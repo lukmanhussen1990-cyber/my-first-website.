@@ -85,7 +85,7 @@
     <div><b>Move</b> W A S D</div>
     <div><b>Jump</b> Space</div>
     <div><b>Sprint</b> Ctrl / Shift</div>
-    <div><b>Look</b> Mouse</div>
+    <div><b>Look</b> Mouse (or drag)</div>
     <div><b>Break</b> Left click</div>
     <div><b>Place</b> Right click</div>
     <div><b>Select</b> 1–8 / scroll wheel</div>
@@ -575,19 +575,45 @@ document.addEventListener('keydown', e=>{
 });
 document.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
 
-canvas.addEventListener('mousemove', e=>{
-  if(paused) return;
-  const s = 0.0022;
-  player.yaw   -= e.movementX*s;
-  player.pitch -= e.movementY*s;
+// Two input modes: Pointer Lock (preferred) or a drag-to-look fallback for
+// environments (e.g. sandboxed iframes) that deny pointer lock.
+let locked = false;         // true when the pointer is locked to the canvas
+let dragging = false;       // fallback: a mouse button is held for look
+let dragMoved = 0, dragBtn = -1;
+const LOOK_S = 0.0022;
+
+function applyLook(dx,dy){
+  player.yaw   -= dx*LOOK_S;
+  player.pitch -= dy*LOOK_S;
   const lim = Math.PI/2 - 0.02;
   player.pitch = Math.max(-lim, Math.min(lim, player.pitch));
+}
+
+canvas.addEventListener('mousemove', e=>{
+  if(paused) return;
+  if(locked){ applyLook(e.movementX, e.movementY); }
+  else if(dragging){ applyLook(e.movementX, e.movementY); dragMoved += Math.abs(e.movementX)+Math.abs(e.movementY); }
 });
 
 canvas.addEventListener('mousedown', e=>{
-  if(paused){ return; }
-  if(e.button===0) breakBlock();
-  else if(e.button===2) placeBlock();
+  if(paused) return;
+  if(locked){
+    // classic: act immediately
+    if(e.button===0) breakBlock();
+    else if(e.button===2) placeBlock();
+  } else {
+    // fallback: begin a drag; decide click-vs-drag on mouseup
+    dragging = true; dragMoved = 0; dragBtn = e.button;
+  }
+});
+window.addEventListener('mouseup', e=>{
+  if(paused || locked || !dragging) { dragging=false; return; }
+  dragging = false;
+  if(dragMoved < 6){ // treated as a click, not a look-drag
+    if(dragBtn===0) breakBlock();
+    else if(dragBtn===2) placeBlock();
+  }
+  dragBtn = -1;
 });
 canvas.addEventListener('contextmenu', e=>e.preventDefault());
 canvas.addEventListener('wheel', e=>{
@@ -596,16 +622,41 @@ canvas.addEventListener('wheel', e=>{
   selectSlot((selected + (e.deltaY>0?1:-1) + HOTBAR.length) % HOTBAR.length);
 }, {passive:false});
 
-// pointer lock
+// start / pause
 const overlay = document.getElementById('overlay');
 const playBtn = document.getElementById('playBtn');
-function requestPlay(){ canvas.requestPointerLock(); }
-playBtn.addEventListener('click', requestPlay);
-canvas.addEventListener('click', ()=>{ if(paused) requestPlay(); });
+const loadingEl = document.getElementById('loading');
+
+function startGame(){
+  paused = false;
+  overlay.classList.add('hidden');
+  // best-effort pointer lock; falls back to drag-look if denied
+  try {
+    const r = canvas.requestPointerLock && canvas.requestPointerLock();
+    if(r && typeof r.catch === 'function') r.catch(()=>{});
+  } catch(_){ /* fallback mode */ }
+}
+function pauseGame(){
+  paused = true;
+  dragging = false;
+  overlay.classList.remove('hidden');
+  loadingEl.textContent = 'Paused — click PLAY to resume';
+  if(locked && document.exitPointerLock) document.exitPointerLock();
+}
+playBtn.addEventListener('click', e=>{ e.stopPropagation(); startGame(); });
+canvas.addEventListener('click', ()=>{ if(paused) startGame(); });
+
 document.addEventListener('pointerlockchange', ()=>{
-  paused = document.pointerLockElement !== canvas;
-  overlay.classList.toggle('hidden', !paused);
-  if(paused) document.getElementById('loading').textContent = 'Paused — click PLAY to resume';
+  locked = (document.pointerLockElement === canvas);
+  // Only treat a *lock exit* as pausing when we were actually locked;
+  // in fallback mode this event never fires so play continues normally.
+  if(!locked && !paused && wasLocked){ pauseGame(); }
+  wasLocked = locked;
+});
+let wasLocked = false;
+// Esc pauses in fallback mode (pointer lock handles Esc itself when locked)
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape' && !paused && !locked) pauseGame();
 });
 
 //////////////////// Look direction ////////////////////
