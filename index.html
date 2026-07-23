@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawd — Dancing Heart Loop</title>
+<style>
+  :root{
+    --coral:#f1583f;        /* Clawd's coral-orange body */
+    --coral-hi:#f56b53;     /* subtle top highlight */
+    --eye:#0d0d0d;          /* square eyes */
+    --heart:#ff3d71;        /* heart body */
+    --heart-hi:#ff7aa5;     /* heart highlight */
+    --stage:#000;           /* pure black stage */
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:#0b0b0f;
+    color:#e9e9ef;
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    padding:24px;
+    min-height:100%;
+  }
+
+  h1{
+    font-size:clamp(15px,2.6vw,20px);
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    font-weight:700;
+    margin:0;
+    color:#f4a08e;
+    opacity:.85;
+  }
+
+  /* ---- The 1:1 pure-black stage ---- */
+  .stage{
+    position:relative;
+    width:min(88vw,72vh);
+    aspect-ratio:1/1;
+    background:var(--stage);
+    border-radius:16px;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    perspective:1000px;
+    box-shadow:0 24px 60px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.03);
+  }
+
+  /* ---- Dance rig: hops, side-steps, wiggle, squash & stretch ---- */
+  .dance{
+    width:56%;
+    transform-origin:50% 84%;
+    transform-style:preserve-3d;
+    animation:dance 9s linear infinite;
+    filter:drop-shadow(0 8px 10px rgba(0,0,0,.55));
+  }
+
+  /* ---- Flipper: the 180° spin that reveals Clawd's back ---- */
+  .flipper{
+    position:relative;
+    width:100%;
+    aspect-ratio:13/11;
+    transform-style:preserve-3d;
+    animation:spin 9s ease-in-out infinite;
+  }
+
+  .face{
+    position:absolute;
+    inset:0;
+    backface-visibility:hidden;
+  }
+  .face svg{width:100%;height:100%;display:block;}
+  .face.back{transform:rotateY(180deg);}
+
+  /* Heart lives on the back; hidden until Clawd turns around */
+  .heart{
+    transform-box:fill-box;
+    transform-origin:center;
+    opacity:0;
+    animation:heart 9s ease-in-out infinite;
+  }
+
+  /* ============ KEYFRAMES ============ */
+
+  /* Happy bouncy dance. 0%==100% so the loop is seamless.
+     Phases: 0-33% dance · 33-44% spin · 44-70% heart · 70-80% spin back · 80-100% reprise */
+  @keyframes dance{
+    0%   {transform:translate(0,0) rotate(0deg) scale(1,1);}
+    /* --- dance --- */
+    4%   {transform:translate(0,-13%) rotate(0deg) scale(.94,1.09); animation-timing-function:cubic-bezier(.2,.7,.4,1);}
+    8%   {transform:translate(-9%,0) rotate(-7deg) scale(1.06,.93); animation-timing-function:cubic-bezier(.6,0,.8,.3);}
+    12%  {transform:translate(-9%,-12%) rotate(-4deg) scale(.95,1.07);}
+    16%  {transform:translate(0,0) rotate(0deg) scale(1.06,.93);}
+    20%  {transform:translate(9%,-12%) rotate(7deg) scale(.95,1.07);}
+    24%  {transform:translate(9%,0) rotate(4deg) scale(1.06,.93);}
+    28%  {transform:translate(0,-11%) rotate(0deg) scale(.96,1.06);}
+    33%  {transform:translate(0,0) rotate(0deg) scale(1,1);}
+    /* --- spin to back (hold steady) --- */
+    44%  {transform:translate(0,0) rotate(0deg) scale(1,1);}
+    /* --- heart reveal: tiny happy bounces --- */
+    50%  {transform:translate(0,-9%) scale(.97,1.05); animation-timing-function:cubic-bezier(.2,.7,.4,1);}
+    56%  {transform:translate(0,0) scale(1.04,.96); animation-timing-function:cubic-bezier(.6,0,.8,.3);}
+    62%  {transform:translate(0,-7%) scale(.98,1.04);}
+    68%  {transform:translate(0,0) scale(1,1);}
+    /* --- spin back (hold steady) --- */
+    80%  {transform:translate(0,0) scale(1,1);}
+    /* --- reprise back to start --- */
+    86%  {transform:translate(0,-13%) scale(.94,1.09); animation-timing-function:cubic-bezier(.2,.7,.4,1);}
+    92%  {transform:translate(0,0) rotate(0deg) scale(1.05,.94); animation-timing-function:cubic-bezier(.6,0,.8,.3);}
+    96%  {transform:translate(0,-6%) scale(.98,1.03);}
+    100% {transform:translate(0,0) rotate(0deg) scale(1,1);}
+  }
+
+  /* One smooth continuous turn: front -> back -> front. 0deg and 360deg are identical => perfect loop. */
+  @keyframes spin{
+    0%   {transform:rotateY(0deg);}
+    33%  {transform:rotateY(0deg);}      /* face camera during dance */
+    44%  {transform:rotateY(180deg);}    /* whoosh — turn around */
+    70%  {transform:rotateY(180deg);}    /* back to camera during heart */
+    80%  {transform:rotateY(360deg);}    /* whoosh — turn back to front */
+    100% {transform:rotateY(360deg);}
+  }
+
+  /* Heart softly appears, sparkles in, then pulses & glows while the back faces us. */
+  @keyframes heart{
+    0%   {opacity:0; transform:scale(.5); filter:none;}
+    44%  {opacity:0; transform:scale(.5); filter:none;}
+    46%  {opacity:1; transform:scale(1.25); filter:drop-shadow(0 0 10px var(--heart)) drop-shadow(0 0 4px #fff);}
+    50%  {opacity:1; transform:scale(1);   filter:drop-shadow(0 0 4px var(--heart));}
+    56%  {opacity:1; transform:scale(1.14);filter:drop-shadow(0 0 12px var(--heart));}
+    62%  {opacity:1; transform:scale(1);   filter:drop-shadow(0 0 4px var(--heart));}
+    68%  {opacity:1; transform:scale(1.12);filter:drop-shadow(0 0 12px var(--heart));}
+    73%  {opacity:1; transform:scale(1);   filter:drop-shadow(0 0 5px var(--heart));}
+    79%  {opacity:0; transform:scale(.7);  filter:none;}
+    100% {opacity:0; transform:scale(.5);  filter:none;}
+  }
+
+  /* Respect users who prefer less motion: freeze on the friendly front pose. */
+  @media (prefers-reduced-motion:reduce){
+    .dance,.flipper,.heart{animation:none;}
+    .flipper{transform:rotateY(0deg);}
+  }
+
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;}
+  button{
+    font:inherit;
+    font-weight:600;
+    letter-spacing:.02em;
+    color:#0b0b0f;
+    background:var(--coral);
+    border:none;
+    padding:10px 16px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:transform .08s ease, background .2s ease, box-shadow .2s ease;
+    box-shadow:0 4px 14px rgba(241,88,63,.35);
+  }
+  button:hover{background:var(--coral-hi);}
+  button:active{transform:translateY(1px) scale(.98);}
+  button.off{background:#2a2a33;color:#cfcfda;box-shadow:none;}
+  .hint{font-size:12px;opacity:.55;text-align:center;max-width:36ch;line-height:1.5;}
+</style>
+</head>
+<body>
+  <h1>Clawd&nbsp;♥&nbsp;You</h1>
+
+  <div class="stage" id="stage">
+    <div class="dance" id="dance">
+      <div class="flipper" id="flipper">
+        <div class="face front" id="front"></div>
+        <div class="face back"  id="back"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="sound" class="off" type="button" aria-pressed="false">🔈 Sound: off</button>
+    <button id="restart" type="button">↻ Restart loop</button>
+  </div>
+  <p class="hint">8-bit Clawd dances, spins around to flash the heart on his back, then spins home — a seamless loop. Turn on sound for the chiptune tune, boings, whoosh &amp; sparkle.</p>
+
+<script>
+/* ============================================================
+   1) BUILD CLAWD  — data-driven pixel art so the front and back
+      faces share the exact same body (no design drift).
+   ============================================================ */
+
+// 13 x 11 grid.  O = coral body pixel.  '.' = empty.
+const BODY = [
+  "...OOOOOOO...", // 0  head top
+  "...OOOOOOO...", // 1  (eyes drawn here on the front)
+  "...OOOOOOO...", // 2
+  "OOOOOOOOOOOOO", // 3  arms out (full width)
+  "OOOOOOOOOOOOO", // 4  arms out
+  "...OOOOOOO...", // 5  body
+  "...OOOOOOO...", // 6
+  "...OOOOOOO...", // 7
+  "...OOOOOOO...", // 8  body bottom
+  "...O.O.O.O...", // 9  four legs
+  "...O.O.O.O...", // 10 four legs
+];
+
+// Front-only: two square eyes  [col,row]
+const EYES = [[4,1],[8,1]];
+
+// Back-only: a classic pixel heart, centred on col 6  [col,row]
+const HEART = [
+        [5,3],       [7,3],
+  [4,4],[5,4],[6,4],[7,4],[8,4],
+  [4,5],[5,5],[6,5],[7,5],[8,5],
+        [5,6],[6,6],[7,6],
+              [6,7],
+];
+
+const CELL = 1;          // svg units per pixel
+const OVERLAP = 0.03;    // tiny overlap kills anti-alias hairlines
+
+function rect(c, r, cls){
+  return `<rect x="${c-OVERLAP}" y="${r-OVERLAP}" `
+       + `width="${CELL+OVERLAP*2}" height="${CELL+OVERLAP*2}" class="${cls}"/>`;
+}
+
+function buildFace(kind){
+  let px = "";
+  // body
+  for(let r=0;r<BODY.length;r++){
+    for(let c=0;c<BODY[r].length;c++){
+      if(BODY[r][c] === "O") px += rect(c, r, "b");
+    }
+  }
+  let overlay = "";
+  if(kind === "front"){
+    for(const [c,r] of EYES) overlay += rect(c, r, "e");
+  } else {
+    let h = "";
+    for(const [c,r] of HEART) h += rect(c, r, "h");
+    // highlight pixel for a little shine
+    h += rect(5, 4, "hh");
+    overlay = `<g class="heart">${h}</g>`;
+  }
+
+  return `
+    <svg viewBox="0 0 13 11" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        .b{fill:var(--coral);}
+        .e{fill:var(--eye);}
+        .h{fill:var(--heart);}
+        .hh{fill:var(--heart-hi);}
+      </style>
+      ${px}
+      ${overlay}
+    </svg>`;
+}
+
+document.getElementById("front").innerHTML = buildFace("front");
+document.getElementById("back").innerHTML  = buildFace("back");
+
+
+/* ============================================================
+   2) RESTART — resync all loops (and used to line audio up too)
+   ============================================================ */
+function restartAnimations(){
+  const els = document.querySelectorAll("#dance, #flipper, .heart");
+  els.forEach(el=>{
+    el.style.animation = "none";
+    // force reflow so the animation truly restarts from 0
+    void el.offsetWidth;
+    el.style.animation = "";
+  });
+}
+document.getElementById("restart").addEventListener("click", ()=>{
+  restartAnimations();
+  if(soundOn){ stopAudio(); startAudio(); }
+});
+
+
+/* ============================================================
+   3) ORIGINAL CHIPTUNE + SFX  (Web Audio API, no files)
+      Autoplay is blocked by browsers, so it starts on click.
+   ============================================================ */
+const CYCLE = 9;              // seconds — matches the animation
+let ctx = null;
+let master = null;
+let schedTimer = null;
+let soundOn = false;
+
+const NOTE = {               // frequencies (Hz)
+  C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196.00,A3:220.00,
+  C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392.00,A4:440.00,B4:493.88,
+  C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:783.99,A5:880.00,B5:987.77,
+  C6:1046.50,D6:1174.66,E6:1318.51,G6:1567.98
+};
+
+// Cheerful lead: a bouncy arpeggio motif, transposed across the loop.
+// [noteName, startSec, durSec]
+function buildLead(){
+  const step = 0.30;                 // eighth-note
+  const motifs = [
+    ["C5","E5","G5","C6","G5","E5"], // dance
+    ["C5","E5","G5","C6","G5","E5"], // dance
+    ["E5","G5","B5","E6","B5","G5"], // spin+heart (up a third, brighter)
+    ["D5","G5","B5","D6","B5","G5"], // heart pulse
+    ["C5","E5","G5","C6","G5","E5"], // reprise home
+  ];
+  const notes = [];
+  let t = 0;
+  for(const m of motifs){
+    for(const n of m){
+      notes.push([n, t, step*0.92]);
+      t += step;
+    }
+  }
+  return notes;                      // 30 notes ≈ 9.0s
+}
+
+// Walking bassline (root notes), quarter-ish notes.
+function buildBass(){
+  const roots = ["C3","C3","G3","G3","A3","A3","F3","G3",  // dance
+                 "E3","G3","A3","F3",                        // heart
+                 "C3","G3","C3"];                            // home
+  const step = CYCLE / roots.length;
+  return roots.map((n,i)=>[n, i*step, step*0.9]);
+}
+
+const LEAD = buildLead();
+const BASS = buildBass();
+
+// SFX timings (seconds within the loop), synced to the visuals
+const HOPS   = [0.36,1.08,1.80,2.52,7.74,8.64]; // tiny boings on jumps
+const WHOOSH = [3.05,6.30];                       // pixel whoosh on the turns
+const SPARK  = [4.12,5.05,6.10];                  // sparkle when heart appears/pulses
+
+function env(node, gain, t, dur, atk=0.005, rel=0.06){
+  const g = node.gain;
+  g.setValueAtTime(0.0001, t);
+  g.exponentialRampToValueAtTime(gain, t+atk);
+  g.setValueAtTime(gain, Math.max(t+atk, t+dur-rel));
+  g.exponentialRampToValueAtTime(0.0001, t+dur);
+}
+
+function tone(type, freq, t, dur, gain){
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  env(g, gain, t, dur);
+  o.connect(g).connect(master);
+  o.start(t); o.stop(t+dur+0.05);
+}
+
+function boing(t){
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = "square";
+  o.frequency.setValueAtTime(180, t);
+  o.frequency.exponentialRampToValueAtTime(620, t+0.06);
+  o.frequency.exponentialRampToValueAtTime(240, t+0.16);
+  env(g, 0.18, t, 0.18, 0.004, 0.08);
+  o.connect(g).connect(master);
+  o.start(t); o.stop(t+0.24);
+}
+
+function whoosh(t){
+  const dur = 0.42;
+  const buf = ctx.createBuffer(1, ctx.sampleRate*dur, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const bp = ctx.createBiquadFilter(); bp.type="bandpass"; bp.Q.value=1.2;
+  bp.frequency.setValueAtTime(500, t);
+  bp.frequency.exponentialRampToValueAtTime(3600, t+dur*0.6);
+  bp.frequency.exponentialRampToValueAtTime(700, t+dur);
+  const g = ctx.createGain();
+  env(g, 0.14, t, dur, 0.02, 0.18);
+  src.connect(bp).connect(g).connect(master);
+  src.start(t); src.stop(t+dur+0.05);
+}
+
+function sparkle(t){
+  const seq = ["E6","G6","C6","D6"];
+  seq.forEach((n,i)=> tone("triangle", NOTE[n], t+i*0.05, 0.12, 0.10));
+}
+
+function scheduleCycle(start){
+  for(const [n,s,d] of LEAD) tone("square",   NOTE[n], start+s, d, 0.075);
+  for(const [n,s,d] of BASS) tone("triangle", NOTE[n], start+s, d, 0.11);
+  // soft chiptune "hat" for drive
+  for(let i=0;i<CYCLE/0.30;i++){
+    const g = 0.02;
+    tone("square", 40, start+i*0.30, 0.02, g); // click-ish low blip
+  }
+  for(const t of HOPS)   boing(start+t);
+  for(const t of WHOOSH) whoosh(start+t);
+  for(const t of SPARK)  sparkle(start+t);
+}
+
+function startAudio(){
+  if(!ctx){
+    ctx = new (window.AudioContext||window.webkitAudioContext)();
+    master = ctx.createGain();
+    master.gain.value = 0.5;
+    master.connect(ctx.destination);
+  }
+  ctx.resume();
+  restartAnimations();                 // line visuals up with the music
+  const base = ctx.currentTime + 0.08;
+  let n = 0;
+  scheduleCycle(base + n*CYCLE);       // first loop
+  scheduleCycle(base + (++n)*CYCLE);   // pre-schedule next
+  schedTimer = setInterval(()=>{
+    scheduleCycle(base + (++n)*CYCLE);
+  }, CYCLE*1000);
+}
+
+function stopAudio(){
+  if(schedTimer){ clearInterval(schedTimer); schedTimer = null; }
+  if(ctx) ctx.suspend();
+}
+
+const soundBtn = document.getElementById("sound");
+soundBtn.addEventListener("click", ()=>{
+  soundOn = !soundOn;
+  soundBtn.classList.toggle("off", !soundOn);
+  soundBtn.setAttribute("aria-pressed", String(soundOn));
+  soundBtn.textContent = soundOn ? "🔊 Sound: on" : "🔈 Sound: off";
+  if(soundOn) startAudio(); else stopAudio();
+});
+</script>
+</body>
+</html>
