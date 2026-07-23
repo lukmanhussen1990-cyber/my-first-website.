@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pac-Man</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-wrap">
+    <h1>PAC-MAN</h1>
+
+    <div class="hud">
+      <div class="stat">SCORE<br><span id="score">0</span></div>
+      <div class="stat">HIGH SCORE<br><span id="high-score">0</span></div>
+      <div class="stat">LIVES<br><span id="lives">3</span></div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="game" width="448" height="496"></canvas>
+      <div id="overlay" class="overlay">
+        <div id="overlay-title">PAC-MAN</div>
+        <div id="overlay-message">Press Start or hit any arrow key to play</div>
+        <button id="start-btn">Start Game</button>
+      </div>
+    </div>
+
+    <div class="controls-hint">
+      Use Arrow Keys or WASD to move &middot; P to pause &middot;
+      <button id="mobile-toggle" class="link-btn">show touch controls</button>
+    </div>
+
+    <div id="touch-controls" class="touch-controls hidden">
+      <button data-dir="up" class="tc tc-up">&#9650;</button>
+      <div class="tc-row">
+        <button data-dir="left" class="tc tc-left">&#9664;</button>
+        <button data-dir="down" class="tc tc-down">&#9660;</button>
+        <button data-dir="right" class="tc tc-right">&#9654;</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
