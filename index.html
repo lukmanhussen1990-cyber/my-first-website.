@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Squid Game 2 · The Players</title>
+<meta name="description" content="An interactive dossier of every player in Squid Game Season 2 — numbers, names, actors and stories." />
+<style>
+  :root{
+    --ink:#07070c;
+    --ink-2:#0d0d16;
+    --panel:#12121f;
+    --panel-2:#171727;
+    --line:rgba(255,255,255,.09);
+    --txt:#f3f1ea;
+    --muted:#9a97ad;
+    --pink:#ff2e88;
+    --pink-2:#e4007c;
+    --green:#37b26a;
+    --green-2:#1f8f52;
+    --teal:#16c2c2;
+    --gold:#e9c46a;
+    --blood:#c8102e;
+    --shadow:0 30px 80px rgba(0,0,0,.55);
+    --r:20px;
+    --font: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    font-family:var(--font);
+    color:var(--txt);
+    background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(255,46,136,.16), transparent 60%),
+      radial-gradient(900px 600px at 10% 20%, rgba(22,194,194,.10), transparent 55%),
+      var(--ink);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* fine film grain + vignette for cinematic feel */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/></svg>");
+    opacity:.045;mix-blend-mode:overlay;
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:9998;
+    box-shadow:inset 0 0 260px 60px rgba(0,0,0,.75);
+  }
+
+  a{color:inherit;text-decoration:none}
+  ::selection{background:var(--pink);color:#fff}
+
+  /* ---------- Loader ---------- */
+  #loader{
+    position:fixed;inset:0;z-index:10000;background:var(--ink);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+    transition:opacity .8s ease, visibility .8s;
+  }
+  #loader.done{opacity:0;visibility:hidden}
+  .loader-shapes{display:flex;gap:22px}
+  .loader-shapes span{width:26px;height:26px;display:block;opacity:.15;animation:pop 1.4s infinite}
+  .loader-shapes .c{border-radius:50%;background:var(--pink)}
+  .loader-shapes .t{width:0;height:0;background:none;border-left:15px solid transparent;border-right:15px solid transparent;border-bottom:26px solid var(--teal)}
+  .loader-shapes .s{background:var(--green);border-radius:4px}
+  .loader-shapes span:nth-child(2){animation-delay:.2s}
+  .loader-shapes span:nth-child(3){animation-delay:.4s}
+  @keyframes pop{0%,100%{opacity:.15;transform:translateY(0) scale(.9)}50%{opacity:1;transform:translateY(-10px) scale(1.05)}}
+  .loader-txt{font-size:12px;letter-spacing:.5em;color:var(--muted);text-transform:uppercase;padding-left:.5em}
+
+  /* ---------- Nav ---------- */
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:900;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px clamp(16px,4vw,54px);
+    backdrop-filter:blur(10px);
+    background:linear-gradient(180deg, rgba(7,7,12,.72), rgba(7,7,12,0));
+    transition:background .4s, padding .4s;
+  }
+  nav.scrolled{background:rgba(9,9,16,.9);border-bottom:1px solid var(--line);padding-top:12px;padding-bottom:12px}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.18em;font-size:14px;text-transform:uppercase}
+  .brand .mark{display:flex;gap:6px;align-items:center}
+  .brand .mark i{width:13px;height:13px;display:block}
+  .brand .mark .c{border-radius:50%;border:2.5px solid var(--pink)}
+  .brand .mark .t{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:13px solid var(--teal)}
+  .brand .mark .s{border:2.5px solid var(--green);border-radius:2px}
+  .nav-links{display:flex;gap:28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .nav-links a{position:relative;transition:color .3s}
+  .nav-links a:hover{color:var(--txt)}
+  .nav-links a::after{content:"";position:absolute;left:0;bottom:-6px;height:2px;width:0;background:var(--pink);transition:width .3s}
+  .nav-links a:hover::after{width:100%}
+  @media(max-width:720px){.nav-links{display:none}}
+
+  /* ---------- Hero ---------- */
+  header.hero{
+    position:relative;min-height:100vh;display:flex;align-items:center;
+    padding:120px clamp(20px,6vw,90px) 80px;overflow:hidden;
+  }
+  .float-shapes{position:absolute;inset:0;pointer-events:none;z-index:0}
+  .float-shapes b{position:absolute;display:block;opacity:.5;filter:drop-shadow(0 10px 30px rgba(0,0,0,.5));animation:drift linear infinite}
+  @keyframes drift{
+    0%{transform:translateY(0) rotate(0deg)}
+    50%{transform:translateY(-40px) rotate(180deg)}
+    100%{transform:translateY(0) rotate(360deg)}
+  }
+  .hero-inner{position:relative;z-index:3;max-width:900px}
+  .season-tag{
+    display:inline-flex;align-items:center;gap:10px;
+    border:1px solid var(--line);border-radius:100px;padding:8px 16px;
+    font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--pink);
+    background:rgba(255,46,136,.06);margin-bottom:26px;
+  }
+  .season-tag .dot{width:8px;height:8px;border-radius:50%;background:var(--pink);box-shadow:0 0 0 0 rgba(255,46,136,.7);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,46,136,.6)}70%{box-shadow:0 0 0 12px rgba(255,46,136,0)}100%{box-shadow:0 0 0 0 rgba(255,46,136,0)}}
+  h1.title{
+    margin:0;font-weight:900;line-height:.92;letter-spacing:-.02em;
+    font-size:clamp(52px,11vw,150px);text-transform:uppercase;
+  }
+  h1.title .l1{display:block;color:var(--txt)}
+  h1.title .l2{display:block;background:linear-gradient(100deg,var(--pink),var(--teal) 60%,var(--green));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .subtitle{max-width:560px;margin:26px 0 0;color:var(--muted);font-size:clamp(15px,2vw,19px);line-height:1.6}
+  .hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:38px}
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;cursor:pointer;
+    padding:15px 26px;border-radius:100px;font-weight:700;font-size:14px;letter-spacing:.05em;
+    border:1px solid transparent;transition:transform .25s, box-shadow .25s, background .25s;
+  }
+  .btn-primary{background:var(--pink);color:#fff;box-shadow:0 14px 40px rgba(255,46,136,.35)}
+  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 20px 50px rgba(255,46,136,.5)}
+  .btn-ghost{border-color:var(--line);color:var(--txt);background:rgba(255,255,255,.02)}
+  .btn-ghost:hover{transform:translateY(-3px);border-color:var(--teal)}
+
+  /* Young-hee doll */
+  .doll{position:absolute;right:clamp(-40px,4vw,60px);bottom:0;z-index:2;width:min(38vw,420px);opacity:.96;animation:sway 6s ease-in-out infinite}
+  @keyframes sway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1.5deg)}}
+  @media(max-width:900px){.doll{opacity:.22;right:-10vw;width:70vw}}
+
+  .scroll-hint{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);z-index:3;color:var(--muted);font-size:11px;letter-spacing:.3em;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .scroll-hint .bar{width:1px;height:44px;background:linear-gradient(var(--pink),transparent);animation:drop 1.8s infinite}
+  @keyframes drop{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}100%{transform:scaleY(0);transform-origin:bottom}}
+
+  /* ---------- Stats ---------- */
+  .stats{
+    position:relative;z-index:5;margin:-40px auto 0;max-width:1180px;padding:0 clamp(16px,4vw,40px);
+    display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+  }
+  .stat{
+    background:linear-gradient(160deg,var(--panel),var(--ink-2));
+    border:1px solid var(--line);border-radius:var(--r);padding:26px 22px;text-align:center;
+    box-shadow:var(--shadow);
+  }
+  .stat .num{font-size:clamp(28px,4vw,46px);font-weight:900;letter-spacing:-.02em;
+    background:linear-gradient(120deg,#fff,#c9c6d8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat .lbl{margin-top:6px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+  @media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+  /* ---------- Section shell ---------- */
+  section{position:relative;z-index:5;padding:clamp(70px,10vw,130px) clamp(16px,4vw,40px);max-width:1240px;margin:0 auto}
+  .eyebrow{font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:var(--pink);margin-bottom:14px}
+  .sec-head h2{margin:0;font-size:clamp(30px,5.5vw,60px);font-weight:900;letter-spacing:-.02em;line-height:1.02}
+  .sec-head p{color:var(--muted);max-width:640px;margin:18px 0 0;font-size:16px;line-height:1.65}
+
+  /* ---------- Controls ---------- */
+  .controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin:44px 0 30px}
+  .search{position:relative;flex:1;min-width:220px;max-width:360px}
+  .search input{
+    width:100%;padding:14px 16px 14px 44px;border-radius:100px;border:1px solid var(--line);
+    background:var(--panel);color:var(--txt);font-size:14px;outline:none;transition:border .3s,box-shadow .3s;
+  }
+  .search input:focus{border-color:var(--pink);box-shadow:0 0 0 4px rgba(255,46,136,.12)}
+  .search svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--muted)}
+  .filters{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    cursor:pointer;padding:10px 16px;border-radius:100px;border:1px solid var(--line);
+    background:var(--panel);color:var(--muted);font-size:12px;letter-spacing:.06em;font-weight:600;
+    text-transform:uppercase;transition:all .25s;
+  }
+  .chip:hover{color:var(--txt);border-color:var(--muted)}
+  .chip.active{background:var(--pink);border-color:var(--pink);color:#fff;box-shadow:0 8px 22px rgba(255,46,136,.32)}
+
+  /* ---------- Grid + cards ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px}
+  .card{
+    position:relative;border-radius:var(--r);overflow:hidden;cursor:pointer;
+    background:linear-gradient(170deg,var(--panel-2),var(--ink-2));
+    border:1px solid var(--line);
+    transform:perspective(900px);transition:box-shadow .3s, border-color .3s;
+    will-change:transform;
+  }
+  .card:hover{border-color:rgba(255,46,136,.5);box-shadow:0 26px 60px rgba(0,0,0,.6),0 0 0 1px rgba(255,46,136,.2)}
+  .card .portrait{position:relative;aspect-ratio:1/1;background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.05),transparent 70%)}
+  .card .portrait svg{width:100%;height:100%;display:block}
+  .card .pnum{
+    position:absolute;top:12px;left:12px;z-index:2;width:46px;height:46px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;
+    color:#fff;background:rgba(7,7,12,.55);border:2px solid rgba(255,255,255,.85);backdrop-filter:blur(4px);
+  }
+  .card .status{
+    position:absolute;top:14px;right:12px;z-index:2;font-size:9.5px;letter-spacing:.12em;font-weight:700;
+    text-transform:uppercase;padding:5px 9px;border-radius:100px;backdrop-filter:blur(4px);
+  }
+  .status.returning{background:rgba(233,196,106,.16);color:var(--gold);border:1px solid rgba(233,196,106,.4)}
+  .status.new{background:rgba(55,178,106,.16);color:#66d69a;border:1px solid rgba(55,178,106,.4)}
+  .status.villain{background:rgba(200,16,46,.18);color:#ff6b7f;border:1px solid rgba(200,16,46,.45)}
+  .card .info{padding:16px 18px 20px}
+  .card .info .name{font-weight:800;font-size:18px;letter-spacing:-.01em}
+  .card .info .actor{color:var(--muted);font-size:12.5px;margin-top:3px}
+  .card .info .role{margin-top:12px;display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);border:1px solid rgba(22,194,194,.25);background:rgba(22,194,194,.06);padding:5px 10px;border-radius:100px}
+  .card .glow{position:absolute;inset:0;background:radial-gradient(300px at var(--mx,50%) var(--my,50%),rgba(255,46,136,.14),transparent 60%);opacity:0;transition:opacity .3s;pointer-events:none}
+  .card:hover .glow{opacity:1}
+
+  .no-results{grid-column:1/-1;text-align:center;color:var(--muted);padding:60px 0;font-size:15px}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(40px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* ---------- Symbols section ---------- */
+  .symbols{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:44px}
+  .sym{background:linear-gradient(170deg,var(--panel),var(--ink-2));border:1px solid var(--line);border-radius:var(--r);padding:34px 26px;text-align:center;transition:transform .3s,border-color .3s}
+  .sym:hover{transform:translateY(-6px);border-color:rgba(255,255,255,.2)}
+  .sym .ico{width:70px;height:70px;margin:0 auto 20px}
+  .sym h3{margin:0 0 8px;font-size:19px;letter-spacing:.02em}
+  .sym p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.6}
+  @media(max-width:720px){.symbols{grid-template-columns:1fr}}
+
+  /* ---------- Modal ---------- */
+  .modal-wrap{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+  .modal-wrap.open{display:flex}
+  .modal-bg{position:absolute;inset:0;background:rgba(4,4,9,.82);backdrop-filter:blur(6px);animation:fade .3s}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal{
+    position:relative;z-index:2;width:min(760px,100%);max-height:90vh;overflow:auto;
+    background:linear-gradient(180deg,var(--panel-2),var(--ink-2));border:1px solid var(--line);
+    border-radius:26px;box-shadow:var(--shadow);animation:rise .4s cubic-bezier(.2,.8,.2,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(30px) scale(.98)}to{opacity:1;transform:none}}
+  .modal-top{display:grid;grid-template-columns:200px 1fr;gap:0}
+  @media(max-width:600px){.modal-top{grid-template-columns:1fr}}
+  .modal-portrait{background:radial-gradient(circle at 50% 30%,rgba(255,46,136,.12),transparent 70%);position:relative}
+  .modal-portrait svg{width:100%;height:100%;display:block}
+  .modal-portrait .pnum{position:absolute;top:14px;left:14px;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:#fff;background:rgba(7,7,12,.6);border:2px solid #fff}
+  .modal-meta{padding:28px 28px 8px}
+  .modal-meta .mstatus{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;padding:5px 10px;border-radius:100px;display:inline-block}
+  .modal-meta h3{margin:14px 0 4px;font-size:30px;font-weight:900;letter-spacing:-.01em}
+  .modal-meta .mactor{color:var(--muted);font-size:14px}
+  .modal-meta .mtags{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .modal-meta .mtag{font-size:11px;color:var(--teal);border:1px solid rgba(22,194,194,.28);padding:5px 11px;border-radius:100px;letter-spacing:.05em}
+  .modal-body{padding:6px 28px 30px}
+  .modal-body p{color:#d7d4e2;line-height:1.75;font-size:15.5px;margin:14px 0 0}
+  .modal-body .quote{margin-top:22px;padding:16px 20px;border-left:3px solid var(--pink);background:rgba(255,46,136,.06);border-radius:0 12px 12px 0;color:#f0eef7;font-style:italic}
+  .modal-close{position:absolute;top:14px;right:14px;z-index:5;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(7,7,12,.6);color:#fff;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:background .25s,transform .25s}
+  .modal-close:hover{background:var(--pink);transform:rotate(90deg)}
+
+  /* ---------- Footer ---------- */
+  footer{position:relative;z-index:5;border-top:1px solid var(--line);margin-top:40px;padding:50px clamp(16px,4vw,40px);text-align:center;color:var(--muted);font-size:13px}
+  footer .fmark{display:flex;gap:10px;justify-content:center;margin-bottom:18px}
+  footer .fmark i{width:16px;height:16px;display:block}
+  footer .fmark .c{border-radius:50%;border:2.5px solid var(--pink)}
+  footer .fmark .t{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:16px solid var(--teal)}
+  footer .fmark .s{border:2.5px solid var(--green);border-radius:2px}
+  footer .disclaimer{max-width:620px;margin:16px auto 0;font-size:11.5px;line-height:1.7;opacity:.7}
+</style>
+</head>
+<body>
+
+<!-- Loader -->
+<div id="loader">
+  <div class="loader-shapes"><span class="c"></span><span class="t"></span><span class="s"></span></div>
+  <div class="loader-txt">Entering the Game</div>
+</div>
+
+<!-- Nav -->
+<nav id="nav">
+  <div class="brand">
+    <span class="mark"><i class="c"></i><i class="t"></i><i class="s"></i></span>
+    Squid&nbsp;Game&nbsp;2
+  </div>
+  <div class="nav-links">
+    <a href="#players">Players</a>
+    <a href="#symbols">Symbols</a>
+    <a href="#about">The Game</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="float-shapes" id="floatShapes"></div>
+
+  <!-- Young-hee doll -->
+  <svg class="doll" viewBox="0 0 300 420" aria-hidden="true">
+    <defs>
+      <linearGradient id="hairG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1c1c"/><stop offset="1" stop-color="#000"/></linearGradient>
+      <linearGradient id="dressG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4a02a"/><stop offset="1" stop-color="#d97a12"/></linearGradient>
+    </defs>
+    <!-- legs -->
+    <rect x="128" y="360" width="18" height="58" rx="6" fill="#f0d9b8"/>
+    <rect x="156" y="360" width="18" height="58" rx="6" fill="#f0d9b8"/>
+    <path d="M120 405h34v14h-34z" fill="#7a2b16"/>
+    <path d="M150 405h34v14h-34z" fill="#7a2b16"/>
+    <!-- dress -->
+    <path d="M96 250 Q150 232 206 250 L226 372 Q150 392 76 372 Z" fill="url(#dressG)"/>
+    <!-- arms -->
+    <rect x="70" y="256" width="16" height="86" rx="8" fill="#f0d9b8"/>
+    <rect x="216" y="256" width="16" height="86" rx="8" fill="#f0d9b8"/>
+    <!-- neck + head -->
+    <rect x="140" y="196" width="22" height="34" fill="#f0d9b8"/>
+    <circle cx="151" cy="150" r="66" fill="#f6dfbe"/>
+    <!-- hair -->
+    <path d="M85 150 Q86 74 151 74 Q216 74 217 150 Q217 120 151 116 Q85 120 85 150Z" fill="url(#hairG)"/>
+    <path d="M84 150q-20 6-18 40 12-6 20-8Z" fill="url(#hairG)"/>
+    <path d="M218 150q20 6 18 40-12-6-20-8Z" fill="url(#hairG)"/>
+    <!-- bangs -->
+    <path d="M92 128 Q151 92 210 128 Q180 118 151 118 Q122 118 92 128Z" fill="url(#hairG)"/>
+    <!-- pigtail ties -->
+    <circle cx="70" cy="176" r="12" fill="#c8102e"/>
+    <circle cx="232" cy="176" r="12" fill="#c8102e"/>
+    <!-- eyes (glowing) -->
+    <circle class="dollEye" cx="128" cy="150" r="8" fill="#c8102e"/>
+    <circle class="dollEye" cx="174" cy="150" r="8" fill="#c8102e"/>
+    <!-- cheeks + mouth -->
+    <circle cx="116" cy="168" r="9" fill="#f2a3a0" opacity=".6"/>
+    <circle cx="186" cy="168" r="9" fill="#f2a3a0" opacity=".6"/>
+    <path d="M142 176 q9 8 18 0" stroke="#8a4b2f" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </svg>
+
+  <div class="hero-inner">
+    <span class="season-tag"><span class="dot"></span>Season 2 · The Players Return</span>
+    <h1 class="title"><span class="l1">Squid</span><span class="l2">Game 02</span></h1>
+    <p class="subtitle">456 players. One returning champion determined to burn it all down. Meet every soul who stepped back onto the pink stairs — their numbers, their names, and the debts that dragged them here.</p>
+    <div class="hero-cta">
+      <a href="#players" class="btn btn-primary">Meet the Players
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <a href="#about" class="btn btn-ghost">How the game works</a>
+    </div>
+  </div>
+
+  <div class="scroll-hint"><span>Scroll</span><span class="bar"></span></div>
+</header>
+
+<!-- Stats -->
+<div class="stats" id="stats">
+  <div class="stat"><div class="num" data-count="456" data-suffix="">0</div><div class="lbl">Players</div></div>
+  <div class="stat"><div class="num" data-count="45.6" data-suffix="B₩" data-dec="1">0</div><div class="lbl">Prize Pool</div></div>
+  <div class="stat"><div class="num" data-count="6" data-suffix="">0</div><div class="lbl">Deadly Games</div></div>
+  <div class="stat"><div class="num" data-count="16" data-suffix="">0</div><div class="lbl">Key Faces</div></div>
+</div>
+
+<!-- Players -->
+<section id="players">
+  <div class="sec-head reveal">
+    <div class="eyebrow">The Dossier</div>
+    <h2>Every Player, One&nbsp;Card at a Time</h2>
+    <p>Search by name, number or actor. Filter by who's back for revenge, who's brand new, and who runs with Thanos. Tap any card for the full story.</p>
+  </div>
+
+  <div class="controls reveal">
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="searchInput" type="text" placeholder="Search name, number or actor…" />
+    </div>
+    <div class="filters" id="filters">
+      <button class="chip active" data-filter="all">All</button>
+      <button class="chip" data-filter="returning">Returning</button>
+      <button class="chip" data-filter="new">New</button>
+      <button class="chip" data-filter="villain">Villains</button>
+      <button class="chip" data-filter="crew">Thanos's Crew</button>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</section>
+
+<!-- Symbols -->
+<section id="symbols">
+  <div class="sec-head reveal">
+    <div class="eyebrow">The Invitation</div>
+    <h2>Circle. Triangle. Square.</h2>
+    <p>Three shapes rule the island — printed on the card, stitched onto every mask, carved into the whole machine.</p>
+  </div>
+  <div class="symbols">
+    <div class="sym reveal">
+      <svg class="ico" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#ff2e88" stroke-width="8"/></svg>
+      <h3>○ The Worker</h3>
+      <p>The lowest rank of masked staff — the hands that move bodies, serve food and keep the games running without ever speaking.</p>
+    </div>
+    <div class="sym reveal">
+      <svg class="ico" viewBox="0 0 100 100"><path d="M50 12 L88 82 L12 82 Z" fill="none" stroke="#16c2c2" stroke-width="8" stroke-linejoin="round"/></svg>
+      <h3>△ The Soldier</h3>
+      <p>Armed enforcers who guard the players and carry out eliminations. They outrank workers but answer to the circles above.</p>
+    </div>
+    <div class="sym reveal">
+      <svg class="ico" viewBox="0 0 100 100"><rect x="16" y="16" width="68" height="68" fill="none" stroke="#37b26a" stroke-width="8"/></svg>
+      <h3>□ The Manager</h3>
+      <p>The highest-ranking masks on the field, commanding rooms full of soldiers and reporting only to the Front Man himself.</p>
+    </div>
+  </div>
+</section>
+
+<!-- About -->
+<section id="about">
+  <div class="sec-head reveal">
+    <div class="eyebrow">The Game</div>
+    <h2>Debt In. Death Out.</h2>
+    <p>Hundreds of people crushed by debt accept a stranger's invitation and wake on a secret island. Each round is a children's game — and every loss is fatal. The pot swells with every death, and the last one standing walks away with ₩45.6 billion. In Season 2, one of them came back on purpose: Player 456, Seong Gi-hun, who took his winnings and swore to end the game from the inside.</p>
+  </div>
+</section>
+
+<!-- Modal -->
+<div class="modal-wrap" id="modal">
+  <div class="modal-bg" data-close></div>
+  <div class="modal">
+    <button class="modal-close" data-close aria-label="Close">×</button>
+    <div class="modal-top">
+      <div class="modal-portrait" id="mPortrait"></div>
+      <div class="modal-meta" id="mMeta"></div>
+    </div>
+    <div class="modal-body" id="mBody"></div>
+  </div>
+</div>
+
+<footer id="footer">
+  <div class="fmark"><i class="c"></i><i class="t"></i><i class="s"></i></div>
+  <div>An interactive fan dossier · Squid Game Season 2</div>
+  <div class="disclaimer">Portraits are original stylised illustrations generated in-browser, not photographs. Squid Game and its characters are the property of Netflix and Siren Pictures. This page is an unofficial, non-commercial fan tribute made for enjoyment.</div>
+</footer>
+
+<script>
+/* ============================================================
+   PLAYER DATA  (numbers, names & actors verified from press guides)
+   ============================================================ */
+const PLAYERS = [
+  { num:"456", name:"Seong Gi-hun", actor:"Lee Jung-jae", status:"returning",
+    tags:["Protagonist","Season 1 Winner"], groups:["returning","ally"], role:"The Returning Champion",
+    desc:"Season 1's sole survivor. Three years and ₩45.6 billion later, Gi-hun is a haunted man consumed by one goal: destroy the game for good. He hunts the Recruiter, gets voted back in as Player 456, and re-enters the arena to dismantle it from the inside.",
+    quote:"\"I'm going to end this. All of it.\"",
+    traits:{skin:"#e6b48c",hair:"#c0392b",style:"redSwoop",brow:"det",mouth:"firm",tone:"green"} },
+
+  { num:"001", name:"Oh Young-il", actor:"Lee Byung-hun", status:"villain",
+    tags:["The Front Man","Undercover"], groups:["returning","villain"], role:"The Man in the Mask",
+    desc:"Behind the black mask is Hwang In-ho, the Front Man who runs the games. To keep watch on his biggest threat, he slips in among the players as calm, watchful 'Oh Young-il' — earning Gi-hun's trust while quietly steering everything.",
+    quote:"\"You don't trust people because they're trustworthy. You trust them because you have no choice.\"",
+    traits:{skin:"#dcae86",hair:"#141414",style:"neatShort",brow:"calm",mouth:"flat",tone:"green"} },
+
+  { num:"007", name:"Park Yong-sik", actor:"Yang Dong-geun", status:"new",
+    tags:["Gambling Debt","Geum-ja's Son"], groups:["new","ally"], role:"The Reckless Son",
+    desc:"A gambling addict buried in debt, Yong-sik enters chasing one more big score — never realising his elderly mother has walked into the very same game to protect him.",
+    quote:"\"Mom… why are you here?\"",
+    traits:{skin:"#d8a578",hair:"#20180f",style:"balding",brow:"worry",mouth:"open",tone:"green",extras:["stubble"]} },
+
+  { num:"044", name:"Seon-nyeo", actor:"Chae Kook-hee", status:"villain",
+    tags:["Shaman","Manipulator"], groups:["new","villain"], role:"The Self-Made Prophet",
+    desc:"A self-proclaimed shaman who reads doom in every face. She peddles cryptic prophecies to the terrified, bending desperate players to her will and dividing the group when it suits her.",
+    quote:"\"The spirits told me… you won't last the night.\"",
+    traits:{skin:"#e3b78e",hair:"#0d0d0d",style:"longWavy",brow:"arch",mouth:"smirk",tone:"green",extras:["liner"]} },
+
+  { num:"120", name:"Cho Hyun-ju", actor:"Park Sung-hoon", status:"new",
+    tags:["Ex-Special Forces","Protector"], groups:["new","ally"], role:"The Soldier With a Debt",
+    desc:"A former Special Forces soldier and trans woman who joined the game to fund gender-affirming surgery. Level-headed, physically capable and fiercely protective, she becomes one of the group's most dependable allies.",
+    quote:"\"Stay behind me. I've done this before.\"",
+    traits:{skin:"#e8bd94",hair:"#241a12",style:"bob",brow:"calm",mouth:"soft",tone:"green"} },
+
+  { num:"124", name:"Nam-gyu", actor:"Roh Jae-won", status:"villain",
+    tags:["Thanos's Crew","Hot-Headed"], groups:["new","villain","crew"], role:"The Henchman",
+    desc:"Wiped out by the same crypto crash as his idol, Nam-gyu latches onto Thanos as a loyal, volatile enforcer — quick to threaten, quicker to swing.",
+    quote:"\"You heard the boss. Move.\"",
+    traits:{skin:"#d9a271",hair:"#e8e2d0",style:"undercut",brow:"anger",mouth:"sneer",tone:"green"} },
+
+  { num:"125", name:"Park Min-su", actor:"Lee David", status:"new",
+    tags:["Thanos's Crew","Timid"], groups:["new","crew"], role:"The Nervous Follower",
+    desc:"A jittery, easily-led young man who drifts into Thanos's orbit for protection. He goes along with the crew's cruelty out of fear far more than conviction.",
+    quote:"\"I— I didn't want any of this…\"",
+    traits:{skin:"#e4b487",hair:"#1a1a1a",style:"bowl",brow:"worry",mouth:"small",tone:"green"} },
+
+  { num:"149", name:"Jang Geum-ja", actor:"Kang Ae-sim", status:"new",
+    tags:["Devoted Mother","Fan Favourite"], groups:["new","ally"], role:"The Selfless Mother",
+    desc:"A warm, sharp-tongued grandmother who entered the game for one reason only — to watch over her reckless son, Yong-sik. Her kindness becomes a quiet anchor for the players around her.",
+    quote:"\"A mother doesn't leave her child. Not even here.\"",
+    traits:{skin:"#e9c6a0",hair:"#cfd0d4",style:"bun",brow:"calm",mouth:"soft",tone:"green",extras:["glasses"]} },
+
+  { num:"196", name:"Player 196", actor:"Song Ji-woo", status:"new",
+    tags:["First Round","Early Loss"], groups:["new"], role:"The First to Fall",
+    desc:"An ordinary, hopeful player who never made it past the opening game — the season's first brutal reminder that no one here is safe.",
+    quote:"\"It's just a children's game… right?\"",
+    traits:{skin:"#dcac80",hair:"#171717",style:"plain",brow:"worry",mouth:"open",tone:"green"} },
+
+  { num:"222", name:"Kim Jun-hee", actor:"Jo Yu-ri", status:"new",
+    tags:["Expecting","Survivor"], groups:["new","ally"], role:"The Mother-to-Be",
+    desc:"Pregnant and abandoned by her ex — the con-man streamer Myung-gi — Jun-hee fights not just for herself but for the child she carries through every round.",
+    quote:"\"I have to make it out. For both of us.\"",
+    traits:{skin:"#ecc19a",hair:"#20160e",style:"ponytail",brow:"worry",mouth:"soft",tone:"green"} },
+
+  { num:"230", name:"Thanos", actor:"Choi Seung-hyun (T.O.P)", status:"villain",
+    tags:["Rapper","Crew Leader"], groups:["new","villain","crew"], role:"The Chaos Rapper",
+    desc:"A washed-up rapper who blew his fortune on Myung-gi's coin and now numbs himself with pills. Loud, theatrical and dangerous, he gathers a crew and treats the deadly games like his own violent stage.",
+    quote:"\"Life's a game, baby. I'm just here to play LOUD.\"",
+    traits:{skin:"#e3b085",hair:"#b06fe0",style:"wildSilver",brow:"anger",mouth:"grin",tone:"green",extras:["gem","earring"]} },
+
+  { num:"246", name:"Park Gyeong-seok", actor:"Lee Jin-wook", status:"new",
+    tags:["Devoted Father","Steady"], groups:["new","ally"], role:"The Father Who Won't Fold",
+    desc:"A quiet, dependable man playing to fund his young daughter's cancer treatment. He keeps his head down and his morals intact in a place designed to strip both away.",
+    quote:"\"My daughter is waiting for me. That's all that matters.\"",
+    traits:{skin:"#d5a074",hair:"#161616",style:"crop",brow:"det",mouth:"firm",tone:"green"} },
+
+  { num:"333", name:"Lee Myung-gi", actor:"Yim Si-wan", status:"new",
+    tags:["Crypto Streamer","Con Man"], groups:["new"], role:"The Coin Streamer",
+    desc:"Once the face of 'MG Coin', Myung-gi ran a crypto scheme that ruined thousands — including many of his fellow players and his ex, Jun-hee. Charming, slippery and always calculating his next angle.",
+    quote:"\"Trust me. Have I ever steered you wrong?\"",
+    traits:{skin:"#e5ba8f",hair:"#0f0f0f",style:"sidePart",brow:"calm",mouth:"smirk",tone:"green"} },
+
+  { num:"380", name:"Se-mi", actor:"Won Ji-an", status:"new",
+    tags:["Thanos's Crew","Strategist"], groups:["new","crew"], role:"The Cold Calculator",
+    desc:"Sharp and self-interested, Se-mi throws in with Thanos's crew — convinced she can outsmart the weaker players and ride the strong ones to the prize.",
+    quote:"\"Sentiment gets you killed. Numbers don't.\"",
+    traits:{skin:"#eabf98",hair:"#141014",style:"straightLong",brow:"arch",mouth:"flat",tone:"green"} },
+
+  { num:"388", name:"Kang Dae-ho", actor:"Kang Ha-neul", status:"new",
+    tags:["Ex-Marine","Loyal"], groups:["new","ally"], role:"The Marine Who Froze",
+    desc:"A cheerful, muscle-bound ex-Marine who allies with Gi-hun and talks a big game — but when the decisive moment comes, his courage abandons him at the worst possible time.",
+    quote:"\"Semper Fi, brother. I've got your back… I swear I do.\"",
+    traits:{skin:"#d59b6c",hair:"#0e0e0e",style:"buzz",brow:"det",mouth:"grin",tone:"green"} },
+
+  { num:"390", name:"Park Jung-bae", actor:"Lee Seo-hwan", status:"new",
+    tags:["Old Friend","Gambler"], groups:["new","ally"], role:"The Friend From the Past",
+    desc:"Gi-hun's lifelong friend, who gambled his life away and landed in the game by chance. Their reunion in that dormitory is a gut-punch — and gives Gi-hun someone to fight for.",
+    quote:"\"Gi-hun? Of all the places… it had to be here.\"",
+    traits:{skin:"#dba97d",hair:"#1c1c1c",style:"sidePartGray",brow:"warm",mouth:"soft",tone:"green",extras:["glasses"]} },
+];
+
+/* ============================================================
+   PORTRAIT GENERATOR  — original stylised SVG per player
+   ============================================================ */
+function portrait(p){
+  const t = p.traits;
+  const cx = 100;
+  const extras = t.extras || [];
+  const has = k => extras.includes(k);
+  const tone = t.tone === "green" ? {suit:"#2f9e5b", suitDark:"#1c7040", zip:"#eef3ec"} : {suit:"#2f9e5b",suitDark:"#1c7040",zip:"#eef3ec"};
+
+  // ---- hair paths ----
+  function hair(style,color){
+    switch(style){
+      case "redSwoop": // swept-back dyed hair (Gi-hun)
+        return `<path d="M60 96 C56 50 78 40 100 40 C124 40 146 52 140 96 C140 66 120 58 100 58 C82 58 63 66 60 96Z" fill="${color}"/>
+                <path d="M60 96 C56 54 74 44 96 44 C82 52 70 68 68 96Z" fill="#000" opacity=".18"/>`;
+      case "neatShort":
+        return `<path d="M62 94 C60 54 80 44 100 44 C120 44 140 54 138 94 C138 70 120 62 100 62 C80 62 62 70 62 94Z" fill="${color}"/>`;
+      case "balding":
+        return `<path d="M64 96 C62 74 74 62 100 62 C126 62 138 74 136 96 C136 84 128 78 118 76 C114 66 108 62 100 62 C92 62 86 66 82 76 C72 78 64 84 64 96Z" fill="${color}"/>`;
+      case "longWavy":
+        return `<path d="M56 150 C48 92 60 42 100 42 C140 42 152 92 144 150 C150 118 142 96 138 92 C138 66 122 56 100 56 C78 56 62 66 62 92 C58 96 50 118 56 150Z" fill="${color}"/>`;
+      case "bob":
+        return `<path d="M58 128 C54 74 74 44 100 44 C126 44 146 74 142 128 C144 100 138 84 136 82 C136 64 120 58 100 58 C80 58 64 64 64 82 C62 84 56 100 58 128Z" fill="${color}"/>`;
+      case "undercut":
+        return `<path d="M66 92 C66 60 82 46 100 46 C120 46 136 58 134 92 L124 92 C124 70 116 60 100 60 C86 60 78 68 76 92Z" fill="${color}"/>
+                <path d="M100 46 C120 46 136 58 134 76 C126 62 114 58 100 58Z" fill="#000" opacity=".2"/>`;
+      case "bowl":
+        return `<path d="M60 96 C58 56 80 46 100 46 C120 46 142 56 140 96 C140 84 130 82 118 82 L118 74 C112 66 90 66 82 74 L82 82 C70 82 60 84 60 96Z" fill="${color}"/>`;
+      case "bun":
+        return `<circle cx="100" cy="44" r="15" fill="${color}"/>
+                <path d="M64 92 C62 60 80 52 100 52 C120 52 138 60 136 92 C136 74 120 68 100 68 C80 68 64 74 64 92Z" fill="${color}"/>`;
+      case "plain":
+        return `<path d="M62 94 C60 58 80 48 100 48 C120 48 140 58 138 94 C138 72 120 64 100 64 C80 64 62 72 62 94Z" fill="${color}"/>`;
+      case "ponytail":
+        return `<path d="M138 78 C156 84 160 120 150 146 C150 118 142 100 132 96Z" fill="${color}"/>
+                <path d="M62 92 C60 56 80 46 100 46 C120 46 140 56 138 92 C138 70 120 62 100 62 C80 62 62 70 62 92Z" fill="${color}"/>`;
+      case "wildSilver": // spiky flamboyant (Thanos)
+        return `<path d="M58 92 L60 52 L72 74 L78 44 L92 70 L100 40 L108 70 L122 44 L128 74 L140 52 L142 92 C138 70 120 62 100 62 C80 62 62 70 58 92Z" fill="${color}"/>`;
+      case "crop":
+        return `<path d="M64 92 C62 60 80 50 100 50 C120 50 138 60 136 92 C136 72 120 66 100 66 C80 66 64 72 64 92Z" fill="${color}"/>`;
+      case "sidePart":
+        return `<path d="M62 92 C60 54 80 44 100 44 C120 44 140 54 138 92 C138 70 122 62 108 62 C112 56 96 54 88 60 C78 62 64 70 62 92Z" fill="${color}"/>`;
+      case "straightLong":
+        return `<path d="M56 152 C52 90 66 42 100 42 C134 42 148 90 144 152 L128 152 C134 104 128 74 122 66 C118 58 108 56 100 56 C92 56 82 58 78 66 C72 74 66 104 72 152Z" fill="${color}"/>`;
+      case "buzz":
+        return `<path d="M66 90 C66 62 82 52 100 52 C118 52 134 62 134 90 C134 74 120 70 100 70 C80 70 66 74 66 90Z" fill="${color}" opacity=".92"/>`;
+      case "sidePartGray":
+        return `<path d="M62 92 C60 56 80 46 100 46 C120 46 140 56 138 92 C138 70 122 62 108 62 C112 56 96 54 88 60 C78 62 64 70 62 92Z" fill="${color}"/>`;
+      default:
+        return `<path d="M62 94 C60 56 80 46 100 46 C120 46 140 56 138 94 C138 72 120 64 100 64 C80 64 62 72 62 94Z" fill="${color}"/>`;
+    }
+  }
+  const sideHair = ["bob","longWavy","straightLong"].includes(t.style)
+    ? `<path d="M60 100 q-6 30 4 46 M140 100 q6 30 -4 46" stroke="${t.hair}" stroke-width="10" fill="none" opacity=".9"/>` : "";
+
+  // ---- eyebrows ----
+  const brows = {
+    det:  `<path d="M74 88 l16 -3 M126 88 l-16 -3" stroke="#3a2a20" stroke-width="4" stroke-linecap="round"/>`,
+    calm: `<path d="M74 88 h15 M111 88 h15" stroke="#3a2a20" stroke-width="4" stroke-linecap="round"/>`,
+    worry:`<path d="M74 86 l15 4 M126 86 l-15 4" stroke="#3a2a20" stroke-width="4" stroke-linecap="round"/>`,
+    anger:`<path d="M74 84 l16 6 M126 84 l-16 6" stroke="#2a1c14" stroke-width="4.5" stroke-linecap="round"/>`,
+    arch: `<path d="M74 88 q8 -6 16 -2 M126 88 q-8 -6 -16 -2" stroke="#2a1c14" stroke-width="3.6" stroke-linecap="round" fill="none"/>`,
+    warm: `<path d="M75 89 q7 -3 14 -1 M125 89 q-7 -3 -14 -1" stroke="#3a2a20" stroke-width="3.6" stroke-linecap="round" fill="none"/>`,
+    flat: `<path d="M74 88 h15 M111 88 h15" stroke="#2a1c14" stroke-width="4" stroke-linecap="round"/>`
+  };
+
+  // ---- mouths ----
+  const mouths = {
+    firm: `<path d="M88 128 h24" stroke="#7a3b2b" stroke-width="4" stroke-linecap="round"/>`,
+    flat: `<path d="M90 128 h20" stroke="#7a3b2b" stroke-width="3.4" stroke-linecap="round"/>`,
+    soft: `<path d="M89 126 q11 8 22 0" stroke="#7a3b2b" stroke-width="3.6" fill="none" stroke-linecap="round"/>`,
+    open: `<ellipse cx="100" cy="130" rx="8" ry="9" fill="#5c241c"/>`,
+    small:`<path d="M94 129 q6 4 12 0" stroke="#7a3b2b" stroke-width="3.2" fill="none" stroke-linecap="round"/>`,
+    smirk:`<path d="M88 128 q12 8 24 -2" stroke="#7a3b2b" stroke-width="3.6" fill="none" stroke-linecap="round"/>`,
+    sneer:`<path d="M88 130 q12 -6 24 2" stroke="#7a3b2b" stroke-width="3.6" fill="none" stroke-linecap="round"/>`,
+    grin: `<path d="M86 124 q14 16 28 0 Z" fill="#5c241c"/><path d="M86 124 q14 8 28 0" fill="#fff"/>`
+  };
+
+  const glasses = has("glasses") ? `
+    <g stroke="#2a2a2a" stroke-width="3" fill="none">
+      <rect x="72" y="100" width="22" height="17" rx="5" fill="rgba(255,255,255,.12)"/>
+      <rect x="106" y="100" width="22" height="17" rx="5" fill="rgba(255,255,255,.12)"/>
+      <path d="M94 108 h12 M72 104 l-8 -3 M128 104 l8 -3"/>
+    </g>` : "";
+  const stubble = has("stubble") ? `<path d="M74 120 q26 26 52 0 q-4 20 -26 22 q-22 -2 -26 -22Z" fill="#2a1c14" opacity=".16"/>` : "";
+  const liner = has("liner") ? `<path d="M74 108 l16 2 M126 108 l-16 2" stroke="#111" stroke-width="2.4" stroke-linecap="round"/>` : "";
+  const gem = has("gem") ? `<circle cx="112" cy="94" r="3.2" fill="#ff4dd2"/><circle cx="120" cy="98" r="2.4" fill="#4dd2ff"/>` : "";
+  const earring = has("earring") ? `<circle cx="66" cy="116" r="3.5" fill="#e9c46a"/><circle cx="134" cy="116" r="3.5" fill="#e9c46a"/>` : "";
+
+  return `
+  <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Illustrated portrait of ${p.name}">
+    <defs>
+      <radialGradient id="bg${p.num}" cx="50%" cy="34%" r="80%">
+        <stop offset="0" stop-color="#20202f"/><stop offset="1" stop-color="#0c0c15"/>
+      </radialGradient>
+    </defs>
+    <rect width="200" height="200" fill="url(#bg${p.num})"/>
+    <!-- faint big number -->
+    <text x="100" y="150" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900"
+          font-size="150" fill="#ffffff" opacity="0.04">${p.num}</text>
+
+    <!-- tracksuit torso -->
+    <path d="M50 200 C50 158 74 146 100 146 C126 146 150 158 150 200Z" fill="${tone.suit}"/>
+    <path d="M50 200 C50 172 66 158 82 152 L100 172 L118 152 C134 158 150 172 150 200Z" fill="${tone.suitDark}" opacity=".55"/>
+    <!-- collar + zipper -->
+    <path d="M92 148 L100 168 L108 148" fill="${tone.zip}"/>
+    <rect x="98.5" y="160" width="3" height="40" fill="${tone.zip}" opacity=".9"/>
+    <!-- number badge -->
+    <rect x="112" y="176" width="30" height="15" rx="2" fill="#f4f2ea"/>
+    <text x="127" y="187.5" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="10" fill="#1a1a1a">${p.num}</text>
+
+    <!-- neck -->
+    <rect x="90" y="126" width="20" height="26" fill="${t.skin}"/>
+    <path d="M90 138 q10 8 20 0 v14 h-20Z" fill="#000" opacity=".08"/>
+    ${sideHair}
+    <!-- head -->
+    <ellipse cx="${cx}" cy="98" rx="38" ry="43" fill="${t.skin}"/>
+    <!-- ears -->
+    <circle cx="62" cy="102" r="7" fill="${t.skin}"/><circle cx="138" cy="102" r="7" fill="${t.skin}"/>
+    ${earring}
+    <!-- cheeks -->
+    <circle cx="78" cy="116" r="8" fill="#e8836f" opacity=".18"/>
+    <circle cx="122" cy="116" r="8" fill="#e8836f" opacity=".18"/>
+    ${stubble}
+    <!-- hair -->
+    ${hair(t.style, t.hair)}
+    <!-- brows -->
+    ${brows[t.brow]||brows.calm}
+    ${liner}
+    <!-- eyes -->
+    <ellipse cx="83" cy="102" rx="4.6" ry="5.4" fill="#fff"/>
+    <ellipse cx="117" cy="102" rx="4.6" ry="5.4" fill="#fff"/>
+    <circle cx="84" cy="103" r="2.7" fill="#20140c"/>
+    <circle cx="118" cy="103" r="2.7" fill="#20140c"/>
+    <!-- nose -->
+    <path d="M100 106 l-4 10 q4 3 8 0" stroke="#c98a68" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    ${gem}
+    ${glasses}
+    <!-- mouth -->
+    ${mouths[t.mouth]||mouths.flat}
+  </svg>`;
+}
+
+/* ============================================================
+   RENDER GRID
+   ============================================================ */
+const grid = document.getElementById("grid");
+function statusBadge(p){
+  const map = {returning:"Returning", new:"New", villain:"Antagonist"};
+  return `<span class="status ${p.status}">${map[p.status]}</span>`;
+}
+function render(list){
+  if(!list.length){ grid.innerHTML = `<div class="no-results">No player matches that search. Try a number like “230” or a name.</div>`; return; }
+  grid.innerHTML = list.map((p,i)=>`
+    <article class="card reveal" data-num="${p.num}" style="transition-delay:${Math.min(i*40,320)}ms">
+      <div class="glow"></div>
+      <div class="pnum">${p.num}</div>
+      ${statusBadge(p)}
+      <div class="portrait">${portrait(p)}</div>
+      <div class="info">
+        <div class="name">${p.name}</div>
+        <div class="actor">${p.actor}</div>
+        <div class="role">${p.role}</div>
+      </div>
+    </article>`).join("");
+  bindCards();
+  observeReveals();
+}
+
+/* ============================================================
+   FILTER + SEARCH
+   ============================================================ */
+let currentFilter = "all";
+let currentQuery = "";
+function apply(){
+  const q = currentQuery.trim().toLowerCase();
+  const out = PLAYERS.filter(p=>{
+    const passF = currentFilter==="all" || p.groups.includes(currentFilter);
+    const passQ = !q || (p.name+" "+p.actor+" "+p.num+" "+p.role).toLowerCase().includes(q);
+    return passF && passQ;
+  });
+  render(out);
+}
+document.getElementById("filters").addEventListener("click", e=>{
+  const b = e.target.closest(".chip"); if(!b) return;
+  document.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));
+  b.classList.add("active"); currentFilter = b.dataset.filter; apply();
+});
+document.getElementById("searchInput").addEventListener("input", e=>{ currentQuery = e.target.value; apply(); });
+
+/* ============================================================
+   TILT + GLOW + MODAL
+   ============================================================ */
+function bindCards(){
+  document.querySelectorAll(".card").forEach(card=>{
+    card.addEventListener("pointermove", e=>{
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX-r.left)/r.width, py=(e.clientY-r.top)/r.height;
+      card.style.transform = `perspective(900px) rotateY(${(px-.5)*10}deg) rotateX(${(.5-py)*10}deg) translateY(-6px)`;
+      card.style.setProperty("--mx", (px*100)+"%");
+      card.style.setProperty("--my", (py*100)+"%");
+    });
+    card.addEventListener("pointerleave", ()=>{ card.style.transform="perspective(900px)"; });
+    card.addEventListener("click", ()=> openModal(card.dataset.num));
+  });
+}
+
+const modal = document.getElementById("modal");
+function openModal(num){
+  const p = PLAYERS.find(x=>x.num===num); if(!p) return;
+  const smap = {returning:["Returning","rgba(233,196,106,.16)","#e9c46a"],
+                new:["New Player","rgba(55,178,106,.16)","#66d69a"],
+                villain:["Antagonist","rgba(200,16,46,.18)","#ff6b7f"]};
+  const s = smap[p.status];
+  document.getElementById("mPortrait").innerHTML = `<div class="pnum">${p.num}</div>${portrait(p)}`;
+  document.getElementById("mMeta").innerHTML = `
+    <span class="mstatus" style="background:${s[1]};color:${s[2]}">${s[0]}</span>
+    <h3>${p.name}</h3>
+    <div class="mactor">Played by ${p.actor} · Player ${p.num}</div>
+    <div class="mtags">${p.tags.map(t=>`<span class="mtag">${t}</span>`).join("")}</div>`;
+  document.getElementById("mBody").innerHTML = `
+    <p>${p.desc}</p>
+    <div class="quote">${p.quote}</div>`;
+  modal.classList.add("open");
+  document.body.style.overflow="hidden";
+}
+function closeModal(){ modal.classList.remove("open"); document.body.style.overflow=""; }
+modal.addEventListener("click", e=>{ if(e.target.hasAttribute("data-close")) closeModal(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeModal(); });
+
+/* ============================================================
+   SCROLL REVEALS
+   ============================================================ */
+let io;
+function observeReveals(){
+  if(!io){
+    io = new IntersectionObserver(entries=>{
+      entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target);} });
+    },{threshold:.12});
+  }
+  document.querySelectorAll(".reveal:not(.in)").forEach(el=>io.observe(el));
+}
+observeReveals();
+
+/* ============================================================
+   NAV + FLOAT SHAPES + STAT COUNTERS + LOADER
+   ============================================================ */
+const nav = document.getElementById("nav");
+addEventListener("scroll", ()=> nav.classList.toggle("scrolled", scrollY>40));
+
+// floating shapes
+(function(){
+  const wrap = document.getElementById("floatShapes");
+  const cols = ["#ff2e88","#16c2c2","#37b26a"];
+  const shapes = ["c","t","s"];
+  for(let i=0;i<14;i++){
+    const b=document.createElement("b");
+    const kind=shapes[i%3], col=cols[i%3];
+    const size=16+Math.random()*30;
+    b.style.left=Math.random()*100+"%";
+    b.style.top=Math.random()*100+"%";
+    b.style.animationDuration=(9+Math.random()*12)+"s";
+    b.style.animationDelay=(-Math.random()*10)+"s";
+    if(kind==="c"){b.style.width=size+"px";b.style.height=size+"px";b.style.borderRadius="50%";b.style.border=`3px solid ${col}`;}
+    if(kind==="t"){b.style.width="0";b.style.height="0";b.style.borderLeft=`${size/2}px solid transparent`;b.style.borderRight=`${size/2}px solid transparent`;b.style.borderBottom=`${size}px solid ${col}`;}
+    if(kind==="s"){b.style.width=size+"px";b.style.height=size+"px";b.style.border=`3px solid ${col}`;b.style.borderRadius="3px";}
+    wrap.appendChild(b);
+  }
+})();
+
+// stat count-up
+const statObs = new IntersectionObserver(entries=>{
+  entries.forEach(en=>{
+    if(!en.isIntersecting) return;
+    const el=en.target, end=parseFloat(el.dataset.count), dec=parseInt(el.dataset.dec||"0"), suf=el.dataset.suffix||"";
+    let start=null, dur=1500;
+    function step(ts){
+      if(!start) start=ts;
+      const prog=Math.min((ts-start)/dur,1);
+      const eased=1-Math.pow(1-prog,3);
+      const val=(end*eased).toFixed(dec);
+      el.textContent = (dec? val : Math.round(val).toLocaleString()) + suf;
+      if(prog<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    statObs.unobserve(el);
+  });
+},{threshold:.5});
+document.querySelectorAll(".stat .num").forEach(el=>statObs.observe(el));
+
+// doll eye blink (red light / green light)
+setInterval(()=>{
+  const on = Math.random()>.5;
+  document.querySelectorAll(".dollEye").forEach(e=>e.setAttribute("fill", on? "#37b26a" : "#c8102e"));
+}, 1400);
+
+// loader out
+addEventListener("load", ()=> setTimeout(()=> document.getElementById("loader").classList.add("done"), 650));
+setTimeout(()=> document.getElementById("loader").classList.add("done"), 2500); // safety
+
+/* ---- initial render (runs last so all consts are initialized) ---- */
+render(PLAYERS);
+</script>
+</body>
+</html>
