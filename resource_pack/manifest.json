@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "§5Haunted House §8Add-On §7[RP]",
+    "description": "§7Textures & spooky fog for the Haunted House Add-On.",
+    "uuid": "6b5ae6d1-a88a-4a4b-ab92-b124e092868a",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 20, 0]
+  },
+  "modules": [
+    {
+      "description": "Haunted House resources (item texture, fog).",
+      "type": "resources",
+      "uuid": "8a438ed0-31f3-41bc-b52a-f0e1c13af25b",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "df5e13a8-c76b-4ab6-bed1-881d03ab65d3",
+      "version": [1, 0, 0]
+    }
+  ],
+  "metadata": {
+    "authors": ["Haunted House Add-On"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

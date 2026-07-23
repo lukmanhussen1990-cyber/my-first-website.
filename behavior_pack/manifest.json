@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "§5Haunted House §8Add-On §7[BP]",
+    "description": "§7Builds a spooky two-story haunted mansion around you.\n§8Run §f/function haunted_house/build",
+    "uuid": "df5e13a8-c76b-4ab6-bed1-881d03ab65d3",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 20, 0]
+  },
+  "modules": [
+    {
+      "description": "Haunted House behaviors, build functions and custom item.",
+      "type": "data",
+      "uuid": "0acf3b5f-32c5-4976-89fb-765282fe82a3",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "6b5ae6d1-a88a-4a4b-ab92-b124e092868a",
+      "version": [1, 0, 0]
+    }
+  ],
+  "metadata": {
+    "authors": ["Haunted House Add-On"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}
