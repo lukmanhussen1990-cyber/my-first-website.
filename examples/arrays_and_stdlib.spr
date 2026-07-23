@@ -1,0 +1,34 @@
+// arrays_and_stdlib.spr — arrays, indexing, and the standard library.
+
+// Build an array and inspect it.
+let nums = [5, 2, 9, 1, 7]
+print("array:", nums)
+print("length:", length(nums))
+print("first:", nums[0])
+print("last:", nums[length(nums) - 1])
+
+// Mutate an element by index.
+nums[0] = 50
+print("after nums[0] = 50:", nums)
+
+// Grow an array with push().
+push(nums, 100)
+print("after push:", nums)
+
+// range() makes counting loops easy.
+let total = 0
+let r = range(1, 6)   // [1, 2, 3, 4, 5]
+let i = 0
+while i < length(r) {
+  total = total + r[i]
+  i = i + 1
+}
+print("sum of 1..5 =", total)
+
+// String helpers from the standard library.
+print("length of \"hello\":", length("hello"))
+print("str(42) + \"!\" =", str(42) + "!")
+print("num(\"3.14\") * 2 =", num("3.14") * 2)
+print("type checks:", type(1), type("s"), type(true), type([1]), type(print))
+print("sqrt(144) =", sqrt(144))
+print("max(3, 9, 2) =", max(3, 9, 2))

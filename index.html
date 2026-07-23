@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sprout — a tiny programming language</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --panel: #171a23;
+      --panel-2: #1e222d;
+      --border: #2a2f3a;
+      --text: #e6e9ef;
+      --muted: #9aa3b2;
+      --green: #4ade80;
+      --green-dim: #22c55e;
+      --red: #f87171;
+      --accent: #7dd3fc;
+      --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      padding: 22px 24px 18px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #141824, #0f1117);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .leaf { color: var(--green); }
+    header p { margin: 6px 0 0; color: var(--muted); font-size: 14px; max-width: 640px; }
+    .layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      min-height: 0;
+    }
+    @media (max-width: 820px) { .layout { grid-template-columns: 1fr; } }
+    .pane { background: var(--bg); display: flex; flex-direction: column; min-height: 0; }
+    .pane-head {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .pane-head strong { color: var(--text); font-weight: 600; }
+    .spacer { flex: 1; }
+    select, button {
+      font-family: var(--sans);
+      font-size: 13px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 7px 12px;
+      cursor: pointer;
+    }
+    select:hover, button:hover { border-color: #3a4150; }
+    button.run {
+      background: var(--green-dim);
+      border-color: var(--green-dim);
+      color: #052e16;
+      font-weight: 700;
+      padding: 7px 18px;
+    }
+    button.run:hover { background: var(--green); border-color: var(--green); }
+    button.run:disabled { opacity: 0.6; cursor: default; }
+    textarea#code {
+      flex: 1;
+      resize: none;
+      border: none;
+      outline: none;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.55;
+      padding: 16px;
+      tab-size: 2;
+      white-space: pre;
+      overflow: auto;
+    }
+    #output {
+      flex: 1;
+      margin: 0;
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 13.5px;
+      line-height: 1.55;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    #output .err { color: var(--red); }
+    #output .muted { color: var(--muted); }
+    #output .ok { color: var(--green); }
+    footer {
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    footer code { color: var(--accent); background: var(--panel-2); padding: 1px 6px; border-radius: 4px; }
+    kbd {
+      font-family: var(--mono); font-size: 11px;
+      background: var(--panel-2); border: 1px solid var(--border);
+      border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span class="leaf">🌱</span> Sprout Playground</h1>
+    <p>
+      A small programming language built from scratch in JavaScript — lexer, parser, and
+      tree-walking interpreter, all running right here in your browser. Pick an example or
+      write your own, then press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to run.
+    </p>
+  </header>
+
+  <div class="layout">
+    <section class="pane">
+      <div class="pane-head">
+        <strong>editor</strong>
+        <select id="examples" title="Load an example">
+          <option value="">Load an example…</option>
+        </select>
+        <div class="spacer"></div>
+        <button class="run" id="run" title="Run (Ctrl+Enter)">▶ Run</button>
+      </div>
+      <textarea id="code" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+    </section>
+
+    <section class="pane">
+      <div class="pane-head">
+        <strong>output</strong>
+        <div class="spacer"></div>
+        <button id="clear">Clear</button>
+      </div>
+      <pre id="output"><span class="muted">Output will appear here. Try "Run".</span></pre>
+    </section>
+  </div>
+
+  <footer>
+    <span><code>let</code> variables</span>
+    <span><code>if / else</code></span>
+    <span><code>while</code> loops</span>
+    <span><code>fn</code> functions</span>
+    <span>arrays &amp; <code>[i]</code> indexing</span>
+    <span>stdlib: <code>print input length str num type push range abs floor sqrt min max</code></span>
+  </footer>
+
+  <script type="module">
+    import { run } from "./src/index.js";
+
+    const codeEl = document.getElementById("code");
+    const outEl = document.getElementById("output");
+    const runBtn = document.getElementById("run");
+    const clearBtn = document.getElementById("clear");
+    const examplesEl = document.getElementById("examples");
+
+    // Built-in examples shown in the dropdown.
+    const EXAMPLES = {
+      "Hello & arithmetic": `// Variables, arithmetic, and printing
+let name = "world"
+print("Hello, " + name + "!")
+
+let a = 10
+let b = 3
+print("sum:", a + b)
+print("product:", a * b)
+print("2 + 3 * 4 =", 2 + 3 * 4)`,
+
+      "FizzBuzz (if / while)": `// Classic FizzBuzz using if/else and a while loop
+let i = 1
+while i <= 20 {
+  if i % 15 == 0 {
+    print("FizzBuzz")
+  } else if i % 3 == 0 {
+    print("Fizz")
+  } else if i % 5 == 0 {
+    print("Buzz")
+  } else {
+    print(i)
+  }
+  i = i + 1
+}`,
+
+      "Functions & recursion": `// Functions, recursion, and closures
+fn factorial(n) {
+  if n <= 1 { return 1 }
+  return n * factorial(n - 1)
+}
+print("6! =", factorial(6))
+
+fn makeAdder(x) {
+  fn add(y) { return x + y }
+  return add
+}
+let add10 = makeAdder(10)
+print("add10(5) =", add10(5))`,
+
+      "Arrays & standard library": `// Arrays, indexing, and stdlib helpers
+let nums = range(1, 8)   // [1..7]
+print("nums:", nums)
+print("length:", length(nums))
+
+let total = 0
+let i = 0
+while i < length(nums) {
+  total = total + nums[i]
+  i = i + 1
+}
+print("sum:", total)
+print("sqrt(144):", sqrt(144))
+print("max:", max(3, 9, 2, 7))`,
+
+      "Ask for your name (input)": `// input() prompts you in the browser
+let name = input("What is your name? ")
+print("Nice to meet you, " + name + "!")
+let n = num(input("Pick a number: "))
+print("Your number doubled is", n * 2)`,
+    };
+
+    for (const key of Object.keys(EXAMPLES)) {
+      const opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = key;
+      examplesEl.appendChild(opt);
+    }
+
+    function loadExample(key) {
+      if (EXAMPLES[key]) codeEl.value = EXAMPLES[key];
+    }
+
+    // Start with the first example loaded.
+    loadExample("Hello & arithmetic");
+    examplesEl.value = "Hello & arithmetic";
+
+    examplesEl.addEventListener("change", () => {
+      if (examplesEl.value) loadExample(examplesEl.value);
+    });
+
+    function execute() {
+      const lines = [];
+      const result = run(codeEl.value, {
+        print: (line) => lines.push(line),
+        input: (prompt) => {
+          const answer = window.prompt(prompt);
+          return answer === null ? "" : answer;
+        },
+      });
+
+      outEl.innerHTML = "";
+      if (lines.length) {
+        const body = document.createElement("span");
+        body.textContent = lines.join("\n") + "\n";
+        outEl.appendChild(body);
+      }
+      if (!result.ok) {
+        const err = document.createElement("span");
+        err.className = "err";
+        err.textContent = result.message;
+        outEl.appendChild(err);
+      } else if (!lines.length) {
+        const ok = document.createElement("span");
+        ok.className = "ok";
+        ok.textContent = "✓ ran with no output";
+        outEl.appendChild(ok);
+      }
+      outEl.scrollTop = 0;
+    }
+
+    runBtn.addEventListener("click", execute);
+    clearBtn.addEventListener("click", () => {
+      outEl.innerHTML = '<span class="muted">Output cleared.</span>';
+    });
+
+    // Ctrl/Cmd+Enter runs; Tab inserts two spaces instead of leaving the box.
+    codeEl.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        execute();
+      }
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const start = codeEl.selectionStart;
+        const end = codeEl.selectionEnd;
+        codeEl.value = codeEl.value.slice(0, start) + "  " + codeEl.value.slice(end);
+        codeEl.selectionStart = codeEl.selectionEnd = start + 2;
+      }
+    });
+  </script>
+</body>
+</html>

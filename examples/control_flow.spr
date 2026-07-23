@@ -1,0 +1,27 @@
+// control_flow.spr — if / else and while loops.
+
+// FizzBuzz: the classic. Prints numbers 1..15, replacing multiples of 3
+// with "Fizz", multiples of 5 with "Buzz", and both with "FizzBuzz".
+let i = 1
+while i <= 15 {
+  if i % 15 == 0 {
+    print("FizzBuzz")
+  } else if i % 3 == 0 {
+    print("Fizz")
+  } else if i % 5 == 0 {
+    print("Buzz")
+  } else {
+    print(i)
+  }
+  i = i + 1
+}
+
+print("---")
+
+// Count down from 5 using a while loop.
+let n = 5
+while n > 0 {
+  print("T-minus", n)
+  n = n - 1
+}
+print("Liftoff!")

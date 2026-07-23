@@ -1,0 +1,24 @@
+// basics.spr — variables, arithmetic, strings, and printing.
+
+let name = "Sprout"
+let year = 2026
+
+print("Hello from " + name + "!")
+
+// Arithmetic: + - * / % with normal precedence.
+let a = 10
+let b = 3
+print("a + b =", a + b)
+print("a - b =", a - b)
+print("a * b =", a * b)
+print("a / b =", a / b)
+print("a % b =", a % b)
+print("2 + 3 * 4 =", 2 + 3 * 4)      // 14, not 20
+print("(2 + 3) * 4 =", (2 + 3) * 4)  // 20
+
+// Booleans and comparisons.
+print("a > b is", a > b)
+print("a == b is", a == b)
+print("true && false is", true && false)
+print("true || false is", true || false)
+print("not true is", !true)

@@ -1,0 +1,40 @@
+// functions.spr — defining and calling functions, including recursion.
+
+fn add(a, b) {
+  return a + b
+}
+
+fn square(x) {
+  return x * x
+}
+
+print("add(3, 4) =", add(3, 4))
+print("square(5) =", square(5))
+
+// Recursion: factorial.
+fn factorial(n) {
+  if n <= 1 {
+    return 1
+  }
+  return n * factorial(n - 1)
+}
+print("factorial(6) =", factorial(6))
+
+// Recursion: Fibonacci.
+fn fib(n) {
+  if n < 2 {
+    return n
+  }
+  return fib(n - 1) + fib(n - 2)
+}
+print("fib(10) =", fib(10))
+
+// Closures: makeAdder returns a function that remembers `x`.
+fn makeAdder(x) {
+  fn adder(y) {
+    return x + y
+  }
+  return adder
+}
+let add10 = makeAdder(10)
+print("add10(5) =", add10(5))

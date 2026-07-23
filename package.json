@@ -1,0 +1,19 @@
+{
+  "name": "sprout-lang",
+  "version": "1.0.0",
+  "description": "Sprout — a tiny programming language built from scratch: lexer, parser, and tree-walking interpreter, with a browser playground.",
+  "type": "module",
+  "bin": {
+    "sprout": "bin/sprout.js"
+  },
+  "scripts": {
+    "test": "node tests/run_tests.js",
+    "start": "node bin/sprout.js",
+    "example": "node bin/sprout.js examples/functions.spr"
+  },
+  "keywords": ["programming-language", "interpreter", "lexer", "parser", "compiler", "playground"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=16"
+  }
+}
