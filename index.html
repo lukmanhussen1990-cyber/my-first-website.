@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chickenpox (Varicella) — A Parent's Guide</title>
+<style>
+  :root {
+    --bg: #f4f7f6;
+    --surface: #ffffff;
+    --surface-2: #eef3f1;
+    --ink: #16262a;
+    --ink-soft: #47585c;
+    --line: #d9e3e0;
+    --accent: #12857a;
+    --accent-soft: #d6ece8;
+    --coral: #d1584a;
+    --coral-soft: #f8e4e1;
+    --amber: #b45309;
+    --amber-soft: #fde7cf;
+    --shadow: 0 1px 2px rgba(22,38,42,.04), 0 8px 28px rgba(22,38,42,.06);
+    --radius: 14px;
+    --maxw: 720px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1719;
+      --surface: #16242a;
+      --surface-2: #1b2d33;
+      --ink: #e6efec;
+      --ink-soft: #a5b8b6;
+      --line: #294046;
+      --accent: #4bccbb;
+      --accent-soft: #17383a;
+      --coral: #f08d80;
+      --coral-soft: #3a2320;
+      --amber: #f0b25a;
+      --amber-soft: #3a2c15;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f7f6; --surface: #ffffff; --surface-2: #eef3f1; --ink: #16262a;
+    --ink-soft: #47585c; --line: #d9e3e0; --accent: #12857a; --accent-soft: #d6ece8;
+    --coral: #d1584a; --coral-soft: #f8e4e1; --amber: #b45309; --amber-soft: #fde7cf;
+    --shadow: 0 1px 2px rgba(22,38,42,.04), 0 8px 28px rgba(22,38,42,.06);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1719; --surface: #16242a; --surface-2: #1b2d33; --ink: #e6efec;
+    --ink-soft: #a5b8b6; --line: #294046; --accent: #4bccbb; --accent-soft: #17383a;
+    --coral: #f08d80; --coral-soft: #3a2320; --amber: #f0b25a; --amber-soft: #3a2c15;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.65;
+    font-size: 17px;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 22px; }
+
+  /* Header */
+  header.hero {
+    padding: 56px 0 30px;
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(120% 100% at 100% 0%, var(--accent-soft) 0%, transparent 55%);
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); padding: 6px 12px; border-radius: 999px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display:inline-block; }
+  h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 700;
+    font-size: clamp(2rem, 6vw, 3rem);
+    line-height: 1.08;
+    text-wrap: balance;
+    margin: 18px 0 10px;
+    letter-spacing: -.01em;
+  }
+  .subtitle { color: var(--ink-soft); font-size: 1.12rem; max-width: 52ch; margin: 0; }
+
+  main { padding: 8px 0 60px; }
+  section { padding: 30px 0; border-bottom: 1px solid var(--line); }
+  section:last-of-type { border-bottom: 0; }
+  h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.5rem; margin: 0 0 6px; letter-spacing: -.01em;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  h2 .num {
+    font-family: system-ui, sans-serif; font-size: .8rem; font-weight: 700;
+    color: var(--accent); background: var(--accent-soft);
+    border-radius: 8px; padding: 2px 8px; letter-spacing: .04em;
+    position: relative; top: -3px;
+  }
+  h3 { font-size: 1.05rem; margin: 20px 0 6px; }
+  p { margin: 10px 0; }
+  a { color: var(--accent); }
+
+  /* Disclaimer banner */
+  .disclaimer {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: var(--amber-soft); color: var(--ink);
+    border: 1px solid color-mix(in srgb, var(--amber) 40%, transparent);
+    border-radius: var(--radius); padding: 16px 18px; margin: 26px 0 4px;
+  }
+  .disclaimer .ic { font-size: 1.35rem; line-height: 1.3; }
+  .disclaimer strong { color: var(--amber); }
+  .disclaimer p { margin: 2px 0 0; font-size: .95rem; color: var(--ink-soft); }
+
+  /* Diagnosis card */
+  .dx-card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 22px 22px 18px; margin: 22px 0 4px;
+  }
+  .dx-card .label { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; }
+  .dx-card .name { font-family: Georgia, serif; font-size: 1.7rem; margin: 4px 0 2px; }
+  .dx-card .latin { color: var(--ink-soft); font-style: italic; }
+  .confidence {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+    font-size: .85rem; color: var(--ink-soft);
+  }
+  .meter { width: 130px; height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .meter > span { display: block; height: 100%; width: 78%; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, var(--coral))); }
+
+  /* Symptom match list */
+  .match { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 10px; }
+  .match li { display: flex; gap: 12px; align-items: flex-start; }
+  .check {
+    flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+    display: grid; place-items: center; font-size: 13px; font-weight: 800;
+    margin-top: 2px;
+  }
+  .match li .txt { color: var(--ink); }
+  .match li .txt b { font-weight: 700; }
+
+  /* Info grid cards */
+  .cards { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
+  @media (max-width: 560px) { .cards { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow);
+  }
+  .card h3 { margin: 0 0 4px; font-size: 1rem; color: var(--accent); }
+  .card p { margin: 0; font-size: .95rem; color: var(--ink-soft); }
+
+  ul.clean { padding-left: 1.15em; margin: 10px 0; }
+  ul.clean li { margin: 6px 0; }
+
+  /* Red flags */
+  .redflags {
+    background: var(--coral-soft);
+    border: 1px solid color-mix(in srgb, var(--coral) 40%, transparent);
+    border-radius: var(--radius); padding: 18px 20px; margin-top: 8px;
+  }
+  .redflags h2 { color: var(--coral); }
+  .redflags h2 .num { color: var(--coral); background: color-mix(in srgb, var(--coral) 18%, transparent); }
+  .redflags ul { margin: 10px 0 0; padding-left: 1.15em; }
+  .redflags li { margin: 7px 0; }
+
+  /* Differential table */
+  .table-scroll { overflow-x: auto; margin-top: 10px; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; width: 100%; min-width: 460px; font-size: .95rem; }
+  th, td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); font-weight: 700; }
+  tbody tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 600; }
+
+  footer {
+    padding: 26px 0 50px; color: var(--ink-soft); font-size: .85rem;
+    text-align: center;
+  }
+  footer .rule { height: 1px; background: var(--line); margin-bottom: 20px; }
+</style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <span class="eyebrow"><span class="dot"></span> Pediatric health guide</span>
+      <h1>A fever, then a rash that spreads fast</h1>
+      <p class="subtitle">Understanding the most likely cause of an itchy, blister-like rash in a child after a fever — and knowing when to get help.</p>
+
+      <div class="disclaimer" role="note">
+        <span class="ic" aria-hidden="true">⚕️</span>
+        <div>
+          <strong>This is not a diagnosis.</strong>
+          <p>This page is general information, not medical advice. Only a doctor who examines the child can confirm what is causing the rash. If you are worried, contact a pediatrician or clinic today.</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <section>
+      <h2><span class="num">Case</span> What was described</h2>
+      <p>A 7-year-old girl had a <b>fever about a week ago</b>. Then she suddenly developed <b>raised, pimple-like bumps on her legs</b> that <b>quickly spread to her face</b>, causing <b>burning, pain, and intense itching</b>.</p>
+      <p>This pattern — a fever first, followed a few days later by an itchy rash of small raised bumps that turn into blisters and spread across the body — is the classic story of one very common childhood illness.</p>
+
+      <div class="dx-card">
+        <span class="label">Most likely explanation</span>
+        <div class="name">Chickenpox</div>
+        <div class="latin">Varicella — caused by the varicella-zoster virus (VZV)</div>
+        <div class="confidence" title="How well the described symptoms match this condition">
+          <span class="meter" aria-hidden="true"><span></span></span>
+          Strong symptom match — needs a doctor to confirm
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="num">Why</span> Why it fits</h2>
+      <ul class="match">
+        <li><span class="check" aria-hidden="true">✓</span><span class="txt"><b>Fever came first.</b> Chickenpox usually starts with 1–2 days of fever and feeling unwell before any rash appears.</span></li>
+        <li><span class="check" aria-hidden="true">✓</span><span class="txt"><b>Raised, "pimple-like" bumps.</b> The rash begins as small red bumps (papules) that quickly become fluid-filled blisters (vesicles) that look like little pimples.</span></li>
+        <li><span class="check" aria-hidden="true">✓</span><span class="txt"><b>Spreads quickly across the body.</b> New spots appear in waves over several days and reach the face, scalp, trunk, and limbs.</span></li>
+        <li><span class="check" aria-hidden="true">✓</span><span class="txt"><b>Very itchy, with burning and soreness.</b> Intense itch is the hallmark; blisters can also sting and feel tender.</span></li>
+      </ul>
+      <p style="margin-top:16px;color:var(--ink-soft);font-size:.95rem">One detail worth checking with a doctor: chickenpox spots often appear at <b>different stages at the same time</b> — new bumps, fresh blisters, and crusting scabs side by side. That mix is a strong clue.</p>
+    </section>
+
+    <section>
+      <h2><span class="num">Facts</span> About chickenpox</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>How it spreads</h3>
+          <p>Very contagious — through the air (coughing, sneezing) and by touching the blister fluid. Spreads from ~2 days before the rash until every spot has crusted over.</p>
+        </div>
+        <div class="card">
+          <h3>How long it lasts</h3>
+          <p>Usually 5–10 days. Spots crust and scab, then heal. Most healthy children recover fully at home.</p>
+        </div>
+        <div class="card">
+          <h3>Who catches it</h3>
+          <p>Most common in unvaccinated children under 12. One infection (or the vaccine) usually gives lasting immunity.</p>
+        </div>
+        <div class="card">
+          <h3>Prevention</h3>
+          <p>The varicella vaccine prevents most cases and makes any breakthrough illness much milder.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="num">Care</span> Easing the symptoms at home</h2>
+      <p>These general comfort measures are commonly recommended, but confirm the plan with your child's doctor first:</p>
+      <ul class="clean">
+        <li>Keep the child cool and offer plenty of fluids.</li>
+        <li>Trim fingernails and keep them clean to reduce damage and infection from scratching.</li>
+        <li>Cool baths, calamine lotion, or a doctor-recommended antihistamine can ease itching.</li>
+        <li>Use <b>acetaminophen (paracetamol)</b> for fever if advised. <b>Do not give aspirin</b> to children with chickenpox — it is linked to a serious condition called Reye's syndrome. Ask a doctor before using ibuprofen.</li>
+        <li>Keep the child home from school until every blister has crusted over.</li>
+      </ul>
+    </section>
+
+    <section class="redflags">
+      <h2><span class="num">!</span> When to get medical help urgently</h2>
+      <p style="margin-top:2px">Contact a doctor promptly — or go to emergency care — if the child has any of these:</p>
+      <ul>
+        <li>A very high fever, a fever that lasts more than 4 days, or fever that returns after going away.</li>
+        <li>A rash area that becomes red, warm, swollen, or leaks pus (possible skin infection).</li>
+        <li>Trouble breathing, a stiff neck, severe headache, or unusual drowsiness or confusion.</li>
+        <li>Repeated vomiting, refusal to drink, or signs of dehydration.</li>
+        <li>The child is very young, has a weak immune system, or you are simply worried — trust that instinct.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="num">Also</span> Other possibilities a doctor may consider</h2>
+      <p>Several conditions can look similar. Only an in-person exam can tell them apart — which is exactly why a professional should confirm the cause.</p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Condition</th><th>How it may differ</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Hand-foot-and-mouth disease</td><td>Blisters focused on the hands, feet, and inside the mouth, often with milder spread.</td></tr>
+            <tr><td>Impetigo</td><td>A bacterial skin infection with honey-colored crusts, usually more localized.</td></tr>
+            <tr><td>Shingles</td><td>A painful, burning blister rash — but usually in a single band on one side of the body.</td></tr>
+            <tr><td>Insect bites / hives</td><td>Itchy bumps, but without the fever-first pattern or blistering in stages.</td></tr>
+            <tr><td>Erythema multiforme / drug reaction</td><td>Target-shaped or widespread spots, sometimes after a medicine or infection.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="num">Next</span> The bottom line</h2>
+      <p>The described symptoms most closely match <b>chickenpox (varicella)</b>. It is usually mild and treated at home, but because rashes can look alike and complications are possible, the right next step is to have a doctor examine the child, confirm the cause, and advise on treatment.</p>
+    </section>
+
+  </main>
+
+  <footer class="wrap">
+    <div class="rule"></div>
+    <p>General health information only — not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider about your child's health.</p>
+  </footer>
+</body>
+</html>
