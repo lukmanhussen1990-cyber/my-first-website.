@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clawd — A Little Pixel Love Story</title>
+  <meta name="description" content="A wholesome, family-friendly pixel-art animation: Clawd dances through a magical world, meets someone special, and falls in love." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="stage">
+    <canvas id="scene" width="384" height="216" aria-label="Pixel-art animation of Clawd falling in love"></canvas>
+
+    <!-- Start overlay (needed so audio can play after a user gesture) -->
+    <div id="startScreen" class="overlay">
+      <div class="card">
+        <canvas id="poster" width="96" height="96" aria-hidden="true"></canvas>
+        <h1>A Little Pixel Love Story</h1>
+        <p>Watch Clawd dance through a magical world, meet someone special, and fall in love.</p>
+        <button id="startBtn" type="button">▶ Play with sound</button>
+        <button id="startMuteBtn" type="button" class="ghost">Play muted</button>
+        <p class="hint">A wholesome, family-friendly loop • best with sound on</p>
+      </div>
+    </div>
+
+    <!-- On-screen controls -->
+    <div id="controls" class="controls hidden">
+      <button id="muteBtn" type="button" title="Toggle sound">🔊</button>
+      <button id="fsBtn" type="button" title="Fullscreen">⛶</button>
+      <div id="chapter" class="chapter">Dancing Walk</div>
+    </div>
+  </main>
+
+  <script src="clawd-love-story.js"></script>
+</body>
+</html>
