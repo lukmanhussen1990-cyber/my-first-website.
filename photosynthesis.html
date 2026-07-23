@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photosynthesis — An Interactive Animation</title>
+<style>
+  :root {
+    --sky-top: #bfe3ff;
+    --sky-bot: #eaf7ff;
+    --leaf: #3faa4a;
+    --leaf-dark: #2c7a37;
+    --soil: #6b4a2f;
+    --water: #2f7fd1;
+    --co2: #8a8f98;
+    --o2: #46c1d9;
+    --glucose: #e8a33d;
+    --sun: #ffd23f;
+    --ink: #1c2530;
+    --card: #ffffff;
+    --accent: #2c7a37;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: linear-gradient(180deg, #f3f8fb 0%, #e8f3ec 100%);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+  header { text-align: center; margin-bottom: 22px; }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: clamp(1.7rem, 4vw, 2.6rem);
+    letter-spacing: -0.02em;
+    color: #17321d;
+  }
+  header p { margin: 0; color: #4a5a52; font-size: clamp(0.95rem, 2vw, 1.1rem); }
+
+  /* ---- Stage ---- */
+  .stage-card {
+    background: var(--card);
+    border-radius: 18px;
+    box-shadow: 0 12px 40px rgba(20,60,40,0.12);
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+  .stage { display: block; width: 100%; height: auto; }
+
+  /* ---- Controls ---- */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 26px;
+    align-items: center;
+    padding: 16px 20px;
+    background: #f7faf8;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+  .controls .group { display: flex; align-items: center; gap: 10px; }
+  .controls label { font-size: 0.86rem; font-weight: 600; color: #3a4a42; white-space: nowrap; }
+  input[type="range"] { width: 130px; accent-color: var(--accent); cursor: pointer; }
+  button {
+    font: inherit;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    padding: 9px 16px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    transition: transform .08s ease, background .2s ease;
+  }
+  button:hover { background: #23632c; }
+  button:active { transform: scale(0.96); }
+  button.ghost { background: #e4ede7; color: #2c5138; }
+  button.ghost:hover { background: #d3e2d8; }
+  .readout { font-size: 0.82rem; color: #5a6a62; min-width: 74px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ---- Live rate meter ---- */
+  .meter-row { display:flex; align-items:center; gap:12px; padding: 4px 20px 16px; background:#f7faf8;}
+  .meter-label { font-size:0.82rem; font-weight:700; color:#2c5138; white-space:nowrap;}
+  .meter { flex:1; height:12px; border-radius:8px; background:#e0e8e3; overflow:hidden; }
+  .meter > span { display:block; height:100%; width:50%; background:linear-gradient(90deg,#57c06a,#2c7a37); transition: width .3s ease; }
+  .meter-val { font-size:0.82rem; font-weight:700; color:#2c7a37; min-width:44px; text-align:right; font-variant-numeric:tabular-nums;}
+
+  /* ---- Explanation ---- */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 26px; }
+  .card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 6px 20px rgba(20,60,40,0.08);
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+  .card h3 { margin: 0 0 8px; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
+  .card p { margin: 0; font-size: 0.92rem; color: #45524b; }
+  .dot { width: 13px; height: 13px; border-radius: 50%; flex: none; box-shadow: 0 0 0 3px rgba(0,0,0,0.04); }
+
+  .equation {
+    margin: 26px 0 6px;
+    background: linear-gradient(135deg,#1f5b2c,#2c7a37);
+    color: #eafaef;
+    border-radius: 16px;
+    padding: 24px 20px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(30,80,45,0.25);
+  }
+  .equation .formula {
+    font-size: clamp(1.05rem, 3vw, 1.7rem);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.7;
+  }
+  .equation .formula sub { font-size: 0.65em; }
+  .equation .chip {
+    display: inline-block;
+    padding: 2px 10px;
+    margin: 3px 2px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.14);
+    white-space: nowrap;
+  }
+  .equation .arrow { margin: 0 10px; opacity: 0.9; }
+  .equation .caption { margin-top: 10px; font-size: 0.85rem; opacity: 0.85; font-weight: 400; }
+
+  .stages { margin-top: 26px; }
+  .stages h2, .legend-title { font-size: 1.25rem; margin: 0 0 14px; color:#17321d;}
+  .step {
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 16px 18px; background: var(--card); border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(20,60,40,0.07); margin-bottom: 12px;
+    border-left: 5px solid var(--accent);
+  }
+  .step .num {
+    flex: none; width: 34px; height: 34px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-weight: 700;
+    display: grid; place-items: center; font-size: 0.95rem;
+  }
+  .step h4 { margin: 2px 0 4px; font-size: 1rem; }
+  .step p { margin: 0; font-size: 0.9rem; color: #45524b; }
+
+  footer { text-align: center; margin-top: 34px; font-size: 0.82rem; color: #7a8a82; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🌿 How Photosynthesis Works</h1>
+    <p>Watch a leaf turn sunlight, water, and air into food and oxygen — then explore the science below.</p>
+  </header>
+
+  <div class="stage-card">
+    <!-- The animation is a single responsive SVG driven by JS -->
+    <svg class="stage" viewBox="0 0 800 460" xmlns="http://www.w3.org/2000/svg" role="img"
+         aria-label="Animation of a plant performing photosynthesis: sunlight, carbon dioxide and water enter the leaf; glucose and oxygen are produced.">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="var(--sky-top)"/>
+          <stop offset="1" stop-color="var(--sky-bot)"/>
+        </linearGradient>
+        <radialGradient id="sunGrad" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#fff6c9"/>
+          <stop offset="0.5" stop-color="var(--sun)"/>
+          <stop offset="1" stop-color="#ffb703"/>
+        </radialGradient>
+        <linearGradient id="leafGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#5cc063"/>
+          <stop offset="1" stop-color="var(--leaf-dark)"/>
+        </linearGradient>
+        <linearGradient id="soilGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7d5636"/>
+          <stop offset="1" stop-color="#583d27"/>
+        </linearGradient>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="2.2"/>
+        </filter>
+      </defs>
+
+      <!-- Sky & ground -->
+      <rect x="0" y="0" width="800" height="360" fill="url(#sky)"/>
+      <rect x="0" y="360" width="800" height="100" fill="url(#soilGrad)"/>
+      <ellipse cx="400" cy="362" rx="420" ry="16" fill="#4c8b3f" opacity="0.55"/>
+
+      <!-- Sun -->
+      <g id="sun">
+        <g id="rays" opacity="0.9"></g>
+        <circle cx="118" cy="96" r="46" fill="url(#sunGrad)"/>
+        <circle cx="118" cy="96" r="46" fill="none" stroke="#ffe98a" stroke-width="2" opacity="0.6"/>
+      </g>
+
+      <!-- Light beams from sun to leaf (animated dashes) -->
+      <g id="beams" stroke="#ffe27a" stroke-width="4" stroke-linecap="round" opacity="0.75"></g>
+
+      <!-- Plant -->
+      <g id="plant">
+        <!-- stem -->
+        <path d="M400 360 Q396 300 402 250 Q406 215 400 185"
+              fill="none" stroke="#2f7a37" stroke-width="9" stroke-linecap="round"/>
+        <!-- roots -->
+        <g stroke="#4a3722" stroke-width="3" fill="none" opacity="0.85">
+          <path d="M400 360 Q392 392 372 410"/>
+          <path d="M400 360 Q400 396 400 418"/>
+          <path d="M400 360 Q408 392 430 408"/>
+        </g>
+        <!-- lower leaves -->
+        <path id="leafL" d="M402 250 Q330 232 300 268 Q342 292 402 268 Z" fill="url(#leafGrad)"/>
+        <path id="leafR" d="M400 285 Q470 268 500 300 Q456 322 400 300 Z" fill="url(#leafGrad)"/>
+
+        <!-- HERO leaf (the reaction chamber) -->
+        <g id="heroLeaf">
+          <path d="M400 185
+                   C330 150 300 120 320 78
+                   C360 92 430 96 470 132
+                   C500 160 470 196 400 185 Z"
+                fill="url(#leafGrad)" stroke="#256a2e" stroke-width="2"/>
+          <!-- midrib + veins -->
+          <path d="M400 185 C388 150 372 118 356 90" fill="none" stroke="#bfeecb" stroke-width="2.2" opacity="0.7"/>
+          <path d="M382 150 Q360 146 342 132" fill="none" stroke="#bfeecb" stroke-width="1.4" opacity="0.6"/>
+          <path d="M372 122 Q352 116 338 104" fill="none" stroke="#bfeecb" stroke-width="1.4" opacity="0.6"/>
+          <path d="M394 168 Q420 160 442 150" fill="none" stroke="#bfeecb" stroke-width="1.4" opacity="0.6"/>
+          <!-- glow when active -->
+          <path id="leafGlow" d="M400 185 C330 150 300 120 320 78 C360 92 430 96 470 132 C500 160 470 196 400 185 Z"
+                fill="#eaffd6" opacity="0" filter="url(#soft)"/>
+        </g>
+      </g>
+
+      <!-- Molecule layers (populated by JS) -->
+      <g id="co2Layer"></g>   <!-- CO2 in -->
+      <g id="waterLayer"></g> <!-- H2O up the stem -->
+      <g id="o2Layer"></g>    <!-- O2 out -->
+      <g id="glucoseLayer"></g> <!-- glucose stored -->
+
+      <!-- Labels -->
+      <g font-family="inherit" font-size="13" font-weight="700">
+        <g id="lblCO2" opacity="0">
+          <rect x="556" y="150" rx="7" width="118" height="26" fill="#5c626b"/>
+          <text x="615" y="168" fill="#fff" text-anchor="middle">CO₂  in →</text>
+        </g>
+        <g id="lblSun" opacity="0">
+          <rect x="150" y="150" rx="7" width="120" height="26" fill="#e0a200"/>
+          <text x="210" y="168" fill="#fff" text-anchor="middle">☀ light energy</text>
+        </g>
+        <g id="lblH2O" opacity="0">
+          <rect x="430" y="330" rx="7" width="120" height="26" fill="#2f7fd1"/>
+          <text x="490" y="348" fill="#fff" text-anchor="middle">H₂O  up ↑</text>
+        </g>
+        <g id="lblO2" opacity="0">
+          <rect x="128" y="238" rx="7" width="112" height="26" fill="#2aa7bd"/>
+          <text x="184" y="256" fill="#fff" text-anchor="middle">O₂  out →</text>
+        </g>
+        <g id="lblGlu" opacity="0">
+          <rect x="356" y="196" rx="7" width="150" height="26" fill="#cf8a1f"/>
+          <text x="431" y="214" fill="#fff" text-anchor="middle">glucose (food) ✓</text>
+        </g>
+      </g>
+    </svg>
+
+    <div class="meter-row">
+      <span class="meter-label">🌱 Photosynthesis rate</span>
+      <div class="meter"><span id="rateBar"></span></div>
+      <span class="meter-val" id="rateVal">50%</span>
+    </div>
+
+    <div class="controls">
+      <div class="group">
+        <button id="playBtn">⏸ Pause</button>
+        <button id="stepBtn" class="ghost">Slow-mo ⏱</button>
+      </div>
+      <div class="group">
+        <label for="light">☀ Sunlight</label>
+        <input id="light" type="range" min="0" max="100" value="70">
+        <span class="readout" id="lightVal">70%</span>
+      </div>
+      <div class="group">
+        <label for="co2">💨 CO₂ level</label>
+        <input id="co2" type="range" min="0" max="100" value="60">
+        <span class="readout" id="co2Val">60%</span>
+      </div>
+      <div class="group">
+        <label for="water">💧 Water</label>
+        <input id="water" type="range" min="0" max="100" value="65">
+        <span class="readout" id="waterVal">65%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Core equation -->
+  <div class="equation">
+    <div class="formula">
+      <span class="chip">6 CO<sub>2</sub></span> +
+      <span class="chip">6 H<sub>2</sub>O</span>
+      <span class="arrow">— light + chlorophyll →</span>
+      <span class="chip">C<sub>6</sub>H<sub>12</sub>O<sub>6</sub></span> +
+      <span class="chip">6 O<sub>2</sub></span>
+    </div>
+    <div class="caption">Six carbon dioxide + six water, powered by sunlight, become one glucose sugar + six oxygen.</div>
+  </div>
+
+  <!-- Ingredient legend -->
+  <h2 class="legend-title" style="margin-top:26px;">What's moving on screen</h2>
+  <div class="grid">
+    <div class="card">
+      <h3><span class="dot" style="background:var(--sun)"></span>Sunlight (energy)</h3>
+      <p>Yellow beams stream from the sun into the leaf. Light is the <strong>energy source</strong> that powers the whole reaction.</p>
+    </div>
+    <div class="card">
+      <h3><span class="dot" style="background:var(--co2)"></span>Carbon dioxide (CO₂)</h3>
+      <p>Grey particles drift in from the air through tiny leaf pores called <strong>stomata</strong>. This supplies the carbon.</p>
+    </div>
+    <div class="card">
+      <h3><span class="dot" style="background:var(--water)"></span>Water (H₂O)</h3>
+      <p>Blue droplets rise up the stem from the roots, delivering water and hydrogen to the leaf.</p>
+    </div>
+    <div class="card">
+      <h3><span class="dot" style="background:var(--o2)"></span>Oxygen (O₂)</h3>
+      <p>Cyan bubbles are released back into the air — the oxygen we breathe is a <strong>by-product</strong>.</p>
+    </div>
+    <div class="card">
+      <h3><span class="dot" style="background:var(--glucose)"></span>Glucose (food)</h3>
+      <p>Orange sugar collects in the leaf. This <strong>stored chemical energy</strong> feeds the plant and everything that eats it.</p>
+    </div>
+    <div class="card">
+      <h3><span class="dot" style="background:var(--leaf)"></span>Chlorophyll</h3>
+      <p>The green pigment inside the leaf's <strong>chloroplasts</strong> absorbs light and makes the reaction possible.</p>
+    </div>
+  </div>
+
+  <!-- Two-stage explanation -->
+  <div class="stages">
+    <h2 style="margin-top:30px;">The two stages, step by step</h2>
+
+    <div class="step">
+      <div class="num">1</div>
+      <div>
+        <h4>Light-dependent reactions <span style="color:#7a8a82;font-weight:400;">(in the thylakoid membranes)</span></h4>
+        <p>Chlorophyll captures sunlight and uses it to split water (H₂O). This releases oxygen (O₂) as waste and stores energy in two carrier molecules, <strong>ATP</strong> and <strong>NADPH</strong>. Think of this stage as charging the plant's batteries.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">2</div>
+      <div>
+        <h4>Light-independent reactions — the Calvin cycle <span style="color:#7a8a82;font-weight:400;">(in the stroma)</span></h4>
+        <p>Using the ATP and NADPH from stage 1, the plant grabs carbon dioxide from the air and assembles it into <strong>glucose</strong> (C₆H₁₂O₆). No light is needed here directly — just the energy stored earlier.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">3</div>
+      <div>
+        <h4>Why it matters</h4>
+        <p>Photosynthesis is the foundation of nearly every food chain and the source of the oxygen in our atmosphere. Plants also lock away carbon, helping regulate Earth's climate. Try the <strong>sliders above</strong>: with little light, water, or CO₂, the rate meter drops — because the reaction can only run as fast as its scarcest ingredient (the "limiting factor").</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Single-file interactive animation • built with SVG + vanilla JavaScript • no external libraries
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const SVGNS = "http://www.w3.org/2000/svg";
+
+  // ---- Element refs ----
+  const co2Layer = document.getElementById("co2Layer");
+  const waterLayer = document.getElementById("waterLayer");
+  const o2Layer = document.getElementById("o2Layer");
+  const glucoseLayer = document.getElementById("glucoseLayer");
+  const beams = document.getElementById("beams");
+  const rays = document.getElementById("rays");
+  const leafGlow = document.getElementById("leafGlow");
+
+  const labels = {
+    co2: document.getElementById("lblCO2"),
+    sun: document.getElementById("lblSun"),
+    h2o: document.getElementById("lblH2O"),
+    o2: document.getElementById("lblO2"),
+    glu: document.getElementById("lblGlu"),
+  };
+
+  const lightSlider = document.getElementById("light");
+  const co2Slider = document.getElementById("co2");
+  const waterSlider = document.getElementById("water");
+  const lightVal = document.getElementById("lightVal");
+  const co2Val = document.getElementById("co2Val");
+  const waterVal = document.getElementById("waterVal");
+  const rateBar = document.getElementById("rateBar");
+  const rateVal = document.getElementById("rateVal");
+  const playBtn = document.getElementById("playBtn");
+  const stepBtn = document.getElementById("stepBtn");
+
+  // Reaction hub (inside the hero leaf)
+  const LEAF = { x: 393, y: 132 };
+
+  // ---- Sun rays (static decorative) ----
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    const r1 = 52, r2 = 66;
+    const line = document.createElementNS(SVGNS, "line");
+    line.setAttribute("x1", 118 + Math.cos(a) * r1);
+    line.setAttribute("y1", 96 + Math.sin(a) * r1);
+    line.setAttribute("x2", 118 + Math.cos(a) * r2);
+    line.setAttribute("y2", 96 + Math.sin(a) * r2);
+    line.setAttribute("stroke", "#ffd23f");
+    line.setAttribute("stroke-width", "4");
+    line.setAttribute("stroke-linecap", "round");
+    rays.appendChild(line);
+  }
+
+  // ---- Light beams (sun -> leaf), animated by dash offset ----
+  const beamLines = [];
+  for (let i = 0; i < 3; i++) {
+    const l = document.createElementNS(SVGNS, "line");
+    l.setAttribute("x1", 150);
+    l.setAttribute("y1", 110 + i * 8);
+    l.setAttribute("x2", LEAF.x - 20);
+    l.setAttribute("y2", LEAF.y - 10 + i * 10);
+    l.setAttribute("stroke-dasharray", "10 12");
+    beams.appendChild(l);
+    beamLines.push(l);
+  }
+
+  // ---- Particle system ----
+  // Each particle: {el, type, t, dur, path(t)->{x,y}, r, active}
+  let particles = [];
+  let running = true;
+  let slowmo = false;
+  let lastTs = 0;
+
+  function circle(r, fill, stroke) {
+    const c = document.createElementNS(SVGNS, "circle");
+    c.setAttribute("r", r);
+    c.setAttribute("fill", fill);
+    if (stroke) { c.setAttribute("stroke", stroke); c.setAttribute("stroke-width", "1.4"); }
+    return c;
+  }
+
+  // A CO2 molecule: one carbon (dark) + two oxygens (grey)
+  function makeCO2() {
+    const g = document.createElementNS(SVGNS, "g");
+    g.appendChild(circle(5.5, "#565b63"));
+    const o1 = circle(3.6, "#9aa0a8"); o1.setAttribute("cx", -7);
+    const o2 = circle(3.6, "#9aa0a8"); o2.setAttribute("cx", 7);
+    g.appendChild(o1); g.appendChild(o2);
+    return g;
+  }
+  // Water droplet
+  function makeWater() {
+    const g = document.createElementNS(SVGNS, "g");
+    const d = document.createElementNS(SVGNS, "path");
+    d.setAttribute("d", "M0 -7 C5 -1 6 4 0 7 C-6 4 -5 -1 0 -7 Z");
+    d.setAttribute("fill", "#3b8fe0");
+    d.setAttribute("stroke", "#2a6fb8");
+    d.setAttribute("stroke-width", "1");
+    g.appendChild(d);
+    return g;
+  }
+  // O2 molecule: two bonded oxygens (cyan)
+  function makeO2() {
+    const g = document.createElementNS(SVGNS, "g");
+    const a = circle(4.6, "#4fc9de", "#2aa7bd"); a.setAttribute("cx", -3.4);
+    const b = circle(4.6, "#4fc9de", "#2aa7bd"); b.setAttribute("cx", 3.4);
+    g.appendChild(a); g.appendChild(b);
+    return g;
+  }
+  // Glucose: hexagon ring, amber
+  function makeGlucose() {
+    const g = document.createElementNS(SVGNS, "g");
+    const hex = document.createElementNS(SVGNS, "path");
+    const pts = [];
+    for (let i = 0; i < 6; i++) {
+      const a = Math.PI / 6 + i * Math.PI / 3;
+      pts.push((Math.cos(a) * 7).toFixed(1) + "," + (Math.sin(a) * 7).toFixed(1));
+    }
+    hex.setAttribute("d", "M" + pts.join("L") + "Z");
+    hex.setAttribute("fill", "#eaa63f");
+    hex.setAttribute("stroke", "#c9821c");
+    hex.setAttribute("stroke-width", "1.4");
+    g.appendChild(hex);
+    return g;
+  }
+
+  // Cubic-ish bezier interpolation helper
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function bez(p0, p1, p2, t) {
+    const u = 1 - t;
+    return u*u*p0 + 2*u*t*p1 + t*t*p2;
+  }
+
+  // Spawn a particle heading along a path
+  function spawn(type) {
+    let el, path, dur, layer, r = 5;
+    const jitter = (Math.random() - 0.5);
+
+    if (type === "co2") {
+      el = makeCO2(); layer = co2Layer;
+      const y0 = 158 + jitter * 26;
+      const cx = 560, cy = 150;
+      path = t => ({
+        x: bez(700, cx, LEAF.x + 30, t),
+        y: bez(y0, cy, LEAF.y + 10, t)
+      });
+      dur = 2.6;
+    } else if (type === "water") {
+      el = makeWater(); layer = waterLayer;
+      const x0 = 400 + jitter * 4;
+      path = t => ({
+        x: bez(x0, 402 + jitter*8, LEAF.x + 6, t),
+        y: lerp(360, LEAF.y + 20, t)
+      });
+      dur = 2.8;
+    } else if (type === "o2") {
+      el = makeO2(); layer = o2Layer;
+      const y1 = 250 + jitter * 30;
+      path = t => ({
+        x: bez(LEAF.x - 10, 250, 90 + jitter*20, t),
+        y: bez(LEAF.y + 4, 210, y1, t)
+      });
+      dur = 2.8;
+    } else { // glucose
+      el = makeGlucose(); layer = glucoseLayer;
+      const tx = 402 + jitter * 34, ty = 238 + Math.abs(jitter) * 20;
+      path = t => ({
+        x: lerp(LEAF.x, tx, t),
+        y: lerp(LEAF.y + 8, ty, t)
+      });
+      dur = 2.2;
+    }
+
+    layer.appendChild(el);
+    particles.push({ el, type, t: 0, dur, path, settle: type === "glucose" });
+  }
+
+  // Glucose that has "settled" stays a while then fades
+  function update(dt) {
+    // pulse the leaf glow with reaction activity
+    const rate = currentRate();
+    leafGlow.setAttribute("opacity", (0.15 + 0.5 * rate * (0.6 + 0.4 * Math.sin(perfNow()/380))).toFixed(3));
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.t += dt / p.dur;
+      if (p.t >= 1) {
+        if (p.settle && !p.held) {
+          // hold glucose in place, fade later
+          p.held = true; p.holdT = 0;
+          const pos = p.path(1);
+          p.el.setAttribute("transform", `translate(${pos.x.toFixed(1)},${pos.y.toFixed(1)})`);
+          continue;
+        }
+        if (p.held) {
+          p.holdT += dt;
+          const k = Math.max(0, 1 - p.holdT / 3.2);
+          p.el.setAttribute("opacity", k.toFixed(2));
+          if (p.holdT > 3.2) { p.el.remove(); particles.splice(i, 1); }
+          continue;
+        }
+        p.el.remove();
+        particles.splice(i, 1);
+        continue;
+      }
+      const pos = p.path(p.t);
+      const scale = p.type === "glucose" ? lerp(0.3, 1, Math.min(1, p.t*2)) : 1;
+      const rot = (p.type === "glucose") ? (p.t * 180).toFixed(0) : 0;
+      p.el.setAttribute("transform",
+        `translate(${pos.x.toFixed(1)},${pos.y.toFixed(1)}) rotate(${rot}) scale(${scale.toFixed(2)})`);
+      // fade in/out at ends
+      const fade = Math.min(1, p.t * 6) * Math.min(1, (1 - p.t) * 6 + 0.2);
+      p.el.setAttribute("opacity", Math.min(1, fade).toFixed(2));
+    }
+  }
+
+  function perfNow() { return performance.now(); }
+
+  // ---- Reaction rate from limiting factors ----
+  function currentRate() {
+    const L = lightSlider.value / 100;
+    const C = co2Slider.value / 100;
+    const W = waterSlider.value / 100;
+    // Liebig's law of the minimum: limited by scarcest resource,
+    // but blend a little so it feels organic.
+    const minF = Math.min(L, C, W);
+    const avg = (L + C + W) / 3;
+    return Math.max(0, Math.min(1, minF * 0.7 + avg * 0.3));
+  }
+
+  // ---- Spawn scheduling based on rate ----
+  let acc = { co2: 0, water: 0, light: 0 };
+  function schedule(dt) {
+    const rate = currentRate();
+    const L = lightSlider.value / 100;
+    const C = co2Slider.value / 100;
+    const W = waterSlider.value / 100;
+
+    // beams intensity
+    beams.setAttribute("opacity", (0.15 + 0.7 * L).toFixed(2));
+    rays.setAttribute("opacity", (0.35 + 0.6 * L).toFixed(2));
+
+    // inputs flow in proportion to their own availability
+    acc.co2 += dt * (0.2 + C * 2.2);
+    acc.water += dt * (0.2 + W * 2.2);
+
+    if (acc.co2 >= 1) { acc.co2 = 0; if (C > 0.03) spawn("co2"); }
+    if (acc.water >= 1) { acc.water = 0; if (W > 0.03) spawn("water"); }
+
+    // outputs (O2 + glucose) flow in proportion to the reaction RATE
+    acc.light += dt * (0.15 + rate * 3.0);
+    if (acc.light >= 1) {
+      acc.light = 0;
+      if (rate > 0.04) { spawn("o2"); spawn("glucose"); }
+    }
+  }
+
+  // ---- Label cycling for guided tour ----
+  const labelOrder = ["sun", "co2", "h2o", "o2", "glu"];
+  let labelIdx = 0, labelTimer = 0;
+  function cycleLabels(dt) {
+    labelTimer += dt;
+    if (labelTimer > 2.4) {
+      labelTimer = 0;
+      labels[labelOrder[labelIdx]].setAttribute("opacity", "0");
+      labelIdx = (labelIdx + 1) % labelOrder.length;
+    }
+    const cur = labels[labelOrder[labelIdx]];
+    const target = 0.15 + labelTimer < 0.3 ? 0 : 1;
+    cur.setAttribute("opacity", Math.min(1, labelTimer * 3).toFixed(2));
+  }
+
+  // ---- Main loop ----
+  let beamDash = 0;
+  function frame(ts) {
+    if (!lastTs) lastTs = ts;
+    let dt = (ts - lastTs) / 1000;
+    lastTs = ts;
+    dt = Math.min(dt, 0.05); // clamp
+    if (slowmo) dt *= 0.3;
+
+    if (running) {
+      schedule(dt);
+      update(dt);
+      cycleLabels(dt);
+      beamDash -= dt * 60;
+      beamLines.forEach(l => l.setAttribute("stroke-dashoffset", beamDash.toFixed(1)));
+    }
+    // rate meter always reflects sliders
+    const r = Math.round(currentRate() * 100);
+    rateBar.style.width = r + "%";
+    rateVal.textContent = r + "%";
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ---- Controls ----
+  function bind(slider, out) {
+    const upd = () => out.textContent = slider.value + "%";
+    slider.addEventListener("input", upd); upd();
+  }
+  bind(lightSlider, lightVal);
+  bind(co2Slider, co2Val);
+  bind(waterSlider, waterVal);
+
+  playBtn.addEventListener("click", () => {
+    running = !running;
+    playBtn.textContent = running ? "⏸ Pause" : "▶ Play";
+    lastTs = 0;
+  });
+  stepBtn.addEventListener("click", () => {
+    slowmo = !slowmo;
+    stepBtn.textContent = slowmo ? "▶︎ Normal speed" : "Slow-mo ⏱";
+  });
+})();
+</script>
+</body>
+</html>
