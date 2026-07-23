@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; padding: 0; }
+  #c { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1080"></canvas>
+<script>
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+const CX = W / 2, CY = H / 2 - 40;
+
+// Claude signature colours
+const CORAL = '#D97757';
+const CORAL_DK = '#C15F3C';
+const INK = '#2B2622';
+
+// easing helpers
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const easeInOut = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+const clamp01 = t => Math.max(0, Math.min(1, t));
+
+// The Claude "spark" mark: radiating tapered blades of alternating length.
+const NUM = 12;           // pairs of long/short around the circle
+const R_INNER = 26;
+
+function drawBlade(angle, len, width, grow) {
+  // grow 0..1 controls how far the blade has extended
+  const L = R_INNER + (len - R_INNER) * grow;
+  ctx.save();
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.moveTo(0, -R_INNER * 0.4);
+  ctx.lineTo(width, -R_INNER);
+  ctx.lineTo(0.0, -L);              // tip
+  ctx.lineTo(-width, -R_INNER);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawFrame(t) {
+  // t in [0,1] for one loop
+  ctx.clearRect(0, 0, W, H);
+
+  // warm background gradient
+  const bg = ctx.createRadialGradient(CX, CY, 60, CX, CY, W * 0.75);
+  bg.addColorStop(0, '#FBF7F0');
+  bg.addColorStop(1, '#EDE6DA');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // ---- global motion ----
+  const spin = easeOut(clamp01(t / 0.7));           // draw-in spin
+  const breathe = 1 + 0.04 * Math.sin(t * Math.PI * 2); // gentle pulse
+  const settleRot = (1 - spin) * (-Math.PI / 4);        // start rotated, settle to 0
+
+  ctx.save();
+  ctx.translate(CX, CY);
+  ctx.scale(breathe, breathe);
+  ctx.rotate(settleRot);
+
+  // soft glow
+  ctx.shadowColor = 'rgba(217,119,87,0.35)';
+  ctx.shadowBlur = 40;
+
+  for (let i = 0; i < NUM; i++) {
+    const baseAngle = (i / NUM) * Math.PI * 2;
+
+    // stagger each blade's grow so they fan out
+    const stagger = (i / NUM) * 0.35;
+    const g = easeOut(clamp01((t / 0.55 - stagger) / (1 - stagger)));
+
+    // long blade
+    ctx.fillStyle = CORAL;
+    drawBlade(baseAngle, 300, 26, g);
+    // short blade offset between the long ones
+    const g2 = easeOut(clamp01((t / 0.55 - stagger - 0.05) / (1 - stagger)));
+    ctx.fillStyle = CORAL_DK;
+    drawBlade(baseAngle + Math.PI / NUM, 170, 18, g2);
+  }
+
+  // centre disc
+  ctx.shadowBlur = 0;
+  const discR = R_INNER * easeOut(clamp01(t / 0.4));
+  ctx.fillStyle = INK;
+  ctx.beginPath();
+  ctx.arc(0, 0, discR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = CORAL;
+  ctx.beginPath();
+  ctx.arc(0, 0, discR * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+
+  // ---- wordmark ----
+  const textApp = easeInOut(clamp01((t - 0.45) / 0.35));
+  ctx.save();
+  ctx.globalAlpha = textApp;
+  ctx.translate(CX, CY + 360 - 20 * (1 - textApp));
+  ctx.fillStyle = INK;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '600 116px Georgia, "Times New Roman", serif';
+  ctx.fillText('Claude', 0, 0);
+  ctx.globalAlpha = textApp * 0.6;
+  ctx.font = '400 30px Georgia, serif';
+  ctx.fillText('A I', 0, 78);
+  ctx.restore();
+}
+
+window.drawFrame = drawFrame;
+window.__ready = true;
+drawFrame(0);
+</script>
+</body>
+</html>
