@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>3D Village Road — from a drawing</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  #app { position: fixed; inset: 0; background: linear-gradient(#bfe3ff 0%, #dff1ff 45%, #eaf7e6 72%, #e7f3d8 100%); }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+  /* soft sun glow overlay (top-right, matches the drawing) */
+  #sunglow {
+    position: fixed; top: -140px; right: -140px; width: 460px; height: 460px;
+    pointer-events: none; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,247,200,0.95) 0%, rgba(255,232,140,0.55) 32%, rgba(255,220,120,0.0) 70%);
+    mix-blend-mode: screen;
+  }
+
+  .panel {
+    position: fixed; left: 16px; bottom: 16px; z-index: 5;
+    background: rgba(20,30,45,0.55); color: #fff; backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.18); border-radius: 14px;
+    padding: 12px 14px; max-width: min(320px, 78vw);
+    font-size: 13px; line-height: 1.5; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  }
+  .panel h1 { font-size: 15px; margin-bottom: 4px; letter-spacing: .2px; }
+  .panel p { opacity: .85; }
+  .panel .hint { margin-top: 8px; font-size: 12px; opacity: .75; }
+
+  #controls { position: fixed; right: 16px; bottom: 16px; z-index: 5; display: flex; gap: 8px; }
+  button {
+    font: inherit; font-size: 13px; color: #fff; cursor: pointer;
+    background: rgba(20,30,45,0.55); border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-radius: 10px; padding: 9px 13px; box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+    transition: transform .08s ease, background .2s ease;
+  }
+  button:hover { background: rgba(40,55,80,0.7); }
+  button:active { transform: scale(0.96); }
+  button.on { background: rgba(80,170,120,0.75); border-color: rgba(255,255,255,0.35); }
+
+  #err {
+    position: fixed; inset: auto 16px 16px 16px; z-index: 10; display: none;
+    background: #b00020; color: #fff; padding: 12px 14px; border-radius: 10px; font-size: 13px;
+  }
+  @media (max-width: 520px) {
+    .panel { max-width: 70vw; font-size: 12px; }
+    button { padding: 9px 11px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="gl"></canvas>
+  <div id="sunglow"></div>
+
+  <div class="panel">
+    <h1>My Village Road · 3D</h1>
+    <p>A children's drawing brought to life — the hill, the little house, the winding road and roadside trees.</p>
+    <div class="hint">Drag to orbit · Scroll / pinch to zoom · buttons ↘</div>
+  </div>
+
+  <div id="controls">
+    <button id="spin" class="on" title="Auto-rotate">◐ Spin</button>
+    <button id="reset" title="Reset view">⟳ Reset</button>
+  </div>
+
+  <div id="err"></div>
+</div>
+
+<script>
+"use strict";
+(function () {
+  const canvas = document.getElementById("gl");
+  const errBox = document.getElementById("err");
+  const gl = canvas.getContext("webgl", { antialias: true, alpha: true }) ||
+             canvas.getContext("experimental-webgl", { antialias: true });
+  if (!gl) { showErr("Your browser doesn't support WebGL."); return; }
+
+  function showErr(m){ errBox.style.display="block"; errBox.textContent = m; }
+
+  /* ---------------------------------------------------------------- mat4 */
+  const M = {
+    ident(){ return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]); },
+    mul(a,b){
+      const o = new Float32Array(16);
+      for(let r=0;r<4;r++) for(let c=0;c<4;c++){
+        o[c*4+r] = a[0*4+r]*b[c*4+0] + a[1*4+r]*b[c*4+1] + a[2*4+r]*b[c*4+2] + a[3*4+r]*b[c*4+3];
+      }
+      return o;
+    },
+    perspective(fovy, asp, n, f){
+      const t = 1/Math.tan(fovy/2), o = new Float32Array(16);
+      o[0]=t/asp; o[5]=t; o[10]=(f+n)/(n-f); o[11]=-1; o[14]=(2*f*n)/(n-f);
+      return o;
+    },
+    lookAt(eye, ctr, up){
+      const z = norm(sub(eye,ctr));
+      const x = norm(cross(up,z));
+      const y = cross(z,x);
+      return new Float32Array([
+        x[0],y[0],z[0],0,
+        x[1],y[1],z[1],0,
+        x[2],y[2],z[2],0,
+        -dot(x,eye),-dot(y,eye),-dot(z,eye),1
+      ]);
+    },
+    translate(x,y,z){ const o=M.ident(); o[12]=x;o[13]=y;o[14]=z; return o; },
+    scale(x,y,z){ const o=M.ident(); o[0]=x;o[5]=y;o[10]=z; return o; },
+    rotY(a){ const c=Math.cos(a),s=Math.sin(a),o=M.ident(); o[0]=c;o[2]=-s;o[8]=s;o[10]=c; return o; },
+    rotX(a){ const c=Math.cos(a),s=Math.sin(a),o=M.ident(); o[5]=c;o[6]=s;o[9]=-s;o[10]=c; return o; },
+    normalMat3(m){
+      // upper-left 3x3 inverse-transpose
+      const a=m[0],b=m[1],c=m[2],d=m[4],e=m[5],f=m[6],g=m[8],h=m[9],i=m[10];
+      const A=e*i-f*h, B=f*g-d*i, C=d*h-e*g;
+      let det=a*A+b*B+c*C; det = det?1/det:0;
+      return new Float32Array([
+        A*det, B*det, C*det,
+        (c*h-b*i)*det, (a*i-c*g)*det, (b*g-a*h)*det,
+        (b*f-c*e)*det, (c*d-a*f)*det, (a*e-b*d)*det
+      ]);
+    }
+  };
+  function sub(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
+  function cross(a,b){return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];}
+  function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+  function len(a){return Math.hypot(a[0],a[1],a[2]);}
+  function norm(a){const l=len(a)||1;return [a[0]/l,a[1]/l,a[2]/l];}
+
+  /* ---------------------------------------------------------------- shaders */
+  const vs = `
+    attribute vec3 aPos; attribute vec3 aNormal; attribute vec3 aColor;
+    uniform mat4 uProj, uView, uModel; uniform mat3 uNorm;
+    varying vec3 vN; varying vec3 vColor; varying vec3 vWorld;
+    void main(){
+      vec4 w = uModel * vec4(aPos,1.0);
+      vWorld = w.xyz;
+      vN = normalize(uNorm * aNormal);
+      vColor = aColor;
+      gl_Position = uProj * uView * w;
+    }`;
+  const fs = `
+    precision mediump float;
+    varying vec3 vN; varying vec3 vColor; varying vec3 vWorld;
+    uniform vec3 uLightDir;      // direction TO the light
+    uniform float uAmbient;
+    uniform float uEmissive;     // 0..1 self-illumination
+    void main(){
+      vec3 N = normalize(vN);
+      float diff = max(dot(N, normalize(uLightDir)), 0.0);
+      // subtle sky fill from above
+      float sky = 0.15 * (0.5 + 0.5*N.y);
+      float lit = uAmbient + sky + diff*0.85;
+      vec3 col = vColor * lit;
+      col = mix(col, vColor, uEmissive);        // emissive washes out shading
+      col += uEmissive * vColor * 0.4;
+      // gentle distance haze toward the sky colour
+      float haze = clamp((length(vWorld) - 22.0)/40.0, 0.0, 0.35);
+      col = mix(col, vec3(0.85,0.92,1.0), haze);
+      gl_FragColor = vec4(col, 1.0);
+    }`;
+
+  function compile(type, src){
+    const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+    return s;
+  }
+  let prog;
+  try {
+    prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, vs));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(prog);
+    if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+  } catch(e){ showErr("Shader error: "+e.message); return; }
+  gl.useProgram(prog);
+
+  const loc = {
+    aPos: gl.getAttribLocation(prog,"aPos"),
+    aNormal: gl.getAttribLocation(prog,"aNormal"),
+    aColor: gl.getAttribLocation(prog,"aColor"),
+    uProj: gl.getUniformLocation(prog,"uProj"),
+    uView: gl.getUniformLocation(prog,"uView"),
+    uModel: gl.getUniformLocation(prog,"uModel"),
+    uNorm: gl.getUniformLocation(prog,"uNorm"),
+    uLightDir: gl.getUniformLocation(prog,"uLightDir"),
+    uAmbient: gl.getUniformLocation(prog,"uAmbient"),
+    uEmissive: gl.getUniformLocation(prog,"uEmissive"),
+  };
+
+  /* -------------------------------------------------- geometry builder utils */
+  // Each mesh: { pos:[], nor:[], col:[], idx:[] } accumulated then uploaded.
+  function Builder(){ return { pos:[], nor:[], col:[], idx:[] }; }
+  function pushTri(b, a,bb,c, color){
+    const n = norm(cross(sub(bb,a), sub(c,a)));
+    for(const v of [a,bb,c]){
+      const i = b.pos.length/3;
+      b.pos.push(v[0],v[1],v[2]);
+      b.nor.push(n[0],n[1],n[2]);
+      b.col.push(color[0],color[1],color[2]);
+      b.idx.push(i);
+    }
+  }
+  function pushQuad(b, a,bb,c,d, color){ pushTri(b,a,bb,c,color); pushTri(b,a,c,d,color); }
+
+  // transform helper: apply model matrix (translate+scale+rotY) to a point
+  function xf(t, p){
+    // t = {pos:[x,y,z], s:[x,y,z], ry:rad}
+    let x=p[0]*t.s[0], y=p[1]*t.s[1], z=p[2]*t.s[2];
+    if(t.ry){ const c=Math.cos(t.ry), s=Math.sin(t.ry); const nx=x*c+z*s, nz=-x*s+z*c; x=nx; z=nz; }
+    return [x+t.pos[0], y+t.pos[1], z+t.pos[2]];
+  }
+
+  function box(b, t, color, colorRoof){
+    // unit cube centered, y from 0..1 (sits on ground). corners
+    const P = [
+      [-.5,0,-.5],[.5,0,-.5],[.5,1,-.5],[-.5,1,-.5],
+      [-.5,0,.5],[.5,0,.5],[.5,1,.5],[-.5,1,.5]
+    ].map(p=>xf(t,p));
+    pushQuad(b,P[4],P[5],P[6],P[7],color); // front
+    pushQuad(b,P[1],P[0],P[3],P[2],color); // back
+    pushQuad(b,P[0],P[4],P[7],P[3],color); // left
+    pushQuad(b,P[5],P[1],P[2],P[6],color); // right
+    pushQuad(b,P[3],P[7],P[6],P[2],colorRoof||color); // top
+    pushQuad(b,P[0],P[1],P[5],P[4],color); // bottom
+  }
+
+  function cylinder(b, t, color, seg, capColor){
+    seg = seg||14;
+    const bot=[], top=[];
+    for(let i=0;i<seg;i++){
+      const a = i/seg*Math.PI*2;
+      const x=Math.cos(a)*0.5, z=Math.sin(a)*0.5;
+      bot.push(xf(t,[x,0,z])); top.push(xf(t,[x,1,z]));
+    }
+    for(let i=0;i<seg;i++){
+      const j=(i+1)%seg;
+      pushQuad(b, bot[i], bot[j], top[j], top[i], color);
+    }
+    // top cap
+    const cTop = xf(t,[0,1,0]);
+    for(let i=0;i<seg;i++){ const j=(i+1)%seg; pushTri(b, top[i], top[j], cTop, capColor||color); }
+  }
+
+  function cone(b, t, color, seg){
+    seg = seg||16;
+    const apex = xf(t,[0,1,0]);
+    const ring=[];
+    for(let i=0;i<seg;i++){ const a=i/seg*Math.PI*2; ring.push(xf(t,[Math.cos(a)*0.5,0,Math.sin(a)*0.5])); }
+    for(let i=0;i<seg;i++){ const j=(i+1)%seg; pushTri(b, ring[i], ring[j], apex, color); }
+  }
+
+  function sphere(b, t, color, seg){
+    seg = seg||16; const rings=Math.max(6, seg/2|0);
+    const grid=[];
+    for(let y=0;y<=rings;y++){
+      const v=y/rings, phi=v*Math.PI, row=[];
+      for(let x=0;x<=seg;x++){
+        const u=x/seg, th=u*Math.PI*2;
+        const px=Math.sin(phi)*Math.cos(th)*0.5;
+        const py=Math.cos(phi)*0.5+0.5;   // 0..1
+        const pz=Math.sin(phi)*Math.sin(th)*0.5;
+        row.push(xf(t,[px,py,pz]));
+      }
+      grid.push(row);
+    }
+    for(let y=0;y<rings;y++) for(let x=0;x<seg;x++){
+      pushQuad(b, grid[y][x], grid[y][x+1], grid[y+1][x+1], grid[y+1][x], color);
+    }
+  }
+
+  /* -------------------------------------------------- terrain (the hill) */
+  const HILL = { cx:0, cz:-1.5, H:4.4, s:5.6 };
+  function terrain(x,z){
+    const d2 = (x-HILL.cx)*(x-HILL.cx) + (z-HILL.cz)*(z-HILL.cz);
+    let h = HILL.H * Math.exp(-d2/(2*HILL.s*HILL.s));
+    // a couple of gentle secondary bumps for a natural look
+    h += 0.8*Math.exp(-(((x+7)*(x+7))+((z-6)*(z-6)))/26);
+    h += 0.7*Math.exp(-(((x-8)*(x-8))+((z+7)*(z+7)))/34);
+    return h;
+  }
+  function terrainNormal(x,z){
+    const e=0.15;
+    const hL=terrain(x-e,z), hR=terrain(x+e,z), hD=terrain(x,z-e), hU=terrain(x,z+e);
+    return norm([hL-hR, 2*e, hD-hU]);
+  }
+
+  const world = Builder();
+  let roadSamples = [];
+
+  // ground grid with vertex colours by height/slope
+  (function buildGround(){
+    const R=20, N=90;
+    const P=[];
+    for(let i=0;i<=N;i++){ const row=[]; for(let j=0;j<=N;j++){
+      const x=-R + (i/N)*2*R, z=-R + (j/N)*2*R;
+      row.push([x, terrain(x,z), z]);
+    } P.push(row);}
+    function colAt(p){
+      const h=p[1];
+      // green gradients; sandy tint at very bottom, brown-green higher
+      const g = 0.55 + 0.10*Math.sin(p[0]*0.7)*0.2;
+      let c = [0.30+h*0.02, 0.55+ Math.min(h,4)*0.03, 0.26];
+      if(h>3.2){ c=[0.42,0.50,0.24]; }        // dry hilltop
+      if(h<0.15){ c=[0.62,0.68,0.42]; }       // low meadow
+      return c;
+    }
+    for(let i=0;i<N;i++) for(let j=0;j<N;j++){
+      const a=P[i][j], bb=P[i+1][j], c=P[i+1][j+1], d=P[i][j+1];
+      // custom normals from terrain for smooth shading
+      pushSmoothQuad(world, a,bb,c,d, colAt(a));
+    }
+  })();
+
+  // like pushQuad but uses analytic terrain normals (smooth ground)
+  function pushSmoothQuad(b, a,bb,c,d, color){
+    const verts=[a,bb,c, a,c,d];
+    for(const v of verts){
+      b.pos.push(v[0],v[1],v[2]);
+      const n=terrainNormal(v[0],v[2]);
+      b.nor.push(n[0],n[1],n[2]);
+      b.col.push(color[0],color[1],color[2]);
+      b.idx.push(b.pos.length/3-1);
+    }
+  }
+
+  /* -------------------------------------------------- the winding road */
+  // Catmull-Rom through control points in the xz plane
+  const roadCtrl = [
+    [ 0.2, 15.5],[ 0.6, 12.0],[-0.4, 9.0],[ 0.2, 6.0],
+    [-0.2, 3.2],[ 0.0, 0.6],                  // climbs to the house area
+    [ 2.6,-0.4],[ 5.6, 0.8],[ 7.4, 3.6],
+    [ 7.2, 7.2],[ 5.8,10.5],[ 4.4,13.5],[ 3.6,16.0]
+  ];
+  function catmull(pts, t){
+    const n=pts.length-1, ft=t*(n-2)+1; // keep within interior
+    let i=Math.floor(ft); i=Math.max(1, Math.min(n-2, i));
+    const lt=ft-i;
+    const p0=pts[i-1],p1=pts[i],p2=pts[i+1],p3=pts[i+2];
+    const t2=lt*lt, t3=t2*lt;
+    const f=(a,b,c,d)=>0.5*((2*b)+(-a+c)*lt+(2*a-5*b+4*c-d)*t2+(-a+3*b-3*c+d)*t3);
+    return [ f(p0[0],p1[0],p2[0],p3[0]), f(p0[1],p1[1],p2[1],p3[1]) ];
+  }
+  (function buildRoad(){
+    const STEPS=180, HW=0.95; // half width
+    const dark=[0.24,0.24,0.27], stripe=[0.95,0.85,0.30];
+    let prev=null;
+    const left=[],right=[],cl=[];
+    for(let i=0;i<=STEPS;i++){
+      const p=catmull(roadCtrl, i/STEPS);
+      const x=p[0], z=p[1];
+      let dir;
+      if(prev){ dir=norm([x-prev[0],0,z-prev[1]]); } else { const q=catmull(roadCtrl,1/STEPS); dir=norm([q[0]-x,0,q[1]-z]); }
+      const nrm=[-dir[2],0,dir[0]];
+      const y=terrain(x,z)+0.06;
+      left.push([x+nrm[0]*HW, terrain(x+nrm[0]*HW,z+nrm[2]*HW)+0.06, z+nrm[2]*HW]);
+      right.push([x-nrm[0]*HW, terrain(x-nrm[0]*HW,z-nrm[2]*HW)+0.06, z-nrm[2]*HW]);
+      cl.push([x,y,z,nrm]);
+      prev=[x,z];
+    }
+    for(let i=0;i<STEPS;i++){
+      pushFlatQuad(world, left[i], right[i], right[i+1], left[i+1], dark);
+    }
+    // dashed centre stripe
+    for(let i=0;i<STEPS;i+=6){
+      const a=cl[i], b2=cl[Math.min(i+3,STEPS)];
+      const w=0.09;
+      const la=[a[0]+a[3][0]*w, a[1]+0.02, a[2]+a[3][2]*w];
+      const ra=[a[0]-a[3][0]*w, a[1]+0.02, a[2]-a[3][2]*w];
+      const lb=[b2[0]+b2[3][0]*w, b2[1]+0.02, b2[2]+b2[3][2]*w];
+      const rb=[b2[0]-b2[3][0]*w, b2[1]+0.02, b2[2]-b2[3][2]*w];
+      pushFlatQuad(world, la, ra, rb, lb, stripe);
+    }
+    // stash sampled centre for tree placement
+    roadSamples = cl;
+  })();
+  function pushFlatQuad(b,a,bb,c,d,color){
+    // normal roughly up but from geometry
+    pushTri(b,a,bb,c,color); pushTri(b,a,c,d,color);
+  }
+
+  /* -------------------------------------------------- roadside trees */
+  (function buildTrees(){
+    const trunk=[0.42,0.28,0.16];
+    const greens=[[0.20,0.52,0.24],[0.16,0.46,0.20],[0.28,0.58,0.26],[0.22,0.50,0.30]];
+    const s=roadSamples;
+    let k=0;
+    for(let i=8;i<s.length-6;i+=7){
+      const c=s[i], nrm=c[3];
+      for(const side of [1,-1]){
+        const off=1.7 + (k%3)*0.25;
+        const x=c[0]+nrm[0]*off*side, z=c[2]+nrm[2]*off*side;
+        const y=terrain(x,z);
+        const hgt=0.9 + ((k*7)%5)*0.14;
+        const rad=0.26;
+        cylinder(world, {pos:[x,y,z], s:[0.16,hgt,0.16], ry:0}, trunk, 8, trunk);
+        const gcol=greens[k%greens.length];
+        // layered foliage — reads like the little sprigs in the drawing
+        sphere(world, {pos:[x,y+hgt-0.15,z], s:[rad*2.1,rad*2.0,rad*2.1], ry:0}, gcol, 12);
+        sphere(world, {pos:[x-0.18,y+hgt+0.05,z+0.12], s:[rad*1.5,rad*1.5,rad*1.5], ry:0}, gcol, 10);
+        sphere(world, {pos:[x+0.16,y+hgt+0.1,z-0.05], s:[rad*1.4,rad*1.6,rad*1.4], ry:0}, gcol, 10);
+        k++;
+      }
+    }
+  })();
+
+  /* -------------------------------------------------- the house */
+  (function buildHouse(){
+    const hx=-0.6, hz=-2.6;
+    const hy=terrain(hx,hz);
+    const wall=[0.94,0.90,0.82], wallSide=[0.86,0.82,0.74];
+    const roof=[0.72,0.28,0.22];
+    const door=[0.35,0.22,0.14], win=[0.55,0.78,0.92], frame=[0.5,0.4,0.3];
+    const bodyW=2.3, bodyD=2.0, bodyH=1.5;
+    box(world, {pos:[hx,hy,hz], s:[bodyW,bodyH,bodyD], ry:0.15}, wall, wallSide);
+
+    // gable roof: two slabs meeting at a ridge (build manually)
+    const ry=0.15, c=Math.cos(ry), sn=Math.sin(ry);
+    function R(p){ return [p[0]*c+p[2]*sn+hx, p[1]+hy+bodyH, -p[0]*sn+p[2]*c+hz]; }
+    const eaveY=0, ridgeY=1.05, ov=0.25;
+    const fl=R([-bodyW/2-ov,eaveY, bodyD/2+ov]);
+    const fr=R([ bodyW/2+ov,eaveY, bodyD/2+ov]);
+    const bl=R([-bodyW/2-ov,eaveY,-bodyD/2-ov]);
+    const br=R([ bodyW/2+ov,eaveY,-bodyD/2-ov]);
+    const rf=R([0,ridgeY, bodyD/2+ov]);
+    const rb=R([0,ridgeY,-bodyD/2-ov]);
+    // left slope
+    pushQuad(world, bl, fl, rf, rb, roof);
+    // right slope
+    pushQuad(world, fr, br, rb, rf, roof);
+    // gable triangles (front & back)
+    pushTri(world, fl, fr, rf, [0.80,0.36,0.30]);
+    pushTri(world, br, bl, rb, [0.80,0.36,0.30]);
+
+    // door & windows on the rotated front facade
+    function faceZ(px,py){ // point on front face (z = bodyD/2)
+      return [px*c + (bodyD/2)*sn + hx, py+hy, -px*sn + (bodyD/2)*c + hz + 0.02];
+    }
+    // door as thin quad on facade
+    quadOnFace(world, faceZ, -0.2,0, 0.35,1.0, door);
+    quadOnFace(world, faceZ,  0.55,0.55, 0.5,0.55, win, frame);
+    quadOnFace(world, faceZ, -0.95,0.55, 0.5,0.55, win, frame);
+
+    buildHouse.pos=[hx,hy,hz];
+  })();
+
+  // draw a rectangle sitting on the rotated front facade; optional frame border
+  function quadOnFace(b, faceFn, cx, cy, w, h, color, frameColor){
+    if(frameColor){
+      const fw=w*0.62, fh=h*0.62; // border
+      quadRect(b,faceFn,cx,cy,w,h,frameColor);
+      quadRect(b,faceFn,cx,cy,fw,fh,color);
+    } else {
+      quadRect(b,faceFn,cx,cy,w,h,color);
+    }
+  }
+  function quadRect(b, faceFn, cx, cy, w, h, color){
+    const a=faceFn(cx-w/2, cy-h/2);
+    const bb=faceFn(cx+w/2, cy-h/2);
+    const c=faceFn(cx+w/2, cy+h/2);
+    const d=faceFn(cx-w/2, cy+h/2);
+    // slightly push outward along normal already handled by +0.02 offset
+    pushTri(b,a,bb,c,color); pushTri(b,a,c,d,color);
+  }
+
+  /* -------------------------------------------------- signboard (from drawing) */
+  (function buildSign(){
+    const sx=2.9, sz=-2.2, sy=terrain(sx,sz);
+    const post=[0.45,0.32,0.2], board=[0.30,0.45,0.75], txt=[0.95,0.95,0.98];
+    cylinder(world, {pos:[sx,sy,sz], s:[0.10,1.5,0.10], ry:0}, post, 8, post);
+    box(world, {pos:[sx-0.7,sy+1.5,sz], s:[1.4,0.7,0.08], ry:0}, board, board);
+    // two little text lines
+    box(world, {pos:[sx-0.5,sy+2.02,sz+0.05], s:[1.0,0.09,0.02], ry:0}, txt, txt);
+    box(world, {pos:[sx-0.4,sy+1.78,sz+0.05], s:[0.8,0.09,0.02], ry:0}, txt, txt);
+  })();
+
+  /* -------------------------------------------------- flowering bush (drawing's top-left) */
+  (function buildBush(){
+    const bx=-7.5, bz=4.0, by=terrain(bx,bz);
+    const leaf=[0.20,0.5,0.22];
+    sphere(world,{pos:[bx,by,bz],s:[1.4,1.0,1.4],ry:0},leaf,12);
+    const flowers=[[0.90,0.30,0.28],[0.95,0.55,0.20],[0.90,0.25,0.40]];
+    for(let i=0;i<7;i++){
+      const a=i/7*Math.PI*2, r=0.7;
+      sphere(world,{pos:[bx+Math.cos(a)*r, by+0.7+Math.sin(i)*0.2, bz+Math.sin(a)*r],s:[0.28,0.28,0.28],ry:0}, flowers[i%3], 8);
+    }
+  })();
+
+  /* -------------------------------------------------- the sun (emissive) */
+  const sunMesh = Builder();
+  const SUN_POS=[9.5, 11.5, -12];
+  sphere(sunMesh, {pos:SUN_POS, s:[2.2,2.2,2.2], ry:0}, [1.0,0.92,0.55], 20);
+  // sun rays as thin elongated boxes
+  for(let i=0;i<12;i++){
+    const a=i/12*Math.PI*2;
+    const rx=SUN_POS[0]+Math.cos(a)*3.2, ry=SUN_POS[1]+Math.sin(a)*3.2;
+    cone(sunMesh, {pos:[rx,ry,SUN_POS[2]], s:[0.5,1.4,0.5], ry:0}, [1.0,0.85,0.4], 6);
+  }
+
+  /* -------------------------------------------------- birds (emissive dark V's) */
+  const birdMesh = Builder();
+  function bird(x,y,z,scl){
+    const c=[0.15,0.15,0.18];
+    const a=[x,y,z];
+    box(birdMesh,{pos:[x-0.02*scl,y,z],s:[0.5*scl,0.06*scl,0.06*scl],ry:0.6},c,c);
+    box(birdMesh,{pos:[x+0.02*scl,y,z],s:[0.5*scl,0.06*scl,0.06*scl],ry:-0.6},c,c);
+  }
+  bird(-3.2,5.4,-3, 1.0); bird(-2.2,5.9,-4, 0.8); bird(-4.0,6.0,-2.5,0.7);
+
+  /* -------------------------------------------------- upload meshes */
+  function makeMesh(b){
+    const vao = {
+      pos: buf(new Float32Array(b.pos)),
+      nor: buf(new Float32Array(b.nor)),
+      col: buf(new Float32Array(b.col)),
+      idx: (function(){ const e=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,e);
+              gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexArr(b.idx.length), gl.STATIC_DRAW); return e; })(),
+      count: b.idx.length
+    };
+    return vao;
+  }
+  function buf(data){ const g=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,g); gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW); return g; }
+  function indexArr(n){ // sequential indices (we don't dedupe vertices)
+    const use32 = n>65535 && gl.getExtension("OES_element_index_uint");
+    if(n>65535 && !use32){ // fall back: split not needed since draw uses drawArrays
+    }
+    const arr = (n>65535)? new Uint32Array(n): new Uint16Array(n);
+    for(let i=0;i<n;i++) arr[i]=i; return arr;
+  }
+
+  // We stored sequential idx; simpler to just drawArrays. Build draw wrappers.
+  const meshWorld = makeMeshArrays(world);
+  const meshSun = makeMeshArrays(sunMesh);
+  const meshBird = makeMeshArrays(birdMesh);
+  function makeMeshArrays(b){
+    return { pos:buf(new Float32Array(b.pos)), nor:buf(new Float32Array(b.nor)),
+             col:buf(new Float32Array(b.col)), count:b.pos.length/3 };
+  }
+
+  function draw(mesh, model, emissive){
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.pos); gl.enableVertexAttribArray(loc.aPos); gl.vertexAttribPointer(loc.aPos,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.nor); gl.enableVertexAttribArray(loc.aNormal); gl.vertexAttribPointer(loc.aNormal,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.col); gl.enableVertexAttribArray(loc.aColor); gl.vertexAttribPointer(loc.aColor,3,gl.FLOAT,false,0,0);
+    gl.uniformMatrix4fv(loc.uModel,false,model);
+    gl.uniformMatrix3fv(loc.uNorm,false,M.normalMat3(model));
+    gl.uniform1f(loc.uEmissive, emissive||0);
+    gl.drawArrays(gl.TRIANGLES, 0, mesh.count);
+  }
+
+  /* -------------------------------------------------- camera / interaction */
+  const cam = { yaw: 0.7, pitch: 0.55, dist: 26, target:[0, 2.2, 0], autoSpin:true };
+  let dragging=false, lastX=0, lastY=0, pinchDist=0;
+
+  canvas.addEventListener("pointerdown", e=>{ dragging=true; lastX=e.clientX; lastY=e.clientY; cam.autoSpin=false; setSpin(false); canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener("pointerup", ()=> dragging=false);
+  canvas.addEventListener("pointercancel", ()=> dragging=false);
+  canvas.addEventListener("pointermove", e=>{
+    if(!dragging) return;
+    const dx=e.clientX-lastX, dy=e.clientY-lastY; lastX=e.clientX; lastY=e.clientY;
+    cam.yaw -= dx*0.006; cam.pitch += dy*0.006;
+    cam.pitch = Math.max(0.08, Math.min(1.35, cam.pitch));
+  });
+  canvas.addEventListener("wheel", e=>{ e.preventDefault(); cam.dist *= (1 + Math.sign(e.deltaY)*0.08); cam.dist=Math.max(9, Math.min(48, cam.dist)); }, {passive:false});
+
+  // pinch zoom
+  const active=new Map();
+  canvas.addEventListener("pointerdown", e=>active.set(e.pointerId,e));
+  canvas.addEventListener("pointermove", e=>{
+    if(active.has(e.pointerId)) active.set(e.pointerId,e);
+    if(active.size===2){
+      const [a,b]=[...active.values()];
+      const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+      if(pinchDist){ cam.dist *= pinchDist/d; cam.dist=Math.max(9,Math.min(48,cam.dist)); }
+      pinchDist=d;
+    }
+  });
+  canvas.addEventListener("pointerup", e=>{ active.delete(e.pointerId); pinchDist=0; });
+
+  const spinBtn=document.getElementById("spin");
+  const resetBtn=document.getElementById("reset");
+  function setSpin(on){ cam.autoSpin=on; spinBtn.classList.toggle("on",on); }
+  spinBtn.addEventListener("click",()=> setSpin(!cam.autoSpin));
+  resetBtn.addEventListener("click",()=>{ cam.yaw=0.7; cam.pitch=0.55; cam.dist=26; setSpin(true); });
+
+  /* -------------------------------------------------- resize + render loop */
+  function resize(){
+    const dpr=Math.min(window.devicePixelRatio||1, 2);
+    canvas.width = Math.floor(canvas.clientWidth*dpr);
+    canvas.height= Math.floor(canvas.clientHeight*dpr);
+    gl.viewport(0,0,canvas.width,canvas.height);
+  }
+  window.addEventListener("resize", resize); resize();
+
+  gl.enable(gl.DEPTH_TEST);
+  gl.enable(gl.CULL_FACE); gl.cullFace(gl.BACK); gl.frontFace(gl.CCW);
+  // culling can hide inward faces; disable to be safe with hand-wound quads
+  gl.disable(gl.CULL_FACE);
+  gl.clearColor(0,0,0,0);
+
+  const lightDir = norm([SUN_POS[0], SUN_POS[1], SUN_POS[2]]); // toward sun
+
+  function frame(t){
+    if(cam.autoSpin) cam.yaw += 0.0022;
+    const cx=cam.target[0]+cam.dist*Math.cos(cam.pitch)*Math.sin(cam.yaw);
+    const cy=cam.target[1]+cam.dist*Math.sin(cam.pitch);
+    const cz=cam.target[2]+cam.dist*Math.cos(cam.pitch)*Math.cos(cam.yaw);
+    const view=M.lookAt([cx,cy,cz], cam.target, [0,1,0]);
+    const proj=M.perspective(50*Math.PI/180, canvas.width/canvas.height, 0.1, 200);
+
+    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    gl.useProgram(prog);
+    gl.uniformMatrix4fv(loc.uProj,false,proj);
+    gl.uniformMatrix4fv(loc.uView,false,view);
+    gl.uniform3fv(loc.uLightDir, new Float32Array(lightDir));
+    gl.uniform1f(loc.uAmbient, 0.42);
+
+    draw(meshWorld, M.ident(), 0.0);
+    draw(meshBird, M.ident(), 0.55);
+    // gentle sun bob
+    const bob=M.translate(0, Math.sin(t*0.0006)*0.25, 0);
+    draw(meshSun, bob, 0.95);
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
