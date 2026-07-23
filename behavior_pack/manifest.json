@@ -2,16 +2,24 @@
   "format_version": 2,
   "header": {
     "name": "§5Haunted House §8Add-On §7[BP]",
-    "description": "§7Builds a spooky two-story haunted mansion around you.\n§8Run §f/function haunted_house/build",
+    "description": "§7Haunted mansion builder §8+ §5custom flame & magic weapons.\n§8Run §f/function haunted_house/build §8and §f/function arcane/give",
     "uuid": "df5e13a8-c76b-4ab6-bed1-881d03ab65d3",
-    "version": [1, 0, 0],
-    "min_engine_version": [1, 20, 0]
+    "version": [1, 1, 0],
+    "min_engine_version": [1, 20, 60]
   },
   "modules": [
     {
-      "description": "Haunted House behaviors, build functions and custom item.",
+      "description": "Haunted House behaviors, build functions and custom items.",
       "type": "data",
       "uuid": "0acf3b5f-32c5-4976-89fb-765282fe82a3",
+      "version": [1, 0, 0]
+    },
+    {
+      "description": "Arcane weapon scripts (flame, magic, storm).",
+      "type": "script",
+      "language": "javascript",
+      "uuid": "c4cffa6e-23eb-40d6-b7cc-8e83625160ff",
+      "entry": "scripts/main.js",
       "version": [1, 0, 0]
     }
   ],
@@ -19,6 +27,10 @@
     {
       "uuid": "6b5ae6d1-a88a-4a4b-ab92-b124e092868a",
       "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
     }
   ],
   "metadata": {

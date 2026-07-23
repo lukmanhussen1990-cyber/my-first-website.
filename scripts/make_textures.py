@@ -116,7 +116,78 @@ def make_key(path):
     write_png(path, buf, W, H)
 
 
+# ---------- Flame Sword (16x16) ----------
+def make_flame_sword(path):
+    W = H = 16
+    buf = blank(W, H, (0, 0, 0, 0))
+    handle = (80, 50, 28, 255)
+    guard = (120, 120, 130, 255)
+    rect(buf, W, 7, 12, 8, 15, handle)
+    px(buf, W, 7, 11, (60, 38, 20, 255))
+    rect(buf, W, 5, 11, 10, 11, guard)
+    blade = [(255, 245, 150, 255), (255, 205, 70, 255), (255, 150, 40, 255),
+             (255, 110, 30, 255), (225, 70, 20, 255)]
+    for i, y in enumerate(range(2, 11)):
+        rect(buf, W, 7, y, 8, y, blade[min(i // 2, len(blade) - 1)])
+    px(buf, W, 6, 4, (255, 90, 20, 255))
+    px(buf, W, 9, 6, (255, 130, 30, 255))
+    px(buf, W, 6, 7, (255, 70, 15, 255))
+    px(buf, W, 9, 9, (230, 60, 15, 255))
+    px(buf, W, 7, 2, (255, 255, 190, 255))
+    write_png(path, buf, W, H)
+
+
+# ---------- Arcane Staff (16x16) ----------
+def make_arcane_staff(path):
+    W = H = 16
+    buf = blank(W, H, (0, 0, 0, 0))
+    shaft = (90, 60, 35, 255)
+    shaft_d = (60, 40, 22, 255)
+    for y in range(5, 16):
+        px(buf, W, 8, y, shaft)
+        px(buf, W, 9, y, shaft_d)
+    orb = (150, 80, 220, 255)
+    orb_l = (200, 150, 255, 255)
+    cx, cy = 8, 3
+    for y in range(0, 7):
+        for x in range(4, 13):
+            d = (x - cx) ** 2 + (y - cy) ** 2
+            if d <= 9:
+                px(buf, W, x, y, orb)
+            if d <= 4:
+                px(buf, W, x, y, orb_l)
+    px(buf, W, cx, cy, (245, 225, 255, 255))
+    px(buf, W, 3, 6, orb_l)
+    px(buf, W, 13, 2, orb_l)
+    px(buf, W, 12, 7, (200, 150, 255, 255))
+    write_png(path, buf, W, H)
+
+
+# ---------- Storm Hammer (16x16) ----------
+def make_storm_hammer(path):
+    W = H = 16
+    buf = blank(W, H, (0, 0, 0, 0))
+    handle = (90, 60, 35, 255)
+    metal = (70, 150, 200, 255)
+    metal_l = (150, 220, 255, 255)
+    metal_d = (40, 90, 140, 255)
+    rect(buf, W, 3, 2, 12, 6, metal)
+    rect(buf, W, 3, 2, 12, 2, metal_l)
+    rect(buf, W, 3, 6, 12, 6, metal_d)
+    rect(buf, W, 3, 2, 3, 6, metal_l)
+    px(buf, W, 7, 4, (235, 255, 255, 255))
+    px(buf, W, 9, 3, (200, 245, 255, 255))
+    for y in range(7, 16):
+        px(buf, W, 7, y, handle)
+        px(buf, W, 8, y, (60, 40, 22, 255))
+    write_png(path, buf, W, H)
+
+
+ITEMS = os.path.join(BASE, "resource_pack", "textures", "items")
 make_pack_icon(os.path.join(BASE, "behavior_pack", "pack_icon.png"), (150, 90, 210, 255))
 make_pack_icon(os.path.join(BASE, "resource_pack", "pack_icon.png"), (120, 200, 150, 255))
-make_key(os.path.join(BASE, "resource_pack", "textures", "items", "cursed_key.png"))
+make_key(os.path.join(ITEMS, "cursed_key.png"))
+make_flame_sword(os.path.join(ITEMS, "flame_sword.png"))
+make_arcane_staff(os.path.join(ITEMS, "arcane_staff.png"))
+make_storm_hammer(os.path.join(ITEMS, "storm_hammer.png"))
 print("done")

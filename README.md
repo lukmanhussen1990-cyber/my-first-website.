@@ -54,6 +54,29 @@ BP (item behavior) and RP (texture) are working.
 
 ---
 
+## ⚔️ Custom Weapons (flame & magic)
+
+Three scripted weapons come with the add-on. Grab all of them with one command:
+
+```
+/function arcane/give
+```
+
+Or give a single one, e.g. `/give @s arcane:flame_sword`.
+
+| Weapon | Melee | Right-click ability |
+|---|---|---|
+| 🔥 **Flame Sword** | Sets the target **on fire** + flame burst | Unleashes a **fan of fire** (igniting fireballs) |
+| 🔮 **Arcane Staff** | Light magic strike | Casts an **explosive fireball** |
+| ⚡ **Storm Hammer** | Calls a **lightning bolt** onto the target | — |
+
+These are powered by Minecraft's **Script API** (`@minecraft/server`) in
+`behavior_pack/scripts/main.js`, with per-player cooldowns so the abilities
+can't be spammed. The stable scripting API is used, so no beta toggle is
+required — just import the add-on and play (Minecraft **1.20.60+**).
+
+---
+
 ## 🏚️ What gets built
 
 - **Two-story dark-oak mansion** with a mossy-cobblestone foundation
