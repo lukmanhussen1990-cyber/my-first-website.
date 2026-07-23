@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "§bArcane Weapons §7[RP]",
+    "description": "§7Weapon textures for the Arcane Weapons mod.",
+    "uuid": "6fc039a9-2985-47a6-b737-70dcfd97e078",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 20, 60]
+  },
+  "modules": [
+    {
+      "description": "Weapon textures and names.",
+      "type": "resources",
+      "uuid": "a469a825-f3a4-4f6f-8a96-9b68228f8f8a",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "16a5b8d7-d4cd-4c28-8d6b-aff5aa96bce6",
+      "version": [1, 0, 0]
+    }
+  ],
+  "metadata": {
+    "authors": ["Arcane Weapons"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

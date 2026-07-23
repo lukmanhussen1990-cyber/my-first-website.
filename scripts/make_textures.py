@@ -183,6 +183,46 @@ def make_storm_hammer(path):
     write_png(path, buf, W, H)
 
 
+# ---------- Weapons mod pack icon (128x128): flaming sword + magic ----------
+def make_weapon_icon(path):
+    W = H = 128
+    buf = blank(W, H, (14, 14, 24, 255))
+    # dark radial-ish background
+    for y in range(H):
+        for x in range(W):
+            d = ((x - 64) ** 2 + (y - 64) ** 2) ** 0.5
+            v = max(0, 40 - int(d * 0.30))
+            buf[y * W + x] = (14 + v, 14 + v // 2, 26 + v, 255)
+    # big central blade (gray) pointing up
+    rect(buf, W, 58, 20, 70, 82, (150, 158, 172, 255))
+    rect(buf, W, 58, 20, 61, 82, (190, 198, 210, 255))   # highlight edge
+    for i in range(6):                                    # pointed tip
+        rect(buf, W, 58 + i, 20 - i, 70 - i, 20 - i, (170, 178, 190, 255))
+    # guard + handle
+    rect(buf, W, 44, 82, 84, 90, (90, 70, 40, 255))
+    rect(buf, W, 60, 90, 68, 112, (70, 48, 26, 255))
+    rect(buf, W, 60, 112, 68, 116, (200, 180, 90, 255))   # pommel
+    # flames licking up the blade
+    flame = [(255, 220, 90, 255), (255, 160, 40, 255), (255, 100, 25, 255)]
+    import random
+    random.seed(7)
+    for _ in range(240):
+        fx = 56 + random.randint(-6, 18)
+        fy = random.randint(14, 84)
+        if 0 <= fx < W:
+            buf[fy * W + fx] = flame[random.randint(0, 2)]
+    # purple magic orb (top-left) and cyan spark (right)
+    for y in range(18, 40):
+        for x in range(16, 40):
+            if (x - 28) ** 2 + (y - 29) ** 2 <= 90:
+                buf[y * W + x] = (150, 90, 220, 255)
+            if (x - 28) ** 2 + (y - 29) ** 2 <= 30:
+                buf[y * W + x] = (205, 160, 255, 255)
+    for i, (x, y) in enumerate([(96, 24), (100, 34), (94, 40), (104, 46), (98, 54)]):
+        rect(buf, W, x, y, x + 3, y + 3, (150, 220, 255, 255))
+    write_png(path, buf, W, H)
+
+
 ITEMS = os.path.join(BASE, "resource_pack", "textures", "items")
 make_pack_icon(os.path.join(BASE, "behavior_pack", "pack_icon.png"), (150, 90, 210, 255))
 make_pack_icon(os.path.join(BASE, "resource_pack", "pack_icon.png"), (120, 200, 150, 255))
@@ -190,4 +230,14 @@ make_key(os.path.join(ITEMS, "cursed_key.png"))
 make_flame_sword(os.path.join(ITEMS, "flame_sword.png"))
 make_arcane_staff(os.path.join(ITEMS, "arcane_staff.png"))
 make_storm_hammer(os.path.join(ITEMS, "storm_hammer.png"))
+
+# Standalone weapons mod assets
+WM = os.path.join(BASE, "weapons_mod")
+if os.path.isdir(WM):
+    make_weapon_icon(os.path.join(WM, "behavior_pack", "pack_icon.png"))
+    make_weapon_icon(os.path.join(WM, "resource_pack", "pack_icon.png"))
+    wm_items = os.path.join(WM, "resource_pack", "textures", "items")
+    make_flame_sword(os.path.join(wm_items, "flame_sword.png"))
+    make_arcane_staff(os.path.join(wm_items, "arcane_staff.png"))
+    make_storm_hammer(os.path.join(wm_items, "storm_hammer.png"))
 print("done")

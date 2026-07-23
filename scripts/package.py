@@ -40,7 +40,23 @@ def make_mcaddon(out_name):
     print("wrote", os.path.relpath(out, BASE))
 
 
+def make_mcaddon_from(bp_folder, rp_folder, bp_arc, rp_arc, out_name):
+    out = os.path.join(DIST, out_name)
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
+        add_folder(zf, bp_folder, bp_arc)
+        add_folder(zf, rp_folder, rp_arc)
+    print("wrote", os.path.relpath(out, BASE))
+
+
+# --- Full add-on: haunted house + weapons ---
 make_mcpack("behavior_pack", "HauntedHouse_BP.mcpack")
 make_mcpack("resource_pack", "HauntedHouse_RP.mcpack")
 make_mcaddon("HauntedHouse.mcaddon")
+
+# --- Standalone weapons mod ---
+if os.path.isdir(os.path.join(BASE, "weapons_mod")):
+    make_mcaddon_from(
+        "weapons_mod/behavior_pack", "weapons_mod/resource_pack",
+        "ArcaneWeapons_BP", "ArcaneWeapons_RP", "ArcaneWeapons.mcaddon",
+    )
 print("done")

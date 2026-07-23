@@ -1,0 +1,41 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "§bArcane Weapons §7[BP]",
+    "description": "§7Flame Sword, Arcane Staff & Storm Hammer.\n§8Run §f/function arcane/give",
+    "uuid": "16a5b8d7-d4cd-4c28-8d6b-aff5aa96bce6",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 20, 60]
+  },
+  "modules": [
+    {
+      "description": "Weapon item definitions and give function.",
+      "type": "data",
+      "uuid": "159a4d4b-fcdd-4b0c-bb5d-2f504f507b7a",
+      "version": [1, 0, 0]
+    },
+    {
+      "description": "Weapon ability scripts (flame, magic, storm).",
+      "type": "script",
+      "language": "javascript",
+      "uuid": "554b912b-5397-42cf-9f81-a18393cc3e61",
+      "entry": "scripts/main.js",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "6fc039a9-2985-47a6-b737-70dcfd97e078",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    }
+  ],
+  "metadata": {
+    "authors": ["Arcane Weapons"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}
