@@ -1,0 +1,177 @@
+/* ---- Super Mario canvas platformer ---- */
+:root {
+  --sky: #5c94fc;
+  --ink: #0b1020;
+  --accent: #e52521;
+  --gold: #ffd34e;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #10131c;
+  color: #fff;
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+}
+
+#game-shell {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  gap: 10px;
+}
+
+#stage {
+  position: relative;
+  width: min(96vw, 960px);
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .55), inset 0 0 0 3px rgba(255, 255, 255, .06);
+  background: var(--sky);
+  touch-action: none;
+}
+
+canvas#game {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+}
+
+/* ---- Overlays ---- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(120% 120% at 50% 30%, rgba(10, 14, 32, .35), rgba(6, 9, 20, .82));
+  backdrop-filter: blur(2px);
+  animation: fade .25s ease;
+}
+.overlay.hidden { display: none; }
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.panel {
+  text-align: center;
+  padding: clamp(16px, 4vw, 34px);
+  max-width: 90%;
+}
+
+.logo {
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: 2px;
+  line-height: .95;
+  font-size: clamp(34px, 9vw, 84px);
+  color: #fff;
+  text-shadow: 0 4px 0 #b81f1c, 0 8px 0 #7a1512, 0 12px 18px rgba(0, 0, 0, .5);
+}
+.logo span {
+  display: block;
+  color: var(--gold);
+  text-shadow: 0 4px 0 #c79412, 0 8px 0 #8a660c, 0 12px 18px rgba(0, 0, 0, .5);
+}
+.tagline {
+  margin: 12px 0 22px;
+  opacity: .85;
+  font-size: clamp(13px, 2.4vw, 17px);
+}
+
+.panel h2 {
+  margin: 0 0 18px;
+  font-size: clamp(24px, 6vw, 46px);
+  letter-spacing: 2px;
+  text-shadow: 0 4px 0 rgba(0, 0, 0, .35);
+}
+.panel p { margin: 0 0 18px; opacity: .9; }
+
+.btn {
+  display: inline-block;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #241a00;
+  background: linear-gradient(180deg, #ffe27a, var(--gold));
+  padding: 13px 26px;
+  margin: 6px;
+  border-radius: 12px;
+  box-shadow: 0 5px 0 #b8891a, 0 10px 20px rgba(0, 0, 0, .35);
+  transition: transform .06s ease, box-shadow .06s ease;
+}
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #b8891a, 0 4px 10px rgba(0, 0, 0, .35); }
+.btn-ghost {
+  color: #fff;
+  background: rgba(255, 255, 255, .12);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, .35);
+}
+
+.controls-hint {
+  margin-top: 20px;
+  display: grid;
+  gap: 6px;
+  font-size: clamp(11px, 2.2vw, 14px);
+  opacity: .82;
+}
+.controls-hint b {
+  background: rgba(255, 255, 255, .14);
+  padding: 1px 7px;
+  border-radius: 5px;
+}
+
+.footer-note {
+  margin: 0;
+  font-size: 12px;
+  opacity: .5;
+}
+
+/* ---- Touch controls ---- */
+#touch-controls {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 4;
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 18px 20px;
+  pointer-events: none;
+}
+#touch-controls.hidden { display: none; }
+.pad-left, .pad-right { display: flex; gap: 14px; pointer-events: auto; }
+
+.tbtn {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: #fff;
+  background: rgba(0, 0, 0, .38);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .35), 0 4px 12px rgba(0, 0, 0, .4);
+  user-select: none;
+  touch-action: none;
+}
+.tbtn:active { background: rgba(255, 255, 255, .3); }
+.tbtn-a { background: rgba(229, 37, 33, .5); }
+.tbtn-a:active { background: rgba(229, 37, 33, .8); }
+
+@media (max-width: 720px) {
+  #game-shell { justify-content: flex-start; padding-top: 8px; }
+  #stage { width: 100vw; border-radius: 0; }
+  .footer-note { display: none; }
+}
