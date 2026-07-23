@@ -1,0 +1,43 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "weapons:shadow_scythe",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.sword"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "shadow_scythe"
+      },
+      "minecraft:display_name": {
+        "value": "Shadow Scythe"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:damage": 10,
+      "minecraft:durability": {
+        "max_durability": 1500
+      },
+      "minecraft:enchantable": {
+        "slot": "sword",
+        "value": 15
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "minecraft:netherite_scrap"
+            ],
+            "repair_amount": 120
+          }
+        ]
+      },
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:mining_speed": 1.5,
+      "minecraft:hover_text_color": "dark_purple"
+    }
+  }
+}

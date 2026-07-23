@@ -1,0 +1,36 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "weapons:celestial_staff"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " C ",
+      " G ",
+      " G "
+    ],
+    "key": {
+      "C": {
+        "item": "minecraft:amethyst_shard"
+      },
+      "G": {
+        "item": "minecraft:gold_ingot"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:amethyst_shard"
+      },
+      {
+        "item": "minecraft:gold_ingot"
+      }
+    ],
+    "result": {
+      "item": "weapons:celestial_staff",
+      "count": 1
+    }
+  }
+}

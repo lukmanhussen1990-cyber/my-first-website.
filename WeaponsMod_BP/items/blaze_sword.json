@@ -1,0 +1,43 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "weapons:blaze_sword",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.sword"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "blaze_sword"
+      },
+      "minecraft:display_name": {
+        "value": "Blaze Sword"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:damage": 9,
+      "minecraft:durability": {
+        "max_durability": 1400
+      },
+      "minecraft:enchantable": {
+        "slot": "sword",
+        "value": 14
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "minecraft:blaze_rod"
+            ],
+            "repair_amount": 62
+          }
+        ]
+      },
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:mining_speed": 1.5,
+      "minecraft:hover_text_color": "gold"
+    }
+  }
+}

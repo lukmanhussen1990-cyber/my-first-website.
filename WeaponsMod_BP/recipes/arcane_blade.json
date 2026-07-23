@@ -1,0 +1,42 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "weapons:arcane_blade"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " A ",
+      "GAG",
+      " N "
+    ],
+    "key": {
+      "A": {
+        "item": "minecraft:amethyst_shard"
+      },
+      "G": {
+        "item": "minecraft:gold_ingot"
+      },
+      "N": {
+        "item": "minecraft:nether_star"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:amethyst_shard"
+      },
+      {
+        "item": "minecraft:gold_ingot"
+      },
+      {
+        "item": "minecraft:nether_star"
+      }
+    ],
+    "result": {
+      "item": "weapons:arcane_blade",
+      "count": 1
+    }
+  }
+}

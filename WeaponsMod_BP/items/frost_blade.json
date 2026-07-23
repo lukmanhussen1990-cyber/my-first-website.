@@ -1,0 +1,43 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "weapons:frost_blade",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.sword"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "frost_blade"
+      },
+      "minecraft:display_name": {
+        "value": "Frost Blade"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:damage": 8,
+      "minecraft:durability": {
+        "max_durability": 1600
+      },
+      "minecraft:enchantable": {
+        "slot": "sword",
+        "value": 16
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "minecraft:diamond"
+            ],
+            "repair_amount": 100
+          }
+        ]
+      },
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:mining_speed": 1.5,
+      "minecraft:hover_text_color": "aqua"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "weapons:blaze_sword"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " B ",
+      " B ",
+      " S "
+    ],
+    "key": {
+      "B": {
+        "item": "minecraft:blaze_rod"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:blaze_rod"
+      },
+      {
+        "item": "minecraft:stick"
+      }
+    ],
+    "result": {
+      "item": "weapons:blaze_sword",
+      "count": 1
+    }
+  }
+}

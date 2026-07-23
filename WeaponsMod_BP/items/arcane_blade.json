@@ -1,0 +1,44 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "weapons:arcane_blade",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.sword"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "arcane_blade"
+      },
+      "minecraft:display_name": {
+        "value": "Arcane Blade"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:damage": 13,
+      "minecraft:durability": {
+        "max_durability": 2400
+      },
+      "minecraft:enchantable": {
+        "slot": "sword",
+        "value": 25
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "minecraft:amethyst_shard"
+            ],
+            "repair_amount": 150
+          }
+        ]
+      },
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:mining_speed": 1.5,
+      "minecraft:foil": true,
+      "minecraft:hover_text_color": "light_purple"
+    }
+  }
+}

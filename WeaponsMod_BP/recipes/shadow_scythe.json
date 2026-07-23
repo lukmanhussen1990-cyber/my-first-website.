@@ -1,0 +1,36 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "weapons:shadow_scythe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "NNN",
+      " S ",
+      " S "
+    ],
+    "key": {
+      "N": {
+        "item": "minecraft:netherite_scrap"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:netherite_scrap"
+      },
+      {
+        "item": "minecraft:stick"
+      }
+    ],
+    "result": {
+      "item": "weapons:shadow_scythe",
+      "count": 1
+    }
+  }
+}

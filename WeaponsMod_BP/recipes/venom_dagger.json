@@ -1,0 +1,36 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "weapons:venom_dagger"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " E ",
+      " S ",
+      "   "
+    ],
+    "key": {
+      "E": {
+        "item": "minecraft:emerald"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:emerald"
+      },
+      {
+        "item": "minecraft:stick"
+      }
+    ],
+    "result": {
+      "item": "weapons:venom_dagger",
+      "count": 1
+    }
+  }
+}
