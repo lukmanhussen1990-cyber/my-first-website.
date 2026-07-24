@@ -44,10 +44,26 @@ def build(name, packs):
     print("%-28s %6.1f KB" % (os.path.relpath(path, ROOT), size / 1024.0))
 
 
+def build_from_files(name, members):
+    """An .mcaddon whose members are finished .mcpack files.
+
+    Some Android builds import this shape when the folder shape does nothing.
+    """
+    os.makedirs(DIST, exist_ok=True)
+    path = os.path.join(DIST, name)
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for member in members:
+            zf.write(member, os.path.basename(member))
+    print("%-28s %6.1f KB" % (os.path.relpath(path, ROOT), os.path.getsize(path) / 1024.0))
+
+
 def main():
     build("LuxuryHouse.mcaddon", [(BP, "luxury_house_bp"), (RP, "luxury_house_rp")])
     build("LuxuryHouse_BP.mcpack", [(BP, "")])
     build("LuxuryHouse_RP.mcpack", [(RP, "")])
+    build_from_files("LuxuryHouse_alt.mcaddon",
+                     [os.path.join(DIST, "LuxuryHouse_BP.mcpack"),
+                      os.path.join(DIST, "LuxuryHouse_RP.mcpack")])
 
 
 if __name__ == "__main__":
