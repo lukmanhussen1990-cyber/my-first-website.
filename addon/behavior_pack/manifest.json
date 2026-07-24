@@ -1,0 +1,23 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Blocky Pet (Behavior)",
+    "description": "Adds a cute red blocky pet that follows you. Behavior Pack.",
+    "uuid": "ba4a2922-78de-4811-bb8e-e51c4e3c1b86",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 20, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "7f1c6065-c3fb-4796-b5d2-6c4400559095",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "5f1f79de-77e2-47f6-becf-e08d0b6a8de5",
+      "version": [1, 0, 0]
+    }
+  ]
+}

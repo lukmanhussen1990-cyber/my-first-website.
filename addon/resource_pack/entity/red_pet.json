@@ -1,0 +1,22 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "rp:red_pet",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/red_pet"
+      },
+      "geometry": {
+        "default": "geometry.red_pet"
+      },
+      "render_controllers": ["controller.render.red_pet"],
+      "spawn_egg": {
+        "base_color": "#EF5B45",
+        "overlay_color": "#141414"
+      }
+    }
+  }
+}

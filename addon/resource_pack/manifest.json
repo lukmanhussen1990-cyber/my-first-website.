@@ -1,0 +1,23 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Blocky Pet (Resource)",
+    "description": "Model, texture and spawn egg for the red blocky pet. Resource Pack.",
+    "uuid": "5f1f79de-77e2-47f6-becf-e08d0b6a8de5",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 20, 0]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "633bf17c-0ad4-4d44-9444-f171c5c8b0cd",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "ba4a2922-78de-4811-bb8e-e51c4e3c1b86",
+      "version": [1, 0, 0]
+    }
+  ]
+}
