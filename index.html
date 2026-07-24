@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Murphy Law — Detective</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="intro">
+      <p class="kicker">A Case File</p>
+      <h1>Murphy&nbsp;Law</h1>
+      <p class="sub">Detective &mdash; with a doctorate in&hellip; molecular murder.</p>
+    </header>
+
+    <!-- Animated silhouette. The base image is static; the head and gun
+         hand are separate cut-out layers that pivot on their joints. -->
+    <figure class="scene" aria-label="Animated silhouette of a detective raising a gun; his head and hand move.">
+      <div class="stage">
+        <img class="layer base" src="assets/base.jpg" alt="Detective silhouette against a page of text." />
+        <img class="layer arm"  src="assets/arm.png"  alt="" aria-hidden="true" />
+        <img class="layer head" src="assets/head.png" alt="" aria-hidden="true" />
+        <span class="vignette" aria-hidden="true"></span>
+      </div>
+    </figure>
+
+    <footer class="credit">
+      <span class="dot"></span>
+      <p>Case&nbsp;#3043 &middot; &ldquo;For Murder&rdquo;</p>
+    </footer>
+  </main>
+</body>
+</html>

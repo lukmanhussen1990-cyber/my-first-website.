@@ -1,0 +1,184 @@
+:root {
+  --paper: #e9e4d8;
+  --ink: #121212;
+  --accent: #c0392b;
+  --stage-w: 765;   /* intrinsic image size, used for aspect ratio */
+  --stage-h: 1133;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(120% 80% at 50% -10%, #26221c 0%, #0c0b0a 60%, #050505 100%);
+  color: var(--paper);
+  font-family: "Georgia", "Times New Roman", serif;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 3rem);
+}
+
+.wrap {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ---- Intro type ---- */
+.intro { text-align: center; margin-bottom: 1.4rem; }
+
+.kicker {
+  margin: 0 0 .4rem;
+  font-family: "Courier New", monospace;
+  letter-spacing: .42em;
+  text-transform: uppercase;
+  font-size: .7rem;
+  color: #9a927f;
+  padding-left: .42em;
+}
+
+.intro h1 {
+  margin: 0;
+  font-weight: 800;
+  font-size: clamp(2.6rem, 12vw, 3.8rem);
+  letter-spacing: .01em;
+  line-height: .95;
+  color: #f3efe4;
+  text-shadow: 0 2px 24px rgba(0,0,0,.6);
+}
+
+.sub {
+  margin: .7rem 0 0;
+  font-style: italic;
+  font-size: 1rem;
+  color: #b7ae9a;
+}
+
+/* ---- Animated scene ---- */
+.scene {
+  margin: 0;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow:
+    0 30px 60px -20px rgba(0,0,0,.8),
+    0 0 0 1px rgba(255,255,255,.05);
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--stage-w) / var(--stage-h);
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+/* The head pivots at the neck; the hand pivots at the shoulder.
+   Both joints sit inside the black body, so the moving edges never
+   reveal a seam. */
+.head {
+  transform-origin: 62.75% 62.84%;
+  animation: head-move 6.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+.arm {
+  transform-origin: 52.03% 70.61%;
+  animation: arm-move 5.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* whole figure breathes subtly */
+.base {
+  transform-origin: 50% 100%;
+  animation: breathe 6.5s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-0.35%) scale(1.004); }
+}
+
+@keyframes head-move {
+  0%   { transform: rotate(0deg) translateY(0); }
+  20%  { transform: rotate(-2.4deg) translateY(-0.3%); }
+  40%  { transform: rotate(-0.6deg) translateY(0); }
+  55%  { transform: rotate(1.4deg) translateY(-0.15%); }
+  75%  { transform: rotate(-1.2deg) translateY(0); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+
+@keyframes arm-move {
+  0%   { transform: rotate(0deg); }
+  30%  { transform: rotate(-4.2deg); }   /* raise & aim */
+  46%  { transform: rotate(-4.2deg); }   /* hold */
+  49%  { transform: rotate(-1.2deg); }   /* recoil kick */
+  52%  { transform: rotate(-5deg); }     /* snap back up */
+  55%  { transform: rotate(-3.8deg); }
+  74%  { transform: rotate(-4deg); }
+  100% { transform: rotate(0deg); }      /* lower */
+}
+
+/* soft cinematic vignette over the stage */
+.vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 40%,
+    transparent 55%, rgba(0,0,0,.28) 100%);
+  mix-blend-mode: multiply;
+}
+
+/* ---- Footer ---- */
+.credit {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  margin-top: 1.1rem;
+  color: #8f886f;
+  font-family: "Courier New", monospace;
+  font-size: .72rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.credit p { margin: 0; }
+
+.credit .dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px 1px var(--accent);
+  animation: blink 2.4s steps(1) infinite;
+}
+
+@keyframes blink {
+  0%, 60% { opacity: 1; }
+  61%, 100% { opacity: .25; }
+}
+
+/* Respect users who prefer no motion */
+@media (prefers-reduced-motion: reduce) {
+  .head, .arm, .base, .credit .dot {
+    animation: none !important;
+  }
+}
