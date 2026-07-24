@@ -17,8 +17,10 @@
   }
   body {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 16px;
     background:
       radial-gradient(circle at 50% 35%, #1b2b45 0%, #0d1522 60%, #070b12 100%);
   }
@@ -38,23 +40,31 @@
     background: #4ec0ca;
   }
   #hint {
-    position: fixed;
-    bottom: 10px;
-    left: 0; right: 0;
     text-align: center;
-    color: rgba(255,255,255,.28);
-    font-size: 12px;
-    letter-spacing: .08em;
+    color: #7c8aa3;
+    font-size: 11px;
+    letter-spacing: .14em;
     text-transform: uppercase;
     pointer-events: none;
     user-select: none;
   }
-  @media (max-height: 560px) { #hint { display: none; } }
+  #hint kbd {
+    font: inherit;
+    color: #ffe066;
+    border: 1px solid rgba(255,224,102,.3);
+    border-radius: 4px;
+    padding: 2px 5px;
+    margin: 0 1px;
+  }
+  @media (max-height: 560px), (max-width: 460px) { #hint { display: none; } }
 </style>
 </head>
 <body>
 <div id="wrap"><canvas id="game"></canvas></div>
-<div id="hint">Space / Click / Tap &nbsp;·&nbsp; P pause &nbsp;·&nbsp; M mute &nbsp;·&nbsp; R restart</div>
+<div id="hint">
+  <kbd>Space</kbd> <kbd>Click</kbd> <kbd>Tap</kbd> to flap &nbsp;·&nbsp;
+  <kbd>P</kbd> pause &nbsp;·&nbsp; <kbd>M</kbd> mute &nbsp;·&nbsp; <kbd>R</kbd> restart
+</div>
 
 <script>
 "use strict";
@@ -115,8 +125,11 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d", { alpha: false });
 
 function fit() {
-  const pad = window.innerWidth < 420 ? 0 : 24;
-  const scale = Math.min((window.innerWidth - pad) / W, (window.innerHeight - pad) / H);
+  const padX = window.innerWidth < 420 ? 0 : 24;
+  // leave room for the control legend below the board when it is visible
+  const legend = document.getElementById("hint");
+  const padY = padX + (legend && getComputedStyle(legend).display !== "none" ? 46 : 0);
+  const scale = Math.min((window.innerWidth - padX) / W, (window.innerHeight - padY) / H);
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
   canvas.width  = Math.round(W * scale * dpr);
   canvas.height = Math.round(H * scale * dpr);
