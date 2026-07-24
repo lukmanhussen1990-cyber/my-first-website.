@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Dino Run — Custom Character</title>
+<style>
+  :root {
+    --bg: #f7f7f7;
+    --fg: #535353;
+    --line: #535353;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--fg);
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 16px;
+  }
+  h1 {
+    font-size: 18px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 0;
+    opacity: 0.8;
+  }
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--bg);
+    border: 2px solid #d0d0d0;
+    border-radius: 8px;
+    image-rendering: pixelated;
+  }
+  .hint {
+    font-size: 13px;
+    opacity: 0.6;
+    text-align: center;
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+    pointer-events: none;
+  }
+  .overlay.hidden { display: none; }
+  .overlay .big {
+    font-size: 26px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .overlay .small { font-size: 14px; opacity: 0.7; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1f1f1f; --fg: #cfcfcf; --line: #9a9a9a; }
+    canvas { border-color: #3a3a3a; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Dino Run</h1>
+    <div class="stage">
+      <canvas id="game" width="800" height="240"></canvas>
+      <div id="overlay" class="overlay">
+        <div class="big">Dino Run</div>
+        <div class="small">Press Space / ↑ / Tap to start &amp; jump · ↓ to duck</div>
+      </div>
+    </div>
+    <div class="hint">Space / ↑ = jump &nbsp;·&nbsp; ↓ = duck &nbsp;·&nbsp; avoid the cacti &amp; birds</div>
+  </div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  const W = canvas.width;
+  const H = canvas.height;
+
+  // ---- Theme colours ----
+  const themeDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const COL = {
+    ground: themeDark ? '#9a9a9a' : '#535353',
+    text: themeDark ? '#cfcfcf' : '#535353',
+    obstacle: themeDark ? '#7fa86a' : '#3a7d2c',
+  };
+  const CHAR = { body: '#ef5a45', eye: '#141414' }; // matches provided image
+
+  // ---- Character pixel map (matches the provided creature) ----
+  // 1 = body, 2 = eye, 0 = empty
+  const P = [
+    [0,0,0,1,1,1,1,1,1,1,1,0,0,0],
+    [0,0,0,1,1,1,1,1,1,1,1,0,0,0],
+    [0,0,0,1,2,2,1,1,2,2,1,0,0,0],
+    [0,0,0,1,2,2,1,1,2,2,1,0,0,0],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [0,0,0,1,1,1,1,1,1,1,1,0,0,0],
+    [0,0,0,1,1,1,1,1,1,1,1,0,0,0],
+  ];
+  const LEGS_A = [0,0,0,1,0,1,1,0,1,1,0,0,0,0];
+  const LEGS_B = [0,0,0,1,1,0,0,1,1,0,1,0,0,0];
+  const PCOLS = 14;
+  const PROWS = P.length + 2; // + 2 leg rows
+
+  function drawCharacter(x, y, size, legFrame, ducking) {
+    // size = pixel size of one cell
+    ctx.save();
+    if (ducking) {
+      // squash: draw a shorter, wider version by clipping to lower rows
+      const rows = P.slice(2); // drop the tall top for a ducking look
+      for (let r = 0; r < rows.length; r++) {
+        for (let c = 0; c < PCOLS; c++) {
+          const v = rows[r][c];
+          if (!v) continue;
+          ctx.fillStyle = v === 2 ? CHAR.eye : CHAR.body;
+          ctx.fillRect(x + c * size, y + r * size, size, size);
+        }
+      }
+      // legs directly under
+      const legs = legFrame ? LEGS_A : LEGS_B;
+      for (let c = 0; c < PCOLS; c++) {
+        if (!legs[c]) continue;
+        ctx.fillStyle = CHAR.body;
+        ctx.fillRect(x + c * size, y + rows.length * size, size, size);
+      }
+      ctx.restore();
+      return;
+    }
+    for (let r = 0; r < P.length; r++) {
+      for (let c = 0; c < PCOLS; c++) {
+        const v = P[r][c];
+        if (!v) continue;
+        ctx.fillStyle = v === 2 ? CHAR.eye : CHAR.body;
+        ctx.fillRect(x + c * size, y + r * size, size, size);
+      }
+    }
+    const legs = legFrame ? LEGS_A : LEGS_B;
+    for (let li = 0; li < 2; li++) {
+      for (let c = 0; c < PCOLS; c++) {
+        if (!legs[c]) continue;
+        ctx.fillStyle = CHAR.body;
+        ctx.fillRect(x + c * size, y + (P.length + li) * size, size, size);
+      }
+    }
+    ctx.restore();
+  }
+
+  // ---- Game constants ----
+  const GROUND_Y = H - 28;
+  const PX = 3; // character pixel scale
+  const CHAR_W = PCOLS * PX;
+  const CHAR_H = PROWS * PX;
+  const GRAVITY = 0.7;
+  const JUMP_V = -12.5;
+
+  // ---- State ----
+  let state = 'ready'; // ready | running | over
+  let speed, distance, score, high, spawnTimer, legTimer, legFrame;
+  let obstacles, clouds, groundOffset;
+  const player = { x: 60, y: GROUND_Y - CHAR_H, vy: 0, ducking: false, onGround: true };
+
+  high = parseInt(localStorage.getItem('dinoHigh') || '0', 10) || 0;
+
+  function reset() {
+    speed = 6;
+    distance = 0;
+    score = 0;
+    spawnTimer = 0;
+    legTimer = 0;
+    legFrame = 0;
+    obstacles = [];
+    clouds = [];
+    groundOffset = 0;
+    player.y = GROUND_Y - CHAR_H;
+    player.vy = 0;
+    player.ducking = false;
+    player.onGround = true;
+    for (let i = 0; i < 3; i++) {
+      clouds.push({ x: Math.random() * W, y: 30 + Math.random() * 70, s: 0.3 + Math.random() * 0.4 });
+    }
+  }
+
+  function start() {
+    reset();
+    state = 'running';
+    overlay.classList.add('hidden');
+  }
+
+  function gameOver() {
+    state = 'over';
+    high = Math.max(high, Math.floor(score));
+    localStorage.setItem('dinoHigh', String(high));
+    overlay.querySelector('.big').textContent = 'Game Over';
+    overlay.querySelector('.small').textContent = 'Score ' + Math.floor(score) + ' · Press Space / Tap to retry';
+    overlay.classList.remove('hidden');
+  }
+
+  function jump() {
+    if (player.onGround) {
+      player.vy = JUMP_V;
+      player.onGround = false;
+      player.ducking = false;
+    }
+  }
+
+  // ---- Input ----
+  function press(e) {
+    if (state === 'ready') { start(); return; }
+    if (state === 'over') { start(); return; }
+    jump();
+  }
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      e.preventDefault();
+      press(e);
+    } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+      e.preventDefault();
+      if (state === 'running') player.ducking = true;
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.code === 'ArrowDown' || e.code === 'KeyS') player.ducking = false;
+  });
+  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); press(e); }, { passive: false });
+  canvas.addEventListener('mousedown', (e) => { e.preventDefault(); press(e); });
+
+  // ---- Obstacles ----
+  function spawnObstacle() {
+    const bird = score > 250 && Math.random() < 0.28;
+    if (bird) {
+      const heights = [GROUND_Y - CHAR_H - 6, GROUND_Y - CHAR_H + 12, GROUND_Y - 34];
+      const y = heights[Math.floor(Math.random() * heights.length)];
+      obstacles.push({ type: 'bird', x: W + 20, y, w: 34, h: 24, flap: 0 });
+    } else {
+      const big = Math.random() < 0.5;
+      const count = 1 + Math.floor(Math.random() * (big ? 2 : 3));
+      const w = (big ? 16 : 11) * count + 4;
+      const h = big ? 44 : 32;
+      obstacles.push({ type: 'cactus', x: W + 20, y: GROUND_Y - h, w, h, count, big });
+    }
+  }
+
+  function drawCactus(o) {
+    ctx.fillStyle = COL.obstacle;
+    const unit = o.big ? 16 : 11;
+    for (let i = 0; i < o.count; i++) {
+      const cx = o.x + i * unit;
+      const stemW = o.big ? 8 : 5;
+      ctx.fillRect(cx, o.y, stemW, o.h);
+      // arms
+      const armY = o.y + o.h * 0.35;
+      ctx.fillRect(cx - 4, armY, 4, o.h * 0.28);
+      ctx.fillRect(cx - 4, armY, 3, 3);
+      ctx.fillRect(cx + stemW, armY + 6, 4, o.h * 0.28);
+      ctx.fillRect(cx + stemW + 1, armY + 6, 3, 3);
+    }
+  }
+
+  function drawBird(o) {
+    ctx.fillStyle = COL.ground;
+    const wingUp = o.flap < 6;
+    // body
+    ctx.fillRect(o.x + 10, o.y + 8, 18, 7);
+    ctx.fillRect(o.x + 24, o.y + 6, 8, 5); // head
+    ctx.fillRect(o.x + 30, o.y + 8, 5, 3); // beak
+    // wing
+    if (wingUp) {
+      ctx.fillRect(o.x + 8, o.y, 16, 8);
+    } else {
+      ctx.fillRect(o.x + 8, o.y + 14, 16, 8);
+    }
+  }
+
+  function drawCloud(c) {
+    ctx.fillStyle = themeDark ? '#3a3a3a' : '#e6e6e6';
+    ctx.fillRect(c.x, c.y, 26, 8);
+    ctx.fillRect(c.x + 6, c.y - 5, 16, 8);
+    ctx.fillRect(c.x + 4, c.y + 6, 20, 5);
+  }
+
+  function drawGround() {
+    ctx.strokeStyle = COL.ground;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y + 1);
+    ctx.lineTo(W, GROUND_Y + 1);
+    ctx.stroke();
+    // pebbles
+    ctx.fillStyle = COL.ground;
+    for (let x = -(groundOffset % 40); x < W; x += 40) {
+      ctx.fillRect(x + 8, GROUND_Y + 8, 4, 2);
+      ctx.fillRect(x + 22, GROUND_Y + 12, 6, 2);
+    }
+  }
+
+  function drawScore() {
+    ctx.fillStyle = COL.text;
+    ctx.font = 'bold 16px "Courier New", monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    const s = String(Math.floor(score)).padStart(5, '0');
+    const h = String(high).padStart(5, '0');
+    ctx.fillText('HI ' + h + '   ' + s, W - 14, 14);
+    ctx.textAlign = 'left';
+  }
+
+  function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
+    return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+  }
+
+  function playerHitbox() {
+    if (player.ducking) {
+      const h = (P.length - 2 + 1) * PX;
+      return { x: player.x + 3, y: GROUND_Y - h, w: CHAR_W - 8, h: h };
+    }
+    return { x: player.x + PX, y: player.y + PX, w: CHAR_W - 2 * PX, h: CHAR_H - PX };
+  }
+
+  // ---- Loop ----
+  let last = 0;
+  function loop(t) {
+    const dt = Math.min(2, (t - last) / 16.67 || 1);
+    last = t;
+    ctx.clearRect(0, 0, W, H);
+
+    // background
+    for (const c of clouds) {
+      if (state === 'running') c.x -= c.s * speed * 0.3 * dt;
+      if (c.x < -30) { c.x = W + Math.random() * 60; c.y = 30 + Math.random() * 70; }
+      drawCloud(c);
+    }
+
+    if (state === 'running') {
+      groundOffset += speed * dt;
+      distance += speed * dt;
+      score += speed * dt * 0.05;
+      speed += 0.0015 * dt;
+
+      // physics
+      player.vy += GRAVITY * dt;
+      player.y += player.vy * dt;
+      if (player.y >= GROUND_Y - CHAR_H) {
+        player.y = GROUND_Y - CHAR_H;
+        player.vy = 0;
+        player.onGround = true;
+      }
+
+      // leg animation
+      legTimer += dt;
+      if (legTimer > 5 / Math.max(1, speed / 6)) { legFrame ^= 1; legTimer = 0; }
+
+      // spawn
+      spawnTimer -= dt;
+      if (spawnTimer <= 0) {
+        spawnObstacle();
+        const base = 70 - Math.min(30, speed * 2);
+        spawnTimer = base + Math.random() * 60;
+      }
+
+      // move + collide
+      const hb = playerHitbox();
+      for (const o of obstacles) {
+        o.x -= speed * dt;
+        if (o.type === 'bird') { o.flap = (o.flap + dt) % 12; o.x -= 0.6 * dt; }
+        if (rectsOverlap(hb.x, hb.y, hb.w, hb.h, o.x + 2, o.y + 2, o.w - 4, o.h - 4)) {
+          gameOver();
+        }
+      }
+      obstacles = obstacles.filter(o => o.x + o.w > -10);
+    }
+
+    drawGround();
+    for (const o of obstacles) {
+      if (o.type === 'cactus') drawCactus(o); else drawBird(o);
+    }
+    drawCharacter(player.x, player.y, PX, legFrame, player.ducking && player.onGround);
+    drawScore();
+
+    requestAnimationFrame(loop);
+  }
+
+  reset();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
