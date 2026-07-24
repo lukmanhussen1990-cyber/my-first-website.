@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b0f2a">
+<title>Cosmic Coin Clicker — Idle Empire</title>
+<style>
+:root{
+  --bg1:#0b0f2a; --bg2:#161a45; --bg3:#221a5c;
+  --panel:rgba(20,24,60,0.72); --panel2:rgba(30,34,80,0.85);
+  --gold:#ffd54a; --gold2:#ffb020; --accent:#7b5cff; --accent2:#00e0ff;
+  --good:#3ddc84; --bad:#ff5470; --text:#eef1ff; --muted:#9aa3d0;
+  --card:rgba(40,44,95,0.6); --line:rgba(255,255,255,0.08);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; height:100%;}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+  color:var(--text); overflow:hidden; position:relative;
+  background:radial-gradient(circle at 20% 10%,var(--bg3),transparent 55%),
+             radial-gradient(circle at 85% 90%,#3a1a6c,transparent 55%),
+             linear-gradient(160deg,var(--bg1),var(--bg2));
+  user-select:none;
+}
+#stars{position:fixed; inset:0; z-index:0; pointer-events:none;}
+canvas#fx{position:fixed; inset:0; z-index:40; pointer-events:none;}
+
+/* ---------- Layout ---------- */
+#app{position:relative; z-index:2; height:100dvh; display:flex; flex-direction:column;}
+header{
+  display:flex; align-items:center; gap:10px; padding:8px 12px;
+  background:linear-gradient(90deg,rgba(123,92,255,.25),rgba(0,224,255,.12));
+  border-bottom:1px solid var(--line); backdrop-filter:blur(6px);
+}
+header .logo{font-weight:800; font-size:16px; letter-spacing:.5px; white-space:nowrap;
+  background:linear-gradient(90deg,var(--gold),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+header .stat{font-size:12px; color:var(--muted); display:flex; flex-direction:column; line-height:1.15;}
+header .stat b{color:var(--text); font-size:14px;}
+header .spacer{flex:1;}
+.icon-btn{background:var(--card); border:1px solid var(--line); color:var(--text);
+  width:38px; height:38px; border-radius:10px; font-size:16px; cursor:pointer; transition:.15s; display:grid; place-items:center;}
+.icon-btn:active{transform:scale(.9);}
+.icon-btn.on{background:linear-gradient(135deg,var(--accent),var(--accent2)); border-color:transparent;}
+
+main{flex:1; display:flex; overflow:hidden;}
+@media(max-width:820px){ main{flex-direction:column;} }
+
+/* Left: clicker */
+#clickPane{
+  width:38%; min-width:280px; display:flex; flex-direction:column; align-items:center;
+  padding:14px; gap:10px; border-right:1px solid var(--line); overflow:hidden;
+}
+@media(max-width:820px){ #clickPane{width:100%; min-width:0; border-right:none; border-bottom:1px solid var(--line); padding:10px; flex:0 0 auto;} }
+
+.coinWrap{position:relative; display:grid; place-items:center; margin:auto 0;}
+@media(max-width:820px){ .coinWrap{margin:6px 0;} }
+#coinBtn{
+  width:min(46vw,220px); height:min(46vw,220px); border-radius:50%; cursor:pointer; border:none; position:relative;
+  background:radial-gradient(circle at 35% 30%,#fff2b0,#ffcf3f 40%,#e79b16 75%,#9a5e05);
+  box-shadow:0 12px 40px rgba(255,180,0,.35), inset 0 -10px 24px rgba(120,60,0,.45), inset 0 8px 20px rgba(255,255,255,.5);
+  transition:transform .06s; touch-action:manipulation;
+}
+@media(max-width:820px){ #coinBtn{width:min(42vw,170px); height:min(42vw,170px);} }
+#coinBtn:active{transform:scale(.94);}
+#coinBtn .glyph{font-size:min(20vw,88px); filter:drop-shadow(0 3px 6px rgba(120,60,0,.5)); pointer-events:none;}
+#coinBtn.crit{animation:critpulse .4s;}
+@keyframes critpulse{0%{box-shadow:0 0 0 0 rgba(255,80,120,.7);}100%{box-shadow:0 0 0 40px rgba(255,80,120,0);}}
+.ring{position:absolute; inset:-14px; border-radius:50%; border:3px solid rgba(255,255,255,.12); pointer-events:none;}
+.ring.combo{border-color:var(--accent2); box-shadow:0 0 22px var(--accent2);}
+
+.perclick{font-size:13px; color:var(--muted); text-align:center;}
+.perclick b{color:var(--gold);}
+.comboBox{height:26px; font-weight:800; font-size:15px; color:var(--accent2); text-shadow:0 0 10px var(--accent2); transition:.2s;}
+.comboBar{width:min(46vw,220px); height:6px; border-radius:4px; background:rgba(255,255,255,.1); overflow:hidden;}
+.comboBar>i{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .1s linear;}
+
+/* Right: tabs + content */
+#mainPane{flex:1; display:flex; flex-direction:column; overflow:hidden;}
+.tabbar{display:flex; gap:6px; padding:8px 10px; overflow-x:auto; border-bottom:1px solid var(--line); scrollbar-width:none;}
+.tabbar::-webkit-scrollbar{display:none;}
+.tab{white-space:nowrap; padding:8px 12px; border-radius:10px; background:var(--card); border:1px solid var(--line);
+  color:var(--muted); font-size:13px; cursor:pointer; transition:.15s; position:relative;}
+.tab.active{color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-color:transparent;}
+.tab .dot{position:absolute; top:-3px; right:-3px; width:10px; height:10px; border-radius:50%; background:var(--bad); display:none;}
+.tab.notify .dot{display:block; animation:pop .4s;}
+
+.content{flex:1; overflow-y:auto; padding:12px; scrollbar-width:thin;}
+.content::-webkit-scrollbar{width:8px;} .content::-webkit-scrollbar-thumb{background:var(--accent); border-radius:8px;}
+
+/* Shop */
+.shopTools{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; position:sticky; top:-12px; background:transparent; padding-top:2px; z-index:5;}
+#search{flex:1; min-width:140px; padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:var(--panel2); color:#fff; font-size:13px;}
+.buyAmt{display:flex; gap:4px;}
+.buyAmt button{padding:8px 10px; border-radius:9px; border:1px solid var(--line); background:var(--card); color:var(--muted); cursor:pointer; font-size:12px; font-weight:700; transition:.15s;}
+.buyAmt button.active{background:linear-gradient(135deg,var(--gold),var(--gold2)); color:#3a2400; border-color:transparent;}
+
+.catTitle{margin:14px 0 8px; font-size:13px; letter-spacing:1px; text-transform:uppercase; color:var(--accent2); display:flex; align-items:center; gap:8px;}
+.catTitle .ln{flex:1; height:1px; background:linear-gradient(90deg,var(--accent2),transparent);}
+
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px;}
+.card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:11px 12px; display:flex; gap:10px;
+  cursor:pointer; transition:transform .12s, box-shadow .12s, opacity .3s; position:relative; overflow:hidden;}
+.card:hover{transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.35);}
+.card.afford{border-color:rgba(61,220,132,.5);}
+.card.locked{opacity:.45; filter:grayscale(.6); pointer-events:none;}
+.card.maxed{border-color:var(--gold);}
+.card .emj{font-size:30px; width:44px; height:44px; display:grid; place-items:center; background:rgba(0,0,0,.25); border-radius:10px; flex:0 0 auto;}
+.card .info{flex:1; min-width:0;}
+.card .nm{font-weight:700; font-size:14px; display:flex; justify-content:space-between; gap:6px;}
+.card .nm .lv{color:var(--gold); font-weight:800; font-size:12px;}
+.card .ds{font-size:11px; color:var(--muted); margin:2px 0 6px; line-height:1.25;}
+.card .cost{font-size:13px; font-weight:800;}
+.card .cost.ok{color:var(--good);} .card .cost.no{color:var(--bad);}
+.card .prog{height:4px; border-radius:3px; background:rgba(255,255,255,.08); margin-top:6px; overflow:hidden;}
+.card .prog>i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.card.buyflash::after{content:''; position:absolute; inset:0; background:rgba(255,255,255,.35); animation:flash .35s;}
+@keyframes flash{from{opacity:1;}to{opacity:0;}}
+.card.unlockAnim{animation:unlockIn .5s cubic-bezier(.2,1.4,.4,1);}
+@keyframes unlockIn{from{transform:scale(.6) translateY(20px); opacity:0;}to{transform:none; opacity:1;}}
+
+/* generic list panels */
+.panelGrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px;}
+.mini{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:11px;}
+.mini h4{margin:0 0 4px; font-size:14px; display:flex; align-items:center; gap:8px;}
+.mini p{margin:0; font-size:12px; color:var(--muted); line-height:1.3;}
+.mini.done{border-color:var(--good);}
+.mini.done .lock{color:var(--good);}
+.mini.locked{opacity:.5;}
+.badge{margin-left:auto; font-size:11px; padding:2px 8px; border-radius:20px; background:rgba(255,255,255,.08); color:var(--muted);}
+.badge.g{background:rgba(61,220,132,.2); color:var(--good);}
+
+.bigStat{display:flex; flex-direction:column; gap:6px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px;}
+.statRow{display:flex; justify-content:space-between; font-size:13px; padding:5px 0; border-bottom:1px dashed var(--line);}
+.statRow:last-child{border-bottom:none;}
+.statRow span:last-child{color:var(--gold); font-weight:700;}
+
+.btn{padding:11px 16px; border-radius:11px; border:none; cursor:pointer; font-weight:800; font-size:14px; transition:.15s; color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));}
+.btn:active{transform:scale(.96);}
+.btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold2)); color:#3a2400;}
+.btn.red{background:linear-gradient(135deg,#ff5470,#b3243c);}
+.btn.ghost{background:var(--card); border:1px solid var(--line); color:var(--text);}
+.btn:disabled{opacity:.4; cursor:not-allowed;}
+.btnRow{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
+
+textarea{width:100%; height:110px; background:var(--panel2); color:#fff; border:1px solid var(--line); border-radius:10px; padding:10px; font-size:12px; resize:vertical;}
+
+/* Prestige */
+.prestigeHero{text-align:center; background:radial-gradient(circle at 50% 0%,rgba(123,92,255,.35),transparent 70%); padding:16px; border-radius:16px; border:1px solid var(--line);}
+.prestigeHero .big{font-size:40px; margin:4px;}
+.gemCount{font-size:26px; font-weight:800; color:#c39bff; text-shadow:0 0 14px #7b5cff;}
+
+/* Toast / notifications */
+#toasts{position:fixed; top:56px; right:10px; z-index:60; display:flex; flex-direction:column; gap:8px; max-width:min(84vw,340px);}
+.toast{background:var(--panel2); border:1px solid var(--line); border-left:4px solid var(--gold); border-radius:12px;
+  padding:10px 12px; box-shadow:0 10px 30px rgba(0,0,0,.4); animation:toastIn .4s; display:flex; gap:10px; align-items:center;}
+.toast .ti{font-size:26px;}
+.toast .tt b{display:block; font-size:13px;} .toast .tt small{color:var(--muted); font-size:11px;}
+.toast.ach{border-left-color:var(--accent2);}
+.toast.good{border-left-color:var(--good);}
+@keyframes toastIn{from{transform:translateX(120%); opacity:0;}to{transform:none; opacity:1;}}
+@keyframes toastOut{to{transform:translateX(120%); opacity:0;}}
+@keyframes pop{0%{transform:scale(0);}70%{transform:scale(1.3);}100%{transform:scale(1);}}
+
+/* Modal */
+.overlay{position:fixed; inset:0; z-index:80; background:rgba(4,6,20,.72); display:none; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(4px);}
+.overlay.show{display:flex; animation:fade .25s;}
+@keyframes fade{from{opacity:0;}to{opacity:1;}}
+.modal{background:linear-gradient(160deg,var(--bg2),var(--bg1)); border:1px solid var(--line); border-radius:18px; padding:20px; max-width:440px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,.6); animation:modalIn .3s;}
+@keyframes modalIn{from{transform:scale(.85) translateY(20px); opacity:0;}to{transform:none; opacity:1;}}
+.modal h2{margin:0 0 6px; font-size:20px;}
+.modal p{color:var(--muted); font-size:13px; line-height:1.5;}
+
+/* Golden coin */
+#golden{position:fixed; z-index:55; font-size:44px; cursor:pointer; display:none; filter:drop-shadow(0 0 16px var(--gold));
+  animation:goldFloat 2.4s ease-in-out infinite; transition:transform .1s;}
+#golden:active{transform:scale(.8);}
+@keyframes goldFloat{0%,100%{transform:translateY(0) rotate(-8deg);}50%{transform:translateY(-16px) rotate(8deg);}}
+
+/* Treasure banner */
+#treasure{position:fixed; left:50%; top:64px; transform:translateX(-50%); z-index:56; display:none;
+  background:linear-gradient(135deg,#2a1f5c,#3a2a7c); border:1px solid var(--accent2); border-radius:14px; padding:10px 16px;
+  box-shadow:0 0 30px rgba(0,224,255,.4); cursor:pointer; text-align:center; animation:pop .4s;}
+#treasure b{color:var(--accent2);} #treasure small{display:block; color:var(--muted); font-size:11px;}
+
+/* floating number */
+.floatNum{position:fixed; z-index:58; pointer-events:none; font-weight:800; font-size:18px; text-shadow:0 2px 6px rgba(0,0,0,.6); animation:floatUp 1s ease-out forwards;}
+@keyframes floatUp{0%{transform:translate(-50%,0) scale(.6); opacity:0;}20%{opacity:1; transform:translate(-50%,-14px) scale(1.15);}100%{transform:translate(-50%,-70px) scale(1); opacity:0;}}
+
+#fps{position:fixed; bottom:6px; left:8px; z-index:70; font-size:10px; color:var(--muted); background:rgba(0,0,0,.3); padding:2px 6px; border-radius:6px; display:none;}
+
+.pill{display:inline-block; font-size:10px; padding:2px 8px; border-radius:20px; background:rgba(0,224,255,.15); color:var(--accent2); font-weight:700;}
+.empty{color:var(--muted); font-size:13px; text-align:center; padding:30px 10px;}
+.dailyGrid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin:10px 0;}
+.dayCell{aspect-ratio:1; border-radius:10px; background:var(--card); border:1px solid var(--line); display:grid; place-items:center; font-size:11px; text-align:center; color:var(--muted); position:relative;}
+.dayCell.claimed{background:rgba(61,220,132,.18); border-color:var(--good); color:var(--good);}
+.dayCell.today{border-color:var(--gold); box-shadow:0 0 12px rgba(255,213,74,.4);}
+.dayCell b{font-size:15px; color:#fff;}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<canvas id="fx"></canvas>
+
+<div id="app">
+  <header>
+    <div class="logo">🪙 COSMIC CLICKER</div>
+    <div class="stat" style="margin-left:6px"><b id="hCoins">0</b><span>coins</span></div>
+    <div class="stat"><b id="hCps">0</b><span>/ sec</span></div>
+    <div class="stat"><span class="pill" id="hWorld">🌍 Earth</span></div>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="muteBtn" title="Sound">🔊</button>
+    <button class="icon-btn" id="dailyBtn" title="Daily reward">🎁</button>
+    <button class="icon-btn" id="settingsBtn" title="Settings">⚙️</button>
+  </header>
+
+  <main>
+    <section id="clickPane">
+      <div class="comboBox" id="comboBox"></div>
+      <div class="comboBar"><i id="comboFill"></i></div>
+      <div class="coinWrap">
+        <div class="ring" id="coinRing"></div>
+        <button id="coinBtn"><span class="glyph" id="coinGlyph">🪙</span></button>
+      </div>
+      <div class="perclick">+<b id="perClick">1</b> per tap · <span id="critInfo">5% crit</span></div>
+      <div class="perclick" style="font-size:11px" id="worldCur"></div>
+    </section>
+
+    <section id="mainPane">
+      <div class="tabbar" id="tabbar"></div>
+      <div class="content" id="content"></div>
+    </section>
+  </main>
+</div>
+
+<div id="toasts"></div>
+<div id="golden">🌟</div>
+<div id="treasure"></div>
+<div id="fps">FPS: 60</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modalBox"></div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   COSMIC COIN CLICKER  — single file idle game
+   ============================================================ */
+
+/* ---------- Number formatting ---------- */
+const SUFFIX = ["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
+function fmt(n){
+  if(n===Infinity) return "∞";
+  if(n<0) return "-"+fmt(-n);
+  if(n<1000) return (Math.floor(n*10)/10).toString().replace(/\.0$/,"");
+  let t=0; while(n>=1000 && t<SUFFIX.length-1){ n/=1000; t++; }
+  let s=(t===0)?Math.floor(n):n.toFixed(n<10?2:n<100?1:0);
+  return s+SUFFIX[t];
+}
+function fmtInt(n){ return Math.floor(n).toLocaleString('en-US'); }
+function fmtTime(s){
+  s=Math.floor(s); if(s<60) return s+"s";
+  let m=Math.floor(s/60); if(m<60) return m+"m "+(s%60)+"s";
+  let h=Math.floor(m/60); if(h<24) return h+"h "+(m%60)+"m";
+  let d=Math.floor(h/24); return d+"d "+(h%24)+"h";
+}
+
+/* ---------- Worlds (multiple worlds w/ unique currencies) ---------- */
+const WORLDS = [
+  {id:"earth", name:"Earth",   emoji:"🌍", cur:"Coins",    sym:"🪙", unlockPrestige:0},
+  {id:"mars",  name:"Mars",    emoji:"🔴", cur:"Redstone", sym:"🟥", unlockPrestige:3},
+  {id:"nebula",name:"Nebula",  emoji:"🌌", cur:"Stardust", sym:"✨", unlockPrestige:8},
+  {id:"void",  name:"The Void",emoji:"🕳️", cur:"Entropy",  sym:"🌀", unlockPrestige:20},
+];
+
+/* ---------- Upgrade categories & definitions (30+) ---------- */
+// type: click => adds to click power ; cps => adds passive/sec
+// base cost grows exponentially per level via cost = base * growth^level
+const CATEGORIES = [
+  {id:"click", name:"Click Boosters", emoji:"👆"},
+  {id:"pets", name:"Pets", emoji:"🐾"},
+  {id:"workers", name:"Workers", emoji:"👷"},
+  {id:"factories", name:"Factories", emoji:"🏭"},
+  {id:"cities", name:"Cities", emoji:"🏙️"},
+  {id:"space", name:"Space Program", emoji:"🚀"},
+  {id:"time", name:"Time Travel", emoji:"⏳"},
+  {id:"galaxy", name:"Galaxy Expansion", emoji:"🌠"},
+];
+
+const UPGRADES = [
+  // ----- Click boosters -----
+  {id:"cursor", cat:"click", type:"click", name:"Reinforced Finger", emoji:"👆", base:15, growth:1.15, power:1, desc:"+1 coin per tap"},
+  {id:"glove", cat:"click", type:"click", name:"Golden Glove", emoji:"🧤", base:120, growth:1.16, power:4, desc:"+4 per tap"},
+  {id:"hammer", cat:"click", type:"click", name:"Coin Hammer", emoji:"🔨", base:1300, growth:1.17, power:22, desc:"+22 per tap"},
+  {id:"gauntlet", cat:"click", type:"click", name:"Power Gauntlet", emoji:"🥊", base:22000, growth:1.18, power:140, desc:"+140 per tap"},
+  {id:"laserfinger", cat:"click", type:"click", name:"Laser Finger", emoji:"🔫", base:450000, growth:1.19, power:1400, desc:"+1.4K per tap"},
+  {id:"godtouch", cat:"click", type:"click", name:"Midas Touch", emoji:"✋", base:9.5e6, growth:1.20, power:16000, desc:"+16K per tap"},
+
+  // ----- Pets (bonus + income) -----
+  {id:"cat", cat:"pets", type:"cps", name:"Coin Cat", emoji:"🐱", base:80, growth:1.15, power:2, desc:"A lucky cat, +2/s"},
+  {id:"dog", cat:"pets", type:"cps", name:"Treasure Dog", emoji:"🐶", base:640, growth:1.16, power:14, desc:"Digs up coins, +14/s"},
+  {id:"dragon", cat:"pets", type:"cps", name:"Hoard Dragon", emoji:"🐉", base:14000, growth:1.17, power:180, desc:"Guards gold, +180/s"},
+  {id:"unicorn", cat:"pets", type:"cps", name:"Golden Unicorn", emoji:"🦄", base:260000, growth:1.18, power:2100, desc:"Magic income, +2.1K/s"},
+  {id:"phoenix", cat:"pets", type:"cps", name:"Coin Phoenix", emoji:"🦅", base:5.5e6, growth:1.19, power:26000, desc:"Reborn riches, +26K/s"},
+
+  // ----- Workers -----
+  {id:"miner", cat:"workers", type:"cps", name:"Coin Miner", emoji:"⛏️", base:400, growth:1.15, power:8, desc:"Mines +8/s"},
+  {id:"banker", cat:"workers", type:"cps", name:"Banker", emoji:"💼", base:5200, growth:1.16, power:70, desc:"Invests +70/s"},
+  {id:"merchant", cat:"workers", type:"cps", name:"Merchant Guild", emoji:"🛒", base:78000, growth:1.17, power:820, desc:"Trades +820/s"},
+  {id:"tycoon", cat:"workers", type:"cps", name:"Tycoon", emoji:"🎩", base:1.4e6, growth:1.18, power:9500, desc:"Empire +9.5K/s"},
+
+  // ----- Factories -----
+  {id:"mint", cat:"factories", type:"cps", name:"Coin Mint", emoji:"🏭", base:12000, growth:1.16, power:130, desc:"Prints +130/s"},
+  {id:"foundry", cat:"factories", type:"cps", name:"Gold Foundry", emoji:"🔥", base:150000, growth:1.17, power:1500, desc:"Smelts +1.5K/s"},
+  {id:"refinery", cat:"factories", type:"cps", name:"Ore Refinery", emoji:"⚙️", base:2.1e6, growth:1.18, power:17000, desc:"Refines +17K/s"},
+  {id:"megaplant", cat:"factories", type:"cps", name:"Mega Plant", emoji:"🏗️", base:34e6, growth:1.19, power:200000, desc:"Mass output +200K/s"},
+
+  // ----- Cities -----
+  {id:"town", cat:"cities", type:"cps", name:"Boom Town", emoji:"🏘️", base:420000, growth:1.17, power:3800, desc:"Taxes +3.8K/s"},
+  {id:"metropolis", cat:"cities", type:"cps", name:"Metropolis", emoji:"🏙️", base:7.8e6, growth:1.18, power:44000, desc:"Commerce +44K/s"},
+  {id:"megacity", cat:"cities", type:"cps", name:"Mega City", emoji:"🌆", base:130e6, growth:1.19, power:520000, desc:"Economy +520K/s"},
+  {id:"arcology", cat:"cities", type:"cps", name:"Arcology", emoji:"🏛️", base:2.4e9, growth:1.20, power:6.2e6, desc:"Super city +6.2M/s"},
+
+  // ----- Space -----
+  {id:"rocket", cat:"space", type:"cps", name:"Coin Rocket", emoji:"🚀", base:44e6, growth:1.18, power:180000, desc:"Launch +180K/s"},
+  {id:"station", cat:"space", type:"cps", name:"Space Station", emoji:"🛰️", base:820e6, growth:1.19, power:2.1e6, desc:"Orbit +2.1M/s"},
+  {id:"moonbase", cat:"space", type:"cps", name:"Moon Base", emoji:"🌙", base:15e9, growth:1.20, power:25e6, desc:"Mining +25M/s"},
+  {id:"marscolony", cat:"space", type:"cps", name:"Mars Colony", emoji:"🪐", base:290e9, growth:1.21, power:300e6, desc:"Colonize +300M/s"},
+
+  // ----- Time Travel -----
+  {id:"clock", cat:"time", type:"cps", name:"Chrono Clock", emoji:"⏰", base:6e9, growth:1.19, power:12e6, desc:"Bends time +12M/s"},
+  {id:"delorean", cat:"time", type:"cps", name:"Time Machine", emoji:"🚗", base:120e9, growth:1.20, power:150e6, desc:"88mph +150M/s"},
+  {id:"paradox", cat:"time", type:"cps", name:"Paradox Engine", emoji:"🌀", base:2.6e12, growth:1.21, power:1.9e9, desc:"Loops +1.9B/s"},
+  {id:"eternity", cat:"time", type:"cps", name:"Eternity Core", emoji:"♾️", base:60e12, growth:1.22, power:24e9, desc:"Infinite +24B/s"},
+
+  // ----- Galaxy -----
+  {id:"starforge", cat:"galaxy", type:"cps", name:"Star Forge", emoji:"⭐", base:900e12, growth:1.21, power:300e9, desc:"Forge stars +300B/s"},
+  {id:"dyson", cat:"galaxy", type:"cps", name:"Dyson Sphere", emoji:"🔆", base:22e15, growth:1.22, power:4e12, desc:"Harvest suns +4T/s"},
+  {id:"blackhole", cat:"galaxy", type:"cps", name:"Black Hole Bank", emoji:"⚫", base:520e15, growth:1.23, power:52e12, desc:"Infinite density +52T/s"},
+  {id:"galacticgov", cat:"galaxy", type:"cps", name:"Galactic Empire", emoji:"👑", base:14e18, growth:1.24, power:750e12, desc:"Rule all +750T/s"},
+];
+
+/* ---------- Milestones (unlock features) ---------- */
+const MILESTONES = [
+  {id:"m_pets",    need:()=>state.upgrades.cursor>=5, name:"Adopt Pets", emoji:"🐾", desc:"Reach 5 Reinforced Fingers to unlock the Pets category.", reward:"Pets tab"},
+  {id:"m_factory", need:()=>totalOwned()>=25, name:"Industrialize", emoji:"🏭", desc:"Own 25 total upgrades to reveal Factories.", reward:"Factories tab"},
+  {id:"m_space",   need:()=>state.totalCoins>=1e7, name:"Reach for Stars", emoji:"🚀", desc:"Earn 10M total coins to open the Space Program.", reward:"Space tab"},
+  {id:"m_time",    need:()=>state.prestige>=1, name:"Bend Time", emoji:"⏳", desc:"Prestige once to unlock Time Travel.", reward:"Time tab"},
+  {id:"m_galaxy",  need:()=>state.totalCoins>=1e12, name:"Galactic Age", emoji:"🌠", desc:"Earn 1T total coins to expand into the Galaxy.", reward:"Galaxy tab"},
+  {id:"m_golden",  need:()=>state.totalClicks>=100, name:"Golden Luck", emoji:"🌟", desc:"Tap 100 times to start attracting Golden Coins.", reward:"Golden coins"},
+];
+
+/* ---------- Achievements (with rewards - permanent % multipliers) ---------- */
+const ACHV = [
+  {id:"a_click1", name:"First Tap", emoji:"👆", desc:"Tap the coin once", mult:0.01, cond:()=>state.totalClicks>=1},
+  {id:"a_click100", name:"Clicker", emoji:"🖱️", desc:"Tap 100 times", mult:0.02, cond:()=>state.totalClicks>=100},
+  {id:"a_click1k", name:"Tap Master", emoji:"⚡", desc:"Tap 1,000 times", mult:0.03, cond:()=>state.totalClicks>=1000},
+  {id:"a_click10k", name:"Tap God", emoji:"🌩️", desc:"Tap 10,000 times", mult:0.05, cond:()=>state.totalClicks>=10000},
+  {id:"a_coin1k", name:"Pocket Money", emoji:"💰", desc:"Earn 1,000 coins", mult:0.02, cond:()=>state.totalCoins>=1000},
+  {id:"a_coin1m", name:"Millionaire", emoji:"🤑", desc:"Earn 1,000,000 coins", mult:0.05, cond:()=>state.totalCoins>=1e6},
+  {id:"a_coin1b", name:"Billionaire", emoji:"💎", desc:"Earn 1 billion coins", mult:0.08, cond:()=>state.totalCoins>=1e9},
+  {id:"a_coin1t", name:"Trillionaire", emoji:"🏆", desc:"Earn 1 trillion coins", mult:0.12, cond:()=>state.totalCoins>=1e12},
+  {id:"a_coin1qa", name:"Quadrillion", emoji:"👑", desc:"Earn 1 quadrillion coins", mult:0.15, cond:()=>state.totalCoins>=1e15},
+  {id:"a_own10", name:"Collector", emoji:"📦", desc:"Own 10 upgrades", mult:0.02, cond:()=>totalOwned()>=10},
+  {id:"a_own50", name:"Hoarder", emoji:"🗄️", desc:"Own 50 upgrades", mult:0.05, cond:()=>totalOwned()>=50},
+  {id:"a_own150", name:"Completionist", emoji:"🧩", desc:"Own 150 upgrades", mult:0.1, cond:()=>totalOwned()>=150},
+  {id:"a_crit", name:"Critical!", emoji:"💥", desc:"Land a critical click", mult:0.02, cond:()=>state.crits>=1},
+  {id:"a_crit100", name:"Crit Machine", emoji:"🎯", desc:"Land 100 crits", mult:0.04, cond:()=>state.crits>=100},
+  {id:"a_combo25", name:"Combo King", emoji:"🔥", desc:"Reach a 25x combo", mult:0.05, cond:()=>state.maxCombo>=25},
+  {id:"a_golden", name:"Lucky Star", emoji:"🌟", desc:"Catch a golden coin", mult:0.03, cond:()=>state.goldenCaught>=1},
+  {id:"a_golden10", name:"Star Hunter", emoji:"✨", desc:"Catch 10 golden coins", mult:0.06, cond:()=>state.goldenCaught>=10},
+  {id:"a_treasure", name:"Treasure!", emoji:"🎁", desc:"Open a treasure event", mult:0.03, cond:()=>state.treasures>=1},
+  {id:"a_prestige1", name:"Reborn", emoji:"♻️", desc:"Prestige once", mult:0.1, cond:()=>state.prestige>=1},
+  {id:"a_prestige5", name:"Ascended", emoji:"🌈", desc:"Prestige 5 times", mult:0.2, cond:()=>state.prestige>=5},
+  {id:"a_daily", name:"Loyal", emoji:"📅", desc:"Claim a daily reward", mult:0.03, cond:()=>state.dailyStreak>=1},
+  {id:"a_daily7", name:"Dedicated", emoji:"🗓️", desc:"7-day daily streak", mult:0.08, cond:()=>state.dailyStreak>=7},
+  {id:"a_pet", name:"Pet Lover", emoji:"🐾", desc:"Own all 5 pets", mult:0.05, cond:()=>["cat","dog","dragon","unicorn","phoenix"].every(p=>state.upgrades[p]>0)},
+  {id:"a_space", name:"Astronaut", emoji:"🚀", desc:"Build a Space Station", mult:0.06, cond:()=>state.upgrades.station>0},
+  {id:"a_galaxy", name:"Emperor", emoji:"🌌", desc:"Build the Galactic Empire", mult:0.15, cond:()=>state.upgrades.galacticgov>0},
+];
+
+/* ---------- Daily rewards (7 day cycle) ---------- */
+const DAILY = [
+  {d:1, type:"coins", label:"5 min income"},
+  {d:2, type:"coins", label:"10 min income"},
+  {d:3, type:"crit",  label:"+5% crit (run)"},
+  {d:4, type:"coins", label:"20 min income"},
+  {d:5, type:"gems",  label:"1 Gem"},
+  {d:6, type:"coins", label:"40 min income"},
+  {d:7, type:"gems",  label:"3 Gems + boost"},
+];
+
+/* ---------- Default state ---------- */
+function defaultState(){
+  return {
+    coins:0, totalCoins:0, totalClicks:0, crits:0, maxCombo:0, goldenCaught:0, treasures:0,
+    upgrades:{}, milestones:{}, achv:{}, prestige:0, gems:0,
+    world:"earth", worldCur:{earth:0,mars:0,nebula:0,void:0},
+    dailyStreak:0, lastDaily:0,
+    critChanceBonus:0, tempCritUntil:0, idleMultUntil:0, idleMultVal:1,
+    muted:false, showFps:false, buyAmt:1,
+    lastSave:Date.now(), lastSeen:Date.now(), created:Date.now(),
+    playTime:0,
+  };
+}
+let state = defaultState();
+
+/* ---------- Derived stats ---------- */
+function achMult(){ let m=1; for(const a of ACHV) if(state.achv[a.id]) m+=a.mult; return m; }
+function prestigeMult(){ return 1 + state.prestige*0.1 + state.gems*0.02; } // gems = prestige currency
+function worldMult(){ const i=WORLDS.findIndex(w=>w.id===state.world); return 1 + i*0.5; }
+function globalMult(){ return achMult()*prestigeMult()*worldMult(); }
+
+function clickPower(){
+  let base=1;
+  for(const u of UPGRADES) if(u.type==="click") base += (state.upgrades[u.id]||0)*u.power;
+  return base*globalMult();
+}
+function baseCps(){
+  let c=0;
+  for(const u of UPGRADES) if(u.type==="cps") c += (state.upgrades[u.id]||0)*u.power;
+  return c;
+}
+function idleMult(){
+  return (Date.now()<state.idleMultUntil)? state.idleMultVal : 1;
+}
+function cps(){ return baseCps()*globalMult()*idleMult(); }
+function critChance(){ let c=0.05+state.critChanceBonus; if(Date.now()<state.tempCritUntil) c+=0.05; return Math.min(c,0.75); }
+function critMult(){ return 5 + state.prestige*0.5; }
+
+function totalOwned(){ let t=0; for(const k in state.upgrades) t+=state.upgrades[k]; return t; }
+
+function upgCost(u, level){ return Math.ceil(u.base * Math.pow(u.growth, level)); }
+// cost to buy `qty` units starting at current level
+function bulkCost(u, qty){
+  let lvl=state.upgrades[u.id]||0, total=0;
+  for(let i=0;i<qty;i++){ total+=upgCost(u,lvl+i); }
+  return total;
+}
+function maxBuyable(u){
+  let lvl=state.upgrades[u.id]||0, coins=state.coins, n=0, cost=upgCost(u,lvl);
+  while(coins>=cost && n<100000){ coins-=cost; n++; cost=upgCost(u,lvl+n); }
+  return n;
+}
+function buyQtyFor(u){
+  if(state.buyAmt==="max") return Math.max(0, maxBuyable(u));
+  return state.buyAmt;
+}
+
+/* ---------- Unlock logic ---------- */
+function catUnlocked(cat){
+  switch(cat){
+    case "click": case "workers": return true;
+    case "pets": return !!state.milestones.m_pets;
+    case "factories": return !!state.milestones.m_factory;
+    case "cities": return state.totalCoins>=200000;
+    case "space": return !!state.milestones.m_space;
+    case "time": return !!state.milestones.m_time;
+    case "galaxy": return !!state.milestones.m_galaxy;
+  }
+  return true;
+}
+function upgVisible(u){
+  if(!catUnlocked(u.cat)) return false;
+  // progressive reveal within category: show if it's the first, or previous tier owned, or affordable-ish
+  const catUps = UPGRADES.filter(x=>x.cat===u.cat);
+  const idx = catUps.indexOf(u);
+  if(idx===0) return true;
+  const prev = catUps[idx-1];
+  return (state.upgrades[prev.id]||0)>0 || state.totalCoins >= u.base*0.35 || (state.upgrades[u.id]||0)>0;
+}
+
+/* ============================================================
+   AUDIO (generated with WebAudio)
+   ============================================================ */
+let AC=null;
+function ac(){ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } return AC; }
+function beep(freq=440, dur=0.08, type="sine", vol=0.15, slideTo=null){
+  if(state.muted) return; const c=ac(); if(!c) return;
+  if(c.state==="suspended") c.resume();
+  const o=c.createOscillator(), g=c.createGain();
+  o.type=type; o.frequency.value=freq;
+  if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, c.currentTime+dur);
+  g.gain.setValueAtTime(vol, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime+dur);
+  o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+dur);
+}
+function sClick(crit){ beep(crit?880:520+Math.random()*40, crit?0.12:0.06, crit?"triangle":"square", 0.09, crit?1400:null); }
+function sBuy(){ beep(300,0.05,"sine",0.12); setTimeout(()=>beep(600,0.09,"sine",0.12),40); }
+function sAch(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,0.14,"triangle",0.14),i*80)); }
+function sGold(){ [784,988,1318].forEach((f,i)=>setTimeout(()=>beep(f,0.12,"sine",0.13),i*60)); }
+function sPrestige(){ [261,329,392,523,659,784].forEach((f,i)=>setTimeout(()=>beep(f,0.18,"triangle",0.14),i*70)); }
+
+/* ============================================================
+   PARTICLES / FX
+   ============================================================ */
+const fx=document.getElementById('fx'), fxc=fx.getContext('2d');
+let particles=[];
+function resizeFx(){ fx.width=innerWidth; fx.height=innerHeight; }
+addEventListener('resize',resizeFx); resizeFx();
+function spawnParticles(x,y,n,color){
+  if(particles.length>260) return;
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, sp=2+Math.random()*4;
+    particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,life:1,color,size:3+Math.random()*4});
+  }
+}
+function floatNum(x,y,text,color){
+  const el=document.createElement('div'); el.className='floatNum'; el.textContent=text;
+  el.style.left=x+'px'; el.style.top=y+'px'; el.style.color=color;
+  document.body.appendChild(el); setTimeout(()=>el.remove(),1000);
+}
+
+/* ---------- Star background ---------- */
+const starC=document.getElementById('stars'), starCtx=starC.getContext('2d');
+let stars=[];
+function initStars(){
+  starC.width=innerWidth; starC.height=innerHeight; stars=[];
+  const count=Math.min(90, Math.floor(innerWidth*innerHeight/16000));
+  for(let i=0;i<count;i++) stars.push({x:Math.random()*starC.width,y:Math.random()*starC.height,r:Math.random()*1.6+.3,s:Math.random()*.4+.1,tw:Math.random()*Math.PI});
+}
+addEventListener('resize',initStars); initStars();
+
+/* ============================================================
+   GAME LOOP  (fixed timestep for logic, rAF for render)
+   ============================================================ */
+let lastTick=performance.now(), acc=0, lastFrame=performance.now(), frames=0, fpsTimer=0, curFps=60;
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt=(now-lastFrame)/1000; lastFrame=now;
+
+  // FPS
+  frames++; fpsTimer+=dt;
+  if(fpsTimer>=0.5){ curFps=Math.round(frames/fpsTimer); frames=0; fpsTimer=0;
+    if(state.showFps) document.getElementById('fps').textContent="FPS: "+curFps; }
+
+  // logic: passive income accrual
+  acc+=dt;
+  if(acc>=0.1){ // 10Hz logic
+    const inc=cps()*acc;
+    if(inc>0){ addCoins(inc, false); }
+    state.playTime+=acc;
+    acc=0;
+  }
+
+  // combo decay
+  updateComboDecay(now);
+
+  render(now, dt);
+}
+
+let comboLast=0;
+function updateComboDecay(now){
+  if(combo>0 && now-comboLast>2500){ combo=0; refreshComboUI(); }
+}
+
+/* ---------- Render (particles, stars, HUD throttled) ---------- */
+let hudTimer=0;
+function render(now, dt){
+  // stars
+  starCtx.clearRect(0,0,starC.width,starC.height);
+  for(const s of stars){ s.tw+=dt*2; s.y+=s.s; if(s.y>starC.height){s.y=0;s.x=Math.random()*starC.width;}
+    const a=0.4+Math.sin(s.tw)*0.4; starCtx.globalAlpha=a; starCtx.fillStyle="#cfd6ff";
+    starCtx.beginPath(); starCtx.arc(s.x,s.y,s.r,0,7); starCtx.fill(); }
+  starCtx.globalAlpha=1;
+
+  // particles
+  fxc.clearRect(0,0,fx.width,fx.height);
+  for(let i=particles.length-1;i>=0;i--){ const p=particles[i];
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.18; p.life-=dt*1.6;
+    if(p.life<=0){ particles.splice(i,1); continue; }
+    fxc.globalAlpha=Math.max(0,p.life); fxc.fillStyle=p.color;
+    fxc.beginPath(); fxc.arc(p.x,p.y,p.size*p.life,0,7); fxc.fill();
+  }
+  fxc.globalAlpha=1;
+
+  // HUD update ~10fps
+  hudTimer+=dt; if(hudTimer>=0.1){ hudTimer=0; updateHUD(); }
+}
+
+/* ============================================================
+   CORE ACTIONS
+   ============================================================ */
+let combo=0, comboMax=50;
+function addCoins(amt, isActive){
+  state.coins+=amt; state.totalCoins+=amt;
+  if(state.world!=="earth") state.worldCur[state.world]+=amt*0.001;
+}
+
+function doClick(clientX, clientY){
+  // combo
+  combo=Math.min(combo+1, comboMax); comboLast=performance.now();
+  if(combo>state.maxCombo) state.maxCombo=combo;
+  const comboMult = 1 + Math.floor(combo/5)*0.1; // +10% per 5 combo
+
+  let amt=clickPower()*comboMult;
+  let crit=Math.random()<critChance();
+  if(crit){ amt*=critMult(); state.crits++; }
+  addCoins(amt, true); state.totalClicks++;
+
+  // fx
+  const btn=document.getElementById('coinBtn'), r=btn.getBoundingClientRect();
+  const x=clientX||r.left+r.width/2, y=clientY||r.top+r.height/2;
+  spawnParticles(x,y, crit?16:7, crit?"#ff5470":"#ffd54a");
+  floatNum(x,y,(crit?"CRIT +":"+")+fmt(amt), crit?"#ff5470":"#ffd54a");
+  btn.classList.toggle('crit', crit);
+  sClick(crit);
+  refreshComboUI();
+  if(Math.random()<0.02) maybeSpawnGolden();
+  checkAchievements();
+}
+
+function buyUpgrade(u){
+  const qty=buyQtyFor(u); if(qty<=0) return;
+  const cost=bulkCost(u,qty);
+  if(state.coins<cost) return;
+  state.coins-=cost;
+  state.upgrades[u.id]=(state.upgrades[u.id]||0)+qty;
+  sBuy();
+  const card=document.querySelector(`[data-upg="${u.id}"]`);
+  if(card){ card.classList.remove('buyflash'); void card.offsetWidth; card.classList.add('buyflash'); }
+  checkMilestones(); checkAchievements(); renderTab(true);
+}
+
+/* ---------- Milestones ---------- */
+function checkMilestones(){
+  for(const m of MILESTONES){
+    if(!state.milestones[m.id] && m.need()){
+      state.milestones[m.id]=true;
+      toast(m.emoji, "Milestone: "+m.name, "Unlocked: "+m.reward, "ach");
+      sAch(); markTabNotify();
+      buildTabs();
+    }
+  }
+}
+/* ---------- Achievements ---------- */
+function checkAchievements(){
+  for(const a of ACHV){
+    if(!state.achv[a.id] && a.cond()){
+      state.achv[a.id]=true;
+      toast(a.emoji, "Achievement: "+a.name, "+"+Math.round(a.mult*100)+"% all income", "good");
+      sAch();
+    }
+  }
+}
+
+/* ============================================================
+   GOLDEN COIN
+   ============================================================ */
+const goldenEl=document.getElementById('golden');
+let goldenTimeout=null;
+function maybeSpawnGolden(){
+  if(!state.milestones.m_golden) return;
+  if(goldenEl.style.display==="block") return;
+  const pad=60;
+  goldenEl.style.left=(pad+Math.random()*(innerWidth-pad*2))+'px';
+  goldenEl.style.top=(90+Math.random()*(innerHeight-180))+'px';
+  goldenEl.style.display='block';
+  clearTimeout(goldenTimeout);
+  goldenTimeout=setTimeout(()=>{ goldenEl.style.display='none'; }, 6000);
+}
+goldenEl.addEventListener('click', ()=>{
+  goldenEl.style.display='none'; state.goldenCaught++;
+  const r=goldenEl.getBoundingClientRect();
+  const roll=Math.random();
+  let msg;
+  if(roll<0.5){ const bonus=Math.max(clickPower()*77, cps()*90); addCoins(bonus,true); msg="+"+fmt(bonus)+" coins!"; }
+  else if(roll<0.8){ state.tempCritUntil=Date.now()+30000; msg="+5% crit for 30s!"; }
+  else { state.idleMultUntil=Date.now()+60000; state.idleMultVal=3; msg="3× income for 60s!"; }
+  spawnParticles(r.left+22,r.top+22,24,"#ffd54a");
+  floatNum(r.left+22,r.top,msg,"#ffd54a");
+  toast("🌟","Golden Coin!",msg,"good"); sGold(); checkAchievements();
+});
+
+/* ============================================================
+   TREASURE EVENTS (random)
+   ============================================================ */
+const treasureEl=document.getElementById('treasure');
+let treasureTimeout=null;
+function scheduleTreasure(){
+  const delay=60000+Math.random()*90000; // 1-2.5 min
+  setTimeout(spawnTreasure, delay);
+}
+function spawnTreasure(){
+  if(treasureEl.style.display==="block"){ scheduleTreasure(); return; }
+  const rewards=[
+    {t:"💰 Coin Cache", d:"Tap to claim 2 min of income!", fn:()=>{const b=Math.max(cps()*120, clickPower()*50); addCoins(b,true); return "+"+fmt(b)+" coins";}},
+    {t:"⚡ Frenzy", d:"3× income for 45 seconds!", fn:()=>{state.idleMultUntil=Date.now()+45000; state.idleMultVal=3; return "3× income for 45s";}},
+    {t:"🎯 Crit Storm", d:"+10% crit chance for 30s!", fn:()=>{state.tempCritUntil=Date.now()+30000; return "+crit for 30s";}},
+    {t:"💎 Gem Drop", d:"A rare prestige gem!", fn:()=>{state.gems+=1; return "+1 Gem";}},
+  ];
+  const rw=rewards[Math.floor(Math.random()*rewards.length)];
+  treasureEl.innerHTML=`<b>${rw.t}</b><small>${rw.d}</small>`;
+  treasureEl.style.display='block';
+  treasureEl.onclick=()=>{
+    treasureEl.style.display='none';
+    const res=rw.fn(); state.treasures++;
+    toast("🎁","Treasure!",res,"good"); sGold(); checkAchievements();
+    scheduleTreasure();
+  };
+  clearTimeout(treasureTimeout);
+  treasureTimeout=setTimeout(()=>{ if(treasureEl.style.display==="block"){treasureEl.style.display='none'; scheduleTreasure();} }, 12000);
+}
+
+/* ============================================================
+   PRESTIGE
+   ============================================================ */
+function prestigeGain(){
+  // gems earned based on total coins this run (sqrt scaling)
+  return Math.floor(Math.pow(state.totalCoins/1e6, 0.4));
+}
+function canPrestige(){ return prestigeGain()>=1; }
+function doPrestige(){
+  const gain=prestigeGain();
+  if(gain<1) return;
+  state.gems+=gain; state.prestige++;
+  // reset run but keep meta
+  const keep={
+    prestige:state.prestige, gems:state.gems, achv:state.achv, milestones:state.milestones,
+    world:state.world, worldCur:state.worldCur, dailyStreak:state.dailyStreak, lastDaily:state.lastDaily,
+    muted:state.muted, showFps:state.showFps, buyAmt:state.buyAmt, created:state.created,
+    totalClicks:state.totalClicks, crits:state.crits, maxCombo:state.maxCombo,
+    goldenCaught:state.goldenCaught, treasures:state.treasures, critChanceBonus:state.critChanceBonus,
+    playTime:state.playTime,
+  };
+  const fresh=defaultState();
+  Object.assign(fresh, keep);
+  fresh.lastSave=Date.now(); fresh.lastSeen=Date.now();
+  state=fresh;
+  // world unlock check
+  sPrestige();
+  toast("♻️","Rebirth!","+"+gain+" Gems · +10% permanent income","ach");
+  spawnParticles(innerWidth/2,innerHeight/2,50,"#c39bff");
+  closeModal(); buildTabs(); checkAchievements(); save();
+}
+
+/* ============================================================
+   DAILY REWARDS
+   ============================================================ */
+function dayIndex(ts){ return Math.floor(ts/86400000); }
+function canClaimDaily(){ return dayIndex(Date.now())>dayIndex(state.lastDaily); }
+function claimDaily(){
+  if(!canClaimDaily()) return;
+  const yesterday = dayIndex(Date.now())-1===dayIndex(state.lastDaily);
+  state.dailyStreak = (state.lastDaily && yesterday)? state.dailyStreak+1 : 1;
+  state.lastDaily=Date.now();
+  const idx=((state.dailyStreak-1)%7);
+  const r=DAILY[idx];
+  let msg="";
+  if(r.type==="coins"){ const mins=[5,10,0,20,0,40,0][idx]||5; const b=Math.max(cps()*60*mins, clickPower()*mins*10); addCoins(b,true); msg="+"+fmt(b)+" coins"; }
+  else if(r.type==="crit"){ state.tempCritUntil=Date.now()+300000; msg="+5% crit for 5 min"; }
+  else if(r.type==="gems"){ const g=idx===6?3:1; state.gems+=g; if(idx===6){state.idleMultUntil=Date.now()+120000; state.idleMultVal=2;} msg="+"+g+" Gem"+(g>1?"s":""); }
+  toast("🎁","Daily Reward · Day "+state.dailyStreak, msg,"good"); sGold();
+  checkAchievements(); renderTab(true); updateDailyBtn();
+}
+
+/* ============================================================
+   OFFLINE PROGRESS
+   ============================================================ */
+function applyOffline(){
+  const now=Date.now();
+  const away=(now-(state.lastSeen||now))/1000;
+  state.lastSeen=now;
+  if(away<30) return; // ignore short
+  const rate=cps();
+  if(rate<=0) return;
+  const capped=Math.min(away, 8*3600); // cap 8h
+  const earned=rate*capped*0.5; // offline at 50% efficiency
+  if(earned<1) return;
+  state.coins+=earned; state.totalCoins+=earned;
+  pendingOffline={earned, time:capped};
+}
+let pendingOffline=null;
+function showOfflineModal(){
+  if(!pendingOffline) return;
+  openModal(`
+    <h2>🌙 Welcome back!</h2>
+    <p>You were away for <b>${fmtTime(pendingOffline.time)}</b>.</p>
+    <p>Your empire earned (at 50% idle rate):</p>
+    <div style="font-size:30px;font-weight:800;color:var(--gold);text-align:center;margin:14px 0">🪙 ${fmt(pendingOffline.earned)}</div>
+    <div class="btnRow" style="justify-content:center"><button class="btn gold" id="claimOffline">Collect</button></div>
+  `);
+  document.getElementById('claimOffline').onclick=()=>{ closeModal(); sGold(); spawnParticles(innerWidth/2,innerHeight/2,30,"#ffd54a"); };
+  pendingOffline=null;
+}
+
+/* ============================================================
+   SAVE / LOAD  (localStorage + import/export)
+   ============================================================ */
+const SAVE_KEY="cosmicClicker_v1";
+function save(){
+  state.lastSave=Date.now(); state.lastSeen=Date.now();
+  try{ localStorage.setItem(SAVE_KEY, btoa(unescape(encodeURIComponent(JSON.stringify(state))))); }catch(e){}
+}
+function load(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY); if(!raw) return false;
+    const obj=JSON.parse(decodeURIComponent(escape(atob(raw))));
+    state=Object.assign(defaultState(), obj);
+    state.upgrades=Object.assign({},obj.upgrades||{});
+    state.achv=Object.assign({},obj.achv||{});
+    state.milestones=Object.assign({},obj.milestones||{});
+    state.worldCur=Object.assign({earth:0,mars:0,nebula:0,void:0},obj.worldCur||{});
+    return true;
+  }catch(e){ return false; }
+}
+function exportSave(){ return localStorage.getItem(SAVE_KEY)||btoa(unescape(encodeURIComponent(JSON.stringify(state)))); }
+function importSave(str){
+  try{
+    const obj=JSON.parse(decodeURIComponent(escape(atob(str.trim()))));
+    if(typeof obj!=="object") throw 0;
+    localStorage.setItem(SAVE_KEY, str.trim());
+    load(); buildTabs(); toast("📥","Save Imported","Welcome back!","good"); return true;
+  }catch(e){ toast("⚠️","Import Failed","Invalid save code","ach"); return false; }
+}
+function hardReset(){
+  localStorage.removeItem(SAVE_KEY);
+  state=defaultState(); buildTabs(); closeModal();
+  toast("🔄","Game Reset","A fresh start!","ach");
+}
+
+/* ============================================================
+   UI — TABS
+   ============================================================ */
+const TABS=[
+  {id:"shop", name:"Shop", emoji:"🛒"},
+  {id:"pets", name:"Pets", emoji:"🐾", need:()=>state.milestones.m_pets},
+  {id:"worlds", name:"Worlds", emoji:"🌍"},
+  {id:"prestige", name:"Prestige", emoji:"♻️"},
+  {id:"achv", name:"Achievements", emoji:"🏆"},
+  {id:"miles", name:"Milestones", emoji:"🎯"},
+  {id:"daily", name:"Daily", emoji:"🎁"},
+  {id:"stats", name:"Stats", emoji:"📊"},
+];
+let activeTab="shop";
+function buildTabs(){
+  const bar=document.getElementById('tabbar'); bar.innerHTML="";
+  for(const t of TABS){
+    if(t.need && !t.need()) continue;
+    const el=document.createElement('div');
+    el.className="tab"+(activeTab===t.id?" active":"");
+    el.dataset.tab=t.id;
+    el.innerHTML=`${t.emoji} ${t.name}<span class="dot"></span>`;
+    el.onclick=()=>{ activeTab=t.id; buildTabs(); renderTab(); };
+    bar.appendChild(el);
+  }
+  renderTab();
+}
+function markTabNotify(){ /* placeholder for notifications */ }
+
+/* ---------- Render current tab ---------- */
+let searchTerm="";
+function renderTab(preserveScroll){
+  const c=document.getElementById('content');
+  const sc=preserveScroll?c.scrollTop:0;
+  if(activeTab==="shop") renderShop(c);
+  else if(activeTab==="pets") renderShop(c,"pets");
+  else if(activeTab==="worlds") renderWorlds(c);
+  else if(activeTab==="prestige") renderPrestige(c);
+  else if(activeTab==="achv") renderAchv(c);
+  else if(activeTab==="miles") renderMiles(c);
+  else if(activeTab==="daily") renderDaily(c);
+  else if(activeTab==="stats") renderStats(c);
+  if(preserveScroll) c.scrollTop=sc;
+}
+
+/* ---------- SHOP ---------- */
+function renderShop(c, onlyCat){
+  const showCats = onlyCat? CATEGORIES.filter(x=>x.id===onlyCat) : CATEGORIES;
+  let html=`<div class="shopTools">
+    <input id="search" placeholder="🔍 Search upgrades..." value="${searchTerm}">
+    <div class="buyAmt">
+      ${[1,10,100,"max"].map(a=>`<button data-amt="${a}" class="${state.buyAmt==a?'active':''}">${a==="max"?"MAX":"×"+a}</button>`).join("")}
+    </div>
+  </div><div id="shopBody"></div>`;
+  c.innerHTML=html;
+  document.getElementById('search').oninput=(e)=>{ searchTerm=e.target.value; renderShopBody(showCats); };
+  c.querySelectorAll('.buyAmt button').forEach(b=>b.onclick=()=>{ const v=b.dataset.amt; state.buyAmt=(v==="max")?"max":+v; renderShop(c,onlyCat); });
+  renderShopBody(showCats);
+}
+function renderShopBody(showCats){
+  const body=document.getElementById('shopBody'); if(!body) return;
+  const term=searchTerm.trim().toLowerCase();
+  let html="";
+  for(const cat of showCats){
+    if(!catUnlocked(cat.id)) continue;
+    let ups=UPGRADES.filter(u=>u.cat===cat.id && upgVisible(u));
+    if(term) ups=ups.filter(u=>u.name.toLowerCase().includes(term)||u.desc.toLowerCase().includes(term));
+    if(!ups.length) continue;
+    html+=`<div class="catTitle">${cat.emoji} ${cat.name}<span class="ln"></span></div><div class="grid">`;
+    for(const u of ups){
+      const lvl=state.upgrades[u.id]||0;
+      const qty=buyQtyFor(u);
+      const cost=qty>0?bulkCost(u,qty):upgCost(u,lvl);
+      const afford=state.coins>=cost && qty>0;
+      const contrib = u.type==="click"? `+${fmt(u.power*Math.max(lvl,1)*globalMult())} tap` : `+${fmt(u.power*Math.max(lvl,1)*globalMult()*idleMult())}/s`;
+      html+=`<div class="card ${afford?'afford':''}" data-upg="${u.id}">
+        <div class="emj">${u.emoji}</div>
+        <div class="info">
+          <div class="nm">${u.name}<span class="lv">Lv ${lvl}</span></div>
+          <div class="ds">${u.desc}${lvl>0?` · now ${contrib}`:""}</div>
+          <div class="cost ${afford?'ok':'no'}">🪙 ${fmt(cost)} ${state.buyAmt!==1?`<span style="opacity:.7">(×${qty||buyQtyFor(u)||0})</span>`:""}</div>
+        </div>
+      </div>`;
+    }
+    html+=`</div>`;
+  }
+  if(!html) html=`<div class="empty">No upgrades match "${term}". Try another search.</div>`;
+  body.innerHTML=html;
+  body.querySelectorAll('.card').forEach(card=>{
+    const u=UPGRADES.find(x=>x.id===card.dataset.upg);
+    card.onclick=()=>buyUpgrade(u);
+  });
+}
+
+/* ---------- WORLDS ---------- */
+function renderWorlds(c){
+  let html=`<div class="bigStat"><b>🌐 Multiverse</b><p style="margin:4px 0 0;color:var(--muted);font-size:12px">Each world has its own currency and a permanent income multiplier. Unlock new worlds by prestiging.</p></div><div class="panelGrid">`;
+  WORLDS.forEach((w,i)=>{
+    const unlocked=state.prestige>=w.unlockPrestige;
+    const active=state.world===w.id;
+    const mult=1+i*0.5;
+    html+=`<div class="mini ${unlocked?'':'locked'} ${active?'done':''}">
+      <h4>${w.emoji} ${w.name} ${active?'<span class="badge g">ACTIVE</span>':''}</h4>
+      <p>Currency: ${w.sym} ${w.cur}<br>Income ×${mult.toFixed(1)}<br>${unlocked?`Balance: ${w.sym} ${fmt(state.worldCur[w.id]||0)}`:`🔒 Prestige ${w.unlockPrestige}× to unlock`}</p>
+      ${unlocked&&!active?`<div class="btnRow"><button class="btn" data-world="${w.id}">Travel Here</button></div>`:''}
+    </div>`;
+  });
+  html+=`</div>`;
+  c.innerHTML=html;
+  c.querySelectorAll('[data-world]').forEach(b=>b.onclick=()=>{
+    state.world=b.dataset.world; const w=WORLDS.find(x=>x.id===state.world);
+    toast(w.emoji,"Traveled to "+w.name,"Now earning "+w.cur,"good"); sGold();
+    buildTabs(); updateHUD();
+  });
+}
+
+/* ---------- PRESTIGE ---------- */
+function renderPrestige(c){
+  const gain=prestigeGain();
+  c.innerHTML=`
+    <div class="prestigeHero">
+      <div class="big">♻️</div>
+      <div class="gemCount">💎 ${fmt(state.gems)} Gems</div>
+      <p style="margin:8px 0">Prestige level <b style="color:#fff">${state.prestige}</b> · Permanent bonus <b style="color:var(--good)">+${Math.round((prestigeMult()-1)*100)}%</b></p>
+      <p style="margin:10px 0">Rebirth now to gain <b style="color:var(--gold);font-size:18px">💎 ${fmt(gain)}</b> gems.<br>Each gem gives +2% income forever. Rebirthing resets coins & upgrades.</p>
+      <div class="btnRow" style="justify-content:center">
+        <button class="btn gold" id="doPrestige" ${gain<1?'disabled':''}>${gain<1?'Earn 1M+ coins first':'♻️ Rebirth for '+fmt(gain)+' Gems'}</button>
+      </div>
+    </div>
+    <div class="bigStat" style="margin-top:12px">
+      <div class="statRow"><span>Prestige count</span><span>${state.prestige}</span></div>
+      <div class="statRow"><span>Total gems</span><span>💎 ${fmt(state.gems)}</span></div>
+      <div class="statRow"><span>Prestige multiplier</span><span>×${prestigeMult().toFixed(2)}</span></div>
+      <div class="statRow"><span>Crit multiplier bonus</span><span>×${critMult().toFixed(1)}</span></div>
+      <div class="statRow"><span>Next world unlock</span><span>${nextWorldInfo()}</span></div>
+    </div>`;
+  document.getElementById('doPrestige').onclick=()=>{
+    if(gain<1) return;
+    openModal(`<h2>♻️ Rebirth?</h2>
+      <p>You'll gain <b style="color:var(--gold)">💎 ${fmt(gain)} Gems</b> and <b>+10%</b> permanent income, but lose your current coins and upgrades.</p>
+      <p>Achievements, milestones, worlds and gems are kept.</p>
+      <div class="btnRow" style="justify-content:flex-end;margin-top:14px">
+        <button class="btn ghost" id="cancelP">Cancel</button>
+        <button class="btn gold" id="confirmP">Rebirth</button>
+      </div>`);
+    document.getElementById('cancelP').onclick=closeModal;
+    document.getElementById('confirmP').onclick=doPrestige;
+  };
+}
+function nextWorldInfo(){
+  const next=WORLDS.find(w=>state.prestige<w.unlockPrestige);
+  return next? `${next.emoji} ${next.name} @ P${next.unlockPrestige}` : "All unlocked ✓";
+}
+
+/* ---------- ACHIEVEMENTS ---------- */
+function renderAchv(c){
+  const done=ACHV.filter(a=>state.achv[a.id]).length;
+  let html=`<div class="bigStat"><div class="statRow"><span>🏆 Achievements unlocked</span><span>${done} / ${ACHV.length}</span></div>
+    <div class="prog" style="height:8px;border-radius:6px;background:rgba(255,255,255,.08);margin-top:8px;overflow:hidden"><i style="display:block;height:100%;width:${done/ACHV.length*100}%;background:linear-gradient(90deg,var(--accent),var(--accent2))"></i></div>
+    <div class="statRow" style="border:none"><span>Total bonus from achievements</span><span>+${Math.round((achMult()-1)*100)}%</span></div></div>
+    <div class="panelGrid">`;
+  for(const a of ACHV){
+    const got=state.achv[a.id];
+    html+=`<div class="mini ${got?'done':'locked'}">
+      <h4><span class="lock">${got?a.emoji:'🔒'}</span> ${a.name} <span class="badge ${got?'g':''}">+${Math.round(a.mult*100)}%</span></h4>
+      <p>${a.desc}</p></div>`;
+  }
+  html+=`</div>`; c.innerHTML=html;
+}
+
+/* ---------- MILESTONES ---------- */
+function renderMiles(c){
+  let html=`<div class="bigStat"><b>🎯 Milestones</b><p style="margin:4px 0 0;color:var(--muted);font-size:12px">Hit these goals to unlock new game systems.</p></div><div class="panelGrid">`;
+  for(const m of MILESTONES){
+    const got=state.milestones[m.id];
+    html+=`<div class="mini ${got?'done':''}">
+      <h4><span class="lock">${got?'✅':m.emoji}</span> ${m.name} <span class="badge ${got?'g':''}">${got?'DONE':'Locked'}</span></h4>
+      <p>${m.desc}<br><b style="color:var(--accent2)">Reward: ${m.reward}</b></p></div>`;
+  }
+  html+=`</div>`; c.innerHTML=html;
+}
+
+/* ---------- DAILY ---------- */
+function renderDaily(c){
+  const idx=((state.dailyStreak)%7); // next reward index
+  const canClaim=canClaimDaily();
+  let cells="";
+  for(let i=0;i<7;i++){
+    const claimed = i < (state.dailyStreak%7 || (state.dailyStreak>0&&!canClaim?7:0));
+    const isNext = canClaim && i===(state.dailyStreak%7);
+    cells+=`<div class="dayCell ${claimed?'claimed':''} ${isNext?'today':''}">
+      <div>Day<br><b>${i+1}</b></div>
+      <small style="font-size:9px;margin-top:2px">${DAILY[i].label}</small>
+    </div>`;
+  }
+  c.innerHTML=`
+    <div class="bigStat">
+      <div class="statRow"><span>🔥 Current streak</span><span>${state.dailyStreak} days</span></div>
+      <div class="statRow" style="border:none"><span>Next reset</span><span>${canClaim?'Ready now!':'Tomorrow'}</span></div>
+    </div>
+    <div class="dailyGrid">${cells}</div>
+    <div class="btnRow" style="justify-content:center">
+      <button class="btn gold" id="claimDaily" ${canClaim?'':'disabled'}>${canClaim?'🎁 Claim Day '+(state.dailyStreak+1):'✅ Come back tomorrow'}</button>
+    </div>`;
+  const b=document.getElementById('claimDaily'); if(b&&canClaim) b.onclick=claimDaily;
+}
+
+/* ---------- STATS ---------- */
+function renderStats(c){
+  c.innerHTML=`<div class="bigStat">
+    <div class="statRow"><span>Current coins</span><span>🪙 ${fmt(state.coins)}</span></div>
+    <div class="statRow"><span>Total earned (all time)</span><span>🪙 ${fmt(state.totalCoins)}</span></div>
+    <div class="statRow"><span>Coins / second</span><span>${fmt(cps())}</span></div>
+    <div class="statRow"><span>Coins / tap</span><span>${fmt(clickPower())}</span></div>
+    <div class="statRow"><span>Total taps</span><span>${fmtInt(state.totalClicks)}</span></div>
+    <div class="statRow"><span>Critical hits</span><span>${fmtInt(state.crits)}</span></div>
+    <div class="statRow"><span>Crit chance</span><span>${Math.round(critChance()*100)}%</span></div>
+    <div class="statRow"><span>Best combo</span><span>${state.maxCombo}×</span></div>
+    <div class="statRow"><span>Golden coins caught</span><span>${fmtInt(state.goldenCaught)}</span></div>
+    <div class="statRow"><span>Treasures opened</span><span>${fmtInt(state.treasures)}</span></div>
+    <div class="statRow"><span>Upgrades owned</span><span>${fmtInt(totalOwned())}</span></div>
+    <div class="statRow"><span>Prestige level</span><span>${state.prestige}</span></div>
+    <div class="statRow"><span>Gems</span><span>💎 ${fmt(state.gems)}</span></div>
+    <div class="statRow"><span>Global multiplier</span><span>×${globalMult().toFixed(2)}</span></div>
+    <div class="statRow"><span>Play time</span><span>${fmtTime(state.playTime)}</span></div>
+    <div class="statRow"><span>Current world</span><span>${WORLDS.find(w=>w.id===state.world).emoji} ${WORLDS.find(w=>w.id===state.world).name}</span></div>
+  </div>
+  <div class="btnRow"><button class="btn ghost" id="openSettings2">⚙️ Settings & Save Management</button></div>`;
+  document.getElementById('openSettings2').onclick=openSettings;
+}
+
+/* ============================================================
+   HUD
+   ============================================================ */
+function updateHUD(){
+  document.getElementById('hCoins').textContent=fmt(state.coins);
+  document.getElementById('hCps').textContent=fmt(cps());
+  const w=WORLDS.find(x=>x.id===state.world);
+  document.getElementById('hWorld').textContent=w.emoji+" "+w.name;
+  document.getElementById('perClick').textContent=fmt(clickPower());
+  document.getElementById('critInfo').textContent=Math.round(critChance()*100)+"% crit";
+  const wc=document.getElementById('worldCur');
+  if(state.world!=="earth") wc.textContent=`${w.sym} ${fmt(state.worldCur[state.world]||0)} ${w.cur}`;
+  else wc.textContent="";
+  // idle boost indicator
+  if(Date.now()<state.idleMultUntil){ document.getElementById('coinRing').classList.add('combo'); }
+  else if(combo<5){ document.getElementById('coinRing').classList.remove('combo'); }
+  // live-update affordability on shop
+  if(activeTab==="shop"||activeTab==="pets") updateAffordability();
+}
+function updateAffordability(){
+  document.querySelectorAll('#shopBody .card').forEach(card=>{
+    const u=UPGRADES.find(x=>x.id===card.dataset.upg); if(!u) return;
+    const qty=buyQtyFor(u); const cost=qty>0?bulkCost(u,qty):upgCost(u,state.upgrades[u.id]||0);
+    const afford=state.coins>=cost && qty>0;
+    card.classList.toggle('afford',afford);
+    const costEl=card.querySelector('.cost'); if(costEl){ costEl.classList.toggle('ok',afford); costEl.classList.toggle('no',!afford); }
+  });
+}
+function refreshComboUI(){
+  const box=document.getElementById('comboBox'), fill=document.getElementById('comboFill'), ring=document.getElementById('coinRing');
+  if(combo>=2){ const m=(1+Math.floor(combo/5)*0.1).toFixed(1); box.textContent=`🔥 ${combo}× COMBO (×${m})`; ring.classList.add('combo'); }
+  else { box.textContent=""; if(Date.now()>=state.idleMultUntil) ring.classList.remove('combo'); }
+  fill.style.width=(combo/comboMax*100)+"%";
+}
+
+/* ============================================================
+   MODAL & SETTINGS
+   ============================================================ */
+const overlay=document.getElementById('overlay'), modalBox=document.getElementById('modalBox');
+function openModal(html){ modalBox.innerHTML=html; overlay.classList.add('show'); }
+function closeModal(){ overlay.classList.remove('show'); }
+overlay.addEventListener('click',e=>{ if(e.target===overlay) closeModal(); });
+
+function openSettings(){
+  openModal(`
+    <h2>⚙️ Settings</h2>
+    <div class="btnRow" style="margin:8px 0">
+      <button class="btn ghost" id="tglSound">${state.muted?'🔇 Sound: Off':'🔊 Sound: On'}</button>
+      <button class="btn ghost" id="tglFps">${state.showFps?'📈 FPS: On':'📉 FPS: Off'}</button>
+    </div>
+    <p style="margin-top:10px"><b>💾 Save Management</b></p>
+    <div class="btnRow">
+      <button class="btn" id="expBtn">📤 Export Save</button>
+      <button class="btn" id="impBtn">📥 Import Save</button>
+    </div>
+    <textarea id="saveBox" placeholder="Paste a save code here to import, or export to copy your save..." style="margin-top:8px"></textarea>
+    <p style="margin-top:14px"><b style="color:var(--bad)">⚠️ Danger Zone</b></p>
+    <div class="btnRow">
+      <button class="btn red" id="resetBtn">🗑️ Reset Everything</button>
+      <button class="btn ghost" id="closeSet">Close</button>
+    </div>
+  `);
+  document.getElementById('tglSound').onclick=()=>{ state.muted=!state.muted; updateMuteBtn(); openSettings(); };
+  document.getElementById('tglFps').onclick=()=>{ state.showFps=!state.showFps; document.getElementById('fps').style.display=state.showFps?'block':'none'; openSettings(); };
+  document.getElementById('expBtn').onclick=()=>{ const box=document.getElementById('saveBox'); box.value=exportSave(); box.select();
+    try{document.execCommand('copy');}catch(e){} toast("📤","Save Exported","Copied to the box — copy it somewhere safe!","good"); };
+  document.getElementById('impBtn').onclick=()=>{ const v=document.getElementById('saveBox').value.trim(); if(v){ if(importSave(v)) closeModal(); } };
+  document.getElementById('resetBtn').onclick=()=>{
+    openModal(`<h2>⚠️ Reset Everything?</h2><p>This permanently deletes ALL progress — coins, upgrades, prestige, achievements. This cannot be undone.</p>
+      <div class="btnRow" style="justify-content:flex-end;margin-top:14px">
+        <button class="btn ghost" id="noReset">Cancel</button>
+        <button class="btn red" id="yesReset">Delete Everything</button></div>`);
+    document.getElementById('noReset').onclick=openSettings;
+    document.getElementById('yesReset').onclick=hardReset;
+  };
+  document.getElementById('closeSet').onclick=closeModal;
+}
+function updateMuteBtn(){ document.getElementById('muteBtn').textContent=state.muted?'🔇':'🔊'; }
+function updateDailyBtn(){ document.getElementById('dailyBtn').classList.toggle('on', canClaimDaily()); }
+
+/* ============================================================
+   TOASTS
+   ============================================================ */
+function toast(icon,title,sub,cls){
+  const wrap=document.getElementById('toasts');
+  const el=document.createElement('div'); el.className="toast "+(cls||"");
+  el.innerHTML=`<div class="ti">${icon}</div><div class="tt"><b>${title}</b><small>${sub||''}</small></div>`;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.animation="toastOut .4s forwards"; setTimeout(()=>el.remove(),400); }, 3800);
+  while(wrap.children.length>4) wrap.firstChild.remove();
+}
+
+/* ============================================================
+   INPUT WIRING
+   ============================================================ */
+const coinBtn=document.getElementById('coinBtn');
+coinBtn.addEventListener('click', e=>{ doClick(e.clientX, e.clientY); });
+// touch multi-finger support
+coinBtn.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  for(const t of e.changedTouches) doClick(t.clientX, t.clientY);
+}, {passive:false});
+
+document.getElementById('muteBtn').onclick=()=>{ state.muted=!state.muted; updateMuteBtn(); if(!state.muted) beep(660,0.08); };
+document.getElementById('settingsBtn').onclick=openSettings;
+document.getElementById('dailyBtn').onclick=()=>{ activeTab="daily"; buildTabs(); if(canClaimDaily()) {} };
+
+// keyboard: space to click
+addEventListener('keydown', e=>{ if(e.code==="Space" && e.target.tagName!=="TEXTAREA" && e.target.tagName!=="INPUT"){ e.preventDefault(); doClick(); } });
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init(){
+  const had=load();
+  applyOffline();
+  updateMuteBtn(); updateDailyBtn();
+  document.getElementById('fps').style.display=state.showFps?'block':'none';
+  buildTabs();
+  updateHUD();
+  if(!had){
+    toast("🪙","Welcome to Cosmic Clicker!","Tap the coin to start your empire","good");
+  }
+  showOfflineModal();
+  checkMilestones(); checkAchievements();
+  scheduleTreasure();
+  // autosave
+  setInterval(save, 15000);
+  addEventListener('beforeunload', save);
+  document.addEventListener('visibilitychange', ()=>{ if(document.hidden) save(); else { updateDailyBtn(); } });
+  // golden coin periodic chance
+  setInterval(()=>{ if(Math.random()<0.25) maybeSpawnGolden(); }, 18000);
+  requestAnimationFrame(loop);
+}
+init();
+</script>
+</body>
+</html>
