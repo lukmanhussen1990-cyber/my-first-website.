@@ -1,0 +1,28 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "650bd391-5089-4766-8a67-658e0f9cf629",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "ca265808-5c00-48ca-9a9a-a416d37b3267",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "4c4f8186-b397-432c-b015-8f445a3e4ec5",
+      "version": [1, 0, 0]
+    }
+  ],
+  "metadata": {
+    "authors": ["Luxury House Addon"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}
