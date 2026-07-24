@@ -1,0 +1,108 @@
+/* ==========================================================================
+   NeoDesk OS — Design tokens & themes
+   ========================================================================== */
+
+:root {
+  /* Accent (overridable from Settings) */
+  --accent: #5b8cff;
+  --accent-2: #9d5bff;
+  --accent-rgb: 91, 140, 255;
+
+  /* Radii */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-round: 999px;
+
+  /* Spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  /* Typography */
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", "Fira Code", "Cascadia Code",
+    Consolas, "Roboto Mono", monospace;
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 360ms;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.12);
+  --shadow-2: 0 6px 16px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.14);
+  --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.36), 0 6px 16px rgba(0, 0, 0, 0.24);
+
+  --taskbar-h: 52px;
+  --z-window: 100;
+  --z-taskbar: 5000;
+  --z-startmenu: 5200;
+  --z-context: 6000;
+  --z-toast: 6500;
+  --z-overlay: 7000;
+}
+
+/* ---------- Dark theme (default) ---------- */
+:root[data-theme="dark"] {
+  --bg: #0b1020;
+  --bg-2: #121a30;
+  --surface: rgba(24, 32, 54, 0.72);
+  --surface-solid: #161e34;
+  --surface-2: rgba(38, 48, 76, 0.72);
+  --surface-hover: rgba(255, 255, 255, 0.08);
+  --surface-active: rgba(255, 255, 255, 0.14);
+  --glass-blur: 22px;
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --text: #eef1f8;
+  --text-dim: #a9b2c9;
+  --text-faint: #6f7896;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --input-bg: rgba(0, 0, 0, 0.28);
+  --danger: #ff5c73;
+  --warn: #ffb84d;
+  --ok: #46d19e;
+  --scrollbar: rgba(255, 255, 255, 0.16);
+  color-scheme: dark;
+}
+
+/* ---------- Light theme ---------- */
+:root[data-theme="light"] {
+  --bg: #eef1f8;
+  --bg-2: #e2e7f3;
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-solid: #ffffff;
+  --surface-2: rgba(245, 247, 252, 0.86);
+  --surface-hover: rgba(0, 0, 0, 0.05);
+  --surface-active: rgba(0, 0, 0, 0.09);
+  --glass-blur: 22px;
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --text: #17203a;
+  --text-dim: #4b566f;
+  --text-faint: #8b93a8;
+  --line: rgba(20, 30, 60, 0.10);
+  --line-strong: rgba(20, 30, 60, 0.18);
+  --input-bg: rgba(255, 255, 255, 0.9);
+  --danger: #e23b52;
+  --warn: #d98515;
+  --ok: #12a97b;
+  --scrollbar: rgba(20, 30, 60, 0.22);
+  color-scheme: light;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 1ms;
+    --dur: 1ms;
+    --dur-slow: 1ms;
+  }
+}

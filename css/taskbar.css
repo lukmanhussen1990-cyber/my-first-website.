@@ -1,0 +1,297 @@
+/* ==========================================================================
+   Taskbar
+   ========================================================================== */
+
+.taskbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--taskbar-h);
+  z-index: var(--z-taskbar);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-2);
+  background: var(--surface);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  border-top: 1px solid var(--glass-border);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.18);
+}
+
+.start-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 38px;
+  padding: 0 14px 0 12px;
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-weight: 600;
+  transition: background var(--dur-fast) var(--ease);
+}
+.start-button:hover {
+  background: var(--surface-hover);
+}
+.start-button[aria-expanded="true"] {
+  background: var(--surface-active);
+}
+.start-glyph {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+  border-radius: 6px;
+  background: conic-gradient(
+    from 210deg,
+    var(--accent),
+    var(--accent-2),
+    var(--accent)
+  );
+  position: relative;
+}
+.start-glyph::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 3px;
+  background: var(--surface-solid);
+}
+.start-label {
+  font-size: 13px;
+}
+
+.taskbar-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 38px;
+  width: clamp(180px, 22vw, 320px);
+  padding: 0 12px;
+  gap: var(--sp-2);
+  border-radius: var(--r-round);
+  background: var(--input-bg);
+  border: 1px solid var(--line);
+}
+.taskbar-search .search-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  opacity: 0.7;
+  background: currentColor;
+  color: var(--text-dim);
+  -webkit-mask: var(--search-mask) center / contain no-repeat;
+  mask: var(--search-mask) center / contain no-repeat;
+}
+.taskbar-search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+}
+.taskbar-search input::placeholder {
+  color: var(--text-faint);
+}
+
+.search-results {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  width: min(420px, 84vw);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: var(--sp-2);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-3);
+  z-index: var(--z-startmenu);
+}
+.search-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-faint);
+  padding: 6px 8px 4px;
+}
+.search-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  cursor: default;
+}
+.search-item:hover,
+.search-item.active {
+  background: var(--surface-hover);
+}
+.search-item .search-item-icon {
+  width: 26px;
+  height: 26px;
+  flex: none;
+}
+.search-item .search-item-title {
+  font-size: 13px;
+  color: var(--text);
+}
+.search-item .search-item-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.task-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  height: 100%;
+  padding: 0 4px;
+}
+.task-buttons::-webkit-scrollbar {
+  display: none;
+}
+.task-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 38px;
+  max-width: 190px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  color: var(--text-dim);
+  position: relative;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast);
+  flex: none;
+}
+.task-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.task-btn.active {
+  background: var(--surface-active);
+  color: var(--text);
+}
+.task-btn .task-btn-icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.task-btn .task-btn-label {
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.task-btn::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  transition: width var(--dur-fast) var(--ease);
+}
+.task-btn.active::after {
+  width: 20px;
+}
+.task-btn.minimized {
+  opacity: 0.72;
+}
+
+.taskbar-tray {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+.tray-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-sm);
+  color: var(--text-dim);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast);
+}
+.tray-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.tray-icon {
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+}
+.tray-icon[data-icon="bell"] {
+  -webkit-mask: var(--bell-mask) center / contain no-repeat;
+  mask: var(--bell-mask) center / contain no-repeat;
+}
+.tray-icon[data-icon="theme"] {
+  -webkit-mask: var(--theme-mask) center / contain no-repeat;
+  mask: var(--theme-mask) center / contain no-repeat;
+}
+.notif-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--r-round);
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.tray-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: var(--r-sm);
+  color: var(--text);
+  line-height: 1.2;
+  transition: background var(--dur-fast) var(--ease);
+}
+.tray-clock:hover {
+  background: var(--surface-hover);
+}
+#clock-time {
+  font-size: 13px;
+  font-weight: 600;
+}
+#clock-date {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.tray-showdesktop {
+  width: 8px;
+  height: 38px;
+  margin-left: 2px;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+}
+.tray-showdesktop:hover {
+  background: var(--surface-hover);
+}

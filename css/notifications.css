@@ -1,0 +1,169 @@
+/* ==========================================================================
+   Notifications: toasts + notification center
+   ========================================================================== */
+
+.toast-container {
+  position: fixed;
+  right: var(--sp-3);
+  bottom: calc(var(--taskbar-h) + var(--sp-3));
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  width: min(340px, calc(100vw - 24px));
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-3);
+  animation: toastIn var(--dur) var(--ease) both;
+  overflow: hidden;
+  position: relative;
+}
+.toast.dismissing {
+  animation: toastOut var(--dur) var(--ease) forwards;
+}
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+@keyframes toastOut {
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+.toast-icon {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: var(--r-sm);
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+}
+.toast-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.toast-icon.info { color: var(--accent); }
+.toast-icon.success { color: var(--ok); }
+.toast-icon.warn { color: var(--warn); }
+.toast-icon.error { color: var(--danger); }
+.toast-body {
+  flex: 1;
+  min-width: 0;
+}
+.toast-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+.toast-msg {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  word-break: break-word;
+}
+.toast-close {
+  flex: none;
+  color: var(--text-faint);
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-xs);
+  display: grid;
+  place-items: center;
+}
+.toast-close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.toast-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--accent);
+  width: 100%;
+  transform-origin: left;
+}
+
+/* Notification center */
+.notification-center {
+  position: fixed;
+  right: var(--sp-2);
+  bottom: calc(var(--taskbar-h) + var(--sp-2));
+  width: min(380px, calc(100vw - 16px));
+  max-height: min(560px, calc(100vh - var(--taskbar-h) - 20px));
+  z-index: var(--z-startmenu);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+  animation: startIn var(--dur) var(--ease) both;
+}
+.nc-header {
+  display: flex;
+  align-items: center;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--line);
+}
+.nc-header h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.nc-header .spacer {
+  flex: 1;
+}
+.nc-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-2);
+}
+.nc-item {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  margin-bottom: 6px;
+  background: var(--surface-2);
+  animation: toastIn var(--dur) var(--ease) both;
+}
+.nc-item .nc-icon {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.nc-item .nc-icon svg { width: 18px; height: 18px; }
+.nc-item.info .nc-icon { color: var(--accent); }
+.nc-item.success .nc-icon { color: var(--ok); }
+.nc-item.warn .nc-icon { color: var(--warn); }
+.nc-item.error .nc-icon { color: var(--danger); }
+.nc-item-body { flex: 1; min-width: 0; }
+.nc-item-title { font-weight: 600; font-size: 13px; }
+.nc-item-msg { font-size: 12.5px; color: var(--text-dim); word-break: break-word; }
+.nc-item-time { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+.nc-item-close {
+  color: var(--text-faint);
+  width: 22px; height: 22px;
+  border-radius: var(--r-xs);
+  display: grid; place-items: center;
+  flex: none;
+}
+.nc-item-close:hover { background: var(--surface-hover); color: var(--text); }

@@ -1,0 +1,72 @@
+/* ==========================================================================
+   Context menu
+   ========================================================================== */
+
+.context-menu {
+  position: fixed;
+  z-index: var(--z-context);
+  min-width: 200px;
+  max-width: 280px;
+  padding: 6px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-3);
+  animation: ctxIn var(--dur-fast) var(--ease) both;
+}
+@keyframes ctxIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+.context-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  color: var(--text);
+  cursor: default;
+  white-space: nowrap;
+}
+.context-item:hover:not(.disabled),
+.context-item.active:not(.disabled) {
+  background: var(--surface-hover);
+}
+.context-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.context-item.danger:hover {
+  background: var(--danger);
+  color: #fff;
+}
+.context-item .ctx-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  opacity: 0.9;
+}
+.context-item .ctx-shortcut {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-faint);
+  padding-left: var(--sp-4);
+}
+.context-sep {
+  height: 1px;
+  margin: 5px 8px;
+  background: var(--line);
+}
+.context-label {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-faint);
+}

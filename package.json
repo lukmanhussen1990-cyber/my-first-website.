@@ -1,0 +1,19 @@
+{
+  "name": "neodesk-os",
+  "version": "1.0.0",
+  "description": "NeoDesk OS — a polished browser-based operating system simulator.",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve -l 3000 .",
+    "serve": "python3 -m http.server 3000"
+  },
+  "keywords": [
+    "web-desktop",
+    "os-simulator",
+    "vanilla-js",
+    "webapp"
+  ],
+  "license": "MIT",
+  "author": "NeoDesk OS",
+  "private": true
+}

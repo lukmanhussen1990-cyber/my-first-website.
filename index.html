@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="description" content="NeoDesk OS — a polished browser-based operating system simulator." />
+  <meta name="theme-color" content="#0b1020" />
+  <title>NeoDesk OS</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/boot.css" />
+  <link rel="stylesheet" href="css/login.css" />
+  <link rel="stylesheet" href="css/desktop.css" />
+  <link rel="stylesheet" href="css/taskbar.css" />
+  <link rel="stylesheet" href="css/window.css" />
+  <link rel="stylesheet" href="css/startmenu.css" />
+  <link rel="stylesheet" href="css/contextmenu.css" />
+  <link rel="stylesheet" href="css/notifications.css" />
+  <link rel="stylesheet" href="css/apps.css" />
+  <link rel="stylesheet" href="css/onboarding.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+</head>
+<body>
+  <!-- Boot screen -->
+  <div id="boot-screen" class="boot-screen" role="status" aria-live="polite" aria-label="Booting NeoDesk OS">
+    <div class="boot-logo" aria-hidden="true">
+      <svg viewBox="0 0 100 100" width="96" height="96">
+        <defs>
+          <linearGradient id="bootGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b8cff" />
+            <stop offset="1" stop-color="#9d5bff" />
+          </linearGradient>
+        </defs>
+        <rect x="14" y="14" width="72" height="72" rx="18" fill="url(#bootGrad)" />
+        <circle cx="50" cy="50" r="20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-dasharray="90 40" class="boot-ring" />
+      </svg>
+    </div>
+    <div class="boot-title">NeoDesk<span>OS</span></div>
+    <div class="boot-progress"><div class="boot-progress-bar"></div></div>
+    <div class="boot-status" id="boot-status">Starting services…</div>
+  </div>
+
+  <!-- Login screen -->
+  <div id="login-screen" class="login-screen hidden" aria-hidden="true">
+    <div class="login-backdrop"></div>
+    <div class="login-clock">
+      <div class="login-time" id="login-time">--:--</div>
+      <div class="login-date" id="login-date">—</div>
+    </div>
+    <form class="login-card" id="login-form" autocomplete="off">
+      <div class="login-avatar" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="52" height="52"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4 0-9 2-9 6v2h18v-2c0-4-5-6-9-6Z"/></svg>
+      </div>
+      <div class="login-user" id="login-username">Guest</div>
+      <label class="visually-hidden" for="login-password">Password</label>
+      <input type="password" id="login-password" class="login-input" placeholder="Password (leave blank)" aria-label="Password" />
+      <button type="submit" class="login-btn">Sign in</button>
+      <div class="login-hint">Tip: no password is required — just press Sign in.</div>
+    </form>
+  </div>
+
+  <!-- Desktop environment -->
+  <main id="desktop" class="desktop hidden" aria-hidden="true">
+    <div id="wallpaper" class="wallpaper"></div>
+    <div id="desktop-icons" class="desktop-icons" aria-label="Desktop" role="list"></div>
+    <div id="selection-box" class="selection-box hidden"></div>
+    <div id="windows-layer" class="windows-layer"></div>
+  </main>
+
+  <!-- Taskbar -->
+  <footer id="taskbar" class="taskbar hidden" aria-label="Taskbar">
+    <button id="start-button" class="start-button" aria-label="Open Start menu" aria-haspopup="true" aria-expanded="false">
+      <span class="start-glyph" aria-hidden="true"></span>
+      <span class="start-label">Start</span>
+    </button>
+    <div class="taskbar-search">
+      <span class="search-icon" aria-hidden="true"></span>
+      <input id="taskbar-search-input" type="text" placeholder="Search apps and files…" aria-label="Search apps and files" />
+      <div id="search-results" class="search-results hidden" role="listbox" aria-label="Search results"></div>
+    </div>
+    <div id="task-buttons" class="task-buttons" role="list" aria-label="Running applications"></div>
+    <div class="taskbar-tray">
+      <button id="tray-notifications" class="tray-btn" aria-label="Notifications" aria-haspopup="true">
+        <span class="tray-icon" data-icon="bell"></span>
+        <span id="notif-badge" class="notif-badge hidden">0</span>
+      </button>
+      <button id="tray-theme" class="tray-btn" aria-label="Toggle light or dark theme">
+        <span class="tray-icon" data-icon="theme"></span>
+      </button>
+      <button id="tray-clock" class="tray-clock" aria-label="Date and time">
+        <span id="clock-time">--:--</span>
+        <span id="clock-date">—</span>
+      </button>
+      <button id="tray-showdesktop" class="tray-showdesktop" aria-label="Show desktop"></button>
+    </div>
+  </footer>
+
+  <!-- Start menu -->
+  <div id="start-menu" class="start-menu hidden" role="menu" aria-label="Start menu"></div>
+
+  <!-- Notification center -->
+  <aside id="notification-center" class="notification-center hidden" aria-label="Notification center"></aside>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- Context menu -->
+  <div id="context-menu" class="context-menu hidden" role="menu"></div>
+
+  <!-- Onboarding -->
+  <div id="onboarding" class="onboarding hidden" role="dialog" aria-modal="true" aria-label="Welcome tour"></div>
+
+  <script type="module" src="js/main.js"></script>
+  <noscript>
+    <div style="position:fixed;inset:0;display:grid;place-items:center;background:#0b1020;color:#fff;font-family:sans-serif;text-align:center;padding:2rem;">
+      NeoDesk OS requires JavaScript to run. Please enable JavaScript in your browser.
+    </div>
+  </noscript>
+</body>
+</html>

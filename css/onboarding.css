@@ -1,0 +1,73 @@
+/* ==========================================================================
+   Onboarding tutorial
+   ========================================================================== */
+
+.onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: grid;
+  place-items: center;
+  background: rgba(6, 10, 20, 0.55);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.onboard-card {
+  width: min(460px, 90vw);
+  border-radius: var(--r-lg);
+  background: var(--surface-solid);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+  animation: loginIn var(--dur) var(--ease) both;
+}
+.onboard-visual {
+  height: 150px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+}
+.onboard-visual svg {
+  width: 68px;
+  height: 68px;
+}
+.onboard-content {
+  padding: var(--sp-5);
+  text-align: center;
+}
+.onboard-content h2 {
+  margin: 0 0 var(--sp-2);
+  font-size: 20px;
+}
+.onboard-content p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+.onboard-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: var(--sp-4) 0;
+}
+.onboard-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-round);
+  background: var(--line-strong);
+  transition: width var(--dur-fast) var(--ease), background var(--dur-fast);
+}
+.onboard-dot.active {
+  width: 22px;
+  background: var(--accent);
+}
+.onboard-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-5) var(--sp-5);
+}
+.onboard-actions .spacer {
+  flex: 1;
+}
