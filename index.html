@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#f7f7f7" />
+  <meta name="description" content="A polished offline-style Dino Runner game. Jump and duck to dodge cacti and pterodactyls. Play with Space, arrow keys, or touch." />
+  <title>Dino Runner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A6%96%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="topbar">
+      <h1 class="title">DINO RUNNER</h1>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle theme">
+        <span class="theme-icon">🌙</span>
+      </button>
+    </header>
+
+    <div class="stage" id="stage">
+      <canvas id="game" width="1200" height="360" aria-label="Dino Runner game canvas" role="img"></canvas>
+
+      <div class="overlay" id="overlay">
+        <div class="overlay-card">
+          <div class="overlay-emoji">🦖</div>
+          <h2 id="overlayTitle">Dino Runner</h2>
+          <p id="overlayText">Press <kbd>Space</kbd> or tap to start.<br/>Jump the cacti, duck the birds.</p>
+          <button id="startBtn" class="btn" type="button">Start Game</button>
+        </div>
+      </div>
+
+      <div class="hud">
+        <div class="hud-item"><span class="hud-label">HI</span> <span id="hiScore">00000</span></div>
+        <div class="hud-item"><span id="score">00000</span></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="control-hint">
+        <kbd>Space</kbd> / <kbd>↑</kbd> jump &nbsp;·&nbsp; <kbd>↓</kbd> duck &nbsp;·&nbsp; <kbd>P</kbd> pause
+      </div>
+      <div class="touch-controls" aria-hidden="false">
+        <button id="jumpBtn" class="tbtn" type="button" aria-label="Jump">▲ JUMP</button>
+        <button id="duckBtn" class="tbtn" type="button" aria-label="Duck">▼ DUCK</button>
+      </div>
+    </div>
+
+    <footer class="foot">
+      <span id="muteBtn" class="link" role="button" tabindex="0">🔊 Sound on</span>
+      <span class="sep">·</span>
+      <span>Best runs are saved locally.</span>
+    </footer>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
