@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1e2030">
+<title>MiniOS</title>
+<style>
+  /* ============================= THEME / RESET ============================= */
+  :root{
+    --accent:#3b82f6;
+    --accent-2:#2563eb;
+    --bg:#1e2030;
+    --panel:rgba(30,32,48,.72);
+    --panel-solid:#252739;
+    --text:#eef1f8;
+    --muted:#9aa3bd;
+    --border:rgba(255,255,255,.12);
+    --shadow:0 18px 50px rgba(0,0,0,.45);
+    --win-bg:#20222f;
+    --win-head:#2a2d3e;
+    --taskbar:rgba(20,22,34,.78);
+    --danger:#ef4444;
+    --ok:#22c55e;
+    --radius:12px;
+  }
+  html[data-theme="light"]{
+    --bg:#dfe4ee;
+    --panel:rgba(255,255,255,.72);
+    --panel-solid:#f4f6fb;
+    --text:#1a1d29;
+    --muted:#586079;
+    --border:rgba(0,0,0,.12);
+    --shadow:0 18px 50px rgba(0,0,0,.22);
+    --win-bg:#ffffff;
+    --win-head:#eef1f8;
+    --taskbar:rgba(245,247,252,.82);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;margin:0;padding:0;overflow:hidden;overscroll-behavior:none;}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text);
+    background:var(--bg);
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:manipulation;
+    position:fixed;inset:0;
+  }
+  button{font-family:inherit;color:inherit;cursor:pointer;}
+  input,textarea,select{font-family:inherit;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:var(--muted);border-radius:8px;opacity:.5;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  /* ============================= WALLPAPERS ============================= */
+  #screen{position:absolute;inset:0;overflow:hidden;}
+  .wp-aurora{background:linear-gradient(135deg,#1e2030,#3b1d5c 40%,#0f5e73 100%);}
+  .wp-sunset{background:linear-gradient(160deg,#ff8f6b,#d64b8a 45%,#3b2f63 100%);}
+  .wp-forest{background:linear-gradient(135deg,#0b3d2e,#116149 50%,#1f7a4d 100%);}
+  .wp-ocean{background:radial-gradient(120% 120% at 20% 20%,#1b3a63,#0a1a33 70%);}
+  .wp-mono{background:linear-gradient(135deg,#20222f,#33374d);}
+  .wp-peach{background:linear-gradient(135deg,#ffd1a9,#ff9ea8 60%,#c98bd4);}
+
+  /* ============================= BOOT SCREEN ============================= */
+  #boot{position:absolute;inset:0;z-index:9000;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;background:#0d0f1a;color:#fff;gap:26px;}
+  .boot-logo{width:96px;height:96px;border-radius:24px;
+    background:conic-gradient(from 0deg,var(--accent),#8b5cf6,#06b6d4,var(--accent));
+    display:flex;align-items:center;justify-content:center;font-size:46px;font-weight:800;
+    animation:pulse 1.6s ease-in-out infinite;box-shadow:0 0 60px rgba(59,130,246,.6);}
+  .boot-name{font-size:26px;font-weight:700;letter-spacing:4px;}
+  .boot-bar{width:220px;height:6px;border-radius:6px;background:rgba(255,255,255,.15);overflow:hidden;}
+  .boot-bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#8b5cf6);
+    animation:load 2.2s ease forwards;}
+  .boot-tip{color:#8b93b0;font-size:12px;letter-spacing:1px;}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+  @keyframes load{to{width:100%}}
+  .spinner{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.15);
+    border-top-color:var(--accent);animation:spin .9s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ============================= LOCK SCREEN ============================= */
+  #lock{position:absolute;inset:0;z-index:8000;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:14px;color:#fff;
+    backdrop-filter:blur(6px);background:rgba(8,10,20,.35);}
+  #lock .clock{font-size:64px;font-weight:200;letter-spacing:2px;}
+  #lock .date{font-size:18px;opacity:.85;margin-top:-8px;}
+  .lock-avatar{width:84px;height:84px;border-radius:50%;background:var(--accent);
+    display:flex;align-items:center;justify-content:center;font-size:40px;margin-top:20px;box-shadow:var(--shadow);}
+  .lock-hint{margin-top:6px;opacity:.8;font-size:13px;animation:fade 2s ease-in-out infinite;}
+  @keyframes fade{0%,100%{opacity:.4}50%{opacity:.95}}
+  .lock-btn{margin-top:8px;padding:10px 26px;border-radius:30px;border:1px solid rgba(255,255,255,.35);
+    background:rgba(255,255,255,.12);color:#fff;font-size:15px;}
+
+  /* ============================= DESKTOP ============================= */
+  #desktop{position:absolute;inset:0;bottom:52px;}
+  .icon{position:absolute;width:84px;padding:8px 4px;border-radius:10px;display:flex;
+    flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;
+    touch-action:none;transition:background .12s;}
+  .icon:hover{background:rgba(255,255,255,.10);}
+  .icon.selected{background:rgba(59,130,246,.30);outline:1px solid var(--accent);}
+  .icon .glyph{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;
+    justify-content:center;font-size:26px;background:var(--panel);border:1px solid var(--border);
+    box-shadow:0 4px 12px rgba(0,0,0,.25);}
+  .icon .label{font-size:12px;line-height:1.2;color:#fff;max-width:82px;word-break:break-word;
+    text-shadow:0 1px 3px rgba(0,0,0,.7);}
+  html[data-theme="light"] .icon .label{color:#12151f;text-shadow:0 1px 2px rgba(255,255,255,.7);}
+
+  /* ============================= TASKBAR ============================= */
+  #taskbar{position:absolute;left:0;right:0;bottom:0;height:52px;z-index:5000;
+    background:var(--taskbar);backdrop-filter:blur(18px);border-top:1px solid var(--border);
+    display:flex;align-items:center;gap:6px;padding:0 8px;}
+  #startBtn{height:38px;min-width:44px;border:none;border-radius:10px;
+    background:var(--accent);color:#fff;font-size:20px;display:flex;align-items:center;
+    justify-content:center;gap:6px;padding:0 12px;font-weight:600;}
+  #startBtn:active{transform:scale(.95);}
+  #taskItems{display:flex;gap:6px;flex:1;overflow-x:auto;overflow-y:hidden;height:100%;align-items:center;}
+  #taskItems::-webkit-scrollbar{height:0;}
+  .task-item{height:38px;padding:0 12px;max-width:170px;border-radius:9px;border:1px solid var(--border);
+    background:var(--panel);display:flex;align-items:center;gap:7px;font-size:13px;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;flex:0 0 auto;}
+  .task-item.active{border-color:var(--accent);background:rgba(59,130,246,.20);}
+  .task-item span.t{overflow:hidden;text-overflow:ellipsis;max-width:120px;}
+  .tray{display:flex;align-items:center;gap:12px;padding:0 8px;flex:0 0 auto;}
+  #trayClock{text-align:right;font-size:12px;line-height:1.25;font-variant-numeric:tabular-nums;}
+  .tray-btn{background:none;border:none;font-size:17px;padding:4px;border-radius:8px;}
+  .tray-btn:hover{background:rgba(255,255,255,.12);}
+
+  /* ============================= START MENU ============================= */
+  #startMenu{position:absolute;left:8px;bottom:58px;width:340px;max-width:calc(100vw - 16px);
+    max-height:70vh;z-index:6000;background:var(--panel);backdrop-filter:blur(22px);
+    border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);
+    padding:14px;display:none;flex-direction:column;gap:12px;}
+  #startMenu.open{display:flex;animation:rise .16s ease;}
+  @keyframes rise{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+  #searchBox{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);
+    background:var(--panel-solid);color:var(--text);font-size:14px;outline:none;}
+  .app-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;overflow-y:auto;}
+  .app-tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;
+    border-radius:12px;background:transparent;border:none;font-size:12px;color:var(--text);}
+  .app-tile:hover{background:rgba(255,255,255,.10);}
+  .app-tile .g{font-size:26px;}
+  .start-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:10px;}
+  .start-foot .who{display:flex;align-items:center;gap:8px;font-size:13px;}
+  .start-foot .who .av{width:30px;height:30px;border-radius:50%;background:var(--accent);
+    display:flex;align-items:center;justify-content:center;}
+  .search-results{display:flex;flex-direction:column;gap:2px;max-height:300px;overflow:auto;}
+  .search-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:13px;}
+  .search-row:hover{background:rgba(255,255,255,.1);}
+  .search-row .sub{color:var(--muted);font-size:11px;margin-left:auto;}
+
+  /* ============================= WINDOWS ============================= */
+  .window{position:absolute;min-width:200px;min-height:140px;background:var(--win-bg);
+    border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);
+    display:flex;flex-direction:column;overflow:hidden;}
+  .window.dragging,.window.resizing{will-change:transform;}
+  .win-head{height:38px;flex:0 0 auto;background:var(--win-head);display:flex;align-items:center;
+    gap:8px;padding:0 6px 0 12px;cursor:move;touch-action:none;border-bottom:1px solid var(--border);}
+  .win-title{font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    display:flex;align-items:center;gap:8px;}
+  .win-btns{display:flex;gap:4px;}
+  .win-btn{width:30px;height:26px;border:none;border-radius:7px;background:transparent;font-size:14px;
+    display:flex;align-items:center;justify-content:center;color:var(--muted);}
+  .win-btn:hover{background:rgba(255,255,255,.14);color:var(--text);}
+  .win-btn.close:hover{background:var(--danger);color:#fff;}
+  .win-body{flex:1;overflow:auto;position:relative;background:var(--win-bg);}
+  .rz{position:absolute;z-index:5;}
+  .rz.n{top:-3px;left:8px;right:8px;height:8px;cursor:ns-resize;}
+  .rz.s{bottom:-3px;left:8px;right:8px;height:8px;cursor:ns-resize;}
+  .rz.e{right:-3px;top:8px;bottom:8px;width:8px;cursor:ew-resize;}
+  .rz.w{left:-3px;top:8px;bottom:8px;width:8px;cursor:ew-resize;}
+  .rz.ne{top:-3px;right:-3px;width:14px;height:14px;cursor:nesw-resize;}
+  .rz.nw{top:-3px;left:-3px;width:14px;height:14px;cursor:nwse-resize;}
+  .rz.se{bottom:-3px;right:-3px;width:16px;height:16px;cursor:nwse-resize;}
+  .rz.sw{bottom:-3px;left:-3px;width:14px;height:14px;cursor:nesw-resize;}
+
+  /* ============================= GENERIC UI ============================= */
+  .toolbar{display:flex;gap:6px;align-items:center;padding:8px;flex-wrap:wrap;
+    border-bottom:1px solid var(--border);background:var(--panel-solid);}
+  .btn{padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel-solid);
+    color:var(--text);font-size:13px;display:inline-flex;align-items:center;gap:6px;}
+  .btn:hover{border-color:var(--accent);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .btn.danger{background:var(--danger);border-color:var(--danger);color:#fff;}
+  .btn:active{transform:translateY(1px);}
+  .field{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--panel-solid);
+    color:var(--text);font-size:13px;outline:none;}
+  .field:focus{border-color:var(--accent);}
+
+  /* ============================= FILE EXPLORER ============================= */
+  .fe-path{padding:6px 10px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:4px;flex-wrap:wrap;background:var(--panel-solid);}
+  .fe-crumb{cursor:pointer;padding:2px 6px;border-radius:6px;}
+  .fe-crumb:hover{background:rgba(255,255,255,.1);color:var(--text);}
+  .fe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;padding:12px;}
+  .fe-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border-radius:10px;
+    text-align:center;cursor:pointer;border:1px solid transparent;}
+  .fe-item:hover{background:rgba(255,255,255,.08);}
+  .fe-item.selected{background:rgba(59,130,246,.25);border-color:var(--accent);}
+  .fe-item .fg{font-size:34px;}
+  .fe-item .fn{font-size:12px;word-break:break-word;max-width:88px;}
+  .fe-empty{padding:40px;text-align:center;color:var(--muted);font-size:13px;}
+
+  /* ============================= CONTEXT MENU ============================= */
+  #ctxMenu{position:absolute;z-index:7000;min-width:180px;background:var(--panel);backdrop-filter:blur(20px);
+    border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);padding:5px;display:none;}
+  .ctx-item{padding:9px 12px;border-radius:7px;font-size:13px;display:flex;align-items:center;gap:10px;cursor:pointer;}
+  .ctx-item:hover{background:var(--accent);color:#fff;}
+  .ctx-sep{height:1px;background:var(--border);margin:4px 6px;}
+  .ctx-item.disabled{opacity:.4;pointer-events:none;}
+
+  /* ============================= NOTIFICATIONS ============================= */
+  #notifs{position:absolute;right:12px;bottom:62px;z-index:7500;display:flex;flex-direction:column;gap:10px;
+    max-width:320px;}
+  .notif{background:var(--panel);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:12px;
+    padding:12px 14px;box-shadow:var(--shadow);animation:slideIn .25s ease;display:flex;gap:10px;}
+  @keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:none;opacity:1}}
+  .notif .ni{font-size:22px;}
+  .notif .nt{font-size:13px;font-weight:600;}
+  .notif .nm{font-size:12px;color:var(--muted);margin-top:2px;}
+
+  /* ============================= CALCULATOR ============================= */
+  .calc{display:flex;flex-direction:column;height:100%;padding:10px;gap:10px;}
+  .calc-screen{background:var(--panel-solid);border:1px solid var(--border);border-radius:10px;
+    padding:14px;text-align:right;font-size:30px;font-variant-numeric:tabular-nums;min-height:64px;
+    display:flex;align-items:flex-end;justify-content:flex-end;overflow:hidden;word-break:break-all;}
+  .calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex:1;}
+  .calc-grid button{border:1px solid var(--border);border-radius:12px;background:var(--panel-solid);
+    font-size:20px;color:var(--text);}
+  .calc-grid button:active{transform:scale(.96);}
+  .calc-grid button.op{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .calc-grid button.fn{background:var(--win-head);}
+  .calc-grid button.eq{background:var(--ok);color:#fff;border-color:var(--ok);}
+
+  /* ============================= DRAWING ============================= */
+  .draw-wrap{display:flex;flex-direction:column;height:100%;}
+  .draw-canvas-holder{flex:1;overflow:hidden;background:#fff;position:relative;}
+  .draw-canvas-holder canvas{display:block;touch-action:none;background:#fff;width:100%;height:100%;}
+  .swatch{width:24px;height:24px;border-radius:6px;border:2px solid var(--border);cursor:pointer;}
+  .swatch.active{border-color:#fff;box-shadow:0 0 0 2px var(--accent);}
+
+  /* ============================= TERMINAL ============================= */
+  .term{height:100%;background:#0c0e17;color:#cfe;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:13px;padding:10px;overflow-y:auto;line-height:1.5;}
+  .term .line{white-space:pre-wrap;word-break:break-word;}
+  .term .prompt{color:#5ee;}
+  .term-input-line{display:flex;gap:6px;align-items:baseline;}
+  .term-input-line input{flex:1;background:transparent;border:none;color:#fff;outline:none;
+    font-family:inherit;font-size:13px;}
+  .term .err{color:#f88;}
+  .term .ok{color:#8f8;}
+  .term .dir{color:#7bf;font-weight:600;}
+
+  /* ============================= EDITOR ============================= */
+  .editor{display:flex;flex-direction:column;height:100%;}
+  .editor textarea{flex:1;border:none;outline:none;resize:none;padding:14px;font-size:14px;line-height:1.6;
+    background:var(--win-bg);color:var(--text);font-family:ui-monospace,Menlo,Consolas,monospace;}
+  .editor .status{padding:5px 12px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);
+    display:flex;justify-content:space-between;background:var(--panel-solid);}
+
+  /* ============================= SETTINGS ============================= */
+  .settings{padding:16px;display:flex;flex-direction:column;gap:20px;overflow:auto;height:100%;}
+  .set-group{border:1px solid var(--border);border-radius:12px;padding:14px;background:var(--panel-solid);}
+  .set-group h3{margin:0 0 12px;font-size:14px;}
+  .set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+  .wp-choices,.accent-choices{display:flex;gap:10px;flex-wrap:wrap;}
+  .wp-thumb{width:64px;height:40px;border-radius:8px;border:2px solid var(--border);cursor:pointer;}
+  .wp-thumb.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);}
+  .accent-dot{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
+  .accent-dot.active{border-color:var(--text);box-shadow:0 0 0 2px var(--accent);}
+  .toggle{width:46px;height:26px;border-radius:20px;background:var(--muted);position:relative;cursor:pointer;transition:.2s;}
+  .toggle.on{background:var(--accent);}
+  .toggle::after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s;}
+  .toggle.on::after{left:23px;}
+
+  /* ============================= MUSIC ============================= */
+  .music{display:flex;flex-direction:column;height:100%;padding:16px;gap:14px;align-items:center;justify-content:center;}
+  .music .art{width:120px;height:120px;border-radius:18px;display:flex;align-items:center;justify-content:center;
+    font-size:56px;background:linear-gradient(135deg,var(--accent),#8b5cf6);box-shadow:var(--shadow);}
+  .music .art.playing{animation:pulse 1.4s ease-in-out infinite;}
+  .music .track-name{font-size:16px;font-weight:600;}
+  .music .controls{display:flex;gap:16px;align-items:center;}
+  .music .ctl{width:52px;height:52px;border-radius:50%;border:1px solid var(--border);background:var(--panel-solid);
+    font-size:20px;display:flex;align-items:center;justify-content:center;}
+  .music .ctl.play{width:64px;height:64px;background:var(--accent);color:#fff;border-color:var(--accent);font-size:26px;}
+  .music .playlist{width:100%;max-width:280px;display:flex;flex-direction:column;gap:4px;}
+  .music .pl-row{padding:8px 12px;border-radius:8px;font-size:13px;display:flex;justify-content:space-between;cursor:pointer;}
+  .music .pl-row:hover{background:rgba(255,255,255,.08);}
+  .music .pl-row.active{background:rgba(59,130,246,.22);color:var(--accent);}
+
+  /* ============================= GAME ============================= */
+  .game{display:flex;flex-direction:column;height:100%;padding:14px;gap:12px;align-items:center;}
+  .game-head{display:flex;gap:20px;font-size:14px;}
+  .mem-grid{display:grid;gap:8px;width:100%;max-width:360px;flex:1;align-content:center;}
+  .mem-card{aspect-ratio:1;border-radius:10px;background:var(--accent);display:flex;align-items:center;
+    justify-content:center;font-size:26px;cursor:pointer;transition:transform .15s;border:none;color:transparent;}
+  .mem-card.flip{background:var(--panel-solid);color:var(--text);border:1px solid var(--border);}
+  .mem-card.matched{background:var(--ok);color:#fff;opacity:.75;}
+  .mem-card:active{transform:scale(.95);}
+
+  /* ============================= DIALOG ============================= */
+  #modalWrap{position:absolute;inset:0;z-index:8500;display:none;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.45);}
+  #modalWrap.open{display:flex;}
+  .modal{background:var(--win-bg);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);
+    padding:20px;width:320px;max-width:calc(100vw - 32px);display:flex;flex-direction:column;gap:14px;}
+  .modal h3{margin:0;font-size:16px;}
+  .modal p{margin:0;font-size:13px;color:var(--muted);}
+  .modal .row{display:flex;gap:8px;justify-content:flex-end;}
+  .modal input{width:100%;}
+
+  @media (max-width:760px){
+    .app-grid{grid-template-columns:repeat(4,1fr);}
+    #startMenu{left:6px;right:6px;width:auto;}
+    .icon{width:74px;}
+    .icon .glyph{width:44px;height:44px;font-size:23px;}
+  }
+</style>
+</head>
+<body>
+<div id="screen" class="wp-aurora">
+  <div id="desktop"></div>
+
+  <div id="taskbar">
+    <button id="startBtn" title="Start (Win)">▦</button>
+    <div id="taskItems"></div>
+    <div class="tray">
+      <button class="tray-btn" id="searchTray" title="Search">🔍</button>
+      <button class="tray-btn" id="lockTray" title="Lock">🔒</button>
+      <div id="trayClock"><div id="tClock">--:--</div><div id="tDate">--</div></div>
+    </div>
+  </div>
+
+  <div id="startMenu">
+    <input id="searchBox" placeholder="Search apps and files…" autocomplete="off">
+    <div class="search-results" id="searchResults" style="display:none;"></div>
+    <div class="app-grid" id="appGrid"></div>
+    <div class="start-foot">
+      <div class="who"><div class="av">👤</div><span id="userName">User</span></div>
+      <div style="display:flex;gap:4px;">
+        <button class="win-btn" id="lockFromStart" title="Lock">🔒</button>
+        <button class="win-btn" id="restartFromStart" title="Restart">⏻</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="notifs"></div>
+  <div id="ctxMenu"></div>
+
+  <div id="modalWrap"><div class="modal" id="modal"></div></div>
+
+  <div id="lock">
+    <div class="clock" id="lockClock">--:--</div>
+    <div class="date" id="lockDate">--</div>
+    <div class="lock-avatar">👤</div>
+    <div class="lock-hint">Tap to unlock</div>
+    <button class="lock-btn" id="unlockBtn">Unlock</button>
+  </div>
+
+  <div id="boot">
+    <div class="boot-logo">M</div>
+    <div class="boot-name">MINI&nbsp;OS</div>
+    <div class="boot-bar"><i></i></div>
+    <div class="spinner"></div>
+    <div class="boot-tip">Loading virtual environment…</div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================================================================
+   MiniOS — a self-contained desktop OS in one HTML file.
+   ================================================================ */
+(function(){
+const LS_KEY = "miniOS_state_v1";
+const $ = (s,r)=> (r||document).querySelector(s);
+const $$ = (s,r)=> Array.from((r||document).querySelectorAll(s));
+const isMobile = ()=> window.matchMedia("(max-width:760px)").matches;
+const now = ()=> Date.now();
+const uid = ()=> Math.random().toString(36).slice(2,9);
+
+/* ---------------- DEFAULT STATE ---------------- */
+function defaultFS(){
+  return {type:"folder",children:{
+    "Desktop":{type:"folder",children:{},created:now(),modified:now()},
+    "Documents":{type:"folder",children:{
+      "welcome.txt":{type:"file",kind:"text",content:"Welcome to MiniOS!\n\nThis is a fully working mini operating system built in a single HTML file.\n\nTry the File Explorer, Terminal, Drawing app and more.\nEverything you create is saved in your browser.",created:now(),modified:now()},
+      "notes.txt":{type:"file",kind:"text",content:"- Buy groceries\n- Finish project\n- Star this on GitHub",created:now(),modified:now()}
+    },created:now(),modified:now()},
+    "Pictures":{type:"folder",children:{},created:now(),modified:now()},
+    "Music":{type:"folder",children:{},created:now(),modified:now()}
+  },created:now(),modified:now()};
+}
+function defaultState(){
+  return {
+    version:1,
+    fs:defaultFS(),
+    recycle:[],
+    settings:{theme:"dark",wallpaper:"wp-aurora",accent:"#3b82f6",sound:true,userName:"User"},
+    iconPos:{}
+  };
+}
+
+/* ---------------- STATE + PERSISTENCE ---------------- */
+let state;
+function validState(s){
+  try{
+    if(!s||typeof s!=="object") return false;
+    if(!s.fs||s.fs.type!=="folder"||typeof s.fs.children!=="object") return false;
+    if(!s.settings||typeof s.settings!=="object") return false;
+    if(!Array.isArray(s.recycle)) return false;
+    return true;
+  }catch(e){return false;}
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(validState(parsed)){ state = mergeDefaults(parsed); return; }
+    }
+  }catch(e){ console.warn("Load failed, resetting", e); }
+  state = defaultState();
+}
+function mergeDefaults(s){
+  const d = defaultState();
+  s.settings = Object.assign({}, d.settings, s.settings||{});
+  s.iconPos = s.iconPos||{};
+  s.recycle = Array.isArray(s.recycle)? s.recycle : [];
+  return s;
+}
+let saveTimer=null;
+function save(){
+  if(saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+    catch(e){ notify("⚠️","Storage full","Could not save data."); }
+  },120);
+}
+
+/* ---------------- VIRTUAL FILE SYSTEM ---------------- */
+function normPath(p){
+  if(!p||p==="/") return "/";
+  const parts=[];
+  p.split("/").forEach(seg=>{
+    if(seg===""||seg===".") return;
+    if(seg===".."){ parts.pop(); return; }
+    parts.push(seg);
+  });
+  return "/"+parts.join("/");
+}
+function pathParts(p){ p=normPath(p); return p==="/"?[]:p.slice(1).split("/"); }
+function getNode(p){
+  const parts=pathParts(p);
+  let node=state.fs;
+  for(const seg of parts){
+    if(node.type!=="folder"||!node.children[seg]) return null;
+    node=node.children[seg];
+  }
+  return node;
+}
+function getParent(p){ const parts=pathParts(p); parts.pop(); return getNode("/"+parts.join("/")); }
+function baseName(p){ const parts=pathParts(p); return parts.length? parts[parts.length-1] : ""; }
+function dirName(p){ const parts=pathParts(p); parts.pop(); return "/"+parts.join("/"); }
+function uniqueName(folder,name){
+  if(!folder.children[name]) return name;
+  const dot=name.lastIndexOf(".");
+  const base = dot>0? name.slice(0,dot):name;
+  const ext = dot>0? name.slice(dot):"";
+  let i=1,cand;
+  do{ cand=`${base} (${i})${ext}`; i++; }while(folder.children[cand]);
+  return cand;
+}
+function fsCreate(dirPath,name,type,extra){
+  const folder=getNode(dirPath);
+  if(!folder||folder.type!=="folder") return null;
+  name=uniqueName(folder, name);
+  const node = type==="folder"
+    ? {type:"folder",children:{},created:now(),modified:now()}
+    : Object.assign({type:"file",kind:"text",content:"",created:now(),modified:now()},extra||{});
+  folder.children[name]=node;
+  folder.modified=now();
+  save();
+  return name;
+}
+function fsRename(path,newName){
+  const parent=getParent(path); const old=baseName(path);
+  if(!parent||!parent.children[old]) return false;
+  newName=newName.trim(); if(!newName) return false;
+  if(newName!==old && parent.children[newName]) newName=uniqueName(parent,newName);
+  const node=parent.children[old];
+  delete parent.children[old];
+  parent.children[newName]=node;
+  node.modified=now();
+  save(); return newName;
+}
+function fsDelete(path){
+  const parent=getParent(path); const name=baseName(path);
+  if(!parent||!parent.children[name]) return false;
+  const node=parent.children[name];
+  state.recycle.push({id:uid(),name,node:JSON.parse(JSON.stringify(node)),origin:dirName(path),deletedAt:now()});
+  delete parent.children[name];
+  save(); return true;
+}
+function fsRestore(id){
+  const idx=state.recycle.findIndex(r=>r.id===id);
+  if(idx<0) return false;
+  const r=state.recycle[idx];
+  let dest=getNode(r.origin);
+  if(!dest||dest.type!=="folder") dest=getNode("/Desktop");
+  const name=uniqueName(dest,r.name);
+  dest.children[name]=r.node;
+  state.recycle.splice(idx,1);
+  save(); return true;
+}
+function fsCopy(srcPath,destDir){
+  const src=getNode(srcPath); const dest=getNode(destDir);
+  if(!src||!dest||dest.type!=="folder") return false;
+  const name=uniqueName(dest, baseName(srcPath));
+  dest.children[name]=JSON.parse(JSON.stringify(src));
+  dest.children[name].modified=now();
+  save(); return name;
+}
+function fsMove(srcPath,destDir){
+  const src=getNode(srcPath); const dest=getNode(destDir); const parent=getParent(srcPath);
+  if(!src||!dest||dest.type!=="folder"||!parent) return false;
+  // prevent moving folder into itself/descendant
+  if(normPath(destDir)===normPath(dirName(srcPath))) return false;
+  if(src.type==="folder" && normPath(destDir).startsWith(normPath(srcPath))) return false;
+  const name=uniqueName(dest, baseName(srcPath));
+  dest.children[name]=src;
+  delete parent.children[baseName(srcPath)];
+  save(); return name;
+}
+function fileIcon(node,name){
+  if(node.type==="folder") return "📁";
+  if(node.kind==="drawing") return "🖼️";
+  if(/\.txt$/i.test(name)) return "📄";
+  return "📄";
+}
+
+/* ================================================================
+   WINDOW MANAGER
+   ================================================================ */
+let zTop=100;
+const windows={}; // id -> {el,appId,title,icon,min,max,prevRect,taskEl}
+function focusWindow(id){
+  const w=windows[id]; if(!w) return;
+  zTop++; w.el.style.zIndex=zTop;
+  $$(".task-item").forEach(t=>t.classList.remove("active"));
+  if(w.taskEl) w.taskEl.classList.add("active");
+}
+function clampToScreen(el){
+  const scr=$("#screen").getBoundingClientRect();
+  const tb=52;
+  let x=parseFloat(el.style.left)||0, y=parseFloat(el.style.top)||0;
+  let w=el.offsetWidth, h=el.offsetHeight;
+  x=Math.min(Math.max(x, -w+80), scr.width-40);
+  y=Math.min(Math.max(y, 0), scr.height-tb-34);
+  el.style.left=x+"px"; el.style.top=y+"px";
+}
+function createWindow(opts){
+  const id=uid();
+  const el=document.createElement("div");
+  el.className="window"; el.dataset.id=id;
+  const scr=$("#screen").getBoundingClientRect();
+  const mob=isMobile();
+  let w=opts.width||480, h=opts.height||360;
+  if(mob){ w=scr.width-12; h=scr.height-52-12; }
+  w=Math.min(w,scr.width-8); h=Math.min(h,scr.height-52-8);
+  const openCount=Object.keys(windows).length;
+  let x=mob?6:Math.max(10,(scr.width-w)/2 + (openCount%5)*26 - 52);
+  let y=mob?6:Math.max(10,(scr.height-52-h)/2 + (openCount%5)*22 - 44);
+  el.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px;`;
+  el.innerHTML=`
+    <div class="win-head">
+      <div class="win-title"><span>${opts.icon||"🗔"}</span><span class="tt">${escapeHtml(opts.title)}</span></div>
+      <div class="win-btns">
+        <button class="win-btn min" title="Minimize">—</button>
+        <button class="win-btn max" title="Maximize">▢</button>
+        <button class="win-btn close" title="Close">✕</button>
+      </div>
+    </div>
+    <div class="win-body"></div>
+    <div class="rz n"></div><div class="rz s"></div><div class="rz e"></div><div class="rz w"></div>
+    <div class="rz ne"></div><div class="rz nw"></div><div class="rz se"></div><div class="rz sw"></div>`;
+  $("#screen").appendChild(el);
+  const body=$(".win-body",el);
+  const w_obj={el,appId:opts.appId,title:opts.title,icon:opts.icon,min:false,max:false,prevRect:null};
+  windows[id]=w_obj;
+
+  // taskbar item
+  const task=document.createElement("div");
+  task.className="task-item"; task.dataset.id=id;
+  task.innerHTML=`<span>${opts.icon||"🗔"}</span><span class="t">${escapeHtml(opts.title)}</span>`;
+  task.addEventListener("click",()=>{
+    if(w_obj.min){ restoreWin(id); }
+    else if(el.style.zIndex==zTop){ minimizeWin(id); }
+    else focusWindow(id);
+  });
+  $("#taskItems").appendChild(task);
+  w_obj.taskEl=task;
+
+  el.addEventListener("mousedown",()=>focusWindow(id));
+  el.addEventListener("touchstart",()=>focusWindow(id),{passive:true});
+
+  $(".win-btn.close",el).addEventListener("click",e=>{e.stopPropagation();closeWin(id);});
+  $(".win-btn.min",el).addEventListener("click",e=>{e.stopPropagation();minimizeWin(id);});
+  $(".win-btn.max",el).addEventListener("click",e=>{e.stopPropagation();toggleMax(id);});
+  $(".win-head",el).addEventListener("dblclick",()=>toggleMax(id));
+
+  makeDraggable(el,$(".win-head",el),id);
+  makeResizable(el,id);
+
+  focusWindow(id);
+  if(mob){ toggleMax(id,true); }
+
+  if(opts.build) opts.build(body,w_obj,id);
+  return {id,body,win:w_obj};
+}
+function closeWin(id){
+  const w=windows[id]; if(!w) return;
+  if(w.onClose) try{w.onClose();}catch(e){}
+  w.el.remove(); if(w.taskEl) w.taskEl.remove();
+  delete windows[id];
+}
+function minimizeWin(id){
+  const w=windows[id]; if(!w) return;
+  w.min=true; w.el.style.display="none";
+  if(w.taskEl) w.taskEl.classList.remove("active");
+}
+function restoreWin(id){
+  const w=windows[id]; if(!w) return;
+  w.min=false; w.el.style.display="flex"; focusWindow(id);
+}
+function toggleMax(id,force){
+  const w=windows[id]; if(!w) return;
+  const el=w.el; const scr=$("#screen").getBoundingClientRect();
+  if(!w.max || force===true){
+    if(!w.max){
+      w.prevRect={left:el.style.left,top:el.style.top,width:el.style.width,height:el.style.height};
+      w.max=true;
+    }
+    el.style.left="0px"; el.style.top="0px";
+    el.style.width=scr.width+"px"; el.style.height=(scr.height-52)+"px";
+  }else{
+    w.max=false;
+    if(w.prevRect){ Object.assign(el.style,w.prevRect); }
+  }
+}
+function makeDraggable(el,handle,id){
+  let sx,sy,ox,oy,drag=false;
+  const down=(e)=>{
+    const w=windows[id]; if(w&&w.max) return;
+    if(e.target.closest(".win-btn")) return;
+    drag=true; el.classList.add("dragging");
+    const p=point(e); sx=p.x; sy=p.y;
+    ox=parseFloat(el.style.left)||0; oy=parseFloat(el.style.top)||0;
+    focusWindow(id);
+    document.addEventListener("mousemove",move); document.addEventListener("mouseup",up);
+    document.addEventListener("touchmove",move,{passive:false}); document.addEventListener("touchend",up);
+  };
+  const move=(e)=>{
+    if(!drag) return; e.preventDefault();
+    const p=point(e);
+    el.style.left=(ox+p.x-sx)+"px"; el.style.top=(oy+p.y-sy)+"px";
+  };
+  const up=()=>{
+    drag=false; el.classList.remove("dragging"); clampToScreen(el);
+    document.removeEventListener("mousemove",move); document.removeEventListener("mouseup",up);
+    document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up);
+  };
+  handle.addEventListener("mousedown",down);
+  handle.addEventListener("touchstart",down,{passive:false});
+}
+function makeResizable(el,id){
+  $$(".rz",el).forEach(h=>{
+    const dirs=h.classList[1];
+    const down=(e)=>{
+      e.preventDefault(); e.stopPropagation();
+      const w=windows[id]; if(w&&w.max) return;
+      el.classList.add("resizing"); focusWindow(id);
+      const p=point(e), sx=p.x, sy=p.y;
+      const startW=el.offsetWidth,startH=el.offsetHeight;
+      const startL=parseFloat(el.style.left)||0, startT=parseFloat(el.style.top)||0;
+      const move=(ev)=>{
+        ev.preventDefault();
+        const q=point(ev), dx=q.x-sx, dy=q.y-sy;
+        let nw=startW,nh=startH,nl=startL,nt=startT;
+        if(dirs.includes("e")) nw=Math.max(200,startW+dx);
+        if(dirs.includes("s")) nh=Math.max(140,startH+dy);
+        if(dirs.includes("w")){ nw=Math.max(200,startW-dx); nl=startL+(startW-nw); }
+        if(dirs.includes("n")){ nh=Math.max(140,startH-dy); nt=startT+(startH-nh); }
+        el.style.width=nw+"px"; el.style.height=nh+"px";
+        el.style.left=nl+"px"; el.style.top=nt+"px";
+      };
+      const up=()=>{
+        el.classList.remove("resizing"); clampToScreen(el);
+        document.removeEventListener("mousemove",move); document.removeEventListener("mouseup",up);
+        document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up);
+      };
+      document.addEventListener("mousemove",move); document.addEventListener("mouseup",up);
+      document.addEventListener("touchmove",move,{passive:false}); document.addEventListener("touchend",up);
+    };
+    h.addEventListener("mousedown",down);
+    h.addEventListener("touchstart",down,{passive:false});
+  });
+}
+function point(e){
+  if(e.touches&&e.touches[0]) return {x:e.touches[0].clientX,y:e.touches[0].clientY};
+  if(e.changedTouches&&e.changedTouches[0]) return {x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY};
+  return {x:e.clientX,y:e.clientY};
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ================================================================
+   NOTIFICATIONS
+   ================================================================ */
+function notify(icon,title,msg,ms){
+  const n=document.createElement("div");
+  n.className="notif";
+  n.innerHTML=`<div class="ni">${icon}</div><div><div class="nt">${escapeHtml(title)}</div>${msg?`<div class="nm">${escapeHtml(msg)}</div>`:""}</div>`;
+  $("#notifs").appendChild(n);
+  setTimeout(()=>{ n.style.transition="opacity .3s,transform .3s"; n.style.opacity="0"; n.style.transform="translateX(120%)";
+    setTimeout(()=>n.remove(),300); }, ms||3200);
+  beep(880,.05,.03);
+}
+
+/* ================================================================
+   MODAL DIALOG (prompt / confirm)
+   ================================================================ */
+function modalPrompt(title,defVal,cb,placeholder){
+  const m=$("#modal");
+  m.innerHTML=`<h3>${escapeHtml(title)}</h3>
+    <input class="field" id="mp" value="${escapeHtml(defVal||"")}" placeholder="${escapeHtml(placeholder||"")}">
+    <div class="row"><button class="btn" id="mCancel">Cancel</button><button class="btn primary" id="mOk">OK</button></div>`;
+  $("#modalWrap").classList.add("open");
+  const inp=$("#mp"); inp.focus(); inp.select();
+  const done=(v)=>{ $("#modalWrap").classList.remove("open"); if(v!==null&&cb) cb(v); };
+  $("#mOk").onclick=()=>done(inp.value);
+  $("#mCancel").onclick=()=>done(null);
+  inp.onkeydown=e=>{ if(e.key==="Enter")done(inp.value); if(e.key==="Escape")done(null); };
+}
+function modalConfirm(title,msg,cb){
+  const m=$("#modal");
+  m.innerHTML=`<h3>${escapeHtml(title)}</h3><p>${escapeHtml(msg)}</p>
+    <div class="row"><button class="btn" id="mCancel">Cancel</button><button class="btn danger" id="mOk">Confirm</button></div>`;
+  $("#modalWrap").classList.add("open");
+  $("#mOk").onclick=()=>{ $("#modalWrap").classList.remove("open"); cb&&cb(true); };
+  $("#mCancel").onclick=()=>{ $("#modalWrap").classList.remove("open"); };
+}
+$("#modalWrap").addEventListener("mousedown",e=>{ if(e.target.id==="modalWrap") $("#modalWrap").classList.remove("open"); });
+
+/* ================================================================
+   CONTEXT MENU
+   ================================================================ */
+function showContextMenu(x,y,items){
+  const menu=$("#ctxMenu"); menu.innerHTML="";
+  items.forEach(it=>{
+    if(it.sep){ const s=document.createElement("div"); s.className="ctx-sep"; menu.appendChild(s); return; }
+    const el=document.createElement("div");
+    el.className="ctx-item"+(it.disabled?" disabled":"");
+    el.innerHTML=`<span>${it.icon||""}</span><span>${escapeHtml(it.label)}</span>`;
+    el.addEventListener("click",()=>{ hideContextMenu(); if(!it.disabled&&it.action) it.action(); });
+    menu.appendChild(el);
+  });
+  menu.style.display="block";
+  const mw=menu.offsetWidth, mh=menu.offsetHeight;
+  const sw=window.innerWidth, sh=window.innerHeight-52;
+  menu.style.left=Math.min(x,sw-mw-6)+"px";
+  menu.style.top=Math.min(y,sh-mh-6)+"px";
+}
+function hideContextMenu(){ $("#ctxMenu").style.display="none"; }
+document.addEventListener("mousedown",e=>{ if(!e.target.closest("#ctxMenu")) hideContextMenu(); });
+document.addEventListener("scroll",hideContextMenu,true);
+
+// long-press helper for touch context menus
+function attachLongPress(el,handler){
+  let timer=null,sp=null;
+  el.addEventListener("touchstart",e=>{
+    sp=point(e);
+    timer=setTimeout(()=>{ timer=null; handler(sp.x,sp.y,e); }, 500);
+  },{passive:true});
+  const cancel=(e)=>{ if(timer){clearTimeout(timer);timer=null;} };
+  el.addEventListener("touchmove",e=>{ if(timer&&sp){ const p=point(e); if(Math.hypot(p.x-sp.x,p.y-sp.y)>12){clearTimeout(timer);timer=null;} } },{passive:true});
+  el.addEventListener("touchend",cancel);
+  el.addEventListener("touchcancel",cancel);
+}
+
+/* ================================================================
+   WEB AUDIO — sounds + music
+   ================================================================ */
+let audioCtx=null;
+function ac(){ if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return audioCtx; }
+function beep(freq,dur,vol,type){
+  if(!state.settings.sound) return;
+  const c=ac(); if(!c) return;
+  try{
+    const o=c.createOscillator(), g=c.createGain();
+    o.type=type||"sine"; o.frequency.value=freq;
+    g.gain.value=vol||.05;
+    o.connect(g); g.connect(c.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(.0001, c.currentTime+(dur||.1));
+    o.stop(c.currentTime+(dur||.1));
+  }catch(e){}
+}
+
+/* ================================================================
+   APPS REGISTRY
+   ================================================================ */
+const APPS={
+  files:{name:"File Explorer",icon:"📁",open:openFileExplorer},
+  editor:{name:"Text Editor",icon:"📝",open:()=>openEditor(null)},
+  calc:{name:"Calculator",icon:"🧮",open:openCalculator},
+  draw:{name:"Drawing",icon:"🎨",open:openDrawing},
+  terminal:{name:"Terminal",icon:"⌨️",open:openTerminal},
+  settings:{name:"Settings",icon:"⚙️",open:openSettings},
+  music:{name:"Music Player",icon:"🎵",open:openMusic},
+  game:{name:"Memory Game",icon:"🎮",open:openGame},
+  recycle:{name:"Recycle Bin",icon:"🗑️",open:openRecycle}
+};
+
+/* ================================================================
+   FILE EXPLORER
+   ================================================================ */
+let clipboard=null; // {path, mode:'copy'|'cut'}
+function openFileExplorer(startPath){
+  let cwd=startPath||"/";
+  let selected=null;
+  const {body}=createWindow({title:"File Explorer",icon:"📁",appId:"files",width:560,height:420,build:(b,w)=>{
+    b.innerHTML=`
+      <div class="toolbar">
+        <button class="btn" data-a="up">⬆ Up</button>
+        <button class="btn" data-a="newFolder">📁 New Folder</button>
+        <button class="btn" data-a="newFile">📄 New File</button>
+        <button class="btn" data-a="paste" id="pasteBtn">📋 Paste</button>
+        <input class="field" id="feSearch" placeholder="Search…" style="margin-left:auto;max-width:150px;">
+      </div>
+      <div class="fe-path" id="fePath"></div>
+      <div class="fe-grid" id="feGrid"></div>`;
+    w.render=render;
+    render();
+    function render(){
+      const node=getNode(cwd); if(!node){ cwd="/"; }
+      renderPath(); renderGrid();
+      $("#pasteBtn",b).style.display=clipboard?"inline-flex":"none";
+    }
+    function renderPath(){
+      const parts=pathParts(cwd);
+      let html=`<span class="fe-crumb" data-p="/">🖥 This PC</span>`;
+      let acc="";
+      parts.forEach(seg=>{ acc+="/"+seg; html+=` › <span class="fe-crumb" data-p="${acc}">${escapeHtml(seg)}</span>`; });
+      $("#fePath",b).innerHTML=html;
+      $$(".fe-crumb",b).forEach(c=>c.onclick=()=>{ cwd=c.dataset.p; selected=null; render(); });
+    }
+    function renderGrid(){
+      const node=getNode(cwd);
+      const grid=$("#feGrid",b); grid.innerHTML="";
+      const filter=($("#feSearch",b).value||"").toLowerCase();
+      const entries=Object.entries(node.children)
+        .filter(([n])=>!filter||n.toLowerCase().includes(filter))
+        .sort((a,b)=>{
+          if(a[1].type!==b[1].type) return a[1].type==="folder"?-1:1;
+          return a[0].localeCompare(b[0]);
+        });
+      if(!entries.length){ grid.innerHTML=`<div class="fe-empty">This folder is empty.<br>Use the buttons above to create files.</div>`; return; }
+      entries.forEach(([name,child])=>{
+        const path=normPath(cwd+"/"+name);
+        const it=document.createElement("div");
+        it.className="fe-item"+(selected===path?" selected":"");
+        it.innerHTML=`<div class="fg">${fileIcon(child,name)}</div><div class="fn">${escapeHtml(name)}</div>`;
+        it.onclick=(e)=>{ e.stopPropagation(); selected=path; $$(".fe-item",b).forEach(x=>x.classList.remove("selected")); it.classList.add("selected"); };
+        it.ondblclick=()=>openEntry(path,child);
+        const menu=(x,y)=>{ selected=path; itemMenu(path,child); };
+        it.oncontextmenu=(e)=>{ e.preventDefault(); selected=path; showContextMenu(e.clientX,e.clientY,itemMenuItems(path,child)); };
+        attachLongPress(it,(x,y)=>{ selected=path; showContextMenu(x,y,itemMenuItems(path,child)); });
+        grid.appendChild(it);
+      });
+    }
+    function openEntry(path,child){
+      if(child.type==="folder"){ cwd=path; selected=null; render(); }
+      else if(child.kind==="drawing"){ openDrawing(path); }
+      else openEditor(path);
+    }
+    function itemMenuItems(path,child){
+      return [
+        {icon:"📂",label:child.type==="folder"?"Open":"Open",action:()=>openEntry(path,child)},
+        {icon:"✏️",label:"Rename",action:()=>modalPrompt("Rename",baseName(path),v=>{ const nn=fsRename(path,v); if(nn){selected=normPath(dirName(path)+"/"+nn);render();} })},
+        {icon:"📋",label:"Copy",action:()=>{ clipboard={path,mode:"copy"}; render(); notify("📋","Copied",baseName(path)); }},
+        {icon:"✂️",label:"Cut",action:()=>{ clipboard={path,mode:"cut"}; render(); notify("✂️","Cut",baseName(path)); }},
+        {sep:true},
+        {icon:"🗑️",label:"Delete",action:()=>{ fsDelete(path); selected=null; render(); refreshDesktop(); notify("🗑️","Moved to Recycle Bin",baseName(path)); }}
+      ];
+    }
+    function itemMenu(){}
+    // toolbar actions
+    b.querySelector(".toolbar").addEventListener("click",e=>{
+      const a=e.target.closest("[data-a]"); if(!a) return;
+      const act=a.dataset.a;
+      if(act==="up"){ if(cwd!=="/"){ cwd=dirName(cwd); selected=null; render(); } }
+      if(act==="newFolder"){ modalPrompt("New folder name","New Folder",v=>{ if(v.trim()){ fsCreate(cwd,v.trim(),"folder"); render(); refreshDesktop(); } }); }
+      if(act==="newFile"){ modalPrompt("New file name","untitled.txt",v=>{ if(v.trim()){ const nn=fsCreate(cwd,v.trim(),"file"); render(); refreshDesktop(); } }); }
+      if(act==="paste" && clipboard){
+        if(clipboard.mode==="copy") fsCopy(clipboard.path,cwd);
+        else { fsMove(clipboard.path,cwd); clipboard=null; }
+        render(); refreshDesktop();
+      }
+    });
+    $("#feSearch",b).addEventListener("input",renderGrid);
+    // empty area context menu
+    $("#feGrid",b).addEventListener("contextmenu",e=>{
+      if(e.target.closest(".fe-item")) return;
+      e.preventDefault();
+      showContextMenu(e.clientX,e.clientY,[
+        {icon:"📁",label:"New Folder",action:()=>{ modalPrompt("New folder name","New Folder",v=>{ if(v.trim()){fsCreate(cwd,v.trim(),"folder");render();refreshDesktop();} }); }},
+        {icon:"📄",label:"New File",action:()=>{ modalPrompt("New file name","untitled.txt",v=>{ if(v.trim()){fsCreate(cwd,v.trim(),"file");render();refreshDesktop();} }); }},
+        {icon:"📋",label:"Paste",disabled:!clipboard,action:()=>{ if(clipboard){ if(clipboard.mode==="copy")fsCopy(clipboard.path,cwd); else {fsMove(clipboard.path,cwd);clipboard=null;} render();refreshDesktop(); } }}
+      ]);
+    });
+    attachLongPress($("#feGrid",b),(x,y,e)=>{
+      if(e.target.closest(".fe-item")) return;
+      showContextMenu(x,y,[
+        {icon:"📁",label:"New Folder",action:()=>{ modalPrompt("New folder name","New Folder",v=>{ if(v.trim()){fsCreate(cwd,v.trim(),"folder");render();refreshDesktop();} }); }},
+        {icon:"📄",label:"New File",action:()=>{ modalPrompt("New file name","untitled.txt",v=>{ if(v.trim()){fsCreate(cwd,v.trim(),"file");render();refreshDesktop();} }); }},
+        {icon:"📋",label:"Paste",disabled:!clipboard,action:()=>{ if(clipboard){ if(clipboard.mode==="copy")fsCopy(clipboard.path,cwd); else {fsMove(clipboard.path,cwd);clipboard=null;} render();refreshDesktop(); } }}
+      ]);
+    });
+  }});
+}
+
+/* ================================================================
+   TEXT EDITOR
+   ================================================================ */
+function openEditor(path){
+  let curPath=path;
+  const node=path?getNode(path):null;
+  const title=path?baseName(path):"Untitled";
+  const {body}=createWindow({title:"Editor — "+title,icon:"📝",appId:"editor",width:520,height:420,build:(b,w)=>{
+    b.innerHTML=`
+      <div class="toolbar">
+        <button class="btn primary" data-a="save">💾 Save</button>
+        <button class="btn" data-a="saveAs">Save As…</button>
+        <button class="btn" data-a="open">📂 Open</button>
+      </div>
+      <div class="editor">
+        <textarea id="edArea" spellcheck="false" placeholder="Start typing…"></textarea>
+        <div class="status"><span id="edPath">${escapeHtml(path||"unsaved")}</span><span id="edStat">0 chars</span></div>
+      </div>`;
+    const ta=$("#edArea",b);
+    ta.value=node?node.content:"";
+    const upd=()=>{ $("#edStat",b).textContent=ta.value.length+" chars · "+ta.value.split("\n").length+" lines"; };
+    ta.addEventListener("input",upd); upd();
+    function doSave(targetPath){
+      const n=getNode(targetPath);
+      if(n&&n.type==="file"){ n.content=ta.value; n.modified=now(); save(); }
+      curPath=targetPath;
+      $("#edPath",b).textContent=targetPath;
+      w.title="Editor — "+baseName(targetPath);
+      $(".tt",w.el).textContent=w.title; if(w.taskEl)$(".t",w.taskEl).textContent=w.title;
+      notify("💾","Saved",baseName(targetPath)); refreshDesktop();
+    }
+    b.querySelector(".toolbar").addEventListener("click",e=>{
+      const a=e.target.closest("[data-a]"); if(!a) return;
+      if(a.dataset.a==="save"){
+        if(curPath) doSave(curPath);
+        else saveAs();
+      }
+      if(a.dataset.a==="saveAs") saveAs();
+      if(a.dataset.a==="open") openPicker();
+    });
+    function saveAs(){
+      modalPrompt("Save as (path or name)",curPath||"/Documents/untitled.txt",v=>{
+        v=v.trim(); if(!v) return;
+        if(!v.startsWith("/")) v="/Documents/"+v;
+        const dir=dirName(v); let folder=getNode(dir);
+        if(!folder||folder.type!=="folder"){ notify("⚠️","Invalid path",dir+" does not exist"); return; }
+        const nn=fsCreate(dir,baseName(v),"file",{content:ta.value});
+        doSave(normPath(dir+"/"+nn));
+      });
+    }
+    function openPicker(){
+      modalPrompt("Open file (full path)","/Documents/welcome.txt",v=>{
+        const n=getNode(v);
+        if(n&&n.type==="file"){ ta.value=n.content; curPath=normPath(v); $("#edPath",b).textContent=curPath; upd();
+          w.title="Editor — "+baseName(v); $(".tt",w.el).textContent=w.title; if(w.taskEl)$(".t",w.taskEl).textContent=w.title; }
+        else notify("⚠️","Not found",v);
+      });
+    }
+    // Ctrl+S
+    ta.addEventListener("keydown",e=>{
+      if((e.ctrlKey||e.metaKey)&&e.key==="s"){ e.preventDefault(); if(curPath)doSave(curPath); else saveAs(); }
+    });
+  }});
+}
+
+/* ================================================================
+   CALCULATOR
+   ================================================================ */
+function openCalculator(){
+  createWindow({title:"Calculator",icon:"🧮",appId:"calc",width:280,height:400,build:(b)=>{
+    b.innerHTML=`
+      <div class="calc">
+        <div class="calc-screen" id="calcScr">0</div>
+        <div class="calc-grid" id="calcGrid">
+          <button class="fn" data-k="C">C</button>
+          <button class="fn" data-k="±">±</button>
+          <button class="fn" data-k="%">%</button>
+          <button class="op" data-k="/">÷</button>
+          <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button class="op" data-k="*">×</button>
+          <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button class="op" data-k="-">−</button>
+          <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button class="op" data-k="+">+</button>
+          <button data-k="0" style="grid-column:span 2;">0</button><button data-k=".">.</button><button class="eq" data-k="=">=</button>
+        </div>
+      </div>`;
+    const scr=$("#calcScr",b);
+    let cur="0",prev=null,op=null,reset=false;
+    const show=()=>{ scr.textContent=cur.length>12?parseFloat(cur).toPrecision(10):cur; };
+    function press(k){
+      beep(660,.03,.02);
+      if(/[0-9]/.test(k)){ if(cur==="0"||reset){cur=k;reset=false;} else cur+=k; }
+      else if(k==="."){ if(reset){cur="0.";reset=false;} else if(!cur.includes("."))cur+="."; }
+      else if(k==="C"){ cur="0";prev=null;op=null; }
+      else if(k==="±"){ cur=(parseFloat(cur)*-1).toString(); }
+      else if(k==="%"){ cur=(parseFloat(cur)/100).toString(); }
+      else if(["+","-","*","/"].includes(k)){
+        if(op&&!reset) compute();
+        prev=parseFloat(cur); op=k; reset=true;
+      }
+      else if(k==="="){ compute(); op=null; }
+      show();
+    }
+    function compute(){
+      if(op===null||prev===null) return;
+      const b2=parseFloat(cur); let r=0;
+      if(op==="+")r=prev+b2; if(op==="-")r=prev-b2; if(op==="*")r=prev*b2;
+      if(op==="/")r=b2===0?NaN:prev/b2;
+      cur=isNaN(r)?"Error":String(Math.round(r*1e10)/1e10); prev=r; reset=true;
+    }
+    $("#calcGrid",b).addEventListener("click",e=>{ const btn=e.target.closest("[data-k]"); if(btn)press(btn.dataset.k); });
+    // keyboard support when focused
+    b.tabIndex=0;
+    b.addEventListener("keydown",e=>{
+      const m={"Enter":"=","=":"=","Backspace":"C","Escape":"C","x":"*"};
+      let k=e.key; if(m[k])k=m[k];
+      if(/[0-9.+\-*/=]/.test(k)){ e.preventDefault(); press(k); }
+    });
+  }});
+}
+
+/* ================================================================
+   DRAWING APP
+   ================================================================ */
+function openDrawing(loadPath){
+  createWindow({title:"Drawing",icon:"🎨",appId:"draw",width:560,height:460,build:(b,w)=>{
+    b.innerHTML=`
+      <div class="toolbar">
+        <span style="font-size:12px;">Size</span>
+        <input type="range" id="brush" min="1" max="40" value="5" style="width:90px;">
+        <button class="btn" data-a="eraser" id="eraserBtn">🩹 Eraser</button>
+        <button class="btn" data-a="undo">↶ Undo</button>
+        <button class="btn" data-a="redo">↷ Redo</button>
+        <button class="btn danger" data-a="clear">🗑 Clear</button>
+        <button class="btn primary" data-a="save">💾 Save</button>
+      </div>
+      <div style="display:flex;gap:6px;padding:6px 8px;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--panel-solid);" id="swatches"></div>
+      <div class="draw-canvas-holder" id="holder"><canvas id="cv"></canvas></div>`;
+    const holder=$("#holder",b), cv=$("#cv",b), ctx=cv.getContext("2d");
+    let color="#111111", erasing=false, drawing=false, size=5;
+    let undoStack=[], redoStack=[];
+    const colors=["#111111","#ffffff","#ef4444","#f97316","#eab308","#22c55e","#3b82f6","#8b5cf6","#ec4899","#78350f"];
+    const sw=$("#swatches",b);
+    colors.forEach((c,i)=>{ const s=document.createElement("div"); s.className="swatch"+(i===0?" active":""); s.style.background=c;
+      s.onclick=()=>{ color=c; erasing=false; $("#eraserBtn",b).classList.remove("primary"); $$(".swatch",b).forEach(x=>x.classList.remove("active")); s.classList.add("active"); };
+      sw.appendChild(s); });
+    function fit(){
+      const r=holder.getBoundingClientRect();
+      const data = cv.width? ctx.getImageData(0,0,cv.width,cv.height):null;
+      cv.width=Math.max(50,r.width); cv.height=Math.max(50,r.height);
+      ctx.fillStyle="#fff"; ctx.fillRect(0,0,cv.width,cv.height);
+      if(data){ try{ctx.putImageData(data,0,0);}catch(e){} }
+    }
+    setTimeout(()=>{ fit(); if(loadPath){ loadImg(loadPath); } else pushUndo(); },30);
+    const ro=new ResizeObserver(()=>fit()); ro.observe(holder);
+    w.onClose=()=>ro.disconnect();
+    function pushUndo(){ try{ undoStack.push(cv.toDataURL()); if(undoStack.length>30)undoStack.shift(); redoStack=[]; }catch(e){} }
+    function restore(url,cb){ const img=new Image(); img.onload=()=>{ ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height); ctx.drawImage(img,0,0,cv.width,cv.height); cb&&cb(); }; img.src=url; }
+    function loadImg(p){ const n=getNode(p); if(n&&n.content){ restore(n.content,()=>pushUndo()); } }
+    function pos(e){ const r=cv.getBoundingClientRect(); const p=point(e); return {x:(p.x-r.left)*(cv.width/r.width),y:(p.y-r.top)*(cv.height/r.height)}; }
+    function start(e){ e.preventDefault(); drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); draw(e); }
+    function draw(e){ if(!drawing)return; e.preventDefault(); const p=pos(e);
+      ctx.lineTo(p.x,p.y); ctx.lineCap="round"; ctx.lineJoin="round";
+      ctx.lineWidth=size; ctx.strokeStyle=erasing?"#ffffff":color; ctx.stroke(); ctx.beginPath(); ctx.moveTo(p.x,p.y); }
+    function end(){ if(drawing){ drawing=false; ctx.beginPath(); pushUndo(); } }
+    cv.addEventListener("mousedown",start); cv.addEventListener("mousemove",draw); window.addEventListener("mouseup",end);
+    cv.addEventListener("touchstart",start,{passive:false}); cv.addEventListener("touchmove",draw,{passive:false}); cv.addEventListener("touchend",end);
+    $("#brush",b).addEventListener("input",e=>size=+e.target.value);
+    b.querySelector(".toolbar").addEventListener("click",e=>{
+      const a=e.target.closest("[data-a]"); if(!a)return;
+      const act=a.dataset.a;
+      if(act==="eraser"){ erasing=!erasing; a.classList.toggle("primary",erasing); }
+      if(act==="undo"){ if(undoStack.length>1){ redoStack.push(undoStack.pop()); restore(undoStack[undoStack.length-1]); } }
+      if(act==="redo"){ if(redoStack.length){ const u=redoStack.pop(); undoStack.push(u); restore(u); } }
+      if(act==="clear"){ ctx.fillStyle="#fff"; ctx.fillRect(0,0,cv.width,cv.height); pushUndo(); }
+      if(act==="save"){
+        modalPrompt("Save drawing name","drawing"+Date.now().toString().slice(-4),v=>{
+          v=v.trim(); if(!v)return; if(!/\.(png|draw)$/i.test(v))v+=".png";
+          const data=cv.toDataURL("image/png");
+          const nn=fsCreate("/Pictures",v,"file",{kind:"drawing",content:data});
+          notify("🎨","Drawing saved","/Pictures/"+nn); refreshDesktop();
+        });
+      }
+    });
+  }});
+}
+
+/* ================================================================
+   TERMINAL
+   ================================================================ */
+function openTerminal(){
+  createWindow({title:"Terminal",icon:"⌨️",appId:"terminal",width:560,height:380,build:(b,w)=>{
+    let cwd="/";
+    const history=[]; let hi=0;
+    b.innerHTML=`<div class="term" id="termOut"></div>`;
+    const out=$("#termOut",b);
+    function prompt(){ return `<span class="prompt">user@minios</span>:<span class="dir">${cwd}</span>$ `; }
+    function writeLine(html,cls){ const d=document.createElement("div"); d.className="line"+(cls?" "+cls:""); d.innerHTML=html; out.appendChild(d); out.scrollTop=out.scrollHeight; }
+    function newInput(){
+      const line=document.createElement("div"); line.className="term-input-line";
+      line.innerHTML=prompt()+`<input autocomplete="off" autocapitalize="off" spellcheck="false">`;
+      out.appendChild(line);
+      const inp=line.querySelector("input"); inp.focus();
+      inp.addEventListener("keydown",e=>{
+        if(e.key==="Enter"){
+          const cmd=inp.value; inp.disabled=true;
+          line.innerHTML=prompt()+escapeHtml(cmd);
+          if(cmd.trim()){ history.push(cmd); hi=history.length; }
+          run(cmd);
+          newInput();
+        } else if(e.key==="ArrowUp"){ e.preventDefault(); if(hi>0){hi--;inp.value=history[hi]||"";} }
+        else if(e.key==="ArrowDown"){ e.preventDefault(); if(hi<history.length-1){hi++;inp.value=history[hi]||"";} else {hi=history.length;inp.value="";} }
+      });
+      out.scrollTop=out.scrollHeight;
+    }
+    out.addEventListener("click",()=>{ const inp=out.querySelector("input:not([disabled])"); if(inp)inp.focus(); });
+    function resolve(arg){ if(!arg) return cwd; return arg.startsWith("/")?normPath(arg):normPath(cwd+"/"+arg); }
+    function run(raw){
+      const parts=raw.trim().match(/(?:[^\s"]+|"[^"]*")+/g)||[];
+      const cmd=(parts[0]||"").toLowerCase();
+      const args=parts.slice(1).map(a=>a.replace(/^"|"$/g,""));
+      if(!cmd) return;
+      switch(cmd){
+        case "help": writeLine("Available commands:\n  help clear date echo ls cd mkdir touch cat rm history pwd\n  Files are shared with File Explorer.","ok"); break;
+        case "clear": out.innerHTML=""; break;
+        case "date": writeLine(new Date().toString()); break;
+        case "echo": writeLine(escapeHtml(args.join(" "))); break;
+        case "pwd": writeLine(cwd); break;
+        case "ls": {
+          const p=resolve(args[0]); const n=getNode(p);
+          if(!n){ writeLine("ls: cannot access '"+escapeHtml(args[0]||p)+"': No such file or directory","err"); break; }
+          if(n.type==="file"){ writeLine(baseName(p)); break; }
+          const items=Object.entries(n.children).sort((a,b)=>a[0].localeCompare(b[0]));
+          if(!items.length){ writeLine("(empty)"); break; }
+          writeLine(items.map(([nm,c])=>c.type==="folder"?`<span class="dir">${escapeHtml(nm)}/</span>`:escapeHtml(nm)).join("   "));
+          break;
+        }
+        case "cd": {
+          const target=args[0]?resolve(args[0]):"/"; const n=getNode(target);
+          if(!n){ writeLine("cd: "+escapeHtml(args[0])+": No such file or directory","err"); }
+          else if(n.type!=="folder"){ writeLine("cd: "+escapeHtml(args[0])+": Not a directory","err"); }
+          else cwd=target;
+          break;
+        }
+        case "mkdir": {
+          if(!args[0]){ writeLine("mkdir: missing operand","err"); break; }
+          const p=resolve(args[0]); const parent=getParent(p);
+          if(!parent||parent.type!=="folder"){ writeLine("mkdir: cannot create directory","err"); break; }
+          fsCreate(dirName(p),baseName(p),"folder"); refreshDesktop();
+          break;
+        }
+        case "touch": {
+          if(!args[0]){ writeLine("touch: missing operand","err"); break; }
+          const p=resolve(args[0]); const parent=getParent(p);
+          if(!parent||parent.type!=="folder"){ writeLine("touch: cannot create file","err"); break; }
+          if(getNode(p)){ getNode(p).modified=now(); save(); }
+          else { fsCreate(dirName(p),baseName(p),"file"); refreshDesktop(); }
+          break;
+        }
+        case "cat": {
+          const p=resolve(args[0]); const n=getNode(p);
+          if(!n){ writeLine("cat: "+escapeHtml(args[0]||"")+": No such file","err"); break; }
+          if(n.type==="folder"){ writeLine("cat: "+escapeHtml(args[0])+": Is a directory","err"); break; }
+          writeLine(n.kind==="drawing"?"[drawing image data]":escapeHtml(n.content||"(empty)"));
+          break;
+        }
+        case "rm": {
+          if(!args[0]){ writeLine("rm: missing operand","err"); break; }
+          const p=resolve(args[0]); const n=getNode(p);
+          if(!n){ writeLine("rm: cannot remove '"+escapeHtml(args[0])+"': No such file","err"); break; }
+          if(n.type==="folder" && !args.includes("-r") && Object.keys(n.children).length){ writeLine("rm: '"+escapeHtml(args[0])+"' is a non-empty directory (use -r)","err"); break; }
+          fsDelete(p); refreshDesktop(); writeLine("moved to recycle bin: "+escapeHtml(baseName(p)),"ok");
+          break;
+        }
+        case "history": writeLine(history.map((h,i)=>`  ${i+1}  ${escapeHtml(h)}`).join("\n")||"(empty)"); break;
+        default: writeLine(escapeHtml(cmd)+": command not found (try 'help')","err");
+      }
+    }
+    writeLine("MiniOS Terminal — type <b>help</b> to get started.","ok");
+    newInput();
+  }});
+}
+
+/* ================================================================
+   SETTINGS
+   ================================================================ */
+function openSettings(){
+  createWindow({title:"Settings",icon:"⚙️",appId:"settings",width:480,height:480,build:(b,w)=>{
+    const s=state.settings;
+    const wps=[["wp-aurora","Aurora"],["wp-sunset","Sunset"],["wp-forest","Forest"],["wp-ocean","Ocean"],["wp-mono","Mono"],["wp-peach","Peach"]];
+    const accents=["#3b82f6","#8b5cf6","#ec4899","#ef4444","#f97316","#eab308","#22c55e","#06b6d4"];
+    b.innerHTML=`<div class="settings">
+      <div class="set-group">
+        <h3>🎨 Appearance</h3>
+        <div class="set-row"><span>Theme</span>
+          <div style="display:flex;gap:8px;">
+            <button class="btn" data-theme="light">☀️ Light</button>
+            <button class="btn" data-theme="dark">🌙 Dark</button>
+          </div>
+        </div>
+        <div class="set-row" style="align-items:flex-start;"><span>Wallpaper</span>
+          <div class="wp-choices" id="wpChoices"></div></div>
+        <div class="set-row"><span>Accent colour</span>
+          <div class="accent-choices" id="accentChoices"></div></div>
+      </div>
+      <div class="set-group">
+        <h3>🔊 System</h3>
+        <div class="set-row"><span>Sound effects</span><div class="toggle ${s.sound?"on":""}" id="soundToggle"></div></div>
+        <div class="set-row"><span>User name</span><input class="field" id="userNameInp" value="${escapeHtml(s.userName)}" style="max-width:160px;"></div>
+      </div>
+      <div class="set-group">
+        <h3>💾 Data</h3>
+        <div class="set-row"><span>Export everything</span><button class="btn" id="exportBtn">⬇ Export JSON</button></div>
+        <div class="set-row"><span>Import system</span><button class="btn" id="importBtn">⬆ Import JSON</button></div>
+        <div class="set-row"><span>Reset to factory</span><button class="btn danger" id="resetBtn">Reset</button></div>
+      </div>
+      <div class="set-group">
+        <h3>ℹ️ About</h3>
+        <p style="font-size:12px;color:var(--muted);margin:0;">MiniOS v1.0 — a complete desktop environment in a single HTML file. No frameworks, no network. Everything runs locally and persists in your browser.</p>
+      </div>
+    </div>`;
+    // wallpapers
+    const wpc=$("#wpChoices",b);
+    wps.forEach(([cls,nm])=>{ const t=document.createElement("div"); t.className="wp-thumb "+cls+(s.wallpaper===cls?" active":""); t.title=nm;
+      t.onclick=()=>{ s.wallpaper=cls; applyWallpaper(); $$(".wp-thumb",b).forEach(x=>x.classList.remove("active")); t.classList.add("active"); save(); };
+      wpc.appendChild(t); });
+    // accents
+    const acc=$("#accentChoices",b);
+    accents.forEach(c=>{ const d=document.createElement("div"); d.className="accent-dot"+(s.accent===c?" active":""); d.style.background=c;
+      d.onclick=()=>{ s.accent=c; applyAccent(); $$(".accent-dot",b).forEach(x=>x.classList.remove("active")); d.classList.add("active"); save(); };
+      acc.appendChild(d); });
+    $$("[data-theme]",b).forEach(btn=>btn.onclick=()=>{ s.theme=btn.dataset.theme; applyTheme(); save(); });
+    $("#soundToggle",b).onclick=(e)=>{ s.sound=!s.sound; e.target.classList.toggle("on",s.sound); save(); if(s.sound)beep(660,.08,.05); };
+    $("#userNameInp",b).addEventListener("input",e=>{ s.userName=e.target.value||"User"; $("#userName").textContent=s.userName; save(); });
+    $("#exportBtn",b).onclick=exportJSON;
+    $("#importBtn",b).onclick=importJSON;
+    $("#resetBtn",b).onclick=()=>modalConfirm("Reset MiniOS?","This deletes all files, settings and data permanently.",()=>{
+      localStorage.removeItem(LS_KEY); location.reload();
+    });
+  }});
+}
+function exportJSON(){
+  try{
+    const data=JSON.stringify(state,null,2);
+    const blob=new Blob([data],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download="minios-backup.json"; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    notify("⬇️","Exported","minios-backup.json downloaded");
+  }catch(e){ notify("⚠️","Export failed",""); }
+}
+function importJSON(){
+  const inp=document.createElement("input"); inp.type="file"; inp.accept="application/json,.json";
+  inp.onchange=()=>{
+    const f=inp.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const parsed=JSON.parse(r.result);
+        if(!validState(parsed)){ notify("⚠️","Import failed","File is not a valid MiniOS backup."); return; }
+        state=mergeDefaults(parsed); save();
+        applyAll(); refreshDesktop(); buildAppGrid();
+        // close windows
+        Object.keys(windows).forEach(closeWin);
+        notify("✅","Imported","System restored from backup.");
+      }catch(e){ notify("⚠️","Import failed","Corrupted or invalid JSON — nothing changed."); }
+    };
+    r.onerror=()=>notify("⚠️","Import failed","Could not read file.");
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+/* ================================================================
+   MUSIC PLAYER (Web Audio generated melodies)
+   ================================================================ */
+const N={C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,C5:523.25,D5:587.33,E5:659.25,G5:783.99,R:0};
+const TRACKS=[
+  {name:"Morning Bells",tempo:150,wave:"triangle",notes:["C4","E4","G4","C5","G4","E4","C4","R","E4","G4","C5","E5","C5","G4","E4","R"]},
+  {name:"Pixel March",tempo:180,wave:"square",notes:["C4","C4","G4","G4","A4","A4","G4","R","F4","F4","E4","E4","D4","D4","C4","R"]},
+  {name:"Calm Waves",tempo:110,wave:"sine",notes:["E4","G4","B4","G4","A4","C5","A4","F4","D4","F4","A4","F4","E4","G4","E4","R"]},
+  {name:"Night Drive",tempo:140,wave:"sawtooth",notes:["A4","C5","E5","C5","G4","B4","D5","B4","F4","A4","C5","A4","E4","G4","E4","R"]}
+];
+let musicState={idx:0,playing:false,timer:null,step:0,win:null};
+function openMusic(){
+  const {win}=createWindow({title:"Music Player",icon:"🎵",appId:"music",width:340,height:440,build:(b,w)=>{
+    musicState.win=w;
+    b.innerHTML=`<div class="music">
+      <div class="art" id="mArt">🎵</div>
+      <div class="track-name" id="mName">${TRACKS[musicState.idx].name}</div>
+      <div class="controls">
+        <button class="ctl" id="mPrev">⏮</button>
+        <button class="ctl play" id="mPlay">▶</button>
+        <button class="ctl" id="mNext">⏭</button>
+      </div>
+      <div class="playlist" id="mList"></div>
+    </div>`;
+    const list=$("#mList",b);
+    TRACKS.forEach((t,i)=>{ const r=document.createElement("div"); r.className="pl-row"+(i===musicState.idx?" active":"");
+      r.innerHTML=`<span>${escapeHtml(t.name)}</span><span>♪</span>`; r.onclick=()=>{ selectTrack(i); playMusic(true); }; list.appendChild(r); });
+    w.render=refresh;
+    function refresh(){
+      $("#mName",b).textContent=TRACKS[musicState.idx].name;
+      $("#mPlay",b).textContent=musicState.playing?"⏸":"▶";
+      $("#mArt",b).classList.toggle("playing",musicState.playing);
+      $$(".pl-row",b).forEach((r,i)=>r.classList.toggle("active",i===musicState.idx));
+    }
+    $("#mPlay",b).onclick=()=>playMusic(!musicState.playing);
+    $("#mPrev",b).onclick=()=>{ selectTrack((musicState.idx-1+TRACKS.length)%TRACKS.length); playMusic(true); };
+    $("#mNext",b).onclick=()=>{ selectTrack((musicState.idx+1)%TRACKS.length); playMusic(true); };
+    w.onClose=()=>{ playMusic(false); musicState.win=null; };
+    refresh();
+  }});
+}
+function selectTrack(i){ musicState.idx=i; musicState.step=0; if(musicState.win&&musicState.win.render)musicState.win.render(); }
+function playMusic(on){
+  musicState.playing=on;
+  if(musicState.timer){ clearInterval(musicState.timer); musicState.timer=null; }
+  if(on){
+    ac();
+    const t=TRACKS[musicState.idx]; const beat=60000/t.tempo/2;
+    musicState.timer=setInterval(()=>{
+      const note=t.notes[musicState.step % t.notes.length];
+      const f=N[note];
+      if(f>0 && state.settings.sound) beep(f,beat/1000*0.9,.06,t.wave);
+      musicState.step++;
+    },beat);
+  }
+  if(musicState.win&&musicState.win.render) musicState.win.render();
+}
+
+/* ================================================================
+   MEMORY GAME
+   ================================================================ */
+function openGame(){
+  createWindow({title:"Memory Game",icon:"🎮",appId:"game",width:400,height:480,build:(b)=>{
+    const EMOJI=["🍎","🚀","🎸","🌈","⚡","🐱","🍕","🎁"];
+    let cards=[],flipped=[],matched=0,moves=0,lock=false;
+    b.innerHTML=`<div class="game">
+      <div class="game-head"><span>Moves: <b id="gMoves">0</b></span><span>Pairs: <b id="gPairs">0</b>/8</span>
+        <button class="btn" id="gNew">🔄 New Game</button></div>
+      <div class="mem-grid" id="gGrid"></div>
+      <div id="gMsg" style="font-size:13px;color:var(--muted);height:18px;"></div>
+    </div>`;
+    const grid=$("#gGrid",b);
+    grid.style.gridTemplateColumns="repeat(4,1fr)";
+    function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+    function newGame(){
+      cards=shuffle([...EMOJI,...EMOJI].map((e,i)=>({e,id:i,m:false})));
+      flipped=[];matched=0;moves=0;lock=false;
+      $("#gMoves",b).textContent=0; $("#gPairs",b).textContent=0; $("#gMsg",b).textContent="";
+      grid.innerHTML="";
+      cards.forEach((c,i)=>{ const btn=document.createElement("button"); btn.className="mem-card"; btn.dataset.i=i; btn.textContent=c.e;
+        btn.onclick=()=>flip(i,btn); grid.appendChild(btn); });
+    }
+    function flip(i,btn){
+      if(lock||cards[i].m||flipped.find(f=>f.i===i)) return;
+      beep(520,.04,.03);
+      btn.classList.add("flip"); flipped.push({i,btn});
+      if(flipped.length===2){
+        moves++; $("#gMoves",b).textContent=moves; lock=true;
+        const [a,c]=flipped;
+        if(cards[a.i].e===cards[c.i].e){
+          cards[a.i].m=cards[c.i].m=true; matched++;
+          $("#gPairs",b).textContent=matched;
+          a.btn.classList.add("matched"); c.btn.classList.add("matched");
+          flipped=[]; lock=false; beep(880,.1,.05);
+          if(matched===8){ $("#gMsg",b).textContent=`🎉 You won in ${moves} moves!`; notify("🎮","You won!","Completed in "+moves+" moves"); beep(1046,.3,.06); }
+        } else {
+          setTimeout(()=>{ a.btn.classList.remove("flip"); c.btn.classList.remove("flip"); flipped=[]; lock=false; },700);
+        }
+      }
+    }
+    $("#gNew",b).onclick=newGame;
+    newGame();
+  }});
+}
+
+/* ================================================================
+   RECYCLE BIN
+   ================================================================ */
+function openRecycle(){
+  createWindow({title:"Recycle Bin",icon:"🗑️",appId:"recycle",width:480,height:380,build:(b,w)=>{
+    function render(){
+      b.innerHTML=`<div class="toolbar">
+        <button class="btn danger" id="emptyBin">🗑 Empty Bin</button>
+        <span style="font-size:12px;color:var(--muted);margin-left:auto;">${state.recycle.length} item(s)</span>
+      </div><div class="fe-grid" id="binGrid"></div>`;
+      const grid=$("#binGrid",b);
+      if(!state.recycle.length){ grid.innerHTML=`<div class="fe-empty">Recycle Bin is empty.</div>`; }
+      else state.recycle.slice().reverse().forEach(r=>{
+        const it=document.createElement("div"); it.className="fe-item";
+        it.innerHTML=`<div class="fg">${fileIcon(r.node,r.name)}</div><div class="fn">${escapeHtml(r.name)}</div>`;
+        const menu=items=>showContextMenu(...items);
+        const doMenu=(x,y)=>showContextMenu(x,y,[
+          {icon:"♻️",label:"Restore",action:()=>{ fsRestore(r.id); render(); refreshDesktop(); notify("♻️","Restored",r.name); }},
+          {icon:"❌",label:"Delete permanently",action:()=>{ state.recycle=state.recycle.filter(x=>x.id!==r.id); save(); render(); }}
+        ]);
+        it.oncontextmenu=e=>{ e.preventDefault(); doMenu(e.clientX,e.clientY); };
+        it.onclick=()=>doMenu(window.innerWidth/2-90, 120);
+        attachLongPress(it,doMenu);
+        grid.appendChild(it);
+      });
+      $("#emptyBin",b).onclick=()=>{ if(!state.recycle.length)return; modalConfirm("Empty Recycle Bin?","All items will be permanently deleted.",()=>{ state.recycle=[]; save(); render(); }); };
+    }
+    w.render=render; render();
+  }});
+}
+
+/* ================================================================
+   DESKTOP ICONS
+   ================================================================ */
+const DESKTOP_APPS=["files","editor","terminal","draw","calc","music","game","settings","recycle"];
+function refreshDesktop(){
+  const d=$("#desktop"); d.innerHTML="";
+  const cols=isMobile()?3:1; // mobile: flow grid feel; desktop: vertical columns
+  let items=[];
+  DESKTOP_APPS.forEach(id=>items.push({key:"app:"+id,type:"app",app:id,label:APPS[id].name,icon:APPS[id].icon}));
+  // desktop folder files
+  const deskFolder=getNode("/Desktop");
+  if(deskFolder) Object.entries(deskFolder.children).forEach(([name,node])=>{
+    items.push({key:"file:/Desktop/"+name,type:"file",path:"/Desktop/"+name,label:name,icon:fileIcon(node,name),node});
+  });
+  const gw=isMobile()?86:96, gh=isMobile()?92:104;
+  const areaH=window.innerHeight-52-10;
+  const perCol=Math.max(1,Math.floor(areaH/gh));
+  items.forEach((it,i)=>{
+    const el=document.createElement("div");
+    el.className="icon"; el.dataset.key=it.key;
+    el.innerHTML=`<div class="glyph">${it.icon}</div><div class="label">${escapeHtml(it.label)}</div>`;
+    let pos=state.iconPos[it.key];
+    if(!pos){
+      const col=Math.floor(i/perCol), row=i%perCol;
+      pos={x:10+col*gw, y:10+row*gh};
+      state.iconPos[it.key]=pos;
+    }
+    el.style.left=pos.x+"px"; el.style.top=pos.y+"px";
+    const openIt=()=>{ if(it.type==="app")APPS[it.app].open(); else {
+      const n=getNode(it.path); if(!n)return; if(n.type==="folder")openFileExplorer(it.path); else if(n.kind==="drawing")openDrawing(it.path); else openEditor(it.path);
+    }};
+    // click / dblclick handling with drag
+    makeIconDraggable(el,it.key,openIt);
+    // context menu
+    el.oncontextmenu=e=>{ e.preventDefault(); desktopIconMenu(e.clientX,e.clientY,it); };
+    attachLongPress(el,(x,y)=>desktopIconMenu(x,y,it));
+    d.appendChild(el);
+  });
+  save();
+}
+function desktopIconMenu(x,y,it){
+  const items=[{icon:"📂",label:"Open",action:()=>{ if(it.type==="app")APPS[it.app].open(); else { const n=getNode(it.path); if(n){ if(n.type==="folder")openFileExplorer(it.path); else if(n.kind==="drawing")openDrawing(it.path); else openEditor(it.path);} } }}];
+  if(it.type==="file"){
+    items.push({icon:"✏️",label:"Rename",action:()=>modalPrompt("Rename",it.label,v=>{ const nn=fsRename(it.path,v); if(nn){ delete state.iconPos[it.key]; refreshDesktop(); } })});
+    items.push({icon:"🗑️",label:"Delete",action:()=>{ fsDelete(it.path); delete state.iconPos[it.key]; refreshDesktop(); notify("🗑️","Deleted",it.label); }});
+  }
+  showContextMenu(x,y,items);
+}
+function makeIconDraggable(el,key,onOpen){
+  let sx,sy,ox,oy,moved,drag=false,downT=0,lastTap=0;
+  const down=e=>{
+    if(e.button===2) return;
+    drag=true; moved=false; downT=now();
+    const p=point(e); sx=p.x; sy=p.y; ox=parseFloat(el.style.left)||0; oy=parseFloat(el.style.top)||0;
+    $$(".icon").forEach(x=>x.classList.remove("selected")); el.classList.add("selected");
+    document.addEventListener("mousemove",move); document.addEventListener("mouseup",up);
+    document.addEventListener("touchmove",move,{passive:false}); document.addEventListener("touchend",up);
+  };
+  const move=e=>{
+    if(!drag) return;
+    const p=point(e); const dx=p.x-sx, dy=p.y-sy;
+    if(Math.hypot(dx,dy)>5) moved=true;
+    if(moved){ if(e.cancelable)e.preventDefault();
+      let nx=ox+dx, ny=oy+dy;
+      nx=Math.max(0,Math.min(nx,window.innerWidth-84));
+      ny=Math.max(0,Math.min(ny,window.innerHeight-52-96));
+      el.style.left=nx+"px"; el.style.top=ny+"px"; }
+  };
+  const up=e=>{
+    drag=false;
+    document.removeEventListener("mousemove",move); document.removeEventListener("mouseup",up);
+    document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up);
+    if(moved){ state.iconPos[key]={x:parseFloat(el.style.left),y:parseFloat(el.style.top)}; save(); }
+    else {
+      // treat as open on double-click (desktop) or double-tap (mobile)
+      const t=now();
+      if(t-lastTap<400){ onOpen(); lastTap=0; }
+      else lastTap=t;
+    }
+  };
+  el.addEventListener("mousedown",down);
+  el.addEventListener("touchstart",down,{passive:true});
+  el.addEventListener("dblclick",e=>{ e.preventDefault(); onOpen(); });
+}
+// clicking empty desktop clears selection + context menu for new items
+$("#desktop").addEventListener("mousedown",e=>{ if(e.target.id==="desktop") $$(".icon").forEach(x=>x.classList.remove("selected")); });
+$("#desktop").addEventListener("contextmenu",e=>{
+  if(e.target.closest(".icon")) return;
+  e.preventDefault();
+  showContextMenu(e.clientX,e.clientY,[
+    {icon:"📄",label:"New Text File",action:()=>modalPrompt("File name","untitled.txt",v=>{ if(v.trim()){fsCreate("/Desktop",v.trim(),"file");refreshDesktop();} })},
+    {icon:"📁",label:"New Folder",action:()=>modalPrompt("Folder name","New Folder",v=>{ if(v.trim()){fsCreate("/Desktop",v.trim(),"folder");refreshDesktop();} })},
+    {sep:true},
+    {icon:"🖼️",label:"Change Wallpaper",action:()=>openSettings()},
+    {icon:"🔄",label:"Refresh",action:()=>refreshDesktop()}
+  ]);
+});
+attachLongPress($("#desktop"),(x,y,e)=>{
+  if(e.target.closest(".icon")) return;
+  showContextMenu(x,y,[
+    {icon:"📄",label:"New Text File",action:()=>modalPrompt("File name","untitled.txt",v=>{ if(v.trim()){fsCreate("/Desktop",v.trim(),"file");refreshDesktop();} })},
+    {icon:"📁",label:"New Folder",action:()=>modalPrompt("Folder name","New Folder",v=>{ if(v.trim()){fsCreate("/Desktop",v.trim(),"folder");refreshDesktop();} })},
+    {icon:"🖼️",label:"Change Wallpaper",action:()=>openSettings()}
+  ]);
+});
+
+/* ================================================================
+   START MENU + SEARCH
+   ================================================================ */
+function buildAppGrid(){
+  const grid=$("#appGrid");
+  grid.innerHTML="";
+  Object.entries(APPS).forEach(([id,a])=>{
+    const t=document.createElement("button"); t.className="app-tile";
+    t.innerHTML=`<span class="g">${a.icon}</span><span>${escapeHtml(a.name)}</span>`;
+    t.onclick=()=>{ a.open(); closeStart(); };
+    grid.appendChild(t);
+  });
+}
+function openStart(){ $("#startMenu").classList.add("open"); $("#searchBox").value=""; doSearch(""); setTimeout(()=>$("#searchBox").focus(),50); }
+function closeStart(){ $("#startMenu").classList.remove("open"); }
+function toggleStart(){ $("#startMenu").classList.contains("open")?closeStart():openStart(); }
+$("#startBtn").addEventListener("click",e=>{ e.stopPropagation(); toggleStart(); });
+document.addEventListener("mousedown",e=>{ if(!e.target.closest("#startMenu")&&!e.target.closest("#startBtn")) closeStart(); });
+$("#lockFromStart").onclick=()=>{ closeStart(); lockScreen(); };
+$("#restartFromStart").onclick=()=>{ closeStart(); restart(); };
+$("#searchBox").addEventListener("input",e=>doSearch(e.target.value));
+function doSearch(q){
+  q=q.trim().toLowerCase();
+  const res=$("#searchResults"), grid=$("#appGrid");
+  if(!q){ res.style.display="none"; grid.style.display="grid"; return; }
+  res.style.display="flex"; grid.style.display="none";
+  const matches=[];
+  Object.entries(APPS).forEach(([id,a])=>{ if(a.name.toLowerCase().includes(q)) matches.push({icon:a.icon,label:a.name,sub:"App",action:()=>{a.open();closeStart();}}); });
+  // search files
+  function walk(node,path){
+    Object.entries(node.children||{}).forEach(([name,child])=>{
+      const p=normPath(path+"/"+name);
+      if(name.toLowerCase().includes(q)) matches.push({icon:fileIcon(child,name),label:name,sub:p,action:()=>{ if(child.type==="folder")openFileExplorer(p); else if(child.kind==="drawing")openDrawing(p); else openEditor(p); closeStart(); }});
+      if(child.type==="folder") walk(child,p);
+    });
+  }
+  walk(state.fs,"/");
+  res.innerHTML="";
+  if(!matches.length){ res.innerHTML=`<div class="search-row" style="color:var(--muted);">No results for "${escapeHtml(q)}"</div>`; return; }
+  matches.slice(0,20).forEach(m=>{ const r=document.createElement("div"); r.className="search-row";
+    r.innerHTML=`<span>${m.icon}</span><span>${escapeHtml(m.label)}</span><span class="sub">${escapeHtml(m.sub)}</span>`;
+    r.onclick=m.action; res.appendChild(r); });
+}
+$("#searchTray").onclick=()=>{ openStart(); };
+
+/* ================================================================
+   CLOCK / TASKBAR TRAY
+   ================================================================ */
+function tickClock(){
+  const d=new Date();
+  const hh=String(d.getHours()).padStart(2,"0"), mm=String(d.getMinutes()).padStart(2,"0");
+  const time=hh+":"+mm;
+  const dateStr=d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+  $("#tClock").textContent=time; $("#tDate").textContent=dateStr;
+  $("#lockClock").textContent=time;
+  $("#lockDate").textContent=d.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+}
+
+/* ================================================================
+   LOCK / BOOT / RESTART
+   ================================================================ */
+function lockScreen(){ $("#lock").style.display="flex"; }
+function unlock(){ $("#lock").style.display="none"; beep(660,.1,.04); }
+$("#unlockBtn").onclick=unlock;
+$("#lock").addEventListener("click",e=>{ if(e.target.id==="lock"||e.target.classList.contains("lock-hint")||e.target.classList.contains("lock-avatar")) unlock(); });
+$("#lockTray").onclick=lockScreen;
+function restart(){
+  Object.keys(windows).forEach(closeWin);
+  $("#boot").style.display="flex";
+  $("#boot").querySelector(".boot-bar>i").style.animation="none";
+  void $("#boot").offsetWidth;
+  $("#boot").querySelector(".boot-bar>i").style.animation="load 1.6s ease forwards";
+  setTimeout(()=>{ $("#boot").style.display="none"; lockScreen(); },1700);
+}
+
+/* ================================================================
+   THEME / WALLPAPER / ACCENT APPLICATION
+   ================================================================ */
+function applyTheme(){ document.documentElement.setAttribute("data-theme",state.settings.theme); }
+function applyWallpaper(){ const scr=$("#screen"); scr.className=""; scr.classList.add(state.settings.wallpaper); }
+function applyAccent(){
+  document.documentElement.style.setProperty("--accent",state.settings.accent);
+  document.documentElement.style.setProperty("--accent-2",state.settings.accent);
+}
+function applyAll(){ applyTheme(); applyWallpaper(); applyAccent(); $("#userName").textContent=state.settings.userName; }
+
+/* ================================================================
+   KEYBOARD SHORTCUTS
+   ================================================================ */
+document.addEventListener("keydown",e=>{
+  // ignore when typing in inputs (except global combos)
+  const typing = /INPUT|TEXTAREA/.test(document.activeElement.tagName);
+  if(e.key==="Escape"){ hideContextMenu(); closeStart(); $("#modalWrap").classList.remove("open"); }
+  if(e.ctrlKey&&e.altKey&&(e.key==="t"||e.key==="T")){ e.preventDefault(); openTerminal(); }
+  if(e.ctrlKey&&e.altKey&&(e.key==="e"||e.key==="E")){ e.preventDefault(); openFileExplorer(); }
+  if(e.ctrlKey&&e.altKey&&(e.key==="l"||e.key==="L")){ e.preventDefault(); lockScreen(); }
+  if(typing) return;
+  if(e.key==="Meta"||e.key==="OS"){ /* handled by start btn */ }
+  // Alt+F4 close active window
+  if(e.altKey&&e.key==="F4"){ e.preventDefault(); const top=topWindowId(); if(top)closeWin(top); }
+});
+function topWindowId(){
+  let best=null,bz=-1;
+  Object.entries(windows).forEach(([id,w])=>{ if(w.min)return; const z=+w.el.style.zIndex||0; if(z>bz){bz=z;best=id;} });
+  return best;
+}
+
+/* ================================================================
+   RESPONSIVE — keep windows inside on resize
+   ================================================================ */
+let rzTimer=null;
+window.addEventListener("resize",()=>{
+  Object.values(windows).forEach(w=>{ if(w.max){ const scr=$("#screen").getBoundingClientRect(); w.el.style.width=scr.width+"px"; w.el.style.height=(scr.height-52)+"px"; } else clampToScreen(w.el); });
+  clearTimeout(rzTimer); rzTimer=setTimeout(refreshDesktop,300);
+});
+
+/* ================================================================
+   BOOT SEQUENCE
+   ================================================================ */
+function bootUp(){
+  load();
+  applyAll();
+  buildAppGrid();
+  refreshDesktop();
+  tickClock(); setInterval(tickClock,1000);
+  // boot animation then lock screen
+  setTimeout(()=>{
+    $("#boot").style.transition="opacity .5s"; $("#boot").style.opacity="0";
+    setTimeout(()=>{ $("#boot").style.display="none"; $("#boot").style.opacity="1"; }, 500);
+    lockScreen();
+    setTimeout(()=>notify("👋","Welcome to MiniOS","Tap the ▦ button to open apps."),900);
+  }, 2400);
+}
+document.addEventListener("DOMContentLoaded",bootUp);
+// safety: if DOMContentLoaded already fired
+if(document.readyState!=="loading") { /* bootUp attached above will run on event; ensure */ }
+})();
+</script>
+</body>
+</html>
