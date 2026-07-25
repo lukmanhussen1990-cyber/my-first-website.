@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FAF4EA">
+<title>Clawd — Pixel Dance Show</title>
+<style>
+  /* ---------------------------------------------------------------
+     Layout: full-viewport stage, no page scrolling, safe on mobile.
+     --------------------------------------------------------------- */
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    overflow: hidden; overscroll-behavior: none;
+    background: #FAF4EA;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+    -webkit-user-select: none; user-select: none; touch-action: none;
+  }
+  #app { position: fixed; inset: 0; }
+  /* The canvas fills the stage; image-rendering keeps upscaled pixels sharp. */
+  canvas#stage {
+    display: block; width: 100%; height: 100%;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+  }
+
+  /* ---------------------------------------------------------------
+     Control bar
+     --------------------------------------------------------------- */
+  #ui {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    display: flex; flex-wrap: wrap; gap: 8px;
+    align-items: center; justify-content: center;
+    background: linear-gradient(to top, rgba(250,244,234,.96), rgba(250,244,234,.72) 62%, rgba(250,244,234,0));
+    touch-action: manipulation;
+  }
+  .btn {
+    appearance: none; border: 0; cursor: pointer;
+    font: inherit; font-size: 13px; font-weight: 700; letter-spacing: .04em;
+    color: #4A3A34; background: #FFFFFF;
+    padding: 10px 13px; min-height: 42px;
+    /* squared-off, chunky "pixel" chrome — no rounded corners anywhere */
+    border-radius: 0;
+    box-shadow: 0 3px 0 #E2D5C4, 0 3px 0 1px #D6C6B2;
+    transition: transform .06s linear, box-shadow .06s linear, background .12s linear;
+    white-space: nowrap;
+  }
+  .btn:hover { background: #FFFBF4; }
+  .btn:active { transform: translateY(3px); box-shadow: 0 0 0 1px #D6C6B2; }
+  .btn.primary { color: #FFF; background: #F1573F; box-shadow: 0 3px 0 #B93A28, 0 3px 0 1px #A83322; }
+  .btn.primary:hover { background: #F4664F; }
+  .btn.on { color: #FFF; background: #3EB489; box-shadow: 0 3px 0 #2A8C68, 0 3px 0 1px #24785A; }
+  .btn:disabled { opacity: .45; cursor: default; transform: none; }
+
+  /* volume slider */
+  .vol { display: flex; align-items: center; gap: 8px; padding: 6px 12px; min-height: 42px;
+         background: #FFFFFF; box-shadow: 0 3px 0 #E2D5C4, 0 3px 0 1px #D6C6B2; }
+  .vol span { font-size: 11px; font-weight: 700; color: #7A6659; letter-spacing: .08em; }
+  input[type=range] {
+    appearance: none; -webkit-appearance: none; width: 96px; height: 10px;
+    background: #EDE0CE; outline: none; border-radius: 0; touch-action: manipulation;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 20px; background: #F1573F;
+    border: 0; border-radius: 0; cursor: pointer;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 20px; background: #F1573F; border: 0; border-radius: 0; cursor: pointer;
+  }
+
+  /* "press start" hint shown before the show begins */
+  #hint {
+    position: absolute; left: 0; right: 0; top: 10%;
+    text-align: center; color: #A08D7C; font-size: 12px; letter-spacing: .18em;
+    font-weight: 700; pointer-events: none;
+    animation: pulse 1.8s steps(2, jump-none) infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: .35 } 50% { opacity: 1 } }
+  #hint.hidden { display: none; }
+
+  /* capture mode: chrome removed so the stage can be recorded cleanly */
+  body.capture #ui, body.capture #hint { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="stage"></canvas>
+  <div id="hint">PRESS START SHOW</div>
+  <div id="ui">
+    <button class="btn primary" id="btnStart" type="button">▶ START SHOW</button>
+    <button class="btn" id="btnPause" type="button" disabled>❚❚ PAUSE</button>
+    <button class="btn" id="btnRestart" type="button" disabled>⟲ RESTART</button>
+    <button class="btn on" id="btnSound" type="button">♪ SOUND ON</button>
+    <button class="btn" id="btnFull" type="button">⛶ FULLSCREEN</button>
+    <label class="vol"><span>VOL</span><input id="vol" type="range" min="0" max="100" value="70"></label>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ===================================================================
+   CLAWD — a cute pixel character who sings and dances.
+   Everything (art, animation, music) is generated in this one file:
+   no images, no libraries, no fonts, no audio files. Works offline.
+
+   Structure
+     1. Constants + small math helpers
+     2. Clawd's sprite (drawn into a tiny offscreen canvas, then
+        upscaled with nearest-neighbour so the pixels stay sharp)
+     3. pose(t) — the whole choreography as a pure function of time
+     4. Scene (background, lights, particles, notes, confetti...)
+     5. Web Audio chiptune band (only after a user gesture)
+     6. Controls, resizing, main requestAnimationFrame loop
+     7. Capture hooks (used to render the offline video)
+   =================================================================== */
+
+/* ------------------------------------------------------------------
+   1. Constants and helpers
+   ------------------------------------------------------------------ */
+const BPM  = 120;            // tempo of the little chiptune
+const SPB  = 60 / BPM;       // seconds per beat (0.5s)
+const BAR  = SPB * 4;        // seconds per bar (2s)
+const SHOW = BAR * 12;       // one full show = 12 bars = 24s, loops seamlessly
+
+// section boundaries (seconds)
+const T_VERSE  = 4;          // intro  : 0  -> 4
+const T_CHORUS = 12;         // verse  : 4  -> 12
+const T_FINALE = 20;         // chorus : 12 -> 20 ; finale : 20 -> 24
+
+// scripted moments
+const SPIN_T0 = 11.0, SPIN_T1 = 12.0;      // one smooth spin into the chorus
+const JUMP_WU = 20.5, JUMP_T0 = 20.85;     // finale: wind-up then take-off
+const JUMP_T1 = 22.0,  JUMP_H  = 40;       // landing time and jump height (sprite units)
+const SHAKE_WINDOWS = [[8.0, 8.8], [17.0, 17.8]];   // excited shaking
+const BLINKS = [1.4, 3.1, 6.2, 8.9, 13.4, 16.3, 19.4, 22.9];
+
+// palette
+const CORAL      = '#F1573F';
+const CORAL_DARK = '#E9533B';   // barely-darker coral: keeps the arms readable
+const INK        = '#141414';
+const BG_TOP     = '#FDF8F0';
+const BG_BOT     = '#F2E6D4';
+
+// sprite geometry, in "pixel units" traced from the reference artwork
+const S_W = 74, S_H = 51;                       // full sprite bounds
+const BODY = { x: 11, y: 0, w: 52, h: 36 };     // coral body block
+const EYE  = { w: 7, h: 7, y: 5, lx: 18, rx: 49 };
+const LEG_Y = 36, LEG_H = 15, LEG_W = 7;
+const LEG_X = [11, 25, 43, 56];                 // four stubby legs
+const ARM_TH = 12;                              // arm thickness
+const ARM_PIVOT_Y = 19;
+const ARM_L_X = 13, ARM_R_X = 61;               // pivots sunk slightly into the body
+
+// offscreen sprite canvas (small!) — origin of the sprite sits at (OX, OY)
+const OFF_W = 170, OFF_H = 112, OX = 46, OY = 42;
+
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp  = (a, b, u) => a + (b - a) * u;
+function smoothstep(e0, e1, x) {
+  const u = clamp((x - e0) / (e1 - e0 || 1e-6), 0, 1);
+  return u * u * (3 - 2 * u);
+}
+// deterministic pseudo-random: the whole scene is a pure function of time,
+// which keeps the animation loop-safe and reproducible.
+function rnd(i) { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+const midiToHz = m => 440 * Math.pow(2, (m - 69) / 12);
+
+/* keyframe interpolation: keys = [[time, value], ...] with eased blending */
+function keyf(keys, t) {
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 1; i < keys.length; i++) {
+    if (t <= keys[i][0]) {
+      const a = keys[i - 1], b = keys[i];
+      return lerp(a[1], b[1], smoothstep(a[0], b[0], t));
+    }
+  }
+  return keys[keys.length - 1][1];
+}
+
+/* ------------------------------------------------------------------
+   3. Choreography — pose(t) returns every animated value for time t
+   ------------------------------------------------------------------ */
+
+// right arm (the one holding the microphone)
+const ARM_R_ANG = [[0,0.25],[3.6,0.25],[4.4,-0.85],[10.6,-0.85],[11.0,0.25],[12.0,0.25],
+                   [12.4,-1.15],[20.4,-1.15],[20.85,-0.55],[21.45,-1.25],[22.0,-1.25],
+                   [22.45,-1.00],[23.0,-1.12],[23.6,0.25],[24,0.25]];
+const ARM_R_LEN = [[0,11],[4.4,13],[10.6,13],[11.0,10],[12.0,10],[12.4,22],[20.4,22],
+                   [20.85,14],[21.45,20],[22.4,20],[23.6,11],[24,11]];
+// left arm (angles are "unwrapped": PI = straight out, 1.5*PI = straight up)
+const ARM_L_ANG = [[0,3.29],[4,3.29],[12.4,3.64],[20.4,3.64],[20.85,3.05],[21.45,4.71],
+                   [22.0,4.71],[22.6,4.25],[23.6,3.29],[24,3.29]];
+const ARM_L_LEN = [[0,11],[12.4,12],[20.4,12],[21.45,13],[22.6,12],[23.6,11],[24,11]];
+// microphone aim: 2.4 = held low across the chest, 2.86 = at the face, 4.71 = grille up
+const MIC_ANG   = [[0,2.4],[3.6,2.4],[4.4,2.86],[10.6,2.86],[11.0,2.4],[12.0,2.4],
+                   [12.4,4.71],[20.4,4.71],[22.0,4.71],[22.6,4.45],[23.6,2.4],[24,2.4]];
+
+/** How closed the eyes are at time t (0 = open, 1 = shut). */
+function blinkAmt(t) {
+  let b = 0;
+  for (let i = 0; i < BLINKS.length; i++) {
+    const d = t - BLINKS[i];
+    if (d >= 0 && d < 0.16) b = Math.max(b, Math.sin((d / 0.16) * Math.PI));
+  }
+  return b;
+}
+
+/**
+ * The whole dance as a pure function of show-time.
+ * @param {number} t    seconds into the show (0..SHOW)
+ * @param {number} calm 1 = full performance, <1 = gentle idle version
+ */
+function pose(t, calm) {
+  calm = calm === undefined ? 1 : calm;
+  const beat = t / SPB;
+  const bu   = beat - Math.floor(beat);          // phase inside the current beat
+
+  // energy ramps up section by section, then settles so t=24 matches t=0
+  let energy = 0.60;
+  energy = lerp(energy, 0.85, smoothstep(3.6, 4.4, t));
+  energy = lerp(energy, 1.35, smoothstep(11.7, 12.3, t));   // chorus: much bouncier
+  energy = lerp(energy, 1.10, smoothstep(19.6, 20.2, t));
+  energy = lerp(energy, 0.60, smoothstep(23.1, 24.0, t));   // settle for a seamless loop
+  energy *= calm;
+
+  const hop = 4 * bu * (1 - bu);                 // 0..1 hop curve, peaks between beats
+  const sq  = Math.max(0, 1 - bu * 7);           // landing squash right on the beat
+
+  let by = -hop * 5 * energy;                    // rhythmic up/down bounce
+  let sx = 1 + 0.10 * sq * energy - 0.04 * hop * energy;   // squash & stretch
+  let sy = 1 - 0.12 * sq * energy + 0.06 * hop * energy;
+  let px = Math.sin((t / (4 * SPB)) * Math.PI * 2) * 5 * energy;         // side-to-side steps
+  let tilt = Math.sin((t / (4 * SPB)) * Math.PI * 2 + 1.0) * 0.055 * energy; // playful body tilt
+
+  // occasional excited shaking
+  let shake = 0;
+  for (let i = 0; i < SHAKE_WINDOWS.length; i++) {
+    const w = SHAKE_WINDOWS[i];
+    if (t >= w[0] && t <= w[1]) {
+      const k = Math.sin(((t - w[0]) / (w[1] - w[0])) * Math.PI);
+      shake = Math.sin(t * 62) * 2.2 * k * calm;
+      tilt += Math.sin(t * 58) * 0.03 * k * calm;
+    }
+  }
+
+  // ---- one smooth spin (a horizontal squash through zero = classic pixel spin)
+  let spinScale = 1, spinning = 0;
+  if (calm > 0.9 && t >= SPIN_T0 && t <= SPIN_T1) {
+    const u = (t - SPIN_T0) / (SPIN_T1 - SPIN_T0);
+    spinScale = Math.cos(u * Math.PI * 2);
+    spinning = Math.sin(u * Math.PI);
+    by -= 7 * spinning;
+    tilt *= 0.3;
+  }
+  sx *= spinScale;
+
+  // ---- big finale jump: wind-up, take-off, flight, confident landing
+  let jy = 0, airborne = 0;
+  if (calm > 0.9) {
+    if (t >= JUMP_WU && t < JUMP_T0) {                       // crouch
+      const u = smoothstep(JUMP_WU, JUMP_T0, t);
+      sy *= 1 - 0.24 * u; sx *= 1 + 0.18 * u; by *= 1 - u;
+    } else if (t >= JUMP_T0 && t <= JUMP_T1) {               // in the air
+      const u = (t - JUMP_T0) / (JUMP_T1 - JUMP_T0);
+      jy = -JUMP_H * 4 * u * (1 - u);
+      airborne = 1;
+      by = 0;
+      const vel = 1 - 2 * u;                                  // +1 rising, -1 falling
+      sy *= 1 + 0.20 * Math.abs(vel); sx *= 1 - 0.12 * Math.abs(vel);
+    } else if (t > JUMP_T1 && t < JUMP_T1 + 0.40) {          // impact squash
+      const k = 1 - (t - JUMP_T1) / 0.40;
+      sy *= 1 - 0.32 * k; sx *= 1 + 0.30 * k; by *= 1 - k;
+    }
+  }
+
+  // ---- four legs, alternating like little dance steps
+  const parity = Math.floor(beat) % 2;
+  const legs = [];
+  for (let i = 0; i < 4; i++) {
+    let lift = ((i % 2) === parity) ? Math.sin(bu * Math.PI) * 3.2 * energy : 0.4 * hop * energy;
+    let step = ((i % 2) === parity) ? Math.sin(bu * Math.PI) * 1.2 * energy : 0;
+    if (airborne) { lift = 6 + 2 * Math.sin(t * 9 + i); step = (i < 2 ? -1.5 : 1.5); }
+    legs.push({ lift: lift, step: step });
+  }
+
+  // ---- expressive eyes: they squash on the beat, drift with the movement, and blink
+  const blink = blinkAmt(t);
+  const eyeH = (1 + 0.12 * hop * energy - 0.16 * sq * energy) * (1 - 0.88 * blink);
+  const eyeW = 1 + 0.10 * sq * energy + 0.05 * (energy - 0.8) + 0.10 * blink;
+  const eyeOY = -0.7 * hop * energy + 0.6 * sq * energy + (airborne ? -0.8 : 0);
+  const eyeOX = clamp(px * 0.07 + tilt * 2.2, -1.6, 1.6);
+
+  // ---- arms and microphone
+  const swingL = 0.28 * Math.sin(Math.PI * beat) * energy;
+  const swingR = 0.10 * Math.sin(2 * Math.PI * beat) * energy;
+  const aL = { ang: keyf(ARM_L_ANG, t) + swingL, len: keyf(ARM_L_LEN, t) };
+  const aR = { ang: keyf(ARM_R_ANG, t) + swingR, len: keyf(ARM_R_LEN, t) };
+  const micAng = keyf(MIC_ANG, t) + 0.10 * Math.sin(2 * Math.PI * beat) * energy;
+
+  // hand position = where the microphone lives (so it always follows the hand)
+  const hand = { x: ARM_R_X + Math.cos(aR.ang) * aR.len, y: ARM_PIVOT_Y + Math.sin(aR.ang) * aR.len };
+  // the mic sits just beyond the fist so it never disappears inside the arm
+  const micRoot = { x: hand.x + Math.cos(aR.ang) * 5, y: hand.y + Math.sin(aR.ang) * 5 };
+  // grille tip, used as the spawn point for notes and sound waves
+  const micTip = { x: micRoot.x + Math.cos(micAng) * 8, y: micRoot.y + Math.sin(micAng) * 8 };
+
+  // lean slightly toward the mic while singing the verse
+  tilt += 0.03 * (smoothstep(4.2, 4.8, t) - smoothstep(10.4, 11.0, t)) * calm;
+
+  return { t, beat, bu, hop, sq, energy, by, jy, sx, sy, px, tilt, shake, spinning, spinScale,
+           airborne, legs, eyeH, eyeW, eyeOX, eyeOY, blink, aL, aR, micAng, hand, micRoot, micTip };
+}
+
+/* ------------------------------------------------------------------
+   2. Sprite drawing — everything is axis-aligned rectangles so the
+      pixel edges stay hard and blocky, exactly like the reference.
+   ------------------------------------------------------------------ */
+const off = document.createElement('canvas');
+off.width = OFF_W; off.height = OFF_H;
+const g = off.getContext('2d');
+
+/**
+ * Limbs are drawn as a chain of axis-aligned squares marching along the arm
+ * direction. Rotating a rectangle would blur its edges; stamping whole pixels
+ * keeps every edge hard and stair-stepped, like real pixel art.
+ */
+function drawArm(ctx, px, py, ang, len, th, color) {
+  ctx.fillStyle = color;
+  const dx = Math.cos(ang), dy = Math.sin(ang);
+  const steps = Math.max(4, Math.round(len * 1.5));
+  // a resting arm keeps the reference's chunky 12px nub; a reaching arm tapers
+  // toward the hand so the raised microphone stays readable
+  const reach = clamp((len - 11) / 6, 0, 1);
+  for (let i = 0; i <= steps; i++) {
+    const f = i / steps;
+    const w = Math.round(th - (th - 7) * f * reach);
+    ctx.fillRect(Math.round(px + dx * f * len - w / 2), Math.round(py + dy * f * len - w / 2), w, w);
+  }
+}
+
+/** Small black-and-silver pixel microphone, stamped along the hand direction. */
+function drawMic(ctx, mx, my, ang) {
+  const dx = Math.cos(ang), dy = Math.sin(ang);
+  const at = d => ({ x: mx + dx * d, y: my + dy * d });
+  // handle: chunky black pixels running back from the grille
+  ctx.fillStyle = '#17181C';
+  for (let i = -5; i <= 2.5; i += 0.6) {
+    const p = at(i);
+    ctx.fillRect(Math.round(p.x - 2), Math.round(p.y - 2), 4, 4);
+  }
+  // silver band around the handle
+  const b = at(-1.5);
+  ctx.fillStyle = '#9BA4B1';
+  ctx.fillRect(Math.round(b.x - 2), Math.round(b.y - 2), 4, 4);
+  // grille
+  const gp = at(5);
+  const gx = Math.round(gp.x - 3), gy = Math.round(gp.y - 3);
+  ctx.fillStyle = '#17181C'; ctx.fillRect(gx - 1, gy - 1, 8, 8);   // dark rim
+  ctx.fillStyle = '#C9D1DB'; ctx.fillRect(gx, gy, 6, 6);
+  ctx.fillStyle = '#8F98A6';                                        // grille speckle
+  ctx.fillRect(gx + 1, gy + 1, 1, 1); ctx.fillRect(gx + 3, gy + 2, 1, 1);
+  ctx.fillRect(gx + 2, gy + 4, 1, 1); ctx.fillRect(gx + 4, gy + 4, 1, 1);
+  ctx.fillStyle = '#EFF3F8'; ctx.fillRect(gx, gy, 6, 1);            // highlight
+}
+
+/** Renders Clawd into the tiny offscreen canvas for the given pose. */
+function drawSprite(P) {
+  g.clearRect(0, 0, OFF_W, OFF_H);
+  g.save();
+  g.translate(OX, OY);
+
+  // legs (four stubby rectangles; lifting a leg shortens it from the floor up)
+  g.fillStyle = CORAL;
+  for (let i = 0; i < 4; i++) {
+    const L = P.legs[i];
+    const h = Math.max(3, LEG_H - L.lift);
+    g.fillRect(Math.round(LEG_X[i] + L.step), LEG_Y, LEG_W, Math.round(h));
+  }
+
+  // body
+  g.fillRect(BODY.x, BODY.y, BODY.w, BODY.h);
+
+  // arms (slightly darker so they stay readable when they cross the body)
+  drawArm(g, ARM_L_X, ARM_PIVOT_Y, P.aL.ang, P.aL.len, ARM_TH, CORAL_DARK);
+  drawArm(g, ARM_R_X, ARM_PIVOT_Y, P.aR.ang, P.aR.len, ARM_TH, CORAL_DARK);
+
+  // eyes — two black squares that squash, drift and blink
+  const ew = EYE.w * P.eyeW, eh = EYE.h * P.eyeH;
+  const cy = EYE.y + EYE.h / 2 + P.eyeOY;
+  g.fillStyle = INK;
+  const lcx = EYE.lx + EYE.w / 2 + P.eyeOX, rcx = EYE.rx + EYE.w / 2 + P.eyeOX;
+  g.fillRect(Math.round(lcx - ew / 2), Math.round(cy - eh / 2), Math.round(ew), Math.max(1, Math.round(eh)));
+  g.fillRect(Math.round(rcx - ew / 2), Math.round(cy - eh / 2), Math.round(ew), Math.max(1, Math.round(eh)));
+
+  // microphone, always attached to the right hand
+  drawMic(g, P.micRoot.x, P.micRoot.y, P.micAng);
+
+  g.restore();
+}
+
+/* ------------------------------------------------------------------
+   4. Scene
+   ------------------------------------------------------------------ */
+const cv  = document.getElementById('stage');
+const ctx = cv.getContext('2d', { alpha: false });
+const L = { W: 0, H: 0, dpr: 1, scale: 6, cx: 0, groundY: 0 };
+
+let captureMode = false, capW = 1280, capH = 720;
+
+function resize() {
+  const dpr = captureMode ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+  const w = captureMode ? capW : (window.innerWidth  || document.documentElement.clientWidth);
+  const h = captureMode ? capH : (window.innerHeight || document.documentElement.clientHeight);
+  cv.width  = Math.round(w * dpr);
+  cv.height = Math.round(h * dpr);
+  cv.style.width = captureMode ? w + 'px' : '100%';
+  cv.style.height = captureMode ? h + 'px' : '100%';
+  L.W = w; L.H = h; L.dpr = dpr;
+  // pick an integer pixel scale that fits both portrait and landscape screens
+  const byH = (h * 0.46) / S_H, byW = (w * 0.44) / S_W;
+  L.scale = Math.max(2, Math.floor(Math.min(byH, byW)));
+  L.cx = Math.round(w / 2);
+  L.groundY = Math.round(h * (h > w ? 0.70 : 0.78));
+}
+
+/** Maps a point in sprite units to stage coordinates for the given pose. */
+function spriteToWorld(P, u, v) {
+  const ox = L.cx + (P.px + P.shake) * L.scale;
+  const oy = L.groundY + (P.by + P.jy) * L.scale;
+  const dy = (v - S_H) * P.sy * L.scale;
+  return { x: ox + (u - S_W / 2) * P.sx * L.scale - P.tilt * dy, y: oy + dy };
+}
+
+function drawSky() {
+  const gr = ctx.createLinearGradient(0, 0, 0, L.H);
+  gr.addColorStop(0, BG_TOP); gr.addColorStop(1, BG_BOT);
+  ctx.fillStyle = gr; ctx.fillRect(0, 0, L.W, L.H);
+}
+
+function drawFloor() {
+  // warm wooden stage floor
+  const fh = L.H - L.groundY;
+  const fg = ctx.createLinearGradient(0, L.groundY, 0, L.H);
+  fg.addColorStop(0, 'rgba(224,199,163,.85)');
+  fg.addColorStop(1, 'rgba(206,175,134,.85)');
+  ctx.fillStyle = fg; ctx.fillRect(0, L.groundY, L.W, fh + L.H);
+  ctx.fillStyle = 'rgba(180,148,110,.6)';
+  ctx.fillRect(0, L.groundY - 2, L.W, 3);       // stage lip
+  ctx.fillStyle = 'rgba(255,250,240,.35)';
+  ctx.fillRect(0, L.groundY + 3, L.W, 2);
+}
+
+const LIGHT_COLORS = ['#F1573F', '#FFC24B', '#3EB489', '#4FA8E0', '#B96BD8', '#FF7FA5'];
+
+/** Row of small colourful stage lights that blink with the beat. */
+function drawStageLights(t, energy) {
+  const n = Math.max(6, Math.min(12, Math.round(L.W / 130)));
+  const beat = t / SPB;
+  const px = Math.max(3, Math.round(L.scale * 0.9));
+  const top = Math.round(L.H * 0.055);
+  for (let i = 0; i < n; i++) {
+    const x = Math.round((i + 0.5) * (L.W / n));
+    const c = LIGHT_COLORS[i % LIGHT_COLORS.length];
+    const on = ((Math.floor(beat) + i) % 2 === 0) ? 1 : 0.28;
+    const pulse = on * (0.55 + 0.45 * Math.sin(beat * Math.PI * 2 - i));
+    // glow
+    const rg = ctx.createRadialGradient(x, top, 0, x, top, px * 6 * (0.7 + 0.5 * pulse));
+    rg.addColorStop(0, c + 'AA'); rg.addColorStop(1, c + '00');
+    ctx.fillStyle = rg;
+    ctx.fillRect(x - px * 7, top - px * 7, px * 14, px * 14);
+    // the pixel bulb itself
+    ctx.globalAlpha = 0.35 + 0.65 * pulse;
+    ctx.fillStyle = c;
+    ctx.fillRect(x - px, top - px, px * 2, px * 2);
+    ctx.globalAlpha = 1;
+    // little beams during the chorus
+    if (energy > 1.0) {
+      const sway = Math.sin(t * 1.3 + i) * L.W * 0.04;
+      ctx.globalAlpha = 0.055 * pulse * (energy - 1);
+      ctx.beginPath();
+      ctx.moveTo(x - px, top);
+      ctx.lineTo(x - px * 4 + sway, L.groundY);
+      ctx.lineTo(x + px * 4 + sway, L.groundY);
+      ctx.lineTo(x + px, top);
+      ctx.closePath(); ctx.fillStyle = c; ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+
+/** Soft floating dust particles drifting upward behind Clawd. */
+function drawParticles(t) {
+  const N = 26;
+  for (let i = 0; i < N; i++) {
+    const sp = 0.25 + rnd(i) * 0.5;
+    const y = L.H - (((t * sp * 60 + rnd(i + 40) * L.H * 2) % (L.H * 1.15)));
+    const x = (rnd(i + 90) * L.W + Math.sin(t * 0.6 + i) * L.W * 0.03 + L.W) % L.W;
+    const s = Math.max(2, Math.round(L.scale * (0.3 + rnd(i + 7) * 0.4)));
+    ctx.globalAlpha = 0.10 + rnd(i + 3) * 0.22;
+    ctx.fillStyle = i % 3 === 0 ? '#F1573F' : (i % 3 === 1 ? '#FFC24B' : '#C9B49A');
+    ctx.fillRect(Math.round(x), Math.round(y), s, s);
+  }
+  ctx.globalAlpha = 1;
+}
+
+/** Warm spotlight that swells during the chorus and the finale jump. */
+function drawSpotlight(t, P) {
+  let k = smoothstep(11.9, 12.6, t) - smoothstep(19.6, 20.4, t);
+  k = Math.max(k, (smoothstep(20.7, 21.1, t) - smoothstep(22.6, 23.4, t)) * 0.9);
+  if (k <= 0.001) return;
+  const cx = L.cx + P.px * L.scale, cy = L.groundY - S_H * L.scale * 0.5;
+  const r = Math.max(L.W, L.H) * 0.55;
+  const rg = ctx.createRadialGradient(cx, cy, r * 0.05, cx, cy, r);
+  rg.addColorStop(0, 'rgba(255,246,214,' + (0.55 * k).toFixed(3) + ')');
+  rg.addColorStop(0.55, 'rgba(255,240,200,' + (0.16 * k).toFixed(3) + ')');
+  rg.addColorStop(1, 'rgba(255,235,190,0)');
+  ctx.fillStyle = rg; ctx.fillRect(0, -L.H, L.W, L.H * 3);
+  // gentle vignette so the spotlight reads
+  const vg = ctx.createRadialGradient(cx, cy, r * 0.4, cx, cy, r * 1.25);
+  vg.addColorStop(0, 'rgba(90,60,40,0)');
+  vg.addColorStop(1, 'rgba(90,60,40,' + (0.16 * k).toFixed(3) + ')');
+  ctx.fillStyle = vg; ctx.fillRect(0, -L.H, L.W, L.H * 3);
+}
+
+/** Soft oval shadow — shrinks and fades as Clawd leaves the ground. */
+function drawShadow(P) {
+  const lift = (-P.by - P.jy) / (JUMP_H * 0.9);
+  const k = clamp(1 - lift * 0.75, 0.28, 1);
+  const rx = S_W * 0.42 * L.scale * k * Math.abs(P.sx);
+  const ry = Math.max(3, rx * 0.22);
+  const cx = L.cx + P.px * L.scale + P.shake * L.scale;
+  const cy = L.groundY + ry * 0.35;
+  ctx.save();
+  ctx.translate(cx, cy); ctx.scale(1, ry / Math.max(rx, 1));
+  // NB: the gradient must be built inside the transform it is painted with
+  const rg = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+  rg.addColorStop(0, 'rgba(122,86,60,' + (0.38 * k).toFixed(3) + ')');
+  rg.addColorStop(0.55, 'rgba(122,86,60,' + (0.20 * k).toFixed(3) + ')');
+  rg.addColorStop(1, 'rgba(122,86,60,0)');
+  ctx.fillStyle = rg;
+  ctx.beginPath(); ctx.arc(0, 0, rx, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+/**
+ * Draws Clawd: the tiny sprite is blown up with smoothing off, in horizontal
+ * slices that are nudged sideways to produce the body tilt. Shearing whole
+ * pixel rows keeps the silhouette blocky (a real rotation would soften it).
+ */
+function drawClawd(P) {
+  drawSprite(P);
+  const baseX = L.cx + (P.px + P.shake) * L.scale;
+  const baseY = L.groundY + (P.by + P.jy) * L.scale;
+  const sxs = P.sx * L.scale, sys = P.sy * L.scale;
+  const flip = sxs < 0, asx = Math.abs(sxs);
+  if (asx < 0.25) return;                        // mid-spin: edge-on, nothing to draw
+  const SLICE = 4;                               // sprite rows per shear step
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.translate(baseX, 0);
+  if (flip) ctx.scale(-1, 1);
+  for (let j = 0; j < OFF_H; j += SLICE) {
+    const h = Math.min(SLICE, OFF_H - j);
+    const v0 = j - OY, v1 = j + h - OY;          // slice bounds in sprite units
+    const y0 = Math.round(baseY + (v0 - S_H) * sys);
+    const y1 = Math.round(baseY + (v1 - S_H) * sys);
+    if (y1 <= y0) continue;
+    const dy = ((v0 + v1) / 2 - S_H) * sys;
+    const shear = -P.tilt * dy * (flip ? -1 : 1);
+    const x0 = Math.round(-(OX + S_W / 2) * asx + shear);
+    ctx.drawImage(off, 0, j, OFF_W, h, x0, y0, Math.round(OFF_W * asx), y1 - y0);
+  }
+  ctx.restore();
+}
+
+const NOTE_COLORS = ['#F1573F', '#FFB13B', '#3EB489', '#4FA8E0', '#B96BD8', '#FF7FA5'];
+
+/** One pixel music note (built from rectangles, no fonts). */
+function drawNote(x, y, s, color, kind) {
+  ctx.fillStyle = color;
+  if (kind === 0) {                 // ♪ single note
+    ctx.fillRect(x - 3 * s, y, 4 * s, 3 * s);       // head
+    ctx.fillRect(x + s, y - 7 * s, s, 7 * s);       // stem
+    ctx.fillRect(x + 2 * s, y - 7 * s, 2 * s, 2 * s); // flag
+  } else if (kind === 1) {          // ♫ double note
+    ctx.fillRect(x - 4 * s, y, 3 * s, 3 * s);
+    ctx.fillRect(x + 2 * s, y - s, 3 * s, 3 * s);
+    ctx.fillRect(x - 2 * s, y - 7 * s, s, 7 * s);
+    ctx.fillRect(x + 4 * s, y - 8 * s, s, 7 * s);
+    ctx.fillRect(x - 2 * s, y - 8 * s, 7 * s, s);   // beam
+  } else {                          // ✦ sparkle
+    ctx.fillRect(x - s, y - 4 * s, 2 * s, 8 * s);
+    ctx.fillRect(x - 4 * s, y - s, 8 * s, 2 * s);
+  }
+}
+
+/**
+ * Musical notes stream out of the microphone on every beat while Clawd sings.
+ * Each note is derived analytically from its spawn beat, so the scene stays a
+ * pure function of time (and therefore loops perfectly).
+ */
+function drawNotes(t) {
+  const LIFE = 2.4;
+  const firstBeat = Math.floor((t - LIFE) / SPB) + 1;
+  const lastBeat  = Math.floor(t / SPB);
+  for (let b = firstBeat; b <= lastBeat; b++) {
+    const st = b * SPB;
+    if (st < 0 || st > SHOW) continue;
+    // Clawd only "sings" from the verse onward
+    if (st < T_VERSE - 0.5) continue;
+    if (st > SPIN_T0 - 0.1 && st < SPIN_T1) continue;
+    const chorus = st >= T_CHORUS;
+    const count = chorus ? 2 : 1;
+    for (let k = 0; k < count; k++) {
+      const id = b * 7 + k * 3;
+      const born = st + k * 0.13;
+      const age = t - born;
+      if (age < 0 || age > LIFE) continue;
+      const u = age / LIFE;
+      const bp = pose(born);                        // where the mic was at spawn time
+      const src = spriteToWorld(bp, bp.micTip.x, bp.micTip.y);
+      const dir = (rnd(id) < 0.5 ? -1 : 1);
+      const x = src.x + dir * (0.7 + rnd(id + 1)) * L.scale * 2.6 * age
+              + Math.sin(age * 3.4 + id) * L.scale * 1.6;
+      const y = src.y - age * L.scale * (7 + rnd(id + 2) * 5);
+      const a = (u < 0.12 ? u / 0.12 : 1) * (1 - smoothstep(0.6, 1, u));
+      const s = Math.max(1.2, L.scale * 0.42) * (0.85 + 0.25 * Math.sin(age * 6 + id));
+      ctx.globalAlpha = a * 0.95;
+      drawNote(x, y, s, NOTE_COLORS[Math.floor(rnd(id + 5) * NOTE_COLORS.length)],
+               chorus ? (id % 3) : (id % 2));
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+/** Sound-wave arcs pulsing out of the microphone grille. */
+function drawSoundWaves(t, P) {
+  if (t < T_VERSE - 0.4 || (t > SPIN_T0 && t < SPIN_T1)) return;
+  const tip = spriteToWorld(P, P.micTip.x, P.micTip.y);
+  const beat = t / SPB, u = beat - Math.floor(beat);
+  const dir = P.micAng;
+  ctx.save();
+  ctx.translate(tip.x, tip.y); ctx.rotate(dir);
+  ctx.lineWidth = Math.max(2, L.scale * 0.35);
+  ctx.lineCap = 'butt';
+  for (let i = 0; i < 3; i++) {
+    const p = (u + i * 0.33) % 1;
+    const r = L.scale * (2.5 + p * 7);
+    ctx.globalAlpha = (1 - p) * 0.42 * (P.energy > 1 ? 1 : 0.7);
+    ctx.strokeStyle = '#F1573F';
+    ctx.beginPath(); ctx.arc(0, 0, r, -0.6, 0.6); ctx.stroke();
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+const CONFETTI_COLORS = ['#F1573F', '#FFC24B', '#3EB489', '#4FA8E0', '#B96BD8', '#FF7FA5', '#FFFFFF'];
+const BURSTS = [{ t: JUMP_T0 + 0.05, n: 46, life: 2.2, up: 1.0 },  // take-off puff
+                { t: JUMP_T1,        n: 110, life: 1.9, up: 1.5 }]; // landing explosion
+
+/** Confetti for the finale — analytic ballistic paths, so it is loop-safe. */
+function drawConfetti(t) {
+  for (let bi = 0; bi < BURSTS.length; bi++) {
+    const B = BURSTS[bi];
+    const age = t - B.t;
+    if (age < 0 || age > B.life) continue;
+    for (let i = 0; i < B.n; i++) {
+      const id = bi * 1000 + i;
+      const ang = -Math.PI / 2 + (rnd(id) - 0.5) * 2.4;
+      const spd = (0.5 + rnd(id + 1) * 1.0) * L.scale * 46 * B.up;
+      const x0 = L.cx + (rnd(id + 2) - 0.5) * S_W * L.scale * (bi === 0 ? 0.7 : 0.95);
+      const y0 = L.groundY - (bi === 0 ? 5 : 3) * L.scale;
+      const x = x0 + Math.cos(ang) * spd * age + Math.sin(age * 5 + id) * L.scale * 1.5;
+      const y = y0 + Math.sin(ang) * spd * age + 0.5 * 900 * age * age * (L.scale / 6);
+      if (y > L.H + 40) continue;
+      const rot = rnd(id + 3) * 6.28 + age * (3 + rnd(id + 4) * 7) * (rnd(id + 5) < .5 ? -1 : 1);
+      const w = Math.max(3, L.scale * 0.8), h = Math.max(4, L.scale * 1.2);
+      ctx.save();
+      ctx.globalAlpha = 1 - smoothstep(B.life * 0.6, B.life, age);
+      ctx.translate(x, y); ctx.rotate(rot);
+      ctx.fillStyle = CONFETTI_COLORS[Math.floor(rnd(id + 6) * CONFETTI_COLORS.length)];
+      ctx.fillRect(-w / 2, -h / 2, w, h);
+      ctx.restore();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+/** Renders one complete frame of the show at show-time t. */
+function drawFrame(t, calm) {
+  const P = pose(t, calm);
+  drawSky();
+  // the "camera" tilts up a little during the finale jump, so Clawd can leap
+  // properly high without flying out of frame
+  const cam = Math.round(-P.jy * 0.35 * L.scale);
+  ctx.save();
+  ctx.translate(0, cam);
+  drawFloor();
+  drawStageLights(t, P.energy);
+  drawParticles(t);
+  drawSpotlight(t, P);
+  drawShadow(P);
+  drawClawd(P);
+  drawSoundWaves(t, P);
+  drawNotes(t);
+  drawConfetti(t);
+  ctx.restore();
+}
+
+/* ------------------------------------------------------------------
+   5. Web Audio — a small chiptune band, created only after the user
+      presses Start (nothing ever autoplays).
+   ------------------------------------------------------------------ */
+
+// lead melody: 12 bars x 8 eighth notes (MIDI numbers, null = rest)
+const LEAD = [
+  [72,null,76,null,79,null,76,null],      // bar 0  intro   C
+  [74,null,79,null,83,null,79,null],      // bar 1  intro   G
+  [76,79,84,79,76,null,74,null],          // bar 2  verse   C
+  [74,79,83,79,74,null,72,null],          // bar 3  verse   G
+  [72,76,81,76,72,null,71,null],          // bar 4  verse   Am
+  [72,77,81,77,76,null,74,null],          // bar 5  verse   F
+  [84,79,84,88,86,84,79,null],            // bar 6  chorus  C
+  [83,79,83,86,84,83,79,null],            // bar 7  chorus  G
+  [81,76,81,84,83,81,76,null],            // bar 8  chorus  Am
+  [77,81,84,86,84,81,84,null],            // bar 9  chorus  F
+  [77,81,84,86,null,null,null,null],      // bar 10 finale  F  (jump take-off)
+  [null,null,84,null,79,null,76,null]     // bar 11 finale  C  (landing + settle)
+];
+const BASS_ROOT = [36, 31, 36, 31, 33, 29, 36, 31, 33, 29, 29, 36];
+
+function makeNoiseBuffer(ac) {
+  const len = Math.floor(ac.sampleRate * 1.2);
+  const b = ac.createBuffer(1, len, ac.sampleRate);
+  const d = b.getChannelData(0);
+  let s = 1;
+  for (let i = 0; i < len; i++) { s = (s * 16807) % 2147483647; d[i] = (s / 1073741823) - 1; }
+  return b;
+}
+
+/** One chiptune tone with an optional pitch sweep. */
+function tone(ac, dest, time, o) {
+  const osc = ac.createOscillator();
+  const gn  = ac.createGain();
+  osc.type = o.type || 'square';
+  osc.frequency.setValueAtTime(o.freq, time);
+  if (o.sweepTo) osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.sweepTo), time + o.dur);
+  if (o.detune) osc.detune.setValueAtTime(o.detune, time);
+  const a = o.attack === undefined ? 0.006 : o.attack;
+  gn.gain.setValueAtTime(0.0001, time);
+  gn.gain.exponentialRampToValueAtTime(Math.max(0.0002, o.gain), time + a);
+  gn.gain.exponentialRampToValueAtTime(0.0001, time + o.dur);
+  osc.connect(gn); gn.connect(dest);
+  osc.start(time); osc.stop(time + o.dur + 0.05);
+  return osc;
+}
+
+function noiseHit(ac, dest, time, o) {
+  const src = ac.createBufferSource();
+  src.buffer = o.buf;
+  src.playbackRate.value = o.rate || 1;
+  const flt = ac.createBiquadFilter();
+  flt.type = o.filter || 'highpass';
+  flt.frequency.setValueAtTime(o.freq || 1200, time);
+  if (o.freqTo) flt.frequency.exponentialRampToValueAtTime(o.freqTo, time + o.dur);
+  const gn = ac.createGain();
+  gn.gain.setValueAtTime(0.0001, time);
+  gn.gain.exponentialRampToValueAtTime(o.gain, time + 0.004);
+  gn.gain.exponentialRampToValueAtTime(0.0001, time + o.dur);
+  src.connect(flt); flt.connect(gn); gn.connect(dest);
+  src.start(time, (o.offset || 0)); src.stop(time + o.dur + 0.05);
+  return src;
+}
+
+function kick(ac, dest, time, gain) {
+  const osc = ac.createOscillator(), gn = ac.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(150, time);
+  osc.frequency.exponentialRampToValueAtTime(42, time + 0.12);
+  gn.gain.setValueAtTime(0.0001, time);
+  gn.gain.exponentialRampToValueAtTime(gain, time + 0.005);
+  gn.gain.exponentialRampToValueAtTime(0.0001, time + 0.20);
+  osc.connect(gn); gn.connect(dest);
+  osc.start(time); osc.stop(time + 0.26);
+  return osc;
+}
+
+/** Schedules the entire 24-second show onto any AudioContext. */
+function scheduleShow(ac, dest, t0, noiseBuf, keep) {
+  const push = n => { if (keep) keep.push(n); };
+  const B = SPB;
+
+  for (let bar = 0; bar < 12; bar++) {
+    const barT = t0 + bar * BAR;
+    const chorus = bar >= 6 && bar <= 9;
+    const intro  = bar < 2;
+    const finale = bar >= 10;
+
+    // ---- drums
+    for (let b = 0; b < 4; b++) {
+      const bt = barT + b * B;
+      const beatIdx = bar * 4 + b;
+      const inJump = beatIdx >= 41.5 && beatIdx < 44;      // silence under the jump
+      if (!inJump) {
+        if (chorus)      push(kick(ac, dest, bt, 0.55));                    // four on the floor
+        else if (b % 2 === 0) push(kick(ac, dest, bt, intro ? 0.34 : 0.46));
+        if (b % 2 === 1 && !intro) {                                        // clap on 2 and 4
+          push(noiseHit(ac, dest, bt, { buf: noiseBuf, dur: 0.13, gain: chorus ? 0.30 : 0.22, freq: 1400, filter: 'bandpass' }));
+          if (chorus) push(noiseHit(ac, dest, bt + 0.02, { buf: noiseBuf, dur: 0.11, gain: 0.18, freq: 2000, filter: 'bandpass', offset: 0.3 }));
+        }
+      }
+      // hats on the eighths
+      for (let e = 0; e < 2; e++) {
+        const ht = bt + e * B / 2;
+        if (ht - t0 >= 20.85 && ht - t0 < 22.0) continue;
+        push(noiseHit(ac, dest, ht, { buf: noiseBuf, dur: 0.045, gain: (e ? 0.055 : 0.085) * (chorus ? 1.35 : 1) * (intro ? 0.6 : 1), freq: 7000, offset: 0.5 }));
+      }
+    }
+
+    // ---- bouncy bass (eighth notes)
+    const root = BASS_ROOT[bar];
+    const pat = [0, null, 12, null, 7, null, 12, null];
+    for (let e = 0; e < 8; e++) {
+      if (pat[e] === null) continue;
+      const bt = barT + e * B / 2;
+      if (bt - t0 >= 20.9 && bt - t0 < 22.0) continue;
+      push(tone(ac, dest, bt, { freq: midiToHz(root + pat[e]), dur: 0.22, type: 'triangle',
+                                gain: intro ? 0.16 : (chorus ? 0.26 : 0.21) }));
+    }
+
+    // ---- 8-bit lead
+    const line = LEAD[bar];
+    for (let e = 0; e < 8; e++) {
+      const m = line[e];
+      if (m === null) continue;
+      const bt = barT + e * B / 2;
+      push(tone(ac, dest, bt, { freq: midiToHz(m), dur: chorus ? 0.30 : 0.26, type: 'square',
+                                gain: intro ? 0.10 : (chorus ? 0.17 : 0.14) }));
+      if (chorus) push(tone(ac, dest, bt + 0.012, { freq: midiToHz(m + 12), dur: 0.16, type: 'square', gain: 0.05 }));
+    }
+
+    // ---- sparkling chorus shimmer at the top of every chorus bar
+    if (chorus) {
+      for (let k = 0; k < 5; k++) {
+        push(tone(ac, dest, barT + k * 0.045, { freq: midiToHz(93 + k * 3), dur: 0.16, type: 'triangle', gain: 0.075 }));
+      }
+    }
+    if (finale && bar === 11) {
+      // big confident landing chord
+      [72, 76, 79, 84].forEach((m, i) => push(tone(ac, dest, barT + i * 0.008, { freq: midiToHz(m), dur: 0.8, type: 'square', gain: 0.125 })));
+      push(noiseHit(ac, dest, barT, { buf: noiseBuf, dur: 0.6, gain: 0.22, freq: 3000, filter: 'highpass' }));
+      push(kick(ac, dest, barT, 0.55));
+    }
+  }
+
+  // ---- scripted sound effects
+  // spin blip
+  for (let k = 0; k < 6; k++) {
+    push(tone(ac, dest, t0 + SPIN_T0 + k * 0.14, { freq: midiToHz(76 + k * 2), dur: 0.11, type: 'square', gain: 0.10 }));
+  }
+  // jump whoosh + a riser that lifts all the way to the landing
+  push(tone(ac, dest, t0 + JUMP_T0, { freq: 220, sweepTo: 1500, dur: JUMP_T1 - JUMP_T0, type: 'square', gain: 0.11 }));
+  push(noiseHit(ac, dest, t0 + JUMP_T0, { buf: noiseBuf, dur: JUMP_T1 - JUMP_T0, gain: 0.09, freq: 400, freqTo: 7000 }));
+  for (let k = 0; k < 8; k++) {                       // ticking hat roll under the flight
+    const rt = t0 + JUMP_T0 + 0.28 + k * 0.105;
+    push(noiseHit(ac, dest, rt, { buf: noiseBuf, dur: 0.05, gain: 0.05 + k * 0.011, freq: 7000, offset: 0.5 }));
+    push(tone(ac, dest, rt, { freq: midiToHz(76 + k * 2), dur: 0.09, type: 'square', gain: 0.05 + k * 0.008 }));
+  }
+  // landing thud
+  push(tone(ac, dest, t0 + JUMP_T1, { freq: 180, sweepTo: 45, dur: 0.35, type: 'triangle', gain: 0.26 }));
+  push(noiseHit(ac, dest, t0 + JUMP_T1, { buf: noiseBuf, dur: 0.22, gain: 0.20, freq: 900, filter: 'lowpass', freqTo: 200 }));
+}
+
+/* --- live audio engine ------------------------------------------- */
+let ac = null, master = null, noiseBuf = null;
+let audioNodes = [];
+let audioAnchor = 0;          // ac.currentTime that corresponds to show-time 0
+let scheduledCycle = -1;      // last cycle index handed to the scheduler
+let soundOn = true, volume = 0.7;
+
+function initAudio() {
+  if (ac) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  ac = new AC();
+  master = ac.createGain();
+  master.gain.value = soundOn ? volume : 0;
+  const comp = ac.createDynamicsCompressor();
+  comp.threshold.value = -14; comp.ratio.value = 5;
+  master.connect(comp); comp.connect(ac.destination);
+  noiseBuf = makeNoiseBuffer(ac);
+}
+
+function stopAllAudio() {
+  audioNodes.forEach(n => { try { n.stop(0); } catch (e) {} try { n.disconnect(); } catch (e) {} });
+  audioNodes = [];
+}
+
+/** Keeps one show-cycle of music scheduled ahead of the audio clock. */
+function pumpAudio() {
+  if (!ac || ac.state !== 'running') return;
+  const ahead = ac.currentTime + 0.6;
+  let cycle = Math.floor((ahead - audioAnchor) / SHOW);
+  while (scheduledCycle < cycle) {
+    scheduledCycle++;
+    const t0 = audioAnchor + scheduledCycle * SHOW;
+    if (t0 + SHOW < ac.currentTime) continue;         // skip cycles already in the past
+    scheduleShow(ac, master, Math.max(t0, ac.currentTime + 0.02), noiseBuf, audioNodes);
+  }
+  if (audioNodes.length > 900) audioNodes = audioNodes.slice(-400);
+}
+
+/* ------------------------------------------------------------------
+   6. Show state, controls and the main loop
+   ------------------------------------------------------------------ */
+let started = false, paused = false;
+let showT = 0;                    // current show-time in seconds
+let idleT = 0;                    // clock used for the gentle pre-show idle
+let lastRAF = 0;
+
+const btnStart   = document.getElementById('btnStart');
+const btnPause   = document.getElementById('btnPause');
+const btnRestart = document.getElementById('btnRestart');
+const btnSound   = document.getElementById('btnSound');
+const btnFull    = document.getElementById('btnFull');
+const volSlider  = document.getElementById('vol');
+const hint       = document.getElementById('hint');
+
+function startShow() {
+  initAudio();
+  if (ac.state === 'suspended') ac.resume();
+  started = true; paused = false;
+  showT = 0;
+  audioAnchor = ac.currentTime + 0.08;
+  scheduledCycle = -1;
+  stopAllAudio();
+  pumpAudio();
+  btnStart.textContent = '▶ PLAYING';
+  btnStart.disabled = true;
+  btnPause.disabled = false; btnRestart.disabled = false;
+  btnPause.textContent = '❚❚ PAUSE';
+  hint.classList.add('hidden');
+}
+
+function togglePause() {
+  if (!started) return;
+  paused = !paused;
+  btnPause.textContent = paused ? '▶ RESUME' : '❚❚ PAUSE';
+  if (!ac) return;
+  // suspending freezes the audio clock too, so music and dance stay in sync
+  if (paused) ac.suspend(); else ac.resume().then(pumpAudio);
+}
+
+function restartShow() {
+  if (!started) { startShow(); return; }
+  paused = false;
+  btnPause.textContent = '❚❚ PAUSE';
+  showT = 0;
+  stopAllAudio();
+  if (ac) {
+    if (ac.state === 'suspended') ac.resume();
+    audioAnchor = ac.currentTime + 0.08;
+    scheduledCycle = -1;
+    pumpAudio();
+  }
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  btnSound.textContent = soundOn ? '♪ SOUND ON' : '♪ SOUND OFF';
+  btnSound.classList.toggle('on', soundOn);
+  if (master) master.gain.setTargetAtTime(soundOn ? volume : 0, ac.currentTime, 0.02);
+}
+
+function toggleFullscreen() {
+  const el = document.getElementById('app');
+  const fs = document.fullscreenElement || document.webkitFullscreenElement;
+  if (!fs) {
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (req) req.call(el);
+  } else {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit) exit.call(document);
+  }
+}
+
+btnStart.addEventListener('click', startShow);
+btnPause.addEventListener('click', togglePause);
+btnRestart.addEventListener('click', restartShow);
+btnSound.addEventListener('click', toggleSound);
+btnFull.addEventListener('click', toggleFullscreen);
+volSlider.addEventListener('input', () => {
+  volume = volSlider.value / 100;
+  if (master && soundOn) master.gain.setTargetAtTime(volume, ac.currentTime, 0.02);
+});
+
+// keyboard shortcuts for desktop
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); started ? togglePause() : startShow(); }
+  else if (e.key === 'r' || e.key === 'R') restartShow();
+  else if (e.key === 'm' || e.key === 'M') toggleSound();
+  else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+});
+
+// stop accidental page scrolling / pull-to-refresh while still allowing the UI
+document.addEventListener('touchmove', e => {
+  if (!e.target.closest || !e.target.closest('#ui')) { if (e.cancelable) e.preventDefault(); }
+}, { passive: false });
+document.addEventListener('gesturestart', e => e.preventDefault());
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 120));
+document.addEventListener('fullscreenchange', () => setTimeout(resize, 60));
+document.addEventListener('visibilitychange', () => { if (!document.hidden) lastRAF = 0; });
+
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (captureMode) return;                       // offline renderer drives the frames
+  const dt = lastRAF ? Math.min(0.05, (now - lastRAF) / 1000) : 0;
+  lastRAF = now;
+
+  if (!started) {
+    idleT += dt;
+    drawFrame(idleT % 3.6, 0.45);                // gentle idle: small bounce + blinking
+    return;
+  }
+  if (!paused) {
+    // drive the animation from the audio clock so the dance hugs the beat
+    if (ac && ac.state === 'running') showT = ((ac.currentTime - audioAnchor) % SHOW + SHOW) % SHOW;
+    else showT = (showT + dt) % SHOW;
+    pumpAudio();
+  }
+  drawFrame(showT, 1);
+}
+
+resize();
+requestAnimationFrame(frame);
+
+/* ------------------------------------------------------------------
+   7. Capture hooks — used by the offline renderer to export a video.
+      They have no effect during normal playback.
+   ------------------------------------------------------------------ */
+function encodeWav(buf) {
+  const nCh = buf.numberOfChannels, len = buf.length, sr = buf.sampleRate;
+  const bytes = 44 + len * nCh * 2;
+  const ab = new ArrayBuffer(bytes), view = new DataView(ab);
+  const ws = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+  ws(0, 'RIFF'); view.setUint32(4, bytes - 8, true); ws(8, 'WAVE');
+  ws(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+  view.setUint16(22, nCh, true); view.setUint32(24, sr, true);
+  view.setUint32(28, sr * nCh * 2, true); view.setUint16(32, nCh * 2, true);
+  view.setUint16(34, 16, true); ws(36, 'data'); view.setUint32(40, len * nCh * 2, true);
+  const ch = []; for (let c = 0; c < nCh; c++) ch.push(buf.getChannelData(c));
+  let o = 44;
+  for (let i = 0; i < len; i++) {
+    for (let c = 0; c < nCh; c++) {
+      const s = Math.max(-1, Math.min(1, ch[c][i]));
+      view.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7FFF, true); o += 2;
+    }
+  }
+  let bin = '', u8 = new Uint8Array(ab);
+  for (let i = 0; i < u8.length; i += 8192) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 8192));
+  return btoa(bin);
+}
+
+// tiny introspection hook (used by the automated checks; harmless at runtime)
+window.__dbg = () => ({
+  started, paused, showT,
+  acState: ac ? ac.state : 'none',
+  gain: master ? +master.gain.value.toFixed(3) : null,
+  nodes: audioNodes.length,
+  seek(t) { showT = t; if (ac) { audioAnchor = ac.currentTime - t; } }
+});
+
+window.__clawd = {
+  SHOW: SHOW,
+  setCapture(w, h) {
+    captureMode = true; capW = w; capH = h;
+    document.body.classList.add('capture');
+    resize();
+  },
+  renderFrame(t) { started = true; drawFrame(((t % SHOW) + SHOW) % SHOW, 1); },
+  /** Renders the same music offline and returns a base64 WAV. */
+  async renderAudio(cycles) {
+    const sr = 44100, dur = SHOW * (cycles || 1);
+    const oc = new OfflineAudioContext(2, Math.ceil(sr * dur), sr);
+    const m = oc.createGain(); m.gain.value = 1.0;
+    const comp = oc.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.ratio.value = 5;
+    m.connect(comp); comp.connect(oc.destination);
+    const nb = makeNoiseBuffer(oc);
+    for (let c = 0; c < (cycles || 1); c++) scheduleShow(oc, m, c * SHOW, nb, null);
+    const rendered = await oc.startRendering();
+    return encodeWav(rendered);
+  }
+};
+</script>
+</body>
+</html>
