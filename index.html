@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#7ec850">
+<meta name="description" content="Crossy Road — a hoppy endless arcade road-crossing game. Pure HTML5 canvas, no dependencies.">
+<title>Crossy Road</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐔</text></svg>">
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<!-- ── In-game HUD ─────────────────────────────────────────── -->
+<div id="hud" class="hud hidden">
+  <div class="hud-score" id="hud-score">0</div>
+  <div class="hud-right">
+    <div class="pill" id="hud-coins"><span class="coin-dot"></span><span id="coin-count">0</span></div>
+    <button class="icon-btn" id="btn-sound" title="Sound (M)" aria-label="Toggle sound">🔊</button>
+    <button class="icon-btn" id="btn-pause" title="Pause (Esc)" aria-label="Pause">❚❚</button>
+  </div>
+</div>
+
+<!-- ── Start / character select ─────────────────────────────── -->
+<div id="screen-start" class="overlay">
+  <div class="card">
+    <h1 class="title">CROSSY<span>ROAD</span></h1>
+    <p class="tagline">How far can you hop?</p>
+
+    <div class="chooser">
+      <button class="arrow" id="char-prev" aria-label="Previous character">‹</button>
+      <div class="char-stage">
+        <canvas id="char-preview" width="220" height="200"></canvas>
+        <div class="char-name" id="char-name">Chicken</div>
+        <div class="char-status" id="char-status">Selected</div>
+      </div>
+      <button class="arrow" id="char-next" aria-label="Next character">›</button>
+    </div>
+
+    <button class="btn btn-primary" id="btn-play">PLAY</button>
+    <button class="btn btn-ghost hidden" id="btn-unlock">Unlock</button>
+
+    <div class="wallet"><span class="coin-dot"></span><span id="wallet-count">0</span> coins</div>
+
+    <div class="hints">
+      <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> to hop</div>
+      <div class="hint-touch">Swipe or tap the arrows to hop</div>
+      <div>Don't stand still — the eagle is watching.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Game over ────────────────────────────────────────────── -->
+<div id="screen-over" class="overlay hidden">
+  <div class="card">
+    <div class="over-cause" id="over-cause">Squashed!</div>
+    <div class="over-score" id="over-score">0</div>
+    <div class="over-label">SCORE</div>
+    <div class="over-stats">
+      <div><span id="over-best">0</span><small>BEST</small></div>
+      <div><span id="over-coins">0</span><small>COINS</small></div>
+    </div>
+    <div class="new-best hidden" id="new-best">NEW BEST!</div>
+    <button class="btn btn-primary" id="btn-again">PLAY AGAIN</button>
+    <button class="btn btn-ghost" id="btn-menu">CHANGE CHARACTER</button>
+  </div>
+</div>
+
+<!-- ── Pause ────────────────────────────────────────────────── -->
+<div id="screen-pause" class="overlay hidden">
+  <div class="card card-sm">
+    <h2 class="title-sm">PAUSED</h2>
+    <button class="btn btn-primary" id="btn-resume">RESUME</button>
+    <button class="btn btn-ghost" id="btn-quit">QUIT TO MENU</button>
+  </div>
+</div>
+
+<!-- ── Touch controls ───────────────────────────────────────── -->
+<div id="dpad" class="dpad hidden">
+  <button class="dbtn up"    data-dir="up"    aria-label="Hop forward">▲</button>
+  <button class="dbtn left"  data-dir="left"  aria-label="Hop left">◀</button>
+  <button class="dbtn right" data-dir="right" aria-label="Hop right">▶</button>
+  <button class="dbtn down"  data-dir="down"  aria-label="Hop back">▼</button>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/render.js"></script>
+<script src="js/models.js"></script>
+<script src="js/characters.js"></script>
+<script src="js/world.js"></script>
+<script src="js/player.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

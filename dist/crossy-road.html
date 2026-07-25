@@ -1,0 +1,2642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Crossy Road</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#7ec850">
+<meta name="description" content="Crossy Road — an endless hop-across-the-traffic arcade game. Pure HTML5 canvas, no dependencies.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐔</text></svg>">
+<style>
+/* ── Crossy Road — UI shell ───────────────────────────────── */
+
+:root {
+  --ink: #10141c;
+  --card: rgba(18, 22, 31, .82);
+  --stroke: rgba(255, 255, 255, .14);
+  --grass: #7ec850;
+  --gold: #ffcf3f;
+  --font: "Trebuchet MS", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: #0d1017;
+  font-family: var(--font);
+  color: #fff;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+#game {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: auto;
+}
+
+.hidden { display: none !important; }
+
+/* ── HUD ──────────────────────────────────────────────────── */
+
+.hud {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: max(14px, env(safe-area-inset-top)) 16px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.hud-score {
+  font-size: clamp(38px, 9vw, 64px);
+  font-weight: 900;
+  letter-spacing: 1px;
+  line-height: .95;
+  text-shadow: 0 4px 0 rgba(0, 0, 0, .35), 0 0 18px rgba(0, 0, 0, .25);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-right { display: flex; gap: 8px; align-items: center; pointer-events: auto; }
+
+.pill {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(10, 14, 20, .5);
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  padding: 7px 14px 7px 10px;
+  font-weight: 800;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  backdrop-filter: blur(6px);
+}
+
+.coin-dot {
+  width: 15px; height: 15px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, #ffe98a, var(--gold) 60%, #d69a08);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, .18) inset;
+  display: inline-block;
+  flex: none;
+}
+
+.icon-btn {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+  background: rgba(10, 14, 20, .5);
+  color: #fff;
+  font-size: 15px;
+  font-family: var(--font);
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: transform .1s, background .15s;
+}
+.icon-btn:active { transform: scale(.92); }
+.icon-btn:hover { background: rgba(30, 38, 52, .7); }
+
+/* ── Overlays & cards ─────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 10;
+  background: radial-gradient(ellipse at center, rgba(4, 8, 14, .35), rgba(4, 8, 14, .72));
+  animation: fade .25s ease;
+}
+
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pop { from { transform: translateY(14px) scale(.94); opacity: 0 } to { transform: none; opacity: 1 } }
+
+.card {
+  width: min(400px, 100%);
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 26px;
+  padding: 26px 24px 22px;
+  text-align: center;
+  backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: 0 26px 60px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .08);
+  animation: pop .3s cubic-bezier(.2, .9, .3, 1.2);
+  max-height: 96vh;
+  overflow-y: auto;
+}
+.card-sm { width: min(320px, 100%); }
+
+.title {
+  font-size: clamp(36px, 11vw, 52px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  line-height: .92;
+  color: #fff;
+  text-shadow: 0 5px 0 #2c7a2c, 0 7px 14px rgba(0, 0, 0, .5);
+}
+.title span { display: block; color: var(--gold); text-shadow: 0 5px 0 #a86e00, 0 7px 14px rgba(0, 0, 0, .5); }
+.title-sm { font-size: 30px; font-weight: 900; letter-spacing: 3px; margin-bottom: 18px; }
+
+.tagline { margin: 12px 0 4px; opacity: .7; font-size: 15px; font-weight: 600; }
+
+/* ── Character chooser ────────────────────────────────────── */
+
+.chooser { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 6px 0 14px; }
+
+.char-stage { flex: 1; min-width: 0; }
+
+#char-preview {
+  width: 100%;
+  max-width: 220px;
+  height: 170px;
+  display: block;
+  margin: 0 auto;
+}
+
+.char-name { font-size: 19px; font-weight: 900; letter-spacing: 1px; margin-top: -6px; }
+.char-status { font-size: 13px; opacity: .65; font-weight: 700; min-height: 18px; }
+.char-status.locked { color: var(--gold); opacity: .95; }
+
+.arrow {
+  width: 44px; height: 60px;
+  flex: none;
+  font-size: 32px;
+  line-height: 1;
+  color: #fff;
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: transform .1s, background .15s;
+}
+.arrow:hover { background: rgba(255, 255, 255, .16); }
+.arrow:active { transform: scale(.92); }
+
+/* ── Buttons ──────────────────────────────────────────────── */
+
+.btn {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 15px 18px;
+  border: none;
+  border-radius: 16px;
+  font-family: var(--font);
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: transform .08s, filter .15s;
+}
+.btn:active { transform: translateY(2px) scale(.99); }
+
+.btn-primary {
+  background: linear-gradient(#8ede5c, var(--grass) 55%, #57a032);
+  color: #10300d;
+  box-shadow: 0 5px 0 #3d7a24, 0 12px 24px rgba(0, 0, 0, .35);
+}
+.btn-primary:hover { filter: brightness(1.06); }
+
+.btn-ghost {
+  background: rgba(255, 255, 255, .09);
+  color: #fff;
+  border: 1px solid var(--stroke);
+  font-size: 15px;
+  padding: 12px;
+  letter-spacing: 1px;
+}
+.btn-ghost:hover { background: rgba(255, 255, 255, .17); }
+.btn-ghost:disabled { opacity: .45; cursor: not-allowed; }
+
+.wallet {
+  margin-top: 14px;
+  font-size: 15px;
+  font-weight: 800;
+  opacity: .85;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.hints { margin-top: 16px; font-size: 12.5px; line-height: 1.9; opacity: .55; font-weight: 600; }
+.hint-touch { display: none; }
+
+kbd {
+  display: inline-block;
+  min-width: 20px;
+  padding: 1px 5px;
+  margin: 0 1px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, .14);
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-bottom-width: 2px;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── Game over ────────────────────────────────────────────── */
+
+.over-cause { font-size: 20px; font-weight: 900; letter-spacing: 2px; color: #ff7b6b; text-transform: uppercase; }
+.over-score {
+  font-size: 76px; font-weight: 900; line-height: 1.05; margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 5px 0 rgba(0, 0, 0, .35);
+}
+.over-label { font-size: 12px; letter-spacing: 4px; opacity: .55; font-weight: 800; }
+
+.over-stats { display: flex; gap: 10px; margin: 18px 0 4px; }
+.over-stats > div {
+  flex: 1;
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  padding: 10px 6px;
+}
+.over-stats span { display: block; font-size: 26px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.over-stats small { font-size: 10px; letter-spacing: 2px; opacity: .55; font-weight: 800; }
+
+.new-best {
+  margin-top: 12px;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--gold);
+  animation: blink 1s steps(2, end) infinite;
+}
+@keyframes blink { 50% { opacity: .35 } }
+
+/* ── Touch d-pad ──────────────────────────────────────────── */
+
+.dpad {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  width: 186px; height: 186px;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 5px;
+  opacity: .5;
+}
+
+.dbtn {
+  border: 1px solid rgba(255, 255, 255, .25);
+  background: rgba(10, 14, 20, .42);
+  color: #fff;
+  border-radius: 16px;
+  font-size: 20px;
+  font-family: var(--font);
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: transform .07s, background .1s;
+}
+.dbtn:active { transform: scale(.9); background: rgba(120, 200, 90, .55); }
+.dbtn.up    { grid-area: 1 / 2; }
+.dbtn.left  { grid-area: 2 / 1; }
+.dbtn.right { grid-area: 2 / 3; }
+.dbtn.down  { grid-area: 3 / 2; }
+
+/* ── Responsive ───────────────────────────────────────────── */
+
+@media (pointer: coarse) {
+  .hint-touch { display: block; }
+  .hints > div:first-child { display: none; }
+}
+
+@media (max-height: 620px) {
+  .card { padding: 18px 18px 14px; border-radius: 20px; }
+  #char-preview { height: 120px; }
+  .hints { display: none; }
+  .over-score { font-size: 56px; }
+  .tagline { margin: 6px 0 0; }
+}
+
+@media (max-width: 380px) {
+  .dpad { width: 150px; height: 150px; }
+}
+
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- ── In-game HUD ─────────────────────────────────────────── -->
+<div id="hud" class="hud hidden">
+  <div class="hud-score" id="hud-score">0</div>
+  <div class="hud-right">
+    <div class="pill" id="hud-coins"><span class="coin-dot"></span><span id="coin-count">0</span></div>
+    <button class="icon-btn" id="btn-sound" title="Sound (M)" aria-label="Toggle sound">🔊</button>
+    <button class="icon-btn" id="btn-pause" title="Pause (Esc)" aria-label="Pause">❚❚</button>
+  </div>
+</div>
+
+<!-- ── Start / character select ─────────────────────────────── -->
+<div id="screen-start" class="overlay">
+  <div class="card">
+    <h1 class="title">CROSSY<span>ROAD</span></h1>
+    <p class="tagline">How far can you hop?</p>
+
+    <div class="chooser">
+      <button class="arrow" id="char-prev" aria-label="Previous character">‹</button>
+      <div class="char-stage">
+        <canvas id="char-preview" width="220" height="200"></canvas>
+        <div class="char-name" id="char-name">Chicken</div>
+        <div class="char-status" id="char-status">Selected</div>
+      </div>
+      <button class="arrow" id="char-next" aria-label="Next character">›</button>
+    </div>
+
+    <button class="btn btn-primary" id="btn-play">PLAY</button>
+    <button class="btn btn-ghost hidden" id="btn-unlock">Unlock</button>
+
+    <div class="wallet"><span class="coin-dot"></span><span id="wallet-count">0</span> coins</div>
+
+    <div class="hints">
+      <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> to hop</div>
+      <div class="hint-touch">Swipe or tap the arrows to hop</div>
+      <div>Don't stand still — the eagle is watching.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Game over ────────────────────────────────────────────── -->
+<div id="screen-over" class="overlay hidden">
+  <div class="card">
+    <div class="over-cause" id="over-cause">Squashed!</div>
+    <div class="over-score" id="over-score">0</div>
+    <div class="over-label">SCORE</div>
+    <div class="over-stats">
+      <div><span id="over-best">0</span><small>BEST</small></div>
+      <div><span id="over-coins">0</span><small>COINS</small></div>
+    </div>
+    <div class="new-best hidden" id="new-best">NEW BEST!</div>
+    <button class="btn btn-primary" id="btn-again">PLAY AGAIN</button>
+    <button class="btn btn-ghost" id="btn-menu">CHANGE CHARACTER</button>
+  </div>
+</div>
+
+<!-- ── Pause ────────────────────────────────────────────────── -->
+<div id="screen-pause" class="overlay hidden">
+  <div class="card card-sm">
+    <h2 class="title-sm">PAUSED</h2>
+    <button class="btn btn-primary" id="btn-resume">RESUME</button>
+    <button class="btn btn-ghost" id="btn-quit">QUIT TO MENU</button>
+  </div>
+</div>
+
+<!-- ── Touch controls ───────────────────────────────────────── -->
+<div id="dpad" class="dpad hidden">
+  <button class="dbtn up"    data-dir="up"    aria-label="Hop forward">▲</button>
+  <button class="dbtn left"  data-dir="left"  aria-label="Hop left">◀</button>
+  <button class="dbtn right" data-dir="right" aria-label="Hop right">▶</button>
+  <button class="dbtn down"  data-dir="down"  aria-label="Hop back">▼</button>
+</div>
+<script>
+/* ==== js/util.js ==== */
+/* Crossy Road — small shared helpers (math, colour, storage, RNG). */
+(function (global) {
+  'use strict';
+
+  var CR = global.CR || (global.CR = {});
+
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  /** Frame-rate independent easing toward a target. */
+  function damp(a, b, lambda, dt) { return lerp(a, b, 1 - Math.exp(-lambda * dt)); }
+
+  /** Deterministic 32-bit PRNG so a run can be replayed from a seed. */
+  function rng(seed) {
+    var s = seed >>> 0 || 1;
+    var f = function () {
+      s = (s + 0x6D2B79F5) >>> 0;
+      var t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    f.range = function (lo, hi) { return lo + f() * (hi - lo); };
+    f.int = function (lo, hi) { return Math.floor(lo + f() * (hi - lo + 1)); };
+    f.pick = function (arr) { return arr[Math.floor(f() * arr.length) % arr.length]; };
+    f.chance = function (p) { return f() < p; };
+    /** Weighted pick: entries are [value, weight]. */
+    f.weighted = function (entries) {
+      var total = 0, i;
+      for (i = 0; i < entries.length; i++) total += entries[i][1];
+      var r = f() * total;
+      for (i = 0; i < entries.length; i++) {
+        r -= entries[i][1];
+        if (r <= 0) return entries[i][0];
+      }
+      return entries[entries.length - 1][0];
+    };
+    return f;
+  }
+
+  /* ── Colour ─────────────────────────────────────────────── */
+
+  function hexToRgb(hex) {
+    var h = hex.charAt(0) === '#' ? hex.slice(1) : hex;
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    var n = parseInt(h, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+
+  var shadeCache = Object.create(null);
+
+  /** Multiply a colour's brightness; results are cached (hot path). */
+  function shade(hex, mul) {
+    var key = hex + '|' + mul;
+    var hit = shadeCache[key];
+    if (hit) return hit;
+    var c = hexToRgb(hex);
+    var out = 'rgb(' +
+      clamp(Math.round(c[0] * mul), 0, 255) + ',' +
+      clamp(Math.round(c[1] * mul), 0, 255) + ',' +
+      clamp(Math.round(c[2] * mul), 0, 255) + ')';
+    shadeCache[key] = out;
+    return out;
+  }
+
+  function rgba(hex, a) {
+    var c = hexToRgb(hex);
+    return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')';
+  }
+
+  function mix(hexA, hexB, t) {
+    var a = hexToRgb(hexA), b = hexToRgb(hexB);
+    return 'rgb(' +
+      Math.round(lerp(a[0], b[0], t)) + ',' +
+      Math.round(lerp(a[1], b[1], t)) + ',' +
+      Math.round(lerp(a[2], b[2], t)) + ')';
+  }
+
+  /* ── Persistence (never throws — private mode, file://, etc.) ── */
+
+  var store = {
+    get: function (key, fallback) {
+      try {
+        var v = global.localStorage.getItem('crossy.' + key);
+        return v === null ? fallback : JSON.parse(v);
+      } catch (e) { return fallback; }
+    },
+    set: function (key, value) {
+      try { global.localStorage.setItem('crossy.' + key, JSON.stringify(value)); } catch (e) { /* ignore */ }
+    }
+  };
+
+  CR.util = {
+    clamp: clamp, lerp: lerp, damp: damp, rng: rng,
+    shade: shade, rgba: rgba, mix: mix, hexToRgb: hexToRgb,
+    store: store,
+    TAU: Math.PI * 2
+  };
+})(window);
+
+/* ==== js/audio.js ==== */
+/* Crossy Road — procedural sound. Every effect is synthesised with the
+   WebAudio API, so the game ships with zero audio assets. */
+(function (global) {
+  'use strict';
+
+  var CR = global.CR;
+  var store = CR.util.store;
+
+  function Audio() {
+    this.ctx = null;
+    this.master = null;
+    this.noise = null;
+    this.muted = store.get('muted', false);
+    this.ready = false;
+  }
+
+  /** Must be called from a user gesture (browser autoplay policy). */
+  Audio.prototype.init = function () {
+    if (this.ready) { this.resume(); return; }
+    var AC = global.AudioContext || global.webkitAudioContext;
+    if (!AC) return;
+    try {
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = this.muted ? 0 : 0.6;
+      this.master.connect(this.ctx.destination);
+
+      // One shared noise buffer for splashes/crashes.
+      var len = Math.floor(this.ctx.sampleRate * 0.7);
+      var buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+      this.noise = buf;
+      this.ready = true;
+    } catch (e) { this.ready = false; }
+  };
+
+  Audio.prototype.resume = function () {
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  };
+
+  Audio.prototype.setMuted = function (m) {
+    this.muted = m;
+    store.set('muted', m);
+    if (this.master) this.master.gain.value = m ? 0 : 0.6;
+  };
+
+  Audio.prototype.toggle = function () { this.setMuted(!this.muted); return this.muted; };
+
+  /* ── Primitives ───────────────────────────────────────────── */
+
+  /** A single enveloped oscillator note. */
+  Audio.prototype.tone = function (opt) {
+    if (!this.ready || this.muted) return;
+    var ctx = this.ctx, t0 = ctx.currentTime + (opt.delay || 0);
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = opt.type || 'square';
+    osc.frequency.setValueAtTime(opt.from, t0);
+    if (opt.to && opt.to !== opt.from) {
+      if (opt.exp !== false && opt.to > 0 && opt.from > 0) osc.frequency.exponentialRampToValueAtTime(opt.to, t0 + opt.dur);
+      else osc.frequency.linearRampToValueAtTime(opt.to, t0 + opt.dur);
+    }
+    var vol = opt.vol == null ? 0.2 : opt.vol;
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(vol, t0 + Math.min(0.012, opt.dur * 0.3));
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + opt.dur);
+    osc.connect(gain);
+    if (opt.detune) osc.detune.value = opt.detune;
+    gain.connect(this.master);
+    osc.start(t0);
+    osc.stop(t0 + opt.dur + 0.03);
+  };
+
+  /** Filtered noise burst. */
+  Audio.prototype.burst = function (opt) {
+    if (!this.ready || this.muted) return;
+    var ctx = this.ctx, t0 = ctx.currentTime + (opt.delay || 0);
+    var src = ctx.createBufferSource();
+    src.buffer = this.noise;
+    var filt = ctx.createBiquadFilter();
+    filt.type = opt.filter || 'lowpass';
+    filt.frequency.setValueAtTime(opt.from || 1200, t0);
+    filt.frequency.exponentialRampToValueAtTime(Math.max(60, opt.to || 300), t0 + opt.dur);
+    filt.Q.value = opt.q || 1;
+    var gain = ctx.createGain();
+    var vol = opt.vol == null ? 0.22 : opt.vol;
+    gain.gain.setValueAtTime(vol, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + opt.dur);
+    src.connect(filt); filt.connect(gain); gain.connect(this.master);
+    src.start(t0);
+    src.stop(t0 + opt.dur + 0.02);
+  };
+
+  /* ── Game sounds ──────────────────────────────────────────── */
+
+  Audio.prototype.hop = function () {
+    this.tone({ type: 'triangle', from: 420, to: 760, dur: 0.09, vol: 0.16 });
+    this.tone({ type: 'sine', from: 180, to: 120, dur: 0.07, vol: 0.1, delay: 0.07 });
+  };
+
+  Audio.prototype.blocked = function () {
+    this.tone({ type: 'square', from: 150, to: 90, dur: 0.08, vol: 0.08 });
+  };
+
+  Audio.prototype.coin = function () {
+    this.tone({ type: 'square', from: 988, to: 988, dur: 0.06, vol: 0.13 });
+    this.tone({ type: 'square', from: 1319, to: 1319, dur: 0.13, vol: 0.13, delay: 0.055 });
+  };
+
+  Audio.prototype.splash = function () {
+    this.burst({ from: 2600, to: 260, dur: 0.5, vol: 0.3 });
+    this.tone({ type: 'sine', from: 300, to: 90, dur: 0.35, vol: 0.16 });
+  };
+
+  Audio.prototype.crash = function () {
+    this.burst({ from: 1800, to: 120, dur: 0.4, vol: 0.34 });
+    this.tone({ type: 'sawtooth', from: 160, to: 42, dur: 0.4, vol: 0.24 });
+  };
+
+  Audio.prototype.horn = function () {
+    this.tone({ type: 'sawtooth', from: 233, to: 233, dur: 0.55, vol: 0.13 });
+    this.tone({ type: 'sawtooth', from: 311, to: 311, dur: 0.55, vol: 0.11, detune: 8 });
+  };
+
+  Audio.prototype.trainPass = function () {
+    this.burst({ from: 900, to: 400, dur: 0.9, vol: 0.2, filter: 'bandpass', q: 0.7 });
+  };
+
+  Audio.prototype.screech = function () {
+    this.tone({ type: 'sawtooth', from: 1500, to: 620, dur: 0.5, vol: 0.14 });
+    this.tone({ type: 'sawtooth', from: 1900, to: 900, dur: 0.4, vol: 0.09, delay: 0.12 });
+  };
+
+  Audio.prototype.gameOver = function () {
+    var self = this, notes = [392, 330, 262];
+    notes.forEach(function (n, i) {
+      self.tone({ type: 'triangle', from: n, to: n, dur: 0.22, vol: 0.16, delay: 0.14 * i + 0.25 });
+    });
+  };
+
+  Audio.prototype.unlock = function () {
+    var self = this, notes = [523, 659, 784, 1047];
+    notes.forEach(function (n, i) {
+      self.tone({ type: 'square', from: n, to: n, dur: 0.15, vol: 0.14, delay: 0.08 * i });
+    });
+  };
+
+  Audio.prototype.click = function () {
+    this.tone({ type: 'square', from: 660, to: 880, dur: 0.06, vol: 0.1 });
+  };
+
+  CR.audio = new Audio();
+})(window);
+
+/* ==== js/render.js ==== */
+/* Crossy Road — 2.5D renderer.
+ *
+ * The world is a right-handed grid: +x runs right, +y runs away from the
+ * camera (the direction you hop) and +z is up. It is drawn with a rotated
+ * axonometric projection — no perspective divide — which gives the chunky
+ * toy-box look while keeping depth sorting trivial.
+ *
+ *   u =  x·cosYAW + y·sinYAW      (screen right)
+ *   v = -x·sinYAW + y·cosYAW      (depth: bigger = further away)
+ *   screenY = -(v·sinELEV + z·cosELEV)
+ */
+(function (global) {
+  'use strict';
+
+  var CR = global.CR;
+  var util = CR.util;
+
+  var YAW = 9 * Math.PI / 180;
+  var ELEV = 54 * Math.PI / 180;
+  var CY = Math.cos(YAW), SY = Math.sin(YAW);
+  var SE = Math.sin(ELEV), CE = Math.cos(ELEV);
+
+  // Face brightness multipliers: top is lit, the two visible sides fall off.
+  var TOP = 1, SOUTH = 0.8, EAST = 0.62;
+
+  function Renderer(canvas, opts) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d', { alpha: !!(opts && opts.alpha) });
+    this.w = 0; this.h = 0; this.dpr = 1;
+    this.scale = 60;
+    this.cam = { x: 0, y: 0 };
+    this.anchor = 0.7;      // where cam.y sits vertically on screen (0=top)
+    this.shakeX = 0; this.shakeY = 0;
+    this.queue = [];
+    this.qn = 0;
+    this.parts = [];
+    this.pn = 0;
+    this._pts = [0, 0, 0, 0, 0, 0, 0, 0];
+  }
+
+  Renderer.YAW = YAW; Renderer.ELEV = ELEV;
+  Renderer.CY = CY; Renderer.SY = SY; Renderer.SE = SE; Renderer.CE = CE;
+
+  Renderer.prototype.resize = function (cssW, cssH) {
+    var dpr = Math.min(global.devicePixelRatio || 1, 2.5);
+    this.dpr = dpr;
+    this.w = cssW; this.h = cssH;
+    this.canvas.width = Math.round(cssW * dpr);
+    this.canvas.height = Math.round(cssH * dpr);
+    this.canvas.style.width = cssW + 'px';
+    this.canvas.style.height = cssH + 'px';
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Aim for ~11 columns × ~14 rows of playfield. On very tall/narrow
+    // screens fall back to a floor so tiles never get postage-stamp small.
+    var byCols = cssW / (11 * CY);
+    var byRows = cssH / (14 * SE);
+    var s = Math.min(byCols, byRows);
+    var floor = Math.min(cssW / (8.5 * CY), cssH / (19 * SE));
+    this.scale = util.clamp(Math.max(s, floor), 20, 120);
+  };
+
+  Renderer.prototype.setCamera = function (x, y) { this.cam.x = x; this.cam.y = y; };
+
+  /** Depth key — larger is further from the camera. */
+  Renderer.prototype.depth = function (x, y) { return -x * SY + y * CY; };
+
+  Renderer.prototype.sx = function (x, y) {
+    return this.w * 0.5 + ((x - this.cam.x) * CY + (y - this.cam.y) * SY) * this.scale + this.shakeX;
+  };
+
+  Renderer.prototype.sy = function (x, y, z) {
+    var v = -(x - this.cam.x) * SY + (y - this.cam.y) * CY;
+    return this.h * this.anchor - (v * SE + z * CE) * this.scale + this.shakeY;
+  };
+
+  /** Rows/columns that can possibly be on screen (generous margin). */
+  Renderer.prototype.viewRows = function () {
+    var up = (this.h * this.anchor) / (this.scale * SE);
+    var down = (this.h * (1 - this.anchor)) / (this.scale * SE);
+    var side = (this.w * 0.5) / this.scale * (SY / CY);
+    return { far: this.cam.y + up + side + 3, near: this.cam.y - down - side - 3 };
+  };
+
+  Renderer.prototype.halfCols = function () { return (this.w * 0.5) / (this.scale * CY); };
+
+  /* ── Flat quads (ground markings) ─────────────────────────────
+   * Many small quads share a colour, so they are batched into one path
+   * and filled once. */
+
+  Renderer.prototype.beginFlat = function (color) {
+    this.ctx.beginPath();
+    this._flat = color;
+  };
+
+  Renderer.prototype.addFlat = function (x0, x1, y0, y1, z) {
+    var c = this.ctx;
+    c.moveTo(this.sx(x0, y0), this.sy(x0, y0, z));
+    c.lineTo(this.sx(x1, y0), this.sy(x1, y0, z));
+    c.lineTo(this.sx(x1, y1), this.sy(x1, y1, z));
+    c.lineTo(this.sx(x0, y1), this.sy(x0, y1, z));
+    c.closePath();
+  };
+
+  Renderer.prototype.endFlat = function () {
+    this.ctx.fillStyle = this._flat;
+    this.ctx.fill();
+  };
+
+  Renderer.prototype.tile = function (x0, x1, y0, y1, z, color) {
+    this.beginFlat(color);
+    this.addFlat(x0, x1, y0, y1, z);
+    this.endFlat();
+  };
+
+  /* ── Boxes ────────────────────────────────────────────────────
+   * A box shows three faces. Instead of filling each face and stroking
+   * it to hide the seams, the whole silhouette is filled with the side
+   * colour first and the lit faces are painted on top: three fills, no
+   * strokes, and no sub-pixel gaps.
+   */
+  Renderer.prototype.box = function (x, y, z, w, d, h, color, light) {
+    var x0 = x - w * 0.5, x1 = x + w * 0.5;
+    var y0 = y - d * 0.5, y1 = y + d * 0.5;
+    var z1 = z + h;
+    var c = this.ctx;
+    var l = light == null ? 1 : light;
+
+    var ax = this.sx(x0, y0), ay = this.sy(x0, y0, z);      // A near-left base
+    var bx = this.sx(x1, y0), by = this.sy(x1, y0, z);      // B near-right base
+    var cx2 = this.sx(x1, y1), cy2 = this.sy(x1, y1, z);    // C far-right base
+    var dx = cx2, dy = this.sy(x1, y1, z1);                 // D far-right top
+    var ex = this.sx(x0, y1), ey = this.sy(x0, y1, z1);     // E far-left top
+    var fx = ax, fy = this.sy(x0, y0, z1);                  // F near-left top
+    var gx = bx, gy = this.sy(x1, y0, z1);                  // G near-right top
+
+    c.beginPath();                                          // silhouette
+    c.moveTo(ax, ay); c.lineTo(bx, by); c.lineTo(cx2, cy2);
+    c.lineTo(dx, dy); c.lineTo(ex, ey); c.lineTo(fx, fy);
+    c.closePath();
+    c.fillStyle = util.shade(color, SOUTH * l);
+    c.fill();
+
+    c.beginPath();                                          // east (+x)
+    c.moveTo(bx, by); c.lineTo(cx2, cy2); c.lineTo(dx, dy); c.lineTo(gx, gy);
+    c.closePath();
+    c.fillStyle = util.shade(color, EAST * l);
+    c.fill();
+
+    c.beginPath();                                          // top (+z)
+    c.moveTo(fx, fy); c.lineTo(gx, gy); c.lineTo(dx, dy); c.lineTo(ex, ey);
+    c.closePath();
+    c.fillStyle = util.shade(color, TOP * l);
+    c.fill();
+  };
+
+  /* ── Contact shadows ──────────────────────────────────────── */
+
+  Renderer.prototype.beginShadows = function (alpha) {
+    var c = this.ctx;
+    c.save();
+    c.globalAlpha = alpha;
+    c.fillStyle = '#000';
+    c.beginPath();
+  };
+
+  Renderer.prototype.addShadow = function (x, y, w, d) {
+    var c = this.ctx;
+    var px = this.sx(x, y), py = this.sy(x, y, 0.002);
+    var rx = w * 0.5 * this.scale * CY, ry = d * 0.5 * this.scale * SE;
+    c.moveTo(px + rx, py);
+    c.ellipse(px, py, rx, ry, 0, 0, util.TAU);
+  };
+
+  Renderer.prototype.endShadows = function () {
+    this.ctx.fill();
+    this.ctx.restore();
+  };
+
+  /** Soft contact shadow under a single object. */
+  Renderer.prototype.shadow = function (x, y, w, d, alpha) {
+    this.beginShadows(alpha == null ? 0.17 : alpha);
+    this.addShadow(x, y, w, d);
+    this.endShadows();
+  };
+
+  /* ── Depth-sorted part batch ──────────────────────────────────
+   * Composite models (a car, a train, a chicken) are built out of boxes
+   * that can occlude each other. There is no z-buffer, so parts are
+   * collected and sorted along the true view axis before drawing:
+   *   depth = v·cosELEV − z·sinELEV   (bigger = further from the camera)
+   */
+
+  Renderer.prototype.part = function (x, y, z, w, d, h, color, light) {
+    var p = this.parts[this.pn];
+    if (!p) p = this.parts[this.pn] = {};
+    p.x = x; p.y = y; p.z = z; p.w = w; p.d = d; p.h = h; p.c = color; p.l = light;
+    p.k = (-x * SY + y * CY) * CE - (z + h * 0.5) * SE;
+    this.pn++;
+  };
+
+  function byKey(a, b) { return b.k - a.k; }
+
+  Renderer.prototype.drawParts = function () {
+    var list = this.parts.slice(0, this.pn);
+    this.pn = 0;
+    list.sort(byKey);
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i];
+      this.box(p.x, p.y, p.z, p.w, p.d, p.h, p.c, p.l);
+    }
+  };
+
+  /* ── Depth-sorted draw queue ──────────────────────────────── */
+
+  Renderer.prototype.push = function (depth, fn, arg) {
+    var item = this.queue[this.qn];
+    if (item) { item.d = depth; item.fn = fn; item.a = arg; }
+    else this.queue[this.qn] = { d: depth, fn: fn, a: arg };
+    this.qn++;
+  };
+
+  Renderer.prototype.flush = function () {
+    var list = this.queue.slice(0, this.qn);
+    list.sort(function (a, b) { return b.d - a.d; });   // far → near
+    for (var i = 0; i < list.length; i++) list[i].fn(this, list[i].a);
+    this.qn = 0;
+  };
+
+  CR.Renderer = Renderer;
+})(window);
+
+/* ==== js/models.js ==== */
+/* Crossy Road — everything that gets drawn in the world, built out of boxes. */
+(function (global) {
+  'use strict';
+
+  var CR = global.CR;
+  var util = CR.util;
+
+  var M = {};
+
+  M.palette = {
+    grassA: '#7ec94b',
+    grassB: '#75c043',
+    grassEdge: '#5c9c37',
+    dirt: '#8a6b45',
+    road: '#41454e',
+    roadB: '#3b3f47',
+    kerb: '#5a5f69',
+    water: '#3a8fd4',
+    waterB: '#3486ca',
+    gravel: '#6d6459',
+    sleeper: '#4d3b2c',
+    rail: '#b9c0c8'
+  };
+
+  /* ── Scenery ──────────────────────────────────────────────── */
+
+  var TREE_GREENS = ['#2f8f3e', '#37a047', '#2a7f38', '#3faa50'];
+
+  M.tree = function (r, x, y, o) {
+    var trunkH = 0.3 + o.size * 0.25;
+    r.box(x, y, 0, 0.26, 0.26, trunkH, '#7a5230');
+    var layers = o.layers;
+    var w = 0.95 + o.size * 0.25;
+    var z = trunkH;
+    for (var i = 0; i < layers; i++) {
+      var h = 0.42 + o.size * 0.1;
+      r.box(x, y, z, w, w, h, o.color);
+      z += h - 0.04;
+      w *= 0.74;
+    }
+  };
+
+  M.rock = function (r, x, y, o) {
+    r.box(x, y, 0, 0.72, 0.68, 0.34, '#9aa1a8');
+    r.box(x + 0.08 * o.size, y - 0.05, 0.32, 0.46, 0.44, 0.26, '#aab1b8');
+  };
+
+  M.bush = function (r, x, y, o) {
+    r.box(x, y, 0, 0.86, 0.86, 0.42 + o.size * 0.2, '#3e8b3a');
+  };
+
+  M.lamp = function (r, x, y) {
+    r.box(x, y, 0, 0.16, 0.16, 1.15, '#5a616b');
+    r.box(x, y, 1.15, 0.34, 0.3, 0.18, '#ffe9a8');
+  };
+
+  M.scenery = function (r, o, x, y) {
+    if (o.kind === 'tree') M.tree(r, x, y, o);
+    else if (o.kind === 'rock') M.rock(r, x, y, o);
+    else if (o.kind === 'lamp') M.lamp(r, x, y);
+    else M.bush(r, x, y, o);
+  };
+
+  /* ── Vehicles ─────────────────────────────────────────────── */
+
+  M.VEHICLES = {
+    car:    { len: 1.55, weight: 5 },
+    taxi:   { len: 1.55, weight: 2 },
+    police: { len: 1.6,  weight: 1 },
+    truck:  { len: 3.2,  weight: 3 },
+    bus:    { len: 3.0,  weight: 2 }
+  };
+
+  var CAR_COLORS = ['#e8453c', '#3f7ae0', '#f2f2f2', '#7d47cf', '#22b573', '#ff8c1a', '#4a5568', '#e94f9a', '#ffd23f', '#16a5c9'];
+  var GLASS = '#1e2a38';
+
+  /**
+   * Draw a vehicle. `dir` is +1 (moving right) or −1 and body-local +f points
+   * at the front. Parts go through the renderer's sorted batch, so nothing
+   * needs to be emitted in a particular order.
+   */
+  M.vehicle = function (r, v, y, t) {
+    var d = v.dir, cx = v.x;
+    function X(f) { return cx + f * d; }      // f: distance toward the front
+    var body = v.color;
+
+    if (v.kind === 'truck') {
+      // laid out so the whole rig is centred on cx (matches the hit box)
+      M.wheels(r, cx, y, [-1.3, -0.35, 1.15], d, 0.96);
+      r.part(X(-0.6), y, 0.16, 2.0, 0.92, 0.78, '#e9edf2');         // trailer
+      r.part(X(-0.6), y, 0.94, 1.94, 0.88, 0.05, '#cfd6de');
+      r.part(X(1.07), y, 0.14, 1.05, 0.92, 0.42, body);             // cab
+      r.part(X(1.03), y, 0.56, 0.82, 0.84, 0.36, body);
+      r.part(X(1.03), y - 0.43, 0.62, 0.6, 0.02, 0.24, GLASS);
+      M.endLights(r, cx + 1.58, y, d, 0.3, 0.22);
+    } else if (v.kind === 'bus') {
+      M.wheels(r, cx, y, [-1.05, 1.0], d, 1.0);
+      r.part(cx, y, 0.16, 2.9, 0.95, 0.82, body);
+      r.part(cx, y, 0.98, 2.86, 0.9, 0.06, util.shade(body, 0.86));
+      r.part(cx, y - 0.48, 0.52, 2.4, 0.02, 0.32, GLASS);           // side windows
+      M.endLights(r, cx + 1.46, y, d, 0.3, 0.28);
+    } else {
+      var isPolice = v.kind === 'police';
+      M.wheels(r, cx, y, [-0.5, 0.5], d, 0.9);
+      r.part(cx, y, 0.13, 1.5, 0.86, 0.35, body);
+      r.part(X(-0.1), y, 0.48, 0.88, 0.8, 0.3, isPolice ? '#f2f4f7' : body);
+      r.part(X(-0.1), y - 0.41, 0.54, 0.66, 0.02, 0.2, GLASS);      // side glass
+      if (v.kind === 'taxi') r.part(X(-0.1), y, 0.78, 0.4, 0.24, 0.14, '#ffd23f');
+      if (isPolice) {
+        var blink = Math.floor(t * 6) % 2 === 0;
+        r.part(X(-0.1), y - 0.16, 0.78, 0.26, 0.2, 0.12, blink ? '#ff3b30' : '#7a1f1a');
+        r.part(X(-0.1), y + 0.16, 0.78, 0.26, 0.2, 0.12, blink ? '#8a1f6a' : '#2f6ad0');
+      }
+      M.endLights(r, cx + 0.75, y, d, 0.26, 0.2);
+    }
+    r.drawParts();
+  };
+
+  M.wheels = function (r, cx, y, offsets, d, width) {
+    for (var i = 0; i < offsets.length; i++) {
+      r.part(cx + offsets[i] * d, y, 0, 0.32, width, 0.15, '#23262c');
+    }
+  };
+
+  /** Lights on the +x end only — the −x end faces away from the camera.
+   *  Heading right you see headlamps, heading left you see tail lights. */
+  M.endLights = function (r, x, y, d, size, z) {
+    var col = d > 0 ? '#fff3c4' : '#ff5040';
+    r.part(x, y - 0.28, z, 0.07, size, 0.13, col);
+    r.part(x, y + 0.28, z, 0.07, size, 0.13, col);
+  };
+
+  /* ── Train ────────────────────────────────────────────────── */
+
+  M.train = function (r, tr, y, t) {
+    var d = tr.dir, n = tr.cars;
+    for (var i = 0; i < n; i++) {
+      // car 0 is the locomotive, at the front
+      var off = (i === 0 ? 0 : -1.6 - (i - 1) * 3.0 - 1.7);
+      var cx = tr.x + off * d;
+      var loco = i === 0;
+      var len = loco ? 3.4 : 2.9;
+      var col = loco ? '#c8443a' : '#4c5560';
+      M.wheels(r, cx, y, [-len * 0.3, len * 0.3], d, 1.02);
+      r.part(cx, y, 0.12, len, 1.0, 0.9, col);
+      r.part(cx, y, 1.02, len - 0.3, 0.86, 0.16, util.shade(col, 0.82));
+      r.part(cx, y - 0.51, 0.58, len - 0.7, 0.02, 0.3, '#1c2530');
+      if (loco) {
+        r.part(cx + len * 0.5, y, 0.34, 0.1, 0.55, 0.34,
+          d > 0 ? (Math.floor(t * 10) % 2 ? '#fff6cf' : '#ffd23f') : '#c23a30');
+        r.part(cx - len * 0.34 * d, y, 1.18, 0.3, 0.3, 0.35, '#333a44');
+      }
+    }
+    r.drawParts();
+  };
+
+  M.signal = function (r, x, y, on) {
+    r.box(x, y, 0, 0.14, 0.14, 1.0, '#4a5057');
+    r.box(x, y, 1.0, 0.4, 0.24, 0.2, '#2b3036');
+    r.box(x - 0.1, y, 1.03, 0.16, 0.26, 0.14, on ? '#ff3b30' : '#5c2a26');
+    r.box(x + 0.1, y, 1.03, 0.16, 0.26, 0.14, on ? '#5c2a26' : '#ff3b30');
+  };
+
+  /* ── River props ──────────────────────────────────────────── */
+
+  M.log = function (r, lg, y) {
+    var len = lg.len;
+    r.box(lg.x, y, -0.08, len, 0.82, 0.36, '#8b5a2b');
+    r.box(lg.x, y, 0.26, len - 0.14, 0.7, 0.04, '#a06b34');
+    r.box(lg.x + len * 0.5 - 0.04, y, -0.06, 0.09, 0.74, 0.32, '#6d4522');  // cut end
+  };
+
+  M.pad = function (r, p, y) {
+    r.box(p.x, y, -0.05, 0.78, 0.78, 0.12, '#237d45');
+    r.box(p.x, y, 0.07, 0.66, 0.66, 0.03, '#35a95f');
+    r.box(p.x - 0.14, y + 0.1, 0.1, 0.24, 0.2, 0.02, '#2b8e4f');   // leaf notch
+    if (p.flower) r.box(p.x + 0.18, y - 0.16, 0.1, 0.18, 0.18, 0.12, '#f472b6');
+  };
+
+  /* ── Pickups ──────────────────────────────────────────────── */
+
+  M.coin = function (r, x, y, t) {
+    var spin = t * 3.4;
+    var w = Math.abs(Math.cos(spin)) * 0.34 + 0.05;
+    var d = Math.abs(Math.sin(spin)) * 0.34 + 0.05;
+    var z = 0.34 + Math.sin(t * 2.6) * 0.07;
+    r.shadow(x, y, 0.5, 0.5, 0.13);
+    r.box(x, y, z, w, d, 0.36, '#ffcf3f');
+    r.box(x, y, z + 0.36, w * 0.6, d * 0.6, 0.02, '#fff0a8');
+  };
+
+  /* ── Eagle (the "stop dawdling" enforcer) ─────────────────── */
+
+  M.eagle = function (r, x, y, z, t) {
+    var flap = Math.sin(t * 16) * 0.22;
+    r.part(x, y, z, 0.55, 1.0, 0.42, '#5b4632');
+    r.part(x, y - 0.6, z + 0.16, 0.42, 0.4, 0.34, '#efe9dd');
+    r.part(x, y - 0.86, z + 0.22, 0.16, 0.2, 0.12, '#ffb02e');
+    r.part(x - 0.72, y, z + 0.2 + flap, 0.9, 0.62, 0.12, '#6b543c');
+    r.part(x + 0.72, y, z + 0.2 - flap, 0.9, 0.62, 0.12, '#6b543c');
+    r.part(x, y + 0.62, z + 0.1, 0.34, 0.4, 0.1, '#efe9dd');
+    r.drawParts();
+  };
+
+  /* ── Ground rows ──────────────────────────────────────────── */
+
+  M.rowGround = function (r, row, x0, x1, t) {
+    var p = M.palette;
+    var y = row.y, y0 = y - 0.5, y1 = y + 0.5;
+
+    if (row.type === 'road') {
+      r.tile(x0, x1, y0, y1, 0, row.shade ? p.roadB : p.road);
+      if (row.markLeading) {
+        r.beginFlat('rgba(255,255,255,.72)');
+        for (var mx = Math.floor(x0); mx < x1; mx += 2) {
+          r.addFlat(mx, mx + 1.05, y1 - 0.055, y1 + 0.055, 0.002);
+        }
+        r.endFlat();
+      }
+      if (row.kerbNear) r.tile(x0, x1, y0 - 0.02, y0 + 0.06, 0.002, p.kerb);
+      if (row.kerbFar) r.tile(x0, x1, y1 - 0.06, y1 + 0.02, 0.002, p.kerb);
+    } else if (row.type === 'water') {
+      r.tile(x0, x1, y0, y1, 0, row.shade ? p.waterB : p.water);
+      // drifting highlight bands
+      var off = (t * 0.35 * row.dir) % 2;
+      var wx;
+      r.beginFlat('rgba(255,255,255,.15)');
+      for (wx = Math.floor(x0 / 2) * 2 + off; wx < x1; wx += 2) {
+        var wob = Math.sin(t * 1.6 + wx * 0.6) * 0.08;
+        r.addFlat(wx, wx + 0.9, y - 0.16 + wob, y - 0.06 + wob, 0.003);
+        r.addFlat(wx + 0.5, wx + 1.2, y + 0.16 - wob, y + 0.24 - wob, 0.003);
+      }
+      r.endFlat();
+      if (row.bankNear) r.tile(x0, x1, y0 - 0.04, y0 + 0.05, 0.004, '#6f9c4a');
+      if (row.bankFar) r.tile(x0, x1, y1 - 0.05, y1 + 0.04, 0.004, '#6f9c4a');
+    } else if (row.type === 'rail') {
+      r.tile(x0, x1, y0, y1, 0, p.gravel);
+      r.beginFlat(p.sleeper);
+      for (var sx = Math.floor(x0); sx < x1; sx += 0.62) {
+        r.addFlat(sx, sx + 0.34, y0 + 0.12, y1 - 0.12, 0.004);
+      }
+      r.endFlat();
+      r.beginFlat(p.rail);
+      r.addFlat(x0, x1, y - 0.3, y - 0.22, 0.006);
+      r.addFlat(x0, x1, y + 0.22, y + 0.3, 0.006);
+      r.endFlat();
+    } else {
+      r.tile(x0, x1, y0, y1, 0, row.shade ? p.grassB : p.grassA);
+      if (row.flowers) {
+        for (var i = 0; i < row.flowers.length; i++) {
+          var f = row.flowers[i];
+          r.tile(f.x, f.x + 0.16, y + f.o, y + f.o + 0.16, 0.003, f.c);
+        }
+      }
+    }
+  };
+
+  CR.models = M;
+  CR.CAR_COLORS = CAR_COLORS;
+})(window);
+
+/* ==== js/characters.js ==== */
+/* Crossy Road — playable characters.
+ * Each one is the same voxel skeleton with different colours and add-ons,
+ * drawn in local space (front = +y) and rotated to face the hop direction. */
+(function (global) {
+  'use strict';
+
+  var CR = global.CR;
+  var util = CR.util;
+
+  var CHARACTERS = [
+    {
+      id: 'chicken', name: 'Chicken', cost: 0,
+      body: '#f5f6f8', head: '#ffffff', accent: '#ff9d1e', feet: '#ff9d1e',
+      eye: '#1a1e26', comb: '#e8433a', wattle: true, tail: '#e9ebef', wings: true
+    },
+    {
+      id: 'duck', name: 'Duckling', cost: 20,
+      body: '#ffd93d', head: '#ffe066', accent: '#ff8a1e', feet: '#ff8a1e',
+      eye: '#1a1e26', tail: '#f5c92e', wings: true
+    },
+    {
+      id: 'frog', name: 'Frog', cost: 40,
+      body: '#57c257', head: '#63d063', accent: '#2f8f3e', feet: '#3fa14b',
+      eye: '#1a1e26', bigEyes: true, wide: true, mouth: '#2f8f3e'
+    },
+    {
+      id: 'cat', name: 'Alley Cat', cost: 60,
+      body: '#98a1ab', head: '#a4adb7', accent: '#ff9db1', feet: '#8a939d',
+      eye: '#2b8f4f', ears: true, tail: '#98a1ab', stripes: '#7c858f'
+    },
+    {
+      id: 'penguin', name: 'Penguin', cost: 90,
+      body: '#2f3542', head: '#39404f', accent: '#ffb02e', feet: '#ffb02e',
+      eye: '#f2f4f8', belly: '#f2f4f8', wings: true, wingColor: '#262c37'
+    },
+    {
+      id: 'robot', name: 'Rusty Bot', cost: 120,
+      body: '#b7c1cb', head: '#c6d0d9', accent: '#4dd0ff', feet: '#8d97a1',
+      eye: '#4dd0ff', antenna: true, panel: '#8d97a1', metal: true
+    }
+  ];
+
+  /** Rotate a local offset/size pair into world space for a facing. */
+  function place(r, f, lx, ly, lz, w, d, h, color, light) {
+    var x, y, sw, sd;
+    switch (f) {
+      case 1: x = ly; y = -lx; sw = d; sd = w; break;   // facing +x
+      case 2: x = -lx; y = -ly; sw = w; sd = d; break;  // facing −y
+      case 3: x = -ly; y = lx; sw = d; sd = w; break;   // facing −x
+      default: x = lx; y = ly; sw = w; sd = d;          // facing +y
+    }
+    return { x: x, y: y, z: lz, w: sw, d: sd, h: h, c: color, l: light };
+  }
+
+  /**
+   * Draw a character.
+   * @param st {x,y,z,facing,squash,stretch,alpha,flat,spin}
+   */
+  function draw(r, ch, st) {
+    var f = st.facing || 0;
+    var sxy = st.squash == null ? 1 : st.squash;     // horizontal scale
+    var sz = st.stretch == null ? 1 : st.stretch;    // vertical scale
+    var ox = st.x, oy = st.y, oz = st.z || 0;
+    var wide = ch.wide ? 1.14 : 1;
+    var parts = [];
+
+    function P(lx, ly, lz, w, d, h, color, light) {
+      parts.push(place(r, f, lx * sxy * wide, ly * sxy, lz * sz, w * sxy * wide, d * sxy, h * sz, color, light));
+    }
+
+    // feet
+    P(-0.16, 0.08, 0, 0.17, 0.24, 0.09, ch.feet);
+    P(0.16, 0.08, 0, 0.17, 0.24, 0.09, ch.feet);
+    // body
+    P(0, 0, 0.08, 0.58, 0.54, 0.4, ch.body);
+    if (ch.belly) P(0, 0.28, 0.14, 0.36, 0.04, 0.3, ch.belly);
+    if (ch.stripes) {
+      P(0, -0.1, 0.47, 0.5, 0.1, 0.02, ch.stripes);
+      P(0, 0.1, 0.47, 0.5, 0.1, 0.02, ch.stripes);
+    }
+    if (ch.panel) P(0, 0.28, 0.16, 0.3, 0.03, 0.16, ch.panel);
+    if (ch.wings) {
+      P(-0.31, -0.02, 0.14, 0.07, 0.4, 0.26, ch.wingColor || ch.body, 0.93);
+      P(0.31, -0.02, 0.14, 0.07, 0.4, 0.26, ch.wingColor || ch.body, 0.93);
+    }
+    if (ch.tail) P(0, -0.31, 0.26, 0.22, 0.14, 0.26, ch.tail, 0.95);
+
+    // head
+    var headZ = ch.wide ? 0.44 : 0.47;
+    P(0, 0.03, headZ, 0.46, 0.42, ch.wide ? 0.3 : 0.34, ch.head);
+    var topZ = headZ + (ch.wide ? 0.3 : 0.34);
+
+    if (ch.bigEyes) {
+      P(-0.16, 0.1, topZ - 0.02, 0.2, 0.2, 0.16, ch.head);
+      P(0.16, 0.1, topZ - 0.02, 0.2, 0.2, 0.16, ch.head);
+      P(-0.16, 0.06, topZ + 0.1, 0.14, 0.14, 0.06, '#ffffff');
+      P(0.16, 0.06, topZ + 0.1, 0.14, 0.14, 0.06, '#ffffff');
+      P(-0.16, 0.04, topZ + 0.15, 0.08, 0.08, 0.04, ch.eye);
+      P(0.16, 0.04, topZ + 0.15, 0.08, 0.08, 0.04, ch.eye);
+      if (ch.mouth) P(0, 0.24, headZ + 0.04, 0.34, 0.02, 0.05, ch.mouth);
+    } else {
+      P(-0.13, 0.22, headZ + 0.14, 0.08, 0.03, 0.09, ch.eye);
+      P(0.13, 0.22, headZ + 0.14, 0.08, 0.03, 0.09, ch.eye);
+      P(0, 0.25, headZ + 0.05, 0.16, 0.14, 0.1, ch.accent);   // beak / muzzle
+    }
+
+    if (ch.comb) {
+      P(0, 0.12, topZ, 0.07, 0.09, 0.11, ch.comb);
+      P(0, 0.0, topZ, 0.07, 0.1, 0.14, ch.comb);
+      P(0, -0.11, topZ, 0.07, 0.09, 0.1, ch.comb);
+    }
+    if (ch.wattle) P(0, 0.24, headZ - 0.04, 0.07, 0.07, 0.09, ch.comb);
+    if (ch.ears) {
+      P(-0.15, 0.05, topZ, 0.13, 0.11, 0.13, ch.head);
+      P(0.15, 0.05, topZ, 0.13, 0.11, 0.13, ch.head);
+      P(-0.15, 0.1, topZ + 0.03, 0.07, 0.04, 0.07, ch.accent);
+      P(0.15, 0.1, topZ + 0.03, 0.07, 0.04, 0.07, ch.accent);
+    }
+    if (ch.antenna) {
+      P(0, 0, topZ, 0.05, 0.05, 0.16, '#8d97a1');
+      P(0, 0, topZ + 0.16, 0.12, 0.12, 0.12, ch.accent);
+    }
+
+    var ctx = r.ctx, restore = false;
+    if (st.alpha != null && st.alpha < 1) { ctx.save(); ctx.globalAlpha = st.alpha; restore = true; }
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      r.part(ox + p.x, oy + p.y, oz + p.z, p.w, p.d, p.h, p.c, p.l);
+    }
+    r.drawParts();
+    if (restore) ctx.restore();
+  }
+
+  CR.characters = CHARACTERS;
+  CR.byId = function (id) {
+    for (var i = 0; i < CHARACTERS.length; i++) if (CHARACTERS[i].id === id) return CHARACTERS[i];
+    return CHARACTERS[0];
+  };
+  CR.drawCharacter = draw;
+})(window);
+
+/* ==== js/world.js ==== */
+/* Crossy Road — endless world: row generation and traffic simulation.
+ *
+ * Rows are generated in *groups* (a highway of 1-4 lanes, a river of 1-3
+ * lanes, a rail yard, a strip of meadow) which is what makes the terrain
+ * read as a place rather than as noise. Everything is driven by a seeded
+ * PRNG, so a seed replays exactly. */
+(function (global) {
+  'use strict';
+
+  var CR = global.CR;
+  var util = CR.util;
+  var M = CR.models;
+
+  var MINX = -9, MAXX = 9;          // playable columns (inclusive)
+  var SPAWN = 21;                   // where traffic recycles
+  var TRAIN_SPAWN = 26;
+
+  var TREE_GREENS = ['#2f8f3e', '#37a047', '#2a7f38', '#3faa50', '#45b158'];
+  var FLOWERS = ['#ffe066', '#ff8fab', '#ffffff', '#c084fc'];
+
+  function World(seed) {
+    this.rng = util.rng(seed);
+    this.rows = Object.create(null);
+    this.next = -12;
+    this.lastType = 'grass';
+    this.since = { road: 0, water: 0, rail: 0 };
+    this.maxY = 0;
+
+    // Opening stretch: quiet meadow so the first hop is never fatal.
+    while (this.next < 4) this._meadow(this.next, this.next < -1);
+    this.ensure(26);
+  }
+
+  World.MINX = MINX;
+  World.MAXX = MAXX;
+
+  /* ── Generation ───────────────────────────────────────────── */
+
+  World.prototype.difficulty = function () { return util.clamp((this.next - 6) / 230, 0, 1); };
+
+  World.prototype.ensure = function (upTo) {
+    var guard = 0;
+    while (this.next <= upTo && guard++ < 400) this._group();
+  };
+
+  World.prototype.rowAt = function (y) {
+    var r = this.rows[y];
+    if (r) return r;
+    this.ensure(y);
+    return this.rows[y] || this._meadow(y, false);
+  };
+
+  World.prototype._put = function (row) {
+    row.shade = ((row.y % 2) + 2) % 2 === 0;
+    this.hazardRun = row.type === 'grass' ? 0 : (this.hazardRun || 0) + 1;
+    this.rows[row.y] = row;
+    if (row.y >= this.next) this.next = row.y + 1;
+    return row;
+  };
+
+  /** A single meadow row (also used as the safety net for stray lookups). */
+  World.prototype._meadow = function (y, decorate) {
+    var rng = this.rng;
+    var row = { y: y, type: 'grass', obstacles: Object.create(null), coin: null, flowers: [] };
+    if (decorate) {
+      for (var x = MINX; x <= MAXX; x++) {
+        if (rng.chance(0.1)) row.obstacles[x] = this._prop(rng);
+      }
+    }
+    this._border(row);
+    this._flowers(row);
+    return this._put(row);
+  };
+
+  World.prototype._prop = function (rng) {
+    var kind = rng.weighted([['tree', 7], ['rock', 2], ['bush', 2]]);
+    return {
+      kind: kind,
+      size: rng.range(0, 1),
+      layers: rng.int(2, 3),
+      color: rng.pick(TREE_GREENS)
+    };
+  };
+
+  /** Dense scenery outside the playfield so the edges feel like a forest. */
+  World.prototype._border = function (row) {
+    var rng = this.rng;
+    row.border = [];
+    for (var i = 1; i <= 7; i++) {
+      if (rng.chance(0.82)) row.border.push({ x: MINX - i, o: this._prop(rng) });
+      if (rng.chance(0.82)) row.border.push({ x: MAXX + i, o: this._prop(rng) });
+    }
+  };
+
+  World.prototype._flowers = function (row) {
+    var rng = this.rng, n = rng.int(0, 3);
+    for (var i = 0; i < n; i++) {
+      row.flowers.push({
+        x: rng.range(MINX - 6, MAXX + 6),
+        o: rng.range(-0.35, 0.35),
+        c: rng.pick(FLOWERS)
+      });
+    }
+  };
+
+  World.prototype._group = function () {
+    var rng = this.rng, d = this.difficulty();
+    var y = this.next;
+    var last = this.lastType;
+
+    // Weights: meadows thin out, rivers and rails show up as you get deeper.
+    var choices = [
+      ['grass', last === 'grass' ? 0.6 : 3.4 - d * 1.2],
+      ['road', last === 'road' ? 0.4 : 3.6 + d * 0.8],
+      ['water', last === 'water' ? 0.2 : (d > 0.06 ? 1.4 + d * 1.6 : 0.35)],
+      ['rail', last === 'rail' ? 0 : (d > 0.12 ? 0.8 + d * 1.6 : 0)]
+    ];
+    var type = rng.weighted(choices);
+    // Guarantee breathing room: never string more than ~6 hazard rows
+    // together, and keep rivers (the least forgiving row) out of long chains.
+    if (this.hazardRun >= 6) type = 'grass';
+    else if (this.hazardRun >= 4 && type === 'water') type = 'road';
+    this.lastType = type;
+
+    if (type === 'grass') this._grassGroup(y, d);
+    else if (type === 'road') this._roadGroup(y, d);
+    else if (type === 'water') this._waterGroup(y, d);
+    else this._railGroup(y, d);
+  };
+
+  World.prototype._grassGroup = function (y, d) {
+    var rng = this.rng;
+    var len = rng.weighted([[1, 5], [2, 3], [3, 1.4]]);
+    for (var i = 0; i < len; i++) {
+      var row = { y: y + i, type: 'grass', obstacles: Object.create(null), coin: null, flowers: [] };
+      var density = (i === 0 ? 0.07 : 0.13) + d * 0.14;
+      var free = [];
+      for (var x = MINX; x <= MAXX; x++) {
+        if (rng.chance(density)) row.obstacles[x] = this._prop(rng);
+        else free.push(x);
+      }
+      // Never wall the player in.
+      while (free.length < 7) {
+        var pick = rng.int(MINX, MAXX);
+        if (row.obstacles[pick]) { delete row.obstacles[pick]; free.push(pick); }
+      }
+      if (rng.chance(0.2)) row.coin = { x: rng.pick(free), taken: false };
+      this._border(row);
+      this._flowers(row);
+      this._put(row);
+    }
+  };
+
+  World.prototype._roadGroup = function (y, d) {
+    var rng = this.rng;
+    var len = rng.weighted([[1, 3], [2, 4], [3, 2.6 + d], [4, 0.8 + d * 1.6]]);
+    var baseDir = rng.chance(0.5) ? 1 : -1;
+    var lampSide = rng.chance(0.5) ? MINX - 1 : MAXX + 1;
+    for (var i = 0; i < len; i++) {
+      var dir = len > 1 ? (i % 2 === 0 ? baseDir : -baseDir) : baseDir;
+      var speed = (2.3 + d * 3.6) * rng.range(0.78, 1.3);
+      var row = {
+        y: y + i, type: 'road', dir: dir, speed: speed, vehicles: [],
+        markLeading: i < len - 1, kerbNear: i === 0, kerbFar: i === len - 1,
+        lamp: i === 0 ? lampSide : 0
+      };
+      this._fillTraffic(row, d);
+      this._put(row);
+    }
+  };
+
+  World.prototype._fillTraffic = function (row, d) {
+    var rng = this.rng;
+    var heavy = row.speed < 4.4;
+    var table = [
+      ['car', 6], ['taxi', 2], ['police', 1],
+      ['truck', heavy ? 3 : 0.6], ['bus', heavy ? 2 : 0.4]
+    ];
+    var x = -SPAWN + rng.range(0, 6);
+    while (x < SPAWN) {
+      var kind = rng.weighted(table);
+      var len = M.VEHICLES[kind].len;
+      x += len * 0.5;
+      row.vehicles.push({
+        x: x, kind: kind, len: len, dir: row.dir, speed: row.speed,
+        color: this._color(kind)
+      });
+      x += len * 0.5 + this._gap(row, d);
+    }
+    // Traffic always flows toward the row's direction.
+    if (row.dir < 0) {
+      for (var i = 0; i < row.vehicles.length; i++) row.vehicles[i].x *= -1;
+    }
+  };
+
+  World.prototype._color = function (kind) {
+    if (kind === 'police') return '#2f4f9e';
+    if (kind === 'taxi') return '#ffc21f';
+    return this.rng.pick(CR.CAR_COLORS);
+  };
+
+  World.prototype._gap = function (row, d) {
+    var rng = this.rng;
+    return Math.max(1.5, (2.6 - d * 0.7) * rng.range(0.7, 2.1) + row.speed * 0.18);
+  };
+
+  World.prototype._waterGroup = function (y, d) {
+    var rng = this.rng;
+    var len = rng.weighted([[1, 4], [2, 3], [3, 1 + d * 1.5]]);
+    var baseDir = rng.chance(0.5) ? 1 : -1;
+    for (var i = 0; i < len; i++) {
+      var dir = len > 1 ? (i % 2 === 0 ? baseDir : -baseDir) : baseDir;
+      var row = {
+        y: y + i, type: 'water', dir: dir,
+        speed: (1.05 + d * 1.5) * rng.range(0.8, 1.25),
+        logs: [], pads: [],
+        bankNear: i === 0, bankFar: i === len - 1
+      };
+      if (rng.chance(0.24)) this._fillPads(row, d);
+      else this._fillLogs(row, d);
+      this._put(row);
+    }
+  };
+
+  World.prototype._fillLogs = function (row, d) {
+    var rng = this.rng;
+    var x = -SPAWN + rng.range(0, 5);
+    while (x < SPAWN) {
+      var len = d < 0.45 ? rng.int(2, 4) : rng.int(2, 3);
+      x += len * 0.5;
+      row.logs.push({ x: x, len: len });
+      x += len * 0.5 + Math.max(1.0, rng.range(1.0, 2.1) + d * 0.5);
+    }
+    if (row.dir < 0) for (var i = 0; i < row.logs.length; i++) row.logs[i].x *= -1;
+  };
+
+  World.prototype._fillPads = function (row) {
+    var rng = this.rng;
+    row.speed = 0;
+    for (var x = MINX - 3; x <= MAXX + 3; x++) {
+      if (rng.chance(0.36)) row.pads.push({ x: x, flower: rng.chance(0.3) });
+    }
+    // Guarantee a foothold somewhere near the middle.
+    if (!row.pads.length) row.pads.push({ x: rng.int(-3, 3), flower: false });
+  };
+
+  World.prototype._railGroup = function (y, d) {
+    var rng = this.rng;
+    var len = rng.chance(0.25 + d * 0.35) ? 2 : 1;
+    for (var i = 0; i < len; i++) {
+      this._put({
+        y: y + i, type: 'rail',
+        dir: rng.chance(0.5) ? 1 : -1,
+        state: 'idle',
+        timer: rng.range(1.6, 4.5) + i * 1.3,
+        train: null,
+        cars: rng.int(3, 5),
+        speed: 24 + d * 12,
+        signalOn: false
+      });
+    }
+  };
+
+  /* ── Simulation ───────────────────────────────────────────── */
+
+  World.prototype.update = function (dt, view, game) {
+    var d = this.difficulty();
+    for (var y = Math.floor(view.near) - 2; y <= Math.ceil(view.far) + 2; y++) {
+      var row = this.rows[y];
+      if (!row) continue;
+      if (row.type === 'road') this._updateRoad(row, dt, d);
+      else if (row.type === 'water') this._updateWater(row, dt);
+      else if (row.type === 'rail') this._updateRail(row, dt, game);
+    }
+  };
+
+  World.prototype._updateRoad = function (row, dt, d) {
+    var v = row.vehicles, i, n = v.length;
+    if (!n) return;
+    var step = row.dir * row.speed * dt;
+    var edge = row.dir > 0 ? Infinity : -Infinity;
+    for (i = 0; i < n; i++) {
+      v[i].x += step;
+      // find the tail of the queue so a recycled car slots in behind it
+      if (row.dir > 0) edge = Math.min(edge, v[i].x - v[i].len * 0.5);
+      else edge = Math.max(edge, v[i].x + v[i].len * 0.5);
+    }
+    for (i = 0; i < n; i++) {
+      var car = v[i];
+      if (row.dir > 0 && car.x - car.len * 0.5 > SPAWN) {
+        car.x = edge - this._gap(row, d) - car.len * 0.5;
+        edge = car.x - car.len * 0.5;
+        car.color = this._color(car.kind);
+      } else if (row.dir < 0 && car.x + car.len * 0.5 < -SPAWN) {
+        car.x = edge + this._gap(row, d) + car.len * 0.5;
+        edge = car.x + car.len * 0.5;
+        car.color = this._color(car.kind);
+      }
+    }
+  };
+
+  World.prototype._updateWater = function (row, dt) {
+    var logs = row.logs, n = logs.length;
+    if (!n || !row.speed) return;
+    var step = row.dir * row.speed * dt;
+    var edge = row.dir > 0 ? Infinity : -Infinity;
+    var i;
+    for (i = 0; i < n; i++) {
+      logs[i].x += step;
+      if (row.dir > 0) edge = Math.min(edge, logs[i].x - logs[i].len * 0.5);
+      else edge = Math.max(edge, logs[i].x + logs[i].len * 0.5);
+    }
+    for (i = 0; i < n; i++) {
+      var lg = logs[i];
+      if (row.dir > 0 && lg.x - lg.len * 0.5 > SPAWN) {
+        lg.x = edge - this.rng.range(1.0, 2.2) - lg.len * 0.5;
+        edge = lg.x - lg.len * 0.5;
+      } else if (row.dir < 0 && lg.x + lg.len * 0.5 < -SPAWN) {
+        lg.x = edge + this.rng.range(1.0, 2.2) + lg.len * 0.5;
+        edge = lg.x + lg.len * 0.5;
+      }
+    }
+  };
+
+  World.prototype._updateRail = function (row, dt, game) {
+    row.timer -= dt;
+    if (row.state === 'idle') {
+      row.signalOn = false;
+      if (row.timer <= 0) {
+        row.state = 'warn';
+        row.timer = 1.35;
+        if (game && game.nearRow(row.y, 9)) CR.audio.horn();
+      }
+    } else if (row.state === 'warn') {
+      row.signalOn = Math.floor(row.timer * 6) % 2 === 0;
+      if (row.timer <= 0) {
+        row.state = 'run';
+        row.train = { x: -TRAIN_SPAWN * row.dir, dir: row.dir, cars: row.cars };
+        row.train.back = row.cars > 1 ? (1.6 + (row.cars - 2) * 3.0 + 1.7 + 1.45) : 1.7;
+        if (game && game.nearRow(row.y, 10)) CR.audio.trainPass();
+      }
+    } else {
+      row.signalOn = Math.floor(row.timer * 8) % 2 === 0;
+      row.train.x += row.dir * row.speed * dt;
+      var tail = row.train.x - row.train.back * row.dir;
+      if ((row.dir > 0 && tail > TRAIN_SPAWN) || (row.dir < 0 && tail < -TRAIN_SPAWN)) {
+        row.state = 'idle';
+        row.train = null;
+        row.timer = this.rng.range(2.6, 6.5);
+        row.dir = this.rng.chance(0.5) ? 1 : -1;
+        row.cars = this.rng.int(3, 5);
+      }
+    }
+  };
+
+  /* ── Queries ──────────────────────────────────────────────── */
+
+  /** Is the integer cell (x, y) impassable? */
+  World.prototype.blocked = function (x, y) {
+    if (x < MINX || x > MAXX) return true;
+    var row = this.rowAt(y);
+    return row.type === 'grass' && !!row.obstacles[x];
+  };
+
+  /** The log or pad supporting a float x on a water row, else null. */
+  World.prototype.platformAt = function (x, row) {
+    var i;
+    for (i = 0; i < row.logs.length; i++) {
+      var lg = row.logs[i];
+      if (x > lg.x - lg.len * 0.5 - 0.18 && x < lg.x + lg.len * 0.5 + 0.18) return lg;
+    }
+    for (i = 0; i < row.pads.length; i++) {
+      var p = row.pads[i];
+      if (Math.abs(x - p.x) < 0.62) return p;
+    }
+    return null;
+  };
+
+  /** Vehicle or train overlapping a float x on this row, else null. */
+  World.prototype.hazardAt = function (x, row, halfWidth) {
+    var i;
+    if (row.type === 'road') {
+      for (i = 0; i < row.vehicles.length; i++) {
+        var v = row.vehicles[i];
+        if (Math.abs(x - v.x) < v.len * 0.5 + halfWidth) return v;
+      }
+    } else if (row.type === 'rail' && row.train) {
+      var t = row.train;
+      var front = t.x + 1.7 * t.dir, back = t.x - t.back * t.dir;
+      var lo = Math.min(front, back), hi = Math.max(front, back);
+      if (x > lo - halfWidth && x < hi + halfWidth) return t;
+    }
+    return null;
+  };
+
+  /** Drop rows far behind the camera so memory stays flat on long runs. */
+  World.prototype.prune = function (below) {
+    for (var key in this.rows) {
+      if (+key < below) delete this.rows[key];
+    }
+  };
+
+  CR.World = World;
+})(window);
+
+/* ==== js/player.js ==== */
+/* Crossy Road — the hopper: grid movement, log riding, and death theatrics. */
+(function (global) {
+  'use strict';
+
+  var CR = global.CR;
+  var util = CR.util;
+  var W = CR.World;
+
+  var HOP_TIME = 0.145;
+  var HOP_HEIGHT = 0.55;
+  var HALF = 0.34;              // collision half-width
+
+  function Player(character) {
+    this.char = character;
+    this.reset();
+  }
+
+  Player.HALF = HALF;
+
+  Player.prototype.reset = function () {
+    this.x = 0; this.y = 0; this.z = 0;
+    this.gx = 0; this.gy = 0;
+    this.facing = 0;
+    this.hopping = false;
+    this.hopT = 0;
+    this.from = { x: 0, y: 0 };
+    this.to = { x: 0, y: 0 };
+    this.platform = null;
+    this.platformOff = 0;
+    this.landT = 0;
+    this.bumpT = 0;
+    this.alive = true;
+    this.cause = null;
+    this.deathT = 0;
+    this.vel = { x: 0, z: 0 };
+    this.spin = 0;
+    this.squash = 1;
+    this.stretch = 1;
+    this.alpha = 1;
+    this.maxY = 0;
+    this.moved = false;
+  };
+
+  var DIRS = {
+    up: { dx: 0, dy: 1, f: 0 },
+    right: { dx: 1, dy: 0, f: 1 },
+    down: { dx: 0, dy: -1, f: 2 },
+    left: { dx: -1, dy: 0, f: 3 }
+  };
+
+  /**
+   * Attempt a hop. Returns 'ok' | 'blocked' | 'busy'.
+   * Movement is grid based, but x stays fractional while riding a log so the
+   * hopper keeps the drift it picked up on the water.
+   */
+  Player.prototype.tryMove = function (dirName, world) {
+    if (!this.alive) return 'busy';
+    var d = DIRS[dirName];
+    if (!d) return 'busy';
+    if (this.hopping) return 'busy';
+
+    this.facing = d.f;
+
+    var ty = this.gy + d.dy;
+    var tx = this.x + d.dx;
+    if (ty < 0 && this.gy <= 0) ty = 0;                       // no falling off the start
+
+    var row = world.rowAt(ty);
+    var landX;
+    if (row.type === 'water') {
+      landX = util.clamp(tx, W.MINX, W.MAXX);
+      if (Math.abs(landX - tx) > 0.3) { this.bump(); return 'blocked'; }
+    } else {
+      landX = Math.round(tx);
+      if (world.blocked(landX, ty)) { this.bump(); return 'blocked'; }
+    }
+
+    this.from.x = this.x; this.from.y = this.y;
+    this.to.x = landX; this.to.y = ty;
+    this.hopping = true;
+    this.hopT = 0;
+    this.platform = null;
+    this.moved = true;
+    CR.audio.hop();
+    return 'ok';
+  };
+
+  Player.prototype.bump = function () {
+    this.bumpT = 0.12;
+    CR.audio.blocked();
+  };
+
+  /** Advance one frame. Returns a death cause string if the hop was fatal. */
+  Player.prototype.update = function (dt, world, game) {
+    if (!this.alive) { this._death(dt); return null; }
+
+    if (this.bumpT > 0) this.bumpT -= dt;
+
+    if (this.hopping) {
+      this.hopT += dt / HOP_TIME;
+      if (this.hopT >= 1) {
+        this.hopT = 1;
+        this.hopping = false;
+        this.x = this.to.x; this.y = this.to.y;
+        this.gx = Math.round(this.to.x); this.gy = this.to.y;
+        this.z = 0;
+        this.landT = 0.12;
+        var cause = this._land(world, game);
+        if (cause) return cause;
+      } else {
+        var t = this.hopT;
+        this.x = util.lerp(this.from.x, this.to.x, t);
+        this.y = util.lerp(this.from.y, this.to.y, t);
+        this.z = Math.sin(Math.PI * t) * HOP_HEIGHT;
+        var p = Math.sin(Math.PI * t);
+        this.stretch = 1 + 0.26 * p;
+        this.squash = 1 - 0.13 * p;
+      }
+    } else {
+      if (this.landT > 0) {
+        this.landT -= dt;
+        var k = Math.max(0, this.landT / 0.12);
+        this.stretch = 1 - 0.22 * k;
+        this.squash = 1 + 0.16 * k;
+      } else {
+        this.stretch = 1; this.squash = 1;
+      }
+      // Drift with the log / pad underfoot.
+      if (this.platform) {
+        this.x = this.platform.x + this.platformOff;
+        this.gx = Math.round(this.x);
+        if (this.x < W.MINX - 0.75 || this.x > W.MAXX + 0.75) return 'water';
+      }
+    }
+    return null;
+  };
+
+  Player.prototype._land = function (world, game) {
+    var row = world.rowAt(this.gy);
+
+    if (row.type === 'water') {
+      var plat = world.platformAt(this.x, row);
+      if (!plat) return 'water';
+      this.platform = plat;
+      this.platformOff = plat.len
+        ? util.clamp(this.x - plat.x, -plat.len * 0.5 + 0.25, plat.len * 0.5 - 0.25)
+        : 0;                                  // lily pads always centre you
+      this.x = plat.x + this.platformOff;
+    } else {
+      this.platform = null;
+      if (row.coin && !row.coin.taken && row.coin.x === this.gx) {
+        row.coin.taken = true;
+        game.collectCoin(this.gx, this.gy);
+      }
+    }
+
+    if (this.y > this.maxY) this.maxY = this.y;
+    return null;
+  };
+
+  /* ── Death ────────────────────────────────────────────────── */
+
+  Player.prototype.die = function (cause, hazard) {
+    if (!this.alive) return;
+    this.alive = false;
+    this.cause = cause;
+    this.deathT = 0;
+    this.hopping = false;
+    if (cause === 'car' || cause === 'train') {
+      var dir = hazard && hazard.dir ? hazard.dir : 1;
+      var force = cause === 'train' ? 1 : 0.35;
+      this.vel.x = dir * (cause === 'train' ? 13 : 3.4);
+      this.vel.z = cause === 'train' ? 7.5 : 0;
+      this.spinRate = dir * force * 22;
+    }
+  };
+
+  Player.prototype._death = function (dt) {
+    this.deathT += dt;
+    var t = this.deathT;
+    if (this.cause === 'car') {
+      var k = Math.min(1, t / 0.1);
+      this.stretch = util.lerp(1, 0.13, k);
+      this.squash = util.lerp(1, 1.42, k);
+      this.x += this.vel.x * dt;
+      this.vel.x *= 0.86;
+    } else if (this.cause === 'train') {
+      this.x += this.vel.x * dt;
+      this.z += this.vel.z * dt;
+      this.vel.z -= 16 * dt;
+      this.vel.x *= 0.985;
+      this.spin = (this.spin || 0) + this.spinRate * dt;
+      this.facing = ((Math.round(this.spin / (Math.PI / 2)) % 4) + 4) % 4;
+      if (this.z < -3) this.alpha = 0;
+    } else if (this.cause === 'water') {
+      this.z = Math.max(-0.62, this.z - 1.05 * dt);
+      this.stretch = util.lerp(1, 0.8, Math.min(1, t / 0.6));
+      this.alpha = util.clamp(1 - (t - 0.35) / 0.7, 0, 1);
+      if (this.platform) this.platform = null;
+    } else if (this.cause === 'eagle') {
+      if (t > 0.42) {
+        this.z += (t - 0.42) * 26 * dt;
+        this.alpha = util.clamp(1 - (t - 1.1) / 0.5, 0, 1);
+      }
+    }
+  };
+
+  /* ── Draw ─────────────────────────────────────────────────── */
+
+  Player.prototype.draw = function (r, time) {
+    var bump = this.bumpT > 0 ? Math.sin(this.bumpT * 90) * 0.05 : 0;
+    var bob = (!this.hopping && this.alive && this.landT <= 0) ? Math.sin(time * 3) * 0.012 : 0;
+    if (this.alive || this.cause !== 'water') {
+      // shrink and fade the contact shadow as the hopper gets airborne
+      var s = Math.max(0.12, 0.66 - Math.max(0, this.z) * 0.14);
+      r.shadow(this.x, this.y, s, s, this.z > 0.03 ? 0.14 : 0.2);
+    }
+    CR.drawCharacter(r, this.char, {
+      x: this.x + bump, y: this.y, z: this.z + bob,
+      facing: this.facing,
+      squash: this.squash, stretch: this.stretch,
+      alpha: this.alpha
+    });
+  };
+
+  CR.Player = Player;
+})(window);
+
+/* ==== js/game.js ==== */
+/* Crossy Road — game loop, camera, collisions, effects. */
+(function (global) {
+  'use strict';
+
+  var CR = global.CR;
+  var util = CR.util;
+  var M = CR.models;
+  var W = CR.World;
+
+  var SKY_TOP = '#cfeaf7';
+  var IDLE_WARN = 5.0;
+  var IDLE_DEATH = 8.0;
+
+  function Game(canvas) {
+    this.r = new CR.Renderer(canvas);
+    this.state = 'menu';
+    this.time = 0;
+    this.shake = 0;
+    this.particles = [];
+    this.pool = [];
+    this.pending = null;
+    this.pendingAt = 0;
+    this.score = 0;
+    this.best = util.store.get('best', 0);
+    this.wallet = util.store.get('coins', 0);
+    this.runCoins = 0;
+    this.idle = 0;
+    this.charId = util.store.get('char', 'chicken');
+    this.overTimer = 0;
+    this.newBest = false;
+
+    this.world = new CR.World((Math.random() * 1e9) | 0);
+    this.player = new CR.Player(CR.byId(this.charId));
+    this.camY = 0; this.camX = 0;
+    this.scroll = 0;
+  }
+
+  /* ── Lifecycle ────────────────────────────────────────────── */
+
+  Game.prototype.setCharacter = function (id) {
+    this.charId = id;
+    util.store.set('char', id);
+    this.player.char = CR.byId(id);
+  };
+
+  Game.prototype.start = function () {
+    this.world = new CR.World((Math.random() * 1e9) | 0);
+    this.player = new CR.Player(CR.byId(this.charId));
+    this.particles.length = 0;
+    this.camY = 0; this.camX = 0;
+    this.score = 0; this.runCoins = 0;
+    this.idle = 0; this.scroll = 0; this.shake = 0;
+    this.pending = null;
+    this.newBest = false;
+    this.state = 'play';
+    CR.ui.setScore(0);
+    CR.ui.setCoins(this.wallet);
+  };
+
+  Game.prototype.toMenu = function () {
+    this.state = 'menu';
+    this.world = new CR.World((Math.random() * 1e9) | 0);
+    this.player = new CR.Player(CR.byId(this.charId));
+    this.camY = 0; this.camX = 0;
+    this.particles.length = 0;
+  };
+
+  Game.prototype.pause = function () {
+    if (this.state === 'play') { this.state = 'paused'; CR.ui.showPause(true); }
+  };
+
+  Game.prototype.resume = function () {
+    if (this.state === 'paused') { this.state = 'play'; CR.ui.showPause(false); }
+  };
+
+  Game.prototype.move = function (dir) {
+    if (this.state !== 'play') return;
+    if (this.player.hopping) {
+      // late-hop buffering keeps fast chains of taps feeling responsive
+      if (this.player.hopT > 0.45) { this.pending = dir; this.pendingAt = this.time; }
+      return;
+    }
+    this.player.tryMove(dir, this.world);
+  };
+
+  Game.prototype.nearRow = function (y, dist) {
+    return Math.abs(y - this.camY) < dist;
+  };
+
+  /* ── Update ───────────────────────────────────────────────── */
+
+  Game.prototype.update = function (dt) {
+    this.time += dt;
+    var r = this.r, p = this.player;
+
+    // Shake decay
+    if (this.shake > 0.001) {
+      this.shake *= Math.exp(-7 * dt);
+      r.shakeX = (Math.random() - 0.5) * this.shake;
+      r.shakeY = (Math.random() - 0.5) * this.shake;
+    } else { this.shake = 0; r.shakeX = 0; r.shakeY = 0; }
+
+    var view = r.viewRows();
+    this.world.ensure(Math.ceil(view.far) + 6);
+    this.world.update(dt, view, this);
+    this.updateParticles(dt);
+
+    if (this.state === 'menu') {
+      this.camY = util.damp(this.camY, 1.2, 2, dt);
+      this.camX = 0;
+      r.setCamera(this.camX, this.camY);
+      return;
+    }
+    if (this.state === 'paused') return;
+
+    // Buffered input
+    if (this.pending && !p.hopping && p.alive) {
+      if (this.time - this.pendingAt < 0.35) p.tryMove(this.pending, this.world);
+      this.pending = null;
+    }
+
+    var cause = p.update(dt, this.world, this);
+    if (cause) this.kill(cause, null);
+
+    if (p.alive && this.state === 'play') {
+      this.checkHazards();
+      this.checkIdle(dt);
+      var s = Math.max(0, Math.round(p.maxY));
+      if (s !== this.score) { this.score = s; CR.ui.setScore(s); }
+    }
+
+    this.updateCamera(dt);
+
+    if (this.state === 'dying') {
+      this.overTimer -= dt;
+      if (this.overTimer <= 0) this.gameOver();
+    }
+
+    if (this.time % 1 < dt) this.world.prune(Math.floor(this.camY) - 40);
+  };
+
+  Game.prototype.checkHazards = function () {
+    var p = this.player;
+    var ry = Math.round(p.y);
+    var row = this.world.rowAt(ry);
+    var hz = this.world.hazardAt(p.x, row, CR.Player.HALF);
+    if (hz) {
+      this.kill(row.type === 'rail' ? 'train' : 'car', hz);
+      return;
+    }
+    if (row.type === 'water' && !p.hopping && !p.platform) this.kill('water', null);
+  };
+
+  Game.prototype.checkIdle = function (dt) {
+    var p = this.player;
+    if (!p.moved) return;                     // grace until the first hop
+    if (p.hopping) this.idle = 0; else this.idle += dt;
+
+    // Falling behind the camera is also a summons.
+    var rowsBelow = (this.r.h * (1 - this.r.anchor)) / (this.r.scale * CR.Renderer.SE);
+    if (p.y < this.camY - Math.max(2.4, rowsBelow - 0.8)) { this.kill('eagle', null); return; }
+    if (this.idle > IDLE_DEATH) this.kill('eagle', null);
+  };
+
+  Game.prototype.updateCamera = function (dt) {
+    var p = this.player, r = this.r;
+
+    if (this.state === 'play' && p.moved) {
+      var d = util.clamp(this.score / 260, 0, 1);
+      this.scroll = 0.28 + d * 1.1;
+      this.camY += this.scroll * dt;
+    }
+    var target = Math.max(this.camY, p.alive ? p.y : this.camY);
+    this.camY = Math.max(this.camY, util.damp(this.camY, target, 7, dt));
+
+    var half = r.halfCols();
+    var cx = 0;
+    if (half < W.MAXX + 1.5) {
+      cx = util.clamp(p.x, W.MINX + half - 1.4, W.MAXX - half + 1.4);
+    }
+    this.camX = util.damp(this.camX, cx, 6, dt);
+    r.setCamera(this.camX, this.camY);
+  };
+
+  Game.prototype.kill = function (cause, hazard) {
+    var p = this.player;
+    if (!p.alive) return;
+    p.die(cause, hazard);
+    this.state = 'dying';
+    this.overTimer = cause === 'eagle' ? 1.75 : 1.15;
+
+    if (cause === 'car') {
+      this.shake = 16; CR.audio.crash();
+      this.burst(p.x, p.y, 0.35, 16, p.char.body, 4.5);
+    } else if (cause === 'train') {
+      this.shake = 26; CR.audio.crash();
+      this.burst(p.x, p.y, 0.4, 22, p.char.body, 7);
+    } else if (cause === 'water') {
+      CR.audio.splash();
+      this.burst(p.x, p.y, 0.1, 18, '#9fd8ff', 3.4);
+    } else {
+      CR.audio.screech();
+    }
+    CR.audio.gameOver();
+  };
+
+  Game.prototype.gameOver = function () {
+    this.state = 'over';
+    // Distance itself pays out, so every run makes progress toward a character.
+    this.distanceBonus = Math.floor(this.score / 8);
+    this.runCoins += this.distanceBonus;
+    this.wallet += this.runCoins;
+    util.store.set('coins', this.wallet);
+    if (this.score > this.best) {
+      this.best = this.score;
+      this.newBest = true;
+      util.store.set('best', this.best);
+    }
+    CR.ui.showGameOver(this);
+  };
+
+  Game.prototype.collectCoin = function (x, y) {
+    this.runCoins++;
+    CR.audio.coin();
+    CR.ui.setCoins(this.wallet + this.runCoins);
+    this.burst(x, y, 0.4, 10, '#ffcf3f', 2.6);
+  };
+
+  /* ── Particles ────────────────────────────────────────────── */
+
+  Game.prototype.burst = function (x, y, z, n, color, power) {
+    for (var i = 0; i < n; i++) {
+      var pt = this.pool.pop() || {};
+      var a = Math.random() * util.TAU;
+      var sp = power * (0.35 + Math.random() * 0.65);
+      pt.x = x; pt.y = y; pt.z = z + Math.random() * 0.3;
+      pt.vx = Math.cos(a) * sp * 0.6;
+      pt.vy = Math.sin(a) * sp * 0.6;
+      pt.vz = 1.6 + Math.random() * power * 0.5;
+      pt.size = 0.07 + Math.random() * 0.09;
+      pt.color = color;
+      pt.life = pt.max = 0.5 + Math.random() * 0.6;
+      this.particles.push(pt);
+    }
+  };
+
+  Game.prototype.updateParticles = function (dt) {
+    var list = this.particles;
+    for (var i = list.length - 1; i >= 0; i--) {
+      var p = list[i];
+      p.life -= dt;
+      if (p.life <= 0) { this.pool.push(p); list.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+      p.vz -= 13 * dt;
+      if (p.z < 0.02) { p.z = 0.02; p.vz *= -0.34; p.vx *= 0.7; p.vy *= 0.7; }
+    }
+  };
+
+  /* ── Draw ─────────────────────────────────────────────────── */
+
+  function drawParticle(r, p) {
+    var ctx = r.ctx;
+    ctx.save();
+    ctx.globalAlpha = util.clamp(p.life / p.max, 0, 1);
+    r.box(p.x, p.y, p.z, p.size, p.size, p.size, p.color);
+    ctx.restore();
+  }
+
+  function drawScenery(r, a) { M.scenery(r, a.o, a.x, a.y); }
+  function drawVehicle(r, a) { M.vehicle(r, a.v, a.y, a.t); }
+  function drawTrain(r, a) { M.train(r, a.t, a.y, a.time); }
+  function drawSignal(r, a) { M.signal(r, a.x, a.y, a.on); }
+  function drawLog(r, a) { M.log(r, a.l, a.y); }
+  function drawPad(r, a) { M.pad(r, a.p, a.y); }
+  function drawCoin(r, a) { M.coin(r, a.x, a.y, a.t); }
+  function drawPlayer(r, a) { a.game.player.draw(r, a.game.time); }
+  function drawEagle(r, a) { M.eagle(r, a.x, a.y, a.z, a.t); }
+
+  Game.prototype.draw = function () {
+    var r = this.r, ctx = r.ctx, t = this.time;
+    var view = r.viewRows();
+    var halfCols = r.halfCols();
+    var tilt = CR.Renderer.SY / CR.Renderer.CY;
+
+    ctx.fillStyle = SKY_TOP;
+    ctx.fillRect(0, 0, r.w, r.h);
+
+    var yFar = Math.ceil(view.far), yNear = Math.floor(view.near);
+    var y, row, i;
+
+    // 1. Ground, far → near.
+    for (y = yFar; y >= yNear; y--) {
+      row = this.world.rows[y];
+      if (!row) continue;
+      var centre = this.camX - (y - this.camY) * tilt;
+      M.rowGround(r, row, centre - halfCols - 2.5, centre + halfCols + 2.5, t);
+    }
+
+    // 2. Contact shadows — flat, so they all go down before any geometry,
+    //    batched into a single path/fill.
+    r.beginShadows(0.17);
+    for (y = yFar; y >= yNear; y--) {
+      row = this.world.rows[y];
+      if (!row) continue;
+      if (row.type === 'grass') {
+        for (var key in row.obstacles) r.addShadow(+key, y, 0.9, 0.9);
+        for (i = 0; i < row.border.length; i++) r.addShadow(row.border[i].x, y, 0.9, 0.9);
+      } else if (row.type === 'road') {
+        for (i = 0; i < row.vehicles.length; i++) {
+          var v = row.vehicles[i];
+          r.addShadow(v.x, y, v.len + 0.25, 1.15);
+        }
+      }
+    }
+    r.endShadows();
+
+    // 3. Everything with height, depth sorted.
+    for (y = yFar; y >= yNear; y--) {
+      row = this.world.rows[y];
+      if (!row) continue;
+      var cen = this.camX - (y - this.camY) * tilt;
+      var x0 = cen - halfCols - 5, x1 = cen + halfCols + 5;
+
+      if (row.type === 'grass') {
+        for (var k in row.obstacles) {
+          var ox = +k;
+          if (ox < x0 || ox > x1) continue;
+          r.push(r.depth(ox, y), drawScenery, { o: row.obstacles[k], x: ox, y: y });
+        }
+        for (i = 0; i < row.border.length; i++) {
+          var b = row.border[i];
+          if (b.x < x0 || b.x > x1) continue;
+          r.push(r.depth(b.x, y), drawScenery, { o: b.o, x: b.x, y: y });
+        }
+        if (row.coin && !row.coin.taken) {
+          r.push(r.depth(row.coin.x, y), drawCoin, { x: row.coin.x, y: y, t: t });
+        }
+      } else if (row.type === 'road') {
+        if (row.lamp) r.push(r.depth(row.lamp, y), drawScenery, { o: { kind: 'lamp' }, x: row.lamp, y: y });
+        for (i = 0; i < row.vehicles.length; i++) {
+          var veh = row.vehicles[i];
+          if (veh.x < x0 - veh.len || veh.x > x1 + veh.len) continue;
+          r.push(r.depth(veh.x, y), drawVehicle, { v: veh, y: y, t: t });
+        }
+      } else if (row.type === 'water') {
+        for (i = 0; i < row.logs.length; i++) {
+          var lg = row.logs[i];
+          if (lg.x < x0 - lg.len || lg.x > x1 + lg.len) continue;
+          r.push(r.depth(lg.x, y), drawLog, { l: lg, y: y });
+        }
+        for (i = 0; i < row.pads.length; i++) {
+          var pd = row.pads[i];
+          if (pd.x < x0 || pd.x > x1) continue;
+          r.push(r.depth(pd.x, y), drawPad, { p: pd, y: y });
+        }
+      } else if (row.type === 'rail') {
+        r.push(r.depth(W.MINX - 1, y), drawSignal, { x: W.MINX - 1, y: y, on: row.signalOn });
+        r.push(r.depth(W.MAXX + 1, y), drawSignal, { x: W.MAXX + 1, y: y, on: !row.signalOn && row.state !== 'idle' });
+        if (row.train) r.push(r.depth(row.train.x, y), drawTrain, { t: row.train, y: y, time: t });
+      }
+    }
+
+    // Player + eagle
+    var p = this.player;
+    if (p.alpha > 0.01) r.push(r.depth(p.x, p.y) - 0.001, drawPlayer, { game: this });
+
+    if (!p.alive && p.cause === 'eagle') {
+      var k2 = util.clamp(p.deathT / 0.42, 0, 1);
+      var ez = util.lerp(6.5, 0.5, k2) + (p.deathT > 0.42 ? p.z : 0);
+      var ey = p.y + util.lerp(3.2, 0.02, k2);
+      r.push(r.depth(p.x, ey) - 0.5, drawEagle, { x: p.x, y: ey, z: ez, t: t });
+    } else if (this.state === 'play' && this.idle > IDLE_WARN) {
+      // Circling warning shadow — you have about two seconds.
+      var warn = util.clamp((this.idle - IDLE_WARN) / (IDLE_DEATH - IDLE_WARN), 0, 1);
+      var sz = util.lerp(2.4, 0.9, warn);
+      ctx.save();
+      ctx.globalAlpha = 0.1 + warn * 0.3;
+      r.shadow(p.x + Math.cos(t * 2.2) * 0.6, p.y + Math.sin(t * 2.2) * 0.6, sz, sz, 1);
+      ctx.restore();
+    }
+
+    for (i = 0; i < this.particles.length; i++) {
+      var pt = this.particles[i];
+      r.push(r.depth(pt.x, pt.y) - 0.002, drawParticle, pt);
+    }
+
+    r.flush();
+
+    // 4. Distance haze so the far edge of the world melts away.
+    var fog = r.h * 0.24;
+    var g = ctx.createLinearGradient(0, 0, 0, fog);
+    g.addColorStop(0, SKY_TOP);
+    g.addColorStop(0.4, util.rgba(SKY_TOP, 0.6));
+    g.addColorStop(1, util.rgba(SKY_TOP, 0));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, r.w, fog);
+  };
+
+  CR.Game = Game;
+})(window);
+
+/* ==== js/ui.js ==== */
+/* Crossy Road — DOM glue: HUD, menus, character shop. */
+(function (global) {
+  'use strict';
+
+  var CR = global.CR;
+  var util = CR.util;
+
+  function $(id) { return document.getElementById(id); }
+
+  var CAUSE = {
+    car: 'Squashed!',
+    train: 'Off the rails!',
+    water: 'Splash!',
+    eagle: 'Eagle got you!'
+  };
+
+  var ui = {
+    game: null,
+    index: 0,
+    unlocked: util.store.get('unlocked', ['chicken']),
+    preview: null,
+    previewT: 0
+  };
+
+  ui.init = function (game) {
+    this.game = game;
+    this.el = {
+      hud: $('hud'), score: $('hud-score'), coins: $('coin-count'),
+      start: $('screen-start'), over: $('screen-over'), pause: $('screen-pause'),
+      name: $('char-name'), status: $('char-status'),
+      play: $('btn-play'), unlock: $('btn-unlock'), wallet: $('wallet-count'),
+      cause: $('over-cause'), overScore: $('over-score'), overBest: $('over-best'),
+      overCoins: $('over-coins'), newBest: $('new-best'),
+      sound: $('btn-sound'), dpad: $('dpad')
+    };
+
+    // Character preview gets its own tiny renderer.
+    this.preview = new CR.Renderer($('char-preview'), { alpha: true });
+    this.resizePreview();
+
+    var i = 0;
+    for (; i < CR.characters.length; i++) {
+      if (CR.characters[i].id === game.charId) { this.index = i; break; }
+    }
+    if (!this.has(game.charId)) { this.index = 0; game.setCharacter('chicken'); }
+
+    var self = this;
+    $('char-prev').onclick = function () { self.cycle(-1); };
+    $('char-next').onclick = function () { self.cycle(1); };
+    this.el.play.onclick = function () { self.play(); };
+    this.el.unlock.onclick = function () { self.buy(); };
+    $('btn-again').onclick = function () { self.play(); };
+    $('btn-menu').onclick = function () { CR.audio.click(); self.showStart(); };
+    $('btn-resume').onclick = function () { CR.audio.click(); game.resume(); };
+    $('btn-quit').onclick = function () { CR.audio.click(); self.showPause(false); self.showStart(); };
+    $('btn-pause').onclick = function () { CR.audio.click(); game.pause(); };
+    this.el.sound.onclick = function () {
+      var muted = CR.audio.toggle();
+      self.el.sound.textContent = muted ? '🔇' : '🔊';
+      if (!muted) CR.audio.click();
+    };
+    this.el.sound.textContent = CR.audio.muted ? '🔇' : '🔊';
+
+    this.refreshChar();
+    this.setCoins(game.wallet);
+  };
+
+  ui.has = function (id) { return this.unlocked.indexOf(id) !== -1; };
+
+  ui.resizePreview = function () {
+    var c = $('char-preview');
+    var rect = c.getBoundingClientRect();
+    this.preview.resize(Math.max(120, rect.width || 220), Math.max(100, rect.height || 170));
+    this.preview.scale = this.preview.h * 0.5;
+    this.preview.anchor = 0.56;
+    this.preview.setCamera(0, 0);
+  };
+
+  ui.cycle = function (step) {
+    CR.audio.click();
+    var n = CR.characters.length;
+    this.index = (this.index + step + n) % n;
+    var ch = CR.characters[this.index];
+    if (this.has(ch.id)) this.game.setCharacter(ch.id);
+    this.refreshChar();
+  };
+
+  ui.refreshChar = function () {
+    var ch = CR.characters[this.index];
+    var owned = this.has(ch.id);
+    this.el.name.textContent = ch.name;
+    this.el.status.classList.toggle('locked', !owned);
+    if (owned) {
+      this.el.status.textContent = this.game.charId === ch.id ? 'Selected' : 'Tap play to use';
+      this.el.play.classList.remove('hidden');
+      this.el.unlock.classList.add('hidden');
+    } else {
+      var short = ch.cost - this.game.wallet;
+      this.el.status.textContent = short > 0 ? 'Locked — ' + short + ' more coins' : 'Locked';
+      this.el.play.classList.add('hidden');
+      this.el.unlock.classList.remove('hidden');
+      this.el.unlock.textContent = 'UNLOCK — ' + ch.cost + ' COINS';
+      this.el.unlock.disabled = short > 0;
+    }
+    this.el.wallet.textContent = this.game.wallet;
+  };
+
+  ui.buy = function () {
+    var ch = CR.characters[this.index];
+    if (this.game.wallet < ch.cost || this.has(ch.id)) return;
+    this.game.wallet -= ch.cost;
+    util.store.set('coins', this.game.wallet);
+    this.unlocked.push(ch.id);
+    util.store.set('unlocked', this.unlocked);
+    this.game.setCharacter(ch.id);
+    CR.audio.unlock();
+    this.refreshChar();
+    this.setCoins(this.game.wallet);
+  };
+
+  ui.play = function () {
+    CR.audio.init();
+    CR.audio.click();
+    var ch = CR.characters[this.index];
+    if (this.has(ch.id)) this.game.setCharacter(ch.id);
+    this.el.start.classList.add('hidden');
+    this.el.over.classList.add('hidden');
+    this.el.hud.classList.remove('hidden');
+    if (CR.touch) this.el.dpad.classList.remove('hidden');
+    this.game.start();
+  };
+
+  ui.showStart = function () {
+    this.game.toMenu();
+    this.el.over.classList.add('hidden');
+    this.el.hud.classList.add('hidden');
+    this.el.dpad.classList.add('hidden');
+    this.el.start.classList.remove('hidden');
+    this.refreshChar();
+  };
+
+  ui.showGameOver = function (game) {
+    this.el.cause.textContent = CAUSE[game.player.cause] || 'Game over';
+    this.el.overScore.textContent = game.score;
+    this.el.overBest.textContent = game.best;
+    this.el.overCoins.textContent = game.runCoins;
+    this.el.newBest.classList.toggle('hidden', !game.newBest);
+    this.el.over.classList.remove('hidden');
+    this.el.dpad.classList.add('hidden');
+    this.refreshChar();
+  };
+
+  ui.showPause = function (on) {
+    this.el.pause.classList.toggle('hidden', !on);
+  };
+
+  ui.setScore = function (v) { this.el.score.textContent = v; };
+  ui.setCoins = function (v) { this.el.coins.textContent = v; };
+
+  /** Idle animation on the character-select canvas. */
+  ui.drawPreview = function (dt) {
+    if (this.el.start.classList.contains('hidden')) return;
+    var r = this.preview, t = (this.previewT += dt);
+    var ctx = r.ctx;
+    ctx.clearRect(0, 0, r.w, r.h);
+
+    // little grass podium
+    for (var gx = -0.5; gx <= 0.5; gx++) {
+      for (var gy = -0.5; gy <= 0.5; gy++) {
+        r.box(gx, gy, -0.4, 1, 1, 0.4, (gx + gy) === 0 ? '#7ec94b' : '#71bb41');
+      }
+    }
+    var hop = Math.abs(Math.sin(t * 2.2));
+    var z = Math.pow(hop, 0.7) * 0.22;
+    r.shadow(0, 0, 0.66 - z * 0.3, 0.66 - z * 0.3, 0.18);
+    CR.drawCharacter(r, CR.characters[this.index], {
+      x: 0, y: 0, z: z,
+      facing: 2,                       // turned to face the player
+
+      squash: 1 - hop * 0.06,
+      stretch: 1 + hop * 0.1
+    });
+  };
+
+  CR.ui = ui;
+})(window);
+
+/* ==== js/main.js ==== */
+/* Crossy Road — bootstrap, input, main loop. */
+(function (global) {
+  'use strict';
+
+  var CR = global.CR;
+
+  var canvas = document.getElementById('game');
+  var game = new CR.Game(canvas);
+  CR.game = game;
+  CR.touch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in global;
+
+  CR.ui.init(game);
+
+  /* ── Sizing ───────────────────────────────────────────────── */
+
+  function resize() {
+    game.r.resize(global.innerWidth, global.innerHeight);
+    CR.ui.resizePreview();
+  }
+  global.addEventListener('resize', resize);
+  global.addEventListener('orientationchange', function () { setTimeout(resize, 120); });
+  resize();
+
+  /* ── Keyboard ─────────────────────────────────────────────── */
+
+  var KEYS = {
+    ArrowUp: 'up', KeyW: 'up',
+    ArrowDown: 'down', KeyS: 'down',
+    ArrowLeft: 'left', KeyA: 'left',
+    ArrowRight: 'right', KeyD: 'right'
+  };
+
+  document.addEventListener('keydown', function (e) {
+    var dir = KEYS[e.code];
+    if (dir) {
+      e.preventDefault();
+      CR.audio.init();
+      if (game.state === 'menu') { CR.ui.play(); return; }
+      game.move(dir);
+      return;
+    }
+    if (e.code === 'Escape' || e.code === 'KeyP') {
+      e.preventDefault();
+      if (game.state === 'play') game.pause();
+      else if (game.state === 'paused') game.resume();
+    } else if (e.code === 'Space' || e.code === 'Enter') {
+      e.preventDefault();
+      if (game.state === 'menu' || game.state === 'over') CR.ui.play();
+    } else if (e.code === 'KeyM') {
+      var muted = CR.audio.toggle();
+      document.getElementById('btn-sound').textContent = muted ? '🔇' : '🔊';
+    }
+  }, { passive: false });
+
+  /* ── Touch: swipe anywhere, or the on-screen pad ──────────── */
+
+  var t0 = null;
+  canvas.addEventListener('touchstart', function (e) {
+    CR.audio.init();
+    var t = e.changedTouches[0];
+    t0 = { x: t.clientX, y: t.clientY, time: Date.now() };
+  }, { passive: true });
+
+  canvas.addEventListener('touchend', function (e) {
+    if (!t0) return;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - t0.x, dy = t.clientY - t0.y;
+    var dist = Math.hypot(dx, dy);
+    var quick = Date.now() - t0.time < 450;
+    t0 = null;
+    if (game.state === 'menu') return;
+    if (dist < 24) { game.move('up'); return; }          // tap = hop forward
+    if (!quick && dist < 40) return;
+    if (Math.abs(dx) > Math.abs(dy)) game.move(dx > 0 ? 'right' : 'left');
+    else game.move(dy < 0 ? 'up' : 'down');
+  }, { passive: true });
+
+  // Mouse click on the playfield also hops forward (desktop convenience).
+  canvas.addEventListener('mousedown', function () {
+    CR.audio.init();
+    if (game.state === 'play') game.move('up');
+  });
+
+  var pad = document.getElementById('dpad');
+  Array.prototype.forEach.call(pad.querySelectorAll('.dbtn'), function (btn) {
+    var dir = btn.getAttribute('data-dir');
+    function press(e) { e.preventDefault(); CR.audio.init(); game.move(dir); }
+    btn.addEventListener('touchstart', press, { passive: false });
+    btn.addEventListener('mousedown', press);
+  });
+
+  if (CR.touch) document.body.classList.add('touch');
+
+  /* ── Auto-pause when the tab or window goes away ──────────── */
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) game.pause();
+  });
+  global.addEventListener('blur', function () { game.pause(); });
+
+  /* ── Loop ─────────────────────────────────────────────────── */
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = (now - last) / 1000;
+    last = now;
+    if (dt > 0.1) dt = 0.1;             // never let a stall teleport traffic
+    game.update(dt);
+    game.draw();
+    CR.ui.drawPreview(dt);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})(window);
+
+</script>
+</body>
+</html>
