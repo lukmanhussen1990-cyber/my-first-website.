@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Opus 5 — Ad</title>
+<link rel="stylesheet" href="assets/fonts.local.css">
+<style>
+  :root{
+    --cream:#F4F0E9;
+    --cream-dim:rgba(244,240,233,.62);
+    --rust:#D97757;
+    --rust-deep:#C15F3C;
+    --ember:#E9A17C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#000;overflow:hidden}
+  #stage{
+    position:relative;width:1920px;height:1080px;overflow:hidden;
+    background:#0C0B0A;
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  canvas{position:absolute;inset:0;width:1920px;height:1080px}
+  .layer{position:absolute;inset:0;pointer-events:none}
+
+  /* ---- vignette + subtle scanline sheen (static, cheap) ---- */
+  #vignette{
+    background:
+      radial-gradient(120% 85% at 50% 45%, rgba(0,0,0,0) 42%, rgba(0,0,0,.55) 100%);
+    mix-blend-mode:multiply;
+  }
+
+  /* ---- symbol ---- */
+  #symbol{position:absolute;will-change:transform,opacity,filter}
+  #symbol img{width:100%;height:100%;display:block}
+  #symbolGlow{
+    position:absolute;border-radius:50%;
+    background:radial-gradient(circle, rgba(217,119,87,.55) 0%, rgba(217,119,87,.16) 38%, rgba(217,119,87,0) 70%);
+    will-change:transform,opacity;
+  }
+
+  /* ---- wordmark ---- */
+  #wordmark{position:absolute;left:50%;top:50%;width:620px;transform:translate(-50%,-50%);will-change:opacity,filter}
+  #wordmark svg{width:100%;height:auto;display:block}
+  #wmClip{clip-path:inset(0 100% 0 0)}
+
+  /* ---- typography blocks ---- */
+  .center{position:absolute;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap}
+  .eyebrow{
+    font-family:'Inter';font-weight:500;font-size:19px;letter-spacing:.42em;
+    color:var(--rust);text-transform:uppercase;
+  }
+  .title{
+    font-family:'Fraunces','Georgia',serif;font-weight:700;
+    font-size:196px;line-height:1;letter-spacing:-.022em;color:var(--cream);
+  }
+  .title .ltr{display:inline-block;will-change:transform,opacity,filter}
+  .title .accent{color:var(--rust)}
+  .tagline{
+    font-family:'Fraunces',serif;font-weight:300;font-size:44px;letter-spacing:.005em;
+    color:var(--cream-dim);
+  }
+
+  /* ---- cards ---- */
+  #cards{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    display:flex;gap:44px}
+  .card{
+    width:452px;height:524px;border-radius:26px;
+    background:linear-gradient(168deg, rgba(255,255,255,.055) 0%, rgba(255,255,255,.018) 55%, rgba(217,119,87,.045) 100%);
+    border:1px solid rgba(244,240,233,.10);
+    padding:44px 42px;display:flex;flex-direction:column;
+    will-change:transform,opacity,filter;
+    box-shadow:0 30px 80px -40px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .card .num{
+    font-family:'JetBrains Mono',monospace;font-size:15px;letter-spacing:.24em;
+    color:var(--rust);opacity:.95;
+  }
+  .card .ico{height:150px;margin:26px 0 10px;position:relative}
+  .card h3{
+    font-family:'Fraunces',serif;font-weight:600;font-size:47px;line-height:1.06;
+    color:var(--cream);letter-spacing:-.012em;margin-top:auto;
+  }
+  .card p{
+    font-family:'Inter';font-weight:400;font-size:21px;line-height:1.5;
+    color:rgba(244,240,233,.56);margin-top:16px;
+  }
+  .card .rule{height:1px;background:linear-gradient(90deg,rgba(217,119,87,.85),rgba(217,119,87,0));margin:22px 0 0}
+
+  /* icon 2: code lines */
+  .codeline{height:11px;border-radius:6px;margin-bottom:13px;background:rgba(244,240,233,.22)}
+  .codeline.hot{background:linear-gradient(90deg,var(--rust),rgba(217,119,87,.35))}
+
+  /* ---- scene E ---- */
+  #ribbonText{font-family:'Fraunces',serif;font-weight:300;font-size:76px;color:var(--cream);letter-spacing:-.01em}
+
+  /* ---- lockup ---- */
+  #lockTitle{font-family:'Fraunces',serif;font-weight:700;font-size:132px;letter-spacing:-.02em;color:var(--cream);line-height:1}
+  #lockTitle .accent{color:var(--rust)}
+  #lockBy{font-family:'Inter';font-weight:400;font-size:31px;letter-spacing:.30em;color:rgba(244,240,233,.72);text-transform:uppercase}
+  #lockRule{position:absolute;left:50%;height:1px;background:linear-gradient(90deg,rgba(217,119,87,0),var(--rust),rgba(217,119,87,0));transform:translateX(-50%)}
+  #lockCta{font-family:'Inter';font-weight:500;font-size:26px;letter-spacing:.06em;color:var(--ember)}
+
+  #fadeout{background:#000;opacity:0}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="bg" width="1920" height="1080"></canvas>
+  <canvas id="fx" width="1920" height="1080"></canvas>
+
+  <div id="symbolGlow"></div>
+  <div id="symbol"><img id="symImg" src="assets/claude_symbol.svg" alt=""></div>
+
+  <div id="wordmark"><div id="wmHost"></div></div>
+
+  <div class="center" id="eyebrow"><div class="eyebrow">Introducing</div></div>
+  <div class="center title" id="title"></div>
+  <div class="center" id="tagline"><div class="tagline">Intelligence, at depth.</div></div>
+
+  <div id="cards">
+    <div class="card" data-i="0">
+      <div class="num">01</div>
+      <div class="ico" id="ico0">
+        <svg viewBox="0 0 150 150" width="150" height="150">
+          <g id="arc0a" style="transform-origin:75px 75px">
+            <circle cx="75" cy="75" r="62" fill="none" stroke="rgba(217,119,87,.85)" stroke-width="2.5" stroke-dasharray="235 155" stroke-linecap="round"/>
+          </g>
+          <g id="arc0b" style="transform-origin:75px 75px">
+            <circle cx="75" cy="75" r="45" fill="none" stroke="rgba(244,240,233,.55)" stroke-width="2.5" stroke-dasharray="172 111" stroke-linecap="round"/>
+          </g>
+          <g id="arc0c" style="transform-origin:75px 75px">
+            <circle cx="75" cy="75" r="28" fill="none" stroke="rgba(217,119,87,.65)" stroke-width="2.5" stroke-dasharray="106 70" stroke-linecap="round"/>
+          </g>
+          <circle id="arc0d" cx="75" cy="75" r="7" fill="#D97757"/>
+        </svg>
+      </div>
+      <h3>Reasons<br>deeper</h3>
+      <div class="rule"></div>
+      <p>Holds the whole problem in view, then follows the thread down.</p>
+    </div>
+
+    <div class="card" data-i="1">
+      <div class="num">02</div>
+      <div class="ico" id="ico1" style="padding-top:22px">
+        <div class="codeline" id="cl0" style="width:0"></div>
+        <div class="codeline hot" id="cl1" style="width:0"></div>
+        <div class="codeline" id="cl2" style="width:0"></div>
+        <div class="codeline" id="cl3" style="width:0"></div>
+        <div class="codeline hot" id="cl4" style="width:0"></div>
+      </div>
+      <h3>Codes<br>further</h3>
+      <div class="rule"></div>
+      <p>From the first prompt to a diff that is ready to ship.</p>
+    </div>
+
+    <div class="card" data-i="2">
+      <div class="num">03</div>
+      <div class="ico" id="ico2">
+        <svg viewBox="0 0 220 150" width="220" height="150">
+          <path id="netPath" d="M18 118 L60 62 L112 96 L158 34 L202 74" fill="none"
+                stroke="rgba(217,119,87,.9)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <g id="netNodes" fill="#F4F0E9">
+            <circle cx="18" cy="118" r="6"/><circle cx="60" cy="62" r="6"/>
+            <circle cx="112" cy="96" r="6"/><circle cx="158" cy="34" r="6"/>
+            <circle cx="202" cy="74" r="6"/>
+          </g>
+        </svg>
+      </div>
+      <h3>Follows<br>through</h3>
+      <div class="rule"></div>
+      <p>Agents that stay on task and finish what they start.</p>
+    </div>
+  </div>
+
+  <div class="center" id="ribbonText">Built for the long horizon.</div>
+
+  <div class="center" id="lockTitle"><span>OPUS</span> <span class="accent">5</span></div>
+  <div id="lockRule"></div>
+  <div class="center" id="lockBy">by Claude</div>
+  <div class="center" id="lockCta">Available now on claude.ai</div>
+
+  <div class="layer" id="vignette"></div>
+  <canvas id="grain" width="1920" height="1080"></canvas>
+  <div class="layer" id="fadeout"></div>
+</div>
+
+<script>
+const W=1920,H=1080, DUR=20;
+
+/* ---------------- math helpers ---------------- */
+const clamp01=x=>x<0?0:x>1?1:x;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const P=(t,a,b)=>clamp01((t-a)/(b-a));
+const eOutCubic=x=>1-Math.pow(1-x,3);
+const eOutQuint=x=>1-Math.pow(1-x,5);
+const eOutExpo=x=>x>=1?1:1-Math.pow(2,-10*x);
+const eInOutCubic=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const eInCubic=x=>x*x*x;
+/* window with ease-in and ease-out: 1 inside, 0 outside */
+function band(t,a,b,c,d){ return Math.min(eOutCubic(P(t,a,b)), 1-eInOutCubic(P(t,c,d))); }
+function mulberry(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let x=Math.imul(a^a>>>15,1|a);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296;};}
+
+/* ---------------- element refs ---------------- */
+const $=id=>document.getElementById(id);
+const bg=$('bg').getContext('2d');
+const fx=$('fx').getContext('2d');
+const grainCtx=$('grain').getContext('2d');
+const symbol=$('symbol'), symGlow=$('symbolGlow'), wordmark=$('wordmark');
+const eyebrow=$('eyebrow'), titleEl=$('title'), tagline=$('tagline'), cardsEl=$('cards');
+const ribbonText=$('ribbonText'), lockTitle=$('lockTitle'), lockRule=$('lockRule'),
+      lockBy=$('lockBy'), lockCta=$('lockCta'), fadeout=$('fadeout');
+const cards=[...document.querySelectorAll('.card')];
+
+/* build per-letter title */
+const TITLE='OPUS 5';
+titleEl.innerHTML='';
+const letters=[...TITLE].map(ch=>{
+  const s=document.createElement('span');
+  s.className='ltr'+(ch==='5'?' accent':'');
+  if(ch===' '){ s.innerHTML='&nbsp;'; s.style.width='0.30em'; } else { s.textContent=ch; }
+  titleEl.appendChild(s); return s;
+});
+
+/* ---------------- style helper ---------------- */
+function setT(el,{o=1,x=0,y=0,s=1,rot=0,blur=0,cx=null}){
+  el.style.opacity=o;
+  let tr = cx===null ? '' : 'translateX(-50%) ';
+  tr += `translate(${x}px,${y}px)`;
+  if(s!==1) tr+=` scale(${s})`;
+  if(rot) tr+=` rotate(${rot}deg)`;
+  el.style.transform=tr;
+  el.style.filter = blur>0.01 ? `blur(${blur}px)` : 'none';
+}
+function place(el,cxp,cyp,size){ /* center-based absolute placement */
+  el.style.left=(cxp-size/2)+'px'; el.style.top=(cyp-size/2)+'px';
+  el.style.width=size+'px'; el.style.height=size+'px';
+}
+
+/* ---------------- wordmark (recolored, symbol part removed) ---------------- */
+let wmReady=false;
+fetch('assets/claude_wordmark.svg').then(r=>r.text()).then(txt=>{
+  txt=txt.replace(/#0f0f0d/gi,'#F4F0E9').replace(/fill:\s*#0f0f0d/gi,'fill:#F4F0E9');
+  $('wmHost').innerHTML=txt;
+  const svg=$('wmHost').querySelector('svg');
+  svg.removeAttribute('width'); svg.removeAttribute('height');
+  svg.style.width='100%'; svg.style.height='auto';
+  /* hide the starburst path (class cls-2 / orange) — the live symbol element sits there */
+  svg.querySelectorAll('path').forEach(p=>{
+    const cls=p.getAttribute('class')||'';
+    const f=(p.getAttribute('fill')||'').toLowerCase();
+    if(cls.includes('cls-2')||f==='#d97757') p.style.opacity='0';
+    else p.style.fill='#F4F0E9';
+  });
+  /* wrap letter paths in a clip group for the wipe */
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('id','wmClipG');
+  while(svg.childNodes.length){ const n=svg.childNodes[0]; if(n.tagName==='defs'){svg.removeChild(n);continue;} g.appendChild(n); }
+  svg.appendChild(g);
+  wmReady=true;
+});
+
+/* wordmark geometry constants (fractions of rendered wordmark width) */
+const WM_W=620, WM_SYM_CX=0.1138, WM_SYM_SIZE=0.1435;
+
+/* ---------------- particle logo formation ---------------- */
+let pts=[], particles=[], sampled=false;
+const HERO_SIZE=360, HERO_CX=960, HERO_CY=524;
+function samplePoints(){
+  const N=380;
+  const c=document.createElement('canvas'); c.width=N; c.height=N;
+  const g=c.getContext('2d');
+  g.drawImage($('symImg'),0,0,N,N);
+  const d=g.getImageData(0,0,N,N).data;
+  const raw=[];
+  for(let y=0;y<N;y+=2) for(let x=0;x<N;x+=2){
+    if(d[(y*N+x)*4+3]>110) raw.push([x/N-0.5, y/N-0.5]);
+  }
+  const rnd=mulberry(1337);
+  for(let i=raw.length-1;i>0;i--){const j=(rnd()*(i+1))|0;[raw[i],raw[j]]=[raw[j],raw[i]];}
+  pts=raw.slice(0,1500);
+  particles=pts.map((p,i)=>{
+    const a=rnd()*Math.PI*2, r=760+rnd()*820;
+    return{
+      tx:p[0], ty:p[1],
+      sx:Math.cos(a)*r, sy:Math.sin(a)*r*0.72,
+      spin:(rnd()-.5)*1.5,
+      d:0.06+rnd()*0.80,
+      dur:0.95+rnd()*0.45,
+      sz:0.9+rnd()*1.7,
+      hue:rnd(),
+      tw:rnd()*6.28,
+      out:a
+    };
+  });
+  sampled=true;
+}
+
+/* ---------------- grain tiles ---------------- */
+const grainTiles=[];
+function buildGrain(){
+  for(let k=0;k<8;k++){
+    const c=document.createElement('canvas'); c.width=c.height=180;
+    const g=c.getContext('2d'); const img=g.createImageData(180,180);
+    const rnd=mulberry(9000+k*77);
+    for(let i=0;i<180*180;i++){
+      const v=200+rnd()*55|0;
+      img.data[i*4]=v; img.data[i*4+1]=v; img.data[i*4+2]=v;
+      img.data[i*4+3]=rnd()*255|0;
+    }
+    g.putImageData(img,0,0);
+    grainTiles.push(grainCtx.createPattern(c,'repeat'));
+  }
+}
+
+/* ---------------- background ---------------- */
+const blooms=[
+  {x:.28,y:.34,r:660,c:[217,119,87],a:.20,ph:0.0,sp:.13},
+  {x:.76,y:.70,r:760,c:[193,95,60],a:.16,ph:2.1,sp:.10},
+  {x:.52,y:.50,r:460,c:[240,168,120],a:.13,ph:4.2,sp:.17},
+];
+function drawBG(t){
+  const g=bg.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#0B0A09'); g.addColorStop(.55,'#100D0C'); g.addColorStop(1,'#141110');
+  bg.fillStyle=g; bg.fillRect(0,0,W,H);
+
+  /* bloom energy ramps with the story */
+  let energy = 0.35 + 0.65*eOutCubic(P(t,0.6,2.4));
+  energy *= 1 + 0.55*band(t,13.4,14.4,16.2,17.0);      /* ribbon scene surge */
+  energy *= 1 - 0.12*band(t,8.9,9.6,13.3,13.9);        /* calm behind cards  */
+
+  bg.globalCompositeOperation='lighter';
+  blooms.forEach(b=>{
+    const cx=b.x*W + Math.sin(t*b.sp+b.ph)*120;
+    const cy=b.y*H + Math.cos(t*b.sp*0.8+b.ph)*90;
+    const rr=b.r*(1+0.09*Math.sin(t*0.31+b.ph));
+    const rg=bg.createRadialGradient(cx,cy,0,cx,cy,rr);
+    const [r,gg,bb]=b.c, A=b.a*energy;
+    rg.addColorStop(0,`rgba(${r},${gg},${bb},${A})`);
+    rg.addColorStop(.45,`rgba(${r},${gg},${bb},${A*0.35})`);
+    rg.addColorStop(1,`rgba(${r},${gg},${bb},0)`);
+    bg.fillStyle=rg; bg.fillRect(0,0,W,H);
+  });
+  bg.globalCompositeOperation='source-over';
+}
+
+/* ---------------- particles + shockwave + ribbons ---------------- */
+function drawFX(t){
+  fx.clearRect(0,0,W,H);
+
+  /* --- particles (scene A) --- */
+  if(sampled && t<3.6){
+    const disperse=clamp01((t-2.20)/0.90);
+    const size=HERO_SIZE;
+    fx.globalCompositeOperation='lighter';
+    for(const p of particles){
+      const pr=clamp01((t-p.d)/p.dur);
+      if(pr<=0) continue;
+      const e=eOutQuint(pr);
+      const tx=p.tx*size, ty=p.ty*size;
+      /* spiral in */
+      const ang=p.spin*(1-e)*2.2;
+      const sxr=p.sx*Math.cos(ang)-p.sy*Math.sin(ang);
+      const syr=p.sx*Math.sin(ang)+p.sy*Math.cos(ang);
+      let x=lerp(sxr,tx,e), y=lerp(syr,ty,e);
+      /* micro shimmer once landed */
+      const shim=(1-Math.abs(1-2*Math.min(pr,1)))*0+0;
+      x+=Math.sin(t*3.1+p.tw)*1.5*e; y+=Math.cos(t*2.7+p.tw)*1.5*e;
+      let a=Math.min(1,pr*4)*(0.55+0.45*Math.sin(t*4+p.tw)*0.5+0.225);
+      if(disperse>0){
+        const d2=eInCubic(disperse);
+        x+=Math.cos(p.out)*d2*420; y+=Math.sin(p.out)*d2*300;
+        a*=(1-disperse);
+      }
+      if(a<=0.004) continue;
+      const warm=p.hue;
+      fx.fillStyle=`rgba(${(217+warm*35)|0},${(119+warm*70)|0},${(87+warm*60)|0},${a*0.9})`;
+      const s=p.sz*(1+0.6*(1-e));
+      fx.beginPath(); fx.arc(HERO_CX+x,HERO_CY+y,s,0,6.2832); fx.fill();
+    }
+    fx.globalCompositeOperation='source-over';
+  }
+
+  /* --- shockwave at ignition --- */
+  if(t>2.02 && t<3.5){
+    fx.globalCompositeOperation='lighter';
+    for(let k=0;k<2;k++){
+      const pr=clamp01((t-2.02-k*0.10)/1.05);
+      if(pr<=0||pr>=1) continue;
+      const R=110+960*eOutExpo(pr);
+      const a=0.26*Math.pow(1-pr,1.8);
+      fx.strokeStyle=`rgba(233,161,124,${a})`;
+      fx.lineWidth=Math.max(0.6,7*(1-pr));
+      fx.beginPath(); fx.ellipse(HERO_CX,HERO_CY,R,R*0.82,0,0,6.2832); fx.stroke();
+    }
+    fx.globalCompositeOperation='source-over';
+  }
+
+  /* --- ribbons (scene E) --- */
+  const rv=band(t,13.30,14.35,16.30,17.05);
+  if(rv>0.002){
+    fx.globalCompositeOperation='lighter';
+    const RN=6;
+    for(let i=0;i<RN;i++){
+      const f=i/(RN-1);
+      const cy=H*(0.30+0.42*f);
+      const amp=68+58*Math.sin(i*1.7);
+      const k=0.0032+0.0011*i, k2=0.0059-0.0006*i;
+      const sp=0.75+0.30*i, sp2=1.25-0.09*i;
+      const path=new Path2D();
+      for(let x=-40;x<=W+40;x+=10){
+        const y=cy+amp*Math.sin(x*k+t*sp+i)+amp*0.42*Math.sin(x*k2-t*sp2+i*2.1);
+        if(x<=-40) path.moveTo(x,y); else path.lineTo(x,y);
+      }
+      const grd=fx.createLinearGradient(0,0,W,0);
+      grd.addColorStop(0,'rgba(193,95,60,0)');
+      grd.addColorStop(.28,`rgba(217,119,87,${0.55*rv})`);
+      grd.addColorStop(.62,`rgba(240,180,140,${0.75*rv})`);
+      grd.addColorStop(1,'rgba(193,95,60,0)');
+      fx.strokeStyle=grd;
+      const wob=1+0.35*Math.sin(t*1.4+i);
+      [ [22,0.07], [9,0.16], [2.6,0.5] ].forEach(([lw,al])=>{
+        fx.lineWidth=lw*wob; fx.globalAlpha=al;
+        fx.stroke(path);
+      });
+      fx.globalAlpha=1;
+    }
+    fx.globalCompositeOperation='source-over';
+  }
+}
+
+function drawGrain(t){
+  grainCtx.clearRect(0,0,W,H);
+  if(!grainTiles.length) return;
+  const idx=Math.floor(t*60)%grainTiles.length;
+  grainCtx.globalAlpha=0.030;
+  grainCtx.fillStyle=grainTiles[idx];
+  grainCtx.fillRect(0,0,W,H);
+  grainCtx.globalAlpha=1;
+}
+
+/* ---------------- the timeline ---------------- */
+function seek(t){
+  t=Math.max(0,Math.min(DUR,t));
+  drawBG(t); drawFX(t); drawGrain(t);
+
+  /* ============ SYMBOL: one continuous journey ============ */
+  const wmLeft=(W-WM_W)/2;
+  const KEY=[
+    /* t,      cx,               cy,   size, opacity, rot,  blur */
+    [0.00, HERO_CX, HERO_CY, HERO_SIZE*0.86, 0, -38, 26],
+    [1.15, HERO_CX, HERO_CY, HERO_SIZE*0.94, 0.10, -20, 16],
+    [2.05, HERO_CX, HERO_CY, HERO_SIZE, 1, 0, 0],
+    [2.45, HERO_CX, HERO_CY, HERO_SIZE*1.045, 1, 0, 0],
+    [2.95, HERO_CX, HERO_CY, HERO_SIZE, 1, 0, 0],
+    [3.85, wmLeft+WM_W*WM_SYM_CX, 540, WM_W*WM_SYM_SIZE, 1, 0, 0],
+    [5.35, wmLeft+WM_W*WM_SYM_CX, 540, WM_W*WM_SYM_SIZE, 1, 0, 0],
+    [6.15, 960, 122, 46, .92, 0, 0],
+    [16.45, 960, 122, 46, .92, 0, 0],
+    [17.35, 960, 392, 122, 1, 0, 0],
+    [20.00, 960, 392, 122, 1, 0, 0],
+  ];
+  let i=0; while(i<KEY.length-2 && t>KEY[i+1][0]) i++;
+  const A=KEY[i], B=KEY[i+1];
+  let pr=P(t,A[0],B[0]);
+  /* softer easing for the long travels, snappier for the pulse */
+  pr = (i>=5) ? eInOutCubic(pr) : eOutQuint(pr);
+  const scx=lerp(A[1],B[1],pr), scy=lerp(A[2],B[2],pr), ssz=lerp(A[3],B[3],pr);
+  let sop=lerp(A[4],B[4],pr), srot=lerp(A[5],B[5],pr), sbl=lerp(A[6],B[6],pr);
+  /* fade-in of the solid mark as the particles land */
+  if(t<2.05) sop=Math.max(sop, eOutCubic(P(t,1.35,2.10)));
+  /* breathing in the final lockup */
+  const breathe = t>17.2 ? 1+0.012*Math.sin((t-17.2)*2.0) : 1;
+  place(symbol,scx,scy,ssz*breathe);
+  symbol.style.opacity=sop;
+  symbol.style.transform=`rotate(${srot}deg)`;
+  symbol.style.filter=sbl>0.02?`blur(${sbl}px)`:'none';
+
+  /* glow behind the mark */
+  const glowBoost = 1
+    + 1.5*band(t,1.95,2.20,2.30,3.10)          /* ignition flash */
+    + 0.5*band(t,17.2,17.9,19.5,20.0);         /* lockup warmth  */
+  const sizeFactor=Math.min(1,0.34+0.66*(ssz/HERO_SIZE));
+  const gsz=ssz*(2.4+1.4*(ssz/HERO_SIZE));
+  place(symGlow,scx,scy,gsz);
+  symGlow.style.opacity=(sop*0.55*sizeFactor*glowBoost*(t<1.2?eOutCubic(P(t,0.5,1.4)):1)).toFixed(3);
+
+  /* ============ WORDMARK ============ */
+  const wmIn=P(t,3.30,3.95), wmOut=P(t,5.35,5.95);
+  wordmark.style.opacity=(wmIn*(1-wmOut)).toFixed(3);
+  wordmark.style.transform=`translate(-50%,-50%) translateY(${-26*eInCubic(wmOut)}px)`;
+  wordmark.style.filter=wmOut>0.01?`blur(${10*wmOut}px)`:'none';
+  if(wmReady){
+    const g=document.getElementById('wmClipG');
+    if(g){
+      const wipe=100-100*eOutQuint(P(t,3.45,4.55));
+      g.style.clipPath=`inset(-10% ${wipe}% -10% -3%)`;
+    }
+  }
+
+  /* ============ SCENE C — title ============ */
+  const eb=band(t,5.55,6.05,8.35,8.80);
+  eyebrow.style.left='50%';
+  eyebrow.style.top='318px';
+  setT(eyebrow,{o:eb,y:lerp(14,0,eOutCubic(P(t,5.55,6.15)))-14*eInCubic(P(t,8.30,8.90)),cx:1});
+
+  const tOut=P(t,8.30,8.90);
+  letters.forEach((L,idx)=>{
+    const st=5.90+idx*0.085;
+    const p=eOutQuint(P(t,st,st+0.80));
+    const o=P(t,st,st+0.45)*(1-tOut);
+    L.style.opacity=o.toFixed(3);
+    L.style.transform=`translateY(${lerp(64,0,p)-34*eInCubic(tOut)}px)`;
+    L.style.filter=(p<0.99||tOut>0.01)?`blur(${lerp(16,0,p)+10*tOut}px)`:'none';
+  });
+  titleEl.style.left='50%'; titleEl.style.top='406px';
+  titleEl.style.transform='translateX(-50%)';
+
+  const tg=band(t,6.95,7.55,8.25,8.75);
+  tagline.style.top='640px';
+  setT(tagline,{o:tg,y:lerp(22,0,eOutCubic(P(t,6.95,7.65)))-18*eInCubic(tOut),cx:1});
+
+  /* ============ SCENE D — cards ============ */
+  cardsEl.style.top='566px';
+  cards.forEach((c,idx)=>{
+    const st=8.95+idx*0.26;
+    const p=eOutQuint(P(t,st,st+0.95));
+    const out=P(t,13.15+idx*0.11,13.85+idx*0.11);
+    const o=Math.min(P(t,st,st+0.55),1-eInOutCubic(out));
+    c.style.opacity=o.toFixed(3);
+    c.style.transform=`translateY(${lerp(78,0,p)-52*eInCubic(out)}px) scale(${lerp(0.955,1,p)})`;
+    c.style.filter=(p<0.99||out>0.01)?`blur(${lerp(12,0,p)+9*out}px)`:'none';
+  });
+
+  /* card icon animation (driven, not CSS) */
+  const it=t-8.9;
+  $('arc0a').style.transform=`rotate(${it*46}deg)`;
+  $('arc0b').style.transform=`rotate(${-it*33+40}deg)`;
+  $('arc0c').style.transform=`rotate(${it*64-20}deg)`;
+  $('arc0d').setAttribute('r',(6.4+1.5*Math.sin(it*3.4)).toFixed(2));
+
+  const widths=[340,300,240,318,196];
+  for(let k=0;k<5;k++){
+    const cyc=(it-0.35-k*0.30)/2.9;
+    const c1=cyc-Math.floor(cyc);
+    const grow=eOutCubic(clamp01(c1/0.34));
+    const fade=1-clamp01((c1-0.80)/0.18);
+    const el=$('cl'+k);
+    el.style.width=(widths[k]*grow)+'px';
+    el.style.opacity=(0.35+0.65*fade).toFixed(3);
+  }
+
+  const netLen=340;
+  const nc=((it-0.5)/3.1); const nf=nc-Math.floor(nc);
+  const np=$('netPath');
+  np.setAttribute('stroke-dasharray',netLen);
+  np.setAttribute('stroke-dashoffset',(netLen*(1-eInOutCubic(clamp01(nf/0.55)))).toFixed(1));
+  [...$('netNodes').children].forEach((n,k)=>{
+    const on=clamp01((nf-0.06-k*0.10)/0.10);
+    n.setAttribute('r',(4.4+2.6*eOutCubic(on)).toFixed(2));
+    n.setAttribute('fill-opacity',(0.35+0.65*on).toFixed(2));
+  });
+
+  /* ============ SCENE E — ribbon line ============ */
+  const rt=band(t,14.05,14.85,16.15,16.70);
+  ribbonText.style.top='498px';
+  setT(ribbonText,{o:rt,y:lerp(26,0,eOutCubic(P(t,14.05,15.0))),blur:lerp(12,0,eOutCubic(P(t,14.05,14.9)))+9*eInCubic(P(t,16.15,16.70)),cx:1});
+
+  /* ============ SCENE F — lockup ============ */
+  const lp=eOutQuint(P(t,17.30,18.10));
+  lockTitle.style.top='498px';
+  setT(lockTitle,{o:P(t,17.30,17.85),y:lerp(38,0,lp),blur:lerp(14,0,lp),cx:1});
+
+  const rw=eOutQuint(P(t,17.95,18.65));
+  lockRule.style.top='672px';
+  lockRule.style.width=(320*rw)+'px';
+  lockRule.style.opacity=rw.toFixed(3);
+
+  const byP=eOutQuint(P(t,18.20,18.85));
+  lockBy.style.top='706px';
+  setT(lockBy,{o:P(t,18.20,18.70),y:lerp(18,0,byP),cx:1});
+
+  const ctaP=eOutQuint(P(t,18.70,19.35));
+  lockCta.style.top='796px';
+  setT(lockCta,{o:P(t,18.70,19.20)*(0.88+0.12*Math.sin(t*3)),y:lerp(16,0,ctaP),cx:1});
+
+  /* final fade */
+  fadeout.style.opacity=eInOutCubic(P(t,19.55,20.0)).toFixed(3);
+}
+window.seek=seek;
+
+/* ---------------- boot ---------------- */
+window.READY=false;
+(async ()=>{
+  await document.fonts.ready;
+  const img=$('symImg');
+  if(!img.complete) await new Promise(r=>{img.onload=r;img.onerror=r;});
+  await new Promise(r=>setTimeout(r,120));
+  samplePoints();
+  buildGrain();
+  /* wait for wordmark fetch */
+  for(let k=0;k<80 && !wmReady;k++) await new Promise(r=>setTimeout(r,25));
+  seek(0);
+  window.READY=true;
+})();
+</script>
+</body>
+</html>
