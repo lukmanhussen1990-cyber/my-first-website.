@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SCP-3143 — Murphy Law</title>
+<meta name="description" content="An animated, music-reactive version of the SCP-3143 'Murphy Law' illustration.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main class="wrap">
+  <div class="frame">
+    <!-- every layer is the same 685x1259 canvas, so they stack pixel-perfect -->
+    <div class="stage" id="stage">
+      <img class="layer" id="plate"  src="assets/layers/plate.png"  alt="SCP-3143 Murphy Law, standing in a trench coat and fedora">
+      <img class="layer" id="smoke"  src="assets/layers/smoke.png"  alt="">
+      <div class="layer" id="head">
+        <img src="assets/layers/head.png" alt="">
+        <div class="eyelid"></div>
+        <div class="lash"></div>
+      </div>
+      <img class="layer" id="coat"   src="assets/layers/coat.png"   alt="">
+      <div class="layer" id="hand">
+        <img src="assets/layers/hand.png" alt="">
+      </div>
+      <img class="layer" id="sleeve" src="assets/layers/sleeve.png" alt="">
+      <div class="layer puffs" id="puffs"></div>
+      <div class="grain"></div>
+      <div class="vignette" id="vignette"></div>
+    </div>
+
+    <button class="play" id="play" aria-label="Play the animation with sound">
+      <span class="disc"></span>
+      <span class="txt">PLAY<em>with sound</em></span>
+    </button>
+  </div>
+
+  <audio id="track" src="assets/brooklyn-blood-pop-syko.mp3" loop preload="auto" crossorigin="anonymous"></audio>
+
+  <div class="bar">
+    <button class="ctrl" id="toggle" hidden>❚❚</button>
+    <p class="credits">
+      <span>SCP&#8209;3143 &ldquo;Murphy Law&rdquo; — art by <b>zal</b> (2022)</span>
+      <span>track: <b>BROOKLYN BLOOD POP!</b> — Syko</span>
+    </p>
+  </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
