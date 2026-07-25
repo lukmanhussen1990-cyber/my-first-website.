@@ -1,0 +1,1210 @@
+<title>Windward Range — Target Archery</title>
+
+<style>
+  :root{
+    --ground:#0A1211;
+    --panel:#101A18;
+    --panel-2:#0D1614;
+    --ink:#EAE3D2;
+    --ink-dim:#8E9C93;
+    --edge:rgba(234,227,210,.13);
+    --edge-soft:rgba(234,227,210,.07);
+    --gold:#E8B93C;
+    --red:#C8362B;
+    --blue:#2E6E9E;
+    --ring-black:#191D20;
+    --ring-white:#E6E1D3;
+    --display:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --ui:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --data:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+
+  body{
+    margin:0;
+    background:
+      radial-gradient(120% 70% at 50% -10%, #16241F 0%, transparent 60%),
+      var(--ground);
+    color:var(--ink);
+    font-family:var(--ui);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+
+  .wrap{
+    max-width:1080px;
+    margin:0 auto;
+    padding:clamp(18px,3vw,38px) clamp(14px,3vw,28px) 56px;
+    display:flex;
+    flex-direction:column;
+    gap:clamp(14px,2vw,22px);
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:20px;
+    flex-wrap:wrap;
+    border-bottom:1px solid var(--edge);
+    padding-bottom:14px;
+  }
+  .eyebrow{
+    font-family:var(--data);
+    font-size:.66rem;
+    letter-spacing:.24em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    margin:0 0 6px;
+  }
+  h1{
+    font-family:var(--display);
+    font-weight:400;
+    font-size:clamp(1.7rem,4vw,2.6rem);
+    letter-spacing:-.015em;
+    line-height:1.02;
+    margin:0;
+    text-wrap:balance;
+  }
+  h1 em{ font-style:italic; color:var(--gold); }
+  .standfirst{
+    margin:8px 0 0;
+    max-width:44ch;
+    color:var(--ink-dim);
+    font-size:.94rem;
+  }
+  .best{
+    font-family:var(--data);
+    font-size:.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    text-align:right;
+    white-space:nowrap;
+  }
+  .best b{
+    display:block;
+    font-size:1.5rem;
+    letter-spacing:.02em;
+    color:var(--ink);
+    font-variant-numeric:tabular-nums;
+    font-weight:500;
+  }
+
+  /* ---------- stage ---------- */
+  .stage{
+    position:relative;
+    aspect-ratio:16/10;
+    max-height:68vh;
+    border:1px solid var(--edge);
+    border-radius:3px;
+    overflow:hidden;
+    background:var(--panel-2);
+    touch-action:none;
+    cursor:crosshair;
+  }
+  .stage:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+  canvas{ display:block; width:100%; height:100%; }
+
+  /* ---------- hud ---------- */
+  .hud{
+    position:absolute; inset:0;
+    pointer-events:none;
+    padding:clamp(10px,1.6vw,18px);
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    grid-template-rows:auto 1fr auto;
+    gap:10px;
+    font-family:var(--data);
+    font-size:.7rem;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+  }
+  .hud .tl{ grid-area:1/1; }
+  .hud .tr{ grid-area:1/3; text-align:right; }
+  .hud .bl{ grid-area:3/1; }
+  .hud .br{ grid-area:3/3; text-align:right; }
+  .stat{ color:var(--ink-dim); }
+  .stat b{
+    display:block;
+    font-size:1.05rem;
+    letter-spacing:.04em;
+    font-weight:500;
+    color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .stat b.wind{ color:var(--gold); }
+
+  /* draw meter, left rail */
+  .meter{
+    grid-area:2/1;
+    align-self:center;
+    width:9px;
+    height:min(46%,190px);
+    background:rgba(234,227,210,.09);
+    border:1px solid var(--edge);
+    position:relative;
+    overflow:hidden;
+  }
+  .meter .zone{
+    position:absolute; left:0; right:0;
+    bottom:85%; height:15%;
+    background:rgba(232,185,60,.26);
+    border-top:1px solid rgba(232,185,60,.7);
+    border-bottom:1px solid rgba(232,185,60,.45);
+  }
+  .meter .fill{
+    position:absolute; left:0; right:0; bottom:0;
+    height:0%;
+    background:linear-gradient(0deg,#7E6A2E,var(--gold));
+  }
+  .meter.fatigued .fill{ background:linear-gradient(0deg,#7A2B22,var(--red)); }
+  .meter-label{
+    grid-area:2/1;
+    align-self:center;
+    justify-self:start;
+    margin-left:20px;
+    color:var(--ink-dim);
+    font-size:.6rem;
+    letter-spacing:.2em;
+    writing-mode:vertical-rl;
+    opacity:.75;
+  }
+
+  /* centred call-out */
+  .callout{
+    grid-area:2/2;
+    align-self:end;
+    justify-self:center;
+    margin-bottom:4%;
+    text-align:center;
+    pointer-events:auto;
+    background:rgba(10,18,17,.86);
+    border:1px solid var(--edge);
+    padding:18px 26px;
+    max-width:min(360px,80%);
+    display:none;
+  }
+  .callout.show{ display:block; }
+  .callout .kicker{ color:var(--ink-dim); font-size:.62rem; letter-spacing:.24em; }
+  .callout .headline{
+    font-family:var(--display);
+    font-size:1.5rem;
+    letter-spacing:0;
+    text-transform:none;
+    margin:6px 0 2px;
+  }
+  .callout .detail{
+    font-family:var(--ui);
+    text-transform:none;
+    letter-spacing:0;
+    font-size:.86rem;
+    color:var(--ink-dim);
+    margin:0 0 14px;
+  }
+
+  button{
+    font-family:var(--data);
+    font-size:.68rem;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--ground);
+    background:var(--gold);
+    border:0;
+    padding:9px 18px;
+    cursor:pointer;
+  }
+  button:hover{ background:#F2C750; }
+  button:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+  button.ghost{
+    background:transparent;
+    color:var(--ink-dim);
+    border:1px solid var(--edge);
+  }
+  button.ghost:hover{ color:var(--ink); border-color:var(--ink-dim); }
+
+  .toast{
+    grid-area:3/2;
+    justify-self:center;
+    align-self:end;
+    color:var(--ink-dim);
+    opacity:0;
+    transition:opacity .3s;
+  }
+  .toast.show{ opacity:1; }
+
+  /* ---------- scorecard ---------- */
+  .card{
+    border:1px solid var(--edge);
+    background:var(--panel);
+    padding:clamp(12px,2vw,18px);
+    overflow-x:auto;
+  }
+  table{ border-collapse:collapse; width:100%; min-width:520px; }
+  caption{
+    text-align:left;
+    font-family:var(--data);
+    font-size:.62rem;
+    letter-spacing:.24em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    padding-bottom:12px;
+  }
+  th,td{ padding:7px 6px; text-align:center; }
+  thead th{
+    font-family:var(--data);
+    font-size:.58rem;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    font-weight:400;
+    border-bottom:1px solid var(--edge);
+  }
+  tbody th{
+    text-align:left;
+    font-family:var(--ui);
+    font-weight:500;
+    font-size:.82rem;
+    white-space:nowrap;
+  }
+  tbody th span{
+    display:block;
+    font-family:var(--data);
+    font-size:.6rem;
+    letter-spacing:.14em;
+    color:var(--ink-dim);
+    text-transform:uppercase;
+  }
+  tbody tr+tr th,tbody tr+tr td{ border-top:1px solid var(--edge-soft); }
+  tbody tr.live th{ color:var(--gold); }
+  td.total,td.run{
+    font-family:var(--data);
+    font-variant-numeric:tabular-nums;
+    font-size:.95rem;
+  }
+  td.run{ color:var(--ink-dim); }
+
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:26px; height:26px;
+    border-radius:50%;
+    font-family:var(--data);
+    font-size:.72rem;
+    font-variant-numeric:tabular-nums;
+    border:1px solid var(--edge);
+    color:var(--ink-dim);
+  }
+  .chip.s10,.chip.s9{ background:var(--gold); color:#20180A; border-color:transparent; }
+  .chip.s8,.chip.s7{ background:var(--red); color:#F6E7E3; border-color:transparent; }
+  .chip.s6,.chip.s5{ background:var(--blue); color:#E8F1F7; border-color:transparent; }
+  .chip.s4,.chip.s3{ background:var(--ring-black); color:var(--ink); border-color:rgba(234,227,210,.25); }
+  .chip.s2,.chip.s1{ background:var(--ring-white); color:#1A1A18; border-color:transparent; }
+  .chip.s0{ color:var(--red); border-style:dashed; }
+
+  /* ---------- footer ---------- */
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px 26px;
+    align-items:center;
+    justify-content:space-between;
+    font-family:var(--data);
+    font-size:.64rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+  }
+  .legend p{ margin:0; }
+  .legend kbd{
+    font-family:var(--data);
+    border:1px solid var(--edge);
+    border-bottom-width:2px;
+    padding:1px 5px;
+    color:var(--ink);
+    letter-spacing:0;
+  }
+  .legend .keys{ display:flex; gap:14px; flex-wrap:wrap; }
+
+  @media (max-width:620px){
+    .meter{ height:min(40%,140px); }
+    .meter-label{ display:none; }
+    .hud{ font-size:.62rem; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">Target archery · three ends · eighteen arrows</p>
+      <h1>Windward Range, <em>evening session</em></h1>
+      <p class="standfirst">Eighteen metres, then fifty, then seventy. Six arrows an end.
+        The flag is telling you something — read it before you loose.</p>
+    </div>
+    <p class="best">Best round<b id="best">—</b></p>
+  </header>
+
+  <div class="stage" id="stage" tabindex="0" role="application"
+       aria-label="Archery range. Hold to draw the bow, release to loose the arrow. Arrow keys aim.">
+    <canvas id="range"></canvas>
+
+    <div class="hud">
+      <p class="stat tl">End <span id="endNo">1</span> of 3<b id="arrowNo">Arrow 1 / 6</b></p>
+      <p class="stat tr">Distance<b id="dist">18 m</b></p>
+
+      <div class="meter" id="meter"><div class="zone"></div><div class="fill" id="fill"></div></div>
+      <span class="meter-label">Draw</span>
+
+      <div class="callout" id="callout">
+        <p class="kicker" id="coKicker">End 1 complete</p>
+        <p class="headline" id="coHead">48 points</p>
+        <p class="detail" id="coDetail">Step back to fifty metres.</p>
+        <button id="coBtn" type="button">Walk up</button>
+      </div>
+
+      <p class="stat bl">Wind<b class="wind" id="wind">1.2 m/s →</b></p>
+      <p class="toast" id="toast">Let down — take it again</p>
+      <p class="stat br">This end<b id="endScore">0</b></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <caption>Scorecard</caption>
+      <thead>
+        <tr>
+          <th scope="col">End</th>
+          <th scope="col">1</th><th scope="col">2</th><th scope="col">3</th>
+          <th scope="col">4</th><th scope="col">5</th><th scope="col">6</th>
+          <th scope="col">End</th><th scope="col">Running</th>
+        </tr>
+      </thead>
+      <tbody id="cardBody"></tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <div class="keys">
+      <p>Hold <kbd>click</kbd> or <kbd>space</kbd> to draw</p>
+      <p>Release in the gold band</p>
+      <p><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> aim</p>
+    </div>
+    <p><button class="ghost" id="soundBtn" type="button" aria-pressed="true">Sound on</button></p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var cv = document.getElementById("range");
+  var ctx = cv.getContext("2d");
+  var stage = document.getElementById("stage");
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var el = {
+    endNo: document.getElementById("endNo"),
+    arrowNo: document.getElementById("arrowNo"),
+    dist: document.getElementById("dist"),
+    wind: document.getElementById("wind"),
+    endScore: document.getElementById("endScore"),
+    fill: document.getElementById("fill"),
+    meter: document.getElementById("meter"),
+    callout: document.getElementById("callout"),
+    coKicker: document.getElementById("coKicker"),
+    coHead: document.getElementById("coHead"),
+    coDetail: document.getElementById("coDetail"),
+    coBtn: document.getElementById("coBtn"),
+    toast: document.getElementById("toast"),
+    cardBody: document.getElementById("cardBody"),
+    best: document.getElementById("best"),
+    soundBtn: document.getElementById("soundBtn")
+  };
+
+  /* ------------------------------------------------------------------ */
+  /*  round definition — real World Archery distances and face sizes      */
+  /* ------------------------------------------------------------------ */
+  var ENDS = [
+    { dist: 18, face: 40,  wind: 1.0, walk: "Step back to fifty metres." },
+    { dist: 50, face: 80,  wind: 1.9, walk: "Seventy metres. Last end." },
+    { dist: 70, face: 122, wind: 2.6, walk: "" }
+  ];
+  var ARROWS = 6;
+
+  var G = {
+    end: 0,
+    arrow: 0,
+    phase: "aim",           // aim | draw | fly | between | done
+    scores: [[], [], []],
+    marks: [],              // impacts on the current face, in face units
+    wind: { base: 1, sign: 1, cur: 1 },
+    t: 0
+  };
+
+  var aim = { x: 0, y: 0 };
+  var draw = { held: 0, power: 0, fatigue: 0, phaseT: 0 };
+  var shot = null;
+  var pops = [];
+  var keys = Object.create(null);
+  var W = 0, H = 0;
+  var trees = [];
+
+  var clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
+  var lerp = function (a, b, t) { return a + (b - a) * t; };
+
+  /* ------------------------------------------------------------------ */
+  /*  geometry                                                           */
+  /* ------------------------------------------------------------------ */
+  function horizon() { return H * 0.30; }
+
+  function geom() {
+    var e = ENDS[G.end];
+    var m = Math.min(W, H);
+    var apparent = e.face / e.dist;                 // angular size
+    var R = m * 0.145 * (apparent / (40 / 18));
+    var hz = horizon();
+    var f = 0.14 + 0.34 * Math.pow(18 / e.dist, 0.7);
+    var groundY = hz + (H - hz) * f;
+    return { cx: W * 0.5, cy: groundY - R * 1.0, R: R, groundY: groundY };
+  }
+
+  function resize() {
+    var r = stage.getBoundingClientRect();
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = r.width; H = r.height;
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    trees = [];
+    var seed = 7;
+    var rnd = function () { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+    for (var x = -30; x < W + 30; x += 9 + rnd() * 16) {
+      trees.push({ x: x, h: 10 + rnd() * 26, w: 6 + rnd() * 12 });
+    }
+
+    var g = geom();
+    if (!aim.x) { aim.x = g.cx; aim.y = g.cy; }
+    aim.x = clamp(aim.x, 8, W - 8);
+    aim.y = clamp(aim.y, 8, H - 8);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  audio — synthesised, no assets                                     */
+  /* ------------------------------------------------------------------ */
+  var AC = null, muted = false;
+  function ac() {
+    if (!AC) {
+      var C = window.AudioContext || window.webkitAudioContext;
+      if (C) AC = new C();
+    }
+    if (AC && AC.state === "suspended") AC.resume();
+    return AC;
+  }
+  function noise(dur, freq, q, gain) {
+    var a = ac(); if (!a || muted) return;
+    var n = Math.floor(a.sampleRate * dur);
+    var buf = a.createBuffer(1, n, a.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.5);
+    var src = a.createBufferSource(); src.buffer = buf;
+    var flt = a.createBiquadFilter(); flt.type = "bandpass"; flt.frequency.value = freq; flt.Q.value = q;
+    var g = a.createGain(); g.gain.value = gain;
+    src.connect(flt); flt.connect(g); g.connect(a.destination);
+    src.start();
+  }
+  function tone(f0, f1, dur, gain, type) {
+    var a = ac(); if (!a || muted) return;
+    var o = a.createOscillator(); o.type = type || "sine";
+    var g = a.createGain();
+    o.frequency.setValueAtTime(f0, a.currentTime);
+    o.frequency.exponentialRampToValueAtTime(f1, a.currentTime + dur);
+    g.gain.setValueAtTime(gain, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur);
+    o.connect(g); g.connect(a.destination);
+    o.start(); o.stop(a.currentTime + dur + 0.02);
+  }
+  var sfx = {
+    loose: function () { noise(0.16, 2200, 1.2, 0.16); tone(220, 90, 0.14, 0.09, "triangle"); },
+    hit: function (s) { noise(0.09, s >= 9 ? 1400 : 700, 3, 0.2); tone(s >= 9 ? 520 : 300, 120, 0.1, 0.08, "square"); },
+    miss: function () { noise(0.22, 320, 0.8, 0.14); },
+    ding: function () { tone(880, 660, 0.5, 0.06, "sine"); }
+  };
+  el.soundBtn.addEventListener("click", function () {
+    muted = !muted;
+    el.soundBtn.textContent = muted ? "Sound off" : "Sound on";
+    el.soundBtn.setAttribute("aria-pressed", String(!muted));
+  });
+
+  /* ------------------------------------------------------------------ */
+  /*  scene painting                                                     */
+  /* ------------------------------------------------------------------ */
+  function paintSky() {
+    var hz = horizon();
+    var sky = ctx.createLinearGradient(0, 0, 0, hz);
+    sky.addColorStop(0, "#0B1620");
+    sky.addColorStop(0.55, "#1D3038");
+    sky.addColorStop(1, "#4A4634");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, hz + 1);
+
+    var glow = ctx.createRadialGradient(W * 0.72, hz, 0, W * 0.72, hz, W * 0.45);
+    glow.addColorStop(0, "rgba(232,185,60,.22)");
+    glow.addColorStop(1, "rgba(232,185,60,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, hz + 1);
+  }
+
+  function paintTreeline() {
+    var hz = horizon();
+    ctx.fillStyle = "#0F1C1B";
+    ctx.fillRect(0, hz - Math.min(W, H) * 0.012, W, Math.min(W, H) * 0.013 + 1);
+    for (var i = 0; i < trees.length; i++) {
+      var t = trees[i];
+      ctx.beginPath();
+      ctx.moveTo(t.x - t.w / 2, hz + 1);
+      ctx.quadraticCurveTo(t.x - t.w * 0.22, hz - t.h * 0.7, t.x, hz - t.h);
+      ctx.quadraticCurveTo(t.x + t.w * 0.22, hz - t.h * 0.7, t.x + t.w / 2, hz + 1);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  function paintField() {
+    var hz = horizon();
+    var grad = ctx.createLinearGradient(0, hz, 0, H);
+    grad.addColorStop(0, "#22352C");
+    grad.addColorStop(0.45, "#1A2A24");
+    grad.addColorStop(1, "#0C1512");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, hz, W, H - hz);
+
+    // mown stripes converging on the vanishing point
+    var vx = W * 0.5, band = W / 7;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, hz, W, H - hz); ctx.clip();
+    for (var i = -6; i <= 6; i++) {
+      if (i % 2) continue;
+      var x0 = vx + i * band, x1 = x0 + band;
+      ctx.fillStyle = "rgba(255,255,255,.022)";
+      ctx.beginPath();
+      ctx.moveTo(x0, H);
+      ctx.lineTo(x1, H);
+      ctx.lineTo(lerp(x1, vx, 0.94), hz);
+      ctx.lineTo(lerp(x0, vx, 0.94), hz);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // shooting-line markers receding down the field
+    ctx.strokeStyle = "rgba(234,227,210,.10)";
+    ctx.lineWidth = 1;
+    for (var k = 1; k <= 4; k++) {
+      var p = k / 5, y = hz + (H - hz) * (p * p * 0.86 + 0.06);
+      var spread = lerp(0.06, 0.5, p * p);
+      ctx.beginPath();
+      ctx.moveTo(W * (0.5 - spread), y);
+      ctx.lineTo(W * (0.5 + spread), y);
+      ctx.stroke();
+    }
+  }
+
+  function paintFlag(g) {
+    var hz = horizon();
+    var px = g.cx + g.R * 2.6;
+    var base = lerp(g.groundY, H, 0.12);
+    var ph = (base - hz) * 0.42 + g.R * 0.5;
+    ctx.strokeStyle = "rgba(234,227,210,.4)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(px, base); ctx.lineTo(px, base - ph); ctx.stroke();
+
+    var s = G.wind.sign;
+    var strength = clamp(Math.abs(G.wind.cur) / 3.4, 0.05, 1);
+    var len = (ph * 0.34) * (0.35 + strength * 0.65);
+    var flutter = reduce ? 0 : Math.sin(G.t * 7) * len * 0.13 * strength;
+    var top = base - ph + 2;
+    ctx.fillStyle = "rgba(232,185,60,.85)";
+    ctx.beginPath();
+    ctx.moveTo(px, top);
+    ctx.quadraticCurveTo(px + s * len * 0.55, top + flutter - len * 0.06, px + s * len, top + flutter * 1.6 + len * 0.08);
+    ctx.lineTo(px + s * len * 0.5, top + len * 0.28 + flutter);
+    ctx.quadraticCurveTo(px + s * len * 0.24, top + len * 0.22, px, top + len * 0.3);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function paintTarget(g) {
+    var R = g.R;
+
+    // stand legs + straw bale
+    ctx.strokeStyle = "#2A2118";
+    ctx.lineWidth = Math.max(2, R * 0.06);
+    ctx.beginPath();
+    ctx.moveTo(g.cx - R * 0.55, g.groundY); ctx.lineTo(g.cx - R * 0.16, g.cy);
+    ctx.moveTo(g.cx + R * 0.55, g.groundY); ctx.lineTo(g.cx + R * 0.16, g.cy);
+    ctx.stroke();
+
+    var bw = R * 1.12, bh = R * 1.08;
+    ctx.fillStyle = "#5E5233";
+    ctx.beginPath();
+    ctx.rect(g.cx - bw, g.cy - bh, bw * 2, bh * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,.22)";
+    ctx.lineWidth = 1;
+    for (var s = -bh; s < bh; s += Math.max(3, R * 0.11)) {
+      ctx.beginPath();
+      ctx.moveTo(g.cx - bw, g.cy + s);
+      ctx.lineTo(g.cx + bw, g.cy + s);
+      ctx.stroke();
+    }
+    ctx.fillStyle = "rgba(0,0,0,.3)";
+    ctx.fillRect(g.cx - bw, g.cy + bh - R * 0.12, bw * 2, R * 0.12);
+
+    // ten-ring World Archery face
+    var cols = ["#E6E1D3", "#E6E1D3", "#191D20", "#191D20", "#2E6E9E", "#2E6E9E", "#C8362B", "#C8362B", "#E8B93C", "#E8B93C"];
+    for (var i = 0; i < 10; i++) {
+      ctx.beginPath();
+      ctx.arc(g.cx, g.cy, R * (1 - i / 10), 0, Math.PI * 2);
+      ctx.fillStyle = cols[i];
+      ctx.fill();
+    }
+    // ring divisions
+    ctx.lineWidth = Math.max(0.5, R * 0.006);
+    for (var j = 1; j < 10; j++) {
+      var rr = R * (1 - j / 10);
+      ctx.strokeStyle = (j >= 8) ? "rgba(0,0,0,.35)" : (j >= 4 ? "rgba(255,255,255,.35)" : "rgba(0,0,0,.3)");
+      ctx.beginPath(); ctx.arc(g.cx, g.cy, rr, 0, Math.PI * 2); ctx.stroke();
+    }
+    // inner ten (the X)
+    var xr = R * 0.05;
+    ctx.strokeStyle = "rgba(0,0,0,.5)";
+    ctx.beginPath(); ctx.arc(g.cx, g.cy, xr, 0, Math.PI * 2); ctx.stroke();
+
+    // shading so the face reads as a physical object
+    var sh = ctx.createLinearGradient(g.cx - R, g.cy - R, g.cx + R, g.cy + R);
+    sh.addColorStop(0, "rgba(255,240,200,.10)");
+    sh.addColorStop(0.5, "rgba(0,0,0,0)");
+    sh.addColorStop(1, "rgba(0,0,0,.22)");
+    ctx.fillStyle = sh;
+    ctx.beginPath(); ctx.arc(g.cx, g.cy, R, 0, Math.PI * 2); ctx.fill();
+  }
+
+  function paintMarks(g) {
+    for (var i = 0; i < G.marks.length; i++) {
+      var m = G.marks[i];
+      var x = g.cx + m.x * g.R, y = g.cy + m.y * g.R;
+      var r = Math.max(2, g.R * 0.035);
+      ctx.fillStyle = "rgba(0,0,0,.45)";
+      ctx.beginPath(); ctx.arc(x + r * 0.4, y + r * 0.4, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#EAE3D2";
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#C8362B";
+      ctx.beginPath(); ctx.arc(x, y, r * 0.42, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function paintArrow() {
+    if (!shot) return;
+    var t = clamp(shot.t / shot.dur, 0, 1);
+    var e = t * t * 0.55 + t * 0.45;                 // slight ease-out
+    var x = lerp(shot.from.x, shot.to.x, e);
+    var arc = shot.arc * Math.sin(Math.PI * e);
+    var y = lerp(shot.from.y, shot.to.y, e) - arc;
+    var sc = lerp(1, 0.1, e);
+    var len = Math.min(W, H) * 0.22 * sc;
+
+    var ang = Math.atan2(shot.to.y - shot.from.y - shot.arc * Math.cos(Math.PI * e) * Math.PI * 0.4,
+                         shot.to.x - shot.from.x);
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(ang);
+    ctx.strokeStyle = "#D9CDB2";
+    ctx.lineWidth = Math.max(1, 3.2 * sc);
+    ctx.beginPath(); ctx.moveTo(-len, 0); ctx.lineTo(len * 0.5, 0); ctx.stroke();
+    ctx.fillStyle = "#B9B0A0";
+    ctx.beginPath();
+    ctx.moveTo(len * 0.5, 0); ctx.lineTo(len * 0.22, -2.6 * sc); ctx.lineTo(len * 0.22, 2.6 * sc);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#C8362B";
+    for (var k = 0; k < 2; k++) {
+      var off = -len + k * len * 0.16;
+      ctx.beginPath();
+      ctx.moveTo(off, 0);
+      ctx.lineTo(off + len * 0.2, -5 * sc);
+      ctx.lineTo(off + len * 0.16, 0);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function paintBow() {
+    // the archer's own bow, held at the left edge of frame
+    var p = (G.phase === "draw") ? draw.power : 0;
+    var bx = W * 0.062;
+    var ty = H * 0.36, by = H * 1.04;
+    var span = by - ty;
+    var mid = (ty + by) / 2;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // limbs — a single arc bellying away from the archer
+    ctx.strokeStyle = "#33291B";
+    ctx.lineWidth = Math.max(4, span * 0.028);
+    ctx.beginPath();
+    ctx.moveTo(bx, ty);
+    ctx.quadraticCurveTo(bx - span * 0.20, mid, bx, by);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(232,185,60,.16)";
+    ctx.lineWidth = Math.max(1, span * 0.008);
+    ctx.beginPath();
+    ctx.moveTo(bx, ty);
+    ctx.quadraticCurveTo(bx - span * 0.20, mid, bx, by);
+    ctx.stroke();
+
+    // grip, seated on the belly of the arc
+    var belly = bx - span * 0.10;
+    ctx.strokeStyle = "#1C1710";
+    ctx.lineWidth = Math.max(6, span * 0.046);
+    ctx.beginPath();
+    ctx.moveTo(belly, mid - span * 0.06);
+    ctx.lineTo(belly, mid + span * 0.06);
+    ctx.stroke();
+
+    // string, drawn back as the bow comes to full draw
+    var nx = bx + span * (0.015 + p * 0.10);
+    ctx.strokeStyle = "rgba(234,227,210,.55)";
+    ctx.lineWidth = Math.max(1, span * 0.0055);
+    ctx.beginPath();
+    ctx.moveTo(bx, ty);
+    ctx.lineTo(nx, mid);
+    ctx.lineTo(bx, by);
+    ctx.stroke();
+
+    // nocked arrow, riding the string and pointing where you are looking
+    if (p > 0) {
+      var sw = swayOffset();
+      var ang = Math.atan2((aim.y + sw.y) - mid, (aim.x + sw.x) - nx);
+      var len = span * 0.34;
+      ctx.strokeStyle = "rgba(217,205,178,.8)";
+      ctx.lineWidth = Math.max(1.5, span * 0.009);
+      ctx.beginPath();
+      ctx.moveTo(nx, mid);
+      ctx.lineTo(nx + Math.cos(ang) * len, mid + Math.sin(ang) * len);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function paintReticle(g) {
+    if (G.phase === "fly" || G.phase === "between" || G.phase === "done") return;
+    var sw = swayOffset();
+    var x = aim.x + sw.x, y = aim.y + sw.y;
+    var r = Math.max(9, g.R * 0.13);
+    ctx.save();
+    ctx.strokeStyle = draw.fatigue > 0.35 ? "rgba(200,54,43,.9)" : "rgba(234,227,210,.8)";
+    ctx.lineWidth = 1.25;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - r * 1.9, y); ctx.lineTo(x - r * 1.25, y);
+    ctx.moveTo(x + r * 1.25, y); ctx.lineTo(x + r * 1.9, y);
+    ctx.moveTo(x, y - r * 1.9); ctx.lineTo(x, y - r * 1.25);
+    ctx.moveTo(x, y + r * 1.25); ctx.lineTo(x, y + r * 1.9);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(232,185,60,.95)";
+    ctx.beginPath(); ctx.arc(x, y, 1.8, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function paintPops() {
+    for (var i = 0; i < pops.length; i++) {
+      var p = pops[i];
+      var k = p.t / p.dur;
+      ctx.save();
+      ctx.globalAlpha = 1 - k;
+      ctx.fillStyle = p.color;
+      ctx.font = "500 " + Math.round(Math.min(W, H) * 0.055) + "px " + '"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+      ctx.textAlign = "center";
+      ctx.fillText(p.text, p.x, p.y - k * Math.min(W, H) * 0.08);
+      ctx.restore();
+    }
+  }
+
+  function paintVignette() {
+    var v = ctx.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.3, W / 2, H * 0.5, Math.max(W, H) * 0.75);
+    v.addColorStop(0, "rgba(0,0,0,0)");
+    v.addColorStop(1, "rgba(0,0,0,.5)");
+    ctx.fillStyle = v;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  ballistics                                                         */
+  /* ------------------------------------------------------------------ */
+  function swayOffset() {
+    if (G.phase !== "draw") return { x: 0, y: 0 };
+    var g = geom();
+    var amp = g.R * (0.02 + draw.fatigue * 0.18);
+    return {
+      x: Math.sin(G.t * 3.1) * amp + Math.sin(G.t * 7.7) * amp * 0.35,
+      y: Math.cos(G.t * 2.3) * amp * 0.8 + Math.sin(G.t * 6.1) * amp * 0.3
+    };
+  }
+
+  function startDraw() {
+    if (G.phase !== "aim") return;
+    G.phase = "draw";
+    draw.held = 0; draw.power = 0; draw.fatigue = 0;
+    ac();
+  }
+
+  function release() {
+    if (G.phase !== "draw") return;
+    var g = geom();
+    var e = ENDS[G.end];
+    var sw = swayOffset();
+    var p = draw.power;
+
+    var drop = (1 - p) * g.R * (1.2 + e.dist / 40);
+    var drift = G.wind.cur * G.wind.sign * g.R * 0.05 * Math.pow(e.dist / 18, 0.85);
+    var slop = p < 0.85 ? (Math.random() - 0.5) * g.R * 0.3 * (1 - p) : 0;
+
+    var to = { x: aim.x + sw.x + drift + slop, y: aim.y + sw.y + drop };
+
+    shot = {
+      from: { x: W * 0.062 + H * 0.078, y: H * 0.70 },
+      to: to,
+      arc: Math.min(W, H) * 0.06 * (0.4 + e.dist / 70),
+      t: 0,
+      dur: 0.45 + e.dist / 110
+    };
+    G.phase = "fly";
+    sfx.loose();
+    setMeter(0, false);
+  }
+
+  function letDown() {
+    G.phase = "aim";
+    draw.power = 0; draw.fatigue = 0; draw.held = 0;
+    setMeter(0, false);
+    showToast("Let down — that one is free");
+  }
+
+  function land() {
+    var g = geom();
+    var dx = (shot.to.x - g.cx) / g.R;
+    var dy = (shot.to.y - g.cy) / g.R;
+    var d = Math.hypot(dx, dy);
+    var score = d > 1 ? 0 : Math.max(1, 11 - Math.max(1, Math.ceil(d * 10)));
+    var isX = d <= 0.05;
+
+    if (score > 0) {
+      G.marks.push({ x: dx, y: dy });
+      sfx.hit(score);
+    } else {
+      sfx.miss();
+    }
+
+    pops.push({
+      text: score === 0 ? "miss" : (isX ? "X" : String(score)),
+      x: g.cx, y: g.cy - g.R * 1.2,
+      color: score === 0 ? "#C8362B" : score >= 9 ? "#E8B93C" : "#EAE3D2",
+      t: 0, dur: 1.1
+    });
+
+    G.scores[G.end].push({ v: score, x: isX });
+    shot = null;
+    G.arrow++;
+
+    renderCard();
+    updateHud();
+
+    if (G.arrow >= ARROWS) {
+      G.phase = "between";
+      setTimeout(finishEnd, 700);
+    } else {
+      G.phase = "aim";
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  round flow                                                         */
+  /* ------------------------------------------------------------------ */
+  function endTotal(i) {
+    return G.scores[i].reduce(function (a, b) { return a + b.v; }, 0);
+  }
+  function grandTotal() {
+    return endTotal(0) + endTotal(1) + endTotal(2);
+  }
+
+  function finishEnd() {
+    sfx.ding();
+    var t = endTotal(G.end);
+    if (G.end === ENDS.length - 1) {
+      G.phase = "done";
+      var total = grandTotal();
+      var xs = 0, tens = 0, i, j;
+      for (i = 0; i < 3; i++) for (j = 0; j < G.scores[i].length; j++) {
+        if (G.scores[i][j].x) xs++;
+        if (G.scores[i][j].v === 10) tens++;
+      }
+      saveBest(total);
+      show("Round complete",
+           total + " of 180",
+           tens + " tens, " + xs + " of them dead centre. " + verdict(total),
+           "Shoot again", reset);
+    } else {
+      show("End " + (G.end + 1) + " complete", t + " points",
+           ENDS[G.end].walk, "Walk up", nextEnd);
+    }
+  }
+
+  function verdict(total) {
+    if (total >= 150) return "That is a scorecard worth keeping.";
+    if (total >= 110) return "Solid grouping. The gold is in reach.";
+    if (total >= 70) return "The wind took its share.";
+    return "Every archer starts here.";
+  }
+
+  function nextEnd() {
+    G.end++;
+    G.arrow = 0;
+    G.marks = [];
+    newWind();
+    hide();
+    G.phase = "aim";
+    var g = geom();
+    aim.x = g.cx; aim.y = g.cy;
+    renderCard();
+    updateHud();
+  }
+
+  function newWind() {
+    var e = ENDS[G.end];
+    G.wind.base = e.wind * (0.55 + Math.random() * 0.9);
+    G.wind.sign = Math.random() < 0.5 ? -1 : 1;
+  }
+
+  function reset() {
+    G.end = 0; G.arrow = 0; G.marks = [];
+    G.scores = [[], [], []];
+    pops = []; shot = null;
+    newWind();
+    hide();
+    G.phase = "aim";
+    var g = geom();
+    aim.x = g.cx; aim.y = g.cy;
+    renderCard();
+    updateHud();
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  chrome                                                             */
+  /* ------------------------------------------------------------------ */
+  function setMeter(p, fatigued) {
+    el.fill.style.height = (p * 100).toFixed(1) + "%";
+    el.meter.classList.toggle("fatigued", !!fatigued);
+  }
+
+  var toastTimer = null;
+  function showToast(msg) {
+    el.toast.textContent = msg;
+    el.toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.toast.classList.remove("show"); }, 1600);
+  }
+
+  var coAction = null;
+  function show(kicker, head, detail, btn, action) {
+    el.coKicker.textContent = kicker;
+    el.coHead.textContent = head;
+    el.coDetail.textContent = detail;
+    el.coBtn.textContent = btn;
+    coAction = action;
+    el.callout.classList.add("show");
+    el.coBtn.focus();
+  }
+  function hide() {
+    el.callout.classList.remove("show");
+    stage.focus();               // hand the keyboard back to the range
+  }
+  el.coBtn.addEventListener("click", function () { if (coAction) coAction(); });
+
+  function updateHud() {
+    var e = ENDS[G.end];
+    el.endNo.textContent = String(G.end + 1);
+    el.arrowNo.textContent = "Arrow " + Math.min(G.arrow + 1, ARROWS) + " / " + ARROWS;
+    el.dist.textContent = e.dist + " m";
+    el.endScore.textContent = String(endTotal(G.end));
+    var w = Math.abs(G.wind.cur);
+    el.wind.textContent = w.toFixed(1) + " m/s " + (G.wind.sign > 0 ? "→" : "←");
+  }
+
+  function renderCard() {
+    var html = "";
+    for (var i = 0; i < ENDS.length; i++) {
+      var live = (i === G.end && G.phase !== "done") ? ' class="live"' : "";
+      html += "<tr" + live + '><th scope="row">End ' + (i + 1) + "<span>" + ENDS[i].dist + " m · " + ENDS[i].face + " cm</span></th>";
+      for (var a = 0; a < ARROWS; a++) {
+        var s = G.scores[i][a];
+        if (s) {
+          html += '<td><span class="chip s' + s.v + '">' + (s.x ? "X" : (s.v === 0 ? "M" : s.v)) + "</span></td>";
+        } else {
+          html += '<td><span class="chip" aria-hidden="true">·</span></td>';
+        }
+      }
+      var running = 0;
+      for (var k = 0; k <= i; k++) running += endTotal(k);
+      var shotAny = G.scores[i].length > 0;
+      html += '<td class="total">' + (shotAny ? endTotal(i) : "—") + "</td>";
+      html += '<td class="run">' + (shotAny ? running : "—") + "</td></tr>";
+    }
+    el.cardBody.innerHTML = html;
+  }
+
+  function saveBest(total) {
+    var prev = 0;
+    try { prev = parseInt(localStorage.getItem("windward.best") || "0", 10) || 0; } catch (err) { prev = 0; }
+    if (total > prev) {
+      try { localStorage.setItem("windward.best", String(total)); } catch (err) { /* private mode */ }
+      prev = total;
+    }
+    el.best.textContent = prev + " / 180";
+  }
+  function loadBest() {
+    var prev = 0;
+    try { prev = parseInt(localStorage.getItem("windward.best") || "0", 10) || 0; } catch (err) { prev = 0; }
+    el.best.textContent = prev ? prev + " / 180" : "—";
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  input                                                              */
+  /* ------------------------------------------------------------------ */
+  function pointAt(ev) {
+    var r = cv.getBoundingClientRect();
+    aim.x = clamp(ev.clientX - r.left, 6, W - 6);
+    aim.y = clamp(ev.clientY - r.top, 6, H - 6);
+  }
+
+  stage.addEventListener("pointerdown", function (ev) {
+    if (ev.target.tagName === "BUTTON") return;
+    stage.focus();
+    if (G.phase !== "aim") return;
+    ev.preventDefault();
+    pointAt(ev);
+    stage.setPointerCapture(ev.pointerId);
+    startDraw();
+  });
+  stage.addEventListener("pointermove", function (ev) {
+    if (G.phase === "aim" || G.phase === "draw") pointAt(ev);
+  });
+  window.addEventListener("pointerup", function () { if (G.phase === "draw") release(); });
+  window.addEventListener("pointercancel", function () { if (G.phase === "draw") letDown(); });
+
+  stage.addEventListener("keydown", function (ev) {
+    var k = ev.key;
+    if (k === " " || k === "Spacebar") {
+      ev.preventDefault();
+      if (!keys.space) { keys.space = true; startDraw(); }
+      return;
+    }
+    if (k.indexOf("Arrow") === 0 || "wasdWASD".indexOf(k) > -1) {
+      ev.preventDefault();
+      keys[k.toLowerCase()] = true;
+    }
+  });
+  stage.addEventListener("keyup", function (ev) {
+    var k = ev.key;
+    if (k === " " || k === "Spacebar") {
+      ev.preventDefault();
+      keys.space = false;
+      release();
+      return;
+    }
+    keys[k.toLowerCase()] = false;
+  });
+  stage.addEventListener("blur", function () {
+    keys = Object.create(null);
+    if (G.phase === "draw") letDown();
+  });
+
+  function applyKeys(dt) {
+    var v = Math.min(W, H) * 0.45 * dt;
+    if (keys.arrowleft || keys.a) aim.x -= v;
+    if (keys.arrowright || keys.d) aim.x += v;
+    if (keys.arrowup || keys.w) aim.y -= v;
+    if (keys.arrowdown || keys.s) aim.y += v;
+    aim.x = clamp(aim.x, 6, W - 6);
+    aim.y = clamp(aim.y, 6, H - 6);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  loop                                                               */
+  /* ------------------------------------------------------------------ */
+  var last = 0;
+  function frame(now) {
+    var dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016;
+    last = now;
+    G.t += dt;
+
+    // gusting wind
+    G.wind.cur = G.wind.base * (1 + 0.28 * Math.sin(G.t * 0.55) + 0.14 * Math.sin(G.t * 1.31));
+
+    applyKeys(dt);
+
+    if (G.phase === "draw") {
+      draw.held += dt;
+      draw.power = clamp(draw.held / 1.05, 0, 1);
+      draw.fatigue = clamp((draw.held - 1.45) / 1.3, 0, 1);
+      setMeter(draw.power, draw.fatigue > 0.35);
+      if (draw.held > 2.75) letDown();
+    }
+
+    if (G.phase === "fly" && shot) {
+      shot.t += dt;
+      if (shot.t >= shot.dur) land();
+    }
+
+    for (var i = pops.length - 1; i >= 0; i--) {
+      pops[i].t += dt;
+      if (pops[i].t >= pops[i].dur) pops.splice(i, 1);
+    }
+
+    var g = geom();
+    ctx.clearRect(0, 0, W, H);
+    paintSky();
+    paintTreeline();
+    paintField();
+    paintFlag(g);
+    paintTarget(g);
+    paintMarks(g);
+    paintArrow();
+    paintBow();
+    paintVignette();
+    paintReticle(g);
+    paintPops();
+
+    updateHud();
+    requestAnimationFrame(frame);
+  }
+
+  /* ------------------------------------------------------------------ */
+  window.addEventListener("resize", resize);
+  resize();
+  loadBest();
+  newWind();
+  var g0 = geom();
+  aim.x = g0.cx; aim.y = g0.cy;
+  renderCard();
+  updateHud();
+  requestAnimationFrame(frame);
+})();
+</script>
