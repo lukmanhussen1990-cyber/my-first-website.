@@ -49,6 +49,7 @@
   /* --------------------------------------------------------------- the beat */
   let ctx = null, analyser = null, freq = null, graphOK = false;
   let pulse = 0, level = 0, avg = 0, lastBeat = -9, sawSignal = 0;
+  let bassPeak = 1e-6, midPeak = 1e-6;
 
   function buildGraph() {
     if (ctx) return;
@@ -59,10 +60,10 @@
       const src = ctx.createMediaElementSource(audio);
       analyser = ctx.createAnalyser();
       analyser.fftSize = 1024;
-      analyser.smoothingTimeConstant = 0.5;
+      analyser.smoothingTimeConstant = 0.2;
       src.connect(analyser);
       analyser.connect(ctx.destination);
-      freq = new Uint8Array(analyser.frequencyBinCount);
+      freq = new Float32Array(analyser.frequencyBinCount);
       graphOK = true;
     } catch (e) { graphOK = false; }        // file:// gives an opaque source — fall back
   }
@@ -70,24 +71,30 @@
   function readBeat(t, dt) {
     pulse *= Math.exp(-dt / 0.11);
     if (graphOK && !audio.paused) {
-      analyser.getByteFrequencyData(freq);
+      // byte data clips solid at 255 on a track this loud, so read the dB and
+      // convert back to amplitude — that keeps the kick's dynamics intact
+      analyser.getFloatFrequencyData(freq);
       const binHz = ctx.sampleRate / analyser.fftSize;
-      let bass = 0, n = 0, mid = 0, m = 0;
+      let bass = 0, nb = 0, mid = 0, nm = 0;
       for (let i = 1; i < freq.length; i++) {
-        const f = i * binHz;
-        if (f < 170) { bass += freq[i]; n++; }
-        else if (f < 6000) { mid += freq[i]; m++; }
+        const f = i * binHz, amp = Math.pow(10, freq[i] / 20);
+        if (f < 170) { bass += amp; nb++; }
+        else if (f < 6000) { mid += amp; nm++; }
       }
-      bass = n ? bass / n / 255 : 0;
-      level = m ? Math.min(1, mid / m / 90) : 0;
-      if (bass > 0.02) sawSignal = 1;
-      avg = avg * 0.94 + bass * 0.06;
-      if (bass > avg * 1.28 && bass > 0.16 && t - lastBeat > 0.14) { pulse = 1; lastBeat = t; }
+      bass = nb ? bass / nb : 0;
+      mid = nm ? mid / nm : 0;
+      if (bass > 1e-5) sawSignal = 1;
+      bassPeak = Math.max(bassPeak * 0.9995, bass, 1e-6);
+      midPeak = Math.max(midPeak * 0.9995, mid, 1e-6);
+      level = Math.min(1, mid / midPeak);
+      avg = avg * 0.985 + bass * 0.015;                  // ~1s running mean
+      if (bass > avg * 1.35 && bass > bassPeak * 0.12 && t - lastBeat > 0.15) {
+        pulse = 1; lastBeat = t;
+      }
     }
     if ((!graphOK || !sawSignal) && !audio.paused) {     // silent analyser: run on the clock
       const beat = 60 / BPM_FALLBACK;
-      const k = Math.floor(t / beat);
-      if (k !== Math.floor(lastBeat / beat) || lastBeat < 0) { pulse = 1; lastBeat = t; }
+      if (Math.floor(t / beat) !== Math.floor(lastBeat / beat) || lastBeat < 0) { pulse = 1; lastBeat = t; }
       level = 0.6;
     }
     return pulse;
