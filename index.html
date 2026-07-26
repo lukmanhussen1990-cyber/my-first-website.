@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hand-drawn line animation</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #cfc4b5;
+    display: grid;
+    place-items: center;
+    font: 400 14px system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #4a4238;
+  }
+  figure { margin: 0; width: min(94vw, 1280px); }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    box-shadow: 0 18px 50px rgba(23, 21, 18, .22);
+  }
+  figcaption {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-top: .9rem;
+    letter-spacing: .04em;
+  }
+  button {
+    font: inherit;
+    letter-spacing: .04em;
+    color: inherit;
+    background: none;
+    border: 1px solid rgba(74, 66, 56, .45);
+    border-radius: 3px;
+    padding: .25rem .8rem;
+    cursor: pointer;
+  }
+  button:hover { background: rgba(74, 66, 56, .1); }
+</style>
+</head>
+<body>
+  <figure>
+    <canvas id="stage" width="1280" height="720"></canvas>
+    <figcaption>
+      <span>Hand-drawn line animation &middot; 12&nbsp;fps on twos &middot; 6s loop</span>
+      <button id="toggle" type="button">Pause</button>
+    </figcaption>
+  </figure>
+
+  <script src="assets/anim.js"></script>
+  <script>
+    const ctx = document.getElementById('stage').getContext('2d');
+    const btn = document.getElementById('toggle');
+
+    // Recording mode: render.mjs drives frames one at a time instead.
+    const recording = new URLSearchParams(location.search).has('record');
+    window.renderFrame = (i) => ANIM.render(ctx, i);
+
+    let playing = !recording;
+    let frame = 0;
+    let last = 0;
+
+    function loop(now) {
+      requestAnimationFrame(loop);
+      if (!playing) return;
+      if (now - last < 1000 / ANIM.OUT_FPS) return;
+      last = now;
+      ANIM.render(ctx, frame++);
+    }
+
+    ANIM.render(ctx, 0);
+    if (recording) {
+      btn.parentElement.parentElement.style.boxShadow = 'none';
+    } else {
+      requestAnimationFrame(loop);
+    }
+
+    btn.addEventListener('click', () => {
+      playing = !playing;
+      btn.textContent = playing ? 'Pause' : 'Play';
+    });
+  </script>
+</body>
+</html>
