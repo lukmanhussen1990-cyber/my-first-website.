@@ -7,8 +7,9 @@ a behavior pack + resource pack, bundled into a single `.mcaddon` you tap to imp
 | --- | --- | --- |
 | **One Punch Man** | [`dist/OnePunchMan.mcaddon`](https://github.com/lukmanhussen1990-cyber/my-first-website./raw/claude/one-punch-man-minecraft-mod-3fps55/dist/OnePunchMan.mcaddon) | Normal Punch and Serious Punch items |
 | **Security House** | [`dist/SecurityHouse.mcaddon`](https://github.com/lukmanhussen1990-cyber/my-first-website./raw/claude/one-punch-man-minecraft-mod-3fps55/dist/SecurityHouse.mcaddon) | One command builds a fortified one-floor house |
+| **Vibrant Plus Graphics** | [`dist/VibrantPlusGraphics.mcpack`](https://github.com/lukmanhussen1990-cyber/my-first-website./raw/claude/one-punch-man-minecraft-mod-3fps55/dist/VibrantPlusGraphics.mcpack) | Cinematic lighting, sky, water and colour grading |
 
-### Installing (same for both)
+### Installing (same for all three)
 
 1. Download the `.mcaddon` onto your phone (on GitHub: open the file → **Download raw file**).
 2. Open it. Android offers "Open with Minecraft"; on iOS use **Share → Copy to Minecraft**.
@@ -192,20 +193,105 @@ pushes a fill over that.
 
 ---
 
+# 3. Vibrant Plus Graphics
+
+A graphics pack that rewrites how the world is lit, coloured and rendered: sun and moon
+intensity across the day, sky scattering colours, water clarity and waves, light colours
+for every torch and lantern, and a filmic colour grade over the whole image.
+
+### Read this first — how graphics packs work on Bedrock
+
+**GLSL shader packs do not work on Bedrock mobile any more.** Minecraft switched to the
+RenderDragon engine in 1.16.200 and removed the `shaders/glsl` path that old "shader
+packs" used. Anything still advertised as a mobile shader pack is either for an ancient
+version, or is just a texture pack with a fog tweak.
+
+What replaced it is **Vibrant Visuals** — Mojang's own deferred renderer, with real
+directional shadows, reflections, volumetric lighting and PBR. It is data-driven through
+resource packs, and that is what this pack drives. It is the supported way to change
+Bedrock's graphics today, and it works on phones.
+
+### Requirements
+
+- Minecraft Bedrock **1.21.120 or newer** (the `pbr` pack capability requires it).
+- A device that offers Vibrant Visuals. It's demanding — on older or budget phones the
+  option may be missing or will cost you a lot of frames.
+
+### Applying it on mobile
+
+1. Download **`VibrantPlusGraphics.mcpack`** and open it. Minecraft imports it.
+2. **Turn Vibrant Visuals on** — this is the step people miss, and without it the pack
+   does nothing at all:
+   **Settings → Video → Graphics Mode → Vibrant Visuals.**
+   If that option isn't there, your version or device doesn't support it yet.
+3. Open your world → **Settings → Resource Packs → My Packs → Vibrant Plus Graphics →
+   Activate.**
+4. Go outside around sunrise or sunset, and look at some water.
+
+Global packs work too: **Settings → Global Resources → Vibrant Plus Graphics** applies it
+to every world at once.
+
+### What it changes
+
+| File | What it drives |
+| --- | --- |
+| `lighting/global.json` | Sun 118,000 lux at noon falling to 0.6 at midnight, warm golden sun colour at dawn/dusk, cool blue moonlight, 8° orbital tilt for longer shadows, ambient dropped to 0.014 lux and sky intensity to 0.82 so caves are genuinely dark |
+| `atmospherics/atmospherics.json` | Sky colours keyframed through the day — deep blue zenith, white-blue midday horizon, orange-into-magenta sunset, near-black midnight — plus Rayleigh and Mie scattering strength and sun glare shape |
+| `water/water.json` | Clear blue water (low CDOM/chlorophyll/sediment), 24-octave waves, and caustics at power 3 |
+| `color_grading/color_grading.json` | Teal-and-orange film grade: cool shadows, warm highlights, +16% contrast, +12% saturation, 6200K, ACES tone mapping |
+| `local_lighting/local_lighting.json` | Torches, lanterns, redstone torches and end rods promoted to **point lights** — real dynamic shadows from your torch — with hand-picked colours; campfires, glowstone, sea lanterns, shroomlight, lava and magma get tinted static light |
+| `pbr/global.json` | Default surface roughness for every block, mob, item and particle that has no texture set, so the whole world catches a subtle sheen instead of looking flat |
+
+### Tuning it
+
+Every value is range-checked by `tools/verify_graphics.py` against the documented limits,
+so if you edit something and get it wrong you'll be told which field and what the range is
+instead of hunting through the content log.
+
+| Want | File | Field |
+| --- | --- | --- |
+| Brighter nights | `lighting/global.json` | `moon.illuminance` (0.42), `ambient.illuminance` (0.014) |
+| Darker, harsher shadows | `lighting/global.json` | `sky.intensity` — lower is darker, floor is 0.1 |
+| Less saturated look | `color_grading/color_grading.json` | `midtones.saturation` (1.12) |
+| Warmer or cooler image | `color_grading/color_grading.json` | `temperature.temperature` (6200K) |
+| A different film curve | `color_grading/color_grading.json` | `tone_mapping.operator` — `aces`, `hable`, `generic`, `reinhard`, `reinhard_luma`, `reinhard_luminance` |
+| Calmer water | `water/water.json` | `waves.depth` (0.85), `waves.octaves` (24) |
+| Better performance | `water/water.json`, `local_lighting/local_lighting.json` | drop `waves.octaves`, set `caustics.enabled` to false, and switch point lights back to `static_light` — point lights are by far the most expensive thing here |
+
+### Why there are no per-block PBR textures
+
+A texture set can only reference images **inside its own resource pack** — the game will
+not let a pack attach a normal or MER map to a vanilla texture it doesn't also ship. So
+adding true per-block PBR means redrawing every block texture in the game, which is a
+texture-art project, not a config one. This pack instead uses `pbr/global.json` to set
+sensible material defaults for everything at once, which is where most of the benefit is
+for the effort.
+
+---
+
 ## Repository layout
 
 ```
 OPM_BP/ OPM_RP/     One Punch Man behavior + resource pack
 SEC_BP/ SEC_RP/     Security House behavior + resource pack
+VIS_RP/             Vibrant Plus Graphics resource pack
   SEC_BP/blocks/           the five custom blocks
   SEC_BP/functions/house/  build.mcfunction and the steps it calls
-dist/               the two .mcaddon bundles
+dist/               the three ready-to-import bundles
 tools/
   make_textures.py        One Punch Man item icons
   make_house_textures.py  Security House block textures
   make_house.py           generates the house .mcfunction files
+  make_graphics_icon.py   graphics pack icon
   verify_house.py         replays the build in a voxel grid, proves it is sealed
-  build.py                validates every pack, rebuilds both .mcaddon files
+  verify_graphics.py      range-checks every graphics value against the docs
+  build.py                validates every pack, rebuilds all three bundles
+```
+
+Rebuild everything after an edit:
+
+```bash
+python3 tools/build.py && python3 tools/verify_house.py && python3 tools/verify_graphics.py
 ```
 
 `build.py` checks that every JSON parses, that pack UUIDs are unique, that each item's
@@ -222,8 +308,10 @@ the corridor nor the living room, and that every lever is adjacent to a door it 
 - One Punch Man: stable formats (items `1.20.30`, entities `1.16.0`, recipes `1.20.10`),
   `min_engine_version` `1.20.0`.
 - Security House: blocks use format `1.21.0`, `min_engine_version` `1.21.0`.
-- Neither needs experimental toggles or scripting, so both work on mobile, on Realms and
-  in multiplayer.
+- Vibrant Plus Graphics: `min_engine_version` `1.21.120`, and it needs Vibrant Visuals
+  switched on in video settings. The other two work regardless of graphics mode.
+- None of them need experimental toggles or scripting, so all three work on mobile, on
+  Realms and in multiplayer.
 
 One consequence of running both at once: the Serious Punch's `max_resistance: 5.0` caps
 *every* block's blast resistance, so it goes through the security house too. Nothing in
@@ -231,15 +319,29 @@ Minecraft stops Saitama.
 
 ## Status / what wasn't verified
 
-Both addons are structurally validated by `tools/build.py`, and the house geometry is
-verified by simulation in `tools/verify_house.py`. Neither has been launched in an actual
-Minecraft client from this environment — there is no Bedrock client here — so damage
-numbers, explosion sizes and block-state rotations are design targets, not measured
-results.
+All three packs are structurally validated by `tools/build.py`; the house geometry is
+verified by simulation in `tools/verify_house.py`; and every graphics value is
+range-checked against the published schemas by `tools/verify_graphics.py`. None of them
+has been launched in an actual Minecraft client from this environment — there is no
+Bedrock client here — so damage numbers, explosion sizes, block-state rotations and the
+final look of the graphics pack are design targets, not measured results.
 
 Specifically worth checking in game, because they are the parts a simulation can't prove:
 
 - **Door and bed rotations.** Iron doors and beds carry a `direction` block state. If one
   lands facing an odd way, break it and place it again — the geometry around it is right.
+- **The graphics pack's look.** Range-checking proves the files will load; it cannot tell
+  you whether the sunset is the colour you wanted. The tuning table above is where to
+  adjust it.
 - If Minecraft reports a content error on import, **Settings → Creator → Content Log**
   names the exact file.
+
+## Sources
+
+Vibrant Visuals schemas used for the graphics pack come from the Minecraft creator docs:
+[Vibrant Visuals Resource Packs](https://learn.microsoft.com/en-us/minecraft/creator/documents/vibrantvisuals/vvresourcepacks),
+[Light Sources](https://learn.microsoft.com/en-us/minecraft/creator/documents/vibrantvisuals/lightingcustomization),
+[Atmospheric Effects](https://learn.microsoft.com/en-us/minecraft/creator/documents/vibrantvisuals/atmosphericscustomization),
+[Water Effects](https://learn.microsoft.com/en-us/minecraft/creator/documents/vibrantvisuals/watercustomization),
+[Color Grading and Tone Mapping](https://learn.microsoft.com/en-us/minecraft/creator/documents/vibrantvisuals/colorgradingtonemappingcustomization),
+[Texture Sets](https://learn.microsoft.com/en-us/minecraft/creator/reference/content/texturesetsreference/texturesetsconcepts/texturesetsintroduction).

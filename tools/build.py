@@ -12,9 +12,12 @@ import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# name, packs, bundle extension. A pack pair ships as .mcaddon; a lone
+# resource pack ships as .mcpack. Both import the same way on mobile.
 ADDONS = [
-    ("OnePunchMan", ["OPM_BP", "OPM_RP"]),
-    ("SecurityHouse", ["SEC_BP", "SEC_RP"]),
+    ("OnePunchMan", ["OPM_BP", "OPM_RP"], "mcaddon"),
+    ("SecurityHouse", ["SEC_BP", "SEC_RP"], "mcaddon"),
+    ("VibrantPlusGraphics", ["VIS_RP"], "mcpack"),
 ]
 
 
@@ -132,7 +135,7 @@ def check_functions(bp, defined_blocks, errors):
 
 def validate():
     errors = []
-    all_packs = [p for _, packs in ADDONS for p in packs]
+    all_packs = [p for _, packs, _ in ADDONS for p in packs]
     check_manifests(all_packs, errors)
 
     count = 0
@@ -144,7 +147,10 @@ def validate():
             except ValueError as exc:
                 errors.append(f"{os.path.relpath(path, ROOT)}: invalid JSON - {exc}")
 
-    for _, (bp, rp) in ADDONS:
+    for _, packs, _ in ADDONS:
+        if len(packs) != 2:
+            continue          # resource-pack-only addons have nothing to cross-check
+        bp, rp = packs
         check_items(bp, rp, errors)
         blocks = check_blocks(bp, rp, errors)
         check_functions(bp, blocks, errors)
@@ -152,8 +158,8 @@ def validate():
     return errors, count
 
 
-def bundle(name, packs):
-    out = os.path.join(ROOT, "dist", name + ".mcaddon")
+def bundle(name, packs, ext):
+    out = os.path.join(ROOT, "dist", f"{name}.{ext}")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
         for pack in packs:
@@ -171,9 +177,9 @@ def main():
         for err in errors:
             print("  -", err)
         return 1
-    print(f"validated {count} JSON files across {len([p for _, ps in ADDONS for p in ps])} packs")
-    for name, packs in ADDONS:
-        out = bundle(name, packs)
+    print(f"validated {count} JSON files across {len([p for _, ps, _ in ADDONS for p in ps])} packs")
+    for name, packs, ext in ADDONS:
+        out = bundle(name, packs, ext)
         print(f"built dist/{os.path.basename(out)} ({os.path.getsize(out)} bytes)")
     return 0
 

@@ -1,0 +1,33 @@
+{
+  "format_version": "1.21.40",
+  "minecraft:water_settings": {
+    "description": {
+      "identifier": "vibrantplus:global"
+    },
+    "particle_concentrations": {
+      "cdom": 0.35,
+      "chlorophyll": 0.28,
+      "suspended_sediment": 0.15
+    },
+    "waves": {
+      "enabled": true,
+      "depth": 0.85,
+      "direction_increment": 74.0,
+      "frequency": 0.9,
+      "frequency_scaling": 1.18,
+      "mix": 0.22,
+      "octaves": 24,
+      "pull": 0.42,
+      "sampleWidth": 0.02,
+      "shape": 1.6,
+      "speed": 1.7,
+      "speed_scaling": 1.04
+    },
+    "caustics": {
+      "enabled": true,
+      "frame_length": 0.06,
+      "power": 3,
+      "scale": 0.55
+    }
+  }
+}
