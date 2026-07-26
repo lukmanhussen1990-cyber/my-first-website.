@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Claude Runner — a Chrome Dino game</title>
+<meta name="description" content="An endless runner in the style of the Chrome dino game, starring a little coral pixel creature.">
+<style>
+  :root{
+    --paper:#F0EEE6;
+    --ink:#2A2724;
+    --coral:#F15C45;
+    --muted:#8C867B;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:20px 14px 28px;
+    gap:14px;
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior:none;
+    touch-action:manipulation;
+  }
+  header{text-align:center;line-height:1.4}
+  h1{
+    margin:0;
+    font-size:clamp(15px,2.6vw,21px);
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    font-weight:700;
+  }
+  h1 b{color:var(--coral);font-weight:700}
+  .sub{margin:6px 0 0;font-size:11px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+
+  .stage{
+    width:min(1000px,100%);
+    aspect-ratio:3.125;          /* 1000 x 320 */
+    position:relative;
+    border:2px solid var(--ink);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 10px 0 -4px rgba(42,39,36,.10), 0 22px 40px -20px rgba(42,39,36,.45);
+    background:var(--paper);
+    transition:border-color .35s linear;
+  }
+  /* On a phone the world is narrowed rather than shrunk, so the runner
+     stays legible instead of becoming a 4px speck. */
+  @media (max-width:760px){ .stage{aspect-ratio:1.95} }
+  .stage.night{border-color:#4A4640}
+  canvas{display:block;width:100%;height:100%;image-rendering:pixelated;cursor:pointer}
+
+  .legend{
+    display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;
+    font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;
+    max-width:1000px;
+  }
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  kbd{
+    display:inline-block;border:1.5px solid currentColor;border-radius:4px;
+    padding:2px 6px;font:inherit;font-size:10px;line-height:1;color:var(--ink);
+  }
+
+  .pad{display:none;gap:12px;width:min(1000px,100%)}
+  .pad button{
+    flex:1;appearance:none;-webkit-appearance:none;
+    border:2px solid var(--ink);background:transparent;color:var(--ink);
+    border-radius:10px;padding:20px 0;font:inherit;font-size:13px;font-weight:700;
+    letter-spacing:.2em;text-transform:uppercase;cursor:pointer;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+    touch-action:none;
+  }
+  .pad button:active{background:var(--ink);color:var(--paper)}
+  @media (hover:none) and (pointer:coarse){ .pad{display:flex} .legend{display:none} }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Claude <b>Runner</b></h1>
+  <p class="sub">jump the cacti &middot; duck the birds &middot; don't stop</p>
+</header>
+
+<div class="stage" id="stage">
+  <canvas id="game"></canvas>
+</div>
+
+<div class="pad">
+  <button id="btnJump" type="button">Jump</button>
+  <button id="btnDuck" type="button">Duck</button>
+</div>
+
+<div class="legend">
+  <span><kbd>Space</kbd> / <kbd>&uarr;</kbd> jump</span>
+  <span><kbd>&darr;</kbd> duck &amp; fast-fall</span>
+  <span><kbd>P</kbd> pause</span>
+  <span><kbd>M</kbd> sound</span>
+  <span><kbd>R</kbd> restart</span>
+</div>
+
+<script>
+(function () {
+"use strict";
+
+/* ------------------------------------------------------------------ *
+ * Canvas setup — everything is authored in a logical space that is a
+ * fixed 320 tall and scaled up to whatever the element measures. The
+ * logical *width* follows the element's aspect ratio, so a phone shows a
+ * narrower slice of world at the same sprite size rather than the whole
+ * 1000px squeezed down to nothing.
+ * ------------------------------------------------------------------ */
+var H = 320, GROUND = 252;
+var W = 1000;                         // recomputed on every resize
+
+var stage  = document.getElementById("stage");
+var canvas = document.getElementById("game");
+var ctx    = canvas.getContext("2d", { alpha: false });
+var view   = 1;                       // logical -> device pixel scale
+
+function resize() {
+  var cssW = stage.clientWidth  || 1000;
+  var cssH = stage.clientHeight || 320;
+  /* Clamped only as a safety net — the CSS aspect ratios both land inside. */
+  W = Math.max(560, Math.min(1100, Math.round(H * cssW / cssH)));
+  var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  canvas.width  = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  view = canvas.width / W;
+  ctx.imageSmoothingEnabled = false;
+}
+window.addEventListener("resize", resize);
+
+/* Snap a logical coordinate to a whole device pixel so the pixel-art
+   edges stay hard no matter what the scale factor works out to. */
+function snap(v) { return Math.round(v * view) / view; }
+function rect(x, y, w, h) {
+  var x0 = snap(x), y0 = snap(y);
+  ctx.fillRect(x0, y0, snap(x + w) - x0, snap(y + h) - y0);
+}
+
+/* ------------------------------------------------------------------ *
+ * Palette + day/night
+ * ------------------------------------------------------------------ */
+var DAY   = { bg:[240,238,230], ink:[42,39,36],   dim:[186,181,170] };
+var NIGHT = { bg:[27,26,24],    ink:[236,233,224], dim:[92,88,81]   };
+
+var theme = { bg:DAY.bg.slice(), ink:DAY.ink.slice(), dim:DAY.dim.slice() };
+var nightMix = 0, nightTarget = 0;     // 0 = day, 1 = night
+
+function mix(a, b, t) {
+  return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
+}
+function rgb(c, alpha) {
+  var r = c[0]|0, g = c[1]|0, b = c[2]|0;
+  return alpha === undefined
+    ? "rgb(" + r + "," + g + "," + b + ")"
+    : "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
+}
+function updateTheme() {
+  theme.bg  = mix(DAY.bg,  NIGHT.bg,  nightMix);
+  theme.ink = mix(DAY.ink, NIGHT.ink, nightMix);
+  theme.dim = mix(DAY.dim, NIGHT.dim, nightMix);
+}
+
+var CORAL       = "#F15C45";
+var CORAL_SHADE = "#CF4A35";
+var CORAL_LIT   = "#F87A62";
+var EYE         = "#151311";
+
+/* ------------------------------------------------------------------ *
+ * The character.
+ *
+ * Geometry sampled straight from the source artwork (a 400x400 image),
+ * then translated so the sprite's own bounding box starts at 0,0.
+ *   art bbox: x 12..389, y 91..344   ->   377 x 253
+ * ------------------------------------------------------------------ */
+var SW = 377, SH = 253;
+
+var BODY   = [ 60,   0, 259, 185];
+var ARM_L  = [  0,  61,  60,  63];
+var ARM_R  = [319,  61,  58,  63];
+var EYE_L  = [ 96,  29,  32,  32];
+var EYE_R  = [250,  29,  33,  32];
+var LEG_Y  = 185, LEG_H = 68;
+var LEGS   = [[60,35],[125,33],[219,33],[282,37]];
+
+/**
+ * Draw the creature.
+ *   x,y  top-left of the sprite box, in logical pixels
+ *   h    height of the sprite box (width follows the source ratio)
+ *   o    { mode, cycle, blink, squash, armLift, t }
+ */
+function drawClaude(x, y, h, o) {
+  var mode = o.mode || "run";
+  var sy   = h / SH;                        // vertical sprite-unit -> px
+  var sxu  = (h * (o.squash ? 1.14 : 1)) / SH;
+
+  function P(r, dx, dy, dw, dh) {           // paint a sprite-space rect
+    rect(x + (r[0] + (dx || 0)) * sxu,
+         y + (r[1] + (dy || 0)) * sy,
+         (r[2] + (dw || 0)) * sxu,
+         (r[3] + (dh || 0)) * sy);
+  }
+
+  /* ---- leg phases -------------------------------------------------- */
+  var lifts = [0, 0, 0, 0], swings = [0, 0, 0, 0], i;
+
+  if (mode === "run") {
+    /* Four-beat scuttle: each leg stays planted for 60% of the cycle,
+       then swings forward through a smooth arc for the other 40%. */
+    for (i = 0; i < 4; i++) {
+      var u = (o.cycle + i * 0.25) % 1;
+      if (u < 0) u += 1;
+      if (u < 0.6) {
+        lifts[i]  = 0;
+        swings[i] = 10 - 20 * (u / 0.6);          // planted, sliding back
+      } else {
+        var k = (u - 0.6) / 0.4;
+        lifts[i]  = Math.sin(Math.PI * k);        // lifted, arcing forward
+        swings[i] = -10 + 20 * k;
+      }
+    }
+  } else if (mode === "jump") {
+    lifts  = [0.75, 0.35, 0.35, 0.75];
+    swings = [-5, -2, 2, 5];
+  } else if (mode === "duck") {
+    lifts  = [0.72, 0.72, 0.72, 0.72];
+    swings = [-4, -2, 2, 4];
+  } else if (mode === "dead") {
+    lifts  = [0.15, 0.55, 0.55, 0.15];
+    swings = [-9, -3, 3, 9];
+  } else {                                        // idle — breathing shuffle
+    for (i = 0; i < 4; i++) {
+      lifts[i]  = 0.10 + 0.10 * Math.sin(o.t * 1.6 + i * 0.9);
+      swings[i] = 0;
+    }
+  }
+
+  /* A little vertical bob so the body isn't glued to a flat line. */
+  var bob = 0;
+  if (mode === "run")  bob = -1.8 * Math.abs(Math.sin(o.cycle * Math.PI * 2));
+  if (mode === "idle") bob =  1.6 * Math.sin(o.t * 1.6);
+  y += bob * sy;
+
+  /* ---- legs -------------------------------------------------------- */
+  for (i = 0; i < 4; i++) {
+    ctx.fillStyle = i === 0 ? CORAL_SHADE : CORAL;
+    rect(x + (LEGS[i][0] + swings[i]) * sxu,
+         y + LEG_Y * sy,
+         LEGS[i][1] * sxu,
+         LEG_H * (1 - 0.62 * lifts[i]) * sy);
+  }
+
+  /* ---- arms -------------------------------------------------------- */
+  /* When squashed the arms splay outward — they're widened rather than
+     moved, so they stay welded to the body instead of floating free. */
+  var arm = o.armLift || 0;
+  ctx.fillStyle = CORAL_SHADE;
+  P(ARM_L, o.squash ? -14 : 0, arm, o.squash ? 14 : 0);
+  ctx.fillStyle = CORAL;
+  P(ARM_R, 0, arm, o.squash ? 14 : 0);
+
+  /* ---- body -------------------------------------------------------- */
+  ctx.fillStyle = CORAL;
+  P(BODY);
+  ctx.fillStyle = CORAL_SHADE;                         // shaded left edge
+  P([BODY[0], BODY[1], 26, BODY[3]]);
+  ctx.fillStyle = CORAL_LIT;                           // lit top edge
+  P([BODY[0] + 26, BODY[1], BODY[2] - 26, 12]);
+
+  /* ---- eyes -------------------------------------------------------- */
+  ctx.fillStyle = EYE;
+  if (mode === "dead") {
+    crossEye(x, y, sxu, sy, EYE_L);
+    crossEye(x, y, sxu, sy, EYE_R);
+  } else if (o.blink) {
+    P(EYE_L, 0, 12, 0, -22);
+    P(EYE_R, 0, 12, 0, -22);
+  } else if (mode === "duck") {
+    P(EYE_L, 0, 8, 0, -14);
+    P(EYE_R, 0, 8, 0, -14);
+  } else {
+    P(EYE_L); P(EYE_R);
+  }
+}
+
+/* Dizzy X where an eye used to be. */
+function crossEye(x, y, sxu, sy, e) {
+  var cx = x + (e[0] + e[2] / 2) * sxu;
+  var cy = y + (e[1] + e[3] / 2) * sy;
+  var r  = e[2] * sxu * 0.62;
+  var t  = Math.max(2, e[2] * sxu * 0.26);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(Math.PI / 4);
+  ctx.fillRect(-r, -t / 2, r * 2, t);
+  ctx.fillRect(-t / 2, -r, t, r * 2);
+  ctx.restore();
+}
+
+/* ------------------------------------------------------------------ *
+ * Obstacles
+ * ------------------------------------------------------------------ */
+/* Cactus authored inside a 28 x 44 box. */
+var CACTUS = {
+  trunk: [10, 0, 9, 44],
+  left:  [[1, 14, 6, 16], [1, 24, 10, 6]],
+  right: [[21, 8, 6, 16], [17, 18, 11, 6]]
+};
+function drawCactus(x, baseY, scale, variant) {
+  var top = baseY - 44 * scale;
+  function put(r) { rect(x + r[0] * scale, top + r[1] * scale, r[2] * scale, r[3] * scale); }
+  put(CACTUS.trunk);
+  if (variant !== "right") { put(CACTUS.left[0]);  put(CACTUS.left[1]);  }
+  if (variant !== "left")  { put(CACTUS.right[0]); put(CACTUS.right[1]); }
+}
+
+/* Bird authored inside a 52 x 34 box. Slim body + long beak so the
+   silhouette still reads at speed; the wing is what carries the animation. */
+var BIRD_W = 52, BIRD_H = 34;
+function drawBird(x, y, frame) {
+  function put(r) { rect(x + r[0], y + r[1], r[2], r[3]); }
+  put([0, 6, 6, 10]);                        // tail fin
+  put([4, 16, 32, 9]);                       // body
+  put([34, 12, 10, 9]);                      // head
+  put([44, 15, 8, 4]);                       // beak
+  if (frame === 0) {                         // wing up, tapering
+    put([16, 8, 16, 8]);
+    put([19, 2, 11, 6]);
+  } else {                                   // wing down, tapering
+    put([16, 25, 16, 6]);
+    put([19, 31, 11, 3]);
+  }
+  ctx.fillStyle = rgb(theme.bg);
+  put([37, 14, 3, 3]);                       // eye punched out
+  ctx.fillStyle = rgb(theme.ink);
+}
+
+/* ------------------------------------------------------------------ *
+ * Scenery
+ * ------------------------------------------------------------------ */
+function makeDither(color) {
+  var c = document.createElement("canvas");
+  c.width = c.height = 4;
+  var g = c.getContext("2d");
+  g.fillStyle = color;
+  g.fillRect(0, 0, 1, 1);
+  g.fillRect(2, 2, 1, 1);
+  return ctx.createPattern(c, "repeat");
+}
+
+/* Chunky pixel cloud silhouettes, in 1-unit blocks. */
+var CLOUD_SHAPES = [
+  [[4,0,4,2],[2,2,7,2],[0,4,11,2],[1,6,12,2],[0,8,14,2]],
+  [[3,1,5,2],[1,3,9,2],[0,5,12,2],[2,7,11,2]],
+  [[4,0,6,2],[2,2,10,2],[0,4,14,2],[1,6,13,2],[3,8,9,2]]
+];
+var clouds = [];
+function newCloud(x) {
+  return {
+    x: x,
+    y: 22 + Math.random() * 76,
+    s: 2.4 + Math.random() * 2.6,
+    k: 0.14 + Math.random() * 0.16,
+    shape: CLOUD_SHAPES[(Math.random() * CLOUD_SHAPES.length) | 0]
+  };
+}
+function seedClouds() {
+  clouds = [];
+  for (var i = 0; i < 5; i++) clouds.push(newCloud(Math.random() * W));
+}
+function drawClouds(pat) {
+  ctx.fillStyle = pat;
+  for (var i = 0; i < clouds.length; i++) {
+    var c = clouds[i], u = c.s;
+    for (var r = 0; r < c.shape.length; r++) {
+      var b = c.shape[r];
+      rect(c.x + b[0] * u, c.y + b[1] * u, b[2] * u, b[3] * u);
+    }
+  }
+}
+
+var stars = [];
+function seedStars() {
+  stars = [];
+  for (var i = 0; i < 46; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: 10 + Math.random() * 140,
+      s: Math.random() < 0.25 ? 4 : 3,
+      p: Math.random() * 6.283
+    });
+  }
+}
+
+/* Ground: one long strip of dashes/pebbles, scrolled modulo its length. */
+var STRIP = 2400;
+var groundBits = [];
+function seedGround() {
+  groundBits = [];
+  for (var x = 0; x < STRIP; ) {
+    x += 12 + Math.random() * 70;
+    groundBits.push({
+      x: x,
+      y: 6 + Math.random() * 34,
+      w: Math.random() < 0.35 ? 3 : 8 + Math.random() * 26,
+      h: Math.random() < 0.35 ? 3 : 2
+    });
+  }
+}
+function drawGround(scroll) {
+  ctx.fillStyle = rgb(theme.ink);
+  rect(0, GROUND, W, 3);
+  ctx.fillStyle = rgb(theme.dim);
+  var off = scroll % STRIP;
+  for (var i = 0; i < groundBits.length; i++) {
+    var b = groundBits[i];
+    var x = b.x - off;
+    if (x < -60) x += STRIP;
+    if (x > W) continue;
+    rect(x, GROUND + b.y, b.w, b.h);
+  }
+}
+
+/* Blocky celestial bodies. */
+function pixelDisc(cx, cy, r, unit, color) {
+  ctx.fillStyle = color;
+  for (var y = -r; y < r; y += unit) {
+    var m = Math.min(Math.abs(y), Math.abs(y + unit));
+    var half = Math.sqrt(Math.max(0, r * r - m * m));
+    if (half <= 0) continue;
+    rect(cx - half, cy + y, half * 2, unit);
+  }
+}
+function drawMoon(x, y, phase) {
+  pixelDisc(x, y, 26, 4, rgb(theme.ink));
+  if (phase !== 0) pixelDisc(x + phase * 9, y, 26, 4, rgb(theme.bg));
+}
+function drawSun(x, y) {
+  var col = rgb(theme.dim, 0.9);
+  pixelDisc(x, y, 21, 4, col);
+  pixelDisc(x, y, 14, 4, rgb(theme.bg));        // hollow it into a ring
+  ctx.fillStyle = col;
+  for (var i = 0; i < 8; i++) {
+    var a = i * Math.PI / 4;
+    rect(x + Math.cos(a) * 29 - 2, y + Math.sin(a) * 29 - 2, 4, 4);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Audio — tiny square-wave blips, built on demand.
+ * ------------------------------------------------------------------ */
+var actx = null, muted = false;
+function audio() {
+  if (!actx) {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) { try { actx = new AC(); } catch (e) { actx = null; } }
+  }
+  if (actx && actx.state === "suspended") actx.resume();
+  return actx;
+}
+function beep(freq, dur, type, vol, slide) {
+  if (muted) return;
+  var a = audio(); if (!a) return;
+  var o = a.createOscillator(), g = a.createGain();
+  o.type = type || "square";
+  o.frequency.setValueAtTime(freq, a.currentTime);
+  if (slide) o.frequency.exponentialRampToValueAtTime(slide, a.currentTime + dur);
+  g.gain.setValueAtTime(0.0001, a.currentTime);
+  g.gain.exponentialRampToValueAtTime(vol || 0.06, a.currentTime + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur);
+  o.connect(g); g.connect(a.destination);
+  o.start(); o.stop(a.currentTime + dur + 0.02);
+}
+var sfx = {
+  jump:  function () { beep(660, 0.11, "square", 0.05, 940); },
+  land:  function () { beep(180, 0.06, "square", 0.03); },
+  point: function () { beep(880, 0.07, "square", 0.05);
+                       setTimeout(function () { beep(1320, 0.09, "square", 0.05); }, 80); },
+  die:   function () { beep(300, 0.5, "sawtooth", 0.07, 70); },
+  start: function () { beep(520, 0.08, "square", 0.05);
+                       setTimeout(function () { beep(780, 0.12, "square", 0.05); }, 90); }
+};
+
+/* ------------------------------------------------------------------ *
+ * Game state
+ * ------------------------------------------------------------------ */
+var PH = 72, PW = Math.round(PH * SW / SH);       // 72 x 107
+var DUCK = 0.62;                                  // ducked height, as a ratio
+var PLAYER_X = 88;
+/* A ~140px arc over ~0.77s. The runner is wide (107px), so the arc has to
+   stay airborne long enough to carry that width clear of the widest cactus
+   cluster at the *slowest* scroll speed — that's the binding constraint. */
+var GRAVITY = 0.529, JUMP_V = -12.17;
+var AIRTIME = 2 * Math.abs(JUMP_V) / GRAVITY;     // frames, for spawn spacing
+var SPEED_MIN = 7, SPEED_MAX = 15.5;
+
+var HI_KEY = "claudeRunner.hi";
+var hi = 0;
+try { hi = parseInt(localStorage.getItem(HI_KEY), 10) || 0; } catch (e) { hi = 0; }
+
+var state;
+function reset() {
+  state = {
+    phase: "intro",          // intro | playing | paused | over
+    t: 0,
+    frames: 0,
+    speed: SPEED_MIN,
+    scroll: 0,
+    score: 0,
+    newHi: false,
+    y: GROUND - PH,          // sprite top
+    vy: 0,
+    onGround: true,
+    ducking: false,
+    cycle: 0,
+    blink: 0,
+    nextBlink: 60 + Math.random() * 160,
+    obstacles: [],
+    nextSpawn: 700,
+    particles: [],
+    flash: 0,
+    shake: 0,
+    overAt: 0
+  };
+  nightMix = 0; nightTarget = 0; updateTheme();
+  seedClouds(); seedStars(); seedGround();
+}
+
+/* ------------------------------------------------------------------ *
+ * Spawning
+ * ------------------------------------------------------------------ */
+function spawn() {
+  var s = state;
+
+  if (s.score > 260 && Math.random() < 0.26) {
+    /* Clearance above the ground line, tuned against the real hitboxes:
+       40 -> must jump, 84 -> duck (or jump), 112 -> keep running, and
+       jumping into it is the trap. */
+    var bands = [40, 84, 112];
+    var band  = bands[(Math.random() * bands.length) | 0];
+    s.obstacles.push({
+      kind: "bird", x: W + 40, y: GROUND - band,
+      w: BIRD_W, h: BIRD_H, frame: 0, timer: 0
+    });
+  } else {
+    var big   = Math.random() < 0.45;
+    var scale = big ? 1.7 : 1.0;
+    /* Big cacti cap at two abreast — three is wider than a jump can carry. */
+    var count = 1 + ((Math.random() * (big ? 2 : 3)) | 0);
+    var parts = [], cx = 0;
+    for (var i = 0; i < count; i++) {
+      parts.push({
+        dx: cx,
+        variant: ["both", "left", "right"][(Math.random() * 3) | 0]
+      });
+      cx += 28 * scale + 2 + Math.random() * 5;
+    }
+    s.obstacles.push({
+      kind: "cactus", x: W + 20, scale: scale, parts: parts,
+      w: cx - 2, h: 44 * scale, y: GROUND - 44 * scale
+    });
+  }
+
+  /* Space the next one relative to how far a full jump carries you, so the
+     rhythm stays constant in *time* as the scroll speed climbs. */
+  var reach = s.speed * AIRTIME;
+  s.nextSpawn = reach * (1.05 + Math.random() * 1.35);
+}
+
+/* ------------------------------------------------------------------ *
+ * Simulation — fixed 60Hz step
+ * ------------------------------------------------------------------ */
+var held = { jump: false, duck: false };
+
+function hitbox() {
+  var s = state;
+  var h   = (s.ducking && s.onGround) ? PH * DUCK : PH;
+  var top = (s.ducking && s.onGround) ? s.y + (PH - h) : s.y;
+  return { x: PLAYER_X + PW * 0.20, y: top + h * 0.06, w: PW * 0.60, h: h * 0.90 };
+}
+function overlaps(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function puff(x, y, n, spread) {
+  for (var i = 0; i < n; i++) {
+    state.particles.push({
+      x: x, y: y,
+      vx: -1 - Math.random() * 2.2,
+      vy: -Math.random() * (spread || 1.4),
+      life: 18 + Math.random() * 16, max: 34,
+      s: 2 + Math.random() * 3
+    });
+  }
+}
+
+function start() { audio(); state.phase = "playing"; sfx.start(); }
+
+function jump() {
+  var s = state;
+  if (s.phase === "intro") { start(); return; }
+  if (s.phase === "over") { if (s.frames - s.overAt > 24) { reset(); start(); } return; }
+  if (s.phase !== "playing" || !s.onGround) return;
+  s.vy = JUMP_V;
+  s.onGround = false;
+  s.ducking = false;
+  puff(PLAYER_X + PW * 0.4, GROUND, 7, 2.2);
+  sfx.jump();
+}
+
+function die() {
+  var s = state;
+  if (s.phase !== "playing") return;
+  s.phase = "over";
+  s.overAt = s.frames;
+  s.shake = 16;
+  sfx.die();
+  var sc = Math.floor(s.score);
+  if (sc > hi) {
+    hi = sc; s.newHi = true;
+    try { localStorage.setItem(HI_KEY, String(hi)); } catch (e) {}
+  }
+  puff(PLAYER_X + PW * 0.5, s.y + PH, 16, 3.4);
+}
+
+function update() {
+  var s = state, i;
+  s.frames++;
+  s.t += 1 / 60;
+
+  /* Clouds drift even on the title card. */
+  for (i = 0; i < clouds.length; i++) {
+    clouds[i].x -= (s.phase === "playing" ? s.speed : 1.6) * clouds[i].k;
+    if (clouds[i].x < -140) clouds[i] = newCloud(W + 40 + Math.random() * 200);
+  }
+
+  if (s.blink > 0) s.blink--;
+  else if (--s.nextBlink <= 0) { s.blink = 7; s.nextBlink = 70 + Math.random() * 190; }
+
+  if (s.flash > 0) s.flash--;
+  if (s.shake > 0) s.shake--;
+
+  for (i = s.particles.length - 1; i >= 0; i--) {
+    var q = s.particles[i];
+    q.x += q.vx; q.y += q.vy; q.vy += 0.11;
+    if (--q.life <= 0) s.particles.splice(i, 1);
+  }
+
+  /* Ease the palette toward its target no matter what phase we're in. */
+  if (nightMix !== nightTarget) {
+    nightMix += (nightTarget - nightMix) * 0.022;
+    if (Math.abs(nightTarget - nightMix) < 0.004) nightMix = nightTarget;
+    updateTheme();
+  }
+
+  if (s.phase !== "playing") {
+    if (s.phase === "intro") s.cycle += 0.004;
+    return;
+  }
+
+  /* ---- speed + score ------------------------------------------------ */
+  if (s.speed < SPEED_MAX) s.speed += 0.0011;
+  s.scroll += s.speed;
+  /* Cadence rises with speed, but sub-linearly — a strictly proportional
+     stride turns into an unreadable blur once the run gets quick. */
+  s.cycle  += 0.020 + s.speed * 0.0022;
+
+  var before = Math.floor(s.score / 100);
+  s.score += s.speed * 0.052;
+  if (Math.floor(s.score / 100) > before) { s.flash = 42; sfx.point(); }
+
+  nightTarget = Math.floor(s.score / 700) % 2 === 1 ? 1 : 0;
+
+  /* ---- player -------------------------------------------------------- */
+  s.ducking = held.duck;
+
+  if (!s.onGround) {
+    s.vy += GRAVITY;
+    if (held.duck) s.vy += 0.62;                     // fast-fall
+    if (!held.jump && s.vy < -4) s.vy *= 0.86;       // variable jump height
+    s.y += s.vy;
+    if (s.y >= GROUND - PH) {
+      s.y = GROUND - PH; s.vy = 0; s.onGround = true;
+      puff(PLAYER_X + PW * 0.35, GROUND, 5, 1.6);
+      sfx.land();
+    }
+  } else if (s.frames % 7 === 0) {
+    puff(PLAYER_X + PW * 0.15, GROUND, 1, 0.7);      // running dust
+  }
+
+  /* ---- obstacles ----------------------------------------------------- */
+  s.nextSpawn -= s.speed;
+  if (s.nextSpawn <= 0) spawn();
+
+  var box = hitbox();
+  for (i = s.obstacles.length - 1; i >= 0; i--) {
+    var o = s.obstacles[i];
+    o.x -= s.speed;
+    if (o.kind === "bird") {
+      o.x -= s.speed * 0.14;                         // birds close a bit faster
+      o.timer++;
+      if (o.timer % 9 === 0) o.frame ^= 1;
+    }
+    if (o.x + o.w < -60) { s.obstacles.splice(i, 1); continue; }
+    if (overlaps(box, { x: o.x + 3, y: o.y + 3, w: o.w - 6, h: o.h - 6 })) {
+      die();
+      return;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Rendering
+ * ------------------------------------------------------------------ */
+var ditherDay = null, ditherNight = null;
+
+/* Manually tracked text so we can letter-space it like a pixel HUD. */
+function text(str, x, y, size, align, color, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha === undefined ? 1 : alpha;
+  ctx.fillStyle = color || rgb(theme.ink);
+  ctx.font = "700 " + size + "px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  var tracking = size * 0.14, total = 0, i;
+  for (i = 0; i < str.length; i++) total += ctx.measureText(str.charAt(i)).width + tracking;
+  total -= tracking;
+  var cx = align === "center" ? x - total / 2 : align === "right" ? x - total : x;
+  for (i = 0; i < str.length; i++) {
+    ctx.fillText(str.charAt(i), cx, y);
+    cx += ctx.measureText(str.charAt(i)).width + tracking;
+  }
+  ctx.restore();
+}
+
+function pad(n) {
+  var s = String(n);
+  while (s.length < 5) s = "0" + s;
+  return s;
+}
+
+function render() {
+  var s = state, i;
+
+  ctx.setTransform(view, 0, 0, view, 0, 0);
+  ctx.fillStyle = rgb(theme.bg);
+  ctx.fillRect(0, 0, W, H);
+
+  if (s.shake > 0) {
+    ctx.translate((Math.random() - 0.5) * s.shake * 0.55,
+                  (Math.random() - 0.5) * s.shake * 0.45);
+  }
+
+  /* ---- sky ----------------------------------------------------------- */
+  if (nightMix > 0.05) {
+    for (i = 0; i < stars.length; i++) {
+      var sp = stars[i];
+      var tw = 0.45 + 0.55 * Math.abs(Math.sin(s.t * 1.6 + sp.p));
+      ctx.fillStyle = rgb(theme.ink, nightMix * tw * 0.9);
+      var sxp = (sp.x - s.scroll * 0.035) % W;
+      if (sxp < 0) sxp += W;
+      rect(sxp, sp.y, sp.s, sp.s);
+    }
+  }
+
+  /* Kept well clear of the score readout in the top-right corner. */
+  if (nightMix > 0.5) drawMoon(W - 300, 68, (Math.floor(s.score / 700) % 5) - 2);
+  else                drawSun(W - 300, 68);
+
+  if (!ditherDay) { ditherDay = makeDither("#000"); ditherNight = makeDither("#fff"); }
+  ctx.save();
+  ctx.globalAlpha = nightMix > 0.5 ? 0.32 : 0.34;
+  drawClouds(nightMix > 0.5 ? ditherNight : ditherDay);
+  ctx.restore();
+
+  /* ---- ground -------------------------------------------------------- */
+  drawGround(s.scroll);
+
+  /* ---- obstacles ----------------------------------------------------- */
+  ctx.fillStyle = rgb(theme.ink);
+  for (i = 0; i < s.obstacles.length; i++) {
+    var o = s.obstacles[i];
+    if (o.kind === "cactus") {
+      for (var p = 0; p < o.parts.length; p++) {
+        drawCactus(o.x + o.parts[p].dx, GROUND + 2, o.scale, o.parts[p].variant);
+      }
+    } else {
+      drawBird(o.x, o.y, o.frame);
+    }
+  }
+
+  /* ---- dust ---------------------------------------------------------- */
+  for (i = 0; i < s.particles.length; i++) {
+    var q = s.particles[i];
+    ctx.fillStyle = rgb(theme.dim, Math.max(0, q.life / q.max) * 0.85);
+    rect(q.x, q.y, q.s, q.s);
+  }
+
+  /* ---- the runner ---------------------------------------------------- */
+  var mode = s.phase === "over"  ? "dead"
+           : s.phase === "intro" ? "idle"
+           : !s.onGround         ? "jump"
+           : s.ducking           ? "duck" : "run";
+
+  var duck  = mode === "duck";
+  var ph    = duck ? PH * DUCK : PH;
+  var drawY = duck ? s.y + (PH - ph) : s.y;
+  var drawX = duck ? PLAYER_X - PW * 0.05 : PLAYER_X;
+
+  drawClaude(drawX, drawY, ph, {
+    mode: mode,
+    cycle: s.cycle,
+    t: s.t,
+    blink: s.blink > 0 && (mode === "run" || mode === "idle"),
+    squash: duck,
+    armLift: mode === "jump" ? (s.vy < 0 ? -16 : 12) : (duck ? 26 : 0)
+  });
+
+  /* ---- score --------------------------------------------------------- */
+  var flashing = s.flash > 0 && Math.floor(s.flash / 7) % 2 === 0;
+  if (hi > 0) {
+    text("HI " + pad(hi), W - 26, 42, 19, "right", rgb(theme.dim));
+    text(pad(Math.floor(s.score)), W - 26, 70, 19, "right", rgb(theme.ink), flashing ? 0.25 : 1);
+  } else {
+    text(pad(Math.floor(s.score)), W - 26, 42, 19, "right", rgb(theme.ink), flashing ? 0.25 : 1);
+  }
+
+  /* ---- overlays ------------------------------------------------------- */
+  if (s.phase === "intro") {
+    if (Math.floor(s.t * 1.6) % 2 === 0) {
+      text(touchLikely ? "TAP TO START" : "PRESS SPACE TO START", W / 2, 128, 24, "center");
+    }
+    text(touchLikely ? "TAP LOW TO DUCK" : "↑ JUMP     ↓ DUCK",
+         W / 2, 162, 13, "center", rgb(theme.dim));
+  }
+
+  if (s.phase === "paused") {
+    ctx.fillStyle = rgb(theme.bg, 0.74);
+    ctx.fillRect(0, 0, W, H);
+    text("PAUSED", W / 2, 150, 30, "center");
+    text(touchLikely ? "TAP TO RESUME" : "PRESS P TO RESUME",
+         W / 2, 182, 13, "center", rgb(theme.dim));
+  }
+
+  if (s.phase === "over") {
+    text("GAME OVER", W / 2, 118, 30, "center");
+    if (s.newHi) text("NEW HIGH SCORE", W / 2, 146, 14, "center", CORAL);
+    if (s.frames - s.overAt > 24 && Math.floor(s.t * 1.8) % 2 === 0) {
+      text(touchLikely ? "TAP TO RUN AGAIN" : "SPACE / R TO RUN AGAIN",
+           W / 2, s.newHi ? 176 : 152, 13, "center", rgb(theme.dim));
+    }
+  }
+
+  if (muted) {                                    // muted speaker glyph
+    ctx.fillStyle = rgb(theme.dim);
+    rect(26, 32, 6, 10); rect(32, 28, 6, 18);
+    ctx.save();
+    ctx.strokeStyle = rgb(theme.dim);
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(44, 30); ctx.lineTo(56, 42);
+    ctx.moveTo(56, 30); ctx.lineTo(44, 42);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  stage.classList.toggle("night", nightMix > 0.5);
+}
+
+/* ------------------------------------------------------------------ *
+ * Loop — fixed-step update, render once per frame
+ * ------------------------------------------------------------------ */
+var STEP = 1000 / 60, acc = 0, last = 0;
+function frame(now) {
+  if (!last) last = now;
+  var dt = now - last;
+  last = now;
+  if (dt > 120) dt = 120;                 // never fast-forward after a stall
+  acc += dt;
+  var guard = 0;
+  while (acc >= STEP && guard++ < 5) { update(); acc -= STEP; }
+  if (guard >= 5) acc = 0;
+  render();
+  requestAnimationFrame(frame);
+}
+
+/* ------------------------------------------------------------------ *
+ * Input
+ * ------------------------------------------------------------------ */
+var touchLikely = !!(window.matchMedia &&
+  window.matchMedia("(hover:none) and (pointer:coarse)").matches);
+
+function togglePause() {
+  if (state.phase === "playing") state.phase = "paused";
+  else if (state.phase === "paused") { state.phase = "playing"; last = 0; acc = 0; }
+}
+
+window.addEventListener("keydown", function (e) {
+  var k = e.key;
+  if (k === " " || k === "Spacebar" || k === "ArrowUp" || k === "w" || k === "W") {
+    e.preventDefault();
+    if (state.phase === "paused") { togglePause(); return; }
+    if (!held.jump) jump();
+    held.jump = true;
+  } else if (k === "ArrowDown" || k === "s" || k === "S") {
+    e.preventDefault();
+    held.duck = true;
+  } else if (k === "p" || k === "P" || k === "Escape") {
+    e.preventDefault();
+    togglePause();
+  } else if (k === "m" || k === "M") {
+    muted = !muted;
+    if (!muted) beep(700, 0.07, "square", 0.05);
+  } else if (k === "r" || k === "R") {
+    reset();
+    start();
+  }
+}, { passive: false });
+
+window.addEventListener("keyup", function (e) {
+  var k = e.key;
+  if (k === " " || k === "Spacebar" || k === "ArrowUp" || k === "w" || k === "W") held.jump = false;
+  if (k === "ArrowDown" || k === "s" || k === "S") held.duck = false;
+});
+
+/* Pointer: press near the ground to duck, anywhere else to jump. */
+function pointerDown(e) {
+  e.preventDefault();
+  if (state.phase === "paused") { togglePause(); return; }
+  var r  = canvas.getBoundingClientRect();
+  var pt = e.touches ? e.touches[0] : e;
+  var ly = (pt.clientY - r.top) / r.height * H;
+  if (ly > GROUND - 30 && state.phase === "playing") {
+    held.duck = true;
+  } else {
+    held.jump = true;
+    jump();
+  }
+}
+function pointerUp(e) {
+  if (e && e.cancelable) e.preventDefault();
+  held.jump = false;
+  held.duck = false;
+}
+canvas.addEventListener("mousedown", pointerDown);
+window.addEventListener("mouseup", pointerUp);
+canvas.addEventListener("touchstart", pointerDown, { passive: false });
+window.addEventListener("touchend", pointerUp, { passive: false });
+window.addEventListener("touchcancel", pointerUp, { passive: false });
+
+function bindPad(id, onDown, onUp) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var down = function (e) { e.preventDefault(); onDown(); };
+  var up   = function (e) { if (e && e.cancelable) e.preventDefault(); onUp(); };
+  el.addEventListener("touchstart", down, { passive: false });
+  el.addEventListener("mousedown", down);
+  el.addEventListener("touchend", up, { passive: false });
+  el.addEventListener("touchcancel", up, { passive: false });
+  el.addEventListener("mouseup", up);
+  el.addEventListener("mouseleave", up);
+}
+bindPad("btnJump", function () { if (!held.jump) jump(); held.jump = true; },
+                   function () { held.jump = false; });
+bindPad("btnDuck", function () { held.duck = true; },
+                   function () { held.duck = false; });
+
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden && state.phase === "playing") state.phase = "paused";
+});
+window.addEventListener("blur", function () {
+  if (state.phase === "playing") state.phase = "paused";
+  held.jump = false;
+  held.duck = false;
+});
+
+/* ------------------------------------------------------------------ */
+reset();
+resize();
+requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>
