@@ -1,15 +1,27 @@
 # Minecraft Bedrock Addons
 
-Three mobile-ready Bedrock addons (Android / iOS / Windows / Console), each bundled into
+Four mobile-ready Bedrock addons (Android / iOS / Windows / Console), each bundled into
 a single file you tap to import.
 
-| Addon | Download | What it is |
-| --- | --- | --- |
-| **One Punch Man** | [`dist/OnePunchMan.mcaddon`](https://github.com/lukmanhussen1990-cyber/my-first-website./raw/claude/one-punch-man-minecraft-mod-3fps55/dist/OnePunchMan.mcaddon) | Normal Punch and Serious Punch items |
-| **Security House** | [`dist/SecurityHouse.mcaddon`](https://github.com/lukmanhussen1990-cyber/my-first-website./raw/claude/one-punch-man-minecraft-mod-3fps55/dist/SecurityHouse.mcaddon) | One command builds a fortified one-floor house |
-| **Vibrant Plus Graphics** | [`dist/VibrantPlusGraphics.mcpack`](https://github.com/lukmanhussen1990-cyber/my-first-website./raw/claude/one-punch-man-minecraft-mod-3fps55/dist/VibrantPlusGraphics.mcpack) | Cinematic lighting, sky, water and colour grading |
+| Addon | Download | Needs | What it is |
+| --- | --- | --- | --- |
+| **One Punch Man** | [`OnePunchMan.mcaddon`](https://github.com/lukmanhussen1990-cyber/my-first-website./raw/claude/one-punch-man-minecraft-mod-3fps55/dist/OnePunchMan.mcaddon) | 1.20.0+ | Normal Punch and Serious Punch items |
+| **Security House** | [`SecurityHouse.mcaddon`](https://github.com/lukmanhussen1990-cyber/my-first-website./raw/claude/one-punch-man-minecraft-mod-3fps55/dist/SecurityHouse.mcaddon) | 1.21.0+ | One command builds a fortified one-floor house |
+| **Atmos Graphics** | [`AtmosGraphics.mcpack`](https://github.com/lukmanhussen1990-cyber/my-first-website./raw/claude/one-punch-man-minecraft-mod-3fps55/dist/AtmosGraphics.mcpack) | 1.16.100+ | Atmospheric fog and clearer water — **the graphics pack for 1.21.0 and older** |
+| **Vibrant Plus Graphics** | [`VibrantPlusGraphics.mcpack`](https://github.com/lukmanhussen1990-cyber/my-first-website./raw/claude/one-punch-man-minecraft-mod-3fps55/dist/VibrantPlusGraphics.mcpack) | **1.21.120+** | Full Vibrant Visuals: cinematic lighting, sky, water, colour grading |
 
-### Installing (same for all three)
+### Which graphics pack do I need?
+
+Check your version on the Minecraft title screen, bottom right corner.
+
+- **Below 1.21.120** (including 1.21.0, 1.21.4x, 1.21.9x) → **Atmos Graphics**. Vibrant
+  Visuals does not exist on your build, and Vibrant Plus will refuse to load.
+- **1.21.120 or newer** → **Vibrant Plus Graphics**, and turn Vibrant Visuals on in video
+  settings. Atmos still works if your device can't run Vibrant Visuals smoothly.
+
+Don't run both at once — they both set fog and the higher pack in the list wins.
+
+### Installing (same for all four)
 
 1. Download the file onto your phone (on GitHub: open it → **Download raw file**).
 2. Open it. Android offers "Open with Minecraft"; on iOS use **Share → Copy to Minecraft**.
@@ -17,8 +29,9 @@ a single file you tap to import.
 4. Activate it in your world settings:
    - One Punch Man and Security House → **Behavior Packs**. The matching resource pack
      comes along as a dependency.
-   - Vibrant Plus Graphics → **Resource Packs**. It also needs Vibrant Visuals switched on
-     in video settings — see [its section](#3-vibrant-plus-graphics).
+   - Atmos Graphics and Vibrant Plus Graphics → **Resource Packs**. Vibrant Plus also
+     needs Vibrant Visuals switched on in video settings — see
+     [its section](#4-vibrant-plus-graphics).
 
 No experimental toggles and no scripting anywhere. If a browser saves the file as `.zip`,
 rename it back to `.mcaddon` or `.mcpack`.
@@ -196,7 +209,58 @@ pushes a fill over that.
 
 ---
 
-# 3. Vibrant Plus Graphics
+# 3. Atmos Graphics — for 1.21.0 and older
+
+The graphics pack for builds from before Vibrant Visuals existed. Nothing to switch on,
+no experimental toggles, and it runs on low-end phones.
+
+### Applying it on mobile
+
+1. Download **`AtmosGraphics.mcpack`** and open it. Minecraft imports it.
+2. World → **Settings → Resource Packs → My Packs → Atmos Graphics → Activate**.
+   Or **Settings → Global Resources** to apply it to every world at once.
+3. That's it. Go outside and look at the horizon, then dive underwater.
+
+To check it actually loaded, run `/fog @s push atmos:default test` — if the command
+succeeds, the pack's fog definitions are registered. `/fog @s pop test` undoes it.
+
+### What it changes
+
+| | |
+| --- | --- |
+| **Distance haze** | Soft blue aerial perspective from 60% of your render distance outward, so hills and mountains sit back in the air instead of being cut off flat |
+| **Clearer water** | Underwater visibility from vanilla's 60 blocks out to 95, and up to 180 in warm oceans, with a smooth fade as you dive in |
+| **Heavier rain** | Storms drop the view to a grey-blue murk instead of barely changing anything |
+| **Per-biome mood** | Swamps get thick low green murk and 24-block water, deserts and mesas get warm dust, ice plains get a pale cold haze, jungles get humid green, the Nether gets a deep red close-in glow, the End gets violet-black void |
+
+11 fog definitions mapped over 32 biomes.
+
+### Tuning it
+
+`tools/make_atmos.py` is the source — the fog files are generated from it. Then
+`python3 tools/make_atmos.py && python3 tools/verify_atmos.py && python3 tools/build.py`.
+
+| Want | Change |
+| --- | --- |
+| Less haze, longer views | Raise `fog_start` toward `1.0` (vanilla is `0.92`) |
+| Thick, moody fog | Lower `fog_start` toward `0.2` |
+| Even clearer water | Raise the `water()` distance — it's in blocks, vanilla is 60 |
+| Vanilla fog back in one biome | Delete that biome's line from `BIOME_FOG` |
+
+`fog_start`/`fog_end` are fractions of your render distance when
+`render_distance_type` is `"render"`, so the look holds at any view distance.
+Water fog is measured in blocks instead.
+
+### The honest ceiling
+
+On pre-1.21.120 builds, distance fog is essentially the only rendering control a resource
+pack gets. There is no way to add shadows, reflections, bloom or real lighting — those
+arrived with Vibrant Visuals. Anything advertising "shaders" for these versions is either
+for pre-1.16.200 (before RenderDragon removed GLSL support) or is a fog pack like this one.
+
+---
+
+# 4. Vibrant Plus Graphics
 
 A graphics pack that rewrites how the world is lit, coloured and rendered: sun and moon
 intensity across the day, sky scattering colours, water clarity and waves, light colours
@@ -277,6 +341,7 @@ for the effort.
 ```
 OPM_BP/ OPM_RP/     One Punch Man behavior + resource pack
 SEC_BP/ SEC_RP/     Security House behavior + resource pack
+ATM_RP/             Atmos Graphics resource pack (fog, pre-Vibrant-Visuals)
 VIS_RP/             Vibrant Plus Graphics resource pack
   SEC_BP/blocks/           the five custom blocks
   SEC_BP/functions/house/  build.mcfunction and the steps it calls
@@ -285,16 +350,19 @@ tools/
   make_textures.py        One Punch Man item icons
   make_house_textures.py  Security House block textures
   make_house.py           generates the house .mcfunction files
-  make_graphics_icon.py   graphics pack icon
+  make_atmos.py           generates the fog definitions and biome assignments
+  make_graphics_icon.py   both graphics pack icons
   verify_house.py         replays the build in a voxel grid, proves it is sealed
-  verify_graphics.py      range-checks every graphics value against the docs
-  build.py                validates every pack, rebuilds all three bundles
+  verify_graphics.py      range-checks every Vibrant Visuals value against the docs
+  verify_atmos.py         checks fog ranges and that every biome resolves to a real fog
+  build.py                validates every pack, rebuilds all four bundles
 ```
 
 Rebuild everything after an edit:
 
 ```bash
-python3 tools/build.py && python3 tools/verify_house.py && python3 tools/verify_graphics.py
+python3 tools/build.py && python3 tools/verify_house.py \
+  && python3 tools/verify_graphics.py && python3 tools/verify_atmos.py
 ```
 
 `build.py` checks that every JSON parses, that pack UUIDs are unique, that each item's
@@ -311,8 +379,10 @@ the corridor nor the living room, and that every lever is adjacent to a door it 
 - One Punch Man: stable formats (items `1.20.30`, entities `1.16.0`, recipes `1.20.10`),
   `min_engine_version` `1.20.0`.
 - Security House: blocks use format `1.21.0`, `min_engine_version` `1.21.0`.
+- Atmos Graphics: fog format `1.16.100`, `min_engine_version` `1.16.100`. Works on
+  everything from 1.16.100 up, including 1.21.0.
 - Vibrant Plus Graphics: `min_engine_version` `1.21.120`, and it needs Vibrant Visuals
-  switched on in video settings. The other two work regardless of graphics mode.
+  switched on in video settings.
 - None of them need experimental toggles or scripting, so all three work on mobile, on
   Realms and in multiplayer.
 

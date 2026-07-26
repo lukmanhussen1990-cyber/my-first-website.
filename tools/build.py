@@ -17,6 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ADDONS = [
     ("OnePunchMan", ["OPM_BP", "OPM_RP"], "mcaddon"),
     ("SecurityHouse", ["SEC_BP", "SEC_RP"], "mcaddon"),
+    ("AtmosGraphics", ["ATM_RP"], "mcpack"),
     ("VibrantPlusGraphics", ["VIS_RP"], "mcpack"),
 ]
 

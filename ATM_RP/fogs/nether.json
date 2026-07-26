@@ -1,0 +1,34 @@
+{
+  "format_version": "1.16.100",
+  "minecraft:fog_settings": {
+    "description": {
+      "identifier": "atmos:nether"
+    },
+    "distance": {
+      "air": {
+        "fog_start": 0.06,
+        "fog_end": 0.62,
+        "fog_color": "#4A1008",
+        "render_distance_type": "render"
+      },
+      "weather": {
+        "fog_start": 0.06,
+        "fog_end": 0.62,
+        "fog_color": "#4A1008",
+        "render_distance_type": "render"
+      },
+      "lava": {
+        "fog_start": 0.0,
+        "fog_end": 0.7,
+        "fog_color": "#B32B00",
+        "render_distance_type": "fixed"
+      },
+      "lava_resistance": {
+        "fog_start": 2.0,
+        "fog_end": 6.0,
+        "fog_color": "#B32B00",
+        "render_distance_type": "fixed"
+      }
+    }
+  }
+}

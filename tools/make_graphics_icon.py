@@ -53,6 +53,38 @@ def main():
     write_png(path, rows)
     print("wrote", os.path.relpath(path, ROOT))
 
+    atmos()
+
+
+def atmos():
+    """Atmos pack icon: hills fading into layered haze."""
+    sky_top = (110, 150, 190)
+    haze = (168, 200, 232)
+    ridge = (46, 62, 58)
+
+    rows = [[(0, 0, 0, 0)] * N for _ in range(N)]
+    for y in range(N):
+        t = (y / N) ** 0.8
+        base = lerp(sky_top, haze, t)
+        for x in range(N):
+            rows[y][x] = (base[0], base[1], base[2], 255)
+
+    # four ridgelines, each hazier than the one behind it
+    for i, (offset, amp, fade) in enumerate(((0.46, 10, 0.72), (0.58, 14, 0.52),
+                                             (0.72, 18, 0.30), (0.88, 22, 0.10))):
+        colour = lerp(haze, ridge, 1.0 - fade)
+        phase = i * 1.7
+        for x in range(N):
+            import math
+            h = offset * N - amp * (math.sin(x / 26.0 + phase) * 0.6
+                                    + math.sin(x / 11.0 + phase * 2) * 0.4)
+            for y in range(int(h), N):
+                rows[y][x] = (colour[0], colour[1], colour[2], 255)
+
+    path = os.path.join(ROOT, "ATM_RP", "pack_icon.png")
+    write_png(path, rows)
+    print("wrote", os.path.relpath(path, ROOT))
+
 
 if __name__ == "__main__":
     main()
