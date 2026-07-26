@@ -1,7 +1,7 @@
 # Minecraft Bedrock Addons
 
-Two mobile-ready Bedrock addons (Android / iOS / Windows / Console). Each one ships as
-a behavior pack + resource pack, bundled into a single `.mcaddon` you tap to import.
+Three mobile-ready Bedrock addons (Android / iOS / Windows / Console), each bundled into
+a single file you tap to import.
 
 | Addon | Download | What it is |
 | --- | --- | --- |
@@ -11,14 +11,17 @@ a behavior pack + resource pack, bundled into a single `.mcaddon` you tap to imp
 
 ### Installing (same for all three)
 
-1. Download the `.mcaddon` onto your phone (on GitHub: open the file → **Download raw file**).
+1. Download the file onto your phone (on GitHub: open it → **Download raw file**).
 2. Open it. Android offers "Open with Minecraft"; on iOS use **Share → Copy to Minecraft**.
-3. Minecraft imports both packs automatically.
-4. In your world settings → **Behavior Packs** → activate it. The matching resource pack
-   comes along as a dependency.
+3. Minecraft imports it automatically.
+4. Activate it in your world settings:
+   - One Punch Man and Security House → **Behavior Packs**. The matching resource pack
+     comes along as a dependency.
+   - Vibrant Plus Graphics → **Resource Packs**. It also needs Vibrant Visuals switched on
+     in video settings — see [its section](#3-vibrant-plus-graphics).
 
-No experimental toggles and no scripting in either addon. If a browser saves the file as
-`.zip`, rename it back to `.mcaddon`.
+No experimental toggles and no scripting anywhere. If a browser saves the file as `.zip`,
+rename it back to `.mcaddon` or `.mcpack`.
 
 ---
 
