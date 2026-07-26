@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "sec:security_floor"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "SSS",
+      "SIS",
+      "SSS"
+    ],
+    "key": {
+      "S": {
+        "item": "minecraft:stone"
+      },
+      "I": {
+        "item": "minecraft:iron_ingot"
+      }
+    },
+    "result": {
+      "item": "sec:security_floor",
+      "count": 8
+    }
+  }
+}

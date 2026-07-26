@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "sec:reinforced_wall"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "SIS",
+      "IOI",
+      "SIS"
+    ],
+    "key": {
+      "S": {
+        "item": "minecraft:stone"
+      },
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "O": {
+        "item": "minecraft:obsidian"
+      }
+    },
+    "result": {
+      "item": "sec:reinforced_wall",
+      "count": 8
+    }
+  }
+}

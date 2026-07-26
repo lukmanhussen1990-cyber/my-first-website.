@@ -1,0 +1,28 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "sec:reinforced_wall",
+      "menu_category": {
+        "category": "construction",
+        "group": "itemGroup.name.concrete"
+      }
+    },
+    "components": {
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 12.5
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 1200.0
+      },
+      "minecraft:map_color": "#3A4048",
+      "minecraft:light_dampening": 15,
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "sec_reinforced_wall",
+          "render_method": "opaque"
+        }
+      }
+    }
+  }
+}

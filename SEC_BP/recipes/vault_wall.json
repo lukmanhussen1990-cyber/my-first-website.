@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "sec:vault_wall"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "GIG",
+      "IOI",
+      "GIG"
+    ],
+    "key": {
+      "G": {
+        "item": "minecraft:gold_ingot"
+      },
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "O": {
+        "item": "minecraft:obsidian"
+      }
+    },
+    "result": {
+      "item": "sec:vault_wall",
+      "count": 4
+    }
+  }
+}

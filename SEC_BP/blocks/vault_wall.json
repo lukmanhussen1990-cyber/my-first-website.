@@ -1,0 +1,28 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "sec:vault_wall",
+      "menu_category": {
+        "category": "construction",
+        "group": "itemGroup.name.concrete"
+      }
+    },
+    "components": {
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 20.0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 3600.0
+      },
+      "minecraft:map_color": "#4A4230",
+      "minecraft:light_dampening": 15,
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "sec_vault_wall",
+          "render_method": "opaque"
+        }
+      }
+    }
+  }
+}

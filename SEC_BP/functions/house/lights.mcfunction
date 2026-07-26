@@ -1,0 +1,89 @@
+# Alarm lamps everywhere. Called by house/build.
+
+# Alarm lamps emit light 15. Full coverage means nothing spawns inside.
+# House ceiling.
+setblock ~-5 ~5 ~-5 sec:alarm_lamp
+setblock ~-5 ~5 ~-2 sec:alarm_lamp
+setblock ~-5 ~5 ~1 sec:alarm_lamp
+setblock ~-5 ~5 ~4 sec:alarm_lamp
+setblock ~-2 ~5 ~-5 sec:alarm_lamp
+setblock ~-2 ~5 ~-2 sec:alarm_lamp
+setblock ~-2 ~5 ~1 sec:alarm_lamp
+setblock ~-2 ~5 ~4 sec:alarm_lamp
+setblock ~1 ~5 ~-5 sec:alarm_lamp
+setblock ~1 ~5 ~-2 sec:alarm_lamp
+setblock ~1 ~5 ~1 sec:alarm_lamp
+setblock ~1 ~5 ~4 sec:alarm_lamp
+setblock ~4 ~5 ~-5 sec:alarm_lamp
+setblock ~4 ~5 ~-2 sec:alarm_lamp
+setblock ~4 ~5 ~1 sec:alarm_lamp
+setblock ~4 ~5 ~4 sec:alarm_lamp
+
+# House floor.
+setblock ~-5 ~-1 ~-5 sec:alarm_lamp
+setblock ~-5 ~-1 ~-1 sec:alarm_lamp
+setblock ~-5 ~-1 ~3 sec:alarm_lamp
+setblock ~-1 ~-1 ~-5 sec:alarm_lamp
+setblock ~-1 ~-1 ~-1 sec:alarm_lamp
+setblock ~-1 ~-1 ~3 sec:alarm_lamp
+setblock ~3 ~-1 ~-5 sec:alarm_lamp
+setblock ~3 ~-1 ~-1 sec:alarm_lamp
+setblock ~3 ~-1 ~3 sec:alarm_lamp
+
+# Patrol corridor - lamps in the roof and in the floor.
+setblock ~-9 ~8 ~-9 sec:alarm_lamp
+setblock ~-9 ~-1 ~-9 sec:alarm_lamp
+setblock ~-9 ~8 ~9 sec:alarm_lamp
+setblock ~-9 ~-1 ~9 sec:alarm_lamp
+setblock ~-9 ~8 ~-9 sec:alarm_lamp
+setblock ~-9 ~-1 ~-9 sec:alarm_lamp
+setblock ~9 ~8 ~-9 sec:alarm_lamp
+setblock ~9 ~-1 ~-9 sec:alarm_lamp
+setblock ~-6 ~8 ~-9 sec:alarm_lamp
+setblock ~-6 ~-1 ~-9 sec:alarm_lamp
+setblock ~-6 ~8 ~9 sec:alarm_lamp
+setblock ~-6 ~-1 ~9 sec:alarm_lamp
+setblock ~-9 ~8 ~-6 sec:alarm_lamp
+setblock ~-9 ~-1 ~-6 sec:alarm_lamp
+setblock ~9 ~8 ~-6 sec:alarm_lamp
+setblock ~9 ~-1 ~-6 sec:alarm_lamp
+setblock ~-3 ~8 ~-9 sec:alarm_lamp
+setblock ~-3 ~-1 ~-9 sec:alarm_lamp
+setblock ~-3 ~8 ~9 sec:alarm_lamp
+setblock ~-3 ~-1 ~9 sec:alarm_lamp
+setblock ~-9 ~8 ~-3 sec:alarm_lamp
+setblock ~-9 ~-1 ~-3 sec:alarm_lamp
+setblock ~9 ~8 ~-3 sec:alarm_lamp
+setblock ~9 ~-1 ~-3 sec:alarm_lamp
+setblock ~ ~8 ~-9 sec:alarm_lamp
+setblock ~ ~-1 ~-9 sec:alarm_lamp
+setblock ~ ~8 ~9 sec:alarm_lamp
+setblock ~ ~-1 ~9 sec:alarm_lamp
+setblock ~-9 ~8 ~ sec:alarm_lamp
+setblock ~-9 ~-1 ~ sec:alarm_lamp
+setblock ~9 ~8 ~ sec:alarm_lamp
+setblock ~9 ~-1 ~ sec:alarm_lamp
+setblock ~3 ~8 ~-9 sec:alarm_lamp
+setblock ~3 ~-1 ~-9 sec:alarm_lamp
+setblock ~3 ~8 ~9 sec:alarm_lamp
+setblock ~3 ~-1 ~9 sec:alarm_lamp
+setblock ~-9 ~8 ~3 sec:alarm_lamp
+setblock ~-9 ~-1 ~3 sec:alarm_lamp
+setblock ~9 ~8 ~3 sec:alarm_lamp
+setblock ~9 ~-1 ~3 sec:alarm_lamp
+setblock ~6 ~8 ~-9 sec:alarm_lamp
+setblock ~6 ~-1 ~-9 sec:alarm_lamp
+setblock ~6 ~8 ~9 sec:alarm_lamp
+setblock ~6 ~-1 ~9 sec:alarm_lamp
+setblock ~-9 ~8 ~6 sec:alarm_lamp
+setblock ~-9 ~-1 ~6 sec:alarm_lamp
+setblock ~9 ~8 ~6 sec:alarm_lamp
+setblock ~9 ~-1 ~6 sec:alarm_lamp
+setblock ~9 ~8 ~-9 sec:alarm_lamp
+setblock ~9 ~-1 ~-9 sec:alarm_lamp
+setblock ~9 ~8 ~9 sec:alarm_lamp
+setblock ~9 ~-1 ~9 sec:alarm_lamp
+setblock ~-9 ~8 ~9 sec:alarm_lamp
+setblock ~-9 ~-1 ~9 sec:alarm_lamp
+setblock ~9 ~8 ~9 sec:alarm_lamp
+setblock ~9 ~-1 ~9 sec:alarm_lamp

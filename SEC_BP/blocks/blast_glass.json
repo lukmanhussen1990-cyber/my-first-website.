@@ -1,0 +1,30 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "sec:blast_glass",
+      "menu_category": {
+        "category": "construction",
+        "group": "itemGroup.name.glass"
+      }
+    },
+    "components": {
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 6.0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 900.0
+      },
+      "minecraft:map_color": "#8FB8C4",
+      "minecraft:light_dampening": 0,
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "sec_blast_glass",
+          "render_method": "blend",
+          "face_dimming": false,
+          "ambient_occlusion": false
+        }
+      }
+    }
+  }
+}
