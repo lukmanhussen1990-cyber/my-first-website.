@@ -1,0 +1,22 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Secret Underground Bunker BP",
+    "description": "Builds a hidden underground bunker. Run: /function bunker/build",
+    "uuid": "497850d9-5e56-491f-ad54-6229341d1076",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "description": "Bunker build functions",
+      "uuid": "2385f781-63c1-493a-970e-fd28fcd18e2c",
+      "version": [1, 0, 0]
+    }
+  ],
+  "metadata": {
+    "authors": ["lukmanhussen1990"],
+    "license": "MIT"
+  }
+}
