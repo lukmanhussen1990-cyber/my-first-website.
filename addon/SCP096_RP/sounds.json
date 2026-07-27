@@ -1,0 +1,16 @@
+{
+  "format_version": "1.14.0",
+  "entity_sounds": {
+    "entities": {
+      "scp:scp_096": {
+        "volume": 1.0,
+        "pitch": [0.55, 0.7],
+        "events": {
+          "ambient": "mob.zombie.say",
+          "hurt": "mob.zombie.hurt",
+          "death": "mob.zombie.death"
+        }
+      }
+    }
+  }
+}

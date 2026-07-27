@@ -1,0 +1,90 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.scp_096.walk": {
+      "loop": true,
+      "bones": {
+        "leg_right": {
+          "rotation": ["math.cos(q.modified_distance_moved * 38.17) * 48 * q.modified_move_speed", 0, 0]
+        },
+        "leg_left": {
+          "rotation": ["-math.cos(q.modified_distance_moved * 38.17) * 48 * q.modified_move_speed", 0, 0]
+        }
+      }
+    },
+
+    "animation.scp_096.idle": {
+      "loop": true,
+      "animation_length": 4.0,
+      "bones": {
+        "body": {
+          "rotation": {
+            "0.0": [22, 0, 0],
+            "2.0": [26, 0, 0],
+            "4.0": [22, 0, 0]
+          },
+          "position": [0, -1, 0]
+        },
+        "head": {
+          "rotation": {
+            "0.0": [18, -7, 0],
+            "1.0": [22, 0, 2],
+            "2.0": [18, 7, 0],
+            "3.0": [22, 0, -2],
+            "4.0": [18, -7, 0]
+          }
+        },
+        "arm_right": {
+          "rotation": {
+            "0.0": [-14, 0, 4],
+            "2.0": [-8, 0, 6],
+            "4.0": [-14, 0, 4]
+          }
+        },
+        "arm_left": {
+          "rotation": {
+            "0.0": [-8, 0, -6],
+            "2.0": [-14, 0, -4],
+            "4.0": [-8, 0, -6]
+          }
+        }
+      }
+    },
+
+    "animation.scp_096.rage": {
+      "loop": true,
+      "animation_length": 0.6,
+      "bones": {
+        "body": {
+          "rotation": {
+            "0.0": [34, -4, 0],
+            "0.3": [30, 4, 0],
+            "0.6": [34, -4, 0]
+          },
+          "position": [0, -1, 0]
+        },
+        "head": {
+          "rotation": {
+            "0.0": [-52, 6, -3],
+            "0.3": [-58, -6, 3],
+            "0.6": [-52, 6, -3]
+          }
+        },
+        "arm_right": {
+          "rotation": {
+            "0.0": [138, 14, 22],
+            "0.3": [152, 6, 14],
+            "0.6": [138, 14, 22]
+          }
+        },
+        "arm_left": {
+          "rotation": {
+            "0.0": [152, -6, -14],
+            "0.3": [138, -14, -22],
+            "0.6": [152, -6, -14]
+          }
+        }
+      }
+    }
+  }
+}

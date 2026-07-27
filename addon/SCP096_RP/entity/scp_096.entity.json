@@ -1,0 +1,37 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "scp:scp_096",
+      "min_engine_version": "1.16.0",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/scp_096"
+      },
+      "geometry": {
+        "default": "geometry.scp_096"
+      },
+      "animations": {
+        "walk": "animation.scp_096.walk",
+        "idle": "animation.scp_096.idle",
+        "rage": "animation.scp_096.rage"
+      },
+      "scripts": {
+        "animate": [
+          "walk",
+          { "idle": "q.variant == 0" },
+          { "rage": "q.variant == 1" }
+        ]
+      },
+      "render_controllers": ["controller.render.scp_096"],
+      "spawn_egg": {
+        "texture": "scp_096_spawn_egg",
+        "texture_index": 0,
+        "base_color": "#E8DDD2",
+        "overlay_color": "#8C1B1B"
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+# Pack archives and textures must never be line-ending normalized —
+# a single mangled byte makes the addon fail to import.
+*.mcaddon binary
+*.mcpack  binary
+*.png     binary
+*.lang    text eol=lf

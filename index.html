@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCP-096 — Minecraft Bedrock Addon</title>
+<style>
+  :root {
+    --bg: #0d0e10;
+    --panel: #17191d;
+    --line: #2a2d33;
+    --text: #e8e4dd;
+    --muted: #9aa0a8;
+    --blood: #8c1b1b;
+    --hazard: #c4a820;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.55;
+  }
+  .stripes {
+    height: 10px;
+    background: repeating-linear-gradient(45deg, var(--hazard) 0 14px, #1a1a1a 14px 28px);
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 28px 20px 64px; }
+  header { text-align: center; padding: 8px 0 4px; }
+  h1 { font-size: 2.2rem; margin: 12px 0 4px; letter-spacing: 2px; }
+  .sub { color: var(--muted); margin: 0 0 6px; font-size: 1rem; }
+  .tag {
+    display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px;
+    background: rgba(140, 27, 27, .18); color: #e07a7a;
+    border: 1px solid rgba(140, 27, 27, .5); font-size: .78rem; letter-spacing: 1px;
+  }
+  .btn {
+    display: block; text-align: center; text-decoration: none;
+    background: var(--blood); color: #fff; font-weight: 700; font-size: 1.1rem;
+    padding: 18px 20px; border-radius: 14px; margin: 22px 0 10px;
+    border: 1px solid #b53535; box-shadow: 0 6px 0 #5c1010;
+  }
+  .btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #5c1010; }
+  .btn small { display: block; font-weight: 400; font-size: .8rem; opacity: .85; margin-top: 4px; }
+  .btn.alt { background: var(--panel); border-color: var(--line); box-shadow: 0 6px 0 #0a0b0c; }
+  .row { display: flex; gap: 12px; }
+  .row .btn { flex: 1; font-size: .95rem; padding: 14px 10px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; padding: 16px 18px; margin: 22px 0;
+  }
+  .card h2 { font-size: 1.05rem; margin: 0 0 10px; letter-spacing: 1px; }
+  ol, ul { padding-left: 20px; margin: 0; }
+  li { margin: 6px 0; }
+  code {
+    background: #101215; border: 1px solid var(--line); border-radius: 5px;
+    padding: 1px 6px; font-size: .88rem;
+  }
+  .stat { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--line); padding: 7px 0; }
+  .stat:last-child { border-bottom: 0; }
+  .stat span:last-child { color: var(--muted); }
+  footer { color: var(--muted); font-size: .8rem; text-align: center; margin-top: 34px; }
+  a { color: #e07a7a; }
+</style>
+</head>
+<body>
+<div class="stripes"></div>
+<div class="wrap">
+
+  <header>
+    <h1>SCP-096</h1>
+    <p class="sub">"The Shy Guy" — Minecraft Bedrock addon (BP + RP)</p>
+    <span class="tag">EUCLID · KEEP OUT OF SIGHT</span>
+  </header>
+
+  <a class="btn" href="downloads/SCP-096.mcaddon" download>
+    ⬇ Download SCP-096.mcaddon
+    <small>Behavior pack + resource pack — tap to open in Minecraft</small>
+  </a>
+
+  <div class="row">
+    <a class="btn alt" href="downloads/SCP-096_BP.mcpack" download>Behavior Pack only</a>
+    <a class="btn alt" href="downloads/SCP-096_RP.mcpack" download>Resource Pack only</a>
+  </div>
+
+  <div class="card">
+    <h2>HOW TO INSTALL (Android / iOS)</h2>
+    <ol>
+      <li>Tap the big red button above.</li>
+      <li>When the download finishes, tap the downloaded file.</li>
+      <li>Minecraft opens and imports both packs automatically.</li>
+      <li>Create or edit a world → <b>Behavior Packs</b> → activate <b>SCP-096</b>. The resource pack switches on with it.</li>
+      <li>In the world, open the creative inventory and search <b>SCP-096</b> — the spawn egg is under <b>Items / Spawn Eggs</b>.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>THE SPAWN EGG</h2>
+    <ul>
+      <li>Name: <b>Spawn SCP-096</b></li>
+      <li>Pale bone-white egg with dried-blood blotches.</li>
+      <li>Get it in survival: <code>/give @s scp:scp_096_spawn_egg</code></li>
+      <li>Or skip the egg entirely: <code>/summon scp:scp_096</code></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>CONTAINMENT NOTES</h2>
+    <div class="stat"><span>Health</span><span>250 ❤</span></div>
+    <div class="stat"><span>Damage (enraged)</span><span>14</span></div>
+    <div class="stat"><span>Docile state</span><span>hunched, harmless, wanders</span></div>
+    <div class="stat"><span>Trigger</span><span>seeing it up close, or hitting it</span></div>
+    <div class="stat"><span>When enraged</span><span>sprints, tracks you 128 blocks, breaks doors, climbs</span></div>
+    <div class="stat"><span>Calms down</span><span>after ~60s with no target</span></div>
+    <div class="stat"><span>Knockback</span><span>immune</span></div>
+    <div class="stat"><span>Fall / fire damage</span><span>immune (lava still burns)</span></div>
+  </div>
+
+  <div class="card">
+    <h2>REQUIREMENTS</h2>
+    <ul>
+      <li>Minecraft Bedrock <b>1.16+</b> (Android, iOS, Windows 10/11, Fire, Chromebook).</li>
+      <li>No experimental toggles needed.</li>
+      <li>Does <b>not</b> work on Minecraft Java Edition.</li>
+    </ul>
+  </div>
+
+  <footer>
+    SCP-096 is from the SCP Foundation wiki, licensed CC BY-SA 3.0.<br>
+    Fan-made addon. Not affiliated with Mojang or the SCP Foundation.
+  </footer>
+</div>
+<div class="stripes"></div>
+</body>
+</html>

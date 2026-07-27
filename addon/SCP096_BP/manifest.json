@@ -1,0 +1,23 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "SCP-096 Behavior Pack",
+    "description": "SCP-096 — The Shy Guy. Adds the SCP-096 mob and its spawn egg.",
+    "uuid": "8c589b8d-f276-4f40-9c2f-f1c1d3d9dfea",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 16, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "0b450243-164b-48c9-ab88-62f20fd4afa9",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "d4ce4c0a-3ff4-48ba-bca3-75f74608faf1",
+      "version": [1, 0, 0]
+    }
+  ]
+}
