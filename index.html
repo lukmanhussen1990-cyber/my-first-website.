@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IMRAN — Butterfly Intro</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+  }
+  #stage {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 56.25vw;
+    max-height: 100vh;
+    max-width: 177.7778vh;
+    background: #000;
+  }
+  /* Capture mode: exact 1:1 pixels, no letterboxing. */
+  body.capture #stage { display: block; }
+  body.capture canvas { width: 1920px; height: 1080px; max-width: none; max-height: none; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="1920" height="1080"></canvas></div>
+<script>
+(() => {
+"use strict";
+
+/* ═══════════════════════════════════════════════════════════════════════
+   IMRAN — a 5 second cinematic butterfly title animation.
+   Everything is a pure function of time, so frame N always renders
+   identically whether it is played live or captured headlessly.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const W = 1920, H = 1080;
+const FPS = 30, DURATION = 5, TOTAL_FRAMES = FPS * DURATION;   // 150 frames
+
+const cv  = document.getElementById('c');
+const ctx = cv.getContext('2d', { alpha: false });
+
+/* ── deterministic randomness ─────────────────────────────────────────── */
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rng  = mulberry32(20260727);
+const R  = (a, b) => a + (b - a) * rng();
+const RI = (a, b) => Math.floor(R(a, b + 1));
+
+/* ── easing ───────────────────────────────────────────────────────────── */
+const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+const smoothstep = (a, b, x) => { const t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+const smoother = x => { const t = clamp01(x); return t * t * t * (t * (t * 6 - 15) + 10); };
+const easeOutCubic = x => 1 - Math.pow(1 - clamp01(x), 3);
+const easeOutQuint = x => 1 - Math.pow(1 - clamp01(x), 5);
+const easeInOut = x => { const t = clamp01(x); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+const lerp = (a, b, t) => a + (b - a) * t;
+const TAU = Math.PI * 2;
+function lerpAngle(a, b, t) {
+  let d = (b - a) % TAU;
+  if (d > Math.PI) d -= TAU; else if (d < -Math.PI) d += TAU;
+  return a + d * t;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1. LETTERFORMS — bespoke geometric strokes for I M R A N
+   Defined in a unit box: x ∈ [0,w], y ∈ [0,1] (0 = cap line, 1 = baseline)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const GLYPHS = {
+  I: { w: 0.16, sub: [
+        [['M', 0.0800, 0.000], ['L', 0.0800, 1.000]] ] },
+
+  M: { w: 1.02, sub: [
+        [['M', 0.0775, 1.000], ['L', 0.0775, 0.000],
+         ['L', 0.5100, 0.600], ['L', 0.9425, 0.000], ['L', 0.9425, 1.000]] ] },
+
+  R: { w: 0.88, sub: [
+        [['M', 0.0775, 1.000], ['L', 0.0775, 0.000]],
+        [['M', 0.0775, 0.000],
+         ['C', 0.4200, 0.000, 0.6650, 0.045, 0.6650, 0.2525],
+         ['C', 0.6650, 0.460, 0.4200, 0.505, 0.0775, 0.5050]],
+        [['M', 0.4000, 0.505], ['L', 0.8000, 1.000]] ] },
+
+  A: { w: 0.96, sub: [
+        [['M', 0.0850, 1.000], ['L', 0.4800, 0.000], ['L', 0.8750, 1.000]],
+        [['M', 0.2311, 0.630], ['L', 0.7289, 0.630]] ] },
+
+  N: { w: 0.92, sub: [
+        [['M', 0.0775, 1.000], ['L', 0.0775, 0.000],
+         ['L', 0.8425, 1.000], ['L', 0.8425, 0.000]] ] },
+};
+
+const WORD    = 'IMRAN';
+const CAP     = 300;                 // cap height in px
+const TRACK   = 0.17 * CAP;          // letter spacing
+const STROKE  = 0.152 * CAP;         // stroke weight of the letterforms
+
+const glyphW  = [...WORD].map(ch => GLYPHS[ch].w * CAP);
+const wordW   = glyphW.reduce((a, b) => a + b, 0) + TRACK * (WORD.length - 1);
+const originX = (W - wordW) / 2;
+const originY = H / 2 - CAP / 2;
+const TEXT_CX = W / 2, TEXT_CY = H / 2;
+
+/* build absolute-space letters: Path2D for rendering, polylines for sampling */
+const letters = [];
+{
+  let x = originX;
+  for (let i = 0; i < WORD.length; i++) {
+    const g = GLYPHS[WORD[i]];
+    const path = new Path2D();
+    const polys = [];
+    for (const sub of g.sub) {
+      let cx = 0, cy = 0;
+      const pts = [];
+      for (const cmd of sub) {
+        if (cmd[0] === 'M') {
+          cx = x + cmd[1] * CAP; cy = originY + cmd[2] * CAP;
+          path.moveTo(cx, cy); pts.push([cx, cy]);
+        } else if (cmd[0] === 'L') {
+          const nx = x + cmd[1] * CAP, ny = originY + cmd[2] * CAP;
+          path.lineTo(nx, ny);
+          const steps = Math.max(2, Math.ceil(Math.hypot(nx - cx, ny - cy) / 6));
+          for (let s = 1; s <= steps; s++) pts.push([lerp(cx, nx, s / steps), lerp(cy, ny, s / steps)]);
+          cx = nx; cy = ny;
+        } else { // 'C'
+          const x1 = x + cmd[1] * CAP, y1 = originY + cmd[2] * CAP;
+          const x2 = x + cmd[3] * CAP, y2 = originY + cmd[4] * CAP;
+          const x3 = x + cmd[5] * CAP, y3 = originY + cmd[6] * CAP;
+          path.bezierCurveTo(x1, y1, x2, y2, x3, y3);
+          const steps = 26;
+          for (let s = 1; s <= steps; s++) {
+            const u = s / steps, iu = 1 - u;
+            const bx = iu * iu * iu * cx + 3 * iu * iu * u * x1 + 3 * iu * u * u * x2 + u * u * u * x3;
+            const by = iu * iu * iu * cy + 3 * iu * iu * u * y1 + 3 * iu * u * u * y2 + u * u * u * y3;
+            pts.push([bx, by]);
+          }
+          cx = x3; cy = y3;
+        }
+      }
+      polys.push(pts);
+    }
+    letters.push({ ch: WORD[i], path, polys, x0: x, x1: x + glyphW[i] });
+    x += glyphW[i] + TRACK;
+  }
+}
+
+/* sample butterfly landing spots evenly along every stroke */
+function sampleLetter(letter, step, lateral) {
+  const out = [];
+  for (const pts of letter.polys) {
+    // arc-length walk
+    let acc = 0, next = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
+      const q = pts[Math.min(i + 1, pts.length - 1)];
+      const pv = pts[Math.max(i - 1, 0)];
+      let tx = q[0] - pv[0], ty = q[1] - pv[1];
+      const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+      const nx = -ty, ny = tx;
+      const isEnd = (i === 0 || i === pts.length - 1);
+      if (acc >= next || isEnd) {
+        for (const off of lateral) {
+          out.push({ x: p[0] + nx * off, y: p[1] + ny * off, tx, ty });
+        }
+        if (!isEnd) next = acc + step;
+      }
+      if (i < pts.length - 1) acc += Math.hypot(pts[i + 1][0] - p[0], pts[i + 1][1] - p[1]);
+    }
+  }
+  return out;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2. TIMELINE
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const LETTER_T0   = [0.22, 0.62, 1.02, 1.44, 1.86];  // when each letter starts assembling
+const FLIGHT      = 1.20;                            // per-butterfly flight duration
+const STAGGER     = 0.44;                            // spread of departures inside a letter
+const T_FLASH     = 3.66;                            // the cinematic flash
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3. PALETTE
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const PALETTE = [
+  { deep: '#1436b4', mid: '#3f8dff', lite: '#c3e5ff', glow: '90,160,255' }, // blue
+  { deep: '#5b18b4', mid: '#a855f7', lite: '#e8ccff', glow: '170,105,255' }, // purple
+  { deep: '#b03605', mid: '#ff8a2b', lite: '#ffd4a6', glow: '255,150,70'  }, // orange
+  { deep: '#a8720a', mid: '#ffc63a', lite: '#fff2bf', glow: '255,205,90'  }, // gold
+  { deep: '#6f93bd', mid: '#dae9ff', lite: '#ffffff', glow: '210,230,255' }, // white
+];
+
+/* ═══════════════════════════════════════════════════════════════════════
+   4. BUTTERFLIES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+function spawnPoint() {
+  const a = R(0, TAU);
+  const rad = R(1040, 1480);
+  return [W / 2 + Math.cos(a) * rad, H / 2 + Math.sin(a) * rad * 0.72];
+}
+
+const butterflies = [];
+
+/* — letter builders — */
+letters.forEach((L, li) => {
+  const targets = sampleLetter(L, 31, [-12.5, 12.5]);
+  // shuffle so departures aren't spatially ordered
+  for (let i = targets.length - 1; i > 0; i--) {
+    const j = RI(0, i);[targets[i], targets[j]] = [targets[j], targets[i]];
+  }
+  targets.forEach((tp, i) => {
+    const [sx, sy] = spawnPoint();
+    const dx = sx - tp.x, dy = sy - tp.y;
+    const t0 = LETTER_T0[li] + (i / Math.max(1, targets.length - 1)) * STAGGER + R(-0.05, 0.05);
+    butterflies.push({
+      free: false, letter: li,
+      px: tp.x, py: tp.y,
+      r0: Math.hypot(dx, dy), a0: Math.atan2(dy, dx),
+      turns: (rng() < .5 ? -1 : 1) * R(1.15, 2.35) * TAU,
+      t0, dur: FLIGHT * R(0.92, 1.06),
+      col: RI(0, PALETTE.length - 1),
+      size: R(38, 47),
+      flap: R(8.5, 11.5), fph: R(0, TAU),
+      ph1: R(0, TAU), ph2: R(0, TAU),
+      rest: -Math.PI / 2 + R(-1.0, 1.0),
+      bob: R(2.0, 4.2), bobw: R(1.4, 2.6),
+      det: false,
+    });
+  });
+});
+
+/* a dozen of them lift off again once the name is lit */
+{
+  const pool = butterflies.map((b, i) => i);
+  for (let i = pool.length - 1; i > 0; i--) { const j = RI(0, i);[pool[i], pool[j]] = [pool[j], pool[i]]; }
+  for (let i = 0; i < 13; i++) {
+    const b = butterflies[pool[i]];
+    b.det = true;
+    b.td = T_FLASH + R(0.02, 0.55);
+    b.dr = R(90, 230);
+    b.dw = R(0.9, 2.1) * (rng() < .5 ? -1 : 1);
+    b.dang = R(0, TAU);
+    b.dlift = R(0.5, 1.0);
+  }
+}
+
+/* — free flyers that roam the frame the whole time — */
+const NUM_FREE = 44;
+for (let i = 0; i < NUM_FREE; i++) {
+  const orb = {
+    rx: R(430, 900), ry: R(210, 430),
+    w1: R(0.42, 0.95) * (rng() < .5 ? -1 : 1), w2: R(0.42, 0.95) * (rng() < .5 ? -1 : 1),
+    p1: R(0, TAU), p2: R(0, TAU),
+    rx2: R(60, 190), ry2: R(50, 150),
+    w3: R(1.3, 2.6) * (rng() < .5 ? -1 : 1), w4: R(1.3, 2.6) * (rng() < .5 ? -1 : 1),
+    p3: R(0, TAU), p4: R(0, TAU),
+    cy: TEXT_CY + R(-120, 120),
+  };
+  const t0 = i < 20 ? R(0.0, 0.20) : R(0.15, 2.6);
+  const base = orbitAt(orb, t0);
+  const [sx, sy] = spawnPoint();
+  butterflies.push({
+    free: true, orb,
+    r0: Math.hypot(sx - base[0], sy - base[1]),
+    a0: Math.atan2(sy - base[1], sx - base[0]),
+    turns: (rng() < .5 ? -1 : 1) * R(0.9, 2.0) * TAU,
+    t0, dur: R(1.0, 1.5),
+    col: RI(0, PALETTE.length - 1),
+    size: R(34, 58),
+    flap: R(7.5, 10.5), fph: R(0, TAU),
+    ph1: R(0, TAU), ph2: R(0, TAU),
+    det: false,
+  });
+}
+
+function orbitAt(o, t) {
+  return [
+    TEXT_CX + Math.cos(o.w1 * t + o.p1) * o.rx + Math.cos(o.w3 * t + o.p3) * o.rx2,
+    o.cy + Math.sin(o.w2 * t + o.p2) * o.ry + Math.sin(o.w4 * t + o.p4) * o.ry2,
+  ];
+}
+
+/* position of a butterfly at absolute time t */
+function posAt(b, t) {
+  let bx, by;
+  const u = clamp01((t - b.t0) / b.dur);
+  if (b.free) {
+    const p = orbitAt(b.orb, t); bx = p[0]; by = p[1];
+  } else {
+    bx = b.px; by = b.py;
+    const settled = smoothstep(0.55, 1.0, u);
+    bx += Math.sin(t * b.bobw + b.ph1) * b.bob * settled;
+    by += Math.sin(t * b.bobw * 0.78 + b.ph2) * b.bob * 0.85 * settled;
+    if (b.det && t > b.td) {
+      const v = clamp01((t - b.td) / 1.05);
+      const e = easeInOut(v) * (0.35 + 0.65 * v);
+      const ang = b.dang + (t - b.td) * b.dw * TAU * 0.30;
+      bx += Math.cos(ang) * b.dr * e;
+      by += Math.sin(ang) * b.dr * 0.62 * e - 46 * e * b.dlift;
+    }
+  }
+  const er = 1 - Math.pow(1 - u, 2.2);
+  const ea = smoother(u);
+  const r  = b.r0 * (1 - er);
+  const a  = b.a0 + b.turns * ea;
+  let x = bx + Math.cos(a) * r;
+  let y = by + Math.sin(a) * r;
+  const fl = Math.pow(1 - u, 1.5);
+  x += Math.sin(t * 12.5 + b.ph1) * 11 * fl;
+  y += Math.cos(t * 10.0 + b.ph2) * 9 * fl;
+  return [x, y, u];
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   5. BUTTERFLY SPRITE  (local unit space, +x = heading, ±y = wings)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const gradCache = [];
+function grads(ci) {
+  if (gradCache[ci]) return gradCache[ci];
+  const p = PALETTE[ci];
+  const fore = ctx.createLinearGradient(0.04, 0.04, 0.40, 0.42);
+  fore.addColorStop(0.00, p.deep);
+  fore.addColorStop(0.42, p.mid);
+  fore.addColorStop(1.00, p.lite);
+  const hind = ctx.createLinearGradient(0.02, 0.04, -0.22, 0.40);
+  hind.addColorStop(0.00, p.deep);
+  hind.addColorStop(0.55, p.mid);
+  hind.addColorStop(1.00, p.lite);
+  const body = ctx.createLinearGradient(-0.24, 0, 0.22, 0);
+  body.addColorStop(0.00, '#0e0b18');
+  body.addColorStop(0.55, '#2a2338');
+  body.addColorStop(1.00, '#4a4060');
+  const g = { fore, hind, body };
+  gradCache[ci] = g;
+  return g;
+}
+
+/* soft glow sprites, one per palette colour */
+const glowSprites = PALETTE.map(p => {
+  const s = 128, off = document.createElement('canvas');
+  off.width = off.height = s;
+  const g = off.getContext('2d');
+  const rg = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  rg.addColorStop(0.00, `rgba(${p.glow},0.55)`);
+  rg.addColorStop(0.28, `rgba(${p.glow},0.22)`);
+  rg.addColorStop(0.65, `rgba(${p.glow},0.05)`);
+  rg.addColorStop(1.00, `rgba(${p.glow},0)`);
+  g.fillStyle = rg; g.fillRect(0, 0, s, s);
+  return off;
+});
+
+function wingPath(g, kind) {
+  g.beginPath();
+  if (kind === 0) {                 // forewing — swept, pointed tip
+    g.moveTo(0.095, 0.015);
+    g.bezierCurveTo(0.300, -0.020, 0.432, 0.100, 0.450, 0.296);
+    g.bezierCurveTo(0.456, 0.398, 0.400, 0.452, 0.298, 0.430);
+    g.bezierCurveTo(0.178, 0.404, 0.070, 0.330, 0.030, 0.230);
+    g.bezierCurveTo(0.004, 0.150, 0.030, 0.040, 0.095, 0.015);
+  } else {                          // hindwing — rounded, small trailing lobe
+    g.moveTo(0.030, 0.040);
+    g.bezierCurveTo(0.124, 0.118, 0.152, 0.272, 0.070, 0.396);
+    g.bezierCurveTo(0.010, 0.486, -0.132, 0.512, -0.216, 0.440);
+    g.bezierCurveTo(-0.292, 0.376, -0.302, 0.228, -0.246, 0.130);
+    g.bezierCurveTo(-0.196, 0.044, -0.090, 0.004, 0.030, 0.040);
+  }
+  g.closePath();
+}
+
+/* Wingbeat phase. Butterflies beat hard in flight and settle to a calm,
+   slow fan once perched, so the beat rate is the derivative of this and
+   the phase itself stays continuous (no stutter when the rate changes). */
+function flapPhase(b, t) {
+  const e = Math.max(0, t - b.t0);
+  let integral = e;                       // free flyers: always in flight
+  if (!b.free) {
+    const u = clamp01(e / b.dur);
+    let G;
+    if (u <= 0.78) G = u;
+    else { const w = (u - 0.78) / 0.22; G = 0.78 + 0.22 * (w - w * w * w + w * w * w * w / 2); }
+    integral = 0.42 * e + 0.58 * b.dur * G;
+    if (b.det && t > b.td) integral += 0.58 * (t - b.td);
+  }
+  return TAU * b.flap * integral + b.fph;
+}
+
+function drawButterfly(b, t, x, y, ang, alpha, detail) {
+  if (alpha <= 0.004) return;
+  const p = PALETTE[b.col];
+  const gr = grads(b.col);
+  const s = b.size / 1.02;
+
+  const phase = flapPhase(b, t);
+  const elev = 0.40 + 0.72 * Math.sin(phase);
+  const k = Math.max(0.30, Math.cos(elev));
+  const hop = -Math.sin(phase) * 0.020;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(ang);
+  ctx.scale(s, s);
+  ctx.globalAlpha = alpha;
+
+  if (detail) { // soft coloured aura
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = alpha * 0.55;
+    ctx.drawImage(glowSprites[b.col], -1.05, -1.05, 2.1, 2.1);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = alpha;
+  }
+
+  ctx.translate(0, hop);
+
+  for (const side of [-1, 1]) {
+    ctx.save();
+    ctx.scale(1, side * k);
+    // hindwing first (behind)
+    for (let kind = 1; kind >= 0; kind--) {
+      wingPath(ctx, kind);
+      ctx.fillStyle = kind ? gr.hind : gr.fore;
+      ctx.fill();
+      if (detail) {
+        ctx.lineWidth = 0.014;
+        ctx.strokeStyle = 'rgba(12,8,22,0.42)';
+        ctx.stroke();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineWidth = 0.010;
+        ctx.strokeStyle = `rgba(${p.glow},0.40)`;
+        ctx.stroke();
+        ctx.globalCompositeOperation = 'source-over';
+      }
+    }
+    if (detail) { // wing markings
+      ctx.globalAlpha = alpha * 0.6;
+      ctx.fillStyle = p.lite;
+      ctx.beginPath(); ctx.ellipse(0.300, 0.215, 0.040, 0.030, 0.3, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0.196, 0.318, 0.026, 0.020, 0.3, 0, TAU); ctx.fill();
+      ctx.globalAlpha = alpha * 0.34;
+      ctx.fillStyle = '#120c1e';
+      ctx.beginPath(); ctx.ellipse(-0.120, 0.286, 0.052, 0.036, -0.2, 0, TAU); ctx.fill();
+      ctx.globalAlpha = alpha;
+    }
+    ctx.restore();
+  }
+
+  // body + head
+  ctx.fillStyle = gr.body;
+  ctx.beginPath();
+  ctx.ellipse(-0.020, 0, 0.215, 0.036, 0, 0, TAU);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(0.205, 0, 0.040, 0.037, 0, 0, TAU);
+  ctx.fill();
+
+  if (detail) { // antennae
+    ctx.strokeStyle = `rgba(${p.glow},0.55)`;
+    ctx.lineWidth = 0.013;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(0.215, 0.012 * side);
+      ctx.quadraticCurveTo(0.320, 0.055 * side, 0.372, 0.130 * side);
+      ctx.stroke();
+      ctx.fillStyle = p.lite;
+      ctx.beginPath(); ctx.arc(0.376, 0.136 * side, 0.020, 0, TAU); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   6. BACKGROUND ELEMENTS
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const bokeh = [];
+for (let i = 0; i < 190; i++) {
+  const big = i < 26;
+  bokeh.push({
+    x: R(-100, W + 100), y: R(-80, H + 80),
+    r: big ? R(26, 70) : R(1.6, 7.5),
+    a: big ? R(0.030, 0.075) : R(0.20, 0.85),
+    vx: R(-13, 13), vy: R(-22, -4),
+    tw: R(0.5, 2.4), tp: R(0, TAU),
+    c: RI(0, PALETTE.length - 1), big,
+  });
+}
+const bokehSprite = (() => {
+  const s = 96, off = document.createElement('canvas');
+  off.width = off.height = s;
+  const g = off.getContext('2d');
+  const rg = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  rg.addColorStop(0.00, 'rgba(255,255,255,1)');
+  rg.addColorStop(0.22, 'rgba(255,255,255,0.55)');
+  rg.addColorStop(0.60, 'rgba(255,255,255,0.10)');
+  rg.addColorStop(1.00, 'rgba(255,255,255,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, s, s);
+  return off;
+})();
+
+const rays = [];
+for (let i = 0; i < 7; i++) {
+  rays.push({
+    x: R(-0.15, 1.15) * W, ang: R(-0.44, 0.44),
+    w: R(60, 190), len: R(900, 1500),
+    a: R(0.030, 0.085), sw: R(0.10, 0.30), sp: R(0.25, 0.7), ph: R(0, TAU),
+    c: rng() < 0.5 ? '160,190,255' : '210,180,255',
+  });
+}
+const rayCv = document.createElement('canvas');
+rayCv.width = W / 5; rayCv.height = H / 5;
+const rayCtx = rayCv.getContext('2d');
+
+const nebulae = [];
+for (let i = 0; i < 6; i++) {
+  nebulae.push({
+    x: R(0.1, 0.9) * W, y: R(0.05, 0.95) * H, r: R(320, 720),
+    c: ['40,70,190', '90,40,170', '150,80,30', '30,90,150'][RI(0, 3)],
+    a: R(0.10, 0.24), ph: R(0, TAU), sp: R(0.25, 0.6),
+  });
+}
+
+/* flash sparkles, emitted from the letterforms */
+const sparks = [];
+{
+  const all = [];
+  letters.forEach(L => { for (const pts of L.polys) for (const p of pts) all.push(p); });
+  for (let i = 0; i < 230; i++) {
+    const p = all[RI(0, all.length - 1)];
+    const a = R(0, TAU), sp = R(180, 1150);
+    sparks.push({
+      x: p[0] + R(-16, 16), y: p[1] + R(-16, 16),
+      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.72 - R(20, 130),
+      life: R(0.45, 1.30), delay: R(0, 0.12),
+      size: R(1.4, 4.2), star: rng() < 0.22,
+      c: PALETTE[RI(0, PALETTE.length - 1)].glow,
+    });
+  }
+}
+
+/* film grain tile */
+const grainCv = document.createElement('canvas');
+grainCv.width = grainCv.height = 256;
+{
+  const g = grainCv.getContext('2d');
+  const img = g.createImageData(256, 256);
+  const gr = mulberry32(99887766);
+  for (let i = 0; i < 256 * 256; i++) {
+    const v = 128 + (gr() - 0.5) * 255;
+    img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v;
+    img.data[i * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+}
+const grainPat = ctx.createPattern(grainCv, 'repeat');
+
+/* bloom buffers */
+const bloomA = document.createElement('canvas'); bloomA.width = W / 8;  bloomA.height = H / 8;
+const bloomB = document.createElement('canvas'); bloomB.width = W / 24; bloomB.height = H / 24;
+const bloomACtx = bloomA.getContext('2d');
+const bloomBCtx = bloomB.getContext('2d');
+
+/* ═══════════════════════════════════════════════════════════════════════
+   7. SCENE PIECES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+function drawBackground(t) {
+  const g = ctx.createRadialGradient(W / 2, H * 0.46, 60, W / 2, H * 0.5, W * 0.78);
+  g.addColorStop(0.00, '#101a3c');
+  g.addColorStop(0.34, '#0a0f28');
+  g.addColorStop(0.72, '#05071a');
+  g.addColorStop(1.00, '#02030c');
+  ctx.fillStyle = g;
+  ctx.fillRect(-400, -400, W + 800, H + 800);
+
+  ctx.globalCompositeOperation = 'lighter';
+  for (const n of nebulae) {
+    const px = n.x + Math.cos(t * n.sp + n.ph) * 40;
+    const py = n.y + Math.sin(t * n.sp * 0.8 + n.ph) * 26;
+    const rg = ctx.createRadialGradient(px, py, 0, px, py, n.r);
+    const a = n.a * (0.75 + 0.25 * Math.sin(t * 0.9 + n.ph));
+    rg.addColorStop(0, `rgba(${n.c},${a})`);
+    rg.addColorStop(0.55, `rgba(${n.c},${a * 0.28})`);
+    rg.addColorStop(1, `rgba(${n.c},0)`);
+    ctx.fillStyle = rg;
+    ctx.beginPath(); ctx.arc(px, py, n.r, 0, TAU); ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+function drawRays(t, boost) {
+  const sc = 1 / 5;
+  rayCtx.clearRect(0, 0, rayCv.width, rayCv.height);
+  rayCtx.save();
+  rayCtx.scale(sc, sc);
+  rayCtx.globalCompositeOperation = 'lighter';
+  for (const r of rays) {
+    const ang = r.ang + Math.sin(t * r.sp + r.ph) * r.sw;
+    rayCtx.save();
+    rayCtx.translate(r.x, -120);
+    rayCtx.rotate(ang);
+    const lg = rayCtx.createLinearGradient(0, 0, 0, r.len);
+    const a = r.a * boost * (0.7 + 0.3 * Math.sin(t * 0.8 + r.ph));
+    lg.addColorStop(0.00, `rgba(${r.c},0)`);
+    lg.addColorStop(0.18, `rgba(${r.c},${a})`);
+    lg.addColorStop(0.62, `rgba(${r.c},${a * 0.45})`);
+    lg.addColorStop(1.00, `rgba(${r.c},0)`);
+    rayCtx.fillStyle = lg;
+    rayCtx.beginPath();
+    rayCtx.moveTo(-r.w * 0.32, 0);
+    rayCtx.lineTo(r.w * 0.32, 0);
+    rayCtx.lineTo(r.w * 0.9, r.len);
+    rayCtx.lineTo(-r.w * 0.9, r.len);
+    rayCtx.closePath();
+    rayCtx.fill();
+    rayCtx.restore();
+  }
+  rayCtx.restore();
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.filter = 'blur(38px)';
+  ctx.drawImage(rayCv, -60, -60, W + 120, H + 120);
+  ctx.filter = 'none';
+  ctx.restore();
+}
+
+function drawBokeh(t, big) {
+  ctx.globalCompositeOperation = 'lighter';
+  for (const p of bokeh) {
+    if (p.big !== big) continue;
+    let x = p.x + p.vx * t, y = p.y + p.vy * t;
+    x = ((x + 160) % (W + 320) + (W + 320)) % (W + 320) - 160;
+    y = ((y + 140) % (H + 280) + (H + 280)) % (H + 280) - 140;
+    const tw = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * p.tw + p.tp));
+    ctx.globalAlpha = p.a * tw;
+    const c = PALETTE[p.c];
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.globalCompositeOperation = 'lighter';
+    // tint by drawing the white sprite then a coloured multiply-free wash
+    ctx.drawImage(bokehSprite, -p.r, -p.r, p.r * 2, p.r * 2);
+    ctx.globalAlpha = p.a * tw * 0.75;
+    const rg = ctx.createRadialGradient(0, 0, 0, 0, 0, p.r);
+    rg.addColorStop(0, `rgba(${c.glow},0.85)`);
+    rg.addColorStop(1, `rgba(${c.glow},0)`);
+    ctx.fillStyle = rg;
+    ctx.beginPath(); ctx.arc(0, 0, p.r, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+/* the glowing IMRAN letterforms */
+function drawWordmark(t) {
+  const wordGrad = ctx.createLinearGradient(originX, 0, originX + wordW, 0);
+  wordGrad.addColorStop(0.00, '#7cc0ff');
+  wordGrad.addColorStop(0.24, '#a98bff');
+  wordGrad.addColorStop(0.50, '#ffeec2');
+  wordGrad.addColorStop(0.72, '#ffb43c');
+  wordGrad.addColorStop(1.00, '#5fb6ff');
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  letters.forEach((L, i) => {
+    const t0 = LETTER_T0[i];
+    let a = smoothstep(t0 + 0.70, t0 + 1.62, t);
+    if (a <= 0.001) return;
+
+    // brief ignition overshoot as the letter completes
+    const ig = Math.exp(-Math.pow((t - (t0 + 1.58)) / 0.13, 2));
+    // post-flash pulse
+    const pulse = t > T_FLASH
+      ? 1 + 0.16 * Math.sin((t - T_FLASH) * 5.0 - i * 0.55) * smoothstep(T_FLASH, T_FLASH + 0.35, t)
+      : 1;
+    const flashBoost = 1 + 0.85 * Math.exp(-Math.pow((t - T_FLASH) / 0.16, 2));
+    const k = a * pulse * flashBoost + ig * 0.55;
+    const kh = Math.min(1.35, k);   // haloes must not run away during the flash
+
+    ctx.globalCompositeOperation = 'lighter';
+
+    ctx.strokeStyle = `rgba(110,140,255,${0.045 * kh})`;
+    ctx.lineWidth = STROKE * 2.4;
+    ctx.stroke(L.path);
+
+    ctx.strokeStyle = `rgba(180,130,255,${0.062 * kh})`;
+    ctx.lineWidth = STROKE * 1.62;
+    ctx.stroke(L.path);
+
+    ctx.strokeStyle = `rgba(255,190,95,${0.10 * kh})`;
+    ctx.lineWidth = STROKE * 1.16;
+    ctx.stroke(L.path);
+
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = Math.min(1, a * 0.98);
+    ctx.strokeStyle = wordGrad;
+    ctx.lineWidth = STROKE;
+    ctx.shadowColor = 'rgba(255,196,110,0.7)';
+    ctx.shadowBlur = 26 * Math.min(1.3, k);
+    ctx.stroke(L.path);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = `rgba(255,250,235,${0.16 * kh})`;
+    ctx.lineWidth = STROKE * 0.30;
+    ctx.stroke(L.path);
+    ctx.globalCompositeOperation = 'source-over';
+  });
+
+  ctx.restore();
+}
+
+function drawShockwaves(t) {
+  const rings = [
+    { d: 0.00, c: '255,246,214', sy: 1.00, lw: 26, sp: 1650 },
+    { d: 0.09, c: '255,196,90', sy: 0.34, lw: 16, sp: 2050 },
+    { d: 0.19, c: '160,190,255', sy: 0.62, lw: 12, sp: 1450 },
+  ];
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const r of rings) {
+    const u = (t - T_FLASH - r.d) / 0.82;
+    if (u <= 0 || u >= 1) continue;
+    const e = easeOutQuint(u);
+    const rad = e * r.sp;
+    const a = (1 - u) * (1 - u) * 0.75;
+    ctx.save();
+    ctx.translate(TEXT_CX, TEXT_CY);
+    ctx.scale(1, r.sy);
+    ctx.strokeStyle = `rgba(${r.c},${a})`;
+    ctx.lineWidth = r.lw * (1 - u * 0.75) + 1;
+    ctx.shadowColor = `rgba(${r.c},${a})`;
+    ctx.shadowBlur = 40;
+    ctx.beginPath(); ctx.arc(0, 0, rad, 0, TAU); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawSparks(t) {
+  if (t < T_FLASH) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const s of sparks) {
+    const e = t - T_FLASH - s.delay;
+    if (e <= 0 || e > s.life) continue;
+    const u = e / s.life;
+    const drag = (1 - Math.exp(-e * 3.1)) / 3.1;
+    const x = s.x + s.vx * drag;
+    const y = s.y + s.vy * drag + 130 * e * e;
+    const a = (1 - u) * (1 - u) * 0.95;
+    const sz = s.size * (1 - u * 0.35);
+    ctx.fillStyle = `rgba(${s.c},${a})`;
+    ctx.shadowColor = `rgba(${s.c},${a})`;
+    ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.arc(x, y, sz, 0, TAU); ctx.fill();
+    if (s.star) {
+      ctx.strokeStyle = `rgba(255,255,255,${a * 0.8})`;
+      ctx.lineWidth = 1.2;
+      const L = sz * 5.5;
+      ctx.beginPath();
+      ctx.moveTo(x - L, y); ctx.lineTo(x + L, y);
+      ctx.moveTo(x, y - L); ctx.lineTo(x, y + L);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+  }
+  ctx.restore();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   8. FRAME RENDER
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const DT = 1 / 110;   // motion-blur sample spacing
+
+function renderAt(t, frameIdx) {
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  /* camera: slow push-in plus a punch on the flash */
+  let zoom = 1.0 + 0.052 * easeOutCubic(t / DURATION) + 0.012 * Math.sin(t * 0.7);
+  if (t > T_FLASH) zoom += 0.034 * Math.exp(-(t - T_FLASH) / 0.40);
+  zoom += 0.010 * Math.exp(-Math.pow((t - T_FLASH) / 0.10, 2));
+  const drift = Math.sin(t * 0.45) * 6;
+
+  ctx.save();
+  ctx.translate(TEXT_CX + drift, TEXT_CY);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-TEXT_CX, -TEXT_CY);
+
+  drawBackground(t);
+  drawRays(t, 1 + 2.4 * Math.exp(-Math.pow((t - T_FLASH) / 0.22, 2)));
+  drawBokeh(t, false);
+  drawWordmark(t);
+
+  /* butterflies, back to front by y for a touch of depth */
+  const frame = [];
+  for (const b of butterflies) {
+    if (t < b.t0 - 0.001) continue;
+    const [x, y, u] = posAt(b, t);
+    if (x < -260 || x > W + 260 || y < -260 || y > H + 260) continue;
+    const [px, py] = posAt(b, t - DT);
+    const vx = (x - px) / DT, vy = (y - py) / DT;
+    const speed = Math.hypot(vx, vy);
+    let ang = Math.atan2(vy, vx);
+    if (!b.free) {
+      const rest = b.rest + Math.sin(t * 0.8 + b.ph1) * 0.28;
+      ang = lerpAngle(ang, rest, smoothstep(0.86, 1.0, u) * (b.det && t > b.td ? clamp01(1 - (t - b.td) / 0.5) : 1));
+    }
+    const fade = smoothstep(0, 0.10, t - b.t0);
+    frame.push({ b, x, y, ang, u, speed, alpha: fade });
+  }
+  frame.sort((p, q) => p.y - q.y);
+
+  /* Motion blur: sample each butterfly densely across one shutter interval
+     so a fast entry reads as a continuous streak rather than a row of copies. */
+  const SHUTTER = 1 / 82;
+  for (const f of frame) {
+    const b = f.b;
+    const n = Math.min(12, Math.round(f.speed * SHUTTER / 6));
+    if (n >= 2) {
+      const smear = Math.min(1, f.speed / 2400);
+      const core = 1 - 0.55 * smear;               // energy left in the sharp copy
+      const pts = [];
+      for (let j = 0; j <= n; j++) pts.push(posAt(b, t - SHUTTER * (j / n)));
+      // tail weights: older samples fade out, so the smear trails off softly
+      let wsum = 0;
+      for (let j = 1; j <= n; j++) wsum += 1 - j / (n + 1);
+      for (let j = n; j >= 1; j--) {
+        const [gx, gy] = pts[j];
+        const [ax, ay] = pts[j - 1];
+        drawButterfly(b, t - SHUTTER * (j / n), gx, gy,
+          Math.atan2(ay - gy, ax - gx),
+          f.alpha * (1 - core) * (1 - j / (n + 1)) / wsum, false);
+      }
+      drawButterfly(b, t, f.x, f.y, f.ang, f.alpha * core, true);
+    } else {
+      drawButterfly(b, t, f.x, f.y, f.ang, f.alpha, true);
+    }
+  }
+
+  drawBokeh(t, true);
+  drawShockwaves(t);
+  drawSparks(t);
+
+  ctx.restore();
+
+  /* ── bloom ── */
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  bloomACtx.clearRect(0, 0, bloomA.width, bloomA.height);
+  bloomACtx.drawImage(cv, 0, 0, bloomA.width, bloomA.height);
+  bloomBCtx.clearRect(0, 0, bloomB.width, bloomB.height);
+  bloomBCtx.drawImage(cv, 0, 0, bloomB.width, bloomB.height);
+
+  const bloomBoost = 1 + 0.55 * Math.exp(-Math.pow((t - T_FLASH) / 0.20, 2));
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.filter = 'blur(7px)';
+  ctx.globalAlpha = 0.26 * bloomBoost;
+  ctx.drawImage(bloomA, 0, 0, W, H);
+  ctx.filter = 'blur(16px)';
+  ctx.globalAlpha = 0.22 * bloomBoost;
+  ctx.drawImage(bloomB, 0, 0, W, H);
+  ctx.filter = 'none';
+  ctx.restore();
+
+  /* ── cinematic flash ── */
+  const fl = Math.exp(-Math.pow((t - T_FLASH) / 0.075, 2));
+  if (fl > 0.002) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const rg = ctx.createRadialGradient(TEXT_CX, TEXT_CY, 0, TEXT_CX, TEXT_CY, W * 0.80);
+    rg.addColorStop(0.00, `rgba(255,250,232,${0.46 * fl})`);
+    rg.addColorStop(0.30, `rgba(255,226,168,${0.30 * fl})`);
+    rg.addColorStop(0.72, `rgba(170,185,255,${0.10 * fl})`);
+    rg.addColorStop(1.00, 'rgba(120,140,255,0)');
+    ctx.fillStyle = rg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
+  /* ── vignette ── */
+  const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.30, W / 2, H / 2, W * 0.72);
+  vg.addColorStop(0.00, 'rgba(0,0,0,0)');
+  vg.addColorStop(0.62, 'rgba(0,0,0,0.24)');
+  vg.addColorStop(1.00, 'rgba(0,0,0,0.72)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, W, H);
+
+  /* ── grain ── */
+  ctx.save();
+  ctx.globalCompositeOperation = 'overlay';
+  ctx.globalAlpha = 0.045;
+  ctx.translate(-(frameIdx * 71) % 256, -(frameIdx * 149) % 256);
+  ctx.fillStyle = grainPat;
+  ctx.fillRect(0, 0, W + 256, H + 256);
+  ctx.restore();
+
+  /* ── opening fade-up / closing settle ── */
+  const fadeIn = smoothstep(0, 0.22, t);
+  if (fadeIn < 1) {
+    ctx.fillStyle = `rgba(0,0,0,${1 - fadeIn})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+/* headless capture entry point */
+window.__renderFrame = (i) => { renderAt(i / FPS, i); return true; };
+window.__TOTAL_FRAMES = TOTAL_FRAMES;
+
+/* live playback */
+if (new URLSearchParams(location.search).has('capture')) {
+  document.body.classList.add('capture');
+  renderAt(0, 0);
+} else {
+  let start = null;
+  const loop = (now) => {
+    if (start === null) start = now;
+    let t = ((now - start) / 1000) % (DURATION + 0.7);
+    const i = Math.round(Math.min(t, DURATION - 1 / FPS) * FPS);
+    renderAt(Math.min(t, DURATION - 1 / FPS), i);
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+
+window.__ready = true;
+})();
+</script>
+</body>
+</html>
