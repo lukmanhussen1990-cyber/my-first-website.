@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>2 + 2 = 4</title>
+<style>
+  @font-face { font-family: 'Outfit'; src: url('fonts/outfit-700.ttf') format('truetype'); font-weight: 700; }
+  @font-face { font-family: 'Outfit'; src: url('fonts/outfit-600.ttf') format('truetype'); font-weight: 600; }
+  @font-face { font-family: 'Inter';  src: url('fonts/inter-500.ttf')  format('truetype'); font-weight: 500; }
+  html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ config */
+
+const TL = window.__TIMELINE__ || {
+  duration: 30, fps: 30, width: 1920, height: 1080,
+  designWidth: 1920, designHeight: 1080,
+  scene: {}
+};
+const SC = TL.scene;
+
+const DW = TL.designWidth, DH = TL.designHeight;   // design space
+const W = TL.width, H = TL.height;                 // output pixels
+const S = W / DW;                                  // design -> device scale
+const CX = DW / 2, CY = DH / 2;
+
+const canvas = document.getElementById('stage');
+canvas.width = W;
+canvas.height = H;
+canvas.style.width = W + 'px';
+canvas.style.height = H + 'px';
+const ctx = canvas.getContext('2d', { alpha: false });
+
+/* ------------------------------------------------------------------ palette */
+
+const GOLD = {
+  white: '#FFFCF0',
+  hi:    '#FFF2CE',
+  light: '#FFE3A0',
+  mid:   '#F3C963',
+  deep:  '#CE9A36',
+  dark:  '#8A5E18',
+  core:  '#3C2708'
+};
+const BLUE = {
+  hi:   '#BFE2FF',
+  mid:  '#5AA6F5',
+  deep: '#1F5BB5',
+  dark: '#0A1F45'
+};
+
+/* ------------------------------------------------------------------- maths */
+
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp  = (a, b, t) => a + (b - a) * t;
+const mix   = (a, b, t) => a + (b - a) * clamp(t, 0, 1);
+
+/** normalised progress of t through [t0,t1] */
+function seg(t, t0, t1) {
+  if (t1 <= t0) return t >= t1 ? 1 : 0;
+  return clamp((t - t0) / (t1 - t0), 0, 1);
+}
+const easeOutCubic  = t => 1 - Math.pow(1 - t, 3);
+const easeOutQuint  = t => 1 - Math.pow(1 - t, 5);
+const easeInOutCubic= t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+const easeOutBack   = t => { const c = 1.36; return 1 + (c+1)*Math.pow(t-1,3) + c*Math.pow(t-1,2); };
+const easeInCubic   = t => t*t*t;
+/** one-shot 0->1->0 pulse */
+const pulse = (t, t0, dur) => { const p = seg(t, t0, t0 + dur); return Math.sin(Math.PI * p); };
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* -------------------------------------------------------------- sprite kit */
+
+/** Offscreen canvas measured in design units but backed by S x pixels. */
+function makeSprite(wDesign, hDesign, draw, superSample) {
+  const ss = superSample || 1;
+  const c = document.createElement('canvas');
+  c.width  = Math.max(1, Math.ceil(wDesign * S * ss));
+  c.height = Math.max(1, Math.ceil(hDesign * S * ss));
+  const g = c.getContext('2d');
+  g.scale(S * ss, S * ss);
+  draw(g, wDesign, hDesign);
+  return { canvas: c, w: wDesign, h: hDesign };
+}
+
+function blit(g, sp, cx, cy, scale, alpha, composite) {
+  if (alpha <= 0.001 || scale <= 0) return;
+  const w = sp.w * scale, h = sp.h * scale;
+  g.save();
+  g.globalAlpha = clamp(alpha, 0, 1);
+  if (composite) g.globalCompositeOperation = composite;
+  g.drawImage(sp.canvas, cx - w / 2, cy - h / 2, w, h);
+  g.restore();
+}
+
+/** Blurred copy of a sprite, tinted, for bloom passes. */
+function bloomOf(sp, blurDesign, tint) {
+  const pad = blurDesign * 2.2;
+  return makeSprite(sp.w + pad * 2, sp.h + pad * 2, (g, w, h) => {
+    g.filter = `blur(${blurDesign}px)`;
+    g.drawImage(sp.canvas, pad, pad, sp.w, sp.h);
+    g.filter = 'none';
+    if (tint) {
+      g.globalCompositeOperation = 'source-in';
+      g.fillStyle = tint;
+      g.fillRect(0, 0, w, h);
+    }
+  });
+}
+
+/* ------------------------------------------------------- glass numerals */
+
+const glyphCache = new Map();
+
+/**
+ * A numeral rendered as polished gold glass: gradient body, bright top
+ * highlight, diagonal specular streak, cool blue counter-light and a crisp rim.
+ */
+function glassGlyph(char, size) {
+  const key = char + '|' + size;
+  if (glyphCache.has(key)) return glyphCache.get(key);
+
+  const font = `700 ${size}px Outfit, Inter, sans-serif`;
+  const m0 = (() => { ctx.save(); ctx.font = font; const m = ctx.measureText(char); ctx.restore(); return m; })();
+  const gw = m0.width;
+  const asc = m0.actualBoundingBoxAscent || size * 0.72;
+  const desc = m0.actualBoundingBoxDescent || size * 0.05;
+  const padX = size * 0.30, padY = size * 0.30;
+  const w = gw + padX * 2, h = asc + desc + padY * 2;
+  const bx = padX, by = padY + asc;   // baseline origin inside the sprite
+
+  const core = makeSprite(w, h, (g) => {
+    g.font = font;
+    g.textAlign = 'left';
+    g.textBaseline = 'alphabetic';
+
+    // body gradient: a white crown falling through rich gold to a warm base.
+    // The whole ramp is smooth end-to-end so no banding shows inside strokes.
+    const grad = g.createLinearGradient(0, by - asc, 0, by + desc);
+    grad.addColorStop(0.00, '#FFFDF4');
+    grad.addColorStop(0.12, '#FFF0CE');
+    grad.addColorStop(0.30, '#FFE09A');
+    grad.addColorStop(0.50, '#F7CB6E');
+    grad.addColorStop(0.70, '#E7B152');
+    grad.addColorStop(0.88, '#D19A3E');
+    grad.addColorStop(1.00, '#B9822C');
+    g.fillStyle = grad;
+    g.fillText(char, bx, by);
+
+    // everything below only paints where the glyph already is
+    g.globalCompositeOperation = 'source-atop';
+
+    // glassy crown highlight, kept to the top sliver
+    const hi = g.createLinearGradient(0, by - asc, 0, by - asc * 0.52);
+    hi.addColorStop(0, 'rgba(255,255,255,0.55)');
+    hi.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = hi;
+    g.fillRect(0, 0, w, h);
+
+    // cool blue counter-light rising from the base (blue/gold palette tie-in)
+    const cool = g.createLinearGradient(0, by + desc, 0, by - asc * 0.55);
+    cool.addColorStop(0, 'rgba(96,168,245,0.26)');
+    cool.addColorStop(1, 'rgba(96,168,245,0)');
+    g.fillStyle = cool;
+    g.fillRect(0, 0, w, h);
+
+    // broad, soft diagonal specular sweep across the whole glyph
+    g.save();
+    g.translate(w * 0.5, h * 0.5);
+    g.rotate(-0.52);
+    const reach = Math.max(w, h) * 1.5;
+    const spec = g.createLinearGradient(0, -reach, 0, reach);
+    spec.addColorStop(0.00, 'rgba(255,255,255,0)');
+    spec.addColorStop(0.30, 'rgba(255,255,255,0)');
+    spec.addColorStop(0.50, 'rgba(255,255,255,0.11)');
+    spec.addColorStop(0.70, 'rgba(255,255,255,0)');
+    spec.addColorStop(1.00, 'rgba(255,255,255,0)');
+    g.fillStyle = spec;
+    g.fillRect(-reach, -reach, reach * 2, reach * 2);
+    g.restore();
+
+    // NB: no strokeText rim here. Outfit's digits are built from overlapping
+    // contours, so stroking the path draws the internal seams (a visible line
+    // across the bar of '2' and '4'). The bloom passes give the edge definition.
+  }, 1);
+
+  const sprite = {
+    core,
+    glow: bloomOf(core, size * 0.16, 'rgba(255,206,110,0.95)'),
+    halo: bloomOf(core, size * 0.44, 'rgba(255,182,74,0.75)'),
+    adv: m0.width,                       // advance width, for typographic layout
+    baseDy: (padY + asc) - h / 2         // baseline offset from the sprite centre
+  };
+  glyphCache.set(key, sprite);
+  return sprite;
+}
+
+/**
+ * Draw a glass numeral sitting on the baseline `yBase` (so mixed glyphs such
+ * as '2', '+' and '=' align typographically rather than by bounding box).
+ *
+ * @param opts.glow    bloom strength multiplier
+ * @param opts.tint    extra white-hot flash 0..1
+ */
+function drawGlyph(g, char, size, x, yBase, scale, alpha, opts) {
+  const o = opts || {};
+  const sp = glassGlyph(char, size);
+  const y = yBase - sp.baseDy * scale;
+  const glow = o.glow == null ? 1 : o.glow;
+  blit(g, sp.halo, x, y, scale, alpha * 0.55 * glow, 'lighter');
+  blit(g, sp.glow, x, y, scale, alpha * 0.75 * glow, 'lighter');
+  blit(g, sp.core, x, y, scale, alpha);
+  if (o.tint > 0.001) blit(g, sp.glow, x, y, scale, alpha * o.tint * 1.4, 'lighter');
+}
+
+/** advance width of a glyph in design units (for equation layout) */
+function glyphAdvance(char, size) { return glassGlyph(char, size).adv; }
+/** baseline offset of the digits, so an optical centre can be converted */
+function digitBaseDy(size) { return glassGlyph('2', size).baseDy; }
+
+/* --------------------------------------------------------------- spheres */
+
+const SPHERE_R = 52;          // design units
+const SPHERE_SS = 2;          // supersample the cached ball for crisp edges
+
+const TAU = Math.PI * 2;
+
+const sphereCore = makeSprite(SPHERE_R * 2.3, SPHERE_R * 2.3, (g, w, h) => {
+  const cx = w / 2, cy = h / 2, r = SPHERE_R;
+  const lx = cx - r * 0.36, ly = cy - r * 0.42;   // key light position
+
+  // dark base so the unlit limb is genuinely dark
+  g.beginPath(); g.arc(cx, cy, r, 0, TAU);
+  g.fillStyle = '#261704';
+  g.fill();
+
+  g.save();
+  g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.clip();
+
+  // diffuse falloff from the key light
+  const diff = g.createRadialGradient(lx, ly, r * 0.02, lx, ly, r * 1.5);
+  diff.addColorStop(0.00, '#FFF7E0');
+  diff.addColorStop(0.13, '#FFE9B6');
+  diff.addColorStop(0.30, '#F6CC72');
+  diff.addColorStop(0.49, '#DCA344');
+  diff.addColorStop(0.68, '#A2701F');
+  diff.addColorStop(0.85, '#63400E');
+  diff.addColorStop(1.00, '#2A1A05');
+  g.fillStyle = diff;
+  g.fillRect(0, 0, w, h);
+
+  // limb darkening — this is what makes it read as a ball rather than a disc
+  const limb = g.createRadialGradient(cx, cy, r * 0.58, cx, cy, r);
+  limb.addColorStop(0.00, 'rgba(18,11,2,0)');
+  limb.addColorStop(0.72, 'rgba(18,11,2,0.18)');
+  limb.addColorStop(1.00, 'rgba(14,9,2,0.62)');
+  g.fillStyle = limb;
+  g.fillRect(0, 0, w, h);
+
+  g.globalCompositeOperation = 'lighter';
+
+  // warm rim light wrapping the lower-right limb
+  g.save();
+  g.filter = `blur(${r * 0.075}px)`;
+  g.strokeStyle = 'rgba(255,198,112,0.90)';
+  g.lineWidth = r * 0.095;
+  g.lineCap = 'round';
+  g.beginPath(); g.arc(cx, cy, r * 0.945, 0.30, 1.85); g.stroke();
+  g.restore();
+
+  // cool blue bounce along the lower-left limb, tying the ball to the room
+  g.save();
+  g.filter = `blur(${r * 0.11}px)`;
+  g.strokeStyle = 'rgba(132,188,255,0.68)';
+  g.lineWidth = r * 0.16;
+  g.lineCap = 'round';
+  g.beginPath(); g.arc(cx, cy, r * 0.925, 1.95, 3.35); g.stroke();
+  g.restore();
+
+  // broad specular bloom
+  const s1 = g.createRadialGradient(lx, ly, 0, lx, ly, r * 0.32);
+  s1.addColorStop(0.00, 'rgba(255,255,255,0.70)');
+  s1.addColorStop(0.32, 'rgba(255,251,236,0.22)');
+  s1.addColorStop(1.00, 'rgba(255,249,228,0)');
+  g.fillStyle = s1;
+  g.fillRect(0, 0, w, h);
+
+  // tight polished hotspot
+  const s2 = g.createRadialGradient(lx, ly, 0, lx, ly, r * 0.115);
+  s2.addColorStop(0.00, 'rgba(255,255,255,1)');
+  s2.addColorStop(0.50, 'rgba(255,255,255,0.50)');
+  s2.addColorStop(1.00, 'rgba(255,255,255,0)');
+  g.fillStyle = s2;
+  g.fillRect(0, 0, w, h);
+
+  // small secondary glint from the back light
+  const gx = cx + r * 0.32, gy = cy - r * 0.54;
+  const s3 = g.createRadialGradient(gx, gy, 0, gx, gy, r * 0.095);
+  s3.addColorStop(0.00, 'rgba(255,255,255,0.50)');
+  s3.addColorStop(1.00, 'rgba(255,255,255,0)');
+  g.fillStyle = s3;
+  g.fillRect(0, 0, w, h);
+
+  g.restore();
+
+  // polished edge
+  g.globalCompositeOperation = 'source-over';
+  g.lineWidth = r * 0.016;
+  g.strokeStyle = 'rgba(255,226,166,0.35)';
+  g.beginPath(); g.arc(cx, cy, r * 0.992, 0, TAU); g.stroke();
+}, SPHERE_SS);
+
+const sphereGlow = bloomOf(sphereCore, SPHERE_R * 0.30, 'rgba(255,196,96,0.95)');
+const sphereHalo = bloomOf(sphereCore, SPHERE_R * 0.85, 'rgba(255,170,60,0.70)');
+
+function drawSphere(g, x, y, scale, alpha, heat) {
+  const hh = heat || 0;
+  blit(g, sphereHalo, x, y, scale * (1 + hh * 0.10), alpha * (0.40 + hh * 0.85), 'lighter');
+  blit(g, sphereGlow, x, y, scale, alpha * (0.55 + hh * 0.75), 'lighter');
+  blit(g, sphereCore, x, y, scale, alpha);
+  if (hh > 0.001) blit(g, sphereGlow, x, y, scale, alpha * hh * 0.9, 'lighter');
+}
+
+/* ---------------------------------------------------------- soft graphics */
+
+/** radial dot used for particles and generic glows */
+function softDot(radius, color, falloff) {
+  return makeSprite(radius * 2, radius * 2, (g, w, h) => {
+    const grd = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, radius);
+    grd.addColorStop(0.00, color);
+    grd.addColorStop(falloff || 0.35, color.replace(/[\d.]+\)$/, '0.30)'));
+    grd.addColorStop(1.00, color.replace(/[\d.]+\)$/, '0)'));
+    g.fillStyle = grd;
+    g.fillRect(0, 0, w, h);
+  });
+}
+
+const dotGold  = softDot(26, 'rgba(255,214,140,1)');
+const dotBlue  = softDot(26, 'rgba(150,205,255,1)');
+const dotWhite = softDot(26, 'rgba(255,255,255,1)');
+const bokehGold = makeSprite(120, 120, (g, w, h) => {
+  g.filter = 'blur(9px)';
+  const grd = g.createRadialGradient(w/2, h/2, w*0.18, w/2, h/2, w*0.42);
+  grd.addColorStop(0, 'rgba(255,206,128,0.30)');
+  grd.addColorStop(0.75, 'rgba(255,196,110,0.16)');
+  grd.addColorStop(1, 'rgba(255,196,110,0)');
+  g.fillStyle = grd;
+  g.beginPath(); g.arc(w/2, h/2, w*0.42, 0, Math.PI*2); g.fill();
+});
+const bokehBlue = makeSprite(120, 120, (g, w, h) => {
+  g.filter = 'blur(9px)';
+  const grd = g.createRadialGradient(w/2, h/2, w*0.18, w/2, h/2, w*0.42);
+  grd.addColorStop(0, 'rgba(120,180,255,0.26)');
+  grd.addColorStop(0.75, 'rgba(110,170,250,0.13)');
+  grd.addColorStop(1, 'rgba(110,170,250,0)');
+  g.fillStyle = grd;
+  g.beginPath(); g.arc(w/2, h/2, w*0.42, 0, Math.PI*2); g.fill();
+});
+
+/* ------------------------------------------------------------- background */
+
+const bgBase = makeSprite(DW, DH, (g, w, h) => {
+  g.fillStyle = '#03050b';
+  g.fillRect(0, 0, w, h);
+  // soft cool wash lifting the centre out of black
+  const c = g.createRadialGradient(w * 0.5, h * 0.46, 0, w * 0.5, h * 0.46, w * 0.72);
+  c.addColorStop(0.00, '#0E1B36');
+  c.addColorStop(0.38, '#0A1428');
+  c.addColorStop(0.72, '#050A16');
+  c.addColorStop(1.00, '#02040A');
+  g.fillStyle = c;
+  g.fillRect(0, 0, w, h);
+});
+
+const nebulaBlue = makeSprite(1500, 1500, (g, w, h) => {
+  const grd = g.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
+  grd.addColorStop(0.00, 'rgba(46,110,205,0.30)');
+  grd.addColorStop(0.35, 'rgba(32,80,160,0.15)');
+  grd.addColorStop(0.70, 'rgba(20,50,110,0.05)');
+  grd.addColorStop(1.00, 'rgba(15,40,90,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, w, h);
+});
+const nebulaGold = makeSprite(1300, 1300, (g, w, h) => {
+  const grd = g.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
+  grd.addColorStop(0.00, 'rgba(190,140,50,0.20)');
+  grd.addColorStop(0.40, 'rgba(160,115,40,0.09)');
+  grd.addColorStop(1.00, 'rgba(140,100,35,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, w, h);
+});
+
+const vignette = makeSprite(DW, DH, (g, w, h) => {
+  const grd = g.createRadialGradient(w/2, h*0.48, h*0.28, w/2, h*0.48, w*0.70);
+  grd.addColorStop(0.00, 'rgba(0,0,0,0)');
+  grd.addColorStop(0.58, 'rgba(0,0,0,0.20)');
+  grd.addColorStop(0.85, 'rgba(0,0,0,0.60)');
+  grd.addColorStop(1.00, 'rgba(0,0,0,0.86)');
+  g.fillStyle = grd; g.fillRect(0, 0, w, h);
+});
+
+// film grain tile (kept subtle; also helps x264 avoid banding in the darks)
+const grainTile = (() => {
+  const n = 256;
+  const c = document.createElement('canvas');
+  c.width = c.height = n;
+  const g = c.getContext('2d');
+  const img = g.createImageData(n, n);
+  const rnd = mulberry32(99);
+  for (let i = 0; i < n * n; i++) {
+    const v = 118 + (rnd() - 0.5) * 74;
+    img.data[i*4] = img.data[i*4+1] = img.data[i*4+2] = v;
+    img.data[i*4+3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+})();
+const grainPattern = ctx.createPattern(grainTile, 'repeat');
+
+/* ------------------------------------------------- background populations */
+
+const SYMBOLS = ['+', '=', '×', '÷', '√', 'π', '∑', '∞', '∫', 'Δ', 'θ', '∂', '<', '>'];
+const symbolSprites = new Map();
+function symbolSprite(ch, size, blur, gold) {
+  const key = ch + '|' + size + '|' + blur + '|' + gold;
+  if (symbolSprites.has(key)) return symbolSprites.get(key);
+  const sp = makeSprite(size * 2.4, size * 2.4, (g, w, h) => {
+    g.filter = `blur(${blur}px)`;
+    g.font = `600 ${size}px Inter, DejaVu Sans, sans-serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = gold ? '#FFD79A' : '#9FCBFF';
+    g.fillText(ch, w / 2, h / 2);
+  });
+  symbolSprites.set(key, sp);
+  return sp;
+}
+
+/** how far a point sits from centre, in units where 1.0 is the frame edge */
+function centreDist(x, y) {
+  const nx = (x - CX) / CX, ny = (y - CY) / CY;
+  return Math.sqrt(nx * nx + ny * ny);
+}
+
+const symbolField = (() => {
+  const r = mulberry32(4242);
+  const out = [];
+  for (let i = 0; i < 17; i++) {
+    let x = r() * DW, y = r() * DH;
+    // push symbols out of the middle so they never crowd the equation
+    let nx = (x - CX) / CX, ny = (y - CY) / CY;
+    const d = Math.sqrt(nx * nx + ny * ny) || 0.001;
+    if (d < 0.72) { const k = 0.72 / d; nx *= k; ny *= k; }
+    x = clamp(CX + nx * CX, 40, DW - 40);
+    y = clamp(CY + ny * CY, 40, DH - 40);
+    out.push({
+      ch: SYMBOLS[Math.floor(r() * SYMBOLS.length)],
+      x, y,
+      size: 44 + r() * 92,
+      blur: 1.6 + r() * 4.0,
+      alpha: 0.040 + r() * 0.055,
+      depth: 0.16 + r() * 0.34,
+      drift: 4 + r() * 12,
+      phase: r() * Math.PI * 2,
+      speed: 0.05 + r() * 0.09,
+      gold: r() < 0.42,
+      rot: (r() - 0.5) * 0.34
+    });
+  }
+  return out;
+})();
+
+const particles = (() => {
+  const r = mulberry32(1337);
+  const out = [];
+  for (let i = 0; i < 190; i++) {
+    const depth = r();                    // 0 = far, 1 = near
+    out.push({
+      x: r() * DW, y: r() * DH,
+      r: 1.2 + depth * 4.4 + r() * 1.6,
+      baseAlpha: 0.16 + depth * 0.52,
+      gold: r() < 0.46,
+      depth: 0.18 + depth * 0.95,
+      vx: (r() - 0.5) * 7,
+      vy: -3 - r() * 9,
+      tw: 0.5 + r() * 2.1,               // twinkle rate
+      phase: r() * Math.PI * 2
+    });
+  }
+  return out;
+})();
+
+const bokeh = (() => {
+  const r = mulberry32(808);
+  const out = [];
+  for (let i = 0; i < 13; i++) {
+    out.push({
+      x: r() * DW, y: r() * DH,
+      size: 90 + r() * 170,
+      alpha: 0.28 + r() * 0.42,
+      gold: r() < 0.6,
+      depth: 1.15 + r() * 0.55,
+      vx: (r() - 0.5) * 5, vy: -2 - r() * 5,
+      phase: r() * 6.283, tw: 0.3 + r() * 0.7
+    });
+  }
+  return out;
+})();
+
+const wrap = (v, max) => ((v % max) + max) % max;
+
+/* ------------------------------------------------------------------ camera */
+
+function cameraAt(t) {
+  // gentle continuous drift keeps the frame alive
+  let zoom = 1 + 0.008 * Math.sin(t * 0.19);
+  let x = Math.sin(t * 0.13) * 9;
+  let y = Math.cos(t * 0.11) * 6;
+
+  // dramatic push-in for the finale
+  const p = easeInOutCubic(seg(t, SC.pushIn[0], SC.pushIn[1]));
+  zoom += 0.13 * p;
+
+  // a slower, closer settle on the very last beat
+  zoom += 0.035 * easeOutCubic(seg(t, SC.sparkleBurst, SC.sparkleBurst + 1.2));
+  return { x, y, zoom };
+}
+
+function applyCamera(g, cam, parallax) {
+  const p = parallax == null ? 1 : parallax;
+  const z = 1 + (cam.zoom - 1) * p;
+  g.translate(CX, CY);
+  g.scale(z, z);
+  g.translate(-CX, -CY);
+  g.translate(cam.x * p, cam.y * p);
+}
+
+/* ------------------------------------------------------------ scene layout */
+
+const SPHERE_Y = 470;
+const ROW_Y = 625;
+
+// group anchors: numeral sits left of its two spheres
+const GRP = { num: -165, s1: 45, s2: 185 };
+const A_HOME = 490, B_HOME = 1170, A_SOLO = 960;
+
+const MERGE_X = [692, 844, 1076, 1228];    // still reads as 2 | 2
+const ROW_X   = [732, 884, 1036, 1188];    // even, countable row
+
+function groupAx(t) {
+  // group A starts centred, then slides left to make room for group B
+  return mix(A_SOLO, A_HOME, easeInOutCubic(seg(t, 4.20, 5.05)));
+}
+function groupBx(t) {
+  return mix(DW + 380, B_HOME, easeOutQuint(seg(t, SC.numberB, SC.numberB + 0.95)));
+}
+
+/** position of sphere i (0..3) at time t, plus its float bob */
+function spherePos(i, t) {
+  const ax = groupAx(t), bx = groupBx(t);
+  const startX = i < 2 ? ax + (i === 0 ? GRP.s1 : GRP.s2)
+                       : bx + (i === 2 ? GRP.s1 : GRP.s2);
+  const m = easeInOutCubic(seg(t, SC.merge[0], SC.merge[1]));
+  const rs = easeInOutCubic(seg(t, SC.rowSettle[0], SC.rowSettle[1]));
+  const x = mix(mix(startX, MERGE_X[i], m), ROW_X[i], rs);
+  const y = mix(SPHERE_Y, ROW_Y, rs);
+  const bob = Math.sin(t * 1.15 + i * 1.7) * 7 * (1 - rs * 0.55);
+  return { x, y: y + bob };
+}
+
+function sphereAlpha(i, t) {
+  const cues = i < 2 ? SC.spheresA : SC.spheresB;
+  const t0 = cues[i % 2];
+  let a = easeOutCubic(seg(t, t0, t0 + 0.65));
+  // spheres hand over to the number line
+  a *= 1 - easeInOutCubic(seg(t, SC.lineTransition, SC.lineTransition + 0.55));
+  return a;
+}
+
+/** counting heat for sphere i: bright flash then a warm 'counted' residue */
+function countHeat(i, t) {
+  const t0 = SC.count[i];
+  const flash = pulse(t, t0 - 0.06, 0.62);
+  const held = easeOutCubic(seg(t, t0, t0 + 0.3)) * 0.30
+             * (1 - easeInOutCubic(seg(t, SC.lineTransition, SC.lineTransition + 0.5)));
+  return clamp(flash * 0.95 + held, 0, 1.6);
+}
+
+/* --------------------------------------------------------- equation layout */
+
+const EQ_SIZE = 170;
+const EQ_CHARS = ['2', '+', '2', '=', '4'];
+const EQ_BASE_DY = digitBaseDy(EQ_SIZE);   // optical centre -> baseline
+
+const eqLayout = (() => {
+  const gap = EQ_SIZE * 0.40;
+  const widths = EQ_CHARS.map(c => glyphAdvance(c, EQ_SIZE));
+  const total = widths.reduce((a, b) => a + b, 0) + gap * (EQ_CHARS.length - 1);
+  let x = -total / 2;
+  return EQ_CHARS.map((c, i) => {
+    const cx = x + widths[i] / 2;
+    x += widths[i] + gap;
+    return { ch: c, dx: cx };
+  });
+})();
+
+function equationTransform(t) {
+  // centred under the spheres -> parked above the number line -> hero centre
+  let y = 355, scale = 1.0;
+  const up = easeInOutCubic(seg(t, SC.lineTransition, SC.lineTransition + 0.8));
+  y = mix(y, 225, up); scale = mix(scale, 0.72, up);
+  const fin = easeInOutCubic(seg(t, SC.finaleIn, SC.finaleIn + 1.35));
+  y = mix(y, 540, fin); scale = mix(scale, 1.50, fin);
+  return { x: CX, y, scale };
+}
+
+/* ------------------------------------------------------------- number line */
+
+const NL = { x0: 380, x1: 1540, y: 620, min: 0, max: 6 };
+const nlX = v => NL.x0 + (v - NL.min) / (NL.max - NL.min) * (NL.x1 - NL.x0);
+
+/** marker value over time: sits at 2, hops to 3, hops to 4 */
+function markerValue(t) {
+  let v = 2;
+  v = mix(v, 3, easeInOutCubic(seg(t, SC.jump1[0], SC.jump1[1])));
+  v = mix(v, 4, easeInOutCubic(seg(t, SC.jump2[0], SC.jump2[1])));
+  return v;
+}
+/** arc lift while hopping */
+function markerLift(t) {
+  const a = Math.sin(Math.PI * seg(t, SC.jump1[0], SC.jump1[1]));
+  const b = Math.sin(Math.PI * seg(t, SC.jump2[0], SC.jump2[1]));
+  return (a + b) * 108;
+}
+function lineAlpha(t) {
+  const inA  = easeOutCubic(seg(t, SC.lineTransition + 0.15, SC.lineTransition + 0.7));
+  const outA = easeInOutCubic(seg(t, SC.finaleIn - 0.15, SC.finaleIn + 0.6));
+  return inA * (1 - outA);
+}
+
+/* ------------------------------------------------------------------- rings */
+
+function drawRing(g, x, y, radius, thickness, alpha, color) {
+  if (alpha <= 0.002 || radius <= 0) return;
+  g.save();
+  g.globalCompositeOperation = 'lighter';
+  g.globalAlpha = clamp(alpha, 0, 1);
+  g.strokeStyle = color;
+  g.lineWidth = thickness;
+  g.beginPath(); g.arc(x, y, radius, 0, Math.PI * 2); g.stroke();
+  g.restore();
+}
+
+/* ---------------------------------------------------------------- sparkles */
+
+const sparkles = (() => {
+  const r = mulberry32(555);
+  const out = [];
+  for (let i = 0; i < 150; i++) {
+    const ang = r() * Math.PI * 2;
+    const spd = 150 + r() * 720;
+    out.push({
+      ang, spd,
+      size: 3 + r() * 9,
+      gold: r() < 0.72,
+      delay: r() * 0.5,
+      life: 1.5 + r() * 1.6,
+      tw: 3 + r() * 7,
+      yBias: (r() - 0.5) * 0.5
+    });
+  }
+  return out;
+})();
+
+/* =================================================================== FRAME */
+
+function renderFrame(frame) {
+  const t = frame / TL.fps;
+  const cam = cameraAt(t);
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+
+  /* ---------- background plates ---------- */
+  ctx.drawImage(bgBase.canvas, 0, 0, DW, DH);
+
+  ctx.save();
+  applyCamera(ctx, cam, 0.25);
+  blit(ctx, nebulaBlue, CX - 260 + Math.sin(t * 0.09) * 40, CY - 90 + Math.cos(t * 0.07) * 30, 1, 0.95, 'lighter');
+  blit(ctx, nebulaGold, CX + 330 + Math.cos(t * 0.06) * 46, CY + 150 + Math.sin(t * 0.08) * 26, 1, 0.80, 'lighter');
+  // the finale warms the whole room
+  const warm = easeInOutCubic(seg(t, SC.goldWave - 0.9, SC.goldWave + 1.4));
+  if (warm > 0.002) blit(ctx, nebulaGold, CX, CY, 1.5, warm * 0.85, 'lighter');
+  ctx.restore();
+
+  /* ---------- drifting mathematical symbols ---------- */
+  ctx.save();
+  applyCamera(ctx, cam, 0.4);
+  for (const s of symbolField) {
+    const x = wrap(s.x + Math.sin(t * s.speed + s.phase) * s.drift, DW);
+    const y = wrap(s.y - t * (3 + s.depth * 7) + Math.cos(t * s.speed * 0.8 + s.phase) * s.drift, DH);
+    // fade out anything that drifts towards the middle: the numerals own that space
+    const clear = clamp((centreDist(x, y) - 0.42) / 0.30, 0, 1);
+    if (clear <= 0.01) continue;
+    const sp = symbolSprite(s.ch, s.size, s.blur, s.gold);
+    const flick = 0.8 + 0.2 * Math.sin(t * 0.7 + s.phase);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(s.rot);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = s.alpha * flick * clear;
+    ctx.drawImage(sp.canvas, -sp.w / 2, -sp.h / 2, sp.w, sp.h);
+    ctx.restore();
+  }
+  ctx.restore();
+
+  /* ---------- particle field ---------- */
+  ctx.save();
+  applyCamera(ctx, cam, 0.7);
+  for (const p of particles) {
+    const x = wrap(p.x + p.vx * t, DW);
+    const y = wrap(p.y + p.vy * t, DH);
+    const tw = 0.55 + 0.45 * Math.sin(t * p.tw + p.phase);
+    const sp = p.gold ? dotGold : dotBlue;
+    const rr = p.r * (0.9 + 0.2 * tw);
+    blit(ctx, sp, x, y, rr / 26 * 2.2, p.baseAlpha * tw * 0.85, 'lighter');
+    if (p.depth > 0.85) blit(ctx, dotWhite, x, y, rr / 26 * 0.55, p.baseAlpha * tw * 0.5, 'lighter');
+  }
+  ctx.restore();
+
+  /* ================= main content ================= */
+  ctx.save();
+  applyCamera(ctx, cam, 1);
+
+  /* ---------- the two glowing numerals ---------- */
+  const numFadeOut = easeInOutCubic(seg(t, SC.merge[0] - 0.15, SC.merge[0] + 0.95));
+  const aAppear = seg(t, SC.numberA, SC.numberA + 0.85);
+  const aAlpha = easeOutCubic(aAppear) * (1 - numFadeOut);
+  const NUM_SIZE = 190, NUM_BASE = SPHERE_Y + digitBaseDy(NUM_SIZE);
+  if (aAlpha > 0.002) {
+    const s = mix(1.5, 1.0, easeOutBack(aAppear)) * mix(1, 0.82, numFadeOut);
+    const bob = Math.sin(t * 0.9) * 5;
+    drawGlyph(ctx, '2', NUM_SIZE, groupAx(t) + GRP.num, NUM_BASE + bob, s, aAlpha,
+              { glow: 1 + 0.35 * Math.sin(t * 1.6), tint: pulse(t, SC.numberA, 0.7) * 0.6 });
+  }
+  const bAppear = seg(t, SC.numberB, SC.numberB + 0.85);
+  const bAlpha = easeOutCubic(bAppear) * (1 - numFadeOut);
+  if (bAlpha > 0.002) {
+    const s = mix(1.35, 1.0, easeOutQuint(bAppear)) * mix(1, 0.82, numFadeOut);
+    const bob = Math.sin(t * 0.9 + 1.2) * 5;
+    drawGlyph(ctx, '2', NUM_SIZE, groupBx(t) + GRP.num, NUM_BASE + bob, s, bAlpha,
+              { glow: 1 + 0.35 * Math.sin(t * 1.6 + 1), tint: pulse(t, SC.numberB, 0.7) * 0.6 });
+  }
+
+  /* ---------- the four spheres ---------- */
+  for (let i = 0; i < 4; i++) {
+    const a = sphereAlpha(i, t);
+    if (a <= 0.002) continue;
+    const p = spherePos(i, t);
+    const heat = countHeat(i, t);
+    const born = seg(t, (i < 2 ? SC.spheresA : SC.spheresB)[i % 2], (i < 2 ? SC.spheresA : SC.spheresB)[i % 2] + 0.7);
+    // pop in, then the counting pulse
+    let sc = mix(0.45, 1.0, easeOutBack(born));
+    sc *= 1 + 0.15 * pulse(t, SC.count[i] - 0.05, 0.55);
+    // the pair linked to an equation '2' acknowledges when that glyph lands
+    const linkIdx = i < 2 ? 0 : 2;
+    sc *= 1 + 0.07 * pulse(t, SC.equation[linkIdx], 0.5);
+    drawSphere(ctx, p.x, p.y, sc, a, heat);
+
+    // expanding ring on the count beat
+    const cr = seg(t, SC.count[i], SC.count[i] + 0.85);
+    if (cr > 0 && cr < 1) {
+      drawRing(ctx, p.x, p.y, SPHERE_R * (1.1 + cr * 2.4), 5 * (1 - cr) + 1,
+               (1 - cr) * 0.85 * a, 'rgba(255,214,140,1)');
+    }
+  }
+
+  /* ---------- counting numerals ---------- */
+  for (let i = 0; i < 4; i++) {
+    const t0 = SC.count[i];
+    const k = seg(t, t0 - 0.05, t0 + 1.05);
+    if (k <= 0 || k >= 1) continue;
+    const p = spherePos(i, t);
+    const rise = easeOutCubic(k);
+    const a = Math.sin(Math.PI * Math.pow(k, 0.75)) * sphereAlpha(i, t);
+    drawGlyph(ctx, String(i + 1), 92, p.x, p.y - 118 - rise * 44 + digitBaseDy(92),
+              mix(0.7, 1.05, easeOutBack(clamp(k * 2.4, 0, 1))), a, { glow: 1.25 });
+  }
+
+  /* ---------- the equation ---------- */
+  const eq = equationTransform(t);
+  for (let i = 0; i < eqLayout.length; i++) {
+    const g0 = SC.equation[i];
+    const k = seg(t, g0, g0 + 0.60);
+    if (k <= 0) continue;
+    const a = easeOutCubic(k);
+    const drop = (1 - easeOutQuint(k)) * 54;
+    const sc = mix(1.42, 1.0, easeOutQuint(k)) * eq.scale;
+    const x = eq.x + eqLayout[i].dx * eq.scale;
+    const y = eq.y + (EQ_BASE_DY + drop) * eq.scale;
+
+    // reveal flash, the mid-video emphasis pulse, and the finale shine
+    let tint = pulse(t, g0, 0.55) * 0.85;
+    tint += pulse(t, SC.equationPulse + i * 0.07, 0.85) * 0.55;
+    tint += pulse(t, SC.sparkleBurst - 0.05 + i * 0.045, 1.0) * 0.75;
+    const shine = 1 + 0.55 * easeInOutCubic(seg(t, SC.finaleIn, SC.finaleIn + 1.6))
+                    + 0.22 * Math.sin(t * 2.1 + i);
+    drawGlyph(ctx, eqLayout[i].ch, EQ_SIZE, x, y, sc, a, { glow: shine, tint });
+
+    // ring accent as each glyph lands
+    if (k > 0 && k < 1) {
+      drawRing(ctx, x, y - EQ_BASE_DY * eq.scale, (30 + k * 130) * eq.scale,
+               (1 - k) * 6 + 1, (1 - k) * 0.45, 'rgba(255,214,140,1)');
+    }
+  }
+
+  /* ---------- number line ---------- */
+  const la = lineAlpha(t);
+  if (la > 0.003) {
+    const draw = easeInOutCubic(seg(t, SC.lineDraw[0], SC.lineDraw[1]));
+    const tipX = mix(NL.x0, NL.x1, draw);
+
+    ctx.save();
+    ctx.globalAlpha = la;
+
+    // axis
+    ctx.strokeStyle = 'rgba(150,196,255,0.55)';
+    ctx.lineWidth = 3.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(NL.x0, NL.y); ctx.lineTo(tipX, NL.y); ctx.stroke();
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = 'rgba(110,180,255,0.5)';
+    ctx.lineWidth = 11;
+    ctx.beginPath(); ctx.moveTo(NL.x0, NL.y); ctx.lineTo(tipX, NL.y); ctx.stroke();
+    ctx.restore();
+
+    // travelling tip glow while the axis draws
+    if (draw > 0 && draw < 1) blit(ctx, dotBlue, tipX, NL.y, 1.6, la * 0.9, 'lighter');
+
+    // ticks + labels
+    for (let v = NL.min; v <= NL.max; v++) {
+      const x = nlX(v);
+      if (x > tipX + 4) continue;
+      const isKey = (v >= 2 && v <= 4);
+      const reached = markerValue(t) >= v - 0.02;
+      const hot = (v === 3 ? pulse(t, SC.jump1[1] - 0.05, 0.7) : 0)
+                + (v === 4 ? pulse(t, SC.landPulse - 0.15, 1.1) : 0)
+                + (v === 2 ? pulse(t, SC.lineMarker, 0.8) : 0);
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = isKey && reached ? 'rgba(255,216,146,0.95)' : 'rgba(150,196,255,0.55)';
+      ctx.lineWidth = isKey ? 4 : 2.6;
+      const hgt = isKey ? 22 : 14;
+      ctx.beginPath(); ctx.moveTo(x, NL.y - hgt); ctx.lineTo(x, NL.y + hgt); ctx.stroke();
+      ctx.restore();
+
+      const labelGold = isKey && reached;
+      const lscale = 1 + hot * 0.22;
+      const lalpha = la * (labelGold ? 1 : 0.5);
+      if (labelGold) {
+        drawGlyph(ctx, String(v), 62, x, NL.y + 86 + digitBaseDy(62), lscale, lalpha,
+                  { glow: 1 + hot, tint: hot * 0.8 });
+      } else {
+        ctx.save();
+        ctx.globalAlpha = lalpha;
+        ctx.font = '600 62px Outfit, Inter, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'rgba(168,206,255,0.85)';
+        ctx.fillText(String(v), x, NL.y + 86);
+        ctx.restore();
+      }
+    }
+
+    // gold highlight over the 2 -> 4 span that has been travelled
+    const mv = markerValue(t);
+    if (mv > 2.001) {
+      // drawn opaque (not additive) so it replaces the blue axis instead of
+      // summing with it and blowing out to white
+      ctx.save();
+      ctx.globalAlpha = la;
+      const grd = ctx.createLinearGradient(nlX(2), 0, nlX(mv), 0);
+      grd.addColorStop(0, 'rgba(214,146,48,1)');
+      grd.addColorStop(1, 'rgba(255,190,92,1)');
+      ctx.strokeStyle = grd;
+      ctx.lineWidth = 8;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(nlX(2), NL.y); ctx.lineTo(nlX(mv), NL.y); ctx.stroke();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = la * 0.35;
+      ctx.lineWidth = 16;
+      ctx.strokeStyle = 'rgba(226,150,50,1)';
+      ctx.beginPath(); ctx.moveTo(nlX(2), NL.y); ctx.lineTo(nlX(mv), NL.y); ctx.stroke();
+      ctx.restore();
+    }
+
+    // the two hop arcs
+    for (const [from, to, win] of [[2, 3, SC.jump1], [3, 4, SC.jump2]]) {
+      const k = seg(t, win[0], win[1]);
+      if (k <= 0) continue;
+      const x0 = nlX(from), x1 = nlX(to);
+      const apex = 108;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = la * (0.75 - 0.45 * easeInCubic(seg(t, win[1], win[1] + 1.5)));
+      ctx.strokeStyle = 'rgba(248,178,78,0.95)';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      const steps = 40;
+      for (let sIdx = 0; sIdx <= steps * k; sIdx++) {
+        const u = sIdx / steps;
+        const px = mix(x0, x1, u);
+        const py = NL.y - Math.sin(Math.PI * u) * apex;
+        if (sIdx === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // the marker itself
+    const ma = easeOutCubic(seg(t, SC.lineMarker, SC.lineMarker + 0.5));
+    if (ma > 0.002) {
+      const mx = nlX(markerValue(t));
+      const my = NL.y - markerLift(t);
+      const beat = 1 + 0.30 * pulse(t, SC.landPulse - 0.15, 0.9)
+                     + 0.18 * pulse(t, SC.lineMarker, 0.8);
+      drawSphere(ctx, mx, my, 0.42 * beat, la * ma,
+                 0.35 + 0.65 * pulse(t, SC.landPulse - 0.15, 1.0));
+      const lp = seg(t, SC.landPulse, SC.landPulse + 1.0);
+      if (lp > 0 && lp < 1) {
+        drawRing(ctx, nlX(4), NL.y, 26 + lp * 190, (1 - lp) * 7 + 1,
+                 (1 - lp) * 0.9 * la, 'rgba(255,222,158,1)');
+      }
+    }
+    ctx.restore();
+  }
+
+  /* ---------- golden energy wave ---------- */
+  const gw = seg(t, SC.goldWave, SC.goldWave + 2.2);
+  if (gw > 0 && gw < 1) {
+    const e = easeOutCubic(gw);
+    for (let ring = 0; ring < 3; ring++) {
+      const rk = clamp(e - ring * 0.10, 0, 1);
+      if (rk <= 0) continue;
+      // held back until the front has cleared the numerals, so the ring never
+      // draws a hard circle across the equation
+      const a = Math.pow(1 - rk, 1.3) * 0.26 * clamp(rk * 5, 0, 1) * (1 - ring * 0.3);
+      drawRing(ctx, CX, CY, 120 + rk * 1700, (1 - rk) * 20 + 2, a, 'rgba(255,176,84,1)');
+    }
+    blit(ctx, nebulaGold, CX, CY, 0.5 + e * 1.7, Math.sin(Math.PI * gw) * 0.55, 'lighter');
+  }
+
+  /* ---------- sparkle burst ---------- */
+  const sb = t - SC.sparkleBurst;
+  if (sb > -0.1 && sb < 3.2) {
+    for (const s of sparkles) {
+      const k = (sb - s.delay) / s.life;
+      if (k <= 0 || k >= 1) continue;
+      const d = easeOutQuint(k) * s.spd;
+      const x = CX + Math.cos(s.ang) * d;
+      const y = CY + Math.sin(s.ang) * d * 0.72 + s.yBias * d * 0.3 + k * k * 60;
+      const tw = 0.45 + 0.55 * Math.abs(Math.sin(sb * s.tw + s.ang * 3));
+      blit(ctx, s.gold ? dotGold : dotWhite, x, y,
+           s.size / 26 * 1.6 * (1 - k * 0.4), (1 - k) * tw * 0.95, 'lighter');
+    }
+  }
+
+  ctx.restore();  // end camera
+
+  /* ---------- foreground bokeh (depth of field) ---------- */
+  ctx.save();
+  applyCamera(ctx, cam, 1.35);
+  for (const b of bokeh) {
+    const x = wrap(b.x + b.vx * t, DW + 300) - 150;
+    const y = wrap(b.y + b.vy * t, DH + 300) - 150;
+    const tw = 0.6 + 0.4 * Math.sin(t * b.tw + b.phase);
+    blit(ctx, b.gold ? bokehGold : bokehBlue, x, y, b.size / 120, b.alpha * tw, 'lighter');
+  }
+  ctx.restore();
+
+  /* ---------- grade: vignette, grain, fades ---------- */
+  ctx.drawImage(vignette.canvas, 0, 0, DW, DH);
+
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'overlay';
+  ctx.globalAlpha = 0.045;
+  ctx.fillStyle = grainPattern;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  const fadeIn  = 1 - easeOutCubic(seg(t, SC.fadeUp[0], SC.fadeUp[1]));
+  const fadeOut = easeInOutCubic(seg(t, SC.fadeOut[0], SC.fadeOut[1]));
+  const black = clamp(fadeIn + fadeOut, 0, 1);
+  if (black > 0.002) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = black;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+    ctx.setTransform(S, 0, 0, S, 0, 0);
+  }
+}
+
+window.renderFrame = renderFrame;
+
+/* fonts must be resident before the first glyph sprite is baked */
+window.__ready = (async () => {
+  await document.fonts.load('700 190px Outfit');
+  await document.fonts.load('600 62px Outfit');
+  await document.fonts.load('500 60px Inter');
+  await document.fonts.ready;
+  glyphCache.clear();
+  renderFrame(0);
+  return true;
+})();
+</script>
+</body>
+</html>
