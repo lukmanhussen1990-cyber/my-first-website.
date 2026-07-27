@@ -1,0 +1,1129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#100f0f">
+<title>NOW SHOWING — OPUS 5</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%;background:#100f0f}
+  body{
+    position:fixed;inset:0;overflow:hidden;
+    -webkit-user-select:none;user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-touch-callout:none;
+    overscroll-behavior:none;touch-action:manipulation;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  #stage{display:block;width:100%;height:100%;touch-action:none}
+  #ui{
+    position:fixed;left:0;right:0;bottom:0;
+    display:flex;gap:10px;justify-content:center;align-items:flex-end;
+    padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px));
+    pointer-events:none;z-index:2;
+  }
+  .btn{
+    pointer-events:auto;-webkit-appearance:none;appearance:none;
+    min-height:46px;min-width:112px;padding:0 16px;
+    background:rgba(24,22,21,.78);
+    color:#c9c3ba;
+    border:2px dotted rgba(201,195,186,.45);
+    border-radius:11px;
+    font:600 12px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    letter-spacing:.16em;text-transform:uppercase;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    cursor:pointer;touch-action:manipulation;
+    transition:color .15s,border-color .15s,background .15s,transform .08s;
+  }
+  .btn:active{transform:translateY(1px);background:rgba(38,34,32,.9)}
+  .btn[data-on="1"]{color:#f0b45e;border-color:rgba(240,180,94,.6)}
+  .dot{width:7px;height:7px;border-radius:2px;background:currentColor;opacity:.8;flex:0 0 auto}
+  #hint{
+    position:fixed;left:0;right:0;bottom:calc(70px + env(safe-area-inset-bottom,0px));
+    text-align:center;color:#6e6862;font-size:10px;letter-spacing:.22em;
+    text-transform:uppercase;pointer-events:none;z-index:2;
+    transition:opacity .5s;
+  }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div id="hint">tap sound for music</div>
+<div id="ui">
+  <button class="btn" id="btnReplay" type="button"><i class="dot"></i>Replay</button>
+  <button class="btn" id="btnSound" type="button" data-on="0"><i class="dot"></i>Sound: off</button>
+</div>
+
+<script>
+"use strict";
+(function () {
+
+/* ============================================================
+   1. CONSTANTS / PALETTE
+   ============================================================ */
+const DW = 720, DH = 900;      // design space
+const DOT = 6;                 // dot-matrix pitch, in design px
+
+const C = {
+  bg:      "#100f0f",
+  dotDim:  "rgba(255,255,255,0.055)",
+  dotMid:  "rgba(255,255,255,0.16)",
+  dotHot:  "rgba(255,255,255,0.60)",
+  slot:    "#1b1817",
+  slotEdge:"#262121",
+  letter:  "#e2635a",
+  letterLit:"#e05a52",
+  cream:   "#f8f0dc",
+  headerLit:"#15120f",
+  headText:"#c9c3ba",
+  headTextLit:"#eda23e",
+  fur:     "#cd7452",
+  furLite: "#dd8a63",
+  furDark: "#b1603f",
+  eye:     "#100f0f",
+  glow:    "255,236,196",
+};
+
+/* ============================================================
+   2. 5x7 PIXEL FONT
+   ============================================================ */
+const FONT = {
+  "A":["11111","10001","10001","11111","10001","10001","10001"],
+  "B":["11110","10001","10001","11110","10001","10001","11110"],
+  "C":["11111","10000","10000","10000","10000","10000","11111"],
+  "D":["11110","10001","10001","10001","10001","10001","11110"],
+  "E":["11111","10000","10000","11110","10000","10000","11111"],
+  "F":["11111","10000","10000","11110","10000","10000","10000"],
+  "G":["11111","10000","10000","10111","10001","10001","11111"],
+  "H":["10001","10001","10001","11111","10001","10001","10001"],
+  "I":["11111","00100","00100","00100","00100","00100","11111"],
+  "J":["00111","00010","00010","00010","00010","10010","11110"],
+  "K":["10001","10001","10010","11100","10010","10001","10001"],
+  "L":["10000","10000","10000","10000","10000","10000","11111"],
+  "M":["10001","11011","10101","10001","10001","10001","10001"],
+  "N":["10001","11001","10101","10011","10001","10001","10001"],
+  "O":["11111","10001","10001","10001","10001","10001","11111"],
+  "P":["11111","10001","10001","11111","10000","10000","10000"],
+  "Q":["11111","10001","10001","10001","10101","10011","11111"],
+  "R":["11111","10001","10001","11111","10100","10010","10001"],
+  "S":["11111","10000","10000","11111","00001","00001","11111"],
+  "T":["11111","00100","00100","00100","00100","00100","00100"],
+  "U":["10001","10001","10001","10001","10001","10001","11111"],
+  "V":["10001","10001","10001","10001","10001","01010","00100"],
+  "W":["10001","10001","10001","10101","10101","11011","10001"],
+  "X":["10001","10001","01010","00100","01010","10001","10001"],
+  "Y":["10001","10001","01010","00100","00100","00100","00100"],
+  "Z":["11111","00010","00010","00100","01000","01000","11111"],
+  "0":["11111","10001","10011","10101","11001","10001","11111"],
+  "1":["00100","01100","00100","00100","00100","00100","11111"],
+  "2":["11111","00001","00001","11111","10000","10000","11111"],
+  "3":["11111","00001","00001","01111","00001","00001","11111"],
+  "4":["10001","10001","10001","11111","00001","00001","00001"],
+  "5":["11111","10000","10000","11111","00001","00001","11111"],
+  "6":["11111","10000","10000","11111","10001","10001","11111"],
+  "7":["11111","00001","00010","00100","01000","01000","01000"],
+  "8":["11111","10001","10001","11111","10001","10001","11111"],
+  "9":["11111","10001","10001","11111","00001","00001","11111"],
+  ".":["00","00","00","00","00","11","11"],
+  "-":["00000","00000","00000","11111","00000","00000","00000"],
+  ":":["00","00","11","00","00","11","00"],
+  " ":["00","00","00","00","00","00","00"],
+};
+function glyph(ch){ return FONT[ch] || FONT[" "]; }
+function glyphW(ch){ return glyph(ch)[0].length; }
+
+/* Lay out a string: returns {items:[{ch,x,w}], w} in glyph-pixel units. */
+function layout(str, gap){
+  const items = []; let x = 0;
+  for (let i = 0; i < str.length; i++){
+    const w = glyphW(str[i]);
+    items.push({ ch: str[i], x: x, w: w });
+    x += w + (i === str.length - 1 ? 0 : gap);
+  }
+  return { items: items, w: x };
+}
+
+/* ============================================================
+   3. ANIMAL SPRITES  (a = fur, b = highlight, c = shade, e = eye)
+   ============================================================ */
+const SPR_SIDE = [            // 3/4 view, facing RIGHT
+  "....aaaaaaaaa...",
+  "...aaaaaaaaaab..",
+  "..aaaaaaaaaaab..",
+  "..aaaaaaaeaaeb..",
+  "aaaaaaaaaaaaabbb",
+  "aaaaaaaaaaaaabbb",
+  "..aaaaaaaaaaabb.",
+  "..aaaaaaaaaaacb.",
+  "..aa.aa..aa.aa..",
+  "..aa.aa..aa.aa..",
+  "..aa.aa..aa.aa..",
+];
+const SPR_CLIMB = [           // seen from behind, head up at the sign
+  "...aaaaaaaaaab..",
+  "..aaaaaaaaaaab..",
+  "..aaaaaaaaaaab..",
+  "aaaaaaaaaaaaab..",
+  "aaaaaaaaaaaaab..",
+  "..aaaaaaaaaaab..",
+  "..aaaaaaaaaaab..",
+  "..aaaaaaaaaacb..",
+  "..aa.aa..aa.ab..",
+  "..aa.aa..aa.a...",
+  "..aa.aa..aa.a...",
+];
+const FURCOL = { a: C.fur, b: C.furLite, c: C.furDark, e: C.eye };
+const SPR_W = 16, SPR_H = 11, SPR_SC = 10;      // sprite -> design px
+const DOG_W = SPR_W * SPR_SC, DOG_H = SPR_H * SPR_SC;
+const LEG_ROW = 8;
+const LEG_GROUP = { 2:0, 3:0, 5:1, 6:1, 9:2, 10:2, 12:3, 13:3 };
+
+/* ============================================================
+   4. SCENE GEOMETRY
+   ============================================================ */
+const SIGN = {
+  px: 122, py: 140, pw: 476, ph: 204, pr: 26,        // main panel
+  hx: 200, hy: 84,  hw: 320, hh: 92,  hr: 14,        // "NOW SHOWING" header
+  lx: 140, ly: 340, lw: 440, lh: 32,  lr: 10,        // bottom lip
+  lipTop: 340,
+};
+const LAD = {
+  yTop: 412, yBot: 800, k: 1.15,
+  topL: 277, topR: 443, botL: 185, botR: 540,
+  wTop: 18,  wBot: 20,
+  /* screen fractions measured off the reference: the top window is
+     roughly twice as tall as the ones below it */
+  rungs: [0.148, 0.490, 0.682, 0.888],
+};
+function ladT(u){ return u * (1 + LAD.k) / (1 + LAD.k * u); }
+function ladY(u){ return LAD.yTop + (LAD.yBot - LAD.yTop) * ladT(u); }
+function railCx(side, sf){
+  return side < 0 ? LAD.topL + (LAD.botL - LAD.topL) * sf
+                  : LAD.topR + (LAD.botR - LAD.topR) * sf;
+}
+function railHw(sf){ return LAD.wTop + (LAD.wBot - LAD.wTop) * sf; }
+
+/* --- marquee title ---
+   The reference marquee font is not square: glyph pixels are ~1.28x taller
+   than they are wide, which is what gives the letters their narrow, tall look. */
+const TITLE = "OPUS 5";
+const TL_GAP = 1;
+const TLay = layout(TITLE, TL_GAP);
+const PANEL_IN_X = SIGN.px + 22, PANEL_IN_W = SIGN.pw - 44;
+const LPX = Math.min(8.7, PANEL_IN_W * 0.78 / TLay.w);
+const LPY = LPX * 1.28;
+const TITLE_W = TLay.w * LPX, TITLE_H = 7 * LPY;
+const TITLE_X = PANEL_IN_X + (PANEL_IN_W - TITLE_W) / 2;
+const TITLE_Y = SIGN.py + (SIGN.ph - TITLE_H) / 2;     // vertically centred
+const SLOT_Y = TITLE_Y - 6, SLOT_H = TITLE_H + 24;
+/* absolute design-space x/width for every character */
+const CHARS = TLay.items.map(function (it) {
+  return {
+    ch: it.ch,
+    x: TITLE_X + it.x * LPX,
+    w: it.w * LPX,
+    sx: TITLE_X + it.x * LPX - LPX * 0.5,
+    sw: (it.w + TL_GAP) * LPX,
+  };
+});
+const NCH = CHARS.length;
+
+/* --- header text (slightly wider than tall, unlike the marquee) --- */
+const HEAD = "NOW SHOWING";
+const HGAP = 1.4, HPX = 4.4, HPY = 3.9;
+const HLay = layout(HEAD, HGAP);
+const HEAD_W = HLay.w * HPX;
+const HEAD_X = SIGN.hx + (SIGN.hw - HEAD_W) / 2;
+const HEAD_Y = SIGN.hy + (SIGN.hh - 7 * HPY) / 2;
+
+/* --- dog stations --- */
+const DOG_LADDER_X = 360 - DOG_W / 2;           // centred on the ladder
+const PLACE_FEET = 424;                         // perched at the ladder top,
+const GROUND = 806;                             // head level with the letters
+function dogPlaceX(i){
+  const c = CHARS[Math.max(0, Math.min(NCH - 1, i))];
+  return Math.max(200, Math.min(440, c.x + c.w - 10));
+}
+
+/* ============================================================
+   5. TIMELINE
+   ============================================================ */
+const TLN = [];
+let TEND = 0;
+function seg(name, dur, data){
+  TLN.push({ name: name, st: TEND, dur: dur, en: TEND + dur, data: data || null });
+  TEND += dur;
+}
+seg("idle",    0.45);
+seg("walkIn",  1.85);
+seg("brace",   0.22);
+seg("climb",   1.55);
+seg("onto",    0.32);
+for (let i = 0; i < NCH; i++){
+  seg("move",  i === 0 ? 0.26 : 0.34, { i: i });
+  seg("place", 0.34, { i: i });
+}
+seg("back",    0.45);
+seg("flicker", 0.85);
+seg("descend", 1.45);
+seg("walkOut", 1.95);
+seg("fade",    1.10);
+const LOOP = TEND;
+
+/* When each character becomes visible */
+const REVEAL = new Array(NCH);
+TLN.forEach(function (s) { if (s.name === "place") REVEAL[s.data.i] = s.st; });
+const T_LIGHT = TLN.find(function (s) { return s.name === "flicker"; }).st;
+const T_FADE  = TLN.find(function (s) { return s.name === "fade"; }).st;
+
+function segAt(t){
+  for (let i = 0; i < TLN.length; i++){
+    if (t < TLN[i].en) return TLN[i];
+  }
+  return TLN[TLN.length - 1];
+}
+
+/* Sign flicker curve: a couple of stutters, then a clean ramp up. */
+const FLICK = [[0.00,0],[0.05,0],[0.07,1],[0.13,1],[0.16,0.04],[0.26,0.04],
+               [0.29,0.95],[0.37,0.95],[0.40,0.10],[0.48,0.10],[0.54,1],[1,1]];
+function curve(tab, u){
+  for (let i = 1; i < tab.length; i++){
+    if (u <= tab[i][0]){
+      const a = tab[i - 1], b = tab[i];
+      const k = b[0] === a[0] ? 1 : (u - a[0]) / (b[0] - a[0]);
+      return a[1] + (b[1] - a[1]) * k;
+    }
+  }
+  return tab[tab.length - 1][1];
+}
+function glowAt(t){
+  const f = TLN.find(function (s) { return s.name === "flicker"; });
+  if (t < f.st) return 0;
+  if (t < f.en) return curve(FLICK, (t - f.st) / f.dur);
+  if (t < T_FADE) return 1;
+  const u = Math.min(1, (t - T_FADE) / 0.85);
+  return 1 - u * u;
+}
+
+/* ============================================================
+   6. SPARKLES (deterministic, so seeking is exact)
+   ============================================================ */
+function rng(seed){
+  let s = (seed * 2654435761) % 2147483647; if (s <= 0) s += 2147483646;
+  return function () { s = (s * 16807) % 2147483647; return s / 2147483647; };
+}
+const SPARKS = [];
+function addSpark(t, x, y, n, spread, life, seed){
+  const r = rng(seed);
+  for (let i = 0; i < n; i++){
+    const a = r() * Math.PI * 2, d = spread * (0.3 + r() * 0.7);
+    SPARKS.push({
+      t0: t + r() * 0.05, life: life * (0.6 + r() * 0.7),
+      x: x + Math.cos(a) * d, y: y + Math.sin(a) * d * 0.7,
+      vx: Math.cos(a) * 40, vy: Math.sin(a) * 30 - 26,
+      n: 2 + Math.floor(r() * 3),
+    });
+  }
+}
+CHARS.forEach(function (c, i) {
+  if (c.ch === " ") return;
+  addSpark(REVEAL[i], c.x + c.w / 2, TITLE_Y + TITLE_H / 2, 5, 34, 0.42, i + 7);
+});
+addSpark(T_LIGHT + 0.55, 360, 250, 26, 250, 1.0, 91);
+
+/* ============================================================
+   7. CANVAS PLUMBING
+   ============================================================ */
+const cv = document.getElementById("stage");
+const ctx = cv.getContext("2d", { alpha: false });
+const sc = document.createElement("canvas");          // scratch (dot masking)
+const sctx = sc.getContext("2d");
+const bk = document.createElement("canvas");          // cached dotted backdrop
+const bctx = bk.getContext("2d");
+
+let dpr = 1, S = 1, OX = 0, OY = 0, PW = 0, PH = 0;
+let patFine = null, patBold = null;
+let bkKey = "";
+
+function mkPat(pitch, frac){
+  const t = document.createElement("canvas");
+  t.width = t.height = pitch;
+  const g = t.getContext("2d");
+  const s = Math.max(1, Math.round(pitch * frac));
+  const o = Math.floor((pitch - s) / 2);
+  g.fillStyle = "#fff";
+  g.fillRect(o, o, s, s);
+  return sctx.createPattern(t, "repeat");
+}
+
+function resize(){
+  const vw = Math.max(1, window.innerWidth), vh = Math.max(1, window.innerHeight);
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  PW = Math.round(vw * dpr); PH = Math.round(vh * dpr);
+  [cv, sc, bk].forEach(function (c) { c.width = PW; c.height = PH; });
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+  S = Math.min(vw / DW, vh / DH);
+  OX = (vw - DW * S) / 2; OY = (vh - DH * S) / 2;
+  const pitch = Math.max(3, Math.round(DOT * S * dpr));
+  patFine = mkPat(pitch, 0.36);
+  patBold = mkPat(pitch, 0.52);
+  ctx.imageSmoothingEnabled = false;
+  sctx.imageSmoothingEnabled = false;
+  bkKey = "";                                        // force backdrop rebuild
+}
+
+function setT(g){ g.setTransform(S * dpr, 0, 0, S * dpr, OX * dpr, OY * dpr); }
+function idT(g){ g.setTransform(1, 0, 0, 1, 0, 0); }
+
+/* Mask the scratch layer through a dot pattern, then blit onto `dst`. */
+function maskTo(dst, pat){
+  idT(sctx);
+  sctx.globalCompositeOperation = "destination-in";
+  sctx.fillStyle = pat;
+  sctx.fillRect(0, 0, PW, PH);
+  sctx.globalCompositeOperation = "source-over";
+  idT(dst);
+  dst.drawImage(sc, 0, 0);
+}
+function clearScratch(){ idT(sctx); sctx.clearRect(0, 0, PW, PH); }
+
+function rr(g, x, y, w, h, r){
+  r = Math.min(r, w / 2, h / 2);
+  g.beginPath();
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+function clipStage(g){ g.save(); g.beginPath(); g.rect(0, 0, DW, DH); g.clip(); }
+
+/* ============================================================
+   8. DOTTED BACKDROP  (ambient field + ladder + sign chassis + bloom)
+   ============================================================ */
+function ladderSilhouette(g){
+  g.beginPath();
+  g.moveTo(railCx(-1, 0) - LAD.wTop, LAD.yTop);
+  g.lineTo(railCx(1, 0) + LAD.wTop, LAD.yTop);
+  g.lineTo(railCx(1, 1) + LAD.wBot, LAD.yBot);
+  g.lineTo(railCx(-1, 1) - LAD.wBot, LAD.yBot);
+  g.closePath();
+}
+function railPath(g, side){
+  const hw0 = railHw(0), hw1 = railHw(1);
+  g.beginPath();
+  g.moveTo(railCx(side, 0) - hw0, LAD.yTop);
+  g.lineTo(railCx(side, 0) + hw0, LAD.yTop);
+  g.lineTo(railCx(side, 1) + hw1, LAD.yBot);
+  g.lineTo(railCx(side, 1) - hw1, LAD.yBot);
+  g.closePath();
+}
+function rungRects(){
+  return LAD.rungs.map(function (sf) {
+    const y = LAD.yTop + (LAD.yBot - LAD.yTop) * sf, th = 20 + 12 * sf;
+    const xl = railCx(-1, sf) + railHw(sf) * 0.35;
+    const xr = railCx(1, sf) - railHw(sf) * 0.35;
+    return { x: xl, y: y - th / 2, w: xr - xl, h: th };
+  });
+}
+function centerRail(g){
+  g.beginPath();
+  g.moveTo(360 - 5, LAD.yTop); g.lineTo(360 + 5, LAD.yTop);
+  g.lineTo(360 + 7, LAD.yBot); g.lineTo(360 - 7, LAD.yBot);
+  g.closePath();
+}
+
+function drawBloom(g, gl){
+  if (gl <= 0.001) return;
+  const cx = 360, cy = 248;
+
+  /* broad halftone field spilling across the frame — small, sparse dots */
+  const layers = [[260, 0.26], [430, 0.11], [720, 0.05]];
+  for (let i = 0; i < layers.length; i++){
+    const r = layers[i][0], a = layers[i][1] * gl;
+    const gr = g.createRadialGradient(cx, cy, 20, cx, cy, r);
+    gr.addColorStop(0,   "rgba(" + C.glow + "," + a + ")");
+    gr.addColorStop(0.55,"rgba(" + C.glow + "," + (a * 0.42) + ")");
+    gr.addColorStop(1,   "rgba(" + C.glow + ",0)");
+    g.fillStyle = gr;
+    g.fillRect(cx - r, cy - r, r * 2, r * 2);
+  }
+}
+
+/* Tight halo hugging the panel — drawn in the bold-dot pass so the dots
+   nearest the sign are large and hot, the way a real light source reads. */
+function drawHalo(g, gl){
+  if (gl <= 0.001) return;
+  /* largest ring first: each smaller ring layers on top so brightness ramps
+     up toward the panel instead of the outermost ring covering everything */
+  const halo = [[80, 0.06], [60, 0.10], [44, 0.15], [30, 0.21], [19, 0.29], [9, 0.38]];
+  for (let i = 0; i < halo.length; i++){
+    const e = halo[i][0], a = halo[i][1] * gl;
+    g.fillStyle = "rgba(" + C.glow + "," + a + ")";
+    rr(g, SIGN.px - e, SIGN.py - e, SIGN.pw + e * 2, SIGN.ph + e * 2, SIGN.pr + e * 0.7);
+    g.fill();
+  }
+}
+
+function buildBackdrop(gl){
+  idT(bctx); bctx.clearRect(0, 0, PW, PH);
+
+  /* ---- fine-dot pass ----
+     The unlit scene is almost pure black in the reference: no ambient field,
+     no panel interior. Every background dot comes from the bloom. */
+  clearScratch();
+  setT(sctx);
+  clipStage(sctx);
+  drawBloom(sctx, gl);
+
+  /* sign body: dim depth slabs on the right (the chassis seen at an angle) */
+  sctx.fillStyle = "rgba(255,255,255,0.15)";
+  sctx.fillRect(SIGN.px + SIGN.pw - 4, 196, 112, 100);
+  sctx.fillRect(SIGN.px + SIGN.pw - 4, 300, 132, 52);
+
+  /* ladder: very faint silhouette haze, then the rails & rungs as solid bars */
+  sctx.fillStyle = "rgba(255,255,255,0.05)";
+  ladderSilhouette(sctx); sctx.fill();
+  sctx.fillStyle = "rgba(255,255,255,0.40)";
+  railPath(sctx, -1); sctx.fill();
+  railPath(sctx, 1);  sctx.fill();
+  sctx.fillStyle = "rgba(255,255,255,0.34)";
+  centerRail(sctx);   sctx.fill();
+  sctx.fillStyle = "rgba(255,255,255,0.38)";
+  rungRects().forEach(function (r) { sctx.fillRect(r.x, r.y, r.w, r.h); });
+  sctx.restore();
+  maskTo(bctx, patFine);
+
+  /* ---- bold-dot pass: edges & bloom core ---- */
+  clearScratch();
+  setT(sctx);
+  clipStage(sctx);
+
+  drawHalo(sctx, gl);
+
+  sctx.lineWidth = DOT;
+  sctx.lineJoin = "round";
+  sctx.strokeStyle = "rgba(255,255,255," + (0.52 + 0.30 * gl) + ")";
+  rr(sctx, SIGN.px, SIGN.py, SIGN.pw, SIGN.ph, SIGN.pr); sctx.stroke();
+  rr(sctx, SIGN.lx, SIGN.ly, SIGN.lw, SIGN.lh, SIGN.lr); sctx.stroke();
+  sctx.strokeRect(SIGN.px - 22, 132, 32, 50);
+  sctx.strokeRect(SIGN.px + SIGN.pw - 10, 132, 150, 50);
+
+  /* the header box sits in front of the panel, so knock the panel's
+     top edge out of the region it covers before outlining it */
+  sctx.globalCompositeOperation = "destination-out";
+  rr(sctx, SIGN.hx + 3, SIGN.hy + 3, SIGN.hw - 6, SIGN.hh - 6, SIGN.hr); sctx.fill();
+  sctx.globalCompositeOperation = "source-over";
+  sctx.strokeStyle = "rgba(255,255,255," + (0.52 + 0.30 * gl) + ")";
+  rr(sctx, SIGN.hx, SIGN.hy, SIGN.hw, SIGN.hh, SIGN.hr); sctx.stroke();
+
+  /* only a light edge lift on the rails — a strong stroke stacks with the
+     fill dots and turns the ladder into sparse white specks */
+  sctx.strokeStyle = "rgba(255,255,255," + (0.20 + 0.14 * gl) + ")";
+  railPath(sctx, -1); sctx.stroke();
+  railPath(sctx, 1);  sctx.stroke();
+
+  sctx.restore();
+  maskTo(bctx, patBold);
+}
+
+/* ============================================================
+   9. SOLID LAYER: panel, slots, letters, header text, sprites
+   ============================================================ */
+function drawGlyph(g, gr, x, y, px, py, color){
+  g.fillStyle = color;
+  const ox = px * 0.06 + 0.35, oy = py * 0.06 + 0.35;
+  for (let r = 0; r < gr.length; r++){
+    const row = gr[r];
+    for (let c = 0; c < row.length; c++){
+      if (row[c] === "1") g.fillRect(x + c * px, y + r * py, px + ox, py + oy);
+    }
+  }
+}
+/* dotted glyph: one dot per glyph pixel — matches the reference header text */
+function drawGlyphDots(g, gr, x, y, px, py, color){
+  g.fillStyle = color;
+  const s = Math.max(1.6, Math.min(px, py) * 0.58);
+  const ox = (px - s) / 2, oy = (py - s) / 2;
+  for (let r = 0; r < gr.length; r++){
+    const row = gr[r];
+    for (let c = 0; c < row.length; c++){
+      if (row[c] === "1") g.fillRect(x + c * px + ox, y + r * py + oy, s, s);
+    }
+  }
+}
+
+/* Content alpha: the letters have to clear out along with the glow so the
+   last frame of the loop matches the first one. */
+function signAlpha(t){
+  return t < T_FADE ? 1 : Math.max(0, 1 - (t - T_FADE) / 0.95);
+}
+
+function drawSign(g, t, gl){
+  const sa = signAlpha(t);
+  clipStage(g);
+
+  /* lit panel + header bar fade in over the dark off-state */
+  if (gl > 0.002){
+    g.globalAlpha = Math.min(1, gl * 1.15);
+    /* soft bloom fringe so the panel edge blends into the glow rather than
+       ending on a hard line, as it does in the reference */
+    g.fillStyle = "rgba(" + C.glow + ",0.20)";
+    rr(g, SIGN.px - 6, SIGN.py - 6, SIGN.pw + 12, SIGN.ph + 12, SIGN.pr + 4); g.fill();
+    g.fillStyle = "rgba(" + C.glow + ",0.42)";
+    rr(g, SIGN.px, SIGN.py, SIGN.pw, SIGN.ph, SIGN.pr); g.fill();
+    g.fillStyle = C.cream;
+    rr(g, SIGN.px + 6, SIGN.py + 6, SIGN.pw - 12, SIGN.ph - 12, SIGN.pr - 2); g.fill();
+    g.fillStyle = C.headerLit;
+    rr(g, SIGN.hx + 5, SIGN.hy + 5, SIGN.hw - 10, SIGN.hh - 10, SIGN.hr - 3); g.fill();
+    g.globalAlpha = 1;
+  }
+
+  /* letter slots + glyphs */
+  const slotA = 1 - Math.min(1, gl * 1.25);
+  for (let i = 0; i < NCH; i++){
+    const rt = REVEAL[i];
+    if (t < rt) continue;
+    const pop = Math.min(1, (t - rt) / 0.16);
+    const ch = CHARS[i];
+
+    if (slotA * sa > 0.004){
+      g.globalAlpha = slotA * sa;
+      g.fillStyle = C.slot;
+      g.fillRect(ch.sx, SLOT_Y, ch.sw, SLOT_H);
+      g.fillStyle = C.slotEdge;
+      g.fillRect(ch.sx, SLOT_Y, ch.sw, 2);
+      g.globalAlpha = 1;
+    }
+    if (ch.ch === " ") continue;
+
+    const ease = 1 - Math.pow(1 - pop, 3);
+    const s = 0.45 + 0.55 * ease;
+    const cx = ch.x + ch.w / 2, cy = TITLE_Y + TITLE_H / 2;
+    g.save();
+    g.translate(cx, cy); g.scale(s, s); g.translate(-cx, -cy);
+    if (pop < 1){
+      g.globalAlpha = (0.5 + 0.5 * pop) * sa;
+      drawGlyph(g, glyph(ch.ch), ch.x, TITLE_Y, LPX, LPY, "#fff3e2");
+      g.globalAlpha = pop * sa;
+    } else {
+      g.globalAlpha = sa;
+    }
+    drawGlyph(g, glyph(ch.ch), ch.x, TITLE_Y, LPX, LPY, gl > 0.5 ? C.letterLit : C.letter);
+    g.globalAlpha = 1;
+    g.restore();
+  }
+
+  /* "NOW SHOWING" — dotted text, colour shifts to amber when lit */
+  const hc = gl > 0.02
+    ? mix(C.headText, C.headTextLit, Math.min(1, gl * 1.3))
+    : C.headText;
+  HLay.items.forEach(function (it) {
+    drawGlyphDots(g, glyph(it.ch), HEAD_X + it.x * HPX, HEAD_Y, HPX, HPY, hc);
+  });
+
+  g.restore();
+}
+
+function mix(a, b, k){
+  const pa = [parseInt(a.slice(1,3),16), parseInt(a.slice(3,5),16), parseInt(a.slice(5,7),16)];
+  const pb = [parseInt(b.slice(1,3),16), parseInt(b.slice(3,5),16), parseInt(b.slice(5,7),16)];
+  return "rgb(" + Math.round(pa[0]+(pb[0]-pa[0])*k) + "," +
+                  Math.round(pa[1]+(pb[1]-pa[1])*k) + "," +
+                  Math.round(pa[2]+(pb[2]-pa[2])*k) + ")";
+}
+
+function drawSprite(g, grid, x, y, flip, legPhase, reach){
+  const sc0 = SPR_SC, o = 0.6;
+  g.save();
+  clipStage(g);
+  if (flip){ g.translate(x + SPR_W * sc0, y); g.scale(-1, 1); }
+  else     { g.translate(x, y); }
+  const off = [0, 0, 0, 0];
+  if (legPhase >= 0){
+    const p = legPhase % 1;
+    const a = p < 0.5 ? 0 : 1, b = 1 - a;
+    off[0] = a * 0.55; off[2] = a * 0.55;
+    off[1] = b * 0.55; off[3] = b * 0.55;
+  }
+  for (let r = 0; r < grid.length; r++){
+    const row = grid[r];
+    for (let c = 0; c < row.length; c++){
+      const k = row[c];
+      if (k === ".") continue;
+      let dy = 0, dx = 0;
+      if (r >= LEG_ROW){
+        const gidx = LEG_GROUP[c];
+        if (gidx !== undefined) dy = off[gidx] * sc0;
+      }
+      if (reach && c <= 1 && r >= 3 && r <= 4) dx = -reach * sc0;
+      g.fillStyle = FURCOL[k];
+      g.fillRect(c * sc0 + dx, r * sc0 + dy, sc0 + o, sc0 + o);
+    }
+  }
+  g.restore();
+}
+
+function drawSparks(g, t){
+  g.save();
+  clipStage(g);
+  const s = DOT * 0.5;
+  for (let i = 0; i < SPARKS.length; i++){
+    const p = SPARKS[i];
+    const dt = t - p.t0;
+    if (dt < 0 || dt > p.life) continue;
+    const u = dt / p.life;
+    const a = (1 - u) * (1 - u);
+    g.fillStyle = "rgba(255,231,186," + (a * 0.85) + ")";
+    for (let n = 0; n < p.n; n++){
+      const k = u + n * 0.055;
+      const x = p.x + p.vx * k, y = p.y + p.vy * k + 130 * k * k;
+      g.fillRect(Math.round(x / DOT) * DOT, Math.round(y / DOT) * DOT, s, s);
+    }
+  }
+  g.restore();
+}
+
+/* ============================================================
+   10. DOG STATE FROM TIME
+   ============================================================ */
+function dogState(t){
+  const s = segAt(t);
+  const u = s.dur > 0 ? Math.min(1, Math.max(0, (t - s.st) / s.dur)) : 1;
+  const d = { grid: SPR_SIDE, x: -400, y: GROUND - DOG_H, flip: false, leg: -1, reach: 0, show: true };
+
+  switch (s.name){
+    case "idle":
+      d.x = -DOG_W - 40; d.leg = -1; break;
+
+    case "walkIn": {
+      d.x = (-DOG_W - 40) + ((DOG_LADDER_X - 26) - (-DOG_W - 40)) * u;
+      d.leg = t * 7.5;
+      d.y = GROUND - DOG_H - (Math.sin(t * 15) > 0 ? 1 : 0) * 3;
+      break;
+    }
+    case "brace":
+      d.x = DOG_LADDER_X - 26; d.leg = -1; break;
+
+    case "climb": {
+      const uu = u * u * (3 - 2 * u);
+      const feet = ladY(1 - uu);
+      d.grid = SPR_CLIMB;
+      d.x = DOG_LADDER_X + Math.sin(uu * 22) * 4;
+      d.y = feet - DOG_H;
+      d.leg = uu * 9;
+      break;
+    }
+    case "onto": {
+      const feet = LAD.yTop + (PLACE_FEET - LAD.yTop) * u;
+      d.grid = SPR_CLIMB; d.x = DOG_LADDER_X; d.y = feet - DOG_H; d.leg = u * 2;
+      break;
+    }
+    case "move": {
+      const i = s.data.i;
+      const from = i === 0 ? DOG_LADDER_X : dogPlaceX(i - 1);
+      d.grid = SPR_CLIMB;
+      d.x = from + (dogPlaceX(i) - from) * (u * u * (3 - 2 * u));
+      d.y = PLACE_FEET - DOG_H - (Math.sin(t * 26) > 0 ? 1 : 0) * 3;
+      d.leg = t * 8;
+      break;
+    }
+    case "place": {
+      const i = s.data.i;
+      d.grid = SPR_CLIMB;
+      d.x = dogPlaceX(i);
+      d.y = PLACE_FEET - DOG_H;
+      d.reach = Math.sin(Math.min(1, u * 1.6) * Math.PI) * 1.6;
+      d.leg = -1;
+      break;
+    }
+    case "back": {
+      const from = dogPlaceX(NCH - 1);
+      d.grid = SPR_CLIMB;
+      d.x = from + (DOG_LADDER_X - from) * (u * u * (3 - 2 * u));
+      d.y = PLACE_FEET - DOG_H;
+      d.leg = t * 8;
+      break;
+    }
+    case "flicker":
+      d.grid = SPR_CLIMB; d.x = DOG_LADDER_X; d.y = PLACE_FEET - DOG_H; d.leg = -1; break;
+
+    case "descend": {
+      d.grid = SPR_CLIMB;
+      if (u < 0.14){
+        const k = u / 0.14;
+        d.x = DOG_LADDER_X;
+        d.y = (PLACE_FEET + (LAD.yTop - PLACE_FEET) * k) - DOG_H;
+        d.leg = k * 2;
+      } else {
+        const k = (u - 0.14) / 0.86;
+        const kk = k * k * (3 - 2 * k);
+        d.x = DOG_LADDER_X + Math.sin(kk * 20) * 4;
+        d.y = ladY(kk) - DOG_H;
+        d.leg = kk * 9;
+      }
+      break;
+    }
+    case "walkOut": {
+      d.x = DOG_LADDER_X + ((DW + 120) - DOG_LADDER_X) * u;
+      d.y = GROUND - DOG_H - (Math.sin(t * 15) > 0 ? 1 : 0) * 3;
+      d.leg = t * 7.5;
+      break;
+    }
+    case "fade":
+      d.show = false; break;
+  }
+  return d;
+}
+
+/* ============================================================
+   11. FRAME
+   ============================================================ */
+function render(t){
+  t = ((t % LOOP) + LOOP) % LOOP;
+  const gl = glowAt(t);
+
+  const key = (Math.round(gl * 40) / 40) + "|" + PW + "x" + PH;
+  if (key !== bkKey){ buildBackdrop(gl); bkKey = key; }
+
+  idT(ctx);
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, PW, PH);
+  ctx.drawImage(bk, 0, 0);
+
+  setT(ctx);
+  drawSign(ctx, t, gl);
+  drawSparks(ctx, t);
+
+  const d = dogState(t);
+  if (d.show) drawSprite(ctx, d.grid, d.x, d.y, d.flip, d.leg, d.reach);
+}
+
+/* ============================================================
+   12. AUDIO — electronic bed + SFX, all synthesised
+   ============================================================ */
+const BPM = 104, STEP = 60 / BPM / 4, BAR = 16, PATLEN = 64;
+const ROOTS = [110.00, 110.00, 87.31, 98.00];        // A2 A2 F2 G2
+const BASSHITS = [0, 3, 6, 8, 11, 14];
+const ARPHITS  = [0, 2, 5, 7, 8, 10, 13, 15];
+const HATHITS  = [2, 6, 10, 14];
+const HATSOFT  = [4, 12];
+
+function makeBus(ac, dest){
+  const master = ac.createGain(); master.gain.value = 0.9;
+  const comp = ac.createDynamicsCompressor();
+  comp.threshold.value = -16; comp.ratio.value = 4; comp.attack.value = 0.004;
+  const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 9000;
+
+  const wet = ac.createGain(); wet.gain.value = 0.26;
+  const dly = ac.createDelay(1.0); dly.delayTime.value = STEP * 2;
+  const fb = ac.createGain(); fb.gain.value = 0.30;
+  const dlp = ac.createBiquadFilter(); dlp.type = "lowpass"; dlp.frequency.value = 2200;
+  dly.connect(dlp); dlp.connect(fb); fb.connect(dly); dlp.connect(wet);
+
+  master.connect(comp); comp.connect(lp); lp.connect(dest); wet.connect(master);
+
+  let nb = null;
+  function noise(){
+    if (nb) return nb;
+    const len = Math.floor(ac.sampleRate * 0.5);
+    nb = ac.createBuffer(1, len, ac.sampleRate);
+    const ch = nb.getChannelData(0);
+    for (let i = 0; i < len; i++) ch[i] = Math.random() * 2 - 1;
+    return nb;
+  }
+  return { ac: ac, master: master, echo: dly, noise: noise };
+}
+
+function tone(B, opt){
+  const ac = B.ac;
+  const o = ac.createOscillator();
+  o.type = opt.type || "square";
+  o.frequency.setValueAtTime(opt.f0, opt.t);
+  if (opt.f1) o.frequency.exponentialRampToValueAtTime(Math.max(20, opt.f1), opt.t + opt.dur);
+  if (opt.detune) o.detune.value = opt.detune;
+
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, opt.t);
+  g.gain.linearRampToValueAtTime(opt.g, opt.t + (opt.atk || 0.006));
+  g.gain.exponentialRampToValueAtTime(0.0001, opt.t + opt.dur);
+
+  let node = o;
+  if (opt.cut){
+    const f = ac.createBiquadFilter();
+    f.type = opt.cutType || "lowpass";
+    f.frequency.value = opt.cut;
+    f.Q.value = opt.q || 1;
+    node.connect(f); node = f;
+  }
+  node.connect(g);
+  g.connect(B.master);
+  if (opt.echo) g.connect(B.echo);
+  o.start(opt.t);
+  o.stop(opt.t + opt.dur + 0.02);
+}
+
+function hit(B, t, dur, gain, hp, lp){
+  const ac = B.ac;
+  const s = ac.createBufferSource(); s.buffer = B.noise();
+  const f = ac.createBiquadFilter(); f.type = "highpass"; f.frequency.value = hp;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f);
+  if (lp){ const l = ac.createBiquadFilter(); l.type = "lowpass"; l.frequency.value = lp; f.connect(l); l.connect(g); }
+  else f.connect(g);
+  g.connect(B.master);
+  s.start(t); s.stop(t + dur + 0.02);
+}
+
+function musicStep(B, step, t){
+  const bar = Math.floor(step / BAR) % 4;
+  const s = step % BAR;
+  const root = ROOTS[bar];
+
+  if (s === 0 || s === 8 || (bar === 3 && s === 12))
+    tone(B, { type: "sine", f0: 132, f1: 44, t: t, dur: 0.15, g: 0.55, atk: 0.002 });
+
+  if (BASSHITS.indexOf(s) >= 0)
+    tone(B, { type: "square", f0: root, t: t, dur: 0.19, g: 0.17, cut: 430, q: 3 });
+
+  if (HATHITS.indexOf(s) >= 0) hit(B, t, 0.035, 0.055, 6500);
+  if (HATSOFT.indexOf(s) >= 0) hit(B, t, 0.025, 0.026, 7800);
+  if (s === 14 && bar % 2 === 1) hit(B, t, 0.12, 0.10, 1400, 5200);
+
+  if (ARPHITS.indexOf(s) >= 0){
+    const scale = [1, 1.2, 1.5, 2, 2.4];
+    const n = scale[(step * 3 + bar) % scale.length];
+    tone(B, { type: "square", f0: root * 4 * n, t: t, dur: 0.13, g: 0.048, cut: 4200, echo: true });
+  }
+
+  if (s === 0){
+    tone(B, { type: "triangle", f0: root * 2, t: t, dur: 3.6, g: 0.034, atk: 0.5, cut: 950 });
+    tone(B, { type: "triangle", f0: root * 2, detune: 9, t: t, dur: 3.6, g: 0.030, atk: 0.6, cut: 950 });
+  }
+}
+
+function sfxPlace(B, t, i){
+  tone(B, { type: "square", f0: 460 + i * 46, f1: 900 + i * 60, t: t, dur: 0.075, g: 0.115, cut: 5200, echo: true });
+  hit(B, t, 0.03, 0.055, 3000);
+}
+function sfxStep(B, t){ hit(B, t, 0.022, 0.028, 900, 2600); }
+function sfxLight(B, t){
+  [440, 554.37, 659.25, 880].forEach(function (f, i) {
+    tone(B, { type: "triangle", f0: f, t: t + i * 0.02, dur: 0.9, g: 0.075, atk: 0.05, cut: 5000, echo: true });
+  });
+  const ac = B.ac;
+  const s = ac.createBufferSource(); s.buffer = B.noise(); s.loop = true;
+  const f = ac.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 1.2;
+  f.frequency.setValueAtTime(300, t);
+  f.frequency.exponentialRampToValueAtTime(5200, t + 0.35);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(0.07, t + 0.06);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+  s.connect(f); f.connect(g); g.connect(B.master);
+  s.start(t); s.stop(t + 0.55);
+}
+function sfxFlickerTick(B, t){
+  tone(B, { type: "square", f0: 180, f1: 90, t: t, dur: 0.05, g: 0.07, cut: 1800 });
+}
+
+/* One-shot events derived from the timeline (same list drives live + offline) */
+const SFX = [];
+for (let i = 0; i < NCH; i++){
+  if (CHARS[i].ch !== " ") SFX.push({ t: REVEAL[i], k: "place", a: i });
+}
+SFX.push({ t: T_LIGHT + 0.06, k: "tick" });
+SFX.push({ t: T_LIGHT + 0.29, k: "tick" });
+SFX.push({ t: T_LIGHT + 0.54, k: "light" });
+TLN.forEach(function (s) {
+  if (s.name === "walkIn" || s.name === "walkOut"){
+    for (let k = 0.1; k < s.dur; k += 0.135) SFX.push({ t: s.st + k, k: "step" });
+  }
+  if (s.name === "climb" || s.name === "descend"){
+    for (let k = 0.1; k < s.dur; k += 0.19) SFX.push({ t: s.st + k, k: "step" });
+  }
+});
+SFX.sort(function (a, b) { return a.t - b.t; });
+
+function fireSfx(B, ev, when){
+  if (ev.k === "place") sfxPlace(B, when, ev.a);
+  else if (ev.k === "light") sfxLight(B, when);
+  else if (ev.k === "step") sfxStep(B, when);
+  else if (ev.k === "tick") sfxFlickerTick(B, when);
+}
+
+/* --- realtime audio engine --- */
+const Audio_ = {
+  ac: null, B: null, on: false,
+  step: 0, nextT: 0, sfxIdx: 0, sfxLoop: 0,
+  ensure: function () {
+    if (this.ac) return this.ac;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    this.ac = new AC();
+    this.B = makeBus(this.ac, this.ac.destination);
+    this.B.master.gain.value = 0;
+    return this.ac;
+  },
+  setOn: function (v) {
+    const ac = this.ensure();
+    if (!ac) return;
+    this.on = v;
+    if (v){
+      if (ac.state !== "running") ac.resume();
+      if (this.nextT === 0) this.nextT = ac.currentTime + 0.08;
+      this.B.master.gain.cancelScheduledValues(ac.currentTime);
+      this.B.master.gain.setTargetAtTime(0.85, ac.currentTime, 0.15);
+    } else {
+      this.B.master.gain.cancelScheduledValues(ac.currentTime);
+      this.B.master.gain.setTargetAtTime(0, ac.currentTime, 0.08);
+    }
+  },
+  /* keep the sequencer and the visual timeline fed with lookahead */
+  pump: function (visT, loopCount) {
+    if (!this.on || !this.ac || this.ac.state !== "running") return;
+    const ac = this.ac, look = ac.currentTime + 0.18;
+    if (this.nextT < ac.currentTime) this.nextT = ac.currentTime + 0.02;
+    while (this.nextT < look){
+      musicStep(this.B, this.step % PATLEN, this.nextT);
+      this.step++; this.nextT += STEP;
+    }
+    /* one-shots: schedule anything whose visual time has just been reached */
+    if (loopCount !== this.sfxLoop){ this.sfxLoop = loopCount; this.sfxIdx = 0; }
+    while (this.sfxIdx < SFX.length && SFX[this.sfxIdx].t <= visT){
+      fireSfx(this.B, SFX[this.sfxIdx], ac.currentTime + 0.01);
+      this.sfxIdx++;
+    }
+  },
+  resetSfx: function () { this.sfxIdx = 0; },
+};
+
+/* ============================================================
+   13. MAIN LOOP + UI
+   ============================================================ */
+let t0 = 0, tNow = 0, last = 0, running = true, loopCount = 0, manual = null;
+
+function frame(ts){
+  if (!running) return;
+  if (!last) last = ts;
+  let dt = (ts - last) / 1000;
+  last = ts;
+  if (dt > 0.25) dt = 1 / 60;              // survive tab switches / stalls
+
+  if (manual === null){
+    const prev = tNow;
+    tNow += dt;
+    if (tNow >= LOOP){ tNow -= LOOP; loopCount++; Audio_.resetSfx(); }
+    if (tNow < prev) { /* wrapped */ }
+    render(tNow);
+    Audio_.pump(tNow, loopCount);
+  }
+  requestAnimationFrame(frame);
+}
+
+function replay(){
+  tNow = 0; loopCount++; Audio_.resetSfx();
+  render(0);
+}
+
+const btnSound = document.getElementById("btnSound");
+const btnReplay = document.getElementById("btnReplay");
+const hint = document.getElementById("hint");
+
+function setSoundUI(on){
+  btnSound.dataset.on = on ? "1" : "0";
+  btnSound.innerHTML = '<i class="dot"></i>Sound: ' + (on ? "on" : "off");
+  if (on) hint.style.opacity = "0";
+}
+btnSound.addEventListener("click", function (e) {
+  e.preventDefault();
+  const next = btnSound.dataset.on !== "1";
+  Audio_.setOn(next);
+  setSoundUI(next);
+});
+btnReplay.addEventListener("click", function (e) { e.preventDefault(); replay(); });
+
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden){
+    running = false;
+    if (Audio_.ac && Audio_.ac.state === "running") Audio_.ac.suspend();
+  } else {
+    if (!running){ running = true; last = 0; requestAnimationFrame(frame); }
+    if (Audio_.on && Audio_.ac) Audio_.ac.resume();
+  }
+});
+
+let rt = 0;
+function onResize(){
+  clearTimeout(rt);
+  rt = setTimeout(function () { resize(); render(tNow); }, 60);
+}
+window.addEventListener("resize", onResize, { passive: true });
+window.addEventListener("orientationchange", onResize, { passive: true });
+if (window.visualViewport) window.visualViewport.addEventListener("resize", onResize, { passive: true });
+document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
+cv.addEventListener("touchstart", function (e) { e.preventDefault(); }, { passive: false });
+
+resize();
+render(0);
+requestAnimationFrame(frame);
+
+/* ============================================================
+   14. CAPTURE HOOKS (used to render the mp4; harmless otherwise)
+   ============================================================ */
+window.__scene = {
+  loop: LOOP,
+  seek: function (t) { manual = t; tNow = t; render(t); },
+  live: function () { manual = null; last = 0; },
+  /* Render `sec` seconds of the exact same music offline -> WAV bytes */
+  renderAudio: function (sec, rate) {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return null;
+    rate = rate || 44100;
+    const ac = new OAC(2, Math.ceil(sec * rate), rate);
+    const B = makeBus(ac, ac.destination);
+    B.master.gain.value = 0.85;
+    const nSteps = Math.ceil(sec / STEP);
+    for (let i = 0; i < nSteps; i++) musicStep(B, i % PATLEN, i * STEP + 0.02);
+    for (let L = 0; L * LOOP < sec; L++){
+      SFX.forEach(function (ev) {
+        const tt = ev.t + L * LOOP;
+        if (tt < sec) fireSfx(B, ev, tt + 0.02);
+      });
+    }
+    return ac.startRendering().then(function (buf) {
+      const n = buf.length, chs = buf.numberOfChannels;
+      const data = new DataView(new ArrayBuffer(44 + n * chs * 2));
+      const w = function (o, s) { for (let i = 0; i < s.length; i++) data.setUint8(o + i, s.charCodeAt(i)); };
+      w(0, "RIFF"); data.setUint32(4, 36 + n * chs * 2, true); w(8, "WAVEfmt ");
+      data.setUint32(16, 16, true); data.setUint16(20, 1, true);
+      data.setUint16(22, chs, true); data.setUint32(24, rate, true);
+      data.setUint32(28, rate * chs * 2, true); data.setUint16(32, chs * 2, true);
+      data.setUint16(34, 16, true); w(36, "data");
+      data.setUint32(40, n * chs * 2, true);
+      const cd = [];
+      for (let c = 0; c < chs; c++) cd.push(buf.getChannelData(c));
+      let o = 44;
+      for (let i = 0; i < n; i++){
+        for (let c = 0; c < chs; c++){
+          let v = Math.max(-1, Math.min(1, cd[c][i]));
+          data.setInt16(o, v < 0 ? v * 32768 : v * 32767, true);
+          o += 2;
+        }
+      }
+      let bin = "";
+      const u8 = new Uint8Array(data.buffer);
+      for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
+      return btoa(bin);
+    });
+  },
+};
+
+})();
+</script>
+</body>
+</html>
