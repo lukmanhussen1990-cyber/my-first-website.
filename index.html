@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rolling Two-Disc Assembly — Animated Solution (JEE Advanced 2016)</title>
+<style>
+  :root{
+    --bg:#080b14;
+    --bg2:#0d1220;
+    --panel:rgba(255,255,255,.045);
+    --line:rgba(255,255,255,.10);
+    --ink:#eef2ff;
+    --dim:#9aa6c4;
+    --accent:#5eead4;
+    --accent2:#a78bfa;
+    --warn:#fbbf24;
+    --good:#34d399;
+    --bad:#fb7185;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1100px 700px at 15% -10%, #16224a 0%, transparent 60%),
+      radial-gradient(900px 600px at 95% 0%, #2a1740 0%, transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:18px 14px 60px}
+
+  header h1{
+    font-size:clamp(19px,4.4vw,30px);
+    margin:0 0 6px;letter-spacing:-.02em;font-weight:750;
+  }
+  header p{margin:0;color:var(--dim);font-size:clamp(12px,2.9vw,14px)}
+  .tagrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .tag{
+    font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    padding:4px 9px;border-radius:999px;border:1px solid var(--line);
+    background:var(--panel);color:var(--dim);
+  }
+
+  /* ---------- player ---------- */
+  .player{
+    margin-top:16px;border:1px solid var(--line);border-radius:16px;
+    background:linear-gradient(180deg,#0e1526 0%, #0a0f1c 100%);
+    overflow:hidden;box-shadow:0 24px 60px -30px rgba(0,0,0,.9);
+  }
+  .stage{position:relative;width:100%;aspect-ratio:16/10;background:
+    radial-gradient(70% 90% at 50% 15%, #101a33 0%, #070b14 75%);}
+  @media (max-width:640px){ .stage{aspect-ratio:5/4} }
+  canvas{display:block;width:100%;height:100%}
+
+  .chapbadge{
+    position:absolute;top:10px;left:12px;display:flex;align-items:center;gap:8px;
+    font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);
+    background:rgba(6,12,24,.6);border:1px solid var(--line);
+    padding:5px 10px;border-radius:999px;backdrop-filter:blur(6px);
+  }
+  .chapbadge b{color:var(--ink);font-weight:600;letter-spacing:.02em;text-transform:none;font-size:12px}
+
+  .mathcard{
+    position:absolute;top:10px;right:12px;max-width:min(46%,360px);
+    background:rgba(6,11,22,.72);border:1px solid var(--line);border-radius:12px;
+    padding:10px 12px;backdrop-filter:blur(8px);
+    font-family:var(--mono);font-size:clamp(10px,2.15vw,13px);line-height:1.75;
+    color:#dbe4ff;
+  }
+  .mathcard .ml{opacity:0;transform:translateY(6px);transition:.45s ease}
+  .mathcard .ml.on{opacity:1;transform:none}
+  .mathcard em{color:var(--accent);font-style:normal}
+  .mathcard s{color:var(--bad);text-decoration-color:var(--bad)}
+  .mathcard .hi{color:var(--warn)}
+  @media (max-width:640px){
+    .mathcard{max-width:52%;padding:8px 9px;line-height:1.6}
+    .chapbadge{max-width:42%}
+    .chapbadge b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  }
+
+  .screen{position:relative}
+  .caption{
+    position:absolute;left:0;right:0;bottom:0;
+    padding:26px 14px 14px;
+    background:linear-gradient(180deg,transparent, rgba(4,7,14,.86) 45%);
+    font-size:clamp(12.5px,3vw,15.5px);
+  }
+  /* on phones the caption sits below the picture instead of covering it */
+  @media (max-width:640px){
+    .caption{position:static;padding:12px 13px 14px;background:rgba(4,7,14,.55);
+             border-top:1px solid var(--line);font-size:13px}
+  }
+  .caption b{color:var(--accent)}
+  .caption .sub{color:var(--dim);font-size:.86em;display:block;margin-top:3px}
+
+  .scrub{height:3px;background:rgba(255,255,255,.09);position:relative;cursor:pointer}
+  .scrub .fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .scrub .mk{position:absolute;top:0;width:1px;height:100%;background:rgba(255,255,255,.28)}
+
+  .controls{display:flex;align-items:center;gap:8px;padding:10px 12px;flex-wrap:wrap;
+    border-top:1px solid var(--line);background:rgba(255,255,255,.02)}
+  button{
+    font:inherit;font-size:13px;color:var(--ink);cursor:pointer;
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;
+    padding:7px 12px;transition:.15s;
+  }
+  button:hover{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.22)}
+  button.primary{background:linear-gradient(180deg,#2dd4bf,#14b8a6);color:#04231f;border-color:transparent;font-weight:650;min-width:86px}
+  .spacer{flex:1}
+  .clock{font-family:var(--mono);font-size:12px;color:var(--dim)}
+
+  .chips{display:flex;gap:6px;overflow-x:auto;padding:0 12px 12px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{white-space:nowrap;font-size:11.5px;padding:5px 10px;border-radius:999px;
+    border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer}
+  .chip.on{background:rgba(94,234,212,.14);border-color:rgba(94,234,212,.45);color:var(--accent)}
+
+  /* ---------- write-up ---------- */
+  h2{font-size:clamp(16px,3.6vw,21px);margin:34px 0 10px;letter-spacing:-.01em}
+  .card{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:14px 16px;margin:10px 0}
+  .card h3{margin:0 0 8px;font-size:14.5px;color:var(--accent)}
+  .eq{font-family:var(--mono);font-size:13px;color:#dbe4ff;background:rgba(0,0,0,.28);
+      border-left:2px solid var(--accent2);border-radius:0 8px 8px 0;padding:8px 12px;margin:8px 0;overflow-x:auto}
+  p{margin:8px 0}
+  .muted{color:var(--dim)}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--dim);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em}
+  .ok{color:var(--good);font-weight:700}
+  .no{color:var(--bad);font-weight:700}
+  .mid{color:var(--warn);font-weight:700}
+  code{font-family:var(--mono);font-size:.92em;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:5px}
+  footer{margin-top:34px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Two rolling discs on a rod — animated solution</h1>
+  <p>JEE Advanced 2016 · Paper 2 · Rotational motion — the assembly rolls as a cone about O, and every option follows from one angle.</p>
+  <div class="tagrow">
+    <span class="tag">rolling without slipping</span>
+    <span class="tag">precession</span>
+    <span class="tag">angular momentum</span>
+  </div>
+</header>
+
+<div class="player">
+  <div class="screen">
+    <div class="stage">
+      <canvas id="cv"></canvas>
+      <div class="chapbadge"><span id="chapNum">01</span> <b id="chapTitle">Setup</b></div>
+      <div class="mathcard" id="mathcard"></div>
+    </div>
+    <div class="caption" id="caption"></div>
+  </div>
+
+  <div class="scrub" id="scrub"><div class="fill" id="fill"></div></div>
+
+  <div class="controls">
+    <button class="primary" id="play">⏸ Pause</button>
+    <button id="prev">⏮ Prev</button>
+    <button id="next">Next ⏭</button>
+    <button id="restart">↺ Restart</button>
+    <div class="spacer"></div>
+    <button id="speed">1.0×</button>
+    <span class="clock" id="clock">0:00 / 0:00</span>
+  </div>
+  <div class="chips" id="chips"></div>
+</div>
+
+<h2>The problem</h2>
+<div class="card">
+  <p>Two thin discs — mass <code>m</code>, radius <code>a</code> and mass <code>4m</code>, radius <code>2a</code> — are fixed on a massless rigid rod of length <code>l = √24·a</code> through their centres. The assembly rolls without slipping on a flat floor, spinning about the rod's own axis at <code>ω</code>. <code>L</code> is the angular momentum of the whole assembly about the point <b>O</b> where the rod's axis meets the floor.</p>
+</div>
+
+<h2>Step 1 — the tilt angle (everything depends on it)</h2>
+<div class="card">
+  <p>Each disc's plane is perpendicular to the rod, so a disc tilted by <code>θ</code> touches the floor with its centre at height <b><code>r·cos θ</code></b>, not <code>r</code>. That single fact is what makes the numbers come out clean.</p>
+  <div class="eq">height difference of centres:  l·sin θ = 2a·cos θ − a·cos θ = a·cos θ
+⇒  tan θ = a / l = a / (√24·a) = 1/√24
+⇒  sin θ = 1/5 ,  cos θ = √24/5 = 2√6/5 ,  θ ≈ 11.54°</div>
+  <p class="muted">Check: the two contact points sit at 5a and 10a from O, and the disc centres at √24·a and 2√24·a along the axis — so both discs and O lie on one straight contact line. The assembly is a rolling cone with apex O.</p>
+</div>
+
+<h2>Step 2 — rolling ⇒ precession (option a)</h2>
+<div class="card">
+  <p>The contact line is instantaneously at rest, so the total angular velocity must point <em>along that line</em>. Write it as spin about the rod plus precession about z:</p>
+  <div class="eq">ω_total = ω·n̂ + Ω·ẑ   must be horizontal
+z-component:  ω·sin θ + Ω = 0
+⇒  |Ω| = ω·sin θ = ω/5        ✓ option (a) is TRUE</div>
+</div>
+
+<h2>Step 3 — centre of mass</h2>
+<div class="card">
+  <div class="eq">d₁ = √24·a ,  d₂ = 2√24·a          (centres, measured from O along the axis)
+r_cm = (m·d₁ + 4m·d₂)/5m = 9√24·a/5 = 18√6·a/5 ≈ 8.82a
+distance from the z-axis:  ρ = r_cm·cos θ = 216a/25 = 8.64a
+speed:  v_cm = ρ·Ω = 216aω/125 ≈ 1.728aω</div>
+</div>
+
+<h2>Step 4 — the three angular-momentum options</h2>
+<div class="card">
+  <h3>(b) angular momentum of the CM about O</h3>
+  <div class="eq">|L_orbital| = M·r_cm·v_cm = 5m · (18√6a/5) · (216aω/125)
+            = 3888√6/125 · ma²ω ≈ 76.2 ma²ω   ≠ 81 ma²ω   ✗ FALSE</div>
+
+  <h3>(c) angular momentum about the centre of mass</h3>
+  <p>Resolve <code>ω_total</code> along the rod and perpendicular to it:</p>
+  <div class="eq">ω∥ = ω·cos²θ = 24ω/25          ω⊥ = ω·sin θ·cos θ = 2√6·ω/25
+I∥ = ½ma² + ½(4m)(2a)² = 17ma²/2
+I⊥ = [¼ma² + m(4√24a/5)²] + [¼(4m)(2a)² + 4m(√24a/5)²] = 469ma²/20
+
+L∥ = I∥·ω∥ = 204ma²ω/25 ≈ 8.16 ma²ω
+L⊥ = I⊥·ω⊥ = 469√6·ma²ω/250 ≈ 4.60 ma²ω
+|L_cm| = √(L∥² + L⊥²) ≈ 9.36 ma²ω</div>
+  <p><b class="mid">Careful.</b> The official key marks (c) TRUE, because <code>I∥·ω = 17ma²ω/2 = 8.5 ma²ω</code> — that is only the component <em>along the rod</em>. The full magnitude, including the perpendicular part, is <b>9.36 ma²ω</b>. ALLEN's official solution flags exactly this and gives the answer as “(A, D) or (D)”.</p>
+
+  <h3>(d) the z-component of L</h3>
+  <div class="eq">I⊥,O = [¼ma² + m(√24a)²] + [¼(4m)(2a)² + 4m(2√24a)²] = 1649ma²/4
+L_z = ω·sin θ·cos²θ · (I∥ − I⊥,O) = (24ω/125)(17/2 − 1649/4)ma²
+    = −1938/25 · ma²ω  ⇒  |L_z| ≈ 77.5 ma²ω   ≠ 55 ma²ω   ✗ FALSE</div>
+  <p class="muted">Equivalently: orbital part <code>Mρ²Ω = 74.65 ma²ω</code> plus spin part <code>2.87 ma²ω</code> (same sense) = 77.52 ma²ω.</p>
+</div>
+
+<h2>Verdict</h2>
+<div class="card">
+<table>
+  <tr><th>Option</th><th>Claim</th><th>Exact value</th><th>Result</th></tr>
+  <tr><td>(a)</td><td>CM precesses at ω/5</td><td>ω/5</td><td class="ok">TRUE</td></tr>
+  <tr><td>(b)</td><td>|L of CM about O| = 81 ma²ω</td><td>≈ 76.2 ma²ω</td><td class="no">FALSE</td></tr>
+  <tr><td>(c)</td><td>|L about CM| = 17ma²ω/2</td><td>8.5 ma²ω along the rod; 9.36 ma²ω in full</td><td class="mid">TRUE in the key*</td></tr>
+  <tr><td>(d)</td><td>|L_z| = 55 ma²ω</td><td>≈ 77.5 ma²ω</td><td class="no">FALSE</td></tr>
+</table>
+<p style="margin-top:12px"><b>Official answer: (a) and (c).</b> <span class="muted">*Strictly, only (a) survives a full vector treatment — (c) holds only if you read “angular momentum about the CM” as its axial component. This is a known flaw in the question; ALLEN prints the answer as “(A, D) or (D)”.</span></p>
+</div>
+
+<footer>Single-file animation — no external libraries. Geometry, rolling constraint and every number in the animation are computed live from sin θ = 1/5.</footer>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ============================================================
+   Physics constants — all derived from the problem
+   ============================================================ */
+const SIN = 1/5;                        // sin θ
+const COS = Math.sqrt(24)/5;            // cos θ = 2√6/5
+const TH  = Math.asin(SIN);             // θ ≈ 11.54°
+const L   = Math.sqrt(24);              // rod length in units of a
+const D1  = L, D2 = 2*L;                // centre distances from O along the axis
+const R1  = 1, R2 = 2;                  // disc radii
+const RCM = (1*D1 + 4*D2)/5;            // 9√24/5 ≈ 8.818
+const RHO = RCM*COS;                    // 8.64  (distance from z-axis)
+const HCM = RCM*SIN;                    // 1.7636 (height)
+const OMEGA = 1;                        // spin about the rod (units)
+const PREC  = -OMEGA*SIN;               // Ω = −ω sinθ  (precession about z)
+
+/* ============================================================
+   Canvas + orthographic 3D projection
+   ============================================================ */
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+let W=0, H=0, DPR=1;
+
+/* The camera tracks the precession (az = psi - 90° + tilt) so the rod is always
+   presented side-on. A top-view mini-map carries the "it circles O" information. */
+const CAM_OFFSET = 0.45;
+const view = { az:-0.62, el:0.26, scale:26, cx:0, cy:0 };
+
+function resize(){
+  const r = cv.getBoundingClientRect();
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  W = r.width; H = r.height;
+  cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const narrow = W < 640;
+  view.scale = Math.min(W/(narrow?14.2:15.5), H/(narrow?11.0:9.6));
+  view.cx = W*(narrow?0.25:0.30); view.cy = H*(narrow?0.58:0.62);
+}
+new ResizeObserver(resize).observe(cv);
+
+function proj(p){
+  const ca=Math.cos(view.az), sa=Math.sin(view.az);
+  const ce=Math.cos(view.el), se=Math.sin(view.el);
+  const ex = -p[0]*sa + p[1]*ca;
+  const ey =  p[2]*ce - (p[0]*ca + p[1]*sa)*se;
+  return [view.cx + view.scale*ex, view.cy - view.scale*ey];
+}
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
+const mul=(a,k)=>[a[0]*k,a[1]*k,a[2]*k];
+
+/* ---- 2D section view (used by the geometry chapter) ---- */
+let SEC = {s:60, x0:0, y0:0};
+function sec(x,y){ return [SEC.x0 + SEC.s*x, SEC.y0 - SEC.s*y]; }
+
+/* ============================================================
+   drawing helpers
+   ============================================================ */
+function line(a,b,color,w=1.4,dash=null){
+  ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=w;
+  if(dash) ctx.setLineDash(dash);
+  ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); ctx.restore();
+}
+function arrow2(a,b,color,w=2,head=9){
+  line(a,b,color,w);
+  const an=Math.atan2(b[1]-a[1],b[0]-a[0]);
+  ctx.save(); ctx.fillStyle=color; ctx.beginPath();
+  ctx.moveTo(b[0],b[1]);
+  ctx.lineTo(b[0]-head*Math.cos(an-0.38), b[1]-head*Math.sin(an-0.38));
+  ctx.lineTo(b[0]-head*Math.cos(an+0.38), b[1]-head*Math.sin(an+0.38));
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function label(txt,p,color,dx=0,dy=0,size=12,weight=600,align='left'){
+  ctx.save();
+  ctx.font=`${weight} ${size}px ui-sans-serif,system-ui,sans-serif`;
+  ctx.textAlign=align; ctx.textBaseline='middle';
+  ctx.lineWidth=3.4; ctx.strokeStyle='rgba(5,9,18,.85)';
+  ctx.strokeText(txt,p[0]+dx,p[1]+dy);
+  ctx.fillStyle=color; ctx.fillText(txt,p[0]+dx,p[1]+dy);
+  ctx.restore();
+}
+function dot(p,color,r=3.5){
+  ctx.save(); ctx.fillStyle=color; ctx.beginPath(); ctx.arc(p[0],p[1],r,0,7); ctx.fill(); ctx.restore();
+}
+
+/* ============================================================
+   the assembly
+   ============================================================ */
+function frame(psi){
+  const n = [COS*Math.cos(psi), COS*Math.sin(psi), SIN];              // rod axis
+  const u = [-SIN*Math.cos(psi), -SIN*Math.sin(psi), COS];            // in disc plane, "up"
+  const v = [-Math.sin(psi), Math.cos(psi), 0];                       // in disc plane, horizontal
+  return {n,u,v};
+}
+function discPath(C,r,f,spin){
+  const pts=[];
+  for(let i=0;i<=72;i++){
+    const t=i/72*Math.PI*2;
+    pts.push(proj(add(C, add(mul(f.u, r*Math.cos(t)), mul(f.v, r*Math.sin(t))))));
+  }
+  return pts;
+}
+function drawDisc(C,r,f,spin,fill,stroke){
+  const pts=discPath(C,r,f,spin);
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
+  ctx.closePath();
+  ctx.fillStyle=fill; ctx.fill();
+  ctx.strokeStyle=stroke; ctx.lineWidth=2; ctx.stroke();
+  // spokes rotate with the body → shows the spin
+  const Cp=proj(C);
+  for(let k=0;k<6;k++){
+    const a=spin + k*Math.PI/3;
+    const P=proj(add(C, add(mul(f.u, r*Math.cos(a)), mul(f.v, r*Math.sin(a)))));
+    line(Cp,P,'rgba(167,139,250,.45)',1.2);
+  }
+  // one bright rim marker so rolling is unmistakable
+  const M=proj(add(C, add(mul(f.u, r*Math.cos(spin)), mul(f.v, r*Math.sin(spin)))));
+  dot(M,'#f472b6',3.8);
+  dot(Cp,'#eef2ff',3);
+  ctx.restore();
+}
+function contactPoint(d,r,f){            // lowest rim point = contact with floor
+  const C=mul(f.n,d);
+  return add(C, mul(f.u,-r));
+}
+
+function drawGround(psi){
+  ctx.save();
+  for(let k=2;k<=12;k+=2){
+    ctx.beginPath();
+    for(let i=0;i<=90;i++){
+      const t=i/90*Math.PI*2, p=proj([k*Math.cos(t),k*Math.sin(t),0]);
+      i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);
+    }
+    ctx.closePath();
+    ctx.strokeStyle= k===10 ? 'rgba(94,234,212,.16)' : 'rgba(255,255,255,.055)';
+    ctx.lineWidth=1; ctx.stroke();
+  }
+  for(let i=0;i<12;i++){
+    const t=i/12*Math.PI*2;
+    line(proj([0,0,0]),proj([12*Math.cos(t),12*Math.sin(t),0]),'rgba(255,255,255,.04)',1);
+  }
+  ctx.restore();
+}
+
+/* ============================================================
+   chapters
+   ============================================================ */
+const CH = [
+ {t:'Setup', d:11, view:'scene',
+  cap:'<b>The assembly.</b> A small disc (m, radius a) and a big disc (4m, radius 2a) are welded to one rigid rod of length <b>l = √24·a</b>. It rolls on the floor without slipping, spinning about its own axis at ω.',
+  sub:'O is where the rod\'s axis meets the floor. Watch: the whole thing sweeps a circle around O.',
+  math:['<em>given</em>','m, a  and  4m, 2a','l = √24·a ≈ 4.9a','spin about rod = ω']},
+
+ {t:'Why it tilts at sin θ = 1/5', d:15, view:'section',
+  cap:'<b>The key geometry.</b> A disc tilted by θ touches the floor with its centre at height <b>r·cos θ</b> — not r. So the centres differ in height by a·cos θ, while the rod covers that in length l.',
+  sub:'l·sin θ = a·cos θ  ⇒  tan θ = 1/√24  ⇒  sin θ = 1/5, cos θ = 2√6/5.',
+  math:['centre height = <em>r·cos θ</em>','l·sin θ = a·cos θ','tan θ = a/l = 1/√24','<em>sin θ = 1/5</em>','cos θ = 2√6/5 ≈ 0.98','θ ≈ 11.54°']},
+
+ {t:'One contact line', d:11, view:'scene',
+  cap:'<b>It is a rolling cone.</b> The contact points sit 5a and 10a from O — so O and both contact points lie on one straight line. That whole line is instantaneously at rest.',
+  sub:'Centres are at √24·a and 2√24·a along the axis; both discs touch the same line through O.',
+  math:['contact points:','&nbsp;&nbsp;5a  and  10a  from O','centres along axis:','&nbsp;&nbsp;√24a and 2√24a','⇒ <em>rolling cone, apex O</em>']},
+
+ {t:'Rolling ⇒ precession  (a)', d:15, view:'scene',
+  cap:'<b>Option (a).</b> ω_total must lie along the contact line, i.e. horizontal. Splitting it into spin about the rod plus precession about z kills the vertical part.',
+  sub:'ω·sin θ + Ω = 0 ⇒ |Ω| = ω·sin θ = <b>ω/5</b>  ✓ TRUE',
+  math:['ω_total = ω·n̂ + Ω·ẑ','must be horizontal','ω·sin θ + Ω = 0','<em>|Ω| = ω/5</em>  ✓ (a) TRUE']},
+
+ {t:'Centre of mass', d:13, view:'scene',
+  cap:'<b>Where the mass sits.</b> With m at √24·a and 4m at 2√24·a from O, the centre of mass rides at 9√24·a/5 along the axis and circles the z-axis at radius ρ = 8.64a.',
+  sub:'r_cm ≈ 8.82a,  ρ = r_cm·cos θ = 216a/25,  v_cm = ρ·Ω = 216aω/125 ≈ 1.73aω.',
+  math:['r_cm = (m·d₁+4m·d₂)/5m','&nbsp;&nbsp;= 9√24a/5 ≈ 8.82a','ρ = r_cm cos θ = 8.64a','v_cm = ρΩ ≈ 1.728aω']},
+
+ {t:'L about the CM  (c)', d:17, view:'scene',
+  cap:'<b>Option (c).</b> Resolve ω_total along the rod (ω∥ = 24ω/25) and perpendicular to it (ω⊥ = 2√6ω/25). Both carry angular momentum.',
+  sub:'L∥ = 8.16 ma²ω, L⊥ = 4.60 ma²ω ⇒ |L_cm| = <b>9.36 ma²ω</b>. The key\'s 17ma²ω/2 = 8.5 is only the axial part.',
+  math:['I∥ = 17ma²/2','I⊥ = 469ma²/20','ω∥ = 24ω/25 , ω⊥ = 2√6ω/25','L∥ = 8.16 , L⊥ = 4.60','|L_cm| = <em>9.36 ma²ω</em>','key says 17ma²ω/2 = <span class="hi">8.5</span> (axial only)']},
+
+ {t:'L of the CM about O  (b)', d:13, view:'scene',
+  cap:'<b>Option (b).</b> Treat all 5m at the centre of mass: L = M·r_cm·v_cm, with r_cm ⊥ v_cm.',
+  sub:'5m × 8.82a × 1.728aω ≈ <b>76.2 ma²ω</b> — not 81 ma²ω. ✗ FALSE',
+  math:['|L| = M·r_cm·v_cm','= 5m(8.82a)(1.728aω)','= <em>76.2 ma²ω</em>','claim 81 ma²ω → <s>FALSE</s>']},
+
+ {t:'z-component of L  (d)', d:15, view:'scene',
+  cap:'<b>Option (d).</b> Add the orbital part (Mρ²Ω = 74.65 ma²ω) to the spin part (2.87 ma²ω) — they point the same way along −z.',
+  sub:'|L_z| = 74.65 + 2.87 = <b>77.5 ma²ω</b>, not 55 ma²ω. ✗ FALSE',
+  math:['I⊥,O = 1649ma²/4','L_z = ω sinθcos²θ (I∥ − I⊥,O)','orbital 74.65 + spin 2.87','|L_z| = <em>77.5 ma²ω</em>','claim 55 ma²ω → <s>FALSE</s>']},
+
+ {t:'Verdict', d:14, view:'verdict',
+  cap:'<b>Answer: (a) and (c).</b> (a) is exact; (c) matches the official key only as the axial component. (b) and (d) are false by a wide margin.',
+  sub:'A full vector treatment leaves only (a) — ALLEN prints the official answer as “(A, D) or (D)”.',
+  math:['(a) ω/5 &nbsp;&nbsp;<em>✓ TRUE</em>','(b) 81 ma²ω &nbsp;<s>✗</s>','(c) 17ma²ω/2 <span class="hi">✓ key</span>','(d) 55 ma²ω &nbsp;<s>✗</s>']}
+];
+const TOTAL = CH.reduce((s,c)=>s+c.d,0);
+const STARTS = []; { let s=0; for(const c of CH){ STARTS.push(s); s+=c.d; } }
+
+/* ============================================================
+   scene renderers
+   ============================================================ */
+/* ---- reusable 2-D vector inset, drawn to true scale ---- */
+function inset(x,y,w,title,note,vecs){
+  let up=0; for(const v of vecs) up=Math.min(up, v.by, v.ay);
+  ctx.save();
+  ctx.font=`700 ${Math.min(w*0.075,13)}px ui-sans-serif,system-ui,sans-serif`;
+  ctx.fillStyle='#9aa6c4'; ctx.textBaseline='middle';
+  ctx.fillText(title, x, y+up-22);
+  for(const v of vecs){
+    arrow2([x+v.ax, y+v.ay], [x+v.bx, y+v.by], v.c, v.w||2.4, 9);
+    label(v.t, [x+v.bx, y+v.by], v.c, v.dx||8, v.dy||-8, Math.min(w*0.072,12.5), 700, v.al||'left');
+  }
+  if(note){
+    ctx.font=`500 ${Math.min(w*0.062,11.5)}px ui-monospace,monospace`;
+    ctx.fillStyle='#5eead4';
+    ctx.fillText(note, x, y+ (vecs.noteY||78));
+  }
+  ctx.restore();
+}
+
+/* ---- top-view mini-map: shows the assembly circling O ---- */
+function minimap(psi, ci){
+  const R = Math.min(W*0.075, 40), cx = 18+R, cy = H*0.70;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,7);
+  ctx.fillStyle='rgba(6,11,22,.55)'; ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.13)'; ctx.lineWidth=1; ctx.stroke();
+  // circle traced by the big disc's contact point
+  ctx.beginPath(); ctx.arc(cx,cy,R*0.78,0,7);
+  ctx.strokeStyle='rgba(94,234,212,.28)'; ctx.setLineDash([3,4]); ctx.stroke(); ctx.setLineDash([]);
+  const ux=Math.cos(psi), uy=Math.sin(psi);
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+ux*R*0.78, cy+uy*R*0.78);
+  ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=1.8; ctx.stroke();
+  dot([cx+ux*R*0.39, cy+uy*R*0.39], '#5eead4', 2.6);
+  dot([cx+ux*R*0.78, cy+uy*R*0.78], '#a78bfa', 3.6);
+  if(ci>=4) dot([cx+ux*R*0.69, cy+uy*R*0.69], '#fbbf24', 2.8);
+  dot([cx,cy],'#eef2ff',2.4);
+  ctx.font='600 9px ui-sans-serif,system-ui,sans-serif';
+  ctx.fillStyle='rgba(154,166,196,.9)'; ctx.textAlign='center';
+  ctx.fillText('top view', cx, cy+R+11);
+  ctx.restore();
+}
+
+function drawScene(T, ci, local){
+  const psi  = PREC*T*1.15;                 // precession angle
+  const spin = OMEGA*T*1.15;                // spin about the rod
+  view.az = psi - Math.PI/2 + CAM_OFFSET;   // camera tracks the precession
+  const f = frame(psi);
+
+  drawGround(psi);
+
+  // z-axis
+  const O=proj([0,0,0]);
+  arrow2(O, proj([0,0,5.2]), 'rgba(148,163,184,.75)', 1.6, 8);
+  label('z', proj([0,0,5.2]), '#94a3b8', -13, -2, 13);
+  dot(O,'#eef2ff',4);
+  label('O', O, '#eef2ff', -14, 8, 13);
+
+  const c1 = contactPoint(D1,R1,f), c2 = contactPoint(D2,R2,f);
+
+  // contact line (instantaneous axis)
+  if(ci>=2){
+    const glow = ci===2 ? 1 : .45;
+    line(O, proj(mul([Math.cos(psi),Math.sin(psi),0], 11.4)),
+         `rgba(94,234,212,${glow})`, ci===2?3:2);
+    dot(proj(c1),'#5eead4',4); dot(proj(c2),'#5eead4',4);
+    if(ci===2){
+      label('5a', proj(c1), '#5eead4', 0, 16, 12, 700, 'center');
+      label('10a', proj(c2), '#5eead4', 0, 16, 12, 700, 'center');
+      label('contact line — instantaneously at rest',
+            proj(mul([Math.cos(psi),Math.sin(psi),0], 11.4)), '#5eead4', 0, 20, 11.5, 600, 'center');
+    }
+  }
+
+  // rod
+  line(O, proj(mul(f.n, D2+1.2)), 'rgba(255,255,255,.30)', 1.2, [5,5]);
+  line(proj(mul(f.n,D1)), proj(mul(f.n,D2)), '#cbd5e1', 3);
+
+  // CM path + marker
+  if(ci>=4){
+    ctx.save(); ctx.beginPath();
+    for(let i=0;i<=110;i++){
+      const t=i/110*Math.PI*2, p=proj([RHO*Math.cos(t),RHO*Math.sin(t),HCM]);
+      i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);
+    }
+    ctx.closePath(); ctx.strokeStyle='rgba(251,191,36,.26)'; ctx.lineWidth=1.3; ctx.setLineDash([6,5]); ctx.stroke(); ctx.restore();
+    const CM = mul(f.n, RCM), CMp = proj(CM);
+    dot(CMp,'#fbbf24',5.5);
+    label('CM', CMp, '#fbbf24', 0, -14, 12, 700, 'center');
+    if(ci===4){
+      line(proj([0,0,HCM]), CMp, 'rgba(251,191,36,.55)', 1.3, [4,4]);
+      label('ρ = 8.64a', proj([RHO/2*Math.cos(psi),RHO/2*Math.sin(psi),HCM]), '#fbbf24', 0, -12, 11.5, 600, 'center');
+      // velocity of the CM
+      const tang = [-Math.sin(psi), Math.cos(psi), 0];
+      arrow2(CMp, proj(add(CM, mul(tang, 3.0*Math.sign(PREC)))), '#fbbf24', 2.2, 9);
+      label('v_cm', proj(add(CM, mul(tang, 3.2*Math.sign(PREC)))), '#fbbf24', 0, -12, 11.5, 700, 'center');
+    }
+  }
+
+  // discs — far one first
+  const C1=mul(f.n,D1), C2=mul(f.n,D2);
+  const dep = p => p[0]*Math.cos(view.az)+p[1]*Math.sin(view.az);
+  const order = dep(C1) > dep(C2) ? [[C2,R2,'4m','2a'],[C1,R1,'m','a']] : [[C1,R1,'m','a'],[C2,R2,'4m','2a']];
+  for(const [C,r,mlab,rlab] of order){
+    drawDisc(C, r, f, spin, r===1?'rgba(94,234,212,.14)':'rgba(167,139,250,.13)',
+                            r===1?'rgba(94,234,212,.85)':'rgba(167,139,250,.9)');
+    if(ci<=2){
+      const p=proj(add(C, mul(f.u, r*1.25)));
+      label(mlab, p, r===1?'#5eead4':'#a78bfa', 0, -10, 13, 700, 'center');
+      label(rlab, proj(add(C, mul(f.v, r*0.62))), 'rgba(203,213,225,.9)', 0, 12, 11.5, 600, 'center');
+    }
+  }
+  if(ci===0){
+    const mid = mul(f.n,(D1+D2)/2);
+    label('l = √24·a', proj(add(mid,[0,0,.55])), '#e2e8f0', 0, -12, 12.5, 700, 'center');
+  }
+
+  // ── option (a): the ω-triangle, drawn to true scale ──
+  if(ci===3){
+    const w=Math.min(W*0.30,270), x=W*0.055, y=H*(W<640?0.40:0.30);
+    const Lx=w, Ly=-w*Math.tan(TH);                 // ω n̂ , true angle θ
+    inset(x,y,w,'ω n̂ + Ω ẑ  must end up flat', null, [
+      {ax:0,ay:0,bx:Lx,by:Ly,c:'#a78bfa',t:'ω n̂',dx:6,dy:-10},
+      {ax:Lx,ay:Ly,bx:Lx,by:0,c:'#fb7185',t:'Ω = ω sin θ',dx:6,dy:0},
+      {ax:0,ay:0,bx:Lx*COS*COS,by:0,c:'#5eead4',t:'ω_total',w:3,dx:-4,dy:16,al:'right'}
+    ]);
+    ctx.save();
+    ctx.font=`700 ${Math.min(W*0.032,16)}px ui-sans-serif,system-ui,sans-serif`;
+    ctx.fillStyle='#5eead4'; ctx.fillText('|Ω| = ω sin θ = ω/5', x, y+40);
+    ctx.font=`500 ${Math.min(W*0.024,11.5)}px ui-monospace,monospace`;
+    ctx.fillStyle='#9aa6c4'; ctx.fillText('drawn to scale, θ = 11.54°', x, y+58);
+    ctx.restore();
+  }
+
+  // ── option (c): L about the CM, to scale (1 unit = ma²ω) ──
+  if(ci===5){
+    const k=Math.min(W*0.030,20), x=W*0.055, y=H*(W<640?0.44:0.36);
+    inset(x,y,Math.min(W*0.30,270),'L about the CM  (units of ma²ω)', null, [
+      {ax:0,ay:0,bx:8.16*k,by:0,c:'#a78bfa',t:'L∥ = 8.16',dx:-4,dy:17,al:'right'},
+      {ax:8.16*k,ay:0,bx:8.16*k,by:-4.60*k,c:'#5eead4',t:'L⊥ = 4.60',dx:8,dy:6},
+      {ax:0,ay:0,bx:8.16*k,by:-4.60*k,c:'#fbbf24',t:'|L_cm| = 9.36',w:3,dx:-6,dy:-14,al:'right'}
+    ]);
+    ctx.save();
+    ctx.font=`500 ${Math.min(W*0.024,11.5)}px ui-monospace,monospace`;
+    ctx.fillStyle='#fbbf24';
+    ctx.fillText('key uses L∥ only ≈ 8.5 = 17ma²ω/2', x, y+36);
+    ctx.restore();
+  }
+  if(ci===6){
+    const CM=mul(f.n,RCM), p0=proj(CM);
+    arrow2(proj([0,0,0]), p0, 'rgba(251,191,36,.8)', 1.8, 9);
+    label('r_cm ≈ 8.82a', proj(mul(f.n,RCM/2)), '#fbbf24', 0, -12, 11.5, 700, 'center');
+    const tang=[-Math.sin(psi),Math.cos(psi),0];
+    arrow2(p0, proj(add(CM, mul(tang, 2.6*Math.sign(PREC)))), '#fbbf24', 2.2, 9);
+    label('v_cm', proj(add(CM, mul(tang,2.8*Math.sign(PREC)))), '#fbbf24', 0, -12, 11.5, 700, 'center');
+  }
+  if(ci===7){
+    const CM=mul(f.n,RCM), p0=proj(CM);
+    arrow2(p0, proj(add(CM,[0,0,-2.4])), '#fb7185', 3, 11);
+    label('L_z', proj(add(CM,[0,0,-1.4])), '#fb7185', 10, 0, 12.5, 700);
+    // stacked bar: orbital + spin vs the claimed 55
+    const x=W*0.055, y=H*(W<640?0.34:0.24), bw=Math.min(W*0.40,320), u=bw/85;
+    ctx.save();
+    ctx.font=`600 ${Math.min(W*0.026,12)}px ui-sans-serif,system-ui,sans-serif`;
+    ctx.fillStyle='#9aa6c4'; ctx.textBaseline='middle';
+    ctx.fillText('actual', x, y-13);
+    ctx.fillStyle='rgba(251,191,36,.85)'; ctx.fillRect(x, y, 74.65*u, 17);
+    ctx.fillStyle='rgba(167,139,250,.9)'; ctx.fillRect(x+74.65*u, y, 2.87*u, 17);
+    ctx.fillStyle='#eef2ff'; ctx.font=`700 ${Math.min(W*0.026,12)}px ui-sans-serif,system-ui,sans-serif`;
+    ctx.fillText('77.5', x+77.52*u+8, y+9);
+    ctx.fillStyle='#9aa6c4'; ctx.font=`600 ${Math.min(W*0.026,12)}px ui-sans-serif,system-ui,sans-serif`;
+    ctx.fillText('claim (d)', x, y+30);
+    ctx.fillStyle='rgba(251,113,133,.55)'; ctx.fillRect(x, y+43, 55*u, 17);
+    ctx.fillStyle='#fb7185'; ctx.font=`700 ${Math.min(W*0.026,12)}px ui-sans-serif,system-ui,sans-serif`;
+    ctx.fillText('55  ✗', x+55*u+8, y+52);
+    ctx.font=`500 ${Math.min(W*0.024,11)}px ui-monospace,monospace`;
+    ctx.fillStyle='#9aa6c4';
+    ctx.fillText('orbital 74.65  +  spin 2.87', x, y+74);
+    ctx.restore();
+  }
+
+  minimap(psi, ci);
+}
+
+/* ---- chapter 2: 2-D vertical section that proves sin θ = 1/5 ---- */
+function drawSection(local){
+  SEC.s = Math.min(W/16, H/6.6);
+  SEC.x0 = W*0.05;
+  SEC.y0 = H*0.72;
+  const s=SEC.s;
+  // floor
+  line(sec(-0.6,0), sec(13.4,0), 'rgba(148,163,184,.55)', 2);
+  for(let x=-0.4;x<13.2;x+=0.55) line(sec(x,0), sec(x-0.28,-0.34), 'rgba(148,163,184,.28)',1);
+
+  const O=sec(0,0);
+  dot(O,'#eef2ff',4.5); label('O',O,'#eef2ff',-14,-10,13);
+
+  // axis through O at angle θ
+  const AX=(d)=>sec(d*COS, d*SIN);
+  line(O, AX(12.3), 'rgba(255,255,255,.35)', 1.4, [6,5]);
+
+  // angle arc
+  ctx.save(); ctx.strokeStyle='#fbbf24'; ctx.lineWidth=1.8;
+  ctx.beginPath(); ctx.arc(O[0],O[1], s*2.1, -TH, 0); ctx.stroke(); ctx.restore();
+  label('θ', sec(2.5*COS, 1.05*SIN), '#fbbf24', 4, -2, 13, 700);
+
+  // both discs, in section they appear as tilted segments of length 2r
+  const reveal = Math.min(1, local/2.2);
+  for(const [d,r,col,nm] of [[D1,R1,'#5eead4','m, a'],[D2,R2,'#a78bfa','4m, 2a']]){
+    const cx=d*COS, cy=d*SIN;             // centre
+    // disc edge direction in the section = perpendicular to axis
+    const ux=-SIN, uy=COS;
+    const A=sec(cx+ux*r, cy+uy*r), B=sec(cx-ux*r, cy-uy*r);
+    line(A,B,col,4);
+    dot(sec(cx,cy),'#eef2ff',3.6);
+    // vertical drop showing centre height = r cos θ
+    line(sec(cx,cy), sec(cx,0), 'rgba(255,255,255,.35)',1.2,[4,4]);
+    if(reveal>0.4){
+      label(`${r===1?'a':'2a'}·cos θ`, sec(cx, r===1? cy/2 : cy*0.30), col, r===1? 8 : -8, 0, 11.5, 700, r===1?'left':'right');
+    }
+    label(nm, sec(cx+ux*r, cy+uy*r), col, 0, -12, 12, 700, 'center');
+    dot(B,'#5eead4',3.4);   // contact point
+    label(r===1?'5a':'10a', B, '#5eead4', 0, 16, 11.5, 700, 'center');
+  }
+
+  // the rod, with the height-difference triangle
+  const P1=sec(D1*COS, D1*SIN), P2=sec(D2*COS, D2*SIN);
+  line(P1,P2,'#e2e8f0',3);
+  label('l = √24·a', [(P1[0]+P2[0])/2,(P1[1]+P2[1])/2], '#e2e8f0', 0, -14, 12.5, 700, 'center');
+
+  if(local>2.6){
+    const K=sec(D2*COS, D1*SIN);
+    line(P1,K,'rgba(251,191,36,.85)',1.6,[5,4]);
+    line(K,P2,'rgba(251,191,36,.85)',1.6,[5,4]);
+    arrow2([K[0]+22,K[1]], [K[0]+22,P2[1]], '#fbbf24', 1.6, 7);
+    label('Δh = a·cos θ', [K[0]+26, (K[1]+P2[1])/2], '#fbbf24', 0, -12, 12, 700);
+    label('l·cos θ', [(P1[0]+K[0])/2,(P1[1]+K[1])/2], '#fbbf24', 0, 15, 11.5, 600, 'center');
+  }
+  // headline derivation, in the empty space above the drawing
+  ctx.save();
+  const fx=W*0.05, fs=Math.min(W*0.030,19);
+  ctx.textBaseline='middle';
+  ctx.font=`600 ${fs*0.72}px ui-monospace,monospace`;
+  ctx.fillStyle='rgba(154,166,196,.95)';
+  ctx.fillText('a disc tilted by θ rests with its centre at height  r·cos θ', fx, H*0.10);
+  if(local>2.6){
+    ctx.font=`700 ${fs*0.86}px ui-sans-serif,system-ui,sans-serif`;
+    ctx.fillStyle='#fbbf24';
+    ctx.fillText('l·sin θ  =  2a·cos θ − a·cos θ  =  a·cos θ', fx, H*0.18);
+  }
+  if(local>6){
+    ctx.font=`800 ${fs}px ui-sans-serif,system-ui,sans-serif`;
+    ctx.fillStyle='#5eead4';
+    ctx.fillText('⇒  tan θ = a/l = 1/√24   ⇒   sin θ = 1/5,  cos θ = 2√6/5', fx, H*0.26);
+  }
+  ctx.restore();
+}
+
+/* ---- final chapter ---- */
+function drawVerdict(local){
+  const rows=[
+    ['(a)','CM precesses at ω/5','ω/5','TRUE','#34d399'],
+    ['(b)','|L of CM about O| = 81 ma²ω','76.2 ma²ω','FALSE','#fb7185'],
+    ['(c)','|L about CM| = 17ma²ω/2','8.5 axial · 9.36 full','TRUE in key','#fbbf24'],
+    ['(d)','|L_z| = 55 ma²ω','77.5 ma²ω','FALSE','#fb7185'],
+  ];
+  const w=Math.min(W*0.92, 640), x=(W-w)/2, rh=Math.min(H*0.15, 66);
+  const top=Math.max(H*0.14, H*0.46 - rh*2);
+  ctx.save();
+  ctx.font=`700 ${Math.min(W*0.028,17)}px ui-sans-serif,system-ui,sans-serif`;
+  ctx.fillStyle='#eef2ff'; ctx.textBaseline='middle';
+  ctx.fillText('Which statements are true?', x, top-rh*0.65);
+  rows.forEach((r,i)=>{
+    const app = Math.min(1, Math.max(0,(local-0.5-i*0.85)/0.6));
+    if(app<=0) return;
+    const y=top+i*rh;
+    ctx.globalAlpha=app;
+    ctx.fillStyle='rgba(255,255,255,.05)';
+    ctx.beginPath(); ctx.roundRect(x, y, w, rh*0.84, 10); ctx.fill();
+    ctx.strokeStyle=r[4]+'55'; ctx.lineWidth=1.2; ctx.stroke();
+    const fs=Math.min(W*0.026,15);
+    ctx.font=`700 ${fs}px ui-sans-serif,system-ui,sans-serif`;
+    ctx.fillStyle=r[4]; ctx.fillText(r[0], x+12, y+rh*0.42);
+    ctx.font=`500 ${fs*0.92}px ui-sans-serif,system-ui,sans-serif`;
+    ctx.fillStyle='#dbe4ff'; ctx.fillText(r[1], x+52, y+rh*0.30);
+    ctx.font=`500 ${fs*0.78}px ui-monospace,monospace`;
+    ctx.fillStyle='#9aa6c4'; ctx.fillText('exact: '+r[2], x+52, y+rh*0.60);
+    ctx.font=`800 ${fs*0.86}px ui-sans-serif,system-ui,sans-serif`;
+    ctx.fillStyle=r[4]; ctx.textAlign='right'; ctx.fillText(r[3], x+w-12, y+rh*0.42); ctx.textAlign='left';
+    ctx.globalAlpha=1;
+  });
+  if(local>4.4){
+    ctx.font=`800 ${Math.min(W*0.032,20)}px ui-sans-serif,system-ui,sans-serif`;
+    ctx.fillStyle='#5eead4';
+    ctx.textAlign='center';
+    ctx.fillText('Answer:  (a) and (c)', W/2, top+4*rh+rh*0.55);
+    ctx.textAlign='left';
+  }
+  ctx.restore();
+}
+
+/* ============================================================
+   player loop
+   ============================================================ */
+let T=0, playing=true, rate=1, last=performance.now();
+const elPlay=document.getElementById('play'), elChips=document.getElementById('chips');
+const elFill=document.getElementById('fill'), elScrub=document.getElementById('scrub');
+const elCap=document.getElementById('caption'), elMath=document.getElementById('mathcard');
+const elNum=document.getElementById('chapNum'), elTitle=document.getElementById('chapTitle');
+const elClock=document.getElementById('clock');
+
+CH.forEach((c,i)=>{
+  const b=document.createElement('button');
+  b.className='chip'; b.textContent=`${i+1}. ${c.t}`;
+  b.onclick=()=>{ T=STARTS[i]+0.01; playing=true; elPlay.textContent='⏸ Pause'; };
+  elChips.appendChild(b);
+  const mk=document.createElement('div'); mk.className='mk';
+  mk.style.left=(STARTS[i]/TOTAL*100)+'%'; elScrub.appendChild(mk);
+});
+
+let curCh=-1;
+function setChapter(i){
+  if(i===curCh) return; curCh=i;
+  const c=CH[i];
+  elNum.textContent=String(i+1).padStart(2,'0');
+  elTitle.textContent=c.t;
+  elCap.innerHTML=`${c.cap}<span class="sub">${c.sub}</span>`;
+  elMath.innerHTML=c.math.map(m=>`<div class="ml">${m}</div>`).join('');
+  const lines=elMath.querySelectorAll('.ml');
+  lines.forEach((l,k)=>setTimeout(()=>l.classList.add('on'), 220+k*260));
+  [...elChips.children].forEach((b,k)=>b.classList.toggle('on',k===i));
+}
+const fmt=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+
+function tick(now){
+  const dt=Math.min((now-last)/1000, .05); last=now;
+  if(playing) T+=dt*rate;
+  if(T>=TOTAL) { T=TOTAL-0.001; playing=false; elPlay.textContent='▶ Play'; }
+
+  let ci=0; for(let i=0;i<CH.length;i++) if(T>=STARTS[i]) ci=i;
+  setChapter(ci);
+  const local=T-STARTS[ci];
+
+  ctx.clearRect(0,0,W,H);
+  const mode=CH[ci].view;
+  if(mode==='section') drawSection(local);
+  else if(mode==='verdict') drawVerdict(local);
+  else drawScene(T, ci, local);
+
+  elFill.style.width=(T/TOTAL*100)+'%';
+  elClock.textContent=`${fmt(T)} / ${fmt(TOTAL)}`;
+  requestAnimationFrame(tick);
+}
+
+elPlay.onclick=()=>{ playing=!playing; elPlay.textContent = playing?'⏸ Pause':'▶ Play'; };
+document.getElementById('restart').onclick=()=>{ T=0; playing=true; elPlay.textContent='⏸ Pause'; };
+document.getElementById('prev').onclick=()=>{
+  let ci=0; for(let i=0;i<CH.length;i++) if(T>=STARTS[i]) ci=i;
+  T = (T-STARTS[ci] < 1.2 && ci>0) ? STARTS[ci-1]+0.01 : STARTS[ci]+0.01;
+};
+document.getElementById('next').onclick=()=>{
+  let ci=0; for(let i=0;i<CH.length;i++) if(T>=STARTS[i]) ci=i;
+  T = ci<CH.length-1 ? STARTS[ci+1]+0.01 : TOTAL-0.5;
+  playing=true; elPlay.textContent='⏸ Pause';
+};
+const speeds=[1,1.5,2,.5], elSpeed=document.getElementById('speed'); let si=0;
+elSpeed.onclick=()=>{ si=(si+1)%speeds.length; rate=speeds[si]; elSpeed.textContent=rate.toFixed(1)+'×'; };
+elScrub.onclick=e=>{ const r=elScrub.getBoundingClientRect(); T=Math.max(0,Math.min(TOTAL-0.01,(e.clientX-r.left)/r.width*TOTAL)); };
+addEventListener('keydown',e=>{
+  if(e.code==='Space'){ e.preventDefault(); elPlay.click(); }
+  if(e.code==='ArrowRight') document.getElementById('next').click();
+  if(e.code==='ArrowLeft')  document.getElementById('prev').click();
+});
+
+resize();
+requestAnimationFrame(t=>{ last=t; tick(t); });
+})();
+</script>
+</body>
+</html>
