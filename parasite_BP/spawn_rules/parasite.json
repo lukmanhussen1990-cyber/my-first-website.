@@ -1,0 +1,47 @@
+{
+  "format_version": "1.20.0",
+  "minecraft:spawn_rules": {
+    "description": {
+      "identifier": "pm:parasite",
+      "population_control": "monster"
+    },
+    "conditions": [
+      {
+        "minecraft:spawns_underground": {},
+        "minecraft:brightness_filter": {
+          "min": 0,
+          "max": 7,
+          "adjust_for_weather": false
+        },
+        "minecraft:difficulty_filter": {
+          "min": "easy",
+          "max": "hard"
+        },
+        "minecraft:weight": {
+          "default": 3
+        },
+        "minecraft:herd": {
+          "min_size": 1,
+          "max_size": 2
+        },
+        "minecraft:biome_filter": {
+          "test": "has_biome_tag",
+          "operator": "==",
+          "value": "overworld"
+        },
+        "minecraft:spawns_on_block_filter": [
+          "minecraft:stone",
+          "minecraft:deepslate",
+          "minecraft:tuff",
+          "minecraft:andesite",
+          "minecraft:diorite",
+          "minecraft:granite",
+          "minecraft:gravel",
+          "minecraft:dirt",
+          "minecraft:moss_block",
+          "pm:infested_flesh"
+        ]
+      }
+    ]
+  }
+}

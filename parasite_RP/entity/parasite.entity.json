@@ -1,0 +1,40 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "pm:parasite",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/parasite/parasite_small",
+        "small": "textures/entity/parasite/parasite_small",
+        "large": "textures/entity/parasite/parasite_large",
+        "apex": "textures/entity/parasite/parasite_apex"
+      },
+      "geometry": {
+        "default": "geometry.pm_parasite"
+      },
+      "animations": {
+        "idle": "animation.pm_parasite.idle",
+        "walk": "animation.pm_parasite.walk",
+        "chew": "animation.pm_parasite.chew",
+        "move_controller": "controller.animation.pm_parasite.move"
+      },
+      "scripts": {
+        "animate": ["chew", "move_controller"]
+      },
+      "particle_effects": {
+        "spore": "pm:parasite_spore",
+        "feed": "pm:parasite_feed",
+        "gore": "pm:parasite_gore"
+      },
+      "render_controllers": ["controller.render.pm_parasite"],
+      "spawn_egg": {
+        "base_color": "#3c0d16",
+        "overlay_color": "#b7ff2e"
+      },
+      "enable_attachables": false
+    }
+  }
+}

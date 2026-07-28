@@ -1,0 +1,20 @@
+{
+  "format_version": "1.10.0",
+  "render_controllers": {
+    "controller.render.pm_parasite": {
+      "arrays": {
+        "textures": {
+          "Array.stages": ["Texture.small", "Texture.large", "Texture.apex"]
+        }
+      },
+      "geometry": "Geometry.default",
+      "materials": [
+        { "*": "Material.default" }
+      ],
+      "textures": ["Array.stages[query.variant]"],
+      "part_visibility": [
+        { "*": true }
+      ]
+    }
+  }
+}

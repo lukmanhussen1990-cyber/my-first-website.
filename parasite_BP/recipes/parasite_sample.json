@@ -1,0 +1,26 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "pm:parasite_sample_recipe"
+    },
+    "tags": ["crafting_table"],
+    "pattern": [
+      "GSG",
+      "GFG",
+      "GGG"
+    ],
+    "key": {
+      "G": { "item": "minecraft:glass" },
+      "S": { "item": "minecraft:spider_eye" },
+      "F": { "item": "minecraft:rotten_flesh" }
+    },
+    "unlock": [
+      { "item": "minecraft:rotten_flesh" }
+    ],
+    "result": {
+      "item": "pm:parasite_sample",
+      "count": 1
+    }
+  }
+}

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-Natural Disasters - packer.
+Packer for every addon in this repository.
 
-Validates every JSON file, then zips both packs into a single installable
-`NaturalDisasters.mcaddon` in the repository root:
+Validates all JSON, checks that no two manifests share a UUID, then zips each
+addon's packs into an installable `.mcaddon` in the repository root:
 
-    python3 tools/build_mcaddon.py
+    python3 tools/build_mcaddon.py            # build everything
+    python3 tools/build_mcaddon.py parasite   # build one addon by name
 
-The .mcaddon file is just a zip that contains the two pack folders. Minecraft
-opens it directly on Android and iOS.
+A .mcaddon is just a zip containing the pack folders. Minecraft opens it
+directly on Android and iOS.
 """
 
 import json
@@ -17,18 +18,32 @@ import sys
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PACKS = ["natural_disasters_BP", "natural_disasters_RP"]
-OUTPUT = os.path.join(ROOT, "NaturalDisasters.mcaddon")
 
-# Files that are documentation only and do not belong in the shipped addon.
+ADDONS = {
+    "natural_disasters": {
+        "output": "NaturalDisasters.mcaddon",
+        "packs": ["natural_disasters_BP", "natural_disasters_RP"],
+    },
+    "parasite": {
+        "output": "Parasite.mcaddon",
+        "packs": ["parasite_BP", "parasite_RP"],
+    },
+}
+
+# Documentation that should not ship inside the addon.
 SKIP_NAMES = {"README.md", ".DS_Store", "Thumbs.db", "desktop.ini"}
 
 
-def validate_json():
-    """Parses every .json file so a typo never ships as a broken pack."""
+def all_packs(selected):
+    for name in selected:
+        for pack in ADDONS[name]["packs"]:
+            yield pack
+
+
+def validate_json(selected):
     problems = []
     checked = 0
-    for pack in PACKS:
+    for pack in all_packs(selected):
         for folder, _, files in os.walk(os.path.join(ROOT, pack)):
             for name in files:
                 if not name.endswith(".json"):
@@ -44,11 +59,11 @@ def validate_json():
     return problems
 
 
-def check_uuids():
-    """Every manifest UUID in the addon has to be unique."""
+def check_uuids(selected):
+    """UUIDs must be unique across every pack, not just within one addon."""
     seen = {}
     problems = []
-    for pack in PACKS:
+    for pack in all_packs(selected):
         manifest_path = os.path.join(ROOT, pack, "manifest.json")
         with open(manifest_path, "r", encoding="utf-8") as handle:
             manifest = json.load(handle)
@@ -62,35 +77,63 @@ def check_uuids():
     return problems
 
 
-def build():
-    if os.path.exists(OUTPUT):
-        os.remove(OUTPUT)
+def check_dependencies(selected):
+    """Each behavior pack must point at its own resource pack."""
+    problems = []
+    for name in selected:
+        packs = ADDONS[name]["packs"]
+        behavior, resource = packs[0], packs[1]
+        with open(os.path.join(ROOT, behavior, "manifest.json"), "r", encoding="utf-8") as handle:
+            bp = json.load(handle)
+        with open(os.path.join(ROOT, resource, "manifest.json"), "r", encoding="utf-8") as handle:
+            rp = json.load(handle)
+        wanted = rp["header"]["uuid"]
+        found = [d.get("uuid") for d in bp.get("dependencies", [])]
+        if wanted not in found:
+            problems.append(f"{behavior} does not depend on {resource} ({wanted})")
+    return problems
+
+
+def build(name):
+    spec = ADDONS[name]
+    output = os.path.join(ROOT, spec["output"])
+    if os.path.exists(output):
+        os.remove(output)
     count = 0
-    with zipfile.ZipFile(OUTPUT, "w", zipfile.ZIP_DEFLATED) as archive:
-        for pack in PACKS:
+    with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
+        for pack in spec["packs"]:
             base = os.path.join(ROOT, pack)
             for folder, _, files in os.walk(base):
-                for name in sorted(files):
-                    if name in SKIP_NAMES:
+                for filename in sorted(files):
+                    if filename in SKIP_NAMES:
                         continue
-                    full = os.path.join(folder, name)
+                    full = os.path.join(folder, filename)
                     arcname = os.path.join(pack, os.path.relpath(full, base))
                     archive.write(full, arcname)
                     count += 1
-    size_kb = os.path.getsize(OUTPUT) / 1024
-    print(f"packed {count} files into {os.path.relpath(OUTPUT, ROOT)} ({size_kb:.1f} KB)")
+    size_kb = os.path.getsize(output) / 1024
+    print(f"packed {count} files into {spec['output']} ({size_kb:.1f} KB)")
 
 
-def main():
-    problems = validate_json() + check_uuids()
+def main(argv):
+    selected = argv[1:] or list(ADDONS)
+    unknown = [name for name in selected if name not in ADDONS]
+    if unknown:
+        print(f"unknown addon(s): {', '.join(unknown)}")
+        print(f"available: {', '.join(ADDONS)}")
+        return 2
+
+    problems = validate_json(selected) + check_uuids(selected) + check_dependencies(selected)
     if problems:
         print("\nBuild failed:")
         for problem in problems:
             print(f"  - {problem}")
         return 1
-    build()
+
+    for name in selected:
+        build(name)
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv))

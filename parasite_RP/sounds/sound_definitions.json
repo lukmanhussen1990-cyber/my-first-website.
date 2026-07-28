@@ -1,0 +1,48 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "pm.parasite.spawn": {
+      "category": "hostile",
+      "sounds": [{ "name": "sounds/parasite/spawn", "volume": 1.0 }]
+    },
+    "pm.parasite.screech": {
+      "category": "hostile",
+      "sounds": [
+        { "name": "sounds/parasite/screech1", "volume": 1.0, "stream": true },
+        { "name": "sounds/parasite/screech2", "volume": 1.0, "stream": true }
+      ]
+    },
+    "pm.parasite.chew": {
+      "category": "hostile",
+      "sounds": [
+        { "name": "sounds/parasite/chew1", "volume": 0.9 },
+        { "name": "sounds/parasite/chew2", "volume": 0.9 },
+        { "name": "sounds/parasite/chew3", "volume": 0.9 }
+      ]
+    },
+    "pm.parasite.bite": {
+      "category": "hostile",
+      "sounds": [{ "name": "sounds/parasite/bite", "volume": 1.0 }]
+    },
+    "pm.parasite.grow": {
+      "category": "hostile",
+      "sounds": [{ "name": "sounds/parasite/grow", "volume": 1.0, "stream": true }]
+    },
+    "pm.parasite.split": {
+      "category": "hostile",
+      "sounds": [{ "name": "sounds/parasite/split", "volume": 1.0 }]
+    },
+    "pm.parasite.die": {
+      "category": "hostile",
+      "sounds": [{ "name": "sounds/parasite/die", "volume": 1.0 }]
+    },
+    "pm.sample.use": {
+      "category": "player",
+      "sounds": [{ "name": "sounds/parasite/sample_use", "volume": 0.9 }]
+    },
+    "pm.purge": {
+      "category": "player",
+      "sounds": [{ "name": "sounds/parasite/purge", "volume": 1.0 }]
+    }
+  }
+}

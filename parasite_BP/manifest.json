@@ -1,0 +1,45 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "26085580-7dea-4df7-83b8-0675b59717f6",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "Parasite data module",
+      "type": "data",
+      "uuid": "17c6d235-1914-498d-a0a9-85b730d1d179",
+      "version": [1, 0, 0]
+    },
+    {
+      "description": "Parasite script module",
+      "type": "script",
+      "language": "javascript",
+      "uuid": "7d80ac0c-0e46-4271-9204-dcd7c8bd5061",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "d21c3359-6d33-4643-afe1-7204b29b1491",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.1.0"
+    }
+  ],
+  "metadata": {
+    "authors": ["Parasite Addon"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

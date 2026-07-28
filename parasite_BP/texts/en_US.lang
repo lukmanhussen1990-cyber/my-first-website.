@@ -1,0 +1,28 @@
+## Parasite - Behavior Pack (en_US)
+
+pack.name=Parasite (Behavior)
+pack.description=A parasite that eats everything around it the moment it spawns: items, mobs, players and the blocks themselves. It grows, leaves infested flesh behind and splits in two.
+
+## Entity
+entity.pm:parasite.name=Parasite
+item.spawn_egg.entity.pm:parasite.name=Spawn Parasite
+
+## Items
+item.pm:parasite_sample=Parasite Sample
+item.pm:parasite_sample.name=Parasite Sample
+
+## Blocks
+tile.pm:infested_flesh.name=Infested Flesh
+
+## Growth stages, used by the warning readout
+pm.stage.small=Parasite
+pm.stage.large=Parasite
+pm.stage.apex=Apex Parasite
+
+## Menus
+pm.menu.title=Parasite Sample
+pm.menu.release=Release One
+pm.menu.swarm=Release a Swarm
+pm.menu.purge=Purge Nearby
+pm.menu.purge_all=Purge Everything
+pm.menu.settings=Settings

@@ -1,0 +1,32 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "pm:parasite_sample",
+      "menu_category": {
+        "category": "equipment",
+        "is_hidden_in_commands": false
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "pm_parasite_sample"
+      },
+      "minecraft:display_name": {
+        "value": "item.pm:parasite_sample.name"
+      },
+      "minecraft:max_stack_size": 16,
+      "minecraft:hand_equipped": false,
+      "minecraft:glint": true,
+      "minecraft:should_despawn": false,
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:use_modifiers": {
+        "use_duration": 0.1,
+        "movement_modifier": 1.0
+      },
+      "minecraft:tags": {
+        "tags": ["pm:parasite_tool"]
+      }
+    }
+  }
+}

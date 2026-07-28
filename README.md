@@ -1,4 +1,20 @@
-# Natural Disasters — Minecraft Bedrock Addon (Pocket Edition friendly)
+# Minecraft Bedrock Addons (Pocket Edition friendly)
+
+Two standalone addons for Minecraft Bedrock Edition, built for **Android and
+iOS** (they work on Windows, console and Realms too). Install either one, or
+both — they share no files and never conflict.
+
+| Addon | Download | What it is |
+| --- | --- | --- |
+| **Natural Disasters** | `NaturalDisasters.mcaddon` | Tornadoes, earthquakes, meteors, tsunamis, wildfires and lightning storms, with a Disaster Wand and a Disaster Detector |
+| **Parasite** | `Parasite.mcaddon` | A creature that eats everything around it the moment it spawns — items, mobs, players and the blocks themselves — then grows and splits in two |
+
+Both require **Minecraft Bedrock 1.21.0 or newer** and need **no experimental
+toggles**.
+
+---
+
+# Part 1 — Natural Disasters
 
 Tornadoes, earthquakes, meteors, tsunamis, wildfires and lightning storms for
 Minecraft Bedrock Edition, built for **Android and iOS** (works on Windows,
@@ -41,9 +57,10 @@ If the file does not open in Minecraft, rename it so it ends in exactly
 ### Building the `.mcaddon` yourself
 
 ```bash
-python3 tools/generate_textures.py   # optional, regenerates every PNG
-python3 tools/build_mcaddon.py       # validates the JSON and writes NaturalDisasters.mcaddon
-node    tools/test_scripts.mjs       # optional, runs the scripts against a fake world
+python3 tools/generate_textures.py            # optional, regenerates every PNG
+python3 tools/build_mcaddon.py                # validates the JSON, writes both .mcaddon files
+python3 tools/build_mcaddon.py natural_disasters   # just this one
+node    tools/test_scripts.mjs                # optional, runs the scripts against a fake world
 ```
 
 To install manually instead, copy `natural_disasters_BP` into
@@ -251,3 +268,192 @@ uuid; print(uuid.uuid4())"`) — two addons must never share a UUID.
 
 Everything else — the wand menu, the detector, the random scheduler and the
 `/scriptevent` commands — picks it up automatically.
+
+---
+
+# Part 2 — Parasite
+
+A single creature that treats the world as food. **The moment a parasite exists
+— spawn egg, `/summon`, a cave spawn, the Parasite Sample or a split — it starts
+eating everything within reach.** For the first three seconds it feeds in a
+frenzy, which is why a fresh spawn strips its surroundings almost instantly.
+
+Install `Parasite.mcaddon` exactly the same way as the disasters addon (section
+1 above): tap the file, then activate **Parasite (Behavior)** in your world. The
+resource pack follows automatically.
+
+## What it eats, in this order
+
+1. **Dropped items and XP orbs** in range — swallowed whole
+2. **Anything alive that is not a parasite** — players, animals, villagers, other
+   monsters; it bites on top of its normal melee attack
+3. **The blocks around it** — it burrows a crater into whatever it is standing
+   on and leaves **Infested Flesh** behind
+
+Everything it eats becomes *biomass*, and biomass makes it grow:
+
+| Stage | Reached at | Size | Health | Damage | Feeding radius |
+| --- | --- | --- | --- | --- | --- |
+| Small | spawn | 0.65× | 20 | 4 | 3.0 blocks |
+| Large | 45 biomass | 1.0× | 44 | 7 | 4.5 blocks |
+| **Apex** | 110 biomass | 1.7× | 90 | 12 | 6.5 blocks |
+
+An **Apex Parasite** splits off a new parasite every 25 seconds while it keeps
+feeding, until the population cap is reached. It is also fire immune and barely
+flinches when hit.
+
+It hunts everything within 26 blocks, climbs walls, swims, and never despawns.
+
+## Safety rails (all adjustable in game)
+
+- **Population cap** — 25 parasites per world by default. Anything spawned past
+  the cap is removed immediately.
+- **Never eaten** — bedrock, barriers, command blocks, portals, spawners,
+  reinforced deepslate, water and lava.
+- **Chests, furnaces, hoppers, beacons and shulker boxes are protected too**,
+  unless you turn on "They may eat chests and furnaces".
+- **Purge** — one button, or `/scriptevent pm:purge`, removes every parasite in
+  the world.
+- Turn off "Parasites eat blocks" to keep the monster but save your terrain.
+
+## The Parasite Sample
+
+Craft it with 8 glass around a spider eye and a rotten flesh
+(spider eye top middle, rotten flesh centre, glass everywhere else), or run
+`/scriptevent pm:give`. In creative it is in the **Equipment** tab. It is a
+reusable tool — using it does not consume it.
+
+- **Tap** → releases one parasite 5 blocks in front of you
+- **Sneak + tap** → opens the menu: Release One, Release a Swarm (5), Purge
+  Nearby (32 blocks), Purge Everything, Settings
+
+A spawn egg is also available in the creative inventory.
+
+While a parasite is within 18 blocks, your action bar shows how close it is:
+
+```
+Parasite 11m · it is feeding
+APEX PARASITE 6m · it is feeding
+```
+
+## Commands
+
+```
+/scriptevent pm:spawn [count]     release parasites in front of you (max 20)
+/scriptevent pm:purge             kill every parasite in the world
+/scriptevent pm:purge near        kill the ones within 32 blocks
+/scriptevent pm:status            population report by stage
+/scriptevent pm:cap <number>      set the population cap
+/scriptevent pm:eat on|off        block eating on or off
+/scriptevent pm:breed on|off      growing and splitting on or off
+/scriptevent pm:give              give yourself a Parasite Sample
+/scriptevent pm:settings          open the settings screen
+/scriptevent pm:help              print this in chat
+```
+
+## Folder structure
+
+```
+Parasite.mcaddon                  <- the installable file
+
+parasite_BP/                      BEHAVIOR PACK
+├── manifest.json
+├── pack_icon.png
+├── blocks/
+│   └── infested_flesh.json       pm:infested_flesh (custom block)
+├── entities/
+│   └── parasite.json             pm:parasite, 3 growth stages as component groups
+├── items/
+│   └── parasite_sample.json      pm:parasite_sample
+├── loot_tables/
+│   ├── blocks/infested_flesh.json
+│   └── entities/parasite.json
+├── recipes/
+│   └── parasite_sample.json
+├── spawn_rules/
+│   └── parasite.json             rare natural spawns underground (weight 3)
+├── scripts/
+│   ├── main.js                   events, item taps, /scriptevent, proximity warning
+│   ├── config.js                 settings + tuning + protected block lists
+│   ├── util.js                   safe wrappers around every world API call
+│   ├── sounds.js                 custom + vanilla sound ids
+│   ├── swarm.js                  feeding, growth, splitting, population cap
+│   └── ui.js                     Parasite Sample menus
+└── texts/
+    ├── en_US.lang
+    └── languages.json
+
+parasite_RP/                      RESOURCE PACK
+├── manifest.json
+├── pack_icon.png
+├── blocks.json                   block sound mapping
+├── entity/
+│   └── parasite.entity.json      3 textures selected by growth stage
+├── models/entity/
+│   └── parasite.geo.json         body, spiked back, jaws, mandibles, tail, 6 legs
+├── animations/
+│   └── parasite.animation.json   idle, walk, chew (jaws never stop moving)
+├── animation_controllers/
+│   └── parasite.animation_controllers.json
+├── render_controllers/
+│   └── parasite.render_controllers.json
+├── particles/
+│   ├── parasite_spore.particle.json   pm:parasite_spore
+│   ├── parasite_feed.particle.json    pm:parasite_feed
+│   └── parasite_gore.particle.json    pm:parasite_gore
+├── sounds/
+│   ├── sound_definitions.json    9 custom sound events
+│   └── parasite/                 drop your own .ogg files here (see its README)
+├── textures/
+│   ├── item_texture.json
+│   ├── terrain_texture.json
+│   ├── items/pm_parasite_sample.png
+│   ├── blocks/pm_infested_flesh.png
+│   ├── entity/parasite/          parasite_small.png, parasite_large.png, parasite_apex.png
+│   ├── particle/                 pm_spore.png, pm_bit.png, pm_gore.png
+│   └── ui/                       5 menu button icons
+└── texts/
+    ├── en_US.lang
+    └── languages.json
+```
+
+### UUIDs
+
+| Pack | Part | UUID |
+| --- | --- | --- |
+| BP | header | `26085580-7dea-4df7-83b8-0675b59717f6` |
+| BP | data module | `17c6d235-1914-498d-a0a9-85b730d1d179` |
+| BP | script module | `7d80ac0c-0e46-4271-9204-dcd7c8bd5061` |
+| RP | header | `d21c3359-6d33-4643-afe1-7204b29b1491` |
+| RP | resources module | `506acdfa-d4c1-4704-89c5-e36c856cc040` |
+
+## Tuning it
+
+`parasite_BP/scripts/config.js` holds everything:
+
+- `SETTINGS_DEFAULTS` — what the in-game menu changes (eating, breeding, cap,
+  bite rate, flesh trail)
+- `TUNING.radius` / `TUNING.growth` / `TUNING.splitCost` — how fast it grows and
+  multiplies
+- `TUNING.protectedBlocks` / `TUNING.containerBlocks` — what it may never eat
+- `TUNING.tickInterval` — how often the swarm loop runs (5 ticks; raise it to 10
+  on very old phones)
+
+To stop parasites appearing naturally in caves, delete
+`parasite_BP/spawn_rules/parasite.json` and rebuild.
+
+---
+
+# Development
+
+```bash
+python3 tools/generate_textures.py            # Natural Disasters PNGs
+python3 tools/generate_parasite_textures.py   # Parasite PNGs
+python3 tools/build_mcaddon.py                # validate + pack both .mcaddon files
+node    tools/test_scripts.mjs                # Natural Disasters: 37 checks
+node    tools/test_parasite.mjs               # Parasite: 23 checks
+```
+
+Both test files stub `@minecraft/server` and `@minecraft/server-ui` and run the
+real behavior pack scripts against a fake world, so script errors show up here
+instead of as a silent "script pack failed to load" on a phone.
