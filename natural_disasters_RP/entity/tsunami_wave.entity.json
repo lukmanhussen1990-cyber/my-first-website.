@@ -1,0 +1,30 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nd:tsunami_wave",
+      "materials": {
+        "default": "entity_alphablend"
+      },
+      "textures": {
+        "default": "textures/entity/natural_disasters/wave"
+      },
+      "geometry": {
+        "default": "geometry.nd_tsunami_wave"
+      },
+      "animations": {
+        "roll": "animation.nd_wave.roll",
+        "spawn": "animation.nd_wave.spawn",
+        "controller": "controller.animation.nd_wave"
+      },
+      "scripts": {
+        "animate": ["controller"]
+      },
+      "particle_effects": {
+        "spray": "nd:water_spray"
+      },
+      "render_controllers": ["controller.render.nd_wave"],
+      "enable_attachables": false
+    }
+  }
+}

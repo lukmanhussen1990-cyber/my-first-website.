@@ -1,0 +1,32 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nd:tornado",
+      "materials": {
+        "default": "entity_alphablend"
+      },
+      "textures": {
+        "default": "textures/entity/natural_disasters/tornado"
+      },
+      "geometry": {
+        "default": "geometry.nd_tornado"
+      },
+      "animations": {
+        "spin": "animation.nd_tornado.spin",
+        "sway": "animation.nd_tornado.sway",
+        "spawn": "animation.nd_tornado.spawn",
+        "controller": "controller.animation.nd_tornado"
+      },
+      "scripts": {
+        "animate": ["controller"]
+      },
+      "particle_effects": {
+        "debris": "nd:tornado_debris",
+        "core": "nd:tornado_core"
+      },
+      "render_controllers": ["controller.render.nd_tornado"],
+      "enable_attachables": false
+    }
+  }
+}

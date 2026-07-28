@@ -1,0 +1,32 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.nd_wave": {
+      "initial_state": "rising",
+      "states": {
+        "rising": {
+          "animations": ["spawn", "roll"],
+          "particle_effects": [
+            {
+              "effect": "spray"
+            }
+          ],
+          "transitions": [
+            {
+              "rolling": "query.life_time > 1.0"
+            }
+          ]
+        },
+        "rolling": {
+          "animations": ["roll"],
+          "blend_transition": 0.3,
+          "particle_effects": [
+            {
+              "effect": "spray"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

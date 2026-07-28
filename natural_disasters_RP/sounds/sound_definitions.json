@@ -1,0 +1,91 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "nd.wand.open": {
+      "category": "player",
+      "sounds": [{ "name": "sounds/natural_disasters/wand_open", "volume": 0.9, "load_on_low_memory": true }]
+    },
+    "nd.wand.cast": {
+      "category": "player",
+      "sounds": [{ "name": "sounds/natural_disasters/wand_cast", "volume": 1.0, "load_on_low_memory": true }]
+    },
+    "nd.detector.tick": {
+      "category": "player",
+      "sounds": [{ "name": "sounds/natural_disasters/detector_tick", "volume": 0.8, "load_on_low_memory": true }]
+    },
+    "nd.detector.alarm": {
+      "category": "player",
+      "sounds": [{ "name": "sounds/natural_disasters/detector_alarm", "volume": 0.9, "load_on_low_memory": true }]
+    },
+    "nd.warning": {
+      "category": "ambient",
+      "sounds": [{ "name": "sounds/natural_disasters/warning_siren", "volume": 1.0, "stream": true }]
+    },
+
+    "nd.tornado.loop": {
+      "category": "weather",
+      "sounds": [{ "name": "sounds/natural_disasters/tornado_loop", "volume": 1.0, "stream": true }]
+    },
+    "nd.tornado.debris": {
+      "category": "block",
+      "sounds": [
+        { "name": "sounds/natural_disasters/tornado_debris1", "volume": 0.9 },
+        { "name": "sounds/natural_disasters/tornado_debris2", "volume": 0.9 }
+      ]
+    },
+
+    "nd.earthquake.rumble": {
+      "category": "weather",
+      "sounds": [{ "name": "sounds/natural_disasters/earthquake_rumble", "volume": 1.0, "stream": true }]
+    },
+    "nd.earthquake.crack": {
+      "category": "block",
+      "sounds": [
+        { "name": "sounds/natural_disasters/earthquake_crack1", "volume": 1.0 },
+        { "name": "sounds/natural_disasters/earthquake_crack2", "volume": 1.0 }
+      ]
+    },
+
+    "nd.meteor.fly": {
+      "category": "hostile",
+      "sounds": [{ "name": "sounds/natural_disasters/meteor_fly", "volume": 1.0, "stream": true }]
+    },
+    "nd.meteor.impact": {
+      "category": "hostile",
+      "sounds": [{ "name": "sounds/natural_disasters/meteor_impact", "volume": 1.0 }]
+    },
+
+    "nd.tsunami.roar": {
+      "category": "weather",
+      "sounds": [{ "name": "sounds/natural_disasters/tsunami_roar", "volume": 1.0, "stream": true }]
+    },
+    "nd.tsunami.splash": {
+      "category": "weather",
+      "sounds": [
+        { "name": "sounds/natural_disasters/tsunami_splash1", "volume": 1.0 },
+        { "name": "sounds/natural_disasters/tsunami_splash2", "volume": 1.0 }
+      ]
+    },
+
+    "nd.wildfire.burn": {
+      "category": "block",
+      "sounds": [{ "name": "sounds/natural_disasters/wildfire_burn", "volume": 1.0, "stream": true }]
+    },
+    "nd.wildfire.ignite": {
+      "category": "block",
+      "sounds": [{ "name": "sounds/natural_disasters/wildfire_ignite", "volume": 1.0 }]
+    },
+
+    "nd.storm.thunder": {
+      "category": "weather",
+      "sounds": [
+        { "name": "sounds/natural_disasters/storm_thunder1", "volume": 1.0, "stream": true },
+        { "name": "sounds/natural_disasters/storm_thunder2", "volume": 1.0, "stream": true }
+      ]
+    },
+    "nd.storm.charge": {
+      "category": "weather",
+      "sounds": [{ "name": "sounds/natural_disasters/storm_charge", "volume": 1.0 }]
+    }
+  }
+}

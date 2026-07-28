@@ -1,0 +1,45 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "81dbb53a-3ec8-435c-83b1-b69d8ac983c4",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "Natural Disasters data module",
+      "type": "data",
+      "uuid": "c56b45f3-318c-44cb-a82b-f5238ee99a79",
+      "version": [1, 0, 0]
+    },
+    {
+      "description": "Natural Disasters script module",
+      "type": "script",
+      "language": "javascript",
+      "uuid": "9b11154a-2fdf-4a42-bd69-bb9c3bff5b3d",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "43c1cc2b-7bd7-43a6-acd6-8ded1a8dbc1b",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.1.0"
+    }
+  ],
+  "metadata": {
+    "authors": ["Natural Disasters Addon"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

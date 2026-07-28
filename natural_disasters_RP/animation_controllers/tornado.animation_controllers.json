@@ -1,0 +1,32 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.nd_tornado": {
+      "initial_state": "spawning",
+      "states": {
+        "spawning": {
+          "animations": ["spawn", "spin"],
+          "particle_effects": [
+            {
+              "effect": "core"
+            }
+          ],
+          "transitions": [
+            {
+              "swirling": "query.life_time > 1.5"
+            }
+          ]
+        },
+        "swirling": {
+          "animations": ["spin", "sway"],
+          "blend_transition": 0.4,
+          "particle_effects": [
+            {
+              "effect": "debris"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

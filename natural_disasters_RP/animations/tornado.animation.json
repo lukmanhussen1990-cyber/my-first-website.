@@ -1,0 +1,79 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nd_tornado.spin": {
+      "loop": true,
+      "animation_length": 4.0,
+      "bones": {
+        "funnel1": {
+          "rotation": [0, "query.life_time * 420", 0]
+        },
+        "funnel2": {
+          "rotation": [0, "query.life_time * 380", 0]
+        },
+        "funnel3": {
+          "rotation": [0, "query.life_time * 340", 0]
+        },
+        "funnel4": {
+          "rotation": [0, "query.life_time * 300", 0]
+        },
+        "funnel5": {
+          "rotation": [0, "query.life_time * 260", 0]
+        },
+        "funnel6": {
+          "rotation": [0, "query.life_time * 220", 0]
+        },
+        "funnel7": {
+          "rotation": [0, "query.life_time * 190", 0]
+        },
+        "funnel8": {
+          "rotation": [0, "query.life_time * 160", 0]
+        }
+      }
+    },
+
+    "animation.nd_tornado.sway": {
+      "loop": true,
+      "animation_length": 6.0,
+      "bones": {
+        "funnel3": {
+          "position": ["math.sin(query.life_time * 70) * 1.5", 0, "math.cos(query.life_time * 55) * 1.5"]
+        },
+        "funnel4": {
+          "position": ["math.sin(query.life_time * 70) * 2.5", 0, "math.cos(query.life_time * 55) * 2.5"]
+        },
+        "funnel5": {
+          "position": ["math.sin(query.life_time * 70) * 3.5", 0, "math.cos(query.life_time * 55) * 3.5"]
+        },
+        "funnel6": {
+          "position": ["math.sin(query.life_time * 70) * 5", 0, "math.cos(query.life_time * 55) * 5"]
+        },
+        "funnel7": {
+          "position": ["math.sin(query.life_time * 70) * 6.5", 0, "math.cos(query.life_time * 55) * 6.5"]
+        },
+        "funnel8": {
+          "position": ["math.sin(query.life_time * 70) * 8", 0, "math.cos(query.life_time * 55) * 8"],
+          "scale": [
+            "1.0 + math.sin(query.life_time * 120) * 0.06",
+            1.0,
+            "1.0 + math.cos(query.life_time * 120) * 0.06"
+          ]
+        }
+      }
+    },
+
+    "animation.nd_tornado.spawn": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 1.5,
+      "bones": {
+        "root": {
+          "scale": {
+            "0.0": [0.15, 0.05, 0.15],
+            "0.8": [1.05, 1.1, 1.05],
+            "1.5": [1.0, 1.0, 1.0]
+          }
+        }
+      }
+    }
+  }
+}

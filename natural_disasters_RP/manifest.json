@@ -1,0 +1,23 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "43c1cc2b-7bd7-43a6-acd6-8ded1a8dbc1b",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "Natural Disasters resource module",
+      "type": "resources",
+      "uuid": "bae57f92-4453-4721-8ae6-2f1325d2f41e",
+      "version": [1, 0, 0]
+    }
+  ],
+  "metadata": {
+    "authors": ["Natural Disasters Addon"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

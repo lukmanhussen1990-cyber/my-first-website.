@@ -1,0 +1,32 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.nd_meteor": {
+      "initial_state": "spawning",
+      "states": {
+        "spawning": {
+          "animations": ["spawn", "tumble"],
+          "particle_effects": [
+            {
+              "effect": "trail"
+            }
+          ],
+          "transitions": [
+            {
+              "falling": "query.life_time > 0.6"
+            }
+          ]
+        },
+        "falling": {
+          "animations": ["tumble"],
+          "blend_transition": 0.2,
+          "particle_effects": [
+            {
+              "effect": "trail"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

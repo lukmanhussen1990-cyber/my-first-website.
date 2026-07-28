@@ -1,0 +1,43 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nd_wave.roll": {
+      "loop": true,
+      "animation_length": 3.0,
+      "bones": {
+        "wall": {
+          "scale": [1.0, "1.0 + math.sin(query.life_time * 90) * 0.08", 1.0]
+        },
+        "crest": {
+          "rotation": ["-12 + math.sin(query.life_time * 120) * 8", 0, 0],
+          "position": [0, "math.sin(query.life_time * 120) * 2", "math.cos(query.life_time * 120) * 2"]
+        },
+        "foam": {
+          "position": [
+            "math.sin(query.life_time * 200) * 1.5",
+            "math.cos(query.life_time * 180) * 1.5",
+            "math.sin(query.life_time * 160) * 2"
+          ],
+          "scale": [
+            "1.0 + math.sin(query.life_time * 240) * 0.1",
+            1.0,
+            "1.0 + math.cos(query.life_time * 240) * 0.1"
+          ]
+        }
+      }
+    },
+
+    "animation.nd_wave.spawn": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 1.0,
+      "bones": {
+        "root": {
+          "scale": {
+            "0.0": [1.0, 0.05, 1.0],
+            "1.0": [1.0, 1.0, 1.0]
+          }
+        }
+      }
+    }
+  }
+}

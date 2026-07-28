@@ -1,0 +1,13 @@
+{
+  "name": "natural-disasters-addon",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Natural Disasters - a Minecraft Bedrock Edition addon (behavior pack + resource pack) for mobile.",
+  "scripts": {
+    "textures": "python3 tools/generate_textures.py",
+    "build": "python3 tools/build_mcaddon.py",
+    "test": "node tools/test_scripts.mjs"
+  },
+  "license": "MIT"
+}

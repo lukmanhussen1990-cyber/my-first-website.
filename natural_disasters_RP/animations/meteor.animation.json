@@ -1,0 +1,39 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.nd_meteor.tumble": {
+      "loop": true,
+      "animation_length": 4.0,
+      "bones": {
+        "rock": {
+          "rotation": [
+            "query.life_time * 210",
+            "query.life_time * 150",
+            "query.life_time * 90"
+          ]
+        },
+        "flames": {
+          "scale": [
+            "1.0 + math.sin(query.life_time * 600) * 0.12",
+            "1.0 + math.cos(query.life_time * 520) * 0.12",
+            "1.0 + math.sin(query.life_time * 640) * 0.12"
+          ],
+          "rotation": [0, "query.life_time * -260", 0]
+        }
+      }
+    },
+
+    "animation.nd_meteor.spawn": {
+      "loop": "hold_on_last_frame",
+      "animation_length": 0.6,
+      "bones": {
+        "root": {
+          "scale": {
+            "0.0": [0.2, 0.2, 0.2],
+            "0.6": [1.0, 1.0, 1.0]
+          }
+        }
+      }
+    }
+  }
+}

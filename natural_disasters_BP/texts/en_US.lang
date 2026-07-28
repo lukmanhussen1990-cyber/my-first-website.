@@ -1,0 +1,43 @@
+## Natural Disasters - Behavior Pack (en_US)
+
+pack.name=Natural Disasters (Behavior)
+pack.description=Tornadoes, earthquakes, meteors, tsunamis, wildfires and lightning storms. Craft the Disaster Wand to start one and the Disaster Detector to see them coming.
+
+## Items
+item.nd:disaster_wand=Disaster Wand
+item.nd:disaster_wand.name=Disaster Wand
+item.nd:disaster_detector=Disaster Detector
+item.nd:disaster_detector.name=Disaster Detector
+
+## Entities
+entity.nd:tornado.name=Tornado
+entity.nd:meteor.name=Meteor
+entity.nd:tsunami_wave.name=Tsunami Wave
+
+## Spawn eggs (hidden, kept so nothing shows a missing name)
+item.spawn_egg.entity.nd:tornado.name=Spawn Tornado
+item.spawn_egg.entity.nd:meteor.name=Spawn Meteor
+item.spawn_egg.entity.nd:tsunami_wave.name=Spawn Tsunami Wave
+
+## Disaster names used by the wand menu and the detector
+nd.disaster.tornado=Tornado
+nd.disaster.earthquake=Earthquake
+nd.disaster.meteor=Meteor
+nd.disaster.tsunami=Tsunami
+nd.disaster.wildfire=Wildfire
+nd.disaster.lightning_storm=Lightning Storm
+
+## Warnings
+nd.warning.tornado=A tornado is forming nearby!
+nd.warning.earthquake=The ground is starting to shake!
+nd.warning.meteor=A meteor has entered the atmosphere!
+nd.warning.tsunami=A tsunami is rolling in!
+nd.warning.wildfire=A wildfire has broken out!
+nd.warning.lightning_storm=A lightning storm is closing in!
+
+## Menus
+nd.menu.title=Natural Disasters
+nd.menu.settings=Settings
+nd.menu.stop=Stop All Disasters
+nd.menu.random=Surprise Me
+nd.menu.allclear=All clear
