@@ -28,7 +28,6 @@ import { openCodex, openSettingsMenu, openWeaponPage } from "./ui.js";
 import {
   actionBar,
   damageHeldItem,
-  getItemCooldown,
   heldItem,
   playSoundForPlayer,
   sendMessage,
@@ -58,6 +57,33 @@ function cooldownCategory(weapon) {
   return `wm_${weapon.key}`;
 }
 
+/**
+ * Cooldowns are tracked here rather than read back with getItemCooldown().
+ *
+ * The item's own `minecraft:cooldown` component starts the moment the item is
+ * used - before this script ever sees the event - so asking the game "is this
+ * on cooldown?" always answered yes and every ability was refused. The map
+ * below is written only by this script, so it can never be poisoned that way.
+ */
+const castAt = new Map();
+
+function cooldownKey(player, weapon) {
+  try {
+    return `${player.id}:${weapon.key}`;
+  } catch {
+    return `?:${weapon.key}`;
+  }
+}
+
+/** Ticks left on a weapon's ability, 0 when it is ready. */
+function ticksUntilReady(player, weapon) {
+  const last = castAt.get(cooldownKey(player, weapon));
+  if (last === undefined) return 0;
+  const elapsed = system.currentTick - last;
+  const total = weapon.cooldownSeconds * 20;
+  return elapsed >= total ? 0 : total - elapsed;
+}
+
 function handleItemUse(player, id) {
   const weapon = weaponFromItemId(id);
   if (!weapon || !player) return;
@@ -74,20 +100,27 @@ function handleItemUse(player, id) {
     return;
   }
 
-  const remaining = getItemCooldown(player, cooldownCategory(weapon));
+  const remaining = ticksUntilReady(player, weapon);
   if (remaining > 0) {
     actionBar(player, `§8${weapon.name} ready in §f${(remaining / 20).toFixed(1)}s`);
     playSoundForPlayer(player, SOUNDS.denied.custom, SOUNDS.denied.vanilla, { volume: 0.5, pitch: 0.8 });
     return;
   }
 
+  // Claim the cooldown now so two taps in the same tick cannot both fire.
+  castAt.set(cooldownKey(player, weapon), system.currentTick);
+
   system.run(() => {
     try {
       const fired = useAbility(player, weapon);
-      if (!fired) return;
+      if (!fired) {
+        castAt.delete(cooldownKey(player, weapon));
+        return;
+      }
       startItemCooldown(player, cooldownCategory(weapon), weapon.cooldownSeconds);
       if (getSetting("abilityDurability")) damageHeldItem(player, 3);
     } catch (error) {
+      castAt.delete(cooldownKey(player, weapon));
       console.warn(`[Weapons] ability ${weapon.key}: ${error}`);
     }
   });
@@ -117,6 +150,25 @@ function registerEvents() {
     });
   } catch {
     // optional
+  }
+
+  // Belt and braces for touch controls: some interactions only produce the
+  // "before" version of the use event. The debounce stops a single tap from
+  // being handled twice when both fire.
+  try {
+    world.beforeEvents.itemUse.subscribe((event) => {
+      const source = event.source;
+      const typeId = event.itemStack?.typeId;
+      system.run(() => {
+        try {
+          handleItemUse(source, typeId);
+        } catch (error) {
+          console.warn(`[Weapons] beforeItemUse: ${error}`);
+        }
+      });
+    });
+  } catch {
+    // beforeEvents.itemUse missing on this runtime - the after events cover it.
   }
 
   // Melee passives.
@@ -167,6 +219,7 @@ function registerEvents() {
  * Admin commands:
  *
  *   /scriptevent wm:give [weapon|all]   give yourself weapons
+ *   /scriptevent wm:use <weapon>        fire an ability without tapping
  *   /scriptevent wm:codex               open the codex
  *   /scriptevent wm:settings            open the settings screen
  *   /scriptevent wm:power <percent>     ability damage multiplier
@@ -214,6 +267,29 @@ function handleScriptEvent(event) {
       } catch (error) {
         reply(`§c[Weapons] ${error}`);
       }
+      return;
+    }
+    case "wm:use": {
+      // Fires an ability without tapping. Handy on a phone for checking that a
+      // weapon works when the touch controls are being awkward.
+      if (!isPlayer) {
+        reply("§c[Weapons] A player has to run this one.");
+        return;
+      }
+      const key = (args[0] ?? "").toLowerCase();
+      const weapon = WEAPONS[key];
+      if (!weapon) {
+        reply(`§c[Weapons] Unknown weapon. Try: ${WEAPON_KEYS.join(", ")}`);
+        return;
+      }
+      system.run(() => {
+        try {
+          const fired = useAbility(source, weapon);
+          reply(fired ? `§6[Weapons] §f${weapon.ability} fired.` : "§c[Weapons] That ability did nothing here.");
+        } catch (error) {
+          reply(`§c[Weapons] ${error}`);
+        }
+      });
       return;
     }
     case "wm:codex": {
@@ -267,6 +343,7 @@ function handleScriptEvent(event) {
       reply(
         `§6[Legendary Weapons v${VERSION}]\n` +
           `§f/scriptevent wm:give [weapon|core|all]\n` +
+          `§f/scriptevent wm:use <weapon>\n` +
           `§f/scriptevent wm:codex [weapon]\n` +
           `§f/scriptevent wm:settings\n` +
           `§f/scriptevent wm:power <percent>\n` +

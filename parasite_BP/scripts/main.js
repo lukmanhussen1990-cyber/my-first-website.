@@ -131,6 +131,25 @@ function registerEvents() {
     // touch devices without itemUseOn still fire itemUse
   }
 
+  // Belt and braces for touch controls: some interactions only produce the
+  // "before" version of the use event. The debounce stops a single tap from
+  // being handled twice when both fire.
+  try {
+    world.beforeEvents.itemUse.subscribe((event) => {
+      const source = event.source;
+      const typeId = event.itemStack?.typeId;
+      system.run(() => {
+        try {
+          handleItemUse(source, typeId);
+        } catch (error) {
+          console.warn(`[Parasite] beforeItemUse: ${error}`);
+        }
+      });
+    });
+  } catch {
+    // beforeEvents.itemUse missing on this runtime - the after events cover it.
+  }
+
   try {
     world.afterEvents.playerSpawn.subscribe((event) => {
       if (!event.initialSpawn) return;

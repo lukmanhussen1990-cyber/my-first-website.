@@ -445,6 +445,23 @@ async function main() {
     ""
   );
 
+  // Regression: the item's minecraft:cooldown component starts the cooldown the
+  // instant the item is used, i.e. before this event handler runs. The script
+  // must not read that back as "still cooling down" and refuse to fire.
+  tick(300);
+  spawnDummies(2, player.location);
+  const lightningBefore = log.lightning;
+  tick(10);
+  player.hold("wm:thunder_blade");
+  player.cooldowns.set("wm_thunder_blade", 120); // as if the component just fired
+  for (const fn of listeners.itemUse) fn({ source: player, itemStack: { typeId: "wm:thunder_blade" } });
+  tick(6);
+  check(
+    "the item cooldown component does not block the ability",
+    log.lightning > lightningBefore,
+    `${lightningBefore} -> ${log.lightning}`
+  );
+
   // Durability.
   player.cooldowns.clear();
   tick(10);
@@ -514,6 +531,7 @@ async function main() {
 
   config.setSetting("hurtPlayers", true);
   player.cooldowns.clear();
+  tick(150); // Ground Slam has a 7 second cooldown, wait it out
   useItem(player, "wm:earthshaker");
   tick(10);
   check("PvP on hits other players", other.health < friendHealth, `${friendHealth} -> ${other.health}`);
@@ -546,6 +564,12 @@ async function main() {
   fire("wm:give");
   check("wm:give hands out every weapon", log.commands.filter((c) => c.startsWith("give")).length >= 6, "");
   fire("wm:give", "thunder_blade");
+  const lightningBeforeCmd = log.lightning;
+  spawnDummies(2, player.location);
+  fire("wm:use", "thunder_blade");
+  tick(5);
+  check("scriptevent wm:use fires an ability", log.lightning > lightningBeforeCmd,
+    `${lightningBeforeCmd} -> ${log.lightning}`);
   fire("wm:power", "150");
   check("wm:power changes the setting", config.getSetting("powerPercent") === 150, String(config.getSetting("powerPercent")));
   fire("wm:blocks", "on");

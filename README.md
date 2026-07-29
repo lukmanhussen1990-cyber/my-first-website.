@@ -13,6 +13,24 @@ all three — they share no files and never conflict.
 All three require **Minecraft Bedrock 1.21.0 or newer** and need **no
 experimental toggles**.
 
+## Using the items on a phone
+
+Touch controls treat a quick tap as an *attack*, not a *use*. To trigger any item
+in these addons:
+
+- **Tap and hold** the screen for a moment while holding the item, **or**
+- point at the ground/a block and tap it (that always counts as a use), **or**
+- with **"Auto-Jump"/classic touch**, press and hold on the world, not on the
+  hotbar.
+
+Every item here uses a 2 second use duration so the press registers reliably; the
+ability fires the instant you press, so you do not have to hold it down.
+
+If an item still does nothing, run `/scriptevent wm:help` (or `nd:help` /
+`pm:help`) in chat — the same actions are available as commands, and
+`/scriptevent wm:use thunder_blade` fires an ability directly so you can tell a
+control problem apart from a pack problem.
+
 ---
 
 # Part 1 — Natural Disasters
@@ -455,7 +473,7 @@ python3 tools/build_mcaddon.py                # validate + pack all three .mcadd
 python3 tools/build_mcaddon.py weapons        # just one addon
 node    tools/test_scripts.mjs                # Natural Disasters: 37 checks
 node    tools/test_parasite.mjs               # Parasite: 23 checks
-node    tools/test_weapons.mjs                # Legendary Weapons: 42 checks
+node    tools/test_weapons.mjs                # Legendary Weapons: 44 checks
 ```
 
 Both test files stub `@minecraft/server` and `@minecraft/server-ui` and run the
@@ -533,6 +551,7 @@ Sneak + tap → **Settings**, or use the commands below:
 
 ```
 /scriptevent wm:give [weapon|core|all]   give yourself weapons
+/scriptevent wm:use <weapon>             fire an ability without tapping
 /scriptevent wm:codex [weapon]           open the codex
 /scriptevent wm:settings                 open the settings screen
 /scriptevent wm:power <percent>          ability damage multiplier (10-500)
