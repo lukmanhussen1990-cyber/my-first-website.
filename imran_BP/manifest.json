@@ -1,0 +1,45 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "d7036228-abc6-45ed-b23e-c0550ac29003",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "Imran Security House data module",
+      "type": "data",
+      "uuid": "6317a648-cdce-46aa-880f-1ca656248eab",
+      "version": [1, 0, 0]
+    },
+    {
+      "description": "Imran Security House script module",
+      "type": "script",
+      "language": "javascript",
+      "uuid": "09dac4f6-90c2-49c6-8541-4b393746cb73",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "7bcba579-b973-483d-b25a-8e78671d05f2",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.1.0"
+    }
+  ],
+  "metadata": {
+    "authors": ["Imran Security House Addon"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

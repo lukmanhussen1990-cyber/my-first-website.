@@ -1,0 +1,23 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "7bcba579-b973-483d-b25a-8e78671d05f2",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "Imran Security House resource module",
+      "type": "resources",
+      "uuid": "6f1f8858-5140-4967-a6f4-f4e9847449f9",
+      "version": [1, 0, 0]
+    }
+  ],
+  "metadata": {
+    "authors": ["Imran Security House Addon"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

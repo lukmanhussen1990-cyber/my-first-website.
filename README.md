@@ -1,8 +1,8 @@
 # Minecraft Bedrock Addons (Pocket Edition friendly)
 
-Five standalone addons for Minecraft Bedrock Edition, built for **Android and
+Six standalone addons for Minecraft Bedrock Edition, built for **Android and
 iOS** (they work on Windows, console and Realms too). Install any one of them, or
-all five — they share no files and never conflict.
+all six — they share no files and never conflict.
 
 | Addon | Download | What it is |
 | --- | --- | --- |
@@ -11,8 +11,9 @@ all five — they share no files and never conflict.
 | **Legendary Weapons** | `LegendaryWeapons.mcaddon` | Six weapons with real abilities: call lightning, freeze the battlefield, fire explosive bolts, blink through enemies, slam the ground, open a black hole |
 | **Kaiju Rampage** | `KaijuRampage.mcaddon` | An 11 block tall Godzilla-style monster that levels terrain and buildings just by walking, stomps craters, sweeps its tail, roars and fires an atomic breath |
 | **Extreme Blizzard** | `ExtremeBlizzard.mcaddon` | A killing winter. Outside freezes you to death in about 5 seconds — the only safe place is a sealed room with a fire in it |
+| **Imran Security House** | `ImranSecurityHouse.mcaddon` | A fortified house you drop out of your inventory with IMRAN spelled across the front, plus a zombie disaster you start by typing in chat |
 
-All five require **Minecraft Bedrock 1.21.0 or newer** and need **no
+All six require **Minecraft Bedrock 1.21.0 or newer** and need **no
 experimental toggles**.
 
 ## Using the items on a phone
@@ -29,7 +30,7 @@ Every item here uses a 2 second use duration so the press registers reliably; th
 ability fires the instant you press, so you do not have to hold it down.
 
 If an item still does nothing, run `/scriptevent wm:help` (or `nd:help`,
-`pm:help`, `kj:help`, `sw:help`) in chat — the same actions are available as commands, and
+`pm:help`, `kj:help`, `sw:help`, `ih:help`) in chat — the same actions are available as commands, and
 `/scriptevent wm:use thunder_blade` fires an ability directly so you can tell a
 control problem apart from a pack problem.
 
@@ -474,6 +475,7 @@ python3 tools/generate_weapon_textures.py     # Legendary Weapons PNGs
 python3 tools/generate_kaiju_model.py         # Kaiju geometry + UV atlas map
 python3 tools/generate_kaiju_textures.py      # Kaiju PNGs (paints against that map)
 python3 tools/generate_blizzard_textures.py   # Extreme Blizzard PNGs
+python3 tools/generate_imran_textures.py      # Imran Security House PNGs
 python3 tools/build_mcaddon.py                # validate + pack all three .mcaddon files
 python3 tools/build_mcaddon.py weapons        # just one addon
 node    tools/test_scripts.mjs                # Natural Disasters: 37 checks
@@ -481,6 +483,7 @@ node    tools/test_parasite.mjs               # Parasite: 23 checks
 node    tools/test_weapons.mjs                # Legendary Weapons: 44 checks
 node    tools/test_kaiju.mjs                  # Kaiju Rampage: 30 checks
 node    tools/test_blizzard.mjs               # Extreme Blizzard: 35 checks
+node    tools/test_imran.mjs                  # Imran Security House: 36 checks
 ```
 
 Both test files stub `@minecraft/server` and `@minecraft/server-ui` and run the
@@ -943,3 +946,169 @@ blizzard_RP/                        RESOURCE PACK
 - `TUNING.heatSources` — which blocks count as heat, and how much each is worth
 - `TUNING.coldImmune` — mobs the cold ignores
 - `SETTINGS_DEFAULTS.harshnessPercent` — one dial for the whole difficulty
+
+---
+
+# Part 6 — Imran Security House
+
+Two things in one pack: **a fortified house you drop straight out of your
+inventory**, and **a zombie disaster you start by typing in chat**.
+
+Install `ImranSecurityHouse.mcaddon` like the others, then activate
+**Imran Security House (Behavior)** in your world.
+
+## The house
+
+Hold the **House Deployer** and tap. A 19 x 15 single storey fort goes up 12
+blocks in front of you, block by block, with **IMRAN spelled out in gold across
+the front** — the letters are built from real blocks on a parapet above the door,
+not a texture.
+
+```
+        IMRAN                <- gold letters, 3 blocks wide each
+   ###################
+   #  []         []  #       <- iron bar windows
+   #                 #
+   #        ][       #       <- iron door, dead centre
+   ###################
+```
+
+What you get:
+
+- **Stone brick walls with iron pillars** at the corners and every 6 blocks
+- **Polished deepslate floor and flat roof**, glowstone in the ceiling so nothing
+  spawns inside
+- **Iron door** with a lever indoors, **iron bar windows** zombies cannot pass
+- Crafting table, furnace, chest, barrel and a bed already inside
+- A **security system**: any violent zombie that gets inside takes 20 damage a
+  second until it stops moving. Your action bar says `✔ Inside IMRAN` when you
+  are in the protected zone.
+
+Sneak + tap the deployer for the menu, or `/scriptevent ih:removehouse` to clear
+the last one away.
+
+## The zombie disaster
+
+**Type `zombie disaster` in chat.** That is all — no cheats needed, because the
+pack reads the chat message rather than a command. `zombie apocalypse` and
+`!horde` work too, and you can add a number: `zombie disaster 3000`.
+
+**1000 violent zombies** come for you. They are not the vanilla kind:
+
+| | |
+| --- | --- |
+| **Damage** | 9 a hit, and they move faster than you walk |
+| **Health** | 30 |
+| **Targets** | you, every mob, villagers — **and each other**. Put two in a room and they fight. |
+| **Rot** | 1 damage every 6 seconds. A horde left alone eats itself alive. |
+| **Bombers** | 15% of them explode when they die |
+
+### About "1000 at once"
+
+They arrive in waves, and the number **alive at the same time** is capped at
+**150** by default. The full 1000 still comes — the horde tops itself up as they
+die — but your phone survives as well as you do. A thousand entities loaded at
+once would drop most devices to single digit frame rates.
+
+Want a real wall of them? Raise it:
+
+```
+/scriptevent ih:alive 400
+```
+
+The action bar keeps score the whole time:
+
+```
+☣ HORDE  alive 148/150   sent 412/1000   killed 264
+```
+
+## Getting the items
+
+| Item | Recipe |
+| --- | --- |
+| **House Deployer** | 5 iron blocks, 1 iron door, 3 stone bricks |
+| **Horde Totem** | 4 rotten flesh around a skull — tap to start or stop a disaster |
+
+Or `/scriptevent ih:give`.
+
+## Commands
+
+```
+/scriptevent ih:house              build the house in front of you
+/scriptevent ih:removehouse        clear the last house away
+/scriptevent ih:horde [count]      start a disaster
+/scriptevent ih:stop               stop it and clear every zombie
+/scriptevent ih:status             houses and horde report
+/scriptevent ih:alive <number>     how many zombies may live at once
+/scriptevent ih:give               deployer + horde totem
+/scriptevent ih:settings           open the settings screen
+/scriptevent ih:help               print this in chat
+```
+
+## Folder structure
+
+```
+ImranSecurityHouse.mcaddon          <- the installable file
+
+imran_BP/                           BEHAVIOR PACK
+├── manifest.json
+├── pack_icon.png
+├── entities/violent_zombie.json    ih:violent_zombie, attacks its own kind
+├── items/
+│   ├── imran_house.json            ih:imran_house (the deployer)
+│   └── horde_totem.json            ih:horde_totem
+├── recipes/                        one per item
+├── loot_tables/entities/violent_zombie.json
+├── scripts/
+│   ├── main.js                     items, chat trigger, /scriptevent
+│   ├── config.js                   settings, tuning, house materials
+│   ├── util.js                     safe API wrappers
+│   ├── sounds.js                   custom + vanilla sound ids
+│   ├── house.js                    the layout, the IMRAN letters, security
+│   ├── horde.js                    waves, the alive cap, bombers
+│   └── ui.js                       deployer menus
+└── texts/en_US.lang, languages.json
+
+imran_RP/                           RESOURCE PACK
+├── manifest.json
+├── pack_icon.png
+├── entity/violent_zombie.entity.json
+├── models/entity/violent_zombie.geo.json     humanoid, standard skin layout
+├── animations/violent_zombie.animation.json  idle and shambling walk
+├── animation_controllers/violent_zombie.animation_controllers.json
+├── render_controllers/violent_zombie.render_controllers.json
+├── particles/                      rot burst, security spark
+├── sounds/
+│   ├── sound_definitions.json      9 custom sound events
+│   └── imran/                      drop your own .ogg files here
+├── textures/
+│   ├── item_texture.json
+│   ├── items/                      deployer, horde totem
+│   ├── entity/imran/               violent_zombie, bomber_zombie
+│   ├── particle/                   rot, spark
+│   └── ui/                         5 menu icons
+└── texts/en_US.lang, languages.json
+```
+
+### UUIDs
+
+| Pack | Part | UUID |
+| --- | --- | --- |
+| BP | header | `d7036228-abc6-45ed-b23e-c0550ac29003` |
+| BP | data module | `6317a648-cdce-46aa-880f-1ca656248eab` |
+| BP | script module | `09dac4f6-90c2-49c6-8541-4b393746cb73` |
+| RP | header | `7bcba579-b973-483d-b25a-8e78671d05f2` |
+| RP | resources module | `6f1f8858-5140-4967-a6f4-f4e9847449f9` |
+
+## Tuning it
+
+`imran_BP/scripts/config.js`:
+
+- `SETTINGS_DEFAULTS.hordeTotal` / `hordeMaxAlive` / `hordeWaveSize` — the whole
+  difficulty and performance story
+- `TUNING.house.blocks` — every material the house is built from
+- `TUNING.house.width` / `depth` — the footprint. The name needs the full 19
+  blocks of width to spell out; go narrower and it will be clipped.
+- `TUNING.chatPhrases` — what you have to type to start a disaster
+- `FONT` in `house.js` — the 3x5 letters. Add more letters there to rename the
+  house (also change `HOUSE_NAME`).

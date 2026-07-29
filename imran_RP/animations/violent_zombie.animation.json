@@ -1,0 +1,67 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.ih_zombie.idle": {
+      "loop": true,
+      "animation_length": 3.0,
+      "bones": {
+        "body": {
+          "rotation": [0, 0, "math.sin(query.life_time * 90) * 1.5"],
+          "position": [0, "math.sin(query.life_time * 120) * 0.3", 0]
+        },
+        "head": {
+          "rotation": [
+            "8 + math.sin(query.life_time * 70) * 4",
+            "math.sin(query.life_time * 40) * 12",
+            "math.sin(query.life_time * 55) * 6"
+          ]
+        },
+        "rightArm": {
+          "rotation": ["-88 + math.sin(query.life_time * 110) * 5", 0, "-4 + math.sin(query.life_time * 90) * 3"]
+        },
+        "leftArm": {
+          "rotation": ["-88 + math.sin(query.life_time * 110 + 60) * 5", 0, "4 - math.sin(query.life_time * 90) * 3"]
+        },
+        "rightLeg": {
+          "rotation": ["math.sin(query.life_time * 60) * 3", 0, 0]
+        },
+        "leftLeg": {
+          "rotation": ["-math.sin(query.life_time * 60) * 3", 0, 0]
+        }
+      }
+    },
+
+    "animation.ih_zombie.walk": {
+      "loop": true,
+      "animation_length": 1.0,
+      "bones": {
+        "body": {
+          "rotation": ["6", "math.sin(query.modified_distance_moved * 19) * 4", "math.sin(query.modified_distance_moved * 38) * 3"]
+        },
+        "head": {
+          "rotation": ["6 + math.sin(query.modified_distance_moved * 38) * 5", "math.sin(query.modified_distance_moved * 19) * 8", 0]
+        },
+        "rightLeg": {
+          "rotation": ["math.sin(query.modified_distance_moved * 38) * 42", 0, 0]
+        },
+        "leftLeg": {
+          "rotation": ["math.sin(query.modified_distance_moved * 38 + 180) * 42", 0, 0]
+        },
+        "rightArm": {
+          "rotation": [
+            "-84 + math.sin(query.modified_distance_moved * 38 + 180) * 8",
+            0,
+            "-6 + math.sin(query.modified_distance_moved * 19) * 5"
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "-84 + math.sin(query.modified_distance_moved * 38) * 8",
+            0,
+            "6 - math.sin(query.modified_distance_moved * 19) * 5"
+          ]
+        }
+      }
+    }
+  }
+}

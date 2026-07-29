@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "ih:imran_house_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "III",
+      "IDI",
+      "SSS"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_block"
+      },
+      "D": {
+        "item": "minecraft:iron_door"
+      },
+      "S": {
+        "item": "minecraft:stone_bricks"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:iron_block"
+      }
+    ],
+    "result": {
+      "item": "ih:imran_house",
+      "count": 1
+    }
+  }
+}

@@ -1,18 +1,19 @@
 {
   "name": "minecraft-bedrock-addons",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "type": "module",
-  "description": "Minecraft Bedrock Edition addons for mobile: Natural Disasters, Parasite, Legendary Weapons, Kaiju Rampage and Extreme Blizzard.",
+  "description": "Minecraft Bedrock Edition addons for mobile: Natural Disasters, Parasite, Legendary Weapons, Kaiju Rampage, Extreme Blizzard and Imran Security House.",
   "scripts": {
-    "textures": "python3 tools/generate_textures.py && python3 tools/generate_parasite_textures.py && python3 tools/generate_weapon_textures.py && python3 tools/generate_kaiju_model.py && python3 tools/generate_kaiju_textures.py && python3 tools/generate_blizzard_textures.py",
+    "textures": "python3 tools/generate_textures.py && python3 tools/generate_parasite_textures.py && python3 tools/generate_weapon_textures.py && python3 tools/generate_kaiju_model.py && python3 tools/generate_kaiju_textures.py && python3 tools/generate_blizzard_textures.py && python3 tools/generate_imran_textures.py",
     "build": "python3 tools/build_mcaddon.py",
-    "test": "node tools/test_scripts.mjs && node tools/test_parasite.mjs && node tools/test_weapons.mjs && node tools/test_kaiju.mjs && node tools/test_blizzard.mjs",
+    "test": "node tools/test_scripts.mjs && node tools/test_parasite.mjs && node tools/test_weapons.mjs && node tools/test_kaiju.mjs && node tools/test_blizzard.mjs && node tools/test_imran.mjs",
     "test:disasters": "node tools/test_scripts.mjs",
     "test:parasite": "node tools/test_parasite.mjs",
     "test:weapons": "node tools/test_weapons.mjs",
     "test:kaiju": "node tools/test_kaiju.mjs",
-    "test:blizzard": "node tools/test_blizzard.mjs"
+    "test:blizzard": "node tools/test_blizzard.mjs",
+    "test:imran": "node tools/test_imran.mjs"
   },
   "license": "MIT"
 }

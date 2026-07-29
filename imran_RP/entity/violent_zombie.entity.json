@@ -1,0 +1,36 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ih:violent_zombie",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/imran/violent_zombie",
+        "violent": "textures/entity/imran/violent_zombie",
+        "bomber": "textures/entity/imran/bomber_zombie"
+      },
+      "geometry": {
+        "default": "geometry.ih_violent_zombie"
+      },
+      "animations": {
+        "idle": "animation.ih_zombie.idle",
+        "walk": "animation.ih_zombie.walk",
+        "controller": "controller.animation.ih_zombie"
+      },
+      "scripts": {
+        "animate": ["controller"]
+      },
+      "particle_effects": {
+        "rot": "ih:rot_burst"
+      },
+      "render_controllers": ["controller.render.ih_violent_zombie"],
+      "spawn_egg": {
+        "base_color": "#4a5a2c",
+        "overlay_color": "#b02020"
+      },
+      "enable_attachables": false
+    }
+  }
+}

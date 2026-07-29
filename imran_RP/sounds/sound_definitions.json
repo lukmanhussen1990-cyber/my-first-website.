@@ -1,0 +1,95 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "ih.house.build": {
+      "category": "block",
+      "sounds": [
+        {
+          "name": "sounds/imran/build1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/imran/build2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "ih.house.done": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/imran/house_done",
+          "volume": 1.0
+        }
+      ]
+    },
+    "ih.house.zap": {
+      "category": "block",
+      "sounds": [
+        {
+          "name": "sounds/imran/zap",
+          "volume": 1.0
+        }
+      ]
+    },
+    "ih.horde.start": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/imran/horde_start",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "ih.horde.wave": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/imran/horde_wave1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/imran/horde_wave2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "ih.horde.end": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/imran/horde_end",
+          "volume": 1.0
+        }
+      ]
+    },
+    "ih.zombie.spawn": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/imran/zombie_spawn",
+          "volume": 1.0
+        }
+      ]
+    },
+    "ih.zombie.bomb": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/imran/zombie_bomb",
+          "volume": 1.0
+        }
+      ]
+    },
+    "ih.menu.open": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/imran/menu",
+          "volume": 1.0
+        }
+      ]
+    }
+  }
+}

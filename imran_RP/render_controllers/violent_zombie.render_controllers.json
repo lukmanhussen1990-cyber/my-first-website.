@@ -1,0 +1,20 @@
+{
+  "format_version": "1.10.0",
+  "render_controllers": {
+    "controller.render.ih_violent_zombie": {
+      "arrays": {
+        "textures": {
+          "Array.kinds": ["Texture.violent", "Texture.bomber"]
+        }
+      },
+      "geometry": "Geometry.default",
+      "materials": [
+        { "*": "Material.default" }
+      ],
+      "textures": ["Array.kinds[query.variant]"],
+      "part_visibility": [
+        { "*": true }
+      ]
+    }
+  }
+}

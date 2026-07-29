@@ -40,6 +40,10 @@ ADDONS = {
         "output": "ExtremeBlizzard.mcaddon",
         "packs": ["blizzard_BP", "blizzard_RP"],
     },
+    "imran": {
+        "output": "ImranSecurityHouse.mcaddon",
+        "packs": ["imran_BP", "imran_RP"],
+    },
 }
 
 # Documentation that should not ship inside the addon.

@@ -1,0 +1,181 @@
+{
+  "format_version": "1.20.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ih:violent_zombie",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+
+    "component_groups": {
+      "ih:bomber": {
+        "minecraft:variant": { "value": 1 },
+        "minecraft:health": { "value": 20, "max": 20 },
+        "minecraft:movement": { "value": 0.42 }
+      },
+      "ih:despawn_now": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+
+    "components": {
+      "minecraft:type_family": {
+        "family": ["violent_zombie", "zombie", "undead", "monster", "mob"]
+      },
+      "minecraft:experience_reward": {
+        "on_death": "query.last_hit_by_player ? 5 : 0"
+      },
+      "minecraft:loot": {
+        "table": "loot_tables/entities/violent_zombie.json"
+      },
+
+      "minecraft:collision_box": {
+        "width": 0.6,
+        "height": 1.9
+      },
+      "minecraft:health": {
+        "value": 30,
+        "max": 30
+      },
+      "minecraft:attack": {
+        "damage": 9
+      },
+      "minecraft:movement": {
+        "value": 0.36
+      },
+      "minecraft:knockback_resistance": {
+        "value": 0.2
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": true,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:jump.static": {},
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "can_path_over_water": true,
+        "can_pass_doors": true,
+        "can_open_doors": false,
+        "avoid_water": false,
+        "avoid_damage_blocks": false
+      },
+      "minecraft:breathable": {
+        "total_supply": 20,
+        "suffocate_time": -1,
+        "breathes_water": true
+      },
+
+      "minecraft:despawn": {
+        "despawn_from_distance": {
+          "max_distance": 96,
+          "min_distance": 64
+        },
+        "min_range_random_chance": 200
+      },
+
+      "minecraft:damage_over_time": {
+        "damage_per_hurt": 1,
+        "time_between_hurt": 6
+      },
+
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:behavior.hurt_by_target": {
+        "priority": 1,
+        "entity_types": [
+          {
+            "filters": {
+              "test": "is_family",
+              "subject": "other",
+              "operator": "!=",
+              "value": "inanimate"
+            },
+            "max_dist": 24
+          }
+        ]
+      },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 2,
+        "must_see": false,
+        "must_reach": false,
+        "reselect_targets": true,
+        "within_radius": 32,
+        "scan_interval": 12,
+        "entity_types": [
+          {
+            "filters": {
+              "test": "is_family",
+              "subject": "other",
+              "value": "player"
+            },
+            "max_dist": 40,
+            "priority": 0
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "operator": "!=",
+                  "value": "inanimate"
+                },
+                {
+                  "any_of": [
+                    { "test": "is_family", "subject": "other", "value": "mob" },
+                    { "test": "is_family", "subject": "other", "value": "villager" },
+                    { "test": "is_family", "subject": "other", "value": "violent_zombie" }
+                  ]
+                }
+              ]
+            },
+            "max_dist": 20,
+            "priority": 1
+          }
+        ]
+      },
+      "minecraft:behavior.melee_attack": {
+        "priority": 3,
+        "track_target": true,
+        "speed_multiplier": 1.25,
+        "reach_multiplier": 1.4
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 6,
+        "speed_multiplier": 1.0,
+        "xz_dist": 16,
+        "y_dist": 6
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 8
+      },
+
+      "minecraft:conditional_bandwidth_optimization": {
+        "default_values": {
+          "max_optimized_distance": 64,
+          "max_dropped_ticks": 20,
+          "use_motion_prediction_hints": true
+        }
+      },
+      "minecraft:variant": {
+        "value": 0
+      }
+    },
+
+    "events": {
+      "ih:make_bomber": {
+        "add": {
+          "component_groups": ["ih:bomber"]
+        }
+      },
+      "ih:despawn": {
+        "add": {
+          "component_groups": ["ih:despawn_now"]
+        }
+      }
+    }
+  }
+}

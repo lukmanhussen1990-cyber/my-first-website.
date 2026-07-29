@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "ih:horde_totem_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " R ",
+      "RSR",
+      " R "
+    ],
+    "key": {
+      "R": {
+        "item": "minecraft:rotten_flesh"
+      },
+      "S": {
+        "item": "minecraft:skull"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:rotten_flesh"
+      }
+    ],
+    "result": {
+      "item": "ih:horde_totem",
+      "count": 1
+    }
+  }
+}
