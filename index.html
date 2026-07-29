@@ -439,8 +439,26 @@ function toggleMute() {
   }
 }
 
-// Speaker button, top-right of the canvas.
+// Buttons, top-right of the canvas.
 const MUTE_BTN = { x: W - 26, y: 8, w: 18, h: 16 };
+const BOT_BTN  = { x: W - 74, y: 8, w: 40, h: 16 };
+
+function drawBotButton() {
+  const b = BOT_BTN;
+  ctx.save();
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
+  ctx.fillStyle = bot ? "#73bf2e" : "#000000";
+  ctx.fillRect(b.x, b.y, b.w, b.h);
+  ctx.globalAlpha = 1;
+  ctx.font = 'bold 10px "Trebuchet MS", sans-serif';
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("BOT", b.x + b.w / 2, b.y + b.h / 2 + 1);
+  ctx.restore();
+}
 
 function drawMuteButton() {
   const b = MUTE_BTN;
@@ -480,6 +498,10 @@ function drawMuteButton() {
  * ------------------------------------------------------------------ */
 const READY = 0, PLAY = 1, DYING = 2, OVER = 3;
 let state, bird, pipes, score, best, bgX, groundX, frames, flash, overAt, shake;
+
+// Bot mode is a setting, not run state, so it survives a reset.
+let bot = localStorage.getItem("flappyBot") === "1";
+let botCool = 0;
 
 best = parseInt(localStorage.getItem("flappyBest") || "0", 10) || 0;
 
@@ -523,6 +545,50 @@ function flap() {
 }
 
 /* ------------------------------------------------------------------ *
+ * Bot mode — plays a round on its own, and starts the next one.
+ *
+ * A flap lifts the bird about FLAP_V^2 / (2 * GRAVITY) ~= 57px, and the gap
+ * is 112px, so aiming at the middle of the gap overshoots into the top pipe.
+ * The bot aims low in the gap instead, and only flaps on the way down, which
+ * gives it the same up-down rhythm a person plays with.
+ * ------------------------------------------------------------------ */
+function toggleBot() {
+  bot = !bot;
+  localStorage.setItem("flappyBot", bot ? "1" : "0");
+  botCool = 0;
+}
+
+function botTick() {
+  if (!bot) return;
+
+  if (state === READY) {
+    if (frames > 24) start();          // beat to show the screen, then go
+    return;
+  }
+  if (state === OVER) {
+    if (frames - overAt > 60) reset(); // attract loop: play the next round
+    return;
+  }
+  if (state !== PLAY) return;
+
+  if (botCool > 0) botCool--;
+
+  // the pipe the bird has not cleared yet
+  let next = null;
+  for (const p of pipes) {
+    if (p.x + PIPE_W > BIRD_X - BW / 2) { next = p; break; }
+  }
+  const aim = next ? next.top + PIPE_GAP * 0.74 : GROUND_Y * 0.45;
+  const sinking = bird.y >= aim || bird.y > GROUND_Y - 62;
+
+  if (sinking && bird.v > -1.5 && botCool === 0) {
+    bird.v = FLAP_V;
+    botCool = 5;
+    sfx.flap();
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * Update (fixed 60Hz step)
  * ------------------------------------------------------------------ */
 function collides() {
@@ -543,6 +609,7 @@ function collides() {
 function update() {
   frames++;
   if (flash > 0) flash--;
+  botTick();
   if (shake > 0) shake--;
 
   if (state === READY) {
@@ -669,6 +736,7 @@ function drawReady() {
   ctx.stroke();
   ctx.restore();
   label("TAP  /  SPACE", W / 2, 326 + bob, 15, "#ffffff", "#543847");
+  label("PRESS B TO WATCH THE BOT PLAY", W / 2, 352, 11, "#ffffff", "#543847");
 }
 
 function drawOver() {
@@ -719,6 +787,7 @@ function render() {
   if (state === READY) drawReady();
   if (state === OVER)  drawOver();
 
+  drawBotButton();
   drawMuteButton();
 
   ctx.restore();
@@ -760,12 +829,10 @@ function toCanvas(e) {
 function onPress(e) {
   e.preventDefault();
   const p = toCanvas(e);
-  const b = MUTE_BTN;
-  // generous hit area around the speaker icon
-  if (p.x >= b.x - 8 && p.x <= b.x + b.w + 8 && p.y >= b.y - 8 && p.y <= b.y + b.h + 8) {
-    toggleMute();
-    return;
-  }
+  const hit = (b) => p.x >= b.x - 8 && p.x <= b.x + b.w + 8 &&
+                     p.y >= b.y - 8 && p.y <= b.y + b.h + 8;
+  if (hit(MUTE_BTN)) { toggleMute(); return; }
+  if (hit(BOT_BTN))  { toggleBot();  return; }
   flap();
 }
 canvas.addEventListener("mousedown", onPress);
@@ -776,6 +843,8 @@ window.addEventListener("keydown", function (e) {
     flap();
   } else if (e.code === "KeyM") {
     toggleMute();
+  } else if (e.code === "KeyB") {
+    toggleBot();
   }
 });
 // Don't leave the track playing to an empty room.
