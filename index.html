@@ -116,6 +116,11 @@ el("stop", { offset:".36", "stop-color":"#79c162" }, stemG);
 el("stop", { offset:".7",  "stop-color":"#47924a" }, stemG);
 el("stop", { offset:"1",   "stop-color":"#1e4a2b" }, stemG);
 
+const fglow = el("radialGradient", { id:"fglow" }, defs);
+el("stop", { offset:"0",   "stop-color":"#ffe9b0", "stop-opacity":".45" }, fglow);
+el("stop", { offset:".45", "stop-color":"#ffd27a", "stop-opacity":".14" }, fglow);
+el("stop", { offset:"1",   "stop-color":"#ffc46a", "stop-opacity":"0" }, fglow);
+
 const fade = el("linearGradient", { id:"fade", x1:"0", y1:"0", x2:"0", y2:"1" }, defs);
 el("stop", { offset:"0", "stop-color":"#061014", "stop-opacity":"0" }, fade);
 el("stop", { offset:"1", "stop-color":"#040b0e", "stop-opacity":".95" }, fade);
@@ -458,6 +463,7 @@ function addFlower(S, idx) {
                "stroke-linecap":"round", "stroke-opacity":".9" }, g);   // pedicel
   const head = el("g", {}, g);
   F.head = head;
+  el("circle", { r:26, fill:"url(#fglow)" }, head);      // it carries its own light
   for (let i = 0; i < 6; i++) {
     F.petals.push(el("path", {
       d: "M0,0 C7,-5 16,-13 20,-3 C23,5 12,9 0,0 Z",
