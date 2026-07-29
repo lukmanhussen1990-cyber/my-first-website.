@@ -5,30 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Endless Growth — SVG plant simulation</title>
 <style>
-  :root{
-    --ink: #0d1b14;
-    --hud: rgba(255,255,255,.72);
-  }
   *{ box-sizing:border-box; }
-  html,body{ height:100%; margin:0; overflow:hidden; background:#0b1410; }
+  html,body{ height:100%; margin:0; overflow:hidden; background:#050d14; }
   body{
-    font: 400 13px/1.5 ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font: 400 13px/1.5 ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont,
+          "Segoe UI", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
-    color: var(--hud);
+    color: rgba(255,255,255,.72);
     touch-action: none;
   }
   #stage{ position:fixed; inset:0; display:block; width:100%; height:100%; }
 
   .hud{
     position:fixed; left:22px; bottom:20px; pointer-events:none;
-    text-shadow:0 1px 12px rgba(0,0,0,.55);
-    opacity:.9;
+    text-shadow:0 1px 12px rgba(0,0,0,.6); opacity:.9;
   }
-  .hud h1{
-    margin:0 0 3px; font-size:15px; font-weight:600; letter-spacing:.02em;
-    color:#eaf6ee;
-  }
-  .hud p{ margin:0; font-size:11.5px; letter-spacing:.045em; text-transform:uppercase; opacity:.6; }
+  .hud h1{ margin:0 0 3px; font-size:15px; font-weight:600; letter-spacing:.02em; color:#eaf6ee; }
+  .hud p{ margin:0; font-size:11.5px; letter-spacing:.045em; text-transform:uppercase; opacity:.55; }
 
   .meter{
     position:fixed; right:22px; bottom:20px; pointer-events:none;
@@ -37,14 +30,12 @@
   }
   .meter b{ font-weight:600; color:#eaf6ee; }
 
-  @media (max-width:560px){
-    .hud{ left:16px; bottom:16px; } .meter{ right:16px; bottom:16px; }
-  }
+  @media (max-width:560px){ .hud{ left:16px; bottom:16px; } .meter{ right:16px; bottom:16px; } }
 </style>
 </head>
 <body>
 
-<svg id="stage" preserveAspectRatio="xMidYMid slice" aria-label="An animation of a plant growing endlessly upward, its leaves unfurling and swaying in the wind."></svg>
+<svg id="stage" aria-label="An animation of a plant growing endlessly upward, branching, its leaves unfurling and swaying in the wind."></svg>
 
 <div class="hud">
   <h1>Endless Growth</h1>
@@ -63,27 +54,33 @@ const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ─────────────────────────── tuning ─────────────────────────── */
 const CFG = {
-  seg:        13,        // stem segment length (px)
-  growth:     REDUCED ? 14 : 30,  // px / second
-  leafEvery:  3,         // one leaf every N segments
-  flowerEvery:23,        // one flower every N segments
-  gravity:    26,
-  windGain:   REDUCED ? .25 : 1,
-  substeps:   2,
-  iterations: 4,
-  maxStep:    5          // per-substep speed cap — keeps the solver honest
+  seg:         13,                    // stem segment length (px)
+  growth:      REDUCED ? 14 : 30,     // px / second
+  leafEvery:   3,                     // a leaf every N segments
+  flowerEvery: 23,
+  branchEvery: 11,
+  maxBranches: 9,
+  gravity:     26,
+  windGain:    REDUCED ? .25 : 1,
+  substeps:    2,
+  iterations:  4,
+  maxStep:     5                      // per-substep speed cap — keeps the solver honest
 };
 
+// key light, aimed to agree with the sun glow up and to the right
+const LIGHT = { x: 0.50, y: -0.87 };
+
 /* ─────────────────────────── helpers ─────────────────────────── */
-const rnd  = (a, b) => a + Math.random() * (b - a);
-const clamp= (v, a, b) => v < a ? a : v > b ? b : v;
-const el   = (tag, attrs, parent) => {
+const rnd   = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const mix   = (a, b, k) => a + (b - a) * k;
+const f     = n => Math.round(n * 100) / 100;
+const el    = (tag, attrs, parent) => {
   const n = document.createElementNS(NS, tag);
   for (const k in attrs) n.setAttribute(k, attrs[k]);
   if (parent) parent.appendChild(n);
   return n;
 };
-const f = n => Math.round(n * 100) / 100;
 
 /* Catmull–Rom through points → cubic bezier path data */
 function smooth(pts, cont) {
@@ -101,55 +98,48 @@ function smooth(pts, cont) {
 
 /* ─────────────────────────── scene scaffold ─────────────────────────── */
 let W = 0, H = 0;
-
 const defs = el("defs", {}, svg);
 
-// sky — cool and dark, so the plant reads bright against it
 const sky = el("linearGradient", { id:"sky", x1:"0", y1:"0", x2:".3", y2:"1" }, defs);
-el("stop", { offset:"0",   "stop-color":"#050d14" }, sky);
-el("stop", { offset:".5",  "stop-color":"#08171d" }, sky);
-el("stop", { offset:"1",   "stop-color":"#0d2422" }, sky);
+el("stop", { offset:"0",  "stop-color":"#050d14" }, sky);
+el("stop", { offset:".5", "stop-color":"#08171d" }, sky);
+el("stop", { offset:"1",  "stop-color":"#0d2422" }, sky);
 
-// warm sun glow
 const glow = el("radialGradient", { id:"glow", cx:".74", cy:".13", r:".48" }, defs);
-el("stop", { offset:"0",  "stop-color":"#ffe0a0", "stop-opacity":".26" }, glow);
-el("stop", { offset:".45","stop-color":"#7fd39a", "stop-opacity":".07" }, glow);
-el("stop", { offset:"1",  "stop-color":"#000000", "stop-opacity":"0" }, glow);
+el("stop", { offset:"0",   "stop-color":"#ffe0a0", "stop-opacity":".26" }, glow);
+el("stop", { offset:".45", "stop-color":"#7fd39a", "stop-opacity":".07" }, glow);
+el("stop", { offset:"1",   "stop-color":"#000000", "stop-opacity":"0" }, glow);
 
-// stem shading (cylindrical, across the bounding box)
 const stemG = el("linearGradient", { id:"stemG", x1:"0", y1:"0", x2:"1", y2:"0" }, defs);
 el("stop", { offset:"0",   "stop-color":"#2f6b39" }, stemG);
 el("stop", { offset:".36", "stop-color":"#79c162" }, stemG);
 el("stop", { offset:".7",  "stop-color":"#47924a" }, stemG);
 el("stop", { offset:"1",   "stop-color":"#1e4a2b" }, stemG);
 
-// bottom vignette so culled geometry never "pops"
 const fade = el("linearGradient", { id:"fade", x1:"0", y1:"0", x2:"0", y2:"1" }, defs);
-el("stop", { offset:"0",   "stop-color":"#061014", "stop-opacity":"0" }, fade);
-el("stop", { offset:"1",   "stop-color":"#040b0e", "stop-opacity":".95" }, fade);
+el("stop", { offset:"0", "stop-color":"#061014", "stop-opacity":"0" }, fade);
+el("stop", { offset:"1", "stop-color":"#040b0e", "stop-opacity":".95" }, fade);
 
 const blur = el("filter", { id:"soft", x:"-50%", y:"-50%", width:"200%", height:"200%" }, defs);
 el("feGaussianBlur", { stdDeviation:"22" }, blur);
+const blur2 = el("filter", { id:"soft2", x:"-30%", y:"-30%", width:"160%", height:"160%" }, defs);
+el("feGaussianBlur", { stdDeviation:"5" }, blur2);
+const blur3 = el("filter", { id:"soft3", x:"-30%", y:"-30%", width:"160%", height:"160%" }, defs);
+el("feGaussianBlur", { stdDeviation:"2.2" }, blur3);
 
-const bg      = el("rect",  { x:0, y:0, width:"100%", height:"100%", fill:"url(#sky)" }, svg);
-const bokeh   = el("g",     { filter:"url(#soft)", opacity:".22" }, svg);
-const sunRect = el("rect",  { x:0, y:0, width:"100%", height:"100%", fill:"url(#glow)" }, svg);
-
-const world   = el("g", {}, svg);              // camera-transformed
-const gGround = el("g", {}, world);
-const gLeaf   = el("g", {}, world);            // behind the stem
-const gStem   = el("g", {}, world);
-const gFlower = el("g", {}, world);
-
-const stemPath = el("path", { fill:"url(#stemG)" }, gStem);
-const stemLite = el("path", { fill:"none", stroke:"#a9e39a", "stroke-opacity":".33",
-                              "stroke-width":"1.1", "stroke-linecap":"round" }, gStem);
-
-const motes   = el("g", {}, svg);
-const vign    = el("rect", { x:0, y:0, width:"100%", height:"180", fill:"url(#fade)" }, svg);
+el("rect", { x:0, y:0, width:"100%", height:"100%", fill:"url(#sky)" }, svg);
+const bokeh    = el("g", { filter:"url(#soft)", opacity:".22" }, svg);
+el("rect", { x:0, y:0, width:"100%", height:"100%", fill:"url(#glow)" }, svg);
+const backdrop = el("g", {}, svg);             // parallax thicket, far behind
+const world    = el("g", {}, svg);             // camera-transformed
+const gGround  = el("g", {}, world);
+const motes    = el("g", {}, svg);
+const vign     = el("rect", { x:0, y:0, width:"100%", height:"180", fill:"url(#fade)" }, svg);
 
 /* ─────────────────────────── wind ─────────────────────────── */
-let gust = 0, pointerWind = 0, pointerY = 0;
+/* Gusts are wavefronts, not a global scalar: each one is born at a height and
+   climbs, so a click sends a visible ripple up through the plant. */
+let gusts = [], pointerWind = 0;
 
 function windAt(y, t) {
   const base =
@@ -157,57 +147,107 @@ function windAt(y, t) {
       Math.sin(t * 1.71 - y * 0.0110) * 0.26 +
       Math.sin(t * 0.29 + 1.7)        * 0.48;
   const swell = 0.45 + 0.55 * Math.pow(0.5 + 0.5 * Math.sin(t * 0.17 - 0.6), 2);
-  return (base * swell * 46 + gust * 150 + pointerWind * 90) * CFG.windGain;
+
+  let g = 0;
+  for (let i = 0; i < gusts.length; i++) {
+    const G = gusts[i], age = t - G.t0;
+    const front = G.y - age * 430;                       // climbing at 430 px/s
+    const env = Math.exp(-Math.pow((y - front) / 210, 2)) * Math.exp(-age * 0.7);
+    g += G.amp * env;
+  }
+  return (base * swell * 46 + g * 420 + pointerWind * 90) * CFG.windGain;
 }
 
-/* ─────────────────────────── the plant ─────────────────────────── */
-let nodes = [], leaves = [], flowers = [];
-let restLast = 0.5, grown = 0, made = 0, camY = 0, camTarget = 0;
-let growAng = -Math.PI / 2, lastGrowAng = -Math.PI / 2;
-
-/* Where the tip *wants* to go: up, with a slow wander and a pull back to
-   centre. Everything the stem does is a deviation from this, so wind can
-   bend it hard without the plant ever wandering out of frame. */
-function growDir(t, x) {
-  return -Math.PI / 2
-       + Math.sin(t * 0.21) * 0.30 + Math.sin(t * 0.47 + 1.9) * 0.13
-       + clamp((W / 2 - x) / (W * 0.42), -1, 1) * 0.40;
-}
+/* ─────────────────────────── strands ─────────────────────────── */
+/* One strand = one growing chain. The main stem is a strand; every branch is
+   another, anchored to a node of its parent so it inherits the parent's sway. */
+let strands = [], main = null, camY = 0, camTarget = 0, grown = 0;
 
 function node(x, y, born) {
-  // `aim` is the absolute direction this segment hardened at. Absolute, not
-  // relative to the segment below: relative angles let each joint inherit the
-  // one below's droop, and the stem slowly curls itself into a spiral.
+  // `aim` is the absolute world direction this segment hardened at. Absolute,
+  // not relative to the segment below: relative angles let each joint inherit
+  // the one below's droop, and the stem curls itself into a spiral.
   return { x, y, px:x, py:y, vx:0, vy:0, ax:0, ay:0, born, aim:-Math.PI/2, w:0 };
 }
 
+function Strand(o) {
+  const S = Object.assign({
+    nodes: [], leaves: [], flowers: [],
+    restLast: 0.6, made: 0, dead: false,
+    seg: CFG.seg, growth: CFG.growth, scale: 1, thick: 1,
+    maxNodes: Infinity, parent: null, parentIdx: 0, attach: 0,
+    ph: rnd(0, 6.28)
+  }, o);
+
+  S.g       = el("g", {}, world);
+  S.gLeaf   = el("g", {}, S.g);                 // leaves sit behind their own stem
+  S.stem    = el("path", { fill:"url(#stemG)" }, S.g);
+  S.lite    = el("path", { fill:"none", stroke:"#a9e39a", "stroke-opacity":".33",
+                           "stroke-width":"1.1", "stroke-linecap":"round" }, S.g);
+  S.apex    = el("path", { fill:"none", stroke:"#9ede84", "stroke-opacity":".85",
+                           "stroke-linecap":"round" }, S.g);
+  S.gFlower = el("g", {}, S.g);
+  S.growAng = S.start !== undefined ? S.start : -Math.PI / 2;
+  strands.push(S);
+  return S;
+}
+
 function seedPlant(now) {
-  nodes = [node(W / 2, CFG.seg, now), node(W / 2, 0, now), node(W / 2, -0.6, now)];
-  nodes[0].pinned = nodes[1].pinned = true;      // rigid root, always off-screen
-  leaves.length = flowers.length = 0;
-  gLeaf.textContent = gFlower.textContent = "";
-  restLast = 0.6; grown = 0; made = 0;
-  growAng = lastGrowAng = -Math.PI / 2;
+  for (const S of strands) S.g.remove();
+  strands = [];
+  main = Strand({ seg: CFG.seg, growth: CFG.growth });
+  main.nodes = [node(W / 2, CFG.seg, now), node(W / 2, 0, now), node(W / 2, -0.6, now)];
+  main.nodes[0].pinned = main.nodes[1].pinned = true;   // rigid root, always off-screen
+  grown = 0;
   camY = camTarget = -H * 0.80;
 }
 
+/* where a tip wants to go ------------------------------------- */
+function growDir(S, t) {
+  const tip = S.nodes[S.nodes.length - 1];
+  if (!S.parent) {
+    return -Math.PI / 2
+         + Math.sin(t * 0.21) * 0.30 + Math.sin(t * 0.47 + 1.9) * 0.13
+         + clamp((W / 2 - tip.x) / (W * 0.42), -1, 1) * 0.40;
+  }
+  // a branch leaves at its attachment angle and turns back toward the light
+  const prog = clamp(S.made / S.maxNodes, 0, 1) * 0.8;
+  const up = -Math.PI / 2 + Math.sin(t * 0.23 + S.ph) * 0.24
+           + clamp((W / 2 - tip.x) / (W * 0.42), -1, 1) * 0.25;
+  return mix(S.start, up, prog);
+}
+
+/* a branch's two base nodes are written from the parent every substep, so the
+   branch whips when the stem it hangs off whips */
+function anchor(S) {
+  const P = S.parent.nodes[S.parentIdx];
+  if (!P) { S.dead = true; return; }
+  const pn = S.parent.nodes;
+  const a = pn[Math.max(0, S.parentIdx - 1)], b = pn[Math.min(pn.length - 1, S.parentIdx + 1)];
+  const ang = Math.atan2(b.y - a.y, b.x - a.x) + S.attach;
+  const n0 = S.nodes[0], n1 = S.nodes[1];
+  n1.x = P.x; n1.y = P.y;
+  n0.x = P.x - Math.cos(ang) * S.seg;
+  n0.y = P.y - Math.sin(ang) * S.seg;
+  n0.aim = n1.aim = ang;
+}
+
 /* physics ------------------------------------------------------ */
-function integrate(dt, t) {
-  const tip = nodes.length - 1;
+function integrate(S, dt, t) {
+  const nodes = S.nodes, tip = nodes.length - 1;
   for (let i = 0; i < nodes.length; i++) {
     const n = nodes[i];
     if (n.pinned) { n.px = n.x; n.py = n.y; continue; }
 
     // youth = how recently this node was laid down → thin, whippy, wind-catching
-    const youth = clamp(1 - n.w / 6.2, 0, 1);
-
+    const youth = clamp(1 - n.w / (6.2 * S.thick), 0, 1);
     let fx = windAt(n.y, t) * (0.25 + 0.95 * youth);
     let fy = CFG.gravity * (0.35 + 0.65 * youth);
 
-    if (i === tip) {                        // the tip chases the light
+    if (i === tip && S.made < S.maxNodes) {          // the tip chases the light
       const p = nodes[tip - 1];
-      fx += (p.x + Math.cos(growAng) * restLast - n.x) * 62;
-      fy += (p.y + Math.sin(growAng) * restLast - n.y) * 62 - 40;
+      fx += (p.x + Math.cos(S.growAng) * S.restLast - n.x) * 62;
+      fy += (p.y + Math.sin(S.growAng) * S.restLast - n.y) * 62 - 40;
     }
 
     let vx = (n.x - n.px) * 0.9885, vy = (n.y - n.py) * 0.9885;
@@ -219,10 +259,9 @@ function integrate(dt, t) {
   }
 
   for (let k = 0; k < CFG.iterations; k++) {
-    // distance
-    for (let i = 0; i < nodes.length - 1; i++) {
+    for (let i = 0; i < nodes.length - 1; i++) {           // distance
       const a = nodes[i], b = nodes[i + 1];
-      const rest = (i === nodes.length - 2) ? restLast : CFG.seg;
+      const rest = (i === nodes.length - 2) ? S.restLast : S.seg;
       let dx = b.x - a.x, dy = b.y - a.y;
       const d = Math.hypot(dx, dy) || 1e-4;
       const diff = (d - rest) / d * 0.5;
@@ -230,83 +269,112 @@ function integrate(dt, t) {
       if (!a.pinned) { a.x += dx; a.y += dy; }
       if (!b.pinned) { b.x -= dx; b.y -= dy; }
     }
-    // bending — each joint pulls back toward the angle it hardened at
-    for (let i = 1; i < nodes.length - 1; i++) {
+    for (let i = 1; i < nodes.length - 1; i++) {           // bending
       const a = nodes[i - 1], b = nodes[i], c = nodes[i + 1];
       const len = Math.hypot(c.x - b.x, c.y - b.y);
       const tx = b.x + Math.cos(b.aim) * len, ty = b.y + Math.sin(b.aim) * len;
       const stiff = clamp(0.07 + b.w * 0.038, 0.07, 0.30);
       const dx = (tx - c.x) * stiff, dy = (ty - c.y) * stiff;
-      // split the correction so the joint straightens without shoving the
-      // whole chain upward — an unbalanced version pumps energy and detonates
+      // split the correction so the joint straightens without shoving the whole
+      // chain upward — an unbalanced version pumps energy and detonates
       c.x += dx * 0.62; c.y += dy * 0.62;
       if (!a.pinned) { a.x -= dx * 0.38; a.y -= dy * 0.38; }
     }
   }
 }
 
-function grow(dt, now) {
-  const tip = nodes[nodes.length - 1];
-  growAng = growDir(now, tip.x);
-  restLast += CFG.growth * dt;
-  if (restLast < CFG.seg) return;
+function grow(S, dt, now) {
+  if (S.made >= S.maxNodes) return;
+  const nodes = S.nodes, tip = nodes[nodes.length - 1];
+  S.growAng = growDir(S, now);
+  S.restLast += S.growth * dt;
+  if (S.restLast < S.seg) return;
 
-  restLast -= CFG.seg;
+  S.restLast -= S.seg;
+  tip.aim = S.growAng;                       // the joint hardens holding its heading
+  nodes[nodes.length - 2].aim = S.lastAim !== undefined ? S.lastAim : S.growAng;
+  S.lastAim = S.growAng;
 
-  // the joint hardens holding the direction the tip was heading
-  tip.aim = growAng;
-  nodes[nodes.length - 2].aim = lastGrowAng;
-  lastGrowAng = growAng;
+  nodes.push(node(tip.x + Math.cos(S.growAng) * S.restLast,
+                  tip.y + Math.sin(S.growAng) * S.restLast, now));
+  S.made++;
+  if (!S.parent) grown++;
 
-  nodes.push(node(tip.x + Math.cos(growAng) * restLast,
-                  tip.y + Math.sin(growAng) * restLast, now));
-  grown++; made++;
+  const at = nodes.length - 2;
+  if (S.made % CFG.leafEvery === 0) addLeaf(S, at, now);
+  if (S.made % CFG.flowerEvery === 0) addFlower(S, at);
+  if (!S.parent && S.made % CFG.branchEvery === 0 && strands.length <= CFG.maxBranches)
+    sprout(S, at, now);
+  if (S.made >= S.maxNodes) addFlower(S, nodes.length - 1);   // branches end in bloom
+}
 
-  if (made % CFG.leafEvery === 0)   addLeaf(nodes.length - 2);
-  if (made % CFG.flowerEvery === 0) addFlower(nodes.length - 2);
+function sprout(P, idx, now) {
+  const dir = (Math.random() < 0.5 ? -1 : 1);
+  const pn = P.nodes;
+  const a = pn[Math.max(0, idx - 1)], b = pn[Math.min(pn.length - 1, idx + 1)];
+  const tan = Math.atan2(b.y - a.y, b.x - a.x);
+  const attach = dir * rnd(0.55, 0.95);
+  const S = Strand({
+    parent: P, parentIdx: idx, attach,
+    start: tan + attach,
+    seg: P.seg * 0.82, growth: P.growth * 0.68,
+    scale: 0.72, thick: 0.6, maxNodes: Math.round(rnd(10, 16))
+  });
+  const p = pn[idx];
+  S.nodes = [node(p.x - Math.cos(S.start) * S.seg, p.y - Math.sin(S.start) * S.seg, now),
+             node(p.x, p.y, now),
+             node(p.x + Math.cos(S.start) * 0.6, p.y + Math.sin(S.start) * 0.6, now)];
+  S.nodes[0].pinned = S.nodes[1].pinned = true;
+  S.lastAim = S.start;
 }
 
 /* leaves ------------------------------------------------------- */
 let side = 1;
-function addLeaf(idx) {
+function addLeaf(S, idx, now) {
   side *= -1;
   const L = {
-    idx, side,
+    idx, side, born: now,
     spread: rnd(0.80, 1.08),
-    len:    rnd(44, 68),
-    wid:    rnd(12, 18),
-    bend:   rnd(0.25, 0.62) * side,
+    len:    rnd(44, 68) * S.scale,
+    wid:    rnd(12, 18) * S.scale,
+    bend0:  rnd(0.25, 0.62) * side,
+    bend:   rnd(0.25, 0.62) * side, bendV: 0,
     open:0, openV:0, ang:0, angV:0, age:0, wait: rnd(0.7, 1.6),
     k: rnd(30, 44), c: rnd(3.4, 5.2),
     drag: rnd(0.010, 0.018),
     fl: rnd(1.1, 2.0), ph: rnd(0, 6.28),
-    hue: rnd(84, 124), lig: rnd(40, 52),
-    blade: el("path", { "stroke-linejoin":"round" }, gLeaf),
-    shine: el("path", { fill:"#dcf7c4", "fill-opacity":".16" }, gLeaf),
-    vein:  el("path", { fill:"none", stroke:"#1c3f22", "stroke-opacity":".30",
-                        "stroke-width":".9", "stroke-linecap":"round" }, gLeaf)
+    hue: rnd(88, 122), lig: rnd(36, 48),
+    blade: el("path", { "stroke-linejoin":"round" }, S.gLeaf),
+    shine: el("path", { fill:"#eaffd0" }, S.gLeaf),
+    vein:  el("path", { fill:"none", stroke:"#12301c", "stroke-opacity":".34",
+                        "stroke-width":".9", "stroke-linecap":"round" }, S.gLeaf)
   };
-  L.blade.setAttribute("fill", `hsl(${f(L.hue)} 42% ${f(L.lig)}%)`);
-  leaves.push(L);
+  S.leaves.push(L);
 }
 
-function leafGeom(L, t) {
-  const n = nodes[L.idx];
+function leafGeom(S, L, t) {
+  const nodes = S.nodes, n = nodes[L.idx];
   const a = nodes[Math.max(0, L.idx - 1)], b = nodes[Math.min(nodes.length - 1, L.idx + 1)];
   const stem = Math.atan2(b.y - a.y, b.x - a.x);
-  const base = stem + L.side * L.spread;
-  const worldAng = base + L.ang;
+  const worldAng = stem + L.side * L.spread + L.ang;
+
+  // a leaf matures: it swells and deepens from fresh yellow-green to full green
+  const mat  = clamp((t - L.born) / 9, 0, 1);
+  const size = 0.55 + 0.45 * mat;
 
   const curl = clamp(1 - L.open, 0, 1);
-  // blade grows as it unrolls; while coiled it's a tight fiddlehead
-  const len  = L.len * (0.30 + 0.70 * clamp(L.open, 0, 1.1));
+  const len  = L.len * size * (0.30 + 0.70 * clamp(L.open, 0, 1.1));
   const N    = 15, step = len / N;
   const spin = curl * 2.7 * Math.PI * L.side;
 
-  // wind flutter reads as the blade twisting edge-on to the light
+  // the blade twists in the wind; the twist decides which face catches the light
   const wq   = clamp(Math.abs(windAt(n.y, t)) / 90, 0, 1);
-  const tw   = 0.34 + 0.66 * Math.abs(Math.cos(t * L.fl + L.ph + wq * 2.4));
-  const face = 0.45 + 0.55 * tw;
+  const tp   = Math.cos(t * L.fl + L.ph + wq * 2.4);
+  const face = 0.45 + 0.55 * (0.34 + 0.66 * Math.abs(tp));
+
+  // key light on the blade's normal, flipping as the leaf turns over
+  const sgn = tp >= 0 ? 1 : -1;
+  const lit = clamp(0.5 + 0.5 * sgn * (-Math.sin(worldAng) * LIGHT.x + Math.cos(worldAng) * LIGHT.y), 0, 1);
 
   const mid = [], lft = [], rgt = [];
   let ang = worldAng, x = n.x, y = n.y;
@@ -314,7 +382,7 @@ function leafGeom(L, t) {
     const s = i / N;
     mid.push([x, y]);
     const shape = Math.pow(Math.sin(Math.PI * Math.pow(s, 0.82)), 0.92);
-    const w = L.wid * shape * face * (1 - curl * 0.86) * (1 + 0.055 * Math.sin(s * 21));
+    const w = L.wid * size * shape * face * (1 - curl * 0.86) * (1 + 0.055 * Math.sin(s * 21));
     const nx = -Math.sin(ang) * w, ny = Math.cos(ang) * w;
     lft.push([x + nx, y + ny]);
     rgt.push([x - nx, y - ny]);
@@ -322,28 +390,40 @@ function leafGeom(L, t) {
     x += Math.cos(ang) * step; y += Math.sin(ang) * step;
   }
 
+  const hue = mix(96, L.hue, mat) - lit * 8;
+  const sat = mix(34, 46, lit) * (0.8 + 0.2 * face);
+  const lig = mix(L.lig * 1.30, L.lig, mat) * (0.74 + 0.52 * lit) * (0.84 + 0.22 * face);
   L.blade.setAttribute("d", smooth(lft) + smooth(rgt.reverse(), true) + "Z");
-  L.blade.setAttribute("fill", `hsl(${f(L.hue)} ${f(30 + 20 * face)}% ${f(L.lig * (0.7 + 0.55 * face))}%)`);
+  L.blade.setAttribute("fill", `hsl(${f(hue)} ${f(clamp(sat, 12, 70))}% ${f(clamp(lig, 8, 74))}%)`);
 
   if (L.open > 0.45) {
-    L.vein.setAttribute("d", smooth(mid));
-    L.vein.setAttribute("opacity", f(clamp((L.open - 0.45) * 2.2, 0, 1)));
+    const fadeIn = clamp((L.open - 0.45) * 2.2, 0, 1);
+    // midrib plus three pairs of side veins running toward the tip
+    let d = smooth(mid);
+    for (let j = 1; j <= 3; j++) {
+      const i = Math.round(N * (0.20 + j * 0.20));
+      const m = mid[i], l = lft[i], r = rgt[i], tipP = mid[Math.min(N, i + 3)];
+      d += `M${f(m[0])},${f(m[1])}L${f(mix(l[0], tipP[0], .25) * .5 + l[0] * .5)},${f(mix(l[1], tipP[1], .25) * .5 + l[1] * .5)}`;
+      d += `M${f(m[0])},${f(m[1])}L${f(mix(r[0], tipP[0], .25) * .5 + r[0] * .5)},${f(mix(r[1], tipP[1], .25) * .5 + r[1] * .5)}`;
+    }
+    L.vein.setAttribute("d", d);
+    L.vein.setAttribute("opacity", f(fadeIn * 0.9));
+
     const half = mid.slice(0, Math.ceil(N * 0.62)).map((p, i) => {
       const q = lft[i];
       return [p[0] + (q[0] - p[0]) * 0.55, p[1] + (q[1] - p[1]) * 0.55];
     });
     L.shine.setAttribute("d", smooth(half) + smooth(mid.slice(0, half.length).reverse(), true) + "Z");
-    L.shine.setAttribute("opacity", f(0.10 + 0.30 * face));
+    L.shine.setAttribute("fill-opacity", f(0.04 + 0.34 * lit * face));
   } else {
     L.vein.setAttribute("d", ""); L.shine.setAttribute("d", "");
   }
 }
 
-function updateLeaf(L, dt, t) {
-  const n = nodes[L.idx];
+function updateLeaf(S, L, dt, t) {
+  const nodes = S.nodes, n = nodes[L.idx];
   const a = nodes[Math.max(0, L.idx - 1)], b = nodes[Math.min(nodes.length - 1, L.idx + 1)];
-  const stem = Math.atan2(b.y - a.y, b.x - a.x);
-  const A = stem + L.side * L.spread + L.ang;
+  const A = Math.atan2(b.y - a.y, b.x - a.x) + L.side * L.spread + L.ang;
 
   // unfurl: sits tight as a coiled fiddlehead, then springs open and overshoots
   L.age += dt;
@@ -353,91 +433,159 @@ function updateLeaf(L, dt, t) {
   }
 
   const w = windAt(n.y, t);
-  const grow = clamp(L.open, 0, 1);
-  let torque = -w * Math.sin(A) * L.drag * grow          // wind pressure on the blade
-             + Math.cos(A) * 0.85 * grow                 // its own weight, drooping
-             + (Math.sin(A) * n.ay - Math.cos(A) * n.ax) * 0.020; // lag behind the stem
-
+  const g = clamp(L.open, 0, 1);
+  const torque = -w * Math.sin(A) * L.drag * g            // wind pressure on the blade
+               + Math.cos(A) * 0.85 * g                   // its own weight, drooping
+               + (Math.sin(A) * n.ay - Math.cos(A) * n.ax) * 0.020;  // lag behind the stem
   L.angV += (torque - L.ang * L.k * 0.16 - L.angV * L.c) * dt * 6;
-  L.ang  += L.angV * dt;
-  L.ang   = clamp(L.ang, -0.85, 0.85);
+  L.ang   = clamp(L.ang + L.angV * dt, -0.85, 0.85);
 
-  leafGeom(L, t);
+  // the blade itself is sprung, so its tip lags and whips instead of staying rigid
+  const want = L.bend0 + clamp(w / 120, -1, 1) * 0.55 * g;
+  L.bendV += ((want - L.bend) * 20 - L.bendV * 4.4) * dt;
+  L.bend  += L.bendV * dt;
+
+  leafGeom(S, L, t);
 }
 
 /* flowers ------------------------------------------------------ */
-function addFlower(idx) {
-  const g = el("g", {}, gFlower);
-  const hue = rnd(-14, 44);
-  const petals = 6, F = { idx, g, open:0, openV:0, ang:0, angV:0, hue,
-                          k: rnd(30, 42), c: rnd(3.6, 5) };
-  for (let i = 0; i < petals; i++) {
-    const a = (i / petals) * 360;
-    el("path", {
+function addFlower(S, idx) {
+  const g = el("g", {}, S.gFlower);
+  const hue = rnd(-16, 46), lit = rnd(62, 76);
+  const F = { idx, g, open:0, openV:0, ang:0, angV:0, side: (Math.random() < .5 ? -1 : 1),
+              k: rnd(30, 42), c: rnd(3.6, 5), scale: S.scale, petals: [] };
+  el("path", { d:"M0,0", fill:"none", stroke:"#4f9450", "stroke-width":"2",
+               "stroke-linecap":"round", "stroke-opacity":".9" }, g);   // pedicel
+  const head = el("g", {}, g);
+  F.head = head;
+  for (let i = 0; i < 6; i++) {
+    F.petals.push(el("path", {
       d: "M0,0 C7,-5 16,-13 20,-3 C23,5 12,9 0,0 Z",
-      transform: `rotate(${f(a)})`,
-      fill: `hsl(${f(hue < 0 ? hue + 360 : hue)} 78% ${f(rnd(62, 74))}%)`,
-      "fill-opacity": ".95"
-    }, g);
+      transform: `rotate(${f(i * 60)})`,
+      fill: `hsl(${f(hue < 0 ? hue + 360 : hue)} 78% ${f(lit)}%)`
+    }, head));
   }
-  el("circle", { r:4.6, fill:"#ffdf7a" }, g);
-  el("circle", { r:2.2, fill:"#c9891f", "fill-opacity":".8" }, g);
-  flowers.push(F);
+  el("circle", { r:4.6, fill:"#ffdf7a" }, head);
+  el("circle", { r:2.2, fill:"#c9891f", "fill-opacity":".8" }, head);
+  F.stalk = g.firstChild;
+  S.flowers.push(F);
 }
 
-function updateFlower(F, dt, t) {
-  const n = nodes[F.idx];
+function updateFlower(S, F, dt, t) {
+  const nodes = S.nodes, n = nodes[F.idx];
   const a = nodes[Math.max(0, F.idx - 1)], b = nodes[Math.min(nodes.length - 1, F.idx + 1)];
   const stem = Math.atan2(b.y - a.y, b.x - a.x);
 
-  F.openV += ((1 - F.open) * 26 - F.openV * 5.0) * dt;
+  F.openV += ((1 - F.open) * 16 - F.openV * 4.2) * dt;
   F.open  += F.openV * dt;
 
   const w = windAt(n.y, t);
   F.angV += (w * 0.0016 - F.ang * F.k * 0.16 - F.angV * F.c) * dt * 6;
   F.ang  += F.angV * dt;
 
-  const s = clamp(F.open, 0, 1.25);
-  const deg = (stem + Math.PI / 2 + F.ang) * 180 / Math.PI;
-  F.g.setAttribute("transform",
-    `translate(${f(n.x)},${f(n.y)}) rotate(${f(deg)}) scale(${f(s)})`);
-  F.g.setAttribute("opacity", f(clamp(F.open * 1.6, 0, 1)));
+  // it stands off the stem on a short pedicel that bends with the wind
+  const out = stem + F.side * 0.75;
+  const L = 17 * F.scale * clamp(F.open * 1.4, 0, 1);
+  const hx = n.x + Math.cos(out) * L + F.ang * 6, hy = n.y + Math.sin(out) * L;
+  F.stalk.setAttribute("d",
+    `M${f(n.x)},${f(n.y)}Q${f(n.x + Math.cos(out) * L * .55)},${f(n.y + Math.sin(out) * L * .55 - 3)} ${f(hx)},${f(hy)}`);
+
+  // it opens out of a tight green bud rather than popping in flat
+  const s = clamp(F.open, 0, 1.2) * F.scale;
+  const bud = clamp(1 - F.open * 1.6, 0, 1);
+  for (let i = 0; i < F.petals.length; i++)
+    F.petals[i].setAttribute("transform", `rotate(${f(i * 60 + bud * 40)}) scale(${f(1 - bud * .55)},${f(1 - bud * .8)})`);
+  F.head.setAttribute("transform", `rotate(${f((stem + Math.PI / 2 + F.ang) * 180 / Math.PI)}) scale(${f(s)})`);
+  F.head.setAttribute("opacity", f(clamp(F.open * 1.6, 0, 1)));
+  F.g.setAttribute("transform", `translate(${f(hx)},${f(hy)})`);
+  F.stalk.setAttribute("transform", `translate(${f(-hx)},${f(-hy)})`);
 }
 
-/* stem rendering ----------------------------------------------- */
-function drawStem(now) {
-  const L = [], R = [], M = [];
+/* stem + apex -------------------------------------------------- */
+function drawStem(S, now) {
+  const nodes = S.nodes, Lp = [], Rp = [], M = [];
   for (let i = 0; i < nodes.length; i++) {
     const n = nodes[i];
-    const age = (now - n.born);
-    n.w = Math.min(6.6, 0.75 + 6.0 * (1 - Math.exp(-age * 0.16)));
+    n.w = Math.min(6.6 * S.thick, (0.75 + 6.0 * (1 - Math.exp(-(now - n.born) * 0.16))) * S.thick);
     const a = nodes[Math.max(0, i - 1)], b = nodes[Math.min(nodes.length - 1, i + 1)];
-    let dx = b.x - a.x, dy = b.y - a.y;
-    const d = Math.hypot(dx, dy) || 1;
+    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
     const nx = -dy / d * n.w, ny = dx / d * n.w;
-    L.push([n.x + nx, n.y + ny]);
-    R.push([n.x - nx, n.y - ny]);
+    Lp.push([n.x + nx, n.y + ny]);
+    Rp.push([n.x - nx, n.y - ny]);
     M.push([n.x + nx * 0.45, n.y + ny * 0.45]);
   }
-  stemPath.setAttribute("d", smooth(L) + smooth(R.reverse(), true) + "Z");
-  stemLite.setAttribute("d", smooth(M.slice(0, -2)));
+  S.stem.setAttribute("d", smooth(Lp) + smooth(Rp.reverse(), true) + "Z");
+  S.lite.setAttribute("d", smooth(M.slice(0, -2)));
+
+  // a crozier at the growing tip, so the stem ends in a curled bud, not a taper
+  if (S.made < S.maxNodes) {
+    const tip = nodes[nodes.length - 1], p = nodes[nodes.length - 2];
+    let ang = Math.atan2(tip.y - p.y, tip.x - p.x), x = tip.x, y = tip.y;
+    const pts = [[x, y]], r = 2.4 * S.scale;
+    for (let i = 0; i < 8; i++) {
+      ang += 0.60; x += Math.cos(ang) * r * (1 - i * 0.10); y += Math.sin(ang) * r * (1 - i * 0.10);
+      pts.push([x, y]);
+    }
+    S.apex.setAttribute("d", smooth(pts));
+    S.apex.setAttribute("stroke-width", f(2.6 * S.scale));
+  } else S.apex.setAttribute("d", "");
+}
+
+/* parallax thicket --------------------------------------------- */
+const PER = 900;
+let layers = [];
+function buildBackdrop() {
+  backdrop.textContent = ""; layers = [];
+  const spec = [{ k:.30, o:.13, hue:150, sc:.55, fil:"url(#soft2)" },
+                { k:.55, o:.20, hue:135, sc:.80, fil:"url(#soft3)" }];
+  for (const sp of spec) {
+    const g = el("g", { filter: sp.fil, opacity: sp.o }, backdrop);
+    const band = el("g", {});
+    // one band, drawn to be periodic over PER so the tiling seam is invisible
+    for (let i = 0; i < 7; i++) {
+      const x = rnd(0, W), amp = rnd(10, 34), col = `hsl(${f(sp.hue + rnd(-16, 16))} 40% ${f(rnd(20, 34))}%)`;
+      let d = `M${f(x)},${PER}`;
+      for (let s = 1; s <= 10; s++) {
+        const yy = PER - s * (PER / 10);
+        d += `L${f(x + Math.sin(s / 10 * Math.PI * 2) * amp)},${f(yy)}`;
+      }
+      el("path", { d, fill:"none", stroke: col, "stroke-width": f(rnd(3, 7) * sp.sc),
+                   "stroke-linecap":"round" }, band);
+      for (let s = 1; s < 10; s++) {
+        const yy = PER - s * (PER / 10), xx = x + Math.sin(s / 10 * Math.PI * 2) * amp;
+        el("ellipse", { cx: f(xx + (s % 2 ? 1 : -1) * 16 * sp.sc), cy: f(yy),
+                        rx: f(rnd(11, 20) * sp.sc), ry: f(rnd(4, 7) * sp.sc),
+                        transform: `rotate(${f((s % 2 ? -28 : 28))} ${f(xx)} ${f(yy)})`,
+                        fill: col }, band);
+      }
+    }
+    for (let i = -1; i <= 1; i++) {
+      const c = band.cloneNode(true);
+      c.setAttribute("transform", `translate(0,${i * PER})`);
+      g.appendChild(c);
+    }
+    layers.push({ g, k: sp.k });
+  }
+}
+function drawBackdrop(t) {
+  for (const L of layers) {
+    const ty = ((-camY * L.k) % PER + PER) % PER;
+    // the thicket leans with the same wind, just softer and later
+    const sx = Math.sin(t * 0.34 + L.k * 9) * 6 * L.k + windAt(camY + H * .5, t) * 0.02 * L.k;
+    L.g.setAttribute("transform", `translate(${f(sx)},${f(ty)})`);
+  }
 }
 
 /* ground ------------------------------------------------------- */
 let grass = [];
 function buildGround() {
   gGround.textContent = ""; grass = [];
-  el("path", {
-    d: `M${-W} 0 Q${W * 0.5} ${-26} ${W * 2} 0 L${W * 2} 400 L${-W} 400 Z`,
-    fill: "#16281c"
-  }, gGround);
-  el("path", {
-    d: `M${-W} 0 Q${W * 0.5} ${-26} ${W * 2} 0`,
-    fill:"none", stroke:"#2c5232", "stroke-width":"3", "stroke-opacity":".8"
-  }, gGround);
+  el("path", { d:`M${-W} 0 Q${W * .5} ${-26} ${W * 2} 0 L${W * 2} 400 L${-W} 400 Z`,
+               fill:"#16281c" }, gGround);
+  el("path", { d:`M${-W} 0 Q${W * .5} ${-26} ${W * 2} 0`, fill:"none",
+               stroke:"#2c5232", "stroke-width":"3", "stroke-opacity":".8" }, gGround);
   for (let i = 0; i < 26; i++) {
-    const x = rnd(-20, W + 20), h = rnd(14, 40), lean = rnd(-14, 14);
-    grass.push({ x, h, lean, ph: rnd(0, 6.3),
+    grass.push({ x: rnd(-20, W + 20), h: rnd(14, 40), lean: rnd(-14, 14), ph: rnd(0, 6.3),
       p: el("path", { fill:"none", stroke:`hsl(${f(rnd(95,135))} 34% ${f(rnd(24,38))}%)`,
                       "stroke-width": f(rnd(1.4, 2.6)), "stroke-linecap":"round" }, gGround) });
   }
@@ -446,7 +594,7 @@ function drawGrass(t) {
   for (const g of grass) {
     const sway = Math.sin(t * 1.1 + g.ph) * 5 + windAt(-g.h, t) * 0.06;
     g.p.setAttribute("d",
-      `M${f(g.x)},2 Q${f(g.x + g.lean * 0.4 + sway * 0.4)},${f(-g.h * 0.6)} ${f(g.x + g.lean + sway)},${f(-g.h)}`);
+      `M${f(g.x)},2 Q${f(g.x + g.lean * .4 + sway * .4)},${f(-g.h * .6)} ${f(g.x + g.lean + sway)},${f(-g.h)}`);
   }
 }
 
@@ -454,26 +602,22 @@ function drawGrass(t) {
 let dust = [], blobs = [];
 function buildAir() {
   motes.textContent = ""; bokeh.textContent = ""; dust = []; blobs = [];
-  for (let i = 0; i < 34; i++) {
-    dust.push({ x: rnd(0, W), y: rnd(0, H), r: rnd(0.8, 2.6), s: rnd(7, 22),
-      ph: rnd(0, 6.3), o: rnd(.18, .6),
-      c: el("circle", { fill:"#eaffd6" }, motes) });
-  }
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < 34; i++)
+    dust.push({ x: rnd(0, W), y: rnd(0, H), r: rnd(.8, 2.6), s: rnd(7, 22),
+      ph: rnd(0, 6.3), o: rnd(.18, .6), c: el("circle", { fill:"#eaffd6" }, motes) });
+  for (let i = 0; i < 9; i++)
     blobs.push({ x: rnd(0, W), y: rnd(0, H), r: rnd(28, 88), k: rnd(.12, .4),
-      c: el("circle", { fill: `hsl(${f(rnd(96, 150))} 45% ${f(rnd(40, 62))}%)`,
+      c: el("circle", { fill:`hsl(${f(rnd(96,150))} 45% ${f(rnd(40,62))}%)`,
                         "fill-opacity": f(rnd(.16, .38)) }, bokeh) });
-  }
 }
 function drawAir(dt, t) {
   for (const d of dust) {
     d.y -= d.s * dt;
-    d.x += (windAt(d.y - camY, t) * 0.010 + Math.sin(t * 0.9 + d.ph) * 6) * dt;
+    d.x += (windAt(d.y + camY, t) * 0.010 + Math.sin(t * .9 + d.ph) * 6) * dt;
     if (d.y < -12) { d.y = H + 12; d.x = rnd(0, W); }
     if (d.x < -12) d.x = W + 12; else if (d.x > W + 12) d.x = -12;
-    d.c.setAttribute("cx", f(d.x)); d.c.setAttribute("cy", f(d.y));
-    d.c.setAttribute("r", f(d.r));
-    d.c.setAttribute("fill-opacity", f(d.o * (0.55 + 0.45 * Math.sin(t * 1.6 + d.ph))));
+    d.c.setAttribute("cx", f(d.x)); d.c.setAttribute("cy", f(d.y)); d.c.setAttribute("r", f(d.r));
+    d.c.setAttribute("fill-opacity", f(d.o * (.55 + .45 * Math.sin(t * 1.6 + d.ph))));
   }
   for (const b of blobs) {
     const y = ((b.y - camY * b.k) % (H + 500) + H + 500) % (H + 500) - 250;
@@ -483,19 +627,30 @@ function drawAir(dt, t) {
 
 /* housekeeping: retire what has scrolled away, forever ---------- */
 function cull() {
-  let cut = 0;
-  while (nodes.length - cut > 8 && (nodes[cut].y - camY) > H + 220) cut++;
-  if (!cut) return;
-  nodes.splice(0, cut);
-  nodes[0].pinned = nodes[1].pinned = true;
-  for (let i = leaves.length - 1; i >= 0; i--) {
-    const L = leaves[i]; L.idx -= cut;
-    if (L.idx < 1) { L.blade.remove(); L.shine.remove(); L.vein.remove(); leaves.splice(i, 1); }
+  const gone = new Set();
+  for (const S of strands) {
+    if (S.parent) {
+      // a branch lives exactly as long as the node it hangs off
+      if (S.parent.dead || !S.parent.nodes[S.parentIdx]) S.dead = true;
+      continue;
+    }
+    let cut = 0;
+    while (S.nodes.length - cut > 8 && (S.nodes[cut].y - camY) > H + 220) cut++;
+    if (!cut) continue;
+    S.nodes.splice(0, cut);
+    S.nodes[0].pinned = S.nodes[1].pinned = true;
+    for (let i = S.leaves.length - 1; i >= 0; i--) {
+      const L = S.leaves[i]; L.idx -= cut;
+      if (L.idx < 1) { L.blade.remove(); L.shine.remove(); L.vein.remove(); S.leaves.splice(i, 1); }
+    }
+    for (let i = S.flowers.length - 1; i >= 0; i--) {
+      const F = S.flowers[i]; F.idx -= cut;
+      if (F.idx < 1) { F.g.remove(); S.flowers.splice(i, 1); }
+    }
+    for (const C of strands) if (C.parent === S) { C.parentIdx -= cut; if (C.parentIdx < 2) C.dead = true; }
   }
-  for (let i = flowers.length - 1; i >= 0; i--) {
-    const F = flowers[i]; F.idx -= cut;
-    if (F.idx < 1) { F.g.remove(); flowers.splice(i, 1); }
-  }
+  for (const S of strands) if (S.dead) { S.g.remove(); gone.add(S); }
+  if (gone.size) strands = strands.filter(S => !gone.has(S));
 }
 
 /* ─────────────────────────── loop ─────────────────────────── */
@@ -504,37 +659,44 @@ let last = 0, clock = 0, acc = 0;
 function frame(ms) {
   requestAnimationFrame(frame);
   const now = ms / 1000;
-  let dt = last ? Math.min(now - last, 0.05) : 0.016;
+  const dt = last ? Math.min(now - last, 0.05) : 0.016;
   last = now; clock += dt;
 
-  gust *= Math.pow(0.12, dt);
   pointerWind *= Math.pow(0.35, dt);
+  if (gusts.length) gusts = gusts.filter(g => clock - g.t0 < 5);
 
-  // fixed-step physics keeps the springs stable at any refresh rate
   acc += dt;
   const h = 1 / (60 * CFG.substeps);
-  if (!Number.isFinite(nodes[nodes.length - 1].y)) seedPlant(clock);   // never wedge
+  if (!Number.isFinite(main.nodes[main.nodes.length - 1].y)) seedPlant(clock);   // never wedge
   let guard = 0;
   while (acc >= h && guard++ < 12) {
-    for (const n of nodes) { n.pvx = n.vx; n.pvy = n.vy; }
-    integrate(h, clock);
-    for (const n of nodes) {
-      n.vx = (n.x - n.px); n.vy = (n.y - n.py);
-      n.ax = (n.vx - n.pvx) / (h * h); n.ay = (n.vy - n.pvy) / (h * h);
+    for (const S of strands) {
+      const nodes = S.nodes;
+      if (S.parent) anchor(S);
+      for (const n of nodes) { n.pvx = n.vx; n.pvy = n.vy; }
+      integrate(S, h, clock);
+      for (const n of nodes) {
+        n.vx = n.x - n.px; n.vy = n.y - n.py;
+        n.ax = (n.vx - n.pvx) / (h * h); n.ay = (n.vy - n.pvy) / (h * h);
+      }
+      grow(S, h, clock);
     }
-    grow(h, clock);
     acc -= h;
   }
 
-  // camera rides the growing tip; the base slides off the bottom and is retired
-  const tip = nodes[nodes.length - 1];
+  // the camera rides the growing tip; geometry that scrolls past the bottom is
+  // retired, so the loop has no reset and no fade
+  const tip = main.nodes[main.nodes.length - 1];
   camTarget = Math.min(tip.y - H * 0.40, -H * 0.80);
   camY += (camTarget - camY) * Math.min(1, dt * 3.2);
   world.setAttribute("transform", `translate(0,${f(-camY)})`);
 
-  drawStem(clock);
-  for (const L of leaves)  updateLeaf(L, dt, clock);
-  for (const F of flowers) updateFlower(F, dt, clock);
+  for (const S of strands) {
+    drawStem(S, clock);
+    for (const L of S.leaves)  updateLeaf(S, L, dt, clock);
+    for (const F of S.flowers) updateFlower(S, F, dt, clock);
+  }
+  drawBackdrop(clock);
   drawGrass(clock);
   drawAir(dt, clock);
   cull();
@@ -543,25 +705,26 @@ function frame(ms) {
 }
 
 /* ─────────────────────────── input & size ─────────────────────────── */
+function blow(strength) {
+  gusts.push({ amp: strength, y: camY + H * 1.05, t0: clock });   // born low, climbs
+  if (gusts.length > 5) gusts.shift();
+}
 addEventListener("pointermove", e => {
   pointerWind = clamp((e.clientX / W - 0.5) * 2.2, -1.4, 1.4);
-  pointerY = e.clientY;
 }, { passive: true });
-addEventListener("pointerdown", e => {
-  gust = (e.clientX / W - 0.5) > 0 ? 1 : -1;
-  gust *= rnd(0.8, 1.3);
-}, { passive: true });
+addEventListener("pointerdown", e => blow((e.clientX / W - .5 > 0 ? 1 : -1) * rnd(.8, 1.3)),
+                 { passive: true });
 addEventListener("keydown", e => {
-  if (e.code === "Space") { e.preventDefault(); gust = (Math.random() < .5 ? -1 : 1) * rnd(.8, 1.3); }
+  if (e.code === "Space") { e.preventDefault(); blow((Math.random() < .5 ? -1 : 1) * rnd(.8, 1.3)); }
 });
 
 function resize() {
-  const wasSeeded = nodes.length > 0;
+  const seeded = !!main;
   W = innerWidth; H = innerHeight;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   vign.setAttribute("y", H - 200); vign.setAttribute("height", 200);
-  buildGround(); buildAir();
-  if (!wasSeeded) seedPlant(0);
+  buildGround(); buildAir(); buildBackdrop();
+  if (!seeded) seedPlant(0);
 }
 
 addEventListener("resize", resize);
