@@ -36,6 +36,10 @@ ADDONS = {
         "output": "KaijuRampage.mcaddon",
         "packs": ["kaiju_BP", "kaiju_RP"],
     },
+    "blizzard": {
+        "output": "ExtremeBlizzard.mcaddon",
+        "packs": ["blizzard_BP", "blizzard_RP"],
+    },
 }
 
 # Documentation that should not ship inside the addon.

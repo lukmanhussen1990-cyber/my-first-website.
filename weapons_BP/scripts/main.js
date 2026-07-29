@@ -36,10 +36,10 @@ import {
 
 const VERSION = "1.0.0";
 
-/** Stops one tap being handled twice (itemUse + itemUseOn). */
+/** Stops one tap on one item being handled twice (itemUse + itemUseOn). */
 const lastUse = new Map();
 
-function debounce(player, ticks = 6) {
+function debounce(player, itemId, ticks = 6) {
   let id;
   try {
     id = player.id;
@@ -47,9 +47,10 @@ function debounce(player, ticks = 6) {
     return false;
   }
   const now = system.currentTick;
-  const previous = lastUse.get(id) ?? -999;
+  const key = `${id}:${itemId}`;
+  const previous = lastUse.get(key) ?? -999;
   if (now - previous < ticks) return false;
-  lastUse.set(id, now);
+  lastUse.set(key, now);
   return true;
 }
 
@@ -87,7 +88,7 @@ function ticksUntilReady(player, weapon) {
 function handleItemUse(player, id) {
   const weapon = weaponFromItemId(id);
   if (!weapon || !player) return;
-  if (!debounce(player)) return;
+  if (!debounce(player, id)) return;
 
   let sneaking = false;
   try {

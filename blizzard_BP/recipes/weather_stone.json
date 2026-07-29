@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "sw:weather_stone_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "BSB",
+      "SAS",
+      "BSB"
+    ],
+    "key": {
+      "B": {
+        "item": "minecraft:packed_ice"
+      },
+      "S": {
+        "item": "minecraft:snowball"
+      },
+      "A": {
+        "item": "minecraft:amethyst_shard"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:packed_ice"
+      }
+    ],
+    "result": {
+      "item": "sw:weather_stone",
+      "count": 1
+    }
+  }
+}

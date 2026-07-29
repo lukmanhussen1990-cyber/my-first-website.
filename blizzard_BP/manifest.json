@@ -1,0 +1,45 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "c7ebb08f-8cc9-4fac-b2f1-2b15949608a6",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "Extreme Blizzard data module",
+      "type": "data",
+      "uuid": "b30dd6d7-60e2-49b8-a21c-f97ace1c894b",
+      "version": [1, 0, 0]
+    },
+    {
+      "description": "Extreme Blizzard script module",
+      "type": "script",
+      "language": "javascript",
+      "uuid": "9cc57e00-8f9a-4ec4-8d45-466999d6ea26",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "a95b7cfc-914c-4d23-b6e5-b71a9d0dd89e",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.1.0"
+    }
+  ],
+  "metadata": {
+    "authors": ["Extreme Blizzard Addon"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

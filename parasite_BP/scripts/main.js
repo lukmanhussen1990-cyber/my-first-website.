@@ -30,7 +30,7 @@ import { actionBar, allPlayers, isValidEntity } from "./util.js";
 const VERSION = "1.0.0";
 const lastUse = new Map();
 
-function debounce(player, ticks = 8) {
+function debounce(player, itemId, ticks = 8) {
   const now = system.currentTick;
   let id;
   try {
@@ -38,15 +38,16 @@ function debounce(player, ticks = 8) {
   } catch {
     return false;
   }
-  const previous = lastUse.get(id) ?? -999;
+  const key = `${id}:${itemId}`;
+  const previous = lastUse.get(key) ?? -999;
   if (now - previous < ticks) return false;
-  lastUse.set(id, now);
+  lastUse.set(key, now);
   return true;
 }
 
 function handleItemUse(player, itemId) {
   if (!player || itemId !== SAMPLE_ID) return;
-  if (!debounce(player)) return;
+  if (!debounce(player, itemId)) return;
 
   let sneaking = false;
   try {

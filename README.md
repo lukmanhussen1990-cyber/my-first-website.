@@ -1,8 +1,8 @@
 # Minecraft Bedrock Addons (Pocket Edition friendly)
 
-Four standalone addons for Minecraft Bedrock Edition, built for **Android and
+Five standalone addons for Minecraft Bedrock Edition, built for **Android and
 iOS** (they work on Windows, console and Realms too). Install any one of them, or
-all four — they share no files and never conflict.
+all five — they share no files and never conflict.
 
 | Addon | Download | What it is |
 | --- | --- | --- |
@@ -10,8 +10,9 @@ all four — they share no files and never conflict.
 | **Parasite** | `Parasite.mcaddon` | A creature that eats everything around it the moment it spawns — items, mobs, players and the blocks themselves — then grows and splits in two |
 | **Legendary Weapons** | `LegendaryWeapons.mcaddon` | Six weapons with real abilities: call lightning, freeze the battlefield, fire explosive bolts, blink through enemies, slam the ground, open a black hole |
 | **Kaiju Rampage** | `KaijuRampage.mcaddon` | An 11 block tall Godzilla-style monster that levels terrain and buildings just by walking, stomps craters, sweeps its tail, roars and fires an atomic breath |
+| **Extreme Blizzard** | `ExtremeBlizzard.mcaddon` | A killing winter. Outside freezes you to death in about 5 seconds — the only safe place is a sealed room with a fire in it |
 
-All four require **Minecraft Bedrock 1.21.0 or newer** and need **no
+All five require **Minecraft Bedrock 1.21.0 or newer** and need **no
 experimental toggles**.
 
 ## Using the items on a phone
@@ -28,7 +29,7 @@ Every item here uses a 2 second use duration so the press registers reliably; th
 ability fires the instant you press, so you do not have to hold it down.
 
 If an item still does nothing, run `/scriptevent wm:help` (or `nd:help`,
-`pm:help`, `kj:help`) in chat — the same actions are available as commands, and
+`pm:help`, `kj:help`, `sw:help`) in chat — the same actions are available as commands, and
 `/scriptevent wm:use thunder_blade` fires an ability directly so you can tell a
 control problem apart from a pack problem.
 
@@ -472,12 +473,14 @@ python3 tools/generate_parasite_textures.py   # Parasite PNGs
 python3 tools/generate_weapon_textures.py     # Legendary Weapons PNGs
 python3 tools/generate_kaiju_model.py         # Kaiju geometry + UV atlas map
 python3 tools/generate_kaiju_textures.py      # Kaiju PNGs (paints against that map)
+python3 tools/generate_blizzard_textures.py   # Extreme Blizzard PNGs
 python3 tools/build_mcaddon.py                # validate + pack all three .mcaddon files
 python3 tools/build_mcaddon.py weapons        # just one addon
 node    tools/test_scripts.mjs                # Natural Disasters: 37 checks
 node    tools/test_parasite.mjs               # Parasite: 23 checks
 node    tools/test_weapons.mjs                # Legendary Weapons: 44 checks
 node    tools/test_kaiju.mjs                  # Kaiju Rampage: 30 checks
+node    tools/test_blizzard.mjs               # Extreme Blizzard: 35 checks
 ```
 
 Both test files stub `@minecraft/server` and `@minecraft/server-ui` and run the
@@ -786,3 +789,157 @@ python3 tools/generate_kaiju_textures.py   # paints the three skins against that
 - `TUNING.enrageAtHealthFraction` and `enrageCooldownScale`
 - `SETTINGS_DEFAULTS.maxBlockOpsPerTick` — the single most useful dial for
   performance on older phones
+
+---
+
+# Part 5 — Extreme Blizzard
+
+A winter that kills. When the storm is up, **anything caught outside freezes to
+death in about five seconds** — you, your animals, every mob. There is exactly
+one way to survive it: **a sealed room with a fire burning inside**.
+
+Install `ExtremeBlizzard.mcaddon` like the others, then activate
+**Extreme Blizzard (Behavior)** in your world.
+
+## The one rule
+
+Your body heat is a bar on the action bar, 100% down to 0%. Where you are
+standing decides which way it moves:
+
+| Where you are | Body heat | Outcome |
+| --- | --- | --- |
+| **Sealed room + a fire in it** | **+22%/s** | Safe. This is the only real shelter. |
+| Sealed room, no fire | −4%/s | Buys you a couple of minutes, nothing more. |
+| Outside (or a room with any gap) | **−25%/s** | 4 seconds to zero, dead about 1.5 seconds later. |
+| Outside next to a campfire | slowed, can even hold | Enough to work outdoors briefly. |
+
+At 55% you start to slow down. At 0% you take 16 damage a second and the screen
+goes white. Leather armour (or netherite) slows the whole thing down by 12% a
+piece, up to 60%.
+
+## What counts as "sealed"
+
+The pack does not just check for a roof. It **flood fills the air around you**:
+if that pocket of air closes within 160 blocks, you are inside; if it keeps
+going — an open door, a gap in the roof, a missing floor block, the open world —
+you are outside and freezing, no matter how much wall is around you.
+
+Then it looks for **heat touching that same air**: a Heater, campfire, lit
+furnace, torch, lantern, glowstone, lava, fire. One is enough.
+
+Not sure? **Sneak + tap the Weather Stone**, or run `/scriptevent sw:check`.
+It tells you exactly which of the two you are missing:
+
+```
+✔ SAFE            sealed (48 blocks of air) with 4 heat nearby
+⚠ SEALED BUT COLD the room is closed in, but there is no fire in it
+✘ NOT SHELTERED   the air around you runs straight to the outside
+```
+
+## Building a house that works
+
+1. Four walls, a floor and a **complete roof** — no gaps, no open doorway.
+2. A **door** in the frame (a hole counts as outdoors).
+3. **A fire inside**: a Heater, a campfire, a lit furnace, or even a torch.
+4. Check it with `/scriptevent sw:check` before the storm arrives.
+
+You get a **one minute warning** before every storm.
+
+## Items
+
+| Item | Recipe | What it does |
+| --- | --- | --- |
+| **Heater** | 6 iron, 1 magma block, 1 coal block | The best heat source, worth 4 heat. Lights the room too. |
+| **Weather Stone** | 4 packed ice, 4 snowballs, 1 amethyst shard | Tap: start/stop the storm. Sneak + tap: menu, shelter check, settings. |
+| **Hand Warmer** | 3 iron, 1 coal, 1 redstone | Tap for +35% body heat, 25 second cooldown. |
+| **Hot Cocoa** | Cocoa beans + milk bucket + sugar | Drink for +60% body heat. |
+
+Or run `/scriptevent sw:give` for the whole kit.
+
+## The storm
+
+Runs on a cycle: **6 minutes calm, 8 minutes storm** by default. During a storm
+snow piles up over the world, standing water freezes to ice, the wind howls and
+the sky closes in. Turn on **endless winter** in the settings for a world that
+never thaws.
+
+## Commands
+
+```
+/scriptevent sw:storm on|off        start or stop the blizzard now
+/scriptevent sw:status              storm state and everyone's body heat
+/scriptevent sw:check               is the room you are in actually safe?
+/scriptevent sw:harsh <percent>     how fast you freeze, 25 to 200
+/scriptevent sw:endless on|off      never ending winter
+/scriptevent sw:lethal on|off       whether the cold can kill at all
+/scriptevent sw:warm                fill your body heat back up
+/scriptevent sw:give                heater, weather stone, warmer, cocoa
+/scriptevent sw:settings            open the settings screen
+/scriptevent sw:help                print this in chat
+```
+
+## Folder structure
+
+```
+ExtremeBlizzard.mcaddon             <- the installable file
+
+blizzard_BP/                        BEHAVIOR PACK
+├── manifest.json
+├── pack_icon.png
+├── blocks/heater.json              sw:heater
+├── items/
+│   ├── weather_stone.json          sw:weather_stone
+│   ├── hand_warmer.json            sw:hand_warmer
+│   └── hot_cocoa.json              sw:hot_cocoa
+├── recipes/                        one per item, plus the heater
+├── loot_tables/blocks/heater.json
+├── scripts/
+│   ├── main.js                     items, /scriptevent, storm forecast
+│   ├── config.js                   settings, tuning, heat source table
+│   ├── util.js                     safe API wrappers
+│   ├── sounds.js                   custom + vanilla sound ids
+│   ├── shelter.js                  the sealed-and-heated flood fill
+│   ├── blizzard.js                 storm cycle, freezing, mobs, snow
+│   └── ui.js                       Weather Stone menus
+└── texts/en_US.lang, languages.json
+
+blizzard_RP/                        RESOURCE PACK
+├── manifest.json
+├── pack_icon.png
+├── blocks.json
+├── fogs/blizzard.json              the whiteout fog (sw:blizzard)
+├── particles/                      snow flurry, frost, heat shimmer
+├── sounds/
+│   ├── sound_definitions.json      9 custom sound events
+│   └── blizzard/                   drop your own .ogg files here
+├── textures/
+│   ├── item_texture.json
+│   ├── terrain_texture.json
+│   ├── items/                      weather stone, hand warmer, hot cocoa
+│   ├── blocks/                     heater top and side
+│   ├── particle/                   snow, frost, ember
+│   └── ui/                         4 menu icons
+└── texts/en_US.lang, languages.json
+```
+
+### UUIDs
+
+| Pack | Part | UUID |
+| --- | --- | --- |
+| BP | header | `c7ebb08f-8cc9-4fac-b2f1-2b15949608a6` |
+| BP | data module | `b30dd6d7-60e2-49b8-a21c-f97ace1c894b` |
+| BP | script module | `9cc57e00-8f9a-4ec4-8d45-466999d6ea26` |
+| RP | header | `a95b7cfc-914c-4d23-b6e5-b71a9d0dd89e` |
+| RP | resources module | `77bc46e6-f39c-4e22-94b2-a831461f6b02` |
+
+## Tuning it
+
+`blizzard_BP/scripts/config.js`:
+
+- `TUNING.temperature` — every rate: how fast you freeze, how fast you warm up,
+  when the damage starts and how hard it hits
+- `TUNING.shelter.maxRoomCells` — how big a room may be and still count as
+  sealed (160 blocks of air by default)
+- `TUNING.heatSources` — which blocks count as heat, and how much each is worth
+- `TUNING.coldImmune` — mobs the cold ignores
+- `SETTINGS_DEFAULTS.harshnessPercent` — one dial for the whole difficulty

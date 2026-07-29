@@ -23,24 +23,25 @@ import { formatTicks, surfaceY } from "./util.js";
 
 const VERSION = "1.0.0";
 
-/** Stops one tap from being handled twice (itemUse + itemUseOn). */
+/** Stops one tap on one item being handled twice (itemUse + itemUseOn). */
 const lastUse = new Map();
 
-function debounce(player, ticks = 8) {
+function debounce(player, itemId, ticks = 8) {
   const now = system.currentTick;
-  const previous = lastUse.get(player.id) ?? -999;
+  const key = `${player.id}:${itemId}`;
+  const previous = lastUse.get(key) ?? -999;
   if (now - previous < ticks) return false;
-  lastUse.set(player.id, now);
+  lastUse.set(key, now);
   return true;
 }
 
 function handleItemUse(player, itemId) {
   if (!player || !itemId) return;
   if (itemId === ITEM_IDS.WAND_ID) {
-    if (!debounce(player)) return;
+    if (!debounce(player, itemId)) return;
     system.run(() => openWandMenu(player));
   } else if (itemId === ITEM_IDS.DETECTOR_ID) {
-    if (!debounce(player)) return;
+    if (!debounce(player, itemId)) return;
     const remaining = getSetting("randomDisasters")
       ? `§7Next random event in about §f${formatTicks(Math.max(0, ticksUntilNext()))}§7.`
       : "§7Random disasters are turned off.";

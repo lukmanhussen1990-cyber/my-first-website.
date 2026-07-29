@@ -1,0 +1,40 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "sw:heater",
+      "menu_category": {
+        "category": "construction",
+        "is_hidden_in_commands": false
+      }
+    },
+    "components": {
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "sw_heater_side",
+          "render_method": "opaque"
+        },
+        "up": {
+          "texture": "sw_heater_top",
+          "render_method": "opaque"
+        },
+        "down": {
+          "texture": "sw_heater_top",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 3.0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 6
+      },
+      "minecraft:light_emission": 14,
+      "minecraft:map_color": "#b4462a",
+      "minecraft:collision_box": true,
+      "minecraft:selection_box": true,
+      "minecraft:loot": "loot_tables/blocks/heater.json"
+    }
+  }
+}

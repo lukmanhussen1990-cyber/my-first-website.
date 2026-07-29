@@ -1,0 +1,99 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "sw.blizzard.wind": {
+      "category": "weather",
+      "sounds": [
+        {
+          "name": "sounds/blizzard/wind1",
+          "volume": 1.0,
+          "stream": true
+        },
+        {
+          "name": "sounds/blizzard/wind2",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "sw.blizzard.start": {
+      "category": "weather",
+      "sounds": [
+        {
+          "name": "sounds/blizzard/storm_start",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "sw.blizzard.end": {
+      "category": "weather",
+      "sounds": [
+        {
+          "name": "sounds/blizzard/storm_end",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "sw.freezing": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/blizzard/freezing1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/blizzard/freezing2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "sw.heartbeat": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/blizzard/heartbeat",
+          "volume": 1.0
+        }
+      ]
+    },
+    "sw.cocoa.drink": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/blizzard/cocoa",
+          "volume": 1.0
+        }
+      ]
+    },
+    "sw.warmer.use": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/blizzard/hand_warmer",
+          "volume": 1.0
+        }
+      ]
+    },
+    "sw.stone.use": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/blizzard/weather_stone",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "sw.menu.open": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/blizzard/menu",
+          "volume": 1.0
+        }
+      ]
+    }
+  }
+}

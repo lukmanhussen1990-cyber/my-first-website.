@@ -1,0 +1,27 @@
+## Extreme Blizzard - Behavior Pack (en_US)
+
+pack.name=Extreme Blizzard (Behavior)
+pack.description=A killing winter. When the blizzard hits, anything caught outside freezes to death in seconds. The only safe place is a sealed room with a fire burning inside it.
+
+## Items
+item.sw:weather_stone=Weather Stone
+item.sw:weather_stone.name=Weather Stone
+item.sw:hand_warmer=Hand Warmer
+item.sw:hand_warmer.name=Hand Warmer
+item.sw:hot_cocoa=Hot Cocoa
+item.sw:hot_cocoa.name=Hot Cocoa
+
+## Blocks
+tile.sw:heater.name=Heater
+
+## Shelter states, used by the readout
+sw.state.warm=Warm and sealed
+sw.state.sheltered=Sealed, but no fire
+sw.state.open=FREEZING - get inside
+
+## Menus
+sw.menu.title=Weather Stone
+sw.menu.storm=Start a blizzard
+sw.menu.calm=End the blizzard
+sw.menu.check=Check my shelter
+sw.menu.settings=Settings

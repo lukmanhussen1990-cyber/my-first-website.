@@ -1,0 +1,99 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "sw:snow_flurry",
+      "basic_render_parameters": {
+        "material": "particles_alpha",
+        "texture": "textures/particle/sw_snow"
+      }
+    },
+    "components": {
+      "minecraft:emitter_local_space": {
+        "position": false,
+        "rotation": false,
+        "velocity": false
+      },
+      "minecraft:emitter_rate_instant": {
+        "num_particles": 6
+      },
+      "minecraft:emitter_lifetime_once": {
+        "active_time": 0.05
+      },
+      "minecraft:emitter_shape_box": {
+        "offset": [
+          0,
+          2.5,
+          0
+        ],
+        "half_dimensions": [
+          4,
+          1.5,
+          4
+        ],
+        "direction": [
+          0,
+          -1,
+          0
+        ]
+      },
+      "minecraft:particle_initial_speed": "math.random(2.0, 5.0)",
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": "math.random(0.7, 1.8)"
+      },
+      "minecraft:particle_motion_dynamic": {
+        "linear_acceleration": [
+          4.5,
+          -9.0,
+          2.0
+        ],
+        "linear_drag_coefficient": 0.5
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "math.random(0.06, 0.16)",
+          "math.random(0.06, 0.16)"
+        ],
+        "facing_camera_mode": "rotate_xyz",
+        "uv": {
+          "texture_width": 16,
+          "texture_height": 16,
+          "uv": [
+            0,
+            0
+          ],
+          "uv_size": [
+            16,
+            16
+          ]
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": {
+          "interpolant": "variable.particle_age/variable.particle_lifetime",
+          "gradient": [
+            [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            [
+              0.94,
+              0.97,
+              1.0,
+              0.9
+            ],
+            [
+              0.86,
+              0.92,
+              1.0,
+              0.0
+            ]
+          ]
+        }
+      },
+      "minecraft:particle_appearance_lighting": {}
+    }
+  }
+}

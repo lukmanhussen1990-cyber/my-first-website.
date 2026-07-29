@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "sw:weather_stone",
+      "menu_category": {
+        "category": "equipment",
+        "is_hidden_in_commands": false
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "sw_weather_stone"
+      },
+      "minecraft:display_name": {
+        "value": "item.sw:weather_stone.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:should_despawn": false,
+      "minecraft:hand_equipped": true,
+      "minecraft:glint": true,
+      "minecraft:use_modifiers": {
+        "use_duration": 2.0,
+        "movement_modifier": 1.0
+      },
+      "minecraft:tags": {
+        "tags": [
+          "sw:weather_tool"
+        ]
+      }
+    }
+  }
+}
