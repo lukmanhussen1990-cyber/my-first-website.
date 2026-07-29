@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "wm:inferno_cannon_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "BBB",
+      "BCB",
+      " S "
+    ],
+    "key": {
+      "B": {
+        "item": "minecraft:blaze_rod"
+      },
+      "C": {
+        "item": "wm:weapon_core"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "wm:weapon_core"
+      }
+    ],
+    "result": {
+      "item": "wm:inferno_cannon",
+      "count": 1
+    }
+  }
+}

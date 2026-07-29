@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "wm:earthshaker_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "OOO",
+      "OCO",
+      " S "
+    ],
+    "key": {
+      "O": {
+        "item": "minecraft:obsidian"
+      },
+      "C": {
+        "item": "wm:weapon_core"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "wm:weapon_core"
+      }
+    ],
+    "result": {
+      "item": "wm:earthshaker",
+      "count": 1
+    }
+  }
+}

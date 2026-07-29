@@ -28,6 +28,10 @@ ADDONS = {
         "output": "Parasite.mcaddon",
         "packs": ["parasite_BP", "parasite_RP"],
     },
+    "weapons": {
+        "output": "LegendaryWeapons.mcaddon",
+        "packs": ["weapons_BP", "weapons_RP"],
+    },
 }
 
 # Documentation that should not ship inside the addon.

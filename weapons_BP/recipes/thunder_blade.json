@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "wm:thunder_blade_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " P ",
+      " C ",
+      " S "
+    ],
+    "key": {
+      "P": {
+        "item": "minecraft:copper_block"
+      },
+      "C": {
+        "item": "wm:weapon_core"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "wm:weapon_core"
+      }
+    ],
+    "result": {
+      "item": "wm:thunder_blade",
+      "count": 1
+    }
+  }
+}

@@ -1,16 +1,17 @@
 # Minecraft Bedrock Addons (Pocket Edition friendly)
 
-Two standalone addons for Minecraft Bedrock Edition, built for **Android and
-iOS** (they work on Windows, console and Realms too). Install either one, or
-both — they share no files and never conflict.
+Three standalone addons for Minecraft Bedrock Edition, built for **Android and
+iOS** (they work on Windows, console and Realms too). Install any one of them, or
+all three — they share no files and never conflict.
 
 | Addon | Download | What it is |
 | --- | --- | --- |
 | **Natural Disasters** | `NaturalDisasters.mcaddon` | Tornadoes, earthquakes, meteors, tsunamis, wildfires and lightning storms, with a Disaster Wand and a Disaster Detector |
 | **Parasite** | `Parasite.mcaddon` | A creature that eats everything around it the moment it spawns — items, mobs, players and the blocks themselves — then grows and splits in two |
+| **Legendary Weapons** | `LegendaryWeapons.mcaddon` | Six weapons with real abilities: call lightning, freeze the battlefield, fire explosive bolts, blink through enemies, slam the ground, open a black hole |
 
-Both require **Minecraft Bedrock 1.21.0 or newer** and need **no experimental
-toggles**.
+All three require **Minecraft Bedrock 1.21.0 or newer** and need **no
+experimental toggles**.
 
 ---
 
@@ -449,11 +450,167 @@ To stop parasites appearing naturally in caves, delete
 ```bash
 python3 tools/generate_textures.py            # Natural Disasters PNGs
 python3 tools/generate_parasite_textures.py   # Parasite PNGs
-python3 tools/build_mcaddon.py                # validate + pack both .mcaddon files
+python3 tools/generate_weapon_textures.py     # Legendary Weapons PNGs
+python3 tools/build_mcaddon.py                # validate + pack all three .mcaddon files
+python3 tools/build_mcaddon.py weapons        # just one addon
 node    tools/test_scripts.mjs                # Natural Disasters: 37 checks
 node    tools/test_parasite.mjs               # Parasite: 23 checks
+node    tools/test_weapons.mjs                # Legendary Weapons: 42 checks
 ```
 
 Both test files stub `@minecraft/server` and `@minecraft/server-ui` and run the
 real behavior pack scripts against a fake world, so script errors show up here
 instead of as a silent "script pack failed to load" on a phone.
+
+---
+
+# Part 3 — Legendary Weapons
+
+Six weapons, each with an **active ability** (tap while holding it) and a
+**passive** that fires on every melee hit. Every ability runs on a real cooldown,
+shown by the vanilla cooldown sweep on the item.
+
+Install `LegendaryWeapons.mcaddon` the same way as the others: tap the file, then
+activate **Legendary Weapons (Behavior)** in your world.
+
+## The weapons
+
+| Weapon | Melee | Cooldown | Ability (tap) | Passive (on hit) |
+| --- | --- | --- | --- | --- |
+| **Thunder Blade** §e | 9 | 6s | **Call Lightning** — a bolt lands where you look, then arcs to 3 more enemies nearby | Every hit chains lightning to up to 3 nearby enemies |
+| **Frost Scythe** | 8 | 8s | **Frost Nova** — a 7 block ring of ice: 6 damage, slowness III, weakness and mining fatigue for 7s | Hits chill: slowness + weakness for 4s |
+| **Inferno Cannon** | 4 | 3s | **Fire Blast** — a bolt of fire up to 40 blocks that explodes on impact (10 direct + 6 splash, sets fire) | Melee hits set the target on fire |
+| **Void Ripper** | 7 | 4s | **Blink Strike** — teleport up to 12 blocks forward, cutting everything you pass through for 8 | Steals health equal to 30% of the damage you deal |
+| **Earthshaker** | 12 | 7s | **Ground Slam** — 9 block shockwave: 12 damage, launches everything, shakes the screen | Heavy knockback on every hit |
+| **Singularity Staff** | 3 | 12s | **Singularity** — a black hole that drags everything within 13 blocks in for 3 seconds, then implodes for 16 | Weak in melee. It is not a club. |
+
+Abilities never hit you, and by default they do **not** break blocks — turn that
+on in the settings if you want the craters.
+
+## Controls
+
+- **Tap** with a weapon → use its ability (or a "ready in 2.4s" message if it is
+  still cooling down)
+- **Sneak + tap** → open the **Weapon Codex**: every weapon's stats, ability and
+  passive, plus the settings screen
+
+## Crafting
+
+Everything starts with a **Weapon Core**:
+
+```
+Weapon Core:      A D A      A = amethyst shard
+                  D N D      D = diamond
+                  A D A      N = netherite ingot
+```
+
+Then, with the core in the middle and a stick as the handle:
+
+| Weapon | Top of the recipe |
+| --- | --- |
+| Thunder Blade | 1 copper block |
+| Frost Scythe | 3 packed ice across the top row |
+| Inferno Cannon | 5 blaze rods (top row + both sides of the core) |
+| Void Ripper | 1 echo shard |
+| Earthshaker | 5 obsidian (top row + both sides of the core) |
+| Singularity Staff | 1 nether star |
+
+In creative all seven items are in the **Equipment** tab (the core is under
+**Items**), or run `/scriptevent wm:give` for the full set. Each weapon is
+repairable on an anvil with its own material and takes enchantments normally.
+
+## Settings
+
+Sneak + tap → **Settings**, or use the commands below:
+
+- **Ability power** — 25% to 300% damage multiplier on every ability
+- **Abilities may break blocks** — off by default, protects your builds
+- **Abilities may hit other players** — turn off for co-op worlds
+- **Abilities cost durability** — 3 durability per cast
+- **Show ability name on screen**
+
+## Commands
+
+```
+/scriptevent wm:give [weapon|core|all]   give yourself weapons
+/scriptevent wm:codex [weapon]           open the codex
+/scriptevent wm:settings                 open the settings screen
+/scriptevent wm:power <percent>          ability damage multiplier (10-500)
+/scriptevent wm:blocks on|off            let abilities break blocks
+/scriptevent wm:pvp on|off               let abilities hit other players
+/scriptevent wm:list                     list the weapon ids
+/scriptevent wm:help                     print this in chat
+```
+
+## Folder structure
+
+```
+LegendaryWeapons.mcaddon           <- the installable file
+
+weapons_BP/                        BEHAVIOR PACK
+├── manifest.json
+├── pack_icon.png
+├── items/                         6 weapons + wm:weapon_core
+│   ├── thunder_blade.json         damage, durability, enchantable, cooldown
+│   ├── frost_scythe.json
+│   ├── inferno_cannon.json
+│   ├── void_ripper.json
+│   ├── earthshaker.json
+│   ├── singularity_staff.json
+│   └── weapon_core.json
+├── recipes/                       one per weapon, plus the core
+├── scripts/
+│   ├── main.js                    taps, cooldowns, melee passives, /scriptevent
+│   ├── config.js                  the weapon table: stats, cooldowns, tuning
+│   ├── util.js                    safe API wrappers + a hand written raycast
+│   ├── sounds.js                  custom + vanilla sound ids
+│   ├── abilities.js               all six abilities and all six passives
+│   └── ui.js                      codex and settings screens
+└── texts/
+    ├── en_US.lang
+    └── languages.json
+
+weapons_RP/                        RESOURCE PACK
+├── manifest.json
+├── pack_icon.png
+├── particles/
+│   ├── thunder_arc.particle.json       wm:thunder_arc
+│   ├── frost_shard.particle.json       wm:frost_shard
+│   ├── inferno_bolt.particle.json      wm:inferno_bolt
+│   ├── void_rift.particle.json         wm:void_rift
+│   ├── quake_dust.particle.json        wm:quake_dust
+│   └── singularity_core.particle.json  wm:singularity_core
+├── sounds/
+│   ├── sound_definitions.json     15 custom sound events
+│   └── weapons/                   drop your own .ogg files here (see its README)
+├── textures/
+│   ├── item_texture.json
+│   ├── items/                     7 weapon sprites
+│   ├── particle/                  6 particle textures
+│   └── ui/                        7 codex icons
+└── texts/
+    ├── en_US.lang
+    └── languages.json
+```
+
+### UUIDs
+
+| Pack | Part | UUID |
+| --- | --- | --- |
+| BP | header | `f9a45432-a6a4-4171-9921-681ab38c0231` |
+| BP | data module | `b9974b74-9456-402c-b21a-1888635a8f7a` |
+| BP | script module | `987e288c-82d2-4dae-abbd-62650f0d1a86` |
+| RP | header | `1b556013-1c42-477c-9b48-4a5d52c24bd9` |
+| RP | resources module | `43fa6066-be87-4bb5-9b40-e2dcae48922c` |
+
+## Adding your own weapon
+
+1. Add an entry to `WEAPONS` in `weapons_BP/scripts/config.js` (stats, cooldown,
+   ability text and a `tuning` block).
+2. Add a handler with the same key to `ACTIVE` in `abilities.js`, and a case in
+   `onHit()` if it needs a passive.
+3. Copy an item JSON in `weapons_BP/items/`, a recipe, an icon in
+   `weapons_RP/textures/items/` and the matching `item_texture.json` entry.
+
+The codex, the cooldown handling, the settings and the `/scriptevent` commands
+pick it up automatically.

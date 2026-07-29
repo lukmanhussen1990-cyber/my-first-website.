@@ -1,0 +1,155 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "wm.thunder.cast": {
+      "category": "weather",
+      "sounds": [
+        {
+          "name": "sounds/weapons/thunder_cast",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "wm.thunder.arc": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/weapons/thunder_arc1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/weapons/thunder_arc2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "wm.frost.cast": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/weapons/frost_cast",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "wm.frost.hit": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/weapons/frost_hit1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/weapons/frost_hit2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "wm.inferno.shot": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/weapons/inferno_shot",
+          "volume": 1.0
+        }
+      ]
+    },
+    "wm.inferno.blast": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/weapons/inferno_blast",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "wm.void.blink": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/weapons/void_blink",
+          "volume": 1.0
+        }
+      ]
+    },
+    "wm.void.hit": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/weapons/void_hit",
+          "volume": 1.0
+        }
+      ]
+    },
+    "wm.quake.slam": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/weapons/quake_slam",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "wm.quake.rumble": {
+      "category": "weather",
+      "sounds": [
+        {
+          "name": "sounds/weapons/quake_rumble",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "wm.singularity.open": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/weapons/singularity_open",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "wm.singularity.pull": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/weapons/singularity_pull",
+          "volume": 1.0
+        }
+      ]
+    },
+    "wm.singularity.implode": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/weapons/singularity_implode",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "wm.denied": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/weapons/denied",
+          "volume": 1.0
+        }
+      ]
+    },
+    "wm.codex": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/weapons/codex",
+          "volume": 1.0
+        }
+      ]
+    }
+  }
+}

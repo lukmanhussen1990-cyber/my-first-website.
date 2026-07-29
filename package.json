@@ -1,15 +1,16 @@
 {
   "name": "minecraft-bedrock-addons",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
-  "description": "Minecraft Bedrock Edition addons for mobile: Natural Disasters and Parasite.",
+  "description": "Minecraft Bedrock Edition addons for mobile: Natural Disasters, Parasite and Legendary Weapons.",
   "scripts": {
-    "textures": "python3 tools/generate_textures.py && python3 tools/generate_parasite_textures.py",
+    "textures": "python3 tools/generate_textures.py && python3 tools/generate_parasite_textures.py && python3 tools/generate_weapon_textures.py",
     "build": "python3 tools/build_mcaddon.py",
-    "test": "node tools/test_scripts.mjs && node tools/test_parasite.mjs",
+    "test": "node tools/test_scripts.mjs && node tools/test_parasite.mjs && node tools/test_weapons.mjs",
     "test:disasters": "node tools/test_scripts.mjs",
-    "test:parasite": "node tools/test_parasite.mjs"
+    "test:parasite": "node tools/test_parasite.mjs",
+    "test:weapons": "node tools/test_weapons.mjs"
   },
   "license": "MIT"
 }

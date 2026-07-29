@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "wm:frost_scythe_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "III",
+      " C ",
+      " S "
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:packed_ice"
+      },
+      "C": {
+        "item": "wm:weapon_core"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "wm:weapon_core"
+      }
+    ],
+    "result": {
+      "item": "wm:frost_scythe",
+      "count": 1
+    }
+  }
+}

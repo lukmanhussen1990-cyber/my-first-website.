@@ -1,0 +1,45 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "f9a45432-a6a4-4171-9921-681ab38c0231",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "Legendary Weapons data module",
+      "type": "data",
+      "uuid": "b9974b74-9456-402c-b21a-1888635a8f7a",
+      "version": [1, 0, 0]
+    },
+    {
+      "description": "Legendary Weapons script module",
+      "type": "script",
+      "language": "javascript",
+      "uuid": "987e288c-82d2-4dae-abbd-62650f0d1a86",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "1b556013-1c42-477c-9b48-4a5d52c24bd9",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.1.0"
+    }
+  ],
+  "metadata": {
+    "authors": ["Legendary Weapons Addon"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "wm:void_ripper_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " E ",
+      " C ",
+      " S "
+    ],
+    "key": {
+      "E": {
+        "item": "minecraft:echo_shard"
+      },
+      "C": {
+        "item": "wm:weapon_core"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "wm:weapon_core"
+      }
+    ],
+    "result": {
+      "item": "wm:void_ripper",
+      "count": 1
+    }
+  }
+}
