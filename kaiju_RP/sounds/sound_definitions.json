@@ -1,0 +1,150 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "kj.kaiju.roar": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/kaiju/roar1",
+          "volume": 1.0,
+          "stream": true
+        },
+        {
+          "name": "sounds/kaiju/roar2",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "kj.kaiju.screech": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/kaiju/screech",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "kj.kaiju.step": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/kaiju/step1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/kaiju/step2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "kj.kaiju.stomp": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/kaiju/stomp",
+          "volume": 1.0
+        }
+      ]
+    },
+    "kj.kaiju.smash": {
+      "category": "block",
+      "sounds": [
+        {
+          "name": "sounds/kaiju/smash1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/kaiju/smash2",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/kaiju/smash3",
+          "volume": 1.0
+        }
+      ]
+    },
+    "kj.kaiju.tail": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/kaiju/tail_sweep",
+          "volume": 1.0
+        }
+      ]
+    },
+    "kj.atomic.charge": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/kaiju/atomic_charge",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "kj.atomic.beam": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/kaiju/atomic_beam",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "kj.atomic.hit": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/kaiju/atomic_hit",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "kj.kaiju.hurt": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/kaiju/hurt1",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/kaiju/hurt2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "kj.kaiju.death": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/kaiju/death",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "kj.horn.summon": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/kaiju/horn_summon",
+          "volume": 1.0,
+          "stream": true
+        }
+      ]
+    },
+    "kj.horn.open": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/kaiju/horn_open",
+          "volume": 1.0
+        }
+      ]
+    }
+  }
+}

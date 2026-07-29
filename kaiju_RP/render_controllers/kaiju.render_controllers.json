@@ -1,0 +1,20 @@
+{
+  "format_version": "1.10.0",
+  "render_controllers": {
+    "controller.render.kj_kaiju": {
+      "arrays": {
+        "textures": {
+          "Array.states": ["Texture.calm", "Texture.charging", "Texture.enraged"]
+        }
+      },
+      "geometry": "Geometry.default",
+      "materials": [
+        { "*": "Material.default" }
+      ],
+      "textures": ["Array.states[query.variant]"],
+      "part_visibility": [
+        { "*": true }
+      ]
+    }
+  }
+}

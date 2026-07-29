@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "kj:kaiju_horn_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "OSO",
+      "SNS",
+      "OSO"
+    ],
+    "key": {
+      "O": {
+        "item": "minecraft:obsidian"
+      },
+      "S": {
+        "item": "minecraft:iron_ingot"
+      },
+      "N": {
+        "item": "minecraft:nether_star"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:nether_star"
+      }
+    ],
+    "result": {
+      "item": "kj:kaiju_horn",
+      "count": 1
+    }
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.kj_kaiju.idle": {
+      "loop": true,
+      "animation_length": 4.0,
+      "bones": {
+        "body": {
+          "position": [0, "math.sin(query.life_time * 60) * 1.2", 0],
+          "rotation": ["2 + math.sin(query.life_time * 60) * 1.5", 0, 0]
+        },
+        "neck": {
+          "rotation": ["-6 + math.sin(query.life_time * 45) * 3", "math.sin(query.life_time * 25) * 6", 0]
+        },
+        "head": {
+          "rotation": ["4 + math.sin(query.life_time * 50) * 3", "math.sin(query.life_time * 20) * 8", 0]
+        },
+        "jaw": {
+          "rotation": ["6 + math.sin(query.life_time * 40) * 5", 0, 0]
+        },
+        "arm_left": {
+          "rotation": ["-14 + math.sin(query.life_time * 55) * 4", 0, "-8"]
+        },
+        "arm_right": {
+          "rotation": ["-14 + math.sin(query.life_time * 55 + 90) * 4", 0, "8"]
+        },
+        "tail1": {
+          "rotation": ["-6", "math.sin(query.life_time * 40) * 8", 0]
+        },
+        "tail2": {
+          "rotation": [0, "math.sin(query.life_time * 40 + 40) * 10", 0]
+        },
+        "tail3": {
+          "rotation": [0, "math.sin(query.life_time * 40 + 80) * 12", 0]
+        },
+        "tail4": {
+          "rotation": [0, "math.sin(query.life_time * 40 + 120) * 14", 0]
+        },
+        "spines": {
+          "scale": [1.0, "1.0 + math.sin(query.life_time * 90) * 0.04", 1.0]
+        }
+      }
+    },
+
+    "animation.kj_kaiju.walk": {
+      "loop": true,
+      "animation_length": 2.0,
+      "bones": {
+        "root": {
+          "position": [0, "math.abs(math.sin(query.modified_distance_moved * 22)) * 2.5", 0]
+        },
+        "body": {
+          "rotation": [
+            "4 + math.sin(query.modified_distance_moved * 44) * 3",
+            "math.sin(query.modified_distance_moved * 22) * 5",
+            "math.sin(query.modified_distance_moved * 22) * 4"
+          ]
+        },
+        "leg_left": {
+          "rotation": ["math.sin(query.modified_distance_moved * 22) * 32", 0, 0]
+        },
+        "leg_right": {
+          "rotation": ["math.sin(query.modified_distance_moved * 22 + 180) * 32", 0, 0]
+        },
+        "arm_left": {
+          "rotation": ["-16 + math.sin(query.modified_distance_moved * 22 + 180) * 18", 0, "-10"]
+        },
+        "arm_right": {
+          "rotation": ["-16 + math.sin(query.modified_distance_moved * 22) * 18", 0, "10"]
+        },
+        "neck": {
+          "rotation": ["-8 + math.sin(query.modified_distance_moved * 44) * 4", 0, 0]
+        },
+        "head": {
+          "rotation": ["6 + math.sin(query.modified_distance_moved * 44 + 90) * 4", 0, 0]
+        },
+        "jaw": {
+          "rotation": ["10 + math.sin(query.modified_distance_moved * 44) * 6", 0, 0]
+        },
+        "tail1": {
+          "rotation": ["-8", "math.sin(query.modified_distance_moved * 22) * 16", 0]
+        },
+        "tail2": {
+          "rotation": [0, "math.sin(query.modified_distance_moved * 22 + 50) * 18", 0]
+        },
+        "tail3": {
+          "rotation": [0, "math.sin(query.modified_distance_moved * 22 + 100) * 20", 0]
+        },
+        "tail4": {
+          "rotation": [0, "math.sin(query.modified_distance_moved * 22 + 150) * 22", 0]
+        }
+      }
+    },
+
+    "animation.kj_kaiju.charge": {
+      "loop": true,
+      "animation_length": 3.0,
+      "bones": {
+        "body": {
+          "rotation": ["-8", 0, "math.sin(query.life_time * 300) * 1.2"],
+          "position": [0, "math.sin(query.life_time * 300) * 0.8", 0]
+        },
+        "neck": {
+          "rotation": ["-30 + math.sin(query.life_time * 260) * 2", 0, 0]
+        },
+        "head": {
+          "rotation": ["-18", 0, 0]
+        },
+        "jaw": {
+          "rotation": ["38 + math.sin(query.life_time * 340) * 6", 0, 0]
+        },
+        "spines": {
+          "scale": [
+            "1.0 + math.sin(query.life_time * 420) * 0.12",
+            "1.15 + math.sin(query.life_time * 420) * 0.12",
+            "1.0 + math.sin(query.life_time * 420) * 0.12"
+          ]
+        },
+        "arm_left": { "rotation": ["-34", 0, "-18"] },
+        "arm_right": { "rotation": ["-34", 0, "18"] },
+        "tail1": { "rotation": ["-14", "math.sin(query.life_time * 120) * 4", 0] }
+      }
+    },
+
+    "animation.kj_kaiju.roar": {
+      "loop": true,
+      "animation_length": 2.5,
+      "bones": {
+        "head": {
+          "rotation": ["-22 + math.sin(query.life_time * 500) * 2", 0, 0]
+        },
+        "jaw": {
+          "rotation": ["46 + math.sin(query.life_time * 500) * 8", 0, 0]
+        }
+      }
+    }
+  }
+}

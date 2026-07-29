@@ -1,0 +1,39 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.kj_kaiju": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "animations": ["idle"],
+          "blend_transition": 0.3,
+          "transitions": [
+            { "charging": "query.variant == 1" },
+            { "walking": "query.modified_move_speed > 0.05" }
+          ]
+        },
+        "walking": {
+          "animations": ["walk"],
+          "blend_transition": 0.3,
+          "particle_effects": [
+            { "effect": "rubble" }
+          ],
+          "transitions": [
+            { "charging": "query.variant == 1" },
+            { "idle": "query.modified_move_speed <= 0.05" }
+          ]
+        },
+        "charging": {
+          "animations": ["charge", "roar"],
+          "blend_transition": 0.2,
+          "particle_effects": [
+            { "effect": "charge" }
+          ],
+          "transitions": [
+            { "idle": "query.variant != 1" }
+          ]
+        }
+      }
+    }
+  }
+}

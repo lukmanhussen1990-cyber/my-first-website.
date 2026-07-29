@@ -1,0 +1,41 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "kj:kaiju",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/kaiju/kaiju_calm",
+        "calm": "textures/entity/kaiju/kaiju_calm",
+        "charging": "textures/entity/kaiju/kaiju_charging",
+        "enraged": "textures/entity/kaiju/kaiju_enraged"
+      },
+      "geometry": {
+        "default": "geometry.kj_kaiju"
+      },
+      "animations": {
+        "idle": "animation.kj_kaiju.idle",
+        "walk": "animation.kj_kaiju.walk",
+        "charge": "animation.kj_kaiju.charge",
+        "roar": "animation.kj_kaiju.roar",
+        "controller": "controller.animation.kj_kaiju"
+      },
+      "scripts": {
+        "animate": ["controller"]
+      },
+      "particle_effects": {
+        "charge": "kj:atomic_charge",
+        "smoke": "kj:kaiju_smoke",
+        "rubble": "kj:rubble"
+      },
+      "render_controllers": ["controller.render.kj_kaiju"],
+      "spawn_egg": {
+        "base_color": "#2c2f33",
+        "overlay_color": "#8ef0ff"
+      },
+      "enable_attachables": false
+    }
+  }
+}

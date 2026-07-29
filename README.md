@@ -1,16 +1,17 @@
 # Minecraft Bedrock Addons (Pocket Edition friendly)
 
-Three standalone addons for Minecraft Bedrock Edition, built for **Android and
+Four standalone addons for Minecraft Bedrock Edition, built for **Android and
 iOS** (they work on Windows, console and Realms too). Install any one of them, or
-all three — they share no files and never conflict.
+all four — they share no files and never conflict.
 
 | Addon | Download | What it is |
 | --- | --- | --- |
 | **Natural Disasters** | `NaturalDisasters.mcaddon` | Tornadoes, earthquakes, meteors, tsunamis, wildfires and lightning storms, with a Disaster Wand and a Disaster Detector |
 | **Parasite** | `Parasite.mcaddon` | A creature that eats everything around it the moment it spawns — items, mobs, players and the blocks themselves — then grows and splits in two |
 | **Legendary Weapons** | `LegendaryWeapons.mcaddon` | Six weapons with real abilities: call lightning, freeze the battlefield, fire explosive bolts, blink through enemies, slam the ground, open a black hole |
+| **Kaiju Rampage** | `KaijuRampage.mcaddon` | An 11 block tall Godzilla-style monster that levels terrain and buildings just by walking, stomps craters, sweeps its tail, roars and fires an atomic breath |
 
-All three require **Minecraft Bedrock 1.21.0 or newer** and need **no
+All four require **Minecraft Bedrock 1.21.0 or newer** and need **no
 experimental toggles**.
 
 ## Using the items on a phone
@@ -26,8 +27,8 @@ in these addons:
 Every item here uses a 2 second use duration so the press registers reliably; the
 ability fires the instant you press, so you do not have to hold it down.
 
-If an item still does nothing, run `/scriptevent wm:help` (or `nd:help` /
-`pm:help`) in chat — the same actions are available as commands, and
+If an item still does nothing, run `/scriptevent wm:help` (or `nd:help`,
+`pm:help`, `kj:help`) in chat — the same actions are available as commands, and
 `/scriptevent wm:use thunder_blade` fires an ability directly so you can tell a
 control problem apart from a pack problem.
 
@@ -469,11 +470,14 @@ To stop parasites appearing naturally in caves, delete
 python3 tools/generate_textures.py            # Natural Disasters PNGs
 python3 tools/generate_parasite_textures.py   # Parasite PNGs
 python3 tools/generate_weapon_textures.py     # Legendary Weapons PNGs
+python3 tools/generate_kaiju_model.py         # Kaiju geometry + UV atlas map
+python3 tools/generate_kaiju_textures.py      # Kaiju PNGs (paints against that map)
 python3 tools/build_mcaddon.py                # validate + pack all three .mcaddon files
 python3 tools/build_mcaddon.py weapons        # just one addon
 node    tools/test_scripts.mjs                # Natural Disasters: 37 checks
 node    tools/test_parasite.mjs               # Parasite: 23 checks
 node    tools/test_weapons.mjs                # Legendary Weapons: 44 checks
+node    tools/test_kaiju.mjs                  # Kaiju Rampage: 30 checks
 ```
 
 Both test files stub `@minecraft/server` and `@minecraft/server-ui` and run the
@@ -633,3 +637,152 @@ weapons_RP/                        RESOURCE PACK
 
 The codex, the cooldown handling, the settings and the `/scriptevent` commands
 pick it up automatically.
+
+---
+
+# Part 4 — Kaiju Rampage
+
+An **11 block tall** monster in the Godzilla mould that treats the landscape as
+scenery to be flattened. **It destroys constantly — not only when it attacks.**
+Anything its body occupies is ground to rubble as it walks, so it carves its own
+path through hills, forests and whatever you built.
+
+> The creature is called **Kaiju** rather than a trademarked name. If you want it
+> named something else, change one line — `entity.kj:kaiju.name=` in
+> `kaiju_BP/texts/en_US.lang` — and rebuild.
+
+Install `KaijuRampage.mcaddon` the same way as the others, then activate
+**Kaiju Rampage (Behavior)** in your world.
+
+## What it does
+
+| Attack | Effect |
+| --- | --- |
+| **Walking** | Every block its body passes through is smashed, with a little rubble left behind. Hills, trees and buildings all go. |
+| **Stomp** | Every few footfalls: a 4.5 block shockwave, 14 damage, cracks the ground two blocks deep, launches everything into the air and shakes screens for 45 blocks. |
+| **Tail Sweep** | Every 9 seconds when something is close: 9 block radius, 26 damage, hurls everything away and knocks chunks out of the surroundings. |
+| **Atomic Breath** | Every 22 seconds: the dorsal plates glow blue for 3 seconds, then a beam carves a burning 46 block trench through the world — 55 damage, scorched magma, a 4 power detonation at the far end. |
+| **Roar** | Every 30 seconds: 55 block radius, heavy screen shake, nausea, slowness and weakness for everything nearby. |
+
+**Health 1500, melee damage 40, immune to fall, fire, lava, lightning and
+drowning, and it cannot be knocked back.** Below **half health it enrages**: it
+turns scorched black with molten cracks, moves faster, hits for 60 and its
+cooldowns drop by nearly half.
+
+Its skin changes with its state — charcoal when calm, glowing atomic blue while
+charging its breath, black and molten when enraged.
+
+## Waking one
+
+Craft the **Kaiju Horn** (nether star in the centre, 4 iron, 4 obsidian), or run
+`/scriptevent kj:give`. It is also a creative spawn egg.
+
+- **Tap** the horn → a kaiju rises 22 blocks in front of you
+- **Sneak + tap** → menu: Wake the Kaiju, Banish Them All, Settings
+
+It drops **Kaiju Scales**, **Atomic Cores**, diamonds and netherite scrap, plus
+500 XP. Killing one is a real fight: 1500 health that regenerates.
+
+## Keeping it under control
+
+Default limits, all adjustable in the settings screen:
+
+- **2 kaiju maximum** — extras are removed the moment they spawn
+- **140 block edits per tick**, shared between all kaiju, so phones stay playable
+  (lower it if your device struggles)
+- **Never destroyed**: bedrock, barriers, command blocks, portals, spawners,
+  reinforced deepslate, and water/lava are left alone
+- **Destruction scale** 25–200%
+- Block smashing, atomic breath, roar and hunting players can each be turned off
+- **Banish Them All** removes every kaiju instantly
+
+## Commands
+
+```
+/scriptevent kj:summon [count]     wake kaiju in front of you (max 5)
+/scriptevent kj:kill               remove every kaiju
+/scriptevent kj:status             what is awake, and how hurt
+/scriptevent kj:destroy on|off     block smashing on or off
+/scriptevent kj:hunt on|off        whether it targets players
+/scriptevent kj:power <percent>    destruction scale, 10 to 400
+/scriptevent kj:cap <number>       how many may exist at once
+/scriptevent kj:give               give yourself a Kaiju Horn
+/scriptevent kj:settings           open the settings screen
+/scriptevent kj:help               print this in chat
+```
+
+## Folder structure
+
+```
+KaijuRampage.mcaddon               <- the installable file
+
+kaiju_BP/                          BEHAVIOR PACK
+├── manifest.json
+├── pack_icon.png
+├── entities/
+│   └── kaiju.json                 kj:kaiju, three states as component groups
+├── items/
+│   ├── kaiju_horn.json            kj:kaiju_horn
+│   ├── kaiju_scale.json           kj:kaiju_scale
+│   └── atomic_core.json           kj:atomic_core
+├── recipes/kaiju_horn.json
+├── loot_tables/entities/kaiju.json
+├── scripts/
+│   ├── main.js                    events, horn taps, /scriptevent, warnings
+│   ├── config.js                  settings, tuning, protected block list
+│   ├── util.js                    safe API wrappers, raycast, block breaking
+│   ├── sounds.js                  custom + vanilla sound ids
+│   ├── rampage.js                 the destruction engine
+│   └── ui.js                      Kaiju Horn menus
+└── texts/en_US.lang, languages.json
+
+kaiju_RP/                          RESOURCE PACK
+├── manifest.json
+├── pack_icon.png
+├── entity/kaiju.entity.json       three skins chosen by state
+├── models/entity/kaiju.geo.json   35 cubes, generated (see tools/)
+├── animations/kaiju.animation.json    idle, walk, charge, roar
+├── animation_controllers/kaiju.animation_controllers.json
+├── render_controllers/kaiju.render_controllers.json
+├── particles/                     atomic charge + beam, stomp dust, rubble,
+│                                  roar wave, smoke
+├── sounds/
+│   ├── sound_definitions.json     13 custom sound events
+│   └── kaiju/                     drop your own .ogg files here
+├── textures/
+│   ├── item_texture.json
+│   ├── items/                     horn, scale, atomic core
+│   ├── entity/kaiju/              kaiju_calm, kaiju_charging, kaiju_enraged
+│   ├── particle/                  6 particle textures
+│   └── ui/                        3 menu icons
+└── texts/en_US.lang, languages.json
+```
+
+The model and its texture are both generated, and share a UV atlas map so they
+can never drift apart:
+
+```bash
+python3 tools/generate_kaiju_model.py      # writes the .geo.json + tools/kaiju_uv_map.json
+python3 tools/generate_kaiju_textures.py   # paints the three skins against that map
+```
+
+### UUIDs
+
+| Pack | Part | UUID |
+| --- | --- | --- |
+| BP | header | `6a867c80-c6d0-42ca-93bf-f81bff3131aa` |
+| BP | data module | `82b2d9ba-9794-44af-8088-3c79324401ce` |
+| BP | script module | `b64daa19-f3c9-4125-bc05-269bb59a3f1a` |
+| RP | header | `acd5b6e2-c994-4b47-ae22-95805b507598` |
+| RP | resources module | `7e7e2ad7-4f2e-43ce-a7d9-20806e1a2cf8` |
+
+## Tuning it
+
+`kaiju_BP/scripts/config.js`:
+
+- `TUNING.body` — how much of the world its hitbox grinds up
+- `TUNING.stomp` / `TUNING.tail` / `TUNING.breath` / `TUNING.roar` — every
+  cooldown, radius and damage number
+- `TUNING.enrageAtHealthFraction` and `enrageCooldownScale`
+- `SETTINGS_DEFAULTS.maxBlockOpsPerTick` — the single most useful dial for
+  performance on older phones

@@ -32,6 +32,10 @@ ADDONS = {
         "output": "LegendaryWeapons.mcaddon",
         "packs": ["weapons_BP", "weapons_RP"],
     },
+    "kaiju": {
+        "output": "KaijuRampage.mcaddon",
+        "packs": ["kaiju_BP", "kaiju_RP"],
+    },
 }
 
 # Documentation that should not ship inside the addon.

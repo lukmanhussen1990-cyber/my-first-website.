@@ -1,0 +1,45 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "6a867c80-c6d0-42ca-93bf-f81bff3131aa",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "Kaiju Rampage data module",
+      "type": "data",
+      "uuid": "82b2d9ba-9794-44af-8088-3c79324401ce",
+      "version": [1, 0, 0]
+    },
+    {
+      "description": "Kaiju Rampage script module",
+      "type": "script",
+      "language": "javascript",
+      "uuid": "b64daa19-f3c9-4125-bc05-269bb59a3f1a",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "acd5b6e2-c994-4b47-ae22-95805b507598",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.1.0"
+    }
+  ],
+  "metadata": {
+    "authors": ["Kaiju Rampage Addon"],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}
