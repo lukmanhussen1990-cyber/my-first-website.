@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Endless Growth — SVG plant simulation</title>
+<style>
+  :root{
+    --ink: #0d1b14;
+    --hud: rgba(255,255,255,.72);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; overflow:hidden; background:#0b1410; }
+  body{
+    font: 400 13px/1.5 ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    color: var(--hud);
+    touch-action: none;
+  }
+  #stage{ position:fixed; inset:0; display:block; width:100%; height:100%; }
+
+  .hud{
+    position:fixed; left:22px; bottom:20px; pointer-events:none;
+    text-shadow:0 1px 12px rgba(0,0,0,.55);
+    opacity:.9;
+  }
+  .hud h1{
+    margin:0 0 3px; font-size:15px; font-weight:600; letter-spacing:.02em;
+    color:#eaf6ee;
+  }
+  .hud p{ margin:0; font-size:11.5px; letter-spacing:.045em; text-transform:uppercase; opacity:.6; }
+
+  .meter{
+    position:fixed; right:22px; bottom:20px; pointer-events:none;
+    font-variant-numeric: tabular-nums; font-size:11.5px; letter-spacing:.05em;
+    text-transform:uppercase; opacity:.45; text-align:right;
+  }
+  .meter b{ font-weight:600; color:#eaf6ee; }
+
+  @media (max-width:560px){
+    .hud{ left:16px; bottom:16px; } .meter{ right:16px; bottom:16px; }
+  }
+</style>
+</head>
+<body>
+
+<svg id="stage" preserveAspectRatio="xMidYMid slice" aria-label="An animation of a plant growing endlessly upward, its leaves unfurling and swaying in the wind."></svg>
+
+<div class="hud">
+  <h1>Endless Growth</h1>
+  <p>Move to stir the air &middot; Click for a gust</p>
+</div>
+<div class="meter"><b id="hgt">0</b> cm tall</div>
+
+<script>
+(() => {
+"use strict";
+
+const NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById("stage");
+const hgtEl = document.getElementById("hgt");
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ─────────────────────────── tuning ─────────────────────────── */
+const CFG = {
+  seg:        13,        // stem segment length (px)
+  growth:     REDUCED ? 14 : 30,  // px / second
+  leafEvery:  3,         // one leaf every N segments
+  flowerEvery:23,        // one flower every N segments
+  gravity:    26,
+  windGain:   REDUCED ? .25 : 1,
+  substeps:   2,
+  iterations: 4,
+  maxStep:    5          // per-substep speed cap — keeps the solver honest
+};
+
+/* ─────────────────────────── helpers ─────────────────────────── */
+const rnd  = (a, b) => a + Math.random() * (b - a);
+const clamp= (v, a, b) => v < a ? a : v > b ? b : v;
+const el   = (tag, attrs, parent) => {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+};
+const f = n => Math.round(n * 100) / 100;
+
+/* Catmull–Rom through points → cubic bezier path data */
+function smooth(pts, cont) {
+  if (pts.length < 2) return "";
+  let d = (cont ? "L" : "M") + f(pts[0][0]) + "," + f(pts[0][1]);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i],
+          p2 = pts[i + 1], p3 = pts[i + 2] || pts[i + 1];
+    d += "C" + f(p1[0] + (p2[0] - p0[0]) / 6) + "," + f(p1[1] + (p2[1] - p0[1]) / 6)
+       + " " + f(p2[0] - (p3[0] - p1[0]) / 6) + "," + f(p2[1] - (p3[1] - p1[1]) / 6)
+       + " " + f(p2[0]) + "," + f(p2[1]);
+  }
+  return d;
+}
+
+/* ─────────────────────────── scene scaffold ─────────────────────────── */
+let W = 0, H = 0;
+
+const defs = el("defs", {}, svg);
+
+// sky — cool and dark, so the plant reads bright against it
+const sky = el("linearGradient", { id:"sky", x1:"0", y1:"0", x2:".3", y2:"1" }, defs);
+el("stop", { offset:"0",   "stop-color":"#050d14" }, sky);
+el("stop", { offset:".5",  "stop-color":"#08171d" }, sky);
+el("stop", { offset:"1",   "stop-color":"#0d2422" }, sky);
+
+// warm sun glow
+const glow = el("radialGradient", { id:"glow", cx:".74", cy:".13", r:".48" }, defs);
+el("stop", { offset:"0",  "stop-color":"#ffe0a0", "stop-opacity":".26" }, glow);
+el("stop", { offset:".45","stop-color":"#7fd39a", "stop-opacity":".07" }, glow);
+el("stop", { offset:"1",  "stop-color":"#000000", "stop-opacity":"0" }, glow);
+
+// stem shading (cylindrical, across the bounding box)
+const stemG = el("linearGradient", { id:"stemG", x1:"0", y1:"0", x2:"1", y2:"0" }, defs);
+el("stop", { offset:"0",   "stop-color":"#2f6b39" }, stemG);
+el("stop", { offset:".36", "stop-color":"#79c162" }, stemG);
+el("stop", { offset:".7",  "stop-color":"#47924a" }, stemG);
+el("stop", { offset:"1",   "stop-color":"#1e4a2b" }, stemG);
+
+// bottom vignette so culled geometry never "pops"
+const fade = el("linearGradient", { id:"fade", x1:"0", y1:"0", x2:"0", y2:"1" }, defs);
+el("stop", { offset:"0",   "stop-color":"#061014", "stop-opacity":"0" }, fade);
+el("stop", { offset:"1",   "stop-color":"#040b0e", "stop-opacity":".95" }, fade);
+
+const blur = el("filter", { id:"soft", x:"-50%", y:"-50%", width:"200%", height:"200%" }, defs);
+el("feGaussianBlur", { stdDeviation:"22" }, blur);
+
+const bg      = el("rect",  { x:0, y:0, width:"100%", height:"100%", fill:"url(#sky)" }, svg);
+const bokeh   = el("g",     { filter:"url(#soft)", opacity:".22" }, svg);
+const sunRect = el("rect",  { x:0, y:0, width:"100%", height:"100%", fill:"url(#glow)" }, svg);
+
+const world   = el("g", {}, svg);              // camera-transformed
+const gGround = el("g", {}, world);
+const gLeaf   = el("g", {}, world);            // behind the stem
+const gStem   = el("g", {}, world);
+const gFlower = el("g", {}, world);
+
+const stemPath = el("path", { fill:"url(#stemG)" }, gStem);
+const stemLite = el("path", { fill:"none", stroke:"#a9e39a", "stroke-opacity":".33",
+                              "stroke-width":"1.1", "stroke-linecap":"round" }, gStem);
+
+const motes   = el("g", {}, svg);
+const vign    = el("rect", { x:0, y:0, width:"100%", height:"180", fill:"url(#fade)" }, svg);
+
+/* ─────────────────────────── wind ─────────────────────────── */
+let gust = 0, pointerWind = 0, pointerY = 0;
+
+function windAt(y, t) {
+  const base =
+      Math.sin(t * 0.63 + y * 0.0042) * 0.62 +
+      Math.sin(t * 1.71 - y * 0.0110) * 0.26 +
+      Math.sin(t * 0.29 + 1.7)        * 0.48;
+  const swell = 0.45 + 0.55 * Math.pow(0.5 + 0.5 * Math.sin(t * 0.17 - 0.6), 2);
+  return (base * swell * 46 + gust * 150 + pointerWind * 90) * CFG.windGain;
+}
+
+/* ─────────────────────────── the plant ─────────────────────────── */
+let nodes = [], leaves = [], flowers = [];
+let restLast = 0.5, grown = 0, made = 0, camY = 0, camTarget = 0;
+let growAng = -Math.PI / 2, lastGrowAng = -Math.PI / 2;
+
+/* Where the tip *wants* to go: up, with a slow wander and a pull back to
+   centre. Everything the stem does is a deviation from this, so wind can
+   bend it hard without the plant ever wandering out of frame. */
+function growDir(t, x) {
+  return -Math.PI / 2
+       + Math.sin(t * 0.21) * 0.30 + Math.sin(t * 0.47 + 1.9) * 0.13
+       + clamp((W / 2 - x) / (W * 0.42), -1, 1) * 0.40;
+}
+
+function node(x, y, born) {
+  // `aim` is the absolute direction this segment hardened at. Absolute, not
+  // relative to the segment below: relative angles let each joint inherit the
+  // one below's droop, and the stem slowly curls itself into a spiral.
+  return { x, y, px:x, py:y, vx:0, vy:0, ax:0, ay:0, born, aim:-Math.PI/2, w:0 };
+}
+
+function seedPlant(now) {
+  nodes = [node(W / 2, CFG.seg, now), node(W / 2, 0, now), node(W / 2, -0.6, now)];
+  nodes[0].pinned = nodes[1].pinned = true;      // rigid root, always off-screen
+  leaves.length = flowers.length = 0;
+  gLeaf.textContent = gFlower.textContent = "";
+  restLast = 0.6; grown = 0; made = 0;
+  growAng = lastGrowAng = -Math.PI / 2;
+  camY = camTarget = -H * 0.80;
+}
+
+/* physics ------------------------------------------------------ */
+function integrate(dt, t) {
+  const tip = nodes.length - 1;
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    if (n.pinned) { n.px = n.x; n.py = n.y; continue; }
+
+    // youth = how recently this node was laid down → thin, whippy, wind-catching
+    const youth = clamp(1 - n.w / 6.2, 0, 1);
+
+    let fx = windAt(n.y, t) * (0.25 + 0.95 * youth);
+    let fy = CFG.gravity * (0.35 + 0.65 * youth);
+
+    if (i === tip) {                        // the tip chases the light
+      const p = nodes[tip - 1];
+      fx += (p.x + Math.cos(growAng) * restLast - n.x) * 62;
+      fy += (p.y + Math.sin(growAng) * restLast - n.y) * 62 - 40;
+    }
+
+    let vx = (n.x - n.px) * 0.9885, vy = (n.y - n.py) * 0.9885;
+    const sp = Math.hypot(vx, vy);
+    if (sp > CFG.maxStep) { vx *= CFG.maxStep / sp; vy *= CFG.maxStep / sp; }
+    n.px = n.x; n.py = n.y;
+    n.x += vx + fx * dt * dt;
+    n.y += vy + fy * dt * dt;
+  }
+
+  for (let k = 0; k < CFG.iterations; k++) {
+    // distance
+    for (let i = 0; i < nodes.length - 1; i++) {
+      const a = nodes[i], b = nodes[i + 1];
+      const rest = (i === nodes.length - 2) ? restLast : CFG.seg;
+      let dx = b.x - a.x, dy = b.y - a.y;
+      const d = Math.hypot(dx, dy) || 1e-4;
+      const diff = (d - rest) / d * 0.5;
+      dx *= diff; dy *= diff;
+      if (!a.pinned) { a.x += dx; a.y += dy; }
+      if (!b.pinned) { b.x -= dx; b.y -= dy; }
+    }
+    // bending — each joint pulls back toward the angle it hardened at
+    for (let i = 1; i < nodes.length - 1; i++) {
+      const a = nodes[i - 1], b = nodes[i], c = nodes[i + 1];
+      const len = Math.hypot(c.x - b.x, c.y - b.y);
+      const tx = b.x + Math.cos(b.aim) * len, ty = b.y + Math.sin(b.aim) * len;
+      const stiff = clamp(0.07 + b.w * 0.038, 0.07, 0.30);
+      const dx = (tx - c.x) * stiff, dy = (ty - c.y) * stiff;
+      // split the correction so the joint straightens without shoving the
+      // whole chain upward — an unbalanced version pumps energy and detonates
+      c.x += dx * 0.62; c.y += dy * 0.62;
+      if (!a.pinned) { a.x -= dx * 0.38; a.y -= dy * 0.38; }
+    }
+  }
+}
+
+function grow(dt, now) {
+  const tip = nodes[nodes.length - 1];
+  growAng = growDir(now, tip.x);
+  restLast += CFG.growth * dt;
+  if (restLast < CFG.seg) return;
+
+  restLast -= CFG.seg;
+
+  // the joint hardens holding the direction the tip was heading
+  tip.aim = growAng;
+  nodes[nodes.length - 2].aim = lastGrowAng;
+  lastGrowAng = growAng;
+
+  nodes.push(node(tip.x + Math.cos(growAng) * restLast,
+                  tip.y + Math.sin(growAng) * restLast, now));
+  grown++; made++;
+
+  if (made % CFG.leafEvery === 0)   addLeaf(nodes.length - 2);
+  if (made % CFG.flowerEvery === 0) addFlower(nodes.length - 2);
+}
+
+/* leaves ------------------------------------------------------- */
+let side = 1;
+function addLeaf(idx) {
+  side *= -1;
+  const L = {
+    idx, side,
+    spread: rnd(0.80, 1.08),
+    len:    rnd(44, 68),
+    wid:    rnd(12, 18),
+    bend:   rnd(0.25, 0.62) * side,
+    open:0, openV:0, ang:0, angV:0, age:0, wait: rnd(0.7, 1.6),
+    k: rnd(30, 44), c: rnd(3.4, 5.2),
+    drag: rnd(0.010, 0.018),
+    fl: rnd(1.1, 2.0), ph: rnd(0, 6.28),
+    hue: rnd(84, 124), lig: rnd(40, 52),
+    blade: el("path", { "stroke-linejoin":"round" }, gLeaf),
+    shine: el("path", { fill:"#dcf7c4", "fill-opacity":".16" }, gLeaf),
+    vein:  el("path", { fill:"none", stroke:"#1c3f22", "stroke-opacity":".30",
+                        "stroke-width":".9", "stroke-linecap":"round" }, gLeaf)
+  };
+  L.blade.setAttribute("fill", `hsl(${f(L.hue)} 42% ${f(L.lig)}%)`);
+  leaves.push(L);
+}
+
+function leafGeom(L, t) {
+  const n = nodes[L.idx];
+  const a = nodes[Math.max(0, L.idx - 1)], b = nodes[Math.min(nodes.length - 1, L.idx + 1)];
+  const stem = Math.atan2(b.y - a.y, b.x - a.x);
+  const base = stem + L.side * L.spread;
+  const worldAng = base + L.ang;
+
+  const curl = clamp(1 - L.open, 0, 1);
+  // blade grows as it unrolls; while coiled it's a tight fiddlehead
+  const len  = L.len * (0.30 + 0.70 * clamp(L.open, 0, 1.1));
+  const N    = 15, step = len / N;
+  const spin = curl * 2.7 * Math.PI * L.side;
+
+  // wind flutter reads as the blade twisting edge-on to the light
+  const wq   = clamp(Math.abs(windAt(n.y, t)) / 90, 0, 1);
+  const tw   = 0.34 + 0.66 * Math.abs(Math.cos(t * L.fl + L.ph + wq * 2.4));
+  const face = 0.45 + 0.55 * tw;
+
+  const mid = [], lft = [], rgt = [];
+  let ang = worldAng, x = n.x, y = n.y;
+  for (let i = 0; i <= N; i++) {
+    const s = i / N;
+    mid.push([x, y]);
+    const shape = Math.pow(Math.sin(Math.PI * Math.pow(s, 0.82)), 0.92);
+    const w = L.wid * shape * face * (1 - curl * 0.86) * (1 + 0.055 * Math.sin(s * 21));
+    const nx = -Math.sin(ang) * w, ny = Math.cos(ang) * w;
+    lft.push([x + nx, y + ny]);
+    rgt.push([x - nx, y - ny]);
+    ang += (L.bend + spin * (0.45 + 1.1 * s)) / N;
+    x += Math.cos(ang) * step; y += Math.sin(ang) * step;
+  }
+
+  L.blade.setAttribute("d", smooth(lft) + smooth(rgt.reverse(), true) + "Z");
+  L.blade.setAttribute("fill", `hsl(${f(L.hue)} ${f(30 + 20 * face)}% ${f(L.lig * (0.7 + 0.55 * face))}%)`);
+
+  if (L.open > 0.45) {
+    L.vein.setAttribute("d", smooth(mid));
+    L.vein.setAttribute("opacity", f(clamp((L.open - 0.45) * 2.2, 0, 1)));
+    const half = mid.slice(0, Math.ceil(N * 0.62)).map((p, i) => {
+      const q = lft[i];
+      return [p[0] + (q[0] - p[0]) * 0.55, p[1] + (q[1] - p[1]) * 0.55];
+    });
+    L.shine.setAttribute("d", smooth(half) + smooth(mid.slice(0, half.length).reverse(), true) + "Z");
+    L.shine.setAttribute("opacity", f(0.10 + 0.30 * face));
+  } else {
+    L.vein.setAttribute("d", ""); L.shine.setAttribute("d", "");
+  }
+}
+
+function updateLeaf(L, dt, t) {
+  const n = nodes[L.idx];
+  const a = nodes[Math.max(0, L.idx - 1)], b = nodes[Math.min(nodes.length - 1, L.idx + 1)];
+  const stem = Math.atan2(b.y - a.y, b.x - a.x);
+  const A = stem + L.side * L.spread + L.ang;
+
+  // unfurl: sits tight as a coiled fiddlehead, then springs open and overshoots
+  L.age += dt;
+  if (L.age > L.wait) {
+    L.openV += ((1 - L.open) * 15 - L.openV * 3.3) * dt;
+    L.open  += L.openV * dt;
+  }
+
+  const w = windAt(n.y, t);
+  const grow = clamp(L.open, 0, 1);
+  let torque = -w * Math.sin(A) * L.drag * grow          // wind pressure on the blade
+             + Math.cos(A) * 0.85 * grow                 // its own weight, drooping
+             + (Math.sin(A) * n.ay - Math.cos(A) * n.ax) * 0.020; // lag behind the stem
+
+  L.angV += (torque - L.ang * L.k * 0.16 - L.angV * L.c) * dt * 6;
+  L.ang  += L.angV * dt;
+  L.ang   = clamp(L.ang, -0.85, 0.85);
+
+  leafGeom(L, t);
+}
+
+/* flowers ------------------------------------------------------ */
+function addFlower(idx) {
+  const g = el("g", {}, gFlower);
+  const hue = rnd(-14, 44);
+  const petals = 6, F = { idx, g, open:0, openV:0, ang:0, angV:0, hue,
+                          k: rnd(30, 42), c: rnd(3.6, 5) };
+  for (let i = 0; i < petals; i++) {
+    const a = (i / petals) * 360;
+    el("path", {
+      d: "M0,0 C7,-5 16,-13 20,-3 C23,5 12,9 0,0 Z",
+      transform: `rotate(${f(a)})`,
+      fill: `hsl(${f(hue < 0 ? hue + 360 : hue)} 78% ${f(rnd(62, 74))}%)`,
+      "fill-opacity": ".95"
+    }, g);
+  }
+  el("circle", { r:4.6, fill:"#ffdf7a" }, g);
+  el("circle", { r:2.2, fill:"#c9891f", "fill-opacity":".8" }, g);
+  flowers.push(F);
+}
+
+function updateFlower(F, dt, t) {
+  const n = nodes[F.idx];
+  const a = nodes[Math.max(0, F.idx - 1)], b = nodes[Math.min(nodes.length - 1, F.idx + 1)];
+  const stem = Math.atan2(b.y - a.y, b.x - a.x);
+
+  F.openV += ((1 - F.open) * 26 - F.openV * 5.0) * dt;
+  F.open  += F.openV * dt;
+
+  const w = windAt(n.y, t);
+  F.angV += (w * 0.0016 - F.ang * F.k * 0.16 - F.angV * F.c) * dt * 6;
+  F.ang  += F.angV * dt;
+
+  const s = clamp(F.open, 0, 1.25);
+  const deg = (stem + Math.PI / 2 + F.ang) * 180 / Math.PI;
+  F.g.setAttribute("transform",
+    `translate(${f(n.x)},${f(n.y)}) rotate(${f(deg)}) scale(${f(s)})`);
+  F.g.setAttribute("opacity", f(clamp(F.open * 1.6, 0, 1)));
+}
+
+/* stem rendering ----------------------------------------------- */
+function drawStem(now) {
+  const L = [], R = [], M = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    const age = (now - n.born);
+    n.w = Math.min(6.6, 0.75 + 6.0 * (1 - Math.exp(-age * 0.16)));
+    const a = nodes[Math.max(0, i - 1)], b = nodes[Math.min(nodes.length - 1, i + 1)];
+    let dx = b.x - a.x, dy = b.y - a.y;
+    const d = Math.hypot(dx, dy) || 1;
+    const nx = -dy / d * n.w, ny = dx / d * n.w;
+    L.push([n.x + nx, n.y + ny]);
+    R.push([n.x - nx, n.y - ny]);
+    M.push([n.x + nx * 0.45, n.y + ny * 0.45]);
+  }
+  stemPath.setAttribute("d", smooth(L) + smooth(R.reverse(), true) + "Z");
+  stemLite.setAttribute("d", smooth(M.slice(0, -2)));
+}
+
+/* ground ------------------------------------------------------- */
+let grass = [];
+function buildGround() {
+  gGround.textContent = ""; grass = [];
+  el("path", {
+    d: `M${-W} 0 Q${W * 0.5} ${-26} ${W * 2} 0 L${W * 2} 400 L${-W} 400 Z`,
+    fill: "#16281c"
+  }, gGround);
+  el("path", {
+    d: `M${-W} 0 Q${W * 0.5} ${-26} ${W * 2} 0`,
+    fill:"none", stroke:"#2c5232", "stroke-width":"3", "stroke-opacity":".8"
+  }, gGround);
+  for (let i = 0; i < 26; i++) {
+    const x = rnd(-20, W + 20), h = rnd(14, 40), lean = rnd(-14, 14);
+    grass.push({ x, h, lean, ph: rnd(0, 6.3),
+      p: el("path", { fill:"none", stroke:`hsl(${f(rnd(95,135))} 34% ${f(rnd(24,38))}%)`,
+                      "stroke-width": f(rnd(1.4, 2.6)), "stroke-linecap":"round" }, gGround) });
+  }
+}
+function drawGrass(t) {
+  for (const g of grass) {
+    const sway = Math.sin(t * 1.1 + g.ph) * 5 + windAt(-g.h, t) * 0.06;
+    g.p.setAttribute("d",
+      `M${f(g.x)},2 Q${f(g.x + g.lean * 0.4 + sway * 0.4)},${f(-g.h * 0.6)} ${f(g.x + g.lean + sway)},${f(-g.h)}`);
+  }
+}
+
+/* atmosphere --------------------------------------------------- */
+let dust = [], blobs = [];
+function buildAir() {
+  motes.textContent = ""; bokeh.textContent = ""; dust = []; blobs = [];
+  for (let i = 0; i < 34; i++) {
+    dust.push({ x: rnd(0, W), y: rnd(0, H), r: rnd(0.8, 2.6), s: rnd(7, 22),
+      ph: rnd(0, 6.3), o: rnd(.18, .6),
+      c: el("circle", { fill:"#eaffd6" }, motes) });
+  }
+  for (let i = 0; i < 9; i++) {
+    blobs.push({ x: rnd(0, W), y: rnd(0, H), r: rnd(28, 88), k: rnd(.12, .4),
+      c: el("circle", { fill: `hsl(${f(rnd(96, 150))} 45% ${f(rnd(40, 62))}%)`,
+                        "fill-opacity": f(rnd(.16, .38)) }, bokeh) });
+  }
+}
+function drawAir(dt, t) {
+  for (const d of dust) {
+    d.y -= d.s * dt;
+    d.x += (windAt(d.y - camY, t) * 0.010 + Math.sin(t * 0.9 + d.ph) * 6) * dt;
+    if (d.y < -12) { d.y = H + 12; d.x = rnd(0, W); }
+    if (d.x < -12) d.x = W + 12; else if (d.x > W + 12) d.x = -12;
+    d.c.setAttribute("cx", f(d.x)); d.c.setAttribute("cy", f(d.y));
+    d.c.setAttribute("r", f(d.r));
+    d.c.setAttribute("fill-opacity", f(d.o * (0.55 + 0.45 * Math.sin(t * 1.6 + d.ph))));
+  }
+  for (const b of blobs) {
+    const y = ((b.y - camY * b.k) % (H + 500) + H + 500) % (H + 500) - 250;
+    b.c.setAttribute("cx", f(b.x)); b.c.setAttribute("cy", f(y)); b.c.setAttribute("r", f(b.r));
+  }
+}
+
+/* housekeeping: retire what has scrolled away, forever ---------- */
+function cull() {
+  let cut = 0;
+  while (nodes.length - cut > 8 && (nodes[cut].y - camY) > H + 220) cut++;
+  if (!cut) return;
+  nodes.splice(0, cut);
+  nodes[0].pinned = nodes[1].pinned = true;
+  for (let i = leaves.length - 1; i >= 0; i--) {
+    const L = leaves[i]; L.idx -= cut;
+    if (L.idx < 1) { L.blade.remove(); L.shine.remove(); L.vein.remove(); leaves.splice(i, 1); }
+  }
+  for (let i = flowers.length - 1; i >= 0; i--) {
+    const F = flowers[i]; F.idx -= cut;
+    if (F.idx < 1) { F.g.remove(); flowers.splice(i, 1); }
+  }
+}
+
+/* ─────────────────────────── loop ─────────────────────────── */
+let last = 0, clock = 0, acc = 0;
+
+function frame(ms) {
+  requestAnimationFrame(frame);
+  const now = ms / 1000;
+  let dt = last ? Math.min(now - last, 0.05) : 0.016;
+  last = now; clock += dt;
+
+  gust *= Math.pow(0.12, dt);
+  pointerWind *= Math.pow(0.35, dt);
+
+  // fixed-step physics keeps the springs stable at any refresh rate
+  acc += dt;
+  const h = 1 / (60 * CFG.substeps);
+  if (!Number.isFinite(nodes[nodes.length - 1].y)) seedPlant(clock);   // never wedge
+  let guard = 0;
+  while (acc >= h && guard++ < 12) {
+    for (const n of nodes) { n.pvx = n.vx; n.pvy = n.vy; }
+    integrate(h, clock);
+    for (const n of nodes) {
+      n.vx = (n.x - n.px); n.vy = (n.y - n.py);
+      n.ax = (n.vx - n.pvx) / (h * h); n.ay = (n.vy - n.pvy) / (h * h);
+    }
+    grow(h, clock);
+    acc -= h;
+  }
+
+  // camera rides the growing tip; the base slides off the bottom and is retired
+  const tip = nodes[nodes.length - 1];
+  camTarget = Math.min(tip.y - H * 0.40, -H * 0.80);
+  camY += (camTarget - camY) * Math.min(1, dt * 3.2);
+  world.setAttribute("transform", `translate(0,${f(-camY)})`);
+
+  drawStem(clock);
+  for (const L of leaves)  updateLeaf(L, dt, clock);
+  for (const F of flowers) updateFlower(F, dt, clock);
+  drawGrass(clock);
+  drawAir(dt, clock);
+  cull();
+
+  hgtEl.textContent = Math.round(grown * CFG.seg / 6);
+}
+
+/* ─────────────────────────── input & size ─────────────────────────── */
+addEventListener("pointermove", e => {
+  pointerWind = clamp((e.clientX / W - 0.5) * 2.2, -1.4, 1.4);
+  pointerY = e.clientY;
+}, { passive: true });
+addEventListener("pointerdown", e => {
+  gust = (e.clientX / W - 0.5) > 0 ? 1 : -1;
+  gust *= rnd(0.8, 1.3);
+}, { passive: true });
+addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); gust = (Math.random() < .5 ? -1 : 1) * rnd(.8, 1.3); }
+});
+
+function resize() {
+  const wasSeeded = nodes.length > 0;
+  W = innerWidth; H = innerHeight;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  vign.setAttribute("y", H - 200); vign.setAttribute("height", 200);
+  buildGround(); buildAir();
+  if (!wasSeeded) seedPlant(0);
+}
+
+addEventListener("resize", resize);
+resize();
+requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>
