@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<!--
+  TEACH YOU A LESSON (참교육 / Chamgyoyuk) — animated single-file fan site.
+  Netflix, premiered 5 June 2026 · 10 episodes · dir. Hong Jong-chan.
+  Based on the Naver webtoon "Get Schooled" by Chae Yong-taek & Han Ga-ram.
+
+  Unofficial fan page. No build step, no dependencies, no network requests.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teach You a Lesson (참교육) — Netflix Series</title>
+<meta name="description" content="Teach You a Lesson (참교육) — the 2026 Netflix action-school drama starring Kim Mu-yeol, Lee Sung-min, Jin Ki-joo and Pyo Ji-hoon. All 10 episodes, cast, and trailer.">
+<meta name="theme-color" content="#0c0d10">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%230c0d10'/><text y='73' x='50' font-size='62' text-anchor='middle' fill='%23e50914' font-family='Georgia,serif'>참</text></svg>">
+<style>
+/* ============================================================
+   0. TOKENS
+   ============================================================ */
+:root{
+  --bg:#0c0d10;
+  --bg-2:#12141a;
+  --panel:#171a21;
+  --ink:#05060a;
+  --fg:#f2f2f4;
+  --fg-dim:#a2a6b0;
+  --red:#e50914;
+  --red-soft:#ff4b45;
+  --gold:#e8b93c;
+  --steel:#5aa9d6;
+  --line:rgba(242,242,244,.13);
+
+  --f-display:"Georgia","Times New Roman",serif;
+  --f-body:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Apple SD Gothic Neo","Malgun Gothic",Helvetica,Arial,sans-serif;
+  --f-mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+
+  --pad:clamp(1.25rem,5vw,6rem);
+  --r:14px;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--fg);
+  font-family:var(--f-body);font-size:clamp(1rem,.95rem + .2vw,1.075rem);
+  line-height:1.7;overflow-x:hidden;
+}
+img,svg{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+::selection{background:var(--red);color:#fff}
+:focus-visible{outline:2px solid var(--steel);outline-offset:3px;border-radius:4px}
+
+/* ============================================================
+   1. AMBIENT LAYERS
+   ============================================================ */
+.grain,.vignette,.spotlight{position:fixed;inset:0;pointer-events:none;z-index:60}
+.grain{
+  opacity:.045;mix-blend-mode:screen;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain 700ms steps(3,end) infinite;
+}
+@keyframes grain{0%{transform:translate(0,0)}33%{transform:translate(-2%,1%)}66%{transform:translate(1%,-2%)}100%{transform:translate(0,0)}}
+.vignette{background:radial-gradient(120% 90% at 50% 30%,transparent 42%,rgba(0,0,0,.74) 100%)}
+.spotlight{
+  z-index:1;
+  background:radial-gradient(300px circle at var(--mx,50%) var(--my,0%),rgba(229,9,20,.10),transparent 65%);
+}
+.dust{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.dust i{position:absolute;bottom:-10px;width:3px;height:3px;border-radius:50%;background:var(--fg);opacity:0;animation:rise linear infinite}
+@keyframes rise{
+  0%{opacity:0;transform:translateY(0) scale(.4)}
+  12%{opacity:.42}
+  100%{opacity:0;transform:translateY(-105vh) translateX(var(--dx,20px)) scale(1)}
+}
+
+/* ============================================================
+   2. PRELOADER
+   ============================================================ */
+#loader{
+  position:fixed;inset:0;z-index:200;background:var(--ink);
+  display:grid;place-items:center;transition:opacity .7s var(--ease),visibility .7s;
+}
+#loader.done{opacity:0;visibility:hidden}
+.loader-inner{text-align:center}
+.loader-inner .han{
+  font-family:var(--f-display);font-size:clamp(3rem,10vw,5.5rem);line-height:1;color:var(--red);
+  letter-spacing:.06em;animation:thump 1.4s var(--ease) infinite;
+}
+@keyframes thump{0%,100%{transform:scale(1);opacity:.85}45%{transform:scale(1.07);opacity:1}}
+.loader-inner p{
+  font-family:var(--f-mono);font-size:.68rem;letter-spacing:.42em;text-transform:uppercase;
+  color:var(--fg-dim);margin:1.3rem 0 0;
+}
+.loader-bar{width:180px;height:2px;margin:1.2rem auto 0;background:rgba(242,242,244,.14);overflow:hidden}
+.loader-bar i{display:block;height:100%;width:40%;background:var(--red);animation:shuttle 1.2s var(--ease) infinite}
+@keyframes shuttle{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+
+/* ============================================================
+   3. NAV
+   ============================================================ */
+.progress{
+  position:fixed;top:0;left:0;height:3px;width:100%;z-index:110;
+  background:linear-gradient(90deg,var(--red),var(--gold));
+  transform:scaleX(0);transform-origin:0 50%;
+}
+header.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:1.1rem var(--pad);border-bottom:1px solid transparent;
+  transition:background .45s var(--ease),padding .45s var(--ease),border-color .45s;
+}
+header.nav.stuck{
+  background:rgba(12,13,16,.84);backdrop-filter:blur(14px) saturate(140%);
+  border-bottom-color:var(--line);padding-top:.7rem;padding-bottom:.7rem;
+}
+.brand{display:flex;align-items:center;gap:.65rem}
+.brand b{font-family:var(--f-display);font-weight:400;font-size:1.02rem;letter-spacing:.01em}
+.brand small{display:block;font-family:var(--f-mono);font-size:.55rem;letter-spacing:.32em;color:var(--fg-dim);text-transform:uppercase}
+.mark{
+  width:34px;height:34px;flex:0 0 34px;border-radius:9px;
+  background:linear-gradient(150deg,var(--red),#7d0308);
+  display:grid;place-items:center;font-family:var(--f-display);font-size:1.02rem;color:#fff;
+  box-shadow:0 0 0 1px rgba(255,255,255,.14) inset,0 6px 20px -8px var(--red);
+  animation:tick 6s ease-in-out infinite;
+}
+@keyframes tick{0%,92%,100%{transform:rotate(0)}94%{transform:rotate(-7deg)}97%{transform:rotate(6deg)}}
+nav ul{display:flex;gap:.3rem;list-style:none;margin:0;padding:0}
+nav a{position:relative;display:block;padding:.5rem .8rem;border-radius:999px;font-size:.83rem;color:var(--fg-dim);transition:color .3s}
+nav a::after{
+  content:"";position:absolute;left:.8rem;right:.8rem;bottom:.34rem;height:1px;background:var(--red);
+  transform:scaleX(0);transform-origin:0 50%;transition:transform .4s var(--ease);
+}
+nav a:hover,nav a.active{color:var(--fg)}
+nav a:hover::after,nav a.active::after{transform:scaleX(1)}
+.nav-toggle{display:none;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.2em;border:1px solid var(--line);border-radius:999px;padding:.5rem .85rem}
+
+/* ============================================================
+   4. BUTTONS
+   ============================================================ */
+.btn{
+  --bg:var(--red);
+  position:relative;display:inline-flex;align-items:center;gap:.6rem;
+  padding:.85rem 1.5rem;border-radius:999px;overflow:hidden;isolation:isolate;
+  font-size:.85rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--bg);color:#fff;box-shadow:0 14px 34px -16px var(--bg);
+  transition:transform .35s var(--ease),box-shadow .35s var(--ease);
+}
+.btn::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.4),transparent 80%);
+  transform:translateX(-120%);transition:transform .7s var(--ease);
+}
+.btn:hover{transform:translateY(-3px);box-shadow:0 20px 40px -14px var(--bg)}
+.btn:hover::before{transform:translateX(120%)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn.ghost{--bg:transparent;color:var(--fg);box-shadow:none;border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--fg);box-shadow:none}
+.btn .dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:blip 1.6s infinite}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* ============================================================
+   5. SECTION SHELL + REVEAL
+   ============================================================ */
+section{padding:clamp(4.5rem,10vw,9rem) var(--pad);position:relative;z-index:3}
+.wrap{max-width:1180px;margin:0 auto}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:.6rem;margin:0 0 1rem;
+  font-family:var(--f-mono);font-size:.68rem;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);
+}
+.eyebrow::before{content:"";width:34px;height:1px;background:var(--gold);opacity:.7}
+h2.title{
+  font-family:var(--f-display);font-weight:400;
+  font-size:clamp(2rem,1.3rem + 3.4vw,3.6rem);line-height:1.07;letter-spacing:-.02em;margin:0 0 1rem;
+}
+.lede{max-width:58ch;color:var(--fg-dim);margin:0 0 2.6rem}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+.reveal[data-d="1"]{transition-delay:.1s}
+.reveal[data-d="2"]{transition-delay:.2s}
+.reveal[data-d="3"]{transition-delay:.3s}
+.reveal[data-d="4"]{transition-delay:.4s}
+
+/* ============================================================
+   6. HERO
+   ============================================================ */
+.hero{
+  min-height:100svh;display:grid;align-content:center;position:relative;overflow:hidden;
+  padding-top:clamp(7rem,14vh,10rem);padding-bottom:clamp(4rem,10vh,7rem);
+}
+.hero-bg{position:absolute;inset:0;z-index:0}
+.hero-bg::before{
+  content:"";position:absolute;inset:-30%;
+  background:
+    radial-gradient(45% 45% at 18% 22%,rgba(229,9,20,.34),transparent 60%),
+    radial-gradient(40% 40% at 82% 28%,rgba(90,169,214,.16),transparent 60%),
+    radial-gradient(50% 50% at 55% 88%,rgba(232,185,60,.16),transparent 60%);
+  filter:blur(30px);animation:drift 22s ease-in-out infinite alternate;
+}
+@keyframes drift{
+  0%{transform:translate3d(-4%,-2%,0) scale(1)}
+  50%{transform:translate3d(3%,4%,0) scale(1.12)}
+  100%{transform:translate3d(-2%,3%,0) scale(1.04)}
+}
+.hero-bg::after{ /* corridor grid */
+  content:"";position:absolute;inset:0;opacity:.34;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:76px 76px;
+  mask-image:radial-gradient(80% 70% at 50% 45%,#000 18%,transparent 78%);
+}
+.hangul-ghost{
+  position:absolute;right:-2%;top:50%;transform:translateY(-50%);z-index:1;
+  font-family:var(--f-body);font-size:min(34vw,32rem);line-height:.9;
+  color:rgba(242,242,244,.035);letter-spacing:-.04em;user-select:none;pointer-events:none;
+  animation:breathe 12s ease-in-out infinite alternate;
+}
+@keyframes breathe{to{transform:translateY(-52%) scale(1.04);color:rgba(229,9,20,.06)}}
+.hero-inner{position:relative;z-index:2;max-width:1180px;margin:0 auto;width:100%}
+.badge{
+  display:inline-flex;align-items:center;gap:.55rem;margin-bottom:1.5rem;
+  padding:.42rem .9rem;border:1px solid var(--line);border-radius:999px;background:rgba(242,242,244,.04);
+  font-family:var(--f-mono);font-size:.65rem;letter-spacing:.24em;text-transform:uppercase;color:var(--fg-dim);
+}
+.badge .live{width:7px;height:7px;border-radius:50%;background:var(--red);animation:ping 2s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(229,9,20,.7)}70%{box-shadow:0 0 0 11px rgba(229,9,20,0)}100%{box-shadow:0 0 0 0 rgba(229,9,20,0)}}
+h1{font-family:var(--f-display);font-weight:400;margin:0;font-size:clamp(2.7rem,1.1rem + 8.6vw,8rem);line-height:.93;letter-spacing:-.035em}
+h1 .ln{display:block;overflow:hidden}
+h1 .ln>span{display:inline-block;transform:translateY(105%);animation:up 1.05s var(--ease) forwards}
+h1 .ln:nth-child(1)>span{animation-delay:.15s}
+h1 .ln:nth-child(2)>span{animation-delay:.28s}
+@keyframes up{to{transform:translateY(0)}}
+h1 em{
+  font-style:italic;
+  background:linear-gradient(100deg,var(--gold),var(--red-soft) 55%,var(--gold));
+  background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:sheen 7s linear infinite;
+}
+@keyframes sheen{to{background-position:220% 0}}
+.underline{display:block;width:min(600px,88%);height:16px;margin-top:.35rem}
+.underline path{fill:none;stroke:var(--red);stroke-width:4;stroke-linecap:round;stroke-dasharray:900;stroke-dashoffset:900;animation:draw 1.6s .9s var(--ease) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.native{margin:1rem 0 0;font-family:var(--f-display);font-size:clamp(1rem,.9rem + .5vw,1.35rem);color:var(--fg-dim);letter-spacing:.02em}
+.type{font-family:var(--f-mono);font-size:clamp(.78rem,.74rem + .3vw,.95rem);letter-spacing:.14em;color:var(--steel);margin:1.5rem 0 1rem;min-height:1.6em}
+.type i{display:inline-block;width:9px;height:1.05em;background:var(--steel);vertical-align:-.16em;margin-left:2px;animation:blip 1s steps(2) infinite}
+.hero p.pitch{max-width:52ch;color:var(--fg-dim);margin:0 0 2.2rem}
+.cta{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center}
+.cta .meta{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.18em;color:var(--fg-dim);text-transform:uppercase}
+.scroll-hint{
+  position:absolute;left:50%;bottom:1.6rem;transform:translateX(-50%);z-index:3;display:grid;justify-items:center;gap:.5rem;
+  font-family:var(--f-mono);font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;color:var(--fg-dim);
+}
+.scroll-hint span{width:1px;height:38px;background:linear-gradient(var(--fg-dim),transparent);animation:slide 2.2s ease-in-out infinite}
+@keyframes slide{0%{transform:scaleY(.2);transform-origin:0 0}50%{transform:scaleY(1);transform-origin:0 0}51%{transform-origin:0 100%}100%{transform:scaleY(.2);transform-origin:0 100%}}
+
+/* ============================================================
+   7. MARQUEE
+   ============================================================ */
+.marquee{border-block:1px solid var(--line);background:var(--bg-2);padding:.9rem 0;overflow:hidden;display:flex;position:relative;z-index:4}
+.marquee div{
+  display:flex;gap:2.4rem;padding-right:2.4rem;flex:0 0 auto;animation:slidex 30s linear infinite;
+  font-family:var(--f-display);font-size:clamp(1rem,.9rem + .6vw,1.45rem);color:var(--fg-dim);white-space:nowrap;
+}
+.marquee b{color:var(--fg);font-weight:400}
+.marquee em{color:var(--red);font-style:normal}
+@keyframes slidex{to{transform:translateX(-100%)}}
+.marquee:hover div{animation-play-state:paused}
+
+/* ============================================================
+   8. STORY
+   ============================================================ */
+.about{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(2rem,5vw,5rem);align-items:center}
+.quotebox{
+  position:relative;padding:clamp(1.5rem,4vw,2.6rem);border:1px solid var(--line);border-radius:var(--r);
+  background:linear-gradient(160deg,rgba(242,242,244,.055),transparent);
+  font-family:var(--f-display);font-size:clamp(1.1rem,1rem + .85vw,1.7rem);line-height:1.42;
+}
+.quotebox::before{content:"“";position:absolute;top:-.34em;left:.5rem;font-family:var(--f-display);font-size:7rem;color:var(--red);opacity:.32;line-height:1}
+.quotebox footer{margin-top:1.1rem;font-family:var(--f-mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--fg-dim)}
+.facts{list-style:none;margin:2rem 0 0;padding:0;display:grid;gap:.1rem}
+.facts li{display:flex;justify-content:space-between;gap:1rem;padding:.8rem 0;border-bottom:1px solid var(--line);font-size:.89rem}
+.facts li span:first-child{color:var(--fg-dim);font-family:var(--f-mono);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;flex:0 0 auto}
+.facts li span:last-child{text-align:right}
+
+/* ============================================================
+   9. STATS
+   ============================================================ */
+.stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+}
+.stat{background:var(--bg);padding:clamp(1.4rem,3vw,2.2rem);transition:background .4s}
+.stat:hover{background:var(--panel)}
+.stat b{display:block;font-family:var(--f-display);font-weight:400;font-size:clamp(2.1rem,1.5rem + 2.3vw,3.2rem);line-height:1;letter-spacing:-.02em}
+.stat b i{font-style:normal;color:var(--red);font-size:.62em}
+.stat p{margin:.55rem 0 0;font-family:var(--f-mono);font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--fg-dim)}
+
+/* ============================================================
+   10. EPISODES
+   ============================================================ */
+.ep-head{display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:space-between;align-items:flex-end;margin-bottom:2.6rem}
+.tabs{display:inline-flex;padding:4px;border:1px solid var(--line);border-radius:999px;background:rgba(242,242,244,.03)}
+.tabs button{padding:.5rem 1.05rem;border-radius:999px;font-family:var(--f-mono);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--fg-dim);transition:color .3s,background .4s var(--ease)}
+.tabs button[aria-selected="true"]{background:var(--fg);color:var(--ink)}
+.eps{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:1.15rem}
+.ep{
+  position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--bg-2);
+  transform-style:preserve-3d;transition:transform .5s var(--ease),border-color .4s,box-shadow .5s var(--ease);
+}
+.ep:hover{border-color:rgba(242,242,244,.34);box-shadow:0 30px 60px -34px #000,0 0 0 1px rgba(229,9,20,.14) inset}
+.ep .thumb{position:relative;aspect-ratio:16/10;overflow:hidden;background:var(--panel)}
+.ep .thumb::before{
+  content:"";position:absolute;inset:0;transition:transform .8s var(--ease),filter .6s;
+  background:
+    radial-gradient(60% 60% at 30% 25%,rgba(255,255,255,.16),transparent 60%),
+    conic-gradient(from var(--a,200deg),#1e2229,#3a1416 34%,#182430 68%,#2a2419);
+}
+.ep:hover .thumb::before{transform:scale(1.12) rotate(2deg);filter:saturate(1.35) brightness(1.12)}
+.ep .thumb::after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.3) 0 1px,transparent 1px 3px);opacity:.5}
+.ep .num{position:absolute;top:.7rem;left:.85rem;z-index:2;font-family:var(--f-display);font-size:2.5rem;line-height:1;color:rgba(242,242,244,.92);text-shadow:0 2px 20px #000}
+.ep .len{position:absolute;bottom:.7rem;right:.7rem;z-index:2;font-family:var(--f-mono);font-size:.6rem;letter-spacing:.12em;background:rgba(5,6,10,.72);border:1px solid var(--line);border-radius:6px;padding:.2rem .45rem}
+.play{position:absolute;inset:0;z-index:3;display:grid;place-items:center;opacity:0;transition:opacity .4s}
+.ep:hover .play,.ep:focus-within .play{opacity:1}
+.play i{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:rgba(242,242,244,.93);color:var(--ink);transform:scale(.7);transition:transform .5s var(--ease)}
+.ep:hover .play i{transform:scale(1)}
+.play i::after{content:"";border-left:13px solid currentColor;border-block:8px solid transparent;margin-left:4px}
+.ep .body{padding:1rem 1.15rem 1.3rem}
+.ep h3{font-family:var(--f-display);font-weight:400;font-size:1.15rem;margin:0 0 .35rem;letter-spacing:-.01em}
+.ep p{margin:0;font-size:.86rem;color:var(--fg-dim)}
+.ep .tag{display:inline-block;margin-top:.8rem;font-family:var(--f-mono);font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+.ep .bar{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--red);transform:scaleX(0);transform-origin:0 50%;transition:transform .55s var(--ease)}
+.ep:hover .bar{transform:scaleX(1)}
+.ep.hide{display:none}
+
+/* ============================================================
+   11. TRAILER
+   ============================================================ */
+.trailer-wrap{max-width:1000px;margin:0 auto;text-align:center}
+.screen{position:relative;aspect-ratio:16/9;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--ink);cursor:pointer;box-shadow:0 50px 90px -50px #000}
+.screen .film{
+  position:absolute;inset:0;
+  background:radial-gradient(70% 70% at 50% 40%,rgba(229,9,20,.3),transparent 65%),conic-gradient(from 160deg,#14171d,#2c1214 30%,#101d27 65%,#1d1c14);
+  animation:hue 16s ease-in-out infinite alternate;
+}
+@keyframes hue{to{filter:hue-rotate(20deg) brightness(1.12)}}
+.screen .scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.34) 0 2px,transparent 2px 4px);opacity:.5}
+.screen .sweep{position:absolute;top:0;bottom:0;width:35%;background:linear-gradient(90deg,transparent,rgba(242,242,244,.09),transparent);animation:sweep 4.5s linear infinite}
+@keyframes sweep{0%{transform:translateX(-120%)}100%{transform:translateX(360%)}}
+.bigplay{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:1rem;transition:opacity .4s}
+.bigplay .circle{
+  width:96px;height:96px;border-radius:50%;display:grid;place-items:center;background:rgba(242,242,244,.94);color:var(--ink);
+  box-shadow:0 0 0 0 rgba(242,242,244,.5);animation:ping2 2.6s infinite;transition:transform .4s var(--ease);
+}
+.screen:hover .bigplay .circle{transform:scale(1.08)}
+.bigplay .circle::after{content:"";border-left:24px solid currentColor;border-block:15px solid transparent;margin-left:7px}
+@keyframes ping2{0%{box-shadow:0 0 0 0 rgba(242,242,244,.32)}70%{box-shadow:0 0 0 30px rgba(242,242,244,0)}100%{box-shadow:0 0 0 0 rgba(242,242,244,0)}}
+.bigplay p{margin:0;font-family:var(--f-mono);font-size:.64rem;letter-spacing:.28em;text-transform:uppercase;color:var(--fg-dim)}
+.screen.playing .bigplay{opacity:0;pointer-events:none}
+.screen .timeline{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(242,242,244,.14)}
+.screen .timeline i{display:block;height:100%;width:0;background:var(--red)}
+.screen.playing .timeline i{animation:runtime 14s linear forwards}
+@keyframes runtime{to{width:100%}}
+.caption{margin-top:1.1rem;font-family:var(--f-mono);font-size:.64rem;letter-spacing:.22em;text-transform:uppercase;color:var(--fg-dim)}
+
+/* ============================================================
+   12. CAST
+   ============================================================ */
+.cast{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:1.15rem}
+.person{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--bg-2);transition:transform .5s var(--ease),border-color .4s}
+.person:hover{transform:translateY(-8px);border-color:rgba(242,242,244,.3)}
+.face{position:relative;aspect-ratio:3/4;display:grid;place-items:center;overflow:hidden}
+.face::before{content:"";position:absolute;inset:0;background:linear-gradient(155deg,var(--c1),var(--c2));transition:transform .7s var(--ease)}
+.person:hover .face::before{transform:scale(1.1)}
+.face span{position:relative;z-index:2;font-family:var(--f-display);font-size:3.2rem;color:rgba(5,6,10,.5);mix-blend-mode:overlay;letter-spacing:-.03em}
+.face::after{content:"";position:absolute;inset:0;z-index:3;background:linear-gradient(to top,rgba(5,6,10,.94) 4%,transparent 55%)}
+.person .body{position:relative;z-index:4;padding:0 1.05rem 1.2rem;margin-top:-3.4rem}
+.person h3{font-family:var(--f-display);font-weight:400;font-size:1.12rem;margin:0}
+.person .actor{font-size:.8rem;color:var(--fg-dim);margin:.15rem 0 0}
+.person .role{font-family:var(--f-mono);font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin:.5rem 0 .55rem}
+.person .bio{margin:0;font-size:.82rem;color:var(--fg-dim);max-height:0;opacity:0;overflow:hidden;transition:max-height .55s var(--ease),opacity .45s}
+.person:hover .bio,.person:focus-within .bio{max-height:8em;opacity:1}
+
+/* ============================================================
+   13. PRESS
+   ============================================================ */
+.press{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.15rem}
+.pq{border:1px solid var(--line);border-radius:var(--r);padding:1.5rem;background:linear-gradient(160deg,rgba(242,242,244,.05),transparent);transition:transform .5s var(--ease),border-color .4s}
+.pq:hover{transform:translateY(-6px);border-color:rgba(242,242,244,.3)}
+.pq blockquote{margin:0;font-family:var(--f-display);font-size:1.12rem;line-height:1.45}
+.pq cite{display:block;margin-top:.9rem;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-style:normal}
+.balance{margin:2rem 0 0;padding:1.1rem 1.3rem;border-left:2px solid var(--steel);background:rgba(90,169,214,.07);font-size:.9rem;color:var(--fg-dim);border-radius:0 var(--r) var(--r) 0}
+
+/* ============================================================
+   14. TIMELINE
+   ============================================================ */
+.road{position:relative;max-width:820px;margin:0 auto;padding-left:2.2rem}
+.road::before{content:"";position:absolute;left:6px;top:.6rem;bottom:.6rem;width:2px;background:linear-gradient(var(--red),var(--gold),transparent)}
+.road li{list-style:none;position:relative;padding:0 0 2rem}
+.road li::before{content:"";position:absolute;left:-2.2rem;top:.55rem;width:14px;height:14px;border-radius:50%;background:var(--bg);border:2px solid var(--red)}
+.road li.now::before{background:var(--red);box-shadow:0 0 0 6px rgba(229,9,20,.18)}
+.road time{font-family:var(--f-mono);font-size:.64rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+.road h3{font-family:var(--f-display);font-weight:400;font-size:1.24rem;margin:.3rem 0 .3rem}
+.road p{margin:0;color:var(--fg-dim);font-size:.89rem}
+
+/* ============================================================
+   15. WATCH + FOOTER
+   ============================================================ */
+.join{
+  max-width:780px;margin:0 auto;text-align:center;border:1px solid var(--line);border-radius:var(--r);
+  padding:clamp(2rem,5vw,3.4rem);
+  background:radial-gradient(80% 120% at 50% 0%,rgba(229,9,20,.18),transparent 60%),linear-gradient(160deg,rgba(242,242,244,.05),transparent);
+}
+.join .cta{justify-content:center;margin-top:1.8rem}
+.join .note{margin:1.4rem 0 0;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--fg-dim)}
+.warn{
+  max-width:780px;margin:1.6rem auto 0;padding:1rem 1.2rem;border:1px solid var(--line);border-radius:var(--r);
+  font-size:.85rem;color:var(--fg-dim);text-align:center;
+}
+footer.site{
+  padding:3rem var(--pad) 2.4rem;border-top:1px solid var(--line);position:relative;z-index:3;
+  display:flex;flex-wrap:wrap;gap:1.2rem;justify-content:space-between;align-items:center;
+  font-size:.8rem;color:var(--fg-dim);
+}
+footer.site .socials{display:flex;gap:.4rem}
+footer.site .socials a{
+  width:36px;height:36px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;
+  font-family:var(--f-mono);font-size:.64rem;transition:background .35s,color .35s,transform .35s var(--ease);
+}
+footer.site .socials a:hover{background:var(--fg);color:var(--ink);transform:translateY(-3px)}
+.top{
+  position:fixed;right:1.1rem;bottom:1.1rem;z-index:90;width:44px;height:44px;border-radius:50%;
+  background:var(--fg);color:var(--ink);display:grid;place-items:center;font-size:1rem;
+  opacity:0;transform:translateY(14px);pointer-events:none;transition:opacity .4s,transform .4s var(--ease);
+}
+.top.show{opacity:1;transform:none;pointer-events:auto}
+
+/* ============================================================
+   16. RESPONSIVE / MOTION
+   ============================================================ */
+@media (max-width:880px){
+  .about{grid-template-columns:1fr}
+  nav{
+    position:fixed;left:var(--pad);right:var(--pad);top:4.4rem;display:none;padding:.6rem;
+    background:rgba(12,13,16,.97);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:var(--r);
+  }
+  nav.open{display:block;animation:up2 .35s var(--ease)}
+  @keyframes up2{from{opacity:0;transform:translateY(-8px)}}
+  nav ul{flex-direction:column;gap:0}
+  nav a{padding:.7rem .9rem}
+  .nav-toggle{display:block}
+  .spotlight,.hangul-ghost{display:none}
+  .facts li{flex-direction:column;gap:.15rem}
+  .facts li span:last-child{text-align:left}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  .reveal{opacity:1;transform:none}
+  h1 .ln>span{transform:none}
+  .underline path{stroke-dashoffset:0}
+  .grain,.dust,.spotlight{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+<div class="spotlight" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+<div class="dust" id="dust" aria-hidden="true"></div>
+
+<div id="loader">
+  <div class="loader-inner">
+    <div class="han" aria-hidden="true">참교육</div>
+    <p>Class is in session</p>
+    <div class="loader-bar" aria-hidden="true"><i></i></div>
+  </div>
+</div>
+
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <a class="brand" href="#top">
+    <span class="mark" aria-hidden="true">참</span>
+    <span><b>Teach You a Lesson</b><small>Netflix · 2026</small></span>
+  </a>
+  <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="menu">Menu</button>
+  <nav id="menu">
+    <ul>
+      <li><a href="#story">Story</a></li>
+      <li><a href="#episodes">Episodes</a></li>
+      <li><a href="#trailer">Trailer</a></li>
+      <li><a href="#cast">Cast</a></li>
+      <li><a href="#press">Press</a></li>
+      <li><a href="#origin">Origin</a></li>
+      <li><a href="#watch">Watch</a></li>
+    </ul>
+  </nav>
+</header>
+
+<!-- ============================ HERO ============================ -->
+<section class="hero" id="top">
+  <div class="hero-bg" aria-hidden="true"></div>
+  <div class="hangul-ghost" aria-hidden="true">참</div>
+  <div class="hero-inner">
+    <p class="badge"><span class="live" aria-hidden="true"></span> Season 1 · 10 episodes · streaming on Netflix</p>
+
+    <h1>
+      <span class="ln"><span>Teach You</span></span>
+      <span class="ln"><span>a <em>Lesson</em></span></span>
+    </h1>
+    <svg class="underline" viewBox="0 0 600 16" aria-hidden="true">
+      <path d="M4 11 C130 3, 260 15, 375 7 S535 3, 596 9"/>
+    </svg>
+
+    <p class="native">참교육 · <i>Chamgyoyuk</i> — “True Education”</p>
+
+    <p class="type" id="type" aria-live="polite"><i aria-hidden="true"></i></p>
+
+    <p class="pitch">When respect collapses in Korea's classrooms, the government answers with the
+      Educational Rights Protection Bureau — and an ex-Special Forces captain who is licensed to
+      intervene physically. Ten episodes. Ten schools that thought no one was coming.</p>
+
+    <div class="cta">
+      <a class="btn" href="https://www.netflix.com/title/81947300" target="_blank" rel="noopener noreferrer">
+        <span class="dot" aria-hidden="true"></span> Watch on Netflix</a>
+      <a class="btn ghost" href="#episodes">Episode guide</a>
+      <span class="meta">Premiered 5 June 2026 · 18+</span>
+    </div>
+  </div>
+  <div class="scroll-hint" aria-hidden="true">Scroll<span></span></div>
+</section>
+
+<div class="marquee" aria-hidden="true">
+  <div id="mq1"></div><div id="mq2"></div>
+</div>
+
+<!-- ============================ STORY ============================ -->
+<section id="story">
+  <div class="wrap about">
+    <div>
+      <p class="eyebrow reveal">The premise</p>
+      <h2 class="title reveal" data-d="1">Teachers lost their authority.<br>The state sent someone to take it back.</h2>
+      <p class="lede reveal" data-d="2">School violence has outrun the people meant to stop it — teachers
+        can't discipline, parents won't accept blame, and the law arrives too late to matter. So the
+        Ministry of Education stands up a new agency: the <b>Educational Rights Protection Bureau</b>,
+        authorised to enter any school and use physical intervention. Inspector Na Hwa-jin, a former
+        Special Forces captain, works school by school through bullying, gang extortion, cyber
+        defamation, stalking, drugs and gambling — and finds that the students are rarely the real
+        problem.</p>
+
+      <ul class="facts reveal" data-d="3">
+        <li><span>Genre</span><span>Action · school drama · thriller</span></li>
+        <li><span>Format</span><span>10 episodes × ~64 min</span></li>
+        <li><span>Director</span><span>Hong Jong-chan</span></li>
+        <li><span>Writers</span><span>Lee Nam-kyu, Kim Da-hee, Moon Jong-ho</span></li>
+        <li><span>Based on</span><span>Naver webtoon <i>Get Schooled</i> — Chae Yong-taek &amp; Han Ga-ram</span></li>
+        <li><span>Production</span><span>Ylab Plex · GTist</span></li>
+        <li><span>Released</span><span>5 June 2026 · all episodes at once</span></li>
+        <li><span>Rating</span><span>18+ — violence, profanity</span></li>
+      </ul>
+    </div>
+
+    <div class="reveal" data-d="2">
+      <blockquote class="quotebox">
+        When respect collapses in schools, a special unit arrives to set things right — with sharp,
+        no-nonsense lessons you won't find in textbooks.
+        <footer>— Official series logline</footer>
+      </blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ STATS ============================ -->
+<section style="padding-top:0">
+  <div class="wrap stats reveal">
+    <div class="stat"><b><span class="count" data-to="10">0</span></b><p>Episodes, one drop</p></div>
+    <div class="stat"><b><span class="count" data-to="9">0</span><i>.0</i></b><p>MyDramaList user score</p></div>
+    <div class="stat"><b><span class="count" data-to="89">0</span><i>%</i></b><p>Rotten Tomatoes critics</p></div>
+    <div class="stat"><b><span class="count" data-to="490">0</span><i>M hrs</i></b><p>Viewed worldwide</p></div>
+  </div>
+  <p class="warn reveal" data-d="1">Heads-up: the series depicts school bullying, assault, substance
+    abuse and self-harm directly. Rated 18+ / TV-MA.</p>
+</section>
+
+<!-- ============================ EPISODES ============================ -->
+<section id="episodes">
+  <div class="wrap">
+    <div class="ep-head">
+      <div>
+        <p class="eyebrow reveal">Watch</p>
+        <h2 class="title reveal" data-d="1">Episode guide</h2>
+        <p class="lede reveal" data-d="2" style="margin-bottom:0">Case-by-case, school by school —
+          one problem institution per hour, building to a bureau that has to go rogue.</p>
+      </div>
+      <div class="tabs reveal" data-d="2" role="tablist" aria-label="Filter episodes">
+        <button role="tab" aria-selected="true" data-filter="all">All 10</button>
+        <button role="tab" aria-selected="false" data-filter="a">Ep 1–5</button>
+        <button role="tab" aria-selected="false" data-filter="b">Ep 6–10</button>
+      </div>
+    </div>
+    <div class="eps" id="eps"></div>
+  </div>
+</section>
+
+<!-- ============================ TRAILER ============================ -->
+<section id="trailer">
+  <div class="trailer-wrap">
+    <p class="eyebrow reveal">Official trailer</p>
+    <h2 class="title reveal" data-d="1">No detention. No warnings.</h2>
+    <p class="lede reveal" data-d="2" style="margin-inline:auto">Sound on — the bureau doesn't
+      negotiate, and neither does the fight choreography.</p>
+
+    <div class="screen reveal" data-d="3" id="screen" role="button" tabindex="0"
+         aria-label="Play the trailer (visual placeholder)">
+      <div class="film" aria-hidden="true"></div>
+      <div class="scan" aria-hidden="true"></div>
+      <div class="sweep" aria-hidden="true"></div>
+      <div class="bigplay"><span class="circle" aria-hidden="true"></span><p>Play trailer</p></div>
+      <div class="timeline" aria-hidden="true"><i></i></div>
+    </div>
+    <p class="caption">Animated placeholder — swap in the official Netflix embed.</p>
+  </div>
+</section>
+
+<!-- ============================ CAST ============================ -->
+<section id="cast">
+  <div class="wrap" style="margin-bottom:2.6rem">
+    <p class="eyebrow reveal">Who's in the room</p>
+    <h2 class="title reveal" data-d="1">The bureau &amp; the opposition</h2>
+    <p class="lede reveal" data-d="2">Hover a card for the character.</p>
+  </div>
+  <div class="wrap cast" id="castGrid"></div>
+</section>
+
+<!-- ============================ PRESS ============================ -->
+<section id="press">
+  <div class="wrap">
+    <p class="eyebrow reveal">Reception</p>
+    <h2 class="title reveal" data-d="1">Number one worldwide, and arguing with itself</h2>
+    <p class="lede reveal" data-d="2">It topped Netflix's global non-English chart for weeks and
+      became one of the most-watched Korean originals ever — while critics debated whether it
+      should exist in this form at all.</p>
+
+    <div class="press">
+      <div class="pq reveal" data-d="1">
+        <blockquote>May be one of the best dramas this year.</blockquote>
+        <cite>Forbes</cite>
+      </div>
+      <div class="pq reveal" data-d="2">
+        <blockquote>Gloriously unhinged.</blockquote>
+        <cite>Tatler Asia</cite>
+      </div>
+      <div class="pq reveal" data-d="3">
+        <blockquote>Kim Mu-yeol's performance elevates an already addictive drama.</blockquote>
+        <cite>Critical consensus</cite>
+      </div>
+    </div>
+
+    <p class="balance reveal" data-d="2">The counter-argument, worth reading before you binge:
+      reviewers have accused the series of glamorising vigilante justice — dressing “might makes
+      right” in superhero packaging — and one sequence involving false accusations drew criticism
+      over its choice of filming location. Director Hong Jong-chan has said the adaptation
+      deliberately shifted weight from the webtoon's spectacle toward supporting victims.</p>
+  </div>
+</section>
+
+<!-- ============================ ORIGIN ============================ -->
+<section id="origin">
+  <div class="wrap" style="max-width:820px;margin-bottom:2.6rem">
+    <p class="eyebrow reveal">From webtoon to Netflix</p>
+    <h2 class="title reveal" data-d="1">How it got here</h2>
+  </div>
+  <ul class="road">
+    <li class="reveal"><time>Source</time><h3><i>Get Schooled</i> (참교육) on Naver</h3>
+      <p>Chae Yong-taek and Han Ga-ram's webtoon builds the ERPB premise — and the controversy
+        about its methods — long before the cameras roll.</p></li>
+    <li class="reveal" data-d="1"><time>Adaptation</time><h3>Ylab Plex &amp; GTist take it to series</h3>
+      <p>Hong Jong-chan directs; Lee Nam-kyu, Kim Da-hee and Moon Jong-ho write. Kim Mu-yeol,
+        Lee Sung-min, Jin Ki-joo and Pyo Ji-hoon head the cast.</p></li>
+    <li class="reveal now" data-d="2"><time>5 June 2026</time><h3>All 10 episodes drop on Netflix</h3>
+      <p>No weekly wait. The series goes straight to number one on the global non-English chart.</p></li>
+    <li class="reveal" data-d="3"><time>Shared universe</time><h3>Same world as <i>Study Group</i></h3>
+      <p>Both adapted from the same webtoon lineage — a school-action universe that keeps growing.</p></li>
+  </ul>
+</section>
+
+<!-- ============================ WATCH ============================ -->
+<section id="watch">
+  <div class="join reveal">
+    <p class="eyebrow" style="display:inline-flex">Roll call</p>
+    <h2 class="title">Class is in session</h2>
+    <p class="lede" style="margin:0 auto">All ten episodes are streaming now, in Korean with
+      subtitles in a dozen languages. Start at episode one — the first hour sets the rules.</p>
+    <div class="cta">
+      <a class="btn" href="https://www.netflix.com/title/81947300" target="_blank" rel="noopener noreferrer">
+        <span class="dot" aria-hidden="true"></span> Open on Netflix</a>
+      <a class="btn ghost" href="#episodes">Back to episodes</a>
+    </div>
+    <p class="note">Unofficial fan page · not affiliated with Netflix or the production</p>
+  </div>
+</section>
+
+<footer class="site">
+  <span>Fan page for <b>Teach You a Lesson</b> (참교육, 2026). Series © its rights holders.
+    Built <span id="yr">2026</span>.</span>
+  <span class="socials">
+    <a href="https://www.netflix.com/title/81947300" target="_blank" rel="noopener noreferrer" aria-label="Netflix">N</a>
+    <a href="https://www.imdb.com/title/tt34809853/" target="_blank" rel="noopener noreferrer" aria-label="IMDb">IMDb</a>
+    <a href="https://mydramalist.com/778658-get-schooled" target="_blank" rel="noopener noreferrer" aria-label="MyDramaList">MDL</a>
+    <a href="#top" aria-label="Back to top">↑</a>
+  </span>
+</footer>
+
+<a class="top" id="toTop" href="#top" aria-label="Back to top">↑</a>
+
+<script>
+(() => {
+  "use strict";
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $  = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+  /* ---------- episodes (Netflix synopses, condensed) ---------- */
+  const EPISODES = [
+    { n:1,  len:"~64 min", part:"a", tag:"Series premiere",
+      d:"Inspector Na Hwa-jin walks into a school run by the spoiled son of a powerful politician — and takes control of the room." },
+    { n:2,  len:"~64 min", part:"a", tag:"Episode 2",
+      d:"With unassuming Bong Geun-dae backing him up, Hwa-jin uses his special ops training on a school gang to defend a student who only wants to study." },
+    { n:3,  len:"~64 min", part:"a", tag:"Episode 3",
+      d:"A teen influencer spreads false claims about her teachers, so the team's loose cannon, Inspector Im Han-rim, steps in to set the record straight." },
+    { n:4,  len:"~64 min", part:"a", tag:"Episode 4",
+      d:"Choi Gang-seok weathers a political attack on his bureau while Hwa-jin handles a teacher assault at an elite school." },
+    { n:5,  len:"~64 min", part:"a", tag:"Episode 5",
+      d:"An elementary school teacher's spirit wears down under relentless pressure from parents who refuse to accept any accountability." },
+    { n:6,  len:"~64 min", part:"b", tag:"Episode 6",
+      d:"Four juvenile delinquents are certain they're above the law — until the bureau demonstrates otherwise." },
+    { n:7,  len:"~64 min", part:"b", tag:"Episode 7",
+      d:"Geun-dae goes undercover inside a youth gambling network to help a father reach his son before the debt does." },
+    { n:8,  len:"~64 min", part:"b", tag:"Episode 8",
+      d:"After a pre-med student collapses in class, Hwa-jin's investigation leads to an illegal drug operation — the season's sharpest hour." },
+    { n:9,  len:"~64 min", part:"b", tag:"Penultimate",
+      d:"To pull a student away from the friends exploiting him, Han-rim tries a new approach — with the bureau working without official cover." },
+    { n:10, len:"~64 min", part:"b", tag:"Season finale",
+      d:"Public backlash hits the bureau, so Hwa-jin and his team go rogue to expose a deadly conspiracy run by a violent student gang." }
+  ];
+
+  /* ---------- cast ---------- */
+  const CAST = [
+    { i:"나", n:"Na Hwa-jin", a:"Kim Mu-yeol", r:"ERPB inspector", c1:"#e50914", c2:"#4d0206",
+      d:"Former Special Forces captain. Intimidating, methodical, and authorised to put hands on the problem." },
+    { i:"최", n:"Choi Gang-seok", a:"Lee Sung-min", r:"Minister of Education", c1:"#e8b93c", c2:"#4d3a09",
+      d:"Founded the Educational Rights Protection Bureau and spends every episode defending its existence in politics." },
+    { i:"임", n:"Im Han-rim", a:"Jin Ki-joo", r:"ERPB inspector", c1:"#5aa9d6", c2:"#0e3a52",
+      d:"Ex-Special Forces sergeant who enjoys the field work rather more than the paperwork." },
+    { i:"봉", n:"Bong Geun-dae", a:"Pyo Ji-hoon (P.O)", r:"Technical support", c1:"#7a6ce0", c2:"#211a52",
+      d:"KAIST graduate. Looks harmless, runs the surveillance, data and undercover setups." },
+    { i:"류", n:"Ryu Kwang-pil", a:"Song Young-gyu", r:"Antagonist", c1:"#8b8f6a", c2:"#2c2f1c",
+      d:"One of the entrenched interests that treats a school as private property." },
+    { i:"황", n:"Hwang Ki-tae", a:"Kim Jong-soo", r:"Antagonist", c1:"#c2694a", c2:"#40190e",
+      d:"Institutional obstruction with a title and a comfortable office." },
+    { i:"장", n:"Jang Kwon-hyuk", a:"Lee Tae-hwan", r:"Supporting", c1:"#3f8f7a", c2:"#0f3229",
+      d:"Caught between the bureau's methods and the world that produced him." },
+    { i:"조", n:"Cho In-beom", a:"Ok Jin-uk", r:"Villain", c1:"#9c2b6b", c2:"#390d27",
+      d:"The kind of case the bureau was invented for." }
+  ];
+
+  /* ---------- render episodes ---------- */
+  $("#eps").innerHTML = EPISODES.map((e, i) => `
+    <article class="ep reveal" data-part="${e.part}" data-d="${(i % 4) + 1}" style="--a:${140 + i * 24}deg">
+      <div class="thumb">
+        <span class="num">${String(e.n).padStart(2, "0")}</span>
+        <span class="len">${e.len}</span>
+        <span class="play"><i></i></span>
+      </div>
+      <div class="body">
+        <h3>Episode ${e.n}</h3>
+        <p>${e.d}</p>
+        <span class="tag">${e.tag}</span>
+      </div>
+      <span class="bar"></span>
+    </article>`).join("");
+
+  /* ---------- render cast ---------- */
+  $("#castGrid").innerHTML = CAST.map((p, i) => `
+    <article class="person reveal" data-d="${(i % 4) + 1}" tabindex="0">
+      <div class="face" style="--c1:${p.c1};--c2:${p.c2}"><span aria-hidden="true">${p.i}</span></div>
+      <div class="body">
+        <h3>${p.n}</h3>
+        <p class="actor">${p.a}</p>
+        <p class="role">${p.r}</p>
+        <p class="bio">${p.d}</p>
+      </div>
+    </article>`).join("");
+
+  /* ---------- marquee ---------- */
+  const words = ["참교육","<em>·</em>","Chamgyoyuk","<em>·</em>","<b>Get Schooled</b>","<em>·</em>",
+    "10 episodes on Netflix","<em>·</em>","Educational Rights Protection Bureau","<em>·</em>",
+    "<b>No. 1 non-English worldwide</b>","<em>·</em>"];
+  const strip = words.map(w => `<span>${w}</span>`).join("");
+  $("#mq1").innerHTML = strip;
+  $("#mq2").innerHTML = strip;
+
+  /* ---------- preloader ---------- */
+  const hide = () => $("#loader").classList.add("done");
+  addEventListener("load", () => setTimeout(hide, reduce ? 0 : 900));
+  setTimeout(hide, 3500); // safety net
+
+  /* ---------- typewriter ---------- */
+  const LINES = ["School violence outran the law.","So the state stopped asking nicely.","참교육 — true education."];
+  const typeEl = $("#type"), caret = '<i aria-hidden="true"></i>';
+  if (reduce) {
+    typeEl.innerHTML = LINES[1] + caret;
+  } else {
+    let li = 0, ci = 0, del = false;
+    (function tick() {
+      const line = LINES[li];
+      ci += del ? -1 : 1;
+      typeEl.innerHTML = line.slice(0, ci) + caret;
+      let wait = del ? 32 : 60;
+      if (!del && ci === line.length) { del = true; wait = 1600; }
+      else if (del && ci === 0) { del = false; li = (li + 1) % LINES.length; wait = 300; }
+      setTimeout(tick, wait);
+    })();
+  }
+
+  /* ---------- scroll reveal ---------- */
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); }
+    });
+  }, { rootMargin: "0px 0px -8% 0px", threshold: .12 });
+  $$(".reveal").forEach(el => io.observe(el));
+
+  /* ---------- counters ---------- */
+  const cio = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      const el = en.target, to = +el.dataset.to, t0 = performance.now(), dur = 1500;
+      cio.unobserve(el);
+      if (reduce) { el.textContent = to; return; }
+      (function step(now) {
+        const p = Math.min(1, (now - t0) / dur);
+        el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(step);
+      })(t0);
+    });
+  }, { threshold: .5 });
+  $$(".count").forEach(el => cio.observe(el));
+
+  /* ---------- nav state, progress, back-to-top ---------- */
+  const nav = $("#nav"), bar = $("#progress"), toTop = $("#toTop");
+  const links = $$('nav a[href^="#"]');
+  const sections = links.map(a => $(a.getAttribute("href"))).filter(Boolean);
+  let queued = false;
+  const onScroll = () => {
+    const y = scrollY;
+    const max = document.documentElement.scrollHeight - innerHeight;
+    nav.classList.toggle("stuck", y > 40);
+    toTop.classList.toggle("show", y > 700);
+    bar.style.transform = `scaleX(${max > 0 ? y / max : 0})`;
+    let cur = null;
+    sections.forEach(s => { if (s.offsetTop - innerHeight * .32 <= y) cur = s.id; });
+    links.forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + cur));
+    queued = false;
+  };
+  addEventListener("scroll", () => { if (!queued) { queued = true; requestAnimationFrame(onScroll); } }, { passive: true });
+  onScroll();
+
+  /* ---------- mobile menu ---------- */
+  const menu = $("#menu"), toggle = $("#navToggle");
+  toggle.addEventListener("click", () => {
+    const open = menu.classList.toggle("open");
+    toggle.setAttribute("aria-expanded", String(open));
+  });
+  menu.addEventListener("click", e => {
+    if (e.target.tagName === "A") { menu.classList.remove("open"); toggle.setAttribute("aria-expanded", "false"); }
+  });
+
+  /* ---------- episode filter ---------- */
+  $$(".tabs button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      $$(".tabs button").forEach(b => b.setAttribute("aria-selected", String(b === btn)));
+      const f = btn.dataset.filter;
+      $$(".ep").forEach(ep => {
+        const show = f === "all" || ep.dataset.part === f;
+        ep.classList.toggle("hide", !show);
+        if (show) { ep.classList.remove("in"); requestAnimationFrame(() => ep.classList.add("in")); }
+      });
+    });
+  });
+
+  /* ---------- tilt + cursor spotlight (fine pointers) ---------- */
+  if (!reduce && matchMedia("(pointer:fine)").matches) {
+    $$(".ep").forEach(card => {
+      card.addEventListener("pointermove", e => {
+        const r = card.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+        card.style.transform = `perspective(900px) rotateY(${x * 7}deg) rotateX(${-y * 7}deg) translateY(-6px)`;
+      });
+      card.addEventListener("pointerleave", () => { card.style.transform = ""; });
+    });
+    const sp = $(".spotlight");
+    addEventListener("pointermove", e => {
+      sp.style.setProperty("--mx", e.clientX + "px");
+      sp.style.setProperty("--my", e.clientY + "px");
+    }, { passive: true });
+  }
+
+  /* ---------- chalk dust ---------- */
+  if (!reduce) {
+    const dust = $("#dust");
+    for (let i = 0; i < 26; i++) {
+      const b = document.createElement("i");
+      b.style.left = Math.random() * 100 + "%";
+      b.style.animationDuration = (13 + Math.random() * 16) + "s";
+      b.style.animationDelay = (-Math.random() * 20) + "s";
+      b.style.setProperty("--dx", (Math.random() * 120 - 60) + "px");
+      const s = 1 + Math.random() * 2.2;
+      b.style.width = b.style.height = s + "px";
+      dust.appendChild(b);
+    }
+  }
+
+  /* ---------- trailer placeholder ---------- */
+  const screen = $("#screen");
+  const toggleTrailer = () => screen.classList.toggle("playing");
+  screen.addEventListener("click", toggleTrailer);
+  screen.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleTrailer(); }
+  });
+
+  $("#yr").textContent = new Date().getFullYear();
+})();
+</script>
+</body>
+</html>
