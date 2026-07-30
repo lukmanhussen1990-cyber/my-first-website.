@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#08120c" />
+    <meta
+      name="description"
+      content="Touchline — a browser football game with 11-a-side matches, real rules, team AI and a cup competition."
+    />
+    <title>Touchline — Football</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='white' stroke='%23111' stroke-width='6'/><path d='M50 22l16 12-6 19H40l-6-19z' fill='%23111'/></svg>"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="pitch" aria-label="Football pitch"></canvas>
+
+      <!-- ------------------------------ In-match HUD ------------------------------ -->
+      <div id="hud" class="hud" hidden>
+        <div class="scoreboard">
+          <div class="score-team home">
+            <span class="kit" data-kit="home"></span>
+            <span class="abbr" data-abbr="home">HOM</span>
+          </div>
+          <div class="score-core">
+            <div class="score" data-score>0 – 0</div>
+            <div class="clock"><span data-clock>00:00</span><span class="half" data-half>1st</span></div>
+          </div>
+          <div class="score-team away">
+            <span class="abbr" data-abbr="away">AWY</span>
+            <span class="kit" data-kit="away"></span>
+          </div>
+        </div>
+
+        <div class="banner" data-banner hidden></div>
+
+        <ul class="ticker" data-ticker></ul>
+
+        <div class="hud-corner">
+          <button class="icon-button" data-action="pause" title="Pause (Esc)" aria-label="Pause">❚❚</button>
+        </div>
+
+        <!-- Touch controls, shown only on coarse pointers -->
+        <div class="touch-layer" data-touch-root hidden>
+          <div class="touch-area" data-touch-area></div>
+          <div class="touch-stick" data-touch-stick><span data-touch-knob></span></div>
+          <div class="touch-buttons">
+            <button class="touch-btn sprint" data-touch-button="sprint">RUN</button>
+            <button class="touch-btn through" data-touch-button="through">THRU</button>
+            <button class="touch-btn pass" data-touch-button="pass">PASS</button>
+            <button class="touch-btn shoot" data-touch-button="shoot">SHOOT</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ------------------------------ Main menu ------------------------------ -->
+      <section class="screen" data-screen="menu">
+        <div class="menu-art" aria-hidden="true">
+          <div class="pitch-lines"></div>
+        </div>
+        <div class="panel title-panel">
+          <h1 class="logo">TOUCHLINE</h1>
+          <p class="tagline">Eleven a side. Real rules. One button to win it.</p>
+          <div class="menu-buttons">
+            <button class="btn primary" data-action="quick-match">Quick Match</button>
+            <button class="btn" data-action="cup">Cup Run</button>
+            <button class="btn" data-action="two-player">Two Players</button>
+            <button class="btn ghost" data-action="help">How to Play</button>
+            <button class="btn ghost" data-action="settings">Settings</button>
+          </div>
+          <p class="footnote">Keyboard, gamepad and touch. No downloads, no accounts.</p>
+        </div>
+      </section>
+
+      <!-- ------------------------------ Match setup ------------------------------ -->
+      <section class="screen" data-screen="setup" hidden>
+        <div class="panel wide">
+          <header class="panel-head">
+            <h2 data-setup-title>Quick Match</h2>
+            <button class="btn ghost small" data-action="back-to-menu">Back</button>
+          </header>
+
+          <div class="setup-grid">
+            <div class="team-pick">
+              <h3><span class="pill home-pill">P1</span> Your team</h3>
+              <div class="team-list" data-team-list="home"></div>
+            </div>
+            <div class="versus">
+              <div class="vs-badge">VS</div>
+              <div class="kit-preview">
+                <div class="kit-swatch" data-preview="home"></div>
+                <div class="kit-swatch" data-preview="away"></div>
+              </div>
+            </div>
+            <div class="team-pick">
+              <h3><span class="pill away-pill" data-away-label>CPU</span> Opponent</h3>
+              <div class="team-list" data-team-list="away"></div>
+            </div>
+          </div>
+
+          <div class="options-row">
+            <label class="option">
+              <span>Difficulty</span>
+              <select data-option="difficulty"></select>
+            </label>
+            <label class="option">
+              <span>Half length</span>
+              <select data-option="halfLength"></select>
+            </label>
+            <label class="option">
+              <span>Your formation</span>
+              <select data-option="formationHome"></select>
+            </label>
+            <label class="option">
+              <span>Their formation</span>
+              <select data-option="formationAway"></select>
+            </label>
+            <label class="option toggle">
+              <input type="checkbox" data-option="offside" checked />
+              <span>Offside</span>
+            </label>
+            <label class="option toggle">
+              <input type="checkbox" data-option="fouls" checked />
+              <span>Fouls &amp; cards</span>
+            </label>
+          </div>
+
+          <footer class="panel-foot">
+            <button class="btn primary large" data-action="start-match">Kick Off</button>
+          </footer>
+        </div>
+      </section>
+
+      <!-- ------------------------------ Cup bracket ------------------------------ -->
+      <section class="screen" data-screen="cup" hidden>
+        <div class="panel">
+          <header class="panel-head">
+            <h2>Cup Run</h2>
+            <button class="btn ghost small" data-action="back-to-menu">Quit cup</button>
+          </header>
+          <div class="bracket" data-bracket></div>
+          <footer class="panel-foot">
+            <button class="btn primary large" data-action="cup-continue">Continue</button>
+          </footer>
+        </div>
+      </section>
+
+      <!-- ------------------------------ Pause ------------------------------ -->
+      <section class="screen overlay" data-screen="pause" hidden>
+        <div class="panel narrow">
+          <h2>Paused</h2>
+          <div class="menu-buttons">
+            <button class="btn primary" data-action="resume">Resume</button>
+            <button class="btn" data-action="help">Controls</button>
+            <button class="btn" data-action="toggle-sound" data-sound-label>Sound: On</button>
+            <button class="btn ghost" data-action="abandon">Leave match</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ------------------------------ Full time ------------------------------ -->
+      <section class="screen" data-screen="fulltime" hidden>
+        <div class="panel wide">
+          <h2 data-ft-title>Full Time</h2>
+          <div class="ft-score" data-ft-score></div>
+          <div class="ft-body">
+            <div class="ft-stats" data-ft-stats></div>
+            <div class="ft-events" data-ft-events></div>
+          </div>
+          <footer class="panel-foot" data-ft-actions></footer>
+        </div>
+      </section>
+
+      <!-- ------------------------------ Help ------------------------------ -->
+      <section class="screen" data-screen="help" hidden>
+        <div class="panel wide">
+          <header class="panel-head">
+            <h2>How to Play</h2>
+            <button class="btn ghost small" data-action="close-help">Close</button>
+          </header>
+          <div class="help-grid">
+            <div class="help-card">
+              <h3>Keyboard — Player 1</h3>
+              <dl>
+                <dt>WASD / Arrows</dt><dd>Move</dd>
+                <dt>Space</dt><dd>Pass · switch player when defending</dd>
+                <dt>F or J</dt><dd>Shoot — hold to charge · tackle when defending</dd>
+                <dt>G or K</dt><dd>Through ball · slide tackle when defending</dd>
+                <dt>Shift</dt><dd>Sprint (watch the stamina ring)</dd>
+                <dt>Esc / P</dt><dd>Pause</dd>
+              </dl>
+            </div>
+            <div class="help-card">
+              <h3>Keyboard — Player 2</h3>
+              <dl>
+                <dt>Arrows</dt><dd>Move</dd>
+                <dt>. (period)</dt><dd>Pass · switch</dd>
+                <dt>/ (slash)</dt><dd>Shoot · tackle</dd>
+                <dt>, (comma)</dt><dd>Through ball · slide</dd>
+                <dt>Right Shift</dt><dd>Sprint</dd>
+              </dl>
+            </div>
+            <div class="help-card">
+              <h3>Gamepad</h3>
+              <dl>
+                <dt>Left stick / D-pad</dt><dd>Move</dd>
+                <dt>A</dt><dd>Pass · switch</dd>
+                <dt>B / X</dt><dd>Shoot · tackle</dd>
+                <dt>Y</dt><dd>Through ball · slide</dd>
+                <dt>RT / RB</dt><dd>Sprint</dd>
+              </dl>
+            </div>
+            <div class="help-card">
+              <h3>Playing well</h3>
+              <ul>
+                <li>Aim shots by holding a direction as you release — up and down move the ball inside the frame.</li>
+                <li>Steer with left/right while shooting to bend it around the keeper.</li>
+                <li>Through balls are timed, not aimed: play them before the run, not after.</li>
+                <li>Slide tackles in your own box give away penalties. Stand up instead.</li>
+                <li>Sprinting drains stamina; tired players lose a yard of pace.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ------------------------------ Settings ------------------------------ -->
+      <section class="screen" data-screen="settings" hidden>
+        <div class="panel narrow">
+          <header class="panel-head">
+            <h2>Settings</h2>
+            <button class="btn ghost small" data-action="back-to-menu">Back</button>
+          </header>
+          <label class="option toggle">
+            <input type="checkbox" data-setting="sound" checked />
+            <span>Sound</span>
+          </label>
+          <label class="option">
+            <span>Volume</span>
+            <input type="range" min="0" max="100" value="70" data-setting="volume" />
+          </label>
+          <label class="option toggle">
+            <input type="checkbox" data-setting="radar" checked />
+            <span>Radar</span>
+          </label>
+          <label class="option toggle">
+            <input type="checkbox" data-setting="touch" />
+            <span>Force touch controls</span>
+          </label>
+        </div>
+      </section>
+
+      <div class="loading" data-loading>Loading…</div>
+    </div>
+
+    <!-- Bundled from src/ by `node build.mjs`. A classic script (rather than a
+         module) so the page also runs when opened straight from disk. -->
+    <script src="dist/game.js" defer></script>
+    <noscript>
+      <p style="color: white; padding: 2rem">This game needs JavaScript enabled.</p>
+    </noscript>
+  </body>
+</html>
