@@ -422,6 +422,16 @@ footer.site{
   display:flex;flex-wrap:wrap;gap:1.2rem;justify-content:space-between;align-items:center;
   font-size:.8rem;color:var(--fg-dim);
 }
+footer.site .foot-actions{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+.dl{
+  display:inline-flex;align-items:center;gap:.55rem;padding:.55rem 1rem;border-radius:999px;
+  border:1px solid var(--line);font-family:var(--f-mono);font-size:.63rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--fg);
+  transition:background .35s,color .35s,border-color .35s,transform .35s var(--ease);
+}
+.dl:hover{background:var(--fg);color:var(--ink);transform:translateY(-2px)}
+.dl.done{border-color:var(--steel);color:var(--steel);background:none;transform:none}
+.dl svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 footer.site .socials{display:flex;gap:.4rem}
 footer.site .socials a{
   width:36px;height:36px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;
@@ -696,6 +706,10 @@ footer.site .socials a:hover{background:var(--fg);color:var(--ink);transform:tra
       <a class="btn" href="https://www.netflix.com/title/81947300" target="_blank" rel="noopener noreferrer">
         <span class="dot" aria-hidden="true"></span> Open on Netflix</a>
       <a class="btn ghost" href="#episodes">Back to episodes</a>
+      <button class="dl" type="button" data-dl>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0 4-4m-4 4-4-4M5 19h14"/></svg>
+        <span>Download this page</span>
+      </button>
     </div>
     <p class="note">Unofficial fan page · not affiliated with Netflix or the production</p>
   </div>
@@ -704,11 +718,17 @@ footer.site .socials a:hover{background:var(--fg);color:var(--ink);transform:tra
 <footer class="site">
   <span>Fan page for <b>Teach You a Lesson</b> (참교육, 2026). Series © its rights holders.
     Built <span id="yr">2026</span>.</span>
+  <span class="foot-actions">
+  <button class="dl" type="button" data-dl>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0 4-4m-4 4-4-4M5 19h14"/></svg>
+    <span>Download index.html</span>
+  </button>
   <span class="socials">
     <a href="https://www.netflix.com/title/81947300" target="_blank" rel="noopener noreferrer" aria-label="Netflix">N</a>
     <a href="https://www.imdb.com/title/tt34809853/" target="_blank" rel="noopener noreferrer" aria-label="IMDb">IMDb</a>
     <a href="https://mydramalist.com/778658-get-schooled" target="_blank" rel="noopener noreferrer" aria-label="MyDramaList">MDL</a>
     <a href="#top" aria-label="Back to top">↑</a>
+  </span>
   </span>
 </footer>
 
@@ -928,6 +948,38 @@ footer.site .socials a:hover{background:var(--fg);color:var(--ink);transform:tra
   screen.addEventListener("click", toggleTrailer);
   screen.addEventListener("keydown", e => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleTrailer(); }
+  });
+
+  /* ---------- save this page as a standalone .html file ---------- */
+  const FILENAME = "teach-you-a-lesson.html";
+  const source = () => "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+
+  const flash = (btn, msg) => {
+    const label = $("span", btn), was = label.textContent;
+    label.textContent = msg;
+    btn.classList.add("done");
+    setTimeout(() => { label.textContent = was; btn.classList.remove("done"); }, 3200);
+  };
+
+  $$("[data-dl]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      try {
+        const url = URL.createObjectURL(new Blob([source()], { type: "text/html" }));
+        const a = document.createElement("a");
+        a.href = url; a.download = FILENAME;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        flash(btn, "Saved");
+      } catch {
+        // Blob downloads can be blocked by a host's security policy — hand over the source instead.
+        try {
+          await navigator.clipboard.writeText(source());
+          flash(btn, "Source copied — paste into a .html file");
+        } catch {
+          flash(btn, "Blocked here — use the repo copy");
+        }
+      }
+    });
   });
 
   $("#yr").textContent = new Date().getFullYear();
