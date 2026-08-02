@@ -1,0 +1,145 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "npck:kingdom_core",
+      "is_spawnable": true,
+      "is_summonable": true
+    },
+    "component_groups": {
+      "npck:daytime": {
+        "minecraft:type_family": {
+          "family": [
+            "npck_core",
+            "npck_day"
+          ]
+        }
+      },
+      "npck:nighttime": {
+        "minecraft:type_family": {
+          "family": [
+            "npck_core",
+            "npck_night"
+          ]
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "npck_core"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 0.9,
+        "height": 1.4
+      },
+      "minecraft:health": {
+        "value": 400,
+        "max": 400
+      },
+      "minecraft:physics": {
+        "has_gravity": true,
+        "has_collision": true
+      },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:persistent": {},
+      "minecraft:fire_immune": {},
+      "minecraft:nameable": {
+        "allow_name_tag_renaming": true
+      },
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "entity_attack",
+            "deals_damage": true,
+            "on_damage": {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "player"
+              }
+            }
+          },
+          {
+            "cause": "all",
+            "deals_damage": false
+          }
+        ]
+      },
+      "minecraft:environment_sensor": {
+        "triggers": [
+          {
+            "filters": {
+              "test": "is_daytime",
+              "subject": "self",
+              "operator": "==",
+              "value": true
+            },
+            "event": "npck:daytime"
+          },
+          {
+            "filters": {
+              "test": "is_daytime",
+              "subject": "self",
+              "operator": "==",
+              "value": false
+            },
+            "event": "npck:nighttime"
+          }
+        ]
+      },
+      "minecraft:interact": {
+        "interactions": [
+          {
+            "on_interact": {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "player"
+              }
+            },
+            "interact_text": "action.interact.npck.core",
+            "spawn_entities": "npck:m_core",
+            "play_sounds": "beacon.activate",
+            "use_item": false,
+            "cooldown": 0.6
+          }
+        ]
+      }
+    },
+    "events": {
+      "npck:daytime": {
+        "remove": {
+          "component_groups": [
+            "npck:nighttime"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "npck:daytime"
+          ]
+        }
+      },
+      "npck:nighttime": {
+        "remove": {
+          "component_groups": [
+            "npck:daytime"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "npck:nighttime"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,304 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.npck.humanoid.look_at_target": {
+      "loop": true,
+      "bones": {
+        "head": {
+          "rotation": [
+            "this - query.target_x_rotation",
+            "this - query.target_y_rotation",
+            0
+          ]
+        }
+      }
+    },
+    "animation.npck.humanoid.idle": {
+      "loop": true,
+      "bones": {
+        "rightArm": {
+          "rotation": [
+            0,
+            0,
+            "2 + math.cos(query.life_time * 103) * 2"
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            0,
+            0,
+            "-2 - math.cos(query.life_time * 97) * 2"
+          ]
+        },
+        "body": {
+          "rotation": [
+            "math.sin(query.life_time * 62) * 0.7",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.npck.humanoid.walk": {
+      "loop": true,
+      "bones": {
+        "rightLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17) * 42 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 + 180) * 42 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 + 180) * 32 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17) * 32 * query.modified_move_speed",
+            0,
+            0
+          ]
+        },
+        "body": {
+          "rotation": [
+            0,
+            "math.cos(query.modified_distance_moved * 38.17) * 3 * query.modified_move_speed",
+            0
+          ]
+        }
+      }
+    },
+    "animation.npck.humanoid.attack": {
+      "loop": true,
+      "bones": {
+        "rightArm": {
+          "rotation": [
+            "-70 - math.sin(query.life_time * 420) * 60",
+            0,
+            -8
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            -18,
+            0,
+            8
+          ]
+        },
+        "body": {
+          "rotation": [
+            0,
+            "math.sin(query.life_time * 420) * 8",
+            0
+          ]
+        }
+      }
+    },
+    "animation.npck.humanoid.work": {
+      "loop": true,
+      "bones": {
+        "rightArm": {
+          "rotation": [
+            "-58 + math.sin(query.life_time * 320) * 52",
+            0,
+            0
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "-34 + math.sin(query.life_time * 320 + 45) * 22",
+            0,
+            0
+          ]
+        },
+        "body": {
+          "rotation": [
+            "7 + math.sin(query.life_time * 320) * 4",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.npck.humanoid.build": {
+      "loop": true,
+      "bones": {
+        "rightArm": {
+          "rotation": [
+            "-112 + math.sin(query.life_time * 210) * 26",
+            0,
+            -6
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "-112 + math.sin(query.life_time * 210 + 180) * 26",
+            0,
+            6
+          ]
+        },
+        "head": {
+          "rotation": [
+            -12,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.npck.humanoid.celebrate": {
+      "loop": true,
+      "bones": {
+        "rightArm": {
+          "rotation": [
+            "-158 + math.sin(query.life_time * 300) * 16",
+            0,
+            -22
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "-158 + math.sin(query.life_time * 300 + 180) * 16",
+            0,
+            22
+          ]
+        },
+        "root": {
+          "position": [
+            0,
+            "math.abs(math.sin(query.life_time * 300)) * 2.6",
+            0
+          ]
+        },
+        "head": {
+          "rotation": [
+            "-8 + math.sin(query.life_time * 300) * 6",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.npck.humanoid.sleep": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "position": [
+            0,
+            -6.5,
+            0
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            -82,
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0,
+            -2
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            -82,
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0,
+            -2
+          ]
+        },
+        "body": {
+          "rotation": [
+            9,
+            0,
+            0
+          ]
+        },
+        "head": {
+          "rotation": [
+            "24 + math.sin(query.life_time * 50) * 3",
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            -9,
+            0,
+            4
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            -9,
+            0,
+            -4
+          ]
+        }
+      }
+    },
+    "animation.npck.humanoid.hurt": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            0,
+            0,
+            "math.sin(query.life_time * 900) * 7"
+          ]
+        },
+        "head": {
+          "rotation": [
+            -6,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.npck.core.pulse": {
+      "loop": true,
+      "bones": {
+        "gem": {
+          "rotation": [
+            0,
+            "query.life_time * 45",
+            0
+          ],
+          "position": [
+            0,
+            "math.sin(query.life_time * 90) * 0.6",
+            0
+          ],
+          "scale": [
+            "1 + math.sin(query.life_time * 120) * 0.04"
+          ]
+        },
+        "cap": {
+          "rotation": [
+            0,
+            "-query.life_time * 20",
+            0
+          ]
+        }
+      }
+    }
+  }
+}

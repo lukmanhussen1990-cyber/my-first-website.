@@ -1,0 +1,26 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "npck:command_banner",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.banner"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "npck_command_banner"
+      },
+      "minecraft:display_name": {
+        "value": "Royal Command Banner"
+      },
+      "minecraft:max_stack_size": {
+        "value": 1
+      },
+      "minecraft:hand_equipped": {
+        "value": true
+      }
+    }
+  }
+}

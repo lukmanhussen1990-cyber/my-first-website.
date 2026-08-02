@@ -1,0 +1,160 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "npck:bandit",
+      "is_spawnable": true,
+      "is_summonable": true
+    },
+    "component_groups": {
+      "npck:despawned": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "npck_enemy",
+          "monster",
+          "mob",
+          "npck_e_bandit"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 0.6,
+        "height": 1.9
+      },
+      "minecraft:health": {
+        "value": 20,
+        "max": 20
+      },
+      "minecraft:movement": {
+        "value": 0.3
+      },
+      "minecraft:navigation.walk": {
+        "can_path_over_water": false,
+        "avoid_water": true,
+        "avoid_damage_blocks": true,
+        "can_open_doors": true,
+        "can_pass_doors": true,
+        "can_break_doors": false,
+        "avoid_portals": true,
+        "can_walk": true,
+        "can_sink": false,
+        "can_jump": true
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:jump.static": {},
+      "minecraft:can_climb": {},
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": true,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:knockback_resistance": {
+        "value": 0.1
+      },
+      "minecraft:nameable": {},
+      "minecraft:persistent": {},
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": 0
+      },
+      "minecraft:attack": {
+        "damage": 4
+      },
+      "minecraft:mark_variant": {
+        "value": 5
+      },
+      "minecraft:scale": {
+        "value": 1.0
+      },
+      "minecraft:annotation.open_door": {},
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:loot": {
+        "table": "loot_tables/entities/npck_enemy.json"
+      },
+      "minecraft:equipment": {
+        "table": "loot_tables/equipment/npck_bandit.json"
+      },
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 2,
+        "within_radius": 40,
+        "must_see": false,
+        "must_see_forget_duration": 30,
+        "reselect_targets": true,
+        "entity_types": [
+          {
+            "filters": {
+              "any_of": [
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "value": "player"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "value": "npck_friendly"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "value": "villager"
+                },
+                {
+                  "test": "is_family",
+                  "subject": "other",
+                  "value": "irongolem"
+                }
+              ]
+            },
+            "max_dist": 40
+          }
+        ]
+      },
+      "minecraft:behavior.hurt_by_target": {
+        "priority": 1,
+        "alert_same_type": true
+      },
+      "minecraft:behavior.melee_attack": {
+        "priority": 4,
+        "speed_multiplier": 1.15,
+        "track_target": true,
+        "reach_multiplier": 1.7
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 7,
+        "speed_multiplier": 1.0,
+        "xz_distance": 16,
+        "interval": 60
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 9,
+        "look_distance": 10
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 10
+      },
+      "minecraft:timer": {
+        "looping": false,
+        "time": 1200.0,
+        "time_down_event": {
+          "event": "npck:expire"
+        }
+      }
+    },
+    "events": {
+      "npck:expire": {
+        "add": {
+          "component_groups": [
+            "npck:despawned"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "npck:m_tap",
+      "min_engine_version": "1.21.0",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/npck/invisible"
+      },
+      "geometry": {
+        "default": "geometry.npck.empty"
+      },
+      "render_controllers": [
+        "controller.render.npck_humanoid"
+      ]
+    }
+  }
+}

@@ -1,0 +1,5 @@
+# only the core runs this, every 2 seconds
+execute if score #level npck.sys matches 1 if score Wood npck.res matches 64.. if score Stone npck.res matches 32.. if score Food npck.res matches 32.. run function npck/kingdom/up_2
+execute if score #level npck.sys matches 2 if score Wood npck.res matches 160.. if score Stone npck.res matches 128.. if score Food npck.res matches 96.. if score Iron npck.res matches 16.. run function npck/kingdom/up_3
+execute if score #level npck.sys matches 3 if score Wood npck.res matches 320.. if score Stone npck.res matches 256.. if score Food npck.res matches 192.. if score Iron npck.res matches 64.. if score Gold npck.res matches 24.. if score Emeralds npck.res matches 8.. run function npck/kingdom/up_4
+execute if score #level npck.sys matches 4 if score Wood npck.res matches 512.. if score Stone npck.res matches 512.. if score Food npck.res matches 384.. if score Iron npck.res matches 128.. if score Gold npck.res matches 64.. if score Emeralds npck.res matches 32.. run function npck/kingdom/up_5

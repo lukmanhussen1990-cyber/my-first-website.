@@ -1,0 +1,30 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "npck:kingdom_core",
+      "menu_category": {
+        "category": "items",
+        "group": "itemGroup.name.miscFood"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "npck_kingdom_core"
+      },
+      "minecraft:display_name": {
+        "value": "Kingdom Core"
+      },
+      "minecraft:max_stack_size": {
+        "value": 1
+      },
+      "minecraft:entity_placer": {
+        "entity": "npck:kingdom_core"
+      },
+      "minecraft:use_modifiers": {
+        "use_duration": 0.1,
+        "movement_modifier": 1.0
+      }
+    }
+  }
+}

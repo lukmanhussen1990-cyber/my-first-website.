@@ -1,0 +1,47 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "npck:merchant",
+      "min_engine_version": "1.21.0",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/npck/merchant"
+      },
+      "geometry": {
+        "default": "geometry.npck.humanoid"
+      },
+      "animations": {
+        "look_at_target": "animation.npck.humanoid.look_at_target",
+        "idle": "animation.npck.humanoid.idle",
+        "walk": "animation.npck.humanoid.walk",
+        "attack": "animation.npck.humanoid.attack",
+        "work": "animation.npck.humanoid.work",
+        "build": "animation.npck.humanoid.build",
+        "celebrate": "animation.npck.humanoid.celebrate",
+        "sleep": "animation.npck.humanoid.sleep",
+        "hurt": "animation.npck.humanoid.hurt",
+        "move_controller": "controller.animation.npck.humanoid.move",
+        "state_controller": "controller.animation.npck.humanoid.state",
+        "hurt_controller": "controller.animation.npck.humanoid.hurt"
+      },
+      "scripts": {
+        "animate": [
+          "move_controller",
+          "state_controller",
+          "hurt_controller"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.npck_humanoid"
+      ],
+      "enable_attachables": true,
+      "spawn_egg": {
+        "base_color": "#6B3E8E",
+        "overlay_color": "#F0C64A"
+      }
+    }
+  }
+}

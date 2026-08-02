@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "npck:kingdom_core",
+      "min_engine_version": "1.21.0",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/npck/kingdom_core"
+      },
+      "geometry": {
+        "default": "geometry.npck.kingdom_core"
+      },
+      "animations": {
+        "pulse": "animation.npck.core.pulse"
+      },
+      "scripts": {
+        "animate": [
+          "pulse"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.npck_core"
+      ],
+      "spawn_egg": {
+        "base_color": "#2E86C8",
+        "overlay_color": "#E7C43F"
+      }
+    }
+  }
+}

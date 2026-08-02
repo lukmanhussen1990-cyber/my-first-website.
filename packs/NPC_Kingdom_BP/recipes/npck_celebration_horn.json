@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "npck:celebration_horn_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "  G",
+      " GN",
+      "G  "
+    ],
+    "key": {
+      "G": {
+        "item": "minecraft:gold_ingot"
+      },
+      "N": {
+        "item": "minecraft:note_block"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:gold_ingot"
+      },
+      {
+        "item": "minecraft:note_block"
+      }
+    ],
+    "result": {
+      "item": "npck:celebration_horn",
+      "count": 1
+    }
+  }
+}

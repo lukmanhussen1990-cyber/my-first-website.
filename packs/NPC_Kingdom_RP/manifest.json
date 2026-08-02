@@ -1,0 +1,47 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "NPC Kingdom Resources",
+    "description": "Textures, models, animations and sounds for the NPC Kingdom add-on.",
+    "uuid": "6f1a2c40-5d3b-4e77-9a10-3c2b8f4d1e03",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "description": "NPC Kingdom resources",
+      "uuid": "6f1a2c40-5d3b-4e77-9a10-3c2b8f4d1e04",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "6f1a2c40-5d3b-4e77-9a10-3c2b8f4d1e01",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "metadata": {
+    "authors": [
+      "NPC Kingdom"
+    ],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}

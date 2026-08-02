@@ -1,0 +1,25 @@
+execute if block ~2 ~-1 ~0 stone run setblock ~2 ~-1 ~0 air destroy
+execute if block ~2 ~-1 ~0 coal_ore run setblock ~2 ~-1 ~0 air destroy
+execute if block ~2 ~-1 ~0 iron_ore run setblock ~2 ~-1 ~0 air destroy
+execute if block ~2 ~-1 ~0 deepslate_coal_ore run setblock ~2 ~-1 ~0 air destroy
+execute if block ~2 ~-1 ~0 deepslate_iron_ore run setblock ~2 ~-1 ~0 air destroy
+execute if block ~2 ~-1 ~0 gold_ore run setblock ~2 ~-1 ~0 air destroy
+execute if block ~-2 ~-1 ~0 stone run setblock ~-2 ~-1 ~0 air destroy
+execute if block ~-2 ~-1 ~0 coal_ore run setblock ~-2 ~-1 ~0 air destroy
+execute if block ~-2 ~-1 ~0 iron_ore run setblock ~-2 ~-1 ~0 air destroy
+execute if block ~-2 ~-1 ~0 deepslate_coal_ore run setblock ~-2 ~-1 ~0 air destroy
+execute if block ~-2 ~-1 ~0 deepslate_iron_ore run setblock ~-2 ~-1 ~0 air destroy
+execute if block ~-2 ~-1 ~0 gold_ore run setblock ~-2 ~-1 ~0 air destroy
+execute if block ~0 ~-1 ~2 stone run setblock ~0 ~-1 ~2 air destroy
+execute if block ~0 ~-1 ~2 coal_ore run setblock ~0 ~-1 ~2 air destroy
+execute if block ~0 ~-1 ~2 iron_ore run setblock ~0 ~-1 ~2 air destroy
+execute if block ~0 ~-1 ~2 deepslate_coal_ore run setblock ~0 ~-1 ~2 air destroy
+execute if block ~0 ~-1 ~2 deepslate_iron_ore run setblock ~0 ~-1 ~2 air destroy
+execute if block ~0 ~-1 ~2 gold_ore run setblock ~0 ~-1 ~2 air destroy
+execute if block ~0 ~-1 ~-2 stone run setblock ~0 ~-1 ~-2 air destroy
+execute if block ~0 ~-1 ~-2 coal_ore run setblock ~0 ~-1 ~-2 air destroy
+execute if block ~0 ~-1 ~-2 iron_ore run setblock ~0 ~-1 ~-2 air destroy
+execute if block ~0 ~-1 ~-2 deepslate_coal_ore run setblock ~0 ~-1 ~-2 air destroy
+execute if block ~0 ~-1 ~-2 deepslate_iron_ore run setblock ~0 ~-1 ~-2 air destroy
+execute if block ~0 ~-1 ~-2 gold_ore run setblock ~0 ~-1 ~-2 air destroy
+particle minecraft:basic_crit_particle ~ ~ ~

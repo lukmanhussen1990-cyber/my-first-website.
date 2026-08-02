@@ -1,0 +1,13 @@
+execute if score @s npck.order matches 0 run event entity @s npck:order_work
+execute if score @s npck.order matches 1 run event entity @s npck:order_follow
+execute if score @s npck.order matches 2 run event entity @s npck:order_stay
+execute if score @s npck.order matches 3 run event entity @s npck:order_patrol
+execute if score @s npck.order matches 4 run event entity @s npck:order_defend
+execute if score @s npck.order matches 5 run event entity @s npck:order_attack
+execute if score @s npck.order matches 6 run event entity @s npck:order_retreat
+execute if score @s npck.order matches 7 run event entity @s npck:order_gather
+execute if score @s npck.order matches 8 run event entity @s npck:order_build
+execute if score @s npck.order matches 9 run event entity @s npck:order_repair
+execute if score @s npck.order matches 10 run event entity @s npck:order_home
+execute if score @s npck.order matches 11 run event entity @s npck:order_celebrate
+execute if score @s npck.order matches 12 run event entity @s npck:order_sleep

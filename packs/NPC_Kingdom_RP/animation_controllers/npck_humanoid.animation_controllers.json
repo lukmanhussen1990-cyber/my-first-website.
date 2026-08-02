@@ -1,0 +1,121 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.npck.humanoid.move": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "animations": [
+            "look_at_target",
+            "idle",
+            {
+              "walk": "query.modified_move_speed"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.npck.humanoid.state": {
+      "initial_state": "normal",
+      "states": {
+        "normal": {
+          "transitions": [
+            {
+              "work": "query.mark_variant == 1"
+            },
+            {
+              "celebrate": "query.mark_variant == 2"
+            },
+            {
+              "sleep": "query.mark_variant == 3"
+            },
+            {
+              "build": "query.mark_variant == 4"
+            },
+            {
+              "combat": "query.mark_variant == 5"
+            }
+          ]
+        },
+        "work": {
+          "animations": [
+            "work"
+          ],
+          "blend_transition": 0.25,
+          "transitions": [
+            {
+              "normal": "query.mark_variant != 1"
+            }
+          ]
+        },
+        "celebrate": {
+          "animations": [
+            "celebrate"
+          ],
+          "blend_transition": 0.25,
+          "transitions": [
+            {
+              "normal": "query.mark_variant != 2"
+            }
+          ]
+        },
+        "sleep": {
+          "animations": [
+            "sleep"
+          ],
+          "blend_transition": 0.5,
+          "transitions": [
+            {
+              "normal": "query.mark_variant != 3"
+            }
+          ]
+        },
+        "build": {
+          "animations": [
+            "build"
+          ],
+          "blend_transition": 0.25,
+          "transitions": [
+            {
+              "normal": "query.mark_variant != 4"
+            }
+          ]
+        },
+        "combat": {
+          "animations": [
+            "attack"
+          ],
+          "blend_transition": 0.15,
+          "transitions": [
+            {
+              "normal": "query.mark_variant != 5"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.npck.humanoid.hurt": {
+      "initial_state": "none",
+      "states": {
+        "none": {
+          "transitions": [
+            {
+              "hurt": "query.hurt_time > 0"
+            }
+          ]
+        },
+        "hurt": {
+          "animations": [
+            "hurt"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "none": "query.hurt_time <= 0"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
