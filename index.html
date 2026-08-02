@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dancing Invader — Montagem Perigosa</title>
+<link rel="icon" href="assets/dancer.webp">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="stage"></canvas>
+
+<div id="hud">
+  <div class="hud-line"><span id="place">—</span></div>
+  <div class="hud-line sub"><span id="move">—</span></div>
+</div>
+
+<div id="progress"><div id="progress-fill"></div></div>
+
+<div id="gate">
+  <img id="gate-sprite" src="assets/dancer.webp" alt="Pixel invader character">
+  <h1>MONTAGEM PERIGOSA</h1>
+  <p class="sub">super slowed &middot; 95 BPM &middot; 10 places</p>
+  <button id="start">TAP TO DANCE</button>
+  <p class="hint">headphones recommended &middot; press <kbd>M</kbd> to mute, <kbd>space</kbd> to pause</p>
+</div>
+
+<audio id="track" src="assets/track.mp3" preload="auto" crossorigin="anonymous"></audio>
+
+<script src="assets/beatdata.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
