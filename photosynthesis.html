@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photosynthesis</title>
+<style>
+:root {
+  --bg:      #f0f9f2;
+  --surface: #e2f4e6;
+  --text:    #162c1e;
+  --sub:     #2d5a3d;
+  --muted:   #5a8a6a;
+  --panel:   rgba(255,255,255,0.72);
+  --border:  rgba(0,0,0,0.09);
+
+  --sun:     #FFD166;
+  --co2:     #EF476F;
+  --h2o:     #0096C7;
+  --o2:      #06D6A0;
+  --glc:     #FFB703;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:      #091a0f;
+    --surface: #0d2318;
+    --text:    #d0edd8;
+    --sub:     #6fc98a;
+    --muted:   #4a8a62;
+    --panel:   rgba(9,26,15,0.82);
+    --border:  rgba(255,255,255,0.09);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg:      #091a0f;
+  --surface: #0d2318;
+  --text:    #d0edd8;
+  --sub:     #6fc98a;
+  --muted:   #4a8a62;
+  --panel:   rgba(9,26,15,0.82);
+  --border:  rgba(255,255,255,0.09);
+}
+
+:root[data-theme="light"] {
+  --bg:      #f0f9f2;
+  --surface: #e2f4e6;
+  --text:    #162c1e;
+  --sub:     #2d5a3d;
+  --muted:   #5a8a6a;
+  --panel:   rgba(255,255,255,0.72);
+  --border:  rgba(0,0,0,0.09);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 16px 40px;
+  gap: 20px;
+  transition: background .4s, color .4s;
+}
+
+header { text-align: center; }
+
+h1 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+  text-wrap: balance;
+  color: var(--text);
+}
+
+.subtitle {
+  font-size: .95rem;
+  color: var(--sub);
+  margin-top: 6px;
+}
+
+/* --- Canvas wrapper --- */
+.scene-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 40px rgba(0,0,0,.13);
+}
+
+#scene {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+}
+
+.theme-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: .72rem;
+  color: var(--sub);
+  cursor: pointer;
+  z-index: 5;
+  backdrop-filter: blur(6px);
+  transition: opacity .2s;
+}
+.theme-btn:hover { opacity: .75; }
+.theme-btn:focus-visible { outline: 2px solid var(--o2); outline-offset: 2px; }
+
+/* --- Legend --- */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: center;
+  font-size: .8rem;
+  color: var(--sub);
+}
+
+.leg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.leg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* --- Equation panel --- */
+.eq-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 28px;
+  text-align: center;
+  width: 100%;
+  max-width: 800px;
+  backdrop-filter: blur(8px);
+}
+
+.eq-eyebrow {
+  font-size: .68rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.eq {
+  font-family: Georgia, serif;
+  font-size: clamp(.95rem, 2.8vw, 1.3rem);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.eq-co2  { color: var(--co2); }
+.eq-h2o  { color: var(--h2o); }
+.eq-sun  { color: var(--sun); }
+.eq-glc  { color: var(--glc); }
+.eq-o2   { color: var(--o2); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Photosynthesis</h1>
+  <p class="subtitle">How plants transform light into life</p>
+</header>
+
+<div class="scene-wrap">
+  <button class="theme-btn" id="themeBtn" aria-label="Toggle light / dark theme">&#9728; / &#9686;</button>
+  <canvas id="scene"
+    role="img"
+    aria-label="Animated diagram showing sunlight, CO₂, and water entering a leaf, producing oxygen and glucose via photosynthesis"></canvas>
+</div>
+
+<div class="legend">
+  <div class="leg"><div class="leg-dot" style="background:#FFD166"></div><span>Sunlight</span></div>
+  <div class="leg"><div class="leg-dot" style="background:#EF476F"></div><span>CO₂ in</span></div>
+  <div class="leg"><div class="leg-dot" style="background:#0096C7"></div><span>H₂O in</span></div>
+  <div class="leg"><div class="leg-dot" style="background:#06D6A0"></div><span>O₂ released</span></div>
+  <div class="leg"><div class="leg-dot" style="background:#FFB703"></div><span>Glucose produced</span></div>
+</div>
+
+<div class="eq-panel">
+  <div class="eq-eyebrow">The Photosynthesis Equation</div>
+  <div class="eq">
+    <span class="eq-co2">6&thinsp;CO₂</span>
+    &nbsp;+&nbsp;
+    <span class="eq-h2o">6&thinsp;H₂O</span>
+    &nbsp;+&nbsp;
+    <span class="eq-sun">Light Energy</span>
+    &nbsp;&nbsp;→&nbsp;&nbsp;
+    <span class="eq-glc">C₆H₁₂O₆</span>
+    &nbsp;+&nbsp;
+    <span class="eq-o2">6&thinsp;O₂</span>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Theme
+   ============================================================ */
+const root = document.documentElement;
+let dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+function applyTheme() {
+  root.setAttribute('data-theme', dark ? 'dark' : 'light');
+  buildPalette();
+}
+applyTheme();
+
+document.getElementById('themeBtn').addEventListener('click', () => {
+  dark = !dark;
+  applyTheme();
+});
+
+/* ============================================================
+   Canvas
+   ============================================================ */
+const canvas = document.getElementById('scene');
+const ctx    = canvas.getContext('2d');
+let W = 0, H = 0;
+
+function resize() {
+  const r = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  W = canvas.width  = Math.round(r.width  * dpr);
+  H = canvas.height = Math.round(r.height * dpr);
+}
+
+new ResizeObserver(resize).observe(canvas);
+resize();
+
+/* ============================================================
+   Palette  (rebuilt on theme switch)
+   ============================================================ */
+let P = {};
+
+function buildPalette() {
+  if (dark) {
+    P = {
+      skyT:  '#071422', skyM: '#0b2016', skyB: '#0c1f0e',
+      gndT:  '#0e2910', gndB: '#07160a',
+      soilT: '#180d05', soilB: '#0d0703',
+
+      sunCore:  '#FFF4A0', sunMid: '#FFD166', sunEdge: '#FF9500',
+      sunGlow:  'rgba(255,180,40,.22)',
+      rayStroke:'rgba(255,209,102,.55)',
+      beamFill: 'rgba(255,200,80,.09)',
+      photon:   'rgba(255,240,140,.9)',
+
+      stemL:  '#3a7025', stemD: '#204a14',
+      leafL:  '#2a6e3c', leafD: '#153c21', vein: '#153c21',
+      rootC:  '#3a2208',
+
+      co2F:  '#EF476F', co2S: '#ff8aaa',
+      h2oF:  '#0096C7', h2oS: '#40C4FF',
+      o2F:   '#06D6A0', o2S:  '#80ffe8',
+      glcF:  '#FFB703', glcS: '#FFE060',
+
+      tag: 'rgba(255,255,255,.93)',
+      chloroGlowC: 'rgba(6,214,160,',
+    };
+  } else {
+    P = {
+      skyT:  '#c3e8ff', skyM: '#d8f0dd', skyB: '#e8f7eb',
+      gndT:  '#daf0dc', gndB: '#c0e0c3',
+      soilT: '#9a7050', soilB: '#6a4428',
+
+      sunCore:  '#FFF9D0', sunMid: '#FFD166', sunEdge: '#FF8C00',
+      sunGlow:  'rgba(255,210,60,.28)',
+      rayStroke:'rgba(255,160,0,.6)',
+      beamFill: 'rgba(255,200,80,.16)',
+      photon:   'rgba(255,220,80,.95)',
+
+      stemL:  '#4caf50', stemD: '#2e7d32',
+      leafL:  '#43a860', leafD: '#2e7d46', vein: '#1b5730',
+      rootC:  '#7c5030',
+
+      co2F:  '#EF476F', co2S: '#a00030',
+      h2oF:  '#0096C7', h2oS: '#005f8a',
+      o2F:   '#06D6A0', o2S:  '#019970',
+      glcF:  '#FFB703', glcS: '#cc8800',
+
+      tag: 'rgba(255,255,255,.96)',
+      chloroGlowC: 'rgba(6,214,160,',
+    };
+  }
+}
+buildPalette();
+
+/* ============================================================
+   Geometry  (derived fresh each frame from W, H)
+   ============================================================ */
+function geo() {
+  const cx   = W * .5;
+  const gndY = H * .70;
+  const stemTop = H * .26;
+
+  const leaf1 = { cx: cx - W*.085, cy: H*.48, rx: W*.105, ry: H*.052, a: -.50 };
+  const leaf2 = { cx: cx + W*.07,  cy: H*.37, rx: W*.082, ry: H*.040, a:  .48 };
+  const leaf3 = { cx: cx - W*.03,  cy: H*.27, rx: W*.060, ry: H*.030, a: -.18 };
+
+  return {
+    cx, gndY, stemTop,
+    leaf1, leaf2, leaf3,
+    activeLeaf: leaf1,
+
+    sunX: W * .80, sunY: H * .13, sunR: Math.min(W, H) * .068,
+
+    roots: [
+      [cx,      gndY,  cx - W*.04, H*.80, cx - W*.07, H*.91],
+      [cx,      gndY,  cx + W*.03, H*.80, cx + W*.06, H*.89],
+      [cx,      gndY,  cx,         H*.83, cx + W*.01, H*.93],
+      [cx-W*.04, H*.80, cx-W*.10, H*.88, cx-W*.13,  H*.94],
+      [cx+W*.03, H*.80, cx+W*.09, H*.87, cx+W*.12,  H*.93],
+    ],
+  };
+}
+
+/* ============================================================
+   Particle system
+   ============================================================ */
+let particles = [];
+let frame = 0;
+let co2Count = 0, h2oCount = 0;
+let chloroGlow = 0;      // 0→1, pulsed on reaction
+let reactionFlash = 0;   // brief screen-wide flash
+
+const PARTICLE_COLORS = {
+  co2:     () => ({ f: P.co2F, s: P.co2S, label: 'CO₂' }),
+  h2o:     () => ({ f: P.h2oF, s: P.h2oS, label: 'H₂O' }),
+  o2:      () => ({ f: P.o2F,  s: P.o2S,  label: 'O₂' }),
+  glucose: () => ({ f: P.glcF, s: P.glcS, label: 'Glucose' }),
+};
+
+class Particle {
+  constructor(type) {
+    this.type    = type;
+    this.alpha   = 0;
+    this.life    = 0;
+    this.done    = false;
+    this.fading  = false;
+    this.absorbed = false;
+    this.wobble  = Math.random() * Math.PI * 2;
+    this.speed   = .9 + Math.random() * .5;
+    this.size    = (type === 'o2') ? 6 : (type === 'glucose') ? 5 : 7;
+    this._init();
+  }
+
+  _init() {
+    const g = geo();
+    const L = g.activeLeaf;
+
+    if (this.type === 'co2') {
+      const left = Math.random() > .5;
+      this.x  = left ? -25 : W + 25;
+      this.y  = L.cy + (Math.random() - .5) * H * .30;
+      this.tx = L.cx + (Math.random() - .5) * L.rx * .4;
+      this.ty = L.cy + (Math.random() - .5) * L.ry * .4;
+
+    } else if (this.type === 'h2o') {
+      const r = g.roots[Math.floor(Math.random() * g.roots.length)];
+      this.x  = r[4] + (Math.random() - .5) * 14;
+      this.y  = r[5] + (Math.random() - .5) * 10;
+      this.tx = L.cx + (Math.random() - .5) * L.rx * .35;
+      this.ty = L.cy + (Math.random() - .5) * L.ry * .35;
+
+    } else if (this.type === 'o2') {
+      this.x  = L.cx + (Math.random() - .5) * L.rx * .5;
+      this.y  = L.cy + (Math.random() - .5) * L.ry * .5;
+      const ang = -Math.PI / 2 + (Math.random() - .5) * Math.PI * 1.1;
+      const sp  = 1.1 + Math.random() * .9;
+      this.vx   = Math.cos(ang) * sp;
+      this.vy   = Math.sin(ang) * sp - .4;
+      this.maxLife = 160 + Math.random() * 70 | 0;
+
+    } else if (this.type === 'glucose') {
+      const g2 = geo();
+      this.x  = g2.activeLeaf.cx;
+      this.y  = g2.activeLeaf.cy;
+      this.tx = g2.cx + (Math.random() - .5) * 12;
+      this.ty = g2.gndY + H * .03;
+    }
+
+    this.maxLife = this.maxLife || 320;
+  }
+
+  _nearTarget() {
+    const dx = this.tx - this.x, dy = this.ty - this.y;
+    return dx*dx + dy*dy < 64;
+  }
+
+  update() {
+    if (this.done) return;
+    this.life++;
+    this.wobble += .042 + Math.random() * .01;
+
+    // Fade in
+    if (this.life < 18) {
+      this.alpha = this.life / 18;
+    } else if (this.fading) {
+      this.alpha -= .04;
+      if (this.alpha <= 0) { this.done = true; return; }
+    } else {
+      this.alpha = 1;
+    }
+
+    if (this.type === 'co2' || this.type === 'h2o') {
+      if (!this.fading) {
+        if (this._nearTarget()) {
+          this.fading   = true;
+          this.absorbed = true;
+        } else {
+          const dx = this.tx - this.x, dy = this.ty - this.y;
+          const d  = Math.sqrt(dx*dx + dy*dy) || 1;
+          this.x += (dx/d) * this.speed + Math.sin(this.wobble) * .8;
+          this.y += (dy/d) * this.speed + Math.cos(this.wobble * 1.4) * .5;
+        }
+      }
+
+    } else if (this.type === 'o2') {
+      this.x  += this.vx;
+      this.y  += this.vy;
+      this.vy -= .022;
+      this.vx += (Math.random() - .5) * .05;
+      if (this.life > this.maxLife - 28) this.fading = true;
+      if (this.y < -40 || this.x < -60 || this.x > W + 60) this.done = true;
+
+    } else if (this.type === 'glucose') {
+      if (!this.fading) {
+        if (this._nearTarget()) {
+          this.fading = true;
+        } else {
+          const dx = this.tx - this.x, dy = this.ty - this.y;
+          const d  = Math.sqrt(dx*dx + dy*dy) || 1;
+          this.x += (dx/d) * this.speed * .55 + Math.sin(this.wobble) * .4;
+          this.y += (dy/d) * this.speed * .55;
+        }
+      }
+    }
+  }
+
+  draw() {
+    if (this.done || this.alpha <= 0) return;
+    const c = PARTICLE_COLORS[this.type]();
+
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.shadowColor = c.f;
+    ctx.shadowBlur  = 12;
+
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle   = c.f;
+    ctx.fill();
+    ctx.strokeStyle = c.s;
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    if (this.alpha > .42) {
+      const fs = Math.max(9, W * .0148);
+      ctx.font = `bold ${fs}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'bottom';
+      const tw   = ctx.measureText(c.label).width;
+      const pad  = 4;
+      const pillH = fs + 4;
+      const pillW = tw + pad * 2;
+      const ly   = this.y - this.size - 3;
+
+      pill(this.x - pillW/2, ly - pillH, pillW, pillH, pillH/2);
+      ctx.fillStyle  = c.f;
+      ctx.globalAlpha = this.alpha * .82;
+      ctx.fill();
+
+      ctx.fillStyle  = P.tag;
+      ctx.globalAlpha = this.alpha;
+      ctx.fillText(c.label, this.x, ly);
+    }
+    ctx.restore();
+  }
+}
+
+function pill(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+/* ============================================================
+   Particle spawning & reaction
+   ============================================================ */
+function count(type) {
+  return particles.filter(p => p.type === type && !p.done && !p.fading).length;
+}
+
+function spawn(type) {
+  particles.push(new Particle(type));
+}
+
+function fireReaction() {
+  const g = geo();
+  for (let i = 0; i < 2 + (Math.random() * 2 | 0); i++) {
+    setTimeout(() => particles.push(new Particle('o2')), i * 180);
+  }
+  particles.push(new Particle('glucose'));
+  chloroGlow    = 1.0;
+  reactionFlash = 1.0;
+}
+
+/* ============================================================
+   Scene drawing
+   ============================================================ */
+function drawBG() {
+  const g = geo();
+
+  // Sky
+  const sg = ctx.createLinearGradient(0, 0, 0, g.gndY);
+  sg.addColorStop(0, P.skyT);
+  sg.addColorStop(.55, P.skyM);
+  sg.addColorStop(1, P.skyB);
+  ctx.fillStyle = sg;
+  ctx.fillRect(0, 0, W, g.gndY);
+
+  // Ground (grass layer)
+  const gg = ctx.createLinearGradient(0, g.gndY, 0, g.gndY + H * .06);
+  gg.addColorStop(0, P.gndT);
+  gg.addColorStop(1, P.gndB);
+  ctx.fillStyle = gg;
+  ctx.fillRect(0, g.gndY, W, H * .06);
+
+  // Soil
+  const soilG = ctx.createLinearGradient(0, g.gndY + H * .06, 0, H);
+  soilG.addColorStop(0, P.soilT);
+  soilG.addColorStop(1, P.soilB);
+  ctx.fillStyle = soilG;
+  ctx.fillRect(0, g.gndY + H * .06, W, H);
+}
+
+function drawSun() {
+  const g = geo();
+  const t = frame * .018;
+  const pulse = 1 + Math.sin(t) * .035;
+  const R = g.sunR;
+
+  // Outer atmospheric glow
+  const atmos = ctx.createRadialGradient(g.sunX, g.sunY, R * .4, g.sunX, g.sunY, R * 3.5);
+  atmos.addColorStop(0, P.sunGlow);
+  atmos.addColorStop(.6, 'rgba(255,160,40,.06)');
+  atmos.addColorStop(1, 'rgba(255,100,0,0)');
+  ctx.fillStyle = atmos;
+  ctx.beginPath();
+  ctx.arc(g.sunX, g.sunY, R * 3.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Rotating rays
+  ctx.save();
+  ctx.translate(g.sunX, g.sunY);
+  ctx.rotate(t * .18);
+  const nRays = 12;
+  for (let i = 0; i < nRays; i++) {
+    const a   = (i / nRays) * Math.PI * 2;
+    const ri  = R * 1.18 * pulse;
+    const ro  = R * (1.9 + Math.sin(i * 1.8 + t) * .25) * pulse;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * ri, Math.sin(a) * ri);
+    ctx.lineTo(Math.cos(a) * ro, Math.sin(a) * ro);
+    ctx.strokeStyle = P.rayStroke;
+    ctx.lineWidth   = 2;
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Sun disc
+  const disc = ctx.createRadialGradient(g.sunX - R*.22, g.sunY - R*.22, 0, g.sunX, g.sunY, R * pulse);
+  disc.addColorStop(0,  P.sunCore);
+  disc.addColorStop(.5, P.sunMid);
+  disc.addColorStop(1,  P.sunEdge);
+  ctx.fillStyle = disc;
+  ctx.beginPath();
+  ctx.arc(g.sunX, g.sunY, R * pulse, 0, Math.PI * 2);
+  ctx.fill();
+
+  // "Light" label below sun
+  const fs = Math.max(10, W * .017);
+  ctx.font         = `italic ${fs}px Georgia, serif`;
+  ctx.fillStyle    = dark ? 'rgba(255,230,120,.85)' : 'rgba(140,70,0,.8)';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('Light', g.sunX, g.sunY + R * 1.6);
+}
+
+function drawBeams() {
+  const g  = geo();
+  const L  = g.activeLeaf;
+  const t  = frame * .012;
+
+  const targets = [
+    { x: L.cx,          y: L.cy },
+    { x: L.cx + W*.038, y: L.cy - H*.018 },
+    { x: L.cx - W*.028, y: L.cy + H*.012 },
+  ];
+
+  targets.forEach((tg, i) => {
+    const a = .10 + Math.sin(t + i * 1.3) * .04;
+    const bg = ctx.createLinearGradient(g.sunX, g.sunY, tg.x, tg.y);
+    bg.addColorStop(0,   `rgba(255,209,102,${a * 1.8})`);
+    bg.addColorStop(.65, `rgba(255,200,80,${a})`);
+    bg.addColorStop(1,   'rgba(255,180,50,0)');
+    ctx.beginPath();
+    ctx.moveTo(g.sunX, g.sunY);
+    ctx.lineTo(tg.x, tg.y);
+    ctx.strokeStyle = bg;
+    ctx.lineWidth   = 10 - i * 3;
+    ctx.stroke();
+  });
+
+  // Animated photon dots
+  const nP = 7;
+  for (let i = 0; i < nP; i++) {
+    const prog = ((t * .45 + i / nP) % 1);
+    const tg   = targets[i % targets.length];
+    const px   = g.sunX + (tg.x - g.sunX) * prog;
+    const py   = g.sunY + (tg.y - g.sunY) * prog;
+    const a    = Math.sin(prog * Math.PI) * .9;
+
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.shadowColor = P.photon;
+    ctx.shadowBlur  = 8;
+    ctx.beginPath();
+    ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = P.photon;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawLeaf(leaf, active) {
+  // Draw leaf as rotated ellipse with veins
+  ctx.save();
+  ctx.translate(leaf.cx, leaf.cy);
+  ctx.rotate(leaf.a);
+
+  // Leaf body gradient
+  const lg = ctx.createRadialGradient(0, -leaf.ry * .2, leaf.ry * .1, 0, 0, leaf.rx);
+  lg.addColorStop(0,  P.leafL);
+  lg.addColorStop(.7, P.leafD);
+  lg.addColorStop(1,  dark ? '#0d2518' : '#154428');
+
+  if (active && chloroGlow > 0) {
+    ctx.shadowColor = P.o2F;
+    ctx.shadowBlur  = 28 * chloroGlow;
+  }
+
+  ctx.beginPath();
+  ctx.ellipse(0, 0, leaf.rx, leaf.ry, 0, 0, Math.PI * 2);
+  ctx.fillStyle = lg;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Edge
+  ctx.strokeStyle = P.vein;
+  ctx.lineWidth   = 1;
+  ctx.stroke();
+
+  // Midrib
+  ctx.beginPath();
+  ctx.moveTo(-leaf.rx * .88, 0);
+  ctx.lineTo( leaf.rx * .88, 0);
+  ctx.strokeStyle = P.vein;
+  ctx.lineWidth   = 1.6;
+  ctx.stroke();
+
+  // Side veins
+  for (let i = -4; i <= 4; i++) {
+    if (i === 0) continue;
+    const vx = i * leaf.rx * .19;
+    const vy = leaf.ry * .65 * Math.sign(i);
+    ctx.beginPath();
+    ctx.moveTo(vx, 0);
+    ctx.lineTo(vx + leaf.rx * .08, vy);
+    ctx.strokeStyle = P.vein;
+    ctx.lineWidth   = .7;
+    ctx.globalAlpha = .55;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // Chloroplast glow overlay
+  if (active && chloroGlow > 0) {
+    const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, leaf.rx * .75);
+    cg.addColorStop(0, P.chloroGlowC + (chloroGlow * .42) + ')');
+    cg.addColorStop(.5, P.chloroGlowC + (chloroGlow * .18) + ')');
+    cg.addColorStop(1, P.chloroGlowC + '0)');
+    ctx.fillStyle = cg;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, leaf.rx * .92, leaf.ry * .92, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+
+  // "Chloroplasts" label when glowing
+  if (active && chloroGlow > .28) {
+    const fs = Math.max(8, W * .0135);
+    ctx.save();
+    ctx.globalAlpha  = Math.min(chloroGlow * 1.6, 1);
+    ctx.font         = `${fs}px -apple-system, sans-serif`;
+    ctx.fillStyle    = dark ? 'rgba(6,214,160,.9)' : 'rgba(0,100,70,.85)';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Chloroplasts active', leaf.cx, leaf.cy + leaf.ry + 5);
+    ctx.restore();
+  }
+}
+
+function drawPlant() {
+  const g = geo();
+
+  // Roots
+  g.roots.forEach(r => {
+    const rg = ctx.createLinearGradient(r[0], r[1], r[4], r[5]);
+    rg.addColorStop(0, P.rootC);
+    rg.addColorStop(1, dark ? '#0a0501' : '#3a1808');
+
+    ctx.beginPath();
+    ctx.moveTo(r[0], r[1]);
+    ctx.quadraticCurveTo(r[2], r[3], r[4], r[5]);
+    ctx.strokeStyle = rg;
+    ctx.lineWidth   = Math.max(1.5, W * .007);
+    ctx.lineCap     = 'round';
+    ctx.stroke();
+  });
+
+  // Stem
+  const sw = Math.max(5, W * .013);
+  const sg = ctx.createLinearGradient(g.cx - sw, 0, g.cx + sw, 0);
+  sg.addColorStop(0, P.stemD);
+  sg.addColorStop(.4, P.stemL);
+  sg.addColorStop(1, P.stemD);
+
+  ctx.beginPath();
+  ctx.moveTo(g.cx, g.gndY);
+  ctx.lineTo(g.cx, g.stemTop);
+  ctx.strokeStyle = sg;
+  ctx.lineWidth   = sw;
+  ctx.lineCap     = 'round';
+  ctx.stroke();
+
+  // Petioles (leaf stalks)
+  const leaves = [g.leaf3, g.leaf2, g.leaf1];
+  // Approximate attachment points on stem by y
+  const attachY = [g.stemTop + H*.01, g.stemTop + H*.11, g.stemTop + H*.22];
+  leaves.forEach((L, i) => {
+    ctx.beginPath();
+    ctx.moveTo(g.cx, attachY[i]);
+    ctx.quadraticCurveTo(
+      (g.cx + L.cx) / 2, (attachY[i] + L.cy) / 2 + (L.cx < g.cx ? -H*.01 : H*.01),
+      L.cx, L.cy
+    );
+    ctx.strokeStyle = P.stemL;
+    ctx.lineWidth   = Math.max(2, W * .005);
+    ctx.lineCap     = 'round';
+    ctx.stroke();
+  });
+
+  // Leaves (back → front)
+  drawLeaf(g.leaf3, false);
+  drawLeaf(g.leaf2, false);
+  drawLeaf(g.leaf1, true); // photosynthesis leaf
+}
+
+function drawReactionFlash() {
+  if (reactionFlash <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = reactionFlash * .12;
+  ctx.fillStyle   = dark ? '#00ffc8' : '#00dd98';
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  reactionFlash = Math.max(0, reactionFlash - .05);
+}
+
+/* ============================================================
+   Animation loop
+   ============================================================ */
+function loop() {
+  requestAnimationFrame(loop);
+  if (!W || !H) return;
+
+  ctx.clearRect(0, 0, W, H);
+  frame++;
+
+  // Spawn inputs
+  if (frame % 88 === 0 && count('co2') < 4) spawn('co2');
+  if (frame % 58 === 0 && count('h2o') < 5) spawn('h2o');
+
+  // Check absorptions, accumulate toward reaction
+  particles.forEach(p => {
+    p.update();
+    if (p.absorbed && !p._counted) {
+      p._counted = true;
+      if (p.type === 'co2') co2Count++;
+      if (p.type === 'h2o') h2oCount++;
+    }
+  });
+
+  // Fire reaction when we've collected enough
+  if (co2Count >= 3 && h2oCount >= 3) {
+    co2Count -= 3;
+    h2oCount -= 3;
+    fireReaction();
+  }
+
+  // Decay glow
+  chloroGlow = Math.max(0, chloroGlow - .007);
+
+  // Prune dead particles
+  particles = particles.filter(p => !p.done);
+
+  // Draw
+  drawBG();
+  drawBeams();
+  drawSun();
+  drawPlant();
+  drawReactionFlash();
+  particles.forEach(p => p.draw());
+}
+
+loop();
+</script>
+
+</body>
+</html>
