@@ -1,4 +1,4 @@
-give @s npck:kingdom_core 1
+give @s npck:core_stone 1
 give @s npck:command_staff 1
 give @s npck:command_banner 1
 give @s npck:royal_ledger 1

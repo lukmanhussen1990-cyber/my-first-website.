@@ -526,7 +526,7 @@ def kingdom_core_entity():
 # Items
 # ---------------------------------------------------------------------------
 PLACER_ENTITY = {
-    "npck:kingdom_core": "npck:kingdom_core",
+    "npck:core_stone": "npck:kingdom_core",
 }
 
 
@@ -660,7 +660,7 @@ def blacksmith_trades():
 
 
 RECIPES = [
-    ("kingdom_core", ["GDG", "DED", "GDG"], {
+    ("core_stone", ["GDG", "DED", "GDG"], {
         "G": "minecraft:gold_ingot", "D": "minecraft:diamond",
         "E": "minecraft:emerald_block"}),
     ("command_staff", [" DG", " SG", "S  "], {

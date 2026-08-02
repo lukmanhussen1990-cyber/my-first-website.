@@ -555,6 +555,7 @@ def build_core_functions():
         "# One tiny dispatcher; everything heavy hangs off the 2s pulse.",
         "execute as @e[family=npck_marker] at @s run function npck/sys/marker",
         "execute as @e[type=npck:kingdom_core,tag=!npck_init] at @s run function npck/kingdom/found",
+        "execute as @e[type=npck:kingdom_core,tag=npck_init] at @s unless score #founded npck.sys matches 1.. run function npck/kingdom/establish",
         "execute if entity @e[type=npck:kingdom_core,tag=npck_init] run function npck/sys/clock",
     ])
 
@@ -584,6 +585,11 @@ def build_core_functions():
         "scoreboard objectives setdisplay sidebar npck.res",
     ]
     fn("npck/sys/setup", setup)
+
+    fn("npck/found", [
+        "summon npck:kingdom_core ~ ~ ~",
+        say("@a[r=16]", "§6[NPC Kingdom] §fKingdom Core placed."),
+    ])
 
     fn("npck/setup", [
         "function npck/sys/setup",
@@ -637,7 +643,7 @@ def build_kingdom_functions():
         say("@a[r=48]", "§c[Kingdom] §fYour realm already has a Kingdom Core. Only one may stand."),
         "particle minecraft:large_explosion ~ ~1 ~",
         "playsound random.fizz @a[r=16] ~ ~ ~",
-        "give @p[r=16] npck:kingdom_core 1",
+        "give @p[r=16] npck:core_stone 1",
         "kill @s",
     ])
 
@@ -1231,7 +1237,7 @@ def build_help():
     H = "@a[r=48]"
     lines = [
         say(H, "§6§l===== NPC KINGDOM ====="),
-        say(H, "§e1.§f Craft or grab a §eKingdom Core§f and place it on the ground."),
+        say(H, "§e1.§f Use the §eKingdom Core§f spawn egg, or long-press the ground with the Kingdom Core item."),
         say(H, "§e2.§f Spawn citizens with the custom §espawn eggs§f (Creative) or let them join."),
         say(H, "§e3.§f Give an NPC an §aemerald§f to §arecruit§f it (recruited NPCs can follow you)."),
         say(H, "§e4.§f Tap an NPC with the §eRoyal Command Staff§f to cycle its order."),
@@ -1240,12 +1246,12 @@ def build_help():
         say(H, "§e7.§f Tap the §eKingdom Core§f with the §eRoyal Ledger§f for a report and to collect taxes."),
         say(H, "§e8.§f Tap the Core with the §eCelebration Horn§f to party, or the §eWar Horn§f to declare war."),
         say(H, "§7Orders: work, follow, stay, patrol, defend, attack, retreat, gather, build, repair, home, celebrate"),
-        say(H, "§7Commands: §f/function npck/orders/<order>§7, §f/function npck/kingdom/status§7, §f/function npck/give_kit"),
+        say(H, "§7Commands: §f/function npck/found§7, §f/function npck/give_kit§7, §f/function npck/kingdom/status"),
     ]
     fn("npck/help", lines)
 
     fn("npck/give_kit", [
-        "give @s npck:kingdom_core 1",
+        "give @s npck:core_stone 1",
         "give @s npck:command_staff 1",
         "give @s npck:command_banner 1",
         "give @s npck:royal_ledger 1",

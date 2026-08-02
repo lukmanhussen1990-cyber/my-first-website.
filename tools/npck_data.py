@@ -149,8 +149,8 @@ BUILDINGS = [
 # Items
 # ---------------------------------------------------------------------------
 ITEMS = [
-    {"id": "npck:kingdom_core", "name": "Kingdom Core", "texture": "kingdom_core",
-     "category": "items", "group": "itemGroup.name.miscFood", "stack": 1},
+    {"id": "npck:core_stone", "name": "Kingdom Core", "texture": "kingdom_core",
+     "category": "items", "group": "itemGroup.name.egg", "stack": 1},
     {"id": "npck:command_staff", "name": "Royal Command Staff", "texture": "command_staff",
      "category": "equipment", "group": "itemGroup.name.sword", "stack": 1, "hand": True},
     {"id": "npck:command_banner", "name": "Royal Command Banner", "texture": "command_banner",
