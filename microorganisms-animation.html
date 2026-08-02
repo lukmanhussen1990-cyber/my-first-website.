@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Microorganisms Animation — Learn in Simple English</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%AC%3C/text%3E%3C/svg%3E" />
+<style>
+  :root{
+    --bg1:#040814;
+    --bg2:#081326;
+    --panel:#0d1a30;
+    --panel-line:#1b2c4a;
+    --text:#dfe9ff;
+    --muted:#93a6c9;
+    --bacteria:#7CFC9A;
+    --virus:#FF6B6B;
+    --protozoa:#5EC8FF;
+    --algae:#4CD964;
+    --fungi:#F5C542;
+    --accent:#8fd6ff;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(1200px 800px at 50% -10%, #10203f 0%, var(--bg1) 55%, #020509 100%);
+    color:var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    min-height:100vh;
+    line-height:1.5;
+  }
+  header{
+    text-align:center;
+    padding: 34px 16px 10px;
+  }
+  header h1{
+    margin:0 0 6px;
+    font-size: clamp(1.5rem, 4vw, 2.4rem);
+    background: linear-gradient(90deg, #8fd6ff, #7CFC9A 40%, #F5C542 70%, #FF6B6B);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    letter-spacing:0.5px;
+  }
+  header p{
+    margin:0 auto;
+    max-width:640px;
+    color:var(--muted);
+    font-size:0.98rem;
+  }
+  main{
+    max-width:1100px;
+    margin:0 auto;
+    padding:20px 16px 60px;
+    display:flex;
+    flex-direction:column;
+    gap:26px;
+  }
+
+  /* ---------- Stage ---------- */
+  #stage{
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+    align-items:flex-start;
+    justify-content:center;
+  }
+  #dish-wrap{
+    position:relative;
+    width:min(560px, 92vw);
+    aspect-ratio:1/1;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #0f2242 0%, #061024 55%, #01030a 100%);
+    box-shadow:
+      inset 0 0 60px rgba(0,0,0,0.85),
+      inset 0 0 12px rgba(143,214,255,0.25),
+      0 0 0 6px #0a1526,
+      0 0 0 8px #1b2c4a,
+      0 10px 40px rgba(0,0,0,0.55);
+    overflow:hidden;
+    flex-shrink:0;
+  }
+  #dish-wrap::after{
+    content:"";
+    position:absolute; inset:0;
+    border-radius:50%;
+    background: radial-gradient(circle at 30% 25%, rgba(255,255,255,0.10), rgba(255,255,255,0) 45%);
+    pointer-events:none;
+  }
+  canvas#dish{
+    width:100%;
+    height:100%;
+    display:block;
+    cursor:grab;
+  }
+
+  #side-panel{
+    flex:1 1 260px;
+    min-width:240px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .panel-box{
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:14px;
+    padding:14px 16px;
+  }
+  .panel-box h3{
+    margin:0 0 10px;
+    font-size:0.95rem;
+    color:var(--accent);
+    text-transform:uppercase;
+    letter-spacing:1px;
+  }
+  #controls-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  button#toggle-play{
+    background:linear-gradient(135deg,#1c3a63,#0f2140);
+    color:var(--text);
+    border:1px solid var(--panel-line);
+    border-radius:10px;
+    padding:8px 14px;
+    font-size:0.95rem;
+    cursor:pointer;
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  button#toggle-play:hover{ transform:translateY(-1px); box-shadow:0 4px 14px rgba(143,214,255,0.15); }
+  #speed-row{ display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--muted); flex:1; }
+  #speed-row input{ flex:1; accent-color: var(--accent); }
+
+  .legend-chip{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    width:100%;
+    background:transparent;
+    border:1px solid var(--panel-line);
+    color:var(--text);
+    border-radius:10px;
+    padding:9px 10px;
+    margin-bottom:8px;
+    cursor:pointer;
+    font-size:0.92rem;
+    text-align:left;
+    transition:background 0.15s ease, border-color 0.15s ease, opacity .15s ease;
+  }
+  .legend-chip:last-child{margin-bottom:0;}
+  .legend-chip:hover{ background:rgba(255,255,255,0.04); }
+  .legend-chip.active{ border-color: var(--dot); background:rgba(255,255,255,0.06); }
+  .legend-chip.dimmed{ opacity:0.4; }
+  .dot{
+    width:13px; height:13px; border-radius:50%;
+    flex-shrink:0;
+    box-shadow:0 0 8px 1px currentColor;
+  }
+  .legend-chip small{ color:var(--muted); display:block; font-size:0.78rem; }
+
+  #show-all-btn{
+    width:100%;
+    margin-top:2px;
+    background:none;
+    border:1px dashed var(--panel-line);
+    color:var(--muted);
+    border-radius:10px;
+    padding:8px;
+    cursor:pointer;
+    font-size:0.85rem;
+  }
+  #show-all-btn:hover{ color:var(--text); border-color:var(--accent); }
+
+  /* ---------- Info section ---------- */
+  #info h2{
+    text-align:center;
+    font-size:1.4rem;
+    margin-bottom:4px;
+  }
+  #info > p.lead{
+    text-align:center;
+    max-width:720px;
+    margin:0 auto 20px;
+    color:var(--muted);
+  }
+  #cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px,1fr));
+    gap:16px;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-left:5px solid var(--card-color);
+    border-radius:12px;
+    padding:16px;
+    cursor:pointer;
+    transition:transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  }
+  .card:hover{ transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,0.35); }
+  .card.active{ background:#122343; box-shadow:0 0 0 2px var(--card-color), 0 8px 24px rgba(0,0,0,0.4); }
+  .card h4{
+    margin:0 0 6px;
+    display:flex; align-items:center; gap:8px;
+    font-size:1.05rem;
+  }
+  .card p{ margin:0 0 8px; color:var(--text); font-size:0.92rem; }
+  .card .fact{
+    color:var(--muted);
+    font-size:0.82rem;
+    border-top:1px dashed var(--panel-line);
+    padding-top:8px;
+    margin:0;
+  }
+
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:0.8rem;
+    padding:10px 16px 30px;
+  }
+
+  @media (prefers-color-scheme: light){
+    /* Page is designed to stay dark like a microscope room — intentional single theme. */
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔬 The Amazing World of Microorganisms</h1>
+  <p>A tiny, living petri dish — right in your browser. Watch bacteria, viruses, protozoa, algae and fungi move, grow and multiply, then read what each one really is, in very simple English.</p>
+</header>
+
+<main>
+  <section id="stage">
+    <div id="dish-wrap">
+      <canvas id="dish"></canvas>
+    </div>
+
+    <div id="side-panel">
+      <div class="panel-box">
+        <h3>Controls</h3>
+        <div id="controls-row">
+          <button id="toggle-play">⏸ Pause</button>
+          <div id="speed-row">
+            <span>Speed</span>
+            <input type="range" id="speed" min="0.2" max="2.5" step="0.1" value="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-box">
+        <h3>Show / Focus on a type</h3>
+        <div id="legend"></div>
+        <button id="show-all-btn">Show all types</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="info">
+    <h2>What Are Microorganisms?</h2>
+    <p class="lead">
+      Microorganisms (also called <strong>microbes</strong> or <strong>germs</strong>) are living things so small
+      that you cannot see them with just your eyes — you need a microscope. They live everywhere: in water, soil, air,
+      food, and even inside your own body. Some can make you sick, but most are harmless, and many are actually
+      helpful — they help you digest food, make bread rise, and keep nature in balance. Click a card below, or tap
+      it in the dish above, to learn more about each type.
+    </p>
+    <div id="cards"></div>
+  </section>
+</main>
+
+<footer>
+  Made for learning — a simple canvas animation, no external libraries. Not to scale, not medically exact:
+  built to teach the basic idea of each microbe in a fun way.
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ Data: types, colors, simple-English explanations ============ */
+  const TYPES = {
+    bacteria: {
+      color: getVar('--bacteria'),
+      title: "Bacteria",
+      emoji: "🦠",
+      text: "Bacteria are living things made of just ONE cell. They are so small that thousands could fit on a pinhead. Bacteria swim using a tiny tail called a flagellum. Some bacteria are bad and make us sick, but many are good — they help us digest food and make yogurt or cheese.",
+      fact: "Fun fact: Bacteria make more of themselves by splitting into two. One becomes two, two become four — very fast!"
+    },
+    virus: {
+      color: getVar('--virus'),
+      title: "Virus",
+      emoji: "🧫",
+      text: "A virus is even smaller than a bacterium, and it is not fully 'alive' on its own. It cannot move by itself and cannot make copies of itself — it must enter a living cell first and use that cell like a copy machine. That's why viruses cause diseases like the flu or a cold.",
+      fact: "Fun fact: Outside a body, a virus just floats around, doing nothing, until it bumps into a cell to invade."
+    },
+    protozoa: {
+      color: getVar('--protozoa'),
+      title: "Protozoa (Amoeba)",
+      emoji: "🫧",
+      text: "Protozoa are single-cell living things that behave a bit like tiny animals. An amoeba is a protozoan that has no fixed shape — it pushes out arm-like bumps called pseudopods ('false feet') to crawl around and to wrap around and eat food particles.",
+      fact: "Fun fact: 'Pseudopod' means 'false foot' — the amoeba uses it to walk AND to eat!"
+    },
+    algae: {
+      color: getVar('--algae'),
+      title: "Algae",
+      emoji: "🌿",
+      text: "Algae are like tiny plants that live in water. They are green because they use a substance called chlorophyll to catch sunlight and turn it into food — the same trick real plants use. Algae give off oxygen, which helps other living things breathe.",
+      fact: "Fun fact: Much of the oxygen you breathe was originally made by tiny algae in the ocean!"
+    },
+    fungi: {
+      color: getVar('--fungi'),
+      title: "Fungi (Yeast)",
+      emoji: "🍄",
+      text: "Yeast is a simple, single-cell fungus. Unlike bacteria, yeast usually makes new cells by 'budding' — a small bump grows on its side, gets bigger, and then breaks off to become its own new cell. Yeast is what makes bread dough rise and turns grape juice into wine.",
+      fact: "Fun fact: When yeast eats sugar, it burps out tiny bubbles of gas — that's what makes bread fluffy!"
+    }
+  };
+
+  function getVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  /* ============ Build legend + info cards from TYPES ============ */
+  const legendEl = document.getElementById('legend');
+  const cardsEl = document.getElementById('cards');
+  let focusType = null; // null = show all
+
+  Object.keys(TYPES).forEach(key=>{
+    const t = TYPES[key];
+
+    const chip = document.createElement('button');
+    chip.className = 'legend-chip';
+    chip.dataset.type = key;
+    chip.style.setProperty('--dot', t.color);
+    chip.style.color = t.color;
+    chip.innerHTML = `<span class="dot" style="background:${t.color}; color:${t.color};"></span>
+      <span style="color:var(--text)">${t.emoji} ${t.title}</span>`;
+    chip.addEventListener('click', ()=> setFocus(key));
+    legendEl.appendChild(chip);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.type = key;
+    card.style.setProperty('--card-color', t.color);
+    card.innerHTML = `<h4 style="color:${t.color}">${t.emoji} ${t.title}</h4>
+      <p>${t.text}</p>
+      <p class="fact">${t.fact}</p>`;
+    card.addEventListener('click', ()=> setFocus(key));
+    cardsEl.appendChild(card);
+  });
+
+  document.getElementById('show-all-btn').addEventListener('click', ()=> setFocus(null));
+
+  function setFocus(key){
+    focusType = (focusType === key) ? null : key;
+    document.querySelectorAll('.legend-chip').forEach(c=>{
+      c.classList.toggle('active', c.dataset.type === focusType);
+      c.classList.toggle('dimmed', focusType !== null && c.dataset.type !== focusType);
+    });
+    document.querySelectorAll('.card').forEach(c=>{
+      c.classList.toggle('active', c.dataset.type === focusType);
+    });
+  }
+
+  /* ============ Canvas setup ============ */
+  const canvas = document.getElementById('dish');
+  const ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('dish-wrap');
+  let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  function resize(){
+    const rect = wrap.getBoundingClientRect();
+    W = rect.width;
+    H = rect.height;
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  /* ============ Utility ============ */
+  const rand = (a,b)=> a + Math.random()*(b-a);
+  const TAU = Math.PI*2;
+  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+
+  /* Food particles that protozoa can "eat" */
+  const foods = [];
+  function spawnFood(){
+    foods.push({
+      x: rand(W*0.1, W*0.9),
+      y: rand(H*0.1, H*0.9),
+      r: rand(2,3.4),
+      wobble: rand(0, TAU)
+    });
+  }
+  for(let i=0;i<14;i++) spawnFood();
+
+  /* ============ Organism base data ============ */
+  let organisms = [];
+  let idCounter = 0;
+
+  function makeOrganism(type, x, y){
+    const base = {
+      id: idCounter++,
+      type,
+      color: TYPES[type].color,
+      x: x ?? rand(W*0.15, W*0.85),
+      y: y ?? rand(H*0.15, H*0.85),
+      heading: rand(0, TAU),
+      size: 0,
+      phase: rand(0, TAU),
+      turnTimer: rand(0.3, 1.4),
+      growth: 0,        // bacteria division progress
+      budSize: 0,       // fungi bud progress
+      budAngle: rand(0, TAU),
+      eatGlow: 0,       // protozoa digestion flash
+      spin: rand(-0.6,0.6)
+    };
+    switch(type){
+      case 'bacteria': base.size = rand(9,12); base.speed = rand(16,26); break;
+      case 'virus':    base.size = rand(8,11); base.speed = rand(2,5);  break;
+      case 'protozoa': base.size = rand(15,20); base.speed = rand(8,14); break;
+      case 'algae':    base.size = rand(10,13); base.speed = rand(10,18); break;
+      case 'fungi':    base.size = rand(9,12); base.speed = rand(1.5,4); break;
+    }
+    return base;
+  }
+
+  const LIMITS = { bacteria: 7, virus: 6, protozoa: 4, algae: 5, fungi: 5 };
+  const STARTING = { bacteria: 4, virus: 4, protozoa: 3, algae: 4, fungi: 3 };
+
+  Object.keys(STARTING).forEach(type=>{
+    for(let i=0;i<STARTING[type]; i++) organisms.push(makeOrganism(type));
+  });
+
+  function countType(type){
+    return organisms.reduce((n,o)=> n + (o.type===type?1:0), 0);
+  }
+
+  /* ============ Physics / behaviour update ============ */
+  const SELF_PROPELLED = { bacteria:true, protozoa:true, algae:true, virus:false, fungi:false };
+
+  function updateOrganism(o, dt, t){
+    o.phase += dt * (o.type==='virus' ? 1.4 : 3.2);
+    const margin = o.size * 1.4;
+
+    if(SELF_PROPELLED[o.type]){
+      o.turnTimer -= dt;
+      if(o.turnTimer <= 0){
+        o.heading += rand(-1.1, 1.1);
+        o.turnTimer = rand(0.4, 1.6);
+      }
+      // gentle steer back toward center if drifting off dish
+      const cx = W/2, cy = H/2;
+      const distFromCenter = Math.hypot(o.x-cx, o.y-cy);
+      const dishR = Math.min(W,H)/2 - margin;
+      if(distFromCenter > dishR*0.92){
+        const toCenter = Math.atan2(cy-o.y, cx-o.x);
+        o.heading = lerpAngle(o.heading, toCenter, 0.06);
+      }
+      o.vx = Math.cos(o.heading) * o.speed;
+      o.vy = Math.sin(o.heading) * o.speed;
+    } else {
+      // passive Brownian drift
+      o.vx = (o.vx||0) + rand(-3,3)*dt;
+      o.vy = (o.vy||0) + rand(-3,3)*dt;
+      const sp = Math.hypot(o.vx,o.vy);
+      const max = o.speed;
+      if(sp > max){ o.vx = o.vx/sp*max; o.vy = o.vy/sp*max; }
+      const cx = W/2, cy = H/2;
+      const distFromCenter = Math.hypot(o.x-cx, o.y-cy);
+      const dishR = Math.min(W,H)/2 - margin;
+      if(distFromCenter > dishR*0.92){
+        o.vx += (cx-o.x)*0.02*dt;
+        o.vy += (cy-o.y)*0.02*dt;
+      }
+    }
+
+    o.x += o.vx * dt;
+    o.y += o.vy * dt;
+
+    // Keep inside circular dish (soft container)
+    const cx = W/2, cy = H/2;
+    const dishR = Math.min(W,H)/2 - o.size*0.6;
+    const d = Math.hypot(o.x-cx, o.y-cy);
+    if(d > dishR){
+      const a = Math.atan2(o.y-cy, o.x-cx);
+      o.x = cx + Math.cos(a)*dishR;
+      o.y = cy + Math.sin(a)*dishR;
+      o.heading = a + Math.PI + rand(-0.4,0.4);
+    }
+
+    if(o.eatGlow > 0) o.eatGlow = Math.max(0, o.eatGlow - dt*0.6);
+
+    // Type-specific life cycles
+    if(o.type === 'bacteria'){
+      o.growth += dt / 6; // ~6s to divide
+      if(o.growth >= 1){
+        o.growth = 0;
+        if(countType('bacteria') < LIMITS.bacteria){
+          const child = makeOrganism('bacteria', o.x, o.y);
+          child.heading = o.heading + Math.PI + rand(-0.5,0.5);
+          organisms.push(child);
+          o.heading += rand(-0.5,0.5);
+        }
+      }
+    }
+
+    if(o.type === 'fungi'){
+      o.budSize += dt / 5.5; // ~5.5s to bud
+      if(o.budSize >= 1){
+        o.budSize = 0;
+        o.budAngle = rand(0, TAU);
+        if(countType('fungi') < LIMITS.fungi){
+          const bx = o.x + Math.cos(o.budAngle) * (o.size*1.6);
+          const by = o.y + Math.sin(o.budAngle) * (o.size*1.6);
+          organisms.push(makeOrganism('fungi', bx, by));
+        }
+      }
+    }
+
+    if(o.type === 'protozoa'){
+      for(const f of foods){
+        if(f.eaten) continue;
+        const dist = Math.hypot(o.x-f.x, o.y-f.y);
+        if(dist < o.size*0.9){
+          f.eaten = true;
+          o.eatGlow = 1;
+          setTimeout(()=>{
+            f.x = rand(W*0.1,W*0.9);
+            f.y = rand(H*0.1,H*0.9);
+            f.eaten = false;
+          }, rand(2500,5000));
+        }
+      }
+    }
+  }
+
+  function lerpAngle(a,b,t){
+    let diff = ((b-a + Math.PI) % TAU + TAU) % TAU - Math.PI;
+    return a + diff*t;
+  }
+
+  /* ============ Drawing ============ */
+  function drawFood(f, t){
+    if(f.eaten) return;
+    const wob = Math.sin(t*2 + f.wobble)*0.6;
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.arc(f.x, f.y + wob, f.r, 0, TAU);
+    ctx.fill();
+  }
+
+  function applyFocusAlpha(o){
+    if(focusType === null) return 1;
+    return o.type === focusType ? 1 : 0.12;
+  }
+
+  function drawBacteria(o, t){
+    const stretch = 1 + o.growth*0.9;
+    const len = o.size * (1.9 + stretch*0.5);
+    const wid = o.size * 0.62;
+    ctx.save();
+    ctx.translate(o.x, o.y);
+    ctx.rotate(o.heading);
+    ctx.globalAlpha *= applyFocusAlpha(o);
+
+    // flagella (wavy tail)
+    ctx.strokeStyle = o.color + 'aa';
+    ctx.lineWidth = 1.2;
+    for(let f=-1; f<=1; f+=2){
+      ctx.beginPath();
+      ctx.moveTo(-len/2, f*wid*0.3);
+      for(let i=1;i<=6;i++){
+        const px = -len/2 - i*3.2;
+        const py = f*wid*0.3 + Math.sin(t*8 + i*0.9 + o.phase)* (i*0.9);
+        ctx.lineTo(px,py);
+      }
+      ctx.stroke();
+    }
+
+    // body — capsule shape, possibly pinching in the middle when dividing
+    const pinch = Math.sin(clamp(o.growth,0,1)*Math.PI) * wid*0.35;
+    const grad = ctx.createLinearGradient(-len/2,0,len/2,0);
+    grad.addColorStop(0, o.color);
+    grad.addColorStop(1, shade(o.color, -25));
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(-len/2, -wid/2);
+    ctx.quadraticCurveTo(0, -wid/2 - pinch*0.15, len/2, -wid/2);
+    ctx.arc(len/2, 0, wid/2, -Math.PI/2, Math.PI/2);
+    ctx.quadraticCurveTo(0, wid/2 + pinch*0.15, -len/2, wid/2);
+    ctx.arc(-len/2, 0, wid/2, Math.PI/2, Math.PI*1.5);
+    ctx.closePath();
+    ctx.fill();
+
+    if(o.growth > 0.15){
+      ctx.fillStyle = 'rgba(4,8,20,' + (o.growth*0.55) + ')';
+      ctx.beginPath();
+      ctx.ellipse(0,0, wid*0.28, wid*0.7, 0, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawVirus(o, t){
+    ctx.save();
+    ctx.translate(o.x, o.y);
+    ctx.globalAlpha *= applyFocusAlpha(o);
+    const pulse = 1 + Math.sin(t*2 + o.phase)*0.06;
+    const r = o.size * pulse;
+    const spikes = 10;
+    ctx.rotate(t*0.6*o.spin);
+
+    ctx.strokeStyle = o.color;
+    ctx.fillStyle = o.color;
+    ctx.lineWidth = 1.6;
+    for(let i=0;i<spikes;i++){
+      const a = (i/spikes) * TAU;
+      const x1 = Math.cos(a)*r, y1 = Math.sin(a)*r;
+      const x2 = Math.cos(a)*(r+5), y2 = Math.sin(a)*(r+5);
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.lineTo(x2,y2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x2,y2, 1.9, 0, TAU);
+      ctx.fill();
+    }
+
+    const grad = ctx.createRadialGradient(-r*0.3,-r*0.3,1, 0,0,r);
+    grad.addColorStop(0, shade(o.color, 30));
+    grad.addColorStop(1, shade(o.color, -20));
+    ctx.beginPath();
+    ctx.fillStyle = grad;
+    ctx.arc(0,0,r,0,TAU);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(4,8,20,0.6)';
+    ctx.beginPath();
+    ctx.arc(0,0, r*0.4, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawProtozoa(o, t){
+    ctx.save();
+    ctx.translate(o.x, o.y);
+    ctx.globalAlpha *= applyFocusAlpha(o);
+    const N = 10;
+    const pts = [];
+    for(let i=0;i<N;i++){
+      const a = (i/N)*TAU;
+      const r = o.size
+        + Math.sin(a*3 + t*1.6 + o.phase) * o.size*0.22
+        + Math.sin(a*5 - t*1.1 + o.phase*1.3) * o.size*0.12;
+      pts.push([Math.cos(a)*r, Math.sin(a)*r]);
+    }
+    ctx.beginPath();
+    ctx.moveTo((pts[0][0]+pts[N-1][0])/2, (pts[0][1]+pts[N-1][1])/2);
+    for(let i=0;i<N;i++){
+      const cur = pts[i], next = pts[(i+1)%N];
+      const mx = (cur[0]+next[0])/2, my = (cur[1]+next[1])/2;
+      ctx.quadraticCurveTo(cur[0],cur[1], mx,my);
+    }
+    ctx.closePath();
+    const grad = ctx.createRadialGradient(-o.size*0.3,-o.size*0.3,1,0,0,o.size*1.3);
+    grad.addColorStop(0, shade(o.color, 25) + 'ee');
+    grad.addColorStop(1, shade(o.color, -10) + 'cc');
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = shade(o.color, 30);
+    ctx.stroke();
+
+    // nucleus
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath();
+    ctx.arc(o.size*0.1, o.size*0.05, o.size*0.28, 0, TAU);
+    ctx.fill();
+
+    if(o.eatGlow > 0){
+      ctx.fillStyle = `rgba(255,255,255,${o.eatGlow*0.5})`;
+      ctx.beginPath();
+      ctx.arc(0,0, o.size*(0.5 + (1-o.eatGlow)*0.6), 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawAlgae(o, t){
+    ctx.save();
+    ctx.translate(o.x, o.y);
+    ctx.rotate(o.heading);
+    ctx.globalAlpha *= applyFocusAlpha(o);
+    const len = o.size*1.6, wid = o.size;
+
+    ctx.strokeStyle = shade(o.color, 20) + 'cc';
+    ctx.lineWidth = 1.1;
+    for(let f=-1; f<=1; f+=2){
+      ctx.beginPath();
+      ctx.moveTo(len*0.55, f*wid*0.15);
+      for(let i=1;i<=5;i++){
+        const px = len*0.55 + i*3;
+        const py = f*wid*0.15 + Math.sin(t*10 + i*1.1 + o.phase)*(i*0.8)*f;
+        ctx.lineTo(px,py);
+      }
+      ctx.stroke();
+    }
+
+    const grad = ctx.createLinearGradient(-len/2,0,len/2,0);
+    grad.addColorStop(0, shade(o.color,-15));
+    grad.addColorStop(1, shade(o.color,20));
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(0,0, len/2, wid/2, 0, 0, TAU);
+    ctx.fill();
+
+    const shimmer = 0.5 + Math.sin(t*3 + o.phase)*0.3;
+    ctx.fillStyle = `rgba(10,40,20,${0.35+shimmer*0.2})`;
+    [[-len*0.2,-wid*0.15],[len*0.05,wid*0.1],[len*0.22,-wid*0.05]].forEach(p=>{
+      ctx.beginPath();
+      ctx.arc(p[0],p[1], wid*0.14, 0, TAU);
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  function drawFungi(o, t){
+    ctx.save();
+    ctx.translate(o.x, o.y);
+    ctx.globalAlpha *= applyFocusAlpha(o);
+    const r = o.size;
+
+    if(o.budSize > 0.02){
+      const br = r * (0.25 + o.budSize*0.55);
+      const bx = Math.cos(o.budAngle) * (r*0.75 + br*0.5);
+      const by = Math.sin(o.budAngle) * (r*0.75 + br*0.5);
+      ctx.fillStyle = shade(o.color, 10);
+      ctx.beginPath();
+      ctx.arc(bx,by, br, 0, TAU);
+      ctx.fill();
+    }
+
+    const grad = ctx.createRadialGradient(-r*0.3,-r*0.3,1,0,0,r);
+    grad.addColorStop(0, shade(o.color,25));
+    grad.addColorStop(1, shade(o.color,-15));
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0,0,r,0,TAU);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.beginPath();
+    ctx.arc(-r*0.25,-r*0.15, r*0.22, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  const DRAWERS = { bacteria:drawBacteria, virus:drawVirus, protozoa:drawProtozoa, algae:drawAlgae, fungi:drawFungi };
+
+  function shade(hex, percent){
+    hex = hex.replace('#','');
+    if(hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+    const num = parseInt(hex,16);
+    let r = (num>>16) + Math.round(255*percent/100);
+    let g = ((num>>8)&0xff) + Math.round(255*percent/100);
+    let b = (num&0xff) + Math.round(255*percent/100);
+    r = clamp(r,0,255); g = clamp(g,0,255); b = clamp(b,0,255);
+    return '#' + (r<<16 | g<<8 | b).toString(16).padStart(6,'0');
+  }
+
+  /* ============ Main loop ============ */
+  let playing = true;
+  let speedMult = 1;
+  let lastTime = performance.now();
+  let simTime = 0;
+
+  document.getElementById('toggle-play').addEventListener('click', function(){
+    playing = !playing;
+    this.textContent = playing ? '⏸ Pause' : '▶ Play';
+  });
+  document.getElementById('speed').addEventListener('input', e=>{
+    speedMult = parseFloat(e.target.value);
+  });
+
+  function frame(now){
+    let dt = Math.min((now - lastTime)/1000, 0.05);
+    lastTime = now;
+    if(playing){
+      dt *= speedMult;
+      simTime += dt;
+      for(const o of organisms) updateOrganism(o, dt, simTime);
+    }
+
+    ctx.clearRect(0,0,W,H);
+
+    // subtle grid / depth dots in background of the dish
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    for(const f of foods) drawFood(f, simTime);
+    ctx.restore();
+
+    // draw non-focused first (visually behind), focused type drawn last so glow reads on top
+    const layer1 = organisms.filter(o=> focusType===null || o.type!==focusType);
+    const layer2 = organisms.filter(o=> focusType!==null && o.type===focusType);
+
+    for(const o of layer1) DRAWERS[o.type](o, simTime);
+    for(const o of layer2){
+      ctx.save();
+      ctx.shadowColor = o.type ? TYPES[o.type].color : '#fff';
+      ctx.shadowBlur = 18;
+      DRAWERS[o.type](o, simTime);
+      ctx.restore();
+    }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>
