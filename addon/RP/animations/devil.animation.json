@@ -1,0 +1,68 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.devil.look": {
+      "loop": true,
+      "bones": {
+        "head": {
+          "rotation": ["query.target_x_rotation", "query.target_y_rotation", 0]
+        }
+      }
+    },
+
+    "animation.devil.idle": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "position": [0, "math.sin(query.life_time * 90) * 0.4", 0],
+          "rotation": [0, 0, "math.sin(query.life_time * 70) * 1.5"]
+        },
+        "arm_right": {
+          "rotation": ["math.cos(query.life_time * 60) * 4 - 10", 0, "math.sin(query.life_time * 50) * 2 + 7"]
+        },
+        "arm_left": {
+          "rotation": ["math.sin(query.life_time * 60) * 4 - 10", 0, "-math.sin(query.life_time * 50) * 2 - 7"]
+        },
+        "tail": {
+          "rotation": ["math.sin(query.life_time * 100) * 6", "math.sin(query.life_time * 130) * 14", 0]
+        },
+        "wing_right": {
+          "rotation": [0, "math.sin(query.life_time * 170) * 16", "math.cos(query.life_time * 170) * 6"]
+        },
+        "wing_left": {
+          "rotation": [0, "-math.sin(query.life_time * 170) * 16", "-math.cos(query.life_time * 170) * 6"]
+        },
+        "horn_right": {
+          "rotation": [0, 0, "math.sin(query.life_time * 80) * 2"]
+        },
+        "horn_left": {
+          "rotation": [0, 0, "-math.sin(query.life_time * 80) * 2"]
+        }
+      }
+    },
+
+    "animation.devil.move": {
+      "loop": true,
+      "bones": {
+        "leg_right": {
+          "rotation": ["math.cos(query.modified_distance_moved * 38.17) * 42 * query.modified_move_speed", 0, 0]
+        },
+        "leg_left": {
+          "rotation": ["-math.cos(query.modified_distance_moved * 38.17) * 42 * query.modified_move_speed", 0, 0]
+        },
+        "arm_right": {
+          "rotation": ["-math.cos(query.modified_distance_moved * 38.17) * 32 * query.modified_move_speed", 0, 0]
+        },
+        "arm_left": {
+          "rotation": ["math.cos(query.modified_distance_moved * 38.17) * 32 * query.modified_move_speed", 0, 0]
+        },
+        "wing_right": {
+          "rotation": [0, "math.sin(query.life_time * 260) * 22 * query.modified_move_speed", 0]
+        },
+        "wing_left": {
+          "rotation": [0, "-math.sin(query.life_time * 260) * 22 * query.modified_move_speed", 0]
+        }
+      }
+    }
+  }
+}

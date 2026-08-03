@@ -1,0 +1,30 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "devil_angel:angel",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/angel"
+      },
+      "geometry": {
+        "default": "geometry.angel"
+      },
+      "render_controllers": ["controller.render.angel"],
+      "spawn_egg": {
+        "base_color": "#FFFFFF",
+        "overlay_color": "#FFD24A"
+      },
+      "animations": {
+        "idle": "animation.angel.idle",
+        "fly": "animation.angel.fly",
+        "look": "animation.angel.look"
+      },
+      "scripts": {
+        "animate": ["idle", "look", "fly"]
+      }
+    }
+  }
+}

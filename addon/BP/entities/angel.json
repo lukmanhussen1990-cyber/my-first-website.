@@ -1,0 +1,147 @@
+{
+  "format_version": "1.16.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "devil_angel:angel",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+
+    "component_groups": {},
+
+    "components": {
+      "minecraft:type_family": {
+        "family": ["angel", "mob"]
+      },
+
+      "minecraft:collision_box": {
+        "width": 1.0,
+        "height": 2.4
+      },
+
+      "minecraft:health": {
+        "value": 400,
+        "max": 400
+      },
+
+      "minecraft:movement": {
+        "value": 0.35
+      },
+
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+
+      "minecraft:attack": {
+        "damage": 30
+      },
+
+      "minecraft:scale": {
+        "value": 1.1
+      },
+
+      "minecraft:fire_immune": true,
+
+      "minecraft:damage_sensor": {
+        "triggers": [
+          { "cause": "fire", "deals_damage": false },
+          { "cause": "fire_tick", "deals_damage": false },
+          { "cause": "lava", "deals_damage": false },
+          { "cause": "magma", "deals_damage": false },
+          { "cause": "projectile", "deals_damage": false },
+          { "cause": "fall", "deals_damage": false },
+          { "cause": "drowning", "deals_damage": false }
+        ]
+      },
+
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": 0,
+        "breathes_air": true,
+        "breathes_water": true
+      },
+
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:jump.static": {},
+      "minecraft:persistent": {},
+      "minecraft:nameable": {},
+
+      "minecraft:can_fly": {},
+      "minecraft:movement.hover": {},
+      "minecraft:navigation.hover": {
+        "can_path_over_water": true,
+        "can_sink": false,
+        "can_pass_doors": true,
+        "can_path_from_air": true,
+        "avoid_water": true,
+        "avoid_damage_blocks": true,
+        "avoid_portals": true
+      },
+
+      "minecraft:loot": {
+        "table": "loot_tables/entities/angel.json"
+      },
+
+      "minecraft:ambient_sound_interval": {
+        "value": 5.0,
+        "range": 8.0,
+        "event_name": "ambient"
+      },
+
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 1,
+        "must_see": false,
+        "must_see_forget_duration": 60.0,
+        "reselect_targets": true,
+        "within_radius": 64.0,
+        "entity_types": [
+          {
+            "filters": {
+              "test": "is_family",
+              "subject": "other",
+              "value": "devil"
+            },
+            "max_dist": 64
+          }
+        ]
+      },
+
+      "minecraft:behavior.melee_attack": {
+        "priority": 2,
+        "speed_multiplier": 1.7,
+        "track_target": true,
+        "reach_multiplier": 2.2
+      },
+
+      "minecraft:behavior.charge_attack": {
+        "priority": 3
+      },
+
+      "minecraft:behavior.random_hover": {
+        "priority": 8,
+        "xz_dist": 10,
+        "y_dist": 8,
+        "y_offset": -1,
+        "interval": 1,
+        "hover_height": [1, 4]
+      },
+
+      "minecraft:behavior.look_at_player": {
+        "priority": 9,
+        "look_distance": 16.0,
+        "probability": 0.06
+      },
+
+      "minecraft:behavior.random_look_around": {
+        "priority": 10
+      }
+    },
+
+    "events": {}
+  }
+}

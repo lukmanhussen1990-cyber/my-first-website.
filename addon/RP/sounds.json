@@ -1,0 +1,26 @@
+{
+  "entity_sounds": {
+    "entities": {
+      "devil_angel:devil": {
+        "volume": 1.0,
+        "pitch": [0.55, 0.75],
+        "events": {
+          "ambient": "mob.ghast.moan",
+          "hurt": "mob.blaze.hit",
+          "death": "mob.ghast.death",
+          "attack": "mob.blaze.shoot"
+        }
+      },
+      "devil_angel:angel": {
+        "volume": 0.9,
+        "pitch": [1.2, 1.4],
+        "events": {
+          "ambient": "mob.allay.ambient",
+          "hurt": "mob.allay.hurt",
+          "death": "mob.allay.death",
+          "attack": "random.anvil_land"
+        }
+      }
+    }
+  }
+}
