@@ -2492,6 +2492,15 @@ const UI = {
 const game = new Game();
 
 /* ------------------------- responsive scaling ------------------------ */
+// If this markup is embedded in a host page that supplies its own <head>,
+// make sure mobile still gets a 1:1 viewport instead of the 980px default.
+if (!document.querySelector('meta[name="viewport"]')) {
+  const mv = document.createElement("meta");
+  mv.name = "viewport";
+  mv.content = "width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover";
+  document.head.appendChild(mv);
+}
+
 function resize() {
   const pad = 0;
   const availW = window.innerWidth - pad, availH = window.innerHeight - pad;
