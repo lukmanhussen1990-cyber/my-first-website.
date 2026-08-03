@@ -1,0 +1,2571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#04223d">
+<meta name="description" content="DEEP DIVER - a retro 2D side-scrolling underwater submarine shooter. One HTML file, no dependencies.">
+<title>DEEP DIVER — Retro Underwater Sub Shooter</title>
+<style>
+/* ------------------------------------------------------------------ *
+ * Layout: a single letterboxed canvas + DOM overlays for menus / HUD  *
+ * ------------------------------------------------------------------ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{
+  width:100%;height:100%;overflow:hidden;background:#04121f;
+  font-family:"Courier New",Courier,monospace;color:#dff6ff;
+  user-select:none;-webkit-user-select:none;touch-action:none;
+}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#game{
+  display:block;image-rendering:pixelated;image-rendering:crisp-edges;
+  background:#0a3d62;box-shadow:0 0 0 2px #072d47,0 10px 40px rgba(0,0,0,.6);
+  touch-action:none;
+}
+/* --- overlay screens ------------------------------------------------ */
+.screen{
+  position:absolute;inset:0;display:none;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+  background:rgba(3,20,36,.82);backdrop-filter:blur(2px);z-index:20;padding:16px;
+}
+.screen.show{display:flex}
+.title{
+  font-size:clamp(26px,7vmin,58px);font-weight:bold;letter-spacing:3px;color:#ffe14d;
+  text-shadow:0 3px 0 #b8860b,0 0 18px rgba(255,225,77,.55);margin-bottom:4px;
+}
+.sub{font-size:clamp(10px,2.2vmin,15px);color:#7fd3ff;letter-spacing:2px;margin-bottom:16px}
+.panel{
+  background:rgba(6,38,66,.9);border:2px solid #1b6ea8;border-radius:4px;
+  padding:12px 18px;margin-bottom:14px;max-width:min(92vw,520px);
+}
+.panel h3{font-size:clamp(11px,2.2vmin,14px);color:#ffe14d;letter-spacing:2px;margin-bottom:6px}
+.panel p,.panel li{font-size:clamp(9px,1.9vmin,12px);line-height:1.7;color:#bfe9ff}
+.keys{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;margin-top:4px}
+.key{background:#0d4b78;border:1px solid #2e8fd0;border-radius:3px;padding:2px 7px;font-size:11px;color:#eaf8ff}
+.btn{
+  font-family:inherit;font-size:clamp(12px,2.6vmin,17px);font-weight:bold;letter-spacing:2px;
+  color:#04223d;background:#ffe14d;border:0;border-bottom:4px solid #b8860b;border-radius:4px;
+  padding:11px 26px;margin:5px;cursor:pointer;transition:transform .06s,filter .12s;
+}
+.btn:active{transform:translateY(3px);border-bottom-width:1px}
+.btn:hover{filter:brightness(1.08)}
+.btn.alt{background:#2e8fd0;border-bottom-color:#14547f;color:#eaf8ff}
+.bigscore{font-size:clamp(18px,4.4vmin,30px);color:#fff;margin:2px 0}
+.bigscore span{color:#ffe14d}
+.newrec{color:#7CFC00;font-size:clamp(11px,2.4vmin,15px);letter-spacing:2px;margin-top:4px;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.25}}
+.stats{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin-top:8px;font-size:clamp(9px,2vmin,12px);color:#bfe9ff}
+.hint{font-size:10px;color:#5fa8d3;margin-top:10px;letter-spacing:1px}
+/* --- mobile touch controls ------------------------------------------ */
+#touch{position:absolute;inset:0;z-index:10;display:none;pointer-events:none}
+#touch.on{display:block}
+.zone{position:absolute;top:0;bottom:0;width:50%;pointer-events:auto}
+#zoneUp{left:0}
+#zoneDown{right:0}
+.tbtn{
+  position:absolute;pointer-events:auto;border-radius:50%;
+  background:rgba(255,225,77,.16);border:2px solid rgba(255,225,77,.5);
+  color:#ffe14d;font-family:inherit;font-weight:bold;font-size:12px;letter-spacing:1px;
+  display:flex;align-items:center;justify-content:center;
+}
+.tbtn:active{background:rgba(255,225,77,.4)}
+#btnFire{right:14px;bottom:14px;width:74px;height:74px;font-size:13px}
+#btnPause{right:14px;top:14px;width:40px;height:40px;font-size:14px;border-radius:6px}
+.arrowhint{
+  position:absolute;top:50%;transform:translateY(-50%);font-size:26px;color:rgba(255,255,255,.13);
+  pointer-events:none;
+}
+#hintUp{left:26px}
+#hintDown{right:110px}
+/* --- rotate-device nudge (non-blocking) ----------------------------- */
+#rotate{
+  position:absolute;left:0;right:0;bottom:0;z-index:30;display:none;
+  background:rgba(4,34,61,.95);color:#ffe14d;font-size:11px;letter-spacing:1px;
+  padding:7px;text-align:center;border-top:2px solid #1b6ea8;
+}
+@media (max-width:900px) and (orientation:portrait){#rotate{display:block}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="480" height="270"></canvas>
+
+  <!-- ============ mobile touch controls ============ -->
+  <div id="touch">
+    <div class="zone" id="zoneUp"></div>
+    <div class="zone" id="zoneDown"></div>
+    <div class="arrowhint" id="hintUp">▲</div>
+    <div class="arrowhint" id="hintDown">▼</div>
+    <button class="tbtn" id="btnFire">FIRE</button>
+    <button class="tbtn" id="btnPause">II</button>
+  </div>
+
+  <!-- ============ start screen ============ -->
+  <div class="screen show" id="screenStart">
+    <div class="title">DEEP DIVER</div>
+    <div class="sub">◄ ENDLESS UNDERWATER PATROL ►</div>
+    <div class="panel">
+      <h3>CONTROLS</h3>
+      <div class="keys">
+        <span><span class="key">W</span>/<span class="key">↑</span> UP</span>
+        <span><span class="key">S</span>/<span class="key">↓</span> DOWN</span>
+        <span><span class="key">SPACE</span> FIRE</span>
+        <span><span class="key">P</span>/<span class="key">ESC</span> PAUSE</span>
+        <span><span class="key">M</span> MUTE</span>
+      </div>
+      <p style="margin-top:8px">MOBILE: touch LEFT half = up &nbsp;·&nbsp; RIGHT half = down &nbsp;·&nbsp; FIRE / II buttons</p>
+    </div>
+    <div class="panel">
+      <h3>MISSION</h3>
+      <p>Torpedo the hostile shoal, dodge rocks &amp; mines, grab power-ups,<br>and survive the deep-sea bosses. Your sub fires automatically.</p>
+    </div>
+    <button class="btn" id="btnStart">START DIVE</button>
+    <div class="stats"><span>HIGH SCORE <b id="startHigh">0</b></span><span>COINS BANKED <b id="startCoins">0</b></span></div>
+    <div class="hint">no downloads · no libraries · works offline</div>
+  </div>
+
+  <!-- ============ pause screen ============ -->
+  <div class="screen" id="screenPause">
+    <div class="title" style="font-size:clamp(22px,5vmin,40px)">PAUSED</div>
+    <div class="panel"><p id="pauseInfo">—</p></div>
+    <button class="btn" id="btnResume">RESUME</button>
+    <button class="btn alt" id="btnMute">SOUND: ON</button>
+    <button class="btn alt" id="btnQuit">QUIT TO MENU</button>
+  </div>
+
+  <!-- ============ game over screen ============ -->
+  <div class="screen" id="screenOver">
+    <div class="title" style="color:#ff6b6b;text-shadow:0 3px 0 #7a1f1f,0 0 18px rgba(255,107,107,.5)">SUB LOST</div>
+    <div class="bigscore">SCORE <span id="overScore">0</span></div>
+    <div class="bigscore" style="font-size:clamp(12px,2.8vmin,18px)">BEST <span id="overHigh">0</span></div>
+    <div class="newrec" id="overNew" style="display:none">★ NEW HIGH SCORE ★</div>
+    <div class="stats">
+      <span>COINS <b id="overCoins">0</b></span>
+      <span>KILLS <b id="overKills">0</b></span>
+      <span>BOSSES <b id="overBosses">0</b></span>
+      <span>DEPTH <b id="overDist">0</b>m</span>
+    </div>
+    <div style="margin-top:14px">
+      <button class="btn" id="btnRestart">DIVE AGAIN</button>
+      <button class="btn alt" id="btnMenu">MENU</button>
+    </div>
+  </div>
+
+  <div id="rotate">↻ ROTATE YOUR DEVICE TO LANDSCAPE FOR THE FULL VIEW</div>
+</div>
+
+<script>
+"use strict";
+/* ==================================================================== *
+ *  DEEP DIVER — retro 2D side-scrolling underwater shooter             *
+ *  Single file. No libraries, no assets. Canvas 2D + Web Audio.        *
+ *                                                                      *
+ *  Architecture                                                        *
+ *    §1  Config & math helpers                                         *
+ *    §2  Audio  (procedural retro SFX)                                 *
+ *    §3  Input  (keyboard + touch)                                     *
+ *    §4  Pool   (object pooling for every spawned entity)              *
+ *    §5  FX     (particles, camera, screen shake)                      *
+ *    §6  Actors (player, bullets, coins, power-ups, enemies, hazards)  *
+ *    §7  Bosses                                                        *
+ *    §8  World  (procedural chunks, parallax scenery)                  *
+ *    §9  Game   (state machine, spawning, collisions, HUD)             *
+ *    §10 Boot   (resize, events, main loop)                            *
+ * ==================================================================== */
+
+/* ===================== §1  CONFIG & HELPERS ========================= */
+
+const VIEW_W = 480;                 // logical pixels (upscaled to fit screen)
+const VIEW_H = 270;
+const SURFACE_Y = 22;               // water surface line
+const FLOOR_Y = VIEW_H - 26;        // sea bed line
+const PLAY_TOP = SURFACE_Y + 6;     // player movement bounds
+const PLAY_BOTTOM = FLOOR_Y - 6;
+const PLAYER_X_OFFSET = 92;         // sub's resting distance from left edge
+const FIXED_DT = 1 / 60;            // physics step (60 FPS)
+const MAX_PARTICLES = 420;          // hard cap keeps mobile GPUs happy
+const BOSS_SCORE_STEP = 3000;       // first boss at 3000 pts, then every 3000+
+const STORE_KEY = "deepdiver.save.v1";
+
+// Colour palette (kept small & bright: retro cartoon look)
+const C = {
+  waterTop:"#1287c4", waterMid:"#0a5f96", waterDeep:"#063f68",
+  sand:"#d8b46a", sandDark:"#b08c45",
+  hull:"#ffd93b", hullDark:"#c79a13", hullLight:"#fff08a",
+  glass:"#8fe3ff", metal:"#9fb4c7",
+  red:"#ff5f5f", green:"#7CFC00", pink:"#ff8ad8", purple:"#a06bd8",
+  orange:"#ff9f43", white:"#ffffff", black:"#06121d",
+  gold:"#ffe14d", steel:"#7a93a8", weed:"#2f9e44", weedDark:"#1f7a33",
+  coral:"#ff6b9d", coral2:"#ff9f43"
+};
+
+const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
+const lerp  = (a, b, t) => a + (b - a) * t;
+const rand  = (a, b) => a + Math.random() * (b - a);
+const randInt = (a, b) => Math.floor(rand(a, b + 1));
+const pick  = arr => arr[(Math.random() * arr.length) | 0];
+const chance = p => Math.random() < p;
+const TAU = Math.PI * 2;
+
+/** Deterministic PRNG so a world chunk always regenerates identically. */
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Axis-aligned bounding-box overlap. Every actor exposes x,y,w,h (centred). */
+function aabb(a, b) {
+  return Math.abs(a.x - b.x) * 2 < a.w + b.w &&
+         Math.abs(a.y - b.y) * 2 < a.h + b.h;
+}
+
+/** Load / save persistent data (high score + banked coins). */
+const Store = {
+  data: { high: 0, coins: 0, muted: false },
+  load() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) Object.assign(this.data, JSON.parse(raw));
+    } catch (e) { /* private mode / disabled storage: run with defaults */ }
+  },
+  save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(this.data)); }
+    catch (e) { /* ignore quota / privacy errors */ }
+  }
+};
+
+/* ========================== §2  AUDIO =============================== */
+/**
+ * Tiny procedural sound engine. Every effect is synthesised on demand from
+ * oscillators + a noise buffer, so the game ships with zero audio assets.
+ */
+const Audio_ = {
+  ctx: null, master: null, muted: false, noiseBuf: null, ready: false,
+
+  init() {
+    if (this.ready) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;                       // graceful: game runs silent
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = 0.32;
+    this.master.connect(this.ctx.destination);
+
+    // one second of white noise, reused by every explosion / splash
+    const len = this.ctx.sampleRate;
+    this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = this.noiseBuf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    this.ready = true;
+  },
+  resume() { if (this.ctx && this.ctx.state === "suspended") this.ctx.resume(); },
+  setMuted(m) {
+    this.muted = m;
+    if (this.master) this.master.gain.value = m ? 0 : 0.32;
+  },
+
+  /** Single oscillator blip with optional pitch slide. */
+  tone(freq, dur, type = "square", vol = 0.3, slideTo = null, delay = 0) {
+    if (!this.ready || this.muted) return;
+    const t = this.ctx.currentTime + delay;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(1, slideTo), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + 0.02);
+  },
+
+  /** Filtered noise burst — explosions, splashes, hits. */
+  noise(dur, vol = 0.3, filtFrom = 1800, filtTo = 120, delay = 0) {
+    if (!this.ready || this.muted) return;
+    const t = this.ctx.currentTime + delay;
+    const s = this.ctx.createBufferSource(); s.buffer = this.noiseBuf;
+    const f = this.ctx.createBiquadFilter(); f.type = "lowpass";
+    f.frequency.setValueAtTime(filtFrom, t);
+    f.frequency.exponentialRampToValueAtTime(Math.max(40, filtTo), t + dur);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(this.master);
+    s.start(t); s.stop(t + dur + 0.02);
+  },
+
+  // ---- named effects -------------------------------------------------
+  shoot()      { this.tone(760, 0.07, "square", 0.13, 240); },
+  laser()      { this.tone(1200, 0.12, "sawtooth", 0.10, 380); },
+  hit()        { this.tone(300, 0.05, "square", 0.10, 160); },
+  explode()    { this.noise(0.34, 0.34, 1500, 90); this.tone(150, 0.24, "triangle", 0.16, 45); },
+  bigExplode() { this.noise(0.75, 0.42, 1100, 50); this.tone(90, 0.6, "triangle", 0.22, 28); },
+  coin()       { this.tone(1050, 0.06, "square", 0.14); this.tone(1560, 0.10, "square", 0.13, null, 0.06); },
+  powerup()    { [660, 880, 1180, 1560].forEach((f, i) => this.tone(f, 0.10, "square", 0.13, null, i * 0.055)); },
+  damage()     { this.tone(220, 0.28, "sawtooth", 0.22, 60); this.noise(0.18, 0.18, 900, 100); },
+  bossWarn()   { for (let i = 0; i < 3; i++) { this.tone(150, 0.20, "square", 0.20, null, i * 0.32); this.tone(112, 0.20, "square", 0.20, null, i * 0.32 + 0.16); } },
+  bossDown()   { this.bigExplode(); [400, 330, 260, 180, 110].forEach((f, i) => this.tone(f, 0.22, "square", 0.17, null, 0.15 + i * 0.13)); },
+  gameOver()   { [520, 400, 320, 240, 160].forEach((f, i) => this.tone(f, 0.34, "square", 0.20, null, i * 0.19)); },
+  shield()     { this.tone(300, 0.3, "sine", 0.15, 900); },
+  life()       { [520, 660, 880, 1180, 1560].forEach((f, i) => this.tone(f, 0.13, "triangle", 0.15, null, i * 0.08)); }
+};
+
+/* ========================== §3  INPUT =============================== */
+/**
+ * Normalises keyboard + multi-touch into three booleans the player reads.
+ * Touch zones are DOM elements so they never fight the canvas for events.
+ */
+const Input = {
+  up: false, down: false, fire: false,
+  touchUp: false, touchDown: false, touchFire: false,
+  onPause: null, onMute: null, onAnyKey: null,
+
+  init() {
+    addEventListener("keydown", e => {
+      if (["ArrowUp","ArrowDown","Space","ArrowLeft","ArrowRight"].includes(e.code)) e.preventDefault();
+      switch (e.code) {
+        case "KeyW": case "ArrowUp":   this.up = true; break;
+        case "KeyS": case "ArrowDown": this.down = true; break;
+        case "Space":                  this.fire = true; break;
+        case "KeyP": case "Escape":    if (this.onPause) this.onPause(); break;
+        case "KeyM":                   if (this.onMute) this.onMute(); break;
+        case "Enter":                  if (this.onAnyKey) this.onAnyKey(); break;
+      }
+    }, { passive: false });
+
+    addEventListener("keyup", e => {
+      switch (e.code) {
+        case "KeyW": case "ArrowUp":   this.up = false; break;
+        case "KeyS": case "ArrowDown": this.down = false; break;
+        case "Space":                  this.fire = false; break;
+      }
+    });
+
+    // lose held keys when the tab/app loses focus
+    addEventListener("blur", () => { this.up = this.down = this.fire = false; });
+
+    const hold = (el, on, off) => {
+      const start = e => { e.preventDefault(); on(); };
+      const end   = e => { e.preventDefault(); off(); };
+      el.addEventListener("touchstart", start, { passive: false });
+      el.addEventListener("touchend", end,   { passive: false });
+      el.addEventListener("touchcancel", end, { passive: false });
+      el.addEventListener("mousedown", start);
+      el.addEventListener("mouseup", end);
+      el.addEventListener("mouseleave", end);
+    };
+    hold(document.getElementById("zoneUp"),   () => this.touchUp = true,   () => this.touchUp = false);
+    hold(document.getElementById("zoneDown"), () => this.touchDown = true, () => this.touchDown = false);
+    hold(document.getElementById("btnFire"),  () => this.touchFire = true, () => this.touchFire = false);
+    document.getElementById("btnPause").addEventListener("click", e => {
+      e.preventDefault(); if (this.onPause) this.onPause();
+    });
+
+    // show touch UI only on touch-capable devices
+    if (("ontouchstart" in window) || navigator.maxTouchPoints > 0) {
+      document.getElementById("touch").classList.add("on");
+    }
+  },
+
+  get moveUp()   { return this.up   || this.touchUp; },
+  get moveDown() { return this.down || this.touchDown; },
+  get firing()   { return this.fire || this.touchFire; },
+  releaseAll()   { this.up = this.down = this.fire = this.touchUp = this.touchDown = this.touchFire = false; }
+};
+
+/* =========================== §4  POOL =============================== */
+/**
+ * Generic free-list pool. Every transient actor lives here so the game
+ * allocates almost nothing after the first few seconds — no GC hitches.
+ */
+class Pool {
+  constructor(factory, prealloc = 24) {
+    this.factory = factory;
+    this.free = [];
+    this.active = [];
+    for (let i = 0; i < prealloc; i++) this.free.push(factory());
+  }
+  obtain() {
+    const o = this.free.length ? this.free.pop() : this.factory();
+    o.alive = true;
+    this.active.push(o);
+    return o;
+  }
+  /** Steps every live object and recycles the ones that died this frame. */
+  update(dt, ...args) {
+    const a = this.active;
+    for (let i = a.length - 1; i >= 0; i--) {
+      const o = a[i];
+      o.update(dt, ...args);
+      if (!o.alive) { a[i] = a[a.length - 1]; a.pop(); this.free.push(o); }
+    }
+  }
+  draw(g) { for (let i = 0; i < this.active.length; i++) this.active[i].draw(g); }
+  clear() { while (this.active.length) { const o = this.active.pop(); o.alive = false; this.free.push(o); } }
+  get count() { return this.active.length; }
+}
+
+/* ============================ §5  FX ================================ */
+
+/** One particle covers every effect: bubbles, sparks, debris, sparkles. */
+class Particle {
+  constructor() { this.alive = false; }
+  init(x, y, vx, vy, life, size, color, kind = "bubble") {
+    this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+    this.life = life; this.maxLife = life;
+    this.size = size; this.color = color; this.kind = kind;
+    this.rot = rand(0, TAU); this.spin = rand(-6, 6);
+    this.wobble = rand(0, TAU);
+    return this;
+  }
+  update(dt) {
+    this.life -= dt;
+    if (this.life <= 0) { this.alive = false; return; }
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.rot += this.spin * dt;
+    switch (this.kind) {
+      case "bubble":                       // rises and drifts sideways
+        this.vy -= 42 * dt;
+        this.wobble += 7 * dt;
+        this.x += Math.sin(this.wobble) * 12 * dt;
+        this.vx *= 0.96;
+        break;
+      case "spark":                        // fast, drag-heavy, sinks a little
+        this.vx *= 0.90; this.vy *= 0.90; this.vy += 26 * dt;
+        break;
+      case "debris":
+        this.vy += 90 * dt; this.vx *= 0.99;
+        break;
+      case "sparkle":
+        this.vx *= 0.93; this.vy *= 0.93;
+        break;
+      case "ring":                         // expanding shockwave
+        this.size += 150 * dt;
+        break;
+    }
+  }
+  draw(g) {
+    const t = this.life / this.maxLife;
+    g.globalAlpha = this.kind === "bubble" ? clamp(t * 1.3, 0, 0.85) : clamp(t * 1.4, 0, 1);
+    const x = this.x | 0, y = this.y | 0;
+    switch (this.kind) {
+      case "bubble":
+        g.strokeStyle = this.color; g.lineWidth = 1;
+        g.beginPath(); g.arc(x, y, this.size, 0, TAU); g.stroke();
+        break;
+      case "ring":
+        g.strokeStyle = this.color; g.lineWidth = 2;
+        g.beginPath(); g.arc(x, y, this.size, 0, TAU); g.stroke();
+        break;
+      case "sparkle": {
+        g.fillStyle = this.color; const s = this.size;
+        g.fillRect(x - s, y, s * 2, 1); g.fillRect(x, y - s, 1, s * 2);
+        break;
+      }
+      default:
+        g.fillStyle = this.color;
+        g.fillRect(x - this.size, y - this.size, this.size * 2, this.size * 2);
+    }
+    g.globalAlpha = 1;
+  }
+}
+
+/** Particle emitters + screen shake, all in one place. */
+const FX = {
+  pool: new Pool(() => new Particle(), 260),
+  shake: 0, shakeX: 0, shakeY: 0, flash: 0, flashColor: "#ffffff",
+
+  spawn(x, y, vx, vy, life, size, color, kind) {
+    if (this.pool.count >= MAX_PARTICLES) return null;
+    return this.pool.obtain().init(x, y, vx, vy, life, size, color, kind);
+  },
+  bubbles(x, y, n, spread = 22, tint = "#bfe9ff") {
+    for (let i = 0; i < n; i++)
+      this.spawn(x + rand(-3, 3), y + rand(-3, 3), rand(-spread, spread), rand(-spread, 4),
+                 rand(0.5, 1.3), rand(1, 2.6), tint, "bubble");
+  },
+  explosion(x, y, scale = 1, color = C.orange) {
+    for (let i = 0; i < 10 * scale; i++) {
+      const a = rand(0, TAU), s = rand(40, 150) * scale;
+      this.spawn(x, y, Math.cos(a) * s, Math.sin(a) * s, rand(0.25, 0.55), rand(1, 3) * scale, i % 3 ? color : C.gold, "spark");
+    }
+    this.bubbles(x, y, 8 * scale, 40 * scale);
+    this.spawn(x, y, 0, 0, 0.3, 4, "#ffffff", "ring");
+    this.addShake(3 * scale);
+  },
+  splash(x, y) {
+    for (let i = 0; i < 10; i++)
+      this.spawn(x + rand(-6, 6), y, rand(-40, 40), rand(-120, -50), rand(0.3, 0.7), rand(1, 2), "#dff6ff", "debris");
+  },
+  sparkle(x, y, color = C.gold) {
+    for (let i = 0; i < 5; i++)
+      this.spawn(x, y, rand(-40, 40), rand(-40, 40), rand(0.25, 0.5), rand(1.5, 3.5), color, "sparkle");
+  },
+  debris(x, y, n, color) {
+    for (let i = 0; i < n; i++)
+      this.spawn(x, y, rand(-80, 80), rand(-90, 10), rand(0.4, 0.9), rand(1, 2.5), color, "debris");
+  },
+  addShake(a) { this.shake = Math.min(14, this.shake + a); },
+  hitFlash(a = 0.5, color = "#ffffff") { this.flash = Math.max(this.flash, a); this.flashColor = color; },
+
+  update(dt) {
+    this.pool.update(dt);
+    if (this.shake > 0) {
+      this.shake = Math.max(0, this.shake - 26 * dt);
+      this.shakeX = rand(-this.shake, this.shake);
+      this.shakeY = rand(-this.shake, this.shake);
+    } else { this.shakeX = this.shakeY = 0; }
+    if (this.flash > 0) this.flash = Math.max(0, this.flash - 2.2 * dt);
+  },
+  reset() { this.pool.clear(); this.shake = this.flash = 0; this.shakeX = this.shakeY = 0; }
+};
+
+/** Scrolling camera with smoothed vertical follow. */
+const Camera = {
+  x: 0, y: 0, targetY: 0, speed: 62,
+  reset() { this.x = 0; this.y = 0; this.targetY = 0; this.speed = 62; },
+  update(dt, player) {
+    this.x += this.speed * dt;
+    // gentle vertical lead so the sub can peek at what's above/below
+    this.targetY = clamp((player.y - VIEW_H / 2) * 0.16, -18, 18);
+    this.y = lerp(this.y, this.targetY, 1 - Math.pow(0.001, dt)); // frame-rate independent smoothing
+  },
+  get left()  { return this.x; },
+  get right() { return this.x + VIEW_W; }
+};
+
+/* ========================== §6  ACTORS ============================== */
+
+/* --------------------------- weapons -------------------------------- */
+/**
+ * Weapon table. `shots` describes muzzle offsets and angles, so adding a
+ * new weapon is a one-object change.
+ */
+const WEAPONS = {
+  single: { name: "TORPEDO",  cooldown: 0.30, dmg: 1, speed: 300, kind: "torpedo",
+            shots: [{ y: 0, a: 0 }] },
+  double: { name: "DOUBLE",   cooldown: 0.28, dmg: 1, speed: 310, kind: "torpedo",
+            shots: [{ y: -5, a: 0 }, { y: 5, a: 0 }] },
+  triple: { name: "TRIPLE",   cooldown: 0.30, dmg: 1, speed: 315, kind: "torpedo",
+            shots: [{ y: -6, a: 0 }, { y: 0, a: 0 }, { y: 6, a: 0 }] },
+  spread: { name: "SPREAD",   cooldown: 0.34, dmg: 1, speed: 285, kind: "pellet",
+            shots: [{ y: 0, a: -0.34 }, { y: 0, a: -0.17 }, { y: 0, a: 0 }, { y: 0, a: 0.17 }, { y: 0, a: 0.34 }] },
+  rapid:  { name: "RAPID",    cooldown: 0.09, dmg: 1, speed: 360, kind: "pellet",
+            shots: [{ y: 0, a: 0 }] },
+  laser:  { name: "LASER",    cooldown: 0.16, dmg: 2, speed: 620, kind: "laser",
+            shots: [{ y: -3, a: 0 }, { y: 3, a: 0 }] }
+};
+const WEAPON_KEYS = ["double", "triple", "spread", "rapid", "laser"];
+
+/* --------------------------- player --------------------------------- */
+class Player {
+  constructor() { this.reset(); }
+
+  reset() {
+    this.x = PLAYER_X_OFFSET; this.y = VIEW_H / 2;
+    this.vy = 0; this.w = 26; this.h = 13;
+    this.tilt = 0;
+    this.hp = 100; this.maxHp = 100;
+    this.lives = 3;
+    this.alive = true;
+    this.invuln = 0;                 // i-frames after a hit
+    this.hurtFlash = 0;
+    this.weapon = "single";
+    this.weaponTime = 0;             // 0 = permanent default gun
+    this.cooldown = 0;
+    this.bob = 0;
+    this.trailTimer = 0;
+    // timed power-up states
+    this.shield = 0; this.dmgBoost = 0; this.speedBoost = 0;
+    this.magnet = 0; this.multiplier = 0; this.freeze = 0;
+  }
+
+  /** Vertical thrust + buoyancy + drag = the floaty underwater feel. */
+  update(dt, game) {
+    this.bob += dt * 2.4;
+    const accel = this.speedBoost > 0 ? 900 : 640;
+    const maxV  = this.speedBoost > 0 ? 190 : 140;
+
+    if (Input.moveUp)   this.vy -= accel * dt;
+    if (Input.moveDown) this.vy += accel * dt;
+    if (!Input.moveUp && !Input.moveDown) this.vy *= Math.pow(0.02, dt);  // water drag
+    this.vy += 26 * dt;                                                   // slight negative buoyancy
+    this.vy = clamp(this.vy, -maxV, maxV);
+    this.y += this.vy * dt;
+
+    // bounce softly off surface / sea bed
+    if (this.y < PLAY_TOP)    { this.y = PLAY_TOP;    this.vy = Math.abs(this.vy) * 0.3; }
+    if (this.y > PLAY_BOTTOM) { this.y = PLAY_BOTTOM; this.vy = -Math.abs(this.vy) * 0.3; }
+
+    // sub noses up/down with vertical speed
+    this.tilt = lerp(this.tilt, clamp(this.vy / 260, -0.34, 0.34), 1 - Math.pow(0.005, dt));
+    this.x = Camera.x + PLAYER_X_OFFSET + Math.sin(this.bob) * 1.5;
+
+    // ---- timers ----
+    for (const k of ["invuln","hurtFlash","shield","dmgBoost","speedBoost","magnet","multiplier","freeze"])
+      if (this[k] > 0) this[k] = Math.max(0, this[k] - dt);
+    if (this.weaponTime > 0) {
+      this.weaponTime -= dt;
+      if (this.weaponTime <= 0) { this.weapon = "single"; this.weaponTime = 0; }
+    }
+
+    // ---- propeller bubble trail ----
+    this.trailTimer -= dt;
+    if (this.trailTimer <= 0) {
+      this.trailTimer = 0.06;
+      FX.spawn(this.x - 14, this.y + 2 + rand(-2, 2), rand(-38, -18), rand(-12, 2),
+               rand(0.4, 0.9), rand(0.8, 1.8), "#cfeeff", "bubble");
+    }
+
+    // ---- firing (the sub shoots continuously; FIRE just tops it up) ----
+    this.cooldown -= dt;
+    if (this.cooldown <= 0) { this.shoot(game); }
+  }
+
+  shoot(game) {
+    const w = WEAPONS[this.weapon];
+    this.cooldown = w.cooldown;
+    const dmg = w.dmg * (this.dmgBoost > 0 ? 2 : 1);
+    for (const s of w.shots) {
+      const b = game.bullets.obtain();
+      const a = s.a + this.tilt * 0.5;
+      b.init(this.x + 14, this.y + s.y + this.tilt * 8,
+             Math.cos(a) * w.speed, Math.sin(a) * w.speed, dmg, w.kind);
+    }
+    w.kind === "laser" ? Audio_.laser() : Audio_.shoot();
+  }
+
+  /** Returns true if the hit actually landed (not shielded / invulnerable). */
+  damage(amount, game) {
+    if (this.invuln > 0) return false;
+    if (this.shield > 0) {                      // shield eats one hit
+      this.shield = 0;
+      FX.explosion(this.x, this.y, 0.8, C.glass);
+      FX.hitFlash(0.35, "#8fe3ff");
+      this.invuln = 0.8;
+      Audio_.shield();
+      return false;
+    }
+    this.hp -= amount;
+    this.invuln = 1.1;
+    this.hurtFlash = 0.3;
+    FX.addShake(6);
+    FX.hitFlash(0.45, "#ff5f5f");
+    FX.bubbles(this.x, this.y, 8, 50);
+    Audio_.damage();
+    if (this.hp <= 0) { this.hp = 0; game.loseLife(); }
+    return true;
+  }
+
+  heal(n) { this.hp = clamp(this.hp + n, 0, this.maxHp); }
+
+  draw(g) {
+    // blink while invulnerable
+    if (this.invuln > 0 && Math.floor(this.invuln * 14) % 2 === 0) return;
+    g.save();
+    g.translate(this.x | 0, this.y | 0);
+    g.rotate(this.tilt);
+
+    const flash = this.hurtFlash > 0 && Math.floor(this.hurtFlash * 20) % 2 === 0;
+    const body = flash ? "#ffffff" : C.hull;
+    const dark = flash ? "#ffdddd" : C.hullDark;
+
+    // tail fin
+    g.fillStyle = dark;
+    g.fillRect(-16, -5, 5, 10);
+    g.fillRect(-14, -8, 3, 16);
+    // propeller (spins with the bob timer)
+    const p = Math.abs(Math.sin(this.bob * 7)) * 5 + 1;
+    g.fillStyle = C.steel;
+    g.fillRect(-19, -p, 3, p * 2);
+    // hull
+    g.fillStyle = body;
+    g.fillRect(-12, -6, 22, 12);
+    g.fillRect(10, -4, 4, 8);
+    g.fillStyle = C.hullLight;
+    g.fillRect(-11, -6, 20, 2);
+    g.fillStyle = dark;
+    g.fillRect(-12, 4, 22, 2);
+    // conning tower
+    g.fillStyle = body; g.fillRect(-3, -11, 8, 5);
+    g.fillStyle = dark;  g.fillRect(-3, -11, 8, 1);
+    // periscope
+    g.fillStyle = C.steel; g.fillRect(1, -15, 2, 4);
+    // porthole
+    g.fillStyle = C.glass; g.fillRect(1, -3, 6, 6);
+    g.fillStyle = "#ffffff"; g.fillRect(2, -2, 2, 2);
+    // nose light
+    g.fillStyle = flash ? "#fff" : C.red; g.fillRect(12, -2, 2, 4);
+    g.restore();
+
+    // shield bubble
+    if (this.shield > 0) {
+      g.save();
+      g.globalAlpha = this.shield < 2 && Math.floor(this.shield * 8) % 2 ? 0.25 : 0.55;
+      g.strokeStyle = C.glass; g.lineWidth = 1.5;
+      g.beginPath(); g.arc(this.x | 0, this.y | 0, 20 + Math.sin(this.bob * 3) * 1.5, 0, TAU); g.stroke();
+      g.restore();
+    }
+    // little health bar above the sub
+    const bw = 24, hp = this.hp / this.maxHp;
+    g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect((this.x - bw / 2) | 0, (this.y - 22) | 0, bw, 4);
+    g.fillStyle = hp > 0.55 ? C.green : hp > 0.25 ? C.gold : C.red;
+    g.fillRect((this.x - bw / 2 + 1) | 0, (this.y - 21) | 0, Math.max(0, (bw - 2) * hp) | 0, 2);
+  }
+}
+
+/* --------------------------- bullets -------------------------------- */
+class Bullet {
+  constructor() { this.alive = false; }
+  init(x, y, vx, vy, dmg, kind) {
+    this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+    this.dmg = dmg; this.kind = kind; this.life = 2.2;
+    this.w = kind === "laser" ? 14 : (kind === "pellet" ? 6 : 10);
+    this.h = kind === "laser" ? 3 : (kind === "pellet" ? 4 : 5);
+    this.trail = 0;
+    return this;
+  }
+  update(dt) {
+    this.x += this.vx * dt; this.y += this.vy * dt;
+    this.life -= dt;
+    if (this.life <= 0 || this.x > Camera.right + 30 || this.y < 0 || this.y > VIEW_H) this.alive = false;
+    if (this.kind === "torpedo") {
+      this.trail -= dt;
+      if (this.trail <= 0) { this.trail = 0.05; FX.spawn(this.x - 5, this.y, rand(-30, -10), rand(-8, 2), 0.4, 1, "#bfe9ff", "bubble"); }
+    }
+  }
+  draw(g) {
+    const x = this.x | 0, y = this.y | 0;
+    if (this.kind === "laser") {
+      g.fillStyle = "#ff3b6b"; g.fillRect(x - 8, y - 1, 16, 3);
+      g.fillStyle = "#ffd6e0"; g.fillRect(x - 8, y, 16, 1);
+    } else if (this.kind === "pellet") {
+      g.fillStyle = C.gold;    g.fillRect(x - 3, y - 2, 6, 4);
+      g.fillStyle = "#ffffff"; g.fillRect(x - 1, y - 1, 2, 2);
+    } else {                                   // torpedo
+      g.fillStyle = C.steel;   g.fillRect(x - 5, y - 2, 9, 4);
+      g.fillStyle = "#ffffff"; g.fillRect(x + 2, y - 2, 3, 4);
+      g.fillStyle = C.red;     g.fillRect(x - 6, y - 1, 2, 2);
+    }
+  }
+}
+
+/** Hostile projectile (ink, spines, boss shots). */
+class EnemyBullet {
+  constructor() { this.alive = false; }
+  init(x, y, vx, vy, kind = "ink", dmg = 8) {
+    this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+    this.kind = kind; this.dmg = dmg; this.life = 5;
+    this.w = kind === "big" ? 12 : 7; this.h = this.w;
+    this.t = 0;
+    return this;
+  }
+  update(dt) {
+    this.t += dt; this.life -= dt;
+    this.x += this.vx * dt; this.y += this.vy * dt;
+    if (this.life <= 0 || this.x < Camera.left - 40 || this.x > Camera.right + 60 ||
+        this.y < -20 || this.y > VIEW_H + 20) this.alive = false;
+  }
+  draw(g) {
+    const x = this.x | 0, y = this.y | 0;
+    if (this.kind === "ink") {
+      g.fillStyle = "#2b1a4d"; g.beginPath(); g.arc(x, y, 4, 0, TAU); g.fill();
+      g.fillStyle = "#5a3d91"; g.fillRect(x - 1, y - 3, 2, 2);
+    } else if (this.kind === "spine") {
+      g.fillStyle = "#ffe14d"; g.fillRect(x - 4, y - 1, 8, 2); g.fillRect(x - 1, y - 4, 2, 8);
+    } else if (this.kind === "bolt") {
+      g.fillStyle = "#8fe3ff"; g.fillRect(x - 4, y - 2, 8, 4);
+      g.fillStyle = "#ffffff"; g.fillRect(x - 2, y - 1, 4, 2);
+    } else {                                   // big boss orb
+      g.fillStyle = "#ff5f5f"; g.beginPath(); g.arc(x, y, 6, 0, TAU); g.fill();
+      g.fillStyle = "#ffd6d6"; g.beginPath(); g.arc(x - 1, y - 1, 2, 0, TAU); g.fill();
+    }
+  }
+}
+
+/* ------------------------- coins & pickups --------------------------- */
+class Coin {
+  constructor() { this.alive = false; }
+  init(x, y, value = 1) {
+    this.x = x; this.y = y; this.vx = rand(-20, 20); this.vy = rand(-40, -10);
+    this.w = 9; this.h = 9; this.value = value; this.t = rand(0, TAU); this.life = 12;
+    return this;
+  }
+  update(dt, player) {
+    this.t += dt * 6; this.life -= dt;
+    // magnet power-up sucks coins in from across the screen
+    if (player.magnet > 0) {
+      const dx = player.x - this.x, dy = player.y - this.y;
+      const d = Math.hypot(dx, dy) || 1;
+      if (d < 150) { this.vx += (dx / d) * 620 * dt; this.vy += (dy / d) * 620 * dt; }
+    }
+    this.vx *= Math.pow(0.35, dt); this.vy *= Math.pow(0.35, dt);
+    this.vy += Math.sin(this.t) * 6 * dt;
+    this.x += this.vx * dt; this.y += this.vy * dt;
+    if (this.life <= 0 || this.x < Camera.left - 30) this.alive = false;
+  }
+  draw(g) {
+    const x = this.x | 0, y = this.y | 0;
+    const wdt = Math.abs(Math.cos(this.t)) * 4 + 1;    // spin illusion
+    // bevelled octagon reads as a round coin at this pixel size
+    g.fillStyle = "#b8860b"; g.fillRect(x - wdt, y - 3, wdt * 2, 7);
+    g.fillStyle = C.gold;
+    g.fillRect(x - wdt, y - 2, wdt * 2, 5);
+    g.fillRect(x - wdt + 1, y - 4, Math.max(0, wdt * 2 - 2), 8);
+    if (wdt > 3) { g.fillStyle = "#fff8c0"; g.fillRect(x - 1, y - 2, 2, 3); }
+  }
+}
+
+/** Power-up definitions: colour, glyph and what the pickup does. */
+const POWERUPS = {
+  health:  { color:"#ff5f5f", glyph:"+",  label:"HEALTH" },
+  shield:  { color:"#8fe3ff", glyph:"O",  label:"SHIELD" },
+  damage:  { color:"#ff9f43", glyph:"!",  label:"DAMAGE x2" },
+  speed:   { color:"#7CFC00", glyph:">",  label:"SPEED" },
+  magnet:  { color:"#ff8ad8", glyph:"U",  label:"MAGNET" },
+  coinx:   { color:"#ffe14d", glyph:"$",  label:"COIN x3" },
+  freeze:  { color:"#bfe9ff", glyph:"*",  label:"FREEZE" },
+  life:    { color:"#ff4d9d", glyph:"♥",  label:"EXTRA LIFE" },
+  weapon:  { color:"#a06bd8", glyph:"W",  label:"WEAPON" }
+};
+const POWERUP_KEYS = Object.keys(POWERUPS);
+
+class PowerUp {
+  constructor() { this.alive = false; }
+  init(x, y, type) {
+    this.x = x; this.y = y; this.type = type;
+    this.w = 16; this.h = 16; this.t = rand(0, TAU);
+    this.vy = rand(-6, 6); this.life = 16;
+    this.weapon = type === "weapon" ? pick(WEAPON_KEYS) : null;
+    return this;
+  }
+  update(dt, player) {
+    this.t += dt * 3; this.life -= dt;
+    this.y += Math.sin(this.t) * 14 * dt + this.vy * dt;
+    this.y = clamp(this.y, PLAY_TOP, PLAY_BOTTOM);
+    if (player.magnet > 0) {
+      const dx = player.x - this.x, dy = player.y - this.y, d = Math.hypot(dx, dy) || 1;
+      if (d < 140) { this.x += (dx / d) * 130 * dt; this.y += (dy / d) * 130 * dt; }
+    }
+    if (this.life <= 0 || this.x < Camera.left - 40) this.alive = false;
+    if (chance(dt * 3)) FX.spawn(this.x, this.y, rand(-8, 8), -18, 0.6, 1, POWERUPS[this.type].color, "bubble");
+  }
+  draw(g) {
+    const def = POWERUPS[this.type];
+    const x = this.x | 0, y = (this.y + Math.sin(this.t) * 2) | 0;
+    // capsule
+    g.fillStyle = "rgba(0,0,0,.35)"; g.fillRect(x - 8, y - 8, 16, 16);
+    g.fillStyle = def.color;         g.fillRect(x - 7, y - 7, 14, 14);
+    g.fillStyle = "rgba(255,255,255,.45)"; g.fillRect(x - 7, y - 7, 14, 3);
+    g.fillStyle = "#06121d";
+    g.font = "bold 10px 'Courier New',monospace";
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(def.glyph, x, y + 1);
+    g.textAlign = "left"; g.textBaseline = "alphabetic";
+    // glow ring
+    g.globalAlpha = 0.35 + Math.sin(this.t * 2) * 0.2;
+    g.strokeStyle = def.color; g.lineWidth = 1;
+    g.strokeRect(x - 10, y - 10, 20, 20);
+    g.globalAlpha = 1;
+  }
+}
+
+/* --------------------------- enemies --------------------------------- */
+/**
+ * Enemy archetypes. `tier` gates when a species starts appearing, `weight`
+ * biases the random pick. Movement is a named pattern handled in update().
+ */
+const ENEMIES = {
+  small:     { hp:1, speed:46, score:10,  w:16, h:11, dmg:8,  tier:0, weight:34, pattern:"sine",    color:C.orange,  alt:"#ffd08a" },
+  large:     { hp:4, speed:30, score:25,  w:30, h:19, dmg:14, tier:0, weight:16, pattern:"sine",    color:C.purple,  alt:"#c9a3f0" },
+  jelly:     { hp:2, speed:20, score:20,  w:16, h:20, dmg:12, tier:1, weight:14, pattern:"pulse",   color:C.pink,    alt:"#ffd0ef" },
+  puffer:    { hp:5, speed:24, score:30,  w:20, h:20, dmg:16, tier:1, weight:12, pattern:"puff",    color:"#8ed36b", alt:"#d3f0b8" },
+  barracuda: { hp:3, speed:72, score:50,  w:34, h:12, dmg:16, tier:2, weight:11, pattern:"dash",    color:"#9fd8e8", alt:"#5f9fb8" },
+  eel:       { hp:4, speed:38, score:45,  w:34, h:10, dmg:14, tier:2, weight:10, pattern:"zigzag",  color:"#c9e04a", alt:"#8fa832" },
+  shark:     { hp:8, speed:56, score:60,  w:44, h:20, dmg:22, tier:3, weight:9,  pattern:"chase",   color:C.steel,   alt:"#c3d4e0" },
+  angler:    { hp:6, speed:26, score:55,  w:28, h:22, dmg:18, tier:3, weight:8,  pattern:"lurk",    color:"#5a4a7a", alt:"#8b74c0" },
+  squid:     { hp:5, speed:34, score:65,  w:24, h:24, dmg:16, tier:4, weight:8,  pattern:"jet",     color:"#e0568a", alt:"#ffa8c6" }
+};
+const ENEMY_KEYS = Object.keys(ENEMIES);
+
+class Enemy {
+  constructor() { this.alive = false; }
+
+  init(type, x, y, diff) {
+    const d = ENEMIES[type];
+    this.type = type; this.def = d;
+    this.x = x; this.y = y;
+    this.w = d.w; this.h = d.h;
+    this.maxHp = Math.max(1, Math.round(d.hp * (1 + (diff - 1) * 0.34)));
+    this.hp = this.maxHp;
+    this.speed = d.speed * (1 + (diff - 1) * 0.14);
+    this.score = d.score;
+    this.dmg = d.dmg;
+    this.baseY = y;
+    this.t = rand(0, TAU);
+    this.flash = 0;
+    this.phase = 0;          // pattern-specific sub-state
+    this.timer = rand(0.5, 2);
+    this.shootTimer = rand(1.2, 3.2);
+    this.scale = 1;          // pufferfish inflation
+    this.charge = 0;         // eel electricity
+    return this;
+  }
+
+  update(dt, game) {
+    const frozen = game.player.freeze > 0;
+    const dts = frozen ? dt * 0.18 : dt;      // FREEZE power-up slows enemies
+    this.t += dts;
+    if (this.flash > 0) this.flash -= dt;
+
+    const p = game.player;
+    switch (this.def.pattern) {
+      case "sine":
+        this.x -= this.speed * dts;
+        this.y = this.baseY + Math.sin(this.t * 2.2) * 16;
+        break;
+
+      case "pulse":                            // jellyfish: bob up, sink down
+        this.x -= this.speed * dts;
+        this.phase += dts * 2;
+        this.y = this.baseY + Math.sin(this.phase) * 26;
+        break;
+
+      case "puff":                             // pufferfish inflates near player
+        this.x -= this.speed * dts;
+        this.y = this.baseY + Math.sin(this.t * 1.4) * 10;
+        {
+          const near = Math.abs(this.x - p.x) < 90;
+          this.scale = lerp(this.scale, near ? 1.5 : 1, 1 - Math.pow(0.02, dt));
+          this.w = this.def.w * this.scale; this.h = this.def.h * this.scale;
+          // spits spines while inflated
+          this.shootTimer -= dts;
+          if (near && this.scale > 1.35 && this.shootTimer <= 0) {
+            this.shootTimer = 1.6;
+            for (let i = 0; i < 4; i++) {
+              const a = Math.PI + (i - 1.5) * 0.4;
+              game.eBullets.obtain().init(this.x, this.y, Math.cos(a) * 110, Math.sin(a) * 110, "spine", 7);
+            }
+          }
+        }
+        break;
+
+      case "dash":                             // barracuda: glide, then burst
+        this.timer -= dts;
+        if (this.timer <= 0) { this.phase = this.phase ? 0 : 1; this.timer = this.phase ? 0.55 : rand(0.7, 1.4); }
+        this.x -= this.speed * (this.phase ? 2.3 : 0.45) * dts;
+        this.y += Math.sign(p.y - this.y) * 22 * dts;
+        if (this.phase && chance(dts * 20)) FX.spawn(this.x + 14, this.y, 40, 0, 0.3, 1, "#dff6ff", "bubble");
+        break;
+
+      case "zigzag":                           // electric eel + shock aura
+        this.x -= this.speed * dts;
+        this.y = this.baseY + Math.sin(this.t * 5) * 22;
+        this.charge = (this.charge + dts) % 2.4;
+        if (this.charged && chance(dts * 12))
+          FX.spawn(this.x + rand(-16, 16), this.y + rand(-8, 8), 0, 0, 0.16, 1.5, "#bfe9ff", "sparkle");
+        break;
+
+      case "chase":                            // shark hunts the sub's depth
+        this.x -= this.speed * dts;
+        this.y = lerp(this.y, clamp(p.y, PLAY_TOP, PLAY_BOTTOM), 1 - Math.pow(0.4, dt));
+        break;
+
+      case "lurk":                             // angler drifts, lure pulses
+        this.x -= this.speed * dts;
+        this.y += Math.sin(this.t * 1.1) * 22 * dts + Math.sign(p.y - this.y) * 12 * dts;
+        this.shootTimer -= dts;
+        if (this.shootTimer <= 0 && this.x < Camera.right - 20) {
+          this.shootTimer = rand(2.2, 3.6);
+          const dx = p.x - this.x, dy = p.y - this.y, d = Math.hypot(dx, dy) || 1;
+          game.eBullets.obtain().init(this.x - 8, this.y, (dx / d) * 130, (dy / d) * 130, "bolt", 9);
+        }
+        break;
+
+      case "jet":                              // squid: pulse-swims, spits ink
+        this.timer -= dts;
+        if (this.timer <= 0) { this.timer = rand(0.8, 1.3); this.phase = 1; }
+        if (this.phase > 0) { this.phase = Math.max(0, this.phase - dts * 3); }
+        this.x -= this.speed * (0.4 + this.phase * 2.4) * dts;
+        this.y += Math.sin(this.t * 1.7) * 26 * dts;
+        this.shootTimer -= dts;
+        if (this.shootTimer <= 0) {
+          this.shootTimer = rand(1.8, 3.0);
+          game.eBullets.obtain().init(this.x - 10, this.y, -150, rand(-30, 30), "ink", 8);
+        }
+        break;
+    }
+
+    this.y = clamp(this.y, SURFACE_Y + 4, FLOOR_Y - 4);
+    if (this.x < Camera.left - 80) this.alive = false;    // recycled off-screen
+  }
+
+  /** Eels only zap during the charged half of their cycle. */
+  get charged() { return this.def.pattern === "zigzag" && this.charge > 1.5; }
+
+  hurt(dmg, game) {
+    this.hp -= dmg;
+    this.flash = 0.12;
+    if (this.hp <= 0) { this.die(game); return true; }
+    Audio_.hit();
+    FX.bubbles(this.x, this.y, 2, 20);
+    return false;
+  }
+
+  die(game) {
+    this.alive = false;
+    const mult = game.player.multiplier > 0 ? 3 : 1;
+    game.addScore(this.score * mult);
+    game.kills++;
+    FX.explosion(this.x, this.y, this.w > 28 ? 1.4 : 0.9, this.def.color);
+    Audio_.explode();
+    // loot
+    const coins = randInt(1, this.score >= 45 ? 4 : 2);
+    for (let i = 0; i < coins; i++) game.coins.obtain().init(this.x + rand(-6, 6), this.y + rand(-6, 6), mult);
+    if (chance(0.055 + (this.score >= 45 ? 0.05 : 0)))
+      game.powerups.obtain().init(this.x, this.y, pick(POWERUP_KEYS));
+  }
+
+  draw(g) {
+    const x = this.x | 0, y = this.y | 0;
+    const d = this.def;
+    const flash = this.flash > 0;
+    const col  = flash ? "#ffffff" : d.color;
+    const col2 = flash ? "#ffffff" : d.alt;
+    g.save();
+    g.translate(x, y);
+
+    switch (this.type) {
+      case "small": {
+        const wag = Math.sin(this.t * 9) * 3;
+        g.fillStyle = col2; g.beginPath();                 // tail
+        g.moveTo(8, 0); g.lineTo(14, -4 + wag); g.lineTo(14, 4 + wag); g.closePath(); g.fill();
+        g.fillStyle = col; g.fillRect(-8, -4, 16, 8);      // body
+        g.fillRect(-6, -5, 11, 10);
+        g.fillStyle = col2; g.fillRect(-2, -7, 5, 3);      // fin
+        g.fillStyle = "#fff"; g.fillRect(-6, -2, 3, 3);    // eye
+        g.fillStyle = "#000"; g.fillRect(-5, -1, 2, 2);
+        break;
+      }
+      case "large": {
+        const wag = Math.sin(this.t * 6) * 4;
+        g.fillStyle = col2; g.beginPath();
+        g.moveTo(13, 0); g.lineTo(23, -8 + wag); g.lineTo(23, 8 + wag); g.closePath(); g.fill();
+        g.fillStyle = col;  g.fillRect(-14, -8, 28, 16);
+        g.fillRect(-11, -10, 22, 20);
+        g.fillStyle = col2; g.fillRect(-4, -13, 9, 4); g.fillRect(-4, 9, 9, 3);
+        g.fillStyle = "#fff"; g.fillRect(-11, -4, 5, 5);
+        g.fillStyle = "#000"; g.fillRect(-10, -3, 3, 3);
+        g.fillStyle = col2; g.fillRect(-14, -1, 6, 2);     // gill
+        break;
+      }
+      case "jelly": {
+        const squash = Math.sin(this.phase * 2) * 2;
+        g.fillStyle = col;
+        g.beginPath(); g.arc(0, -3, 9 + squash, Math.PI, 0); g.fill();
+        g.fillRect(-9 - squash, -3, (9 + squash) * 2, 3);
+        g.fillStyle = col2;
+        for (let i = -2; i <= 2; i++) {                    // tentacles
+          const tx = i * 3.6, sway = Math.sin(this.t * 4 + i) * 2;
+          g.fillRect(tx - 1, 0, 2, 8 + Math.sin(this.t * 3 + i) * 3);
+          g.fillRect(tx - 1 + sway, 7, 2, 4);
+        }
+        g.globalAlpha = 0.5; g.fillStyle = "#fff";
+        g.fillRect(-5, -9, 4, 2); g.globalAlpha = 1;
+        break;
+      }
+      case "puffer": {
+        const r = 9 * this.scale;
+        g.fillStyle = col;
+        g.beginPath(); g.arc(0, 0, r, 0, TAU); g.fill();
+        g.fillStyle = col2;                                 // spikes
+        const spikes = 8;
+        for (let i = 0; i < spikes; i++) {
+          const a = (i / spikes) * TAU + this.t * 0.4;
+          const sx = Math.cos(a) * r, sy = Math.sin(a) * r;
+          const len = this.scale > 1.2 ? 5 : 2.5;
+          g.fillRect((sx - 1) | 0, (sy - 1) | 0, 2 + len * Math.abs(Math.cos(a)), 2 + len * Math.abs(Math.sin(a)));
+        }
+        g.fillStyle = "#fff"; g.fillRect(-r * 0.6, -3, 4, 4);
+        g.fillStyle = "#000"; g.fillRect(-r * 0.6 + 1, -2, 2, 2);
+        g.fillStyle = "#000"; g.fillRect(-r * 0.9, 2, 3, 1);
+        break;
+      }
+      case "barracuda": {
+        const wag = Math.sin(this.t * 12) * 3;
+        g.fillStyle = col2; g.beginPath();
+        g.moveTo(14, 0); g.lineTo(21, -6 + wag); g.lineTo(21, 6 + wag); g.closePath(); g.fill();
+        g.fillStyle = col; g.fillRect(-17, -4, 32, 8);
+        g.beginPath(); g.moveTo(-17, 0); g.lineTo(-9, -4); g.lineTo(-9, 4); g.closePath(); g.fill();
+        g.fillStyle = col2; g.fillRect(0, -8, 7, 4);
+        g.fillStyle = "#fff"; g.fillRect(-10, -3, 4, 4);
+        g.fillStyle = "#000"; g.fillRect(-9, -2, 2, 2);
+        g.fillStyle = "#fff";                                // teeth
+        for (let i = 0; i < 4; i++) g.fillRect(-16 + i * 2, -1, 1, 2);
+        break;
+      }
+      case "eel": {
+        g.fillStyle = col;
+        for (let i = 0; i < 9; i++) {                        // segmented body
+          const sx = -16 + i * 4;
+          const sy = Math.sin(this.t * 6 - i * 0.7) * 4;
+          g.fillRect(sx, sy - 3, 5, 6);
+        }
+        g.fillStyle = col2;
+        g.fillRect(-19, Math.sin(this.t * 6 + 0.7) * 4 - 3, 5, 6);
+        g.fillStyle = "#fff"; g.fillRect(-18, Math.sin(this.t * 6 + 0.7) * 4 - 2, 2, 2);
+        if (this.charged) {                                  // crackling shock aura
+          g.strokeStyle = "#bfe9ff"; g.lineWidth = 1; g.globalAlpha = 0.8;
+          g.beginPath();
+          for (let i = 0; i < 5; i++) {
+            const a = rand(0, TAU), r1 = 10, r2 = 18;
+            g.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
+            g.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+          }
+          g.stroke(); g.globalAlpha = 1;
+        }
+        break;
+      }
+      case "shark": {
+        const wag = Math.sin(this.t * 5) * 4;
+        g.fillStyle = col2; g.beginPath();                   // tail
+        g.moveTo(18, 0); g.lineTo(26, -10 + wag); g.lineTo(24, 0); g.lineTo(26, 9 + wag); g.closePath(); g.fill();
+        g.fillStyle = col;
+        g.beginPath();
+        g.moveTo(-22, 1); g.lineTo(-10, -8); g.lineTo(12, -8); g.lineTo(20, 0); g.lineTo(12, 8); g.lineTo(-10, 8);
+        g.closePath(); g.fill();
+        g.fillStyle = col2; g.fillRect(-2, -15, 9, 8);       // dorsal
+        g.beginPath(); g.moveTo(-6, 7); g.lineTo(-1, 14); g.lineTo(4, 7); g.closePath(); g.fill();
+        g.fillStyle = "#e8f2f8"; g.fillRect(-14, 3, 24, 4);  // pale belly
+        g.fillStyle = "#fff"; g.fillRect(-14, -4, 4, 4);
+        g.fillStyle = "#000"; g.fillRect(-13, -3, 2, 2);
+        g.fillStyle = "#06121d"; g.fillRect(-21, 1, 12, 2);  // mouth
+        g.fillStyle = "#fff";
+        for (let i = 0; i < 5; i++) g.fillRect(-20 + i * 2, 1, 1, 2);
+        break;
+      }
+      case "angler": {
+        g.fillStyle = col;
+        g.beginPath(); g.arc(0, 0, 12, 0, TAU); g.fill();
+        g.fillStyle = col2; g.beginPath();                   // tail
+        g.moveTo(10, 0); g.lineTo(18, -6); g.lineTo(18, 6); g.closePath(); g.fill();
+        // lure on a stalk
+        const lx = -12 + Math.sin(this.t * 2) * 2, ly = -14 + Math.cos(this.t * 2) * 2;
+        g.strokeStyle = col2; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(-4, -10); g.lineTo(lx, ly); g.stroke();
+        const glow = 0.6 + Math.sin(this.t * 6) * 0.4;
+        g.globalAlpha = glow; g.fillStyle = "#ffe14d";
+        g.beginPath(); g.arc(lx, ly, 3, 0, TAU); g.fill(); g.globalAlpha = 1;
+        g.fillStyle = "#fff"; g.fillRect(-8, -5, 4, 4);
+        g.fillStyle = "#000"; g.fillRect(-7, -4, 2, 2);
+        g.fillStyle = "#06121d"; g.fillRect(-12, 3, 14, 3);  // gaping mouth
+        g.fillStyle = "#fff";
+        for (let i = 0; i < 6; i++) g.fillRect(-12 + i * 2.4, 3, 1, 3);
+        break;
+      }
+      case "squid": {
+        const pulse = this.phase;
+        g.fillStyle = col;
+        g.beginPath(); g.ellipse(4, -2, 8, 10 - pulse * 2, 0, 0, TAU); g.fill();
+        g.fillStyle = col2;                                  // tentacles
+        for (let i = -3; i <= 3; i++) {
+          const ty = i * 2.4;
+          const len = 10 + Math.sin(this.t * 5 + i) * 4 + pulse * 6;
+          g.fillRect(-4 - len, ty - 1, len, 2);
+        }
+        g.fillStyle = "#fff"; g.fillRect(1, -6, 4, 4); g.fillRect(1, 0, 4, 4);
+        g.fillStyle = "#000"; g.fillRect(2, -5, 2, 2); g.fillRect(2, 1, 2, 2);
+        break;
+      }
+    }
+    g.restore();
+
+    // health pip for tougher species
+    if (this.maxHp > 2 && this.hp < this.maxHp) {
+      const bw = Math.max(14, this.w * 0.8);
+      g.fillStyle = "rgba(0,0,0,.5)"; g.fillRect((x - bw / 2) | 0, (y - this.h / 2 - 8) | 0, bw, 3);
+      g.fillStyle = C.red;
+      g.fillRect((x - bw / 2) | 0, (y - this.h / 2 - 8) | 0, (bw * (this.hp / this.maxHp)) | 0, 3);
+    }
+  }
+}
+
+/* -------------------------- obstacles -------------------------------- */
+/**
+ * Static-ish hazards. Most are indestructible (bullets are absorbed);
+ * mines and clams can be shot and blow up.
+ */
+const OBSTACLES = {
+  rock:    { w:34, h:30, dmg:18, hp:0,  destructible:false },
+  coral:   { w:30, h:34, dmg:14, hp:0,  destructible:false },
+  mine:    { w:20, h:20, dmg:34, hp:2,  destructible:true  },
+  debris:  { w:34, h:20, dmg:16, hp:0,  destructible:false },
+  clam:    { w:30, h:22, dmg:22, hp:6,  destructible:true  },
+  weedwall:{ w:22, h:70, dmg:12, hp:0,  destructible:false }
+};
+
+class Obstacle {
+  constructor() { this.alive = false; }
+  init(type, x, y, diff) {
+    const d = OBSTACLES[type];
+    this.type = type; this.def = d;
+    this.x = x; this.y = y;
+    this.w = d.w; this.h = d.h;
+    this.dmg = d.dmg;
+    this.hp = d.hp;
+    this.t = rand(0, TAU);
+    this.flash = 0;
+    this.seed = Math.random();
+    this.drift = type === "debris" || type === "mine" ? rand(-8, 8) : 0;
+    this.spin = type === "debris" ? rand(-0.6, 0.6) : 0;
+    this.rot = 0;
+    this.open = 0;
+    return this;
+  }
+  update(dt, game) {
+    this.t += dt;
+    this.rot += this.spin * dt;
+    this.y += this.drift * dt * Math.sin(this.t);
+    if (this.flash > 0) this.flash -= dt;
+    if (this.type === "clam") this.open = (Math.sin(this.t * 1.4) + 1) / 2;   // opens & closes
+    if (this.type === "mine" && chance(dt * 1.2)) FX.spawn(this.x, this.y - 8, rand(-6, 6), -20, 0.7, 1, "#bfe9ff", "bubble");
+    if (this.x < Camera.left - 90) this.alive = false;
+  }
+  hurt(dmg, game) {
+    if (!this.def.destructible) return false;
+    this.hp -= dmg; this.flash = 0.1;
+    if (this.hp <= 0) {
+      this.alive = false;
+      const big = this.type === "mine";
+      FX.explosion(this.x, this.y, big ? 1.6 : 1.1, big ? C.red : C.pink);
+      Audio_.explode();
+      game.addScore(this.type === "clam" ? 40 : 25);
+      if (this.type === "clam") {                    // clams hide pearls
+        for (let i = 0; i < 4; i++) game.coins.obtain().init(this.x, this.y, game.player.multiplier > 0 ? 3 : 1);
+        if (chance(0.4)) game.powerups.obtain().init(this.x, this.y, pick(POWERUP_KEYS));
+      }
+      return true;
+    }
+    Audio_.hit();
+    return false;
+  }
+  /** Mines detonate on contact instead of lingering. */
+  onPlayerHit(game) {
+    if (this.type === "mine") {
+      this.alive = false;
+      FX.explosion(this.x, this.y, 1.8, C.red);
+      Audio_.explode();
+    }
+  }
+  draw(g) {
+    const x = this.x | 0, y = this.y | 0;
+    g.save(); g.translate(x, y);
+    if (this.flash > 0) g.globalAlpha = 0.75;
+
+    switch (this.type) {
+      case "rock": {
+        g.fillStyle = "#5b6b78";
+        g.beginPath();
+        g.moveTo(-17, 15); g.lineTo(-13, -6); g.lineTo(-4, -15); g.lineTo(8, -12);
+        g.lineTo(16, -1); g.lineTo(15, 15);
+        g.closePath(); g.fill();
+        g.fillStyle = "#7a8b98"; g.fillRect(-9, -8, 8, 5); g.fillRect(2, -4, 6, 4);
+        g.fillStyle = "#3f4d59"; g.fillRect(-14, 8, 26, 4);
+        g.fillStyle = C.weed; g.fillRect(-12, -9, 4, 3); g.fillRect(6, -13, 4, 3);
+        break;
+      }
+      case "coral": {
+        g.fillStyle = C.coral;
+        g.fillRect(-3, -4, 6, 20);
+        g.fillRect(-12, 2, 6, 14); g.fillRect(7, 0, 6, 16);
+        g.fillStyle = C.coral2;
+        g.fillRect(-14, -6, 8, 8); g.fillRect(5, -10, 9, 9); g.fillRect(-5, -16, 10, 9);
+        g.fillStyle = "#ffd0e0";
+        g.fillRect(-3, -14, 3, 3); g.fillRect(8, -8, 3, 3); g.fillRect(-12, -4, 3, 3);
+        break;
+      }
+      case "mine": {
+        const pulse = (Math.sin(this.t * 5) + 1) / 2;
+        g.strokeStyle = "#3f4d59"; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(0, -10); g.lineTo(0, -22); g.stroke();
+        g.fillStyle = "#2f3b45";
+        for (let i = 0; i < 8; i++) {                        // spikes
+          const a = (i / 8) * TAU;
+          g.fillRect((Math.cos(a) * 9 - 1.5) | 0, (Math.sin(a) * 9 - 1.5) | 0, 5, 5);
+        }
+        g.fillStyle = "#46545f"; g.beginPath(); g.arc(0, 0, 9, 0, TAU); g.fill();
+        g.fillStyle = "#5f7080"; g.beginPath(); g.arc(-2, -2, 5, 0, TAU); g.fill();
+        g.fillStyle = pulse > 0.5 ? "#ff2b2b" : "#7a1f1f";
+        g.fillRect(-2, -2, 4, 4);
+        break;
+      }
+      case "debris": {
+        g.rotate(this.rot);
+        g.fillStyle = "#6b5230"; g.fillRect(-16, -8, 32, 7);
+        g.fillStyle = "#8a6a3f"; g.fillRect(-16, -1, 32, 6);
+        g.fillStyle = "#4a3820"; g.fillRect(-16, -8, 4, 13); g.fillRect(10, -8, 4, 13);
+        g.fillStyle = "#33261a"; g.fillRect(-6, -5, 3, 3); g.fillRect(4, 0, 3, 3);
+        g.fillStyle = C.weed; g.fillRect(-14, -10, 5, 3);
+        break;
+      }
+      case "clam": {
+        const o = this.open * 7;
+        g.fillStyle = "#d7a7d0";
+        g.beginPath(); g.ellipse(0, 4, 15, 8, 0, Math.PI, 0); g.fill();      // bottom shell
+        g.save(); g.translate(0, -o);
+        g.fillStyle = "#f0c6e8";
+        g.beginPath(); g.ellipse(0, 3, 15, 8, 0, Math.PI, 0); g.fill();      // top shell
+        g.fillStyle = "#b986b2";
+        for (let i = -2; i <= 2; i++) g.fillRect(i * 5 - 1, -4, 2, 7);
+        g.restore();
+        if (this.open > 0.35) {                                              // pearl
+          g.globalAlpha = clamp((this.open - 0.35) * 3, 0, 1);
+          g.fillStyle = "#ffffff"; g.beginPath(); g.arc(0, 1, 3, 0, TAU); g.fill();
+          g.fillStyle = "#ffe14d"; g.fillRect(-1, 0, 2, 2);
+          g.globalAlpha = 1;
+        }
+        break;
+      }
+      case "weedwall": {
+        g.fillStyle = C.weedDark;
+        for (let i = -1; i <= 1; i++) {
+          const sway = Math.sin(this.t * 1.6 + i) * 3;
+          g.beginPath();
+          g.moveTo(i * 7 - 3, this.h / 2);
+          g.quadraticCurveTo(i * 7 - 3 + sway, 0, i * 7 - 2 + sway * 2, -this.h / 2);
+          g.lineTo(i * 7 + 3 + sway * 2, -this.h / 2);
+          g.quadraticCurveTo(i * 7 + 3 + sway, 0, i * 7 + 3, this.h / 2);
+          g.closePath(); g.fill();
+        }
+        g.fillStyle = C.weed;
+        for (let i = -1; i <= 1; i++) {
+          const sway = Math.sin(this.t * 1.6 + i + 1) * 3;
+          g.fillRect(i * 7 - 1 + sway, -this.h / 2 + 4, 3, this.h - 8);
+        }
+        break;
+      }
+    }
+    g.globalAlpha = 1;
+    g.restore();
+  }
+}
+
+/* ========================== §7  BOSSES ============================== */
+/**
+ * Four sea monsters, cycled in order. Each has three HP phases and its own
+ * attack rotation; the phase table below is the only thing to edit when
+ * tuning or adding a boss.
+ */
+const BOSSES = {
+  megalodon: {
+    name: "MEGALODON", w: 96, h: 52, hp: 90, color: "#8ea6b8", alt: "#dbe7ef",
+    phases: [ { move:"hover",  attacks:["minions","aimed"],        rate:2.0 },
+              { move:"follow", attacks:["charge","spread"],        rate:1.6 },
+              { move:"follow", attacks:["charge","aimed","spread"],rate:1.1 } ]
+  },
+  kraken: {
+    name: "THE KRAKEN", w: 84, h: 76, hp: 110, color: "#8b3a62", alt: "#d76a9c",
+    phases: [ { move:"hover",  attacks:["ink","minions"],          rate:1.9 },
+              { move:"sway",   attacks:["ink","spread"],           rate:1.4 },
+              { move:"follow", attacks:["ink","spread","minions"], rate:1.0 } ]
+  },
+  moonjelly: {
+    name: "MOON TERROR", w: 78, h: 88, hp: 100, color: "#c86bd8", alt: "#f0b8ff",
+    phases: [ { move:"bob",    attacks:["rain","spread"],          rate:1.8 },
+              { move:"bob",    attacks:["rain","ring"],            rate:1.3 },
+              { move:"follow", attacks:["ring","rain","spread"],   rate:0.95 } ]
+  },
+  mechsub: {
+    name: "IRON LEVIATHAN", w: 104, h: 46, hp: 130, color: "#6d7a86", alt: "#aebcc7",
+    phases: [ { move:"hover",  attacks:["aimed","minions"],        rate:1.7 },
+              { move:"sway",   attacks:["beam","aimed"],           rate:1.4 },
+              { move:"follow", attacks:["beam","spread","aimed"],  rate:0.95 } ]
+  }
+};
+const BOSS_KEYS = Object.keys(BOSSES);
+
+class Boss {
+  constructor(key, index, game) {
+    const d = BOSSES[key];
+    this.key = key; this.def = d;
+    this.w = d.w; this.h = d.h;
+    this.maxHp = Math.round(d.hp * (1 + index * 0.42));
+    this.hp = this.maxHp;
+    this.x = Camera.x + VIEW_W + 90;             // slides in from the right
+    this.y = VIEW_H / 2;
+    this.homeX = VIEW_W - d.w / 2 - 24;          // resting offset from camera
+    this.t = 0; this.flash = 0; this.alive = true;
+    this.state = "enter";                        // enter → fight → dying
+    this.attackTimer = 2.2;
+    this.attackIndex = 0;
+    this.beam = 0; this.beamWarn = 0;
+    this.charge = 0; this.chargeDir = -1;
+    this.deathTimer = 0;
+    this.score = 1200 + index * 600;
+    this.index = index;
+    this.tentacle = 0;
+    // reused hitbox object — collision runs per bullet, so never allocate here
+    this._body = { x: this.x, y: this.y, w: d.w * 0.82, h: d.h * 0.78 };
+  }
+
+  get phase() {
+    const f = this.hp / this.maxHp;
+    return f > 0.66 ? 0 : (f > 0.33 ? 1 : 2);
+  }
+
+  update(dt, game) {
+    this.t += dt;
+    this.tentacle += dt * 3;
+    if (this.flash > 0) this.flash -= dt;
+
+    if (this.state === "dying") {
+      this.deathTimer -= dt;
+      this.x -= 8 * dt;
+      if (chance(dt * 22)) FX.explosion(this.x + rand(-this.w / 2, this.w / 2), this.y + rand(-this.h / 2, this.h / 2), 1.1, C.orange);
+      if (this.deathTimer <= 0) { this.alive = false; game.onBossDefeated(this); }
+      return;
+    }
+
+    if (this.state === "enter") {
+      this.x = lerp(this.x, Camera.x + this.homeX, 1 - Math.pow(0.15, dt));
+      if (this.x - Camera.x < this.homeX + 6) { this.state = "fight"; }
+      return;
+    }
+
+    // ---- movement per phase ----
+    const p = game.player;
+    const ph = this.def.phases[this.phase];
+    const anchor = Camera.x + this.homeX;
+    switch (ph.move) {
+      case "hover":
+        this.x = lerp(this.x, anchor, 1 - Math.pow(0.2, dt));
+        this.y = VIEW_H / 2 + Math.sin(this.t * 1.1) * 46;
+        break;
+      case "sway":
+        this.x = anchor + Math.sin(this.t * 0.9) * 34;
+        this.y = VIEW_H / 2 + Math.sin(this.t * 1.6) * 54;
+        break;
+      case "bob":
+        this.x = lerp(this.x, anchor, 1 - Math.pow(0.2, dt));
+        this.y = VIEW_H / 2 + Math.sin(this.t * 2.1) * 58;
+        break;
+      case "follow":
+        this.x = lerp(this.x, anchor, 1 - Math.pow(0.25, dt));
+        this.y = lerp(this.y, clamp(p.y, PLAY_TOP + this.h / 2, PLAY_BOTTOM - this.h / 2), 1 - Math.pow(0.25, dt));
+        break;
+    }
+
+    // ---- charge attack overrides movement while active ----
+    if (this.charge > 0) {
+      this.charge -= dt;
+      this.x += this.chargeDir * 260 * dt;
+      if (this.charge <= 0) this.chargeDir = -this.chargeDir;
+      if (this.x - Camera.x < 70) { this.charge = 0; this.chargeDir = 1; }
+      FX.bubbles(this.x, this.y, 1, 40);
+    }
+
+    // ---- laser beam windup / fire ----
+    if (this.beamWarn > 0) {
+      this.beamWarn -= dt;
+      if (this.beamWarn <= 0) { this.beam = 1.1; Audio_.laser(); FX.addShake(4); }
+    } else if (this.beam > 0) {
+      this.beam -= dt;
+      if (Math.abs(p.y - this.y) < 10 && p.x < this.x) {
+        if (p.damage(14, game)) FX.addShake(5);
+      }
+      if (chance(dt * 30)) FX.spawn(rand(Camera.left, this.x), this.y + rand(-3, 3), rand(-60, -20), 0, 0.3, 1.5, "#ff8a8a", "spark");
+    }
+
+    // ---- attack rotation ----
+    this.attackTimer -= dt;
+    if (this.attackTimer <= 0 && this.beam <= 0 && this.beamWarn <= 0) {
+      const list = ph.attacks;
+      const atk = list[this.attackIndex % list.length];
+      this.attackIndex++;
+      this.attackTimer = ph.rate * rand(0.85, 1.15);
+      this.doAttack(atk, game);
+    }
+
+    this.y = clamp(this.y, SURFACE_Y + this.h / 2, FLOOR_Y - this.h / 2);
+    this.x = clamp(this.x, Camera.x + 60, Camera.x + VIEW_W - 20);
+  }
+
+  doAttack(atk, game) {
+    const p = game.player;
+    switch (atk) {
+      case "aimed": {                                    // 3 shots led at the sub
+        for (let i = 0; i < 3; i++) {
+          const dx = p.x - this.x, dy = (p.y + i * 6 - 6) - this.y, d = Math.hypot(dx, dy) || 1;
+          game.eBullets.obtain().init(this.x - this.w / 2, this.y + (i - 1) * 8,
+                                      (dx / d) * 150, (dy / d) * 150, "bolt", 10);
+        }
+        Audio_.tone(240, 0.1, "square", 0.12, 120);
+        break;
+      }
+      case "spread": {                                   // fan of orbs
+        const n = 7 + this.phase * 2;
+        for (let i = 0; i < n; i++) {
+          const a = Math.PI - 0.7 + (i / (n - 1)) * 1.4;
+          game.eBullets.obtain().init(this.x - 10, this.y, Math.cos(a) * 130, Math.sin(a) * 130, "big", 12);
+        }
+        Audio_.tone(180, 0.16, "sawtooth", 0.14, 80);
+        break;
+      }
+      case "ink": {                                      // ink volley
+        for (let i = 0; i < 5; i++)
+          game.eBullets.obtain().init(this.x - 20, this.y + rand(-24, 24), rand(-190, -110), rand(-45, 45), "ink", 9);
+        Audio_.noise(0.25, 0.16, 700, 120);
+        break;
+      }
+      case "rain": {                                     // drops from the surface
+        for (let i = 0; i < 6; i++) {
+          const x = Camera.left + rand(40, VIEW_W - 40);
+          game.eBullets.obtain().init(x, SURFACE_Y + 6, rand(-14, 14), rand(80, 130), "spine", 8);
+        }
+        Audio_.tone(520, 0.12, "triangle", 0.10, 260);
+        break;
+      }
+      case "ring": {                                     // full circular burst
+        const n = 12;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * TAU;
+          game.eBullets.obtain().init(this.x, this.y, Math.cos(a) * 105, Math.sin(a) * 105, "big", 11);
+        }
+        Audio_.tone(150, 0.22, "square", 0.15, 70);
+        break;
+      }
+      case "minions": {                                  // call in the shoal
+        const pool = this.index > 1 ? ["small","large","barracuda"] : ["small","large"];
+        for (let i = 0; i < 2 + this.phase; i++)
+          game.enemies.obtain().init(pick(pool), Camera.right + rand(10, 60), rand(PLAY_TOP + 20, PLAY_BOTTOM - 20), game.difficulty);
+        Audio_.tone(400, 0.12, "square", 0.10, 700);
+        break;
+      }
+      case "charge":                                     // ram the player
+        this.charge = 0.55; this.chargeDir = -1;
+        Audio_.noise(0.4, 0.2, 900, 200);
+        FX.addShake(3);
+        break;
+      case "beam":                                       // telegraphed laser
+        this.beamWarn = 0.8;
+        Audio_.tone(900, 0.7, "sine", 0.10, 1500);
+        break;
+    }
+  }
+
+  hurt(dmg, game) {
+    if (this.state !== "fight") return false;
+    this.hp -= dmg;
+    this.flash = 0.08;
+    if (this.hp <= 0) {
+      this.hp = 0;
+      this.state = "dying";
+      this.deathTimer = 1.7;
+      Audio_.bossDown();
+      FX.addShake(12);
+      return true;
+    }
+    Audio_.hit();
+    return false;
+  }
+
+  /** Bosses count as one big damaging body (shared, non-allocating box). */
+  get body() { this._body.x = this.x; this._body.y = this.y; return this._body; }
+
+  draw(g) {
+    const x = this.x | 0, y = this.y | 0;
+    const d = this.def;
+    const flash = this.flash > 0;
+    const col  = flash ? "#ffffff" : d.color;
+    const col2 = flash ? "#ffffff" : d.alt;
+
+    // beam telegraph + beam itself
+    if (this.beamWarn > 0) {
+      g.globalAlpha = 0.35 + Math.sin(this.t * 40) * 0.2;
+      g.fillStyle = "#ff5f5f";
+      g.fillRect(Camera.left, y - 1, this.x - Camera.left, 2);
+      g.globalAlpha = 1;
+    }
+    if (this.beam > 0) {
+      g.fillStyle = "#ff3b6b"; g.fillRect(Camera.left, y - 5, this.x - Camera.left, 10);
+      g.fillStyle = "#ffd6e0"; g.fillRect(Camera.left, y - 2, this.x - Camera.left, 4);
+      g.fillStyle = "#ffffff"; g.fillRect(Camera.left, y - 1, this.x - Camera.left, 2);
+    }
+
+    g.save(); g.translate(x, y);
+    switch (this.key) {
+      case "megalodon": {
+        const wag = Math.sin(this.t * 4) * 8;
+        g.fillStyle = col2; g.beginPath();                       // crescent tail
+        g.moveTo(38, -2); g.lineTo(58, -26 + wag); g.lineTo(50, 0); g.lineTo(58, 22 + wag);
+        g.lineTo(38, 3); g.closePath(); g.fill();
+        g.fillStyle = col2; g.beginPath();                       // dorsal fin
+        g.moveTo(-8, -19); g.lineTo(4, -40); g.lineTo(16, -18); g.closePath(); g.fill();
+        g.beginPath();                                            // pelvic fin
+        g.moveTo(-16, 17); g.lineTo(-6, 34); g.lineTo(8, 18); g.closePath(); g.fill();
+        g.fillStyle = col; g.beginPath();                        // body
+        g.moveTo(-50, 4); g.lineTo(-26, -20); g.lineTo(26, -20); g.lineTo(44, 0); g.lineTo(26, 20); g.lineTo(-26, 20);
+        g.closePath(); g.fill();
+        g.fillStyle = "#eef5fa"; g.beginPath();                  // pale belly, following the hull
+        g.moveTo(-38, 9); g.lineTo(22, 9); g.lineTo(16, 19); g.lineTo(-26, 19);
+        g.closePath(); g.fill();
+        g.fillStyle = col2;                                       // gills, behind the eye
+        for (let i = 0; i < 4; i++) g.fillRect(-12 + i * 5, -8, 2, 13);
+        g.fillStyle = "#fff"; g.fillRect(-30, -11, 8, 8);        // eye
+        g.fillStyle = "#000"; g.fillRect(-28, -9, 4, 4);
+        g.fillStyle = "#1a0d0d"; g.fillRect(-49, 1, 24, 8);      // maw
+        g.fillStyle = "#fff";
+        for (let i = 0; i < 7; i++) { g.fillRect(-48 + i * 3.4, 1, 2, 3); g.fillRect(-48 + i * 3.4, 6, 2, 3); }
+        break;
+      }
+      case "kraken": {
+        g.fillStyle = col2;                                       // tentacles
+        for (let i = -3; i <= 3; i++) {
+          const ty = i * 9;
+          const len = 34 + Math.sin(this.tentacle + i) * 14;
+          g.beginPath();
+          g.moveTo(-10, ty - 3);
+          g.quadraticCurveTo(-10 - len * 0.6, ty + Math.sin(this.tentacle * 1.3 + i) * 16, -10 - len, ty + Math.sin(this.tentacle + i) * 10);
+          g.lineTo(-10 - len, ty + 4 + Math.sin(this.tentacle + i) * 10);
+          g.quadraticCurveTo(-10 - len * 0.6, ty + 6 + Math.sin(this.tentacle * 1.3 + i) * 16, -10, ty + 4);
+          g.closePath(); g.fill();
+        }
+        g.fillStyle = col;                                        // mantle
+        g.beginPath(); g.ellipse(12, -4, 32, 36, 0, 0, TAU); g.fill();
+        g.fillStyle = "#5f2545"; g.fillRect(-4, -34, 34, 6);
+        g.fillStyle = "#ffe14d";                                  // eyes
+        g.beginPath(); g.arc(-2, -10, 9, 0, TAU); g.fill();
+        g.beginPath(); g.arc(-2, 12, 9, 0, TAU); g.fill();
+        g.fillStyle = "#000";
+        const look = Math.sin(this.t * 2) * 2;
+        g.fillRect(-6 + look, -14, 4, 8); g.fillRect(-6 + look, 8, 4, 8);
+        g.fillStyle = col2;
+        for (let i = 0; i < 5; i++) g.fillRect(18 + (i % 3) * 8, -26 + i * 9, 5, 5);
+        break;
+      }
+      case "moonjelly": {
+        const squash = Math.sin(this.t * 2) * 5;
+        g.globalAlpha = 0.9;
+        g.fillStyle = col;                                        // bell
+        g.beginPath(); g.ellipse(0, -8, 38, 30 + squash, 0, Math.PI, 0); g.fill();
+        g.fillRect(-38, -8, 76, 6);
+        g.fillStyle = col2;
+        g.beginPath(); g.ellipse(0, -14, 26, 18 + squash, 0, Math.PI, 0); g.fill();
+        g.globalAlpha = 1;
+        g.fillStyle = col2;                                       // tendrils
+        for (let i = -4; i <= 4; i++) {
+          const tx = i * 8, sway = Math.sin(this.tentacle * 1.4 + i) * 6;
+          g.fillRect(tx - 2, -2, 4, 26 + Math.sin(this.tentacle + i) * 8);
+          g.fillRect(tx - 2 + sway, 22, 4, 14);
+        }
+        g.fillStyle = "#ffffff"; g.globalAlpha = 0.55;
+        g.fillRect(-22, -30, 12, 5); g.fillRect(-8, -34, 8, 4);
+        g.globalAlpha = 1;
+        g.fillStyle = "#ffe14d";                                  // glowing core
+        const cg = 0.5 + Math.sin(this.t * 5) * 0.4;
+        g.globalAlpha = cg;
+        g.beginPath(); g.arc(0, -12, 8, 0, TAU); g.fill();
+        g.globalAlpha = 1;
+        break;
+      }
+      case "mechsub": {
+        g.fillStyle = "#404d58"; g.fillRect(-54, -20, 108, 40);   // hull
+        g.fillStyle = col;      g.fillRect(-52, -18, 104, 34);
+        g.fillStyle = col2;     g.fillRect(-52, -18, 104, 5);
+        g.fillStyle = "#39444e"; g.fillRect(-52, 12, 104, 5);
+        g.fillStyle = "#2b343c";                                   // rivets
+        for (let i = 0; i < 10; i++) g.fillRect(-48 + i * 11, -8, 3, 3);
+        g.fillStyle = "#39444e"; g.fillRect(-14, -32, 30, 14);     // tower
+        g.fillStyle = col2;      g.fillRect(-14, -32, 30, 3);
+        g.fillStyle = C.glass;   g.fillRect(24, -8, 12, 12);       // viewport
+        g.fillStyle = "#fff";    g.fillRect(26, -6, 4, 4);
+        g.fillStyle = "#2b343c"; g.fillRect(-64, -8, 14, 7); g.fillRect(-64, 3, 14, 7); // cannons
+        g.fillStyle = this.beamWarn > 0 ? "#ff2b2b" : "#7a1f1f";
+        g.fillRect(-58, -3, 8, 6);
+        const prop = Math.abs(Math.sin(this.t * 10)) * 14 + 3;     // propeller
+        g.fillStyle = C.steel; g.fillRect(52, -prop, 5, prop * 2);
+        g.fillStyle = "#ff9f43";                                   // running lights
+        if (Math.sin(this.t * 6) > 0) { g.fillRect(-30, -36, 5, 4); g.fillRect(6, -36, 5, 4); }
+        break;
+      }
+    }
+    g.restore();
+  }
+}
+
+/* =========================== §8  WORLD ============================== */
+/**
+ * Procedural scenery. The world is cut into fixed-width chunks; each chunk
+ * is generated from a seeded PRNG so it is stable, cheap and disposable.
+ */
+const CHUNK_W = 240;
+
+const World = {
+  chunks: new Map(),          // chunkIndex → decoration array
+  farLayer: new Map(),        // chunkIndex → distant silhouettes
+
+  reset() { this.chunks.clear(); this.farLayer.clear(); },
+
+  /** Builds (once) and returns the decorations for a chunk index. */
+  getChunk(ci) {
+    let c = this.chunks.get(ci);
+    if (c) return c;
+    const r = mulberry32(ci * 7919 + 13);
+    c = [];
+    const base = ci * CHUNK_W;
+    // sea-bed dressing
+    const n = 4 + Math.floor(r() * 4);
+    for (let i = 0; i < n; i++) {
+      const x = base + r() * CHUNK_W;
+      const roll = r();
+      if (roll < 0.42)      c.push({ t:"weed",  x, y: FLOOR_Y, s: 0.7 + r() * 0.9, p: r() * TAU });
+      else if (roll < 0.68) c.push({ t:"coral", x, y: FLOOR_Y, s: 0.6 + r() * 0.8, p: r() * TAU, c: r() });
+      else if (roll < 0.88) c.push({ t:"rock",  x, y: FLOOR_Y, s: 0.6 + r() * 1.0, p: r() });
+      else                  c.push({ t:"star",  x, y: FLOOR_Y - 2, s: 0.8 + r() * 0.5, p: r() });
+    }
+    if (r() < 0.22) c.push({ t:"chest", x: base + r() * CHUNK_W, y: FLOOR_Y - 6, s: 1, p: r() * TAU });
+    if (r() < 0.3)  c.push({ t:"vent",  x: base + r() * CHUNK_W, y: FLOOR_Y - 2, s: 1, p: r() * TAU });
+    this.chunks.set(ci, c);
+    return c;
+  },
+
+  /** Distant parallax silhouettes (mountains, kelp forest, ruins). */
+  getFar(ci) {
+    let c = this.farLayer.get(ci);
+    if (c) return c;
+    const r = mulberry32(ci * 104729 + 7);
+    c = [];
+    const base = ci * CHUNK_W;
+    for (let i = 0; i < 3; i++)
+      c.push({ t: r() < 0.75 ? "hill" : "ruin", x: base + r() * CHUNK_W, s: 0.6 + r() * 1.1, h: 40 + r() * 70 });
+    this.farLayer.set(ci, c);
+    return c;
+  },
+
+  /** Drops chunks that are far behind the camera so memory stays flat. */
+  prune() {
+    const minCi = Math.floor((Camera.left - CHUNK_W * 2) / CHUNK_W);
+    for (const k of this.chunks.keys())   if (k < minCi) this.chunks.delete(k);
+    for (const k of this.farLayer.keys()) if (k < minCi - 4) this.farLayer.delete(k);
+  }
+};
+
+/* ============================ §9  GAME ============================== */
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d", { alpha: false });
+ctx.imageSmoothingEnabled = false;
+
+class Game {
+  constructor() {
+    // every transient actor lives in a pool → near-zero allocation in play
+    this.bullets  = new Pool(() => new Bullet(), 60);
+    this.eBullets = new Pool(() => new EnemyBullet(), 60);
+    this.enemies  = new Pool(() => new Enemy(), 40);
+    this.obstacles= new Pool(() => new Obstacle(), 24);
+    this.coins    = new Pool(() => new Coin(), 60);
+    this.powerups = new Pool(() => new PowerUp(), 12);
+    this.player   = new Player();
+    this.state    = "menu";
+    this.toasts   = [];
+    this.reset();
+  }
+
+  reset() {
+    this.bullets.clear(); this.eBullets.clear(); this.enemies.clear();
+    this.obstacles.clear(); this.coins.clear(); this.powerups.clear();
+    FX.reset(); Camera.reset(); World.reset();
+    this.player.reset();
+    this.score = 0; this.scoreAcc = 0; this.coinCount = 0;
+    this.kills = 0; this.bossCount = 0; this.elapsed = 0;
+    this.difficulty = 1;
+    this.enemyTimer = 1.2; this.obstacleTimer = 2.6; this.powerTimer = 9;
+    this.boss = null; this.bossWarn = 0; this.nextBossScore = BOSS_SCORE_STEP;
+    this.toasts.length = 0;
+    this.newRecord = false;
+  }
+
+  // ---------------------------------------------------------------- state
+  start() {
+    this.reset();
+    this.state = "playing";
+    Audio_.init(); Audio_.resume();
+    UI.hideAll();
+  }
+  pause() {
+    if (this.state !== "playing") return;
+    this.state = "paused";
+    Input.releaseAll();
+    UI.show("screenPause");
+    UI.updatePause(this);
+  }
+  resume() {
+    if (this.state !== "paused") return;
+    this.state = "playing";
+    Audio_.resume();
+    UI.hideAll();
+  }
+  togglePause() {
+    if (this.state === "playing") this.pause();
+    else if (this.state === "paused") this.resume();
+  }
+  toMenu() {
+    this.state = "menu";
+    this.reset();
+    UI.show("screenStart");
+    UI.refreshMenu();
+  }
+
+  addScore(n) {
+    this.score += n;
+    if (this.score > Store.data.high) { Store.data.high = this.score; this.newRecord = true; }
+  }
+  toast(text, color = C.gold) { this.toasts.push({ text, color, t: 1.6 }); if (this.toasts.length > 4) this.toasts.shift(); }
+
+  loseLife() {
+    this.player.lives--;
+    FX.explosion(this.player.x, this.player.y, 2.2, C.hull);
+    FX.addShake(12);
+    if (this.player.lives < 0) { this.gameOver(); return; }
+    // respawn with a grace period and a cleared screen
+    this.player.hp = this.player.maxHp;
+    this.player.invuln = 2.4;
+    this.player.weapon = "single"; this.player.weaponTime = 0;
+    this.player.vy = 0;
+    this.eBullets.clear();
+    for (const e of this.enemies.active.slice()) if (e.x - this.player.x < 160) e.die(this);
+    this.toast("SUB REBUILT — " + (this.player.lives + 1) + " LEFT", C.glass);
+    Audio_.life();
+  }
+
+  gameOver() {
+    this.state = "over";
+    Audio_.gameOver();
+    Store.data.coins += this.coinCount;
+    if (this.score > Store.data.high) Store.data.high = this.score;
+    Store.save();
+    UI.showGameOver(this);
+  }
+
+  // ------------------------------------------------------------- spawning
+  /** Weighted pick limited to species unlocked by the current difficulty. */
+  pickEnemyType() {
+    const tier = Math.min(4, Math.floor(this.difficulty - 1));
+    let total = 0;
+    const avail = [];
+    for (const k of ENEMY_KEYS) {
+      const d = ENEMIES[k];
+      if (d.tier <= tier) { total += d.weight; avail.push(k); }
+    }
+    let r = Math.random() * total;
+    for (const k of avail) { r -= ENEMIES[k].weight; if (r <= 0) return k; }
+    return "small";
+  }
+
+  spawnEnemy() {
+    const type = this.pickEnemyType();
+    const d = ENEMIES[type];
+    const y = rand(PLAY_TOP + d.h, PLAY_BOTTOM - d.h);
+    this.enemies.obtain().init(type, Camera.right + rand(20, 70), y, this.difficulty);
+    // shoals: small fish arrive in formation
+    if (type === "small" && chance(0.45)) {
+      const n = randInt(2, 4);
+      for (let i = 1; i <= n; i++)
+        this.enemies.obtain().init("small", Camera.right + 24 + i * 20, clamp(y + i * 9 - 12, PLAY_TOP + 8, PLAY_BOTTOM - 8), this.difficulty);
+    }
+  }
+
+  spawnObstacle() {
+    const roll = Math.random();
+    let type, y;
+    if (roll < 0.24)      { type = "rock";   y = FLOOR_Y - OBSTACLES.rock.h / 2 + 4; }
+    else if (roll < 0.44) { type = "coral";  y = FLOOR_Y - OBSTACLES.coral.h / 2 + 4; }
+    else if (roll < 0.60) { type = "mine";   y = rand(PLAY_TOP + 20, PLAY_BOTTOM - 20); }
+    else if (roll < 0.74) { type = "debris"; y = rand(PLAY_TOP + 20, PLAY_BOTTOM - 20); }
+    else if (roll < 0.86) { type = "clam";   y = FLOOR_Y - OBSTACLES.clam.h / 2 + 2; }
+    else {                                                    // seaweed wall with a gap
+      const gapY = rand(PLAY_TOP + 40, PLAY_BOTTOM - 40);
+      const x = Camera.right + 40;
+      this.obstacles.obtain().init("weedwall", x, SURFACE_Y + (gapY - 34 - SURFACE_Y) / 2, this.difficulty).h = Math.max(10, gapY - 34 - SURFACE_Y);
+      this.obstacles.obtain().init("weedwall", x, gapY + 34 + (FLOOR_Y - gapY - 34) / 2, this.difficulty).h = Math.max(10, FLOOR_Y - gapY - 34);
+      return;
+    }
+    this.obstacles.obtain().init(type, Camera.right + rand(30, 80), y, this.difficulty);
+  }
+
+  spawnPowerUp() {
+    // health shows up more often when the sub is hurting
+    const hurt = this.player.hp < this.player.maxHp * 0.5;
+    const type = hurt && chance(0.4) ? "health" : pick(POWERUP_KEYS);
+    this.powerups.obtain().init(Camera.right + 20, rand(PLAY_TOP + 24, PLAY_BOTTOM - 24), type);
+  }
+
+  applyPowerUp(pu) {
+    const p = this.player;
+    switch (pu.type) {
+      case "health": p.heal(40); this.toast("+40 HULL", C.red); break;
+      case "shield": p.shield = 14; this.toast("SHIELD UP", C.glass); break;
+      case "damage": p.dmgBoost = 14; this.toast("DAMAGE x2", C.orange); break;
+      case "speed":  p.speedBoost = 12; this.toast("SPEED BOOST", C.green); break;
+      case "magnet": p.magnet = 14; this.toast("COIN MAGNET", C.pink); break;
+      case "coinx":  p.multiplier = 16; this.toast("SCORE x3", C.gold); break;
+      case "freeze": p.freeze = 7; this.toast("SEA FROZEN", C.glass); break;
+      case "life":   p.lives++; this.toast("EXTRA LIFE", "#ff4d9d"); Audio_.life(); break;
+      case "weapon": p.weapon = pu.weapon; p.weaponTime = 18; p.cooldown = 0;
+                     this.toast(WEAPONS[pu.weapon].name + "!", C.purple); break;
+    }
+    Audio_.powerup();
+    FX.sparkle(pu.x, pu.y, POWERUPS[pu.type].color);
+    FX.bubbles(pu.x, pu.y, 6, 40, POWERUPS[pu.type].color);
+  }
+
+  // --------------------------------------------------------------- update
+  update(dt) {
+    if (this.state !== "playing") {
+      FX.update(dt);
+      // attract mode: the ocean keeps drifting behind the menu
+      if (this.state === "menu") {
+        this.elapsed += dt;
+        Camera.x += 26 * dt;
+        const p = this.player;
+        p.bob += dt * 2.4;
+        p.x = Camera.x + PLAYER_X_OFFSET;
+        p.y = VIEW_H / 2 + Math.sin(this.elapsed * 0.9) * 16;
+        p.tilt = Math.cos(this.elapsed * 0.9) * 0.14;
+        if (chance(dt * 14))
+          FX.spawn(p.x - 14, p.y + 2, rand(-30, -12), rand(-10, 2), rand(0.5, 1), rand(0.8, 1.8), "#cfeeff", "bubble");
+        World.prune();
+      }
+      return;
+    }
+
+    this.elapsed += dt;
+    // difficulty ramps with both time survived and distance covered
+    this.difficulty = Math.min(6, 1 + this.elapsed / 55 + this.score / 4200);
+    Camera.speed = Math.min(132, 62 + this.difficulty * 12);
+
+    Camera.update(dt, this.player);
+    this.player.update(dt, this);
+
+    // distance score (10 world px = 1 point)
+    this.scoreAcc += Camera.speed * dt * 0.1;
+    if (this.scoreAcc >= 1) { const n = Math.floor(this.scoreAcc); this.scoreAcc -= n; this.addScore(n); }
+
+    // ---- boss cycle ----
+    if (!this.boss && this.bossWarn <= 0 && this.score >= this.nextBossScore) {
+      this.bossWarn = 2.4;
+      Audio_.bossWarn();
+      this.toast("!! WARNING !!", C.red);
+    }
+    if (this.bossWarn > 0) {
+      this.bossWarn -= dt;
+      if (this.bossWarn <= 0) {
+        const key = BOSS_KEYS[this.bossCount % BOSS_KEYS.length];
+        this.boss = new Boss(key, this.bossCount, this);
+        this.toast(BOSSES[key].name, C.red);
+      }
+    }
+    if (this.boss) {
+      this.boss.update(dt, this);
+      if (!this.boss.alive) this.boss = null;
+    }
+
+    // ---- procedural spawning (paused while a boss is on screen) ----
+    if (!this.boss && this.bossWarn <= 0) {
+      this.enemyTimer -= dt;
+      if (this.enemyTimer <= 0) {
+        this.enemyTimer = clamp(1.5 / this.difficulty, 0.26, 1.5) * rand(0.7, 1.3);
+        this.spawnEnemy();
+      }
+      this.obstacleTimer -= dt;
+      if (this.obstacleTimer <= 0) {
+        this.obstacleTimer = clamp(3.4 / this.difficulty, 0.85, 3.4) * rand(0.7, 1.35);
+        this.spawnObstacle();
+      }
+    }
+    this.powerTimer -= dt;
+    if (this.powerTimer <= 0) { this.powerTimer = rand(8, 15); this.spawnPowerUp(); }
+
+    // ---- actors ----
+    this.bullets.update(dt);
+    this.eBullets.update(dt);
+    this.enemies.update(dt, this);
+    this.obstacles.update(dt, this);
+    this.coins.update(dt, this.player);
+    this.powerups.update(dt, this.player);
+
+    this.collide();
+    FX.update(dt);
+    World.prune();
+
+    // ambient bubbles drifting up through the scene
+    if (chance(dt * 9))
+      FX.spawn(Camera.right + rand(-VIEW_W, 20), FLOOR_Y + rand(-4, 4), rand(-6, 6), rand(-26, -12),
+               rand(1.6, 3.2), rand(1, 2.4), "#9fd8f0", "bubble");
+
+    for (let i = this.toasts.length - 1; i >= 0; i--) {
+      this.toasts[i].t -= dt;
+      if (this.toasts[i].t <= 0) this.toasts.splice(i, 1);
+    }
+  }
+
+  // ------------------------------------------------------------ collisions
+  /**
+   * Flat loops over pooled arrays with a cheap horizontal reject first.
+   * Entity counts stay in the low hundreds, so this beats a spatial hash
+   * for both speed and memory on mobile.
+   */
+  collide() {
+    const p = this.player;
+    const bl = this.bullets.active;
+
+    // --- player bullets -> enemies / destructible obstacles / boss ---
+    for (let i = bl.length - 1; i >= 0; i--) {
+      const b = bl[i];
+      if (!b.alive) continue;
+
+      if (this.boss && this.boss.state === "fight" && aabb(b, this.boss.body)) {
+        this.boss.hurt(b.dmg, this);
+        FX.spawn(b.x, b.y, rand(-30, 30), rand(-30, 30), 0.2, 2, C.gold, "spark");
+        b.alive = false;
+        continue;
+      }
+      const es = this.enemies.active;
+      let hit = false;
+      for (let j = es.length - 1; j >= 0; j--) {
+        const e = es[j];
+        if (!e.alive || Math.abs(e.x - b.x) > 40) continue;
+        if (aabb(b, e)) { e.hurt(b.dmg, this); b.alive = false; hit = true; break; }
+      }
+      if (hit) continue;
+
+      const os = this.obstacles.active;
+      for (let j = os.length - 1; j >= 0; j--) {
+        const o = os[j];
+        if (!o.alive || Math.abs(o.x - b.x) > 50) continue;
+        if (aabb(b, o)) {
+          o.hurt(b.dmg, this);
+          FX.spawn(b.x, b.y, rand(-40, 0), rand(-30, 30), 0.2, 1.5, "#dff6ff", "spark");
+          b.alive = false;
+          break;
+        }
+      }
+    }
+
+    if (p.lives < 0) return;
+
+    // --- enemies -> player ---
+    for (const e of this.enemies.active) {
+      if (!e.alive || Math.abs(e.x - p.x) > 70) continue;
+      const box = e.charged ? { x: e.x, y: e.y, w: e.w + 16, h: e.h + 16 } : e;
+      if (aabb(box, p)) {
+        if (p.damage(e.dmg, this)) {
+          if (e.def.hp <= 4) e.die(this);     // small fry splatter on impact
+          else e.hurt(2, this);
+        }
+      }
+    }
+
+    // --- hazards -> player ---
+    for (const o of this.obstacles.active) {
+      if (!o.alive || Math.abs(o.x - p.x) > 80) continue;
+      if (aabb(o, p)) { if (p.damage(o.dmg, this)) o.onPlayerHit(this); }
+    }
+
+    // --- enemy projectiles -> player ---
+    for (const b of this.eBullets.active) {
+      if (!b.alive || Math.abs(b.x - p.x) > 60) continue;
+      if (aabb(b, p)) { b.alive = false; FX.explosion(b.x, b.y, 0.4, "#ff8a8a"); p.damage(b.dmg, this); }
+    }
+
+    // --- boss body -> player ---
+    if (this.boss && this.boss.state === "fight" && aabb(this.boss.body, p)) p.damage(20, this);
+
+    // --- pickups ---
+    for (const c of this.coins.active) {
+      if (!c.alive || Math.abs(c.x - p.x) > 40) continue;
+      if (aabb(c, p)) {
+        c.alive = false;
+        this.coinCount += c.value;
+        this.addScore(5 * c.value);
+        FX.sparkle(c.x, c.y);
+        Audio_.coin();
+      }
+    }
+    for (const u of this.powerups.active) {
+      if (!u.alive || Math.abs(u.x - p.x) > 50) continue;
+      if (aabb(u, p)) { u.alive = false; this.applyPowerUp(u); }
+    }
+  }
+
+  onBossDefeated(boss) {
+    this.bossCount++;
+    this.addScore(boss.score);
+    this.toast("BOSS DOWN +" + boss.score, C.green);
+    FX.explosion(boss.x, boss.y, 3, C.gold);
+    FX.addShake(14);
+    for (let i = 0; i < 18; i++) this.coins.obtain().init(boss.x + rand(-30, 30), boss.y + rand(-20, 20), 2);
+    for (let i = 0; i < 2; i++) this.powerups.obtain().init(boss.x + rand(-20, 20), boss.y + rand(-16, 16), pick(POWERUP_KEYS));
+    this.nextBossScore = this.score + BOSS_SCORE_STEP + this.bossCount * 900;
+    this.eBullets.clear();
+  }
+
+  /* ------------------------------------------------------------ rendering */
+  render(g) {
+    this.drawWater(g);
+
+    g.save();
+    g.translate(-Camera.x + FX.shakeX, -Camera.y + FX.shakeY);
+
+    this.drawFarLayer(g);
+    this.drawMidLayer(g);
+    this.drawSeabed(g);
+
+    this.obstacles.draw(g);
+    this.powerups.draw(g);
+    this.coins.draw(g);
+    this.enemies.draw(g);
+    if (this.boss) this.boss.draw(g);
+    this.bullets.draw(g);
+    this.eBullets.draw(g);
+    if (this.player.lives >= 0) this.player.draw(g);
+    FX.pool.draw(g);
+
+    g.restore();
+
+    this.drawForeground(g);
+    this.drawHUD(g);
+  }
+
+  /** Water column: gradient, god rays and the wavy surface. */
+  drawWater(g) {
+    const grad = g.createLinearGradient(0, 0, 0, VIEW_H);
+    grad.addColorStop(0, C.waterTop);
+    grad.addColorStop(0.55, C.waterMid);
+    grad.addColorStop(1, C.waterDeep);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, VIEW_W, VIEW_H);
+
+    // sunlight shafts (slow parallax, additive-ish)
+    g.save();
+    g.globalAlpha = 0.075;
+    g.fillStyle = "#dff6ff";
+    const off = (Camera.x * 0.18) % 120;
+    for (let i = -1; i < 6; i++) {
+      const x = i * 120 - off + Math.sin(Camera.x * 0.004 + i) * 8;
+      g.beginPath();
+      g.moveTo(x, 0); g.lineTo(x + 26, 0); g.lineTo(x + 64, VIEW_H); g.lineTo(x + 6, VIEW_H);
+      g.closePath(); g.fill();
+    }
+    g.restore();
+
+    // surface band + waves
+    const wy = SURFACE_Y - Camera.y;
+    g.fillStyle = "#2aa3e0";
+    g.fillRect(0, 0, VIEW_W, Math.max(0, wy));
+    g.fillStyle = "#8fe3ff";
+    for (let x = 0; x < VIEW_W; x += 4) {
+      const h = Math.sin((x + Camera.x) * 0.06) * 2 + Math.sin((x + Camera.x) * 0.021) * 2;
+      g.fillRect(x, wy + h - 2, 4, 3);
+    }
+    g.globalAlpha = 0.5; g.fillStyle = "#ffffff";
+    for (let x = ((-Camera.x * 0.6) % 32); x < VIEW_W; x += 32) {
+      const h = Math.sin((x + Camera.x) * 0.06) * 2;
+      g.fillRect(x, wy + h - 4, 8, 1);
+    }
+    g.globalAlpha = 1;
+  }
+
+  /** Distant hills / sunken ruins (slowest parallax layer). */
+  drawFarLayer(g) {
+    g.save();
+    // counter-translate to fake a slower scroll inside the world transform
+    g.translate(Camera.x * 0.72, Camera.y * 0.55);
+    g.globalAlpha = 0.32;
+    const from = Math.floor((Camera.x * 0.28 - CHUNK_W) / CHUNK_W);
+    const to   = Math.ceil((Camera.x * 0.28 + VIEW_W + CHUNK_W) / CHUNK_W);
+    for (let ci = from; ci <= to; ci++) {
+      for (const d of World.getFar(ci)) {
+        if (d.t === "hill") {
+          g.fillStyle = "#063a5e";
+          g.beginPath();
+          g.moveTo(d.x - 70 * d.s, FLOOR_Y + 8);
+          g.lineTo(d.x - 20 * d.s, FLOOR_Y - d.h);
+          g.lineTo(d.x + 16 * d.s, FLOOR_Y - d.h * 0.7);
+          g.lineTo(d.x + 76 * d.s, FLOOR_Y + 8);
+          g.closePath(); g.fill();
+        } else {
+          g.fillStyle = "#05304e";                       // ruined columns
+          const h = d.h * 0.9;
+          g.fillRect(d.x - 16, FLOOR_Y - h, 10, h);
+          g.fillRect(d.x + 8, FLOOR_Y - h * 0.7, 10, h * 0.7);
+          g.fillRect(d.x - 24, FLOOR_Y - h - 6, 46, 6);
+        }
+      }
+    }
+    g.restore();
+    g.globalAlpha = 1;
+  }
+
+  /** Mid-distance kelp haze. */
+  drawMidLayer(g) {
+    g.save();
+    g.translate(Camera.x * 0.42, Camera.y * 0.3);
+    g.globalAlpha = 0.28;
+    g.fillStyle = "#0b5c48";
+    const step = 46;
+    const from = Math.floor((Camera.x * 0.58 - step) / step);
+    const to   = Math.ceil((Camera.x * 0.58 + VIEW_W) / step);
+    for (let i = from; i <= to; i++) {
+      const r = mulberry32(i * 2654435761)();
+      const h = 40 + r * 80;
+      const sway = Math.sin(this.elapsed * 0.8 + i) * 5;
+      g.beginPath();
+      g.moveTo(i * step - 5, FLOOR_Y + 10);
+      g.quadraticCurveTo(i * step + sway, FLOOR_Y - h * 0.6, i * step + sway * 2, FLOOR_Y - h);
+      g.lineTo(i * step + 7 + sway * 2, FLOOR_Y - h);
+      g.quadraticCurveTo(i * step + 8 + sway, FLOOR_Y - h * 0.6, i * step + 8, FLOOR_Y + 10);
+      g.closePath(); g.fill();
+    }
+    g.restore();
+    g.globalAlpha = 1;
+  }
+
+  /** Sea bed + the procedural decorations of every visible chunk. */
+  drawSeabed(g) {
+    const l = Camera.left - 40, r = Camera.right + 40;
+    // sand
+    g.fillStyle = C.sand;
+    g.fillRect(l, FLOOR_Y, r - l, VIEW_H);
+    g.fillStyle = C.sandDark;
+    for (let x = Math.floor(l / 8) * 8; x < r; x += 8) {
+      const h = 2 + Math.sin(x * 0.09) * 2 + Math.sin(x * 0.031) * 2;
+      g.fillRect(x, FLOOR_Y - h, 8, h + 2);
+    }
+    g.fillStyle = "#c2a05c";
+    for (let x = Math.floor(l / 16) * 16; x < r; x += 16) {
+      const s = mulberry32(x)();
+      g.fillRect(x + s * 8, FLOOR_Y + 6 + s * 12, 2, 2);
+    }
+
+    const from = Math.floor(l / CHUNK_W), to = Math.ceil(r / CHUNK_W);
+    for (let ci = from; ci <= to; ci++) {
+      for (const d of World.getChunk(ci)) this.drawDeco(g, d);
+    }
+  }
+
+  drawDeco(g, d) {
+    const x = d.x | 0, y = d.y | 0, s = d.s;
+    const sway = Math.sin(this.elapsed * 1.3 + d.p) * 3;
+    switch (d.t) {
+      case "weed":
+        g.fillStyle = C.weedDark;
+        for (let i = 0; i < 3; i++) {
+          const h = (18 + i * 9) * s, ox = (i - 1) * 5;
+          g.beginPath();
+          g.moveTo(x + ox - 2, y);
+          g.quadraticCurveTo(x + ox + sway, y - h * 0.6, x + ox + sway * 1.6, y - h);
+          g.lineTo(x + ox + 3 + sway * 1.6, y - h);
+          g.quadraticCurveTo(x + ox + 5 + sway, y - h * 0.6, x + ox + 3, y);
+          g.closePath(); g.fill();
+          g.fillStyle = i % 2 ? C.weed : C.weedDark;
+        }
+        break;
+      case "coral": {
+        const c1 = d.c < 0.5 ? C.coral : "#ff7f50";
+        const c2 = d.c < 0.5 ? C.coral2 : "#ffb36b";
+        g.fillStyle = c1;
+        g.fillRect(x - 2 * s, y - 16 * s, 4 * s, 16 * s);
+        g.fillRect(x - 9 * s, y - 10 * s, 3 * s, 10 * s);
+        g.fillRect(x + 6 * s, y - 13 * s, 3 * s, 13 * s);
+        g.fillStyle = c2;
+        g.fillRect(x - 5 * s, y - 22 * s, 9 * s, 7 * s);
+        g.fillRect(x - 12 * s, y - 15 * s, 6 * s, 6 * s);
+        g.fillRect(x + 4 * s, y - 19 * s, 7 * s, 6 * s);
+        break;
+      }
+      case "rock":
+        g.fillStyle = "#4f5f6b";
+        g.beginPath();
+        g.moveTo(x - 14 * s, y); g.lineTo(x - 9 * s, y - 10 * s); g.lineTo(x + 2 * s, y - 14 * s);
+        g.lineTo(x + 12 * s, y - 6 * s); g.lineTo(x + 15 * s, y);
+        g.closePath(); g.fill();
+        g.fillStyle = "#68798a";
+        g.fillRect(x - 6 * s, y - 9 * s, 6 * s, 4 * s);
+        break;
+      case "star":                                   // starfish
+        g.fillStyle = "#ff7f50";
+        for (let i = 0; i < 5; i++) {
+          const a = (i / 5) * TAU - Math.PI / 2;
+          g.fillRect((x + Math.cos(a) * 5 * s - 2) | 0, (y + Math.sin(a) * 4 * s - 2) | 0, 4 * s, 3 * s);
+        }
+        g.fillStyle = "#ffb36b"; g.fillRect(x - 2, y - 2, 4, 3);
+        break;
+      case "chest": {                                // treasure chest with sparkle
+        g.fillStyle = "#6b4a24"; g.fillRect(x - 12, y - 8, 24, 14);
+        g.fillStyle = "#8a6a3f"; g.fillRect(x - 12, y - 14, 24, 7);
+        g.fillStyle = "#c9a227"; g.fillRect(x - 12, y - 9, 24, 2); g.fillRect(x - 2, y - 14, 4, 20);
+        g.fillStyle = "#3a2a14"; g.fillRect(x - 2, y - 5, 4, 4);
+        if (Math.sin(this.elapsed * 3 + d.p) > 0.6) {
+          g.fillStyle = "#fff8c0";
+          g.fillRect(x + 6, y - 20, 1, 5); g.fillRect(x + 4, y - 18, 5, 1);
+        }
+        break;
+      }
+      case "vent":                                   // bubbling sea-floor vent
+        g.fillStyle = "#3f4d59";
+        g.fillRect(x - 5, y - 6, 10, 8);
+        g.fillStyle = "#2b343c"; g.fillRect(x - 3, y - 8, 6, 3);
+        if (chance(0.04))
+          FX.spawn(x + rand(-2, 2), y - 8, rand(-4, 4), rand(-30, -16), rand(1.4, 2.6), rand(1, 2), "#bfe9ff", "bubble");
+        break;
+    }
+  }
+
+  /** Foreground tint, hit flash and vignette. */
+  drawForeground(g) {
+    if (FX.flash > 0) {
+      g.globalAlpha = Math.min(0.55, FX.flash);
+      g.fillStyle = FX.flashColor;
+      g.fillRect(0, 0, VIEW_W, VIEW_H);
+      g.globalAlpha = 1;
+    }
+    // freeze overlay
+    if (this.player.freeze > 0) {
+      g.globalAlpha = 0.12 + Math.sin(this.elapsed * 6) * 0.03;
+      g.fillStyle = "#8fe3ff"; g.fillRect(0, 0, VIEW_W, VIEW_H);
+      g.globalAlpha = 1;
+    }
+    // depth vignette
+    const vg = g.createRadialGradient(VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.35, VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.95);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, "rgba(2,18,32,.55)");
+    g.fillStyle = vg;
+    g.fillRect(0, 0, VIEW_W, VIEW_H);
+  }
+
+  /** Score, health, weapon, lives, boss bar, toasts. Drawn unshaken. */
+  drawHUD(g) {
+    if (this.state === "menu") return;
+    g.font = "bold 10px 'Courier New',monospace";
+    g.textBaseline = "top";
+
+    // --- score / high score ---
+    g.fillStyle = "rgba(3,20,36,.55)";
+    g.fillRect(4, 4, 128, 24);
+    g.fillStyle = C.gold;
+    g.fillText("SCORE " + this.score, 8, 8);
+    g.fillStyle = "#8fd6ff";
+    g.fillText("BEST  " + Math.max(this.score, Store.data.high), 8, 18);
+
+    // --- coins & lives ---
+    g.textAlign = "right";
+    g.fillStyle = "rgba(3,20,36,.55)";
+    g.fillRect(VIEW_W - 96, 4, 92, 24);
+    g.fillStyle = C.gold;
+    g.fillText("$ " + this.coinCount, VIEW_W - 8, 8);
+    g.fillStyle = "#ff8ad8";
+    g.fillText("SUBS " + Math.max(0, this.player.lives), VIEW_W - 8, 18);
+    g.textAlign = "left";
+
+    // --- health bar + weapon ---
+    const bw = 96, bh = 8, bx = 8, by = VIEW_H - 22;
+    g.fillStyle = "rgba(3,20,36,.6)";
+    g.fillRect(bx - 3, by - 12, bw + 6, bh + 16);
+    g.fillStyle = "#dff6ff";
+    g.fillText("HULL", bx, by - 11);
+    g.fillStyle = "#0b2b45"; g.fillRect(bx, by, bw, bh);
+    const hp = this.player.hp / this.player.maxHp;
+    g.fillStyle = hp > 0.55 ? C.green : hp > 0.25 ? C.gold : C.red;
+    g.fillRect(bx + 1, by + 1, Math.max(0, (bw - 2) * hp) | 0, bh - 2);
+    g.strokeStyle = "#1b6ea8"; g.lineWidth = 1;
+    g.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
+
+    g.fillStyle = C.gold;
+    const wname = WEAPONS[this.player.weapon].name +
+                  (this.player.weaponTime > 0 ? " " + Math.ceil(this.player.weaponTime) : "");
+    g.fillText(wname, bx + bw + 10, by - 1);
+
+    // --- depth / difficulty readout, tucked under the score panel ---
+    g.font = "8px 'Courier New',monospace";
+    g.fillStyle = "rgba(223,246,255,.6)";
+    g.fillText("DEPTH " + Math.floor(Camera.x / 10) + "m   LV" + this.difficulty.toFixed(1), 8, 31);
+    g.font = "bold 10px 'Courier New',monospace";
+
+    // --- active power-up chips (top-left: clear of the mobile FIRE pad) ---
+    const chips = [];
+    const p = this.player;
+    if (p.shield > 0)     chips.push(["O", C.glass, p.shield]);
+    if (p.dmgBoost > 0)   chips.push(["!", C.orange, p.dmgBoost]);
+    if (p.speedBoost > 0) chips.push([">", C.green, p.speedBoost]);
+    if (p.magnet > 0)     chips.push(["U", C.pink, p.magnet]);
+    if (p.multiplier > 0) chips.push(["$", C.gold, p.multiplier]);
+    if (p.freeze > 0)     chips.push(["*", C.glass, p.freeze]);
+    chips.forEach((c, i) => {
+      const cx = 16 + i * 20, cy = 43;
+      g.fillStyle = "rgba(3,20,36,.6)"; g.fillRect(cx - 9, cy - 2, 19, 20);
+      g.fillStyle = c[1]; g.fillRect(cx - 8, cy - 1, 17, 18);
+      g.fillStyle = "#06121d"; g.textAlign = "center";
+      g.fillText(c[0], cx + 0.5, cy + 1);
+      g.font = "7px 'Courier New',monospace";
+      g.fillText(Math.ceil(c[2]) + "", cx + 0.5, cy + 10);
+      g.font = "bold 10px 'Courier New',monospace"; g.textAlign = "left";
+    });
+
+    // --- boss warning / boss health ---
+    if (this.bossWarn > 0 && Math.floor(this.bossWarn * 5) % 2 === 0) {
+      g.textAlign = "center";
+      g.font = "bold 16px 'Courier New',monospace";
+      g.fillStyle = C.red;
+      g.fillText("!! WARNING !!", VIEW_W / 2, VIEW_H / 2 - 40);
+      g.font = "bold 10px 'Courier New',monospace";
+      g.fillStyle = "#ffd6d6";
+      g.fillText("SOMETHING BIG APPROACHES", VIEW_W / 2, VIEW_H / 2 - 20);
+      g.textAlign = "left";
+    }
+    if (this.boss) {
+      const w = 196, x = (VIEW_W - w) / 2, y = 44;
+      g.fillStyle = "rgba(3,20,36,.65)"; g.fillRect(x - 3, y - 12, w + 6, 22);
+      g.textAlign = "center"; g.fillStyle = C.red;
+      g.fillText(this.boss.def.name, VIEW_W / 2, y - 11);
+      g.textAlign = "left";
+      g.fillStyle = "#3a0f14"; g.fillRect(x, y, w, 7);
+      const f = this.boss.hp / this.boss.maxHp;
+      g.fillStyle = f > 0.66 ? C.red : f > 0.33 ? "#ff9f43" : "#ffe14d";
+      g.fillRect(x + 1, y + 1, Math.max(0, (w - 2) * f) | 0, 5);
+      g.strokeStyle = "#ff8a8a"; g.strokeRect(x + 0.5, y + 0.5, w - 1, 6);
+      // phase pips
+      for (let i = 0; i < 3; i++) {
+        g.fillStyle = i <= this.boss.phase ? C.gold : "#4a5a66";
+        g.fillRect(x + w - 3 - i * 6, y + 10, 4, 3);
+      }
+    }
+
+    // --- pickup toasts (pushed below the boss bar when one is on screen) ---
+    const toastTop = this.boss ? 68 : 44;
+    this.toasts.forEach((t, i) => {
+      g.globalAlpha = clamp(t.t, 0, 1);
+      g.textAlign = "center";
+      g.fillStyle = t.color;
+      g.fillText(t.text, VIEW_W / 2, toastTop + i * 12);
+      g.textAlign = "left";
+      g.globalAlpha = 1;
+    });
+    g.textBaseline = "alphabetic";
+  }
+}
+
+/* =========================== §10  BOOT ============================== */
+
+const UI = {
+  el: id => document.getElementById(id),
+  hideAll() { document.querySelectorAll(".screen").forEach(s => s.classList.remove("show")); },
+  show(id) { this.hideAll(); this.el(id).classList.add("show"); },
+  refreshMenu() {
+    this.el("startHigh").textContent = Store.data.high;
+    this.el("startCoins").textContent = Store.data.coins;
+  },
+  updatePause(game) {
+    this.el("pauseInfo").innerHTML =
+      "SCORE " + game.score + " &nbsp;·&nbsp; COINS " + game.coinCount +
+      " &nbsp;·&nbsp; KILLS " + game.kills + "<br>WEAPON " + WEAPONS[game.player.weapon].name +
+      " &nbsp;·&nbsp; DEPTH " + Math.floor(Camera.x / 10) + "m";
+    this.el("btnMute").textContent = "SOUND: " + (Audio_.muted ? "OFF" : "ON");
+  },
+  showGameOver(game) {
+    this.el("overScore").textContent = game.score;
+    this.el("overHigh").textContent = Store.data.high;
+    this.el("overCoins").textContent = game.coinCount;
+    this.el("overKills").textContent = game.kills;
+    this.el("overBosses").textContent = game.bossCount;
+    this.el("overDist").textContent = Math.floor(Camera.x / 10);
+    this.el("overNew").style.display = game.newRecord ? "block" : "none";
+    this.show("screenOver");
+  }
+};
+
+const game = new Game();
+
+/* ------------------------- responsive scaling ------------------------ */
+function resize() {
+  const pad = 0;
+  const availW = window.innerWidth - pad, availH = window.innerHeight - pad;
+  const scale = Math.min(availW / VIEW_W, availH / VIEW_H);
+  canvas.style.width  = Math.floor(VIEW_W * scale) + "px";
+  canvas.style.height = Math.floor(VIEW_H * scale) + "px";
+}
+addEventListener("resize", resize);
+addEventListener("orientationchange", () => setTimeout(resize, 120));
+
+/* ---------------------------- wiring --------------------------------- */
+function toggleMute() {
+  Audio_.init();
+  Audio_.setMuted(!Audio_.muted);
+  Store.data.muted = Audio_.muted;
+  Store.save();
+  UI.el("btnMute").textContent = "SOUND: " + (Audio_.muted ? "OFF" : "ON");
+}
+
+Store.load();
+Input.init();
+Input.onPause = () => {
+  if (game.state === "playing" || game.state === "paused") game.togglePause();
+};
+Input.onMute = toggleMute;
+Input.onAnyKey = () => {
+  if (game.state === "menu") game.start();
+  else if (game.state === "over") game.start();
+};
+
+UI.el("btnStart").addEventListener("click", () => game.start());
+UI.el("btnRestart").addEventListener("click", () => game.start());
+UI.el("btnResume").addEventListener("click", () => game.resume());
+UI.el("btnQuit").addEventListener("click", () => game.toMenu());
+UI.el("btnMenu").addEventListener("click", () => game.toMenu());
+UI.el("btnMute").addEventListener("click", toggleMute);
+
+// unlock the audio context on the first user gesture (mobile autoplay policy)
+["pointerdown", "keydown", "touchstart"].forEach(ev =>
+  addEventListener(ev, () => { Audio_.init(); Audio_.resume(); }, { once: true }));
+
+// auto-pause when the tab or app is backgrounded
+document.addEventListener("visibilitychange", () => { if (document.hidden) game.pause(); });
+
+resize();
+UI.refreshMenu();
+Audio_.setMuted(!!Store.data.muted);
+
+/* ---------------------------- main loop ------------------------------ */
+/**
+ * Fixed-timestep accumulator: physics always advances in 1/60 s steps so
+ * behaviour is identical on 60 Hz, 120 Hz and throttled mobile displays.
+ */
+let lastTime = performance.now();
+let accumulator = 0;
+
+function frame(now) {
+  requestAnimationFrame(frame);
+  let delta = (now - lastTime) / 1000;
+  lastTime = now;
+  if (delta > 0.25) delta = 0.25;              // never spiral after a stall
+  accumulator += delta;
+
+  let steps = 0;
+  while (accumulator >= FIXED_DT && steps < 5) {
+    game.update(FIXED_DT);
+    accumulator -= FIXED_DT;
+    steps++;
+  }
+  if (steps === 5) accumulator = 0;
+
+  game.render(ctx);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
