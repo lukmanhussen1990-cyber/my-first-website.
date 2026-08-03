@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Force &amp; SI Units — An Animated Guide</title>
+<style>
+:root{
+  --bg:#080b14;
+  --bg2:#0e1524;
+  --panel:#111a2e;
+  --panel2:#16223a;
+  --line:#243352;
+  --txt:#e8eefc;
+  --dim:#93a4c4;
+  --accent:#4cc9f0;
+  --accent2:#f72585;
+  --gold:#ffd166;
+  --green:#06d6a0;
+  --violet:#b07cff;
+  --orange:#ff8f4d;
+  --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.65;
+  overflow-x:hidden;
+}
+
+/* ---------- background starfield ---------- */
+#stars{position:fixed;inset:0;z-index:-2;background:
+  radial-gradient(1100px 700px at 78% -8%,#1b2b52 0%,transparent 60%),
+  radial-gradient(900px 600px at 12% 12%,#2a1140 0%,transparent 62%),
+  var(--bg);}
+#starCanvas{position:fixed;inset:0;z-index:-1;opacity:.55}
+
+/* ---------- nav ---------- */
+nav{
+  position:sticky;top:0;z-index:100;
+  backdrop-filter:blur(14px);
+  background:rgba(8,11,20,.78);
+  border-bottom:1px solid var(--line);
+}
+.navwrap{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:22px;padding:12px 20px}
+.brand{font-weight:800;letter-spacing:.5px;font-size:1.02rem;white-space:nowrap}
+.brand span{color:var(--accent)}
+.navlinks{display:flex;gap:16px;overflow-x:auto;scrollbar-width:none}
+.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{
+  color:var(--dim);text-decoration:none;font-size:.86rem;white-space:nowrap;
+  padding:5px 10px;border-radius:8px;transition:.2s;
+}
+.navlinks a:hover{color:var(--txt);background:var(--panel2)}
+#progress{position:absolute;left:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0}
+
+/* ---------- layout ---------- */
+section{max-width:1180px;margin:0 auto;padding:78px 20px;scroll-margin-top:66px}
+h1{font-size:clamp(2.1rem,6vw,4rem);line-height:1.08;font-weight:850;letter-spacing:-1.5px}
+h2{font-size:clamp(1.5rem,3.4vw,2.3rem);font-weight:800;letter-spacing:-.6px;margin-bottom:10px}
+h3{font-size:1.12rem;font-weight:700;margin-bottom:6px}
+p{color:var(--dim);max-width:75ch}
+.lead{font-size:1.08rem;color:#b9c8e4}
+.kicker{
+  display:inline-block;font-family:var(--mono);font-size:.72rem;letter-spacing:2.4px;
+  text-transform:uppercase;color:var(--accent);border:1px solid var(--line);
+  padding:5px 12px;border-radius:999px;margin-bottom:16px;background:var(--panel);
+  align-self:flex-start;
+}
+.sechead{margin-bottom:30px}
+
+/* ---------- hero ---------- */
+#hero{min-height:88vh;display:flex;flex-direction:column;justify-content:center;padding-top:40px}
+.grad{background:linear-gradient(100deg,var(--accent) 0%,var(--violet) 45%,var(--accent2) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+#heroCanvas{width:100%;height:300px;display:block;margin-top:34px;
+  border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,#0c1322,#0a1020)}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+.btn{
+  display:inline-block;padding:11px 22px;border-radius:11px;text-decoration:none;font-weight:650;font-size:.94rem;
+  background:linear-gradient(100deg,var(--accent),var(--violet));color:#06101f;border:none;cursor:pointer;
+  transition:transform .15s, box-shadow .2s;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(76,201,240,.28)}
+.btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+.btn.ghost:hover{box-shadow:none;background:var(--panel2)}
+
+/* ---------- cards ---------- */
+.card{
+  background:linear-gradient(165deg,var(--panel),var(--bg2));
+  border:1px solid var(--line);border-radius:16px;padding:20px;
+}
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+#forceGrid{grid-template-columns:repeat(auto-fit,minmax(430px,1fr))}
+@media (max-width:900px){#forceGrid{grid-template-columns:1fr}}
+
+canvas.demo{width:100%;height:210px;display:block;border-radius:11px;
+  background:linear-gradient(180deg,#0b1220,#0d1526);border:1px solid #1d2b47}
+
+/* ---------- equation ---------- */
+.eq{
+  font-family:var(--mono);text-align:center;font-size:clamp(1.5rem,4.5vw,2.6rem);
+  padding:26px 14px;letter-spacing:1px;
+}
+.eq b{color:var(--gold)}
+.eq .op{color:var(--dim)}
+.eq .m{color:var(--accent)}
+.eq .a{color:var(--accent2)}
+
+/* ---------- units table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:.92rem}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line)}
+th{background:var(--panel2);font-size:.74rem;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:rgba(76,201,240,.06)}
+td.sym{font-family:var(--mono);color:var(--gold);font-weight:700}
+
+/* ---------- controls ---------- */
+.ctrl{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.ctrl label{font-size:.8rem;color:var(--dim);min-width:104px;font-family:var(--mono)}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;flex:1;min-width:130px;height:5px;border-radius:4px;
+  background:var(--line);outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:17px;height:17px;border-radius:50%;
+  background:var(--accent);cursor:pointer;border:2px solid #061020;
+}
+input[type=range]::-moz-range-thumb{width:17px;height:17px;border-radius:50%;background:var(--accent);
+  cursor:pointer;border:2px solid #061020}
+.val{font-family:var(--mono);color:var(--gold);font-size:.84rem;min-width:78px;text-align:right}
+
+/* ---------- reveal ---------- */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+
+.tag{display:inline-block;font-family:var(--mono);font-size:.7rem;padding:3px 9px;border-radius:6px;
+  background:var(--panel2);border:1px solid var(--line);color:var(--accent);margin-bottom:8px}
+.note{font-size:.86rem;color:#7f90b0;font-style:italic}
+footer{border-top:1px solid var(--line);padding:34px 20px;text-align:center;color:#6d7d9c;font-size:.86rem}
+.hl{color:var(--txt);font-weight:600}
+ul{color:var(--dim);padding-left:20px;font-size:.94rem}
+li{margin:5px 0}
+.readout{font-family:var(--mono);font-size:.82rem;color:var(--dim);margin-top:10px}
+.readout b{color:var(--green)}
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+<canvas id="starCanvas"></canvas>
+
+<nav>
+  <div class="navwrap">
+    <div class="brand">⚛ FORCE<span>·LAB</span></div>
+    <div class="navlinks">
+      <a href="#what">What is Force</a>
+      <a href="#si">SI Units</a>
+      <a href="#newton">The Newton</a>
+      <a href="#laws">Newton's Laws</a>
+      <a href="#forces">Every Force</a>
+      <a href="#fbd">Free-Body Lab</a>
+      <a href="#scale">Scale of Forces</a>
+    </div>
+  </div>
+  <div id="progress"></div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section id="hero">
+  <span class="kicker">Physics · Interactive</span>
+  <h1>Everything that <span class="grad">pushes, pulls,<br>bends or breaks</span></h1>
+  <p class="lead" style="margin-top:16px">
+    A force is what changes an object's motion. This page animates every major force in
+    nature — and the SI unit system we use to measure them. Nothing to install, nothing to click
+    through: just scroll and watch the physics run.
+  </p>
+  <div class="cta">
+    <a class="btn" href="#what">Start with the basics</a>
+    <a class="btn ghost" href="#forces">Jump to the forces</a>
+  </div>
+  <canvas id="heroCanvas"></canvas>
+  <p class="note" style="margin-top:10px">Above: masses on springs, gravity, collisions and drag — all running in real time.</p>
+</section>
+
+<!-- ============ WHAT IS FORCE ============ -->
+<section id="what">
+  <div class="sechead reveal">
+    <span class="kicker">Chapter 01</span>
+    <h2>What actually is a force?</h2>
+    <p class="lead">A force is a <span class="hl">push or a pull</span> on an object, caused by its interaction
+    with something else. Forces are <span class="hl">vectors</span> — they have both a size and a direction, and
+    that direction matters just as much as the number.</p>
+  </div>
+
+  <div class="grid g2">
+    <div class="card reveal">
+      <span class="tag">DEMO · PUSH vs PULL</span>
+      <h3>Same size, opposite direction</h3>
+      <canvas class="demo" id="cPushPull"></canvas>
+      <p style="margin-top:10px;font-size:.92rem">Two forces of equal magnitude acting in opposite directions
+      cancel out. The block doesn't move — but it is <em>not</em> force-free.</p>
+      <div class="ctrl">
+        <label>Left force</label>
+        <input type="range" id="ppLeft" min="0" max="100" value="60">
+        <span class="val" id="ppLeftV">60 N</span>
+      </div>
+      <div class="ctrl">
+        <label>Right force</label>
+        <input type="range" id="ppRight" min="0" max="100" value="60">
+        <span class="val" id="ppRightV">60 N</span>
+      </div>
+      <div class="readout">Net force ΣF = <b id="ppNet">0 N</b> · acceleration a = ΣF/m = <b id="ppAcc">0 m/s²</b></div>
+    </div>
+
+    <div class="card reveal">
+      <span class="tag">DEMO · VECTOR ADDITION</span>
+      <h3>Forces add head-to-tail</h3>
+      <canvas class="demo" id="cVector"></canvas>
+      <p style="margin-top:10px;font-size:.92rem">Two forces at an angle combine into one <span class="hl">resultant</span>.
+      Drag the angle and watch the resultant swing around.</p>
+      <div class="ctrl">
+        <label>Angle θ</label>
+        <input type="range" id="vecAng" min="0" max="180" value="60">
+        <span class="val" id="vecAngV">60°</span>
+      </div>
+      <div class="ctrl">
+        <label>F₂ magnitude</label>
+        <input type="range" id="vecMag" min="10" max="100" value="70">
+        <span class="val" id="vecMagV">70 N</span>
+      </div>
+      <div class="readout">Resultant R = <b id="vecRes">…</b> at <b id="vecDir">…</b> from F₁</div>
+    </div>
+  </div>
+
+  <div class="grid g3" style="margin-top:18px">
+    <div class="card reveal"><h3>🎯 Magnitude</h3><p style="font-size:.92rem">How strong the push is, measured in newtons (N).</p></div>
+    <div class="card reveal"><h3>🧭 Direction</h3><p style="font-size:.92rem">Which way it points. 10 N left ≠ 10 N right.</p></div>
+    <div class="card reveal"><h3>📍 Point of action</h3><p style="font-size:.92rem">Where it's applied — this decides whether the object spins.</p></div>
+  </div>
+</section>
+
+<!-- ============ SI UNITS ============ -->
+<section id="si">
+  <div class="sechead reveal">
+    <span class="kicker">Chapter 02</span>
+    <h2>The SI system — 7 base units</h2>
+    <p class="lead">Every measurement in physics is built from seven <span class="hl">base units</span>.
+    Since 2019 all of them are defined by fixed constants of nature, not by physical objects sitting in a vault
+    in France — each card below names the constant that fixes it.</p>
+  </div>
+
+  <div class="grid g4 reveal" id="siGrid"></div>
+
+  <div class="card reveal" style="margin-top:26px">
+    <h3>Derived units — where force comes in</h3>
+    <p style="font-size:.93rem;margin-bottom:14px">Everything else is a <span class="hl">combination</span> of those seven.
+    The newton is metre · kilogram per second squared.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Quantity</th><th>Unit</th><th>Symbol</th><th>In base units</th></tr></thead>
+        <tbody>
+          <tr><td>Force</td><td>newton</td><td class="sym">N</td><td class="sym">kg·m·s⁻²</td></tr>
+          <tr><td>Pressure / stress</td><td>pascal</td><td class="sym">Pa</td><td class="sym">kg·m⁻¹·s⁻² = N/m²</td></tr>
+          <tr><td>Energy / work</td><td>joule</td><td class="sym">J</td><td class="sym">kg·m²·s⁻² = N·m</td></tr>
+          <tr><td>Power</td><td>watt</td><td class="sym">W</td><td class="sym">kg·m²·s⁻³ = J/s</td></tr>
+          <tr><td>Momentum</td><td>—</td><td class="sym">kg·m/s</td><td class="sym">kg·m·s⁻¹ = N·s</td></tr>
+          <tr><td>Frequency</td><td>hertz</td><td class="sym">Hz</td><td class="sym">s⁻¹</td></tr>
+          <tr><td>Electric charge</td><td>coulomb</td><td class="sym">C</td><td class="sym">A·s</td></tr>
+          <tr><td>Voltage</td><td>volt</td><td class="sym">V</td><td class="sym">kg·m²·s⁻³·A⁻¹</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card reveal" style="margin-top:18px">
+    <h3>SI prefixes — the same unit, different scale</h3>
+    <canvas class="demo" id="cPrefix" style="height:130px"></canvas>
+    <p class="note" style="margin-top:8px">From nano­newtons (a molecular bond) to tera­newtons (tidal forces on a moon).</p>
+  </div>
+</section>
+
+<!-- ============ THE NEWTON ============ -->
+<section id="newton">
+  <div class="sechead reveal">
+    <span class="kicker">Chapter 03</span>
+    <h2>One newton, built from scratch</h2>
+    <p class="lead">A newton is the force that accelerates <span class="hl">1 kilogram</span> at
+    <span class="hl">1 metre per second, every second</span>. Watch it assemble.</p>
+  </div>
+
+  <div class="card reveal">
+    <div class="eq">
+      <b>1 N</b> <span class="op">=</span> <span class="m">1 kg</span> <span class="op">×</span> <span class="a">1 m/s²</span>
+    </div>
+    <canvas class="demo" id="cNewton" style="height:250px"></canvas>
+    <p class="note" style="margin-top:10px">Each second the block gains exactly 1 m/s. That is 1 N acting on 1 kg.</p>
+  </div>
+
+  <div class="grid g2 reveal" style="margin-top:18px">
+    <div class="card">
+      <span class="tag">F = ma · INTERACTIVE</span>
+      <h3>Change the mass, change the acceleration</h3>
+      <canvas class="demo" id="cFma"></canvas>
+      <div class="ctrl"><label>Force F</label><input type="range" id="fmaF" min="1" max="60" value="20"><span class="val" id="fmaFV">20 N</span></div>
+      <div class="ctrl"><label>Mass m</label><input type="range" id="fmaM" min="1" max="30" value="5"><span class="val" id="fmaMV">5 kg</span></div>
+      <div class="readout">a = F/m = <b id="fmaA">4.00 m/s²</b> · after 3 s: v = <b id="fmaV">12.0 m/s</b></div>
+    </div>
+    <div class="card">
+      <h3>How big is a newton, really?</h3>
+      <ul style="margin-top:8px">
+        <li><span class="hl">~1 N</span> — the weight of a small apple in your hand 🍎</li>
+        <li><span class="hl">~700 N</span> — an average adult's weight on Earth</li>
+        <li><span class="hl">~4 000 N</span> — a hard punch from a heavyweight boxer</li>
+        <li><span class="hl">~35 000 000 N</span> — thrust of the Saturn V at liftoff 🚀</li>
+        <li><span class="hl">3.5 × 10²² N</span> — the Sun's gravitational pull on Earth ☀️</li>
+      </ul>
+      <p class="note" style="margin-top:12px">Weight is a force (newtons). Mass is not (kilograms).
+      On the Moon your mass is unchanged, your weight is ~1/6.</p>
+      <div class="ctrl" style="margin-top:14px"><label>Your mass</label>
+        <input type="range" id="wMass" min="1" max="150" value="70"><span class="val" id="wMassV">70 kg</span></div>
+      <div class="readout" id="wOut"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ NEWTON'S LAWS ============ -->
+<section id="laws">
+  <div class="sechead reveal">
+    <span class="kicker">Chapter 04</span>
+    <h2>Newton's three laws, animated</h2>
+    <p class="lead">Three sentences from 1687 that still describe almost everything you will ever see move.</p>
+  </div>
+
+  <div class="grid g3">
+    <div class="card reveal">
+      <span class="tag">FIRST LAW · INERTIA</span>
+      <h3>No force → no change</h3>
+      <canvas class="demo" id="cLaw1" style="height:160px"></canvas>
+      <p style="font-size:.92rem;margin-top:10px">An object keeps doing what it's doing — at rest or moving in a
+      straight line at constant speed — until a net force acts on it. The top puck has friction; the bottom one is on ice.</p>
+    </div>
+    <div class="card reveal">
+      <span class="tag">SECOND LAW · F = ma</span>
+      <h3>Force → acceleration</h3>
+      <canvas class="demo" id="cLaw2" style="height:160px"></canvas>
+      <p style="font-size:.92rem;margin-top:10px">The same force gives a light object a big acceleration and a heavy
+      object a small one. Acceleration is proportional to force and inversely proportional to mass.</p>
+    </div>
+    <div class="card reveal">
+      <span class="tag">THIRD LAW · PAIRS</span>
+      <h3>Every push pushes back</h3>
+      <canvas class="demo" id="cLaw3" style="height:160px"></canvas>
+      <p style="font-size:.92rem;margin-top:10px">Forces always come in equal and opposite pairs acting on
+      <em>different</em> objects. The skater pushes the wall; the wall pushes the skater away.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EVERY FORCE ============ -->
+<section id="forces">
+  <div class="sechead reveal">
+    <span class="kicker">Chapter 05</span>
+    <h2>Every force, explained &amp; animated</h2>
+    <p class="lead">Twelve forces you meet in mechanics and beyond — each with the formula, the SI units,
+    and a live simulation of what it actually does.</p>
+  </div>
+  <div class="grid g2" id="forceGrid"></div>
+</section>
+
+<!-- ============ FREE BODY LAB ============ -->
+<section id="fbd">
+  <div class="sechead reveal">
+    <span class="kicker">Chapter 06</span>
+    <h2>Free-body lab: put them all together</h2>
+    <p class="lead">A crate on a ramp feels gravity, the normal force, friction and your applied push all at once.
+    Change the numbers and see which one wins.</p>
+  </div>
+
+  <div class="card reveal">
+    <canvas class="demo" id="cRamp" style="height:330px"></canvas>
+    <div class="grid g2" style="margin-top:14px">
+      <div>
+        <div class="ctrl"><label>Ramp angle</label><input type="range" id="rAng" min="0" max="45" value="22"><span class="val" id="rAngV">22°</span></div>
+        <div class="ctrl"><label>Mass</label><input type="range" id="rMass" min="1" max="50" value="12"><span class="val" id="rMassV">12 kg</span></div>
+      </div>
+      <div>
+        <div class="ctrl"><label>Friction μ</label><input type="range" id="rMu" min="0" max="100" value="35"><span class="val" id="rMuV">0.35</span></div>
+        <div class="ctrl"><label>Push (up ramp)</label><input type="range" id="rPush" min="0" max="300" value="0"><span class="val" id="rPushV">0 N</span></div>
+      </div>
+    </div>
+    <div class="readout" id="rampOut"></div>
+  </div>
+</section>
+
+<!-- ============ SCALE ============ -->
+<section id="scale">
+  <div class="sechead reveal">
+    <span class="kicker">Chapter 07</span>
+    <h2>The four fundamental forces</h2>
+    <p class="lead">Every force above is really one of these four in disguise. Friction, tension, the normal force
+    and springs are all electromagnetism between atoms.</p>
+  </div>
+  <div class="card reveal">
+    <canvas class="demo" id="cFund" style="height:290px"></canvas>
+    <p class="note" style="margin-top:10px">Relative strengths, plotted logarithmically. Gravity is ~10³⁶ times weaker
+    than electromagnetism — it only dominates at planetary scale because mass never cancels, while charge does.</p>
+  </div>
+  <div class="grid g4 reveal" style="margin-top:18px">
+    <div class="card"><h3 style="color:var(--accent2)">Strong nuclear</h3><p style="font-size:.88rem">Binds quarks into protons and protons into nuclei. Range ~10⁻¹⁵ m. Relative strength <b>1</b>.</p></div>
+    <div class="card"><h3 style="color:var(--gold)">Electromagnetic</h3><p style="font-size:.88rem">Between charges. Infinite range. Responsible for chemistry, light, and every contact force. <b>10⁻²</b>.</p></div>
+    <div class="card"><h3 style="color:var(--violet)">Weak nuclear</h3><p style="font-size:.88rem">Drives radioactive beta decay and the fusion that powers the Sun. Range ~10⁻¹⁸ m. <b>10⁻⁶</b>.</p></div>
+    <div class="card"><h3 style="color:var(--accent)">Gravitational</h3><p style="font-size:.88rem">Between masses. Infinite range, always attractive, never cancels. <b>10⁻³⁸</b>.</p></div>
+  </div>
+</section>
+
+<footer>
+  Built as a single HTML file — no frameworks, no dependencies. Every animation is hand-drawn on canvas.<br>
+  <span style="color:#4a5a78">Force · SI Units · Newtonian Mechanics</span>
+</footer>
+
+<script>
+/* =========================================================
+   Shared helpers
+   ========================================================= */
+const G = 9.80665;
+
+function fitCanvas(cv){
+  const dpr = window.devicePixelRatio || 1;
+  const r = cv.getBoundingClientRect();
+  if(!r.width) return false;
+  cv.width  = Math.round(r.width  * dpr);
+  cv.height = Math.round(r.height * dpr);
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  cv._w = r.width; cv._h = r.height;
+  return true;
+}
+
+/* Draw an arrow with a label — used by nearly every demo */
+/* lp = label position: 'tip' (default, past the arrowhead),
+   'start' (behind the tail) or 'side' (beside the midpoint). */
+function arrow(ctx,x1,y1,x2,y2,color,label,width,lp){
+  const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy);
+  if(len<0.7) return;
+  const ux=dx/len, uy=dy/len;
+  const head=Math.min(11,len*0.42);
+  ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=width||2.6;
+  ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2-ux*head*0.85, y2-uy*head*0.85);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-ux*head + uy*head*0.42, y2-uy*head - ux*head*0.42);
+  ctx.lineTo(x2-ux*head - uy*head*0.42, y2-uy*head + ux*head*0.42);
+  ctx.closePath(); ctx.fill();
+  if(label){
+    ctx.font='600 11px ui-monospace,Menlo,monospace';
+    ctx.textBaseline='middle';
+    let lx,ly,al='center';
+    const horiz = Math.abs(ux)>0.7;   // keep horizontal labels clear of the shaft
+    if(lp==='start'){
+      lx=x1-ux*10; ly=y1-uy*12;
+      if(horiz) al = ux>0 ? 'right' : 'left';
+    }else if(lp==='side'){
+      lx=(x1+x2)/2 - uy*13; ly=(y1+y2)/2 + ux*13;
+    }else{
+      lx=x2+ux*10; ly=y2+uy*15;
+      if(horiz) al = ux>0 ? 'left' : 'right';
+    }
+    ctx.textAlign=al;
+    ctx.fillText(label, lx, ly);
+  }
+}
+
+function ground(ctx,w,y,color){
+  ctx.strokeStyle=color||'#2c3d60'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+  ctx.lineWidth=1; ctx.strokeStyle=(color||'#2c3d60')+'99';
+  for(let x=-20;x<w+20;x+=15){
+    ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-9,y+9); ctx.stroke();
+  }
+}
+
+function box(ctx,x,y,w,h,fill,stroke){
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke||'rgba(255,255,255,.25)'; ctx.lineWidth=1.4;
+  ctx.beginPath();
+  const r=4;
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+}
+
+function label(ctx,txt,x,y,color,size,align){
+  ctx.fillStyle=color||'#93a4c4';
+  ctx.font=(size||11)+'px ui-monospace,Menlo,monospace';
+  ctx.textAlign=align||'left'; ctx.textBaseline='middle';
+  ctx.fillText(txt,x,y);
+}
+
+/* Caption with a dark backing plate — readable over busy artwork.
+   pos: 'top' or 'bottom'. */
+function cap(ctx,txt,w,h,color,pos){
+  const y = pos==='bottom' ? h-11 : 13;
+  ctx.font='10px ui-monospace,Menlo,monospace';
+  const tw=ctx.measureText(txt).width;
+  ctx.fillStyle='rgba(9,15,28,.82)';
+  ctx.fillRect(4,y-8,tw+14,17);
+  label(ctx,txt,11,y,color||'#93a4c4',10);
+}
+
+/* =========================================================
+   Animation registry — only visible canvases are ticked
+   ========================================================= */
+const scenes = [];
+function scene(canvas, draw){
+  if(!canvas) return;
+  const s = {cv:canvas, ctx:canvas.getContext('2d'), draw, visible:false, t:0};
+  scenes.push(s);
+  const io = new IntersectionObserver(es=>{ s.visible = es[0].isIntersecting; },{threshold:0.01});
+  io.observe(canvas);
+  return s;
+}
+
+let last = performance.now();
+function loop(now){
+  let dt = (now-last)/1000; last = now;
+  if(dt > 0.05) dt = 0.05;           // clamp after tab switch
+  for(const s of scenes){
+    if(!s.visible) continue;
+    if(!s.cv._w) { if(!fitCanvas(s.cv)) continue; }
+    s.t += dt;
+    s.ctx.clearRect(0,0,s.cv._w,s.cv._h);
+    s.draw(s.ctx, s.cv._w, s.cv._h, dt, s.t, s);
+  }
+  requestAnimationFrame(loop);
+}
+
+function resizeAll(){
+  fitCanvas(starCv);
+  for(const s of scenes) fitCanvas(s.cv);
+}
+let rTimer;
+window.addEventListener('resize',()=>{ clearTimeout(rTimer); rTimer=setTimeout(resizeAll,120); });
+
+/* =========================================================
+   Starfield background
+   ========================================================= */
+const starCv = document.getElementById('starCanvas');
+const starCtx = starCv.getContext('2d');
+let starPts = [];
+function initStars(){
+  fitCanvas(starCv);
+  starPts = [];
+  const n = Math.min(140, Math.round(starCv._w*starCv._h/12000));
+  for(let i=0;i<n;i++){
+    starPts.push({x:Math.random()*starCv._w, y:Math.random()*starCv._h,
+      r:Math.random()*1.5+0.3, p:Math.random()*Math.PI*2, s:0.4+Math.random()*0.9});
+  }
+}
+function drawStars(t){
+  if(!starCv._w) return;
+  starCtx.clearRect(0,0,starCv._w,starCv._h);
+  for(const p of starPts){
+    const a = 0.25 + 0.55*Math.abs(Math.sin(t*p.s + p.p));
+    starCtx.fillStyle = 'rgba(200,225,255,'+a.toFixed(3)+')';
+    starCtx.beginPath(); starCtx.arc(p.x,p.y,p.r,0,7); starCtx.fill();
+  }
+}
+
+/* =========================================================
+   HERO — mixed physics sandbox
+   ========================================================= */
+(function(){
+  const cv = document.getElementById('heroCanvas');
+  const balls = [];
+  let init = false;
+  scene(cv, (ctx,w,h,dt,t)=>{
+    if(!init){
+      init = true;
+      for(let i=0;i<11;i++){
+        balls.push({
+          x: 40+Math.random()*(w-80), y: 30+Math.random()*(h-90),
+          vx:(Math.random()-0.5)*150, vy:(Math.random()-0.5)*90,
+          r: 7+Math.random()*13,
+          c: ['#4cc9f0','#f72585','#ffd166','#06d6a0','#b07cff','#ff8f4d'][i%6]
+        });
+      }
+    }
+    const floor = h-26;
+
+    /* springs anchored to the ceiling */
+    for(let i=0;i<3;i++){
+      const ax = w*(0.18+0.32*i);
+      const y  = 46 + 34*Math.sin(t*(1.4+i*0.35)) + 40;
+      ctx.strokeStyle='#2f4a72'; ctx.lineWidth=1.8; ctx.beginPath();
+      ctx.moveTo(ax,0);
+      for(let k=0;k<=26;k++){
+        const p=k/26;
+        ctx.lineTo(ax + (k%2?7:-7)*(p>0.06&&p<0.94?1:0), p*y);
+      }
+      ctx.stroke();
+      box(ctx, ax-13, y, 26, 20, 'rgba(76,201,240,.28)', '#4cc9f0');
+      arrow(ctx, ax, y+22, ax, y+46, 'rgba(255,209,102,.75)', '', 2);
+    }
+
+    /* gravity + walls + drag on the balls */
+    for(const b of balls){
+      b.vy += 190*dt;
+      b.vx *= (1-0.22*dt);            // air resistance
+      b.x += b.vx*dt; b.y += b.vy*dt;
+      if(b.y+b.r>floor){ b.y=floor-b.r; b.vy*=-0.78; b.vx*=0.97; }
+      if(b.x-b.r<0){ b.x=b.r; b.vx*=-0.9; }
+      if(b.x+b.r>w){ b.x=w-b.r; b.vx*=-0.9; }
+      if(Math.abs(b.vy)<26 && b.y+b.r>floor-1) b.vy = -170-Math.random()*90;
+
+      const g = ctx.createRadialGradient(b.x-b.r*0.35,b.y-b.r*0.35,1,b.x,b.y,b.r);
+      g.addColorStop(0,'#fff'); g.addColorStop(0.25,b.c); g.addColorStop(1,b.c+'44');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7); ctx.fill();
+      ctx.strokeStyle=b.c; ctx.lineWidth=1.2; ctx.stroke();
+    }
+    ground(ctx,w,floor);
+    label(ctx,'gravity · springs · collisions · drag',12,h-9,'#4a5a78',10);
+  });
+})();
+
+/* =========================================================
+   PUSH / PULL
+   ========================================================= */
+(function(){
+  const cv=document.getElementById('cPushPull');
+  const L=document.getElementById('ppLeft'), R=document.getElementById('ppRight');
+  const LV=document.getElementById('ppLeftV'), RV=document.getElementById('ppRightV');
+  const NET=document.getElementById('ppNet'), ACC=document.getElementById('ppAcc');
+  const MASS = 10;
+  let x=null, v=0;
+
+  scene(cv,(ctx,w,h,dt)=>{
+    const fl=+L.value, fr=+R.value;
+    const net = fr-fl;
+    LV.textContent=fl+' N'; RV.textContent=fr+' N';
+    NET.textContent=(net>0?'+':'')+net+' N';
+    NET.style.color = net===0 ? 'var(--green)' : 'var(--accent2)';
+    ACC.textContent=(net/MASS).toFixed(2)+' m/s²';
+
+    if(x===null) x=w/2;
+    v += (net/MASS)*dt*11;
+    v *= 0.985;
+    x += v*dt;
+    const bw=54;
+    if(x<bw/2+70){ x=bw/2+70; v=0; }
+    if(x>w-bw/2-70){ x=w-bw/2-70; v=0; }
+    if(net===0) v*=0.86;
+
+    const y=h/2, bh=44;
+    ground(ctx,w,y+bh/2);
+    box(ctx, x-bw/2, y-bh/2, bw, bh, 'rgba(176,124,255,.3)','#b07cff');
+    label(ctx,MASS+' kg', x, y, '#e8eefc', 12, 'center');
+
+    const sc=0.62;
+    arrow(ctx, x-bw/2-fl*sc, y, x-bw/2-4, y, '#f72585', fl?fl+'N':'', 3, 'start');
+    arrow(ctx, x+bw/2+fr*sc, y, x+bw/2+4, y, '#4cc9f0', fr?fr+'N':'', 3, 'start');
+    label(ctx, net===0?'BALANCED — net force zero':'UNBALANCED — it accelerates',
+          w/2, 18, net===0?'#06d6a0':'#ffd166', 11,'center');
+  });
+})();
+
+/* =========================================================
+   VECTOR ADDITION
+   ========================================================= */
+(function(){
+  const cv=document.getElementById('cVector');
+  const A=document.getElementById('vecAng'), M=document.getElementById('vecMag');
+  const AV=document.getElementById('vecAngV'), MV=document.getElementById('vecMagV');
+  const RES=document.getElementById('vecRes'), DIR=document.getElementById('vecDir');
+  const F1=70;
+
+  scene(cv,(ctx,w,h)=>{
+    const th=+A.value*Math.PI/180, f2=+M.value;
+    AV.textContent=A.value+'°'; MV.textContent=f2+' N';
+
+    const ox=w*0.24, oy=h*0.68, sc=Math.min(1, (w*0.55)/(F1+f2));
+    const p1={x:ox+F1*sc, y:oy};
+    const p2={x:p1.x+Math.cos(-th)*f2*sc, y:p1.y+Math.sin(-th)*f2*sc};
+
+    /* parallelogram ghost */
+    ctx.setLineDash([4,4]); ctx.strokeStyle='#2c3d60'; ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(ox,oy); ctx.lineTo(ox+Math.cos(-th)*f2*sc, oy+Math.sin(-th)*f2*sc); ctx.lineTo(p2.x,p2.y);
+    ctx.stroke(); ctx.setLineDash([]);
+
+    arrow(ctx,ox,oy,p1.x,p1.y,'#4cc9f0','F₁ '+F1+'N',3,'side');
+    arrow(ctx,p1.x,p1.y,p2.x,p2.y,'#f72585','F₂ '+f2+'N',3,'side');
+    const rx=p2.x-ox, ry=p2.y-oy, R=Math.hypot(rx,ry)/sc;
+    arrow(ctx,ox,oy,p2.x,p2.y,'#ffd166','R = '+R.toFixed(0)+' N',3.4,'side');
+
+    ctx.fillStyle='#e8eefc'; ctx.beginPath(); ctx.arc(ox,oy,4,0,7); ctx.fill();
+    const ang=Math.atan2(-ry,rx)*180/Math.PI;
+    RES.textContent=R.toFixed(1)+' N';
+    DIR.textContent=ang.toFixed(1)+'°';
+  });
+})();
+
+/* =========================================================
+   SI BASE UNIT CARDS
+   ========================================================= */
+(function(){
+  const base=[
+    {q:'Length',u:'metre',s:'m',icon:'📏',def:'Defined by fixing the speed of light c = 299 792 458 m/s.'},
+    {q:'Mass',u:'kilogram',s:'kg',icon:'⚖️',def:'Defined by fixing the Planck constant h = 6.626 070 15 × 10⁻³⁴ J·s.'},
+    {q:'Time',u:'second',s:'s',icon:'⏱️',def:'9 192 631 770 periods of the caesium-133 hyperfine transition.'},
+    {q:'Electric current',u:'ampere',s:'A',icon:'⚡',def:'Defined by fixing the elementary charge e = 1.602 176 634 × 10⁻¹⁹ C.'},
+    {q:'Temperature',u:'kelvin',s:'K',icon:'🌡️',def:'Defined by fixing the Boltzmann constant k = 1.380 649 × 10⁻²³ J/K.'},
+    {q:'Amount of substance',u:'mole',s:'mol',icon:'🧪',def:'Exactly 6.022 140 76 × 10²³ elementary entities.'},
+    {q:'Luminous intensity',u:'candela',s:'cd',icon:'💡',def:'Fixed luminous efficacy K = 683 lm/W at 540 THz.'}
+  ];
+  const grid=document.getElementById('siGrid');
+  base.forEach(b=>{
+    const d=document.createElement('div');
+    d.className='card';
+    d.style.cursor='default';
+    d.innerHTML=`<div style="font-size:1.6rem">${b.icon}</div>
+      <h3 style="margin-top:6px">${b.u} <span style="color:var(--gold);font-family:var(--mono)">${b.s}</span></h3>
+      <p style="font-size:.82rem;color:var(--accent)">${b.q}</p>
+      <p style="font-size:.79rem;margin-top:8px;line-height:1.5">${b.def}</p>`;
+    grid.appendChild(d);
+  });
+})();
+
+/* =========================================================
+   SI PREFIX SCROLLER
+   ========================================================= */
+(function(){
+  const cv=document.getElementById('cPrefix');
+  const pre=[
+    ['tera','T','10¹²','#f72585'],['giga','G','10⁹','#ff8f4d'],['mega','M','10⁶','#ffd166'],
+    ['kilo','k','10³','#06d6a0'],['—','','10⁰','#e8eefc'],['milli','m','10⁻³','#4cc9f0'],
+    ['micro','µ','10⁻⁶','#b07cff'],['nano','n','10⁻⁹','#7fb3ff'],['pico','p','10⁻¹²','#5c7bd1']
+  ];
+  scene(cv,(ctx,w,h,dt,t)=>{
+    const sp=42, total=pre.length*160;
+    const off=(t*sp)%total;
+    ctx.textBaseline='middle';
+    for(let rep=0;rep<3;rep++){
+      pre.forEach((p,i)=>{
+        const x = i*160 + rep*total - off + 20;
+        if(x<-160||x>w+40) return;
+        const cx = x+62;
+        const fade = Math.max(0.15, 1-Math.abs(cx-w/2)/(w*0.75));
+        ctx.globalAlpha=fade;
+        ctx.fillStyle=p[3];
+        ctx.font='700 26px ui-monospace,Menlo,monospace'; ctx.textAlign='center';
+        ctx.fillText(p[1]+'N', cx, h*0.38);
+        ctx.fillStyle='#93a4c4'; ctx.font='11px ui-monospace,Menlo,monospace';
+        ctx.fillText(p[0]==='—'?'newton':p[0]+'newton', cx, h*0.66);
+        ctx.fillStyle='#5c6f92'; ctx.font='10px ui-monospace,Menlo,monospace';
+        ctx.fillText('× '+p[2], cx, h*0.85);
+        ctx.globalAlpha=1;
+      });
+    }
+    const g=ctx.createLinearGradient(0,0,w,0);
+    g.addColorStop(0,'rgba(11,18,32,1)'); g.addColorStop(0.12,'rgba(11,18,32,0)');
+    g.addColorStop(0.88,'rgba(11,18,32,0)'); g.addColorStop(1,'rgba(11,18,32,1)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  });
+})();
+
+/* =========================================================
+   ONE NEWTON
+   ========================================================= */
+(function(){
+  const cv=document.getElementById('cNewton');
+  let x=0,v=0,T=0;
+  scene(cv,(ctx,w,h,dt)=>{
+    T+=dt;
+    if(T>5.2){ T=0; x=0; v=0; }
+    v = T*1;                    // a = 1 m/s²
+    x = 0.5*T*T;
+
+    const fl=h-42, px = 30 + x*(w-120)/13;
+    ground(ctx,w,fl);
+
+    /* ruler ticks in metres */
+    for(let m=0;m<=13;m++){
+      const tx=30+m*(w-120)/13;
+      ctx.strokeStyle='#233350'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(tx,fl); ctx.lineTo(tx,fl+7); ctx.stroke();
+      if(m%2===0) label(ctx,m+'m',tx,fl+16,'#4a5a78',9,'center');
+    }
+
+    box(ctx,px,fl-40,44,40,'rgba(6,214,160,.28)','#06d6a0');
+    label(ctx,'1 kg',px+22,fl-20,'#e8eefc',12,'center');
+    arrow(ctx,px-52,fl-20,px-6,fl-20,'#ffd166','1 N',3.2,'start');
+
+    /* speedometer bars, one per elapsed second */
+    label(ctx,'t = '+T.toFixed(1)+' s',w-16,22,'#93a4c4',12,'right');
+    label(ctx,'v = '+v.toFixed(2)+' m/s',w-16,40,'#4cc9f0',12,'right');
+    label(ctx,'x = '+x.toFixed(2)+' m',w-16,58,'#b07cff',12,'right');
+    label(ctx,'a = 1.00 m/s²  (constant)',16,22,'#06d6a0',12,'left');
+
+    const bx=16, by=h*0.42, bw=Math.min(180,w*0.42);
+    label(ctx,'speed',bx,by-14,'#4a5a78',10);
+    ctx.fillStyle='#1a2540'; ctx.fillRect(bx,by,bw,9);
+    ctx.fillStyle='#4cc9f0'; ctx.fillRect(bx,by,bw*Math.min(1,v/5.2),9);
+    for(let s=1;s<=5;s++){
+      const tx=bx+bw*s/5.2;
+      ctx.fillStyle='#0b1220'; ctx.fillRect(tx-0.5,by,1,9);
+      label(ctx,s+'',tx,by+20,'#4a5a78',9,'center');
+    }
+    label(ctx,'each second: +1 m/s',bx,by+38,'#ffd166',10);
+  });
+})();
+
+/* =========================================================
+   F = ma
+   ========================================================= */
+(function(){
+  const cv=document.getElementById('cFma');
+  const F=document.getElementById('fmaF'), M=document.getElementById('fmaM');
+  const FV=document.getElementById('fmaFV'), MV=document.getElementById('fmaMV');
+  const AO=document.getElementById('fmaA'), VO=document.getElementById('fmaV');
+  let x=0,v=0;
+  scene(cv,(ctx,w,h,dt)=>{
+    const f=+F.value, m=+M.value, a=f/m;
+    FV.textContent=f+' N'; MV.textContent=m+' kg';
+    AO.textContent=a.toFixed(2)+' m/s²';
+    VO.textContent=(a*3).toFixed(1)+' m/s';
+
+    v+=a*dt*2.2; x+=v*dt;
+    const size=20+m*1.5;
+    if(x>w-size-20){ x=0; v=0; }
+
+    const fl=h-30;
+    ground(ctx,w,fl);
+    box(ctx,x,fl-size,size,size,'rgba(247,37,133,.25)','#f72585');
+    label(ctx,m+'kg',x+size/2,fl-size/2,'#e8eefc',Math.min(12,size/3),'center');
+    arrow(ctx,x-10-f*1.3,fl-size/2,x-6,fl-size/2,'#4cc9f0',f+'N',3,'start');
+    label(ctx,'a = F/m = '+a.toFixed(2)+' m/s²',w-14,18,'#ffd166',12,'right');
+    label(ctx,'heavier box → same force → slower acceleration',14,h-11,'#4a5a78',10);
+  });
+})();
+
+/* =========================================================
+   WEIGHT ON OTHER WORLDS
+   ========================================================= */
+(function(){
+  const M=document.getElementById('wMass'), MV=document.getElementById('wMassV'), OUT=document.getElementById('wOut');
+  const worlds=[['Earth',9.81],['Moon',1.62],['Mars',3.72],['Jupiter',24.79]];
+  function upd(){
+    const m=+M.value; MV.textContent=m+' kg';
+    OUT.innerHTML = worlds.map(w=>w[0]+': <b>'+(m*w[1]).toFixed(0)+' N</b>').join(' · ') +
+      '<br>mass stays <b>'+m+' kg</b> everywhere';
+  }
+  M.addEventListener('input',upd); upd();
+})();
+
+/* =========================================================
+   NEWTON'S LAWS
+   ========================================================= */
+(function(){ /* law 1 */
+  const cv=document.getElementById('cLaw1');
+  let a={x:10,v:130}, b={x:10,v:130};
+  scene(cv,(ctx,w,h,dt)=>{
+    a.v -= a.v*0.75*dt; a.x += a.v*dt;
+    b.x += b.v*dt;
+    if(a.x>w-30||a.v<3){ a.x=10; a.v=130; }
+    if(b.x>w-30){ b.x=10; }
+
+    const y1=h*0.3, y2=h*0.72;
+    ground(ctx,w,y1+14,'#3a2a20');
+    ground(ctx,w,y2+14,'#1f3f5c');
+    label(ctx,'rough surface — friction acts',6,y1-22,'#ff8f4d',10);
+    label(ctx,'frictionless ice — no net force',6,y2-22,'#4cc9f0',10);
+    box(ctx,a.x,y1-8,24,22,'rgba(255,143,77,.3)','#ff8f4d');
+    if(a.v>4) arrow(ctx,a.x,y1+3,a.x-16,y1+3,'#f72585','',2);
+    box(ctx,b.x,y2-8,24,22,'rgba(76,201,240,.3)','#4cc9f0');
+    arrow(ctx,b.x+24,y2+3,b.x+40,y2+3,'#06d6a0','',2);
+    label(ctx,'v='+a.v.toFixed(0),w-8,y1-22,'#ff8f4d',10,'right');
+    label(ctx,'v='+b.v.toFixed(0)+' (constant)',w-8,y2-22,'#06d6a0',10,'right');
+  });
+})();
+
+(function(){ /* law 2 */
+  const cv=document.getElementById('cLaw2');
+  let t=0, x1=0, x2=0, v1=0, v2=0;
+  scene(cv,(ctx,w,h,dt)=>{
+    t+=dt;
+    if(t>3.4){ t=0; x1=x2=v1=v2=0; }
+    const F=30;
+    v1+=F/2*dt*3; v2+=F/8*dt*3;
+    x1+=v1*dt; x2+=v2*dt;
+    const y1=h*0.32, y2=h*0.74, x0=64;
+    ground(ctx,w,y1+16); ground(ctx,w,y2+16);
+    const px1=x0+Math.min(x1,w-x0-40), px2=x0+Math.min(x2,w-x0-46);
+    box(ctx,px1,y1-10,26,26,'rgba(6,214,160,.3)','#06d6a0');
+    label(ctx,'2kg',px1+13,y1+3,'#e8eefc',9,'center');
+    arrow(ctx,px1-26,y1+3,px1-4,y1+3,'#ffd166','30N',2.4,'start');
+    box(ctx,px2,y2-14,34,34,'rgba(176,124,255,.3)','#b07cff');
+    label(ctx,'8kg',px2+17,y2+3,'#e8eefc',9,'center');
+    arrow(ctx,px2-26,y2+3,px2-4,y2+3,'#ffd166','30N',2.4,'start');
+    label(ctx,'a = 15 m/s²',w-8,y1-24,'#06d6a0',10,'right');
+    label(ctx,'a = 3.75 m/s²',w-8,y2-24,'#b07cff',10,'right');
+  });
+})();
+
+(function(){ /* law 3 */
+  const cv=document.getElementById('cLaw3');
+  let t=0;
+  scene(cv,(ctx,w,h,dt)=>{
+    t+=dt; const c=t%3.4;
+    let push=0, sx=0;
+    if(c<1.1){ push=0; sx=0; }
+    else if(c<1.6){ push=1; sx=0; }
+    else { push=0.35; sx=(c-1.6)*95; }
+
+    const y=h*0.55, wallX=w-40;
+    /* wall */
+    ctx.fillStyle='#1b2740'; ctx.fillRect(wallX,10,30,h-20);
+    ctx.strokeStyle='#2c3d60'; ctx.strokeRect(wallX,10,30,h-20);
+    label(ctx,'WALL',wallX+15,h/2,'#4a5a78',9,'center');
+    ground(ctx,w,y+22);
+
+    const px = wallX-46-sx;
+    box(ctx,px,y-4,40,26,'rgba(76,201,240,.3)','#4cc9f0');
+    label(ctx,'🧍',px+20,y+9,'#fff',14,'center');
+
+    if(push>0){
+      arrow(ctx,px+40,y-16,px+40+30*push,y-16,'#f72585','F',2.6,'start');
+      arrow(ctx,px,y+34,px-30*push,y+34,'#06d6a0','−F',2.6,'start');
+    }
+    label(ctx,'action: person → wall',6,16,'#f72585',10);
+    label(ctx,'reaction: wall → person',6,h-10,'#06d6a0',10);
+  });
+})();
+
+/* =========================================================
+   THE FORCE CATALOGUE — cards + per-card animation
+   ========================================================= */
+const FORCES=[
+  {
+    id:'grav', name:'Gravitational force', color:'#4cc9f0',
+    formula:'F = G·m₁m₂/r²   |   near Earth: W = mg',
+    units:'N  ·  G = 6.674×10⁻¹¹ N·m²/kg²  ·  g = 9.81 m/s²',
+    desc:'Every mass attracts every other mass. It is always attractive, never cancels, and has infinite range — which is why it rules the universe at large scales even though it is by far the weakest force.',
+    draw(ctx,w,h,dt,t,s){
+      if(!s.p){ s.p={a:0}; }
+      s.p.a += dt*0.55;
+      const cx=w*0.5, cy=h*0.5;
+      /* sun */
+      const g=ctx.createRadialGradient(cx,cy,2,cx,cy,26);
+      g.addColorStop(0,'#fff6d0'); g.addColorStop(0.4,'#ffd166'); g.addColorStop(1,'rgba(255,143,77,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,26,0,7); ctx.fill();
+      label(ctx,'M',cx,cy,'#5a3c00',12,'center');
+      /* orbits */
+      [[52,1.0,'#4cc9f0'],[80,0.62,'#06d6a0'],[104,0.42,'#b07cff']].forEach((o,i)=>{
+        const [r,sp,col]=o;
+        ctx.strokeStyle='rgba(60,85,130,.5)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.ellipse(cx,cy,r,r*0.55,0,0,7); ctx.stroke();
+        const a=s.p.a*sp + i*2.1;
+        const px=cx+Math.cos(a)*r, py=cy+Math.sin(a)*r*0.55;
+        ctx.fillStyle=col; ctx.beginPath(); ctx.arc(px,py,5.5,0,7); ctx.fill();
+        arrow(ctx,px,py,px+(cx-px)*0.32,py+(cy-py)*0.32,col,'',1.8);
+      });
+      cap(ctx,'F ∝ 1/r²  — the pull always points at the mass',w,h,'#7f90b0','bottom');
+    }
+  },
+  {
+    id:'norm', name:'Normal force', color:'#06d6a0',
+    formula:'N ⊥ surface   |   flat ground: N = mg   |   ramp: N = mg·cosθ',
+    units:'N (newtons)',
+    desc:'The push a surface gives back, perpendicular ("normal") to itself. It exists because the surface\'s atoms are compressed slightly, like a very stiff spring. It is what stops you falling through the floor.',
+    draw(ctx,w,h,dt,t,s){
+      const bob = 2*Math.sin(t*2.2);
+      const fl=h*0.62, bx=w*0.5-26, by=fl-38+bob;
+      ground(ctx,w,fl);
+      /* exaggerated surface compression */
+      ctx.strokeStyle='#2c3d60'; ctx.lineWidth=1.6;
+      ctx.beginPath();
+      for(let x=0;x<=w;x+=4){
+        const d=Math.max(0,1-Math.abs(x-(bx+26))/60);
+        ctx.lineTo(x, fl + d*(3+bob*0.4));
+      }
+      ctx.stroke();
+      box(ctx,bx,by,52,38,'rgba(6,214,160,.26)','#06d6a0');
+      label(ctx,'m',bx+26,by+19,'#e8eefc',13,'center');
+      arrow(ctx,bx+26,by+19,bx+26,by+19+54,'#4cc9f0','W = mg',2.8);
+      arrow(ctx,bx+26,fl+4,bx+26,fl-52,'#06d6a0','N',2.8);
+      cap(ctx,'N = W  → no vertical acceleration',w,h,'#93a4c4','top');
+      cap(ctx,'the surface flexes like a very stiff spring',w,h,'#7f90b0','bottom');
+    }
+  },
+  {
+    id:'fric', name:'Friction', color:'#ff8f4d',
+    formula:'fₛ ≤ μₛN   (static)   |   f_k = μ_k N   (kinetic)',
+    units:'N  ·  μ is dimensionless',
+    desc:'Resists sliding between surfaces. Static friction holds until you exceed μₛN, then kinetic friction takes over — and is usually a little weaker, which is why an object suddenly "breaks loose" and lurches.',
+    draw(ctx,w,h,dt,t,s){
+      if(!s.p) s.p={x:0,v:0,ph:0,pull:0};
+      const p=s.p;
+      p.ph += dt;
+      const cyc = p.ph % 5.0;
+      p.pull = cyc<2.6 ? cyc*26 : 68;
+      const MU_S=52, MU_K=40;
+      const moving = p.v>0.5 || p.pull>MU_S;
+      if(moving){
+        const net=(p.pull-MU_K)*0.9;
+        p.v += net*dt; p.v=Math.max(0,p.v);
+        p.x += p.v*dt;
+      }
+      if(cyc<0.05){ p.x=0; p.v=0; }
+      const fl=h*0.72, bx=76+Math.min(p.x, Math.max(0,w-76-54-80));
+      ground(ctx,w,fl,'#4a3524');
+      box(ctx,bx,fl-34,54,34,'rgba(255,143,77,.26)','#ff8f4d');
+      label(ctx,'m',bx+27,fl-17,'#e8eefc',12,'center');
+      arrow(ctx,bx+54,fl-24,bx+54+p.pull*0.7,fl-24,'#ffd166','pull '+p.pull.toFixed(0)+'N',2.8);
+      const fdraw = moving?MU_K:Math.min(p.pull,MU_S);
+      arrow(ctx,bx,fl-9,bx-fdraw*0.7,fl-9,'#f72585','f '+fdraw.toFixed(0)+'N',2.6);
+
+      /* threshold bar */
+      const bw=Math.min(200,w*0.5), bx2=14, by2=18;
+      label(ctx,'applied vs static limit',bx2,by2-9,'#4a5a78',9);
+      ctx.fillStyle='#1a2540'; ctx.fillRect(bx2,by2,bw,8);
+      ctx.fillStyle=moving?'#f72585':'#06d6a0';
+      ctx.fillRect(bx2,by2,bw*Math.min(1,p.pull/90),8);
+      ctx.fillStyle='#ffd166'; ctx.fillRect(bx2+bw*MU_S/90-1,by2-3,2,14);
+      label(ctx, moving?'SLIPPING — kinetic friction':'STUCK — static friction',
+            bx2, by2+22, moving?'#f72585':'#06d6a0',10);
+    }
+  },
+  {
+    id:'tens', name:'Tension', color:'#ffd166',
+    formula:'T pulls along the rope, equal at both ends (ideal rope)',
+    units:'N (newtons)',
+    desc:'The pull transmitted through a rope, cable, chain or muscle tendon. An ideal massless rope over a frictionless pulley has the same tension everywhere — it can only pull, never push.',
+    draw(ctx,w,h,dt,t,s){
+      const sw = 12*Math.sin(t*1.6);
+      const px=w*0.5, py=14;
+      /* pulley */
+      ctx.strokeStyle='#4a5a78'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(px,py+16,13,0,7); ctx.stroke();
+      ctx.fillStyle='#1b2740'; ctx.fill();
+      ctx.strokeStyle='#2c3d60'; ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,py+3); ctx.stroke();
+
+      const lx=px-13, rx=px+13;
+      const ly=h*0.42+sw*0.7, ry=h*0.62-sw*0.7;
+      ctx.strokeStyle='#ffd166'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(lx,py+16); ctx.lineTo(lx,ly); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(rx,py+16); ctx.lineTo(rx,ry); ctx.stroke();
+
+      box(ctx,lx-19,ly,38,28,'rgba(76,201,240,.28)','#4cc9f0');
+      label(ctx,'3kg',lx,ly+14,'#e8eefc',10,'center');
+      box(ctx,rx-19,ry,38,34,'rgba(247,37,133,.28)','#f72585');
+      label(ctx,'5kg',rx,ry+17,'#e8eefc',10,'center');
+
+      arrow(ctx,lx,ly-2,lx,ly-30,'#ffd166','T',2.4,'side');
+      arrow(ctx,rx,ry-2,rx,ry-30,'#ffd166','T',2.4,'side');
+      arrow(ctx,lx,ly+28,lx,ly+52,'#4cc9f0','',2);
+      arrow(ctx,rx,ry+34,rx,ry+62,'#f72585','',2);
+      cap(ctx,'same T on both sides · the heavier side wins',w,h,'#7f90b0','bottom');
+    }
+  },
+  {
+    id:'spring', name:'Spring / elastic force', color:'#b07cff',
+    formula:"Hooke's law:  F = −k·x",
+    units:'N  ·  spring constant k in N/m',
+    desc:'A stretched or compressed spring pulls back toward its rest length, proportionally to how far you moved it. The minus sign means it always opposes the displacement — that is what makes it oscillate.',
+    draw(ctx,w,h,dt,t,s){
+      if(!s.p) s.p={x:60,v:0};
+      const p=s.p, k=9, m=1;
+      p.v += (-k*p.x/m)*dt; p.v*=0.9995; p.x += p.v*dt;
+      const ax=30, y=h*0.44, rest=w*0.55;
+      const bx = rest + p.x;
+
+      ctx.fillStyle='#1b2740'; ctx.fillRect(0,y-34,14,68);
+      ctx.strokeStyle='#b07cff'; ctx.lineWidth=2.2; ctx.beginPath();
+      ctx.moveTo(14,y);
+      const coils=14, span=bx-14;
+      for(let i=0;i<=coils*2;i++){
+        const f=i/(coils*2);
+        ctx.lineTo(14+span*f, y+(i%2?-13:13)*(f>0.05&&f<0.95?1:0));
+      }
+      ctx.lineTo(bx,y); ctx.stroke();
+
+      box(ctx,bx,y-20,40,40,'rgba(176,124,255,.28)','#b07cff');
+      label(ctx,'m',bx+20,y,'#e8eefc',12,'center');
+
+      ctx.setLineDash([3,4]); ctx.strokeStyle='#4a5a78'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(rest,y-42); ctx.lineTo(rest,y+42); ctx.stroke(); ctx.setLineDash([]);
+      label(ctx,'x = 0',rest,y+52,'#4a5a78',9,'center');
+
+      const F=-k*p.x*0.55;
+      arrow(ctx,bx+20,y-32,bx+20+F,y-32,'#f72585','F = −kx',2.6,'side');
+      cap(ctx,'x = '+(p.x/10).toFixed(2)+' m   k = '+k+' N/m',w,h,'#93a4c4','top');
+      cap(ctx,'energy sloshes between spring and motion',w,h,'#7f90b0','bottom');
+    }
+  },
+  {
+    id:'drag', name:'Air resistance / drag', color:'#4cc9f0',
+    formula:'F_d = ½·ρ·v²·C_d·A     (turbulent, high speed)',
+    units:'N  ·  ρ in kg/m³  ·  A in m²  ·  C_d dimensionless',
+    desc:'A fluid pushes back on anything moving through it, roughly with the square of speed. When drag grows to equal weight, acceleration stops and the object falls at constant terminal velocity.',
+    draw(ctx,w,h,dt,t,s){
+      if(!s.p) s.p={a:{y:0,v:0},b:{y:0,v:0}};
+      const p=s.p;
+      p.a.v += 90*dt; p.a.y += p.a.v*dt;                          // vacuum
+      p.b.v += (90 - 0.030*p.b.v*p.b.v)*dt; p.b.y += p.b.v*dt;    // with drag
+      const fl=h-32;
+      if(p.a.y>fl-56 && p.b.y>fl-56){ p.a={y:0,v:0}; p.b={y:0,v:0}; }
+      ground(ctx,w,fl);
+      const x1=w*0.32, x2=w*0.66;
+      label(ctx,'vacuum',x1,15,'#93a4c4',10,'center');
+      label(ctx,'with air',x2,15,'#4cc9f0',10,'center');
+
+      const ay=Math.min(42+p.a.y, fl-14), by=Math.min(42+p.b.y, fl-14);
+      ctx.fillStyle='#ffd166'; ctx.beginPath(); ctx.arc(x1,ay,11,0,7); ctx.fill();
+      ctx.fillStyle='#4cc9f0'; ctx.beginPath(); ctx.arc(x2,by,11,0,7); ctx.fill();
+      arrow(ctx,x1,ay+12,x1,ay+34,'#f72585','mg',2);
+      arrow(ctx,x2,by+12,x2,by+34,'#f72585','mg',2);
+      const d=Math.min(32, 0.030*p.b.v*p.b.v*0.36);
+      arrow(ctx,x2,by-12,x2,by-12-d,'#06d6a0','F_d',2);
+
+      /* streamlines */
+      ctx.strokeStyle='rgba(76,201,240,.28)'; ctx.lineWidth=1;
+      for(let i=0;i<7;i++){
+        const sx=x2-30+i*10, off=(t*180+i*23)%40;
+        ctx.beginPath(); ctx.moveTo(sx,by-40+off); ctx.lineTo(sx,by-30+off); ctx.stroke();
+      }
+      label(ctx,'v = '+p.a.v.toFixed(0),x1,fl+15,'#ffd166',10,'center');
+      label(ctx,'v = '+p.b.v.toFixed(0)+' → terminal '+Math.sqrt(90/0.030).toFixed(0),x2,fl+15,'#4cc9f0',10,'center');
+    }
+  },
+  {
+    id:'buoy', name:'Buoyant force', color:'#06d6a0',
+    formula:"Archimedes:  F_b = ρ_fluid · V_displaced · g",
+    units:'N  ·  ρ in kg/m³  ·  V in m³',
+    desc:'A fluid pushes up on a submerged object with a force equal to the weight of the fluid it displaces. Denser than the fluid → it sinks. Less dense → it floats until just enough is submerged to balance.',
+    draw(ctx,w,h,dt,t,s){
+      if(!s.p) s.p={y:[0,0,0],v:[0,0,0]};
+      const p=s.p, surf=h*0.36;
+      /* water */
+      ctx.fillStyle='rgba(6,120,180,.28)'; ctx.fillRect(0,surf,w,h-surf);
+      ctx.strokeStyle='#4cc9f0'; ctx.lineWidth=1.6; ctx.beginPath();
+      for(let x=0;x<=w;x+=5) ctx.lineTo(x, surf+Math.sin(x*0.05+t*2)*2.5);
+      ctx.stroke();
+
+      const dens=[0.4,1.0,2.4], names=['cork','wood','steel'], cols=['#ffd166','#06d6a0','#f72585'];
+      for(let i=0;i<3;i++){
+        const bx=w*(0.2+0.3*i)-20, bh=30;
+        const top=surf-40+p.y[i];
+        const sub=Math.max(0, Math.min(bh, (top+bh)-surf));
+        const subFrac=sub/bh;
+        const acc = (1 - subFrac/dens[i]) * 90;     // net = weight − buoyancy
+        p.v[i]+=acc*dt; p.v[i]*= (subFrac>0?0.90:0.999);
+        p.y[i]+=p.v[i]*dt;
+        if(top>h-40){ p.y[i]=h-40-(surf-40); p.v[i]=0; }
+
+        box(ctx,bx,top,40,bh,cols[i]+'44',cols[i]);
+        label(ctx,names[i],bx+20,top+bh/2,'#e8eefc',9,'center');
+        if(subFrac>0) arrow(ctx,bx+20,top,bx+20,top-14-18*subFrac/dens[i],'#06d6a0','',2);
+        arrow(ctx,bx+20,top+bh,bx+20,top+bh+16,'#f72585','',2);
+        label(ctx,'ρ='+dens[i],bx+20,h-8,'#4a5a78',9,'center');
+      }
+      cap(ctx,'green up: buoyancy   pink down: weight',w,h,'#93a4c4','top');
+    }
+  },
+  {
+    id:'cent', name:'Centripetal force', color:'#f72585',
+    formula:'F_c = m·v²/r = m·ω²·r,  pointing at the centre',
+    units:'N  ·  v in m/s  ·  r in m  ·  ω in rad/s',
+    desc:'Not a new kind of force — it is the name for whatever force happens to be pointing at the centre of a circular path (tension, gravity, friction, the normal force). Remove it and the object flies off along the tangent.',
+    draw(ctx,w,h,dt,t,s){
+      if(!s.p) s.p={a:0,cut:false,fx:0,fy:0,vx:0,vy:0,timer:0};
+      const p=s.p;
+      p.timer+=dt;
+      const cyc=p.timer%5.4;
+      const cx=w*0.5, cy=h*0.52, r=Math.min(w,h)*0.28;
+      ctx.strokeStyle='rgba(60,85,130,.55)'; ctx.setLineDash([4,5]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.stroke(); ctx.setLineDash([]);
+
+      if(cyc<3.9){
+        p.a += dt*2.3;
+        const bx=cx+Math.cos(p.a)*r, by=cy+Math.sin(p.a)*r;
+        p.fx=bx; p.fy=by;
+        p.vx=-Math.sin(p.a)*r*2.3; p.vy=Math.cos(p.a)*r*2.3;
+        ctx.strokeStyle='#ffd166'; ctx.lineWidth=1.6;
+        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(bx,by); ctx.stroke();
+        ctx.fillStyle='#f72585'; ctx.beginPath(); ctx.arc(bx,by,9,0,7); ctx.fill();
+        arrow(ctx,bx,by,bx+(cx-bx)*0.45,by+(cy-by)*0.45,'#4cc9f0','F_c',2.4);
+        arrow(ctx,bx,by,bx-Math.sin(p.a)*38,by+Math.cos(p.a)*38,'#06d6a0','v',2.2);
+        cap(ctx,'the rope tension is supplying F_c',w,h,'#7f90b0','bottom');
+      }else{
+        const k=(cyc-3.9);
+        const bx=p.fx+p.vx*k, by=p.fy+p.vy*k;
+        ctx.fillStyle='#f72585'; ctx.beginPath(); ctx.arc(bx,by,9,0,7); ctx.fill();
+        arrow(ctx,bx,by,bx+p.vx*0.16,by+p.vy*0.16,'#06d6a0','v',2.2);
+        cap(ctx,'rope cut → straight line (Newton\'s 1st law)',w,h,'#f72585','bottom');
+      }
+      ctx.fillStyle='#4a5a78'; ctx.beginPath(); ctx.arc(cx,cy,4,0,7); ctx.fill();
+      cap(ctx,'F_c points inward — it changes direction, not speed',w,h,'#93a4c4','top');
+    }
+  },
+  {
+    id:'elec', name:'Electrostatic force', color:'#ffd166',
+    formula:"Coulomb's law:  F = k·q₁q₂/r²,  k = 8.99×10⁹ N·m²/C²",
+    units:'N  ·  charge q in coulombs (C)',
+    desc:'Like charges repel, opposites attract, with the same inverse-square shape as gravity — but around 10³⁶ times stronger. Every contact force you feel (normal, friction, tension) is this force between surface atoms.',
+    draw(ctx,w,h,dt,t,s){
+      const sep = 34 + 22*Math.sin(t*1.5);
+      const y1=h*0.32, y2=h*0.74, cx=w*0.5;
+      /* opposite charges attract */
+      drawQ(ctx,cx-sep,y1,'+','#f72585'); drawQ(ctx,cx+sep,y1,'−','#4cc9f0');
+      arrow(ctx,cx-sep+16,y1,cx-sep+16+20,y1,'#ffd166','',2.2);
+      arrow(ctx,cx+sep-16,y1,cx+sep-16-20,y1,'#ffd166','',2.2);
+      label(ctx,'opposite → attract',8,y1-26,'#06d6a0',10);
+      /* like charges repel */
+      const sep2 = 56 - 20*Math.sin(t*1.5);
+      drawQ(ctx,cx-sep2,y2,'+','#f72585'); drawQ(ctx,cx+sep2,y2,'+','#f72585');
+      arrow(ctx,cx-sep2-16,y2,cx-sep2-36,y2,'#ffd166','',2.2);
+      arrow(ctx,cx+sep2+16,y2,cx+sep2+36,y2,'#ffd166','',2.2);
+      label(ctx,'like → repel',8,y2-28,'#f72585',10);
+      /* field lines */
+      ctx.strokeStyle='rgba(255,209,102,.22)'; ctx.lineWidth=1;
+      for(let i=-2;i<=2;i++){
+        ctx.beginPath();
+        ctx.moveTo(cx-sep,y1);
+        ctx.quadraticCurveTo(cx, y1+i*17, cx+sep, y1);
+        ctx.stroke();
+      }
+      function drawQ(c,x,y,sym,col){
+        const g=c.createRadialGradient(x-4,y-4,1,x,y,15);
+        g.addColorStop(0,'#fff'); g.addColorStop(0.3,col); g.addColorStop(1,col+'33');
+        c.fillStyle=g; c.beginPath(); c.arc(x,y,14,0,7); c.fill();
+        c.strokeStyle=col; c.lineWidth=1.4; c.stroke();
+        label(c,sym,x,y,'#0b1220',15,'center');
+      }
+    }
+  },
+  {
+    id:'mag', name:'Magnetic force', color:'#b07cff',
+    formula:'F = q·v × B    |    on a wire:  F = B·I·L·sinθ',
+    units:'N  ·  B in tesla (T)  ·  I in amperes (A)',
+    desc:'Acts only on moving charges, and always perpendicular to both the velocity and the field. Because it is perpendicular to motion it does no work — it bends paths into circles and helices rather than speeding things up.',
+    draw(ctx,w,h,dt,t,s){
+      if(!s.p) s.p={a:0};
+      s.p.a += dt*1.7;
+      /* field into page */
+      ctx.strokeStyle='rgba(176,124,255,.4)'; ctx.lineWidth=1;
+      for(let x=18;x<w-8;x+=34) for(let y=32;y<h-26;y+=30){
+        ctx.beginPath(); ctx.arc(x,y,4,0,7); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x-3,y-3); ctx.lineTo(x+3,y+3);
+        ctx.moveTo(x+3,y-3); ctx.lineTo(x-3,y+3); ctx.stroke();
+      }
+      const cx=w*0.5, cy=h*0.5, r=Math.min(w,h)*0.26;
+      const a=s.p.a, px=cx+Math.cos(a)*r, py=cy+Math.sin(a)*r;
+      ctx.strokeStyle='rgba(6,214,160,.4)'; ctx.setLineDash([3,4]);
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='#06d6a0'; ctx.beginPath(); ctx.arc(px,py,8,0,7); ctx.fill();
+      label(ctx,'+',px,py,'#052018',12,'center');
+      arrow(ctx,px,py,px-Math.sin(a)*40,py+Math.cos(a)*40,'#4cc9f0','v',2.2);
+      arrow(ctx,px,py,px+(cx-px)*0.42,py+(cy-py)*0.42,'#f72585','F',2.2);
+      cap(ctx,'B into the page (⊗)',w,h,'#b07cff','top');
+      cap(ctx,'F ⊥ v  → circular path, speed unchanged',w,h,'#7f90b0','bottom');
+    }
+  },
+  {
+    id:'thrust', name:'Thrust', color:'#ff8f4d',
+    formula:'F = ṁ·v_e    (mass flow rate × exhaust velocity)',
+    units:'N  ·  ṁ in kg/s  ·  v_e in m/s',
+    desc:'Newton\'s third law turned into an engine: throw mass backwards fast, and it throws you forwards just as hard. A rocket needs nothing to push against — the exhaust is the thing being pushed.',
+    draw(ctx,w,h,dt,t,s){
+      if(!s.p) s.p={y:0,v:0,ps:[]};
+      const p=s.p;
+      p.v += 26*dt; p.y += p.v*dt;
+      if(p.y>h*0.55){ p.y=0; p.v=0; }
+      const rx=w*0.5, ry=h*0.72-p.y;
+
+      for(let i=0;i<3;i++) p.ps.push({x:rx+(Math.random()-0.5)*10, y:ry+26,
+        vx:(Math.random()-0.5)*40, vy:70+Math.random()*90, l:1});
+      p.ps=p.ps.filter(q=>q.l>0);
+      for(const q of p.ps){
+        q.l-=dt*1.6; q.x+=q.vx*dt; q.y+=q.vy*dt;
+        ctx.globalAlpha=Math.max(0,q.l);
+        ctx.fillStyle= q.l>0.6?'#fff3c4': q.l>0.3?'#ffd166':'#ff8f4d';
+        ctx.beginPath(); ctx.arc(q.x,q.y,3.6*q.l+1,0,7); ctx.fill();
+      }
+      ctx.globalAlpha=1;
+
+      /* rocket */
+      ctx.fillStyle='#e8eefc';
+      ctx.beginPath();
+      ctx.moveTo(rx,ry-30); ctx.lineTo(rx+11,ry+4); ctx.lineTo(rx+11,ry+24);
+      ctx.lineTo(rx-11,ry+24); ctx.lineTo(rx-11,ry+4); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#f72585';
+      ctx.beginPath(); ctx.moveTo(rx-11,ry+10); ctx.lineTo(rx-20,ry+26); ctx.lineTo(rx-11,ry+26); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(rx+11,ry+10); ctx.lineTo(rx+20,ry+26); ctx.lineTo(rx+11,ry+26); ctx.fill();
+
+      arrow(ctx,rx+34,ry+6,rx+34,ry-34,'#06d6a0','thrust',2.6);
+      arrow(ctx,rx-40,ry+56,rx-40,ry+90,'#ffd166','exhaust',2.4);
+      cap(ctx,'action: gas pushed down · reaction: rocket pushed up',w,h,'#93a4c4','top');
+    }
+  },
+  {
+    id:'torq', name:'Torque — force that turns', color:'#4cc9f0',
+    formula:'τ = r × F = r·F·sinθ',
+    units:'newton-metre (N·m) — not a joule, despite the same base units',
+    desc:'Where a force acts matters. The same push far from the pivot turns an object much more easily than close to it. Torque is why door handles sit opposite the hinge and why long spanners loosen tight bolts.',
+    draw(ctx,w,h,dt,t,s){
+      if(!s.p) s.p={ang:0,vel:0};
+      const p=s.p;
+      const rArm = 0.55+0.45*Math.sin(t*0.8);   // lever arm fraction
+      const F=1;
+      p.vel += (rArm*F)*dt*2.2; p.vel*=0.94; p.ang += p.vel*dt;
+      const cx=w*0.5, cy=h*0.55, L=Math.min(w,h)*0.36;
+
+      ctx.save(); ctx.translate(cx,cy); ctx.rotate(p.ang);
+      ctx.strokeStyle='#4cc9f0'; ctx.lineWidth=6; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-L,0); ctx.lineTo(L,0); ctx.stroke();
+      ctx.fillStyle='#1b2740';
+      for(let i=-1;i<=1;i+=2){ ctx.beginPath(); ctx.arc(i*L,0,5,0,7); ctx.fill(); }
+      ctx.restore();
+
+      const ax=cx+Math.cos(p.ang)*L*rArm, ay=cy+Math.sin(p.ang)*L*rArm;
+      arrow(ctx,ax,ay,ax-Math.sin(p.ang)*40,ay+Math.cos(p.ang)*40,'#f72585','F',2.8);
+      ctx.strokeStyle='rgba(255,209,102,.7)'; ctx.lineWidth=1.6; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ax,ay); ctx.stroke(); ctx.setLineDash([]);
+      label(ctx,'r',(cx+ax)/2+8,(cy+ay)/2-8,'#ffd166',11);
+      ctx.fillStyle='#ffd166'; ctx.beginPath(); ctx.arc(cx,cy,6,0,7); ctx.fill();
+      label(ctx,'pivot',cx-14,cy+16,'#7f90b0',9,'right');
+      cap(ctx,'lever arm r = '+rArm.toFixed(2)+' m  → τ = '+(rArm*F).toFixed(2)+' N·m',w,h,'#93a4c4','top');
+      cap(ctx,'same force, longer arm → more turning effect',w,h,'#7f90b0','bottom');
+    }
+  }
+];
+
+(function buildForces(){
+  const grid=document.getElementById('forceGrid');
+  FORCES.forEach(f=>{
+    const card=document.createElement('div');
+    card.className='card reveal';
+    card.innerHTML=`
+      <span class="tag" style="color:${f.color}">${f.name.toUpperCase()}</span>
+      <h3 style="color:${f.color}">${f.name}</h3>
+      <canvas class="demo" id="fc_${f.id}" style="height:220px;margin-top:10px"></canvas>
+      <p style="margin-top:12px;font-size:.92rem">${f.desc}</p>
+      <div style="margin-top:12px;padding:10px 12px;background:#0c1524;border:1px solid var(--line);border-radius:9px">
+        <div style="font-family:var(--mono);font-size:.84rem;color:${f.color}">${f.formula}</div>
+        <div style="font-family:var(--mono);font-size:.74rem;color:#7f90b0;margin-top:5px">SI: ${f.units}</div>
+      </div>`;
+    grid.appendChild(card);
+  });
+  FORCES.forEach(f=>{
+    scene(document.getElementById('fc_'+f.id), f.draw);
+  });
+})();
+
+/* =========================================================
+   FREE BODY LAB — crate on a ramp
+   ========================================================= */
+(function(){
+  const cv=document.getElementById('cRamp');
+  const A=document.getElementById('rAng'), M=document.getElementById('rMass'),
+        U=document.getElementById('rMu'), P=document.getElementById('rPush');
+  const AV=document.getElementById('rAngV'), MV=document.getElementById('rMassV'),
+        UV=document.getElementById('rMuV'), PV=document.getElementById('rPushV');
+  const OUT=document.getElementById('rampOut');
+  let d=0, v=0;
+
+  scene(cv,(ctx,w,h,dt)=>{
+    const th=+A.value*Math.PI/180, m=+M.value, mu=+U.value/100, push=+P.value;
+    AV.textContent=A.value+'°'; MV.textContent=m+' kg';
+    UV.textContent=mu.toFixed(2); PV.textContent=push+' N';
+
+    const W=m*G;
+    const Wpar=W*Math.sin(th);      // down-slope component
+    const N=W*Math.cos(th);
+    const fMax=mu*N;
+    const drive = push - Wpar;      // + = up the slope
+    let f=0, a=0, state='';
+    if(Math.abs(v)<0.05 && Math.abs(drive)<=fMax){
+      f=-drive; a=0; v=0; state='STATIC — friction holds it';
+    }else{
+      const dir = Math.abs(v)>0.05 ? Math.sign(v) : Math.sign(drive);
+      f = -dir*fMax;
+      a = (drive+f)/m;
+      state = dir>0 ? 'SLIDING UP the ramp' : 'SLIDING DOWN the ramp';
+    }
+    v += a*dt; d += v*dt*4;
+
+    /* keep the crate on the ramp: park it at the ends, reset when it bottoms out */
+    const Lmax = 190;
+    if(d>Lmax){ d=Lmax; v=0; }
+    if(d<0){ d=Lmax*0.55; v=0; }
+
+    /* geometry */
+    const bx=w*0.12, by=h-46, L=Math.min(w*0.72, 420);
+    const tx=bx+L*Math.cos(th), ty=by-L*Math.sin(th);
+    ctx.fillStyle='rgba(30,48,80,.55)';
+    ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(tx,ty); ctx.lineTo(tx,by); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='#3a5480'; ctx.lineWidth=2; ctx.stroke();
+    ground(ctx,w,by);
+
+    /* angle arc */
+    ctx.strokeStyle='#ffd166'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.arc(bx,by,30,-th,0); ctx.stroke();
+    label(ctx,A.value+'°',bx+38,by-10,'#ffd166',11);
+
+    /* crate — arrows scaled so the weight vector is always 56 px long */
+    const s0=56/W, dist=44+d;
+    const cxp=bx+dist*Math.cos(th), cyp=by-dist*Math.sin(th);
+    const bw=44, bh=34;
+    ctx.save(); ctx.translate(cxp,cyp); ctx.rotate(-th);
+    box(ctx,-bw/2,-bh,bw,bh,'rgba(255,143,77,.28)','#ff8f4d');
+    label(ctx,m+'kg',0,-bh/2,'#e8eefc',11,'center');
+    /* forces expressed in the ramp frame */
+    arrow(ctx,0,-bh,0,-bh-N*s0,'#06d6a0','N',2.6,'side');
+    if(Math.abs(f)>0.5) arrow(ctx,0,-bh*0.35,f*s0,-bh*0.35,'#ff8f4d','f',2.4,'side');
+    if(push>0) arrow(ctx,0,-bh*0.7,push*s0,-bh*0.7,'#4cc9f0','P',2.4,'side');
+    ctx.restore();
+    /* weight stays vertical in the world frame */
+    arrow(ctx,cxp,cyp,cxp,cyp+W*s0,'#f72585','W = mg',2.8,'side');
+
+    /* readout panel on canvas */
+    label(ctx,state, w-12, 20, a===0?'#06d6a0':'#ffd166',12,'right');
+    label(ctx,'a = '+a.toFixed(2)+' m/s²', w-12, 38,'#4cc9f0',11,'right');
+
+    OUT.innerHTML =
+      'W = mg = <b>'+W.toFixed(1)+' N</b> · '+
+      'N = mg·cosθ = <b>'+N.toFixed(1)+' N</b> · '+
+      'down-slope mg·sinθ = <b>'+Wpar.toFixed(1)+' N</b> · '+
+      'max static friction μN = <b>'+fMax.toFixed(1)+' N</b><br>'+
+      'net along ramp = <b>'+(a*m).toFixed(1)+' N</b> → a = <b>'+a.toFixed(2)+' m/s²</b> — '+state;
+  });
+})();
+
+/* =========================================================
+   FOUR FUNDAMENTAL FORCES — log bar chart
+   ========================================================= */
+(function(){
+  const cv=document.getElementById('cFund');
+  const data=[
+    {n:'Strong nuclear', e:0,   c:'#f72585', r:'10⁻¹⁵ m', d:'binds nuclei'},
+    {n:'Electromagnetic',e:-2,  c:'#ffd166', r:'infinite', d:'charges, light, chemistry'},
+    {n:'Weak nuclear',   e:-6,  c:'#b07cff', r:'10⁻¹⁸ m', d:'radioactive decay'},
+    {n:'Gravitational',  e:-38, c:'#4cc9f0', r:'infinite', d:'masses, orbits'}
+  ];
+  let grow=0;
+  scene(cv,(ctx,w,h,dt,t)=>{
+    grow=Math.min(1, grow+dt*0.6);
+    const pad=w<520?110:170, top=34, bh=Math.min(34,(h-top-26)/4-12);
+    label(ctx,'relative strength (log scale, strong = 1)',12,16,'#93a4c4',11);
+    data.forEach((d,i)=>{
+      const y=top+i*((h-top-18)/4);
+      const frac=(d.e+40)/40;
+      const bw=(w-pad-24)*frac*grow;
+      label(ctx,d.n,pad-10,y+bh/2,d.c,11,'right');
+      ctx.fillStyle='#141e33'; ctx.fillRect(pad,y,w-pad-24,bh);
+      const g=ctx.createLinearGradient(pad,0,pad+Math.max(bw,1),0);
+      g.addColorStop(0,d.c+'55'); g.addColorStop(1,d.c);
+      ctx.fillStyle=g; ctx.fillRect(pad,y,Math.max(bw,2),bh);
+      label(ctx,'10'+sup(d.e),pad+Math.max(bw,2)+8,y+bh/2,'#e8eefc',11);
+      label(ctx,'range '+d.r+' · '+d.d,pad+4,y+bh+9,'#5c6f92',9);
+    });
+    function sup(e){
+      const map={'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+      return String(e).split('').map(c=>map[c]||c).join('');
+    }
+  });
+})();
+
+/* =========================================================
+   Reveal on scroll + reading progress
+   ========================================================= */
+const revIO=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); revIO.unobserve(e.target); } });
+},{threshold:0.08});
+document.querySelectorAll('.reveal').forEach(el=>revIO.observe(el));
+
+const prog=document.getElementById('progress');
+window.addEventListener('scroll',()=>{
+  const max=document.body.scrollHeight-window.innerHeight;
+  prog.style.width=(max>0? (scrollY/max*100):0)+'%';
+},{passive:true});
+
+/* =========================================================
+   Boot
+   ========================================================= */
+initStars();
+resizeAll();
+(function tick(now){ drawStars((now||0)/1000); requestAnimationFrame(tick); })();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
