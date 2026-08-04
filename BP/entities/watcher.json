@@ -1,0 +1,53 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ag:watcher",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "ag:despawn_now": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": { "family": ["ag_horror", "ag_watcher"] },
+      "minecraft:collision_box": { "width": 0.6, "height": 2.4 },
+      "minecraft:health": { "value": 200, "max": 200 },
+      "minecraft:knockback_resistance": { "value": 1.0 },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "deals_damage": false
+          }
+        ]
+      },
+      "minecraft:physics": { "has_collision": true, "has_gravity": true },
+      "minecraft:pushable": { "is_pushable": false, "is_pushable_by_piston": false },
+      "minecraft:persistent": {},
+      "minecraft:movement": { "value": 0.0 },
+      "minecraft:attack": { "damage": 3 },
+      "minecraft:behavior.look_at_player": {
+        "priority": 1,
+        "look_distance": 32,
+        "probability": 1.0,
+        "angle_of_view_horizontal": 360,
+        "angle_of_view_vertical": 360
+      },
+      "minecraft:conditional_bandwidth_optimization": {
+        "default_values": {
+          "max_optimized_distance": 64,
+          "max_dropped_ticks": 12,
+          "use_motion_prediction_hints": false
+        }
+      }
+    },
+    "events": {
+      "ag:despawn": {
+        "add": { "component_groups": ["ag:despawn_now"] }
+      }
+    }
+  }
+}

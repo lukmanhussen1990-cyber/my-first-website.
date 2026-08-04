@@ -1,0 +1,94 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ag:portrait",
+      "menu_category": {
+        "category": "construction"
+      },
+      "states": {
+        "ag:index": [0, 1, 2, 3, 4],
+        "ag:wrong": [false, true]
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ag_portrait_0",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 16, 16]
+      },
+      "minecraft:selection_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 16, 16]
+      },
+      "minecraft:light_emission": 3,
+      "minecraft:destructible_by_mining": false,
+      "minecraft:destructible_by_explosion": false,
+      "minecraft:map_color": "#4b3b2a"
+    },
+    "permutations": [
+      {
+        "condition": "query.block_state('ag:index') == 1",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "ag_portrait_1",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "query.block_state('ag:index') == 2",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "ag_portrait_2",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "query.block_state('ag:index') == 3",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "ag_portrait_3",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "query.block_state('ag:index') == 4",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "ag_portrait_4",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "query.block_state('ag:wrong') == true",
+        "components": {
+          "minecraft:light_emission": 5,
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "ag_portrait_wrong",
+              "render_method": "opaque"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

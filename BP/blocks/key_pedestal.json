@@ -1,0 +1,44 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ag:key_pedestal",
+      "menu_category": {
+        "category": "construction"
+      },
+      "states": {
+        "ag:key_id": [1, 2, 3, 4, 5],
+        "ag:taken": [false, true]
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ag_key_pedestal",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 14, 16]
+      },
+      "minecraft:selection_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 16, 16]
+      },
+      "minecraft:light_emission": 8,
+      "minecraft:destructible_by_mining": false,
+      "minecraft:destructible_by_explosion": false,
+      "minecraft:map_color": "#d9d2b6"
+    },
+    "permutations": [
+      {
+        "condition": "query.block_state('ag:taken') == true",
+        "components": {
+          "minecraft:light_emission": 2
+        }
+      }
+    ]
+  }
+}

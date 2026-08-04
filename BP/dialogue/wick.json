@@ -1,0 +1,109 @@
+{
+  "format_version": "1.17.0",
+  "minecraft:npc_dialogue": {
+    "scenes": [
+      {
+        "scene_tag": "ag_wick_intro",
+        "npc_name": {
+          "rawtext": [
+            {
+              "text": "Wick, the Lamplighter"
+            }
+          ]
+        },
+        "text": {
+          "rawtext": [
+            {
+              "text": "I lit the lamps here for forty years. Then one night I did not.\n\nTake the candle. Keep it burning."
+            }
+          ]
+        },
+        "on_open_commands": [
+          "/playsound note.harp @a[r=12] ~ ~ ~ 0.6 0.7"
+        ],
+        "on_close_commands": [],
+        "buttons": [
+          {
+            "name": {
+              "rawtext": [
+                {
+                  "text": "Why the candle?"
+                }
+              ]
+            },
+            "commands": [
+              "/dialogue open @s @initiator ag_wick_light"
+            ]
+          },
+          {
+            "name": {
+              "rawtext": [
+                {
+                  "text": "What is watching me?"
+                }
+              ]
+            },
+            "commands": [
+              "/dialogue open @s @initiator ag_wick_dark"
+            ]
+          }
+        ]
+      },
+      {
+        "scene_tag": "ag_wick_light",
+        "npc_name": {
+          "rawtext": [
+            {
+              "text": "Wick, the Lamplighter"
+            }
+          ]
+        },
+        "text": {
+          "rawtext": [
+            {
+              "text": "Light is safe. Dark is watched.\n\nThe flame eats itself. Wind and water eat it faster. Find tallow before the wick goes blue."
+            }
+          ]
+        },
+        "on_open_commands": [],
+        "on_close_commands": [],
+        "buttons": [
+          {
+            "name": {
+              "rawtext": [
+                {
+                  "text": "And the dark?"
+                }
+              ]
+            },
+            "commands": [
+              "/dialogue open @s @initiator ag_wick_dark"
+            ]
+          }
+        ]
+      },
+      {
+        "scene_tag": "ag_wick_dark",
+        "npc_name": {
+          "rawtext": [
+            {
+              "text": "Wick, the Lamplighter"
+            }
+          ]
+        },
+        "text": {
+          "rawtext": [
+            {
+              "text": "Five keys of bone. Five rooms that keep them.\n\nSalt stops what walks. Glass shows what hides. The bell asks, and the house answers - badly."
+            }
+          ]
+        },
+        "on_open_commands": [],
+        "on_close_commands": [
+          "/playsound random.click @a[r=12] ~ ~ ~ 0.5 0.8"
+        ],
+        "buttons": []
+      }
+    ]
+  }
+}

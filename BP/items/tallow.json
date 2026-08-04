@@ -1,0 +1,24 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "ag:tallow",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "ag_tallow"
+      },
+      "minecraft:display_name": {
+        "value": "item.ag:tallow.name"
+      },
+      "minecraft:max_stack_size": 16,
+      "minecraft:should_despawn": false,
+      "minecraft:tags": {
+        "tags": ["ag:fuel"]
+      }
+    }
+  }
+}

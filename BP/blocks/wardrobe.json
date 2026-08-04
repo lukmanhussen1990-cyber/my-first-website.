@@ -1,0 +1,55 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ag:wardrobe",
+      "menu_category": {
+        "category": "construction"
+      },
+      "states": {
+        "ag:occupied": [false, true]
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ag_wardrobe_side",
+          "render_method": "opaque"
+        },
+        "north": {
+          "texture": "ag_wardrobe_front",
+          "render_method": "opaque"
+        },
+        "up": {
+          "texture": "ag_wardrobe_top",
+          "render_method": "opaque"
+        },
+        "down": {
+          "texture": "ag_wardrobe_top",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 16, 16]
+      },
+      "minecraft:selection_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 16, 16]
+      },
+      "minecraft:light_emission": 2,
+      "minecraft:destructible_by_mining": false,
+      "minecraft:destructible_by_explosion": false,
+      "minecraft:map_color": "#3a2a1d"
+    },
+    "permutations": [
+      {
+        "condition": "query.block_state('ag:occupied') == true",
+        "components": {
+          "minecraft:light_emission": 5
+        }
+      }
+    ]
+  }
+}

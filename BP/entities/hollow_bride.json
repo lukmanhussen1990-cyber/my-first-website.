@@ -1,0 +1,124 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ag:hollow_bride",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "ag:phase_veil": {
+        "minecraft:movement": { "value": 0.14 },
+        "minecraft:damage_sensor": {
+          "triggers": [{ "deals_damage": false }]
+        },
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 2,
+          "must_see": false,
+          "must_reach": false,
+          "reselect_targets": true,
+          "within_default": 40,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "player"
+              },
+              "max_dist": 40
+            }
+          ]
+        }
+      },
+      "ag:phase_chorus": {
+        "minecraft:movement": { "value": 0.0 },
+        "minecraft:damage_sensor": {
+          "triggers": [{ "deals_damage": false }]
+        }
+      },
+      "ag:phase_hollowing": {
+        "minecraft:movement": { "value": 0.0 },
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "fall",
+              "deals_damage": false
+            },
+            {
+              "cause": "fire",
+              "deals_damage": false
+            },
+            {
+              "cause": "drowning",
+              "deals_damage": false
+            }
+          ]
+        }
+      },
+      "ag:despawn_now": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": { "family": ["ag_horror", "ag_boss", "ag_hunter"] },
+      "minecraft:collision_box": { "width": 0.7, "height": 2.3 },
+      "minecraft:health": { "value": 150, "max": 150 },
+      "minecraft:knockback_resistance": { "value": 1.0 },
+      "minecraft:physics": {},
+      "minecraft:pushable": { "is_pushable": false, "is_pushable_by_piston": false },
+      "minecraft:persistent": {},
+      "minecraft:fire_immune": true,
+      "minecraft:movement": { "value": 0.14 },
+      "minecraft:navigation.walk": {
+        "can_path_over_water": true,
+        "can_pass_doors": true,
+        "can_open_doors": true,
+        "avoid_water": false,
+        "can_walk": true,
+        "can_sink": false
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:jump.static": {},
+      "minecraft:attack": { "damage": 5 },
+      "minecraft:behavior.melee_attack": {
+        "priority": 3,
+        "track_target": true,
+        "reach_multiplier": 1.3,
+        "cooldown_time": 2.0
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 7,
+        "look_distance": 24,
+        "probability": 1.0
+      },
+      "minecraft:conditional_bandwidth_optimization": {
+        "default_values": {
+          "max_optimized_distance": 64,
+          "max_dropped_ticks": 8,
+          "use_motion_prediction_hints": true
+        }
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": { "component_groups": ["ag:phase_veil"] }
+      },
+      "ag:to_veil": {
+        "remove": { "component_groups": ["ag:phase_chorus", "ag:phase_hollowing"] },
+        "add": { "component_groups": ["ag:phase_veil"] }
+      },
+      "ag:to_chorus": {
+        "remove": { "component_groups": ["ag:phase_veil", "ag:phase_hollowing"] },
+        "add": { "component_groups": ["ag:phase_chorus"] }
+      },
+      "ag:to_hollowing": {
+        "remove": { "component_groups": ["ag:phase_veil", "ag:phase_chorus"] },
+        "add": { "component_groups": ["ag:phase_hollowing"] }
+      },
+      "ag:despawn": {
+        "add": { "component_groups": ["ag:despawn_now"] }
+      }
+    }
+  }
+}

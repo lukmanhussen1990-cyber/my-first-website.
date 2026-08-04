@@ -1,0 +1,46 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "7f3a1c62-9e04-4b8d-b1a7-2c5e6d90f341",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "2d84be51-6a3f-4c17-9e0b-5f7a1d2c8e64",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "entry": "scripts/main.js",
+      "uuid": "9c1e7a30-4b52-46df-8a13-0e6f5b7c2d98",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "4e6b8d15-3c07-4a29-bf42-91d7e0a6c358",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.2.0"
+    }
+  ],
+  "metadata": {
+    "authors": ["Hollow Bride Studio"],
+    "license": "MIT",
+    "product_type": "addon",
+    "generated_with": {
+      "hollow_bride_build": ["1.0.0"]
+    }
+  }
+}

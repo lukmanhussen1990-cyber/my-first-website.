@@ -1,0 +1,29 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "ag:salt_pouch",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "ag_salt_pouch"
+      },
+      "minecraft:display_name": {
+        "value": "item.ag:salt_pouch.name"
+      },
+      "minecraft:max_stack_size": 12,
+      "minecraft:should_despawn": false,
+      "minecraft:block_placer": {
+        "block": "ag:salt_line"
+      },
+      "minecraft:tags": {
+        "tags": [
+          "ag:tool"
+        ]
+      }
+    }
+  }
+}

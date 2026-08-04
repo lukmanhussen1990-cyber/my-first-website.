@@ -1,0 +1,81 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ag:toy_block",
+      "menu_category": {
+        "category": "construction"
+      },
+      "states": {
+        "ag:note": [0, 1, 2, 3, 4]
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ag_toy_0",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 16, 16]
+      },
+      "minecraft:selection_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 16, 16]
+      },
+      "minecraft:light_emission": 4,
+      "minecraft:destructible_by_mining": false,
+      "minecraft:destructible_by_explosion": false,
+      "minecraft:map_color": "#c25f4a"
+    },
+    "permutations": [
+      {
+        "condition": "query.block_state('ag:note') == 1",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "ag_toy_1",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "query.block_state('ag:note') == 2",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "ag_toy_2",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "query.block_state('ag:note') == 3",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "ag_toy_3",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "query.block_state('ag:note') == 4",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "ag_toy_4",
+              "render_method": "opaque"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

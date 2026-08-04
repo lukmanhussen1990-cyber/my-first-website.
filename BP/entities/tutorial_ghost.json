@@ -1,0 +1,58 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ag:tutorial_ghost",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "ag:despawn_now": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": { "family": ["ag_friendly", "ag_ghost"] },
+      "minecraft:collision_box": { "width": 0.6, "height": 1.8 },
+      "minecraft:health": { "value": 10, "max": 10 },
+      "minecraft:knockback_resistance": { "value": 1.0 },
+      "minecraft:physics": { "has_collision": false, "has_gravity": false },
+      "minecraft:pushable": { "is_pushable": false, "is_pushable_by_piston": false },
+      "minecraft:persistent": {},
+      "minecraft:movement": { "value": 0.0 },
+      "minecraft:damage_sensor": {
+        "triggers": [{ "deals_damage": false }]
+      },
+      "minecraft:npc": {
+        "npc_data": {
+          "portrait_offsets": {
+            "translate": [0, 0, 0],
+            "scale": [1, 1, 1]
+          },
+          "picker_offsets": {
+            "translate": [0, 0, 0],
+            "scale": [1, 1, 1]
+          }
+        }
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 1,
+        "look_distance": 12,
+        "probability": 1.0
+      },
+      "minecraft:conditional_bandwidth_optimization": {
+        "default_values": {
+          "max_optimized_distance": 32,
+          "max_dropped_ticks": 15,
+          "use_motion_prediction_hints": false
+        }
+      }
+    },
+    "events": {
+      "ag:despawn": {
+        "add": { "component_groups": ["ag:despawn_now"] }
+      }
+    }
+  }
+}

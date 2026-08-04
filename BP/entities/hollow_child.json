@@ -1,0 +1,78 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ag:hollow_child",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "ag:despawn_now": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": { "family": ["ag_horror", "ag_child", "ag_hunter"] },
+      "minecraft:collision_box": { "width": 0.4, "height": 1.0 },
+      "minecraft:health": { "value": 14, "max": 14 },
+      "minecraft:knockback_resistance": { "value": 0.6 },
+      "minecraft:physics": {},
+      "minecraft:pushable": { "is_pushable": false, "is_pushable_by_piston": false },
+      "minecraft:persistent": {},
+      "minecraft:scale": { "value": 0.65 },
+      "minecraft:movement": { "value": 0.24 },
+      "minecraft:navigation.walk": {
+        "can_path_over_water": true,
+        "can_pass_doors": true,
+        "can_open_doors": false,
+        "avoid_water": false,
+        "can_walk": true,
+        "can_sink": false
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:jump.static": {},
+      "minecraft:attack": { "damage": 2 },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 2,
+        "must_see": false,
+        "must_reach": false,
+        "reselect_targets": true,
+        "within_default": 24,
+        "entity_types": [
+          {
+            "filters": {
+              "test": "is_family",
+              "subject": "other",
+              "value": "player"
+            },
+            "max_dist": 24
+          }
+        ]
+      },
+      "minecraft:behavior.melee_attack": {
+        "priority": 3,
+        "track_target": true,
+        "cooldown_time": 1.8
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 6,
+        "speed_multiplier": 0.7,
+        "xz_dist": 6,
+        "y_dist": 2
+      },
+      "minecraft:conditional_bandwidth_optimization": {
+        "default_values": {
+          "max_optimized_distance": 48,
+          "max_dropped_ticks": 10,
+          "use_motion_prediction_hints": true
+        }
+      }
+    },
+    "events": {
+      "ag:despawn": {
+        "add": { "component_groups": ["ag:despawn_now"] }
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ag:reflection",
+      "min_engine_version": "1.21.0",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/ag_reflection"
+      },
+      "geometry": {
+        "default": "geometry.ag_humanoid"
+      },
+      "animations": {
+        "idle": "animation.ag.idle",
+        "walk": "animation.ag.walk",
+        "general": "controller.animation.ag.general"
+      },
+      "scripts": {
+        "animate": ["general"]
+      },
+      "render_controllers": ["controller.render.ag_default"]
+    }
+  }
+}

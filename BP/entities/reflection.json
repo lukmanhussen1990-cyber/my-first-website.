@@ -1,0 +1,62 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ag:reflection",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "ag:mirroring": {
+        "minecraft:movement": { "value": 0.0 },
+        "minecraft:damage_sensor": {
+          "triggers": [{ "deals_damage": false }]
+        }
+      },
+      "ag:hunting": {
+        "minecraft:movement": { "value": 0.23 },
+        "minecraft:attack": { "damage": 3 }
+      },
+      "ag:despawn_now": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": { "family": ["ag_horror", "ag_reflection"] },
+      "minecraft:collision_box": { "width": 0.6, "height": 1.8 },
+      "minecraft:health": { "value": 40, "max": 40 },
+      "minecraft:knockback_resistance": { "value": 1.0 },
+      "minecraft:physics": { "has_collision": false, "has_gravity": false },
+      "minecraft:pushable": { "is_pushable": false, "is_pushable_by_piston": false },
+      "minecraft:persistent": {},
+      "minecraft:movement": { "value": 0.0 },
+      "minecraft:damage_sensor": {
+        "triggers": [{ "deals_damage": false }]
+      },
+      "minecraft:conditional_bandwidth_optimization": {
+        "default_values": {
+          "max_optimized_distance": 48,
+          "max_dropped_ticks": 8,
+          "use_motion_prediction_hints": false
+        }
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": { "component_groups": ["ag:mirroring"] }
+      },
+      "ag:start_hunt": {
+        "remove": { "component_groups": ["ag:mirroring"] },
+        "add": { "component_groups": ["ag:hunting"] }
+      },
+      "ag:stop_hunt": {
+        "remove": { "component_groups": ["ag:hunting"] },
+        "add": { "component_groups": ["ag:mirroring"] }
+      },
+      "ag:despawn": {
+        "add": { "component_groups": ["ag:despawn_now"] }
+      }
+    }
+  }
+}

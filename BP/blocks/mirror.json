@@ -1,0 +1,49 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ag:mirror",
+      "menu_category": {
+        "category": "construction"
+      },
+      "states": {
+        "ag:broken": [false, true]
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ag_mirror",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 16, 16]
+      },
+      "minecraft:selection_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 16, 16]
+      },
+      "minecraft:light_emission": 4,
+      "minecraft:destructible_by_mining": false,
+      "minecraft:destructible_by_explosion": false,
+      "minecraft:map_color": "#8f9aa3"
+    },
+    "permutations": [
+      {
+        "condition": "query.block_state('ag:broken') == true",
+        "components": {
+          "minecraft:light_emission": 1,
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "ag_mirror_broken",
+              "render_method": "opaque"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

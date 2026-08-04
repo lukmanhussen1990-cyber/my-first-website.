@@ -1,0 +1,43 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ag:under_bed",
+      "menu_category": {
+        "category": "construction"
+      },
+      "states": {
+        "ag:occupied": [false, true]
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ag_under_bed",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 10, 16]
+      },
+      "minecraft:selection_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 12, 16]
+      },
+      "minecraft:light_emission": 2,
+      "minecraft:destructible_by_mining": false,
+      "minecraft:destructible_by_explosion": false,
+      "minecraft:map_color": "#4a3324"
+    },
+    "permutations": [
+      {
+        "condition": "query.block_state('ag:occupied') == true",
+        "components": {
+          "minecraft:light_emission": 5
+        }
+      }
+    ]
+  }
+}

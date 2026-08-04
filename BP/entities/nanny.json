@@ -1,0 +1,162 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ag:nanny",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "ag:ears_calm": {
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 2,
+          "must_see": false,
+          "must_reach": false,
+          "reselect_targets": true,
+          "within_default": 3,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "player"
+              },
+              "max_dist": 3
+            }
+          ]
+        },
+        "minecraft:movement": { "value": 0.16 }
+      },
+      "ag:ears_alert": {
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 2,
+          "must_see": false,
+          "must_reach": false,
+          "reselect_targets": true,
+          "within_default": 18,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "player"
+              },
+              "max_dist": 18
+            }
+          ]
+        },
+        "minecraft:movement": { "value": 0.21 }
+      },
+      "ag:ears_frenzy": {
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 2,
+          "must_see": false,
+          "must_reach": false,
+          "reselect_targets": true,
+          "within_default": 40,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "player"
+              },
+              "max_dist": 40
+            }
+          ]
+        },
+        "minecraft:movement": { "value": 0.27 }
+      },
+      "ag:frozen": {
+        "minecraft:movement": { "value": 0.0 },
+        "minecraft:is_stunned": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": { "family": ["ag_horror", "ag_hunter", "nanny"] },
+      "minecraft:collision_box": { "width": 0.6, "height": 1.9 },
+      "minecraft:health": { "value": 60, "max": 60 },
+      "minecraft:knockback_resistance": { "value": 1.0 },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "fall",
+            "deals_damage": false
+          },
+          {
+            "cause": "fire",
+            "deals_damage": false
+          },
+          {
+            "cause": "drowning",
+            "deals_damage": false
+          }
+        ]
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": { "is_pushable": false, "is_pushable_by_piston": false },
+      "minecraft:persistent": {},
+      "minecraft:movement": { "value": 0.16 },
+      "minecraft:navigation.walk": {
+        "can_path_over_water": true,
+        "can_pass_doors": true,
+        "can_open_doors": true,
+        "avoid_water": false,
+        "can_walk": true,
+        "can_sink": false
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:jump.static": {},
+      "minecraft:can_climb": {},
+      "minecraft:attack": { "damage": 4 },
+      "minecraft:behavior.melee_attack": {
+        "priority": 3,
+        "track_target": true,
+        "reach_multiplier": 1.2,
+        "attack_once": false,
+        "cooldown_time": 1.5
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 6,
+        "speed_multiplier": 0.6,
+        "xz_dist": 8,
+        "y_dist": 3
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 8,
+        "look_distance": 12,
+        "probability": 0.04
+      },
+      "minecraft:behavior.random_look_around": { "priority": 9 },
+      "minecraft:conditional_bandwidth_optimization": {
+        "default_values": {
+          "max_optimized_distance": 64,
+          "max_dropped_ticks": 10,
+          "use_motion_prediction_hints": true
+        }
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": { "component_groups": ["ag:ears_calm"] }
+      },
+      "ag:set_calm": {
+        "remove": { "component_groups": ["ag:ears_alert", "ag:ears_frenzy", "ag:frozen"] },
+        "add": { "component_groups": ["ag:ears_calm"] }
+      },
+      "ag:set_alert": {
+        "remove": { "component_groups": ["ag:ears_calm", "ag:ears_frenzy", "ag:frozen"] },
+        "add": { "component_groups": ["ag:ears_alert"] }
+      },
+      "ag:set_frenzy": {
+        "remove": { "component_groups": ["ag:ears_calm", "ag:ears_alert", "ag:frozen"] },
+        "add": { "component_groups": ["ag:ears_frenzy"] }
+      },
+      "ag:freeze": {
+        "remove": { "component_groups": ["ag:ears_calm", "ag:ears_alert", "ag:ears_frenzy"] },
+        "add": { "component_groups": ["ag:frozen"] }
+      }
+    }
+  }
+}

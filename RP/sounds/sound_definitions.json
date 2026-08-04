@@ -1,0 +1,188 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "ag.title": {
+      "category": "ui",
+      "sounds": [
+        { "name": "sounds/note/harp", "volume": 0.9, "pitch": 0.55, "load_on_low_memory": true }
+      ]
+    },
+    "ag.door_slam": {
+      "category": "block",
+      "sounds": [
+        { "name": "sounds/random/door_close", "volume": 1.0, "pitch": 0.6, "load_on_low_memory": true }
+      ]
+    },
+    "ag.door_open": {
+      "category": "block",
+      "sounds": [
+        { "name": "sounds/random/door_open", "volume": 0.8, "pitch": 0.75 }
+      ]
+    },
+    "ag.clock_chime": {
+      "category": "block",
+      "sounds": [
+        { "name": "sounds/note/bell", "volume": 1.0, "pitch": 0.6, "load_on_low_memory": true }
+      ]
+    },
+    "ag.clock_tick": {
+      "category": "block",
+      "sounds": [
+        { "name": "sounds/random/click", "volume": 0.35, "pitch": 0.7 }
+      ]
+    },
+    "ag.heartbeat": {
+      "category": "player",
+      "sounds": [
+        { "name": "sounds/mob/warden/heartbeat", "volume": 1.0, "pitch": 1.0, "load_on_low_memory": true }
+      ]
+    },
+    "ag.whisper": {
+      "category": "ambient",
+      "sounds": [
+        { "name": "sounds/mob/ghast/moan1", "volume": 0.35, "pitch": 1.6 },
+        { "name": "sounds/mob/ghast/moan2", "volume": 0.35, "pitch": 1.7 },
+        { "name": "sounds/mob/ghast/moan3", "volume": 0.35, "pitch": 1.55 }
+      ]
+    },
+    "ag.tell": {
+      "category": "ambient",
+      "sounds": [
+        { "name": "sounds/random/fuse", "volume": 0.7, "pitch": 0.5, "load_on_low_memory": true }
+      ]
+    },
+    "ag.scare": {
+      "category": "hostile",
+      "sounds": [
+        { "name": "sounds/mob/enderdragon/growl", "volume": 0.9, "pitch": 1.4 }
+      ]
+    },
+    "ag.candle_light": {
+      "category": "block",
+      "sounds": [
+        { "name": "sounds/fire/ignite", "volume": 0.8, "pitch": 1.1 }
+      ]
+    },
+    "ag.candle_out": {
+      "category": "block",
+      "sounds": [
+        { "name": "sounds/random/fizz", "volume": 0.7, "pitch": 0.8 }
+      ]
+    },
+    "ag.key_get": {
+      "category": "player",
+      "sounds": [
+        { "name": "sounds/random/levelup", "volume": 0.8, "pitch": 0.8, "load_on_low_memory": true }
+      ]
+    },
+    "ag.checkpoint": {
+      "category": "player",
+      "sounds": [
+        { "name": "sounds/random/orb", "volume": 0.5, "pitch": 0.7 }
+      ]
+    },
+    "ag.page": {
+      "category": "player",
+      "sounds": [
+        { "name": "sounds/random/orb", "volume": 0.6, "pitch": 1.3 }
+      ]
+    },
+    "ag.bell": {
+      "category": "player",
+      "sounds": [
+        { "name": "sounds/note/bell", "volume": 0.9, "pitch": 1.2 }
+      ]
+    },
+    "ag.camera": {
+      "category": "player",
+      "sounds": [
+        { "name": "sounds/random/click", "volume": 0.9, "pitch": 1.5 }
+      ]
+    },
+    "ag.mirror_break": {
+      "category": "block",
+      "sounds": [
+        { "name": "sounds/random/glass1", "volume": 1.0, "pitch": 0.8 },
+        { "name": "sounds/random/glass2", "volume": 1.0, "pitch": 0.75 },
+        { "name": "sounds/random/glass3", "volume": 1.0, "pitch": 0.85 }
+      ]
+    },
+    "ag.salt_place": {
+      "category": "block",
+      "sounds": [
+        { "name": "sounds/dig/sand1", "volume": 0.8, "pitch": 1.3 },
+        { "name": "sounds/dig/sand2", "volume": 0.8, "pitch": 1.25 }
+      ]
+    },
+    "ag.wardrobe": {
+      "category": "block",
+      "sounds": [
+        { "name": "sounds/random/door_open", "volume": 0.7, "pitch": 0.55 }
+      ]
+    },
+    "ag.muffled": {
+      "category": "player",
+      "sounds": [
+        { "name": "sounds/random/pop", "volume": 0.4, "pitch": 0.5 }
+      ]
+    },
+    "ag.step_wet": {
+      "category": "player",
+      "sounds": [
+        { "name": "sounds/liquid/splash", "volume": 0.5, "pitch": 0.9 }
+      ]
+    },
+    "ag.collapse": {
+      "category": "block",
+      "sounds": [
+        { "name": "sounds/random/explode1", "volume": 1.0, "pitch": 0.55 },
+        { "name": "sounds/random/explode2", "volume": 1.0, "pitch": 0.5 }
+      ]
+    },
+    "ag.bride_tell": {
+      "category": "hostile",
+      "sounds": [
+        { "name": "sounds/mob/wither/idle1", "volume": 0.8, "pitch": 0.7, "load_on_low_memory": true }
+      ]
+    },
+    "ag.child_giggle": {
+      "category": "hostile",
+      "sounds": [
+        { "name": "sounds/note/pling", "volume": 0.6, "pitch": 1.9 }
+      ]
+    },
+    "ag.watcher_move": {
+      "category": "hostile",
+      "sounds": [
+        { "name": "sounds/mob/skeleton/step1", "volume": 0.5, "pitch": 0.6 },
+        { "name": "sounds/mob/skeleton/step2", "volume": 0.5, "pitch": 0.55 }
+      ]
+    },
+    "ag.wraith": {
+      "category": "hostile",
+      "sounds": [
+        { "name": "sounds/mob/ghast/moan4", "volume": 0.7, "pitch": 0.8 }
+      ]
+    },
+    "ag.thunder": {
+      "category": "weather",
+      "sounds": [
+        { "name": "sounds/ambient/weather/thunder1", "volume": 0.8, "pitch": 1.0 }
+      ]
+    },
+    "ag.silence_break": {
+      "category": "ambient",
+      "sounds": [
+        { "name": "sounds/ambient/cave/cave1", "volume": 0.5, "pitch": 0.9 },
+        { "name": "sounds/ambient/cave/cave5", "volume": 0.5, "pitch": 0.85 }
+      ]
+    },
+    "ag.floor_creak": {
+      "category": "block",
+      "sounds": [
+        { "name": "sounds/step/wood1", "volume": 0.45, "pitch": 0.55 },
+        { "name": "sounds/step/wood4", "volume": 0.45, "pitch": 0.5 }
+      ]
+    }
+  }
+}

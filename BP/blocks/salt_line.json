@@ -1,0 +1,48 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ag:salt_line",
+      "menu_category": {
+        "category": "construction"
+      }
+    },
+    "components": {
+      "minecraft:geometry": "geometry.ag_salt_line",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ag_salt_line",
+          "render_method": "alpha_test",
+          "face_dimming": false,
+          "ambient_occlusion": false
+        }
+      },
+      "minecraft:collision_box": false,
+      "minecraft:selection_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 8, 16]
+      },
+      "minecraft:light_emission": 3,
+      "minecraft:light_dampening": 0,
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 0.15
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 0.5
+      },
+      "minecraft:map_color": "#e8e4d8",
+      "minecraft:placement_filter": {
+        "conditions": [
+          {
+            "allowed_faces": ["up"],
+            "block_filter": [
+              {
+                "tags": "!query.any_tag('minecraft:is_liquid')"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

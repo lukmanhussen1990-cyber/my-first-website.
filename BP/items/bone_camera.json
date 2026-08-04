@@ -1,0 +1,29 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "ag:bone_camera",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "ag_bone_camera"
+      },
+      "minecraft:display_name": {
+        "value": "item.ag:bone_camera.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:should_despawn": false,
+      "minecraft:cooldown": {
+        "category": "ag_camera",
+        "duration": 1.5
+      },
+      "minecraft:tags": {
+        "tags": ["ag:tool"]
+      }
+    }
+  }
+}

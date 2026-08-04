@@ -1,0 +1,43 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ag:mailbox",
+      "menu_category": {
+        "category": "construction"
+      },
+      "states": {
+        "ag:opened": [false, true]
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ag_mailbox",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 16, 16]
+      },
+      "minecraft:selection_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 16, 16]
+      },
+      "minecraft:light_emission": 5,
+      "minecraft:destructible_by_mining": false,
+      "minecraft:destructible_by_explosion": false,
+      "minecraft:map_color": "#7a2f28"
+    },
+    "permutations": [
+      {
+        "condition": "query.block_state('ag:opened') == true",
+        "components": {
+          "minecraft:light_emission": 1
+        }
+      }
+    ]
+  }
+}

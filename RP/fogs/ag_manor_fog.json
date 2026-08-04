@@ -1,0 +1,28 @@
+{
+  "format_version": "1.16.100",
+  "minecraft:fog_settings": {
+    "description": {
+      "identifier": "ag:manor_fog"
+    },
+    "distance": {
+      "air": {
+        "fog_start": 3.0,
+        "fog_end": 26.0,
+        "fog_color": "#0d0f13",
+        "render_distance_type": "fixed"
+      },
+      "weather": {
+        "fog_start": 2.0,
+        "fog_end": 18.0,
+        "fog_color": "#0a0c10",
+        "render_distance_type": "fixed"
+      },
+      "water": {
+        "fog_start": 0.5,
+        "fog_end": 8.0,
+        "fog_color": "#101820",
+        "render_distance_type": "fixed"
+      }
+    }
+  }
+}
