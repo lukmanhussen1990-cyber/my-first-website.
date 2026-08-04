@@ -900,6 +900,23 @@ function ringPlaque(player, idx) {
 export function onItemUse(player, itemStack) {
   const id = itemStack ? itemStack.typeId : "";
 
+  // Tap to build (or rebuild) the manor and go there. The escape hatch for
+  // when the automatic build did not fire.
+  if (id === "ag:manor_key") {
+    hint(player, "Building the manor. Stand still.");
+    sound(player, "ag.key_get", 0.7, 0.9);
+    runCmd(player, "function build_manor");
+    system.runTimeout(() => {
+      try {
+        player.teleport({ x: 1015.5, y: 65, z: 996.5 });
+        titleCard(player, "Vane Manor", "Tap the mailbox by the gate");
+      } catch (e) {
+        // ignore
+      }
+    }, 40);
+    return true;
+  }
+
   if (id === "ag:tallow_candle") {
     if (pbool(player, "candle_lit", false)) {
       if (hasItem(player, "ag:tallow") && pnum(player, "candle_fuel", 0) < 900) {

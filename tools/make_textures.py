@@ -960,6 +960,16 @@ def derive_mirror_broken():
     return img
 
 
+def derive_manor_key():
+    """The Manor Key: the bone key struck in brass, so it reads as special."""
+    rows, palette = BONE_KEY
+    pal = dict(palette)
+    pal["a"] = "#6b5220"
+    pal["b"] = "#e8c96a"
+    pal["c"] = "#3a2c10"
+    return grid(rows, pal)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=".", help="directory containing RP/ and BP/")
@@ -1003,6 +1013,7 @@ def main():
         "ag_salt_pouch": grid(*SALT_POUCH),
         "ag_bone_key": grid(*BONE_KEY),
         "ag_manor_journal": grid(*MANOR_JOURNAL),
+        "ag_manor_key": derive_manor_key(),
     }
 
     for name, img in blocks.items():

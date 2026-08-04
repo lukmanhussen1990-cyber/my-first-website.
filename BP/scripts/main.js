@@ -176,6 +176,8 @@ function wireEvents() {
               .then(() => pset(player, "asking", false));
           }, 60);
         }
+        // Everyone always carries the escape hatch.
+        runCmd(player, "give @s ag:manor_key 1");
         titleCard(player, "Vane Manor", "Tap the mailbox by the gate");
       } else {
         // Death respawn: straight back to the room checkpoint, inventory intact.
