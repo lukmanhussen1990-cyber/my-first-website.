@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Al-Ameen Academy — Opening Titles</title>
+<style>
+  @font-face{font-family:'Cinzel';src:url('assets/fonts/Cinzel.woff2') format('woff2');font-weight:400 900;font-display:block}
+  @font-face{font-family:'Montserrat';src:url('assets/fonts/Montserrat.woff2') format('woff2');font-weight:300 700;font-display:block}
+  @font-face{font-family:'Cormorant';src:url('assets/fonts/Cormorant.woff2') format('woff2');font-weight:300 700;font-display:block}
+  html,body{margin:0;height:100%;background:#000;overflow:hidden}
+  #stage{position:fixed;inset:0;display:grid;place-items:center}
+  canvas{width:100vw;height:56.25vw;max-height:100vh;max-width:177.78vh;display:block}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="1920" height="1080"></canvas></div>
+<script>
+const W = 1920, H = 1080, DURATION = 10.6;
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d', { alpha: false });
+
+/* ---------- palette ---------- */
+const INK       = '#02100a';
+const GREEN_DP  = '#04160d';
+const GREEN_MD  = '#0d3b21';
+const GOLD      = '#e3c26a';
+const GOLD_LT   = '#f7e7b6';
+const GOLD_DK   = '#b9903a';
+const IVORY     = '#f7f5ee';
+
+/* ---------- copy (edit these three lines to change the wording) ---------- */
+const TITLE    = 'AL-AMEEN ACADEMY';
+const SUBLEFT  = 'BADARPUR';
+const SUBRIGHT = 'ESTD. 1994';
+const TAGLINE  = 'Excellence in Education since 1994';
+
+/* ---------- timing ---------- */
+const T = {
+  bgIn:      [0.00, 1.40],
+  ringDraw:  [0.35, 1.85],
+  logoIn:    [0.55, 1.95],
+  impact:     1.95,
+  shine:     [2.15, 3.05],
+  title:     [2.45, 4.05],
+  rule:      [3.75, 4.55],
+  sub:       [4.05, 4.95],
+  tag:       [4.75, 5.75],
+  titleShine:[6.30, 7.40],
+  out:       [8.90, 10.35]
+};
+
+/* ---------- math ---------- */
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp  = (a, b, k) => a + (b - a) * k;
+const seg   = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+const easeOutCubic = k => 1 - Math.pow(1 - k, 3);
+const easeOutExpo  = k => k >= 1 ? 1 : 1 - Math.pow(2, -10 * k);
+const easeInOutCubic = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const easeOutBack  = k => { const c = 1.24; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* ---------- assets ---------- */
+const logo = new Image();
+let grain = null;
+
+function buildGrain(){
+  const s = 256, g = document.createElement('canvas');
+  g.width = g.height = s;
+  const gx = g.getContext('2d'), id = gx.createImageData(s, s), rnd = mulberry32(7);
+  for (let i = 0; i < s * s; i++){
+    const v = 120 + rnd() * 135;
+    id.data[i*4] = id.data[i*4+1] = id.data[i*4+2] = v;
+    id.data[i*4+3] = 255;
+  }
+  gx.putImageData(id, 0, 0);
+  grain = g;
+}
+
+/* deterministic particle field */
+const PARTS = (() => {
+  const rnd = mulberry32(2024), out = [];
+  for (let i = 0; i < 110; i++){
+    out.push({
+      x: rnd() * W,
+      y: rnd() * H,
+      r: 0.7 + rnd() * 2.6,
+      spd: 6 + rnd() * 22,
+      drift: (rnd() - .5) * 14,
+      ph: rnd() * Math.PI * 2,
+      a: 0.10 + rnd() * 0.38,
+      warm: rnd()
+    });
+  }
+  return out;
+})();
+
+const LOGO = { x: 960, y: 372, r: 201 };
+
+/* ---------- layers ---------- */
+const layer = document.createElement('canvas');
+layer.width = W; layer.height = 260;
+const lx = layer.getContext('2d');
+
+/* ---------- background ---------- */
+function drawBackground(t){
+  const k = easeOutCubic(seg(t, T.bgIn[0], T.bgIn[1]));
+
+  ctx.fillStyle = INK;
+  ctx.fillRect(0, 0, W, H);
+
+  const g = ctx.createRadialGradient(960, LOGO.y + 40, 60, 960, LOGO.y + 40, 1180);
+  g.addColorStop(0,   'rgba(24,96,54,' + (0.86 * k) + ')');
+  g.addColorStop(0.38,'rgba(10,54,30,' + (0.78 * k) + ')');
+  g.addColorStop(1,   'rgba(3,17,10,'  + (1.00 * k) + ')');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  /* soft light shafts */
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.translate(960, LOGO.y);
+  for (let i = 0; i < 5; i++){
+    const ang = -1.15 + i * 0.52 + Math.sin(t * 0.18 + i) * 0.035;
+    const a = (0.030 + 0.018 * Math.sin(t * 0.6 + i * 1.7)) * k;
+    ctx.save();
+    ctx.rotate(ang);
+    const lg = ctx.createLinearGradient(0, 0, 0, -1500);
+    lg.addColorStop(0, 'rgba(214,236,196,' + a + ')');
+    lg.addColorStop(1, 'rgba(214,236,196,0)');
+    ctx.fillStyle = lg;
+    ctx.beginPath();
+    ctx.moveTo(-14, 0); ctx.lineTo(-150, -1500); ctx.lineTo(150, -1500); ctx.lineTo(14, 0);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  /* concentric guide rings behind the mark */
+  ctx.save();
+  ctx.globalAlpha = 0.9 * k;
+  for (let i = 0; i < 3; i++){
+    const rr = LOGO.r + 74 + i * 96 + Math.sin(t * 0.5 + i) * 3;
+    ctx.beginPath();
+    ctx.arc(LOGO.x, LOGO.y, rr, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(227,194,106,' + (0.075 - i * 0.018) + ')';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawParticles(t, k){
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const p of PARTS){
+    let y = p.y - t * p.spd;
+    y = ((y % (H + 160)) + H + 160) % (H + 160) - 80;
+    const x = p.x + Math.sin(t * 0.34 + p.ph) * p.drift;
+    const tw = 0.55 + 0.45 * Math.sin(t * 1.5 + p.ph * 3);
+    const a = p.a * tw * k;
+    const col = p.warm > 0.45 ? '227,194,106' : '198,232,190';
+    const rg = ctx.createRadialGradient(x, y, 0, x, y, p.r * 5.5);
+    rg.addColorStop(0, 'rgba(' + col + ',' + a + ')');
+    rg.addColorStop(1, 'rgba(' + col + ',0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.arc(x, y, p.r * 5.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* ---------- the mark ---------- */
+function drawLogo(t){
+  const k  = easeOutBack(seg(t, T.logoIn[0], T.logoIn[1]));
+  const ka = easeOutCubic(seg(t, T.logoIn[0], T.logoIn[0] + 0.75));
+  const kOut = easeInOutCubic(seg(t, T.out[0], T.out[1]));
+  if (ka <= 0) return;
+
+  const blur = lerp(26, 0, easeOutExpo(seg(t, T.logoIn[0], T.logoIn[0] + 1.05)));
+  const scale = lerp(0.66, 1, k) * lerp(1, 0.90, kOut);
+  const rot = lerp(-0.13, 0, easeOutCubic(seg(t, T.logoIn[0], T.logoIn[1] + 0.25)));
+  const alpha = ka * (1 - kOut);
+
+  /* halo */
+  const hp = 1 + 0.35 * Math.exp(-Math.max(0, t - T.impact) * 6);
+  const hg = ctx.createRadialGradient(LOGO.x, LOGO.y, LOGO.r * 0.55, LOGO.x, LOGO.y, LOGO.r * 2.5 * hp);
+  hg.addColorStop(0, 'rgba(227,194,106,' + (0.20 * alpha * hp) + ')');
+  hg.addColorStop(0.45, 'rgba(120,200,140,' + (0.09 * alpha) + ')');
+  hg.addColorStop(1, 'rgba(120,200,140,0)');
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = hg;
+  ctx.beginPath();
+  ctx.arc(LOGO.x, LOGO.y, LOGO.r * 2.5 * hp, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  const d = LOGO.r * 2 * scale;
+
+  /* bloom pass */
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.30 * alpha;
+  ctx.filter = 'blur(18px)';
+  ctx.translate(LOGO.x, LOGO.y); ctx.rotate(rot);
+  ctx.drawImage(logo, -d / 2, -d / 2, d, d);
+  ctx.restore();
+
+  /* main pass */
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.filter = blur > 0.4 ? 'blur(' + blur.toFixed(2) + 'px)' : 'none';
+  ctx.translate(LOGO.x, LOGO.y); ctx.rotate(rot);
+  ctx.shadowColor = 'rgba(0,0,0,0.55)';
+  ctx.shadowBlur = 42; ctx.shadowOffsetY = 10;
+  ctx.drawImage(logo, -d / 2, -d / 2, d, d);
+  ctx.restore();
+
+  /* specular sweep across the mark */
+  const ks = seg(t, T.shine[0], T.shine[1]);
+  if (ks > 0 && ks < 1){
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(LOGO.x, LOGO.y, LOGO.r * scale - 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.translate(LOGO.x, LOGO.y);
+    ctx.rotate(-0.42);
+    const span = LOGO.r * 3.2;
+    const px = lerp(-span, span, easeInOutCubic(ks));
+    const sg = ctx.createLinearGradient(px - 130, 0, px + 130, 0);
+    const sa = 0.36 * Math.sin(Math.PI * ks);
+    sg.addColorStop(0, 'rgba(255,255,255,0)');
+    sg.addColorStop(0.5, 'rgba(255,255,255,' + sa + ')');
+    sg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sg;
+    ctx.fillRect(-span, -span, span * 2, span * 2);
+    ctx.restore();
+  }
+}
+
+/* ring that draws itself around the mark, then snaps into a shockwave */
+function drawRings(t){
+  const kd = easeInOutCubic(seg(t, T.ringDraw[0], T.ringDraw[1]));
+  const kOut = easeInOutCubic(seg(t, T.out[0], T.out[1]));
+  if (kd > 0 && kd < 1){
+    ctx.save();
+    ctx.translate(LOGO.x, LOGO.y);
+    ctx.rotate(-Math.PI / 2);
+    ctx.strokeStyle = 'rgba(227,194,106,0.85)';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = 'rgba(227,194,106,0.7)';
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(0, 0, LOGO.r + 42, 0, Math.PI * 2 * kd);
+    ctx.stroke();
+    ctx.restore();
+  } else if (kd >= 1){
+    const fade = clamp(1 - (t - T.ringDraw[1]) / 0.9, 0, 1) * (1 - kOut);
+    if (fade > 0){
+      ctx.save();
+      ctx.strokeStyle = 'rgba(227,194,106,' + (0.85 * fade) + ')';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(LOGO.x, LOGO.y, LOGO.r + 42 + (1 - fade) * 26, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /* shockwave on landing */
+  for (let i = 0; i < 2; i++){
+    const st = T.impact + i * 0.13;
+    const kw = seg(t, st, st + 1.15);
+    if (kw > 0 && kw < 1){
+      const e = easeOutExpo(kw);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = 'rgba(240,226,178,' + (0.42 * (1 - kw) * (1 - kw)) + ')';
+      ctx.lineWidth = lerp(3.2, 0.4, e);
+      ctx.beginPath();
+      ctx.arc(LOGO.x, LOGO.y, lerp(LOGO.r * 0.9, LOGO.r * 3.4, e), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /* anamorphic streak across the mark on landing */
+  const kst = seg(t, T.impact - 0.05, T.impact + 0.75);
+  if (kst > 0 && kst < 1){
+    const e = easeOutExpo(kst);
+    const half = lerp(80, 1080, e);
+    const a = 0.55 * Math.pow(1 - kst, 1.8);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const sg = ctx.createLinearGradient(LOGO.x - half, 0, LOGO.x + half, 0);
+    sg.addColorStop(0.00, 'rgba(255,247,214,0)');
+    sg.addColorStop(0.28, 'rgba(255,243,200,' + (a * 0.45) + ')');
+    sg.addColorStop(0.50, 'rgba(255,252,238,' + a + ')');
+    sg.addColorStop(0.72, 'rgba(255,243,200,' + (a * 0.45) + ')');
+    sg.addColorStop(1.00, 'rgba(255,247,214,0)');
+    ctx.fillStyle = sg;
+    ctx.filter = 'blur(2px)';
+    const th = lerp(9, 2.2, e);
+    ctx.fillRect(LOGO.x - half, LOGO.y - th / 2, half * 2, th);
+    ctx.restore();
+  }
+
+  /* flash */
+  const kf = seg(t, T.impact, T.impact + 0.45);
+  if (kf > 0 && kf < 1){
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const fa = 0.30 * Math.pow(1 - kf, 2.4);
+    const fg = ctx.createRadialGradient(LOGO.x, LOGO.y, 0, LOGO.x, LOGO.y, 900);
+    fg.addColorStop(0, 'rgba(255,250,230,' + fa + ')');
+    fg.addColorStop(1, 'rgba(255,250,230,0)');
+    ctx.fillStyle = fg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+}
+
+/* ---------- typography ---------- */
+function tracked(c, text, font, tracking){
+  c.font = font;
+  let w = 0;
+  for (const ch of text) w += c.measureText(ch).width + tracking;
+  return w - tracking;
+}
+
+function drawTitle(t){
+  const kOut = easeInOutCubic(seg(t, T.out[0] + 0.10, T.out[1]));
+  const chars = [...TITLE];
+  const font = '700 94px Cinzel, serif';
+  const tracking = 9;
+  const total = tracked(lx, TITLE, font, tracking);
+  const baseY = 168;
+
+  lx.clearRect(0, 0, W, layer.height);
+  lx.font = font;
+  lx.textBaseline = 'alphabetic';
+
+  const grad = lx.createLinearGradient(0, baseY - 78, 0, baseY + 16);
+  grad.addColorStop(0.00, '#fff6dd');
+  grad.addColorStop(0.34, '#f4dfa4');
+  grad.addColorStop(0.66, '#dfb95d');
+  grad.addColorStop(1.00, '#b3862f');
+
+  const span = T.title[1] - T.title[0];
+  const per = 0.62;
+  const stagger = (span - per) / Math.max(1, chars.length - 1);
+
+  let x = (W - total) / 2;
+  let any = false;
+  for (let i = 0; i < chars.length; i++){
+    const ch = chars[i];
+    const cw = lx.measureText(ch).width;
+    const k = easeOutCubic(seg(t, T.title[0] + i * stagger, T.title[0] + i * stagger + per));
+    if (k > 0){
+      any = true;
+      const bl = lerp(12, 0, Math.min(1, k * 1.6));
+      lx.save();
+      lx.globalAlpha = k;
+      lx.filter = bl > 0.4 ? 'blur(' + bl.toFixed(2) + 'px)' : 'none';
+      lx.translate(x + cw / 2, baseY + lerp(46, 0, k));
+      lx.scale(lerp(1.06, 1, k), lerp(1.14, 1, k));
+      lx.fillStyle = grad;
+      lx.shadowColor = 'rgba(0,0,0,0.5)';
+      lx.shadowBlur = 18; lx.shadowOffsetY = 6;
+      lx.fillText(ch, -cw / 2, 0);
+      lx.restore();
+    }
+    x += cw + tracking;
+  }
+  if (!any) return;
+
+  /* gold shimmer travelling through the letters */
+  const ksh = seg(t, T.titleShine[0], T.titleShine[1]);
+  if (ksh > 0 && ksh < 1){
+    const px = lerp(-360, W + 360, easeInOutCubic(ksh));
+    const sg = lx.createLinearGradient(px - 300, 0, px + 300, 0);
+    sg.addColorStop(0, 'rgba(255,255,255,0)');
+    sg.addColorStop(0.5, 'rgba(255,252,238,0.72)');
+    sg.addColorStop(1, 'rgba(255,255,255,0)');
+    lx.save();
+    lx.globalCompositeOperation = 'source-atop';
+    lx.fillStyle = sg;
+    lx.fillRect(0, 0, W, layer.height);
+    lx.restore();
+  }
+
+  ctx.save();
+  ctx.globalAlpha = 1 - kOut;
+  ctx.translate(0, lerp(0, 26, kOut));
+  ctx.drawImage(layer, 0, 700 - baseY);
+  ctx.restore();
+}
+
+function drawRule(t){
+  const k = easeOutCubic(seg(t, T.rule[0], T.rule[1]));
+  const kOut = easeInOutCubic(seg(t, T.out[0] + 0.05, T.out[1] - 0.25));
+  if (k <= 0) return;
+  const y = 762, half = 390 * k, a = k * (1 - kOut);
+
+  ctx.save();
+  for (const s of [-1, 1]){
+    const g = ctx.createLinearGradient(960, y, 960 + s * half, y);
+    g.addColorStop(0, 'rgba(227,194,106,' + (0.95 * a) + ')');
+    g.addColorStop(1, 'rgba(227,194,106,0)');
+    ctx.strokeStyle = g;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(960 + s * 26, y);
+    ctx.lineTo(960 + s * half, y);
+    ctx.stroke();
+  }
+  ctx.translate(960, y);
+  ctx.rotate(Math.PI / 4);
+  ctx.fillStyle = 'rgba(227,194,106,' + a + ')';
+  ctx.shadowColor = 'rgba(227,194,106,0.8)';
+  ctx.shadowBlur = 14;
+  const s2 = 7 * k;
+  ctx.fillRect(-s2 / 2, -s2 / 2, s2, s2);
+  ctx.restore();
+}
+
+function drawTracked(c, text, cx, y, font, tracking, fill, alpha){
+  const total = tracked(c, text, font, tracking);
+  let x = cx - total / 2;
+  c.save();
+  c.globalAlpha = alpha;
+  c.font = font;
+  c.fillStyle = fill;
+  c.textBaseline = 'alphabetic';
+  for (const ch of text){
+    c.fillText(ch, x, y);
+    x += c.measureText(ch).width + tracking;
+  }
+  c.restore();
+}
+
+function drawSub(t){
+  const k = easeOutCubic(seg(t, T.sub[0], T.sub[1]));
+  const kOut = easeInOutCubic(seg(t, T.out[0], T.out[1] - 0.3));
+  if (k <= 0) return;
+  const a = k * (1 - kOut);
+  const y = 824 + lerp(14, 0, k) + lerp(0, 18, kOut);
+  const font = '600 27px Montserrat, sans-serif';
+  const gap = 74;
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.45)';
+  ctx.shadowBlur = 12;
+  const wl = tracked(ctx, SUBLEFT, font, 11);
+  const wr = tracked(ctx, SUBRIGHT, font, 11);
+  const cl = 960 - (gap / 2 + wl / 2);
+  const cr = 960 + (gap / 2 + wr / 2);
+  drawTracked(ctx, SUBLEFT,  cl, y, font, 11, IVORY, a);
+  drawTracked(ctx, SUBRIGHT, cr, y, font, 11, 'rgba(227,194,106,0.95)', a);
+  ctx.globalAlpha = a * 0.85;
+  ctx.fillStyle = GOLD;
+  ctx.beginPath();
+  ctx.arc(960, y - 9, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawTagline(t){
+  const k = easeOutCubic(seg(t, T.tag[0], T.tag[1]));
+  const kOut = easeInOutCubic(seg(t, T.out[0] - 0.15, T.out[1] - 0.45));
+  if (k <= 0) return;
+  const a = k * (1 - kOut) * 0.86;
+  const y = 908 + lerp(16, 0, k) + lerp(0, 20, kOut);
+  drawTracked(ctx, TAGLINE, 960, y, '400 40px Cormorant, serif', 3.4, 'rgba(247,245,238,0.92)', a);
+}
+
+/* ---------- finish ---------- */
+function drawVignetteGrain(t){
+  const vg = ctx.createRadialGradient(960, 520, 340, 960, 560, 1250);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(0.62, 'rgba(0,0,0,0.30)');
+  vg.addColorStop(1, 'rgba(0,0,0,0.86)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, W, H);
+
+  if (grain){
+    const f = Math.floor(t * 60);
+    ctx.save();
+    ctx.globalAlpha = 0.030;
+    ctx.globalCompositeOperation = 'overlay';
+    const p = ctx.createPattern(grain, 'repeat');
+    ctx.translate(-(f * 53) % 256, -(f * 97) % 256);
+    ctx.fillStyle = p;
+    ctx.fillRect(0, 0, W + 256, H + 256);
+    ctx.restore();
+  }
+}
+
+/* ---------- master ---------- */
+function render(t){
+  t = clamp(t, 0, DURATION);
+  const kIn  = easeOutCubic(seg(t, 0, 0.9));
+  const kOut = easeInOutCubic(seg(t, T.out[0], T.out[1]));
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  /* slow push-in, then a touch further on the way out */
+  const zoom = 1 + 0.035 * easeInOutCubic(seg(t, 0.6, 9.2)) + 0.03 * kOut;
+  ctx.save();
+  ctx.translate(960, 540);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-960, -540);
+
+  drawBackground(t);
+  drawParticles(t, kIn * (1 - kOut * 0.85));
+  drawRings(t);
+  drawLogo(t);
+  drawTitle(t);
+  drawRule(t);
+  drawSub(t);
+  drawTagline(t);
+  drawVignetteGrain(t);
+
+  ctx.restore();
+
+  /* opening and closing dips to black */
+  const fade = Math.max(1 - seg(t, 0, 0.55), kOut);
+  if (fade > 0){
+    ctx.fillStyle = 'rgba(0,0,0,' + fade + ')';
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+window.render = render;
+window.DURATION = DURATION;
+
+/* ---------- boot ---------- */
+const params = new URLSearchParams(location.search);
+window.ready = false;
+
+Promise.all([
+  document.fonts.load('700 94px Cinzel'),
+  document.fonts.load('600 27px Montserrat'),
+  document.fonts.load('400 40px Cormorant'),
+  document.fonts.ready,
+  new Promise(res => { logo.onload = res; logo.onerror = res; logo.src = 'assets/logo.png'; })
+]).then(() => {
+  buildGrain();
+  render(0);
+  window.ready = true;
+  if (!params.has('capture')){
+    const t0 = performance.now();
+    const loop = () => {
+      const t = (performance.now() - t0) / 1000;
+      render(t % (DURATION + 0.6));
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+});
+</script>
+</body>
+</html>

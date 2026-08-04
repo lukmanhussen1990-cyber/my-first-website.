@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Al-Ameen Academy, Badarpur — Opening Titles</title>
+<meta name="description" content="Animated opening title sequence for Al-Ameen Academy, Badarpur (Estd. 1994) — 1080p60 MP4 download.">
+<style>
+  @font-face{font-family:'Cinzel';src:url('assets/fonts/Cinzel.woff2') format('woff2');font-weight:400 900;font-display:swap}
+  @font-face{font-family:'Montserrat';src:url('assets/fonts/Montserrat.woff2') format('woff2');font-weight:300 700;font-display:swap}
+  @font-face{font-family:'Cormorant';src:url('assets/fonts/Cormorant.woff2') format('woff2');font-weight:300 700;font-display:swap}
+
+  :root{
+    --ink:#04120b; --ink-2:#082018; --gold:#e3c26a; --gold-lt:#f7e7b6;
+    --ivory:#f4f2e9; --muted:rgba(244,242,233,.66); --line:rgba(227,194,106,.22);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; color:var(--ivory);
+    font-family:'Montserrat',system-ui,sans-serif;
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(24,96,54,.55), transparent 70%),
+      linear-gradient(180deg,#04120b 0%, #061a10 55%, #03100a 100%);
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:56px 24px 80px}
+  header{text-align:center;margin-bottom:38px}
+  header img{width:96px;height:96px;filter:drop-shadow(0 8px 24px rgba(0,0,0,.55))}
+  h1{
+    font-family:'Cinzel',serif;font-weight:700;letter-spacing:.06em;
+    font-size:clamp(28px,5vw,52px);margin:20px 0 10px;
+    background:linear-gradient(180deg,#fff6dd 0%,#f4dfa4 36%,#dfb95d 68%,#b3862f 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .rule{display:flex;align-items:center;justify-content:center;gap:14px;margin:14px 0 12px}
+  .rule i{display:block;height:1px;width:min(180px,22vw);background:linear-gradient(90deg,transparent,var(--gold))}
+  .rule i+i{background:linear-gradient(90deg,var(--gold),transparent)}
+  .rule b{width:6px;height:6px;background:var(--gold);transform:rotate(45deg)}
+  .kicker{font-size:13px;letter-spacing:.34em;color:var(--muted);text-transform:uppercase}
+  .tag{font-family:'Cormorant',serif;font-size:22px;letter-spacing:.04em;color:var(--muted);margin-top:10px}
+
+  .player{
+    position:relative;border-radius:16px;overflow:hidden;
+    border:1px solid var(--line);
+    box-shadow:0 30px 70px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.03);
+    background:#000;
+  }
+  video{display:block;width:100%;height:auto}
+
+  .actions{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin:30px 0 8px}
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;text-decoration:none;
+    padding:14px 26px;border-radius:999px;font-size:13px;font-weight:600;
+    letter-spacing:.16em;text-transform:uppercase;transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .btn:hover{transform:translateY(-2px)}
+  .btn-primary{
+    color:#231a05;background:linear-gradient(180deg,#f7e7b6,#dfb95d);
+    box-shadow:0 12px 30px rgba(227,194,106,.28);
+  }
+  .btn-ghost{color:var(--ivory);border:1px solid var(--line);background:rgba(255,255,255,.02)}
+  .note{text-align:center;color:var(--muted);font-size:12.5px;letter-spacing:.05em;margin-top:6px}
+
+  .specs{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;
+    margin-top:52px;
+  }
+  .spec{border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:18px 20px;background:rgba(255,255,255,.02)}
+  .spec dt{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+  .spec dd{margin:8px 0 0;font-family:'Cinzel',serif;font-size:18px;color:var(--gold-lt)}
+
+  footer{margin-top:56px;text-align:center;color:var(--muted);font-size:12px;letter-spacing:.12em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="assets/logo-mark.png" alt="Al-Ameen Academy crest">
+    <h1>Al-Ameen Academy</h1>
+    <div class="rule"><i></i><b></b><i></i></div>
+    <p class="kicker">Badarpur &nbsp;·&nbsp; Estd. 1994</p>
+    <p class="tag">Opening title sequence — 1080p, 60 fps, with score</p>
+  </header>
+
+  <div class="player">
+    <video src="video/al-ameen-academy-intro.mp4" poster="assets/poster.jpg"
+           controls playsinline preload="metadata"></video>
+  </div>
+
+  <div class="actions">
+    <a class="btn btn-primary" href="video/al-ameen-academy-intro.mp4" download>Download MP4</a>
+    <a class="btn btn-ghost" href="intro.html">Play live version</a>
+  </div>
+  <p class="note">10.6 seconds · H.264 · AAC stereo · ~3 MB</p>
+
+  <dl class="specs">
+    <div class="spec"><dt>Resolution</dt><dd>1920 × 1080</dd></div>
+    <div class="spec"><dt>Frame rate</dt><dd>60 fps</dd></div>
+    <div class="spec"><dt>Duration</dt><dd>10.6 s</dd></div>
+    <div class="spec"><dt>Format</dt><dd>MP4 / H.264</dd></div>
+  </dl>
+
+  <footer>Al-Ameen Academy, Badarpur · Established 1994</footer>
+</div>
+</body>
+</html>
