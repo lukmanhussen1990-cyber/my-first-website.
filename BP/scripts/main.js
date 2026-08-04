@@ -152,6 +152,21 @@ function wireEvents() {
       if (ev.initialSpawn) {
         runCmd(player, "fog @s remove ag_room");
         runCmd(player, "fog @s push ag:manor_fog ag_room");
+        // A fresh world drops you at the vanilla spawn, nowhere near the manor.
+        // If the build already finished, put them on the road to the gate.
+        try {
+          if (dist(player.location, PROPS.gate) > 200) {
+            system.runTimeout(() => {
+              try {
+                player.teleport(getCheckpoint(player));
+              } catch (e) {
+                // ignore
+              }
+            }, 40);
+          }
+        } catch (e) {
+          // ignore
+        }
         if (!pbool(player, "configured", false)) {
           system.runTimeout(() => {
             if (pbool(player, "asking", false)) return;

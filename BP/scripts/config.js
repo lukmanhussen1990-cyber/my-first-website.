@@ -47,7 +47,7 @@ export const ROOMS = [
     name: "The Approach",
     min: { x: 995, y: 60, z: 993 },
     max: { x: 1035, y: 80, z: 1010 },
-    spawn: { x: 1015, y: 65, z: 1000 },
+    spawn: { x: 1015, y: 65, z: 996 },
     fog: "ag:manor_fog"
   },
   {

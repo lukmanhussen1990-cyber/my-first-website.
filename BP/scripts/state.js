@@ -76,7 +76,7 @@ export function ensurePlayer(player) {
   pset(player, "hide_z", 0);
   pset(player, "cp_x", 1015);
   pset(player, "cp_y", 65);
-  pset(player, "cp_z", 1000);
+  pset(player, "cp_z", 996);
   pset(player, "intensity", "normal");
   pset(player, "flashes", true);
   pset(player, "configured", false);
@@ -154,6 +154,6 @@ export function getCheckpoint(player) {
   return {
     x: pnum(player, "cp_x", 1015) + 0.5,
     y: pnum(player, "cp_y", 65),
-    z: pnum(player, "cp_z", 1000) + 0.5
+    z: pnum(player, "cp_z", 996) + 0.5
   };
 }

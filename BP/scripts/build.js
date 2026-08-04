@@ -24,6 +24,8 @@ function setupWorldRules() {
   runCmd(d, "gamerule naturalregeneration true");
   runCmd(d, "time set 16000");
   runCmd(d, "weather rain 999999");
+  // The manor is built at a fixed origin, so the world spawn has to move to it.
+  runCmd(d, "setworldspawn 1015 65 1000");
 }
 
 function setupTickingArea() {
@@ -90,8 +92,14 @@ export function ensureBuilt() {
   runSteps(BUILD_STEPS, () => {
     gset("built", true);
     log("manor build complete");
+    // Nobody should have to walk a thousand blocks to reach the gate.
     for (const p of players()) {
-      hint(p, "The manor is finished. Walk north.");
+      try {
+        p.teleport({ x: 1015.5, y: 65, z: 996.5 });
+      } catch (e) {
+        // ignore
+      }
+      hint(p, "The gate is ahead. Check the mailbox.");
     }
   });
 }
