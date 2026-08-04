@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photosynthesis — How a Leaf Makes Food from Light</title>
+<meta name="description" content="An interactive animation of photosynthesis: sunlight, water and carbon dioxide becoming glucose and oxygen inside a chloroplast.">
+<style>
+/* ============================================================
+   Palette & global tokens
+   --k     : time scale (1 = normal, 2 = half speed, 0.5 = double)
+   --light : sunlight level, 0 (night) .. 1 (full sun)
+   ============================================================ */
+:root{
+  --sky-1:#bfe6ff; --sky-2:#e8f6ff; --sky-3:#fff4d6;
+  --night-1:#0e1a33; --night-2:#152a4d;
+  --soil-1:#6b4a2f; --soil-2:#4a3120;
+  --leaf-1:#5fbf5a; --leaf-2:#2f8b45; --leaf-3:#1f6b39;
+  --stem:#3f9a4e;
+  --sun-1:#fff6c9; --sun-2:#ffd45e; --sun-3:#ffb020;
+  --water:#3fa9f5; --water-2:#1c6fb8;
+  --co2:#4a5b6b; --co2-2:#2c3946;
+  --o2:#5ec8ff;
+  --glucose:#f2a93b; --glucose-2:#c97e14;
+
+  --ink:#12241c; --ink-soft:#3c5a4c; --ink-faint:#6f8a7c;
+  --panel:#ffffff; --panel-2:#f3f8f4; --line:#d8e6dc;
+  --bg-1:#eef7f0; --bg-2:#e2f0e8;
+  --accent:#2f8b45;
+  --shadow:0 1px 2px rgba(16,40,28,.06), 0 12px 32px -12px rgba(16,40,28,.22);
+  --radius:16px;
+  --k:1; --light:1;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --ink:#e7f2ea; --ink-soft:#a9c4b5; --ink-faint:#7d9a8b;
+    --panel:#15241d; --panel-2:#1b2e25; --line:#2a4235;
+    --bg-1:#0d1712; --bg-2:#101f19;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px -12px rgba(0,0,0,.6);
+  }
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(1200px 700px at 80% -10%, rgba(255,212,94,.18), transparent 60%),
+    linear-gradient(180deg,var(--bg-1),var(--bg-2));
+  min-height:100vh;
+  line-height:1.5;
+  overflow-x:hidden;
+}
+
+.wrap{max-width:1180px;margin:0 auto;padding:28px 18px 56px}
+
+/* ---------- Header ---------- */
+.masthead{text-align:center;margin-bottom:22px}
+.eyebrow{
+  display:inline-block;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);font-weight:700;margin:0 0 8px;
+  padding:5px 12px;border-radius:999px;background:color-mix(in srgb,var(--accent) 12%,transparent);
+}
+h1{
+  margin:0 0 8px;font-size:clamp(1.65rem,4.6vw,2.9rem);line-height:1.1;letter-spacing:-.02em;
+  font-weight:800;
+}
+h1 .grad{
+  background:linear-gradient(100deg,var(--leaf-2),var(--leaf-1) 45%,var(--sun-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.lede{margin:0 auto;max-width:60ch;color:var(--ink-soft);font-size:clamp(.94rem,2vw,1.05rem)}
+
+/* ---------- Equation ---------- */
+.eq{
+  margin:20px auto 18px;padding:14px 16px;max-width:820px;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 8px;
+  font-size:clamp(.9rem,2.4vw,1.22rem);font-weight:700;letter-spacing:.01em;
+}
+.eq .term{
+  padding:5px 10px;border-radius:10px;white-space:nowrap;
+  border:1px solid transparent;
+  transition:background-color .45s ease,color .45s ease,border-color .45s ease,transform .45s ease;
+}
+.eq .op{color:var(--ink-faint);font-weight:600}
+.eq .arrow{font-size:1.15em;color:var(--ink-faint)}
+.eq sub{font-size:.68em;font-weight:700}
+
+/* stage-driven highlighting of the equation */
+[data-stage="0"] .eq [data-term="light"],
+[data-stage="1"] .eq [data-term="h2o"],
+[data-stage="1"] .eq [data-term="o2"],
+[data-stage="2"] .eq [data-term="co2"],
+[data-stage="3"] .eq [data-term="glucose"],
+[data-stage="4"] .eq [data-term="o2"],
+[data-stage="4"] .eq [data-term="glucose"]{
+  background:color-mix(in srgb,var(--accent) 16%,transparent);
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent);
+  color:var(--accent);
+  transform:translateY(-2px);
+}
+[data-stage="0"] .eq [data-term="light"]{
+  background:color-mix(in srgb,var(--sun-3) 24%,transparent);
+  border-color:color-mix(in srgb,var(--sun-3) 55%,transparent);
+  color:#a86a00;
+}
+@media (prefers-color-scheme: dark){
+  [data-stage="0"] .eq [data-term="light"]{color:var(--sun-2)}
+}
+
+/* ---------- Stage / panels ---------- */
+.stage{
+  display:grid;gap:16px;
+  grid-template-columns:minmax(0,1.32fr) minmax(0,1fr);
+  align-items:stretch;
+}
+@media (max-width:840px){ .stage{grid-template-columns:minmax(0,1fr)} }
+
+.panel{
+  position:relative;background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.panel-head{
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+  padding:12px 15px 10px;border-bottom:1px solid var(--line);
+  background:var(--panel-2);
+}
+.panel-head h2{margin:0;font-size:.95rem;font-weight:750;letter-spacing:-.01em}
+.panel-head span{font-size:.78rem;color:var(--ink-faint)}
+.panel svg{display:block;width:100%;height:auto}
+
+/* ---------- Caption ---------- */
+.caption{
+  margin:16px auto 0;max-width:900px;min-height:76px;
+  display:flex;align-items:center;gap:14px;
+  padding:14px 16px;border-radius:var(--radius);
+  background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);
+}
+.caption .num{
+  flex:0 0 auto;width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;font-weight:800;font-size:.9rem;
+  background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent);
+}
+.caption .txt strong{display:block;font-size:1rem;letter-spacing:-.01em}
+.caption .txt small{display:block;color:var(--ink-soft);font-size:.87rem;margin-top:2px}
+.caption.is-night .num{background:color-mix(in srgb,#5b7fbf 22%,transparent);color:#5b7fbf}
+
+/* ---------- Controls ---------- */
+.controls{
+  margin-top:16px;padding:14px 16px;border-radius:var(--radius);
+  background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);
+  display:flex;flex-wrap:wrap;align-items:center;gap:14px 22px;
+}
+.ctrl{display:flex;align-items:center;gap:9px;min-width:0}
+.ctrl > .lbl{font-size:.76rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+
+button{font:inherit;color:inherit}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:9px 16px;border-radius:11px;cursor:pointer;
+  border:1px solid var(--line);background:var(--panel-2);
+  font-weight:650;font-size:.9rem;
+  transition:background-color .18s,border-color .18s,transform .12s;
+}
+.btn:hover{background:color-mix(in srgb,var(--accent) 10%,var(--panel-2));border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:color-mix(in srgb,var(--accent) 86%,#000);border-color:color-mix(in srgb,var(--accent) 86%,#000)}
+.btn .ico{width:14px;height:14px;flex:0 0 auto;fill:currentColor}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--panel-2)}
+.seg button{
+  border:0;background:transparent;padding:9px 13px;cursor:pointer;
+  font-weight:650;font-size:.86rem;color:var(--ink-soft);
+  transition:background-color .18s,color .18s;
+}
+.seg button + button{border-left:1px solid var(--line)}
+.seg button:hover{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+
+input[type=range]{
+  -webkit-appearance:none;appearance:none;background:transparent;
+  width:clamp(110px,20vw,190px);cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{
+  height:7px;border-radius:99px;
+  background:linear-gradient(90deg,#5b7fbf,var(--sun-2),var(--sun-3));
+}
+input[type=range]::-moz-range-track{
+  height:7px;border-radius:99px;
+  background:linear-gradient(90deg,#5b7fbf,var(--sun-2),var(--sun-3));
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:19px;height:19px;margin-top:-6px;
+  border-radius:50%;background:#fff;border:2px solid var(--accent);
+  box-shadow:0 1px 4px rgba(0,0,0,.25);
+}
+input[type=range]::-moz-range-thumb{
+  width:15px;height:15px;border-radius:50%;background:#fff;border:2px solid var(--accent);
+}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:2px;border-radius:8px}
+
+/* rate meter */
+.meter{display:flex;align-items:center;gap:10px;margin-left:auto}
+.meter .track{
+  width:clamp(80px,14vw,140px);height:9px;border-radius:99px;
+  background:color-mix(in srgb,var(--ink) 10%,transparent);overflow:hidden;
+}
+.meter .fill{
+  height:100%;border-radius:99px;
+  width:calc(var(--light) * 100%);
+  background:linear-gradient(90deg,var(--leaf-2),var(--leaf-1),var(--sun-2));
+  transition:width .35s ease;
+}
+.meter .val{font-variant-numeric:tabular-nums;font-weight:750;font-size:.85rem;min-width:4.4ch;text-align:right}
+
+.footnote{margin:22px auto 0;max-width:70ch;text-align:center;color:var(--ink-faint);font-size:.82rem}
+
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
+}
+
+/* ============================================================
+   SVG scene styling + animation
+   ============================================================ */
+.scene text{font-family:inherit;font-weight:700}
+
+/* Everything animated pauses together */
+.app.paused .scene *, .app.paused .scene{animation-play-state:paused !important}
+
+/* Night: the light-dependent machinery halts */
+.app.dark .rays,
+.app.dark .photon,
+.app.dark .mol,
+.app.dark .calvin-ring{animation-play-state:paused !important}
+.app.dark .granum{animation:none !important}   /* no charge glow without light */
+.app.dark .rays,.app.dark .photon{opacity:0 !important}
+
+/* --- sky / sun --- */
+.night-veil{opacity:calc(1 - var(--light));transition:opacity .4s ease}
+.stars{opacity:clamp(0,calc(1.6 - var(--light) * 2),1);transition:opacity .4s ease}
+.star{animation:twinkle calc(3.4s * var(--k)) ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes twinkle{0%,100%{opacity:.35}50%{opacity:1}}
+
+.sun-core{opacity:calc(.06 + var(--light) * .94);transition:opacity .4s ease}
+.sun-glow{
+  opacity:calc(var(--light) * .85);transition:opacity .4s ease;
+  transform-box:fill-box;transform-origin:center;
+  animation:sun-breathe calc(5.5s * var(--k)) ease-in-out infinite;
+}
+@keyframes sun-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
+.sun-spokes{
+  opacity:calc(var(--light) * .9);transform-box:fill-box;transform-origin:center;
+  animation:spin calc(48s * var(--k)) linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* --- light beams: dashes travel down the beam --- */
+.rays{opacity:calc(var(--light) * 1);transition:opacity .4s ease}
+.ray{
+  stroke:var(--sun-2);stroke-linecap:round;fill:none;
+  stroke-dasharray:9 26;
+  animation:ray-travel calc(1.5s * var(--k)) linear infinite;
+}
+@keyframes ray-travel{from{stroke-dashoffset:35}to{stroke-dashoffset:0}}
+
+/* --- molecule chips --- */
+.chip circle,.chip rect{stroke-width:1.6}
+.chip text{font-size:11px;text-anchor:middle;dominant-baseline:central;letter-spacing:.2px}
+.chip-co2 circle{fill:var(--co2);stroke:#1c2731}
+.chip-co2 text{fill:#eaf1f6}
+.chip-h2o circle{fill:var(--water);stroke:var(--water-2)}
+.chip-h2o text{fill:#eaf6ff}
+.chip-o2 circle{fill:var(--o2);stroke:#1e87c4}
+.chip-o2 text{fill:#08344c}
+.chip-glu rect{fill:var(--glucose);stroke:var(--glucose-2)}
+.chip-glu text{fill:#4a2f00;font-size:10px}
+
+/* reaction-rate scaling: less light -> slower (stops near zero) */
+.mol,.photon{--r:max(var(--light),.06)}
+
+.sway{animation:sway calc(2.6s * var(--k)) ease-in-out infinite alternate}
+@keyframes sway{from{transform:translateY(-4px)}to{transform:translateY(4px)}}
+
+.co2{animation:co2-in calc(7s * var(--k) / var(--r)) linear infinite;animation-delay:var(--d)}
+@keyframes co2-in{
+  0%{transform:translate(-70px,0);opacity:0}
+  12%{opacity:1}
+  86%{opacity:1}
+  100%{transform:translate(196px,-16px);opacity:0}
+}
+.h2o{animation:h2o-up calc(7.6s * var(--k) / var(--r)) linear infinite;animation-delay:var(--d)}
+@keyframes h2o-up{
+  0%{transform:translate(0,26px);opacity:0}
+  14%{opacity:1}
+  85%{opacity:1}
+  100%{transform:translate(0,-268px);opacity:0}
+}
+.o2{animation:o2-out calc(6.6s * var(--k) / var(--r)) linear infinite;animation-delay:var(--d)}
+@keyframes o2-out{
+  0%{transform:translate(0,0) scale(.5);opacity:0}
+  16%{opacity:1;transform:translate(44px,-40px) scale(1)}
+  100%{transform:translate(224px,-226px) scale(1);opacity:0}
+}
+.glu{animation:glu-down calc(8.4s * var(--k) / var(--r)) linear infinite;animation-delay:var(--d)}
+@keyframes glu-down{
+  0%{transform:translate(0,-14px) scale(.55);opacity:0}
+  18%{opacity:1;transform:translate(0,26px) scale(1)}
+  82%{opacity:1}
+  100%{transform:translate(0,178px) scale(1);opacity:0}
+}
+
+/* stage focus: dim what the narration isn't talking about */
+.dimmable{opacity:.4;transition:opacity .55s ease}
+[data-stage="0"] .f-light,
+[data-stage="1"] .f-water,[data-stage="1"] .f-o2,
+[data-stage="2"] .f-co2,
+[data-stage="3"] .f-co2,[data-stage="3"] .f-glu,
+[data-stage="4"] .f-o2,[data-stage="4"] .f-glu{opacity:1}
+.app.dark .dimmable{opacity:.4}
+
+/* --- plant --- */
+.leaf-body{fill:url(#leafGrad);stroke:var(--leaf-3);stroke-width:1.5}
+.leaf-vein{stroke:color-mix(in srgb,var(--leaf-3) 62%,transparent);stroke-width:1.4;fill:none;stroke-linecap:round}
+.leaf{transform-box:fill-box;transform-origin:0% 50%;animation:leaf-flutter calc(5.2s * var(--k)) ease-in-out infinite alternate}
+@keyframes leaf-flutter{from{transform:rotate(-1.6deg)}to{transform:rotate(1.6deg)}}
+.focus-ring{
+  fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:6 7;opacity:.75;
+  animation:spin-slow calc(26s * var(--k)) linear infinite;
+  transform-box:fill-box;transform-origin:center;
+}
+@keyframes spin-slow{to{transform:rotate(-360deg)}}
+
+.lbl{font-size:12px;font-weight:750;fill:var(--ink-soft)}
+.lbl-sm{font-size:10.5px;font-weight:700;fill:var(--ink-faint)}
+.scene .lbl,.scene .lbl-sm{paint-order:stroke;stroke:var(--panel);stroke-width:3.5;stroke-linejoin:round}
+.scene .on-soil{fill:#f7e6cd;stroke:#3a2617;stroke-width:3}
+
+/* --- chloroplast panel --- */
+.granum ellipse{fill:url(#granumGrad);stroke:#186b3a;stroke-width:.9}
+.granum{
+  transform-box:fill-box;transform-origin:center;
+  animation:granum-charge calc(2.4s * var(--k)) ease-in-out infinite;
+}
+@keyframes granum-charge{
+  0%,100%{filter:none;transform:scale(1)}
+  45%{filter:drop-shadow(0 0 7px rgba(255,214,90,.95));transform:scale(1.045)}
+}
+.photon{
+  fill:var(--sun-2);stroke:#e79a12;stroke-width:.8;
+  animation:photon-fall calc(2.2s * var(--k) / var(--r)) linear infinite;
+  animation-delay:var(--d);
+}
+@keyframes photon-fall{
+  0%{transform:translate(0,-86px);opacity:0}
+  16%{opacity:1}
+  84%{opacity:1}
+  100%{transform:translate(38px,152px);opacity:0}
+}
+.calvin-ring{
+  fill:none;stroke:var(--glucose);stroke-width:3.4;stroke-linecap:round;stroke-dasharray:15 11;
+  transform-box:fill-box;transform-origin:center;
+  animation:spin calc(6.5s * var(--k)) linear infinite;
+}
+.pill{fill:var(--panel-2);stroke:var(--line);stroke-width:1}
+.pill-txt{font-size:10.5px;text-anchor:middle;dominant-baseline:central;fill:var(--ink-soft);font-weight:700}
+
+/* zone highlight in the chloroplast, driven by the narration stage */
+.zone{fill:none;stroke-width:2;stroke-dasharray:5 6;opacity:0;transition:opacity .5s ease}
+[data-stage="0"] .zone-light,[data-stage="1"] .zone-light{opacity:.9}
+[data-stage="2"] .zone-calvin,[data-stage="3"] .zone-calvin{opacity:.9}
+
+/* ---------- Reduced motion: start paused, nothing loops on its own ---------- */
+@media (prefers-reduced-motion: reduce){
+  .sun-glow,.sun-spokes,.leaf,.sway,.star,.focus-ring,.calvin-ring,.granum{animation:none !important}
+  .eq .term{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap app" id="app" data-stage="0">
+
+  <header class="masthead">
+    <p class="eyebrow">Interactive biology</p>
+    <h1>How a leaf turns <span class="grad">light into food</span></h1>
+    <p class="lede">Photosynthesis in motion — follow water up from the roots, carbon dioxide in through the leaf, and watch sugar and oxygen come back out. Drag the sunlight slider to change the reaction rate.</p>
+  </header>
+
+  <!-- ============ Equation ============ -->
+  <p class="eq" aria-label="Six carbon dioxide plus six water plus light energy yields one glucose molecule plus six oxygen.">
+    <span class="term" data-term="co2">6&nbsp;CO<sub>2</sub></span>
+    <span class="op">+</span>
+    <span class="term" data-term="h2o">6&nbsp;H<sub>2</sub>O</span>
+    <span class="op">+</span>
+    <span class="term" data-term="light">light energy</span>
+    <span class="arrow" aria-hidden="true">&rarr;</span>
+    <span class="term" data-term="glucose">C<sub>6</sub>H<sub>12</sub>O<sub>6</sub></span>
+    <span class="op">+</span>
+    <span class="term" data-term="o2">6&nbsp;O<sub>2</sub></span>
+  </p>
+
+  <!-- ============ Stage ============ -->
+  <div class="stage">
+
+    <!-- ---------- Panel A: the whole plant ---------- -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>The plant</h2>
+        <span>gas exchange &amp; transport</span>
+      </div>
+      <svg class="scene" viewBox="0 0 560 640" role="img"
+           aria-label="A plant in sunlight. Light rays fall on the leaves, carbon dioxide drifts in from the air, water rises from the roots through the stem, oxygen leaves the leaf into the sky, and glucose travels down the stem.">
+        <defs>
+          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--sky-1)"/>
+            <stop offset="62%" stop-color="var(--sky-2)"/>
+            <stop offset="100%" stop-color="var(--sky-3)"/>
+          </linearGradient>
+          <linearGradient id="nightGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--night-1)"/>
+            <stop offset="100%" stop-color="var(--night-2)"/>
+          </linearGradient>
+          <linearGradient id="soilGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--soil-1)"/>
+            <stop offset="100%" stop-color="var(--soil-2)"/>
+          </linearGradient>
+          <linearGradient id="leafGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="var(--leaf-1)"/>
+            <stop offset="100%" stop-color="var(--leaf-2)"/>
+          </linearGradient>
+          <radialGradient id="sunGlow">
+            <stop offset="0%" stop-color="var(--sun-2)" stop-opacity=".85"/>
+            <stop offset="55%" stop-color="var(--sun-3)" stop-opacity=".22"/>
+            <stop offset="100%" stop-color="var(--sun-3)" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="sunCore">
+            <stop offset="0%" stop-color="#fffdf0"/>
+            <stop offset="55%" stop-color="var(--sun-1)"/>
+            <stop offset="100%" stop-color="var(--sun-3)"/>
+          </radialGradient>
+          <clipPath id="skyClip"><rect x="0" y="0" width="560" height="472"/></clipPath>
+        </defs>
+
+        <!-- sky -->
+        <g clip-path="url(#skyClip)">
+          <rect x="0" y="0" width="560" height="472" fill="url(#skyGrad)"/>
+          <rect class="night-veil" x="0" y="0" width="560" height="472" fill="url(#nightGrad)"/>
+          <g class="stars" fill="#ffffff">
+            <circle class="star" cx="70"  cy="62"  r="1.8" style="animation-delay:-.2s"/>
+            <circle class="star" cx="132" cy="126" r="1.3" style="animation-delay:-1.1s"/>
+            <circle class="star" cx="212" cy="52"  r="1.6" style="animation-delay:-2s"/>
+            <circle class="star" cx="308" cy="104" r="1.2" style="animation-delay:-.7s"/>
+            <circle class="star" cx="386" cy="46"  r="1.7" style="animation-delay:-1.6s"/>
+            <circle class="star" cx="486" cy="196" r="1.3" style="animation-delay:-2.6s"/>
+            <circle class="star" cx="46"  cy="186" r="1.4" style="animation-delay:-3s"/>
+            <circle class="star" cx="258" cy="168" r="1.1" style="animation-delay:-2.3s"/>
+          </g>
+
+          <!-- sun -->
+          <g class="f-light dimmable">
+            <circle class="sun-glow" cx="452" cy="94" r="112" fill="url(#sunGlow)"/>
+            <g class="sun-spokes sun-core" stroke="var(--sun-2)" stroke-width="4" stroke-linecap="round" opacity=".8">
+              <line x1="452" y1="30"  x2="452" y2="8"/>
+              <line x1="452" y1="158" x2="452" y2="180"/>
+              <line x1="388" y1="94"  x2="366" y2="94"/>
+              <line x1="516" y1="94"  x2="538" y2="94"/>
+              <line x1="407" y1="49"  x2="391" y2="33"/>
+              <line x1="497" y1="139" x2="513" y2="155"/>
+              <line x1="497" y1="49"  x2="513" y2="33"/>
+              <line x1="407" y1="139" x2="391" y2="155"/>
+            </g>
+            <circle class="sun-core" cx="452" cy="94" r="38" fill="url(#sunCore)"/>
+          </g>
+
+          <!-- light beams onto the leaves -->
+          <g class="rays f-light dimmable" stroke-width="3.4">
+            <line class="ray" x1="437" y1="128" x2="300" y2="268" style="animation-delay:-.2s"/>
+            <line class="ray" x1="452" y1="132" x2="336" y2="404" style="animation-delay:-.75s"/>
+            <line class="ray" x1="424" y1="120" x2="184" y2="352" style="animation-delay:-1.1s"/>
+            <line class="ray" x1="462" y1="130" x2="392" y2="332" style="animation-delay:-.45s"/>
+          </g>
+        </g>
+
+        <!-- ground -->
+        <rect x="0" y="466" width="560" height="174" fill="url(#soilGrad)"/>
+        <path d="M0 470 Q 140 458 280 470 T 560 468 L560 480 L0 480 Z" fill="#7a5636" opacity=".65"/>
+
+        <!-- roots -->
+        <g stroke="#c9a06a" stroke-width="4.5" fill="none" stroke-linecap="round" opacity=".85">
+          <path d="M256 470 C 254 512 236 540 206 566"/>
+          <path d="M262 470 C 266 516 288 542 322 570"/>
+          <path d="M259 470 L 259 596"/>
+          <path d="M240 520 C 226 534 214 540 196 544" stroke-width="3"/>
+          <path d="M280 528 C 296 542 308 546 328 548" stroke-width="3"/>
+        </g>
+
+        <!-- stem -->
+        <path d="M259 470 C 253 396 253 320 256 240" stroke="var(--stem)" stroke-width="11" fill="none" stroke-linecap="round"/>
+        <path d="M259 470 C 253 396 253 320 256 240" stroke="#6fce78" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".55"/>
+
+        <!-- leaves (outer group = placement, inner group = flutter animation) -->
+        <g transform="translate(250,336) rotate(163)"><g class="leaf">
+          <path class="leaf-body" d="M0,0 C 30,-34 92,-42 134,0 C 92,42 30,34 0,0 Z"/>
+          <path class="leaf-vein" d="M6,0 L124,0 M34,-2 L58,-19 M34,2 L58,19 M64,-2 L88,-17 M64,2 L88,17"/>
+        </g></g>
+        <g transform="translate(262,398) rotate(19)"><g class="leaf" style="animation-delay:-1.7s">
+          <path class="leaf-body" d="M0,0 C 30,-34 92,-42 134,0 C 92,42 30,34 0,0 Z"/>
+          <path class="leaf-vein" d="M6,0 L124,0 M34,-2 L58,-19 M34,2 L58,19 M64,-2 L88,-17 M64,2 L88,17"/>
+        </g></g>
+        <g transform="translate(256,250) rotate(-63) scale(.82)"><g class="leaf" style="animation-delay:-3.1s">
+          <path class="leaf-body" d="M0,0 C 30,-34 92,-42 134,0 C 92,42 30,34 0,0 Z"/>
+          <path class="leaf-vein" d="M6,0 L124,0 M34,-2 L58,-19 M34,2 L58,19 M64,-2 L88,-17 M64,2 L88,17"/>
+        </g></g>
+
+        <!-- zoom marker on the working leaf -->
+        <circle class="focus-ring" cx="336" cy="418" r="42"/>
+        <text class="lbl-sm" x="336" y="478" text-anchor="middle">shown magnified</text>
+
+        <!-- CO2 drifting in from the left -->
+        <g class="f-co2 dimmable">
+          <g transform="translate(0,352)"><g class="mol co2" style="--d:-1.4s"><g class="sway"><g class="chip chip-co2"><circle r="16"/><text y="1">CO₂</text></g></g></g></g>
+          <g transform="translate(0,392)"><g class="mol co2" style="--d:-3.6s"><g class="sway" style="animation-delay:-1s"><g class="chip chip-co2"><circle r="16"/><text y="1">CO₂</text></g></g></g></g>
+          <g transform="translate(0,428)"><g class="mol co2" style="--d:-5.5s"><g class="sway" style="animation-delay:-1.8s"><g class="chip chip-co2"><circle r="16"/><text y="1">CO₂</text></g></g></g></g>
+          <text class="lbl" x="16" y="252">CO₂ from the air</text>
+          <text class="lbl-sm" x="16" y="268">enters through stomata</text>
+        </g>
+
+        <!-- H2O rising through the stem -->
+        <g class="f-water dimmable">
+          <g transform="translate(258,566)"><g class="mol h2o" style="--d:-1s"><g class="chip chip-h2o"><circle r="15"/><text y="1">H₂O</text></g></g></g>
+          <g transform="translate(258,566)"><g class="mol h2o" style="--d:-3.5s"><g class="chip chip-h2o"><circle r="15"/><text y="1">H₂O</text></g></g></g>
+          <g transform="translate(258,566)"><g class="mol h2o" style="--d:-6s"><g class="chip chip-h2o"><circle r="15"/><text y="1">H₂O</text></g></g></g>
+          <text class="lbl on-soil" x="330" y="604">H₂O from the soil</text>
+          <text class="lbl-sm on-soil" x="330" y="620">drawn up the xylem</text>
+        </g>
+
+        <!-- O2 leaving the leaf -->
+        <g class="f-o2 dimmable">
+          <g transform="translate(344,404)"><g class="mol o2" style="--d:-.6s"><g class="sway" style="animation-delay:-.4s"><g class="chip chip-o2"><circle r="15"/><text y="1">O₂</text></g></g></g></g>
+          <g transform="translate(352,414)"><g class="mol o2" style="--d:-2.8s"><g class="sway" style="animation-delay:-1.4s"><g class="chip chip-o2"><circle r="15"/><text y="1">O₂</text></g></g></g></g>
+          <g transform="translate(336,420)"><g class="mol o2" style="--d:-4.7s"><g class="sway" style="animation-delay:-2.2s"><g class="chip chip-o2"><circle r="15"/><text y="1">O₂</text></g></g></g></g>
+          <text class="lbl" x="544" y="204" text-anchor="end">O₂ released</text>
+        </g>
+
+        <!-- glucose travelling down the stem -->
+        <g class="f-glu dimmable">
+          <g transform="translate(258,286)"><g class="mol glu" style="--d:-1.2s">
+            <g class="chip chip-glu"><rect x="-32" y="-12" width="64" height="24" rx="12"/><text y="1">C₆H₁₂O₆</text></g>
+          </g></g>
+          <g transform="translate(258,286)"><g class="mol glu" style="--d:-5.4s">
+            <g class="chip chip-glu"><rect x="-32" y="-12" width="64" height="24" rx="12"/><text y="1">C₆H₁₂O₆</text></g>
+          </g></g>
+          <text class="lbl" x="14" y="438">Glucose made</text>
+          <text class="lbl-sm" x="14" y="454">sugar feeds the whole plant</text>
+        </g>
+      </svg>
+    </section>
+
+    <!-- ---------- Panel B: inside a chloroplast ---------- -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Inside a leaf cell</h2>
+        <span>the chloroplast at work</span>
+      </div>
+      <svg class="scene" viewBox="0 0 460 640" role="img"
+           aria-label="A magnified leaf cell. Photons of light strike stacks of thylakoid discs called grana, where water is split into oxygen and hydrogen ions. In the surrounding stroma, the Calvin cycle fixes carbon dioxide into glucose.">
+        <defs>
+          <linearGradient id="cellGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#e9f8ec"/>
+            <stop offset="100%" stop-color="#d3efdb"/>
+          </linearGradient>
+          <linearGradient id="chloroGrad" x1="0" y1="0" x2="0.6" y2="1">
+            <stop offset="0%" stop-color="#6fd07a"/>
+            <stop offset="100%" stop-color="#2c8747"/>
+          </linearGradient>
+          <linearGradient id="granumGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#2ea35a"/>
+            <stop offset="100%" stop-color="#14663a"/>
+          </linearGradient>
+        </defs>
+
+        <!-- cell -->
+        <rect x="16" y="16" width="428" height="608" rx="46" fill="url(#cellGrad)" stroke="#8ec79b" stroke-width="3"/>
+        <rect x="30" y="30" width="400" height="580" rx="36" fill="none" stroke="#b6ddc0" stroke-width="2"/>
+        <text class="lbl-sm" x="46" y="58">cell wall</text>
+
+        <!-- small background chloroplasts -->
+        <g opacity=".4">
+          <ellipse cx="92"  cy="130" rx="52" ry="30" fill="url(#chloroGrad)" transform="rotate(-18 92 130)"/>
+          <ellipse cx="372" cy="556" rx="56" ry="32" fill="url(#chloroGrad)" transform="rotate(-12 372 556)"/>
+          <ellipse cx="368" cy="132" rx="44" ry="26" fill="url(#chloroGrad)" transform="rotate(22 368 132)"/>
+        </g>
+
+        <!-- incoming photons -->
+        <g class="f-light dimmable">
+          <g transform="translate(104,214)"><circle class="photon" r="5.5" style="--d:-.3s"/></g>
+          <g transform="translate(150,196)"><circle class="photon" r="4.5" style="--d:-1.1s"/></g>
+          <g transform="translate(196,208)"><circle class="photon" r="5"   style="--d:-1.7s"/></g>
+          <g transform="translate(132,204)"><circle class="photon" r="4"   style="--d:-2.1s"/></g>
+          <text class="lbl" x="30" y="176">photons</text>
+        </g>
+
+        <!-- main chloroplast -->
+        <g transform="rotate(-9 230 400)">
+          <ellipse cx="230" cy="400" rx="170" ry="108" fill="url(#chloroGrad)" stroke="#1c6b3b" stroke-width="3"/>
+          <ellipse cx="230" cy="400" rx="157" ry="96" fill="none" stroke="#9ae4ab" stroke-width="1.6" opacity=".55"/>
+
+          <!-- grana stacks (thylakoids); outer g places, inner g animates -->
+          <g transform="translate(138,349) rotate(-14)"><g class="granum" style="animation-delay:-.1s">
+            <ellipse cx="0" cy="-22" rx="27" ry="6.5"/><ellipse cx="0" cy="-11" rx="27" ry="6.5"/>
+            <ellipse cx="0" cy="0"   rx="27" ry="6.5"/><ellipse cx="0" cy="11"  rx="27" ry="6.5"/>
+            <ellipse cx="0" cy="22"  rx="27" ry="6.5"/>
+          </g></g>
+          <g transform="translate(181,417) rotate(-14)"><g class="granum" style="animation-delay:-.8s">
+            <ellipse cx="0" cy="-22" rx="27" ry="6.5"/><ellipse cx="0" cy="-11" rx="27" ry="6.5"/>
+            <ellipse cx="0" cy="0"   rx="27" ry="6.5"/><ellipse cx="0" cy="11"  rx="27" ry="6.5"/>
+            <ellipse cx="0" cy="22"  rx="27" ry="6.5"/>
+          </g></g>
+          <g transform="translate(122,448) rotate(-14)"><g class="granum" style="animation-delay:-1.5s">
+            <ellipse cx="0" cy="-16" rx="24" ry="6"/><ellipse cx="0" cy="-5.5" rx="24" ry="6"/>
+            <ellipse cx="0" cy="5"   rx="24" ry="6"/><ellipse cx="0" cy="15.5" rx="24" ry="6"/>
+          </g></g>
+          <!-- connecting lamellae -->
+          <g stroke="#1a7a44" stroke-width="2.4" fill="none" opacity=".7">
+            <path d="M161 352 C 176 364, 172 390, 180 403"/>
+            <path d="M144 373 C 135 400, 129 421, 129 434"/>
+          </g>
+
+          <!-- Calvin cycle in the stroma -->
+          <g transform="translate(297,417)">
+            <circle class="calvin-ring" r="42"/>
+            <circle r="29" fill="rgba(255,255,255,.14)"/>
+            <text class="pill-txt" y="-6" style="fill:#f6fff8;font-size:11px">Calvin</text>
+            <text class="pill-txt" y="8"  style="fill:#f6fff8;font-size:11px">cycle</text>
+          </g>
+
+          <!-- zone highlights -->
+          <ellipse class="zone zone-light"  cx="150" cy="400" rx="72" ry="80" stroke="var(--sun-2)"/>
+          <circle  class="zone zone-calvin" cx="297" cy="417" r="54" stroke="var(--glucose)"/>
+        </g>
+
+        <!-- labels around the chloroplast -->
+        <text class="lbl" x="30" y="246">Thylakoid stacks (grana)</text>
+        <text class="lbl-sm" x="30" y="262">light reactions happen here</text>
+
+        <text class="lbl" x="430" y="246" text-anchor="end">Stroma</text>
+        <text class="lbl-sm" x="430" y="262" text-anchor="end">sugar is built here</text>
+
+        <!-- reaction summaries -->
+        <g class="f-water dimmable" transform="translate(140,572)">
+          <rect class="pill" x="-104" y="-19" width="208" height="38" rx="19"/>
+          <text class="pill-txt" y="-4">2 H₂O  →  4 H⁺ + 4 e⁻ + O₂</text>
+          <text class="pill-txt" y="10" style="font-size:9.5px">water splitting (photolysis)</text>
+        </g>
+        <g class="f-glu dimmable" transform="translate(300,96)">
+          <rect class="pill" x="-118" y="-19" width="236" height="38" rx="19"/>
+          <text class="pill-txt" y="-4">6 CO₂ + ATP + NADPH  →  C₆H₁₂O₆</text>
+          <text class="pill-txt" y="10" style="font-size:9.5px">carbon fixation in the stroma</text>
+        </g>
+      </svg>
+    </section>
+  </div>
+
+  <!-- ============ Narration ============ -->
+  <div class="caption" id="caption">
+    <div class="num" id="capNum">1</div>
+    <div class="txt">
+      <strong id="capTitle">Sunlight reaches the leaf</strong>
+      <small id="capBody">Chlorophyll inside the chloroplasts absorbs red and blue light — the green it reflects is why leaves look green.</small>
+    </div>
+  </div>
+  <p class="sr-only" id="live" role="status" aria-live="polite"></p>
+
+  <!-- ============ Controls ============ -->
+  <div class="controls">
+    <div class="ctrl">
+      <button class="btn btn-primary" id="playBtn" aria-pressed="true">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" id="playIco"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+        <span id="playLabel">Pause</span>
+      </button>
+    </div>
+
+    <div class="ctrl">
+      <span class="lbl" id="speedLbl">Speed</span>
+      <div class="seg" role="group" aria-labelledby="speedLbl">
+        <button type="button" data-speed="0.5" aria-pressed="false">0.5&times;</button>
+        <button type="button" data-speed="1"   aria-pressed="true">1&times;</button>
+        <button type="button" data-speed="2"   aria-pressed="false">2&times;</button>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <label class="lbl" for="lightRange">Sunlight</label>
+      <input type="range" id="lightRange" min="0" max="100" step="1" value="100"
+             aria-describedby="rateText">
+    </div>
+
+    <div class="meter">
+      <span class="lbl" style="font-size:.76rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)">Rate</span>
+      <div class="track" aria-hidden="true"><div class="fill"></div></div>
+      <span class="val" id="rateText">100%</span>
+    </div>
+  </div>
+
+  <p class="footnote">The rate meter reflects light intensity only. In a real leaf the rate also depends on CO₂ concentration and temperature — light is simply the factor that most often limits it.</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var app       = document.getElementById('app');
+  var playBtn   = document.getElementById('playBtn');
+  var playIco   = document.getElementById('playIco');
+  var playLabel = document.getElementById('playLabel');
+  var lightRange= document.getElementById('lightRange');
+  var rateText  = document.getElementById('rateText');
+  var caption   = document.getElementById('caption');
+  var capNum    = document.getElementById('capNum');
+  var capTitle  = document.getElementById('capTitle');
+  var capBody   = document.getElementById('capBody');
+  var live      = document.getElementById('live');
+
+  var ICON_PAUSE = 'M7 5h4v14H7zM13 5h4v14h-4z';
+  var ICON_PLAY  = 'M8 5l11 7-11 7z';
+
+  var STAGES = [
+    ['Sunlight reaches the leaf',
+     'Chlorophyll inside the chloroplasts absorbs red and blue light — the green it reflects is why leaves look green.'],
+    ['Water is split, oxygen escapes',
+     'Roots pull H₂O up the xylem. In the thylakoid membranes that light energy splits water, freeing electrons, H⁺ ions and O₂.'],
+    ['Carbon dioxide enters',
+     'CO₂ diffuses in through tiny pores called stomata on the underside of the leaf and reaches the stroma.'],
+    ['The Calvin cycle builds sugar',
+     'Using the ATP and NADPH made by the light reactions, carbon from CO₂ is fixed into a three-carbon sugar and assembled into glucose.'],
+    ['Sugar and oxygen leave',
+     'Glucose travels down the phloem to feed and build the plant, while the leftover oxygen diffuses out into the air we breathe.']
+  ];
+
+  var NIGHT = ['No light — the reaction stops',
+               'Without photons the light reactions halt, so no sugar is made. The plant keeps respiring, using stored glucose instead.'];
+
+  var STAGE_MS = 5200;   // narration dwell time at 1× speed
+
+  var reduced  = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var playing  = !reduced.matches;
+  var speed    = 1;
+  var lightVal = 1;
+  var stage    = 0;
+  var acc      = 0;
+  var last     = 0;
+
+  function setLight(v) {
+    lightVal = v;
+    app.style.setProperty('--light', v);
+    var pct = Math.round(v * 100);
+    rateText.textContent = pct + '%';
+    var night = v <= 0.001;
+    app.classList.toggle('dark', night);
+    caption.classList.toggle('is-night', night);
+    if (night) { renderCaption(NIGHT, '—'); }
+    else { renderCaption(STAGES[stage], String(stage + 1)); }
+  }
+
+  function renderCaption(pair, num) {
+    if (capTitle.textContent === pair[0]) return;
+    capNum.textContent  = num;
+    capTitle.textContent= pair[0];
+    capBody.textContent = pair[1];
+    live.textContent    = pair[0] + '. ' + pair[1];
+  }
+
+  function setSpeed(s) {
+    speed = s;
+    app.style.setProperty('--k', 1 / s);
+    var btns = document.querySelectorAll('.seg [data-speed]');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute('aria-pressed', String(parseFloat(btns[i].dataset.speed) === s));
+    }
+  }
+
+  function setPlaying(p) {
+    playing = p;
+    app.classList.toggle('paused', !p);
+    playBtn.setAttribute('aria-pressed', String(p));
+    playIco.firstElementChild.setAttribute('d', p ? ICON_PAUSE : ICON_PLAY);
+    playLabel.textContent = p ? 'Pause' : 'Play';
+    playBtn.setAttribute('aria-label', p ? 'Pause the animation' : 'Play the animation');
+    if (p) { last = 0; }
+  }
+
+  function tick(now) {
+    requestAnimationFrame(tick);
+    if (!last) { last = now; return; }
+    var dt = now - last;
+    last = now;
+    if (!playing || lightVal <= 0.001) return;
+
+    acc += dt * speed;
+    if (acc >= STAGE_MS) {
+      acc = 0;
+      stage = (stage + 1) % STAGES.length;
+      app.setAttribute('data-stage', String(stage));
+      renderCaption(STAGES[stage], String(stage + 1));
+    }
+  }
+
+  playBtn.addEventListener('click', function () { setPlaying(!playing); });
+
+  document.querySelector('.seg').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-speed]');
+    if (b) setSpeed(parseFloat(b.dataset.speed));
+  });
+
+  lightRange.addEventListener('input', function () {
+    setLight(parseInt(lightRange.value, 10) / 100);
+  });
+
+  // Space / K toggle play-pause when not typing in a control
+  document.addEventListener('keydown', function (e) {
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'BUTTON' || t.isContentEditable)) return;
+    if (e.key === ' ' || e.key.toLowerCase() === 'k') { e.preventDefault(); setPlaying(!playing); }
+  });
+
+  setSpeed(1);
+  setLight(1);
+  setPlaying(playing);
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
