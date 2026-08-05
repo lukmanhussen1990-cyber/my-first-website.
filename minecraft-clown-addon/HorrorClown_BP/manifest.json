@@ -1,0 +1,24 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Horror Clown [BP]",
+    "description": "A flying, laughing, regenerating clown that hunts you until one of you is dead.",
+    "uuid": "1d839d2e-35cf-4c4c-9958-2ad8104cada8",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "description": "Clown entity, spawn rules, loot and commands.",
+      "uuid": "059adc27-94dc-4148-9ac2-38028aa950c3",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "0b07b0cc-d881-4e69-8d62-269fade0dad4",
+      "version": [1, 0, 0]
+    }
+  ]
+}

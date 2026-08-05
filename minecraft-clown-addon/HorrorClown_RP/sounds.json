@@ -1,0 +1,47 @@
+{
+  "entity_sounds": {
+    "entities": {
+      "ssgm:clown": {
+        "volume": 1.0,
+        "pitch": [
+          0.5,
+          0.7
+        ],
+        "events": {
+          "ambient": {
+            "sound": "mob.witch.ambient",
+            "volume": 1.0,
+            "pitch": [
+              0.45,
+              0.65
+            ]
+          },
+          "hurt": {
+            "sound": "mob.witch.hurt",
+            "volume": 1.0,
+            "pitch": [
+              0.45,
+              0.6
+            ]
+          },
+          "death": {
+            "sound": "mob.witch.death",
+            "volume": 1.2,
+            "pitch": [
+              0.35,
+              0.45
+            ]
+          },
+          "attack": {
+            "sound": "mob.vex.charge",
+            "volume": 1.0,
+            "pitch": [
+              0.5,
+              0.7
+            ]
+          }
+        }
+      }
+    }
+  }
+}

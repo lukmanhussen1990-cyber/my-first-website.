@@ -13,3 +13,11 @@ camera** (the view looks *at* your character instead of out of their eyes).
 
 Targets Minecraft for Android v1.21.0.26. No experimental toggles, no Beta
 APIs, no scripting — vanilla `/camera` and `/effect` commands only.
+
+## Horror Clown — Minecraft Bedrock addon
+
+`minecraft-clown-addon/` adds a single mob: a clown that flies, heals itself,
+laughs, kills anything it can reach, and hunts you until one of you is dead.
+
+- Ready-to-install file: **`dist/HorrorClown.mcaddon`**
+- Full details: [`minecraft-clown-addon/README.md`](minecraft-clown-addon/README.md)
