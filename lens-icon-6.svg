@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <style>
+      .lens-circle { fill: none; stroke: currentColor; stroke-width: 6; stroke-linecap: round; }
+      .lens-handle { stroke: currentColor; stroke-width: 6; stroke-linecap: round; fill: none; }
+    </style>
+  </defs>
+
+  <!-- Magnifying glass lens -->
+  <circle class="lens-circle" cx="40" cy="40" r="28" />
+
+  <!-- Handle -->
+  <line class="lens-handle" x1="60" y1="60" x2="80" y2="80" />
+</svg>
