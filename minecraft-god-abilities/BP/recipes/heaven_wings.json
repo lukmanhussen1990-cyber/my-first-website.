@@ -1,0 +1,23 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "godmod:recipe_heaven_wings"
+    },
+    "tags": ["crafting_table"],
+    "pattern": [
+      "F F",
+      "FNF",
+      "FEF"
+    ],
+    "key": {
+      "F": { "item": "minecraft:feather" },
+      "N": { "item": "minecraft:nether_star" },
+      "E": { "item": "minecraft:elytra" }
+    },
+    "result": {
+      "item": "godmod:heaven_wings",
+      "count": 1
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "godmod:recipe_chrono_scepter"
+    },
+    "tags": ["crafting_table"],
+    "pattern": [
+      "DCD",
+      "GNG",
+      " G "
+    ],
+    "key": {
+      "D": { "item": "minecraft:diamond" },
+      "C": { "item": "minecraft:clock" },
+      "G": { "item": "minecraft:gold_ingot" },
+      "N": { "item": "minecraft:nether_star" }
+    },
+    "result": {
+      "item": "godmod:chrono_scepter",
+      "count": 1
+    }
+  }
+}

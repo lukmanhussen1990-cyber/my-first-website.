@@ -1,0 +1,23 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "godmod:recipe_divine_wrath"
+    },
+    "tags": ["crafting_table"],
+    "pattern": [
+      " N ",
+      " I ",
+      " B "
+    ],
+    "key": {
+      "N": { "item": "minecraft:nether_star" },
+      "I": { "item": "minecraft:netherite_ingot" },
+      "B": { "item": "minecraft:blaze_rod" }
+    },
+    "result": {
+      "item": "godmod:divine_wrath",
+      "count": 1
+    }
+  }
+}

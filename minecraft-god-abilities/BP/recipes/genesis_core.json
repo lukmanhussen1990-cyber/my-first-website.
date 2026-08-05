@@ -1,0 +1,23 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "godmod:recipe_genesis_core"
+    },
+    "tags": ["crafting_table"],
+    "pattern": [
+      "GAG",
+      "ANA",
+      "GAG"
+    ],
+    "key": {
+      "G": { "item": "minecraft:gold_ingot" },
+      "A": { "item": "minecraft:golden_apple" },
+      "N": { "item": "minecraft:nether_star" }
+    },
+    "result": {
+      "item": "godmod:genesis_core",
+      "count": 1
+    }
+  }
+}
