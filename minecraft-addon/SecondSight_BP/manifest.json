@@ -1,0 +1,24 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Second Sight: Survival God Mode [BP]",
+    "description": "Survival god mode + a second-person camera. Throw the God Core to become invincible, throw the Perspective Lens to cycle your view.",
+    "uuid": "bfc45c63-2fcb-4a48-b54e-0da3faef13ca",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "description": "Behaviour: god-mode effects, camera cycling, trigger items.",
+      "uuid": "d0995495-3afb-4456-b585-1bbeb8f4d91f",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "0deabf9c-d79f-45ab-ac45-49afaa3428e1",
+      "version": [1, 0, 0]
+    }
+  ]
+}

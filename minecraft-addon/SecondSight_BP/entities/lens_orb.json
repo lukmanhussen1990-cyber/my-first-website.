@@ -1,0 +1,51 @@
+{
+  "format_version": "1.16.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ssgm:lens_orb",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "ssgm:gone": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:collision_box": {
+        "width": 0.1,
+        "height": 0.1
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:projectile": {
+        "power": 0.6,
+        "gravity": 0.05,
+        "uncertainty_base": 0,
+        "uncertainty_multiplier": 0,
+        "anchor": 1,
+        "offset": [0, -0.1, 0],
+        "should_bounce": false
+      },
+      "minecraft:timer": {
+        "time": 1.0,
+        "looping": false,
+        "time_down_event": {
+          "event": "ssgm:despawn"
+        }
+      }
+    },
+    "events": {
+      "ssgm:despawn": {
+        "add": {
+          "component_groups": ["ssgm:gone"]
+        }
+      }
+    }
+  }
+}
