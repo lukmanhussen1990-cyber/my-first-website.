@@ -1,12 +1,38 @@
 # my-first-website.
 
-## ⚡ God Abilities — Minecraft Bedrock Add-On
+Two Minecraft **Bedrock / Pocket Edition 1.21.x** add-ons (Behaviour Pack + Resource Pack each),
+built to be imported with one tap on a phone.
 
-A Minecraft **Pocket Edition / Bedrock 1.21.x** add-on with a Behaviour Pack + Resource Pack and
-5 god-power items you activate straight from your inventory.
+---
 
-➡️ **[minecraft-god-abilities/](minecraft-god-abilities/)** — full docs, abilities and install steps
+## 🔵 Gojo Abilities
+
+Satoru Gojo's cursed techniques as items.
+
+➡️ **[minecraft-gojo-abilities/](minecraft-gojo-abilities/)** — docs and install steps
+➡️ Phone install file: **[`minecraft-gojo-abilities/dist/GojoAbilities.mcaddon`](minecraft-gojo-abilities/dist/GojoAbilities.mcaddon)**
+➡️ In game: `/scriptevent gojo:give`
+
+![the six Gojo items](minecraft-gojo-abilities/docs/preview.png)
+
+| Item | Power |
+|------|-------|
+| 👓 Six Eyes Blindfold | Teleport to what you look at + vision buffs |
+| ♾️ Infinity | Toggle: nothing can touch you |
+| 🔵 Blue | Crushes everything toward one point |
+| 🔴 Red | Blasts everything away from one point |
+| 🟣 Hollow Purple | Erases a tunnel through anything |
+| ⚫ Unlimited Void | Freezes every mob around you |
+
+---
+
+## ⚡ God Abilities
+
+Five god-power items.
+
+➡️ **[minecraft-god-abilities/](minecraft-god-abilities/)** — docs and install steps
 ➡️ Phone install file: **[`minecraft-god-abilities/dist/GodAbilities.mcaddon`](minecraft-god-abilities/dist/GodAbilities.mcaddon)**
+➡️ In game: `/scriptevent godmod:give`
 
 ![the five god items](minecraft-god-abilities/docs/preview.png)
 
@@ -17,3 +43,5 @@ A Minecraft **Pocket Edition / Bedrock 1.21.x** add-on with a Behaviour Pack + R
 | 🕊️ Wings of Heaven | Launch into the sky and land safely |
 | 🟣 Void Ripper | Pull mobs in, then annihilate them |
 | 🔵 Chrono Scepter | Freeze time for nearby mobs |
+
+Both packs can be active in the same world at the same time.

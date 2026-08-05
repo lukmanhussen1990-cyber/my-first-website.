@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "gojo:recipe_blue"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " L ",
+      "LNL",
+      " L "
+    ],
+    "key": {
+      "L": {
+        "item": "minecraft:lapis_lazuli"
+      },
+      "N": {
+        "item": "minecraft:nether_star"
+      }
+    },
+    "result": {
+      "item": "gojo:blue",
+      "count": 1
+    }
+  }
+}

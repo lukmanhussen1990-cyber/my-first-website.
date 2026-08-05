@@ -1,0 +1,24 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "gojo:six_eyes",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "gojo_six_eyes"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:glint": true,
+      "minecraft:damage": 2,
+      "minecraft:cooldown": {
+        "category": "gojo_six_eyes",
+        "duration": 8.0
+      }
+    }
+  }
+}

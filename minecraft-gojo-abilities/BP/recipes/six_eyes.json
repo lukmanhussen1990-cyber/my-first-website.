@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "gojo:recipe_six_eyes"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "WWW",
+      "EDE",
+      "WWW"
+    ],
+    "key": {
+      "W": {
+        "item": "minecraft:white_wool"
+      },
+      "E": {
+        "item": "minecraft:ender_eye"
+      },
+      "D": {
+        "item": "minecraft:diamond"
+      }
+    },
+    "result": {
+      "item": "gojo:six_eyes",
+      "count": 1
+    }
+  }
+}

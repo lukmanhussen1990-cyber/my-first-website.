@@ -1,0 +1,34 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "§b§lGojo Abilities §7[Behavior]",
+    "description": "§fSix Eyes · Infinity · Blue · Red · Hollow Purple · Unlimited Void",
+    "uuid": "ae0cb12d-c157-4f36-a6a1-e32f507f8c32",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "495f7975-c304-48fb-98e3-dd18729da612",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "567640a2-f2d3-4be0-ae46-ef5a8626bf36",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "203c7cf8-6989-4b45-b3a6-3568d7dca43d",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    }
+  ]
+}
