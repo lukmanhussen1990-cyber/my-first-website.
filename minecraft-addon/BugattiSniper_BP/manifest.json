@@ -1,0 +1,23 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Bugatti & Sniper BP",
+    "description": "Behavior pack: drivable Bugatti supercar + working sniper rifle.",
+    "uuid": "b5b5f8e1-51b8-43d5-bcde-c1a175ec9e10",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "b9bfdec4-7f2c-4f88-b210-8ede358abb77",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "15d33cce-4e52-45de-b554-4d4503af5c4e",
+      "version": [1, 0, 0]
+    }
+  ]
+}

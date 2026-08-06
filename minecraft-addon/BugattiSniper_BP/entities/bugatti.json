@@ -1,0 +1,113 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "bg:bugatti",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": ["bugatti", "vehicle", "inanimate"]
+      },
+      "minecraft:collision_box": {
+        "width": 1.9,
+        "height": 1.2
+      },
+      "minecraft:health": {
+        "value": 80,
+        "max": 80
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:movement": {
+        "value": 0.42
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "can_path_over_water": false,
+        "avoid_water": true,
+        "avoid_damage_blocks": true
+      },
+      "minecraft:jump.static": {
+        "jump_power": 0.45
+      },
+      "minecraft:can_climb": {},
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": 0,
+        "breathes_water": true
+      },
+      "minecraft:rideable": {
+        "seat_count": 2,
+        "crouching_skip_interact": true,
+        "pull_in_entities": false,
+        "interact_text": "action.interact.ride.bugatti",
+        "family_types": ["player"],
+        "seats": [
+          {
+            "position": [0.0, 0.72, -0.45],
+            "lock_rider_rotation": 181,
+            "min_rider_count": 0,
+            "max_rider_count": 2
+          },
+          {
+            "position": [0.0, 0.72, 0.55],
+            "lock_rider_rotation": 181,
+            "min_rider_count": 1,
+            "max_rider_count": 2
+          }
+        ]
+      },
+      "minecraft:input_ground_controlled": {},
+      "minecraft:behavior.controlled_by_player": {
+        "priority": 0
+      },
+      "minecraft:boostable": {
+        "speed_multiplier": 2.2,
+        "duration": 6.0,
+        "boost_items": [
+          {
+            "item": "minecraft:coal",
+            "damage": 0
+          },
+          {
+            "item": "minecraft:blaze_powder",
+            "damage": 0
+          }
+        ]
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "fall",
+            "deals_damage": false
+          },
+          {
+            "cause": "drowning",
+            "deals_damage": false
+          },
+          {
+            "cause": "suffocation",
+            "deals_damage": false
+          }
+        ]
+      },
+      "minecraft:ambient_sound_interval": {
+        "value": 3.0,
+        "range": 4.0,
+        "event_name": "ambient"
+      },
+      "minecraft:nameable": {},
+      "minecraft:persistent": {},
+      "minecraft:conditional_bandwidth_optimization": {}
+    }
+  }
+}

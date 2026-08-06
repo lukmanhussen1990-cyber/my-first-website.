@@ -1,0 +1,23 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bg:sniper_rifle_recipe"
+    },
+    "tags": ["crafting_table"],
+    "pattern": [
+      "  G",
+      "III",
+      "S  "
+    ],
+    "key": {
+      "G": { "item": "minecraft:glass_pane" },
+      "I": { "item": "minecraft:iron_ingot" },
+      "S": { "item": "minecraft:stick" }
+    },
+    "result": {
+      "item": "bg:sniper_rifle",
+      "count": 1
+    }
+  }
+}

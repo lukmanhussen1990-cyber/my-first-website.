@@ -1,0 +1,52 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "bg:sniper_bullet",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "components": {
+      "minecraft:collision_box": {
+        "width": 0.2,
+        "height": 0.2
+      },
+      "minecraft:physics": {
+        "has_gravity": false,
+        "has_collision": false
+      },
+      "minecraft:projectile": {
+        "on_hit": {
+          "impact_damage": {
+            "damage": 22,
+            "knockback": true,
+            "semi_random_diff_damage": false,
+            "destroy_on_hit": true
+          },
+          "particle_on_hit": {
+            "particle_type": "largeexplode",
+            "num_particles": 1,
+            "on_entity_hit": true,
+            "on_other_hit": true
+          },
+          "remove_on_hit": {}
+        },
+        "power": 6.0,
+        "gravity": 0.0,
+        "inertia": 1.0,
+        "liquid_inertia": 1.0,
+        "uncertainty_base": 0.0,
+        "uncertainty_multiplier": 0.0,
+        "anchor": 1,
+        "offset": [0, -0.1, 0],
+        "should_bounce": false,
+        "shoot_sound": "firework.blast",
+        "hit_sound": "random.bowhit",
+        "shoot_target": true,
+        "reflect_on_hurt": false
+      },
+      "minecraft:conditional_bandwidth_optimization": {}
+    }
+  }
+}

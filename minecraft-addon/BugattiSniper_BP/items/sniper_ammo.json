@@ -1,0 +1,25 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "bg:sniper_ammo",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.arrow"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "sniper_ammo"
+      },
+      "minecraft:display_name": {
+        "value": "Sniper Round"
+      },
+      "minecraft:max_stack_size": 64,
+      "minecraft:projectile": {
+        "projectile_entity": "bg:sniper_bullet",
+        "minimum_critical_power": 0.5
+      }
+    }
+  }
+}

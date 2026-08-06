@@ -1,0 +1,22 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "bg:bugatti",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/bugatti"
+      },
+      "geometry": {
+        "default": "geometry.bugatti"
+      },
+      "render_controllers": ["controller.render.bugatti"],
+      "spawn_egg": {
+        "base_color": "#1560BD",
+        "overlay_color": "#111318"
+      }
+    }
+  }
+}

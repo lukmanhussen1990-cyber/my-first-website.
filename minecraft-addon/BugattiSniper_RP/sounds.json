@@ -1,0 +1,15 @@
+{
+  "entity_sounds": {
+    "entities": {
+      "bugatti": {
+        "volume": 0.7,
+        "pitch": [0.9, 1.1],
+        "events": {
+          "ambient": "minecart.base",
+          "hurt": "random.break",
+          "death": "random.explode"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "bg:sniper_bullet",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/sniper_bullet"
+      },
+      "geometry": {
+        "default": "geometry.sniper_bullet"
+      },
+      "render_controllers": ["controller.render.sniper_bullet"]
+    }
+  }
+}
