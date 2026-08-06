@@ -1,7 +1,26 @@
 # my-first-website.
 
-Three Minecraft **Bedrock / Pocket Edition 1.21.x** add-ons (Behaviour Pack + Resource Pack each),
+Four Minecraft **Bedrock / Pocket Edition 1.21.x** add-ons (Behaviour Pack + Resource Pack each),
 built to be imported with one tap on a phone.
+
+---
+
+## 🪦 Qabristan (graveyard)
+
+A shovel that raises a whole walled graveyard, and the undead that sleep in it.
+
+➡️ **[minecraft-qabristan/](minecraft-qabristan/)** — docs and install steps
+➡️ Phone install file: **[`minecraft-qabristan/dist/Qabristan.mcaddon`](minecraft-qabristan/dist/Qabristan.mcaddon)**
+➡️ In game: `/scriptevent qabr:give`
+
+![the four Qabristan items](minecraft-qabristan/docs/preview.png)
+
+| Item | Power |
+|------|-------|
+| ⛏️ Gravedigger's Shovel | Builds a walled graveyard: 24 graves, tomb, crypt with treasure |
+| 🏮 Cursed Lantern | Wakes 13 undead led by a named Guardian |
+| 🔔 Soul Bell | Banishes every undead within 24 blocks and shields you |
+| 🧭 Spirit Compass | Takes you back to your graveyard gate |
 
 ---
 
@@ -60,4 +79,4 @@ Five god-power items.
 | 🟣 Void Ripper | Pull mobs in, then annihilate them |
 | 🔵 Chrono Scepter | Freeze time for nearby mobs |
 
-All three packs can be active in the same world at the same time.
+All four packs can be active in the same world at the same time.

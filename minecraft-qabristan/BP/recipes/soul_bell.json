@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "qabr:recipe_soul_bell"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "GGG",
+      "GBG",
+      " G "
+    ],
+    "key": {
+      "G": {
+        "item": "minecraft:gold_ingot"
+      },
+      "B": {
+        "item": "minecraft:bone_block"
+      }
+    },
+    "result": {
+      "item": "qabr:soul_bell",
+      "count": 1
+    }
+  }
+}

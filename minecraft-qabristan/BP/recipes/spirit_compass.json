@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "qabr:recipe_spirit_compass"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " G ",
+      "GCG",
+      " G "
+    ],
+    "key": {
+      "G": {
+        "item": "minecraft:gold_ingot"
+      },
+      "C": {
+        "item": "minecraft:compass"
+      }
+    },
+    "result": {
+      "item": "qabr:spirit_compass",
+      "count": 1
+    }
+  }
+}
