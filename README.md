@@ -1,7 +1,23 @@
 # my-first-website.
 
-Two Minecraft **Bedrock / Pocket Edition 1.21.x** add-ons (Behaviour Pack + Resource Pack each),
+Three Minecraft **Bedrock / Pocket Edition 1.21.x** add-ons (Behaviour Pack + Resource Pack each),
 built to be imported with one tap on a phone.
+
+---
+
+## 🏠 Instant Base
+
+One tap builds a complete finished starter base around you.
+
+➡️ **[minecraft-instant-base/](minecraft-instant-base/)** — docs and install steps
+➡️ Phone install file: **[`minecraft-instant-base/dist/InstantBase.mcaddon`](minecraft-instant-base/dist/InstantBase.mcaddon)**
+➡️ In game: `/scriptevent base:give`
+
+![base blueprint](minecraft-instant-base/docs/preview.png)
+
+House with workshop wall, 8 chests + starter kit, enchanting corner, beds, kitchen,
+basement with a ready-dug mine tunnel, fenced yard, fully grown watered farm and an
+animal pen with cows, sheep and chickens. Respawn point is set to the house.
 
 ---
 
@@ -44,4 +60,4 @@ Five god-power items.
 | 🟣 Void Ripper | Pull mobs in, then annihilate them |
 | 🔵 Chrono Scepter | Freeze time for nearby mobs |
 
-Both packs can be active in the same world at the same time.
+All three packs can be active in the same world at the same time.
