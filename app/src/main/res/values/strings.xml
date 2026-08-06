@@ -1,0 +1,112 @@
+<resources>
+    <string name="app_name">Alarm Handler</string>
+
+    <!-- Home -->
+    <string name="home_title">Alarm Handler</string>
+    <string name="add_alarm">Add Alarm</string>
+    <string name="next_alarm">Next alarm</string>
+    <string name="no_alarms_title">No alarms yet. Let\'s create one.</string>
+    <string name="no_alarms_body">Tap the button below and I\'ll start watching the clock for you.</string>
+    <string name="mascot_greeting_ready">I\'ll handle your next alarm.</string>
+    <string name="mascot_greeting_set">Your next alarm is ready!</string>
+    <string name="mascot_greeting_none">No alarms yet. Let\'s create one.</string>
+    <string name="mascot_greeting_saved">Alarm saved. I\'ve got this.</string>
+    <string name="alarms_off">All alarms are switched off.</string>
+
+    <!-- Alarm card -->
+    <string name="repeat_once">One time</string>
+    <string name="repeat_every_day">Every day</string>
+    <string name="repeat_weekdays">Weekdays</string>
+    <string name="repeat_weekends">Weekends</string>
+    <string name="duplicate">Duplicate</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="undo">Undo</string>
+
+    <!-- Edit -->
+    <string name="new_alarm">New alarm</string>
+    <string name="edit_alarm">Edit alarm</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="alarm_name">Alarm name</string>
+    <string name="alarm_name_hint">Wake up!</string>
+    <string name="repeat">Repeat</string>
+    <string name="sound">Sound</string>
+    <string name="volume">Volume</string>
+    <string name="vibration">Vibration</string>
+    <string name="gradual_volume">Gradually increase volume</string>
+    <string name="snooze_duration">Snooze duration</string>
+    <string name="snooze_limit">Maximum snoozes</string>
+    <string name="snooze_unlimited">Unlimited</string>
+    <string name="dismiss_challenge">Dismiss challenge</string>
+    <string name="safety_dismiss">Always allow dismiss after</string>
+    <string name="safety_dismiss_off">Off — challenge is always required</string>
+
+    <!-- Ring -->
+    <string name="dismiss">Dismiss</string>
+    <string name="snooze">Snooze</string>
+    <string name="ring_wake_up">Wake up! I\'ve been waiting.</string>
+    <string name="ring_snoozed">Five more minutes? Seriously?</string>
+    <string name="ring_dismissed">Mission complete. You\'re awake!</string>
+    <string name="snoozes_left">%1$d snooze left</string>
+    <string name="snoozes_left_plural">%1$d snoozes left</string>
+    <string name="no_snoozes_left">No snoozes left</string>
+
+    <!-- Challenges -->
+    <string name="challenge_tap">Simple tap</string>
+    <string name="challenge_hold">Hold for 3 seconds</string>
+    <string name="challenge_math">Solve a maths question</string>
+    <string name="challenge_mascot">Tap the moving mascot</string>
+    <string name="challenge_memory">Repeat the pattern</string>
+    <string name="challenge_shake">Shake the phone</string>
+
+    <!-- Screens -->
+    <string name="settings">Settings</string>
+    <string name="history">Alarm history</string>
+    <string name="about">About</string>
+    <string name="sound_picker">Choose a sound</string>
+
+    <!-- Settings -->
+    <string name="theme">Theme</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">System</string>
+    <string name="clock_format">Clock format</string>
+    <string name="format_12h">12-hour</string>
+    <string name="format_24h">24-hour</string>
+    <string name="week_start">Week starts on</string>
+    <string name="reduced_motion">Reduced motion</string>
+    <string name="reduced_motion_summary">Turn off bouncing, shaking and flashing animations.</string>
+    <string name="test_alarm">Test alarm in 5 seconds</string>
+    <string name="backup">Back up alarms to a file</string>
+    <string name="restore">Restore alarms from a file</string>
+    <string name="reset_settings">Reset all settings</string>
+
+    <!-- Permissions -->
+    <string name="perm_exact_title">Exact alarms are blocked</string>
+    <string name="perm_exact_body">Android needs your permission to ring at an exact time. Without it your alarms may be delayed by several minutes.</string>
+    <string name="perm_notif_title">Notifications are off</string>
+    <string name="perm_notif_body">The alarm screen and its controls are delivered as a notification. Allow notifications so alarms can reach you.</string>
+    <string name="perm_fsi_title">Full-screen alarms are blocked</string>
+    <string name="perm_fsi_body">Allow full-screen notifications so the alarm can appear over your lock screen instead of as a small banner.</string>
+    <string name="perm_battery_title">Battery optimisation is on</string>
+    <string name="perm_battery_body">Some phones delay or drop alarms to save power. Exclude Alarm Handler from battery optimisation for reliable wake-ups.</string>
+    <string name="perm_fix">Fix this</string>
+    <string name="perm_dismiss">Not now</string>
+
+    <!-- Notifications -->
+    <string name="channel_alarm">Ringing alarms</string>
+    <string name="channel_alarm_desc">Shown while an alarm is ringing.</string>
+    <string name="channel_upcoming">Upcoming alarm</string>
+    <string name="channel_upcoming_desc">A quiet reminder of your next alarm.</string>
+    <string name="channel_missed">Missed alarms</string>
+    <string name="channel_missed_desc">Shown when an alarm rang out without being dismissed.</string>
+    <string name="notif_ringing">Alarm Handler is ringing</string>
+    <string name="notif_missed">Missed alarm</string>
+
+    <!-- Accessibility -->
+    <string name="cd_mascot">The Alarm Handler mascot</string>
+    <string name="cd_city">Pixel city skyline with the Alarm Handler mascot</string>
+    <string name="cd_back">Go back</string>
+    <string name="cd_more">More options</string>
+</resources>

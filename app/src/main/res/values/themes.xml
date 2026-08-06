@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.AlarmHandler" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/off_white</item>
+    </style>
+
+    <!-- Android 12+ splash screen: the mascot on the off-white backdrop. -->
+    <style name="Theme.AlarmHandler.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/off_white</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_mascot</item>
+        <item name="postSplashScreenTheme">@style/Theme.AlarmHandler</item>
+    </style>
+
+    <!-- Ringing screen: fullscreen, no system bars competing with the mascot. -->
+    <style name="Theme.AlarmHandler.Ring" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/off_white</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowShowWallpaper">false</item>
+        <item name="android:windowTranslucentStatus" tools:targetApi="19">false</item>
+    </style>
+
+</resources>
