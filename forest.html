@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Forest — an animated woodland</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: #0b1020;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  #stage { display: block; width: 100vw; height: 100vh; touch-action: none; cursor: crosshair; }
+
+  .title {
+    position: fixed; left: 50%; top: 8vh; transform: translateX(-50%);
+    text-align: center; pointer-events: none; user-select: none;
+    color: rgba(255,255,255,.92);
+    text-shadow: 0 2px 18px rgba(0,0,0,.55), 0 1px 2px rgba(0,0,0,.4);
+    animation: fadeAway 7s ease-in forwards;
+  }
+  .title h1 {
+    margin: 0; font-size: clamp(28px, 6vw, 64px); font-weight: 300;
+    letter-spacing: .34em; text-indent: .34em; text-transform: uppercase;
+  }
+  .title p { margin: .85em 0 0; font-size: clamp(11px, 1.5vw, 14px); letter-spacing: .28em; text-indent: .28em; opacity: .72; text-transform: uppercase; }
+  @keyframes fadeAway { 0%,55% { opacity: 1 } 100% { opacity: 0 } }
+
+  .panel {
+    position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px;
+    padding: 9px 16px 9px 11px; border-radius: 999px;
+    background: rgba(12,16,26,.42); backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid rgba(255,255,255,.13);
+    box-shadow: 0 10px 34px rgba(0,0,0,.35);
+    color: #eaf0ff; font-size: 12px; letter-spacing: .06em;
+    opacity: .28; transition: opacity .35s ease;
+  }
+  .panel:hover, .panel:focus-within { opacity: 1; }
+  @media (hover: none) { .panel { opacity: .92; } }
+
+  .panel button {
+    all: unset; cursor: pointer; display: grid; place-items: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.14);
+    transition: background .2s ease, transform .12s ease;
+  }
+  .panel button:hover { background: rgba(255,255,255,.2); }
+  .panel button:active { transform: scale(.92); }
+  .panel button svg { width: 13px; height: 13px; fill: #eaf0ff; }
+  .panel button .ico-pause { display: none; }
+  .panel button[data-playing="false"] .ico-play { display: none; }
+  .panel button[data-playing="false"] .ico-pause { display: block; }
+
+  .panel .clock { font-variant-numeric: tabular-nums; min-width: 46px; opacity: .9; }
+  .panel .lbl { opacity: .5; text-transform: uppercase; font-size: 10px; letter-spacing: .16em; }
+
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; background: transparent;
+    width: clamp(110px, 26vw, 210px); height: 18px; margin: 0; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track { height: 3px; border-radius: 3px; background: rgba(255,255,255,.24); }
+  input[type=range]::-moz-range-track { height: 3px; border-radius: 3px; background: rgba(255,255,255,.24); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 13px; height: 13px; margin-top: -5px; border-radius: 50%;
+    background: #fff; box-shadow: 0 0 10px rgba(255,255,255,.55);
+  }
+  input[type=range]::-moz-range-thumb { width: 13px; height: 13px; border: 0; border-radius: 50%; background: #fff; }
+
+  .hint {
+    position: fixed; right: 14px; bottom: 14px; color: rgba(255,255,255,.34);
+    font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+    pointer-events: none; user-select: none;
+  }
+  @media (max-width: 620px) { .hint { display: none; } }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+
+<div class="title">
+  <h1>Forest</h1>
+  <p>a day in the woods</p>
+</div>
+
+<div class="panel">
+  <button id="play" data-playing="true" title="Pause / resume the day cycle" aria-label="Pause or resume">
+    <svg class="ico-play" viewBox="0 0 12 12"><rect x="1.5" y="1" width="3" height="10" rx="1"/><rect x="7.5" y="1" width="3" height="10" rx="1"/></svg>
+    <svg class="ico-pause" viewBox="0 0 12 12"><path d="M2.5 1.2 10.4 6 2.5 10.8z"/></svg>
+  </button>
+  <span class="lbl">Time</span>
+  <input id="scrub" type="range" min="0" max="1000" value="120" aria-label="Time of day">
+  <span class="clock" id="clock">07:00</span>
+</div>
+
+<p class="hint">Move the mouse to drift &nbsp;·&nbsp; Space to pause</p>
+
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const playBtn = document.getElementById('play');
+  const scrub = document.getElementById('scrub');
+  const clockEl = document.getElementById('clock');
+
+  let W = 0, H = 0, dpr = 1;
+
+  /* ---------------------------------------------------------------- utils */
+  const TAU = Math.PI * 2;
+  const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const mod = (n, m) => ((n % m) + m) % m;
+  const smooth = t => t * t * (3 - 2 * t);
+
+  // deterministic RNG so the forest is the same shape every reload
+  function makeRng(seed) {
+    let s = seed >>> 0 || 1;
+    return () => {
+      s ^= s << 13; s >>>= 0;
+      s ^= s >> 17;
+      s ^= s << 5;  s >>>= 0;
+      return s / 4294967296;
+    };
+  }
+  const rng = makeRng(20260806);
+  const rand = (a = 1, b = 0) => b + (a - b) * rng();
+  const pick = arr => arr[(rng() * arr.length) | 0];
+
+  // 1-D value noise, used for ridge lines and gusts
+  const noiseTable = Array.from({ length: 512 }, () => rng());
+  function noise1(x) {
+    const i = Math.floor(x), f = x - i;
+    const a = noiseTable[mod(i, 512)], b = noiseTable[mod(i + 1, 512)];
+    return lerp(a, b, smooth(f));
+  }
+  function fbm(x) {
+    return noise1(x) * 0.55 + noise1(x * 2.1 + 9.3) * 0.28 + noise1(x * 4.3 + 21.7) * 0.17;
+  }
+
+  const rgb = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+  const mix = (c1, c2, t) => [lerp(c1[0], c2[0], t), lerp(c1[1], c2[1], t), lerp(c1[2], c2[2], t)];
+
+  /* ------------------------------------------------------- sky keyframes */
+  // t = 0 sunrise · 0.25 noon · 0.5 sunset · 0.75 midnight
+  const SKY = [
+    { t: 0.00, top: [ 44,  58,  96], mid: [172, 118, 128], bot: [244, 148, 104], sun: [255, 196, 138], fog: [196, 156, 152], amb: 0.36 },
+    { t: 0.10, top: [ 78, 136, 198], mid: [150, 190, 218], bot: [236, 202, 168], sun: [255, 244, 208], fog: [212, 224, 236], amb: 0.74 },
+    { t: 0.25, top: [ 56, 128, 206], mid: [124, 186, 226], bot: [188, 222, 242], sun: [255, 255, 238], fog: [222, 238, 250], amb: 1.00 },
+    { t: 0.40, top: [ 84, 140, 196], mid: [176, 186, 200], bot: [242, 204, 152], sun: [255, 226, 172], fog: [230, 214, 190], amb: 0.80 },
+    { t: 0.50, top: [ 56,  62, 112], mid: [166, 100, 118], bot: [248, 130,  84], sun: [255, 152,  92], fog: [202, 152, 140], amb: 0.42 },
+    { t: 0.60, top: [ 22,  28,  62], mid: [ 62,  48,  92], bot: [ 96,  66, 112], sun: [192, 152, 202], fog: [110, 100, 140], amb: 0.19 },
+    { t: 0.75, top: [  7,  11,  30], mid: [ 13,  20,  46], bot: [ 24,  34,  66], sun: [204, 218, 255], fog: [ 58,  70, 110], amb: 0.08 },
+    { t: 0.92, top: [ 15,  21,  52], mid: [ 40,  40,  78], bot: [ 64,  56,  98], sun: [222, 204, 224], fog: [ 92,  92, 132], amb: 0.16 },
+    { t: 1.00, top: [ 44,  58,  96], mid: [172, 118, 128], bot: [244, 148, 104], sun: [255, 196, 138], fog: [196, 156, 152], amb: 0.36 }
+  ];
+
+  function sampleSky(t) {
+    t = mod(t, 1);
+    let i = 0;
+    while (i < SKY.length - 2 && SKY[i + 1].t < t) i++;
+    const a = SKY[i], b = SKY[i + 1];
+    const k = smooth(clamp((t - a.t) / (b.t - a.t || 1), 0, 1));
+    return {
+      top: mix(a.top, b.top, k),
+      mid: mix(a.mid, b.mid, k),
+      bot: mix(a.bot, b.bot, k),
+      sun: mix(a.sun, b.sun, k),
+      fog: mix(a.fog, b.fog, k),
+      amb: lerp(a.amb, b.amb, k)
+    };
+  }
+
+  /* -------------------------------------------------------------- layers */
+  // depth: parallax factor · base: ground line as a fraction of height
+  const LAYERS = [
+    { depth: 0.030, count: 40, hMin: 0.075, hMax: 0.125, base: 0.615, haze: 0.86, kind: 'pine' },
+    { depth: 0.065, count: 32, hMin: 0.110, hMax: 0.190, base: 0.665, haze: 0.66, kind: 'mix'  },
+    { depth: 0.120, count: 24, hMin: 0.170, hMax: 0.280, base: 0.730, haze: 0.44, kind: 'mix'  },
+    { depth: 0.220, count: 16, hMin: 0.260, hMax: 0.420, base: 0.810, haze: 0.24, kind: 'mix'  },
+    { depth: 0.420, count: 10, hMin: 0.440, hMax: 0.720, base: 0.935, haze: 0.07, kind: 'pine' }
+  ];
+
+  const TREE_GREEN = [26, 54, 40];
+  const TRUNK      = [38, 30, 26];
+
+  let layers = [], stars = [], motes = [], fireflies = [], leaves = [], grass = [], flocks = [], ridges = [];
+  let worldW = 1200;
+
+  function buildScene() {
+    worldW = W + 700;
+
+    layers = LAYERS.map((cfg, li) => {
+      const trees = [];
+      for (let i = 0; i < cfg.count; i++) {
+        const kind = cfg.kind === 'pine' ? 'pine' : (rng() < 0.62 ? 'pine' : 'broad');
+        trees.push({
+          x: rand(worldW),
+          h: H * rand(cfg.hMax, cfg.hMin),
+          lean: rand(0.5, -0.5),
+          phase: rand(TAU),
+          stiff: rand(1.25, 0.7),
+          kind,
+          tiers: 5 + ((rng() * 3) | 0),
+          width: rand(0.62, 0.40),
+          blobs: Array.from({ length: 5 + ((rng() * 4) | 0) }, () => ({
+            dx: rand(0.6, -0.6), dy: rand(0.22, -0.34), r: rand(0.46, 0.26)
+          })),
+          dip: rand(0.014, -0.006)
+        });
+      }
+      trees.sort((a, b) => a.h - b.h);
+      return { ...cfg, index: li, trees };
+    });
+
+    // background ridges
+    ridges = [
+      { y: 0.575, amp: 0.150, freq: 0.0011, seed: 4.1, depth: 0.010, haze: 0.88 },
+      { y: 0.620, amp: 0.105, freq: 0.0021, seed: 17.9, depth: 0.020, haze: 0.74 }
+    ];
+
+    stars = Array.from({ length: 260 }, () => ({
+      x: rand(1), y: rand(0.62), r: rand(1.5, 0.35), tw: rand(TAU), sp: rand(2.4, 0.7)
+    }));
+
+    // motes stay below the treeline — pollen drifting through the canopy, not specks in open sky
+    motes = Array.from({ length: 90 }, () => ({
+      x: rand(W), y: rand(H * 0.97, H * 0.52), r: rand(2.0, 0.6),
+      sp: rand(9, 2), ph: rand(TAU), amp: rand(26, 8)
+    }));
+
+    fireflies = Array.from({ length: 46 }, () => ({
+      x: rand(W), y: rand(H * 0.97, H * 0.45), ph: rand(TAU), sp: rand(1.5, 0.5),
+      ax: rand(60, 18), ay: rand(30, 8), blink: rand(TAU), br: rand(1.4, 0.5), r: rand(2.2, 1.1)
+    }));
+
+    leaves = Array.from({ length: 30 }, () => spawnLeaf(rand(H, -H * 0.4)));
+
+    grass = Array.from({ length: Math.round(W / 5) + 60 }, () => ({
+      x: rand(W + 60, -30),
+      h: rand(H * 0.075, H * 0.022),
+      lean: rand(0.55, -0.55),
+      ph: rand(TAU),
+      w: rand(2.6, 1.0),
+      shade: rand(1, 0.55)
+    }));
+
+    flocks = [];
+  }
+
+  function spawnLeaf(y) {
+    return {
+      x: rand(W + 80, -80), y,
+      vy: rand(46, 18), ph: rand(TAU), sp: rand(1.9, 0.7), amp: rand(58, 18),
+      s: rand(7.5, 3.5), rot: rand(TAU), vr: rand(1.6, -1.6),
+      c: pick([[122, 148, 74], [156, 132, 56], [178, 106, 48], [96, 128, 66], [140, 92, 52]])
+    };
+  }
+
+  /* --------------------------------------------------------- tree shapes */
+  function shear(dy, h, sway) {
+    // horizontal offset that grows towards the crown — a cheap, convincing bend
+    const k = clamp(dy / h, 0, 1);
+    return sway * Math.pow(k, 1.7) * h * 0.13;
+  }
+
+  function drawPine(t, gx, gy, sway, canopy, trunkCol) {
+    const h = t.h, n = t.tiers, halfBase = h * t.width * 0.5;
+
+    // trunk
+    const tw = Math.max(1.2, h * 0.032);
+    ctx.fillStyle = trunkCol;
+    ctx.beginPath();
+    ctx.moveTo(gx - tw * 0.5, gy);
+    ctx.lineTo(gx + tw * 0.5, gy);
+    const tipY = gy - h * 0.34;
+    ctx.lineTo(gx + shear(h * 0.34, h, sway) + tw * 0.28, tipY);
+    ctx.lineTo(gx + shear(h * 0.34, h, sway) - tw * 0.28, tipY);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = canopy;
+    for (let i = 0; i < n; i++) {
+      const f = i / n;
+      const baseDy = h * (0.20 + f * 0.80);
+      const tipDy = Math.min(h, h * (0.20 + (f + 1.9 / n) * 0.80));
+      const hw = halfBase * (1 - f * 0.92) + h * 0.012;
+      const yB = gy - baseDy, yT = gy - tipDy;
+      const sB = shear(baseDy, h, sway), sT = shear(tipDy, h, sway);
+      ctx.beginPath();
+      ctx.moveTo(gx + sB - hw, yB + h * t.dip);
+      ctx.quadraticCurveTo(gx + sB - hw * 0.42, yB - (yB - yT) * 0.30, gx + sT, yT);
+      ctx.quadraticCurveTo(gx + sB + hw * 0.42, yB - (yB - yT) * 0.30, gx + sB + hw, yB + h * t.dip);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  function drawBroad(t, gx, gy, sway, canopy, trunkCol) {
+    const h = t.h;
+    const crownDy = h * 0.56;
+    const sC = shear(crownDy, h, sway);
+
+    // trunk + two boughs
+    ctx.strokeStyle = trunkCol;
+    ctx.lineCap = 'round';
+    ctx.lineWidth = Math.max(1.4, h * 0.055);
+    ctx.beginPath();
+    ctx.moveTo(gx, gy);
+    ctx.quadraticCurveTo(gx + sC * 0.35, gy - h * 0.3, gx + sC * 0.8, gy - crownDy);
+    ctx.stroke();
+    ctx.lineWidth = Math.max(1, h * 0.028);
+    for (const dir of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(gx + sC * 0.3, gy - h * 0.30);
+      ctx.quadraticCurveTo(gx + sC * 0.6 + dir * h * 0.12, gy - h * 0.44,
+                           gx + sC * 0.9 + dir * h * 0.26, gy - h * 0.58);
+      ctx.stroke();
+    }
+
+    // canopy as a cluster of soft blobs
+    ctx.fillStyle = canopy;
+    ctx.beginPath();
+    for (const b of t.blobs) {
+      const dy = crownDy + b.dy * h * 0.5;
+      const s = shear(dy, h, sway);
+      ctx.moveTo(gx + s + b.dx * h * 0.5 + b.r * h * 0.5, gy - dy);
+      ctx.arc(gx + s + b.dx * h * 0.5, gy - dy, b.r * h * 0.5, 0, TAU);
+    }
+    ctx.fill();
+  }
+
+  /* ------------------------------------------------------------- drawing */
+  function drawSky(sky, sun) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, rgb(sky.top));
+    g.addColorStop(0.52, rgb(sky.mid));
+    g.addColorStop(1, rgb(sky.bot));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // glow around whichever body is up
+    if (sun.y < H * 0.9) {
+      const rad = H * (sun.isSun ? 0.95 : 0.55);
+      const glow = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, rad);
+      const a = sun.isSun ? 0.42 * clamp(sun.elev + 0.35, 0, 1) : 0.20 * clamp(-sun.elev + 0.3, 0, 1);
+      glow.addColorStop(0, rgb(sky.sun, a));
+      glow.addColorStop(0.35, rgb(sky.sun, a * 0.30));
+      glow.addColorStop(1, rgb(sky.sun, 0));
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function drawStars(night, time) {
+    if (night <= 0.02) return;
+    ctx.save();
+    for (const s of stars) {
+      const tw = 0.55 + 0.45 * Math.sin(time * s.sp + s.tw);
+      ctx.globalAlpha = night * tw * 0.95;
+      ctx.fillStyle = '#fff';
+      const x = s.x * W, y = s.y * H;
+      ctx.beginPath();
+      ctx.arc(x, y, s.r, 0, TAU);
+      ctx.fill();
+      if (s.r > 1.1) {
+        ctx.globalAlpha *= 0.28;
+        ctx.beginPath();
+        ctx.arc(x, y, s.r * 3.2, 0, TAU);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawCelestial(sky, sun) {
+    if (sun.y > H * 1.05) return;
+    ctx.save();
+    const r = sun.isSun ? H * 0.045 : H * 0.032;
+    if (sun.isSun) {
+      ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, r * 4.5);
+      g.addColorStop(0, rgb(sky.sun, 0.95));
+      g.addColorStop(0.18, rgb(sky.sun, 0.55));
+      g.addColorStop(1, rgb(sky.sun, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(sun.x - r * 5, sun.y - r * 5, r * 10, r * 10);
+      ctx.fillStyle = rgb(sky.sun, 0.98);
+      ctx.beginPath(); ctx.arc(sun.x, sun.y, r, 0, TAU); ctx.fill();
+    } else {
+      const g = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, r * 6);
+      g.addColorStop(0, rgb([220, 232, 255], 0.30));
+      g.addColorStop(1, rgb([220, 232, 255], 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(sun.x - r * 6, sun.y - r * 6, r * 12, r * 12);
+      ctx.fillStyle = 'rgba(238,244,255,.96)';
+      ctx.beginPath(); ctx.arc(sun.x, sun.y, r, 0, TAU); ctx.fill();
+      // craters + a shadowed limb
+      ctx.fillStyle = 'rgba(206,216,238,.9)';
+      ctx.beginPath(); ctx.arc(sun.x - r * 0.28, sun.y - r * 0.2, r * 0.22, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(sun.x + r * 0.3, sun.y + r * 0.16, r * 0.16, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(sun.x + r * 0.02, sun.y + r * 0.44, r * 0.1, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawRidges(sky, scroll) {
+    for (const rd of ridges) {
+      const col = mix(mix(TREE_GREEN, sky.fog, rd.haze), sky.bot, 0.18 * rd.haze);
+      const off = scroll * rd.depth;
+      ctx.fillStyle = rgb(col, 0.95);
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      const step = 14;
+      for (let x = 0; x <= W + step; x += step) {
+        const n = fbm((x + off) * rd.freq + rd.seed);
+        ctx.lineTo(x, H * rd.y - n * H * rd.amp);
+      }
+      ctx.lineTo(W, H);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  function drawLayer(layer, sky, scroll, wind, time) {
+    const off = scroll * layer.depth;
+    const gy = H * layer.base;
+
+    // canopy + trunk colours faded towards the sky by distance (aerial perspective)
+    const light = 0.30 + 0.70 * sky.amb;
+    const lit = [TREE_GREEN[0] * light, TREE_GREEN[1] * light, TREE_GREEN[2] * light];
+    const canopy = rgb(mix(lit, sky.fog, layer.haze * 0.88));
+    const trunkLit = [TRUNK[0] * light, TRUNK[1] * light, TRUNK[2] * light];
+    const trunkCol = rgb(mix(trunkLit, sky.fog, layer.haze * 0.88));
+
+    // forest floor for this band
+    const floor = ctx.createLinearGradient(0, gy - H * 0.02, 0, gy + H * 0.16);
+    const floorCol = mix([lit[0] * 0.8, lit[1] * 0.8, lit[2] * 0.75], sky.fog, layer.haze * 0.8);
+    floor.addColorStop(0, rgb(floorCol));
+    floor.addColorStop(1, rgb(mix(floorCol, [0, 0, 0], 0.35)));
+    ctx.fillStyle = floor;
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    const step = 22;
+    for (let x = 0; x <= W + step; x += step) {
+      const n = fbm((x + off) * 0.0022 + layer.index * 7.3);
+      ctx.lineTo(x, gy - n * H * 0.022);
+    }
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    ctx.fill();
+
+    const swayScale = 0.55 + layer.depth * 1.1;
+    for (const t of layer.trees) {
+      const px = mod(t.x - off, worldW) - 350;
+      if (px < -t.h * 0.9 || px > W + t.h * 0.9) continue;
+      const gyT = gy - fbm((px + off) * 0.0022 + layer.index * 7.3) * H * 0.022 + 1;
+      const sway = (t.lean * 0.35 + wind * t.stiff * Math.sin(time * 1.1 * t.stiff + t.phase) * 0.5 + wind * 0.55) * swayScale;
+      if (t.kind === 'pine') drawPine(t, px, gyT, sway, canopy, trunkCol);
+      else drawBroad(t, px, gyT, sway, canopy, trunkCol);
+    }
+  }
+
+  function drawFog(sky, time, strength) {
+    ctx.save();
+    for (let i = 0; i < 5; i++) {
+      const y = H * (0.56 + i * 0.085);
+      const th = H * (0.055 + i * 0.02);
+      const drift = time * (5 + i * 4);
+      const g = ctx.createLinearGradient(0, y - th, 0, y + th);
+      const base = 0.055 + i * 0.018;
+      g.addColorStop(0, rgb(sky.fog, 0));
+      g.addColorStop(0.5, rgb(sky.fog, base * strength * (1.2 + 0.5 * Math.sin(time * 0.3 + i))));
+      g.addColorStop(1, rgb(sky.fog, 0));
+      ctx.fillStyle = g;
+
+      // scallop the band so it reads as drifting mist rather than a flat wash
+      ctx.beginPath();
+      ctx.moveTo(-10, y + th);
+      for (let x = -10; x <= W + 20; x += 26) {
+        const n = fbm((x + drift) * 0.0035 + i * 3.7);
+        ctx.lineTo(x, y - th * 0.5 + (n - 0.5) * th * 1.4);
+      }
+      ctx.lineTo(W + 20, y + th);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawRays(sky, sun, time) {
+    if (sun.elev <= 0.02 || !sun.isSun) return;
+    const power = clamp(Math.sin(sun.elev * Math.PI) * 1.15, 0, 1) * (0.55 - 0.28 * sun.elev);
+    if (power <= 0.01) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.translate(sun.x, sun.y);
+    const len = Math.hypot(W, H) * 1.25;
+    for (let i = 0; i < 11; i++) {
+      const a = Math.PI * 0.5 + (i - 5) * 0.085 + Math.sin(time * 0.12 + i * 1.7) * 0.02;
+      const wdt = (0.012 + 0.02 * ((i * 37) % 5) / 5) * (1 + 0.25 * Math.sin(time * 0.5 + i));
+      ctx.save();
+      ctx.rotate(a - Math.PI * 0.5);
+      const g = ctx.createLinearGradient(0, 0, 0, len);
+      const al = power * (0.10 + 0.06 * Math.sin(time * 0.4 + i * 2.1));
+      g.addColorStop(0, rgb(sky.sun, al));
+      g.addColorStop(0.55, rgb(sky.sun, al * 0.35));
+      g.addColorStop(1, rgb(sky.sun, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-len * wdt, len);
+      ctx.lineTo(len * wdt * 1.6, len);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function drawMotes(sky, day, time, dt) {
+    if (day <= 0.05) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const m of motes) {
+      m.x += (6 + m.sp * 0.4) * dt;
+      m.y -= m.sp * 0.18 * dt;
+      if (m.x > W + 20) m.x = -20;
+      if (m.y < H * 0.5) m.y = H * 0.98;
+      const px = m.x + Math.sin(time * 0.6 + m.ph) * m.amp;
+      const py = m.y + Math.cos(time * 0.45 + m.ph) * m.amp * 0.35;
+      const a = day * 0.5 * (0.4 + 0.6 * Math.sin(time * 0.9 + m.ph) ** 2);
+      ctx.fillStyle = rgb(sky.sun, a);
+      ctx.beginPath();
+      ctx.arc(px, py, m.r, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawFireflies(night, time, dt) {
+    if (night <= 0.05) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const f of fireflies) {
+      f.x += (Math.sin(time * f.sp + f.ph) * 14 + 5) * dt;
+      f.y += Math.cos(time * f.sp * 0.8 + f.ph * 1.7) * 9 * dt;
+      if (f.x > W + 30) f.x = -30;
+      if (f.y > H * 0.99) f.y = H * 0.45;
+      if (f.y < H * 0.42) f.y = H * 0.98;
+      const px = f.x + Math.sin(time * 0.9 + f.ph) * f.ax;
+      const py = f.y + Math.cos(time * 0.7 + f.ph * 2.1) * f.ay;
+      const blink = Math.max(0, Math.sin(time * f.br + f.blink));
+      const a = night * blink * blink * 0.95;
+      if (a < 0.01) continue;
+      const g = ctx.createRadialGradient(px, py, 0, px, py, f.r * 7);
+      g.addColorStop(0, `rgba(215,255,170,${a})`);
+      g.addColorStop(0.25, `rgba(170,240,120,${a * 0.42})`);
+      g.addColorStop(1, 'rgba(150,230,110,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(px - f.r * 7, py - f.r * 7, f.r * 14, f.r * 14);
+      ctx.fillStyle = `rgba(240,255,214,${a})`;
+      ctx.beginPath();
+      ctx.arc(px, py, f.r * 0.7, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawLeaves(sky, wind, time, dt) {
+    const light = 0.25 + 0.75 * sky.amb;
+    for (let i = 0; i < leaves.length; i++) {
+      const l = leaves[i];
+      l.y += l.vy * dt;
+      l.x += (wind * 34 + Math.sin(time * l.sp + l.ph) * 12) * dt;
+      l.rot += l.vr * dt;
+      if (l.y > H + 40) leaves[i] = spawnLeaf(-40);
+      if (l.x > W + 60) l.x = -60;
+      if (l.x < -60) l.x = W + 60;
+      const px = l.x + Math.sin(time * l.sp + l.ph) * l.amp;
+      const flat = Math.abs(Math.cos(l.rot));
+      ctx.save();
+      ctx.translate(px, l.y);
+      ctx.rotate(Math.sin(l.rot * 0.6) * 0.9);
+      ctx.fillStyle = rgb([l.c[0] * light, l.c[1] * light, l.c[2] * light], 0.9);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, l.s * (0.35 + 0.65 * flat), l.s * 0.42, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawBirds(day, time, dt) {
+    if (day > 0.25 && flocks.length < 2 && rng() < 0.0022) {
+      const dir = rng() < 0.5 ? 1 : -1;
+      const n = 3 + ((rng() * 4) | 0);
+      flocks.push({
+        dir,
+        x: dir > 0 ? -80 : W + 80,
+        y: H * rand(0.34, 0.10),
+        sp: rand(115, 62),
+        birds: Array.from({ length: n }, (_, i) => ({
+          dx: -i * rand(30, 16) * dir + rand(8, -8),
+          dy: (i % 2 ? 1 : -1) * i * rand(10, 4) + rand(5, -5),
+          fl: rand(TAU), fs: rand(11, 7), s: rand(1.15, 0.7)
+        }))
+      });
+    }
+    for (let i = flocks.length - 1; i >= 0; i--) {
+      const f = flocks[i];
+      f.x += f.sp * f.dir * dt;
+      if (f.x < -220 || f.x > W + 220) { flocks.splice(i, 1); continue; }
+      ctx.save();
+      ctx.strokeStyle = `rgba(24,26,34,${0.42 * clamp(day, 0, 1) + 0.12})`;
+      ctx.lineCap = 'round';
+      for (const b of f.birds) {
+        const bx = f.x + b.dx;
+        const by = f.y + b.dy + Math.sin(time * 0.8 + b.fl) * 6;
+        const flap = Math.sin(time * b.fs + b.fl);
+        const s = 5 * b.s;
+        ctx.lineWidth = 1.5 * b.s;
+        ctx.beginPath();
+        ctx.moveTo(bx - s * 1.5, by - flap * s * 0.75);
+        ctx.quadraticCurveTo(bx - s * 0.5, by + s * 0.2, bx, by);
+        ctx.quadraticCurveTo(bx + s * 0.5, by + s * 0.2, bx + s * 1.5, by - flap * s * 0.75);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawGrass(sky, wind, time, scroll) {
+    const light = 0.22 + 0.78 * sky.amb;
+    const off = scroll * 0.62;
+    const baseY = H * 1.005;
+    ctx.lineCap = 'round';
+    for (const g of grass) {
+      const px = mod(g.x - off, W + 120) - 60;
+      const sway = (wind * 1.5 + Math.sin(time * 1.6 + g.ph) * 0.35 + g.lean) * g.h * 0.42;
+      const c = [34 * g.shade * light, 62 * g.shade * light, 40 * g.shade * light];
+      ctx.strokeStyle = rgb(c, 0.95);
+      ctx.lineWidth = g.w;
+      ctx.beginPath();
+      ctx.moveTo(px, baseY);
+      ctx.quadraticCurveTo(px + sway * 0.3, baseY - g.h * 0.6, px + sway, baseY - g.h);
+      ctx.stroke();
+    }
+  }
+
+  function drawGroundMist(sky, time) {
+    const g = ctx.createLinearGradient(0, H * 0.82, 0, H);
+    g.addColorStop(0, rgb(sky.fog, 0));
+    g.addColorStop(1, rgb(sky.fog, 0.14 + 0.05 * Math.sin(time * 0.4)));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, H * 0.82, W, H * 0.18);
+  }
+
+  function drawVignette(sky) {
+    const g = ctx.createRadialGradient(W * 0.5, H * 0.52, Math.min(W, H) * 0.28, W * 0.5, H * 0.52, Math.max(W, H) * 0.78);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, `rgba(0,0,0,${0.30 + 0.22 * (1 - sky.amb)})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  /* ------------------------------------------------------------ the loop */
+  let dayT = 0.12;          // time of day
+  let playing = true;
+  const DAY_LENGTH = 96;    // seconds for a full cycle
+  let scroll = 0;
+  let pointerX = 0.5, targetPointerX = 0.5;
+  let last = performance.now() / 1000;
+  let time = 0;
+
+  function frame(now) {
+    now /= 1000;
+    let dt = Math.min(0.05, now - last);
+    last = now;
+    time += dt;
+
+    if (playing) {
+      dayT = mod(dayT + dt / DAY_LENGTH, 1);
+      scrub.value = String(Math.round(dayT * 1000));
+    }
+    updateClock();
+
+    // camera drift + gentle mouse parallax
+    pointerX += (targetPointerX - pointerX) * clamp(dt * 2.4, 0, 1);
+    scroll += dt * 13;
+    const cam = scroll + (pointerX - 0.5) * 260;
+
+    const sky = sampleSky(dayT);
+    const elev = Math.sin(dayT * TAU);
+    const day = clamp(elev * 1.6 + 0.12, 0, 1);
+    const night = clamp(-elev * 1.9 + 0.10, 0, 1);
+
+    const isSun = dayT < 0.5;
+    const p = isSun ? dayT * 2 : (dayT - 0.5) * 2;
+    const sun = {
+      x: W * (0.06 + p * 0.88),
+      y: H * 0.655 - Math.sin(p * Math.PI) * H * 0.60,
+      elev: isSun ? elev : -elev,
+      isSun
+    };
+
+    // wind: a slow base breeze with occasional gusts
+    const wind = 0.16 * Math.sin(time * 0.31) + 0.10 * Math.sin(time * 0.77 + 1.4)
+               + 0.30 * Math.pow(clamp(fbm(time * 0.16) * 1.5 - 0.42, 0, 1), 2);
+
+    drawSky(sky, sun);
+    drawStars(night, time);
+    drawCelestial(sky, sun);
+    drawBirds(day, time, dt);
+    drawRidges(sky, cam);
+
+    drawLayer(layers[0], sky, cam, wind * 0.5, time);
+    drawFog(sky, time, 1.1);
+    drawLayer(layers[1], sky, cam, wind * 0.7, time);
+    drawLayer(layers[2], sky, cam, wind * 0.85, time);
+    drawFog(sky, time, 0.75);
+    drawRays(sky, sun, time);
+    drawLayer(layers[3], sky, cam, wind, time);
+    drawMotes(sky, day, time, dt);
+    drawLayer(layers[4], sky, cam, wind * 1.15, time);
+    drawLeaves(sky, wind, time, dt);
+    drawGroundMist(sky, time);
+    drawFireflies(night, time, dt);
+    drawGrass(sky, wind, time, cam);
+    drawVignette(sky);
+
+    requestAnimationFrame(frame);
+  }
+
+  /* ------------------------------------------------------------ controls */
+  function updateClock() {
+    const hours = mod(dayT * 24 + 6, 24);
+    const h = Math.floor(hours);
+    const m = Math.floor((hours - h) * 60);
+    clockEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+
+  function setPlaying(v) {
+    playing = v;
+    playBtn.dataset.playing = String(v);
+  }
+
+  playBtn.addEventListener('click', () => setPlaying(!playing));
+  scrub.addEventListener('input', () => {
+    dayT = Number(scrub.value) / 1000;
+    setPlaying(false);
+    updateClock();
+  });
+
+  addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); setPlaying(!playing); }
+  });
+
+  addEventListener('pointermove', e => { targetPointerX = clamp(e.clientX / W, 0, 1); }, { passive: true });
+  addEventListener('pointerdown', e => {
+    if (e.target === canvas) targetPointerX = clamp(e.clientX / W, 0, 1);
+  }, { passive: true });
+
+  function resize() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildScene();
+  }
+
+  let resizeTimer = 0;
+  addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 140);
+  });
+
+  resize();
+  dayT = Number(scrub.value) / 1000;
+  updateClock();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
