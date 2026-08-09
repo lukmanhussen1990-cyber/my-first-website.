@@ -1,0 +1,1827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecosystem Education - Interactive Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000;
+        }
+
+        body {
+            position: relative;
+            touch-action: manipulation;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 100%);
+        }
+
+        #container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .section {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .section.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        canvas {
+            cursor: pointer;
+        }
+
+        .info-card {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #00ff88;
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 300px;
+            font-size: 16px;
+            line-height: 1.6;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+            z-index: 1000;
+            animation: slideInCard 0.5s ease;
+        }
+
+        @keyframes slideInCard {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .ui-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 999;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .button.danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        }
+
+        .button.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .slider-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #00ff88;
+            z-index: 999;
+            display: none;
+        }
+
+        .slider-container.active {
+            display: block;
+        }
+
+        .slider-container label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        input[type="range"] {
+            width: 250px;
+            height: 8px;
+            border-radius: 5px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #00ff88;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #00ff88;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .title-screen {
+            text-align: center;
+            z-index: 100;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 30px;
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.8);
+            animation: titlePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #00ff88;
+        }
+
+        .description {
+            font-size: 18px;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 20px auto;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #00ff88;
+        }
+
+        .split-screen {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .split-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background: rgba(0, 0, 0, 0.7);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .split-section:first-child {
+            border-right: 3px solid #00ff88;
+        }
+
+        .biotic-grid, .abiotic-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .grid-item {
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .challenge-container {
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #00ff88;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            text-align: center;
+            z-index: 100;
+        }
+
+        .challenge-question {
+            font-size: 24px;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        .challenge-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .choice-button {
+            background: rgba(102, 126, 234, 0.5);
+            border: 2px solid #667eea;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .choice-button:hover {
+            background: rgba(102, 126, 234, 0.8);
+            transform: scale(1.05);
+        }
+
+        .choice-button.correct {
+            background: #00ff88;
+            border-color: #00ff88;
+            color: #000;
+            animation: correctPulse 0.6s ease;
+        }
+
+        @keyframes correctPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .choice-button.incorrect {
+            background: #ff4444;
+            border-color: #ff4444;
+            animation: shake 0.3s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .feedback-text {
+            margin-top: 20px;
+            font-size: 18px;
+            min-height: 30px;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            h2 { font-size: 1.5rem; }
+            .description { font-size: 16px; }
+            .info-card {
+                bottom: 15px;
+                right: 15px;
+                max-width: 250px;
+                font-size: 14px;
+            }
+            .ui-panel {
+                bottom: 10px;
+                left: 10px;
+                gap: 10px;
+            }
+            .button {
+                padding: 10px 15px;
+                font-size: 12px;
+            }
+            .split-screen {
+                flex-direction: column;
+            }
+            .split-section {
+                flex: 1;
+                border-right: none;
+                border-bottom: 3px solid #00ff88;
+            }
+            .split-section:last-child {
+                border-bottom: none;
+            }
+            .slider-container {
+                width: 90%;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+
+        .mute-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 999;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0, 255, 136, 0.2);
+            border: 2px solid #00ff88;
+            color: #00ff88;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .mute-button:hover {
+            background: rgba(0, 255, 136, 0.4);
+        }
+
+        .particle {
+            position: absolute;
+            pointer-events: none;
+        }
+
+        .loading-bar {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            overflow: hidden;
+            z-index: 200;
+        }
+
+        .loading-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88 0%, #00ff88 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        @keyframes slideLeft {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        .ecosystem-label {
+            position: absolute;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            pointer-events: none;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <!-- Section 1: Main Ecosystem Canvas -->
+        <div class="section active" id="section-ecosystem">
+            <canvas id="mainCanvas"></canvas>
+            <div class="mute-button" id="muteButton">🔊</div>
+        </div>
+
+        <!-- Section 2: Biotic vs Abiotic -->
+        <div class="section" id="section-biotic-abiotic">
+            <div class="split-screen">
+                <div class="split-section" style="background: linear-gradient(135deg, rgba(0, 200, 100, 0.2), rgba(0, 150, 80, 0.2));">
+                    <h2>🌿 BIOTIC</h2>
+                    <p style="font-size: 18px; margin-bottom: 10px;">Living Things</p>
+                    <div class="biotic-grid">
+                        <div class="grid-item">🌳 Plants</div>
+                        <div class="grid-item">🐰 Animals</div>
+                        <div class="grid-item">🍄 Fungi</div>
+                        <div class="grid-item">🦠 Bacteria</div>
+                    </div>
+                    <p class="description" style="margin-top: 30px;">These are the LIVING parts of an ecosystem. They breathe, move, grow, and reproduce.</p>
+                </div>
+                <div class="split-section" style="background: linear-gradient(135deg, rgba(100, 150, 255, 0.2), rgba(50, 100, 200, 0.2));">
+                    <h2>💧 ABIOTIC</h2>
+                    <p style="font-size: 18px; margin-bottom: 10px;">Non-Living Things</p>
+                    <div class="abiotic-grid">
+                        <div class="grid-item">☀️ Sunlight</div>
+                        <div class="grid-item">💧 Water</div>
+                        <div class="grid-item">💨 Air</div>
+                        <div class="grid-item">🌍 Soil</div>
+                    </div>
+                    <p class="description" style="margin-top: 30px;">These are the NON-LIVING parts. They don't breathe or reproduce, but living things need them to survive.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Energy Flow -->
+        <div class="section" id="section-energy-flow">
+            <canvas id="energyCanvas"></canvas>
+            <div class="ui-panel">
+                <button class="button" onclick="nextSection()">Next</button>
+            </div>
+        </div>
+
+        <!-- Section 4: Producers, Consumers, Decomposers -->
+        <div class="section" id="section-pcd">
+            <canvas id="pcdCanvas"></canvas>
+            <div class="ui-panel">
+                <button class="button" onclick="prevSection()">Back</button>
+                <button class="button" onclick="nextSection()">Next</button>
+            </div>
+        </div>
+
+        <!-- Section 5: Interactions -->
+        <div class="section" id="section-interactions">
+            <canvas id="interactionsCanvas"></canvas>
+            <div class="ui-panel">
+                <button class="button" onclick="prevSection()">Back</button>
+                <button class="button" onclick="nextSection()">Next</button>
+            </div>
+        </div>
+
+        <!-- Section 6: Impact Simulation -->
+        <div class="section" id="section-impact">
+            <canvas id="impactCanvas"></canvas>
+            <div class="ui-panel">
+                <button class="button danger" onclick="removeElement('sunlight')">Remove Sunlight</button>
+                <button class="button danger" onclick="removeElement('water')">Remove Water</button>
+                <button class="button danger" onclick="removeElement('plants')">Remove Plants</button>
+                <button class="button danger" onclick="removeElement('insects')">Remove Insects</button>
+                <button class="button danger" onclick="removeElement('predators')">Remove Predators</button>
+                <button class="button success" onclick="restoreEcosystem()">Restore Ecosystem</button>
+                <button class="button" onclick="nextSection()">Next</button>
+            </div>
+        </div>
+
+        <!-- Section 7: Water Ecosystem & Day/Night -->
+        <div class="section" id="section-water-daynight">
+            <canvas id="waterCanvas"></canvas>
+            <div class="slider-container active" id="dayNightSlider">
+                <label for="timeSlider">Day ☀️ ← → 🌙 Night</label>
+                <input type="range" id="timeSlider" min="0" max="100" value="50">
+            </div>
+            <div class="ui-panel">
+                <button class="button" onclick="prevSection()">Back</button>
+                <button class="button" onclick="nextSection()">Next</button>
+            </div>
+        </div>
+
+        <!-- Section 8: Weather Controls -->
+        <div class="section" id="section-weather">
+            <canvas id="weatherCanvas"></canvas>
+            <div class="ui-panel">
+                <button class="button" onclick="setWeather('sunny')">☀️ Sunny</button>
+                <button class="button" onclick="setWeather('rain')">🌧️ Rain</button>
+                <button class="button" onclick="setWeather('wind')">💨 Wind</button>
+                <button class="button" onclick="prevSection()">Back</button>
+                <button class="button" onclick="nextSection()">Next</button>
+            </div>
+        </div>
+
+        <!-- Section 9: Connections Mode -->
+        <div class="section" id="section-connections">
+            <canvas id="connectionsCanvas"></canvas>
+            <div class="ui-panel">
+                <button class="button" id="connectionsToggle" onclick="toggleConnections()">SHOW CONNECTIONS</button>
+                <button class="button" onclick="prevSection()">Back</button>
+                <button class="button" onclick="nextSection()">Next</button>
+            </div>
+        </div>
+
+        <!-- Section 10: Challenge -->
+        <div class="section" id="section-challenge">
+            <canvas id="challengeCanvas"></canvas>
+            <div class="ui-panel">
+                <button class="button" onclick="prevSection()">Back</button>
+                <button class="button" onclick="nextSection()">Finish</button>
+            </div>
+        </div>
+
+        <!-- Section 11: Summary -->
+        <div class="section" id="section-summary">
+            <canvas id="summaryCanvas"></canvas>
+            <div class="ui-panel">
+                <button class="button" onclick="restartExperience()">Start Over</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================
+        // STATE MANAGEMENT
+        // ========================
+        const state = {
+            currentSection: 0,
+            isMuted: false,
+            dayNightValue: 50,
+            weather: 'sunny',
+            removedElements: new Set(),
+            showConnections: false,
+            animationTime: 0,
+            touchX: 0,
+            touchY: 0
+        };
+
+        const sections = [
+            'section-ecosystem',
+            'section-biotic-abiotic',
+            'section-energy-flow',
+            'section-pcd',
+            'section-interactions',
+            'section-impact',
+            'section-water-daynight',
+            'section-weather',
+            'section-connections',
+            'section-challenge',
+            'section-summary'
+        ];
+
+        // ========================
+        // AUDIO ENGINE
+        // ========================
+        class AudioEngine {
+            constructor() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.isMuted = false;
+            }
+
+            playSound(freq, duration, type = 'sine') {
+                if (this.isMuted) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.frequency.value = freq;
+                osc.type = type;
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.start(this.ctx.currentTime);
+                osc.stop(this.ctx.currentTime + duration);
+            }
+
+            playMelody(notes) {
+                if (this.isMuted) return;
+                notes.forEach((freq, i) => {
+                    setTimeout(() => this.playSound(freq, 0.2), i * 100);
+                });
+            }
+
+            mute() {
+                this.isMuted = !this.isMuted;
+            }
+        }
+
+        const audio = new AudioEngine();
+
+        // ========================
+        // ECOSYSTEM RENDERER
+        // ========================
+        class EcosystemRenderer {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.width = canvas.width = window.innerWidth;
+                this.height = canvas.height = window.innerHeight;
+                this.time = 0;
+                this.organisms = [];
+                this.particles = [];
+                this.setupOrganism();
+                this.resizeListener = () => this.handleResize();
+                window.addEventListener('resize', this.resizeListener);
+            }
+
+            handleResize() {
+                this.width = this.canvas.width = window.innerWidth;
+                this.height = this.canvas.height = window.innerHeight;
+            }
+
+            setupOrganism() {
+                this.organisms = [
+                    { name: 'Grass', x: 0.2, y: 0.7, type: 'plant', color: '#22aa22' },
+                    { name: 'Tree', x: 0.5, y: 0.4, type: 'plant', color: '#0d5d0d' },
+                    { name: 'Flower', x: 0.7, y: 0.65, type: 'plant', color: '#ff69b4' },
+                    { name: 'Rabbit', x: 0.25, y: 0.75, type: 'animal', color: '#d4a574' },
+                    { name: 'Deer', x: 0.6, y: 0.65, type: 'animal', color: '#8b5a3c' },
+                    { name: 'Butterfly', x: 0.75, y: 0.5, type: 'animal', color: '#ff8800' },
+                    { name: 'Fish', x: 0.15, y: 0.85, type: 'animal', color: '#ffaa00' },
+                    { name: 'Eagle', x: 0.8, y: 0.2, type: 'animal', color: '#663300' },
+                    { name: 'Mushroom', x: 0.35, y: 0.8, type: 'decomposer', color: '#ff6b6b' },
+                ];
+            }
+
+            drawSky() {
+                const sunIntensity = (Math.sin(this.time * 0.3) + 1) / 2;
+                const skyColor = `hsl(200, 100%, ${60 - sunIntensity * 20}%)`;
+                this.ctx.fillStyle = skyColor;
+                this.ctx.fillRect(0, 0, this.width, this.height * 0.6);
+
+                this.drawSun(sunIntensity);
+                this.drawClouds();
+            }
+
+            drawSun(intensity) {
+                const sunX = this.width * 0.85;
+                const sunY = this.height * 0.15;
+
+                this.ctx.fillStyle = `rgba(255, 200, 0, ${0.3 + intensity * 0.3})`;
+                this.ctx.beginPath();
+                this.ctx.arc(sunX, sunY, 80, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = `rgba(255, 220, 0, ${0.8 + intensity * 0.2})`;
+                this.ctx.beginPath();
+                this.ctx.arc(sunX, sunY, 50, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const x1 = sunX + Math.cos(angle) * 70;
+                    const y1 = sunY + Math.sin(angle) * 70;
+                    const x2 = sunX + Math.cos(angle) * 120;
+                    const y2 = sunY + Math.sin(angle) * 120;
+                    this.ctx.strokeStyle = `rgba(255, 200, 0, ${0.5 + intensity * 0.3})`;
+                    this.ctx.lineWidth = 3;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x1, y1);
+                    this.ctx.lineTo(x2, y2);
+                    this.ctx.stroke();
+                }
+            }
+
+            drawClouds() {
+                for (let i = 0; i < 3; i++) {
+                    const x = (this.time * 20 + i * 400) % (this.width + 200) - 100;
+                    const y = this.height * 0.15 + i * 60;
+                    this.drawCloud(x, y);
+                }
+            }
+
+            drawCloud(x, y) {
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                for (let i = 0; i < 4; i++) {
+                    this.ctx.beginPath();
+                    this.ctx.arc(x + i * 35, y, 30, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+
+            drawGround() {
+                const groundY = this.height * 0.65;
+                this.ctx.fillStyle = '#8b7355';
+                this.ctx.fillRect(0, groundY, this.width, this.height - groundY);
+
+                this.ctx.fillStyle = '#2d5016';
+                for (let i = 0; i < this.width; i += 50) {
+                    this.ctx.fillRect(i, groundY - 5, 30, 15);
+                }
+            }
+
+            drawWater() {
+                const waterY = this.height * 0.75;
+                const waveHeight = 5;
+                this.ctx.fillStyle = 'rgba(100, 150, 255, 0.6)';
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, waterY);
+                for (let x = 0; x <= this.width; x += 10) {
+                    const wave = Math.sin((x * 0.01 + this.time * 2)) * waveHeight;
+                    this.ctx.lineTo(x, waterY + wave);
+                }
+                this.ctx.lineTo(this.width, this.height);
+                this.ctx.lineTo(0, this.height);
+                this.ctx.fill();
+            }
+
+            drawPlant(x, y, height = 60) {
+                this.ctx.strokeStyle = '#22aa22';
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                this.ctx.moveTo(x, y);
+                const sway = Math.sin(this.time * 3 + x) * 5;
+                this.ctx.lineTo(x + sway, y - height);
+                this.ctx.stroke();
+
+                this.ctx.fillStyle = '#33dd33';
+                for (let i = 0; i < 3; i++) {
+                    this.ctx.beginPath();
+                    this.ctx.ellipse(x - 10 + i * 10, y - height * 0.5 - i * 10, 15, 25, Math.PI / 4, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+
+            drawAnimal(x, y, type, name) {
+                if (type === 'rabbit') {
+                    this.drawRabbit(x, y);
+                } else if (type === 'deer') {
+                    this.drawDeer(x, y);
+                } else if (type === 'butterfly') {
+                    this.drawButterfly(x, y);
+                } else if (type === 'bird') {
+                    this.drawEagle(x, y);
+                } else if (type === 'fish') {
+                    this.drawFish(x, y);
+                }
+            }
+
+            drawRabbit(x, y) {
+                this.ctx.fillStyle = '#d4a574';
+                this.ctx.beginPath();
+                this.ctx.ellipse(x, y, 20, 25, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#d4a574';
+                this.ctx.beginPath();
+                this.ctx.ellipse(x - 8, y - 30, 8, 20, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.ellipse(x + 8, y - 30, 8, 20, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#fff';
+                this.ctx.beginPath();
+                this.ctx.arc(x - 5, y - 10, 4, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.arc(x + 5, y - 10, 4, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+
+            drawDeer(x, y) {
+                this.ctx.fillStyle = '#8b5a3c';
+                this.ctx.beginPath();
+                this.ctx.ellipse(x, y, 30, 20, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#8b5a3c';
+                this.ctx.beginPath();
+                this.ctx.ellipse(x - 25, y + 5, 8, 15, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.ellipse(x - 10, y + 5, 8, 15, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.ellipse(x + 10, y + 5, 8, 15, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.ellipse(x + 25, y + 5, 8, 15, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.strokeStyle = '#6b4423';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(x + 5, y - 20);
+                this.ctx.lineTo(x + 10, y - 35);
+                this.ctx.stroke();
+                this.ctx.beginPath();
+                this.ctx.moveTo(x - 5, y - 20);
+                this.ctx.lineTo(x - 10, y - 35);
+                this.ctx.stroke();
+            }
+
+            drawButterfly(x, y) {
+                const wingFlap = Math.sin(this.time * 5) * 10;
+                this.ctx.fillStyle = '#ff8800';
+                this.ctx.beginPath();
+                this.ctx.ellipse(x - 15 - wingFlap, y - 5, 15, 25, Math.PI / 6, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.ellipse(x + 15 + wingFlap, y - 5, 15, 25, -Math.PI / 6, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#ffd700';
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 5, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+
+            drawEagle(x, y) {
+                this.ctx.fillStyle = '#663300';
+                this.ctx.beginPath();
+                this.ctx.ellipse(x, y, 20, 15, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#8b6914';
+                this.ctx.beginPath();
+                this.ctx.ellipse(x + 25, y, 30, 8, Math.PI / 8, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.ellipse(x - 25, y, 30, 8, -Math.PI / 8, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+
+            drawFish(x, y) {
+                const tailFlap = Math.sin(this.time * 4) * 5;
+                this.ctx.fillStyle = '#ffaa00';
+                this.ctx.beginPath();
+                this.ctx.ellipse(x, y, 20, 12, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#ff8800';
+                this.ctx.beginPath();
+                this.ctx.moveTo(x + 20, y);
+                this.ctx.lineTo(x + 35 + tailFlap, y - 15);
+                this.ctx.lineTo(x + 35 + tailFlap, y + 15);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = 'white';
+                this.ctx.beginPath();
+                this.ctx.arc(x - 5, y - 5, 2, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+
+            drawOrganism(org) {
+                const x = this.width * org.x;
+                const y = this.height * org.y;
+
+                if (org.type === 'plant') {
+                    this.drawPlant(x, y);
+                } else if (org.type === 'animal') {
+                    const animalType = this.getAnimalType(org.name);
+                    this.drawAnimal(x, y, animalType, org.name);
+                } else if (org.type === 'decomposer') {
+                    this.drawMushroom(x, y);
+                }
+
+                org.x += (Math.random() - 0.5) * 0.002;
+                org.y += (Math.random() - 0.5) * 0.001;
+                org.x = Math.max(0.05, Math.min(0.95, org.x));
+                org.y = Math.max(0.4, Math.min(0.85, org.y));
+            }
+
+            getAnimalType(name) {
+                if (name === 'Rabbit') return 'rabbit';
+                if (name === 'Deer') return 'deer';
+                if (name === 'Butterfly') return 'butterfly';
+                if (name === 'Eagle') return 'bird';
+                if (name === 'Fish') return 'fish';
+                return 'animal';
+            }
+
+            drawMushroom(x, y) {
+                this.ctx.fillStyle = '#ff6b6b';
+                this.ctx.beginPath();
+                this.ctx.ellipse(x, y - 10, 15, 12, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#ff8888';
+                this.ctx.beginPath();
+                this.ctx.moveTo(x - 2, y + 5);
+                this.ctx.lineTo(x - 2, y + 20);
+                this.ctx.lineTo(x + 2, y + 20);
+                this.ctx.lineTo(x + 2, y + 5);
+                this.ctx.fill();
+            }
+
+            render() {
+                this.ctx.clearRect(0, 0, this.width, this.height);
+                this.drawSky();
+                this.drawGround();
+                this.drawWater();
+
+                this.organisms.forEach(org => this.drawOrganism(org));
+
+                this.time += 0.016;
+            }
+
+            destroy() {
+                window.removeEventListener('resize', this.resizeListener);
+            }
+        }
+
+        // ========================
+        // CANVAS MANAGERS
+        // ========================
+        let ecosystemRenderer = null;
+
+        function initEcosystem() {
+            const canvas = document.getElementById('mainCanvas');
+            if (canvas) {
+                if (ecosystemRenderer) ecosystemRenderer.destroy();
+                ecosystemRenderer = new EcosystemRenderer(canvas);
+                animateEcosystem();
+            }
+        }
+
+        function animateEcosystem() {
+            if (!ecosystemRenderer) return;
+            ecosystemRenderer.render();
+            requestAnimationFrame(animateEcosystem);
+        }
+
+        // ========================
+        // SECTION MANAGEMENT
+        // ========================
+        function showSection(index) {
+            if (index < 0 || index >= sections.length) return;
+
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sections[index]).classList.add('active');
+
+            state.currentSection = index;
+
+            if (index === 0) {
+                setTimeout(initEcosystem, 100);
+            } else if (index === 1) {
+                // Biotic/Abiotic is HTML-based
+            } else if (index === 2) {
+                renderEnergyFlow();
+            } else if (index === 3) {
+                renderPCD();
+            } else if (index === 4) {
+                renderInteractions();
+            } else if (index === 5) {
+                renderImpact();
+            } else if (index === 6) {
+                renderWaterAndDayNight();
+            } else if (index === 7) {
+                renderWeather();
+            } else if (index === 8) {
+                renderConnections();
+            } else if (index === 9) {
+                renderChallenge();
+            } else if (index === 10) {
+                renderSummary();
+            }
+        }
+
+        function nextSection() {
+            showSection(state.currentSection + 1);
+        }
+
+        function prevSection() {
+            showSection(state.currentSection - 1);
+        }
+
+        function restartExperience() {
+            state.removedElements.clear();
+            state.showConnections = false;
+            showSection(0);
+        }
+
+        // ========================
+        // SECTION RENDERERS
+        // ========================
+
+        function renderEnergyFlow() {
+            const canvas = document.getElementById('energyCanvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let progress = 0;
+            const duration = 8000;
+            const startTime = Date.now();
+
+            const energyPath = [
+                { x: canvas.width * 0.15, y: canvas.height * 0.2, name: 'Sun', icon: '☀️' },
+                { x: canvas.width * 0.3, y: canvas.height * 0.6, name: 'Grass', icon: '🌿' },
+                { x: canvas.width * 0.45, y: canvas.height * 0.65, name: 'Grasshopper', icon: '🦗' },
+                { x: canvas.width * 0.6, y: canvas.height * 0.65, name: 'Frog', icon: '🐸' },
+                { x: canvas.width * 0.75, y: canvas.height * 0.6, name: 'Snake', icon: '🐍' },
+                { x: canvas.width * 0.85, y: canvas.height * 0.3, name: 'Eagle', icon: '🦅' }
+            ];
+
+            function animate() {
+                const now = Date.now();
+                progress = Math.min((now - startTime) / duration, 1);
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.font = 'bold 28px Arial';
+                ctx.fillStyle = '#00ff88';
+                ctx.textAlign = 'center';
+                ctx.fillText('ENERGY FLOW IN AN ECOSYSTEM', canvas.width / 2, 50);
+
+                energyPath.forEach((point, i) => {
+                    ctx.font = '48px Arial';
+                    ctx.fillText(point.icon, point.x, point.y);
+
+                    ctx.font = '16px Arial';
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText(point.name, point.x, point.y + 50);
+                });
+
+                for (let i = 0; i < energyPath.length - 1; i++) {
+                    const current = energyPath[i];
+                    const next = energyPath[i + 1];
+                    const pathProgress = (progress * (energyPath.length - 1)) - i;
+
+                    if (pathProgress > 0 && pathProgress < 1) {
+                        const x = current.x + (next.x - current.x) * pathProgress;
+                        const y = current.y + (next.y - current.y) * pathProgress;
+
+                        ctx.fillStyle = `rgba(0, 255, 136, ${1 - pathProgress})`;
+                        for (let p = 0; p < 5; p++) {
+                            const pProgress = pathProgress + p * 0.1;
+                            if (pProgress < 1) {
+                                const px = current.x + (next.x - current.x) * pProgress;
+                                const py = current.y + (next.y - current.y) * pProgress;
+                                ctx.beginPath();
+                                ctx.arc(px, py, 10 - p * 2, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        }
+                    }
+
+                    if (pathProgress > 0.3) {
+                        ctx.strokeStyle = `rgba(0, 255, 136, ${Math.max(0, 1 - pathProgress)})`;
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.moveTo(current.x, current.y);
+                        const nextX = current.x + (next.x - current.x) * Math.min(pathProgress, 1);
+                        const nextY = current.y + (next.y - current.y) * Math.min(pathProgress, 1);
+                        ctx.lineTo(nextX, nextY);
+                        ctx.stroke();
+                    }
+                }
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            }
+
+            animate();
+        }
+
+        function renderPCD() {
+            const canvas = document.getElementById('pcdCanvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let phase = 0;
+            const phaseTime = 0.02;
+
+            function drawProducer() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const sunX = canvas.width * 0.2;
+                const sunY = canvas.height * 0.2;
+                const plantX = canvas.width * 0.2;
+                const plantY = canvas.height * 0.65;
+
+                ctx.fillStyle = '#ffff00';
+                ctx.beginPath();
+                ctx.arc(sunX, sunY, 40, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+                ctx.lineWidth = 3;
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const x1 = sunX + Math.cos(angle) * 50;
+                    const y1 = sunY + Math.sin(angle) * 50;
+                    const x2 = sunX + Math.cos(angle) * 80;
+                    const y2 = sunY + Math.sin(angle) * 80;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = 'rgba(0, 255, 136, 0.5)';
+                for (let i = 0; i < 20; i++) {
+                    const x = sunX + (Math.random() - 0.5) * 100;
+                    const y = sunY + (Math.random() - 0.5) * 100;
+                    const lerpX = x + (plantX - x) * (phase % 1);
+                    const lerpY = y + (plantY - y) * (phase % 1);
+                    ctx.beginPath();
+                    ctx.arc(lerpX, lerpY, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = '#00ff00';
+                ctx.beginPath();
+                ctx.ellipse(plantX, plantY - 50, 30, 50, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.font = 'bold 24px Arial';
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.fillText('PRODUCER', canvas.width / 2, 100);
+                ctx.font = '18px Arial';
+                ctx.fillText('Plants use sunlight to make food.', canvas.width / 2, 130);
+            }
+
+            function drawConsumer() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const items = [
+                    { x: canvas.width * 0.2, y: canvas.height * 0.6, icon: '🌿', name: 'Grass' },
+                    { x: canvas.width * 0.5, y: canvas.height * 0.6, icon: '🐰', name: 'Rabbit' },
+                    { x: canvas.width * 0.8, y: canvas.height * 0.6, icon: '🐯', name: 'Tiger' }
+                ];
+
+                items.forEach((item, i) => {
+                    ctx.font = '60px Arial';
+                    ctx.fillText(item.icon, item.x, item.y);
+                    ctx.font = '16px Arial';
+                    ctx.fillStyle = '#fff';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(item.name, item.x, item.y + 60);
+                });
+
+                ctx.strokeStyle = '#00ff88';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(canvas.width * 0.3, canvas.height * 0.6);
+                ctx.lineTo(canvas.width * 0.7, canvas.height * 0.6);
+                ctx.stroke();
+
+                ctx.font = 'bold 24px Arial';
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.fillText('CONSUMER', canvas.width / 2, 100);
+                ctx.font = '18px Arial';
+                ctx.fillText('Consumers cannot make their own food.', canvas.width / 2, 130);
+                ctx.fillText('They eat plants or other animals.', canvas.width / 2, 155);
+            }
+
+            function drawDecomposer() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#8b4513';
+                ctx.fillRect(canvas.width * 0.1, canvas.height * 0.7, canvas.width * 0.8, 20);
+
+                ctx.fillStyle = '#ff6b6b';
+                ctx.beginPath();
+                ctx.ellipse(canvas.width * 0.3, canvas.height * 0.65, 20, 20, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ff8888';
+                ctx.beginPath();
+                ctx.moveTo(canvas.width * 0.3, canvas.height * 0.65);
+                ctx.lineTo(canvas.width * 0.3, canvas.height * 0.35);
+                ctx.lineTo(canvas.width * 0.25, canvas.height * 0.5);
+                ctx.fill();
+
+                ctx.fillStyle = '#22aa22';
+                ctx.beginPath();
+                ctx.ellipse(canvas.width * 0.5, canvas.height * 0.4, 20, 40, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.font = 'bold 24px Arial';
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.fillText('DECOMPOSER', canvas.width / 2, 100);
+                ctx.font = '18px Arial';
+                ctx.fillText('Decomposers break down dead things.', canvas.width / 2, 130);
+                ctx.fillText('They return nutrients to the soil.', canvas.width / 2, 155);
+            }
+
+            function animate() {
+                phase += phaseTime;
+                const phaseCycle = Math.floor((phase / 3) % 3);
+
+                if (phaseCycle === 0) {
+                    drawProducer();
+                } else if (phaseCycle === 1) {
+                    drawConsumer();
+                } else {
+                    drawDecomposer();
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        function renderInteractions() {
+            const canvas = document.getElementById('interactionsCanvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let time = 0;
+
+            function animate() {
+                time += 0.016;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const sceneIndex = Math.floor((time / 8) % 5);
+                const sceneProgress = (time / 8) % 1;
+
+                ctx.font = 'bold 28px Arial';
+                ctx.fillStyle = '#00ff88';
+                ctx.textAlign = 'center';
+                ctx.fillText('ECOSYSTEM INTERACTIONS', canvas.width / 2, 50);
+
+                if (sceneIndex === 0) {
+                    ctx.font = '24px Arial';
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText('☀️ + 🌿', canvas.width / 2, 150);
+                    ctx.fillStyle = '#ffff00';
+                    ctx.fillRect(canvas.width * 0.3, canvas.height * 0.4, canvas.width * 0.4, 10);
+                    ctx.fillText('Plant uses sunlight to grow', canvas.width / 2, 350);
+                } else if (sceneIndex === 1) {
+                    ctx.font = '24px Arial';
+                    ctx.fillStyle = '#fff';
+                    const rabbitX = canvas.width * 0.4 + sceneProgress * 200;
+                    ctx.fillText('🌿', canvas.width * 0.2, canvas.height / 2);
+                    ctx.fillText('🐰', rabbitX, canvas.height / 2);
+                    ctx.fillText('Rabbit eats grass', canvas.width / 2, 350);
+                } else if (sceneIndex === 2) {
+                    ctx.font = '24px Arial';
+                    const frogX = canvas.width * 0.4 + sceneProgress * 200;
+                    ctx.fillText('🦗', canvas.width * 0.2, canvas.height / 2);
+                    ctx.fillText('🐸', frogX, canvas.height / 2);
+                    ctx.fillText('Frog eats grasshopper', canvas.width / 2, 350);
+                } else if (sceneIndex === 3) {
+                    ctx.font = '24px Arial';
+                    ctx.fillText('🦋', canvas.width * 0.3, canvas.height * 0.4);
+                    ctx.fillText('🌸', canvas.width * 0.7, canvas.height * 0.4);
+                    const pollenParticles = sceneProgress * 10;
+                    for (let i = 0; i < pollenParticles; i++) {
+                        const px = canvas.width * 0.3 + (canvas.width * 0.4) * (i / 10);
+                        const py = canvas.height * 0.4 + Math.sin(i) * 30;
+                        ctx.fillStyle = 'rgba(255, 200, 0, 0.8)';
+                        ctx.beginPath();
+                        ctx.arc(px, py, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText('Butterfly helps pollinate flower', canvas.width / 2, 350);
+                } else if (sceneIndex === 4) {
+                    ctx.font = '24px Arial';
+                    ctx.fillText('🐰', canvas.width * 0.3, canvas.height * 0.4);
+                    ctx.fillText('💧', canvas.width * 0.7, canvas.height * 0.4);
+                    const waterDrops = Math.floor(sceneProgress * 5);
+                    for (let i = 0; i < waterDrops; i++) {
+                        const dx = canvas.width * 0.5 + (Math.random() - 0.5) * 100;
+                        const dy = canvas.height * 0.4 + i * 20;
+                        ctx.fillStyle = 'rgba(100, 200, 255, 0.7)';
+                        ctx.beginPath();
+                        ctx.arc(dx, dy, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText('Animal drinks water', canvas.width / 2, 350);
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        function renderImpact() {
+            const canvas = document.getElementById('impactCanvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let time = 0;
+            const showingDarkness = state.removedElements.has('sunlight');
+            const showingWaterless = state.removedElements.has('water');
+            const showingPlantless = state.removedElements.has('plants');
+            const showingInsectless = state.removedElements.has('insects');
+            const showingPredatorless = state.removedElements.has('predators');
+
+            function animate() {
+                time += 0.016;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (showingDarkness) {
+                    ctx.fillStyle = `rgba(0, 0, 0, ${0.8 + Math.sin(time * 2) * 0.1})`;
+                } else {
+                    ctx.fillStyle = 'rgba(135, 206, 235, 0.3)';
+                }
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.font = 'bold 28px Arial';
+                ctx.fillStyle = '#00ff88';
+                ctx.textAlign = 'center';
+                ctx.fillText('WHAT HAPPENS IF SOMETHING DISAPPEARS?', canvas.width / 2, 60);
+
+                ctx.font = '20px Arial';
+                ctx.fillStyle = '#fff';
+
+                const items = [];
+                if (showingDarkness) {
+                    items.push('❌ No Sunlight → Plants cannot grow');
+                    items.push('→ Herbivores lose food');
+                    items.push('→ Predators lose prey');
+                    items.push('→ The ecosystem COLLAPSES');
+                }
+                if (showingWaterless) {
+                    items.push('❌ No Water → All organisms need water');
+                    items.push('→ Plants wilt and die');
+                    items.push('→ Animals cannot survive');
+                }
+                if (showingPlantless) {
+                    items.push('❌ No Plants → Herbivores have no food');
+                    items.push('→ Carnivores lose their prey');
+                    items.push('→ The food chain breaks');
+                }
+                if (showingInsectless) {
+                    items.push('❌ No Insects → Birds have no food');
+                    items.push('→ Flowers are not pollinated');
+                    items.push('→ Seeds cannot be made');
+                }
+                if (showingPredatorless) {
+                    items.push('❌ No Predators → Prey population explodes');
+                    items.push('→ Herbivores eat all plants');
+                    items.push('→ Food runs out');
+                }
+
+                items.forEach((item, i) => {
+                    ctx.fillText(item, canvas.width / 2, 150 + i * 40);
+                });
+
+                if (state.removedElements.size > 0) {
+                    ctx.font = 'bold 22px Arial';
+                    ctx.fillStyle = '#ff6b6b';
+                    ctx.fillText('A change in one part affects many other parts!', canvas.width / 2, canvas.height - 100);
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        function renderWaterAndDayNight() {
+            const canvas = document.getElementById('waterCanvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            function animate() {
+                const dayValue = state.dayNightValue / 100;
+                const isDay = dayValue > 0.5;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.5);
+                if (isDay) {
+                    skyGradient.addColorStop(0, `hsl(200, 100%, ${80 - dayValue * 20}%)`);
+                    skyGradient.addColorStop(1, `hsl(200, 100%, ${60 - dayValue * 10}%)`);
+                } else {
+                    const nightFactor = (1 - dayValue) * 2;
+                    skyGradient.addColorStop(0, `hsl(260, 50%, ${20 - nightFactor * 10}%)`);
+                    skyGradient.addColorStop(1, `hsl(260, 50%, ${30 - nightFactor * 15}%)`);
+                }
+                ctx.fillStyle = skyGradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height * 0.5);
+
+                ctx.fillStyle = `hsl(200, 100%, ${40 + dayValue * 20}%)`;
+                ctx.fillRect(0, canvas.height * 0.5, canvas.width, canvas.height * 0.5);
+
+                if (isDay) {
+                    ctx.fillStyle = '#ffff00';
+                    ctx.beginPath();
+                    ctx.arc(canvas.width * 0.8, canvas.height * 0.1 * dayValue, 50, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = '#f0f0f0';
+                    const moonPhase = (1 - dayValue) * 2;
+                    ctx.beginPath();
+                    ctx.arc(canvas.width * 0.8, canvas.height * 0.1 * (2 - moonPhase), 40, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = `rgba(100, 150, 255, ${0.5 + dayValue * 0.3})`;
+                ctx.fillRect(0, canvas.height * 0.6, canvas.width, canvas.height * 0.4);
+
+                ctx.fillStyle = '#ffaa00';
+                const fishCount = 3;
+                for (let i = 0; i < fishCount; i++) {
+                    const fishX = (Date.now() * 0.0005 + i * 0.3) % 1 * canvas.width;
+                    const fishY = canvas.height * 0.7 + i * 40;
+                    ctx.beginPath();
+                    ctx.ellipse(fishX, fishY, 20, 12, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                if (!isDay) {
+                    ctx.fillStyle = `rgba(255, 255, 150, ${0.5 + Math.sin(Date.now() * 0.003) * 0.3})`;
+                    for (let i = 0; i < 10; i++) {
+                        const x = (i * 0.1 + Math.sin(Date.now() * 0.001 + i) * 0.2) * canvas.width;
+                        const y = (i * 0.08 + Math.cos(Date.now() * 0.001 + i) * 0.1) * canvas.height * 0.3;
+                        ctx.beginPath();
+                        ctx.arc(x, y, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                ctx.font = 'bold 28px Arial';
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.fillText('WATER ECOSYSTEM & DAY/NIGHT CYCLE', canvas.width / 2, 50);
+
+                ctx.font = '18px Arial';
+                const label = isDay ? 'DAYTIME' : 'NIGHTTIME';
+                ctx.fillText(label, canvas.width / 2, canvas.height - 30);
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        function renderWeather() {
+            const canvas = document.getElementById('weatherCanvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let time = 0;
+
+            function animate() {
+                time += 0.016;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const weather = state.weather;
+
+                if (weather === 'sunny') {
+                    ctx.fillStyle = 'hsl(200, 100%, 70%)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.fillStyle = '#ffff00';
+                    ctx.beginPath();
+                    ctx.arc(canvas.width * 0.85, canvas.height * 0.2, 60, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (weather === 'rain') {
+                    ctx.fillStyle = 'hsl(200, 100%, 40%)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
+                    for (let i = 0; i < 100; i++) {
+                        const x = (Math.random() * canvas.width) + (time * 100) % canvas.width;
+                        const y = (Math.random() * canvas.height) + (time * 200) % canvas.height;
+                        ctx.fillRect(x, y, 2, 10);
+                    }
+
+                    ctx.fillStyle = 'rgba(100, 150, 255, 0.6)';
+                    ctx.fillRect(0, canvas.height * 0.7, canvas.width, canvas.height * 0.3);
+                } else if (weather === 'wind') {
+                    ctx.fillStyle = 'hsl(200, 100%, 60%)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    const windForce = Math.sin(time * 3) * 50;
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    for (let i = 0; i < 5; i++) {
+                        ctx.fillRect(0, canvas.height * (0.2 + i * 0.15), canvas.width, 30);
+                    }
+                }
+
+                ctx.font = 'bold 28px Arial';
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.fillText('WEATHER EFFECTS', canvas.width / 2, 50);
+
+                const descriptions = {
+                    'sunny': 'Sunlight helps plants grow. Animals are active.',
+                    'rain': 'Rain provides water. Water is essential for all life.',
+                    'wind': 'Wind moves seeds and pollen. It affects where plants grow.'
+                };
+
+                ctx.font = '20px Arial';
+                ctx.fillText(descriptions[weather], canvas.width / 2, canvas.height - 50);
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        function renderConnections() {
+            const canvas = document.getElementById('connectionsCanvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const connections = [
+                { from: { x: 0.5, y: 0.1 }, to: { x: 0.3, y: 0.4 }, label: 'Sun → Plant' },
+                { from: { x: 0.5, y: 0.1 }, to: { x: 0.7, y: 0.4 }, label: 'Sun → Soil' },
+                { from: { x: 0.3, y: 0.4 }, to: { x: 0.2, y: 0.6 }, label: 'Plant → Herbivore' },
+                { from: { x: 0.3, y: 0.4 }, to: { x: 0.5, y: 0.6 }, label: 'Plant → Carnivore' },
+                { from: { x: 0.2, y: 0.6 }, to: { x: 0.5, y: 0.5 }, label: 'Herbivore → Predator' },
+                { from: { x: 0.6, y: 0.7 }, to: { x: 0.7, y: 0.4 }, label: 'Dead → Soil' },
+            ];
+
+            let time = 0;
+
+            function animate() {
+                time += 0.016;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                if (state.showConnections) {
+                    connections.forEach((conn, i) => {
+                        const x1 = conn.from.x * canvas.width;
+                        const y1 = conn.from.y * canvas.height;
+                        const x2 = conn.to.x * canvas.width;
+                        const y2 = conn.to.y * canvas.height;
+
+                        ctx.strokeStyle = `rgba(0, 255, 136, ${0.5 + Math.sin(time * 2 + i) * 0.3})`;
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+
+                        ctx.fillStyle = `rgba(0, 255, 136, 0.8)`;
+                        ctx.font = '14px Arial';
+                        const midX = (x1 + x2) / 2;
+                        const midY = (y1 + y2) / 2;
+                        ctx.fillText(conn.label, midX, midY);
+                    });
+
+                    ctx.font = 'bold 28px Arial';
+                    ctx.fillStyle = '#00ff88';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('ECOSYSTEM IS A NETWORK', canvas.width / 2, canvas.height - 100);
+                    ctx.font = '18px Arial';
+                    ctx.fillText('Everything is connected!', canvas.width / 2, canvas.height - 50);
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        function renderChallenge() {
+            const canvas = document.getElementById('challengeCanvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = 'bold 32px Arial';
+            ctx.fillStyle = '#00ff88';
+            ctx.textAlign = 'center';
+            ctx.fillText('TEST YOUR KNOWLEDGE', canvas.width / 2, 100);
+
+            ctx.font = '24px Arial';
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Which of these is a BIOTIC component?', canvas.width / 2, 200);
+
+            const choices = [
+                { text: '☀️ Sunlight', correct: false, x: canvas.width * 0.25, y: 300 },
+                { text: '🌳 Tree', correct: true, x: canvas.width * 0.75, y: 300 },
+                { text: '💧 Water', correct: false, x: canvas.width * 0.25, y: 400 },
+                { text: '💨 Air', correct: false, x: canvas.width * 0.75, y: 400 }
+            ];
+
+            choices.forEach(choice => {
+                ctx.fillStyle = 'rgba(102, 126, 234, 0.5)';
+                ctx.fillRect(choice.x - 80, choice.y - 40, 160, 80);
+                ctx.fillStyle = '#fff';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(choice.text, choice.x, choice.y + 10);
+            });
+
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+
+                choices.forEach(choice => {
+                    if (clickX > choice.x - 80 && clickX < choice.x + 80 &&
+                        clickY > choice.y - 40 && clickY < choice.y + 40) {
+                        if (choice.correct) {
+                            audio.playSound(800, 0.3);
+                        } else {
+                            audio.playSound(200, 0.3);
+                        }
+                    }
+                });
+            });
+        }
+
+        function renderSummary() {
+            const canvas = document.getElementById('summaryCanvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let time = 0;
+
+            function animate() {
+                time += 0.016;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = 'hsl(200, 100%, 70%)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height * 0.5);
+                ctx.fillStyle = '#8b7355';
+                ctx.fillRect(0, canvas.height * 0.5, canvas.width, canvas.height * 0.25);
+                ctx.fillStyle = 'rgba(100, 150, 255, 0.7)';
+                ctx.fillRect(0, canvas.height * 0.75, canvas.width, canvas.height * 0.25);
+
+                ctx.fillStyle = '#ffff00';
+                ctx.beginPath();
+                ctx.arc(canvas.width * 0.85, canvas.height * 0.1, 50, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.font = 'bold 32px Arial';
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.fillText('WHAT YOU LEARNED', canvas.width / 2, 150);
+
+                const facts = [
+                    '🌿 BIOTIC = Living things (plants, animals, fungi, bacteria)',
+                    '⚪ ABIOTIC = Non-living things (sun, water, air, soil)',
+                    '🌻 PRODUCERS = Plants that make their own food',
+                    '🐰 CONSUMERS = Animals that eat plants or other animals',
+                    '🍄 DECOMPOSERS = Fungi and bacteria that break down dead things',
+                    '☀️ Energy comes from the SUN',
+                    '🔗 Everything in an ecosystem is CONNECTED',
+                    '⚠️ Changes in one part affect many other parts'
+                ];
+
+                ctx.font = '18px Arial';
+                facts.forEach((fact, i) => {
+                    ctx.fillText(fact, canvas.width / 2, 250 + i * 50);
+                });
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        // ========================
+        // INTERACTION HANDLERS
+        // ========================
+        function removeElement(element) {
+            if (state.removedElements.has(element)) {
+                state.removedElements.delete(element);
+            } else {
+                state.removedElements.add(element);
+            }
+            audio.playSound(400, 0.2);
+        }
+
+        function restoreEcosystem() {
+            state.removedElements.clear();
+            audio.playMelody([440, 550, 660, 770, 880]);
+        }
+
+        function setWeather(weather) {
+            state.weather = weather;
+            audio.playSound(600, 0.2);
+        }
+
+        function toggleConnections() {
+            state.showConnections = !state.showConnections;
+            audio.playSound(state.showConnections ? 700 : 400, 0.2);
+        }
+
+        // ========================
+        // UI INITIALIZATION
+        // ========================
+        document.getElementById('muteButton').addEventListener('click', () => {
+            audio.mute();
+            document.getElementById('muteButton').textContent = audio.isMuted ? '🔇' : '🔊';
+        });
+
+        document.getElementById('timeSlider').addEventListener('input', (e) => {
+            state.dayNightValue = parseInt(e.target.value);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (ecosystemRenderer) {
+                ecosystemRenderer.handleResize();
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSection();
+            } else if (e.key === 'ArrowLeft') {
+                prevSection();
+            }
+        });
+
+        // Touch and mouse support
+        document.addEventListener('touchstart', (e) => {
+            state.touchX = e.touches[0].clientX;
+            state.touchY = e.touches[0].clientY;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchEndX - state.touchX;
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) {
+                    prevSection();
+                } else {
+                    nextSection();
+                }
+            }
+        });
+
+        // Initialize first section
+        showSection(0);
+    </script>
+</body>
+</html>
