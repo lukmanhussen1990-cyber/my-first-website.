@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Definite Integration &amp; Area — Solved Examples 14–18</title>
+<style>
+/* ───────────────────────── tokens ───────────────────────── */
+:root{
+  --bg:#f6f7fb; --bg2:#eceef7; --panel:#ffffff; --panel2:#f2f4fb;
+  --ink:#141726; --ink-soft:#4d5470; --ink-dim:#7a819c;
+  --line:#dfe3f0;
+  --accent:#5b4bff; --accent2:#00b8a9; --accent3:#ff5c8a;
+  --ok:#0f9d6b; --ok-bg:rgba(15,157,107,.12);
+  --no:#e0405e; --no-bg:rgba(224,64,94,.12);
+  --shadow:0 18px 50px -22px rgba(20,23,38,.35);
+  --glow:.35;
+}
+:root[data-theme="dark"]{
+  --bg:#07070f; --bg2:#0d0d1a; --panel:#12121f; --panel2:#191926;
+  --ink:#eceefb; --ink-soft:#a8adcc; --ink-dim:#6d7396;
+  --line:#252838;
+  --accent:#8b7dff; --accent2:#2ee6c8; --accent3:#ff7aa8;
+  --ok:#2fd39a; --ok-bg:rgba(47,211,154,.14);
+  --no:#ff6b83; --no-bg:rgba(255,107,131,.14);
+  --shadow:0 24px 60px -24px rgba(0,0,0,.85);
+  --glow:.9;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Inter","Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;
+  line-height:1.6; overflow-x:hidden; min-height:100vh;
+  transition:background .5s ease,color .5s ease;
+}
+
+/* ───────────────────────── animated backdrop ───────────────────────── */
+.aurora{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
+.aurora span{
+  position:absolute;border-radius:50%;filter:blur(90px);opacity:var(--glow);
+  mix-blend-mode:screen;
+}
+:root:not([data-theme="dark"]) .aurora span{mix-blend-mode:multiply;opacity:.30}
+.aurora .a1{width:52vw;height:52vw;background:var(--accent);  top:-14vw;left:-10vw;  animation:drift1 24s ease-in-out infinite}
+.aurora .a2{width:44vw;height:44vw;background:var(--accent2); top:34vh;right:-14vw;  animation:drift2 30s ease-in-out infinite}
+.aurora .a3{width:40vw;height:40vw;background:var(--accent3); bottom:-16vw;left:22vw; animation:drift3 27s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(14vw,10vh) scale(1.18)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1.1)}50%{transform:translate(-12vw,-12vh) scale(.92)}}
+@keyframes drift3{0%,100%{transform:translate(0,0) scale(.95)}50%{transform:translate(10vw,-14vh) scale(1.2)}}
+
+.grid-lines{
+  position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.55;
+  background-image:
+    linear-gradient(to right,var(--line) 1px,transparent 1px),
+    linear-gradient(to bottom,var(--line) 1px,transparent 1px);
+  background-size:64px 64px;
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 30%,#000 20%,transparent 78%);
+  -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 30%,#000 20%,transparent 78%);
+}
+
+/* floating symbols */
+.floaters{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.floaters b{
+  position:absolute;font-family:Georgia,"Times New Roman",serif;font-style:italic;
+  font-weight:400;color:var(--ink);opacity:.09;user-select:none;
+  animation:float linear infinite;
+}
+@keyframes float{
+  0%{transform:translateY(12vh) rotate(0deg);opacity:0}
+  12%{opacity:.11}
+  88%{opacity:.11}
+  100%{transform:translateY(-115vh) rotate(200deg);opacity:0}
+}
+
+/* ───────────────────────── progress + nav ───────────────────────── */
+.progress{position:fixed;top:0;left:0;height:3px;width:100%;z-index:60;background:transparent}
+.progress i{
+  display:block;height:100%;width:0%;
+  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));
+  box-shadow:0 0 14px var(--accent);transition:width .12s linear;
+}
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;
+  gap:14px;padding:14px 22px;backdrop-filter:blur(14px);
+  background:color-mix(in srgb,var(--bg) 72%,transparent);
+  border-bottom:1px solid transparent;transition:border-color .35s,padding .35s;
+}
+.topbar.stuck{border-bottom-color:var(--line);padding:9px 22px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em;font-size:.95rem}
+.brand .mark{
+  width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  color:#fff;font-family:Georgia,serif;font-size:1.15rem;
+  box-shadow:0 0 22px -4px var(--accent);
+  animation:pulse 3.4s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.dots{margin-left:auto;display:flex;gap:7px;align-items:center}
+.dots a{
+  width:9px;height:9px;border-radius:50%;background:var(--line);
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);
+}
+.dots a:hover{transform:scale(1.5);background:var(--ink-dim)}
+.dots a.on{width:26px;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.tbtn{
+  border:1px solid var(--line);background:var(--panel);color:var(--ink);
+  width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:.95rem;
+  display:grid;place-items:center;transition:transform .25s,border-color .25s;
+}
+.tbtn:hover{transform:rotate(-18deg) scale(1.09);border-color:var(--accent)}
+
+/* ───────────────────────── layout ───────────────────────── */
+.wrap{max-width:960px;margin:0 auto;padding:0 22px}
+
+/* hero */
+header.hero{min-height:100svh;display:grid;place-items:center;text-align:center;padding:110px 0 70px}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:9px;font-size:.72rem;letter-spacing:.19em;
+  text-transform:uppercase;color:var(--ink-soft);border:1px solid var(--line);
+  border-radius:100px;padding:7px 16px;background:color-mix(in srgb,var(--panel) 70%,transparent);
+}
+.eyebrow .blip{width:6px;height:6px;border-radius:50%;background:var(--accent2);box-shadow:0 0 10px var(--accent2);animation:blink 1.9s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+h1{
+  font-size:clamp(2.4rem,7.5vw,4.9rem);line-height:1.02;letter-spacing:-.035em;
+  font-weight:800;margin:26px 0 0;
+}
+h1 .grad{
+  background:linear-gradient(100deg,var(--accent),var(--accent2) 45%,var(--accent3));
+  background-size:220% auto;-webkit-background-clip:text;background-clip:text;
+  color:transparent;animation:shift 7s linear infinite;
+}
+@keyframes shift{to{background-position:220% center}}
+.sub{margin:22px auto 0;max-width:56ch;color:var(--ink-soft);font-size:1.06rem}
+.stats{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+.stat{
+  background:color-mix(in srgb,var(--panel) 80%,transparent);border:1px solid var(--line);
+  border-radius:15px;padding:13px 20px;min-width:104px;backdrop-filter:blur(8px);
+}
+.stat b{display:block;font-size:1.55rem;font-weight:800;letter-spacing:-.02em;
+  background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat span{font-size:.68rem;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-dim)}
+.scroller{margin-top:52px;color:var(--ink-dim);font-size:.74rem;letter-spacing:.16em;text-transform:uppercase}
+.scroller .arw{display:block;margin:12px auto 0;width:20px;height:32px;border:1.5px solid var(--line);border-radius:11px;position:relative}
+.scroller .arw::after{content:"";position:absolute;left:50%;top:7px;width:3px;height:6px;border-radius:2px;margin-left:-1.5px;background:var(--accent);animation:wheel 1.7s ease-in-out infinite}
+@keyframes wheel{0%{transform:translateY(0);opacity:1}70%{transform:translateY(11px);opacity:0}100%{opacity:0}}
+
+/* ───────────────────────── problem cards ───────────────────────── */
+main{padding-bottom:90px}
+.card{
+  position:relative;background:color-mix(in srgb,var(--panel) 88%,transparent);
+  border:1px solid var(--line);border-radius:22px;padding:30px;margin:30px 0;
+  box-shadow:var(--shadow);backdrop-filter:blur(12px);
+  opacity:0;transform:translateY(46px) scale(.985);
+  transition:opacity .75s cubic-bezier(.16,1,.3,1),transform .75s cubic-bezier(.16,1,.3,1),border-color .4s;
+}
+.card.in{opacity:1;transform:none}
+.card::before{
+  content:"";position:absolute;inset:-1px;border-radius:23px;padding:1px;
+  background:linear-gradient(130deg,var(--accent),transparent 38%,transparent 62%,var(--accent2));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  mask-composite:exclude;opacity:0;transition:opacity .45s;pointer-events:none;
+}
+.card:hover::before{opacity:.85}
+
+.chead{display:flex;align-items:flex-start;gap:15px;margin-bottom:20px}
+.num{
+  flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
+  font-weight:800;font-size:1.02rem;color:#fff;letter-spacing:-.02em;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 8px 22px -8px var(--accent);
+}
+.ctitle{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim)}
+.ctopic{font-size:1.12rem;font-weight:700;letter-spacing:-.015em;margin-top:2px}
+
+.qbox{
+  background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:0 13px 13px 0;padding:17px 19px;font-size:1.03rem;
+}
+
+/* options */
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:11px;margin-top:19px}
+.opt{
+  display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;
+  background:var(--panel2);border:1px solid var(--line);border-radius:13px;
+  padding:13px 15px;color:var(--ink);font:inherit;font-size:.97rem;
+  transition:transform .22s cubic-bezier(.34,1.56,.64,1),border-color .25s,background .25s;
+}
+.opt:hover:not(.locked){transform:translateY(-3px);border-color:var(--accent)}
+.opt .tag{
+  flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
+  background:var(--panel);border:1px solid var(--line);font-size:.79rem;font-weight:700;color:var(--ink-soft);
+  transition:all .3s;
+}
+.opt.right{border-color:var(--ok);background:var(--ok-bg);animation:pop .45s cubic-bezier(.34,1.56,.64,1)}
+.opt.right .tag{background:var(--ok);border-color:var(--ok);color:#04140e}
+.opt.wrong{border-color:var(--no);background:var(--no-bg);animation:shake .42s}
+.opt.wrong .tag{background:var(--no);border-color:var(--no);color:#2a0007}
+.opt.locked{cursor:default}
+@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.05)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+
+.verdict{margin-top:15px;font-size:.92rem;color:var(--ink-soft);min-height:1.3em;opacity:0;transform:translateY(6px);transition:.4s}
+.verdict.show{opacity:1;transform:none}
+.verdict b.g{color:var(--ok)} .verdict b.r{color:var(--no)}
+
+/* solution */
+.reveal{
+  margin-top:18px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+  border-radius:12px;padding:11px 19px;font:inherit;font-size:.88rem;font-weight:600;
+  cursor:pointer;display:inline-flex;align-items:center;gap:9px;
+  transition:transform .22s cubic-bezier(.34,1.56,.64,1),border-color .25s;
+}
+.reveal:hover{transform:translateY(-2px);border-color:var(--accent2)}
+.reveal .cv{transition:transform .35s;display:inline-block}
+.reveal[aria-expanded="true"] .cv{transform:rotate(180deg)}
+
+.sol{display:grid;grid-template-rows:0fr;transition:grid-template-rows .55s cubic-bezier(.16,1,.3,1)}
+.sol.open{grid-template-rows:1fr}
+.sol > div{overflow:hidden}
+.steps{list-style:none;margin:22px 0 0;padding:0 0 0 30px;position:relative}
+.steps::before{
+  content:"";position:absolute;left:9px;top:6px;bottom:6px;width:2px;border-radius:2px;
+  background:linear-gradient(var(--accent),var(--accent2),var(--accent3));
+  transform:scaleY(0);transform-origin:top;transition:transform .9s ease .1s;
+}
+.sol.open .steps::before{transform:scaleY(1)}
+.steps li{
+  position:relative;padding:0 0 20px;color:var(--ink-soft);
+  opacity:0;transform:translateX(-14px);transition:opacity .5s ease,transform .5s ease;
+}
+.sol.open .steps li{opacity:1;transform:none}
+.steps li::before{
+  content:"";position:absolute;left:-26px;top:9px;width:10px;height:10px;border-radius:50%;
+  background:var(--accent);border:2px solid var(--bg);box-shadow:0 0 0 2px var(--accent);
+}
+.steps li .lead{color:var(--ink);font-weight:600}
+.mathline{
+  display:block;margin:11px 0 2px;padding:12px 15px;border-radius:11px;
+  background:var(--panel);border:1px solid var(--line);color:var(--ink);
+  overflow-x:auto;font-size:1.04rem;
+}
+.answer{
+  margin-top:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  background:var(--ok-bg);border:1px solid var(--ok);border-radius:13px;padding:14px 17px;
+}
+.answer .ttl{font-size:.68rem;letter-spacing:.17em;text-transform:uppercase;color:var(--ok);font-weight:700}
+
+/* score */
+.score{
+  text-align:center;border:1px solid var(--line);border-radius:24px;padding:40px 28px;
+  background:color-mix(in srgb,var(--panel) 88%,transparent);box-shadow:var(--shadow);
+  backdrop-filter:blur(12px);margin-top:44px;
+  opacity:0;transform:translateY(40px);transition:.8s cubic-bezier(.16,1,.3,1);
+}
+.score.in{opacity:1;transform:none}
+.ring{width:150px;height:150px;margin:22px auto 6px;position:relative}
+.ring svg{transform:rotate(-90deg);width:100%;height:100%}
+.ring circle{fill:none;stroke-width:11;stroke-linecap:round}
+.ring .bgc{stroke:var(--line)}
+.ring .fgc{stroke:url(#sg);stroke-dasharray:396;stroke-dashoffset:396;transition:stroke-dashoffset 1.1s cubic-bezier(.16,1,.3,1)}
+.ring .lbl{position:absolute;inset:0;display:grid;place-items:center;font-size:2rem;font-weight:800;letter-spacing:-.03em}
+.resetb{
+  margin-top:20px;border:none;border-radius:12px;padding:12px 26px;cursor:pointer;
+  font:inherit;font-weight:700;font-size:.9rem;color:#fff;
+  background:linear-gradient(120deg,var(--accent),var(--accent2));
+  box-shadow:0 12px 30px -12px var(--accent);transition:transform .25s;
+}
+.resetb:hover{transform:translateY(-2px) scale(1.03)}
+
+footer{text-align:center;padding:44px 22px 60px;color:var(--ink-dim);font-size:.83rem;border-top:1px solid var(--line)}
+
+/* ───────────────────────── math typesetting ───────────────────────── */
+.m{font-family:"Cambria Math","Latin Modern Math",Georgia,"Times New Roman",serif;font-style:italic;white-space:nowrap}
+.m .up{font-style:normal}
+.frac{display:inline-block;vertical-align:middle;text-align:center;margin:0 .2em;line-height:1.18}
+.frac .n{display:block;border-bottom:1.4px solid currentColor;padding:0 .3em}
+.frac .d{display:block;padding:.06em .3em 0}
+.ig{display:inline-flex;align-items:center;vertical-align:middle;margin:0 .14em}
+.ig .s{font-size:1.85em;line-height:.78;font-style:normal;font-family:Georgia,"Times New Roman",serif}
+.ig .l{display:inline-flex;flex-direction:column;justify-content:space-between;height:2.5em;font-size:.58em;line-height:1;padding:.12em 0 .12em .06em}
+.sq{white-space:nowrap}
+.sq .r{border-top:1.3px solid currentColor;padding:0 .1em 0 .05em;margin-left:-.02em}
+.br{display:inline-block;vertical-align:middle;font-style:normal;font-family:Georgia,"Times New Roman",serif;
+    font-size:1.9em;line-height:.55;padding:0 .02em;transform:translateY(-.02em)}
+.br sup,.br sub{font-size:.36em}
+sup,sub{font-size:.68em;font-style:normal}
+sup{vertical-align:.55em} sub{vertical-align:-.28em}
+
+@media (max-width:620px){
+  .card{padding:22px 18px;border-radius:18px}
+  .opts{grid-template-columns:1fr}
+  h1{letter-spacing:-.02em}
+  .dots{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+  html{scroll-behavior:auto}
+  .card,.score{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="aurora"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+<div class="grid-lines"></div>
+<div class="floaters" id="floaters"></div>
+
+<div class="progress"><i id="bar"></i></div>
+
+<div class="topbar" id="topbar">
+  <div class="brand"><span class="mark">∫</span><span>Definite Integration &amp; Area</span></div>
+  <nav class="dots" id="dots" aria-label="Jump to problem"></nav>
+  <button class="tbtn" id="theme" title="Toggle theme" aria-label="Toggle light and dark theme">◐</button>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="blip"></span> Chapter 20 · Examples 14–18</div>
+    <h1>Five integrals,<br><span class="grad">fully unpacked.</span></h1>
+    <p class="sub">Substitution, integration by parts, the reciprocal trick, the Mean Value Theorem and inverse-function integration — each one worked line by line. Pick an answer, then open the reasoning.</p>
+    <div class="stats">
+      <div class="stat"><b>5</b><span>Problems</span></div>
+      <div class="stat"><b>26</b><span>Steps</span></div>
+      <div class="stat"><b>4</b><span>Techniques</span></div>
+    </div>
+    <div class="scroller">Scroll<span class="arw"></span></div>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+
+<!-- ══════════════ 14 ══════════════ -->
+<article class="card" id="p14">
+  <div class="chead">
+    <div class="num">14</div>
+    <div>
+      <div class="ctitle">Substitution + By Parts</div>
+      <div class="ctopic">Linking two integrals through integration by parts</div>
+    </div>
+  </div>
+
+  <div class="qbox">
+    If <span class="m">A =
+      <span class="ig"><span class="s">∫</span><span class="l"><em>π</em><em>0</em></span></span>
+      <span class="frac"><span class="n up">cos x</span><span class="d">(x+2)<sup>2</sup></span></span> dx</span>,
+    then <span class="m">
+      <span class="ig"><span class="s">∫</span><span class="l"><em>π/2</em><em>0</em></span></span>
+      <span class="frac"><span class="n up">sin 2x</span><span class="d">x+1</span></span> dx</span>
+    is equal to
+  </div>
+
+  <div class="opts" data-answer="1">
+    <button class="opt" data-i="1"><span class="tag">1</span><span class="m"><span class="frac"><span class="n">1</span><span class="d">2</span></span> + <span class="frac"><span class="n">1</span><span class="d">π+2</span></span> − A</span></button>
+    <button class="opt" data-i="2"><span class="tag">2</span><span class="m"><span class="frac"><span class="n">1</span><span class="d">π+2</span></span> − A</span></button>
+    <button class="opt" data-i="3"><span class="tag">3</span><span class="m">1 + <span class="frac"><span class="n">1</span><span class="d">π+2</span></span> − A</span></button>
+    <button class="opt" data-i="4"><span class="tag">4</span><span class="m">A − <span class="frac"><span class="n">1</span><span class="d">2</span></span> − <span class="frac"><span class="n">1</span><span class="d">π+2</span></span></span></button>
+  </div>
+  <p class="verdict"></p>
+
+  <button class="reveal" aria-expanded="false">Show the working <span class="cv">▾</span></button>
+  <div class="sol"><div>
+    <ol class="steps">
+      <li><span class="lead">Rescale so the sine loses its factor of 2.</span> Put <span class="m">x = y/2</span>, so <span class="m">dx = dy/2</span>, and the limits <span class="m">0 → π/2</span> become <span class="m">0 → π</span>.
+        <span class="mathline m">I =
+          <span class="ig"><span class="s">∫</span><span class="l"><em>π/2</em><em>0</em></span></span>
+          <span class="frac"><span class="n up">sin 2x</span><span class="d">x+1</span></span> dx</span>
+      </li>
+      <li><span class="lead">Simplify the new integrand.</span> Now <span class="m up">sin 2x = sin y</span> and <span class="m">x+1 = <span class="frac"><span class="n">y+2</span><span class="d">2</span></span></span>, so the two factors of 2 cancel exactly.
+        <span class="mathline m">I =
+          <span class="ig"><span class="s">∫</span><span class="l"><em>π</em><em>0</em></span></span>
+          <span class="frac"><span class="n up">sin y</span><span class="d">y+2</span></span> dy</span>
+      </li>
+      <li><span class="lead">Integrate by parts</span> with <span class="m">u = <span class="frac"><span class="n">1</span><span class="d">y+2</span></span></span> and <span class="m up">dv = sin y dy</span>, giving <span class="m up">v = −cos y</span>.
+        <span class="mathline m">I = <span class="br">[</span>
+          <span class="frac"><span class="n up">−cos y</span><span class="d">y+2</span></span>
+          <span class="br">]<sub>0</sub><sup>π</sup></span> −
+          <span class="ig"><span class="s">∫</span><span class="l"><em>π</em><em>0</em></span></span>
+          <span class="frac"><span class="n up">cos y</span><span class="d">(y+2)<sup>2</sup></span></span> dy</span>
+      </li>
+      <li><span class="lead">Evaluate the boundary term.</span> With <span class="m up">cos π = −1</span> and <span class="m up">cos 0 = 1</span>:
+        <span class="mathline m"><span class="br">[</span><span class="frac"><span class="n up">−cos y</span><span class="d">y+2</span></span><span class="br">]<sub>0</sub><sup>π</sup></span>
+        = <span class="frac"><span class="n">1</span><span class="d">π+2</span></span> + <span class="frac"><span class="n">1</span><span class="d">2</span></span></span>
+      </li>
+      <li><span class="lead">Recognise the leftover integral.</span> The remaining piece is precisely <span class="m">A</span> — the dummy variable name makes no difference.
+        <span class="mathline m">I = <span class="frac"><span class="n">1</span><span class="d">2</span></span> + <span class="frac"><span class="n">1</span><span class="d">π+2</span></span> − A</span>
+      </li>
+    </ol>
+    <div class="answer"><span class="ttl">Answer</span>
+      <span class="m">Option (1)&nbsp;&nbsp;<span class="frac"><span class="n">1</span><span class="d">2</span></span> + <span class="frac"><span class="n">1</span><span class="d">π+2</span></span> − A</span>
+    </div>
+  </div></div>
+</article>
+
+<!-- ══════════════ 15 ══════════════ -->
+<article class="card" id="p15">
+  <div class="chead">
+    <div class="num">15</div>
+    <div>
+      <div class="ctitle">Monotonicity of an Integral Function</div>
+      <div class="ctopic">Comparing an accumulation function with ln x</div>
+    </div>
+  </div>
+
+  <div class="qbox">
+    <span class="m">f(x) =
+      <span class="ig"><span class="s">∫</span><span class="l"><em>x</em><em>1</em></span></span>
+      <span class="frac"><span class="n up">e<sup>t</sup></span><span class="d">t</span></span> dt</span>,
+    <span class="m">x ∈ <span class="up">R</span><sup>+</sup></span>. Then the complete set of values of <span class="m">x</span> for which <span class="m">f(x) ≤ <span class="up">ln</span> x</span> is
+  </div>
+
+  <div class="opts" data-answer="1">
+    <button class="opt" data-i="1"><span class="tag">1</span><span class="m">(0, 1]</span></button>
+    <button class="opt" data-i="2"><span class="tag">2</span><span class="m">[1, ∞)</span></button>
+    <button class="opt" data-i="3"><span class="tag">3</span><span class="m">(0, ∞)</span></button>
+    <button class="opt" data-i="4"><span class="tag">4</span><span class="m up">None of these</span></button>
+  </div>
+  <p class="verdict"></p>
+
+  <button class="reveal" aria-expanded="false">Show the working <span class="cv">▾</span></button>
+  <div class="sol"><div>
+    <ol class="steps">
+      <li><span class="lead">Read off the two facts the integral gives you.</span> The limits coincide at <span class="m">x = 1</span>, and the Fundamental Theorem supplies the derivative.
+        <span class="mathline m">f(1) = 0,&nbsp;&nbsp; f′(x) = <span class="frac"><span class="n up">e<sup>x</sup></span><span class="d">x</span></span></span>
+      </li>
+      <li><span class="lead">Compare by building a difference function.</span> Set <span class="m">g(x) = f(x) − <span class="up">ln</span> x</span> on <span class="m"><span class="up">R</span><sup>+</sup></span>.
+        <span class="mathline m">g′(x) = <span class="frac"><span class="n up">e<sup>x</sup></span><span class="d">x</span></span> − <span class="frac"><span class="n">1</span><span class="d">x</span></span> = <span class="frac"><span class="n up">e<sup>x</sup> − 1</span><span class="d">x</span></span></span>
+      </li>
+      <li><span class="lead">Fix the sign of the derivative.</span> For every <span class="m">x &gt; 0</span> we have <span class="m up">e<sup>x</sup> &gt; 1</span>, so numerator and denominator are both positive — <span class="m">g</span> is <em>strictly increasing</em> on all of <span class="m"><span class="up">R</span><sup>+</sup></span>.
+        <span class="mathline m">g′(x) &gt; 0&nbsp;&nbsp;∀ x ∈ <span class="up">R</span><sup>+</sup></span>
+      </li>
+      <li><span class="lead">Anchor it at the one point you know.</span> <span class="m">g(1) = f(1) − <span class="up">ln</span> 1 = 0 − 0 = 0</span>. A strictly increasing function crosses zero exactly once, at <span class="m">x = 1</span>.
+        <span class="mathline m">g(x) ≤ 0 ⟺ x ≤ 1 &nbsp;&nbsp;and&nbsp;&nbsp; g(x) &gt; 0 ⟺ x &gt; 1</span>
+      </li>
+      <li><span class="lead">Intersect with the domain.</span> Only <span class="m">x &gt; 0</span> is allowed, so the solution set is half-open at 0 and includes the equality point <span class="m">x = 1</span>.
+        <span class="mathline m">f(x) ≤ <span class="up">ln</span> x&nbsp;&nbsp;⟺&nbsp;&nbsp;x ∈ (0, 1]</span>
+      </li>
+    </ol>
+    <div class="answer"><span class="ttl">Answer</span><span class="m">Option (1)&nbsp;&nbsp;(0, 1]</span></div>
+  </div></div>
+</article>
+
+<!-- ══════════════ 16 ══════════════ -->
+<article class="card" id="p16">
+  <div class="chead">
+    <div class="num">16</div>
+    <div>
+      <div class="ctitle">The Reciprocal Substitution</div>
+      <div class="ctopic">Two improper integrals that secretly agree</div>
+    </div>
+  </div>
+
+  <div class="qbox">
+    Let <span class="m">I<sub>1</sub> =
+      <span class="ig"><span class="s">∫</span><span class="l"><em>∞</em><em>0</em></span></span>
+      <span class="frac"><span class="n">x<sup>2</sup><span class="sq">√<span class="r">x</span></span></span><span class="d">(1+x)<sup>6</sup></span></span> dx</span>,
+    <span class="m">I<sub>2</sub> =
+      <span class="ig"><span class="s">∫</span><span class="l"><em>∞</em><em>0</em></span></span>
+      <span class="frac"><span class="n">x<span class="sq">√<span class="r">x</span></span></span><span class="d">(1+x)<sup>6</sup></span></span> dx</span>. Then
+  </div>
+
+  <div class="opts" data-answer="4">
+    <button class="opt" data-i="1"><span class="tag">1</span><span class="m">I<sub>1</sub> = 2I<sub>2</sub></span></button>
+    <button class="opt" data-i="2"><span class="tag">2</span><span class="m">I<sub>2</sub> = 2I<sub>1</sub></span></button>
+    <button class="opt" data-i="3"><span class="tag">3</span><span class="m">I<sub>1</sub> = I<sub>2</sub><sup>2</sup></span></button>
+    <button class="opt" data-i="4"><span class="tag">4</span><span class="m">I<sub>1</sub> = I<sub>2</sub></span></button>
+  </div>
+  <p class="verdict"></p>
+
+  <button class="reveal" aria-expanded="false">Show the working <span class="cv">▾</span></button>
+  <div class="sol"><div>
+    <ol class="steps">
+      <li><span class="lead">Write the powers as exponents.</span> The two integrands differ only in the numerator exponent, <span class="m">5/2</span> versus <span class="m">3/2</span>.
+        <span class="mathline m">I<sub>1</sub> = <span class="ig"><span class="s">∫</span><span class="l"><em>∞</em><em>0</em></span></span><span class="frac"><span class="n">x<sup>5/2</sup></span><span class="d">(1+x)<sup>6</sup></span></span> dx,&nbsp;&nbsp;
+        I<sub>2</sub> = <span class="ig"><span class="s">∫</span><span class="l"><em>∞</em><em>0</em></span></span><span class="frac"><span class="n">x<sup>3/2</sup></span><span class="d">(1+x)<sup>6</sup></span></span> dx</span>
+      </li>
+      <li><span class="lead">Apply the reciprocal substitution to <span class="m">I<sub>1</sub></span>.</span> Put <span class="m">x = 1/t</span>, so <span class="m">dx = −dt/t<sup>2</sup></span>. The limits flip from <span class="m">0 → ∞</span> to <span class="m">∞ → 0</span>, and that flip absorbs the minus sign.
+        <span class="mathline m">I<sub>1</sub> = <span class="ig"><span class="s">∫</span><span class="l"><em>0</em><em>∞</em></span></span>
+          <span class="frac"><span class="n">t<sup>−5/2</sup></span><span class="d"><span class="br">(</span>1 + <span class="frac"><span class="n">1</span><span class="d">t</span></span><span class="br">)</span><sup>6</sup></span></span>
+          <span class="br">(</span>− <span class="frac"><span class="n">1</span><span class="d">t<sup>2</sup></span></span><span class="br">)</span> dt</span>
+      </li>
+      <li><span class="lead">Clear the compound denominator.</span> Since <span class="m"><span class="br">(</span>1 + 1/t<span class="br">)</span><sup>6</sup> = (1+t)<sup>6</sup>/t<sup>6</sup></span>, that <span class="m">t<sup>6</sup></span> climbs into the numerator.
+        <span class="mathline m">t<sup>−5/2</sup> · t<sup>6</sup> · t<sup>−2</sup> = t<sup>6 − 2 − 5/2</sup> = t<sup>3/2</sup></span>
+      </li>
+      <li><span class="lead">Read off the result.</span> What is left is exactly the integrand of <span class="m">I<sub>2</sub></span>, with <span class="m">t</span> as a dummy variable.
+        <span class="mathline m">I<sub>1</sub> = <span class="ig"><span class="s">∫</span><span class="l"><em>∞</em><em>0</em></span></span><span class="frac"><span class="n">t<span class="sq">√<span class="r">t</span></span></span><span class="d">(1+t)<sup>6</sup></span></span> dt = I<sub>2</sub></span>
+      </li>
+      <li><span class="lead">Cross-check with the Beta integral.</span> Using <span class="m"><span class="ig"><span class="s">∫</span><span class="l"><em>∞</em><em>0</em></span></span> <span class="frac"><span class="n">x<sup>m−1</sup></span><span class="d">(1+x)<sup>m+n</sup></span></span> dx = B(m, n)</span>, the exponents give <span class="m">I<sub>1</sub> = B(7/2, 5/2)</span> and <span class="m">I<sub>2</sub> = B(5/2, 7/2)</span>. Beta is symmetric, so they match.
+        <span class="mathline m">B(7/2, 5/2) = B(5/2, 7/2) ⟹ I<sub>1</sub> = I<sub>2</sub></span>
+      </li>
+    </ol>
+    <div class="answer"><span class="ttl">Answer</span><span class="m">Option (4)&nbsp;&nbsp;I<sub>1</sub> = I<sub>2</sub></span></div>
+  </div></div>
+</article>
+
+<!-- ══════════════ 17 ══════════════ -->
+<article class="card" id="p17">
+  <div class="chead">
+    <div class="num">17</div>
+    <div>
+      <div class="ctitle">Lagrange Mean Value Theorem</div>
+      <div class="ctopic">Bounding an integral you cannot evaluate</div>
+    </div>
+  </div>
+
+  <div class="qbox">
+    If <span class="m">f(x) =
+      <span class="ig"><span class="s">∫</span><span class="l"><em>x</em><em>2</em></span></span>
+      <span class="frac"><span class="n up">dt</span><span class="d">1+t<sup>4</sup></span></span></span>, then
+  </div>
+
+  <div class="opts" data-answer="1">
+    <button class="opt" data-i="1"><span class="tag">1</span><span class="m">f(3) &lt; 1/17</span></button>
+    <button class="opt" data-i="2"><span class="tag">2</span><span class="m">f(3) &gt; 1/17</span></button>
+    <button class="opt" data-i="3"><span class="tag">3</span><span class="m">f(3) = 1/17</span></button>
+    <button class="opt" data-i="4"><span class="tag">4</span><span class="m">f(3) &gt; 1</span></button>
+  </div>
+  <p class="verdict"></p>
+
+  <button class="reveal" aria-expanded="false">Show the working <span class="cv">▾</span></button>
+  <div class="sol"><div>
+    <ol class="steps">
+      <li><span class="lead">Differentiate the accumulation function.</span> The lower limit is the constant 2, so <span class="m">f(2) = 0</span>.
+        <span class="mathline m">f′(x) = <span class="frac"><span class="n">1</span><span class="d">1+x<sup>4</sup></span></span></span>
+      </li>
+      <li><span class="lead">Apply the Mean Value Theorem on [2, 3].</span> <span class="m">f</span> is continuous and differentiable there, so some <span class="m">c ∈ (2, 3)</span> satisfies:
+        <span class="mathline m"><span class="frac"><span class="n">f(3) − f(2)</span><span class="d">3 − 2</span></span> = f′(c) ⟹ f(3) = <span class="frac"><span class="n">1</span><span class="d">1+c<sup>4</sup></span></span></span>
+      </li>
+      <li><span class="lead">Bound the unknown point.</span> From <span class="m">2 &lt; c &lt; 3</span>, raising to the fourth power preserves the inequalities:
+        <span class="mathline m">16 &lt; c<sup>4</sup> &lt; 81 ⟹ 17 &lt; 1 + c<sup>4</sup> &lt; 82</span>
+      </li>
+      <li><span class="lead">Invert — which flips the inequality.</span> Taking reciprocals of positive quantities reverses the order.
+        <span class="mathline m"><span class="frac"><span class="n">1</span><span class="d">82</span></span> &lt; f(3) &lt; <span class="frac"><span class="n">1</span><span class="d">17</span></span></span>
+      </li>
+      <li><span class="lead">Match against the options.</span> The upper bound is strict, so <span class="m">f(3) &lt; 1/17</span> — which also rules out options (2), (3) and (4) at once.
+        <span class="mathline m">f(3) &lt; <span class="frac"><span class="n">1</span><span class="d">17</span></span> ≈ 0.0588</span>
+      </li>
+    </ol>
+    <div class="answer"><span class="ttl">Answer</span><span class="m">Option (1)&nbsp;&nbsp;f(3) &lt; 1/17</span></div>
+  </div></div>
+</article>
+
+<!-- ══════════════ 18 ══════════════ -->
+<article class="card" id="p18">
+  <div class="chead">
+    <div class="num">18</div>
+    <div>
+      <div class="ctitle">Integrating an Inverse Function</div>
+      <div class="ctopic">Turning <span class="m">f<sup>−1</sup></span> into something you can actually integrate</div>
+    </div>
+  </div>
+
+  <div class="qbox">
+    If <span class="m up">f(x) = x + sin x</span>, then <span class="m">
+      <span class="ig"><span class="s">∫</span><span class="l"><em>2π</em><em>π</em></span></span>
+      f<sup>−1</sup>(x) dx</span> is equal to
+  </div>
+
+  <div class="opts" data-answer="2">
+    <button class="opt" data-i="1"><span class="tag">1</span><span class="m"><span class="frac"><span class="n">3π<sup>2</sup></span><span class="d">2</span></span> − 2</span></button>
+    <button class="opt" data-i="2"><span class="tag">2</span><span class="m"><span class="frac"><span class="n">3π<sup>2</sup></span><span class="d">2</span></span> + 2</span></button>
+    <button class="opt" data-i="3"><span class="tag">3</span><span class="m">3π<sup>2</sup></span></button>
+    <button class="opt" data-i="4"><span class="tag">4</span><span class="m up">None of these</span></button>
+  </div>
+  <p class="verdict"></p>
+
+  <button class="reveal" aria-expanded="false">Show the working <span class="cv">▾</span></button>
+  <div class="sol"><div>
+    <ol class="steps">
+      <li><span class="lead">Confirm the inverse exists, and find the matching limits.</span> <span class="m up">f′(x) = 1 + cos x ≥ 0</span>, so <span class="m">f</span> is increasing and invertible; and since <span class="m up">sin π = sin 2π = 0</span>:
+        <span class="mathline m">f(π) = π,&nbsp;&nbsp; f(2π) = 2π</span>
+      </li>
+      <li><span class="lead">Substitute <span class="m">x = f(t)</span>.</span> Then <span class="m">dx = f′(t) dt</span> and <span class="m">f<sup>−1</sup>(x) = t</span>. By the step above, <span class="m">t</span> also runs from <span class="m">π</span> to <span class="m">2π</span>.
+        <span class="mathline m">I = <span class="ig"><span class="s">∫</span><span class="l"><em>2π</em><em>π</em></span></span> t · f′(t) dt</span>
+      </li>
+      <li><span class="lead">Integrate by parts</span> — this is the whole point of the substitution, since it trades <span class="m">f′</span> for <span class="m">f</span>.
+        <span class="mathline m">I = <span class="br">[</span>t f(t)<span class="br">]<sub>π</sub><sup>2π</sup></span> − <span class="ig"><span class="s">∫</span><span class="l"><em>2π</em><em>π</em></span></span> f(t) dt</span>
+      </li>
+      <li><span class="lead">Evaluate the boundary term.</span> Using <span class="m">f(2π) = 2π</span> and <span class="m">f(π) = π</span>:
+        <span class="mathline m"><span class="br">[</span>t f(t)<span class="br">]<sub>π</sub><sup>2π</sup></span> = 2π · 2π − π · π = 4π<sup>2</sup> − π<sup>2</sup> = 3π<sup>2</sup></span>
+      </li>
+      <li><span class="lead">Evaluate the ordinary integral of <span class="m">f</span>.</span> With <span class="m up">cos 2π = 1</span> and <span class="m up">cos π = −1</span>:
+        <span class="mathline m"><span class="ig"><span class="s">∫</span><span class="l"><em>2π</em><em>π</em></span></span>(t + <span class="up">sin</span> t) dt = <span class="br">[</span><span class="frac"><span class="n">t<sup>2</sup></span><span class="d">2</span></span> − <span class="up">cos</span> t<span class="br">]<sub>π</sub><sup>2π</sup></span> = (2π<sup>2</sup> − 1) − <span class="br">(</span><span class="frac"><span class="n">π<sup>2</sup></span><span class="d">2</span></span> + 1<span class="br">)</span> = <span class="frac"><span class="n">3π<sup>2</sup></span><span class="d">2</span></span> − 2</span>
+      </li>
+      <li><span class="lead">Subtract.</span> The two minus signs on the constant combine into a plus.
+        <span class="mathline m">I = 3π<sup>2</sup> − <span class="br">(</span><span class="frac"><span class="n">3π<sup>2</sup></span><span class="d">2</span></span> − 2<span class="br">)</span> = <span class="frac"><span class="n">3π<sup>2</sup></span><span class="d">2</span></span> + 2 ≈ 16.80</span>
+      </li>
+    </ol>
+    <div class="answer"><span class="ttl">Answer</span><span class="m">Option (2)&nbsp;&nbsp;<span class="frac"><span class="n">3π<sup>2</sup></span><span class="d">2</span></span> + 2</span></div>
+  </div></div>
+</article>
+
+<!-- ══════════════ score ══════════════ -->
+<section class="score" id="score">
+  <div class="ctitle">Your run</div>
+  <div class="ring">
+    <svg viewBox="0 0 140 140" aria-hidden="true">
+      <defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="var(--accent)"/><stop offset="100%" stop-color="var(--accent2)"/>
+      </linearGradient></defs>
+      <circle class="bgc" cx="70" cy="70" r="63"/>
+      <circle class="fgc" id="ringfg" cx="70" cy="70" r="63"/>
+    </svg>
+    <div class="lbl" id="scoreLbl">0/5</div>
+  </div>
+  <p class="sub" id="scoreMsg" style="margin-top:4px">Answer the five questions above — first attempt counts.</p>
+  <button class="resetb" id="reset">Reset and try again</button>
+</section>
+
+</main>
+
+<footer>
+  Chapter 20 — Definite Integration and Area · Examples 14–18, worked in full.<br>
+  Techniques used: linear substitution · integration by parts · the <span class="m">x → 1/x</span> reciprocal trick · Lagrange MVT · inverse-function integration.
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- floating math symbols ---------- */
+  (function floaters(){
+    if (reduced) return;
+    var host = document.getElementById("floaters");
+    var glyphs = ["∫","π","∞","dx","√","Σ","≤","f′","θ","e","ln","≈","∂","β"];
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < 22; i++){
+      var b = document.createElement("b");
+      b.textContent = glyphs[i % glyphs.length];
+      b.style.left = (Math.random() * 100).toFixed(2) + "%";
+      b.style.fontSize = (14 + Math.random() * 44).toFixed(0) + "px";
+      b.style.animationDuration = (22 + Math.random() * 26).toFixed(1) + "s";
+      b.style.animationDelay = (-Math.random() * 40).toFixed(1) + "s";
+      frag.appendChild(b);
+    }
+    host.appendChild(frag);
+  })();
+
+  /* ---------- theme toggle ---------- */
+  var root = document.documentElement;
+  var stored = null;
+  try { stored = localStorage.getItem("di-theme"); } catch (e) {}
+  if (stored) root.setAttribute("data-theme", stored);
+  else if (matchMedia("(prefers-color-scheme: light)").matches) root.setAttribute("data-theme", "light");
+  document.getElementById("theme").addEventListener("click", function(){
+    var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("di-theme", next); } catch (e) {}
+  });
+
+  /* ---------- reveal on scroll ---------- */
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".card"));
+  var revealables = cards.concat([document.getElementById("score")]);
+  if ("IntersectionObserver" in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); }
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -60px 0px" });
+    revealables.forEach(function(el){ io.observe(el); });
+  } else {
+    revealables.forEach(function(el){ el.classList.add("in"); });
+  }
+
+  /* ---------- nav dots ---------- */
+  var dots = document.getElementById("dots");
+  cards.forEach(function(c, i){
+    var a = document.createElement("a");
+    a.href = "#" + c.id;
+    a.title = "Example " + (14 + i);
+    a.setAttribute("aria-label", "Go to example " + (14 + i));
+    dots.appendChild(a);
+  });
+  var dotEls = Array.prototype.slice.call(dots.children);
+
+  /* ---------- scroll progress, sticky bar, active dot ---------- */
+  var bar = document.getElementById("bar");
+  var topbar = document.getElementById("topbar");
+  var ticking = false;
+  function onScroll(){
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + "%";
+    topbar.classList.toggle("stuck", window.scrollY > 40);
+    var mid = window.innerHeight * 0.45, best = -1, bestD = Infinity;
+    cards.forEach(function(c, i){
+      var r = c.getBoundingClientRect();
+      var d = Math.abs(r.top + r.height / 2 - mid);
+      if (r.bottom > 0 && r.top < window.innerHeight && d < bestD){ bestD = d; best = i; }
+    });
+    dotEls.forEach(function(d, i){ d.classList.toggle("on", i === best); });
+    ticking = false;
+  }
+  window.addEventListener("scroll", function(){
+    if (!ticking){ ticking = true; requestAnimationFrame(onScroll); }
+  }, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+
+  /* ---------- solution accordions ---------- */
+  document.querySelectorAll(".reveal").forEach(function(btn){
+    var sol = btn.nextElementSibling;
+    btn.addEventListener("click", function(){
+      var open = sol.classList.toggle("open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      btn.firstChild.nodeValue = open ? "Hide the working " : "Show the working ";
+      if (open){
+        sol.querySelectorAll(".steps li").forEach(function(li, i){
+          li.style.transitionDelay = (0.12 + i * 0.11) + "s";
+        });
+      }
+    });
+  });
+
+  /* ---------- quiz ---------- */
+  var TOTAL = cards.length;
+  var firstTry = {};
+  var ring = document.getElementById("ringfg");
+  var lbl = document.getElementById("scoreLbl");
+  var msg = document.getElementById("scoreMsg");
+  var CIRC = 2 * Math.PI * 63;
+  ring.style.strokeDasharray = CIRC;
+
+  function updateScore(){
+    var answered = 0, correct = 0;
+    for (var k in firstTry){ if (Object.prototype.hasOwnProperty.call(firstTry, k)){ answered++; if (firstTry[k]) correct++; } }
+    ring.style.strokeDashoffset = CIRC * (1 - correct / TOTAL);
+    lbl.textContent = correct + "/" + TOTAL;
+    if (answered === 0){
+      msg.textContent = "Answer the five questions above — first attempt counts.";
+    } else if (answered < TOTAL){
+      msg.textContent = answered + " of " + TOTAL + " attempted. Keep going.";
+    } else if (correct === TOTAL){
+      msg.textContent = "All five on the first try. Substitution, by parts, MVT and inverse integration — all clean.";
+    } else if (correct >= 3){
+      msg.textContent = "Solid run. Re-read the working on the ones you missed — the trick is usually in the first line.";
+    } else {
+      msg.textContent = "Worth a second pass. Open each solution and follow the substitution that starts it.";
+    }
+  }
+
+  document.querySelectorAll(".opts").forEach(function(group, gi){
+    var answer = group.getAttribute("data-answer");
+    var verdict = group.nextElementSibling;
+    group.querySelectorAll(".opt").forEach(function(opt){
+      opt.addEventListener("click", function(){
+        var chosen = opt.getAttribute("data-i");
+        var right = chosen === answer;
+        if (!(gi in firstTry)) firstTry[gi] = right;
+
+        if (right){
+          opt.classList.add("right");
+          verdict.innerHTML = '<b class="g">Correct.</b> Option (' + answer + ') — open the working to see why.';
+        } else {
+          opt.classList.add("wrong");
+          var win = group.querySelector('.opt[data-i="' + answer + '"]');
+          if (win) win.classList.add("right");
+          verdict.innerHTML = '<b class="r">Not quite.</b> The answer is option (' + answer + ').';
+        }
+        group.querySelectorAll(".opt").forEach(function(o){ o.classList.add("locked"); });
+        verdict.classList.add("show");
+        updateScore();
+      });
+    });
+  });
+
+  document.getElementById("reset").addEventListener("click", function(){
+    firstTry = {};
+    document.querySelectorAll(".opt").forEach(function(o){ o.classList.remove("right", "wrong", "locked"); });
+    document.querySelectorAll(".verdict").forEach(function(v){ v.classList.remove("show"); v.innerHTML = ""; });
+    updateScore();
+    document.getElementById("p14").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  });
+
+  updateScore();
+})();
+</script>
+</body>
+</html>
