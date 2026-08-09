@@ -31,10 +31,14 @@
     border-radius: 4px;
     cursor: pointer;
   }
-  #sound {
+  #hud {
     position: fixed;
     top: max(12px, env(safe-area-inset-top));
     right: max(12px, env(safe-area-inset-right));
+    display: flex;
+    gap: 8px;
+  }
+  #hud button {
     width: 40px; height: 40px;
     border: none;
     border-radius: 50%;
@@ -44,16 +48,24 @@
     line-height: 40px;
     cursor: pointer;
     backdrop-filter: blur(4px);
-    transition: background .15s ease, transform .1s ease;
+    transition: background .15s ease, transform .1s ease, box-shadow .15s ease;
   }
-  #sound:hover { background: rgba(0,0,0,.55); }
-  #sound:active { transform: scale(.92); }
-  #sound:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  #hud button:hover { background: rgba(0,0,0,.55); }
+  #hud button:active { transform: scale(.92); }
+  #hud button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  #bot[aria-pressed="true"] {
+    background: #37b24d;
+    box-shadow: 0 0 0 3px rgba(55,178,77,.35);
+  }
+  #bot[aria-pressed="true"]:hover { background: #2f9e44; }
 </style>
 </head>
 <body>
 <div id="stage"><canvas id="game" aria-label="Flappy Flight game"></canvas></div>
-<button id="sound" type="button" title="Toggle sound (M)" aria-label="Toggle sound">&#128266;</button>
+<div id="hud">
+  <button id="bot" type="button" title="Toggle autopilot (B)" aria-label="Toggle autopilot" aria-pressed="false">&#129302;</button>
+  <button id="sound" type="button" title="Toggle sound (M)" aria-label="Toggle sound" aria-pressed="false">&#128266;</button>
+</div>
 
 <script>
 (() => {
@@ -176,6 +188,7 @@
   let state, score, pipes, particles, clouds, stars, hills;
   let speed, gap, scrollX, groundX, timeAlive, bobT, shake, flash;
   let overT, newBest, themeT, themeTarget;
+  let botBest = 0;   // session-only: what the autopilot managed, kept out of `best`
 
   function rand(a, b) { return a + Math.random() * (b - a); }
 
@@ -218,6 +231,7 @@
     flash = 0;
     overT = 0;
     newBest = false;
+    bot.playedThisRun = bot.on;
     bird.y = H * 0.42;
     bird.v = 0;
     bird.rot = 0;
@@ -258,8 +272,10 @@
   }
 
   // -------------------------------------------------------------------- input
-  function flap() {
+  function flap(fromBot) {
     initAudio();
+    // A human touching the controls takes the autopilot off, then flies the flap.
+    if (bot.on && !fromBot) setBot(false);
     if (state === READY) {
       state = PLAY;
       spawnPipe(W + 60);
@@ -274,16 +290,78 @@
     }
   }
 
-  canvas.addEventListener("pointerdown", e => { e.preventDefault(); flap(); });
+  canvas.addEventListener("pointerdown", e => { e.preventDefault(); flap(false); });
   window.addEventListener("keydown", e => {
     if (e.code === "Space" || e.code === "ArrowUp" || e.code === "Enter") {
       e.preventDefault();
-      if (!e.repeat) flap();
+      if (!e.repeat) flap(false);
     } else if (e.code === "KeyM") {
       initAudio();
       setMuted(!muted);
+    } else if (e.code === "KeyB") {
+      setBot(!bot.on);
     }
   });
+
+  // ---------------------------------------------------------------- autopilot
+  // The bot holds the bird inside a band by flapping whenever it sinks past an
+  // aim line. A flap adds FLAP_V and gravity cancels it after FLAP_RISE px, so
+  // the bird ends up oscillating in [aim - FLAP_RISE, aim] — put the middle of
+  // that band where we want the bird and the pipes take care of themselves.
+  const FLAP_RISE = (FLAP_V * FLAP_V) / (2 * GRAVITY);   // ~53px, the band height
+  const BOT_BAND = FLAP_RISE / 2;                         // half-height of that band
+  const BOT_COOLDOWN = 0.09;                              // caps the climb rate
+  const BOT_MARGIN = 8;                                   // clearance kept off each pipe lip
+
+  const bot = { on: false, cooldown: 0, playedThisRun: false };
+  const botBtn = document.getElementById("bot");
+
+  function setBot(v) {
+    bot.on = v;
+    bot.cooldown = 0;
+    botBtn.setAttribute("aria-pressed", String(v));
+    if (v) bot.playedThisRun = true;
+  }
+  botBtn.addEventListener("click", e => { e.stopPropagation(); initAudio(); setBot(!bot.on); });
+
+  function botThink(dt) {
+    if (!bot.on) return;
+    bot.cooldown -= dt;
+
+    if (state === READY) { if (bot.cooldown <= 0) flap(true); return; }
+    if (state === OVER) { if (overT > 1.2) flap(true); return; }
+    if (state !== PLAY) return;
+
+    bot.playedThisRun = true;
+
+    // The gap we are committed to: the first pipe whose back edge is still ahead.
+    let cur = null, nxt = null;
+    for (let i = 0; i < pipes.length; i++) {
+      if (pipes[i].x + PIPE_W > BIRD_X - BIRD_R) { cur = pipes[i]; nxt = pipes[i + 1] || null; break; }
+    }
+
+    let desired;
+    if (cur) {
+      // Drift toward the next gap while still inside this one, but never far
+      // enough to clip the pipe we are actually flying through. The bird sweeps
+      // BOT_BAND either side of `desired`, so that has to come out of the budget
+      // alongside its own radius.
+      const safe = Math.max(0, gap / 2 - BIRD_R - BOT_BAND - BOT_MARGIN);
+      desired = cur.gapY + (nxt ? clamp((nxt.gapY - cur.gapY) * 0.5, -safe, safe) : 0);
+    } else {
+      desired = H * 0.42;
+    }
+
+    // Flap on the real position, not a predicted one: the bot ticks at the
+    // physics rate, so there is no lag to lead, and leading would bias the whole
+    // band upward into the top pipe.
+    const aim = clamp(desired + BOT_BAND, 60, GROUND_Y - 60);
+
+    if (bird.y > aim && bot.cooldown <= 0) {
+      flap(true);
+      bot.cooldown = BOT_COOLDOWN;
+    }
+  }
 
   // ------------------------------------------------------------------ physics
   function circleHitsRect(cx, cy, r, rx, ry, rw, rh) {
@@ -300,7 +378,10 @@
     sfx.hit();
     if (hitPipe) setTimeout(() => { if (state === FALLING) sfx.die(); }, 120);
     burst(BIRD_X, bird.y, 16, [[255, 207, 66], [255, 168, 60], [255, 255, 255]], 1, 1);
-    if (score > best) {
+    if (bot.playedThisRun) {
+      // The autopilot does not get to set the player's record.
+      botBest = Math.max(botBest, score);
+    } else if (score > best) {
       best = score;
       newBest = true;
       try { localStorage.setItem("flappy.best", String(best)); } catch (e) { /* storage blocked */ }
@@ -308,6 +389,8 @@
   }
 
   function update(dt) {
+    botThink(dt);
+
     // scenery keeps moving in every state
     const sceneSpeed = state === PLAY || state === FALLING ? speed : SPEED_START * 0.55;
     scrollX += sceneSpeed * dt;
@@ -649,6 +732,26 @@
     text(String(score), W / 2, 96, 56, { lw: 8, color: "#fff", stroke: "rgba(0,0,0,.45)" });
   }
 
+  function drawBotBadge() {
+    if (!bot.on || state === OVER) return;
+    const pulse = 0.6 + 0.4 * Math.sin(performance.now() / 260);
+    const y = 30;
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = "rgba(20,32,22,.5)";
+    roundRect(W / 2 - 74, y - 15, 148, 24, 12);
+    ctx.fill();
+    ctx.globalAlpha = pulse;
+    ctx.fillStyle = "#69db7c";
+    ctx.beginPath();
+    ctx.arc(W / 2 - 58, y - 3, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    text("AUTOPILOT", W / 2 + 8, y + 2, 14, { color: "#c3fae8" });
+    ctx.restore();
+    text("tap to take over", W / 2, GROUND_Y - 14, 13, { lw: 4, stroke: "rgba(0,0,0,.45)", color: "rgba(255,255,255,.8)" });
+  }
+
   function drawReady() {
     const pulse = 0.5 + 0.5 * Math.sin(bobT * 3);
     text("FLAPPY", W / 2, 140, 46, { lw: 9, stroke: "rgba(0,0,0,.45)", color: "#fff" });
@@ -661,6 +764,7 @@
     text("to flap", W / 2, 414, 14, { lw: 4, stroke: "rgba(0,0,0,.4)", color: "rgba(255,255,255,.85)" });
 
     if (best > 0) text("BEST  " + best, W / 2, 462, 15, { lw: 4, stroke: "rgba(0,0,0,.4)", color: "rgba(255,255,255,.9)" });
+    if (!bot.on) text("B  —  watch the autopilot play", W / 2, 500, 13, { lw: 4, stroke: "rgba(0,0,0,.4)", color: "rgba(255,255,255,.7)" });
   }
 
   function medalFor(s) {
@@ -746,15 +850,20 @@
     text("BEST", rx, pyy + 122, 15, { align: "right", color: "#8a7444" });
     text(String(best), rx, pyy + 156, 34, { align: "right", color: "#e07a2a", lw: 4, stroke: "rgba(255,255,255,.9)" });
 
-    if (newBest) {
+    // A bot run never counts as a record, so it gets its own tag instead.
+    if (newBest || bot.playedThisRun) {
       ctx.save();
       ctx.translate(px + 46, pyy + 150);
       ctx.rotate(-0.14);
-      ctx.fillStyle = "#e5484d";
-      roundRect(-38, -13, 76, 26, 6);
+      ctx.fillStyle = bot.playedThisRun ? "#2f9e44" : "#e5484d";
+      roundRect(-42, -13, 84, 26, 6);
       ctx.fill();
-      text("NEW BEST!", 0, 5, 13, { color: "#fff" });
+      text(bot.playedThisRun ? "AUTOPILOT" : "NEW BEST!", 0, 5, 13, { color: "#fff" });
       ctx.restore();
+    }
+
+    if (bot.playedThisRun && botBest > 0) {
+      text("BOT BEST  " + botBest, W / 2, 432, 14, { lw: 4, stroke: "rgba(0,0,0,.5)", color: "rgba(255,255,255,.85)" });
     }
 
     if (overT > 0.65) {
@@ -781,6 +890,7 @@
     drawScore();
 
     if (state === READY) drawReady();
+    drawBotBadge();
     ctx.restore();
 
     if (state === OVER) drawGameOver();
