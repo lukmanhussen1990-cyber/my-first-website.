@@ -15,6 +15,18 @@ three-phase boss fight against the Cinder Warden.
 - **Desktop + Android.** Keyboard, gamepad and multi-touch controls; the on-screen pad's
   size and opacity are adjustable.
 - **Saves progress** to `localStorage` (unlocked levels, best scores, settings).
+- **Watch Bot Play** — a demo bot plays the game by itself, with its own music track.
+
+## Watch Bot Play
+
+Pick **WATCH BOT PLAY** from the main menu (or just leave the title screen alone
+for ~22 seconds) and a bot takes over: it reads the tile grid around Pip and
+plays on its own — running, jumping gaps, stomping enemies, swimming, waiting
+for moving platforms and throwing embers. Its own music track plays while it
+runs, replacing the chiptune score.
+
+Press any key or tap a control to take over instantly. The bot never triggers a
+game over and never writes to your save; it just cycles through the stages.
 
 ## Controls
 
