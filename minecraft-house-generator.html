@@ -1,0 +1,1390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beautiful Base — Minecraft Bedrock house generator</title>
+<style>
+/* ---------------------------------------------------------------
+   Tokens. Light palette on bare :root, redefined for the two dark
+   states so the un-stamped "system" viewer resolves correctly too.
+   --------------------------------------------------------------- */
+:root{
+  --bg:#e9e4d5;
+  --panel:#f7f4ea;
+  --panel-2:#efeadb;
+  --line:#cfc6ad;
+  --line-soft:#ded6c2;
+  --ink:#1d2216;
+  --ink-2:#4e5544;
+  --ink-3:#77806a;
+  --amber:#a35c07;
+  --amber-ink:#7d4604;
+  --amber-soft:#f3e2c2;
+  --moss:#3d7a30;
+  --moss-soft:#dfeacf;
+  --sky:#2f6ea8;
+  --shadow:rgba(40,34,18,.14);
+  --canvas-sky-a:#cfe0ec;
+  --canvas-sky-b:#eae4d2;
+  --btn-ink:#fff8ea;
+  --radius:4px;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#12160f;
+    --panel:#1a2016;
+    --panel-2:#212819;
+    --line:#333d29;
+    --line-soft:#28311f;
+    --ink:#eceedd;
+    --ink-2:#b3bba1;
+    --ink-3:#828b71;
+    --amber:#f0a63c;
+    --amber-ink:#f7c476;
+    --amber-soft:#33270f;
+    --moss:#7cc45f;
+    --moss-soft:#1e2c17;
+    --sky:#78b4e8;
+    --shadow:rgba(0,0,0,.45);
+    --canvas-sky-a:#1d2a33;
+    --canvas-sky-b:#161c14;
+    --btn-ink:#16190f;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12160f;
+  --panel:#1a2016;
+  --panel-2:#212819;
+  --line:#333d29;
+  --line-soft:#28311f;
+  --ink:#eceedd;
+  --ink-2:#b3bba1;
+  --ink-3:#828b71;
+  --amber:#f0a63c;
+  --amber-ink:#f7c476;
+  --amber-soft:#33270f;
+  --moss:#7cc45f;
+  --moss-soft:#1e2c17;
+  --sky:#78b4e8;
+  --shadow:rgba(0,0,0,.45);
+  --canvas-sky-a:#1d2a33;
+  --canvas-sky-b:#161c14;
+  --btn-ink:#16190f;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.6;
+}
+.wrap{max-width:1160px;margin:0 auto;padding:20px 16px 72px}
+
+/* --- masthead ------------------------------------------------- */
+.masthead{padding:12px 0 22px}
+.eyebrow{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--ink-3);
+  margin:0 0 10px;
+}
+h1{
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:clamp(28px,7.5vw,52px);
+  line-height:1.05;
+  letter-spacing:.02em;
+  margin:0;
+  text-wrap:balance;
+  text-shadow:3px 3px 0 var(--shadow);
+}
+h1 .amber{color:var(--amber)}
+.tagline{
+  margin:14px 0 0;
+  max-width:62ch;
+  color:var(--ink-2);
+  font-size:clamp(15px,3.6vw,18px);
+}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.badge{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  padding:5px 9px;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  background:var(--panel);
+  color:var(--ink-2);
+}
+
+/* --- layout --------------------------------------------------- */
+.cols{display:flex;flex-direction:column;gap:20px}
+@media (min-width:940px){
+  .cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr);align-items:start;gap:24px}
+  .stage-col{position:sticky;top:20px}
+}
+
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:0 2px 0 var(--line-soft);
+}
+.panel-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 14px;
+  border-bottom:1px solid var(--line);
+  background:var(--panel-2);
+  border-radius:var(--radius) var(--radius) 0 0;
+}
+.panel-head h2{
+  font-family:var(--mono);
+  font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  margin:0;color:var(--ink-2);font-weight:700;
+}
+.panel-body{padding:14px}
+
+/* --- stage ---------------------------------------------------- */
+.stage{
+  position:relative;
+  background:linear-gradient(180deg,var(--canvas-sky-a),var(--canvas-sky-b));
+  border-bottom:1px solid var(--line);
+  overflow:hidden;
+}
+canvas#view{display:block;width:100%;height:auto;touch-action:pan-y}
+.stage-hud{
+  position:absolute;left:10px;top:10px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+  color:var(--ink-2);background:color-mix(in srgb,var(--panel) 82%,transparent);
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:4px 8px;pointer-events:none;
+}
+.stage-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 14px}
+.slider-row{display:flex;align-items:center;gap:10px;flex:1 1 220px;min-width:200px}
+.slider-row label{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);white-space:nowrap;
+}
+input[type=range]{flex:1;accent-color:var(--amber);min-width:90px}
+
+/* --- controls ------------------------------------------------- */
+.field{margin-bottom:18px}
+.field:last-child{margin-bottom:0}
+.field > legend,.field-label{
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding:0;margin:0 0 8px;display:block;
+}
+fieldset{border:0;padding:0;margin:0 0 18px}
+fieldset:last-of-type{margin-bottom:0}
+
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px}
+.choice{position:relative}
+.choice input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.choice span{
+  display:block;padding:10px 8px;text-align:center;
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--panel-2);color:var(--ink-2);
+  font-size:13px;line-height:1.3;
+  transition:background .12s ease,border-color .12s ease,color .12s ease;
+}
+.choice span small{display:block;font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.06em;margin-top:3px}
+.choice input:checked + span{
+  background:var(--amber-soft);border-color:var(--amber);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--amber);
+}
+.choice input:focus-visible + span{outline:2px solid var(--sky);outline-offset:2px}
+.choice input:checked + span small{color:var(--amber-ink)}
+
+.toggles{display:flex;flex-direction:column;gap:2px}
+.toggle{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 6px;border-radius:var(--radius);cursor:pointer;
+}
+.toggle:hover{background:var(--panel-2)}
+.toggle input{width:18px;height:18px;accent-color:var(--moss);flex:none;cursor:pointer}
+.toggle span{font-size:14px;color:var(--ink-2)}
+.toggle input:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+
+/* --- stats ---------------------------------------------------- */
+.stats{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  border-top:1px solid var(--line);
+}
+.stat{padding:12px 14px;border-right:1px solid var(--line-soft)}
+.stat:last-child{border-right:0}
+.stat b{
+  display:block;font-family:var(--mono);font-size:19px;font-weight:700;
+  color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:.01em;
+}
+.stat small{
+  display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);margin-top:2px;
+}
+
+/* --- buttons -------------------------------------------------- */
+.btn{
+  display:block;width:100%;text-align:center;
+  font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:.06em;
+  padding:15px 16px;border-radius:var(--radius);cursor:pointer;
+  border:1px solid var(--amber);
+  background:var(--amber);color:var(--btn-ink);
+  box-shadow:0 3px 0 color-mix(in srgb,var(--amber) 62%,#000);
+  transition:transform .08s ease,box-shadow .08s ease;
+}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 color-mix(in srgb,var(--amber) 62%,#000)}
+.btn:focus-visible{outline:2px solid var(--sky);outline-offset:3px}
+.btn.ghost{
+  background:var(--panel-2);color:var(--ink-2);border-color:var(--line);
+  box-shadow:0 2px 0 var(--line-soft);font-size:13px;padding:11px 14px;font-weight:400;
+}
+.btn-row{display:flex;gap:8px;margin-top:10px}
+.btn-row .btn.ghost{flex:1}
+.hint{margin:10px 0 0;font-size:12.5px;color:var(--ink-3);text-align:center}
+
+/* --- steps ---------------------------------------------------- */
+.steps{list-style:none;counter-reset:step;margin:0;padding:0}
+.steps li{
+  counter-increment:step;
+  display:grid;grid-template-columns:30px 1fr;gap:12px;
+  padding:11px 0;border-bottom:1px dashed var(--line-soft);
+  font-size:14.5px;color:var(--ink-2);
+}
+.steps li:last-child{border-bottom:0}
+.steps li::before{
+  content:counter(step,decimal-leading-zero);
+  font-family:var(--mono);font-size:12px;font-weight:700;
+  color:var(--amber);padding-top:2px;
+}
+.steps b{color:var(--ink);font-weight:600}
+code{
+  font-family:var(--mono);font-size:.9em;
+  background:var(--panel-2);border:1px solid var(--line-soft);
+  border-radius:3px;padding:1px 5px;color:var(--amber-ink);
+  overflow-wrap:anywhere;
+}
+
+/* --- details / command dump ----------------------------------- */
+details{border-top:1px solid var(--line);}
+details summary{
+  padding:12px 14px;cursor:pointer;
+  font-family:var(--mono);font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-2);
+}
+details summary:focus-visible{outline:2px solid var(--sky);outline-offset:-2px}
+pre#cmds{
+  margin:0;padding:12px 14px;max-height:280px;overflow:auto;
+  font-family:var(--mono);font-size:11.5px;line-height:1.55;
+  color:var(--ink-2);background:var(--panel-2);
+  border-top:1px solid var(--line-soft);
+  white-space:pre;
+}
+.note{
+  font-size:13px;color:var(--ink-3);margin:0;
+  padding:12px 14px;border-top:1px solid var(--line-soft);
+}
+.note strong{color:var(--ink-2)}
+
+footer{
+  margin-top:28px;padding-top:18px;border-top:1px solid var(--line);
+  font-size:12.5px;color:var(--ink-3);
+}
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);
+  background:var(--ink);color:var(--bg);
+  font-family:var(--mono);font-size:13px;
+  padding:10px 16px;border-radius:var(--radius);
+  opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;
+  z-index:20;max-width:90vw;text-align:center;
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Bedrock add-on generator · Pocket / mobile edition</p>
+    <h1>Beautiful <span class="amber">Base</span></h1>
+    <p class="tagline">Design a furnished survival house here, then download it as a real Minecraft add-on. Import it on your phone, run one command, and the whole build drops into your world — walls, roof, beds, storage, lighting and garden included.</p>
+    <div class="badges">
+      <span class="badge">Bedrock 1.21</span>
+      <span class="badge">.mcpack export</span>
+      <span class="badge">No PC needed</span>
+    </div>
+  </header>
+
+  <div class="cols">
+
+    <!-- ============ LEFT: preview stage ============ -->
+    <div class="stage-col">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Preview</h2>
+          <span class="badge" id="themeName">Oakwood Cottage</span>
+        </div>
+        <div class="stage">
+          <div class="stage-hud" id="hud">—</div>
+          <canvas id="view" width="900" height="600" role="img" aria-label="Isometric preview of the generated house"></canvas>
+        </div>
+        <div class="stage-tools">
+          <button class="btn ghost" id="rotate" style="flex:0 0 auto;width:auto" type="button">Rotate ⟳</button>
+          <div class="slider-row">
+            <label for="cut">Cutaway</label>
+            <input type="range" id="cut" min="0" max="20" value="20">
+          </div>
+        </div>
+        <div class="stats">
+          <div class="stat"><b id="sBlocks">0</b><small>Blocks</small></div>
+          <div class="stat"><b id="sCmds">0</b><small>Commands</small></div>
+          <div class="stat"><b id="sSize">0×0</b><small>Footprint</small></div>
+        </div>
+      </section>
+      <p class="hint">Drag the cutaway slider down to peel off the roof and look inside.</p>
+    </div>
+
+    <!-- ============ RIGHT: controls ============ -->
+    <div>
+      <section class="panel">
+        <div class="panel-head"><h2>Design</h2></div>
+        <div class="panel-body">
+
+          <fieldset class="field">
+            <legend>Style</legend>
+            <div class="choices" id="themeChoices">
+              <label class="choice"><input type="radio" name="theme" value="oak" checked><span>Oakwood<small>Cottage</small></span></label>
+              <label class="choice"><input type="radio" name="theme" value="stone"><span>Stonebrick<small>Manor</small></span></label>
+              <label class="choice"><input type="radio" name="theme" value="dark"><span>Darkwood<small>Lodge</small></span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="field">
+            <legend>Size</legend>
+            <div class="choices" id="sizeChoices">
+              <label class="choice"><input type="radio" name="size" value="cozy"><span>Cozy<small>11×9 · 1 floor</small></span></label>
+              <label class="choice"><input type="radio" name="size" value="standard" checked><span>Standard<small>13×11 · 2 floors</small></span></label>
+              <label class="choice"><input type="radio" name="size" value="grand"><span>Grand<small>17×13 · 2 floors</small></span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="field">
+            <legend>Include</legend>
+            <div class="toggles">
+              <label class="toggle"><input type="checkbox" id="optFurnish" checked><span>Furniture &amp; storage — beds, chests, furnaces, enchanting table</span></label>
+              <label class="toggle"><input type="checkbox" id="optLights" checked><span>Lanterns inside and under the eaves</span></label>
+              <label class="toggle"><input type="checkbox" id="optFarm" checked><span>Wheat &amp; carrot farm with a water channel</span></label>
+              <label class="toggle"><input type="checkbox" id="optYard" checked><span>Fenced garden, path and flowers</span></label>
+              <label class="toggle"><input type="checkbox" id="optChimney" checked><span>Chimney with a lit campfire</span></label>
+              <label class="toggle"><input type="checkbox" id="optClear" checked><span>Clear trees and terrain in the build area</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="field">
+            <legend>Block names</legend>
+            <div class="choices" id="idChoices">
+              <label class="choice"><input type="radio" name="ids" value="modern" checked><span>1.21+<small>Recommended</small></span></label>
+              <label class="choice"><input type="radio" name="ids" value="legacy"><span>1.20 &amp; older<small>Legacy IDs</small></span></label>
+            </div>
+          </fieldset>
+
+        </div>
+        <div class="panel-body" style="border-top:1px solid var(--line)">
+          <button class="btn" id="download" type="button">Download add-on (.mcpack)</button>
+          <div class="btn-row">
+            <button class="btn ghost" id="dlFunc" type="button">.mcfunction only</button>
+            <button class="btn ghost" id="copy" type="button">Copy commands</button>
+          </div>
+          <p class="hint">Tap the downloaded file to import it straight into Minecraft.</p>
+        </div>
+        <details>
+          <summary>See the generated commands</summary>
+          <pre id="cmds">—</pre>
+        </details>
+      </section>
+
+      <section class="panel" style="margin-top:20px">
+        <div class="panel-head"><h2>Install on your phone</h2></div>
+        <div class="panel-body">
+          <ol class="steps">
+            <li><b>Download the .mcpack</b> with the button above. Chrome may warn about the file type — choose <em>Download anyway</em>.</li>
+            <li><b>Tap the file</b> in your notification shade or Downloads folder. Minecraft opens and shows <em>Import started</em>, then <em>Successfully imported</em>.</li>
+            <li><b>Create or edit a world.</b> In world settings turn on <b>Activate Cheats</b> — commands will not run without it.</li>
+            <li><b>Behavior Packs → Beautiful Base → Activate.</b> If it asks about experimental features, you can say no; this pack does not need them.</li>
+            <li><b>Enter the world</b>, stand on flat ground facing the way you want the front door to face, and open the chat.</li>
+            <li>Run <code>/function beautiful_base</code>. The house builds in front of you instantly.</li>
+            <li>Changed your mind? Stand on the same spot and run <code>/function clear_base</code> to erase it.</li>
+          </ol>
+        </div>
+        <p class="note"><strong>Heads up:</strong> the build is placed a few blocks north of where you stand and always faces the same way — Minecraft functions ignore which direction you are looking. Flat ground gives the best result.</p>
+      </section>
+
+      <footer>
+        Every block you see in the preview is exactly what the add-on places. Made for Bedrock Edition on Android, iOS, Windows and console.
+      </footer>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+
+/* ==================================================================
+   1. Block model
+   A block is {id, states, color, alpha, pass}. `pass` orders the
+   generated commands so supports exist before the things that hang
+   off them (torches, beds, crops).
+   ================================================================== */
+
+function blk(id, opts){
+  opts = opts || {};
+  return {
+    id: id,
+    states: opts.states || null,
+    color: opts.color || "#8a8a8a",
+    alpha: opts.alpha === undefined ? 1 : opts.alpha,
+    pass: opts.pass || 0
+  };
+}
+
+/* Blocks whose IDs changed in the 1.21 flattening. When the player
+   picks "legacy", we swap the ID and merge in the old data states. */
+const LEGACY = {
+  "minecraft:oak_slab":            ["minecraft:wooden_slab", {wood_type:"oak"}],
+  "minecraft:spruce_slab":         ["minecraft:wooden_slab", {wood_type:"spruce"}],
+  "minecraft:dark_oak_slab":       ["minecraft:wooden_slab", {wood_type:"dark_oak"}],
+  "minecraft:oak_fence":           ["minecraft:fence", {wood_type:"oak"}],
+  "minecraft:spruce_fence":        ["minecraft:fence", {wood_type:"spruce"}],
+  "minecraft:dark_oak_fence":      ["minecraft:fence", {wood_type:"dark_oak"}],
+  "minecraft:stone_bricks":        ["minecraft:stonebrick", {stone_brick_type:"default"}],
+  "minecraft:mossy_stone_bricks":  ["minecraft:stonebrick", {stone_brick_type:"mossy"}],
+  "minecraft:chiseled_stone_bricks":["minecraft:stonebrick", {stone_brick_type:"chiseled"}],
+  "minecraft:stone_brick_slab":    ["minecraft:stone_block_slab", {stone_slab_type:"stone_brick"}],
+  "minecraft:cobblestone_slab":    ["minecraft:stone_block_slab", {stone_slab_type:"cobblestone"}],
+  "minecraft:polished_andesite":   ["minecraft:stone", {stone_type:"andesite_smooth"}],
+  "minecraft:white_wool":          ["minecraft:wool", {color:"white"}],
+  "minecraft:red_carpet":          ["minecraft:carpet", {color:"red"}],
+  "minecraft:brown_carpet":        ["minecraft:carpet", {color:"brown"}],
+  "minecraft:poppy":               ["minecraft:red_flower", {flower_type:"poppy"}],
+  "minecraft:dandelion":           ["minecraft:yellow_flower", {}],
+  "minecraft:dirt_path":           ["minecraft:grass_path", {}],
+  "minecraft:oak_pressure_plate":  ["minecraft:wooden_pressure_plate", {}],
+  "minecraft:oak_trapdoor":        ["minecraft:trapdoor", {}]
+};
+
+/* Shared palette ------------------------------------------------- */
+const C = {
+  oak:"#b8945f", spruce:"#7a5c39", darkoak:"#4d3218", birch:"#d7c98d",
+  stonebrick:"#7e7e7e", mossy:"#6d7a61", cobble:"#7a7a7a",
+  oaklog:"#8a6b3f", sprucelog:"#4f3a22", darklog:"#3b2a17", stripped:"#c2a06a",
+  glass:"#bfe0ec", grass:"#6aa84f", dirt:"#8b6141", farm:"#66452c",
+  water:"#3c6fd4", wheat:"#cbb547", carrot:"#3f8a2f",
+  lantern:"#f0b34a", torch:"#ffcf6b", bed:"#c23b3b", shelf:"#a1804f",
+  craft:"#a97f4d", furnace:"#6e6e6e", chest:"#a06a30", barrel:"#8a6a3c",
+  campfire:"#d3792a", anvil:"#4a4a4a", ench:"#7b4a6c", brew:"#8d8d8d",
+  wool:"#e9ecec", carpet:"#a63d3d", path:"#9a8058", door:"#8b6b3d",
+  fence:"#a1794b", flowerR:"#d3453f", flowerY:"#f0d94a", glow:"#f6d68a"
+};
+
+/* Stair ascent direction (Bedrock "weirdo_direction"). */
+const ASC = {east:0, west:1, south:2, north:3};
+/* Block facing (Bedrock "facing_direction"): the side the front shows. */
+const FACE = {down:0, up:1, north:2, south:3, west:4, east:5};
+
+/* Style presets --------------------------------------------------- */
+const THEMES = {
+  oak: {
+    label:"Oakwood Cottage",
+    wall:      blk("minecraft:oak_planks",   {color:C.oak}),
+    floor:     blk("minecraft:spruce_planks",{color:C.spruce}),
+    upper:     blk("minecraft:oak_planks",   {color:C.oak}),
+    pillar:    blk("minecraft:spruce_log",   {states:{pillar_axis:"y"}, color:C.sprucelog}),
+    beamX:     blk("minecraft:spruce_log",   {states:{pillar_axis:"x"}, color:C.sprucelog}),
+    beamZ:     blk("minecraft:spruce_log",   {states:{pillar_axis:"z"}, color:C.sprucelog}),
+    base:      blk("minecraft:cobblestone",  {color:C.cobble}),
+    baseTrim:  blk("minecraft:mossy_stone_bricks",{color:C.mossy}),
+    roofId:    "minecraft:dark_oak_stairs",  roofColor:C.darkoak,
+    ridge:     blk("minecraft:dark_oak_slab",{color:C.darkoak}),
+    fence:     blk("minecraft:oak_fence",    {color:C.fence}),
+    door:      "minecraft:oak_door",
+    stairId:   "minecraft:oak_stairs",       stairColor:C.oak,
+    chimney:   blk("minecraft:cobblestone",  {color:C.cobble})
+  },
+  stone: {
+    label:"Stonebrick Manor",
+    wall:      blk("minecraft:stone_bricks", {color:C.stonebrick}),
+    floor:     blk("minecraft:dark_oak_planks",{color:C.darkoak}),
+    upper:     blk("minecraft:oak_planks",   {color:C.oak}),
+    pillar:    blk("minecraft:stripped_oak_log",{states:{pillar_axis:"y"}, color:C.stripped}),
+    beamX:     blk("minecraft:stripped_oak_log",{states:{pillar_axis:"x"}, color:C.stripped}),
+    beamZ:     blk("minecraft:stripped_oak_log",{states:{pillar_axis:"z"}, color:C.stripped}),
+    base:      blk("minecraft:cobblestone",  {color:C.cobble}),
+    baseTrim:  blk("minecraft:mossy_stone_bricks",{color:C.mossy}),
+    roofId:    "minecraft:dark_oak_stairs",  roofColor:C.darkoak,
+    ridge:     blk("minecraft:dark_oak_slab",{color:C.darkoak}),
+    fence:     blk("minecraft:oak_fence",    {color:C.fence}),
+    door:      "minecraft:oak_door",
+    stairId:   "minecraft:stone_brick_stairs",stairColor:C.stonebrick,
+    chimney:   blk("minecraft:stone_bricks", {color:C.stonebrick})
+  },
+  dark: {
+    label:"Darkwood Lodge",
+    wall:      blk("minecraft:dark_oak_planks",{color:C.darkoak}),
+    floor:     blk("minecraft:spruce_planks",{color:C.spruce}),
+    upper:     blk("minecraft:spruce_planks",{color:C.spruce}),
+    pillar:    blk("minecraft:dark_oak_log", {states:{pillar_axis:"y"}, color:C.darklog}),
+    beamX:     blk("minecraft:dark_oak_log", {states:{pillar_axis:"x"}, color:C.darklog}),
+    beamZ:     blk("minecraft:dark_oak_log", {states:{pillar_axis:"z"}, color:C.darklog}),
+    base:      blk("minecraft:cobblestone",  {color:C.cobble}),
+    baseTrim:  blk("minecraft:mossy_stone_bricks",{color:C.mossy}),
+    roofId:    "minecraft:spruce_stairs",    roofColor:C.spruce,
+    ridge:     blk("minecraft:spruce_slab",  {color:C.spruce}),
+    fence:     blk("minecraft:spruce_fence", {color:C.sprucelog}),
+    door:      "minecraft:spruce_door",
+    stairId:   "minecraft:spruce_stairs",    stairColor:C.spruce,
+    chimney:   blk("minecraft:cobblestone",  {color:C.cobble})
+  }
+};
+
+/* Shared furnishing blocks --------------------------------------- */
+const G = {
+  pane:    blk("minecraft:glass_pane", {color:C.glass, alpha:.4}),
+  glass:   blk("minecraft:glass",      {color:C.glass, alpha:.35}),
+  grass:   blk("minecraft:grass_block",{color:C.grass}),
+  dirt:    blk("minecraft:dirt",       {color:C.dirt}),
+  path:    blk("minecraft:dirt_path",  {color:C.path}),
+  farmland:blk("minecraft:farmland",   {states:{moisturized_amount:7}, color:C.farm}),
+  water:   blk("minecraft:water",      {states:{liquid_depth:0}, color:C.water, alpha:.75}),
+  wheat:   blk("minecraft:wheat",      {states:{growth:7}, color:C.wheat, pass:2}),
+  carrots: blk("minecraft:carrots",    {states:{growth:7}, color:C.carrot, pass:2}),
+  bookshelf:blk("minecraft:bookshelf", {color:C.shelf}),
+  craft:   blk("minecraft:crafting_table",{color:C.craft}),
+  ench:    blk("minecraft:enchanting_table",{color:C.ench, pass:1}),
+  brew:    blk("minecraft:brewing_stand",{color:C.brew, pass:1}),
+  anvil:   blk("minecraft:anvil",      {color:C.anvil, pass:1}),
+  campfire:blk("minecraft:campfire",   {color:C.campfire, pass:1}),
+  glow:    blk("minecraft:glowstone",  {color:C.glow}),
+  carpet:  blk("minecraft:red_carpet", {color:C.carpet, pass:1}),
+  poppy:   blk("minecraft:poppy",      {color:C.flowerR, pass:2}),
+  dandy:   blk("minecraft:dandelion",  {color:C.flowerY, pass:2}),
+  lanternF:blk("minecraft:lantern",    {states:{hanging:false}, color:C.lantern, pass:1}),
+  lanternH:blk("minecraft:lantern",    {states:{hanging:true},  color:C.lantern, pass:1})
+};
+
+function chest(face){ return blk("minecraft:chest",  {states:{facing_direction:face}, color:C.chest, pass:1}); }
+function barrel(face){return blk("minecraft:barrel", {states:{facing_direction:face}, color:C.barrel, pass:1}); }
+function furnace(id,face){ return blk(id, {states:{facing_direction:face}, color:C.furnace, pass:1}); }
+function stair(id,color,dir,upside){
+  return blk(id, {states:{weirdo_direction:dir, upside_down_bit:!!upside}, color:color});
+}
+function bedPart(dir,head){
+  return blk("minecraft:bed", {states:{direction:dir, head_piece_bit:head, occupied_bit:false}, color:C.bed, pass:1});
+}
+function doorPart(id,dir,upper){
+  return blk(id, {
+    states:{direction:dir, door_hinge_bit:false, open_bit:false, upper_block_bit:upper},
+    color:C.door, pass:1
+  });
+}
+
+/* ==================================================================
+   2. The build volume
+   ================================================================== */
+
+class Build{
+  constructor(){ this.m = new Map(); }
+  key(x,y,z){ return x+","+y+","+z; }
+  set(x,y,z,b){
+    if(!b){ this.m.delete(this.key(x,y,z)); return; }
+    this.m.set(this.key(x,y,z), {x:x,y:y,z:z,b:b});
+  }
+  air(x,y,z){ this.m.delete(this.key(x,y,z)); }
+  has(x,y,z){ return this.m.has(this.key(x,y,z)); }
+  box(x1,y1,z1,x2,y2,z2,b){
+    for(let y=Math.min(y1,y2); y<=Math.max(y1,y2); y++)
+      for(let z=Math.min(z1,z2); z<=Math.max(z1,z2); z++)
+        for(let x=Math.min(x1,x2); x<=Math.max(x1,x2); x++)
+          this.set(x,y,z,b);
+  }
+  /* hollow rectangle wall, corners included */
+  ring(x1,z1,x2,z2,y1,y2,b){
+    for(let y=y1;y<=y2;y++){
+      for(let x=x1;x<=x2;x++){ this.set(x,y,z1,b); this.set(x,y,z2,b); }
+      for(let z=z1;z<=z2;z++){ this.set(x1,y,z,b); this.set(x2,y,z,b); }
+    }
+  }
+  bounds(){
+    let b={x1:1e9,y1:1e9,z1:1e9,x2:-1e9,y2:-1e9,z2:-1e9};
+    this.m.forEach(function(v){
+      if(v.x<b.x1)b.x1=v.x; if(v.x>b.x2)b.x2=v.x;
+      if(v.y<b.y1)b.y1=v.y; if(v.y>b.y2)b.y2=v.y;
+      if(v.z<b.z1)b.z1=v.z; if(v.z>b.z2)b.z2=v.z;
+    });
+    return b;
+  }
+}
+
+/* ==================================================================
+   3. The house
+   Local axes: x = width (left→right), z = depth (front→back, the
+   front door is on the z = 0 wall), y = up, y = 0 is the floor slab.
+   ================================================================== */
+
+const SIZES = {
+  cozy:     {w:11, d:9,  floors:1},
+  standard: {w:13, d:11, floors:2},
+  grand:    {w:17, d:13, floors:2}
+};
+
+const WALL_H = 4;   // wall blocks per storey
+
+function buildHouse(o){
+  const S = SIZES[o.size];
+  const T = THEMES[o.theme];
+  const w = S.w, d = S.d, floors = S.floors;
+  const cx = (w-1) >> 1;
+  const B = new Build();
+
+  /* ---- plinth and ground floor slab --------------------------- */
+  B.box(-1,-2,-1, w,-1, d, T.base);
+  B.ring(-1,-1, w, d, -1,-1, T.baseTrim);
+  B.box(0,0,0, w-1,0, d-1, T.floor);
+  B.ring(0,0, w-1, d-1, 0,0, T.baseTrim);
+
+  const ceilings = [];        // y of each ceiling slab
+  for(let f=0; f<floors; f++){
+    const y0 = 1 + f*(WALL_H+1);
+    const yTop = y0 + WALL_H - 1;
+    const yc = y0 + WALL_H;
+    ceilings.push(yc);
+
+    /* walls */
+    B.ring(0,0, w-1, d-1, y0, yTop, T.wall);
+
+    /* corner posts + top plate beams give the timbered look */
+    for(let y=y0; y<=yTop; y++){
+      B.set(0,y,0,T.pillar); B.set(w-1,y,0,T.pillar);
+      B.set(0,y,d-1,T.pillar); B.set(w-1,y,d-1,T.pillar);
+    }
+    for(let x=1; x<w-1; x++){ B.set(x,yTop,0,T.beamX); B.set(x,yTop,d-1,T.beamX); }
+    for(let z=1; z<d-1; z++){ B.set(0,yTop,z,T.beamZ); B.set(w-1,yTop,z,T.beamZ); }
+
+    /* windows: 1 wide, 2 tall, evenly spaced between the posts */
+    const wy1 = y0+1, wy2 = y0+2;
+    for(let x=2; x<=w-3; x+=2){
+      const doorway = (f===0 && Math.abs(x-cx) <= 1);
+      if(!doorway){ B.set(x,wy1,0,G.pane); B.set(x,wy2,0,G.pane); }
+      B.set(x,wy1,d-1,G.pane); B.set(x,wy2,d-1,G.pane);
+    }
+    for(let z=2; z<=d-3; z+=2){
+      B.set(0,wy1,z,G.pane);   B.set(0,wy2,z,G.pane);
+      B.set(w-1,wy1,z,G.pane); B.set(w-1,wy2,z,G.pane);
+    }
+
+    /* ceiling / next floor */
+    B.box(0,yc,0, w-1,yc, d-1, f===0 ? T.upper : T.upper);
+  }
+
+  /* ---- front door --------------------------------------------- */
+  B.set(cx,1,0, doorPart(T.door, 3, false));
+  B.set(cx,2,0, doorPart(T.door, 3, true));
+  B.set(cx-1,1,0,T.pillar); B.set(cx+1,1,0,T.pillar);
+  B.set(cx-1,2,0,T.pillar); B.set(cx+1,2,0,T.pillar);
+
+  /* ---- staircase to the upper floor ---------------------------- */
+  if(floors > 1){
+    const yc = ceilings[0];
+    for(let i=0; i<=WALL_H; i++){          // 5 steps: y 1..5, z 1..5
+      B.set(1, 1+i, 1+i, stair(T.stairId, T.stairColor, ASC.south, false));
+    }
+    for(let z=1; z<=WALL_H; z++) B.air(1, yc, z);   // stairwell opening
+    B.air(2, yc, WALL_H);
+    /* railing around the hole */
+    B.set(2, yc+1, 1, T.fence); B.set(2, yc+1, 2, T.fence); B.set(2, yc+1, 3, T.fence);
+  }
+
+  /* ---- roof ---------------------------------------------------- */
+  const roofBase = ceilings[ceilings.length-1] + 1;
+  const zA = -1, zB = d;                    // 1-block eave overhang
+  const layers = Math.ceil((zB - zA + 1) / 2);
+  for(let i=0; i<layers; i++){
+    const y = roofBase + i;
+    const zl = zA + i, zr = zB - i;
+    if(zl > zr) break;
+    if(zl === zr){                          // single ridge row
+      for(let x=-1; x<=w; x++) B.set(x,y,zl,T.ridge);
+    }else{
+      for(let x=-1; x<=w; x++){
+        B.set(x,y,zl, stair(T.roofId, T.roofColor, ASC.south, false));
+        B.set(x,y,zr, stair(T.roofId, T.roofColor, ASC.north, false));
+      }
+      if(zl+1 === zr){                      // even span: cap the seam
+        for(let x=-1; x<=w; x++){ /* the two stairs already meet */ }
+      }
+      /* gable end walls close the triangle */
+      for(let z=zl+1; z<=zr-1; z++){
+        B.set(0,y,z,T.wall); B.set(w-1,y,z,T.wall);
+      }
+    }
+  }
+
+  /* ---- chimney ------------------------------------------------- */
+  if(o.chimney){
+    const chx = w-2, chz = d-2;
+    const top = roofBase + layers + 1;
+    for(let y=1; y<=top; y++) B.set(chx,y,chz,T.chimney);
+    B.set(chx, top+1, chz, G.campfire);
+  }
+
+  /* ---- porch --------------------------------------------------- */
+  B.box(cx-2,0,-2, cx+2,0,-1, T.baseTrim);
+  B.box(cx-2,-1,-2, cx+2,-1,-1, T.base);
+  B.set(cx-2,1,-2,T.fence); B.set(cx-2,2,-2,T.fence);
+  B.set(cx+2,1,-2,T.fence); B.set(cx+2,2,-2,T.fence);
+  for(let x=cx-2; x<=cx+2; x++){
+    B.set(x, 0, -3, stair(T.stairId, T.stairColor, ASC.south, false));
+  }
+  if(o.lights){
+    B.set(cx-2,3,-2,G.lanternF); B.set(cx+2,3,-2,G.lanternF);
+  }
+
+  if(o.furnish) furnish(B, o, T, w, d, floors, cx, ceilings);
+  if(o.lights)  addLights(B, o, T, w, d, floors, cx, ceilings, roofBase);
+  if(o.yard)    addYard(B, o, T, w, d, cx);
+  if(o.farm)    addFarm(B, o, T, w, d);
+
+  return B;
+}
+
+/* ---- interiors --------------------------------------------------- */
+function furnish(B,o,T,w,d,floors,cx,ceilings){
+  const back = d-2;
+
+  /* --- ground floor: kitchen + storage along the back wall ------ */
+  B.set(w-3,1,back, furnace("minecraft:furnace", FACE.north));
+  B.set(w-4,1,back, furnace("minecraft:smoker", FACE.north));
+  B.set(w-5,1,back, furnace("minecraft:blast_furnace", FACE.north));
+  B.set(2,1,back, G.craft);
+  B.set(3,1,back, chest(FACE.north));
+  B.set(4,1,back, chest(FACE.north));
+  B.set(5,1,back, barrel(FACE.up));
+
+  /* dining nook: a fence post table with a pressure plate top */
+  const tx = cx, tz = 2;
+  B.set(tx,1,tz, T.fence);
+  B.set(tx,2,tz, blk("minecraft:oak_pressure_plate",{color:C.oak, pass:1}));
+  B.set(tx-1,1,tz, stair(T.stairId,T.stairColor,ASC.east,false));
+  B.set(tx+1,1,tz, stair(T.stairId,T.stairColor,ASC.west,false));
+
+  /* runner carpet from the door inward */
+  for(let z=1; z<=d-3; z++) B.set(cx,1,z,G.carpet);
+
+  if(floors > 1){
+    /* --- upper floor: bedroom, library, brewing corner --------- */
+    const y = ceilings[0] + 1;               // standing level upstairs
+    B.set(w-3,y,1, bedPart(0,false));
+    B.set(w-3,y,2, bedPart(0,true));
+    B.set(w-4,y,1, chest(FACE.south));
+
+    for(let x=3; x<=w-4; x++){
+      B.set(x,y,d-2,G.bookshelf);
+      B.set(x,y+1,d-2,G.bookshelf);
+    }
+    B.set(cx,y,d-3, G.ench);
+    B.set(cx-2,y,d-3, G.brew);
+    B.set(cx+2,y,d-3, G.anvil);
+    B.set(cx,y+1,d-3, null);
+    for(let z=1; z<=2; z++) B.set(cx,y,z,G.carpet);
+  }else{
+    /* cozy: everything lives on one floor */
+    const y = 1;
+    B.set(2,y,1, bedPart(0,false));
+    B.set(2,y,2, bedPart(0,true));
+    B.set(1,y,4,G.bookshelf); B.set(1,y+1,4,G.bookshelf);
+    B.set(1,y,5,G.bookshelf); B.set(1,y+1,5,G.bookshelf);
+    B.set(w-2,y,1,G.ench);
+    B.set(w-2,y,3,G.brew);
+  }
+}
+
+/* ---- lighting ---------------------------------------------------- */
+function addLights(B,o,T,w,d,floors,cx,ceilings,roofBase){
+  ceilings.forEach(function(yc,i){
+    const y = yc-1;
+    const xs = [2, cx, w-3];
+    const zs = [2, d-3];
+    xs.forEach(function(x){ zs.forEach(function(z){
+      if(!B.has(x,y,z)) B.set(x,y,z,G.lanternH);
+    });});
+  });
+  /* lanterns under the eaves, front and back */
+  for(let x=1; x<w-1; x+=4){
+    B.set(x, roofBase-1, -1, G.lanternH);
+    B.set(x, roofBase-1, d, G.lanternH);
+  }
+}
+
+/* ---- garden, fence, path ----------------------------------------- */
+function addYard(B,o,T,w,d,cx){
+  const x1 = -8, x2 = w+5, z1 = -9, z2 = d+5;
+  /* Lawn. Never paint over something already built — the porch and its
+     steps sit inside this rectangle. */
+  for(let x=x1; x<=x2; x++) for(let z=z1; z<=z2; z++){
+    const insideHouse = (x>=-1 && x<=w && z>=-1 && z<=d);
+    if(insideHouse) continue;
+    if(!B.has(x,-1,z)) B.set(x,-1,z,G.dirt);
+    if(!B.has(x,0,z))  B.set(x,0,z,G.grass);
+  }
+  /* path from the porch steps out to the fence gate */
+  for(let z=-4; z>=z1+1; z--) for(let x=cx-1; x<=cx+1; x++) B.set(x,0,z,G.path);
+  /* perimeter fence with a gap where the path leaves */
+  for(let x=x1; x<=x2; x++){
+    if(!(x>=cx-1 && x<=cx+1)) B.set(x,1,z1,T.fence);
+    B.set(x,1,z2,T.fence);
+  }
+  for(let z=z1; z<=z2; z++){ B.set(x1,1,z,T.fence); B.set(x2,1,z,T.fence); }
+  /* lantern posts either side of the gate */
+  [cx-2, cx+2].forEach(function(x){
+    B.set(x,1,z1,T.fence); B.set(x,2,z1,T.fence); B.set(x,3,z1,G.lanternF);
+  });
+  /* scattered flowers */
+  const spots = [[-4,-3],[-3,-6],[-5,2],[w+2,-4],[w+3,1],[w+1,d+2],[-4,d+2],[-2,d+3]];
+  spots.forEach(function(p,i){
+    const x=p[0], z=p[1];
+    if(x>=x1 && x<=x2 && z>=z1 && z<=z2) B.set(x,1,z, i%2 ? G.poppy : G.dandy);
+  });
+}
+
+/* ---- crop farm ---------------------------------------------------- */
+function addFarm(B,o,T,w,d){
+  const fx = -7, fz = 1;                 // near corner of the plot
+  const fw = 5, fd = 7;
+
+  /* Lay ground under the plot *and* its border first, so the farm works
+     whether or not the garden was included and no fence post floats. */
+  for(let x=fx-1; x<=fx+fw; x++)
+    for(let z=fz-1; z<=fz+fd; z++){
+      if(!B.has(x,-1,z)) B.set(x,-1,z, G.dirt);
+      if(!B.has(x,0,z))  B.set(x,0,z, G.grass);
+    }
+
+  for(let x=fx; x<fx+fw; x++){
+    for(let z=fz; z<fz+fd; z++){
+      B.set(x,-1,z, G.dirt);
+      if(x === fx+2){                    // irrigation channel down the middle
+        B.set(x,0,z, G.water);
+        B.air(x,1,z);
+      }else{
+        B.set(x,0,z, G.farmland);
+        B.set(x,1,z, (x < fx+2) ? G.wheat : G.carrots);
+      }
+    }
+  }
+  /* a low fence so the crops do not get trampled */
+  for(let x=fx-1; x<=fx+fw; x++){ B.set(x,1,fz-1,T.fence); B.set(x,1,fz+fd,T.fence); }
+  for(let z=fz-1; z<=fz+fd; z++){ B.set(fx-1,1,z,T.fence); B.set(fx+fw,1,z,T.fence); }
+}
+
+/* ==================================================================
+   4. Blocks → commands
+   Identical blocks are merged into the largest boxes we can find so
+   the function stays a couple of hundred /fill lines, not thousands.
+   ================================================================== */
+
+function statesString(states, legacyMode){
+  if(!states) return "";
+  const keys = Object.keys(states);
+  if(!keys.length) return "";
+  const parts = keys.sort().map(function(k){
+    const v = states[k];
+    if(typeof v === "string") return '"'+k+'"="'+v+'"';
+    return '"'+k+'"='+v;
+  });
+  return " ["+parts.join(",")+"]";
+}
+
+function resolveBlock(b, legacyMode){
+  let id = b.id, states = b.states;
+  if(legacyMode && LEGACY[id]){
+    const L = LEGACY[id];
+    id = L[0];
+    states = Object.assign({}, L[1], states || {});
+  }
+  return {id:id, states:states};
+}
+
+function rel(n){ return n === 0 ? "~" : "~"+n; }
+
+function mergeBoxes(coords){
+  const present = new Set(), used = new Set();
+  const k = function(x,y,z){ return x+","+y+","+z; };
+  coords.forEach(function(c){ present.add(k(c[0],c[1],c[2])); });
+  coords.sort(function(a,b){ return (a[1]-b[1]) || (a[2]-b[2]) || (a[0]-b[0]); });
+
+  const boxes = [];
+  for(let n=0; n<coords.length; n++){
+    const x=coords[n][0], y=coords[n][1], z=coords[n][2];
+    if(used.has(k(x,y,z))) continue;
+
+    let x2 = x;
+    while(present.has(k(x2+1,y,z)) && !used.has(k(x2+1,y,z))) x2++;
+
+    let z2 = z;
+    growZ: while(true){
+      const nz = z2+1;
+      for(let i=x; i<=x2; i++){
+        if(!present.has(k(i,y,nz)) || used.has(k(i,y,nz))) break growZ;
+      }
+      z2 = nz;
+    }
+
+    let y2 = y;
+    growY: while(true){
+      const ny = y2+1;
+      for(let i=x; i<=x2; i++)
+        for(let j=z; j<=z2; j++)
+          if(!present.has(k(i,ny,j)) || used.has(k(i,ny,j))) break growY;
+      y2 = ny;
+    }
+
+    for(let a=x; a<=x2; a++)
+      for(let b2=y; b2<=y2; b2++)
+        for(let c=z; c<=z2; c++) used.add(k(a,b2,c));
+
+    boxes.push([x,y,z,x2,y2,z2]);
+  }
+  return boxes;
+}
+
+const OFFSET = {y:-1, z:3};   // sink the floor one block, push it clear of the player
+
+function toCommands(build, o){
+  const legacy = (o.ids === "legacy");
+  const bnds = build.bounds();
+  const ox = -Math.round((bnds.x1 + bnds.x2)/2);   // centre on the player
+  const oy = OFFSET.y, oz = OFFSET.z;
+
+  const lines = [];
+  lines.push("# Beautiful Base — generated house");
+  lines.push("# Style: "+THEMES[o.theme].label+"  Size: "+o.size);
+  lines.push("# Stand where you want the house and run: /function beautiful_base");
+  lines.push("");
+
+  if(o.clear){
+    lines.push("# clear the build area");
+    lines.push("fill "+rel(bnds.x1-1+ox)+" "+rel(0+oy)+" "+rel(bnds.z1-1+oz)+" "+
+                       rel(bnds.x2+1+ox)+" "+rel(bnds.y2+2+oy)+" "+rel(bnds.z2+1+oz)+" minecraft:air");
+    lines.push("");
+  }
+
+  /* bucket every placed block by (id + states + pass) */
+  const groups = new Map();
+  build.m.forEach(function(v){
+    const r = resolveBlock(v.b, legacy);
+    const key = v.b.pass+"|"+r.id+statesString(r.states, legacy);
+    let g = groups.get(key);
+    if(!g){ g = {pass:v.b.pass, id:r.id, st:statesString(r.states, legacy), coords:[]}; groups.set(key,g); }
+    g.coords.push([v.x, v.y, v.z]);
+  });
+
+  const ordered = Array.from(groups.values()).sort(function(a,b){
+    return (a.pass - b.pass) || (a.coords.length - b.coords.length);
+  });
+
+  let lastPass = -1;
+  ordered.forEach(function(g){
+    if(g.pass !== lastPass){
+      lastPass = g.pass;
+      lines.push("");
+      lines.push("# "+["structure","fittings","plants"][g.pass]);
+    }
+    mergeBoxes(g.coords).forEach(function(bx){
+      const x1=bx[0]+ox, y1=bx[1]+oy, z1=bx[2]+oz;
+      const x2=bx[3]+ox, y2=bx[4]+oy, z2=bx[5]+oz;
+      if(x1===x2 && y1===y2 && z1===z2){
+        lines.push("setblock "+rel(x1)+" "+rel(y1)+" "+rel(z1)+" "+g.id+g.st);
+      }else{
+        lines.push("fill "+rel(x1)+" "+rel(y1)+" "+rel(z1)+" "+
+                            rel(x2)+" "+rel(y2)+" "+rel(z2)+" "+g.id+g.st);
+      }
+    });
+  });
+
+  lines.push("");
+  lines.push('tellraw @s {"rawtext":[{"text":"§6[Beautiful Base] §fYour '+THEMES[o.theme].label+' is ready. Sleep well!"}]}');
+  return lines;
+}
+
+function clearCommands(build, o){
+  const bnds = build.bounds();
+  const ox = -Math.round((bnds.x1 + bnds.x2)/2), oy = OFFSET.y, oz = OFFSET.z;
+  return [
+    "# Removes a Beautiful Base built from this exact spot.",
+    "fill "+rel(bnds.x1-1+ox)+" "+rel(bnds.y1+oy)+" "+rel(bnds.z1-1+oz)+" "+
+            rel(bnds.x2+1+ox)+" "+rel(bnds.y2+2+oy)+" "+rel(bnds.z2+1+oz)+" minecraft:air",
+    'tellraw @s {"rawtext":[{"text":"§6[Beautiful Base] §fArea cleared."}]}'
+  ];
+}
+
+/* ==================================================================
+   5. Minimal ZIP writer (stored, no compression) so the page stays
+      self-contained — no external library.
+   ================================================================== */
+
+const CRC_TABLE = (function(){
+  const t = new Uint32Array(256);
+  for(let n=0; n<256; n++){
+    let c = n;
+    for(let k=0; k<8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+
+function crc32(bytes){
+  let c = 0xFFFFFFFF;
+  for(let i=0; i<bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+function zipStore(files){
+  const enc = new TextEncoder();
+  const chunks = [], central = [];
+  let offset = 0;
+
+  files.forEach(function(f){
+    const name = enc.encode(f.name);
+    const data = f.data;
+    const crc = crc32(data);
+
+    const local = new Uint8Array(30 + name.length);
+    const lv = new DataView(local.buffer);
+    lv.setUint32(0, 0x04034b50, true);
+    lv.setUint16(4, 20, true);      // version needed
+    lv.setUint16(6, 0, true);       // flags
+    lv.setUint16(8, 0, true);       // stored
+    lv.setUint16(10, 0, true);      // time
+    lv.setUint16(12, 0x2821, true); // date (2020-01-01)
+    lv.setUint32(14, crc, true);
+    lv.setUint32(18, data.length, true);
+    lv.setUint32(22, data.length, true);
+    lv.setUint16(26, name.length, true);
+    lv.setUint16(28, 0, true);
+    local.set(name, 30);
+
+    chunks.push(local, data);
+
+    const cd = new Uint8Array(46 + name.length);
+    const cv = new DataView(cd.buffer);
+    cv.setUint32(0, 0x02014b50, true);
+    cv.setUint16(4, 20, true);
+    cv.setUint16(6, 20, true);
+    cv.setUint16(8, 0, true);
+    cv.setUint16(10, 0, true);
+    cv.setUint16(12, 0, true);
+    cv.setUint16(14, 0x2821, true);
+    cv.setUint32(16, crc, true);
+    cv.setUint32(20, data.length, true);
+    cv.setUint32(24, data.length, true);
+    cv.setUint16(28, name.length, true);
+    cv.setUint32(42, offset, true);
+    cd.set(name, 46);
+    central.push(cd);
+
+    offset += local.length + data.length;
+  });
+
+  let centralSize = 0;
+  central.forEach(function(c){ centralSize += c.length; });
+
+  const end = new Uint8Array(22);
+  const ev = new DataView(end.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(8, files.length, true);
+  ev.setUint16(10, files.length, true);
+  ev.setUint32(12, centralSize, true);
+  ev.setUint32(16, offset, true);
+
+  return new Blob(chunks.concat(central, [end]), {type:"application/octet-stream"});
+}
+
+function uuid(){
+  if(crypto && crypto.randomUUID) return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, function(x){ return x.toString(16).padStart(2,"0"); }).join("");
+  return h.slice(0,8)+"-"+h.slice(8,12)+"-"+h.slice(12,16)+"-"+h.slice(16,20)+"-"+h.slice(20);
+}
+
+function packIcon(){
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const g = c.getContext("2d");
+  g.fillStyle = "#1a2016"; g.fillRect(0,0,64,64);
+  g.fillStyle = "#b8945f"; g.fillRect(14,30,36,24);       // wall
+  g.fillStyle = "#4d3218";                                 // roof
+  for(let i=0; i<11; i++) g.fillRect(9+i*2, 30-i*2, 46-i*4, 4);
+  g.fillStyle = "#3b2a17"; g.fillRect(28,40,8,14);         // door
+  g.fillStyle = "#bfe0ec"; g.fillRect(18,34,6,6); g.fillRect(40,34,6,6);
+  g.fillStyle = "#f0a63c"; g.fillRect(30,26,4,4);
+  const url = c.toDataURL("image/png");
+  const bin = atob(url.split(",")[1]);
+  const out = new Uint8Array(bin.length);
+  for(let i=0; i<bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function makePack(build, o){
+  const enc = new TextEncoder();
+  const manifest = {
+    format_version: 2,
+    header: {
+      name: "Beautiful Base — "+THEMES[o.theme].label,
+      description: "Run /function beautiful_base to build a furnished "+o.size+" house. /function clear_base removes it.",
+      uuid: uuid(),
+      version: [1,0,0],
+      min_engine_version: [1,19,0]
+    },
+    modules: [
+      { type:"data", uuid:uuid(), version:[1,0,0],
+        description:"House building functions" }
+    ]
+  };
+  return zipStore([
+    {name:"manifest.json", data: enc.encode(JSON.stringify(manifest, null, 2))},
+    {name:"pack_icon.png", data: packIcon()},
+    {name:"functions/beautiful_base.mcfunction", data: enc.encode(toCommands(build,o).join("\n")+"\n")},
+    {name:"functions/clear_base.mcfunction", data: enc.encode(clearCommands(build,o).join("\n")+"\n")}
+  ]);
+}
+
+/* ==================================================================
+   6. Isometric preview
+   ================================================================== */
+
+const view = document.getElementById("view");
+const ctx = view.getContext("2d");
+let rotation = 0;
+
+function shade(hex, f){
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, Math.round(((n>>16)&255) * f));
+  const g = Math.min(255, Math.round(((n>>8)&255) * f));
+  const b = Math.min(255, Math.round((n&255) * f));
+  return "rgb("+r+","+g+","+b+")";
+}
+
+function rotate(x, z){
+  switch(rotation){
+    case 1:  return [-z, x];
+    case 2:  return [-x, -z];
+    case 3:  return [z, -x];
+    default: return [x, z];
+  }
+}
+
+function draw(build, cutY){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const cssW = view.clientWidth || 640;
+  const cssH = Math.max(300, Math.min(560, Math.round(cssW * 0.66)));
+  view.width = Math.round(cssW * dpr);
+  view.height = Math.round(cssH * dpr);
+  view.style.height = cssH + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const items = [];
+  build.m.forEach(function(v){
+    if(v.y > cutY) return;
+    const r = rotate(v.x, v.z);
+    items.push({x:r[0], y:v.y, z:r[1], b:v.b});
+  });
+  if(!items.length) return;
+
+  /* Measure the drawing in unit space (u = 1) including each cube's
+     silhouette, then solve for the u that fits. Using the bounding-box
+     corners instead would reserve room for blocks that aren't there. */
+  const pad = 16;
+  let ux1=1e9, ux2=-1e9, uy1=1e9, uy2=-1e9;
+  items.forEach(function(it){
+    const ax = it.x - it.z;
+    const ay = (it.x + it.z) * 0.5 - it.y * 0.86;
+    if(ax - 1 < ux1) ux1 = ax - 1;
+    if(ax + 1 > ux2) ux2 = ax + 1;
+    if(ay - 0.5 < uy1) uy1 = ay - 0.5;
+    if(ay + 1.36 > uy2) uy2 = ay + 1.36;
+  });
+  const u = Math.max(1.2, Math.min((cssW - pad*2)/(ux2 - ux1), (cssH - pad*2)/(uy2 - uy1)));
+  const v = u * 0.5, h = u * 0.86;
+
+  const projX = function(x,z){ return (x - z) * u; };
+  const projY = function(x,y,z){ return (x + z) * v - y * h; };
+
+  const offX = (cssW - (ux2 - ux1) * u) / 2 - ux1 * u;
+  const offY = (cssH - (uy2 - uy1) * u) / 2 - uy1 * u;
+
+  items.sort(function(a,b){ return (a.x + a.z) - (b.x + b.z) || a.y - b.y; });
+
+  items.forEach(function(it){
+    const px = projX(it.x, it.z) + offX;
+    const py = projY(it.x, it.y, it.z) + offY;
+    const col = it.b.color;
+    ctx.globalAlpha = it.b.alpha;
+
+    ctx.beginPath();                                  // top
+    ctx.moveTo(px, py - v); ctx.lineTo(px + u, py);
+    ctx.lineTo(px, py + v); ctx.lineTo(px - u, py);
+    ctx.closePath();
+    ctx.fillStyle = shade(col, 1.06); ctx.fill();
+
+    ctx.beginPath();                                  // left
+    ctx.moveTo(px - u, py); ctx.lineTo(px, py + v);
+    ctx.lineTo(px, py + v + h); ctx.lineTo(px - u, py + h);
+    ctx.closePath();
+    ctx.fillStyle = shade(col, 0.72); ctx.fill();
+
+    ctx.beginPath();                                  // right
+    ctx.moveTo(px + u, py); ctx.lineTo(px, py + v);
+    ctx.lineTo(px, py + v + h); ctx.lineTo(px + u, py + h);
+    ctx.closePath();
+    ctx.fillStyle = shade(col, 0.52); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+/* ==================================================================
+   7. Wiring
+   ================================================================== */
+
+let current = null, currentOpts = null, currentCmds = [];
+
+function readOptions(){
+  return {
+    theme:   document.querySelector('input[name=theme]:checked').value,
+    size:    document.querySelector('input[name=size]:checked').value,
+    ids:     document.querySelector('input[name=ids]:checked').value,
+    furnish: document.getElementById("optFurnish").checked,
+    lights:  document.getElementById("optLights").checked,
+    farm:    document.getElementById("optFarm").checked,
+    yard:    document.getElementById("optYard").checked,
+    chimney: document.getElementById("optChimney").checked,
+    clear:   document.getElementById("optClear").checked
+  };
+}
+
+function regenerate(keepCut){
+  currentOpts = readOptions();
+  current = buildHouse(currentOpts);
+  currentCmds = toCommands(current, currentOpts);
+
+  const bnds = current.bounds();
+  const cut = document.getElementById("cut");
+  cut.max = bnds.y2;
+  if(!keepCut) cut.value = bnds.y2;
+  if(+cut.value > bnds.y2) cut.value = bnds.y2;
+
+  const S = SIZES[currentOpts.size];
+  document.getElementById("sBlocks").textContent = current.m.size.toLocaleString();
+  document.getElementById("sCmds").textContent =
+    currentCmds.filter(function(l){ return l && l[0] !== "#"; }).length.toLocaleString();
+  document.getElementById("sSize").textContent = S.w+"×"+S.d;
+  document.getElementById("themeName").textContent = THEMES[currentOpts.theme].label;
+  document.getElementById("cmds").textContent = currentCmds.join("\n");
+
+  updateHud();
+  draw(current, +cut.value);
+}
+
+function updateHud(){
+  const cut = document.getElementById("cut");
+  const top = +cut.max;
+  const at = +cut.value;
+  document.getElementById("hud").textContent =
+    (at >= top ? "Full build" : "Cut at layer "+at+" / "+top) + "  ·  view " + (rotation*90) + "°";
+}
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ t.classList.remove("on"); }, 2200);
+}
+
+function saveBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+}
+
+document.querySelectorAll('input[name=theme],input[name=size],input[name=ids]')
+  .forEach(function(el){ el.addEventListener("change", function(){ regenerate(false); }); });
+["optFurnish","optLights","optFarm","optYard","optChimney","optClear"].forEach(function(id){
+  document.getElementById(id).addEventListener("change", function(){ regenerate(true); });
+});
+
+document.getElementById("cut").addEventListener("input", function(){
+  updateHud();
+  draw(current, +this.value);
+});
+
+document.getElementById("rotate").addEventListener("click", function(){
+  rotation = (rotation + 1) % 4;
+  updateHud();
+  draw(current, +document.getElementById("cut").value);
+});
+
+document.getElementById("download").addEventListener("click", function(){
+  const blob = makePack(current, currentOpts);
+  saveBlob(blob, "beautiful-base-"+currentOpts.theme+"-"+currentOpts.size+".mcpack");
+  toast("Downloaded — tap the file to import it");
+});
+
+document.getElementById("dlFunc").addEventListener("click", function(){
+  const blob = new Blob([currentCmds.join("\n")+"\n"], {type:"text/plain"});
+  saveBlob(blob, "beautiful_base.mcfunction");
+  toast("Saved beautiful_base.mcfunction");
+});
+
+document.getElementById("copy").addEventListener("click", function(){
+  const text = currentCmds.join("\n");
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(
+      function(){ toast("Commands copied"); },
+      function(){ toast("Could not copy — open the command list and select it"); }
+    );
+  }else{
+    toast("Open the command list below and copy it manually");
+  }
+});
+
+let resizeTimer = null;
+window.addEventListener("resize", function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function(){
+    if(current) draw(current, +document.getElementById("cut").value);
+  }, 120);
+});
+
+regenerate(false);
+</script>
+</body>
+</html>
