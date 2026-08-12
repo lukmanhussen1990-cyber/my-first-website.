@@ -1,0 +1,38 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "myc:protective_suit",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": "myc_protective_suit",
+      "minecraft:max_stack_size": 1,
+      "minecraft:wearable": {
+        "slot": "slot.armor.chest",
+        "protection": 6
+      },
+      "minecraft:durability": {
+        "max_durability": 480
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "myc:biofilter"
+            ],
+            "repair_amount": 150
+          }
+        ]
+      },
+      "minecraft:tags": {
+        "tags": [
+          "myc:equipment",
+          "myc:protective"
+        ]
+      }
+    }
+  }
+}

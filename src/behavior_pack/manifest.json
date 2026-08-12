@@ -1,0 +1,41 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "b4208847-fda8-487a-9529-bb1f70b3d27b",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "c975210c-407b-4236-9fbe-d069aafa4bda",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "entry": "scripts/main.js",
+      "uuid": "1bf17e64-39db-47f6-94a0-a0e6417c136e",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "9fe573cb-69fc-4334-8ce7-3dd0aa7b6aa7",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    }
+  ],
+  "metadata": {
+    "authors": ["Luxury Tech Mycelium-X"],
+    "license": "MIT",
+    "generated_with": {
+      "luxury_tech_mycelium_x_builder": ["1.0.0"]
+    }
+  }
+}

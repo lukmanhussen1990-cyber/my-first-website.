@@ -1,0 +1,38 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "myc:spore_mask",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": "myc_spore_mask",
+      "minecraft:max_stack_size": 1,
+      "minecraft:wearable": {
+        "slot": "slot.armor.head",
+        "protection": 3
+      },
+      "minecraft:durability": {
+        "max_durability": 320
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "myc:biofilter"
+            ],
+            "repair_amount": 120
+          }
+        ]
+      },
+      "minecraft:tags": {
+        "tags": [
+          "myc:equipment",
+          "myc:protective"
+        ]
+      }
+    }
+  }
+}

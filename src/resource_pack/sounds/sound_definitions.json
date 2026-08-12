@@ -1,0 +1,47 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "myc.scanner.ping": {
+      "category": "player",
+      "sounds": [
+        "sounds/random/orb"
+      ]
+    },
+    "myc.scanner.alert": {
+      "category": "player",
+      "sounds": [
+        "sounds/note/pling"
+      ]
+    },
+    "myc.alarm": {
+      "category": "ambient",
+      "sounds": [
+        "sounds/mob/wither/shoot"
+      ]
+    },
+    "myc.lockdown": {
+      "category": "ambient",
+      "sounds": [
+        "sounds/random/anvil_land"
+      ]
+    },
+    "myc.infect": {
+      "category": "player",
+      "sounds": [
+        "sounds/mob/slime/attack1"
+      ]
+    },
+    "myc.cure": {
+      "category": "player",
+      "sounds": [
+        "sounds/random/drink"
+      ]
+    },
+    "myc.build": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/random/levelup"
+      ]
+    }
+  }
+}

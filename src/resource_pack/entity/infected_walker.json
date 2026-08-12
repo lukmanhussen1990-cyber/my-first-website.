@@ -1,0 +1,24 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "myc:infected_walker",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/myc/infected_walker" },
+      "geometry": { "default": "geometry.myc.infected_walker" },
+      "render_controllers": [ "controller.render.myc.infected_walker" ],
+      "animations": {
+        "idle": "animation.myc.infected_walker.idle",
+        "walk": "animation.myc.infected_walker.walk",
+        "controller": "controller.animation.myc.infected_walker"
+      },
+      "scripts": {
+        "animate": [ "controller" ]
+      },
+      "spawn_egg": {
+        "base_color": "#68765C",
+        "overlay_color": "#925ABA"
+      }
+    }
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "myc:fungal_brute",
+      "is_spawnable": true,
+      "is_summonable": true
+    },
+
+    "component_groups": {
+      "myc:culled": {
+        "minecraft:instant_despawn": {}
+      },
+      "myc:enraged": {
+        "minecraft:movement": {
+          "value": 0.26
+        },
+        "minecraft:attack": {
+          "damage": 11
+        },
+        "minecraft:ambient_sound_interval": {
+          "event_name": "angry",
+          "value": 3.0,
+          "range": 5.0
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": [ 12.0, 18.0 ],
+          "time_down_event": {
+            "event": "myc:calm_down"
+          }
+        }
+      }
+    },
+
+    "components": {
+      "minecraft:type_family": {
+        "family": [ "myc_infected", "myc_brute", "monster", "undead", "mob" ]
+      },
+      "minecraft:health": {
+        "value": 60,
+        "max": 60
+      },
+      "minecraft:attack": {
+        "damage": 9
+      },
+      "minecraft:knockback_resistance": {
+        "value": 0.85
+      },
+      "minecraft:scale": {
+        "value": 1.4
+      },
+      "minecraft:movement": {
+        "value": 0.19
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "can_path_over_water": false,
+        "can_pass_doors": true,
+        "can_open_doors": true,
+        "can_break_doors": true,
+        "avoid_water": true,
+        "avoid_portals": true
+      },
+      "minecraft:jump.static": {},
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:collision_box": {
+        "width": 1.2,
+        "height": 2.7
+      },
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": 0,
+        "breathes_air": true,
+        "breathes_water": false
+      },
+      "minecraft:nameable": {},
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:loot": {
+        "table": "loot_tables/entities/fungal_brute.json"
+      },
+      "minecraft:experience_reward": {
+        "on_death": "query.last_hit_by_player ? 24 : 0"
+      },
+      "minecraft:despawn": {
+        "despawn_from_distance": {
+          "min_distance": 72,
+          "max_distance": 160
+        },
+        "min_range_inactivity_timer": 120
+      },
+      "minecraft:ambient_sound_interval": {
+        "event_name": "ambient",
+        "value": 8.0,
+        "range": 16.0
+      },
+      "minecraft:hurt_on_condition": {
+        "damage_conditions": [
+          {
+            "filters": { "test": "in_lava", "subject": "self", "operator": "==", "value": true },
+            "cause": "lava",
+            "damage_per_tick": 4
+          }
+        ]
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "projectile",
+            "deals_damage": true,
+            "damage_multiplier": 0.5
+          },
+          {
+            "cause": "entity_explosion",
+            "deals_damage": false,
+            "on_damage": {
+              "filters": {
+                "test": "is_family", "subject": "other", "value": "myc_infected"
+              }
+            }
+          },
+          {
+            "cause": "entity_attack",
+            "deals_damage": true,
+            "on_damage": {
+              "filters": {
+                "test": "is_family", "subject": "other", "value": "player"
+              },
+              "event": "myc:enrage",
+              "target": "self"
+            }
+          }
+        ]
+      },
+
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:behavior.hurt_by_target": {
+        "priority": 1,
+        "alert_same_type": true
+      },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 2,
+        "must_see": true,
+        "must_see_forget_duration": 30.0,
+        "reselect_targets": true,
+        "within_radius": 26.0,
+        "entity_types": [
+          {
+            "filters": {
+              "any_of": [
+                { "test": "is_family", "subject": "other", "value": "player" },
+                { "test": "is_family", "subject": "other", "value": "villager" },
+                { "test": "is_family", "subject": "other", "value": "irongolem" }
+              ]
+            },
+            "max_dist": 28
+          }
+        ]
+      },
+      "minecraft:behavior.melee_attack": {
+        "priority": 3,
+        "track_target": true,
+        "speed_multiplier": 1.0,
+        "reach_multiplier": 2.2,
+        "cooldown_time": 1.8,
+        "require_complete_path": false
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 6,
+        "speed_multiplier": 0.6
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 7,
+        "look_distance": 12.0,
+        "probability": 0.02
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 8
+      }
+    },
+
+    "events": {
+      "myc:enrage": {
+        "add": { "component_groups": [ "myc:enraged" ] }
+      },
+      "myc:calm_down": {
+        "remove": { "component_groups": [ "myc:enraged" ] }
+      },
+      "myc:cull": {
+        "add": { "component_groups": [ "myc:culled" ] }
+      }
+    }
+  }
+}

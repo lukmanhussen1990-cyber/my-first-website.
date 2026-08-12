@@ -1,0 +1,71 @@
+{
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "item",
+          "name": "myc:spore_sample",
+          "weight": 1,
+          "functions": [
+            { "function": "set_count", "count": { "min": 2, "max": 3 } },
+            { "function": "looting_enchant", "count": { "min": 0, "max": 1 } }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "conditions": [
+        { "condition": "killed_by_player" },
+        { "condition": "random_chance", "chance": 0.5 }
+      ],
+      "entries": [
+        {
+          "type": "item",
+          "name": "myc:suppressant",
+          "weight": 1,
+          "functions": [
+            { "function": "set_count", "count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "conditions": [
+        { "condition": "killed_by_player" },
+        { "condition": "random_chance", "chance": 0.3 }
+      ],
+      "entries": [
+        {
+          "type": "item",
+          "name": "myc:biofilter",
+          "weight": 1,
+          "functions": [
+            { "function": "set_count", "count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "conditions": [
+        { "condition": "killed_by_player" },
+        { "condition": "random_chance_with_looting", "chance": 0.2, "looting_multiplier": 0.02 }
+      ],
+      "entries": [
+        {
+          "type": "item",
+          "name": "minecraft:emerald",
+          "weight": 4,
+          "functions": [
+            { "function": "set_count", "count": { "min": 1, "max": 2 } }
+          ]
+        },
+        { "type": "item", "name": "minecraft:echo_shard", "weight": 1 },
+        { "type": "item", "name": "minecraft:glow_ink_sac", "weight": 6 }
+      ]
+    }
+  ]
+}

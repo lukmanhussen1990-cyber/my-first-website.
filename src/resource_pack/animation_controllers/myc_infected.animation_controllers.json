@@ -1,0 +1,126 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+
+    "controller.animation.myc.infected_walker": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "animations": [ "idle" ],
+          "blend_transition": 0.3,
+          "transitions": [
+            { "walk": "query.modified_move_speed > 0.03" }
+          ]
+        },
+        "walk": {
+          "animations": [ "walk" ],
+          "blend_transition": 0.3,
+          "transitions": [
+            { "idle": "query.modified_move_speed <= 0.03" }
+          ]
+        }
+      }
+    },
+
+    "controller.animation.myc.infected_runner": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "animations": [ "idle" ],
+          "blend_transition": 0.15,
+          "transitions": [
+            { "walk": "query.modified_move_speed > 0.03" }
+          ]
+        },
+        "walk": {
+          "animations": [ "walk" ],
+          "blend_transition": 0.15,
+          "transitions": [
+            { "idle": "query.modified_move_speed <= 0.03" }
+          ]
+        }
+      }
+    },
+
+    "controller.animation.myc.fungal_brute": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "animations": [ "idle" ],
+          "blend_transition": 0.5,
+          "transitions": [
+            { "walk": "query.modified_move_speed > 0.02" }
+          ]
+        },
+        "walk": {
+          "animations": [ "walk" ],
+          "blend_transition": 0.5,
+          "transitions": [
+            { "idle": "query.modified_move_speed <= 0.02" }
+          ]
+        }
+      }
+    },
+
+    "controller.animation.myc.spore_crawler": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "animations": [ "idle" ],
+          "blend_transition": 0.1,
+          "transitions": [
+            { "walk": "query.modified_move_speed > 0.02" }
+          ]
+        },
+        "walk": {
+          "animations": [ "walk" ],
+          "blend_transition": 0.1,
+          "transitions": [
+            { "idle": "query.modified_move_speed <= 0.02" }
+          ]
+        }
+      }
+    },
+
+    "controller.animation.myc.mycelium_stalker": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "animations": [ "idle" ],
+          "blend_transition": 0.4,
+          "transitions": [
+            { "walk": "query.modified_move_speed > 0.03" }
+          ]
+        },
+        "walk": {
+          "animations": [ "walk" ],
+          "blend_transition": 0.4,
+          "transitions": [
+            { "idle": "query.modified_move_speed <= 0.03" }
+          ]
+        }
+      }
+    },
+
+    "controller.animation.myc.nest_core": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "animations": [ "idle" ],
+          "blend_transition": 0.6,
+          "transitions": [
+            { "walk": "query.health < 20" }
+          ]
+        },
+        "walk": {
+          "animations": [ "walk" ],
+          "blend_transition": 0.6,
+          "transitions": [
+            { "idle": "query.health >= 20" }
+          ]
+        }
+      }
+    }
+
+  }
+}

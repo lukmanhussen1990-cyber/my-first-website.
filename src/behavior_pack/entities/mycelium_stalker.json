@@ -1,0 +1,219 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "myc:mycelium_stalker",
+      "is_spawnable": true,
+      "is_summonable": true
+    },
+
+    "component_groups": {
+      "myc:culled": {
+        "minecraft:instant_despawn": {}
+      },
+
+      "myc:cloaked": {
+        "minecraft:spell_effects": {
+          "add_effects": [
+            {
+              "effect": "invisibility",
+              "duration": 100000,
+              "display_on_screen_animation": false
+            }
+          ]
+        },
+        "minecraft:is_hidden_when_invisible": {},
+        "minecraft:movement": {
+          "value": 0.20
+        },
+        "minecraft:ambient_sound_interval": {
+          "event_name": "ambient",
+          "value": 2.0,
+          "range": 2.0
+        },
+        "minecraft:environment_sensor": {
+          "triggers": [
+            {
+              "filters": { "test": "has_target", "subject": "self", "operator": "==", "value": true },
+              "event": "myc:reveal"
+            }
+          ]
+        }
+      },
+
+      "myc:exposed": {
+        "minecraft:spell_effects": {
+          "remove_effects": "invisibility"
+        },
+        "minecraft:movement": {
+          "value": 0.28
+        },
+        "minecraft:ambient_sound_interval": {
+          "event_name": "angry",
+          "value": 4.0,
+          "range": 6.0
+        },
+        "minecraft:behavior.leap_at_target": {
+          "priority": 4,
+          "must_be_on_ground": true,
+          "yd": 0.4
+        },
+        "minecraft:environment_sensor": {
+          "triggers": [
+            {
+              "filters": { "test": "has_target", "subject": "self", "operator": "==", "value": false },
+              "event": "myc:recloak"
+            }
+          ]
+        }
+      }
+    },
+
+    "components": {
+      "minecraft:type_family": {
+        "family": [ "myc_infected", "myc_stalker", "monster", "undead", "mob" ]
+      },
+      "minecraft:health": {
+        "value": 34,
+        "max": 34
+      },
+      "minecraft:attack": {
+        "damage": 6
+      },
+      "minecraft:knockback_resistance": {
+        "value": 0.35
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "can_path_over_water": false,
+        "can_pass_doors": true,
+        "can_open_doors": true,
+        "can_break_doors": false,
+        "avoid_water": true,
+        "avoid_portals": true
+      },
+      "minecraft:jump.static": {},
+      "minecraft:can_climb": {},
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:collision_box": {
+        "width": 0.6,
+        "height": 2.3
+      },
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": 0,
+        "breathes_air": true,
+        "breathes_water": false
+      },
+      "minecraft:nameable": {},
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:loot": {
+        "table": "loot_tables/entities/mycelium_stalker.json"
+      },
+      "minecraft:experience_reward": {
+        "on_death": "query.last_hit_by_player ? 20 : 0"
+      },
+      "minecraft:despawn": {
+        "despawn_from_distance": {
+          "min_distance": 72,
+          "max_distance": 160
+        },
+        "min_range_inactivity_timer": 120
+      },
+      "minecraft:hurt_on_condition": {
+        "damage_conditions": [
+          {
+            "filters": { "test": "in_lava", "subject": "self", "operator": "==", "value": true },
+            "cause": "lava",
+            "damage_per_tick": 4
+          }
+        ]
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "entity_explosion",
+            "deals_damage": false,
+            "on_damage": {
+              "filters": {
+                "test": "is_family", "subject": "other", "value": "myc_infected"
+              }
+            }
+          },
+          {
+            "deals_damage": true,
+            "on_damage": {
+              "event": "myc:reveal",
+              "target": "self"
+            }
+          }
+        ]
+      },
+
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:behavior.hurt_by_target": {
+        "priority": 1,
+        "alert_same_type": false
+      },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 2,
+        "must_see": true,
+        "must_see_forget_duration": 40.0,
+        "reselect_targets": true,
+        "within_radius": 20.0,
+        "entity_types": [
+          {
+            "filters": {
+              "any_of": [
+                { "test": "is_family", "subject": "other", "value": "player" },
+                { "test": "is_family", "subject": "other", "value": "villager" }
+              ]
+            },
+            "max_dist": 24
+          }
+        ]
+      },
+      "minecraft:behavior.melee_attack": {
+        "priority": 3,
+        "track_target": true,
+        "speed_multiplier": 1.1,
+        "reach_multiplier": 1.8,
+        "cooldown_time": 1.4,
+        "on_attack": {
+          "event": "myc:reveal",
+          "target": "self"
+        }
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 6,
+        "speed_multiplier": 0.7
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 8
+      }
+    },
+
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": { "component_groups": [ "myc:cloaked" ] }
+      },
+      "myc:reveal": {
+        "remove": { "component_groups": [ "myc:cloaked" ] },
+        "add": { "component_groups": [ "myc:exposed" ] }
+      },
+      "myc:recloak": {
+        "remove": { "component_groups": [ "myc:exposed" ] },
+        "add": { "component_groups": [ "myc:cloaked" ] }
+      },
+      "myc:cull": {
+        "add": { "component_groups": [ "myc:culled" ] }
+      }
+    }
+  }
+}

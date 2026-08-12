@@ -1,0 +1,24 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "myc:mycelium_stalker",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/myc/mycelium_stalker" },
+      "geometry": { "default": "geometry.myc.mycelium_stalker" },
+      "render_controllers": [ "controller.render.myc.mycelium_stalker" ],
+      "animations": {
+        "idle": "animation.myc.mycelium_stalker.idle",
+        "walk": "animation.myc.mycelium_stalker.walk",
+        "controller": "controller.animation.myc.mycelium_stalker"
+      },
+      "scripts": {
+        "animate": [ "controller" ]
+      },
+      "spawn_egg": {
+        "base_color": "#202228",
+        "overlay_color": "#4AD6CE"
+      }
+    }
+  }
+}

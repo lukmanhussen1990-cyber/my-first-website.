@@ -1,0 +1,24 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "myc:spore_crawler",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/myc/spore_crawler" },
+      "geometry": { "default": "geometry.myc.spore_crawler" },
+      "render_controllers": [ "controller.render.myc.spore_crawler" ],
+      "animations": {
+        "idle": "animation.myc.spore_crawler.idle",
+        "walk": "animation.myc.spore_crawler.walk",
+        "controller": "controller.animation.myc.spore_crawler"
+      },
+      "scripts": {
+        "animate": [ "controller" ]
+      },
+      "spawn_egg": {
+        "base_color": "#302C36",
+        "overlay_color": "#5CBE60"
+      }
+    }
+  }
+}

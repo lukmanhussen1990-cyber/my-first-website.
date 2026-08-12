@@ -1,0 +1,45 @@
+{
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "item",
+          "name": "minecraft:rotten_flesh",
+          "weight": 1,
+          "functions": [
+            { "function": "set_count", "count": { "min": 0, "max": 2 } },
+            { "function": "looting_enchant", "count": { "min": 0, "max": 1 } }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "conditions": [
+        { "condition": "random_chance", "chance": 0.12 }
+      ],
+      "entries": [
+        {
+          "type": "item",
+          "name": "myc:spore_sample",
+          "weight": 1,
+          "functions": [
+            { "function": "set_count", "count": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "conditions": [
+        { "condition": "killed_by_player" },
+        { "condition": "random_chance_with_looting", "chance": 0.03, "looting_multiplier": 0.01 }
+      ],
+      "entries": [
+        { "type": "item", "name": "minecraft:iron_ingot", "weight": 3 },
+        { "type": "item", "name": "minecraft:paper", "weight": 5 }
+      ]
+    }
+  ]
+}

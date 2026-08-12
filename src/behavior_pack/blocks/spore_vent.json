@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.60",
+  "minecraft:block": {
+    "description": {
+      "identifier": "myc:spore_vent",
+      "menu_category": {
+        "category": "nature"
+      }
+    },
+    "components": {
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "myc_spore_vent",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1.4
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 8.0
+      },
+      "minecraft:map_color": "#2A2A32",
+      "minecraft:light_emission": 4
+    }
+  }
+}

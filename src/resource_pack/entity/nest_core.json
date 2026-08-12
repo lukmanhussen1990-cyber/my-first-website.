@@ -1,0 +1,20 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "myc:nest_core",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/myc/nest_core" },
+      "geometry": { "default": "geometry.myc.nest_core" },
+      "render_controllers": [ "controller.render.myc.nest_core" ],
+      "animations": {
+        "idle": "animation.myc.nest_core.idle",
+        "walk": "animation.myc.nest_core.walk",
+        "controller": "controller.animation.myc.nest_core"
+      },
+      "scripts": {
+        "animate": [ "controller" ]
+      }
+    }
+  }
+}

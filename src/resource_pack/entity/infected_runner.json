@@ -1,0 +1,24 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "myc:infected_runner",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/myc/infected_runner" },
+      "geometry": { "default": "geometry.myc.infected_runner" },
+      "render_controllers": [ "controller.render.myc.infected_runner" ],
+      "animations": {
+        "idle": "animation.myc.infected_runner.idle",
+        "walk": "animation.myc.infected_runner.walk",
+        "controller": "controller.animation.myc.infected_runner"
+      },
+      "scripts": {
+        "animate": [ "controller" ]
+      },
+      "spawn_egg": {
+        "base_color": "#96846F",
+        "overlay_color": "#C45480"
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "myc:fungal_brute",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/myc/fungal_brute" },
+      "geometry": { "default": "geometry.myc.fungal_brute" },
+      "render_controllers": [ "controller.render.myc.fungal_brute" ],
+      "animations": {
+        "idle": "animation.myc.fungal_brute.idle",
+        "walk": "animation.myc.fungal_brute.walk",
+        "controller": "controller.animation.myc.fungal_brute"
+      },
+      "scripts": {
+        "animate": [ "controller" ]
+      },
+      "spawn_egg": {
+        "base_color": "#464E3C",
+        "overlay_color": "#C67A2E"
+      }
+    }
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "myc:spore_crawler",
+      "is_spawnable": true,
+      "is_summonable": true
+    },
+
+    "component_groups": {
+      "myc:culled": {
+        "minecraft:instant_despawn": {}
+      },
+      "myc:spore_burst": {
+        "minecraft:explode": {
+          "fuse_lit": true,
+          "fuse_length": 0,
+          "power": 1.5,
+          "breaks_blocks": false,
+          "causes_fire": false,
+          "destroy_affected_by_griefing": false,
+          "fire_affected_by_griefing": false,
+          "max_resistance": 0.0
+        }
+      }
+    },
+
+    "components": {
+      "minecraft:type_family": {
+        "family": [ "myc_infected", "myc_crawler", "monster", "undead", "lightweight", "mob" ]
+      },
+      "minecraft:health": {
+        "value": 10,
+        "max": 10
+      },
+      "minecraft:attack": {
+        "damage": 2
+      },
+      "minecraft:knockback_resistance": {
+        "value": 0.0
+      },
+      "minecraft:scale": {
+        "value": 0.5
+      },
+      "minecraft:movement": {
+        "value": 0.30
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "can_path_over_water": true,
+        "can_pass_doors": true,
+        "can_open_doors": false,
+        "avoid_water": true,
+        "avoid_portals": true
+      },
+      "minecraft:jump.static": {},
+      "minecraft:can_climb": {},
+      "minecraft:block_climber": {},
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": true,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:collision_box": {
+        "width": 0.5,
+        "height": 0.45
+      },
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": 0,
+        "breathes_air": true,
+        "breathes_water": false
+      },
+      "minecraft:nameable": {},
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:loot": {
+        "table": "loot_tables/entities/spore_crawler.json"
+      },
+      "minecraft:experience_reward": {
+        "on_death": "query.last_hit_by_player ? 3 : 0"
+      },
+      "minecraft:despawn": {
+        "despawn_from_distance": {
+          "min_distance": 32,
+          "max_distance": 96
+        },
+        "min_range_inactivity_timer": 30
+      },
+      "minecraft:ambient_sound_interval": {
+        "event_name": "ambient",
+        "value": 3.0,
+        "range": 8.0
+      },
+      "minecraft:on_death": {
+        "event": "myc:burst",
+        "target": "self"
+      },
+      "minecraft:hurt_on_condition": {
+        "damage_conditions": [
+          {
+            "filters": { "test": "in_lava", "subject": "self", "operator": "==", "value": true },
+            "cause": "lava",
+            "damage_per_tick": 4
+          }
+        ]
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "fall",
+            "deals_damage": false
+          },
+          {
+            "cause": "entity_explosion",
+            "deals_damage": false,
+            "on_damage": {
+              "filters": {
+                "test": "is_family", "subject": "other", "value": "myc_infected"
+              }
+            }
+          }
+        ]
+      },
+
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:behavior.hurt_by_target": {
+        "priority": 1,
+        "alert_same_type": true
+      },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 2,
+        "must_see": true,
+        "must_see_forget_duration": 12.0,
+        "reselect_targets": true,
+        "within_radius": 14.0,
+        "entity_types": [
+          {
+            "filters": {
+              "any_of": [
+                { "test": "is_family", "subject": "other", "value": "player" },
+                { "test": "is_family", "subject": "other", "value": "villager" }
+              ]
+            },
+            "max_dist": 16
+          }
+        ]
+      },
+      "minecraft:behavior.melee_attack": {
+        "priority": 3,
+        "track_target": true,
+        "speed_multiplier": 1.2,
+        "reach_multiplier": 1.2,
+        "cooldown_time": 0.75
+      },
+      "minecraft:behavior.leap_at_target": {
+        "priority": 4,
+        "must_be_on_ground": true,
+        "yd": 0.35
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 6,
+        "speed_multiplier": 1.0
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 8
+      }
+    },
+
+    "events": {
+      "myc:burst": {
+        "add": { "component_groups": [ "myc:spore_burst" ] }
+      },
+      "myc:cull": {
+        "add": { "component_groups": [ "myc:culled" ] }
+      }
+    }
+  }
+}

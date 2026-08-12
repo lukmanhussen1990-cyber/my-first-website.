@@ -1,0 +1,27 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "9fe573cb-69fc-4334-8ce7-3dd0aa7b6aa7",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "1d7aa792-c7e2-49e0-919b-b1c0c200455a",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "b4208847-fda8-487a-9529-bb1f70b3d27b",
+      "version": [1, 0, 0]
+    }
+  ],
+  "metadata": {
+    "authors": ["Luxury Tech Mycelium-X"],
+    "license": "MIT"
+  }
+}

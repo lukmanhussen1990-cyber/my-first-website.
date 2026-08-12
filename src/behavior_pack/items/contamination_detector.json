@@ -1,0 +1,29 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "myc:contamination_detector",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": "myc_contamination_detector",
+      "minecraft:max_stack_size": 1,
+      "minecraft:use_modifiers": {
+        "use_duration": 0.2,
+        "movement_modifier": 0.6
+      },
+      "minecraft:hand_equipped": true,
+      "minecraft:durability": {
+        "max_durability": 300
+      },
+      "minecraft:tags": {
+        "tags": [
+          "myc:equipment",
+          "myc:tool"
+        ]
+      }
+    }
+  }
+}

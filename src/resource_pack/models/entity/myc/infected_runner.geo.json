@@ -1,0 +1,218 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.myc.infected_runner",
+        "texture_width": 64,
+        "texture_height": 64,
+        "visible_bounds_width": 1.2,
+        "visible_bounds_height": 2.3,
+        "visible_bounds_offset": [
+          0,
+          1.15,
+          0
+        ]
+      },
+      "bones": [
+        {
+          "name": "root",
+          "pivot": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "name": "body",
+          "pivot": [
+            0,
+            24,
+            0
+          ],
+          "parent": "root",
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                14,
+                -2
+              ],
+              "size": [
+                6,
+                10,
+                4
+              ],
+              "uv": [
+                0,
+                17
+              ]
+            }
+          ]
+        },
+        {
+          "name": "head",
+          "pivot": [
+            0,
+            24,
+            0
+          ],
+          "parent": "body",
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                24,
+                -5
+              ],
+              "size": [
+                6,
+                6,
+                7
+              ],
+              "uv": [
+                20,
+                17
+              ]
+            }
+          ]
+        },
+        {
+          "name": "crest",
+          "pivot": [
+            0,
+            30,
+            0
+          ],
+          "parent": "head",
+          "cubes": [
+            {
+              "origin": [
+                -1,
+                29,
+                -4
+              ],
+              "size": [
+                2,
+                4,
+                6
+              ],
+              "uv": [
+                46,
+                17
+              ]
+            }
+          ]
+        },
+        {
+          "name": "rightArm",
+          "pivot": [
+            -3,
+            23,
+            0
+          ],
+          "parent": "body",
+          "cubes": [
+            {
+              "origin": [
+                -6,
+                11,
+                -2
+              ],
+              "size": [
+                3,
+                12,
+                3
+              ],
+              "uv": [
+                24,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "leftArm",
+          "pivot": [
+            3,
+            23,
+            0
+          ],
+          "parent": "body",
+          "cubes": [
+            {
+              "origin": [
+                3,
+                11,
+                -2
+              ],
+              "size": [
+                3,
+                12,
+                3
+              ],
+              "uv": [
+                36,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "rightLeg",
+          "pivot": [
+            -2,
+            14,
+            0
+          ],
+          "parent": "root",
+          "cubes": [
+            {
+              "origin": [
+                -4,
+                0,
+                -2
+              ],
+              "size": [
+                3,
+                14,
+                3
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "leftLeg",
+          "pivot": [
+            2,
+            14,
+            0
+          ],
+          "parent": "root",
+          "cubes": [
+            {
+              "origin": [
+                1,
+                0,
+                -2
+              ],
+              "size": [
+                3,
+                14,
+                3
+              ],
+              "uv": [
+                12,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

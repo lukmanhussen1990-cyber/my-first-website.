@@ -1,0 +1,106 @@
+{
+  "entity_sounds": {
+    "entities": {
+
+      "myc:infected_walker": {
+        "volume": 0.9,
+        "pitch": [ 0.55, 0.75 ],
+        "events": {
+          "ambient": "mob.zombie.say",
+          "hurt": "mob.zombie.hurt",
+          "death": "mob.zombie.death",
+          "step": {
+            "sound": "mob.zombie.step",
+            "volume": 0.45,
+            "pitch": [ 0.7, 0.85 ]
+          }
+        }
+      },
+
+      "myc:infected_runner": {
+        "volume": 1.25,
+        "pitch": [ 1.3, 1.6 ],
+        "events": {
+          "ambient": "mob.husk.ambient",
+          "hurt": "mob.husk.hurt",
+          "death": "mob.husk.death",
+          "step": {
+            "sound": "mob.spider.step",
+            "volume": 0.5,
+            "pitch": [ 1.2, 1.45 ]
+          }
+        }
+      },
+
+      "myc:fungal_brute": {
+        "volume": 1.35,
+        "pitch": [ 0.45, 0.6 ],
+        "events": {
+          "ambient": "mob.ravager.ambient",
+          "angry": {
+            "sound": "mob.ravager.roar",
+            "volume": 1.6,
+            "pitch": [ 0.5, 0.65 ]
+          },
+          "hurt": "mob.ravager.hurt",
+          "death": "mob.ravager.death",
+          "step": {
+            "sound": "mob.ravager.step",
+            "volume": 0.9,
+            "pitch": [ 0.5, 0.65 ]
+          }
+        }
+      },
+
+      "myc:spore_crawler": {
+        "volume": 0.6,
+        "pitch": [ 1.45, 1.85 ],
+        "events": {
+          "ambient": "mob.silverfish.say",
+          "hurt": "mob.silverfish.hit",
+          "death": "mob.silverfish.kill",
+          "step": {
+            "sound": "mob.silverfish.step",
+            "volume": 0.3,
+            "pitch": [ 1.4, 1.8 ]
+          }
+        }
+      },
+
+      "myc:mycelium_stalker": {
+        "volume": 1.5,
+        "pitch": [ 0.8, 0.95 ],
+        "events": {
+          "ambient": {
+            "sound": "mob.warden.heartbeat",
+            "volume": 2.0,
+            "pitch": [ 0.85, 0.95 ]
+          },
+          "angry": {
+            "sound": "mob.warden.angry",
+            "volume": 1.4,
+            "pitch": [ 0.9, 1.05 ]
+          },
+          "hurt": "mob.warden.hurt",
+          "death": "mob.warden.death",
+          "step": {
+            "sound": "mob.warden.step",
+            "volume": 0.35,
+            "pitch": [ 0.9, 1.1 ]
+          }
+        }
+      },
+
+      "myc:nest_core": {
+        "volume": 1.1,
+        "pitch": [ 0.7, 0.9 ],
+        "events": {
+          "ambient": "bloom.sculk_catalyst",
+          "hurt": "hit.sculk",
+          "death": "break.sculk_catalyst"
+        }
+      }
+
+    }
+  }
+}
