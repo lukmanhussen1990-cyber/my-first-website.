@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Cartoon character with arms raised in triumph and energy lines above the head">
+  <defs>
+    <!-- subtle wobble so the strokes read as hand-drawn marker, not vector -->
+    <filter id="wobble" x="-12%" y="-12%" width="124%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="11" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <clipPath id="frame">
+      <rect x="0" y="0" width="512" height="512" rx="52"/>
+    </clipPath>
+  </defs>
+
+  <rect width="512" height="512" rx="52" fill="#fdfcfa"/>
+
+  <g clip-path="url(#frame)">
+    <g filter="url(#wobble)" transform="rotate(-1.2 256 256)"
+       fill="none" stroke="#141414" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+
+      <!-- energy / inspiration lines radiating from the head -->
+      <g stroke-width="5.5">
+        <path d="M164 151 L131 137"/>
+        <path d="M182 123 L136 82"/>
+        <path d="M210 103 L179 45"/>
+        <path d="M241 93 L232 36"/>
+        <path d="M273 93 L283 36"/>
+        <path d="M304 104 L334 49"/>
+        <path d="M330 123 L371 86"/>
+        <path d="M348 151 L379 139"/>
+      </g>
+
+      <!-- arms thrown up in celebration -->
+      <g stroke="#565073" stroke-width="56">
+        <path d="M200 308 L112 324 L92 152"/>
+        <path d="M312 308 L400 324 L420 152"/>
+      </g>
+
+      <!-- torso -->
+      <path d="M200 268 C238 256 274 256 312 268 C334 276 342 298 340 330
+               L344 424 C345 438 336 444 323 444 L189 444 C176 444 167 438 168 424
+               L172 330 C170 298 178 276 200 268 Z"
+            fill="#565073" stroke="none"/>
+
+      <!-- head -->
+      <path d="M256 92 C326 92 356 138 354 192 C352 244 318 278 256 278
+               C194 278 160 244 158 192 C156 138 186 92 256 92 Z"
+            fill="#f7e3d6"/>
+
+      <!-- face: eyes squeezed shut with a satisfied grin -->
+      <g stroke-width="6.5">
+        <path d="M198 176 Q220 165 242 176"/>
+        <path d="M201 191 Q220 202 239 191"/>
+        <path d="M270 176 Q292 165 314 176"/>
+        <path d="M273 191 Q292 202 311 191"/>
+        <path d="M210 233 Q256 245 304 229"/>
+        <path d="M210 223 L210 236"/>
+      </g>
+    </g>
+  </g>
+</svg>
