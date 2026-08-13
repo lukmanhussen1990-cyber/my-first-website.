@@ -33,6 +33,16 @@ FILL_LIMIT = 32768
 
 IDENTIFIER_RE = re.compile(r"^[a-z0-9_]+:[a-z0-9_]+$")
 
+# Per-tick block budgets.
+#
+# Bedrock's own fill cap is 32768, but that is a syntax limit, not a budget an
+# Android device can absorb in one frame. A .mcfunction runs in a single tick,
+# so the whole file's block volume — plus anything it calls — is what actually
+# lands on the frame. Pacing the build by command count instead of volume put
+# ~500k block writes in one tick and hard-crashed Minecraft on mobile.
+MAX_FILL_BLOCKS = 8192       # any single fill command
+MAX_FUNCTION_BLOCKS = 16000  # one .mcfunction, including functions it calls
+
 
 def error(message: str) -> None:
     ERRORS.append(message)
@@ -643,6 +653,11 @@ def check_functions() -> None:
                             f"{where}: fill volume {int(volume)} exceeds Bedrock's "
                             f"{FILL_LIMIT} block limit"
                         )
+                    elif volume > MAX_FILL_BLOCKS:
+                        error(
+                            f"{where}: fill volume {int(volume)} exceeds the mobile "
+                            f"per-command budget of {MAX_FILL_BLOCKS} blocks"
+                        )
 
             # `execute positioned` chains must still end in a real command.
             if command == "execute" and " run " not in f" {line} ":
@@ -653,7 +668,72 @@ def check_functions() -> None:
             error(f"function reference {name!r} does not resolve to a .mcfunction file")
 
     check_script_events(script_events)
+    check_function_budgets(function_root, available)
     print(f"  functions: {len(available)} files, {total_commands} commands")
+
+
+def function_own_volume(path: Path) -> tuple[int, list[str]]:
+    """Blocks a function writes itself, and the functions it calls."""
+    volume = 0
+    calls: list[str] = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split()
+        if parts[0] == "setblock":
+            volume += 1
+        elif parts[0] == "function" and len(parts) > 1:
+            calls.append(parts[1].strip('"'))
+        elif parts[0] == "fill" and len(parts) >= 7:
+            coords = [parse_coord(token) for token in parts[1:7]]
+            if all(c is not None for c in coords):
+                span = 1
+                for index in range(3):
+                    span *= abs(coords[index + 3] - coords[index]) + 1
+                volume += int(span)
+        elif "run fill" in line or "run setblock" in line:
+            volume += 1
+    return volume, calls
+
+
+def check_function_budgets(function_root: Path, available: set[str]) -> None:
+    """No single function may blow the per-tick block budget.
+
+    A .mcfunction executes in one tick, and so does everything it calls, so the
+    transitive volume is what actually hits the frame. This is the check that
+    would have caught the crash: a build paced by command count where one part
+    happened to contain half a million blocks of `fill`.
+    """
+    own: dict[str, int] = {}
+    calls: dict[str, list[str]] = {}
+    for path in sorted(function_root.rglob("*.mcfunction")):
+        name = str(path.relative_to(function_root).with_suffix("")).replace("\\", "/")
+        own[name], calls[name] = function_own_volume(path)
+
+    def total(name: str, seen: frozenset[str]) -> int:
+        if name in seen or name not in own:
+            return 0  # cycle, or unresolved reference already reported
+        return own[name] + sum(
+            total(callee, seen | {name}) for callee in calls.get(name, [])
+        )
+
+    worst = ("", 0)
+    for name in sorted(own):
+        volume = total(name, frozenset())
+        if volume > worst[1]:
+            worst = (name, volume)
+        if volume > MAX_FUNCTION_BLOCKS:
+            detail = (
+                f" (it calls {len(calls[name])} functions)" if calls.get(name) else ""
+            )
+            error(
+                f"{name}.mcfunction writes {volume:,} blocks in a single tick{detail} — "
+                f"over the {MAX_FUNCTION_BLOCKS:,} mobile budget. Split it into parts "
+                "the script paces one per tick."
+            )
+    if worst[0]:
+        print(f"  per-tick budget: worst function {worst[0]} at {worst[1]:,} blocks")
 
 
 VANILLA_BLOCK_DATA = Path(__file__).parent / "data_mojang_blocks_1_21_0.json"

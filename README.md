@@ -60,9 +60,10 @@ Stand where you want the front door, then:
 /function tech_house
 ```
 
-The building is placed **one section per tick** (13 sections, ~2200 block
-operations) so a phone does not stall. You will see progress messages in chat and
-*"Deployment complete. Systems online."* when it finishes.
+The building is placed **one section per tick** — 85 sections, about 532,000 block
+operations, roughly **4 seconds**. Each section is budgeted to at most ~12,000
+blocks so no single frame is ever overloaded. You will see progress messages in
+chat and *"Deployment complete. Systems online."* when it finishes.
 
 The origin is your feet. The building extends roughly 40 blocks out in each
 horizontal direction, 34 up and 30 down — pick somewhere open and flat.
@@ -70,9 +71,8 @@ horizontal direction, 34 up and 30 down — pick somewhere open and flat.
 | Command | What it does |
 |---|---|
 | `/function tech_house` | Paced deployment. **Use this one.** |
-| `/function tech_house_now` | Same build, 12 sections per tick. Faster, heavier. |
-| `/function tech_house_clear` | Removes the whole build volume. |
-| `/function mansion/build_all` | Fallback that needs no scripting (see Limitations). |
+| `/function tech_house_now` | Same build, 3 sections per tick (~1.5s). Heavier. |
+| `/function tech_house_clear` | Removes the whole build volume (also paced). |
 
 ### What's inside
 
@@ -286,10 +286,11 @@ This was a design constraint, not an afterthought.
   and may leave the pool or garden hanging.
 - **Only one mansion at a time.** The origin is stored globally, so deploying a
   second one repoints lockdown, quarantine and the room systems at the new build.
-- **`/function mansion/build_all`** is a no-scripting fallback that builds
-  everything in a single tick. It works, but it will hitch on a phone and it does
-  **not** record the mansion origin, so lockdown, quarantine and the room systems
-  will not know where the house is. Prefer `/function tech_house`.
+- **There is no single-tick "build it all now" function**, deliberately. Chaining
+  every section from one `.mcfunction` runs ~532,000 block writes in one tick and
+  crashes Minecraft on Android. Only the script can pace the work, so the script
+  is the only supported way to build. The build therefore needs the behaviour
+  pack's scripting to be working.
 - **Lockdown shutters are placed by volume**, so if you stand exactly in a doorway
   when it seals you will be pushed out of the block.
 - **Infection persists per player via scoreboard.** If a player's scoreboard entry
@@ -323,14 +324,19 @@ re-opens the archive and checks it. The build refuses to package if validation f
 - `.mcfunction` linting: unknown commands, Java-Edition-only commands, Java block
   state syntax (`[facing=north]`), fills over Bedrock's 32768-block volume cap,
   leading slashes, and unresolved `function` references
+- **per-tick block budgets** — no single `fill` may exceed 8,192 blocks, and no
+  function may write more than 16,000 blocks in one tick *including every function
+  it calls*. A `.mcfunction` runs in a single tick, so transitive volume is what
+  actually lands on the frame
 - every `scriptevent` raised by a function has a handler in `main.js`
 - scripts import only the allowed module, relative imports resolve, **named imports
   resolve to real exports**, no synchronous `runCommand`, no `setTimeout`/`setInterval`,
   and **every script parses as an ES module under Node**
 
 The validator was negative-tested: injected faults (a bad block id, a bad block
-state, a Java-only command, an unknown sound, an import of a non-existent export)
-were each caught and failed the build.
+state, a Java-only command, an unknown sound, an import of a non-existent export,
+an oversized fill, and a function chaining the whole build into one tick) were each
+caught and failed the build.
 
 The mansion generator additionally proves its own lockdown contract — it simulates
 every block operation and fails the build if any sealable opening is not pure air in

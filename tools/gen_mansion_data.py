@@ -41,6 +41,7 @@ def main() -> None:
 
     index = json.loads(index_path.read_text())
     parts = index["parts"]
+    clear_parts = index["clear_parts"]
     anchors = index["anchors"]
     seals = index["seals"]
     bounds = index["bounds"]
@@ -53,13 +54,15 @@ def main() -> None:
         if name not in anchors:
             raise SystemExit(f"_index.json is missing the required anchor {name!r}")
 
-    for part in parts:
+    for part in parts + clear_parts:
         if not (ROOT / "src" / "behavior_pack" / "functions" / f"{part}.mcfunction").exists():
             raise SystemExit(f"_index.json lists {part!r}, which has no .mcfunction file")
 
     body = [
         HEADER,
         f"export const PARTS = {json.dumps(parts, indent=2)};",
+        "",
+        f"export const CLEAR_PARTS = {json.dumps(clear_parts, indent=2)};",
         "",
         f"export const ANCHORS = {json.dumps(anchors, indent=2)};",
         "",
@@ -70,24 +73,19 @@ def main() -> None:
     ]
     (SCRIPTS / "mansion_data.js").write_text("\n".join(body))
 
-    fallback = [
-        "# Build the whole mansion in one tick at the position this function runs at.",
-        "# Run by a player from chat, that is the player's feet.",
-        "#",
-        "# This is the fallback path: /function tech_house is preferred because the",
-        "# script paces the build one part per tick, which is far kinder to a phone.",
-        "# This version does not record the mansion origin, so lockdown, quarantine",
-        "# and the room systems will not know where the building is.",
-        "",
-    ]
-    fallback += [f"function {part}" for part in parts]
-    (MANSION / "build_all.mcfunction").write_text("\n".join(fallback) + "\n")
+    # Deliberately NO build_all.mcfunction. Chaining every part from one
+    # function runs the entire ~532,000-block build in a single tick, which
+    # crashes Minecraft on Android. Pacing is the whole point, and a function
+    # cannot pace itself — only the script can.
+    stale = MANSION / "build_all.mcfunction"
+    if stale.exists():
+        stale.unlink()
 
     print(
-        f"mansion_data.js: {len(parts)} parts, {len(anchors)} anchors, "
-        f"{len(seals)} seals, bounds {bounds['from']}..{bounds['to']}"
+        f"mansion_data.js: {len(parts)} build parts, {len(clear_parts)} clear parts, "
+        f"{len(anchors)} anchors, {len(seals)} seals, "
+        f"bounds {bounds['from']}..{bounds['to']}"
     )
-    print(f"build_all.mcfunction: {len(parts)} part calls")
 
 
 if __name__ == "__main__":

@@ -14,12 +14,15 @@
  */
 
 import { BlockPermutation, system, world } from "@minecraft/server";
-import { ANCHORS, BOUNDS, PARTS, SEALS } from "./mansion_data.js";
+import { ANCHORS, BOUNDS, CLEAR_PARTS, PARTS, SEALS } from "./mansion_data.js";
 import { getGlobal, getOrigin, playerState, runCmd, setGlobal, setOrigin } from "./state.js";
 import { safeBlock } from "./infection.js";
 import { threatLabel } from "./ui.js";
 
-const FILL_LIMIT = 32768; // Bedrock's per-fill volume cap
+// Bedrock's own per-fill cap is 32768, but a phone cannot absorb that in one
+// frame. Match the mansion generator's tighter budget so the lockdown light
+// sweep costs about as much per tick as one part of the build does.
+const FILL_LIMIT = 8192;
 const AUTO_DOOR_RADIUS = 45;
 const DOOR_HOLD_TICKS = 60;
 
@@ -108,8 +111,10 @@ export function buildMansion(player, { instant = false } = {}) {
   );
 
   world.sendMessage("§b§l[TECH MANSION] §r§7Deploying structure — hold still.");
+  // Each part is budgeted to ~12k blocks, so perTick is a direct multiplier on
+  // per-frame cost. Keep "fast" modest: this build crashes phones if rushed.
   enqueue(player.dimension, commands, {
-    perTick: instant ? 12 : 1,
+    perTick: instant ? 3 : 1,
     label: "TECH MANSION",
     onDone: () => {
       world.sendMessage("§a§l[TECH MANSION] §r§aDeployment complete. Systems online.");
@@ -124,11 +129,19 @@ export function clearMansion(player) {
     player.sendMessage("§cNo mansion has been deployed yet.");
     return;
   }
-  enqueue(
-    player.dimension,
-    [`execute positioned ${origin.x} ${origin.y} ${origin.z} run function mansion/clear`],
-    { onDone: () => world.sendMessage("§7[TECH MANSION] Structure removed.") }
+  if (isBusy()) {
+    player.sendMessage("§eAnother large operation is already running. Try again in a moment.");
+    return;
+  }
+  // Clearing the envelope is ~426k blocks. Paced exactly like the build.
+  const commands = CLEAR_PARTS.map(
+    (part) => `execute positioned ${origin.x} ${origin.y} ${origin.z} run function ${part}`
   );
+  enqueue(player.dimension, commands, {
+    perTick: 1,
+    label: "TECH MANSION",
+    onDone: () => world.sendMessage("§7[TECH MANSION] Structure removed."),
+  });
   setGlobal("built", 0);
   setGlobal("lockdown", 0);
 }
@@ -221,7 +234,7 @@ export function lockdown(player) {
   world.sendMessage("§c§l[SECURITY] §r§cLOCKDOWN ENGAGED. Sealing the envelope.");
   runCmd("playsound myc.lockdown @a");
   runCmd("playsound myc.alarm @a");
-  enqueue(player?.dimension ?? world.getDimension("overworld"), commands, { perTick: 3 });
+  enqueue(player?.dimension ?? world.getDimension("overworld"), commands, { perTick: 2 });
 
   quarantineInfected();
 }
@@ -248,7 +261,7 @@ export function unlock(player) {
 
   world.sendMessage("§a§l[SECURITY] §r§aLockdown released. The mansion is open.");
   runCmd("playsound myc.lockdown @a");
-  enqueue(player?.dimension ?? world.getDimension("overworld"), commands, { perTick: 3 });
+  enqueue(player?.dimension ?? world.getDimension("overworld"), commands, { perTick: 2 });
 }
 
 /** Anyone critical gets moved into the sealed quarantine cell. */
