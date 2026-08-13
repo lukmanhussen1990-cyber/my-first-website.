@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b2a1d">
+<title>Chloroplast — The Photosynthesis Game</title>
+<meta name="description" content="An animated arcade game about photosynthesis: split water with sunlight, fix carbon, build glucose.">
+<style>
+  :root{
+    --leaf:#5ddc7a;
+    --leaf-dark:#1d7a45;
+    --sun:#ffd54a;
+    --water:#5cc9ff;
+    --carbon:#c9d4dd;
+    --smog:#d2478f;
+    --ink:#04150e;
+    --panel:rgba(4,24,16,.62);
+    --panel-line:rgba(126,255,180,.22);
+    --text:#eafff2;
+    --muted:#9fc9b3;
+    --font:'Trebuchet MS','Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0;overflow:hidden;background:#04150e;font-family:var(--font);color:var(--text)}
+  #stage{position:fixed;inset:0;overflow:hidden;touch-action:none}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+  /* ---------- HUD ---------- */
+  #hud{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;
+       padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+       opacity:0;transition:opacity .45s ease}
+  #hud.on{opacity:1}
+  .row{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+  .panel{background:var(--panel);border:1px solid var(--panel-line);border-radius:14px;padding:8px 12px;
+         backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);box-shadow:0 6px 26px rgba(0,0,0,.35)}
+  .label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+  .big{font-size:24px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 0 14px rgba(93,220,122,.45)}
+  #scoreBox .big{color:#fff}
+  #comboTag{display:inline-block;margin-left:8px;font-size:12px;color:var(--sun);opacity:0;transform:translateY(4px);
+            transition:.25s ease;font-weight:700;text-shadow:0 0 12px rgba(255,213,74,.8)}
+  #comboTag.on{opacity:1;transform:translateY(0)}
+  #rightTop{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+  #clock{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  #clockDot{width:14px;height:14px;border-radius:50%;background:var(--sun);box-shadow:0 0 14px var(--sun);transition:.6s}
+  .btn{pointer-events:auto;cursor:pointer;border:1px solid var(--panel-line);background:var(--panel);color:var(--text);
+       border-radius:12px;padding:9px 14px;font-family:var(--font);font-size:13px;font-weight:700;letter-spacing:.06em;
+       backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);transition:.18s}
+  .btn:hover{background:rgba(93,220,122,.22);border-color:rgba(126,255,180,.5);transform:translateY(-1px)}
+  .btn:active{transform:translateY(0) scale(.97)}
+  .btn.icon{width:42px;height:42px;padding:0;font-size:15px;display:grid;place-items:center}
+  #iconRow{display:flex;gap:8px}
+
+  /* vitality */
+  #vitalWrap{width:min(280px,42vw)}
+  #vitalBar{height:9px;border-radius:99px;background:rgba(255,255,255,.13);overflow:hidden;margin-top:5px}
+  #vitalFill{height:100%;width:100%;border-radius:99px;background:linear-gradient(90deg,#2fbf6b,#9dff9a);
+             box-shadow:0 0 16px rgba(93,220,122,.7);transition:width .18s linear,background .4s}
+  #vitalWrap.low #vitalFill{background:linear-gradient(90deg,#ff5c5c,#ffb36b);box-shadow:0 0 18px rgba(255,92,92,.75)}
+  #vitalWrap.low{animation:pulseWarn 1s infinite}
+  @keyframes pulseWarn{0%,100%{opacity:1}50%{opacity:.6}}
+
+  /* reaction tracker */
+  #bottom{display:flex;flex-direction:column;align-items:center;gap:8px}
+  #tracker{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;justify-content:center}
+  .res{min-width:104px}
+  .res .head{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+  .res .name{font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:700}
+  .res .count{margin-left:auto;font-size:11px;color:#fff;font-variant-numeric:tabular-nums;opacity:.85}
+  .pips{display:flex;gap:4px}
+  .pip{width:13px;height:13px;border-radius:4px;background:rgba(255,255,255,.11);transition:.2s;position:relative}
+  .pip.on{transform:scale(1.12)}
+  .res.w .pip.on{background:var(--water);box-shadow:0 0 10px var(--water)}
+  .res.e .pip.on{background:var(--sun);box-shadow:0 0 10px var(--sun)}
+  .res.c .pip.on{background:var(--carbon);box-shadow:0 0 10px rgba(201,212,221,.9)}
+  .res.full{animation:popRes .4s ease}
+  @keyframes popRes{0%{transform:scale(1)}45%{transform:scale(1.08)}100%{transform:scale(1)}}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .dot.w{background:var(--water);box-shadow:0 0 10px var(--water)}
+  .dot.e{background:var(--sun);box-shadow:0 0 10px var(--sun)}
+  .dot.c{background:var(--carbon);box-shadow:0 0 10px rgba(201,212,221,.7)}
+  #eq{font-size:11px;letter-spacing:.09em;color:var(--muted);opacity:.85;text-align:center}
+  #eq b{color:#bff7d2}
+
+  /* toast */
+  #toast{position:absolute;left:50%;top:13%;transform:translate(-50%,-14px);pointer-events:none;
+         max-width:min(460px,86vw);text-align:center;opacity:0;transition:.4s cubic-bezier(.2,.9,.25,1);
+         background:rgba(3,20,13,.74);border:1px solid rgba(126,255,180,.22);border-radius:16px;padding:11px 18px;
+         backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 12px 40px rgba(0,0,0,.45)}
+  #toast.on{opacity:1;transform:translate(-50%,0)}
+  #toast .t-title{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--sun);margin-bottom:3px}
+  #toast .t-body{font-size:13px;line-height:1.45;color:#e6fff0}
+
+  /* ---------- Screens ---------- */
+  .screen{position:absolute;inset:0;display:grid;place-items:center;padding:20px;
+          background:radial-gradient(120% 90% at 50% 0%,rgba(6,40,26,.30),rgba(2,10,7,.62));
+          backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:5;
+          opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s}
+  .screen.on{opacity:1;visibility:visible}
+  .card{width:min(620px,94vw);max-height:92vh;overflow:auto;text-align:center;
+        background:linear-gradient(180deg,rgba(9,44,29,.95),rgba(4,20,13,.97));
+        backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+        border:1px solid rgba(126,255,180,.28);border-radius:22px;padding:26px 24px;
+        box-shadow:0 30px 90px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.07)}
+  .card h1{margin:0;font-size:clamp(30px,7vw,50px);line-height:1;letter-spacing:-.5px;
+           background:linear-gradient(180deg,#eaffe9,#5ddc7a 55%,#1d7a45);
+           -webkit-background-clip:text;background-clip:text;color:transparent;
+           filter:drop-shadow(0 4px 18px rgba(93,220,122,.35))}
+  .card h2{margin:0 0 6px;font-size:clamp(24px,6vw,34px);color:#fff}
+  .tag{display:inline-block;margin:10px 0 4px;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted)}
+  .lede{color:#cfeede;font-size:14px;line-height:1.6;margin:10px auto 4px;max-width:46ch}
+  .keys{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px 0 4px}
+  .keys span{font-size:12px;color:#d9f6e6;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+             border-radius:9px;padding:6px 10px}
+  kbd{font-family:var(--font);font-weight:700;color:#fff;background:rgba(93,220,122,.22);
+      border:1px solid rgba(126,255,180,.4);border-radius:6px;padding:1px 6px;font-size:11px}
+  .steps{text-align:left;margin:14px auto 0;max-width:46ch;display:grid;gap:9px}
+  .step{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;color:#dff6e8}
+  .step .n{flex:none;width:22px;height:22px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:800;color:#04150e}
+  .n.s1{background:var(--water)}.n.s2{background:var(--sun)}.n.s3{background:var(--carbon)}.n.s4{background:var(--leaf)}
+  .cta{margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .cta .btn{pointer-events:auto;font-size:15px;padding:13px 24px;border-radius:14px}
+  .btn.primary{background:linear-gradient(180deg,#57d97a,#22954f);border-color:rgba(180,255,205,.55);color:#04150e;
+               box-shadow:0 10px 30px rgba(45,190,105,.35)}
+  .btn.primary:hover{background:linear-gradient(180deg,#6ff08e,#2aa85c)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:18px 0 4px}
+  .stat{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 8px}
+  .stat .v{font-size:24px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+  .stat .k{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+  .fact{margin-top:16px;font-size:12.5px;line-height:1.55;color:#bfe8d1;background:rgba(93,220,122,.09);
+        border:1px solid rgba(126,255,180,.2);border-radius:14px;padding:11px 14px}
+  .fact b{color:var(--sun)}
+  .rank{font-size:13px;color:var(--sun);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+  #srOnly{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  @media (max-width:520px){
+    .res{min-width:88px}
+    .pip{width:11px;height:11px}
+    .big{font-size:20px}
+    #eq{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001ms!important;transition-duration:.08s!important}
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- ================= HUD ================= -->
+  <div id="hud">
+    <div class="row">
+      <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">
+        <div class="panel" id="scoreBox">
+          <div class="label">Score</div>
+          <div class="big"><span id="score">0</span><span id="comboTag">×2</span></div>
+        </div>
+        <div class="panel">
+          <div class="label">Glucose</div>
+          <div class="big" style="color:#ffe89a"><span id="glucose">0</span></div>
+        </div>
+        <div class="panel" id="vitalWrap">
+          <div class="label">Leaf vitality · <span id="lvlTxt">Sprout</span></div>
+          <div id="vitalBar"><div id="vitalFill"></div></div>
+        </div>
+      </div>
+      <div id="rightTop">
+        <div class="panel" id="clock"><span id="clockDot"></span><span id="clockTxt">Dawn</span></div>
+        <div id="iconRow">
+          <button class="btn icon" id="btnSound" title="Sound on/off" aria-label="Toggle sound">♪</button>
+          <button class="btn icon" id="btnPause" title="Pause (P)" aria-label="Pause">❚❚</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="bottom">
+      <div id="tracker">
+        <div class="panel res w" id="resW">
+          <div class="head"><span class="dot w"></span><span class="name">H₂O</span><span class="count"><span id="cw">0</span>/6</span></div>
+          <div class="pips" id="pw"></div>
+        </div>
+        <div class="panel res e" id="resE">
+          <div class="head"><span class="dot e"></span><span class="name">ATP</span><span class="count"><span id="ce">0</span>/6</span></div>
+          <div class="pips" id="pe"></div>
+        </div>
+        <div class="panel res c" id="resC">
+          <div class="head"><span class="dot c"></span><span class="name">CO₂</span><span class="count"><span id="cc">0</span>/6</span></div>
+          <div class="pips" id="pc"></div>
+        </div>
+      </div>
+      <div id="eq">6 CO₂ + 6 H₂O + <b>light</b> &nbsp;→&nbsp; C₆H₁₂O₆ + 6 O₂</div>
+    </div>
+  </div>
+
+  <div id="toast"><div class="t-title" id="toastTitle"></div><div class="t-body" id="toastBody"></div></div>
+
+  <!-- ================= TITLE ================= -->
+  <div class="screen on" id="screenTitle">
+    <div class="card">
+      <div class="tag">An arcade game about the greenest chemistry on Earth</div>
+      <h1>CHLOROPLAST</h1>
+      <p class="lede">You are a single chloroplast inside a living leaf. Sunlight pours from above,
+        water climbs from the roots, carbon dioxide drifts in through the stomata.
+        Turn all three into sugar — before the leaf runs out of breath.</p>
+
+      <div class="steps">
+        <div class="step"><span class="n s1">1</span><span><b>Drink water.</b> Blue droplets rise from the xylem. Fill your tank to 6.</span></div>
+        <div class="step"><span class="n s2">2</span><span><b>Catch photons.</b> Each one splits a stored H₂O into <b>ATP energy</b> + a puff of O₂. No water, no split.</span></div>
+        <div class="step"><span class="n s3">3</span><span><b>Fix carbon.</b> Grey CO₂ molecules drift in from the air. Collect 6.</span></div>
+        <div class="step"><span class="n s4">4</span><span><b>6 ATP + 6 CO₂ = glucose.</b> The Calvin cycle fires automatically and the leaf revives.</span></div>
+      </div>
+
+      <div class="keys">
+        <span><kbd>Move mouse</kbd> or <kbd>drag</kbd> to steer</span>
+        <span><kbd>W A S D</kbd> / <kbd>arrows</kbd></span>
+        <span><kbd>P</kbd> pause</span>
+      </div>
+      <p class="lede" style="font-size:13px;color:#9fc9b3">Dodge the magenta <b>smog</b>. The sun sets — stockpile water and CO₂ in the dark,
+        then burn through it at noon.</p>
+
+      <div class="cta">
+        <button class="btn primary" id="btnStart">Start photosynthesis</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PAUSE ================= -->
+  <div class="screen" id="screenPause">
+    <div class="card">
+      <div class="tag">Stomata closed</div>
+      <h2>Paused</h2>
+      <p class="lede">The light-dependent reactions will wait for you.</p>
+      <div class="cta">
+        <button class="btn primary" id="btnResume">Resume</button>
+        <button class="btn" id="btnQuit">Quit to title</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= GAME OVER ================= -->
+  <div class="screen" id="screenOver">
+    <div class="card">
+      <div class="tag" id="overTag">The leaf has fallen</div>
+      <h2 id="overTitle">Wilted</h2>
+      <div class="rank" id="overRank"></div>
+      <div class="stats">
+        <div class="stat"><div class="v" id="fScore">0</div><div class="k">Score</div></div>
+        <div class="stat"><div class="v" id="fGlucose">0</div><div class="k">Glucose</div></div>
+        <div class="stat"><div class="v" id="fO2">0</div><div class="k">O₂ released</div></div>
+        <div class="stat"><div class="v" id="fBest">0</div><div class="k">Best score</div></div>
+      </div>
+      <div class="fact" id="overFact"></div>
+      <div class="cta">
+        <button class="btn primary" id="btnAgain">Grow again</button>
+        <button class="btn" id="btnTitle">Title screen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="srOnly" aria-live="polite"></div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ============================================================
+   Chloroplast — a single-file photosynthesis arcade game
+   ============================================================ */
+
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp  = (a, b, t) => a + (b - a) * t;
+const rand  = (a, b) => a + Math.random() * (b - a);
+const randi = (a, b) => Math.floor(rand(a, b + 1));
+const pick  = arr => arr[(Math.random() * arr.length) | 0];
+const ease  = t => t * t * (3 - 2 * t);
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- canvas ---------- */
+const cv  = document.getElementById('game');
+const ctx = cv.getContext('2d', { alpha: false });
+let W = 0, H = 0, DPR = 1;
+
+function resize(){
+  DPR = clamp(window.devicePixelRatio || 1, 1, 2);
+  W = cv.clientWidth; H = cv.clientHeight;
+  cv.width  = Math.round(W * DPR);
+  cv.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  buildStars();
+  buildLeafScene();
+}
+addEventListener('resize', resize, { passive: true });
+
+/* ---------- audio (tiny WebAudio synth, no assets) ---------- */
+const Sound = {
+  ctx: null, master: null, on: true,
+  init(){
+    if (this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { this.on = false; return; }
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = 0.28;
+    this.master.connect(this.ctx.destination);
+  },
+  resume(){ if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); },
+  blip(freq, dur = .12, type = 'sine', vol = .5, slide = 0){
+    if (!this.on || !this.ctx) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + .02);
+  },
+  chord(freqs, dur = .5, type = 'triangle', vol = .32){
+    freqs.forEach((f, i) => setTimeout(() => this.blip(f, dur, type, vol), i * 60));
+  },
+  noise(dur = .3, vol = .3){
+    if (!this.on || !this.ctx) return;
+    const n = Math.floor(this.ctx.sampleRate * dur);
+    const buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n) ** 2;
+    const s = this.ctx.createBufferSource(); s.buffer = buf;
+    const f = this.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900;
+    const g = this.ctx.createGain(); g.gain.value = vol;
+    s.connect(f); f.connect(g); g.connect(this.master); s.start();
+  }
+};
+
+/* ---------- game constants ---------- */
+const NEED       = 6;        // 6 CO2 + 6 H2O + 6 ATP -> 1 glucose
+const CYCLE      = 52;       // seconds per full day/night cycle
+const BASE_DRAIN = 1.55;     // vitality lost per second (respiration)
+const RANKS = [
+  [0,    'Seedling'],
+  [1200, 'Sprout'],
+  [3000, 'Sapling'],
+  [6000, 'Leafy Green'],
+  [10000,'Canopy Keeper'],
+  [16000,'Photon Baron'],
+  [24000,'Rainforest Legend']
+];
+const STAGES = ['Sprout','Seedling','Shoot','Sapling','Young Tree','Elder Tree','Ancient Canopy'];
+
+const FACTS = [
+  ['Six is the magic number', 'Six CO₂ and six H₂O make exactly one glucose and six O₂. You just balanced a chemical equation with your reflexes.'],
+  ['Where the oxygen comes from', 'Every O₂ you released came from split <b>water</b>, not from CO₂. Photolysis tears H₂O apart to feed the electron chain.'],
+  ['Two reactions, one leaf', 'Catching photons is the <b>light-dependent</b> stage. Spending ATP on CO₂ is the <b>Calvin cycle</b> — it needs no light at all.'],
+  ['Rubisco, the slow giant', 'The enzyme that grabs CO₂ is the most abundant protein on Earth — and one of the slowest, fixing only ~3 molecules per second.'],
+  ['Green is the leftover', 'Chlorophyll drinks red and blue light and reflects green. Leaves look green because that is the colour they refuse.'],
+  ['Thylakoid stacks', 'Inside you are coin-stacks of membrane called grana. That folding packs a tennis court of light-catching surface into a speck.'],
+  ['Eight photons per breath', 'Real chloroplasts need roughly 8 photons to release a single O₂ molecule. You are getting a generous discount.'],
+  ['The ancient merger', 'Chloroplasts were once free-living cyanobacteria. Two billion years ago one moved in — and never left.'],
+  ['Half of all photosynthesis', 'Ocean phytoplankton perform about half the planet\'s photosynthesis. Every second breath you take is thanks to the sea.'],
+  ['Night shift', 'In the dark, plants respire like you do — burning sugar for energy. That is why your vitality kept draining after sunset.'],
+  ['Stomata are lips', 'Leaves open tiny mouths to inhale CO₂, and lose water doing it. Photosynthesis is always a trade with thirst.'],
+  ['Sugar becomes wood', 'Most of a tree\'s mass is not soil — it is carbon pulled out of thin air, one CO₂ molecule at a time.']
+];
+
+/* ---------- state ---------- */
+const G = {
+  mode: 'title',                // title | play | pause | over
+  t: 0, dt: 0, clock: 0,
+  score: 0, glucose: 0, o2: 0, best: +(localStorage.getItem('chloro_best') || 0),
+  vital: 100,
+  water: 0, atp: 0, co2: 0,
+  combo: 1, comboT: 0,
+  level: 1,
+  shake: 0, flash: 0, flashCol: '255,255,255',
+  magnet: 0,
+  spawnT: { photon: 0, water: 0, co2: 0, smog: 0, power: 0 },
+  lastDusk: -1, lastDawn: -1,
+  ended: 0
+};
+
+let pickups = [], effects = [], texts = [], o2bubbles = [], stars = [], clouds = [], veins = [], blades = [];
+
+/* ---------- player ---------- */
+const P = {
+  x: 0, y: 0, vx: 0, vy: 0, r: 21,
+  tx: 0, ty: 0, usePointer: false,
+  trail: [], pulse: 0, hurt: 0, spin: 0
+};
+
+/* ---------- input ---------- */
+const keys = new Set();
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) e.preventDefault();
+  keys.add(k);
+  P.usePointer = false;
+  if (k === 'p' || k === 'escape') { if (G.mode === 'play') pause(); else if (G.mode === 'pause') resume(); }
+  if (k === 'm') toggleSound();
+  if (k === 'enter' || k === ' ') {
+    if (G.mode === 'title') start();
+    else if (G.mode === 'over') start();
+  }
+});
+addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+addEventListener('blur', () => { keys.clear(); if (G.mode === 'play') pause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && G.mode === 'play') pause(); });
+
+function pointTo(e){
+  const r = cv.getBoundingClientRect();
+  P.tx = e.clientX - r.left;
+  P.ty = e.clientY - r.top;
+  P.usePointer = true;
+}
+cv.addEventListener('pointermove', e => { pointTo(e); }, { passive: true });
+cv.addEventListener('pointerdown', e => { Sound.init(); Sound.resume(); pointTo(e); cv.setPointerCapture?.(e.pointerId); }, { passive: true });
+
+/* ---------- DOM refs ---------- */
+const $ = id => document.getElementById(id);
+const el = {
+  hud: $('hud'), score: $('score'), glucose: $('glucose'), vital: $('vitalFill'), vitalWrap: $('vitalWrap'),
+  lvl: $('lvlTxt'), combo: $('comboTag'), clockDot: $('clockDot'), clockTxt: $('clockTxt'),
+  cw: $('cw'), ce: $('ce'), cc: $('cc'), pw: $('pw'), pe: $('pe'), pc: $('pc'),
+  resW: $('resW'), resE: $('resE'), resC: $('resC'),
+  toast: $('toast'), toastTitle: $('toastTitle'), toastBody: $('toastBody'),
+  sTitle: $('screenTitle'), sPause: $('screenPause'), sOver: $('screenOver'),
+  fScore: $('fScore'), fGlucose: $('fGlucose'), fO2: $('fO2'), fBest: $('fBest'),
+  overFact: $('overFact'), overTitle: $('overTitle'), overTag: $('overTag'), overRank: $('overRank'),
+  sr: $('srOnly'), btnSound: $('btnSound')
+};
+
+/* build pip rows */
+function buildPips(host){
+  host.innerHTML = '';
+  for (let i = 0; i < NEED; i++){
+    const d = document.createElement('div');
+    d.className = 'pip';
+    host.appendChild(d);
+  }
+  return [...host.children];
+}
+const pips = { w: buildPips(el.pw), e: buildPips(el.pe), c: buildPips(el.pc) };
+
+/* ============================================================
+   Background scenery
+   ============================================================ */
+function buildStars(){
+  stars = [];
+  const n = Math.round((W * H) / 14000);
+  for (let i = 0; i < n; i++){
+    stars.push({ x: Math.random() * W, y: Math.random() * H * .72, r: rand(.5, 1.7), p: Math.random() * TAU, s: rand(.6, 2.4) });
+  }
+  clouds = [];
+  for (let i = 0; i < 5; i++){
+    clouds.push({ x: Math.random() * W, y: rand(H * .06, H * .38), s: rand(.55, 1.5), v: rand(6, 18), a: rand(.05, .16) });
+  }
+}
+function buildLeafScene(){
+  // leaf veins along the bottom "leaf floor"
+  veins = [];
+  const baseY = H;
+  for (let i = 0; i < 7; i++){
+    const x = (W / 6) * i + rand(-30, 30);
+    veins.push({ x, h: rand(H * .10, H * .26), w: rand(2, 5), sway: rand(0, TAU), sp: rand(.4, .9) });
+  }
+  blades = [];
+  for (let i = 0; i < 26; i++){
+    blades.push({ x: Math.random() * W, h: rand(18, 66), w: rand(3, 9), sway: Math.random() * TAU, sp: rand(.6, 1.5), c: rand(.35, 1) });
+  }
+  void baseY;
+}
+
+/* ============================================================
+   Day / night
+   ============================================================ */
+const REF_AREA = 1280 * 800;
+function density(){ return clamp(Math.sqrt((W * H) / REF_AREA), .55, 1.35); }
+
+function dayPhase(){ return (G.clock % CYCLE) / CYCLE; }          // 0 dawn .25 noon .5 dusk .75 midnight
+function sunHeight(){ return Math.sin(dayPhase() * TAU); }          // -1..1
+function lightLevel(){ return clamp(sunHeight() * 1.15, 0, 1); }
+
+function phaseName(){
+  const t = dayPhase();
+  if (t < .06 || t > .96) return 'Dawn';
+  if (t < .2)  return 'Morning';
+  if (t < .32) return 'High noon';
+  if (t < .44) return 'Afternoon';
+  if (t < .56) return 'Dusk';
+  if (t < .72) return 'Night';
+  if (t < .9)  return 'Deep night';
+  return 'First light';
+}
+
+function skyColors(){
+  const s = sunHeight();
+  // key palettes: night, dawn/dusk, day
+  const night = [[6,14,34],   [12,26,48],  [18,38,60]];
+  const dusk  = [[52,26,74],  [162,66,84], [244,140,86]];
+  const day   = [[26,102,182],[70,158,214],[142,206,220]];
+  let top, mid, bot;
+  if (s >= 0){
+    const k = ease(clamp(s * 2.1, 0, 1));
+    top = mixArr(dusk[0], day[0], k); mid = mixArr(dusk[1], day[1], k); bot = mixArr(dusk[2], day[2], k);
+  } else {
+    const k = ease(clamp(-s * 2.1, 0, 1));
+    top = mixArr(dusk[0], night[0], k); mid = mixArr(dusk[1], night[1], k); bot = mixArr(dusk[2], night[2], k);
+  }
+  return [top, mid, bot];
+}
+const mixArr = (a, b, t) => [lerp(a[0],b[0],t)|0, lerp(a[1],b[1],t)|0, lerp(a[2],b[2],t)|0];
+const rgb = a => `rgb(${a[0]},${a[1]},${a[2]})`;
+const rgba = (a, al) => `rgba(${a[0]},${a[1]},${a[2]},${al})`;
+
+/* ============================================================
+   Pickups
+   ============================================================ */
+function sunPos(){
+  const t = dayPhase();
+  const k = t < .5 ? t / .5 : (t - .5) / .5;         // 0..1 across the sky
+  const isSun = t < .5;
+  const x = lerp(W * -.05, W * 1.05, k);
+  const y = H * .82 - Math.sin(k * Math.PI) * H * .72;
+  return { x, y, isSun };
+}
+
+function spawnPhoton(golden = false){
+  const s = sunPos();
+  const sp = rand(90, 155) * (1 + (G.level - 1) * .05);
+  // Photons rain across the whole sky rather than streaming from a single
+  // point — biased toward the sun, and entering at a low angle near sunrise
+  // and sunset, when the sun itself hangs near the horizon.
+  const ox = lerp(s.x, rand(-30, W + 30), rand(.45, .95));
+  const oy = lerp(s.y, -20, .78) + rand(-20, 30);
+  pickups.push({
+    kind: golden ? 'golden' : 'photon',
+    x: ox, y: oy,
+    vx: (ox - s.x) * .1 + rand(-26, 26),
+    vy: sp,
+    r: golden ? 15 : 10, life: 0, rot: Math.random() * TAU, wob: Math.random() * TAU
+  });
+}
+function spawnWater(){
+  pickups.push({
+    kind: 'water',
+    x: rand(W * .06, W * .94), y: H + 24,
+    vx: rand(-8, 8), vy: -rand(52, 96) * (1 + (G.level - 1) * .04),
+    r: 13, life: 0, wob: Math.random() * TAU
+  });
+}
+function spawnCO2(){
+  const left = Math.random() < .5;
+  pickups.push({
+    kind: 'co2',
+    x: left ? -30 : W + 30, y: rand(H * .18, H * .88),
+    vx: (left ? 1 : -1) * rand(42, 82) * (1 + (G.level - 1) * .045),
+    vy: rand(-14, 14),
+    r: 15, life: 0, rot: Math.random() * TAU, spin: rand(-1.4, 1.4), wob: Math.random() * TAU
+  });
+}
+function spawnSmog(){
+  const fromTop = Math.random() < .35;
+  const left = Math.random() < .5;
+  pickups.push({
+    kind: 'smog',
+    x: fromTop ? rand(0, W) : (left ? -40 : W + 40),
+    y: fromTop ? -40 : rand(H * .12, H * .9),
+    vx: fromTop ? rand(-30, 30) : (left ? 1 : -1) * rand(58, 108) * (1 + (G.level - 1) * .06),
+    vy: fromTop ? rand(58, 104) : rand(-22, 22),
+    r: 23, life: 0, rot: Math.random() * TAU, spin: rand(-2, 2), wob: Math.random() * TAU
+  });
+}
+function spawnPower(){
+  pickups.push({
+    kind: 'power',
+    x: rand(W * .12, W * .88), y: rand(H * .2, H * .7),
+    vx: rand(-18, 18), vy: rand(-14, 14),
+    r: 16, life: 0, rot: 0, wob: Math.random() * TAU
+  });
+}
+
+/* ============================================================
+   Effects
+   ============================================================ */
+function burst(x, y, color, n = 14, speed = 200, size = 3.4, life = .7){
+  if (REDUCED) n = Math.min(n, 6);
+  for (let i = 0; i < n; i++){
+    const a = Math.random() * TAU, s = rand(speed * .3, speed);
+    effects.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, r: rand(size * .5, size), c: color, t: 0, life: rand(life * .6, life) });
+  }
+}
+function ring(x, y, color, rMax = 90, life = .5, width = 3){
+  effects.push({ ring: true, x, y, c: color, t: 0, life, rMax, width });
+}
+function floatText(x, y, txt, color, size = 16){
+  texts.push({ x, y, txt, c: color, t: 0, life: 1.05, size });
+}
+function releaseO2(x, y, n = 1){
+  for (let i = 0; i < n; i++){
+    o2bubbles.push({ x: x + rand(-12, 12), y: y + rand(-8, 8), r: rand(4, 8), vy: -rand(30, 62), vx: rand(-14, 14), t: 0, life: rand(2.2, 3.6), wob: Math.random() * TAU });
+    G.o2++;
+  }
+}
+
+/* ============================================================
+   HUD sync
+   ============================================================ */
+let lastHud = {};
+function syncHUD(force){
+  if (force || lastHud.score !== G.score) { el.score.textContent = G.score.toLocaleString(); lastHud.score = G.score; }
+  if (force || lastHud.glucose !== G.glucose) { el.glucose.textContent = G.glucose; lastHud.glucose = G.glucose; }
+  if (force || lastHud.water !== G.water){ setPips(pips.w, G.water); el.cw.textContent = G.water; lastHud.water = G.water; }
+  if (force || lastHud.atp   !== G.atp)  { setPips(pips.e, G.atp);   el.ce.textContent = G.atp;   lastHud.atp = G.atp; }
+  if (force || lastHud.co2   !== G.co2)  { setPips(pips.c, G.co2);   el.cc.textContent = G.co2;   lastHud.co2 = G.co2; }
+
+  const v = clamp(G.vital, 0, 100);
+  el.vital.style.width = v + '%';
+  el.vitalWrap.classList.toggle('low', v < 32);
+
+  const lv = STAGES[Math.min(STAGES.length - 1, G.level - 1)];
+  if (force || lastHud.lv !== lv){ el.lvl.textContent = lv; lastHud.lv = lv; }
+
+  const c = G.combo > 1 ? '×' + G.combo : '';
+  if (force || lastHud.combo !== c){ el.combo.textContent = c; el.combo.classList.toggle('on', G.combo > 1); lastHud.combo = c; }
+
+  const pn = phaseName();
+  if (force || lastHud.pn !== pn){
+    el.clockTxt.textContent = pn;
+    const L = lightLevel();
+    el.clockDot.style.background = L > .15 ? '#ffd54a' : '#bcd2ff';
+    el.clockDot.style.boxShadow  = `0 0 ${8 + L * 16}px ${L > .15 ? '#ffd54a' : '#8fa7dd'}`;
+    lastHud.pn = pn;
+  }
+}
+function setPips(list, n){ list.forEach((p, i) => p.classList.toggle('on', i < n)); }
+function popRes(node){ node.classList.remove('full'); void node.offsetWidth; node.classList.add('full'); }
+
+let toastTimer = 0;
+function toast(title, body, ms = 4200){
+  el.toastTitle.innerHTML = title;
+  el.toastBody.innerHTML = body;
+  el.toast.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.toast.classList.remove('on'), ms);
+}
+
+/* ============================================================
+   Game flow
+   ============================================================ */
+function reset(){
+  pickups = []; effects = []; texts = []; o2bubbles = [];
+  Object.assign(G, {
+    t: 0, clock: CYCLE * .04, score: 0, glucose: 0, o2: 0, vital: 100,
+    water: 0, atp: 0, co2: 0, combo: 1, comboT: 0, level: 1,
+    shake: 0, flash: 0, magnet: 0, ended: 0, lastDusk: -1, lastDawn: -1
+  });
+  G.spawnT = { photon: 0, water: 0, co2: 0, smog: 0, power: 0 };
+  P.x = W / 2; P.y = H * .55; P.vx = P.vy = 0; P.trail = []; P.hurt = 0; P.spin = 0;
+  P.tx = P.x; P.ty = P.y; P.usePointer = false;
+  syncHUD(true);
+}
+function showScreen(node){
+  [el.sTitle, el.sPause, el.sOver].forEach(s => s.classList.toggle('on', s === node));
+}
+function start(){
+  Sound.init(); Sound.resume();
+  reset();
+  G.mode = 'play';
+  showScreen(null);
+  el.hud.classList.add('on');
+  toast('Sunrise', 'Collect <b>H₂O</b> first — photons are useless without water to split.', 5200);
+  Sound.chord([392, 523, 659], .45, 'triangle', .25);
+}
+function pause(){
+  if (G.mode !== 'play') return;
+  G.mode = 'pause'; showScreen(el.sPause);
+}
+function resume(){
+  if (G.mode !== 'pause') return;
+  G.mode = 'play'; showScreen(null); Sound.resume();
+}
+function toTitle(){
+  G.mode = 'title'; showScreen(el.sTitle); el.hud.classList.remove('on');
+}
+function gameOver(){
+  G.mode = 'over'; G.ended = G.t;
+  if (G.score > G.best){ G.best = G.score; localStorage.setItem('chloro_best', String(G.best)); }
+  el.fScore.textContent   = G.score.toLocaleString();
+  el.fGlucose.textContent = G.glucose;
+  el.fO2.textContent      = G.o2;
+  el.fBest.textContent    = G.best.toLocaleString();
+  let rank = RANKS[0][1];
+  for (const [s, r] of RANKS) if (G.score >= s) rank = r;
+  el.overRank.textContent = rank;
+  el.overTitle.textContent = G.glucose === 0 ? 'Wilted' : (G.glucose >= 12 ? 'A Full Harvest' : 'Autumn Came Early');
+  el.overTag.textContent   = G.glucose === 0 ? 'Not one sugar molecule' : `${G.glucose} glucose · ${G.o2} O₂ set free`;
+  const f = pick(FACTS);
+  el.overFact.innerHTML = `<b>${f[0]}.</b> ${f[1]}`;
+  el.hud.classList.remove('on');
+  showScreen(el.sOver);
+  Sound.blip(220, .6, 'sawtooth', .3, -140);
+  Sound.noise(.7, .18);
+}
+
+/* buttons */
+$('btnStart').onclick  = start;
+$('btnAgain').onclick  = start;
+$('btnTitle').onclick  = toTitle;
+$('btnResume').onclick = resume;
+$('btnQuit').onclick   = toTitle;
+$('btnPause').onclick  = () => G.mode === 'play' ? pause() : resume();
+function toggleSound(){
+  Sound.init();
+  Sound.on = !Sound.on;
+  el.btnSound.textContent = Sound.on ? '♪' : '✕';
+  el.btnSound.style.opacity = Sound.on ? '1' : '.55';
+  if (Sound.on) Sound.blip(660, .1, 'sine', .4);
+}
+el.btnSound.onclick = toggleSound;
+
+/* ============================================================
+   Update
+   ============================================================ */
+function update(dt){
+  G.t += dt; G.clock += dt;
+  const L = lightLevel();
+
+  /* ---- player movement ---- */
+  const accel = 2400, maxV = 620, friction = 6.2;
+  let ax = 0, ay = 0;
+  if (keys.has('a') || keys.has('arrowleft'))  ax -= 1;
+  if (keys.has('d') || keys.has('arrowright')) ax += 1;
+  if (keys.has('w') || keys.has('arrowup'))    ay -= 1;
+  if (keys.has('s') || keys.has('arrowdown'))  ay += 1;
+
+  if (ax || ay){
+    const m = Math.hypot(ax, ay) || 1;
+    P.vx += (ax / m) * accel * dt;
+    P.vy += (ay / m) * accel * dt;
+    P.usePointer = false;
+  } else if (P.usePointer){
+    const dx = P.tx - P.x, dy = P.ty - P.y;
+    P.vx = lerp(P.vx, dx * 9.5, clamp(dt * 14, 0, 1));
+    P.vy = lerp(P.vy, dy * 9.5, clamp(dt * 14, 0, 1));
+  }
+  P.vx *= 1 - clamp(friction * dt, 0, .96);
+  P.vy *= 1 - clamp(friction * dt, 0, .96);
+  const sp = Math.hypot(P.vx, P.vy);
+  if (sp > maxV){ P.vx = P.vx / sp * maxV; P.vy = P.vy / sp * maxV; }
+  P.x += P.vx * dt; P.y += P.vy * dt;
+
+  const pad = P.r + 4;
+  if (P.x < pad){ P.x = pad; P.vx *= -.35; }
+  if (P.x > W - pad){ P.x = W - pad; P.vx *= -.35; }
+  if (P.y < pad){ P.y = pad; P.vy *= -.35; }
+  if (P.y > H - pad){ P.y = H - pad; P.vy *= -.35; }
+
+  P.pulse += dt * (2.4 + G.atp * .32);
+  P.spin  += dt * (.35 + sp * .0012);
+  P.hurt   = Math.max(0, P.hurt - dt * 2.2);
+  P.trail.unshift({ x: P.x, y: P.y });
+  if (P.trail.length > 16) P.trail.pop();
+
+  /* ---- difficulty ---- */
+  G.level = clamp(1 + Math.floor(G.glucose / 2), 1, 7);
+  // spawn intervals are stretched on small screens so a phone doesn't drown
+  // in molecules, and tightened a little on very large ones
+  const diff = (1 + (G.level - 1) * .22) * density();
+
+  /* ---- spawning ---- */
+  const S = G.spawnT;
+  S.photon -= dt;
+  if (S.photon <= 0 && L > .04){
+    const rate = lerp(.50, .14, L) / diff;
+    S.photon = rate * rand(.7, 1.3);
+    spawnPhoton(Math.random() < .035 + L * .02);
+  } else if (L <= .04){ S.photon = .25; }
+
+  S.water -= dt;
+  if (S.water <= 0){ S.water = rand(.42, .72) / diff; spawnWater(); }
+
+  S.co2 -= dt;
+  if (S.co2 <= 0){ S.co2 = rand(.5, .84) / diff; spawnCO2(); }
+
+  S.smog -= dt;
+  if (S.smog <= 0 && G.t > 8){
+    S.smog = rand(2.6, 4.6) / ((1 + (G.level - 1) * .3) * density());
+    spawnSmog();
+    if (G.level >= 4 && Math.random() < .35) spawnSmog();
+  }
+
+  S.power -= dt;
+  if (S.power <= 0){ S.power = rand(16, 26); if (G.t > 14) spawnPower(); }
+
+  /* ---- magnet ---- */
+  if (G.magnet > 0) G.magnet -= dt;
+
+  /* ---- pickups ---- */
+  for (let i = pickups.length - 1; i >= 0; i--){
+    const p = pickups[i];
+    p.life += dt;
+    p.wob += dt * 2.6;
+
+    if (p.kind === 'water'){
+      p.vy -= 14 * dt;                    // buoyant
+      p.x += Math.sin(p.wob) * 16 * dt;
+    } else if (p.kind === 'co2' || p.kind === 'smog'){
+      p.y += Math.sin(p.wob * .8) * 22 * dt;
+      p.rot += (p.spin || 0) * dt;
+    } else if (p.kind === 'photon' || p.kind === 'golden'){
+      p.vy += 32 * dt;
+    } else if (p.kind === 'power'){
+      p.vx += Math.cos(p.wob * .7) * 26 * dt;
+      p.vy += Math.sin(p.wob * .9) * 26 * dt;
+      p.vx *= .995; p.vy *= .995;
+    }
+
+    // attraction — a gentle constant pull so near-misses still feel good,
+    // widened dramatically by the chlorophyll rush. Smog is never attracted.
+    if (p.kind !== 'smog'){
+      const reach = G.magnet > 0 ? 320 : 74;
+      const force = G.magnet > 0 ? 900 : 520;
+      const dx = P.x - p.x, dy = P.y - p.y, d = Math.hypot(dx, dy) || 1;
+      if (d < reach){ const f = (1 - d / reach) * force * dt; p.vx += dx / d * f; p.vy += dy / d * f; }
+    }
+
+    p.x += p.vx * dt; p.y += p.vy * dt;
+
+    // collision
+    const dx = p.x - P.x, dy = p.y - P.y;
+    const rr = p.r + P.r;
+    if (dx * dx + dy * dy < rr * rr){ collect(p); pickups.splice(i, 1); continue; }
+
+    // cull
+    const m = 90;
+    if (p.x < -m || p.x > W + m || p.y < -m - 60 || p.y > H + m || p.life > 26) pickups.splice(i, 1);
+  }
+
+  /* ---- sunset / sunrise announcements ---- */
+  const dayNo = Math.floor(G.clock / CYCLE);
+  const ph = dayPhase();
+  if (ph > .42 && ph < .5 && G.lastDusk !== dayNo){
+    G.lastDusk = dayNo;
+    toast('Sunset', 'No photons until dawn. Stockpile <b>H₂O</b> and <b>CO₂</b> now — and bank ATP while you still can.', 5000);
+    Sound.blip(300, .4, 'sine', .2, -110);
+  }
+  if (ph > .93 && G.lastDawn !== dayNo){
+    G.lastDawn = dayNo;
+    toast('Sunrise', 'Light is returning. Burn that stored water.', 3600);
+    Sound.blip(420, .35, 'triangle', .22, 220);
+  }
+
+  /* ---- vitality ---- */
+  // night is dark, not doubly punishing: respiration eases off a little after dusk
+  const drain = BASE_DRAIN * (1 + (G.level - 1) * .12) * (L > .1 ? 1 : .88);
+  G.vital -= drain * dt;
+  if (G.vital <= 0){ G.vital = 0; syncHUD(true); gameOver(); return; }
+
+  /* ---- combo timer ---- */
+  if (G.combo > 1){
+    G.comboT -= dt;
+    if (G.comboT <= 0) G.combo = 1;
+  }
+
+  /* ---- effects ---- */
+  for (let i = effects.length - 1; i >= 0; i--){
+    const e = effects[i]; e.t += dt;
+    if (e.t >= e.life){ effects.splice(i, 1); continue; }
+    if (!e.ring){ e.x += e.vx * dt; e.y += e.vy * dt; e.vx *= .965; e.vy = e.vy * .965 + 90 * dt; }
+  }
+  for (let i = texts.length - 1; i >= 0; i--){
+    const t = texts[i]; t.t += dt; t.y -= 46 * dt;
+    if (t.t >= t.life) texts.splice(i, 1);
+  }
+  for (let i = o2bubbles.length - 1; i >= 0; i--){
+    const b = o2bubbles[i]; b.t += dt; b.wob += dt * 3;
+    b.y += b.vy * dt; b.x += b.vx * dt + Math.sin(b.wob) * 18 * dt; b.vy *= .995;
+    if (b.t >= b.life || b.y < -30) o2bubbles.splice(i, 1);
+  }
+  for (const c of clouds){ c.x += c.v * dt; if (c.x > W + 220 * c.s) c.x = -220 * c.s; }
+
+  G.shake = Math.max(0, G.shake - dt * 26);
+  G.flash = Math.max(0, G.flash - dt * 2.6);
+
+  syncHUD(false);
+}
+
+/* ---------- collecting ---------- */
+function collect(p){
+  switch (p.kind){
+    case 'water': {
+      if (G.water < NEED){
+        G.water++;
+        burst(p.x, p.y, '92,201,255', 10, 150, 3, .5);
+        floatText(p.x, p.y - 16, '+H₂O', '#7fd8ff', 15);
+        Sound.blip(300 + G.water * 40, .09, 'sine', .35, 90);
+        popRes(el.resW);
+      } else {
+        addScore(15); floatText(p.x, p.y - 16, '+15', '#7fd8ff', 13);
+        burst(p.x, p.y, '92,201,255', 5, 110, 2.4, .4);
+        Sound.blip(760, .06, 'sine', .18);
+      }
+      break;
+    }
+    case 'photon':
+    case 'golden': {
+      const n = p.kind === 'golden' ? 3 : 1;
+      let split = 0;
+      for (let i = 0; i < n; i++){
+        if (G.water > 0 && G.atp < NEED){ G.water--; G.atp++; split++; }
+      }
+      if (split){
+        releaseO2(P.x, P.y, split);
+        burst(p.x, p.y, '255,220,110', 12 + split * 4, 210, 3.4, .6);
+        ring(p.x, p.y, '255,214,90', 70 + split * 16, .45, 2.5);
+        floatText(p.x, p.y - 18, split > 1 ? `+${split} ATP` : '+ATP', '#ffe082', 16);
+        Sound.blip(520 + G.atp * 55, .1, 'triangle', .34, 140);
+        popRes(el.resE); popRes(el.resW);
+        G.flash = Math.min(.35, G.flash + .1); G.flashCol = '255,225,140';
+      } else if (G.water === 0){
+        floatText(p.x, p.y - 18, 'need H₂O!', '#9fd8ff', 14);
+        burst(p.x, p.y, '255,220,110', 5, 120, 2.4, .4);
+        Sound.blip(300, .08, 'sine', .16, -60);
+      } else {
+        addScore(25); floatText(p.x, p.y - 18, '+25', '#ffe082', 14);
+        burst(p.x, p.y, '255,220,110', 6, 130, 2.6, .4);
+      }
+      break;
+    }
+    case 'co2': {
+      if (G.co2 < NEED){
+        G.co2++;
+        burst(p.x, p.y, '210,222,232', 10, 150, 3, .5);
+        floatText(p.x, p.y - 18, '+CO₂', '#dfe9f2', 15);
+        Sound.blip(200 + G.co2 * 26, .09, 'square', .18, 60);
+        popRes(el.resC);
+      } else {
+        addScore(15); floatText(p.x, p.y - 18, '+15', '#dfe9f2', 13);
+        burst(p.x, p.y, '210,222,232', 5, 110, 2.4, .4);
+      }
+      break;
+    }
+    case 'smog': {
+      hit(p);
+      break;
+    }
+    case 'power': {
+      G.magnet = 7;
+      ring(p.x, p.y, '150,255,220', 150, .6, 3);
+      burst(p.x, p.y, '150,255,220', 22, 260, 4, .8);
+      floatText(p.x, p.y - 20, 'CHLOROPHYLL RUSH', '#8fffd8', 17);
+      Sound.chord([523, 659, 784, 1046], .3, 'triangle', .26);
+      toast('Chlorophyll rush', 'Molecules are pulled toward you for 7 seconds. Smog is not.', 3000);
+      break;
+    }
+  }
+  tryCalvin();
+}
+
+function hit(p){
+  G.vital -= 17;
+  P.hurt = 1;
+  G.shake = 16;
+  G.flash = .5; G.flashCol = '255,90,160';
+  G.combo = 1;
+  // smog knocks loose a resource
+  const opts = [];
+  if (G.co2 > 0) opts.push('co2');
+  if (G.water > 0) opts.push('water');
+  if (G.atp > 0) opts.push('atp');
+  if (opts.length){
+    const k = pick(opts);
+    if (k === 'co2') { G.co2--; popRes(el.resC); }
+    if (k === 'water'){ G.water--; popRes(el.resW); }
+    if (k === 'atp')  { G.atp--; popRes(el.resE); }
+  }
+  burst(p.x, p.y, '236,86,158', 24, 280, 4.2, .8);
+  ring(P.x, P.y, '255,90,160', 120, .45, 3);
+  floatText(P.x, P.y - 34, 'SMOG!', '#ff7ab8', 18);
+  Sound.blip(150, .22, 'sawtooth', .3, -70);
+  Sound.noise(.25, .22);
+  if (G.vital <= 0){ G.vital = 0; syncHUD(true); gameOver(); }
+}
+
+function addScore(n){ G.score += Math.round(n); }
+
+function tryCalvin(){
+  if (G.atp < NEED || G.co2 < NEED) return;
+  G.atp -= NEED; G.co2 -= NEED;
+  G.glucose++;
+
+  // combo
+  if (G.comboT > 0) G.combo = Math.min(6, G.combo + 1);
+  else G.combo = 1;
+  G.comboT = 15;
+
+  const gained = 300 * G.combo * (1 + (G.level - 1) * .18);
+  addScore(gained);
+  G.vital = Math.min(100, G.vital + 26);
+
+  // fireworks
+  G.shake = 12; G.flash = .55; G.flashCol = '190,255,180';
+  burst(P.x, P.y, '160,255,150', REDUCED ? 14 : 46, 380, 5, 1.1);
+  burst(P.x, P.y, '255,224,130', REDUCED ? 10 : 30, 300, 4, .9);
+  ring(P.x, P.y, '190,255,170', 240, .8, 4);
+  ring(P.x, P.y, '255,230,140', 170, .6, 3);
+  effects.push({ glucose: true, x: P.x, y: P.y, t: 0, life: 1.4 });
+  floatText(P.x, P.y - 46, `GLUCOSE +${Math.round(gained)}`, '#c9ffb0', 20);
+  releaseO2(P.x, P.y, 6);
+  Sound.chord([523, 659, 784, 1046, 1318], .5, 'triangle', .26);
+
+  const f = FACTS[(G.glucose - 1) % FACTS.length];
+  toast(f[0], f[1], 5200);
+  el.sr.textContent = `Glucose ${G.glucose} produced. Score ${G.score}.`;
+  popRes(el.resE); popRes(el.resC);
+}
+
+/* ============================================================
+   Render
+   ============================================================ */
+function render(){
+  const s = sunHeight(), L = lightLevel();
+  const [top, mid, bot] = skyColors();
+
+  ctx.save();
+  if (G.shake > .2){
+    const m = G.shake;
+    ctx.translate(rand(-m, m), rand(-m, m));
+  }
+
+  /* sky */
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, rgb(top));
+  g.addColorStop(.55, rgb(mid));
+  g.addColorStop(1, rgb(bot));
+  ctx.fillStyle = g;
+  ctx.fillRect(-30, -30, W + 60, H + 60);
+
+  /* stars */
+  if (s < .18){
+    const a = clamp((.18 - s) * 2.4, 0, 1);
+    for (const st of stars){
+      const tw = .55 + .45 * Math.sin(G.t * st.s + st.p);
+      ctx.globalAlpha = a * tw * .95;
+      ctx.fillStyle = '#eaf2ff';
+      ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, TAU); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* sun / moon */
+  const sp = sunPos();
+  drawSunMoon(sp, L, s);
+
+  /* clouds */
+  for (const c of clouds) drawCloud(c, L);
+
+  /* light shafts */
+  if (L > .05 && !REDUCED){
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = L * .035;
+    for (let i = 0; i < 5; i++){
+      const off = (i - 2) * 130 + Math.sin(G.t * .22 + i) * 30;
+      ctx.beginPath();
+      ctx.moveTo(sp.x - 14 + off * .12, sp.y);
+      ctx.lineTo(sp.x + off - 72, H + 40);
+      ctx.lineTo(sp.x + off + 72, H + 40);
+      ctx.closePath();
+      ctx.fillStyle = '#fff4c2';
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /* distant leaf/canopy silhouette */
+  drawCanopy(L);
+
+  /* rising xylem shimmer */
+  drawGround(L);
+
+  /* O2 bubbles */
+  for (const b of o2bubbles){
+    const k = 1 - b.t / b.life;
+    ctx.globalAlpha = clamp(k, 0, 1) * .8;
+    ctx.strokeStyle = 'rgba(180,255,245,.95)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.stroke();
+    ctx.fillStyle = 'rgba(150,255,240,.14)';
+    ctx.fill();
+    ctx.globalAlpha = clamp(k, 0, 1) * .55;
+    ctx.font = '700 8px ' + FONT;
+    ctx.fillStyle = '#d8fffb';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('O₂', b.x, b.y + .5);
+  }
+  ctx.globalAlpha = 1;
+
+  /* pickups */
+  for (const p of pickups) drawPickup(p);
+
+  /* player */
+  drawPlayer();
+
+  /* effects */
+  for (const e of effects) drawEffect(e);
+
+  /* floating texts */
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const t of texts){
+    const k = 1 - t.t / t.life;
+    ctx.globalAlpha = clamp(k * 1.5, 0, 1);
+    ctx.font = `800 ${t.size}px ${FONT}`;
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = 'rgba(2,14,9,.65)';
+    ctx.strokeText(t.txt, t.x, t.y);
+    ctx.fillStyle = t.c;
+    ctx.fillText(t.txt, t.x, t.y);
+  }
+  ctx.globalAlpha = 1;
+
+  /* magnet aura */
+  if (G.magnet > 0){
+    const k = clamp(G.magnet / 7, 0, 1);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = `rgba(140,255,215,${.14 + .1 * Math.sin(G.t * 6)})`;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([9, 12]);
+    ctx.lineDashOffset = -G.t * 60;
+    ctx.beginPath(); ctx.arc(P.x, P.y, 90 + 24 * k + Math.sin(G.t * 3) * 6, 0, TAU); ctx.stroke();
+    ctx.restore();
+  }
+
+  /* night vignette + darkness */
+  if (s < .1){
+    const dk = clamp((.1 - s) * .62, 0, .5);
+    ctx.fillStyle = `rgba(2,8,26,${dk})`;
+    ctx.fillRect(-30, -30, W + 60, H + 60);
+  }
+  const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .3, W / 2, H / 2, Math.max(W, H) * .78);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,10,6,.5)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(-30, -30, W + 60, H + 60);
+
+  /* hurt / flash */
+  if (G.flash > .01){
+    ctx.fillStyle = `rgba(${G.flashCol},${G.flash * .32})`;
+    ctx.fillRect(-30, -30, W + 60, H + 60);
+  }
+  if (P.hurt > .01){
+    ctx.strokeStyle = `rgba(255,80,150,${P.hurt * .5})`;
+    ctx.lineWidth = 14;
+    ctx.strokeRect(4, 4, W - 8, H - 8);
+  }
+
+  /* low vitality warning */
+  if (G.mode === 'play' && G.vital < 30){
+    const a = (1 - G.vital / 30) * (.16 + .1 * Math.sin(G.t * 5));
+    ctx.fillStyle = `rgba(255,60,90,${a})`;
+    ctx.fillRect(-30, -30, W + 60, H + 60);
+  }
+
+  ctx.restore();
+}
+const FONT = "'Trebuchet MS','Segoe UI',system-ui,sans-serif";
+
+function drawSunMoon(sp, L, s){
+  const isSun = sp.isSun;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const R = isSun ? 36 : 24;
+  const gr = R * (isSun ? 4.2 : 3.6);
+  const glow = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, gr);
+  if (isSun){
+    glow.addColorStop(0,  'rgba(255,246,196,.7)');
+    glow.addColorStop(.22,'rgba(255,208,86,.28)');
+    glow.addColorStop(.55,'rgba(255,166,56,.08)');
+    glow.addColorStop(1,  'rgba(255,150,40,0)');
+  } else {
+    glow.addColorStop(0,  'rgba(226,238,255,.6)');
+    glow.addColorStop(.28,'rgba(160,190,255,.16)');
+    glow.addColorStop(1,  'rgba(120,150,255,0)');
+  }
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(sp.x, sp.y, gr, 0, TAU); ctx.fill();
+  ctx.restore();
+
+  // body
+  ctx.save();
+  ctx.beginPath(); ctx.arc(sp.x, sp.y, R, 0, TAU);
+  ctx.fillStyle = isSun ? '#fff2b8' : '#e8eeff';
+  ctx.shadowColor = isSun ? 'rgba(255,214,90,.8)' : 'rgba(190,215,255,.7)';
+  ctx.shadowBlur = 26;
+  ctx.fill();
+  ctx.restore();
+
+  if (isSun && !REDUCED){
+    ctx.save();
+    ctx.translate(sp.x, sp.y);
+    ctx.rotate(G.t * .12);
+    ctx.strokeStyle = `rgba(255,228,140,${.18 + .1 * Math.sin(G.t * 2)})`;
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 12; i++){
+      const a = (i / 12) * TAU;
+      const r1 = R + 12 + Math.sin(G.t * 2.2 + i) * 4;
+      const r2 = r1 + 18;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
+      ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  } else if (!isSun){
+    // craters
+    ctx.save();
+    ctx.globalAlpha = .18;
+    ctx.fillStyle = '#7d90c4';
+    ctx.beginPath(); ctx.arc(sp.x - 8, sp.y - 5, 6, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(sp.x + 7, sp.y + 6, 4.2, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(sp.x + 3, sp.y - 10, 3, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  void s; void L;
+}
+
+function drawCloud(c, L){
+  const x = c.x, y = c.y, s = c.s;
+  ctx.save();
+  ctx.globalAlpha = c.a * (0.35 + L * .75);
+  ctx.fillStyle = L > .3 ? '#ffffff' : '#9fb4d8';
+  ctx.beginPath();
+  ctx.ellipse(x, y, 78 * s, 26 * s, 0, 0, TAU);
+  ctx.ellipse(x - 46 * s, y + 7 * s, 44 * s, 18 * s, 0, 0, TAU);
+  ctx.ellipse(x + 52 * s, y + 9 * s, 50 * s, 20 * s, 0, 0, TAU);
+  ctx.ellipse(x + 10 * s, y - 17 * s, 40 * s, 22 * s, 0, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCanopy(L){
+  // soft leaf shapes framing the top corners
+  ctx.save();
+  ctx.globalAlpha = .5;
+  const col = `rgba(${lerp(8,20,L)|0},${lerp(38,92,L)|0},${lerp(28,54,L)|0},1)`;
+  ctx.fillStyle = col;
+  const sway = Math.sin(G.t * .5) * 8;
+  drawLeafShape(-30 + sway * .4, -20, 210, 120, -0.5);
+  drawLeafShape(W + 30 - sway * .4, -10, 190, 108, Math.PI + 0.55);
+  ctx.restore();
+}
+function drawLeafShape(x, y, len, wid, rot){
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(rot);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(len * .5, -wid * .55, len, 0);
+  ctx.quadraticCurveTo(len * .5,  wid * .55, 0, 0);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawGround(L){
+  const baseY = H;
+  ctx.save();
+  // xylem glow strips
+  ctx.globalCompositeOperation = 'lighter';
+  for (const v of veins){
+    const sway = Math.sin(G.t * v.sp + v.sway) * 6;
+    const gg = ctx.createLinearGradient(0, baseY, 0, baseY - v.h);
+    gg.addColorStop(0, 'rgba(92,201,255,.28)');
+    gg.addColorStop(1, 'rgba(92,201,255,0)');
+    ctx.fillStyle = gg;
+    ctx.beginPath();
+    ctx.moveTo(v.x - v.w, baseY);
+    ctx.quadraticCurveTo(v.x + sway, baseY - v.h * .6, v.x + sway * 1.4, baseY - v.h);
+    ctx.lineTo(v.x + sway * 1.4 + v.w, baseY - v.h);
+    ctx.quadraticCurveTo(v.x + sway + v.w, baseY - v.h * .6, v.x + v.w, baseY);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // leaf floor
+  ctx.save();
+  const gg = ctx.createLinearGradient(0, H - 90, 0, H);
+  gg.addColorStop(0, `rgba(${lerp(8,26,L)|0},${lerp(48,116,L)|0},${lerp(34,64,L)|0},0)`);
+  gg.addColorStop(1, `rgba(${lerp(6,22,L)|0},${lerp(40,96,L)|0},${lerp(28,54,L)|0},.95)`);
+  ctx.fillStyle = gg;
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  ctx.lineTo(0, H - 34);
+  for (let x = 0; x <= W; x += 40){
+    ctx.lineTo(x, H - 34 - Math.sin(x * .012 + G.t * .6) * 7);
+  }
+  ctx.lineTo(W, H);
+  ctx.closePath();
+  ctx.fill();
+
+  // grass blades / stomata guard cells
+  for (const b of blades){
+    const sw = Math.sin(G.t * b.sp + b.sway) * 9;
+    ctx.strokeStyle = `rgba(${lerp(20,60,L)|0},${lerp(90,190,L)|0},${lerp(60,110,L)|0},${.35 + b.c * .35})`;
+    ctx.lineWidth = b.w * .5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(b.x, H - 20);
+    ctx.quadraticCurveTo(b.x + sw * .5, H - 20 - b.h * .6, b.x + sw, H - 20 - b.h);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawPickup(p){
+  const bob = Math.sin(p.wob) * 2.2;
+  switch (p.kind){
+    case 'photon': {
+      const r = p.r + Math.sin(p.life * 9) * 1.1;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const gl = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 2);
+      gl.addColorStop(0,  'rgba(255,240,160,.85)');
+      gl.addColorStop(.45,'rgba(255,200,60,.28)');
+      gl.addColorStop(1,  'rgba(255,180,30,0)');
+      ctx.fillStyle = gl;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r * 2, 0, TAU); ctx.fill();
+      // hard bright core so a photon reads as a point of light, not a smudge
+      ctx.fillStyle = '#fffdf0';
+      ctx.beginPath(); ctx.arc(p.x, p.y, r * .46, 0, TAU); ctx.fill();
+      // sparkle cross
+      ctx.strokeStyle = 'rgba(255,246,190,.8)';
+      ctx.lineWidth = 1.4;
+      const sp2 = r * 1.55;
+      ctx.beginPath();
+      ctx.moveTo(p.x - sp2, p.y); ctx.lineTo(p.x + sp2, p.y);
+      ctx.moveTo(p.x, p.y - sp2); ctx.lineTo(p.x, p.y + sp2);
+      ctx.stroke();
+      ctx.restore();
+      break;
+    }
+    case 'golden': {
+      const r = p.r + Math.sin(p.life * 7) * 2;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const gl = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 4);
+      gl.addColorStop(0, 'rgba(255,255,240,1)');
+      gl.addColorStop(.3, 'rgba(255,196,60,.6)');
+      gl.addColorStop(1, 'rgba(255,140,20,0)');
+      ctx.fillStyle = gl;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r * 4, 0, TAU); ctx.fill();
+      ctx.translate(p.x, p.y); ctx.rotate(p.life * 2.2);
+      ctx.fillStyle = '#ffe49a';
+      star(0, 0, 6, r * 1.5, r * .6);
+      ctx.fill();
+      ctx.restore();
+      break;
+    }
+    case 'water': {
+      ctx.save();
+      ctx.translate(p.x, p.y + bob);
+      ctx.globalCompositeOperation = 'lighter';
+      const gl = ctx.createRadialGradient(0, 0, 0, 0, 0, p.r * 2.6);
+      gl.addColorStop(0, 'rgba(140,225,255,.55)');
+      gl.addColorStop(1, 'rgba(60,170,255,0)');
+      ctx.fillStyle = gl;
+      ctx.beginPath(); ctx.arc(0, 0, p.r * 2.6, 0, TAU); ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      // droplet
+      ctx.beginPath();
+      ctx.moveTo(0, -p.r * 1.25);
+      ctx.bezierCurveTo(p.r * .95, -p.r * .2, p.r * .85, p.r, 0, p.r);
+      ctx.bezierCurveTo(-p.r * .85, p.r, -p.r * .95, -p.r * .2, 0, -p.r * 1.25);
+      const dg = ctx.createLinearGradient(0, -p.r, 0, p.r);
+      dg.addColorStop(0, '#bfefff');
+      dg.addColorStop(1, '#2f9ee0');
+      ctx.fillStyle = dg;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(220,248,255,.85)'; ctx.lineWidth = 1.3; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.75)';
+      ctx.beginPath(); ctx.ellipse(-p.r * .28, -p.r * .1, p.r * .18, p.r * .3, -.4, 0, TAU); ctx.fill();
+      ctx.font = `700 ${p.r * .62}px ${FONT}`;
+      ctx.fillStyle = 'rgba(10,50,80,.8)';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('H₂O', 0, p.r * .35);
+      ctx.restore();
+      break;
+    }
+    case 'co2': {
+      ctx.save();
+      ctx.translate(p.x, p.y + bob);
+      ctx.rotate(p.rot);
+      // faint halo keeps the molecule legible against the night sky
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const cgl = ctx.createRadialGradient(0, 0, p.r * .4, 0, 0, p.r * 2);
+      cgl.addColorStop(0, 'rgba(200,220,240,.16)');
+      cgl.addColorStop(1, 'rgba(180,205,235,0)');
+      ctx.fillStyle = cgl;
+      ctx.beginPath(); ctx.arc(0, 0, p.r * 2, 0, TAU); ctx.fill();
+      ctx.restore();
+      // bonds
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-p.r * .78, 0); ctx.lineTo(p.r * .78, 0); ctx.stroke();
+      // O atoms
+      for (const sx of [-1, 1]){
+        ctx.beginPath(); ctx.arc(sx * p.r * .8, 0, p.r * .48, 0, TAU);
+        const og = ctx.createRadialGradient(sx * p.r * .8 - 2, -3, 1, sx * p.r * .8, 0, p.r * .5);
+        og.addColorStop(0, '#ffffff'); og.addColorStop(1, '#9fb2c2');
+        ctx.fillStyle = og; ctx.fill();
+      }
+      // C atom
+      ctx.beginPath(); ctx.arc(0, 0, p.r * .58, 0, TAU);
+      const cg = ctx.createRadialGradient(-3, -4, 1, 0, 0, p.r * .6);
+      cg.addColorStop(0, '#8d9aa6'); cg.addColorStop(1, '#3d4a56');
+      ctx.fillStyle = cg; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.restore();
+      break;
+    }
+    case 'smog': {
+      ctx.save();
+      ctx.translate(p.x, p.y + bob);
+      ctx.rotate(p.rot);
+      // dark sooty core + hot magenta rim, so it reads as a threat against
+      // both the bright noon sky and the pink dusk sky
+      ctx.globalCompositeOperation = 'lighter';
+      const gl = ctx.createRadialGradient(0, 0, p.r * .6, 0, 0, p.r * 2.6);
+      gl.addColorStop(0, 'rgba(255,60,150,.34)');
+      gl.addColorStop(1, 'rgba(160,20,110,0)');
+      ctx.fillStyle = gl;
+      ctx.beginPath(); ctx.arc(0, 0, p.r * 2.6, 0, TAU); ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+
+      // billowing soot lobes
+      ctx.fillStyle = 'rgba(26,6,22,.92)';
+      for (let i = 0; i < 5; i++){
+        const a = (i / 5) * TAU + p.life * .6;
+        const rr = p.r * .58 * (1 + Math.sin(p.life * 4 + i * 1.7) * .16);
+        ctx.beginPath();
+        ctx.arc(Math.cos(a) * p.r * .46, Math.sin(a) * p.r * .46, rr, 0, TAU);
+        ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(0, 0, p.r * .74, 0, TAU);
+      ctx.fillStyle = 'rgba(18,3,16,.95)'; ctx.fill();
+
+      // jagged hazard rim
+      ctx.beginPath();
+      const spikes = 12;
+      for (let i = 0; i <= spikes; i++){
+        const a = (i / spikes) * TAU;
+        const rr = p.r * (i % 2 ? .74 : 1.12) * (1 + Math.sin(p.life * 6 + i) * .06);
+        const x = Math.cos(a) * rr, y = Math.sin(a) * rr;
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = `rgba(255,${90 + Math.sin(p.life * 8) * 40 | 0},190,.9)`;
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = 'rgba(255,60,150,.9)'; ctx.shadowBlur = 12;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // eyes
+      ctx.fillStyle = 'rgba(255,120,200,.95)';
+      ctx.beginPath(); ctx.arc(-p.r * .26, -p.r * .1, p.r * .12, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(p.r * .26, -p.r * .1, p.r * .12, 0, TAU); ctx.fill();
+      ctx.restore();
+      break;
+    }
+    case 'power': {
+      ctx.save();
+      ctx.translate(p.x, p.y + bob);
+      ctx.rotate(p.life * 1.6);
+      ctx.globalCompositeOperation = 'lighter';
+      const gl = ctx.createRadialGradient(0, 0, 0, 0, 0, p.r * 3.2);
+      gl.addColorStop(0, 'rgba(180,255,230,.85)');
+      gl.addColorStop(.4, 'rgba(80,255,190,.32)');
+      gl.addColorStop(1, 'rgba(40,220,160,0)');
+      ctx.fillStyle = gl;
+      ctx.beginPath(); ctx.arc(0, 0, p.r * 3.2, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#d8fff0';
+      star(0, 0, 5, p.r * 1.25, p.r * .52);
+      ctx.fill();
+      ctx.restore();
+      break;
+    }
+  }
+}
+function star(cx, cy, spikes, outer, inner){
+  ctx.beginPath();
+  let rot = -Math.PI / 2;
+  const step = Math.PI / spikes;
+  ctx.moveTo(cx, cy - outer);
+  for (let i = 0; i < spikes; i++){
+    rot += step; ctx.lineTo(cx + Math.cos(rot) * inner, cy + Math.sin(rot) * inner);
+    rot += step; ctx.lineTo(cx + Math.cos(rot) * outer, cy + Math.sin(rot) * outer);
+  }
+  ctx.closePath();
+}
+
+function drawPlayer(){
+  // trail
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = P.trail.length - 1; i > 0; i--){
+    const t = P.trail[i], k = 1 - i / P.trail.length;
+    ctx.globalAlpha = k * .13;
+    ctx.fillStyle = '#7dffab';
+    ctx.beginPath(); ctx.arc(t.x, t.y, P.r * k * .95, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+
+  const charge = G.atp / NEED;
+  const pulse = 1 + Math.sin(P.pulse) * (.04 + charge * .05);
+  const R = P.r * pulse;
+
+  // aura
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const gl = ctx.createRadialGradient(P.x, P.y, 0, P.x, P.y, R * (2.6 + charge * 1.4));
+  gl.addColorStop(0, `rgba(140,255,180,${.32 + charge * .3})`);
+  gl.addColorStop(.5, `rgba(90,220,140,${.12 + charge * .14})`);
+  gl.addColorStop(1, 'rgba(40,160,90,0)');
+  ctx.fillStyle = gl;
+  ctx.beginPath(); ctx.arc(P.x, P.y, R * (2.6 + charge * 1.4), 0, TAU); ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(P.x, P.y);
+  const tilt = clamp(P.vx * .0007, -.35, .35);
+  ctx.rotate(tilt);
+
+  // body (chloroplast lens shape)
+  ctx.beginPath();
+  ctx.ellipse(0, 0, R * 1.28, R, 0, 0, TAU);
+  const bg = ctx.createLinearGradient(-R, -R, R, R);
+  if (P.hurt > .01){
+    bg.addColorStop(0, '#ffb0d0'); bg.addColorStop(1, '#c02a70');
+  } else {
+    bg.addColorStop(0, '#a8ffb4');
+    bg.addColorStop(.45, '#4fd47a');
+    bg.addColorStop(1, '#146b3a');
+  }
+  ctx.fillStyle = bg;
+  ctx.shadowColor = P.hurt > .01 ? 'rgba(255,80,150,.9)' : `rgba(93,220,122,${.55 + charge * .4})`;
+  ctx.shadowBlur = 22 + charge * 26;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.strokeStyle = 'rgba(230,255,235,.55)';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+
+  // grana (thylakoid stacks)
+  ctx.save();
+  ctx.rotate(P.spin * .5);
+  for (let i = 0; i < 5; i++){
+    const a = (i / 5) * TAU + P.spin;
+    const rx = Math.cos(a) * R * .58, ry = Math.sin(a) * R * .42;
+    const lit = clamp(charge * 1.2 + .15 + .15 * Math.sin(P.pulse * 2 + i), 0, 1);
+    ctx.beginPath();
+    ctx.ellipse(rx, ry, R * .27, R * .17, a, 0, TAU);
+    ctx.fillStyle = `rgba(${lerp(16,255,lit * .7)|0},${lerp(96,240,lit)|0},${lerp(54,150,lit * .6)|0},.95)`;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = .9; ctx.stroke();
+  }
+  ctx.restore();
+
+  // water level inside (little blue arc)
+  if (G.water > 0){
+    const wk = G.water / NEED;
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(0, 0, R * 1.28, R, 0, 0, TAU);
+    ctx.clip();
+    ctx.globalAlpha = .3;
+    ctx.fillStyle = '#5cc9ff';
+    ctx.fillRect(-R * 1.4, R - R * 2 * wk, R * 2.8, R * 2);
+    ctx.restore();
+  }
+
+  // highlight
+  ctx.beginPath();
+  ctx.ellipse(-R * .42, -R * .38, R * .34, R * .2, -.6, 0, TAU);
+  ctx.fillStyle = 'rgba(255,255,255,.4)';
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawEffect(e){
+  const k = 1 - e.t / e.life;
+  if (e.ring){
+    const r = e.rMax * (1 - k * k);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = clamp(k, 0, 1) * .85;
+    ctx.strokeStyle = `rgba(${e.c},1)`;
+    ctx.lineWidth = e.width * k + .5;
+    ctx.beginPath(); ctx.arc(e.x, e.y, r, 0, TAU); ctx.stroke();
+    ctx.restore();
+    return;
+  }
+  if (e.glucose){
+    // spinning glucose hexagon rising
+    const t = e.t / e.life;
+    ctx.save();
+    ctx.translate(e.x, e.y - t * 90);
+    ctx.rotate(t * 3.2);
+    ctx.globalAlpha = clamp(1 - t, 0, 1);
+    const R = 20 + t * 22;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++){
+      const a = (i / 6) * TAU - Math.PI / 2;
+      const x = Math.cos(a) * R, y = Math.sin(a) * R;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(200,255,170,.95)';
+    ctx.lineWidth = 3.5;
+    ctx.shadowColor = 'rgba(160,255,140,.9)'; ctx.shadowBlur = 24;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(160,255,150,.14)'; ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `800 ${11 + t * 4}px ${FONT}`;
+    ctx.fillStyle = 'rgba(235,255,220,.95)';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('C₆H₁₂O₆', 0, 0);
+    ctx.restore();
+    return;
+  }
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = clamp(k, 0, 1);
+  ctx.fillStyle = `rgba(${e.c},1)`;
+  ctx.beginPath(); ctx.arc(e.x, e.y, e.r * (0.35 + k * .8), 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+/* ============================================================
+   Idle/attract animation for the title screen
+   ============================================================ */
+function attract(dt){
+  G.t += dt;
+  // hold the attract scene in permanent late morning so the menus always sit
+  // on a bright, readable sky instead of drifting into midnight
+  G.clock = CYCLE * (.14 + .12 * (.5 + .5 * Math.sin(G.t * .09)));
+  // gentle drifting demo particles
+  if (Math.random() < dt * 2.2) spawnPhoton();
+  if (Math.random() < dt * 1.1) spawnWater();
+  if (Math.random() < dt * 1.0) spawnCO2();
+  for (let i = pickups.length - 1; i >= 0; i--){
+    const p = pickups[i];
+    p.life += dt; p.wob += dt * 2.4;
+    if (p.kind === 'water'){ p.vy -= 14 * dt; p.x += Math.sin(p.wob) * 16 * dt; }
+    if (p.kind === 'co2'){ p.y += Math.sin(p.wob * .8) * 22 * dt; p.rot += (p.spin || 0) * dt; }
+    if (p.kind === 'photon'){ p.vy += 32 * dt; }
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    const m = 90;
+    if (p.x < -m || p.x > W + m || p.y < -m - 60 || p.y > H + m || p.life > 26) pickups.splice(i, 1);
+  }
+  for (const c of clouds){ c.x += c.v * dt; if (c.x > W + 220 * c.s) c.x = -220 * c.s; }
+  // player floats in a lazy figure-eight
+  P.x = W / 2 + Math.sin(G.t * .5) * W * .22;
+  P.y = H * .58 + Math.sin(G.t * 1.0) * H * .12;
+  P.pulse += dt * 2.2; P.spin += dt * .4;
+  P.trail.unshift({ x: P.x, y: P.y });
+  if (P.trail.length > 16) P.trail.pop();
+  for (let i = o2bubbles.length - 1; i >= 0; i--){
+    const b = o2bubbles[i]; b.t += dt; b.y += b.vy * dt;
+    if (b.t >= b.life) o2bubbles.splice(i, 1);
+  }
+  effects.length = 0; texts.length = 0;
+}
+
+/* ============================================================
+   Main loop
+   ============================================================ */
+let last = performance.now();
+function frame(now){
+  let dt = (now - last) / 1000;
+  last = now;
+  dt = clamp(dt, 0, 1 / 20);            // clamp big pauses
+
+  if (G.mode === 'play') update(dt);
+  else if (G.mode === 'title' || G.mode === 'over') attract(dt);
+  else if (G.mode === 'pause'){ /* frozen */ }
+
+  render();
+  requestAnimationFrame(frame);
+}
+
+/* ---------- boot ---------- */
+resize();
+P.x = W / 2; P.y = H * .55; P.tx = P.x; P.ty = P.y;
+G.clock = CYCLE * .12;
+syncHUD(true);
+requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>
