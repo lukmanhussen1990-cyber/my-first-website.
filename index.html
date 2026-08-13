@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Independence Day — India</title>
+<meta name="description" content="An animated tribute to India's Independence Day, 15 August 1947.">
+<style>
+  :root{
+    --saffron:#FF9933;
+    --white:#FFFFFF;
+    --green:#138808;
+    --navy:#000080;
+    --ink:#0b0f1a;
+    --ink-2:#131a2b;
+    --muted:#9fb0c9;
+    --line:rgba(255,255,255,.12);
+    --maxw:1100px;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:#eaf0fa;
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    overflow-x:hidden;
+  }
+
+  /* ---------- Preloader ---------- */
+  #loader{
+    position:fixed;inset:0;z-index:999;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+    background:var(--ink);
+    transition:opacity .7s ease,visibility .7s ease;
+  }
+  #loader.hide{opacity:0;visibility:hidden}
+  .chakra-load{
+    width:84px;height:84px;border-radius:50%;
+    border:4px solid var(--navy);
+    position:relative;
+    animation:spin 3s linear infinite;
+    background:radial-gradient(circle,#fff 0 22%,transparent 23%);
+  }
+  .chakra-load i{
+    position:absolute;left:50%;top:50%;
+    width:2px;height:42px;background:var(--navy);
+    transform-origin:top center;
+  }
+  .load-text{letter-spacing:.35em;font-size:12px;color:var(--muted);text-transform:uppercase}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---------- Background layers ---------- */
+  #sky{
+    position:fixed;inset:0;z-index:0;
+    background:
+      radial-gradient(900px 500px at 15% 0%,rgba(255,153,51,.18),transparent 60%),
+      radial-gradient(900px 500px at 85% 10%,rgba(19,136,8,.18),transparent 60%),
+      linear-gradient(180deg,#070a12 0%,#0b0f1a 45%,#0e1424 100%);
+  }
+  #fireworks{position:fixed;inset:0;z-index:1;pointer-events:none;transition:opacity .4s linear}
+
+  .kite{
+    position:fixed;z-index:2;width:26px;height:26px;pointer-events:none;opacity:.85;
+    animation:fly linear infinite;
+  }
+  .kite::before{
+    content:"";position:absolute;inset:0;
+    background:var(--k,var(--saffron));
+    clip-path:polygon(50% 0,100% 45%,50% 100%,0 45%);
+    box-shadow:0 0 18px rgba(255,153,51,.5);
+  }
+  .kite::after{
+    content:"";position:absolute;left:50%;top:100%;width:1px;height:38px;
+    background:linear-gradient(180deg,rgba(255,255,255,.5),transparent);
+  }
+  @keyframes fly{
+    0%{transform:translate(-12vw,10vh) rotate(-10deg)}
+    50%{transform:translate(50vw,-6vh) rotate(14deg)}
+    100%{transform:translate(115vw,12vh) rotate(-8deg)}
+  }
+
+  /* ---------- Nav ---------- */
+  header.nav{
+    position:fixed;top:0;left:0;right:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 22px;
+    backdrop-filter:blur(10px);
+    background:rgba(7,10,18,.55);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.06em}
+  .brand span.dot{
+    width:12px;height:12px;border-radius:50%;
+    background:conic-gradient(var(--saffron) 0 33%,#fff 0 66%,var(--green) 0);
+    box-shadow:0 0 12px rgba(255,153,51,.6);
+  }
+  nav a{
+    color:var(--muted);text-decoration:none;font-size:14px;margin-left:20px;
+    transition:color .25s ease;
+  }
+  nav a:hover{color:#fff}
+  @media(max-width:640px){nav{display:none}}
+
+  /* ---------- Layout ---------- */
+  main{position:relative;z-index:3}
+  section{padding:96px 22px;max-width:var(--maxw);margin:0 auto}
+  h2.title{
+    font-size:clamp(26px,4vw,40px);margin:0 0 10px;
+    background:linear-gradient(90deg,var(--saffron),#fff 50%,var(--green));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{color:var(--muted);margin:0 0 38px;max-width:60ch;line-height:1.7}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    min-height:100vh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;
+    padding-top:120px;
+  }
+  .eyebrow{
+    letter-spacing:.45em;text-transform:uppercase;font-size:11px;color:var(--saffron);
+    margin-bottom:18px;
+  }
+  .hero h1{
+    font-size:clamp(34px,7vw,78px);line-height:1.05;margin:0 0 8px;font-weight:800;
+  }
+  .hero h1 .word{display:inline-block;opacity:0;transform:translateY(28px) rotateX(-60deg);
+    animation:rise .9s cubic-bezier(.2,.8,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .tricolor-text{
+    background:linear-gradient(90deg,var(--saffron) 0%,#fff 50%,var(--green) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .typed{
+    min-height:1.6em;font-size:clamp(14px,2.4vw,20px);color:var(--muted);margin-top:10px;
+  }
+  .typed .cursor{
+    display:inline-block;width:2px;height:1em;background:var(--saffron);
+    vertical-align:-2px;animation:blink 1s steps(1) infinite;
+  }
+  @keyframes blink{50%{opacity:0}}
+
+  #flag{
+    width:min(560px,88vw);height:auto;margin-top:34px;
+    filter:drop-shadow(0 24px 40px rgba(0,0,0,.6));
+  }
+  .pole-line{
+    width:2px;height:70px;margin:0 auto;
+    background:linear-gradient(180deg,rgba(255,255,255,.4),transparent);
+  }
+
+  .stats{
+    display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:40px;
+  }
+  .stat{
+    border:1px solid var(--line);border-radius:14px;padding:14px 20px;min-width:120px;
+    background:rgba(255,255,255,.03);
+  }
+  .stat b{display:block;font-size:26px;color:#fff}
+  .stat small{color:var(--muted);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+
+  .scroll-hint{
+    margin-top:44px;color:var(--muted);font-size:12px;letter-spacing:.25em;
+    animation:bob 2s ease-in-out infinite;
+  }
+  @keyframes bob{50%{transform:translateY(8px)}}
+
+  /* ---------- Reveal ---------- */
+  .reveal{opacity:0;transform:translateY(34px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* ---------- Timeline ---------- */
+  .timeline{position:relative;padding-left:30px}
+  .timeline::before{
+    content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;
+    background:linear-gradient(180deg,var(--saffron),#fff,var(--green));
+    opacity:.65;
+  }
+  .item{position:relative;padding:0 0 34px 12px}
+  .item::before{
+    content:"";position:absolute;left:-27px;top:6px;width:12px;height:12px;border-radius:50%;
+    background:var(--saffron);box-shadow:0 0 0 4px rgba(255,153,51,.18);
+  }
+  .item:nth-child(3n+2)::before{background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.16)}
+  .item:nth-child(3n+3)::before{background:var(--green);box-shadow:0 0 0 4px rgba(19,136,8,.2)}
+  .item h3{margin:0 0 4px;font-size:18px}
+  .item .yr{color:var(--saffron);font-weight:700;font-size:13px;letter-spacing:.1em}
+  .item p{margin:6px 0 0;color:var(--muted);line-height:1.7;font-size:15px}
+
+  /* ---------- Cards ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+  .card{
+    border:1px solid var(--line);border-radius:18px;padding:22px;
+    background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+    transition:transform .35s ease,border-color .35s ease,box-shadow .35s ease;
+  }
+  .card:hover{transform:translateY(-6px);border-color:rgba(255,153,51,.5);
+    box-shadow:0 18px 40px rgba(0,0,0,.45)}
+  .card .ic{font-size:26px}
+  .card h3{margin:10px 0 6px;font-size:17px}
+  .card p{margin:0;color:var(--muted);font-size:14px;line-height:1.65}
+
+  .swatch{display:flex;gap:0;border-radius:12px;overflow:hidden;height:10px;margin-bottom:14px}
+  .swatch i{flex:1}
+  .s1{background:var(--saffron)} .s2{background:#fff} .s3{background:var(--green)}
+
+  /* ---------- Quote ---------- */
+  .quote{
+    border-left:3px solid var(--saffron);padding:8px 0 8px 22px;
+    font-size:clamp(18px,2.6vw,26px);line-height:1.5;
+  }
+  .quote small{display:block;margin-top:12px;color:var(--muted);font-size:14px;letter-spacing:.1em}
+
+  /* ---------- Pledge ---------- */
+  .pledge{
+    border:1px solid var(--line);border-radius:20px;padding:28px;
+    background:rgba(255,255,255,.03);line-height:1.9;color:#dbe5f5;
+  }
+
+  /* ---------- Countdown ---------- */
+  .count{display:flex;gap:12px;flex-wrap:wrap}
+  .count div{
+    flex:1;min-width:92px;text-align:center;border:1px solid var(--line);
+    border-radius:14px;padding:16px 8px;background:rgba(255,255,255,.03)
+  }
+  .count b{display:block;font-size:30px;font-variant-numeric:tabular-nums}
+  .count small{color:var(--muted);font-size:11px;letter-spacing:.18em;text-transform:uppercase}
+
+  /* ---------- Button / footer ---------- */
+  .btn{
+    display:inline-block;margin-top:8px;cursor:pointer;
+    border:0;border-radius:999px;padding:14px 30px;font-size:15px;font-weight:600;color:#0b0f1a;
+    background:linear-gradient(90deg,var(--saffron),#fff,var(--green));
+    background-size:200% 100%;
+    transition:background-position .6s ease,transform .2s ease;
+  }
+  .btn:hover{background-position:100% 0;transform:translateY(-2px)}
+
+  footer{
+    text-align:center;padding:50px 22px 70px;color:var(--muted);font-size:13px;
+    border-top:1px solid var(--line);position:relative;z-index:3;
+  }
+  footer .jh{color:#fff;letter-spacing:.3em;font-weight:700;margin-bottom:10px}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+    .reveal{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="chakra-load" id="chakraLoad"></div>
+  <div class="load-text">Vande Mataram</div>
+</div>
+
+<div id="sky"></div>
+<canvas id="fireworks"></canvas>
+
+<header class="nav">
+  <div class="brand"><span class="dot"></span> 15 AUGUST 1947</div>
+  <nav>
+    <a href="#story">Story</a>
+    <a href="#heroes">Heroes</a>
+    <a href="#flag-meaning">Flag</a>
+    <a href="#pledge">Pledge</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="eyebrow">Republic of India</div>
+    <h1>
+      <span class="word" style="animation-delay:.1s">Happy</span>
+      <span class="word tricolor-text" style="animation-delay:.28s">Independence</span>
+      <span class="word" style="animation-delay:.46s">Day</span>
+    </h1>
+    <div class="typed" id="typed"><span class="cursor"></span></div>
+
+    <div class="pole-line"></div>
+    <canvas id="flag" width="1120" height="700" aria-label="Waving Indian national flag"></canvas>
+
+    <div class="stats">
+      <div class="stat"><b id="yearsFree">0</b><small>Years Free</small></div>
+      <div class="stat"><b>28</b><small>States</small></div>
+      <div class="stat"><b>22</b><small>Languages</small></div>
+      <div class="stat"><b>1.4B</b><small>People</small></div>
+    </div>
+
+    <div class="scroll-hint">SCROLL ↓</div>
+  </section>
+
+  <!-- STORY -->
+  <section id="story">
+    <h2 class="title reveal">The Long Road to Freedom</h2>
+    <p class="sub reveal">Nearly two centuries of resistance, sacrifice and non-violent struggle led to the midnight of 15 August 1947.</p>
+
+    <div class="timeline">
+      <div class="item reveal"><div class="yr">1857</div><h3>The First War of Independence</h3>
+        <p>A nationwide revolt against the East India Company became the first mass challenge to colonial rule.</p></div>
+      <div class="item reveal"><div class="yr">1885</div><h3>Indian National Congress Founded</h3>
+        <p>A political platform is born, giving the freedom movement a unified national voice.</p></div>
+      <div class="item reveal"><div class="yr">1919</div><h3>Jallianwala Bagh</h3>
+        <p>The massacre at Amritsar turned moderate opinion decisively toward complete independence.</p></div>
+      <div class="item reveal"><div class="yr">1930</div><h3>The Dandi Salt March</h3>
+        <p>Gandhi walked 386&nbsp;km to the sea and made a fistful of salt the symbol of defiance.</p></div>
+      <div class="item reveal"><div class="yr">1942</div><h3>Quit India Movement</h3>
+        <p>"Do or Die." The final mass call for the British to leave India.</p></div>
+      <div class="item reveal"><div class="yr">1947</div><h3>Freedom at Midnight</h3>
+        <p>At the stroke of the midnight hour of 15 August, India awoke to life and freedom.</p></div>
+    </div>
+  </section>
+
+  <!-- QUOTE -->
+  <section>
+    <blockquote class="quote reveal">
+      "At the stroke of the midnight hour, when the world sleeps, India will awake to life and freedom."
+      <small>— Jawaharlal Nehru, 14 August 1947</small>
+    </blockquote>
+  </section>
+
+  <!-- HEROES -->
+  <section id="heroes">
+    <h2 class="title reveal">Those Who Gave Everything</h2>
+    <p class="sub reveal">A nation remembers the leaders and martyrs whose courage made this day possible.</p>
+    <div class="grid">
+      <div class="card reveal"><div class="ic">🕊️</div><h3>Mahatma Gandhi</h3><p>Led the freedom struggle through truth and non-violence, inspiring movements worldwide.</p></div>
+      <div class="card reveal"><div class="ic">🔥</div><h3>Bhagat Singh</h3><p>Gave his life at 23, turning youth across India toward the cause of complete freedom.</p></div>
+      <div class="card reveal"><div class="ic">⚔️</div><h3>Subhas Chandra Bose</h3><p>Founded the Indian National Army with the cry, "Give me blood, and I will give you freedom."</p></div>
+      <div class="card reveal"><div class="ic">🛡️</div><h3>Rani Lakshmibai</h3><p>The Queen of Jhansi who fought to the last in 1857 and became a symbol of resistance.</p></div>
+      <div class="card reveal"><div class="ic">🏛️</div><h3>Sardar Patel</h3><p>The Iron Man who united 562 princely states into one republic.</p></div>
+      <div class="card reveal"><div class="ic">📜</div><h3>Dr. B. R. Ambedkar</h3><p>Architect of the Constitution that guaranteed liberty, equality and justice to all.</p></div>
+    </div>
+  </section>
+
+  <!-- FLAG MEANING -->
+  <section id="flag-meaning">
+    <h2 class="title reveal">The Tiranga</h2>
+    <p class="sub reveal">Three bands, one chakra, and a promise renewed every year.</p>
+    <div class="grid">
+      <div class="card reveal"><div class="swatch"><i class="s1"></i></div><h3>Saffron</h3><p>Courage, sacrifice and the spirit of renunciation.</p></div>
+      <div class="card reveal"><div class="swatch"><i class="s2"></i></div><h3>White</h3><p>Peace, truth and the light that guides the nation's conduct.</p></div>
+      <div class="card reveal"><div class="swatch"><i class="s3"></i></div><h3>Green</h3><p>Faith, fertility and the prosperity of the land.</p></div>
+      <div class="card reveal"><div class="ic">☸️</div><h3>Ashoka Chakra</h3><p>24 spokes of the wheel of dharma — a reminder that a nation must keep moving forward.</p></div>
+    </div>
+  </section>
+
+  <!-- COUNTDOWN -->
+  <section>
+    <h2 class="title reveal">Next Independence Day</h2>
+    <p class="sub reveal" id="countLabel">Counting down to the next 15th of August.</p>
+    <div class="count reveal">
+      <div><b id="cd">00</b><small>Days</small></div>
+      <div><b id="ch">00</b><small>Hours</small></div>
+      <div><b id="cm">00</b><small>Minutes</small></div>
+      <div><b id="cs">00</b><small>Seconds</small></div>
+    </div>
+  </section>
+
+  <!-- PLEDGE -->
+  <section id="pledge">
+    <h2 class="title reveal">The National Pledge</h2>
+    <div class="pledge reveal">
+      India is my country and all Indians are my brothers and sisters.<br>
+      I love my country and I am proud of its rich and varied heritage.<br>
+      I shall always strive to be worthy of it.<br>
+      I shall give my parents, teachers and all elders respect and treat everyone with courtesy.<br>
+      To my country and my people, I pledge my devotion.
+    </div>
+    <br>
+    <button class="btn" id="celebrate">🎆 Celebrate</button>
+  </section>
+
+</main>
+
+<footer>
+  <div class="jh">JAI HIND</div>
+  Made with pride for the tricolour · 15 August
+</footer>
+
+<script>
+(function(){
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Loader chakra spokes ---------- */
+  const cl = document.getElementById('chakraLoad');
+  for(let i=0;i<24;i++){
+    const s=document.createElement('i');
+    s.style.transform='rotate('+(i*15)+'deg)';
+    cl.appendChild(s);
+  }
+  window.addEventListener('load',()=>{
+    setTimeout(()=>document.getElementById('loader').classList.add('hide'),700);
+  });
+
+  /* ---------- Kites ---------- */
+  const kiteColors=['#FF9933','#ffffff','#138808'];
+  for(let i=0;i<5;i++){
+    const k=document.createElement('div');
+    k.className='kite';
+    k.style.setProperty('--k',kiteColors[i%3]);
+    k.style.top=(8+i*15)+'%';
+    k.style.animationDuration=(22+i*7)+'s';
+    k.style.animationDelay=(-i*6)+'s';
+    document.body.appendChild(k);
+  }
+
+  /* ---------- Typewriter ---------- */
+  const lines=[
+    'Freedom is not given, it is taken.',
+    'One nation. Many voices. One tricolour.',
+    'Remembering 1947 — celebrating today.',
+    'सत्यमेव जयते — Truth alone triumphs.'
+  ];
+  const typedEl=document.getElementById('typed');
+  const cursor=typedEl.querySelector('.cursor');
+  let li=0,ci=0,del=false;
+  function type(){
+    const txt=lines[li];
+    ci += del ? -1 : 1;
+    typedEl.textContent = txt.slice(0,ci);
+    typedEl.appendChild(cursor);
+    let wait = del ? 35 : 60;
+    if(!del && ci===txt.length){ del=true; wait=1800; }
+    else if(del && ci===0){ del=false; li=(li+1)%lines.length; wait=350; }
+    setTimeout(type,wait);
+  }
+  type();
+
+  /* ---------- Years free counter ---------- */
+  const yEl=document.getElementById('yearsFree');
+  const target=new Date().getFullYear()-1947;
+  let cur=0;
+  const tick=setInterval(()=>{
+    cur++; yEl.textContent=cur;
+    if(cur>=target) clearInterval(tick);
+  },1200/Math.max(target,1));
+
+  /* ---------- Waving flag ---------- */
+  const flag=document.getElementById('flag');
+  const fx=flag.getContext('2d');
+
+  // Offscreen flat flag
+  const off=document.createElement('canvas');
+  off.width=900; off.height=600;
+  const ox=off.getContext('2d');
+  function drawFlat(){
+    const w=off.width,h=off.height,band=h/3;
+    ox.fillStyle='#FF9933'; ox.fillRect(0,0,w,band);
+    ox.fillStyle='#FFFFFF'; ox.fillRect(0,band,w,band);
+    ox.fillStyle='#138808'; ox.fillRect(0,band*2,w,band);
+    // Ashoka Chakra
+    const cx=w/2, cy=h/2, r=band*0.42;
+    ox.strokeStyle='#000080'; ox.lineWidth=r*0.09;
+    ox.beginPath(); ox.arc(cx,cy,r,0,Math.PI*2); ox.stroke();
+    ox.fillStyle='#000080';
+    ox.beginPath(); ox.arc(cx,cy,r*0.13,0,Math.PI*2); ox.fill();
+    ox.lineWidth=r*0.045;
+    for(let i=0;i<24;i++){
+      const a=(Math.PI*2/24)*i;
+      ox.beginPath();
+      ox.moveTo(cx+Math.cos(a)*r*0.13, cy+Math.sin(a)*r*0.13);
+      ox.lineTo(cx+Math.cos(a)*r*0.95, cy+Math.sin(a)*r*0.95);
+      ox.stroke();
+      ox.beginPath();
+      ox.arc(cx+Math.cos(a)*r*0.9, cy+Math.sin(a)*r*0.9, r*0.035,0,Math.PI*2);
+      ox.fill();
+    }
+  }
+  drawFlat();
+
+  let t=0;
+  function drawFlag(){
+    const W=flag.width,H=flag.height;
+    fx.clearRect(0,0,W,H);
+    const fw=W-40, fh=H-160, x0=30, y0=60;
+    const slices=fw;
+    for(let i=0;i<slices;i++){
+      const p=i/slices;
+      const amp=26*p;                       // more sway away from the pole
+      const yOff=Math.sin(p*7 - t)*amp + Math.sin(p*3.2 - t*0.6)*amp*0.5;
+      const squeeze=1 - Math.abs(Math.cos(p*7 - t))*0.06*p;
+      const sh=fh*squeeze;
+      fx.drawImage(off, i*(off.width/slices),0, off.width/slices, off.height,
+                        x0+i, y0+yOff+(fh-sh)/2, 1.1, sh);
+      // light & shade for cloth depth
+      const shade=Math.sin(p*7 - t);
+      fx.fillStyle = shade>0
+        ? 'rgba(255,255,255,'+(shade*0.16*p).toFixed(3)+')'
+        : 'rgba(0,0,0,'+(Math.abs(shade)*0.22*p).toFixed(3)+')';
+      fx.fillRect(x0+i, y0+yOff+(fh-sh)/2, 1.4, sh);
+    }
+    // pole
+    const g=fx.createLinearGradient(x0-16,0,x0,0);
+    g.addColorStop(0,'#6b7280'); g.addColorStop(1,'#d1d5db');
+    fx.fillStyle=g; fx.fillRect(x0-14,20,12,H-30);
+    fx.fillStyle='#FF9933';
+    fx.beginPath(); fx.arc(x0-8,20,11,0,Math.PI*2); fx.fill();
+
+    if(!reduce) t+=0.045;
+    requestAnimationFrame(drawFlag);
+  }
+  drawFlag();
+
+  /* ---------- Fireworks ---------- */
+  const fwc=document.getElementById('fireworks');
+  const c=fwc.getContext('2d');
+  let parts=[];
+  function size(){ fwc.width=innerWidth; fwc.height=innerHeight; }
+  size(); addEventListener('resize',size);
+
+  const palette=['#FF9933','#FFFFFF','#138808','#FFD08A','#7CE07C','#8ea2ff'];
+  function burst(x,y,count){
+    const col=palette[(Math.random()*palette.length)|0];
+    for(let i=0;i<count;i++){
+      const a=Math.random()*Math.PI*2, sp=Math.random()*5+1.4;
+      parts.push({
+        x,y,
+        vx:Math.cos(a)*sp, vy:Math.sin(a)*sp,
+        life:1, decay:Math.random()*0.012+0.008,
+        color: Math.random()<0.25 ? palette[(Math.random()*palette.length)|0] : col,
+        r:Math.random()*2+1
+      });
+    }
+  }
+  function loopFw(){
+    c.fillStyle='rgba(7,10,18,0.18)';
+    c.fillRect(0,0,fwc.width,fwc.height);
+    c.globalCompositeOperation='lighter';
+    for(let i=parts.length-1;i>=0;i--){
+      const p=parts[i];
+      p.x+=p.vx; p.y+=p.vy;
+      p.vy+=0.035; p.vx*=0.99; p.vy*=0.99;
+      p.life-=p.decay;
+      if(p.life<=0){ parts.splice(i,1); continue; }
+      c.globalAlpha=Math.max(p.life,0);
+      c.fillStyle=p.color;
+      c.beginPath(); c.arc(p.x,p.y,p.r,0,Math.PI*2); c.fill();
+    }
+    c.globalAlpha=1;
+    c.globalCompositeOperation='source-over';
+    requestAnimationFrame(loopFw);
+  }
+  if(!reduce){
+    loopFw();
+    setInterval(()=>{
+      if(parts.length<900)
+        burst(Math.random()*fwc.width, Math.random()*fwc.height*0.55+40, 70);
+    },1100);
+  }
+  addEventListener('click',e=>{ if(!reduce) burst(e.clientX,e.clientY,90); });
+
+  document.getElementById('celebrate').addEventListener('click',()=>{
+    if(reduce) return;
+    for(let i=0;i<7;i++){
+      setTimeout(()=>burst(Math.random()*fwc.width, Math.random()*fwc.height*0.6+40, 140), i*180);
+    }
+  });
+
+  /* ---------- Dim fireworks past the hero so text stays readable ---------- */
+  function dim(){
+    const p=Math.min(scrollY/innerHeight,1);
+    fwc.style.opacity=(1-p*0.78).toFixed(2);
+  }
+  dim(); addEventListener('scroll',dim,{passive:true});
+
+  /* ---------- Scroll reveal ---------- */
+  const io=new IntersectionObserver(es=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+  },{threshold:.15});
+  document.querySelectorAll('.reveal').forEach((el,i)=>{
+    el.style.transitionDelay=(i%6)*60+'ms';
+    io.observe(el);
+  });
+
+  /* ---------- Countdown ---------- */
+  const pad=n=>String(n).padStart(2,'0');
+  function nextAug15(){
+    const now=new Date();
+    let y=now.getFullYear();
+    let d=new Date(y,7,15,0,0,0);
+    if(d-now<=0) d=new Date(y+1,7,15,0,0,0);
+    return d;
+  }
+  function countdown(){
+    const now=new Date(), tgt=nextAug15();
+    let ms=tgt-now;
+    const isToday = now.getMonth()===7 && now.getDate()===15;
+    if(isToday){
+      document.getElementById('countLabel').textContent='It is 15 August today — Happy Independence Day! 🇮🇳';
+    }
+    const s=Math.floor(ms/1000);
+    document.getElementById('cd').textContent=pad(Math.floor(s/86400));
+    document.getElementById('ch').textContent=pad(Math.floor(s/3600)%24);
+    document.getElementById('cm').textContent=pad(Math.floor(s/60)%60);
+    document.getElementById('cs').textContent=pad(s%60);
+  }
+  countdown(); setInterval(countdown,1000);
+})();
+</script>
+</body>
+</html>
