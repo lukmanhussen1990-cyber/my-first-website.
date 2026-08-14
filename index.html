@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#04060c">
+<meta name="description" content="A cinematic zoom from a tree down to a single atom — twelve powers of ten, rendered live in the browser.">
+<title>Inside an Atom — A Journey Through Twelve Powers of Ten</title>
+<style>
+  :root{
+    --ink:#e8f1ff;
+    --dim:#8fa3bd;
+    --accent:#7fe3c4;
+    --accent2:#8ab6ff;
+    --panel:rgba(9,14,22,.58);
+    --line:rgba(150,190,230,.20);
+    --safe-b:env(safe-area-inset-bottom,0px);
+    --safe-t:env(safe-area-inset-top,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0;background:#04060c;overflow:hidden;overscroll-behavior:none}
+  body{
+    font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--ink);
+    touch-action:none;
+    -webkit-font-smoothing:antialiased;
+  }
+  #scene{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0}
+
+  #ui{position:fixed;inset:0;z-index:2;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between}
+  #ui.hidden{opacity:0;transition:opacity .4s}
+
+  /* ---------- top ---------- */
+  #top{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+    padding:calc(14px + var(--safe-t)) 14px 0 14px;
+  }
+  #titleBlock{max-width:64%}
+  #stageIndex{
+    font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);
+    opacity:.85;margin-bottom:5px;font-variant-numeric:tabular-nums;
+  }
+  #stageName{
+    font-size:clamp(21px,6.4vw,42px);font-weight:250;letter-spacing:.012em;line-height:1.02;
+    text-shadow:0 2px 28px rgba(0,0,0,.75);
+  }
+  #stageSize{
+    margin-top:6px;font-size:clamp(11px,3.1vw,14px);color:var(--dim);letter-spacing:.05em;
+    font-variant-numeric:tabular-nums;
+  }
+  .swap{animation:swapIn .55s cubic-bezier(.2,.7,.25,1) both}
+  @keyframes swapIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+
+  #hud{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
+  .chip{
+    background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    padding:6px 9px;text-align:right;backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+    min-width:104px;
+  }
+  .chip .k{display:block;font-size:8.5px;letter-spacing:.19em;text-transform:uppercase;color:var(--dim);margin-bottom:2px}
+  .chip b{font-weight:500;font-size:clamp(12px,3.4vw,15px);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  #magVal{color:var(--accent)}
+  #scalebar{
+    background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:7px 9px 6px;
+    backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  }
+  #scalebar .k{font-size:8.5px;letter-spacing:.19em;text-transform:uppercase;color:var(--dim)}
+  #barWrap{display:flex;align-items:center;gap:7px;margin-top:5px}
+  #bar{width:62px;height:7px;border:1px solid rgba(200,225,255,.7);border-top:0;position:relative}
+  #bar::after{content:"";position:absolute;left:50%;top:0;width:1px;height:4px;background:rgba(200,225,255,.55)}
+  #barLabel{font-size:11px;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+
+  /* ---------- comparison card ---------- */
+  #compare{
+    pointer-events:none;position:absolute;left:14px;right:14px;top:50%;transform:translateY(-50%) scale(.97);
+    max-width:330px;opacity:0;transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.25,1);
+    background:linear-gradient(160deg,rgba(12,20,32,.80),rgba(8,12,20,.66));
+    border:1px solid var(--line);border-radius:15px;padding:13px 14px;
+    backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);
+  }
+  #compare.show{opacity:1;transform:translateY(-50%) scale(1)}
+  @media (max-width:759px){
+    #compare{top:auto;bottom:196px;transform:translateY(10px) scale(.98);max-width:none;padding:10px 12px;
+      background:linear-gradient(160deg,rgba(12,20,32,.72),rgba(8,12,20,.58))}
+    #compare.show{transform:none}
+    #compare p{font-size:11.5px;line-height:1.45;margin-bottom:6px}
+    #compare h3{margin-bottom:6px}
+    #compare p:nth-of-type(2){display:none}
+  }
+  @media (max-width:759px) and (min-height:780px){
+    #compare p:nth-of-type(2){display:block}
+  }
+  #compare h3{margin:0 0 9px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  #compare p{margin:0 0 9px;font-size:12.5px;line-height:1.5;color:#cfe0f4}
+  #compare p b{color:#fff;font-weight:600}
+  #atomStrip{height:11px;border-radius:3px;border:1px solid rgba(160,200,240,.4);
+    background:repeating-linear-gradient(90deg,rgba(127,227,196,.85) 0 1px,rgba(127,227,196,0) 1px 3px);
+    box-shadow:inset 0 0 12px rgba(127,227,196,.25)}
+  #stripLabel{display:flex;justify-content:space-between;font-size:9.5px;color:var(--dim);margin-top:4px;letter-spacing:.08em}
+
+  /* ---------- bottom ---------- */
+  #bottom{padding:0 14px calc(12px + var(--safe-b));display:flex;flex-direction:column;gap:10px}
+  #caption{
+    margin:0 auto;max-width:640px;text-align:center;font-size:clamp(11.5px,3.2vw,14.5px);
+    line-height:1.55;color:#c3d5ea;text-shadow:0 1px 16px rgba(0,0,0,.85);
+  }
+  #rail{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;pointer-events:auto}
+  .dot{
+    width:9px;height:9px;border-radius:50%;border:1px solid rgba(160,200,240,.45);background:transparent;
+    padding:0;cursor:pointer;transition:all .3s;position:relative;
+  }
+  .dot:hover{border-color:var(--accent);transform:scale(1.25)}
+  .dot.on{background:var(--accent);border-color:var(--accent);box-shadow:0 0 11px rgba(127,227,196,.75)}
+  .dot.done{background:rgba(127,227,196,.4)}
+  .dot:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
+
+  #track{position:relative;height:22px;display:flex;align-items:center;pointer-events:auto;cursor:pointer}
+  #trackBg{position:absolute;left:0;right:0;height:3px;background:rgba(150,190,230,.18);border-radius:3px;overflow:hidden}
+  #trackFill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:3px}
+  #trackHead{position:absolute;top:50%;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;
+    background:#fff;box-shadow:0 0 12px rgba(127,227,196,.9);pointer-events:none}
+  .tick{position:absolute;top:50%;width:1px;height:8px;margin-top:-4px;background:rgba(190,215,240,.32)}
+
+  #controls{display:flex;align-items:center;justify-content:center;gap:8px;pointer-events:auto}
+  button.ctl{
+    background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:50%;
+    width:42px;height:42px;display:grid;place-items:center;cursor:pointer;
+    backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);transition:background .2s,transform .12s,border-color .2s;
+  }
+  button.ctl:hover{background:rgba(28,42,60,.8);border-color:var(--accent)}
+  button.ctl:active{transform:scale(.92)}
+  button.ctl:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+  #play{width:54px;height:54px;background:rgba(20,34,48,.72);border-color:rgba(127,227,196,.5)}
+  .ctl svg{width:17px;height:17px;fill:currentColor;display:block}
+  #play svg{width:21px;height:21px}
+  #speed{width:auto;border-radius:21px;padding:0 13px;font-size:12px;letter-spacing:.06em;font-variant-numeric:tabular-nums}
+
+  #hint{
+    position:absolute;left:50%;bottom:130px;transform:translateX(-50%);
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+    background:var(--panel);border:1px solid var(--line);padding:7px 13px;border-radius:20px;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);white-space:nowrap;
+    transition:opacity .8s;text-align:center;
+  }
+  #hint.gone{opacity:0}
+
+  @media (min-width:760px){
+    #top{padding:24px 26px 0}
+    #bottom{padding:0 26px 20px}
+    #compare{left:auto;right:26px;max-width:310px}
+    #hint{bottom:150px}
+    .chip{min-width:132px}
+    #bar{width:88px}
+  }
+  @media (max-height:520px){
+    #caption{display:none}
+    #hint{bottom:112px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .swap{animation:none}
+  }
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="Animated zoom from a tree down to a single atom"></canvas>
+
+<div id="ui">
+  <div id="top">
+    <div id="titleBlock">
+      <div id="stageIndex">Stage 1 / 9</div>
+      <div id="stageName">Tree</div>
+      <div id="stageSize">≈ 15 metres</div>
+    </div>
+    <div id="hud">
+      <div class="chip"><span class="k">Magnification</span><b id="magVal">×1</b></div>
+      <div class="chip"><span class="k">Field of view</span><b id="fovVal">15 m</b></div>
+      <div id="scalebar">
+        <span class="k">Scale</span>
+        <div id="barWrap"><div id="bar"></div><span id="barLabel">2 m</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="compare" aria-hidden="true">
+    <h3>How small is that?</h3>
+    <p>Carbon atoms sit about <b>0.2 nm</b> apart. Line them up and you would need roughly <b>5 000 000</b> of them to stretch across <b>one millimetre</b>.</p>
+    <p>A human hair is ~0.1 mm thick — about <b>500 000 atoms</b> across.</p>
+    <div id="atomStrip"></div>
+    <div id="stripLabel"><span>0</span><span>1 mm ≈ 5 million atoms</span></div>
+  </div>
+
+  <div id="bottom">
+    <p id="caption"></p>
+    <div id="rail" role="tablist" aria-label="Stages"></div>
+    <div id="track" role="slider" aria-label="Journey progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+      <div id="trackBg"><div id="trackFill"></div></div>
+      <div id="trackHead"></div>
+    </div>
+    <div id="controls">
+      <button class="ctl" id="restart" title="Restart (R)" aria-label="Restart">
+        <svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>
+      </button>
+      <button class="ctl" id="prev" title="Previous stage (←)" aria-label="Previous stage">
+        <svg viewBox="0 0 24 24"><path d="M7 6h2v12H7zm3 6 8 6V6z"/></svg>
+      </button>
+      <button class="ctl" id="play" title="Play / Pause (Space)" aria-label="Play or pause">
+        <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="ctl" id="next" title="Next stage (→)" aria-label="Next stage">
+        <svg viewBox="0 0 24 24"><path d="M15 6h2v12h-2zM6 18l8-6-8-6z"/></svg>
+      </button>
+      <button class="ctl" id="speed" title="Playback speed" aria-label="Playback speed">1×</button>
+    </div>
+  </div>
+
+  <div id="hint">Scroll · swipe · ← → keys to travel</div>
+</div>
+
+<script>
+"use strict";
+(function(){
+
+/* ============================================================
+   0.  MATH / UTILITY
+   ============================================================ */
+const TAU = Math.PI * 2;
+const clamp = (v,a,b)=> v<a?a:(v>b?b:v);
+const lerp  = (a,b,t)=> a+(b-a)*t;
+const smoothstep = (a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+const easeInOut  = t => t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a>>>15, 1 | a);
+    t = t + Math.imul(t ^ t>>>7, 61 | t) ^ t;
+    return ((t ^ t>>>14) >>> 0) / 4294967296;
+  };
+}
+const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* irregular organic outline — used for cells, organelles, tissue */
+function blobPath(cx,cy,rx,ry,seed,amp,rot,steps){
+  const rnd = mulberry32(seed|0), harm = [];
+  for(let k=0;k<4;k++) harm.push({f:2+k+(rnd()*2|0), ph:rnd()*TAU, a:amp/(k+1.2)});
+  const N = steps||60, p = new Path2D();
+  const cr = Math.cos(rot||0), sr = Math.sin(rot||0);
+  for(let i=0;i<=N;i++){
+    const a = i/N*TAU;
+    let m = 1;
+    for(let k=0;k<harm.length;k++) m += Math.sin(a*harm[k].f+harm[k].ph)*harm[k].a;
+    const ex = Math.cos(a)*rx*m, ey = Math.sin(a)*ry*m;
+    const x = cx + ex*cr - ey*sr, y = cy + ex*sr + ey*cr;
+    if(i) p.lineTo(x,y); else p.moveTo(x,y);
+  }
+  p.closePath();
+  return p;
+}
+
+/* shaded sphere with specular highlight */
+function sphere(c,x,y,r,hi,mid,lo,glowA){
+  const g = c.createRadialGradient(x-r*0.36,y-r*0.42,r*0.04,x,y,r*1.02);
+  g.addColorStop(0,hi); g.addColorStop(0.42,mid); g.addColorStop(1,lo);
+  c.fillStyle=g; c.beginPath(); c.arc(x,y,r,0,TAU); c.fill();
+  if(glowA){
+    const s = c.createRadialGradient(x,y,r*0.5,x,y,r*1.9);
+    s.addColorStop(0,'rgba(255,255,255,'+glowA+')'); s.addColorStop(1,'rgba(255,255,255,0)');
+    c.fillStyle=s; c.beginPath(); c.arc(x,y,r*1.9,0,TAU); c.fill();
+  }
+}
+
+/* soft radial sprite (cheap glow / particle) */
+function makeSprite(r,g,b,soft){
+  const S=64, cv=document.createElement('canvas'); cv.width=cv.height=S;
+  const x=cv.getContext('2d');
+  const gr=x.createRadialGradient(S/2,S/2,0,S/2,S/2,S/2);
+  gr.addColorStop(0,   'rgba('+r+','+g+','+b+',1)');
+  gr.addColorStop(soft?0.18:0.10,'rgba('+r+','+g+','+b+',0.72)');
+  gr.addColorStop(0.45,'rgba('+r+','+g+','+b+',0.20)');
+  gr.addColorStop(1,   'rgba('+r+','+g+','+b+',0)');
+  x.fillStyle=gr; x.fillRect(0,0,S,S);
+  return cv;
+}
+const SP_WHITE = makeSprite(220,238,255,true);
+const SP_GREEN = makeSprite(140,240,200,true);
+const SP_CYAN  = makeSprite(140,205,255,true);
+const SP_WARM  = makeSprite(255,214,150,true);
+const SP_RED   = makeSprite(255,140,120,true);
+function glow(c,sp,x,y,r,a){ c.globalAlpha=a; c.drawImage(sp,x-r,y-r,r*2,r*2); c.globalAlpha=1; }
+
+/* soft-edged backdrop for a scene — a rectangle would show its corners
+   while the stage is still small and fading in, so this fades out instead */
+function backdrop(c,u,inner,mid){
+  const g=c.createRadialGradient(0,0,0,0,0,u*1.45);
+  g.addColorStop(0,inner); g.addColorStop(0.55,mid); g.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=g; c.beginPath(); c.arc(0,0,u*1.45,0,TAU); c.fill();
+}
+
+/* ribbon (branch / twig) built from a centre line + widths */
+function ribbon(pts,ws){
+  const p=new Path2D(), n=pts.length, L=[], R=[];
+  for(let i=0;i<n;i++){
+    const a=pts[Math.max(0,i-1)], b=pts[Math.min(n-1,i+1)];
+    let dx=b[0]-a[0], dy=b[1]-a[1];
+    const len=Math.hypot(dx,dy)||1; dx/=len; dy/=len;
+    const w=ws[i];
+    L.push([pts[i][0]-dy*w, pts[i][1]+dx*w]);
+    R.push([pts[i][0]+dy*w, pts[i][1]-dx*w]);
+  }
+  p.moveTo(L[0][0],L[0][1]);
+  for(let i=1;i<n;i++) p.lineTo(L[i][0],L[i][1]);
+  for(let i=n-1;i>=0;i--) p.lineTo(R[i][0],R[i][1]);
+  p.closePath();
+  return p;
+}
+function curvePts(x0,y0,x1,y1,x2,y2,x3,y3,n){
+  const out=[];
+  for(let i=0;i<=n;i++){
+    const t=i/n, m=1-t;
+    out.push([
+      m*m*m*x0+3*m*m*t*x1+3*m*t*t*x2+t*t*t*x3,
+      m*m*m*y0+3*m*m*t*y1+3*m*t*t*y2+t*t*t*y3
+    ]);
+  }
+  return out;
+}
+
+/* ---- leaf geometry (reused at three different scales) ---- */
+function leafHalfWidth(x,teeth){
+  x=clamp(x,0,1);
+  let w = 0.255*Math.pow(Math.sin(Math.PI*Math.pow(x,0.60)),1.30);
+  w *= (1-0.14*x);
+  if(teeth) w += 0.013*Math.sin(x*Math.PI*19)*Math.min(1,x*4)*(1-x);
+  return Math.max(0,w);
+}
+function leafPath(teeth){
+  const p=new Path2D(), N=64;
+  p.moveTo(0,0);
+  for(let i=1;i<=N;i++){ const x=i/N; p.lineTo(x,-leafHalfWidth(x,teeth)); }
+  for(let i=N-1;i>=0;i--){ const x=i/N; p.lineTo(x, leafHalfWidth(x,teeth)); }
+  p.closePath();
+  return p;
+}
+const LEAF_TOOTH = leafPath(true), LEAF_SMOOTH = leafPath(false);
+
+/* draws a leaf of length L with origin at the petiole, pointing +x */
+function drawLeaf(c,L,opt){
+  opt = opt||{};
+  const detail = opt.detail||0;   // 0 = tiny, 1 = medium, 2 = full
+  c.save(); c.scale(L,L);
+  const g=c.createLinearGradient(0.05,-0.26,0.85,0.26);
+  g.addColorStop(0, opt.c0||'#2f6b34');
+  g.addColorStop(0.45,opt.c1||'#3f8b3f');
+  g.addColorStop(1, opt.c2||'#1e4a28');
+  c.fillStyle=g; c.fill(LEAF_TOOTH);
+  /* darker towards the margin, which gives the blade some body */
+  c.save(); c.clip(LEAF_TOOTH);
+  c.lineWidth=0.13; c.strokeStyle='rgba(7,28,15,0.34)'; c.stroke(LEAF_TOOTH);
+  c.lineWidth=0.05; c.strokeStyle='rgba(7,28,15,0.24)'; c.stroke(LEAF_TOOTH);
+  c.restore();
+
+  if(detail>0){
+    /* translucent glow — light passing through the blade */
+    const tg=c.createRadialGradient(0.42,-0.05,0.02,0.45,0,0.62);
+    tg.addColorStop(0,'rgba(190,255,170,0.20)');
+    tg.addColorStop(1,'rgba(190,255,170,0)');
+    c.save(); c.clip(LEAF_TOOTH); c.fillStyle=tg; c.fillRect(0,-0.5,1.05,1);
+    /* mottled surface cells */
+    if(detail>1){
+      const r=mulberry32(31); c.fillStyle='rgba(214,255,190,0.055)';
+      for(let i=0;i<210;i++){
+        const x=r(), y=(r()-0.5)*0.55;
+        c.beginPath(); c.ellipse(x,y,0.016+r()*0.020,0.011+r()*0.013,r()*3,0,TAU); c.fill();
+      }
+      c.fillStyle='rgba(8,36,18,0.16)';
+      for(let i=0;i<150;i++){
+        const x=r(), y=(r()-0.5)*0.52;
+        c.beginPath(); c.ellipse(x,y,0.012+r()*0.010,0.009+r()*0.007,r()*3,0,TAU); c.fill();
+      }
+    }
+    c.restore();
+  }
+
+  /* midrib — thinner on the big close-ups, or it reads as a stripe */
+  const vw = detail>1?0.55:1;
+  c.strokeStyle=opt.vein||'rgba(206,236,178,0.55)';
+  c.lineCap='round';
+  c.lineWidth=0.013*vw; c.beginPath(); c.moveTo(0,0); c.lineTo(0.965,0); c.stroke();
+
+  /* secondary veins */
+  const pairs = detail>1?12:(detail>0?8:5);
+  c.lineWidth=0.008*vw; c.strokeStyle=opt.vein2||'rgba(200,232,172,0.34)';
+  for(let i=1;i<=pairs;i++){
+    const x0=i/(pairs+1)*0.86;
+    const x1=Math.min(0.95, x0+0.12+(1-x0)*0.11);
+    for(let s=-1;s<=1;s+=2){
+      const w=leafHalfWidth(x1,false)*0.80;
+      c.beginPath(); c.moveTo(x0,0);
+      c.quadraticCurveTo(x0+(x1-x0)*0.32, s*w*0.66, x1, s*w);
+      c.stroke();
+    }
+  }
+  /* tertiary reticulation */
+  if(detail>1){
+    const r=mulberry32(77);
+    c.lineWidth=0.0022; c.strokeStyle='rgba(200,232,172,0.17)';
+    for(let i=0;i<150;i++){
+      const x=0.06+r()*0.74, s=r()<0.5?-1:1;
+      const w=Math.min(leafHalfWidth(x,false),leafHalfWidth(x+0.11,false));
+      const y=s*w*(0.15+r()*0.72);
+      c.beginPath(); c.moveTo(x,y);
+      c.quadraticCurveTo(x+0.03,y+(r()-0.5)*0.06, x+0.05+r()*0.05, y+(r()-0.5)*0.08);
+      c.stroke();
+    }
+  }
+  /* edge shading */
+  c.lineWidth=0.010*vw; c.strokeStyle='rgba(8,26,14,0.42)'; c.stroke(LEAF_TOOTH);
+  c.restore();
+}
+
+/* ============================================================
+   1.  CANVAS SET-UP
+   ============================================================ */
+const CV = document.getElementById('scene');
+const C  = CV.getContext('2d',{alpha:false});
+let W=0,H=0,DPR=1,U=0,VIG=null,NOISE=null;
+
+function buildNoise(){
+  const S=140, cv=document.createElement('canvas'); cv.width=cv.height=S;
+  const x=cv.getContext('2d'), img=x.createImageData(S,S), d=img.data;
+  for(let i=0;i<d.length;i+=4){
+    const v=200+Math.random()*55|0;
+    d[i]=d[i+1]=d[i+2]=v; d[i+3]=Math.random()*38|0;
+  }
+  x.putImageData(img,0,0);
+  NOISE = C.createPattern(cv,'repeat');
+}
+function resize(){
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  CV.width = Math.round(W*DPR); CV.height = Math.round(H*DPR);
+  CV.style.width = W+'px'; CV.style.height = H+'px';
+  U = Math.min(W,H);
+  const g = C.createRadialGradient(W*0.5,H*0.5,U*0.22,W*0.5,H*0.5,Math.hypot(W,H)*0.62);
+  g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(0.62,'rgba(0,0,0,0.32)'); g.addColorStop(1,'rgba(0,0,0,0.86)');
+  VIG = g;
+}
+window.addEventListener('resize',resize);
+window.addEventListener('orientationchange',()=>setTimeout(resize,120));
+
+/* ============================================================
+   2.  SCENES
+   ============================================================ */
+
+/* ---------- 2.1  TREE ------------------------------------- */
+function skyTree(c,a,t){
+  c.save(); c.globalAlpha=a;
+  const g=c.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#050a17'); g.addColorStop(0.45,'#0a1426'); g.addColorStop(0.78,'#152438'); g.addColorStop(1,'#1b2c3c');
+  c.fillStyle=g; c.fillRect(0,0,W,H);
+  /* moon haze */
+  const mx=W*0.80, my=H*0.16;
+  const mg=c.createRadialGradient(mx,my,0,mx,my,U*0.75);
+  mg.addColorStop(0,'rgba(190,215,255,0.26)'); mg.addColorStop(0.25,'rgba(150,185,240,0.09)');
+  mg.addColorStop(1,'rgba(120,160,220,0)');
+  c.fillStyle=mg; c.beginPath(); c.arc(mx,my,U*0.75,0,TAU); c.fill();
+  glow(c,SP_WHITE,mx,my,U*0.11,0.55);
+  /* stars, batched into three brightness buckets */
+  const r=mulberry32(9);
+  const buckets=[new Path2D(),new Path2D(),new Path2D()];
+  for(let i=0;i<90;i++){
+    const x=r()*W, y=r()*H*0.62, sz=r()*1.25+0.25;
+    const tw=(0.25+0.75*r())*(0.62+0.38*Math.sin(t*1.4+i));
+    buckets[clamp((tw*3)|0,0,2)].rect(x,y,sz,sz);
+  }
+  c.fillStyle='#dce9ff';
+  for(let k=0;k<3;k++){ c.globalAlpha=a*(0.18+k*0.28); c.fill(buckets[k]); }
+  c.restore();
+}
+function sceneTree(c,E){
+  const u=E.u, t=E.t;
+  const groundY = u*0.44;
+
+  /* distant tree line + hills */
+  c.fillStyle='#0b1520';
+  c.beginPath(); c.moveTo(-u*1.4,groundY);
+  for(let x=-1.4;x<=1.4;x+=0.05){
+    const y = groundY - u*(0.055 + 0.035*Math.sin(x*3.1) + 0.02*Math.sin(x*7.7+1.2));
+    c.lineTo(x*u,y);
+  }
+  c.lineTo(u*1.4,groundY*2); c.lineTo(-u*1.4,groundY*2); c.fill();
+
+  /* mist */
+  const mg=c.createLinearGradient(0,groundY-u*0.16,0,groundY+u*0.06);
+  mg.addColorStop(0,'rgba(140,175,215,0)'); mg.addColorStop(0.6,'rgba(140,175,215,0.10)');
+  mg.addColorStop(1,'rgba(140,175,215,0.02)');
+  c.fillStyle=mg; c.fillRect(-u*1.4,groundY-u*0.16,u*2.8,u*0.22);
+
+  /* ground */
+  const gg=c.createLinearGradient(0,groundY,0,groundY+u*0.4);
+  gg.addColorStop(0,'#141d18'); gg.addColorStop(1,'#05090a');
+  c.fillStyle=gg; c.fillRect(-u*1.4,groundY,u*2.8,u*0.6);
+  const rg=mulberry32(3), grass=new Path2D();
+  for(let i=0;i<150;i++){
+    const x=(rg()*2-1)*u*1.3, y=groundY+rg()*u*0.10;
+    const h=u*(0.006+rg()*0.014), sw=Math.sin(t*0.9+i)*u*0.003;
+    grass.moveTo(x,y); grass.quadraticCurveTo(x+sw*0.5,y-h*0.6,x+sw,y-h);
+  }
+  c.strokeStyle='rgba(90,130,95,0.30)'; c.lineWidth=u*0.0016; c.stroke(grass);
+
+  /* ---- recursive tree ---- */
+  const D=10;
+  const barkPaths=[], leafPaths=[];
+  for(let i=0;i<=D;i++) barkPaths.push(new Path2D());
+  const LEAF_BUCKETS=7;
+  for(let i=0;i<LEAF_BUCKETS;i++) leafPaths.push(new Path2D());
+  const rnd = mulberry32(1337);
+  const widths=[];
+  for(let d=0;d<=D;d++) widths.push(u*0.0295*Math.pow(0.735,d));
+
+  function grow(x,y,ang,len,d){
+    const sway = Math.sin(t*0.55 + d*0.8 + x*0.015)*0.016*Math.pow(d,1.35)*0.13;
+    const a = ang + sway;
+    const x2 = x + Math.cos(a)*len, y2 = y + Math.sin(a)*len;
+    /* the two finest twig levels sit under the foliage — skipping them
+       removes three quarters of the stroke work and is invisible */
+    if(d<D-1){ barkPaths[d].moveTo(x,y); barkPaths[d].lineTo(x2,y2); }
+    if(d>=D){
+      const n=3+(rnd()*3|0);
+      for(let i=0;i<n;i++){
+        const la=a+(rnd()-0.5)*2.6, sp=u*(0.004+rnd()*0.018);
+        const ll=u*(0.0040+rnd()*0.0034);
+        const lx=x2+Math.cos(la)*sp, ly=y2+Math.sin(la)*sp;
+        /* light falls from the upper right → brighter leaves there, plus noise so it never bands */
+        const lit = clamp(0.42 + (lx/u)*0.55 - (ly/u)*0.75 + (rnd()-0.5)*0.55, 0, 0.999);
+        const P=leafPaths[(lit*LEAF_BUCKETS)|0];
+        /* each ellipse needs its own subpath, otherwise they all join into one blob */
+        P.moveTo(lx+Math.cos(la)*ll, ly+Math.sin(la)*ll);
+        P.ellipse(lx,ly,ll,ll*0.55,la,0,TAU);
+      }
+      return;
+    }
+    /* a scatter of darker leaves one level in, so the crown is not hollow */
+    if(d===D-1){
+      for(let i=0;i<2;i++){
+        const la=a+(rnd()-0.5)*3.0, sp=u*(0.004+rnd()*0.022);
+        const ll=u*(0.0040+rnd()*0.0030);
+        const lx=x2+Math.cos(la)*sp, ly=y2+Math.sin(la)*sp;
+        const lit=clamp(0.10+(lx/u)*0.35-(ly/u)*0.45+(rnd()-0.5)*0.4,0,0.999);
+        const P=leafPaths[(lit*LEAF_BUCKETS)|0];
+        P.moveTo(lx+Math.cos(la)*ll, ly+Math.sin(la)*ll);
+        P.ellipse(lx,ly,ll,ll*0.55,la,0,TAU);
+      }
+    }
+    /* the trunk runs straight for its first segments, then forks */
+    if(d<2){ grow(x2,y2, a+(rnd()-0.5)*0.14, len*0.95, d+1); return; }
+    const kids = rnd()<0.80?2:3;
+    for(let i=0;i<kids;i++){
+      const spread = (i-(kids-1)/2)*(0.80-d*0.035) + (rnd()-0.5)*0.34;
+      /* a gentle pull back towards vertical rounds the crown out */
+      const up = (-Math.PI/2 - a)*0.09;
+      grow(x2,y2, a+spread+up, len*(0.80+rnd()*0.06), d+1);
+    }
+  }
+  grow(0, groundY, -Math.PI/2, u*0.105, 0);
+
+  /* roots flare */
+  c.fillStyle='#1a1410';
+  c.beginPath(); c.moveTo(-u*0.055,groundY+u*0.012); c.quadraticCurveTo(-u*0.02,groundY-u*0.03,0,groundY-u*0.05);
+  c.quadraticCurveTo(u*0.02,groundY-u*0.03,u*0.055,groundY+u*0.012); c.fill();
+
+  const barkCols=['#2a2119','#2e2519','#332a1d','#3a3022','#413726','#463c2a','#4b4130','#514734','#564c38','#5b5140'];
+  c.lineCap='round'; c.lineJoin='round';
+  for(let d=0;d<=D;d++){
+    c.strokeStyle=barkCols[Math.min(d,barkCols.length-1)];
+    c.lineWidth=widths[d];
+    c.stroke(barkPaths[d]);
+  }
+  /* rim light on the trunk */
+  c.save(); c.globalCompositeOperation='lighter';
+  c.strokeStyle='rgba(150,180,225,0.10)';
+  for(let d=0;d<=4;d++){ c.lineWidth=widths[d]*0.30; c.stroke(barkPaths[d]); }
+  c.restore();
+
+  const leafCols=['#12341c','#17441f','#1d5424','#256428','#2d742d','#3a8836','#59a648'];
+  for(let i=0;i<LEAF_BUCKETS;i++){ c.fillStyle=leafCols[i]; c.fill(leafPaths[i]); }
+
+  /* fireflies */
+  if(!REDUCED){
+    const fr=mulberry32(55);
+    for(let i=0;i<16;i++){
+      const bx=(fr()*2-1)*u*0.45, by=groundY-fr()*u*0.5;
+      const x=bx+Math.sin(t*0.5+i*1.7)*u*0.05, y=by+Math.cos(t*0.4+i*2.3)*u*0.03;
+      glow(c,SP_WARM,x,y,u*0.012,0.30+0.30*Math.sin(t*2.2+i));
+    }
+  }
+}
+function annTree(E){
+  return [
+    {x:E.u*0.012, y:E.u*0.30, label:'TRUNK', sub:'≈ 0.5 m across', dx:-104, dy:-30},
+    {x:E.u*0.17, y:-E.u*0.14, label:'CANOPY', sub:'tens of thousands of leaves', dx:96, dy:-40}
+  ];
+}
+
+/* ---------- 2.2  BRANCH ----------------------------------- */
+function sceneBranch(c,E){
+  const u=E.u,t=E.t;
+  /* depth-of-field foliage behind */
+  const r=mulberry32(21);
+  for(let i=0;i<26;i++){
+    const x=(r()*2-1)*u*0.95, y=(r()*2-1)*u*0.72, rad=u*(0.03+r()*0.10);
+    c.globalAlpha=0.05+r()*0.12;
+    const g=c.createRadialGradient(x,y,0,x,y,rad);
+    g.addColorStop(0,'rgba(90,190,110,0.75)'); g.addColorStop(0.6,'rgba(40,110,60,0.35)'); g.addColorStop(1,'rgba(20,60,35,0)');
+    c.fillStyle=g; c.beginPath(); c.arc(x,y,rad,0,TAU); c.fill();
+  }
+  c.globalAlpha=1;
+
+  const sw = Math.sin(t*0.5)*u*0.006;
+  const spine = curvePts(-u*0.85,u*0.52, -u*0.30,u*0.30, u*0.10,u*0.02+sw, u*0.88,-u*0.34+sw, 40);
+  const ws = spine.map((p,i)=> u*(0.088 - 0.058*(i/40)));
+
+  /* twigs first (behind) */
+  function twig(i0,ang,len,wid,seedv){
+    const b=spine[i0];
+    const pts=curvePts(b[0],b[1], b[0]+Math.cos(ang)*len*0.4, b[1]+Math.sin(ang)*len*0.4,
+                       b[0]+Math.cos(ang-0.25)*len*0.75, b[1]+Math.sin(ang-0.25)*len*0.75,
+                       b[0]+Math.cos(ang-0.4)*len, b[1]+Math.sin(ang-0.4)*len, 14);
+    const tw=pts.map((p,i)=> wid*(1-i/16));
+    c.fillStyle='#4a3d29'; c.fill(ribbon(pts,tw));
+    return pts[pts.length-1];
+  }
+  const tipA=twig(9,-1.35,u*0.42,u*0.020,1);
+  const tipB=twig(20,-1.05,u*0.36,u*0.017,2);
+  const tipC=twig(30,-1.55,u*0.30,u*0.014,3);
+
+  /* main branch body */
+  const bp = ribbon(spine,ws);
+  const bg=c.createLinearGradient(0,-u*0.12,0,u*0.12);
+  bg.addColorStop(0,'#6b5a41'); bg.addColorStop(0.35,'#4c3f2c'); bg.addColorStop(1,'#241c13');
+  c.fillStyle=bg; c.fill(bp);
+
+  /* bark texture */
+  c.save(); c.clip(bp);
+  const br=mulberry32(88);
+  c.lineCap='round';
+  for(let i=0;i<230;i++){
+    const k=br()*39|0, p=spine[k];
+    const off=(br()*2-1)*ws[k]*0.95;
+    const nx=-(spine[Math.min(39,k+1)][1]-p[1]), ny=(spine[Math.min(39,k+1)][0]-p[0]);
+    const nl=Math.hypot(nx,ny)||1;
+    const x=p[0]+nx/nl*off, y=p[1]+ny/nl*off;
+    const L=u*(0.02+br()*0.10);
+    c.strokeStyle = br()<0.5 ? 'rgba(20,14,8,0.42)' : 'rgba(160,140,110,0.16)';
+    c.lineWidth=u*(0.0012+br()*0.0026);
+    c.beginPath(); c.moveTo(x,y);
+    c.quadraticCurveTo(x+L*0.5, y-L*0.13+(br()-0.5)*u*0.01, x+L*0.86, y-L*0.30);
+    c.stroke();
+  }
+  /* lichen */
+  for(let i=0;i<70;i++){
+    const k=br()*39|0, p=spine[k];
+    c.fillStyle='rgba(150,180,150,'+(0.05+br()*0.13)+')';
+    c.beginPath(); c.ellipse(p[0]+(br()*2-1)*u*0.05, p[1]+(br()*2-1)*ws[k], u*(0.004+br()*0.012), u*(0.003+br()*0.008), br()*3,0,TAU); c.fill();
+  }
+  c.restore();
+  /* highlight along the top edge */
+  c.save(); c.clip(bp);
+  const hg=c.createLinearGradient(0,-u*0.16,0,u*0.02);
+  hg.addColorStop(0,'rgba(230,240,255,0.16)'); hg.addColorStop(1,'rgba(230,240,255,0)');
+  c.fillStyle=hg; c.fillRect(-u,-u*0.6,u*2,u*0.7);
+  c.restore();
+
+  /* leaves */
+  const leafDefs=[
+    [tipA[0],tipA[1],-0.55,u*0.30,0],
+    [tipB[0],tipB[1],-0.25,u*0.26,1],
+    [tipC[0],tipC[1],-1.05,u*0.22,2],
+    [spine[14][0],spine[14][1]+u*0.02,0.62,u*0.24,3],
+    [spine[24][0],spine[24][1]+u*0.02,0.95,u*0.20,4],
+    [spine[34][0],spine[34][1]-u*0.02,-1.9,u*0.18,5]
+  ];
+  leafDefs.forEach((L,i)=>{
+    c.save();
+    c.translate(L[0],L[1]);
+    c.rotate(L[2]+Math.sin(t*0.7+i)*0.045);
+    /* petiole */
+    c.strokeStyle='#5d6b3a'; c.lineWidth=u*0.005; c.lineCap='round';
+    c.beginPath(); c.moveTo(0,0); c.lineTo(u*0.03,0); c.stroke();
+    c.translate(u*0.03,0);
+    /* shadow */
+    c.save(); c.translate(u*0.012,u*0.014); c.globalAlpha=0.35;
+    c.fillStyle='#000'; c.save(); c.scale(L[3],L[3]); c.fill(LEAF_TOOTH); c.restore(); c.restore();
+    drawLeaf(c,L[3],{detail: i===0?2:1});
+    c.restore();
+  });
+
+  /* drifting motes */
+  if(!REDUCED){
+    const mr=mulberry32(4);
+    for(let i=0;i<22;i++){
+      const x=(mr()*2-1)*u*0.9+Math.sin(t*0.3+i)*u*0.04;
+      const y=(mr()*2-1)*u*0.7+Math.cos(t*0.22+i*2)*u*0.03;
+      glow(c,SP_WHITE,x,y,u*0.006,0.10+0.10*Math.sin(t+i));
+    }
+  }
+}
+function annBranch(E){
+  const u=E.u;
+  return [
+    {x:-u*0.32,y:u*0.30,label:'BARK',sub:'dead protective cells',dx:-70,dy:34},
+    {x:u*0.30,y:-u*0.09,label:'PETIOLE',sub:'leaf stalk',dx:20,dy:60},
+    {x:u*0.13,y:-u*0.27,label:'LEAF',sub:'the solar panel',dx:66,dy:-56}
+  ];
+}
+
+/* ---------- 2.3  LEAF ------------------------------------- */
+function sceneLeaf(c,E){
+  const u=E.u,t=E.t;
+  /* backlight */
+  const bg=c.createRadialGradient(0,0,0,0,0,u*0.95);
+  bg.addColorStop(0,'rgba(120,220,150,0.16)'); bg.addColorStop(0.5,'rgba(50,140,90,0.06)'); bg.addColorStop(1,'rgba(10,40,25,0)');
+  c.fillStyle=bg; c.beginPath(); c.arc(0,0,u*0.95,0,TAU); c.fill();
+
+  c.save();
+  c.rotate(-0.14+Math.sin(t*0.4)*0.012);
+  c.translate(-u*0.62,u*0.02);
+  drawLeaf(c,u*1.30,{detail:2,c0:'#245c2c',c1:'#3d8f3f',c2:'#17462a'});
+  c.restore();
+
+  /* dew drops */
+  const r=mulberry32(66);
+  for(let i=0;i<11;i++){
+    const x=(r()*2-1)*u*0.44, y=(r()*2-1)*u*0.20, rad=u*(0.008+r()*0.017);
+    c.save();
+    const g=c.createRadialGradient(x-rad*0.3,y-rad*0.4,rad*0.05,x,y,rad);
+    g.addColorStop(0,'rgba(255,255,255,0.62)'); g.addColorStop(0.4,'rgba(190,240,220,0.20)');
+    g.addColorStop(0.85,'rgba(120,200,170,0.10)'); g.addColorStop(1,'rgba(255,255,255,0.30)');
+    c.fillStyle=g; c.beginPath(); c.arc(x,y,rad,0,TAU); c.fill();
+    c.fillStyle='rgba(255,255,255,0.85)';
+    c.beginPath(); c.arc(x-rad*0.32,y-rad*0.36,rad*0.16,0,TAU); c.fill();
+    c.restore();
+  }
+  /* sheen sweeping slowly across the blade */
+  const s=(t*0.10)%1.6-0.3;
+  c.save(); c.globalCompositeOperation='lighter';
+  const sg=c.createLinearGradient((s-0.16)*u,-u*0.5,(s+0.16)*u,u*0.5);
+  sg.addColorStop(0,'rgba(255,255,255,0)'); sg.addColorStop(0.5,'rgba(230,255,240,0.055)'); sg.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=sg; c.fillRect(-u,-u*0.7,u*2,u*1.4);
+  c.restore();
+}
+function annLeaf(E){
+  const u=E.u;
+  return [
+    {x:-u*0.20,y:u*0.005,label:'MIDRIB',sub:'central vein',dx:-40,dy:56},
+    {x:u*0.12,y:-u*0.15,label:'VEIN NETWORK',sub:'water in, sugar out',dx:56,dy:-46},
+    {x:u*0.30,y:u*0.09,label:'BLADE SURFACE',sub:'waxy cuticle',dx:44,dy:52}
+  ];
+}
+
+/* ---------- 2.4  LEAF TISSUE (cross-section) --------------- */
+function sceneTissue(c,E){
+  const u=E.u,t=E.t;
+  const X0=-u*0.95, X1=u*0.95, w=X1-X0;
+
+  /* sunlight shafts from above */
+  c.save(); c.globalCompositeOperation='lighter';
+  for(let i=0;i<7;i++){
+    const x=X0+w*(i+0.5)/7 + Math.sin(t*0.3+i)*u*0.012;
+    const hw=u*0.062;
+    const g=c.createLinearGradient(x-hw,0,x+hw,0);
+    g.addColorStop(0,'rgba(255,245,200,0)');
+    g.addColorStop(0.5,'rgba(255,245,200,0.085)');
+    g.addColorStop(1,'rgba(255,245,200,0)');
+    c.fillStyle=g;
+    /* a tapering shaft, so there is no hard rectangle edge */
+    c.beginPath(); c.moveTo(x-hw,-u*0.95); c.lineTo(x+hw,-u*0.95);
+    c.lineTo(x+hw*0.15,u*0.05); c.lineTo(x-hw*0.15,u*0.05); c.closePath(); c.fill();
+  }
+  c.restore();
+
+  const yCut=-u*0.42, yUE=-u*0.36, yPal=-u*0.27, yPal2=-u*0.05, ySpo=u*0.05, yLE=u*0.33;
+
+  /* cuticle */
+  const cg=c.createLinearGradient(0,yCut-u*0.04,0,yUE);
+  cg.addColorStop(0,'rgba(215,240,255,0.30)'); cg.addColorStop(1,'rgba(180,220,210,0.05)');
+  c.fillStyle=cg; c.fillRect(X0,yCut-u*0.04,w,u*0.045);
+  c.strokeStyle='rgba(225,248,255,0.55)'; c.lineWidth=u*0.004;
+  c.beginPath(); c.moveTo(X0,yCut-u*0.035); c.lineTo(X1,yCut-u*0.035); c.stroke();
+
+  function cellRow(y0,y1,count,seed,fill,stroke,chloro,jag){
+    const r=mulberry32(seed);
+    for(let i=0;i<count;i++){
+      const cx=X0+w*(i+0.5)/count + (jag?(r()-0.5)*w/count*0.35:0);
+      const cy=(y0+y1)/2 + (jag?(r()-0.5)*(y1-y0)*0.30:0);
+      const rx=w/count*0.52*(jag?0.72+r()*0.5:1), ry=(y1-y0)*0.48*(jag?0.6+r()*0.6:1);
+      const p=blobPath(cx,cy,rx,ry,seed+i*7,jag?0.13:0.05,0,34);
+      c.fillStyle=fill; c.fill(p);
+      c.strokeStyle=stroke; c.lineWidth=u*0.0042; c.stroke(p);
+      /* nucleus */
+      if(r()<0.5){
+        c.fillStyle='rgba(120,150,190,0.42)';
+        c.beginPath(); c.arc(cx+(r()-0.5)*rx*0.6, cy+(r()-0.5)*ry*0.7, Math.min(rx,ry)*0.20,0,TAU); c.fill();
+      }
+      /* chloroplasts */
+      if(chloro){
+        const n=chloro;
+        for(let k=0;k<n;k++){
+          const a=r()*TAU, rr=Math.sqrt(r());
+          const x=cx+Math.cos(a)*rx*0.66*rr, yy=cy+Math.sin(a)*ry*0.70*rr;
+          const rot=r()*TAU + t*0.10*(r()<0.5?1:-1);
+          const size=Math.min(rx,ry)*(0.30+r()*0.12);
+          const g=c.createRadialGradient(x-size*0.3,yy-size*0.3,size*0.05,x,yy,size);
+          g.addColorStop(0,'#8fe07a'); g.addColorStop(0.5,'#3f9c46'); g.addColorStop(1,'#12421f');
+          c.save(); c.translate(x,yy); c.rotate(rot);
+          c.fillStyle=g; c.beginPath(); c.ellipse(0,0,size,size*0.55,0,0,TAU); c.fill();
+          c.strokeStyle='rgba(190,255,180,0.34)'; c.lineWidth=u*0.0016;
+          for(let s=-1;s<=1;s++){ c.beginPath(); c.moveTo(-size*0.55,s*size*0.24); c.lineTo(size*0.55,s*size*0.24); c.stroke(); }
+          c.fillStyle='rgba(14,60,28,0.75)';
+          for(let s=-1;s<=1;s+=2){ c.beginPath(); c.ellipse(s*size*0.30,0,size*0.16,size*0.30,0,0,TAU); c.fill(); }
+          c.strokeStyle='rgba(215,255,205,0.45)'; c.lineWidth=u*0.0012;
+          c.beginPath(); c.ellipse(0,0,size,size*0.55,0,0,TAU); c.stroke();
+          c.restore();
+        }
+      }
+    }
+  }
+
+  /* air spaces backdrop for the spongy layer */
+  c.fillStyle='rgba(10,26,30,0.55)'; c.fillRect(X0,ySpo,w,yLE-ySpo);
+
+  cellRow(yUE,yPal,10,101,'rgba(150,205,220,0.20)','rgba(190,235,245,0.50)',0,false);      /* upper epidermis */
+  cellRow(yPal,yPal2,14,202,'rgba(48,124,80,0.42)','rgba(150,230,170,0.55)',9,false);      /* palisade */
+  cellRow(ySpo,yLE-u*0.10,9,303,'rgba(46,112,78,0.40)','rgba(150,230,170,0.45)',6,true);   /* spongy */
+  cellRow(yLE-u*0.06,yLE+u*0.06,11,404,'rgba(150,205,220,0.18)','rgba(190,235,245,0.45)',0,false); /* lower epidermis */
+
+  /* vascular bundle */
+  c.save();
+  const vx=-u*0.62, vy=u*0.0;
+  c.fillStyle='rgba(90,110,150,0.30)';
+  const vp=blobPath(vx,vy,u*0.13,u*0.10,900,0.09,0,40); c.fill(vp);
+  c.strokeStyle='rgba(180,205,255,0.45)'; c.lineWidth=u*0.004; c.stroke(vp);
+  const vr=mulberry32(12);
+  for(let i=0;i<7;i++){
+    const x=vx+(vr()*2-1)*u*0.085, y=vy+(vr()*2-1)*u*0.06;
+    c.fillStyle= i<4 ? 'rgba(120,180,240,0.55)':'rgba(230,200,140,0.42)';
+    c.beginPath(); c.arc(x,y,u*(0.012+vr()*0.012),0,TAU); c.fill();
+  }
+  c.restore();
+
+  /* stoma in the lower epidermis */
+  const sx=u*0.30;
+  c.save();
+  c.fillStyle='rgba(70,160,110,0.55)'; c.strokeStyle='rgba(170,240,190,0.7)'; c.lineWidth=u*0.004;
+  const gap=u*0.022+Math.sin(t*0.8)*u*0.005;
+  for(let s=-1;s<=1;s+=2){
+    c.beginPath(); c.ellipse(sx+s*(gap+u*0.028), yLE, u*0.030, u*0.052,0,0,TAU); c.fill(); c.stroke();
+  }
+  c.fillStyle='rgba(4,10,14,0.9)';
+  c.beginPath(); c.ellipse(sx,yLE,gap,u*0.045,0,0,TAU); c.fill();
+  /* CO2 entering */
+  if(!REDUCED) for(let i=0;i<5;i++){
+    const ph=(t*0.35+i*0.2)%1;
+    glow(c,SP_CYAN,sx+Math.sin(i*3+t)*u*0.02, yLE+u*0.10-ph*u*0.24, u*0.010, 0.35*(1-ph));
+  }
+  c.restore();
+}
+function annTissue(E){
+  const u=E.u;
+  return [
+    {x:-u*0.30,y:-u*0.405,label:'CUTICLE',sub:'waterproof wax',dx:-40,dy:-46,pri:2},
+    {x:-u*0.10,y:-u*0.31,label:'UPPER EPIDERMIS',sub:'transparent skin',dx:70,dy:-70},
+    {x:u*0.16,y:-u*0.17,label:'PALISADE CELLS',sub:'packed with chloroplasts',dx:104,dy:-10},
+    {x:-u*0.34,y:u*0.19,label:'SPONGY MESOPHYLL',sub:'air spaces for CO₂',dx:-96,dy:30},
+    {x:u*0.30,y:u*0.35,label:'STOMA',sub:'gas pore',dx:78,dy:34},
+    {x:-u*0.62,y:0,label:'VEIN',sub:'xylem + phloem',dx:-78,dy:-40,pri:2}
+  ];
+}
+
+/* ---------- 2.5  PLANT CELL -------------------------------- */
+function cellLayout(u){
+  return {
+    R: u*0.44,
+    wall: u*0.052,
+    vac: {x:u*0.02,y:u*0.03,rx:u*0.255,ry:u*0.225},
+    nuc: {x:-u*0.20,y:-u*0.17,r:u*0.088},
+    chl: [
+      [ u*0.235,-u*0.19, 0.5],[ u*0.30, u*0.05,-0.9],[ u*0.10,-u*0.30, 0.15],
+      [-u*0.30, u*0.13, 0.7],[-u*0.06, u*0.31,-0.35],[ u*0.20, u*0.28, 1.1],
+      [-u*0.32,-u*0.03,-0.3],[ u*0.33,-u*0.29, 0.9]
+    ],
+    mit: [[-u*0.11,-u*0.34,0.6],[u*0.35,u*0.20,-0.4],[-u*0.34,u*0.28,0.25]]
+  };
+}
+function sceneCell(c,E){
+  const u=E.u,t=E.t,L=cellLayout(u);
+
+  /* neighbouring cells peeking in at the corners */
+  c.save();
+  c.strokeStyle='rgba(150,200,170,0.09)'; c.lineWidth=u*0.05;
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(q=>{
+    c.beginPath(); c.arc(q[0]*u*0.98,q[1]*u*0.86,u*0.46,0,TAU); c.stroke();
+  });
+  c.restore();
+
+  /* ---- cell wall ---- */
+  const outer = blobPath(0,0,L.R+L.wall,L.R*0.96+L.wall,555,0.030,0,90);
+  const inner = blobPath(0,0,L.R,L.R*0.96,555,0.030,0,90);
+  const wg=c.createLinearGradient(-L.R,-L.R,L.R,L.R);
+  wg.addColorStop(0,'#5c6f4e'); wg.addColorStop(0.5,'#43563c'); wg.addColorStop(1,'#2b3a29');
+  c.fillStyle=wg; c.fill(outer);
+  c.save(); c.clip(outer);
+  /* cellulose microfibrils */
+  const wr=mulberry32(31);
+  c.lineWidth=u*0.0022;
+  for(let i=0;i<260;i++){
+    const a=wr()*TAU, rr=L.R+wr()*L.wall;
+    c.strokeStyle='rgba(220,240,200,'+(0.05+wr()*0.13)+')';
+    c.beginPath();
+    c.arc(0,0,rr, a, a+0.05+wr()*0.20);
+    c.stroke();
+  }
+  c.restore();
+
+  /* ---- cytoplasm ---- */
+  const cg=c.createRadialGradient(-L.R*0.3,-L.R*0.3,L.R*0.05,0,0,L.R);
+  cg.addColorStop(0,'rgba(38,78,72,0.96)'); cg.addColorStop(0.65,'rgba(22,54,52,0.96)'); cg.addColorStop(1,'rgba(12,34,34,0.98)');
+  c.fillStyle=cg; c.fill(inner);
+
+  c.save(); c.clip(inner);
+
+  /* cytoplasmic granularity + streaming */
+  const gr=mulberry32(77);
+  for(let i=0;i<340;i++){
+    const a=gr()*TAU, rr=Math.sqrt(gr())*L.R*0.97;
+    const drift = t*0.22*(1-rr/L.R*0.4);
+    const x=Math.cos(a+drift)*rr, y=Math.sin(a+drift)*rr*0.96;
+    c.fillStyle='rgba(180,230,210,'+(0.04+gr()*0.10)+')';
+    c.beginPath(); c.arc(x,y,u*(0.0016+gr()*0.0034),0,TAU); c.fill();
+  }
+
+  /* ---- vacuole ---- */
+  const vp=blobPath(L.vac.x,L.vac.y,L.vac.rx,L.vac.ry,808,0.06,0,70);
+  const vg=c.createRadialGradient(L.vac.x-L.vac.rx*0.35,L.vac.y-L.vac.ry*0.4,L.vac.rx*0.05,L.vac.x,L.vac.y,L.vac.rx);
+  vg.addColorStop(0,'rgba(150,225,240,0.30)'); vg.addColorStop(0.6,'rgba(70,150,185,0.22)'); vg.addColorStop(1,'rgba(40,100,140,0.28)');
+  c.fillStyle=vg; c.fill(vp);
+  c.strokeStyle='rgba(190,240,255,0.45)'; c.lineWidth=u*0.005; c.stroke(vp);  /* tonoplast */
+  c.save(); c.clip(vp);
+  c.fillStyle='rgba(255,255,255,0.06)';
+  c.beginPath(); c.ellipse(L.vac.x-L.vac.rx*0.35,L.vac.y-L.vac.ry*0.45,L.vac.rx*0.42,L.vac.ry*0.22,-0.5,0,TAU); c.fill();
+  c.restore();
+
+  /* ---- endoplasmic reticulum + ribosomes ---- */
+  c.strokeStyle='rgba(190,220,255,0.20)'; c.lineWidth=u*0.0055;
+  const er=mulberry32(202);
+  for(let i=0;i<7;i++){
+    const a=er()*TAU, rr=L.nuc.r*(1.5+er()*1.5);
+    const x=L.nuc.x+Math.cos(a)*rr, y=L.nuc.y+Math.sin(a)*rr;
+    c.beginPath(); c.moveTo(x,y);
+    c.bezierCurveTo(x+u*0.06,y-u*0.03,x+u*0.09,y+u*0.05,x+u*0.15,y+u*0.02);
+    c.stroke();
+    for(let k=0;k<7;k++){
+      c.fillStyle='rgba(220,240,255,0.30)';
+      c.beginPath(); c.arc(x+u*0.15*(k/7)+er()*u*0.01,y+(er()-0.5)*u*0.02,u*0.0028,0,TAU); c.fill();
+    }
+  }
+  /* golgi apparatus — stacked cisternae with budding vesicles */
+  c.save(); c.translate(u*0.055,-u*0.345); c.rotate(-0.25);
+  c.lineCap='round';
+  for(let i=0;i<5;i++){
+    c.strokeStyle='rgba(226,178,255,'+(0.42-i*0.045)+')'; c.lineWidth=u*0.011;
+    c.beginPath(); c.arc(0,i*u*0.019,u*0.052-i*u*0.005,-2.45,-0.75); c.stroke();
+  }
+  const gv=mulberry32(66);
+  for(let i=0;i<7;i++){
+    c.fillStyle='rgba(226,178,255,0.30)';
+    c.beginPath(); c.arc((gv()*2-1)*u*0.07,u*0.10+gv()*u*0.03,u*0.006,0,TAU); c.fill();
+  }
+  c.restore();
+
+  /* ---- mitochondria ---- */
+  L.mit.forEach((m,i)=>{
+    c.save(); c.translate(m[0],m[1]); c.rotate(m[2]+Math.sin(t*0.3+i)*0.08);
+    const p=blobPath(0,0,u*0.052,u*0.024,600+i,0.10,0,40);
+    const g=c.createLinearGradient(0,-u*0.02,0,u*0.02);
+    g.addColorStop(0,'#c08a6a'); g.addColorStop(1,'#6e4535');
+    c.fillStyle=g; c.fill(p);
+    c.strokeStyle='rgba(255,215,190,0.55)'; c.lineWidth=u*0.0025; c.stroke(p);
+    c.save(); c.clip(p);
+    c.strokeStyle='rgba(255,230,205,0.55)'; c.lineWidth=u*0.0035;
+    for(let k=-4;k<=4;k++){
+      c.beginPath(); c.moveTo(k*u*0.011,-u*0.022);
+      c.quadraticCurveTo(k*u*0.011+u*0.010,0,k*u*0.011,u*0.022); c.stroke();
+    }
+    c.restore(); c.restore();
+  });
+
+  /* ---- chloroplasts ---- */
+  L.chl.forEach((ch,i)=>{
+    const wob=Math.sin(t*0.35+i*1.3)*u*0.006;
+    c.save(); c.translate(ch[0]+wob,ch[1]+Math.cos(t*0.3+i)*u*0.005);
+    c.rotate(ch[2]+Math.sin(t*0.2+i)*0.05);
+    const rx=u*0.072, ry=u*0.040;
+    glow(c,SP_GREEN,0,0,rx*1.7,0.14);
+    const g=c.createRadialGradient(-rx*0.3,-ry*0.4,rx*0.05,0,0,rx);
+    g.addColorStop(0,'#a5ec86'); g.addColorStop(0.45,'#49b055'); g.addColorStop(1,'#123f22');
+    c.fillStyle=g;
+    c.beginPath(); c.ellipse(0,0,rx,ry,0,0,TAU); c.fill();
+    c.save();
+    c.beginPath(); c.ellipse(0,0,rx,ry,0,0,TAU); c.clip();
+    /* grana stacks */
+    const cr=mulberry32(400+i);
+    for(let k=0;k<7;k++){
+      const gx=(cr()*2-1)*rx*0.72, gy=(cr()*2-1)*ry*0.62;
+      c.fillStyle='rgba(18,70,35,0.80)';
+      c.beginPath(); c.ellipse(gx,gy,rx*0.10,ry*0.20,0.2,0,TAU); c.fill();
+      c.strokeStyle='rgba(180,255,170,0.35)'; c.lineWidth=rx*0.012;
+      for(let s=-2;s<=2;s++){ c.beginPath(); c.moveTo(gx-rx*0.09,gy+s*ry*0.062); c.lineTo(gx+rx*0.09,gy+s*ry*0.062); c.stroke(); }
+    }
+    /* stroma lamellae */
+    c.strokeStyle='rgba(150,235,150,0.22)'; c.lineWidth=rx*0.02;
+    for(let k=-2;k<=2;k++){ c.beginPath(); c.moveTo(-rx,k*ry*0.30); c.lineTo(rx,k*ry*0.30+ry*0.08); c.stroke(); }
+    c.restore();
+    c.strokeStyle='rgba(200,255,190,0.5)'; c.lineWidth=u*0.0022;
+    c.beginPath(); c.ellipse(0,0,rx,ry,0,0,TAU); c.stroke();
+    c.restore();
+  });
+
+  /* ---- nucleus ---- */
+  c.save();
+  const N=L.nuc;
+  glow(c,SP_CYAN,N.x,N.y,N.r*2.3,0.16);
+  const ng=c.createRadialGradient(N.x-N.r*0.35,N.y-N.r*0.4,N.r*0.05,N.x,N.y,N.r);
+  ng.addColorStop(0,'#b9c8ea'); ng.addColorStop(0.45,'#6d7cae'); ng.addColorStop(1,'#33406b');
+  c.fillStyle=ng; c.beginPath(); c.arc(N.x,N.y,N.r,0,TAU); c.fill();
+  /* chromatin */
+  c.save(); c.beginPath(); c.arc(N.x,N.y,N.r,0,TAU); c.clip();
+  const nr=mulberry32(999);
+  c.strokeStyle='rgba(40,55,95,0.55)'; c.lineWidth=N.r*0.045;
+  for(let i=0;i<26;i++){
+    const x=N.x+(nr()*2-1)*N.r*0.8, y=N.y+(nr()*2-1)*N.r*0.8;
+    c.beginPath(); c.moveTo(x,y);
+    c.bezierCurveTo(x+N.r*0.3,y-N.r*0.2,x-N.r*0.1,y+N.r*0.35,x+N.r*0.25,y+N.r*0.3);
+    c.stroke();
+  }
+  /* nucleolus */
+  const og=c.createRadialGradient(N.x+N.r*0.14,N.y+N.r*0.08,0,N.x+N.r*0.18,N.y+N.r*0.12,N.r*0.34);
+  og.addColorStop(0,'#5a4a86'); og.addColorStop(1,'#2b2450');
+  c.fillStyle=og; c.beginPath(); c.arc(N.x+N.r*0.18,N.y+N.r*0.12,N.r*0.32,0,TAU); c.fill();
+  c.restore();
+  /* nuclear envelope with pores */
+  c.strokeStyle='rgba(210,230,255,0.55)'; c.lineWidth=u*0.004;
+  c.beginPath(); c.arc(N.x,N.y,N.r,0,TAU); c.stroke();
+  c.beginPath(); c.arc(N.x,N.y,N.r*0.945,0,TAU); c.stroke();
+  c.fillStyle='rgba(20,30,50,0.9)';
+  for(let i=0;i<18;i++){
+    const a=i/18*TAU+0.1;
+    c.beginPath(); c.arc(N.x+Math.cos(a)*N.r*0.972,N.y+Math.sin(a)*N.r*0.972,u*0.0055,0,TAU); c.fill();
+  }
+  c.restore();
+
+  c.restore(); /* end clip(inner) */
+
+  /* ---- plasma membrane, drawn over everything ---- */
+  c.strokeStyle='rgba(170,235,255,0.75)'; c.lineWidth=u*0.0075; c.stroke(inner);
+  c.strokeStyle='rgba(90,190,220,0.55)'; c.lineWidth=u*0.0022;
+  const ip=blobPath(0,0,L.R*0.985,L.R*0.96*0.985,555,0.030,0,90); c.stroke(ip);
+  c.strokeStyle='rgba(10,25,20,0.55)'; c.lineWidth=u*0.004; c.stroke(outer);
+}
+function annCell(E){
+  const u=E.u,L=cellLayout(u);
+  return [
+    {x:-L.R*0.52,y:-(L.R*0.78+L.wall*0.5),label:'CELL WALL',sub:'rigid cellulose',dx:-30,dy:-72},
+    {x:-L.R*0.86,y:L.R*0.40,label:'CELL MEMBRANE',sub:'controls what enters',dx:-56,dy:40},
+    {x:L.nuc.x,y:L.nuc.y,label:'NUCLEUS',sub:'holds the DNA',dx:-104,dy:-64},
+    {x:L.chl[0][0],y:L.chl[0][1],label:'CHLOROPLAST',sub:'makes sugar from light',dx:112,dy:-40},
+    {x:L.vac.x+L.vac.rx*0.55,y:L.vac.y+L.vac.ry*0.55,label:'VACUOLE',sub:'water store — keeps the cell firm',dx:86,dy:64},
+    {x:-u*0.335,y:-u*0.225,label:'CYTOPLASM',sub:'the living jelly',dx:-96,dy:-6},
+    {x:L.mit[2][0],y:L.mit[2][1],label:'MITOCHONDRION',sub:'releases energy',dx:-92,dy:36,pri:2}
+  ];
+}
+
+/* ---------- 2.6  CELL STRUCTURES (inside a chloroplast) ---- */
+function granaLayout(u){
+  return [
+    [-u*0.46,-u*0.20,7,0.18],[-u*0.10,-u*0.32,6,-0.12],[ u*0.30,-u*0.14,8,0.22],
+    [-u*0.34, u*0.24,6,-0.20],[ u*0.06, u*0.14,7,0.06],[ u*0.48, u*0.28,6,-0.26],
+    [-u*0.62, u*0.06,5,0.10]
+  ];
+}
+function sceneStructures(c,E){
+  const u=E.u,t=E.t;
+
+  /* stroma */
+  backdrop(c,u,'rgba(24,64,44,0.95)','rgba(6,26,20,0.98)');
+
+  /* the chloroplast's double envelope, curving away past the frame */
+  const env1=blobPath(0,0,u*0.80,u*0.62,1212,0.018,0,80);
+  const env2=blobPath(0,0,u*0.755,u*0.578,1212,0.018,0,80);
+  c.strokeStyle='rgba(180,255,200,0.34)'; c.lineWidth=u*0.012; c.stroke(env1);
+  c.strokeStyle='rgba(180,255,200,0.20)'; c.lineWidth=u*0.006; c.stroke(env2);
+
+  /* stroma proteins (RuBisCO) */
+  const r=mulberry32(17);
+  for(let i=0;i<260;i++){
+    const x=(r()*2-1)*u*0.85, y=(r()*2-1)*u*0.68;
+    c.fillStyle='rgba(190,255,205,'+(0.05+r()*0.11)+')';
+    c.beginPath(); c.arc(x,y,u*(0.003+r()*0.005),0,TAU); c.fill();
+  }
+  /* plastid DNA loops + ribosomes */
+  c.strokeStyle='rgba(150,220,255,0.35)'; c.lineWidth=u*0.0035;
+  for(let i=0;i<3;i++){
+    const x=(r()*2-1)*u*0.6, y=(r()*2-1)*u*0.5;
+    c.beginPath(); c.ellipse(x,y,u*0.045,u*0.028,r()*3,0,TAU); c.stroke();
+  }
+  /* starch granule */
+  c.save();
+  const stg=c.createRadialGradient(-u*0.72,u*0.26,u*0.01,-u*0.70,u*0.28,u*0.10);
+  stg.addColorStop(0,'rgba(240,250,235,0.85)'); stg.addColorStop(1,'rgba(150,180,160,0.55)');
+  c.fillStyle=stg;
+  c.beginPath(); c.ellipse(-u*0.70,u*0.28,u*0.095,u*0.065,0.3,0,TAU); c.fill();
+  c.restore();
+  /* plastoglobuli */
+  for(let i=0;i<6;i++){
+    const x=(r()*2-1)*u*0.7, y=(r()*2-1)*u*0.55;
+    sphere(c,x,y,u*0.012,'#ffe9a8','#c9a24e','#5a4520');
+  }
+
+  /* stroma lamellae connecting the stacks */
+  const G=granaLayout(u);
+  c.strokeStyle='rgba(120,215,140,0.30)'; c.lineWidth=u*0.014; c.lineCap='round';
+  for(let i=0;i<G.length-1;i++){
+    c.beginPath(); c.moveTo(G[i][0],G[i][1]);
+    c.quadraticCurveTo((G[i][0]+G[i+1][0])/2,(G[i][1]+G[i+1][1])/2+u*0.08,G[i+1][0],G[i+1][1]);
+    c.stroke();
+  }
+
+  /* grana — stacks of thylakoid discs */
+  G.forEach((g,gi)=>{
+    const [gx,gy,n,rot]=g;
+    c.save(); c.translate(gx,gy); c.rotate(rot+Math.sin(t*0.25+gi)*0.02);
+    const rx=u*0.115, ry=u*0.042, step=u*0.026;
+    for(let k=0;k<n;k++){
+      const yy=(k-(n-1)/2)*step;
+      const shade = 0.55+0.45*(1-Math.abs(k-(n-1)/2)/n);
+      const gg=c.createLinearGradient(0,yy-ry,0,yy+ry);
+      gg.addColorStop(0,'rgba(120,225,140,'+(0.55*shade)+')');
+      gg.addColorStop(0.5,'rgba(40,140,80,'+(0.90*shade)+')');
+      gg.addColorStop(1,'rgba(12,60,40,'+(0.95*shade)+')');
+      c.fillStyle=gg;
+      c.beginPath(); c.ellipse(0,yy,rx,ry,0,0,TAU); c.fill();
+      /* membrane rim + embedded photosystems */
+      c.strokeStyle='rgba(190,255,200,0.45)'; c.lineWidth=u*0.0022;
+      c.beginPath(); c.ellipse(0,yy,rx,ry,0,0,TAU); c.stroke();
+      const pr=mulberry32(gi*31+k);
+      for(let m=0;m<9;m++){
+        const a=pr()*TAU;
+        c.fillStyle='rgba(255,240,180,'+(0.20+0.35*Math.abs(Math.sin(t*1.1+m+gi)))+')';
+        c.beginPath(); c.arc(Math.cos(a)*rx*0.8,yy+Math.sin(a)*ry*0.7,u*0.0045,0,TAU); c.fill();
+      }
+    }
+    c.restore();
+  });
+
+  /* photons streaming in from the upper left and being absorbed by a granum */
+  if(!REDUCED){
+    const pr2=mulberry32(71);
+    c.save(); c.globalCompositeOperation='lighter';
+    for(let i=0;i<14;i++){
+      const g0=G[(pr2()*G.length)|0];
+      const ph=((t*0.40+pr2())%1);
+      const sx=g0[0]-u*0.75, sy=g0[1]-u*0.55;
+      const x=lerp(sx,g0[0],ph), y=lerp(sy,g0[1],ph);
+      const a=0.60*(1-ph)*(1-ph)+0.10;
+      glow(c,SP_WARM,x,y,u*0.016,a*0.8);
+      c.strokeStyle='rgba(255,235,170,'+(0.22*(1-ph))+')'; c.lineWidth=u*0.002;
+      c.beginPath(); c.moveTo(x,y); c.lineTo(x-u*0.055,y-u*0.040); c.stroke();
+    }
+    c.restore();
+  }
+}
+function annStructures(E){
+  const u=E.u,G=granaLayout(u);
+  return [
+    {x:G[2][0],y:G[2][1]-u*0.075,label:'GRANUM',sub:'a stack of thylakoids',dx:100,dy:-74},
+    {x:G[2][0]+u*0.10,y:G[2][1]+u*0.02,label:'THYLAKOID',sub:'light is captured in this membrane',dx:86,dy:26},
+    {x:u*0.24,y:-u*0.50,label:'STROMA',sub:'fluid where sugar is built',dx:-40,dy:-64},
+    {x:-u*0.773,y:-u*0.16,label:'INNER MEMBRANE',sub:'lipid bilayer',dx:66,dy:-40,pri:2},
+    {x:-u*0.70,y:u*0.28,label:'STARCH GRAIN',sub:'stored sugar',dx:-40,dy:34,pri:2}
+  ];
+}
+
+/* ---------- 2.7  MOLECULE --------------------------------- */
+const ATOM_COL = {
+  C:['#e6ecf2','#9aa7b4','#3b4553'],
+  H:['#ffffff','#dfe8f2','#8c9aa8'],
+  O:['#ffb4a8','#e2503c','#6d1c14'],
+  N:['#b9cdff','#3f6fe0','#152c6b'],
+  Mg:['#d9ffd0','#63c76a','#1c5424'],
+  P:['#ffd9a0','#e08a2a','#63390a']
+};
+function chlorophyll(u){
+  /* procedural porphyrin-like ring system + phytol tail */
+  const atoms=[], bonds=[];
+  const S=u*0.088;
+  function add(el,x,y,z){ atoms.push({el:el,x:x,y:y,z:z||0}); return atoms.length-1; }
+  function bond(a,b,o){ bonds.push([a,b,o||1]); }
+  const mg = add('Mg',0,0,0.1);
+  /* four pyrrole rings arranged around the Mg */
+  const ringN=[];
+  for(let k=0;k<4;k++){
+    const a = k*Math.PI/2 + Math.PI/4;
+    const nx=Math.cos(a)*S*1.05, ny=Math.sin(a)*S*1.05;
+    const ni=add('N',nx,ny,0.05); ringN.push(ni); bond(mg,ni,0);
+    /* pentagon carbons around each N */
+    const prev=[];
+    for(let j=1;j<=4;j++){
+      const ang=a + (j-2.5)*0.60;
+      const rr=S*(1.05+ (j===1||j===4?0.95:1.75));
+      const cx=Math.cos(ang)*rr, cy=Math.sin(ang)*rr;
+      prev.push(add('C',cx,cy,0));
+    }
+    bond(ni,prev[0],1); bond(prev[0],prev[1],2); bond(prev[1],prev[2],1);
+    bond(prev[2],prev[3],2); bond(prev[3],ni,1);
+    ringN[k]={n:ni,c:prev};
+  }
+  /* methine bridges linking the rings */
+  for(let k=0;k<4;k++){
+    const a=ringN[k], b=ringN[(k+1)%4];
+    const ang=(k*Math.PI/2)+Math.PI/4+Math.PI/4;
+    const br=add('C',Math.cos(ang)*S*3.1,Math.sin(ang)*S*3.1,0);
+    bond(a.c[3],br,1); bond(br,b.c[0],2);
+    if(k%2===0) add('H',Math.cos(ang)*S*3.95,Math.sin(ang)*S*3.95,0), bond(atoms.length-1,br,1);
+  }
+  /* side groups */
+  const o1=add('O',S*3.0,-S*3.4,0); bond(ringN[3].c[2],o1,2);
+  const o2=add('O',-S*3.2,S*3.3,0); bond(ringN[1].c[2],o2,2);
+  /* phytol tail — zig-zag chain */
+  let px=S*2.6, py=S*2.9, last=ringN[2].c[3];
+  for(let i=0;i<9;i++){
+    px += S*0.95; py += (i%2? -1:1)*S*0.55;
+    const ci=add('C',px,py,0); bond(last,ci,1);
+    if(i%2===0){ const h=add('H',px,py+S*0.85,0); bond(ci,h,1); }
+    last=ci;
+  }
+  /* a few explicit hydrogens on the outside */
+  [ringN[0].c[1],ringN[1].c[1],ringN[2].c[1],ringN[3].c[1]].forEach((ci,i)=>{
+    const A=atoms[ci]; const L=Math.hypot(A.x,A.y)||1;
+    const h=add('H',A.x/L*(L+S*0.9),A.y/L*(L+S*0.9),0); bond(ci,h,1);
+  });
+  return {atoms:atoms,bonds:bonds,S:S};
+}
+let CHL=null, CHL_U=-1;
+function sceneMolecule(c,E){
+  const u=E.u,t=E.t;
+  if(CHL_U!==u){ CHL=chlorophyll(u); CHL_U=u; }
+
+  /* watery background with a hint of the membrane */
+  backdrop(c,u,'rgba(20,40,60,0.92)','rgba(5,12,22,0.95)');
+
+  /* --- lipid bilayer running down the left of the frame --- */
+  c.save();
+  c.translate(-u*0.66,0); c.rotate(Math.PI/2);
+  const headR=u*0.020, step=u*0.052;
+  for(let s=-1;s<=1;s+=2){
+    for(let i=-20;i<=20;i++){
+      const x=i*step+Math.sin(t*0.6+i*0.4)*u*0.004;
+      const y=s*u*0.052;
+      /* tails */
+      c.strokeStyle='rgba(230,210,150,0.30)'; c.lineWidth=u*0.005; c.lineCap='round';
+      for(let k=-1;k<=1;k+=2){
+        c.beginPath(); c.moveTo(x+k*headR*0.45,y-s*headR*0.6);
+        c.quadraticCurveTo(x+k*headR*0.9+Math.sin(t*1.2+i)*u*0.006, y-s*u*0.028, x+k*headR*0.4, y-s*u*0.050);
+        c.stroke();
+      }
+      sphere(c,x,y,headR,'#ffe6b0','#d9932f','#6b3f10');
+    }
+  }
+  c.restore();
+
+  /* --- water molecules floating --- */
+  const wr=mulberry32(303);
+  for(let i=0;i<22;i++){
+    const bx=(wr()*2-1)*u*0.9, by=(wr()*2-1)*u*0.55;
+    const x=bx+Math.sin(t*0.5+i*1.7)*u*0.02, y=by+Math.cos(t*0.42+i)*u*0.018;
+    const a=t*0.4+i;
+    const r0=u*0.017;
+    c.save(); c.globalAlpha=0.65;
+    c.strokeStyle='rgba(190,220,255,0.35)'; c.lineWidth=u*0.005;
+    for(let k=-1;k<=1;k+=2){
+      const hx=x+Math.cos(a+k*0.9)*r0*1.5, hy=y+Math.sin(a+k*0.9)*r0*1.5;
+      c.beginPath(); c.moveTo(x,y); c.lineTo(hx,hy); c.stroke();
+      sphere(c,hx,hy,r0*0.55,ATOM_COL.H[0],ATOM_COL.H[1],ATOM_COL.H[2]);
+    }
+    sphere(c,x,y,r0,ATOM_COL.O[0],ATOM_COL.O[1],ATOM_COL.O[2]);
+    c.restore();
+  }
+
+  /* --- chlorophyll molecule --- */
+  c.save();
+  c.translate(-u*0.12,-u*0.16);
+  c.rotate(Math.sin(t*0.18)*0.05);
+  const wob = (i)=> Math.sin(t*1.7+i*0.9)*CHL.S*0.035;
+  const A=CHL.atoms, B=CHL.bonds;
+  /* bonds */
+  B.forEach((b,i)=>{
+    const a1=A[b[0]], a2=A[b[1]];
+    const x1=a1.x+wob(b[0]), y1=a1.y+wob(b[0]+3);
+    const x2=a2.x+wob(b[1]), y2=a2.y+wob(b[1]+3);
+    if(b[2]===0){ /* coordination bond to Mg */
+      c.setLineDash([CHL.S*0.18,CHL.S*0.18]);
+      c.strokeStyle='rgba(160,255,180,0.45)'; c.lineWidth=CHL.S*0.10;
+      c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2,y2); c.stroke();
+      c.setLineDash([]);
+      return;
+    }
+    const g=c.createLinearGradient(x1,y1,x2,y2);
+    g.addColorStop(0,'rgba(200,215,235,0.85)'); g.addColorStop(0.5,'rgba(150,168,190,0.95)'); g.addColorStop(1,'rgba(200,215,235,0.85)');
+    c.strokeStyle=g; c.lineCap='round';
+    if(b[2]===2){
+      const dx=x2-x1, dy=y2-y1, L=Math.hypot(dx,dy)||1, nx=-dy/L, ny=dx/L, o=CHL.S*0.10;
+      c.lineWidth=CHL.S*0.085;
+      c.beginPath(); c.moveTo(x1+nx*o,y1+ny*o); c.lineTo(x2+nx*o,y2+ny*o); c.stroke();
+      c.beginPath(); c.moveTo(x1-nx*o,y1-ny*o); c.lineTo(x2-nx*o,y2-ny*o); c.stroke();
+    }else{
+      c.lineWidth=CHL.S*0.135;
+      c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2,y2); c.stroke();
+    }
+  });
+  /* atoms */
+  A.forEach((a,i)=>{
+    const x=a.x+wob(i), y=a.y+wob(i+3);
+    const col=ATOM_COL[a.el]||ATOM_COL.C;
+    const r=CHL.S*(a.el==='H'?0.20:(a.el==='Mg'?0.40:0.30));
+    if(a.el==='Mg') glow(c,SP_GREEN,x,y,r*3,0.30);
+    sphere(c,x,y,r,col[0],col[1],col[2], a.el==='Mg'?0.10:0);
+  });
+  c.restore();
+
+  /* electron-sharing shimmer over the ring */
+  if(!REDUCED){
+    c.save(); c.globalCompositeOperation='lighter'; c.translate(-u*0.12,-u*0.16);
+    for(let i=0;i<26;i++){
+      const a=t*0.5+i/26*TAU;
+      const rr=CHL.S*2.9+Math.sin(t*2+i)*CHL.S*0.25;
+      glow(c,SP_CYAN,Math.cos(a)*rr,Math.sin(a)*rr,CHL.S*0.30,0.10);
+    }
+    c.restore();
+  }
+}
+function annMolecule(E){
+  const u=E.u;
+  const S=(CHL?CHL.S:u*0.088), ox=-u*0.12, oy=-u*0.16;
+  return [
+    {x:ox,y:oy,label:'MAGNESIUM ATOM',sub:'the green heart of chlorophyll',dx:-110,dy:6},
+    {x:ox+Math.cos(Math.PI/4)*S*1.05,y:oy+Math.sin(Math.PI/4)*S*1.05,label:'NITROGEN',sub:'4 of them, holding the Mg',dx:78,dy:56},
+    {x:ox-S*3.1,y:oy-S*0.2,label:'CARBON',sub:'the backbone element',dx:-70,dy:-56},
+    {x:ox+S*3.0,y:oy-S*3.4,label:'OXYGEN',sub:'',dx:66,dy:-44},
+    {x:ox+S*5.5,y:oy+S*3.2,label:'COVALENT BONDS',sub:'atoms sharing electrons',dx:70,dy:34},
+    {x:-u*0.66,y:u*0.24,label:'LIPID BILAYER',sub:'a membrane just two molecules thick',dx:56,dy:40}
+  ];
+}
+
+/* ---------- 2.8  SINGLE ATOM ------------------------------ */
+let CLOUD=null;
+function buildCloud(n){
+  const r=mulberry32(2024), pts=[];
+  for(let i=0;i<n;i++){
+    /* radial distribution loosely following a 2s/2p density */
+    const q=r();
+    const rad = q<0.16 ? 0.10+r()*0.10 : 0.28+Math.pow(r(),0.55)*0.62;
+    /* golden angle keeps the swarm evenly spread instead of clumping */
+    const a=i*2.399963+r()*0.7;
+    pts.push({r:rad,a:a,ph:r()*TAU,sp:0.25+r()*0.9,s:0.5+r()*0.9,w:0.35+r()*0.65});
+  }
+  return pts;
+}
+function sceneAtom(c,E){
+  const u=E.u,t=E.t;
+  const R=u*0.42;
+  if(!CLOUD) CLOUD=buildCloud(REDUCED?140:420);
+
+  /* deep field */
+  backdrop(c,u,'rgba(18,26,52,0.88)','rgba(3,5,12,0.96)');
+
+  c.save(); c.globalCompositeOperation='lighter';
+
+  /* smooth probability density: three nested shells */
+  const shells=[[R*1.02,0.10],[R*0.62,0.14],[R*0.24,0.20]];
+  shells.forEach(s=>{
+    const g=c.createRadialGradient(0,0,0,0,0,s[0]);
+    g.addColorStop(0,'rgba(120,190,255,'+s[1]+')');
+    g.addColorStop(0.55,'rgba(90,150,255,'+(s[1]*0.5)+')');
+    g.addColorStop(1,'rgba(60,110,220,0)');
+    c.fillStyle=g; c.beginPath(); c.arc(0,0,s[0],0,TAU); c.fill();
+  });
+
+  /* p-orbital probability lobes, slowly precessing */
+  for(let k=0;k<2;k++){
+    const a=t*0.09+k*Math.PI/2;
+    c.save(); c.rotate(a);
+    for(let s=-1;s<=1;s+=2){
+      const g=c.createRadialGradient(s*R*0.46,0,0,s*R*0.46,0,R*0.42);
+      g.addColorStop(0,'rgba(150,220,255,0.085)'); g.addColorStop(1,'rgba(100,170,255,0)');
+      c.fillStyle=g;
+      c.beginPath(); c.ellipse(s*R*0.46,0,R*0.40,R*0.24,0,0,TAU); c.fill();
+    }
+    c.restore();
+  }
+
+  /* the cloud itself — a swarm of "where might the electron be" samples */
+  for(let i=0;i<CLOUD.length;i++){
+    const p=CLOUD[i];
+    const rr=p.r*R*(1+0.05*Math.sin(t*p.sp+p.ph));
+    const aa=p.a+t*0.05*p.sp;
+    const x=Math.cos(aa)*rr, y=Math.sin(aa)*rr*0.98;
+    const fl=0.35+0.65*Math.abs(Math.sin(t*1.6*p.sp+p.ph));
+    const near=1.5-clamp(p.r,0,1);   /* denser and brighter close to the nucleus */
+    glow(c,SP_CYAN,x,y,u*0.017*p.s,0.17*p.w*fl*near);
+  }
+  c.restore();
+
+  /* 90 % probability contour */
+  c.save();
+  c.setLineDash([u*0.012,u*0.016]);
+  c.strokeStyle='rgba(170,215,255,0.30)'; c.lineWidth=u*0.0025;
+  c.beginPath(); c.arc(0,0,R*0.92,0,TAU); c.stroke();
+  c.setLineDash([]);
+  c.restore();
+
+  /* nucleus — deliberately drawn far larger than scale */
+  glow(c,SP_WARM,0,0,u*0.055,0.55);
+  sphere(c,0,0,u*0.0125,'#fff6e0','#ffb469','#8a3a12',0.25);
+
+  /* faint neighbouring atoms at the edge, to give a sense of a lattice */
+  [[-0.98,-0.34],[1.02,0.30],[0.10,-0.98],[-0.20,1.00]].forEach((p,i)=>{
+    c.save(); c.globalCompositeOperation='lighter';
+    const g=c.createRadialGradient(p[0]*u,p[1]*u,0,p[0]*u,p[1]*u,R*0.9);
+    g.addColorStop(0,'rgba(110,170,255,0.10)'); g.addColorStop(1,'rgba(80,130,220,0)');
+    c.fillStyle=g; c.beginPath(); c.arc(p[0]*u,p[1]*u,R*0.9,0,TAU); c.fill();
+    c.restore();
+  });
+}
+function annAtom(E){
+  const u=E.u,R=u*0.42;
+  return [
+    {x:0,y:0,label:'NUCLEUS',sub:'drawn ~10 000× too big to be visible',dx:-76,dy:-52},
+    {x:R*0.66,y:-R*0.55,label:'ELECTRON CLOUD',sub:'no orbits — only probabilities',dx:84,dy:-44},
+    {x:-R*0.70,y:R*0.30,label:'PROBABILITY REGION',sub:'a p-orbital lobe',dx:-90,dy:26},
+    {x:-R*0.65,y:-R*0.65,label:'90% BOUNDARY',sub:'the electron is inside this 9 times in 10',dx:-70,dy:-34}
+  ];
+}
+
+/* ---------- 2.9  ATOMIC STRUCTURE (the nucleus) ------------ */
+let NUCLEONS=null;
+function buildNucleons(){
+  const r=mulberry32(4242), out=[];
+  const n=12;
+  for(let i=0;i<n;i++){
+    /* golden-angle spiral packing in a sphere */
+    const y=1-(i/(n-1))*2, rad=Math.sqrt(Math.max(0,1-y*y)), th=i*2.399963;
+    out.push({
+      x:Math.cos(th)*rad, y:y*0.92, z:Math.sin(th)*rad,
+      p: i%2===0,      /* proton / neutron */
+      ph:r()*TAU, sp:0.6+r()*0.9
+    });
+  }
+  return out;
+}
+function sceneNucleus(c,E){
+  const u=E.u,t=E.t;
+  if(!NUCLEONS) NUCLEONS=buildNucleons();
+  const R=u*0.26;
+
+  /* far-off electron cloud, now impossibly distant */
+  c.save(); c.globalCompositeOperation='lighter';
+  const eg=c.createRadialGradient(0,0,u*0.62,0,0,u*1.45);
+  eg.addColorStop(0,'rgba(70,130,220,0)'); eg.addColorStop(0.55,'rgba(90,150,240,0.09)');
+  eg.addColorStop(0.85,'rgba(120,180,255,0.13)'); eg.addColorStop(1,'rgba(120,180,255,0)');
+  c.fillStyle=eg; c.beginPath(); c.arc(0,0,u*1.45,0,TAU); c.fill();
+  if(!REDUCED) for(let i=0;i<30;i++){
+    const a=i/30*TAU+t*0.05, rr=u*(0.95+0.18*Math.sin(t*0.7+i));
+    glow(c,SP_CYAN,Math.cos(a)*rr,Math.sin(a)*rr*0.92,u*0.03,0.10);
+  }
+  c.restore();
+
+  /* strong-force binding haze */
+  c.save(); c.globalCompositeOperation='lighter';
+  const bindPulse=0.5+0.5*Math.sin(t*1.5);
+  glow(c,SP_WARM,0,0,R*2.4,0.16+0.10*bindPulse);
+  c.restore();
+
+  /* nucleons, painted back-to-front */
+  const list = NUCLEONS.map(n=>{
+    const j=0.06;
+    return {
+      n:n,
+      X:(n.x+Math.sin(t*n.sp+n.ph)*j)*R,
+      Y:(n.y+Math.cos(t*n.sp*0.9+n.ph)*j)*R,
+      Z:(n.z+Math.sin(t*n.sp*1.2+n.ph*2)*j)
+    };
+  }).sort((a,b)=>a.Z-b.Z);
+
+  /* gluon-ish links between close neighbours */
+  c.save(); c.globalCompositeOperation='lighter';
+  for(let i=0;i<list.length;i++) for(let k=i+1;k<list.length;k++){
+    const d=Math.hypot(list[i].X-list[k].X,list[i].Y-list[k].Y);
+    if(d<R*0.95){
+      c.strokeStyle='rgba(255,200,140,'+(0.10*(1-d/(R*0.95))*(0.6+0.4*Math.sin(t*3+i+k)))+')';
+      c.lineWidth=u*0.004;
+      c.beginPath(); c.moveTo(list[i].X,list[i].Y); c.lineTo(list[k].X,list[k].Y); c.stroke();
+    }
+  }
+  c.restore();
+
+  list.forEach((o,i)=>{
+    const depth=(o.Z+1)/2;                 /* 0 = far, 1 = near */
+    const rr=R*0.40*(0.80+depth*0.30);
+    const dim=0.55+depth*0.45;
+    const col = o.n.p
+      ? ['rgba(255,215,205,'+dim+')','rgba(226,86,70,'+dim+')','rgba(94,20,16,'+dim+')']
+      : ['rgba(226,238,252,'+dim+')','rgba(126,148,176,'+dim+')','rgba(34,45,60,'+dim+')'];
+    if(o.n.p) glow(c,SP_RED,o.X,o.Y,rr*1.9,0.14*depth);
+    sphere(c,o.X,o.Y,rr,col[0],col[1],col[2]);
+    /* three quarks hinted inside */
+    c.save(); c.globalAlpha=0.5*dim;
+    for(let q=0;q<3;q++){
+      const a=t*1.1*o.n.sp+q*TAU/3+o.n.ph;
+      c.fillStyle= o.n.p ? 'rgba(255,240,220,0.9)' : 'rgba(210,235,255,0.85)';
+      c.beginPath(); c.arc(o.X+Math.cos(a)*rr*0.36, o.Y+Math.sin(a)*rr*0.36, rr*0.10,0,TAU); c.fill();
+    }
+    c.restore();
+    /* charge mark — protons only; neutrons carry none */
+    if(o.n.p){
+      c.save();
+      c.globalAlpha=0.55*dim; c.lineCap='round';
+      c.strokeStyle='rgba(255,240,232,0.95)'; c.lineWidth=rr*0.055;
+      const q=rr*0.17;
+      c.beginPath(); c.moveTo(o.X-q,o.Y); c.lineTo(o.X+q,o.Y);
+      c.moveTo(o.X,o.Y-q); c.lineTo(o.X,o.Y+q); c.stroke();
+      c.restore();
+    }
+  });
+}
+function annNucleus(E){
+  const u=E.u,R=u*0.26;
+  return [
+    {x:R*0.45,y:-R*0.62,label:'PROTON',sub:'charge +1 · defines the element',dx:88,dy:-46},
+    {x:-R*0.52,y:R*0.40,label:'NEUTRON',sub:'no charge · adds mass',dx:-84,dy:46},
+    {x:0,y:R*1.05,label:'NUCLEUS',sub:'99.9% of the atom’s mass, 1/100 000 of its width',dx:0,dy:74},
+    {x:0,y:-u*0.92,label:'ELECTRON CLOUD',sub:'still far outside this frame',dx:-70,dy:-30}
+  ];
+}
+
+/* ============================================================
+   3.  STAGE TABLE
+   ============================================================ */
+const STAGES=[
+  { name:'Tree', size:'≈ 15 metres  ·  10¹ m', fov:15, dwell:10,
+    pivot:[0.17,-0.14], back:skyTree, scene:sceneTree, annots:annTree,
+    bg:['#050a17','#02040a'],
+    caption:'An oak at dusk, about fifteen metres tall. Everything ahead of us — every cell, molecule and atom — is already inside this silhouette. We are about to fall through twelve powers of ten.' },
+
+  { name:'Branch', size:'≈ 80 centimetres  ·  10⁻¹ m', fov:0.8, dwell:8,
+    pivot:[0.13,-0.27], scene:sceneBranch, annots:annBranch,
+    bg:['#07120e','#020705'],
+    caption:'A single branch. The bark is armour made of dead cells; the leaves hanging from it are the machinery that built the whole tree out of air, water and light.' },
+
+  { name:'Leaf', size:'≈ 9 centimetres  ·  10⁻² m', fov:0.09, dwell:8,
+    pivot:[0.13,-0.05], scene:sceneLeaf, annots:annLeaf,
+    bg:['#06140d','#020806'],
+    caption:'One leaf, a hand-span across. That web of veins delivers water to every square millimetre of blade and carries sugar back out. Now we slice through it.' },
+
+  { name:'Leaf tissue', size:'≈ 1.5 millimetres  ·  10⁻³ m', fov:0.0015, dwell:9,
+    pivot:[0.16,-0.19], scene:sceneTissue, annots:annTissue,
+    bg:['#05150f','#020a08'],
+    caption:'A cross-section through the blade. Light enters the transparent skin, is trapped by the tall palisade cells, and carbon dioxide seeps in through pores called stomata.' },
+
+  { name:'Plant cell', size:'≈ 100 micrometres  ·  10⁻⁴ m', fov:1.2e-4, dwell:13,
+    pivot:[0.235,-0.19], scene:sceneCell, annots:annCell,
+    bg:['#06140f','#020a09'],
+    caption:'One living cell — around a tenth of a millimetre wide, right at the limit of unaided eyesight. Everything from here on is invisible to you, forever.' },
+
+  { name:'Cell structures', size:'≈ 5 micrometres  ·  10⁻⁶ m', fov:5e-6, dwell:11,
+    pivot:[0.30,-0.14], scene:sceneStructures, annots:annStructures,
+    bg:['#05150f','#02100b'],
+    caption:'Inside a chloroplast. These green discs — thylakoids — are stacked like coins. Their membranes hold the pigment molecules that catch photons, one at a time.' },
+
+  { name:'Molecule', size:'≈ 1 nanometre  ·  10⁻⁹ m', fov:5e-9, dwell:12,
+    pivot:[0.153,-0.16], scene:sceneMolecule, annots:annMolecule,
+    bg:['#070f1c','#02060e'],
+    caption:'A chlorophyll molecule, roughly a nanometre wide. Matter is no longer smooth: it is a scaffold of individual atoms, held together by shared electrons.' },
+
+  { name:'Individual atom', size:'≈ 0.1 nanometre  ·  10⁻¹⁰ m', fov:5e-10, dwell:14,
+    pivot:[0,0], scene:sceneAtom, annots:annAtom,
+    bg:['#070b18','#02040c'],
+    caption:'One carbon atom. It has no surface and no orbits — just a cloud of probability where its electrons might be found. Almost all of it is empty space.' },
+
+  { name:'Atomic structure', size:'≈ 5 femtometres  ·  10⁻¹⁵ m', fov:2e-14, dwell:16,
+    pivot:[0,0], scene:sceneNucleus, annots:annNucleus,
+    bg:['#0d0714','#04020a'],
+    caption:'The nucleus: six protons and six neutrons, bound by the strong force. If the whole atom were a sports stadium, this would be a grain of rice on the centre spot.' }
+];
+const N = STAGES.length;
+const VIS_K = 14;                 /* visual zoom factor per transition */
+const LOGK  = Math.log(VIS_K);
+
+/* ============================================================
+   4.  STATE
+   ============================================================ */
+let pos=0, playing=true, time=0, speed=1, tweenTo=null, uiHidden=false;
+let lastIdx=-1, frameCount=0, zoomVel=0;
+/* adaptive quality: if frames start costing too much, shed the cheap-to-lose effects */
+let LOWFX=REDUCED, fpsAcc=0, fpsN=0;
+
+const SPEEDS=[0.5,1,1.5,2];
+let speedIdx=1;
+
+/* ---- physical scale helpers ---- */
+function fovAt(p){
+  const i=Math.min(N-1,Math.floor(p)), f=p-i;
+  if(i>=N-1) return STAGES[N-1].fov;
+  const e=easeInOut(clamp(f,0,1));
+  return STAGES[i].fov*Math.pow(STAGES[i+1].fov/STAGES[i].fov, e);
+}
+function fmtLen(m){
+  const a=Math.abs(m);
+  if(a>=1000) return (m/1000).toPrecision(3)+' km';
+  if(a>=1)    return trim(m)+' m';
+  if(a>=1e-2) return trim(m*1e2)+' cm';
+  if(a>=1e-3) return trim(m*1e3)+' mm';
+  if(a>=1e-6) return trim(m*1e6)+' µm';
+  if(a>=1e-9) return trim(m*1e9)+' nm';
+  if(a>=1e-12)return trim(m*1e12)+' pm';
+  return trim(m*1e15)+' fm';
+}
+function trim(v){
+  const a=Math.abs(v);
+  if(a>=100) return Math.round(v).toString();
+  if(a>=10)  return v.toFixed(1).replace(/\.0$/,'');
+  return v.toFixed(2).replace(/0$/,'').replace(/\.$/,'');
+}
+const BIG=[[1e15,'quadrillion'],[1e12,'trillion'],[1e9,'billion'],[1e6,'million'],[1e3,'thousand']];
+function fmtMag(m){
+  if(m<1000) return '×'+(m<10?m.toFixed(1):Math.round(m));
+  for(const b of BIG){
+    if(m>=b[0]) return '×'+ (m/b[0]).toFixed(m/b[0]<10?2:(m/b[0]<100?1:0)) +' '+b[1];
+  }
+  return '×'+Math.round(m);
+}
+
+/* ============================================================
+   5.  RENDER
+   ============================================================ */
+const dust = (function(){
+  const r=mulberry32(808), a=[];
+  const n = REDUCED?26:80;
+  for(let i=0;i<n;i++) a.push({a:r()*TAU, r:0.02+r()*1.0, d:0.25+r()*0.95, s:0.4+r()*1.1, h:r()});
+  return a;
+})();
+
+function mixHex(h1,h2,t){
+  const p=x=>[parseInt(x.substr(1,2),16),parseInt(x.substr(3,2),16),parseInt(x.substr(5,2),16)];
+  const a=p(h1), b=p(h2);
+  return 'rgb('+Math.round(lerp(a[0],b[0],t))+','+Math.round(lerp(a[1],b[1],t))+','+Math.round(lerp(a[2],b[2],t))+')';
+}
+
+function drawStage(idx, scale, pivotF, alpha, env, collect){
+  if(alpha<=0.004) return;
+  const S=STAGES[idx];
+  C.save();
+  C.globalAlpha=alpha;
+  C.translate(W/2,H/2);
+  C.scale(scale,scale);
+  C.translate(-S.pivot[0]*U*pivotF, -S.pivot[1]*U*pivotF);
+  const m=C.getTransform();
+  S.scene(C,env);
+  C.restore();
+  if(collect && S.annots){
+    const list=S.annots(env);
+    for(const a of list){
+      collect.push({
+        sx:(m.a*a.x + m.c*a.y + m.e)/DPR,
+        sy:(m.b*a.x + m.d*a.y + m.f)/DPR,
+        label:a.label, sub:a.sub, dx:a.dx, dy:a.dy, pri:a.pri
+      });
+    }
+  }
+}
+
+const FONT='ui-sans-serif,-apple-system,"Segoe UI",Roboto,Arial';
+function drawAnnots(list,alpha){
+  if(alpha<=0.02) return;
+  const narrow = W<560;
+  const fs=clamp(U*0.0235,10,14);
+  const topLimit = H*0.15, botLimit = H - (narrow?215:200);
+  C.save();
+  C.globalAlpha=alpha;
+  C.textBaseline='middle';
+  const used=[];
+  for(const a of list){
+    if(!isFinite(a.sx)||!isFinite(a.sy)) continue;
+    if(narrow && a.pri===2) continue;
+    if(a.sx<-W*0.3||a.sx>W*1.3||a.sy<-H*0.3||a.sy>H*1.3) continue;
+
+    const side = a.dx>=0 ? 1 : -1;
+    let lx=a.sx+a.dx*(narrow?0.55:1), ly=a.sy+a.dy*(narrow?0.7:1);
+    ly=clamp(ly, topLimit, botLimit);
+
+    C.font='600 '+fs+'px '+FONT;
+    let wdt=C.measureText(a.label).width;
+    if(a.sub){ C.font='400 '+(fs*0.80)+'px '+FONT; wdt=Math.max(wdt,C.measureText(a.sub).width); }
+    lx = side>0 ? clamp(lx,12,Math.max(12,W-12-wdt)) : clamp(lx,Math.min(W-12,12+wdt),W-12);
+
+    /* nudge apart labels that would collide */
+    for(let k=0;k<used.length;k++){
+      if(Math.abs(used[k][1]-ly)<fs*2.2 && Math.abs(used[k][0]-lx)<wdt*0.9+40){
+        ly = used[k][1] + (ly>=used[k][1]? fs*2.3 : -fs*2.3);
+      }
+    }
+    ly=clamp(ly, topLimit, botLimit);
+    used.push([lx,ly]);
+
+    /* leader */
+    C.strokeStyle='rgba(190,225,255,0.40)'; C.lineWidth=1;
+    C.beginPath(); C.moveTo(a.sx,a.sy);
+    C.lineTo(lx-side*7, ly);
+    C.stroke();
+    C.fillStyle='rgba(200,230,255,0.9)';
+    C.beginPath(); C.arc(a.sx,a.sy,2.1,0,TAU); C.fill();
+
+    /* text */
+    C.textAlign = side>0 ? 'left' : 'right';
+    C.shadowColor='rgba(0,0,0,0.95)'; C.shadowBlur=9;
+    C.font='600 '+fs+'px '+FONT;
+    C.fillStyle='rgba(242,249,255,0.97)';
+    C.fillText(a.label, lx, ly-(a.sub?fs*0.55:0));
+    if(a.sub){
+      C.font='400 '+(fs*0.80)+'px '+FONT;
+      C.fillStyle='rgba(166,193,219,0.94)';
+      C.fillText(a.sub, lx, ly+fs*0.62);
+    }
+    C.shadowBlur=0;
+  }
+  C.restore();
+}
+
+function render(dt){
+  C.setTransform(DPR,0,0,DPR,0,0);
+  const i=clamp(Math.floor(pos),0,N-1);
+  const p=clamp(pos-i,0,1);
+  const e=easeInOut(p);
+  const nx=Math.min(i+1,N-1);
+  const hasNext = i<N-1;
+
+  /* background blend */
+  const bt=smoothstep(0.20,0.85,p);
+  const A=STAGES[i].bg, B=STAGES[hasNext?nx:i].bg;
+  const g=C.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, mixHex(A[0],B[0],hasNext?bt:0));
+  g.addColorStop(1, mixHex(A[1],B[1],hasNext?bt:0));
+  C.fillStyle=g; C.fillRect(0,0,W,H);
+
+  const aCur = 1-smoothstep(0.58,0.99,p);
+  const aNxt = hasNext ? smoothstep(0.26,0.80,p) : 0;
+
+  if(STAGES[i].back) STAGES[i].back(C,aCur,time);
+  if(hasNext && STAGES[nx].back) STAGES[nx].back(C,aNxt,time);
+
+  const env={u:U,w:W,h:H,t:time,p:p,idx:i};
+
+  const curList=[]; curList.alpha=1;
+  const nxtList=[]; nxtList.alpha=1;
+
+  drawStage(i, Math.exp(LOGK*e), e, aCur, env, curList);
+  if(hasNext) drawStage(nx, Math.exp(LOGK*(e-1)), 0, aNxt, env, nxtList);
+
+  /* dust / depth particles moving with the zoom */
+  if(!REDUCED){
+    const spd = Math.max(0, zoomVel);
+    const step = LOWFX?2:1;
+    C.save(); C.globalCompositeOperation='lighter';
+    for(let di=0;di<dust.length;di+=step){
+      const d=dust[di];
+      d.r *= 1 + (0.0018 + spd*0.020)*d.d;
+      d.a += 0.0006*d.d;
+      if(d.r>1.35){ d.r=0.02+Math.random()*0.05; d.a=Math.random()*TAU; }
+      const x=W/2+Math.cos(d.a)*d.r*U*0.95;
+      const y=H/2+Math.sin(d.a)*d.r*U*0.95;
+      const fade=clamp(d.r*3,0,1)*clamp((1.35-d.r)*2.2,0,1);
+      glow(C, d.h<0.5?SP_WHITE:SP_CYAN, x, y, U*0.006*d.s*(0.5+d.d), 0.10*fade*d.d);
+    }
+    C.restore();
+  }
+
+  /* labels */
+  drawAnnots(curList, aCur*(1-smoothstep(0.30,0.56,p)));
+  if(hasNext) drawAnnots(nxtList, smoothstep(0.80,0.99,p));
+
+  /* vignette + grain */
+  C.fillStyle=VIG; C.fillRect(0,0,W,H);
+  if(NOISE && !LOWFX){
+    C.save();
+    C.globalAlpha=0.030;
+    C.translate((Math.random()*40)|0,(Math.random()*40)|0);
+    C.fillStyle=NOISE; C.fillRect(-40,-40,W+80,H+80);
+    C.restore();
+  }
+}
+
+/* ============================================================
+   6.  UI WIRING
+   ============================================================ */
+const el = id=>document.getElementById(id);
+const elName=el('stageName'), elSize=el('stageSize'), elIdx=el('stageIndex'),
+      elCap=el('caption'), elMag=el('magVal'), elFov=el('fovVal'),
+      elBar=el('barLabel'), elFill=el('trackFill'), elHead=el('trackHead'),
+      elRail=el('rail'), elPlayIcon=el('playIcon'), elCompare=el('compare'),
+      elHint=el('hint'), elTrack=el('track'), elSpeed=el('speed');
+
+const ICON_PLAY='M8 5v14l11-7z';
+const ICON_PAUSE='M6 5h4v14H6zm8 0h4v14h-4z';
+
+/* stage dots */
+STAGES.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.className='dot'; b.title=s.name; b.setAttribute('aria-label','Go to '+s.name);
+  b.addEventListener('click',()=>{ goto(i); });
+  elRail.appendChild(b);
+  /* progress tick */
+  const tk=document.createElement('div');
+  tk.className='tick'; tk.style.left=(i/(N-1)*100)+'%';
+  elTrack.appendChild(tk);
+});
+const dots=[].slice.call(elRail.children);
+
+function updateChrome(force){
+  /* the headline stage follows the cross-fade, not the raw index */
+  const i=clamp(Math.floor(pos),0,N-1), f=pos-i;
+  const cur=clamp(i + (f>0.52?1:0),0,N-1);
+  if(cur!==lastIdx||force){
+    lastIdx=cur;
+    const S=STAGES[cur];
+    [elName,elSize,elIdx].forEach(n=>{ n.classList.remove('swap'); void n.offsetWidth; n.classList.add('swap'); });
+    elName.textContent=S.name;
+    elSize.textContent=S.size;
+    elIdx.textContent='Stage '+(cur+1)+' / '+N;
+    elCap.classList.remove('swap'); void elCap.offsetWidth; elCap.classList.add('swap');
+    elCap.textContent=S.caption;
+    dots.forEach((d,k)=>{ d.classList.toggle('on',k===cur); d.classList.toggle('done',k<cur); });
+    elCompare.classList.toggle('show', cur>=7);
+    elCompare.setAttribute('aria-hidden', cur>=7?'false':'true');
+  }
+  const frac=pos/(N-1);
+  elFill.style.width=(frac*100)+'%';
+  elHead.style.left=(frac*100)+'%';
+  elTrack.setAttribute('aria-valuenow',Math.round(frac*100));
+
+  const fov=fovAt(pos);
+  const mag=STAGES[0].fov/fov;
+  elMag.textContent=fmtMag(mag);
+  elFov.textContent=fmtLen(fov);
+  /* scale bar: 62 px (88 on wide screens) of real-world length */
+  const barPx = W>=760?88:62;
+  elBar.textContent=fmtLen(fov*(barPx/W));
+}
+
+function setPlaying(v){
+  playing=v;
+  elPlayIcon.setAttribute('d', v?ICON_PAUSE:ICON_PLAY);
+  if(v && pos>=N-1-1e-4){ pos=0; }
+}
+function goto(i){
+  tweenTo=clamp(i,0,N-1);
+  setPlaying(false);
+  hideHint();
+}
+function nudge(d){
+  const cur=pos;
+  const target = d>0 ? Math.floor(cur+1e-4)+1 : Math.ceil(cur-1e-4)-1;
+  goto(clamp(target,0,N-1));
+}
+function hideHint(){ elHint.classList.add('gone'); }
+
+el('play').addEventListener('click',()=>{ tweenTo=null; setPlaying(!playing); hideHint(); });
+el('next').addEventListener('click',()=>nudge(1));
+el('prev').addEventListener('click',()=>nudge(-1));
+el('restart').addEventListener('click',()=>{ pos=0; tweenTo=null; setPlaying(true); hideHint(); });
+elSpeed.addEventListener('click',()=>{
+  speedIdx=(speedIdx+1)%SPEEDS.length; speed=SPEEDS[speedIdx];
+  elSpeed.textContent=speed+'×';
+});
+
+/* keyboard */
+window.addEventListener('keydown',ev=>{
+  const k=ev.key;
+  if(k===' '||k==='Spacebar'){ ev.preventDefault(); tweenTo=null; setPlaying(!playing); hideHint(); }
+  else if(k==='ArrowRight'){ ev.preventDefault(); nudge(1); }
+  else if(k==='ArrowLeft'){ ev.preventDefault(); nudge(-1); }
+  else if(k==='ArrowUp'){ ev.preventDefault(); scrub(0.035); }
+  else if(k==='ArrowDown'){ ev.preventDefault(); scrub(-0.035); }
+  else if(k==='r'||k==='R'){ pos=0; tweenTo=null; setPlaying(true); }
+  else if(k==='Home'){ pos=0; }
+  else if(k==='End'){ pos=N-1; setPlaying(false); }
+  else if(k==='h'||k==='H'){ uiHidden=!uiHidden; document.getElementById('ui').classList.toggle('hidden',uiHidden); }
+  else if(k==='f'||k==='F'){
+    if(!document.fullscreenElement && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    else if(document.exitFullscreen) document.exitFullscreen();
+  }
+});
+
+function scrub(d){
+  tweenTo=null;
+  setPlaying(false);
+  pos=clamp(pos+d,0,N-1);
+  hideHint();
+}
+
+/* wheel */
+window.addEventListener('wheel',ev=>{
+  if(ev.target.closest && ev.target.closest('#controls,#rail,#track')) return;
+  ev.preventDefault();
+  const unit = ev.deltaMode===1?16:(ev.deltaMode===2?H:1);
+  scrub(ev.deltaY*unit*0.00085);
+},{passive:false});
+
+/* pointer / touch on the canvas */
+let dragging=false, lastY=0, moved=0, pinch=0;
+CV.addEventListener('pointerdown',ev=>{
+  dragging=true; moved=0; lastY=ev.clientY;
+  CV.setPointerCapture(ev.pointerId);
+});
+CV.addEventListener('pointermove',ev=>{
+  if(!dragging) return;
+  const dy=ev.clientY-lastY; lastY=ev.clientY;
+  moved+=Math.abs(dy);
+  if(moved>6) scrub(-dy*0.0032);
+});
+CV.addEventListener('pointerup',ev=>{
+  dragging=false;
+  if(moved<6){ tweenTo=null; setPlaying(!playing); hideHint(); }
+});
+CV.addEventListener('pointercancel',()=>{dragging=false;});
+
+/* pinch */
+CV.addEventListener('touchmove',ev=>{
+  if(ev.touches.length===2){
+    ev.preventDefault();
+    const d=Math.hypot(ev.touches[0].clientX-ev.touches[1].clientX, ev.touches[0].clientY-ev.touches[1].clientY);
+    if(pinch) scrub(Math.log(d/pinch)*0.55);
+    pinch=d;
+    dragging=false;
+  }
+},{passive:false});
+CV.addEventListener('touchend',()=>{ pinch=0; });
+
+/* progress bar seeking */
+function seekFromEvent(ev){
+  const r=elTrack.getBoundingClientRect();
+  const f=clamp((ev.clientX-r.left)/r.width,0,1);
+  tweenTo=null; setPlaying(false);
+  pos=f*(N-1);
+  hideHint();
+}
+let seeking=false;
+elTrack.addEventListener('pointerdown',ev=>{ seeking=true; elTrack.setPointerCapture(ev.pointerId); seekFromEvent(ev); });
+elTrack.addEventListener('pointermove',ev=>{ if(seeking) seekFromEvent(ev); });
+elTrack.addEventListener('pointerup',()=>{ seeking=false; });
+elTrack.addEventListener('keydown',ev=>{
+  if(ev.key==='ArrowRight'||ev.key==='ArrowLeft'){ ev.preventDefault(); scrub(ev.key==='ArrowRight'?0.05:-0.05); }
+});
+
+/* ============================================================
+   7.  MAIN LOOP
+   ============================================================ */
+let last=performance.now(), prevFov=STAGES[0].fov;
+function frame(now){
+  requestAnimationFrame(frame);
+  let dt=(now-last)/1000; last=now;
+  if(dt>0.1) dt=0.1;
+  time+=dt;
+
+  fpsAcc+=dt; fpsN++;
+  if(fpsN>=45){
+    const avg=fpsAcc/fpsN; fpsAcc=0; fpsN=0;
+    if(!REDUCED) LOWFX = LOWFX ? avg>0.017 : avg>0.024;   /* hysteresis */
+  }
+
+  if(tweenTo!==null){
+    const d=tweenTo-pos;
+    if(Math.abs(d)<0.004){ pos=tweenTo; tweenTo=null; }
+    else pos += d*Math.min(1,dt*5.2);
+  } else if(playing){
+    const i=clamp(Math.floor(pos),0,N-1);
+    pos += dt*speed/STAGES[i].dwell;
+    if(pos>=N-1){ pos=N-1; setPlaying(false); }
+  }
+  pos=clamp(pos,0,N-1);
+
+  /* zoom velocity drives the dust streaks */
+  const f=fovAt(pos);
+  zoomVel = dt>0 ? clamp(Math.log(prevFov/f)/dt,0,8) : 0;
+  prevFov=f;
+
+  render(dt);
+  if((frameCount++ & 1)===0) updateChrome(false);
+}
+
+resize(); buildNoise(); updateChrome(true); setPlaying(true);
+setTimeout(hideHint, 7000);
+requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>
