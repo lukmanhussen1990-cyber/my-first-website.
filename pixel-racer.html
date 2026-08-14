@@ -638,29 +638,73 @@ function inNos(){   return keys['shift']      || touch.nos;                }
    ============================================================ */
 var autoPilot = false;
 
-/* where the car can actually be t seconds from now, given its inertia */
-function predictPx(target, t){
-  var x = S.px + S.pvx * Math.min(t, 0.12);
-  return x + clamp(target - x, -105 * t, 105 * t);
+/* Where the car can actually be over the next 2.4s if it steers for
+   `target`, integrated with the same inertia the car really has: it
+   accelerates sideways at ~300px/s and needs 0.4s just to reach full
+   lateral speed. Assuming a flat cruise instead makes the bot believe it
+   is about 50% more agile than it is, and it clips cars mid-change. */
+var TRAJ_STEPS = 25, TRAJ_DT = 0.1;
+var traj = new Float64Array(TRAJ_STEPS);
+
+function buildTraj(target){
+  var x = S.px, v = S.pvx, a = 280, vmax = 115;
+  for (var s = 0; s < TRAJ_STEPS; s++){
+    traj[s] = x;
+    var d = target - x;
+    var dir = d > 0 ? 1 : -1;
+    // start braking early enough to settle in the lane instead of overshooting
+    if (Math.abs(d) < (v * v) / (2 * a)) dir = (v > 0 ? -1 : 1);
+    v = clamp(v + dir * a * TRAJ_DT, -vmax, vmax);
+    x += v * TRAJ_DT;
+  }
+  return traj;
 }
 
 /* Earliest collision if we commit to `target`, by rolling the whole board
    forward. Sampling in time handles cars ahead, alongside and oncoming with
    the same code, and accounts for the fact that we are moving sideways. */
+function trajAt(path, t){
+  var f = t / TRAJ_DT;
+  if (f <= 0) return path[0];
+  if (f >= TRAJ_STEPS - 1) return path[TRAJ_STEPS - 1];
+  var i = f | 0;
+  return path[i] + (path[i + 1] - path[i]) * (f - i);
+}
+
+var HORIZON = (TRAJ_STEPS - 1) * TRAJ_DT;
+
 function threatTime(target){
   var pW = SPR.player.width, pH = SPR.player.height;
   var soonest = 99, fromAhead = true;
+  var path = buildTraj(target);
   for (var i = 0; i < S.cars.length; i++){
     var c    = S.cars[i];
     var rel  = c.oncoming ? (S.speed + c.spd) : (S.speed - c.spd);
     var span = (pH + c.h) / 2 + 6;      // y band where a hit is possible
     var gapX = (pW + c.w) / 2 + 7;      // x clearance we insist on
     var cOff = LANE_X[c.lane];
-    for (var s = 0; s <= 24; s++){
-      var t = s * 0.1;
-      if (Math.abs((c.y + rel * t) - PLAYER_Y) > span) continue;
-      if (Math.abs(predictPx(target, t) - cOff) < gapX){
-        if (t < soonest){ soonest = t; fromAhead = (c.y <= PLAYER_Y); }
+
+    /* Solve the y-overlap window exactly rather than probing it at fixed
+       steps. An oncoming car closes at ~500px/s - 50px per 0.1s step - while
+       the band is only ~37px deep, so stepped probing let cars slip clean
+       between two samples. That read as "lane clear", then "lane deadly" a
+       frame later, and the flapping is what made the bot thrash. */
+    var t0, t1;
+    if (Math.abs(rel) < 1){
+      if (Math.abs(c.y - PLAYER_Y) > span) continue;
+      t0 = 0; t1 = HORIZON;
+    } else {
+      var ta = (PLAYER_Y - span - c.y) / rel;
+      var tb = (PLAYER_Y + span - c.y) / rel;
+      t0 = Math.min(ta, tb); t1 = Math.max(ta, tb);
+    }
+    if (t1 < 0 || t0 > HORIZON) continue;
+    if (t0 < 0) t0 = 0;
+    if (t1 > HORIZON) t1 = HORIZON;
+
+    for (var s = 0; s <= 4; s++){
+      if (Math.abs(trajAt(path, t0 + (t1 - t0) * s / 4) - cOff) < gapX){
+        if (t0 < soonest){ soonest = t0; fromAhead = (c.y <= PLAYER_Y); }
         break;
       }
     }
@@ -696,11 +740,13 @@ var botLane = 2;
 
 function botThink(){
   var cmd = { left:false, right:false, gas:false, brake:false, nos:false };
-  var bestScore = -1e9, bestPx = LANE_X[botLane], bestLane = botLane, bestT = 0, i;
+  var sc = [0,0,0,0], th = [0,0,0,0], ah = [true,true,true,true], i, L;
 
-  for (var L = 0; L < 4; L++){
+  for (L = 0; L < 4; L++){
     var tgt   = LANE_X[L];
-    var t     = threatTime(tgt).t;
+    var r     = threatTime(tgt);
+    var t     = r.t;
+    th[L] = t; ah[L] = r.ahead;
     var ahead = laneAhead(L);
     var score = Math.min(t, 6);
 
@@ -717,7 +763,6 @@ function botThink(){
     if (ahead.gap < 250) score -= (250 - ahead.gap) / 250 * 5;
 
     score -= Math.abs(tgt - S.px) * 0.006;        // prefer not to weave
-    if (L === botLane) score += 0.8;              // hysteresis: finish the move you started
 
     for (i = 0; i < S.items.length; i++){         // take what is free to take
       var it = S.items[i];
@@ -725,9 +770,22 @@ function botThink(){
         score += (it.kind === 'nos' ? 0.9 : 0.3);
       }
     }
-    if (score > bestScore){ bestScore = score; bestPx = tgt; bestLane = L; bestT = t; }
+    sc[L] = score;
   }
-  botLane = bestLane;
+
+  /* Commit to a lane and see the move through. Re-deciding from scratch
+     every frame is what made it thrash between targets and die parked on a
+     lane line, exposed to two lanes at once - so a rival lane has to clearly
+     beat the committed one, and by more while a change is already underway.
+     The exception is the committed lane turning dangerous, which always wins. */
+  var top = 0;
+  for (L = 1; L < 4; L++) if (sc[L] > sc[top]) top = L;
+  var margin = (Math.abs(S.px - LANE_X[botLane]) > 8) ? 2.5 : 1.2;
+  if (top !== botLane && (sc[top] > sc[botLane] + margin || th[botLane] < 1.2)){
+    botLane = top;
+  }
+
+  var bestLane = botLane, bestPx = LANE_X[botLane], bestT = th[botLane];
 
   // steer to a target velocity, so it settles into the lane instead of weaving
   var err  = bestPx - S.px;
@@ -751,9 +809,9 @@ function botThink(){
   }
   cap = Math.max(cap, 70);                            // never demand a standstill
 
-  var threat = threatTime(bestPx);
-  cmd.gas   = (S.speed < cap - 10) && (bestT > 1.6 || !threat.ahead);
-  cmd.brake = (S.speed > cap + 25 && threat.ahead) || (bestT < 0.85 && threat.ahead);
+  var fromAhead = ah[bestLane];
+  cmd.gas   = (S.speed < cap - 10) && (bestT > 1.6 || !fromAhead);
+  cmd.brake = (S.speed > cap + 25 && fromAhead) || (bestT < 0.85 && fromAhead);
   if (S.speed < 80) cmd.brake = false;                // rolling beats stopped
 
   cmd.nos = (bestT > 4 && lead.gap > 290 && S.nos > 0.3 && bestLane >= 2 &&
