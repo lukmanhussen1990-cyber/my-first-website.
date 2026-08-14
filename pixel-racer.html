@@ -27,6 +27,11 @@
     border-radius:4px;
     box-shadow:0 0 0 2px #2a3050, 0 0 0 4px #12151f, 0 18px 50px rgba(0,0,0,.75), 0 0 90px rgba(70,110,220,.18);
   }
+  /* keyboard focus brightens the bezel rather than adding a stray outline */
+  canvas:focus{
+    outline:none;
+    box-shadow:0 0 0 2px #5b74c8, 0 0 0 4px #12151f, 0 18px 50px rgba(0,0,0,.75), 0 0 90px rgba(70,110,220,.30);
+  }
   #touch{position:absolute;inset:0;display:none;pointer-events:none}
   #touch.on{display:block}
   .btn{
@@ -52,7 +57,7 @@
 <body>
 <div id="wrap">
   <div id="stage">
-    <canvas id="c" width="200" height="300"></canvas>
+    <canvas id="c" width="200" height="300" tabindex="0" aria-label="Pixel Racer game screen"></canvas>
     <div id="touch">
       <button class="btn" id="bLeft">&#9664;</button>
       <button class="btn" id="bRight">&#9654;</button>
@@ -592,7 +597,13 @@ function hold(id, prop){
 }
 hold('bLeft','left'); hold('bRight','right'); hold('bGas','gas'); hold('bNos','nos');
 
-cv.addEventListener('pointerdown', function(e){ e.preventDefault(); if (S.mode !== 'play') anyStart(); });
+/* focus the canvas so key events land here even when embedded in a frame */
+cv.addEventListener('pointerdown', function(e){
+  e.preventDefault();
+  try { window.focus(); cv.focus({ preventScroll:true }); } catch(err){}
+  if (S.mode !== 'play') anyStart();
+});
+try { cv.focus({ preventScroll:true }); } catch(err){}
 
 function inLeft(){  return keys['arrowleft']  || keys['a'] || touch.left;  }
 function inRight(){ return keys['arrowright'] || keys['d'] || touch.right; }
