@@ -247,6 +247,10 @@ const World = {
       if (TILE_SOLID[this.tile[yy * W + xx]]) this.tile[yy * W + xx] = T.MEADOW;
     }
     this.spawn = { x: best.x * TS + TS / 2, y: best.y * TS + TS / 2 };
+    /* Clear caches and obelisks off the starting pad. Opening a run standing
+       on treasure hands out an instant level-up before the player has moved. */
+    this.landmarks = this.landmarks.filter(L =>
+      L.kind === "shrine" || dist2(L.tx, L.ty, best.x, best.y) > 7 * 7);
     /* a welcome shrine at the start */
     this.landmarks.push({ kind: "shrine", tx: best.x + 2, ty: best.y - 2, x: (best.x + 2) * TS + TS / 2, y: (best.y - 2) * TS + TS / 2, used: false, t: 0 });
     for (const L of this.landmarks) this.prop[L.ty * W + L.tx] = 0;

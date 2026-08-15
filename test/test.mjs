@@ -12,6 +12,20 @@ const LAUNCH = process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PA
 const FILE = FILE_URL;
 const OUT = OUT_DIR;
 
+
+// A run can hand out a level immediately (a cache underfoot, a fast first kill).
+// The boon screen pauses the world, so clear any pending choices before making
+// assertions that need the game actually running.
+async function clearLevelUps(page, max = 40) {
+  for (let i = 0; i < max; i++) {
+    const on = await page.locator('#levelup').evaluate(el => el.classList.contains('on')).catch(() => false);
+    if (!on) return i;
+    await page.locator('#cards .card').first().click();
+    await page.waitForTimeout(110);
+  }
+  return max;
+}
+
 const results = [];
 function check(name, ok, detail) {
   results.push({ name, ok, detail });
@@ -75,6 +89,7 @@ async function session(label, viewport, isMobile) {
   // ---- start a run ----
   await page.click('#btnStart');
   await page.waitForTimeout(500);
+  await clearLevelUps(page);
   const mode = await page.evaluate(() => window.PCA.G.mode);
   check(`[${label}] run starts`, mode === 'play', 'mode=' + mode);
 
@@ -103,6 +118,7 @@ async function session(label, viewport, isMobile) {
   const monCount = await page.evaluate(() => window.PCA.G.mons.length);
   check(`[${label}] monsters populate the world`, monCount >= 8, monCount + ' alive');
 
+  await clearLevelUps(page);
   // ---- combat: each weapon actually hurts things, driven by real input ----
   for (const w of ['sword', 'spear', 'wand']) {
     const dealt = await page.evaluate(async (weapon) => {
@@ -154,10 +170,25 @@ async function session(label, viewport, isMobile) {
   check(`[${label}] passive monster retaliates when struck`, dmgApi.angry === true && dmgApi.nowState === 'chase',
     dmgApi.wasPassive + ' -> ' + dmgApi.nowState);
 
+  await clearLevelUps(page);
   // ---- aggressive AI actually engages ----
   const aggro = await page.evaluate(async () => {
-    const { G, spawnMonster } = window.PCA;
-    const m = spawnMonster('grimhound', G.P.x + 120, G.P.y, false);
+    const { G, spawnMonster, World } = window.PCA;
+    // place it somewhere it can actually walk from, otherwise the test is
+    // measuring terrain rather than AI
+    let spot = null;
+    for (let i = 0; i < 64 && !spot; i++) {
+      const a = (i / 64) * Math.PI * 2;
+      const x = G.P.x + Math.cos(a) * 120, y = G.P.y + Math.sin(a) * 120;
+      let clear = true;
+      for (let t = 0; t <= 1.001; t += 0.1) {
+        const px = G.P.x + (x - G.P.x) * t, py = G.P.y + (y - G.P.y) * t;
+        if (!World.walkableTile(Math.floor(px / 16), Math.floor(py / 16))) { clear = false; break; }
+      }
+      if (clear) spot = { x, y };
+    }
+    if (!spot) spot = { x: G.P.x + 120, y: G.P.y };
+    const m = spawnMonster('grimhound', spot.x, spot.y, false);
     const d0 = Math.hypot(m.x - G.P.x, m.y - G.P.y);
     await new Promise(r => setTimeout(r, 1200));
     const d1 = Math.hypot(m.x - G.P.x, m.y - G.P.y);
@@ -168,6 +199,7 @@ async function session(label, viewport, isMobile) {
   check(`[${label}] aggressive monster closes distance`, aggro.d1 < aggro.d0 - 10,
     aggro.d0.toFixed(0) + ' -> ' + aggro.d1.toFixed(0) + ' (' + aggro.st + ')');
 
+  await clearLevelUps(page);
   // ---- regression: sustained attacking must never lock stamina out ----
   const stam = await page.evaluate(async () => {
     const { G } = window.PCA;
@@ -272,12 +304,7 @@ async function session(label, viewport, isMobile) {
   await page.screenshot({ path: path.join(OUT, `${label}-2-levelup.png`) });
 
   // take every pending level
-  for (let i = 0; i < 40; i++) {
-    const on = await page.locator('#levelup').evaluate(el => el.classList.contains('on'));
-    if (!on) break;
-    await page.locator('#cards .card').first().click();
-    await page.waitForTimeout(120);
-  }
+  await clearLevelUps(page);
   const lvl = await page.evaluate(() => ({ level: window.PCA.G.P.level, boons: window.PCA.G.P.boons.length, mode: window.PCA.G.mode }));
   check(`[${label}] boons applied and play resumes`, lvl.boons > 0 && lvl.mode === 'play', JSON.stringify(lvl));
 

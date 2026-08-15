@@ -181,6 +181,14 @@ function doPause() {
 
 /* ================================= BOOT =================================== */
 function boot() {
+  /* Some embeds (artifact frames, previews) supply their own <head>. Without a
+     viewport meta a phone renders this at 980px wide, so make sure one exists. */
+  if (!document.querySelector('meta[name="viewport"]')) {
+    const mv = document.createElement("meta");
+    mv.name = "viewport";
+    mv.content = "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover";
+    document.head.appendChild(mv);
+  }
   Display.resize();
   buildArt();
   Input.init();
