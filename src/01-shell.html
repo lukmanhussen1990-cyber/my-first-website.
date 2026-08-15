@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f1e">
+<meta name="description" content="Phantasy Codex Adventure - a compact top-down action RPG with a procedurally generated world.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Phantasy Codex Adventure</title>
+<style>
+:root{
+  --ink:#e8e2c8; --ink-dim:#a89c78; --gold:#ffcf5c; --gold-2:#c98f2b;
+  --panel:#1a1430; --panel-2:#241a44; --edge:#5b4a94; --edge-2:#0a0716;
+  --hp:#ff5566; --sp:#39d4c8; --xp:#ffcf5c; --bad:#ff7a5c; --good:#8ef07a;
+  --rare:#6cc5ff; --epic:#d68cff; --safe-b: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#05060c;color:var(--ink);
+  font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+  -webkit-user-select:none;user-select:none;touch-action:none;overscroll-behavior:none}
+#stage{position:fixed;inset:0;background:#05060c}
+canvas#view{display:block;position:absolute;inset:0;width:100%;height:100%;
+  image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none}
+
+/* ---------- generic retro panel ---------- */
+.panel{
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  border:2px solid var(--edge);
+  box-shadow:0 0 0 2px var(--edge-2), 0 0 0 4px #2b2350, 0 10px 34px rgba(0,0,0,.65),
+             inset 0 1px 0 rgba(255,255,255,.10);
+  border-radius:3px;
+}
+.overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + var(--safe-b));
+  background:rgba(4,4,12,.72);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:40}
+.overlay.on{display:flex}
+.sheetwrap{width:min(560px,96vw);max-height:94%;overflow:auto;padding:14px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:thin}
+h1,h2,h3{margin:0 0 8px;font-weight:700;letter-spacing:.06em}
+h1{font-size:clamp(18px,5.2vw,30px);color:var(--gold);text-shadow:0 2px 0 #6a4408,0 0 18px rgba(255,207,92,.35)}
+h2{font-size:clamp(14px,3.6vw,18px);color:var(--gold)}
+h3{font-size:11px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.16em;margin:14px 0 6px;
+   border-bottom:1px dashed #4b3f80;padding-bottom:4px}
+p,li,td,th{font-size:clamp(11px,3vw,13px);line-height:1.55}
+small{font-size:10px;color:var(--ink-dim)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 16px;min-height:44px;font:inherit;font-size:clamp(11px,3.1vw,13px);font-weight:700;letter-spacing:.08em;
+  color:#20180a;background:linear-gradient(180deg,#ffdf8a,var(--gold-2));
+  border:2px solid #7a5410;border-radius:3px;cursor:pointer;text-transform:uppercase;
+  box-shadow:0 3px 0 #5a3c0a, 0 6px 14px rgba(0,0,0,.5);transition:transform .06s, filter .12s}
+.btn:active{transform:translateY(3px);box-shadow:0 0 0 #5a3c0a,0 3px 8px rgba(0,0,0,.5)}
+.btn.sec{color:var(--ink);background:linear-gradient(180deg,#3b2f6e,#241a44);border-color:var(--edge);box-shadow:0 3px 0 #150f2c,0 6px 14px rgba(0,0,0,.5)}
+.btn.wide{width:100%}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row.tight{gap:6px}
+.grow{flex:1 1 0;min-width:0}
+input[type=text],input[type=url]{width:100%;padding:10px;font:inherit;font-size:12px;color:var(--ink);
+  background:#120e26;border:2px solid var(--edge);border-radius:3px;min-height:42px}
+input:focus{outline:2px solid var(--gold);outline-offset:1px}
+
+/* ---------- title screen ---------- */
+#titleScreen .sheetwrap{text-align:center;width:min(520px,94vw)}
+#titleArt{width:100%;max-width:340px;margin:0 auto 10px;display:block;image-rendering:pixelated}
+.tagline{color:var(--ink-dim);margin:0 0 14px}
+.keycaps{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0 4px}
+.kc{border:1px solid #4b3f80;background:#160f30;border-radius:3px;padding:4px 7px;font-size:10px;color:var(--ink-dim)}
+.kc b{color:var(--ink)}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;inset:0;pointer-events:none;z-index:20;
+  padding:calc(8px + env(safe-area-inset-top,0px)) 10px 0 10px}
+#hudTop{display:flex;align-items:flex-start;gap:8px}
+#bars{width:min(46vw,190px)}
+.bar{position:relative;height:13px;margin-bottom:4px;background:#0d0a1c;
+  border:2px solid #0a0716;box-shadow:0 0 0 1px #4b3f80, 0 2px 6px rgba(0,0,0,.6);border-radius:2px;overflow:hidden}
+.bar > i{position:absolute;inset:0;width:0%;display:block;transition:width .16s cubic-bezier(.2,.8,.3,1)}
+.bar > u{position:absolute;inset:0;width:0%;display:block;background:rgba(255,255,255,.5);transition:width .5s ease .12s}
+/* flex-centre the readout: the bar's border eats into a fixed line-height and
+   clips the text, and the bars come in two heights */
+.bar > span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:8px;color:#fff;text-shadow:0 1px 0 #000,0 0 4px #000;letter-spacing:.06em;white-space:nowrap}
+#hpFill{background:linear-gradient(180deg,#ff8a90,#e0293e)}
+#spFill{background:linear-gradient(180deg,#7ff0e6,#12a89c)}
+#xpFill{background:linear-gradient(180deg,#ffe9a8,#e0a41c)}
+.bar.small{height:12px}
+.bar.small > span{font-size:8px}
+#lvlBadge{display:flex;align-items:center;gap:6px;background:rgba(10,7,22,.72);border:2px solid var(--edge);
+  border-radius:3px;padding:3px 8px;font-size:11px;font-weight:700;color:var(--gold);white-space:nowrap}
+#hudRight{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+#topBtns{display:flex;gap:6px;pointer-events:auto}
+.iconbtn{width:40px;height:40px;display:grid;place-items:center;background:rgba(16,11,36,.82);
+  border:2px solid var(--edge);border-radius:3px;color:var(--ink);cursor:pointer;padding:0}
+.iconbtn:active{transform:translateY(2px)}
+.iconbtn img{width:22px;height:22px;image-rendering:pixelated}
+#weaponPod{display:flex;align-items:center;gap:6px;background:rgba(10,7,22,.72);border:2px solid var(--edge);
+  border-radius:3px;padding:4px 8px 4px 4px}
+#weaponPod img{width:26px;height:26px;image-rendering:pixelated}
+#weaponPod .wname{font-size:10px;font-weight:700;color:var(--ink)}
+#weaponPod .wtier{font-size:9px;color:var(--gold)}
+#comboBox{position:absolute;top:calc(64px + env(safe-area-inset-top,0px));right:10px;text-align:right;
+  font-weight:700;color:var(--gold);text-shadow:0 2px 0 #000;opacity:0;transition:opacity .2s}
+#comboBox.on{opacity:1}
+#comboN{font-size:clamp(18px,6vw,30px);display:block;line-height:1}
+#comboLbl{font-size:9px;letter-spacing:.2em;color:var(--ink-dim)}
+#toast{position:absolute;left:50%;transform:translateX(-50%);
+  top:calc(96px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:5px;align-items:center;width:86%;pointer-events:none}
+.tmsg{background:rgba(10,7,22,.86);border:2px solid var(--edge);border-left:4px solid var(--gold);
+  padding:6px 12px;font-size:11px;border-radius:3px;animation:tin .3s ease both;max-width:100%;text-align:center}
+@keyframes tin{from{opacity:0;transform:translateY(-8px) scale(.96)}to{opacity:1;transform:none}}
+#codexPeek{position:absolute;left:10px;bottom:calc(10px + var(--safe-b));font-size:10px;color:var(--ink-dim);
+  background:rgba(10,7,22,.6);border:1px solid #3b3168;border-radius:3px;padding:3px 7px;opacity:.85}
+
+/* ---------- touch controls ---------- */
+#touch{position:absolute;inset:0;z-index:30;pointer-events:none;display:none}
+#touch.on{display:block}
+#stick{position:absolute;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(18px + var(--safe-b));
+  width:132px;height:132px;border-radius:50%;pointer-events:auto;
+  background:radial-gradient(circle at 50% 50%, rgba(90,74,150,.30), rgba(10,7,22,.34) 70%);
+  border:2px solid rgba(120,102,190,.5);touch-action:none}
+#knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#8f7fd8,#3a2f70);border:2px solid #b6a6ff;
+  box-shadow:0 4px 12px rgba(0,0,0,.55)}
+#padRight{position:absolute;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(18px + var(--safe-b));
+  width:186px;height:150px;pointer-events:none}
+.tbtn{position:absolute;border-radius:50%;pointer-events:auto;display:grid;place-items:center;
+  border:2px solid rgba(150,132,220,.55);background:radial-gradient(circle at 42% 34%,rgba(70,58,124,.92),rgba(18,13,40,.92));
+  color:var(--ink);font-size:9px;font-weight:700;letter-spacing:.06em;touch-action:none;text-align:center}
+.tbtn:active,.tbtn.held{background:radial-gradient(circle at 42% 34%,#ffdf8a,#c98f2b);color:#20180a;border-color:#ffe9a8}
+.tbtn img{width:30px;height:30px;image-rendering:pixelated;pointer-events:none}
+.tbtn small{display:block;font-size:8px;opacity:.75;color:inherit}
+#bAtk{right:0;bottom:10px;width:92px;height:92px}
+#bDash{right:96px;bottom:34px;width:64px;height:64px}
+#bSwap{right:24px;bottom:104px;width:52px;height:52px}
+.cdmask{position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(4,4,12,.72) var(--cd,0deg), transparent 0);pointer-events:none}
+
+/* ---------- level up cards ---------- */
+#levelup .sheetwrap{width:min(680px,96vw);text-align:center;background:none;border:none;box-shadow:none}
+#cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.card{padding:12px 10px;cursor:pointer;text-align:center;transition:transform .12s, box-shadow .12s;
+  animation:cardin .34s cubic-bezier(.2,.9,.3,1.2) both}
+.card:nth-child(2){animation-delay:.06s}.card:nth-child(3){animation-delay:.12s}
+@keyframes cardin{from{opacity:0;transform:translateY(22px) scale(.9) rotate(-2deg)}to{opacity:1;transform:none}}
+.card:active{transform:translateY(-3px) scale(1.02)}
+.card img{width:44px;height:44px;image-rendering:pixelated;margin-bottom:6px}
+.card .cname{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.card .cdesc{font-size:10px;color:var(--ink-dim);line-height:1.5}
+.card .crar{font-size:8px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px;color:var(--ink-dim)}
+.card.common{border-color:#5b4a94}
+.card.rare{border-color:var(--rare);box-shadow:0 0 0 2px var(--edge-2),0 0 22px rgba(108,197,255,.30)}
+.card.rare .crar{color:var(--rare)}
+.card.epic{border-color:var(--epic);box-shadow:0 0 0 2px var(--edge-2),0 0 26px rgba(214,140,255,.38)}
+.card.epic .crar{color:var(--epic)}
+
+/* ---------- character sheet ---------- */
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:6px}
+.stat{background:#140f2c;border:1px solid #3b3168;border-radius:3px;padding:6px 8px;display:flex;justify-content:space-between;gap:6px}
+.stat b{color:var(--gold);font-weight:700;white-space:nowrap}
+.stat span{color:var(--ink-dim);font-size:10px}
+.wrow{display:flex;align-items:center;gap:9px;background:#140f2c;border:1px solid #3b3168;
+  border-radius:3px;padding:7px 9px;margin-bottom:5px}
+.wrow img{width:30px;height:30px;image-rendering:pixelated;flex:none}
+.wrow .wmeta{flex:1;min-width:0}
+.wrow .wt{font-size:11px;font-weight:700}
+.wrow .wd{font-size:10px;color:var(--ink-dim)}
+.pips{display:flex;gap:3px;flex:none}
+.pip{width:8px;height:8px;background:#2a2350;border:1px solid #4b3f80;border-radius:1px}
+.pip.on{background:var(--gold);border-color:#ffe9a8;box-shadow:0 0 6px rgba(255,207,92,.6)}
+.perks{display:flex;flex-wrap:wrap;gap:5px}
+.perk{display:flex;align-items:center;gap:5px;background:#140f2c;border:1px solid #3b3168;border-radius:3px;padding:4px 7px;font-size:10px}
+.perk img{width:16px;height:16px;image-rendering:pixelated}
+.perk b{color:var(--gold);font-size:9px}
+#buildTitle{color:var(--gold);font-size:clamp(13px,3.6vw,16px);font-weight:700;letter-spacing:.05em}
+#sheetPortrait{width:56px;height:56px;image-rendering:pixelated;flex:none;
+  background:#0f0b22;border:2px solid var(--edge);border-radius:3px}
+.codexlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:5px}
+.codexcell{background:#140f2c;border:1px solid #3b3168;border-radius:3px;padding:5px;text-align:center;font-size:9px}
+.codexcell img{width:26px;height:26px;image-rendering:pixelated;display:block;margin:0 auto 3px}
+.codexcell.locked{opacity:.35;filter:grayscale(1)}
+.codexcell b{display:block;color:var(--ink);font-size:9px}
+.codexcell span{color:var(--ink-dim);font-size:8px}
+
+/* ---------- leaderboard ---------- */
+.tabs{display:flex;gap:5px;margin-bottom:10px}
+.tab{flex:1;padding:9px 6px;min-height:40px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.08em;
+  background:#1c1638;border:2px solid var(--edge);border-radius:3px;color:var(--ink-dim);cursor:pointer;text-transform:uppercase}
+.tab.on{background:linear-gradient(180deg,#3b2f6e,#241a44);color:var(--gold);border-color:var(--gold)}
+.lbrow{display:flex;align-items:center;gap:8px;background:#140f2c;border:1px solid #3b3168;
+  border-radius:3px;padding:7px 9px;margin-bottom:4px;font-size:11px}
+.lbrow.me{border-color:var(--gold);background:#231a3c;box-shadow:0 0 14px rgba(255,207,92,.20)}
+.lbrank{width:26px;font-weight:700;color:var(--gold);flex:none}
+.lbname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lblvl{color:var(--sp);flex:none;font-size:10px}
+.lbxp{color:var(--gold);font-weight:700;flex:none;min-width:62px;text-align:right}
+.note{background:#140f2c;border-left:3px solid var(--edge);padding:8px 10px;font-size:10px;color:var(--ink-dim);
+  line-height:1.6;border-radius:2px;margin:8px 0}
+.note b{color:var(--ink)}
+code{background:#0f0b22;border:1px solid #3b3168;padding:1px 4px;border-radius:2px;font-size:10px;color:var(--sp);
+  word-break:break-all}
+#runCode{width:100%;font-size:10px;padding:8px;background:#0f0b22;border:1px solid #3b3168;color:var(--sp);
+  border-radius:2px;word-break:break-all;max-height:74px;overflow:auto;line-height:1.5}
+.statusdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#6b6088;margin-right:5px}
+.statusdot.ok{background:var(--good);box-shadow:0 0 6px var(--good)}
+.statusdot.err{background:var(--bad);box-shadow:0 0 6px var(--bad)}
+
+/* ---------- run end ---------- */
+#gameover .sheetwrap{width:min(520px,96vw);text-align:center}
+#goTitle{font-size:clamp(20px,6vw,34px);color:#ff8a90;text-shadow:0 3px 0 #5a0f18,0 0 24px rgba(255,90,102,.4);margin-bottom:2px}
+#goSub{color:var(--ink-dim);margin-bottom:12px;font-size:11px}
+.bigstat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.bigstat > div{background:#140f2c;border:1px solid #3b3168;border-radius:3px;padding:9px}
+.bigstat .v{font-size:clamp(17px,5.4vw,26px);font-weight:700;color:var(--gold);line-height:1.1}
+.bigstat .k{font-size:9px;letter-spacing:.16em;color:var(--ink-dim);text-transform:uppercase}
+
+#fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:60;transition:opacity .4s}
+#rot{position:absolute;inset:0;display:none;place-items:center;background:#05060c;z-index:70;text-align:center;padding:20px}
+@media (max-height:430px) and (orientation:landscape){
+  #stick{width:106px;height:106px}#knob{width:46px;height:46px;margin:-23px 0 0 -23px}
+  #bAtk{width:76px;height:76px}#bDash{width:54px;height:54px;right:80px}#bSwap{width:44px;height:44px;bottom:88px}
+}
+@media (prefers-reduced-motion:reduce){.card{animation:none}.tmsg{animation:none}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="view"></canvas>
+
+  <div id="hud">
+    <div id="hudTop">
+      <div id="bars">
+        <div class="bar"><i id="hpFill"></i><u id="hpGhost"></u><span id="hpTxt">20 / 20</span></div>
+        <div class="bar"><i id="spFill"></i><span id="spTxt">30 / 30</span></div>
+        <div class="bar small"><i id="xpFill"></i><span id="xpTxt"></span></div>
+      </div>
+      <div id="hudRight">
+        <div id="topBtns">
+          <button class="iconbtn" id="btnSheet" aria-label="Character sheet"><img id="icoSheet" alt=""></button>
+          <button class="iconbtn" id="btnPause" aria-label="Pause"><img id="icoPause" alt=""></button>
+        </div>
+        <div id="weaponPod">
+          <img id="podIcon" alt="">
+          <div><div class="wname" id="podName">Sword</div><div class="wtier" id="podTier">Tier I</div></div>
+        </div>
+      </div>
+    </div>
+    <div id="lvlBadge" style="position:absolute;left:10px;top:calc(56px + env(safe-area-inset-top,0px))">
+      <span>LV</span><span id="lvlNum">1</span>
+    </div>
+    <div id="comboBox"><span id="comboN">0</span><span id="comboLbl">CHAIN</span></div>
+    <div id="toast"></div>
+    <div id="codexPeek"></div>
+  </div>
+
+  <div id="touch">
+    <div id="stick"><div id="knob"></div></div>
+    <div id="padRight">
+      <div class="tbtn" id="bSwap">SWAP</div>
+      <div class="tbtn" id="bDash">DASH<div class="cdmask" id="dashCd"></div></div>
+      <div class="tbtn" id="bAtk"><img id="atkIcon" alt=""></div>
+    </div>
+  </div>
+
+  <!-- Title -->
+  <div class="overlay on" id="titleScreen">
+    <div class="panel sheetwrap">
+      <img id="titleArt" alt="Phantasy Codex Adventure">
+      <h1>PHANTASY CODEX</h1>
+      <p class="tagline">— ADVENTURE —</p>
+      <p style="margin:0 0 12px">A wandering world, endless monsters, and a codex that
+      remembers every beast you fell. How far can one blade carry you?</p>
+      <div class="row"><button class="btn wide" id="btnStart">Begin Adventure</button></div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn sec grow" id="btnBoard">Leaderboard</button>
+        <button class="btn sec grow" id="btnHowto">How to Play</button>
+      </div>
+      <div class="keycaps" id="kcaps">
+        <span class="kc"><b>WASD</b> move</span><span class="kc"><b>J</b>/<b>Space</b> attack</span>
+        <span class="kc"><b>K</b>/<b>Shift</b> dash</span><span class="kc"><b>1 2 3</b> weapon</span>
+        <span class="kc"><b>Tab</b> codex</span><span class="kc"><b>Esc</b> pause</span>
+      </div>
+      <p style="margin-top:10px"><small id="bestLine"></small></p>
+    </div>
+  </div>
+
+  <!-- How to play -->
+  <div class="overlay" id="howto">
+    <div class="panel sheetwrap">
+      <h1>How to Play</h1>
+      <h3>Movement &amp; Combat</h3>
+      <p>Roam the wilds and strike with three weapons. <b>Sword</b> sweeps a fast arc,
+      <b>Spear</b> thrusts far and pierces, <b>Wand</b> hurls seeking bolts. Attacks and dashes
+      burn <b style="color:var(--sp)">stamina</b> — it refills quickly when you hold back.</p>
+      <h3>Monsters</h3>
+      <p><b>Passive</b> creatures wander harmlessly, but strike one and its whole temper turns.
+      <b>Aggressive</b> beasts hunt you on sight. <b>Elites</b> wear crowns, hit hard, and pay well.</p>
+      <h3>Growing Stronger</h3>
+      <p>Every kill feeds XP. Level up to pick one of three <b style="color:var(--gold)">boons</b>.
+      Find <b>obelisks</b> to temper a weapon a full tier, and <b>shrines</b> to heal.
+      Chain kills quickly for an XP multiplier.</p>
+      <h3>The Codex</h3>
+      <p>Open the codex to read your build, stats, and every beast recorded so far.</p>
+      <div class="row"><button class="btn wide" id="btnHowtoBack">Back</button></div>
+    </div>
+  </div>
+
+  <!-- Level up -->
+  <div class="overlay" id="levelup">
+    <div class="sheetwrap">
+      <h1 id="luTitle">LEVEL 2</h1>
+      <p class="tagline" id="luSub">Choose a boon</p>
+      <div id="cards"></div>
+      <button class="btn sec" id="btnReroll">Reroll (0)</button>
+    </div>
+  </div>
+
+  <!-- Character sheet -->
+  <div class="overlay" id="sheet">
+    <div class="panel sheetwrap">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:6px">
+        <img id="sheetPortrait" alt="">
+        <div style="min-width:0">
+          <div id="buildTitle">Novice Wayfarer</div>
+          <small id="sheetSub">Level 1 · 0 XP</small>
+          <div class="bar small" style="margin-top:6px"><i id="sxpFill"></i><span id="sxpTxt"></span></div>
+        </div>
+      </div>
+      <h3>Vitals &amp; Offense</h3>
+      <div class="statgrid" id="sheetStats"></div>
+      <h3>Arsenal</h3>
+      <div id="sheetWeapons"></div>
+      <h3>Boons</h3>
+      <div class="perks" id="sheetPerks"><small>None yet — level up to earn boons.</small></div>
+      <h3>Run Record</h3>
+      <div class="statgrid" id="sheetRun"></div>
+      <h3>Bestiary Codex</h3>
+      <div class="codexlist" id="sheetCodex"></div>
+      <div class="row" style="margin-top:14px"><button class="btn wide" id="btnSheetBack">Close</button></div>
+    </div>
+  </div>
+
+  <!-- Pause -->
+  <div class="overlay" id="pause">
+    <div class="panel sheetwrap" style="width:min(400px,92vw);text-align:center">
+      <h1>Paused</h1>
+      <div class="row" style="flex-direction:column;margin-top:10px">
+        <button class="btn wide" id="btnResume">Resume</button>
+        <button class="btn sec wide" id="btnPauseSheet">Codex</button>
+        <button class="btn sec wide" id="btnPauseBoard">Leaderboard</button>
+        <button class="btn sec wide" id="btnSound">Sound: On</button>
+        <button class="btn sec wide" id="btnQuit">Abandon Run</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game over -->
+  <div class="overlay" id="gameover">
+    <div class="panel sheetwrap">
+      <div id="goTitle">YOU FELL</div>
+      <div id="goSub">The codex closes… for now.</div>
+      <div class="bigstat">
+        <div><div class="v" id="goLvl">1</div><div class="k">Level</div></div>
+        <div><div class="v" id="goXp">0</div><div class="k">Total XP</div></div>
+        <div><div class="v" id="goKills">0</div><div class="k">Monsters</div></div>
+        <div><div class="v" id="goTime">0:00</div><div class="k">Survived</div></div>
+      </div>
+      <p style="margin:2px 0 8px"><small id="goBuild"></small></p>
+      <div id="goPublish">
+        <h3>Publish to the shared leaderboard</h3>
+        <div class="row tight">
+          <input type="text" id="goName" class="grow" maxlength="14" placeholder="Adventurer name" autocomplete="off">
+          <button class="btn" id="btnPublish">Publish</button>
+        </div>
+        <p style="margin:6px 0 0"><small id="pubStatus"><span class="statusdot"></span>Not published yet.</small></p>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn grow" id="btnRetry">New Run</button>
+        <button class="btn sec grow" id="btnGoBoard">Leaderboard</button>
+      </div>
+      <div class="row" style="margin-top:6px"><button class="btn sec wide" id="btnGoTitle">Title Screen</button></div>
+    </div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="overlay" id="board">
+    <div class="panel sheetwrap">
+      <h1>Leaderboard</h1>
+      <div class="tabs">
+        <div class="tab on" data-tab="global">Shared</div>
+        <div class="tab" data-tab="local">This Device</div>
+        <div class="tab" data-tab="setup">Setup</div>
+      </div>
+      <div id="tabGlobal">
+        <div id="globalList"></div>
+        <p style="margin-top:8px"><small id="globalStatus"></small></p>
+        <div class="row" style="margin-top:6px"><button class="btn sec wide" id="btnRefresh">Refresh</button></div>
+      </div>
+      <div id="tabLocal" style="display:none"><div id="localList"></div></div>
+      <div id="tabSetup" style="display:none">
+        <div class="note">
+          <b>Shared leaderboard endpoint.</b> This game publishes each finished run's
+          <b>level</b> and <b>total XP</b> to an HTTPS endpoint you control — for example a
+          ChatGPT Sites page (or any small JSON service) that stores and serves scores.
+          Leave it blank to keep scores on this device only.
+        </div>
+        <p style="margin:8px 0 4px"><small>Endpoint URL</small></p>
+        <input type="url" id="epUrl" placeholder="https://your-site.example/api/scores" autocomplete="off">
+        <p style="margin:8px 0 4px"><small>Board name (groups runs from the same board)</small></p>
+        <input type="text" id="epRoom" placeholder="phantasy-codex" maxlength="40" autocomplete="off">
+        <div class="row" style="margin-top:10px">
+          <button class="btn grow" id="btnSaveEp">Save</button>
+          <button class="btn sec grow" id="btnTestEp">Test</button>
+        </div>
+        <p style="margin-top:8px"><small id="epStatus"><span class="statusdot"></span>No endpoint configured.</small></p>
+        <div class="note" id="epContract"></div>
+        <h3>Run code</h3>
+        <p><small>If you cannot host an endpoint, copy this code and paste it into any shared
+        page — it encodes your latest run's level and total XP.</small></p>
+        <div id="runCode">—</div>
+        <div class="row" style="margin-top:6px"><button class="btn sec wide" id="btnCopyCode">Copy run code</button></div>
+      </div>
+      <div class="row" style="margin-top:14px"><button class="btn wide" id="btnBoardBack">Back</button></div>
+    </div>
+  </div>
+
+  <div id="fade"></div>
+  <div id="rot"><div><h2>Rotate or resize</h2><p>The window is too small to adventure in.</p></div></div>
+</div>
+<script>
+"use strict";
