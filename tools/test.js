@@ -82,7 +82,22 @@ pump(4000);
 const told = chat.some((m) => m.includes("Build failed")) && chat.some((m) => m.includes("Cheats"));
 check("blocked commands produce a clear message", told, chat.filter(m=>m.includes("Build")||m.includes("Cheats")).join(" ").slice(0,110));
 
-// 7. a non-tool item is ignored
+// 7. /scriptevent lux:status reports the scripts are alive
+const p8 = mkPlayer("p8"); players.push(p8);
+reset();
+system.afterEvents.scriptEventReceive.emit({ id: "lux:status", sourceEntity: p8 });
+pump(5);
+check("lux:status reports wiring", chat.some((m) => m.includes("scripts are running")) && chat.some((m) => m.includes("itemUse")),
+  chat.find((m) => m.includes("Event routes")) ?? "no wiring line");
+
+// 8. joining announces itself, so silence means scripts never loaded
+const p9 = mkPlayer("p9"); players.push(p9);
+reset();
+world.afterEvents.playerSpawn.emit({ player: p9, initialSpawn: true });
+pump(5);
+check("join greeting is sent", chat.some((m) => m.includes("Luxury Tech House")), `${chat.length} chat lines`);
+
+// 9. a non-tool item is ignored
 const p7 = mkPlayer("p7"); players.push(p7);
 reset();
 world.afterEvents.itemUse.emit({ source: p7, itemStack: { typeId: "minecraft:diamond_sword" } });

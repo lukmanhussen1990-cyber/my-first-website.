@@ -300,14 +300,40 @@ safe(() =>
   })
 );
 
-/* Last-resort manual trigger: /scriptevent lux:build */
+/**
+ * Which of the event routes this engine actually handed us. When the Builder
+ * appears to do nothing, this is the difference between "the scripts never
+ * loaded" and "they loaded but your tap arrives on a channel that isn't here",
+ * which is not something a player can otherwise tell apart.
+ */
+function wiring() {
+  const has = (path) => (safe(path, undefined) ? "yes" : "no");
+  return [
+    `itemUse: ${has(() => world.afterEvents.itemUse)}`,
+    `itemUseOn: ${has(() => world.afterEvents.itemUseOn)}`,
+    `interactWithBlock: ${has(() => world.beforeEvents.playerInteractWithBlock)}`,
+    `buttonPush: ${has(() => world.afterEvents.buttonPush)}`,
+  ].join(", ");
+}
+
+/* Manual triggers, for when the tools themselves are not getting through:
+ *   /scriptevent lux:build    build the estate right where you stand
+ *   /scriptevent lux:status   confirm the scripts are alive and report wiring */
 safe(() =>
   system.afterEvents.scriptEventReceive.subscribe((event) => {
     safe(() => {
-      if (event.id !== "lux:build") return;
       const player = event.sourceEntity;
       if (player?.typeId !== "minecraft:player") return;
-      tryBuild(player);
+      if (event.id === "lux:build") {
+        tryBuild(player);
+        return;
+      }
+      if (event.id === "lux:status") {
+        say(player, "§a§lLuxury Tech House scripts are running.");
+        say(player, `§7Event routes - §f${wiring()}`);
+        say(player, `§7Estate loaded: §f${estate ? "yes" : "no"}`);
+        say(player, "§7Tap the ground with the Builder, or run §f/scriptevent lux:build§7.");
+      }
     });
   })
 );
@@ -356,18 +382,26 @@ safe(() =>
   })
 );
 
+/* Greeted once per player per session. It doubles as the "are the scripts even
+ * running?" signal: no message on joining means the script module never
+ * loaded, which looks identical to a dead item from inside the game. */
+const greeted = new Set();
+
 safe(() =>
   world.afterEvents.playerSpawn.subscribe((event) => {
     safe(() => {
       ensurePalette();
       restore();
-      if (!event.initialSpawn) return;
+      const player = event.player;
+      if (greeted.has(player.id)) return;
+      greeted.add(player.id);
       say(
-        event.player,
+        player,
         "§b§lLuxury Tech House §r§7loaded. Grab the §bLuxury Tech House Builder§7 " +
           "from the creative inventory (Construction tab) and tap the ground with it " +
           "on a flat, open area."
       );
+      say(player, "§8Not working? Run §7/scriptevent lux:status§8 to check.");
     });
   })
 );
