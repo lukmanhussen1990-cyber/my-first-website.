@@ -20,10 +20,18 @@ appearing to do nothing.
 Minecraft Bedrock **1.21.0** or newer, including the 1.21.0 beta. No
 experimental toggles are needed.
 
-`min_engine_version` is pinned to 1.21.0 and the script modules to the versions
-that ship with it (`@minecraft/server` 1.11.0, `@minecraft/server-ui` 1.2.0).
-Raising either is what makes Minecraft reject the pack with a bare "failed to
-import", so `build.sh` fails the build if anything drifts above the target.
+`min_engine_version` is pinned to 1.21.0. The script modules ask for the
+*lowest* releases that contain every API the add-on touches — `@minecraft/server`
+1.7.0 and `@minecraft/server-ui` 1.0.0 — rather than the newest. Minecraft
+fulfils a minor-version dependency with any higher minor in the same major, so
+asking low is what makes the pack work across the widest range of builds;
+asking for a version the running game does not have makes the script module
+silently fail to load while the items still register. `build.sh` fails the
+build if `min_engine_version` or an item `format_version` drifts above the
+target.
+
+Items use `format_version` 1.20.50 with `"minecraft:icon": {"texture": ...}`,
+which is exactly what Mojang's own behaviour pack ships inside 1.21.0.
 
 ## Fixes in this branch
 
@@ -66,6 +74,15 @@ The icon is now written in the shape 1.21.0 actually reads:
    queue now counts successes and failures, and the Builder reports "none of the
    block commands were allowed to run" with the fix, or a partial-failure
    warning when only some commands are rejected.
+
+## Updating an installed copy
+
+Minecraft keys an installed pack on uuid **and** version, and a re-import that
+matches both leaves the copy already on disk untouched — a fixed pack then
+behaves exactly like the broken one. Every release that needs to reach an
+existing install must bump `version` in both manifests, and the behaviour
+pack's dependency entry has to track the resource pack's new version.
+`build.sh` fails the build if those two disagree.
 
 ## Layout
 

@@ -45,6 +45,20 @@ for item in sorted(root.glob("src/*/items/*.json")):
               f"{version} cannot parse - use {{'texture': ...}}", file=sys.stderr)
         bad = True
 
+# Minecraft keys an installed pack on uuid + version and will happily keep the
+# copy it already has when a re-import matches both, so a fix can look like it
+# changed nothing. The version has to move for an update to actually land, and
+# the behaviour pack's dependency has to track the resource pack's new version.
+rp = json.load(open(root / "src/luxury_tech_house_rp/manifest.json"))
+bp = json.load(open(root / "src/luxury_tech_house_bp/manifest.json"))
+rp_uuid, rp_version = rp["header"]["uuid"], rp["header"]["version"]
+
+for dep in bp["dependencies"]:
+    if dep.get("uuid") == rp_uuid and dep["version"] != rp_version:
+        print(f"behaviour pack depends on resource pack {dep['version']}, "
+              f"but the resource pack is {rp_version}", file=sys.stderr)
+        bad = True
+
 sys.exit(1 if bad else 0)
 PY
 
