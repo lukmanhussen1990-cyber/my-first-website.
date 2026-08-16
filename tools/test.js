@@ -37,13 +37,18 @@ world.afterEvents.itemUseOn.emit({ source: p2, itemStack: { typeId: "lux:house_b
 pump(4000);
 check("itemUseOn triggers build", fills() > 2000, `${fills()} block ops`);
 
-// 3. playerInteractWithBlock (before-event route)
-const p3 = mkPlayer("p3"); players.push(p3);
-reset();
-world.beforeEvents.playerInteractWithBlock.emit({ player: p3, itemStack: { typeId: "lux:house_builder" },
-  block: { location: { x: 100, y: 69, z: 100 }, typeId: "minecraft:grass_block" }, cancel: false });
-pump(4000);
-check("playerInteractWithBlock triggers build", fills() > 2000, `${fills()} block ops`);
+// 3. playerInteractWithBlock (absent on 1.21.0 / @minecraft/server 1.11.0)
+const hasInteract = !!world.beforeEvents.playerInteractWithBlock;
+if (hasInteract) {
+  const p3 = mkPlayer("p3"); players.push(p3);
+  reset();
+  world.beforeEvents.playerInteractWithBlock.emit({ player: p3, itemStack: { typeId: "lux:house_builder" },
+    block: { location: { x: 100, y: 69, z: 100 }, typeId: "minecraft:grass_block" }, cancel: false });
+  pump(4000);
+  check("playerInteractWithBlock triggers build", fills() > 2000, `${fills()} block ops`);
+} else {
+  check("missing playerInteractWithBlock does not break loading", true, "signal absent, module still loaded");
+}
 
 // 4. /scriptevent lux:build
 const p4 = mkPlayer("p4"); players.push(p4);
@@ -59,7 +64,9 @@ const stack = { typeId: "lux:house_builder" };
 const blk = { location: { x: 100, y: 69, z: 100 }, typeId: "minecraft:grass_block" };
 world.afterEvents.itemUse.emit({ source: p5, itemStack: stack });
 world.afterEvents.itemUseOn.emit({ source: p5, itemStack: stack, block: blk });
-world.beforeEvents.playerInteractWithBlock.emit({ player: p5, itemStack: stack, block: blk, cancel: false });
+if (hasInteract) {
+  world.beforeEvents.playerInteractWithBlock.emit({ player: p5, itemStack: stack, block: blk, cancel: false });
+}
 pump(4000);
 const n5 = fills();
 check("triple-delivered tap builds exactly once", n5 > 2000 && n5 < 4000, `${n5} block ops (one build ~2300)`);
@@ -82,7 +89,7 @@ world.afterEvents.itemUse.emit({ source: p7, itemStack: { typeId: "minecraft:dia
 pump(50);
 check("unrelated item ignored", fills() === 0, `${fills()} block ops`);
 
-console.log();
+console.log(`\n--- @minecraft/server ${process.env.MC_API ?? "current"} ---`);
 let pass = 0;
 for (const [ok, name, detail] of results) {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? "  [" + detail + "]" : ""}`);

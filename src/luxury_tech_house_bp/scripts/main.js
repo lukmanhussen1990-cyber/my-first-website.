@@ -324,6 +324,14 @@ safe(() =>
   })
 );
 
+/*
+ * playerInteractWithBlock does not exist in @minecraft/server 1.11.0, which is
+ * the version 1.21.0 ships. The safe() wrapper turns that into a no-op instead
+ * of a load error, and the route lights up by itself on an engine that has it.
+ * Until then the hidden triggers (lectern, flower pot, lodestone) are inert -
+ * every one of them has a physical button nearby, and the Tech Remote's
+ * Concealed Systems panel drives all of them, so nothing is unreachable.
+ */
 safe(() =>
   world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
     /* Tools win over estate triggers, and over whatever the block itself would
