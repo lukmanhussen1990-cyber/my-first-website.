@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Goku Ultra Instinct — Super Saiyan Bros.</title>
+<style>
+  :root{
+    --bg:#05060f;
+    --ink:#e8ecff;
+    --silver:#dfe7f5;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:
+      radial-gradient(1200px 800px at 50% -10%, #16204a 0%, #070a18 55%, #04050c 100%);
+    color:var(--ink);
+    font-family:"Trebuchet MS",Verdana,system-ui,sans-serif;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;padding:12px;overflow:hidden;
+    -webkit-user-select:none;user-select:none;touch-action:manipulation;
+  }
+  #wrap{position:relative;width:min(100%,1024px);}
+  canvas{
+    display:block;width:100%;height:auto;
+    background:#7fd4ff;
+    border-radius:10px;
+    border:2px solid rgba(190,215,255,.35);
+    box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 18px 60px rgba(60,120,255,.25), inset 0 0 60px rgba(0,0,0,.2);
+    image-rendering:auto;
+  }
+  #hint{
+    font-size:12.5px;letter-spacing:.4px;color:#9fb0d8;text-align:center;
+    line-height:1.7;max-width:1024px;
+  }
+  #hint b{color:var(--silver)}
+  kbd{
+    background:#131a33;border:1px solid #33406e;border-bottom-width:2px;border-radius:5px;
+    padding:1px 6px;font-family:inherit;font-size:11.5px;color:#cfe0ff;
+  }
+  /* touch controls */
+  #touch{position:absolute;inset:0;display:none;pointer-events:none}
+  .tbtn{
+    position:absolute;pointer-events:auto;
+    width:15%;aspect-ratio:1;border-radius:50%;
+    background:rgba(220,235,255,.13);border:2px solid rgba(220,235,255,.35);
+    color:#eaf2ff;font-size:min(4vw,20px);font-weight:bold;
+    display:flex;align-items:center;justify-content:center;
+    backdrop-filter:blur(2px);
+  }
+  .tbtn:active{background:rgba(220,235,255,.32)}
+  #tL{left:2%;bottom:6%} #tR{left:19%;bottom:6%}
+  #tA{right:2%;bottom:6%} #tB{right:19%;bottom:6%} #tU{right:11%;bottom:32%}
+  body.touch #touch{display:block}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="960" height="540"></canvas>
+  <div id="touch">
+    <div class="tbtn" id="tL">◀</div>
+    <div class="tbtn" id="tR">▶</div>
+    <div class="tbtn" id="tA">JUMP</div>
+    <div class="tbtn" id="tB">KI</div>
+    <div class="tbtn" id="tU">UI</div>
+  </div>
+</div>
+<div id="hint">
+  <b>Move</b> <kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd> &nbsp;·&nbsp;
+  <b>Jump</b> <kbd>Space</kbd> / <kbd>W</kbd> / <kbd>↑</kbd> (hold for height) &nbsp;·&nbsp;
+  <b>Ki Blast</b> <kbd>J</kbd> / <kbd>X</kbd> (hold to charge a Kamehameha) &nbsp;·&nbsp;
+  <b>Ultra Instinct</b> <kbd>Shift</kbd> when the gauge is full &nbsp;·&nbsp;
+  <b>Pause</b> <kbd>P</kbd> &nbsp;·&nbsp; <b>Restart</b> <kbd>R</kbd>
+</div>
+
+<script>
+"use strict";
+/* ============================================================================
+   GOKU ULTRA INSTINCT — SUPER SAIYAN BROS.
+   A single-file Mario-style platformer.
+   ========================================================================= */
+
+const cvs = document.getElementById("game");
+const ctx = cvs.getContext("2d");
+const VW = cvs.width, VH = cvs.height;
+const TILE = 36;
+
+/* ---------------------------------------------------------------- level ---- */
+/* Chunks are 20 columns wide, 15 rows tall, stitched left-to-right.
+   #  solid ground       =  floating platform     P  pipe
+   B  brick              ?  item block            u  used block
+   o  dragon ball        s  saibaman              f  frieza soldier
+   G  Shenron portal (goal)                                              */
+const CHUNKS = [
+  [ // A — landing zone
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "          o o o     ",
+    "                    ",
+    "        B ? B       ",
+    "                    ",
+    "                    ",
+    "####################",
+    "####################",
+  ],
+  [ // B — first bricks
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "     o o o o        ",
+    "                    ",
+    "    B B ? B B       ",
+    "                    ",
+    "                    ",
+    "               s    ",
+    "####################",
+    "####################",
+  ],
+  [ // C — pipes and the first pit
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "        ?           ",
+    "                    ",
+    "   PP               ",
+    "   PP      s        ",
+    "###########   ######",
+    "###########   ######",
+  ],
+  [ // D — floating ledges
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "        o o         ",
+    "                    ",
+    "       =====        ",
+    "                    ",
+    "  ===          ===  ",
+    "                    ",
+    "                    ",
+    "      f        s    ",
+    "####################",
+    "####################",
+  ],
+  [ // E — brick roof
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "            o o o   ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "   BBB?BBB          ",
+    "                    ",
+    "              ===   ",
+    "                    ",
+    "    s      f        ",
+    "####################",
+    "####################",
+  ],
+  [ // F — the long jump
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "      o      o      ",
+    "     ===    ===     ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "               s    ",
+    "#####      #########",
+    "#####      #########",
+  ],
+  [ // G — sky ledges + patrol
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "    o o             ",
+    "   ====             ",
+    "           o o      ",
+    "          ====      ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "  f          s   f  ",
+    "####################",
+    "####################",
+  ],
+  [ // H — pipe gauntlet
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "        ? ?         ",
+    "     PP      PP     ",
+    "     PP      PP     ",
+    "     PP  s   PP     ",
+    "####################",
+    "####################",
+  ],
+  [ // I — the abyss
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "    o     o     o   ",
+    "   ===   ===   ===  ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                f   ",
+    "##            ######",
+    "##            ######",
+  ],
+  [ // J — staircase
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "     o o o          ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "           #        ",
+    "          ##        ",
+    "         ###        ",
+    "  s     ####        ",
+    "####################",
+    "####################",
+  ],
+  [ // K — Shenron's portal
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "      o o o o       ",
+    "                    ",
+    "                    ",
+    "                    ",
+    "          G         ",
+    "####################",
+    "####################",
+  ],
+];
+
+const ROWS = 15;
+const COLS = CHUNKS.length * 20;
+const LEVEL_W = COLS * TILE;
+const LEVEL_H = ROWS * TILE;
+
+// Stitch chunks into one mutable grid of characters.
+const grid = [];
+for (let r = 0; r < ROWS; r++) {
+  let line = "";
+  for (const ch of CHUNKS) line += (ch[r] || "").padEnd(20, " ");
+  grid.push(line.split(""));
+}
+
+const SOLID = new Set(["#", "=", "P", "B", "?", "u"]);
+function tileChar(c, r) {
+  if (c < 0 || c >= COLS) return "#";        // invisible walls at the edges
+  if (r < 0 || r >= ROWS) return " ";        // open sky above, open pit below
+  return grid[r][c];
+}
+const isSolid = (c, r) => SOLID.has(tileChar(c, r));
+
+/* ---------------------------------------------------------------- audio ---- */
+const Sound = (() => {
+  let ac = null, master = null, on = true;
+  function ensure() {
+    if (ac) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { on = false; return; }
+    ac = new AC();
+    master = ac.createGain();
+    master.gain.value = 0.22;
+    master.connect(ac.destination);
+  }
+  function tone(freq, dur, type = "square", vol = 1, slideTo = null) {
+    if (!on) return;
+    ensure(); if (!ac) return;
+    if (ac.state === "suspended") ac.resume();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, ac.currentTime);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), ac.currentTime + dur);
+    g.gain.setValueAtTime(0.0001, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(vol, ac.currentTime + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+    o.connect(g); g.connect(master);
+    o.start(); o.stop(ac.currentTime + dur + 0.02);
+  }
+  function noise(dur, vol = 0.5) {
+    if (!on) return;
+    ensure(); if (!ac) return;
+    const n = Math.floor(ac.sampleRate * dur);
+    const buf = ac.createBuffer(1, n, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const g = ac.createGain(); g.gain.value = vol;
+    src.connect(g); g.connect(master); src.start();
+  }
+  return {
+    unlock: ensure,
+    jump:    () => tone(420, 0.16, "square", 0.5, 780),
+    coin:    () => { tone(1050, 0.07, "square", 0.4); setTimeout(() => tone(1580, 0.14, "square", 0.4), 70); },
+    stomp:   () => tone(240, 0.1, "square", 0.5, 90),
+    blast:   () => tone(700, 0.12, "sawtooth", 0.35, 200),
+    kame:    () => { tone(140, 0.55, "sawtooth", 0.45, 900); noise(0.5, 0.35); },
+    charge:  () => tone(320, 0.2, "triangle", 0.25, 620),
+    hurt:    () => tone(300, 0.35, "sawtooth", 0.5, 70),
+    die:     () => { tone(520, 0.15, "square", .5, 400); setTimeout(() => tone(300, 0.5, "square", .5, 80), 160); },
+    power:   () => { [523, 659, 784, 1046, 1318].forEach((f, i) => setTimeout(() => tone(f, 0.18, "square", 0.45), i * 70)); },
+    brick:   () => noise(0.18, 0.5),
+    bump:    () => tone(180, 0.07, "square", 0.4),
+    win:     () => { [523, 659, 784, 1046, 784, 1046, 1318].forEach((f, i) => setTimeout(() => tone(f, 0.22, "square", 0.5), i * 130)); },
+    toggle:  () => { on = !on; return on; },
+    get enabled() { return on; }
+  };
+})();
+
+/* ---------------------------------------------------------------- input ---- */
+const keys = Object.create(null);
+const pressed = Object.create(null);       // edge-triggered, cleared each frame
+const CODE_MAP = {
+  ArrowLeft: "left", KeyA: "left",
+  ArrowRight: "right", KeyD: "right",
+  ArrowUp: "jump", KeyW: "jump", Space: "jump",
+  ArrowDown: "down", KeyS: "down",
+  KeyJ: "fire", KeyX: "fire",
+  ShiftLeft: "ui", ShiftRight: "ui", KeyE: "ui",
+  KeyP: "pause", Enter: "start", KeyR: "restart", KeyM: "mute",
+};
+addEventListener("keydown", e => {
+  const a = CODE_MAP[e.code];
+  if (!a) return;
+  e.preventDefault();
+  if (!keys[a]) pressed[a] = true;
+  keys[a] = true;
+  Sound.unlock();
+});
+addEventListener("keyup", e => {
+  const a = CODE_MAP[e.code];
+  if (!a) return;
+  e.preventDefault();
+  keys[a] = false;
+});
+addEventListener("blur", () => { for (const k in keys) keys[k] = false; });
+
+// Touch controls
+if (matchMedia("(hover: none)").matches || "ontouchstart" in window) {
+  document.body.classList.add("touch");
+}
+function bindTouch(id, action) {
+  const el = document.getElementById(id);
+  const down = e => { e.preventDefault(); if (!keys[action]) pressed[action] = true; keys[action] = true; Sound.unlock(); };
+  const up = e => { e.preventDefault(); keys[action] = false; };
+  el.addEventListener("touchstart", down, { passive: false });
+  el.addEventListener("touchend", up, { passive: false });
+  el.addEventListener("touchcancel", up, { passive: false });
+  el.addEventListener("mousedown", down);
+  addEventListener("mouseup", up);
+}
+bindTouch("tL", "left"); bindTouch("tR", "right");
+bindTouch("tA", "jump"); bindTouch("tB", "fire"); bindTouch("tU", "ui");
+cvs.addEventListener("pointerdown", () => { Sound.unlock(); if (game.state === "title" || game.state === "over" || game.state === "win") pressed.start = true; });
+
+/* ------------------------------------------------------------- entities ---- */
+const GRAVITY = 0.86;
+const MAX_FALL = 17;
+const ACCEL = 0.78;
+const FRICTION = 0.80;
+const AIR_FRICTION = 0.93;
+const MAX_RUN = 5.3;
+const MAX_RUN_UI = 8.0;
+const JUMP_V = -16.0;
+const JUMP_V_UI = -17.4;
+const UI_DURATION = 60 * 14;               // 14 seconds of Ultra Instinct
+const SPAWN = { x: 3 * TILE, y: 10 * TILE };
+
+const player = {
+  x: 0, y: 0, w: 24, h: 40, vx: 0, vy: 0,
+  facing: 1, onGround: false, coyote: 0, jumpBuf: 0, jumpHeld: false, doubleJump: false,
+  ki: 100, charge: 0, fireCool: 0,
+  uiGauge: 0, uiTimer: 0, invuln: 0,
+  runFrame: 0, dodgeOffset: 0, dead: false, deadTimer: 0,
+  get ui() { return this.uiTimer > 0; },
+};
+
+const game = {
+  state: "title",                          // title | play | dying | over | win | paused
+  lives: 3, score: 0, balls: 0, time: 400, timeAcc: 0,
+  camX: 0, checkpoint: { ...SPAWN },
+  shake: 0, flash: 0, slowmo: 0, transition: 0, best: 0,
+};
+
+let enemies = [], blasts = [], particles = [], pops = [], afterimages = [], bumps = [];
+
+/* --------------------------------------------------------------- helpers --- */
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const overlap = (a, b) =>
+  a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+
+function spawnParticles(x, y, n, color, opts = {}) {
+  const spd = opts.speed || 4, life = opts.life || 34, size = opts.size || 3;
+  for (let i = 0; i < n; i++) {
+    particles.push({
+      x, y, vx: rnd(-spd, spd), vy: rnd(-spd, spd * 0.6),
+      g: opts.g === undefined ? 0.22 : opts.g,
+      life, max: life, color, size: rnd(size * 0.5, size),
+    });
+  }
+}
+function popText(x, y, text, color = "#ffe9a8") {
+  pops.push({ x, y, text, color, life: 52 });
+}
+
+/* --------------------------------------------------------------- enemies --- */
+const ENEMY_KINDS = {
+  s: { w: 26, h: 26, speed: 1.15, hp: 1, score: 100, kind: "saibaman" },
+  f: { w: 26, h: 34, speed: 1.9, hp: 2, score: 200, kind: "soldier" },
+};
+
+function buildLevel() {
+  enemies = []; blasts = []; particles = []; pops = []; afterimages = []; bumps = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const ch = grid[r][c];
+      const def = ENEMY_KINDS[ch];
+      if (def) {
+        enemies.push({
+          ...def,
+          x: c * TILE + (TILE - def.w) / 2,
+          y: r * TILE + (TILE - def.h),
+          vx: -def.speed, vy: 0, dead: false, deadTimer: 0,
+          frame: rnd(0, 20), hurt: 0, homeC: c, active: false,
+        });
+      }
+    }
+  }
+}
+
+/* -------------------------------------------------------------- collision -- */
+function collideX(e) {
+  e.x += e.vx;
+  const top = Math.floor(e.y / TILE), bot = Math.floor((e.y + e.h - 1) / TILE);
+  if (e.vx > 0) {
+    const col = Math.floor((e.x + e.w - 1) / TILE);
+    for (let r = top; r <= bot; r++) {
+      if (isSolid(col, r)) { e.x = col * TILE - e.w; e.vx = 0; return true; }
+    }
+  } else if (e.vx < 0) {
+    const col = Math.floor(e.x / TILE);
+    for (let r = top; r <= bot; r++) {
+      if (isSolid(col, r)) { e.x = (col + 1) * TILE; e.vx = 0; return true; }
+    }
+  }
+  return false;
+}
+
+function collideY(e, onBump) {
+  e.y += e.vy;
+  e.onGround = false;
+  const left = Math.floor(e.x / TILE), right = Math.floor((e.x + e.w - 1) / TILE);
+  if (e.vy > 0) {
+    const row = Math.floor((e.y + e.h - 1) / TILE);
+    for (let c = left; c <= right; c++) {
+      if (isSolid(c, row)) { e.y = row * TILE - e.h; e.vy = 0; e.onGround = true; return; }
+    }
+  } else if (e.vy < 0) {
+    const row = Math.floor(e.y / TILE);
+    for (let c = left; c <= right; c++) {
+      if (isSolid(c, row)) {
+        e.y = (row + 1) * TILE; e.vy = 0;
+        if (onBump) onBump(c, row);
+        return;
+      }
+    }
+  }
+}
+
+/* --------------------------------------------------------- block bumping -- */
+function bumpBlock(c, row) {
+  const ch = tileChar(c, row);
+  if (ch === "?") {
+    grid[row][c] = "u";
+    bumps.push({ c, r: row, t: 0 });
+    // 1-in-4 blocks hold a senzu bean; the rest hold dragon balls.
+    if ((c + row) % 4 === 0) {
+      spawnSenzu(c * TILE, row * TILE);
+    } else {
+      collectBall(c * TILE + TILE / 2, row * TILE - 6, true);
+    }
+    Sound.bump();
+  } else if (ch === "B") {
+    bumps.push({ c, r: row, t: 0 });
+    if (player.ui) {                          // UI Goku shatters bricks outright
+      grid[row][c] = " ";
+      spawnParticles(c * TILE + TILE / 2, row * TILE + TILE / 2, 14, "#c9743a", { speed: 5, life: 40 });
+      game.score += 50;
+      Sound.brick();
+    } else {
+      Sound.bump();
+    }
+  } else if (ch === "u" || ch === "#" || ch === "=" || ch === "P") {
+    Sound.bump();
+  }
+}
+
+/* -------------------------------------------------------------- pickups ---- */
+let senzu = [];                              // healing beans popped out of blocks
+
+function spawnSenzu(x, y) {
+  senzu.push({ x: x + 8, y: y - 4, w: 20, h: 20, vy: -6, vx: 1.6, life: 600 });
+  Sound.power();
+  popText(x + 18, y - 10, "SENZU BEAN!", "#9fffa8");
+}
+
+function collectBall(x, y, fromBlock) {
+  game.balls++;
+  game.score += 200;
+  player.uiGauge = clamp(player.uiGauge + 6, 0, 100);
+  spawnParticles(x, y, 8, "#ffcc44", { speed: 3, life: 26, g: -0.02 });
+  popText(x, y, "+200", "#ffd766");
+  Sound.coin();
+  if (game.balls % 7 === 0) {                // every seventh ball = a wish
+    player.uiGauge = 100;
+    popText(x, y - 22, "7 DRAGON BALLS!", "#ff8f3f");
+    game.score += 1000;
+    Sound.power();
+  }
+}
+
+/* -------------------------------------------------------------- attacks ---- */
+function fireBlast(charged) {
+  const power = charged ? 3 : 1;
+  const cost = charged ? 0 : 18;
+  if (!player.ui && player.ki < cost) return;
+  if (!player.ui) player.ki -= cost;
+  const speed = charged ? 15 : 11.5;
+  blasts.push({
+    x: player.x + (player.facing > 0 ? player.w : -12),
+    y: player.y + 14,
+    w: charged ? 30 : 14, h: charged ? 22 : 14,
+    vx: player.facing * speed, life: charged ? 110 : 70,
+    power, pierce: charged, t: 0,
+  });
+  game.shake = Math.max(game.shake, charged ? 10 : 2);
+  if (charged) Sound.kame(); else Sound.blast();
+}
+
+function activateUltraInstinct() {
+  if (player.uiGauge < 100 || player.ui) return;
+  player.uiGauge = 0;
+  player.uiTimer = UI_DURATION;
+  player.invuln = Math.max(player.invuln, 40);
+  game.flash = 1;
+  game.shake = 16;
+  game.slowmo = 70;
+  spawnParticles(player.x + player.w / 2, player.y + player.h / 2, 60, "#dff1ff", { speed: 9, life: 55, g: -0.03, size: 4 });
+  popText(player.x, player.y - 26, "ULTRA INSTINCT", "#dff1ff");
+  Sound.power();
+}
+
+/* --------------------------------------------------------------- damage ---- */
+function hurtPlayer() {
+  if (player.invuln > 0 || player.ui || game.state !== "play") return;
+  player.invuln = 110;
+  player.uiGauge = clamp(player.uiGauge + 22, 0, 100);
+  game.lives--;
+  game.shake = 12;
+  Sound.hurt();
+  if (game.lives < 0) { killPlayer(); return; }
+  player.vy = -8; player.vx = -player.facing * 5;
+  popText(player.x, player.y - 10, "-1", "#ff6b6b");
+}
+
+function killPlayer() {
+  if (game.state !== "play") return;
+  game.state = "dying";
+  player.deadTimer = 0;
+  player.vy = -14;
+  spawnParticles(player.x + player.w / 2, player.y + player.h / 2, 24, "#ffb347", { speed: 6, life: 44 });
+  Sound.die();
+}
+
+function respawn() {
+  if (game.lives < 0) { game.state = "over"; game.best = Math.max(game.best, game.score); return; }
+  player.x = game.checkpoint.x; player.y = game.checkpoint.y;
+  player.vx = player.vy = 0;
+  player.invuln = 90; player.uiTimer = 0; player.ki = 100; player.charge = 0;
+  game.time = 400; game.timeAcc = 0;
+  game.state = "play";
+}
+
+function resetGame() {
+  // Rebuild any blocks / bricks that were consumed on the previous run.
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const src = CHUNKS[Math.floor(c / 20)][r][c % 20] || " ";
+      grid[r][c] = src;
+    }
+  }
+  buildLevel();
+  senzu = [];
+  Object.assign(player, {
+    x: SPAWN.x, y: SPAWN.y, vx: 0, vy: 0, facing: 1, onGround: false,
+    ki: 100, charge: 0, fireCool: 0, uiGauge: 0, uiTimer: 0, invuln: 0,
+    doubleJump: false, runFrame: 0, dodgeOffset: 0,
+  });
+  Object.assign(game, {
+    lives: 3, score: 0, balls: 0, time: 400, timeAcc: 0,
+    camX: 0, checkpoint: { ...SPAWN }, shake: 0, flash: 0, slowmo: 0, transition: 0,
+  });
+}
+
+/* --------------------------------------------------------------- update ---- */
+function updatePlayer() {
+  const p = player;
+  const maxRun = p.ui ? MAX_RUN_UI : MAX_RUN;
+
+  // --- horizontal movement
+  const dir = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+  if (dir !== 0) {
+    p.vx += dir * ACCEL * (p.onGround ? 1 : 0.68);
+    p.facing = dir;
+  } else {
+    p.vx *= p.onGround ? FRICTION : AIR_FRICTION;
+    if (Math.abs(p.vx) < 0.06) p.vx = 0;
+  }
+  p.vx = clamp(p.vx, -maxRun, maxRun);
+
+  // --- jumping: coyote time + input buffering + variable height
+  if (pressed.jump) p.jumpBuf = 8;
+  if (p.jumpBuf > 0) p.jumpBuf--;
+  if (p.coyote > 0) p.coyote--;
+
+  if (p.jumpBuf > 0 && (p.coyote > 0 || (p.ui && p.doubleJump))) {
+    const fromAir = p.coyote <= 0;
+    p.vy = p.ui ? JUMP_V_UI : JUMP_V;
+    p.jumpBuf = 0; p.coyote = 0; p.onGround = false; p.jumpHeld = true;
+    if (fromAir) {
+      p.doubleJump = false;
+      spawnParticles(p.x + p.w / 2, p.y + p.h, 12, "#cfe6ff", { speed: 4, life: 24, g: 0.05 });
+    }
+    Sound.jump();
+  }
+  if (!keys.jump) p.jumpHeld = false;
+  if (p.vy < 0 && !p.jumpHeld) p.vy += 0.62;    // cut the jump short on release
+
+  // --- gravity
+  p.vy = Math.min(p.vy + GRAVITY, MAX_FALL);
+
+  collideX(p);
+  collideY(p, bumpBlock);
+  if (p.onGround) { p.coyote = 8; p.doubleJump = true; }
+
+  // --- attacks
+  if (p.fireCool > 0) p.fireCool--;
+  if (keys.fire) {
+    p.charge++;
+    if (p.charge === 48) { Sound.charge(); }
+    if (p.charge > 48 && p.charge % 6 === 0) {
+      spawnParticles(p.x + (p.facing > 0 ? p.w : 0), p.y + 18, 2, "#8fe6ff", { speed: 2.4, life: 18, g: -0.05 });
+    }
+  } else if (p.charge > 0) {
+    const charged = p.charge >= 48;
+    if (p.fireCool <= 0) { fireBlast(charged); p.fireCool = charged ? 26 : 10; }
+    p.charge = 0;
+  }
+  if (!p.ui) p.ki = clamp(p.ki + 0.42, 0, 100); else p.ki = 100;
+
+  // --- ultra instinct
+  if (pressed.ui) activateUltraInstinct();
+  if (p.uiTimer > 0) {
+    p.uiTimer--;
+    if (p.uiTimer === 0) {
+      popText(p.x, p.y - 20, "...", "#9fb0d8");
+      spawnParticles(p.x + p.w / 2, p.y + p.h / 2, 20, "#9fb0d8", { speed: 4, life: 30 });
+    }
+    if (Math.abs(p.vx) > 1.5 && game.tick % 3 === 0) {
+      afterimages.push({ x: p.x, y: p.y, facing: p.facing, frame: p.runFrame, life: 18, max: 18 });
+    }
+    if (game.tick % 2 === 0) {
+      spawnParticles(p.x + rnd(0, p.w), p.y + rnd(0, p.h), 1, "#dff1ff", { speed: 1.2, life: 26, g: -0.06, size: 2.6 });
+    }
+  }
+  if (p.invuln > 0) p.invuln--;
+  p.dodgeOffset *= 0.82;
+
+  // --- animation
+  if (p.onGround && Math.abs(p.vx) > 0.4) p.runFrame += Math.abs(p.vx) * 0.16;
+  else if (!p.onGround) p.runFrame = 0;
+  else p.runFrame += 0.04;
+
+  // --- pits
+  if (p.y > LEVEL_H + 80) killPlayer();
+
+  // --- checkpoints every four chunks
+  const cp = Math.floor(p.x / (TILE * 80));
+  if (cp > 0 && p.onGround && p.x > game.checkpoint.x + TILE * 40) {
+    game.checkpoint = { x: p.x, y: p.y - 4 };
+  }
+}
+
+function updateEnemies() {
+  const slow = game.slowmo > 0 ? 0.35 : 1;
+  for (const e of enemies) {
+    if (e.dead) { e.deadTimer++; continue; }
+
+    // Enemies wake up when they get near the camera and stay awake.
+    if (!e.active) {
+      if (e.x < game.camX + VW + 80 && e.x + e.w > game.camX - 200) e.active = true;
+      else continue;
+    }
+    if (e.x + e.w < game.camX - 420) continue;   // far behind: freeze to save work
+
+    e.frame += 0.14 * slow;
+    if (e.hurt > 0) e.hurt--;
+
+    e.vy = Math.min(e.vy + GRAVITY, MAX_FALL);
+    const speed = e.speed * slow * (e.hurt > 0 ? 0.4 : 1);
+    const dirSign = Math.sign(e.vx) || -1;
+    e.vx = dirSign * speed;
+
+    if (collideX(e)) e.vx = -dirSign * speed;
+    collideY(e);
+
+    // Turn around at ledges so they stay on their platform.
+    if (e.onGround) {
+      const ahead = Math.floor((e.x + (dirSign > 0 ? e.w + 2 : -2)) / TILE);
+      const below = Math.floor((e.y + e.h + 2) / TILE);
+      if (!isSolid(ahead, below)) e.vx = -dirSign * speed;
+    }
+
+    if (e.y > LEVEL_H + 60) { e.dead = true; e.deadTimer = 999; }
+
+    // --- contact with the player
+    if (game.state === "play" && overlap(player, e)) {
+      const stomping = player.vy > 1.2 && (player.y + player.h) - e.y < 20;
+      if (stomping) {
+        defeatEnemy(e, "stomp");
+        player.vy = keys.jump ? -14 : -10;
+      } else if (player.ui) {
+        // Ultra Instinct: Goku's body sidesteps on its own.
+        player.dodgeOffset = (player.x + player.w / 2 < e.x + e.w / 2 ? -14 : 14);
+        afterimages.push({ x: player.x, y: player.y, facing: player.facing, frame: player.runFrame, life: 20, max: 20 });
+        if (game.tick % 8 === 0) popText(e.x, e.y - 14, "DODGE", "#dff1ff");
+      } else {
+        hurtPlayer();
+      }
+    }
+  }
+}
+
+function defeatEnemy(e, how) {
+  e.hp--;
+  e.hurt = 18;
+  if (e.hp > 0) {
+    spawnParticles(e.x + e.w / 2, e.y + e.h / 2, 6, "#ff9d5c", { speed: 3, life: 20 });
+    Sound.stomp();
+    return;
+  }
+  e.dead = true; e.deadTimer = 0;
+  game.score += e.score;
+  player.uiGauge = clamp(player.uiGauge + 13, 0, 100);
+  popText(e.x, e.y - 6, "+" + e.score, "#ffe9a8");
+  spawnParticles(e.x + e.w / 2, e.y + e.h / 2, how === "blast" ? 18 : 10,
+    e.kind === "saibaman" ? "#6fd06f" : "#b98cff", { speed: how === "blast" ? 6 : 3.6, life: 32 });
+  Sound.stomp();
+}
+
+function updateBlasts() {
+  for (const b of blasts) {
+    b.t++; b.life--;
+    b.x += b.vx;
+    // Blasts stop at walls (Kamehameha punches through one block of brick).
+    const c = Math.floor((b.x + (b.vx > 0 ? b.w : 0)) / TILE);
+    const r = Math.floor((b.y + b.h / 2) / TILE);
+    if (isSolid(c, r)) {
+      if (b.pierce && tileChar(c, r) === "B") {
+        grid[r][c] = " ";
+        spawnParticles(c * TILE + TILE / 2, r * TILE + TILE / 2, 12, "#c9743a", { speed: 4.5, life: 34 });
+        Sound.brick();
+      } else {
+        b.life = 0;
+        spawnParticles(b.x + b.w / 2, b.y + b.h / 2, 10, "#8fe6ff", { speed: 3.4, life: 22, g: 0.05 });
+      }
+    }
+    for (const e of enemies) {
+      if (e.dead || !e.active) continue;
+      if (overlap(b, e)) {
+        e.hp -= b.power;
+        if (e.hp <= 0) { e.hp = 0; defeatEnemy(e, "blast"); }
+        else { e.hurt = 20; spawnParticles(e.x + e.w / 2, e.y + e.h / 2, 6, "#8fe6ff", { speed: 3, life: 18 }); }
+        if (!b.pierce) { b.life = 0; break; }
+      }
+    }
+  }
+  blasts = blasts.filter(b => b.life > 0);
+}
+
+function updatePickups() {
+  // Dragon balls sitting in the level
+  const c0 = Math.floor(game.camX / TILE) - 2, c1 = Math.floor((game.camX + VW) / TILE) + 2;
+  const pc0 = Math.floor(player.x / TILE), pc1 = Math.floor((player.x + player.w) / TILE);
+  const pr0 = Math.floor(player.y / TILE), pr1 = Math.floor((player.y + player.h) / TILE);
+  for (let r = pr0; r <= pr1; r++) {
+    for (let c = pc0; c <= pc1; c++) {
+      if (tileChar(c, r) === "o") {
+        grid[r][c] = " ";
+        collectBall(c * TILE + TILE / 2, r * TILE + TILE / 2);
+      }
+      if (tileChar(c, r) === "G" && game.state === "play") winLevel();
+    }
+  }
+  void c0; void c1;
+
+  for (const s of senzu) {
+    s.life--;
+    s.vy = Math.min(s.vy + 0.5, 12);
+    s.onGround = false;
+    collideX(s); collideY(s);
+    if (s.onGround) s.vx = Math.sign(s.vx) * 1.6;
+    if (overlap(player, s)) {
+      s.life = 0;
+      if (game.lives < 5) { game.lives++; popText(s.x, s.y - 10, "+1 LIFE", "#9fffa8"); }
+      else { game.score += 1000; popText(s.x, s.y - 10, "+1000", "#9fffa8"); }
+      player.ki = 100;
+      player.uiGauge = clamp(player.uiGauge + 20, 0, 100);
+      Sound.power();
+    }
+  }
+  senzu = senzu.filter(s => s.life > 0);
+}
+
+function winLevel() {
+  game.state = "win";
+  game.score += Math.floor(game.time) * 50 + game.lives * 1000;
+  game.best = Math.max(game.best, game.score);
+  game.flash = 1;
+  Sound.win();
+  for (let i = 0; i < 60; i++) {
+    spawnParticles(player.x + player.w / 2, player.y + 10, 1, ["#ffcc44", "#ff8f3f", "#dff1ff"][i % 3],
+      { speed: 8, life: 70, g: 0.06, size: 4 });
+  }
+}
+
+function updateEffects() {
+  for (const p of particles) {
+    p.x += p.vx; p.y += p.vy; p.vy += p.g; p.vx *= 0.99; p.life--;
+  }
+  particles = particles.filter(p => p.life > 0);
+  if (particles.length > 700) particles.splice(0, particles.length - 700);
+
+  for (const t of pops) { t.y -= 0.75; t.life--; }
+  pops = pops.filter(t => t.life > 0);
+
+  for (const a of afterimages) a.life--;
+  afterimages = afterimages.filter(a => a.life > 0);
+
+  for (const b of bumps) b.t++;
+  bumps = bumps.filter(b => b.t < 14);
+
+  if (game.shake > 0) game.shake *= 0.88;
+  if (game.flash > 0) game.flash -= 0.035;
+  if (game.slowmo > 0) game.slowmo--;
+}
+
+function updateCamera() {
+  const target = player.x + player.w / 2 - VW * 0.42;
+  game.camX += (target - game.camX) * 0.12;
+  game.camX = clamp(game.camX, 0, LEVEL_W - VW);
+}
+
+function update() {
+  game.tick++;
+
+  if (game.state === "title") {
+    if (pressed.start || pressed.jump) { resetGame(); game.state = "play"; }
+    updateEffects();
+    return;
+  }
+  if (game.state === "over" || game.state === "win") {
+    updateEffects();
+    if (pressed.start || pressed.jump || pressed.restart) { resetGame(); game.state = "play"; }
+    return;
+  }
+  if (pressed.pause) { game.state = game.state === "paused" ? "play" : "paused"; }
+  if (game.state === "paused") return;
+  if (pressed.restart) { resetGame(); return; }
+
+  if (game.state === "dying") {
+    player.deadTimer++;
+    player.vy = Math.min(player.vy + 0.75, 16);
+    player.y += player.vy;
+    updateEffects();
+    if (player.deadTimer > 110) respawn();
+    return;
+  }
+
+  updatePlayer();
+  updateEnemies();
+  updateBlasts();
+  updatePickups();
+  updateEffects();
+  updateCamera();
+
+  game.timeAcc++;
+  if (game.timeAcc >= 40) { game.timeAcc = 0; game.time--; if (game.time <= 0) { game.time = 0; killPlayer(); } }
+}
+game.tick = 0;
+
+/* =============================================================== rendering = */
+
+function drawSky() {
+  const g = ctx.createLinearGradient(0, 0, 0, VH);
+  if (player.ui && game.state === "play") {
+    g.addColorStop(0, "#2a3f6b"); g.addColorStop(0.55, "#6c8fc4"); g.addColorStop(1, "#c7dcf2");
+  } else {
+    g.addColorStop(0, "#3aa6e8"); g.addColorStop(0.5, "#7fd4ff"); g.addColorStop(1, "#cdeeff");
+  }
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, VW, VH);
+}
+
+function drawParallax() {
+  // Far mountains
+  const off1 = game.camX * 0.18;
+  ctx.fillStyle = player.ui ? "#7c8fbe" : "#6fb8dd";
+  for (let i = -1; i < 12; i++) {
+    const bx = i * 300 - (off1 % 300);
+    ctx.beginPath();
+    ctx.moveTo(bx - 40, VH - 90);
+    ctx.lineTo(bx + 110, VH - 300);
+    ctx.lineTo(bx + 260, VH - 90);
+    ctx.closePath(); ctx.fill();
+  }
+  // Near hills
+  const off2 = game.camX * 0.38;
+  ctx.fillStyle = player.ui ? "#5e7cb0" : "#4fa5cf";
+  for (let i = -1; i < 14; i++) {
+    const bx = i * 220 - (off2 % 220);
+    ctx.beginPath();
+    ctx.arc(bx + 110, VH - 60, 130, Math.PI, 0);
+    ctx.fill();
+  }
+  // Clouds
+  const off3 = game.camX * 0.1;
+  ctx.fillStyle = "rgba(255,255,255,.82)";
+  for (let i = -1; i < 16; i++) {
+    const bx = i * 260 - (off3 % 260);
+    const by = 50 + ((i * 71) % 110);
+    cloud(bx, by, 1 + ((i * 37) % 5) / 8);
+  }
+}
+function cloud(x, y, s) {
+  ctx.beginPath();
+  ctx.arc(x, y, 20 * s, 0, 7); ctx.arc(x + 24 * s, y - 10 * s, 26 * s, 0, 7);
+  ctx.arc(x + 54 * s, y, 21 * s, 0, 7); ctx.rect(x, y, 54 * s, 20 * s);
+  ctx.fill();
+}
+
+/* --------------------------------------------------------------- tiles ----- */
+function drawTiles() {
+  const c0 = Math.max(0, Math.floor(game.camX / TILE) - 1);
+  const c1 = Math.min(COLS - 1, Math.ceil((game.camX + VW) / TILE) + 1);
+  for (let c = c0; c <= c1; c++) {
+    for (let r = 0; r < ROWS; r++) {
+      const ch = grid[r][c];
+      if (ch === " ") continue;
+      const bump = bumps.find(b => b.c === c && b.r === r);
+      const dy = bump ? -Math.sin((bump.t / 14) * Math.PI) * 10 : 0;
+      const x = c * TILE, y = r * TILE + dy;
+      switch (ch) {
+        case "#": drawGround(x, y, c, r); break;
+        case "=": drawPlatform(x, y); break;
+        case "P": drawPipe(x, y, c, r); break;
+        case "B": drawBrick(x, y); break;
+        case "?": drawQuestion(x, y); break;
+        case "u": drawUsed(x, y); break;
+        case "o": drawDragonBall(x + TILE / 2, y + TILE / 2, 11, (c * 3 + r) % 7 + 1); break;
+        case "G": drawPortal(x, y); break;
+      }
+    }
+  }
+}
+
+function drawGround(x, y, c, r) {
+  const top = !isSolid(c, r - 1);
+  ctx.fillStyle = "#8b5a2b";
+  ctx.fillRect(x, y, TILE, TILE);
+  ctx.fillStyle = "rgba(0,0,0,.16)";
+  ctx.fillRect(x, y + TILE - 6, TILE, 6);
+  ctx.fillStyle = "rgba(255,255,255,.09)";
+  ctx.fillRect(x + 4, y + 6, TILE - 8, 4);
+  ctx.fillRect(x + 8, y + 18, TILE - 20, 4);
+  if (top) {
+    ctx.fillStyle = "#4bb14b";
+    ctx.fillRect(x, y, TILE, 10);
+    ctx.fillStyle = "#5fd05f";
+    ctx.fillRect(x, y, TILE, 4);
+  }
+  ctx.strokeStyle = "rgba(0,0,0,.22)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + .5, y + .5, TILE - 1, TILE - 1);
+}
+
+function drawPlatform(x, y) {
+  ctx.fillStyle = "#c98a3c";
+  ctx.fillRect(x, y, TILE, TILE - 12);
+  ctx.fillStyle = "#e8b262";
+  ctx.fillRect(x, y, TILE, 6);
+  ctx.fillStyle = "rgba(0,0,0,.2)";
+  ctx.fillRect(x, y + TILE - 18, TILE, 6);
+  ctx.strokeStyle = "rgba(80,40,0,.5)";
+  ctx.strokeRect(x + .5, y + .5, TILE - 1, TILE - 12);
+}
+
+function drawPipe(x, y, c, r) {
+  const isTop = tileChar(c, r - 1) !== "P";
+  const isLeft = tileChar(c - 1, r) !== "P";
+  const g = ctx.createLinearGradient(x, 0, x + TILE, 0);
+  g.addColorStop(0, "#1f7a3a"); g.addColorStop(0.35, "#48d06a"); g.addColorStop(1, "#186030");
+  ctx.fillStyle = g;
+  if (isTop) {
+    ctx.fillRect(x - (isLeft ? 5 : 0), y, TILE + 5, 14);
+    ctx.fillRect(x, y + 14, TILE, TILE - 14);
+    ctx.strokeStyle = "rgba(0,0,0,.35)";
+    ctx.strokeRect(x - (isLeft ? 5 : 0) + .5, y + .5, TILE + 4, 13);
+  } else {
+    ctx.fillRect(x, y, TILE, TILE);
+  }
+  ctx.fillStyle = "rgba(255,255,255,.18)";
+  ctx.fillRect(x + (isLeft ? 6 : 0), y + (isTop ? 16 : 0), 5, isTop ? TILE - 16 : TILE);
+}
+
+function drawBrick(x, y) {
+  ctx.fillStyle = "#b5642c";
+  ctx.fillRect(x, y, TILE, TILE);
+  ctx.strokeStyle = "rgba(255,255,255,.22)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 1; i < 3; i++) { ctx.moveTo(x, y + i * 12); ctx.lineTo(x + TILE, y + i * 12); }
+  ctx.moveTo(x + TILE / 2, y); ctx.lineTo(x + TILE / 2, y + 12);
+  ctx.moveTo(x + TILE / 4, y + 12); ctx.lineTo(x + TILE / 4, y + 24);
+  ctx.moveTo(x + TILE * 0.75, y + 12); ctx.lineTo(x + TILE * 0.75, y + 24);
+  ctx.moveTo(x + TILE / 2, y + 24); ctx.lineTo(x + TILE / 2, y + TILE);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(0,0,0,.35)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + .5, y + .5, TILE - 1, TILE - 1);
+}
+
+function drawQuestion(x, y) {
+  const pulse = 0.5 + 0.5 * Math.sin(game.tick * 0.09 + x * 0.05);
+  ctx.fillStyle = "#e8a020";
+  ctx.fillRect(x, y, TILE, TILE);
+  ctx.fillStyle = `rgba(255,225,120,${0.35 + pulse * 0.35})`;
+  ctx.fillRect(x + 3, y + 3, TILE - 6, TILE - 6);
+  ctx.strokeStyle = "rgba(0,0,0,.45)"; ctx.lineWidth = 2;
+  ctx.strokeRect(x + 1, y + 1, TILE - 2, TILE - 2);
+  ctx.fillStyle = "#5a3208";
+  ctx.font = "bold 22px Verdana";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText("?", x + TILE / 2, y + TILE / 2 + 1);
+  [[6, 6], [TILE - 7, 6], [6, TILE - 7], [TILE - 7, TILE - 7]].forEach(([dx, dy]) => {
+    ctx.fillStyle = "#5a3208"; ctx.fillRect(x + dx - 1, y + dy - 1, 3, 3);
+  });
+}
+
+function drawUsed(x, y) {
+  ctx.fillStyle = "#7a6a52";
+  ctx.fillRect(x, y, TILE, TILE);
+  ctx.fillStyle = "rgba(0,0,0,.25)";
+  ctx.fillRect(x + 3, y + 3, TILE - 6, TILE - 6);
+  ctx.strokeStyle = "rgba(0,0,0,.4)";
+  ctx.strokeRect(x + .5, y + .5, TILE - 1, TILE - 1);
+}
+
+function drawDragonBall(cx, cy, r, stars) {
+  const bob = Math.sin(game.tick * 0.08 + cx * 0.03) * 2.5;
+  cy += bob;
+  const g = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.4, r * 0.15, cx, cy, r);
+  g.addColorStop(0, "#fff3c4"); g.addColorStop(0.45, "#ffc93c"); g.addColorStop(1, "#e07d16");
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = "rgba(140,60,0,.5)"; ctx.lineWidth = 1.5; ctx.stroke();
+  // stars
+  ctx.fillStyle = "#d3312a";
+  const n = clamp(stars, 1, 7);
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const rad = n === 1 ? 0 : r * 0.42;
+    star(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad, n === 1 ? 4.6 : 2.7);
+  }
+  ctx.globalAlpha = 0.5;
+  ctx.beginPath(); ctx.arc(cx - r * 0.35, cy - r * 0.4, r * 0.24, 0, 7);
+  ctx.fillStyle = "#fff"; ctx.fill();
+  ctx.globalAlpha = 1;
+}
+function star(cx, cy, r) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+    const rr = i % 2 ? r * 0.45 : r;
+    ctx[i ? "lineTo" : "moveTo"](cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+  }
+  ctx.closePath(); ctx.fill();
+}
+
+function drawPortal(x, y) {
+  const cx = x + TILE / 2, cy = y + TILE / 2;
+  const t = game.tick * 0.05;
+  for (let i = 3; i >= 0; i--) {
+    ctx.beginPath();
+    ctx.arc(cx, cy - 10, 26 + i * 11 + Math.sin(t + i) * 4, 0, 7);
+    ctx.fillStyle = `rgba(${120 + i * 30},${200 - i * 20},255,${0.16 - i * 0.03})`;
+    ctx.fill();
+  }
+  const g = ctx.createRadialGradient(cx, cy - 10, 4, cx, cy - 10, 30);
+  g.addColorStop(0, "#ffffff"); g.addColorStop(0.4, "#8fe6ff"); g.addColorStop(1, "rgba(60,120,255,0)");
+  ctx.beginPath(); ctx.arc(cx, cy - 10, 30, 0, 7); ctx.fillStyle = g; ctx.fill();
+  // Shenron silhouette coiling in the portal
+  ctx.strokeStyle = "rgba(40,180,90,.85)";
+  ctx.lineWidth = 5; ctx.lineCap = "round";
+  ctx.beginPath();
+  for (let i = 0; i <= 24; i++) {
+    const a = t * 1.4 + i * 0.42;
+    const rr = 6 + i * 0.85;
+    const px = cx + Math.cos(a) * rr, py = cy - 10 + Math.sin(a) * rr * 0.6;
+    ctx[i ? "lineTo" : "moveTo"](px, py);
+  }
+  ctx.stroke();
+  ctx.lineCap = "butt";
+  ctx.fillStyle = "#eaf6ff";
+  ctx.font = "bold 11px Verdana"; ctx.textAlign = "center";
+  ctx.fillText("GOAL", cx, y - 26);
+}
+
+/* --------------------------------------------------------------- enemies --- */
+function drawEnemy(e) {
+  const x = e.x, y = e.y, w = e.w, h = e.h;
+  if (e.dead) {
+    const t = e.deadTimer;
+    if (t > 26) return;
+    ctx.save();
+    ctx.globalAlpha = clamp(1 - t / 26, 0, 1);
+    ctx.translate(x + w / 2, y + h);
+    ctx.scale(1 + t * 0.03, Math.max(0.1, 1 - t * 0.05));
+    ctx.translate(-(x + w / 2), -(y + h));
+  } else {
+    ctx.save();
+  }
+  const wob = Math.sin(e.frame) * 2;
+  const flash = e.hurt > 0 && Math.floor(e.hurt / 3) % 2 === 0;
+
+  if (e.kind === "saibaman") {
+    // squat green Saibaman with a split skull
+    ctx.fillStyle = flash ? "#ffffff" : "#4ea84e";
+    roundRect(x, y + 6, w, h - 6, 7); ctx.fill();
+    ctx.fillStyle = flash ? "#ffffff" : "#3d8a3d";
+    ctx.fillRect(x + 3, y + h - 6 + wob * 0.3, 7, 6);
+    ctx.fillRect(x + w - 10, y + h - 6 - wob * 0.3, 7, 6);
+    // skull ridge
+    ctx.fillStyle = flash ? "#ddd" : "#d9e7c8";
+    ctx.beginPath();
+    ctx.moveTo(x + 2, y + 12); ctx.lineTo(x + w / 2, y + 2); ctx.lineTo(x + w - 2, y + 12);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "rgba(60,90,50,.7)"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x + w / 2, y + 3); ctx.lineTo(x + w / 2, y + 12); ctx.stroke();
+    // eyes
+    ctx.fillStyle = "#111";
+    ctx.fillRect(x + 5, y + 14, 5, 4);
+    ctx.fillRect(x + w - 10, y + 14, 5, 4);
+    ctx.fillStyle = "#f55";
+    ctx.fillRect(x + 6, y + 15, 2, 2);
+    ctx.fillRect(x + w - 9, y + 15, 2, 2);
+    // grin
+    ctx.strokeStyle = "#1d3f1d"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x + 7, y + 22); ctx.lineTo(x + w - 7, y + 22); ctx.stroke();
+  } else {
+    // Frieza-force foot soldier: purple with battle armor
+    ctx.fillStyle = flash ? "#ffffff" : "#6d4a9c";
+    roundRect(x + 2, y + 10, w - 4, h - 10, 5); ctx.fill();
+    ctx.fillStyle = flash ? "#eee" : "#e6e9f2";       // armor plate
+    roundRect(x + 1, y + 14, w - 2, 12, 3); ctx.fill();
+    ctx.fillStyle = flash ? "#ccc" : "#b8c0d8";
+    ctx.fillRect(x + 1, y + 20, w - 2, 3);
+    // legs
+    ctx.fillStyle = flash ? "#fff" : "#4b3170";
+    ctx.fillRect(x + 4, y + h - 8 + wob * 0.4, 7, 8);
+    ctx.fillRect(x + w - 11, y + h - 8 - wob * 0.4, 7, 8);
+    // head
+    ctx.fillStyle = flash ? "#fff" : "#8a63bd";
+    ctx.beginPath(); ctx.arc(x + w / 2, y + 8, 8, 0, 7); ctx.fill();
+    // scouter
+    ctx.fillStyle = "#2bd66a";
+    ctx.fillRect(x + w / 2 + 1, y + 5, 8, 4);
+    ctx.strokeStyle = "#eee"; ctx.lineWidth = 1;
+    ctx.strokeRect(x + w / 2 + 1.5, y + 5.5, 7, 3);
+    ctx.fillStyle = "#111";
+    ctx.fillRect(x + w / 2 - 6, y + 6, 4, 3);
+  }
+  ctx.restore();
+}
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+/* ------------------------------------------------------------------ Goku --- */
+function drawGoku(px, py, facing, frame, opts = {}) {
+  const ui = opts.ui, ghost = opts.ghost || 0, airborne = opts.airborne, crouch = 0;
+  const skin = "#f2c48d", skinShade = "#d9a469";
+  const hair = ui ? "#e9f2ff" : "#1b1b22";
+  const hairHi = ui ? "#ffffff" : "#3a3a4a";
+  const gi = ui ? "#e2762a" : "#ef7d24";       // torn orange gi
+  const giDark = "#c25a12";
+  const under = ui ? "#2b3a8f" : "#2b52a8";    // undershirt / wristbands
+
+  ctx.save();
+  ctx.translate(px + 12, py + 40);              // origin at the feet, centred
+  if (opts.scale) ctx.scale(opts.scale, opts.scale);
+  if (facing < 0) ctx.scale(-1, 1);
+  if (ghost) ctx.globalAlpha = ghost;
+
+  const run = Math.sin(frame) , run2 = Math.sin(frame + Math.PI);
+  const moving = opts.moving;
+  const legA = airborne ? -0.5 : (moving ? run * 0.9 : 0);
+  const legB = airborne ? 0.7 : (moving ? run2 * 0.9 : 0);
+  const armA = airborne ? -1.1 : (moving ? run2 * 1.0 : 0.08);
+  const armB = airborne ? 0.9 : (moving ? run * 1.0 : -0.08);
+  const bobY = airborne ? 0 : (moving ? Math.abs(run) * -1.6 : Math.sin(frame * 0.6) * 0.8);
+
+  ctx.translate(0, bobY + crouch);
+
+  // ---- shadow
+  ctx.globalAlpha *= 1;
+  ctx.fillStyle = "rgba(0,0,0,.18)";
+  ctx.beginPath(); ctx.ellipse(0, 2, 12, 3.5, 0, 0, 7); ctx.fill();
+
+  // ---- legs (dark blue gi trousers, cinched at the ankle)
+  function leg(swing, shade) {
+    ctx.save();
+    ctx.translate(0, -16);
+    ctx.rotate(swing * 0.55);
+    ctx.fillStyle = shade ? giDark : gi;
+    ctx.fillRect(-4.5, 0, 9, 12);
+    ctx.fillStyle = under;                     // ankle wrap
+    ctx.fillRect(-5, 11, 10, 3.5);
+    ctx.fillStyle = shade ? "#20305f" : "#2b3a8f";
+    ctx.fillRect(-6, 14, 12, 3.5);             // boot
+    ctx.fillStyle = "#e8e8ee";
+    ctx.fillRect(-6, 14, 12, 1.4);
+    ctx.restore();
+  }
+  ctx.save(); ctx.translate(-3, 0); leg(legB, true); ctx.restore();
+  ctx.save(); ctx.translate(3, 0); leg(legA, false); ctx.restore();
+
+  // ---- torso
+  ctx.fillStyle = under;                       // blue undershirt / sash
+  ctx.fillRect(-8, -30, 16, 16);
+  ctx.fillStyle = gi;                          // orange gi top
+  ctx.beginPath();
+  ctx.moveTo(-9.5, -30); ctx.lineTo(9.5, -30);
+  ctx.lineTo(8, -14); ctx.lineTo(-8, -14);
+  ctx.closePath(); ctx.fill();
+  // open collar showing the undershirt
+  ctx.fillStyle = under;
+  ctx.beginPath();
+  ctx.moveTo(-4.5, -30); ctx.lineTo(4.5, -30); ctx.lineTo(0, -21);
+  ctx.closePath(); ctx.fill();
+  // belt
+  ctx.fillStyle = under;
+  ctx.fillRect(-9, -17.5, 18, 4);
+  ctx.fillStyle = "rgba(0,0,0,.18)";
+  ctx.fillRect(-9, -15.5, 18, 1.2);
+  if (ui) {                                    // torn shoulder in Ultra Instinct
+    ctx.fillStyle = under;
+    ctx.beginPath();
+    ctx.moveTo(2, -30); ctx.lineTo(9.5, -30); ctx.lineTo(8.6, -24); ctx.lineTo(3, -25.5);
+    ctx.closePath(); ctx.fill();
+  }
+
+  // ---- arms
+  function arm(swing, front) {
+    ctx.save();
+    ctx.translate(front ? 7 : -7, -28);
+    ctx.rotate(swing * 0.9);
+    ctx.fillStyle = front ? gi : giDark;
+    ctx.fillRect(-3, 0, 6, 8);                 // sleeve
+    ctx.fillStyle = skin;
+    ctx.fillRect(-2.6, 7, 5.2, 8);             // forearm
+    ctx.fillStyle = under;                     // wristband
+    ctx.fillRect(-3.2, 14, 6.4, 3);
+    ctx.fillStyle = skinShade;
+    ctx.beginPath(); ctx.arc(0, 18.4, 3.1, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+  arm(armB, false);
+
+  // ---- head
+  const hy = -38;
+  ctx.fillStyle = skin;
+  ctx.beginPath(); ctx.ellipse(0, hy, 8.4, 9, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = skinShade;
+  ctx.beginPath(); ctx.ellipse(-4, hy + 2, 4, 6.4, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = skin;
+  ctx.beginPath(); ctx.ellipse(0.6, hy, 8, 8.8, 0, 0, 7); ctx.fill();
+
+  // eyes — silver and calm in UI, dark and sharp otherwise
+  ctx.fillStyle = "#fff";
+  ctx.beginPath(); ctx.ellipse(3.2, hy - 0.5, 3.1, 2.5, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-2.6, hy - 0.5, 2.5, 2.3, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = ui ? "#bfe4ff" : "#1a1a22";
+  ctx.beginPath(); ctx.arc(4.1, hy - 0.4, 1.5, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(-2.0, hy - 0.4, 1.35, 0, 7); ctx.fill();
+  if (ui) {
+    ctx.fillStyle = "rgba(220,245,255,.9)";
+    ctx.beginPath(); ctx.arc(4.1, hy - 0.4, 2.6, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(-2.0, hy - 0.4, 2.3, 0, 7); ctx.fill();
+  }
+  // brows
+  ctx.strokeStyle = hair; ctx.lineWidth = 1.7;
+  ctx.beginPath();
+  ctx.moveTo(0.6, hy - 3.6); ctx.lineTo(6.2, hy - 2.6);
+  ctx.moveTo(-4.6, hy - 3.2); ctx.lineTo(-0.8, hy - 3.8);
+  ctx.stroke();
+  // mouth
+  ctx.strokeStyle = "rgba(90,50,30,.8)"; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(1.6, hy + 5); ctx.lineTo(5.2, hy + 5); ctx.stroke();
+
+  // ---- hair: the signature spikes
+  const spikes = [
+    [-9.5, -3, -15, -13, -6.5, -9],
+    [-7.5, -7, -12.5, -21, -3.5, -11],
+    [-3.5, -9.5, -5.5, -26, 1.5, -11.5],
+    [0.5, -10.5, 2.5, -27, 5.5, -10.5],
+    [4.5, -9.5, 10, -23, 8, -8],
+    [7, -7, 15, -16, 9, -4],
+    [8.5, -3.5, 15.5, -7, 9.5, 0.5],
+    [-9.8, 0.5, -16, 1, -9, 3.5],
+  ];
+  ctx.fillStyle = hair;
+  for (const [x1, y1, x2, y2, x3, y3] of spikes) {
+    ctx.beginPath();
+    ctx.moveTo(x1, hy + y1);
+    ctx.quadraticCurveTo((x1 + x2) / 2 - 1, hy + (y1 + y2) / 2, x2, hy + y2);
+    ctx.quadraticCurveTo((x3 + x2) / 2 + 1, hy + (y3 + y2) / 2, x3, hy + y3);
+    ctx.closePath(); ctx.fill();
+  }
+  // hair mass over the skull
+  ctx.beginPath(); ctx.ellipse(-0.5, hy - 4.5, 9, 6.5, 0, Math.PI, 0); ctx.fill();
+  // highlight
+  ctx.fillStyle = hairHi;
+  ctx.globalAlpha *= ui ? 0.85 : 0.35;
+  ctx.beginPath(); ctx.ellipse(-2, hy - 6, 4.5, 2.4, -0.3, 0, 7); ctx.fill();
+  ctx.globalAlpha = ghost || 1;
+  if (ui) ctx.globalAlpha = 1;
+
+  // front arm drawn last so it reads on top of the chest
+  arm(armA, true);
+
+  ctx.restore();
+}
+
+function drawGokuAura(px, py, scale = 1) {
+  const cx = px + 12, cy = py + 40 - 20 * scale;
+  const t = game.tick * 0.15;
+  ctx.save();
+  ctx.translate(cx, cy); ctx.scale(scale, scale); ctx.translate(-cx, -cy);
+  ctx.globalCompositeOperation = "lighter";
+  for (let i = 0; i < 3; i++) {
+    const rr = 30 + i * 12 + Math.sin(t + i) * 4;
+    const g = ctx.createRadialGradient(cx, cy, 4, cx, cy, rr);
+    g.addColorStop(0, `rgba(220,245,255,${0.30 - i * 0.08})`);
+    g.addColorStop(0.6, `rgba(150,200,255,${0.14 - i * 0.04})`);
+    g.addColorStop(1, "rgba(120,170,255,0)");
+    ctx.beginPath(); ctx.arc(cx, cy, rr, 0, 7); ctx.fillStyle = g; ctx.fill();
+  }
+  // licking flame tongues
+  ctx.strokeStyle = "rgba(225,245,255,.55)";
+  ctx.lineWidth = 2.2; ctx.lineCap = "round";
+  for (let i = 0; i < 7; i++) {
+    const a = -Math.PI / 2 + (i - 3) * 0.26 + Math.sin(t * 0.7 + i) * 0.1;
+    const len = 26 + Math.abs(Math.sin(t * 1.6 + i * 1.7)) * 22;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * 12, cy + Math.sin(a) * 12);
+    ctx.quadraticCurveTo(
+      cx + Math.cos(a) * (len * 0.6) + Math.sin(t + i) * 6,
+      cy + Math.sin(a) * (len * 0.7),
+      cx + Math.cos(a) * len, cy + Math.sin(a) * len - 8);
+    ctx.stroke();
+  }
+  ctx.lineCap = "butt";
+  ctx.restore();
+}
+
+/* --------------------------------------------------------------- blasts ---- */
+function drawBlast(b) {
+  const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  if (b.pierce) {
+    // Kamehameha: a beam with a bright leading orb
+    const len = 130;
+    const x0 = cx - Math.sign(b.vx) * len;
+    const g = ctx.createLinearGradient(x0, 0, cx, 0);
+    g.addColorStop(0, "rgba(80,180,255,0)");
+    g.addColorStop(0.5, "rgba(120,220,255,.6)");
+    g.addColorStop(1, "rgba(255,255,255,.95)");
+    ctx.fillStyle = g;
+    const hh = b.h / 2 + Math.sin(game.tick * 0.6) * 2;
+    ctx.fillRect(Math.min(x0, cx), cy - hh, len, hh * 2);
+  }
+  const r = b.pierce ? 17 : 9;
+  const g2 = ctx.createRadialGradient(cx, cy, 1, cx, cy, r * 1.7);
+  g2.addColorStop(0, "#ffffff");
+  g2.addColorStop(0.35, "#a8e8ff");
+  g2.addColorStop(0.7, "rgba(80,170,255,.55)");
+  g2.addColorStop(1, "rgba(60,140,255,0)");
+  ctx.fillStyle = g2;
+  ctx.beginPath(); ctx.arc(cx, cy, r * 1.7, 0, 7); ctx.fill();
+  ctx.restore();
+}
+
+/* ------------------------------------------------------------------ HUD ---- */
+function drawHUD() {
+  ctx.save();
+  ctx.textBaseline = "top";
+  // panel
+  ctx.fillStyle = "rgba(8,12,28,.42)";
+  ctx.fillRect(0, 0, VW, 62);
+  ctx.fillStyle = "rgba(190,220,255,.25)";
+  ctx.fillRect(0, 61, VW, 1);
+
+  ctx.font = "bold 15px Verdana";
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#eaf2ff";
+  ctx.fillText("SCORE", 16, 8);
+  ctx.font = "bold 19px Verdana";
+  ctx.fillText(String(game.score).padStart(6, "0"), 16, 26);
+
+  // dragon balls
+  ctx.font = "bold 15px Verdana";
+  ctx.fillStyle = "#eaf2ff";
+  ctx.fillText("×" + game.balls, 176, 22);
+  drawDragonBall(160, 26, 10, (game.balls % 7) + 1);
+
+  // lives
+  ctx.fillStyle = "#eaf2ff";
+  ctx.fillText("GOKU ×" + Math.max(0, game.lives), 236, 22);
+
+  // time
+  ctx.textAlign = "right";
+  ctx.fillStyle = game.time < 60 ? "#ff8b8b" : "#eaf2ff";
+  ctx.fillText("TIME", VW - 16, 8);
+  ctx.font = "bold 19px Verdana";
+  ctx.fillText(String(game.time).padStart(3, "0"), VW - 16, 26);
+
+  // ki bar
+  bar(392, 12, 170, 12, player.ki / 100, "#2b6bd6", "#8fd8ff", "KI");
+  // ultra instinct gauge
+  const full = player.uiGauge >= 100;
+  const pulse = full ? 0.5 + 0.5 * Math.sin(game.tick * 0.18) : 0;
+  bar(392, 34, 170, 14,
+      player.ui ? player.uiTimer / UI_DURATION : player.uiGauge / 100,
+      player.ui ? "#5b7bb8" : "#4a4f6b",
+      player.ui ? "#ffffff" : (full ? `rgba(${190 + pulse * 65},${225 + pulse * 30},255,1)` : "#b9c8e8"),
+      player.ui ? "ULTRA INSTINCT" : (full ? "READY!  PRESS SHIFT" : "INSTINCT"));
+  ctx.restore();
+}
+
+function bar(x, y, w, h, v, back, fill, label) {
+  ctx.fillStyle = "rgba(0,0,0,.45)";
+  roundRect(x - 1, y - 1, w + 2, h + 2, 4); ctx.fill();
+  ctx.fillStyle = back;
+  roundRect(x, y, w, h, 3); ctx.fill();
+  ctx.save();
+  roundRect(x, y, w, h, 3); ctx.clip();
+  ctx.fillStyle = fill;
+  ctx.fillRect(x, y, w * clamp(v, 0, 1), h);
+  ctx.fillStyle = "rgba(255,255,255,.22)";
+  ctx.fillRect(x, y, w * clamp(v, 0, 1), h / 2.4);
+  ctx.restore();
+  ctx.strokeStyle = "rgba(230,240,255,.45)"; ctx.lineWidth = 1;
+  roundRect(x + .5, y + .5, w - 1, h - 1, 3); ctx.stroke();
+  ctx.fillStyle = "#dbe6ff";
+  ctx.font = "bold 10px Verdana"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  ctx.fillText(label, x + w + 8, y + h / 2 + 1);
+  ctx.textBaseline = "top";
+}
+
+/* ------------------------------------------------------------- overlays ---- */
+function centerPanel(w, h) {
+  ctx.fillStyle = "rgba(5,8,20,.72)";
+  ctx.fillRect(0, 0, VW, VH);
+  ctx.fillStyle = "rgba(16,24,52,.92)";
+  roundRect(VW / 2 - w / 2, VH / 2 - h / 2, w, h, 16); ctx.fill();
+  ctx.strokeStyle = "rgba(180,215,255,.4)"; ctx.lineWidth = 2;
+  roundRect(VW / 2 - w / 2, VH / 2 - h / 2, w, h, 16); ctx.stroke();
+}
+
+function drawTitle() {
+  const t = game.tick * 0.03;
+  ctx.save();
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  centerPanel(680, 446);
+
+  ctx.font = "bold 46px Verdana";
+  const g = ctx.createLinearGradient(0, VH / 2 - 192, 0, VH / 2 - 150);
+  g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#8fd8ff");
+  ctx.fillStyle = g;
+  ctx.fillText("ULTRA INSTINCT", VW / 2, VH / 2 - 172);
+  ctx.font = "bold 20px Verdana";
+  ctx.fillStyle = "#ffb347";
+  ctx.fillText("S U P E R   S A I Y A N   B R O S .", VW / 2, VH / 2 - 136);
+
+  // Goku posing on the title screen
+  drawGokuAura(VW / 2 - 12, VH / 2 - 34, 1.35);
+  drawGoku(VW / 2 - 12, VH / 2 - 34, 1, t * 3, { ui: true, moving: false, scale: 1.7 });
+
+  ctx.font = "bold 15px Verdana";
+  ctx.fillStyle = "#cfe0ff";
+  ctx.fillText("Stomp them, blast them, or transcend them.", VW / 2, VH / 2 + 38);
+  ctx.font = "12.5px Verdana";
+  ctx.fillStyle = "#9fb0d8";
+  ctx.fillText("← → move    ·    SPACE jump    ·    J / X ki blast (hold = Kamehameha)", VW / 2, VH / 2 + 68);
+  ctx.fillText("SHIFT to trigger Ultra Instinct once the gauge is full", VW / 2, VH / 2 + 90);
+  ctx.fillText("Collect 7 Dragon Balls to fill the gauge instantly", VW / 2, VH / 2 + 112);
+
+  const blink = 0.55 + 0.45 * Math.sin(game.tick * 0.1);
+  ctx.font = "bold 18px Verdana";
+  ctx.fillStyle = `rgba(255,235,150,${blink})`;
+  ctx.fillText("PRESS  SPACE  TO  BEGIN", VW / 2, VH / 2 + 158);
+  ctx.restore();
+}
+
+function drawGameOver() {
+  ctx.save();
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  centerPanel(520, 260);
+  ctx.font = "bold 40px Verdana";
+  ctx.fillStyle = "#ff7a7a";
+  ctx.fillText("GAME OVER", VW / 2, VH / 2 - 62);
+  ctx.font = "bold 18px Verdana";
+  ctx.fillStyle = "#eaf2ff";
+  ctx.fillText("SCORE  " + game.score, VW / 2, VH / 2 - 12);
+  ctx.fillStyle = "#9fb0d8";
+  ctx.font = "14px Verdana";
+  ctx.fillText("Dragon Balls gathered: " + game.balls, VW / 2, VH / 2 + 18);
+  ctx.fillText("Best: " + game.best, VW / 2, VH / 2 + 42);
+  const blink = 0.55 + 0.45 * Math.sin(game.tick * 0.1);
+  ctx.font = "bold 16px Verdana";
+  ctx.fillStyle = `rgba(255,235,150,${blink})`;
+  ctx.fillText("PRESS  SPACE  TO  TRY  AGAIN", VW / 2, VH / 2 + 84);
+  ctx.restore();
+}
+
+function drawWin() {
+  ctx.save();
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  centerPanel(560, 300);
+  ctx.font = "bold 38px Verdana";
+  const g = ctx.createLinearGradient(0, VH / 2 - 100, 0, VH / 2 - 60);
+  g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#8fd8ff");
+  ctx.fillStyle = g;
+  ctx.fillText("STAGE CLEAR!", VW / 2, VH / 2 - 82);
+  ctx.font = "15px Verdana";
+  ctx.fillStyle = "#cfe0ff";
+  ctx.fillText("Shenron has been summoned.", VW / 2, VH / 2 - 42);
+  ctx.font = "bold 20px Verdana";
+  ctx.fillStyle = "#ffd766";
+  ctx.fillText("SCORE  " + game.score, VW / 2, VH / 2 - 2);
+  ctx.font = "14px Verdana";
+  ctx.fillStyle = "#9fb0d8";
+  ctx.fillText("Dragon Balls: " + game.balls + "   ·   Lives left: " + Math.max(0, game.lives), VW / 2, VH / 2 + 32);
+  ctx.fillText("Best: " + game.best, VW / 2, VH / 2 + 56);
+  const blink = 0.55 + 0.45 * Math.sin(game.tick * 0.1);
+  ctx.font = "bold 16px Verdana";
+  ctx.fillStyle = `rgba(255,235,150,${blink})`;
+  ctx.fillText("PRESS  SPACE  TO  PLAY  AGAIN", VW / 2, VH / 2 + 100);
+  ctx.restore();
+}
+
+function drawPaused() {
+  ctx.save();
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = "rgba(5,8,20,.6)";
+  ctx.fillRect(0, 0, VW, VH);
+  ctx.font = "bold 38px Verdana";
+  ctx.fillStyle = "#eaf2ff";
+  ctx.fillText("PAUSED", VW / 2, VH / 2 - 10);
+  ctx.font = "14px Verdana";
+  ctx.fillStyle = "#9fb0d8";
+  ctx.fillText("P to resume   ·   R to restart", VW / 2, VH / 2 + 28);
+  ctx.restore();
+}
+
+/* ----------------------------------------------------------------- draw ---- */
+function render() {
+  drawSky();
+  drawParallax();
+
+  ctx.save();
+  const sx = game.shake > 0.4 ? rnd(-game.shake, game.shake) : 0;
+  const sy = game.shake > 0.4 ? rnd(-game.shake, game.shake) : 0;
+  ctx.translate(-Math.round(game.camX) + sx, sy);
+
+  drawTiles();
+
+  for (const s of senzu) {
+    ctx.fillStyle = "#8fdc6a";
+    ctx.beginPath(); ctx.ellipse(s.x + 10, s.y + 10, 9, 7, 0.4, 0, 7); ctx.fill();
+    ctx.fillStyle = "#d9ffbf";
+    ctx.beginPath(); ctx.ellipse(s.x + 7, s.y + 7, 3, 2, 0.4, 0, 7); ctx.fill();
+    ctx.strokeStyle = "rgba(30,90,20,.6)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(s.x + 10, s.y + 10, 9, 7, 0.4, 0, 7); ctx.stroke();
+  }
+
+  for (const e of enemies) {
+    if (e.x + e.w < game.camX - 60 || e.x > game.camX + VW + 60) continue;
+    drawEnemy(e);
+  }
+
+  for (const b of blasts) drawBlast(b);
+
+  // afterimages trailing Ultra Instinct Goku
+  for (const a of afterimages) {
+    drawGoku(a.x, a.y, a.facing, a.frame, { ui: true, ghost: (a.life / a.max) * 0.35, moving: true });
+  }
+
+  // Goku himself
+  if (game.state !== "title") {
+    const blink = player.invuln > 0 && Math.floor(player.invuln / 4) % 2 === 0;
+    if (!blink) {
+      const gx = player.x + player.dodgeOffset;
+      if (player.ui) drawGokuAura(gx, player.y);
+      if (player.charge > 20) {
+        const cx = gx + 12 + player.facing * 16, cy = player.y + 20;
+        const r = clamp(player.charge / 6, 3, 16);
+        const g = ctx.createRadialGradient(cx, cy, 1, cx, cy, r * 1.8);
+        g.addColorStop(0, "#fff"); g.addColorStop(0.5, "#8fe6ff"); g.addColorStop(1, "rgba(60,140,255,0)");
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, r * 1.8, 0, 7); ctx.fill();
+        ctx.restore();
+      }
+      drawGoku(gx, player.y, player.facing, player.runFrame, {
+        ui: player.ui,
+        airborne: !player.onGround && game.state === "play",
+        moving: Math.abs(player.vx) > 0.4,
+      });
+    }
+  }
+
+  // particles
+  for (const p of particles) {
+    ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+
+  // floating score text
+  ctx.font = "bold 13px Verdana";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  for (const t of pops) {
+    ctx.globalAlpha = clamp(t.life / 52, 0, 1);
+    ctx.lineWidth = 3; ctx.strokeStyle = "rgba(0,0,0,.6)";
+    ctx.strokeText(t.text, t.x, t.y);
+    ctx.fillStyle = t.color;
+    ctx.fillText(t.text, t.x, t.y);
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+
+  if (game.state !== "title") drawHUD();
+  if (game.flash > 0) {
+    ctx.fillStyle = `rgba(235,248,255,${clamp(game.flash, 0, 1) * 0.85})`;
+    ctx.fillRect(0, 0, VW, VH);
+  }
+  if (game.state === "title") drawTitle();
+  if (game.state === "paused") drawPaused();
+  if (game.state === "over") drawGameOver();
+  if (game.state === "win") drawWin();
+}
+
+/* ----------------------------------------------------------------- loop ---- */
+let acc = 0, last = performance.now();
+const STEP = 1000 / 60;
+
+function frame(now) {
+  acc += Math.min(now - last, 250);
+  last = now;
+  let steps = 0;
+  while (acc >= STEP && steps < 5) {
+    update();
+    for (const k in pressed) pressed[k] = false;
+    acc -= STEP; steps++;
+  }
+  render();
+  requestAnimationFrame(frame);
+}
+
+resetGame();
+game.state = "title";
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
