@@ -6,6 +6,10 @@ built entirely from vector art and code. No video file, no image assets.
 
 Open `index.html` in a browser. It works offline; nothing is fetched at runtime.
 
+**[`rooftop-8s.mp4`](rooftop-8s.mp4)** — the rendered shot, 1080×1920, 60fps,
+H.264. Produced by `render.js` (see *Rendering the MP4* below), not by screen
+capture, so every frame is exact.
+
 ## The shot
 
 Eight seconds, one continuous take, no cuts:
@@ -71,16 +75,40 @@ Measured effect, software-rendered headless Chromium at 1080×1920:
 18.8 fps  →  42.6 fps
 ```
 
-## Recording it
+## Rendering the MP4
+
+`render.js` renders the shot frame by frame rather than screen-recording it.
+Screen capture would tie the result to whatever framerate the machine
+happened to sustain; instead the page's clock is virtualised, so each frame
+is exactly 1/60s after the last no matter how long it took to draw:
+
+- `performance.now()` and `requestAnimationFrame` are replaced before page
+  load with a manual clock, stepped once per frame — this drives the rain
+  and ripples
+- CSS animations are paused and their `currentTime` set explicitly — this
+  drives the camera, breathing, twinkle and flicker
+- the rain is stepped 150 frames before frame 0 so ripples are already
+  established when the shot opens
+- frames are piped straight into ffmpeg as PNG, so no intermediate files
+  ever hit disk
+
+```
+npm i playwright ffmpeg-static
+node render.js rooftop-8s.mp4
+```
+
+Output: 1080×1920, 60fps, H.264 High, yuv420p, CRF 17, faststart.
+
+Because the page's RNG is seeded, the render is reproducible — the same
+skyline, the same rain, every time.
+
+## Watching it live
 
 Hover the frame for two controls, which stay invisible otherwise so they
 never appear in a capture:
 
 - **Replay 8s** — resets every animation to t=0
 - **Pause** — freezes the scene, including the rain
-
-For a clean export, size the browser window to the aspect you want, hit
-Replay, and screen-record for 8 seconds.
 
 ## Font
 
