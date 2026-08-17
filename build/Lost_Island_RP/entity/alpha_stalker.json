@@ -1,0 +1,35 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "li:alpha_stalker",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/li_alpha_stalker"
+      },
+      "geometry": {
+        "default": "geometry.li_alpha_stalker"
+      },
+      "animations": {
+        "idle": "animation.li_alpha_stalker.idle",
+        "walk": "animation.li_alpha_stalker.walk",
+        "attack": "animation.li_alpha_stalker.attack",
+        "general": "controller.animation.li_alpha_stalker.general"
+      },
+      "scripts": {
+        "animate": [
+          "general"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.li_default"
+      ],
+      "spawn_egg": {
+        "base_colour": "#4e5c4a",
+        "overlay_colour": "#a8482c"
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "li:first_aid",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "li_first_aid"
+      },
+      "minecraft:display_name": {
+        "value": "First Aid Kit"
+      },
+      "minecraft:max_stack_size": 4,
+      "minecraft:food": {
+        "nutrition": 0,
+        "saturation_modifier": "poor",
+        "can_always_eat": true,
+        "using_converts_to": "li:first_aid_used"
+      },
+      "minecraft:use_modifiers": {
+        "use_duration": 0.9,
+        "movement_modifier": 0.35
+      },
+      "minecraft:allow_off_hand": true,
+      "minecraft:tags": {
+        "tags": [
+          "li:lost_island"
+        ]
+      }
+    }
+  }
+}

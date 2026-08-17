@@ -1,0 +1,25 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "li:flashlight_off_used",
+      "menu_category": {
+        "category": "none"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "li_flashlight_off"
+      },
+      "minecraft:display_name": {
+        "value": "Flashlight"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:tags": {
+        "tags": [
+          "li:marker"
+        ]
+      }
+    }
+  }
+}

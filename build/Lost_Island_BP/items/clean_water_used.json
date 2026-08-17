@@ -1,0 +1,25 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "li:clean_water_used",
+      "menu_category": {
+        "category": "none"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "li_clean_water"
+      },
+      "minecraft:display_name": {
+        "value": "Clean Water"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:tags": {
+        "tags": [
+          "li:marker"
+        ]
+      }
+    }
+  }
+}

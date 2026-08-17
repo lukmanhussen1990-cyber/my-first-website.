@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "li:mech_part",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "li_mech_part"
+      },
+      "minecraft:display_name": {
+        "value": "Mechanical Component"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:food": {
+        "nutrition": 0,
+        "saturation_modifier": "poor",
+        "can_always_eat": true,
+        "using_converts_to": "li:mech_part_used"
+      },
+      "minecraft:use_modifiers": {
+        "use_duration": 0.9,
+        "movement_modifier": 0.35
+      },
+      "minecraft:allow_off_hand": true,
+      "minecraft:tags": {
+        "tags": [
+          "li:lost_island"
+        ]
+      }
+    }
+  }
+}

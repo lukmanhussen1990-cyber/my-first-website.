@@ -1,0 +1,131 @@
+{
+  "format_version": "1.20.60",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "li:sensor",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "li:is_day": {
+        "minecraft:type_family": {
+          "family": [
+            "li_sensor",
+            "li_day",
+            "inanimate"
+          ]
+        }
+      },
+      "li:is_night": {
+        "minecraft:type_family": {
+          "family": [
+            "li_sensor",
+            "li_night",
+            "inanimate"
+          ]
+        }
+      },
+      "li:gone": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "li_sensor",
+          "inanimate"
+        ]
+      },
+      "minecraft:health": {
+        "value": 200,
+        "max": 200
+      },
+      "minecraft:collision_box": {
+        "width": 0.1,
+        "height": 0.1
+      },
+      "minecraft:physics": {
+        "has_gravity": false,
+        "has_collision": false
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:fire_immune": true,
+      "minecraft:despawn": {
+        "despawn_from_distance": {
+          "min_distance": 40,
+          "max_distance": 72
+        },
+        "despawn_from_inactivity": false
+      },
+      "minecraft:environment_sensor": {
+        "triggers": [
+          {
+            "filters": {
+              "test": "is_daytime",
+              "subject": "self",
+              "operator": "==",
+              "value": true
+            },
+            "event": "li:became_day"
+          },
+          {
+            "filters": {
+              "test": "is_daytime",
+              "subject": "self",
+              "operator": "==",
+              "value": false
+            },
+            "event": "li:became_night"
+          }
+        ]
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": {
+          "component_groups": [
+            "li:is_day"
+          ]
+        }
+      },
+      "li:became_day": {
+        "remove": {
+          "component_groups": [
+            "li:is_night"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "li:is_day"
+          ]
+        }
+      },
+      "li:became_night": {
+        "remove": {
+          "component_groups": [
+            "li:is_day"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "li:is_night"
+          ]
+        }
+      },
+      "li:remove": {
+        "add": {
+          "component_groups": [
+            "li:gone"
+          ]
+        }
+      }
+    }
+  }
+}

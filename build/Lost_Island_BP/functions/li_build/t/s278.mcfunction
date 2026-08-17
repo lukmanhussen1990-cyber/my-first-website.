@@ -1,0 +1,9 @@
+fill -72 65 -26 -32 82 14 minecraft:air
+fill -72 61 -26 -32 63 14 minecraft:dirt
+fill -72 64 -26 -32 64 14 minecraft:grass_block
+fill 76 79 -50 116 96 -10 minecraft:air
+fill 76 75 -50 116 77 -10 minecraft:dirt
+fill 76 78 -50 116 78 -10 minecraft:stone
+fill 102 93 -74 142 110 -34 minecraft:air
+fill 102 89 -74 142 91 -34 minecraft:dirt
+fill 102 92 -74 142 92 -34 minecraft:andesite

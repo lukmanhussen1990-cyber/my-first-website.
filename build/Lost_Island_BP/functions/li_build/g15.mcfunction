@@ -1,0 +1,21 @@
+titleraw @a actionbar {"rawtext":[{"text":"§7Growing the forest... §f83%"}]}
+execute if score #idx li_sys matches 0 run function li_build/t/s300
+execute if score #idx li_sys matches 1 run function li_build/t/s301
+execute if score #idx li_sys matches 2 run function li_build/t/s302
+execute if score #idx li_sys matches 3 run function li_build/t/s303
+execute if score #idx li_sys matches 4 run function li_build/t/s304
+execute if score #idx li_sys matches 5 run function li_build/t/s305
+execute if score #idx li_sys matches 6 run function li_build/t/s306
+execute if score #idx li_sys matches 7 run function li_build/t/s307
+execute if score #idx li_sys matches 8 run function li_build/t/s308
+execute if score #idx li_sys matches 9 run function li_build/t/s309
+execute if score #idx li_sys matches 10 run function li_build/t/s310
+execute if score #idx li_sys matches 11 run function li_build/t/s311
+execute if score #idx li_sys matches 12 run function li_build/t/s312
+execute if score #idx li_sys matches 13 run function li_build/t/s313
+execute if score #idx li_sys matches 14 run function li_build/t/s314
+execute if score #idx li_sys matches 15 run function li_build/t/s315
+execute if score #idx li_sys matches 16 run function li_build/t/s316
+execute if score #idx li_sys matches 17 run function li_build/t/s317
+execute if score #idx li_sys matches 18 run function li_build/t/s318
+execute if score #idx li_sys matches 19 run function li_build/t/s319

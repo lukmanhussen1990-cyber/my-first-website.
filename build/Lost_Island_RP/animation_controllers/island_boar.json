@@ -1,0 +1,49 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.li_island_boar.general": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "animations": [
+            "idle"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "walk": "query.modified_move_speed > 0.1"
+            },
+            {
+              "attack": "variable.attack_time > 0.0"
+            }
+          ]
+        },
+        "walk": {
+          "animations": [
+            "walk"
+          ],
+          "blend_transition": 0.2,
+          "transitions": [
+            {
+              "idle": "query.modified_move_speed <= 0.1"
+            },
+            {
+              "attack": "variable.attack_time > 0.0"
+            }
+          ]
+        },
+        "attack": {
+          "animations": [
+            "attack"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "idle": "variable.attack_time <= 0.0"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

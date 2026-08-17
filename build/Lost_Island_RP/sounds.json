@@ -1,0 +1,95 @@
+{
+  "format_version": "1.14.0",
+  "entity_sounds": {
+    "entities": {
+      "li:feral_survivor": {
+        "volume": 0.85,
+        "pitch": [
+          0.85,
+          1.05
+        ],
+        "events": {
+          "ambient": "mob.villager.idle",
+          "hurt": "mob.villager.hurt",
+          "death": "mob.zombie.death",
+          "attack": "mob.zombie.say"
+        }
+      },
+      "li:island_stalker": {
+        "volume": 0.85,
+        "pitch": [
+          0.85,
+          1.05
+        ],
+        "events": {
+          "ambient": "mob.wolf.growl",
+          "hurt": "mob.wolf.hurt",
+          "death": "mob.wolf.death",
+          "attack": "mob.wolf.bark"
+        }
+      },
+      "li:cave_crawler": {
+        "volume": 0.85,
+        "pitch": [
+          0.85,
+          1.05
+        ],
+        "events": {
+          "ambient": "mob.silverfish.say",
+          "hurt": "mob.silverfish.hurt",
+          "death": "mob.spider.death",
+          "attack": "mob.spider.say"
+        }
+      },
+      "li:watcher": {
+        "volume": 0.85,
+        "pitch": [
+          0.85,
+          1.05
+        ],
+        "events": {
+          "ambient": "mob.enderman.idle",
+          "hurt": "mob.enderman.portal",
+          "death": "mob.enderman.portal"
+        }
+      },
+      "li:alpha_stalker": {
+        "volume": 0.85,
+        "pitch": [
+          0.85,
+          1.05
+        ],
+        "events": {
+          "ambient": "mob.ravager.ambient",
+          "hurt": "mob.ravager.hurt",
+          "death": "mob.ravager.death",
+          "attack": "mob.ravager.roar"
+        }
+      },
+      "li:island_boar": {
+        "volume": 0.85,
+        "pitch": [
+          0.85,
+          1.05
+        ],
+        "events": {
+          "ambient": "mob.pig.say",
+          "hurt": "mob.pig.say",
+          "death": "mob.pig.death"
+        }
+      },
+      "li:island_bird": {
+        "volume": 0.85,
+        "pitch": [
+          0.85,
+          1.05
+        ],
+        "events": {
+          "ambient": "mob.chicken.say",
+          "hurt": "mob.chicken.hurt",
+          "death": "mob.chicken.hurt"
+        }
+      }
+    }
+  }
+}

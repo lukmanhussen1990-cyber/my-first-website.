@@ -1,0 +1,140 @@
+{
+  "pools": [
+    {
+      "rolls": {
+        "min": 1,
+        "max": 3
+      },
+      "entries": [
+        {
+          "type": "item",
+          "name": "li:canned_beans",
+          "weight": 12
+        },
+        {
+          "type": "item",
+          "name": "li:canned_meat",
+          "weight": 8
+        },
+        {
+          "type": "item",
+          "name": "li:dirty_water",
+          "weight": 12
+        },
+        {
+          "type": "item",
+          "name": "li:clean_water",
+          "weight": 6
+        },
+        {
+          "type": "item",
+          "name": "li:cloth",
+          "weight": 12,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "li:rope",
+          "weight": 8
+        },
+        {
+          "type": "item",
+          "name": "li:scrap",
+          "weight": 12,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "li:battery",
+          "weight": 6
+        },
+        {
+          "type": "item",
+          "name": "li:matches",
+          "weight": 8,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "li:bandage",
+          "weight": 8,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "minecraft:stick",
+          "weight": 8,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 4
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "minecraft:torch",
+          "weight": 6,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 4
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "minecraft:stone_shovel",
+          "weight": 3
+        },
+        {
+          "type": "item",
+          "name": "minecraft:stone_pickaxe",
+          "weight": 3
+        },
+        {
+          "type": "empty",
+          "weight": 34
+        }
+      ]
+    }
+  ]
+}

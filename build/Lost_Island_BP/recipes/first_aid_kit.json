@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "li:first_aid_kit"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "CBC",
+      "BPB",
+      "CBC"
+    ],
+    "key": {
+      "C": {
+        "item": "li:cloth"
+      },
+      "B": {
+        "item": "li:bandage"
+      },
+      "P": {
+        "item": "minecraft:paper"
+      }
+    },
+    "result": {
+      "item": "li:first_aid",
+      "count": 1
+    }
+  }
+}

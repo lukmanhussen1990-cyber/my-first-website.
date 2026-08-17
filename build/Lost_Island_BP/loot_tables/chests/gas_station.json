@@ -1,0 +1,59 @@
+{
+  "pools": [
+    {
+      "rolls": {
+        "min": 1,
+        "max": 2
+      },
+      "entries": [
+        {
+          "type": "item",
+          "name": "li:fuel_can",
+          "weight": 5
+        },
+        {
+          "type": "item",
+          "name": "li:matches",
+          "weight": 12,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "li:canned_beans",
+          "weight": 12
+        },
+        {
+          "type": "item",
+          "name": "li:scrap",
+          "weight": 10,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "li:battery",
+          "weight": 8
+        },
+        {
+          "type": "empty",
+          "weight": 28
+        }
+      ]
+    }
+  ]
+}

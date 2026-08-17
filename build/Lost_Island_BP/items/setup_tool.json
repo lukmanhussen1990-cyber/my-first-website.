@@ -1,0 +1,37 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "li:setup_tool",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "li_setup_tool"
+      },
+      "minecraft:display_name": {
+        "value": "Lost Island - Start Kit"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:food": {
+        "nutrition": 0,
+        "saturation_modifier": "poor",
+        "can_always_eat": true,
+        "using_converts_to": "li:setup_tool_used"
+      },
+      "minecraft:use_modifiers": {
+        "use_duration": 0.9,
+        "movement_modifier": 0.35
+      },
+      "minecraft:glint": true,
+      "minecraft:allow_off_hand": true,
+      "minecraft:tags": {
+        "tags": [
+          "li:lost_island"
+        ]
+      }
+    }
+  }
+}

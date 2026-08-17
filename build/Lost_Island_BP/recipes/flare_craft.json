@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "li:flare_craft"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "P",
+      "G",
+      "S"
+    ],
+    "key": {
+      "P": {
+        "item": "minecraft:paper"
+      },
+      "G": {
+        "item": "minecraft:gunpowder"
+      },
+      "S": {
+        "item": "li:scrap"
+      }
+    },
+    "result": {
+      "item": "li:flare",
+      "count": 2
+    }
+  }
+}

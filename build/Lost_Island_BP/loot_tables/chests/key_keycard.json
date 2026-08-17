@@ -1,0 +1,32 @@
+{
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "item",
+          "name": "li:keycard",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "rolls": {
+        "min": 1,
+        "max": 1
+      },
+      "entries": [
+        {
+          "type": "item",
+          "name": "li:documents",
+          "weight": 10
+        },
+        {
+          "type": "item",
+          "name": "li:bandage",
+          "weight": 6
+        }
+      ]
+    }
+  ]
+}

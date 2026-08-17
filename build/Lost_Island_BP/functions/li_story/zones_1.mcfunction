@@ -1,0 +1,16 @@
+execute as @a[scores={li_chapter=1..},tag=!li_z2,x=-40,y=61,z=114,dx=24,dy=15,dz=24] at @s run function li_story/discover_2
+execute as @a[scores={li_chapter=1..},tag=!li_z7,x=20,y=63,z=60,dx=28,dy=15,dz=28] at @s run function li_story/discover_7
+execute as @a[scores={li_chapter=1..},tag=!li_z12,x=62,y=81,z=24,dx=32,dy=15,dz=32] at @s run function li_story/discover_12
+execute as @a[scores={li_chapter=1..},tag=!li_z17,x=78,y=75,z=-48,dx=36,dy=15,dz=36] at @s run function li_story/discover_17
+execute as @a[scores={li_chapter=1..},tag=!li_z22,x=64,y=69,z=-128,dx=40,dy=15,dz=40] at @s run function li_story/discover_22
+execute as @a[scores={li_chapter=1..},tag=!li_n1,x=5,y=63,z=129,dx=6,dy=4,dz=6] at @s run function li_story/note_1
+execute as @a[scores={li_chapter=1..},tag=!li_n15,x=56,y=66,z=91,dx=6,dy=4,dz=6] at @s run function li_story/note_15
+execute as @a[scores={li_chapter=1..},tag=!li_n7,x=27,y=66,z=68,dx=6,dy=4,dz=6] at @s run function li_story/note_7
+execute as @a[scores={li_chapter=1..},tag=!li_n12,x=-3,y=67,z=13,dx=6,dy=4,dz=6] at @s run function li_story/note_12
+execute as @a[scores={li_chapter=1..},tag=!li_n34,x=42,y=68,z=10,dx=8,dy=4,dz=8] at @s run function li_story/note_34
+execute as @a[scores={li_chapter=1..},tag=!li_n22,x=119,y=92,z=-70,dx=8,dy=4,dz=8] at @s run function li_story/note_22
+execute as @a[scores={li_chapter=1..},tag=!li_n29,x=133,y=59,z=-152,dx=8,dy=4,dz=8] at @s run function li_story/note_29
+execute as @a[scores={li_chapter=1..},tag=!li_n34,x=-98,y=70,z=-104,dx=8,dy=4,dz=8] at @s run function li_story/note_34
+execute as @a[scores={li_chapter=1..},tag=!li_n39,x=-10,y=35,z=-136,dx=6,dy=4,dz=6] at @s run function li_story/note_39
+execute as @a[scores={li_chapter=1..},tag=!li_n51,x=114,y=70,z=92,dx=8,dy=4,dz=8] at @s run function li_story/note_51
+execute as @a[scores={li_chapter=1..},tag=!li_n56,x=-64,y=68,z=-64,dx=8,dy=4,dz=8] at @s run function li_story/note_56

@@ -1,0 +1,9 @@
+fill 152 94 24 168 124 55 minecraft:air
+fill 152 125 24 168 140 55 minecraft:air
+fill 152 63 56 168 93 87 minecraft:air
+fill 152 94 56 168 124 87 minecraft:air
+fill 152 125 56 168 140 87 minecraft:air
+fill 152 63 88 168 93 119 minecraft:air
+fill 152 94 88 168 124 119 minecraft:air
+fill 152 125 88 168 140 119 minecraft:air
+fill 152 63 120 168 93 151 minecraft:air

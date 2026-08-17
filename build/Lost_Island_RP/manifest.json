@@ -1,0 +1,28 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Lost Island: Abandoned [RP]",
+    "description": "Textures, models and atmosphere for Lost Island: Abandoned.\nBuilt for Minecraft Bedrock 1.21.0 (Beta 1.21.0.26) - Android.",
+    "uuid": "b17e94ca-514b-4518-ad13-b3e8486a73a1",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "Lost Island resources",
+      "type": "resources",
+      "uuid": "e7290b05-801c-46fa-8b5d-e0a284253ef8",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "f7c4be07-eacf-4986-996a-a6c552fbb7bd",
+      "version": [1, 0, 0]
+    }
+  ],
+  "metadata": {
+    "authors": ["Lost Island Project"],
+    "license": "Original assets, all rights reserved by the author"
+  }
+}

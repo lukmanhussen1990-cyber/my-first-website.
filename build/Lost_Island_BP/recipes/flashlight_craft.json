@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "li:flashlight_craft"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "SGS",
+      "SBS",
+      "S S"
+    ],
+    "key": {
+      "S": {
+        "item": "li:scrap"
+      },
+      "G": {
+        "item": "minecraft:glass_pane"
+      },
+      "B": {
+        "item": "li:battery"
+      }
+    },
+    "result": {
+      "item": "li:flashlight_off",
+      "count": 1
+    }
+  }
+}

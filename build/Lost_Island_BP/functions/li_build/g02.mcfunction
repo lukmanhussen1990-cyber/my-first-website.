@@ -1,0 +1,21 @@
+titleraw @a actionbar {"rawtext":[{"text":"§7Building... §f11%"}]}
+execute if score #idx li_sys matches 0 run function li_build/t/s040
+execute if score #idx li_sys matches 1 run function li_build/t/s041
+execute if score #idx li_sys matches 2 run function li_build/t/s042
+execute if score #idx li_sys matches 3 run function li_build/t/s043
+execute if score #idx li_sys matches 4 run function li_build/t/s044
+execute if score #idx li_sys matches 5 run function li_build/t/s045
+execute if score #idx li_sys matches 6 run function li_build/t/s046
+execute if score #idx li_sys matches 7 run function li_build/t/s047
+execute if score #idx li_sys matches 8 run function li_build/t/s048
+execute if score #idx li_sys matches 9 run function li_build/t/s049
+execute if score #idx li_sys matches 10 run function li_build/t/s050
+execute if score #idx li_sys matches 11 run function li_build/t/s051
+execute if score #idx li_sys matches 12 run function li_build/t/s052
+execute if score #idx li_sys matches 13 run function li_build/t/s053
+execute if score #idx li_sys matches 14 run function li_build/t/s054
+execute if score #idx li_sys matches 15 run function li_build/t/s055
+execute if score #idx li_sys matches 16 run function li_build/t/s056
+execute if score #idx li_sys matches 17 run function li_build/t/s057
+execute if score #idx li_sys matches 18 run function li_build/t/s058
+execute if score #idx li_sys matches 19 run function li_build/t/s059

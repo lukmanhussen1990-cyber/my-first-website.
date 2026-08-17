@@ -1,0 +1,21 @@
+titleraw @a actionbar {"rawtext":[{"text":"§7Clearing the region... §f0%"}]}
+execute if score #idx li_sys matches 0 run function li_build/t/s000
+execute if score #idx li_sys matches 1 run function li_build/t/s001
+execute if score #idx li_sys matches 2 run function li_build/t/s002
+execute if score #idx li_sys matches 3 run function li_build/t/s003
+execute if score #idx li_sys matches 4 run function li_build/t/s004
+execute if score #idx li_sys matches 5 run function li_build/t/s005
+execute if score #idx li_sys matches 6 run function li_build/t/s006
+execute if score #idx li_sys matches 7 run function li_build/t/s007
+execute if score #idx li_sys matches 8 run function li_build/t/s008
+execute if score #idx li_sys matches 9 run function li_build/t/s009
+execute if score #idx li_sys matches 10 run function li_build/t/s010
+execute if score #idx li_sys matches 11 run function li_build/t/s011
+execute if score #idx li_sys matches 12 run function li_build/t/s012
+execute if score #idx li_sys matches 13 run function li_build/t/s013
+execute if score #idx li_sys matches 14 run function li_build/t/s014
+execute if score #idx li_sys matches 15 run function li_build/t/s015
+execute if score #idx li_sys matches 16 run function li_build/t/s016
+execute if score #idx li_sys matches 17 run function li_build/t/s017
+execute if score #idx li_sys matches 18 run function li_build/t/s018
+execute if score #idx li_sys matches 19 run function li_build/t/s019

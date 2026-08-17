@@ -1,0 +1,35 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "li:island_stalker",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/li_island_stalker"
+      },
+      "geometry": {
+        "default": "geometry.li_island_stalker"
+      },
+      "animations": {
+        "idle": "animation.li_island_stalker.idle",
+        "walk": "animation.li_island_stalker.walk",
+        "attack": "animation.li_island_stalker.attack",
+        "general": "controller.animation.li_island_stalker.general"
+      },
+      "scripts": {
+        "animate": [
+          "general"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.li_default"
+      ],
+      "spawn_egg": {
+        "base_colour": "#707c68",
+        "overlay_colour": "#c8b05a"
+      }
+    }
+  }
+}

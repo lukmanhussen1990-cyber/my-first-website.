@@ -1,0 +1,35 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "li:island_boar",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/li_island_boar"
+      },
+      "geometry": {
+        "default": "geometry.li_island_boar"
+      },
+      "animations": {
+        "idle": "animation.li_island_boar.idle",
+        "walk": "animation.li_island_boar.walk",
+        "attack": "animation.li_island_boar.attack",
+        "general": "controller.animation.li_island_boar.general"
+      },
+      "scripts": {
+        "animate": [
+          "general"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.li_default"
+      ],
+      "spawn_egg": {
+        "base_colour": "#624c36",
+        "overlay_colour": "#8c6a4a"
+      }
+    }
+  }
+}

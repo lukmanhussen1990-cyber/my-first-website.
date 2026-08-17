@@ -1,0 +1,35 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "li:feral_survivor",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/li_feral_survivor"
+      },
+      "geometry": {
+        "default": "geometry.li_feral_survivor"
+      },
+      "animations": {
+        "idle": "animation.li_feral_survivor.idle",
+        "walk": "animation.li_feral_survivor.walk",
+        "attack": "animation.li_feral_survivor.attack",
+        "general": "controller.animation.li_feral_survivor.general"
+      },
+      "scripts": {
+        "animate": [
+          "general"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.li_default"
+      ],
+      "spawn_egg": {
+        "base_colour": "#6b6552",
+        "overlay_colour": "#33302a"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+fill -14 68 0 26 85 40 minecraft:air
+fill -14 64 0 26 66 40 minecraft:dirt
+fill -14 67 0 26 67 40 minecraft:grass_block
+fill 4 68 10 44 85 50 minecraft:air
+fill 4 64 10 44 66 50 minecraft:dirt
+fill 4 67 10 44 67 50 minecraft:grass_block
+fill 58 85 20 98 102 60 minecraft:air
+fill 58 81 20 98 83 60 minecraft:dirt
+fill 58 84 20 98 84 60 minecraft:grass_block

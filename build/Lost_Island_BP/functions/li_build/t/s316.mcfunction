@@ -1,0 +1,150 @@
+fill 23 95 -41 27 96 -37 minecraft:spruce_leaves
+fill 24 97 -40 26 98 -38 minecraft:spruce_leaves
+setblock 25 100 -39 minecraft:spruce_leaves
+fill -147 67 -35 -147 74 -35 minecraft:dark_oak_log
+fill -149 72 -37 -145 73 -33 minecraft:dark_oak_leaves
+fill -148 74 -36 -146 74 -34 minecraft:dark_oak_leaves
+fill -140 67 -36 -140 73 -36 minecraft:oak_log
+fill -142 71 -38 -138 72 -34 minecraft:oak_leaves
+fill -141 73 -37 -139 73 -35 minecraft:oak_leaves
+fill -133 70 -37 -133 76 -37 minecraft:birch_log
+fill -135 74 -39 -131 75 -35 minecraft:birch_leaves
+fill -134 76 -38 -132 76 -36 minecraft:birch_leaves
+fill -129 73 -37 -129 80 -37 minecraft:dark_oak_log
+fill -131 78 -39 -127 79 -35 minecraft:dark_oak_leaves
+fill -130 80 -38 -128 80 -36 minecraft:dark_oak_leaves
+fill -121 73 -36 -121 76 -36 minecraft:oak_log
+fill -123 74 -38 -119 75 -34 minecraft:oak_leaves
+fill -122 76 -37 -120 76 -35 minecraft:oak_leaves
+setblock -120 73 -36 minecraft:vine
+fill -116 76 -37 -116 82 -37 minecraft:dark_oak_log
+fill -118 80 -39 -114 81 -35 minecraft:dark_oak_leaves
+fill -117 82 -38 -115 82 -36 minecraft:dark_oak_leaves
+setblock -115 79 -37 minecraft:vine
+fill -113 76 -37 -113 81 -37 minecraft:dark_oak_log
+fill -115 79 -39 -111 80 -35 minecraft:dark_oak_leaves
+fill -114 81 -38 -112 81 -36 minecraft:dark_oak_leaves
+setblock -112 78 -37 minecraft:vine
+fill -111 76 -37 -111 79 -37 minecraft:oak_log
+fill -113 77 -39 -109 78 -35 minecraft:oak_leaves
+fill -112 79 -38 -110 79 -36 minecraft:oak_leaves
+setblock -110 76 -37 minecraft:vine
+fill -103 76 -36 -103 80 -36 minecraft:dark_oak_log
+fill -105 78 -38 -101 79 -34 minecraft:dark_oak_leaves
+fill -104 80 -37 -102 80 -35 minecraft:dark_oak_leaves
+fill -96 76 -36 -96 79 -36 minecraft:oak_log
+fill -98 77 -38 -94 78 -34 minecraft:oak_leaves
+fill -97 79 -37 -95 79 -35 minecraft:oak_leaves
+fill -93 76 -37 -93 81 -37 minecraft:oak_log
+fill -95 79 -39 -91 80 -35 minecraft:oak_leaves
+fill -94 81 -38 -92 81 -36 minecraft:oak_leaves
+fill -15 88 -35 -15 91 -35 minecraft:oak_log
+fill -17 89 -37 -13 90 -33 minecraft:oak_leaves
+fill -16 91 -36 -14 91 -34 minecraft:oak_leaves
+fill -5 85 -36 -5 91 -36 minecraft:dark_oak_log
+fill -7 89 -38 -3 90 -34 minecraft:dark_oak_leaves
+fill -6 91 -37 -4 91 -35 minecraft:dark_oak_leaves
+fill 5 85 -37 5 89 -37 minecraft:dark_oak_log
+fill 3 87 -39 7 88 -35 minecraft:dark_oak_leaves
+fill 4 89 -38 6 89 -36 minecraft:dark_oak_leaves
+fill 7 85 -35 7 88 -35 minecraft:oak_log
+fill 5 86 -37 9 87 -33 minecraft:oak_leaves
+fill 6 88 -36 8 88 -34 minecraft:oak_leaves
+fill 11 85 -37 11 89 -37 minecraft:oak_log
+fill 9 87 -39 13 88 -35 minecraft:oak_leaves
+fill 10 89 -38 12 89 -36 minecraft:oak_leaves
+fill 13 88 -37 13 91 -37 minecraft:oak_log
+fill 11 89 -39 15 90 -35 minecraft:oak_leaves
+fill 12 91 -38 14 91 -36 minecraft:oak_leaves
+setblock 14 88 -37 minecraft:vine
+fill 15 88 -36 15 94 -36 minecraft:oak_log
+fill 13 92 -38 17 93 -34 minecraft:oak_leaves
+fill 14 94 -37 16 94 -35 minecraft:oak_leaves
+fill -145 67 -33 -145 73 -33 minecraft:oak_log
+fill -147 71 -35 -143 72 -31 minecraft:oak_leaves
+fill -146 73 -34 -144 73 -32 minecraft:oak_leaves
+fill -143 67 -33 -143 71 -33 minecraft:dark_oak_log
+fill -145 69 -35 -141 70 -31 minecraft:dark_oak_leaves
+fill -144 71 -34 -142 71 -32 minecraft:dark_oak_leaves
+fill -137 70 -33 -137 77 -33 minecraft:dark_oak_log
+fill -139 75 -35 -135 76 -31 minecraft:dark_oak_leaves
+fill -138 77 -34 -136 77 -32 minecraft:dark_oak_leaves
+fill -135 70 -33 -135 75 -33 minecraft:oak_log
+fill -137 73 -35 -133 74 -31 minecraft:oak_leaves
+fill -136 75 -34 -134 75 -32 minecraft:oak_leaves
+fill -128 73 -34 -128 78 -34 minecraft:oak_log
+fill -130 76 -36 -126 77 -32 minecraft:oak_leaves
+fill -129 78 -35 -127 78 -33 minecraft:oak_leaves
+fill -120 76 -33 -120 80 -33 minecraft:birch_log
+fill -122 78 -35 -118 79 -31 minecraft:birch_leaves
+fill -121 80 -34 -119 80 -32 minecraft:birch_leaves
+fill -107 76 -34 -107 79 -34 minecraft:oak_log
+fill -109 77 -36 -105 78 -32 minecraft:oak_leaves
+fill -108 79 -35 -106 79 -33 minecraft:oak_leaves
+fill -105 76 -33 -105 81 -33 minecraft:birch_log
+fill -107 79 -35 -103 80 -31 minecraft:birch_leaves
+fill -106 81 -34 -104 81 -32 minecraft:birch_leaves
+setblock -104 78 -33 minecraft:vine
+fill -102 76 -35 -102 83 -35 minecraft:dark_oak_log
+fill -104 81 -37 -100 82 -33 minecraft:dark_oak_leaves
+fill -103 83 -36 -101 83 -34 minecraft:dark_oak_leaves
+setblock -101 80 -35 minecraft:vine
+fill -91 76 -34 -91 80 -34 minecraft:oak_log
+fill -93 78 -36 -89 79 -32 minecraft:oak_leaves
+fill -92 80 -35 -90 80 -33 minecraft:oak_leaves
+fill -17 88 -34 -17 93 -34 minecraft:birch_log
+fill -19 91 -36 -15 92 -32 minecraft:birch_leaves
+fill -18 93 -35 -16 93 -33 minecraft:birch_leaves
+setblock -16 90 -34 minecraft:vine
+fill -15 88 -33 -15 94 -33 minecraft:dark_oak_log
+fill -17 92 -35 -13 93 -31 minecraft:dark_oak_leaves
+fill -16 94 -34 -14 94 -32 minecraft:dark_oak_leaves
+fill -7 88 -35 -7 91 -35 minecraft:oak_log
+fill -9 89 -37 -5 90 -33 minecraft:oak_leaves
+fill -8 91 -36 -6 91 -34 minecraft:oak_leaves
+fill -4 88 -35 -4 93 -35 minecraft:birch_log
+fill -6 91 -37 -2 92 -33 minecraft:birch_leaves
+fill -5 93 -36 -3 93 -34 minecraft:birch_leaves
+fill 0 85 -34 0 91 -34 minecraft:birch_log
+fill -2 89 -36 2 90 -32 minecraft:birch_leaves
+fill -1 91 -35 1 91 -33 minecraft:birch_leaves
+fill 7 85 -35 7 90 -35 minecraft:oak_log
+fill 5 88 -37 9 89 -33 minecraft:oak_leaves
+fill 6 90 -36 8 90 -34 minecraft:oak_leaves
+setblock 8 87 -35 minecraft:vine
+fill 10 88 -35 10 94 -35 minecraft:oak_log
+fill 8 92 -37 12 93 -33 minecraft:oak_leaves
+fill 9 94 -36 11 94 -34 minecraft:oak_leaves
+fill 11 88 -35 11 94 -35 minecraft:oak_log
+fill 9 92 -37 13 93 -33 minecraft:oak_leaves
+fill 10 94 -36 12 94 -34 minecraft:oak_leaves
+fill 15 88 -34 15 95 -34 minecraft:dark_oak_log
+fill 13 93 -36 17 94 -32 minecraft:dark_oak_leaves
+fill 14 95 -35 16 95 -33 minecraft:dark_oak_leaves
+fill 15 88 -34 15 94 -34 minecraft:oak_log
+fill 13 92 -36 17 93 -32 minecraft:oak_leaves
+fill 14 94 -35 16 94 -33 minecraft:oak_leaves
+fill 39 100 -33 39 107 -33 minecraft:spruce_log
+fill 37 103 -35 41 104 -31 minecraft:spruce_leaves
+fill 38 105 -34 40 106 -32 minecraft:spruce_leaves
+setblock 39 108 -33 minecraft:spruce_leaves
+setblock 40 104 -33 minecraft:vine
+fill -143 67 -32 -143 71 -32 minecraft:dark_oak_log
+fill -145 69 -34 -141 70 -30 minecraft:dark_oak_leaves
+fill -144 71 -33 -142 71 -31 minecraft:dark_oak_leaves
+fill -137 70 -31 -137 76 -31 minecraft:dark_oak_log
+fill -139 74 -33 -135 75 -29 minecraft:dark_oak_leaves
+fill -138 76 -32 -136 76 -30 minecraft:dark_oak_leaves
+setblock -136 73 -31 minecraft:vine
+fill -136 70 -32 -136 73 -32 minecraft:oak_log
+fill -138 71 -34 -134 72 -30 minecraft:oak_leaves
+fill -137 73 -33 -135 73 -31 minecraft:oak_leaves
+setblock -135 70 -32 minecraft:vine
+fill -129 73 -33 -129 78 -33 minecraft:birch_log
+fill -131 76 -35 -127 77 -31 minecraft:birch_leaves
+fill -130 78 -34 -128 78 -32 minecraft:birch_leaves
+fill -127 73 -33 -127 76 -33 minecraft:oak_log
+fill -129 74 -35 -125 75 -31 minecraft:oak_leaves
+fill -128 76 -34 -126 76 -32 minecraft:oak_leaves
+fill -125 73 -33 -125 79 -33 minecraft:dark_oak_log
+fill -127 77 -35 -123 78 -31 minecraft:dark_oak_leaves

@@ -1,0 +1,35 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "li:cave_crawler",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/li_cave_crawler"
+      },
+      "geometry": {
+        "default": "geometry.li_cave_crawler"
+      },
+      "animations": {
+        "idle": "animation.li_cave_crawler.idle",
+        "walk": "animation.li_cave_crawler.walk",
+        "attack": "animation.li_cave_crawler.attack",
+        "general": "controller.animation.li_cave_crawler.general"
+      },
+      "scripts": {
+        "animate": [
+          "general"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.li_default"
+      ],
+      "spawn_egg": {
+        "base_colour": "#444c56",
+        "overlay_colour": "#cbb05a"
+      }
+    }
+  }
+}
