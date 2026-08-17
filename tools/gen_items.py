@@ -75,7 +75,7 @@ def w(path, obj):
 
 def item_json(ident, display, category, stack, kind, extra, marker=False):
     comp = {
-        "minecraft:icon": {"texture": "li_" + ident},
+        "minecraft:icon": "li_" + ident,
         "minecraft:display_name": {"value": display},
         "minecraft:max_stack_size": 1 if marker else stack,
     }
@@ -89,7 +89,7 @@ def item_json(ident, display, category, stack, kind, extra, marker=False):
             # that converts into a marker item, which a function detects.
             comp["minecraft:food"] = {
                 "nutrition": extra.get("nutrition", 0),
-                "saturation_modifier": extra.get("sat", "poor"),
+                "saturation_modifier": extra.get("sat", 0.6),
                 "can_always_eat": True,
                 "using_converts_to": "li:%s_used" % ident,
             }

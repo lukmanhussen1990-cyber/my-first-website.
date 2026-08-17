@@ -8,16 +8,14 @@
       }
     },
     "components": {
-      "minecraft:icon": {
-        "texture": "li_setup_tool"
-      },
+      "minecraft:icon": "li_setup_tool",
       "minecraft:display_name": {
         "value": "Lost Island - Start Kit"
       },
       "minecraft:max_stack_size": 1,
       "minecraft:food": {
         "nutrition": 0,
-        "saturation_modifier": "poor",
+        "saturation_modifier": 0.6,
         "can_always_eat": true,
         "using_converts_to": "li:setup_tool_used"
       },

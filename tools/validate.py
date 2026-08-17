@@ -196,15 +196,31 @@ def check_items():
             warn("%s item format_version %r" % (rel(p), d.get("format_version")))
         comp = it.get("components", {})
         icon = comp.get("minecraft:icon")
-        if not isinstance(icon, dict) or "texture" not in icon:
-            err("%s minecraft:icon must be {\"texture\": ...} on 1.21.0"
-                % rel(p))
-        elif icon["texture"] not in tex_keys:
+        if isinstance(icon, str):
+            icon_name = icon
+        elif isinstance(icon, dict) and "texture" in icon:
+            icon_name = icon["texture"]
+        else:
+            icon_name = None
+            err("%s minecraft:icon must be a string or {\"texture\": ...}; "
+                "the {\"textures\": {...}} form is 1.21.40+" % rel(p))
+        if icon_name and icon_name not in tex_keys:
             err("%s icon '%s' is not registered in item_texture.json"
-                % (rel(p), icon["texture"]))
-        food = comp.get("minecraft:food", {})
-        if "using_converts_to" in food:
-            converts.append((rel(p), food["using_converts_to"]))
+                % (rel(p), icon_name))
+        food = comp.get("minecraft:food")
+        if food is not None:
+            # saturation_modifier is a decimal in format 1.20.30+. The old
+            # string enum silently invalidates the whole food component, which
+            # kills every item-use hook in the pack.
+            sat = food.get("saturation_modifier", 0.6)
+            if isinstance(sat, str):
+                err("%s food saturation_modifier is the string %r; it must be "
+                    "a number on 1.21.0" % (rel(p), sat))
+            if "minecraft:use_modifiers" not in comp:
+                err("%s has minecraft:food but no minecraft:use_modifiers "
+                    "(required for food to work)" % rel(p))
+            if "using_converts_to" in food:
+                converts.append((rel(p), food["using_converts_to"]))
         cat = desc.get("menu_category", {}).get("category")
         if cat not in ("construction", "equipment", "items", "nature", "none"):
             err("%s invalid menu_category %r" % (rel(p), cat))

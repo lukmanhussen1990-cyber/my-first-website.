@@ -6,6 +6,7 @@ scoreboard players operation #rand li_sys = #sec li_sys
 scoreboard players operation #rand li_sys %= #c20 li_sys
 execute as @a[tag=!li_init] run function li_core/player_init
 function li_items/detect
+execute if score #built li_sys matches ..0 run function li_items/hold_check
 scoreboard players remove #cd_hud li_sys 1
 execute if score #cd_hud li_sys matches ..0 run function li_surv/hud
 scoreboard players remove #cd_thirst li_sys 1

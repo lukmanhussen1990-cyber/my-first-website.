@@ -8,16 +8,14 @@
       }
     },
     "components": {
-      "minecraft:icon": {
-        "texture": "li_debug_tool"
-      },
+      "minecraft:icon": "li_debug_tool",
       "minecraft:display_name": {
         "value": "Lost Island - Debug Wand"
       },
       "minecraft:max_stack_size": 1,
       "minecraft:food": {
         "nutrition": 0,
-        "saturation_modifier": "poor",
+        "saturation_modifier": 0.6,
         "can_always_eat": true,
         "using_converts_to": "li:debug_tool_used"
       },

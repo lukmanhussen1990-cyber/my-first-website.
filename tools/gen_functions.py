@@ -200,6 +200,7 @@ def gen_core(total_steps, t_steps):
         "scoreboard players operation #rand li_sys %= #c20 li_sys",
         "execute as @a[tag=!li_init] run function li_core/player_init",
         "function li_items/detect",
+        "execute if score #built li_sys matches ..0 run function li_items/hold_check",
         # countdown-gated subsystems
         "scoreboard players remove #cd_hud li_sys 1",
         "execute if score #cd_hud li_sys matches ..0 run function li_surv/hud",
@@ -240,8 +241,10 @@ def gen_core(total_steps, t_steps):
         "give @s li:setup_tool 1",
         "tellraw @s %s" % raw("§8[§eLost Island§8] §fYou have been given the "
                               "§eStart Kit§f."),
-        "tellraw @s %s" % raw("§7Hold-tap it to build Lost Island. Use a "
-                              "§fnew world§7 - it rewrites terrain around 0,0."),
+        "tellraw @s %s" % raw("§7Put it in your hand and §fhold it for 3 "
+                              "seconds§7 to build the island."),
+        "tellraw @s %s" % raw("§7Use a §fnew world§7 - it rewrites terrain "
+                              "around 0,0."),
         "playsound random.orb @s ~ ~ ~ 0.7 1.4",
     ], "First join, island not built yet: hand over the Start Kit.")
 
@@ -579,6 +582,23 @@ def gen_items(markers):
     for name, body in simple.items():
         w(os.path.join(FN, "li_items", "use_%s.mcfunction" % name),
           base(name) + body)
+
+    # A belt-and-braces starter: hold the kit in your hand for 3 seconds.
+    w(os.path.join(FN, "li_items", "hold_check.mcfunction"), [
+        "execute as @a unless entity @s[hasitem={item=li:setup_tool,"
+        "location=slot.weapon.mainhand}] run scoreboard players set @s li_tmp 0",
+        "execute as @a[hasitem={item=li:setup_tool,location=slot.weapon.mainhand}] "
+        "run scoreboard players add @s li_tmp 1",
+        "execute as @a[hasitem={item=li:setup_tool,location=slot.weapon.mainhand},"
+        "scores={li_tmp=3}] run titleraw @s actionbar %s"
+        % raw("§7Keep holding the Start Kit..."),
+        "execute as @a[hasitem={item=li:setup_tool,location=slot.weapon.mainhand},"
+        "scores={li_tmp=6..}] at @s run function li_items/hold_start",
+    ], "Runs only until the island exists: hold-to-start fallback.")
+    w(os.path.join(FN, "li_items", "hold_start.mcfunction"), [
+        "scoreboard players set @s li_tmp 0",
+        "execute if score #built li_sys matches ..0 run function li_build/start",
+    ])
 
     # ------------------------------------------------------------ flashlight
     w(os.path.join(FN, "li_items", "use_flashlight_off.mcfunction"), [

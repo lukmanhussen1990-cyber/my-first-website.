@@ -8,16 +8,14 @@
       }
     },
     "components": {
-      "minecraft:icon": {
-        "texture": "li_clean_water"
-      },
+      "minecraft:icon": "li_clean_water",
       "minecraft:display_name": {
         "value": "Clean Water"
       },
       "minecraft:max_stack_size": 8,
       "minecraft:food": {
         "nutrition": 0,
-        "saturation_modifier": "poor",
+        "saturation_modifier": 0.6,
         "can_always_eat": true,
         "using_converts_to": "li:clean_water_used"
       },
