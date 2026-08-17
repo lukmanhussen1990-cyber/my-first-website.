@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Someone in your life feels better because you exist btw</title>
+<style>
+  /* ============================================================
+     8-second rooftop scene — one continuous shot, vertical 9:16.
+
+     Layer stack, back to front (all inside .camera except the type):
+       1  #baked    static art, rasterised once with its filters
+       2  #skyline  windows that twinkle
+       3  .hush     soft dusk behind the figure
+       4  #front    reflections, lamplight, the man
+       5  #rain     rain and puddle ripples
+       6  .grain    paper tooth
+       7  .vignette corner falloff
+       -- .type sits OUTSIDE .camera, so the push-in never touches it
+     ============================================================ */
+
+  /* Patrick Hand by Patrick Wagesreiter — SIL Open Font License 1.1.
+     Latin subset, self-hosted so the page needs no network. */
+  @font-face{
+    font-family:"Patrick Hand";
+    src:url("fonts/PatrickHand-latin.woff2") format("woff2");
+    font-weight:400;
+    font-style:normal;
+    font-display:block;
+  }
+
+  :root{
+    --ink:    #17131f;
+    --cream:  #f7f0dd;
+    --pink:   #f9a6c0;
+    --yellow: #f8d268;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{ height:100%; background:#0c0a18; overflow:hidden; }
+
+  body{
+    display:grid;
+    place-items:center;
+    font-family:"Patrick Hand","Comic Sans MS","Chalkboard SE","Bradley Hand",
+                "Segoe Print",ui-rounded,"Trebuchet MS",cursive;
+  }
+
+  .stage{
+    position:relative;
+    width:  min(100vw, calc(100dvh * 9 / 16));
+    height: min(100dvh, calc(100vw * 16 / 9));
+    overflow:hidden;
+    background:#241d55;
+    container-type:size;          /* unlocks cqw units for the type */
+    user-select:none;
+  }
+
+  /* ---------- the camera: very slow 3% push-in ---------- */
+  .camera{
+    position:absolute;
+    inset:0;
+    transform-origin:50% 58%;     /* pushes in toward the figure */
+    will-change:transform;
+    animation:push 8s cubic-bezier(.42,0,.58,1) infinite alternate;
+  }
+  @keyframes push{
+    from{ transform:scale(1); }
+    to  { transform:scale(1.03); }
+  }
+
+  .layer{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    display:block;
+    pointer-events:none;
+  }
+
+  /* dusk behind the figure, so his silhouette stays readable */
+  .hush{
+    background:radial-gradient(
+      ellipse 23.2% 10.5% at 49.8% 61.5%,
+      rgba(36,29,85,.62) 0%, rgba(36,29,85,.42) 55%, rgba(36,29,85,0) 100%);
+  }
+
+  /* ---------- breathing, cloth, hair ---------- */
+  /* every period divides 8s, so the shot closes on itself */
+  .breathe{
+    transform-origin:538px 1400px;   /* hips */
+    animation:breathe 4s ease-in-out infinite;
+  }
+  @keyframes breathe{
+    0%,100%{ transform:translateY(0)      scaleY(1); }
+    45%    { transform:translateY(-3.2px) scaleY(1.006); }
+  }
+
+  .sway-hair{
+    transform-origin:538px 1175px;
+    animation:swayHair 8s ease-in-out infinite;
+  }
+  @keyframes swayHair{
+    0%,100%{ transform:rotate(-0.45deg); }
+    50%    { transform:rotate(0.45deg); }
+  }
+
+  .sway-cloth{
+    transform-origin:538px 1210px;
+    animation:swayCloth 8s ease-in-out infinite;
+  }
+  @keyframes swayCloth{
+    0%,100%{ transform:rotate(-0.22deg) translateX(-0.6px); }
+    50%    { transform:rotate(0.22deg)  translateX(0.6px); }
+  }
+
+  /* ---------- streetlight: one soft flicker, ~3.0s in ---------- */
+  .lamp-light{ animation:flicker 8s linear infinite; }
+  @keyframes flicker{
+    0%,36%{ opacity:1; }
+    37.5% { opacity:.52; }
+    38.6% { opacity:.94; }
+    39.8% { opacity:.64; }
+    41.5% { opacity:1; }
+    100%  { opacity:1; }
+  }
+
+  /* ---------- wet-floor reflections drift ---------- */
+  .reflect{
+    transform-origin:center bottom;
+    animation:reflect 8s ease-in-out infinite;
+  }
+  @keyframes reflect{
+    0%,100%{ transform:translateX(-2.5px) scaleY(1);    opacity:.9; }
+    50%    { transform:translateX(2.5px)  scaleY(1.02); opacity:1; }
+  }
+
+  /* ---------- distant windows, slow twinkle ---------- */
+  @keyframes tw{
+    0%,100%{ opacity:var(--o); }
+    50%    { opacity:calc(var(--o) * .22); }
+  }
+  @keyframes beacon{
+    0%,44%,100%{ opacity:.15; }
+    52%,62%    { opacity:1; }
+  }
+
+  /* ============================================================
+     LOCKED TEXT OVERLAY — outside .camera. Nothing here animates.
+     ============================================================ */
+  .type{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    text-align:center;
+    text-rendering:geometricPrecision;
+    -webkit-font-smoothing:antialiased;
+  }
+  .type span{
+    position:absolute;
+    left:0; right:0;
+    transform:translateY(-50%);
+    display:block;
+    line-height:1;
+    letter-spacing:.012em;
+    /* the reference lettering is heavier than Patrick Hand's regular weight */
+    -webkit-text-stroke:.03em currentColor;
+    paint-order:stroke fill;
+    text-shadow:0 .35cqw 1.2cqw rgba(12,8,28,.55);
+  }
+  .l1{ top:22.4cqw; font-size:8.4cqw; color:var(--cream); }
+  .l2{ top:35.6cqw; font-size:9.0cqw; color:var(--pink); }
+  .l3{ top:49.4cqw; font-size:8.8cqw; color:var(--yellow); }
+  .l4{ top:62.9cqw; font-size:10cqw;  color:var(--cream); }
+
+  /* ---------- recording helpers: invisible unless hovered ---------- */
+  .ui{
+    position:absolute;
+    right:1.2cqw; bottom:1.2cqw;
+    display:flex; gap:.6cqw;
+    opacity:0;
+    transition:opacity .25s ease;
+    z-index:10;
+  }
+  .stage:hover .ui{ opacity:.75; }
+  .ui button{
+    font:inherit;
+    font-size:2cqw;
+    padding:.6cqw 1.4cqw;
+    border:1px solid rgba(247,240,221,.35);
+    border-radius:99px;
+    background:rgba(12,8,28,.6);
+    color:var(--cream);
+    cursor:pointer;
+  }
+  .ui button:hover{ background:rgba(12,8,28,.85); }
+
+  /* the source art for the baked layer is never displayed directly */
+  #bakeSrc{ position:absolute; width:0; height:0; overflow:hidden; opacity:0; }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <div class="camera" id="camera">
+
+    <!-- 1 ── static art, drawn once from #bakeSrc -->
+    <canvas class="layer" id="baked"></canvas>
+
+    <!-- 2 ── twinkling windows, clipped so they never cover the
+                pole, the stairwell hut or the parapet in front of them -->
+    <svg class="layer" viewBox="0 0 1080 1920" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <clipPath id="winClip" clipPathUnits="userSpaceOnUse">
+          <path clip-rule="evenodd"
+                d="M0 0 H1080 V1380 H0 Z
+                   M-40 1262 L162 1247 L164 1385 L-40 1385 Z
+                   M196 862 H240 V1385 H196 Z"/>
+        </clipPath>
+      </defs>
+      <g id="cityWindows" clip-path="url(#winClip)"></g>
+    </svg>
+
+    <!-- 3 ── dusk behind the figure -->
+    <div class="layer hush"></div>
+
+    <!-- 4 ── everything that moves -->
+    <svg class="layer" viewBox="0 0 1080 1920" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="cone" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0"   stop-color="#ffd88a" stop-opacity=".30"/>
+          <stop offset=".55" stop-color="#ffc866" stop-opacity=".10"/>
+          <stop offset="1"   stop-color="#ffb347" stop-opacity="0"/>
+        </linearGradient>
+
+        <radialGradient id="bulb">
+          <stop offset="0"   stop-color="#fffbe8"/>
+          <stop offset=".38" stop-color="#ffe08a"/>
+          <stop offset="1"   stop-color="#ffb347" stop-opacity="0"/>
+        </radialGradient>
+
+        <radialGradient id="pool">
+          <stop offset="0"   stop-color="#ffcf6e" stop-opacity=".34"/>
+          <stop offset="1"   stop-color="#ffcf6e" stop-opacity="0"/>
+        </radialGradient>
+
+        <linearGradient id="streak" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0"   stop-color="#ffe0a2" stop-opacity=".78"/>
+          <stop offset=".45" stop-color="#ffc46a" stop-opacity=".34"/>
+          <stop offset="1"   stop-color="#ffb347" stop-opacity="0"/>
+        </linearGradient>
+
+        <!-- the man keeps a live wobble: he is the focal point and
+             stays crisp at any resolution -->
+        <filter id="wobFine" x="-6%" y="-6%" width="112%" height="112%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.016" numOctaves="1" seed="4" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="3"
+                             xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <!-- the face needs the lightest touch: too much wobble and the
+             brows tilt into an expression the original doesn't have -->
+        <filter id="wobFace" x="-8%" y="-8%" width="116%" height="116%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="1" seed="12" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"
+                             xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+      </defs>
+
+      <!-- puddles + mirrored city lights -->
+      <g class="reflect">
+        <g>
+          <ellipse cx="200" cy="1720" rx="210" ry="62" fill="#8579c4" opacity=".26"/>
+          <ellipse cx="650" cy="1655" rx="190" ry="48" fill="#8579c4" opacity=".20"/>
+          <ellipse cx="890" cy="1790" rx="170" ry="56" fill="#8579c4" opacity=".22"/>
+          <ellipse cx="420" cy="1868" rx="230" ry="60" fill="#8579c4" opacity=".18"/>
+          <ellipse cx="760" cy="1520" rx="150" ry="34" fill="#8579c4" opacity=".16"/>
+        </g>
+        <g opacity=".9">
+          <rect x="612"  y="1466" width="16" height="330" fill="url(#streak)"/>
+          <rect x="700"  y="1466" width="12" height="260" fill="url(#streak)"/>
+          <rect x="806"  y="1466" width="20" height="380" fill="url(#streak)"/>
+          <rect x="912"  y="1466" width="14" height="300" fill="url(#streak)"/>
+          <rect x="1002" y="1466" width="18" height="340" fill="url(#streak)"/>
+          <rect x="252"  y="1466" width="12" height="230" fill="url(#streak)"/>
+          <rect x="452"  y="1466" width="10" height="200" fill="url(#streak)"/>
+          <rect x="128"  y="1490" width="10" height="180" fill="url(#streak)"/>
+          <rect x="866"  y="1466" width="12" height="250" fill="url(#streak)"/>
+        </g>
+      </g>
+
+      <!-- lamplight: cone, ground pool, its long reflection -->
+      <g class="lamp-light">
+        <path d="M358 832 L214 1470 L516 1470 Z" fill="url(#cone)"/>
+        <ellipse cx="352" cy="1560" rx="300" ry="104" fill="url(#pool)"/>
+        <g class="reflect">
+          <path d="M324 1470 L384 1470 L434 1920 L258 1920 Z" fill="url(#streak)" opacity=".55"/>
+          <path d="M340 1470 L370 1470 L400 1920 L292 1920 Z" fill="url(#streak)"/>
+        </g>
+        <!-- bulb + bloom -->
+        <circle cx="360" cy="830" r="118" fill="url(#bulb)" opacity=".5"/>
+        <ellipse cx="360" cy="826" rx="36" ry="23" fill="#fff6d5"/>
+        <ellipse cx="360" cy="826" rx="21" ry="14" fill="#ffffff"/>
+      </g>
+
+      <!-- ============ the man ============ -->
+      <g class="breathe">
+        <g class="sway-cloth">
+          <g filter="url(#wobFine)">
+            <!-- trousers -->
+            <path d="M452 1384 L626 1384 L614 1622 L556 1622 L544 1508
+                     L520 1622 L462 1622 Z"
+                  fill="#1c1a2a" stroke="var(--ink)" stroke-width="6" stroke-linejoin="round"/>
+            <!-- pocket seams, hands tucked in -->
+            <path d="M470 1392 C466 1420 474 1436 492 1444"
+                  fill="none" stroke="#3a3550" stroke-width="5" stroke-linecap="round"/>
+            <path d="M608 1392 C612 1420 604 1436 586 1444"
+                  fill="none" stroke="#3a3550" stroke-width="5" stroke-linecap="round"/>
+
+            <!-- shoes -->
+            <path d="M456 1610 C446 1626 448 1642 468 1646
+                     C494 1650 520 1646 526 1636
+                     C530 1628 528 1614 524 1606 Z"
+                  fill="#f2eee1" stroke="var(--ink)" stroke-width="6" stroke-linejoin="round"/>
+            <path d="M622 1610 C632 1626 630 1642 610 1646
+                     C584 1650 558 1646 552 1636
+                     C548 1628 550 1614 554 1606 Z"
+                  fill="#f2eee1" stroke="var(--ink)" stroke-width="6" stroke-linejoin="round"/>
+
+            <!-- sweater -->
+            <path d="M470 1198 C440 1206 428 1250 424 1300
+                     C420 1348 428 1380 436 1402
+                     L644 1402
+                     C652 1380 660 1348 656 1300
+                     C652 1250 640 1206 610 1198 Z"
+                  fill="#6f6885" stroke="var(--ink)" stroke-width="6" stroke-linejoin="round"/>
+            <path d="M474 1236 C464 1290 464 1348 468 1398"
+                  fill="none" stroke="var(--ink)" stroke-width="5" opacity=".85"/>
+            <path d="M606 1236 C616 1290 616 1348 612 1398"
+                  fill="none" stroke="var(--ink)" stroke-width="5" opacity=".85"/>
+            <!-- lamp-side light on his shoulder -->
+            <path d="M470 1198 C445 1206 432 1244 428 1292
+                     C446 1268 460 1228 486 1206 Z"
+                  fill="#8b83a6" opacity=".55"/>
+            <g stroke="#5a5470" stroke-width="5" stroke-linecap="round" fill="none" opacity=".7">
+              <path d="M508 1352 C520 1362 552 1364 570 1354"/>
+              <path d="M498 1300 C512 1310 540 1312 556 1304"/>
+            </g>
+          </g>
+        </g>
+
+        <!-- sparse spiky hair -->
+        <g class="sway-hair">
+          <g filter="url(#wobFine)">
+            <g stroke="var(--ink)" stroke-width="6" stroke-linecap="round">
+              <path d="M450 1125 L385 1116"/>
+              <path d="M457 1102 L398 1074"/>
+              <path d="M472 1082 L423 1038"/>
+              <path d="M492 1067 L458 1010"/>
+              <path d="M516 1057 L500  993"/>
+              <path d="M543 1055 L546  989"/>
+              <path d="M568 1060 L591  998"/>
+              <path d="M592 1071 L631 1019"/>
+              <path d="M610 1088 L663 1050"/>
+              <path d="M622 1110 L685 1088"/>
+              <path d="M626 1125 L691 1116"/>
+            </g>
+          </g>
+        </g>
+
+        <!-- head -->
+        <g filter="url(#wobFace)">
+          <ellipse cx="538" cy="1136" rx="89" ry="81"
+                   fill="#f3ecd2" stroke="var(--ink)" stroke-width="6"/>
+          <path d="M538 1055 A89 81 0 0 0 538 1217 A66 81 0 0 1 538 1055 Z"
+                fill="#fff3cf" opacity=".4"/>
+          <!-- two tired brows, small eyes, a long nose line, a level mouth -->
+          <g stroke="var(--ink)" stroke-linecap="round" fill="none" stroke-width="6">
+            <path d="M470 1102 L514 1106"/>
+            <path d="M562 1106 L606 1102"/>
+            <path d="M498 1128 L500 1142"/>
+            <path d="M580 1128 L578 1142"/>
+            <path d="M538 1112 L536 1156"/>
+            <path d="M500 1180 L580 1181"/>
+          </g>
+        </g>
+      </g>
+    </svg>
+
+    <!-- 5 ── rain + puddle ripples -->
+    <canvas class="layer" id="rain"></canvas>
+  </div>
+
+  <!-- ============ locked overlay: never scales, never moves ============ -->
+  <div class="type">
+    <span class="l1">Someone in your life</span>
+    <span class="l2">feels better</span>
+    <span class="l3">because you exist</span>
+    <span class="l4">btw</span>
+  </div>
+
+  <div class="ui">
+    <button id="replay" type="button">Replay 8s</button>
+    <button id="pause"  type="button">Pause</button>
+  </div>
+</div>
+
+<!-- ================================================================
+     SOURCE ART FOR THE BAKED LAYER
+     Hand-drawn wobble here is expensive to evaluate, so this whole
+     group is rasterised once into #baked and then only composited.
+     ================================================================ -->
+<svg id="bakeSrc" xmlns="http://www.w3.org/2000/svg" width="1080" height="1920"
+     viewBox="0 0 1080 1920" aria-hidden="true">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#1d1748"/>
+      <stop offset=".42" stop-color="#241d55"/>
+      <stop offset=".72" stop-color="#2b2160"/>
+      <stop offset="1"   stop-color="#3a2a6d"/>
+    </linearGradient>
+
+    <linearGradient id="cityGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff9f4a" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ff9f4a" stop-opacity=".16"/>
+    </linearGradient>
+
+    <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"  stop-color="#463b71"/>
+      <stop offset=".3" stop-color="#38305c"/>
+      <stop offset="1"  stop-color="#2b2449"/>
+    </linearGradient>
+
+    <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b5079"/>
+      <stop offset="1" stop-color="#3d3560"/>
+    </linearGradient>
+
+    <filter id="wobBig" x="-4%" y="-4%" width="108%" height="108%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="9" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="7"
+                         xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="wobPole" x="-8%" y="-8%" width="116%" height="116%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.016" numOctaves="1" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="3"
+                         xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+
+  <!-- sky -->
+  <rect width="1080" height="1920" fill="url(#sky)"/>
+  <rect y="900" width="1080" height="520" fill="url(#cityGlow)"/>
+
+  <!-- skyline silhouettes (filled in by JS) -->
+  <g id="cityInk" filter="url(#wobBig)"></g>
+
+  <!-- rooftop -->
+  <g filter="url(#wobBig)">
+    <rect x="-20" y="1462" width="1120" height="480" fill="url(#floorGrad)"/>
+
+    <!-- parapet wall across the back -->
+    <path d="M-20 1392 L1100 1386 L1100 1470 L-20 1476 Z" fill="url(#wallGrad)"/>
+    <path d="M-20 1392 L1100 1386" fill="none" stroke="#7b6f9c" stroke-width="6"/>
+    <path d="M-20 1470 L1100 1464" fill="none" stroke="#1e1935" stroke-width="5" opacity=".65"/>
+    <g opacity=".28" stroke="#241d40" stroke-width="7" stroke-linecap="round">
+      <path d="M120 1400 L118 1466"/><path d="M300 1398 L303 1464"/>
+      <path d="M470 1396 L468 1462"/><path d="M700 1393 L702 1460"/>
+      <path d="M905 1390 L903 1458"/>
+    </g>
+
+    <!-- stairwell hut, left -->
+    <path d="M-30 1272 L152 1258 L160 1492 L-30 1500 Z" fill="#4a4270"/>
+    <path d="M-30 1272 L152 1258" fill="none" stroke="#6d6394" stroke-width="7"/>
+    <path d="M152 1258 L160 1492" fill="none" stroke="#241d40" stroke-width="6"/>
+    <rect x="14" y="1318" width="86" height="168" rx="4" fill="#3c5a86"/>
+    <rect x="14" y="1318" width="86" height="168" rx="4" fill="none"
+          stroke="#1d2b45" stroke-width="6"/>
+    <circle cx="88" cy="1404" r="6" fill="#cbd8ea" opacity=".8"/>
+
+    <!-- vent box, right -->
+    <path d="M872 1480 L978 1472 L982 1584 L868 1590 Z" fill="#4b4370"/>
+    <path d="M872 1480 L978 1472" fill="none" stroke="#6d6394" stroke-width="6"/>
+    <g stroke="#2a2348" stroke-width="6" stroke-linecap="round" opacity=".8">
+      <path d="M888 1500 L960 1495"/><path d="M888 1518 L960 1513"/>
+      <path d="M888 1536 L960 1531"/>
+    </g>
+    <path d="M872 1480 L978 1472 L982 1584 L868 1590 Z" fill="none"
+          stroke="#1e1935" stroke-width="5" opacity=".7"/>
+
+    <!-- tiles and cracks in the wet floor -->
+    <g stroke="#1f1a38" stroke-width="4" opacity=".35" stroke-linecap="round" fill="none">
+      <path d="M-20 1560 L1100 1548"/>
+      <path d="M-20 1668 L1100 1650"/>
+      <path d="M-20 1804 L1100 1782"/>
+      <path d="M210 1462 L150 1920"/>
+      <path d="M690 1462 L760 1920"/>
+    </g>
+  </g>
+
+  <!-- streetlight: lighter wobble, it should read as drawn, not bent -->
+  <g filter="url(#wobPole)">
+    <path d="M211 872 L225 872 L228 1546 L208 1546 Z" fill="#5f5580"/>
+    <path d="M211 872 L225 872 L228 1546 L208 1546 Z" fill="none"
+          stroke="#17131f" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M197 1508 L239 1508 L248 1572 L188 1572 Z" fill="#5f5580"
+          stroke="#17131f" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M218 890 C214 790 244 752 302 752 C346 752 360 780 360 804"
+          fill="none" stroke="#17131f" stroke-width="13" stroke-linecap="round"/>
+    <path d="M218 890 C214 790 244 752 302 752 C346 752 360 780 360 804"
+          fill="none" stroke="#6b6090" stroke-width="6" stroke-linecap="round"/>
+    <path d="M296 806 A64 30 0 0 1 424 806 Z" fill="#5f5580"
+          stroke="#17131f" stroke-width="6" stroke-linejoin="round"/>
+  </g>
+</svg>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------- deterministic RNG so the skyline is always the same ---------- */
+  function rng(seed){
+    return function(){
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  const rnd     = rng(20260817);
+  const pick    = arr => arr[(rnd() * arr.length) | 0];
+  const between = (a, b) => a + rnd() * (b - a);
+
+  const NS      = 'http://www.w3.org/2000/svg';
+  const HORIZON = 1400;   // buildings disappear behind the parapet
+  const WIN_MAX = 1372;   // windows stop above the parapet's top edge
+
+  const stage   = document.getElementById('stage');
+  const ink     = document.getElementById('cityInk');
+  const winRoot = document.getElementById('cityWindows');
+
+  function el(tag, attrs){
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+
+  /* ============================================================
+     SKYLINE
+     ============================================================ */
+  const back = [
+    {x:-12,w:98,t:1128},{x:94,w:72,t:1180},{x:250,w:88,t:1150},{x:352,w:62,t:1196},
+    {x:428,w:92,t:1120},{x:538,w:76,t:1168},{x:628,w:100,t:1108},{x:746,w:68,t:1176},
+    {x:828,w:90,t:1140},{x:932,w:82,t:1186},{x:1018,w:74,t:1150}
+  ];
+  const front = [
+    {x:18,w:122,t:1010},{x:150,w:96,t:1064},{x:262,w:110,t:1046},
+    {x:590,w:104,t:1082},{x:664,w:86,t:1030},{x:756,w:122,t:996},
+    {x:884,w:112,t:934},{x:1000,w:98,t:1058}
+  ];
+
+  const warm = ['#ffcf6e','#ffbe55','#ffe3a4','#ffd47f','#ffb347'];
+  const cool = ['#d9a6ff','#ff9ecb','#b9c9ff'];
+
+  // twinkle periods all divide 8s, so the loop closes cleanly
+  const PERIODS = [8, 4, 8/3, 16/3];
+
+  function building(b, near){
+    const body = near ? '#332a63' : '#3a3068';
+    const edge = near ? '#4d4185' : '#463a7a';
+
+    ink.appendChild(el('rect', {x:b.x, y:b.t, width:b.w, height:HORIZON - b.t, fill:body}));
+    ink.appendChild(el('rect', {x:b.x, y:b.t, width:b.w, height:5, fill:edge}));
+
+    // aerial mast + slow red beacon on the taller ones
+    if (near && b.t < 1010){
+      const mx = b.x + b.w * 0.62;
+      ink.appendChild(el('path', {
+        d:`M${mx} ${b.t} L${mx} ${b.t - 44}`, stroke:edge, 'stroke-width':4
+      }));
+      const beacon = el('circle', {cx:mx, cy:b.t - 48, r:5, fill:'#ff5a6e'});
+      beacon.style.animation = 'beacon 8s ease-in-out infinite';
+      beacon.style.animationDelay = `${-between(0, 8).toFixed(2)}s`;
+      winRoot.appendChild(beacon);
+    }
+
+    const cw = near ? 24 : 18, ch = near ? 30 : 24;
+    const ww = near ? 13 : 10, wh = near ? 17 : 13;
+    const padX = 9, padY = 14;
+    const cols = Math.floor((b.w - padX * 2) / cw);
+    const rows = Math.floor((HORIZON - b.t - padY) / ch);
+
+    for (let c = 0; c < cols; c++){
+      for (let r = 0; r < rows; r++){
+        if (rnd() > (near ? 0.6 : 0.5)) continue;      // most windows are dark
+        const x = b.x + padX + c * cw + (cw - ww) / 2;
+        const y = b.t + padY + r * ch;
+        if (y > WIN_MAX - wh) continue;
+
+        const o = between(near ? 0.45 : 0.3, near ? 0.95 : 0.7);
+        const w = el('rect', {
+          x:x.toFixed(1), y:y.toFixed(1), width:ww, height:wh, rx:1,
+          fill: rnd() > 0.9 ? pick(cool) : pick(warm)
+        });
+        w.style.setProperty('--o', o.toFixed(2));
+        w.style.opacity = o.toFixed(2);
+
+        // a minority breathe in and out very slowly
+        if (rnd() < 0.22){
+          const p = pick(PERIODS);
+          w.style.animation = `tw ${p}s ease-in-out infinite`;
+          w.style.animationDelay = `${-(rnd() * p).toFixed(2)}s`;
+        }
+        winRoot.appendChild(w);
+      }
+    }
+  }
+
+  back.forEach(b => building(b, false));
+  front.forEach(b => building(b, true));
+
+  /* ============================================================
+     BAKE THE STATIC ART
+     The wobble filters are costly per frame; evaluating them once
+     into a bitmap keeps the shot smooth.
+     ============================================================ */
+  const baked  = document.getElementById('baked');
+  const bakeG  = baked.getContext('2d');
+  const svgTxt = new XMLSerializer().serializeToString(document.getElementById('bakeSrc'));
+  const bakeImg = new Image();
+  let bakeReady = false, bakedAt = 0;
+
+  bakeImg.onload = () => { bakeReady = true; paintBake(); };
+  bakeImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgTxt);
+
+  /* ---------- paper tooth, as a tile rather than a live filter ---------- */
+  const grainTile = (() => {
+    const n = 128, c = document.createElement('canvas');
+    c.width = c.height = n;
+    const g = c.getContext('2d');
+    const img = g.createImageData(n, n);
+    const gr = rng(7);
+    for (let i = 0; i < img.data.length; i += 4){
+      const v = 110 + gr() * 90;
+      img.data[i] = img.data[i+1] = img.data[i+2] = v;
+      img.data[i+3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    return c;
+  })();
+
+  /* Grain and vignette are static too, so they are composited into the
+     same bitmap. A live blend layer over the whole frame costs more per
+     frame than everything else in the scene put together. */
+  function paintBake(){
+    if (!bakeReady) return;
+    const r = stage.getBoundingClientRect();
+    if (!r.width) return;
+    const d = Math.min(window.devicePixelRatio || 1, 2);
+    // 1.05x so it stays sharp at the end of the 3% push-in
+    const w = Math.round(r.width * d * 1.05), h = Math.round(r.height * d * 1.05);
+    if (Math.abs(w - bakedAt) < 2) return;
+    bakedAt = w;
+    baked.width = w; baked.height = h;
+
+    bakeG.clearRect(0, 0, w, h);
+    bakeG.drawImage(bakeImg, 0, 0, w, h);
+
+    // paper tooth
+    bakeG.save();
+    bakeG.globalAlpha = .15;
+    bakeG.globalCompositeOperation = 'overlay';
+    bakeG.fillStyle = bakeG.createPattern(grainTile, 'repeat');
+    bakeG.fillRect(0, 0, w, h);
+    bakeG.restore();
+
+    // corner falloff
+    bakeG.save();
+    bakeG.translate(w / 2, h / 2);
+    bakeG.scale(w / 2, h / 2);
+    const vg = bakeG.createRadialGradient(0, 0, 0, 0, 0, Math.SQRT2);
+    vg.addColorStop(.55, 'rgba(0,0,0,0)');
+    vg.addColorStop(1,   'rgba(0,0,0,.45)');
+    bakeG.fillStyle = vg;
+    bakeG.fillRect(-1, -1, 2, 2);
+    bakeG.restore();
+  }
+
+  /* ============================================================
+     RAIN + PUDDLE RIPPLES
+     Drawn in scene coordinates (1080 x 1920) and scaled to fit.
+     ============================================================ */
+  const cv  = document.getElementById('rain');
+  const ctx = cv.getContext('2d');
+  let scale = 1;
+
+  function resize(){
+    const r = stage.getBoundingClientRect();
+    if (!r.width) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width  = Math.max(1, Math.round(r.width  * dpr));
+    cv.height = Math.max(1, Math.round(r.height * dpr));
+    scale = (r.width / 1080) * dpr;
+    paintBake();
+  }
+  new ResizeObserver(resize).observe(stage);
+  resize();
+
+  const PUDDLES = [
+    {x:200, y:1720, rx:200, ry:58},
+    {x:650, y:1655, rx:180, ry:44},
+    {x:890, y:1790, rx:160, ry:52},
+    {x:420, y:1868, rx:220, ry:56},
+    {x:352, y:1580, rx:220, ry:60}
+  ];
+
+  const DRIFT = 0.085;                 // rain leans very slightly
+
+  const drops = [];
+  function newDrop(reset){
+    const d = reset || {};
+    d.x   = between(-80, 1160);
+    d.y   = reset ? between(-260, -20) : between(-260, 1900);
+    d.len = between(16, 42);
+    d.sp  = between(760, 1450);        // scene px per second
+    d.a   = between(0.05, 0.20);
+    d.w   = between(1.2, 2.4);
+    d.end = between(1470, 1900);       // the floor plane it lands on
+    return d;
+  }
+  for (let i = 0; i < 170; i++) drops.push(newDrop(null));
+
+  const ripples = [];
+  function ripple(x, y, big){
+    ripples.push({
+      x, y, r: 2,
+      max: big ? between(46, 96)   : between(14, 34),
+      sp:  big ? between(26, 46)   : between(18, 30),
+      a:   big ? between(.16, .30) : between(.10, .20)
+    });
+  }
+
+  // the streetlight cone — drops crossing it catch the light
+  function lit(x, y){
+    if (y < 800 || y > 1500) return 0;
+    const t = (y - 832) / (1470 - 832);
+    const halfWidth = 20 + t * 140;
+    const dx = Math.abs(x - (358 - t * 8));
+    return dx > halfWidth ? 0 : (1 - dx / halfWidth) * (1 - t * 0.55);
+  }
+
+  let last = performance.now();
+  let running = true;
+  let rippleClock = 0;
+
+  function frame(now){
+    const dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.clearRect(0, 0, 1080, 1920);
+    ctx.lineCap = 'round';
+
+    if (running){
+      for (const d of drops){
+        d.y += d.sp * dt;
+        d.x += d.sp * dt * DRIFT;
+
+        if (d.y > d.end){
+          if (rnd() < 0.5) ripple(d.x, d.end, false);
+          newDrop(d);
+          continue;
+        }
+
+        const glow = lit(d.x, d.y);
+        const a = d.a + glow * 0.42;
+        ctx.strokeStyle = glow > 0.05
+          ? `rgba(255,231,175,${a.toFixed(3)})`
+          : `rgba(203,214,255,${a.toFixed(3)})`;
+        ctx.lineWidth = d.w;
+        ctx.beginPath();
+        ctx.moveTo(d.x, d.y);
+        ctx.lineTo(d.x - d.len * DRIFT, d.y + d.len);
+        ctx.stroke();
+      }
+
+      // extra ripples seeded inside the puddles
+      rippleClock += dt;
+      while (rippleClock > 0.14){
+        rippleClock -= 0.14;
+        const p = PUDDLES[(rnd() * PUDDLES.length) | 0];
+        const a = rnd() * Math.PI * 2, k = Math.sqrt(rnd());
+        ripple(p.x + Math.cos(a) * p.rx * k, p.y + Math.sin(a) * p.ry * k, true);
+      }
+    }
+
+    for (let i = ripples.length - 1; i >= 0; i--){
+      const rp = ripples[i];
+      if (running) rp.r += rp.sp * dt;
+      const life = 1 - rp.r / rp.max;
+      if (life <= 0){ ripples.splice(i, 1); continue; }
+
+      const near = rp.y > 1560 ? 1 : 0.72;      // ripples read flatter further off
+      ctx.strokeStyle = `rgba(226,214,255,${(rp.a * life * near).toFixed(3)})`;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.ellipse(rp.x, rp.y, rp.r, rp.r * 0.32, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // a warm inner highlight where the streetlight falls
+      const g = lit(rp.x, rp.y);
+      if (g > 0.05){
+        ctx.strokeStyle = `rgba(255,214,140,${(rp.a * life * g * 1.5).toFixed(3)})`;
+        ctx.beginPath();
+        ctx.ellipse(rp.x, rp.y, rp.r * 0.72, rp.r * 0.23, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  /* ---------- recording helpers ---------- */
+  const pauseBtn = document.getElementById('pause');
+
+  document.getElementById('replay').addEventListener('click', () => {
+    stage.getAnimations({subtree:true}).forEach(a => { a.currentTime = 0; a.play(); });
+    running = true;
+    last = performance.now();
+    pauseBtn.textContent = 'Pause';
+  });
+
+  pauseBtn.addEventListener('click', () => {
+    running = !running;
+    stage.getAnimations({subtree:true}).forEach(a => running ? a.play() : a.pause());
+    last = performance.now();
+    pauseBtn.textContent = running ? 'Pause' : 'Play';
+  });
+})();
+</script>
+</body>
+</html>
