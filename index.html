@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Al Ameen Academy Badarpur</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap">
+  <style>
+    /* ─── Design tokens ─── */
+    :root {
+      --bg:        #ECE7DA;
+      --surface:   #F7F3EC;
+      --surface2:  #E4DFCF;
+      --border:    #CFC8B8;
+      --text:      #1A1812;
+      --muted:     #6B6353;
+      --gold:      #C4973A;
+      --gold-pale: #EDD98A;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg:        #091510;
+        --surface:   #0F2219;
+        --surface2:  #142C1E;
+        --border:    #1E3A28;
+        --text:      #EBE5D4;
+        --muted:     #897E6D;
+        --gold:      #C49A3C;
+        --gold-pale: #7B5D22;
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg:        #091510;
+      --surface:   #0F2219;
+      --surface2:  #142C1E;
+      --border:    #1E3A28;
+      --text:      #EBE5D4;
+      --muted:     #897E6D;
+      --gold:      #C49A3C;
+      --gold-pale: #7B5D22;
+    }
+
+    /* ─── Reset ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ─── Hero ─── */
+    .hero {
+      background: #0D3C28;
+      min-height: 64vh;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5rem 2rem 5.5rem;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent 5%, #C4973A 40%, #C4973A 60%, transparent 95%);
+    }
+
+    #heroCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.11;
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 720px;
+    }
+
+    /* 8-pointed star emblem */
+    .emblem {
+      display: block;
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 1.75rem;
+      animation: revolve 32s linear infinite;
+    }
+
+    @keyframes revolve { to { transform: rotate(360deg); } }
+
+    .hero-kicker {
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #C4973A;
+      margin-bottom: 0.9rem;
+      opacity: 0;
+      animation: riseIn 0.6s ease 0.15s forwards;
+    }
+
+    h1 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(3rem, 7.5vw, 5.6rem);
+      font-weight: 600;
+      line-height: 1.0;
+      letter-spacing: -0.01em;
+      color: #F4EFE3;
+      text-wrap: balance;
+      opacity: 0;
+      animation: riseIn 0.85s ease 0.3s forwards;
+    }
+
+    .hero-tagline {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(1.05rem, 2.5vw, 1.55rem);
+      font-style: italic;
+      font-weight: 400;
+      color: rgba(244, 239, 227, 0.55);
+      margin-top: 0.55rem;
+      opacity: 0;
+      animation: riseIn 0.8s ease 0.45s forwards;
+    }
+
+    .hero-rule {
+      width: 44px;
+      height: 1.5px;
+      background: #C4973A;
+      margin: 1.75rem auto;
+      opacity: 0;
+      animation: riseIn 0.6s ease 0.58s forwards;
+    }
+
+    .hero-meta {
+      font-size: 0.82rem;
+      font-weight: 300;
+      color: rgba(244, 239, 227, 0.4);
+      letter-spacing: 0.05em;
+      opacity: 0;
+      animation: riseIn 0.6s ease 0.7s forwards;
+    }
+
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Countdown ─── */
+    .countdown {
+      background: #0A2B1C;
+      border-bottom: 1px solid rgba(196, 151, 58, 0.12);
+      padding: 1.1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .cd-label {
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #C4973A;
+    }
+
+    .cd-units {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .cd-unit { text-align: center; }
+
+    .cd-num {
+      display: block;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.1rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #F4EFE3;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cd-uname {
+      display: block;
+      font-size: 0.56rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(244, 239, 227, 0.32);
+      margin-top: 0.12rem;
+    }
+
+    .cd-sep {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      color: #C4973A;
+      opacity: 0.35;
+      margin-bottom: 0.75rem;
+    }
+
+    .cd-next {
+      font-size: 0.78rem;
+      color: rgba(244, 239, 227, 0.4);
+    }
+
+    .cd-next strong {
+      color: rgba(244, 239, 227, 0.7);
+      font-weight: 500;
+    }
+
+    /* ─── Layout ─── */
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ─── Section heading ─── */
+    .sec-head {
+      text-align: center;
+      padding: 3.25rem 0 2rem;
+    }
+
+    .sec-eye {
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.45rem;
+    }
+
+    .sec-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.7rem, 4vw, 2.6rem);
+      font-weight: 600;
+      color: var(--text);
+      text-wrap: balance;
+    }
+
+    /* ─── Tabs ─── */
+    .tabs-nav {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .tab-btn {
+      padding: 0.5rem 1.35rem;
+      border: 1.5px solid var(--border);
+      border-radius: 50px;
+      background: var(--surface);
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.83rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+
+    .tab-btn:hover { border-color: var(--gold); color: var(--text); }
+
+    .tab-btn[aria-selected="true"] {
+      background: #0D3C28;
+      border-color: #0D3C28;
+      color: #F4EFE3;
+    }
+
+    .tab-panel { display: none; }
+
+    .tab-panel[aria-hidden="false"] {
+      display: block;
+      animation: panelSlide 0.35s ease;
+    }
+
+    @keyframes panelSlide {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Notice strip ─── */
+    .notice {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--gold);
+      border-radius: 8px;
+      padding: 0.9rem 1.25rem;
+      margin-bottom: 1.4rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .notice strong { color: var(--text); font-weight: 500; }
+
+    /* ─── Exam cards ─── */
+    .schedule { display: grid; gap: 0.55rem; }
+
+    .card {
+      display: grid;
+      grid-template-columns: 76px 1fr auto;
+      align-items: center;
+      gap: 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 1.1rem 1.4rem;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .card.revealed {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.45s ease, transform 0.45s ease, box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .card:hover { box-shadow: 0 7px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
+    .card.revealed:hover { transform: translateY(-2px); }
+    .card.today { border-color: var(--gold); }
+
+    /* Date column */
+    .card-date {
+      text-align: center;
+      border-right: 1px solid var(--border);
+      padding-right: 1.25rem;
+    }
+
+    .card-dow {
+      font-size: 0.58rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.1rem;
+    }
+
+    .card-dn {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.15rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .card-mo {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    /* Subject column */
+    .card-subj {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .today-pill {
+      font-size: 0.54rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: var(--gold);
+      color: #0D3C28;
+      border-radius: 999px;
+      padding: 0.1rem 0.5rem;
+    }
+
+    .card-paper {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    /* Time column */
+    .card-meta { text-align: right; white-space: nowrap; }
+
+    .card-time {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #1B6644;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .card-time { color: #3DAA72; }
+    }
+    :root[data-theme="dark"] .card-time { color: #3DAA72; }
+
+    .card-marks {
+      font-size: 0.67rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    /* ─── Instructions ─── */
+    .instr-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem 2.25rem 2.25rem;
+      margin: 2.5rem 0 3.25rem;
+    }
+
+    .instr-head {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.35rem;
+    }
+
+    .instr-head::before {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 1.25em;
+      background: var(--gold);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .instr-grid {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem 2.25rem;
+    }
+
+    .instr-grid li {
+      font-size: 0.85rem;
+      color: var(--muted);
+      padding-left: 1.2rem;
+      position: relative;
+      line-height: 1.5;
+    }
+
+    .instr-grid li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      top: 0.18em;
+      color: var(--gold);
+      font-size: 0.68rem;
+    }
+
+    /* ─── Footer ─── */
+    footer {
+      background: #0A2B1C;
+      border-top: 1px solid rgba(196, 151, 58, 0.12);
+      text-align: center;
+      padding: 2.75rem 2rem;
+    }
+
+    .footer-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: rgba(244, 239, 227, 0.88);
+    }
+
+    .footer-rule {
+      width: 36px;
+      height: 1px;
+      background: #C4973A;
+      margin: 0.8rem auto;
+    }
+
+    .footer-info {
+      font-size: 0.78rem;
+      color: rgba(244, 239, 227, 0.38);
+      line-height: 2;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 580px) {
+      .card {
+        grid-template-columns: 64px 1fr;
+        grid-template-rows: auto auto;
+        gap: 0.65rem 1rem;
+      }
+      .card-date { grid-row: 1 / 3; }
+      .card-meta { grid-column: 2; text-align: left; }
+      .instr-grid { grid-template-columns: 1fr; }
+      .countdown { gap: 1rem; }
+      .cd-next { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Hero ─── -->
+<header class="hero">
+  <canvas id="heroCanvas"></canvas>
+  <div class="hero-inner">
+
+    <!-- 8-pointed star emblem (octagram) -->
+    <svg class="emblem" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <polygon
+        points="50,7 56.5,34.3 80.4,19.6 65.7,43.5 93,50 65.7,56.5 80.4,80.4 56.5,65.7 50,93 43.5,65.7 19.6,80.4 34.3,56.5 7,50 34.3,43.5 19.6,19.6 43.5,34.3"
+        stroke="#C4973A" stroke-width="1.5" fill="rgba(196,151,58,0.06)" opacity="0.85"/>
+      <circle cx="50" cy="50" r="14" stroke="#C4973A" stroke-width="1" opacity="0.55"/>
+      <circle cx="50" cy="50" r="3.5" fill="#C4973A" opacity="0.9"/>
+    </svg>
+
+    <p class="hero-kicker">Badarpur &nbsp;·&nbsp; Assam</p>
+    <h1>Al Ameen Academy</h1>
+    <p class="hero-tagline">Annual Examination Schedule 2025 – 26</p>
+    <div class="hero-rule"></div>
+    <p class="hero-meta">October &amp; November 2025 &nbsp;·&nbsp; All Classes</p>
+
+  </div>
+</header>
+
+<!-- ─── Countdown ─── -->
+<div class="countdown" id="countdownBar">
+  <span class="cd-label">Next Exam Begins In</span>
+  <div class="cd-units">
+    <div class="cd-unit">
+      <span class="cd-num" id="cdD">--</span>
+      <span class="cd-uname">Days</span>
+    </div>
+    <span class="cd-sep">:</span>
+    <div class="cd-unit">
+      <span class="cd-num" id="cdH">--</span>
+      <span class="cd-uname">Hrs</span>
+    </div>
+    <span class="cd-sep">:</span>
+    <div class="cd-unit">
+      <span class="cd-num" id="cdM">--</span>
+      <span class="cd-uname">Min</span>
+    </div>
+    <span class="cd-sep">:</span>
+    <div class="cd-unit">
+      <span class="cd-num" id="cdS">--</span>
+      <span class="cd-uname">Sec</span>
+    </div>
+  </div>
+  <p class="cd-next">Up next: <strong id="cdSubject">—</strong></p>
+</div>
+
+<!-- ─── Main ─── -->
+<main class="wrap">
+
+  <div class="sec-head">
+    <p class="sec-eye">Examination Timetable</p>
+    <h2 class="sec-title">Select Your Class Group</h2>
+  </div>
+
+  <!-- Tab nav -->
+  <nav class="tabs-nav" role="tablist" aria-label="Class groups">
+    <button class="tab-btn" role="tab" id="tab-a" aria-selected="true"  aria-controls="panel-a" data-target="panel-a">Class VI – VIII</button>
+    <button class="tab-btn" role="tab" id="tab-b" aria-selected="false" aria-controls="panel-b" data-target="panel-b">Class IX – X</button>
+    <button class="tab-btn" role="tab" id="tab-c" aria-selected="false" aria-controls="panel-c" data-target="panel-c">Class XI – XII</button>
+  </nav>
+
+  <!-- Panel A: VI–VIII -->
+  <div class="tab-panel" id="panel-a" role="tabpanel" aria-labelledby="tab-a" aria-hidden="false">
+    <div class="notice">
+      <span aria-hidden="true">📋</span>
+      <span>Half-Yearly Examination &nbsp;·&nbsp; Time: <strong>10:00 AM – 12:30 PM</strong> &nbsp;·&nbsp; Reporting by 9:30 AM</span>
+    </div>
+    <div class="schedule" id="sched-a"></div>
+  </div>
+
+  <!-- Panel B: IX–X -->
+  <div class="tab-panel" id="panel-b" role="tabpanel" aria-labelledby="tab-b" aria-hidden="true">
+    <div class="notice">
+      <span aria-hidden="true">📋</span>
+      <span>Annual Examination &nbsp;·&nbsp; Time: <strong>10:00 AM – 1:00 PM</strong> &nbsp;·&nbsp; Reporting by 9:30 AM</span>
+    </div>
+    <div class="schedule" id="sched-b"></div>
+  </div>
+
+  <!-- Panel C: XI–XII -->
+  <div class="tab-panel" id="panel-c" role="tabpanel" aria-labelledby="tab-c" aria-hidden="true">
+    <div class="notice">
+      <span aria-hidden="true">📋</span>
+      <span>Annual Examination &nbsp;·&nbsp; Time: <strong>10:00 AM – 1:30 PM</strong> &nbsp;·&nbsp; Reporting by 9:45 AM</span>
+    </div>
+    <div class="schedule" id="sched-c"></div>
+  </div>
+
+  <!-- Instructions -->
+  <div class="instr-wrap">
+    <h3 class="instr-head">Important Instructions</h3>
+    <ul class="instr-grid">
+      <li>Carry your Admit Card and School ID to every examination.</li>
+      <li>Mobile phones and electronic devices are strictly prohibited.</li>
+      <li>Be seated at least 15 minutes before the exam commences.</li>
+      <li>Entry will not be permitted 30 minutes after commencement.</li>
+      <li>Use only blue or black ink pens; pencil for diagrams only.</li>
+      <li>Unfair means will result in immediate paper cancellation.</li>
+      <li>Do all rough work inside the answer script and strike it off.</li>
+      <li>Absence without prior notice will be marked <em>UA</em> (Unauthorised).</li>
+    </ul>
+  </div>
+
+</main>
+
+<!-- ─── Footer ─── -->
+<footer>
+  <div class="footer-name">Al Ameen Academy, Badarpur</div>
+  <div class="footer-rule"></div>
+  <div class="footer-info">
+    Badarpur, Karimganj District, Assam – 788 098<br>
+    +91 94360 00000 &nbsp;·&nbsp; alameenacademy@edu.in<br>
+    Examination Office: Monday – Saturday, 9 AM – 3 PM
+  </div>
+</footer>
+
+<script>
+/* ─── Subject catalogue ─── */
+const S = {
+  math:  { name: 'Mathematics',             color: '#2563EB' },
+  sci:   { name: 'General Science',          color: '#0891B2' },
+  phys:  { name: 'Physics',                 color: '#0E7490' },
+  chem:  { name: 'Chemistry',               color: '#059669' },
+  bio:   { name: 'Biology',                 color: '#16A34A' },
+  eng:   { name: 'English',                 color: '#DC2626' },
+  ben:   { name: 'Bengali',                 color: '#9333EA' },
+  arabic:{ name: 'Arabic',                  color: '#7C3AED' },
+  social:{ name: 'Social Studies',          color: '#D97706' },
+  hist:  { name: 'History & Pol. Science',  color: '#B45309' },
+  geo:   { name: 'Geography',               color: '#92400E' },
+  islam: { name: 'Islamic Studies',         color: '#15803D' },
+  comp:  { name: 'Computer Science',        color: '#4F46E5' },
+  econ:  { name: 'Economics',               color: '#EA580C' },
+  comm:  { name: 'Business Studies',        color: '#C2410C' },
+  acct:  { name: 'Accountancy',             color: '#BE123C' },
+  env:   { name: 'Environmental Science',   color: '#065F46' },
+};
+
+/* ─── Schedule data (all dates fictional) ─── */
+const DATA = {
+  a: {
+    time: '10:00 AM – 12:30 PM',
+    exams: [
+      { d:'2025-10-06', dow:'Mon', s:'ben',   paper:'Prose & Poetry – Paper I',           marks:'80 Marks' },
+      { d:'2025-10-07', dow:'Tue', s:'eng',   paper:'Language & Literature',              marks:'80 Marks' },
+      { d:'2025-10-08', dow:'Wed', s:'math',  paper:'Mathematics',                        marks:'100 Marks' },
+      { d:'2025-10-09', dow:'Thu', s:'sci',   paper:'General Science',                    marks:'80 Marks' },
+      { d:'2025-10-10', dow:'Fri', s:'social',paper:'Social Studies',                     marks:'80 Marks' },
+      { d:'2025-10-13', dow:'Mon', s:'arabic',paper:'Arabic / Alternate Language',        marks:'60 Marks' },
+      { d:'2025-10-14', dow:'Tue', s:'comp',  paper:'Computer Fundamentals',              marks:'50 Marks' },
+      { d:'2025-10-15', dow:'Wed', s:'islam', paper:'Islamic Studies',                    marks:'60 Marks' },
+      { d:'2025-10-16', dow:'Thu', s:'env',   paper:'Environmental Science',              marks:'40 Marks' },
+    ]
+  },
+  b: {
+    time: '10:00 AM – 1:00 PM',
+    exams: [
+      { d:'2025-11-03', dow:'Mon', s:'ben',   paper:'Bengali – Paper I',                  marks:'90 Marks' },
+      { d:'2025-11-04', dow:'Tue', s:'eng',   paper:'General English',                    marks:'90 Marks' },
+      { d:'2025-11-05', dow:'Wed', s:'math',  paper:'Mathematics',                        marks:'100 Marks' },
+      { d:'2025-11-06', dow:'Thu', s:'phys',  paper:'Physical Science',                   marks:'90 Marks' },
+      { d:'2025-11-07', dow:'Fri', s:'bio',   paper:'Life Science',                       marks:'90 Marks' },
+      { d:'2025-11-10', dow:'Mon', s:'hist',  paper:'History & Political Science',        marks:'90 Marks' },
+      { d:'2025-11-11', dow:'Tue', s:'geo',   paper:'Geography & Environment',            marks:'70 Marks' },
+      { d:'2025-11-12', dow:'Wed', s:'arabic',paper:'Arabic / Alternate Subject',         marks:'80 Marks' },
+      { d:'2025-11-13', dow:'Thu', s:'comp',  paper:'Computer Applications',              marks:'70 Marks' },
+      { d:'2025-11-14', dow:'Fri', s:'islam', paper:'Islamic Studies',                    marks:'80 Marks' },
+    ]
+  },
+  c: {
+    time: '10:00 AM – 1:30 PM',
+    exams: [
+      { d:'2025-11-17', dow:'Mon', s:'ben',   paper:'Bengali / Alternative English',      marks:'100 Marks' },
+      { d:'2025-11-18', dow:'Tue', s:'eng',   paper:'English (Core)',                     marks:'100 Marks' },
+      { d:'2025-11-19', dow:'Wed', s:'math',  paper:'Mathematics / Statistics',           marks:'100 Marks' },
+      { d:'2025-11-20', dow:'Thu', s:'phys',  paper:'Physics',                            marks:'70 Marks' },
+      { d:'2025-11-21', dow:'Fri', s:'chem',  paper:'Chemistry',                          marks:'70 Marks' },
+      { d:'2025-11-24', dow:'Mon', s:'bio',   paper:'Biology',                            marks:'70 Marks' },
+      { d:'2025-11-25', dow:'Tue', s:'econ',  paper:'Economics / Business Studies',       marks:'80 Marks' },
+      { d:'2025-11-26', dow:'Wed', s:'acct',  paper:'Accountancy',                        marks:'80 Marks' },
+      { d:'2025-11-27', dow:'Thu', s:'comp',  paper:'Computer Science / Informatics',     marks:'70 Marks' },
+      { d:'2025-11-28', dow:'Fri', s:'islam', paper:'Islamic Studies',                    marks:'80 Marks' },
+    ]
+  }
+};
+
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pad = n => String(n).padStart(2,'0');
+const todayStr = new Date().toISOString().slice(0,10);
+
+/* ─── Build exam cards ─── */
+function buildSchedule(gridId, exams) {
+  const grid = document.getElementById(gridId);
+  exams.forEach((ex, i) => {
+    const d = new Date(ex.d + 'T00:00:00');
+    const subj = S[ex.s];
+    const isToday = ex.d === todayStr;
+    const card = document.createElement('article');
+    card.className = 'card' + (isToday ? ' today' : '');
+    card.style.transitionDelay = `${i * 48}ms`;
+    card.innerHTML = `
+      <div class="card-date">
+        <div class="card-dow">${ex.dow}</div>
+        <div class="card-dn">${pad(d.getDate())}</div>
+        <div class="card-mo">${MON[d.getMonth()]} '${String(d.getFullYear()).slice(2)}</div>
+      </div>
+      <div>
+        <div class="card-subj">
+          <span class="dot" style="background:${subj.color}"></span>
+          ${subj.name}
+          ${isToday ? '<span class="today-pill">Today</span>' : ''}
+        </div>
+        <div class="card-paper">${ex.paper}</div>
+      </div>
+      <div class="card-meta">
+        <div class="card-time">10:00 AM</div>
+        <div class="card-marks">${ex.marks}</div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+buildSchedule('sched-a', DATA.a.exams);
+buildSchedule('sched-b', DATA.b.exams);
+buildSchedule('sched-c', DATA.c.exams);
+
+/* ─── Card reveal on scroll ─── */
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('revealed'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.07 });
+
+document.querySelectorAll('.card').forEach(c => io.observe(c));
+
+function revealAll(panelId) {
+  document.querySelectorAll(`#${panelId} .card`).forEach((c, i) => {
+    setTimeout(() => c.classList.add('revealed'), 60 + i * 52);
+  });
+}
+revealAll('panel-a');
+
+/* ─── Tabs ─── */
+document.querySelectorAll('[role="tab"]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.target;
+    document.querySelectorAll('[role="tab"]').forEach(b => b.setAttribute('aria-selected','false'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.setAttribute('aria-hidden','true'));
+    btn.setAttribute('aria-selected','true');
+    const panel = document.getElementById(target);
+    panel.setAttribute('aria-hidden','false');
+    revealAll(target);
+  });
+});
+
+/* ─── Countdown ─── */
+function getAllExams() {
+  return Object.values(DATA).flatMap(g =>
+    g.exams.map(e => ({ dt: new Date(e.d + 'T10:00:00'), name: S[e.s].name }))
+  );
+}
+
+function tick() {
+  const now = new Date();
+  const future = getAllExams().filter(e => e.dt > now).sort((a,b) => a.dt - b.dt);
+  if (!future.length) { document.getElementById('countdownBar').style.display = 'none'; return; }
+  const diff = future[0].dt - now;
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  document.getElementById('cdD').textContent = pad(d);
+  document.getElementById('cdH').textContent = pad(h);
+  document.getElementById('cdM').textContent = pad(m);
+  document.getElementById('cdS').textContent = pad(s);
+  document.getElementById('cdSubject').textContent = future[0].name;
+}
+tick();
+setInterval(tick, 1000);
+
+/* ─── Hero canvas: Islamic star tessellation ─── */
+(function () {
+  const canvas = document.getElementById('heroCanvas');
+  const ctx = canvas.getContext('2d');
+  let t = 0, rafId;
+
+  function resize() {
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+
+  /* Draw an 8-pointed star (octagram) */
+  function star8(cx, cy, R, r, rot) {
+    ctx.beginPath();
+    for (let i = 0; i < 16; i++) {
+      const a = rot + i * Math.PI / 8;
+      const radius = i % 2 === 0 ? R : r;
+      i === 0 ? ctx.moveTo(cx + radius * Math.cos(a), cy + radius * Math.sin(a))
+              : ctx.lineTo(cx + radius * Math.cos(a), cy + radius * Math.sin(a));
+    }
+    ctx.closePath();
+  }
+
+  function draw() {
+    const W = canvas.offsetWidth, H = canvas.offsetHeight;
+    ctx.clearRect(0, 0, W, H);
+
+    const sz  = 78;
+    const cols = Math.ceil(W / sz) + 3;
+    const rows = Math.ceil(H / (sz * 0.866)) + 3;
+
+    ctx.strokeStyle = 'rgba(196, 151, 58, 0.9)';
+    ctx.lineWidth   = 0.9;
+
+    for (let row = -1; row < rows; row++) {
+      for (let col = -1; col < cols; col++) {
+        const x   = col * sz + (row % 2 === 0 ? 0 : sz * 0.5);
+        const y   = row * sz * 0.866;
+        const rot = t * 0.0025 + (row + col) * 0.12;
+
+        star8(x, y, sz * 0.36, sz * 0.14, rot);
+        ctx.stroke();
+
+        /* Small concentric star inside */
+        ctx.lineWidth = 0.5;
+        star8(x, y, sz * 0.12, sz * 0.048, rot + Math.PI / 8);
+        ctx.stroke();
+        ctx.lineWidth = 0.9;
+      }
+    }
+
+    t++;
+    rafId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(rafId);
+    resize();
+    draw();
+  });
+
+  resize();
+  draw();
+})();
+</script>
+
+</body>
+</html>
