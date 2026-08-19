@@ -11,9 +11,10 @@ There are no images and no webfonts. The scene is generated at load time:
 | Element | How it's made |
 | --- | --- |
 | Ridgelines | Midpoint-displacement fractals, seeded so the island looks the same every visit |
-| Ginkgo tree | Recursive branch routine, canopy blobs clustered on the outer tips |
-| Katana | Hand-modelled SVG — ji and ha bevels split by the shinogi ridge, hamon temper line, yokote at the kissaki, ito-wrapped tsuka |
-| Leaves, grass, wind, birds | Canvas particle system driven by a gusting wind function |
+| Sakura in bloom | Recursive branch routine — dark mass, blossom clusters, then the few flowers still catching the sun |
+| Overhanging bough | A second recursive branch leaning in from the corner, hung with five-petal blossoms |
+| Katana | Hand-modelled SVG — ji and ha bevels split by the shinogi ridge, hamon temper line, yokote at the kissaki, indigo ito over ray skin, gold sakura menuki, and an openwork tsuba the sky shows through |
+| Petals, leaves, grass, wind, birds | Canvas particle system driven by a gusting wind function — petals fall lighter and spin faster than ginkgo leaves |
 | Sky, sun, haze | Layered CSS gradients |
 | Film grain | An inline SVG turbulence filter |
 | UI sounds | Synthesised with WebAudio — brown noise through a wandering band-pass for the wind, a taiko thump on select |
