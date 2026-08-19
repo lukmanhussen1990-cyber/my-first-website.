@@ -1,0 +1,1535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Token Machine</title>
+<meta name="description" content="A long-form animated explainer of how input and output tokens work inside a large language model like Claude Fable 5.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --ground:#080a10; --panel:#0f131d; --panel-2:#141a27; --panel-3:#1a2131;
+  --rule:#1e2636; --rule-soft:#161d2a;
+  --ink:#dde5f2; --ink-dim:#7d8ba6; --ink-faint:#4d596f;
+  --in:#4cc9f0; --out:#ffa63d; --think:#b07cff; --cache:#3ddc97; --warn:#ff5d6c;
+  --in-soft:rgba(76,201,240,.12); --out-soft:rgba(255,166,61,.12);
+  --think-soft:rgba(176,124,255,.12); --cache-soft:rgba(61,220,151,.12);
+  --display:'Bricolage Grotesque',ui-sans-serif,system-ui,sans-serif;
+  --body:'Newsreader',ui-serif,Georgia,serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sp:1;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:var(--body); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased; overflow:hidden;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--in);outline-offset:2px;border-radius:3px}
+
+/* ─────────── console frame ─────────── */
+.console{display:grid;grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:100%;
+  height:100dvh;height:100vh;max-width:100vw}
+.rail,.main,.transport{min-width:0}
+.canvas,.scroller{min-width:0}
+
+.rail{
+  display:flex;align-items:center;gap:18px;
+  padding:11px 20px;border-bottom:1px solid var(--rule);
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));
+}
+.brand{display:flex;align-items:baseline;gap:10px;flex:0 0 auto}
+.brand b{font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:-.01em}
+.brand span{font-family:var(--mono);font-size:10px;color:var(--ink-faint);letter-spacing:.14em;text-transform:uppercase}
+.segs{display:flex;gap:3px;flex:1 1 auto;min-width:0}
+.seg{flex:1 1 0;height:20px;position:relative;background:none;padding:0;min-width:4px}
+.seg::after{
+  content:"";position:absolute;inset:8px 0;border-radius:2px;
+  background:var(--rule);transition:background .3s,transform .2s;
+}
+.seg:hover::after{background:var(--ink-faint);transform:scaleY(1.6)}
+.seg.done::after{background:#2f4a63}
+.seg.act1.done::after,.seg.act1.now::after{background:#2b6a8a}
+.seg.now::after{background:var(--in);transform:scaleY(1.7)}
+.seg.now .fill{position:absolute;inset:8px auto 8px 0;border-radius:2px;background:#bfeeff;width:0}
+.readout{
+  flex:0 0 auto;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  color:var(--ink-dim);text-transform:uppercase;white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.readout em{color:var(--in);font-style:normal}
+
+.main{display:grid;grid-template-columns:minmax(0,1fr) 348px;min-height:0}
+
+/* ─────────── stage ─────────── */
+.stage{position:relative;overflow:hidden;min-width:0;background:
+  radial-gradient(120% 90% at 50% 0%,#0c1119 0%,var(--ground) 62%);}
+.stage::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:5;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.014) 0 1px,transparent 1px 3px);
+}
+.scene{
+  position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+  padding:30px max(38px,calc((100% - 1120px) / 2));
+  opacity:0;transition:opacity .5s ease;overflow:hidden;
+}
+.scene.live{opacity:1}
+.act-tag{
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-faint);margin-bottom:7px;
+}
+.act-tag i{font-style:normal;color:var(--in)}
+.scene h2{
+  font-family:var(--display);font-weight:700;font-size:clamp(21px,2.5vw,31px);
+  line-height:1.12;letter-spacing:-.02em;text-wrap:balance;margin-bottom:22px;max-width:22ch;
+}
+.canvas{flex:0 1 auto;position:relative;display:flex;flex-direction:column;justify-content:center;min-height:0}
+
+/* ─────────── narration ─────────── */
+.script{
+  border-left:1px solid var(--rule);background:var(--panel);
+  display:flex;flex-direction:column;min-height:0;
+}
+.script-head{
+  padding:12px 20px 10px;border-bottom:1px solid var(--rule-soft);
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink-faint);
+}
+.script-body{
+  flex:1 1 auto;overflow-y:auto;padding:18px 20px 40px;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+}
+.script-body::-webkit-scrollbar{width:7px}
+.script-body::-webkit-scrollbar-thumb{background:var(--rule);border-radius:4px}
+.beat{
+  font-family:var(--body);font-size:16.5px;line-height:1.62;color:var(--ink);
+  margin-bottom:15px;font-weight:300;
+}
+.beat.old{color:var(--ink-dim)}
+.beat b{font-weight:400;color:#fff;border-bottom:1px solid rgba(76,201,240,.4)}
+.beat code{font-family:var(--mono);font-size:13.5px;color:var(--in);font-weight:500}
+.beat .cur{border-right:2px solid var(--in);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{border-color:transparent}}
+.beat-rule{height:1px;background:var(--rule-soft);margin:20px 0}
+
+/* ─────────── transport ─────────── */
+.transport{
+  display:flex;align-items:center;gap:14px;padding:10px 20px;
+  border-top:1px solid var(--rule);background:linear-gradient(0deg,var(--panel-2),var(--panel));
+}
+.tbtn{
+  display:grid;place-items:center;width:34px;height:30px;border-radius:6px;
+  border:1px solid var(--rule);background:var(--panel-3);color:var(--ink-dim);
+  transition:color .18s,border-color .18s,background .18s;
+}
+.tbtn:hover{color:var(--ink);border-color:var(--ink-faint);background:#202a3c}
+.tbtn.primary{width:44px;color:var(--ground);background:var(--in);border-color:var(--in)}
+.tbtn.primary:hover{background:#7fdcff;border-color:#7fdcff}
+.tbtn svg{width:14px;height:14px;fill:currentColor}
+.speeds{display:flex;gap:2px;margin-left:auto;padding:2px;background:var(--panel-3);border:1px solid var(--rule);border-radius:7px}
+.speeds button{
+  font-family:var(--mono);font-size:10.5px;padding:5px 9px;border-radius:5px;
+  color:var(--ink-faint);transition:color .15s,background .15s;
+}
+.speeds button:hover{color:var(--ink)}
+.speeds button.on{background:var(--in);color:var(--ground);font-weight:700}
+.clock{font-family:var(--mono);font-size:11px;color:var(--ink-dim);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.scene-name{
+  font-family:var(--mono);font-size:11px;color:var(--ink-faint);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32ch;
+}
+
+/* ─────────── shared stage vocabulary ─────────── */
+.chip{
+  display:inline-flex;align-items:center;font-family:var(--mono);font-size:14px;font-weight:500;
+  padding:7px 9px;border-radius:5px;white-space:pre;
+  background:var(--in-soft);border:1px solid rgba(76,201,240,.34);color:#c9edfd;
+  opacity:0;transform:translateY(9px) scale(.94);
+  transition:opacity calc(.34s * var(--sp)),transform calc(.34s * var(--sp)),background .3s,border-color .3s;
+}
+.chip.show{opacity:1;transform:none}
+.chip .sp{color:var(--ink-faint);opacity:.75}
+.chip.out{background:var(--out-soft);border-color:rgba(255,166,61,.36);color:#ffd9a8}
+.chip.think{background:var(--think-soft);border-color:rgba(176,124,255,.34);color:#dcc6ff}
+.chip.cache{background:var(--cache-soft);border-color:rgba(61,220,151,.34);color:#b0f0d5}
+.chip.ghost{background:transparent;border-color:var(--rule);color:var(--ink-faint)}
+.chip.hot{box-shadow:0 0 0 3px rgba(76,201,240,.16)}
+.chip.out.hot{box-shadow:0 0 0 3px rgba(255,166,61,.18)}
+.chip.sm{font-size:12px;padding:5px 7px}
+.chip .id{font-size:10px;color:var(--ink-faint);margin-left:7px;letter-spacing:.04em}
+
+.chiprow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.rawtext{
+  font-family:var(--mono);font-size:15px;line-height:1.75;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere;
+  background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:16px 18px;
+}
+.label{
+  font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-faint);margin-bottom:9px;
+}
+.label.in{color:var(--in)} .label.out{color:var(--out)}
+.label.think{color:var(--think)} .label.cache{color:var(--cache)}
+.note{
+  font-family:var(--mono);font-size:11px;color:var(--ink-faint);line-height:1.6;
+  border-left:2px solid var(--rule);padding-left:11px;margin-top:16px;
+}
+.stat{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.stat .n{font-size:27px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.stat .n.in{color:var(--in)} .stat .n.out{color:var(--out)}
+.stat .n.think{color:var(--think)} .stat .n.cache{color:var(--cache)}
+.stat .u{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);display:block;margin-top:3px}
+.statrow{display:flex;gap:34px;flex-wrap:wrap}
+.card{
+  background:var(--panel);border:1px solid var(--rule);border-radius:9px;padding:15px 17px;
+  opacity:0;transform:translateY(11px);
+  transition:opacity calc(.42s * var(--sp)),transform calc(.42s * var(--sp)),border-color .3s;
+}
+.card.show{opacity:1;transform:none}
+.card h4{font-family:var(--display);font-weight:700;font-size:15px;margin-bottom:6px;letter-spacing:-.01em}
+.card p{font-size:14.5px;line-height:1.55;color:var(--ink-dim);font-weight:300}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+
+</style>
+</head>
+<body>
+<div class="console">
+  <header class="rail">
+    <div class="brand"><b>The Token Machine</b><span>Claude Fable&nbsp;5</span></div>
+    <div class="segs" id="segs"></div>
+    <div class="readout" id="readout">ACT <em>I</em> · 01/23</div>
+  </header>
+  <div class="main">
+    <div class="stage" id="stage"></div>
+    <aside class="script">
+      <div class="script-head">Narration</div>
+      <div class="script-body" id="script"></div>
+    </aside>
+  </div>
+  <footer class="transport">
+    <button class="tbtn" id="prev" title="Previous scene (←)" aria-label="Previous scene">
+      <svg viewBox="0 0 16 16"><path d="M4 2h2v12H4zM13 2v12L6 8z"/></svg></button>
+    <button class="tbtn primary" id="play" title="Play / pause (space)" aria-label="Play or pause">
+      <svg viewBox="0 0 16 16" id="playicon"><path d="M3 2h3.5v12H3zM9.5 2H13v12H9.5z"/></svg></button>
+    <button class="tbtn" id="next" title="Next scene (→)" aria-label="Next scene">
+      <svg viewBox="0 0 16 16"><path d="M10 2h2v12h-2zM3 2l7 6-7 6z"/></svg></button>
+    <button class="tbtn" id="restart" title="Restart (R)" aria-label="Restart">
+      <svg viewBox="0 0 16 16"><path d="M8 2.5A5.5 5.5 0 1 0 13.5 8h-2A3.5 3.5 0 1 1 8 4.5V7l3.5-3L8 1z"/></svg></button>
+    <div class="clock" id="clock">00:00 / 00:00</div>
+    <div class="scene-name" id="sname"></div>
+    <div class="speeds" id="speeds">
+      <button data-s="0.5">0.5&times;</button>
+      <button data-s="1" class="on">1&times;</button>
+      <button data-s="1.5">1.5&times;</button>
+      <button data-s="2">2&times;</button>
+    </div>
+  </footer>
+</div>
+<script>
+"use strict";
+/* ══════════════════════════════════════════════════════════════════
+   THE TOKEN MACHINE — a scene engine
+   Scenes are declarative: a duration, a stage builder that registers
+   timed cues, and narration beats. One clock drives everything, so
+   pause / speed / seek all work uniformly.
+   ══════════════════════════════════════════════════════════════════ */
+
+const SCENES = [];
+const ACTS = {
+  1:"Text becomes tokens", 2:"The context window",
+  3:"The forward pass", 4:"Writing, one token at a time",
+  5:"What it costs, where it stops"
+};
+const ROMAN = {1:"I",2:"II",3:"III",4:"IV",5:"V"};
+const scene = o => SCENES.push(o);
+
+/* ── tiny DOM helpers ── */
+function E(tag, cls, html){
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(html != null) e.innerHTML = html;
+  return e;
+}
+function add(parent, tag, cls, html){ const e = E(tag, cls, html); parent.appendChild(e); return e; }
+
+/* Render a token string, making leading whitespace visible the way
+   real tokenizer viewers do — the space is part of the token. */
+function tokHTML(t){
+  return t.replace(/ /g, '<span class="sp">·</span>')
+          .replace(/\n/g, '<span class="sp">⏎</span>');
+}
+function chip(text, kind, id){
+  const c = E("span", "chip" + (kind ? " " + kind : ""));
+  c.innerHTML = tokHTML(text) + (id != null ? '<span class="id">'+id+'</span>' : '');
+  return c;
+}
+const nf = n => n.toLocaleString("en-US");
+const money = n => "$" + n.toLocaleString("en-US",{minimumFractionDigits:4, maximumFractionDigits:4});
+
+/* ══════════════ engine ══════════════ */
+const stageEl  = document.getElementById("stage");
+const scriptEl = document.getElementById("script");
+const segsEl   = document.getElementById("segs");
+const state = { i:0, el:0, playing:true, speed:1, cues:[], node:null, typing:null, ended:false };
+
+function cue(t, fn){ state.cues.push({ t, fn, done:false }); }
+
+/* tag-aware slicer so the typewriter never cuts a tag in half */
+function sliceHTML(html, n){
+  let out = "", count = 0, i = 0; const stack = [];
+  while(i < html.length && count < n){
+    const ch = html[i];
+    if(ch === "<"){
+      const j = html.indexOf(">", i); if(j < 0) break;
+      const tag = html.slice(i, j+1); out += tag;
+      const m = /^<\/?\s*([a-z0-9]+)/i.exec(tag);
+      if(m){ if(tag[1] === "/") stack.pop(); else if(!/\/>$/.test(tag)) stack.push(m[1]); }
+      i = j+1; continue;
+    }
+    if(ch === "&"){
+      const j = html.indexOf(";", i);
+      if(j > 0 && j - i <= 9){ out += html.slice(i, j+1); count++; i = j+1; continue; }
+    }
+    out += ch; count++; i++;
+  }
+  for(let k = stack.length-1; k >= 0; k--) out += "</" + stack[k] + ">";
+  return out;
+}
+function visibleLen(html){ return html.replace(/<[^>]*>/g,"").replace(/&[a-z]+;/gi,"x").length; }
+
+const CPS = 42; // narration characters per second
+function speak(html){
+  if(state.typing) finishTyping();
+  document.querySelectorAll(".beat").forEach(b => b.classList.add("old"));
+  const p = add(scriptEl, "p", "beat");
+  state.typing = { el:p, html, shown:0, len:visibleLen(html) };
+  scriptEl.scrollTop = scriptEl.scrollHeight;
+}
+function finishTyping(){
+  if(!state.typing) return;
+  state.typing.el.innerHTML = state.typing.html;
+  state.typing = null;
+}
+function typeTick(dt){
+  const t = state.typing; if(!t) return;
+  t.shown += (dt/1000) * CPS * state.speed;
+  if(t.shown >= t.len){ finishTyping(); return; }
+  t.el.innerHTML = sliceHTML(t.html, Math.floor(t.shown)) + '<span class="cur"></span>';
+  scriptEl.scrollTop = scriptEl.scrollHeight;
+}
+
+function buildSegs(){
+  SCENES.forEach((s, i) => {
+    const b = E("button", "seg act" + s.act);
+    b.title = (i+1) + ". " + s.name;
+    b.setAttribute("aria-label", "Scene " + (i+1) + ": " + s.name);
+    b.appendChild(E("i", "fill"));
+    b.addEventListener("click", () => { go(i); });
+    segsEl.appendChild(b);
+  });
+}
+const TOTAL = () => SCENES.reduce((a,s) => a + s.dur, 0);
+function elapsedTotal(){
+  let t = 0; for(let k = 0; k < state.i; k++) t += SCENES[k].dur;
+  return t + Math.min(state.el, SCENES[state.i].dur);
+}
+function fmt(ms){
+  const s = Math.max(0, Math.round(ms/1000));
+  return String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0");
+}
+
+function go(i){
+  if(i >= SCENES.length){ state.ended = true; state.playing = false; paint(); return; }
+  if(i < 0) i = 0;
+  state.i = i; state.el = 0; state.cues = []; state.ended = false;
+  finishTyping(); scriptEl.innerHTML = "";
+  const s = SCENES[i];
+
+  const old = state.node;
+  if(old){ old.classList.remove("live"); setTimeout(() => old.remove(), 520); }
+
+  const node = E("section", "scene");
+  add(node, "div", "act-tag", "Act <i>" + ROMAN[s.act] + "</i> &nbsp;·&nbsp; " + ACTS[s.act]);
+  add(node, "h2", null, s.title);
+  const canvas = add(node, "div", "canvas");
+  stageEl.appendChild(node);
+  state.node = node;
+  requestAnimationFrame(() => node.classList.add("live"));
+
+  s.build(canvas, cue);
+  (s.narr || []).forEach(b => cue(b.at, () => speak(b.text)));
+
+  document.getElementById("sname").textContent = (i+1) + ". " + s.name;
+  paint();
+}
+
+function paint(){
+  const segs = segsEl.children;
+  for(let k = 0; k < segs.length; k++){
+    segs[k].classList.toggle("done", k < state.i);
+    segs[k].classList.toggle("now", k === state.i);
+    const f = segs[k].querySelector(".fill");
+    if(f) f.style.width = (k === state.i)
+      ? Math.min(100, state.el / SCENES[state.i].dur * 100) + "%" : "0%";
+  }
+  const s = SCENES[state.i];
+  document.getElementById("readout").innerHTML =
+    "Act <em>" + ROMAN[s.act] + "</em> · " + String(state.i+1).padStart(2,"0") + "/" + SCENES.length;
+  document.getElementById("clock").textContent = fmt(elapsedTotal()) + " / " + fmt(TOTAL());
+  document.getElementById("playicon").innerHTML = state.playing
+    ? '<path d="M3 2h3.5v12H3zM9.5 2H13v12H9.5z"/>'
+    : '<path d="M4 2l10 6-10 6z"/>';
+}
+
+let last = 0;
+function frame(ts){
+  const dt = last ? Math.min(ts - last, 120) : 0; last = ts;
+  if(state.playing && !state.ended){
+    state.el += dt * state.speed;
+    const cs = state.cues;
+    for(let k = 0; k < cs.length; k++){
+      if(!cs[k].done && state.el >= cs[k].t){ cs[k].done = true; cs[k].fn(); }
+    }
+    typeTick(dt);
+    paint();
+    if(state.el >= SCENES[state.i].dur) go(state.i + 1);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ── transport ── */
+function setPlaying(p){ state.playing = p; if(!p) finishTyping(); paint(); }
+document.getElementById("play").addEventListener("click", () => {
+  if(state.ended){ go(0); setPlaying(true); return; }
+  setPlaying(!state.playing);
+});
+document.getElementById("next").addEventListener("click", () => go(state.i + 1));
+document.getElementById("prev").addEventListener("click", () => go(state.el > 2500 ? state.i : state.i - 1));
+document.getElementById("restart").addEventListener("click", () => { go(0); setPlaying(true); });
+document.getElementById("speeds").addEventListener("click", e => {
+  const b = e.target.closest("button[data-s]"); if(!b) return;
+  state.speed = parseFloat(b.dataset.s);
+  document.documentElement.style.setProperty("--sp", (1/state.speed).toFixed(3));
+  [...e.currentTarget.children].forEach(x => x.classList.toggle("on", x === b));
+});
+document.addEventListener("keydown", e => {
+  if(e.code === "Space"){ e.preventDefault(); setPlaying(!state.playing); }
+  else if(e.code === "ArrowRight") go(state.i + 1);
+  else if(e.code === "ArrowLeft")  go(state.i - 1);
+  else if(e.key === "r" || e.key === "R"){ go(0); setPlaying(true); }
+});
+</script>
+<style>
+/* ─────────── scene vocabulary ─────────── */
+.flow{display:grid;grid-template-columns:1fr auto 1fr;gap:22px;align-items:center}
+.machine{
+  position:relative;width:132px;height:158px;border-radius:13px;
+  border:1px solid var(--rule);background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  transition:border-color .5s,box-shadow .5s;
+}
+.machine.on{border-color:rgba(76,201,240,.45);box-shadow:0 0 40px rgba(76,201,240,.13)}
+.machine b{font-family:var(--display);font-weight:800;font-size:16px;letter-spacing:-.01em}
+.machine em{font-family:var(--mono);font-size:8.5px;font-style:normal;letter-spacing:.16em;color:var(--ink-faint);text-transform:uppercase}
+.pulse{display:flex;gap:3px;height:26px;align-items:flex-end;margin-top:6px}
+.pulse i{width:4px;height:6px;background:var(--ink-faint);border-radius:1px;transition:height .3s,background .3s}
+.machine.on .pulse i{background:var(--in)}
+.arrow{font-family:var(--mono);color:var(--ink-faint);font-size:12px;text-align:center}
+
+.cmp{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:stretch}
+.cmp .card{display:flex;flex-direction:column;gap:9px}
+.cmp .card.win{border-color:rgba(76,201,240,.4);background:linear-gradient(180deg,rgba(76,201,240,.06),var(--panel))}
+.cmp .vocab{font-family:var(--mono);font-size:11px;color:var(--ink-faint);letter-spacing:.05em}
+.cmp .verdict{margin-top:auto;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--warn)}
+.cmp .card.win .verdict{color:var(--cache)}
+
+.counters{display:flex;gap:30px;margin-top:20px;flex-wrap:wrap}
+
+.splitrow{
+  display:grid;grid-template-columns:180px 1fr auto;gap:16px;align-items:center;
+  padding:9px 0;border-bottom:1px solid var(--rule-soft);
+  opacity:0;transform:translateY(8px);
+  transition:opacity calc(.4s*var(--sp)),transform calc(.4s*var(--sp));
+}
+.splitrow.show{opacity:1;transform:none}
+.splitrow .src{font-family:var(--mono);font-size:13.5px;color:var(--ink)}
+.splitrow .cnt{font-family:var(--mono);font-size:11px;color:var(--ink-faint);white-space:nowrap}
+@media (max-width:640px){.splitrow .cnt{white-space:normal}}
+.splitrow .cnt b{color:var(--out);font-size:15px}
+
+/* context window */
+.window{
+  height:54px;border:1px solid var(--rule);border-radius:9px;background:var(--panel);
+  display:flex;overflow:hidden;position:relative;
+}
+.wseg{width:0;height:100%;transition:width calc(.9s*var(--sp)) cubic-bezier(.22,.8,.24,1);position:relative}
+.wseg::after{content:"";position:absolute;inset:0;border-right:1px solid rgba(8,10,16,.55)}
+.wticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:7px}
+.legend{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:18px}
+.lg{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);
+  opacity:0;transform:translateX(-6px);transition:opacity calc(.35s*var(--sp)),transform calc(.35s*var(--sp))}
+.lg.show{opacity:1;transform:none}
+.lg i{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+.lg b{color:var(--ink);font-weight:500;margin-left:auto;padding-left:12px;font-variant-numeric:tabular-nums}
+
+/* turns */
+.turn{display:grid;grid-template-columns:64px 1fr 108px;gap:13px;align-items:center;margin-bottom:11px;
+  opacity:0;transform:translateY(9px);transition:opacity calc(.4s*var(--sp)),transform calc(.4s*var(--sp))}
+.turn.show{opacity:1;transform:none}
+.turn .tl{font-family:var(--mono);font-size:11px;color:var(--ink-faint);letter-spacing:.08em}
+.turn .tbar{height:26px;border-radius:5px;background:var(--panel-3);display:flex;overflow:hidden}
+.turn .tbar i{height:100%;width:0;transition:width calc(.75s*var(--sp)) cubic-bezier(.22,.8,.24,1)}
+.turn .tc{font-family:var(--mono);font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-dim)}
+.turn .tc b{color:var(--ink)}
+
+/* vectors + attention + layers */
+.vecrow{display:flex;gap:14px;align-items:flex-end;justify-content:center;flex-wrap:wrap}
+.vcell{display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0;transform:translateY(10px);
+  transition:opacity calc(.4s*var(--sp)),transform calc(.4s*var(--sp))}
+.vcell.show{opacity:1;transform:none}
+.vec{display:flex;gap:2px;align-items:flex-end;height:52px}
+.vec i{width:4px;border-radius:1px;background:var(--in);opacity:.8}
+.attnwrap{position:relative;flex:1 1 auto;min-height:210px}
+.attnwrap svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.attnwrap path{stroke:var(--in);fill:none;opacity:0;transition:opacity calc(.5s*var(--sp))}
+.attnwrap path.on{opacity:.55}
+.layers{display:flex;flex-direction:column-reverse;gap:4px;width:100%;max-height:340px}
+.layer{height:12px;border-radius:3px;background:var(--rule);transition:background .35s,box-shadow .35s;position:relative}
+.layer.on{background:linear-gradient(90deg,#245a76,var(--in));box-shadow:0 0 14px rgba(76,201,240,.22)}
+.layer span{position:absolute;right:9px;top:-1px;font-family:var(--mono);font-size:8.5px;color:var(--ground);opacity:0;transition:opacity .3s}
+.layer.on span{opacity:.75}
+
+/* distribution */
+.dist{display:flex;flex-direction:column;gap:6px}
+.drow{display:grid;grid-template-columns:132px 1fr 60px;gap:12px;align-items:center;
+  opacity:0;transform:translateX(-10px);transition:opacity calc(.35s*var(--sp)),transform calc(.35s*var(--sp))}
+.drow.show{opacity:1;transform:none}
+.drow .dk{font-family:var(--mono);font-size:13px;color:var(--ink);text-align:right;white-space:pre}
+.dbar{height:16px;border-radius:3px;background:var(--panel-3);overflow:hidden}
+.dbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#245a76,var(--in));
+  transition:width calc(.6s*var(--sp)) cubic-bezier(.22,.8,.24,1),background .3s}
+.drow .dp{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+.drow.pick .dk{color:var(--out);font-weight:700}
+.drow.pick .dbar i{background:linear-gradient(90deg,#8a5a1e,var(--out))}
+.drow.pick .dp{color:var(--out)}
+
+/* loop */
+.loop{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:stretch;position:relative}
+.lbox{border:1px solid var(--rule);border-radius:9px;background:var(--panel);padding:12px;
+  display:flex;flex-direction:column;gap:5px;transition:border-color .3s,box-shadow .3s,background .3s}
+.lbox.on{border-color:rgba(76,201,240,.55);box-shadow:0 0 26px rgba(76,201,240,.12);background:var(--panel-2)}
+.lbox.on.warm{border-color:rgba(255,166,61,.55);box-shadow:0 0 26px rgba(255,166,61,.12)}
+.lbox .ln{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+.lbox .lt{font-family:var(--display);font-weight:700;font-size:14px}
+.lbox .ld{font-size:13px;color:var(--ink-dim);line-height:1.45;font-weight:300}
+.retpath{margin-top:12px;height:26px;position:relative;
+  border:1px solid var(--rule);border-top:none;border-radius:0 0 9px 9px}
+.retpath span{position:absolute;left:50%;top:12px;transform:translate(-50%,0);background:var(--ground);
+  padding:0 11px;font-family:var(--mono);font-size:10px;color:var(--ink-faint);letter-spacing:.1em;text-transform:uppercase}
+
+/* meters + tables */
+.meter{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+.mcell{border:1px solid var(--rule);border-radius:9px;background:var(--panel);padding:14px 16px}
+.mcell .mn{font-family:var(--mono);font-size:29px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.mcell .mu{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px}
+.mcell .mx{font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-top:9px}
+.tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums}
+.tbl th{text-align:left;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);
+  font-weight:500;padding:0 10px 9px 0;border-bottom:1px solid var(--rule)}
+.tbl td{padding:10px 10px 10px 0;border-bottom:1px solid var(--rule-soft);color:var(--ink-dim)}
+.tbl td:first-child{color:var(--ink)}
+.tbl tr{opacity:0;transform:translateY(7px);transition:opacity calc(.35s*var(--sp)),transform calc(.35s*var(--sp))}
+.tbl tr.show{opacity:1;transform:none}
+.tbl .tot td{border-bottom:none;color:var(--ink);font-weight:700;padding-top:13px}
+.tbl .num{text-align:right}
+.tbl .amt{text-align:right;color:var(--out);font-weight:700}
+.tbl .amt.cheap{color:var(--cache)}
+.scroller{overflow-x:auto}
+
+/* limits */
+.limit{display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
+.lbar{height:34px;border-radius:6px;background:var(--panel-3);position:relative;overflow:hidden;border:1px solid var(--rule)}
+.lbar i{display:block;height:100%;width:0;transition:width calc(1.1s*var(--sp)) cubic-bezier(.22,.8,.24,1)}
+.lbar b{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11.5px;
+  color:var(--ink);letter-spacing:.04em;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+
+/* ─────────── responsive ─────────── */
+@media (max-width:900px){
+  .main{grid-template-columns:1fr;grid-template-rows:minmax(0,1.35fr) minmax(0,1fr)}
+  .script{border-left:none;border-top:1px solid var(--rule)}
+  .scene{padding:20px}
+  .grid3,.cmp,.loop,.meter{grid-template-columns:1fr}
+  .scene-name{display:none}
+  .cmp .card,.lbox{gap:5px}
+  .cmp .verdict{margin-top:6px}
+}
+@media (max-width:640px){
+  .rail{gap:10px;padding:9px 12px}
+  .brand span,.readout{display:none}
+  .brand b{font-size:13px}
+  .transport{flex-wrap:wrap;gap:9px;padding:9px 12px}
+  .clock{order:3;font-size:10px}
+  .speeds{margin-left:auto}
+  .speeds button{padding:5px 7px;font-size:10px}
+  .scene{padding:15px 13px}
+  .scene h2{font-size:19px;margin-bottom:15px}
+  .grid2{grid-template-columns:1fr}
+  .flow{grid-template-columns:1fr;gap:13px}
+  .machine{width:100%;height:82px;flex-direction:row;gap:13px;justify-content:center}
+  .machine .pulse{margin-top:0}
+  .splitrow{grid-template-columns:1fr;gap:5px;padding:11px 0}
+  .turn{grid-template-columns:46px 1fr;row-gap:4px}
+  .turn .tc{grid-column:2;text-align:left}
+  .drow{grid-template-columns:84px 1fr 42px;gap:8px}
+  .drow .dk{font-size:11px}
+  .lg{width:100%}
+  .lg b{margin-left:auto;padding-left:10px}
+  .beat{font-size:15.5px}
+  .vecrow{gap:9px}
+  .vec i{width:3px}
+  .mcell .mn{font-size:24px}
+  .stat .n{font-size:22px}
+  .counters{gap:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  .stage::before{display:none}
+  .chip{transition-duration:.01s}
+  .card{transition-duration:.01s}
+  .beat .cur{animation:none}
+}
+</style>
+<script>
+"use strict";
+/* ══════════════ ACT I — text becomes tokens ══════════════ */
+
+const PROMPT = "Explain how tokenization works, in one paragraph.";
+const TOKENS = ["Explain"," how"," token","ization"," works",","," in"," one"," paragraph","."];
+const IDS    = [18447, 1268, 4037, 2065, 4375, 11, 304, 832, 14646, 13];
+
+scene({
+  act:1, name:"Cold open", dur:23000,
+  title:"A model never sees your words. It sees numbers.",
+  build(c, cue){
+    const flow = add(c, "div", "flow");
+    const L = add(flow, "div"); add(L, "div", "label in", "Input · what you send");
+    const lr = add(L, "div", "chiprow");
+    const M = add(flow, "div");
+    const m = add(M, "div", "machine");
+    add(m, "b", null, "FABLE 5");
+    add(m, "em", null, "claude-fable-5");
+    const pulse = add(m, "div", "pulse");
+    for(let i=0;i<7;i++) add(pulse, "i");
+    const R = add(flow, "div"); add(R, "div", "label out", "Output · what it writes");
+    const rr = add(R, "div", "chiprow");
+
+    TOKENS.forEach((t,i) => {
+      const ch = chip(t); lr.appendChild(ch);
+      cue(700 + i*260, () => ch.classList.add("show"));
+    });
+    cue(4000, () => {
+      m.classList.add("on");
+      const bars = pulse.querySelectorAll("i");
+      const beat = () => bars.forEach(b => b.style.height = (5 + Math.random()*21) + "px");
+      beat(); const iv = setInterval(beat, 180);
+      cue(21000, () => clearInterval(iv));
+    });
+    const OUT = ["Token","ization"," is"," the"," step"," that"," turns"," text"," into"," numbers","."];
+    OUT.forEach((t,i) => {
+      const ch = chip(t, "out"); rr.appendChild(ch);
+      cue(6200 + i*430, () => ch.classList.add("show"));
+    });
+    add(c, "div", "note",
+      "Left to right, that is the whole machine. Everything else in this film is a close-up of one of those three boxes.");
+  },
+  narr:[
+    {at:700,  text:"A language model never sees your text. Not letters, not words, not spelling."},
+    {at:6200, text:"It sees <b>tokens</b> — short pieces of text, each one standing in for a number in a fixed vocabulary."},
+    {at:12500,text:"Everything you send it becomes <b>input tokens</b>. Everything it writes back is <b>output tokens</b>. Those two counts decide how fast your answer arrives, how much context you get, and exactly what you pay."},
+    {at:19000,text:"We're going to follow one prompt all the way through <code>claude-fable-5</code> — from your keyboard to the bill."}
+  ]
+});
+
+scene({
+  act:1, name:"One prompt", dur:23000,
+  title:"Start with something small.",
+  build(c, cue){
+    add(c, "div", "label in", "The prompt");
+    const box = add(c, "div", "rawtext", "");
+    const cnt = add(c, "div", "counters");
+    const mk = (id, u) => {
+      const s = add(cnt, "div", "stat");
+      const n = add(s, "span", "n", "0"); n.id = id;
+      add(s, "span", "u", u); return n;
+    };
+    const nChars = mk("c-chars","Characters"), nWords = mk("c-words","Words"), nTok = mk("c-tok","Tokens");
+
+    let shown = 0;
+    cue(600, () => {
+      const iv = setInterval(() => {
+        shown++;
+        box.textContent = PROMPT.slice(0, shown);
+        nChars.textContent = shown;
+        nWords.textContent = PROMPT.slice(0,shown).trim().split(/\s+/).filter(Boolean).length;
+        if(shown >= PROMPT.length){ clearInterval(iv); box.innerHTML = PROMPT; }
+      }, 55);
+      cue(19000, () => clearInterval(iv));
+    });
+    cue(9000, () => { nTok.textContent = "?"; nTok.classList.add("out"); });
+    add(c, "div", "note",
+      "Characters and words are units for humans. The model is not billed in either of them, and does not measure its own limits in either of them.");
+  },
+  narr:[
+    {at:600,  text:"Here's our prompt. To you, it's a sentence: seven words, forty-nine characters, about two seconds of reading."},
+    {at:7000, text:"To the model, none of that structure exists yet. It's a string of bytes waiting to be cut into pieces."},
+    {at:13000,text:"The cutting is done by a <b>tokenizer</b> — a fixed lookup table, built once, long before your prompt existed, and identical for every request."},
+    {at:19000,text:"So the honest answer to “how long is this prompt?” isn't forty-nine. It's however many tokens the table says."}
+  ]
+});
+
+scene({
+  act:1, name:"Why tokens exist", dur:31000,
+  title:"Why pieces, and not letters or words?",
+  build(c, cue){
+    const g = add(c, "div", "cmp");
+    const mk = (i, t, v, body, verdict, win) => {
+      const card = add(g, "div", "card" + (win ? " win" : ""));
+      add(card, "div", "vocab", v);
+      add(card, "h4", null, t);
+      add(card, "p", null, body);
+      add(card, "div", "verdict", verdict);
+      cue(1200 + i*2600, () => card.classList.add("show"));
+    };
+    mk(0, "One token per letter", "vocabulary ≈ 100",
+      "A tiny alphabet, but every sentence becomes an enormous sequence — and the model spends its capacity relearning how to spell.",
+      "Sequences too long", false);
+    mk(1, "One token per word", "vocabulary ≈ 500,000+",
+      "Short sequences, but a dictionary with no end. Every typo, surname, product name and newly coined word falls off the edge of it.",
+      "Vocabulary too big", false);
+    mk(2, "Subword tokens", "vocabulary ≈ 100,000",
+      "Common words stay whole; rare ones split into fragments the model has seen many times. Nothing is ever unknown, and sequences stay short.",
+      "The compromise that works", true);
+    add(c, "div", "note",
+      "This is why token counts feel arbitrary: the vocabulary was chosen by compressing a giant corpus, not by any rule about English.");
+  },
+  narr:[
+    {at:900,  text:"Why pieces at all? Why not just feed the model letters, or whole words?"},
+    {at:5500, text:"Letters give you a tiny alphabet but enormous sequences, and the model burns its capacity on spelling instead of meaning."},
+    {at:12000,text:"Whole words give you short sequences but a dictionary with no end. Every typo, every surname, every invented word breaks it."},
+    {at:19000,text:"<b>Subword tokens</b> are the compromise. Common words stay whole. Rare ones split into familiar fragments. Nothing is ever off the map."},
+    {at:25500,text:"The vocabulary is fixed at roughly a hundred thousand entries, and every text on earth can be spelled with it."}
+  ]
+});
+
+scene({
+  act:1, name:"The cut", dur:31000,
+  title:"Watch the tokenizer cut.",
+  build(c, cue){
+    add(c, "div", "label in", "Raw string");
+    const box = add(c, "div", "rawtext", PROMPT);
+    add(c, "div", "label in", "Tokens");
+    const row = add(c, "div", "chiprow");
+    const cnt = add(c, "div", "counters");
+    const mk = (u) => { const s = add(cnt,"div","stat"); const n = add(s,"span","n","0"); add(s,"span","u",u); return n; };
+    const nT = mk("Tokens"), nC = mk("Characters"), nR = mk("Chars / token");
+
+    TOKENS.forEach((t, i) => {
+      const ch = chip(t); row.appendChild(ch);
+      cue(2600 + i*1350, () => {
+        ch.classList.add("show","hot");
+        setTimeout(() => ch.classList.remove("hot"), 500);
+        const upto = TOKENS.slice(0, i+1).join("");
+        box.innerHTML = '<span style="color:var(--in)">' + upto +
+                        '</span><span style="color:var(--ink-faint)">' + PROMPT.slice(upto.length) + '</span>';
+        nT.textContent = i+1; nC.textContent = upto.length;
+        nR.textContent = (upto.length/(i+1)).toFixed(1);
+      });
+    });
+    cue(17000, () => { nT.classList.add("in"); });
+    add(c, "div", "note",
+      "Splits shown here are illustrative. The only way to get a real count for a real string is to run it through the tokenizer — the API exposes a count_tokens endpoint for exactly this.");
+  },
+  narr:[
+    {at:700,  text:"The tokenizer walks the string from left to right, grabbing the longest piece it recognises, over and over."},
+    {at:7000, text:"<b>Explain</b> is common enough to be a single token. So are <b>works</b> and <b>paragraph</b>."},
+    {at:13500,text:"But <b>tokenization</b> is rarer. It breaks into <code>token</code> plus <code>ization</code> — two fragments the model has met thousands of times in other words."},
+    {at:21000,text:"Forty-nine characters became ten tokens. Just under five characters each; English averages closer to four."},
+    {at:26500,text:"That ratio is a rule of thumb, never a promise. The next scenes are all the ways it breaks."}
+  ]
+});
+
+scene({
+  act:1, name:"The space belongs to the token", dur:26000,
+  title:"The space in front of a word is part of the word.",
+  build(c, cue){
+    add(c, "div", "label in", "Three different tokens");
+    const row = add(c, "div", "chiprow"); row.style.gap = "14px";
+    [["the",1820],[" the",279],[" The",578]].forEach(([t,id], i) => {
+      const ch = chip(t, null, id); ch.style.fontSize = "16px"; ch.style.padding = "11px 13px";
+      row.appendChild(ch);
+      cue(1500 + i*2200, () => ch.classList.add("show"));
+    });
+    const demo = add(c, "div"); demo.style.marginTop = "26px";
+    add(demo, "div", "label in", "Same words, different cut");
+    const d1 = add(demo, "div", "chiprow"); d1.style.marginBottom = "12px";
+    const d2 = add(demo, "div", "chiprow");
+    const a = ["The"," cat"," sat"], b = ["The"," ","cat"," sat"];
+    a.forEach((t,i) => { const ch = chip(t,"sm"); d1.appendChild(ch); cue(11000 + i*400, () => ch.classList.add("show")); });
+    cue(11000, () => { const l = E("span","chip sm ghost show"); l.textContent = "3 tokens"; d1.appendChild(l); });
+    b.forEach((t,i) => { const ch = chip(t,"sm"); d2.appendChild(ch); cue(14500 + i*400, () => ch.classList.add("show")); });
+    cue(14500, () => { const l = E("span","chip sm ghost show"); l.textContent = "4 tokens"; d2.appendChild(l); });
+    add(c, "div", "note",
+      "Second line has one extra space. Same meaning to you, one extra token to the model — and a completely different set of IDs after it.");
+  },
+  narr:[
+    {at:700,  text:"Here's the detail that surprises everyone: the leading space is <b>part of the token</b>."},
+    {at:6500, text:"<code>the</code>, <code>·the</code> and <code>·The</code> are three separate entries with three separate IDs. The model learns each one on its own."},
+    {at:13000,text:"So an extra space, or a capital letter, quietly changes how the whole rest of the string is cut."},
+    {at:19000,text:"It's also why formatting is never free. Indentation, trailing whitespace and blank lines are all real tokens that you send and pay for."}
+  ]
+});
+
+scene({
+  act:1, name:"What costs more", dur:35000,
+  title:"Not all text tokenizes equally.",
+  build(c, cue){
+    const rows = [
+      ["antidisestablishmentarianism", ["anti","dis","establish","ment","arian","ism"], "a rare long word"],
+      ["+1 (415) 555-0142",            ["+","1"," (","415",")"," ","555","-","014","2"], "digits chunk badly"],
+      ["🦑",                            ["\\xF0","\\x9F","\\xA6","\\x91"], "one emoji, four byte-tokens"],
+      ["const x = [];",                ["const"," x"," ="," []",";"], "code runs punctuation-heavy"],
+      ["言語モデル",                     ["言","語","モ","デ","ル"], "non-Latin scripts cost more"]
+    ];
+    rows.forEach(([src, parts, why], i) => {
+      const r = add(c, "div", "splitrow");
+      add(r, "div", "src", src);
+      const cr = add(r, "div", "chiprow");
+      parts.forEach(p => { const ch = chip(p, "sm out"); ch.classList.add("show"); cr.appendChild(ch); });
+      add(r, "div", "cnt", "<b>" + parts.length + "</b> tok · " + why);
+      cue(1400 + i*3400, () => r.classList.add("show"));
+    });
+    add(c, "div", "note",
+      "Same idea in a different script can cost two to three times the tokens — which means the same paragraph can cost several times more to send.");
+  },
+  narr:[
+    {at:800,  text:"Not all text is priced equally, because not all text tokenizes equally."},
+    {at:5500, text:"A long rare word shatters into six pieces. A phone number becomes a run of digit-chunks and punctuation."},
+    {at:12500,text:"A single emoji can cost four tokens on its own — it's stored as raw bytes, and each byte group is its own vocabulary entry."},
+    {at:19500,text:"Code is punctuation-dense, so it runs hotter than prose. And scripts that aren't Latin often cost two or three times more tokens for exactly the same meaning."},
+    {at:28000,text:"If you need a real number for real text, don't estimate — the API's <code>count_tokens</code> endpoint runs the actual tokenizer for free."}
+  ]
+});
+
+scene({
+  act:1, name:"Just integers", dur:24000,
+  title:"And then it stops being text at all.",
+  build(c, cue){
+    add(c, "div", "label in", "Tokens → vocabulary IDs");
+    const row = add(c, "div", "chiprow"); row.style.gap = "8px";
+    const chips = TOKENS.map((t, i) => {
+      const ch = chip(t, null); ch.classList.add("show"); row.appendChild(ch); return ch;
+    });
+    chips.forEach((ch, i) => {
+      cue(2200 + i*700, () => {
+        ch.classList.add("hot");
+        ch.innerHTML = tokHTML(TOKENS[i]) + '<span class="id">' + IDS[i] + '</span>';
+        setTimeout(() => ch.classList.remove("hot"), 450);
+      });
+    });
+    const outWrap = add(c, "div"); outWrap.style.marginTop = "28px";
+    add(outWrap, "div", "label in", "What actually crosses the wire");
+    const arr = add(outWrap, "div", "rawtext", "");
+    cue(10500, () => { arr.textContent = "[ " + IDS.join(", ") + " ]"; arr.style.color = "var(--in)"; });
+    cue(13000, () => {
+      const s = add(outWrap, "div", "counters");
+      const st = add(s, "div", "stat");
+      add(st, "span", "n in", "10"); add(st, "span", "u", "Input tokens");
+    });
+    add(c, "div", "note",
+      "IDs shown are illustrative. Every model family has its own vocabulary — Fable 5 shares the tokenizer introduced with Opus 4.7, so counts carry over from that family but not from older ones.");
+  },
+  narr:[
+    {at:700,  text:"Now the last step of the translation. Each token is just a row number in that fixed vocabulary."},
+    {at:6500, text:"The text is replaced by a list of integers, and from here on the model is doing arithmetic, not reading."},
+    {at:12000,text:"This array is what actually crosses the wire. Not your sentence — this."},
+    {at:17500,text:"Ten tokens in. Hold on to that number: it is the first half of your bill."}
+  ]
+});
+
+/* ══════════════ ACT II — the context window ══════════════ */
+
+scene({
+  act:2, name:"One million slots", dur:26000,
+  title:"Those tokens land in a fixed-size window.",
+  build(c, cue){
+    add(c, "div", "label in", "Context window · claude-fable-5");
+    const w = add(c, "div", "window");
+    const used = add(w, "i", "wseg"); used.style.background = "linear-gradient(90deg,#245a76,var(--in))";
+    const t = add(c, "div", "wticks");
+    add(t, "span", null, "0"); add(t, "span", null, "500,000"); add(t, "span", null, "1,000,000 tokens");
+
+    cue(1500, () => { used.style.width = "0.2%"; used.style.minWidth = "3px"; });
+    const cnt = add(c, "div", "counters");
+    const mk = (u, cls) => { const s = add(cnt,"div","stat"); const n = add(s,"span","n "+(cls||""),"—"); add(s,"span","u",u); return n; };
+    const a = mk("Our prompt","in"), b = mk("Window capacity"), d = mk("Words, roughly");
+    cue(2000, () => a.textContent = "10");
+    cue(7000, () => b.textContent = "1,000,000");
+    cue(13000,() => d.textContent = "≈ 750,000");
+    cue(18000,() => { used.style.width = "28%"; });
+    cue(18200,() => { a.textContent = "281,510"; a.nextElementSibling.textContent = "A realistic request"; });
+    add(c, "div", "note",
+      "On Fable 5 the million-token window is both the maximum and the default — there's no separate long-context mode to opt into.");
+  },
+  narr:[
+    {at:700,  text:"Those ten integers go into a container called the <b>context window</b>: the total number of tokens the model can hold in mind at once."},
+    {at:7000, text:"On Fable 5 that container holds a million tokens — and a million is both the ceiling and the default."},
+    {at:13500,text:"A million tokens is roughly 750,000 words. Call it a dozen novels, or a mid-sized codebase with room to spare."},
+    {at:19000,text:"Ten tokens in a window that size is a rounding error. Real requests are not — and the reason why is the next scene."}
+  ]
+});
+
+scene({
+  act:2, name:"What actually fills it", dur:31000,
+  title:"Your message is the smallest thing in the window.",
+  build(c, cue){
+    const parts = [
+      ["System prompt",        2400,  "#3a7ca8"],
+      ["Tool definitions",     6800,  "#4a6fa5"],
+      ["Attached documents", 214000,  "#4cc9f0"],
+      ["Conversation so far", 58300,  "#7cb8d8"],
+      ["Your new message",       10,  "#ffa63d"]
+    ];
+    add(c, "div", "label in", "One realistic request, drawn to scale against the full window");
+    const w = add(c, "div", "window");
+    const segs = parts.map(([n, v, col]) => {
+      const s = add(w, "i", "wseg"); s.style.background = col; return s;
+    });
+    const free = add(w, "i", "wseg"); free.style.background = "var(--panel-3)";
+    const lg = add(c, "div", "legend");
+    const rows = parts.map(([n, v, col]) => {
+      const l = add(lg, "div", "lg");
+      const sw = add(l, "i"); sw.style.background = col;
+      add(l, "span", null, n); add(l, "b", null, nf(v) + " tok");
+      return l;
+    });
+    parts.forEach(([n, v], i) => {
+      cue(1600 + i*3000, () => {
+        segs[i].style.width = Math.max(v/1000000*100, 0.28) + "%";
+        rows[i].classList.add("show");
+      });
+    });
+    cue(16500, () => {
+      free.style.width = (100 - 28.151) + "%";
+      const l = add(lg, "div", "lg show");
+      const sw = add(l, "i"); sw.style.background = "var(--panel-3)";
+      add(l, "span", null, "Still free"); add(l, "b", null, nf(1000000-281510) + " tok");
+    });
+    add(c, "div", "note",
+      "Order matters and is fixed: tool definitions render first, then the system prompt, then the messages. Everything above is input, and all of it is counted on every single call.");
+  },
+  narr:[
+    {at:800,  text:"In a real request, the thing you typed is the smallest item in the window."},
+    {at:5500, text:"First the system prompt — the standing instructions. Then the tool definitions, which are surprisingly expensive: every tool's name, description and JSON schema is text the model has to read."},
+    {at:13000,text:"Then whatever you attached. A single long PDF can be two hundred thousand tokens on its own."},
+    {at:19500,text:"Then the whole conversation up to this point. And finally, at the very end, your ten tokens."},
+    {at:25500,text:"All of it is input. All of it is counted. Every time."}
+  ]
+});
+
+scene({
+  act:2, name:"The conversation tax", dur:30000,
+  title:"The model is stateless. You re-send everything, every turn.",
+  build(c, cue){
+    const turns = [
+      ["Turn 1", 12400, 620],
+      ["Turn 2", 13400, 700],
+      ["Turn 3", 14510, 880],
+      ["Turn 4", 15740, 760]
+    ];
+    const MAX = 16500;
+    let cum = 0;
+    turns.forEach(([lab, inp, out], i) => {
+      const r = add(c, "div", "turn");
+      add(r, "div", "tl", lab);
+      const bar = add(r, "div", "tbar");
+      const bi = add(bar, "i"); bi.style.background = "linear-gradient(90deg,#245a76,var(--in))";
+      const bo = add(bar, "i"); bo.style.background = "linear-gradient(90deg,#8a5a1e,var(--out))";
+      const tc = add(r, "div", "tc", "");
+      cue(1500 + i*3600, () => {
+        r.classList.add("show");
+        bi.style.width = (inp/MAX*88) + "%";
+        bo.style.width = (out/MAX*88) + "%";
+        cum += inp;
+        tc.innerHTML = "<b>" + nf(inp) + "</b> in";
+      });
+    });
+    const tot = add(c, "div", "counters");
+    cue(17000, () => {
+      const mk = (n, u, cls) => { const s = add(tot,"div","stat"); add(s,"span","n "+(cls||""),n); add(s,"span","u",u); };
+      mk("56,050", "Input tokens billed", "in");
+      mk("2,960",  "Output tokens billed", "out");
+      mk("19×",    "More input than output");
+    });
+    add(c, "div", "note",
+      "Nothing is stored between calls. Turn four re-sends turn one's system prompt, turn one's documents, and every word either of you has said since.");
+  },
+  narr:[
+    {at:800,  text:"Here's the part that catches people out. The API is <b>stateless</b> — it does not remember your last message."},
+    {at:6500, text:"Every turn, your client re-sends the entire conversation: the system prompt, the tools, the documents, every previous message, and everything the model just wrote."},
+    {at:14000,text:"Turn one bills twelve thousand input tokens. Turn four bills nearly sixteen thousand — for a conversation that only got four questions long."},
+    {at:21500,text:"Each turn grows linearly, so the whole conversation grows with the <b>square</b> of its length. Fifty-six thousand input tokens bought you three thousand tokens of writing."}
+  ]
+});
+
+scene({
+  act:2, name:"Caching the part that never changes", dur:34000,
+  title:"Most of what you re-send is byte-for-byte identical.",
+  build(c, cue){
+    const turns = [["Turn 1",12400,0],["Turn 2",13400,12400],["Turn 3",14510,12400],["Turn 4",15740,12400]];
+    const MAX = 16500;
+    const bars = turns.map(([lab, inp, cached], i) => {
+      const r = add(c, "div", "turn");
+      add(r, "div", "tl", lab);
+      const bar = add(r, "div", "tbar");
+      const bc = add(bar, "i"); bc.style.background = "linear-gradient(90deg,#1f7a55,var(--cache))";
+      const bf = add(bar, "i"); bf.style.background = "linear-gradient(90deg,#245a76,var(--in))";
+      const tc = add(r, "div", "tc", "");
+      cue(2000 + i*2500, () => {
+        r.classList.add("show");
+        bc.style.width = (cached/MAX*88) + "%";
+        bf.style.width = ((inp-cached)/MAX*88) + "%";
+        tc.innerHTML = cached ? '<b style="color:var(--cache)">' + nf(cached) + "</b> cached"
+                              : '<b>' + nf(inp) + "</b> written";
+      });
+      return { bc, bf, tc, inp, cached };
+    });
+    const lg = add(c, "div", "legend");
+    const mk = (col, t) => { const l = add(lg,"div","lg show"); const i = add(l,"i"); i.style.background = col; add(l,"span",null,t); };
+    cue(2000, () => { mk("var(--cache)", "Read from cache — a fraction of the price"); mk("var(--in)", "Processed fresh at full input price"); });
+
+    cue(21000, () => {
+      const bang = add(c, "div", "note");
+      bang.style.borderColor = "var(--warn)"; bang.style.color = "var(--warn)";
+      bang.textContent = "One byte changes near the top of the prompt — a timestamp, a re-ordered JSON key, a renamed tool.";
+      bars.forEach(b => {
+        if(b.cached){
+          b.bc.style.width = "0%";
+          b.bf.style.width = (b.inp/MAX*88) + "%";
+          b.tc.innerHTML = "<b>" + nf(b.inp) + "</b> re-processed";
+        }
+      });
+    });
+    add(c, "div", "note",
+      "Caching is a strict prefix match, with a minimum cacheable prefix of about 1,024 tokens. Everything after the first changed byte is invalidated.");
+  },
+  narr:[
+    {at:800,  text:"But look at what you're re-sending. The system prompt is identical. The tool definitions are identical. The attached document hasn't changed a character."},
+    {at:8000, text:"<b>Prompt caching</b> lets the API keep that stable prefix warm. On later turns you pay a small read fee instead of the full price of processing it again."},
+    {at:16000,text:"The catch is that it's a strict <b>prefix</b> match, and the match is on bytes, not meaning."},
+    {at:22000,text:"Put a timestamp at the top of your system prompt, re-order a JSON key, rename one tool — and every cached token after that point is thrown away. Watch."},
+    {at:28500,text:"So the rule is: stable things first, volatile things last. And check <code>cache_read_input_tokens</code> in the response — if it's always zero, something upstream is changing that you haven't noticed."}
+  ]
+});
+
+/* ══════════════ ACT III — the forward pass ══════════════ */
+
+scene({
+  act:3, name:"Numbers become vectors", dur:25000,
+  title:"An ID means nothing. A vector means something.",
+  build(c, cue){
+    add(c, "div", "label in", "Each ID is looked up in the embedding table");
+    const row = add(c, "div", "vecrow"); row.style.marginTop = "10px";
+    TOKENS.slice(0,7).forEach((t, i) => {
+      const cell = add(row, "div", "vcell");
+      const ch = chip(t, "sm"); ch.classList.add("show"); cell.appendChild(ch);
+      add(cell, "div", "label", String(IDS[i])).style.margin = "0";
+      const v = add(cell, "div", "vec");
+      for(let k = 0; k < 12; k++){
+        const b = add(v, "i");
+        b.style.height = (6 + Math.random()*44) + "px";
+        b.style.opacity = (0.35 + Math.random()*0.6).toFixed(2);
+      }
+      cue(1600 + i*1100, () => cell.classList.add("show"));
+    });
+    add(c, "div", "note",
+      "Real embeddings are thousands of numbers wide, not twelve. Tokens that behave alike end up close together in that space — which is how the model knows 'ization' is a suffix without ever being told.");
+  },
+  narr:[
+    {at:700,  text:"An integer on its own carries no meaning. ID 4037 isn't larger or smaller than ID 279 in any sense the model can use."},
+    {at:7500, text:"So the first thing that happens inside is a lookup: each ID is swapped for a <b>vector</b> — a long list of numbers that positions the token in a space of meaning and behaviour."},
+    {at:16000,text:"From here on there is no text anywhere in the system. Just arrays of numbers being multiplied together."}
+  ]
+});
+
+scene({
+  act:3, name:"Every token looks at every other", dur:31000,
+  title:"All the input is read at once, in a single parallel pass.",
+  build(c, cue){
+    const wrap = add(c, "div", "attnwrap");
+    const row = add(c, "div", "chiprow");
+    row.style.justifyContent = "space-between"; row.style.marginTop = "auto";
+    const chips = TOKENS.map(t => { const ch = chip(t, "sm"); ch.classList.add("show"); row.appendChild(ch); return ch; });
+    const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+    wrap.appendChild(svg);
+
+    function arcs(to){
+      svg.innerHTML = "";
+      const box = wrap.getBoundingClientRect();
+      const tgt = chips[to].getBoundingClientRect();
+      const x2 = tgt.left - box.left + tgt.width/2, y2 = box.height;
+      for(let i = 0; i < to; i++){
+        const s = chips[i].getBoundingClientRect();
+        const x1 = s.left - box.left + s.width/2;
+        const lift = box.height * (0.28 + 0.6*(to-i)/chips.length);
+        const p = document.createElementNS("http://www.w3.org/2000/svg","path");
+        p.setAttribute("d", "M"+x1+","+y2+" C"+x1+","+(y2-lift)+" "+x2+","+(y2-lift)+" "+x2+","+y2);
+        p.setAttribute("stroke-width", (0.6 + Math.random()*2.4).toFixed(2));
+        svg.appendChild(p);
+        setTimeout(() => p.classList.add("on"), 30*i);
+      }
+      chips.forEach((ch,i) => ch.classList.toggle("hot", i === to));
+    }
+    [3,4,8,9].forEach((t, k) => cue(3000 + k*5200, () => arcs(t)));
+    add(c, "div", "note",
+      "The attention step compares every token with every other token, so its cost grows with the square of the input length. Long prompts get slower faster than you'd expect.");
+  },
+  narr:[
+    {at:700,  text:"Now the step that explains everything else in this film."},
+    {at:5000, text:"All ten input tokens are processed <b>at the same time</b>, in one pass. The model doesn't read them left to right the way you did."},
+    {at:12000,text:"Inside that pass, each token compares itself against every other one and decides what to pay attention to. <code>ization</code> looks back at <code>token</code>. <code>works</code> looks back at both of them."},
+    {at:20000,text:"This is why sending a huge prompt is comparatively cheap and fast: however many tokens you send, they go through together."},
+    {at:26000,text:"Hold on to that. It is the entire reason input and output are priced differently."}
+  ]
+});
+
+scene({
+  act:3, name:"The stack", dur:25000,
+  title:"That comparison happens again, and again, and again.",
+  build(c, cue){
+    const wrap = add(c, "div"); wrap.style.display = "grid";
+    wrap.style.gridTemplateColumns = "1fr 260px"; wrap.style.gap = "30px"; wrap.style.alignItems = "center";
+    const left = add(wrap, "div");
+    add(left, "div", "label in", "Layers, bottom to top");
+    const stack = add(left, "div", "layers");
+    const L = 22, layers = [];
+    for(let i = 0; i < L; i++){ const l = add(stack, "div", "layer"); add(l, "span", null, "L" + (i+1)); layers.push(l); }
+    const right = add(wrap, "div");
+    const cap = add(right, "div", "card"); cap.classList.add("show");
+    add(cap, "h4", null, "One pass, whatever the size");
+    add(cap, "p", null, "Ten tokens or two hundred thousand — the entire stack runs once for the whole input. That single pass is all your input tokens ever cost.");
+    layers.forEach((l, i) => cue(2200 + i*620, () => l.classList.add("on")));
+    add(c, "div", "note",
+      "Early layers deal in surface patterns — spelling, grammar, which word goes with which. Deeper layers assemble something much closer to intent.");
+  },
+  narr:[
+    {at:700,  text:"That attention step isn't done once. It's repeated through a deep stack of layers, each one refining what the last produced."},
+    {at:7500, text:"Early layers deal in surface patterns. Deeper ones assemble something closer to meaning, and closer to what you actually asked for."},
+    {at:15000,text:"But the important thing is the shape of the work: <b>the whole stack runs once for the entire input</b>, no matter how long it is."}
+  ]
+});
+
+scene({
+  act:3, name:"A guess about what comes next", dur:26000,
+  title:"At the top, the model produces exactly one thing.",
+  build(c, cue){
+    add(c, "div", "label in", "Probability over the next token · final position");
+    const d = add(c, "div", "dist");
+    const cands = [["Token",".41"],[" Tok",".17"],["Tokens",".09"],["A",".07"],["The",".05"],["…97k others",".21"]];
+    cands.forEach(([k, p], i) => {
+      const r = add(d, "div", "drow");
+      add(r, "div", "dk", k.replace(/ /g,"·"));
+      const bar = add(r, "div", "dbar"); const bi = add(bar, "i");
+      add(r, "div", "dp", p);
+      cue(2500 + i*1400, () => { r.classList.add("show"); setTimeout(() => bi.style.width = (parseFloat(p)*100/0.41*0.92) + "%", 60); });
+    });
+    add(c, "div", "note",
+      "Probabilities shown are illustrative. The real distribution covers the entire vocabulary — roughly a hundred thousand numbers that sum to one.");
+  },
+  narr:[
+    {at:700,  text:"At the top of the stack, at the very last position, the model produces a single object: a probability for <b>every token in the vocabulary</b>."},
+    {at:8000, text:"Around a hundred thousand numbers, all adding up to one. It's the model's complete answer to one narrow question: what comes next?"},
+    {at:16000,text:"That's the whole of what a language model computes. Everything else — chat, agents, code, this explanation — is what you do with that distribution, over and over."}
+  ]
+});
+
+/* ══════════════ ACT IV — writing ══════════════ */
+
+const GEN = ["Token","ization"," is"," the"," step"," that"," turns"," text"," into"," numbers",
+             " a"," model"," can"," actually"," compute"," with","."];
+
+scene({
+  act:4, name:"It thinks before it writes", dur:31000,
+  title:"On Fable 5, the first tokens written are for itself.",
+  build(c, cue){
+    const panel = add(c, "div");
+    panel.style.cssText = "border:1px solid rgba(176,124,255,.28);border-radius:10px;padding:15px 17px;background:rgba(176,124,255,.05);min-height:130px";
+    add(panel, "div", "label think", "Reasoning · not returned to you");
+    const row = add(panel, "div", "chiprow");
+    const words = ["The"," user"," wants"," a"," paragraph","."," I"," should"," cover"," the"," vocabulary",",",
+                   " the"," subword"," split",","," and"," the"," ID"," lookup","."," Keep"," it"," concise","."];
+    words.forEach((w, i) => {
+      const ch = chip(w, "sm think"); row.appendChild(ch);
+      cue(2000 + i*440, () => { ch.classList.add("show"); if(i > 13) ch.style.opacity = ".35"; });
+    });
+    cue(14500, () => {
+      row.style.filter = "blur(4px)"; row.style.opacity = ".45";
+      row.style.transition = "filter .8s, opacity .8s";
+      const mask = add(panel, "div", "label think", "— hidden —");
+      mask.style.marginTop = "12px";
+    });
+    const st = add(c, "div", "counters");
+    cue(17500, () => {
+      const mk = (n, u, cls) => { const s = add(st,"div","stat"); add(s,"span","n "+(cls||""),n); add(s,"span","u",u); };
+      mk("1,840", "Thinking tokens", "think");
+      mk("$50 / M", "Billed as output", "out");
+    });
+    add(c, "div", "note",
+      "Thinking is always on for Fable 5 — there is no off switch and no fixed token budget to set. You steer the depth with an effort setting instead, from low up to max.");
+  },
+  narr:[
+    {at:700,  text:"Before Fable 5 writes a word to you, it writes to itself."},
+    {at:5500, text:"These are <b>thinking tokens</b> — reasoning the model produces to work the problem out before committing to an answer."},
+    {at:12000,text:"You never see the raw text of it. The default returns nothing at all; you can ask for a readable summary, but the underlying chain of thought is never exposed."},
+    {at:20000,text:"You are, however, billed for every one of them — at the <b>output</b> rate. On a hard question the thinking can outweigh the visible answer several times over."},
+    {at:27000,text:"This is the line item people miss when a bill comes in higher than expected."}
+  ]
+});
+
+scene({
+  act:4, name:"Picking one", dur:29000,
+  title:"A hundred thousand probabilities, and one has to win.",
+  build(c, cue){
+    add(c, "div", "label out", "Sampling the next token");
+    const d = add(c, "div", "dist");
+    const cands = [["Token",".41"],[" Tok",".17"],["Tokens",".09"],["A",".07"]];
+    const rows = cands.map(([k, p], i) => {
+      const r = add(d, "div", "drow");
+      add(r, "div", "dk", k.replace(/ /g,"·"));
+      const bar = add(r, "div", "dbar"); const bi = add(bar, "i");
+      add(r, "div", "dp", p);
+      cue(1200 + i*700, () => { r.classList.add("show"); setTimeout(() => bi.style.width = (parseFloat(p)/0.41*92) + "%", 60); });
+      return r;
+    });
+    cue(9000, () => rows[0].classList.add("pick"));
+    const outWrap = add(c, "div"); outWrap.style.marginTop = "26px";
+    add(outWrap, "div", "label out", "Output so far");
+    const orow = add(outWrap, "div", "chiprow");
+    cue(11500, () => { const ch = chip("Token","out"); orow.appendChild(ch); requestAnimationFrame(() => ch.classList.add("show","hot")); });
+    cue(20000, () => {
+      rows.forEach(r => r.classList.remove("pick"));
+      rows[1].classList.add("pick");
+      const n = add(c, "div", "note");
+      n.style.borderColor = "var(--out)";
+      n.textContent = "Run the same prompt again and a different candidate can win. That is where non-determinism in the answer comes from.";
+    });
+    add(c, "div", "note",
+      "The highest-probability token is not always taken. A controlled amount of randomness is what stops the writing from sounding like a stuck record.");
+  },
+  narr:[
+    {at:700,  text:"Back to that distribution. The model now has to commit to exactly one token."},
+    {at:6500, text:"The top candidates here are all plausible continuations of the same sentence — the model is choosing between good options, not between right and wrong."},
+    {at:13500,text:"One is picked, and it becomes the first thing you'll actually see. Five characters. One token."},
+    {at:20500,text:"Ask the same question tomorrow and a different candidate may win. Same model, same prompt, different sentence."}
+  ]
+});
+
+/* repeating timers need to die when the scene does */
+const TIMERS = [];
+function every(ms, fn){ const id = setInterval(fn, ms); TIMERS.push(id); return id; }
+const _origGo = go;
+go = function(i){ while(TIMERS.length) clearInterval(TIMERS.pop()); _origGo(i); };
+
+scene({
+  act:4, name:"The autoregressive loop", dur:66000,
+  title:"Then it does the whole thing again. And again.",
+  build(c, cue){
+    const loop = add(c, "div", "loop");
+    const boxes = [
+      ["01","Context","Every token so far — your prompt plus everything written since."],
+      ["02","Forward pass","The full stack runs over the whole sequence."],
+      ["03","Distribution","A probability for every token in the vocabulary."],
+      ["04","Sample","One token is chosen and emitted."]
+    ].map(([n, t, d]) => {
+      const b = add(loop, "div", "lbox");
+      add(b, "div", "ln", n); add(b, "div", "lt", t); add(b, "div", "ld", d);
+      return b;
+    });
+    const ret = add(c, "div", "retpath");
+    add(ret, "span", null, "append the new token · repeat");
+
+    const ctxWrap = add(c, "div"); ctxWrap.style.marginTop = "20px";
+    add(ctxWrap, "div", "label out", "Output being written");
+    const orow = add(ctxWrap, "div", "chiprow");
+
+    const st = add(c, "div", "counters"); st.style.marginTop = "16px";
+    const mk = (u, cls) => { const s = add(st,"div","stat"); const n = add(s,"span","n "+(cls||""),"0"); add(s,"span","u",u); return n; };
+    const nPass = mk("Passes through the model"), nOut = mk("Output tokens","out");
+
+    let t = 3500;
+    GEN.forEach((tok, i) => {
+      const slow = i < 4;
+      const D = slow ? 4200 : 1900, step = D/5;
+      const T = t; t += D;
+      for(let b = 0; b < 4; b++){
+        cue(T + b*step, () => {
+          boxes.forEach((x, k) => x.classList.toggle("on", k === b));
+          boxes[b].classList.toggle("warm", b >= 2);
+        });
+      }
+      cue(T + 3.4*step, () => {
+        const ch = chip(tok, "out"); orow.appendChild(ch);
+        requestAnimationFrame(() => ch.classList.add("show","hot"));
+        setTimeout(() => ch.classList.remove("hot"), 420);
+        nPass.textContent = i+1; nOut.textContent = i+1;
+      });
+    });
+    cue(t + 400, () => boxes.forEach(x => x.classList.remove("on","warm")));
+
+    /* the asymmetry, drawn */
+    cue(t + 1800, () => {
+      const cmp = add(c, "div", "grid2"); cmp.style.marginTop = "20px";
+      const one = add(cmp, "div", "card"); one.style.borderColor = "rgba(76,201,240,.4)";
+      add(one, "div", "label in", "Reading your 10 input tokens");
+      add(one, "h4", null, "1 pass");
+      const r1 = add(one, "div", "chiprow"); r1.style.marginTop = "8px";
+      const p1 = E("i"); p1.style.cssText = "display:block;height:9px;width:26px;border-radius:2px;background:var(--in)";
+      r1.appendChild(p1);
+      const two = add(cmp, "div", "card"); two.style.borderColor = "rgba(255,166,61,.4)";
+      add(two, "div", "label out", "Writing " + GEN.length + " output tokens");
+      add(two, "h4", null, GEN.length + " passes");
+      const r2 = add(two, "div", "chiprow"); r2.style.marginTop = "8px";
+      for(let k = 0; k < GEN.length; k++){
+        const p = E("i"); p.style.cssText = "display:block;height:9px;width:26px;border-radius:2px;background:var(--out);opacity:0;transition:opacity .3s";
+        r2.appendChild(p); setTimeout(() => p.style.opacity = "1", 70*k);
+      }
+      one.classList.add("show"); two.classList.add("show");
+    });
+    add(c, "div", "note",
+      "Nothing here can be parallelised away. Token fifty cannot be computed before token forty-nine exists, because token fifty depends on it.");
+  },
+  narr:[
+    {at:700,  text:"One token isn't an answer. So the loop begins."},
+    {at:5000, text:"The token just written is <b>appended to the context</b>, and the entire model runs again over the slightly longer sequence."},
+    {at:12000,text:"Ten input tokens became eleven. Forward pass. Distribution. Sample. Append. Eleven became twelve."},
+    {at:19000,text:"Every single word you have ever read from a language model cost one complete pass through it."},
+    {at:26000,text:"And it is strictly sequential. There is no skipping ahead, because each token is conditioned on the one before it."},
+    {at:34000,text:"Watch the counters. The input was read in one pass. The output is costing one pass per token — that is the entire asymmetry between the two halves of your bill."},
+    {at:44000,text:"It's also why streaming exists. The tokens are genuinely produced one at a time, so the API can hand them to you as they appear instead of making you wait for the last one."},
+    {at:54000,text:"Seventeen tokens out. Seventeen full passes through a very large model — against one pass for everything you sent."}
+  ]
+});
+
+scene({
+  act:4, name:"Where it stops", dur:29000,
+  title:"Four ways the writing ends.",
+  build(c, cue){
+    const g = add(c, "div", "grid2");
+    const items = [
+      ["end_turn","It decided it was finished. The sampled token was the end-of-turn marker — the normal, healthy ending.","var(--cache)"],
+      ["max_tokens","It hit the ceiling you set and was cut off mid-sentence. You still pay for every token it wrote.","var(--warn)"],
+      ["tool_use","It wants to call one of your tools and is waiting for the result before continuing.","var(--in)"],
+      ["refusal","A safety classifier declined the request. It arrives as a normal 200 response, so check stop_reason before you read the content.","var(--think)"]
+    ];
+    items.forEach(([k, d, col], i) => {
+      const card = add(g, "div", "card");
+      card.style.borderLeft = "2px solid " + col;
+      const h = add(card, "h4", null, k); h.style.fontFamily = "var(--mono)"; h.style.color = col; h.style.fontSize = "14px";
+      add(card, "p", null, d);
+      cue(1400 + i*3200, () => card.classList.add("show"));
+    });
+    add(c, "div", "note",
+      "max_tokens is a hard cut, not a hint — the model has no idea it's coming. Set it too low and you pay for a truncated answer, then pay again for the retry.");
+  },
+  narr:[
+    {at:700,  text:"The loop has to end somewhere, and the response tells you which of four things happened."},
+    {at:5500, text:"Usually <code>end_turn</code>: the model sampled an end-of-turn token because it judged the answer complete."},
+    {at:11000,text:"Sometimes <code>max_tokens</code> — you set a ceiling and it was cut off mid-word. The model can't see that limit coming, so it can't wrap up gracefully."},
+    {at:18000,text:"<code>tool_use</code> means it's paused waiting on you. And <code>refusal</code> means a classifier declined — that one still arrives as a successful HTTP response, so code that reads the content without checking will read nothing."},
+    {at:25000,text:"Only one of those four is free of surprises."}
+  ]
+});
+
+/* ══════════════ ACT V — cost and limits ══════════════ */
+
+scene({
+  act:5, name:"The meter", dur:31000,
+  title:"Two counters, two very different prices.",
+  build(c, cue){
+    const m = add(c, "div", "meter");
+    const cell = (label, sub) => {
+      const x = add(m, "div", "mcell");
+      const n = add(x, "div", "mn", "0");
+      add(x, "div", "mu", label);
+      add(x, "div", "mx", sub);
+      return n;
+    };
+    const nIn = cell("Input tokens", "$10.00 per million");
+    const nOut = cell("Output tokens", "$50.00 per million · thinking included");
+    const nCost = cell("This request", "input + output");
+    nIn.style.color = "var(--in)"; nOut.style.color = "var(--out)";
+
+    const IN = 12400, OUT = 2460;
+    cue(2500, () => {
+      let a = 0;
+      const idA = every(28, () => {
+        a = Math.min(IN, a + 260);
+        nIn.textContent = nf(a);
+        nCost.textContent = "$" + (a/1e6*10).toFixed(4);
+        if(a >= IN) clearInterval(idA);
+      });
+    });
+    cue(10000, () => {
+      let b = 0;
+      const idB = every(28, () => {
+        b = Math.min(OUT, b + 52);
+        nOut.textContent = nf(b);
+        nCost.textContent = "$" + (IN/1e6*10 + b/1e6*50).toFixed(4);
+        if(b >= OUT) clearInterval(idB);
+      });
+    });
+    cue(19000, () => {
+      const g = add(c, "div", "grid2"); g.style.marginTop = "18px";
+      const a = add(g, "div", "card"); a.classList.add("show"); a.style.borderColor = "rgba(76,201,240,.4)";
+      add(a, "h4", null, "$0.1240");
+      add(a, "p", null, "12,400 input tokens — the prompt, the tools, the documents, the history.");
+      const b = add(g, "div", "card"); b.classList.add("show"); b.style.borderColor = "rgba(255,166,61,.4)";
+      add(b, "h4", null, "$0.1230");
+      add(b, "p", null, "2,460 output tokens — 1,840 of them thinking you never see.");
+    });
+    add(c, "div", "note",
+      "Five times fewer output tokens, and the two halves of the bill land level. On reasoning-heavy work the output side wins outright.");
+  },
+  narr:[
+    {at:700,  text:"So here is the bill, and it has exactly two lines on it."},
+    {at:5000, text:"Input runs at ten dollars per million tokens on Fable 5. Output runs at fifty."},
+    {at:11500,text:"Five times the price — and now you know exactly why. One parallel pass versus one pass per token."},
+    {at:19500,text:"This request sent twelve thousand four hundred tokens and got back two thousand four hundred and sixty, thinking included."},
+    {at:26000,text:"Twelve cents each way. Five times fewer tokens on the right, and the costs land level."}
+  ]
+});
+
+scene({
+  act:5, name:"Three shapes of request", dur:33000,
+  title:"The same model, three completely different bills.",
+  build(c, cue){
+    const sc = add(c, "div", "scroller");
+    const t = add(sc, "table", "tbl");
+    t.innerHTML = "<thead><tr class='show'><th>Request</th><th class='num'>Input</th><th class='num'>Output</th>" +
+                  "<th class='amt'>Input $</th><th class='amt'>Output $</th><th class='amt'>Total</th></tr></thead>";
+    const tb = add(t, "tbody");
+    const rows = [
+      ["A quick question", 1200, 400],
+      ["A 200-page PDF, summarised", 214000, 900],
+      ["A hard reasoning task", 8000, 12000]
+    ];
+    rows.forEach(([n, i, o], k) => {
+      const ci = i/1e6*10, co = o/1e6*50;
+      const tr = add(tb, "tr");
+      tr.innerHTML = "<td>" + n + "</td><td class='num'>" + nf(i) + "</td><td class='num'>" + nf(o) + "</td>" +
+        "<td class='amt cheap'>$" + ci.toFixed(3) + "</td><td class='amt'>$" + co.toFixed(3) +
+        "</td><td class='amt'>$" + (ci+co).toFixed(3) + "</td>";
+      cue(2200 + k*4200, () => tr.classList.add("show"));
+    });
+    cue(16000, () => {
+      const g = add(c, "div", "grid2"); g.style.marginTop = "22px";
+      const a = add(g, "div", "card"); a.style.borderColor = "rgba(76,201,240,.4)";
+      add(a, "h4", null, "Input-heavy work");
+      add(a, "p", null, "Long documents, big codebases, deep history. The fix is caching the stable prefix and not re-attaching what hasn't changed.");
+      const b = add(g, "div", "card"); b.style.borderColor = "rgba(255,166,61,.4)";
+      add(b, "h4", null, "Output-heavy work");
+      add(b, "p", null, "Hard reasoning, long generation, agent loops. The fix is a lower effort setting for routine steps — the thinking is most of the spend.");
+      setTimeout(() => { a.classList.add("show"); b.classList.add("show"); }, 40);
+    });
+    add(c, "div", "note",
+      "Row two sends 27 times more input than row three, and costs only three times as much — because row three does its spending on the expensive side.");
+  },
+  narr:[
+    {at:700,  text:"Three requests to the same model, and three bills with completely different shapes."},
+    {at:6000, text:"A quick question is almost free — about three cents, and most of that is the answer, not the question."},
+    {at:11000,text:"A two-hundred-page PDF costs two dollars, almost all of it on the input side. You're paying to read, not to write."},
+    {at:18000,text:"But a hard reasoning task with twelve thousand tokens of thinking costs sixty-eight cents while sending almost nothing. You're paying to think."},
+    {at:26000,text:"Which side you're on decides what to optimise. Caching does nothing for the third row; a lower effort setting does nothing for the second."}
+  ]
+});
+
+scene({
+  act:5, name:"The two ceilings", dur:28000,
+  title:"There are two limits, and they're not the same one.",
+  build(c, cue){
+    const a = add(c, "div", "limit");
+    add(a, "div", "label in", "Context window — everything sent plus everything written");
+    const b1 = add(a, "div", "lbar"); const i1 = add(b1, "i");
+    i1.style.background = "linear-gradient(90deg,#245a76,var(--in))";
+    add(b1, "b", null, "1,000,000 tokens");
+    const b = add(c, "div", "limit");
+    add(b, "div", "label out", "Maximum tokens in a single response");
+    const b2 = add(b, "div", "lbar"); const i2 = add(b2, "i");
+    i2.style.background = "linear-gradient(90deg,#8a5a1e,var(--out))";
+    add(b2, "b", null, "128,000 tokens");
+    cue(1800, () => i1.style.width = "100%");
+    cue(6000, () => i2.style.width = "12.8%");
+    cue(12000, () => {
+      const g = add(c, "div", "grid2");
+      const x = add(g, "div", "card");
+      add(x, "h4", null, "Fill the window");
+      add(x, "p", null, "Send more than a million tokens and the request is rejected outright. Long conversations need trimming, or server-side compaction that summarises the old turns for you.");
+      const y = add(g, "div", "card");
+      add(y, "h4", null, "Hit the response cap");
+      add(y, "p", null, "A reply is capped at 128,000 tokens, and thinking counts against it. Anything near that size must be streamed, or the connection times out before the model finishes.");
+      setTimeout(() => { x.classList.add("show"); y.classList.add("show"); }, 40);
+    });
+    add(c, "div", "note",
+      "The window is shared. A 900,000-token document doesn't leave much room for a long answer, however generous the response cap looks on its own.");
+  },
+  narr:[
+    {at:700,  text:"Two ceilings, constantly confused with each other."},
+    {at:5000, text:"The <b>context window</b> is a million tokens on Fable 5. That's the total: your prompt, the history, the documents, and the reply, all sharing one budget."},
+    {at:13000,text:"The <b>response cap</b> is separate and much smaller — at most 128,000 tokens in any single reply, thinking included."},
+    {at:20500,text:"And a reply that long takes real minutes to produce. Ask for one on a non-streaming request and the connection will give up before the model does."}
+  ]
+});
+
+scene({
+  act:5, name:"What to remember", dur:30000,
+  title:"Six things that follow from all of it.",
+  build(c, cue){
+    const g = add(c, "div", "grid3");
+    const items = [
+      ["Tokens, not words","Roughly four characters each in English — but code, digits, emoji and non-Latin scripts all run hotter. Count, don't estimate."],
+      ["Input is one pass","However much you send, it's read in a single parallel sweep. This is why huge prompts are cheaper than they feel."],
+      ["Output is N passes","One complete run of the model per token written. Sequential, unskippable, and five times the price."],
+      ["Nothing is remembered","Every turn re-sends the entire conversation. Cost per turn grows linearly; cost per conversation grows with its square."],
+      ["Thinking is output","On Fable 5 it's always on and always billed at the output rate. Steer it with effort, not with an off switch."],
+      ["Order your prompt","Stable content first so it can be cached, volatile content last. One changed byte early invalidates everything after it."]
+    ];
+    items.forEach(([t, d], i) => {
+      const card = add(g, "div", "card");
+      add(card, "h4", null, t);
+      add(card, "p", null, d);
+      cue(1200 + i*2400, () => card.classList.add("show"));
+    });
+    cue(17500, () => {
+      const f = add(c, "div", "note");
+      f.style.cssText = "border-left-color:var(--in);color:var(--ink);font-family:var(--body);font-size:16px;margin-top:24px;font-weight:300";
+      f.innerHTML = "Prices, context and output limits are for <b>claude-fable-5</b> and change over time — check the current model documentation before you budget against them.";
+    });
+  },
+  narr:[
+    {at:700,  text:"So — six things, and they all fall out of the same fact."},
+    {at:5000, text:"Text becomes tokens. Tokens become numbers. Numbers go in together and come back one at a time."},
+    {at:12000,text:"Everything else — the pricing, the limits, the latency, the caching rules, the reason a long chat suddenly gets expensive — is a consequence of that one asymmetry."},
+    {at:21000,text:"Ten dollars a million to read. Fifty to write. One pass in, one pass per token out."},
+    {at:26500,text:"Now go and count something."}
+  ]
+});
+
+/* ══════════════ boot ══════════════ */
+buildSegs();
+go(0);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
