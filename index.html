@@ -1,0 +1,918 @@
+<title>The Life of a Token</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A guided, chaptered animation of how Fable 5 turns your words into input tokens and generates output tokens, one at a time.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+/* ---------- tokens : light (default, un-stamped state) ---------- */
+:root{
+  --bg:#f4f3fa; --bg-2:#eae8f4;
+  --surface:#ffffff; --surface-2:#f2f0fb; --surface-3:#e9e6f6;
+  --line:#e0dcf0; --line-strong:#cfc9e6;
+  --ink:#1a1730; --muted:#5c5678; --faint:#8b85a6;
+  --input:#0b8fb0; --input-soft:rgba(11,143,176,.12); --input-line:rgba(11,143,176,.4);
+  --output:#b9760a; --output-soft:rgba(185,118,10,.12); --output-line:rgba(185,118,10,.4);
+  --model:#6b45d0; --model-soft:rgba(107,69,208,.12); --model-line:rgba(107,69,208,.4);
+  --good:#1f9d63; --good-soft:rgba(31,157,99,.14);
+  --glow-in:none; --glow-out:none; --glow-model:none;
+  --shadow:0 1px 2px rgba(30,20,60,.06), 0 12px 32px -12px rgba(30,20,60,.16);
+  --grain:.4;
+}
+/* ---------- tokens : dark (the hero look) ---------- */
+:root:not([data-theme="light"]){
+  @media (prefers-color-scheme: dark){ }
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c0a16; --bg-2:#100d20;
+    --surface:#16132a; --surface-2:#1d1839; --surface-3:#251f44;
+    --line:#2a2547; --line-strong:#3a3460;
+    --ink:#edeaf7; --muted:#a29cc0; --faint:#6f6a8c;
+    --input:#46c6e6; --input-soft:rgba(70,198,230,.14); --input-line:rgba(70,198,230,.45);
+    --output:#f6b23f; --output-soft:rgba(246,178,63,.14); --output-line:rgba(246,178,63,.45);
+    --model:#b49bff; --model-soft:rgba(180,155,255,.16); --model-line:rgba(180,155,255,.5);
+    --good:#57d99a; --good-soft:rgba(87,217,154,.16);
+    --glow-in:0 0 18px rgba(70,198,230,.35); --glow-out:0 0 18px rgba(246,178,63,.32);
+    --glow-model:0 0 26px rgba(180,155,255,.4);
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 22px 48px -20px rgba(0,0,0,.7);
+    --grain:.7;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c0a16; --bg-2:#100d20;
+  --surface:#16132a; --surface-2:#1d1839; --surface-3:#251f44;
+  --line:#2a2547; --line-strong:#3a3460;
+  --ink:#edeaf7; --muted:#a29cc0; --faint:#6f6a8c;
+  --input:#46c6e6; --input-soft:rgba(70,198,230,.14); --input-line:rgba(70,198,230,.45);
+  --output:#f6b23f; --output-soft:rgba(246,178,63,.14); --output-line:rgba(246,178,63,.45);
+  --model:#b49bff; --model-soft:rgba(180,155,255,.16); --model-line:rgba(180,155,255,.5);
+  --good:#57d99a; --good-soft:rgba(87,217,154,.16);
+  --glow-in:0 0 18px rgba(70,198,230,.35); --glow-out:0 0 18px rgba(246,178,63,.32);
+  --glow-model:0 0 26px rgba(180,155,255,.4);
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 22px 48px -20px rgba(0,0,0,.7);
+  --grain:.7;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Hanken Grotesk", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow:hidden;
+}
+.serif{font-family:"Fraunces", Georgia, "Times New Roman", serif}
+.mono{font-family:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace}
+
+/* ambient background */
+.bg-wrap{position:fixed; inset:0; z-index:0; overflow:hidden;
+  background:
+    radial-gradient(1100px 700px at 78% -8%, var(--model-soft), transparent 60%),
+    radial-gradient(900px 600px at 8% 108%, var(--input-soft), transparent 60%),
+    linear-gradient(160deg, var(--bg), var(--bg-2));
+}
+.bg-wrap::after{content:""; position:absolute; inset:0; opacity:var(--grain); mix-blend-mode:overlay;
+  background-image:radial-gradient(rgba(255,255,255,.5) .5px, transparent .5px);
+  background-size:3px 3px;}
+
+/* ---------- app shell ---------- */
+.app{position:relative; z-index:1; height:100%; display:flex; flex-direction:column;
+  max-width:1160px; margin:0 auto; padding:16px clamp(12px,3vw,26px) 14px;}
+
+header.top{display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+.brand{display:flex; align-items:center; gap:11px; margin-right:auto}
+.mark{width:34px; height:34px; border-radius:10px; flex:none;
+  display:grid; place-items:center; font-size:18px; position:relative;
+  background:conic-gradient(from 220deg, var(--model), var(--input), var(--output), var(--model));
+  box-shadow:var(--glow-model); color:#0c0a16;}
+.mark span{position:relative; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.brand h1{font-size:16px; margin:0; font-weight:600; letter-spacing:.2px}
+.brand .sub{font-size:11.5px; color:var(--muted); letter-spacing:.14em; text-transform:uppercase}
+
+.counters{display:flex; gap:8px; flex-wrap:wrap}
+.counter{display:flex; align-items:center; gap:9px; padding:7px 12px 7px 10px; border-radius:11px;
+  background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow)}
+.counter .dot{width:9px; height:9px; border-radius:50%}
+.counter .lbl{font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted)}
+.counter .val{font-size:18px; font-weight:600; min-width:1.4ch; text-align:right}
+.counter.in .dot{background:var(--input); box-shadow:var(--glow-in)}
+.counter.in .val{color:var(--input)}
+.counter.out .dot{background:var(--output); box-shadow:var(--glow-out)}
+.counter.out .val{color:var(--output)}
+.counter.ctx .dot{background:var(--model); box-shadow:var(--glow-model)}
+.counter.ctx .val{color:var(--model)}
+.icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);
+  color:var(--ink);cursor:pointer;display:grid;place-items:center;font-size:15px;box-shadow:var(--shadow)}
+.icon-btn:hover{border-color:var(--line-strong)}
+
+/* ---------- pipeline map ---------- */
+.pipe{display:flex; align-items:center; gap:2px; margin:14px 0 6px; padding:8px 4px;
+  overflow-x:auto; scrollbar-width:none}
+.pipe::-webkit-scrollbar{display:none}
+.pnode{display:flex; align-items:center; gap:9px; flex:none; opacity:.4; transition:opacity .4s}
+.pnode .pdot{width:11px;height:11px;border-radius:50%;border:2px solid var(--faint);transition:all .4s}
+.pnode .pname{font-size:11.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); white-space:nowrap}
+.pnode.active{opacity:1}
+.pnode.active .pdot{border-color:var(--model);background:var(--model);box-shadow:var(--glow-model)}
+.pnode.active .pname{color:var(--ink)}
+.pnode.done{opacity:.75}
+.pnode.done .pdot{border-color:var(--model);background:transparent}
+.pseg{flex:1 1 22px; min-width:14px; height:2px; background:var(--line); border-radius:2px}
+.pseg.lit{background:linear-gradient(90deg,var(--model),transparent)}
+
+/* ---------- stage ---------- */
+.stage-wrap{flex:1 1 auto; position:relative; min-height:0; margin-top:4px}
+.stage{position:absolute; inset:0; border-radius:20px; border:1px solid var(--line);
+  background:linear-gradient(180deg, var(--surface), var(--surface-2));
+  box-shadow:var(--shadow); overflow:hidden; padding:clamp(16px,3vw,30px);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+  transition:opacity .35s ease;}
+.stage-inner{width:100%; max-width:860px; margin:0 auto; display:flex; flex-direction:column;
+  align-items:center; gap:16px; text-align:center}
+.scene-kicker{font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--model); font-weight:600}
+.scene-title{font-size:clamp(22px,3.4vw,34px); line-height:1.08; margin:0; font-weight:600; text-wrap:balance}
+.scene-note{font-size:13.5px; color:var(--muted); max-width:60ch; line-height:1.5}
+
+/* cover orb */
+.orb{width:132px;height:132px;border-radius:50%;position:relative;display:grid;place-items:center;
+  background:radial-gradient(circle at 34% 30%, var(--model), transparent 62%),
+             radial-gradient(circle at 70% 74%, var(--input), transparent 60%),
+             radial-gradient(circle at 60% 40%, var(--output), transparent 66%);
+  box-shadow:var(--glow-model); animation:float 6s ease-in-out infinite}
+.orb::before{content:"";position:absolute;inset:-14px;border-radius:50%;border:1px solid var(--model-line);
+  animation:ring 4s linear infinite}
+.orb::after{content:"";position:absolute;inset:-26px;border-radius:50%;border:1px dashed var(--line-strong);
+  opacity:.6;animation:ring 9s linear infinite reverse}
+@keyframes float{50%{transform:translateY(-9px)}}
+@keyframes ring{to{transform:rotate(360deg)}}
+
+/* generic token chip */
+.tok{display:inline-flex;align-items:center;gap:1px;padding:6px 10px;border-radius:9px;
+  font-family:"JetBrains Mono", ui-monospace, monospace; font-size:14px; font-weight:500;
+  border:1px solid var(--line-strong); background:var(--surface-3); color:var(--ink);
+  white-space:pre; line-height:1.2}
+.tok .spc{color:var(--faint)}
+.tok.in-tok{border-color:var(--input-line); background:var(--input-soft); color:var(--input); box-shadow:var(--glow-in)}
+.tok.out-tok{border-color:var(--output-line); background:var(--output-soft); color:var(--output); box-shadow:var(--glow-out)}
+.tok.dim{opacity:.5; box-shadow:none; filter:saturate(.7)}
+.tok.pop{opacity:0; transform:translateY(10px) scale(.9)}
+.tok.pop.in{opacity:1; transform:none; transition:opacity .4s ease, transform .45s cubic-bezier(.2,.9,.3,1.2)}
+.tok .tid{font-size:10.5px;color:var(--faint);margin-left:4px}
+
+.tokrow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}
+.tokrow.tight{gap:6px}
+
+/* prompt bubble */
+.bubble{position:relative;max-width:640px;padding:18px 22px;border-radius:16px 16px 16px 4px;
+  background:var(--surface-3);border:1px solid var(--line-strong);text-align:left;
+  font-size:clamp(17px,2.4vw,22px);line-height:1.4;box-shadow:var(--shadow)}
+.bubble .who{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:8px;font-family:"Hanken Grotesk",sans-serif}
+.caret{display:inline-block;width:2px;height:1.05em;background:var(--input);vertical-align:-2px;
+  margin-left:1px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* subword aside */
+.aside{display:flex;flex-direction:column;gap:8px;align-items:center;padding:12px 16px;border-radius:12px;
+  background:var(--surface);border:1px dashed var(--line-strong);max-width:560px}
+.aside .cap{font-size:12px;color:var(--muted)}
+.piece{padding:4px 8px;border-radius:7px;background:var(--input-soft);border:1px solid var(--input-line);
+  color:var(--input);font-family:"JetBrains Mono",monospace;font-size:13px}
+.plus{color:var(--faint);font-size:13px;margin:0 1px}
+
+/* vocab lookup */
+.vocab{display:flex;flex-direction:column;gap:3px;padding:10px;border-radius:12px;background:var(--surface);
+  border:1px solid var(--line);min-width:210px;box-shadow:var(--shadow)}
+.vrow{display:flex;justify-content:space-between;gap:20px;padding:5px 9px;border-radius:7px;
+  font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--muted);white-space:pre}
+.vrow.hit{background:var(--model-soft);color:var(--ink);box-shadow:0 0 0 1px var(--model-line) inset}
+.vrow .vid{color:var(--faint)}
+.vrow.hit .vid{color:var(--model)}
+
+/* embeddings */
+.embed-list{display:flex;flex-direction:column;gap:7px;width:100%;max-width:640px}
+.embed-row{display:flex;align-items:center;gap:10px;opacity:0;transform:translateX(-8px)}
+.embed-row.in{opacity:1;transform:none;transition:all .4s ease}
+.embed-row .etok{flex:none;min-width:96px;text-align:right}
+.embed-row .arrow{color:var(--faint);flex:none}
+.strip{display:flex;gap:2px;flex:1;min-width:0}
+.cell{flex:1;height:16px;border-radius:3px;min-width:6px}
+.embed-row .dots{color:var(--faint);font-family:"JetBrains Mono",monospace;font-size:12px;flex:none}
+
+/* attention */
+.attn{position:relative;width:100%;max-width:760px;height:300px;margin:0 auto}
+.attn-lines{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.attn-row{position:absolute;top:14px;left:0;right:0;display:flex;justify-content:center;gap:7px;flex-wrap:nowrap}
+.attn-row .tok{cursor:default;transition:all .3s}
+.attn-row .tok.q{border-color:var(--model-line);background:var(--model-soft);color:var(--model);
+  box-shadow:var(--glow-model);transform:translateY(-4px) scale(1.05)}
+.attn-cap{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:12.5px;color:var(--muted)}
+.attn path{fill:none;stroke:var(--model);stroke-linecap:round;opacity:0;transition:opacity .35s}
+.ctx-meter{width:100%;max-width:520px;height:12px;border-radius:8px;background:var(--surface-3);
+  border:1px solid var(--line);overflow:hidden;position:relative}
+.ctx-meter .fill{height:100%;width:0;background:linear-gradient(90deg,var(--model),var(--input));
+  border-radius:8px;transition:width .8s ease}
+
+/* prediction / candidates */
+.gen-grid{display:flex;flex-direction:column;gap:14px;width:100%;max-width:720px}
+.seqbar{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;
+  padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);min-height:52px}
+.seqbar .lead{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+  width:100%;margin-bottom:2px}
+.predict{padding:14px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--line);
+  box-shadow:var(--shadow)}
+.predict .phead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.predict .phead .t{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.predict .phead .pin{font-size:12px;color:var(--model)}
+.cand{display:flex;align-items:center;gap:10px;margin:5px 0}
+.cand .clab{flex:none;width:88px;text-align:right;font-family:"JetBrains Mono",monospace;font-size:13px;
+  color:var(--ink);white-space:pre}
+.cand .cbar-wrap{flex:1;height:20px;border-radius:6px;background:var(--surface-3);overflow:hidden;position:relative}
+.cand .cbar{height:100%;width:0;border-radius:6px;background:var(--model);opacity:.55;transition:width .5s ease}
+.cand .cprob{flex:none;width:52px;text-align:right;font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--muted)}
+.cand.win .cbar{background:var(--good);opacity:1}
+.cand.win .clab{color:var(--good);font-weight:700}
+.cand.win .cprob{color:var(--good)}
+.cand.rest .clab{color:var(--faint)}
+.loop-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;
+  background:var(--model-soft);border:1px solid var(--model-line);color:var(--model);font-size:12.5px;font-weight:600}
+.loop-badge .spin{display:inline-block;animation:spin 2.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* tally */
+.tally{display:flex;flex-direction:column;gap:16px;width:100%;max-width:560px}
+.tally-row{display:flex;align-items:center;gap:14px}
+.tally-row .tl{width:120px;flex:none;text-align:right;font-size:13px;color:var(--muted)}
+.tbar-wrap{flex:1;height:30px;border-radius:9px;background:var(--surface-3);overflow:hidden;border:1px solid var(--line)}
+.tbar{height:100%;width:0;border-radius:9px;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.tbar.in-b{background:linear-gradient(90deg,var(--input),var(--input-line))}
+.tbar.out-b{background:linear-gradient(90deg,var(--output),var(--output-line))}
+.tally-row .tv{width:34px;flex:none;font-family:"JetBrains Mono",monospace;font-weight:600}
+.factgrid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.fact{flex:1 1 150px;max-width:220px;padding:12px 14px;border-radius:12px;background:var(--surface);
+  border:1px solid var(--line);text-align:left}
+.fact .fh{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--model);margin-bottom:5px;font-weight:600}
+.fact .fb{font-size:12.5px;color:var(--muted);line-height:1.45}
+
+/* recap flow */
+.flow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;max-width:800px}
+.fstep{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:11px;background:var(--surface);
+  border:1px solid var(--line);font-size:13px;opacity:.35;transform:scale(.96);transition:all .45s}
+.fstep.lit{opacity:1;transform:scale(1);border-color:var(--model-line);box-shadow:var(--shadow)}
+.fstep .fi{font-size:15px}
+.farrow{color:var(--faint);opacity:.4;transition:opacity .4s}
+.farrow.lit{opacity:1;color:var(--model)}
+.replay-cta{display:inline-flex;align-items:center;gap:9px;padding:11px 20px;border-radius:12px;cursor:pointer;
+  background:var(--model);color:#0c0a16;border:none;font-family:inherit;font-size:14px;font-weight:600;
+  box-shadow:var(--glow-model);opacity:0;transform:translateY(6px);transition:all .5s}
+.replay-cta.show{opacity:1;transform:none}
+
+/* ---------- dock ---------- */
+.dock{margin-top:12px;display:flex;flex-direction:column;gap:11px}
+.narration{min-height:58px;display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-radius:14px;
+  background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+.narration .qmark{font-family:"Fraunces",serif;font-size:30px;line-height:.7;color:var(--model);flex:none}
+.narration .txt{font-size:clamp(14px,1.9vw,16.5px);line-height:1.5;color:var(--ink)}
+.narration .txt::after{content:"";display:inline-block;width:2px;height:1.05em;background:var(--model);
+  vertical-align:-3px;margin-left:2px;animation:blink 1s steps(1) infinite}
+.narration.done .txt::after{display:none}
+
+.transport{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tbtns{display:flex;align-items:center;gap:7px}
+.ctrl{height:40px;min-width:40px;padding:0 12px;border-radius:11px;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;
+  justify-content:center;gap:7px;font-family:inherit;font-size:13px;box-shadow:var(--shadow);transition:all .18s}
+.ctrl:hover{border-color:var(--line-strong)}
+.ctrl.primary{background:var(--model);color:#0c0a16;border-color:transparent;box-shadow:var(--glow-model);font-weight:600;padding:0 18px}
+.ctrl .ico{font-size:15px}
+.chapline{margin-left:auto;display:flex;align-items:center;gap:10px;min-width:0}
+.chaplabel{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.chaplabel b{color:var(--ink);font-weight:600}
+.steps{display:flex;gap:5px}
+.step-dot{width:11px;height:11px;border-radius:50%;background:var(--surface-3);border:1px solid var(--line-strong);
+  cursor:pointer;padding:0;transition:all .25s}
+.step-dot:hover{border-color:var(--model)}
+.step-dot.active{background:var(--model);border-color:var(--model);box-shadow:var(--glow-model);transform:scale(1.25)}
+.step-dot.seen{background:var(--model-line);border-color:var(--model-line)}
+.speed-btn{font-family:"JetBrains Mono",monospace}
+
+@media (max-width:640px){
+  .counter .val{font-size:15px}
+  .counter .lbl{display:none}
+  .chapline{width:100%;margin-left:0;justify-content:space-between}
+  .attn{height:250px}
+  .embed-row .etok{min-width:74px}
+}
+@media (prefers-reduced-motion: reduce){
+  .orb,.orb::before,.orb::after,.loop-badge .spin,.caret,.narration .txt::after{animation:none !important}
+  *{transition-duration:.001ms !important}
+}
+</style>
+
+<div class="bg-wrap"></div>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="mark"><span>🦊</span></div>
+      <div>
+        <h1 class="serif">The Life of a Token</h1>
+        <div class="sub">Fable&nbsp;5 · input &amp; output tokens</div>
+      </div>
+    </div>
+    <div class="counters">
+      <div class="counter in"><span class="dot"></span><div><div class="lbl">Input</div></div><span class="val" id="cIn">0</span></div>
+      <div class="counter out"><span class="dot"></span><div><div class="lbl">Output</div></div><span class="val" id="cOut">0</span></div>
+      <div class="counter ctx"><span class="dot"></span><div><div class="lbl">Context</div></div><span class="val" id="cCtx">0</span></div>
+    </div>
+    <button class="icon-btn" id="themeBtn" title="Toggle light / dark" aria-label="Toggle theme">◐</button>
+  </header>
+
+  <nav class="pipe" id="pipe" aria-label="Pipeline stages"></nav>
+
+  <div class="stage-wrap">
+    <section class="stage" id="stage" aria-live="polite"></section>
+  </div>
+
+  <div class="dock">
+    <div class="narration" id="narration">
+      <span class="qmark serif">“</span>
+      <span class="txt" id="narrTxt"></span>
+    </div>
+    <div class="transport">
+      <div class="tbtns">
+        <button class="ctrl primary" id="btnPlay" aria-label="Play or pause"><span class="ico" id="playIco">⏸</span><span id="playLbl">Pause</span></button>
+        <button class="ctrl" id="btnPrev" title="Previous chapter" aria-label="Previous chapter"><span class="ico">‹</span></button>
+        <button class="ctrl" id="btnNext" title="Next chapter" aria-label="Next chapter"><span class="ico">›</span></button>
+        <button class="ctrl" id="btnRestart" title="Restart from the beginning" aria-label="Restart"><span class="ico">↺</span></button>
+        <button class="ctrl speed-btn" id="btnSpeed" title="Playback speed">1×</button>
+      </div>
+      <div class="chapline">
+        <div class="chaplabel"><b id="chapNum">01</b> / <span id="chapTotal">11</span> · <span id="chapName">Cover</span></div>
+        <div class="steps" id="steps"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+(function(){
+  const $ = s => document.querySelector(s);
+  const stage = $("#stage");
+  const narrTxt = $("#narrTxt");
+  const narration = $("#narration");
+  const cIn = $("#cIn"), cOut = $("#cOut"), cCtx = $("#cCtx");
+
+  /* ---------------- data ---------------- */
+  const PROMPT = "Write me a short fable about a clever fox.";
+  const INPUT_TOKENS = [
+    {t:"Write", id:8241},{t:" me", id:502},{t:" a", id:261},{t:" short", id:2523},
+    {t:" fable", id:9137},{t:" about", id:1078},{t:" a", id:261},{t:" clever", id:27890},
+    {t:" fox", id:39064},{t:".", id:13}
+  ];
+  const OUTPUT_STEPS = [
+    {pick:"Once",   cands:[["Once",.41],["A",.16],["In",.12],["The",.08],["Deep",.05]]},
+    {pick:" upon",  cands:[[" upon",.62],[" there",.14],[" a",.07],[" ,",.04]]},
+    {pick:" a",     cands:[[" a",.71],[" the",.09],[" one",.05]]},
+    {pick:" time",  cands:[[" time",.83],[" moon",.03],[" while",.02]]},
+    {pick:",",      cands:[[",",.79],[" in",.06],[" there",.04]]},
+    {pick:" a",     cands:[[" a",.55],[" there",.18],[" the",.07]]},
+    {pick:" clever",cands:[[" clever",.34],[" small",.14],[" red",.12],[" young",.09]]},
+    {pick:" fox",   cands:[[" fox",.88],[" vixen",.03]]},
+    {pick:" roamed",cands:[[" roamed",.29],[" lived",.22],[" trotted",.11]]},
+    {pick:" the",   cands:[[" the",.64],[" through",.12],[" a",.06]]},
+    {pick:" woods", cands:[[" woods",.47],[" forest",.30],[" hills",.06]]},
+    {pick:".",      cands:[[".",.68],[",",.12],[" at",.05]]}
+  ];
+  const FINAL_TEXT = "Once upon a time, a clever fox roamed the woods.";
+  const PIPE_NODES = ["Prompt","Tokenize","Token IDs","Embed","Attend","Generate","Decode"];
+
+  /* ---------------- engine ---------------- */
+  const ABORT = Symbol("abort");
+  let gen = 0;            // generation token; bumping it aborts in-flight animations
+  let paused = false;
+  let speed = 1;
+  let cur = 0;           // current chapter index
+  let ended = false;
+  const seen = new Set();
+
+  function animate(dur, onProgress){
+    return new Promise((resolve, reject)=>{
+      const my = gen;
+      let t = 0, last = performance.now();
+      function tick(now){
+        if(my !== gen) return reject(ABORT);
+        const dt = now - last; last = now;
+        if(!paused) t += dt * speed;
+        const p = dur <= 0 ? 1 : Math.min(1, t/dur);
+        try{ onProgress && onProgress(p); }catch(e){}
+        if(p >= 1) resolve(); else requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+  const wait = ms => animate(ms, null);
+
+  function typewriter(node, text, cps){
+    cps = cps || 42;
+    node.textContent = "";
+    let shownLen = 0;
+    return animate((text.length/cps)*1000, p=>{
+      const n = Math.floor(p*text.length);
+      if(n !== shownLen){ node.textContent = text.slice(0,n); shownLen = n; }
+      if(p>=1) node.textContent = text;
+    });
+  }
+
+  async function say(text, extraHold){
+    narration.classList.remove("done");
+    await typewriter(narrTxt, text, 43);
+    narration.classList.add("done");
+    const hold = (extraHold==null ? 550 + text.length*20 : extraHold);
+    await wait(hold);
+  }
+
+  function countTo(node, to, dur){
+    const from = parseInt(node.textContent,10) || 0;
+    return animate(dur||500, p=> node.textContent = Math.round(from+(to-from)*p));
+  }
+  function setCounts(inp, out){
+    cIn.textContent = inp; cOut.textContent = out; cCtx.textContent = inp+out;
+  }
+
+  /* ---------------- helpers ---------------- */
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  function tokMarkup(t){
+    const lead = t.startsWith(" ");
+    const core = lead ? t.slice(1) : t;
+    return (lead?'<span class="spc">·</span>':"") + esc(core===""?"␣":core);
+  }
+  function makeTok(t, kind, extraClass){
+    const el = document.createElement("span");
+    el.className = "tok " + (kind||"") + (extraClass?(" "+extraClass):"");
+    el.innerHTML = tokMarkup(t);
+    return el;
+  }
+  function html(s){ stage.innerHTML = '<div class="stage-inner">'+s+'</div>'; return stage.querySelector(".stage-inner"); }
+  async function revealSeq(nodes, step, cb){
+    for(let i=0;i<nodes.length;i++){
+      nodes[i].classList.add("in");
+      if(cb) cb(i);
+      await wait(step);
+    }
+  }
+  // deterministic pseudo-random from a seed
+  function rng(seed){ let s = seed%2147483647; if(s<=0) s+=2147483646;
+    return ()=>{ s = (s*16807)%2147483647; return (s-1)/2147483646; }; }
+  function mix(a,b,t){ return Math.round(a+(b-a)*t); }
+  function cellColor(v){ // blend input-cyan -> model-violet by value, alpha by |v|
+    const cy=[70,198,230], vi=[180,155,255];
+    const c=[mix(cy[0],vi[0],v),mix(cy[1],vi[1],v),mix(cy[2],vi[2],v)];
+    return `rgba(${c[0]},${c[1]},${c[2]},${(0.32+0.6*v).toFixed(2)})`;
+  }
+
+  /* ---------------- pipeline map ---------------- */
+  const pipe = $("#pipe");
+  PIPE_NODES.forEach((n,i)=>{
+    if(i>0){ const s=document.createElement("div"); s.className="pseg"; s.dataset.seg=i; pipe.appendChild(s); }
+    const node=document.createElement("div"); node.className="pnode"; node.dataset.node=i;
+    node.innerHTML='<span class="pdot"></span><span class="pname">'+n+'</span>';
+    pipe.appendChild(node);
+  });
+  function setPipe(activeIdx, doneUpTo){
+    pipe.querySelectorAll(".pnode").forEach((el,i)=>{
+      el.classList.toggle("active", i===activeIdx);
+      el.classList.toggle("done", doneUpTo!=null && i<=doneUpTo && i!==activeIdx);
+    });
+    pipe.querySelectorAll(".pseg").forEach((el,i)=>{
+      el.classList.toggle("lit", activeIdx!=null && (i) < activeIdx);
+    });
+  }
+
+  /* ---------------- chapters ---------------- */
+  const chapters = [
+  /* 0 · Cover */ {
+    name:"Cover", pipe:null,
+    setup(){ setCounts(0,0);
+      html('<div class="orb serif">🦊</div>'+
+        '<div class="scene-kicker">A guided animation</div>'+
+        '<h2 class="scene-title serif">How Fable&nbsp;5 reads your words<br>and writes them back</h2>'+
+        '<p class="scene-note">Every reply is a story told in <b>tokens</b> — the small pieces of text a model actually reads and writes. Let\'s follow one prompt the whole way through.</p>');
+    },
+    async play(){
+      await say("Every conversation with Fable 5 is really a story told in tokens.");
+      await say("A token is a small chunk of text — the unit the model reads and writes. Not quite letters, not quite words.");
+      await say("We'll follow a single prompt from your words, into numbers, and all the way back to words again.");
+    }
+  },
+  /* 1 · Prompt */ {
+    name:"The prompt", pipe:0,
+    setup(){ setCounts(0,0);
+      const w=html('<div class="scene-kicker">Step 0 · your words</div>'+
+        '<h2 class="scene-title serif">It begins with what you type</h2>'+
+        '<div class="bubble"><div class="who">You → Fable 5</div><span id="ptext"></span><span class="caret" id="pcaret"></span></div>');
+    },
+    async play(){
+      await say("It starts with what you type — a prompt.");
+      const ptext = $("#ptext");
+      await typewriter(ptext, PROMPT, 24);
+      $("#pcaret").style.display="none";
+      await say("Right now this is just text: a string of characters. Fable 5 can't do arithmetic on letters, so the very first job is to convert them into something numeric.");
+    }
+  },
+  /* 2 · Tokenize */ {
+    name:"Tokenize", pipe:1,
+    setup(){ setCounts(0,0);
+      html('<div class="scene-kicker">Step 1 · tokenization</div>'+
+        '<h2 class="scene-title serif">Text is split into tokens</h2>'+
+        '<div class="tokrow" id="trow"></div>'+
+        '<div class="aside" id="aside" style="opacity:0;transition:opacity .5s">'+
+          '<div class="cap">Common words are one token — rarer or longer ones split into pieces:</div>'+
+          '<div class="tokrow tight"><span class="piece">un</span><span class="plus">+</span>'+
+          '<span class="piece">bel</span><span class="plus">+</span><span class="piece">iev</span>'+
+          '<span class="plus">+</span><span class="piece">able</span>'+
+          '<span class="plus" style="margin:0 6px">→</span><span class="piece">unbelievable</span></div>'+
+        '</div>');
+      this._row = $("#trow");
+      this._chips = INPUT_TOKENS.map(o=>{ const c=makeTok(o.t,"in-tok","pop"); this._row.appendChild(c); return c; });
+    },
+    async play(){
+      const intro = say("Step one is tokenization: the text is chopped into tokens — recurring chunks of characters the model already knows.").catch(()=>{});
+      await revealSeq(this._chips, 150, i=> cIn.textContent = i+1);
+      await intro;
+      cCtx.textContent = INPUT_TOKENS.length;
+      await say("Watch the details: a leading space (·) rides along at the front of a token, and punctuation like the period is its own token.");
+      $("#aside").style.opacity="1";
+      await say("Common words are usually a single token. Unfamiliar or long words get broken into subword pieces, so the model can spell out anything.");
+      await say("Our prompt became " + INPUT_TOKENS.length + " input tokens.", 1400);
+    }
+  },
+  /* 3 · Token IDs */ {
+    name:"Token IDs", pipe:2,
+    setup(){ setCounts(INPUT_TOKENS.length,0);
+      html('<div class="scene-kicker">Step 2 · lookup</div>'+
+        '<h2 class="scene-title serif">Each token becomes a number</h2>'+
+        '<div class="tokrow" id="trow2"></div>'+
+        '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:4px">'+
+          '<div class="scene-note" style="max-width:30ch;text-align:right">The vocabulary is a fixed list of every token Fable&nbsp;5 knows — often 100,000+ entries. Each has one ID.</div>'+
+          '<div class="vocab" id="vocab">'+
+            '<div class="vrow"><span>" clever"</span><span class="vid">27890</span></div>'+
+            '<div class="vrow"><span>" fable"</span><span class="vid">9137</span></div>'+
+            '<div class="vrow hit" id="vhit"><span>" fox"</span><span class="vid">39064</span></div>'+
+            '<div class="vrow"><span>" short"</span><span class="vid">2523</span></div>'+
+          '</div>'+
+        '</div>');
+      this._chips = INPUT_TOKENS.map(o=>{
+        const c=makeTok(o.t,"in-tok"); c.dataset.id=o.id; this._row=$("#trow2"); this._row.appendChild(c); return c;
+      });
+    },
+    async play(){
+      await say("Step two: each token is looked up in Fable 5's vocabulary and replaced by an integer — its token ID.");
+      for(let i=0;i<this._chips.length;i++){
+        const c=this._chips[i]; const id=INPUT_TOKENS[i].id;
+        const s=document.createElement("span"); s.className="tid"; s.textContent="#"+id;
+        c.appendChild(s); c.style.transform="translateY(-2px)";
+        await wait(140); c.style.transform="";
+      }
+      await say("The vocabulary is just a giant fixed dictionary of tokens — here we peek at the row for “ fox”, ID 39064.");
+      await say("Notice “ a” appears twice, and both times its ID is 261. Identical text always maps to the same token. From here on, the model only ever sees these numbers.", 1600);
+    }
+  },
+  /* 4 · Embeddings */ {
+    name:"Embed", pipe:3,
+    setup(){ setCounts(INPUT_TOKENS.length,0);
+      html('<div class="scene-kicker">Step 3 · embeddings</div>'+
+        '<h2 class="scene-title serif">Numbers become vectors of meaning</h2>'+
+        '<div class="embed-list" id="elist"></div>');
+      const list=$("#elist"); this._rows=[];
+      INPUT_TOKENS.forEach(o=>{
+        const row=document.createElement("div"); row.className="embed-row";
+        const tk=makeTok(o.t,"in-tok"); tk.classList.add("etok");
+        const arrow=document.createElement("span"); arrow.className="arrow"; arrow.textContent="→";
+        const strip=document.createElement("div"); strip.className="strip";
+        const r=rng(o.id+7);
+        for(let k=0;k<14;k++){ const cell=document.createElement("div"); cell.className="cell";
+          cell.style.background=cellColor(r()); strip.appendChild(cell); }
+        const dots=document.createElement("span"); dots.className="dots"; dots.textContent="…×768";
+        row.append(tk,arrow,strip,dots); list.appendChild(row); this._rows.push(row);
+      });
+    },
+    async play(){
+      const intro = say("Numbers by themselves carry no meaning, so step three turns each ID into a vector — a long list of numbers called an embedding.").catch(()=>{});
+      await revealSeq(this._rows, 130);
+      await intro;
+      await say("Think of every token as a point in a vast “meaning space.” Tokens used in similar ways end up near each other there.");
+      await say("Each colored strip is only a preview — a real Fable 5 embedding has hundreds or thousands of dimensions per token.", 1500);
+    }
+  },
+  /* 5 · Attention / context */ {
+    name:"Attend", pipe:4,
+    setup(){ setCounts(INPUT_TOKENS.length,0);
+      html('<div class="scene-kicker">Step 4 · attention</div>'+
+        '<h2 class="scene-title serif">The model reads everything at once</h2>'+
+        '<div class="attn" id="attn"><svg class="attn-lines" id="alines" preserveAspectRatio="none"></svg>'+
+          '<div class="attn-row" id="arow"></div>'+
+          '<div class="attn-cap" id="acap">every token weighs how much every other token matters</div></div>'+
+        '<div class="ctx-meter" id="ctxm"><div class="fill" id="ctxfill"></div></div>'+
+        '<p class="scene-note">The context window is the maximum number of tokens Fable&nbsp;5 can hold in mind at once.</p>');
+      const arow=$("#arow");
+      this._nodes = INPUT_TOKENS.map(o=>{ const c=makeTok(o.t,"in-tok"); arow.appendChild(c); return c; });
+    },
+    async play(){
+      await say("Now Fable 5 reads. Unlike us, it doesn't move strictly left to right — it takes in every token at the same time.");
+      // build attention arcs from measured positions
+      const svg=$("#alines"), box=$("#attn").getBoundingClientRect();
+      svg.setAttribute("viewBox","0 0 "+box.width+" "+box.height);
+      const centers=this._nodes.map(n=>{ const r=n.getBoundingClientRect();
+        return {x:r.left-box.left+r.width/2, y:r.top-box.top+r.height/2}; });
+      const paths=[];
+      for(let q=0;q<centers.length;q++){ paths[q]=[];
+        const r=rng(97+q*13); let ws=[],sum=0;
+        for(let t=0;t<=q;t++){ const w=0.15+r(); ws[t]=w; sum+=w; }
+        for(let t=0;t<=q;t++){
+          const a=centers[q], b=centers[t], w=ws[t]/sum;
+          const midx=(a.x+b.x)/2, dip=Math.min(150, 40+Math.abs(a.x-b.x)*0.4);
+          const p=document.createElementNS("http://www.w3.org/2000/svg","path");
+          p.setAttribute("d",`M ${a.x} ${a.y+10} Q ${midx} ${a.y+10+dip} ${b.x} ${b.y+10}`);
+          p.setAttribute("stroke-width",(0.6+w*5).toFixed(2));
+          svg.appendChild(p); paths[q].push({el:p,w});
+        }
+      }
+      const s2 = say("Through a mechanism called attention, each token looks back and weighs how strongly every earlier token relates to it. That's how grammar, links and context are captured.").catch(()=>{});
+      // sweep the reading head (runs alongside the narration above)
+      for(let q=0;q<centers.length;q++){
+        this._nodes.forEach((n,i)=>n.classList.toggle("q", i===q));
+        paths.forEach((set,qq)=> set.forEach(o=> o.el.style.opacity = (qq===q ? (0.2+o.w*0.9).toFixed(2) : 0)));
+        $("#acap").textContent = "“"+INPUT_TOKENS[q].t.trim()+"” is attending to the tokens before it";
+        await wait(560);
+      }
+      this._nodes.forEach(n=>n.classList.remove("q"));
+      paths.forEach(set=> set.forEach(o=> o.el.style.opacity = 0));
+      $("#acap").textContent = "every token weighs how much every other token matters";
+      await s2;
+      await say("All these tokens live inside the context window — the most tokens the model can consider together. A bigger window means it can remember more of a long conversation.");
+      $("#ctxfill").style.width = "9%";
+      await wait(500);
+    }
+  },
+  /* 6 · Predict next token */ {
+    name:"Generate", pipe:5,
+    setup(){ setCounts(INPUT_TOKENS.length,0);
+      html('<div class="scene-kicker">Step 5 · prediction</div>'+
+        '<h2 class="scene-title serif">Now it answers — one token at a time</h2>'+
+        '<div class="gen-grid">'+
+          '<div class="seqbar" id="seq"><span class="lead">the sequence so far — input tokens</span></div>'+
+          '<div class="predict"><div class="phead"><span class="t">Probability of the next token</span>'+
+            '<span class="pin" id="pin">scanning the whole vocabulary…</span></div>'+
+            '<div id="cands"></div></div>'+
+        '</div>');
+      const seq=$("#seq"); INPUT_TOKENS.forEach(o=> seq.appendChild(makeTok(o.t,"in-tok","dim")));
+      this._seq=seq;
+    },
+    async play(){
+      await say("With the prompt understood, Fable 5 starts to reply — but it can only produce one token at a time.");
+      const s2 = say("For the very next token, it assigns a probability to every single token in its vocabulary. Here are the front-runners:").catch(()=>{});
+      await renderCandidates($("#cands"), OUTPUT_STEPS[0].cands, OUTPUT_STEPS[0].pick, true);
+      await s2;
+      await say("“Once” is the most likely here. Fable 5 can simply take the top pick, or roll the dice among the likely options — that controlled randomness is called temperature.");
+      // append the chosen token to the sequence
+      const chip=makeTok(OUTPUT_STEPS[0].pick,"out-tok","pop"); this._seq.appendChild(chip);
+      chip.offsetWidth; chip.classList.add("in");
+      await countTo(cOut,1,400); cCtx.textContent = INPUT_TOKENS.length+1;
+      await say("That first output token is now committed. One down.", 1200);
+    }
+  },
+  /* 7 · Autoregression loop */ {
+    name:"Generate", pipe:5,
+    setup(){ setCounts(INPUT_TOKENS.length,1);
+      html('<div class="scene-kicker">Step 5 · autoregression</div>'+
+        '<h2 class="scene-title serif">Predict, append, repeat</h2>'+
+        '<div class="loop-badge"><span class="spin">↻</span> the output feeds back in as new input</div>'+
+        '<div class="gen-grid">'+
+          '<div class="seqbar" id="seq"><span class="lead">the growing sequence — input + generated so far</span></div>'+
+          '<div class="predict"><div class="phead"><span class="t">Next-token probability</span>'+
+            '<span class="pin" id="pin"></span></div><div id="cands"></div></div>'+
+        '</div>');
+      const seq=$("#seq"); INPUT_TOKENS.forEach(o=> seq.appendChild(makeTok(o.t,"in-tok","dim")));
+      const first=makeTok(OUTPUT_STEPS[0].pick,"out-tok"); seq.appendChild(first);
+      this._seq=seq;
+    },
+    async play(){
+      await say("Here's the essential trick: the token it just chose is appended to the sequence and fed back in as part of the new input.");
+      await say("Then it predicts again — from the longer sequence. Predict, append, repeat. This loop is called autoregression.");
+      const cands=$("#cands"), pin=$("#pin");
+      for(let i=1;i<OUTPUT_STEPS.length;i++){
+        const step=OUTPUT_STEPS[i];
+        const detailed = i<=2;
+        pin.textContent = "token #"+(i+1)+" of the reply";
+        await renderCandidates(cands, step.cands, step.pick, detailed);
+        const chip=makeTok(step.pick,"out-tok","pop"); this._seq.appendChild(chip);
+        chip.offsetWidth; chip.classList.add("in");
+        cOut.textContent = i+1; cCtx.textContent = INPUT_TOKENS.length + i+1;
+        this._seq.scrollTop = this._seq.scrollHeight;
+        await wait(detailed?420: (i<=5?260:150));
+      }
+      await say("Every new token depends on all the tokens before it — which is exactly why longer answers take longer. Each token is another full trip through the model.", 1600);
+    }
+  },
+  /* 8 · Stop + decode */ {
+    name:"Decode", pipe:6,
+    setup(){ setCounts(INPUT_TOKENS.length, OUTPUT_STEPS.length);
+      html('<div class="scene-kicker">Step 6 · stop &amp; decode</div>'+
+        '<h2 class="scene-title serif">Knowing when to stop — then back to text</h2>'+
+        '<div class="seqbar" id="seq" style="max-width:720px"><span class="lead">final token sequence</span></div>'+
+        '<div id="endwrap" style="opacity:0;transition:opacity .5s;margin:2px 0"></div>'+
+        '<div class="bubble" id="finalbubble" style="opacity:0;transition:opacity .6s;border-radius:16px;max-width:640px">'+
+          '<div class="who">Fable 5 → You</div><span class="serif" id="finaltext" style="font-size:1.05em"></span></div>');
+      const seq=$("#seq");
+      INPUT_TOKENS.forEach(o=> seq.appendChild(makeTok(o.t,"in-tok","dim")));
+      OUTPUT_STEPS.forEach(s=> seq.appendChild(makeTok(s.pick,"out-tok")));
+      this._seq=seq;
+    },
+    async play(){
+      await say("How does it know when to stop? Eventually the most likely “next token” is a special end-of-turn token — the model's way of saying it's finished.");
+      const end=makeTok("<|end|>","","pop"); end.style.borderColor="var(--model-line)";
+      end.style.color="var(--model)"; end.style.background="var(--model-soft)";
+      $("#endwrap").appendChild(end); $("#endwrap").style.opacity="1"; end.offsetWidth; end.classList.add("in");
+      this._seq.appendChild(makeTok("<|end|>","","dim"));
+      await wait(700);
+      await say("Now everything runs the other way: the output token IDs are decoded — stitched back into ordinary text, with the spaces put back.");
+      $("#finalbubble").style.opacity="1";
+      await typewriter($("#finaltext"), FINAL_TEXT, 26);
+      await say("And there's your fable's opening line — reassembled from the amber output tokens.", 1500);
+    }
+  },
+  /* 9 · Tally */ {
+    name:"Tally", pipe:null,
+    setup(){ setCounts(INPUT_TOKENS.length, OUTPUT_STEPS.length);
+      const inp=INPUT_TOKENS.length, out=OUTPUT_STEPS.length, max=Math.max(inp,out);
+      html('<div class="scene-kicker">The receipt</div>'+
+        '<h2 class="scene-title serif">Input tokens vs. output tokens</h2>'+
+        '<div class="tally">'+
+          '<div class="tally-row"><span class="tl">Input tokens</span><div class="tbar-wrap"><div class="tbar in-b" id="tbin"></div></div><span class="tv" style="color:var(--input)">'+inp+'</span></div>'+
+          '<div class="tally-row"><span class="tl">Output tokens</span><div class="tbar-wrap"><div class="tbar out-b" id="tbout"></div></div><span class="tv" style="color:var(--output)">'+out+'</span></div>'+
+          '<div class="factgrid">'+
+            '<div class="fact"><div class="fh">Input</div><div class="fb">Everything you send: your prompt plus the entire conversation history, re-read every turn.</div></div>'+
+            '<div class="fact"><div class="fh">Output</div><div class="fb">Everything the model generates, one token at a time — output tokens usually cost more than input.</div></div>'+
+            '<div class="fact"><div class="fh">Context</div><div class="fb">Input + output must both fit inside the context window. Fill it, and the oldest tokens fall out of memory.</div></div>'+
+          '</div>'+
+        '</div>');
+      this._inp=inp; this._out=out; this._max=max;
+    },
+    async play(){
+      await say("Let's tally the whole exchange.");
+      $("#tbin").style.width = (this._inp/this._max*100)+"%";
+      await wait(300);
+      $("#tbout").style.width = (this._out/this._max*100)+"%";
+      await say("Input tokens are everything you send — this prompt, plus the running conversation the model re-reads each turn. Output tokens are everything it writes back.");
+      await say("Both are metered: they're usually billed separately, and together they have to fit inside the context window. This is the real “cost” of a conversation.", 1600);
+    }
+  },
+  /* 10 · Recap + outro */ {
+    name:"Recap", pipe:null,
+    setup(){ setCounts(INPUT_TOKENS.length, OUTPUT_STEPS.length);
+      const steps=[["✍️","Your text"],["🧩","Tokens"],["#","Token IDs"],["📊","Vectors"],
+        ["🕸️","Attention"],["🎯","Predict + loop"],["🔡","Tokens"],["📖","Text reply"]];
+      let s='<div class="scene-kicker">The whole journey</div>'+
+        '<h2 class="scene-title serif">One prompt, start to finish</h2><div class="flow" id="flow">';
+      steps.forEach((st,i)=>{
+        if(i>0) s+='<span class="farrow" data-ar="'+i+'">→</span>';
+        s+='<span class="fstep" data-fs="'+i+'"><span class="fi">'+st[0]+'</span>'+st[1]+'</span>';
+      });
+      s+='</div><button class="replay-cta" id="replayCta">↺ &nbsp;Watch it again</button>';
+      html(s);
+      this._steps=[...stage.querySelectorAll(".fstep")];
+      this._arrows=[...stage.querySelectorAll(".farrow")];
+      $("#replayCta").addEventListener("click", ()=> playChapter(0));
+    },
+    async play(){
+      await say("So here's the entire life of a token, in one breath:");
+      for(let i=0;i<this._steps.length;i++){
+        this._steps[i].classList.add("lit");
+        if(i>0) this._arrows[i-1].classList.add("lit");
+        await wait(360);
+      }
+      await say("Your words become tokens, tokens become numbers, Fable 5 predicts the next token again and again, and the numbers turn back into words.");
+      await say("That's the difference between input and output tokens — what the model reads, and what it writes. Press replay to follow another one through.", 400);
+      $("#replayCta").classList.add("show");
+    }
+  }
+  ];
+
+  /* ---- shared candidate renderer ---- */
+  async function renderCandidates(container, cands, pick, detailed){
+    container.innerHTML="";
+    const rows = cands.map(([lab,prob])=>{
+      const row=document.createElement("div"); row.className="cand";
+      row.innerHTML='<span class="clab">'+tokMarkup(lab)+'</span>'+
+        '<span class="cbar-wrap"><span class="cbar"></span></span>'+
+        '<span class="cprob">'+Math.round(prob*100)+'%</span>';
+      row.dataset.lab=lab; container.appendChild(row); return {row,prob};
+    });
+    const rest=document.createElement("div"); rest.className="cand rest";
+    rest.innerHTML='<span class="clab">…</span><span class="cbar-wrap"></span><span class="cprob">rest</span>';
+    container.appendChild(rest);
+    // grow bars
+    await animate(detailed?520:240, p=>{
+      rows.forEach(o=> o.row.querySelector(".cbar").style.width=(o.prob*100*p)+"%");
+    });
+    // highlight winner
+    const win = rows.find(o=>o.row.dataset.lab===pick) || rows[0];
+    win.row.classList.add("win");
+    await wait(detailed?520:200);
+  }
+
+  /* ---------------- runner ---------------- */
+  const stepsWrap=$("#steps");
+  chapters.forEach((c,i)=>{
+    const b=document.createElement("button"); b.className="step-dot"; b.dataset.i=i;
+    b.title=(i+1)+". "+c.name; b.setAttribute("aria-label",b.title);
+    b.addEventListener("click",()=>{ ended=false; paused=false; updatePlay(); playChapter(i); });
+    stepsWrap.appendChild(b);
+  });
+  $("#chapTotal").textContent = chapters.length;
+
+  function renderChapterChrome(i){
+    cur=i; seen.add(i);
+    const c=chapters[i];
+    $("#chapNum").textContent = String(i+1).padStart(2,"0");
+    $("#chapName").textContent = c.name;
+    stepsWrap.querySelectorAll(".step-dot").forEach((d,j)=>{
+      d.classList.toggle("active", j===i);
+      d.classList.toggle("seen", j<i || (seen.has(j)&&j!==i));
+    });
+    setPipe(c.pipe, c.pipe==null?null:c.pipe-1);
+  }
+
+  async function playChapter(i){
+    const my = ++gen;                 // abort anything in flight
+    ended=false;
+    renderChapterChrome(i);
+    // quick crossfade
+    stage.style.opacity="0";
+    await new Promise(r=>setTimeout(r,180));
+    if(my!==gen) return;
+    const c=chapters[i];
+    c.setup();
+    stage.style.opacity="1";
+    try{ await c.play(); }
+    catch(e){ if(e!==ABORT) console.error(e); return; }
+    if(my!==gen) return;
+    // auto-advance
+    if(i < chapters.length-1){
+      try{ await wait(650);}catch(e){ return; }
+      if(my!==gen) return;
+      playChapter(i+1);
+    } else {
+      ended=true; updatePlay();
+    }
+  }
+
+  /* ---------------- transport ---------------- */
+  const btnPlay=$("#btnPlay"), playIco=$("#playIco"), playLbl=$("#playLbl");
+  function updatePlay(){
+    if(ended){ playIco.textContent="↺"; playLbl.textContent="Replay"; return; }
+    playIco.textContent = paused ? "▶" : "⏸";
+    playLbl.textContent = paused ? "Play" : "Pause";
+  }
+  btnPlay.addEventListener("click",()=>{
+    if(ended){ ended=false; updatePlay(); playChapter(0); return; }
+    paused=!paused; updatePlay();
+  });
+  $("#btnPrev").addEventListener("click",()=>{ paused=false; ended=false; updatePlay(); playChapter(Math.max(0,cur-1)); });
+  $("#btnNext").addEventListener("click",()=>{ paused=false; ended=false; updatePlay(); playChapter(Math.min(chapters.length-1,cur+1)); });
+  $("#btnRestart").addEventListener("click",()=>{ paused=false; ended=false; seen.clear(); updatePlay(); playChapter(0); });
+
+  const SPEEDS=[1,1.5,2,0.5];
+  $("#btnSpeed").addEventListener("click",function(){
+    const idx=(SPEEDS.indexOf(speed)+1)%SPEEDS.length; speed=SPEEDS[idx];
+    this.textContent=(speed%1===0?speed:speed.toFixed(1))+"×";
+  });
+
+  // theme toggle
+  $("#themeBtn").addEventListener("click",()=>{
+    const root=document.documentElement;
+    const dark = getComputedStyle(root).getPropertyValue("--bg").trim().startsWith("#0c") ||
+                 root.getAttribute("data-theme")==="dark";
+    root.setAttribute("data-theme", dark ? "light" : "dark");
+  });
+
+  // keyboard
+  document.addEventListener("keydown",e=>{
+    if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA") return;
+    if(e.code==="Space"){ e.preventDefault(); btnPlay.click(); }
+    else if(e.code==="ArrowRight"){ $("#btnNext").click(); }
+    else if(e.code==="ArrowLeft"){ $("#btnPrev").click(); }
+    else if(e.key==="r"||e.key==="R"){ $("#btnRestart").click(); }
+  });
+
+  // go
+  updatePlay();
+  playChapter(0);
+})();
+</script>
