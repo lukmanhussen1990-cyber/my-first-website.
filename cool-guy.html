@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cool Guy Doodle</title>
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    gap: 1rem;
+    background: #efe5cf;
+    font-family: ui-rounded, "Segoe UI", system-ui, sans-serif;
+    color: #2a201c;
+  }
+  h1 { font-size: 1.25rem; letter-spacing: .04em; margin: 1.5rem 0 0; }
+  canvas {
+    width: min(88vw, 560px);
+    height: auto;
+    border-radius: 18px;
+    box-shadow: 0 14px 40px rgba(42, 32, 28, .28);
+  }
+  p { margin: 0 0 2rem; font-size: .85rem; opacity: .7; }
+</style>
+</head>
+<body>
+  <h1>Cool Guy — drawn in JavaScript</h1>
+  <canvas id="doodle" width="1600" height="1600"></canvas>
+  <p>Every line here is Canvas 2D code, no images.</p>
+  <script src="cool-guy.js"></script>
+  <script>
+    var canvas = document.getElementById('doodle');
+    drawCoolGuy(canvas.getContext('2d'), canvas.width, canvas.height);
+  </script>
+</body>
+</html>
