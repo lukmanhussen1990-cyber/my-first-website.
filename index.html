@@ -1,0 +1,1646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brushstroke Rick</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; margin: 0; overflow: hidden; background: #1c1a4a; }
+  body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  #stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #play {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    margin: 0; padding: 0; border: 0; background: transparent;
+    color: transparent; font-size: 1px; cursor: pointer;
+  }
+  #play:focus-visible { outline: 3px dashed #ffc23a; outline-offset: -14px; }
+</style>
+</head>
+<body>
+<canvas id="stage" role="img" aria-label="A painted figure in a trench coat dances to an 80s synth-pop tune, drawn entirely in moving brushstrokes."></canvas>
+<button id="play" type="button" aria-label="Play the dance with sound">Play</button>
+<script>
+'use strict';
+/* =====================================================================
+   BRUSHSTROKE RICK
+   A one-minute dance painted in code. Every stroke, shadow and note is
+   generated here: canvas brushwork for the picture, WebAudio synthesis
+   for an original late-80s synth-pop tune at 113 BPM.
+   ===================================================================== */
+
+// ---------- small math + colour kit ----------
+const TAU = Math.PI * 2;
+const clamp = (x, a, b) => x < a ? a : x > b ? b : x;
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const ease = t => { t = clamp(t, 0, 1); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+const easeOut = t => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
+const snap = (u, p) => Math.sign(u) * Math.pow(Math.abs(u), p);
+const beatDip = b => Math.pow(0.5 + 0.5 * Math.cos(TAU * b), 2);   // 1 on the beat, 0 between
+
+function rng(seed) {
+  let s = (seed * 2654435761) >>> 0 || 1;
+  return () => {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function hex(h) { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function mix(a, b, t) { return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)]; }
+function css(c) { return 'rgb(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ')'; }
+const BLACK = [12, 8, 30], WHITE = [255, 250, 238];
+// a palette entry: five shades from deep to bright, pre-baked as CSS strings
+function pal(h) {
+  const c = typeof h === 'string' ? hex(h) : h;
+  return {
+    c, base: css(c),
+    s: [css(mix(c, BLACK, .42)), css(mix(c, BLACK, .2)), css(c), css(mix(c, WHITE, .2)), css(mix(c, WHITE, .42))]
+  };
+}
+
+const INK = pal('#171230');
+const P = {
+  coat: pal('#c99a5b'), coatDark: pal('#8a6232'), coatLight: pal('#efcf93'),
+  hair: pal('#d4582a'), hairDark: pal('#93341a'), hairLight: pal('#f59445'),
+  skin: pal('#f2c29d'), skinShade: pal('#d88f6c'), cheek: pal('#ff7f86'),
+  shirt: pal('#211d33'), trousers: pal('#2d3052'), shoe: pal('#15121f'),
+  mic: pal('#2b2a35'), micHead: pal('#cfd2dc'), cord: pal('#1c1a26')
+};
+
+// Each section repaints the wall in its own ground colour; the accents are
+// the Memphis-style confetti and paint that the dance throws around.
+const SECTIONS = [
+  { bar: 0,  name: 'intro',  ground: '#1c1a4a', floor: '#0f0d2b', acc: ['#ffc23a', '#ff5d8f', '#36d6c3', '#f4efe4'] },
+  { bar: 4,  name: 'verse',  ground: '#2944d6', floor: '#131a5e', acc: ['#ff6b4a', '#ffd84d', '#9af0d9', '#f4efe4'] },
+  { bar: 12, name: 'pre',    ground: '#ae2596', floor: '#46103f', acc: ['#ffb000', '#2f4de0', '#fff1d6', '#36d6c3'] },
+  { bar: 16, name: 'chorus', ground: '#10b39b', floor: '#0a4a45', acc: ['#ffc23a', '#ff3d7f', '#2944d6', '#f4efe4'] },
+  { bar: 24, name: 'outro',  ground: '#17123a', floor: '#0b0922', acc: ['#ffc23a', '#ff3d7f', '#36d6c3', '#ff6b4a'] }
+];
+SECTIONS.forEach(s => { s.g = hex(s.ground); s.f = hex(s.floor); s.a = s.acc.map(pal); s.gp = pal(s.ground); });
+function sectionIndex(bar) { let k = 0; for (let i = 0; i < SECTIONS.length; i++) if (bar >= SECTIONS[i].bar) k = i; return k; }
+function sectionOf(bar) { return SECTIONS[sectionIndex(bar)]; }
+
+// ---------- the song: an original tune in A minor, 113 BPM ----------
+const BPM = 113, SPB = 60 / BPM, BAR = SPB * 4, STEP = SPB / 4;
+const BARS = 28, SONG_END = BARS * BAR, TAIL = 3.4, TOTAL = SONG_END + TAIL;
+const TOTAL_STEPS = BARS * 16 + 1;           // one extra step for the final hit
+const CHORDS = ['Am','F','C','G',  'Am','F','C','G','Am','F','C','G',  'Dm','Em','F','G',
+                'F','G','C','Am','F','G','E','Am',  'F','G','E','E',  'A'];
+const CH = {
+  Am: { root: 33, v: [57, 60, 64] }, F:  { root: 29, v: [57, 60, 65] },
+  C:  { root: 36, v: [55, 60, 64] }, G:  { root: 31, v: [55, 59, 62] },
+  Dm: { root: 38, v: [57, 62, 65] }, Em: { root: 28, v: [55, 59, 64] },
+  E:  { root: 28, v: [56, 59, 64] }, A:  { root: 33, v: [57, 61, 64] }
+};
+// Melody, one token per eighth note: a note name, '-' to hold, '.' to rest.
+const MEL = {
+  2: 'E5 . G5 . C6 . B5 G5',   3: 'A5 - G5 - D5 - . .',
+  4: '. E5 E5 D5 E5 - C5 -',   5: 'A4 - C5 D5 - C5 A4 -',  6: '. G4 C5 E5 - D5 C5 -',  7: 'D5 - - B4 - . . .',
+  8: '. E5 E5 D5 E5 - G5 -',   9: 'F5 - E5 D5 - C5 A4 -', 10: '. C5 E5 G5 - E5 D5 C5', 11: 'D5 - - - . B4 C5 D5',
+  12: 'F5 - E5 D5 - A4 - .',  13: 'G5 - F5 E5 - B4 - .',  14: 'A5 - G5 F5 - E5 F5 -', 15: 'G5 - - - D5 E5 F5 G5',
+  16: 'C6 - A5 - G5 A5 - F5', 17: '- - G5 - D5 - B4 D5',  18: 'E5 - G5 - C6 - B5 A5', 19: 'A5 - - - E5 - . .',
+  20: 'C6 - A5 - G5 A5 - C6', 21: '- - D6 - B5 - G5 A5',  22: 'B5 - G#5 - E5 - D6 -', 23: 'C6 - B5 - A5 - - -',
+  24: 'C6 - A5 - G5 A5 - F5', 25: '- - G5 - D5 - B4 D5',  26: 'E5 - G#5 - B5 - D6 -', 27: 'E6 - - - . . . .',
+  28: 'A5 - - - - - - -'
+};
+const NOTE_IDX = { C: 0, 'C#': 1, D: 2, 'D#': 3, E: 4, F: 5, 'F#': 6, G: 7, 'G#': 8, A: 9, 'A#': 10, B: 11 };
+const n2m = s => { const m = /^([A-G]#?)(\d)$/.exec(s); return 12 * (+m[2] + 1) + NOTE_IDX[m[1]]; };
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const LEAD = [];
+(function parseMelody() {
+  let cur = null;
+  for (let bar = 0; bar <= 28; bar++) {
+    const toks = MEL[bar] ? MEL[bar].split(' ') : '. . . . . . . .'.split(' ');
+    toks.forEach((tk, j) => {
+      const step = bar * 16 + j * 2;
+      if (tk === '-') { if (cur) cur.len += 2; return; }
+      if (cur) { LEAD.push(cur); cur = null; }
+      if (tk !== '.') cur = { step, len: 2, m: n2m(tk) };
+    });
+  }
+  if (cur) LEAD.push(cur);
+  LEAD.forEach(n => { n.t = n.step * STEP; n.d = n.len * STEP; });
+})();
+const LEAD_BY_STEP = {};
+LEAD.forEach(n => { (LEAD_BY_STEP[n.step] = LEAD_BY_STEP[n.step] || []).push(n); });
+
+// drum grid: returns what hits on a given sixteenth
+function drumsAt(bar, s) {
+  const r = {};
+  if (bar >= 28) { if (s === 0) { r.kick = 1; r.crash = 1; r.snare = 0.9; } return r; }
+  const sec = sectionOf(bar).name;
+  const big = sec === 'chorus' || sec === 'outro';
+  if (s % 4 === 0) r.kick = 1;
+  if (big && s === 14 && bar % 2 === 1) r.kick = 0.7;
+  if (sec === 'verse' && s === 10 && bar % 2 === 1) r.kick = 0.6;
+  if ((s === 4 || s === 12) && bar > 0) { r.snare = 1; if (big || sec === 'pre') r.clap = 1; }
+  if (bar === 0) {
+    r.hat = s % 2 === 0 ? 0.25 + s / 40 : 0.12;
+    if (s >= 12) r.snare = 0.35 + (s - 12) * 0.2;
+  } else {
+    r.hat = s % 2 === 0 ? 0.55 : 0.3;
+    if (s % 4 === 2) { r.ohat = 1; r.hat = 0; }
+  }
+  if (bar === 15) {                      // snare roll into the chorus
+    r.snare = 0.2 + (s / 15) * 0.8; r.hat = 0; r.ohat = 0; r.clap = 0;
+    if (s > 12) r.kick = 0;
+  }
+  if (s === 0 && [1, 4, 12, 16, 20, 24].includes(bar)) r.crash = 1;
+  if (bar === 27) {                      // tom fill and the big wind-up
+    r.hat = s < 8 ? r.hat : 0; r.ohat = s < 8 ? r.ohat : 0;
+    if (s >= 8) { r.kick = s === 8 || s === 12 ? 1 : 0; r.snare = 0; r.clap = 0; r.tom = [262, 247, 220, 196, 175, 165, 131, 110][s - 8]; }
+  }
+  return r;
+}
+function bassAt(bar, s) {
+  if (bar === 0) return null;
+  if (bar >= 28) return s === 0 ? { m: CH.A.root, d: 14 } : null;
+  const ch = CH[CHORDS[bar]], sec = sectionOf(bar).name;
+  if (bar === 27 && s >= 8) return s === 8 ? { m: ch.root, d: 3 } : null;
+  if (bar === 15 && s >= 14) return null;
+  if (s % 2 === 0) return { m: ch.root + ((s / 2) % 2 ? 12 : 0), d: 1.55 };
+  if ((sec === 'chorus' || sec === 'outro') && s === 15) return { m: ch.root + 12, d: 0.8 };
+  return null;
+}
+
+// =====================================================================
+//  AUDIO: every sound below is synthesized; no samples.
+// =====================================================================
+const A = { ctx: null };
+function initAudio() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ctx = A.ctx = new AC();
+  const comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 4;
+  comp.attack.value = 0.004; comp.release.value = 0.2;
+  const out = ctx.createGain(); out.gain.value = 0.92;
+  comp.connect(out); out.connect(ctx.destination);
+  A.master = ctx.createGain(); A.master.gain.value = 0.8; A.master.connect(comp);
+  A.drums = ctx.createGain(); A.drums.gain.value = 1; A.drums.connect(A.master);
+  A.synth = ctx.createGain(); A.synth.gain.value = 1; A.synth.connect(A.master);
+
+  // lush hall reverb
+  const verb = ctx.createConvolver(); verb.buffer = makeIR(2.6, 3.2, false);
+  A.verb = ctx.createGain(); A.verb.gain.value = 1;
+  const vOut = ctx.createGain(); vOut.gain.value = 0.3;
+  A.verb.connect(verb); verb.connect(vOut); vOut.connect(A.master);
+  // the gated snare room, pure 1987
+  const gverb = ctx.createConvolver(); gverb.buffer = makeIR(0.34, 0, true);
+  A.gate = ctx.createGain(); A.gate.gain.value = 1;
+  const gOut = ctx.createGain(); gOut.gain.value = 0.5;
+  A.gate.connect(gverb); gverb.connect(gOut); gOut.connect(A.master);
+  // dotted-eighth echo for the lead
+  A.echo = ctx.createGain(); A.echo.gain.value = 1;
+  const dl = ctx.createDelay(1.5); dl.delayTime.value = SPB * 0.75;
+  const fb = ctx.createGain(); fb.gain.value = 0.34;
+  const dlf = ctx.createBiquadFilter(); dlf.type = 'lowpass'; dlf.frequency.value = 3000;
+  const dOut = ctx.createGain(); dOut.gain.value = 0.26;
+  A.echo.connect(dl); dl.connect(dlf); dlf.connect(fb); fb.connect(dl); dlf.connect(dOut); dOut.connect(A.master);
+
+  const len = ctx.sampleRate * 2;
+  A.noise = ctx.createBuffer(1, len, ctx.sampleRate);
+  const nd = A.noise.getChannelData(0);
+  for (let i = 0; i < len; i++) nd[i] = Math.random() * 2 - 1;
+}
+function makeIR(dur, decay, gated) {
+  const ctx = A.ctx, len = Math.floor(ctx.sampleRate * dur);
+  const b = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let c = 0; c < 2; c++) {
+    const d = b.getChannelData(c);
+    for (let i = 0; i < len; i++) {
+      const x = i / len;
+      const e = gated ? (x < 0.82 ? 0.8 - x * 0.3 : (1 - x) / 0.18 * 0.55) : Math.pow(1 - x, decay);
+      d[i] = (Math.random() * 2 - 1) * e;
+    }
+  }
+  return b;
+}
+function noiseSrc(t, dur) {
+  const s = A.ctx.createBufferSource(); s.buffer = A.noise;
+  s.start(t, Math.random() * 1.2); s.stop(t + dur + 0.05); return s;
+}
+function envGain(t, peak, attack, decay, floor = 0.0001) {
+  const g = A.ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + attack);
+  g.gain.exponentialRampToValueAtTime(floor, t + attack + decay);
+  return g;
+}
+function filt(type, f, q = 0.7) { const b = A.ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; }
+function panner(p) {
+  if (A.ctx.createStereoPanner) { const n = A.ctx.createStereoPanner(); n.pan.value = p; return n; }
+  return A.ctx.createGain();
+}
+function osc(type, f, t, dur, detune = 0) {
+  const o = A.ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t); o.detune.value = detune;
+  o.start(t); o.stop(t + dur); return o;
+}
+
+// ---- drums ----
+function kick(t, v) {
+  const o = osc('sine', 165, t, 0.5);
+  o.frequency.exponentialRampToValueAtTime(52, t + 0.1);
+  o.frequency.exponentialRampToValueAtTime(40, t + 0.42);
+  const g = envGain(t, 0.95 * v, 0.003, 0.42);
+  o.connect(g); g.connect(A.drums);
+  const n = noiseSrc(t, 0.03), f = filt('bandpass', 3400, 0.8), ng = envGain(t, 0.22 * v, 0.001, 0.018);
+  n.connect(f); f.connect(ng); ng.connect(A.drums);
+}
+function snare(t, v) {
+  const n = noiseSrc(t, 0.3), hp = filt('highpass', 950), g = envGain(t, 0.5 * v, 0.002, 0.17);
+  n.connect(hp); hp.connect(g); g.connect(A.drums); g.connect(A.gate);
+  const o = osc('triangle', 210, t, 0.2); o.frequency.exponentialRampToValueAtTime(165, t + 0.09);
+  const og = envGain(t, 0.36 * v, 0.002, 0.1); o.connect(og); og.connect(A.drums); og.connect(A.gate);
+}
+function clap(t, v) {
+  const n = noiseSrc(t, 0.3), bp = filt('bandpass', 1250, 1.3), g = A.ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  [0, 0.011, 0.022].forEach(o => { g.gain.setValueAtTime(0.42 * v, t + o); g.gain.exponentialRampToValueAtTime(0.05 * v, t + o + 0.009); });
+  g.gain.setValueAtTime(0.32 * v, t + 0.031); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+  n.connect(bp); bp.connect(g); g.connect(A.drums); g.connect(A.gate); g.connect(A.verb);
+}
+function hat(t, v, open) {
+  const n = noiseSrc(t, open ? 0.35 : 0.08), hp = filt('highpass', open ? 7200 : 8200), g = envGain(t, (open ? 0.12 : 0.1) * v, 0.001, open ? 0.24 : 0.035);
+  const p = panner(open ? -0.25 : 0.2);
+  n.connect(hp); hp.connect(g); g.connect(p); p.connect(A.drums);
+}
+function crash(t, v) {
+  const n = noiseSrc(t, 2.2), hp = filt('highpass', 4200), g = envGain(t, 0.26 * v, 0.002, 1.9);
+  n.connect(hp); hp.connect(g); g.connect(A.drums); g.connect(A.verb);
+}
+function tom(t, f, v) {
+  const o = osc('sine', f * 1.7, t, 0.5); o.frequency.exponentialRampToValueAtTime(f, t + 0.06);
+  const g = envGain(t, 0.55 * v, 0.002, 0.34); o.connect(g); g.connect(A.drums); g.connect(A.verb); g.connect(A.gate);
+}
+
+// ---- synths ----
+function bass(t, m, d) {
+  const f = mtof(m);
+  const o1 = osc('sawtooth', f, t, d + 0.1), o2 = osc('square', f, t, d + 0.1, 7);
+  const lp = filt('lowpass', 2400, 5);
+  lp.frequency.setValueAtTime(2600, t); lp.frequency.exponentialRampToValueAtTime(360, t + 0.17);
+  const g = A.ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.34, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.22, t + 0.12); g.gain.setValueAtTime(0.22, t + d - 0.02);
+  g.gain.linearRampToValueAtTime(0.0001, t + d + 0.03);
+  const o2g = A.ctx.createGain(); o2g.gain.value = 0.5;
+  o1.connect(lp); o2.connect(o2g); o2g.connect(lp); lp.connect(g); g.connect(A.synth);
+}
+function pad(t, notes, d, o = {}) {
+  const vol = (o.vol || 1) * 0.034, att = o.att || 0.18;
+  notes.forEach((m, i) => {
+    const lp = filt('lowpass', o.cut0 || o.cut || 1500, 0.9);
+    if (o.cut0) { lp.frequency.setValueAtTime(o.cut0, t); lp.frequency.exponentialRampToValueAtTime(o.cut1, t + d); }
+    const g = A.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + att);
+    g.gain.setValueAtTime(vol, t + d); g.gain.linearRampToValueAtTime(0.0001, t + d + 0.45);
+    const p = panner([-0.45, 0.45, 0][i % 3]);
+    [-9, 9].forEach(dt => { const x = osc('sawtooth', mtof(m), t, d + 0.5, dt); x.connect(lp); });
+    lp.connect(g); g.connect(p); p.connect(A.synth); p.connect(A.verb);
+  });
+}
+function stab(t, notes, d, v = 1) {
+  notes.forEach((m, i) => {
+    const lp = filt('lowpass', 500, 2);
+    lp.frequency.setValueAtTime(500, t); lp.frequency.exponentialRampToValueAtTime(3400, t + 0.018);
+    lp.frequency.exponentialRampToValueAtTime(900, t + 0.2);
+    const g = envGain(t, 0.05 * v, 0.006, d + 0.12);
+    const p = panner([-0.3, 0.3, 0][i % 3]);
+    [-6, 6].forEach(dt => { const x = osc('sawtooth', mtof(m), t, d + 0.2, dt); x.connect(lp); });
+    lp.connect(g); g.connect(p); p.connect(A.synth); p.connect(A.verb);
+  });
+}
+function bell(t, m, d, v = 1) {     // two-operator FM electric piano
+  const f = mtof(m);
+  const car = osc('sine', f, t, d + 1.6);
+  const mod = osc('sine', f, t, d + 1.6), mg = A.ctx.createGain();
+  mg.gain.setValueAtTime(f * 3.2 * v, t); mg.gain.exponentialRampToValueAtTime(f * 0.45, t + 0.9);
+  const tine = osc('sine', f * Math.min(14, 15000 / f), t, 0.3), tg = A.ctx.createGain();
+  tg.gain.setValueAtTime(f * 1.4, t); tg.gain.exponentialRampToValueAtTime(1, t + 0.09);
+  mod.connect(mg); mg.connect(car.frequency); tine.connect(tg); tg.connect(car.frequency);
+  const g = A.ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.19 * v, t + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.07 * v, t + Math.min(d, 0.5));
+  g.gain.setValueAtTime(0.07 * v, t + d); g.gain.exponentialRampToValueAtTime(0.0001, t + d + 1.2);
+  car.connect(g); g.connect(A.synth); g.connect(A.echo); g.connect(A.verb);
+}
+function brass(t, m, d, v = 1) {    // bright saw lead with delayed vibrato
+  const f = mtof(m);
+  const lfo = osc('sine', 5.6, t, d + 0.3), lg = A.ctx.createGain();
+  lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(0, t + 0.22); lg.gain.linearRampToValueAtTime(9, t + 0.5);
+  lfo.connect(lg);
+  const lp = filt('lowpass', 700, 1.4);
+  lp.frequency.setValueAtTime(700, t); lp.frequency.exponentialRampToValueAtTime(4600, t + 0.05);
+  lp.frequency.exponentialRampToValueAtTime(2300, t + 0.3);
+  [-7, 7].forEach(dt => { const o = osc('sawtooth', f, t, d + 0.3, dt); lg.connect(o.detune); o.connect(lp); });
+  const sq = osc('square', f / 2, t, d + 0.3), sg = A.ctx.createGain(); sg.gain.value = 0.35; sq.connect(sg); sg.connect(lp);
+  const g = A.ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.085 * v, t + 0.02);
+  g.gain.setValueAtTime(0.085 * v, t + d); g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.16);
+  lp.connect(g); g.connect(A.synth); g.connect(A.verb); g.connect(A.echo);
+}
+function pluck(t, m, v, pan) {
+  const o = osc('square', mtof(m), t, 0.3);
+  const lp = filt('lowpass', 5200, 3); lp.frequency.setValueAtTime(5200, t); lp.frequency.exponentialRampToValueAtTime(700, t + 0.13);
+  const g = envGain(t, 0.045 * v, 0.002, 0.2), p = panner(pan);
+  o.connect(lp); lp.connect(g); g.connect(p); p.connect(A.synth); p.connect(A.echo);
+}
+function riser(t, d) {
+  const n = noiseSrc(t, d + 0.1), bp = filt('bandpass', 400, 2.5);
+  bp.frequency.setValueAtTime(350, t); bp.frequency.exponentialRampToValueAtTime(7000, t + d);
+  const g = A.ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + d * 0.95);
+  g.gain.linearRampToValueAtTime(0.0001, t + d + 0.02);
+  n.connect(bp); bp.connect(g); g.connect(A.synth); g.connect(A.verb);
+}
+function orchHit(t, notes, v = 1) {
+  notes.forEach((m, i) => {
+    const f = mtof(m);
+    const lp = filt('lowpass', 6000, 1); lp.frequency.setValueAtTime(6000, t); lp.frequency.exponentialRampToValueAtTime(1100, t + 0.35);
+    const g = envGain(t, 0.07 * v, 0.004, 0.7);
+    ['sawtooth', 'square'].forEach((ty, k) => {
+      const o = osc(ty, f * 1.03, t, 0.9, k ? -8 : 8); o.frequency.exponentialRampToValueAtTime(f, t + 0.05); o.connect(lp);
+    });
+    const p = panner((i % 2 ? 1 : -1) * 0.3); lp.connect(g); g.connect(p); p.connect(A.synth); p.connect(A.verb);
+  });
+  const n = noiseSrc(t, 0.4), bp = filt('bandpass', 2200, 0.8), ng = envGain(t, 0.2 * v, 0.002, 0.25);
+  n.connect(bp); bp.connect(ng); ng.connect(A.synth); ng.connect(A.verb);
+}
+
+// ---- arrangement ----
+function playStep(i, t) {
+  const bar = Math.floor(i / 16), s = i % 16;
+  const sec = sectionOf(bar).name, big = sec === 'chorus' || sec === 'outro';
+  const d = drumsAt(bar, s);
+  if (d.kick) kick(t, d.kick);
+  if (d.snare) snare(t, d.snare);
+  if (d.clap) clap(t, d.clap);
+  if (d.hat) hat(t, d.hat, false);
+  if (d.ohat) hat(t, d.ohat, true);
+  if (d.crash) crash(t, d.crash);
+  if (d.tom) tom(t, d.tom, 0.9);
+  const b = bassAt(bar, s);
+  if (b) bass(t, b.m, b.d * STEP);
+
+  const ch = CH[CHORDS[Math.min(bar, 28)]];
+  if (bar >= 28) {
+    if (s === 0) { orchHit(t, [57, 61, 64, 69, 73]); pad(t, [57, 61, 64, 69], 2.6, { cut: 2600, att: 0.02, vol: 1.3 }); }
+  } else {
+    if (s === 0) {
+      if (bar === 0) pad(t, ch.v, BAR, { cut0: 220, cut1: 2400, att: 1.2 });
+      else if (sec === 'pre') pad(t, ch.v, BAR, { cut: 1300 + (bar - 12) * 420 });
+      else if (bar === 27) pad(t, ch.v, BAR, { cut: 2600, vol: 1.2 });
+      else pad(t, ch.v, BAR, { cut: big ? 1900 : 1500, vol: big ? 0.8 : 1 });
+      if (bar === 15) riser(t, BAR);
+      if (bar === 16) orchHit(t, [53, 57, 60, 65]);
+    }
+    if (big && s % 4 === 2 && !(bar === 27 && s >= 8)) stab(t, ch.v.map(m => m + 12), 0.14, 1);
+    if (sec === 'verse' && bar >= 8 && (s === 6 || s === 14)) stab(t, ch.v, 0.1, 0.6);
+    if ((sec === 'pre' || big) && bar !== 27) {
+      const tones = [ch.v[0] + 12, ch.v[1] + 12, ch.v[2] + 12, ch.v[0] + 24];
+      pluck(t, tones[[0, 1, 2, 3, 2, 1, 3, 2][s % 8]], sec === 'pre' ? 0.55 + (bar - 12) * 0.15 : 1, s % 2 ? 0.55 : -0.55);
+    }
+  }
+  const notes = LEAD_BY_STEP[i];
+  if (notes) notes.forEach(n => {
+    if (bar < 4)       { brass(t, n.m, n.d * 0.9, 0.9); bell(t, n.m + 12, n.d, 0.5); }
+    else if (bar < 12) { bell(t, n.m, n.d, 1); }
+    else if (bar < 16) { bell(t, n.m, n.d, 1); brass(t, n.m - 12, n.d * 0.9, 0.55); }
+    else               { brass(t, n.m, n.d * 0.92, 1); bell(t, n.m + 12, n.d, 0.55); }
+  });
+}
+// look-ahead scheduler, driven from both rAF and a timer
+const SCHED = { next: 0, t0: 0 };
+function schedule() {
+  const ctx = A.ctx; if (!ctx || ctx.state !== 'running') return;
+  while (SCHED.next < TOTAL_STEPS && SCHED.t0 + SCHED.next * STEP < ctx.currentTime + 0.14) {
+    const tt = SCHED.t0 + SCHED.next * STEP;
+    if (tt > ctx.currentTime - 0.02) playStep(SCHED.next, tt);
+    SCHED.next++;
+  }
+}
+
+// =====================================================================
+//  CHOREOGRAPHY. Poses use stage units: ground at y = 0, up is negative,
+//  the dancer centred on x = 0. Hands are placed relative to the base of
+//  the neck, feet relative to the stage, and IK works out the joints.
+// =====================================================================
+function pose() {
+  return {
+    px: 0, py: -248, lean: 0, twist: 0, crunch: 0, head: 0, nod: 0, shL: 0, shR: 0,
+    hL: [-62, 176], hR: [62, 176], eL: [-1, 0.3], eR: [1, 0.3],
+    fL: [-52, 0], fR: [52, 0], kL: [-0.5, -1], kR: [0.5, -1],
+    handL: 0, handR: 0, micAim: 0, mouth: 0, eyes: 1, brow: 0, wink: 0, spread: 0, grin: 0
+  };
+}
+const MOVES = {
+  idle(b) {                                   // the title-card sway
+    const p = pose(), sw = Math.sin(Math.PI * b * 0.5);
+    p.px = 5 * sw; p.py = -249 + 3 * beatDip(b * 0.5); p.lean = -0.02 * sw; p.head = 0.05 * sw;
+    p.hL = [-64, 172]; p.hR = [52, 120]; p.eR = [1, 0.7]; p.eyes = 1;
+    return p;
+  },
+  groove(b) {                                 // intro: nods, shrugs, a tapping heel
+    const p = pose(), dip = beatDip(b), sw = Math.sin(Math.PI * b);
+    p.px = 10 * sw; p.py = -248 + 9 * dip; p.lean = -0.035 * sw; p.head = 0.07 * sw; p.nod = 5 * dip;
+    p.shL = 8 * Math.max(0, sw); p.shR = 8 * Math.max(0, -sw);
+    p.hL = [-66 + 4 * sw, 170 - 6 * dip]; p.hR = [56 + 5 * sw, 118 - 8 * dip]; p.eR = [1, 0.7];
+    p.fR = [52, -7 * Math.max(0, Math.sin(TAU * b))];
+    p.grin = 0.4;
+    return p;
+  },
+  shoulders(b) {                              // intro riff: shoulder pops, mic up
+    const p = MOVES.groove(b);
+    const bi = Math.floor(b), ph = b - bi, side = bi % 2 ? -1 : 1, pop = Math.exp(-ph * 5);
+    p.shL = side < 0 ? 22 * pop : 2; p.shR = side > 0 ? 22 * pop : 2;
+    p.lean = -0.07 * side * pop; p.head = 0.13 * side * pop;
+    p.px = 16 * snap(Math.cos(Math.PI * b), 0.5);
+    p.hR = [26, -40]; p.micAim = 1; p.eR = [1, 0.9];
+    p.hL = [-100 - 12 * pop, 62 - 36 * pop * (side < 0 ? 1 : 0.35)]; p.handL = 1; p.eL = [-1, 0.6];
+    return p;
+  },
+  sway(b, lb, big = 0) {                      // THE move: knees bounce, fists swing against the hips
+    const p = pose(), s = snap(Math.cos(Math.PI * b), 0.5), dip = beatDip(b);
+    p.px = (26 + 12 * big) * s; p.py = -246 + (11 + 6 * big) * dip;
+    p.lean = -(0.08 + 0.04 * big) * s; p.twist = (0.22 + 0.1 * big) * s;
+    p.head = 0.1 * s; p.nod = 7 * dip;
+    p.shL = 10 * Math.max(0, -s); p.shR = 10 * Math.max(0, s);
+    const hx = -(62 + 24 * big) * s, arc = (16 + 10 * big) * Math.abs(s);
+    p.hL = [hx - 36, 118 - arc]; p.hR = [hx + 36, 110 - arc];
+    p.eL = [-1, 0.5]; p.eR = [1, 0.5];
+    p.fL = [-56, -9 * Math.max(0, s)]; p.fR = [56, -9 * Math.max(0, -s)];
+    p.kL = [s > 0 ? 0.8 : -1, -0.3]; p.kR = [s < 0 ? -0.8 : 1, -0.3];
+    p.grin = 0.6;
+    return p;
+  },
+  swayStep(b, lb) {                           // the same, travelling: step-touch side to side
+    const p = MOVES.sway(b, lb, 1), s = snap(Math.cos(Math.PI * b), 0.5);
+    const moving = 1 - Math.abs(s), dir = -Math.sign(Math.sin(Math.PI * b));
+    p.px += 14 * s;
+    p.fL = [-58 + 26 * s, -18 * moving * (dir < 0 ? 1 : 0.25)];
+    p.fR = [58 + 26 * s, -18 * moving * (dir > 0 ? 1 : 0.25)];
+    return p;
+  },
+  point(b) {                                  // pre-chorus: sing into the mic, point it out
+    const p = pose(), bi = Math.floor(b), ph = b - bi, dip = beatDip(b);
+    const s = snap(Math.cos(Math.PI * b), 0.6);
+    p.px = 20 * s; p.py = -238 + 10 * dip;
+    p.kL = [s, -0.15]; p.kR = [s, -0.15]; p.fL = [-50, 0]; p.fR = [50, 0];
+    p.lean = -0.05 * s; p.head = -0.08 + 0.05 * s; p.nod = 4 * dip;
+    p.hR = [24, -42]; p.micAim = 1; p.eR = [1, 0.9];
+    const dirs = [[-210, -150], [-240, -30], [-205, 90], [-90, -210]];
+    const k = bi % 4, prev = dirs[(k + 3) % 4], cur = dirs[k];
+    const e = easeOut(ph * 3.2), punch = 1 + Math.exp(-ph * 7) * 0.1;
+    p.hL = [lerp(prev[0], cur[0], e) * punch, lerp(prev[1], cur[1], e) * punch];
+    p.handL = 2; p.eL = [-1, 0.7]; p.brow = 1;
+    return p;
+  },
+  build(b, lb) {                              // the roll into the chorus: crouch, shimmy, rise
+    const p = pose(), t = clamp(lb / 4, 0, 1), shim = Math.sin(TAU * b * 2);
+    const crouch = t < 0.82 ? easeOut(t / 0.82) : 1 - ease((t - 0.82) / 0.18) * 1.25;
+    p.py = -248 + 52 * crouch; p.crunch = 0.35 * Math.max(0, crouch);
+    p.shL = 12 * Math.max(0, shim); p.shR = 12 * Math.max(0, -shim); p.twist = 0.14 * shim;
+    const up = ease(t);
+    p.hL = [lerp(-72, -120, up) + 8 * shim, lerp(118, -165, up)]; p.hR = [lerp(72, 118, up) + 8 * shim, lerp(112, -180, up)];
+    p.eL = [-1, 0.4]; p.eR = [1, 0.4]; p.handL = 1;
+    p.nod = 12 * Math.max(0, crouch); p.head = 0.06 * shim;
+    p.fL = [-68, 0]; p.fR = [68, 0]; p.kL = [-1, -0.2]; p.kR = [1, -0.2];
+    p.eyes = t > 0.8 ? 0 : 1; p.brow = 1;
+    return p;
+  },
+  kick(b) {                                   // chorus: weight over, heel flicked out, coat flying
+    const p = pose(), cyc = Math.floor(b / 2), ph = b - cyc * 2, side = cyc % 2 === 0 ? 1 : -1;
+    p.px = 40 * snap(Math.cos(Math.PI * b / 2), 0.4);
+    p.py = -244 + 14 * beatDip(b);
+    const kp = clamp((ph - 0.35) / 1.1, 0, 1), kk = Math.sin(Math.PI * kp);
+    const supX = ph < 1.7 ? side * 74 : lerp(side * 74, side * 48, smooth((ph - 1.7) / 0.3));
+    const supY = ph < 1.7 ? 0 : -10 * Math.sin(Math.PI * (ph - 1.7) / 0.3);
+    const kx = ph < 1.45 ? -side * (48 + 72 * kk) : lerp(-side * 48, -side * 74, smooth((ph - 1.45) / 0.55));
+    const ky = ph < 1.45 ? -96 * kk : -14 * Math.sin(Math.PI * (ph - 1.45) / 0.55);
+    if (side > 0) { p.fR = [supX, supY]; p.fL = [kx, ky]; p.kL = [-0.6, -1]; p.kR = [0.4, -1]; }
+    else { p.fL = [supX, supY]; p.fR = [kx, ky]; p.kR = [0.6, -1]; p.kL = [-0.4, -1]; }
+    p.hL = [-40 - side * 112 * kk, 70 - 96 * kk]; p.hR = [40 - side * 112 * kk, 58 - 104 * kk];
+    p.eL = [-1, 0.4]; p.eR = [1, 0.4]; p.handL = 1;
+    p.head = -side * 0.2 * kk; p.lean = side * 0.12 * kk; p.twist = -side * 0.3 * kk;
+    p.spread = 0.4 + 0.8 * kk; p.grin = 1;
+    return p;
+  },
+  pump(b) {                                   // hop, hand on hip, mic punched to the ceiling
+    const p = pose(), bi = Math.floor(b), ph = b - bi, hop = Math.sin(Math.PI * ph), up = Math.exp(-ph * 4);
+    p.py = -252 - 18 * hop; p.fL = [-50, -20 * hop]; p.fR = [50, -20 * hop];
+    p.hR = [72, lerp(14, -182, up)]; p.eR = [1, 0.2];
+    p.hL = [-44, 150]; p.eL = [-1, -0.2];
+    p.head = -0.12 * up; p.nod = -6 * up; p.lean = 0.05 * up; p.shR = 14 * up;
+    p.eyes = up > 0.55 ? 0 : 1; p.spread = 0.5 * hop; p.grin = 1;
+    return p;
+  },
+  spin(b, lb) {                               // the coat twirl
+    const t = clamp(lb / 1.6, 0, 1), e = ease(t), p = pose();
+    p.twist = (TAU * e) % TAU;
+    p.py = -258 + 6 * Math.sin(Math.PI * t);
+    p.hL = [-160, 24 - 60 * Math.sin(Math.PI * t)]; p.hR = [160, 14 - 60 * Math.sin(Math.PI * t)];
+    p.eL = [-1, 0.2]; p.eR = [1, 0.2]; p.handL = 1;
+    p.fL = [-30, 0]; p.fR = [30, 0];
+    p.spread = 0.3 + 1.7 * Math.sin(Math.PI * t); p.eyes = 0; p.grin = 1;
+    return p;
+  },
+  windup(b, lb) {                             // tom fill: rolling arms, gathering for the finish
+    const p = pose(), t = clamp(lb / 4, 0, 1), ang = TAU * lb, r = 28 + 18 * t;
+    p.hL = [-30 + r * Math.cos(ang), 96 + r * Math.sin(ang)]; p.hR = [30 + r * Math.cos(ang + Math.PI), 90 + r * Math.sin(ang + Math.PI)];
+    p.eL = [-1, 0.4]; p.eR = [1, 0.4];
+    p.py = -248 + 34 * ease(t); p.crunch = 0.3 * t; p.lean = 0.09 * Math.sin(Math.PI * lb);
+    p.nod = 6 * beatDip(b) + 8 * t; p.fL = [-62, 0]; p.fR = [62, 0]; p.kL = [-1, -0.2]; p.kR = [1, -0.2];
+    p.brow = 1; p.grin = 0.8;
+    return p;
+  },
+  finale(b, lb) {                             // the big finish: mic up, arm flung wide, a wink
+    const p = pose(), br = Math.sin(lb * 0.9);
+    p.px = 16; p.py = -264 + 2 * br; p.lean = -0.12; p.head = -0.22; p.nod = -4;
+    p.hR = [124, -196 + 3 * br]; p.eR = [1, 0.3];
+    p.hL = [-186, -44 + 2 * br]; p.handL = 1; p.eL = [-1, 0.5];
+    p.fL = [-72, 0]; p.fR = [34, -66]; p.kR = [0.7, -1]; p.kL = [-0.5, -1];
+    p.wink = 1; p.mouth = 0.55; p.spread = 0.7; p.grin = 1;
+    return p;
+  }
+};
+// [start beat, move, blend-in beats]
+const TIMELINE = [
+  [0, 'groove', 0.5], [8, 'shoulders', 0.5], [16, 'sway', 0.6], [32, 'swayStep', 0.6],
+  [48, 'point', 0.6], [60, 'build', 0.5],
+  [64, 'kick', 0.3], [72, 'pump', 0.4], [76, 'sway', 0.4], [78, 'spin', 0.35],
+  [80, 'kick', 0.4], [88, 'pump', 0.4], [92, 'sway', 0.4], [94, 'spin', 0.35],
+  [96, 'kick', 0.4], [104, 'swayStep', 0.5], [108, 'windup', 0.5], [112, 'finale', 0.22]
+];
+function blendPose(a, c, t) {
+  const r = {};
+  for (const k in a) {
+    const va = a[k], vc = c[k];
+    r[k] = Array.isArray(va) ? [lerp(va[0], vc[0], t), lerp(va[1], vc[1], t)] : lerp(va, vc, t);
+  }
+  return r;
+}
+function poseAt(b) {
+  let i = 0;
+  for (let k = 0; k < TIMELINE.length; k++) if (b >= TIMELINE[k][0]) i = k;
+  const [s0, m0, bl] = TIMELINE[i];
+  const cur = MOVES[m0](b, b - s0);
+  if (i > 0 && b - s0 < bl) {
+    const [s1, m1] = TIMELINE[i - 1];
+    return blendPose(MOVES[m1](b, b - s1), cur, smooth((b - s0) / bl));
+  }
+  return cur;
+}
+
+// ---------- rig ----------
+const LEN = { torso: 186, upper: 98, fore: 92, thigh: 132, shin: 126, neck: 28, sw: 56, hw: 25 };
+function ik2(A, T, l1, l2, pref) {
+  let dx = T[0] - A[0], dy = T[1] - A[1], d = Math.hypot(dx, dy) || 1e-3;
+  const maxd = (l1 + l2) * 0.998, mind = Math.abs(l1 - l2) + 4;
+  if (d > maxd) { dx *= maxd / d; dy *= maxd / d; d = maxd; }
+  if (d < mind) { dx *= mind / d; dy *= mind / d; d = mind; }
+  const a = Math.atan2(dy, dx), g = Math.acos(clamp((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1, 1));
+  const j1 = [A[0] + Math.cos(a + g) * l1, A[1] + Math.sin(a + g) * l1];
+  const j2 = [A[0] + Math.cos(a - g) * l1, A[1] + Math.sin(a - g) * l1];
+  const mx = A[0] + dx / 2, my = A[1] + dy / 2;
+  const d1 = (j1[0] - mx) * pref[0] + (j1[1] - my) * pref[1], d2 = (j2[0] - mx) * pref[0] + (j2[1] - my) * pref[1];
+  return [d1 >= d2 ? j1 : j2, [A[0] + dx, A[1] + dy]];
+}
+// knees mostly bend toward the viewer, so the sideways bend the 2D solver
+// finds is pulled back toward the hip-ankle line (a cheap foreshortening)
+function foreshorten(Hp, K, An, k = 0.55) {
+  const dx = An[0] - Hp[0], dy = An[1] - Hp[1], L2 = dx * dx + dy * dy || 1;
+  const t = ((K[0] - Hp[0]) * dx + (K[1] - Hp[1]) * dy) / L2, mx = Hp[0] + dx * t, my = Hp[1] + dy * t;
+  return [[mx + (K[0] - mx) * k, my + (K[1] - my) * k], An];
+}
+function solveRig(p) {
+  const f = Math.cos(p.twist), sn = Math.sin(p.twist);
+  const P = [p.px, p.py];
+  const T = LEN.torso * (1 - 0.12 * p.crunch);
+  const u = [Math.cos(p.lean), Math.sin(p.lean)];
+  const N = [P[0] + Math.sin(p.lean) * T, P[1] - Math.cos(p.lean) * T];
+  const sw = LEN.sw * (0.25 + 0.75 * Math.abs(f)) * (f < 0 ? -1 : 1), hw = LEN.hw * (0.45 + 0.55 * Math.abs(f)) * (f < 0 ? -1 : 1);
+  const SL = [N[0] - u[0] * sw, N[1] - u[1] * sw - p.shL], SR = [N[0] + u[0] * sw, N[1] + u[1] * sw - p.shR];
+  const HL = [P[0] - u[0] * hw, P[1] - u[1] * hw], HR = [P[0] + u[0] * hw, P[1] + u[1] * hw];
+  const hand = (h) => [N[0] + h[0] * (0.2 + 0.8 * Math.abs(f)) * (f < 0 ? -1 : 1), N[1] + h[1]];
+  const eref = (e) => [e[0] * (f < 0 ? -1 : 1), e[1]];
+  const [EL, WL] = ik2(SL, hand(p.hL), LEN.upper, LEN.fore, eref(p.eL));
+  const [ER, WR] = ik2(SR, hand(p.hR), LEN.upper, LEN.fore, eref(p.eR));
+  const [KL, AL] = foreshorten(HL, ...ik2(HL, p.fL, LEN.thigh, LEN.shin, p.kL));
+  const [KR, AR] = foreshorten(HR, ...ik2(HR, p.fR, LEN.thigh, LEN.shin, p.kR));
+  const ha = p.lean * 0.6 + p.head;
+  const NT = [N[0] + Math.sin(p.lean * 0.7 + p.head * 0.3) * LEN.neck, N[1] - Math.cos(p.lean * 0.7 + p.head * 0.3) * LEN.neck + p.nod * 0.3];
+  const HC = [NT[0] + Math.sin(ha) * 38, NT[1] - Math.cos(ha) * 38 + p.nod * 0.7];
+  return { p, f, sn, P, N, u, SL, SR, HL, HR, EL, WL, ER, WR, KL, AL, KR, AR, NT, HC, ha };
+}
+
+// =====================================================================
+//  SECONDARY MOTION: springy coat hems, a verlet mic cord and belt,
+//  a pompadour that lags behind every nod.
+// =====================================================================
+const PH = { init: false, hem: {}, hair: { p: [0, 0], v: [0, 0] }, mic: { a: -1.6, v: 0 }, prevHC: null, prevHV: [0, 0] };
+function coatAnchors(R) {
+  const { P, u, f, sn, HL, HR, p } = R, sp = p.spread, sg = f < 0 ? -1 : 1, k = 0.3 + 0.7 * Math.abs(f), tw = sn * 18;
+  const AL = [HL[0] - u[0] * 16 * sg, HL[1] - u[1] * 16 * sg - 6], AR = [HR[0] + u[0] * 16 * sg, HR[1] + u[1] * 16 * sg - 6];
+  return {
+    AL, AR, tw, sg, k,
+    LO: [AL[0] - (26 + 38 * sp) * k * sg, AL[1] + 152 - 22 * sp],
+    LI: [P[0] + tw - (12 + 14 * sp) * k * sg, P[1] + 146 - 8 * sp],
+    RI: [P[0] + tw + (12 + 14 * sp) * k * sg, P[1] + 146 - 8 * sp],
+    RO: [AR[0] + (26 + 38 * sp) * k * sg, AR[1] + 152 - 22 * sp],
+    B: [P[0] - tw * 1.2, P[1] + 160 - 12 * sp]
+  };
+}
+const HEMS = ['LO', 'LI', 'B', 'RI', 'RO'];
+function makeRope(n, seg, x, y) {
+  const r = { n, seg, p: [], o: [] };
+  for (let i = 0; i < n; i++) { r.p.push([x + i * seg * 0.7, y + i * seg * 0.5]); r.o.push([x + i * seg * 0.7, y + i * seg * 0.5]); }
+  return r;
+}
+function stepRope(r, dt, a, b, g, floorY, iters) {
+  const d2 = dt * dt;
+  for (let i = 0; i < r.n; i++) {
+    const p = r.p[i], o = r.o[i];
+    const vx = (p[0] - o[0]) * 0.986, vy = (p[1] - o[1]) * 0.986;
+    o[0] = p[0]; o[1] = p[1]; p[0] += vx; p[1] += vy + g * d2;
+    if (floorY !== null && p[1] > floorY) { p[1] = floorY; o[0] = lerp(o[0], p[0], 0.5); }
+  }
+  for (let k = 0; k < iters; k++) {
+    r.p[0][0] = a[0]; r.p[0][1] = a[1];
+    if (b) { r.p[r.n - 1][0] = b[0]; r.p[r.n - 1][1] = b[1]; }
+    for (let i = 0; i < r.n - 1; i++) {
+      const p = r.p[i], q = r.p[i + 1];
+      const dx = q[0] - p[0], dy = q[1] - p[1], d = Math.hypot(dx, dy) || 1e-4, diff = (d - r.seg) / d;
+      const pinA = i === 0, pinB = b && i + 1 === r.n - 1;
+      if (pinA && !pinB) { q[0] -= dx * diff; q[1] -= dy * diff; }
+      else if (pinB && !pinA) { p[0] += dx * diff; p[1] += dy * diff; }
+      else if (!pinA && !pinB) { p[0] += dx * diff * 0.5; p[1] += dy * diff * 0.5; q[0] -= dx * diff * 0.5; q[1] -= dy * diff * 0.5; }
+    }
+  }
+}
+function micGeom(R) {
+  const fd = norm([R.WR[0] - R.ER[0], R.WR[1] - R.ER[1]]);
+  const hc = [R.WR[0] + fd[0] * 12, R.WR[1] + fd[1] * 12];
+  return { fd, hc };
+}
+function norm(v) { const l = Math.hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; }
+function micTarget(R) {
+  const { fd, hc } = micGeom(R);
+  let a = [fd[1], -fd[0]], b = [-fd[1], fd[0]];
+  let d = a[1] < b[1] ? a : b;
+  d = norm([d[0] * 0.8 + fd[0] * 0.35, d[1] * 0.8 + fd[1] * 0.35]);
+  if (R.p.micAim > 0.01) {
+    const mouth = [R.HC[0] + Math.sin(R.ha) * -22, R.HC[1] + Math.cos(R.ha) * 22];
+    const m = norm([mouth[0] - hc[0], mouth[1] - hc[1]]);
+    d = norm([lerp(d[0], m[0], R.p.micAim), lerp(d[1], m[1], R.p.micAim)]);
+  }
+  return Math.atan2(d[1], d[0]);
+}
+function beltPoint(R) {
+  const ca = coatAnchors(R);
+  return [R.P[0] + ca.tw + 26 * ca.sg * ca.k, R.P[1] - 42];
+}
+function stepPhysics(R, dt) {
+  const tg = coatAnchors(R);
+  if (!PH.init) {
+    HEMS.forEach(k => { PH.hem[k] = { p: tg[k].slice(), v: [0, 0] }; });
+    const m = micGeom(R);
+    PH.cord = makeRope(20, 30, m.hc[0], m.hc[1]);
+    const bp = beltPoint(R);
+    PH.beltA = makeRope(5, 12, bp[0], bp[1]); PH.beltB = makeRope(5, 11, bp[0] + 4, bp[1]);
+    PH.prevHC = R.HC.slice(); PH.mic.a = micTarget(R); PH.init = true;
+  }
+  if (dt <= 0) return;
+  const n = 3, h = dt / n;
+  for (let s = 0; s < n; s++) {
+    HEMS.forEach(k => {
+      const q = PH.hem[k], t = tg[k], w = k === 'B' ? 8 : 9.5, z = 0.2;
+      q.v[0] += (w * w * (t[0] - q.p[0]) - 2 * z * w * q.v[0]) * h;
+      q.v[1] += (w * w * (t[1] - q.p[1]) - 2 * z * w * q.v[1]) * h;
+      q.p[0] += q.v[0] * h; q.p[1] += q.v[1] * h;
+    });
+  }
+  // the hem may swing wildly but never stretches off the coat
+  const tie = { LO: tg.AL, LI: R.P, B: R.P, RI: R.P, RO: tg.AR };
+  HEMS.forEach(k => {
+    const q = PH.hem[k], a = tie[k], dx = q.p[0] - a[0], dy = q.p[1] - a[1], d = Math.hypot(dx, dy), mx = 200;
+    if (d > mx) { q.p[0] = a[0] + dx / d * mx; q.p[1] = a[1] + dy / d * mx; q.v[0] *= 0.6; q.v[1] *= 0.6; }
+    if (q.p[1] < a[1] + 60) { q.p[1] = a[1] + 60; q.v[1] = Math.abs(q.v[1]) * 0.3; }
+  });
+  // mic swings on a damped spring
+  let da = micTarget(R) - PH.mic.a; da = Math.atan2(Math.sin(da), Math.cos(da));
+  PH.mic.v += (16 * 16 * da - 2 * 0.38 * 16 * PH.mic.v) * dt; PH.mic.a += PH.mic.v * dt;
+  // pompadour lag
+  const hv = [(R.HC[0] - PH.prevHC[0]) / dt, (R.HC[1] - PH.prevHC[1]) / dt];
+  let ax = (hv[0] - PH.prevHV[0]) / dt, ay = (hv[1] - PH.prevHV[1]) / dt;
+  const am = Math.hypot(ax, ay), lim = 9000; if (am > lim) { ax *= lim / am; ay *= lim / am; }
+  PH.prevHC = R.HC.slice(); PH.prevHV = hv;
+  const hr = PH.hair, w = 13, z = 0.26;
+  hr.v[0] += (-w * w * hr.p[0] - 2 * z * w * hr.v[0] - ax * 0.9) * dt;
+  hr.v[1] += (-w * w * hr.p[1] - 2 * z * w * hr.v[1] - ay * 0.9) * dt;
+  hr.p[0] += hr.v[0] * dt; hr.p[1] += hr.v[1] * dt;
+  const hl = Math.hypot(hr.p[0], hr.p[1]); if (hl > 26) { hr.p[0] *= 26 / hl; hr.p[1] *= 26 / hl; }
+  // ropes
+  const md = [Math.cos(PH.mic.a), Math.sin(PH.mic.a)], m = micGeom(R);
+  const tail = [m.hc[0] - md[0] * 14, m.hc[1] - md[1] * 14];
+  const bp = beltPoint(R);
+  for (let s = 0; s < 2; s++) {
+    stepRope(PH.cord, dt / 2, tail, [470, 8], 1500, 8, 10);
+    stepRope(PH.beltA, dt / 2, bp, null, 1400, null, 6);
+    stepRope(PH.beltB, dt / 2, [bp[0] + 5, bp[1] + 2], null, 1400, null, 6);
+  }
+}
+
+// =====================================================================
+//  BRUSHWORK. A stroke is a tapered ribbon of paint plus loose bristle
+//  lines; shapes are filled then dragged over with texture strokes.
+//  BOIL ticks ten times a second so outlines shimmer like hand-drawn cels.
+// =====================================================================
+let BOIL = 0, REDUCED = false;
+function spline(pts, res) {
+  const out = [], n = pts.length;
+  if (n === 2) { for (let i = 0; i <= res * 2; i++) { const t = i / (res * 2); out.push([lerp(pts[0][0], pts[1][0], t), lerp(pts[0][1], pts[1][1], t)]); } return out; }
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || pts[i + 1];
+    for (let j = 0; j < res; j++) {
+      const t = j / res, t2 = t * t, t3 = t2 * t;
+      out.push([
+        0.5 * (2 * p1[0] + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3),
+        0.5 * (2 * p1[1] + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3)
+      ]);
+    }
+  }
+  out.push(pts[n - 1].slice());
+  return out;
+}
+function splineClosed(pts, res) {
+  const out = [], n = pts.length;
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+    for (let j = 0; j < res; j++) {
+      const t = j / res, t2 = t * t, t3 = t2 * t;
+      out.push([
+        0.5 * (2 * p1[0] + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3),
+        0.5 * (2 * p1[1] + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3)
+      ]);
+    }
+  }
+  return out;
+}
+function geom(pts, w, o) {
+  const path = o.raw ? pts : spline(pts, o.res || 5), N = path.length;
+  const frac = o.frac === undefined ? 1 : o.frac;
+  const n = Math.max(2, Math.min(N, Math.ceil(N * frac)));
+  const nx = new Float32Array(n), ny = new Float32Array(n), hw = new Float32Array(n);
+  const seed = o.seed || 1, bo = REDUCED ? 0 : (BOIL % 5) * 1.37;
+  const sw = o.sw === undefined ? 1 : o.sw, ew = o.ew === undefined ? 1 : o.ew;
+  const t0 = o.t0 === undefined ? 0.12 : o.t0, t1 = o.t1 === undefined ? 0.22 : o.t1, wob = o.wob === undefined ? 1 : o.wob;
+  for (let i = 0; i < n; i++) {
+    const a = path[Math.max(0, i - 1)], c = path[Math.min(N - 1, i + 1)];
+    const dx = c[0] - a[0], dy = c[1] - a[1], L = Math.hypot(dx, dy) || 1;
+    nx[i] = -dy / L; ny[i] = dx / L;
+    const t = i / (N - 1);
+    const tp = t < t0 ? Math.sqrt(t / t0) : t > 1 - t1 ? Math.pow((1 - t) / t1, 0.8) : 1;
+    hw[i] = w * 0.5 * lerp(sw, ew, t) * Math.max(0.07, tp) * (1 + wob * (0.07 * Math.sin(i * 1.9 + bo * 2.3 + seed) + 0.05 * Math.sin(i * 0.63 + seed * 1.7 + bo)));
+  }
+  return { path, n, nx, ny, hw, seed };
+}
+function paintGeom(g, G, pl, o) {
+  const { path, n, nx, ny, hw } = G, alpha = o.alpha === undefined ? 1 : o.alpha;
+  if (alpha <= 0.003) return;
+  const dx = o.dx || 0, dy = o.dy || 0;
+  if (o.body !== false) {
+    g.globalAlpha = alpha * (o.bodyAlpha === undefined ? 0.96 : o.bodyAlpha);
+    g.fillStyle = pl.s[o.shade === undefined ? 2 : o.shade];
+    g.beginPath(); g.moveTo(path[0][0] + nx[0] * hw[0] + dx, path[0][1] + ny[0] * hw[0] + dy);
+    for (let i = 1; i < n; i++) g.lineTo(path[i][0] + nx[i] * hw[i] + dx, path[i][1] + ny[i] * hw[i] + dy);
+    for (let i = n - 1; i >= 0; i--) g.lineTo(path[i][0] - nx[i] * hw[i] + dx, path[i][1] - ny[i] * hw[i] + dy);
+    g.closePath(); g.fill();
+  }
+  const nb = o.bristles === undefined ? 6 : o.bristles, R = rng(G.seed * 7 + 3), wd = o.w;
+  const shades = o.bshades || [0, 1, 3, 4, 1, 3];
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  for (let k = 0; k < nb; k++) {
+    const off = (R() * 2 - 1) * 0.92, lw = wd * (0.05 + R() * 0.11), sh = shades[(R() * shades.length) | 0];
+    const s0 = Math.floor(R() * 0.16 * n), e0 = n - Math.floor(R() * 0.24 * n), ba = 0.22 + R() * 0.5;
+    if (e0 - s0 < 2) continue;
+    g.globalAlpha = alpha * ba; g.strokeStyle = pl.s[sh]; g.lineWidth = Math.max(0.6, lw);
+    g.beginPath();
+    for (let i = s0; i < e0; i++) {
+      const x = path[i][0] + nx[i] * hw[i] * off + dx, y = path[i][1] + ny[i] * hw[i] * off + dy;
+      if (i === s0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.stroke();
+  }
+  g.globalAlpha = 1;
+}
+function brush(g, pts, w, pl, o = {}) {
+  if (o.frac !== undefined && o.frac <= 0.002) return null;
+  o.w = w; const G = geom(pts, w, o); paintGeom(g, G, pl, o); return G;
+}
+function ink(g, pts, w, o = {}) {
+  return brush(g, pts, w, INK, Object.assign({ bristles: 2, bshades: [0, 1], t0: 0.1, t1: 0.25, bodyAlpha: 0.92 }, o));
+}
+// a painted limb: colour ribbon (slightly mis-registered, like a silkscreen) plus ink contours
+function limb(g, pts, w, pl, reveal, o = {}) {
+  const G = geom(pts, w, Object.assign({ t0: 0.06, t1: 0.1 }, o));
+  if (reveal > 0.002) {
+    const n = Math.max(2, Math.ceil(G.n * reveal));
+    paintGeom(g, Object.assign({}, G, { n }), pl, Object.assign({ w, dx: MR[0], dy: MR[1], bristles: 5 }, o));
+  }
+  const L = [], Rt = [];
+  for (let i = 0; i < G.n; i++) {
+    L.push([G.path[i][0] + G.nx[i] * G.hw[i], G.path[i][1] + G.ny[i] * G.hw[i]]);
+    Rt.push([G.path[i][0] - G.nx[i] * G.hw[i], G.path[i][1] - G.ny[i] * G.hw[i]]);
+  }
+  const iw = o.inkW || 4.6;
+  ink(g, L, iw, { raw: true, seed: G.seed + 11 });
+  ink(g, Rt, iw, { raw: true, seed: G.seed + 13 });
+  return G;
+}
+function tracePath(g, path, dx = 0, dy = 0) {
+  g.beginPath(); g.moveTo(path[0][0] + dx, path[0][1] + dy);
+  for (let i = 1; i < path.length; i++) g.lineTo(path[i][0] + dx, path[i][1] + dy);
+  g.closePath();
+}
+// a filled, textured shape. dir = the angle the texture strokes run along
+function shape(g, pts, pl, o = {}) {
+  const path = splineClosed(pts, o.res || 4), alpha = o.alpha === undefined ? 1 : o.alpha;
+  if (alpha <= 0.003) return path;
+  const dx = o.mr === false ? 0 : MR[0], dy = o.mr === false ? 0 : MR[1];
+  g.save(); g.globalAlpha = alpha;
+  tracePath(g, path, dx, dy); g.fillStyle = pl.s[o.shade === undefined ? 2 : o.shade]; g.fill();
+  if (o.tex !== false) {
+    g.clip();
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const q of path) { if (q[0] < x0) x0 = q[0]; if (q[0] > x1) x1 = q[0]; if (q[1] < y0) y0 = q[1]; if (q[1] > y1) y1 = q[1]; }
+    const cx = (x0 + x1) / 2 + dx, cy = (y0 + y1) / 2 + dy, span = Math.hypot(x1 - x0, y1 - y0) / 2 + 6;
+    const dir = o.dir === undefined ? Math.PI / 2 : o.dir, ux = Math.cos(dir), uy = Math.sin(dir), vx = -uy, vy = ux;
+    const cnt = o.strokes || 7, R = rng((o.seed || 5) * 13), sp = span * 2 / cnt;
+    const shades = o.tshades || [1, 3, 4, 0, 3];
+    g.lineCap = 'round';
+    for (let k = 0; k < cnt; k++) {
+      const off = -span + (k + 0.5) * sp + (R() - 0.5) * sp * 0.6, lenA = span * (0.6 + R() * 0.5), lenB = span * (0.6 + R() * 0.5);
+      const bend = (R() - 0.5) * span * 0.25;
+      const ax = cx + vx * off - ux * lenA, ay = cy + vy * off - uy * lenA, bx = cx + vx * off + ux * lenB, by = cy + vy * off + uy * lenB;
+      g.globalAlpha = alpha * (0.14 + R() * 0.26); g.strokeStyle = pl.s[shades[(R() * shades.length) | 0]];
+      g.lineWidth = sp * (0.35 + R() * 0.6);
+      g.beginPath(); g.moveTo(ax, ay); g.quadraticCurveTo(cx + vx * (off + bend), cy + vy * (off + bend), bx, by); g.stroke();
+    }
+  }
+  g.restore();
+  return path;
+}
+function dab(g, x, y, r, pl, o = {}) {           // a round blob of paint
+  const R = rng(o.seed || 9), pts = [], k = 9, bo = REDUCED ? 0 : BOIL % 5;
+  for (let i = 0; i < k; i++) {
+    const a = i / k * TAU, rr = r * (0.86 + R() * 0.28 + 0.05 * Math.sin(bo + i));
+    pts.push([x + Math.cos(a) * rr * (o.sx || 1), y + Math.sin(a) * rr]);
+  }
+  return shape(g, pts, pl, Object.assign({ tex: false, res: 3 }, o));
+}
+let MR = [2.4, -1.8];                           // colour-plate misregistration
+
+// =====================================================================
+//  THE DANCER. Drawn back to front: coat back, legs, shirt, coat front,
+//  belt and cord, arms and hands, mic, then head, face and pompadour.
+//  Before the music starts only the ink drawing exists; the colour
+//  plates are painted in over the first bars.
+// =====================================================================
+const MOUTH = pal('#6b1730'), TONGUE = pal('#ff6f86');
+function headPt(R, lx, ly) {
+  const c = Math.cos(R.ha), s = Math.sin(R.ha);
+  return [R.HC[0] + c * lx - s * ly, R.HC[1] + s * lx + c * ly];
+}
+function arc(c, r, a0, a1, n = 10, sx = 1) {
+  const out = [];
+  for (let i = 0; i <= n; i++) { const a = lerp(a0, a1, i / n); out.push([c[0] + Math.cos(a) * r * sx, c[1] + Math.sin(a) * r]); }
+  return out;
+}
+function drawHand(g, c, fd, type, side, rv, seed) {
+  const ang = Math.atan2(fd[1], fd[0]);
+  if (type === 1) {                                  // open hand, fingers splayed
+    for (let i = 0; i < 4; i++) {
+      const a = ang + (i - 1.5) * 0.3;
+      limb(g, [[c[0] + Math.cos(a) * 6, c[1] + Math.sin(a) * 6], [c[0] + Math.cos(a) * 28, c[1] + Math.sin(a) * 28]], 7.5, P.skin, rv, { inkW: 2.6, seed: seed + i, t1: 0.35 });
+    }
+    const ta = ang + side * 1.25;
+    limb(g, [[c[0], c[1]], [c[0] + Math.cos(ta) * 20, c[1] + Math.sin(ta) * 20]], 8, P.skin, rv, { inkW: 2.6, seed: seed + 5, t1: 0.4 });
+    dab(g, c[0], c[1], 12, P.skin, { alpha: rv, seed: seed + 6 });
+    ink(g, arc(c, 12.5, ang + 1.9, ang + TAU - 1.9, 8), 3.2, { seed: seed + 7 });
+  } else {                                           // fist (with the index out when pointing)
+    if (type === 2) limb(g, [[c[0], c[1]], [c[0] + fd[0] * 30, c[1] + fd[1] * 30]], 8, P.skin, rv, { inkW: 2.8, seed: seed + 1, t1: 0.3 });
+    dab(g, c[0], c[1], 13.5, P.skin, { alpha: rv, seed: seed + 2 });
+    ink(g, arc(c, 14, ang + 0.6, ang + TAU - 0.4, 12), 3.6, { seed: seed + 3 });
+    const k = [c[0] + fd[0] * 6, c[1] + fd[1] * 6];
+    ink(g, [[k[0] - fd[1] * 8, k[1] + fd[0] * 8], [k[0] + fd[0] * 2, k[1] + fd[1] * 2], [k[0] + fd[1] * 8, k[1] - fd[0] * 8]], 2.4, { seed: seed + 4, alpha: 0.7 });
+  }
+}
+function drawMic(g, hc, part) {
+  const md = [Math.cos(PH.mic.a), Math.sin(PH.mic.a)];
+  if (part === 0) {
+    brush(g, [[hc[0] - md[0] * 16, hc[1] - md[1] * 16], [hc[0] + md[0] * 25, hc[1] + md[1] * 25]], 12, P.mic, { t0: 0.05, t1: 0.05, bristles: 2, seed: 91 });
+    return;
+  }
+  const h = [hc[0] + md[0] * 37, hc[1] + md[1] * 37];
+  brush(g, [[hc[0] + md[0] * 18, hc[1] + md[1] * 18], [hc[0] + md[0] * 27, hc[1] + md[1] * 27]], 15, P.mic, { t0: 0.1, t1: 0.1, bristles: 0, seed: 92 });
+  dab(g, h[0], h[1], 13.5, P.micHead, { seed: 93, mr: false });
+  for (let i = -1; i <= 1; i++) {
+    ink(g, [[h[0] - md[1] * 12 + md[0] * i * 6, h[1] + md[0] * 12 + md[1] * i * 6], [h[0] + md[1] * 12 + md[0] * i * 6, h[1] - md[0] * 12 + md[1] * i * 6]], 1.6, { seed: 94 + i, alpha: 0.55 });
+  }
+  ink(g, arc(h, 14, 0, TAU, 14), 3.4, { seed: 97 });
+  dab(g, h[0] - 4, h[1] - 5, 3.5, pal('#ffffff'), { seed: 98, mr: false, alpha: 0.85 });
+}
+function drawFigure(g, R, L) {
+  const p = R.p, f = R.f, back = f < 0, af = Math.abs(f), sg = back ? -1 : 1;
+  const rv = L.reveal, part = (a, b) => smooth((rv - a) / (b - a));
+  const cLeg = part(0, 0.35), cCoat = part(0.18, 0.62), cArm = part(0.4, 0.78), cHead = part(0.55, 1);
+  const ca = coatAnchors(R), H = PH.hem, LO = H.LO.p, LI = H.LI.p, B = H.B.p, RI = H.RI.p, RO = H.RO.p;
+  const pel = R.P, N = R.N, u = R.u, SL = R.SL, SR = R.SR, tw = ca.tw, k = ca.k;
+  const U = (pt, s, d) => [pt[0] + u[0] * s, pt[1] + u[1] * s + (d || 0)];
+
+  // 1. back of the coat, glimpsed between swinging legs
+  if (!back) {
+    shape(g, [U(ca.AL, 22, -80), ca.AL, LO, B, RO, ca.AR, U(ca.AR, -22, -80)], P.coatDark, { alpha: cCoat, seed: 21, strokes: 6 });
+    ink(g, [LO, [lerp(LO[0], B[0], 0.5), lerp(LO[1], B[1], 0.5) + 3], B, [lerp(B[0], RO[0], 0.5), lerp(B[1], RO[1], 0.5) + 3], RO], 4, { seed: 22, alpha: 0.85 });
+  }
+  // 2. legs and shoes
+  const legs = [['L', R.HL, R.KL, R.AL, 31], ['R', R.HR, R.KR, R.AR, 37]];
+  for (const [side, Hh, K, An, sd] of legs) {
+    limb(g, [Hh, K, An], 46, P.trousers, cLeg, { sw: 1.08, ew: 0.78, seed: sd });
+    const out = side === 'L' ? -1 : 1, lifted = An[1] < -8;
+    const toe = lifted ? [An[0] + out * 14, An[1] + 25] : [An[0] + out * 31, An[1] + 8];
+    const heel = [An[0] - out * 9, An[1] + 5];
+    brush(g, [heel, toe], 23, P.shoe, { seed: sd + 3, t0: 0.3, t1: 0.3, bristles: 2 });
+    brush(g, [[lerp(heel[0], toe[0], 0.35), heel[1] - 4], [lerp(heel[0], toe[0], 0.8), toe[1] - 5]], 4, P.micHead, { alpha: 0.45 * cLeg, bristles: 0, seed: sd + 4 });
+  }
+  // 3. the dark turtleneck between the coat panels
+  shape(g, [U(N, -26 * sg * k, 2), U(N, 26 * sg * k, 2), U(pel, 28 * sg * k, 0), U(pel, -28 * sg * k, 0)], P.shirt, { alpha: cCoat, seed: 41, strokes: 4 });
+
+  if (!back) {
+    // 4. coat front panels, lapels, belt, pockets, buttons, epaulettes
+    for (const s of [-1, 1]) {
+      const S = s < 0 ? SL : SR, Aa = s < 0 ? ca.AL : ca.AR, HO = s < 0 ? LO : RO, HI = s < 0 ? LI : RI, q = s;
+      const sh0 = U(S, 6 * q, -3);
+      const lap = [N[0] + tw + 13 * q * k, N[1] + 24];
+      const chest = [N[0] + tw + 21 * q * k, N[1] + 84];
+      const belt = [pel[0] + tw + 15 * q * k, pel[1] - 40];
+      const hip = [Aa[0] + 5 * q, Aa[1] + 14];
+      const pit = U(S, -2 * q, 52);
+      const sd = s < 0 ? 51 : 57;
+      shape(g, [sh0, lap, chest, belt, HI, HO, hip, pit], P.coat, { alpha: cCoat, seed: sd, strokes: 7 });
+      shape(g, [U(S, -8 * q, 3), lap, chest], P.coatLight, { alpha: cCoat, seed: sd + 1, tex: false, res: 2 });
+      const wl = [lerp(pit[0], hip[0], 0.8), lerp(pit[1], hip[1], 0.8) - 6];
+      brush(g, [wl, [lerp(wl[0], belt[0], 0.5), lerp(wl[1], belt[1], 0.5) + 1], belt], 15, P.coatDark, { alpha: cCoat, seed: sd + 2, t0: 0.02, t1: 0.02, bristles: 3, dx: MR[0], dy: MR[1] });
+      ink(g, [[wl[0], wl[1] + 8], [belt[0], belt[1] + 8]], 2.6, { seed: sd + 3, alpha: 0.75 });
+      brush(g, [U(S, 2 * q, -1), [lerp(S[0], N[0], 0.45), lerp(S[1], N[1], 0.45) - 2]], 11, P.coatDark, { alpha: cCoat, seed: sd + 4, t0: 0.2, t1: 0.2, bristles: 2 });
+      ink(g, [pit, hip, HO], 4.6, { seed: sd + 5 });
+      ink(g, [lap, chest, belt, HI], 4.6, { seed: sd + 6 });
+      ink(g, [HI, [lerp(HI[0], HO[0], 0.5), lerp(HI[1], HO[1], 0.5) + 3], HO], 4.2, { seed: sd + 7 });
+      ink(g, [sh0, [lerp(sh0[0], lap[0], 0.5), lerp(sh0[1], lap[1], 0.5) - 4], lap], 4.2, { seed: sd + 8 });
+      ink(g, [U(S, -8 * q, 3), chest], 3, { seed: sd + 9, alpha: 0.8 });
+      const pk = [lerp(belt[0], hip[0], 0.2), lerp(belt[1], hip[1], 0.2) + 50], pk2 = [lerp(belt[0], hip[0], 0.8), lerp(belt[1], hip[1], 0.8) + 38];
+      ink(g, [pk, pk2], 3.6, { seed: sd + 10 });
+      for (const tt of [0.3, 0.68]) {
+        const bp = [lerp(chest[0], belt[0], tt) + 11 * q * k, lerp(chest[1], belt[1], tt)];
+        dab(g, bp[0], bp[1], 4.2, INK, { seed: sd + 11 + tt * 10, mr: false });
+      }
+    }
+    // the buckle
+    const bb = [pel[0] + tw + 15 * k, pel[1] - 40];
+    ink(g, [[bb[0] - 7, bb[1] - 8], [bb[0] + 7, bb[1] - 8], [bb[0] + 7, bb[1] + 8], [bb[0] - 7, bb[1] + 8], [bb[0] - 7, bb[1] - 8]], 3, { raw: true, seed: 66 });
+  } else {
+    // spinning away: the whole back of the coat
+    const pitL = U(SL, 2 * sg, 52), pitR = U(SR, -2 * sg, 52);
+    const poly = [U(SL, -6 * sg, -3), [N[0], N[1] - 6], U(SR, 6 * sg, -3), pitR, [ca.AR[0], ca.AR[1] + 14], RO, B, LO, [ca.AL[0], ca.AL[1] + 14], pitL];
+    shape(g, poly, P.coat, { alpha: cCoat, seed: 81, strokes: 8 });
+    brush(g, [[lerp(pitL[0], ca.AL[0], 0.8), pel[1] - 44], [pel[0], pel[1] - 40], [lerp(pitR[0], ca.AR[0], 0.8), pel[1] - 44]], 15, P.coatDark, { alpha: cCoat, seed: 82, bristles: 3 });
+    ink(g, [poly[3], poly[4], poly[5]], 4.6, { seed: 83 });
+    ink(g, [poly[9], poly[8], poly[7]], 4.6, { seed: 84 });
+    ink(g, [LO, B, RO], 4.2, { seed: 85 });
+    ink(g, [[pel[0], pel[1] - 30], [lerp(pel[0], B[0], 0.5), lerp(pel[1], B[1], 0.5)], B], 3.4, { seed: 86 });
+    ink(g, [poly[0], poly[1], poly[2]], 4.2, { seed: 87 });
+  }
+  // 5. belt tails and the mic cord
+  limb(g, PH.beltA.p, 11, P.coatDark, cCoat, { inkW: 2.6, seed: 88, t0: 0.02, t1: 0.3 });
+  limb(g, PH.beltB.p, 10, P.coatDark, cCoat, { inkW: 2.6, seed: 89, t0: 0.02, t1: 0.3 });
+  const cg = brush(g, PH.cord.p, 7, P.cord, { res: 3, seed: 61, bristles: 0, t0: 0.02, t1: 0.02, wob: 0.3 });
+  if (cg) ink(g, cg.path.map(q => [q[0] - 1.2, q[1] - 1.8]), 1.8, { raw: true, seed: 62, alpha: 0.5 * cArm, bodyAlpha: 1 });
+
+  // 6. arms, hands, microphone
+  const arms = [['L', SL, R.EL, R.WL, p.handL, 71], ['R', SR, R.ER, R.WR, 0, 77]];
+  for (const [side, S, E, Wr, ht, sd] of arms) {
+    limb(g, [S, E, Wr], 36, P.coat, cArm, { sw: 1.06, ew: 0.82, seed: sd });
+    const cf = [lerp(E[0], Wr[0], 0.8), lerp(E[1], Wr[1], 0.8)];
+    brush(g, [cf, Wr], 33, P.coatDark, { alpha: cArm, t0: 0.15, t1: 0.15, bristles: 3, seed: sd + 1, dx: MR[0], dy: MR[1] });
+    ink(g, [[cf[0] - (Wr[1] - E[1]) * 0.17, cf[1] + (Wr[0] - E[0]) * 0.17], [cf[0] + (Wr[1] - E[1]) * 0.17, cf[1] - (Wr[0] - E[0]) * 0.17]], 3, { seed: sd + 2, alpha: 0.8 });
+    const fd = norm([Wr[0] - E[0], Wr[1] - E[1]]), hc = [Wr[0] + fd[0] * 12, Wr[1] + fd[1] * 12];
+    if (side === 'R') drawMic(g, hc, 0);
+    drawHand(g, hc, fd, ht, side === 'L' ? -1 : 1, cArm, sd + 10);
+    if (side === 'R') drawMic(g, hc, 1);
+  }
+
+  // 7. neck, collar, head
+  limb(g, [[N[0], N[1] + 6], R.NT], 25, P.skin, cHead, { seed: 101, inkW: 3.6, t0: 0.02, t1: 0.02 });
+  const col = [U(N, -24 * sg * k, 0), [N[0] + tw * 0.3, N[1] + 9], U(N, 24 * sg * k, 0)];
+  brush(g, col, 17, P.shirt, { alpha: cCoat, bristles: 3, seed: 103, t0: 0.15, t1: 0.15 });
+  ink(g, col.map(q => [q[0], q[1] - 7]), 3.2, { seed: 104 });
+  const rx = 33 * (0.82 + 0.18 * af), ry = 41, fx = R.sn * 15 * sg;
+  const hp = (lx, ly) => headPt(R, lx, ly);
+  for (const s of [-1, 1]) {
+    const ex = hp(s * (rx + 1) + fx * 0.25, 4);
+    dab(g, ex[0], ex[1], 8.5, P.skin, { alpha: cHead, seed: 105 + s, sx: 0.8 });
+    ink(g, arc(ex, 9, s < 0 ? 1.8 : -1.3, s < 0 ? 4.4 : 1.3, 6, 0.8), 3, { seed: 107 + s });
+  }
+  const hpts = [];
+  for (let i = 0; i < 14; i++) {
+    const a = i / 14 * TAU; let lx = Math.sin(a) * rx; const ly = -Math.cos(a) * ry;
+    if (ly > 0) lx *= 1 - 0.16 * (ly / ry);
+    hpts.push(hp(lx, ly));
+  }
+  shape(g, hpts, P.skin, { alpha: cHead, seed: 111, strokes: 5, dir: 0.3, tshades: [1, 3, 1, 0] });
+  const jaw = [];
+  for (let i = 0; i <= 12; i++) {
+    const a = lerp(0.36, 1.64, i / 12) * Math.PI; let lx = Math.sin(a) * rx; const ly = -Math.cos(a) * ry;
+    if (ly > 0) lx *= 1 - 0.16 * (ly / ry);
+    jaw.push(hp(lx, ly));
+  }
+  ink(g, jaw.reverse(), 4.4, { seed: 112 });
+
+  // 8. the face
+  if (!back && af > 0.2) {
+    const open = p.eyes > 0.5 && !L.blink;
+    for (const s of [-1, 1]) {
+      const ex = fx + s * 12 * (0.75 + 0.25 * af), ey = -2;
+      const shut = !open || (p.wink > 0.5 && s > 0);
+      if (!shut) brush(g, [hp(ex, ey - 4.5), hp(ex, ey + 3.5)], 6.5, INK, { t0: 0.35, t1: 0.35, bristles: 0, seed: 120 + s });
+      else ink(g, [hp(ex - 6, ey + 1), hp(ex, ey - 3.5), hp(ex + 6, ey + 1)], 3.4, { seed: 122 + s });
+      ink(g, [hp(ex + s * 8, -14 - p.brow * 3), hp(ex - s * 7, -17 - p.brow * 6)], 4.6, { seed: 124 + s });
+      dab(g, ...hp(fx + s * 20, 12), 6.5, P.cheek, { alpha: 0.32 * cHead, seed: 126 + s, mr: false });
+    }
+    brush(g, [hp(fx + 1, 1), hp(fx + 4, 11), hp(fx - 1, 13)], 4, P.skinShade, { alpha: cHead, bristles: 0, seed: 128 });
+    ink(g, [hp(fx + 3, 5), hp(fx + 4, 11), hp(fx, 13.5)], 2.2, { seed: 129, alpha: 0.7 });
+    const mo = L.mouth, mc = fx;
+    if (mo > 0.08) {
+      const w2 = 8.5 + 3 * mo + 3 * p.grin, h2 = 2.5 + 11 * mo, pts = [];
+      for (let i = 0; i < 12; i++) { const a = i / 12 * TAU, sy = Math.sin(a); pts.push(hp(mc + Math.cos(a) * w2, 23 + (sy > 0 ? sy * h2 : sy * h2 * 0.35))); }
+      shape(g, pts, MOUTH, { tex: false, mr: false, res: 3 });
+      if (h2 > 6) dab(g, ...hp(mc + 1, 23 + h2 * 0.62), Math.min(5.5, h2 * 0.35), TONGUE, { mr: false, seed: 131, sx: 1.3 });
+      ink(g, pts.concat([pts[0]]), 3, { seed: 132, t0: 0.02, t1: 0.02 });
+    } else {
+      ink(g, [hp(mc - 11, 19 - 2 * p.grin), hp(mc, 24 + 3 * p.grin), hp(mc + 11, 19 - 2 * p.grin)], 4, { seed: 133 });
+    }
+  }
+
+  // 9. the pompadour: a ginger wave that lags every nod
+  const ho = PH.hair.p;
+  const hh = (lx, ly, wgt) => { const q = headPt(R, lx * (0.84 + 0.16 * af) + fx * 0.3, ly); return [q[0] + ho[0] * wgt, q[1] + ho[1] * wgt]; };
+  const cap = back
+    ? [[-35, 12], [-37, -22], [-28, -44], [-8, -56], [14, -56], [31, -44], [37, -22], [35, 12], [18, 30], [-18, 30]]
+    : [[-35, -2], [-37, -24], [-28, -44], [-8, -56], [14, -56], [31, -44], [37, -22], [35, -2], [28, -16], [10, -27], [-10, -26], [-27, -14]];
+  shape(g, cap.map(q => hh(q[0], q[1], 0.12)), P.hair, { alpha: cHead, seed: back ? 135 : 136, dir: -0.7, strokes: 6, tshades: [0, 1, 3, 4] });
+  if (back) ink(g, [hh(-35, 12, 0.1), hh(-18, 30, 0.1), hh(18, 30, 0.1), hh(35, 12, 0.1)], 3.8, { seed: 137 });
+  // the quiff: a rounded mass swept up and back, then combed with strokes
+  const mass = [[-35, -22], [-37, -46], [-26, -70], [-6, -84], [16, -85], [32, -72], [38, -48], [37, -22]];
+  shape(g, mass.map((q, i) => hh(q[0], q[1], 0.2 + 0.8 * Math.min(1, -q[1] / 80))), P.hair, { alpha: cHead, seed: 138, dir: -1.1, strokes: 6, tshades: [0, 1, 3, 4] });
+  for (let i = 0; i < 6; i++) {
+    const x0 = -27 + i * 10.5, a = [x0, -30 + Math.abs(i - 2.5) * 1.5], m = [x0 * 0.75 - 6, -66 - (i < 3 ? i : 5 - i) * 3], e = [x0 * 0.55 + 12, -80 + Math.abs(i - 2) * 2.5];
+    brush(g, [hh(a[0], a[1], 0.1), hh(m[0], m[1], 0.7), hh(e[0], e[1], 1)], 19 - Math.abs(i - 2.5) * 1.2, i % 2 ? P.hairLight : P.hair,
+      { alpha: cHead, seed: 140 + i, t0: 0.12, t1: 0.32, bristles: 5, dx: MR[0], dy: MR[1] });
+  }
+  ink(g, [hh(-37, -20, 0.05), hh(-36, -48, 0.4), hh(-24, -74, 0.8), hh(-4, -88, 1), hh(18, -88, 1), hh(34, -72, 0.8), hh(39, -46, 0.4), hh(37, -20, 0.05)], 4.6, { seed: 146 });
+  ink(g, [hh(-18, -34, 0.15), hh(-18, -62, 0.7), hh(-4, -80, 1)], 2.6, { seed: 147, alpha: 0.7 });
+  ink(g, [hh(4, -32, 0.15), hh(4, -60, 0.7), hh(18, -78, 1)], 2.2, { seed: 148, alpha: 0.6 });
+  if (!back) for (const s of [-1, 1]) {
+    brush(g, [hh(s * 33, -8, 0), hh(s * 32, 11, 0)], 7, P.hairDark, { alpha: cHead, bristles: 0, seed: 149 + s });
+    ink(g, [hh(s * 36, -10, 0), hh(s * 34, 12, 0)], 2.6, { seed: 151 + s, alpha: 0.8 });
+  }
+}
+// flat, lagging copies of the dancer for the chorus
+function drawEcho(g, R, pl, alpha) {
+  const o = { alpha, bristles: 3, t0: 0.1, t1: 0.15, seed: 7, bodyAlpha: 0.9 };
+  brush(g, [R.HL, R.KL, R.AL], 42, pl, o); brush(g, [R.HR, R.KR, R.AR], 42, pl, o);
+  brush(g, [R.P, [lerp(R.P[0], R.N[0], 0.5), lerp(R.P[1], R.N[1], 0.5)], R.N], 84, pl, o);
+  brush(g, [R.SL, R.EL, R.WL], 32, pl, o); brush(g, [R.SR, R.ER, R.WR], 32, pl, o);
+  dab(g, R.HC[0], R.HC[1] - 14, 46, pl, { alpha, mr: false, seed: 8 });
+}
+
+// =====================================================================
+//  THE WALL. A persistent canvas that the dance paints on: each section
+//  swipes in a new ground, every bar adds 80s confetti, and paint thrown
+//  from the dancer's hands and feet lands and stays.
+// =====================================================================
+const cv = document.getElementById('stage'), G = cv.getContext('2d');
+const BG = { cv: document.createElement('canvas'), jobs: [] }; BG.g = BG.cv.getContext('2d');
+const FIG = { cv: document.createElement('canvas') }; FIG.g = FIG.cv.getContext('2d');
+const SIL = { cv: document.createElement('canvas') }; SIL.g = SIL.cv.getContext('2d');
+const FR = { x: -600, y: -880, w: 1200, h: 980 };      // stage rect the figure layer covers
+let W = 0, H = 0, DPR = 1, S = 1, GY = 0, FK = 1;
+function viewBounds() { return { x0: -W / 2 / S, x1: W / 2 / S, y0: -GY / S, y1: (H - GY) / S }; }
+function bgStage(g) { g.setTransform(S * DPR, 0, 0, S * DPR, W * DPR / 2, GY * DPR); }
+
+function resetBackground(sec) {
+  const g = BG.g;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  g.fillStyle = sec.ground; g.fillRect(0, 0, BG.cv.width, BG.cv.height);
+  bgStage(g);
+  const vb = viewBounds(), R = rng(777);
+  for (let i = 0; i < 16; i++) {                       // underpainting
+    const y = lerp(vb.y0 - 40, 30, R()), x0 = vb.x0 - 120, x1 = vb.x1 + 120, tilt = (R() - 0.5) * 160;
+    brush(g, [[x0, y - tilt + (R() - 0.5) * 60], [lerp(x0, x1, 0.5), y + (R() - 0.5) * 90], [x1, y + tilt + (R() - 0.5) * 60]], 90 + R() * 150, sec.gp,
+      { seed: 900 + i, bristles: 6, bshades: [1, 3, 1], bodyAlpha: 0.22, alpha: 0.5, shade: [1, 3, 2][i % 3], wob: 0 });
+  }
+  BG.jobs.length = 0;
+}
+// a stroke that is painted progressively over time onto the wall
+function addJob(pts, w, pl, t0, dur, o = {}) {
+  const G2 = geom(pts, w, Object.assign({ res: 8, wob: 0.6 }, o));
+  const R = rng((o.seed || 1) * 31 + 7), br = [], nb = o.bristles || 10;
+  const bs = o.bshades || [0, 1, 3, 4, 3, 1];
+  for (let k = 0; k < nb; k++) br.push({ off: (R() * 2 - 1) * 0.95, lw: w * (0.04 + R() * 0.1), sh: bs[(R() * bs.length) | 0], a: 0.3 + R() * 0.55, s0: R() * 0.1, e0: 1 - R() * 0.15 });
+  BG.jobs.push({ G: G2, pl, t0, dur, br, done: 0, shade: o.shade === undefined ? 2 : o.shade, bodyAlpha: o.bodyAlpha === undefined ? 1 : o.bodyAlpha });
+}
+function runJobs(t) {
+  if (!BG.jobs.length) return;
+  const g = BG.g; bgStage(g); g.lineCap = 'round'; g.lineJoin = 'round';
+  for (const j of BG.jobs) {
+    const { path, nx, ny, hw, n } = j.G;
+    const target = Math.floor(easeOut((t - j.t0) / j.dur) * (n - 1));
+    if (target <= j.done) continue;
+    const a = Math.max(0, j.done - 1), b = target;
+    g.globalAlpha = j.bodyAlpha; g.fillStyle = j.pl.s[j.shade];
+    g.beginPath(); g.moveTo(path[a][0] + nx[a] * hw[a], path[a][1] + ny[a] * hw[a]);
+    for (let i = a + 1; i <= b; i++) g.lineTo(path[i][0] + nx[i] * hw[i], path[i][1] + ny[i] * hw[i]);
+    for (let i = b; i >= a; i--) g.lineTo(path[i][0] - nx[i] * hw[i], path[i][1] - ny[i] * hw[i]);
+    g.closePath(); g.fill();
+    for (const r of j.br) {
+      const s0 = Math.floor(r.s0 * (n - 1)), e0 = Math.floor(r.e0 * (n - 1)), aa = Math.max(a, s0), bb = Math.min(b, e0);
+      if (bb <= aa) continue;
+      g.globalAlpha = r.a; g.strokeStyle = j.pl.s[r.sh]; g.lineWidth = r.lw;
+      g.beginPath();
+      for (let i = aa; i <= bb; i++) { const x = path[i][0] + nx[i] * hw[i] * r.off, y = path[i][1] + ny[i] * hw[i] * r.off; if (i === aa) g.moveTo(x, y); else g.lineTo(x, y); }
+      g.stroke();
+    }
+    j.done = target;
+  }
+  g.globalAlpha = 1;
+  BG.jobs = BG.jobs.filter(j => j.done < j.G.n - 1);
+}
+function densify(pts, step) {
+  const out = [pts[0].slice()];
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], d = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(d / step));
+    for (let k = 1; k <= n; k++) out.push([lerp(a[0], b[0], k / n), lerp(a[1], b[1], k / n)]);
+  }
+  return out;
+}
+function sectionSwipe(sec, t0, idx) {
+  const vb = viewBounds(), R = rng(idx * 101 + 5), rows = 7, h = (60 - vb.y0) / rows;
+  for (let i = 0; i < rows; i++) {
+    const y = vb.y0 - 20 + (i + 0.5) * h + (R() - 0.5) * h * 0.3, dir = i % 2 ? 1 : -1;
+    const xa = dir > 0 ? vb.x0 - 160 : vb.x1 + 160, xb = dir > 0 ? vb.x1 + 160 : vb.x0 - 160;
+    const pts = [[xa, y + (R() - 0.5) * 40], [lerp(xa, xb, 0.35), y + (R() - 0.5) * 80], [lerp(xa, xb, 0.7), y + (R() - 0.5) * 80], [xb, y + (R() - 0.5) * 40]];
+    const thin = i === 2 + (idx % 3);                   // leave a band of the old colour showing
+    addJob(pts, h * (thin ? 0.75 : 1.6), sec.gp, t0 + i * 0.07, SPB * 1.15, { seed: idx * 50 + i, bristles: 12, bshades: [1, 3, 1, 3, 0], t0: 0.02, t1: 0.06, shade: [2, 2, 1, 2, 3, 2, 2][i] });
+  }
+}
+function motif(key, t0, secIdx) {
+  const sec = SECTIONS[secIdx], R = rng(key * 977 + 13), vb = viewBounds();
+  let x = 0, y = 0;
+  for (let tries = 0; tries < 8; tries++) {
+    x = lerp(vb.x0 + 70, vb.x1 - 70, R()); y = lerp(vb.y0 + 70, -110, R());
+    if (Math.abs(x) > 250 || y < -760) break;
+  }
+  const pl = sec.a[(R() * sec.a.length) | 0], sz = 0.8 + R() * 0.6, type = (key + ((R() * 6) | 0)) % 6, d = SPB * 1.1;
+  if (type === 0) {                                     // squiggle
+    const pts = []; for (let i = 0; i <= 26; i++) pts.push([x - 125 * sz + i * 9.6 * sz, y + Math.sin(i * 0.75) * 20 * sz]);
+    addJob(pts, 15 * sz, pl, t0, d, { raw: true, seed: key, bristles: 5, t0: 0.05, t1: 0.1 });
+  } else if (type === 1) {                              // zigzag
+    const pts = []; for (let i = 0; i < 7; i++) pts.push([x - 105 * sz + i * 35 * sz, y + (i % 2 ? -26 : 26) * sz]);
+    addJob(densify(pts, 6), 13 * sz, pl, t0, d, { raw: true, seed: key, bristles: 5, t0: 0.03, t1: 0.08 });
+  } else if (type === 2) {                              // open ring
+    const a0 = R() * TAU; addJob(arc([x, y], 52 * sz, a0, a0 + TAU * 0.86, 40), 13 * sz, pl, t0, d, { raw: true, seed: key, bristles: 6, t0: 0.05, t1: 0.15 });
+  } else if (type === 3) {                              // triangle
+    const r = 55 * sz, a0 = R() * TAU, pts = [0, 1, 2, 3].map(i => [x + Math.cos(a0 + i * TAU / 3) * r, y + Math.sin(a0 + i * TAU / 3) * r]);
+    addJob(densify(pts, 6), 12 * sz, pl, t0, d, { raw: true, seed: key, bristles: 5, t0: 0.03, t1: 0.06 });
+  } else if (type === 4) {                              // confetti dots
+    for (let i = 0; i < 9; i++) {
+      const cx = x + ((i % 3) - 1) * 34 * sz + (R() - 0.5) * 8, cy = y + (Math.floor(i / 3) - 1) * 34 * sz + (R() - 0.5) * 8;
+      addJob([[cx - 5, cy], [cx + 5, cy + 1]], 17 * sz, pl, t0 + i * 0.03, 0.12, { seed: key * 9 + i, bristles: 3, t0: 0.4, t1: 0.4 });
+    }
+  } else {                                              // swoosh
+    const w2 = 150 * sz, pts = [[x - w2, y + 30 * sz], [x - w2 * 0.2, y - 38 * sz], [x + w2 * 0.6, y - 18 * sz], [x + w2, y + 26 * sz]];
+    addJob(pts, 30 * sz, pl, t0, d, { seed: key, bristles: 10, t0: 0.1, t1: 0.45 });
+  }
+}
+function splatBG(sx, sy, r, pl, vx, vy, seed) {    // screen px → a splat on the wall
+  const g = BG.g; bgStage(g);
+  const x = (sx - W / 2) / S, y = (sy - GY) / S;
+  const R = rng(seed), sp = Math.hypot(vx, vy) || 1, dx = vx / sp, dy = vy / sp;
+  dab(g, x, y, r * 1.5, pl, { seed, mr: false });
+  brush(g, [[x - dx * r * 3, y - dy * r * 3], [x, y]], r * 1.3, pl, { seed: seed + 1, bristles: 2, t0: 0.8, t1: 0.05 });
+  const n = 2 + ((R() * 4) | 0);
+  for (let i = 0; i < n; i++) {
+    const d = r * (1.8 + R() * 3), a = Math.atan2(dy, dx) + (R() - 0.5) * 1.6;
+    dab(g, x + Math.cos(a) * d, y + Math.sin(a) * d, r * (0.2 + R() * 0.35), pl, { seed: seed + 5 + i, mr: false });
+  }
+  g.globalAlpha = 1;
+}
+
+// =====================================================================
+//  STAGE: floor, swinging spotlights, sunburst, shadows, flying paint
+// =====================================================================
+const CAM = { zoom: 1, kick: 0, shake: 0, x: 0 };
+const PARTS = [], FLOOR_SPLATS = [];
+let FLASH = 0, FLASH_COL = '#fff4d6';
+function camMatrix() {
+  const sh = REDUCED ? 0 : CAM.shake, t = performance.now() / 1000;
+  const sx = sh * 9 * Math.sin(t * 53), sy = sh * 7 * Math.cos(t * 47), rot = REDUCED ? 0 : sh * 0.012 * Math.sin(t * 41);
+  return { cx: CAM.x, cy: -300, sx, sy, rot, z: CAM.zoom };
+}
+function applyCam(g, m) {
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  g.translate(W / 2, GY); g.scale(S, S);
+  g.translate(m.sx, m.cy + m.sy); g.rotate(m.rot); g.scale(m.z, m.z); g.translate(-m.cx, -m.cy);
+}
+function camToScreen(m, x, y) {
+  let px = (x - m.cx) * m.z, py = (y - m.cy) * m.z;
+  const c = Math.cos(m.rot), s = Math.sin(m.rot);
+  const rx = px * c - py * s + m.sx, ry = px * s + py * c + m.cy + m.sy;
+  return [W / 2 + rx * S, GY + ry * S];
+}
+function emit(x, y, vx, vy, n, pals, spread = 1) {
+  if (REDUCED) n = Math.ceil(n / 3);
+  for (let i = 0; i < n; i++) {
+    PARTS.push({ x, y, vx: vx + (Math.random() - 0.5) * 700 * spread, vy: vy - Math.random() * 520 * spread - 140,
+      r: 3 + Math.random() * 7, pl: pals[(Math.random() * pals.length) | 0], life: 0.35 + Math.random() * 0.6, seed: (Math.random() * 1e6) | 0 });
+  }
+}
+function stepParts(dt, m) {
+  for (let i = PARTS.length - 1; i >= 0; i--) {
+    const q = PARTS[i];
+    q.vy += 1700 * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt;
+    if (q.life <= 0 || q.y > 150) {
+      if (q.y < -6) { const sp = camToScreen(m, q.x, q.y); splatBG(sp[0], sp[1], q.r, q.pl, q.vx, q.vy, q.seed); }
+      else { FLOOR_SPLATS.push({ x: q.x, y: clamp(q.y, 6, 140), r: q.r, pl: q.pl, seed: q.seed }); if (FLOOR_SPLATS.length > 170) FLOOR_SPLATS.shift(); }
+      PARTS.splice(i, 1);
+    }
+  }
+}
+function drawParts(g) {
+  g.lineCap = 'round';
+  for (const q of PARTS) {
+    g.globalAlpha = 0.95; g.strokeStyle = q.pl.base; g.lineWidth = q.r * 1.5;
+    g.beginPath(); g.moveTo(q.x, q.y); g.lineTo(q.x - q.vx * 0.022, q.y - q.vy * 0.022); g.stroke();
+  }
+  g.globalAlpha = 1;
+}
+function drawFloor(g, floorCol, accents) {
+  const vb = viewBounds(), x0 = vb.x0 * 1.3 - 250, x1 = vb.x1 * 1.3 + 250, yb = vb.y1 * 1.3 + 250;
+  g.globalAlpha = 1; g.fillStyle = css(floorCol);
+  g.beginPath(); g.moveTo(x0, 4); g.lineTo(x1, 4); g.lineTo(x1, yb); g.lineTo(x0, yb); g.closePath(); g.fill();
+  const fp = pal(mix(floorCol, WHITE, 0.08));
+  for (let i = 0; i < 6; i++) {
+    const y = 18 + i * i * 11 + i * 8;
+    brush(g, [[x0, y + 2], [0, y], [x1, y + 3]], 8 + i * 5, fp, { seed: 300 + i, bristles: 4, bodyAlpha: 0.35, alpha: 0.6, wob: 0.3 });
+  }
+  for (const s of FLOOR_SPLATS) dab(g, s.x, s.y, s.r * 1.5, s.pl, { seed: s.seed, sx: 1.7, mr: false, alpha: 0.9 });
+  ink(g, [[x0, 5], [x0 * 0.4, 2], [0, 4], [x1 * 0.4, 2], [x1, 5]], 7, { seed: 310, bristles: 3 });
+}
+function lightRig(b, k, px) {
+  const vb = viewBounds(), sw = Math.sin(Math.PI * b / 2 + (k > 0 ? Math.PI : 0));
+  return { sx: k * Math.min(620, vb.x1 * 0.95 + 60), sy: vb.y0 - 80, ax: px * 0.4 - k * 40 + 230 * sw, sw };
+}
+function drawBeams(g, b, amt, accents, px) {
+  if (amt <= 0.01) return;
+  g.save(); g.globalCompositeOperation = 'lighter';
+  [-1, 1].forEach((k, i) => {
+    const L = lightRig(b, k, px), col = accents[i === 0 ? 0 : 1].c;
+    const gr = g.createLinearGradient(L.sx, L.sy, L.ax, 0);
+    gr.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},${0.2 * amt})`);
+    gr.addColorStop(1, `rgba(${col[0]},${col[1]},${col[2]},${0.05 * amt})`);
+    g.fillStyle = gr;
+    g.beginPath(); g.moveTo(L.sx - 18, L.sy); g.lineTo(L.sx + 18, L.sy); g.lineTo(L.ax + 190, 10); g.lineTo(L.ax - 190, 10); g.closePath(); g.fill();
+    const rg = g.createRadialGradient(L.ax, 30, 10, L.ax, 30, 230);
+    rg.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},${0.34 * amt})`); rg.addColorStop(1, `rgba(${col[0]},${col[1]},${col[2]},0)`);
+    g.fillStyle = rg; g.save(); g.translate(L.ax, 30); g.scale(1, 0.2); g.translate(-L.ax, -30);
+    g.beginPath(); g.arc(L.ax, 30, 230, 0, TAU); g.fill(); g.restore();
+  });
+  g.restore();
+}
+function drawSunburst(g, b, amt, accents) {
+  if (amt <= 0.01) return;
+  const rays = 16, pulse = 1 + 0.06 * beatDip(b), r = 1250 * pulse;
+  g.save(); g.translate(0, -330); g.rotate(b * TAU / 48);
+  for (let i = 0; i < rays; i++) {
+    const a = i / rays * TAU, pl = accents[i % 3];
+    brush(g, [[0, 0], [Math.cos(a) * r * 0.5, Math.sin(a) * r * 0.5], [Math.cos(a) * r, Math.sin(a) * r]], 230, pl,
+      { sw: 0.04, ew: 1, t0: 0.001, t1: 0.02, alpha: amt * 0.3, bristles: 4, seed: 400 + i, wob: 0.5 });
+  }
+  g.restore();
+}
+function drawShadows(g, b, amt, px) {
+  const img = SIL.cv;
+  [-1, 1].forEach((k, i) => {
+    const L = lightRig(b, k, px), shear = -k * (0.75 + 0.55 * L.sw);
+    g.save(); g.globalAlpha = (i ? 0.26 : 0.4) * amt;
+    g.transform(1, 0, shear, -0.3, 0, 6);
+    g.drawImage(img, FR.x, FR.y, FR.w, FR.h); g.restore();
+  });
+}
+function drawWallShadow(g, b, amt, px) {
+  const skew = -0.32 * Math.sin(Math.PI * b), ox = -px * 1.1 + 70 * Math.sin(Math.PI * b / 2);
+  g.save(); g.globalAlpha = 0.24 * amt;
+  g.transform(1.36, 0, skew, 1.24, ox, 0);
+  g.drawImage(SIL.cv, FR.x, FR.y, FR.w, FR.h); g.restore();
+}
+
+// =====================================================================
+//  OVERLAYS: paper grain, vignette, flash, and the few painted words
+// =====================================================================
+const GRAIN = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 220;
+  const g = c.getContext('2d'), id = g.createImageData(220, 220);
+  for (let i = 0; i < 220 * 220; i++) {
+    const v = 128 + (Math.random() - 0.5) * 120 + ((i % 220) % 5 === 0 ? 10 : 0) + (Math.floor(i / 220) % 6 === 0 ? -8 : 0);
+    id.data[i * 4] = id.data[i * 4 + 1] = id.data[i * 4 + 2] = v; id.data[i * 4 + 3] = 255;
+  }
+  g.putImageData(id, 0, 0); return c;
+})();
+let grainPat = null;
+function drawOverlays(g, t) {
+  if (!grainPat) grainPat = g.createPattern(GRAIN, 'repeat');
+  g.save(); g.globalCompositeOperation = 'overlay'; g.globalAlpha = 0.16; g.fillStyle = grainPat; g.fillRect(0, 0, W, H); g.restore();
+  const vg = g.createRadialGradient(W / 2, H * 0.46, Math.min(W, H) * 0.3, W / 2, H * 0.5, Math.max(W, H) * 0.78);
+  vg.addColorStop(0, 'rgba(10,6,30,0)'); vg.addColorStop(1, 'rgba(10,6,30,0.55)');
+  g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  if (FLASH > 0.01 && !REDUCED) {
+    g.save(); g.globalCompositeOperation = 'screen'; g.globalAlpha = FLASH * 0.3; g.fillStyle = FLASH_COL; g.fillRect(0, 0, W, H); g.restore();
+  }
+}
+const FONT_DISPLAY = '"Arial Black", "Helvetica Neue", Helvetica, Arial, sans-serif';
+const FONT_TEXT = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+function plateText(g, txt, x, y, front, backCol, off) {
+  g.fillStyle = backCol; g.fillText(txt, x + off, y + off);
+  g.fillStyle = front; g.fillText(txt, x, y);
+}
+function drawTitle(g, a, now) {
+  if (a <= 0.01) return;
+  const land = W > H * 1.05;
+  let sz = land ? clamp(Math.min(W * 0.05, H * 0.085), 28, 84) : clamp(W * 0.1, 24, 64);
+  const x = land ? Math.max(24, W * 0.06) : Math.max(18, W * 0.07);
+  const maxW = land ? W * 0.44 : W - x * 2;
+  g.font = `italic 900 ${sz}px ${FONT_DISPLAY}`;
+  const tw = g.measureText('BRUSHSTROKE').width; if (tw > maxW) sz *= maxW / tw;
+  const y = land ? H * 0.12 + sz : Math.max(34, H * 0.05) + sz, big = sz * 1.9;
+  g.save(); g.globalAlpha = a; g.translate(x, y); g.rotate(-0.05); g.textBaseline = 'alphabetic';
+  g.font = `italic 900 ${sz}px ${FONT_DISPLAY}`;
+  plateText(g, 'BRUSHSTROKE', 0, 0, '#f4efe4', '#ff5d8f', sz * 0.06);
+  g.font = `italic 900 ${big}px ${FONT_DISPLAY}`;
+  const ry = sz * 0.18 + big * 0.9;
+  plateText(g, 'RICK', 0, ry, '#ffc23a', '#ff5d8f', big * 0.045);
+  const fs = Math.max(12, sz * 0.27);
+  g.font = `600 ${fs}px ${FONT_TEXT}`; g.fillStyle = 'rgba(244,239,228,0.88)';
+  g.fillText('A one-minute dance, painted and scored in code.', 3, ry + sz * 0.62);
+  const py = ry + sz * 1.55, pr = sz * 0.34, pulse = 1 + 0.06 * Math.sin(now / 1000 * TAU * BPM / 60);
+  g.save(); g.translate(pr + 2, py); g.scale(pulse, pulse);
+  brush(g, arc([0, 0], pr, -1.3, -1.3 + TAU * 0.93, 26), Math.max(3, sz * 0.085), SECTIONS[0].a[0], { raw: true, seed: 501, bristles: 3, wob: 0.4 });
+  g.fillStyle = '#ffc23a'; g.beginPath(); g.moveTo(-pr * 0.3, -pr * 0.45); g.lineTo(pr * 0.5, 0); g.lineTo(-pr * 0.3, pr * 0.45); g.closePath(); g.fill();
+  g.restore();
+  g.font = `800 ${fs}px ${FONT_TEXT}`; g.fillStyle = '#ffc23a';
+  g.fillText('PLAY  ·  SOUND ON', pr * 2 + sz * 0.35, py + fs * 0.36);
+  g.restore();
+}
+function drawFooterNote(g, a, text, icon) {
+  if (a <= 0.01) return;
+  const fs = clamp(Math.min(W, H) * 0.026, 12, 18);
+  g.save(); g.globalAlpha = a; g.font = `800 ${fs}px ${FONT_TEXT}`; g.textAlign = 'center';
+  const y = H - Math.max(22, H * 0.045);
+  g.fillStyle = 'rgba(10,6,30,0.55)'; g.fillText(text, W / 2 + 2, y + 2);
+  g.fillStyle = '#f4efe4'; g.fillText(text, W / 2, y);
+  const tw = g.measureText(text).width;
+  brush(g, [[W / 2 - tw / 2, y + fs * 0.55], [W / 2, y + fs * 0.45], [W / 2 + tw / 2, y + fs * 0.6]], fs * 0.28, SECTIONS[3].a[1], { seed: 520, bristles: 2, t0: 0.05, t1: 0.4 });
+  if (icon === 'pause') {
+    g.fillStyle = '#ffc23a'; const s = fs * 1.4;
+    g.fillRect(W / 2 - s * 0.55, y - fs * 3.2, s * 0.35, s * 1.2); g.fillRect(W / 2 + s * 0.2, y - fs * 3.2, s * 0.35, s * 1.2);
+  }
+  g.restore();
+}
+
+// =====================================================================
+//  MAIN LOOP
+// =====================================================================
+const btn = document.getElementById('play');
+let state = 'ready', last = performance.now(), clock = 0, stepSeen = -1, R = null;
+const HIST = [], LOOK = { reveal: 0, mouth: 0, blink: false }, BL = { next: 2.5, until: 0 };
+const mq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+REDUCED = !!(mq && mq.matches);
+if (mq && mq.addEventListener) mq.addEventListener('change', e => { REDUCED = e.matches; });
+
+function songTime() { const c = A.ctx; return c.currentTime - SCHED.t0 - (c.outputLatency || c.baseLatency || 0); }
+function sceneColors(t) {
+  if (t < 0) return { floor: SECTIONS[0].f, acc: SECTIONS[0].a };
+  const bar = Math.min(28, Math.floor(t / BAR)), idx = sectionIndex(bar), sec = SECTIONS[idx], prev = SECTIONS[Math.max(0, idx - 1)];
+  const k = smooth((t - sec.bar * BAR) / SPB);
+  return { floor: idx ? mix(prev.f, sec.f, k) : sec.f, acc: sec.a };
+}
+function levels(t) {
+  if (t < 0) return { sun: 0, beams: 0.35, shadow: 0.8, echo: 0, halo: 0.6 };
+  const bar = t / BAR;
+  const sun = bar < 15.75 ? 0 : bar < 16 ? smooth((bar - 15.75) * 4) : bar < 28 ? 1 : 1 - 0.3 * smooth((t - SONG_END) / 2);
+  return {
+    sun: sun * 0.9,
+    beams: 0.45 + 0.2 * smooth((bar - 12) * 2) + 0.35 * smooth((bar - 16) * 2),
+    shadow: 1,
+    echo: smooth((bar - 16) * 4) * (1 - smooth((bar - 27.6) * 4)),
+    halo: 0.6 + 0.4 * (1 - sun)
+  };
+}
+function moveAt(b) { let n = TIMELINE[0][1]; for (const e of TIMELINE) if (b >= e[0]) n = e[1]; return n; }
+function histAt(lag) {
+  for (let i = HIST.length - 1; i >= 0; i--) if (clock - HIST[i].time >= lag) return HIST[i].R;
+  return HIST.length ? HIST[0].R : null;
+}
+function vel(key) {
+  if (HIST.length < 4) return [0, 0];
+  const a = HIST[HIST.length - 4], c = HIST[HIST.length - 1], dt = Math.max(0.016, c.time - a.time);
+  return [(c.R[key][0] - a.R[key][0]) / dt, (c.R[key][1] - a.R[key][1]) / dt];
+}
+function burst(n, pals, force = 1.6) {
+  if (!R) return;
+  const pts = [R.WL, R.WR, R.HC, R.AL, R.AR, PH.hem.LO.p, PH.hem.RO.p];
+  pts.forEach(q => emit(q[0], q[1], 0, -220 * force, Math.ceil(n / pts.length), pals, force));
+}
+function onStep(i) {
+  const bar = Math.floor(i / 16), s = i % 16;
+  if (bar > 28) return;
+  const si = sectionIndex(Math.min(bar, 27)), sec = SECTIONS[si], big = sec.name === 'chorus' || sec.name === 'outro';
+  const d = drumsAt(bar, s), tt = i * STEP, acc = sec.a, b = i / 4;
+  if (s === 0) {
+    const start = SECTIONS.findIndex(x => x.bar === bar);
+    if (bar === 0) { motif(4, tt + SPB, 0); motif(5, tt + SPB * 3, 0); }
+    else if (start > 0) {
+      sectionSwipe(sec, tt, bar); FLASH = Math.max(FLASH, 0.55); FLASH_COL = sec.acc[0];
+      CAM.shake = Math.max(CAM.shake, 0.8); burst(28, acc);
+    } else if (bar < 28) {
+      motif(bar * 3, tt + SPB * 0.4, si);
+      if (big || sec.name === 'pre') motif(bar * 3 + 1, tt + SPB * 2.2, si);
+    }
+    if (bar === 28) {
+      burst(170, SECTIONS[3].a.concat(SECTIONS[1].a.slice(0, 2)), 2.4);
+      FLASH = 1; FLASH_COL = '#ffc23a'; CAM.shake = 1.4;
+    }
+  }
+  if (d.kick) CAM.kick = 1;
+  if (d.crash) FLASH = Math.max(FLASH, 0.35);
+  FLASH = Math.min(FLASH, 1);
+  if (!R || bar >= 28) return;
+  const mv = moveAt(b);
+  if (big && d.snare) {
+    const vL = vel('WL'), vR = vel('WR');
+    emit(R.WL[0], R.WL[1], vL[0] * 0.5, vL[1] * 0.5, 7, acc); emit(R.WR[0], R.WR[1], vR[0] * 0.5, vR[1] * 0.5, 7, acc);
+  }
+  if (mv === 'kick' && s % 8 === 4) {
+    const side = Math.floor(b / 2) % 2 === 0 ? 1 : -1, ft = side > 0 ? R.AL : R.AR;
+    emit(ft[0], ft[1], -side * 650, -420, 12, acc, 0.8);
+  }
+  if (mv === 'spin' && s % 2 === 0) {
+    for (const k of ['LO', 'RO']) { const h = PH.hem[k]; emit(h.p[0], h.p[1], h.v[0] * 1.2, h.v[1] - 200, 5, acc, 0.6); }
+  }
+  if (mv === 'pump' && s % 4 === 0) emit(R.WR[0], R.WR[1] - 40, 60, -700, 8, acc, 0.6);
+  if (sec.name === 'pre' && bar < 15 && s % 4 === 0) {
+    const dir = norm([R.WL[0] - R.EL[0], R.WL[1] - R.EL[1]]);
+    emit(R.WL[0], R.WL[1], dir[0] * 950, dir[1] * 950 + 200, 6, acc, 0.35);
+  }
+  if (sec.name === 'verse' && bar >= 8 && d.snare) { const v = vel('WR'); emit(R.WR[0], R.WR[1], v[0] * 0.4, v[1] * 0.4, 3, acc, 0.5); }
+  if (d.tom) { emit(R.WL[0], R.WL[1], -300, -300, 3, acc, 0.6); emit(R.WR[0], R.WR[1], 300, -300, 3, acc, 0.6); }
+}
+function camUpdate(t, dt) {
+  const bar = t / BAR, big = t >= 0 && bar >= 16 && bar < 28 ? 1 : 0, fin = t >= 0 && bar >= 28 ? smooth((t - SONG_END) / 2.5) : 0;
+  CAM.kick *= Math.exp(-dt * 9); CAM.shake *= Math.exp(-dt * 5); FLASH *= Math.exp(-dt * 7);
+  CAM.base = lerp(CAM.base || 1, 1 + 0.06 * big + 0.07 * fin, 1 - Math.exp(-dt * 4));
+  CAM.zoom = CAM.base + (REDUCED ? 0 : CAM.kick * 0.016);
+  CAM.x = lerp(CAM.x, R.P[0] * 0.25, 1 - Math.exp(-dt * 3));
+  return camMatrix();
+}
+function drawHalo(g, amt, acc) {
+  if (amt <= 0.01) return;
+  const c = acc[3].c, rg = g.createRadialGradient(0, -330, 30, 0, -330, 480);
+  rg.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${0.16 * amt})`); rg.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
+  g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = rg; g.fillRect(-520, -860, 1040, 900); g.restore();
+}
+function render(t, b, m, now) {
+  const g = G, sc = sceneColors(t), lv = levels(t);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  if (t >= 0) runJobs(t);
+  g.drawImage(BG.cv, 0, 0);
+  // the dancer is painted on its own layer so it can cast shadows
+  const fg = FIG.g;
+  fg.setTransform(1, 0, 0, 1, 0, 0); fg.clearRect(0, 0, FIG.cv.width, FIG.cv.height);
+  fg.setTransform(FK, 0, 0, FK, -FR.x * FK, -FR.y * FK);
+  drawFigure(fg, R, LOOK);
+  const sg = SIL.g;
+  sg.setTransform(1, 0, 0, 1, 0, 0); sg.globalAlpha = 1;
+  sg.globalCompositeOperation = 'copy'; sg.drawImage(FIG.cv, 0, 0);
+  sg.globalCompositeOperation = 'source-in'; sg.fillStyle = '#0b0720'; sg.fillRect(0, 0, SIL.cv.width, SIL.cv.height);
+  sg.globalCompositeOperation = 'source-over';
+
+  applyCam(g, m);
+  drawHalo(g, lv.halo, sc.acc);
+  drawSunburst(g, b, lv.sun, sc.acc);
+  drawWallShadow(g, b, lv.shadow, R.P[0]);
+  drawFloor(g, sc.floor, sc.acc);
+  drawBeams(g, b, lv.beams, sc.acc, R.P[0]);
+  drawShadows(g, b, lv.shadow, R.P[0]);
+  if (lv.echo > 0.01) {
+    const e2 = histAt(0.2), e1 = histAt(0.1);
+    if (e2) drawEcho(g, e2, sc.acc[2], 0.32 * lv.echo);
+    if (e1) drawEcho(g, e1, sc.acc[1], 0.42 * lv.echo);
+  }
+  g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  g.drawImage(FIG.cv, FR.x, FR.y, FR.w, FR.h);
+  drawParts(g);
+
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  drawOverlays(g, t);
+  if (state === 'ready') drawTitle(g, 1, now);
+  else if (t < 1.4) drawTitle(g, 1 - smooth(t / 1.4), now);
+  if (state === 'paused') drawFooterNote(g, 1, 'PAUSED  ·  TAP TO CARRY ON', 'pause');
+  if (state === 'done' || t > SONG_END + 1.8) drawFooterNote(g, smooth((t - SONG_END - 1.8) / 1.2), 'TAP TO DANCE AGAIN');
+}
+function frame(now) {
+  requestAnimationFrame(frame);
+  let dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+  BOIL = Math.floor(now / (REDUCED ? 400 : 100));
+  MR = [2.4 + Math.sin(BOIL * 1.7) * 0.7, -1.8 + Math.cos(BOIL * 1.3) * 0.5];
+  if (state === 'paused') dt = 0;
+  clock += dt;
+  let t = -1, b, p;
+  if (state === 'ready') { b = clock / SPB; p = MOVES.idle(b); LOOK.reveal = 0; }
+  else {
+    if (state === 'playing') schedule();
+    t = songTime(); b = Math.max(0, t / SPB);
+    p = poseAt(b);
+    LOOK.reveal = clamp(t / (BAR * 1.6), 0, 1);
+    const si = Math.min(TOTAL_STEPS - 1, Math.floor(t / STEP));
+    if (si - stepSeen > 24) stepSeen = si - 1;          // returning from a hidden tab: skip the backlog
+    while (stepSeen < si) { stepSeen++; onStep(stepSeen); }
+    if (state === 'playing' && t > TOTAL) { state = 'done'; btn.setAttribute('aria-label', 'Play the dance again'); }
+  }
+  const mt = t >= 0 ? mouthTarget(t) : 0;
+  LOOK.mouth = lerp(LOOK.mouth, Math.max(mt, p.mouth), 1 - Math.exp(-dt * 30));
+  if (clock > BL.next) { BL.until = clock + 0.12; BL.next = clock + 2.2 + Math.random() * 2.6; }
+  LOOK.blink = clock < BL.until;
+  R = solveRig(p);
+  stepPhysics(R, dt);
+  if (dt > 0) { HIST.push({ time: clock, R }); if (HIST.length > 40) HIST.shift(); }
+  const m = camUpdate(t, dt);
+  stepParts(dt, m);
+  render(t, b, m, now);
+}
+function mouthTarget(t) {
+  for (const n of LEAD) if (t >= n.t && t < n.t + n.d * 0.92) return 0.35 + 0.65 * Math.exp(-(t - n.t) * 4);
+  return 0;
+}
+function start() {
+  if (!A.ctx) initAudio();
+  A.ctx.resume();
+  SCHED.t0 = A.ctx.currentTime + 0.15; SCHED.next = 0; stepSeen = -1;
+  resetBackground(SECTIONS[0]);
+  PARTS.length = 0; FLOOR_SPLATS.length = 0;
+  state = 'playing'; btn.setAttribute('aria-label', 'Pause the dance');
+}
+btn.addEventListener('click', () => {
+  if (state === 'ready' || state === 'done') start();
+  else if (state === 'playing') { A.ctx.suspend(); state = 'paused'; btn.setAttribute('aria-label', 'Resume the dance'); }
+  else if (state === 'paused') { A.ctx.resume(); state = 'playing'; btn.setAttribute('aria-label', 'Pause the dance'); }
+});
+window.addEventListener('keydown', e => {
+  if ((e.code === 'Space' || e.key === 'Enter') && document.activeElement !== btn) { e.preventDefault(); btn.click(); }
+});
+setInterval(() => { if (state === 'playing') schedule(); }, 25);
+function resize() {
+  let snap = null;
+  if (BG.cv.width && state !== 'ready') {
+    snap = document.createElement('canvas'); snap.width = BG.cv.width; snap.height = BG.cv.height;
+    snap.getContext('2d').drawImage(BG.cv, 0, 0);
+  }
+  W = Math.max(1, window.innerWidth); H = Math.max(1, window.innerHeight);
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  if (W * H * DPR * DPR > 5.2e6) DPR = Math.sqrt(5.2e6 / (W * H));
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  S = Math.min(H / 980, W / 730); GY = H - Math.max(H * 0.15, 64);
+  FK = Math.min(S * DPR * 1.12, Math.sqrt(4e6 / (FR.w * FR.h)));
+  FIG.cv.width = SIL.cv.width = Math.round(FR.w * FK); FIG.cv.height = SIL.cv.height = Math.round(FR.h * FK);
+  BG.cv.width = cv.width; BG.cv.height = cv.height;
+  if (snap) { BG.g.setTransform(1, 0, 0, 1, 0, 0); BG.g.drawImage(snap, 0, 0, BG.cv.width, BG.cv.height); }
+  else resetBackground(SECTIONS[0]);
+  grainPat = null;
+}
+window.addEventListener('resize', resize);
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
