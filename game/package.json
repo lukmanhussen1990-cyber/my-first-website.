@@ -1,0 +1,19 @@
+{
+  "name": "changban-musou",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zhao Yun: Changban Musou - a voxel musou action game (web + Android APK)",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs --watch",
+    "smoke": "node tests/smoke.mjs"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}

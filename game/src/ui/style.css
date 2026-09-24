@@ -1,0 +1,5 @@
+/* Global styles. Owner: UI agent. */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #000; touch-action: none;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+#game { position: fixed; inset: 0; display: block; width: 100%; height: 100%; }
+#ui { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
