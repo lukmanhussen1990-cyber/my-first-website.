@@ -1,0 +1,16 @@
+{
+  "name": "arcane-arsenal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Magic weapons + realistic torch light add-on for Minecraft Bedrock 1.21 (mobile friendly)",
+  "type": "module",
+  "scripts": {
+    "build": "python3 tools/build.py",
+    "test": "node --import ./test/register.mjs ./test/run-tests.mjs && node --import ./test/register.mjs ./test/reload-test.mjs && MOCK_FLATTENED_LIGHTS=1 node --import ./test/register.mjs ./test/flattened-test.mjs && node ./test/validate-packs.mjs",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@minecraft/server": "1.10.0",
+    "typescript": "^5.5.0"
+  }
+}

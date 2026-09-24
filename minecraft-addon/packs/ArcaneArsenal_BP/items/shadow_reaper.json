@@ -1,0 +1,58 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "arcane:shadow_reaper",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "arcane_shadow_reaper"
+      },
+      "minecraft:display_name": {
+        "value": "item.arcane:shadow_reaper.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:damage": 11,
+      "minecraft:enchantable": {
+        "slot": "sword",
+        "value": 22
+      },
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:cooldown": {
+        "category": "arcane:shadow_reaper",
+        "duration": 5
+      },
+      "minecraft:interact_button": "Shadow Dash",
+      "minecraft:glint": true,
+      "minecraft:tags": {
+        "tags": [
+          "arcane:weapon",
+          "arcane:tier_2"
+        ]
+      },
+      "minecraft:durability": {
+        "max_durability": 3200
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "minecraft:netherite_ingot"
+            ],
+            "repair_amount": 800
+          },
+          {
+            "items": [
+              "arcane:shadow_reaper"
+            ],
+            "repair_amount": "context.other->query.remaining_durability + 0.12 * context.other->query.max_durability"
+          }
+        ]
+      }
+    }
+  }
+}

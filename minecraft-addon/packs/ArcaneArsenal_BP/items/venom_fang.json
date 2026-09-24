@@ -1,0 +1,58 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "arcane:venom_fang",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "arcane_venom_fang"
+      },
+      "minecraft:display_name": {
+        "value": "item.arcane:venom_fang.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:damage": 6,
+      "minecraft:enchantable": {
+        "slot": "sword",
+        "value": 18
+      },
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:cooldown": {
+        "category": "arcane:venom_fang",
+        "duration": 8
+      },
+      "minecraft:interact_button": "Toxic Cloud",
+      "minecraft:glint": false,
+      "minecraft:tags": {
+        "tags": [
+          "arcane:weapon",
+          "arcane:tier_1"
+        ]
+      },
+      "minecraft:durability": {
+        "max_durability": 1600
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "minecraft:diamond"
+            ],
+            "repair_amount": 400
+          },
+          {
+            "items": [
+              "arcane:venom_fang"
+            ],
+            "repair_amount": "context.other->query.remaining_durability + 0.12 * context.other->query.max_durability"
+          }
+        ]
+      }
+    }
+  }
+}

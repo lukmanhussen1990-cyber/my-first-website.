@@ -1,0 +1,37 @@
+{
+  "format_version": "1.12",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "arcane:arcane_staff"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " A ",
+      "FDI",
+      " B "
+    ],
+    "key": {
+      "A": {
+        "item": "minecraft:amethyst_block"
+      },
+      "F": {
+        "item": "arcane:frostbite_blade"
+      },
+      "D": {
+        "item": "minecraft:diamond_block"
+      },
+      "I": {
+        "item": "arcane:inferno_sword"
+      },
+      "B": {
+        "item": "minecraft:blaze_rod"
+      }
+    },
+    "result": {
+      "item": "arcane:arcane_staff",
+      "count": 1
+    }
+  }
+}

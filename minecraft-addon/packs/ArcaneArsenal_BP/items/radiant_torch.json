@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "arcane:radiant_torch",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "arcane_radiant_torch"
+      },
+      "minecraft:display_name": {
+        "value": "item.arcane:radiant_torch.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:allow_off_hand": true,
+      "minecraft:cooldown": {
+        "category": "arcane:radiant_torch",
+        "duration": 0.4
+      },
+      "minecraft:interact_button": "Toggle Beam",
+      "minecraft:tags": {
+        "tags": [
+          "arcane:light_source"
+        ]
+      }
+    }
+  }
+}

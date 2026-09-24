@@ -1,0 +1,31 @@
+{
+  "format_version": "1.12",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "arcane:venom_fang"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " E ",
+      "FSF",
+      " E "
+    ],
+    "key": {
+      "E": {
+        "item": "minecraft:spider_eye"
+      },
+      "F": {
+        "item": "minecraft:fermented_spider_eye"
+      },
+      "S": {
+        "item": "minecraft:iron_sword"
+      }
+    },
+    "result": {
+      "item": "arcane:venom_fang",
+      "count": 1
+    }
+  }
+}
