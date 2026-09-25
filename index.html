@@ -1,0 +1,2422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04060a">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="AI Vision — real-time object recognition in your browser with TensorFlow.js and COCO-SSD. Private by design: video never leaves your device.">
+<title>AI Vision — Real-Time Object Recognition</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2304060a'/%3E%3Cpath d='M6 12V7a1 1 0 0 1 1-1h5M20 6h5a1 1 0 0 1 1 1v5M26 20v5a1 1 0 0 1-1 1h-5M12 26H7a1 1 0 0 1-1-1v-5' stroke='%233ee6ff' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%233ee6ff'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #04060a;
+    --glass: rgba(13, 19, 28, 0.62);
+    --glass-strong: rgba(9, 14, 21, 0.9);
+    --line: rgba(140, 200, 255, 0.11);
+    --line-strong: rgba(150, 210, 255, 0.22);
+    --text: #e7f0fb;
+    --text-2: #a7b6c9;
+    --muted: #6c7d92;
+    --accent: #3ee6ff;
+    --accent-rgb: 62, 230, 255;
+    --ok: #3cf5a4;
+    --ok-rgb: 60, 245, 164;
+    --warn: #ffc65c;
+    --danger: #ff5a76;
+    --danger-rgb: 255, 90, 118;
+    --radius: 16px;
+    --font: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
+    --vh: 100vh;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --pad: clamp(14px, 2.4vw, 28px);
+    --gap: 18px;
+    --header-h: 76px;
+    --controls-h: 52px;
+    --stage-max-h: max(320px, calc(var(--vh) - var(--safe-top) - var(--header-h) - var(--controls-h) - var(--gap) * 2 - 22px));
+  }
+  @supports (height: 100svh) { :root { --vh: 100svh; } }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  html, body { margin: 0; }
+  body {
+    min-height: var(--vh);
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(1100px 620px at 8% -12%, rgba(62, 230, 255, 0.075), transparent 60%),
+      radial-gradient(900px 640px at 108% 112%, rgba(139, 123, 255, 0.075), transparent 60%);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(140, 200, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(140, 200, 255, 0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 20%, transparent 75%);
+            mask-image: radial-gradient(ellipse at 50% 30%, #000 20%, transparent 75%);
+  }
+  button, input, select { font: inherit; color: inherit; }
+  svg { display: block; }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1520px;
+    margin: 0 auto;
+    padding: 0 max(var(--pad), env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) max(var(--pad), env(safe-area-inset-left));
+  }
+
+  /* ---------- Header ---------- */
+  .topbar {
+    height: var(--header-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: var(--safe-top);
+    box-sizing: content-box;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .brand-mark {
+    width: 38px; height: 38px; flex: none;
+    border-radius: 11px;
+    display: grid; place-items: center;
+    background: linear-gradient(160deg, rgba(var(--accent-rgb), 0.16), rgba(var(--accent-rgb), 0.03));
+    border: 1px solid rgba(var(--accent-rgb), 0.35);
+    box-shadow: 0 0 24px -6px rgba(var(--accent-rgb), 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    color: var(--accent);
+  }
+  .brand-mark svg { width: 22px; height: 22px; }
+  .brand-text { min-width: 0; }
+  .brand h1 {
+    margin: 0;
+    font-size: 19px;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: 0.34em;
+    color: #f3f9ff;
+    text-shadow: 0 0 22px rgba(var(--accent-rgb), 0.35);
+  }
+  .brand .subtitle {
+    margin: 4px 0 0;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--text-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .status-pill {
+    --c: var(--text-2);
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    flex: none;
+    padding: 9px 14px 9px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: rgba(8, 13, 20, 0.65);
+    -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+    color: var(--c);
+    font: 600 11.5px/1 var(--mono);
+    letter-spacing: 0.16em;
+    white-space: nowrap;
+    transition: color .35s, border-color .35s, box-shadow .35s;
+  }
+  .status-pill .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 10px currentColor;
+  }
+  .status-pill[data-state="online"] {
+    --c: var(--ok);
+    border-color: rgba(var(--ok-rgb), 0.42);
+    box-shadow: 0 0 26px -8px rgba(var(--ok-rgb), 0.7), inset 0 0 12px -6px rgba(var(--ok-rgb), 0.5);
+  }
+  .status-pill[data-state="online"] .dot { animation: pulse 2s ease-in-out infinite; }
+  .status-pill[data-state="busy"] { --c: var(--warn); border-color: rgba(255, 198, 92, 0.32); }
+  .status-pill[data-state="busy"] .dot { animation: blink 1s ease-in-out infinite; }
+  .status-pill[data-state="standby"] .dot { box-shadow: none; opacity: .7; }
+  .status-pill[data-state="error"] { --c: var(--danger); border-color: rgba(var(--danger-rgb), 0.4); }
+
+  /* ---------- Layout ---------- */
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-areas: "view panel" "controls panel";
+    grid-template-rows: auto 1fr;
+    gap: var(--gap);
+    align-items: start;
+  }
+  .viewport { grid-area: view; display: flex; justify-content: center; min-width: 0; }
+
+  /* ---------- Camera stage ---------- */
+  .stage {
+    --ar: 1.7778;
+    position: relative;
+    width: min(100%, calc(var(--stage-max-h) * var(--ar)));
+    aspect-ratio: var(--ar);
+    border-radius: 20px;
+    overflow: hidden;
+    isolation: isolate;
+    background:
+      radial-gradient(circle at 50% 42%, #0b1421 0%, #05080d 72%);
+    border: 1px solid var(--line-strong);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 30px 80px -34px rgba(0, 0, 0, 0.9),
+      0 0 70px -34px rgba(var(--accent-rgb), 0.35);
+    -webkit-user-select: none;
+            user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    container: stage / inline-size;
+    transition: box-shadow .5s;
+  }
+  .stage.is-live {
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 30px 80px -34px rgba(0, 0, 0, 0.9),
+      0 0 90px -30px rgba(var(--accent-rgb), 0.45);
+  }
+  .stage video,
+  .stage canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .stage video {
+    z-index: 0;
+    object-fit: cover;
+    object-position: 50% 50%;
+    background: #000;
+    opacity: 0;
+    transition: opacity .45s ease, filter .35s ease;
+  }
+  .stage video.mirrored { transform: scaleX(-1); }
+  .stage.is-live video { opacity: 1; }
+  .stage.is-switching video { filter: blur(10px) brightness(0.55) saturate(0.6); }
+  .stage canvas { z-index: 5; pointer-events: none; }
+
+  .hud-grid {
+    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(var(--accent-rgb), 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(var(--accent-rgb), 0.045) 1px, transparent 1px);
+    background-size: 64px 64px;
+    background-position: center center;
+    box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.6);
+    opacity: .9;
+  }
+  .stage.is-live .hud-grid { opacity: .45; }
+  .hud-cross {
+    position: absolute; left: 50%; top: 50%; z-index: 1;
+    width: 34px; height: 34px; margin: -17px 0 0 -17px;
+    pointer-events: none; opacity: 0; transition: opacity .5s;
+  }
+  .hud-cross::before, .hud-cross::after {
+    content: ""; position: absolute; background: rgba(var(--accent-rgb), 0.45);
+  }
+  .hud-cross::before { left: 50%; top: 0; bottom: 0; width: 1px; }
+  .hud-cross::after { top: 50%; left: 0; right: 0; height: 1px; }
+  .stage.is-live .hud-cross { opacity: .55; }
+
+  .scan {
+    position: absolute; inset: 0; z-index: 2;
+    overflow: hidden; pointer-events: none;
+    opacity: 0; transition: opacity .6s;
+  }
+  .stage.is-live .scan { opacity: 1; }
+  .scan::before {
+    content: "";
+    position: absolute; left: 0; right: 0; top: 0;
+    height: 28%;
+    background: linear-gradient(180deg, transparent 0%, rgba(var(--accent-rgb), 0.035) 65%, rgba(var(--accent-rgb), 0.13) 100%);
+    border-bottom: 1px solid rgba(var(--accent-rgb), 0.5);
+    box-shadow: 0 8px 26px -6px rgba(var(--accent-rgb), 0.3);
+    transform: translateY(-100%);
+    animation: scan 4.6s cubic-bezier(.45, .05, .55, .95) infinite;
+  }
+
+  .corner {
+    position: absolute; z-index: 4;
+    width: 24px; height: 24px;
+    pointer-events: none;
+    border: 0 solid rgba(var(--accent-rgb), 0.8);
+    filter: drop-shadow(0 0 6px rgba(var(--accent-rgb), 0.55));
+  }
+  .corner.tl { top: 11px; left: 11px; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: 7px; }
+  .corner.tr { top: 11px; right: 11px; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 7px; }
+  .corner.bl { bottom: 11px; left: 11px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-left-radius: 7px; }
+  .corner.br { bottom: 11px; right: 11px; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 7px; }
+
+  .hud {
+    position: absolute; z-index: 4;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    background: rgba(3, 7, 12, 0.46);
+    border: 1px solid rgba(140, 200, 255, 0.1);
+    -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+    color: rgba(218, 236, 255, 0.82);
+    font: 500 10.5px/1 var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .45s;
+  }
+  .stage.is-live .hud { opacity: 1; }
+  .hud-tl { top: 16px; left: 44px; }
+  .hud-tr { top: 16px; right: 44px; }
+  .hud-bl { bottom: 16px; left: 44px; }
+  .hud-br { bottom: 16px; right: 44px; }
+  .hud .sep { opacity: .4; }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ok); box-shadow: 0 0 8px var(--ok);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  @container stage (max-width: 520px) { .hud-bl { display: none; } }
+  @container stage (max-width: 380px) { .hud-tr { display: none; } }
+  @container stage (max-width: 280px) { .hud { display: none; } }
+
+  .model-chip {
+    position: absolute; z-index: 6;
+    left: 50%; top: 50%;
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 11px 16px;
+    border-radius: 999px;
+    background: rgba(5, 9, 15, 0.78);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+    box-shadow: 0 0 30px -10px rgba(var(--accent-rgb), 0.6);
+    font: 600 12px/1 var(--mono);
+    letter-spacing: 0.08em;
+    color: #dff9ff;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px));
+    transition: opacity .35s, transform .35s;
+  }
+  .model-chip.show { opacity: 1; transform: translate(-50%, -50%); }
+  .model-chip[data-state="ready"] { border-color: rgba(var(--ok-rgb), 0.45); color: #dcffef; box-shadow: 0 0 30px -10px rgba(var(--ok-rgb), 0.7); }
+  .model-chip[data-state="ready"] .spinner { display: none; }
+  .model-chip .ok-icon { display: none; color: var(--ok); }
+  .model-chip[data-state="ready"] .ok-icon { display: block; }
+
+  .spinner {
+    width: 13px; height: 13px; flex: none;
+    border-radius: 50%;
+    border: 2px solid rgba(var(--accent-rgb), 0.22);
+    border-top-color: var(--accent);
+    animation: spin .8s linear infinite;
+  }
+
+  /* Idle + error overlays */
+  .idle, .error {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    padding: 24px;
+    text-align: center;
+  }
+  .idle {
+    z-index: 7;
+    background: radial-gradient(ellipse at center, rgba(6, 11, 18, 0.15) 0%, rgba(3, 5, 9, 0.7) 100%);
+    transition: opacity .5s ease, visibility .5s;
+  }
+  .stage.is-live .idle,
+  .stage.has-error .idle { opacity: 0; visibility: hidden; }
+  .idle-card { max-width: 360px; display: flex; flex-direction: column; align-items: center; }
+  .reticle { width: 84px; height: 84px; color: var(--accent); position: relative; }
+  .reticle svg { width: 100%; height: 100%; }
+  .reticle .ring { transform-origin: 50% 50%; animation: spin 14s linear infinite; }
+  .stage.is-starting .reticle .ring { animation-duration: 1.6s; }
+  .idle h2, .error h2 {
+    margin: 16px 0 8px;
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #eef6ff;
+  }
+  .idle p, .error p { margin: 0 0 18px; color: var(--text-2); font-size: 14px; line-height: 1.55; max-width: 330px; }
+  .model-line {
+    display: inline-flex; align-items: center; gap: 9px;
+    margin-top: 18px;
+    font: 500 12px/1.2 var(--mono);
+    letter-spacing: 0.05em;
+    color: var(--text-2);
+  }
+  .model-line[data-state="ready"] { color: var(--ok); }
+  .model-line[data-state="error"] { color: var(--danger); }
+  .model-line svg { width: 15px; height: 15px; flex: none; }
+  .link-btn {
+    background: none; border: 0; padding: 4px 2px; cursor: pointer;
+    color: var(--accent); text-decoration: underline; text-underline-offset: 3px;
+    font: inherit; letter-spacing: inherit;
+  }
+
+  .error {
+    z-index: 8;
+    background: rgba(3, 5, 9, 0.8);
+    -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+    animation: fadeIn .3s ease;
+  }
+  .error-card {
+    max-width: 420px;
+    padding: 26px 24px 22px;
+    border-radius: 18px;
+    background: rgba(11, 15, 22, 0.96);
+    border: 1px solid rgba(var(--danger-rgb), 0.32);
+    box-shadow: 0 0 60px -24px rgba(var(--danger-rgb), 0.55);
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .error-icon {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: grid; place-items: center;
+    color: var(--danger);
+    background: rgba(var(--danger-rgb), 0.1);
+    border: 1px solid rgba(var(--danger-rgb), 0.4);
+    box-shadow: 0 0 24px -6px rgba(var(--danger-rgb), 0.7);
+  }
+  .error-icon svg { width: 22px; height: 22px; }
+  .error h2 { margin-top: 14px; font-size: 14px; letter-spacing: 0.1em; line-height: 1.4; }
+  .error p { margin-bottom: 20px; }
+  .error-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  .flash { position: absolute; inset: 0; z-index: 9; background: #fff; opacity: 0; pointer-events: none; }
+  .flash.go { animation: flash .5s ease-out; }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    -webkit-appearance: none; appearance: none;
+    position: relative;
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    min-height: 46px;
+    padding: 0 16px;
+    border-radius: 12px;
+    border: 1px solid var(--line-strong);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015));
+    color: var(--text);
+    font: 600 12px/1 var(--font);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+            user-select: none;
+    transition: background .2s, border-color .2s, box-shadow .2s, transform .12s, opacity .2s, color .2s;
+  }
+  .btn svg { width: 18px; height: 18px; flex: none; }
+  .btn > span { overflow: hidden; text-overflow: ellipsis; }
+  .btn:hover:not(:disabled) {
+    border-color: rgba(var(--accent-rgb), 0.45);
+    box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.12), 0 0 26px -8px rgba(var(--accent-rgb), 0.55);
+  }
+  .btn:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn:disabled { opacity: 0.36; cursor: not-allowed; }
+  .btn-primary {
+    color: #e3fbff;
+    border-color: rgba(var(--accent-rgb), 0.55);
+    background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.24), rgba(var(--accent-rgb), 0.09));
+    box-shadow: 0 0 26px -10px rgba(var(--accent-rgb), 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  .btn-primary:hover:not(:disabled) { background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.32), rgba(var(--accent-rgb), 0.12)); }
+  .btn-danger:hover:not(:disabled) {
+    color: #ffe3e8;
+    border-color: rgba(var(--danger-rgb), 0.55);
+    box-shadow: 0 0 0 1px rgba(var(--danger-rgb), 0.12), 0 0 26px -8px rgba(var(--danger-rgb), 0.6);
+  }
+  .btn-ghost { background: transparent; }
+  .btn-lg { min-height: 52px; padding: 0 26px; font-size: 12.5px; }
+
+  .controls {
+    grid-area: controls;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .controls .btn { min-height: var(--controls-h); width: 100%; padding: 0 12px; }
+
+  /* ---------- Side panel ---------- */
+  .panel { grid-area: panel; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .card {
+    position: relative;
+    padding: 18px;
+    border-radius: var(--radius);
+    background: var(--glass);
+    border: 1px solid var(--line);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+            backdrop-filter: blur(16px) saturate(140%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 24px 50px -34px rgba(0, 0, 0, 0.9);
+    min-width: 0;
+  }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  .card h2 {
+    margin: 0;
+    font: 650 11.5px/1 var(--font);
+    letter-spacing: 0.24em;
+    color: var(--text-2);
+  }
+  .tag {
+    font: 600 9.5px/1 var(--mono);
+    letter-spacing: 0.16em;
+    padding: 5px 7px;
+    border-radius: 6px;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    transition: color .3s, border-color .3s;
+  }
+  .tag.live { color: var(--ok); border-color: rgba(var(--ok-rgb), 0.35); }
+
+  .stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .stat {
+    flex: 1 1 auto;
+    padding: 9px 10px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid var(--line);
+    font: 500 11px/1.2 var(--mono);
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .stat b { color: var(--text); font-weight: 600; font-size: 13px; }
+
+  .det-list {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-direction: column; gap: 7px;
+    max-height: 316px; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: rgba(140, 200, 255, 0.2) transparent;
+  }
+  .det-row {
+    --c: var(--accent);
+    display: grid;
+    grid-template-columns: 8px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 11px; row-gap: 8px;
+    padding: 10px 12px 11px;
+    border-radius: 11px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 7%, transparent), rgba(255, 255, 255, 0.015));
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--line);
+    animation: rowIn .28s ease both;
+  }
+  .det-swatch { width: 8px; height: 8px; border-radius: 2px; background: var(--c); box-shadow: 0 0 10px var(--c); }
+  .det-name { font-weight: 560; font-size: 14px; color: #eef5ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .det-count {
+    margin-left: 7px;
+    font: 600 10.5px/1 var(--mono);
+    padding: 3px 5px;
+    border-radius: 5px;
+    color: var(--c);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    vertical-align: 1px;
+  }
+  .det-score { font: 600 13px/1 var(--mono); color: var(--c); font-variant-numeric: tabular-nums; }
+  .det-bar { grid-column: 1 / -1; height: 3px; border-radius: 3px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
+  .det-bar i { display: block; height: 100%; width: 0; background: var(--c); box-shadow: 0 0 8px var(--c); border-radius: inherit; transition: width .3s ease; }
+  .det-empty {
+    margin: 0;
+    padding: 22px 12px;
+    border-radius: 11px;
+    border: 1px dashed var(--line-strong);
+    text-align: center;
+    color: var(--muted);
+    font: 500 12px/1.4 var(--mono);
+    letter-spacing: 0.04em;
+  }
+
+  .field { margin: 0; padding: 0; border: 0; min-width: 0; }
+  .field + .field { margin-top: 20px; }
+  .field-label {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 8px;
+    padding: 0;
+    width: 100%;
+    font-size: 13px; font-weight: 550; color: var(--text);
+  }
+  .field-label output { font: 600 13px/1 var(--mono); color: var(--accent); }
+
+  input[type="range"] {
+    --pct: 42.857%;
+    -webkit-appearance: none; appearance: none;
+    display: block;
+    width: 100%; height: 28px; margin: 0;
+    background: transparent;
+    cursor: pointer;
+    touch-action: pan-y;
+  }
+  input[type="range"]:focus { outline: none; }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px; border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent) 0 var(--pct), rgba(255, 255, 255, 0.1) var(--pct) 100%);
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 20px; height: 20px; margin-top: -8px;
+    border-radius: 50%;
+    background: #06090f;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.14), 0 0 14px rgba(var(--accent-rgb), 0.6);
+    transition: box-shadow .2s;
+  }
+  input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(var(--accent-rgb), 0.3), 0 0 16px rgba(var(--accent-rgb), 0.8); }
+  input[type="range"]::-moz-range-track { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.1); }
+  input[type="range"]::-moz-range-progress { height: 4px; border-radius: 4px; background: var(--accent); }
+  input[type="range"]::-moz-range-thumb {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: #06090f;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.14), 0 0 14px rgba(var(--accent-rgb), 0.6);
+  }
+  .range-scale { display: flex; justify-content: space-between; margin-top: 2px; font: 500 10.5px/1 var(--mono); color: var(--muted); }
+
+  .segmented {
+    position: relative;
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px; padding: 4px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--line);
+  }
+  .segmented input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+  .segmented label {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 40px;
+    border-radius: 9px;
+    font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em;
+    color: var(--text-2);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background .2s, color .2s, box-shadow .2s;
+  }
+  .segmented label:hover { color: var(--text); }
+  .segmented input:checked + label {
+    color: #e3fbff;
+    background: rgba(var(--accent-rgb), 0.14);
+    box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.45), 0 0 18px -6px rgba(var(--accent-rgb), 0.7);
+  }
+  .segmented input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .hint { margin: 9px 0 0; font-size: 12px; color: var(--muted); }
+
+  .sys { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 9px 14px; font-size: 12.5px; }
+  .sys dt { color: var(--muted); font: 500 11px/1.5 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+  .sys dd { margin: 0; color: var(--text); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sys dd[data-state="ready"] { color: var(--ok); }
+  .sys dd[data-state="loading"] { color: var(--warn); }
+  .sys dd[data-state="error"] { color: var(--danger); }
+
+  .privacy {
+    display: flex; gap: 11px; align-items: flex-start;
+    margin: 0;
+    padding: 13px 14px;
+    border-radius: 13px;
+    background: rgba(var(--ok-rgb), 0.04);
+    border: 1px solid rgba(var(--ok-rgb), 0.16);
+    color: var(--text-2);
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  .privacy svg { width: 18px; height: 18px; flex: none; margin-top: 1px; color: var(--ok); }
+  .privacy strong { color: #dffff0; font-weight: 600; }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed; z-index: 90;
+    left: 50%; bottom: calc(22px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 32px);
+    padding: 11px 18px;
+    border-radius: 999px;
+    background: var(--glass-strong);
+    border: 1px solid var(--line-strong);
+    -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(14px);
+    box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.9);
+    color: var(--text);
+    font-size: 13px; font-weight: 500;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 14px);
+    transition: opacity .25s, transform .25s;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---------- Snapshot modal ---------- */
+  .modal { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; }
+  .modal-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(2, 4, 8, 0.74);
+    -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+    opacity: 0; transition: opacity .22s;
+  }
+  .modal-card {
+    position: relative;
+    width: min(940px, 100%);
+    max-height: calc(var(--vh) - 32px);
+    overflow: auto;
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 16px;
+    border-radius: 20px;
+    background: var(--glass-strong);
+    border: 1px solid var(--line-strong);
+    box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.95), 0 0 60px -30px rgba(var(--accent-rgb), 0.4);
+    opacity: 0; transform: translateY(14px) scale(0.985);
+    transition: opacity .22s, transform .22s;
+  }
+  .modal.open .modal-backdrop { opacity: 1; }
+  .modal.open .modal-card { opacity: 1; transform: none; }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .modal-head h2 { margin: 0; font: 650 12px/1 var(--font); letter-spacing: 0.24em; color: var(--text-2); }
+  .icon-btn {
+    width: 40px; height: 40px; flex: none;
+    display: grid; place-items: center;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-2);
+    cursor: pointer;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--line-strong); }
+  .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .icon-btn svg { width: 18px; height: 18px; }
+  .modal img {
+    display: block;
+    width: 100%; height: auto;
+    max-height: calc(var(--vh) - 220px);
+    object-fit: contain;
+    border-radius: 12px;
+    background: #000;
+    border: 1px solid var(--line);
+  }
+  .modal-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .modal-meta { margin: 0; font: 500 11.5px/1.4 var(--mono); color: var(--muted); letter-spacing: 0.04em; }
+  .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+
+  .sr-only {
+    position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  noscript p {
+    position: relative; z-index: 2; margin: 16px auto; max-width: 560px; padding: 14px 18px;
+    border-radius: 12px; border: 1px solid rgba(var(--danger-rgb), 0.4); color: #ffd9e0; text-align: center;
+  }
+
+  /* ---------- Animations ---------- */
+  @keyframes scan { from { transform: translateY(-100%); } to { transform: translateY(360%); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+  @keyframes flash { from { opacity: .6; } to { opacity: 0; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes rowIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scan::before, .reticle .ring, .live-dot, .status-pill .dot { animation: none !important; }
+    .scan::before { transform: translateY(160%); opacity: .5; }
+    *, *::before, *::after { transition-duration: .01ms !important; }
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1320px) {
+    .layout { grid-template-columns: minmax(0, 1fr) 316px; }
+  }
+
+  @media (max-width: 1100px) {
+    :root {
+      --header-h: 68px;
+      --stage-max-h: max(300px, calc(var(--vh) - var(--safe-top) - var(--header-h) - var(--controls-h) - var(--gap) * 2 - 18px));
+    }
+    .layout {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "view" "controls" "panel";
+    }
+    .panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+    .panel .detections { grid-row: span 2; }
+  }
+
+  @media (max-width: 720px) {
+    :root {
+      --gap: 12px;
+      --controls-h: 52px;
+      --stage-max-h: max(300px, calc(var(--vh) - var(--safe-top) - var(--safe-bottom) - var(--header-h) - var(--controls-h) * 2 - 10px - var(--gap) * 2 - 14px));
+    }
+    .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 640px) {
+    :root { --header-h: 60px; --pad: 12px; }
+    .brand { gap: 11px; }
+    .brand-mark { width: 34px; height: 34px; border-radius: 10px; }
+    .brand-mark svg { width: 20px; height: 20px; }
+    .brand h1 { font-size: 16px; letter-spacing: 0.28em; }
+    .brand .subtitle { font-size: 11px; letter-spacing: 0.02em; margin-top: 3px; }
+    .status-pill { padding: 8px 11px 8px 10px; font-size: 10.5px; letter-spacing: 0.12em; gap: 7px; }
+    .stage { border-radius: 16px; }
+    .corner { width: 20px; height: 20px; }
+    .corner.tl, .corner.tr { top: 9px; }
+    .corner.bl, .corner.br { bottom: 9px; }
+    .corner.tl, .corner.bl { left: 9px; }
+    .corner.tr, .corner.br { right: 9px; }
+    .hud { font-size: 9.5px; padding: 5px 7px; letter-spacing: 0.1em; gap: 6px; }
+    .hud-tl, .hud-bl { left: 36px; }
+    .hud-tr, .hud-br { right: 36px; }
+    .hud-tl, .hud-tr { top: 13px; }
+    .hud-bl, .hud-br { bottom: 13px; }
+    .controls .btn { font-size: 11.5px; letter-spacing: 0.1em; }
+    .panel { grid-template-columns: minmax(0, 1fr); }
+    .panel .detections { grid-row: auto; }
+    .card { padding: 16px; }
+    .det-list { max-height: none; }
+    .modal { padding: 10px; }
+    .modal-card { padding: 12px; border-radius: 16px; }
+    .modal-actions { width: 100%; }
+    .modal-actions .btn { flex: 1 1 0; }
+  }
+
+  /* Phones in portrait: let the camera fill most of the screen. */
+  @media (max-width: 640px) and (orientation: portrait) {
+    .stage:not([data-orient="landscape"]) { width: 100%; height: var(--stage-max-h); aspect-ratio: auto; }
+  }
+
+  @media (max-width: 380px) {
+    .brand .subtitle { max-width: 150px; }
+    .hud-bl { display: none; }
+  }
+
+  /* Phones in landscape: camera left, controls stacked on the right. */
+  @media (orientation: landscape) and (max-height: 540px) {
+    :root {
+      --header-h: 50px;
+      --gap: 12px;
+      --stage-max-h: max(220px, calc(var(--vh) - var(--safe-top) - var(--safe-bottom) - var(--header-h) - 18px));
+    }
+    .brand-mark { width: 30px; height: 30px; }
+    .brand-mark svg { width: 18px; height: 18px; }
+    .brand h1 { font-size: 15px; }
+    .brand .subtitle { font-size: 10.5px; margin-top: 2px; }
+    .layout {
+      grid-template-columns: minmax(0, 1fr) 180px;
+      grid-template-areas: "view controls" "panel panel";
+      align-items: stretch;
+    }
+    .viewport { align-items: flex-start; }
+    .controls { display: flex; flex-direction: column; max-height: var(--stage-max-h); }
+    .controls .btn { flex: 1 1 0; min-height: 44px; font-size: 11px; letter-spacing: 0.08em; padding: 0 10px; }
+    .panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .panel .detections { grid-row: span 2; }
+    .reticle { width: 56px; height: 56px; }
+    .idle h2 { margin-top: 10px; }
+    .idle p { margin-bottom: 12px; font-size: 13px; }
+    .model-line { margin-top: 12px; }
+  }
+</style>
+</head>
+<body>
+<noscript><p>AI Vision needs JavaScript enabled to access the camera and run the object-recognition model.</p></noscript>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/>
+          <circle cx="12" cy="12" r="3.2"/>
+          <path d="M12 6.5v1.6M12 15.9v1.6M6.5 12h1.6M15.9 12h1.6"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>AI VISION</h1>
+        <p class="subtitle">Real-Time Object Recognition</p>
+      </div>
+    </div>
+    <div class="status-pill" id="statusPill" data-state="busy" role="status" aria-live="polite">
+      <span class="dot" aria-hidden="true"></span><span id="statusText">INITIALIZING</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="viewport" aria-label="Live camera view">
+      <div class="stage" id="stage">
+        <video id="video" playsinline muted autoplay disablepictureinpicture></video>
+        <div class="hud-grid" aria-hidden="true"></div>
+        <div class="hud-cross" aria-hidden="true"></div>
+        <div class="scan" aria-hidden="true"></div>
+        <canvas id="overlay" aria-hidden="true"></canvas>
+
+        <span class="corner tl" aria-hidden="true"></span>
+        <span class="corner tr" aria-hidden="true"></span>
+        <span class="corner bl" aria-hidden="true"></span>
+        <span class="corner br" aria-hidden="true"></span>
+
+        <div class="hud hud-tl" aria-hidden="true"><span class="live-dot"></span><span>LIVE</span><span class="sep">/</span><span id="hudCam">CAMERA</span></div>
+        <div class="hud hud-tr" aria-hidden="true"><span id="hudRes">—</span></div>
+        <div class="hud hud-bl" aria-hidden="true"><span id="hudModel">COCO-SSD</span></div>
+        <div class="hud hud-br" aria-hidden="true"><span id="hudCount">0 OBJ</span><span class="sep">·</span><span id="hudFps">0 FPS</span></div>
+
+        <div class="model-chip" id="modelChip" data-state="loading" aria-hidden="true">
+          <span class="spinner"></span>
+          <svg class="ok-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          <span id="modelChipText">Loading AI vision model...</span>
+        </div>
+
+        <div class="idle" id="idle">
+          <div class="idle-card">
+            <div class="reticle" aria-hidden="true">
+              <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-linecap="round">
+                <g class="ring"><circle cx="48" cy="48" r="44" stroke-width="1.4" stroke-dasharray="3 7" opacity=".55"/></g>
+                <circle cx="48" cy="48" r="30" stroke-width="1.2" opacity=".35"/>
+                <path d="M26 36v-8a2 2 0 0 1 2-2h8M60 26h8a2 2 0 0 1 2 2v8M70 60v8a2 2 0 0 1-2 2h-8M36 70h-8a2 2 0 0 1-2-2v-8" stroke-width="2.4"/>
+                <circle cx="48" cy="48" r="4" fill="currentColor" stroke="none"/>
+              </svg>
+            </div>
+            <h2 id="idleTitle">Camera offline</h2>
+            <p id="idleText">Start the camera to begin real-time object recognition.</p>
+            <button class="btn btn-primary btn-lg" id="idleStart" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.6v6.8l5.6-3.4z" fill="currentColor"/></svg>
+              <span>Start Camera</span>
+            </button>
+            <div class="model-line" id="idleModel" data-state="loading" role="status" aria-live="polite">
+              <span class="spinner" aria-hidden="true"></span><span>Loading AI vision model...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="error" id="errorBox" role="alert" hidden>
+          <div class="error-card">
+            <div class="error-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5"/><path d="M12 16.5h.01"/><path d="M10.3 3.9 2.4 17.6A2 2 0 0 0 4.1 20.6h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+            </div>
+            <h2 id="errorTitle">Something went wrong</h2>
+            <p id="errorMsg"></p>
+            <div class="error-actions">
+              <button class="btn btn-primary" id="errorRetry" type="button">Try again</button>
+              <button class="btn btn-ghost" id="errorDismiss" type="button">Dismiss</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flash" id="flash" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <nav class="controls" aria-label="Camera controls">
+      <button class="btn btn-primary" id="btnStart" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.6v6.8l5.6-3.4z" fill="currentColor"/></svg>
+        <span id="btnStartLabel">START CAMERA</span>
+      </button>
+      <button class="btn btn-danger" id="btnStop" type="button" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>
+        <span>STOP CAMERA</span>
+      </button>
+      <button class="btn" id="btnSwitch" type="button" disabled title="Switch between front and rear cameras">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/><path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><circle cx="12" cy="12" r="3"/><path d="m18 22-3-3 3-3"/><path d="m6 2 3 3-3 3"/></svg>
+        <span>SWITCH CAMERA</span>
+      </button>
+      <button class="btn" id="btnSnap" type="button" disabled title="Capture the current frame with detections">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="m14.3 8 4.9 8.5"/><path d="M9.7 8h9.8"/><path d="m7.4 12 4.9-8.5"/><path d="M9.7 16 4.8 7.5"/><path d="M14.3 16H4.5"/><path d="m16.6 12-4.9 8.5"/></svg>
+        <span>SNAPSHOT</span>
+      </button>
+    </nav>
+
+    <aside class="panel" aria-label="Detection panel">
+      <section class="card detections" aria-labelledby="detTitle">
+        <div class="card-head">
+          <h2 id="detTitle">OBJECTS DETECTED</h2>
+          <span class="tag" id="detTag">OFFLINE</span>
+        </div>
+        <div class="stats">
+          <div class="stat">Objects: <b id="statObjects">0</b></div>
+          <div class="stat">FPS: <b id="statFps">0</b></div>
+          <div class="stat" title="Average inference time"><b id="statLatency">—</b> ms</div>
+        </div>
+        <ul class="det-list" id="detList" aria-label="Currently detected objects"></ul>
+        <p class="det-empty" id="detEmpty">Camera offline</p>
+      </section>
+
+      <section class="card settings" aria-labelledby="setTitle">
+        <div class="card-head"><h2 id="setTitle">SETTINGS</h2></div>
+        <div class="field">
+          <label class="field-label" for="threshold">Confidence Threshold <output id="thresholdOut" for="threshold">50%</output></label>
+          <input type="range" id="threshold" min="20" max="90" step="1" value="50" aria-describedby="thresholdHint">
+          <div class="range-scale" aria-hidden="true"><span>20%</span><span>90%</span></div>
+          <p class="hint" id="thresholdHint">Only detections scoring above this level are shown.</p>
+        </div>
+        <fieldset class="field">
+          <legend class="field-label">Detection Speed</legend>
+          <div class="segmented">
+            <input type="radio" name="speed" id="speedFast" value="fast"><label for="speedFast">Fast</label>
+            <input type="radio" name="speed" id="speedBalanced" value="balanced" checked><label for="speedBalanced">Balanced</label>
+            <input type="radio" name="speed" id="speedAccurate" value="accurate"><label for="speedAccurate">Accurate</label>
+          </div>
+          <p class="hint" id="speedHint"></p>
+        </fieldset>
+      </section>
+
+      <section class="card system" aria-labelledby="sysTitle">
+        <div class="card-head"><h2 id="sysTitle">SYSTEM</h2></div>
+        <dl class="sys">
+          <dt>Status</dt><dd id="sysStatus" data-state="loading">Loading AI vision model...</dd>
+          <dt>Model</dt><dd>COCO-SSD · MobileNet v2 Lite</dd>
+          <dt>Classes</dt><dd>80 everyday objects</dd>
+          <dt>Backend</dt><dd id="sysBackend">—</dd>
+          <dt>Camera</dt><dd id="sysCamera">Off</dd>
+        </dl>
+      </section>
+
+      <p class="privacy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        <span><strong>Private by design</strong> — camera analysis happens locally in your browser. Video is not uploaded.</span>
+      </p>
+    </aside>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="modal" id="snapModal" role="dialog" aria-modal="true" aria-labelledby="snapTitle" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 id="snapTitle">SNAPSHOT</h2>
+      <button class="icon-btn" type="button" data-close aria-label="Close snapshot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <img id="snapImg" alt="Captured camera frame with detection boxes">
+    <div class="modal-foot">
+      <p class="modal-meta" id="snapMeta"></p>
+      <div class="modal-actions">
+        <button class="btn" id="snapShare" type="button" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></svg>
+          <span>Share</span>
+        </button>
+        <a class="btn btn-primary" id="snapSave" href="#" download="ai-vision-snapshot.jpg">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+          <span>Save image</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* =====================================================================
+   * Configuration
+   * ===================================================================== */
+
+  // Pinned, integrity-checked builds. jsDelivr first, unpkg as a fallback.
+  const LIBS = [
+    {
+      global: 'tf',
+      integrity: 'sha384-vE8hbVJ4lezako5rlvE7bY0BVzWlFhZncPlckrqNwcUQpVtgbENTgZ8TBbnPjZre',
+      urls: [
+        'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js',
+        'https://unpkg.com/@tensorflow/tfjs@4.22.0/dist/tf.min.js',
+      ],
+    },
+    {
+      global: 'cocoSsd',
+      integrity: 'sha384-7qLdgfEQyO9ZQi9ArRHigK+IBto4XPk468jAqc+fnsXaZIcMAhQeLwzggRK7aESl',
+      urls: [
+        'https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js',
+        'https://unpkg.com/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js',
+      ],
+    },
+  ];
+
+  const MODEL_BASE = 'lite_mobilenet_v2';
+  const CANDIDATE_MIN_SCORE = 0.2;   // lowest slider value; the live threshold is applied at draw time
+  const NMS_IOU = 0.5;               // same-class overlap suppression
+  const CROSS_CLASS_IOU = 0.85;      // near-identical boxes with different labels
+  const MAX_DPR = 2;
+
+  // How often inference runs. The render loop always runs at display rate and
+  // interpolates between results, so fewer inferences still look smooth.
+  const SPEEDS = {
+    fast:     { interval: 66,  maxBoxes: 15, confirm: 1, holdMs: 400, scoreAlpha: 0.7,  smoothMs: 55,
+                hint: 'Up to ~15 scans/sec — most responsive tracking, highest GPU load.' },
+    balanced: { interval: 150, maxBoxes: 20, confirm: 1, holdMs: 560, scoreAlpha: 0.55, smoothMs: 90,
+                hint: 'Up to ~7 scans/sec — smooth tracking at a moderate load.' },
+    accurate: { interval: 300, maxBoxes: 30, confirm: 2, holdMs: 950, scoreAlpha: 0.4,  smoothMs: 150,
+                hint: 'Up to ~3 scans/sec — objects must be confirmed in consecutive scans, fewer false positives.' },
+  };
+
+  // COCO label map used by the SSD model (ids have gaps by design).
+  const COCO = {
+    1: 'person', 2: 'bicycle', 3: 'car', 4: 'motorcycle', 5: 'airplane', 6: 'bus', 7: 'train', 8: 'truck',
+    9: 'boat', 10: 'traffic light', 11: 'fire hydrant', 13: 'stop sign', 14: 'parking meter', 15: 'bench',
+    16: 'bird', 17: 'cat', 18: 'dog', 19: 'horse', 20: 'sheep', 21: 'cow', 22: 'elephant', 23: 'bear',
+    24: 'zebra', 25: 'giraffe', 27: 'backpack', 28: 'umbrella', 31: 'handbag', 32: 'tie', 33: 'suitcase',
+    34: 'frisbee', 35: 'skis', 36: 'snowboard', 37: 'sports ball', 38: 'kite', 39: 'baseball bat',
+    40: 'baseball glove', 41: 'skateboard', 42: 'surfboard', 43: 'tennis racket', 44: 'bottle',
+    46: 'wine glass', 47: 'cup', 48: 'fork', 49: 'knife', 50: 'spoon', 51: 'bowl', 52: 'banana', 53: 'apple',
+    54: 'sandwich', 55: 'orange', 56: 'broccoli', 57: 'carrot', 58: 'hot dog', 59: 'pizza', 60: 'donut',
+    61: 'cake', 62: 'chair', 63: 'couch', 64: 'potted plant', 65: 'bed', 67: 'dining table', 70: 'toilet',
+    72: 'tv', 73: 'laptop', 74: 'mouse', 75: 'remote', 76: 'keyboard', 77: 'cell phone', 78: 'microwave',
+    79: 'oven', 80: 'toaster', 81: 'sink', 82: 'refrigerator', 84: 'book', 85: 'clock', 86: 'vase',
+    87: 'scissors', 88: 'teddy bear', 89: 'hair drier', 90: 'toothbrush',
+  };
+
+  const PALETTE = ['#3ee6ff', '#3cf5a4', '#ffc65c', '#ff7ad9', '#9b8cff', '#ff9a5c', '#b8f55c', '#5cb8ff', '#ff6b8f', '#5cffe1', '#e3a8ff', '#ffe066'];
+  const FONT_UI = '"Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+
+  const ERRORS = {
+    denied: {
+      title: 'Camera access is required for AI Vision.',
+      msg: 'Camera permission was denied. Allow camera access for this site in your browser settings (usually via the camera icon in the address bar), then try again.',
+      retry: true,
+    },
+    notfound: {
+      title: 'No camera available',
+      msg: 'No camera was found on this device. Connect or enable a webcam, then try again.',
+      retry: true,
+    },
+    busy: {
+      title: 'Camera is already in use',
+      msg: 'Another application or browser tab is using the camera. Close it (for example a video call), then try again.',
+      retry: true,
+    },
+    unsupported: {
+      title: 'Webcam access not supported',
+      msg: 'This browser doesn’t support webcam access. Please use a recent version of Chrome, Edge, Firefox or Safari.',
+      retry: false,
+    },
+    insecure: {
+      title: 'Secure connection required',
+      msg: 'Browsers only allow camera access on secure pages. Open this app over https:// or from http://localhost.',
+      retry: false,
+    },
+    ended: {
+      title: 'Camera disconnected',
+      msg: 'The camera stopped unexpectedly. It may have been unplugged, disabled or taken over by another app.',
+      retry: true,
+    },
+    model: {
+      title: 'AI model failed to load',
+      msg: 'The object-recognition model could not be downloaded or initialized. Check your internet connection, then retry. The camera still works without it.',
+      retry: true,
+      retryLabel: 'Retry model',
+    },
+    generic: {
+      title: 'Camera error',
+      msg: 'The camera could not be started.',
+      retry: true,
+    },
+  };
+
+  /* =====================================================================
+   * DOM
+   * ===================================================================== */
+
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    stage: $('stage'), video: $('video'), canvas: $('overlay'), flash: $('flash'),
+    idle: $('idle'), idleTitle: $('idleTitle'), idleText: $('idleText'), idleStart: $('idleStart'), idleModel: $('idleModel'),
+    modelChip: $('modelChip'), modelChipText: $('modelChipText'),
+    errorBox: $('errorBox'), errorTitle: $('errorTitle'), errorMsg: $('errorMsg'), errorRetry: $('errorRetry'), errorDismiss: $('errorDismiss'),
+    btnStart: $('btnStart'), btnStartLabel: $('btnStartLabel'), btnStop: $('btnStop'), btnSwitch: $('btnSwitch'), btnSnap: $('btnSnap'),
+    statusPill: $('statusPill'), statusText: $('statusText'),
+    statObjects: $('statObjects'), statFps: $('statFps'), statLatency: $('statLatency'),
+    detList: $('detList'), detEmpty: $('detEmpty'), detTag: $('detTag'),
+    threshold: $('threshold'), thresholdOut: $('thresholdOut'), speedHint: $('speedHint'),
+    hudCam: $('hudCam'), hudRes: $('hudRes'), hudModel: $('hudModel'), hudCount: $('hudCount'), hudFps: $('hudFps'),
+    sysStatus: $('sysStatus'), sysBackend: $('sysBackend'), sysCamera: $('sysCamera'),
+    toast: $('toast'),
+    modal: $('snapModal'), snapImg: $('snapImg'), snapMeta: $('snapMeta'), snapSave: $('snapSave'), snapShare: $('snapShare'),
+  };
+  const ctx = el.canvas.getContext('2d');
+
+  /* =====================================================================
+   * State
+   * ===================================================================== */
+
+  const state = {
+    // model
+    model: null,
+    modelStatus: 'idle',          // idle | loading | ready | error
+    backend: '',
+    inferMode: 'graph',           // graph (custom async post-processing) | detect (library fallback)
+    // camera
+    stream: null,
+    streamGen: 0,                 // bumps whenever the active stream changes
+    session: 0,                   // bumps on every start/stop; stale async work checks it
+    running: false,
+    starting: false,
+    switching: false,
+    facingMode: 'environment',    // preferred camera: rear by default
+    mirrored: false,
+    facingKnown: false,
+    deviceId: null,
+    cameraCount: 0,
+    cameraLabel: '',
+    // loops
+    rafId: 0,
+    inferTimer: 0,
+    inferBusy: false,
+    inferErrors: 0,
+    // detections
+    tracks: [],
+    nextTrackId: 1,
+    lastInferAt: 0,
+    cycleMs: 0,                   // smoothed time between completed inferences
+    latency: 0,                   // smoothed duration of one inference
+    // settings
+    threshold: 0.5,
+    speed: 'balanced',
+    // timing
+    lastFrameTs: 0,
+    lastPanelTs: 0,
+  };
+
+  const view = { cw: 0, ch: 0, dpr: 1, fit: 'cover', dirty: true, reserved: [], reservedAt: 0 };
+
+  const isMobile = (() => {
+    if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean' && navigator.userAgentData.mobile) return true;
+    const ua = navigator.userAgent || '';
+    return /Android|iPhone|iPad|iPod|Mobile|Silk/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  })();
+
+  /* =====================================================================
+   * Utilities
+   * ===================================================================== */
+
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+  function displayName(raw) {
+    if (raw === 'tv') return 'TV';
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  }
+
+  function hashString(s) {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+
+  const colorCache = new Map();
+  function colorFor(name) {
+    let c = colorCache.get(name);
+    if (c) return c;
+    const hex = name === 'Person' ? PALETTE[0] : PALETTE[1 + (hashString(name) % (PALETTE.length - 1))];
+    const n = parseInt(hex.slice(1), 16);
+    const rgb = `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
+    c = { solid: hex, line: `rgba(${rgb}, 0.55)`, fill: `rgba(${rgb}, 0.07)`, glow: `rgba(${rgb}, 0.75)` };
+    colorCache.set(name, c);
+    return c;
+  }
+
+  function iou(a, b) { // [x, y, w, h]
+    const x1 = Math.max(a[0], b[0]), y1 = Math.max(a[1], b[1]);
+    const x2 = Math.min(a[0] + a[2], b[0] + b[2]), y2 = Math.min(a[1] + a[3], b[1] + b[3]);
+    const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+    const union = a[2] * a[3] + b[2] * b[3] - inter;
+    return union > 0 ? inter / union : 0;
+  }
+
+  function withTimeout(promise, ms, message) {
+    let t;
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => { t = setTimeout(() => reject(new Error(message)), ms); }),
+    ]).finally(() => clearTimeout(t));
+  }
+
+  function roundRectPath(g, x, y, w, h, r) {
+    r = Math.max(0, Math.min(r, w / 2, h / 2));
+    g.beginPath();
+    if (typeof g.roundRect === 'function') { g.roundRect(x, y, w, h, r); return; }
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  }
+
+  let toastTimer = 0;
+  function toast(message, ms = 2400) {
+    el.toast.textContent = message;
+    el.toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.toast.classList.remove('show'), ms);
+  }
+
+  const store = {
+    load() {
+      try { return JSON.parse(localStorage.getItem('ai-vision:settings') || '{}') || {}; } catch (_) { return {}; }
+    },
+    save() {
+      try { localStorage.setItem('ai-vision:settings', JSON.stringify({ threshold: state.threshold, speed: state.speed })); } catch (_) { /* storage unavailable */ }
+    },
+  };
+
+  /* =====================================================================
+   * Model loading
+   * ===================================================================== */
+
+  function injectScript(src, integrity) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      s.crossOrigin = 'anonymous';
+      if (integrity) s.integrity = integrity;
+      const timer = setTimeout(() => { cleanup(); s.remove(); reject(new Error(`Timed out loading ${src}`)); }, 45000);
+      function cleanup() { clearTimeout(timer); s.onload = s.onerror = null; }
+      s.onload = () => { cleanup(); resolve(); };
+      s.onerror = () => { cleanup(); s.remove(); reject(new Error(`Failed to load ${src}`)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  async function loadLibrary(lib) {
+    if (window[lib.global]) return;
+    let lastErr = null;
+    for (const url of lib.urls) {
+      try {
+        await injectScript(url, lib.integrity);
+        if (window[lib.global]) return;
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    throw lastErr || new Error(`${lib.global} is unavailable`);
+  }
+
+  async function selectBackend() {
+    const tf = window.tf;
+    try { tf.enableProdMode(); } catch (_) { /* optional */ }
+    for (const name of ['webgl', 'cpu']) {
+      try {
+        if (await tf.setBackend(name)) { await tf.ready(); state.backend = tf.getBackend(); return; }
+      } catch (_) { /* try next backend */ }
+    }
+    await tf.ready();
+    state.backend = tf.getBackend();
+  }
+
+  async function initModel() {
+    if (state.modelStatus === 'loading' || state.modelStatus === 'ready') return;
+    setModelStatus('loading');
+    try {
+      for (const lib of LIBS) await loadLibrary(lib);
+      await selectBackend();
+      state.model = await withTimeout(window.cocoSsd.load({ base: MODEL_BASE }), 120000, 'Model download timed out');
+      await warmUp();
+      setModelStatus('ready');
+      if (state.backend === 'cpu') toast('WebGL unavailable — running on CPU, detection will be slower.', 4200);
+      if (state.running) scheduleInference(0);
+    } catch (err) {
+      console.error('[AI Vision] Model failed to load:', err);
+      state.model = null;
+      setModelStatus('error', err);
+    }
+  }
+
+  // Compiles shaders up front and verifies the fast inference path works with this model build.
+  async function warmUp() {
+    const c = document.createElement('canvas');
+    c.width = 320; c.height = 240;
+    const g = c.getContext('2d');
+    g.fillStyle = '#1a2230'; g.fillRect(0, 0, c.width, c.height);
+    try {
+      await detectFrame(c, 10);
+    } catch (err) {
+      console.warn('[AI Vision] Falling back to cocoSsd.detect():', err);
+      state.inferMode = 'detect';
+      await detectFrame(c, 10);
+    }
+  }
+
+  /* =====================================================================
+   * Inference
+   * ===================================================================== */
+
+  // Runs the SSD graph directly: async GPU readback (no main-thread stall) and our own
+  // per-class NMS, so overlapping objects of different classes are all kept.
+  async function detectFrame(source, maxBoxes) {
+    const tf = window.tf;
+    if (state.inferMode === 'detect') {
+      const preds = await state.model.detect(source, maxBoxes, CANDIDATE_MIN_SCORE);
+      return preds.map((p) => ({ name: displayName(p.class), score: p.score, bbox: p.bbox.slice() }));
+    }
+
+    const graph = state.model.model;
+    const input = tf.tidy(() => tf.expandDims(tf.browser.fromPixels(source)));
+    const imgH = input.shape[1];
+    const imgW = input.shape[2];
+    let outputs;
+    try {
+      outputs = await graph.executeAsync(input);
+    } finally {
+      input.dispose();
+    }
+    outputs = Array.isArray(outputs) ? outputs : [outputs];
+    try {
+      const scoresT = outputs.find((t) => t.rank === 3);
+      const boxesT = outputs.find((t) => t !== scoresT && t.shape[t.rank - 1] === 4);
+      if (!scoresT || !boxesT || boxesT.size / 4 !== scoresT.shape[1]) throw new Error('Unexpected model outputs');
+      const [maxT, clsT] = tf.tidy(() => {
+        const s = tf.squeeze(scoresT, [0]);
+        return [tf.max(s, 1), tf.argMax(s, 1)];
+      });
+      try {
+        const [maxS, cls, boxes] = await Promise.all([maxT.data(), clsT.data(), boxesT.data()]);
+        return postProcess(maxS, cls, boxes, imgW, imgH, maxBoxes);
+      } finally {
+        maxT.dispose(); clsT.dispose();
+      }
+    } finally {
+      tf.dispose(outputs);
+    }
+  }
+
+  function postProcess(maxS, cls, boxes, W, H, maxBoxes) {
+    const cand = [];
+    for (let i = 0; i < maxS.length; i++) {
+      const score = maxS[i];
+      if (score < CANDIDATE_MIN_SCORE) continue;
+      const raw = COCO[cls[i] + 1];
+      if (!raw) continue;
+      const o = i * 4;
+      const y1 = clamp01(boxes[o]), x1 = clamp01(boxes[o + 1]);
+      const y2 = clamp01(boxes[o + 2]), x2 = clamp01(boxes[o + 3]);
+      if (x2 - x1 < 0.005 || y2 - y1 < 0.005) continue;
+      cand.push({ raw, score, bbox: [x1 * W, y1 * H, (x2 - x1) * W, (y2 - y1) * H] });
+    }
+    cand.sort((a, b) => b.score - a.score);
+    const kept = [];
+    for (const c of cand) {
+      if (kept.length >= maxBoxes) break;
+      let suppressed = false;
+      for (const k of kept) {
+        const o = iou(c.bbox, k.bbox);
+        if ((k.raw === c.raw && o > NMS_IOU) || o > CROSS_CLASS_IOU) { suppressed = true; break; }
+      }
+      if (!suppressed) kept.push(c);
+    }
+    return kept.map((k) => ({ name: displayName(k.raw), score: k.score, bbox: k.bbox }));
+  }
+
+  // One timer, one in-flight inference, ever. Every path goes through here.
+  function scheduleInference(delay) {
+    clearTimeout(state.inferTimer);
+    state.inferTimer = 0;
+    if (!state.running) return;
+    state.inferTimer = setTimeout(runInference, Math.max(0, delay));
+  }
+
+  async function runInference() {
+    state.inferTimer = 0;
+    if (!state.running || !state.model) return;          // resumes when the model becomes ready
+    if (state.inferBusy) { scheduleInference(40); return; }
+    const v = el.video;
+    if (document.hidden) return;                          // resumed by visibilitychange
+    if (state.switching || v.readyState < 2 || !v.videoWidth) { scheduleInference(80); return; }
+
+    const cfg = SPEEDS[state.speed];
+    const session = state.session;
+    const gen = state.streamGen;
+    const t0 = performance.now();
+    let preds = null;
+    let failure = null;
+    state.inferBusy = true;
+    try {
+      preds = await detectFrame(v, cfg.maxBoxes);
+    } catch (err) {
+      failure = err;
+    } finally {
+      state.inferBusy = false;
+    }
+    if (session !== state.session || !state.running) return; // stopped meanwhile; the new session owns the loop
+    const t1 = performance.now();
+
+    if (failure) {
+      console.warn('[AI Vision] Inference error:', failure);
+      state.inferErrors++;
+      if (state.inferMode === 'graph' && state.inferErrors >= 3) state.inferMode = 'detect';
+      if (state.inferErrors === 6) toast('AI inference is failing on this device — retrying…', 3600);
+      scheduleInference(Math.min(2000, 250 * state.inferErrors));
+      return;
+    }
+    state.inferErrors = 0;
+
+    if (gen === state.streamGen && !state.switching) {
+      recordTiming(t1, t1 - t0);
+      updateTracks(preds, t1);
+    }
+    scheduleInference(Math.max(12, cfg.interval - (t1 - t0)));
+  }
+
+  function recordTiming(now, duration) {
+    const cycle = state.lastInferAt ? now - state.lastInferAt : 0;
+    if (cycle > 0 && cycle < 5000) { // ignore gaps from paused tabs or camera switches
+      state.cycleMs = state.cycleMs ? state.cycleMs * 0.7 + cycle * 0.3 : cycle;
+    }
+    state.lastInferAt = now;
+    state.latency = state.latency ? state.latency * 0.8 + duration * 0.2 : duration;
+  }
+
+  function currentFps(now) {
+    if (!state.cycleMs || now - state.lastInferAt > Math.max(1500, state.cycleMs * 3)) return 0;
+    return 1000 / state.cycleMs;
+  }
+
+  // How long an unmatched object stays on screen. Scales with the real scan cycle so
+  // slow devices don't drop objects between two inferences.
+  function holdTime(cfg) {
+    return Math.max(cfg.holdMs, state.cycleMs * 2.2, state.latency * 2.5);
+  }
+
+  /* =====================================================================
+   * Tracking & smoothing
+   * ===================================================================== */
+
+  function matchScore(a, b) {
+    const o = iou(a, b);
+    const ax = a[0] + a[2] / 2, ay = a[1] + a[3] / 2;
+    const bx = b[0] + b[2] / 2, by = b[1] + b[3] / 2;
+    const d = Math.hypot(ax - bx, ay - by) / Math.max(1, Math.sqrt(a[2] * a[3]));
+    return Math.max(o, 0.35 * (1 - d));
+  }
+
+  function updateTracks(preds, now) {
+    const cfg = SPEEDS[state.speed];
+    const free = new Set(state.tracks.filter((t) => !t.dead));
+    preds.sort((a, b) => b.score - a.score);
+    for (const p of preds) {
+      let best = null;
+      let bestScore = 0.1;
+      for (const t of free) {
+        if (t.name !== p.name) continue;
+        const m = matchScore(t.target, p.bbox);
+        if (m > bestScore) { bestScore = m; best = t; }
+      }
+      if (best) {
+        free.delete(best);
+        best.target = p.bbox;
+        best.score += (p.score - best.score) * cfg.scoreAlpha;
+        best.hits++;
+        best.missed = 0;
+        best.lastSeen = now;
+      } else {
+        state.tracks.push({
+          id: state.nextTrackId++, name: p.name, color: colorFor(p.name),
+          box: p.bbox.slice(), target: p.bbox, score: p.score,
+          hits: 1, missed: 0, lastSeen: now, alpha: 0, dead: false,
+        });
+      }
+    }
+    for (const t of free) t.missed++;
+  }
+
+  function isShown(t, cfg) {
+    return !t.dead && t.hits >= cfg.confirm && t.score >= state.threshold;
+  }
+
+  /* =====================================================================
+   * Rendering
+   * ===================================================================== */
+
+  function measureView() {
+    const r = el.canvas.getBoundingClientRect();
+    view.cw = r.width;
+    view.ch = r.height;
+    view.dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+    view.fit = getComputedStyle(el.video).objectFit || 'cover';
+    const w = Math.max(1, Math.round(view.cw * view.dpr));
+    const h = Math.max(1, Math.round(view.ch * view.dpr));
+    if (el.canvas.width !== w) el.canvas.width = w;
+    if (el.canvas.height !== h) el.canvas.height = h;
+    view.dirty = false;
+    measureReserved(r);
+  }
+
+  // Screen areas covered by HUD chips; labels are laid out around them.
+  function measureReserved(canvasRect = el.canvas.getBoundingClientRect()) {
+    view.reserved = [];
+    for (const chip of el.stage.querySelectorAll('.hud')) {
+      const r = chip.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      view.reserved.push([r.left - canvasRect.left - 3, r.top - canvasRect.top - 3, r.width + 6, r.height + 6]);
+    }
+    view.reservedAt = performance.now();
+  }
+
+  // Maps video-pixel boxes to on-screen CSS pixels for the current object-fit, size and mirroring.
+  function createMapper(vw, vh, cw, ch, fit, mirrored) {
+    let sx, sy;
+    if (fit === 'fill') { sx = cw / vw; sy = ch / vh; }
+    else if (fit === 'contain' || fit === 'scale-down') { sx = sy = Math.min(cw / vw, ch / vh); }
+    else if (fit === 'none') { sx = sy = 1; }
+    else { sx = sy = Math.max(cw / vw, ch / vh); }
+    const ox = (cw - vw * sx) / 2;
+    const oy = (ch - vh * sy) / 2;
+    return (b) => {
+      const w = b[2] * sx, h = b[3] * sy;
+      let x = ox + b[0] * sx;
+      if (mirrored) x = cw - x - w;
+      return [x, oy + b[1] * sy, w, h];
+    };
+  }
+
+  function clipRect(r, W, H) {
+    const x1 = Math.max(0, r[0]), y1 = Math.max(0, r[1]);
+    const x2 = Math.min(W, r[0] + r[2]), y2 = Math.min(H, r[1] + r[3]);
+    return x2 - x1 < 6 || y2 - y1 < 6 ? null : [x1, y1, x2 - x1, y2 - y1];
+  }
+
+  function drawBox(g, it, u) {
+    const [x, y, w, h] = it.rect;
+    const c = it.color;
+    g.save();
+    g.globalAlpha = it.alpha;
+
+    g.fillStyle = c.fill;
+    g.fillRect(x, y, w, h);
+    g.lineWidth = u;
+    g.strokeStyle = c.line;
+    g.strokeRect(x + u / 2, y + u / 2, Math.max(0, w - u), Math.max(0, h - u));
+
+    // Targeting brackets
+    const L = clamp(Math.min(w, h) * 0.24, 7 * u, 24 * u);
+    g.lineWidth = 2.6 * u;
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    g.strokeStyle = c.solid;
+    g.shadowColor = c.glow;
+    g.shadowBlur = 10 * u;
+    g.beginPath();
+    g.moveTo(x, y + L); g.lineTo(x, y); g.lineTo(x + L, y);
+    g.moveTo(x + w - L, y); g.lineTo(x + w, y); g.lineTo(x + w, y + L);
+    g.moveTo(x + w, y + h - L); g.lineTo(x + w, y + h); g.lineTo(x + w - L, y + h);
+    g.moveTo(x + L, y + h); g.lineTo(x, y + h); g.lineTo(x, y + h - L);
+    g.stroke();
+
+    // Center mark
+    if (w > 56 * u && h > 56 * u) {
+      const cx = x + w / 2, cy = y + h / 2, s = 5 * u;
+      g.shadowBlur = 0;
+      g.globalAlpha = it.alpha * 0.65;
+      g.lineWidth = 1.2 * u;
+      g.beginPath();
+      g.moveTo(cx - s, cy); g.lineTo(cx + s, cy);
+      g.moveTo(cx, cy - s); g.lineTo(cx, cy + s);
+      g.stroke();
+    }
+    g.restore();
+  }
+
+  function overlaps(a, b) {
+    return a[0] < b[0] + b[2] && a[0] + a[2] > b[0] && a[1] < b[1] + b[3] && a[1] + a[3] > b[1];
+  }
+
+  // "Person — 96%" label, placed above the box when possible, never overlapping earlier labels.
+  function drawLabel(g, it, W, H, u, placed) {
+    const [x, y, w, h] = it.rect;
+    const fs = 12.5 * u, padX = 8 * u, lh = 23 * u, bar = 3 * u, gap = 4 * u, m = 2 * u;
+    const sep = ' — ';
+    const pct = `${it.pct}%`;
+    g.font = `600 ${fs}px ${FONT_UI}`;
+    const nameW = g.measureText(it.name).width;
+    const sepW = g.measureText(sep).width;
+    g.font = `700 ${fs}px ${FONT_UI}`;
+    const pctW = g.measureText(pct).width;
+    const lw = bar + padX + nameW + sepW + pctW + padX;
+    const lx = clamp(x, m, Math.max(m, W - lw - m));
+
+    // Preferred slots: above the box, inside its top edge, then next to/below whatever
+    // blocks those (HUD chips or other labels), then below the box.
+    const base = [[lx, y - lh - gap], [lx, y + gap]];
+    const cands = base.slice();
+    for (const b of base) {
+      for (const r of placed) {
+        if (!overlaps(r, [b[0], b[1], lw, lh])) continue;
+        cands.push([lx, r[1] + r[3] + gap], [r[0] + r[2] + gap, b[1]]);
+      }
+    }
+    cands.push([lx, y + h + gap]);
+    let pos = null;
+    for (const [cx0, cy] of cands) {
+      const cx = clamp(cx0, m, Math.max(m, W - lw - m));
+      if (cy < m || cy + lh > H - m) continue;
+      const attached = cx < x + w && cx + lw > x && cy >= y - lh - gap - 1 && cy <= y + h + gap + 1;
+      if (!attached) continue;
+      if (!placed.some((p) => overlaps(p, [cx, cy, lw, lh]))) { pos = [cx, cy]; break; }
+    }
+    if (!pos) pos = [lx, clamp(y - lh - gap, m, Math.max(m, H - lh - m))];
+    const [lx2, ly] = pos;
+    placed.push([lx2, ly, lw, lh]);
+
+    g.save();
+    g.globalAlpha = it.alpha;
+    roundRectPath(g, lx2, ly, lw, lh, 5 * u);
+    g.fillStyle = 'rgba(4, 8, 14, 0.84)';
+    g.fill();
+    g.lineWidth = u;
+    g.strokeStyle = it.color.line;
+    g.stroke();
+    g.save();
+    g.clip();
+    g.fillStyle = it.color.solid;
+    g.fillRect(lx2, ly, bar, lh);
+    g.restore();
+
+    g.textBaseline = 'middle';
+    const ty = ly + lh / 2 + 0.5 * u;
+    let tx = lx2 + bar + padX;
+    g.font = `600 ${fs}px ${FONT_UI}`;
+    g.fillStyle = '#f3f8ff';
+    g.fillText(it.name, tx, ty);
+    tx += nameW;
+    g.fillStyle = 'rgba(190, 210, 232, 0.5)';
+    g.fillText(sep, tx, ty);
+    tx += sepW;
+    g.font = `700 ${fs}px ${FONT_UI}`;
+    g.fillStyle = it.color.solid;
+    g.fillText(pct, tx, ty);
+    g.restore();
+  }
+
+  function drawScene(g, items, W, H, u, reserved = []) {
+    items.sort((a, b) => b.rect[2] * b.rect[3] - a.rect[2] * a.rect[3]); // big boxes underneath
+    for (const it of items) drawBox(g, it, u);
+    const placed = reserved.slice();
+    const byScore = items.slice().sort((a, b) => b.score - a.score);   // best labels placed first
+    for (const it of byScore) drawLabel(g, it, W, H, u, placed);
+  }
+
+  function renderFrame() {
+    if (!state.running) { state.rafId = 0; return; }
+    state.rafId = requestAnimationFrame(renderFrame);
+
+    const now = performance.now();
+    const dt = state.lastFrameTs ? Math.min(100, now - state.lastFrameTs) : 16;
+    state.lastFrameTs = now;
+
+    if (view.dirty) measureView();
+    else if (now - view.reservedAt > 1000) measureReserved();
+    const { cw, ch, dpr } = view;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cw, ch);
+
+    const v = el.video;
+    const cfg = SPEEDS[state.speed];
+    const kBox = 1 - Math.exp(-dt / cfg.smoothMs);
+    const kAlpha = 1 - Math.exp(-dt / 120);
+    const map = v.videoWidth ? createMapper(v.videoWidth, v.videoHeight, cw, ch, view.fit, state.mirrored) : null;
+    const items = [];
+    const alive = [];
+
+    const hold = holdTime(cfg);
+    for (const t of state.tracks) {
+      if (!t.dead && now - t.lastSeen > hold) t.dead = true;
+      for (let i = 0; i < 4; i++) t.box[i] += (t.target[i] - t.box[i]) * kBox;
+      const target = isShown(t, cfg) ? (t.missed ? 0.6 : 1) : 0;
+      t.alpha += (target - t.alpha) * kAlpha;
+      if (t.dead && t.alpha < 0.02) continue;
+      alive.push(t);
+      if (map && t.alpha > 0.02) {
+        const rect = clipRect(map(t.box), cw, ch);
+        if (rect) items.push({ rect, name: t.name, pct: Math.round(t.score * 100), score: t.score, color: t.color, alpha: t.alpha });
+      }
+    }
+    state.tracks = alive;
+    if (items.length) drawScene(ctx, items, cw, ch, 1, view.reserved);
+
+    if (now - state.lastPanelTs > 220) { state.lastPanelTs = now; updatePanel(now); }
+  }
+
+  function clearOverlay() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
+  }
+
+  /* =====================================================================
+   * Detection panel
+   * ===================================================================== */
+
+  const rows = new Map();
+
+  function createRow(name, color) {
+    const li = document.createElement('li');
+    li.className = 'det-row';
+    li.style.setProperty('--c', color.solid);
+    const sw = document.createElement('span'); sw.className = 'det-swatch';
+    const nm = document.createElement('span'); nm.className = 'det-name';
+    const label = document.createElement('span'); label.textContent = name;
+    const count = document.createElement('span'); count.className = 'det-count'; count.hidden = true;
+    nm.append(label, count);
+    const sc = document.createElement('span'); sc.className = 'det-score';
+    const bar = document.createElement('span'); bar.className = 'det-bar';
+    const fill = document.createElement('i');
+    bar.append(fill);
+    li.append(sw, nm, sc, bar);
+    li.addEventListener('animationend', () => { li.style.animation = 'none'; }, { once: true });
+    return { li, count, sc, fill, lastPct: -1, lastCount: -1 };
+  }
+
+  function renderList(groups) {
+    groups.sort((a, b) =>
+      Math.round(b.score * 20) - Math.round(a.score * 20) || b.count - a.count || a.name.localeCompare(b.name));
+    const seen = new Set();
+    groups.forEach((gr, i) => {
+      let row = rows.get(gr.name);
+      if (!row) { row = createRow(gr.name, gr.color); rows.set(gr.name, row); }
+      seen.add(gr.name);
+      const pct = Math.round(gr.score * 100);
+      if (row.lastPct !== pct) { row.sc.textContent = `${pct}%`; row.fill.style.width = `${pct}%`; row.lastPct = pct; }
+      if (row.lastCount !== gr.count) {
+        row.count.hidden = gr.count < 2;
+        row.count.textContent = `×${gr.count}`;
+        row.lastCount = gr.count;
+      }
+      if (el.detList.children[i] !== row.li) el.detList.insertBefore(row.li, el.detList.children[i] || null);
+    });
+    for (const [name, row] of rows) {
+      if (!seen.has(name)) { row.li.remove(); rows.delete(name); }
+    }
+    const empty = groups.length === 0;
+    el.detEmpty.hidden = !empty;
+    if (empty) {
+      el.detEmpty.textContent = !state.running
+        ? (state.starting ? 'Connecting camera…' : 'Camera offline')
+        : state.modelStatus === 'error' ? 'AI model unavailable'
+        : state.modelStatus !== 'ready' ? 'Loading AI vision model...'
+        : `Scanning… nothing above ${Math.round(state.threshold * 100)}%`;
+    }
+  }
+
+  function updatePanel(now = performance.now()) {
+    const cfg = SPEEDS[state.speed];
+    const groups = new Map();
+    let total = 0;
+    for (const t of state.tracks) {
+      if (!isShown(t, cfg)) continue;
+      total++;
+      const g = groups.get(t.name);
+      if (g) { g.count++; if (t.score > g.score) g.score = t.score; }
+      else groups.set(t.name, { name: t.name, count: 1, score: t.score, color: t.color });
+    }
+    const fps = state.running ? currentFps(now) : 0;
+    const fpsText = fps >= 10 || fps === 0 ? String(Math.round(fps)) : fps.toFixed(1);
+    el.statObjects.textContent = total;
+    el.statFps.textContent = fpsText;
+    el.statLatency.textContent = state.running && state.latency ? Math.round(state.latency) : '—';
+    el.hudCount.textContent = `${total} OBJ`;
+    el.hudFps.textContent = `${fpsText} FPS`;
+    renderList([...groups.values()]);
+  }
+
+  /* =====================================================================
+   * Camera
+   * ===================================================================== */
+
+  function cameraSupportError() {
+    const secure = typeof window.isSecureContext === 'boolean'
+      ? window.isSecureContext
+      : location.protocol === 'https:' || ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+    if (!secure) return 'insecure';
+    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') return 'unsupported';
+    return null;
+  }
+
+  function classifyCameraError(err) {
+    const name = err && err.name;
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') return 'denied';
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError' || name === 'OverconstrainedError' || name === 'ConstraintNotSatisfiedError') return 'notfound';
+    if (name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError') return 'busy';
+    if (name === 'TypeError' && !navigator.mediaDevices) return 'unsupported';
+    return 'generic';
+  }
+
+  function stopStreamTracks(stream) {
+    if (!stream) return;
+    for (const track of stream.getTracks()) {
+      track.removeEventListener('ended', onTrackEnded);
+      try { track.stop(); } catch (_) { /* already stopped */ }
+    }
+  }
+
+  function releaseStream() {
+    stopStreamTracks(state.stream);
+    state.stream = null;
+    state.streamGen++;
+  }
+
+  async function openStream(opts) {
+    const base = { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 60 } };
+    const attempts = [];
+    if (opts.deviceId) {
+      attempts.push({ ...base, deviceId: { exact: opts.deviceId } });
+      attempts.push({ deviceId: { exact: opts.deviceId } });
+    } else if (opts.exact) {
+      attempts.push({ ...base, facingMode: { exact: opts.facingMode } });
+    } else {
+      attempts.push({ ...base, facingMode: { ideal: opts.facingMode } });
+      attempts.push({ facingMode: { ideal: opts.facingMode } });
+      attempts.push(true);
+    }
+    let lastErr = null;
+    for (const video of attempts) {
+      try {
+        return await navigator.mediaDevices.getUserMedia({ video, audio: false });
+      } catch (err) {
+        lastErr = err;
+        const retryable = err && (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError' || err.name === 'NotReadableError');
+        if (!retryable) throw err;
+      }
+    }
+    throw lastErr;
+  }
+
+  function waitForVideo(v) {
+    return new Promise((resolve, reject) => {
+      if (v.readyState >= 1 && v.videoWidth) { resolve(); return; }
+      const timer = setTimeout(() => { cleanup(); reject(new Error('The camera did not deliver any video.')); }, 10000);
+      const ok = () => { cleanup(); resolve(); };
+      const fail = () => { cleanup(); reject(new Error('The video stream could not be played.')); };
+      function cleanup() {
+        clearTimeout(timer);
+        v.removeEventListener('loadedmetadata', ok);
+        v.removeEventListener('error', fail);
+      }
+      v.addEventListener('loadedmetadata', ok);
+      v.addEventListener('error', fail);
+    });
+  }
+
+  async function attachStream(stream) {
+    releaseStream();
+    state.stream = stream;
+    state.streamGen++;
+    state.tracks = [];
+
+    const track = stream.getVideoTracks()[0];
+    if (track) track.addEventListener('ended', onTrackEnded);
+    const settings = track && track.getSettings ? track.getSettings() : {};
+    state.deviceId = settings.deviceId || null;
+    state.facingKnown = !!settings.facingMode;
+    if (settings.facingMode === 'user' || settings.facingMode === 'environment') state.facingMode = settings.facingMode;
+    // Unknown facing on a laptop/desktop almost always means a user-facing webcam.
+    const facing = settings.facingMode || (isMobile ? state.facingMode : 'user');
+    state.mirrored = facing === 'user';
+    state.cameraLabel = (track && track.label) || '';
+    el.video.classList.toggle('mirrored', state.mirrored);
+
+    el.video.muted = true;
+    el.video.srcObject = stream;
+    await waitForVideo(el.video);
+    try {
+      await el.video.play();
+    } catch (err) {
+      // Autoplay policies can still block playback in rare cases; a tap on the stage resumes it.
+      console.warn('[AI Vision] video.play() was blocked:', err);
+    }
+    updateVideoMeta();
+  }
+
+  function updateVideoMeta() {
+    const v = el.video;
+    const vw = v.videoWidth, vh = v.videoHeight;
+    if (!vw || !vh) return;
+    el.stage.style.setProperty('--ar', (vw / vh).toFixed(4));
+    el.stage.dataset.orient = vw >= vh ? 'landscape' : 'portrait';
+    el.hudRes.textContent = `${vw}×${vh}`;
+    const facing = state.facingKnown || isMobile ? (state.mirrored ? 'FRONT CAM' : 'REAR CAM') : 'WEBCAM';
+    el.hudCam.textContent = facing;
+    const label = state.cameraLabel ? state.cameraLabel.replace(/\s*\([0-9a-f]{4}:[0-9a-f]{4}\)\s*$/i, '') : facing.toLowerCase();
+    el.sysCamera.textContent = `${label} · ${vw}×${vh}`;
+    el.sysCamera.title = el.sysCamera.textContent;
+    view.dirty = true;
+  }
+
+  function onVideoResize() {
+    if (!state.running) return;
+    const prev = el.stage.dataset.res;
+    const res = `${el.video.videoWidth}x${el.video.videoHeight}`;
+    if (prev && prev !== res) state.tracks = []; // frame geometry changed (e.g. device rotated)
+    el.stage.dataset.res = res;
+    updateVideoMeta();
+  }
+
+  function onTrackEnded() {
+    if (!state.running) return;
+    stopCamera();
+    showError('ended');
+  }
+
+  async function listCameras() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return [];
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter((d) => d.kind === 'videoinput');
+  }
+
+  async function refreshCameraCount() {
+    try { state.cameraCount = (await listCameras()).length; } catch (_) { state.cameraCount = 0; }
+    refreshUI();
+  }
+
+  function startLoops() {
+    cancelAnimationFrame(state.rafId);
+    state.lastFrameTs = 0;
+    view.dirty = true;
+    state.rafId = requestAnimationFrame(renderFrame);
+    scheduleInference(0);
+  }
+
+  async function startCamera() {
+    if (state.running || state.starting) return;
+    hideError();
+    const unsupported = cameraSupportError();
+    if (unsupported) { showError(unsupported); return; }
+
+    const session = ++state.session;
+    state.starting = true;
+    refreshUI();
+    try {
+      const stream = await openStream({ facingMode: state.facingMode });
+      if (session !== state.session) { stopStreamTracks(stream); return; }
+      await attachStream(stream);
+      if (session !== state.session) return; // stopCamera() already released it
+      state.running = true;
+      el.stage.dataset.res = `${el.video.videoWidth}x${el.video.videoHeight}`;
+      startLoops();
+      showChip(state.modelStatus === 'ready' ? 'ready' : state.modelStatus === 'loading' ? 'loading' : null);
+      refreshCameraCount();
+    } catch (err) {
+      if (session !== state.session) return;
+      console.error('[AI Vision] Camera error:', err);
+      releaseStream();
+      el.video.srcObject = null;
+      showError(classifyCameraError(err), err);
+    } finally {
+      if (session === state.session) state.starting = false;
+      refreshUI();
+    }
+  }
+
+  function stopCamera() {
+    state.session++;
+    state.running = false;
+    state.starting = false;
+    state.switching = false;
+    cancelAnimationFrame(state.rafId);
+    state.rafId = 0;
+    clearTimeout(state.inferTimer);
+    state.inferTimer = 0;
+    releaseStream();
+    try { el.video.pause(); } catch (_) { /* ignore */ }
+    el.video.srcObject = null;
+    state.tracks = [];
+    state.lastInferAt = 0;
+    state.cycleMs = 0;
+    state.latency = 0;
+    state.inferErrors = 0;
+    delete el.stage.dataset.res;
+    clearOverlay();
+    showChip(null);
+    updatePanel();
+    refreshUI();
+  }
+
+  async function switchCamera() {
+    if (!state.running || state.switching) return;
+    const session = state.session;
+    const prev = { facingMode: state.facingMode, deviceId: state.deviceId };
+    const nextFacing = state.facingMode === 'user' ? 'environment' : 'user';
+    state.switching = true;
+    refreshUI();
+    // Many phones can't open two cameras at once, so release the current one first.
+    releaseStream();
+    state.tracks = [];
+    try {
+      let stream;
+      try {
+        stream = await openStream({ facingMode: nextFacing, exact: true });
+      } catch (err) {
+        if (session !== state.session) return;
+        if (classifyCameraError(err) === 'denied') throw err;
+        // facingMode isn't reported (typical on desktops) — cycle through devices instead.
+        const cams = (await listCameras()).filter((c) => c.deviceId);
+        const idx = cams.findIndex((c) => c.deviceId === prev.deviceId);
+        const next = cams.length > 1 ? cams[(idx + 1) % cams.length] : null;
+        if (!next || next.deviceId === prev.deviceId) throw err;
+        stream = await openStream({ deviceId: next.deviceId });
+      }
+      if (session !== state.session) { stopStreamTracks(stream); return; }
+      if (!stream.getVideoTracks()[0]?.getSettings?.().facingMode) state.facingMode = nextFacing;
+      await attachStream(stream);
+      if (session !== state.session) return;
+      el.stage.dataset.res = `${el.video.videoWidth}x${el.video.videoHeight}`;
+      toast(state.facingKnown || isMobile ? `Switched to ${state.mirrored ? 'front' : 'rear'} camera` : 'Switched camera');
+    } catch (err) {
+      if (session !== state.session) return;
+      console.warn('[AI Vision] Switch failed:', err);
+      try {
+        const restored = await openStream(prev.deviceId ? { deviceId: prev.deviceId } : { facingMode: prev.facingMode });
+        if (session !== state.session) { stopStreamTracks(restored); return; }
+        await attachStream(restored);
+        toast('Couldn’t switch cameras — kept the current camera.', 3200);
+      } catch (err2) {
+        if (session !== state.session) return;
+        stopCamera();
+        showError(classifyCameraError(err2), err2);
+      }
+    } finally {
+      if (session === state.session) {
+        state.switching = false;
+        refreshUI();
+      }
+    }
+  }
+
+  /* =====================================================================
+   * Snapshot
+   * ===================================================================== */
+
+  let snapUrl = null;
+  let snapBlob = null;
+  let snapName = '';
+  let modalCloseTimer = 0;
+  let lastFocus = null;
+
+  function timestamp(d) {
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  }
+
+  async function takeSnapshot() {
+    const v = el.video;
+    if (!state.running || !v.videoWidth || state.switching) return;
+    const W = v.videoWidth, H = v.videoHeight;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    g.save();
+    if (state.mirrored) { g.translate(W, 0); g.scale(-1, 1); }
+    g.drawImage(v, 0, 0, W, H);
+    g.restore();
+
+    const u = Math.max(1, Math.min(W, H) / 520);
+    const cfg = SPEEDS[state.speed];
+    const map = createMapper(W, H, W, H, 'fill', state.mirrored);
+    const items = [];
+    for (const t of state.tracks) {
+      if (!isShown(t, cfg) || t.alpha < 0.3) continue;
+      const rect = clipRect(map(t.box), W, H);
+      if (rect) items.push({ rect, name: t.name, pct: Math.round(t.score * 100), score: t.score, color: t.color, alpha: 1 });
+    }
+    drawScene(g, items, W, H, u);
+
+    // Footer stamp
+    const now = new Date();
+    const stamp = `AI VISION  ·  ${items.length} object${items.length === 1 ? '' : 's'}  ·  ${now.toLocaleString()}`;
+    g.font = `600 ${11 * u}px ${FONT_UI}`;
+    const tw = g.measureText(stamp).width;
+    const ph = 22 * u, px = 10 * u;
+    roundRectPath(g, 12 * u, H - ph - 12 * u, tw + px * 2, ph, 6 * u);
+    g.fillStyle = 'rgba(4, 8, 14, 0.72)';
+    g.fill();
+    g.fillStyle = 'rgba(225, 240, 255, 0.92)';
+    g.textBaseline = 'middle';
+    g.fillText(stamp, 12 * u + px, H - 12 * u - ph / 2 + 0.5 * u);
+
+    el.flash.classList.remove('go');
+    void el.flash.offsetWidth;
+    el.flash.classList.add('go');
+
+    const blob = await new Promise((resolve) => c.toBlob(resolve, 'image/jpeg', 0.92));
+    if (!blob) { toast('Snapshot failed — please try again.'); return; }
+    openSnapshot(blob, `ai-vision-${timestamp(now)}.jpg`, `${W}×${H} · ${items.length} object${items.length === 1 ? '' : 's'} · ${now.toLocaleTimeString()}`);
+  }
+
+  function openSnapshot(blob, name, meta) {
+    clearTimeout(modalCloseTimer);
+    if (snapUrl) URL.revokeObjectURL(snapUrl);
+    snapBlob = blob;
+    snapName = name;
+    snapUrl = URL.createObjectURL(blob);
+    el.snapImg.src = snapUrl;
+    el.snapSave.href = snapUrl;
+    el.snapSave.download = name;
+    el.snapMeta.textContent = meta;
+    let canShare = false;
+    try {
+      canShare = !!(navigator.canShare && typeof File === 'function' && navigator.canShare({ files: [new File([blob], name, { type: blob.type })] }));
+    } catch (_) { canShare = false; }
+    el.snapShare.hidden = !canShare;
+    lastFocus = document.activeElement;
+    el.modal.hidden = false;
+    requestAnimationFrame(() => {
+      el.modal.classList.add('open');
+      el.snapSave.focus({ preventScroll: true });
+    });
+  }
+
+  function closeSnapshot() {
+    if (el.modal.hidden) return;
+    el.modal.classList.remove('open');
+    clearTimeout(modalCloseTimer);
+    // The blob URL stays valid until the next snapshot so an in-progress download isn't cut off.
+    modalCloseTimer = setTimeout(() => { el.modal.hidden = true; }, 230);
+    if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus({ preventScroll: true });
+  }
+
+  async function shareSnapshot() {
+    if (!snapBlob) return;
+    try {
+      await navigator.share({ files: [new File([snapBlob], snapName, { type: snapBlob.type })], title: 'AI Vision snapshot' });
+    } catch (err) {
+      if (err && err.name !== 'AbortError') toast('Sharing isn’t available — use Save image instead.');
+    }
+  }
+
+  /* =====================================================================
+   * UI state
+   * ===================================================================== */
+
+  function refreshUI() {
+    const { running, starting, switching, modelStatus } = state;
+    el.btnStart.disabled = running || starting;
+    el.btnStartLabel.textContent = starting ? 'STARTING…' : 'START CAMERA';
+    el.btnStop.disabled = !(running || starting);
+    el.btnSwitch.disabled = !running || switching || state.cameraCount === 1;
+    el.btnSwitch.title = state.cameraCount === 1 ? 'Only one camera detected' : 'Switch between front and rear cameras';
+    el.btnSnap.disabled = !running || switching;
+    el.idleStart.disabled = starting;
+    el.idleStart.querySelector('span').textContent = starting ? 'Starting…' : 'Start Camera';
+
+    el.stage.classList.toggle('is-live', running);
+    el.stage.classList.toggle('is-starting', starting);
+    el.stage.classList.toggle('is-switching', switching);
+    el.idleTitle.textContent = starting ? 'Connecting camera' : 'Camera offline';
+    el.idleText.textContent = starting
+      ? 'Allow camera access when your browser asks.'
+      : 'Start the camera to begin real-time object recognition.';
+
+    const live = running && !switching && modelStatus === 'ready';
+    el.detTag.textContent = live ? 'LIVE' : running ? 'STANDBY' : 'OFFLINE';
+    el.detTag.classList.toggle('live', live);
+    if (!running) el.sysCamera.textContent = starting ? 'Connecting…' : 'Off';
+
+    let pill, text;
+    if (switching) { pill = 'busy'; text = 'SWITCHING'; }
+    else if (running && modelStatus === 'ready') { pill = 'online'; text = 'AI ONLINE'; }
+    else if (modelStatus === 'error') { pill = 'error'; text = 'AI OFFLINE'; }
+    else if (starting) { pill = 'busy'; text = 'CONNECTING'; }
+    else if (running) { pill = 'busy'; text = 'LOADING AI'; }
+    else if (modelStatus === 'ready') { pill = 'standby'; text = 'STANDBY'; }
+    else { pill = 'busy'; text = 'INITIALIZING'; }
+    el.statusPill.dataset.state = pill;
+    el.statusText.textContent = text;
+
+    if (!running) updatePanel();
+  }
+
+  const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  const ALERT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/></svg>';
+
+  function setModelStatus(status, err) {
+    state.modelStatus = status;
+    el.idleModel.dataset.state = status;
+    el.sysStatus.dataset.state = status;
+    if (status === 'loading') {
+      el.idleModel.innerHTML = '<span class="spinner" aria-hidden="true"></span><span>Loading AI vision model...</span>';
+      el.sysStatus.textContent = 'Loading AI vision model...';
+      el.hudModel.textContent = 'COCO-SSD · LOADING';
+      hideError('model');
+      if (state.running) showChip('loading');
+    } else if (status === 'ready') {
+      el.idleModel.innerHTML = `${CHECK_SVG}<span>AI Vision Ready</span>`;
+      el.sysStatus.textContent = 'AI Vision Ready';
+      el.sysBackend.textContent = `${state.backend === 'webgl' ? 'WebGL (GPU)' : state.backend.toUpperCase()}${state.inferMode === 'detect' ? ' · compat' : ''}`;
+      el.hudModel.textContent = `COCO-SSD · ${state.backend.toUpperCase()}`;
+      if (state.running) showChip('ready');
+    } else if (status === 'error') {
+      el.idleModel.innerHTML = `${ALERT_SVG}<span>AI model failed to load</span><button class="link-btn" type="button" data-action="retry-model">Retry</button>`;
+      el.sysStatus.textContent = 'Failed to load';
+      el.hudModel.textContent = 'COCO-SSD · OFFLINE';
+      showChip(null);
+      showError('model', err);
+    }
+    refreshUI();
+  }
+
+  let chipTimer = 0;
+  function showChip(kind) {
+    clearTimeout(chipTimer);
+    if (!kind) { el.modelChip.classList.remove('show'); return; }
+    el.modelChip.dataset.state = kind;
+    el.modelChipText.textContent = kind === 'ready' ? 'AI Vision Ready' : 'Loading AI vision model...';
+    el.modelChip.classList.add('show');
+    if (kind === 'ready') chipTimer = setTimeout(() => el.modelChip.classList.remove('show'), 1700);
+  }
+
+  let errorKind = null;
+  function showError(kind, err) {
+    const def = ERRORS[kind] || ERRORS.generic;
+    errorKind = kind;
+    el.errorTitle.textContent = def.title;
+    let msg = def.msg;
+    if (kind === 'generic' && err && err.message) msg += ` (${err.message})`;
+    el.errorMsg.textContent = msg;
+    el.errorRetry.hidden = !def.retry;
+    el.errorRetry.textContent = def.retryLabel || 'Try again';
+    el.errorBox.hidden = false;
+    el.stage.classList.add('has-error');
+  }
+
+  function hideError(kind) {
+    if (kind && errorKind !== kind) return;
+    errorKind = null;
+    el.errorBox.hidden = true;
+    el.stage.classList.remove('has-error');
+  }
+
+  function setThreshold(pct) {
+    const value = clamp(Math.round(pct), 20, 90);
+    state.threshold = value / 100;
+    el.threshold.value = value;
+    el.thresholdOut.textContent = `${value}%`;
+    el.threshold.style.setProperty('--pct', `${((value - 20) / 70) * 100}%`);
+    el.threshold.setAttribute('aria-valuetext', `${value} percent`);
+  }
+
+  function setSpeed(speed) {
+    if (!SPEEDS[speed]) speed = 'balanced';
+    state.speed = speed;
+    const input = document.querySelector(`input[name="speed"][value="${speed}"]`);
+    if (input) input.checked = true;
+    el.speedHint.textContent = SPEEDS[speed].hint;
+  }
+
+  /* =====================================================================
+   * Wiring
+   * ===================================================================== */
+
+  el.btnStart.addEventListener('click', startCamera);
+  el.idleStart.addEventListener('click', startCamera);
+  el.btnStop.addEventListener('click', () => { stopCamera(); toast('Camera stopped'); });
+  el.btnSwitch.addEventListener('click', switchCamera);
+  el.btnSnap.addEventListener('click', takeSnapshot);
+
+  el.errorRetry.addEventListener('click', () => {
+    const kind = errorKind;
+    hideError();
+    if (kind === 'model') initModel();
+    else startCamera();
+  });
+  el.errorDismiss.addEventListener('click', () => hideError());
+  el.idleModel.addEventListener('click', (e) => {
+    if (e.target.closest('[data-action="retry-model"]')) initModel();
+  });
+
+  el.threshold.addEventListener('input', () => {
+    setThreshold(Number(el.threshold.value));
+    if (state.running) updatePanel();
+  });
+  el.threshold.addEventListener('change', () => store.save());
+  document.querySelectorAll('input[name="speed"]').forEach((input) => {
+    input.addEventListener('change', () => {
+      if (!input.checked) return;
+      setSpeed(input.value);
+      store.save();
+      if (state.running && state.inferTimer && !state.inferBusy) scheduleInference(0);
+    });
+  });
+
+  el.modal.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeSnapshot(); });
+  el.snapShare.addEventListener('click', shareSnapshot);
+  el.snapSave.addEventListener('click', () => setTimeout(() => toast('Downloading snapshot…'), 150));
+  document.addEventListener('keydown', (e) => {
+    if (el.modal.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeSnapshot(); return; }
+    if (e.key === 'Tab') { // keep focus inside the dialog
+      const f = [...el.modal.querySelectorAll('button:not([hidden]), a[href]')].filter((n) => n.offsetParent !== null);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+
+  el.video.addEventListener('resize', onVideoResize);
+  if (typeof ResizeObserver === 'function') {
+    new ResizeObserver(() => { view.dirty = true; }).observe(el.canvas);
+  }
+  window.addEventListener('resize', () => { view.dirty = true; });
+  window.addEventListener('orientationchange', () => { view.dirty = true; });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    state.lastFrameTs = 0;
+    state.lastInferAt = 0;
+    if (state.running && !state.inferBusy) scheduleInference(0);
+  });
+  window.addEventListener('pagehide', () => { if (state.running) stopCamera(); });
+  el.stage.addEventListener('click', () => {
+    if (state.running && el.video.paused) el.video.play().catch(() => {});
+  });
+
+  if (navigator.mediaDevices && typeof navigator.mediaDevices.addEventListener === 'function') {
+    navigator.mediaDevices.addEventListener('devicechange', () => { if (state.running) refreshCameraCount(); });
+  }
+
+  /* =====================================================================
+   * Boot
+   * ===================================================================== */
+
+  const saved = store.load();
+  setThreshold(typeof saved.threshold === 'number' ? saved.threshold * 100 : 50);
+  setSpeed(saved.speed || 'balanced');
+  refreshUI();
+
+  const unsupported = cameraSupportError();
+  if (unsupported) showError(unsupported);
+
+  initModel();
+})();
+</script>
+</body>
+</html>
