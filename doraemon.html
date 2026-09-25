@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Doraemon 3D</title>
+<style>
+  :root {
+    --bg-top: #bfe6ff;
+    --bg-bottom: #f4fbff;
+    --panel: rgba(255, 255, 255, 0.82);
+    --text: #0b3a5b;
+    --accent: #0095d9;
+    --accent-text: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(var(--bg-top), var(--bg-bottom));
+    color: var(--text);
+  }
+  canvas { display: block; }
+  #ui {
+    position: fixed;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 14px;
+    background: var(--panel);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 18px rgba(0, 60, 110, 0.15);
+    max-width: calc(100vw - 32px);
+  }
+  #ui button {
+    border: 0;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    background: var(--accent);
+    color: var(--accent-text);
+    cursor: pointer;
+  }
+  #ui button[aria-pressed="false"] { background: #d7e9f5; color: var(--text); }
+  #hint {
+    position: fixed;
+    top: 14px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 13px;
+    opacity: 0.7;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div id="hint">Drag to rotate · Scroll / pinch to zoom · Click Doraemon to wave</div>
+<div id="ui">
+  <button id="btnWave">Wave 👋</button>
+  <button id="btnRotate" aria-pressed="false">Auto-rotate</button>
+  <button id="btnOutline" aria-pressed="true">Outline</button>
+  <button id="btnReset">Reset view</button>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ------------------------------------------------------------------
+   Renderer / scene / camera
+------------------------------------------------------------------ */
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
+const HOME_CAM = new THREE.Vector3(1.8, 2.2, 7.4);
+const HOME_TARGET = new THREE.Vector3(0, 1.4, 0);
+camera.position.copy(HOME_CAM);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.copy(HOME_TARGET);
+controls.enableDamping = true;
+controls.minDistance = 2.5;
+controls.maxDistance = 14;
+controls.maxPolarAngle = Math.PI * 0.55;
+controls.autoRotateSpeed = 1.6;
+
+/* Lights */
+scene.add(new THREE.HemisphereLight(0xffffff, 0x9ec9e6, 1.1));
+
+const key = new THREE.DirectionalLight(0xffffff, 2.2);
+key.position.set(3, 6, 5);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.left = -3;
+key.shadow.camera.right = 3;
+key.shadow.camera.top = 4;
+key.shadow.camera.bottom = -2;
+key.shadow.bias = -0.0004;
+key.shadow.normalBias = 0.02;
+scene.add(key);
+
+const rim = new THREE.DirectionalLight(0xcfe9ff, 1.0);
+rim.position.set(-4, 3, -4);
+scene.add(rim);
+
+const fill = new THREE.DirectionalLight(0xffffff, 0.5);
+fill.position.set(-3, 1, 4);
+scene.add(fill);
+
+/* Ground */
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(6, 64),
+  new THREE.ShadowMaterial({ opacity: 0.22 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+/* ------------------------------------------------------------------
+   Palette & materials
+------------------------------------------------------------------ */
+const COLORS = {
+  blue: 0x0a9be0,
+  white: 0xffffff,
+  red: 0xe60012,
+  nose: 0xe8132b,
+  bell: 0xf7c21b,
+  black: 0x111111,
+};
+
+const mat = (color, opts = {}) => new THREE.MeshPhysicalMaterial({
+  color,
+  roughness: 0.42,
+  metalness: 0,
+  clearcoat: 0.35,
+  clearcoatRoughness: 0.35,
+  ...opts,
+});
+
+const M = {
+  blue: mat(COLORS.blue),
+  white: mat(COLORS.white, { roughness: 0.5, emissive: 0xffffff, emissiveIntensity: 0.12 }),
+  red: mat(COLORS.red),
+  nose: mat(COLORS.nose, { roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.1 }),
+  bell: mat(COLORS.bell, { metalness: 0.55, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.1 }),
+  black: mat(COLORS.black, { roughness: 0.3, clearcoat: 0.8 }),
+  pupil: mat(0x000000, { roughness: 0.15, clearcoat: 1, clearcoatRoughness: 0.05 }),
+  stick: mat(0x333333),
+  outline: new THREE.MeshBasicMaterial({ color: 0x0a0a0a, side: THREE.BackSide }),
+};
+
+/* Inverted-hull outlines give the cartoon ink line */
+const outlines = [];
+function addOutline(mesh, amount = 0.025) {
+  const hull = new THREE.Mesh(mesh.geometry, M.outline);
+  hull.scale.setScalar(1 + amount);
+  hull.userData.isOutline = true;
+  mesh.add(hull);
+  outlines.push(hull);
+  return hull;
+}
+
+function shadowed(mesh) {
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+const unitSphere = (w = 64, h = 48) => new THREE.SphereGeometry(1, w, h);
+
+/* Sphere geometry whose UVs are a planar projection from the front (+Z),
+   so a canvas drawn in "unit face coordinates" (-1..1) maps onto it. */
+function frontProjectedSphere(w = 128, h = 96) {
+  const g = new THREE.SphereGeometry(1, w, h);
+  const pos = g.attributes.position;
+  const uv = g.attributes.uv;
+  for (let i = 0; i < pos.count; i++) {
+    uv.setXY(i, pos.getX(i) * 0.5 + 0.5, pos.getY(i) * 0.5 + 0.5);
+  }
+  uv.needsUpdate = true;
+  return g;
+}
+
+function makeCanvas(size) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  return c;
+}
+
+/* ------------------------------------------------------------------
+   Geometry constants (all in the head's local space, head radius = 1)
+------------------------------------------------------------------ */
+const HEAD_R = 1;
+// The white face is a sphere pushed forward & down so that it meets the
+// blue head along a circle running just under the top of the eyes.
+const FACE_C = new THREE.Vector3(0, -0.062, 0.137);
+const FACE_R = 0.937;
+
+function faceZ(x, y) {
+  const d = FACE_R * FACE_R - x * x - (y - FACE_C.y) ** 2;
+  return d > 0 ? FACE_C.z + Math.sqrt(d) : -Infinity;
+}
+function headZ(x, y) {
+  const d = HEAD_R * HEAD_R - x * x - y * y;
+  return d > 0 ? Math.sqrt(d) : -Infinity;
+}
+function surfaceZ(x, y) {
+  return Math.max(faceZ(x, y), headZ(x, y));
+}
+
+/* ------------------------------------------------------------------
+   Doraemon
+------------------------------------------------------------------ */
+const doraemon = new THREE.Group();
+scene.add(doraemon);
+
+const bodyGroup = new THREE.Group();
+doraemon.add(bodyGroup);
+
+/* ----- Body ----- */
+const BODY_C = new THREE.Vector3(0, 0.8, 0);
+const BODY_S = new THREE.Vector3(0.8, 0.8, 0.72);
+const body = shadowed(new THREE.Mesh(unitSphere(), M.blue));
+body.position.copy(BODY_C);
+body.scale.copy(BODY_S);
+addOutline(body, 0.02);
+bodyGroup.add(body);
+
+/* ----- Belly (white) with pocket drawn on a texture ----- */
+const BELLY_C = new THREE.Vector3(0, 0.76, 0.33);
+const BELLY_S = new THREE.Vector3(0.6, 0.56, 0.45);
+
+function bodyZ(x, y) {
+  const d = 1 - (x / BODY_S.x) ** 2 - ((y - BODY_C.y) / BODY_S.y) ** 2;
+  return d > 0 ? BODY_C.z + BODY_S.z * Math.sqrt(d) : -Infinity;
+}
+function bellyZ(x, y) {
+  const d = 1 - ((x - BELLY_C.x) / BELLY_S.x) ** 2 - ((y - BELLY_C.y) / BELLY_S.y) ** 2;
+  return d > 0 ? BELLY_C.z + BELLY_S.z * Math.sqrt(d) : -Infinity;
+}
+
+/* Trace the visible border between two surfaces, in the front-projected
+   unit coordinates of the first one. Returns [[u, v], ...]. */
+function traceBorder(toWorld, zInner, zOuter, steps = 360) {
+  const pts = [];
+  for (let i = 0; i <= steps; i++) {
+    const a = (i / steps) * Math.PI * 2;
+    let lo = 0, hi = 1;
+    for (let k = 0; k < 30; k++) {
+      const r = (lo + hi) / 2;
+      const [x, y] = toWorld(Math.cos(a) * r, Math.sin(a) * r);
+      if (zInner(x, y) > zOuter(x, y)) lo = r; else hi = r;
+    }
+    pts.push([Math.cos(a) * lo, Math.sin(a) * lo]);
+  }
+  return pts;
+}
+
+function bellyTexture() {
+  const S = 1024;
+  const c = makeCanvas(S);
+  const g = c.getContext('2d');
+  g.fillStyle = '#ffffff';
+  g.fillRect(0, 0, S, S);
+  // world (body-space) -> canvas pixels
+  const toPx = (x, y) => [
+    ((x - BELLY_C.x) / BELLY_S.x * 0.5 + 0.5) * S,
+    (1 - ((y - BELLY_C.y) / BELLY_S.y * 0.5 + 0.5)) * S,
+  ];
+  const uvToPx = (u, v) => [(u * 0.5 + 0.5) * S, (1 - (v * 0.5 + 0.5)) * S];
+
+  // ink line where the belly meets the blue body
+  const border = traceBorder(
+    (u, v) => [BELLY_C.x + u * BELLY_S.x, BELLY_C.y + v * BELLY_S.y],
+    bellyZ, bodyZ
+  );
+  g.strokeStyle = '#111';
+  g.lineWidth = 14;
+  g.lineJoin = 'round';
+  g.beginPath();
+  border.forEach(([u, v], i) => {
+    const [px, py] = uvToPx(u, v);
+    i ? g.lineTo(px, py) : g.moveTo(px, py);
+  });
+  g.closePath();
+  g.stroke();
+
+  // 4D pocket: flat top edge, half-circle bottom
+  const PR = 0.33, PTOP = 0.66, PDEPTH = 0.27;
+  g.lineWidth = 9;
+  g.lineCap = 'round';
+  g.beginPath();
+  for (let i = 0; i <= 64; i++) {
+    const t = (i / 64) * Math.PI;
+    const [px, py] = toPx(PR * Math.cos(t), PTOP - PDEPTH * Math.sin(t));
+    i ? g.lineTo(px, py) : g.moveTo(px, py);
+  }
+  g.closePath();
+  g.stroke();
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return tex;
+}
+
+const bellyTex = bellyTexture();
+const belly = shadowed(new THREE.Mesh(
+  frontProjectedSphere(),
+  mat(COLORS.white, { roughness: 0.5, map: bellyTex, emissive: 0xffffff, emissiveMap: bellyTex, emissiveIntensity: 0.12 })
+));
+belly.position.copy(BELLY_C);
+belly.scale.copy(BELLY_S);
+bodyGroup.add(belly);
+
+/* ----- Legs & feet ----- */
+for (const side of [-1, 1]) {
+  const leg = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.3, 40), M.blue));
+  leg.position.set(side * 0.3, 0.2, 0);
+  bodyGroup.add(leg);
+
+  const foot = shadowed(new THREE.Mesh(unitSphere(), M.white));
+  foot.position.set(side * 0.31, 0.12, 0.06);
+  foot.scale.set(0.31, 0.13, 0.37);
+  foot.rotation.y = side * 0.12;
+  addOutline(foot, 0.04);
+  bodyGroup.add(foot);
+}
+
+/* ----- Tail: red ball on a short stalk ----- */
+const tailStalk = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.2, 12), M.stick));
+tailStalk.rotation.x = Math.PI / 2 + 0.35;
+tailStalk.position.set(0, 0.47, -0.74);
+bodyGroup.add(tailStalk);
+const tailBall = shadowed(new THREE.Mesh(unitSphere(32, 24), M.red));
+tailBall.scale.setScalar(0.085);
+tailBall.position.set(0, 0.43, -0.85);
+addOutline(tailBall, 0.08);
+bodyGroup.add(tailBall);
+
+/* ----- Arms ----- */
+function makeArm(side) {
+  const pivot = new THREE.Group();
+  pivot.position.set(side * 0.6, 1.2, 0.02);
+  pivot.userData.rest = side * 0.62;
+  pivot.rotation.z = pivot.userData.rest;
+
+  const arm = shadowed(new THREE.Mesh(new THREE.CapsuleGeometry(0.135, 0.36, 12, 32), M.blue));
+  arm.position.y = -0.27;
+  addOutline(arm, 0.04);
+  pivot.add(arm);
+
+  const hand = shadowed(new THREE.Mesh(unitSphere(), M.white));
+  hand.scale.setScalar(0.175);
+  hand.position.y = -0.6;
+  addOutline(hand, 0.06);
+  pivot.add(hand);
+
+  bodyGroup.add(pivot);
+  return pivot;
+}
+// Doraemon faces +Z, so his right arm is on the -X side.
+const rightArm = makeArm(-1);
+const leftArm = makeArm(1);
+
+/* ----- Collar & bell ----- */
+const collar = shadowed(new THREE.Mesh(new THREE.TorusGeometry(0.64, 0.075, 24, 96), M.red));
+collar.rotation.x = Math.PI / 2;
+collar.position.y = 1.35;
+addOutline(collar, 0.015);
+bodyGroup.add(collar);
+
+const bell = new THREE.Group();
+bell.position.set(0, 1.2, 0.66);
+bodyGroup.add(bell);
+{
+  const ball = shadowed(new THREE.Mesh(unitSphere(), M.bell));
+  ball.scale.setScalar(0.15);
+  addOutline(ball, 0.05);
+  bell.add(ball);
+
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.148, 0.018, 12, 64), M.bell);
+  band.rotation.x = Math.PI / 2;
+  band.position.y = 0.035;
+  bell.add(band);
+  const band2 = band.clone();
+  band2.position.y = 0.0;
+  band2.scale.setScalar(1.005);
+  bell.add(band2);
+
+  // slot & hole on the lower half
+  const hole = new THREE.Mesh(unitSphere(24, 16), M.black);
+  hole.scale.set(0.028, 0.028, 0.012);
+  hole.position.set(0, -0.06, 0.137);
+  hole.rotation.x = -0.4;
+  bell.add(hole);
+  const slot = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.07, 0.01), M.black);
+  slot.position.set(0, -0.105, 0.108);
+  slot.rotation.x = -0.8;
+  bell.add(slot);
+
+  // tiny loop connecting bell to the collar
+  const loop = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.01, 8, 24), M.bell);
+  loop.position.set(0, 0.155, 0);
+  bell.add(loop);
+}
+
+/* ----- Head ----- */
+const headPivot = new THREE.Group();   // pivots at the neck for nods/tilts
+headPivot.position.set(0, 1.35, 0);
+doraemon.add(headPivot);
+
+const head = new THREE.Group();
+head.position.set(0, 0.86, 0);          // head centre at y = 2.21
+headPivot.add(head);
+
+const skull = shadowed(new THREE.Mesh(unitSphere(96, 72), M.blue));
+skull.scale.setScalar(HEAD_R);
+addOutline(skull, 0.018);
+head.add(skull);
+
+/* Face texture: mouth, tongue, nose line and the ink border to the blue */
+function faceTexture() {
+  const S = 2048;
+  const c = makeCanvas(S);
+  const g = c.getContext('2d');
+  g.fillStyle = '#ffffff';
+  g.fillRect(0, 0, S, S);
+
+  // head-space (x, y) -> canvas pixels, via face-sphere front projection
+  const px = (x, y) => [
+    ((x - FACE_C.x) / FACE_R * 0.5 + 0.5) * S,
+    (1 - ((y - FACE_C.y) / FACE_R * 0.5 + 0.5)) * S,
+  ];
+  const uvToPx = (u, v) => [(u * 0.5 + 0.5) * S, (1 - (v * 0.5 + 0.5)) * S];
+  const P = (x, y) => px(x, y);
+
+  // Ink border where white face meets blue head
+  const border = traceBorder(
+    (u, v) => [FACE_C.x + u * FACE_R, FACE_C.y + v * FACE_R],
+    faceZ, headZ
+  );
+  g.strokeStyle = '#111';
+  g.lineJoin = 'round';
+  g.lineWidth = 22;
+  g.beginPath();
+  border.forEach(([u, v], i) => {
+    const [x, y] = uvToPx(u, v);
+    i ? g.lineTo(x, y) : g.moveTo(x, y);
+  });
+  g.closePath();
+  g.stroke();
+
+  // Mouth: gentle smiling upper lip, big round open lower jaw
+  const L = [-0.53, -0.08], R = [0.53, -0.08];
+  const mouthPath = () => {
+    g.beginPath();
+    g.moveTo(...P(...L));
+    g.quadraticCurveTo(...P(0, -0.44), ...P(...R));
+    g.bezierCurveTo(...P(0.5, -0.74), ...P(-0.5, -0.74), ...P(...L));
+    g.closePath();
+  };
+  mouthPath();
+  g.fillStyle = '#c8102e';
+  g.fill();
+
+  // darker throat shading
+  g.save();
+  mouthPath();
+  g.clip();
+  const [tcx, tcy] = P(0, -0.33);
+  const grad = g.createRadialGradient(tcx, tcy, 10, tcx, tcy, 360);
+  grad.addColorStop(0, '#7a0014');
+  grad.addColorStop(1, 'rgba(122,0,20,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, S, S);
+
+  // Tongue
+  g.beginPath();
+  g.moveTo(...P(-0.34, -0.5));
+  g.bezierCurveTo(...P(-0.2, -0.36), ...P(-0.02, -0.4), ...P(0, -0.46));
+  g.bezierCurveTo(...P(0.02, -0.4), ...P(0.2, -0.36), ...P(0.34, -0.5));
+  g.lineTo(...P(0.4, -0.7));
+  g.lineTo(...P(-0.4, -0.7));
+  g.closePath();
+  g.fillStyle = '#f2605a';
+  g.fill();
+  g.restore();
+
+  mouthPath();
+  g.lineWidth = 14;
+  g.lineCap = 'round';
+  g.strokeStyle = '#111';
+  g.stroke();
+
+  // Line from the nose down to the mouth
+  g.beginPath();
+  g.moveTo(...P(0, 0.1));
+  g.lineTo(...P(0, -0.26));
+  g.lineWidth = 12;
+  g.stroke();
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return tex;
+}
+
+const faceTex = faceTexture();
+const face = shadowed(new THREE.Mesh(
+  frontProjectedSphere(),
+  mat(COLORS.white, { roughness: 0.5, map: faceTex, emissive: 0xffffff, emissiveMap: faceTex, emissiveIntensity: 0.12 })
+));
+face.position.copy(FACE_C);
+face.scale.setScalar(FACE_R);
+head.add(face);
+
+/* Place a group on the head/face surface, oriented along the surface normal */
+function placeOnSurface(obj, x, y, lift = 0) {
+  const zf = faceZ(x, y), zh = headZ(x, y);
+  const onFace = zf >= zh;
+  const z = Math.max(zf, zh);
+  const p = new THREE.Vector3(x, y, z);
+  const n = p.clone().sub(onFace ? FACE_C : new THREE.Vector3()).normalize();
+  obj.position.copy(p).addScaledVector(n, lift);
+  obj.lookAt(obj.position.clone().add(n));
+  return obj;
+}
+
+/* ----- Eyes ----- */
+const eyes = [];
+function makeEye(side) {
+  const group = new THREE.Group();
+  placeOnSurface(group, side * 0.188, 0.42, -0.035);
+  // lean the eyes slightly towards each other at the top, like the anime
+  group.rotateZ(-side * 0.04);
+
+  const W = 0.19, H = 0.255, D = 0.1;
+
+  const outline = new THREE.Mesh(unitSphere(), M.black);
+  outline.scale.set(W + 0.009, H + 0.009, D * 0.9);
+  group.add(outline);
+
+  const white = shadowed(new THREE.Mesh(unitSphere(), M.white));
+  white.scale.set(W, H, D);
+  white.position.z = 0.004;
+  group.add(white);
+
+  // Pupil sits on the inner side of each eye, looking slightly inward
+  const pupilPivot = new THREE.Group();
+  group.add(pupilPivot);
+  const px = -side * 0.06, py = -0.05;
+  const pz = 0.004 + D * Math.sqrt(1 - (px / W) ** 2 - (py / H) ** 2);
+  const pupil = new THREE.Mesh(unitSphere(32, 24), M.pupil);
+  pupil.scale.set(0.04, 0.062, 0.018);
+  pupil.position.set(px, py, pz - 0.006);
+  pupilPivot.add(pupil);
+
+  const shine = new THREE.Mesh(unitSphere(16, 12), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  shine.scale.set(0.012, 0.016, 0.006);
+  shine.position.set(px + 0.012, py + 0.022, pz + 0.008);
+  pupilPivot.add(shine);
+
+  head.add(group);
+  eyes.push({ group, pupilPivot, side });
+  return group;
+}
+makeEye(-1);
+makeEye(1);
+
+/* ----- Nose ----- */
+const nose = new THREE.Group();
+placeOnSurface(nose, 0, 0.17, 0.055);
+head.add(nose);
+{
+  const ball = shadowed(new THREE.Mesh(unitSphere(), M.nose));
+  ball.scale.setScalar(0.1);
+  addOutline(ball, 0.07);
+  nose.add(ball);
+  const shine = new THREE.Mesh(unitSphere(16, 12), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  shine.scale.set(0.028, 0.022, 0.012);
+  shine.position.set(-0.035, 0.04, 0.078);
+  nose.add(shine);
+}
+
+/* ----- Whiskers: three per side, following the face then lifting off ----- */
+function whisker(x0, y0, x1, y1) {
+  const pts = [];
+  const N = 24;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const x = x0 + (x1 - x0) * t;
+    const y = y0 + (y1 - y0) * t;
+    const lift = 0.012 + 0.06 * t * t;   // ends curl away from the face
+    const z = surfaceZ(x, y) + lift;
+    pts.push(new THREE.Vector3(x, y, z));
+  }
+  const curve = new THREE.CatmullRomCurve3(pts);
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.011, 8, false), M.black);
+  // round caps
+  for (const p of [pts[0], pts[pts.length - 1]]) {
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 6), M.black);
+    cap.position.copy(p);
+    tube.add(cap);
+  }
+  head.add(tube);
+}
+for (const s of [-1, 1]) {
+  whisker(s * 0.25, 0.1,  s * 0.8, 0.2);
+  whisker(s * 0.25, 0.0,  s * 0.82, 0.0);
+  whisker(s * 0.25, -0.1, s * 0.8, -0.2);
+}
+
+/* Center the model's feet on the ground */
+doraemon.position.y = 0;
+
+/* ------------------------------------------------------------------
+   UI
+------------------------------------------------------------------ */
+const btnWave = document.getElementById('btnWave');
+const btnRotate = document.getElementById('btnRotate');
+const btnOutline = document.getElementById('btnOutline');
+const btnReset = document.getElementById('btnReset');
+
+let waveStart = -1;
+const WAVE_TIME = 2.4;
+const startWave = () => { waveStart = clock.getElapsedTime(); };
+btnWave.addEventListener('click', startWave);
+
+btnRotate.addEventListener('click', () => {
+  controls.autoRotate = !controls.autoRotate;
+  btnRotate.setAttribute('aria-pressed', String(controls.autoRotate));
+});
+
+btnOutline.addEventListener('click', () => {
+  const on = btnOutline.getAttribute('aria-pressed') !== 'true';
+  btnOutline.setAttribute('aria-pressed', String(on));
+  outlines.forEach(o => (o.visible = on));
+});
+
+btnReset.addEventListener('click', () => {
+  camera.position.copy(HOME_CAM);
+  controls.target.copy(HOME_TARGET);
+  controls.update();
+});
+
+/* Click on Doraemon to make him wave */
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let downAt = null;
+renderer.domElement.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 5) return;
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  if (raycaster.intersectObject(doraemon, true).length) startWave();
+});
+
+/* Eyes follow the pointer a little */
+const look = new THREE.Vector2();
+window.addEventListener('pointermove', e => {
+  look.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+});
+
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ------------------------------------------------------------------
+   Animation
+------------------------------------------------------------------ */
+const clock = new THREE.Clock();
+let nextBlink = 2.5;
+
+function animate() {
+  const t = clock.getElapsedTime();
+
+  // idle breathing & gentle sway
+  const breathe = Math.sin(t * 2) * 0.012;
+  bodyGroup.scale.set(1 + breathe, 1 - breathe * 0.6, 1 + breathe);
+  headPivot.position.y = 1.35 * (1 - breathe * 0.6);
+  headPivot.rotation.z = Math.sin(t * 0.9) * 0.035;
+  headPivot.rotation.x = Math.sin(t * 0.7) * 0.02;
+
+  // blink
+  let blink = 1;
+  if (t > nextBlink) {
+    const k = (t - nextBlink) / 0.16;
+    if (k >= 1) nextBlink = t + 2 + Math.random() * 3;
+    else blink = 1 - Math.sin(k * Math.PI) * 0.92;
+  }
+
+  // eye tracking
+  for (const e of eyes) {
+    e.group.scale.y = blink;
+    e.pupilPivot.position.x += (look.x * 0.03 - e.pupilPivot.position.x) * 0.1;
+    e.pupilPivot.position.y += (look.y * 0.035 - e.pupilPivot.position.y) * 0.1;
+  }
+
+  // arms
+  leftArm.rotation.z = leftArm.userData.rest + Math.sin(t * 2) * 0.03;
+  leftArm.rotation.x = Math.sin(t * 1.3) * 0.05;
+  let rz = rightArm.userData.rest - Math.sin(t * 2) * 0.03;
+  if (waveStart >= 0) {
+    const w = (t - waveStart) / WAVE_TIME;
+    if (w >= 1) {
+      waveStart = -1;
+    } else {
+      const env = Math.sin(Math.min(w, 1) * Math.PI);          // ease in / out
+      const raise = Math.min(1, env * 1.6);
+      rz = THREE.MathUtils.lerp(rz, -2.5, raise) + Math.sin(w * Math.PI * 8) * 0.28 * raise;
+      headPivot.rotation.z += -0.08 * raise;
+    }
+  }
+  rightArm.rotation.z = rz;
+
+  // tail wiggle
+  tailBall.position.x = Math.sin(t * 3) * 0.02;
+
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
