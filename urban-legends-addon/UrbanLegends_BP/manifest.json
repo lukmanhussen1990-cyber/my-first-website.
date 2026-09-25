@@ -4,27 +4,47 @@
     "name": "Urban Legends Horror §7(Behavior)",
     "description": "The Grinning Man urban legend, a deadly Parasite and horror gear. Find the spawn eggs and items in the creative inventory.",
     "uuid": "62269062-1c10-481f-870a-676ca42f89da",
-    "version": [1, 0, 0],
-    "min_engine_version": [1, 20, 80]
+    "version": [
+      1,
+      0,
+      1
+    ],
+    "min_engine_version": [
+      1,
+      20,
+      80
+    ]
   },
   "modules": [
     {
       "type": "data",
       "uuid": "60b68027-2079-4cc8-9c58-e16d9d540ff3",
-      "version": [1, 0, 0]
+      "version": [
+        1,
+        0,
+        1
+      ]
     },
     {
       "type": "script",
       "language": "javascript",
       "uuid": "dfdabb05-6533-4658-af8f-a043a779a086",
-      "version": [1, 0, 0],
+      "version": [
+        1,
+        0,
+        1
+      ],
       "entry": "scripts/main.js"
     }
   ],
   "dependencies": [
     {
       "uuid": "f6c60832-1c5d-48fc-a27d-fb7937d9f1fd",
-      "version": [1, 0, 0]
+      "version": [
+        1,
+        0,
+        1
+      ]
     },
     {
       "module_name": "@minecraft/server",

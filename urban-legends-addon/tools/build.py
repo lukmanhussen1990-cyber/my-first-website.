@@ -91,7 +91,7 @@ def check_json_and_refs():
 
     for path in glob.glob(os.path.join(BP, "items", "*.json")):
         item = load(path)["minecraft:item"]
-        icon = item["components"]["minecraft:icon"]["texture"]
+        icon = item["components"]["minecraft:icon"]
         if icon not in items_atlas:
             errors.append(f"{item['description']['identifier']}: icon {icon} not in item_texture.json")
 
