@@ -1,0 +1,20 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "horror:haunted_mirror",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "horror_haunted_mirror"
+      },
+      "minecraft:display_name": {
+        "value": "§5Haunted Mirror"
+      },
+      "minecraft:max_stack_size": 1
+    }
+  }
+}

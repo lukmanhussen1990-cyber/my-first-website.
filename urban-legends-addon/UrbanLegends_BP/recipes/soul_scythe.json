@@ -1,0 +1,27 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "horror:soul_scythe_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "EEE",
+      "  S",
+      "  S"
+    ],
+    "key": {
+      "E": {
+        "item": "minecraft:echo_shard"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "result": {
+      "item": "horror:soul_scythe"
+    }
+  }
+}

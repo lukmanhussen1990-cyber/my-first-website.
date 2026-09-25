@@ -1,0 +1,36 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "horror:grinning_man",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/grinning_man"
+      },
+      "geometry": {
+        "default": "geometry.horror.grinning_man"
+      },
+      "animations": {
+        "look_at_target": "animation.horror.grinning_man.look_at_target",
+        "walk": "animation.horror.grinning_man.walk",
+        "idle": "animation.horror.grinning_man.idle"
+      },
+      "scripts": {
+        "animate": [
+          "look_at_target",
+          "idle",
+          "walk"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.horror.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#0b0b0e",
+        "overlay_color": "#e8e2d0"
+      }
+    }
+  }
+}

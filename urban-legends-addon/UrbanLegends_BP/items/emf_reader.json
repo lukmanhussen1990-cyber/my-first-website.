@@ -1,0 +1,20 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "horror:emf_reader",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "horror_emf_reader"
+      },
+      "minecraft:display_name": {
+        "value": "§aEMF Ghost Reader"
+      },
+      "minecraft:max_stack_size": 1
+    }
+  }
+}
