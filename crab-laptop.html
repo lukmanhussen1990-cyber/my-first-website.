@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crab at the Laptop</title>
+<style>
+  :root {
+    --bg: #f7efe4;
+    --ink: #2b2622;
+    --muted: #8a7d70;
+    --track: #e6d9c8;
+    --accent: #f26149;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px;
+  }
+  .stage {
+    width: min(100%, 720px);
+    aspect-ratio: 3 / 2;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(60, 40, 20, .15);
+  }
+  svg { display: block; width: 100%; height: 100%; }
+  svg * { shape-rendering: crispEdges; }
+  .controls {
+    width: min(100%, 720px);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  button {
+    font: inherit;
+    border: 0;
+    border-radius: 8px;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 8px 14px;
+    cursor: pointer;
+    min-width: 84px;
+  }
+  .bar {
+    flex: 1;
+    height: 8px;
+    background: var(--track);
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .fill { height: 100%; width: 0; background: var(--accent); }
+  .time { color: var(--muted); font-size: 14px; min-width: 88px; text-align: right; }
+  body.capture .controls { display: none; }
+  body.capture { padding: 0; }
+  body.capture .stage { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; aspect-ratio: auto; }
+</style>
+</head>
+<body>
+
+<div class="stage">
+<svg id="scene" viewBox="0 0 480 320" preserveAspectRatio="xMidYMid slice" aria-label="A pixel crab typing on a laptop">
+  <defs>
+    <!-- Crab silhouette on a 12x8 grid (units scaled by the group transform) -->
+    <g id="crabBody">
+      <rect x="2" y="0" width="8" height="6"/>
+      <rect x="2" y="6" width="1" height="2"/>
+      <rect x="4" y="6" width="1" height="2"/>
+      <rect x="7" y="6" width="1" height="2"/>
+      <rect x="9" y="6" width="1" height="2"/>
+    </g>
+    <linearGradient id="glowGrad" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="1"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <mask id="glowMask">
+      <rect x="0" y="0" width="12" height="8" fill="url(#glowGrad)"/>
+    </mask>
+  </defs>
+
+  <!-- Room -->
+  <rect width="480" height="320" fill="#f7efe4"/>
+  <!-- Window -->
+  <g>
+    <rect x="44" y="34" width="96" height="84" fill="#d9e8ef"/>
+    <rect x="44" y="34" width="96" height="84" fill="none" stroke="#c9b59c" stroke-width="6"/>
+    <rect x="89" y="34" width="6" height="84" fill="#c9b59c"/>
+    <rect x="44" y="73" width="96" height="6" fill="#c9b59c"/>
+    <rect id="cloud" x="54" y="48" width="24" height="8" fill="#fff"/>
+  </g>
+  <!-- Wall frame -->
+  <g>
+    <rect x="396" y="40" width="56" height="44" fill="#fff"/>
+    <rect x="396" y="40" width="56" height="44" fill="none" stroke="#2b2622" stroke-width="4"/>
+    <rect x="410" y="54" width="6" height="6" fill="#f26149"/>
+    <rect x="432" y="54" width="6" height="6" fill="#f26149"/>
+    <rect x="406" y="60" width="36" height="12" fill="#f26149"/>
+  </g>
+
+  <!-- Crab -->
+  <g id="crab">
+    <g id="crabInner" transform="translate(156 110) scale(14)">
+      <g id="armL"><rect x="0" y="2" width="2" height="2" fill="#f26149"/></g>
+      <g id="armR"><rect x="10" y="2" width="2" height="2" fill="#f26149"/></g>
+      <use href="#crabBody" fill="#f26149"/>
+      <!-- screen light on the crab -->
+      <use id="glow" href="#crabBody" fill="#8fd3ff" mask="url(#glowMask)" opacity=".25"/>
+      <g id="eyes">
+        <rect id="eyeL" x="3" y="1" width="1" height="1" fill="#111"/>
+        <rect id="eyeR" x="8" y="1" width="1" height="1" fill="#111"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Desk -->
+  <rect x="0" y="236" width="480" height="84" fill="#c98f5e"/>
+  <rect x="0" y="236" width="480" height="8" fill="#dca676"/>
+  <rect x="0" y="244" width="480" height="4" fill="#a8724a"/>
+
+  <!-- Laptop (lid back facing viewer) -->
+  <g id="laptop">
+    <rect x="174" y="148" width="132" height="84" fill="#3a3f4b"/>
+    <rect x="174" y="148" width="132" height="4" fill="#4a505e"/>
+    <!-- tiny crab logo -->
+    <g id="logo" transform="translate(226 176) scale(2.33)" fill="#5b6273">
+      <rect x="0" y="2" width="12" height="2"/>
+      <use href="#crabBody"/>
+    </g>
+    <rect x="160" y="232" width="160" height="6" fill="#b7bcc6"/>
+    <rect x="160" y="238" width="160" height="2" fill="#8d929c"/>
+  </g>
+
+  <!-- Coffee mug -->
+  <g>
+    <rect x="360" y="206" width="30" height="32" fill="#fff"/>
+    <rect x="390" y="212" width="8" height="4" fill="#fff"/>
+    <rect x="394" y="212" width="4" height="16" fill="#fff"/>
+    <rect x="390" y="224" width="8" height="4" fill="#fff"/>
+    <rect x="360" y="216" width="30" height="6" fill="#f26149"/>
+    <g id="steam" fill="#fff">
+      <rect class="puff" x="366" y="190" width="4" height="4"/>
+      <rect class="puff" x="374" y="190" width="4" height="4"/>
+      <rect class="puff" x="382" y="190" width="4" height="4"/>
+    </g>
+  </g>
+
+  <!-- Plant -->
+  <g>
+    <rect x="84" y="210" width="28" height="28" fill="#8d5a3b"/>
+    <rect x="80" y="206" width="36" height="6" fill="#a06a47"/>
+    <g id="plant" fill="#5c9e62">
+      <rect x="96" y="170" width="4" height="36"/>
+      <rect x="84" y="178" width="12" height="6"/>
+      <rect x="100" y="186" width="14" height="6"/>
+      <rect x="88" y="194" width="8" height="6"/>
+    </g>
+  </g>
+
+  <!-- Code particles -->
+  <g id="particles" font-family="ui-monospace, Menlo, Consolas, monospace" font-weight="700" font-size="14" text-anchor="middle"></g>
+
+  <!-- Thought bubble -->
+  <g id="thought" opacity="0">
+    <rect x="312" y="100" width="6" height="6" fill="#fff"/>
+    <rect x="320" y="86" width="8" height="8" fill="#fff"/>
+    <rect x="322" y="48" width="64" height="30" fill="#fff"/>
+    <rect x="326" y="44" width="56" height="38" fill="#fff"/>
+    <rect class="dot" x="336" y="60" width="8" height="8" fill="#2b2622"/>
+    <rect class="dot" x="350" y="60" width="8" height="8" fill="#2b2622"/>
+    <rect class="dot" x="364" y="60" width="8" height="8" fill="#2b2622"/>
+  </g>
+
+  <!-- Success bubble -->
+  <g id="success" opacity="0">
+    <g id="successInner">
+      <rect x="208" y="36" width="64" height="44" fill="#3fbf6f"/>
+      <rect x="204" y="40" width="72" height="36" fill="#3fbf6f"/>
+      <rect x="236" y="80" width="8" height="6" fill="#3fbf6f"/>
+      <g fill="#fff">
+        <rect x="222" y="56" width="6" height="6"/>
+        <rect x="228" y="62" width="6" height="6"/>
+        <rect x="234" y="56" width="6" height="6"/>
+        <rect x="240" y="50" width="6" height="6"/>
+        <rect x="246" y="44" width="6" height="6"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Sparkles on success -->
+  <g id="sparkles" fill="#ffd34d"></g>
+</svg>
+</div>
+
+<div class="controls">
+  <button id="play" type="button">Pause</button>
+  <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
+  <div class="time" id="time">0.0s / 6.0s</div>
+</div>
+
+<script>
+(() => {
+  const DURATION = 6; // seconds, loops seamlessly
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const $ = id => document.getElementById(id);
+
+  const crab = $('crab'), armL = $('armL'), armR = $('armR');
+  const eyes = $('eyes'), glow = $('glow');
+  const thought = $('thought'), dots = thought.querySelectorAll('.dot');
+  const success = $('success'), successInner = $('successInner');
+  const puffs = document.querySelectorAll('#steam .puff');
+  const plant = $('plant'), cloud = $('cloud');
+
+  // ---- helpers -------------------------------------------------------
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const seg = (t, a, b) => clamp((t - a) / (b - a));       // 0..1 progress in [a,b]
+  const win = (t, a, b) => t >= a && t < b;
+  const easeOut = x => 1 - Math.pow(1 - x, 3);
+  const easeInOut = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  const snap = (v, step = 2) => Math.round(v / step) * step; // keep things pixel-y
+  const TAU = Math.PI * 2;
+
+  // ---- timeline (seconds) -------------------------------------------
+  // 0.0–0.6  idle + blink
+  // 0.6–2.8  typing
+  // 2.8–3.7  thinking ("...")
+  // 3.7–4.6  fast typing
+  // 4.6–4.8  wind-up, SMASH enter
+  // 4.8–5.6  success! hop + sparkles
+  // 5.6–6.0  settle back to idle (matches t = 0)
+  const TYPE_A = [0.6, 2.8], THINK = [2.8, 3.7], TYPE_B = [3.7, 4.6];
+  const ENTER = [4.6, 4.8], PARTY = [4.8, 5.6];
+
+  // Code snippets that pop out while typing
+  const GLYPHS = ['</>', '{ }', '01', ';', '()', '=>', '#', '[]', '++', '&&', 'fn', '<>'];
+  const COLORS = ['#2b2622', '#f26149', '#3a7bd5', '#3fbf6f'];
+  const spawns = [];
+  const addSpawns = (a, b, every) => {
+    for (let s = a; s < b - 0.05; s += every) spawns.push(s);
+  };
+  addSpawns(TYPE_A[0] + 0.1, TYPE_A[1], 0.32);
+  addSpawns(TYPE_B[0], TYPE_B[1], 0.2);
+  const particleEls = spawns.map((s, i) => {
+    const el = document.createElementNS(SVGNS, 'text');
+    el.textContent = GLYPHS[i % GLYPHS.length];
+    el.setAttribute('fill', COLORS[i % COLORS.length]);
+    el.setAttribute('opacity', 0);
+    $('particles').appendChild(el);
+    // deterministic pseudo-random spread
+    const r = Math.sin(i * 12.9898) * 43758.5453;
+    const rnd = r - Math.floor(r);
+    return { el, s, x: 186 + rnd * 108, drift: (rnd - .5) * 40 };
+  });
+
+  // Sparkles burst on success
+  const sparkles = Array.from({ length: 10 }, (_, i) => {
+    const el = document.createElementNS(SVGNS, 'rect');
+    el.setAttribute('width', 6);
+    el.setAttribute('height', 6);
+    $('sparkles').appendChild(el);
+    const a = (i / 10) * TAU + 0.3;
+    return { el, a, d: 70 + (i % 3) * 18 };
+  });
+
+  // ---- render one frame at time t -----------------------------------
+  function render(t) {
+    t = ((t % DURATION) + DURATION) % DURATION;
+
+    const typingA = win(t, ...TYPE_A), typingB = win(t, ...TYPE_B);
+    const typing = typingA || typingB;
+
+    // Body: gentle breathing, bob while typing, hop on success
+    let bodyY = Math.sin(t / DURATION * TAU * 3) * 1.5;
+    if (typing) bodyY += Math.abs(Math.sin(t * (typingB ? 30 : 20))) * -2;
+    if (win(t, ...ENTER)) {
+      const p = seg(t, ...ENTER);
+      bodyY += p < .6 ? -10 * easeOut(p / .6) : -10 + 14 * ((p - .6) / .4);
+    }
+    if (win(t, ...PARTY)) {
+      const p = seg(t, ...PARTY);
+      // two hops, the second smaller
+      const hop = p < .55 ? Math.sin(p / .55 * Math.PI) * 30 : Math.sin((p - .55) / .45 * Math.PI) * 14;
+      bodyY -= hop;
+    }
+    let bodyX = 0;
+    if (win(t, 2.8, 3.1)) bodyX = snap(4 * easeInOut(seg(t, 2.8, 3.1)));
+    else if (win(t, 3.1, 3.6)) bodyX = 4;
+    else if (win(t, 3.6, 3.75)) bodyX = snap(4 * (1 - seg(t, 3.6, 3.75)));
+    crab.setAttribute('transform', `translate(${bodyX} ${snap(bodyY)})`);
+
+    // Arms (in crab grid units, 1 unit = 14px)
+    let aL = 0, aR = 0;
+    if (typing) {
+      const f = typingB ? 16 : 11; // taps per second-ish
+      aL = Math.max(0, Math.sin(t * f * Math.PI)) * 0.45;
+      aR = Math.max(0, Math.sin(t * f * Math.PI + Math.PI)) * 0.45;
+    }
+    if (win(t, ...THINK)) {
+      // right arm rubs chin, left rests
+      const p = seg(t, ...THINK);
+      aR = -0.6 * Math.sin(p * Math.PI) + Math.sin(t * 18) * 0.08 * Math.sin(p * Math.PI);
+    }
+    if (win(t, ...ENTER)) {
+      const p = seg(t, ...ENTER);
+      const lift = p < .6 ? -1.2 * easeOut(p / .6) : -1.2 + 1.9 * ((p - .6) / .4);
+      aL = aR = lift;
+    }
+    if (win(t, ...PARTY)) {
+      const p = seg(t, ...PARTY);
+      const wave = Math.sin(p * Math.PI) * 1.6;
+      aL = -wave + Math.sin(t * 28) * .25 * Math.sin(p * Math.PI);
+      aR = -wave - Math.sin(t * 28) * .25 * Math.sin(p * Math.PI);
+    }
+    armL.setAttribute('transform', `translate(0 ${aL.toFixed(3)})`);
+    armR.setAttribute('transform', `translate(0 ${aR.toFixed(3)})`);
+
+    // Eyes: look at keyboard while typing, up-right while thinking, blink
+    let ex = 0, ey = 0;
+    if (typing) { ey = 0.35; ex = Math.sin(t * 2.2) * 0.15; }
+    if (win(t, ...THINK)) {
+      const p = seg(t, ...THINK);
+      const k = Math.sin(p * Math.PI);
+      ex = 0.4 * clamp(k * 2); ey = -0.4 * clamp(k * 2);
+    }
+    if (win(t, ...PARTY)) ey = -0.15;
+    const blinks = [0.3, 2.2, 3.35, 5.75];
+    let lid = 1;
+    for (const b of blinks) {
+      const d = Math.abs(t - b);
+      if (d < 0.08) lid = 0.15;
+    }
+    // happy squint during party
+    if (win(t, 4.9, 5.5)) lid = 0.5;
+    eyes.setAttribute('transform',
+      `translate(${ex.toFixed(3)} ${ey.toFixed(3)}) translate(0 1.5) scale(1 ${lid}) translate(0 -1.5)`);
+
+    // Screen light
+    let glowOp = 0.18, glowCol = '#8fd3ff';
+    if (typing) glowOp = 0.26 + (Math.sin(t * 37) > .6 ? .06 : 0);
+    if (win(t, 4.75, 5.9)) {
+      const p = seg(t, 4.75, 5.9);
+      glowCol = '#7dff9e';
+      glowOp = 0.55 * (1 - easeOut(p)) + 0.18;
+    }
+    glow.setAttribute('fill', glowCol);
+    glow.setAttribute('opacity', glowOp.toFixed(3));
+
+    // Code particles float up and fade
+    const LIFE = 1.1;
+    for (const p of particleEls) {
+      const age = t - p.s;
+      if (age < 0 || age > LIFE) { p.el.setAttribute('opacity', 0); continue; }
+      const k = age / LIFE;
+      const y = 146 - easeOut(k) * 80;
+      const x = p.x + p.drift * k;
+      p.el.setAttribute('x', snap(x));
+      p.el.setAttribute('y', snap(y));
+      p.el.setAttribute('opacity', (k < .15 ? k / .15 : 1 - (k - .15) / .85).toFixed(3));
+    }
+
+    // Thought bubble
+    let thOp = 0;
+    if (win(t, THINK[0] + 0.1, THINK[1])) {
+      const p = seg(t, THINK[0] + 0.1, THINK[1]);
+      thOp = p < .15 ? p / .15 : p > .85 ? (1 - p) / .15 : 1;
+    }
+    thought.setAttribute('opacity', thOp.toFixed(3));
+    dots.forEach((d, i) => {
+      const on = Math.floor((t - THINK[0]) * 6) % 4 > i;
+      d.setAttribute('opacity', on ? 1 : 0.2);
+    });
+
+    // Success bubble pops
+    let sOp = 0, sScale = 1;
+    if (win(t, 4.8, 5.8)) {
+      const p = seg(t, 4.8, 5.8);
+      sOp = p > .8 ? (1 - p) / .2 : 1;
+      sScale = p < .2 ? 0.4 + 0.75 * easeOut(p / .2) - 0.15 * seg(p, .12, .2) : 1;
+    }
+    success.setAttribute('opacity', sOp.toFixed(3));
+    successInner.setAttribute('transform',
+      `translate(240 86) scale(${sScale.toFixed(3)}) translate(-240 -86)`);
+
+    // Sparkles
+    sparkles.forEach((s, i) => {
+      const age = t - 4.8 - (i % 2) * 0.05;
+      if (age < 0 || age > 0.7) { s.el.setAttribute('opacity', 0); return; }
+      const k = age / 0.7;
+      const r = easeOut(k) * s.d;
+      s.el.setAttribute('x', snap(240 + Math.cos(s.a) * r - 3));
+      s.el.setAttribute('y', snap(110 + Math.sin(s.a) * r * 0.7 - 3));
+      s.el.setAttribute('fill', i % 3 ? '#ffd34d' : '#f26149');
+      s.el.setAttribute('opacity', (1 - k).toFixed(3));
+    });
+
+    // Ambient loops (all periodic in 6s so the loop is seamless)
+    puffs.forEach((pf, i) => {
+      const k = ((t / 2 + i / 3) % 1);
+      pf.setAttribute('y', snap(200 - k * 34));
+      pf.setAttribute('x', snap(366 + i * 8 + Math.sin(k * TAU + i) * 4));
+      pf.setAttribute('opacity', (Math.sin(k * Math.PI) * 0.8).toFixed(3));
+    });
+    plant.setAttribute('transform', `translate(${snap(Math.sin(t / DURATION * TAU) * 1.5, 1)} 0)`);
+    cloud.setAttribute('x', snap(52 + ((t / DURATION) * 64) % 64 - 8));
+
+    return t;
+  }
+
+  // ---- playback -----------------------------------------------------
+  const params = new URLSearchParams(location.search);
+  const capture = params.has('capture');
+  window.renderFrame = render;          // used for exporting video frames
+  window.ANIMATION_DURATION = DURATION;
+
+  if (capture) {
+    document.body.classList.add('capture');
+    render(0);
+    return;
+  }
+
+  const fill = $('fill'), timeEl = $('time'), btn = $('play'), bar = $('bar');
+  let playing = true, offset = 0, start = performance.now();
+  const now = () => playing ? offset + (performance.now() - start) / 1000 : offset;
+
+  function tick() {
+    const t = render(now());
+    fill.style.width = (t / DURATION * 100) + '%';
+    timeEl.textContent = `${t.toFixed(1)}s / ${DURATION.toFixed(1)}s`;
+    requestAnimationFrame(tick);
+  }
+  btn.addEventListener('click', () => {
+    if (playing) { offset = now(); playing = false; btn.textContent = 'Play'; }
+    else { start = performance.now(); playing = true; btn.textContent = 'Pause'; }
+  });
+  bar.addEventListener('click', e => {
+    const r = bar.getBoundingClientRect();
+    offset = clamp((e.clientX - r.left) / r.width) * DURATION;
+    start = performance.now();
+  });
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
