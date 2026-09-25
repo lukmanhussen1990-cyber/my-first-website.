@@ -406,7 +406,21 @@
   }
   .error-icon svg { width: 22px; height: 22px; }
   .error h2 { margin-top: 14px; font-size: 14px; letter-spacing: 0.1em; line-height: 1.4; }
-  .error p { margin-bottom: 20px; }
+  .error p { margin-bottom: 14px; }
+  .error-hint {
+    width: 100%;
+    margin: 0 0 18px;
+    padding: 11px 13px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: left;
+  }
+  .error-hint b { color: #fff; font-weight: 600; }
+  .error-card { max-height: 100%; overflow-y: auto; }
   .error-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
   .flash { position: absolute; inset: 0; z-index: 9; background: #fff; opacity: 0; pointer-events: none; }
@@ -924,7 +938,10 @@
             </div>
             <h2 id="errorTitle">Something went wrong</h2>
             <p id="errorMsg"></p>
+            <p class="error-hint" id="errorHint" hidden></p>
             <div class="error-actions">
+              <button class="btn btn-primary" id="errorOpen" type="button" hidden>Open in new tab</button>
+              <button class="btn btn-primary" id="errorCopy" type="button" hidden>Copy link</button>
               <button class="btn btn-primary" id="errorRetry" type="button">Try again</button>
               <button class="btn btn-ghost" id="errorDismiss" type="button">Dismiss</button>
             </div>
@@ -1099,11 +1116,40 @@
   const PALETTE = ['#3ee6ff', '#3cf5a4', '#ffc65c', '#ff7ad9', '#9b8cff', '#ff9a5c', '#b8f55c', '#5cb8ff', '#ff6b8f', '#5cffe1', '#e3a8ff', '#ffe066'];
   const FONT_UI = '"Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
 
+  const CAMERA_REQUIRED = 'Camera access is required for AI Vision.';
   const ERRORS = {
+    // Permission problems all share the required headline; the message and fix steps name the actual cause.
     denied: {
-      title: 'Camera access is required for AI Vision.',
-      msg: 'Camera permission was denied. Allow camera access for this site in your browser settings (usually via the camera icon in the address bar), then try again.',
+      title: CAMERA_REQUIRED,
+      msg: 'The camera request was declined or dismissed. Press Try again and choose “Allow” when your browser asks.',
+      hint: () => `No prompt appearing? The camera is blocked for this site. ${siteUnblockSteps()}`,
       retry: true,
+    },
+    blocked: {
+      title: CAMERA_REQUIRED,
+      msg: 'Camera access is blocked for this website in your browser, so it can’t ask you again.',
+      hint: () => siteUnblockSteps(),
+      retry: true,
+    },
+    os: {
+      title: CAMERA_REQUIRED,
+      msg: 'Your device’s privacy settings are stopping this browser from using the camera.',
+      hint: () => osUnblockSteps(),
+      retry: true,
+    },
+    frame: {
+      title: CAMERA_REQUIRED,
+      msg: 'This page is running inside a preview or embedded window that isn’t allowed to use the camera.',
+      hint: () => 'Open <b>index.html</b> in its own browser tab, served from <b>http://localhost</b> or an <b>https://</b> address.',
+      retry: true,
+      open: true,
+    },
+    inapp: {
+      title: CAMERA_REQUIRED,
+      msg: 'This app’s built-in browser doesn’t let websites use the camera.',
+      hint: () => 'Open this page in <b>Chrome</b> or <b>Safari</b> instead — use the app’s <b>⋯</b> menu → “Open in browser”, or copy the link and paste it there.',
+      retry: true,
+      copy: true,
     },
     notfound: {
       title: 'No camera available',
@@ -1152,7 +1198,7 @@
     stage: $('stage'), video: $('video'), canvas: $('overlay'), flash: $('flash'),
     idle: $('idle'), idleTitle: $('idleTitle'), idleText: $('idleText'), idleStart: $('idleStart'), idleModel: $('idleModel'),
     modelChip: $('modelChip'), modelChipText: $('modelChipText'),
-    errorBox: $('errorBox'), errorTitle: $('errorTitle'), errorMsg: $('errorMsg'), errorRetry: $('errorRetry'), errorDismiss: $('errorDismiss'),
+    errorBox: $('errorBox'), errorTitle: $('errorTitle'), errorMsg: $('errorMsg'), errorHint: $('errorHint'), errorRetry: $('errorRetry'), errorDismiss: $('errorDismiss'), errorOpen: $('errorOpen'), errorCopy: $('errorCopy'),
     btnStart: $('btnStart'), btnStartLabel: $('btnStartLabel'), btnStop: $('btnStop'), btnSwitch: $('btnSwitch'), btnSnap: $('btnSnap'),
     statusPill: $('statusPill'), statusText: $('statusText'),
     statObjects: $('statObjects'), statFps: $('statFps'), statLatency: $('statLatency'),
@@ -1214,6 +1260,43 @@
     const ua = navigator.userAgent || '';
     return /Android|iPhone|iPad|iPod|Mobile|Silk/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   })();
+
+  const UA = navigator.userAgent || '';
+  const IS_IOS = /iPhone|iPad|iPod/i.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
+  const IS_ANDROID = /Android/i.test(UA);
+  const IS_EMBEDDED = (() => { try { return window.self !== window.top; } catch (_) { return true; } })();
+  // Social/messaging apps and app web views usually refuse camera access to web pages.
+  const IS_IN_APP = /FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|Snapchat|musical_ly|TikTok|Twitter|LinkedInApp|Pinterest/i.test(UA)
+    || (IS_ANDROID && /; wv\)/.test(UA))
+    || (IS_IOS && !/Safari\//.test(UA) && navigator.standalone !== true);
+  const CAN_OPEN_TAB = /^(https?|file):$/.test(location.protocol);
+
+  // Whether the page's permissions policy lets it use the camera: 'allowed' | 'blocked' | 'unknown'.
+  // Frames embedded without allow="camera" (previews, sandboxes) report 'blocked'.
+  function cameraPolicyState() {
+    const policy = document.permissionsPolicy || document.featurePolicy;
+    try {
+      if (policy && typeof policy.allowsFeature === 'function') return policy.allowsFeature('camera') ? 'allowed' : 'blocked';
+    } catch (_) { /* fall through */ }
+    return 'unknown';
+  }
+
+  function siteUnblockSteps() {
+    if (/CriOS/.test(UA)) return 'On iPhone/iPad: open the <b>Settings</b> app → <b>Chrome</b> → turn on <b>Camera</b>, then reload this page.';
+    if (IS_IOS) return 'On iPhone/iPad: tap the <b>aA</b> (page settings) button in the address bar → <b>Website Settings</b> → <b>Camera</b> → <b>Allow</b>. Also check <b>Settings → Safari → Camera</b>. Then reload this page.';
+    if (/Firefox\//.test(UA)) return 'In Firefox: click the <b>camera</b> or <b>lock</b> icon in the address bar, remove the “Blocked” camera permission, then reload this page.';
+    if (/Safari\//.test(UA) && !/Chrome|Chromium|Edg\//.test(UA)) return 'In Safari: <b>Safari → Settings → Websites → Camera</b>, set this website to <b>Allow</b>, then reload this page.';
+    if (IS_ANDROID) return 'In Chrome on Android: tap the icon left of the address bar → <b>Permissions</b> → <b>Camera</b> → <b>Allow</b>, then reload this page.';
+    return 'Click the icon left of the address bar (lock or sliders) → <b>Site settings</b> → <b>Camera</b> → <b>Allow</b>, then reload this page.';
+  }
+
+  function osUnblockSteps() {
+    if (/Windows/.test(UA)) return 'On Windows: <b>Settings → Privacy &amp; security → Camera</b> → turn on <b>Camera access</b> and <b>Let desktop apps access your camera</b>, then restart the browser.';
+    if (IS_ANDROID) return 'On Android: <b>Settings → Apps → your browser → Permissions → Camera → Allow</b>, then reload this page.';
+    if (IS_IOS) return 'On iPhone/iPad: open the <b>Settings</b> app → your browser → turn on <b>Camera</b>, then reload this page.';
+    if (/Macintosh|Mac OS X/.test(UA)) return 'On macOS: <b>System Settings → Privacy &amp; Security → Camera</b> → turn on your browser, then quit and reopen the browser.';
+    return 'Allow your browser to use the camera in your device’s privacy settings, then restart the browser.';
+  }
 
   /* =====================================================================
    * Utilities
@@ -1870,6 +1953,47 @@
     return 'generic';
   }
 
+  let permissionStatus = null;
+
+  // 'granted' | 'denied' | 'prompt' | 'unknown' (Firefox and older browsers can't query the camera).
+  async function queryCameraPermission() {
+    if (!navigator.permissions || typeof navigator.permissions.query !== 'function') return 'unknown';
+    try {
+      const status = await navigator.permissions.query({ name: 'camera' });
+      if (!permissionStatus) {
+        permissionStatus = status;
+        status.onchange = onPermissionChange;
+      }
+      return status.state;
+    } catch (_) {
+      return 'unknown';
+    }
+  }
+
+  // The user fixed the permission in site settings: clear the error and carry on without a reload.
+  function onPermissionChange() {
+    const st = permissionStatus && permissionStatus.state;
+    if (!st || st === 'denied' || !['denied', 'blocked', 'os'].includes(errorKind)) return;
+    hideError();
+    if (st === 'granted' && !state.running && !state.starting) {
+      toast('Camera allowed — starting…');
+      startCamera();
+    } else {
+      toast('Camera permission reset — press Start Camera and choose Allow.', 3200);
+    }
+  }
+
+  // Turns a getUserMedia failure into the most specific explanation we can give.
+  async function diagnoseCameraError(err) {
+    const kind = classifyCameraError(err);
+    if (kind !== 'denied') return kind;
+    if (/system/i.test((err && err.message) || '')) return 'os';        // Chrome: "Permission denied by system"
+    const policy = cameraPolicyState();
+    if (policy === 'blocked' || (IS_EMBEDDED && policy === 'unknown')) return 'frame';
+    if (IS_IN_APP) return 'inapp';
+    return (await queryCameraPermission()) === 'denied' ? 'blocked' : 'denied';
+  }
+
   function stopStreamTracks(stream) {
     if (!stream) return;
     for (const track of stream.getTracks()) {
@@ -2029,7 +2153,9 @@
       console.error('[AI Vision] Camera error:', err);
       releaseStream();
       el.video.srcObject = null;
-      showError(classifyCameraError(err), err);
+      const kind = await diagnoseCameraError(err);
+      if (session !== state.session) return;
+      showError(kind, err);
     } finally {
       if (session === state.session) state.starting = false;
       refreshUI();
@@ -2101,7 +2227,7 @@
       } catch (err2) {
         if (session !== state.session) return;
         stopCamera();
-        showError(classifyCameraError(err2), err2);
+        showError(await diagnoseCameraError(err2), err2);
       }
     } finally {
       if (session === state.session) {
@@ -2301,8 +2427,14 @@
     let msg = def.msg;
     if (kind === 'generic' && err && err.message) msg += ` (${err.message})`;
     el.errorMsg.textContent = msg;
+    const hint = def.hint ? def.hint() : '';
+    el.errorHint.innerHTML = hint; // static, trusted strings only
+    el.errorHint.hidden = !hint;
+    el.errorOpen.hidden = !(def.open && CAN_OPEN_TAB);
+    el.errorCopy.hidden = !(def.copy && /^https?:$/.test(location.protocol));
     el.errorRetry.hidden = !def.retry;
     el.errorRetry.textContent = def.retryLabel || 'Try again';
+    el.errorRetry.classList.toggle('btn-primary', el.errorOpen.hidden && el.errorCopy.hidden);
     el.errorBox.hidden = false;
     el.stage.classList.add('has-error');
   }
@@ -2348,6 +2480,18 @@
     else startCamera();
   });
   el.errorDismiss.addEventListener('click', () => hideError());
+  el.errorOpen.addEventListener('click', () => {
+    const win = window.open(location.href, '_blank', 'noopener');
+    if (!win) toast('Pop-up blocked — open this page in a new browser tab yourself.', 3600);
+  });
+  el.errorCopy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(location.href);
+      toast('Link copied — paste it into Chrome or Safari.', 3200);
+    } catch (_) {
+      toast(location.href, 6000);
+    }
+  });
   el.idleModel.addEventListener('click', (e) => {
     if (e.target.closest('[data-action="retry-model"]')) initModel();
   });
@@ -2412,8 +2556,13 @@
   setSpeed(saved.speed || 'balanced');
   refreshUI();
 
+  // Explain known camera blockers up front instead of waiting for the first failed attempt.
   const unsupported = cameraSupportError();
   if (unsupported) showError(unsupported);
+  else if (cameraPolicyState() === 'blocked') showError('frame');
+  else queryCameraPermission().then((st) => {
+    if (st === 'denied' && !state.running && !state.starting && !errorKind) showError('blocked');
+  });
 
   initModel();
 })();
