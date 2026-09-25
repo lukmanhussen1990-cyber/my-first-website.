@@ -71,68 +71,76 @@ SCENES = [
         "start": 0.0, "art": "rearview_mirror", "bg": "pink",
         "draw_on": (0.0, 1.3),
         "text": [
-            {"text": "[LINE 1]", "box": (18, 18, 310, 96), "at": 0.5, "highlight": "cream", "align": "left"},
-            {"text": "[LINE 2]", "box": (392, 18, 310, 96), "at": 1.1, "highlight": "cream", "align": "right"},
-            {"text": "[LINE 3]", "box": (20, 436, 680, 92), "at": 2.2, "highlight": "cream"},
+            {"text": "JUST", "box": (18, 18, 310, 96), "at": 0.5, "highlight": "cream", "align": "left"},
+            {"text": "WATCH ME", "box": (392, 18, 310, 96), "at": 1.1, "highlight": "cream", "align": "right"},
+            {"text": "MOVING FAR AWAY", "box": (20, 436, 680, 92), "at": 2.2, "highlight": "cream"},
         ],
     },
-    {   # 4.2 s: ID card on a lanyard
-        "start": 4.2, "art": "id_card", "bg": "slate",
+    {   # 4.33 s: ID card on a lanyard
+        "start": 4.33, "art": "id_card", "bg": "slate",
         "text": [
-            {"text": "[LINE 4]", "box": (18, 18, 272, 100), "highlight": "peach", "align": "left"},
-            {"text": "[LINE 5]", "box": (442, 18, 260, 100), "at": 0.9, "highlight": "peach", "align": "right"},
-            {"text": "[LINE 6]", "box": (20, 446, 680, 84), "at": 2.0, "highlight": "peach"},
+            {"text": "NOBODY EVEN", "box": (18, 18, 272, 100), "highlight": "peach", "align": "left"},
+            {"text": "KNOWS MY", "box": (442, 18, 260, 100), "at": 0.9, "highlight": "peach", "align": "right"},
+            {"text": "NAME", "box": (20, 446, 680, 84), "at": 2.0, "highlight": "peach"},
         ],
     },
-    {   # 8.4 s: one big word that letters itself on
-        "start": 8.4, "art": "sparkles", "bg": "red", "draw_on": (0.95, 0.35),
+    {   # 7.87 s: one big word that letters itself on
+        "start": 7.87, "art": "sparkles", "bg": "red", "draw_on": (0.45, 0.2),
         "text": [
-            {"text": "[LINE 7]", "box": (40, 70, 640, 400), "style": "paint", "ink": "peach_light", "draw": 0.9},
+            {"text": "AND", "box": (40, 70, 640, 400), "style": "paint", "ink": "peach_light", "draw": 0.45},
         ],
     },
-    {   # 10.0 s: city skyline at dusk
-        "start": 10.0, "art": "skyline", "bg": "peach",
+    {   # 8.57 s: city skyline at dusk
+        "start": 8.57, "art": "skyline", "bg": "peach",
         "text": [
-            {"text": "[LINE 8]", "box": (18, 18, 440, 80), "highlight": "cream", "align": "left"},
-            {"text": "[LINE 9]", "box": (18, 104, 330, 62), "at": 0.9, "highlight": "cream", "align": "left"},
-            {"text": "[LINE 10]", "box": (20, 426, 680, 104), "at": 2.0, "style": "paint", "ink": "cream"},
+            {"text": "NO ONE SUSPECTS", "box": (18, 18, 540, 80), "highlight": "cream", "align": "left"},
+            {"text": "THAT I'M NOT", "box": (18, 104, 380, 62), "at": 0.9, "highlight": "cream", "align": "left"},
+            {"text": "FINE &", "box": (20, 426, 680, 104), "at": 2.0, "style": "paint", "ink": "cream"},
         ],
     },
-    {   # 14.4 s: two people watching the sun go down
-        "start": 14.4, "art": "sunset_pair", "bg": "pink",
+    {   # 12.6 s: a stitched-together mask on a stick
+        "start": 12.6, "art": "patched_mask", "bg": "slate_light",
         "text": [
-            {"text": "[LINE 11]", "box": (18, 18, 684, 88), "highlight": "cream"},
-            {"text": "[LINE 12]", "box": (20, 450, 680, 82), "at": 2.0, "style": "paint", "ink": "peach_light"},
+            {"text": "NOBODY", "box": (18, 150, 220, 80), "highlight": "slate", "ink": "cream", "align": "left"},
+            {"text": "OUTS", "box": (18, 300, 220, 120), "at": 0.8, "highlight": "slate", "ink": "cream", "align": "left"},
+            {"text": "BEHAVIORL", "box": (480, 90, 222, 70), "at": 1.6, "highlight": "cream", "align": "right"},
+            {"text": "FRANKENSTN", "box": (470, 380, 232, 70), "at": 2.4, "highlight": "cream", "align": "right"},
         ],
     },
-    {   # 19.0 s: paper plane, dotted flight path draws itself on
-        "start": 19.0, "art": "paper_plane", "bg": "blue",
+    {   # 16.7 s: two people watching the sun go down
+        "start": 16.7, "art": "sunset_pair", "bg": "pink",
         "text": [
-            {"text": "[LINE 13]", "box": (24, 150, 640, 110), "style": "outline", "ink": "cream", "align": "left"},
-            {"text": "[LINE 14]", "box": (24, 268, 672, 110), "at": 1.2, "style": "outline", "ink": "cream", "align": "left"},
-            {"text": "[LINE 15]", "box": (24, 388, 672, 120), "at": 2.4, "style": "outline", "ink": "peach_light", "align": "left"},
+            {"text": "JUST LOOK AT", "box": (18, 18, 684, 88), "highlight": "cream"},
+            {"text": "VICTOR IN LA", "box": (20, 450, 680, 82), "at": 2.0, "style": "paint", "ink": "peach_light"},
         ],
     },
-    {   # 23.2 s: open cardboard box, moving day
-        "start": 23.2, "art": "cardboard_box", "bg": "cream",
+    {   # 20.8 s: paper plane, dotted flight path draws itself on
+        "start": 20.8, "art": "paper_plane", "bg": "blue",
         "text": [
-            {"text": "[LINE 16]", "box": (18, 18, 330, 96), "highlight": "pink", "align": "left"},
-            {"text": "[LINE 17]", "box": (392, 18, 310, 96), "at": 1.0, "highlight": "pink", "align": "right"},
-            {"text": "[LINE 18]", "box": (20, 454, 680, 80), "at": 2.2, "highlight": "peach"},
+            {"text": "AND SYD", "box": (24, 150, 640, 110), "style": "outline", "ink": "cream", "align": "left"},
+            {"text": "WITH THE", "box": (24, 268, 672, 110), "at": 1.2, "style": "outline", "ink": "cream", "align": "left"},
+            {"text": "Y'AT U OF A", "box": (24, 388, 672, 120), "at": 2.4, "style": "outline", "ink": "peach_light", "align": "left"},
         ],
     },
-    {   # 27.6 s: sleepy face tucked in, the Zs draw themselves on
-        "start": 27.6, "art": "sleepy_face", "bg": "slate",
+    {   # 24.97 s: open cardboard box, moving day
+        "start": 24.97, "art": "cardboard_box", "bg": "cream",
         "text": [
-            {"text": "[LINE 19]", "box": (18, 18, 420, 90), "highlight": "pink_light", "align": "left"},
-            {"text": "[LINE 20]", "box": (20, 446, 680, 86), "at": 1.8, "until": 4.0, "highlight": "cream"},
-            {"text": "[LINE 21]", "box": (20, 446, 680, 86), "at": 4.0, "highlight": "cream"},
+            {"text": "AND ALL THE", "box": (18, 18, 330, 96), "highlight": "pink", "align": "left"},
+            {"text": "MAJORS", "box": (392, 18, 310, 96), "at": 1.0, "highlight": "pink", "align": "right"},
+            {"text": "AT THE LABELS", "box": (20, 454, 680, 80), "at": 2.2, "highlight": "peach"},
         ],
     },
-    {   # 33.6 s: sign-off card
-        "start": 33.6, "art": "tiny_heart", "bg": "black", "draw_on": (0.95, 0.4),
+    {   # 29.23 s: sleepy face tucked in, the Zs draw themselves on
+        "start": 29.23, "art": "sleepy_face", "bg": "slate",
         "text": [
-            {"text": "[CREDIT]", "box": (160, 238, 400, 60), "style": "paint", "ink": "cream", "draw": 0.8},
+            {"text": "REBOOTING SOON", "box": (18, 18, 440, 90), "highlight": "pink_light", "align": "left"},
+            {"text": "AS I'M ABLE", "box": (20, 446, 680, 86), "at": 1.8, "highlight": "cream"},
+        ],
+    },
+    {   # 33.47 s: sign-off card
+        "start": 33.47, "art": "tiny_heart", "bg": "black", "draw_on": (0.95, 0.4),
+        "text": [
+            {"text": "IMRAN", "box": (160, 238, 400, 60), "style": "paint", "ink": "cream", "draw": 0.8},
         ],
     },
 ]
@@ -1050,6 +1058,27 @@ def art_sleepy_face(A):
     for i, (x, y, s) in enumerate([(490, 150, 42), (560, 92, 32), (620, 44, 24)]):
         with A.draw_on(0.6 + i * 0.55, 0.35):
             A.letters("Z", x, y, s, color="cream", rot=-8 + i * 5)
+
+
+@art("patched_mask")
+def art_patched_mask(A):
+    A.tube([(372, 372), (404, 470), (420, 560)], "tan", 18)
+    face = ell(360, 250, 104, 132, n=44)
+    A.fill(face, "cream", smooth=False)
+    with A.clip(face):
+        A.fill([(372, 100), (352, 170), (380, 230), (344, 300), (366, 400), (480, 400), (480, 100)], "pink_light")
+    A.stroke(face, "ink", 7, closed=True, smooth=False)
+    seam = [(372, 120), (352, 170), (380, 230), (344, 300), (362, 380)]
+    A.stroke(seam, "ink", 4)
+    S = resample(catmull(seam), 26.0)
+    for (x, y), (nx, ny) in zip(S[1:-1], normals(S)[1:-1]):
+        A.stroke([(x - nx * 11, y - ny * 11), (x + nx * 11, y + ny * 11)], "ink", 3, smooth=False, wobble=0.4)
+    for ex in (318, 402):
+        A.shape([(ex - 30, 222), (ex, 206), (ex + 30, 222), (ex, 238)], fill="slate_dark", width=5)
+    A.stroke([(318, 318), (360, 330), (402, 314)], "ink", 5)
+    A.fill(ell(300, 284, 16, 10), "pink", smooth=False)
+    A.stroke([(426, 150), (440, 176)], "ink", 3, smooth=False)
+    A.stroke([(424, 172), (446, 160)], "ink", 3, smooth=False)
 
 
 @art("tiny_heart")

@@ -32,7 +32,7 @@ Options:
 ## Editing lyrics and timings
 
 All text and timing lives in the `SCENES` list at the top of
-`lyric_video.py`. Replace the `[LINE n]` / `[CREDIT]` placeholders with your
+`lyric_video.py`. Each `text` value is one lyric line; change it to your own
 words. Each block word-wraps and scales itself to fit its box.
 
 ```python
@@ -54,9 +54,7 @@ words. Each block word-wraps and scales itself to fit its box.
   plus light and dark variants.
 * `box` is `(x, y, width, height)` in panel pixels (720×540).
 
-Current timeline: rearview mirror (0 s) → ID card (4.2 s) → big word
-(8.4 s) → skyline (10 s) → two people at sunset (14.4 s) → paper plane
-(19 s) → cardboard box (23.2 s) → sleepy face (27.6 s) → credit (33.6 s).
+Current timeline (cuts match the reference video): rearview mirror (0 s) → ID card (4.33 s) → "AND" (7.87 s) → skyline (8.57 s) → patched mask (12.6 s) → sunset pair (16.7 s) → paper plane (20.8 s) → box (24.97 s) → sleepy face (29.23 s) → IMRAN credit (33.47 s).
 
 The illustrations are the functions under `# --- illustrations` in the
 script, built from `A.shape`, `A.stroke`, `A.fill` and similar helpers. Add a
