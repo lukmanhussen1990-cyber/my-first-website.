@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Crossy Road</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#6fc3df;touch-action:none;
+    user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
+    font-family:'Press Start 2P',ui-monospace,monospace}
+  canvas{display:block}
+  #hud{position:fixed;inset:0;pointer-events:none;color:#fff;text-shadow:3px 3px 0 #000}
+  #score{position:absolute;left:16px;top:16px;font-size:40px;transition:transform .08s}
+  #score.pop{transform:scale(1.18)}
+  #best{position:absolute;left:18px;top:68px;font-size:11px}
+  #coins{position:absolute;right:16px;top:16px;font-size:20px;color:#ffd84a;display:flex;align-items:center;gap:10px}
+  .coin-ico{width:14px;height:14px;border-radius:50%;background:#ffd84a;border:3px solid #c98f00;box-shadow:3px 3px 0 #000}
+  #mute{position:absolute;right:16px;top:52px;pointer-events:auto;font-family:inherit;font-size:9px;
+    color:#fff;background:rgba(0,0,0,.35);border:0;padding:8px 10px;cursor:pointer;text-shadow:2px 2px 0 #000}
+  .overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:22px;text-align:center;color:#fff;text-shadow:4px 4px 0 #000;pointer-events:none;padding:16px;box-sizing:border-box}
+  .title{font-size:clamp(34px,10vw,76px);line-height:1.15;transform:rotate(-4deg)}
+  .title span{display:block}
+  .t1{color:#ffe14d;text-shadow:5px 5px 0 #b3541e,9px 9px 0 #000}
+  .t2{color:#fff;text-shadow:5px 5px 0 #2c7fb8,9px 9px 0 #000}
+  .hint{font-size:13px;animation:blink 1s steps(2) infinite}
+  .keys{font-size:9px;opacity:.9;line-height:1.8}
+  @keyframes blink{50%{opacity:.25}}
+  #over{background:rgba(0,0,0,.4);display:none;pointer-events:auto}
+  #over h2{margin:0;font-size:clamp(26px,7vw,44px);color:#ff5a4d;text-shadow:4px 4px 0 #000}
+  #over .big{font-size:48px}
+  #over .small{font-size:12px}
+  #newbest{color:#ffe14d;font-size:14px;display:none;animation:blink .6s steps(2) infinite}
+  #again{font-family:inherit;font-size:16px;padding:16px 24px;background:#3ecf4a;color:#fff;border:0;cursor:pointer;
+    box-shadow:0 6px 0 #1f8a28,6px 12px 0 rgba(0,0,0,.35);text-shadow:2px 2px 0 #000}
+  #again:active{transform:translateY(4px);box-shadow:0 2px 0 #1f8a28}
+  #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;color:#fff;font-size:12px;text-align:center;padding:24px;line-height:2}
+</style>
+</head>
+<body>
+<div id="hud">
+  <div id="score">0</div>
+  <div id="best">TOP 0</div>
+  <div id="coins"><div class="coin-ico"></div><span id="coinN">0</span></div>
+  <button id="mute">SOUND ON</button>
+</div>
+<div id="start" class="overlay">
+  <div class="title"><span class="t1">CROSSY</span><span class="t2">ROAD</span></div>
+  <div class="hint">TAP OR PRESS UP TO HOP</div>
+  <div class="keys">ARROWS / WASD / SWIPE<br>DODGE CARS &middot; RIDE LOGS &middot; WATCH FOR TRAINS</div>
+</div>
+<div id="over" class="overlay">
+  <h2 id="cause">SPLAT!</h2>
+  <div class="small">SCORE</div>
+  <div class="big" id="finalScore">0</div>
+  <div id="newbest">NEW BEST!</div>
+  <div class="small" id="finalBest">TOP 0</div>
+  <button id="again">PLAY AGAIN</button>
+  <div class="keys">OR PRESS SPACE</div>
+</div>
+<div id="err">Could not load the 3D engine.<br>Please check your internet connection and reload.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+'use strict';
+if (typeof THREE === 'undefined') { document.getElementById('err').style.display = 'flex'; return; }
+
+/* ============================ CONFIG / UTILS ============================ */
+const COLS = 4;            // playable columns: -COLS .. COLS
+const LOOP = 46;           // wrap width for moving obstacles
+const HALF = LOOP / 2;
+const HOP = 0.14;          // hop duration (s)
+const rand = (a, b) => a + Math.random() * (b - a);
+const randInt = (a, b) => Math.floor(rand(a, b + 1));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+
+/* ================================ AUDIO ================================= */
+let actx = null, muted = store.get('cr_muted', false);
+function ac() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function tone(f1, f2, dur, type = 'square', vol = 0.08, delay = 0) {
+  if (muted) return; const a = ac(); if (!a) return;
+  const t = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+function noise(dur, vol = 0.2, freq = 1000, delay = 0) {
+  if (muted) return; const a = ac(); if (!a) return;
+  const t = a.currentTime + delay, len = Math.floor(a.sampleRate * dur);
+  const buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  s.buffer = buf; f.type = 'lowpass'; f.frequency.value = freq; g.gain.value = vol;
+  s.connect(f); f.connect(g); g.connect(a.destination); s.start(t);
+}
+const sfx = {
+  hop()    { tone(520, 820, 0.07, 'square', 0.045); },
+  coin()   { tone(988, 988, 0.07, 'square', 0.05); tone(1319, 1319, 0.2, 'square', 0.05, 0.07); },
+  splash() { noise(0.55, 0.4, 1500); tone(400, 120, 0.3, 'sine', 0.08); },
+  squash() { noise(0.25, 0.55, 600); tone(220, 50, 0.3, 'sawtooth', 0.1); },
+  bell()   { tone(1250, 1200, 0.1, 'triangle', 0.05); },
+  horn()   { tone(190, 180, 0.6, 'sawtooth', 0.045); tone(240, 232, 0.6, 'sawtooth', 0.045); },
+  eagle()  { tone(2000, 700, 0.7, 'sawtooth', 0.05); },
+  bump()   { tone(160, 110, 0.06, 'square', 0.04); }
+};
+
+/* =============================== THREE ================================== */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x6fc3df);
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 120);
+const CAM_OFFSET = new THREE.Vector3(3.2, 12, 8.5);
+const ELEV_SIN = CAM_OFFSET.y / CAM_OFFSET.length();
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x7a9a6a, 0.62));
+const sun = new THREE.DirectionalLight(0xffffff, 0.78);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20, near: 1, far: 70 });
+sun.shadow.bias = -0.0006;
+scene.add(sun, sun.target);
+
+const world = new THREE.Group();
+scene.add(world);
+
+const matCache = {}, geoCache = {};
+const mat = c => matCache[c] || (matCache[c] = new THREE.MeshLambertMaterial({ color: c }));
+const geo = (w, h, d) => { const k = w + '_' + h + '_' + d; return geoCache[k] || (geoCache[k] = new THREE.BoxGeometry(w, h, d)); };
+// box whose BOTTOM sits at y
+function box(w, h, d, c, x = 0, y = 0, z = 0, shadow = true) {
+  const m = new THREE.Mesh(geo(w, h, d), typeof c === 'number' ? mat(c) : c);
+  m.position.set(x, y + h / 2, z);
+  m.castShadow = shadow; m.receiveShadow = true;
+  return m;
+}
+
+let coverage = 10; // half of visible ground length (in rows)
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight, aspect = w / h;
+  renderer.setSize(w, h);
+  let hw, hh;
+  if (aspect < 1) { hw = 5.3; hh = hw / aspect; } else { hh = 6.4; hw = hh * aspect; }
+  camera.left = -hw; camera.right = hw; camera.top = hh; camera.bottom = -hh;
+  camera.updateProjectionMatrix();
+  coverage = hh / ELEV_SIN;
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* ================================ MODELS ================================ */
+function makeChicken() {
+  const g = new THREE.Group();
+  const W = 0xffffff, W2 = 0xeeeeee, R = 0xe53935, O = 0xff9800, B = 0x1d1d1d;
+  g.add(box(0.52, 0.72, 0.56, W, 0, 0.12, 0.02));        // body
+  g.add(box(0.1, 0.14, 0.28, R, 0, 0.84, -0.04));        // comb
+  g.add(box(0.16, 0.12, 0.16, O, 0, 0.54, -0.33));       // beak
+  g.add(box(0.08, 0.1, 0.06, R, 0, 0.44, -0.29));        // wattle
+  g.add(box(0.545, 0.08, 0.08, B, 0, 0.64, -0.14));      // eyes (both sides)
+  g.add(box(0.08, 0.26, 0.3, W2, 0.29, 0.3, 0.06));      // wings
+  g.add(box(0.08, 0.26, 0.3, W2, -0.29, 0.3, 0.06));
+  g.add(box(0.3, 0.18, 0.1, W2, 0, 0.6, 0.34));          // tail
+  g.add(box(0.07, 0.12, 0.07, O, 0.12, 0, 0));           // legs
+  g.add(box(0.07, 0.12, 0.07, O, -0.12, 0, 0));
+  g.add(box(0.12, 0.03, 0.16, O, 0.12, 0, -0.05));       // feet
+  g.add(box(0.12, 0.03, 0.16, O, -0.12, 0, -0.05));
+  return g;
+}
+const CAR_COLORS = [0xff5252, 0x42a5f5, 0xffca28, 0x66bb6a, 0xab47bc, 0xff7043, 0x26c6da, 0xf06292];
+function makeCar(color) {
+  const g = new THREE.Group();
+  g.add(box(1.5, 0.4, 0.8, color, 0, 0.14, 0));
+  g.add(box(0.82, 0.36, 0.7, color, -0.1, 0.54, 0));
+  g.add(box(0.86, 0.18, 0.56, 0x263238, -0.1, 0.62, 0));
+  g.add(box(0.6, 0.18, 0.74, 0x263238, -0.1, 0.62, 0));
+  g.add(box(0.34, 0.3, 0.86, 0x212121, 0.45, 0, 0));
+  g.add(box(0.34, 0.3, 0.86, 0x212121, -0.45, 0, 0));
+  g.add(box(0.06, 0.1, 0.18, 0xfff59d, 0.76, 0.3, 0.25, false));
+  g.add(box(0.06, 0.1, 0.18, 0xfff59d, 0.76, 0.3, -0.25, false));
+  g.add(box(0.06, 0.08, 0.16, 0xd32f2f, -0.76, 0.34, 0.26, false));
+  g.add(box(0.06, 0.08, 0.16, 0xd32f2f, -0.76, 0.34, -0.26, false));
+  return g;
+}
+function makeTruck(color) {
+  const g = new THREE.Group();
+  g.add(box(0.9, 0.85, 0.84, color, 0.95, 0.14, 0));
+  g.add(box(0.06, 0.3, 0.66, 0x263238, 1.4, 0.58, 0));
+  g.add(box(0.5, 0.26, 0.86, 0x263238, 1.05, 0.58, 0));
+  g.add(box(1.9, 1.05, 0.9, pick([0xf5f5f5, 0xb0bec5, 0xffe082, 0xffccbc]), -0.45, 0.16, 0));
+  g.add(box(0.1, 0.12, 0.92, color, -0.45, 0.6, 0));
+  for (const x of [1.0, -0.1, -1.0]) g.add(box(0.34, 0.3, 0.96, 0x212121, x, 0, 0));
+  g.add(box(0.06, 0.1, 0.18, 0xfff59d, 1.41, 0.26, 0.26, false));
+  g.add(box(0.06, 0.1, 0.18, 0xfff59d, 1.41, 0.26, -0.26, false));
+  return g;
+}
+function makeLog(len) {
+  const g = new THREE.Group();
+  g.add(box(len, 0.32, 0.72, 0x8d5a2b, 0, -0.22, 0));
+  g.add(box(len - 0.12, 0.02, 0.2, 0x9f6b36, 0, 0.1, 0.12, false));
+  g.add(box(0.04, 0.26, 0.6, 0xd4a574, len / 2, -0.19, 0, false));
+  g.add(box(0.04, 0.26, 0.6, 0xd4a574, -len / 2, -0.19, 0, false));
+  return g;
+}
+const padGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.05, 14);
+function makePad() {
+  const m = new THREE.Mesh(padGeo, mat(0x43a047));
+  m.position.y = -0.11; m.receiveShadow = true;
+  m.rotation.y = Math.random() * 6;
+  return m;
+}
+function makeTrain(cars) {
+  const g = new THREE.Group(), len = cars * 3;
+  for (let i = 0; i < cars; i++) {
+    const cx = len / 2 - 1.5 - i * 3;
+    if (i === 0) {
+      g.add(box(2.9, 0.95, 0.92, 0xd32f2f, cx, 0.16, 0));
+      g.add(box(1.1, 0.5, 0.92, 0xb71c1c, cx - 0.6, 1.11, 0));
+      g.add(box(0.06, 0.28, 0.7, 0x263238, cx + 1.45, 0.72, 0));
+      g.add(box(0.3, 0.3, 0.3, 0x424242, cx + 0.8, 1.11, 0));
+      g.add(box(0.06, 0.14, 0.3, 0xfff59d, cx + 1.46, 0.3, 0, false));
+    } else {
+      const c = i % 2 ? 0x1e88e5 : 0xfdd835;
+      g.add(box(2.9, 0.95, 0.92, c, cx, 0.16, 0));
+      g.add(box(2.5, 0.24, 0.94, 0x263238, cx, 0.66, 0));
+      g.add(box(2.95, 0.08, 0.96, 0xeceff1, cx, 1.11, 0));
+    }
+    g.add(box(0.4, 0.18, 0.96, 0x212121, cx + 0.9, 0, 0));
+    g.add(box(0.4, 0.18, 0.96, 0x212121, cx - 0.9, 0, 0));
+  }
+  return { group: g, len };
+}
+const LEAVES = [0x4caf50, 0x43a047, 0x66bb6a, 0x5cb85c];
+function makeTree(shadow) {
+  const g = new THREE.Group();
+  const h = pick([0.5, 0.8, 1.1, 1.4]);
+  g.add(box(0.28, 0.35, 0.28, 0x7b4a2a, 0, 0, 0, shadow));
+  g.add(box(0.78, h, 0.78, pick(LEAVES), 0, 0.35, 0, shadow));
+  return g;
+}
+const coinGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.07, 16);
+const coinMat = new THREE.MeshLambertMaterial({ color: 0xffd54f, emissive: 0x664400 });
+function makeCoin() {
+  const g = new THREE.Group(), m = new THREE.Mesh(coinGeo, coinMat);
+  m.rotation.x = Math.PI / 2; m.castShadow = true; g.add(m);
+  g.position.y = 0.38;
+  return g;
+}
+function makeEagle() {
+  const g = new THREE.Group();
+  g.add(box(0.6, 0.5, 1.2, 0x5d4037, 0, -0.25, 0));
+  g.add(box(0.44, 0.44, 0.44, 0xffffff, 0, -0.1, 0.7));
+  g.add(box(0.16, 0.14, 0.24, 0xffc107, 0, -0.05, 1.0));
+  g.add(box(0.46, 0.08, 0.08, 0x1d1d1d, 0, 0.06, 0.78));
+  g.add(box(0.5, 0.1, 0.4, 0x4e342e, 0, -0.05, -0.75));
+  const wl = box(1.4, 0.08, 0.7, 0x4e342e, -0.95, 0.0, 0), wr = box(1.4, 0.08, 0.7, 0x4e342e, 0.95, 0.0, 0);
+  g.add(wl, wr); g.userData.wings = [wl, wr];
+  g.add(box(0.1, 0.25, 0.1, 0xffc107, 0.15, -0.5, 0.1));
+  g.add(box(0.1, 0.25, 0.1, 0xffc107, -0.15, -0.5, 0.1));
+  return g;
+}
+
+/* ================================ LANES ================================= */
+const lanes = new Map();
+let gen;
+const diff = row => Math.min(Math.max(row, 0) / 220, 1);
+
+function nextType(row) {
+  if (row <= 2) return 'grass';
+  if (gen.blockLeft <= 0) {
+    const prev = gen.blockType, d = diff(row);
+    let t;
+    if (prev !== 'grass' && Math.random() < 0.6) t = 'grass';
+    else {
+      const r = Math.random();
+      t = r < 0.48 ? 'road' : r < 0.8 ? 'river' : 'rail';
+      if (t === prev) t = t === 'road' ? 'river' : 'road';
+    }
+    gen.blockLeft = t === 'grass' ? randInt(1, 3)
+      : t === 'road' ? randInt(1, 3 + Math.round(d * 2))
+      : t === 'river' ? randInt(1, 2 + Math.round(d * 2))
+      : randInt(1, 2);
+    gen.blockType = t;
+  }
+  gen.blockLeft--;
+  return gen.blockType;
+}
+
+function ground(l, c, side, top) {
+  l.group.add(box(COLS * 2 + 1, 0.5, 1, c, 0, top - 0.5, 0, false));
+  l.group.add(box(30, 0.5, 1, side, COLS + 0.5 + 15, top - 0.5, 0, false));
+  l.group.add(box(30, 0.5, 1, side, -COLS - 0.5 - 15, top - 0.5, 0, false));
+}
+
+function addCoin(l, x) {
+  const c = makeCoin(); c.position.x = x; l.group.add(c); l.coins.set(x, c);
+}
+
+function buildGrass(l) {
+  const r = l.row, even = Math.abs(r) % 2 === 0;
+  ground(l, even ? 0xaee672 : 0xa3dc68, even ? 0x8dc45b : 0x84bb53, 0);
+  const wall = r <= -3;
+  const density = r < 0 ? 0.35 : r <= 2 ? 0.12 : rand(0.15, 0.2 + diff(r) * 0.25);
+  for (let x = -COLS; x <= COLS; x++) if (wall || Math.random() < density) l.trees.add(x);
+  if (!wall) {
+    if (r === 0) l.trees.delete(0);
+    if (r > 0) {
+      const np = clamp(gen.pathX + randInt(-1, 1), -COLS, COLS);
+      l.trees.delete(gen.pathX); l.trees.delete(np); gen.pathX = np;
+    }
+  }
+  for (const x of l.trees) { const t = makeTree(true); t.position.x = x; l.group.add(t); }
+  for (let i = COLS + 1; i <= COLS + 11; i++) for (const x of [i, -i]) {
+    if (wall || Math.random() < 0.72) { const t = makeTree(i < 8); t.position.x = x; l.group.add(t); }
+  }
+  if (r > 2 && Math.random() < 0.14) {
+    const free = []; for (let x = -COLS; x <= COLS; x++) if (!l.trees.has(x)) free.push(x);
+    if (free.length) addCoin(l, pick(free));
+  }
+}
+
+function buildRoad(l) {
+  ground(l, 0x5b5f6b, 0x4c4f59, 0);
+  const prev = lanes.get(l.row - 1);
+  if (prev && prev.type === 'road')
+    for (let x = -HALF; x < HALF; x += 1.6) l.group.add(box(0.7, 0.02, 0.08, 0xe8e8e8, x, 0, 0.5, false));
+  const mult = 1 + diff(l.row) * 0.9;
+  l.dir = Math.random() < 0.5 ? 1 : -1;
+  const truck = Math.random() < 0.3;
+  l.speed = (truck ? rand(1.8, 3.2) : rand(2.4, 5)) * mult;
+  const len = truck ? 2.8 : 1.5;
+  const count = truck ? randInt(2, 4) : randInt(3, 5);
+  const spacing = LOOP / count;
+  const color = pick(CAR_COLORS);
+  for (let i = 0; i < count; i++) {
+    const m = truck ? makeTruck(color) : makeCar(Math.random() < 0.6 ? color : pick(CAR_COLORS));
+    if (l.dir < 0) m.rotation.y = Math.PI;
+    const o = { mesh: m, len, x: -HALF + i * spacing + rand(0, spacing - len - 3) };
+    m.position.x = o.x; l.group.add(m); l.obstacles.push(o);
+  }
+  if (Math.random() < 0.05) addCoin(l, randInt(-COLS, COLS));
+}
+
+function buildRiver(l) {
+  ground(l, 0x5ec8f2, 0x4fb2dc, -0.15);
+  const mult = 1 + diff(l.row) * 0.6;
+  gen.riverDir = -gen.riverDir;
+  l.dir = gen.riverDir;
+  const prev = lanes.get(l.row - 1);
+  if (!(prev && prev.lily) && Math.random() < 0.18) {
+    l.lily = true;
+    for (let x = -COLS; x <= COLS; x++) if (Math.random() < 0.4) l.pads.add(x);
+    l.pads.add(gen.pathX);
+    for (const x of l.pads) { const p = makePad(); p.position.x = x; l.group.add(p); }
+    return;
+  }
+  l.speed = rand(1.1, 2.3) * mult;
+  const len = randInt(2, 4);
+  const gap = rand(1.2, 2.6) + diff(l.row) * 1.2;
+  const count = Math.max(3, Math.floor(LOOP / (len + gap)));
+  const spacing = LOOP / count;
+  for (let i = 0; i < count; i++) {
+    const m = makeLog(len);
+    const o = { mesh: m, len, x: -HALF + i * spacing + rand(0, Math.max(0, spacing - len - 1)) };
+    m.position.x = o.x; l.group.add(m); l.obstacles.push(o);
+  }
+}
+
+function buildRail(l) {
+  ground(l, 0x8c7d74, 0x77695f, 0);
+  for (let x = -18; x <= 18; x += 0.8) l.group.add(box(0.24, 0.05, 0.9, 0x6d4c41, x, 0, 0, false));
+  l.group.add(box(60, 0.08, 0.08, 0xb0bec5, 0, 0.03, 0.26, false));
+  l.group.add(box(60, 0.08, 0.08, 0xb0bec5, 0, 0.03, -0.26, false));
+  const sx = COLS + 0.8, sz = -0.42;
+  l.group.add(box(0.12, 1.3, 0.12, 0x455a64, sx, 0, sz));
+  l.group.add(box(0.5, 0.26, 0.14, 0x263238, sx, 1.14, sz));
+  l.lamps = [];
+  for (const dx of [-0.12, 0.12]) {
+    const m = new THREE.MeshLambertMaterial({ color: 0x4a1010, emissive: 0x000000 });
+    l.group.add(box(0.13, 0.13, 0.04, m, sx + dx, 1.2, sz + 0.08, false));
+    l.lamps.push(m);
+  }
+  l.timer = rand(2, 7);
+  l.train = null;
+  l.bellT = 0;
+}
+
+function makeLane(row) {
+  const type = nextType(row);
+  const group = new THREE.Group(); group.position.z = -row; world.add(group);
+  const l = { row, type, group, obstacles: [], trees: new Set(), coins: new Map(), pads: new Set(), speed: 0, dir: 1, lily: false };
+  lanes.set(row, l);
+  if (type === 'grass') buildGrass(l);
+  else if (type === 'road') buildRoad(l);
+  else if (type === 'river') buildRiver(l);
+  else buildRail(l);
+  return l;
+}
+
+function updateLane(l, dt) {
+  if (l.obstacles.length) {
+    const v = l.speed * l.dir * dt;
+    for (const o of l.obstacles) {
+      o.x += v;
+      if (l.dir > 0 && o.x > HALF) o.x -= LOOP;
+      else if (l.dir < 0 && o.x < -HALF) o.x += LOOP;
+      o.mesh.position.x = o.x;
+    }
+  }
+  if (l.type === 'rail') {
+    const near = Math.abs(l.row - P.row) < 9;
+    if (!l.train) {
+      l.timer -= dt;
+      const warn = l.timer < 1.5;
+      const on = warn && (Math.floor(l.timer * 6) % 2 === 0);
+      l.lamps[0].emissive.setHex(on ? 0xff1a1a : 0);
+      l.lamps[1].emissive.setHex(warn && !on ? 0xff1a1a : 0);
+      if (warn && near) { l.bellT -= dt; if (l.bellT <= 0) { sfx.bell(); l.bellT = 0.28; } }
+      if (l.timer <= 0) {
+        const t = makeTrain(randInt(3, 6));
+        t.dir = Math.random() < 0.5 ? 1 : -1;
+        if (t.dir < 0) t.group.rotation.y = Math.PI;
+        t.x = -t.dir * (HALF + t.len / 2);
+        t.speed = 26 + diff(l.row) * 8;
+        t.group.position.x = t.x;
+        l.group.add(t.group); l.train = t;
+        if (near) sfx.horn();
+      }
+    } else {
+      const t = l.train;
+      t.x += t.speed * t.dir * dt; t.group.position.x = t.x;
+      const on = Math.floor(performance.now() / 160) % 2 === 0;
+      l.lamps[0].emissive.setHex(on ? 0xff1a1a : 0);
+      l.lamps[1].emissive.setHex(on ? 0 : 0xff1a1a);
+      if (Math.abs(t.x) > HALF + t.len / 2 + 1) {
+        l.group.remove(t.group); l.train = null; l.timer = rand(4, 9);
+        l.lamps[0].emissive.setHex(0); l.lamps[1].emissive.setHex(0);
+      }
+    }
+  }
+  for (const c of l.coins.values()) c.rotation.y += dt * 3;
+}
+
+function removeLane(l) {
+  world.remove(l.group);
+  lanes.delete(l.row);
+}
+
+/* ================================ PLAYER ================================ */
+const player = new THREE.Group();
+const pModel = makeChicken();
+pModel.children.forEach(c => { c.position.multiplyScalar(1.12); c.scale.setScalar(1.12); });
+player.add(pModel);
+scene.add(player);
+const P = {};
+const eagle = makeEagle();
+eagle.visible = false;
+scene.add(eagle);
+
+/* ============================== PARTICLES =============================== */
+const parts = [];
+function burst(pos, colors, n, opt = {}) {
+  const g = opt.g ?? 14, sz = opt.size ?? 0.1;
+  for (let i = 0; i < n; i++) {
+    const m = new THREE.Mesh(geo(sz, sz, sz), mat(pick(colors)));
+    m.position.copy(pos);
+    const v = new THREE.Vector3(rand(-1, 1) * (opt.spread ?? 2.5), rand(opt.upMin ?? 2, opt.up ?? 5), rand(-1, 1) * (opt.spread ?? 2.5));
+    scene.add(m);
+    parts.push({ m, v, life: rand(0.6, 1.1), max: 1.1, g, drag: opt.drag ?? 0, spin: rand(-8, 8) });
+  }
+}
+function updateParts(dt) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i];
+    p.v.y -= p.g * dt;
+    if (p.drag) p.v.multiplyScalar(1 - p.drag * dt);
+    p.m.position.addScaledVector(p.v, dt);
+    p.m.rotation.x += p.spin * dt; p.m.rotation.z += p.spin * dt;
+    if (p.m.position.y < 0.02) { p.m.position.y = 0.02; p.v.set(p.v.x * 0.4, -p.v.y * 0.3, p.v.z * 0.4); }
+    p.life -= dt;
+    p.m.scale.setScalar(Math.max(0.01, Math.min(1, p.life * 2)));
+    if (p.life <= 0) { scene.remove(p.m); parts.splice(i, 1); }
+  }
+}
+const feathers = pos => burst(pos, [0xffffff, 0xf5f5f5, 0xeeeeee], 16, { g: 3, drag: 2.5, up: 4, spread: 3, size: 0.12 });
+
+/* ================================= UI =================================== */
+const $ = id => document.getElementById(id);
+const ui = { score: $('score'), best: $('best'), coins: $('coinN'), start: $('start'), over: $('over'),
+  final: $('finalScore'), finalBest: $('finalBest'), newbest: $('newbest'), cause: $('cause'), mute: $('mute') };
+let best = store.get('cr_best', 0), coins = store.get('cr_coins', 0);
+let score = 0, state = 'start', moved = false, deathType = '', deathT = 0, overShown = false;
+const setMuteLabel = () => { ui.mute.textContent = muted ? 'SOUND OFF' : 'SOUND ON'; };
+setMuteLabel();
+ui.mute.addEventListener('click', e => { e.stopPropagation(); muted = !muted; store.set('cr_muted', muted); setMuteLabel(); if (!muted) ac(); });
+ui.mute.addEventListener('pointerdown', e => e.stopPropagation());
+function updateHUD() {
+  ui.score.textContent = score;
+  ui.best.textContent = 'TOP ' + Math.max(best, score);
+  ui.coins.textContent = coins;
+}
+
+/* ================================ GAME ================================== */
+let camRow = 0, camX = 0;
+const focus = new THREE.Vector3();
+
+function reset() {
+  for (const l of [...lanes.values()]) removeLane(l);
+  for (const p of parts) scene.remove(p.m);
+  parts.length = 0;
+  gen = { blockType: 'grass', blockLeft: 0, pathX: 0, riverDir: 1 };
+  for (let r = -14; r <= 30; r++) makeLane(r);
+  Object.assign(P, { row: 0, x: 0, hopping: false, t: 0, fromX: 0, toX: 0, fromRow: 0, toRow: 0, fromY: 0, toY: 0,
+    rot: 0, log: null, logOffset: 0, logOffsetTarget: 0, queued: null, fling: null, idle: 0 });
+  player.position.set(0, 0, 0); player.rotation.set(0, 0, 0); player.visible = true;
+  pModel.rotation.set(0, 0, 0); pModel.scale.set(1, 1, 1);
+  eagle.visible = false;
+  score = 0; moved = false; overShown = false; deathT = 0;
+  camRow = 0; camX = 0;
+  updateHUD();
+  updateCamera(0, true);
+}
+
+function ensureLanes() {
+  const ahead = Math.ceil(camRow + coverage * 1.6 + 8);
+  let maxRow = -Infinity; for (const r of lanes.keys()) if (r > maxRow) maxRow = r;
+  for (let r = maxRow + 1; r <= ahead; r++) makeLane(r);
+  const behind = camRow - coverage - 8;
+  for (const l of [...lanes.values()]) if (l.row < behind) removeLane(l);
+}
+
+function input(dx, dr) {
+  ac();
+  if (state === 'start') { state = 'play'; ui.start.style.display = 'none'; }
+  if (state !== 'play') return;
+  tryMove(dx, dr);
+}
+
+function face(dx, dr) {
+  P.rot = dr > 0 ? 0 : dr < 0 ? Math.PI : dx > 0 ? -Math.PI / 2 : Math.PI / 2;
+}
+
+function tryMove(dx, dr) {
+  if (P.hopping) { P.queued = { dx, dr }; return; }
+  const nr = P.row + dr, nl = lanes.get(nr);
+  if (!nl) return;
+  face(dx, dr);
+  let nx = nl.type === 'river' ? P.x + dx : Math.round(P.x + dx);
+  if (Math.abs(Math.round(nx)) > COLS) { sfx.bump(); return; }
+  if (nl.type === 'grass' && nl.trees.has(Math.round(nx))) { sfx.bump(); pModel.scale.set(1.1, 0.9, 1.1); return; }
+  if (dr === 0 && P.log) { const cl = lanes.get(P.row); nx += cl.speed * cl.dir * HOP; }
+  Object.assign(P, { hopping: true, t: 0, fromX: P.x, toX: nx, fromRow: P.row, toRow: nr,
+    fromY: player.position.y, toY: nl.type === 'river' ? 0.1 : 0, log: null, idle: 0 });
+  moved = true;
+  sfx.hop();
+}
+
+function findSupport(l, x) {
+  if (l.lily) {
+    const rx = Math.round(x);
+    return l.pads.has(rx) && Math.abs(x - rx) < 0.5 ? { pad: true, x: rx } : null;
+  }
+  for (const o of l.obstacles) {
+    const L = o.x - o.len / 2, R = o.x + o.len / 2;
+    if (x > L - 0.3 && x < R + 0.3) {
+      const i = clamp(Math.round(x - (L + 0.5)), 0, o.len - 1);
+      return { log: o, offset: L + 0.5 + i - o.x };
+    }
+  }
+  return null;
+}
+
+function land() {
+  P.hopping = false; P.row = P.toRow; P.x = P.toX;
+  const l = lanes.get(P.row);
+  player.position.set(P.x, 0, -P.row);
+  pModel.scale.set(1.18, 0.78, 1.18);
+  if (l.type === 'river') {
+    const s = findSupport(l, P.x);
+    if (!s) { player.position.y = -0.2; return die('water'); }
+    if (s.pad) { P.x = s.x; player.position.set(P.x, -0.09, -P.row); }
+    else { P.log = s.log; P.logOffset = P.x - s.log.x; P.logOffsetTarget = s.offset; player.position.y = 0.1; }
+  }
+  const cx = Math.round(P.x), coin = l.coins.get(cx);
+  if (coin && Math.abs(P.x - cx) < 0.35) {
+    l.group.remove(coin); l.coins.delete(cx);
+    coins++; store.set('cr_coins', coins); sfx.coin();
+    burst(new THREE.Vector3(P.x, 0.5, -P.row), [0xffd54f, 0xffecb3], 8, { up: 4, spread: 1.5, size: 0.08 });
+  }
+  if (P.row > score) {
+    score = P.row;
+    ui.score.classList.add('pop'); setTimeout(() => ui.score.classList.remove('pop'), 90);
+  }
+  updateHUD();
+  ensureLanes();
+  if (P.queued) { const q = P.queued; P.queued = null; tryMove(q.dx, q.dr); }
+}
+
+function die(type, obj) {
+  if (state === 'dead') return;
+  state = 'dead'; deathType = type; deathT = 0;
+  P.hopping = false; P.queued = null;
+  const pos = player.position.clone(); pos.y += 0.4;
+  if (type === 'car') {
+    const vr = Math.round(-player.position.z);
+    player.position.set(player.position.x, 0.01, -vr);
+    pModel.scale.set(1.4, 0.12, 1.4);
+    sfx.squash(); feathers(pos);
+  } else if (type === 'train') {
+    P.fling = new THREE.Vector3(obj.dir * 16, 7, rand(-1.5, 1.5));
+    sfx.squash(); feathers(pos);
+  } else if (type === 'water') {
+    sfx.splash();
+    burst(new THREE.Vector3(player.position.x, -0.1, player.position.z), [0xffffff, 0xb3e5fc, 0x81d4fa], 18, { up: 5, upMin: 3, spread: 1.6, size: 0.12 });
+  } else if (type === 'eagle') {
+    sfx.eagle();
+    eagle.visible = true;
+    eagle.position.set(player.position.x, 5, player.position.z - 16);
+    eagle.userData.phase = 0;
+  }
+  if (score > best) { best = score; store.set('cr_best', best); ui.newbest.style.display = 'block'; }
+  else ui.newbest.style.display = 'none';
+  ui.cause.textContent = { car: 'SPLAT!', train: 'CHOO CHOO!', water: 'SPLASH!', eagle: 'SNATCHED!' }[type];
+}
+
+function showOver() {
+  overShown = true;
+  ui.final.textContent = score;
+  ui.finalBest.textContent = 'TOP ' + best;
+  ui.over.style.display = 'flex';
+}
+
+function restart() {
+  ui.over.style.display = 'none';
+  reset();
+  state = 'play';
+}
+
+function updatePlayer(dt, time) {
+  // smooth facing
+  let d = P.rot - pModel.rotation.y;
+  d = Math.atan2(Math.sin(d), Math.cos(d));
+  pModel.rotation.y += d * Math.min(1, dt * 28);
+
+  if (P.hopping) {
+    P.t += dt / HOP;
+    const t = Math.min(P.t, 1), s = Math.sin(Math.PI * t);
+    P.x = P.fromX + (P.toX - P.fromX) * t;
+    player.position.set(P.x, P.fromY + (P.toY - P.fromY) * t + s * 0.5, -(P.fromRow + (P.toRow - P.fromRow) * t));
+    pModel.scale.set(1 - 0.1 * s, 1 + 0.22 * s, 1 - 0.1 * s);
+    if (P.t >= 1) land();
+  } else {
+    if (P.log) {
+      P.logOffset += (P.logOffsetTarget - P.logOffset) * Math.min(1, dt * 18);
+      P.x = P.log.x + P.logOffset;
+      player.position.x = P.x;
+      if (Math.abs(P.x) > COLS + 1.4) { player.position.y = -0.2; return die('water'); }
+    }
+    const k = Math.min(1, dt * 14);
+    const breathe = 1 + Math.sin(time * 5) * 0.02;
+    pModel.scale.x += (1 - pModel.scale.x) * k;
+    pModel.scale.y += (breathe - pModel.scale.y) * k;
+    pModel.scale.z += (1 - pModel.scale.z) * k;
+  }
+
+  // collisions
+  const vr = Math.round(-player.position.z), l = lanes.get(vr);
+  if (!l) return;
+  const px = player.position.x;
+  if (l.type === 'road') {
+    for (const o of l.obstacles) if (Math.abs(o.x - px) < o.len / 2 + 0.28) return die('car', o);
+  } else if (l.type === 'rail' && l.train) {
+    if (Math.abs(l.train.x - px) < l.train.len / 2 + 0.3) return die('train', l.train);
+  }
+}
+
+const tmpV = new THREE.Vector3();
+function updateDeath(dt) {
+  deathT += dt;
+  if (deathType === 'train' && P.fling) {
+    P.fling.y -= 18 * dt;
+    player.position.addScaledVector(P.fling, dt);
+    player.rotation.z += dt * 14 * Math.sign(P.fling.x); player.rotation.x += dt * 6;
+    if (player.position.y < 0) { player.position.y = 0; P.fling.y *= -0.35; P.fling.x *= 0.6; }
+  } else if (deathType === 'water') {
+    player.position.y -= dt * 1.4;
+    if (player.position.y < -1.2) player.visible = false;
+  } else if (deathType === 'eagle') {
+    const w = eagle.userData.wings, flap = Math.sin(deathT * 22) * 0.5;
+    w[0].rotation.z = flap; w[1].rotation.z = -flap;
+    if (eagle.userData.phase === 0) {
+      tmpV.set(player.position.x, 1.35, player.position.z);
+      eagle.position.lerp(tmpV, Math.min(1, dt * 9));
+      if (eagle.position.distanceTo(tmpV) < 0.25) { eagle.userData.phase = 1; feathers(player.position.clone().setY(0.5)); }
+    } else {
+      eagle.position.z += dt * 16; eagle.position.y += dt * 3;
+      player.position.set(eagle.position.x, eagle.position.y - 1.3, eagle.position.z);
+    }
+  }
+  const wait = deathType === 'eagle' ? 1.8 : deathType === 'car' ? 1.0 : 1.3;
+  if (!overShown && deathT > wait) showOver();
+}
+
+function updateCamera(dt, snap) {
+  const pr = -player.position.z;
+  if (state === 'play' && moved) camRow += (0.42 + Math.min(score / 300, 0.55)) * dt;
+  if (snap) camRow = pr;
+  else if (pr > camRow && state !== 'dead') camRow += (pr - camRow) * Math.min(1, dt * 3.2);
+  const tx = clamp(player.position.x, -3, 3) * 0.55;
+  camX = snap ? tx : camX + (tx - camX) * Math.min(1, dt * 3);
+  const lead = coverage * 0.36;
+  focus.set(camX, 0, -(camRow + lead));
+  camera.position.copy(focus).add(CAM_OFFSET);
+  camera.lookAt(focus);
+  sun.position.set(focus.x - 7, 18, focus.z - 2);
+  sun.target.position.copy(focus);
+}
+
+function checkEagle() {
+  if (state !== 'play' || P.hopping) return;
+  tmpV.copy(player.position).project(camera);
+  if (tmpV.y < -1.0 || camRow - P.row > 5) die('eagle');
+}
+
+/* =============================== INPUT ================================== */
+const KEYS = { ArrowUp: [0, 1], KeyW: [0, 1], ArrowDown: [0, -1], KeyS: [0, -1],
+  ArrowLeft: [-1, 0], KeyA: [-1, 0], ArrowRight: [1, 0], KeyD: [1, 0] };
+window.addEventListener('keydown', e => {
+  if (e.code === 'KeyM') { ui.mute.click(); return; }
+  if ((e.code === 'Space' || e.code === 'Enter') && state === 'dead') { if (overShown) restart(); e.preventDefault(); return; }
+  const k = KEYS[e.code];
+  if (!k) { if (e.code === 'Space' && state !== 'dead') { input(0, 1); e.preventDefault(); } return; }
+  e.preventDefault();
+  if (e.repeat) return;
+  input(k[0], k[1]);
+});
+let ptr = null;
+window.addEventListener('pointerdown', e => {
+  if (e.target.closest && e.target.closest('button')) return;
+  ptr = { x: e.clientX, y: e.clientY };
+});
+window.addEventListener('pointerup', e => {
+  if (!ptr) return;
+  const dx = e.clientX - ptr.x, dy = e.clientY - ptr.y; ptr = null;
+  if (state === 'dead') return;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) input(0, 1);
+  else if (Math.abs(dx) > Math.abs(dy)) input(dx > 0 ? 1 : -1, 0);
+  else input(0, dy < 0 ? 1 : -1);
+});
+$('again').addEventListener('click', e => { e.stopPropagation(); restart(); });
+$('again').addEventListener('pointerdown', e => e.stopPropagation());
+window.addEventListener('contextmenu', e => e.preventDefault());
+
+/* ================================ LOOP ================================== */
+reset();
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min((now - last) / 1000, 0.05); last = now;
+  const time = now / 1000;
+  for (const l of lanes.values()) updateLane(l, dt);
+  if (state === 'dead') updateDeath(dt);
+  else updatePlayer(dt, time);
+  updateCamera(dt, false);
+  checkEagle();
+  if (state === 'play') ensureLanes();
+  updateParts(dt);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
