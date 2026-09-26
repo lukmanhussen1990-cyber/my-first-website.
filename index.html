@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Beats Rock?</title>
+<meta name="description" content="A word-chain game: keep naming things that beat the last thing. Don't repeat yourself!">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪨</text></svg>">
+<style>
+  :root {
+    --bg: #f6f3ee;
+    --bg-2: #ece6dc;
+    --card: #ffffff;
+    --text: #1d1b18;
+    --muted: #6d665c;
+    --border: #e0d8cb;
+    --accent: #e8590c;
+    --accent-2: #ff922b;
+    --win: #2f9e44;
+    --win-bg: #ebfbee;
+    --lose: #e03131;
+    --lose-bg: #fff5f5;
+    --shadow: 0 10px 30px rgba(60, 40, 10, 0.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16140f;
+      --bg-2: #201d17;
+      --card: #25221b;
+      --text: #f3eee6;
+      --muted: #a79f92;
+      --border: #3a352c;
+      --accent: #ff7a2e;
+      --accent-2: #ffa94d;
+      --win: #51cf66;
+      --win-bg: #1b2e1f;
+      --lose: #ff6b6b;
+      --lose-bg: #331c1c;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16140f;
+    --bg-2: #201d17;
+    --card: #25221b;
+    --text: #f3eee6;
+    --muted: #a79f92;
+    --border: #3a352c;
+    --accent: #ff7a2e;
+    --accent-2: #ffa94d;
+    --win: #51cf66;
+    --win-bg: #1b2e1f;
+    --lose: #ff6b6b;
+    --lose-bg: #331c1c;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: radial-gradient(ellipse at top, var(--bg-2), var(--bg) 60%);
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    line-height: 1.45;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 16px 48px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .logo {
+    font-weight: 800;
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent); }
+  .icon-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 999px;
+    width: 40px; height: 40px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: inline-grid;
+    place-items: center;
+  }
+  .icon-btn:hover { border-color: var(--accent); }
+  .header-actions { display: flex; gap: 8px; }
+
+  .stats {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 18px;
+  }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 8px 18px;
+    text-align: center;
+    min-width: 100px;
+  }
+  .stat .label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .stat .value { font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .stat .value.bump { animation: bump 0.4s ease; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    padding: 28px 22px;
+    text-align: center;
+  }
+  .current-emoji {
+    font-size: 5.5rem;
+    line-height: 1;
+    display: inline-block;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,0.15));
+  }
+  .current-emoji.pop { animation: pop 0.5s cubic-bezier(.2,1.6,.4,1); }
+  .current-emoji.shake { animation: shake 0.5s ease; }
+  h1 {
+    font-size: clamp(1.6rem, 6vw, 2.3rem);
+    margin: 4px 0 20px;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+  h1 .item { color: var(--accent); }
+
+  form { display: flex; gap: 8px; }
+  input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    font-size: 1.1rem;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  .go {
+    font: inherit;
+    font-weight: 800;
+    font-size: 1.05rem;
+    padding: 0 22px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.15s;
+  }
+  .go:active { transform: scale(0.96); }
+  .go:disabled { opacity: 0.55; cursor: wait; }
+
+  .result {
+    margin-top: 18px;
+    border-radius: 16px;
+    padding: 14px 16px;
+    font-size: 1.02rem;
+    display: none;
+    text-align: left;
+  }
+  .result.show { display: block; animation: fadeUp 0.35s ease; }
+  .result.win { background: var(--win-bg); border: 1px solid var(--win); }
+  .result.lose { background: var(--lose-bg); border: 1px solid var(--lose); }
+  .result .verdict { font-weight: 800; margin-bottom: 4px; }
+  .result.win .verdict { color: var(--win); }
+  .result.lose .verdict { color: var(--lose); }
+
+  .thinking {
+    margin-top: 16px;
+    color: var(--muted);
+    display: none;
+  }
+  .thinking.show { display: block; }
+  .dots span { animation: blink 1.2s infinite; }
+  .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  .gameover { display: none; margin-top: 18px; }
+  .gameover.show { display: block; animation: fadeUp 0.4s ease; }
+  .gameover .final { font-size: 1.15rem; margin-bottom: 14px; }
+  .gameover .final b { color: var(--accent); }
+  .btn-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    font: inherit;
+    font-weight: 700;
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border: none;
+    color: #fff;
+  }
+  .btn:hover { filter: brightness(1.05); }
+
+  .chain-section { margin-top: 26px; }
+  .chain-section h2 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin: 0 0 10px;
+    text-align: center;
+  }
+  .chain {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .chain li {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    animation: fadeUp 0.3s ease;
+  }
+  .chain .e { font-size: 1.6rem; line-height: 1.2; }
+  .chain .t { flex: 1; min-width: 0; }
+  .chain .t b { overflow-wrap: anywhere; }
+  .chain .t small { display: block; color: var(--muted); }
+  .chain .n { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 0.85rem; padding-top: 4px; }
+
+  .empty-hint { text-align: center; color: var(--muted); font-size: 0.95rem; }
+
+  dialog {
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--card);
+    color: var(--text);
+    padding: 24px;
+    width: min(480px, calc(100vw - 32px));
+    box-shadow: var(--shadow);
+  }
+  dialog::backdrop { background: rgba(0,0,0,0.45); }
+  dialog h3 { margin-top: 0; }
+  dialog p, dialog li { color: var(--muted); }
+  dialog label { display: block; font-weight: 700; margin: 14px 0 6px; }
+  dialog input[type="password"] {
+    width: 100%;
+    font: inherit;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+  }
+  .toggle { display: flex; align-items: center; gap: 10px; margin-top: 12px; color: var(--text); }
+  .toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
+  .small { font-size: 0.85rem; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-weight: 700;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 32px; }
+
+  @keyframes pop { 0% { transform: scale(0.3) rotate(-15deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-10px); } 40%,80% { transform: translateX(10px); } }
+  @keyframes bump { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes blink { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
+
+  .confetti {
+    position: fixed;
+    top: -20px;
+    font-size: 1.4rem;
+    pointer-events: none;
+    animation: fall linear forwards;
+    z-index: 50;
+  }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0.2; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">What Beats <span>Rock?</span></div>
+    <div class="header-actions">
+      <button class="icon-btn" id="helpBtn" title="How to play" aria-label="How to play">?</button>
+      <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
+      <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">🌓</button>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="label">Score</div><div class="value" id="score">0</div></div>
+    <div class="stat"><div class="label">Best</div><div class="value" id="best">0</div></div>
+  </div>
+
+  <main class="card">
+    <div class="current-emoji" id="currentEmoji">🪨</div>
+    <h1>What beats <span class="item" id="currentName">rock</span>?</h1>
+
+    <form id="guessForm" autocomplete="off">
+      <input type="text" id="guessInput" placeholder="Type something…" maxlength="60" aria-label="Your guess" autofocus>
+      <button class="go" id="goBtn" type="submit">Go</button>
+    </form>
+
+    <div class="thinking" id="thinking">Thinking<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
+
+    <div class="result" id="result">
+      <div class="verdict" id="verdict"></div>
+      <div id="reason"></div>
+    </div>
+
+    <div class="gameover" id="gameover">
+      <div class="final" id="finalText"></div>
+      <div class="btn-row">
+        <button class="btn primary" id="playAgain">Play again</button>
+        <button class="btn" id="shareBtn">Share score</button>
+      </div>
+    </div>
+  </main>
+
+  <section class="chain-section">
+    <h2>Your chain</h2>
+    <ul class="chain" id="chain"></ul>
+    <p class="empty-hint" id="emptyHint">Nothing yet. Start by beating the rock! 🪨</p>
+  </section>
+
+  <footer>Every answer must beat the last one. Repeat anything and you lose.</footer>
+</div>
+
+<dialog id="helpDialog">
+  <h3>How to play</h3>
+  <ol>
+    <li>You start with a <b>rock</b>.</li>
+    <li>Type something that beats it — e.g. <i>paper</i>.</li>
+    <li>Now you need something that beats <i>paper</i>. Keep the chain going!</li>
+    <li>If the judge says your answer doesn't win, or you <b>repeat</b> something you already used, it's game over.</li>
+  </ol>
+  <p class="small">Tip: bigger, stronger, and cleverer things usually win. Classic matchups (water vs fire, garlic vs vampire…) are known to the judge.</p>
+  <div class="btn-row"><button class="btn primary" data-close>Got it</button></div>
+</dialog>
+
+<dialog id="settingsDialog">
+  <h3>Settings</h3>
+  <p class="small">The game works fully offline with a built-in judge. For a smarter, more creative judge, you can optionally use Claude with your own Anthropic API key. The key is stored only in this browser and sent only to api.anthropic.com.</p>
+  <label class="toggle"><input type="checkbox" id="aiToggle"> Use Claude as the judge</label>
+  <label for="apiKey">Anthropic API key</label>
+  <input type="password" id="apiKey" placeholder="sk-ant-…">
+  <div class="btn-row" style="margin-top:18px">
+    <button class="btn" id="resetBest">Reset best score</button>
+    <button class="btn primary" id="saveSettings">Save</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  // ---------- Safe storage ----------
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  };
+
+  // ---------- Knowledge base ----------
+  // name | emoji | power tier (1-10) | aliases (comma separated)
+  const RAW_ITEMS = `
+feather|🪶|1|
+tissue|🧻|1|toilet paper
+bubble|🫧|1|soap bubble
+ant|🐜|1|
+leaf|🍃|1|
+snowflake|❄️|1|
+mouse|🐭|2|mice
+rock|🪨|2|stone,pebble,boulder
+paper|📄|2|sheet of paper
+scissors|✂️|2|
+stick|🪵|2|wood,log,branch
+balloon|🎈|1|
+pillow|🛏️|1|
+sponge|🧽|2|
+pen|🖊️|3|pencil
+pin|📌|2|needle
+glue|🧴|3|
+tape|📼|3|duct tape
+water|💧|3|
+fire|🔥|3|flame
+wind|🌬️|3|
+ice|🧊|3|
+magnet|🧲|3|
+hammer|🔨|3|
+knife|🔪|3|
+dog|🐕|3|puppy
+cat|🐈|3|kitten
+snake|🐍|3|
+garlic|🧄|3|
+salt|🧂|3|
+silver|🥈|3|silver bullet
+stake|🗡️|3|wooden stake
+kryptonite|💎|3|
+sun|☀️|8|sunlight
+vampire|🧛|5|dracula
+werewolf|🐺|5|wolf
+gremlin|👹|4|
+elephant|🐘|5|
+sword|⚔️|4|
+axe|🪓|4|
+bear|🐻|4|
+lion|🦁|4|
+tiger|🐯|4|
+gorilla|🦍|4|
+eagle|🦅|4|
+lightning|⚡|5|thunder,lightning bolt
+flood|🌊|5|
+chainsaw|🪚|4|
+drill|🛠️|4|
+laser|🔦|5|
+car|🚗|4|
+truck|🚚|5|
+train|🚆|5|
+bulldozer|🚜|5|
+gun|🔫|5|pistol,rifle
+shark|🦈|5|
+crocodile|🐊|5|alligator
+tornado|🌪️|6|hurricane,cyclone
+earthquake|🫨|6|
+volcano|🌋|6|lava,magma
+ninja|🥷|5|
+knight|🛡️|5|
+wizard|🧙|6|mage,magic,sorcerer
+witch|🧹|5|
+dinosaur|🦖|6|t-rex,t rex,tyrannosaurus
+robot|🤖|6|
+tank|🪖|6|
+army|💂|6|soldiers
+missile|🚀|7|rocket
+tsunami|🌊|7|
+dragon|🐉|7|
+bomb|💣|7|
+superhero|🦸|7|
+superman|🦸‍♂️|8|
+batman|🦇|6|
+alien|👽|7|aliens,ufo
+zombie|🧟|5|zombies
+godzilla|🦖|8|kaiju
+meteor|☄️|8|asteroid,comet
+nuke|☢️|8|nuclear bomb,atomic bomb,nuclear weapon,nuke bomb
+time|⏳|9|
+love|❤️|8|
+hate|💔|5|
+war|⚔️|7|
+peace|🕊️|8|
+death|💀|9|grim reaper
+life|🌱|8|
+hope|🌈|8|
+black hole|🕳️|9|
+supernova|💥|9|
+entropy|🌀|9|
+chuck norris|🥋|9|
+god|🙏|10|gods,deity
+infinity|♾️|10|
+universe|🌌|10|multiverse
+big bang|💥|10|
+nothing|🫥|10|void,nothingness
+imagination|💭|10|
+teacher|🧑‍🏫|4|
+mom|👩|6|mother,mum,mama
+dad|👨|5|father,papa
+baby|👶|4|
+lawyer|⚖️|5|
+taxes|🧾|7|tax
+internet|🌐|7|
+computer|💻|5|laptop
+phone|📱|4|smartphone
+bee|🐝|2|
+spider|🕷️|2|
+moon|🌙|7|
+earth|🌍|8|planet
+ocean|🌊|7|sea
+mountain|⛰️|6|
+tree|🌳|3|
+axe|🪓|4|
+acid|🧪|5|
+rust|🟫|4|
+cheese|🧀|2|
+banana|🍌|2|
+rain|🌧️|3|
+umbrella|☂️|3|
+cloud|☁️|3|
+math|🧮|5|
+science|🔬|7|
+knowledge|📚|8|
+money|💰|6|cash
+king|🤴|6|
+queen|👸|6|
+president|🏛️|6|
+cheetah|🐆|4|
+octopus|🐙|4|
+kraken|🦑|7|
+phoenix|🐦‍🔥|7|
+unicorn|🦄|6|
+ghost|👻|5|
+mirror|🪞|3|
+shield|🛡️|4|
+armor|🦺|4|armour
+cannon|💥|5|
+ship|🚢|5|boat
+plane|✈️|5|airplane,jet
+coffee|☕|3|
+sleep|😴|4|
+cold|🥶|3|
+heat|🥵|3|
+electricity|🔌|5|
+`;
+
+  // [winner, loser, reason]
+  const RULES = [
+    ["paper", "rock", "Paper covers rock. A classic."],
+    ["scissors", "paper", "Scissors cut paper."],
+    ["rock", "scissors", "Rock crushes scissors."],
+    ["water", "fire", "Water puts out fire."],
+    ["water", "rock", "Given enough time, water erodes rock."],
+    ["fire", "paper", "Fire burns paper to ash."],
+    ["fire", "stick", "Fire burns wood."],
+    ["fire", "tree", "Fire burns the tree down."],
+    ["fire", "ice", "Fire melts ice."],
+    ["fire", "tissue", "Fire burns tissue instantly."],
+    ["ice", "water", "Ice freezes water solid."],
+    ["heat", "ice", "Heat melts ice."],
+    ["sponge", "water", "The sponge soaks up the water."],
+    ["wind", "paper", "The wind blows paper away."],
+    ["wind", "feather", "The wind carries the feather off."],
+    ["wind", "fire", "A strong wind blows out the flame."],
+    ["pin", "balloon", "Pop! The pin pops the balloon."],
+    ["pin", "bubble", "The pin pops the bubble."],
+    ["hammer", "rock", "The hammer smashes the rock."],
+    ["hammer", "scissors", "The hammer flattens the scissors."],
+    ["knife", "paper", "The knife slices paper."],
+    ["axe", "tree", "The axe chops down the tree."],
+    ["axe", "stick", "The axe splits the wood."],
+    ["chainsaw", "tree", "The chainsaw fells the tree."],
+    ["pen", "sword", "The pen is mightier than the sword."],
+    ["pen", "paper", "The pen writes all over the paper."],
+    ["mouse", "elephant", "Elephants are famously scared of mice."],
+    ["cat", "mouse", "The cat catches the mouse."],
+    ["dog", "cat", "The dog chases the cat away."],
+    ["cat", "bird", "The cat pounces on the bird."],
+    ["snake", "mouse", "The snake swallows the mouse."],
+    ["eagle", "snake", "The eagle snatches the snake."],
+    ["garlic", "vampire", "Vampires can't stand garlic."],
+    ["stake", "vampire", "A wooden stake through the heart."],
+    ["sun", "vampire", "Sunlight turns vampires to dust."],
+    ["silver", "werewolf", "Silver bullets stop werewolves."],
+    ["water", "gremlin", "Never get a gremlin wet... wait."],
+    ["sun", "ice", "The sun melts the ice."],
+    ["sun", "snowflake", "The sun melts the snowflake."],
+    ["salt", "snake", "Salt... no. But salt does beat slugs."],
+    ["kryptonite", "superman", "Kryptonite is Superman's only weakness."],
+    ["batman", "superman", "Batman always has a plan (and some kryptonite)."],
+    ["mirror", "laser", "The mirror reflects the laser right back."],
+    ["mirror", "ghost", "Ghosts hate seeing their reflection... or lack of one."],
+    ["umbrella", "rain", "The umbrella keeps you dry."],
+    ["shield", "sword", "The shield blocks the sword."],
+    ["gun", "sword", "Never bring a sword to a gunfight."],
+    ["armor", "knife", "The knife bounces off the armor."],
+    ["love", "hate", "Love conquers hate."],
+    ["love", "war", "Make love, not war."],
+    ["peace", "war", "Peace ends war."],
+    ["hope", "death", "Hope survives even death."],
+    ["life", "death", "Life finds a way."],
+    ["time", "love", "Time heals all wounds... and fades all things."],
+    ["time", "rock", "Time turns rock into sand."],
+    ["time", "mountain", "Time wears mountains down to dust."],
+    ["death", "life", "Everything that lives, dies."],
+    ["taxes", "death", "The only other certainty in life — and taxes survive you."],
+    ["mom", "chuck norris", "Even Chuck Norris listens to his mom."],
+    ["chuck norris", "god", "Chuck Norris doesn't pray. God asks Chuck Norris for help."],
+    ["mom", "dad", "Mom always wins the argument."],
+    ["baby", "mom", "Nobody can resist a baby."],
+    ["teacher", "baby", "The teacher has the patience."],
+    ["lawyer", "dad", "The lawyer has read the fine print."],
+    ["acid", "rock", "Acid dissolves the rock."],
+    ["rust", "sword", "Rust eats away at the sword."],
+    ["rust", "scissors", "Rust ruins the scissors."],
+    ["water", "salt", "Water dissolves salt."],
+    ["electricity", "water", "Electricity courses through the water."],
+    ["water", "computer", "One spilled glass and it's over."],
+    ["water", "electricity", "Water shorts out the electricity."],
+    ["magnet", "computer", "A magnet scrambles the hard drive."],
+    ["coffee", "sleep", "Coffee keeps sleep away."],
+    ["sleep", "coffee", "Eventually, sleep always wins."],
+    ["cold", "heat", "Cold cancels out heat."],
+    ["imagination", "universe", "Imagination isn't limited by the universe."],
+    ["nothing", "god", "Nothing is greater than God. So... nothing wins."],
+    ["infinity", "universe", "Infinity is bigger than the universe."],
+    ["big bang", "nothing", "The big bang created something from nothing."],
+    ["black hole", "sun", "A black hole swallows stars whole."],
+    ["black hole", "earth", "The black hole devours the planet."],
+    ["supernova", "earth", "A supernova vaporizes any nearby planet."],
+    ["entropy", "universe", "Entropy eventually wins. Heat death is coming."],
+    ["meteor", "dinosaur", "The meteor wiped out the dinosaurs."],
+    ["bee", "bear", "A swarm of bees sends the bear running."],
+    ["spider", "ant", "The spider traps the ant."],
+    ["banana", "rock", "Slip on the banana peel — you never throw the rock."],
+    ["knowledge", "money", "Knowledge makes money, not the other way around."],
+    ["science", "magic", "Any sufficiently advanced science is indistinguishable from magic."],
+    ["math", "computer", "The computer is just doing math."],
+    ["internet", "knowledge", "The internet contains all knowledge... and misinformation."],
+    ["cheetah", "car", "In a sprint, the cheetah wins."],
+    ["octopus", "shark", "Octopuses have been seen beating sharks."],
+    ["kraken", "ship", "The kraken drags the ship under."],
+    ["phoenix", "fire", "The phoenix is reborn from fire."],
+    ["phoenix", "death", "The phoenix rises from its own ashes."],
+    ["king", "queen", "…Actually the queen usually wins. Fine, king it is."],
+    ["queen", "king", "Checkmate. The queen is the most powerful piece."],
+    ["tape", "paper", "Tape holds the paper down."],
+    ["glue", "paper", "The glue sticks the paper in place."],
+    ["scissors", "tape", "Scissors cut the tape."],
+    ["cloud", "sun", "The cloud blocks the sun."],
+    ["rain", "fire", "Rain puts out the fire."],
+    ["dragon", "knight", "The dragon roasts the knight."],
+    ["knight", "dragon", "The knight slays the dragon."],
+    ["wizard", "dragon", "The wizard tames the dragon."],
+    ["ninja", "knight", "The ninja strikes from the shadows."],
+    ["zombie", "brain", "Zombies eat brains."],
+    ["alien", "army", "The aliens have lasers from space."],
+    ["godzilla", "tank", "Godzilla stomps the tank flat."],
+    ["robot", "human", "The robot never gets tired."],
+    ["nuke", "godzilla", "Well, actually, that's how Godzilla got created..."],
+  ];
+
+  const BANNED = ["everything", "anything", "all", "something", "whatever", "the thing", "infinity plus one", "infinity +1", "infinity+1", "whatever beats", "what beats"];
+
+  // ---------- Build lookup ----------
+  const ITEMS = {};   // canonical name -> {name, emoji, tier}
+  const ALIAS = {};   // alias -> canonical name
+  RAW_ITEMS.trim().split("\n").forEach(line => {
+    const [name, emoji, tier, aliases] = line.split("|");
+    if (!name) return;
+    ITEMS[name] = { name, emoji, tier: Number(tier) };
+    ALIAS[name] = name;
+    (aliases || "").split(",").map(s => s.trim()).filter(Boolean).forEach(a => ALIAS[a] = name);
+  });
+  const RULE_MAP = {};
+  RULES.forEach(([w, l, r]) => { RULE_MAP[w + ">" + l] = r; });
+
+  // ---------- Helpers ----------
+  function hash(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function normalize(s) {
+    let t = s.toLowerCase().trim()
+      .replace(/[!?.,;:"'`]+/g, "")
+      .replace(/\s+/g, " ");
+    t = t.replace(/^(a|an|the|some|my|your|one|with|using)\s+/, "");
+    t = t.replace(/^(a|an|the)\s+/, "");
+    return t;
+  }
+  function singular(t) {
+    if (t.endsWith("ies") && t.length > 4) return t.slice(0, -3) + "y";
+    if (t.endsWith("es") && /(sh|ch|x|s)es$/.test(t)) return t.slice(0, -2);
+    if (t.endsWith("s") && !t.endsWith("ss") && t.length > 3) return t.slice(0, -1);
+    return t;
+  }
+  function canon(t) {
+    if (ALIAS[t]) return ALIAS[t];
+    const s = singular(t);
+    if (ALIAS[s]) return ALIAS[s];
+    return null;
+  }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function pick(arr, seed) { return arr[seed % arr.length]; }
+
+  const FALLBACK_EMOJI = ["✨", "🌟", "💫", "🎯", "🧩", "🎲", "🔮", "🪄", "🧿", "🎁"];
+  const MODIFIERS = [
+    { re: /\b(god|gods|deity|omnipotent|almighty|divine)\b/, set: 10 },
+    { re: /\b(infinite|infinity|eternal|endless|limitless|unlimited)\b/, set: 10 },
+    { re: /\b(nuclear|atomic|thermonuclear|antimatter)\b/, set: 8 },
+    { re: /\b(cosmic|galactic|planetary|world ending|apocalypse|apocalyptic)\b/, add: 3 },
+    { re: /\b(giant|huge|massive|mega|super|ultra|hyper|gigantic|enormous|colossal|legendary|epic|ultimate)\b/, add: 2 },
+    { re: /\b(big|strong|angry|evil|dark|fire|flaming|electric|armored|robotic|golden|magic|magical)\b/, add: 1 },
+    { re: /\b(tiny|small|mini|little|weak|baby|broken|soggy|wet|sad|toy|fake|plastic)\b/, add: -2 },
+  ];
+
+  // Build a profile for a guess: {name, emoji, tier, known}
+  function profile(text) {
+    const n = normalize(text);
+    const c = canon(n);
+    if (c) return { ...ITEMS[c], label: n, known: true };
+
+    // Look for a known item inside the phrase (e.g. "giant rock", "a bucket of water")
+    let base = null;
+    const words = n.split(" ");
+    for (let len = Math.min(3, words.length); len >= 1 && !base; len--) {
+      for (let i = words.length - len; i >= 0; i--) {
+        const sub = words.slice(i, i + len).join(" ");
+        const cc = canon(sub);
+        if (cc) { base = ITEMS[cc]; break; }
+      }
+    }
+    const h = hash(n);
+    let tier = base ? base.tier : 2 + (h % 6); // unknown things land between 2 and 7
+    let setTier = null;
+    MODIFIERS.forEach(m => {
+      if (m.re.test(n)) {
+        if (m.set != null) setTier = Math.max(setTier || 0, m.set);
+        else tier += m.add;
+      }
+    });
+    if (setTier != null) tier = Math.max(tier, setTier);
+    tier = Math.max(1, Math.min(10, tier));
+    return {
+      name: base ? base.name : n,
+      label: n,
+      emoji: base ? base.emoji : pick(FALLBACK_EMOJI, h),
+      tier,
+      known: false,
+      base: base ? base.name : null
+    };
+  }
+
+  const WIN_LINES = [
+    "{G} easily overpowers {C}.",
+    "{C} never stood a chance against {G}.",
+    "{G} takes {C} down without breaking a sweat.",
+    "{G} is on a whole other level than {C}.",
+    "Against {G}, {C} simply gives up.",
+    "{G} outclasses {C} in every way.",
+    "{C} gets absolutely demolished by {G}.",
+  ];
+  const TIE_WIN_LINES = [
+    "It's close, but {G} edges out {C}.",
+    "A tough fight — {G} barely wins against {C}.",
+    "Photo finish! {G} squeaks past {C}.",
+  ];
+  const LOSE_LINES = [
+    "{C} shrugs off {G} like it's nothing.",
+    "{G} bounces right off {C}.",
+    "{C} is way too strong for {G}.",
+    "Nope. {C} would crush {G}.",
+    "{G}? Against {C}? Not a chance.",
+  ];
+  function fill(line, g, c) { return cap(line.replace(/\{G\}/g, g).replace(/\{C\}/g, c)); }
+
+  // Local judge: returns {beats, reason, emoji, name}
+  function localJudge(guessText, current) {
+    const g = profile(guessText);
+    const n = normalize(guessText);
+    const cName = current.name;
+
+    if (BANNED.some(b => n === b || n.startsWith(b + " "))) {
+      return { beats: false, reason: `"${guessText}" is a cop-out. Be specific!`, emoji: "🙅", name: n };
+    }
+    if (!n || n.length < 2) {
+      return { beats: false, reason: "That's not really a thing.", emoji: "❓", name: n };
+    }
+
+    const gKey = g.known ? g.name : (g.base || g.name);
+    const cKey = current.key || cName;
+
+    // Same thing as current
+    if (g.known && gKey === cKey) {
+      return { beats: false, reason: `${cap(g.label)} can't beat itself. It's a tie at best.`, emoji: g.emoji, name: g.label };
+    }
+
+    // Explicit rules
+    if (RULE_MAP[gKey + ">" + cKey]) {
+      return { beats: true, reason: RULE_MAP[gKey + ">" + cKey], emoji: g.emoji, name: g.label, tier: Math.max(g.tier, current.tier), key: gKey };
+    }
+    if (RULE_MAP[cKey + ">" + gKey]) {
+      return { beats: false, reason: "Nope — " + RULE_MAP[cKey + ">" + gKey].charAt(0).toLowerCase() + RULE_MAP[cKey + ">" + gKey].slice(1), emoji: g.emoji, name: g.label };
+    }
+
+    const seed = hash(n + "|" + cName);
+    if (g.tier > current.tier) {
+      return { beats: true, reason: fill(pick(WIN_LINES, seed), g.label, cName), emoji: g.emoji, name: g.label, tier: g.tier, key: g.known ? gKey : g.label };
+    }
+    if (g.tier === current.tier && seed % 2 === 0) {
+      return { beats: true, reason: fill(pick(TIE_WIN_LINES, seed), g.label, cName), emoji: g.emoji, name: g.label, tier: g.tier, key: g.known ? gKey : g.label };
+    }
+    return { beats: false, reason: fill(pick(LOSE_LINES, seed), g.label, cName), emoji: g.emoji, name: g.label };
+  }
+
+  // Claude judge (optional)
+  async function aiJudge(guessText, current, history, apiKey) {
+    const prompt = `You are the judge of the game "What Beats Rock?". The player must name something that beats the current thing. Be fun, creative and fairly lenient with clever or funny answers, but reject answers that clearly don't beat it, and reject cop-outs like "everything" or "anything".
+
+Previous chain: ${history.map(h => h.name).join(" → ") || "(none)"}
+Current thing: "${current.name}"
+Player's answer: "${guessText}"
+
+Respond with ONLY a JSON object, no other text:
+{"beats": true or false, "reason": "one short witty sentence explaining why", "emoji": "a single emoji representing the player's answer"}`;
+
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 200,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    if (!res.ok) throw new Error("API error " + res.status);
+    const data = await res.json();
+    const text = (data.content || []).map(c => c.text || "").join("");
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("Bad response");
+    const parsed = JSON.parse(match[0]);
+    const n = normalize(guessText);
+    return {
+      beats: !!parsed.beats,
+      reason: String(parsed.reason || ""),
+      emoji: String(parsed.emoji || "✨").slice(0, 8),
+      name: n,
+      tier: Math.min(10, current.tier + 1),
+      key: canon(n) || n
+    };
+  }
+
+  // ---------- State ----------
+  const START = { name: "rock", key: "rock", emoji: "🪨", tier: 2 };
+  let state;
+  let best = store.get("wbr-best", 0);
+  let settings = store.get("wbr-settings", { ai: false, key: "" });
+
+  // ---------- DOM ----------
+  const $ = id => document.getElementById(id);
+  const el = {
+    score: $("score"), best: $("best"),
+    emoji: $("currentEmoji"), name: $("currentName"),
+    form: $("guessForm"), input: $("guessInput"), go: $("goBtn"),
+    thinking: $("thinking"), result: $("result"), verdict: $("verdict"), reason: $("reason"),
+    gameover: $("gameover"), finalText: $("finalText"),
+    chain: $("chain"), emptyHint: $("emptyHint"), toast: $("toast"),
+  };
+
+  function reset() {
+    state = { current: { ...START }, history: [], used: new Set(["rock"]), score: 0, over: false };
+    el.chain.innerHTML = "";
+    el.emptyHint.style.display = "";
+    el.result.className = "result";
+    el.gameover.classList.remove("show");
+    el.form.style.display = "";
+    el.input.value = "";
+    renderCurrent(true);
+    renderScore();
+    el.input.focus();
+  }
+
+  function renderCurrent(animate) {
+    el.emoji.textContent = state.current.emoji;
+    el.name.textContent = state.current.name;
+    document.title = `What beats ${state.current.name}?`;
+    if (animate) {
+      el.emoji.classList.remove("pop"); void el.emoji.offsetWidth; el.emoji.classList.add("pop");
+    }
+  }
+  function renderScore() {
+    el.score.textContent = state.score;
+    el.best.textContent = best;
+  }
+  function bump(node) { node.classList.remove("bump"); void node.offsetWidth; node.classList.add("bump"); }
+
+  function addChainItem(entry, beaten, index) {
+    const li = document.createElement("li");
+    li.innerHTML = `<div class="e"></div><div class="t"><b></b><small></small></div><div class="n"></div>`;
+    li.querySelector(".e").textContent = entry.emoji;
+    li.querySelector("b").textContent = `${cap(entry.name)} beats ${beaten}`;
+    li.querySelector("small").textContent = entry.reason;
+    li.querySelector(".n").textContent = "#" + index;
+    el.chain.appendChild(li);
+    el.emptyHint.style.display = "none";
+  }
+
+  function showResult(win, verdict, reason) {
+    el.result.className = "result show " + (win ? "win" : "lose");
+    el.verdict.textContent = verdict;
+    el.reason.textContent = reason;
+  }
+
+  function toast(msg) {
+    el.toast.textContent = msg;
+    el.toast.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.toast.classList.remove("show"), 1800);
+  }
+
+  function confetti(emoji) {
+    const set = [emoji, "🎉", "✨", "⭐"];
+    for (let i = 0; i < 18; i++) {
+      const s = document.createElement("span");
+      s.className = "confetti";
+      s.textContent = set[i % set.length];
+      s.style.left = Math.random() * 100 + "vw";
+      s.style.animationDuration = 1.6 + Math.random() * 1.4 + "s";
+      s.style.animationDelay = Math.random() * 0.3 + "s";
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 3500);
+    }
+  }
+
+  function gameOver(message) {
+    state.over = true;
+    el.form.style.display = "none";
+    el.emoji.classList.remove("shake"); void el.emoji.offsetWidth; el.emoji.classList.add("shake");
+    const isBest = state.score > 0 && state.score >= best;
+    el.finalText.innerHTML = "";
+    const line = document.createElement("div");
+    line.innerHTML = `Game over! Your score: <b>${state.score}</b>` + (isBest && state.score > 0 ? " 🏆 New best!" : "");
+    el.finalText.appendChild(line);
+    el.gameover.classList.add("show");
+    $("playAgain").focus();
+  }
+
+  async function submitGuess(text) {
+    if (state.over) return;
+    const raw = text.trim();
+    if (!raw) return;
+    const n = normalize(raw);
+    const key = canon(n) || n;
+
+    // Duplicate check (the original game's signature rule)
+    if (state.used.has(key) || state.used.has(n)) {
+      showResult(false, "💥 You already used that!", `"${raw}" was already in your chain. No repeats allowed.`);
+      gameOver();
+      return;
+    }
+
+    el.go.disabled = true;
+    el.input.disabled = true;
+    el.thinking.classList.add("show");
+    el.result.className = "result";
+
+    let verdict;
+    const useAI = settings.ai && settings.key;
+    try {
+      if (useAI) {
+        verdict = await aiJudge(raw, state.current, state.history, settings.key);
+      } else {
+        await new Promise(r => setTimeout(r, 450 + Math.random() * 400)); // dramatic pause
+        verdict = localJudge(raw, state.current);
+      }
+    } catch (err) {
+      toast("Claude unavailable — using built-in judge");
+      verdict = localJudge(raw, state.current);
+    }
+
+    el.thinking.classList.remove("show");
+    el.go.disabled = false;
+    el.input.disabled = false;
+
+    if (verdict.beats) {
+      const beaten = state.current.name;
+      const entry = { name: verdict.name, emoji: verdict.emoji, reason: verdict.reason };
+      state.history.push(entry);
+      state.used.add(key); state.used.add(n);
+      if (verdict.key) state.used.add(verdict.key);
+      state.score++;
+      if (state.score > best) { best = state.score; store.set("wbr-best", best); bump(el.best); }
+      bump(el.score);
+      state.current = { name: verdict.name, key: verdict.key || key, emoji: verdict.emoji, tier: verdict.tier || state.current.tier };
+      showResult(true, `✅ ${cap(verdict.name)} beats ${beaten}!`, verdict.reason);
+      addChainItem(entry, beaten, state.score);
+      renderCurrent(true);
+      renderScore();
+      if (state.score % 5 === 0) confetti(verdict.emoji);
+      el.input.value = "";
+      el.input.focus();
+    } else {
+      showResult(false, `❌ ${cap(verdict.name || n)} does not beat ${state.current.name}.`, verdict.reason);
+      gameOver();
+    }
+  }
+
+  // ---------- Events ----------
+  el.form.addEventListener("submit", e => { e.preventDefault(); submitGuess(el.input.value); });
+  $("playAgain").addEventListener("click", reset);
+
+  $("shareBtn").addEventListener("click", async () => {
+    const chainText = ["🪨 rock", ...state.history.map(h => `${h.emoji} ${h.name}`)].join(" → ");
+    const text = `I scored ${state.score} in What Beats Rock?\n${chainText}`;
+    try {
+      if (navigator.share) { await navigator.share({ text }); return; }
+      await navigator.clipboard.writeText(text);
+      toast("Copied to clipboard!");
+    } catch { toast("Couldn't share"); }
+  });
+
+  const helpDialog = $("helpDialog");
+  const settingsDialog = $("settingsDialog");
+  $("helpBtn").addEventListener("click", () => helpDialog.showModal());
+  helpDialog.querySelector("[data-close]").addEventListener("click", () => helpDialog.close());
+  [helpDialog, settingsDialog].forEach(d => d.addEventListener("click", e => { if (e.target === d) d.close(); }));
+
+  $("settingsBtn").addEventListener("click", () => {
+    $("aiToggle").checked = !!settings.ai;
+    $("apiKey").value = settings.key || "";
+    settingsDialog.showModal();
+  });
+  $("saveSettings").addEventListener("click", () => {
+    settings = { ai: $("aiToggle").checked, key: $("apiKey").value.trim() };
+    if (settings.ai && !settings.key) { toast("Add an API key to use Claude"); return; }
+    store.set("wbr-settings", settings);
+    settingsDialog.close();
+    toast(settings.ai ? "Claude is now judging 🧑‍⚖️" : "Using built-in judge");
+  });
+  $("resetBest").addEventListener("click", () => {
+    best = 0; store.set("wbr-best", 0); renderScore(); toast("Best score reset");
+  });
+
+  // Theme toggle
+  const root = document.documentElement;
+  const savedTheme = store.get("wbr-theme", null);
+  if (savedTheme) root.setAttribute("data-theme", savedTheme);
+  $("themeBtn").addEventListener("click", () => {
+    const current = root.getAttribute("data-theme") ||
+      (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const next = current === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    store.set("wbr-theme", next);
+  });
+
+  // First visit: show instructions
+  reset();
+  if (!store.get("wbr-seen-help", false)) {
+    store.set("wbr-seen-help", true);
+    setTimeout(() => helpDialog.showModal(), 300);
+  }
+})();
+</script>
+</body>
+</html>
