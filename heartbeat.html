@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heartbeat</title>
+  <style>
+    :root {
+      --bg: #0d0d14;
+      --heart: #ff2d55;
+      --glow: rgba(255, 45, 85, 0.55);
+      --line: #ff2d55;
+      --text: #f5f5f7;
+      --muted: #8e8e99;
+      --beat: 1s;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5rem;
+      padding: 16px;
+      background: radial-gradient(circle at center, #1c1020 0%, var(--bg) 70%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ---------- Heart ---------- */
+    .heart-wrap {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      display: grid;
+      place-items: center;
+    }
+
+    .heart {
+      width: 160px;
+      height: 160px;
+      fill: var(--heart);
+      filter: drop-shadow(0 0 18px var(--glow));
+      animation: beat var(--beat) ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    /* Expanding rings on each beat */
+    .ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid var(--heart);
+      opacity: 0;
+      animation: ripple var(--beat) ease-out infinite;
+    }
+    .ring:nth-child(2) { animation-delay: calc(var(--beat) * 0.3); }
+
+    /* "Lub-dub" double pulse */
+    @keyframes beat {
+      0%   { transform: scale(1); }
+      14%  { transform: scale(1.18); }
+      28%  { transform: scale(1); }
+      42%  { transform: scale(1.12); }
+      70%  { transform: scale(1); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes ripple {
+      0%   { transform: scale(0.6); opacity: 0.7; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+
+    /* ---------- ECG line ---------- */
+    .ecg {
+      width: min(600px, 100%);
+      height: 120px;
+    }
+
+    .ecg path {
+      fill: none;
+      stroke: var(--line);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 6px var(--glow));
+      stroke-dasharray: 1200;
+      stroke-dashoffset: 1200;
+      animation: trace calc(var(--beat) * 2) linear infinite;
+    }
+
+    @keyframes trace {
+      0%   { stroke-dashoffset: 1200; opacity: 1; }
+      80%  { stroke-dashoffset: 0;    opacity: 1; }
+      100% { stroke-dashoffset: 0;    opacity: 0; }
+    }
+
+    /* ---------- BPM readout & control ---------- */
+    .readout {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+    .bpm {
+      font-size: 3rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .unit { color: var(--muted); letter-spacing: 0.1em; }
+
+    .control {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    input[type="range"] {
+      accent-color: var(--heart);
+      width: 200px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .heart, .ring, .ecg path { animation: none; }
+      .ecg path { stroke-dashoffset: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="heart-wrap">
+    <span class="ring"></span>
+    <span class="ring"></span>
+    <svg class="heart" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+    </svg>
+  </div>
+
+  <svg class="ecg" viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 60 H120 L135 50 L150 60 H180 L195 60 L205 10 L220 110 L232 60 H260 L285 45 L310 60
+             H420 L435 50 L450 60 H480 L495 60 L505 10 L520 110 L532 60 H560 L585 45 L600 60"/>
+  </svg>
+
+  <div class="readout">
+    <span class="bpm" id="bpm">60</span>
+    <span class="unit">BPM</span>
+  </div>
+
+  <label class="control">
+    Slow
+    <input type="range" id="rate" min="40" max="160" value="60" aria-label="Heart rate in beats per minute">
+    Fast
+  </label>
+
+  <script>
+    const rate = document.getElementById('rate');
+    const bpm = document.getElementById('bpm');
+    const root = document.documentElement;
+
+    function setRate(value) {
+      bpm.textContent = value;
+      root.style.setProperty('--beat', (60 / value) + 's');
+    }
+
+    rate.addEventListener('input', e => setRate(e.target.value));
+    setRate(rate.value);
+  </script>
+</body>
+</html>
