@@ -1,0 +1,39 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ancient_ruins:temple_guardian",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/ancient_ruins/temple_guardian"
+      },
+      "geometry": {
+        "default": "geometry.ancient_ruins.temple"
+      },
+      "scripts": {
+        "pre_animation": [
+          "variable.tcos0 = (math.cos(query.modified_distance_moved * 38.17) * query.modified_move_speed) * 57.3;"
+        ],
+        "animate": [
+          "walk",
+          "attack",
+          "look"
+        ]
+      },
+      "animations": {
+        "walk": "animation.ancient_ruins.walk",
+        "attack": "animation.ancient_ruins.attack",
+        "look": "animation.ancient_ruins.look_at_target"
+      },
+      "render_controllers": [
+        "controller.render.ancient_ruins.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#4b5a3f",
+        "overlay_color": "#3ee07c"
+      }
+    }
+  }
+}

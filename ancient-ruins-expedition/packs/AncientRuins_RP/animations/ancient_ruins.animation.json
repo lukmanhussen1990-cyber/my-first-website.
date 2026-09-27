@@ -1,0 +1,117 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.ancient_ruins.walk": {
+      "loop": true,
+      "bones": {
+        "rightArm": {
+          "rotation": [
+            "-variable.tcos0",
+            0.0,
+            0.0
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "variable.tcos0",
+            0.0,
+            0.0
+          ]
+        },
+        "rightLeg": {
+          "rotation": [
+            "variable.tcos0 * 1.4",
+            0.0,
+            0.0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "-variable.tcos0 * 1.4",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.ancient_ruins.walk_legs": {
+      "loop": true,
+      "bones": {
+        "rightLeg": {
+          "rotation": [
+            "variable.tcos0 * 1.4",
+            0.0,
+            0.0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "-variable.tcos0 * 1.4",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.ancient_ruins.mummy_arms": {
+      "loop": true,
+      "bones": {
+        "rightArm": {
+          "rotation": [
+            "-85.0 + math.sin(query.life_time * 90.0) * 3.0",
+            5.0,
+            0.0
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "-85.0 - math.sin(query.life_time * 90.0) * 3.0",
+            -5.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.ancient_ruins.attack": {
+      "loop": true,
+      "bones": {
+        "rightArm": {
+          "rotation": [
+            "-math.sin(variable.attack_time * 180.0) * 70.0",
+            0.0,
+            0.0
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "-math.sin(variable.attack_time * 180.0) * 35.0",
+            0.0,
+            0.0
+          ]
+        },
+        "body": {
+          "rotation": [
+            0.0,
+            "math.sin(math.sqrt(variable.attack_time) * 360.0) * 8.0",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.ancient_ruins.look_at_target": {
+      "loop": true,
+      "bones": {
+        "head": {
+          "relative_to": {
+            "rotation": "entity"
+          },
+          "rotation": [
+            "query.target_x_rotation",
+            "query.target_y_rotation",
+            0.0
+          ]
+        }
+      }
+    }
+  }
+}

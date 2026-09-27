@@ -1,0 +1,27 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ancient_ruins:ship_floor",
+      "menu_category": {
+        "category": "construction"
+      }
+    },
+    "components": {
+      "minecraft:display_name": "tile.ancient_ruins:ship_floor.name",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ancient_ruins_ship_floor",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:map_color": "#4a3421",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1.2
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 3
+      }
+    }
+  }
+}

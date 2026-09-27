@@ -1,0 +1,103 @@
+{
+  "entity_sounds": {
+    "entities": {
+      "ancient_ruins:temple_guardian": {
+        "volume": 1.0,
+        "pitch": [
+          0.7,
+          0.9
+        ],
+        "events": {
+          "ambient": "mob.zombie.say",
+          "hurt": "mob.irongolem.hit",
+          "death": "mob.irongolem.death",
+          "step": {
+            "sound": "mob.irongolem.walk",
+            "volume": 0.4,
+            "pitch": 1.2
+          }
+        }
+      },
+      "ancient_ruins:crypt_mummy": {
+        "volume": 1.0,
+        "pitch": [
+          0.7,
+          0.9
+        ],
+        "events": {
+          "ambient": "mob.husk.ambient",
+          "hurt": "mob.husk.hurt",
+          "death": "mob.husk.death",
+          "step": {
+            "sound": "mob.husk.step",
+            "volume": 0.35
+          }
+        }
+      },
+      "ancient_ruins:drowned_captain": {
+        "volume": 1.0,
+        "pitch": [
+          0.8,
+          0.95
+        ],
+        "events": {
+          "ambient": "mob.drowned.say",
+          "hurt": "mob.drowned.hurt",
+          "death": "mob.drowned.death",
+          "step": {
+            "sound": "mob.drowned.step",
+            "volume": 0.35
+          }
+        }
+      },
+      "ancient_ruins:jade_idol": {
+        "volume": 1.2,
+        "pitch": [
+          0.5,
+          0.6
+        ],
+        "events": {
+          "hurt": "mob.irongolem.hit",
+          "death": "mob.elderguardian.death",
+          "step": {
+            "sound": "mob.irongolem.walk",
+            "volume": 0.8,
+            "pitch": 0.7
+          }
+        }
+      },
+      "ancient_ruins:sand_pharaoh": {
+        "volume": 1.2,
+        "pitch": [
+          0.5,
+          0.6
+        ],
+        "events": {
+          "ambient": "mob.husk.ambient",
+          "hurt": "mob.husk.hurt",
+          "death": "mob.elderguardian.death",
+          "step": {
+            "sound": "mob.husk.step",
+            "volume": 0.6
+          }
+        }
+      },
+      "ancient_ruins:abyssal_admiral": {
+        "volume": 1.2,
+        "pitch": [
+          0.5,
+          0.6
+        ],
+        "events": {
+          "ambient": "mob.drowned.say",
+          "hurt": "mob.drowned.hurt",
+          "death": "mob.elderguardian.death",
+          "step": {
+            "sound": "mob.drowned.step",
+            "volume": 0.6
+          }
+        }
+      }
+    }
+  }
+}

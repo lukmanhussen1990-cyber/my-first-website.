@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ancient_ruins:ship_altar",
+      "menu_category": {
+        "category": "construction"
+      }
+    },
+    "components": {
+      "minecraft:display_name": "tile.ancient_ruins:ship_altar.name",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ancient_ruins_ship_altar_side",
+          "render_method": "opaque"
+        },
+        "up": {
+          "texture": "ancient_ruins_ship_altar_top",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:map_color": "#e3b341",
+      "minecraft:destructible_by_mining": false,
+      "minecraft:destructible_by_explosion": false,
+      "minecraft:light_emission": 9
+    }
+  }
+}

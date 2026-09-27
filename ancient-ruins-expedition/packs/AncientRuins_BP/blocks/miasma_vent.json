@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ancient_ruins:miasma_vent",
+      "menu_category": {
+        "category": "construction"
+      }
+    },
+    "components": {
+      "minecraft:display_name": "tile.ancient_ruins:miasma_vent.name",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ancient_ruins_miasma_vent",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:map_color": "#30342d",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 2.5
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 6
+      },
+      "minecraft:light_emission": 3
+    }
+  }
+}

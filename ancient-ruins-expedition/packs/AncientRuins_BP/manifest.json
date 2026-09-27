@@ -1,0 +1,63 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Ancient Ruins Expedition BP",
+    "description": "Jungle temples, desert crypts and sunken ships with puzzles, traps, guardians and bosses. Mobile optimized. Bedrock 1.21+",
+    "uuid": "2e351bf7-cbe7-4259-9c6f-c8a3354b4f31",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "1e731878-fbf8-4998-82b7-e89dd497edce",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "da1d0132-8f0c-4a9d-85d5-64ef55382c7b",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "b2ebd391-2568-4941-b8b5-9719226906b1",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.10.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.1.0"
+    }
+  ],
+  "metadata": {
+    "authors": [
+      "Ancient Ruins Expedition"
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ancient_ruins:ruin_marker",
+      "is_spawnable": false,
+      "is_summonable": true
+    },
+    "component_groups": {
+      "ancient_ruins:despawn": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "ancient_ruins_marker",
+          "inanimate"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 0.1,
+        "height": 0.1
+      },
+      "minecraft:physics": {
+        "has_collision": false,
+        "has_gravity": false
+      },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:damage_sensor": {
+        "triggers": {
+          "cause": "all",
+          "deals_damage": false
+        }
+      },
+      "minecraft:health": {
+        "value": 1,
+        "max": 1
+      },
+      "minecraft:persistent": {},
+      "minecraft:timer": {
+        "looping": false,
+        "time": 120.0,
+        "time_down_event": {
+          "event": "ancient_ruins:expire",
+          "target": "self"
+        }
+      }
+    },
+    "events": {
+      "ancient_ruins:expire": {
+        "add": {
+          "component_groups": [
+            "ancient_ruins:despawn"
+          ]
+        }
+      }
+    }
+  }
+}

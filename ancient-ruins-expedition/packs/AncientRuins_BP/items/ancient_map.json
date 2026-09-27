@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "ancient_ruins:ancient_map",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "ancient_ruins_ancient_map"
+      },
+      "minecraft:display_name": {
+        "value": "item.ancient_ruins:ancient_map.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:allow_off_hand": true,
+      "minecraft:hand_equipped": false,
+      "minecraft:tags": {
+        "tags": [
+          "ancient_ruins:relic"
+        ]
+      },
+      "minecraft:cooldown": {
+        "category": "ancient_ruins_ancient_map",
+        "duration": 1.0
+      }
+    }
+  }
+}

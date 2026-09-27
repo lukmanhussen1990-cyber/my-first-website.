@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "ancient_ruins:ruin_compass",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "ancient_ruins_ruin_compass"
+      },
+      "minecraft:display_name": {
+        "value": "item.ancient_ruins:ruin_compass.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:allow_off_hand": true,
+      "minecraft:hand_equipped": false,
+      "minecraft:tags": {
+        "tags": [
+          "ancient_ruins:relic"
+        ]
+      },
+      "minecraft:cooldown": {
+        "category": "ancient_ruins_ruin_compass",
+        "duration": 1.0
+      }
+    }
+  }
+}

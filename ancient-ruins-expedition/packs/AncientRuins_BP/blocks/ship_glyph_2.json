@@ -1,0 +1,24 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ancient_ruins:ship_glyph_2",
+      "menu_category": {
+        "category": "construction"
+      }
+    },
+    "components": {
+      "minecraft:display_name": "tile.ancient_ruins:ship_glyph_2.name",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ancient_ruins_ship_glyph_2",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:map_color": "#46e6e0",
+      "minecraft:destructible_by_mining": false,
+      "minecraft:destructible_by_explosion": false,
+      "minecraft:light_emission": 4
+    }
+  }
+}

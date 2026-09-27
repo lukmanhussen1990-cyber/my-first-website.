@@ -1,0 +1,20 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ancient_ruins:ruin_marker",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/ancient_ruins/ruin_marker"
+      },
+      "geometry": {
+        "default": "geometry.ancient_ruins.empty"
+      },
+      "render_controllers": [
+        "controller.render.ancient_ruins.default"
+      ]
+    }
+  }
+}

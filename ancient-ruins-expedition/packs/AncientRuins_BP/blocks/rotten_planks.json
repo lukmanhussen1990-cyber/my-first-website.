@@ -1,0 +1,27 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ancient_ruins:rotten_planks",
+      "menu_category": {
+        "category": "construction"
+      }
+    },
+    "components": {
+      "minecraft:display_name": "tile.ancient_ruins:rotten_planks.name",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ancient_ruins_rotten_planks",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:map_color": "#3c2d1d",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 0.4
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 1
+      }
+    }
+  }
+}

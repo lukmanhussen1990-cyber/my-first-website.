@@ -1,0 +1,216 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ancient_ruins:abyssal_admiral",
+      "spawn_category": "monster",
+      "is_spawnable": true,
+      "is_summonable": true
+    },
+    "component_groups": {
+      "ancient_ruins:calm": {
+        "minecraft:movement": {
+          "value": 0.24
+        },
+        "minecraft:timer": {
+          "looping": true,
+          "randomInterval": true,
+          "time": [
+            6.0,
+            9.0
+          ],
+          "time_down_event": {
+            "event": "ancient_ruins:special_attack",
+            "target": "self"
+          }
+        }
+      },
+      "ancient_ruins:casting": {
+        "minecraft:mark_variant": {
+          "value": 1
+        }
+      },
+      "ancient_ruins:enraged": {
+        "minecraft:movement": {
+          "value": 0.3
+        },
+        "minecraft:timer": {
+          "looping": true,
+          "randomInterval": true,
+          "time": [
+            4.0,
+            6.0
+          ],
+          "time_down_event": {
+            "event": "ancient_ruins:special_attack",
+            "target": "self"
+          }
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "abyssal_admiral",
+          "ruin_boss",
+          "undead",
+          "monster",
+          "mob"
+        ]
+      },
+      "minecraft:health": {
+        "value": 150,
+        "max": 150
+      },
+      "minecraft:boss": {
+        "hud_range": 32,
+        "name": "Abyssal Admiral",
+        "should_darken_sky": false
+      },
+      "minecraft:attack": {
+        "damage": 7
+      },
+      "minecraft:scale": {
+        "value": 1.6
+      },
+      "minecraft:collision_box": {
+        "width": 1.0,
+        "height": 3.0
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:persistent": {},
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": 0,
+        "breathes_air": true,
+        "breathes_water": true
+      },
+      "minecraft:nameable": {},
+      "minecraft:is_hidden_when_invisible": {},
+      "minecraft:knockback_resistance": {
+        "value": 0.9
+      },
+      "minecraft:follow_range": {
+        "value": 28
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "fall",
+            "deals_damage": false
+          },
+          {
+            "cause": "suffocation",
+            "deals_damage": false
+          },
+          {
+            "cause": "drowning",
+            "deals_damage": false
+          }
+        ]
+      },
+      "minecraft:loot": {
+        "table": "loot_tables/entities/ancient_ruins/abyssal_admiral.json"
+      },
+      "minecraft:experience_reward": {
+        "on_death": "150"
+      },
+      "minecraft:underwater_movement": {
+        "value": 0.08
+      },
+      "minecraft:navigation.generic": {
+        "is_amphibious": true,
+        "can_path_over_water": false,
+        "can_swim": true,
+        "can_walk": true,
+        "can_breach": true,
+        "can_sink": true,
+        "avoid_sun": false
+      },
+      "minecraft:movement.generic": {},
+      "minecraft:jump.static": {},
+      "minecraft:can_climb": {},
+      "minecraft:behavior.random_swim": {
+        "priority": 7,
+        "speed_multiplier": 1.0,
+        "interval": 120,
+        "xz_dist": 8,
+        "y_dist": 4
+      },
+      "minecraft:behavior.hurt_by_target": {
+        "priority": 1
+      },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 2,
+        "must_see": true,
+        "reselect_targets": true,
+        "within_radius": 24,
+        "entity_types": [
+          {
+            "filters": {
+              "test": "is_family",
+              "subject": "other",
+              "value": "player"
+            },
+            "max_dist": 24
+          }
+        ]
+      },
+      "minecraft:behavior.melee_box_attack": {
+        "priority": 3,
+        "speed_multiplier": 1.2,
+        "track_target": true,
+        "horizontal_reach": 1.2
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 6,
+        "speed_multiplier": 0.7,
+        "interval": 160
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 8,
+        "look_distance": 12,
+        "probability": 0.05
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": {
+          "component_groups": [
+            "ancient_ruins:calm"
+          ]
+        }
+      },
+      "ancient_ruins:special_attack": {
+        "add": {
+          "component_groups": [
+            "ancient_ruins:casting"
+          ]
+        }
+      },
+      "ancient_ruins:cast_done": {
+        "remove": {
+          "component_groups": [
+            "ancient_ruins:casting"
+          ]
+        }
+      },
+      "ancient_ruins:enrage": {
+        "remove": {
+          "component_groups": [
+            "ancient_ruins:calm"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "ancient_ruins:enraged"
+          ]
+        }
+      }
+    }
+  }
+}

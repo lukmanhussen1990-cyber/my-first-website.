@@ -1,0 +1,27 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ancient_ruins:crumbling_temple_floor",
+      "menu_category": {
+        "category": "construction"
+      }
+    },
+    "components": {
+      "minecraft:display_name": "tile.ancient_ruins:crumbling_temple_floor.name",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ancient_ruins_crumbling_temple_floor",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:map_color": "#5d6b4f",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 0.5
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 1
+      }
+    }
+  }
+}
