@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+: native splash screen with the animated countdown-ring icon. -->
+    <style name="Theme.ExamCountdown" parent="Platform.Theme.ExamCountdown">
+        <item name="android:windowBackground">@color/navy_950</item>
+        <item name="android:windowSplashScreenBackground">@color/navy_950</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon_animated</item>
+        <item name="android:windowSplashScreenAnimationDuration">900</item>
+    </style>
+</resources>

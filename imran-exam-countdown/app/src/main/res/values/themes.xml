@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared by every API level. The app always uses its dark midnight-navy look. -->
+    <style name="Base.Theme.ExamCountdown" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">@color/navy_900</item>
+        <item name="android:colorPrimaryDark">@color/navy_950</item>
+        <item name="android:colorAccent">@color/electric_blue</item>
+        <item name="android:colorBackground">@color/navy_950</item>
+        <item name="android:colorControlActivated">@color/electric_blue</item>
+        <item name="android:colorControlNormal">@color/text_secondary</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:alertDialogTheme">@style/Theme.ExamCountdown.Dialog</item>
+        <item name="android:datePickerDialogTheme">@style/Theme.ExamCountdown.Dialog</item>
+        <item name="android:timePickerDialogTheme">@style/Theme.ExamCountdown.Dialog</item>
+    </style>
+
+    <!-- Overridden in values-v28 / values-v29 with newer window attributes. -->
+    <style name="Platform.Theme.ExamCountdown" parent="Base.Theme.ExamCountdown" />
+
+    <!-- Android 8–11: the window background doubles as the splash screen. -->
+    <style name="Theme.ExamCountdown" parent="Platform.Theme.ExamCountdown">
+        <item name="android:windowBackground">@drawable/splash_legacy</item>
+    </style>
+
+    <style name="Theme.ExamCountdown.Dialog" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@color/electric_blue</item>
+        <item name="android:colorPrimary">@color/navy_850</item>
+        <item name="android:colorBackground">@color/navy_850</item>
+        <item name="android:colorControlActivated">@color/electric_blue</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+    </style>
+</resources>
