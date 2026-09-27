@@ -1,0 +1,54 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "§6Lumina Graphics §f(Effects)",
+    "description": "Light bloom, fireflies, falling leaves, water glints & morning mist. §7v1.0.0",
+    "uuid": "203a492d-6545-4a12-ae9c-831c765028be",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "09065080-bf11-400b-bfe0-cef892483e75",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "b2dbc0d4-33a9-4c41-8bb0-c35dc91b7da8",
+      "entry": "scripts/main.js",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "d4151798-2725-4028-b368-04a99c84f6be",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    }
+  ]
+}

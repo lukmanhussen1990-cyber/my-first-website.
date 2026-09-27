@@ -1,0 +1,884 @@
+{
+  "biomes": {
+    "bamboo_jungle": {
+      "fog_identifier": "lumina:fog_jungle",
+      "fog_ids_to_merge": [
+        "lumina:fog_jungle"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#16A6C9",
+      "water_surface_transparency": 0.55
+    },
+    "bamboo_jungle_hills": {
+      "fog_identifier": "lumina:fog_jungle",
+      "fog_ids_to_merge": [
+        "lumina:fog_jungle"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#16A6C9",
+      "water_surface_transparency": 0.55
+    },
+    "basalt_deltas": {
+      "fog_identifier": "lumina:fog_basalt",
+      "fog_ids_to_merge": [
+        "lumina:fog_basalt"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#905957",
+      "water_surface_transparency": 0.65
+    },
+    "beach": {
+      "fog_identifier": "lumina:fog_default",
+      "fog_ids_to_merge": [
+        "lumina:fog_default"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3FA6EE",
+      "water_surface_transparency": 0.55
+    },
+    "birch_forest": {
+      "fog_identifier": "lumina:fog_forest",
+      "fog_ids_to_merge": [
+        "lumina:fog_forest"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3A9BE0",
+      "water_surface_transparency": 0.55
+    },
+    "birch_forest_hills": {
+      "fog_identifier": "lumina:fog_forest",
+      "fog_ids_to_merge": [
+        "lumina:fog_forest"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3A9BE0",
+      "water_surface_transparency": 0.55
+    },
+    "birch_forest_hills_mutated": {
+      "fog_identifier": "lumina:fog_forest",
+      "fog_ids_to_merge": [
+        "lumina:fog_forest"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3A9BE0",
+      "water_surface_transparency": 0.55
+    },
+    "birch_forest_mutated": {
+      "fog_identifier": "lumina:fog_forest",
+      "fog_ids_to_merge": [
+        "lumina:fog_forest"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3A9BE0",
+      "water_surface_transparency": 0.55
+    },
+    "cherry_grove": {
+      "fog_identifier": "lumina:fog_cherry",
+      "fog_ids_to_merge": [
+        "lumina:fog_cherry"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#5DB7EF",
+      "water_surface_transparency": 0.5
+    },
+    "cold_beach": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "cold_ocean": {
+      "fog_identifier": "lumina:fog_cold_ocean",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold_ocean"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#2D68C4",
+      "water_surface_transparency": 0.55
+    },
+    "cold_taiga": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "cold_taiga_hills": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "cold_taiga_mutated": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "crimson_forest": {
+      "fog_identifier": "lumina:fog_crimson",
+      "fog_ids_to_merge": [
+        "lumina:fog_crimson"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#905957",
+      "water_surface_transparency": 0.65
+    },
+    "deep_cold_ocean": {
+      "fog_identifier": "lumina:fog_cold_ocean",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold_ocean"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#2D68C4",
+      "water_surface_transparency": 0.55
+    },
+    "deep_dark": {
+      "fog_identifier": "lumina:fog_deep_dark",
+      "fog_ids_to_merge": [
+        "lumina:fog_deep_dark"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#1E4A70",
+      "water_surface_transparency": 0.7
+    },
+    "deep_frozen_ocean": {
+      "fog_identifier": "lumina:fog_frozen_ocean",
+      "fog_ids_to_merge": [
+        "lumina:fog_frozen_ocean"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3A5EB5",
+      "water_surface_transparency": 0.6
+    },
+    "deep_lukewarm_ocean": {
+      "fog_identifier": "lumina:fog_lukewarm_ocean",
+      "fog_ids_to_merge": [
+        "lumina:fog_lukewarm_ocean"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#1F9ED8",
+      "water_surface_transparency": 0.45
+    },
+    "deep_ocean": {
+      "fog_identifier": "lumina:fog_ocean",
+      "fog_ids_to_merge": [
+        "lumina:fog_ocean"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#1B7FD1",
+      "water_surface_transparency": 0.5
+    },
+    "deep_warm_ocean": {
+      "fog_identifier": "lumina:fog_warm_ocean",
+      "fog_ids_to_merge": [
+        "lumina:fog_warm_ocean"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#2BC6E0",
+      "water_surface_transparency": 0.4
+    },
+    "default": {
+      "fog_identifier": "lumina:fog_default",
+      "fog_ids_to_merge": [
+        "lumina:fog_default"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3FA6EE",
+      "water_surface_transparency": 0.55
+    },
+    "desert": {
+      "fog_identifier": "lumina:fog_desert",
+      "fog_ids_to_merge": [
+        "lumina:fog_desert"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#32A8E0",
+      "water_surface_transparency": 0.55
+    },
+    "desert_hills": {
+      "fog_identifier": "lumina:fog_desert",
+      "fog_ids_to_merge": [
+        "lumina:fog_desert"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#32A8E0",
+      "water_surface_transparency": 0.55
+    },
+    "desert_mutated": {
+      "fog_identifier": "lumina:fog_desert",
+      "fog_ids_to_merge": [
+        "lumina:fog_desert"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#32A8E0",
+      "water_surface_transparency": 0.55
+    },
+    "dripstone_caves": {
+      "fog_identifier": "lumina:fog_dripstone_caves",
+      "fog_ids_to_merge": [
+        "lumina:fog_dripstone_caves"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3A82B8",
+      "water_surface_transparency": 0.6
+    },
+    "extreme_hills": {
+      "fog_identifier": "lumina:fog_default",
+      "fog_ids_to_merge": [
+        "lumina:fog_default"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3FA6EE",
+      "water_surface_transparency": 0.55
+    },
+    "extreme_hills_edge": {
+      "fog_identifier": "lumina:fog_default",
+      "fog_ids_to_merge": [
+        "lumina:fog_default"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3FA6EE",
+      "water_surface_transparency": 0.55
+    },
+    "extreme_hills_mutated": {
+      "fog_identifier": "lumina:fog_default",
+      "fog_ids_to_merge": [
+        "lumina:fog_default"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3FA6EE",
+      "water_surface_transparency": 0.55
+    },
+    "extreme_hills_plus_trees": {
+      "fog_identifier": "lumina:fog_default",
+      "fog_ids_to_merge": [
+        "lumina:fog_default"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3FA6EE",
+      "water_surface_transparency": 0.55
+    },
+    "extreme_hills_plus_trees_mutated": {
+      "fog_identifier": "lumina:fog_default",
+      "fog_ids_to_merge": [
+        "lumina:fog_default"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3FA6EE",
+      "water_surface_transparency": 0.55
+    },
+    "flower_forest": {
+      "fog_identifier": "lumina:fog_forest",
+      "fog_ids_to_merge": [
+        "lumina:fog_forest"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3A9BE0",
+      "water_surface_transparency": 0.55
+    },
+    "forest": {
+      "fog_identifier": "lumina:fog_forest",
+      "fog_ids_to_merge": [
+        "lumina:fog_forest"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3A9BE0",
+      "water_surface_transparency": 0.55
+    },
+    "forest_hills": {
+      "fog_identifier": "lumina:fog_forest",
+      "fog_ids_to_merge": [
+        "lumina:fog_forest"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3A9BE0",
+      "water_surface_transparency": 0.55
+    },
+    "frozen_ocean": {
+      "fog_identifier": "lumina:fog_frozen_ocean",
+      "fog_ids_to_merge": [
+        "lumina:fog_frozen_ocean"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3A5EB5",
+      "water_surface_transparency": 0.6
+    },
+    "frozen_peaks": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "frozen_river": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "grove": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "hell": {
+      "fog_identifier": "lumina:fog_nether",
+      "fog_ids_to_merge": [
+        "lumina:fog_nether"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#905957",
+      "water_surface_transparency": 0.65
+    },
+    "ice_mountains": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "ice_plains": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "ice_plains_spikes": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "jagged_peaks": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "jungle": {
+      "fog_identifier": "lumina:fog_jungle",
+      "fog_ids_to_merge": [
+        "lumina:fog_jungle"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#16A6C9",
+      "water_surface_transparency": 0.55
+    },
+    "jungle_edge": {
+      "fog_identifier": "lumina:fog_jungle",
+      "fog_ids_to_merge": [
+        "lumina:fog_jungle"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#16A6C9",
+      "water_surface_transparency": 0.55
+    },
+    "jungle_edge_mutated": {
+      "fog_identifier": "lumina:fog_jungle",
+      "fog_ids_to_merge": [
+        "lumina:fog_jungle"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#16A6C9",
+      "water_surface_transparency": 0.55
+    },
+    "jungle_hills": {
+      "fog_identifier": "lumina:fog_jungle",
+      "fog_ids_to_merge": [
+        "lumina:fog_jungle"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#16A6C9",
+      "water_surface_transparency": 0.55
+    },
+    "jungle_mutated": {
+      "fog_identifier": "lumina:fog_jungle",
+      "fog_ids_to_merge": [
+        "lumina:fog_jungle"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#16A6C9",
+      "water_surface_transparency": 0.55
+    },
+    "lukewarm_ocean": {
+      "fog_identifier": "lumina:fog_lukewarm_ocean",
+      "fog_ids_to_merge": [
+        "lumina:fog_lukewarm_ocean"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#1F9ED8",
+      "water_surface_transparency": 0.45
+    },
+    "lush_caves": {
+      "fog_identifier": "lumina:fog_lush_caves",
+      "fog_ids_to_merge": [
+        "lumina:fog_lush_caves"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3AA8B8",
+      "water_surface_transparency": 0.5
+    },
+    "mangrove_swamp": {
+      "fog_identifier": "lumina:fog_mangrove",
+      "fog_ids_to_merge": [
+        "lumina:fog_mangrove"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#4A8070",
+      "water_surface_transparency": 0.8
+    },
+    "meadow": {
+      "fog_identifier": "lumina:fog_default",
+      "fog_ids_to_merge": [
+        "lumina:fog_default"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3FA6EE",
+      "water_surface_transparency": 0.55
+    },
+    "mega_spruce_taiga": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "mega_spruce_taiga_mutated": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "mega_taiga": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "mega_taiga_hills": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "mega_taiga_mutated": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "mesa": {
+      "fog_identifier": "lumina:fog_mesa",
+      "fog_ids_to_merge": [
+        "lumina:fog_mesa"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#4E9AD8",
+      "water_surface_transparency": 0.55
+    },
+    "mesa_bryce": {
+      "fog_identifier": "lumina:fog_mesa",
+      "fog_ids_to_merge": [
+        "lumina:fog_mesa"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#4E9AD8",
+      "water_surface_transparency": 0.55
+    },
+    "mesa_mutated": {
+      "fog_identifier": "lumina:fog_mesa",
+      "fog_ids_to_merge": [
+        "lumina:fog_mesa"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#4E9AD8",
+      "water_surface_transparency": 0.55
+    },
+    "mesa_plateau": {
+      "fog_identifier": "lumina:fog_mesa",
+      "fog_ids_to_merge": [
+        "lumina:fog_mesa"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#4E9AD8",
+      "water_surface_transparency": 0.55
+    },
+    "mesa_plateau_mutated": {
+      "fog_identifier": "lumina:fog_mesa",
+      "fog_ids_to_merge": [
+        "lumina:fog_mesa"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#4E9AD8",
+      "water_surface_transparency": 0.55
+    },
+    "mesa_plateau_stone": {
+      "fog_identifier": "lumina:fog_mesa",
+      "fog_ids_to_merge": [
+        "lumina:fog_mesa"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#4E9AD8",
+      "water_surface_transparency": 0.55
+    },
+    "mesa_plateau_stone_mutated": {
+      "fog_identifier": "lumina:fog_mesa",
+      "fog_ids_to_merge": [
+        "lumina:fog_mesa"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#4E9AD8",
+      "water_surface_transparency": 0.55
+    },
+    "mushroom_island": {
+      "fog_identifier": "lumina:fog_mushroom",
+      "fog_ids_to_merge": [
+        "lumina:fog_mushroom"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#8A7FD0",
+      "water_surface_transparency": 0.6
+    },
+    "mushroom_island_shore": {
+      "fog_identifier": "lumina:fog_mushroom",
+      "fog_ids_to_merge": [
+        "lumina:fog_mushroom"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#8A7FD0",
+      "water_surface_transparency": 0.6
+    },
+    "ocean": {
+      "fog_identifier": "lumina:fog_ocean",
+      "fog_ids_to_merge": [
+        "lumina:fog_ocean"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#1B7FD1",
+      "water_surface_transparency": 0.5
+    },
+    "plains": {
+      "fog_identifier": "lumina:fog_default",
+      "fog_ids_to_merge": [
+        "lumina:fog_default"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3FA6EE",
+      "water_surface_transparency": 0.55
+    },
+    "river": {
+      "fog_identifier": "lumina:fog_default",
+      "fog_ids_to_merge": [
+        "lumina:fog_default"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3FA6EE",
+      "water_surface_transparency": 0.55
+    },
+    "roofed_forest": {
+      "fog_identifier": "lumina:fog_dark_forest",
+      "fog_ids_to_merge": [
+        "lumina:fog_dark_forest"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3B8DD0",
+      "water_surface_transparency": 0.6
+    },
+    "roofed_forest_mutated": {
+      "fog_identifier": "lumina:fog_dark_forest",
+      "fog_ids_to_merge": [
+        "lumina:fog_dark_forest"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3B8DD0",
+      "water_surface_transparency": 0.6
+    },
+    "savanna": {
+      "fog_identifier": "lumina:fog_savanna",
+      "fog_ids_to_merge": [
+        "lumina:fog_savanna"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#2C9AD6",
+      "water_surface_transparency": 0.55
+    },
+    "savanna_mutated": {
+      "fog_identifier": "lumina:fog_savanna",
+      "fog_ids_to_merge": [
+        "lumina:fog_savanna"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#2C9AD6",
+      "water_surface_transparency": 0.55
+    },
+    "savanna_plateau": {
+      "fog_identifier": "lumina:fog_savanna",
+      "fog_ids_to_merge": [
+        "lumina:fog_savanna"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#2C9AD6",
+      "water_surface_transparency": 0.55
+    },
+    "savanna_plateau_mutated": {
+      "fog_identifier": "lumina:fog_savanna",
+      "fog_ids_to_merge": [
+        "lumina:fog_savanna"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#2C9AD6",
+      "water_surface_transparency": 0.55
+    },
+    "snowy_slopes": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "soulsand_valley": {
+      "fog_identifier": "lumina:fog_soulsand",
+      "fog_ids_to_merge": [
+        "lumina:fog_soulsand"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#905957",
+      "water_surface_transparency": 0.65
+    },
+    "stone_beach": {
+      "fog_identifier": "lumina:fog_default",
+      "fog_ids_to_merge": [
+        "lumina:fog_default"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3FA6EE",
+      "water_surface_transparency": 0.55
+    },
+    "stony_peaks": {
+      "fog_identifier": "lumina:fog_default",
+      "fog_ids_to_merge": [
+        "lumina:fog_default"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3FA6EE",
+      "water_surface_transparency": 0.55
+    },
+    "sunflower_plains": {
+      "fog_identifier": "lumina:fog_default",
+      "fog_ids_to_merge": [
+        "lumina:fog_default"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3FA6EE",
+      "water_surface_transparency": 0.55
+    },
+    "swampland": {
+      "fog_identifier": "lumina:fog_swamp",
+      "fog_ids_to_merge": [
+        "lumina:fog_swamp"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#5A7A5A",
+      "water_surface_transparency": 0.85
+    },
+    "swampland_mutated": {
+      "fog_identifier": "lumina:fog_swamp",
+      "fog_ids_to_merge": [
+        "lumina:fog_swamp"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#5A7A5A",
+      "water_surface_transparency": 0.85
+    },
+    "taiga": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "taiga_hills": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "taiga_mutated": {
+      "fog_identifier": "lumina:fog_cold",
+      "fog_ids_to_merge": [
+        "lumina:fog_cold"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#3D7FD6",
+      "water_surface_transparency": 0.6
+    },
+    "the_end": {
+      "fog_identifier": "lumina:fog_end",
+      "fog_ids_to_merge": [
+        "lumina:fog_end"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#62529E",
+      "water_surface_transparency": 0.65
+    },
+    "warm_ocean": {
+      "fog_identifier": "lumina:fog_warm_ocean",
+      "fog_ids_to_merge": [
+        "lumina:fog_warm_ocean"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#2BC6E0",
+      "water_surface_transparency": 0.4
+    },
+    "warped_forest": {
+      "fog_identifier": "lumina:fog_warped",
+      "fog_ids_to_merge": [
+        "lumina:fog_warped"
+      ],
+      "inherit_from_prior_fog": false,
+      "remove_all_prior_fog": false,
+      "water_surface_color": "#905957",
+      "water_surface_transparency": 0.65
+    }
+  }
+}

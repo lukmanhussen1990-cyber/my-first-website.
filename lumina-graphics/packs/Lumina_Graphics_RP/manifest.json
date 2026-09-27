@@ -1,0 +1,46 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "§6Lumina Graphics §f(Visuals)",
+    "description": "PC-style visuals for mobile: cinematic fog, clear water, glowing sun & moon. §7v1.0.0",
+    "uuid": "d4151798-2725-4028-b368-04a99c84f6be",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "172910e4-8498-45fc-a728-1dd1082d8d78",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "subpacks": [
+    {
+      "folder_name": "performance",
+      "name": "§aPerformance §7(fewer particles)",
+      "memory_tier": 0
+    },
+    {
+      "folder_name": "balanced",
+      "name": "§eBalanced §7(recommended)",
+      "memory_tier": 0
+    },
+    {
+      "folder_name": "ultra",
+      "name": "§dUltra §7(more particles)",
+      "memory_tier": 0
+    }
+  ]
+}
