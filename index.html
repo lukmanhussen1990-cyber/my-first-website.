@@ -1,0 +1,2216 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Susan Roses · Rose Nursery, Little Wenlock, Shropshire</title>
+<meta name="description" content="Susan Roses is a family rose nursery in Little Wenlock, Shropshire. 146 varieties grown peat-free on four acres since 1994. Potted roses, bare-root by post, garden visits and Saturday workshops.">
+<meta name="theme-color" content="#F2ECE1">
+<meta property="og:title" content="Susan Roses · Rose Nursery, Little Wenlock">
+<meta property="og:description" content="146 varieties of rose, grown peat-free on four acres below the Wrekin since 1994.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23F2ECE1'/%3E%3Cpath d='M16 18.2c-1.9 0-3-1.3-2.8-2.8.2-1.8 2.1-2.8 3.7-2.4 2.3.5 3.2 2.8 2.5 4.7-.8 2.4-3.6 3.5-5.9 2.7-3-1-4.1-4.4-3.1-7.1 1.3-3.3 5.2-4.7 8.4-3.4' fill='none' stroke='%23A8323E' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Karla:wght@300;400;500;600&family=Mrs+Saint+Delafield&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "GardenStore",
+  "name": "Susan Roses",
+  "description": "Family rose nursery growing 146 varieties peat-free on four acres since 1994.",
+  "founder": { "@type": "Person", "name": "Susan Mary" },
+  "foundingDate": "1994",
+  "url": "https://susanroses.co.uk",
+  "telephone": "+44 1952 504318",
+  "email": "hello@susanroses.co.uk",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Hollow Lane",
+    "addressLocality": "Little Wenlock, Telford",
+    "addressRegion": "Shropshire",
+    "postalCode": "TF6 5BN",
+    "addressCountry": "GB"
+  },
+  "openingHoursSpecification": [
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"], "opens": "09:00", "closes": "17:00", "validFrom": "2026-03-01", "validThrough": "2026-10-31" },
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Thursday","Friday","Saturday","Sunday"], "opens": "10:00", "closes": "16:00", "validFrom": "2026-11-01", "validThrough": "2027-02-28" }
+  ]
+}
+</script>
+<style>
+/* ==========================================================================
+   Susan Roses — palette drawn from the nursery itself:
+   potting-shed paper, Shropshire clay, rose-leaf green, garden crimson.
+   ========================================================================== */
+:root{
+  --paper:#F2ECE1;
+  --linen:#EAE1D1;
+  --blushpaper:#F1DFD3;
+  --ink:#2A221E;
+  --ink-soft:#5B4E45;
+  --clay:#6A5241;
+  --leaf:#1F2A1C;
+  --moss:#4E5B3A;
+  --sage:#9DA487;
+  --rose:#A8323E;
+  --rose-deep:#7E1F2B;
+  --blush:#E6B6A4;
+  --terracotta:#B6623D;
+  --cream:#EFE6D6;
+
+  --bg:var(--paper);
+  --fg:var(--ink);
+
+  --serif:'Cormorant Garamond','Cormorant',Garamond,'Times New Roman',serif;
+  --sans:'Karla','Helvetica Neue',Arial,sans-serif;
+  --script:'Mrs Saint Delafield','Snell Roundhand',cursive;
+
+  --gutter:clamp(18px,5vw,76px);
+  --ease:cubic-bezier(.2,.7,.1,1);
+  --ease-soft:cubic-bezier(.6,.05,.25,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  background:var(--bg);
+  color:var(--fg);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.55;
+  font-weight:400;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
+  text-rendering:optimizeLegibility;
+}
+::selection{background:var(--rose);color:var(--paper)}
+a{color:inherit}
+img,svg,canvas{display:block}
+.skip{position:absolute;left:-9999px;top:0;z-index:100;background:var(--ink);color:var(--paper);padding:10px 16px}
+.skip:focus{left:16px;top:16px}
+
+/* paper grain — static, fine, barely there */
+.grain{
+  position:fixed;inset:0;pointer-events:none;z-index:60;opacity:.085;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .15 0 0 0 0 .1 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+#petal{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:35}
+
+/* ---------- type primitives ---------- */
+.eyebrow{
+  font-family:var(--sans);font-size:11px;font-weight:500;letter-spacing:.26em;text-transform:uppercase;opacity:.72;
+}
+.serif{font-family:var(--serif)}
+em{font-style:italic}
+
+/* ---------- header ---------- */
+.bar{
+  position:fixed;top:0;left:0;right:0;z-index:40;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  padding:22px var(--gutter);color:var(--fg);pointer-events:none;
+  transition:transform .7s var(--ease), opacity .7s var(--ease);
+}
+.bar.tuck{transform:translateY(-110%);opacity:0}
+.bar>*{pointer-events:auto}
+.mark{display:flex;align-items:center;gap:11px;text-decoration:none;font-family:var(--serif);font-size:23px;font-weight:500;letter-spacing:.005em;line-height:1}
+.mark svg{width:30px;height:30px;flex:none}
+.mark svg path,.mark svg circle{stroke:currentColor}
+.mark svg .r{stroke:var(--rose)}
+.bar nav{display:flex;gap:clamp(18px,2.6vw,40px)}
+.bar nav a,.bar-cta{
+  font-size:11px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;text-decoration:none;position:relative;
+}
+.bar nav a::after{
+  content:'';position:absolute;left:0;right:0;bottom:-6px;height:1px;background:currentColor;
+  transform:scaleX(0);transform-origin:right;transition:transform .6s var(--ease);
+}
+.bar nav a:hover::after,.bar nav a:focus-visible::after{transform:scaleX(1);transform-origin:left}
+.bar-cta{border:1px solid currentColor;border-radius:999px;padding:10px 18px;transition:background .4s,color .4s}
+.bar-cta:hover{background:var(--fg);color:var(--bg)}
+
+/* ---------- scroll sequences ---------- */
+.seq{position:relative;height:var(--len,500vh)}
+.stick{position:sticky;top:0;height:100vh;width:100%;overflow:hidden}
+.scene{position:absolute;inset:0;width:100%;height:100%}
+
+/* ---------- hero: the growing rose ---------- */
+.hero-title{position:absolute;left:0;right:0;top:calc(96px + 5vh);text-align:center;will-change:opacity,transform}
+.hero-title .eyebrow{display:block;margin-bottom:2.6vh}
+.hero-title h1{
+  font-family:var(--serif);font-weight:300;line-height:.84;letter-spacing:-.025em;
+  font-size:clamp(66px,13.2vw,220px);
+}
+.hero-title h1 em{color:var(--rose);font-weight:300;padding-right:.04em}
+.hero-title h1 .ch{display:inline-block;transform:translateY(105%);opacity:0;animation:rise 1.5s var(--ease) forwards;animation-delay:calc(.25s + var(--i) * .06s)}
+.hero-title h1 .clip{display:inline-block;overflow:hidden;padding:0 .02em .06em;vertical-align:bottom}
+.hero-title .eyebrow{opacity:0;animation:fade 1.4s var(--ease) .9s forwards}
+@keyframes rise{to{transform:none;opacity:1}}
+@keyframes fade{to{opacity:.72}}
+
+.cap{position:absolute;top:calc(110px + 9vh);max-width:min(32ch,31vw);opacity:0;will-change:opacity,transform}
+.cap-l{left:var(--gutter)}
+.cap-r{right:var(--gutter);text-align:right}
+.cap .num{display:block;font-family:var(--serif);font-style:italic;font-size:19px;color:var(--rose);margin-bottom:12px}
+.cap h2{font-family:var(--serif);font-weight:300;font-size:clamp(34px,4.3vw,66px);line-height:.98;letter-spacing:-.01em}
+.cap h2 em{color:var(--rose)}
+.cap p{margin-top:16px;font-size:15px;line-height:1.5;opacity:.72}
+.cap-end{top:auto;bottom:13vh}
+
+.cue{
+  position:absolute;left:50%;bottom:4.5vh;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--cream);opacity:0;
+}
+.cue i{display:block;width:1px;height:44px;background:linear-gradient(currentColor,transparent);transform-origin:top;animation:drip 2.6s var(--ease-soft) infinite}
+@keyframes drip{0%{transform:scaleY(0)}45%{transform:scaleY(1)}100%{transform:scaleY(1);opacity:0}}
+
+/* ---------- intro ---------- */
+.intro{padding:26vh var(--gutter) 22vh;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:24px}
+.intro .eyebrow{grid-column:2/7;margin-bottom:5vh}
+.lede{grid-column:2/12;font-family:var(--serif);font-weight:300;font-size:clamp(31px,4.3vw,68px);line-height:1.07;letter-spacing:-.012em}
+.lede em{color:var(--rose)}
+.intro-note{grid-column:7/12;margin-top:8vh;font-size:17px;line-height:1.65;max-width:44ch;opacity:.78}
+.intro-note b{font-weight:500;opacity:1}
+
+/* word-split headings */
+.w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
+.w>span{display:inline-block;transform:translateY(108%);transition:transform 1.25s var(--ease);transition-delay:calc(var(--i) * 38ms)}
+.in .w>span,.w.in>span{transform:none}
+
+[data-reveal]{opacity:0;transform:translateY(28px);transition:opacity 1.2s var(--ease),transform 1.2s var(--ease);transition-delay:var(--d,0s)}
+[data-reveal].in{opacity:1;transform:none}
+[data-reveal].in.eyebrow{opacity:.72}
+
+/* ---------- collection ---------- */
+.coll-head{position:absolute;top:calc(92px + 3vh);left:var(--gutter);right:var(--gutter);display:flex;justify-content:space-between;align-items:baseline}
+.coll-head .count{font-family:var(--serif);font-style:italic;font-size:18px;opacity:.7}
+.varieties{position:absolute;left:var(--gutter);top:50%;transform:translateY(-46%);width:min(40vw,540px);height:62vh}
+.variety{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;opacity:0;will-change:opacity,transform}
+.v-idx{font-family:var(--serif);font-style:italic;font-size:19px;opacity:.65}
+.variety h3{font-family:var(--serif);font-weight:300;font-size:clamp(44px,5.9vw,100px);line-height:.9;letter-spacing:-.02em;margin:12px 0 16px}
+.variety h3 em{font-weight:300}
+.v-type{font-size:11px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;opacity:.66}
+.v-note{margin-top:26px;font-family:var(--serif);font-size:clamp(19px,1.55vw,23px);line-height:1.3;max-width:31ch;opacity:.9}
+.v-spec{display:grid;grid-template-columns:auto 1fr;gap:7px 22px;margin-top:30px;font-size:14px;max-width:360px}
+.v-spec dt{font-size:10px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;opacity:.5;padding-top:3px}
+.v-spec dd{opacity:.9}
+.coll-rail{position:absolute;right:var(--gutter);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:14px;list-style:none;align-items:flex-end}
+.coll-rail li{font-size:10px;letter-spacing:.2em;text-transform:uppercase;display:flex;align-items:center;gap:12px;opacity:.35;transition:opacity .5s}
+.coll-rail li::after{content:'';width:18px;height:1px;background:currentColor;transition:width .6s var(--ease)}
+.coll-rail li.on{opacity:1}
+.coll-rail li.on::after{width:42px}
+
+/* ---------- year ---------- */
+#year .stick{
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 9%,#000 84%,transparent 100%);
+          mask-image:linear-gradient(to bottom,transparent 0,#000 9%,#000 84%,transparent 100%);
+}
+.year-ui{position:absolute;top:calc(92px + 4vh);left:var(--gutter);right:var(--gutter);pointer-events:none;color:var(--ink)}
+.month-roll{height:1em;overflow:hidden;font-family:var(--serif);font-weight:300;font-size:clamp(64px,10.5vw,176px);line-height:1;letter-spacing:-.025em;margin-top:1.6vh}
+.month-roll .track{display:block;will-change:transform}
+.month-roll .track span{display:block;height:1em}
+.month-roll .track span:nth-child(6),.month-roll .track span:nth-child(7){font-style:italic;color:var(--rose)}
+.notes{position:relative;margin-top:2.4vh;height:140px;max-width:38ch}
+.note{position:absolute;inset:0;opacity:0;will-change:opacity,transform}
+.note h3{font-size:11px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--rose-deep);margin-bottom:10px}
+.note p{font-family:var(--serif);font-size:clamp(20px,1.75vw,26px);line-height:1.25}
+.months{position:absolute;left:var(--gutter);right:var(--gutter);bottom:4vh;list-style:none;display:flex;justify-content:space-between;font-size:10.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink)}
+.months li{opacity:.35;transition:opacity .4s;position:relative;padding-top:16px}
+.months li.on{opacity:1}
+.months .rail{position:absolute;left:0;right:0;top:0;height:1px;background:rgba(42,34,30,.2)}
+.months .rail i{position:absolute;left:0;top:0;height:1px;width:100%;background:var(--ink);transform-origin:left;transform:scaleX(var(--y,0))}
+
+/* ---------- offer ---------- */
+.offer{padding:24vh var(--gutter) 8vh}
+.sec-head{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:24px;margin-bottom:11vh;align-items:start}
+.sec-head .eyebrow{grid-column:1/4;padding-top:1.1em}
+.sec-head h2{grid-column:4/12;font-family:var(--serif);font-weight:300;font-size:clamp(38px,5.2vw,84px);line-height:1;letter-spacing:-.018em}
+.sec-head h2 em{color:var(--rose)}
+.offer-list{list-style:none;border-top:1px solid color-mix(in srgb,var(--fg) 22%,transparent)}
+.offer-row{
+  position:relative;display:grid;grid-template-columns:70px 96px minmax(0,1.1fr) minmax(0,1.5fr) 150px;
+  align-items:center;column-gap:clamp(16px,2.4vw,40px);padding:clamp(26px,4vh,44px) 0;
+  border-bottom:1px solid color-mix(in srgb,var(--fg) 22%,transparent);isolation:isolate;
+}
+.offer-row::before{
+  content:'';position:absolute;inset:0 calc(var(--gutter) * -1);z-index:-1;background:var(--blushpaper);
+  transform:scaleY(0);transform-origin:bottom;transition:transform .8s var(--ease);
+}
+.offer-row:hover::before{transform:scaleY(1)}
+.o-num{font-family:var(--serif);font-style:italic;font-size:19px;color:var(--rose)}
+.o-icon svg{width:62px;height:62px;fill:none;stroke:currentColor;stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}
+.o-icon svg .ac{stroke:var(--rose)}
+.o-icon path,.o-icon circle,.o-icon rect,.o-icon line,.o-icon polyline{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 2.2s var(--ease-soft);transition-delay:.25s}
+.offer-row.in .o-icon *{stroke-dashoffset:0}
+.offer-row h3{font-family:var(--serif);font-weight:400;font-size:clamp(28px,3vw,46px);line-height:1;letter-spacing:-.01em;transition:transform .8s var(--ease)}
+.offer-row:hover h3{transform:translateX(12px);font-style:italic}
+.offer-row p{font-size:16px;line-height:1.55;opacity:.76;max-width:46ch}
+.o-meta{text-align:right;font-size:10.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;opacity:.62}
+
+/* ---------- numbers ---------- */
+.numbers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:14vh var(--gutter) 24vh}
+.stat{padding:0 clamp(12px,2vw,32px);border-left:1px solid color-mix(in srgb,var(--fg) 20%,transparent)}
+.stat:first-child{border-left:0;padding-left:0}
+.stat .n{display:block;font-family:var(--serif);font-weight:300;font-size:clamp(64px,8.6vw,150px);line-height:.95;letter-spacing:-.03em;font-variant-numeric:lining-nums tabular-nums}
+.stat .n sup{font-size:.34em;vertical-align:top;position:relative;top:.35em;margin-left:.06em;font-style:italic;color:var(--rose)}
+.stat .l{display:block;margin-top:14px;font-size:11px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;opacity:.66;max-width:18ch;line-height:1.6}
+
+/* ---------- susan ---------- */
+.susan{padding:18vh var(--gutter) 22vh;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:24px;align-items:center}
+.plate{grid-column:1/6;position:relative;aspect-ratio:4/5;border:1px solid color-mix(in srgb,var(--fg) 30%,transparent);padding:14px}
+.plate::before{content:'';position:absolute;inset:6px;border:1px solid color-mix(in srgb,var(--fg) 16%,transparent);pointer-events:none}
+.plate canvas{width:100%;height:100%}
+.plate .pl{position:absolute;top:22px;left:24px;font-family:var(--serif);font-style:italic;font-size:15px;opacity:.7}
+.plate .pl-r{left:auto;right:24px}
+.plate figcaption{position:absolute;left:24px;right:24px;bottom:18px;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.plate figcaption .latin{font-family:var(--serif);font-style:italic;font-size:17px;opacity:.85}
+.plate figcaption .del{font-family:var(--script);font-size:30px;line-height:1;color:var(--rose-deep)}
+.susan-text{grid-column:7/13}
+.susan-text .eyebrow{display:block;margin-bottom:5vh}
+.quote{font-family:var(--serif);font-weight:300;font-size:clamp(30px,3.5vw,56px);line-height:1.1;letter-spacing:-.012em}
+.quote .wd{opacity:.14;transition:opacity .25s linear}
+.story{margin-top:6vh;max-width:46ch;font-size:17px;line-height:1.65;opacity:.8}
+.sig{margin-top:6vh;display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap}
+.sig .name{
+  font-family:var(--script);font-size:clamp(64px,6.6vw,104px);line-height:.9;color:var(--rose-deep);
+  clip-path:inset(-20% 100% -20% 0);transition:clip-path 2.8s var(--ease-soft);padding-right:.1em;
+}
+.sig.in .name{clip-path:inset(-20% -5% -20% 0)}
+.sig .role{font-size:11px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;opacity:.62;padding-bottom:.9em}
+
+/* ---------- visit ---------- */
+.visit{padding:16vh var(--gutter) 18vh}
+.visit-head{display:flex;justify-content:space-between;align-items:flex-end;gap:32px;flex-wrap:wrap}
+.visit h2{font-family:var(--serif);font-weight:300;font-size:clamp(46px,7.4vw,128px);line-height:.92;letter-spacing:-.025em}
+.visit h2 em{color:var(--rose)}
+.status{display:flex;align-items:center;gap:12px;font-size:12px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;padding-bottom:1.2em}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--sage);box-shadow:0 0 0 0 rgba(78,91,58,.5)}
+.status.open i{background:#5E7A3A;animation:pulse 2.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(94,122,58,.55)}70%{box-shadow:0 0 0 10px rgba(94,122,58,0)}100%{box-shadow:0 0 0 0 rgba(94,122,58,0)}}
+.visit-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(32px,6vw,110px);margin-top:10vh;align-items:start}
+.map{position:relative}
+.map svg{width:100%;height:auto;overflow:visible}
+.map .lbl{font-family:var(--sans);font-size:9.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;fill:currentColor;opacity:.62}
+.map .lbl-s{font-family:var(--serif);font-style:italic;font-size:19px;fill:currentColor}
+.map .lbl-r{font-family:var(--serif);font-style:italic;font-size:22px;fill:var(--rose-deep)}
+.info{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:50px 34px}
+.info h4{font-size:10.5px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;opacity:.55;margin-bottom:16px}
+.info address,.info p{font-style:normal;font-size:16px;line-height:1.65}
+.info a{text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 100%/100% 1px no-repeat;transition:background-size .5s var(--ease)}
+.info a:hover{background-size:0 1px;background-position:100% 100%}
+.hours{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;font-size:15px}
+.hours dt{opacity:.6}
+.small-note{margin-top:10px;font-size:13px;opacity:.6}
+.btns{display:flex;gap:12px;margin-top:54px;flex-wrap:wrap;grid-column:1/-1}
+.btn{
+  display:inline-flex;align-items:center;gap:12px;padding:15px 24px;border-radius:999px;border:1px solid currentColor;
+  text-decoration:none;font-size:11.5px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;transition:background .45s,color .45s;
+}
+.btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5;transition:transform .5s var(--ease)}
+.btn:hover svg{transform:translateX(4px)}
+.btn.solid{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btn.solid:hover{background:var(--rose);border-color:var(--rose)}
+.btn:not(.solid):hover{background:var(--ink);color:var(--paper)}
+
+/* ---------- footer ---------- */
+.foot{padding:18vh var(--gutter) 34px;position:relative;overflow:hidden}
+.foot-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(32px,6vw,110px);align-items:end}
+.letter h3{font-family:var(--serif);font-weight:300;font-size:clamp(34px,3.8vw,60px);line-height:1;margin:18px 0 18px}
+.letter h3 em{color:var(--blush)}
+.letter p{max-width:44ch;opacity:.72;font-size:16px}
+.letter form{display:flex;align-items:center;gap:16px;margin-top:34px;max-width:480px;border-bottom:1px solid color-mix(in srgb,var(--fg) 45%,transparent)}
+.letter input{flex:1;min-width:0;background:none;border:0;color:inherit;font:inherit;font-family:var(--serif);font-size:22px;padding:14px 0;outline:none}
+.letter input::placeholder{color:inherit;opacity:.45}
+.letter button{background:none;border:0;color:inherit;cursor:pointer;font-family:var(--sans);font-size:11px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;padding:12px 0}
+.form-msg{min-height:1.6em;margin-top:12px;font-family:var(--serif);font-style:italic;font-size:18px;opacity:.85}
+.foot-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 30px;list-style:none;font-size:14px}
+.foot-links a{text-decoration:none;opacity:.78;transition:opacity .3s}
+.foot-links a:hover{opacity:1}
+.foot-word{
+  font-family:var(--serif);font-weight:300;font-size:18.6vw;line-height:.78;letter-spacing:-.045em;white-space:nowrap;
+  text-align:center;margin:16vh calc(var(--gutter) * -1) 0;
+}
+.foot-word em{color:var(--blush);font-weight:300}
+.fine{display:flex;justify-content:space-between;gap:12px 28px;flex-wrap:wrap;margin-top:6vh;font-size:12px;opacity:.5;letter-spacing:.02em}
+
+/* ---------- responsive ---------- */
+@media (max-width:980px){
+  .bar nav{display:none}
+  .offer-row{grid-template-columns:52px 72px minmax(0,1fr);row-gap:10px}
+  .offer-row p{grid-column:3/4}
+  .o-meta{grid-column:3/4;text-align:left}
+  .o-icon svg{width:52px;height:52px}
+  .numbers{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:9vh}
+  .stat:nth-child(3){border-left:0;padding-left:0}
+  .susan{grid-template-columns:1fr;row-gap:10vh}
+  .plate,.susan-text{grid-column:1/-1}
+  .plate{max-width:520px;width:100%}
+  .visit-grid,.foot-top{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .bar{padding:16px var(--gutter)}
+  .mark{font-size:20px}
+  .mark svg{width:26px;height:26px}
+  .bar-cta{padding:9px 14px;font-size:10px;letter-spacing:.16em}
+  .hero-title{top:calc(80px + 4vh)}
+  .hero-title .eyebrow{font-size:9.5px;letter-spacing:.2em;padding:0 var(--gutter)}
+  .cap,.cap-r{left:var(--gutter);right:var(--gutter);text-align:left;max-width:none;top:calc(78px + 4vh)}
+  .cap h2{font-size:clamp(32px,9vw,44px)}
+  .cap p{font-size:14px;max-width:34ch}
+  .cap-end{top:auto;bottom:9vh}
+  .intro{display:block;padding:18vh var(--gutter) 16vh}
+  .intro-note{margin-top:6vh}
+  .coll-head{top:calc(72px + 2vh)}
+  .coll-head .count{font-size:15px}
+  .varieties{top:auto;bottom:5vh;transform:none;width:auto;right:var(--gutter);height:48vh}
+  .variety{justify-content:flex-end}
+  .variety h3{font-size:clamp(40px,11vw,56px);margin:8px 0 10px}
+  .v-note{margin-top:14px;font-size:17px}
+  .v-spec{margin-top:16px;font-size:13px;gap:4px 16px}
+  .coll-rail{display:none}
+  .year-ui{top:calc(70px + 2vh)}
+  .notes{height:130px}
+  .note p{font-size:19px}
+  .months{font-size:9px;letter-spacing:.08em}
+  .sec-head{display:block;margin-bottom:7vh}
+  .sec-head .eyebrow{display:block;margin-bottom:3vh;padding:0}
+  .offer{padding-top:16vh}
+  .offer-row{grid-template-columns:34px minmax(0,1fr);column-gap:14px}
+  .o-icon{display:none}
+  .offer-row p,.o-meta{grid-column:2/3}
+  .numbers{padding:6vh var(--gutter) 16vh}
+  .stat{padding:0 0 0 16px}
+  .stat:nth-child(odd){padding-left:0;border-left:0}
+  .info{grid-template-columns:1fr;gap:40px}
+  .foot-links{grid-template-columns:1fr 1fr}
+  .foot-word{font-size:19vw}
+}
+@media (prefers-reduced-motion:reduce){
+  .hero-title h1 .ch,.hero-title .eyebrow{animation-duration:.01s;animation-delay:0s}
+  .cue i{animation:none}
+  [data-reveal],.w>span{transition-duration:.01s}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#visit">Skip to opening times and address</a>
+<div class="grain" aria-hidden="true"></div>
+<canvas id="petal" aria-hidden="true"></canvas>
+
+<header class="bar" id="bar">
+  <a class="mark" href="#top" aria-label="Susan Roses — back to the top">
+    <svg viewBox="0 0 32 32" fill="none" stroke-width="1.3" stroke-linecap="round" aria-hidden="true">
+      <circle cx="16" cy="16" r="15.2" opacity=".35"/>
+      <path class="r" d="M16 17.4c-1.7 0-2.7-1.2-2.5-2.5.2-1.6 1.9-2.5 3.3-2.1 2.1.5 2.9 2.5 2.2 4.2-.7 2.1-3.2 3.1-5.3 2.4-2.7-.9-3.7-3.9-2.8-6.3 1.2-3 4.6-4.2 7.5-3 2.6 1.1 4 3.9 3.6 6.6"/>
+      <path d="M16 20.6v6.2M16 24.3c-1.9-.2-3.3-1.2-3.9-2.8 1.9 0 3.3.9 3.9 2.8z"/>
+    </svg>
+    <span>Susan Roses</span>
+  </a>
+  <nav aria-label="Main">
+    <a href="#collection">The roses</a>
+    <a href="#year">The year</a>
+    <a href="#offer">What we do</a>
+    <a href="#visit">Visit</a>
+  </nav>
+  <a class="bar-cta" href="mailto:orders@susanroses.co.uk?subject=Bare-root%20order">Order bare-root</a>
+</header>
+
+<main id="top">
+
+  <!-- I. From cutting to bloom — frame-by-frame -->
+  <section class="seq" id="grow" data-bg="#F2ECE1" data-fg="#2A221E" style="--len:560vh" aria-label="How a Susan rose is grown">
+    <div class="stick">
+      <canvas class="scene" id="growCanvas" aria-hidden="true"></canvas>
+      <div class="hero-title" data-range="-1,0.085">
+        <p class="eyebrow">Rose nursery &nbsp;·&nbsp; Little Wenlock, Shropshire &nbsp;·&nbsp; Since 1994</p>
+        <h1 aria-label="Susan Roses"><span class="clip" aria-hidden="true" data-chars>Susan</span> <span class="clip" aria-hidden="true"><em data-chars>Roses</em></span></h1>
+      </div>
+      <div class="cap cap-l" data-range="0.11,0.27">
+        <span class="num">i.</span>
+        <h2>It begins with<br>a cutting.</h2>
+        <p>Taken every August from our own mother plants, and set in the ground by hand.</p>
+      </div>
+      <div class="cap cap-r" data-range="0.3,0.46">
+        <span class="num">ii.</span>
+        <h2>Roots first.</h2>
+        <p>A whole winter in Shropshire clay before we ask it for a single leaf.</p>
+      </div>
+      <div class="cap cap-l" data-range="0.49,0.64">
+        <span class="num">iii.</span>
+        <h2>Then, <em>patience.</em></h2>
+        <p>Two years in the field. Potted, pruned and fed by the same four pairs of hands.</p>
+      </div>
+      <div class="cap cap-l cap-end" data-range="0.76,1.1">
+        <span class="num">iv.</span>
+        <h2>And one June<br>morning, <em>this.</em></h2>
+      </div>
+      <div class="cue" data-range="-1,0.04" aria-hidden="true">Scroll<i></i></div>
+    </div>
+  </section>
+
+  <!-- II. The nursery -->
+  <section class="intro" id="about" data-bg="#F2ECE1" data-fg="#2A221E">
+    <p class="eyebrow" data-reveal>The nursery</p>
+    <p class="lede" data-split>Four acres of roses on the slope below the Wrekin. Grown in the ground, <em>peat-free,</em> and sold by the people who grew them.</p>
+    <p class="intro-note" data-reveal style="--d:.2s"><b>Susan Mary</b> has run the nursery since 1994. It is still her, four growers, a glasshouse full of cuttings and a tractor older than all of them. Everything we sell, we grew here.</p>
+  </section>
+
+  <!-- III. The collection — frame-by-frame rose that morphs between varieties -->
+  <section class="seq" id="collection" data-bg="#1F2A1C" data-fg="#EFE6D6" style="--len:760vh" aria-label="Six of our roses">
+    <div class="stick">
+      <canvas class="scene" id="roseCanvas" aria-hidden="true"></canvas>
+      <div class="coll-head">
+        <p class="eyebrow">The roses</p>
+        <p class="count">six of the 146 we grow</p>
+      </div>
+      <div class="varieties">
+        <article class="variety">
+          <span class="v-idx">01 / 06</span>
+          <h3>Wenlock <em>Crimson</em></h3>
+          <p class="v-type">English shrub rose</p>
+          <p class="v-note">The first rose Susan ever bred. Dark as claret, and it smells like it.</p>
+          <dl class="v-spec"><dt>Scent</dt><dd>Damask, strong</dd><dt>Height</dt><dd>1.2 m</dd><dt>Flowers</dt><dd>June to October</dd><dt>Price</dt><dd>Potted £22 · Bare-root £15</dd></dl>
+        </article>
+        <article class="variety">
+          <span class="v-idx">02 / 06</span>
+          <h3>Mary’s <em>Blush</em></h3>
+          <p class="v-type">Old garden rose</p>
+          <p class="v-note">Named for Susan’s grandmother. Quartered, blush pink, and scented of myrrh.</p>
+          <dl class="v-spec"><dt>Scent</dt><dd>Myrrh, strong</dd><dt>Height</dt><dd>1.5 m</dd><dt>Flowers</dt><dd>June to July</dd><dt>Price</dt><dd>Potted £24 · Bare-root £16</dd></dl>
+        </article>
+        <article class="variety">
+          <span class="v-idx">03 / 06</span>
+          <h3>Hollow <em>Lane</em></h3>
+          <p class="v-type">Climbing rose</p>
+          <p class="v-note">Covers a cottage wall in three summers. Apricot in the morning, copper by evening.</p>
+          <dl class="v-spec"><dt>Scent</dt><dd>Tea, medium</dd><dt>Height</dt><dd>3 m</dd><dt>Flowers</dt><dd>June to September</dd><dt>Price</dt><dd>Potted £26 · Bare-root £18</dd></dl>
+        </article>
+        <article class="variety">
+          <span class="v-idx">04 / 06</span>
+          <h3>Shropshire <em>Cream</em></h3>
+          <p class="v-type">Rambling rose</p>
+          <p class="v-note">A rambler for old apple trees. Loose sprays of cream flowers that smell of musk.</p>
+          <dl class="v-spec"><dt>Scent</dt><dd>Musk, light</dd><dt>Height</dt><dd>5 m</dd><dt>Flowers</dt><dd>June to July</dd><dt>Price</dt><dd>Potted £24 · Bare-root £16</dd></dl>
+        </article>
+        <article class="variety">
+          <span class="v-idx">05 / 06</span>
+          <h3>October <em>Ember</em></h3>
+          <p class="v-type">Hybrid tea</p>
+          <p class="v-note">Keeps on flowering until the first frost. Coral-orange, with a high, pointed centre.</p>
+          <dl class="v-spec"><dt>Scent</dt><dd>Fruity, light</dd><dt>Height</dt><dd>1 m</dd><dt>Flowers</dt><dd>June to November</dd><dt>Price</dt><dd>Potted £20 · Bare-root £14</dd></dl>
+        </article>
+        <article class="variety">
+          <span class="v-idx">06 / 06</span>
+          <h3><em>Hedgerow</em></h3>
+          <p class="v-type">Native dog rose · Rosa canina</p>
+          <p class="v-note">Grown for wildlife hedges. Pale flowers in June, then scarlet hips for the birds.</p>
+          <dl class="v-spec"><dt>Scent</dt><dd>Faint, sweet</dd><dt>Height</dt><dd>2.5 m</dd><dt>Flowers</dt><dd>June · hips to January</dd><dt>Price</dt><dd>£6 each · £45 for ten</dd></dl>
+        </article>
+      </div>
+      <ol class="coll-rail" aria-hidden="true">
+        <li>Crimson</li><li>Blush</li><li>Hollow Lane</li><li>Cream</li><li>Ember</li><li>Hedgerow</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- IV. The nursery year — frame-by-frame landscape through twelve months -->
+  <section class="seq" id="year" data-bg="#E7E4D8" data-fg="#2A221E" style="--len:820vh" aria-label="A year at the nursery">
+    <div class="stick">
+      <canvas class="scene" id="yearCanvas" aria-hidden="true"></canvas>
+      <div class="year-ui">
+        <p class="eyebrow">A year at the nursery</p>
+        <div class="month-roll" aria-live="polite"><span class="track" id="monthTrack">
+          <span>January</span><span>February</span><span>March</span><span>April</span><span>May</span><span>June</span><span>July</span><span>August</span><span>September</span><span>October</span><span>November</span><span>December</span>
+        </span></div>
+        <div class="notes">
+          <div class="note" data-m="0,2"><h3>Bare-root season</h3><p>Roses lifted from the field while they sleep, wrapped in straw and posted all over the country.</p></div>
+          <div class="note" data-m="2,3"><h3>Pruning</h3><p>Every bush cut back by hand. Free demonstrations in the yard, Saturdays at eleven.</p></div>
+          <div class="note" data-m="3,5"><h3>Potting on</h3><p>Young plants move into peat-free compost and out onto the standing beds.</p></div>
+          <div class="note" data-m="5,7"><h3>First flush</h3><p>The whole field in flower. Rose Weekend is 20–21 June, with tea in the glasshouse.</p></div>
+          <div class="note" data-m="7,9"><h3>Cuttings</h3><p>Next year’s roses are taken from this year’s wood. Propagation classes every Saturday.</p></div>
+          <div class="note" data-m="9,11"><h3>Orders open</h3><p>The bare-root list opens on 1 October. The hedgerow roses are left in hip for the birds.</p></div>
+          <div class="note" data-m="11,12.5"><h3>Rest</h3><p>The field sleeps. The shop stays open for wreaths, vouchers and gifts until the 23rd.</p></div>
+        </div>
+      </div>
+      <ol class="months" id="monthTicks" aria-hidden="true">
+        <span class="rail"><i></i></span>
+        <li>Jan</li><li>Feb</li><li>Mar</li><li>Apr</li><li>May</li><li>Jun</li><li>Jul</li><li>Aug</li><li>Sep</li><li>Oct</li><li>Nov</li><li>Dec</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- V. What we do -->
+  <section class="offer" id="offer" data-bg="#ECE3D3" data-fg="#2A221E">
+    <header class="sec-head">
+      <p class="eyebrow" data-reveal>What we do</p>
+      <h2 data-split>Come to the yard, or let the yard <em>come to you.</em></h2>
+    </header>
+    <ol class="offer-list">
+      <li class="offer-row" data-reveal>
+        <span class="o-num">01</span>
+        <span class="o-icon" aria-hidden="true"><svg viewBox="0 0 64 64">
+          <path pathLength="1" d="M19 36h26l-3.2 19.5a2 2 0 0 1-2 1.5H24.2a2 2 0 0 1-2-1.5z"/>
+          <rect pathLength="1" x="16.5" y="32" width="31" height="5" rx="1.2"/>
+          <path pathLength="1" d="M32 32c0-6-1.5-9.5 0-15"/>
+          <path pathLength="1" d="M31.6 26.5c-4.8-.3-8-3-9-7 4.2-.2 7.8 2.4 9 7z"/>
+          <path class="ac" pathLength="1" d="M32.2 17.2c-2.6.1-4.2-1.7-3.8-3.6.4-2.2 2.9-3.2 4.8-2.5 2.4.9 3 3.7 1.7 5.6-1.5 2.3-4.9 2.7-7 1.1-2.6-2-2.6-5.9-.3-8.1"/>
+        </svg></span>
+        <h3>The rose yard</h3>
+        <p>More than 140 varieties in pots, grown here and ready to plant the day you take them home.</p>
+        <span class="o-meta">Open six days</span>
+      </li>
+      <li class="offer-row" data-reveal>
+        <span class="o-num">02</span>
+        <span class="o-icon" aria-hidden="true"><svg viewBox="0 0 64 64">
+          <path pathLength="1" d="M12 24 32 14l20 10v22L32 56 12 46z"/>
+          <path pathLength="1" d="M12 24l20 10 20-10M32 34v22"/>
+          <path class="ac" pathLength="1" d="M22 19l20 10v11M42 29l-20 10"/>
+          <path class="ac" pathLength="1" d="M42 29c3-3.5 6.5-3.2 7-1.5.5 2-3 3-7 1.5zm0 0c-1.5-4.2.5-7 2.4-6.6 2 .5 1.4 4-2.4 6.6z"/>
+        </svg></span>
+        <h3>Bare-root by post</h3>
+        <p>Lifted to order from November to March, wrapped in straw, and with you inside forty-eight hours.</p>
+        <span class="o-meta">UK delivery £7.50</span>
+      </li>
+      <li class="offer-row" data-reveal>
+        <span class="o-num">03</span>
+        <span class="o-icon" aria-hidden="true"><svg viewBox="0 0 64 64">
+          <path pathLength="1" d="M13 10h29l9 9v35H13z"/>
+          <path pathLength="1" d="M42 10v9h9"/>
+          <path class="ac" pathLength="1" d="M19 47c5-8 8-3 13-11s9-7 13-12" stroke-dasharray="1"/>
+          <circle pathLength="1" cx="22" cy="23" r="3.2"/>
+          <circle pathLength="1" cx="36" cy="48" r="3.2"/>
+          <circle pathLength="1" cx="44" cy="37" r="2.4"/>
+          <circle pathLength="1" cx="27" cy="31" r="2"/>
+        </svg></span>
+        <h3>Garden visits</h3>
+        <p>Susan comes to you, reads your soil and your light, and draws you a planting plan by hand.</p>
+        <span class="o-meta">From £85</span>
+      </li>
+      <li class="offer-row" data-reveal>
+        <span class="o-num">04</span>
+        <span class="o-icon" aria-hidden="true"><svg viewBox="0 0 64 64">
+          <path pathLength="1" d="M26 9c5 5 8 13 6.6 22.6"/>
+          <path pathLength="1" d="M39.5 10.5c-5.2 3.8-8.2 12-7.8 20.2"/>
+          <circle class="ac" pathLength="1" cx="32" cy="32.5" r="2.4"/>
+          <path pathLength="1" d="M30.6 34.4C26.5 42 22 47.5 18.5 55"/>
+          <path pathLength="1" d="M33.6 34.6c3.4 7.3 7.4 12.9 11.6 19.6"/>
+          <path class="ac" pathLength="1" d="M27 42.5c2 1.6 4 .2 5.3 1.8 1.5 1.6 3.6.4 5.6 1.8"/>
+        </svg></span>
+        <h3>Saturday workshops</h3>
+        <p>Pruning, propagation and rose care. Twelve people, two hours, and a pot of tea.</p>
+        <span class="o-meta">£35 · please book</span>
+      </li>
+      <li class="offer-row" data-reveal>
+        <span class="o-num">05</span>
+        <span class="o-icon" aria-hidden="true"><svg viewBox="0 0 64 64">
+          <path pathLength="1" d="M18 22h28l-2.2 33H20.2z"/>
+          <path pathLength="1" d="M18 22l4-7h20l4 7"/>
+          <path class="ac" pathLength="1" d="M32 47c-7.5-3.5-8-13-.2-18.5 7.8 5.5 7.3 15 .2 18.5z"/>
+          <path class="ac" pathLength="1" d="M32 30v21M32 37l-3.6-2.6M32 41.5l3.8-2.8"/>
+        </svg></span>
+        <h3>The rose clinic</h3>
+        <p>Bring a poorly leaf in a paper bag. We will tell you what is wrong with it, and what to do.</p>
+        <span class="o-meta">Always free</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="numbers" data-bg="#ECE3D3" data-fg="#2A221E" aria-label="The nursery in numbers">
+    <div class="stat" data-reveal><span class="n" data-count="32">0</span><span class="l">Summers of growing</span></div>
+    <div class="stat" data-reveal style="--d:.08s"><span class="n" data-count="146">0</span><span class="l">Varieties in the field</span></div>
+    <div class="stat" data-reveal style="--d:.16s"><span class="n" data-count="4">0</span><span class="l">Acres of Shropshire clay</span></div>
+    <div class="stat" data-reveal style="--d:.24s"><span class="n" data-count="100" data-suffix="%">0</span><span class="l">Peat-free, since 2009</span></div>
+  </section>
+
+  <!-- VI. Susan -->
+  <section class="susan" id="susan" data-bg="#F1DFD3" data-fg="#2A221E">
+    <figure class="plate" data-reveal>
+      <span class="pl">Pl. I</span>
+      <span class="pl pl-r">Susan Roses</span>
+      <canvas id="plateCanvas" aria-hidden="true"></canvas>
+      <figcaption><span class="latin">Rosa ‘Mary’s Blush’</span><span class="del">S.M. del.</span></figcaption>
+    </figure>
+    <div class="susan-text">
+      <p class="eyebrow" data-reveal>The grower</p>
+      <blockquote class="quote" id="quote">“I have never sold a rose I wouldn’t plant in my own garden. If it isn’t ready, it stays in the field another year.”</blockquote>
+      <p class="story" data-reveal>Susan started with forty cuttings from her grandmother Mary’s garden and a borrowed field behind the village church. Thirty-two years on, she still takes every cutting herself.</p>
+      <div class="sig" id="sig"><span class="name">Susan Mary</span><span class="role">Founder &amp; head grower</span></div>
+    </div>
+  </section>
+
+  <!-- VII. Visit -->
+  <section class="visit" id="visit" data-bg="#F2ECE1" data-fg="#2A221E">
+    <div class="visit-head">
+      <div>
+        <p class="eyebrow" data-reveal>Visit the nursery</p>
+        <h2 data-split style="margin-top:3vh">Hollow Lane, <em>Little Wenlock</em></h2>
+      </div>
+      <p class="status" id="status" data-reveal><i></i><span>Checking the gate…</span></p>
+    </div>
+    <div class="visit-grid">
+      <figure class="map" data-reveal aria-label="Map: Susan Roses is ten minutes’ walk south-east of Little Wenlock village along Hollow Lane">
+        <svg viewBox="0 0 640 470" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <defs>
+            <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+              <line x1="0" y1="0" x2="0" y2="7" stroke-width=".7" opacity=".35"/>
+            </pattern>
+            <pattern id="rows" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-18)">
+              <line x1="0" y1="0" x2="9" y2="0" stroke="#A8323E" stroke-width="1" opacity=".55"/>
+            </pattern>
+            <mask id="routeMask"><path id="routeReveal" d="M258 238 C 292 250, 300 282, 336 296 S 392 300, 414 330 S 452 372, 494 380" stroke="#fff" stroke-width="10" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></mask>
+          </defs>
+          <!-- the Wrekin contours -->
+          <g opacity=".42" stroke-width=".9">
+            <path d="M26 118C40 62 138 34 222 54c62 15 92 60 70 98-24 42-128 50-196 34C48 196 16 162 26 118z"/>
+            <path d="M58 116c12-40 88-60 152-46 48 11 70 42 54 70-18 32-96 38-148 26-38-9-66-24-58-50z"/>
+            <path d="M92 114c10-28 66-40 112-30 34 8 48 28 36 48-14 22-70 26-106 18-28-6-48-16-42-36z"/>
+            <path d="M126 112c8-16 44-24 72-17 20 5 28 17 20 29-9 13-44 16-66 11-18-4-31-11-26-23z"/>
+            <path d="M156 111c6-7 24-10 38-6 9 3 12 9 6 14-7 6-26 7-37 4-9-3-11-7-7-12z"/>
+          </g>
+          <text class="lbl" x="118" y="202">The Wrekin · 407 m</text>
+          <!-- woods -->
+          <g stroke-width=".9" opacity=".55">
+            <circle cx="330" cy="98" r="6"/><circle cx="344" cy="92" r="7"/><circle cx="356" cy="102" r="6"/><circle cx="340" cy="108" r="5"/><circle cx="366" cy="92" r="5"/><circle cx="376" cy="104" r="6"/>
+            <circle cx="560" cy="170" r="6"/><circle cx="574" cy="162" r="7"/><circle cx="586" cy="174" r="5"/><circle cx="570" cy="180" r="6"/>
+            <circle cx="92" cy="330" r="6"/><circle cx="106" cy="322" r="7"/><circle cx="118" cy="334" r="6"/><circle cx="102" cy="342" r="5"/>
+          </g>
+          <text class="lbl" x="322" y="132">Huntsman’s Wood</text>
+          <!-- fields -->
+          <path d="M392 178l86-18 42 64-92 20z" fill="url(#hatch)" stroke-width=".6" opacity=".7"/>
+          <path d="M170 356l92-26 30 70-100 22z" fill="url(#hatch)" stroke-width=".6" opacity=".7"/>
+          <path d="M470 402l78-38 50 58-84 30z" fill="url(#hatch)" stroke-width=".6" opacity=".7"/>
+          <!-- brook -->
+          <path d="M0 412c40-6 60 14 100 8s58-30 96-26 56 26 98 22 50-30 86-28" stroke-width="1" opacity=".45" stroke-dasharray="2 4"/>
+          <text class="lbl" x="20" y="440">Hollow Brook</text>
+          <!-- roads -->
+          <g stroke-width="1.1" opacity=".75">
+            <path d="M0 262c60-4 120-16 176-22s98-2 138-10 110-52 164-72 110-28 162-30"/>
+            <path d="M0 270c60-4 120-16 176-22s98-2 138-10 110-52 164-72 110-28 162-30"/>
+            <path d="M296 234c-6-40-2-90 10-140s18-72 22-94"/>
+            <path d="M304 233c-6-40-2-90 10-140s18-72 22-94"/>
+          </g>
+          <text class="lbl" x="18" y="252">Wellington Road</text>
+          <!-- Hollow Lane -->
+          <path id="lane" d="M258 238 C 292 250, 300 282, 336 296 S 392 300, 414 330 S 452 372, 494 380 S 560 386, 640 372" stroke-width="1" opacity=".6"/>
+          <text class="lbl" dy="-8"><textPath href="#lane" startOffset="44%">Hollow Lane</textPath></text>
+          <!-- the route (revealed by scroll) -->
+          <path d="M258 238 C 292 250, 300 282, 336 296 S 392 300, 414 330 S 452 372, 494 380" stroke="#A8323E" stroke-width="2.4" stroke-dasharray="1 7" mask="url(#routeMask)"/>
+          <!-- village -->
+          <g stroke-width="1" opacity=".8">
+            <rect x="236" y="206" width="12" height="9"/><rect x="252" y="212" width="9" height="8"/><rect x="226" y="222" width="10" height="8"/>
+            <rect x="268" y="244" width="11" height="8"/><rect x="316" y="214" width="10" height="9"/><rect x="320" y="246" width="9" height="8"/>
+            <rect x="244" y="256" width="10" height="8"/><rect x="282" y="198" width="9" height="8"/>
+            <circle cx="274" cy="222" r="5.5"/><path d="M274 214v-8M270 210h8"/>
+          </g>
+          <text class="lbl-s" x="168" y="186" stroke="none">Little Wenlock</text>
+          <!-- the nursery -->
+          <path d="M470 392l54-14 22 48-58 16z" fill="url(#rows)" stroke="#A8323E" stroke-width=".8" opacity=".9"/>
+          <g transform="translate(494 380)">
+            <circle r="15" fill="#F2ECE1" stroke="#A8323E" stroke-width="1.2"/>
+            <path d="M0 1.6c-1.7 0-2.7-1.2-2.5-2.5.2-1.6 1.9-2.5 3.3-2.1 2.1.5 2.9 2.5 2.2 4.2-.7 2.1-3.2 3.1-5.3 2.4-2.7-.9-3.7-3.9-2.8-6.3 1.2-3 4.6-4.2 7.5-3" stroke="#A8323E" stroke-width="1.3"/>
+          </g>
+          <text class="lbl-r" x="446" y="350" stroke="none">Susan Roses</text>
+          <g transform="translate(542 356)" stroke-width="1"><rect x="-8" y="-8" width="16" height="16" rx="2"/><text x="-4" y="4.5" class="lbl" stroke="none" style="letter-spacing:0;opacity:.9">P</text></g>
+          <!-- compass & scale -->
+          <g transform="translate(596 54)" stroke-width="1">
+            <path d="M0 -24L6 6 0 1-6 6z" fill="currentColor" fill-opacity=".85"/>
+            <circle r="17" opacity=".35"/>
+            <text class="lbl" x="-4" y="-30" stroke="none">N</text>
+          </g>
+          <g transform="translate(470 452)" stroke-width="1">
+            <path d="M0 0h120M0 -4v8M60 -3v6M120 -4v8"/>
+            <text class="lbl" x="0" y="-10" stroke="none">0</text>
+            <text class="lbl" x="98" y="-10" stroke="none">½ mile</text>
+          </g>
+        </svg>
+      </figure>
+      <div class="info">
+        <div data-reveal>
+          <h4>Find us</h4>
+          <address>Susan Roses<br>Hollow Lane, Little Wenlock<br>Telford, Shropshire TF6 5BN</address>
+          <p class="small-note">Ten minutes from the M54, junction 7.<br>Free parking for thirty cars.</p>
+        </div>
+        <div data-reveal style="--d:.08s">
+          <h4>Opening</h4>
+          <dl class="hours">
+            <dt>Mar – Oct</dt><dd>Tue – Sun, 9am – 5pm</dd>
+            <dt>Nov – Feb</dt><dd>Thu – Sun, 10am – 4pm</dd>
+            <dt>Mondays</dt><dd>Closed, except bank holidays</dd>
+          </dl>
+        </div>
+        <div data-reveal style="--d:.16s">
+          <h4>Talk to us</h4>
+          <p><a href="tel:+441952504318">01952 504 318</a><br><a href="mailto:hello@susanroses.co.uk">hello@susanroses.co.uk</a><br><a href="mailto:orders@susanroses.co.uk">orders@susanroses.co.uk</a></p>
+        </div>
+        <div data-reveal style="--d:.24s">
+          <h4>Good to know</h4>
+          <p>Level gravel paths throughout. Dogs on leads welcome. Tea and cake in the glasshouse at weekends.</p>
+        </div>
+        <div class="btns" data-reveal style="--d:.3s">
+          <a class="btn solid" href="https://www.google.com/maps/search/?api=1&amp;query=Little+Wenlock+Telford+TF6" target="_blank" rel="noopener">Directions <svg viewBox="0 0 14 14"><path d="M1 7h11M8 3l4 4-4 4"/></svg></a>
+          <a class="btn" href="tel:+441952504318">Call the nursery</a>
+          <a class="btn" href="mailto:orders@susanroses.co.uk?subject=Bare-root%20order">Order bare-root</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot" data-bg="#2A221E" data-fg="#EFE6D6">
+  <div class="foot-top">
+    <div class="letter">
+      <p class="eyebrow">The Rose Letter</p>
+      <h3>Four letters a year, <em>written by Susan.</em></h3>
+      <p>What is flowering, what to prune, and the day the bare-root list opens. Nothing else.</p>
+      <form id="letter" novalidate>
+        <label for="em" class="skip">Email address</label>
+        <input id="em" type="email" name="email" placeholder="Your email address" autocomplete="email" required>
+        <button type="submit">Subscribe</button>
+      </form>
+      <p class="form-msg" id="formMsg" aria-live="polite"></p>
+    </div>
+    <ul class="foot-links">
+      <li><a href="https://instagram.com/susanroses.nursery" target="_blank" rel="noopener">Instagram</a></li>
+      <li><a href="mailto:hello@susanroses.co.uk?subject=Gift%20vouchers">Gift vouchers</a></li>
+      <li><a href="https://facebook.com/susanroses.nursery" target="_blank" rel="noopener">Facebook</a></li>
+      <li><a href="mailto:hello@susanroses.co.uk?subject=Delivery">Delivery &amp; returns</a></li>
+      <li><a href="mailto:hello@susanroses.co.uk?subject=Rose%20Weekend">Rose Weekend</a></li>
+      <li><a href="mailto:trade@susanroses.co.uk">Trade &amp; landscapers</a></li>
+    </ul>
+  </div>
+  <p class="foot-word" id="footWord" aria-hidden="true">Susan <em>Roses</em></p>
+  <div class="fine">
+    <span>© 2026 Susan Roses Ltd · Registered in England No. 04187263</span>
+    <span>Grown peat-free in Little Wenlock since 1994</span>
+  </div>
+</footer>
+
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+   Utilities
+   ===================================================================== */
+const TAU = Math.PI * 2;
+const GOLD = Math.PI * (3 - Math.sqrt(5));           // golden angle, how petals are really arranged
+const clamp = (v, a = 0, b = 1) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const inv = (a, b, v) => clamp((v - a) / (b - a));
+const sstep = (a, b, v) => { const t = inv(a, b, v); return t * t * (3 - 2 * t); };
+const eOut = t => 1 - Math.pow(1 - t, 3);
+const eInOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const hex = h => { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; };
+const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const shade = (c, k) => [c[0] * k, c[1] * k, c[2] * k];
+const c8 = v => v < 0 ? 0 : v > 255 ? 255 : v | 0;
+const css = (c, a = 1) => `rgba(${c8(c[0])},${c8(c[1])},${c8(c[2])},${a < 0 ? 0 : a > 1 ? 1 : a})`;
+const lum = c => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+function rng(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let vw = innerWidth, vh = innerHeight;
+
+class Stage {
+  constructor(canvas) { this.c = canvas; this.ctx = canvas.getContext('2d'); this.resize(); }
+  resize() {
+    const r = this.c.getBoundingClientRect();
+    this.dpr = Math.min(2, window.devicePixelRatio || 1);
+    this.w = Math.max(1, r.width); this.h = Math.max(1, r.height);
+    this.c.width = Math.round(this.w * this.dpr); this.c.height = Math.round(this.h * this.dpr);
+    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+  }
+}
+
+/* =====================================================================
+   The rose: a small 3D model.
+   Petals are curved strips arranged on the golden angle; each one
+   opens, cups and reflexes with a "bloom" value, is projected with a
+   camera tilt, depth-sorted and painted (or engraved, for the plate).
+   ===================================================================== */
+const Rose = (() => {
+  const LV = (() => { const v = [-0.52, -0.4, 0.75], l = Math.hypot(v[0], v[1], v[2]); return v.map(x => x / l); })();
+  const hP = v => Math.sqrt(v) * Math.sqrt(Math.max(0, 1 - v * v * v * v)) / 0.73;   // rounded petal
+  const hS = v => Math.sqrt(v) * (1 - v) * 2.6;                                       // pointed sepal
+  const M = 18;
+
+  function strip(sp, proj) {
+    const c = Math.cos(sp.theta), s = Math.sin(sp.theta);
+    const left = new Array(M + 1), right = new Array(M + 1);
+    let rad = sp.r0, up = sp.z0, base, tip, n = [0, 0, 1];
+    const ds = sp.L / M;
+    for (let k = 0; k <= M; k++) {
+      const v = k / M;
+      const phi = sp.phi0 + sp.curl * Math.pow(v, sp.kp);
+      if (k > 0) { rad += Math.sin(phi) * ds; up += Math.cos(phi) * ds; }
+      let hw = sp.W * 0.5 * sp.shape(v);
+      if (sp.ruffle) hw *= 1 + sp.ruffle * 0.16 * Math.sin(v * 12 + sp.ph) * v;
+      const nr = -Math.cos(phi), nu = Math.sin(phi);
+      const ca = sp.cupA * (0.55 + 0.45 * v);
+      const tg = hw * Math.cos(ca), off = hw * Math.sin(ca) * 0.85;
+      const er = rad + nr * off, eu = up + nu * off;
+      left[k] = proj(er * c + tg * s, er * s - tg * c, eu);
+      right[k] = proj(er * c - tg * s, er * s + tg * c, eu);
+      if (k === 0) base = proj(rad * c, rad * s, up);
+      if (k === M) tip = proj(rad * c, rad * s, up);
+      if (k === 11) n = [nr * c, nr * s, nu];
+    }
+    let cz = 0;
+    for (let k = 0; k <= M; k++) cz += left[k][2] + right[k][2];
+    return { left, right, base, tip, n, cz: cz / (2 * M + 2) };
+  }
+
+  function geometry(V, o) {
+    const S = o.size, ce = Math.cos(o.tilt), se = Math.sin(o.tilt), ox = o.x, oy = o.y;
+    const proj = (x, y, z) => [ox + x * S, oy - (z * ce + y * se) * S, z * se - y * ce];
+    const items = [];
+    const N = 52, b = o.bloom;
+    const R = rng(o.seed || 11);
+    for (let i = 0; i < N; i++) {
+      const j1 = R() - .5, j2 = R() - .5, j3 = R() - .5, j4 = R();
+      const t = i / (N - 1);
+      const vis = V.visible >= 0.999 ? 1 : sstep(1 - V.visible - 0.03, 1 - V.visible + 0.012, t);
+      if (vis < 0.03) continue;
+      const lb = eInOut(clamp((b - (1 - t) * 0.5) / 0.5));
+      const phiC = lerp(0.25, 0.8, t);
+      const L = (0.3 + 0.7 * Math.pow(t, V.lenPow)) * lerp(0.6, 1, lb) * (1 + j2 * 0.08) * lerp(0.35, 1, vis);
+      const sp = {
+        theta: i * GOLD + o.spin + j1 * 0.14,
+        L,
+        W: L * lerp(V.widthIn, V.width, t),
+        phi0: lerp(phiC, lerp(V.innerOpen, V.open, Math.pow(t, V.openPow)) + j3 * 0.12, lb),
+        curl: lerp(-1.85 * phiC, lerp(V.curlIn, V.curlOut, t), lb),
+        kp: lerp(1, 2, lb),
+        cupA: lerp(1.05, lerp(V.cupIn, V.cupOut, t), lb),
+        r0: 0.03 * t, z0: -0.05 * t, ruffle: V.ruffle, ph: j4 * TAU, shape: hP
+      };
+      const g = strip(sp, proj);
+      g.kind = 0; g.t = t; g.vis = vis;
+      items.push(g);
+    }
+    if (o.sepal !== undefined) {
+      const so = o.sepal;
+      for (let i = 0; i < 5; i++) {
+        const g = strip({
+          theta: i * TAU / 5 + 0.5 + o.spin, L: lerp(0.66, 0.5, so), W: 0.2,
+          phi0: lerp(0.2, 1.95, so), curl: lerp(-0.3, 0.85, so), kp: 1.5,
+          cupA: lerp(0.9, 0.25, so), r0: 0.02, z0: -0.1, ruffle: 0, ph: 0, shape: hS
+        }, proj);
+        g.kind = 1; items.push(g);
+      }
+    }
+    if (o.hip) { const c = proj(0, 0, -0.13); items.push({ kind: 2, c, cz: c[2] - 0.06 }); }
+    if (V.stamens > 0.02) { const c = proj(0, 0, 0.03); items.push({ kind: 3, c, cz: c[2] + 0.1 }); }
+    items.sort((a, b) => a.cz - b.cz);
+    return { items, proj, S, ce, se };
+  }
+
+  function outline(ctx, it) {
+    const L = it.left, R = it.right, n = L.length;
+    ctx.beginPath();
+    ctx.moveTo(L[0][0], L[0][1]);
+    for (let k = 1; k < n - 1; k++) ctx.quadraticCurveTo(L[k][0], L[k][1], (L[k][0] + L[k + 1][0]) / 2, (L[k][1] + L[k + 1][1]) / 2);
+    ctx.lineTo(L[n - 1][0], L[n - 1][1]);
+    for (let k = n - 2; k > 0; k--) ctx.quadraticCurveTo(R[k][0], R[k][1], (R[k][0] + R[k - 1][0]) / 2, (R[k][1] + R[k - 1][1]) / 2);
+    ctx.lineTo(R[0][0], R[0][1]);
+    ctx.closePath();
+  }
+  function rim(ctx, it, from) {
+    const L = it.left, R = it.right, n = L.length, k0 = Math.floor((n - 1) * from);
+    ctx.beginPath();
+    ctx.moveTo(L[k0][0], L[k0][1]);
+    for (let k = k0 + 1; k < n; k++) ctx.lineTo(L[k][0], L[k][1]);
+    for (let k = n - 2; k >= k0; k--) ctx.lineTo(R[k][0], R[k][1]);
+  }
+  function plen(it) {
+    if (it.len) return it.len;
+    let d = 0; const L = it.left, R = it.right;
+    for (let k = 1; k < L.length; k++) d += Math.hypot(L[k][0] - L[k - 1][0], L[k][1] - L[k - 1][1]) + Math.hypot(R[k][0] - R[k - 1][0], R[k][1] - R[k - 1][1]);
+    return (it.len = d + 1);
+  }
+
+  function paint(ctx, V, o, geo) {
+    const { items, proj, S, ce, se } = geo;
+    const ink = o.ink;
+    ctx.save();
+    ctx.globalAlpha = o.alpha == null ? 1 : o.alpha;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    if (!ink) {
+      const open = sstep(0.15, 0.7, o.bloom);
+      if (open > 0.01) {
+        const hc = proj(0, 0, 0.14), r = S * 0.34 * open;
+        const gr = ctx.createRadialGradient(hc[0], hc[1], 0, hc[0], hc[1], r);
+        gr.addColorStop(0, css(V.deep, 0.95 * open)); gr.addColorStop(1, css(V.deep, 0));
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(hc[0], hc[1], r, 0, TAU); ctx.fill();
+      }
+    }
+    const lw = Math.max(0.45, S * 0.0045);
+    const count = items.length;
+    for (let idx = 0; idx < count; idx++) {
+      const it = items[idx];
+      const ord = count > 1 ? idx / (count - 1) : 0;
+      if (it.kind === 0 || it.kind === 1) {
+        const facing = -it.n[1] * ce + it.n[2] * se;
+        const lit = Math.abs(it.n[0] * LV[0] + it.n[1] * LV[1] + it.n[2] * LV[2]);
+        if (ink) { inkStrip(ctx, it, ink, ord, lw); continue; }
+        let c0, c1, c2, cs;
+        if (it.kind === 0) {
+          const face = mix(V.mid, V.inner, Math.pow(1 - it.t, 1.4) * 0.9);
+          const inside = facing > 0;
+          const body = inside ? face : mix(face, V.back, 0.62);
+          const k = (0.6 + 0.5 * lit) * (0.7 + 0.3 * Math.sqrt(it.t));
+          c0 = shade(mix(body, V.deep, inside ? 0.6 : 0.35), k * 0.92);
+          c1 = shade(body, k);
+          c2 = shade(mix(body, V.edge, 0.55), k * 1.05);
+          cs = css(shade(mix(body, V.deep, 0.55), 0.8 * k), 0.3);
+        } else {
+          const k = 0.7 + 0.45 * lit;
+          const body = facing > 0 ? [70, 96, 48] : [98, 124, 64];
+          c0 = shade([44, 62, 32], k); c1 = shade(body, k); c2 = shade(mix(body, [150, 150, 80], 0.3), k);
+          cs = css([30, 42, 22], 0.4);
+        }
+        const g = ctx.createLinearGradient(it.base[0], it.base[1], it.tip[0], it.tip[1]);
+        g.addColorStop(0, css(c0)); g.addColorStop(0.5, css(c1)); g.addColorStop(1, css(c2));
+        outline(ctx, it);
+        ctx.fillStyle = g; ctx.fill();
+        ctx.strokeStyle = cs; ctx.lineWidth = lw; ctx.stroke();
+        if (it.kind === 0 && facing > 0.05 && it.t > 0.3) {
+          rim(ctx, it, 0.55);
+          ctx.strokeStyle = css(mix(V.edge, [255, 250, 240], 0.3), 0.22 * lit + 0.06);
+          ctx.lineWidth = lw * 1.5; ctx.stroke();
+        }
+      } else if (it.kind === 2) {
+        const r = S * 0.13;
+        if (ink) {
+          const pa = inv(0, 0.3, ink.pr); if (pa <= 0) continue;
+          ctx.beginPath(); ctx.ellipse(it.c[0], it.c[1], r, r * 0.9, 0, 0, TAU);
+          ctx.fillStyle = css(ink.paper, sstep(0.5, 1, ink.pr)); ctx.fill();
+          ctx.setLineDash([TAU * r * pa, TAU * r]); ctx.strokeStyle = css(ink.color, 0.9); ctx.lineWidth = lw * 1.1; ctx.stroke(); ctx.setLineDash([]);
+          continue;
+        }
+        const g = ctx.createRadialGradient(it.c[0] - r * 0.3, it.c[1] - r * 0.3, r * 0.1, it.c[0], it.c[1], r);
+        g.addColorStop(0, css([118, 142, 72])); g.addColorStop(1, css([46, 66, 32]));
+        ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(it.c[0], it.c[1], r, r * 0.92, 0, 0, TAU); ctx.fill();
+      } else if (it.kind === 3) {
+        const st = V.stamens;
+        const pa = ink ? inv(0.55, 0.95, ink.pr) : 1;
+        if (pa <= 0) continue;
+        const c = it.c, n = 46;
+        ctx.lineWidth = Math.max(0.4, S * 0.004);
+        for (let k = 0; k < n * pa; k++) {
+          const a = k * GOLD + o.spin, rr = 0.07 + 0.1 * ((k * 7) % 5) / 4, hz = 0.08 + 0.04 * ((k * 3) % 4) / 3;
+          const p = proj(Math.cos(a) * rr, Math.sin(a) * rr, hz);
+          ctx.strokeStyle = ink ? css(ink.color, 0.6) : css([222, 196, 120], 0.85 * st);
+          ctx.beginPath(); ctx.moveTo(c[0], c[1]); ctx.lineTo(p[0], p[1]); ctx.stroke();
+          ctx.fillStyle = ink ? css(ink.color, 0.85) : css(k % 3 ? [214, 158, 44] : [236, 190, 70], st);
+          ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(0.8, S * 0.014), 0, TAU); ctx.fill();
+        }
+        if (!ink) { ctx.fillStyle = css([178, 172, 90], st); ctx.beginPath(); ctx.ellipse(c[0], c[1], S * 0.05, S * 0.05 * (0.4 + 0.6 * se), 0, 0, TAU); ctx.fill(); }
+      }
+    }
+    ctx.restore();
+  }
+
+  function inkStrip(ctx, it, ink, ord, lw) {
+    const pr = ink.pr;
+    const pa = inv(ord * 0.55, ord * 0.55 + 0.45, pr);
+    if (pa <= 0) return;
+    outline(ctx, it);
+    const fillA = sstep(0.45, 0.95, pr);
+    if (fillA > 0) { ctx.fillStyle = css(ink.paper, fillA); ctx.fill(); }
+    const len = plen(it);
+    ctx.setLineDash([len * pa, len]);
+    ctx.strokeStyle = css(ink.color, 0.92); ctx.lineWidth = lw * 1.25; ctx.stroke();
+    ctx.setLineDash([]);
+    const pv = inv(0.4 + ord * 0.35, 0.62 + ord * 0.35, pr);
+    if (pv > 0 && it.kind === 0) {
+      const L = it.left, R = it.right, kmax = Math.max(2, Math.floor(M * 0.66 * pv));
+      ctx.strokeStyle = css(ink.color, 0.38); ctx.lineWidth = lw * 0.7;
+      for (const a of [0.28, 0.5, 0.72]) {
+        ctx.beginPath();
+        for (let k = 1; k <= kmax; k++) {
+          const x = lerp(L[k][0], R[k][0], a), y = lerp(L[k][1], R[k][1], a);
+          k === 1 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+    }
+  }
+
+  return {
+    draw(ctx, V, o) { const geo = geometry(V, o); paint(ctx, V, o, geo); return geo; }
+  };
+})();
+
+/* ---------------------------------------------------------------------
+   Rose leaves — compound, five serrated leaflets. New growth on a rose
+   comes through bronze-red before it greens, so they do here too.
+   --------------------------------------------------------------------- */
+function leaflet(ctx, L, fold, col, ink) {
+  const W = L * 0.36 * fold, n = 40;
+  ctx.beginPath(); ctx.moveTo(0, 0);
+  for (let k = 1; k <= n; k++) {
+    const u = k / n, hw = W * Math.pow(Math.sin(Math.PI * Math.pow(u, 0.85)), 0.9);
+    const sr = (1 - ((u * 9) % 1)) * 0.1 * W * Math.sin(Math.PI * u);
+    ctx.lineTo(u * L, -(hw + sr));
+  }
+  for (let k = n - 1; k >= 1; k--) {
+    const u = k / n, hw = W * Math.pow(Math.sin(Math.PI * Math.pow(u, 0.85)), 0.9);
+    const sr = (1 - ((u * 9) % 1)) * 0.1 * W * Math.sin(Math.PI * u);
+    ctx.lineTo(u * L, hw + sr);
+  }
+  ctx.closePath();
+  if (ink) {
+    const pa = ink.pa;
+    ctx.fillStyle = css(ink.paper, sstep(0.5, 1, ink.pr)); ctx.fill();
+    ctx.setLineDash([L * 2.5 * pa, L * 3]);
+    ctx.strokeStyle = css(ink.color, 0.9); ctx.lineWidth = Math.max(0.6, L * 0.014); ctx.stroke();
+    ctx.setLineDash([]);
+    if (pa > 0.5) {
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(L * 0.95 * inv(0.5, 1, pa), 0);
+      ctx.strokeStyle = css(ink.color, 0.5); ctx.lineWidth = Math.max(0.5, L * 0.009); ctx.stroke();
+    }
+    return;
+  }
+  const g = ctx.createLinearGradient(0, -W, 0, W);
+  g.addColorStop(0, css(shade(col, 1.28))); g.addColorStop(0.5, css(col)); g.addColorStop(1, css(shade(col, 0.68)));
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = css(shade(col, 0.55), 0.55); ctx.lineWidth = Math.max(0.4, L * 0.012); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(L * 0.02, 0); ctx.lineTo(L * 0.95, 0);
+  for (let k = 1; k <= 5; k++) {
+    const u = k / 6.5, s = Math.sin(Math.PI * u);
+    ctx.moveTo(u * L, 0); ctx.lineTo(u * L + L * 0.1, -W * 0.62 * s);
+    ctx.moveTo(u * L, 0); ctx.lineTo(u * L + L * 0.1, W * 0.62 * s);
+  }
+  ctx.strokeStyle = css(shade(col, 1.45), 0.42); ctx.lineWidth = Math.max(0.35, L * 0.009); ctx.stroke();
+}
+function drawLeaf(ctx, x, y, ang, len, grow, mature, side, ink) {
+  if (grow <= 0.002) return;
+  const g = eOut(clamp(grow));
+  const col = mix([132, 66, 50], [62, 90, 45], clamp(mature));
+  const Ls = len * g, arch = side * 0.1 * Ls;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(Ls * 0.5, arch, Ls * 0.92, arch * 0.6);
+  if (ink) { ctx.setLineDash([Ls * ink.pa, Ls]); ctx.strokeStyle = css(ink.color, 0.9); ctx.lineWidth = Math.max(0.6, len * 0.012); }
+  else { ctx.strokeStyle = css(shade(col, 0.78)); ctx.lineWidth = Math.max(0.7, len * 0.022); }
+  ctx.stroke(); ctx.setLineDash([]);
+  const fold = 0.3 + 0.7 * g;
+  const LF = [[0.4, 1, 0.36], [0.4, -1, 0.36], [0.68, 1, 0.4], [0.68, -1, 0.4], [0.93, 0, 0.46]];
+  for (const [s, sd, sz] of LF) {
+    const lx = Ls * s * 0.92 / 0.93 * (s === 0.93 ? 1 : 1), ly = 2 * (1 - s) * s * arch + s * s * arch * 0.6;
+    ctx.save(); ctx.translate(lx, ly); ctx.rotate(sd * (0.95 - 0.45 * (1 - g)));
+    leaflet(ctx, len * sz * g, fold, col, ink);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/* =====================================================================
+   Rose varieties (form + colour). Morphing between them is just
+   interpolation of these numbers.
+   ===================================================================== */
+const VARIETIES = [
+  { // Wenlock Crimson — full, cupped English shrub
+    inner: [112, 14, 28], mid: [160, 30, 44], deep: [48, 6, 12], edge: [204, 66, 72], back: [172, 60, 68],
+    open: 1.28, innerOpen: 0.4, openPow: 1.4, curlIn: -0.65, curlOut: 0.3, width: 0.95, widthIn: 1.3,
+    cupIn: 1.2, cupOut: 0.6, ruffle: 0.3, lenPow: 0.62, visible: 1, stamens: 0, glow: [168, 40, 52]
+  },
+  { // Mary's Blush — flat, quartered old rose
+    inner: [214, 132, 124], mid: [238, 190, 176], deep: [150, 78, 68], edge: [250, 226, 214], back: [240, 210, 198],
+    open: 1.45, innerOpen: 0.95, openPow: 0.8, curlIn: -0.25, curlOut: 0.12, width: 0.86, widthIn: 1.1,
+    cupIn: 0.9, cupOut: 0.35, ruffle: 0.65, lenPow: 0.5, visible: 1, stamens: 0, glow: [236, 180, 160]
+  },
+  { // Hollow Lane — loose apricot climber
+    inner: [212, 110, 60], mid: [238, 162, 104], deep: [140, 58, 28], edge: [250, 210, 156], back: [242, 190, 134],
+    open: 1.22, innerOpen: 0.5, openPow: 1.2, curlIn: -0.35, curlOut: 0.42, width: 0.92, widthIn: 1.1,
+    cupIn: 1.0, cupOut: 0.42, ruffle: 0.45, lenPow: 0.6, visible: 1, stamens: 0, glow: [236, 156, 96]
+  },
+  { // Shropshire Cream — semi-double rambler, stamens showing
+    inner: [228, 210, 170], mid: [244, 234, 210], deep: [170, 150, 96], edge: [253, 250, 240], back: [238, 230, 208],
+    open: 1.5, innerOpen: 1.05, openPow: 1, curlIn: 0.1, curlOut: 0.2, width: 1.05, widthIn: 1,
+    cupIn: 0.5, cupOut: 0.3, ruffle: 0.25, lenPow: 0.55, visible: 0.36, stamens: 1, glow: [236, 226, 196]
+  },
+  { // October Ember — high-centred hybrid tea, reflexed points
+    inner: [196, 56, 38], mid: [228, 94, 62], deep: [118, 26, 16], edge: [246, 154, 104], back: [234, 128, 92],
+    open: 1.12, innerOpen: 0.14, openPow: 2, curlIn: -0.25, curlOut: 0.95, width: 0.8, widthIn: 1,
+    cupIn: 1.1, cupOut: -0.45, ruffle: 0, lenPow: 0.35, visible: 1, stamens: 0, glow: [226, 96, 60]
+  },
+  { // Hedgerow — five-petalled dog rose
+    inner: [252, 240, 230], mid: [240, 196, 190], deep: [250, 238, 222], edge: [226, 150, 154], back: [238, 204, 198],
+    open: 1.52, innerOpen: 1.5, openPow: 1, curlIn: 0, curlOut: 0.15, width: 1.28, widthIn: 1.28,
+    cupIn: 0.35, cupOut: 0.32, ruffle: 0.15, lenPow: 0.65, visible: 0.1, stamens: 1, glow: [236, 190, 186]
+  }
+];
+function lerpV(A, B, t) {
+  const o = {};
+  for (const k in A) { const a = A[k], b = B[k]; o[k] = typeof a === 'number' ? lerp(a, b, t) : mix(a, b, t); }
+  return o;
+}
+
+/* =====================================================================
+   Scene I — from cutting to bloom
+   ===================================================================== */
+let heroFlower = [vw * 0.5, vh * 0.5];
+function makeGrow(stage) {
+  const R = rng(1994);
+  const roots = [];
+  function root(x, y, a, steps, w, t0, dur, depth) {
+    const pts = [[x, y]];
+    for (let k = 0; k < steps; k++) {
+      a += (R() - 0.5) * 0.55;
+      a += (Math.PI / 2 - a) * 0.07;
+      const st = 1.0 + R() * 0.5;
+      x += Math.cos(a) * st; y += Math.sin(a) * st;
+      pts.push([x, y]);
+      if (depth < 2 && k > 2 && k < steps - 3 && R() < 0.2) {
+        const side = R() < 0.5 ? -1 : 1;
+        root(x, y, a + side * (0.7 + R() * 0.6), Math.floor(steps * (0.3 + R() * 0.3)), w * 0.55, t0 + dur * (k / steps), dur * 0.7, depth + 1);
+      }
+    }
+    roots.push({ pts, w, t0, dur });
+  }
+  for (let i = 0; i < 8; i++) {
+    root(-0.1 + (R() - .5) * 0.7, 6.8, Math.PI / 2 + (i - 3.5) * 0.34 + (R() - .5) * 0.2, 22 + Math.floor(R() * 12), 0.5, 0.045 + R() * 0.07, 0.2 + R() * 0.07, 0);
+  }
+  const stones = [], grains = [], tufts = [], motes = [];
+  for (let i = 0; i < 90; i++) { const rx = 0.3 + R() * 1.5; stones.push({ x: (R() - .5) * 230, y: 2.5 + R() * 85, rx, ry: rx * (0.55 + R() * 0.3), rot: R() * 3, c: mix([122, 100, 82], [70, 56, 46], R()) }); }
+  for (let i = 0; i < 900; i++) grains.push({ x: (R() - .5) * 240, y: 0.5 + R() * 90, s: 0.08 + R() * 0.22, l: R() });
+  for (let i = 0; i < 46; i++) tufts.push({ x: (R() - .5) * 240, h: 0.6 + R() * 1.5, n: 3 + Math.floor(R() * 4), ph: R() * 3 });
+  for (let i = 0; i < 44; i++) motes.push({ x: R(), y: R(), s: 0.5 + R() * 1.4, ph: R() * TAU, v: 0.4 + R() });
+
+  const surf = x => Math.sin(x * 0.19) * 0.45 + Math.sin(x * 0.47 + 1.3) * 0.22 + Math.sin(x * 1.7) * 0.06;
+  const P0 = [0.45, -4.4], P1 = [-6, -24], P2 = [9, -44], P3 = [2.5, -66];
+  const bez = t => { const u = 1 - t; return [u * u * u * P0[0] + 3 * u * u * t * P1[0] + 3 * u * t * t * P2[0] + t * t * t * P3[0], u * u * u * P0[1] + 3 * u * u * t * P1[1] + 3 * u * t * t * P2[1] + t * t * t * P3[1]]; };
+  const bezD = t => { const u = 1 - t; return [3 * u * u * (P1[0] - P0[0]) + 6 * u * t * (P2[0] - P1[0]) + 3 * t * t * (P3[0] - P2[0]), 3 * u * u * (P1[1] - P0[1]) + 6 * u * t * (P2[1] - P1[1]) + 3 * t * t * (P3[1] - P2[1])]; };
+  const NODES = [{ t: 0.22, s: 1, len: 15 }, { t: 0.38, s: -1, len: 17 }, { t: 0.55, s: 1, len: 16 }, { t: 0.71, s: -1, len: 13.5 }, { t: 0.86, s: 1, len: 9.5 }];
+  const THORNS = [0.1, 0.17, 0.27, 0.33, 0.46, 0.52, 0.63, 0.77, 0.9];
+  const V = VARIETIES[0];
+
+  return function render(p, f) {
+    const { ctx, w, h } = stage;
+    ctx.clearRect(0, 0, w, h);
+    const U = Math.min(w * 1.15, h) / 100;
+    const mobile = w < 760;
+
+    /* timeline */
+    const g = eInOut(inv(0.16, 0.58, p));                  // stem growth
+    const G2 = g + sstep(0.56, 0.78, p) * 0.3;              // leaves keep maturing
+    const headS = eOut(inv(0.5, 0.64, p));
+    const sepal = sstep(0.6, 0.74, p);
+    const bloom = eInOut(inv(0.655, 0.95, p));
+    const tHead = Math.min(g, 1);
+    const hp = bez(tHead);
+    const size = lerp(10, 14.5, bloom) * headS;
+
+    /* camera */
+    const a1 = sstep(0.17, 0.56, p);
+    let fx = 0, fy = lerp(2, -31, a1), Z = lerp(mobile ? 1.35 : 1.25, 0.92, a1);
+    let ax = w * 0.5, ay = h * (mobile ? 0.56 : 0.5);
+    const k = eInOut(inv(0.6, 0.93, p));
+    fx = lerp(fx, hp[0], k); fy = lerp(fy, hp[1] - size * 0.26, k);
+    Z = lerp(Z, mobile ? 1.9 : 2.15, k);
+    ax = lerp(ax, mobile ? w * 0.5 : w * 0.6, k); ay = lerp(ay, mobile ? h * 0.46 : h * 0.52, k);
+    const S = U * Z;
+    const X = x => ax + (x - fx) * S, Y = y => ay + (y - fy) * S;
+
+    /* morning light */
+    const sunA = 0.08 + 0.34 * sstep(0.5, 0.95, p);
+    const sx = X(16), sy = Y(-60);
+    let gr = ctx.createRadialGradient(sx, sy, 0, sx, sy, 60 * S);
+    gr.addColorStop(0, css([240, 200, 178], sunA)); gr.addColorStop(0.45, css([240, 214, 190], sunA * 0.45)); gr.addColorStop(1, css([242, 236, 225], 0));
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, w, h);
+
+    /* soil cut-away */
+    const x0 = fx - ax / S - 4, x1 = fx + (w - ax) / S + 4;
+    const gy = Y(0);
+    if (gy < h + 20) {
+      // horizon haze just above the ground
+      gr = ctx.createLinearGradient(0, gy - 22 * S, 0, gy);
+      gr.addColorStop(0, css([220, 206, 184], 0)); gr.addColorStop(1, css([214, 198, 172], 0.32));
+      ctx.fillStyle = gr; ctx.fillRect(0, gy - 22 * S, w, 22 * S + 2);
+
+      ctx.save();
+      ctx.beginPath();
+      const stepX = (x1 - x0) / 90;
+      ctx.moveTo(X(x0), Y(surf(x0)));
+      for (let x = x0; x <= x1 + stepX; x += stepX) ctx.lineTo(X(x), Y(surf(x)));
+      ctx.lineTo(X(x1) + 10, h + 10); ctx.lineTo(X(x0) - 10, h + 10); ctx.closePath();
+      gr = ctx.createLinearGradient(0, gy, 0, Y(62));
+      gr.addColorStop(0, '#6d5443'); gr.addColorStop(0.05, '#5b4535'); gr.addColorStop(0.45, '#45342a'); gr.addColorStop(1, '#2b201a');
+      ctx.fillStyle = gr; ctx.fill();
+      ctx.clip();
+      for (const s of stones) {
+        if (s.x < x0 - 2 || s.x > x1 + 2) continue;
+        ctx.fillStyle = css(s.c, 0.8);
+        ctx.beginPath(); ctx.ellipse(X(s.x), Y(s.y), s.rx * S, s.ry * S, s.rot, 0, TAU); ctx.fill();
+      }
+      for (const q of grains) {
+        if (q.x < x0 || q.x > x1) continue;
+        ctx.fillStyle = q.l > 0.55 ? css([160, 132, 104], 0.45) : css([34, 24, 18], 0.5);
+        const z = q.s * S; ctx.fillRect(X(q.x), Y(q.y), z, z);
+      }
+      // roots
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = css([228, 212, 182], 0.92);
+      for (const r of roots) {
+        const fr = inv(r.t0, r.t0 + r.dur, p);
+        if (fr <= 0) continue;
+        const n = (r.pts.length - 1) * eOut(fr), whole = Math.floor(n), part = n - whole;
+        for (let i = 0; i < Math.min(whole + 1, r.pts.length - 1); i++) {
+          const a = r.pts[i], b = r.pts[i + 1], tt = i < whole ? 1 : part;
+          ctx.lineWidth = Math.max(0.5, r.w * (1 - i / r.pts.length * 0.8) * S);
+          ctx.beginPath(); ctx.moveTo(X(a[0]), Y(a[1])); ctx.lineTo(X(lerp(a[0], b[0], tt)), Y(lerp(a[1], b[1], tt))); ctx.stroke();
+        }
+      }
+      // root-hair fuzz once established
+      const fuzz = sstep(0.24, 0.4, p);
+      if (fuzz > 0) {
+        ctx.strokeStyle = css([232, 220, 196], 0.28 * fuzz); ctx.lineWidth = Math.max(0.4, 0.06 * S);
+        ctx.beginPath();
+        for (const r of roots) for (let i = 2; i < r.pts.length; i += 2) {
+          const a = r.pts[i]; const an = i * 1.7;
+          ctx.moveTo(X(a[0]), Y(a[1])); ctx.lineTo(X(a[0] + Math.cos(an) * 0.6), Y(a[1] + Math.sin(an) * 0.6));
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+      // the soil's top edge, crumbly
+      ctx.strokeStyle = css([60, 44, 34], 0.9); ctx.lineWidth = Math.max(1, 0.35 * S);
+      ctx.beginPath(); ctx.moveTo(X(x0), Y(surf(x0)));
+      for (let x = x0; x <= x1 + stepX; x += stepX) ctx.lineTo(X(x), Y(surf(x) + 0.12 * Math.sin(x * 5)));
+      ctx.stroke();
+      // moss tufts on the surface
+      ctx.lineWidth = Math.max(0.6, 0.12 * S);
+      for (const t of tufts) {
+        if (t.x < x0 || t.x > x1) continue;
+        const bx = X(t.x), by = Y(surf(t.x));
+        ctx.strokeStyle = css([98, 112, 64], 0.85);
+        ctx.beginPath();
+        for (let i = 0; i < t.n; i++) {
+          const a = -Math.PI / 2 + (i - t.n / 2) * 0.28 + Math.sin(t.ph + i) * 0.1;
+          ctx.moveTo(bx + i * 0.2 * S, by); ctx.quadraticCurveTo(bx + i * 0.2 * S + Math.cos(a) * t.h * 0.5 * S, by + Math.sin(a) * t.h * 0.6 * S, bx + i * 0.2 * S + Math.cos(a) * t.h * S, by + Math.sin(a) * t.h * S);
+        }
+        ctx.stroke();
+      }
+    }
+
+    /* the cutting */
+    {
+      const pts = [[-0.62, 7.2], [0.5, 7.0], [1.05, -4.6], [-0.2, -5.5]];
+      ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(X(q[0]), Y(q[1])) : ctx.moveTo(X(q[0]), Y(q[1]))); ctx.closePath();
+      gr = ctx.createLinearGradient(X(-0.6), 0, X(1), 0);
+      gr.addColorStop(0, '#7a6448'); gr.addColorStop(0.5, '#8d7453'); gr.addColorStop(1, '#5e4b35');
+      ctx.fillStyle = gr; ctx.fill();
+      ctx.strokeStyle = css([60, 46, 32], 0.6); ctx.lineWidth = Math.max(0.5, 0.1 * S); ctx.stroke();
+      ctx.fillStyle = '#d8c79c';
+      ctx.beginPath(); ctx.ellipse(X(0.42), Y(-5.05), 0.66 * S, 0.22 * S, -0.62, 0, TAU); ctx.fill();
+      ctx.fillStyle = css([128, 60, 46]);
+      ctx.beginPath(); ctx.ellipse(X(0.95), Y(-1.2), 0.32 * S, 0.22 * S, -0.5, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(X(-0.48), Y(2.4), 0.28 * S, 0.2 * S, 0.5, 0, TAU); ctx.fill();
+    }
+
+    /* stem */
+    if (g > 0.002) {
+      const K = 50, Lp = [], Rp = [];
+      for (let i = 0; i <= K; i++) {
+        const t = g * i / K, pt = bez(t), d = bezD(t), dl = Math.hypot(d[0], d[1]);
+        const nx = -d[1] / dl, ny = d[0] / dl;
+        let wd = lerp(0.62, 0.4, t);
+        if (g < 1) wd *= lerp(1, 0.5, sstep(g - 0.06, g, t));
+        Lp.push([X(pt[0] + nx * wd), Y(pt[1] + ny * wd)]); Rp.push([X(pt[0] - nx * wd), Y(pt[1] - ny * wd)]);
+      }
+      ctx.beginPath(); ctx.moveTo(Lp[0][0], Lp[0][1]);
+      for (const q of Lp) ctx.lineTo(q[0], q[1]);
+      for (let i = Rp.length - 1; i >= 0; i--) ctx.lineTo(Rp[i][0], Rp[i][1]);
+      ctx.closePath();
+      const b0 = bez(0), b1 = bez(g), mature = sstep(0.5, 0.8, p);
+      gr = ctx.createLinearGradient(X(b0[0]), Y(b0[1]), X(b1[0]), Y(b1[1]));
+      gr.addColorStop(0, css([72, 90, 46])); gr.addColorStop(0.7, css(mix([96, 110, 56], [84, 108, 54], mature))); gr.addColorStop(1, css(mix([136, 70, 52], [92, 114, 58], mature)));
+      ctx.fillStyle = gr; ctx.fill();
+      ctx.strokeStyle = css([204, 214, 152], 0.3); ctx.lineWidth = Math.max(0.5, 0.13 * S);
+      ctx.beginPath();
+      for (let i = 0; i <= K; i++) { const x = lerp(Lp[i][0], Rp[i][0], 0.28), y = lerp(Lp[i][1], Rp[i][1], 0.28); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+      ctx.stroke();
+
+      // thorns hook downward, as they do
+      THORNS.forEach((t, i) => {
+        const tg = sstep(t + 0.02, t + 0.09, g);
+        if (tg <= 0) return;
+        const pt = bez(t), d = bezD(t), dl = Math.hypot(d[0], d[1]);
+        const tx = d[0] / dl, ty = d[1] / dl, side = i % 2 ? 1 : -1;
+        const nx = -ty * side, ny = tx * side, wd = lerp(0.62, 0.4, t);
+        const bx = pt[0] + nx * wd * 0.9, by = pt[1] + ny * wd * 0.9, L = 1.25 * tg;
+        ctx.fillStyle = css(mix([150, 62, 44], [120, 74, 50], mature));
+        ctx.beginPath();
+        ctx.moveTo(X(bx + tx * 0.55), Y(by + ty * 0.55));
+        ctx.quadraticCurveTo(X(bx + nx * L * 0.6), Y(by + ny * L * 0.6), X(bx + nx * L - tx * 0.55 * L), Y(by + ny * L - ty * 0.55 * L));
+        ctx.lineTo(X(bx - tx * 0.5), Y(by - ty * 0.5));
+        ctx.closePath(); ctx.fill();
+      });
+
+      // leaves
+      for (const n of NODES) {
+        const lg = inv(n.t, n.t + 0.24, G2);
+        if (lg <= 0) continue;
+        const pt = bez(n.t), d = bezD(n.t), tau = Math.atan2(d[1], d[0]);
+        const ang = tau + n.s * lerp(0.35, 1.05, eOut(lg));
+        const wd = lerp(0.62, 0.4, n.t);
+        const dl = Math.hypot(d[0], d[1]);
+        const ox = pt[0] + (-d[1] / dl) * wd * n.s * 0.6, oy = pt[1] + (d[0] / dl) * wd * n.s * 0.6;
+        drawLeaf(ctx, X(ox), Y(oy), ang, n.len * S, lg, sstep(0.45, 1, lg), n.s);
+      }
+    }
+
+    /* the rose itself */
+    if (headS > 0.002) {
+      Rose.draw(ctx, V, {
+        x: X(hp[0]), y: Y(hp[1]), size: size * S, bloom, sepal,
+        tilt: lerp(0.12, 0.62, bloom), spin: 0.6 + p * 0.9, hip: true
+      });
+      heroFlower = [X(hp[0]), Y(hp[1] - size * 0.3)];
+    }
+
+    /* motes in the light */
+    const ma = sstep(0.55, 0.8, p);
+    if (ma > 0) {
+      for (const m of motes) {
+        const x = (m.x * w + Math.sin(f * 0.02 * m.v + m.ph) * 26) % w;
+        const y = ((m.y * h - f * 0.9 * m.v) % h + h) % h;
+        ctx.fillStyle = css([226, 188, 120], ma * 0.5 * (0.5 + 0.5 * Math.sin(f * 0.05 + m.ph)));
+        ctx.beginPath(); ctx.arc(x, y, m.s, 0, TAU); ctx.fill();
+      }
+    }
+  };
+}
+
+/* =====================================================================
+   Scene II — the collection: one rose, six varieties
+   ===================================================================== */
+function makeCollection(stage) {
+  return function render(p, f) {
+    const { ctx, w, h } = stage;
+    ctx.clearRect(0, 0, w, h);
+    const n = VARIETIES.length, u = p * (n - 1);
+    const k = Math.min(n - 2, Math.floor(u)), fr = u - k;
+    const m = eInOut(inv(0.28, 0.72, fr));
+    const V = lerpV(VARIETIES[k], VARIETIES[k + 1], m);
+    const mobile = w < 760;
+    const cx = mobile ? w * 0.5 : w * 0.64, cy = mobile ? h * 0.33 : h * 0.52;
+    const base = mobile ? Math.min(w * 0.3, h * 0.19) : Math.min(w * 0.22, h * 0.27);
+    const dip = Math.sin(Math.PI * m);
+    const size = base * (1 - 0.1 * dip);
+
+    // soft light behind
+    let gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 3);
+    gr.addColorStop(0, css(V.glow, 0.2)); gr.addColorStop(0.5, css(V.glow, 0.06)); gr.addColorStop(1, css(V.glow, 0));
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, w, h);
+
+    // stem and leaves falling out of frame
+    const sx0 = cx, sy0 = cy + size * 0.35;
+    const c1x = cx + size * 0.35, c1y = cy + size * 1.4, ex = cx - size * 0.55, ey = h + 20;
+    const qb = t => [(1 - t) * (1 - t) * sx0 + 2 * (1 - t) * t * c1x + t * t * ex, (1 - t) * (1 - t) * sy0 + 2 * (1 - t) * t * c1y + t * t * ey];
+    ctx.strokeStyle = css([52, 72, 40]); ctx.lineWidth = Math.max(2, size * 0.055); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(sx0, sy0); ctx.quadraticCurveTo(c1x, c1y, ex, ey); ctx.stroke();
+    ctx.strokeStyle = css([120, 140, 90], 0.35); ctx.lineWidth = Math.max(0.6, size * 0.012);
+    ctx.beginPath(); ctx.moveTo(sx0 - size * 0.012, sy0); ctx.quadraticCurveTo(c1x - size * 0.015, c1y, ex - size * 0.015, ey); ctx.stroke();
+    const sway = Math.sin(p * TAU * 2) * 0.05;
+    let q = qb(0.36); drawLeaf(ctx, q[0], q[1], -0.35 + sway, size * 1.15, 1, 1, 1);
+    q = qb(0.6); drawLeaf(ctx, q[0], q[1], Math.PI + 0.45 - sway, size * 1.0, 1, 1, -1);
+
+    Rose.draw(ctx, V, {
+      x: cx, y: cy + size * 0.3, size, bloom: 0.97 - 0.3 * dip, sepal: 1,
+      tilt: 0.98 + 0.07 * Math.sin(p * TAU * 1.5), spin: p * TAU * 1.1 + 0.3, hip: true
+    });
+    return { k, m };
+  };
+}
+
+/* =====================================================================
+   Scene III — the nursery year, January to December
+   ===================================================================== */
+const YT = {
+  skyT:   [[196,205,204],[202,210,206],[204,214,212],[200,216,218],[194,214,220],[188,210,220],[190,210,218],[198,212,214],[208,212,204],[212,204,188],[198,198,192],[190,196,196]],
+  skyB:   [[232,230,222],[236,232,222],[240,236,222],[244,238,220],[246,238,214],[248,234,206],[248,230,200],[246,226,196],[244,222,190],[242,210,170],[230,216,198],[228,226,218]],
+  hill:   [[150,158,156],[148,158,150],[140,156,138],[128,156,126],[116,148,112],[110,140,106],[118,140,104],[128,140,102],[134,138,104],[150,132,102],[146,136,118],[148,154,152]],
+  field:  [[170,172,152],[160,166,132],[150,168,112],[140,172,98],[122,160,82],[134,158,78],[178,166,98],[198,176,112],[172,160,102],[152,124,84],[134,120,92],[160,160,144]],
+  grass:  [[150,156,126],[140,152,108],[124,150,88],[116,156,78],[100,146,66],[96,136,62],[112,136,64],[126,136,70],[118,132,70],[122,122,70],[114,112,76],[134,140,116]],
+  leafCol:[[110,110,70],[112,112,72],[150,176,90],[150,180,86],[112,152,68],[80,116,56],[74,104,50],[80,102,50],[112,112,54],[198,126,52],[172,90,46],[150,92,52]],
+  bushGreen:[[92,86,72],[92,86,72],[100,112,70],[92,132,62],[74,112,54],[62,96,46],[60,92,44],[64,92,44],[70,94,46],[88,96,52],[108,96,60],[96,88,72]],
+  sunCol: [[252,246,230],[252,244,226],[254,242,218],[255,240,210],[255,238,204],[255,234,196],[255,232,192],[255,228,186],[254,224,176],[252,212,160],[250,226,196],[250,240,226]],
+  foliage:[0,0,0.04,0.35,0.8,1,1,1,0.95,0.78,0.32,0.04],
+  bushLeaf:[0.05,0.05,0.2,0.55,0.85,1,1,1,1,0.85,0.5,0.15],
+  bloom:  [0,0,0,0,0.08,0.92,1,0.45,0.66,0.3,0.06,0],
+  prune:  [1,0.8,0.5,0.5,0.55,0.7,0.8,0.85,0.9,0.95,1,1],
+  snow:   [0.85,0.45,0,0,0,0,0,0,0,0,0.04,0.35],
+  snowfall:[0.9,0.5,0,0,0,0,0,0,0,0,0,0.6],
+  rain:   [0,0.2,0.5,0.3,0,0,0,0,0,0.15,0.45,0],
+  leavesFall:[0,0,0,0,0,0,0,0,0.15,0.9,0.7,0],
+  blossom:[0,0,0,0.95,0.35,0,0,0,0,0,0,0],
+  blossomFall:[0,0,0,0.6,0.45,0,0,0,0,0,0,0],
+  roseFall:[0,0,0,0,0,0.2,0.5,0.25,0.1,0,0,0],
+  sunAlt: [0.22,0.32,0.46,0.6,0.72,0.8,0.78,0.68,0.54,0.4,0.28,0.18],
+  warm:   [1,0.8,0.35,0.1,0,0,0,0,0.1,0.45,0.85,1],
+  smoke:  [1,0.8,0.4,0,0,0,0,0,0,0.3,0.8,1],
+  festival:[0,0,0,0,0,1,0.25,0,0,0,0,0],
+  birds:  [0,0,0.3,0.6,1,1,1,0.8,0.6,0.3,0,0],
+  cloud:  [0.8,0.7,0.8,0.6,0.45,0.35,0.35,0.45,0.55,0.65,0.85,0.8],
+  hay:    [0,0,0,0,0,0.3,1,0.8,0.2,0,0,0]
+};
+function season(m) {
+  const mm = m - 0.5, fl = Math.floor(mm), fr = sstep(0, 1, mm - fl);
+  const i0 = ((fl % 12) + 12) % 12, i1 = (i0 + 1) % 12, o = {};
+  for (const k in YT) { const a = YT[k][i0], b = YT[k][i1]; o[k] = typeof a === 'number' ? lerp(a, b, fr) : mix(a, b, fr); }
+  return o;
+}
+const SNOW = [244, 246, 244];
+const ROWCOL = [[156, 30, 44], [238, 184, 170], [238, 160, 100], [244, 234, 208], [226, 96, 66], [224, 140, 150], [196, 52, 64], [246, 206, 170]];
+
+function makeYear(stage) {
+  let G = null;
+  function genTree(R, depthMax) {
+    const segs = [], clusters = [];
+    (function br(x, y, a, len, wd, d) {
+      const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
+      segs.push([x, y, x2, y2, wd, d]);
+      if (d >= depthMax) { clusters.push({ x: x2, y: y2 }); return; }
+      const n = d < 1 ? 3 : 2 + (R() < 0.35 ? 1 : 0);
+      for (let i = 0; i < n; i++) br(x2, y2, a + (i - (n - 1) / 2) * (0.5 + R() * 0.35) + (R() - .5) * 0.3, len * (0.66 + R() * 0.14), wd * 0.64, d + 1);
+      if (d > 1 && R() < 0.6) clusters.push({ x: x2, y: y2 });
+    })(0, 0, -Math.PI / 2 + (R() - .5) * 0.1, 0.32, 0.05, 0);
+    for (const c of clusters) { c.x += (R() - .5) * 0.05; c.y += (R() - .5) * 0.05; c.r = 0.075 + R() * 0.06; c.th = R() * 0.95; c.k = 0.78 + R() * 0.38; c.hue = R(); c.dots = Array.from({ length: 5 }, () => [(R() - .5) * 0.16, (R() - .5) * 0.14, R()]); }
+    clusters.sort((a, b) => a.k - b.k);
+    return { segs, clusters };
+  }
+  function build(w, h) {
+    const R = rng(77);
+    const hy = h * 0.56;
+    const farY = x => { const q = x / w - 0.34; return hy - h * (0.035 + 0.012 * Math.sin(x / w * 9 + 1) + 0.008 * Math.sin(x / w * 23)) - h * 0.165 * Math.exp(-Math.pow(q / (q < 0 ? 0.075 : 0.12), 2)); };
+    const ridgeY = x => hy - h * (0.02 + 0.014 * Math.sin(x / w * 6 + 2.4) + 0.006 * Math.sin(x / w * 17));
+    const midY = x => hy + h * (0.018 + 0.016 * Math.sin(x / w * 5 + 2) + 0.008 * Math.sin(x / w * 13));
+    const nearY = x => hy + h * (0.085 + 0.014 * Math.sin(x / w * 3.3 + 0.7));
+    const bounds = [0, 0.07, 0.19, 0.3, 0.42, 0.55, 0.68, 0.8, 0.9, 1.0].map(v => v * w);
+    const patchK = bounds.map(() => 0.9 + R() * 0.16);
+    const hedges = [];
+    for (let x = 0; x < w; x += Math.max(5, w * 0.006)) hedges.push({ x, r: 0.5 + R() * 0.8 });
+    const farTrees = Array.from({ length: 16 }, () => ({ x: R() * w, s: 0.6 + R() * 0.8 }));
+    const ts = Math.min(h, w * 1.1);
+    const trees = [
+      { x: w * 0.2, y: midY(w * 0.2) + h * 0.012, sc: ts * 0.13, far: 0.35, tree: genTree(R, 5) },
+      { x: w * 0.8, y: midY(w * 0.8) + h * 0.01, sc: ts * 0.11, far: 0.35, tree: genTree(R, 5) },
+      { x: w * 0.085, y: nearY(w * 0.085) + h * 0.03, sc: ts * 0.3, far: 0, tree: genTree(R, 6) },
+      { x: w * 0.93, y: nearY(w * 0.93) + h * 0.035, sc: ts * 0.32, far: 0, tree: genTree(R, 6) },
+      { x: w * 0.47, y: nearY(w * 0.47) + h * 0.01, sc: ts * 0.12, far: 0.08, tree: genTree(R, 5), blossom: true }
+    ];
+    const gw = Math.min(w * 0.2, 400), gx = w * 0.58, gyb = nearY(gx + gw * 0.5) + h * 0.03;
+    const gh = gw * 0.46, sw = gw * 0.38, shx = gx - sw - gw * 0.05;
+    const VP = [w * 0.47, hy - h * 0.005], fieldTop = hy + h * 0.135;
+    const bushBase = Math.min(h * 0.12, w * 0.1);
+    const Dmax = (h * 1.02 - VP[1]) / (fieldTop - VP[1]);
+    const ROWS = 9, bushes = [], rows = [];
+    for (let r = 0; r < ROWS; r++) {
+      const bx = w * (-0.35 + 1.7 * (r + 0.5) / ROWS);
+      rows.push({ bx, path: r === 4 });
+      if (r === 4) continue;
+      for (let d = 1; d < Dmax; d *= 1.2) {
+        const y = VP[1] + (h * 1.02 - VP[1]) / d;
+        const x = VP[0] + (bx - VP[0]) / d + (R() - .5) * bushBase * 0.1 / d;
+        const blobs = Array.from({ length: 7 }, (_, i) => { const dx = (i / 6 - 0.5) * 0.9 + (R() - .5) * 0.12; return { dx, dy: 0.12 + (1 - Math.abs(dx) * 1.5) * 0.34 + R() * 0.1, r: 0.18 + R() * 0.1, k: 0.78 + R() * 0.4 }; });
+        blobs.sort((a, b) => a.k - b.k);
+        const dots = Array.from({ length: 10 }, () => { const dx = (R() - .5) * 0.85; return { dx, dy: 0.25 + (1 - Math.abs(dx) * 1.3) * 0.38 + R() * 0.08, th: R(), s: 0.7 + R() * 0.6, k: R() }; });
+        const canes = Array.from({ length: 6 }, (_, i) => ({ a: -Math.PI / 2 + (i - 2.5) * 0.22 + (R() - .5) * 0.15, l: 0.55 + R() * 0.4 }));
+        bushes.push({ x, y, d, sz: bushBase / d, row: r, blobs, dots, canes });
+      }
+    }
+    bushes.sort((a, b) => b.d - a.d);
+    const parts = Array.from({ length: 180 }, (_, i) => ({ i, x: R(), y: R(), v: 0.6 + R() * 0.8, ph: R() * TAU, s: R() }));
+    const clouds = Array.from({ length: 6 }, () => ({ x: R(), y: 0.06 + R() * 0.26, v: 0.5 + R(), sc: 0.6 + R() * 0.8, puffs: Array.from({ length: 6 }, () => [(R() - .5) * 120, (R() - .5) * 18, 18 + R() * 26]) }));
+    const birds = Array.from({ length: 4 }, () => ({ x: R(), y: 0.12 + R() * 0.2, v: 0.7 + R() * 0.6, ph: R() * TAU }));
+    G = { w, h, hy, farY, ridgeY, midY, nearY, bounds, patchK, hedges, farTrees, trees, gx, gw, gyb, gh, sw, shx, VP, fieldTop, bushBase, Dmax, rows, bushes, parts, clouds, birds };
+  }
+
+  function tree(ctx, T, s) {
+    const { x, y, sc } = T;
+    ctx.save(); ctx.translate(x, y);
+    const bark = mix(mix([72, 60, 50], s.skyB, T.far), SNOW, s.snow * 0.2);
+    ctx.strokeStyle = css(bark); ctx.lineCap = 'round';
+    for (const g of T.tree.segs) {
+      ctx.lineWidth = Math.max(0.5, g[4] * sc);
+      ctx.beginPath(); ctx.moveTo(g[0] * sc, g[1] * sc); ctx.lineTo(g[2] * sc, g[3] * sc); ctx.stroke();
+    }
+    const fol = s.foliage;
+    if (fol > 0.02) {
+      for (const c of T.tree.clusters) {
+        if (c.th > fol) continue;
+        const r = c.r * sc * (0.5 + 0.5 * fol);
+        let col = s.leafCol;
+        col = mix(col, c.hue > 0.5 ? [206, 158, 64] : [92, 108, 52], Math.abs(c.hue - 0.5) * 0.35);
+        col = mix(shade(col, c.k), s.skyB, T.far);
+        ctx.fillStyle = css(col);
+        ctx.beginPath(); ctx.arc(c.x * sc, c.y * sc, r, 0, TAU); ctx.arc(c.x * sc + r * 0.6, c.y * sc + r * 0.25, r * 0.7, 0, TAU); ctx.fill();
+      }
+    }
+    if (T.blossom && s.blossom > 0.02) {
+      for (const c of T.tree.clusters) for (const d of c.dots) {
+        if (d[2] > s.blossom) continue;
+        ctx.fillStyle = css(d[2] > 0.5 ? [250, 236, 234] : [240, 196, 200], 0.95);
+        ctx.beginPath(); ctx.arc((c.x + d[0]) * sc, (c.y + d[1]) * sc, Math.max(1, sc * 0.022), 0, TAU); ctx.fill();
+      }
+    }
+    if (s.snow > 0.05) {
+      ctx.strokeStyle = css(SNOW, s.snow * 0.8);
+      for (const g of T.tree.segs) {
+        if (g[5] < 2) continue;
+        ctx.lineWidth = Math.max(0.5, g[4] * sc * 0.6);
+        ctx.beginPath(); ctx.moveTo(g[0] * sc, g[1] * sc - 0.5); ctx.lineTo(g[2] * sc, g[3] * sc - 0.5); ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  function buildings(ctx, s, f) {
+    const { gx, gw, gyb, gh, sw, shx, h } = G;
+    const wall = gh * 0.2, side = gh * 0.42, roof = gh * 0.38;
+    const top = gyb - wall - side;
+    // ground shadow
+    ctx.fillStyle = css([40, 50, 30], 0.12); ctx.beginPath(); ctx.ellipse(gx + gw * 0.45, gyb + 2, gw * 0.7, gh * 0.08, 0, 0, TAU); ctx.fill();
+
+    /* potting shed */
+    const sh = gh * 0.72, sTop = gyb - sh;
+    ctx.fillStyle = css(mix([124, 94, 68], SNOW, s.snow * 0.05)); ctx.fillRect(shx, sTop, sw, sh);
+    ctx.strokeStyle = css([96, 70, 50], 0.6); ctx.lineWidth = 0.8;
+    ctx.beginPath(); for (let i = 1; i < 7; i++) { const yy = sTop + sh * i / 7; ctx.moveTo(shx, yy); ctx.lineTo(shx + sw, yy); } ctx.stroke();
+    // roof
+    ctx.fillStyle = css(mix([64, 54, 50], SNOW, s.snow * 0.9));
+    ctx.beginPath(); ctx.moveTo(shx - sw * 0.08, sTop + 1); ctx.lineTo(shx + sw * 0.06, sTop - sh * 0.28); ctx.lineTo(shx + sw * 1.02, sTop - sh * 0.28); ctx.lineTo(shx + sw * 1.1, sTop + 1); ctx.closePath(); ctx.fill();
+    // fascia sign
+    ctx.fillStyle = css([236, 228, 212]); ctx.fillRect(shx + sw * 0.1, sTop + sh * 0.07, sw * 0.8, sh * 0.16);
+    ctx.fillStyle = css([126, 30, 42]);
+    ctx.font = `600 ${Math.max(5, sw * 0.085)}px Karla, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('SUSAN  ROSES', shx + sw * 0.5, sTop + sh * 0.155);
+    // door + window
+    ctx.fillStyle = css([74, 90, 66]); ctx.fillRect(shx + sw * 0.14, gyb - sh * 0.62, sw * 0.26, sh * 0.62);
+    ctx.fillStyle = css(mix([180, 196, 196], [255, 204, 130], s.warm * 0.9)); ctx.fillRect(shx + sw * 0.56, gyb - sh * 0.58, sw * 0.3, sh * 0.24);
+    ctx.strokeStyle = css([236, 228, 212]); ctx.lineWidth = Math.max(0.8, sw * 0.012); ctx.strokeRect(shx + sw * 0.56, gyb - sh * 0.58, sw * 0.3, sh * 0.24);
+    // chimney & smoke
+    const chx = shx + sw * 0.8, chy = sTop - sh * 0.28;
+    ctx.fillStyle = css([60, 56, 54]); ctx.fillRect(chx, chy - sh * 0.2, sw * 0.06, sh * 0.2);
+    if (s.smoke > 0.02) {
+      for (let i = 0; i < 12; i++) {
+        const age = ((f * 0.9 + i * 11) % 130) / 130;
+        const x = chx + sw * 0.03 + Math.sin(age * 5 + i) * sw * 0.05 + age * sw * 0.5, y = chy - sh * 0.2 - age * h * 0.14;
+        ctx.fillStyle = css([232, 230, 224], s.smoke * (1 - age) * 0.45);
+        ctx.beginPath(); ctx.arc(x, y, sw * (0.02 + age * 0.12), 0, TAU); ctx.fill();
+      }
+    }
+
+    /* Victorian glasshouse */
+    ctx.fillStyle = css([152, 94, 70]); ctx.fillRect(gx, gyb - wall, gw, wall);
+    ctx.strokeStyle = css([118, 70, 52], 0.55); ctx.lineWidth = 0.6;
+    ctx.beginPath(); for (let i = 1; i < 4; i++) { ctx.moveTo(gx, gyb - wall * i / 4); ctx.lineTo(gx + gw, gyb - wall * i / 4); } ctx.stroke();
+    const glass = mix(s.skyB, [255, 255, 255], 0.3);
+    ctx.fillStyle = css(glass, 0.9); ctx.fillRect(gx, top, gw, side);
+    ctx.beginPath(); ctx.moveTo(gx, top); ctx.lineTo(gx + gw * 0.07, top - roof); ctx.lineTo(gx + gw * 0.93, top - roof); ctx.lineTo(gx + gw, top); ctx.closePath();
+    ctx.fillStyle = css(mix(glass, s.skyT, 0.35), 0.92); ctx.fill();
+    // what's inside
+    ctx.fillStyle = css(mix(s.bushGreen, [40, 60, 36], 0.25), 0.5);
+    for (let i = 0; i < 14; i++) { ctx.beginPath(); ctx.arc(gx + gw * (0.04 + i * 0.07), gyb - wall - side * 0.12, gw * (0.03 + (i % 3) * 0.008), 0, TAU); ctx.fill(); }
+    ctx.fillStyle = css([188, 100, 70], 0.6);
+    for (let i = 0; i < 9; i++) ctx.fillRect(gx + gw * (0.08 + i * 0.1), gyb - wall - side * 0.1, gw * 0.03, side * 0.1);
+    if (s.warm > 0.02) {
+      const wg = ctx.createLinearGradient(0, top - roof, 0, gyb - wall);
+      wg.addColorStop(0, css([255, 214, 150], 0.1 * s.warm)); wg.addColorStop(1, css([255, 198, 120], 0.55 * s.warm));
+      ctx.fillStyle = wg; ctx.fillRect(gx, top, gw, side);
+    }
+    // snow on the roof
+    if (s.snow > 0.05) {
+      ctx.fillStyle = css(SNOW, s.snow * 0.95);
+      ctx.beginPath(); ctx.moveTo(gx + gw * 0.07, top - roof); ctx.lineTo(gx + gw * 0.93, top - roof); ctx.lineTo(gx + gw * 0.95, top - roof * 0.6); ctx.lineTo(gx + gw * 0.05, top - roof * 0.6); ctx.closePath(); ctx.fill();
+    }
+    // frame
+    const fc = [240, 236, 226];
+    ctx.strokeStyle = css(fc); ctx.lineWidth = Math.max(0.8, gw * 0.005);
+    ctx.beginPath();
+    for (let i = 0; i <= 12; i++) {
+      const x = gx + gw * i / 12; ctx.moveTo(x, gyb - wall); ctx.lineTo(x, top);
+      const rx = gx + gw * 0.07 + gw * 0.86 * i / 12; ctx.moveTo(lerp(gx, gx + gw, i / 12), top); ctx.lineTo(rx, top - roof);
+    }
+    ctx.moveTo(gx, top + side * 0.45); ctx.lineTo(gx + gw, top + side * 0.45);
+    ctx.moveTo(gx, top); ctx.lineTo(gx + gw, top);
+    ctx.stroke();
+    ctx.lineWidth = Math.max(1.2, gw * 0.009);
+    ctx.beginPath(); ctx.moveTo(gx + gw * 0.07, top - roof); ctx.lineTo(gx + gw * 0.93, top - roof); ctx.stroke();
+    // cresting
+    ctx.lineWidth = Math.max(0.6, gw * 0.003);
+    ctx.beginPath();
+    for (let i = 0; i <= 24; i++) { const x = gx + gw * 0.07 + gw * 0.86 * i / 24; ctx.moveTo(x, top - roof); ctx.lineTo(x, top - roof - gh * (i % 2 ? 0.03 : 0.05)); }
+    ctx.stroke();
+    ctx.fillStyle = css(fc);
+    for (const x of [gx + gw * 0.07, gx + gw * 0.93]) { ctx.beginPath(); ctx.arc(x, top - roof - gh * 0.07, Math.max(1.2, gw * 0.008), 0, TAU); ctx.fill(); }
+    // door
+    ctx.strokeStyle = css(fc); ctx.lineWidth = Math.max(1, gw * 0.007);
+    ctx.strokeRect(gx + gw * 0.46, gyb - wall - side * 0.95, gw * 0.08, side * 0.95 + wall);
+    // reflections
+    ctx.strokeStyle = css([255, 255, 255], 0.3); ctx.lineWidth = Math.max(1, gw * 0.01);
+    ctx.beginPath();
+    for (const q of [0.14, 0.2, 0.66, 0.71]) { ctx.moveTo(gx + gw * q, top + side * 0.9); ctx.lineTo(gx + gw * (q + 0.06), top + side * 0.1); }
+    ctx.stroke();
+
+    // Rose Weekend bunting, June only
+    if (s.festival > 0.02) {
+      const T = G.trees[3];
+      const ax = gx + gw, ay = top, bx = T.x - T.sc * 0.04, by = T.y - T.sc * 0.36;
+      const n = 16, flags = [[168, 40, 52], [239, 230, 214], [157, 164, 135], [230, 182, 164]];
+      ctx.strokeStyle = css([80, 70, 60], 0.7 * s.festival); ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      const pt = t => [lerp(ax, bx, t), lerp(ay, by, t) + Math.sin(Math.PI * t) * gh * 0.28];
+      for (let i = 0; i <= 30; i++) { const q = pt(i / 30); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }
+      ctx.stroke();
+      for (let i = 1; i < n; i++) {
+        const a = pt(i / n - 0.02), b = pt(i / n + 0.02), fl = gh * 0.1;
+        ctx.fillStyle = css(flags[i % 4], s.festival);
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo((a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + fl); ctx.closePath(); ctx.fill();
+      }
+    }
+  }
+
+  function bush(ctx, B, s) {
+    const { x, y, sz, row } = B;
+    const leaf = s.bushLeaf, bl = s.bloom;
+    ctx.fillStyle = css([40, 50, 30], 0.14);
+    ctx.beginPath(); ctx.ellipse(x, y + sz * 0.02, sz * 0.5, sz * 0.09, 0, 0, TAU); ctx.fill();
+    if (leaf < 0.92) {
+      ctx.strokeStyle = css([98, 62, 46], 1 - leaf); ctx.lineWidth = Math.max(0.6, sz * 0.03); ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (const c of B.canes) { ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(c.a) * sz * c.l * s.prune * 0.8, y + Math.sin(c.a) * sz * c.l * s.prune * 0.8); }
+      ctx.stroke();
+    }
+    if (leaf > 0.04) {
+      for (const b of B.blobs) {
+        const r = b.r * sz * (0.45 + 0.55 * leaf);
+        ctx.fillStyle = css(shade(s.bushGreen, b.k));
+        ctx.beginPath(); ctx.arc(x + b.dx * sz * (0.6 + 0.4 * leaf), y - b.dy * sz * (0.5 + 0.5 * leaf), r, 0, TAU); ctx.fill();
+      }
+    }
+    if (bl > 0.02 && leaf > 0.3) {
+      const col = ROWCOL[row % ROWCOL.length];
+      for (const d of B.dots) {
+        if (d.th > bl) continue;
+        const r = Math.max(0.8, sz * 0.058 * d.s), px = x + d.dx * sz, py = y - d.dy * sz;
+        ctx.fillStyle = css(shade(col, 0.82 + 0.3 * d.k));
+        ctx.beginPath(); ctx.arc(px, py, r, 0, TAU); ctx.fill();
+        if (sz > 40) { ctx.fillStyle = css(mix(col, [255, 250, 240], 0.45), 0.8); ctx.beginPath(); ctx.arc(px - r * 0.3, py - r * 0.3, r * 0.4, 0, TAU); ctx.fill(); }
+      }
+    }
+    if (s.snow > 0.05) {
+      ctx.fillStyle = css(SNOW, s.snow);
+      const hh = leaf > 0.3 ? sz * 0.5 : sz * 0.42 * s.prune;
+      ctx.beginPath(); ctx.ellipse(x, y - hh, sz * 0.26, sz * 0.07, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x, y - sz * 0.02, sz * 0.46, sz * 0.07, 0, 0, TAU); ctx.fill();
+    }
+  }
+
+  return function render(p, f) {
+    const { ctx, w, h } = stage;
+    if (!G || G.w !== w || G.h !== h) build(w, h);
+    const m = 0.02 + p * 11.96;
+    const s = season(m);
+    const { hy } = G;
+
+    // sky
+    let gr = ctx.createLinearGradient(0, 0, 0, hy);
+    gr.addColorStop(0, css(s.skyT)); gr.addColorStop(1, css(s.skyB));
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, w, hy + h * 0.05);
+
+    // sun
+    const sx = w * 0.74, sy = hy - h * (0.06 + 0.4 * s.sunAlt), sr = Math.min(w, h) * 0.034;
+    gr = ctx.createRadialGradient(sx, sy, sr * 0.4, sx, sy, sr * 8);
+    gr.addColorStop(0, css(s.sunCol, 0.6)); gr.addColorStop(1, css(s.sunCol, 0));
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(sx, sy, sr * 8, 0, TAU); ctx.fill();
+    ctx.fillStyle = css(s.sunCol, 0.95); ctx.beginPath(); ctx.arc(sx, sy, sr, 0, TAU); ctx.fill();
+
+    // clouds
+    const cc = mix([255, 255, 255], s.skyT, 0.3);
+    for (const c of G.clouds) {
+      const x = ((c.x * w * 1.5 + f * c.v * w * 0.003) % (w * 1.5)) - w * 0.25, y = c.y * h, sc = c.sc * Math.min(1.3, w / 1200 + 0.3);
+      ctx.fillStyle = css(cc, 0.5 * s.cloud);
+      ctx.beginPath();
+      for (const q of c.puffs) { ctx.moveTo(x + q[0] * sc + q[2] * sc, y + q[1] * sc); ctx.ellipse(x + q[0] * sc, y + q[1] * sc, q[2] * sc, q[2] * sc * 0.55, 0, 0, TAU); }
+      ctx.fill();
+    }
+
+    // birds
+    if (s.birds > 0.05) {
+      ctx.strokeStyle = css([60, 56, 52], 0.55 * s.birds); ctx.lineWidth = 1.1;
+      for (const b of G.birds) {
+        const x = ((b.x * w * 1.3 + f * b.v * 2.2) % (w * 1.3)) - w * 0.15, y = b.y * h + Math.sin(f * 0.2 + b.ph) * 4;
+        const fl = Math.sin(f * 0.9 + b.ph) * 3.5, z = Math.min(1.2, w / 1200 + 0.4);
+        ctx.beginPath(); ctx.moveTo(x - 7 * z, y - fl * z * 0.4); ctx.quadraticCurveTo(x - 3 * z, y - (2 + fl) * z, x, y); ctx.quadraticCurveTo(x + 3 * z, y - (2 + fl) * z, x + 7 * z, y - fl * z * 0.4); ctx.stroke();
+      }
+    }
+
+    // the Wrekin and the far ridge
+    const farCol = mix(mix(s.hill, s.skyB, 0.42), SNOW, s.snow * 0.45);
+    ctx.fillStyle = css(farCol);
+    ctx.beginPath(); ctx.moveTo(0, h);
+    for (let x = 0; x <= w + 8; x += 8) ctx.lineTo(x, G.farY(x));
+    ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+    const ridgeCol = mix(mix(s.hill, s.skyB, 0.2), SNOW, s.snow * 0.5);
+    ctx.fillStyle = css(ridgeCol);
+    ctx.beginPath(); ctx.moveTo(0, h);
+    for (let x = 0; x <= w + 8; x += 8) ctx.lineTo(x, G.ridgeY(x));
+    ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = css(mix(shade(ridgeCol, 0.82), s.skyB, 0.1));
+    for (const t of G.farTrees) { const y = G.ridgeY(t.x); ctx.beginPath(); ctx.ellipse(t.x, y - h * 0.006 * t.s, h * 0.009 * t.s, h * 0.008 * t.s, 0, 0, TAU); ctx.fill(); }
+
+    // patchwork fields and hedgerows
+    const fieldCol = mix(mix(s.field, [214, 190, 120], s.hay * 0.35), SNOW, s.snow * 0.8);
+    for (let i = 0; i < G.bounds.length - 1; i++) {
+      const xa = G.bounds[i], xb = G.bounds[i + 1], sl = (i % 2 ? 1 : -1) * w * 0.02;
+      ctx.fillStyle = css(shade(fieldCol, G.patchK[i]));
+      ctx.beginPath(); ctx.moveTo(xa, G.midY(xa));
+      for (let x = xa; x <= xb; x += 10) ctx.lineTo(x, G.midY(x));
+      ctx.lineTo(xb, G.midY(xb)); ctx.lineTo(xb + sl, h); ctx.lineTo(xa + sl, h); ctx.closePath(); ctx.fill();
+    }
+    const hedgeCol = mix(mix(mix(s.leafCol, [44, 56, 34], 0.5), [96, 84, 70], 1 - s.foliage * 0.9), SNOW, s.snow * 0.3);
+    ctx.fillStyle = css(hedgeCol);
+    for (const q of G.hedges) { const y = G.midY(q.x); ctx.beginPath(); ctx.ellipse(q.x, y - h * 0.003, h * 0.006 * q.r, h * 0.005 * q.r, 0, 0, TAU); ctx.fill(); }
+    for (let i = 1; i < G.bounds.length - 1; i++) {
+      const xa = G.bounds[i], sl = (i % 2 ? 1 : -1) * w * 0.02;
+      for (let t = 0; t < 1; t += 0.06) {
+        const x = lerp(xa, xa + sl * 0.5, t), y = lerp(G.midY(xa), G.nearY(x), t);
+        ctx.beginPath(); ctx.ellipse(x, y, h * 0.005, h * 0.004, 0, 0, TAU); ctx.fill();
+      }
+    }
+    tree(ctx, G.trees[0], s); tree(ctx, G.trees[1], s);
+
+    // near bank
+    const grassCol = mix(s.grass, SNOW, s.snow * 0.9);
+    ctx.fillStyle = css(shade(grassCol, 1.02));
+    ctx.beginPath(); ctx.moveTo(0, h);
+    for (let x = 0; x <= w + 10; x += 10) ctx.lineTo(x, G.nearY(x));
+    ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+
+    buildings(ctx, s, f);
+    tree(ctx, G.trees[4], s);
+
+    // the rose field
+    ctx.fillStyle = css(shade(grassCol, 0.95));
+    ctx.fillRect(0, G.fieldTop, w, h - G.fieldTop);
+    const soil = mix([112, 86, 64], SNOW, s.snow * 0.85), path = mix([208, 192, 162], SNOW, s.snow * 0.7);
+    const bottomY = G.VP[1] + (h * 1.02 - G.VP[1]) / 0.85;
+    for (const r of G.rows) {
+      const hw = G.bushBase * (r.path ? 0.5 : 0.62);
+      const xt = d => G.VP[0] + (r.bx - hw - G.VP[0]) / d, xt2 = d => G.VP[0] + (r.bx + hw - G.VP[0]) / d;
+      ctx.fillStyle = css(r.path ? path : soil);
+      ctx.beginPath(); ctx.moveTo(xt(G.Dmax), G.fieldTop); ctx.lineTo(xt2(G.Dmax), G.fieldTop); ctx.lineTo(xt2(0.85), bottomY); ctx.lineTo(xt(0.85), bottomY); ctx.closePath(); ctx.fill();
+    }
+    for (const B of G.bushes) bush(ctx, B, s);
+    tree(ctx, G.trees[2], s); tree(ctx, G.trees[3], s);
+
+    // weather
+    const P = G.parts, N = P.length;
+    const drift = (q, speed) => [((q.x * w + Math.sin(f * 0.04 + q.ph) * 18 + f * speed) % w + w) % w, ((q.y * h * 1.1 + f * q.v * h * 0.01) % (h * 1.1)) - h * 0.05];
+    if (s.snowfall > 0.02) {
+      ctx.fillStyle = css([255, 255, 255], 0.9);
+      for (const q of P) { if (q.i / N > s.snowfall) continue; const [x, y] = drift(q, 0.4); ctx.beginPath(); ctx.arc(x, y, 0.8 + q.s * 2.2, 0, TAU); ctx.fill(); }
+    }
+    if (s.rain > 0.02) {
+      ctx.strokeStyle = css([110, 124, 128], 0.32); ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (const q of P) { if (q.i / N > s.rain) continue; const x = ((q.x * w - f * 3) % w + w) % w, y = ((q.y * h + f * q.v * h * 0.05) % h); ctx.moveTo(x, y); ctx.lineTo(x - 3, y + 14); }
+      ctx.stroke();
+    }
+    const flutter = (amount, cols, len) => {
+      if (amount <= 0.02) return;
+      for (const q of P) {
+        if (q.i / N > amount * 0.6) continue;
+        const [x, y] = drift(q, 0.9), a = f * 0.12 * q.v + q.ph;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(a); ctx.scale(1, Math.abs(Math.cos(a * 1.3)) * 0.8 + 0.2);
+        ctx.fillStyle = css(cols[q.i % cols.length], 0.9);
+        ctx.beginPath(); ctx.ellipse(0, 0, len * (0.7 + q.s * 0.6), len * 0.45 * (0.7 + q.s * 0.6), 0, 0, TAU); ctx.fill();
+        ctx.restore();
+      }
+    };
+    flutter(s.leavesFall, [[198, 122, 50], [172, 84, 42], [214, 164, 72]], 4.2);
+    flutter(s.blossomFall, [[250, 238, 236], [240, 200, 204]], 2.6);
+    flutter(s.roseFall, [[176, 40, 54], [238, 184, 170], [236, 156, 104]], 3);
+
+    return { m };
+  };
+}
+
+/* =====================================================================
+   The plate — Mary's Blush, engraved as you scroll
+   ===================================================================== */
+function makePlate(stage) {
+  const INK = [58, 42, 36], PAPER = [241, 223, 211];
+  const V = VARIETIES[1];
+  return function render(p) {
+    const { ctx, w, h } = stage;
+    ctx.clearRect(0, 0, w, h);
+    const ink = { pr: p, color: INK, paper: PAPER };
+    const cx = w * 0.52, cy = h * 0.36, size = Math.min(w, h) * 0.25;
+    // stem
+    const sp = inv(0, 0.5, p);
+    const sx = cx, sy = cy + size * 0.2, ex = w * 0.42, ey = h * 0.97, c1x = w * 0.62, c1y = h * 0.7;
+    ctx.lineCap = 'round';
+    const stemLen = h * 0.8;
+    for (const off of [-1, 1]) {
+      ctx.beginPath(); ctx.moveTo(sx + off * size * 0.03, sy); ctx.quadraticCurveTo(c1x + off * size * 0.03, c1y, ex + off * size * 0.035, ey);
+      ctx.setLineDash([stemLen * sp, stemLen]); ctx.strokeStyle = css(INK, 0.9); ctx.lineWidth = 1.1; ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    const qb = t => [(1 - t) * (1 - t) * sx + 2 * (1 - t) * t * c1x + t * t * ex, (1 - t) * (1 - t) * sy + 2 * (1 - t) * t * c1y + t * t * ey];
+    // thorns
+    ctx.strokeStyle = css(INK, 0.85); ctx.lineWidth = 1;
+    [0.3, 0.46, 0.62, 0.8].forEach((t, i) => {
+      if (sp < t) return;
+      const q = qb(t), sd = i % 2 ? 1 : -1;
+      ctx.beginPath(); ctx.moveTo(q[0] + sd * size * 0.03, q[1] - size * 0.03); ctx.lineTo(q[0] + sd * size * 0.12, q[1] + size * 0.04); ctx.lineTo(q[0] + sd * size * 0.03, q[1] + size * 0.04); ctx.stroke();
+    });
+    // leaves
+    const lp = inv(0.18, 0.75, p);
+    let q = qb(0.38); drawLeaf(ctx, q[0], q[1], -0.4, size * 1.25, 1, 1, 1, { pr: p, pa: lp, color: INK, paper: PAPER });
+    q = qb(0.62); drawLeaf(ctx, q[0], q[1], Math.PI + 0.5, size * 1.1, 1, 1, -1, { pr: p, pa: inv(0.28, 0.85, p), color: INK, paper: PAPER });
+    // a bud on a side shoot
+    q = qb(0.24);
+    const bx = q[0] + size * 0.7, by = q[1] - size * 0.55;
+    ctx.beginPath(); ctx.moveTo(q[0], q[1]); ctx.quadraticCurveTo(q[0] + size * 0.5, q[1] - size * 0.05, bx, by + size * 0.12);
+    ctx.setLineDash([size * 1.2 * inv(0.3, 0.6, p), size * 2]); ctx.strokeStyle = css(INK, 0.9); ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
+    Rose.draw(ctx, V, { x: bx, y: by + size * 0.12, size: size * 0.42, bloom: 0.06, sepal: 0.35, tilt: 0.2, spin: 1.2, hip: true, ink: { pr: inv(0.35, 1, p), color: INK, paper: PAPER } });
+    // the flower
+    Rose.draw(ctx, V, { x: cx, y: cy + size * 0.22, size, bloom: 0.92, sepal: 1, tilt: 0.82, spin: 0.5, hip: false, ink });
+  };
+}
+
+/* =====================================================================
+   Scroll engine — each pinned section maps scroll to a discrete frame
+   index; the displayed frame eases toward it so fast scrolls still
+   play every frame in between, like scrubbing film.
+   ===================================================================== */
+class Sequence {
+  constructor(el, canvas, frames, factory, opts = {}) {
+    this.el = el; this.stage = new Stage(canvas); this.frames = frames;
+    this.render = factory(this.stage); this.shown = 0; this.cur = -1;
+    this.pinned = opts.pinned !== false; this.onFrame = opts.onFrame || null; this.progressFn = opts.progress || null;
+    this.ranged = $$('[data-range]', el).map(n => { const [a, b] = n.dataset.range.split(',').map(Number); return { n, a, b }; });
+    this.measure(true);
+  }
+  measure(first) {
+    const r = this.el.getBoundingClientRect();
+    this.top = r.top + scrollY; this.height = r.height;
+    this.len = Math.max(1, r.height - vh);
+    this.stage.resize();
+    this.cur = -1;
+    if (first) this.shown = this.target(scrollY);
+  }
+  target(sy) {
+    const p = this.progressFn ? this.progressFn(sy, this) : clamp((sy - this.top) / this.len);
+    return p * (this.frames - 1);
+  }
+  update(sy) {
+    const near = sy > this.top - vh * 1.3 && sy < this.top + this.height + vh * 0.3;
+    const tgt = this.target(sy);
+    if (!near) { this.shown = tgt; return; }
+    if (reduceMotion) this.shown = tgt;
+    else { this.shown += (tgt - this.shown) * 0.16; if (Math.abs(tgt - this.shown) < 0.04) this.shown = tgt; }
+    const f = Math.round(this.shown);
+    if (f === this.cur) return;
+    this.cur = f;
+    const p = f / (this.frames - 1);
+    this.p = p;
+    const state = this.render(p, f);
+    for (const r of this.ranged) {
+      const op = sstep(r.a, r.a + 0.035, p) * (1 - sstep(r.b - 0.035, r.b, p));
+      r.n.style.opacity = op;
+      r.n.style.transform = r.n.classList.contains('cue') ? `translateX(-50%)` : `translate3d(0,${(1 - op) * (p < r.a + 0.035 ? 26 : -26)}px,0)`;
+      r.n.style.visibility = op < 0.01 ? 'hidden' : 'visible';
+    }
+    if (this.onFrame) this.onFrame(p, f, state);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Build everything
+   --------------------------------------------------------------------- */
+// split hero title letters
+$$('[data-chars]').forEach((el, j) => {
+  const txt = el.textContent; el.textContent = '';
+  [...txt].forEach((ch, i) => { const s = document.createElement('span'); s.className = 'ch'; s.style.setProperty('--i', i + j * 5); s.textContent = ch; el.appendChild(s); });
+});
+// split headings into words
+$$('[data-split]').forEach(el => {
+  let i = 0;
+  const walk = node => {
+    [...node.childNodes].forEach(ch => {
+      if (ch.nodeType === 3) {
+        const frag = document.createDocumentFragment();
+        ch.textContent.split(/(\s+)/).forEach(tok => {
+          if (!tok) return;
+          if (/^\s+$/.test(tok)) { frag.appendChild(document.createTextNode(' ')); return; }
+          const w = document.createElement('span'); w.className = 'w';
+          const inner = document.createElement('span'); inner.style.setProperty('--i', i++); inner.textContent = tok;
+          w.appendChild(inner); frag.appendChild(w);
+        });
+        ch.replaceWith(frag);
+      } else if (ch.nodeType === 1) walk(ch);
+    });
+  };
+  walk(el);
+});
+// quote words
+const quote = $('#quote');
+const qWords = [];
+{
+  const words = quote.textContent.trim().split(/\s+/);
+  quote.textContent = '';
+  words.forEach((wd, i) => { const s = document.createElement('span'); s.className = 'wd'; s.textContent = wd; quote.appendChild(s); qWords.push(s); if (i < words.length - 1) quote.appendChild(document.createTextNode(' ')); });
+}
+
+const varietyEls = $$('.variety'), railEls = $$('.coll-rail li');
+const monthTrack = $('#monthTrack'), notes = $$('.note').map(n => { const [a, b] = n.dataset.m.split(',').map(Number); return { n, a, b }; });
+const ticks = $$('#monthTicks li'), rail = $('#monthTicks .rail i');
+let lastMonth = -1;
+
+const seqs = [];
+seqs.push(new Sequence($('#grow'), $('#growCanvas'), 320, makeGrow));
+const heroSeq = seqs[0];
+seqs.push(new Sequence($('#collection'), $('#roseCanvas'), 420, makeCollection, {
+  onFrame(p, f, st) {
+    const { k, m } = st;
+    varietyEls.forEach((el, i) => {
+      let op = 0, dy = 0;
+      if (i === k) { op = 1 - sstep(0.22, 0.48, m); dy = -sstep(0.22, 0.48, m) * 30; }
+      else if (i === k + 1) { op = sstep(0.52, 0.78, m); dy = (1 - op) * 30; }
+      el.style.opacity = op; el.style.transform = `translate3d(0,${dy}px,0)`; el.style.visibility = op < 0.01 ? 'hidden' : 'visible';
+    });
+    const active = m > 0.5 ? k + 1 : k;
+    railEls.forEach((el, i) => el.classList.toggle('on', i === active));
+  }
+}));
+seqs.push(new Sequence($('#year'), $('#yearCanvas'), 360, makeYear, {
+  onFrame(p, f, st) {
+    const m = st.m, fl = Math.floor(m), fr = m - fl;
+    const roll = Math.min(11, fl + sstep(0.82, 1, fr));
+    monthTrack.style.transform = `translate3d(0,${-roll}em,0)`;
+    for (const nt of notes) {
+      const op = sstep(nt.a - 0.12, nt.a + 0.08, m) * (1 - sstep(nt.b - 0.1, nt.b + 0.1, m));
+      nt.n.style.opacity = op; nt.n.style.transform = `translate3d(0,${(1 - op) * 14}px,0)`;
+    }
+    if (fl !== lastMonth) { ticks.forEach((t, i) => t.classList.toggle('on', i === Math.min(11, fl))); lastMonth = fl; }
+    rail.style.setProperty('--y', (m / 12).toFixed(4));
+  }
+}));
+const plateEl = $('.plate');
+seqs.push(new Sequence(plateEl, $('#plateCanvas'), 240, makePlate, {
+  pinned: false,
+  progress: (sy, s) => inv(s.top - vh * 0.85, s.top - vh * 0.85 + s.height * 0.95 + vh * 0.1, sy)
+}));
+
+/* ---------------------------------------------------------------------
+   Background colour flows between sections instead of hard edges
+   --------------------------------------------------------------------- */
+const bgSecs = $$('[data-bg]').map(el => ({ el, bg: hex(el.dataset.bg), fg: hex(el.dataset.fg || '#2A221E') }));
+const rootStyle = document.documentElement.style;
+function measureBg() { for (const s of bgSecs) { const r = s.el.getBoundingClientRect(); s.top = r.top + scrollY; s.bottom = s.top + r.height; } }
+let lastBg = '';
+function updateBg(sy) {
+  const y = sy + vh * 0.5, T = vh * 0.32;
+  let bg = bgSecs[0].bg, fg = bgSecs[0].fg;
+  for (let i = 0; i < bgSecs.length - 1; i++) {
+    const b = bgSecs[i].bottom, t = sstep(b - T, b + T, y);
+    if (t > 0) { bg = mix(bg, bgSecs[i + 1].bg, t); fg = mix(fg, bgSecs[i + 1].fg, t); }
+  }
+  const key = bg.map(c8).join() + fg.map(c8).join();
+  if (key === lastBg) return;
+  lastBg = key;
+  rootStyle.setProperty('--bg', css(bg)); rootStyle.setProperty('--fg', css(fg));
+}
+
+/* ---------------------------------------------------------------------
+   Smaller scroll-linked things
+   --------------------------------------------------------------------- */
+const counters = $$('[data-count]').map(el => ({ el, n: +el.dataset.count, suf: el.dataset.suffix || '', last: -1 }));
+const sig = $('#sig');
+const routeReveal = $('#routeReveal'), mapEl = $('.map');
+const bar = $('#bar');
+let lastY = -1, lastDirY = scrollY;
+function misc(sy) {
+  // quote, word by word
+  {
+    const r = quote.getBoundingClientRect();
+    const p = inv(vh * 0.9, vh * 0.25 - r.height * 0.3, r.top);
+    const n = qWords.length;
+    for (let i = 0; i < n; i++) qWords[i].style.opacity = (0.14 + 0.86 * sstep(i / n - 0.03, i / n + 0.08, p)).toFixed(3);
+    if (p > 0.96) sig.classList.add('in');
+  }
+  // counters
+  for (const c of counters) {
+    const r = c.el.getBoundingClientRect();
+    const p = eOut(inv(vh * 0.98, vh * 0.5, r.top));
+    const v = Math.round(c.n * p);
+    if (v !== c.last) { c.last = v; c.el.innerHTML = v + (c.suf ? `<sup>${c.suf}</sup>` : ''); }
+  }
+  // the route to the nursery draws itself
+  {
+    const r = mapEl.getBoundingClientRect();
+    const p = eInOut(inv(vh * 0.85, vh * 0.2, r.top));
+    routeReveal.setAttribute('stroke-dashoffset', (1 - p).toFixed(4));
+  }
+  // header tucks away on the way down, returns on the way up
+  const dy = sy - lastDirY;
+  if (Math.abs(dy) > 6) {
+    bar.classList.toggle('tuck', dy > 0 && sy > vh * 0.6);
+    lastDirY = sy;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   One petal falls from the bloom and drifts the length of the page,
+   landing on the nursery's name at the very bottom.
+   --------------------------------------------------------------------- */
+const petal = (() => {
+  const st = new Stage($('#petal'));
+  const footWord = $('#footWord');
+  let smooth = scrollY, drawn = false, landX = 0, landY = 0, start = 0, end = 1, x0 = 0, y0 = 0, lastKey = '';
+  function measure() {
+    st.resize();
+    const max = document.documentElement.scrollHeight - vh;
+    const r = footWord.getBoundingClientRect();
+    landX = r.left + r.width * 0.62;
+    landY = r.top + scrollY - max + r.height * 0.14;
+    start = heroSeq.top + heroSeq.len - vh * 0.02;
+    end = max;
+    lastKey = '';
+  }
+  function shape(ctx, L) {
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(-0.62 * L, -0.12 * L, -0.66 * L, -0.86 * L, -0.14 * L, -L);
+    ctx.quadraticCurveTo(0, -0.9 * L, 0.14 * L, -L);
+    ctx.bezierCurveTo(0.66 * L, -0.86 * L, 0.62 * L, -0.12 * L, 0, 0);
+    ctx.closePath();
+  }
+  function update(sy) {
+    smooth += (sy - smooth) * (reduceMotion ? 1 : 0.09);
+    const q = inv(start, end, smooth);
+    const { ctx, w, h } = st;
+    if (q <= 0) {
+      x0 = heroFlower[0]; y0 = heroFlower[1] - (smooth - start);
+      if (drawn) { ctx.clearRect(0, 0, w, h); drawn = false; }
+      return;
+    }
+    const key = q.toFixed(5);
+    if (key === lastKey) return;
+    lastKey = key;
+    ctx.clearRect(0, 0, w, h);
+    const land = sstep(0.93, 1, q);
+    const sway = Math.sin(Math.PI * q);
+    const floatY = h * (0.44 + 0.17 * Math.sin(q * TAU * 3.3 + 0.4));
+    let x = lerp(x0, landX, eInOut(q)) + w * 0.3 * Math.sin(q * TAU * 2.6) * sway * (1 - land);
+    let y = lerp(lerp(y0, floatY, sstep(0, 0.035, q)), landY, land);
+    const L = clamp(w * 0.017, 13, 24) * (1 - 0.1 * land);
+    const rot = lerp(q * TAU * 5.5 + Math.sin(q * 60) * 0.35, 1.15, land);
+    const flip = lerp(Math.cos(q * TAU * 9), 0.38, land);
+    const alpha = sstep(0, 0.012, q);
+    // soft shadow beneath, suggesting air
+    ctx.save(); ctx.translate(x + 10, y + 26 * (1 - land) + 4); ctx.rotate(rot); ctx.scale(Math.abs(flip) * 0.9 + 0.1, 0.9);
+    shape(ctx, L); ctx.fillStyle = `rgba(30,20,16,${0.07 * alpha})`; ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(Math.abs(flip) * 0.92 + 0.08, 1);
+    shape(ctx, L);
+    const g = ctx.createLinearGradient(0, 0, 0, -L);
+    const back = flip < 0;
+    g.addColorStop(0, back ? 'rgba(120,20,32,1)' : 'rgba(92,10,22,1)');
+    g.addColorStop(0.55, back ? 'rgba(186,70,78,1)' : 'rgba(162,30,44,1)');
+    g.addColorStop(1, back ? 'rgba(214,112,112,1)' : 'rgba(204,66,72,1)');
+    ctx.globalAlpha = alpha; ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = 'rgba(70,8,18,.35)'; ctx.lineWidth = 0.6; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -L * 0.1); ctx.quadraticCurveTo(L * 0.05, -L * 0.5, 0, -L * 0.85);
+    ctx.strokeStyle = 'rgba(255,230,220,.18)'; ctx.stroke();
+    ctx.restore();
+    drawn = true;
+  }
+  return { measure, update };
+})();
+
+/* ---------------------------------------------------------------------
+   Reveal on entry
+   --------------------------------------------------------------------- */
+const io = new IntersectionObserver(entries => {
+  for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}, { threshold: 0.18, rootMargin: '0px 0px -6% 0px' });
+$$('[data-reveal],[data-split]').forEach(el => io.observe(el));
+
+/* ---------------------------------------------------------------------
+   Is the gate open? (Europe/London)
+   --------------------------------------------------------------------- */
+function openStatus() {
+  const el = $('#status'), label = el.querySelector('span');
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  let parts;
+  try {
+    parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', hour: '2-digit', minute: '2-digit', month: 'numeric', hourCycle: 'h23' }).formatToParts(new Date()).map(p => [p.type, p.value]));
+  } catch (e) { label.textContent = 'Open six days a week'; return; }
+  const day = DAYS.indexOf(parts.weekday), mins = (+parts.hour) * 60 + (+parts.minute), month = +parts.month;
+  const sched = mo => (mo >= 3 && mo <= 10) ? { days: [0, 2, 3, 4, 5, 6], o: 540, c: 1020 } : { days: [0, 4, 5, 6], o: 600, c: 960 };
+  const fmt = m => { const hh = Math.floor(m / 60), h12 = hh % 12 || 12; return h12 + (hh < 12 ? 'am' : 'pm'); };
+  const s = sched(month);
+  if (s.days.includes(day) && mins >= s.o && mins < s.c) { el.classList.add('open'); label.textContent = `Open now · until ${fmt(s.c)}`; return; }
+  for (let i = 0; i < 8; i++) {
+    const d = (day + i) % 7;
+    if (!s.days.includes(d)) continue;
+    if (i === 0 && mins >= s.o) continue;
+    label.textContent = `Closed now · opens ${i === 0 ? 'today' : i === 1 ? 'tomorrow' : LONG[d]} ${fmt(s.o)}`;
+    return;
+  }
+}
+openStatus();
+
+/* ---------------------------------------------------------------------
+   The Rose Letter
+   --------------------------------------------------------------------- */
+$('#letter').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = $('#em').value.trim(), msg = $('#formMsg');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) { msg.textContent = 'That address does not look quite right.'; return; }
+  msg.textContent = 'Thank you. The next letter goes out with the first frost.';
+  e.target.reset();
+});
+
+/* ---------------------------------------------------------------------
+   Loop
+   --------------------------------------------------------------------- */
+function measureAll() {
+  vw = innerWidth; vh = innerHeight;
+  for (const s of seqs) s.measure();
+  measureBg();
+  petal.measure();
+  lastBg = ''; lastY = -1;
+}
+function loop() {
+  const sy = scrollY;
+  for (const s of seqs) s.update(sy);
+  if (sy !== lastY) { updateBg(sy); misc(sy); lastY = sy; }
+  petal.update(sy);
+  requestAnimationFrame(loop);
+}
+let rt;
+addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(measureAll, 140); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureAll);
+addEventListener('load', measureAll);
+measureAll();
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
