@@ -2,23 +2,31 @@ package com.imran.examcountdown
 
 import android.Manifest
 import android.app.Activity
+import android.app.UiModeManager
+import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.os.ext.SdkExtensions
+import android.provider.MediaStore
 import android.provider.Settings
-import android.view.Gravity
 import android.view.View
 import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.Toast
 import com.imran.examcountdown.core.Choices
 import com.imran.examcountdown.core.Exam
 import com.imran.examcountdown.core.MotionPref
@@ -27,27 +35,32 @@ import com.imran.examcountdown.core.ReminderSettings
 import com.imran.examcountdown.core.Season
 import com.imran.examcountdown.core.SeasonCalculator
 import com.imran.examcountdown.core.Subject
+import com.imran.examcountdown.core.ThemeMode
 import com.imran.examcountdown.data.AppClock
+import com.imran.examcountdown.data.Avatar
 import com.imran.examcountdown.data.Store
 import com.imran.examcountdown.notify.AppVisibility
 import com.imran.examcountdown.notify.Notifier
 import com.imran.examcountdown.notify.ReminderScheduler
 import com.imran.examcountdown.ui.AmbientTicker
 import com.imran.examcountdown.ui.Fonts
+import com.imran.examcountdown.ui.Haptics
 import com.imran.examcountdown.ui.MATCH
 import com.imran.examcountdown.ui.MotionPolicy
-import com.imran.examcountdown.ui.Palette
+import com.imran.examcountdown.ui.Ui
+import com.imran.examcountdown.ui.WRAP
 import com.imran.examcountdown.ui.dp
 import com.imran.examcountdown.ui.flp
 import com.imran.examcountdown.ui.screens.HomeScreen
+import com.imran.examcountdown.ui.screens.ProfileEditor
 import com.imran.examcountdown.ui.screens.Screen
 import com.imran.examcountdown.ui.screens.SettingsScreen
 import com.imran.examcountdown.ui.screens.SetupScreen
 import com.imran.examcountdown.ui.screens.StudyScreen
 import com.imran.examcountdown.ui.screens.TimetableScreen
 import com.imran.examcountdown.ui.widgets.ConfettiView
+import com.imran.examcountdown.ui.widgets.IntroView
 import com.imran.examcountdown.ui.widgets.NavBar
-import com.imran.examcountdown.ui.widgets.ParticleFieldView
 
 /** Everything the screens read, loaded from [Store]. */
 data class AppData(
@@ -69,6 +82,7 @@ class MainActivity : Activity() {
         const val TAB_SETTINGS = 3
         private const val STATE_TAB = "tab"
         private const val REQUEST_NOTIFICATIONS = 11
+        private const val REQUEST_PHOTO = 12
     }
 
     lateinit var store: Store
@@ -81,8 +95,11 @@ class MainActivity : Activity() {
         private set
     val ambient = AmbientTicker()
 
+    /** True while the opening animation is on screen. */
+    var introRunning = false
+        private set
+
     private lateinit var root: FrameLayout
-    private lateinit var particles: ParticleFieldView
     private lateinit var content: FrameLayout
     private lateinit var nav: NavBar
     private lateinit var confetti: ConfettiView
@@ -90,9 +107,13 @@ class MainActivity : Activity() {
     private val shownBefore = BooleanArray(4)
     private var currentTab = -1
     private var setup: SetupScreen? = null
+    private var editor: ProfileEditor? = null
+    private var intro: IntroView? = null
     private var insetTop = 0
     private var insetBottom = 0
     private var resumed = false
+    private var celebrated = false
+    private var avatarCache: Pair<Long, Bitmap?>? = null
     private var pendingPermission: ((Boolean) -> Unit)? = null
     private val handler = Handler(Looper.getMainLooper())
     private val ticker = Runnable { tick() }
@@ -103,20 +124,53 @@ class MainActivity : Activity() {
 
     private val current: Screen? get() = if (currentTab >= 0) screens[currentTab] else null
 
+    /** The open profile editor, if any (tests hand it a photo directly). */
+    val profileEditor: ProfileEditor? get() = editor
+
+    val currentScreen: Screen? get() = current
+
     // ------------------------------------------------------------------ lifecycle
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(newBase)
+        // Before Android 12 there is no per-app night mode, so apply a chosen theme here.
+        if (Build.VERSION.SDK_INT < 31) {
+            val night = when (Store(newBase).theme) {
+                ThemeMode.LIGHT -> Configuration.UI_MODE_NIGHT_NO
+                ThemeMode.DARK -> Configuration.UI_MODE_NIGHT_YES
+                ThemeMode.SYSTEM -> null
+            }
+            if (night != null) applyOverrideConfiguration(Configuration().apply { uiMode = night })
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Fonts.init(this)
+        Ui.apply(this)
         store = Store(this)
+        Haptics.enabled = store.haptics
         data = loadData()
         season = SeasonCalculator.compute(data.exams, AppClock.now(), data.markedDone)
         policy = MotionPolicy.resolve(this, data.motion)
-        setupWindow()
         buildViews()
-        if (Build.VERSION.SDK_INT >= 31) setupSplashExit()
+        // After setContentView: the window's decor (and its insets controller) now exists.
+        setupWindow()
+        if (Build.VERSION.SDK_INT >= 31) {
+            // The launch window is plain background colour, identical to the intro's first
+            // frame, so remove it at once: no second splash and no blank flash.
+            splashScreen.setOnExitAnimationListener { it.remove() }
+        }
+
+        // The full opening plays only on a cold launch (fresh process), never on rotation or
+        // when returning to the app, and not with reduced motion or when switched off.
+        val coldLaunch = !ExamCountdownApp.introHandled
+        ExamCountdownApp.introHandled = true
+        val playIntro = savedInstanceState == null && coldLaunch && store.introEnabled && policy.motion
+
         val tab = savedInstanceState?.getInt(STATE_TAB, TAB_HOME) ?: intent.getIntExtra(EXTRA_TAB, TAB_HOME)
         if (store.setupDone) showTab(tab, animate = false) else showSetup()
+        if (playIntro) playIntro()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -128,11 +182,11 @@ class MainActivity : Activity() {
         super.onResume()
         resumed = true
         AppVisibility.resumed = true
-        // The app may have been in the background for hours: reload and recompute everything
+        // The app may have been in the background for hours: reload everything and recompute
         // from the current time rather than from anything cached.
         data = loadData()
         screens.forEach { it?.onDataChanged() }
-        current?.onShow(false)
+        if (setup == null && !introRunning) current?.onShow(false)
         if (!powerReceiverRegistered) {
             registerReceiver(powerReceiver, IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED))
             powerReceiverRegistered = true
@@ -147,8 +201,8 @@ class MainActivity : Activity() {
         resumed = false
         AppVisibility.resumed = false
         handler.removeCallbacks(ticker)
+        // Decorative animation stops while the app is in the background.
         ambient.stop()
-        particles.animating = false
         if (powerReceiverRegistered) {
             unregisterReceiver(powerReceiver)
             powerReceiverRegistered = false
@@ -162,6 +216,14 @@ class MainActivity : Activity() {
 
     @Suppress("OVERRIDE_DEPRECATION")
     override fun onBackPressed() {
+        intro?.let {
+            it.skip()
+            return
+        }
+        editor?.let {
+            it.back()
+            return
+        }
         val s = setup
         if (s != null) {
             if (!s.back()) super.onBackPressed()
@@ -177,28 +239,32 @@ class MainActivity : Activity() {
     // ------------------------------------------------------------------ window & views
 
     private fun setupWindow() {
-        // Draw edge to edge; screens pad themselves using the system bar insets.
+        // Edge to edge: screens pad themselves using the system bar insets.
         if (Build.VERSION.SDK_INT >= 30) {
             window.setDecorFitsSystemWindows(false)
+            val light = if (Ui.c.dark) 0 else WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+            window.decorView.windowInsetsController?.setSystemBarsAppearance(
+                light,
+                WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
+            )
         } else {
+            var flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            if (!Ui.c.dark) {
+                flags = flags or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                if (Build.VERSION.SDK_INT >= 27) flags = flags or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+            }
             @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            window.decorView.systemUiVisibility = flags
         }
         @Suppress("DEPRECATION")
         window.statusBarColor = Color.TRANSPARENT
+        // Android 8.0 can't draw dark navigation buttons, so give them a scrim on light backgrounds.
         @Suppress("DEPRECATION")
-        window.navigationBarColor = Color.TRANSPARENT
+        window.navigationBarColor = if (Build.VERSION.SDK_INT < 27 && !Ui.c.dark) 0x66000000 else Color.TRANSPARENT
     }
 
     private fun buildViews() {
-        root = FrameLayout(this).apply {
-            background = GradientDrawable(
-                GradientDrawable.Orientation.TOP_BOTTOM,
-                intArrayOf(Palette.BG_TOP, Palette.BG_MID, Palette.BG_BOTTOM),
-            )
-        }
-        particles = ParticleFieldView(this)
+        root = FrameLayout(this).apply { setBackgroundColor(Ui.c.bg) }
         content = FrameLayout(this)
         nav = NavBar(
             this,
@@ -206,26 +272,27 @@ class MainActivity : Activity() {
             listOf(R.drawable.ic_home, R.drawable.ic_timeline, R.drawable.ic_study, R.drawable.ic_settings),
         ) { showTab(it, animate = true) }
         confetti = ConfettiView(this)
-        root.addView(particles, flp(MATCH, MATCH))
-        root.addView(content, flp(MATCH, MATCH))
-        root.addView(nav, flp(MATCH, dp(68), Gravity.BOTTOM).apply {
-            leftMargin = dp(16)
-            rightMargin = dp(16)
-            bottomMargin = dp(12)
-        })
+        // Content and navigation are stacked, so the bar can never cover anything.
+        val column = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(content, LinearLayout.LayoutParams(MATCH, 0, 1f))
+            addView(nav, LinearLayout.LayoutParams(MATCH, WRAP))
+        }
+        root.addView(column, flp(MATCH, MATCH))
         root.addView(confetti, flp(MATCH, MATCH))
-        ambient.add(particles)
         root.setOnApplyWindowInsetsListener { _, insets ->
             val top: Int
             val bottom: Int
             val left: Int
             val right: Int
+            val ime: Int
             if (Build.VERSION.SDK_INT >= 30) {
                 val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
                 top = bars.top
                 bottom = bars.bottom
                 left = bars.left
                 right = bars.right
+                ime = insets.getInsets(WindowInsets.Type.ime()).bottom
             } else {
                 @Suppress("DEPRECATION")
                 top = insets.systemWindowInsetTop
@@ -235,32 +302,42 @@ class MainActivity : Activity() {
                 left = insets.systemWindowInsetLeft
                 @Suppress("DEPRECATION")
                 right = insets.systemWindowInsetRight
+                ime = 0
             }
             insetTop = top
             insetBottom = bottom
-            content.setPadding(left, 0, right, 0)
-            (nav.layoutParams as FrameLayout.LayoutParams).apply {
-                leftMargin = dp(16) + left
-                rightMargin = dp(16) + right
-                bottomMargin = dp(12) + bottom
-            }
-            nav.requestLayout()
+            column.setPadding(left, 0, right, 0)
+            nav.setBottomInset(bottom)
             screens.forEach { it?.applyInsets(top, bottom) }
             setup?.applyInsets(top, bottom)
+            editor?.applyInsets(top, maxOf(bottom, ime))
             insets
         }
         setContentView(root)
     }
 
-    private fun setupSplashExit() {
-        splashScreen.setOnExitAnimationListener { view ->
-            if (!policy.motion) {
-                view.remove()
-                return@setOnExitAnimationListener
-            }
-            view.iconView?.animate()?.scaleX(1.12f)?.scaleY(1.12f)?.setDuration(300)?.start()
-            view.animate().alpha(0f).setStartDelay(60).setDuration(320).withEndAction { view.remove() }.start()
+    // ------------------------------------------------------------------ intro
+
+    private fun playIntro() {
+        val view = IntroView(this)
+        intro = view
+        introRunning = true
+        // Settle into setup's emblem on first run, otherwise into Home's header emblem.
+        val target: () -> View? = { setup?.emblem ?: (screens[TAB_HOME] as? HomeScreen)?.emblem?.takeIf { currentTab == TAB_HOME } }
+        target()?.visibility = View.INVISIBLE
+        view.target = target
+        view.onReveal = {
+            // Hand over: Home (or setup) staggers in underneath the dissolving intro.
+            (screens[TAB_HOME] as? HomeScreen)?.takeIf { currentTab == TAB_HOME && setup == null }?.playEntrance()
         }
+        view.onFinished = {
+            intro = null
+            introRunning = false
+            current?.onShow(false)
+            tick()
+        }
+        root.addView(view, flp(MATCH, MATCH))
+        view.post { view.play() }
     }
 
     // ------------------------------------------------------------------ navigation
@@ -279,16 +356,23 @@ class MainActivity : Activity() {
             it.applyInsets(insetTop, insetBottom)
         }
         previous?.onHide()
-        previous?.root?.visibility = View.GONE
         currentTab = index
-        screen.root.visibility = View.VISIBLE
-        if (animate && policy.motion) {
-            screen.root.alpha = 0f
-            screen.root.translationY = dp(14).toFloat()
-            screen.root.animate().alpha(1f).translationY(0f).setDuration(240).start()
+        val incoming = screen.root
+        incoming.visibility = View.VISIBLE
+        if (animate && policy.motion && previous != null) {
+            // 240 ms crossfade with a slight rise; the outgoing tab fades faster.
+            val outgoing = previous.root
+            outgoing.animate().alpha(0f).setDuration(120).withEndAction {
+                outgoing.visibility = View.GONE
+                outgoing.alpha = 1f
+            }.start()
+            incoming.alpha = 0f
+            incoming.translationY = dp(10).toFloat()
+            incoming.animate().alpha(1f).translationY(0f).setStartDelay(60).setDuration(240).start()
         } else {
-            screen.root.alpha = 1f
-            screen.root.translationY = 0f
+            previous?.root?.visibility = View.GONE
+            incoming.alpha = 1f
+            incoming.translationY = 0f
         }
         nav.visibility = View.VISIBLE
         nav.select(index, animate)
@@ -315,7 +399,6 @@ class MainActivity : Activity() {
     private fun showSetup() {
         val s = SetupScreen(this)
         setup = s
-        nav.visibility = View.GONE
         root.addView(s.root, root.indexOfChild(confetti), flp(MATCH, MATCH))
         s.applyInsets(insetTop, insetBottom)
         root.requestApplyInsets()
@@ -325,13 +408,110 @@ class MainActivity : Activity() {
         store.setupDone = true
         val s = setup ?: return
         setup = null
+        showTab(TAB_HOME, animate = false)
         val view = s.root
         if (policy.motion) {
-            view.animate().alpha(0f).setDuration(260).withEndAction { root.removeView(view) }.start()
+            view.animate().alpha(0f).setDuration(240).withEndAction { root.removeView(view) }.start()
+            (screens[TAB_HOME] as? HomeScreen)?.playEntrance()
         } else {
             root.removeView(view)
         }
-        showTab(TAB_HOME, animate = true)
+    }
+
+    fun openProfileEditor() {
+        if (editor != null) return
+        val e = ProfileEditor(this)
+        editor = e
+        root.addView(e.root, root.indexOfChild(confetti), flp(MATCH, MATCH))
+        e.applyInsets(insetTop, insetBottom)
+        root.requestApplyInsets()
+        if (policy.motion) {
+            e.root.alpha = 0f
+            e.root.translationY = dp(24).toFloat()
+            e.root.animate().alpha(1f).translationY(0f).setDuration(240).start()
+        }
+    }
+
+    fun closeProfileEditor() {
+        val e = editor ?: return
+        editor = null
+        currentFocus?.let { v ->
+            (getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager)
+                ?.hideSoftInputFromWindow(v.windowToken, 0)
+        }
+        val view = e.root
+        if (policy.motion) {
+            view.animate().alpha(0f).translationY(dp(24).toFloat()).setDuration(200).withEndAction { root.removeView(view) }.start()
+        } else {
+            root.removeView(view)
+        }
+        current?.onShow(false)
+    }
+
+    // ------------------------------------------------------------------ profile photo
+
+    /**
+     * Opens Android's photo picker (no storage permission needed). Falls back to the system
+     * document picker on phones without it.
+     */
+    fun pickPhoto() {
+        val picker = Build.VERSION.SDK_INT >= 33 ||
+            (Build.VERSION.SDK_INT >= 30 && SdkExtensions.getExtensionVersion(Build.VERSION_CODES.R) >= 2)
+        val intents = buildList {
+            if (picker) add(Intent(MediaStore.ACTION_PICK_IMAGES).setType("image/*"))
+            add(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("image/*"))
+            add(Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE).setType("image/*"))
+        }
+        for (intent in intents) {
+            try {
+                @Suppress("DEPRECATION")
+                startActivityForResult(intent, REQUEST_PHOTO)
+                return
+            } catch (e: ActivityNotFoundException) {
+                // Try the next picker.
+            }
+        }
+        Toast.makeText(this, "No photo picker is available on this phone.", Toast.LENGTH_LONG).show()
+    }
+
+    @Deprecated("Framework activity result API")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, result: Intent?) {
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, result)
+        if (requestCode != REQUEST_PHOTO) return
+        val uri: Uri? = result?.data
+        if (resultCode != RESULT_OK || uri == null) {
+            editor?.onPickCancelled()
+            return
+        }
+        handlePickedPhoto(uri)
+    }
+
+    /** Decodes off the main thread so large photos never freeze the screen. */
+    fun handlePickedPhoto(uri: Uri) {
+        val app = applicationContext
+        Thread {
+            val bitmap = Avatar.decodeForCrop(app, uri)
+            handler.post { editor?.onPhotoPicked(bitmap) }
+        }.start()
+    }
+
+    /** The saved profile photo at about [sizePx], cached per saved version. */
+    fun avatarBitmap(sizePx: Int): Bitmap? {
+        val version = store.avatarVersion
+        if (version == 0L) return null
+        val cached = avatarCache
+        if (cached != null && cached.first == version) return cached.second
+        val bitmap = Avatar.load(this, maxOf(sizePx, dp(132)))
+        avatarCache = version to bitmap
+        return bitmap
+    }
+
+    fun onAvatarChanged() {
+        avatarCache = null
+        data = loadData()
+        screens.forEach { it?.onDataChanged() }
+        current?.onShow(false)
     }
 
     // ------------------------------------------------------------------ ticking & motion
@@ -353,13 +533,20 @@ class MainActivity : Activity() {
     fun applyMotion() {
         policy = MotionPolicy.resolve(this, data.motion)
         nav.animateChanges = policy.motion
-        particles.animating = resumed && policy.ambient && (setup != null || currentTab == TAB_HOME)
         if (resumed && policy.ambient) ambient.start() else ambient.stop()
         screens.forEach { it?.onMotionChanged() }
     }
 
-    fun celebrate() {
-        if (policy.motion) confetti.burst()
+    /**
+     * Confetti after the final exam has actually finished. Plays once per launch unless
+     * [force]d (the "Celebrate again" button); skipped with reduced motion.
+     */
+    fun celebrate(force: Boolean) {
+        if (!force && celebrated) return
+        celebrated = true
+        if (!policy.motion) return
+        Haptics.confirm(confetti)
+        confetti.burst()
     }
 
     // ------------------------------------------------------------------ data changes
@@ -409,6 +596,27 @@ class MainActivity : Activity() {
         store.motion = pref
         data = loadData()
         applyMotion()
+    }
+
+    fun setHaptics(on: Boolean) {
+        store.haptics = on
+        Haptics.enabled = on
+    }
+
+    /** Switches light/dark. On Android 12+ the system also uses it for the launch window. */
+    fun setTheme(mode: ThemeMode) {
+        if (mode == store.theme) return
+        store.theme = mode
+        if (Build.VERSION.SDK_INT >= 31) {
+            getSystemService(UiModeManager::class.java)?.setApplicationNightMode(
+                when (mode) {
+                    ThemeMode.SYSTEM -> UiModeManager.MODE_NIGHT_AUTO
+                    ThemeMode.LIGHT -> UiModeManager.MODE_NIGHT_NO
+                    ThemeMode.DARK -> UiModeManager.MODE_NIGHT_YES
+                },
+            )
+        }
+        recreate()
     }
 
     fun rescheduleAlarms() = ReminderScheduler.reschedule(this)
@@ -466,11 +674,12 @@ class MainActivity : Activity() {
         try {
             startActivity(intent)
         } catch (e: RuntimeException) {
-            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:$packageName")))
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
         }
     }
 
     fun resetAllData() {
+        Avatar.remove(this)
         store.resetAll()
         ReminderScheduler.reschedule(this)
         recreate()
@@ -478,8 +687,8 @@ class MainActivity : Activity() {
 
     fun versionName(): String = try {
         @Suppress("DEPRECATION")
-        packageManager.getPackageInfo(packageName, 0).versionName ?: "1.0"
+        packageManager.getPackageInfo(packageName, 0).versionName ?: "1.1.0"
     } catch (e: PackageManager.NameNotFoundException) {
-        "1.0"
+        "1.1.0"
     }
 }

@@ -13,6 +13,7 @@ import com.imran.examcountdown.core.MotionPref
 import com.imran.examcountdown.core.Profile
 import com.imran.examcountdown.core.ReminderSettings
 import com.imran.examcountdown.core.Subject
+import com.imran.examcountdown.core.ThemeMode
 import com.imran.examcountdown.core.Timetable
 import org.json.JSONArray
 import org.json.JSONException
@@ -100,6 +101,24 @@ class Store(context: Context) {
         get() = decodeFocus(prefs.getString(K_FOCUS, null))
         set(value) = prefs.edit().putString(K_FOCUS, encodeFocus(value)).apply()
 
+    var theme: ThemeMode
+        get() = enumOrNull<ThemeMode>(prefs.getString(K_THEME, null)) ?: ThemeMode.SYSTEM
+        set(value) = prefs.edit().putString(K_THEME, value.name).apply()
+
+    /** Play the school-logo opening on cold launch. */
+    var introEnabled: Boolean
+        get() = prefs.getBoolean(K_INTRO, true)
+        set(value) = prefs.edit().putBoolean(K_INTRO, value).apply()
+
+    var haptics: Boolean
+        get() = prefs.getBoolean(K_HAPTICS, true)
+        set(value) = prefs.edit().putBoolean(K_HAPTICS, value).apply()
+
+    /** Changes whenever the profile photo is saved or removed; 0 means no photo. */
+    var avatarVersion: Long
+        get() = prefs.getLong(K_AVATAR, 0L)
+        set(value) = prefs.edit().putLong(K_AVATAR, value).apply()
+
     fun checklist(key: String, defaults: List<String>): List<CheckItem> {
         val json = prefs.getString(K_CHECKLIST + key, null)
             ?: return defaults.mapIndexed { i, text -> CheckItem(i + 1L, text) }
@@ -140,6 +159,10 @@ class Store(context: Context) {
         private const val K_MOTION = "motion"
         private const val K_FOCUS = "focus_v1"
         private const val K_CHECKLIST = "checklist_v1:"
+        private const val K_THEME = "theme"
+        private const val K_INTRO = "intro_enabled"
+        private const val K_HAPTICS = "haptics"
+        private const val K_AVATAR = "avatar_version"
 
         fun encodeExams(list: List<Exam>): String {
             val array = JSONArray()

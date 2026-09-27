@@ -4,15 +4,10 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Canvas
-import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
-import android.graphics.Shader
-import android.os.Build
-import android.util.TypedValue
 import android.view.Gravity
-import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
@@ -35,29 +30,32 @@ import com.imran.examcountdown.core.Phase
 import com.imran.examcountdown.core.Season
 import com.imran.examcountdown.core.Subject
 import com.imran.examcountdown.data.AppClock
+import com.imran.examcountdown.ui.AmbientListener
 import com.imran.examcountdown.ui.Dialogs
 import com.imran.examcountdown.ui.Fonts
+import com.imran.examcountdown.ui.Haptics
 import com.imran.examcountdown.ui.MATCH
-import com.imran.examcountdown.ui.Palette
 import com.imran.examcountdown.ui.Shapes
+import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.WRAP
-import com.imran.examcountdown.ui.caps
 import com.imran.examcountdown.ui.column
 import com.imran.examcountdown.ui.dp
 import com.imran.examcountdown.ui.dpf
-import com.imran.examcountdown.ui.flp
-import com.imran.examcountdown.ui.icon
+import com.imran.examcountdown.ui.heading
+import com.imran.examcountdown.ui.label
 import com.imran.examcountdown.ui.lp
 import com.imran.examcountdown.ui.row
+import com.imran.examcountdown.ui.separator
 import com.imran.examcountdown.ui.text
 import com.imran.examcountdown.ui.update
 import com.imran.examcountdown.ui.widgets.ButtonStyle
-import com.imran.examcountdown.ui.widgets.FocusDialView
+import com.imran.examcountdown.ui.widgets.ProgressTrack
 import com.imran.examcountdown.ui.widgets.RollingNumberView
 import com.imran.examcountdown.ui.widgets.SegmentedControl
 import com.imran.examcountdown.ui.widgets.pillButton
+import com.imran.examcountdown.ui.widgets.setLeadingIcon
 
-class StudyScreen(host: MainActivity) : Screen(host) {
+class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
 
     private val scroll = ScrollView(ctx).apply {
         isVerticalScrollBarEnabled = false
@@ -66,23 +64,29 @@ class StudyScreen(host: MainActivity) : Screen(host) {
     override val root: View get() = scroll
     private val content = ctx.column()
 
-    // ---------------------------------------------------------------- focus timer views
+    // ---------------------------------------------------------------- focus timer
     private val modeControl = SegmentedControl(ctx, listOf("Focus · 25 min", "Break · 5 min"))
-    private val dial = FocusDialView(ctx)
-    private val dialFrame = SquareFrame(ctx, ctx.dp(250))
     private val minutes = RollingNumberView(ctx)
     private val seconds = RollingNumberView(ctx)
-    private val colon = ctx.text(":", 30f, Palette.TEXT_2, Fonts.light) { gravity = Gravity.CENTER }
-    private val phaseLabel = ctx.caps("", Palette.TEXT_2, 11.5f)
-    private val primary = ctx.pillButton("Start", R.drawable.ic_play) { onPrimary() }
+    private val colon = ctx.text(":", 40f, Ui.c.text3, Fonts.serif) { gravity = Gravity.CENTER }
+    private val timerRow = ctx.row {
+        gravity = Gravity.BOTTOM
+        addView(minutes, lp(WRAP, WRAP))
+        addView(colon, lp(WRAP, WRAP))
+        addView(seconds, lp(WRAP, WRAP))
+    }
+    private val track = ProgressTrack(ctx)
+    private val phaseText = ctx.text("", 14.5f, Ui.c.text2, Fonts.sansMedium)
+    private val primary = ctx.pillButton("Start focus", R.drawable.ic_play) { onPrimary() }
     private val reset = ctx.pillButton("Reset", R.drawable.ic_replay, ButtonStyle.SECONDARY) { onReset() }
-    private val sessions = ctx.text("", 13.5f, Palette.TEXT_3) { gravity = Gravity.CENTER }
+    private val sessions = ctx.text("", 13.5f, Ui.c.text3)
 
     private var state = FocusState()
     private var lastPhase: FocusPhase? = null
+    private var smoothing = false
 
     // ---------------------------------------------------------------- checklists
-    private val overall = ctx.text("", 14f, Palette.TEXT_2, Fonts.medium)
+    private val overall = ctx.text("", 14f, Ui.c.text2, Fonts.sansMedium)
     private val cardsContainer = ctx.column()
     private val cards = LinkedHashMap<Subject, ChecklistCard>()
     private var builtFor = ""
@@ -90,59 +94,42 @@ class StudyScreen(host: MainActivity) : Screen(host) {
 
     init {
         scroll.addView(content, FrameLayout.LayoutParams(MATCH, WRAP))
-        content.addView(ctx.text("Study", 30f, Palette.TEXT, Fonts.bold), lp { topMargin = ctx.dp(10) })
-        content.addView(ctx.text("Focus timer and revision checklists", 14.5f, Palette.TEXT_2), lp { topMargin = ctx.dp(6) })
-        content.addView(focusCard(), lp { topMargin = ctx.dp(18) })
+        content.addView(ctx.heading("Study", 30f), lp { topMargin = ctx.dp(8) })
+        content.addView(ctx.text("Focus timer and revision checklists", 15f, Ui.c.text2), lp { topMargin = ctx.dp(6) })
+
+        content.addView(ctx.label("Focus timer"), lp { topMargin = ctx.dp(24) })
+        content.addView(modeControl, lp { topMargin = ctx.dp(12) })
+        content.addView(timerRow, lp(WRAP, WRAP) { topMargin = ctx.dp(18) })
+        content.addView(track, lp(MATCH, ctx.dp(4)) { topMargin = ctx.dp(12) })
+        content.addView(phaseText, lp { topMargin = ctx.dp(10) })
         content.addView(ctx.row {
-            addView(ctx.text("Revision checklists", 20f, Palette.TEXT, Fonts.semibold), lp(0, WRAP, 1f))
+            addView(primary, lp(0, WRAP, 1f))
+            addView(reset, lp(WRAP, WRAP) { marginStart = dp(10) })
+        }, lp { topMargin = ctx.dp(18) })
+        content.addView(sessions, lp { topMargin = ctx.dp(12) })
+
+        content.addView(ctx.separator(), lp(MATCH, WRAP) { topMargin = ctx.dp(26) })
+        content.addView(ctx.row {
+            addView(ctx.label("Revision checklists"), lp(0, WRAP, 1f))
             addView(overall)
-        }, lp { topMargin = ctx.dp(26) })
+        }, lp { topMargin = ctx.dp(22) })
         content.addView(
-            ctx.text("Tap a task to tick it off. Use the pencil to edit or delete it.", 13.5f, Palette.TEXT_3),
+            ctx.text("Tap a task to tick it off. Use the pencil to edit or delete it.", 14f, Ui.c.text3),
             lp { topMargin = ctx.dp(6) },
         )
-        content.addView(cardsContainer, lp { topMargin = ctx.dp(12) })
+        content.addView(cardsContainer, lp { topMargin = ctx.dp(8) })
+
+        val digit = ctx.dp(60).toFloat()
+        minutes.textSizePx = digit
+        seconds.textSizePx = digit
+        minutes.verticalGapPx = digit * 0.06f
+        seconds.verticalGapPx = digit * 0.06f
+        colon.setPadding(ctx.dp(4), 0, ctx.dp(4), (digit * 0.14f).toInt())
 
         modeControl.onSelect = { index ->
             state = FocusTimer.select(state, FocusMode.entries[index])
             saveFocus()
         }
-    }
-
-    private fun focusCard(): View = ctx.column {
-        background = Shapes.card(ctx, 28)
-        setPadding(dp(18), dp(18), dp(18), dp(20))
-        gravity = Gravity.CENTER_HORIZONTAL
-        addView(modeControl, lp())
-
-        dialFrame.addView(dial, flp(MATCH, MATCH))
-        val center = ctx.column {
-            gravity = Gravity.CENTER_HORIZONTAL
-            addView(ctx.row {
-                gravity = Gravity.CENTER
-                addView(minutes, lp(WRAP, WRAP))
-                addView(colon, lp(WRAP, WRAP))
-                addView(seconds, lp(WRAP, WRAP))
-            })
-            addView(phaseLabel, lp(WRAP, WRAP) { topMargin = dp(6) })
-        }
-        dialFrame.addView(center, flp(WRAP, WRAP, Gravity.CENTER))
-        dialFrame.onSize = { size ->
-            val px = size * 0.2f
-            minutes.textSizePx = px
-            seconds.textSizePx = px
-            minutes.font = Fonts.light
-            seconds.font = Fonts.light
-            colon.setTextSize(TypedValue.COMPLEX_UNIT_PX, px * 0.8f)
-        }
-        addView(dialFrame, lp(WRAP, WRAP) { topMargin = dp(14) })
-
-        addView(ctx.row {
-            gravity = Gravity.CENTER
-            addView(primary, lp(0, WRAP, 1f))
-            addView(reset, lp(WRAP, WRAP) { marginStart = dp(10) })
-        }, lp { topMargin = dp(16) })
-        addView(sessions, lp { topMargin = dp(14) })
     }
 
     // ---------------------------------------------------------------- lifecycle
@@ -159,6 +146,11 @@ class StudyScreen(host: MainActivity) : Screen(host) {
         refreshFocus(animate = false)
         updateCards(host.season)
         onMotionChanged()
+        host.ambient.add(this)
+    }
+
+    override fun onHide() {
+        host.ambient.remove(this)
     }
 
     override fun onDataChanged() {
@@ -169,10 +161,11 @@ class StudyScreen(host: MainActivity) : Screen(host) {
         minutes.animateChanges = host.policy.motion
         seconds.animateChanges = host.policy.motion
         modeControl.animateChanges = host.policy.motion
+        smoothing = host.policy.ambient
     }
 
     override fun applyInsets(top: Int, bottom: Int) {
-        content.setPadding(ctx.dp(20), top + ctx.dp(8), ctx.dp(20), bottom + ctx.dp(120))
+        content.setPadding(ctx.dp(20), top + ctx.dp(8), ctx.dp(20), ctx.dp(24))
     }
 
     override fun tick(season: Season) {
@@ -187,6 +180,13 @@ class StudyScreen(host: MainActivity) : Screen(host) {
         return (if (rest == 0L) 1000L else rest) + 5
     }
 
+    /** Smooth progress: while running, the line follows the clock every frame. */
+    override fun onAmbientFrame(frameTimeMs: Long) {
+        if (!state.running || !smoothing) return
+        val left = FocusTimer.remaining(state, AppClock.moment(ctx))
+        track.set(left.toFloat() / state.mode.durationMs, animate = false)
+    }
+
     /** Opens the checklist for [subject] and scrolls it into view. */
     fun reveal(subject: Subject?) {
         if (subject == null) return
@@ -195,7 +195,7 @@ class StudyScreen(host: MainActivity) : Screen(host) {
         cards.forEach { (s, card) -> card.setExpanded(s == subject, animate = false) }
         val card = cards[subject] ?: return
         scroll.post {
-            val y = cardsContainer.top + card.view.top - ctx.dp(12)
+            val y = cardsContainer.top + card.view.top - ctx.dp(8)
             if (host.policy.motion) scroll.smoothScrollTo(0, y) else scroll.scrollTo(0, y)
         }
     }
@@ -215,17 +215,17 @@ class StudyScreen(host: MainActivity) : Screen(host) {
         val totalSeconds = (left + 999) / 1000
         minutes.setValue(totalSeconds / 60)
         seconds.setValue(totalSeconds % 60)
-        dial.mode = state.mode
-        dial.setFraction(left.toFloat() / state.mode.durationMs, animate)
+        track.fillColor = if (state.mode == FocusMode.FOCUS) Ui.c.green else Ui.c.gold
+        if (!state.running || !smoothing) track.set(left.toFloat() / state.mode.durationMs, animate)
         modeControl.select(state.mode.ordinal)
 
         val phase = FocusTimer.phase(state, now)
-        phaseLabel.update(
+        phaseText.update(
             when (phase) {
-                FocusPhase.READY -> if (state.mode == FocusMode.FOCUS) "Ready to focus" else "Ready for a break"
-                FocusPhase.RUNNING -> if (state.mode == FocusMode.FOCUS) "Focusing…" else "On a break"
-                FocusPhase.PAUSED -> "Paused"
-                FocusPhase.FINISHED -> if (state.finished == FocusMode.BREAK) "Break over" else "Session complete!"
+                FocusPhase.READY -> if (state.mode == FocusMode.FOCUS) "Ready for 25 minutes of focus." else "Ready for a 5-minute break."
+                FocusPhase.RUNNING -> if (state.mode == FocusMode.FOCUS) "Focusing… The line shows the time left." else "On a break. Stretch, drink some water."
+                FocusPhase.PAUSED -> "Paused. Resume whenever you’re ready."
+                FocusPhase.FINISHED -> if (state.finished == FocusMode.BREAK) "Break over." else "Session complete! Time for a 5-minute break."
             },
         )
         if (phase != lastPhase) {
@@ -239,19 +239,17 @@ class StudyScreen(host: MainActivity) : Screen(host) {
                     else "Start 5-min break" to R.drawable.ic_coffee
             }
             primary.text = label
-            setButtonIcon(primary, icon)
+            primary.setLeadingIcon(icon)
             reset.visibility = if (phase == FocusPhase.READY) View.GONE else View.VISIBLE
         }
-        val count = state.sessionsToday
         sessions.update(
-            when (count) {
+            when (val count = state.sessionsToday) {
                 0 -> "No focus sessions yet today. You can pause any time."
                 1 -> "1 focus session done today. Nice!"
                 else -> "$count focus sessions done today. Great work!"
             },
         )
-        dialFrame.contentDescription = "${state.mode.label} timer, ${totalSeconds / 60} minutes " +
-            "${totalSeconds % 60} seconds left. ${phaseLabel.text}"
+        timerRow.contentDescription = "${state.mode.label} timer, ${totalSeconds / 60} minutes ${totalSeconds % 60} seconds left. ${phaseText.text}"
     }
 
     private fun onPrimary() {
@@ -278,20 +276,12 @@ class StudyScreen(host: MainActivity) : Screen(host) {
     }
 
     private fun celebrateSession() {
-        val feedback = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.LONG_PRESS
-        dialFrame.performHapticFeedback(feedback)
+        Haptics.confirm(timerRow)
         if (host.policy.motion) {
-            dialFrame.animate().scaleX(1.05f).scaleY(1.05f).setDuration(160).withEndAction {
-                dialFrame.animate().scaleX(1f).scaleY(1f).setInterpolator(OvershootInterpolator()).setDuration(320).start()
+            timerRow.animate().scaleX(1.04f).scaleY(1.04f).setDuration(150).withEndAction {
+                timerRow.animate().scaleX(1f).scaleY(1f).setInterpolator(OvershootInterpolator()).setDuration(300).start()
             }.start()
         }
-    }
-
-    private fun setButtonIcon(button: TextView, iconRes: Int) {
-        val d = ctx.getDrawable(iconRes)?.mutate() ?: return
-        d.setTintList(ColorStateList.valueOf(button.currentTextColor))
-        d.setBounds(0, 0, ctx.dp(20), ctx.dp(20))
-        button.setCompoundDrawablesRelative(d, null, null, null)
     }
 
     // ---------------------------------------------------------------- checklists
@@ -299,11 +289,11 @@ class StudyScreen(host: MainActivity) : Screen(host) {
     private fun buildCards() {
         cardsContainer.removeAllViews()
         cards.clear()
-        val season = host.season
-        season.exams.forEach { status ->
+        host.season.exams.forEachIndexed { i, status ->
             val card = ChecklistCard(status.exam.subject)
             cards[status.exam.subject] = card
-            cardsContainer.addView(card.view, lp { bottomMargin = ctx.dp(12) })
+            if (i > 0) cardsContainer.addView(ctx.separator())
+            cardsContainer.addView(card.view, lp())
             card.load()
             card.setExpanded(status.exam.subject == expanded, animate = false)
         }
@@ -324,11 +314,11 @@ class StudyScreen(host: MainActivity) : Screen(host) {
     private inner class ChecklistCard(val subject: Subject) {
         val view: LinearLayout
         private val ring = MiniRing(ctx)
-        private val title = ctx.text("", 16.5f, Palette.TEXT, Fonts.semibold)
-        private val caption = ctx.text("", 13f, Palette.TEXT_3)
+        private val title = ctx.text("", 16.5f, Ui.c.text, Fonts.sansSemibold)
+        private val caption = ctx.text("", 13.5f, Ui.c.text3)
         private val chevron = ImageView(ctx).apply {
             setImageResource(R.drawable.ic_expand)
-            imageTintList = ColorStateList.valueOf(Palette.TEXT_2)
+            imageTintList = ColorStateList.valueOf(Ui.c.text2)
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         }
         private val body = ctx.column()
@@ -341,34 +331,39 @@ class StudyScreen(host: MainActivity) : Screen(host) {
 
         init {
             val header = ctx.row {
-                setPadding(dp(16), dp(14), dp(12), dp(14))
-                background = Shapes.ripple(ctx, null, 22)
-                addView(ring, lp(dp(34), dp(34)))
+                minimumHeight = dp(64)
+                setPadding(0, dp(10), dp(4), dp(10))
+                background = Shapes.ripple(ctx, null, 12)
+                addView(ring, lp(dp(32), dp(32)))
                 addView(ctx.column {
                     addView(title)
-                    addView(caption, lp { topMargin = dp(3) })
+                    addView(caption, lp { topMargin = dp(2) })
                 }, lp(0, WRAP, 1f) { marginStart = dp(14) })
                 addView(chevron, lp(dp(24), dp(24)))
                 setOnClickListener { toggle() }
             }
-            val addRow = ctx.row {
-                setPadding(dp(12), dp(12), dp(12), dp(12))
-                background = Shapes.ripple(ctx, null, 14)
-                addView(ctx.icon(R.drawable.ic_add, Palette.VIOLET_LIGHT, 20))
-                addView(ctx.text("Add a task", 15f, Palette.VIOLET_LIGHT, Fonts.semibold), lp(0, WRAP, 1f) { marginStart = dp(12) })
+            val addRow = ctx.text("Add a task", 15f, Ui.c.greenText, Fonts.sansSemibold) {
+                gravity = Gravity.CENTER_VERTICAL
+                minHeight = dp(48)
+                setPadding(dp(2), 0, dp(12), 0)
+                setLeadingIcon(R.drawable.ic_add, 20)
+                background = Shapes.ripple(ctx, null, 12)
                 setOnClickListener { addItem() }
             }
-            val restore = ctx.text("Restore suggested tasks", 13f, Palette.TEXT_3, Fonts.medium) {
-                setPadding(dp(12), dp(8), dp(12), dp(8))
+            val restore = ctx.text("Restore suggested tasks", 13.5f, Ui.c.text3, Fonts.sansMedium) {
+                gravity = Gravity.CENTER_VERTICAL
+                minHeight = dp(44)
+                setPadding(dp(12), 0, dp(4), 0)
                 setOnClickListener { restoreDefaults() }
             }
-            body.setPadding(ctx.dp(8), 0, ctx.dp(8), ctx.dp(10))
+            body.setPadding(ctx.dp(46), 0, 0, ctx.dp(10))
             body.addView(itemsBox)
-            body.addView(addRow, lp { topMargin = ctx.dp(2) })
-            body.addView(restore, lp(WRAP, WRAP) { gravity = Gravity.END })
+            body.addView(ctx.row {
+                addView(addRow, lp(0, WRAP, 1f))
+                addView(restore, lp(WRAP, WRAP))
+            })
             body.visibility = View.GONE
             view = ctx.column {
-                background = Shapes.card(ctx, 22)
                 addView(header)
                 addView(body)
             }
@@ -384,10 +379,10 @@ class StudyScreen(host: MainActivity) : Screen(host) {
         fun bindHeader(status: ExamStatus) {
             val choices = host.data.choices
             val done = items.count { it.done }
-            val timing = when {
-                status.phase == Phase.DONE -> "Exam done"
-                status.phase == Phase.LIVE -> "Exam in progress"
-                else -> Formats.relativeDay(status.exam.date, host.season.now)
+            val timing = when (status.phase) {
+                Phase.DONE -> "Exam done"
+                Phase.LIVE -> "Exam in progress"
+                Phase.UPCOMING -> Formats.relativeDay(status.exam.date, host.season.now)
             }
             val signature = "${status.exam.key}|$choices|$done|${items.size}|$timing"
             if (signature == headerSignature) return
@@ -395,7 +390,6 @@ class StudyScreen(host: MainActivity) : Screen(host) {
             title.text = status.exam.title(choices)
             caption.text = "${Formats.dateShort(status.exam.date)} · $timing · $done of ${items.size} done"
             ring.set(done, items.size)
-            view.contentDescription = null
         }
 
         fun toggle() {
@@ -411,7 +405,8 @@ class StudyScreen(host: MainActivity) : Screen(host) {
                 chevron.animate().rotation(rotation).setDuration(200).start()
                 if (value) {
                     body.alpha = 0f
-                    body.animate().alpha(1f).setDuration(220).start()
+                    body.translationY = -ctx.dp(6).toFloat()
+                    body.animate().alpha(1f).translationY(0f).setDuration(220).start()
                 }
             } else {
                 chevron.rotation = rotation
@@ -425,12 +420,12 @@ class StudyScreen(host: MainActivity) : Screen(host) {
 
         private fun itemRow(item: CheckItem): View {
             val check = CheckCircle(ctx).apply { setChecked(item.done, animate = false) }
-            val label = ctx.text(item.text, 15f, if (item.done) Palette.TEXT_3 else Palette.TEXT) {
+            val label = ctx.text(item.text, 15.5f, if (item.done) Ui.c.text3 else Ui.c.text) {
                 paintFlags = if (item.done) paintFlags or Paint.STRIKE_THRU_TEXT_FLAG else paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
             }
             val edit = ImageView(ctx).apply {
                 setImageResource(R.drawable.ic_edit)
-                imageTintList = ColorStateList.valueOf(Palette.TEXT_3)
+                imageTintList = ColorStateList.valueOf(Ui.c.text3)
                 setPadding(dp(12), dp(12), dp(12), dp(12))
                 background = Shapes.ripple(ctx, null, 20)
                 contentDescription = "Edit “${item.text}”"
@@ -438,48 +433,47 @@ class StudyScreen(host: MainActivity) : Screen(host) {
             }
             return ctx.row {
                 minimumHeight = dp(48)
-                setPadding(dp(12), dp(4), 0, dp(4))
-                background = Shapes.ripple(ctx, null, 14)
-                addView(check, lp(dp(24), dp(24)))
+                background = Shapes.ripple(ctx, null, 10)
+                addView(check, lp(dp(22), dp(22)))
                 addView(label, lp(0, WRAP, 1f) { marginStart = dp(14) })
                 addView(edit, lp(dp(44), dp(44)))
                 contentDescription = "${item.text}, ${if (item.done) "done" else "not done"}"
                 setOnClickListener {
                     val updated = item.copy(done = !item.done)
                     check.setChecked(updated.done, animate = host.policy.motion)
-                    replace(item, updated, rerender = false)
-                    label.setTextColor(if (updated.done) Palette.TEXT_3 else Palette.TEXT)
+                    if (updated.done) Haptics.confirm(this) else Haptics.tap(this)
+                    replace(item, updated)
+                    label.setTextColor(if (updated.done) Ui.c.text3 else Ui.c.text)
                     label.paintFlags = if (updated.done) label.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG else label.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
                     contentDescription = "${item.text}, ${if (updated.done) "done" else "not done"}"
                     setOnClickListener(null)
-                    // Rebuild shortly so the row captures the new state.
+                    // Rebuild after the tick animation so the row reflects the new state.
                     postDelayed({ renderItems() }, if (host.policy.motion) 260L else 0L)
                 }
             }
         }
 
-        private fun replace(old: CheckItem, new: CheckItem, rerender: Boolean) {
+        private fun replace(old: CheckItem, new: CheckItem) {
             items = items.map { if (it.id == old.id) new else it }
-            save(rerender)
+            save(rerender = false)
         }
 
         private fun addItem() {
-            val name = title.text
-            Dialogs.editText(host, "New task", "", hint = "e.g. Revise chapter 3 ($name)") { text ->
+            Dialogs.editText(host, "New task", "", hint = "e.g. Revise chapter 3") { text ->
                 if (text.isBlank()) return@editText
                 val id = (items.maxOfOrNull { it.id } ?: 0L) + 1
                 items = items + CheckItem(id, text)
-                save(true)
+                save(rerender = true)
             }
         }
 
         private fun editItem(item: CheckItem) {
             Dialogs.editText(host, "Edit task", item.text, onDelete = {
                 items = items.filterNot { it.id == item.id }
-                save(true)
+                save(rerender = true)
             }) { text ->
                 items = items.map { if (it.id == item.id) it.copy(text = text) else it }
-                save(true)
+                save(rerender = true)
             }
         }
 
@@ -511,18 +505,16 @@ class StudyScreen(host: MainActivity) : Screen(host) {
         private var complete = false
         private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = context.dpf(3.5f)
-            color = Palette.TRACK
+            strokeWidth = context.dpf(3f)
         }
         private val arc = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = context.dpf(3.5f)
+            strokeWidth = context.dpf(3f)
             strokeCap = Paint.Cap.ROUND
         }
         private val label = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Palette.TEXT
             textAlign = Paint.Align.CENTER
-            typeface = Fonts.semibold
+            typeface = Fonts.sansSemibold
             textSize = context.dpf(10.5f)
         }
         private val oval = RectF()
@@ -540,10 +532,12 @@ class StudyScreen(host: MainActivity) : Screen(host) {
         override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
             val inset = track.strokeWidth
             oval.set(inset, inset, w - inset, h - inset)
-            arc.shader = LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), Palette.CYAN, Palette.VIOLET, Shader.TileMode.CLAMP)
         }
 
         override fun onDraw(canvas: Canvas) {
+            track.color = Ui.c.track
+            arc.color = Ui.c.green
+            label.color = Ui.c.text2
             canvas.drawOval(oval, track)
             if (fraction > 0f) canvas.drawArc(oval, -90f, 360f * fraction, false, arc)
             val text = if (complete) "✓" else "${Math.round(fraction * 100)}"
@@ -552,22 +546,20 @@ class StudyScreen(host: MainActivity) : Screen(host) {
         }
     }
 
-    /** Round checkbox with a gradient fill and an animated tick. */
+    /** Round checkbox with an animated tick. */
     private class CheckCircle(context: Context) : View(context) {
         private var progress = 0f
         private var animator: ValueAnimator? = null
         private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = context.dpf(2f)
-            color = Palette.withAlpha(Palette.TEXT, 0.35f)
+            strokeWidth = context.dpf(1.8f)
         }
         private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
         private val tick = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = context.dpf(2.4f)
+            strokeWidth = context.dpf(2.2f)
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
-            color = Palette.WHITE
         }
         private val path = Path()
 
@@ -594,21 +586,22 @@ class StudyScreen(host: MainActivity) : Screen(host) {
             }
         }
 
-        override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-            fill.shader = LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), Palette.BLUE, Palette.VIOLET, Shader.TileMode.CLAMP)
-        }
-
         override fun onDraw(canvas: Canvas) {
             val cx = width / 2f
             val cy = height / 2f
             val r = minOf(cx, cy) - ring.strokeWidth
+            ring.color = Ui.c.text3
             canvas.drawCircle(cx, cy, r, ring)
             if (progress <= 0f) return
-            canvas.drawCircle(cx, cy, r * (0.6f + 0.4f * progress) + ring.strokeWidth / 2, fill.apply { alpha = (255 * progress).toInt() })
+            fill.color = Ui.c.green
+            fill.alpha = (255 * progress).toInt()
+            canvas.drawCircle(cx, cy, r * (0.6f + 0.4f * progress) + ring.strokeWidth / 2, fill)
+            // The tick draws itself in.
             path.reset()
             path.moveTo(cx - r * 0.45f, cy + r * 0.02f)
             path.lineTo(cx - r * 0.1f, cy + r * 0.36f)
             path.lineTo(cx + r * 0.48f, cy - r * 0.32f)
+            tick.color = Ui.c.onGreen
             tick.alpha = (255 * progress).toInt()
             canvas.drawPath(path, tick)
         }

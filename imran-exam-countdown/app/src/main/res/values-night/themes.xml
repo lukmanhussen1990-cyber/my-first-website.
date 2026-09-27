@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Base.Theme.ExamCountdown" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">@color/green</item>
+        <item name="android:colorPrimaryDark">@color/bg</item>
+        <item name="android:colorAccent">@color/green</item>
+        <item name="android:colorBackground">@color/bg</item>
+        <item name="android:colorControlActivated">@color/green</item>
+        <item name="android:textColorPrimary">@color/text</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:alertDialogTheme">@style/Theme.ExamCountdown.Dialog</item>
+        <item name="android:datePickerDialogTheme">@style/Theme.ExamCountdown.Dialog</item>
+        <item name="android:timePickerDialogTheme">@style/Theme.ExamCountdown.Dialog</item>
+    </style>
+
+    <style name="Theme.ExamCountdown.Dialog" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@color/green</item>
+        <item name="android:colorPrimary">@color/green</item>
+        <item name="android:colorControlActivated">@color/green</item>
+        <item name="android:colorBackground">@color/surface</item>
+        <item name="android:textColorPrimary">@color/text</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+    </style>
+</resources>

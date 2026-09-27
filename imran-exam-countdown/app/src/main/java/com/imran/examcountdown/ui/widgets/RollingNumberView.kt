@@ -9,19 +9,19 @@ import android.graphics.Typeface
 import android.view.View
 import android.view.animation.PathInterpolator
 import com.imran.examcountdown.ui.Fonts
-import com.imran.examcountdown.ui.Palette
+import com.imran.examcountdown.ui.Ui
 
 /**
- * A number whose changed digits roll smoothly into place, like an odometer. Each digit
- * gets a fixed-width slot so the number never jitters as it changes.
+ * A number whose changed digits slide gently into place. Every digit has a fixed-width slot,
+ * so the number never shifts sideways, and unchanged digits stay perfectly still.
  */
 class RollingNumberView(context: Context) : View(context) {
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Palette.TEXT
-        typeface = Fonts.medium
+        color = Ui.c.text
+        typeface = Fonts.serif
         textAlign = Paint.Align.CENTER
-        fontFeatureSettings = "tnum"
+        fontFeatureSettings = "tnum, lnum"
     }
     private val bounds = Rect()
     private var digitWidth = 0f
@@ -40,12 +40,19 @@ class RollingNumberView(context: Context) : View(context) {
             requestLayout()
         }
 
+    /** Space above and below the digits, in pixels. Equal gaps keep mixed sizes on one baseline. */
+    var verticalGapPx = -1f
+        set(value) {
+            field = value
+            requestLayout()
+        }
+
     /** When false (reduced motion), digits change instantly. */
     var animateChanges = true
 
     private val animator = ValueAnimator.ofFloat(0f, 1f).apply {
-        duration = 460
-        interpolator = PathInterpolator(0.2f, 0.9f, 0.25f, 1f)
+        duration = 380
+        interpolator = PathInterpolator(0.25f, 0.8f, 0.3f, 1f)
         addUpdateListener {
             progress = it.animatedValue as Float
             invalidate()
@@ -55,6 +62,7 @@ class RollingNumberView(context: Context) : View(context) {
     var textSizePx: Float
         get() = paint.textSize
         set(value) {
+            if (paint.textSize == value) return
             paint.textSize = value
             measureDigits()
         }
@@ -106,9 +114,11 @@ class RollingNumberView(context: Context) : View(context) {
         invalidate()
     }
 
+    private fun gap(): Float = if (verticalGapPx >= 0f) verticalGapPx else digitHeight * 0.16f
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val w = (digitWidth * current.length).toInt() + paddingLeft + paddingRight
-        val h = (digitHeight * 1.32f).toInt() + paddingTop + paddingBottom
+        val h = (digitHeight + 2 * gap()).toInt() + paddingTop + paddingBottom
         setMeasuredDimension(resolveSize(w, widthMeasureSpec), resolveSize(h, heightMeasureSpec))
     }
 
@@ -120,7 +130,7 @@ class RollingNumberView(context: Context) : View(context) {
 
     override fun onDraw(canvas: Canvas) {
         val h = height.toFloat()
-        val baseline = (h + digitHeight) / 2f - bounds.bottom
+        val baseline = h - paddingBottom - gap() - bounds.bottom
         val n = current.length
         val old = if (previous.length >= n) previous.takeLast(n) else previous.padStart(n, ' ')
         val left = paddingLeft + (width - paddingLeft - paddingRight - digitWidth * n) / 2f
@@ -135,8 +145,8 @@ class RollingNumberView(context: Context) : View(context) {
                 paint.alpha = baseAlpha
                 canvas.drawText(newChar.toString(), cx, baseline, paint)
             } else {
-                // The new digit drops in from above while the old one slides down and fades.
-                val travel = h * 0.85f
+                // Only changed digits move: the old one slides down and fades, the new one follows.
+                val travel = digitHeight * 0.55f
                 if (oldChar != ' ') {
                     paint.alpha = (baseAlpha * (1f - progress)).toInt()
                     canvas.drawText(oldChar.toString(), cx, baseline + travel * progress, paint)

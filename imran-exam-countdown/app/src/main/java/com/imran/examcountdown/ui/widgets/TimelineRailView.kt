@@ -2,15 +2,13 @@ package com.imran.examcountdown.ui.widgets
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.Shader
 import android.view.View
-import com.imran.examcountdown.ui.Palette
+import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.dpf
 
-/** The vertical line and node for one timeline row. */
+/** The thin vertical line and node for one timetable row. */
 class TimelineRailView(context: Context) : View(context) {
 
     enum class Node { DONE, LIVE, TODAY, UPCOMING }
@@ -19,127 +17,109 @@ class TimelineRailView(context: Context) : View(context) {
     var hasTop = true
     var hasBottom = true
 
-    /** Line above the node is bright (the previous exam is done). */
+    /** Line above the node is green (the previous exam is done). */
     var topLit = false
 
-    /** Line below the node is bright (this exam is done). */
+    /** Line below the node is green (this exam is done). */
     var bottomLit = false
 
     /** Vertical centre of the node, from the top of the row. */
-    var nodeY = dpf(30)
+    var nodeY = dpf(22)
 
-    /** 0..1 pulse for live/today nodes; set by the host from the ambient clock. */
+    /** 0..1 gentle pulse for the live/today node; driven by the host. */
     var pulse = 0f
         set(value) {
             field = value
             if (node == Node.LIVE || node == Node.TODAY) invalidate()
         }
 
-    /** 0..1: how much of the rail is drawn, for the entrance animation. */
+    /** 0..1 portion of the rail drawn, for the entrance animation. */
     var reveal = 1f
         set(value) {
             field = value
             invalidate()
         }
 
-    private val lineWidth = dpf(2.5f)
-    private val nodeRadius = dpf(12)
-    private val dimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Palette.TRACK
-        strokeWidth = lineWidth
-        strokeCap = Paint.Cap.ROUND
-    }
-    private val litPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        strokeWidth = lineWidth
+    private val nodeRadius = dpf(8)
+    private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        strokeWidth = dpf(2f)
         strokeCap = Paint.Cap.ROUND
     }
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val check = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = dpf(2.4f)
+        strokeWidth = dpf(1.8f)
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
-        color = Palette.BG_TOP
     }
     private val checkPath = Path()
-
-    // Node shaders are in node-local coordinates (the canvas is translated to the node).
-    private val doneShader = LinearGradient(-nodeRadius, -nodeRadius, nodeRadius, nodeRadius, Palette.GREEN, Palette.CYAN, Shader.TileMode.CLAMP)
-    private val liveShader = LinearGradient(-nodeRadius, -nodeRadius, nodeRadius, nodeRadius, Palette.VIOLET, Palette.PINK, Shader.TileMode.CLAMP)
 
     init {
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
     }
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        litPaint.shader = LinearGradient(0f, 0f, 0f, h.toFloat(), Palette.CYAN, Palette.VIOLET, Shader.TileMode.CLAMP)
-    }
-
     override fun onDraw(canvas: Canvas) {
+        val c = Ui.c
         val x = width / 2f
-        val h = height.toFloat()
-        val drawnTo = h * reveal
-        val gapAroundNode = nodeRadius + dpf(4)
+        val drawnTo = height * reveal
+        val gapAround = nodeRadius + dpf(4)
         if (hasTop) {
-            val end = (nodeY - gapAroundNode).coerceAtMost(drawnTo)
-            if (end > 0f) canvas.drawLine(x, 0f, x, end, if (topLit) litPaint else dimPaint)
+            val end = (nodeY - gapAround).coerceAtMost(drawnTo)
+            if (end > 0f) {
+                line.color = if (topLit) c.green else c.separator
+                canvas.drawLine(x, 0f, x, end, line)
+            }
         }
-        if (hasBottom && drawnTo > nodeY + gapAroundNode) {
-            canvas.drawLine(x, nodeY + gapAroundNode, x, drawnTo, if (bottomLit) litPaint else dimPaint)
+        if (hasBottom && drawnTo > nodeY + gapAround) {
+            line.color = if (bottomLit) c.green else c.separator
+            canvas.drawLine(x, nodeY + gapAround, x, drawnTo, line)
         }
-        if (reveal < 0.15f) return
-        val scale = ((reveal - 0.15f) / 0.25f).coerceIn(0f, 1f)
+        if (reveal < 0.1f) return
+        val s = ((reveal - 0.1f) / 0.25f).coerceIn(0f, 1f)
         canvas.save()
         canvas.translate(x, nodeY)
-        canvas.scale(scale, scale)
+        canvas.scale(s, s)
         when (node) {
             Node.DONE -> {
-                fill.shader = doneShader
+                fill.color = c.green
                 canvas.drawCircle(0f, 0f, nodeRadius, fill)
-                fill.shader = null
                 val r = nodeRadius
                 checkPath.reset()
                 checkPath.moveTo(-r * 0.42f, r * 0.02f)
                 checkPath.lineTo(-r * 0.1f, r * 0.34f)
                 checkPath.lineTo(r * 0.45f, -r * 0.3f)
+                check.color = c.onGreen
                 canvas.drawPath(checkPath, check)
             }
             Node.LIVE -> {
-                drawPulse(canvas, Palette.PINK)
-                fill.shader = liveShader
+                drawPulse(canvas, c.gold)
+                fill.color = c.gold
                 canvas.drawCircle(0f, 0f, nodeRadius, fill)
-                fill.shader = null
-                fill.color = Palette.WHITE
-                canvas.drawCircle(0f, 0f, nodeRadius * 0.34f, fill)
             }
             Node.TODAY -> {
-                drawPulse(canvas, Palette.AMBER)
-                fill.color = Palette.withAlpha(Palette.AMBER, 0.18f)
+                drawPulse(canvas, c.gold)
+                fill.color = c.bg
                 canvas.drawCircle(0f, 0f, nodeRadius, fill)
-                ring.color = Palette.AMBER
+                ring.color = c.gold
                 ring.strokeWidth = dpf(2.2f)
                 canvas.drawCircle(0f, 0f, nodeRadius - dpf(1.1f), ring)
-                fill.color = Palette.AMBER
-                canvas.drawCircle(0f, 0f, nodeRadius * 0.34f, fill)
             }
             Node.UPCOMING -> {
-                fill.color = Palette.BG_MID
-                canvas.drawCircle(0f, 0f, nodeRadius * 0.85f, fill)
-                ring.color = Palette.withAlpha(Palette.TEXT, 0.28f)
-                ring.strokeWidth = dpf(2f)
-                canvas.drawCircle(0f, 0f, nodeRadius * 0.8f, ring)
-                fill.color = Palette.withAlpha(Palette.TEXT, 0.38f)
-                canvas.drawCircle(0f, 0f, nodeRadius * 0.24f, fill)
+                fill.color = c.bg
+                canvas.drawCircle(0f, 0f, nodeRadius, fill)
+                ring.color = c.text3
+                ring.strokeWidth = dpf(1.5f)
+                canvas.drawCircle(0f, 0f, nodeRadius * 0.7f, ring)
             }
         }
         canvas.restore()
     }
 
     private fun drawPulse(canvas: Canvas, color: Int) {
-        val r = nodeRadius + dpf(9) * pulse
-        ring.color = Palette.withAlpha(color, 0.45f * (1f - pulse))
-        ring.strokeWidth = dpf(2f)
-        canvas.drawCircle(0f, 0f, r, ring)
+        if (pulse <= 0f) return
+        ring.color = Ui.withAlpha(color, 0.35f * (1f - pulse))
+        ring.strokeWidth = dpf(1.5f)
+        canvas.drawCircle(0f, 0f, nodeRadius + dpf(7) * pulse, ring)
     }
 }

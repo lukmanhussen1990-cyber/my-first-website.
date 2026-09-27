@@ -36,6 +36,9 @@ enum class Subject(val officialName: String) {
 /** How much animation to show. SYSTEM follows Android's "Remove animations" setting. */
 enum class MotionPref(val label: String) { SYSTEM("System"), REDUCED("Reduced"), FULL("Full") }
 
+/** Light or dark appearance. SYSTEM follows the phone's dark theme setting. */
+enum class ThemeMode(val label: String) { SYSTEM("System"), LIGHT("Light"), DARK("Dark") }
+
 data class Choices(val mil: MilLanguage? = null, val elective: Elective? = null) {
     val complete: Boolean get() = mil != null && elective != null
 }

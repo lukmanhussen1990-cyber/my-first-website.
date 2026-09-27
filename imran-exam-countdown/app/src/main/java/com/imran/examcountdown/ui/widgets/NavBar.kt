@@ -2,102 +2,124 @@ package com.imran.examcountdown.ui.widgets
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.util.TypedValue
 import android.view.Gravity
-import android.view.View
-import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.imran.examcountdown.ui.Fonts
+import com.imran.examcountdown.ui.Haptics
 import com.imran.examcountdown.ui.MATCH
-import com.imran.examcountdown.ui.Palette
 import com.imran.examcountdown.ui.Shapes
+import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.WRAP
 import com.imran.examcountdown.ui.dp
 import com.imran.examcountdown.ui.lp
+import com.imran.examcountdown.ui.separator
 import com.imran.examcountdown.ui.text
 
-/** Floating bottom navigation with a gradient pill that slides to the selected tab. */
+/**
+ * Bottom navigation that sits below the content (it never overlaps it). Its bottom padding
+ * covers the system navigation bar, whether that's gesture navigation or three buttons.
+ */
 class NavBar(
     context: Context,
     labels: List<String>,
     iconRes: List<Int>,
     private val onSelect: (Int) -> Unit,
-) : FrameLayout(context) {
+) : LinearLayout(context) {
 
     var selected = -1
         private set
     var animateChanges = true
 
-    private val indicator = View(context).apply {
-        background = Shapes.gradient(
-            context, 22,
-            intArrayOf(Palette.withAlpha(Palette.BLUE, 0.95f), Palette.withAlpha(Palette.VIOLET, 0.95f)),
-            GradientDrawableOrientation.LEFT_RIGHT,
-        )
-        visibility = INVISIBLE
-    }
-    private val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+    private val pills = ArrayList<FrameLayout>()
     private val icons = ArrayList<ImageView>()
     private val texts = ArrayList<TextView>()
+    private val items = ArrayList<LinearLayout>()
+    private val row = LinearLayout(context)
 
     init {
-        background = Shapes.rounded(context, 30, 0xF20A1134.toInt(), Palette.STROKE_STRONG)
-        setPadding(dp(6), dp(6), dp(6), dp(6))
-        addView(indicator, LayoutParams(0, MATCH))
+        orientation = VERTICAL
+        setBackgroundColor(Ui.c.surface)
+        addView(context.separator())
+        row.orientation = HORIZONTAL
         labels.forEachIndexed { index, label ->
             val icon = ImageView(context).apply {
                 setImageResource(iconRes[index])
                 importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
             }
-            val text = context.text(label, 11.5f, Palette.TEXT_3, Fonts.medium) { gravity = Gravity.CENTER }
+            val pill = FrameLayout(context).apply {
+                addView(icon, FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER))
+            }
+            val text = context.text(label, 12.5f, Ui.c.text2, Fonts.sansMedium) {
+                gravity = Gravity.CENTER
+                maxLines = 1
+            }
+            val item = LinearLayout(context).apply {
+                orientation = VERTICAL
+                gravity = Gravity.CENTER
+                minimumHeight = dp(64)
+                setPadding(0, dp(8), 0, dp(8))
+                background = Shapes.ripple(context, null, 0)
+                contentDescription = label
+                addView(pill, lp(dp(60), dp(32)))
+                addView(text, lp(MATCH, WRAP) { topMargin = dp(4) })
+                setOnClickListener {
+                    if (index != selected) Haptics.tap(it)
+                    onSelect(index)
+                }
+            }
+            pills += pill
             icons += icon
             texts += text
-            val item = LinearLayout(context).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER
-                background = Shapes.ripple(context, null, 22)
-                contentDescription = label
-                addView(icon, lp(dp(22), dp(22)))
-                addView(text, lp(WRAP, WRAP) { topMargin = dp(3) })
-                setOnClickListener { onSelect(index) }
-            }
-            row.addView(item, LinearLayout.LayoutParams(0, MATCH, 1f))
+            items += item
+            row.addView(item, LayoutParams(0, WRAP, 1f))
         }
-        addView(row, LayoutParams(MATCH, MATCH))
+        addView(row, lp())
+    }
+
+    /** Space for the system navigation bar below the items. */
+    fun setBottomInset(px: Int) {
+        if (row.paddingBottom != px) row.setPadding(0, 0, 0, px)
     }
 
     fun select(index: Int, animate: Boolean) {
-        val changed = index != selected
+        val previous = selected
         selected = index
-        icons.forEachIndexed { i, v ->
-            v.imageTintList = ColorStateList.valueOf(if (i == index) Palette.WHITE else Palette.TEXT_3)
+        val c = Ui.c
+        for (i in items.indices) {
+            val on = i == index
+            icons[i].imageTintList = ColorStateList.valueOf(if (on) c.greenText else c.text2)
+            texts[i].setTextColor(if (on) c.greenText else c.text2)
+            texts[i].typeface = if (on) Fonts.sansSemibold else Fonts.sansMedium
+            items[i].isSelected = on
+            pills[i].background = if (on) Shapes.rounded(context, 16, c.greenSoft) else null
         }
-        texts.forEachIndexed { i, t ->
-            t.setTextColor(if (i == index) Palette.WHITE else Palette.TEXT_3)
-            t.typeface = if (i == index) Fonts.semibold else Fonts.medium
-        }
-        row.getChildAt(index)?.isSelected = true
-        for (i in 0 until row.childCount) row.getChildAt(i).isSelected = i == index
-        place(animate && changed && animateChanges && indicator.visibility == VISIBLE)
-    }
-
-    private fun place(animate: Boolean) {
-        if (selected < 0 || row.width == 0) return
-        val w = row.width / row.childCount
-        if (indicator.layoutParams.width != w) indicator.layoutParams = LayoutParams(w, row.height)
-        indicator.visibility = VISIBLE
-        val x = (selected * w).toFloat()
-        if (animate) {
-            indicator.animate().translationX(x).setDuration(260).setInterpolator(DecelerateInterpolator(1.5f)).start()
-        } else {
-            indicator.translationX = x
+        if (animate && animateChanges && previous != index && index in pills.indices) {
+            val pill = pills[index]
+            pill.scaleX = 0.7f
+            pill.alpha = 0.4f
+            pill.animate().scaleX(1f).alpha(1f).setDuration(200).start()
         }
     }
 
-    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        super.onLayout(changed, left, top, right, bottom)
-        if (changed) post { place(false) }
+    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        super.onLayout(changed, l, t, r, b)
+        if (changed) texts.forEach { fitWidth(it) }
+    }
+
+    /** Shrinks a label (down to 9 sp) instead of clipping it with very large system text. */
+    private fun fitWidth(view: TextView) {
+        val available = view.width - dp(4)
+        if (available <= 0) return
+        val paint = view.paint
+        val base = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 12.5f, resources.displayMetrics)
+        paint.textSize = base
+        val needed = paint.measureText(view.text.toString())
+        val min = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 9f, resources.displayMetrics)
+        val size = if (needed > available) (base * available / needed).coerceAtLeast(min) else base
+        if (view.textSize != size) view.post { view.setTextSize(TypedValue.COMPLEX_UNIT_PX, size) }
     }
 }

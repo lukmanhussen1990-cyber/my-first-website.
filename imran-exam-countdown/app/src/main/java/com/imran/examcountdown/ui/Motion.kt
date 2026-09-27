@@ -2,18 +2,21 @@ package com.imran.examcountdown.ui
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.os.Build
 import android.os.PowerManager
 import android.view.Choreographer
+import android.view.HapticFeedbackConstants
+import android.view.View
 import com.imran.examcountdown.core.MotionPref
 
 /**
- * Decides how much animation to show. Reduced motion removes movement (particles, rolling
- * digits, confetti, entrance effects). Battery Saver pauses the ambient effects only.
+ * How much animation to show. Reduced motion removes movement (intro, sliding digits,
+ * entrances, confetti) but keeps every function. Battery Saver only pauses continuous effects.
  */
 class MotionPolicy(
     /** Movement allowed at all. */
     val motion: Boolean,
-    /** Continuous ambient effects (particles, glow breathing) allowed. */
+    /** Continuous effects (smooth timer progress, gentle pulses) allowed. */
     val ambient: Boolean,
 ) {
     companion object {
@@ -21,7 +24,7 @@ class MotionPolicy(
             val motion = when (pref) {
                 MotionPref.REDUCED -> false
                 MotionPref.FULL -> true
-                // Off when the user turned on "Remove animations" (or set animator scale to 0).
+                // Off when Android's "Remove animations" is on (animator scale 0).
                 MotionPref.SYSTEM -> ValueAnimator.areAnimatorsEnabled()
             }
             val saver = context.getSystemService(PowerManager::class.java)?.isPowerSaveMode == true
@@ -32,13 +35,13 @@ class MotionPolicy(
 
 /** Something drawn with a continuous, time-based animation. */
 interface AmbientListener {
-    /** [frameTimeMs] is a monotonic time in milliseconds; animate from it, not from frame counts. */
+    /** [frameTimeMs] is monotonic; animate from it rather than from frame counts. */
     fun onAmbientFrame(frameTimeMs: Long)
 }
 
 /**
- * One shared ~30 fps clock for ambient effects, aligned to the display's vsync. It only runs
- * while the screen is visible and ambient motion is allowed, which keeps battery use low.
+ * One shared ~30 fps clock for continuous effects, aligned to vsync. It only runs while the
+ * app is in the foreground and motion is allowed.
  */
 class AmbientTicker(private val fps: Int = 30) {
     private val listeners = LinkedHashSet<AmbientListener>()
@@ -72,5 +75,21 @@ class AmbientTicker(private val fps: Int = 30) {
     fun stop() {
         running = false
         choreographer.removeFrameCallback(frame)
+    }
+}
+
+/** Optional, subtle haptics. Also respects Android's own touch-feedback setting. */
+object Haptics {
+    @Volatile
+    var enabled = true
+
+    fun tap(view: View) {
+        if (enabled) view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+    }
+
+    fun confirm(view: View) {
+        if (!enabled) return
+        val type = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
+        view.performHapticFeedback(type)
     }
 }

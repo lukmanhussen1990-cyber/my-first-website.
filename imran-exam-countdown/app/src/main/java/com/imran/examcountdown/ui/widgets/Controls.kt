@@ -7,10 +7,8 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Canvas
-import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.RectF
-import android.graphics.Shader
 import android.view.Gravity
 import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
@@ -20,15 +18,16 @@ import android.widget.LinearLayout
 import android.widget.Switch
 import android.widget.TextView
 import com.imran.examcountdown.ui.Fonts
+import com.imran.examcountdown.ui.Haptics
 import com.imran.examcountdown.ui.MATCH
-import com.imran.examcountdown.ui.Palette
 import com.imran.examcountdown.ui.Shapes
+import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.WRAP
 import com.imran.examcountdown.ui.dp
 import com.imran.examcountdown.ui.dpf
 import com.imran.examcountdown.ui.text
 
-/** A compact on/off switch that reads as a switch to screen readers. */
+/** On/off switch that reads as a switch to screen readers. */
 class ToggleView(context: Context) : View(context) {
 
     var isChecked = false
@@ -40,14 +39,16 @@ class ToggleView(context: Context) : View(context) {
     private var knob = 0f
     private var animator: ValueAnimator? = null
     private val rect = RectF()
-    private val offPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x33FFFFFF }
-    private val onPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val knobPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Palette.WHITE }
+    private val track = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val outline = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = dpf(1.5f)
+    }
+    private val knobPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     init {
         isClickable = true
         isFocusable = true
-        contentDescription = null
     }
 
     fun setChecked(value: Boolean, animate: Boolean = false) {
@@ -57,7 +58,7 @@ class ToggleView(context: Context) : View(context) {
         val to = if (value) 1f else 0f
         if (animate && animateChanges && isAttachedToWindow) {
             animator = ValueAnimator.ofFloat(knob, to).apply {
-                duration = 180
+                duration = 170
                 interpolator = DecelerateInterpolator()
                 addUpdateListener {
                     knob = it.animatedValue as Float
@@ -74,27 +75,30 @@ class ToggleView(context: Context) : View(context) {
 
     override fun performClick(): Boolean {
         setChecked(!isChecked, animate = true)
+        Haptics.tap(this)
         onChange?.invoke(isChecked)
         return super.performClick()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        setMeasuredDimension(dp(52), dp(32))
-    }
-
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        onPaint.shader = LinearGradient(0f, 0f, w.toFloat(), 0f, Palette.BLUE, Palette.VIOLET, Shader.TileMode.CLAMP)
+        setMeasuredDimension(dp(50), dp(30))
     }
 
     override fun onDraw(canvas: Canvas) {
+        val c = Ui.c
         val h = height.toFloat()
-        rect.set(0f, 0f, width.toFloat(), h)
-        canvas.drawRoundRect(rect, h / 2, h / 2, offPaint)
-        onPaint.alpha = (255 * knob).toInt()
-        canvas.drawRoundRect(rect, h / 2, h / 2, onPaint)
-        val r = h / 2 - dpf(4)
+        val inset = outline.strokeWidth / 2
+        rect.set(inset, inset, width - inset, h - inset)
+        track.color = if (knob > 0.5f) c.green else c.surfaceAlt
+        canvas.drawRoundRect(rect, h / 2, h / 2, track)
+        if (knob < 1f) {
+            outline.color = Ui.withAlpha(c.text3, 1f - knob)
+            canvas.drawRoundRect(rect, h / 2, h / 2, outline)
+        }
+        val radius = dpf(8) + dpf(3) * knob
         val x = h / 2 + (width - h) * knob
-        canvas.drawCircle(x, h / 2, r, knobPaint)
+        knobPaint.color = if (knob > 0.5f) c.onGreen else c.text3
+        canvas.drawCircle(x, h / 2, radius, knobPaint)
     }
 
     override fun getAccessibilityClassName(): CharSequence = Switch::class.java.name
@@ -106,7 +110,7 @@ class ToggleView(context: Context) : View(context) {
     }
 }
 
-/** Pill-shaped options with a gradient highlight that slides to the selected one. */
+/** Options in a quiet track; the selected one sits on a raised ivory tile that slides. */
 class SegmentedControl(context: Context, private val labels: List<String>) : FrameLayout(context) {
 
     var selected = -1
@@ -116,24 +120,28 @@ class SegmentedControl(context: Context, private val labels: List<String>) : Fra
     var animateChanges = true
 
     private val indicator = View(context).apply {
-        background = Shapes.gradient(context, 14, Palette.ACCENT_GRADIENT, GradientDrawableOrientation.LEFT_RIGHT)
+        background = Shapes.rounded(context, 10, Ui.c.surface, Ui.c.separator)
         visibility = INVISIBLE
+        elevation = 0f
     }
     private val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
     private val options: List<TextView>
 
     init {
-        background = Shapes.rounded(context, 18, 0x14FFFFFF, Palette.STROKE)
-        setPadding(dp(4), dp(4), dp(4), dp(4))
+        background = Shapes.rounded(context, 12, Ui.c.surfaceAlt)
+        setPadding(dp(3), dp(3), dp(3), dp(3))
         addView(indicator, LayoutParams(0, MATCH))
         options = labels.mapIndexed { index, label ->
-            context.text(label, 14f, Palette.TEXT_2, Fonts.medium) {
+            context.text(label, 14.5f, Ui.c.text2, Fonts.sansMedium) {
                 gravity = Gravity.CENTER
-                maxLines = 1
-                setPadding(dp(6), 0, dp(6), 0)
-                background = Shapes.ripple(context, null, 14)
-                setOnClickListener { select(index, animate = true, notify = true) }
-            }.also { row.addView(it, LinearLayout.LayoutParams(0, dp(40), 1f)) }
+                maxLines = 2
+                setPadding(dp(6), dp(6), dp(6), dp(6))
+                minHeight = dp(40)
+                setOnClickListener {
+                    Haptics.tap(it)
+                    select(index, animate = true, notify = true)
+                }
+            }.also { row.addView(it, LinearLayout.LayoutParams(0, WRAP, 1f)) }
         }
         addView(row, LayoutParams(MATCH, WRAP))
     }
@@ -142,27 +150,27 @@ class SegmentedControl(context: Context, private val labels: List<String>) : Fra
         val changed = index != selected
         selected = index
         options.forEachIndexed { i, tv ->
-            tv.setTextColor(if (i == index) Palette.WHITE else Palette.TEXT_2)
-            tv.typeface = if (i == index) Fonts.semibold else Fonts.medium
+            tv.setTextColor(if (i == index) Ui.c.greenText else Ui.c.text2)
+            tv.typeface = if (i == index) Fonts.sansSemibold else Fonts.sansMedium
             tv.isSelected = i == index
         }
-        positionIndicator(animate && animateChanges && changed && indicator.visibility == VISIBLE)
+        place(animate && animateChanges && changed && indicator.visibility == VISIBLE)
         if (notify && changed) onSelect?.invoke(index)
     }
 
-    private fun positionIndicator(animate: Boolean) {
+    private fun place(animate: Boolean) {
         if (selected < 0 || row.width == 0) {
-            indicator.visibility = if (selected < 0) INVISIBLE else indicator.visibility
+            if (selected < 0) indicator.visibility = INVISIBLE
             return
         }
         val w = row.width / labels.size
-        val x = (selected * w).toFloat()
-        if (indicator.layoutParams.width != w) {
+        if (indicator.layoutParams.width != w || indicator.layoutParams.height != row.height) {
             indicator.layoutParams = LayoutParams(w, row.height)
         }
         indicator.visibility = VISIBLE
+        val x = (selected * w).toFloat()
         if (animate) {
-            indicator.animate().translationX(x).setDuration(220).setInterpolator(DecelerateInterpolator()).start()
+            indicator.animate().translationX(x).setDuration(200).setInterpolator(DecelerateInterpolator()).start()
         } else {
             indicator.translationX = x
         }
@@ -170,51 +178,59 @@ class SegmentedControl(context: Context, private val labels: List<String>) : Fra
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
-        if (changed && selected >= 0) post { positionIndicator(false) }
+        if (changed && selected >= 0) post { place(false) }
     }
 }
 
-/** Short alias so call sites stay readable. */
-typealias GradientDrawableOrientation = android.graphics.drawable.GradientDrawable.Orientation
-
 enum class ButtonStyle { PRIMARY, SECONDARY, GHOST, DANGER }
 
-/** A rounded, full-height button with an optional leading icon and a gentle press effect. */
+/** A button with an optional leading icon and a gentle press effect. */
 fun Context.pillButton(
     label: String,
     iconRes: Int? = null,
     style: ButtonStyle = ButtonStyle.PRIMARY,
     onClick: (View) -> Unit,
-): TextView = text(label, 16f, Palette.WHITE, Fonts.semibold) {
+): TextView = text(label, 16f, Ui.c.onGreen, Fonts.sansSemibold) {
+    val c = Ui.c
     gravity = Gravity.CENTER
-    minHeight = dp(52)
-    setPadding(dp(22), 0, dp(22), 0)
+    minHeight = dp(50)
+    setPadding(dp(20), dp(8), dp(20), dp(8))
     val fill = when (style) {
-        ButtonStyle.PRIMARY -> Shapes.gradient(context, 26, Palette.ACCENT_GRADIENT, GradientDrawableOrientation.LEFT_RIGHT)
-        ButtonStyle.SECONDARY -> Shapes.rounded(context, 26, 0x14FFFFFF, Palette.STROKE_STRONG)
+        ButtonStyle.PRIMARY -> Shapes.rounded(context, 14, c.green)
+        ButtonStyle.SECONDARY -> Shapes.rounded(context, 14, 0, Ui.withAlpha(c.greenText, 0.55f), 1.5f)
         ButtonStyle.GHOST -> null
-        ButtonStyle.DANGER -> Shapes.rounded(context, 26, Palette.withAlpha(Palette.PINK, 0.14f), Palette.withAlpha(Palette.PINK, 0.5f))
+        ButtonStyle.DANGER -> Shapes.rounded(context, 14, 0, Ui.withAlpha(c.danger, 0.55f), 1.5f)
     }
-    if (style == ButtonStyle.GHOST) setTextColor(Palette.VIOLET_LIGHT)
-    if (style == ButtonStyle.DANGER) setTextColor(Palette.PINK)
-    background = Shapes.ripple(context, fill, 26)
-    if (iconRes != null) {
-        val d = context.getDrawable(iconRes)?.mutate()
-        d?.setTintList(ColorStateList.valueOf(currentTextColor))
-        d?.setBounds(0, 0, dp(20), dp(20))
-        setCompoundDrawablesRelative(d, null, null, null)
-        compoundDrawablePadding = dp(8)
-    }
+    setTextColor(
+        when (style) {
+            ButtonStyle.PRIMARY -> c.onGreen
+            ButtonStyle.DANGER -> c.danger
+            else -> c.greenText
+        },
+    )
+    background = Shapes.ripple(context, fill, 14)
+    if (iconRes != null) setLeadingIcon(iconRes)
     stateListAnimator = pressScale(this)
-    setOnClickListener(onClick)
+    setOnClickListener {
+        Haptics.tap(it)
+        onClick(it)
+    }
 }
 
-/** Scales a view down slightly while pressed. */
+fun TextView.setLeadingIcon(iconRes: Int, sizeDp: Int = 20) {
+    val d = context.getDrawable(iconRes)?.mutate() ?: return
+    d.setTintList(ColorStateList.valueOf(currentTextColor))
+    d.setBounds(0, 0, dp(sizeDp), dp(sizeDp))
+    setCompoundDrawablesRelative(d, null, null, null)
+    compoundDrawablePadding = dp(8)
+}
+
+/** Scales a view down a touch while pressed. */
 fun pressScale(view: View): StateListAnimator = StateListAnimator().apply {
     addState(
         intArrayOf(android.R.attr.state_pressed),
         AnimatorSet().apply {
-            playTogether(ObjectAnimator.ofFloat(view, View.SCALE_X, 0.96f), ObjectAnimator.ofFloat(view, View.SCALE_Y, 0.96f))
+            playTogether(ObjectAnimator.ofFloat(view, View.SCALE_X, 0.97f), ObjectAnimator.ofFloat(view, View.SCALE_Y, 0.97f))
             duration = 90
         },
     )
@@ -222,39 +238,26 @@ fun pressScale(view: View): StateListAnimator = StateListAnimator().apply {
         intArrayOf(),
         AnimatorSet().apply {
             playTogether(ObjectAnimator.ofFloat(view, View.SCALE_X, 1f), ObjectAnimator.ofFloat(view, View.SCALE_Y, 1f))
-            duration = 160
+            duration = 150
         },
     )
 }
 
-/** Small rounded label with an optional icon, e.g. a date or hall number. */
-fun Context.chip(label: String, iconRes: Int? = null, tint: Int = Palette.TEXT_2, fill: Int = 0x12FFFFFF): TextView =
-    text(label, 13.5f, Palette.TEXT, Fonts.medium) {
-        gravity = Gravity.CENTER_VERTICAL
-        setPadding(dp(11), dp(7), dp(12), dp(7))
-        background = Shapes.rounded(context, 14, fill, Palette.STROKE)
-        if (iconRes != null) {
-            val d = context.getDrawable(iconRes)?.mutate()
-            d?.setTintList(ColorStateList.valueOf(tint))
-            d?.setBounds(0, 0, dp(16), dp(16))
-            setCompoundDrawablesRelative(d, null, null, null)
-            compoundDrawablePadding = dp(6)
-        }
-    }
-
-/** Status pill used on timeline rows and checklist headers. */
-fun Context.statusPill(): TextView = text("", 12f, Palette.TEXT, Fonts.semibold) {
-    gravity = Gravity.CENTER
-    setPadding(dp(10), dp(5), dp(10), dp(5))
-    letterSpacing = 0.02f
+/** A short status label, e.g. "Completed" or "Exam time". Filled only for the live state. */
+fun Context.statusLabel(): TextView = text("", 13f, Ui.c.text2, Fonts.sansSemibold) {
+    gravity = Gravity.CENTER_VERTICAL
 }
 
 fun TextView.styleStatus(label: String, color: Int, filled: Boolean = false) {
     text = label
-    setTextColor(if (filled) Palette.WHITE else color)
-    background = if (filled) {
-        Shapes.gradient(context, 12, intArrayOf(color, Palette.withAlpha(color, 0.75f)), GradientDrawableOrientation.LEFT_RIGHT)
+    if (filled) {
+        // Charcoal on gold reads well in both themes.
+        setTextColor(Ui.LIGHT.text)
+        background = Shapes.rounded(context, 8, color)
+        setPadding(dp(8), dp(3), dp(8), dp(3))
     } else {
-        Shapes.rounded(context, 12, Palette.withAlpha(color, 0.14f), Palette.withAlpha(color, 0.35f))
+        setTextColor(color)
+        background = null
+        setPadding(0, 0, 0, 0)
     }
 }

@@ -6,7 +6,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.os.SystemClock
 import android.view.View
-import com.imran.examcountdown.ui.Palette
+import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.dpf
 import kotlin.math.cos
 import kotlin.math.exp
@@ -36,10 +36,7 @@ class ConfettiView(context: Context) : View(context) {
     private val random = Random(SystemClock.uptimeMillis())
     private var start = 0L
     private var last = 0L
-    private val colors = intArrayOf(
-        Palette.BLUE, Palette.CYAN, Palette.VIOLET, Palette.VIOLET_LIGHT,
-        Palette.PINK, Palette.AMBER, Palette.GREEN, Palette.WHITE,
-    )
+    private var colors = intArrayOf()
 
     init {
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
@@ -54,9 +51,12 @@ class ConfettiView(context: Context) : View(context) {
             return
         }
         pieces.clear()
+        val c = Ui.c
+        // School colours only: gold, green and ivory.
+        colors = intArrayOf(c.gold, c.gold, c.goldSoft, c.green, c.greenText, c.onGreen, c.surfaceAlt)
         val h = height.toFloat()
         val w = width.toFloat()
-        repeat(150) { i ->
+        repeat(110) { i ->
             val fromLeft = i % 2 == 0
             val angle = Math.toRadians(if (fromLeft) -62.0 + random.nextDouble(-16.0, 16.0) else -118.0 + random.nextDouble(-16.0, 16.0))
             val speed = dpf(880 + random.nextFloat() * 700)

@@ -2,8 +2,6 @@ package com.imran.examcountdown.ui.screens
 
 import android.content.Context
 import android.view.View
-import android.view.ViewGroup
-import android.widget.FrameLayout
 import com.imran.examcountdown.MainActivity
 import com.imran.examcountdown.core.Season
 
@@ -24,7 +22,7 @@ abstract class Screen(val host: MainActivity) {
     /** Milliseconds until this screen next needs [tick]. */
     open fun nextTickDelay(now: Long): Long = 1000 - now % 1000
 
-    /** System bar sizes, so content can scroll behind them without being hidden. */
+    /** Height of the status bar, so content starts below it. */
     open fun applyInsets(top: Int, bottom: Int) {}
 
     /** Saved data (profile, choices, timetable, settings) changed. */
@@ -34,28 +32,24 @@ abstract class Screen(val host: MainActivity) {
     open fun onMotionChanged() {}
 }
 
-/** A frame that is always square, at most [maxSize] pixels wide. */
-class SquareFrame(context: Context, private val maxSize: Int) : FrameLayout(context) {
-    var onSize: ((Int) -> Unit)? = null
-    private var lastSize = -1
-
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val available = MeasureSpec.getSize(widthMeasureSpec)
-        val size = if (available == 0) maxSize else minOf(available, maxSize)
-        if (size != lastSize) {
-            lastSize = size
-            onSize?.invoke(size)
-        }
-        val exact = MeasureSpec.makeMeasureSpec(size, MeasureSpec.EXACTLY)
-        super.onMeasure(exact, exact)
-    }
-}
-
 fun View.setVisible(visible: Boolean) {
     visibility = if (visible) View.VISIBLE else View.GONE
 }
 
-fun ViewGroup.removeAllAndAdd(vararg views: View) {
-    removeAllViews()
-    views.forEach { addView(it) }
+/** A short, staggered rise-in for a list of views (skipped entirely with reduced motion). */
+fun staggerIn(views: List<View>, motion: Boolean, startDelay: Long = 0L) {
+    views.forEachIndexed { i, v ->
+        v.animate().cancel()
+        if (!motion) {
+            v.alpha = 1f
+            v.translationY = 0f
+            return@forEachIndexed
+        }
+        v.alpha = 0f
+        v.translationY = v.resources.displayMetrics.density * 12
+        v.animate().alpha(1f).translationY(0f)
+            .setStartDelay(startDelay + i * 45L)
+            .setDuration(260)
+            .start()
+    }
 }

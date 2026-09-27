@@ -1,6 +1,5 @@
 package com.imran.examcountdown.ui.screens
 
-import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
@@ -13,298 +12,269 @@ import com.imran.examcountdown.R
 import com.imran.examcountdown.core.Choices
 import com.imran.examcountdown.core.Countdown
 import com.imran.examcountdown.core.Exam
+import com.imran.examcountdown.core.ExamStatus
 import com.imran.examcountdown.core.Formats
 import com.imran.examcountdown.core.Messages
 import com.imran.examcountdown.core.Phase
 import com.imran.examcountdown.core.Profile
 import com.imran.examcountdown.core.Season
 import com.imran.examcountdown.core.Timetable
-import com.imran.examcountdown.data.AppClock
-import com.imran.examcountdown.ui.AmbientListener
 import com.imran.examcountdown.ui.Dialogs
 import com.imran.examcountdown.ui.Fonts
 import com.imran.examcountdown.ui.MATCH
-import com.imran.examcountdown.ui.Palette
 import com.imran.examcountdown.ui.Shapes
+import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.WRAP
-import com.imran.examcountdown.ui.caps
 import com.imran.examcountdown.ui.column
 import com.imran.examcountdown.ui.dp
-import com.imran.examcountdown.ui.flp
-import com.imran.examcountdown.ui.icon
+import com.imran.examcountdown.ui.heading
+import com.imran.examcountdown.ui.label
 import com.imran.examcountdown.ui.lp
 import com.imran.examcountdown.ui.row
+import com.imran.examcountdown.ui.separator
 import com.imran.examcountdown.ui.text
 import com.imran.examcountdown.ui.update
+import com.imran.examcountdown.ui.widgets.AvatarView
 import com.imran.examcountdown.ui.widgets.ButtonStyle
-import com.imran.examcountdown.ui.widgets.CountdownRingView
-import com.imran.examcountdown.ui.widgets.GradientDrawableOrientation
-import com.imran.examcountdown.ui.widgets.InfoTile
-import com.imran.examcountdown.ui.widgets.RollingNumberView
+import com.imran.examcountdown.ui.widgets.CountdownView
+import com.imran.examcountdown.ui.widgets.FlowRow
+import com.imran.examcountdown.ui.widgets.ProgressTrack
 import com.imran.examcountdown.ui.widgets.SeasonProgressView
 import com.imran.examcountdown.ui.widgets.pillButton
 import com.imran.examcountdown.ui.widgets.pressScale
+import com.imran.examcountdown.ui.widgets.setLeadingIcon
 import java.time.ZoneId
-import kotlin.math.sin
 
-class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
+class HomeScreen(host: MainActivity) : Screen(host) {
 
     private enum class Mode { COUNTDOWN, FINAL_LIVE, CELEBRATE }
 
     private val scroll = ScrollView(ctx).apply {
         isVerticalScrollBarEnabled = false
         overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
+        isFillViewport = true
     }
     override val root: View get() = scroll
-
     private val content = ctx.column()
 
-    // Header
-    private val greeting = ctx.text("", 30f, Palette.TEXT, Fonts.bold)
-    private val subtitle = ctx.text("", 14.5f, Palette.TEXT_2)
-    private val avatar = ctx.text("", 16f, Palette.WHITE, Fonts.semibold) {
-        gravity = Gravity.CENTER
-        background = Shapes.ovalGradient(Palette.ACCENT_GRADIENT)
-        contentDescription = "Profile and settings"
-        setOnClickListener { host.showTab(MainActivity.TAB_SETTINGS) }
+    // 1. School
+    /** The header emblem; the opening animation settles into it. */
+    val emblem = ImageView(ctx).apply {
+        setImageResource(R.drawable.emblem_small)
+        contentDescription = "Al-Ameen Academy emblem"
+    }
+    private val schoolName = ctx.text("Al-Ameen Academy", 16f, Ui.c.text, Fonts.serif)
+    private val schoolPlace = ctx.label("Badarpur · Estd. 1994", Ui.c.goldText, 10.5f)
+
+    // 2–3. Greeting and identity
+    private val greeting = ctx.heading("", 30f)
+    private val identity = ctx.text("", 15f, Ui.c.text2)
+    val avatar = AvatarView(ctx).apply {
+        contentDescription = "Profile photo. Double tap to change."
+        isClickable = true
+        stateListAnimator = pressScale(this)
+        setOnClickListener { host.openProfileEditor() }
     }
 
-    // "It's exam time!" banner
-    private val liveDot = View(ctx).apply { background = Shapes.oval(Palette.WHITE) }
-    private val liveTitle = ctx.text("It’s exam time!", 26f, Palette.WHITE, Fonts.bold)
-    private val liveDetail = ctx.text("", 15.5f, 0xF2FFFFFF.toInt(), Fonts.medium)
-    private val liveDuration = ctx.text("", 13.5f, 0xD9FFFFFF.toInt())
-    private val liveButton = ctx.pillButton("Mark as finished", R.drawable.ic_check, ButtonStyle.SECONDARY) { onMarkFinished() }
+    // Live exam banner
+    private val liveTitle = ctx.heading("It’s exam time!", 24f, Ui.c.onGreen)
+    private val liveDetail = ctx.text("", 15.5f, Ui.withAlpha(Ui.c.onGreen, 0.92f), Fonts.sansMedium)
+    private val liveDuration = ctx.text("", 13.5f, Ui.withAlpha(Ui.c.onGreen, 0.78f)) { setLineSpacing(0f, 1.3f) }
+    private val liveButton = ctx.text("Mark as finished", 15f, Ui.c.onGreen, Fonts.sansSemibold) {
+        gravity = Gravity.CENTER
+        minHeight = dp(44)
+        setPadding(dp(16), dp(6), dp(16), dp(6))
+        background = Shapes.ripple(ctx, Shapes.rounded(ctx, 12, 0, Ui.withAlpha(Ui.c.onGreen, 0.6f), 1.5f), 12)
+        setLeadingIcon(R.drawable.ic_check, 18)
+        stateListAnimator = pressScale(this)
+        setOnClickListener { onMarkFinished() }
+    }
     private val liveCard = ctx.column {
-        background = Shapes.gradient(ctx, 28, intArrayOf(0xFF6D3BF0.toInt(), 0xFFB5459F.toInt(), 0xFF2F5BFF.toInt()))
-        setPadding(dp(20), dp(18), dp(20), dp(18))
+        background = Shapes.rounded(ctx, 18, Ui.c.green)
+        setPadding(dp(18), dp(16), dp(18), dp(16))
         addView(ctx.row {
-            addView(liveDot, lp(dp(8), dp(8)))
-            addView(ctx.caps("Live now", 0xE6FFFFFF.toInt()), lp(WRAP, WRAP) { marginStart = dp(8) })
+            addView(View(ctx).apply { background = Shapes.oval(Ui.c.gold) }, lp(dp(8), dp(8)))
+            addView(ctx.label("Exam in progress", Ui.withAlpha(Ui.c.onGreen, 0.85f), 11.5f), lp(WRAP, WRAP) { marginStart = dp(8) })
         })
-        addView(liveTitle, lp { topMargin = dp(10) })
-        addView(liveDetail, lp { topMargin = dp(8) })
-        addView(liveDuration, lp { topMargin = dp(8) })
-        addView(liveButton, lp(WRAP, WRAP) { topMargin = dp(16) })
-        visibility = View.GONE
+        addView(liveTitle, lp { topMargin = dp(8) })
+        addView(liveDetail, lp { topMargin = dp(6) })
+        addView(liveDuration, lp { topMargin = dp(6) })
+        addView(liveButton, lp(WRAP, WRAP) { topMargin = dp(14) })
     }
     private var liveKey: String? = null
 
-    // Countdown hero
-    private val ring = CountdownRingView(ctx)
-    private val ringFrame = SquareFrame(ctx, ctx.dp(340))
-    private val heroKicker = ctx.caps("Next exam in", Palette.TEXT_2, 11f)
-    private val units = List(4) { RollingNumberView(ctx) }
-    private val unitLabels = listOf("Days", "Hrs", "Min", "Sec").map { ctx.caps(it, Palette.TEXT_3, 10f) }
-    private val separators = List(3) { ctx.text(":", 20f, Palette.TEXT_3, Fonts.light) { gravity = Gravity.CENTER } }
-    private val ringDate = ctx.text("", 13f, Palette.TEXT_2, Fonts.medium)
-    private val centerCountdown = ctx.column { gravity = Gravity.CENTER_HORIZONTAL }
-    private val altIcon = ImageView(ctx)
-    private val altTitle = ctx.text("", 24f, Palette.TEXT, Fonts.semibold) { gravity = Gravity.CENTER }
-    private val altCaption = ctx.text("", 13f, Palette.TEXT_2) { gravity = Gravity.CENTER }
-    private val centerAlt = ctx.column { gravity = Gravity.CENTER_HORIZONTAL }
-
-    private val subjectKicker = ctx.caps("", Palette.VIOLET_LIGHT, 11.5f)
-    private val subjectTitle = ctx.text("", 27f, Palette.TEXT, Fonts.semibold) { gravity = Gravity.CENTER }
-    private val dateTile = InfoTile(ctx, R.drawable.ic_calendar, Palette.CYAN)
-    private val timeTile = InfoTile(ctx, R.drawable.ic_clock, Palette.BLUE)
-    private val hallTile = InfoTile(ctx, R.drawable.ic_hall, Palette.VIOLET_LIGHT)
-    private val tiles = ctx.row {
-        addView(dateTile, lp(0, WRAP, 1f))
-        addView(timeTile, lp(0, WRAP, 1f) { marginStart = dp(8) })
-        addView(hallTile, lp(0, WRAP, 1f) { marginStart = dp(8) })
+    // 4–7. Next exam
+    private val nextLabel = ctx.label("Next exam")
+    private val subject = ctx.heading("", 30f)
+    private val countdown = CountdownView(ctx)
+    private val track = ProgressTrack(ctx)
+    private val trackCaption = ctx.text("", 13f, Ui.c.text3) { setLineSpacing(0f, 1.25f) }
+    private val dateItem = detail(R.drawable.ic_calendar)
+    private val timeItem = detail(R.drawable.ic_clock)
+    private val hallItem = detail(R.drawable.ic_hall)
+    private val details = FlowRow(ctx).apply {
+        addView(dateItem)
+        addView(timeItem)
+        addView(hallItem)
     }
-    private val localNote = ctx.text("", 13f, Palette.TEXT_3) { gravity = Gravity.CENTER }
-    private val celebrateBody = ctx.text("", 16f, Palette.TEXT_2) {
-        gravity = Gravity.CENTER
+    private val localNote = ctx.text("", 13f, Ui.c.text3)
+    private val revise = ctx.pillButton("Revise", R.drawable.ic_study) {
+        host.openChecklist((host.season.next ?: host.season.live)?.exam?.subject)
+    }
+    private val finalNote = ctx.text("This is your last paper. The celebration starts when it’s done.", 16f, Ui.c.text2) {
         setLineSpacing(0f, 1.3f)
     }
-    private val celebrateButton = ctx.pillButton("Celebrate again", R.drawable.ic_sparkle) { host.celebrate() }
-    private val heroCard = ctx.column {
-        background = Shapes.card(ctx, 32)
-        setPadding(dp(16), dp(14), dp(16), dp(22))
-        gravity = Gravity.CENTER_HORIZONTAL
+    private val nextSection = ctx.column()
+
+    // Celebration
+    private val celebrateTitle = ctx.heading("", 32f)
+    private val celebrateBody = ctx.text("", 16f, Ui.c.text2) { setLineSpacing(0f, 1.35f) }
+    private val celebrateSection = ctx.column {
+        addView(ctx.label("Exam season complete", Ui.c.goldText))
+        addView(celebrateTitle, lp { topMargin = dp(8) })
+        addView(celebrateBody, lp { topMargin = dp(10) })
+        addView(ctx.pillButton("Celebrate again", R.drawable.ic_sparkle, ButtonStyle.SECONDARY) { host.celebrate(force = true) }, lp(WRAP, WRAP) { topMargin = dp(18) })
     }
 
-    // Friendly message
-    private val messageText = ctx.text("", 16f, Palette.TEXT, Fonts.medium) { setLineSpacing(0f, 1.3f) }
+    // Message
+    private val message = ctx.text("", 17f, Ui.c.text2, Fonts.serifItalic) { setLineSpacing(0f, 1.3f) }
     private var messageOffset = 0
-    private val messageCard = ctx.row {
-        background = Shapes.ripple(ctx, Shapes.card(ctx, 24), 24)
-        setPadding(dp(18), dp(16), dp(18), dp(16))
-        gravity = Gravity.CENTER_VERTICAL
-        addView(ctx.icon(R.drawable.ic_sparkle, Palette.VIOLET_LIGHT, 22))
-        addView(messageText, lp(0, WRAP, 1f) { marginStart = dp(14) })
+    private val messageRow = ctx.row {
+        gravity = Gravity.TOP
+        addView(View(ctx).apply { background = Shapes.rounded(ctx, 2, Ui.c.gold) }, lp(dp(3), MATCH))
+        addView(message, lp(0, WRAP, 1f) { marginStart = dp(14) })
+        background = Shapes.ripple(ctx, null, 8)
+        setPadding(0, dp(4), 0, dp(4))
+        contentDescription = null
         setOnClickListener { cycleMessage() }
     }
 
-    // Season progress
-    private val progressCount = ctx.text("", 14f, Palette.TEXT_2, Fonts.medium)
+    // 8. Progress and what's coming up
+    private val progressCount = ctx.text("", 14f, Ui.c.text2, Fonts.sansMedium)
     private val progressBar = SeasonProgressView(ctx)
-    private val progressFoot = ctx.text("", 13.5f, Palette.TEXT_3)
-    private val progressCard = ctx.column {
-        background = Shapes.card(ctx, 24)
-        setPadding(dp(18), dp(16), dp(18), dp(18))
-        addView(ctx.row {
-            addView(ctx.caps("Exam season"), lp(0, WRAP, 1f))
-            addView(progressCount)
-        })
-        addView(progressBar, lp(MATCH, dp(12)) { topMargin = dp(14) })
-        addView(progressFoot, lp { topMargin = dp(12) })
-    }
-
-    // Quick actions
-    private val reviseCaption = ctx.text("", 13f, Palette.TEXT_2)
-    private val actions = ctx.row {
-        addView(action(R.drawable.ic_bolt, "Focus timer", ctx.text("25-minute session", 13f, Palette.TEXT_2)) {
-            host.showTab(MainActivity.TAB_STUDY)
-        }, lp(0, WRAP, 1f))
-        addView(action(R.drawable.ic_check, "Revise", reviseCaption) {
-            host.openChecklist(host.season.next?.exam?.subject ?: host.season.live?.exam?.subject)
-        }, lp(0, WRAP, 1f) { marginStart = dp(12) })
+    private val progressCaption = ctx.text("", 13f, Ui.c.text3)
+    private val upcomingLabel = ctx.label("Coming up")
+    private val upcomingList = ctx.column()
+    private val timetableLink = ctx.text("Full timetable", 15f, Ui.c.greenText, Fonts.sansSemibold) {
+        setPadding(0, dp(12), dp(12), dp(12))
+        setLeadingIcon(R.drawable.ic_timeline, 18)
+        setOnClickListener { host.showTab(MainActivity.TAB_TIMETABLE) }
     }
 
     private var mode: Mode? = null
     private var target = 0L
-    private var subjectKey: String? = null
+    private var subjectKey = ""
+    private var upcomingKey = ""
     private var spokenMinute = -1L
-    private var introPending = true
-    private var celebrated = false
+    private var avatarVersion = -1L
+    private var entranceDone = false
 
     init {
         scroll.addView(content, FrameLayout.LayoutParams(MATCH, WRAP))
-        content.setPadding(ctx.dp(20), 0, ctx.dp(20), 0)
 
-        val header = ctx.row {
+        content.addView(ctx.row {
+            addView(emblem, lp(dp(36), dp(36)))
+            addView(ctx.column {
+                addView(schoolName)
+                addView(schoolPlace, lp { topMargin = dp(3) })
+            }, lp(0, WRAP, 1f) { marginStart = dp(12) })
+        }, lp { topMargin = ctx.dp(6) })
+        content.addView(ctx.separator(), lp(MATCH, WRAP) { topMargin = ctx.dp(14) })
+
+        content.addView(ctx.row {
             addView(ctx.column {
                 addView(greeting)
-                addView(subtitle, lp { topMargin = dp(6) })
+                addView(identity, lp { topMargin = dp(4) })
             }, lp(0, WRAP, 1f))
-            addView(avatar, lp(dp(46), dp(46)) { marginStart = dp(12) })
-        }
-        content.addView(header, lp { topMargin = ctx.dp(10) })
-        content.addView(liveCard, lp { topMargin = ctx.dp(20) })
-        content.addView(heroCard, lp { topMargin = ctx.dp(18) })
-        content.addView(messageCard, lp { topMargin = ctx.dp(14) })
-        content.addView(progressCard, lp { topMargin = ctx.dp(14) })
-        content.addView(actions, lp { topMargin = ctx.dp(14) })
+            addView(avatar, lp(dp(54), dp(54)) { marginStart = dp(12) })
+        }, lp { topMargin = ctx.dp(18) })
 
-        buildRing()
-        heroCard.addView(ringFrame, lp(WRAP, WRAP))
-        heroCard.addView(subjectKicker, lp(WRAP, WRAP) { topMargin = ctx.dp(4) })
-        heroCard.addView(subjectTitle, lp(WRAP, WRAP) { topMargin = ctx.dp(6) })
-        heroCard.addView(celebrateBody, lp { topMargin = ctx.dp(10) })
-        heroCard.addView(tiles, lp { topMargin = ctx.dp(16) })
-        heroCard.addView(localNote, lp(WRAP, WRAP) { topMargin = ctx.dp(10) })
-        heroCard.addView(celebrateButton, lp(WRAP, WRAP) { topMargin = ctx.dp(18) })
+        content.addView(liveCard, lp { topMargin = ctx.dp(22) })
 
-        ring.secondsProvider = {
-            val left = target - AppClock.now()
-            if (left <= 0) 0f else 1f - (left % 60_000L) / 60_000f
-        }
+        nextSection.addView(nextLabel)
+        nextSection.addView(subject, lp { topMargin = ctx.dp(6) })
+        nextSection.addView(countdown, lp { topMargin = ctx.dp(12) })
+        nextSection.addView(track, lp(MATCH, ctx.dp(4)) { topMargin = ctx.dp(14) })
+        nextSection.addView(trackCaption, lp { topMargin = ctx.dp(8) })
+        nextSection.addView(details, lp { topMargin = ctx.dp(16) })
+        nextSection.addView(localNote, lp { topMargin = ctx.dp(6) })
+        nextSection.addView(finalNote, lp { topMargin = ctx.dp(4) })
+        nextSection.addView(revise, lp { topMargin = ctx.dp(20) })
+        content.addView(nextSection, lp { topMargin = ctx.dp(24) })
+        content.addView(celebrateSection, lp { topMargin = ctx.dp(26) })
+
+        content.addView(messageRow, lp { topMargin = ctx.dp(24) })
+        content.addView(ctx.separator(), lp(MATCH, WRAP) { topMargin = ctx.dp(24) })
+
+        content.addView(ctx.row {
+            addView(ctx.label("Exam progress"), lp(0, WRAP, 1f))
+            addView(progressCount)
+        }, lp { topMargin = ctx.dp(20) })
+        content.addView(progressBar, lp(MATCH, ctx.dp(6)) { topMargin = ctx.dp(12) })
+        content.addView(progressCaption, lp { topMargin = ctx.dp(8) })
+        content.addView(upcomingLabel, lp { topMargin = ctx.dp(24) })
+        content.addView(upcomingList, lp { topMargin = ctx.dp(4) })
+        content.addView(timetableLink, lp(WRAP, WRAP) { topMargin = ctx.dp(4) })
+
         onMotionChanged()
     }
 
-    private fun buildRing() {
-        ringFrame.addView(ring, flp(MATCH, MATCH))
-        val digits = ctx.row { gravity = Gravity.TOP }
-        units.forEachIndexed { i, unit ->
-            if (i > 0) digits.addView(separators[i - 1], lp(WRAP, WRAP))
-            digits.addView(ctx.column {
-                gravity = Gravity.CENTER_HORIZONTAL
-                addView(unit, lp(WRAP, WRAP))
-                addView(unitLabels[i], lp(WRAP, WRAP) { topMargin = dp(2) })
-            }, lp(WRAP, WRAP))
-        }
-        centerCountdown.addView(heroKicker, lp(WRAP, WRAP))
-        centerCountdown.addView(digits, lp(WRAP, WRAP) { topMargin = ctx.dp(10) })
-        centerCountdown.addView(ringDate, lp(WRAP, WRAP) { topMargin = ctx.dp(12) })
-        ringFrame.addView(centerCountdown, flp(WRAP, WRAP, Gravity.CENTER))
-
-        centerAlt.addView(altIcon, lp(ctx.dp(52), ctx.dp(52)))
-        centerAlt.addView(altTitle, lp(WRAP, WRAP) { topMargin = ctx.dp(10) })
-        centerAlt.addView(altCaption, lp(WRAP, WRAP) { topMargin = ctx.dp(6) })
-        ringFrame.addView(centerAlt, flp(WRAP, WRAP, Gravity.CENTER))
-
-        ringFrame.onSize = { size ->
-            val digitPx = size * 0.118f
-            units.forEach { it.textSizePx = digitPx }
-            separators.forEach {
-                it.setTextSize(TypedValue.COMPLEX_UNIT_PX, digitPx * 0.7f)
-                it.setPadding(ctx.dp(3), (digitPx * 0.08f).toInt(), ctx.dp(3), 0)
-            }
-        }
+    private fun detail(iconRes: Int): TextView = ctx.text("", 15f, Ui.c.text, Fonts.sansMedium) {
+        gravity = Gravity.CENTER_VERTICAL
+        setLeadingIcon(iconRes, 18)
+        compoundDrawablePadding = dp(6)
+        compoundDrawablesRelative[0]?.setTint(Ui.c.greenText)
     }
 
-    private fun action(iconRes: Int, title: String, caption: TextView, onClick: () -> Unit): View = ctx.column {
-        background = Shapes.ripple(ctx, Shapes.card(ctx, 22), 22)
-        setPadding(dp(16), dp(16), dp(16), dp(16))
-        addView(ctx.icon(iconRes, Palette.CYAN, 22))
-        addView(ctx.text(title, 16f, Palette.TEXT, Fonts.semibold), lp { topMargin = dp(10) })
-        addView(caption, lp { topMargin = dp(4) })
-        caption.maxLines = 2
-        stateListAnimator = pressScale(this)
-        setOnClickListener { onClick() }
-    }
+    /** Top-level blocks, in order, for the staggered entrance. */
+    fun entranceViews(): List<View> = (0 until content.childCount).map { content.getChildAt(it) }.filter { it.visibility == View.VISIBLE }
 
     // ------------------------------------------------------------------ lifecycle
 
     override fun onShow(first: Boolean) {
-        host.ambient.add(this)
-        host.ambient.add(ring)
-        host.ambient.add(progressBar)
         bindHeader(host.data.profile)
         tick(host.season)
-        if (first && host.policy.motion) {
-            progressBar.playReveal()
-            listOf(heroCard, messageCard, progressCard, actions).forEachIndexed { i, v ->
-                v.alpha = 0f
-                v.translationY = ctx.dp(18).toFloat()
-                v.animate().alpha(1f).translationY(0f).setStartDelay(60L + i * 70L).setDuration(420).start()
-            }
-        }
-        introPending = false
+        if (first && !host.introRunning) playEntrance()
     }
 
-    override fun onHide() {
-        host.ambient.remove(this)
-        host.ambient.remove(ring)
-        host.ambient.remove(progressBar)
+    /** Short staggered rise-in; also used when the opening animation hands over. */
+    fun playEntrance() {
+        if (entranceDone) return
+        entranceDone = true
+        staggerIn(entranceViews().filter { it !== content.getChildAt(0) }, host.policy.motion)
+        if (host.policy.motion) progressBar.playReveal()
     }
 
     override fun onDataChanged() {
-        subjectKey = null
+        subjectKey = ""
+        upcomingKey = ""
         bindHeader(host.data.profile)
     }
 
     override fun onMotionChanged() {
-        val policy = host.policy
-        units.forEach { it.animateChanges = policy.motion }
-        ring.motion = policy.motion
-        ring.ambient = policy.ambient
-        progressBar.ambient = policy.ambient
-        if (!policy.ambient) liveDot.alpha = 1f
+        countdown.animateChanges = host.policy.motion
     }
 
     override fun applyInsets(top: Int, bottom: Int) {
-        content.setPadding(ctx.dp(20), top + ctx.dp(8), ctx.dp(20), bottom + ctx.dp(120))
+        content.setPadding(ctx.dp(20), top + ctx.dp(8), ctx.dp(20), ctx.dp(20))
     }
 
     override fun nextTickDelay(now: Long): Long =
         if (mode == Mode.COUNTDOWN && target > now) Countdown.delayToNextTick(target, now) + 5 else 1000 - now % 1000
 
-    override fun onAmbientFrame(frameTimeMs: Long) {
-        if (liveCard.visibility == View.VISIBLE) {
-            liveDot.alpha = (0.45 + 0.55 * (0.5 + 0.5 * sin(2 * Math.PI * (frameTimeMs % 1400L) / 1400.0))).toFloat()
-        }
-    }
-
-    // ------------------------------------------------------------------ updates
+    // ------------------------------------------------------------------ binding
 
     private fun bindHeader(profile: Profile) {
-        greeting.text = if (profile.firstName.isEmpty()) "Hey there 👋" else "Hey ${profile.firstName} 👋"
-        subtitle.text = listOf(profile.examination, "Class ${profile.className}").filter { it.isNotBlank() }.joinToString(" · ")
-        avatar.text = profile.initials
+        greeting.update(if (profile.firstName.isEmpty()) "Hey there" else "Hey, ${profile.firstName}")
+        identity.update(listOf("Class ${profile.className}".takeIf { profile.className.isNotBlank() }, "Roll ${profile.roll}".takeIf { profile.roll.isNotBlank() })
+            .filterNotNull().joinToString(" · "))
+        schoolName.update(profile.school.substringBefore(",").ifBlank { "Al-Ameen Academy" })
+        avatar.initials = profile.initials
+        val version = host.store.avatarVersion
+        if (version != avatarVersion) {
+            avatarVersion = version
+            avatar.setPhoto(host.avatarBitmap(ctx.dp(54)))
+        }
     }
 
     override fun tick(season: Season) {
@@ -315,108 +285,89 @@ class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
             else -> Mode.COUNTDOWN
         }
         if (newMode != mode) applyMode(newMode)
-        updateLive(season, data.choices, data.profile)
+        bindLive(season, data.choices, data.profile)
         when (newMode) {
-            Mode.COUNTDOWN -> updateCountdown(season, data.choices, data.profile)
-            Mode.FINAL_LIVE -> season.live?.let { bindSubject(it.exam, data.choices, data.profile, live = true) }
+            Mode.COUNTDOWN -> bindCountdown(season, data.choices, data.profile)
+            Mode.FINAL_LIVE -> Unit
             Mode.CELEBRATE -> bindCelebration(season, data.profile)
         }
-        updateProgress(season, data.choices)
-        messageText.update(Messages.pick(season, data.choices, messageOffset))
-        reviseCaption.update((season.next ?: season.live)?.exam?.title(data.choices) ?: "All subjects")
+        bindProgress(season, data.choices)
+        message.update(Messages.pick(season, data.choices, messageOffset))
     }
 
     private fun applyMode(newMode: Mode) {
         val previous = mode
         mode = newMode
-        subjectKey = null
-        centerCountdown.setVisible(newMode == Mode.COUNTDOWN)
-        centerAlt.setVisible(newMode != Mode.COUNTDOWN)
-        tiles.setVisible(newMode != Mode.CELEBRATE)
-        celebrateBody.setVisible(newMode == Mode.CELEBRATE)
-        celebrateButton.setVisible(newMode == Mode.CELEBRATE)
-        actions.setVisible(newMode != Mode.CELEBRATE)
-        subjectKicker.setVisible(newMode != Mode.CELEBRATE)
-        if (newMode == Mode.CELEBRATE) localNote.setVisible(false)
-        when (newMode) {
-            Mode.COUNTDOWN -> ring.mode = CountdownRingView.Mode.COUNTDOWN
-            Mode.FINAL_LIVE -> {
-                ring.mode = CountdownRingView.Mode.LIVE
-                ring.setProgress(1f, animate = false)
-                altIcon.setImageResource(R.drawable.ic_flag)
-                altIcon.imageTintList = android.content.res.ColorStateList.valueOf(Palette.PINK)
-                altTitle.text = "Final exam"
-                altCaption.text = "in progress · last one!"
-            }
-            Mode.CELEBRATE -> {
-                ring.mode = CountdownRingView.Mode.CELEBRATE
-                ring.setProgress(1f, animate = false)
-                altIcon.setImageResource(R.drawable.ic_trophy)
-                altIcon.imageTintList = android.content.res.ColorStateList.valueOf(Palette.AMBER)
-                altTitle.text = "All done!"
-                altCaption.text = "Exam season complete"
-                if (!celebrated) {
-                    celebrated = true
-                    // Celebrate when the season ends while the app is open, and on first view afterwards.
-                    if (previous != null || introPending) scroll.post { host.celebrate() }
-                }
-            }
-        }
+        subjectKey = ""
+        nextSection.setVisible(newMode != Mode.CELEBRATE)
+        celebrateSection.setVisible(newMode == Mode.CELEBRATE)
+        val counting = newMode == Mode.COUNTDOWN
+        listOf(subject, countdown, track, trackCaption, details, revise).forEach { it.setVisible(counting) }
+        localNote.setVisible(false)
+        finalNote.setVisible(newMode == Mode.FINAL_LIVE)
+        if (newMode == Mode.FINAL_LIVE) nextLabel.update("AFTER THIS")
+        // Celebrate when the final exam finishes while the app is open, or on the first
+        // visit afterwards — never before the last paper is actually done.
+        if (newMode == Mode.CELEBRATE && previous != Mode.CELEBRATE) scroll.post { host.celebrate(force = false) }
     }
 
-    private fun updateCountdown(season: Season, choices: Choices, profile: Profile) {
+    private fun bindCountdown(season: Season, choices: Choices, profile: Profile) {
         val next = season.next ?: return
         target = next.startMillis
         val cd = Countdown.until(target, season.now)
-        units[0].minDigits = if (cd.days >= 100) 3 else 2
-        units[0].setValue(cd.days)
-        units[1].setValue(cd.hours.toLong())
-        units[2].setValue(cd.minutes.toLong())
-        units[3].setValue(cd.seconds.toLong())
-        ring.setProgress(season.ringFraction(), animate = introPending)
-        heroKicker.update(when {
-            season.live != null -> "FOLLOWING EXAM IN"
-            season.nextIsFinal -> "FINAL EXAM IN"
-            else -> "NEXT EXAM IN"
-        })
-        ringDate.update(Formats.dateShort(next.exam.date))
-        bindSubject(next.exam, choices, profile, live = false)
+        countdown.set(cd)
+        val base = when {
+            season.live != null -> "FOLLOWING EXAM"
+            season.nextIsFinal -> "FINAL EXAM"
+            else -> "NEXT EXAM"
+        }
+        // "NEXT EXAM · MIL" above "Bengali"; ordinary subjects have no kicker.
+        nextLabel.update(base + (next.exam.kicker(choices)?.let { " · ${it.uppercase()}" } ?: ""))
+        track.set(season.ringFraction(), animate = !entranceDone)
+        bindSubject(next, season, choices, profile)
 
         val minute = (target - season.now) / 60_000L
         if (minute != spokenMinute) {
             spokenMinute = minute
-            heroCard.contentDescription = "${next.exam.title(choices)} starts in ${cd.spoken()}, on " +
-                "${Formats.dateLong(next.exam.date)} at ${Formats.time(next.exam.start)} India time" +
-                (if (profile.hall.isBlank()) "" else ", hall ${profile.hall}") + "."
+            nextSection.contentDescription = null
+            countdown.contentDescription = "${next.exam.title(choices)} starts in ${cd.spoken()}"
         }
     }
 
-    private fun bindSubject(exam: Exam, choices: Choices, profile: Profile, live: Boolean) {
-        val key = "${exam.key}|${exam.durationMinutes}|$choices|${profile.hall}|$live"
-        if (key == subjectKey) return
+    private fun bindSubject(next: ExamStatus, season: Season, choices: Choices, profile: Profile) {
+        val exam = next.exam
+        val index = season.exams.indexOf(next)
+        val previous = season.exams.getOrNull(index - 1)
+        val key = "${exam.key}|${exam.durationMinutes}|$choices|${profile.hall}|${previous?.exam?.key}"
+        if (key == subjectKey) {
+            trackCaption.update(trackText(season, previous, exam, choices))
+            return
+        }
         subjectKey = key
-        val kicker = exam.kicker(choices)
-        subjectKicker.text = (if (live) "Now · " else "") + (kicker ?: "Class VIII").uppercase()
-        subjectTitle.text = exam.headline(choices)
-        dateTile.bind(Formats.dateShort(exam.date).substringAfter(", "), Formats.weekday(exam.date).let { dayName(it) })
-        timeTile.bind(Formats.time(exam.start), "India time")
-        hallTile.bind(profile.hall.ifBlank { "—" }, "Exam hall")
+        subject.update(exam.headline(choices))
+        subject.contentDescription = exam.title(choices)
+        dateItem.update(Formats.dateShort(exam.date))
+        timeItem.update("${Formats.time(exam.start)} IST")
+        hallItem.update(if (profile.hall.isBlank()) "Hall not set" else "Hall ${profile.hall}")
         val local = Formats.startInZone(exam, ZoneId.systemDefault())
-        localNote.text = if (local != null) "That’s $local where you are now." else ""
+        localNote.update(if (local != null) "That’s $local where you are now." else "")
         localNote.setVisible(local != null)
-        if (live) {
-            heroCard.contentDescription = "Final exam in progress: ${exam.title(choices)}."
+        revise.text = "Revise ${exam.headline(choices)}"
+        revise.setLeadingIcon(R.drawable.ic_study)
+        trackCaption.update(trackText(season, previous, exam, choices))
+    }
+
+    /** Explains what the thin line measures. */
+    private fun trackText(season: Season, previous: ExamStatus?, exam: Exam, choices: Choices): String {
+        val percent = Math.round(season.ringFraction() * 100)
+        return if (previous == null) {
+            "$percent% of the final week before your first exam has passed."
+        } else {
+            "$percent% of the time from ${previous.exam.headline(choices)} to ${exam.headline(choices)} has passed."
         }
     }
 
-    private fun bindCelebration(season: Season, profile: Profile) {
-        val name = profile.firstName.ifEmpty { "you" }
-        subjectTitle.text = if (profile.firstName.isEmpty()) "You did it! 🎉" else "You did it, $name! 🎉"
-        celebrateBody.text = "All ${season.total} exams are done. Time to relax — you’ve earned it."
-        heroCard.contentDescription = "${subjectTitle.text} All ${season.total} exams are done."
-    }
-
-    private fun updateLive(season: Season, choices: Choices, profile: Profile) {
+    private fun bindLive(season: Season, choices: Choices, profile: Profile) {
         val live = season.live
         if (live == null) {
             liveCard.setVisible(false)
@@ -427,26 +378,31 @@ class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
         val hall = if (profile.hall.isBlank()) "" else " · Hall ${profile.hall}"
         liveDetail.update("${exam.title(choices)} · started ${Formats.time(exam.start)}$hall")
         val end = exam.confirmedEndMillis
-        liveDuration.update(if (end != null) {
-            "Ends at ${Formats.time(end)} — ${Timetable.durationLabel(exam.durationMinutes).lowercase()}, as set in Settings."
-        } else {
-            "Duration not confirmed: 3 hours for core subjects, 1½ hours for non-core. " +
-                "Tap below once you’ve finished."
-        })
+        liveDuration.update(
+            if (end != null) {
+                "Ends at ${Formats.time(end)} (${Timetable.durationLabel(exam.durationMinutes).lowercase()}, set in Settings)."
+            } else {
+                "Duration not confirmed: 3 hours for core subjects, 1½ hours for non-core. Tap below once you’ve handed in your paper."
+            },
+        )
         liveCard.contentDescription = "It’s exam time! ${liveDetail.text}. ${liveDuration.text}"
         if (exam.key != liveKey) {
             liveKey = exam.key
             liveCard.setVisible(true)
-            if (host.policy.motion && !introPending) {
+            if (host.policy.motion && entranceDone) {
                 liveCard.alpha = 0f
-                liveCard.scaleX = 0.94f
-                liveCard.scaleY = 0.94f
-                liveCard.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(380).start()
+                liveCard.translationY = ctx.dp(10).toFloat()
+                liveCard.animate().alpha(1f).translationY(0f).setDuration(280).start()
             }
         }
     }
 
-    private fun updateProgress(season: Season, choices: Choices) {
+    private fun bindCelebration(season: Season, profile: Profile) {
+        celebrateTitle.update(if (profile.firstName.isEmpty()) "You did it! 🎉" else "You did it, ${profile.firstName}! 🎉")
+        celebrateBody.update("All ${season.total} exams are done. Time to relax — you’ve earned it.")
+    }
+
+    private fun bindProgress(season: Season, choices: Choices) {
         progressCount.update("${season.completed} of ${season.total} done")
         progressBar.segments = season.exams.map {
             when {
@@ -457,27 +413,56 @@ class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
             }
         }
         val percent = Math.round(season.progress * 100)
-        val next = season.next
-        progressFoot.update(
+        progressCaption.update(
             when {
-                season.isOver -> "Exam season complete. Brilliant work!"
-                next != null -> "$percent% complete · Next: ${next.exam.title(choices)}, ${Formats.dateShort(next.exam.date)}"
-                else -> "$percent% complete · Final exam in progress"
+                season.isOver -> "Every exam is complete."
+                season.completed == 0 -> "Counted from completed exam dates. None yet — the first is ${Formats.relativeDay(season.exams.first().exam.date, season.now).lowercase()}."
+                else -> "$percent% complete, counted from completed exam dates."
             },
         )
+        bindUpcoming(season, choices)
+    }
+
+    /** The two timetable entries after the one being counted down to. */
+    private fun bindUpcoming(season: Season, choices: Choices) {
+        val anchor = season.next ?: season.live
+        val start = if (anchor == null) season.exams.size else season.exams.indexOf(anchor) + 1
+        val items = season.exams.drop(start).take(2)
+        val key = items.joinToString { it.exam.key } + choices
+        if (key == upcomingKey) return
+        upcomingKey = key
+        upcomingList.removeAllViews()
+        upcomingLabel.setVisible(items.isNotEmpty())
+        items.forEachIndexed { i, s ->
+            if (i > 0) upcomingList.addView(ctx.separator())
+            upcomingList.addView(upcomingRow(s.exam, choices))
+        }
+    }
+
+    private fun upcomingRow(exam: Exam, choices: Choices): View = ctx.row {
+        minimumHeight = dp(56)
+        setPadding(0, dp(8), 0, dp(8))
+        background = Shapes.ripple(ctx, null, 8)
+        addView(ctx.column {
+            addView(ctx.label(Formats.weekday(exam.date), Ui.c.text3, 10.5f))
+            addView(ctx.text(Formats.dateShort(exam.date).substringAfter(", "), 15f, Ui.c.text, Fonts.sansSemibold), lp { topMargin = dp(2) })
+        }, lp(dp(64), WRAP))
+        addView(ctx.text(exam.title(choices), 16f, Ui.c.text), lp(0, WRAP, 1f) { marginStart = dp(8) })
+        addView(ctx.text(Formats.time(exam.start), 14f, Ui.c.text2), lp(WRAP, WRAP) { marginStart = dp(8) })
+        contentDescription = "${exam.title(choices)}, ${Formats.dateLong(exam.date)} at ${Formats.time(exam.start)}"
+        setOnClickListener { host.openChecklist(exam.subject) }
     }
 
     private fun cycleMessage() {
         messageOffset++
-        val season = host.season
-        val next = Messages.pick(season, host.data.choices, messageOffset)
+        val next = Messages.pick(host.season, host.data.choices, messageOffset)
         if (!host.policy.motion) {
-            messageText.text = next
+            message.text = next
             return
         }
-        messageText.animate().alpha(0f).setDuration(140).withEndAction {
-            messageText.text = next
-            messageText.animate().alpha(1f).setDuration(220).start()
+        message.animate().alpha(0f).setDuration(120).withEndAction {
+            message.text = next
+            message.animate().alpha(1f).setDuration(200).start()
         }.start()
     }
 
@@ -490,16 +475,5 @@ class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
             "Only do this once you’ve handed in your paper. The app will then count it as done.",
             "Mark as finished",
         ) { host.markFinished(live.exam) }
-    }
-
-    private fun dayName(short: String): String = when (short) {
-        "Mon" -> "Monday"
-        "Tue" -> "Tuesday"
-        "Wed" -> "Wednesday"
-        "Thu" -> "Thursday"
-        "Fri" -> "Friday"
-        "Sat" -> "Saturday"
-        "Sun" -> "Sunday"
-        else -> short
     }
 }

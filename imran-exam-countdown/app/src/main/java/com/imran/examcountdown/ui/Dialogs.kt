@@ -17,12 +17,9 @@ import com.imran.examcountdown.ui.widgets.ButtonStyle
 import com.imran.examcountdown.ui.widgets.pillButton
 import kotlin.math.min
 
-/** Rounded, on-brand dialogs built from plain framework views. */
+/** Dialogs built from plain framework views in the app's own style. */
 object Dialogs {
 
-    /**
-     * A card-style dialog. [build] adds the body; it receives a function that dismisses it.
-     */
     fun sheet(
         activity: Activity,
         title: String,
@@ -32,16 +29,15 @@ object Dialogs {
         val dialog = Dialog(activity)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         val card = activity.column {
-            background = Shapes.rounded(context, 28, Palette.SURFACE_SOLID, Palette.STROKE_STRONG)
-            setPadding(dp(24), dp(24), dp(24), dp(20))
-            addView(activity.text(title, 21f, Palette.TEXT, Fonts.semibold))
+            background = Shapes.rounded(context, 22, Ui.c.surface, Ui.c.separator)
+            setPadding(dp(24), dp(22), dp(24), dp(18))
+            addView(activity.heading(title, 21f))
             if (message != null) {
-                addView(activity.text(message, 15f, Palette.TEXT_2) { setLineSpacing(0f, 1.3f) }, lp { topMargin = dp(10) })
+                addView(activity.text(message, 15f, Ui.c.text2) { setLineSpacing(0f, 1.3f) }, lp { topMargin = dp(10) })
             }
         }
         card.build { dialog.dismiss() }
         val scroll = ScrollView(activity).apply {
-            isFillViewport = false
             isVerticalScrollBarEnabled = false
             addView(card)
         }
@@ -50,7 +46,7 @@ object Dialogs {
             setBackgroundDrawable(ColorDrawable(0))
             val metrics = activity.resources.displayMetrics
             setLayout(min(metrics.widthPixels - activity.dp(32), activity.dp(440)), WindowManager.LayoutParams.WRAP_CONTENT)
-            setDimAmount(0.62f)
+            setDimAmount(0.45f)
             addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         }
         dialog.show()
@@ -65,7 +61,7 @@ object Dialogs {
                 addView(b, lp(WRAP, WRAP) { if (i > 0) marginStart = context.dp(8) })
             }
         }
-        addView(row, lp { topMargin = context.dp(22) })
+        addView(row, lp { topMargin = context.dp(20) })
     }
 
     fun editText(
@@ -79,33 +75,20 @@ object Dialogs {
     ) {
         lateinit var field: EditText
         val dialog = sheet(activity, title) { dismiss ->
-            field = EditText(context).apply {
-                setText(initial)
-                setHint(hint)
-                this.inputType = inputType
-                textSize = 17f
-                typeface = Fonts.regular
-                setTextColor(Palette.TEXT)
-                setHintTextColor(Palette.TEXT_3)
-                background = Shapes.rounded(context, 16, 0x14FFFFFF, Palette.STROKE_STRONG)
-                setPadding(dp(16), dp(14), dp(16), dp(14))
-                setSingleLine(true)
-                imeOptions = EditorInfo.IME_ACTION_DONE
-                setSelection(text.length)
-                setOnEditorActionListener { _, action, _ ->
-                    if (action == EditorInfo.IME_ACTION_DONE) {
-                        val value = text.toString().trim()
-                        if (value.isNotEmpty() || onDelete == null) {
-                            onSave(value)
-                            dismiss()
-                        }
-                        true
-                    } else {
-                        false
+            field = activity.inputField(initial, hint, inputType)
+            field.setOnEditorActionListener { _, action, _ ->
+                if (action == EditorInfo.IME_ACTION_DONE) {
+                    val value = field.text.toString().trim()
+                    if (value.isNotEmpty() || onDelete == null) {
+                        onSave(value)
+                        dismiss()
                     }
+                    true
+                } else {
+                    false
                 }
             }
-            addView(field, lp { topMargin = dp(18) })
+            addView(field, lp { topMargin = dp(16) })
             val buttons = mutableListOf<View>()
             if (onDelete != null) {
                 buttons += activity.pillButton("Delete", R.drawable.ic_delete, ButtonStyle.DANGER) {
@@ -140,30 +123,29 @@ object Dialogs {
                 val chosen = index == selected
                 val option = context.row {
                     minimumHeight = dp(52)
-                    setPadding(dp(14), dp(10), dp(14), dp(10))
-                    background = Shapes.ripple(
-                        context,
-                        if (chosen) Shapes.rounded(context, 16, Palette.withAlpha(Palette.BLUE, 0.16f), Palette.withAlpha(Palette.BLUE, 0.5f)) else null,
-                        16,
-                    )
+                    setPadding(dp(12), dp(8), dp(12), dp(8))
+                    background = Shapes.ripple(context, if (chosen) Shapes.rounded(context, 12, Ui.c.greenSoft) else null, 12)
                     addView(
                         View(context).apply {
                             background = if (chosen) {
-                                Shapes.ovalGradient(Palette.ACCENT_GRADIENT)
+                                Shapes.oval(Ui.c.green, Ui.c.green, dp(2))
                             } else {
-                                Shapes.oval(0, Palette.withAlpha(Palette.TEXT, 0.35f), dp(2))
+                                Shapes.oval(0, Ui.c.text3, dp(2))
                             }
                         },
                         lp(dp(18), dp(18)),
                     )
-                    addView(context.text(label, 16f, Palette.TEXT, if (chosen) Fonts.semibold else Fonts.regular), lp(0, WRAP, 1f) { marginStart = dp(14) })
+                    addView(
+                        context.text(label, 16f, Ui.c.text, if (chosen) Fonts.sansSemibold else Fonts.sans),
+                        lp(0, WRAP, 1f) { marginStart = dp(14) },
+                    )
                     isClickable = true
                     setOnClickListener {
                         onPick(index)
                         dismiss()
                     }
                 }
-                list.addView(option, lp { topMargin = if (index == 0) dp(14) else dp(6) })
+                list.addView(option, lp { topMargin = if (index == 0) dp(12) else dp(4) })
             }
             addView(list)
             actions(activity.pillButton("Cancel", style = ButtonStyle.GHOST) { dismiss() })
@@ -188,4 +170,20 @@ object Dialogs {
             )
         }
     }
+}
+
+/** A single-line text field in the app's style. */
+fun Activity.inputField(initial: String, hint: String, type: Int): EditText = EditText(this).apply {
+    setText(initial)
+    setHint(hint)
+    inputType = type
+    textSize = 17f
+    typeface = Fonts.sans
+    setTextColor(Ui.c.text)
+    setHintTextColor(Ui.c.text3)
+    background = Shapes.rounded(context, 12, Ui.c.bg, Ui.c.separator, 1.5f)
+    setPadding(dp(14), dp(12), dp(14), dp(12))
+    setSingleLine(true)
+    imeOptions = EditorInfo.IME_ACTION_DONE
+    setSelection(text.length)
 }

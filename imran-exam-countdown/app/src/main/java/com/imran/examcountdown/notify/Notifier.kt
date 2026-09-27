@@ -31,7 +31,7 @@ object Notifier {
     const val CHANNEL_FOCUS = "focus_timer"
     private const val ID_FOCUS = 1
     private const val ID_EXAM_BASE = 100
-    private const val ACCENT = 0xFF3B7BFF.toInt()
+    private const val ACCENT = 0xFF1F5A3B.toInt()
 
     fun createChannels(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
