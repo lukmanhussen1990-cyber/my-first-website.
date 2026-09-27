@@ -1,5 +1,7 @@
 # Rockstar Bodyguard Mod: Bully: Scholarship Edition (PC)
 
+> **On Android?** See [`android/`](android/README.md).
+
 Hire up to 3 bodyguards who follow Jimmy around, jump in when someone hits him,
 and attack whoever you point them at.
 
