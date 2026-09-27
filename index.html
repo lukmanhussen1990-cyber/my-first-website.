@@ -352,7 +352,7 @@ section{position:relative;padding:clamp(4rem,12vw,7rem) 0}
 .burst svg{width:100%;height:100%}
 
 /* ---------- Closing ---------- */
-.closing{text-align:center;padding-bottom:calc(4rem + env(safe-area-inset-bottom))}
+.closing{text-align:center;padding-bottom:calc(6rem + env(safe-area-inset-bottom))}
 .closing .ribbon-art{width:min(260px,70vw);margin:0 auto 1.2rem}
 .closing .always{margin:0;font-family:var(--serif);font-style:italic;font-weight:500;font-size:clamp(1.9rem,7.6vw,2.7rem);color:var(--ink);line-height:1.15}
 .closing .name{display:block;font-family:var(--script);font-size:clamp(2.8rem,12vw,3.8rem);color:var(--rose-deep);line-height:1.3;margin-top:.2rem}
@@ -364,11 +364,107 @@ section{position:relative;padding:clamp(4rem,12vw,7rem) 0}
 .petals{position:fixed;inset:0;pointer-events:none;z-index:30;overflow:hidden}
 .petal{position:absolute;top:-30px;width:14px;height:12px;border-radius:14px 0 14px 0;background:linear-gradient(135deg,#f9d6d8,#e9a9b1);opacity:.75;box-shadow:inset -1px -1px 2px rgba(148,71,90,.15)}
 
+
+/* ---------- Envelope stamp & postmark ---------- */
+.env-stamp{position:absolute;top:7%;right:5%;width:15%;aspect-ratio:5/6;padding:4px;background:#fffaf4;transform:rotate(4deg);
+  -webkit-mask:radial-gradient(circle 2.4px,#0000 95%,#000) -4px -4px/8px 8px round,linear-gradient(#000 0 0) content-box;
+  mask:radial-gradient(circle 2.4px,#0000 95%,#000) -4px -4px/8px 8px round,linear-gradient(#000 0 0) content-box;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.env-stamp i{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:linear-gradient(160deg,#f7d6d9,#e5a2ab);color:#fff;font-style:normal;font-family:var(--serif);font-weight:600;font-size:clamp(.42rem,1.6vw,.55rem);letter-spacing:.14em}
+.env-stamp svg{width:52%;fill:#fffaf6;margin-bottom:8%}
+.env-postmark{position:absolute;top:4%;right:15%;width:24%;opacity:.5;backface-visibility:hidden;-webkit-backface-visibility:hidden;pointer-events:none}
+
+/* ---------- Top ribbon progress, music, tap hearts ---------- */
+.progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:45;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,var(--blush-2),var(--rose),var(--gold));pointer-events:none}
+.music{
+  position:fixed;left:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:44;
+  display:grid;place-items:center;width:48px;height:48px;padding:0;border-radius:50%;
+  background:rgba(255,250,246,.92);border:1px solid var(--gold-soft);color:var(--rose-deep);font-size:.88rem;letter-spacing:.02em;
+  box-shadow:0 10px 24px -12px rgba(110,58,66,.45);cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  opacity:0;transform:translateY(14px);pointer-events:none;transition:opacity .6s ease, transform .6s ease, background .2s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.music.show{opacity:1;transform:none;pointer-events:auto}
+.music:active{transform:scale(.95)}
+.music .note-ic{width:22px;height:22px}
+.music[aria-pressed="true"] .note-ic{display:none}
+.music[aria-pressed="false"] .eq{display:none}
+.music .eq{display:inline-flex;gap:2px;align-items:flex-end;height:14px}
+.music .eq i{width:3px;height:5px;border-radius:2px;background:currentColor;transition:height .3s ease}
+.music[aria-pressed="true"] .eq i{animation:eq .9s ease-in-out infinite}
+.music[aria-pressed="true"] .eq i:nth-child(2){animation-delay:.2s}
+.music[aria-pressed="true"] .eq i:nth-child(3){animation-delay:.4s}
+@keyframes eq{0%,100%{height:4px}50%{height:14px}}
+.tap-heart{position:fixed;left:0;top:0;width:18px;height:18px;margin:-9px 0 0 -9px;pointer-events:none;z-index:41}
+
+/* ---------- Hero sparkles ---------- */
+.twinkle{position:absolute;width:16px;height:16px;fill:var(--gold);z-index:5;pointer-events:none;animation:twinkle 3.6s ease-in-out infinite}
+.twinkle.t1{left:-6%;top:44%;animation-delay:.2s}
+.twinkle.t2{right:-2%;top:32%;width:11px;height:11px;animation-delay:1.3s}
+.twinkle.t3{left:10%;bottom:-2%;width:12px;height:12px;animation-delay:2.1s}
+.twinkle.t4{right:20%;top:-6%;width:10px;height:10px;animation-delay:2.8s}
+@keyframes twinkle{0%,100%{opacity:.15;transform:scale(.6) rotate(0)}50%{opacity:1;transform:scale(1) rotate(45deg)}}
+
+/* ---------- Stickers ---------- */
+.sticker{position:absolute;right:-10px;bottom:34px;z-index:2;display:grid;place-items:center;min-width:58px;height:58px;padding:0 6px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff 0 10%,transparent 11%),linear-gradient(160deg,#f7d6d9,#e8a8b0);
+  color:#fff;font-family:var(--hand);font-weight:600;font-size:1.05rem;line-height:1;transform:rotate(12deg);
+  box-shadow:0 0 0 3px #fffdf8, 0 6px 12px -4px rgba(110,58,66,.35);text-shadow:0 1px 1px rgba(148,71,90,.35)}
+
+/* ---------- Signature ink reveal ---------- */
+.js .sig-reveal .signature{clip-path:inset(-30% 100% -30% -5%);transition:clip-path 2s cubic-bezier(.55,.1,.3,1) .45s}
+.js .sig-reveal.in .signature{clip-path:inset(-30% -10% -30% -5%)}
+
+/* ---------- Open-when notes ---------- */
+.openwhen .lead{margin:-1.2rem auto 2.4rem;text-align:center;color:var(--ink-soft);font-style:italic;max-width:34ch}
+.notes-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(16px,4.5vw,28px);max-width:900px;margin:0 auto}
+@media (min-width:860px){.notes-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.note-card:nth-child(odd){transform:rotate(-1.6deg)}
+.note-card:nth-child(even){transform:rotate(1.4deg) translateY(10px)}
+.note{position:relative;display:block;width:100%;aspect-ratio:4/5;padding:0;border:0;background:none;cursor:pointer;perspective:1100px;-webkit-tap-highlight-color:transparent;border-radius:12px}
+.note-inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .85s cubic-bezier(.3,.8,.3,1)}
+@media (hover:hover){.note:hover .note-inner{transform:translateY(-4px) rotate(-1deg)}}
+.note[aria-expanded="true"] .note-inner{transform:rotateY(180deg)}
+.note-front,.note-back{position:absolute;inset:0;border-radius:12px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;text-align:center;overflow:hidden}
+.note-front{justify-content:flex-end;padding:0 10px 14%;background:var(--grain), linear-gradient(170deg,#fdf6ec,#f3e3cf);box-shadow:var(--shadow)}
+.note-front::before{content:"";position:absolute;left:0;right:0;top:0;height:50%;background:linear-gradient(180deg,#f6e9d8,#ecd8bf);clip-path:polygon(0 0,100% 0,50% 100%);filter:drop-shadow(0 2px 2px rgba(0,0,0,.1))}
+.note-front::after{content:"";position:absolute;inset:0;background:
+  linear-gradient(to top right,transparent 49.5%,rgba(160,110,90,.12) 50%,transparent 50.6%) left bottom/50% 58% no-repeat,
+  linear-gradient(to top left,transparent 49.5%,rgba(160,110,90,.12) 50%,transparent 50.6%) right bottom/50% 58% no-repeat;pointer-events:none}
+.seal{position:absolute;left:50%;top:50%;width:clamp(34px,10vw,44px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;z-index:1;
+  display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#c9707f,#94475a 70%);
+  box-shadow:0 0 0 3px rgba(148,71,90,.25), 0 3px 6px rgba(80,30,40,.35)}
+.seal svg{width:48%;fill:#f8d9dc}
+.note .ow{position:relative;font-family:var(--serif);font-style:italic;font-size:clamp(.92rem,3.6vw,1.05rem);color:var(--ink-soft)}
+.note .ow-what{position:relative;font-family:var(--hand);font-weight:600;font-size:clamp(1.25rem,5vw,1.55rem);line-height:1.05;color:var(--rose-deep)}
+.note-back{transform:rotateY(180deg);justify-content:center;gap:.5rem;padding:clamp(12px,4vw,20px);
+  background:var(--grain), #fffdf9;background-size:180px 180px,auto;
+  box-shadow:var(--shadow), inset 0 0 0 1px rgba(195,160,99,.45), inset 0 0 0 6px #fffdf9, inset 0 0 0 7px var(--blush-2);
+  font-family:var(--hand);font-weight:500;font-size:clamp(1.02rem,4.1vw,1.3rem);line-height:1.22;color:var(--ink)}
+.note-back .note-sig{font-family:var(--script);font-size:1.5rem;color:var(--rose-deep);line-height:1}
+.note-back .mini{width:22px;fill:var(--blush-2)}
+
+/* ---------- Hold-to-hug ---------- */
+.hug{margin:2.6rem auto 0;display:flex;flex-direction:column;align-items:center;gap:.7rem}
+.hug-btn{position:relative;width:96px;height:96px;border-radius:50%;border:1px solid var(--gold);cursor:pointer;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 40%,#fff,var(--blush));
+  box-shadow:0 0 0 5px rgba(255,255,255,.75), 0 0 0 6px var(--gold-soft), 0 14px 30px -14px rgba(148,71,90,.6);
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;transition:transform .2s ease;-webkit-tap-highlight-color:transparent}
+.hug-btn svg{width:56px;height:56px;overflow:visible}
+.hug-btn.holding{transform:scale(.94)}
+.hug-btn.hugged{animation:beat .9s ease}
+@keyframes beat{0%,100%{transform:scale(1)}25%{transform:scale(1.14)}45%{transform:scale(.97)}65%{transform:scale(1.08)}}
+.hug-hint{margin:0;font-family:var(--hand);font-size:1.3rem;color:var(--ink-soft)}
+.hug-msg{margin:0;min-height:1.6em;font-family:var(--serif);font-style:italic;font-size:1.3rem;color:var(--rose-deep)}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0ms!important}
   .js .reveal{opacity:1;transform:none}
+  .js .sig-reveal .signature{clip-path:none}
+  .twinkle{animation:none;opacity:.7}
+  .progress{display:none}
   .petals{display:none}
 }
 </style>
@@ -418,6 +514,7 @@ section{position:relative;padding:clamp(4rem,12vw,7rem) 0}
     <use href="#blossom" x="72" y="36" width="24" height="24"/>
     <circle cx="36" cy="72" r="3" fill="#f1cbcd"/><circle cx="88" cy="88" r="2.6" fill="#f1cbcd"/><circle cx="84" cy="30" r="2" fill="#e6d4ab"/>
   </symbol>
+  <symbol id="sparkle" viewBox="0 0 24 24"><path d="M12 0C13 8 16 11 24 12C16 13 13 16 12 24C11 16 8 13 0 12C8 11 11 8 12 0Z"/></symbol>
   <symbol id="pressed" viewBox="0 0 100 130">
     <path d="M50 128 C48 100 46 70 52 34" stroke="#9aa88a" stroke-width="1.6" fill="none"/>
     <path d="M49 100 C36 96 28 86 26 76 C38 78 47 88 49 100Z" fill="#b8c2a8" opacity=".9"/>
@@ -444,7 +541,17 @@ section{position:relative;padding:clamp(4rem,12vw,7rem) 0}
         <span class="from">From Rebecca</span>
       </div>
     </div>
-    <div class="env-flap-wrap"><div class="env-flap"></div></div>
+    <div class="env-flap-wrap">
+      <div class="env-flap"></div>
+      <svg class="env-postmark" viewBox="0 0 100 60" fill="none" stroke="#94475a" stroke-width="1.6">
+        <defs><path id="pmArc" d="M36 30 m-19 0 a19 19 0 1 1 38 0 a19 19 0 1 1 -38 0"/></defs>
+        <circle cx="36" cy="30" r="25"/><circle cx="36" cy="30" r="13" stroke-width="1"/>
+        <text font-family="Cormorant Garamond, serif" font-size="8.4" font-weight="600" letter-spacing="1.6" fill="#94475a" stroke="none"><textPath href="#pmArc">SEALED WITH LOVE · XOXO ·</textPath></text>
+        <use href="#heart" x="30" y="24" width="12" height="12" fill="#94475a" stroke="none"/>
+        <path d="M64 18 q6 -4 12 0 t12 0 t12 0M64 30 q6 -4 12 0 t12 0 t12 0M64 42 q6 -4 12 0 t12 0 t12 0" stroke-width="1.3"/>
+      </svg>
+      <div class="env-stamp"><i><svg viewBox="0 0 24 24"><use href="#heart"/></svg>LOVE</i></div>
+    </div>
     <div class="ribbon"><span class="l"></span><span class="r"></span></div>
     <div class="env-bow"><svg viewBox="0 0 120 96"><use href="#bow"/></svg></div>
   </div>
@@ -468,6 +575,10 @@ section{position:relative;padding:clamp(4rem,12vw,7rem) 0}
     <div class="wrap hero-grid">
       <div class="hero-art reveal">
         <svg class="hero-bow" viewBox="0 0 120 96" aria-hidden="true"><use href="#bow"/></svg>
+        <svg class="twinkle t1" aria-hidden="true"><use href="#sparkle"/></svg>
+        <svg class="twinkle t2" aria-hidden="true"><use href="#sparkle"/></svg>
+        <svg class="twinkle t3" aria-hidden="true"><use href="#sparkle"/></svg>
+        <svg class="twinkle t4" aria-hidden="true"><use href="#sparkle"/></svg>
         <svg class="sprig a" viewBox="0 0 120 160" aria-hidden="true"><use href="#sprig"/></svg>
         <svg class="sprig b" viewBox="0 0 120 160" aria-hidden="true"><use href="#sprig"/></svg>
         <button class="oval" type="button" data-open="0" aria-label="Open photo: My favorite smile">
@@ -481,7 +592,7 @@ section{position:relative;padding:clamp(4rem,12vw,7rem) 0}
       </div>
 
       <div class="hero-text">
-        <span class="eyebrow reveal">A love letter</span>
+        <span class="eyebrow reveal" id="greet">A love letter</span>
         <h1 id="hero-title" class="reveal d1">My favorite place <em>is beside you.</em></h1>
         <div class="ornament left reveal d2" aria-hidden="true"><svg><use href="#heart"/></svg></div>
         <p class="sub reveal d2">A little corner of the world, made for us.<span class="sig">— Rebecca</span></p>
@@ -528,15 +639,61 @@ section{position:relative;padding:clamp(4rem,12vw,7rem) 0}
 
           <p class="letter-greeting">My love,</p>
           <div class="letter-body">
-            <p>If I could wrap up a feeling and give it to you, it would be the warmth I feel whenever I think of you.</p>
-            <p>I love the thought of sharing ordinary days with you—the sleepy conversations, the silly jokes, the quiet moments when we don’t need to say anything at all.</p>
-            <p>This little page is my way of putting something into words: you mean so much to me. I hope it makes you smile, and I hope you come back to it whenever you want a little reminder of how loved you are.</p>
+            <p class="reveal">If I could wrap up a feeling and give it to you, it would be the warmth I feel whenever I think of you.</p>
+            <p class="reveal">I love the thought of sharing ordinary days with you—the sleepy conversations, the silly jokes, the quiet moments when we don’t need to say anything at all.</p>
+            <p class="reveal">This little page is my way of putting something into words: you mean so much to me. I hope it makes you smile, and I hope you come back to it whenever you want a little reminder of how loved you are.</p>
           </div>
-          <p class="letter-close">
+          <p class="letter-close sig-reveal">
             <span class="love">All my love,</span>
             <span class="signature">Rebecca <span class="h" aria-hidden="true">♡</span></span>
           </p>
         </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Open-when notes -->
+  <section class="openwhen" id="notes" aria-labelledby="notes-title">
+    <div class="wrap">
+      <header class="section-head reveal">
+        <span class="eyebrow">Keep these for later</span>
+        <h2 class="title" id="notes-title">Little notes, <em>open when…</em></h2>
+        <div class="ornament" aria-hidden="true"><svg><use href="#heart"/></svg></div>
+      </header>
+      <p class="lead reveal">Tap an envelope whenever the moment feels right.</p>
+      <div class="notes-grid">
+        <div class="note-card reveal">
+          <button class="note" type="button" aria-expanded="false" aria-controls="nb1">
+            <span class="note-inner">
+              <span class="note-front"><span class="seal" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#heart"/></svg></span><span class="ow">Open when…</span><span class="ow-what">you miss me</span></span>
+              <span class="note-back" id="nb1" aria-hidden="true"><svg class="mini" viewBox="0 0 24 24" aria-hidden="true"><use href="#heart"/></svg><span>Close your eyes for a moment. I’m right there with you, holding your hand.</span><span class="note-sig">R.</span></span>
+            </span>
+          </button>
+        </div>
+        <div class="note-card reveal d1">
+          <button class="note" type="button" aria-expanded="false" aria-controls="nb2">
+            <span class="note-inner">
+              <span class="note-front"><span class="seal" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#heart"/></svg></span><span class="ow">Open when…</span><span class="ow-what">you need a smile</span></span>
+              <span class="note-back" id="nb2" aria-hidden="true"><svg class="mini" viewBox="0 0 24 24" aria-hidden="true"><use href="#heart"/></svg><span>Hi, cutie. Yes, you. Now smile—you know I love it when you do.</span><span class="note-sig">R.</span></span>
+            </span>
+          </button>
+        </div>
+        <div class="note-card reveal">
+          <button class="note" type="button" aria-expanded="false" aria-controls="nb3">
+            <span class="note-inner">
+              <span class="note-front"><span class="seal" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#heart"/></svg></span><span class="ow">Open when…</span><span class="ow-what">you can’t sleep</span></span>
+              <span class="note-back" id="nb3" aria-hidden="true"><svg class="mini" viewBox="0 0 24 24" aria-hidden="true"><use href="#heart"/></svg><span>Breathe slowly… imagine me beside you, whispering goodnight. Sweet dreams, my love.</span><span class="note-sig">R.</span></span>
+            </span>
+          </button>
+        </div>
+        <div class="note-card reveal d1">
+          <button class="note" type="button" aria-expanded="false" aria-controls="nb4">
+            <span class="note-inner">
+              <span class="note-front"><span class="seal" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#heart"/></svg></span><span class="ow">Open when…</span><span class="ow-what">it’s a hard day</span></span>
+              <span class="note-back" id="nb4" aria-hidden="true"><svg class="mini" viewBox="0 0 24 24" aria-hidden="true"><use href="#heart"/></svg><span>Hard days end. The way I love you doesn’t. Come here—you’ve got me.</span><span class="note-sig">R.</span></span>
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   </section>
@@ -576,6 +733,18 @@ section{position:relative;padding:clamp(4rem,12vw,7rem) 0}
       </svg>
       <p class="always">With love, always.</p>
       <span class="name">Rebecca.</span>
+      <div class="hug">
+        <button class="hug-btn" type="button" id="hug" aria-describedby="hug-hint">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <defs><clipPath id="hugClip"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></clipPath></defs>
+            <use href="#heart" fill="#fff6f5" stroke="#c2848d" stroke-width=".9"/>
+            <rect id="hug-fill" x="0" y="21.4" width="24" height="24" fill="url(#gBow)" clip-path="url(#hugClip)"/>
+          </svg>
+          <span class="sr-only">Send a hug</span>
+        </button>
+        <p class="hug-hint" id="hug-hint">Press &amp; hold the heart for a hug</p>
+        <p class="hug-msg" id="hug-msg" aria-live="polite"></p>
+      </div>
       <div><a class="to-top" href="#top">Read it all again ♡</a></div>
       <p class="footnote">made by hand, for you</p>
     </div>
@@ -584,6 +753,12 @@ section{position:relative;padding:clamp(4rem,12vw,7rem) 0}
 </div>
 
 <div class="petals" id="petals" aria-hidden="true"></div>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<button class="music" type="button" id="music" aria-pressed="false" title="Play music box">
+  <svg class="note-ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 17.5a3 3 0 1 1-2-2.83V5.5l11-2.5v11.5a3 3 0 1 1-2-2.83V6.1L9 7.7z"/></svg>
+  <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+  <span class="music-label sr-only">Play music box</span>
+</button>
 
 <!-- Photo viewer -->
 <dialog class="viewer" id="viewer" aria-label="Photo viewer">
@@ -613,10 +788,10 @@ const SRC = {
 };
 
 const PHOTOS = [
-  { key:'selfie',  cap:'My favorite smile',          alt:'A soft, smiling selfie in a blue football jersey', w:900, h:1200, pos:'50% 38%', style:'polaroid', r:-3, ar:'4/5' },
+  { key:'selfie',  cap:'My favorite smile',          alt:'A soft, smiling selfie in a blue football jersey', w:900, h:1200, pos:'50% 38%', style:'polaroid', r:-3, ar:'4/5', sticker:'cutie ♡' },
   { key:'car',     cap:'You feel like home',         alt:'Standing beside a white car in a crisp white shirt, looking down', w:900, h:1200, pos:'70% 20%', style:'oval' },
   { key:'office',  cap:'A moment worth keeping',     alt:'Standing outside a glass office building in a light blue shirt and glasses', w:600, h:1865, pos:'50% 22%', style:'polaroid', r:2.5, ar:'3/5' },
-  { key:'glasses', cap:'Silly faces, favorite faces', alt:'A playful selfie with a cartoon glasses filter and pixel hearts', w:640, h:1240, pos:'50% 40%', style:'polaroid', r:-2, ar:'3/4' },
+  { key:'glasses', cap:'Silly faces, favorite faces', alt:'A playful selfie with a cartoon glasses filter and pixel hearts', w:640, h:1240, pos:'50% 40%', style:'polaroid', r:-2, ar:'3/4', sticker:'xoxo' },
   { key:'cat',     cap:'Even the cat is smiling',    alt:'A happy orange and white cat wearing cartoon glasses', w:400, h:1201, pos:'50% 40%', style:'oval', ar:'5/11' }
 ];
 
@@ -648,7 +823,7 @@ const PHOTOS = [
       el.setAttribute('aria-label', 'Open photo: ' + p.cap);
       el.innerHTML = `<span class="tape" aria-hidden="true"></span>
         <span class="frame" style="--ar:${p.ar}"><img decoding="async" alt="${p.alt}" width="${p.w}" height="${p.h}" style="object-position:${p.pos}"></span>
-        <span class="cap" aria-hidden="true">${p.cap}</span>`;
+        <span class="cap" aria-hidden="true">${p.cap}</span>${p.sticker ? `<span class="sticker" aria-hidden="true">${p.sticker}</span>` : ''}`;
     }
     el.querySelector('img').src = SRC[p.key];
     grid.appendChild(el);
@@ -661,7 +836,7 @@ const PHOTOS = [
   });
 
   /* ---------- Reveals ---------- */
-  const reveals = document.querySelectorAll('.reveal');
+  const reveals = document.querySelectorAll('.reveal, .sig-reveal');
   if ('IntersectionObserver' in window && !reduce.matches) {
     const io = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
@@ -675,6 +850,11 @@ const PHOTOS = [
   site.inert = true;
   let finished = false, timers = [];
   const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+
+  const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch(e){} } };
+  if (store.get('rebecca-letter-opened')) $('#intro-label').textContent = 'Welcome back, my love ♡';
+  const hr = new Date().getHours();
+  $('#greet').textContent = hr < 5 ? 'Hello, night owl ♡' : hr < 12 ? 'Good morning, my love' : hr < 17 ? 'Good afternoon, my love' : hr < 22 ? 'Good evening, my love' : 'Sweet dreams soon, my love';
 
   function finish(){
     if (finished) return;
@@ -692,6 +872,8 @@ const PHOTOS = [
     h.setAttribute('tabindex', '-1');
     h.focus({ preventScroll: true });
     startPetals();
+    store.set('rebecca-letter-opened', '1');
+    $('#music').classList.add('show');
   }
 
   $('#open-letter').addEventListener('click', e => {
@@ -809,6 +991,133 @@ const PHOTOS = [
     setTimeout(spawnPetal, 900);
     petalTimer = setInterval(spawnPetal, 3200);
   }
+  /* ---------- Scroll ribbon ---------- */
+  const prog = $('#progress');
+  let ticking = false;
+  function updProg(){
+    const max = document.documentElement.scrollHeight - innerHeight;
+    prog.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max) : 0})`;
+    ticking = false;
+  }
+  addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(updProg); } }, { passive: true });
+  addEventListener('resize', updProg);
+
+  /* ---------- Open-when notes ---------- */
+  document.querySelectorAll('.note').forEach(n => {
+    n.addEventListener('click', () => {
+      const open = n.getAttribute('aria-expanded') !== 'true';
+      n.setAttribute('aria-expanded', String(open));
+      document.getElementById(n.getAttribute('aria-controls')).setAttribute('aria-hidden', String(!open));
+    });
+  });
+
+  /* ---------- Tap anywhere for a tiny heart ---------- */
+  let lastTap = 0;
+  document.addEventListener('pointerdown', e => {
+    if (!finished || reduce.matches || !Element.prototype.animate) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (e.target.closest('button, a, dialog, .letter-body, .msg')) return;
+    const now = Date.now(); if (now - lastTap < 150) return; lastTap = now;
+    const h = document.createElement('span');
+    h.className = 'tap-heart';
+    h.innerHTML = `<svg viewBox="0 0 24 24" fill="${burstColors[Math.floor(Math.random() * 3)]}"><use href="#heart"/></svg>`;
+    document.body.appendChild(h);
+    const dx = (Math.random() - .5) * 40;
+    h.animate([
+      { transform: `translate(${e.clientX}px, ${e.clientY}px) scale(.4)`, opacity: 0 },
+      { transform: `translate(${e.clientX}px, ${e.clientY - 14}px) scale(1.1)`, opacity: 1, offset: .25 },
+      { transform: `translate(${e.clientX + dx}px, ${e.clientY - 70}px) scale(.8)`, opacity: 0 }
+    ], { duration: 950, easing: 'ease-out' }).onfinish = () => h.remove();
+  });
+
+  /* ---------- Hold-to-hug ---------- */
+  const hug = $('#hug'), hugFill = $('#hug-fill'), hugMsg = $('#hug-msg');
+  const HOLD = 1200;
+  let hugStart = 0, hugRaf = 0, hugDone = false;
+  const setFill = p => hugFill.setAttribute('y', (21.4 - 18.6 * p).toFixed(2));
+  const hugLines = ['Consider yourself hugged. Tightly. ♡', 'Another one? Always. ♡', 'Hug received, and sent right back ♡'];
+  let hugCount = 0;
+  function hugComplete(){
+    hugDone = true; cancelAnimationFrame(hugRaf);
+    setFill(1);
+    hug.classList.remove('holding'); hug.classList.remove('hugged'); void hug.offsetWidth; hug.classList.add('hugged');
+    hugMsg.textContent = hugLines[hugCount++ % hugLines.length];
+    burst(hug);
+    if (navigator.vibrate) { try { navigator.vibrate([30, 60, 30]); } catch(e){} }
+    setTimeout(() => { setFill(0); hugDone = false; }, 1800);
+  }
+  function hugTick(){
+    const p = Math.min(1, (performance.now() - hugStart) / HOLD);
+    setFill(p);
+    if (p >= 1) hugComplete(); else hugRaf = requestAnimationFrame(hugTick);
+  }
+  hug.addEventListener('pointerdown', e => {
+    if (hugDone) return;
+    if (reduce.matches) { hugComplete(); return; }
+    try { hug.setPointerCapture(e.pointerId); } catch(err){}
+    hugStart = performance.now(); hug.classList.add('holding');
+    hugRaf = requestAnimationFrame(hugTick);
+  });
+  const hugCancel = () => {
+    if (hugDone || !hugStart) return;
+    cancelAnimationFrame(hugRaf); hugStart = 0; hug.classList.remove('holding'); setFill(0);
+    hugMsg.textContent = 'Hold a little longer ♡';
+  };
+  hug.addEventListener('pointerup', hugCancel);
+  hug.addEventListener('pointercancel', hugCancel);
+  hug.addEventListener('contextmenu', e => e.preventDefault());
+  hug.addEventListener('click', e => { if (e.detail === 0 && !hugDone) hugComplete(); }); // keyboard
+
+  /* ---------- Music box (opt-in, synthesized, nothing autoplays) ---------- */
+  const musicBtn = $('#music'), musicLabel = musicBtn.querySelector('.music-label');
+  const MEL = [76,79,84,79, 74,79,83,79, 72,76,81,76, 77,81,84,83,
+               76,79,84,86, 83,79,74,79, 72,76,81,84, 81,77,79,72];
+  const BASS = [48,43,45,41];
+  const STEP = 60 / 84 / 2;
+  let actx = null, master = null, playing = false, nextT = 0, stepN = 0, sched = 0;
+  function tone(m, t, vel, dur){
+    const f = 440 * Math.pow(2, (m - 69) / 12);
+    const o = actx.createOscillator(), o2 = actx.createOscillator(), g = actx.createGain(), g2 = actx.createGain();
+    o.type = 'sine'; o2.type = 'sine'; o.frequency.value = f; o2.frequency.value = f * 3.01; g2.gain.value = .08;
+    o.connect(g); o2.connect(g2).connect(g); g.connect(master);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.start(t); o2.start(t); o.stop(t + dur + .05); o2.stop(t + dur + .05);
+  }
+  function schedule(){
+    while (nextT < actx.currentTime + .3) {
+      const i = stepN % MEL.length;
+      tone(MEL[i], nextT, .13, 1.6);
+      if (i % 4 === 0) tone(BASS[(i / 4) % 4], nextT, .07, 2.4);
+      nextT += STEP; stepN++;
+    }
+  }
+  function musicOn(){
+    if (!actx) {
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      actx = new AC();
+      const lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200;
+      const dl = actx.createDelay(); dl.delayTime.value = .3;
+      const fb = actx.createGain(); fb.gain.value = .3;
+      const wet = actx.createGain(); wet.gain.value = .35;
+      master = actx.createGain(); master.gain.value = 0;
+      master.connect(lp); lp.connect(actx.destination); lp.connect(dl); dl.connect(fb).connect(dl); dl.connect(wet).connect(actx.destination);
+    }
+    actx.resume();
+    master.gain.cancelScheduledValues(actx.currentTime);
+    master.gain.setTargetAtTime(.5, actx.currentTime, .15);
+    nextT = actx.currentTime + .08; stepN = 0;
+    clearInterval(sched); sched = setInterval(schedule, 70); schedule();
+    playing = true; musicBtn.setAttribute('aria-pressed', 'true'); musicLabel.textContent = 'Pause music'; musicBtn.title = 'Pause music';
+  }
+  function musicOff(){
+    if (!actx) return;
+    master.gain.cancelScheduledValues(actx.currentTime);
+    master.gain.setTargetAtTime(0, actx.currentTime, .12);
+    clearInterval(sched);
+    playing = false; musicBtn.setAttribute('aria-pressed', 'false'); musicLabel.textContent = 'Play music box'; musicBtn.title = 'Play music box';
+  }
+  musicBtn.addEventListener('click', () => playing ? musicOff() : musicOn());
+  document.addEventListener('visibilitychange', () => { if (document.hidden && playing) musicOff(); });
 })();
 </script>
 </body>
