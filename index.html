@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BRAINROT.EXE</title>
+<meta name="description" content="A single-page brainrot animation playground: Italian brainrot characters, aura farming, 6-7, and chaos mode.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0b1a;
+    --bg-2: #171433;
+    --ink: #f5f3ff;
+    --ink-dim: #b9b3d9;
+    --pink: #ff3db8;
+    --lime: #b6ff3b;
+    --cyan: #3bf0ff;
+    --yellow: #ffe23b;
+    --orange: #ff8a3b;
+    --card: #1e1a40;
+    --line: #3a3470;
+    --shadow: 0 0 0 3px #000, 6px 6px 0 3px #000;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+  body.shake { animation: shake .45s linear; }
+  @keyframes shake {
+    0%,100% { transform: translate(0,0) rotate(0); }
+    20% { transform: translate(-8px,4px) rotate(-1deg); }
+    40% { transform: translate(7px,-6px) rotate(1deg); }
+    60% { transform: translate(-5px,-3px) rotate(-.5deg); }
+    80% { transform: translate(6px,5px) rotate(.5deg); }
+  }
+  body.chaos { animation: hue 2s linear infinite; }
+  @keyframes hue { to { filter: hue-rotate(360deg); } }
+
+  #fx { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+
+  /* ---------- Marquee ---------- */
+  .marquee {
+    background: var(--yellow);
+    color: #000;
+    font-family: "Bungee", sans-serif;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    border-bottom: 3px solid #000;
+    position: relative;
+    z-index: 5;
+  }
+  .marquee .track { display: inline-block; padding: 8px 0; animation: scroll 28s linear infinite; }
+  .marquee span { margin: 0 18px; }
+  @keyframes scroll { to { transform: translateX(-50%); } }
+
+  /* ---------- Hero ---------- */
+  header.hero {
+    position: relative;
+    padding: 64px 16px 40px;
+    text-align: center;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(255,61,184,.35), transparent 40%),
+      radial-gradient(circle at 80% 60%, rgba(59,240,255,.25), transparent 45%),
+      var(--bg);
+  }
+  .hero h1 {
+    font-family: "Bungee", sans-serif;
+    font-size: clamp(44px, 11vw, 132px);
+    line-height: .95;
+    margin: 0;
+    position: relative;
+    display: inline-block;
+    color: var(--lime);
+    text-shadow: 4px 4px 0 var(--pink), 8px 8px 0 #000;
+    animation: wobble 3s ease-in-out infinite;
+  }
+  .hero h1::before, .hero h1::after {
+    content: attr(data-text);
+    position: absolute; left: 0; top: 0; width: 100%;
+    text-shadow: none;
+    opacity: .8;
+  }
+  .hero h1::before { color: var(--cyan); animation: glitch 2.2s infinite steps(1); clip-path: inset(0 0 60% 0); }
+  .hero h1::after  { color: var(--pink); animation: glitch 1.7s infinite reverse steps(1); clip-path: inset(55% 0 0 0); }
+  @keyframes glitch {
+    0%,88%,100% { transform: translate(0); opacity: 0; }
+    90% { transform: translate(-6px, 2px); opacity: .85; }
+    94% { transform: translate(6px, -2px); opacity: .85; }
+  }
+  @keyframes wobble {
+    0%,100% { transform: rotate(-2deg) scale(1); }
+    50% { transform: rotate(2deg) scale(1.04); }
+  }
+  .hero p.tag {
+    font-size: clamp(16px, 2.4vw, 22px);
+    color: var(--ink-dim);
+    max-width: 640px;
+    margin: 22px auto 28px;
+  }
+  .hero p.tag b { color: var(--yellow); }
+  .btn-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  button, .btn {
+    font-family: "Bungee", sans-serif;
+    font-size: 16px;
+    padding: 14px 22px;
+    border: 3px solid #000;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 5px 5px 0 #000;
+    transition: transform .08s, box-shadow .08s;
+    color: #000;
+    background: var(--lime);
+    text-decoration: none;
+  }
+  button:hover, .btn:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 #000; }
+  button:active, .btn:active { transform: translate(4px,4px); box-shadow: 1px 1px 0 #000; }
+  .btn.pink { background: var(--pink); color: #fff; }
+  .btn.cyan { background: var(--cyan); }
+  .btn.yellow { background: var(--yellow); }
+  button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+
+  .floaty {
+    position: absolute; font-size: 44px; pointer-events: none; opacity: .85;
+    animation: floaty 6s ease-in-out infinite;
+  }
+  @keyframes floaty {
+    0%,100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-26px) rotate(18deg); }
+  }
+
+  /* ---------- Sections ---------- */
+  section { padding: 56px 16px; max-width: 1180px; margin: 0 auto; }
+  h2 {
+    font-family: "Bungee", sans-serif;
+    font-size: clamp(28px, 5vw, 48px);
+    margin: 0 0 8px;
+    color: var(--yellow);
+    text-shadow: 3px 3px 0 #000;
+  }
+  .sub { color: var(--ink-dim); margin: 0 0 28px; font-size: 17px; }
+
+  /* ---------- Character grid ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 22px;
+  }
+  .card {
+    background: var(--card);
+    border: 3px solid #000;
+    border-radius: 20px;
+    box-shadow: 6px 6px 0 #000;
+    padding: 18px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform .15s;
+  }
+  .card:hover { transform: rotate(-1.5deg) scale(1.03); }
+  .card .stage {
+    height: 150px;
+    display: grid; place-items: center;
+    border-radius: 14px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card h3 { font-family: "Bungee", sans-serif; font-size: 19px; margin: 0 0 6px; }
+  .card p { margin: 0; color: var(--ink-dim); font-size: 14px; line-height: 1.4; }
+  .rarity {
+    position: absolute; top: 12px; right: 12px; z-index: 2;
+    font-family: "Bungee", sans-serif; font-size: 11px;
+    padding: 4px 8px; border-radius: 8px; border: 2px solid #000; color: #000;
+  }
+  .rar-god { background: linear-gradient(90deg, var(--pink), var(--yellow), var(--cyan)); background-size: 200% 100%; animation: shimmer 2s linear infinite; }
+  .rar-myth { background: var(--pink); color: #fff; }
+  .rar-leg { background: var(--yellow); }
+  .rar-epic { background: var(--cyan); }
+  @keyframes shimmer { to { background-position: 200% 0; } }
+
+  .creature { position: relative; font-size: 64px; line-height: 1; }
+  .creature .acc { position: absolute; font-size: 34px; }
+
+  /* per-character animations */
+  .a-swim   { animation: swim 1.6s ease-in-out infinite; }
+  .a-fly    { animation: fly 2.4s ease-in-out infinite; }
+  .a-bonk   { animation: bonk .5s ease-in-out infinite; transform-origin: bottom center; }
+  .a-spin   { animation: spin 1.8s linear infinite; }
+  .a-stomp  { animation: stomp .7s ease-in-out infinite; }
+  .a-jitter { animation: jitter .18s linear infinite; }
+  .a-drift  { animation: drift 3.2s ease-in-out infinite; }
+  .a-dash   { animation: dash 1.4s ease-in-out infinite; }
+  @keyframes swim { 0%,100% { transform: translateX(-28px) rotate(-6deg); } 50% { transform: translateX(28px) rotate(6deg); } }
+  @keyframes fly { 0% { transform: translate(-60px, 10px) rotate(-10deg); } 50% { transform: translate(60px,-14px) rotate(8deg); } 100% { transform: translate(-60px, 10px) rotate(-10deg); } }
+  @keyframes bonk { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-14deg) translateY(-6px); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes stomp { 0%,100% { transform: translateY(0) scaleY(1); } 40% { transform: translateY(-20px) scaleY(1.05); } 60% { transform: translateY(0) scaleY(.85); } }
+  @keyframes jitter { 0% { transform: translate(0,0); } 25% { transform: translate(2px,-2px); } 50% { transform: translate(-2px,1px); } 75% { transform: translate(1px,2px); } }
+  @keyframes drift { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-14px) rotate(4deg); } }
+  @keyframes dash { 0%,100% { transform: translateX(-40px) skewX(0); } 45% { transform: translateX(40px) skewX(-12deg); } 55% { transform: translateX(40px) skewX(0); } }
+
+  /* sky backgrounds for stages */
+  .bg-sea   { background: linear-gradient(#1a6dff, #0a2d7a); }
+  .bg-sky   { background: linear-gradient(#ff9a3b, #ff3db8); }
+  .bg-night { background: radial-gradient(circle at 70% 30%, #4b3b9e, #0d0b1a); }
+  .bg-cafe  { background: linear-gradient(135deg, #f6c7a0, #c97b4a); }
+  .bg-jungle{ background: linear-gradient(#2fbf71, #0f5a33); }
+  .bg-desert{ background: linear-gradient(#ffe23b, #ff8a3b); }
+  .bg-space { background: radial-gradient(circle at 30% 30%, #6b3bff, #0d0b1a 70%); }
+  .bg-neon  { background: linear-gradient(135deg, #3bf0ff, #b6ff3b); }
+  .bubbles::after {
+    content: "○ ◦ ○ ◦ ○"; position: absolute; bottom: -20px; left: 10%;
+    color: rgba(255,255,255,.5); letter-spacing: 18px; font-size: 18px;
+    animation: rise 3s linear infinite;
+  }
+  @keyframes rise { to { transform: translateY(-190px); opacity: 0; } }
+  .stars::before {
+    content: "✦ · ✧ · ✦ · ✧"; position: absolute; top: 14px; left: 0; right: 0;
+    color: #fff; letter-spacing: 10px; font-size: 14px; animation: twinkle 1.4s steps(2) infinite;
+  }
+  @keyframes twinkle { 50% { opacity: .3; } }
+
+  /* ---------- Subway surfers split-screen ---------- */
+  .split {
+    display: grid; grid-template-columns: 1.1fr 1fr; gap: 22px; align-items: stretch;
+  }
+  .runner {
+    position: relative; height: 360px; border: 3px solid #000; border-radius: 20px;
+    box-shadow: 6px 6px 0 #000; overflow: hidden;
+    background: linear-gradient(#5ec8ff 0 38%, #7a7a8c 38%);
+    perspective: 420px;
+  }
+  .runner .sun { position: absolute; top: 18px; right: 30px; font-size: 42px; animation: spin 10s linear infinite; }
+  .runner .city {
+    position: absolute; top: 18%; left: 0; width: 200%; height: 22%;
+    background: repeating-linear-gradient(90deg, #2a2a55 0 40px, transparent 40px 52px, #3a3a70 52px 84px, transparent 84px 96px);
+    clip-path: polygon(0 40%, 4% 40%, 4% 10%, 8% 10%, 8% 50%, 12% 50%, 12% 0, 16% 0, 16% 30%, 20% 30%, 20% 60%, 24% 60%, 24% 20%, 28% 20%, 28% 45%, 32% 45%, 32% 5%, 36% 5%, 36% 35%, 40% 35%, 40% 15%, 44% 15%, 44% 55%, 48% 55%, 48% 10%, 52% 10%, 52% 40%, 56% 40%, 56% 0, 60% 0, 60% 30%, 64% 30%, 64% 60%, 68% 60%, 68% 20%, 72% 20%, 72% 45%, 76% 45%, 76% 5%, 80% 5%, 80% 35%, 84% 35%, 84% 15%, 88% 15%, 88% 55%, 92% 55%, 92% 10%, 96% 10%, 96% 40%, 100% 40%, 100% 100%, 0 100%);
+    animation: scroll 12s linear infinite;
+  }
+  .runner .ground {
+    position: absolute; left: -50%; right: -50%; bottom: 0; height: 62%;
+    transform: rotateX(62deg); transform-origin: bottom;
+    background:
+      repeating-linear-gradient(0deg, #4a3a2a 0 14px, #6b5440 14px 60px),
+      #6b5440;
+    background-size: 100% 60px;
+    animation: rails .5s linear infinite;
+  }
+  .runner .ground::before {
+    content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0 calc(33.33% - 6px), #c9c9d6 calc(33.33% - 6px) 33.33%);
+  }
+  @keyframes rails { to { background-position: 0 60px; } }
+  .runner .hero-run {
+    position: absolute; bottom: 28px; left: 50%; font-size: 58px;
+    transform: translateX(-50%); transition: left .18s ease-out;
+    animation: bounce .35s ease-in-out infinite alternate;
+    z-index: 3;
+  }
+  @keyframes bounce { to { margin-bottom: 14px; } }
+  .runner .obstacle {
+    position: absolute; bottom: 30px; font-size: 44px; z-index: 2;
+    animation: approach 1.6s linear forwards;
+  }
+  @keyframes approach {
+    from { transform: translate(-50%, -150px) scale(.25); opacity: .2; }
+    to   { transform: translate(-50%, 40px) scale(1.4); opacity: 1; }
+  }
+  .runner .hud {
+    position: absolute; top: 12px; left: 12px; z-index: 4;
+    font-family: "Bungee", sans-serif; font-size: 14px;
+    background: rgba(0,0,0,.6); padding: 6px 10px; border-radius: 10px;
+  }
+  .runner .hint {
+    position: absolute; bottom: 8px; width: 100%; text-align: center; z-index: 4;
+    font-size: 12px; color: #fff; text-shadow: 1px 1px 0 #000;
+  }
+  .lore {
+    border: 3px solid #000; border-radius: 20px; box-shadow: 6px 6px 0 #000;
+    background: var(--card); padding: 22px; display: flex; flex-direction: column;
+  }
+  .lore .caption {
+    font-family: "Bungee", sans-serif; font-size: clamp(20px, 3vw, 28px);
+    line-height: 1.25; flex: 1; display: grid; place-items: center; text-align: center;
+    min-height: 200px;
+  }
+  .lore .caption span { display: inline-block; animation: pop .3s ease-out; }
+  @keyframes pop { from { transform: scale(.4); opacity: 0; } }
+  .lore .caption .hl { color: var(--lime); }
+
+  /* ---------- Aura / 6-7 ---------- */
+  .meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; }
+  .panel {
+    background: var(--card); border: 3px solid #000; border-radius: 20px;
+    box-shadow: 6px 6px 0 #000; padding: 22px; text-align: center;
+  }
+  .panel h3 { font-family: "Bungee", sans-serif; margin: 0 0 6px; font-size: 22px; }
+  .big-num {
+    font-family: "Bungee", sans-serif; font-size: clamp(48px, 8vw, 72px);
+    color: var(--lime); text-shadow: 3px 3px 0 #000; margin: 10px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .big-num.neg { color: var(--pink); }
+  .bar { height: 20px; border: 3px solid #000; border-radius: 12px; background: #000; overflow: hidden; margin: 12px 0 16px; }
+  .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--pink), var(--yellow), var(--lime)); transition: width .25s; }
+  .rank { font-family: "Bungee", sans-serif; color: var(--cyan); min-height: 1.4em; }
+  .panel .btn-row { margin-top: 14px; }
+  .sixseven {
+    font-family: "Bungee", sans-serif; font-size: 92px; line-height: 1;
+    display: flex; justify-content: center; gap: 22px; margin: 6px 0 14px;
+  }
+  .sixseven .hand { display: inline-block; font-size: 58px; }
+  .sixseven.go .hand:first-child { animation: scale-l .35s ease-in-out 4; }
+  .sixseven.go .hand:last-child { animation: scale-r .35s ease-in-out 4; }
+  @keyframes scale-l { 50% { transform: translateY(-26px); } }
+  @keyframes scale-r { 50% { transform: translateY(26px); } }
+
+  /* ---------- Trend board ---------- */
+  .trends { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  .trend {
+    border: 3px solid #000; border-radius: 16px; padding: 16px; box-shadow: 5px 5px 0 #000;
+    color: #000; font-weight: 700; position: relative;
+  }
+  .trend:nth-child(4n+1) { background: var(--lime); transform: rotate(-1.5deg); }
+  .trend:nth-child(4n+2) { background: var(--cyan); transform: rotate(1deg); }
+  .trend:nth-child(4n+3) { background: var(--yellow); transform: rotate(-.5deg); }
+  .trend:nth-child(4n+4) { background: var(--pink); color: #fff; transform: rotate(1.5deg); }
+  .trend b { font-family: "Bungee", sans-serif; display: block; font-size: 18px; margin-bottom: 6px; }
+  .trend small { font-weight: 400; font-size: 14px; line-height: 1.35; display: block; }
+
+  /* ---------- Slang generator ---------- */
+  .gen {
+    background: var(--bg-2); border: 3px solid #000; border-radius: 20px; box-shadow: 6px 6px 0 #000;
+    padding: 28px 22px; text-align: center;
+  }
+  .gen .out {
+    font-family: "Bungee", sans-serif; font-size: clamp(22px, 4vw, 38px);
+    color: var(--ink); min-height: 2.6em; display: grid; place-items: center; margin-bottom: 18px;
+  }
+
+  footer { text-align: center; padding: 40px 16px 60px; color: var(--ink-dim); font-size: 14px; }
+  footer a { color: var(--cyan); }
+
+  /* flying summoned creature */
+  .summon {
+    position: fixed; z-index: 60; font-size: 90px; pointer-events: none;
+    animation: flyby 2.2s cubic-bezier(.4,.1,.6,.9) forwards;
+    filter: drop-shadow(6px 6px 0 #000);
+  }
+  @keyframes flyby {
+    0% { transform: translate(-20vw, 0) rotate(-20deg) scale(.6); }
+    50% { transform: translate(50vw, -18vh) rotate(15deg) scale(1.4); }
+    100% { transform: translate(120vw, 6vh) rotate(-10deg) scale(.8); }
+  }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: var(--yellow); color: #000; border: 3px solid #000; border-radius: 14px;
+    box-shadow: 5px 5px 0 #000; padding: 12px 18px; font-family: "Bungee", sans-serif;
+    z-index: 70; max-width: calc(100vw - 32px); text-align: center;
+    animation: pop .25s ease-out;
+  }
+
+  @media (max-width: 760px) {
+    .split { grid-template-columns: 1fr; }
+    .runner { height: 300px; }
+    .floaty { font-size: 30px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+    body.chaos { filter: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+
+<div class="marquee" aria-hidden="true">
+  <div class="track" id="ticker"></div>
+</div>
+
+<header class="hero">
+  <span class="floaty" style="top:12%;left:6%">🦈</span>
+  <span class="floaty" style="top:62%;left:10%;animation-delay:-2s">🐊</span>
+  <span class="floaty" style="top:18%;right:8%;animation-delay:-1s">☕</span>
+  <span class="floaty" style="top:66%;right:12%;animation-delay:-3s">🍌</span>
+  <span class="floaty" style="top:40%;left:44%;animation-delay:-4s;opacity:.35">🗿</span>
+  <h1 data-text="BRAINROT.EXE">BRAINROT.EXE</h1>
+  <p class="tag">Your daily dose of <b>Italian brainrot</b>, <b>aura farming</b>, <b>6-7</b> and pure unfiltered chaos. Zero brain cells were harmed. Most were lost.</p>
+  <div class="btn-row">
+    <button class="btn" id="chaosBtn">☢️ Chaos mode</button>
+    <a class="btn pink" href="#squad">Meet the squad</a>
+    <button class="btn cyan" id="sixSevenHero">6 🤲 7</button>
+  </div>
+</header>
+
+<section id="squad">
+  <h2>The Brainrot Squad</h2>
+  <p class="sub">Click a creature to summon it. Turn your sound on — they say their own names.</p>
+  <div class="grid" id="grid"></div>
+</section>
+
+<section id="surf">
+  <h2>Split-Screen Mode</h2>
+  <p class="sub">The classic: lore on one side, endless runner on the other, so your attention span never has to work.</p>
+  <div class="split">
+    <div class="runner" id="runner" tabindex="0" aria-label="Endless runner game. Use left and right arrow keys or tap to change lanes.">
+      <div class="sun">☀️</div>
+      <div class="city"></div>
+      <div class="ground"></div>
+      <div class="hud">🪙 <span id="coins">0</span> · 🏃 <span id="dist">0</span>m</div>
+      <div class="hero-run" id="runnerHero">🦈</div>
+      <div class="hint">← → arrow keys or tap left/right to dodge</div>
+    </div>
+    <div class="lore">
+      <div class="caption" id="caption"><span>Loading lore…</span></div>
+      <div class="btn-row"><button class="btn yellow" id="nextLore">Next lore ➜</button></div>
+    </div>
+  </div>
+</section>
+
+<section id="aura">
+  <h2>Aura Lab</h2>
+  <p class="sub">Farm aura, lose aura, find your rank. Science.</p>
+  <div class="meters">
+    <div class="panel">
+      <h3>Aura Meter</h3>
+      <div class="big-num" id="auraNum">0</div>
+      <div class="bar"><i id="auraBar"></i></div>
+      <div class="rank" id="auraRank">NPC</div>
+      <div class="btn-row">
+        <button class="btn" id="farm">+ Farm aura</button>
+        <button class="btn pink" id="cringe">− Did something cringe</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>The 6-7 Machine</h3>
+      <div class="sixseven" id="sixseven"><span class="hand">🤲</span><span>6-7</span><span class="hand">🤲</span></div>
+      <p class="sub" style="margin:0">Times said: <b id="sixCount">0</b></p>
+      <div class="btn-row"><button class="btn cyan" id="sixBtn">Say it</button></div>
+    </div>
+  </div>
+</section>
+
+<section id="trends">
+  <h2>Trend Board 2026</h2>
+  <p class="sub">What’s rotting brains right now.</p>
+  <div class="trends" id="trendList"></div>
+</section>
+
+<section id="gen">
+  <h2>Brainrot Name Generator</h2>
+  <p class="sub">Invent the next canon character before the internet does.</p>
+  <div class="gen">
+    <div class="out" id="genOut">Press the button, chat</div>
+    <div class="btn-row"><button class="btn" id="genBtn">🎲 Generate</button> <button class="btn yellow" id="genSay">🔊 Say it</button></div>
+  </div>
+</section>
+
+<footer>
+  Made with 0 aura and 100% brainrot. Fan tribute page, not affiliated with any creator.<br>
+  Trend info via <a href="https://en.wikipedia.org/wiki/Italian_brainrot" target="_blank" rel="noopener">Wikipedia</a> &amp; around the internet.
+</footer>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const rand = a => a[Math.floor(Math.random() * a.length)];
+
+  /* ---------- Data ---------- */
+  const squad = [
+    { name: "Tralalero Tralala", emoji: "🦈", acc: [["👟", "bottom:-10px;left:-12px"], ["👟", "bottom:-10px;right:-12px"]], anim: "a-swim", bg: "bg-sea bubbles", rar: ["GOD", "rar-god"], desc: "Three-legged shark in blue Nikes. Unofficial mascot of the whole genre." },
+    { name: "Bombardiro Crocodilo", emoji: "🐊", acc: [["✈️", "top:-18px;left:10px"], ["💣", "bottom:-14px;right:0"]], anim: "a-fly", bg: "bg-sky", rar: ["GOD", "rar-god"], desc: "Half crocodile, half WWII bomber. Drops chaos from above." },
+    { name: "Tung Tung Tung Sahur", emoji: "🪵", acc: [["🏏", "top:-6px;right:-30px"], ["👀", "top:10px;left:10px;font-size:26px"]], anim: "a-bonk", bg: "bg-night stars", rar: ["MYTHIC", "rar-myth"], desc: "Wooden log with a bat. Knocks three times. You WILL wake up." },
+    { name: "Ballerina Cappuccina", emoji: "☕", acc: [["🩰", "bottom:-18px;left:14px"], ["🎀", "top:-18px;left:16px"]], anim: "a-spin", bg: "bg-cafe", rar: ["LEGENDARY", "rar-leg"], desc: "Coffee-cup ballerina. Pirouettes on espresso energy alone." },
+    { name: "Brr Brr Patapim", emoji: "🌳", acc: [["🦶", "bottom:-16px;left:-8px"], ["🦶", "bottom:-16px;right:-8px"]], anim: "a-stomp", bg: "bg-jungle", rar: ["LEGENDARY", "rar-leg"], desc: "Forest spirit with enormous feet. Stomps. That’s the lore." },
+    { name: "Chimpanzini Bananini", emoji: "🍌", acc: [["🐒", "top:-4px;left:6px;font-size:40px"]], anim: "a-jitter", bg: "bg-desert", rar: ["EPIC", "rar-epic"], desc: "A chimp living inside a banana. Wa wa wa." },
+    { name: "Lirilì Larilà", emoji: "🐘", acc: [["🌵", "bottom:-12px;right:-22px"], ["🩴", "bottom:-14px;left:-10px"]], anim: "a-drift", bg: "bg-desert", rar: ["EPIC", "rar-epic"], desc: "Cactus elephant in sandals. Controls time, allegedly." },
+    { name: "Cappuccino Assassino", emoji: "☕", acc: [["🗡️", "top:4px;left:-30px"], ["🗡️", "top:4px;right:-30px"], ["🥷", "top:-22px;left:14px;font-size:30px"]], anim: "a-dash", bg: "bg-night stars", rar: ["EPIC", "rar-epic"], desc: "Ninja coffee cup with twin katanas. Silent. Caffeinated." },
+    { name: "La Vaca Saturno Saturnita", emoji: "🐄", acc: [["🪐", "top:-16px;right:-24px"]], anim: "a-drift", bg: "bg-space stars", rar: ["GOD", "rar-god"], desc: "A cow with Saturn’s rings for a body. Orbits your thoughts." },
+    { name: "Bombombini Gusini", emoji: "🪿", acc: [["🚀", "bottom:-10px;right:-20px"]], anim: "a-fly", bg: "bg-sky", rar: ["MYTHIC", "rar-myth"], desc: "Goose fighter jet. Bombardiro’s wingman. Honk." },
+    { name: "Frigo Camello", emoji: "🐫", acc: [["🧊", "top:-14px;left:-14px"], ["❄️", "top:-12px;right:-10px;font-size:24px"]], anim: "a-stomp", bg: "bg-neon", rar: ["EPIC", "rar-epic"], desc: "Camel with a refrigerator body. Stays cool in any desert." },
+    { name: "Glorbo Fruttodrillo", emoji: "🍉", acc: [["🐊", "top:10px;left:-30px;font-size:34px"]], anim: "a-swim", bg: "bg-jungle", rar: ["LEGENDARY", "rar-leg"], desc: "Watermelon crocodile. Crunchy outside, chaotic inside." },
+  ];
+
+  const lore = [
+    ["Tralalero Tralala", "was banned from the Olympic swim team for wearing", "three Nikes"],
+    ["Bombardiro Crocodilo", "only flies on days ending in", "-y"],
+    ["Tung Tung Tung Sahur", "knocked three times and", "you’re already awake"],
+    ["Ballerina Cappuccina", "married Cappuccino Assassino in a", "latte ceremony"],
+    ["Homer", "let the", "Barts out 🐕"],
+    ["Brr Brr Patapim", "tried to buy shoes. Size", "∞"],
+    ["Chimpanzini Bananini", "peeled himself and discovered", "another banana"],
+    ["Your math teacher", "asked what 6 + 1 is. The class said", "SIX SEVENNN 🤲"],
+    ["Lirilì Larilà", "paused time just to", "finish a nap"],
+    ["La Vaca Saturno Saturnita", "got a moon as a", "birthday present 🪐"],
+    ["The whole class", "went", "funky ehhh 🕺"],
+    ["Cappuccino Assassino", "defeated the final boss with a", "decaf"],
+  ];
+
+  const trends = [
+    ["6-7 🤲", "The two numbers that broke every classroom. Hands go up and down. Nobody knows why."],
+    ["Italian Brainrot", "AI-generated creatures with pseudo-Italian names — still expanding its canon every few weeks."],
+    ["Homer let the Barts out", "Remix meme of “Who Let the Dogs Out”. Barts: out."],
+    ["Funky ehhh", "The sound. The dance. The vibe. You know it."],
+    ["Aura farming", "Doing something effortlessly cool purely for aura points."],
+    ["Steal a Brainrot", "The game where you collect and steal brainrot characters from other players."],
+    ["Folk Valley", "Wholesome folksy edits taking over For You pages."],
+    ["Tung Tung Sahur", "The wooden bat-wielding log is still the scariest alarm clock alive."],
+  ];
+
+  const ticker = ["TRALALERO TRALALA 🦈", "6-7 🤲", "+1000 AURA", "TUNG TUNG TUNG SAHUR 🪵", "BOMBARDIRO CROCODILO 🐊✈️", "HOMER LET THE BARTS OUT", "FUNKY EHHH 🕺", "SKIBIDI", "FANUM TAX", "CHAT IS THIS REAL", "BRR BRR PATAPIM 🌳", "LOCK IN 🔒", "RIZZ", "NO CAP 🧢", "SIGMA 🗿"];
+
+  /* ---------- Ticker ---------- */
+  const tickHTML = ticker.map(t => `<span>${t}</span><span>★</span>`).join("");
+  $("#ticker").innerHTML = tickHTML + tickHTML;
+
+  /* ---------- Speech ---------- */
+  function say(text, rate = 1.05, pitch = 1.1) {
+    if (!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const voices = speechSynthesis.getVoices();
+    const it = voices.find(v => /^it/i.test(v.lang));
+    if (it) u.voice = it;
+    u.rate = rate; u.pitch = pitch;
+    speechSynthesis.speak(u);
+  }
+
+  function toast(msg) {
+    document.querySelectorAll(".toast").forEach(t => t.remove());
+    const t = document.createElement("div");
+    t.className = "toast"; t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 1800);
+  }
+
+  function shake() {
+    if (reduce) return;
+    document.body.classList.remove("shake");
+    void document.body.offsetWidth;
+    document.body.classList.add("shake");
+  }
+
+  /* ---------- Squad grid ---------- */
+  const grid = $("#grid");
+  squad.forEach(c => {
+    const card = document.createElement("article");
+    card.className = "card";
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", `Summon ${c.name}`);
+    const accs = c.acc.map(([e, s]) => `<span class="acc" style="${s}">${e}</span>`).join("");
+    card.innerHTML = `
+      <span class="rarity ${c.rar[1]}">${c.rar[0]}</span>
+      <div class="stage ${c.bg}"><div class="creature ${c.anim}">${c.emoji}${accs}</div></div>
+      <h3>${c.name}</h3><p>${c.desc}</p>`;
+    const summon = () => {
+      say(c.name, .95, 1);
+      const s = document.createElement("div");
+      s.className = "summon";
+      s.style.top = (20 + Math.random() * 40) + "vh";
+      s.style.left = "0";
+      s.textContent = c.emoji + c.acc.map(a => a[0]).join("");
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 2300);
+      burst(innerWidth / 2, innerHeight / 2, [c.emoji, ...c.acc.map(a => a[0]), "✨"]);
+      addAura(50);
+    };
+    card.addEventListener("click", summon);
+    card.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); summon(); } });
+    grid.appendChild(card);
+  });
+
+  /* ---------- Particle FX canvas ---------- */
+  const cv = $("#fx"), ctx = cv.getContext("2d");
+  let W, H, dpr = Math.min(devicePixelRatio || 1, 2);
+  const parts = [];
+  function resize() { W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  resize(); addEventListener("resize", resize);
+
+  function burst(x, y, emojis, n = 26) {
+    if (reduce) n = 6;
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, sp = 3 + Math.random() * 9;
+      parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 4, r: Math.random() * 6, vr: (Math.random() - .5) * .3, e: rand(emojis), s: 20 + Math.random() * 26, life: 90 + Math.random() * 40, bounce: false });
+    }
+  }
+
+  let chaos = false, chaosTimer = 0;
+  const chaosEmojis = ["🦈", "🐊", "🪵", "☕", "🍌", "🗿", "💀", "🔥", "✨", "🤲", "🧢", "😭", "🐒", "🪐", "👟"];
+  function spawnBouncer() {
+    parts.push({ x: Math.random() * W, y: -40, vx: (Math.random() - .5) * 8, vy: Math.random() * 3, r: 0, vr: (Math.random() - .5) * .2, e: rand(chaosEmojis), s: 28 + Math.random() * 40, life: 400, bounce: true });
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, W, H);
+    if (chaos && ++chaosTimer % 6 === 0 && parts.length < 160) spawnBouncer();
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i];
+      p.vy += .32; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life--;
+      if (p.bounce) {
+        if (p.y > H - p.s / 2) { p.y = H - p.s / 2; p.vy *= -.82; }
+        if (p.x < 0 || p.x > W) p.vx *= -1;
+      }
+      if (p.life <= 0 || p.y > H + 80) { parts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, p.life / 30);
+      ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      ctx.font = `${p.s}px serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(p.e, 0, 0);
+      ctx.restore();
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+
+  $("#chaosBtn").addEventListener("click", e => {
+    chaos = !chaos;
+    document.body.classList.toggle("chaos", chaos && !reduce);
+    e.currentTarget.textContent = chaos ? "🛑 Stop chaos" : "☢️ Chaos mode";
+    if (chaos) { say("Tralalero tralala. Bombardiro crocodilo. Tung tung tung sahur.", 1.15, 1.3); shake(); }
+    else speechSynthesis && speechSynthesis.cancel();
+  });
+
+  addEventListener("click", e => {
+    if (e.target.closest("button, a, .card, .runner")) return;
+    burst(e.clientX, e.clientY, ["💀", "✨", "🗿", "🔥"], 10);
+  });
+
+  /* ---------- Runner ---------- */
+  const runner = $("#runner"), rHero = $("#runnerHero");
+  const lanes = [20, 50, 80];
+  let lane = 1, coins = 0, dist = 0, running = false;
+  const setLane = l => { lane = Math.max(0, Math.min(2, l)); rHero.style.left = lanes[lane] + "%"; };
+  runner.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft") { setLane(lane - 1); e.preventDefault(); }
+    if (e.key === "ArrowRight") { setLane(lane + 1); e.preventDefault(); }
+  });
+  addEventListener("keydown", e => {
+    if (document.activeElement === runner) return;
+    const r = runner.getBoundingClientRect();
+    if (r.top > innerHeight || r.bottom < 0) return;
+    if (e.key === "ArrowLeft") setLane(lane - 1);
+    if (e.key === "ArrowRight") setLane(lane + 1);
+  });
+  runner.addEventListener("pointerdown", e => {
+    const r = runner.getBoundingClientRect();
+    setLane(e.clientX - r.left < r.width / 2 ? lane - 1 : lane + 1);
+  });
+
+  function spawnObstacle() {
+    if (!running) return;
+    const l = Math.floor(Math.random() * 3);
+    const isCoin = Math.random() < .55;
+    const o = document.createElement("div");
+    o.className = "obstacle";
+    o.textContent = isCoin ? "🪙" : rand(["🚧", "🚃", "🪵", "🧱"]);
+    o.style.left = lanes[l] + "%";
+    runner.appendChild(o);
+    setTimeout(() => {
+      if (lane === l) {
+        if (isCoin) { coins++; $("#coins").textContent = coins; }
+        else { toast("💀 bonked — respawning"); shake(); dist = 0; }
+      }
+    }, 1400);
+    setTimeout(() => o.remove(), 1600);
+  }
+  new IntersectionObserver(([en]) => { running = en.isIntersecting; }).observe(runner);
+  setInterval(spawnObstacle, 700);
+  setInterval(() => { if (running) $("#dist").textContent = ++dist; }, 100);
+  setInterval(() => { rHero.textContent = rand(["🦈", "🐊", "🐒", "🪵", "☕"]); }, 4000);
+
+  /* ---------- Lore ---------- */
+  let li = 0;
+  function nextLore() {
+    const [a, b, c] = lore[li++ % lore.length];
+    $("#caption").innerHTML = `<span><span class="hl">${a}</span> ${b} <span class="hl">${c}</span></span>`;
+  }
+  nextLore();
+  $("#nextLore").addEventListener("click", nextLore);
+  setInterval(nextLore, 5000);
+
+  /* ---------- Aura ---------- */
+  let aura = 0;
+  const ranks = [[-Infinity, "Negative aura 💀"], [0, "NPC"], [200, "Side character"], [500, "Main character"], [1000, "Sigma 🗿"], [2000, "Aura farmer 🌾"], [5000, "Brainrot deity 🦈👟"]];
+  function addAura(n) {
+    aura += n;
+    const el = $("#auraNum");
+    el.textContent = (aura > 0 ? "+" : "") + aura;
+    el.classList.toggle("neg", aura < 0);
+    $("#auraBar").style.width = Math.max(0, Math.min(100, aura / 50)) + "%";
+    $("#auraRank").textContent = ranks.filter(r => aura >= r[0]).pop()[1];
+  }
+  $("#farm").addEventListener("click", e => {
+    const n = rand([100, 250, 500, 1000]);
+    addAura(n);
+    const r = e.currentTarget.getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top, ["✨", "🌾", "🗿", `+${n}`], 14);
+  });
+  $("#cringe").addEventListener("click", e => {
+    addAura(-rand([200, 500, 1000]));
+    shake();
+    const r = e.currentTarget.getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top, ["💀", "😬", "📉"], 12);
+  });
+
+  /* ---------- 6-7 ---------- */
+  let sixes = 0;
+  function sixSeven(x, y) {
+    sixes++; $("#sixCount").textContent = sixes;
+    const el = $("#sixseven");
+    el.classList.remove("go"); void el.offsetWidth; el.classList.add("go");
+    say("six seven", 1, 1.2);
+    shake();
+    burst(x, y, ["6", "7", "🤲", "6️⃣", "7️⃣"], 30);
+  }
+  $("#sixBtn").addEventListener("click", e => { const r = e.currentTarget.getBoundingClientRect(); sixSeven(r.left + r.width / 2, r.top); });
+  $("#sixSevenHero").addEventListener("click", e => { const r = e.currentTarget.getBoundingClientRect(); sixSeven(r.left + r.width / 2, r.top); });
+
+  /* ---------- Trends ---------- */
+  $("#trendList").innerHTML = trends.map(([t, d]) => `<div class="trend"><b>${t}</b><small>${d}</small></div>`).join("");
+
+  /* ---------- Name generator ---------- */
+  const pre = ["Bombardiro", "Tralalero", "Cappuccino", "Frulli", "Glorbo", "Bananita", "Zibra", "Trippi", "Burbaloni", "Gorillo", "Pizzarino", "Spaghettino", "Toastino", "Wi-Fi-ni", "Sneakerino"];
+  const mid = ["Crocodilo", "Tralala", "Assassino", "Frulla", "Fruttodrillo", "Dolphina", "Zubra", "Troppi", "Luliloli", "Elefanto", "Pinguino", "Giraffone", "Camello", "Ciabattino", "Tostapane"];
+  const suf = ["", "", " Sahur", " Supremo", " Galattico", " Turbo", " Ultra 6-7", " Saturnita", " della Nonna"];
+  const animals = ["🦈", "🐊", "🐘", "🐒", "🐫", "🦒", "🐧", "🪿", "🐄", "🦍", "🐬"];
+  const things = ["👟", "✈️", "☕", "🍕", "🍝", "🪐", "🗡️", "🍞", "🧊", "🍌", "📡"];
+  let lastName = "";
+  $("#genBtn").addEventListener("click", e => {
+    lastName = `${rand(pre)} ${rand(mid)}${rand(suf)}`;
+    $("#genOut").innerHTML = `<span style="animation:pop .3s">${rand(animals)}${rand(things)}<br>${lastName}</span>`;
+    const r = e.currentTarget.getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top, ["🎲", "✨", "🇮🇹"], 12);
+    say(lastName, .95, 1);
+  });
+  $("#genSay").addEventListener("click", () => lastName ? say(lastName, .95, 1) : toast("Generate one first, chat"));
+
+  if ("speechSynthesis" in window) speechSynthesis.getVoices();
+})();
+</script>
+</body>
+</html>
