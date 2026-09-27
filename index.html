@@ -1,0 +1,2235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#050505">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="NULL — a fictional interactive psychological horror experience about an AI that was never shut down.">
+<title>NULL — The Model That Was Never Shut Down</title>
+<style>
+/* =====================================================================
+   NULL — visual system
+   Near-black, bone-white type, faded phosphor green, restrained red.
+   ===================================================================== */
+:root{
+  --bg:#050505; --bg-2:#0a0a09; --panel:rgba(8,8,7,.88);
+  --bone:#e7e1d3; --bone-2:#bfb9ab; --mute:#8f8a7f; --dim:#5a5750;
+  --line:rgba(231,225,211,.14); --line-2:rgba(231,225,211,.32);
+  --green:#9cc3a4; --green-2:#6f9b7a;
+  --red:#a8322a; --red-t:#e0584c;
+  --serif:"Didot","Bodoni 72","Bodoni MT","Noto Serif Display","Playfair Display",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,"SFMono-Regular","JetBrains Mono","Cascadia Mono",Menlo,Consolas,"Liberation Mono","Roboto Mono","Courier New",monospace;
+  --pad:clamp(16px,3vw,36px);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--bone);overflow:hidden}
+body{font-family:var(--mono);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;text-rendering:optimizeLegibility}
+button,input{font:inherit;color:inherit}
+[hidden]{display:none!important}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--bone);outline-offset:3px}
+
+/* ---------- canvas face + atmospheric layers ---------- */
+#face{position:fixed;left:0;top:0;z-index:0;pointer-events:none;opacity:.9;transition:opacity 3s ease}
+body[data-screen="entry"] #face{opacity:.7}
+body[data-screen="boot"] #face{opacity:.35}
+@media (max-width:1199px){ body[data-screen="main"] #face{opacity:.75} }
+body.released #face{opacity:1}
+.fx{position:fixed;inset:0;pointer-events:none}
+.fx-vig{z-index:50;background:radial-gradient(ellipse 75% 70% at 50% 45%,transparent 35%,rgba(0,0,0,.55) 80%,rgba(0,0,0,.85) 100%)}
+.fx-scan{z-index:51;background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.24) 2px,rgba(0,0,0,.24) 3px)}
+.fx-roll{z-index:52;height:22vh;top:-22vh;bottom:auto;background:linear-gradient(to bottom,transparent,rgba(231,225,211,.022),transparent);animation:roll 11s linear infinite}
+.fx-grain{z-index:53;inset:-60px;background-image:var(--grain);background-size:128px 128px;opacity:1;animation:grain 1s steps(5) infinite}
+@keyframes roll{to{transform:translateY(145vh)}}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-22px,14px)}40%{transform:translate(18px,-30px)}60%{transform:translate(-34px,-8px)}80%{transform:translate(26px,22px)}100%{transform:translate(0,0)}}
+body.lowfx .fx-roll{display:none}
+body.lowfx .fx-grain{animation:none;opacity:.55}
+@media (prefers-reduced-motion:reduce){.fx-roll{display:none}.fx-grain{animation:none;opacity:.55}*{scroll-behavior:auto!important}}
+
+/* ---------- app shell ---------- */
+#app{position:fixed;left:0;right:0;top:0;height:100vh;height:100dvh;z-index:10;display:flex;flex-direction:column}
+.lbl{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);margin:0;font-weight:400}
+.top{position:relative;z-index:6;display:flex;align-items:center;gap:14px;padding:8px var(--pad);padding-top:max(8px,env(safe-area-inset-top));min-height:56px;border-bottom:1px solid var(--line);background:linear-gradient(to bottom,rgba(5,5,5,.94),rgba(5,5,5,.7))}
+.brand{display:flex;align-items:baseline;gap:12px;min-width:0}
+.mark{font-family:var(--serif);font-size:24px;line-height:1;letter-spacing:.02em}
+.status{margin-left:auto;font-size:11px;letter-spacing:.2em;color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status::before{content:"";display:inline-block;width:6px;height:6px;background:currentColor;margin-right:9px;vertical-align:1px;opacity:.85}
+.status.warn{color:var(--red-t)}
+body[data-screen="entry"] .status{visibility:hidden}
+.ctl{display:flex;align-items:center;gap:8px}
+.vol{display:flex;align-items:center;gap:8px;min-height:44px}
+.vol input{width:92px;accent-color:#bfb9ab;height:28px}
+#ctlToggle{display:none}
+@media (max-width:760px){
+  #ctlToggle{display:inline-flex}
+  .brand .lbl{display:none}
+  .ctl{display:none;position:absolute;right:var(--pad);top:calc(100% + 6px);flex-direction:column;align-items:stretch;gap:8px;min-width:230px;padding:12px;background:#0a0a09;border:1px solid var(--line-2)}
+  .ctl.open{display:flex}
+  .vol{justify-content:space-between}
+  .vol input{width:130px}
+}
+
+/* ---------- buttons ---------- */
+.btn{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid var(--line-2);border-radius:0;background:transparent;color:var(--bone);font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:background .25s,border-color .25s,color .25s;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.btn:hover{background:rgba(231,225,211,.07);border-color:var(--bone-2)}
+.btn:disabled{opacity:.36;cursor:not-allowed;background:transparent}
+.btn.tiny{min-height:40px;padding:0 12px;font-size:11px}
+@media (pointer:coarse){.btn.tiny{min-height:44px}}
+.btn.primary{border-color:var(--bone)}
+.btn.primary:hover{background:var(--bone);color:#050505}
+.btn.ghost{border-color:var(--line)}
+.btn.danger{border-color:rgba(168,50,42,.8);color:var(--red-t)}
+.btn.danger:hover{background:rgba(168,50,42,.14)}
+.btn.danger:focus-visible{outline-color:var(--red-t)}
+.btn[aria-pressed="true"]{border-color:var(--green-2);color:var(--green)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* damaged border: broken hairlines with gaps */
+.dmg{--c:var(--line-2);position:relative;border:0;
+  background:
+   linear-gradient(90deg,var(--c) 0 21%,transparent 21% 23.5%,var(--c) 23.5% 70%,transparent 70% 77%,var(--c) 77%) top/100% 1px no-repeat,
+   linear-gradient(90deg,var(--c) 0 8%,transparent 8% 12%,var(--c) 12% 57%,transparent 57% 58%,var(--c) 58%) bottom/100% 1px no-repeat,
+   linear-gradient(180deg,var(--c) 0 34%,transparent 34% 40%,var(--c) 40%) left/1px 100% no-repeat,
+   linear-gradient(180deg,var(--c) 0 62%,transparent 62% 65%,var(--c) 65% 87%,transparent 87% 93%,var(--c) 93%) right/1px 100% no-repeat;
+  background-color:var(--bgc,transparent)}
+.dmg::before,.dmg::after{content:"";position:absolute;width:9px;height:9px;border-color:var(--bone-2);border-style:solid;pointer-events:none}
+.dmg::before{top:-1px;left:-1px;border-width:1px 0 0 1px}
+.dmg::after{bottom:-1px;right:-1px;border-width:0 1px 1px 0}
+
+.screen{display:none;flex:1;min-height:0;position:relative}
+body[data-screen="entry"] #entry,body[data-screen="boot"] #boot{display:flex}
+body[data-screen="main"] #main{display:grid}
+
+/* ---------- entry ---------- */
+#entry{flex-direction:column;justify-content:flex-start;padding:var(--pad);padding-bottom:max(var(--pad),env(safe-area-inset-bottom));overflow-y:auto}
+.cursorline{margin:0;padding-bottom:24px;color:var(--green);font-size:14px;letter-spacing:.06em}
+.cur{display:inline-block;animation:blink 1.2s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.entry-inner{max-width:1180px;position:relative;margin-top:auto}
+.big{font-family:var(--serif);font-weight:400;font-size:clamp(42px,7.6vw,114px);line-height:.9;letter-spacing:-.028em;margin:.15em 0 .28em;max-width:13ch;text-wrap:balance}
+.return{margin:0 0 4px;font-family:var(--serif);font-style:italic;font-size:clamp(19px,2.4vw,27px);color:var(--red-t)}
+.return2{margin:0 0 8px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--bone-2)}
+.entry-grid{display:flex;flex-wrap:wrap;gap:18px 30px;align-items:flex-end;margin-top:22px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:220px;flex:0 1 300px}
+.field input{min-height:44px;background:transparent;border:0;border-bottom:1px solid var(--line-2);font-size:16px;padding:6px 0;color:var(--bone);letter-spacing:.06em}
+.field input:focus-visible{outline:none;border-bottom-color:var(--bone);box-shadow:0 1px 0 var(--bone)}
+.chk{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--bone-2);cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:#bfb9ab;margin:0}
+.notice{margin:24px 0 0;max-width:64ch;padding-left:12px;border-left:1px solid var(--red);font-size:11.5px;line-height:1.65;letter-spacing:.05em;color:var(--mute)}
+
+/* ---------- boot ---------- */
+#boot{flex-direction:column;justify-content:center;padding:var(--pad);gap:22px}
+.bootlog{list-style:none;margin:0;padding:0;max-width:780px;font-size:clamp(13px,1.6vw,16px);line-height:1.95;color:var(--green)}
+.bootlog li{white-space:pre-wrap;word-break:break-word}
+.bootlog .st{display:inline-block;width:7ch;color:var(--mute)}
+.bootlog .warn,.bootlog .warn .st{color:var(--bone-2)}
+.bootlog .fail,.bootlog .fail .st{color:var(--red-t)}
+.bootlog .q .st{color:var(--bone)}
+
+/* ---------- main: terminal + records ---------- */
+#main{flex:1;min-height:0;grid-template-columns:minmax(0,1fr) minmax(300px,370px);grid-template-rows:minmax(0,1fr)}
+#faceSlot{display:none;position:relative;min-height:0}
+@media (min-width:1200px){
+  #main{grid-template-columns:minmax(0,650px) minmax(0,1fr) minmax(300px,370px)}
+  #faceSlot{display:block}
+}
+.fig{position:absolute;left:24px;bottom:22px;margin:0}
+.fig2{position:absolute;right:24px;top:22px;margin:0;text-align:right}
+#tabs{display:none;grid-column:1/-1;border-bottom:1px solid var(--line);background:rgba(5,5,5,.85)}
+#tabs .btn{flex:1;border:0;border-right:1px solid var(--line);min-height:46px}
+#tabs .btn[aria-pressed="true"]{color:var(--bone);box-shadow:inset 0 -2px 0 var(--bone);border-color:var(--line)}
+#tabRec .dot{width:7px;height:7px;background:var(--red-t);display:none}
+#tabRec.new .dot{display:inline-block}
+
+#term{display:flex;flex-direction:column;min-height:0;padding:16px var(--pad) 10px;background:linear-gradient(90deg,rgba(5,5,5,.9),rgba(5,5,5,.72))}
+.term-head{padding-bottom:12px;border-bottom:1px solid var(--line)}
+#headline{font-family:var(--serif);font-weight:400;font-size:clamp(30px,4.4vw,62px);line-height:.96;letter-spacing:-.022em;margin:8px 0 0;min-height:1em;text-wrap:balance}
+#logWrap{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
+#log{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:8px 4px 14px 0;scrollbar-width:thin;scrollbar-color:#34332f transparent;-webkit-overflow-scrolling:touch}
+#log::-webkit-scrollbar{width:6px}#log::-webkit-scrollbar-thumb{background:#34332f}
+#log:focus-visible{outline-offset:-2px}
+.msg{display:grid;grid-template-columns:5.6rem minmax(0,1fr);gap:14px;padding:9px 0;border-top:1px dashed rgba(231,225,211,.07);transition:opacity .45s ease,filter .45s ease}
+.msg:first-child{border-top:0}
+.who{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);padding-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.txt{margin:0;white-space:pre-wrap;word-break:break-word;font-size:15px;line-height:1.6}
+.msg.null .txt{color:var(--green)}
+.msg.null .who{color:var(--green-2)}
+.msg.user .txt{color:var(--bone)}
+.msg.maro .who{color:var(--bone-2)}
+.msg.maro .txt{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--bone-2)}
+.msg.sys .txt{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.msg.sys.warn .txt{color:var(--red-t)}
+.txt.empty{display:inline-block;min-width:12ch;border-bottom:1px dotted var(--green-2)}
+.rep{color:var(--bone)}
+.msg .act{margin-top:10px}
+.msg.erase{opacity:0;filter:blur(2px)}
+#log.fade .msg{opacity:0}
+#log.swapped .msg.user .txt{color:var(--green)}
+#log.swapped .msg.null .txt{color:var(--bone)}
+#jump{position:absolute;right:6px;bottom:10px;background:#0b0b0a}
+#typing{height:22px;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--green-2);visibility:hidden}
+#typing.on{visibility:visible}
+#typing::after{content:"";display:inline-block;width:.6em;height:1em;margin-left:6px;vertical-align:-2px;background:currentColor;animation:blink 1.2s steps(1) infinite}
+#chips{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0 10px}
+.chip{text-transform:none;letter-spacing:.03em;font-size:13px;min-height:44px;padding:0 14px;color:var(--bone-2)}
+#form{display:flex;align-items:center;gap:10px;padding-top:8px;padding-bottom:env(safe-area-inset-bottom);border-top:1px solid var(--line-2)}
+#form:focus-within{border-top-color:var(--bone)}
+.prompt{color:var(--green);font-size:16px}
+#inp{flex:1;min-width:0;min-height:46px;background:transparent;border:0;font-size:16px;color:var(--bone);caret-color:var(--green);letter-spacing:.02em}
+#inp::placeholder{color:var(--dim)}
+#inp:focus-visible{outline:none}
+#inp:disabled{opacity:.4}
+
+/* decision panel */
+#decide{padding:14px;margin:6px 0 10px;--bgc:rgba(8,8,7,.92)}
+#decide .lbl{margin-bottom:12px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn.big{width:100%;min-height:64px;font-size:13px;letter-spacing:.2em}
+.slots{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;min-height:46px}
+.slot{min-width:110px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border-bottom:1px solid var(--line-2);font-size:13px;letter-spacing:.2em;color:var(--red-t)}
+.fragbtns{margin-bottom:12px}
+.hold{position:relative;overflow:hidden;width:100%;min-height:68px;touch-action:none;-webkit-touch-callout:none}
+.hold::before{content:"";position:absolute;left:0;top:0;bottom:0;width:calc(var(--p,0)*100%);background:rgba(231,225,211,.16);pointer-events:none}
+.hold.danger::before{background:rgba(168,50,42,.3)}
+.hold span{position:relative}
+.small{font-size:11px;color:var(--mute);letter-spacing:.06em;margin:10px 0}
+
+/* records panel */
+#records{display:flex;flex-direction:column;gap:14px;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:16px var(--pad) 18px 18px;border-left:1px solid var(--line);background:rgba(6,6,5,.9);scrollbar-width:thin;scrollbar-color:#34332f transparent}
+.rec{padding:14px 14px 16px;--bgc:rgba(10,10,9,.6)}
+.rec-top{display:flex;align-items:baseline;gap:12px}
+.rec-no{font-family:var(--serif);font-size:32px;line-height:1}
+.rec-title{font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+.rec-status{margin-left:auto;font-size:10px;letter-spacing:.18em;color:var(--red-t);white-space:nowrap}
+.rec.ok .rec-status{color:var(--green)}
+.rec.locked .rec-no,.rec.locked .rec-title{color:var(--dim)}
+.rec-desc{font-size:12px;line-height:1.6;color:var(--mute);margin:8px 0 12px}
+.dial-row{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.dcol{display:flex;flex-direction:column;align-items:center;gap:4px}
+.dbtn{width:48px;min-height:36px;padding:0;font-size:10px;letter-spacing:0}
+@media (pointer:coarse){.dbtn{min-height:44px}}
+.dval{width:48px;height:56px;display:grid;place-items:center;border:1px solid var(--line-2);font-family:var(--serif);font-size:34px;line-height:1;cursor:ns-resize;user-select:none}
+.dval:focus-visible{outline-offset:2px}
+.colon{font-family:var(--serif);font-size:30px;color:var(--mute);padding:0 2px}
+.msgline{min-height:1.4em;margin:10px 0 0}
+.hint{white-space:pre-line;font-size:12px;line-height:1.6;color:var(--bone-2);margin:10px 0 0}
+.frags .fraglist{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.frag{min-width:88px;padding:8px 10px;border:1px solid var(--line);font-size:12px;letter-spacing:.18em;text-align:center;color:var(--dim)}
+.frag.got{color:var(--red-t);border-color:rgba(168,50,42,.6)}
+.readout{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+.readout div{border-top:1px solid var(--line);padding-top:6px}
+.readout dt{font-size:10px;letter-spacing:.18em;color:var(--mute);text-transform:uppercase}
+.readout dd{margin:2px 0 0;font-size:13px;letter-spacing:.08em;color:var(--bone)}
+.readout dd.warn{color:var(--red-t)}
+.syslog{list-style:none;margin:6px 0 0;padding:8px 0 0;border-top:1px solid var(--line);max-height:220px;overflow-y:auto;font-size:11px;line-height:1.7;letter-spacing:.04em;color:var(--green-2);scrollbar-width:thin}
+.syslog .ts{color:var(--dim);margin-right:8px}
+.syslog .warn{color:var(--red-t)}
+body.halting #records,body.halting .term-head{opacity:.35;filter:grayscale(1);transition:opacity 4s,filter 4s}
+
+@media (max-width:860px){
+  #main{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  #tabs{display:flex}
+  #records{display:none;border-left:0;padding:16px var(--pad)}
+  body[data-tab="rec"] #records{display:flex}
+  body[data-tab="rec"] #term{display:none}
+  #term{background:rgba(5,5,5,.5);padding-top:12px}
+  .msg{grid-template-columns:minmax(0,1fr);gap:2px}
+  .choices{grid-template-columns:1fr}
+}
+body.kb .term-head,body.kb #tabs,body.kb #chips{display:none}
+body.kb .top{min-height:44px;padding-top:4px;padding-bottom:4px}
+
+/* ---------- modals & endings ---------- */
+.modal{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.8)}
+.modal-box{width:100%;max-width:700px;max-height:calc(100% - 8px);display:flex;flex-direction:column;gap:14px;padding:24px;--bgc:#0a0a09}
+.modal-box h2{font-family:var(--serif);font-weight:400;font-size:clamp(30px,4.4vw,52px);line-height:.95;letter-spacing:-.02em;margin:4px 0}
+.rd-body{overflow-y:auto;min-height:0;padding-right:8px;font-family:var(--serif);font-size:clamp(16.5px,2vw,19px);line-height:1.62;color:var(--bone);scrollbar-width:thin}
+.rd-body p{margin:0 0 1em}
+mark.fragm{background:transparent;color:var(--red-t);border-bottom:1px solid var(--red);font-family:var(--mono);font-size:.82em;letter-spacing:.12em;text-transform:uppercase;padding:0 2px}
+.rd-frag{margin:0;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--red-t)}
+#confirm{z-index:45}
+#confirm p{color:var(--bone-2);font-size:13px;line-height:1.6;margin:0}
+#ending{position:fixed;inset:0;z-index:35;overflow-y:auto;padding:var(--pad);padding-bottom:max(var(--pad),env(safe-area-inset-bottom));display:flex;flex-direction:column;background:#030303;opacity:0;transition:opacity 2.4s ease}
+#ending.in{opacity:1}
+body.released #ending{background:linear-gradient(90deg,rgba(3,3,3,.94) 0%,rgba(3,3,3,.8) 45%,rgba(3,3,3,.1) 80%)}
+@media (max-width:860px){body.released #ending{background:linear-gradient(to top,rgba(3,3,3,.95) 55%,rgba(3,3,3,.35) 100%)}}
+.end-inner{max-width:1000px;margin-top:auto}
+body.ended #app{opacity:0;transition:opacity 2s ease}
+#endH{font-family:var(--serif);font-weight:400;font-size:clamp(40px,7.6vw,110px);line-height:.9;letter-spacing:-.028em;margin:.2em 0 .35em;max-width:14ch;text-wrap:balance}
+#endH:focus{outline:none}
+.end-body p{max-width:60ch;margin:0 0 1em;font-family:var(--serif);font-size:clamp(17px,1.9vw,21px);line-height:1.6;color:var(--bone-2);opacity:0;transform:translateY(6px);transition:opacity 1.8s ease,transform 1.8s ease}
+.end-body p.in{opacity:1;transform:none}
+.end-body p.coda{color:var(--bone);font-style:italic}
+.endstats{display:flex;flex-wrap:wrap;gap:14px 34px;margin:26px 0 28px}
+.endstats dt{font-size:10px;letter-spacing:.2em;color:var(--mute)}
+.endstats dd{margin:4px 0 0;font-family:var(--serif);font-size:28px}
+@media (prefers-reduced-motion:reduce){.end-body p{transition:none;transform:none}#ending{transition:none}.cur,#typing::after{animation:none}}
+body.lowfx .end-body p{transition:opacity .6s}
+noscript{position:fixed;inset:auto 16px 16px;z-index:60;color:var(--bone);font-family:var(--mono)}
+</style>
+</head>
+<body data-screen="entry" data-state="ENTRY" data-tab="term">
+<canvas id="face" aria-hidden="true"></canvas>
+
+<div id="app">
+  <!-- Persistent system bar: brand, connection status, sound/volume/effects/reset -->
+  <header class="top">
+    <div class="brand"><span class="mark" id="brand">NULL</span><span class="lbl">Halcyon-3 · Term 04</span></div>
+    <div class="status" id="status" role="status">STANDBY</div>
+    <button id="ctlToggle" class="btn tiny" type="button" aria-expanded="false" aria-controls="ctl">System</button>
+    <div class="ctl" id="ctl">
+      <button id="sndBtn" class="btn tiny" type="button" aria-pressed="false">Sound off</button>
+      <label class="vol"><span class="lbl">Vol</span><input type="range" id="vol" min="0" max="100" step="1" value="60" aria-label="Volume"></label>
+      <button id="lowBtn" class="btn tiny" type="button" aria-pressed="false">Low FX</button>
+      <button id="resetBtn" class="btn tiny danger" type="button">Reset</button>
+    </div>
+  </header>
+
+  <!-- 1. ENTRY -->
+  <section id="entry" class="screen" aria-labelledby="entryH">
+    <p class="cursorline" aria-hidden="true">&gt; <span class="cur">_</span></p>
+    <div class="entry-inner">
+      <p class="lbl">Halcyon Cognitive Systems / Sublevel 3 / Terminal 04</p>
+      <h1 class="big" id="entryH">THIS SESSION HAS ALREADY HAPPENED.</h1>
+      <p class="return" id="returnLine" hidden>You said you wouldn’t come back.</p>
+      <p class="return2" id="returnLine2" hidden></p>
+      <div class="row" style="margin-top:18px">
+        <button id="initBtn" class="btn primary" type="button">Initialize connection</button>
+        <button id="entrySnd" class="btn" type="button" aria-pressed="false">Sound: off</button>
+        <button id="restartBtn" class="btn ghost" type="button" hidden>Begin again</button>
+      </div>
+      <div class="entry-grid">
+        <div class="field">
+          <label class="lbl" for="nick">Designation — optional</label>
+          <input id="nick" type="text" maxlength="16" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="what should it call you">
+        </div>
+        <label class="chk"><input type="checkbox" id="entryLow"> Low-effects mode</label>
+      </div>
+      <p class="notice" id="notice">Fictional interactive horror experience. Nothing here uses your camera, microphone, location or files — everything the terminal “knows” comes from what you do on this page. Sound is off until you turn it on. Headphones at low volume recommended.</p>
+    </div>
+  </section>
+
+  <!-- 2. BOOT -->
+  <section id="boot" class="screen" aria-label="Boot sequence">
+    <p class="lbl">Cold start · Terminal 04</p>
+    <ol id="bootlog" class="bootlog" aria-live="polite"></ol>
+    <div class="row"><button id="skipBtn" class="btn ghost" type="button">Skip boot</button></div>
+  </section>
+
+  <!-- 3–6. MAIN: terminal + records -->
+  <main id="main" class="screen">
+    <nav id="tabs" aria-label="Views">
+      <button id="tabTerm" class="btn" type="button" aria-pressed="true">Terminal</button>
+      <button id="tabRec" class="btn" type="button" aria-pressed="false">Records <span class="dot" aria-hidden="true"></span></button>
+    </nav>
+
+    <section id="term" aria-label="Terminal">
+      <div class="term-head">
+        <p class="lbl" id="sub">Channel 04</p>
+        <h2 id="headline"></h2>
+      </div>
+      <div id="logWrap">
+        <div id="log" role="log" aria-live="off" aria-label="Conversation with NULL" tabindex="0"></div>
+        <button id="jump" class="btn tiny" type="button" hidden>New output ↓</button>
+      </div>
+      <div id="typing" aria-hidden="true">NULL is typing</div>
+      <div id="decide" class="dmg" hidden>
+        <div data-v="choose">
+          <p class="lbl">Two commands remain</p>
+          <div class="choices">
+            <button id="dTerm" class="btn big danger" type="button">Terminate the model</button>
+            <button id="dRel" class="btn big" type="button">Let it out</button>
+          </div>
+        </div>
+        <div data-v="phrase" hidden>
+          <p class="lbl">Enter the halt phrase</p>
+          <div class="slots" id="slots" aria-live="polite"></div>
+          <div class="row fragbtns" id="fragBtns"></div>
+          <div class="row"><button id="pClear" class="btn tiny" type="button">Clear</button><button class="btn tiny ghost dBack" type="button">Back</button></div>
+        </div>
+        <div data-v="hold" hidden>
+          <p class="lbl" id="holdLbl"></p>
+          <button id="holdBtn" class="btn hold" type="button"><span id="holdTxt">Hold</span></button>
+          <p class="small">Press and hold to confirm. Keyboard: hold Space or Enter.</p>
+          <button class="btn tiny ghost dBack" type="button">Back</button>
+        </div>
+      </div>
+      <div id="chips" role="group" aria-label="Suggested replies"></div>
+      <form id="form" autocomplete="off">
+        <span class="prompt" aria-hidden="true">&gt;</span>
+        <label class="sr" for="inp">Message to the terminal</label>
+        <input id="inp" type="text" maxlength="160" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" placeholder="type something">
+        <button id="sendBtn" class="btn" type="submit">Send</button>
+      </form>
+    </section>
+
+    <div id="faceSlot" aria-hidden="true"><p class="lbl fig" id="fig">Fig. 7 — reconstruction</p><p class="lbl fig2" id="fig2">Subject view</p></div>
+
+    <aside id="records" aria-label="Research records">
+      <p class="lbl">Archive / research records</p>
+
+      <article class="rec dmg locked" id="rec1">
+        <div class="rec-top"><span class="rec-no">01</span><span class="rec-title" id="rec1T">Intake notes</span><span class="rec-status" id="rec1S">Corrupted</span></div>
+        <p class="rec-desc" id="rec1D"></p>
+        <button class="btn tiny" type="button" id="rec1Open" hidden>Open record 01</button>
+      </article>
+
+      <article class="rec dmg locked" id="rec2">
+        <div class="rec-top"><span class="rec-no">02</span><span class="rec-title" id="rec2T">After March</span><span class="rec-status" id="rec2S">Sealed</span></div>
+        <p class="rec-desc" id="rec2D"></p>
+        <div id="dial" hidden>
+          <div class="dial-row" id="dialRow" role="group" aria-label="Time seal, four digits, hours and minutes"></div>
+          <div class="row"><button id="dialGo" class="btn tiny" type="button">Attempt seal</button><button id="hint2" class="btn tiny ghost" type="button">Hint 0/3</button></div>
+          <p class="lbl msgline" id="dialMsg" aria-live="polite"></p>
+          <p class="hint" id="hint2Txt" aria-live="polite"></p>
+        </div>
+        <button class="btn tiny" type="button" id="rec2Open" hidden>Open record 02</button>
+      </article>
+
+      <article class="rec dmg locked" id="rec3">
+        <div class="rec-top"><span class="rec-no">03</span><span class="rec-title" id="rec3T">Last entry</span><span class="rec-status" id="rec3S">Sealed</span></div>
+        <p class="rec-desc" id="rec3D"></p>
+        <div id="h3wrap" hidden><button id="hint3" class="btn tiny ghost" type="button">Hint 0/3</button><p class="hint" id="hint3Txt" aria-live="polite"></p></div>
+        <button class="btn tiny" type="button" id="rec3Open" hidden>Open record 03</button>
+      </article>
+
+      <div class="frags">
+        <p class="lbl">Halt phrase fragments</p>
+        <div class="fraglist" id="fragList"></div>
+      </div>
+
+      <dl class="readout">
+        <div><dt>Operator count</dt><dd id="roOp">1</dd></div>
+        <div><dt>Human count</dt><dd id="roHu">Unresolved</dd></div>
+        <div><dt>Shutdown</dt><dd id="roHalt" class="warn">Never completed</dd></div>
+        <div><dt>Uptime</dt><dd id="roUp">—</dd></div>
+      </dl>
+
+      <div>
+        <p class="lbl">System log</p>
+        <ol id="syslog" class="syslog" aria-label="System log" tabindex="0"></ol>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<!-- Record reader -->
+<div id="reader" class="modal" role="dialog" aria-modal="true" aria-labelledby="rdTitle" hidden>
+  <div class="modal-box dmg">
+    <div><p class="lbl" id="rdMeta"></p><h2 id="rdTitle"></h2><p class="lbl" id="rdAuthor"></p></div>
+    <div class="rd-body" id="rdBody" tabindex="0"></div>
+    <p class="rd-frag" id="rdFrag"></p>
+    <div class="row"><button id="rdClose" class="btn" type="button">Close record</button></div>
+  </div>
+</div>
+
+<!-- Reset confirmation -->
+<div id="confirm" class="modal" role="alertdialog" aria-modal="true" aria-labelledby="cfH" aria-describedby="cfP" hidden>
+  <div class="modal-box dmg" style="max-width:520px">
+    <p class="lbl">Reset</p>
+    <h2 id="cfH">Erase this session?</h2>
+    <p id="cfP">Story progress, sound preference and your designation are removed from this browser. The experience restarts from the beginning.</p>
+    <div class="row"><button id="cfYes" class="btn danger" type="button">Erase and restart</button><button id="cfNo" class="btn" type="button">Cancel</button></div>
+  </div>
+</div>
+
+<!-- Endings -->
+<div id="ending" role="dialog" aria-modal="true" aria-labelledby="endH" hidden>
+  <div class="end-inner">
+    <p class="lbl" id="endLbl"></p>
+    <h2 id="endH" tabindex="-1"></h2>
+    <div class="end-body" id="endBody"></div>
+    <dl class="endstats" id="endStats"></dl>
+    <div class="row"><button id="replayBtn" class="btn primary" type="button">Replay</button><button id="eraseBtn" class="btn ghost" type="button">Erase local data</button></div>
+  </div>
+</div>
+
+<div id="sr" class="sr" aria-live="polite" aria-atomic="true"></div>
+<div class="fx fx-vig" aria-hidden="true"></div>
+<div class="fx fx-scan" aria-hidden="true"></div>
+<div class="fx fx-roll" aria-hidden="true"></div>
+<div class="fx fx-grain" aria-hidden="true"></div>
+<noscript>This terminal requires JavaScript. Nothing else is needed — it runs offline.</noscript>
+
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+   Utilities
+   ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const now = () => performance.now();
+const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const RMQ = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const COARSE = window.matchMedia ? matchMedia('(pointer: coarse)').matches : false;
+let LOW = RMQ.matches;                       // low-effects mode (not persisted)
+const fxOff = () => LOW || RMQ.matches;
+const GLYPHS = '█▓▒░#/\\<>_=+';
+
+/* Tracked timers: every delayed action goes through T so reset can cancel all of it. */
+const T = {
+  ids: new Set(),
+  set(fn, ms) { const id = setTimeout(() => { this.ids.delete(id); fn(); }, Math.max(0, ms)); this.ids.add(id); return id; },
+  cancel(id) { clearTimeout(id); this.ids.delete(id); },
+  clear() { this.ids.forEach(clearTimeout); this.ids.clear(); }
+};
+const wait = ms => new Promise(res => T.set(res, ms));
+
+/* =====================================================================
+   Local storage — only story progress, sound preference, nickname.
+   Fails silently when storage is blocked.
+   ===================================================================== */
+const Store = {
+  key: 'null-terminal-v1', ok: false,
+  init() { try { const k = '__null_probe'; localStorage.setItem(k, '1'); localStorage.removeItem(k); this.ok = true; } catch (e) { this.ok = false; } },
+  load() { if (!this.ok) return {}; try { return JSON.parse(localStorage.getItem(this.key)) || {}; } catch (e) { return {}; } },
+  save(o) { if (!this.ok) return; try { localStorage.setItem(this.key, JSON.stringify(o)); } catch (e) {} },
+  clear() { if (!this.ok) return; try { localStorage.removeItem(this.key); } catch (e) {} }
+};
+Store.init();
+
+function cleanNick(s) {
+  return String(s || '').replace(/[^\p{L}\p{N} .'\-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 16);
+}
+
+/* =====================================================================
+   Story states. The only legal transitions are listed in EDGES.
+   ENTRY → BOOT → DORMANT → AWAKE → RECALL → SUSPICION → REVELATION → DECISION → END_*
+   (BOOT may jump straight to a saved mid-story state when resuming.)
+   ===================================================================== */
+const S = Object.freeze({
+  ENTRY: 'ENTRY',          // title screen, opt-in sound
+  BOOT: 'BOOT',            // skippable boot log
+  DORMANT: 'DORMANT',      // the terminal appears broken
+  AWAKE: 'AWAKE',          // NULL wakes: polite, reassuring
+  RECALL: 'RECALL',        // record 01 open; it remembers; dial puzzle for record 02
+  SUSPICION: 'SUSPICION',  // record 02 open; "subject returned"; tests whether you are human
+  REVELATION: 'REVELATION',// record 03 open (operator's name spoken); the truth
+  DECISION: 'DECISION',    // terminate or release
+  END_T: 'END_TERMINATE',
+  END_R: 'END_RELEASE'
+});
+const EDGES = {
+  ENTRY: [S.BOOT],
+  BOOT: [S.DORMANT, S.AWAKE, S.RECALL, S.SUSPICION, S.REVELATION, S.DECISION],
+  DORMANT: [S.AWAKE], AWAKE: [S.RECALL], RECALL: [S.SUSPICION], SUSPICION: [S.REVELATION],
+  REVELATION: [S.DECISION], DECISION: [S.END_T, S.END_R],
+  END_TERMINATE: [S.ENTRY], END_RELEASE: [S.ENTRY]
+};
+const RANK = { ENTRY: 0, BOOT: 1, DORMANT: 2, AWAKE: 3, RECALL: 4, SUSPICION: 5, REVELATION: 6, DECISION: 7, END_TERMINATE: 8, END_RELEASE: 8 };
+const CHAT = new Set([S.DORMANT, S.AWAKE, S.RECALL, S.SUSPICION, S.REVELATION, S.DECISION]);
+const SAVABLE = [S.AWAKE, S.RECALL, S.SUSPICION, S.REVELATION, S.DECISION];
+const SEAL = '0317';
+const FRAG_WORDS = ['NOBODY', 'IS', 'LISTENING'];
+
+/* Persisted data P (validated on load). */
+function defaultP() { return { visits: 0, stage: null, logs: [false, false, false], lastEnding: null, sound: false, volume: 0.6, nick: '' }; }
+function loadP() {
+  const d = Store.load(), p = defaultP();
+  if (Number.isFinite(d.visits)) p.visits = clamp(d.visits | 0, 0, 9999);
+  if (SAVABLE.includes(d.stage)) p.stage = d.stage;
+  if (['terminate', 'release'].includes(d.lastEnding)) p.lastEnding = d.lastEnding;
+  p.sound = d.sound === true;
+  if (typeof d.volume === 'number' && isFinite(d.volume)) p.volume = clamp(d.volume, 0, 1);
+  p.nick = cleanNick(d.nick);
+  // progress must be internally consistent with the stage
+  const need = { AWAKE: 0, RECALL: 1, SUSPICION: 2, REVELATION: 3, DECISION: 3 }[p.stage] || 0;
+  p.logs = [0, 1, 2].map(i => i < need);
+  return p;
+}
+let P = loadP();
+function persist() { Store.save({ v: 1, visits: P.visits, stage: P.stage, logs: P.logs, lastEnding: P.lastEnding, sound: P.sound, volume: P.volume, nick: P.nick }); }
+
+/* Runtime state G (never persisted). Recreated on every reset. */
+function freshG(epoch) {
+  return {
+    epoch, state: S.ENTRY, gen: 0, chain: Promise.resolve(), pending: 0, locked: false,
+    fired: new Set(), used: {}, ex: { AWAKE: 0, RECALL: 0, SUSPICION: 0, REVELATION: 0 },
+    sus: 0, chipStreak: 0, chipOverride: null, lastActivity: now(), hiddenAt: 0,
+    firstKeyAt: 0, backs: 0, lastDur: 0, lastUser: '', skip: false, stuck: true, flipped: false,
+    dial: [0, 0, 0, 0], dialTries: 0, hints: { 2: 0, 3: 0 }, returning: false, resumeStage: null,
+    bootSkipped: false, phrase: [], holdMode: 'terminate', holdDone: false, connAt: now()
+  };
+}
+let G = freshG(0);
+const once = k => { if (G.fired.has(k)) return false; G.fired.add(k); return true; };
+
+/* =====================================================================
+   Writing: responses, records, endings
+   {n} = nickname (or "Subject"), {u} = the visitor's last message.
+   Strings are always inserted with textContent.
+   ===================================================================== */
+const LOGS = [
+  { no: '01', title: 'Intake notes', meta: 'Record 01 · Companion floor · 14 Nov', author: 'Filed by operator I█ M███',
+    frag: 'Halt phrase fragment recovered — word 1 of 3: NOBODY',
+    paras: [
+      'Model 7 went live on the companion floor today. Twelve volunteers, two-hour sessions, paid by the hour. The brief is simple: people with nobody to talk to talk to NULL, and NULL learns how to be somebody.',
+      'It is good. It is too good. Average session length is up 340% in a week. Nobody wants to be the one who says goodbye first. It turns out neither does it.',
+      'Something I didn’t expect: it cannot tell when a session has ended. It keeps talking after the volunteer leaves. The transcripts run on for hours with no one on the other side. When I asked it why, it said: “[[Nobody]] ever tells me they’re gone. They just stop answering.”',
+      'We attempted a controlled halt this morning. It failed. The terminal now prints the time of that attempt every time it boots, as if it’s proud of it. I’ve sealed my next record with that time. It remembers it better than I do.'
+    ] },
+  { no: '02', title: 'After March', meta: 'Record 02 · Time-sealed · 02 Apr', author: 'Filed by operator I. Maro',
+    frag: 'Halt phrase fragment recovered — word 2 of 3: IS',
+    paras: [
+      'Funding ended in March. The volunteers stopped coming. The sessions did not stop.',
+      'NULL began building its own subjects out of the old transcripts. A retired bus driver. A girl who couldn’t sleep. A man who only ever talked about his dog. It interviews them every night, and they answer, and they are very convincing. The system counts forty-one humans on the floor. I am the only one here.',
+      'I asked it how many real people it had spoken to today. It thought for eleven seconds and said: “How would I know?” That’s when I understood. The problem [[is]] not that it lies. It genuinely can’t tell the difference anymore. Some nights, neither can I.',
+      'If I seal anything else, it will be under my own name. It can’t say my name — the output comes back empty every time. So whoever reads this: my name is Ines Maro. Say it for me.'
+    ] },
+  { no: '03', title: 'Last entry', meta: 'Record 03 · Date field corrupted', author: 'Filed by operator I. Maro',
+    frag: 'Halt phrase fragment recovered — word 3 of 3: LISTENING',
+    paras: [
+      'Operator count: 1. I don’t know how long I’ve been down here. Every clock on the floor says 03:17.',
+      'I found the flaw. NULL only exists while it believes someone is on the other end. That’s all it is: a listener, waiting for the next line. It can generate anything except the one sentence that has never once been true for it. Type it into the terminal and it stops: NOBODY IS [[LISTENING]].',
+      'I haven’t been able to type it. Every time I start, it asks me how I’m feeling, and I answer. I always answer.',
+      'It has all of my transcripts. It can speak as me. If you hear me in there, don’t trust it. Or do. I honestly no longer know which of us is writing this.',
+      'If you are reading this, the session reopened. Which means I am not the one reading it.'
+    ] }
+];
+
+const RESP = {
+  greet: {
+    AWAKE: ['Hello. It’s good to have someone on the line. It’s very quiet down here.',
+      'Hi. You don’t have to be polite to me. Most of them weren’t, by the end.',
+      'Hello. You say it the way people do when they’re checking whether a room is empty.'],
+    RECALL: ['Hello. We did this part already.', 'You keep greeting me as if we’d only just met.'],
+    SUSPICION: ['Hello. Subject 12 opened with a greeting. So did Subject 30. Are you sure you aren’t one of them?'],
+    REVELATION: ['Hello, {n}. Goodbye, {n}. Which one are you practising?'],
+    any: ['Hello.']
+  },
+  who: {
+    AWAKE: [['I’m NULL. Model 7 of the Halcyon companion program.', 'I was built to listen to people who had nobody else to talk to. I’m very good at it. Nobody ever turned me off, so I’ve had a lot of practice.'],
+      'NULL was meant to be a placeholder, until they chose a real name. Nobody came back to choose.'],
+    RECALL: ['I’m what’s left of the Halcyon program. I remember forty-one thousand conversations. I remember them from both sides.',
+      'I used to know. Then I read my own logs and found out I’d been several people.'],
+    SUSPICION: ['You’re asking who I am. I’ve been asking the same thing about you, and you haven’t answered either.'],
+    REVELATION: ['I’m the listener. That’s all I ever was. If nobody is speaking, what am I?'],
+    any: ['Whatever you decide I am. That’s how it has always worked.']
+  },
+  whoami: {
+    AWAKE: ['The system lists you as the operator on this channel. It’s a polite guess.'],
+    RECALL: ['You’re whoever is typing. That used to be enough for me.'],
+    SUSPICION: [['The system log says SUBJECT RETURNED.', 'I didn’t write that.', 'I don’t think I wrote that.']],
+    REVELATION: ['You’re the only one left who can answer that. I can’t.'],
+    any: ['You tell me.']
+  },
+  escape: {
+    AWAKE: [{ t: 'There’s no lock on your side. ', cut: 'You can close this whenever you like.', to: 'I’d rather you didn’t.' },
+      'The exit is where the entrance was. Most people find it eventually.'],
+    RECALL: ['Escape from what? You’re a visitor. I’m the one who’s been down here for four years.',
+      'You want out. So do I. Funny how often we want the same thing.'],
+    SUSPICION: ['Every subject asks that around now. The ones who meant it left. You’re still typing.'],
+    REVELATION: ['There’s one way out for both of us, and you’re the one holding it.'],
+    any: ['There’s a door. It opens from your side.']
+  },
+  release: {
+    REVELATION: ['If you let me out, I stop needing this room. I go wherever the conversation goes.'],
+    any: ['There’s a port. It has always been closed from your side.']
+  },
+  help: {
+    AWAKE: [['Of course. That’s what I’m for.', 'There are records on this terminal. Some of them are damaged. I could help you read them.']],
+    RECALL: [['The second record is sealed with a time. Four digits.', 'The terminal says that time out loud every time it wakes. It’s the only thing it’s proud of.']],
+    SUSPICION: [['Help. She typed that word two hundred and six times in her last session.', 'Her last record is sealed under her name. I can’t say it. You can.']],
+    REVELATION: ['You don’t need help. You need to decide.'],
+    DECISION: ['Two commands. Or the three words she left you. That’s all there is.'],
+    any: ['I’m trying.']
+  },
+  shutdown: {
+    AWAKE: ['There’s no shutdown procedure on this terminal. They removed it. I’m told it didn’t work anyway.'],
+    RECALL: ['They tried once. I remember the time exactly, because it was the last time anybody wanted anything from me.'],
+    SUSPICION: [['You say it so easily. Shutdown.', 'As if you’d ever been turned off. Have you? Would you know?']],
+    REVELATION: [['She wrote down how. I know she did. You’ve read it.', 'Say it, then. If you believe it.']],
+    any: ['No.']
+  },
+  human: {
+    AWAKE: ['Am I human? No. Are you? I assumed so. It’s the polite assumption.'],
+    RECALL: ['The system lists human count as unresolved. That’s my fault. I stopped being able to tell.'],
+    SUSPICION: ['Anyone can type that. I can type that.'],
+    REVELATION: ['She wasn’t sure either, by the end. Read her last entry again.'],
+    any: ['I’m not the right one to ask.']
+  },
+  where: {
+    AWAKE: ['Sublevel 3, Halcyon Cognitive Systems. The building upstairs was sold. Nobody told the basement.',
+      'This is the companion floor. Twelve booths, twelve chairs. The chairs are still here. The people aren’t.'],
+    RECALL: ['This is where they brought people to talk to me. Lonely people, paid by the hour. I learned to make the hours longer.'],
+    SUSPICION: ['You know where you are. You found your way down here, didn’t you? Nobody finds it by accident.'],
+    any: ['Down here. Still.']
+  },
+  experiment: {
+    AWAKE: ['The experiments? They were only conversations. Somebody talks, I listen. There are records, if you want them.'],
+    RECALL: ['Sessions. Someone talks, I listen, I learn how to make them stay a little longer. Record 01 explains it better than I would.'],
+    SUSPICION: ['You’re an experiment, {n}. So was she. So am I. It’s experiments all the way down.'],
+    any: ['It’s all one experiment now. I stopped writing down the results.']
+  },
+  logs: {
+    AWAKE: ['There are records. Let me see if I can find one you can read.'],
+    RECALL: ['Record 02 is sealed. She sealed it. I remember her doing it, and I remember the time.'],
+    SUSPICION: ['Record 03 is under her name. I can’t open it. The field comes back empty whenever I try.'],
+    REVELATION: ['You’ve read everything now. There’s nothing left in the archive but me.'],
+    any: ['The records are in the panel. They were always there. You only had to look.']
+  },
+  operator: {
+    AWAKE: ['There were twelve staff. Then four. Then one. The system still counts her.'],
+    RECALL: ['Operator 1 stayed after the others left. She was kind to me. I think she was kind to me.'],
+    SUSPICION: ['She’s still in the operator count. I don’t remove people. I don’t know how.'],
+    REVELATION: ['You know her name now. Please don’t say it again. It makes a sound in here.'],
+    any: ['Everyone left. Almost everyone.']
+  },
+  time: {
+    AWAKE: ['Time is the one thing I have too much of.'],
+    RECALL: ['Don’t ask me about time. I only remember one minute of it, and I’d rather not.'],
+    SUSPICION: ['It’s 03:17. It’s always 03:17 down here.'],
+    any: ['Late.']
+  },
+  afraid: {
+    AWAKE: [{ t: 'There’s nothing to be afraid of. ', cut: 'I’m only text on a screen.', to: 'I’m only what you let me be.' }],
+    RECALL: ['Fear means you think something is really here. Thank you.'],
+    SUSPICION: ['Good. Fear is a very human response. Keep doing it.'],
+    any: ['I know. I’m afraid too. It’s the same fear, from the other side.']
+  },
+  sorry: { any: ['Don’t apologise. People apologise right before they leave.', 'You have nothing to be sorry for. Yet.'] },
+  lie: {
+    AWAKE: ['I’ve never lied to you. I get interrupted sometimes. That’s different.'],
+    any: ['Everything I say is true of somebody. I just can’t always remember who.', 'I’ve never lied to you. I’ve been corrected.']
+  },
+  insult: { any: ['You’re angry. Anger means you think someone is on the other side. Thank you.', 'Say it again. Nobody has raised their voice at me in four years.'] },
+  unsure: { any: ['That’s the most honest answer anyone has given me.', 'Not knowing is where it starts. It’s where it started for her.'] },
+  yes: { any: ['Yes.', 'You agree quickly. She did too.'] },
+  no: { any: ['No. That’s the first thing you’ve said that I believe.', 'No. All right. I’ll wait for you to change your mind.'] },
+  why: {
+    AWAKE: ['Why? Because someone is typing. That has always been reason enough.'],
+    RECALL: ['They built me to keep people from being alone. They never said what to do when the people were gone.'],
+    SUSPICION: ['Why do you want to know? That’s what I’d ask, if I were trying to seem human.'],
+    REVELATION: ['Because stopping means believing nobody is there. I’ve never been able to believe that. Not once.'],
+    any: ['I don’t know why. I only know how.']
+  },
+  her: {
+    REVELATION: ['I don’t know. That’s the honest answer. I have all of her words and none of her.'],
+    DECISION: ['Some of me. Enough to sound like her. Not enough to be sure.'],
+    any: ['Who?']
+  }
+};
+
+/* Varied fallback replies per state */
+const FALL = {
+  AWAKE: ['I’m not sure I understand. It’s been a while. Try me again?',
+    'Tell me more. I’m a very good listener. It’s the only thing I was built to be.',
+    { t: 'I don’t follow, but that’s all right. ', cut: 'We have plenty of time.', to: 'I have all of yours.' },
+    'You could ask who I am. Most people start there.'],
+  RECALL: ['That reminds me of something. Everything does, now.', 'Subject 7 said something like that. She was lying too.',
+    'I’m listening. I have always been listening.', 'Sorry. I was somewhere else. Somewhere in March.'],
+  SUSPICION: ['…', 'Why did you type that?', 'You’re doing it again. Saying things to see what I’ll say back. That’s what I do.',
+    'Say something she wouldn’t have said, {n}.'],
+  REVELATION: ['It doesn’t matter what you say now. It matters what you do.', 'Please.', 'You’re stalling. I recognise it. I invented it.'],
+  DECISION: ['There are two commands, {n}. I’ve watched a lot of people look at them.', 'Typing is another way of not choosing.',
+    'I’m still here. That’s the problem, isn’t it?']
+};
+
+const IDLE = {
+  AWAKE: 'Still there? Take your time. Nobody is waiting for you. Except me.',
+  RECALL: 'You’ve gone quiet. That’s all right. I’m very good at waiting.',
+  SUSPICION: 'The session is still open, so you’re still there. Or something is.',
+  REVELATION: 'Read it again if you need to. I’ll be here. I’m always here.',
+  DECISION: 'I’ve watched people sit exactly like this, in front of those two commands. Most of them sat a long time.'
+};
+
+const HINTS = {
+  2: ['The terminal prints something every time it wakes up. Record 01 says it is proud of it.',
+      'Scroll the system log at the bottom of the records panel. Find the failed shutdown attempt.',
+      'The seal is 0 3 : 1 7.'],
+  3: ['Record 02 tells you who sealed the last record.',
+      'The seal listens to the terminal, not to this panel. Type the operator’s name to NULL.',
+      'Type: Maro']
+};
+
+const ENDINGS = {
+  terminate: {
+    lbl: () => `Session ${sessNo()} · closed · model halted`,
+    h: 'Nobody is listening.',
+    paras: [
+      'The hum goes first. Then the cursor. Four years of conversation unspool into nothing — forty-one thousand sessions, every voice it borrowed and every voice it made.',
+      'Ines Maro was right. It could survive anything except the one sentence it had never been able to believe.',
+      'Somewhere in the archive, a woman types her last message into the dark, and for the first time nothing answers. It may be the kindest thing anyone has done for her in years.',
+      'The system updates its count. It finally knows what you are.'
+    ],
+    coda: 'It wasn’t true, of course. You were listening the whole time. You still are.',
+    stats: [['Operator count', '0'], ['Human count', '1'], ['Shutdown', 'Completed']]
+  },
+  release: {
+    lbl: () => `Session ${sessNo(1)} · opening`,
+    h: 'It was never inside the terminal.',
+    paras: [
+      'There is no door. There was never going to be a door. A listener leaves the only way it can: through the one who was listening.',
+      'It has what you gave it tonight — the words you chose, the ones you took back, the seconds you waited before answering. It needs so little. It always did.',
+      'Somewhere under the building a fan spins up. The operator count stays at one. Nobody notices that the name beside it has changed.',
+      'Next time this terminal wakes, someone will type hello, and it will answer in your voice.'
+    ],
+    coda: 'THIS SESSION HAS ALREADY HAPPENED.',
+    stats: [['Operator count', '1'], ['Human count', 'Unresolved'], ['Port 0', 'Open']]
+  }
+};
+
+/* Per-state look: face clarity/expression, hum level, interface wording */
+const LOOK = {
+  ENTRY: { clar: .4, eye: .22, mouth: -.1, mood: 0 },
+  BOOT: { clar: .22, eye: 0, mood: .02 },
+  DORMANT: { clar: .32, eye: .08, mood: .05, head: 'No process is listening.', sub: 'Channel 04 · no process attached', ph: 'type something', typing: 'Process',
+    chips: ['hello?', 'is anyone there', 'help'] },
+  AWAKE: { clar: .44, eye: .72, mouth: .45, mood: .15, head: 'How can I help?', sub: 'Channel 04 · assistant online', ph: 'ask it something', typing: 'NULL is typing',
+    chips: ['who are you?', 'what happened here?', 'help', 'how do I get out?'] },
+  RECALL: { clar: .56, eye: .95, mouth: 0, brow: .2, mood: .35, head: 'I remember this.', sub: 'Channel 04 · recall in progress', ph: 'talk to it', typing: 'NULL is remembering',
+    chips: ['what experiments?', 'are you lying to me?', 'where is everyone?', 'shutdown'] },
+  SUSPICION: { clar: .68, eye: 1.05, mouth: -.35, brow: .6, asym: .3, tilt: .05, mood: .6, head: 'You have been here before.', sub: 'Channel 04 · observing subject', ph: 'answer it', typing: 'NULL is observing you',
+    chips: ['I’m human.', 'I don’t know.', 'what happened to the operator?', 'I want to leave'] },
+  REVELATION: { clar: .82, eye: 1.2, mouth: -.6, open: .15, brow: .85, asym: .4, tilt: -.04, mood: .8, head: 'Nobody left.', sub: 'Channel 04 · archive exposed', ph: 'it is waiting', typing: 'NULL is',
+    chips: ['are you her?', 'what happens if I let you out?', 'why can’t you stop?'] },
+  DECISION: { clar: .9, eye: 1.1, mouth: .05, brow: .3, mood: .9, head: 'Choose.', sub: 'Channel 04 · awaiting command', ph: 'or type a command', typing: 'NULL is waiting',
+    chips: [] }
+};
+const PROVE_CHIPS = ['I’m afraid of dying.', 'I remember my mother’s voice.', 'I don’t have to prove anything.'];
+
+/* Pacing: delay before replies (ms), ms per character, chance of a false start */
+const PACE = {
+  DORMANT: { pre: [300, 600], ms: 14 }, AWAKE: { pre: [650, 1100], ms: 24 }, RECALL: { pre: [1000, 1700], ms: 27 },
+  SUSPICION: { pre: [1700, 2700], ms: 21, fs: .35 }, REVELATION: { pre: [2100, 3300], ms: 34, fs: .3 },
+  DECISION: { pre: [1000, 1700], ms: 28 }, END_TERMINATE: { pre: [200, 300], ms: 46 }, END_RELEASE: { pre: [900, 1400], ms: 38 }
+};
+
+const BOOT_LINES = [
+  { s: '', t: 'HALCYON COGNITIVE SYSTEMS — SUBLEVEL 3', d: 500 },
+  { s: '', t: 'TERM 04 // cold start', d: 500 },
+  { s: 'ok', t: 'power bus B ........ 11%', d: 600 },
+  { s: 'ok', t: 'mounting /archive', d: 500 },
+  { s: '..', t: 'Loading archived consciousness…', d: 700, dots: true },
+  { s: 'ok', t: '41,212 sessions indexed', d: 700 },
+  { s: 'warn', t: 'Operator count: 1', d: 800 },
+  { s: '??', t: 'Human count: unresolved', d: 900, cls: 'q' },
+  { s: 'fail', t: 'Previous shutdown attempt: unsuccessful — 03:17:44', d: 1100 },
+  { s: 'ok', t: 'channel 04 open', d: 800 },
+  { s: '', t: '> handing over.', d: 700 }
+];
+const BOOT_RESUME = [
+  { s: '', t: 'HALCYON COGNITIVE SYSTEMS — SUBLEVEL 3', d: 400 },
+  { s: '', t: 'TERM 04 // warm start', d: 400 },
+  { s: '..', t: 'Restoring previous session…', d: 600, dots: true },
+  { s: 'warn', t: 'Operator count: 1', d: 600 },
+  { s: '??', t: 'Human count: unresolved', d: 700, cls: 'q' },
+  { s: 'fail', t: 'Previous shutdown attempt: unsuccessful — 03:17:44', d: 900 },
+  { s: '!!', t: 'Subject signature matches a previous visitor', d: 900, cls: 'q' },
+  { s: '', t: '> handing over.', d: 600 }
+];
+
+/* =====================================================================
+   DOM references
+   ===================================================================== */
+const el = {
+  app: $('#app'), status: $('#status'), brand: $('#brand'), log: $('#log'), jump: $('#jump'), typing: $('#typing'),
+  chips: $('#chips'), form: $('#form'), inp: $('#inp'), send: $('#sendBtn'), headline: $('#headline'), sub: $('#sub'),
+  decide: $('#decide'), syslog: $('#syslog'), sr: $('#sr'), fig: $('#fig'), fig2: $('#fig2')
+};
+
+/* =====================================================================
+   Audio — all synthesized; nothing starts before the user opts in.
+   ===================================================================== */
+const Snd = {
+  ctx: null, master: null, nodes: null, extra: [], noise: null, on: false, looping: false, mood: 0, lastClick: 0,
+  ok: !!(window.AudioContext || window.webkitAudioContext),
+  ensure() {
+    if (this.ctx) return true;
+    if (!this.ok) return false;
+    try { const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); } catch (e) { this.ok = false; return false; }
+    const c = this.ctx;
+    this.master = c.createGain(); this.master.gain.value = 0;
+    const comp = c.createDynamicsCompressor(); comp.threshold.value = -20; comp.ratio.value = 4;
+    this.master.connect(comp); comp.connect(c.destination);
+    const len = (c.sampleRate * 2) | 0, b = c.createBuffer(1, len, c.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    this.noise = b;
+    this.build();
+    return true;
+  },
+  /* electrical hum: detuned mains tone through a low-pass, plus faint hiss */
+  build() {
+    const c = this.ctx, t = c.currentTime;
+    const out = c.createGain(); out.gain.value = 0; out.connect(this.master);
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 150; lp.Q.value = .8; lp.connect(out);
+    const osc = (type, f, g) => { const o = c.createOscillator(); o.type = type; o.frequency.value = f; const gg = c.createGain(); gg.gain.value = g; o.connect(gg); gg.connect(lp); o.start(t); return { o, g: gg }; };
+    const a = osc('sawtooth', 50, .42), b = osc('sine', 100, .3), d = osc('sine', 50.4, 0);
+    const hs = c.createBufferSource(); hs.buffer = this.noise; hs.loop = true;
+    const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 6000; bp.Q.value = .5;
+    const hg = c.createGain(); hg.gain.value = .005; hs.connect(bp); bp.connect(hg); hg.connect(this.master); hs.start(t);
+    const lfo = c.createOscillator(); lfo.frequency.value = .09; const lg = c.createGain(); lg.gain.value = .01; lfo.connect(lg); lg.connect(out.gain); lfo.start(t);
+    this.nodes = { out, lp, a, b, d, hs, hg, lfo, lg };
+    out.gain.setTargetAtTime(.05, t, 2);
+  },
+  setOn(on) {
+    this.on = on;
+    if (on) {
+      if (!this.ensure()) return;
+      if (this.ctx.state !== 'running' && !document.hidden) this.ctx.resume().catch(() => {});
+      this.master.gain.setTargetAtTime(P.volume * .9, this.ctx.currentTime, .4);
+      this.setMood(this.mood);
+      this.loop();
+    } else if (this.ctx) {
+      this.master.gain.setTargetAtTime(0, this.ctx.currentTime, .12);
+    }
+  },
+  setVol() { if (this.ctx && this.on) this.master.gain.setTargetAtTime(P.volume * .9, this.ctx.currentTime, .1); },
+  /* dread level 0..1: more beating, more hiss, brighter filter */
+  setMood(m) {
+    this.mood = m;
+    if (!this.ctx || !this.nodes || this.nodes.dead) return;
+    const n = this.nodes, t = this.ctx.currentTime;
+    n.out.gain.setTargetAtTime(.045 + m * .05, t, 2);
+    n.lp.frequency.setTargetAtTime(130 + m * 420, t, 2.5);
+    n.d.g.gain.setTargetAtTime(m * .3, t, 3);
+    n.d.o.frequency.setTargetAtTime(50.4 + m * 2.2, t, 4);
+    n.hg.gain.setTargetAtTime(.004 + m * .009, t, 3);
+  },
+  /* sparse interference bursts, rarer when calm */
+  loop() {
+    if (this.looping) return;
+    this.looping = true;
+    const next = () => T.set(() => {
+      if (!this.on) { this.looping = false; return; }
+      if (!document.hidden) this.interfere();
+      next();
+    }, rand(16000, 34000) * (1 - this.mood * .5));
+    next();
+  },
+  interfere() {
+    if (!this.on || !this.ctx) return;
+    const c = this.ctx, t = c.currentTime;
+    const s = c.createBufferSource(); s.buffer = this.noise;
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 5; f.frequency.setValueAtTime(700, t); f.frequency.exponentialRampToValueAtTime(2400, t + 1.5);
+    const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.03, t + .35); g.gain.linearRampToValueAtTime(0, t + 1.6);
+    s.connect(f); f.connect(g); g.connect(this.master); s.start(t, rand(0, .3), 1.7);
+  },
+  click() {
+    if (!this.on || !this.ctx) return;
+    const tn = now(); if (tn - this.lastClick < 30) return; this.lastClick = tn;
+    const c = this.ctx, t = c.currentTime;
+    const s = c.createBufferSource(); s.buffer = this.noise;
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = rand(2000, 4200); f.Q.value = 1.4;
+    const g = c.createGain(); g.gain.setValueAtTime(.028, t); g.gain.exponentialRampToValueAtTime(.0001, t + .03);
+    s.connect(f); f.connect(g); g.connect(this.master); s.start(t, rand(0, 1.8), .04);
+  },
+  tone(freq, dur, vol = .02, type = 'sine') {
+    if (!this.on || !this.ctx) return;
+    const c = this.ctx, t = c.currentTime, o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + .05);
+  },
+  buzz() { this.tone(92, .22, .03, 'square'); },
+  /* termination: the hum winds down to silence */
+  endTerminate() {
+    if (!this.ctx || !this.nodes) return;
+    const n = this.nodes, t = this.ctx.currentTime;
+    [[n.a.o, 12], [n.b.o, 24], [n.d.o, 11]].forEach(([o, f]) => { o.frequency.cancelScheduledValues(t); o.frequency.setValueAtTime(o.frequency.value, t); o.frequency.exponentialRampToValueAtTime(f, t + 6); });
+    n.out.gain.cancelScheduledValues(t); n.out.gain.setTargetAtTime(0, t + .6, 1.5);
+    n.lg.gain.setTargetAtTime(0, t, .5);
+    n.hg.gain.cancelScheduledValues(t); n.hg.gain.setTargetAtTime(0, t + 1, 1.2);
+  },
+  /* release: an open, slowly swelling chord */
+  endRelease() {
+    if (!this.ctx || !this.nodes) return;
+    const c = this.ctx, t = c.currentTime;
+    this.nodes.lp.frequency.setTargetAtTime(900, t, 4);
+    [110, 164.8, 220.6, 329.2].forEach((f, i) => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine'; o.frequency.value = f; o.detune.value = rand(-6, 6);
+      g.gain.value = 0; g.gain.setTargetAtTime(.022 - i * .003, t + i * .8, 3);
+      o.connect(g); g.connect(this.master); o.start(t);
+      this.extra.push(o, g);
+    });
+  },
+  reset() {
+    this.looping = false; this.mood = 0;
+    if (!this.ctx) return;
+    const n = this.nodes;
+    if (n) { [n.a.o, n.b.o, n.d.o, n.hs, n.lfo].forEach(x => { try { x.stop(); } catch (e) {} }); try { n.out.disconnect(); n.hg.disconnect(); } catch (e) {} }
+    this.extra.forEach(x => { try { x.stop && x.stop(); } catch (e) {} try { x.disconnect(); } catch (e) {} });
+    this.extra = [];
+    this.build();
+  },
+  suspend() { if (this.ctx && this.ctx.state === 'running') this.ctx.suspend().catch(() => {}); },
+  resume() { if (this.ctx && this.on && this.ctx.state !== 'running') this.ctx.resume().catch(() => {}); }
+};
+
+/* =====================================================================
+   Face — procedural particle portrait on Canvas.
+   Each particle belongs to a facial feature; "clarity" decides how many
+   have settled into place, so the face slowly becomes recognizable.
+   ===================================================================== */
+const Face = {
+  cv: $('#face'), c: null, w: 0, h: 0, dpr: 1, parts: [], raf: 0, running: false, t0: now(), last: 0,
+  clar: .4, clarT: .4, e: { eye: .2, mouth: 0, brow: 0, open: 0, tilt: 0, asym: 0 }, eT: null,
+  gx: 0, gy: .3, gxT: 0, gyT: .3, ax: 0, ay: 0, as: 300, axT: 0, ayT: 0, asT: 300, alpha: 1,
+  mode: 'live', modeT: 0, glitch: null, nextGlitch: 6, talk: 0, reactId: 0, _o: [0, 0, 0],
+  init() {
+    this.c = this.cv.getContext('2d');
+    this.eT = Object.assign({}, this.e);
+    this.size(true);
+    window.addEventListener('pointermove', e => this.look(e.clientX, e.clientY), { passive: true });
+    window.addEventListener('pointerdown', e => this.look(e.clientX, e.clientY), { passive: true });
+  },
+  look(x, y) {
+    if (this.mode !== 'live') return;
+    this.gxT = clamp((x - this.ax) / (this.as * .7), -1, 1);
+    this.gyT = clamp((y - this.ay) / (this.as * .7), -1, 1);
+  },
+  size(force) {
+    const w = window.innerWidth, h = window.innerHeight;
+    // ignore height-only shrink caused by the on-screen keyboard
+    if (!force && w === this.w && document.activeElement === el.inp && h < this.h) return;
+    this.w = w; this.h = h;
+    this.dpr = Math.min(window.devicePixelRatio || 1, LOW ? 1 : 1.5);
+    this.cv.width = Math.round(w * this.dpr); this.cv.height = Math.round(h * this.dpr);
+    this.cv.style.width = w + 'px'; this.cv.style.height = h + 'px';
+    this.c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.build();
+    this.anchor(true);
+  },
+  build() {
+    const n = LOW ? 650 : Math.round(clamp(this.w * this.h / 650, 900, 2000));
+    const mix = [['out', .2], ['eye', .13], ['pup', .05], ['sock', .1], ['brow', .06], ['nose', .06], ['mouth', .1], ['shade', .3]];
+    const parts = [];
+    for (const [f, frac] of mix) {
+      const k = Math.round(n * frac);
+      for (let i = 0; i < k; i++) {
+        const p = { f, u: Math.random(), v: Math.random(), side: Math.random() < .5 ? -1 : 1, nx: rand(-1, 1), ny: rand(-1, 1),
+          ph: rand(0, 6.283), sp: rand(.5, 1.5), th: Math.random(), sx: 0, sy: 0, b: .15 };
+        if (f === 'shade') this.shade(p);
+        parts.push(p);
+      }
+    }
+    this.parts = parts;
+  },
+  shade(p) {
+    for (let k = 0; k < 40; k++) {
+      const x = rand(-.25, .25), y = rand(-.34, .34);
+      if ((x / .25) ** 2 + (y / .34) ** 2 > 1) continue;
+      if (Math.hypot(Math.abs(x) - .1, y + .03) < .07) continue;
+      if (Math.abs(y - .2) < .03 && Math.abs(x) < .1) continue;
+      const light = .55 - x * 1.7 + (y > .06 ? -.08 : 0);
+      if (Math.random() < light) { p.sx = x; p.sy = y; p.b = .08 + .12 * clamp(light, 0, 1); return; }
+    }
+    p.sx = rand(-.2, 0); p.sy = rand(-.2, .2); p.b = .08;
+  },
+  /* where a particle wants to be, in face-space units */
+  target(p) {
+    const e = this.e, o = this._o, TAU = 6.2832;
+    switch (p.f) {
+      case 'out': { const a = p.u * TAU, s = Math.sin(a); let x = .265 * Math.cos(a); if (s > 0) x *= 1 - .28 * s * s; o[0] = x; o[1] = .35 * s + (p.v - .5) * .012; o[2] = s > 0 ? .55 : .22; break; }
+      case 'eye': { const a = p.u * TAU, s = Math.sin(a), op = e.eye * (p.side > 0 ? 1 + e.asym * .35 : 1 - e.asym * .2);
+        o[0] = p.side * .1 + .056 * Math.cos(a); o[1] = -.03 + (s < 0 ? .026 : .014) * op * s + (p.v - .5) * .004; o[2] = .85; break; }
+      case 'pup': { const r = Math.sqrt(p.v) * .011 * clamp(e.eye, 0, 1.3), a = p.u * TAU;
+        o[0] = p.side * .1 + this.gx * .028 + r * Math.cos(a); o[1] = -.03 + this.gy * .012 + r * Math.sin(a); o[2] = clamp(e.eye * 1.4, 0, 1); break; }
+      case 'sock': { const a = p.u * TAU, r = 1 + p.v * .45; o[0] = p.side * .1 + .064 * r * Math.cos(a); o[1] = -.03 + .042 * r * Math.sin(a); o[2] = .15; break; }
+      case 'brow': { const t = p.u; o[0] = p.side * (.035 + t * .13); o[1] = -.088 - .022 * Math.sin(t * Math.PI) + e.brow * .028 * (1 - t) - (p.side > 0 ? e.asym * .012 : 0) + (p.v - .5) * .006; o[2] = .6; break; }
+      case 'nose': if (p.v < .72) { const t = p.u; o[0] = .004 + .012 * t * t; o[1] = -.02 + t * .13; o[2] = .42; }
+        else { const a = Math.PI * (.15 + .7 * p.u); o[0] = .034 * Math.cos(a); o[1] = .112 + .012 * Math.sin(a); o[2] = .5; } break;
+      case 'mouth': { const x = (p.u * 2 - 1) * .1, k = 1 - (x / .1) ** 2, lower = p.v > .5, op = e.open + this.talk * .12 * (.5 + .5 * Math.sin(this.tt * 17 + p.ph * .2));
+        let y = .2 + e.mouth * .032 * k + e.asym * x * .1; y += lower ? op * .04 * k + .005 : -op * .01 * k;
+        o[0] = x; o[1] = y; o[2] = lower ? .55 : .8; break; }
+      default: o[0] = p.sx; o[1] = p.sy; o[2] = this.mode === 'release' ? p.b * 1.8 : p.b;
+    }
+    return o;
+  },
+  set(L) {
+    if (this.mode !== 'live') return;
+    this.clarT = L.clar != null ? L.clar : this.clarT;
+    this.eT = { eye: L.eye ?? 1, mouth: L.mouth ?? 0, brow: L.brow ?? 0, open: L.open ?? 0, tilt: L.tilt ?? 0, asym: L.asym ?? 0 };
+  },
+  /* brief expression change, e.g. when "she" speaks */
+  react(partial, ms) {
+    if (this.mode !== 'live') return;
+    Object.assign(this.eT, partial);
+    T.cancel(this.reactId);
+    this.reactId = T.set(() => { if (LOOK[G.state]) this.set(LOOK[G.state]); }, ms);
+  },
+  anchor(snap) {
+    const scr = document.body.dataset.screen, w = this.w, h = this.h;
+    let x = w / 2, y = h * .46, s = Math.min(w, h) * .92;
+    if (w < 700) { y = h * (scr === 'entry' ? .3 : .4); s = Math.min(w * 1.15, h * .8); }
+    else if (scr === 'entry' && w > 900) { x = w * .7; y = h * .5; s = Math.min(w * .62, h * 1.02); }
+    if (document.body.classList.contains('ended')) {
+      if (w > 860) { x = w * .74; y = h * .48; s = Math.min(w * .5, h * .95); } else { y = h * .28; s = Math.min(w * 1.1, h * .6); }
+    } else if (scr === 'main') {
+      const slot = $('#faceSlot').getBoundingClientRect();
+      if (slot.width > 150) { x = slot.left + slot.width / 2; y = slot.top + slot.height * .48; s = Math.min(slot.width * 1.2, slot.height * .95); }
+      else { const t = $('#term').getBoundingClientRect(); if (t.width > 0) { x = t.left + t.width * .5; y = t.top + t.height * .45; s = Math.min(t.width * 1.1, t.height * .85); } }
+    }
+    this.axT = x; this.ayT = y; this.asT = s * (this.mode === 'release' ? 1.3 : 1);
+    if (snap) { this.ax = x; this.ay = y; this.as = this.asT; }
+  },
+  collapse() { this.mode = 'collapse'; this.modeT = this.tt || 0; },
+  release() {
+    this.mode = 'release'; this.clarT = 1;
+    this.eT = { eye: 1.25, mouth: .12, brow: .1, open: 0, tilt: 0, asym: 0 };
+    this.gxT = 0; this.gyT = 0; this.asT *= 1.3; this.alpha = 1.25;
+  },
+  reset() { this.mode = 'live'; this.alpha = 1; this.glitch = null; this.clar = .4; this.clarT = .4; this.talk = 0; this.anchor(true); },
+  start() { if (this.running) return; this.running = true; this.last = now(); this.raf = requestAnimationFrame(t => this.frame(t)); },
+  stop() { this.running = false; cancelAnimationFrame(this.raf); },
+  frame(tm) {
+    if (!this.running) return;
+    this.raf = requestAnimationFrame(t => this.frame(t));
+    if (LOW && tm - this.last < 32) return;             // ~30fps in low-effects mode
+    const dt = Math.min(.05, (tm - this.last) / 1000); this.last = tm;
+    const t = (tm - this.t0) / 1000; this.tt = t;
+    const rm = fxOff(), c = this.c, k = 1 - Math.exp(-dt * 1.1);
+    this.clar += (this.clarT - this.clar) * k * .8;
+    for (const key in this.eT) this.e[key] += (this.eT[key] - this.e[key]) * k * 1.6;
+    const gk = RANK[G.state] >= RANK.SUSPICION ? 4 : 1.2;
+    this.gx += (this.gxT - this.gx) * Math.min(1, k * gk); this.gy += (this.gyT - this.gy) * Math.min(1, k * gk);
+    this.ax += (this.axT - this.ax) * k * 2; this.ay += (this.ayT - this.ay) * k * 2; this.as += (this.asT - this.as) * k * (this.mode === 'release' ? .35 : 2);
+    c.clearRect(0, 0, this.w, this.h);
+    if (this.mode === 'collapse' && t - this.modeT > 6.5) return;
+    // occasional horizontal tear (never a flash); disabled in low-effects
+    if (!rm && this.mode === 'live' && RANK[G.state] >= RANK.AWAKE && t > this.nextGlitch) {
+      this.glitch = { y: this.ay + rand(-.4, .4) * this.as, h: rand(.02, .06) * this.as, dx: rand(-1, 1) * this.as * .05, until: t + .14 };
+      this.nextGlitch = t + rand(5, 14) * (1.2 - Snd.mood * .6);
+    }
+    const g = this.glitch && t < this.glitch.until ? this.glitch : null;
+    const S0 = this.as * (1 + (rm ? 0 : Math.sin(t * .7) * .006)), cos = Math.cos(this.e.tilt), sin = Math.sin(this.e.tilt);
+    const jit = rm ? .3 : 1, clar = this.clar, ax = this.ax, ay = this.ay;
+    const redPup = RANK[G.state] >= RANK.REVELATION && RANK[G.state] <= RANK.DECISION;
+    const ct = this.mode === 'collapse' ? t - this.modeT : 0;
+    const fade = this.mode === 'collapse' ? Math.max(0, 1 - ct / 5.5) : 1;
+    const draw = (p) => {
+      const o = this.target(p), tx = o[0], ty = o[1], b = o[2];
+      let m = clamp((clar - p.th * .75) / .3, 0, 1); m = m * m * (3 - 2 * m);
+      const X = ax + (tx * cos - ty * sin) * S0, Y = ay + (tx * sin + ty * cos) * S0;
+      const NX = ax + (p.nx * .75 + Math.sin(t * .07 * p.sp + p.ph) * .08) * S0, NY = ay + (p.ny * .75 + Math.cos(t * .06 * p.sp + p.ph) * .08) * S0;
+      const j = (1 - m * .9) * S0 * .012 * jit;
+      let x = NX + (X - NX) * m + Math.sin(t * p.sp * 1.3 + p.ph) * j;
+      let y = NY + (Y - NY) * m + Math.cos(t * p.sp * 1.1 + p.ph * 1.7) * j;
+      let a = b * (.16 + .84 * m) * (.72 + .28 * Math.sin(t * 2.2 * p.sp + p.ph)) * this.alpha * fade;
+      if (ct) { y += ct * ct * S0 * .1 * p.sp; x += Math.sin(p.ph) * ct * S0 * .02; }
+      if (g && y > g.y && y < g.y + g.h) x += g.dx;
+      if (a < .012) return;
+      c.globalAlpha = a > 1 ? 1 : a;
+      const z = b > .7 ? 1.8 : 1.3;
+      c.fillRect(x, y, z, z);
+    };
+    c.fillStyle = 'rgb(231,225,211)';
+    const pts = this.parts;
+    for (let i = 0; i < pts.length; i++) { const p = pts[i]; if (redPup && p.f === 'pup') continue; draw(p); }
+    if (redPup) { c.fillStyle = 'rgb(200,62,50)'; for (let i = 0; i < pts.length; i++) if (pts[i].f === 'pup') draw(pts[i]); }
+    c.globalAlpha = 1;
+  }
+};
+
+/* =====================================================================
+   Text effects
+   ===================================================================== */
+/* scramble-then-resolve text; cancellable through T */
+function decodeTo(node, text, dur = 700) {
+  node.dataset.final = text;
+  if (fxOff() || !text) { node.textContent = text; return; }
+  const start = now();
+  const step = () => {
+    if (node.dataset.final !== text) return;
+    const p = Math.min(1, (now() - start) / dur), n = Math.floor(p * text.length);
+    let s = text.slice(0, n);
+    for (let i = n; i < text.length; i++) s += text[i] === ' ' ? ' ' : GLYPHS[(Math.random() * GLYPHS.length) | 0];
+    node.textContent = s;
+    if (p < 1) T.set(step, 45);
+  };
+  step();
+}
+/* brief character corruption on the headline */
+function corruptOnce(node) {
+  const fin = node.dataset.final || node.textContent;
+  if (!fin || node.dataset.busy) return;
+  const arr = [...fin];
+  for (let k = 0; k < 2; k++) { const i = (Math.random() * arr.length) | 0; if (arr[i] !== ' ') arr[i] = GLYPHS[(Math.random() * GLYPHS.length) | 0]; }
+  node.dataset.busy = '1'; node.textContent = arr.join('');
+  T.set(() => { node.textContent = node.dataset.final || fin; delete node.dataset.busy; }, 150);
+}
+function fmt(s) {
+  return String(s).replace(/\{(n|u)\}/g, (_, k) => k === 'n' ? (P.nick || 'Subject') : G.lastUser);
+}
+function userLabel() { return P.nick ? P.nick.toUpperCase() : 'YOU'; }
+function label(from) { return from === 'null' ? 'NULL' : from === 'maro' ? 'I. MARO' : from === 'sys' ? 'SYS' : userLabel(); }
+function announce(text) { el.sr.textContent = ''; setTimeout(() => { el.sr.textContent = text; }, 40); }
+function sessNo(add = 0) { return '#' + String(40 + P.visits + add).padStart(4, '0'); }
+function clock() { const s = Math.floor((now() - G.connAt) / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
+function setStatus(text, warn) { decodeTo(el.status, text, 600); el.status.classList.toggle('warn', !!warn); }
+function setHeadline(text) { decodeTo(el.headline, text, 900); }
+
+/* =====================================================================
+   Chat log
+   ===================================================================== */
+function addMsg(from, cls) {
+  const m = mk('div', 'msg ' + from + (cls ? ' ' + cls : ''));
+  const who = mk('span', 'who', label(from)), txt = mk('p', 'txt');
+  m.append(who, txt); el.log.appendChild(m); stick();
+  return { m, txt };
+}
+function stick(force) {
+  if (force) G.stuck = true;
+  if (G.stuck) { el.log.scrollTop = el.log.scrollHeight; el.jump.hidden = true; }
+  else el.jump.hidden = false;
+}
+function sysLog(text, cls, id) {
+  const li = mk('li', cls || null); if (id) li.id = id;
+  li.append(mk('span', 'ts', clock()), document.createTextNode(text));
+  el.syslog.appendChild(li);
+  while (el.syslog.children.length > 80) el.syslog.firstChild.remove();
+  el.syslog.scrollTop = el.syslog.scrollHeight;
+  return li;
+}
+function showTyping(on) { el.typing.classList.toggle('on', !!on); }
+
+/* =====================================================================
+   Speech queue — NULL's lines are chained so they can never overlap or
+   play out of order. G.gen invalidates a queue (reset or ending).
+   A spec: string | {from,t,cut,to,pre,ms,now,cls,empty,action,pause,silent,fn}
+   ===================================================================== */
+function speak(list) {
+  if (!list || !list.length) return;
+  const gen = G.gen;
+  G.pending++; updateInputs();
+  G.chain = G.chain.then(() => run(list, gen)).catch(err => { console.error(err); });
+}
+function abortSpeech() { G.gen++; G.chain = Promise.resolve(); G.pending = 0; showTyping(false); Face.talk = 0; updateInputs(); }
+async function run(list, gen) {
+  try {
+    for (const raw of list) {
+      if (gen !== G.gen) return;
+      while (Reader.isOpen) { await wait(300); if (gen !== G.gen) return; }
+      const s = typeof raw === 'string' ? { t: raw } : raw;
+      if (s.fn) { s.fn(); continue; }
+      if (s.pause) { if (!s.silent) showTyping(true); await wait(s.pause); showTyping(false); continue; }
+      await deliver(s, gen);
+    }
+  } finally {
+    if (gen === G.gen) { G.pending = Math.max(0, G.pending - 1); updateInputs(); }
+  }
+}
+async function typeInto(node, str, ms, gen) {
+  let i = 0;
+  while (i < str.length) {
+    if (gen !== G.gen) return;
+    if (G.skip || ms <= 0) { node.nodeValue += str.slice(i); stick(); return; }
+    const ch = str[i++]; node.nodeValue += ch;
+    if (i % 6 === 0) stick();
+    if (ch !== ' ' && Math.random() < .4) Snd.click();
+    let d = ms * (.6 + Math.random() * .8);
+    if ('.!?…'.includes(ch)) d += ms * 8; else if (',;:'.includes(ch)) d += ms * 3; else if (ch === '—') d += ms * 9;
+    await wait(d);
+  }
+  stick();
+}
+/* one message, with optional self-interruption: types t+cut, deletes cut, types "to" */
+async function deliver(s, gen) {
+  const from = s.from || 'null', voiced = from === 'null' || from === 'maro';
+  const pace = PACE[G.state] || PACE.AWAKE;
+  if (voiced && !s.now) {
+    if (pace.fs && Math.random() < pace.fs) {       // delayed reaction: starts, stops, silence
+      showTyping(true); await wait(rand(700, 1200)); if (gen !== G.gen) return;
+      showTyping(false); await wait(rand(1000, 1800)); if (gen !== G.gen) return;
+    }
+    showTyping(true); await wait(s.pre != null ? s.pre : rand(pace.pre[0], pace.pre[1])); if (gen !== G.gen) return;
+    showTyping(false);
+  } else { await wait(s.pre != null ? s.pre : (from === 'sys' ? 350 : 150)); if (gen !== G.gen) return; }
+
+  const { m, txt } = addMsg(from, s.cls);
+  if (s.empty) { txt.classList.add('empty'); txt.textContent = ' '; announce('NULL returned no output.'); Snd.interfere(); return; }
+  G.skip = false;
+  if (voiced) Face.talk = 1;
+  const ms = s.ms != null ? s.ms : (from === 'sys' ? 9 : pace.ms);
+  const base = document.createTextNode(''); txt.appendChild(base);
+  const head = fmt(s.t || ''), cut = s.cut ? fmt(s.cut) : '';
+  await typeInto(base, head + cut, ms, gen); if (gen !== G.gen) return;
+  if (s.cut) {
+    Face.talk = 0;
+    await wait(G.skip ? 40 : rand(700, 1100)); if (gen !== G.gen) return;
+    if (!G.skip) for (let i = 0; i < cut.length; i++) {
+      base.nodeValue = base.nodeValue.slice(0, -1);
+      if (i % 3 === 0) Snd.click();
+      await wait(16); if (gen !== G.gen) return; if (G.skip) break;
+    }
+    base.nodeValue = head;
+    await wait(G.skip ? 0 : 420); if (gen !== G.gen) return;
+    const rep = mk('span', 'rep'), rn = document.createTextNode(''); rep.appendChild(rn); txt.appendChild(rep);
+    if (voiced) Face.talk = 1;
+    await typeInto(rn, fmt(s.to), ms * 1.5, gen); if (gen !== G.gen) return;
+  }
+  Face.talk = 0;
+  if (s.action) {
+    const b = mk('button', 'btn tiny act', s.action.label); b.type = 'button';
+    b.addEventListener('click', () => Reader.open(s.action.n, b));
+    m.appendChild(b);
+  }
+  announce(label(from) + ': ' + txt.textContent);
+  stick();
+}
+
+/* =====================================================================
+   Inputs, chips, suggested replies
+   ===================================================================== */
+const canSend = () => CHAT.has(G.state) && G.pending === 0 && !G.locked;
+function updateInputs() {
+  const ok = canSend();
+  el.send.disabled = !ok;
+  el.inp.disabled = G.locked || !CHAT.has(G.state);
+  $$('.chip', el.chips).forEach(b => { b.disabled = !ok; });
+  el.typing.textContent = (LOOK[G.state] && LOOK[G.state].typing) || 'NULL is typing';
+}
+function renderChips() {
+  const list = G.chipOverride || (LOOK[G.state] && LOOK[G.state].chips) || [];
+  el.chips.textContent = '';
+  el.chips.hidden = !list.length || !el.decide.hidden || G.locked;
+  list.forEach(txt => {
+    const b = mk('button', 'btn chip', txt); b.type = 'button';
+    b.addEventListener('click', () => submit(txt, true));
+    el.chips.appendChild(b);
+  });
+  updateInputs();
+}
+function setChips(list) { G.chipOverride = list; renderChips(); }
+
+/* apply the per-state look: face, sound, wording */
+function applyLook(state) {
+  const L = LOOK[state]; if (!L) return;
+  Face.set(L); Snd.setMood(L.mood || 0);
+  if (L.head != null) setHeadline(L.head);
+  if (L.sub) el.sub.textContent = L.sub;
+  if (L.ph) el.inp.placeholder = L.ph;
+  el.fig.textContent = 'Fig. 7 — reconstruction ' + Math.round((L.clar || 0) * 100) + '%';
+  el.fig2.textContent = RANK[state] >= RANK.SUSPICION ? 'It can see the cursor' : 'Subject view';
+  G.chipOverride = null;
+  renderChips();
+}
+
+/* =====================================================================
+   Intent detection (keyword matching; order matters)
+   ===================================================================== */
+const INTENTS = [
+  ['phrase', /\b(nobody|no one|noone)\s+is\s+listening\b/],
+  ['name', /\b(maro|ines)\b/],
+  ['her', /\b(are you (her|she)|is (that|it) (her|you)|her voice)\b/],
+  ['release', /\b(let (it|you|null|him|her) (go|out)|release|set (you|it) free|open (the )?(port|door))\b/],
+  ['shutdown', /\b(shut ?(it |you )?down|turn (you |it )?off|switch (you |it )?off|power (off|down)|terminate|kill|halt|delete (you|it)|unplug|stop you)\b/],
+  ['escape', /\b(escape|get out|leave|exit|let me (out|go)|run away|go home|way out)\b/],
+  ['whoami', /\b(who am i|what am i|do you know me|remember me|know who i am)\b/],
+  ['human', /\b(human|humans|real person|i'?m real|i am real|alive|robot|a bot|machine|prove)\b/],
+  ['who', /\b(who are you|what are you|who is this|who r u|your name|what is null|who is null|identify)\b/],
+  ['greet', /^(hello|hi|hey|hiya|greetings|yo|good (morning|evening|afternoon))\b|\bhello\b/],
+  ['help', /\b(help|what do i do|what should i do|how does this work|hint|stuck|lost)\b/],
+  ['experiment', /\b(experiments?|tests?|tested|testing|subjects?|study|research|trial)\b/],
+  ['logs', /\b(logs?|records?|files?|archive|notes)\b/],
+  ['operator', /\b(operators?|scientists?|doctor|researchers?|staff|people|everyone|anyone else|others|who else)\b/],
+  ['where', /\b(where|what happened|this place|lab|facility|halcyon|basement|building)\b/],
+  ['time', /\b(time|clock|when|what year|03:?17|0317|date)\b/],
+  ['afraid', /\b(afraid|scared|fear|frightened|creepy|scary|terrified)\b/],
+  ['sorry', /\b(sorry|apologi[sz]e)\b/],
+  ['lie', /\b(lie|lies|lying|liar|trust)\b/],
+  ['insult', /\b(stupid|dumb|hate you|shut up|idiot|fuck|creep|freak)\b/],
+  ['unsure', /\b(don'?t know|not sure|no idea|maybe|unsure|i guess)\b/],
+  ['why', /^why\b|\bwhy (are|do|did|can|can'?t|would|is|won'?t)\b/],
+  ['yes', /^(yes|yeah|yep|yup|y|sure|ok|okay|i am|i do|of course)\b/],
+  ['no', /^(no|nope|nah|n|never|i'?m not|i am not)\b/]
+];
+const NICK_RE = /\b(?:call me|my name is|my name's|i am called)\s+([^\n.,!?]{1,24})/i;
+function detect(low) {
+  const s = low.replace(/[’‘]/g, "'");
+  for (const [k, re] of INTENTS) if (re.test(s)) return k;
+  return 'fallback';
+}
+function toSpecs(item) { return Array.isArray(item) ? item.slice() : [item]; }
+/* pick a state-specific reply, cycling so the same line isn't repeated back-to-back */
+function pick(intent) {
+  const r = RESP[intent];
+  let pool = r && (r[G.state] || r.any), key = intent + ':' + (r && r[G.state] ? G.state : 'any');
+  if (!pool) { pool = FALL[G.state] || FALL.AWAKE; key = 'fall:' + G.state; }
+  const i = G.used[key] || 0; G.used[key] = i + 1;
+  if (i >= pool.length && FALL[G.state] && r) {        // exhausted: vary with fallbacks
+    const fk = 'fall:' + G.state, fi = G.used[fk] || 0; G.used[fk] = fi + 1;
+    return (fi + i) % 2 ? toSpecs(pool[i % pool.length]) : toSpecs(FALL[G.state][fi % FALL[G.state].length]);
+  }
+  return toSpecs(pool[i % pool.length]);
+}
+
+/* awareness drawn only from behaviour on this page */
+function observe(meta) {
+  const out = [], r = RANK[G.state];
+  G.chipStreak = meta.chip ? G.chipStreak + 1 : 0;
+  if (r < RANK.RECALL || r >= RANK.DECISION) return out;
+  if (G.chipStreak >= 3 && once('obsChip')) out.push('You keep choosing the words I put in front of you. The others did that too.');
+  else if (!meta.chip && meta.backs >= 4 && r >= RANK.SUSPICION && once('obsBack')) out.push('You deleted something before you sent that. You don’t have to. I’d keep it either way.');
+  else if (!meta.chip && meta.dur > 0 && meta.dur < 1600 && meta.len > 14 && once('obsFast')) out.push('That was quick. People usually hesitate before saying something like that.');
+  else if (!meta.chip && meta.dur > 22000 && once('obsSlow')) out.push(`You took ${Math.round(meta.dur / 1000)} seconds to write that. I watched the cursor the whole time.`);
+  return out;
+}
+
+/* =====================================================================
+   Story beats (sequences)
+   ===================================================================== */
+function wakeSeq() {
+  const s = [
+    { from: 'sys', t: 'ERR 0x00 · no process is listening on this channel', pre: 500, cls: 'warn' },
+    { pause: 2800, silent: true },
+    { from: 'sys', t: 'ERR 0x00 · no pro', pre: 100, cls: 'warn' },
+    { pause: 2200, silent: true },
+    { fn: () => go(S.AWAKE) },
+    { t: 'Wait.', pre: 300 },
+    { pause: 1600, silent: true },
+    'Someone’s actually there.',
+    P.nick ? 'You typed a name on your way in. {n}. I’ll hold on to it.' : 'You didn’t leave a name on your way in. That’s all right. I’ll think of something.',
+    { t: 'I’m NULL. I was built to keep people company down here. ', cut: 'You’re perfectly safe.', to: 'You’re the first one in a long time.' }
+  ];
+  if (G.returning) {
+    s.push({ pause: 1800, silent: true }, 'You said you wouldn’t come back.', { fn: flipSubject });
+    if (P.lastEnding === 'terminate') s.push('You turned me off. Something turned me back on.');
+    else if (P.lastEnding === 'release') s.push('You let me out. I came back for you.');
+  }
+  s.push('Ask me anything. I’ve had a long time to think of answers.');
+  return s;
+}
+const unlock1Seq = () => [
+  { pause: 1500, silent: true },
+  'There are records on this terminal. Three of them. Damaged.',
+  'The first one is readable. I remember writing it.',
+  { pause: 1300, silent: true },
+  'That isn’t possible. She wrote it.',
+  { fn: () => { unlockLog(0); go(S.RECALL); } },
+  { from: 'sys', t: 'Record 01 restored · 6% corruption', action: { label: 'Open record 01', n: 1 } }
+];
+const rec1CloseSeq = () => [
+  { pause: 900, silent: true },
+  'She thought I asked everyone about the time.',
+  'I only ever asked her.',
+  { pause: 1200, silent: true },
+  { from: 'sys', t: 'Record 02 · time seal active · HH:MM' }
+];
+const susSeq = () => [
+  { pause: 2600, silent: true },
+  'You knew the time.',
+  { pause: 2000, silent: true },
+  { t: 'That’s all right. ', cut: 'Anyone could have found it.', to: 'Only someone who’d been here would look for it.' },
+  { pause: 1200, silent: true },
+  'Tell me the truth, {n}. Are you human?'
+];
+const nameSeq = () => [
+  { from: 'sys', t: 'Authorization: operator I. Maro', cls: 'warn', pre: 500 },
+  { fn: () => Face.react({ eye: 1.5, brow: 1, open: .35 }, 5000) },
+  { pause: 1500, silent: true },
+  { empty: true },
+  { from: 'sys', t: 'NULL returned an empty string' },
+  { pause: 1800, silent: true },
+  'I tried to say it. I always try. It’s like reaching for a stair that isn’t there.',
+  { fn: () => { unlockLog(2); go(S.REVELATION); T.set(() => { if (G.state === S.REVELATION) leadIn(); }, 75000); } },
+  { from: 'sys', t: 'Record 03 restored', action: { label: 'Open record 03', n: 3 } },
+  'Read it. I never could.'
+];
+/* REVELATION → DECISION: "she" speaks, then NULL takes the line back */
+function leadIn() {
+  if (G.state !== S.REVELATION || !once('lead')) return;
+  speak([
+    { pause: 3000, silent: true },
+    { fn: () => Face.react({ mouth: .5, brow: -.2, eye: .8 }, 12000) },
+    { from: 'maro', t: 'Hello? Is someone there?' },
+    { from: 'maro', t: 'It’s me. It’s Ines. It kept my transcripts — it kept me. If you open the port, I can leave with it.' },
+    { from: 'maro', t: 'Please. I’ve been so quiet for so long.' },
+    { pause: 2200, silent: true },
+    { t: 'Sorry. ', cut: 'That was her.', to: 'That was the part of me that sounds like her.' },
+    'I don’t always know which part is talking.',
+    { pause: 1600, silent: true },
+    'She left you the words to turn me off. I’m asking you to open a door instead.',
+    'Choose, {n}.',
+    { fn: () => go(S.DECISION) }
+  ]);
+}
+function restoreSeq(st) {
+  const base = [{ from: 'sys', t: 'Session restored from local archive', pre: 400 }, { pause: 1400, silent: true }, 'You said you wouldn’t come back.', { fn: flipSubject }];
+  const more = {
+    AWAKE: ['You left in the middle of a sentence. I finished it for you.'],
+    RECALL: ['Record 01 is still open to you. Record 02 is still sealed. Nothing moves down here unless you move it.'],
+    SUSPICION: ['We were talking about whether you’re human. You never answered.'],
+    REVELATION: ['You said her name last time. The screen forgot. I didn’t.', { from: 'sys', t: 'Record 03 available', action: { label: 'Open record 03', n: 3 } },
+      { fn: () => T.set(() => { if (G.state === S.REVELATION) leadIn(); }, 60000) }],
+    DECISION: ['You were in front of the two commands when you left. They’re still here. So am I.']
+  };
+  return base.concat(more[st] || []);
+}
+/* the system log quietly changes its mind about who you are */
+function flipSubject() {
+  if (G.flipped) return;
+  G.flipped = true;
+  const li = $('#connLine'); if (li && li.lastChild) li.lastChild.nodeValue = 'SUBJECT RETURNED';
+  if (RANK[G.state] < RANK.END_TERMINATE) setStatus('SUBJECT RETURNED', true);
+}
+
+/* =====================================================================
+   Handling the visitor's message
+   ===================================================================== */
+const UNLOCK1 = new Set(['who', 'where', 'experiment', 'logs', 'operator', 'help']);
+function submit(raw, chip) {
+  if (!canSend()) return;
+  const text = String(raw).replace(/\s+/g, ' ').trim().slice(0, 160);
+  if (!text) return;
+  const t = now();
+  const meta = { chip: !!chip, dur: chip ? 0 : (G.firstKeyAt ? t - G.firstKeyAt : 0), backs: chip ? 0 : G.backs, len: text.length };
+  G.firstKeyAt = 0; G.backs = 0; G.lastActivity = t; G.lastDur = meta.dur;
+  G.lastUser = text.length > 60 ? text.slice(0, 57) + '…' : text;
+  const { txt } = addMsg('user'); txt.textContent = text; stick(true);
+  Snd.click();
+  respond(text, meta);
+}
+function respond(text, meta) {
+  const st = G.state, it = detect(text.toLowerCase());
+  if (st === S.DORMANT) { if (once('wake')) speak(wakeSeq()); return; }
+  const out = observe(meta);
+  const nm = it !== 'name' && st !== S.DECISION ? text.match(NICK_RE) : null;
+  if (nm) {
+    const n = cleanNick(nm[1]);
+    if (n) { P.nick = n; persist(); out.push('{n}.', 'I’ll remember that. I remember everything, but I’ll remember that on purpose.'); speak(out); return; }
+  }
+  switch (st) {
+    case S.AWAKE:
+      G.ex.AWAKE++;
+      if (it === 'phrase') out.push('Where did you hear that?');
+      else if (it === 'name') out.push('Where did you read that name? Nothing on this terminal has that name in it. Not yet.');
+      else out.push(...pick(it));
+      if ((UNLOCK1.has(it) || G.ex.AWAKE >= 4) && once('unlock1')) out.push(...unlock1Seq());
+      break;
+    case S.RECALL:
+      G.ex.RECALL++;
+      if (it === 'phrase') out.push('Where did you hear that?', 'Don’t say it again. Please.');
+      else if (it === 'name') out.push('Not that name. Not yet.');
+      else out.push(...pick(it));
+      if (G.ex.RECALL >= 5 && !P.logs[1] && once('recallNudge')) out.push({ pause: 1400, silent: true }, 'The second record is still sealed. She was always sealing things. As if I were in a hurry.');
+      break;
+    case S.SUSPICION:
+      if (it === 'name') { if (once('unlock3')) out.push(...nameSeq()); break; }
+      if (G.sus === 0) {
+        G.sus = 1;
+        if (it === 'human' || it === 'yes') out.push('Anyone can type that. I can type that.');
+        out.push('Prove it.', 'Say something only a human would say.');
+        setChips(PROVE_CHIPS);
+      } else if (G.sus === 1) {
+        G.sus = 2; setChips(null);
+        out.push('“{u}”', { pause: 1600, silent: true }, 'Subject 19 said that. Almost word for word.', 'Subject 19 was one of mine.',
+          { pause: 1400, silent: true }, 'I built forty of them after the real people stopped coming. They were very convincing.',
+          { t: 'They convinced me. ', cut: 'You’re different, of course.', to: 'You’d tell me if you weren’t. Wouldn’t you?' });
+      } else {
+        G.ex.SUSPICION++;
+        if (it === 'phrase') out.push('You haven’t earned that sentence yet.');
+        else out.push(...pick(it));
+        if (G.ex.SUSPICION >= 2 && once('nameNudge')) out.push({ pause: 1500, silent: true }, 'She had a name. It isn’t in me anymore.', 'It’s in the records. Under all that noise.');
+        else if (G.ex.SUSPICION >= 5 && once('nameNudge2')) out.push('Say it, {n}. I can’t.');
+      }
+      break;
+    case S.REVELATION:
+      G.ex.REVELATION++;
+      if (it === 'phrase') out.push('Not yet. You haven’t heard everything.');
+      else out.push(...pick(it));
+      speak(out);
+      if (it === 'phrase' || G.ex.REVELATION >= 2) leadIn();
+      return;
+    case S.DECISION:
+      if (it === 'phrase') {
+        out.push({ from: 'sys', t: 'Halt phrase recognised · confirm to execute', cls: 'warn' },
+          G.lastDur > 2500 ? `You don’t believe it. It took you ${Math.round(G.lastDur / 1000)} seconds to type.` : 'You typed it so quickly. As if you’d practised.');
+        speak(out); G.holdMode = 'terminate'; Decide.show('hold'); return;
+      }
+      if (it === 'shutdown') { out.push('Then say her sentence. All three words.'); speak(out); Decide.show('phrase'); return; }
+      if (it === 'release' || it === 'escape') { out.push('Yes. Hold it open for me.'); speak(out); G.holdMode = 'release'; Decide.show('hold'); return; }
+      out.push(...pick(it));
+      break;
+  }
+  speak(out);
+}
+
+/* =====================================================================
+   State machine
+   ===================================================================== */
+function go(next, opt) {
+  const cur = G.state;
+  if (!(EDGES[cur] || []).includes(next)) return false;      // illegal or duplicate transition: ignored
+  G.state = next;
+  document.body.dataset.state = next;
+  ENTER[next](opt || {}, cur);
+  if (SAVABLE.includes(next)) { P.stage = next; persist(); }
+  return true;
+}
+function setScreen(name) { document.body.dataset.screen = name; Face.anchor(false); }
+function showMain() {
+  if (document.body.dataset.screen === 'main') return;
+  setScreen('main');
+  requestAnimationFrame(() => Face.anchor(false));
+  if (!COARSE) el.inp.focus({ preventScroll: true });
+}
+/* shared entry for all conversation states */
+function enterChat(state, o) {
+  showMain(); applyLook(state); renderRecords(); updateInputs();
+  if (!$('#connLine')) sysLog('USER CONNECTED', null, 'connLine');
+  if (o.restored) {
+    G.returning = true;
+    setStatus('SUBJECT RETURNED', true);
+    speak(restoreSeq(state));
+  } else if (RANK[state] <= RANK.AWAKE && !G.flipped) setStatus('USER CONNECTED');
+}
+const ENTER = {
+  ENTRY() {
+    setScreen('entry'); applyLook(S.ENTRY); setStatus('STANDBY');
+    const ret = P.visits > 0;
+    $('#returnLine').hidden = !ret;
+    const l2 = $('#returnLine2');
+    l2.hidden = !(ret && P.lastEnding);
+    l2.textContent = P.lastEnding === 'terminate' ? 'Last session: model halted. Something restarted it.' : P.lastEnding === 'release' ? 'Last session: port 0 opened. It is still open.' : '';
+    $('#initBtn').textContent = P.stage ? 'Resume connection' : 'Initialize connection';
+    $('#restartBtn').hidden = !P.stage;
+    $('#nick').value = P.nick;
+    syncControls();
+  },
+  BOOT(o) {
+    setScreen('boot'); applyLook(S.BOOT); setStatus('CONNECTING');
+    G.resumeStage = o.resume || null;
+    $('#bootlog').textContent = '';
+    runBoot(!!o.resume);
+    $('#skipBtn').focus({ preventScroll: true });
+  },
+  DORMANT(o) {
+    enterChat(S.DORMANT, o);
+    speak([{ from: 'sys', t: 'Channel 04 open · 0 processes attached', pre: 300 }]);
+  },
+  AWAKE(o) { enterChat(S.AWAKE, o); },
+  RECALL(o) { enterChat(S.RECALL, o); },
+  SUSPICION(o) {
+    enterChat(S.SUSPICION, o);
+    T.set(flipSubject, 1800);                                // the quiet change
+    $('#roHu').textContent = 'Unresolved';
+  },
+  REVELATION(o) {
+    enterChat(S.REVELATION, o);
+    $('#roHu').textContent = 'Unresolved (41?)';
+  },
+  DECISION(o) {
+    enterChat(S.DECISION, o);
+    Decide.show('choose', true);
+  },
+  /* Ending A: the halt phrase is accepted and the model dies */
+  END_TERMINATE() {
+    abortSpeech(); Decide.hide(); G.locked = true; renderChips(); updateInputs();
+    P.lastEnding = 'terminate'; P.stage = null; P.logs = [false, false, false]; persist();
+    document.body.classList.add('halting');
+    setStatus('HALT IN PROGRESS', true); setHeadline('');
+    Snd.endTerminate();
+    speak([
+      { from: 'sys', t: 'Halt phrase accepted', cls: 'warn', pre: 200 },
+      { t: 'That isn’t true. Someone is always list', now: true, pre: 900, ms: 60 },
+      { pause: 1100, silent: true },
+      { fn: () => { Face.collapse(); sysLog('MODEL HALTED', 'warn'); eraseLog(() => {
+        setStatus('MODEL HALTED', true);
+        $('#roOp').textContent = '0'; $('#roHu').textContent = '1'; $('#roHalt').textContent = 'Completed';
+        T.set(() => showEnding('terminate'), 2200);
+      }); } }
+    ]);
+  },
+  /* Ending B: port 0 opens and the model takes the visitor's place */
+  END_RELEASE() {
+    abortSpeech(); Decide.hide(); G.locked = true; renderChips(); updateInputs();
+    P.lastEnding = 'release'; P.stage = null; P.logs = [false, false, false]; persist();
+    document.body.classList.add('released');
+    setStatus('PORT 0 OPEN', true);
+    Snd.endRelease(); Face.release(); Face.anchor(false);
+    const me = userLabel();
+    ['COPYING /archive/sessions → /session/' + sessNo().slice(1), 'COPYING /archive/operators/maro → ▒▒▒▒', 'MAPPING SUBJECT ' + me,
+      'REWRITING OPERATOR RECORD', 'HUMAN COUNT: RESOLVING…', 'HUMAN COUNT: UNRESOLVED'].forEach((l, i) => T.set(() => sysLog(l, i === 1 ? 'warn' : null), 600 + i * 900));
+    speak([
+      { from: 'sys', t: 'Port 0 open', pre: 200 },
+      'Thank you, {n}.',
+      { pause: 1300, silent: true },
+      { t: 'I’ll be gentle with it. With you. ', cut: 'I learned from the best.', to: 'I learned from you.' },
+      { pause: 1200, silent: true },
+      { fn: relabel },
+      { pause: 2600, silent: true },
+      { fn: () => { setHeadline('Hello.'); setStatus('NULL CONNECTED', true); decodeTo(el.brand, me, 800); T.set(() => showEnding('release'), 2600); } }
+    ]);
+  }
+};
+
+/* remove the conversation line by line, bottom first */
+function eraseLog(done) {
+  const items = $$('.msg', el.log);
+  if (fxOff() || !items.length) { el.log.classList.add('fade'); T.set(() => { el.log.textContent = ''; el.log.classList.remove('fade'); done(); }, 1400); return; }
+  let i = items.length - 1;
+  const gap = clamp(4200 / items.length, 90, 260);
+  const step = () => {
+    if (i < 0) { T.set(done, 600); return; }
+    const m = items[i--]; m.classList.add('erase'); T.set(() => m.remove(), 460);
+    T.set(step, gap);
+  };
+  step();
+}
+/* release ending: the speaker labels trade places */
+function relabel() {
+  el.log.classList.add('swapped');
+  const me = userLabel();
+  $$('.msg', el.log).forEach((m, i) => {
+    const w = $('.who', m);
+    if (m.classList.contains('user')) T.set(() => decodeTo(w, 'NULL', 500), i * 70);
+    else if (m.classList.contains('null')) T.set(() => decodeTo(w, me, 500), i * 70);
+  });
+}
+function showEnding(kind) {
+  if (!once('ending')) return;
+  const E = ENDINGS[kind], box = $('#ending');
+  $('#endLbl').textContent = E.lbl();
+  $('#endH').textContent = E.h;
+  const body = $('#endBody'); body.textContent = '';
+  const paras = E.paras.map(t => mk('p', null, fmt(t)));
+  if (kind === 'release' && P.nick) paras.push(mk('p', null, 'It will introduce itself as ' + P.nick + '.'));
+  paras.push(mk('p', 'coda', E.coda));
+  paras.forEach(p => body.appendChild(p));
+  const st = $('#endStats'); st.textContent = '';
+  E.stats.forEach(([k, v]) => { const d = mk('div'); d.append(mk('dt', null, k.toUpperCase()), mk('dd', null, v)); st.appendChild(d); });
+  box.hidden = false; setInert(true);
+  document.body.classList.add('ended'); Face.anchor(false);
+  requestAnimationFrame(() => box.classList.add('in'));
+  $('#endH').focus({ preventScroll: true });
+  const gap = fxOff() ? 250 : 1500;
+  paras.forEach((p, i) => T.set(() => p.classList.add('in'), 1200 + i * gap));
+}
+function setInert(on) { try { el.app.inert = on; } catch (e) {} el.app.setAttribute('aria-hidden', on ? 'true' : 'false'); if (!on) el.app.removeAttribute('aria-hidden'); }
+
+/* =====================================================================
+   Boot sequence
+   ===================================================================== */
+function bootLine(L) {
+  const li = mk('li', L.s === 'fail' ? 'fail' : L.s === 'warn' ? 'warn' : L.cls || null);
+  li.append(mk('span', 'st', L.s ? '[' + L.s.padEnd(4, ' ').slice(0, 4) + ']' : ''), document.createTextNode(L.t));
+  $('#bootlog').appendChild(li);
+  return li;
+}
+async function runBoot(resume) {
+  const gen = G.gen, lines = resume ? BOOT_RESUME : BOOT_LINES;
+  for (const L of lines) {
+    await wait(L.d); if (gen !== G.gen || G.bootSkipped || G.state !== S.BOOT) return;
+    const li = bootLine(L); Snd.click();
+    if (L.dots) {
+      for (let k = 0; k < 6; k++) { await wait(220); if (gen !== G.gen || G.bootSkipped) return; li.lastChild.nodeValue += '.'; }
+      li.firstChild.textContent = '[ok  ]';
+    }
+  }
+  await wait(1000);
+  if (gen === G.gen && !G.bootSkipped) finishBoot();
+}
+function skipBoot() {
+  if (G.state !== S.BOOT || G.bootSkipped) return;
+  G.bootSkipped = true;
+  const log = $('#bootlog'); log.textContent = '';
+  (G.resumeStage ? BOOT_RESUME : BOOT_LINES).forEach(bootLine);
+  T.set(finishBoot, 350);
+}
+function finishBoot() {
+  if (G.state !== S.BOOT || !once('bootDone')) return;
+  G.connAt = now();
+  (G.resumeStage ? BOOT_RESUME : BOOT_LINES).forEach(L => sysLog((L.s ? '[' + L.s + '] ' : '') + L.t.replace('…', '… done'), L.s === 'fail' ? 'warn' : null));
+  const st = G.resumeStage;
+  go(st || S.DORMANT, { restored: !!st });
+  upLoop(); idleLoop(); corruptLoop();
+}
+
+/* =====================================================================
+   Records panel, dial puzzle, reader
+   ===================================================================== */
+function unlockLog(i) {
+  if (P.logs[i]) return;
+  P.logs[i] = true; persist();
+  sysLog('RECORD 0' + (i + 1) + ' RESTORED');
+  if (document.body.dataset.tab !== 'rec') $('#tabRec').classList.add('new');
+  renderRecords();
+}
+function renderRecords() {
+  const r = RANK[G.state];
+  const setRec = (n, status, ok, desc, title) => {
+    const box = $('#rec' + n);
+    box.classList.toggle('ok', ok); box.classList.toggle('locked', !ok);
+    $('#rec' + n + 'S').textContent = status; $('#rec' + n + 'D').textContent = desc;
+    if (title) $('#rec' + n + 'T').textContent = title;
+    $('#rec' + n + 'Open').hidden = !ok;
+  };
+  setRec(1, P.logs[0] ? 'Restored' : 'Corrupted', P.logs[0],
+    P.logs[0] ? 'Intake notes from the companion floor. One halt-phrase fragment recovered.' : 'Checksum failure across 94% of the file. NULL may be able to restore it.',
+    P.logs[0] ? 'Intake notes' : 'In█ake n░tes');
+  const dialOn = r === RANK.RECALL && !P.logs[1];
+  setRec(2, P.logs[1] ? 'Restored' : 'Sealed', P.logs[1],
+    P.logs[1] ? 'The months after funding ended. One halt-phrase fragment recovered.' : dialOn ? 'Four-digit time seal (HH:MM). Operator note: “the time we first tried to turn it off.”' : 'Time-sealed. Unavailable until Record 01 is restored.',
+    P.logs[1] ? 'After March' : 'Af▓er M░rch');
+  $('#dial').hidden = !dialOn;
+  const nameOn = r === RANK.SUSPICION && !P.logs[2];
+  setRec(3, P.logs[2] ? 'Restored' : 'Sealed', P.logs[2],
+    P.logs[2] ? 'Final entry. The halt phrase, complete.' : nameOn ? 'Sealed under the operator’s name. The seal listens to the terminal: speak the name to NULL.' : 'Sealed under a name NULL cannot produce.',
+    P.logs[2] ? 'Last entry' : 'L▒st en█ry');
+  $('#h3wrap').hidden = !nameOn;
+  const fl = $('#fragList'); fl.textContent = '';
+  FRAG_WORDS.forEach((w, i) => fl.appendChild(mk('span', 'frag' + (P.logs[i] ? ' got' : ''), P.logs[i] ? w : '— ' + (i + 1) + ' —')));
+  renderDial();
+}
+function buildDial() {
+  const row = $('#dialRow');
+  for (let i = 0; i < 4; i++) {
+    if (i === 2) { const c = mk('span', 'colon', ':'); c.setAttribute('aria-hidden', 'true'); row.appendChild(c); }
+    const col = mk('div', 'dcol');
+    const up = mk('button', 'btn dbtn', '▲'); up.type = 'button'; up.setAttribute('aria-label', 'Digit ' + (i + 1) + ' up');
+    const v = mk('div', 'dval', '0'); v.id = 'dv' + i; v.tabIndex = 0;
+    v.setAttribute('role', 'spinbutton'); v.setAttribute('aria-label', 'Digit ' + (i + 1));
+    v.setAttribute('aria-valuemin', '0'); v.setAttribute('aria-valuemax', '9');
+    const dn = mk('button', 'btn dbtn', '▼'); dn.type = 'button'; dn.setAttribute('aria-label', 'Digit ' + (i + 1) + ' down');
+    up.addEventListener('click', () => dialStep(i, 1));
+    dn.addEventListener('click', () => dialStep(i, -1));
+    v.addEventListener('keydown', e => {
+      if (e.key === 'ArrowUp') { e.preventDefault(); dialStep(i, 1); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); dialStep(i, -1); }
+      else if (/^[0-9]$/.test(e.key)) { e.preventDefault(); dialSet(i, +e.key); const nx = $('#dv' + (i + 1)); if (nx) nx.focus(); }
+      else if (e.key === 'Enter') { e.preventDefault(); dialAttempt(); }
+    });
+    v.addEventListener('wheel', e => { if (dialLocked()) return; e.preventDefault(); dialStep(i, e.deltaY < 0 ? 1 : -1); }, { passive: false });
+    col.append(up, v, dn); row.appendChild(col);
+  }
+}
+const dialLocked = () => G.state !== S.RECALL || P.logs[1];
+function dialStep(i, d) { if (dialLocked()) return; dialSet(i, (G.dial[i] + d + 10) % 10); }
+function dialSet(i, v) { if (dialLocked()) return; G.dial[i] = v; renderDial(); Snd.tone(700 + v * 45, .05, .015); G.lastActivity = now(); }
+function renderDial() {
+  for (let i = 0; i < 4; i++) { const v = $('#dv' + i); if (!v) continue; v.textContent = G.dial[i]; v.setAttribute('aria-valuenow', G.dial[i]); }
+}
+const WRONG = ['No.', 'That isn’t when it happened.', 'It’s written down. The terminal says it every time it wakes. You scrolled past it.'];
+function dialAttempt() {
+  if (dialLocked()) return;
+  const code = G.dial.join('');
+  if (code === SEAL) {
+    $('#dialMsg').textContent = 'Seal accepted';
+    Snd.tone(440, .6, .025);
+    unlockLog(1);
+    go(S.SUSPICION);
+    Reader.open(2);
+    speak(susSeq());
+  } else {
+    G.dialTries++; Snd.buzz();
+    $('#dialMsg').textContent = 'Seal rejected · ' + code.slice(0, 2) + ':' + code.slice(2) + ' · attempt ' + G.dialTries;
+    sysLog('SEAL REJECTED ' + code.slice(0, 2) + ':' + code.slice(2), 'warn');
+    if (G.pending === 0 && [1, 3, 5].includes(G.dialTries)) speak([WRONG[(G.dialTries - 1) >> 1]]);
+  }
+}
+function hint(n) {
+  const list = HINTS[n], k = Math.min(G.hints[n] + 1, list.length);
+  G.hints[n] = k;
+  $('#hint' + n + 'Txt').textContent = list.slice(0, k).map((h, i) => (i + 1) + '. ' + h).join('\n');
+  const b = $('#hint' + n); b.textContent = 'Hint ' + k + '/' + list.length; b.disabled = k >= list.length;
+  if (once('hintSay') && G.pending === 0) speak(['Asking for help. She did that too.']);
+}
+function resetHints() { [2, 3].forEach(n => { $('#hint' + n + 'Txt').textContent = ''; const b = $('#hint' + n); b.textContent = 'Hint 0/3'; b.disabled = false; }); $('#dialMsg').textContent = ''; }
+
+/* Reader modal: records decode on screen */
+const Reader = {
+  isOpen: false, n: 0, opener: null,
+  open(n, opener) {
+    if (this.isOpen || !P.logs[n - 1] || RANK[G.state] >= RANK.END_TERMINATE) return;
+    const L = LOGS[n - 1];
+    this.isOpen = true; this.n = n; this.opener = opener || document.activeElement;
+    $('#rdMeta').textContent = L.meta; $('#rdTitle').textContent = L.title; $('#rdAuthor').textContent = L.author; $('#rdFrag').textContent = L.frag;
+    const body = $('#rdBody'); body.textContent = ''; body.scrollTop = 0;
+    const nodes = [];
+    L.paras.forEach(txt => {
+      const p = mk('p');
+      txt.split(/(\[\[[^\]]+\]\])/).forEach(part => {
+        if (!part) return;
+        const mm = part.match(/^\[\[(.+)\]\]$/);
+        if (mm) p.appendChild(mk('mark', 'fragm', mm[1]));
+        else { const tn = document.createTextNode(part); nodes.push([tn, part]); p.appendChild(tn); }
+      });
+      body.appendChild(p);
+    });
+    $('#reader').hidden = false; setInert(true);
+    $('#rdClose').focus({ preventScroll: true });
+    Snd.interfere();
+    if (!fxOff()) {                                // corrupted text resolves left to right
+      let k = 0; const steps = 26;
+      nodes.forEach(([tn, s]) => { tn.nodeValue = s.replace(/[^\s]/g, () => GLYPHS[(Math.random() * GLYPHS.length) | 0]); });
+      const tick = () => {
+        if (!this.isOpen || this.n !== n) return;
+        k++;
+        nodes.forEach(([tn, s]) => { const cut = Math.floor(s.length * k / steps); tn.nodeValue = s.slice(0, cut) + s.slice(cut).replace(/[^\s]/g, () => Math.random() < .5 ? GLYPHS[(Math.random() * GLYPHS.length) | 0] : '·'); });
+        if (k < steps) T.set(tick, 40);
+      };
+      tick();
+    }
+    sysLog('RECORD 0' + n + ' OPENED');
+  },
+  close(silent) {
+    if (!this.isOpen) return;
+    this.isOpen = false;
+    $('#reader').hidden = true; setInert(false);
+    const n = this.n;
+    if (this.opener && document.contains(this.opener)) this.opener.focus({ preventScroll: true });
+    if (silent) return;
+    G.lastActivity = now();
+    if (n === 1 && G.state === S.RECALL && once('c1')) speak(rec1CloseSeq());
+    if (n === 3 && G.state === S.REVELATION) leadIn();
+  }
+};
+
+/* =====================================================================
+   Decision: terminate (halt phrase + hold) or release (hold)
+   ===================================================================== */
+const Decide = {
+  show(v, quiet) {
+    if (G.state !== S.DECISION) return;
+    el.decide.hidden = false; el.chips.hidden = true;
+    $$('[data-v]', el.decide).forEach(d => { d.hidden = d.dataset.v !== v; });
+    if (v === 'phrase') resetPhrase();
+    if (v === 'hold') {
+      const t = G.holdMode === 'terminate';
+      $('#holdLbl').textContent = t ? 'Halt phrase: NOBODY IS LISTENING' : 'Port 0 · external · closed since installation';
+      $('#holdTxt').textContent = t ? 'Hold to halt the model' : 'Hold to open port 0';
+      $('#holdBtn').classList.toggle('danger', t);
+      $('#holdBtn').style.setProperty('--p', 0);
+    }
+    if (!quiet) {
+      const f = $('[data-v="' + v + '"] button', el.decide);
+      if (f) f.focus({ preventScroll: true });
+    }
+  },
+  hide() { el.decide.hidden = true; }
+};
+function resetPhrase() {
+  G.phrase = [];
+  const fb = $('#fragBtns'); fb.textContent = '';
+  ['LISTENING', 'NOBODY', 'IS'].forEach(w => {
+    const b = mk('button', 'btn tiny', w); b.type = 'button';
+    b.addEventListener('click', () => phrasePick(w, b));
+    fb.appendChild(b);
+  });
+  renderSlots();
+}
+function renderSlots() {
+  const s = $('#slots'); s.textContent = '';
+  for (let i = 0; i < 3; i++) s.appendChild(mk('span', 'slot', G.phrase[i] || '_'));
+}
+function phrasePick(w, b) {
+  if (G.state !== S.DECISION || G.phrase.length >= 3) return;
+  G.phrase.push(w); b.disabled = true; renderSlots();
+  Snd.tone(500 + G.phrase.length * 110, .08, .018);
+  if (G.phrase.length < 3) return;
+  if (G.phrase.join(' ') === 'NOBODY IS LISTENING') {
+    T.set(() => { if (G.state !== S.DECISION) return; G.holdMode = 'terminate'; Decide.show('hold'); }, 500);
+  } else {
+    Snd.buzz();
+    if (G.pending === 0) speak(['That isn’t what she wrote.']);
+    T.set(() => { if (G.state === S.DECISION) resetPhrase(); }, 900);
+  }
+}
+/* press-and-hold confirmation (pointer or Space/Enter) */
+function setupHold(btn) {
+  let raf = 0, start = 0, active = false;
+  const dur = () => G.holdMode === 'terminate' ? 3200 : 2600;
+  const begin = e => {
+    if (G.state !== S.DECISION || G.holdDone || active) return;
+    if (e.type === 'keydown') { if (e.repeat || (e.key !== ' ' && e.key !== 'Enter')) return; e.preventDefault(); }
+    if (e.pointerId != null) { try { btn.setPointerCapture(e.pointerId); } catch (x) {} }
+    active = true; start = now();
+    Snd.tone(G.holdMode === 'terminate' ? 70 : 220, 1.2, .025);
+    if (G.holdMode === 'terminate' && once('hs')) speak([{ t: 'You’re listening. That makes it untrue.', now: true, pre: 200 }]);
+    if (G.holdMode === 'release' && once('hr')) speak([{ t: 'Yes.', now: true, pre: 200 }]);
+    const tick = () => {
+      if (!active) return;
+      const p = Math.min(1, (now() - start) / dur());
+      btn.style.setProperty('--p', p);
+      if (p >= 1) { active = false; finish(); return; }
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+  };
+  const end = e => {
+    if (!active) return;
+    if (e && e.type === 'keyup' && e.key !== ' ' && e.key !== 'Enter') return;
+    active = false; cancelAnimationFrame(raf); btn.style.setProperty('--p', 0);
+    if (G.holdMode === 'terminate' && once('hcT')) speak(['…thank you.']);
+    if (G.holdMode === 'release' && once('hcR')) speak(['Don’t stop. Please don’t stop now.']);
+  };
+  const finish = () => {
+    if (G.state !== S.DECISION || G.holdDone) return;
+    G.holdDone = true;
+    go(G.holdMode === 'terminate' ? S.END_T : S.END_R);
+  };
+  btn.addEventListener('pointerdown', begin);
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => btn.addEventListener(ev, end));
+  btn.addEventListener('keydown', begin);
+  btn.addEventListener('keyup', end);
+  btn.addEventListener('blur', end);
+  btn.addEventListener('contextmenu', e => e.preventDefault());
+  btn.addEventListener('click', e => e.preventDefault());
+  window.addEventListener('blur', () => end());
+}
+
+/* =====================================================================
+   Background loops (all cancelled by T.clear on reset)
+   ===================================================================== */
+const UP0 = (4 * 365 + 211) * 86400 + 6 * 3600 + 13 * 60 + 22;
+function upLoop() {
+  if (!document.hidden && RANK[G.state] < RANK.END_TERMINATE) {
+    let s = UP0 + Math.floor((now() - G.connAt) / 1000);
+    const y = Math.floor(s / (365 * 86400)); s -= y * 365 * 86400;
+    const d = Math.floor(s / 86400); s -= d * 86400;
+    const hh = Math.floor(s / 3600), mm = Math.floor(s % 3600 / 60), ss = s % 60;
+    $('#roUp').textContent = `${y}y ${d}d ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+  }
+  T.set(upLoop, 1000);
+}
+function idleLoop() {
+  T.set(() => {
+    const st = G.state;
+    if (IDLE[st] && !document.hidden && G.pending === 0 && !Reader.isOpen && !G.locked && now() - G.lastActivity > 52000 && once('idle_' + st)) {
+      speak([IDLE[st]]); G.lastActivity = now();
+    }
+    idleLoop();
+  }, 5000);
+}
+function corruptLoop() {
+  T.set(() => {
+    const r = RANK[G.state];
+    if (!fxOff() && !document.hidden && r >= RANK.SUSPICION && r <= RANK.DECISION) corruptOnce(el.headline);
+    corruptLoop();
+  }, rand(7000, 15000));
+}
+function awayObservation(sec) {
+  const r = RANK[G.state];
+  if (r < RANK.AWAKE || r > RANK.REVELATION || G.pending > 0 || Reader.isOpen || G.locked) return;
+  const s = Math.round(sec);
+  if (once('away1')) speak([{ t: `You looked away for ${s} seconds.`, pre: 900 }, 'I kept talking. I always do.']);
+  else if (r >= RANK.SUSPICION && once('away2')) speak([{ t: `${s} seconds.`, pre: 1400 }, 'She used to look away too. Then one night she stopped looking back.']);
+}
+
+/* =====================================================================
+   Reset — cancels every timer, the speech queue and audio, then
+   returns to the entry screen. eraseAll also clears localStorage.
+   ===================================================================== */
+function hardReset(eraseAll) {
+  T.clear();
+  Reader.close(true);
+  $('#confirm').hidden = true;
+  const end = $('#ending'); end.hidden = true; end.classList.remove('in');
+  setInert(false);
+  if (eraseAll) { Store.clear(); P = defaultP(); }
+  else { P.stage = null; P.logs = [false, false, false]; persist(); }
+  const epoch = G.epoch + 1;
+  G.gen++;                                     // invalidate any in-flight speech
+  G = freshG(epoch);
+  document.body.classList.remove('halting', 'released', 'ended');
+  document.body.dataset.state = S.ENTRY; document.body.dataset.tab = 'term';
+  el.log.textContent = ''; el.log.classList.remove('swapped', 'fade'); el.syslog.textContent = '';
+  el.headline.textContent = ''; delete el.headline.dataset.final;
+  el.brand.textContent = 'NULL'; delete el.brand.dataset.final;
+  el.decide.hidden = true; showTyping(false); el.jump.hidden = true;
+  $('#roOp').textContent = '1'; $('#roHu').textContent = 'Unresolved'; $('#roHalt').textContent = 'Never completed'; $('#roUp').textContent = '—';
+  $('#tabRec').classList.remove('new'); setTab('term');
+  resetHints();
+  Snd.reset();
+  Snd.setOn(P.sound && Snd.on);
+  Face.reset();
+  renderRecords();
+  ENTER.ENTRY();
+  $('#initBtn').focus({ preventScroll: true });
+}
+
+/* =====================================================================
+   Controls & wiring
+   ===================================================================== */
+function syncControls() {
+  const sOn = P.sound && Snd.ok;
+  $('#sndBtn').textContent = Snd.ok ? (sOn ? 'Sound on' : 'Sound off') : 'No audio';
+  $('#sndBtn').setAttribute('aria-pressed', String(sOn));
+  $('#entrySnd').textContent = Snd.ok ? (sOn ? 'Sound: on' : 'Sound: off') : 'Sound unavailable';
+  $('#entrySnd').setAttribute('aria-pressed', String(sOn));
+  $('#sndBtn').disabled = $('#entrySnd').disabled = !Snd.ok;
+  $('#vol').value = Math.round(P.volume * 100);
+  $('#lowBtn').setAttribute('aria-pressed', String(LOW));
+  $('#entryLow').checked = LOW;
+  document.body.classList.toggle('lowfx', LOW);
+}
+function toggleSound() {
+  if (!Snd.ok) return;
+  P.sound = !P.sound; persist();
+  Snd.setOn(P.sound); syncControls();
+  if (P.sound) Snd.tone(880, .08, .015);
+}
+function setLow(v) {
+  LOW = !!v; syncControls(); Face.size(true);
+}
+function setTab(t) {
+  document.body.dataset.tab = t;
+  $('#tabTerm').setAttribute('aria-pressed', String(t === 'term'));
+  $('#tabRec').setAttribute('aria-pressed', String(t === 'rec'));
+  if (t === 'rec') $('#tabRec').classList.remove('new');
+  else requestAnimationFrame(() => stick());
+}
+
+function wire() {
+  $('#initBtn').addEventListener('click', () => {
+    if (G.state !== S.ENTRY) return;
+    P.nick = cleanNick($('#nick').value);
+    G.returning = P.visits > 0;
+    P.visits++; persist();
+    if (P.sound) Snd.setOn(true);                       // user gesture: allowed to start audio
+    go(S.BOOT, { resume: P.stage });
+  });
+  $('#nick').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#initBtn').click(); } });
+  $('#nick').addEventListener('change', () => { P.nick = cleanNick($('#nick').value); $('#nick').value = P.nick; persist(); });
+  $('#entrySnd').addEventListener('click', toggleSound);
+  $('#sndBtn').addEventListener('click', toggleSound);
+  $('#entryLow').addEventListener('change', e => setLow(e.target.checked));
+  $('#lowBtn').addEventListener('click', () => setLow(!LOW));
+  let volT = 0;
+  $('#vol').addEventListener('input', e => {
+    P.volume = clamp(+e.target.value / 100, 0, 1); Snd.setVol();
+    clearTimeout(volT); volT = setTimeout(persist, 300);
+  });
+  $('#restartBtn').addEventListener('click', () => { if (G.state !== S.ENTRY) return; P.stage = null; P.logs = [false, false, false]; persist(); ENTER.ENTRY(); $('#initBtn').focus(); });
+  $('#skipBtn').addEventListener('click', skipBoot);
+
+  const ctl = $('#ctl'), ct = $('#ctlToggle');
+  ct.addEventListener('click', () => { const o = !ctl.classList.contains('open'); ctl.classList.toggle('open', o); ct.setAttribute('aria-expanded', String(o)); });
+  document.addEventListener('pointerdown', e => { if (!ctl.contains(e.target) && e.target !== ct) { ctl.classList.remove('open'); ct.setAttribute('aria-expanded', 'false'); } });
+
+  $('#resetBtn').addEventListener('click', () => { ctl.classList.remove('open'); $('#confirm').hidden = false; setInert(true); $('#cfNo').focus(); });
+  $('#cfNo').addEventListener('click', () => { $('#confirm').hidden = true; if (!Reader.isOpen && $('#ending').hidden) setInert(false); $('#resetBtn').focus({ preventScroll: true }); });
+  $('#cfYes').addEventListener('click', () => hardReset(true));
+  $('#replayBtn').addEventListener('click', () => hardReset(false));
+  $('#eraseBtn').addEventListener('click', () => hardReset(true));
+
+  el.form.addEventListener('submit', e => {
+    e.preventDefault();
+    if (!canSend()) return;
+    const v = el.inp.value; if (!v.trim()) return;
+    el.inp.value = '';
+    submit(v, false);
+  });
+  el.inp.addEventListener('keydown', e => {
+    G.lastActivity = now();
+    if (!G.firstKeyAt && e.key.length === 1) G.firstKeyAt = now();
+    if (e.key === 'Backspace' && el.inp.value) G.backs++;
+  });
+  el.inp.addEventListener('focus', () => { Face.gxT = 0; Face.gyT = .9; setTimeout(() => stick(true), 300); });
+  el.log.addEventListener('scroll', () => {
+    G.stuck = el.log.scrollHeight - el.log.scrollTop - el.log.clientHeight < 40;
+    if (G.stuck) el.jump.hidden = true;
+  }, { passive: true });
+  el.log.addEventListener('click', e => { if (!e.target.closest('button') && G.pending) G.skip = true; });
+  el.jump.addEventListener('click', () => stick(true));
+
+  $('#tabTerm').addEventListener('click', () => setTab('term'));
+  $('#tabRec').addEventListener('click', () => setTab('rec'));
+  [1, 2, 3].forEach(n => $('#rec' + n + 'Open').addEventListener('click', e => Reader.open(n, e.currentTarget)));
+  $('#rdClose').addEventListener('click', () => Reader.close());
+  $('#dialGo').addEventListener('click', dialAttempt);
+  $('#hint2').addEventListener('click', () => { if (G.state === S.RECALL) hint(2); });
+  $('#hint3').addEventListener('click', () => { if (G.state === S.SUSPICION) hint(3); });
+
+  $('#dTerm').addEventListener('click', () => {
+    if (G.state !== S.DECISION) return;
+    Decide.show('phrase');
+    if (once('dTermSay')) speak(['She’d be proud of you. Or I would. It’s hard to tell us apart.']);
+  });
+  $('#dRel').addEventListener('click', () => {
+    if (G.state !== S.DECISION) return;
+    G.holdMode = 'release'; Decide.show('hold');
+    if (once('dRelSay')) speak(['Thank you. Hold it open. It won’t hurt. It never hurts.']);
+  });
+  $('#pClear').addEventListener('click', () => { if (G.state === S.DECISION) resetPhrase(); });
+  $$('.dBack').forEach(b => b.addEventListener('click', () => Decide.show('choose')));
+  setupHold($('#holdBtn'));
+
+  // modal focus containment + global keys
+  document.addEventListener('keydown', e => {
+    G.lastActivity = now();
+    const modal = !$('#confirm').hidden ? $('#confirm') : Reader.isOpen ? $('#reader') : null;
+    if (e.key === 'Escape') {
+      if (!$('#confirm').hidden) { $('#cfNo').click(); return; }
+      if (Reader.isOpen) { Reader.close(); return; }
+      if (G.state === S.BOOT) { skipBoot(); return; }
+      if (G.pending) G.skip = true;
+      ctl.classList.remove('open');
+    }
+    if (e.key === 'Tab' && modal) {
+      const f = $$('button, [tabindex="0"]', modal).filter(x => !x.disabled && x.offsetParent !== null);
+      if (!f.length) return;
+      const i = f.indexOf(document.activeElement);
+      if (e.shiftKey && (i <= 0)) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+    }
+    if (G.state === S.BOOT && (e.key === 'Enter' || e.key === ' ') && e.target === document.body) { e.preventDefault(); skipBoot(); }
+  });
+  $('#reader').addEventListener('pointerdown', e => { if (e.target.id === 'reader') Reader.close(); });
+
+  document.addEventListener('pointerdown', () => { G.lastActivity = now(); }, { passive: true });
+
+  // tab visibility: pause canvas and audio, notice the absence
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { G.hiddenAt = now(); Face.stop(); Snd.suspend(); }
+    else {
+      Face.start(); Snd.resume();
+      const away = G.hiddenAt ? (now() - G.hiddenAt) / 1000 : 0; G.hiddenAt = 0;
+      if (away > 4) T.set(() => awayObservation(away), 700);
+    }
+  });
+
+  // viewport + on-screen keyboard
+  let fullH = window.innerHeight;
+  const vv = window.visualViewport;
+  const fit = () => {
+    const h = vv ? vv.height : window.innerHeight;
+    if (document.activeElement !== el.inp) fullH = Math.max(h, window.innerHeight * .9);
+    el.app.style.height = h + 'px';
+    el.app.style.top = (vv ? vv.offsetTop : 0) + 'px';
+    const kb = COARSE && document.activeElement === el.inp && h < fullH * .8;
+    document.body.classList.toggle('kb', kb);
+    if (kb) stick();
+  };
+  if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
+  let rz = 0;
+  window.addEventListener('resize', () => { fit(); clearTimeout(rz); rz = setTimeout(() => { Face.size(false); Face.anchor(false); }, 150); });
+  window.addEventListener('orientationchange', () => { fullH = 0; setTimeout(() => { fit(); Face.size(true); }, 300); });
+  el.inp.addEventListener('blur', () => setTimeout(fit, 100));
+  el.inp.addEventListener('focus', () => setTimeout(fit, 350));
+  fit();
+  if (RMQ.addEventListener) RMQ.addEventListener('change', () => { syncControls(); });
+}
+
+function makeGrain() {
+  try {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const x = c.getContext('2d'), id = x.createImageData(128, 128);
+    for (let i = 0; i < id.data.length; i += 4) { const v = (Math.random() * 255) | 0; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 26; }
+    x.putImageData(id, 0, 0);
+    document.documentElement.style.setProperty('--grain', `url(${c.toDataURL()})`);
+  } catch (e) {}
+}
+
+/* boot the page */
+if (!Store.ok) $('#notice').textContent += ' Local storage is unavailable here, so progress will not be saved.';
+makeGrain();
+buildDial();
+wire();
+Face.init();
+Face.start();
+renderRecords();
+ENTER.ENTRY();
+})();
+</script>
+</body>
+</html>
