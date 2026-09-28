@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brushstroke Lyrics</title>
+<style>
+  :root { --bg: #0c0d0c; --fg: #e9ece6; --muted: #8b918a; --accent: #f3c07a; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 12px 16px; }
+  canvas { height: calc(100vh - 110px); max-width: 100%; aspect-ratio: 9 / 16; object-fit: contain; background: #000; border-radius: 6px; cursor: pointer; }
+  .bar { display: flex; align-items: center; gap: 10px; width: min(100%, 560px); flex-wrap: wrap; }
+  button, label.btn { background: #1d201d; color: var(--fg); border: 1px solid #333833; border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
+  button:hover, label.btn:hover { border-color: var(--accent); }
+  input[type=range] { flex: 1; min-width: 140px; accent-color: var(--accent); }
+  #time { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 92px; text-align: right; }
+  input[type=file] { display: none; }
+  body.render { padding: 0; display: block; }
+  body.render canvas { height: auto; border-radius: 0; }
+  body.render .bar { display: none; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<div class="bar">
+  <button id="play">Play</button>
+  <input id="seek" type="range" min="0" max="27" step="0.001" value="0">
+  <span id="time">0.00 / 27.00</span>
+  <label class="btn" title="Preview with your own audio file (it is not added to the video)">Load audio<input id="audio" type="file" accept="audio/*,video/*"></label>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/brush.js"></script>
+<script src="js/glyphs.js"></script>
+<script src="js/lettering.js"></script>
+<script src="js/art.js"></script>
+<script src="js/timeline.js"></script>
+<script src="js/renderer.js"></script>
+<script>
+(function () {
+  'use strict';
+  const BV = window.BV;
+  const canvas = document.getElementById('c');
+  const R = BV.createRenderer(canvas);
+  const D = BV.config.duration;
+  const params = new URLSearchParams(location.search);
+
+  // Render mode: used by render.js to export frames. No clock, no UI.
+  if (params.has('render')) {
+    document.body.classList.add('render');
+    BV.renderFrame = (t) => { R.render(t); return canvas.toDataURL('image/png'); };
+    BV.ready = true;
+    return;
+  }
+
+  const playBtn = document.getElementById('play');
+  const seek = document.getElementById('seek');
+  const timeEl = document.getElementById('time');
+  const audioIn = document.getElementById('audio');
+  seek.max = D;
+  let audio = null;
+  let playing = false;
+  let t = parseFloat(params.get('t')) || 0;
+  let last = 0;
+
+  function setPlaying(p) {
+    playing = p;
+    playBtn.textContent = p ? 'Pause' : 'Play';
+    if (audio) {
+      if (p) { audio.currentTime = t; audio.play(); } else audio.pause();
+    }
+    last = performance.now();
+  }
+
+  function frame(now) {
+    if (playing) {
+      if (audio && !audio.paused) t = audio.currentTime;
+      else t += (now - last) / 1000;
+      if (t >= D) { t = D; setPlaying(false); }
+    }
+    last = now;
+    R.render(Math.min(t, D - 1e-3));
+    seek.value = t;
+    timeEl.textContent = t.toFixed(2) + ' / ' + D.toFixed(2);
+    requestAnimationFrame(frame);
+  }
+
+  playBtn.onclick = () => { if (t >= D) t = 0; setPlaying(!playing); };
+  canvas.onclick = playBtn.onclick;
+  seek.oninput = () => { t = parseFloat(seek.value); if (audio) audio.currentTime = t; };
+  audioIn.onchange = () => {
+    const f = audioIn.files[0];
+    if (!f) return;
+    if (audio) audio.pause();
+    audio = new Audio(URL.createObjectURL(f));
+    setPlaying(false);
+  };
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); playBtn.onclick(); }
+    if (e.code === 'ArrowRight') t = Math.min(D, t + 1 / 30);
+    if (e.code === 'ArrowLeft') t = Math.max(0, t - 1 / 30);
+  });
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
