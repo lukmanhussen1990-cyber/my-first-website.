@@ -148,8 +148,10 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
         content.addView(ctx.text("Theme", 16f, Ui.c.text, Fonts.sansSemibold), lp { topMargin = ctx.dp(4) })
         content.addView(themeControl, lp { topMargin = ctx.dp(10) })
         themeControl.onSelect = { i -> host.setTheme(ThemeMode.entries[i]) }
-        content.addView(toggleRow("Opening animation", "The school logo intro when the app starts", introToggle), lp { topMargin = ctx.dp(8) })
-        introToggle.onChange = { on -> host.store.introEnabled = on }
+        content.addView(toggleRow("Opening animation", "The school emblem opening when the app starts", introToggle), lp { topMargin = ctx.dp(8) })
+        introToggle.onChange = { on -> host.setIntroEnabled(on) }
+        content.addView(ctx.separator())
+        content.addView(actionRow("Replay opening", R.drawable.ic_replay) { host.replayIntro() })
         content.addView(ctx.separator())
         content.addView(ctx.text("Reduce motion", 16f, Ui.c.text, Fonts.sansSemibold), lp { topMargin = ctx.dp(14) })
         content.addView(motionControl, lp { topMargin = ctx.dp(10) })
@@ -195,14 +197,14 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
         minimumHeight = dp(76)
         setPadding(0, dp(10), 0, dp(10))
         background = Shapes.ripple(ctx, null, 12)
-        addView(avatar, lp(dp(52), dp(52)))
+        addView(avatar, lp(dp(58), dp(58)))
         addView(ctx.column {
             addView(profileName)
-            addView(ctx.text("Photo and display name", 14f, Ui.c.text3), lp { topMargin = dp(2) })
+            addView(ctx.text("Photo, frame and display name", 14f, Ui.c.text3), lp { topMargin = dp(2) })
         }, lp(0, WRAP, 1f) { marginStart = dp(14) })
         addView(ctx.icon(R.drawable.ic_chevron_right, Ui.c.text3, 22))
-        contentDescription = "Edit photo and display name"
-        setOnClickListener { host.openProfileEditor() }
+        contentDescription = "Edit photo, frame and display name"
+        setOnClickListener { host.openProfileEditor(avatar) }
     }
 
     private fun profileField(label: String, iconRes: Int, last: Boolean = false, read: (Profile) -> String) {
@@ -368,7 +370,10 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
         if (scroll.isShown) refresh()
     }
 
-    override fun onMotionChanged() = refreshMotion()
+    override fun onMotionChanged() {
+        avatar.animateFrame = host.framesMoving
+        refreshMotion()
+    }
 
     override fun applyInsets(top: Int, bottom: Int) {
         content.setPadding(ctx.dp(20), top + ctx.dp(8), ctx.dp(20), ctx.dp(28))
@@ -380,10 +385,11 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
         val data = host.data
         val p = data.profile
         avatar.initials = p.initials
+        avatar.setFrame(data.avatarFrame, animate = avatar.isShown)
         val version = host.store.avatarVersion
         if (version != avatarVersion) {
             avatarVersion = version
-            avatar.setPhoto(host.avatarBitmap(ctx.dp(52)))
+            avatar.setPhoto(host.avatarBitmap(ctx.dp(58)))
         }
         profileName.update(p.name.ifBlank { "Add your name" })
         profileValues["School"]?.update(p.school.ifBlank { "Not set" })
@@ -423,8 +429,8 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
         val policy = host.policy
         motionNote.update(
             when {
-                pref == MotionPref.REDUCED -> "Movement is off: no opening animation, rolling digits, drifting light or confetti. Everything still works."
-                pref == MotionPref.FULL && !policy.ambient -> "Full motion. Battery Saver is on, so continuous effects (drifting light, pulses) are paused."
+                pref == MotionPref.REDUCED -> "Movement is off: no opening animation, sliding digits, drifting light or confetti, and profile frames stay still. Everything still works."
+                pref == MotionPref.FULL && !policy.ambient -> "Full motion. Battery Saver is on, so continuous effects (drifting light, pulses, moving frames) are paused."
                 pref == MotionPref.FULL -> "Full motion, even if Android’s “Remove animations” is on."
                 !policy.motion -> "Following Android: “Remove animations” is on, so motion is reduced."
                 !policy.ambient -> "Following Android. Battery Saver is on, so continuous effects are paused."

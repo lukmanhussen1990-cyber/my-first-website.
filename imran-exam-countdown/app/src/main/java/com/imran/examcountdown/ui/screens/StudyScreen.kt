@@ -133,7 +133,6 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
         colon.setPadding(ctx.dp(4), 0, ctx.dp(4), (digit * 0.14f).toInt())
         minutes.countsDown = true
         seconds.countsDown = true
-        minutes.flashColor = Ui.c.gold
 
         modeControl.onSelect = { index ->
             state = FocusTimer.select(state, FocusMode.entries[index])
@@ -306,10 +305,10 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
     private fun celebrateSession() {
         Haptics.confirm(timerRow)
         if (host.policy.motion) {
-            // The timer punches up, then springs back, as a burst of confetti goes off.
+            // The timer lifts a little, then settles back, as a small burst of confetti goes off.
             timerRow.pivotX = 0f
-            timerRow.animate().scaleX(1.08f).scaleY(1.08f).setDuration(140).setInterpolator(Ease.out).withEndAction {
-                timerRow.animate().scaleX(1f).scaleY(1f).setInterpolator(Spring(0.4f)).setDuration(700).start()
+            timerRow.animate().scaleX(1.05f).scaleY(1.05f).setDuration(120).setInterpolator(Ease.out).withEndAction {
+                timerRow.animate().scaleX(1f).scaleY(1f).setInterpolator(Spring(0.7f)).setDuration(280).start()
             }.start()
             host.popAt(timerRow, 1.1f)
         }
@@ -434,12 +433,12 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
             body.visibility = if (value) View.VISIBLE else View.GONE
             val rotation = if (value) 180f else 0f
             if (animate && host.policy.motion) {
-                chevron.animate().rotation(rotation).setDuration(520).setInterpolator(Spring(0.55f)).start()
+                chevron.animate().rotation(rotation).setDuration(220).setInterpolator(Ease.inOut).start()
                 if (value) {
                     body.alpha = 0f
-                    body.translationY = -ctx.dp(12).toFloat()
-                    body.animate().translationY(0f).setDuration(560).setInterpolator(Spring.gentle).start()
-                    body.fadeTo(1f, 240)
+                    body.translationY = -ctx.dp(8).toFloat()
+                    body.animate().translationY(0f).setDuration(240).setInterpolator(Ease.out).start()
+                    body.fadeTo(1f, 200)
                 }
             } else {
                 chevron.rotation = rotation
@@ -473,20 +472,16 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
                 contentDescription = "${item.text}, ${if (item.done) "done" else "not done"}"
                 setOnClickListener {
                     val updated = item.copy(done = !item.done)
+                    // The tick draws itself into the box.
                     check.setChecked(updated.done, animate = host.policy.motion)
-                    if (updated.done) {
-                        Haptics.confirm(this)
-                        host.popAt(check, 0.5f)
-                    } else {
-                        Haptics.tap(this)
-                    }
+                    if (updated.done) Haptics.confirm(this) else Haptics.tap(this)
                     replace(item, updated)
                     label.setTextColor(if (updated.done) Ui.c.text3 else Ui.c.text)
                     label.paintFlags = if (updated.done) label.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG else label.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
                     contentDescription = "${item.text}, ${if (updated.done) "done" else "not done"}"
                     setOnClickListener(null)
                     // Rebuild after the tick animation so the row reflects the new state.
-                    postDelayed({ renderItems() }, if (host.policy.motion) 520L else 0L)
+                    postDelayed({ renderItems() }, if (host.policy.motion) 340L else 0L)
                 }
             }
         }
@@ -564,7 +559,7 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
         private var shown = -1f
         private var animator: ValueAnimator? = null
 
-        /** Sets the ring; after the first time, it sweeps to the new amount on a spring. */
+        /** Sets the ring; after the first time, it sweeps smoothly to the new amount (300 ms). */
         fun set(done: Int, total: Int) {
             fraction = if (total == 0) 0f else done.toFloat() / total
             complete = total > 0 && done == total
@@ -575,8 +570,8 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
                 return
             }
             animator = ValueAnimator.ofFloat(shown, fraction).apply {
-                duration = 700
-                interpolator = Spring(0.72f)
+                duration = 300
+                interpolator = Ease.inOut
                 addUpdateListener {
                     shown = it.animatedValue as Float
                     invalidate()
@@ -605,7 +600,7 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
         }
     }
 
-    /** Round checkbox: ticking it pops the green fill with a bounce and draws the tick in. */
+    /** Round checkbox: ticking it fills it green, then the tick draws itself into place (320 ms). */
     private class CheckCircle(context: Context) : View(context) {
         private var progress = 0f
         private var popping = false
@@ -640,7 +635,7 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
             }
             popping = checked
             animator = ValueAnimator.ofFloat(progress, to).apply {
-                duration = if (checked) 480 else 220
+                duration = if (checked) 320 else 180
                 interpolator = if (checked) LinearInterpolator() else DecelerateInterpolator()
                 addUpdateListener {
                     progress = it.animatedValue as Float
@@ -657,12 +652,12 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
             ring.color = Ui.c.text3
             canvas.drawCircle(cx, cy, r, ring)
             if (progress <= 0f) return
-            // Checking: the fill bursts out past its size and settles; the tick then draws in.
-            val grow = if (popping) spring(progress, 0.42f) else progress
-            val drawn = if (popping) window(progress, 0.25f, 0.5f) else progress
+            // Checking: the fill grows in quickly, then the tick draws along its path.
+            val grow = if (popping) Ease.cubicOut(window(progress, 0f, 0.5f)) else progress
+            val drawn = if (popping) Ease.cubicOut(window(progress, 0.3f, 0.7f)) else progress
             fill.color = Ui.c.green
-            fill.alpha = (255 * if (popping) window(progress, 0f, 0.2f) else progress).toInt().coerceIn(0, 255)
-            canvas.drawCircle(cx, cy, (r + ring.strokeWidth / 2) * (0.35f + 0.65f * grow), fill)
+            fill.alpha = (255 * if (popping) window(progress, 0f, 0.3f) else progress).toInt().coerceIn(0, 255)
+            canvas.drawCircle(cx, cy, (r + ring.strokeWidth / 2) * (0.55f + 0.45f * grow), fill)
             path.reset()
             path.moveTo(cx - r * 0.45f, cy + r * 0.02f)
             path.lineTo(cx - r * 0.1f, cy + r * 0.36f)

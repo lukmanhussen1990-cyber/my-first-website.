@@ -3,4 +3,10 @@
     <style name="Theme.ExamCountdown" parent="Base.Theme.ExamCountdown">
         <item name="android:windowLightNavigationBar">true</item>
     </style>
+
+    <style name="Theme.ExamCountdown.Launch" parent="Theme.ExamCountdown">
+        <item name="android:windowBackground">@color/forest</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
 </resources>

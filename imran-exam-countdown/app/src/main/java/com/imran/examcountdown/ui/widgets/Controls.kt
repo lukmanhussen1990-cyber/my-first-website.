@@ -12,7 +12,6 @@ import android.graphics.RectF
 import android.view.Gravity
 import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
-import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Switch
@@ -29,15 +28,9 @@ import com.imran.examcountdown.ui.dp
 import com.imran.examcountdown.ui.dpf
 import com.imran.examcountdown.ui.lerp
 import com.imran.examcountdown.ui.lerpColor
-import com.imran.examcountdown.ui.spring
 import com.imran.examcountdown.ui.text
-import kotlin.math.abs
-import kotlin.math.sin
 
-/**
- * On/off switch that reads as a switch to screen readers. The knob springs across, stretching
- * as it moves, and switching on sends a small ring out from it.
- */
+/** On/off switch that reads as a switch to screen readers. The knob glides across in 220 ms. */
 class ToggleView(context: Context) : View(context) {
 
     var isChecked = false
@@ -47,8 +40,6 @@ class ToggleView(context: Context) : View(context) {
     var animateChanges = true
 
     private var knob = 0f
-    private var stretch = 0f
-    private var pop = 1f
     private var animator: ValueAnimator? = null
     private val rect = RectF()
     private val track = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -57,8 +48,6 @@ class ToggleView(context: Context) : View(context) {
         strokeWidth = dpf(1.5f)
     }
     private val knobPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val ring = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val clip = android.graphics.Path()
 
     init {
         isClickable = true
@@ -72,33 +61,18 @@ class ToggleView(context: Context) : View(context) {
         val to = if (value) 1f else 0f
         if (animate && animateChanges && isAttachedToWindow) {
             val start = knob
-            var last = knob
-            pop = if (value) 0f else 1f
             animator = ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = 460
-                interpolator = LinearInterpolator()
+                duration = 220
+                interpolator = Ease.inOut
                 addUpdateListener {
-                    val f = it.animatedValue as Float
-                    knob = lerp(start, to, spring(f, 0.55f))
-                    stretch = (abs(knob - last) * 9f).coerceAtMost(1f)
-                    last = knob
-                    if (value) pop = f
+                    knob = lerp(start, to, it.animatedValue as Float)
                     invalidate()
                 }
-                addListener(object : android.animation.AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: android.animation.Animator) {
-                        stretch = 0f
-                        pop = 1f
-                        invalidate()
-                    }
-                })
                 start()
             }
         } else {
             animator = null
             knob = to
-            stretch = 0f
-            pop = 1f
             invalidate()
         }
     }
@@ -127,27 +101,9 @@ class ToggleView(context: Context) : View(context) {
             canvas.drawRoundRect(rect, h / 2, h / 2, outline)
         }
         val radius = dpf(8) + dpf(3) * k
-        // Past either end (the spring overshooting), the knob squashes against the track's end.
-        val over = (if (knob > 1f) knob - 1f else if (knob < 0f) -knob else 0f) * (width - h)
         val x = h / 2 + (width - h) * k
-        // Switching on, a ripple of light spreads from the knob through the track.
-        if (pop < 1f) {
-            canvas.save()
-            clip.reset()
-            clip.addRoundRect(rect, h / 2, h / 2, android.graphics.Path.Direction.CW)
-            canvas.clipPath(clip)
-            ring.style = Paint.Style.FILL
-            ring.color = Ui.withAlpha(c.onGreen, 0.35f * (1f - pop))
-            canvas.drawCircle(x, h / 2, radius + (width - radius) * Ease.cubicOut(pop), ring)
-            canvas.restore()
-        }
         knobPaint.color = lerpColor(c.text3, c.onGreen, k)
-        // Moving fast, the knob stretches along its path and thins a touch.
-        val grow = dpf(7) * stretch
-        val rx = radius + grow / 2 - over * 0.6f
-        val ry = radius * (1f - 0.12f * stretch) + over * 0.3f
-        rect.set(x - rx, h / 2 - ry, x + rx, h / 2 + ry)
-        canvas.drawRoundRect(rect, minOf(rx, ry), minOf(rx, ry), knobPaint)
+        canvas.drawCircle(x, h / 2, radius, knobPaint)
     }
 
     override fun getAccessibilityClassName(): CharSequence = Switch::class.java.name
@@ -159,7 +115,7 @@ class ToggleView(context: Context) : View(context) {
     }
 }
 
-/** Options in a quiet track; the selected one sits on a raised ivory tile that slides. */
+/** Options in a quiet track; the selected one sits on a raised ivory tile that slides across (240 ms). */
 class SegmentedControl(context: Context, private val labels: List<String>) : FrameLayout(context) {
 
     var selected = -1
@@ -220,22 +176,15 @@ class SegmentedControl(context: Context, private val labels: List<String>) : Fra
         val x = (selected * w).toFloat()
         slide?.cancel()
         if (animate) {
-            // The tile springs across, stretching a little mid-way like something with weight.
             val start = indicator.translationX
-            indicator.pivotX = w / 2f
             slide = ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = 480
-                interpolator = LinearInterpolator()
-                addUpdateListener {
-                    val f = it.animatedValue as Float
-                    indicator.translationX = lerp(start, x, spring(f, 0.68f))
-                    indicator.scaleX = 1f + 0.12f * sin(Math.PI.toFloat() * (f * 2.2f).coerceAtMost(1f))
-                }
+                duration = 240
+                interpolator = Ease.inOut
+                addUpdateListener { indicator.translationX = lerp(start, x, it.animatedValue as Float) }
                 start()
             }
         } else {
             indicator.translationX = x
-            indicator.scaleX = 1f
         }
     }
 
@@ -290,13 +239,13 @@ fun TextView.setLeadingIcon(iconRes: Int, sizeDp: Int = 20) {
     compoundDrawablePadding = dp(8)
 }
 
-/** Squeezes a view while pressed; on release it springs back with a little bounce. */
-fun pressScale(view: View): StateListAnimator = StateListAnimator().apply {
+/** Gentle press feedback: squeezes a view to [pressed] while held, then springs softly back. */
+fun pressScale(view: View, pressed: Float = 0.96f): StateListAnimator = StateListAnimator().apply {
     addState(
         intArrayOf(android.R.attr.state_pressed),
         AnimatorSet().apply {
-            playTogether(ObjectAnimator.ofFloat(view, View.SCALE_X, 0.95f), ObjectAnimator.ofFloat(view, View.SCALE_Y, 0.95f))
-            duration = 110
+            playTogether(ObjectAnimator.ofFloat(view, View.SCALE_X, pressed), ObjectAnimator.ofFloat(view, View.SCALE_Y, pressed))
+            duration = 90
             interpolator = Ease.out
         },
     )
@@ -304,8 +253,8 @@ fun pressScale(view: View): StateListAnimator = StateListAnimator().apply {
         intArrayOf(),
         AnimatorSet().apply {
             playTogether(ObjectAnimator.ofFloat(view, View.SCALE_X, 1f), ObjectAnimator.ofFloat(view, View.SCALE_Y, 1f))
-            duration = 520
-            interpolator = Spring(0.42f)
+            duration = 240
+            interpolator = Spring(0.75f)
         },
     )
 }
@@ -326,5 +275,62 @@ fun TextView.styleStatus(label: String, color: Int, filled: Boolean = false) {
         setTextColor(color)
         background = null
         setPadding(0, 0, 0, 0)
+    }
+}
+
+/**
+ * Buttons side by side, centred, when they fit on one line; otherwise stacked at full width
+ * (small screens, large text), so a label never wraps or gets cut off.
+ */
+class ButtonRow(context: Context, private val gap: Int) : android.view.ViewGroup(context) {
+
+    /** True when the buttons didn't fit side by side. */
+    var stacked = false
+        private set
+
+    private fun shown(): List<View> = (0 until childCount).map { getChildAt(it) }.filter { it.visibility != GONE }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val width = MeasureSpec.getSize(widthMeasureSpec) - paddingLeft - paddingRight
+        val children = shown()
+        val free = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+        var total = gap * (children.size - 1).coerceAtLeast(0)
+        var tallest = 0
+        for (child in children) {
+            child.measure(free, free)
+            total += child.measuredWidth
+            tallest = maxOf(tallest, child.measuredHeight)
+        }
+        stacked = total > width
+        var height = tallest
+        if (stacked) {
+            height = gap * (children.size - 1).coerceAtLeast(0)
+            val exact = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY)
+            for (child in children) {
+                child.measure(exact, free)
+                height += child.measuredHeight
+            }
+        }
+        setMeasuredDimension(resolveSize(width + paddingLeft + paddingRight, widthMeasureSpec), height + paddingTop + paddingBottom)
+    }
+
+    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        val children = shown()
+        if (stacked) {
+            var y = paddingTop
+            for (child in children) {
+                child.layout(paddingLeft, y, paddingLeft + child.measuredWidth, y + child.measuredHeight)
+                y += child.measuredHeight + gap
+            }
+            return
+        }
+        val total = children.sumOf { it.measuredWidth } + gap * (children.size - 1).coerceAtLeast(0)
+        var x = paddingLeft + (r - l - paddingLeft - paddingRight - total) / 2
+        val height = b - t - paddingTop - paddingBottom
+        for (child in children) {
+            val y = paddingTop + (height - child.measuredHeight) / 2
+            child.layout(x, y, x + child.measuredWidth, y + child.measuredHeight)
+            x += child.measuredWidth + gap
+        }
     }
 }

@@ -5,7 +5,8 @@
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
         <item name="android:enforceNavigationBarContrast">false</item>
         <item name="android:enforceStatusBarContrast">false</item>
-        <!-- Plain background, no icon: the in-app intro shows the emblem, so there is no second splash. -->
+        <!-- Plain background, no icon: used when the opening is switched off (Android 13+ picks
+             the launch window with SplashScreen.setSplashScreenTheme). -->
         <item name="android:windowSplashScreenBackground">@color/bg</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_blank</item>
     </style>

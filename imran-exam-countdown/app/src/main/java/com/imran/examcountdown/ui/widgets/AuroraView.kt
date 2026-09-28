@@ -10,13 +10,12 @@ import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.dpf
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.random.Random
 
 /**
- * Home's living background: soft pools of green and gold light drifting slowly behind the
- * content, with a few specks of gold dust rising and twinkling. The contrast is kept very low so
- * text stays crisp. It moves only while continuous effects are allowed (not in Battery Saver or
- * with reduced motion); otherwise it is drawn once, still, and costs nothing.
+ * Home's background: soft pools of green and gold light drifting slowly behind the content. The
+ * contrast is kept very low so text stays crisp. It moves only while continuous effects are
+ * allowed (not in Battery Saver or with reduced motion); otherwise it is drawn once, still, and
+ * costs nothing.
  */
 class AuroraView(context: Context) : View(context) {
 
@@ -32,9 +31,7 @@ class AuroraView(context: Context) : View(context) {
         var shader: RadialGradient? = null
     }
 
-    private class Mote(val fx: Float, val fy: Float, val speedDp: Float, val size: Float, val sway: Float, val phase: Float)
-
-    /** Whether the light drifts and the dust rises (continuous effects allowed). */
+    /** Whether the light drifts (continuous effects allowed). */
     var moving = false
         set(value) {
             if (field == value) return
@@ -57,11 +54,7 @@ class AuroraView(context: Context) : View(context) {
         Glow(0.04f, 0.3f, 0.95f, Ui.withAlpha(if (c.dark) c.green else c.greenText, if (c.dark) 0.3f else 0.07f), 42f, 23f, 2.1f),
         Glow(0.62f, 0.56f, 0.7f, Ui.withAlpha(c.gold, if (c.dark) 0.06f else 0.08f), 28f, 29f, 4.2f),
     )
-    private val motes = Random(47).let { rnd ->
-        List(16) { Mote(rnd.nextFloat(), rnd.nextFloat(), 7f + rnd.nextFloat() * 12f, 0.8f + rnd.nextFloat() * 1.3f, 6f + rnd.nextFloat() * 10f, rnd.nextFloat() * 6.28f) }
-    }
     private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val motePaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     init {
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
@@ -96,18 +89,6 @@ class AuroraView(context: Context) : View(context) {
             canvas.scale(r, r)
             canvas.drawCircle(0f, 0f, 1f, glowPaint)
             canvas.restore()
-        }
-        if (!moving) return
-        // Gold dust drifting up through the top half, twinkling.
-        for (m in motes) {
-            val span = h * 0.62f
-            val rise = (t * dpf(m.speedDp) + m.fy * span) % span
-            val y = span - rise + parallax * 0.6f
-            val x = m.fx * w + sin(t * 0.7f + m.phase) * dpf(m.sway)
-            val edge = (rise / span).let { if (it < 0.15f) it / 0.15f else if (it > 0.8f) (1f - it) / 0.2f else 1f }
-            val twinkle = 0.5f + 0.5f * sin(t * 2.3f + m.phase * 3f)
-            motePaint.color = Ui.withAlpha(if (c.dark) c.goldText else c.gold, (if (c.dark) 0.55f else 0.5f) * edge * twinkle)
-            canvas.drawCircle(x, y, dpf(m.size), motePaint)
         }
     }
 }

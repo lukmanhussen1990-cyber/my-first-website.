@@ -52,8 +52,8 @@ class IntroTest {
         assertEquals("header emblem waits for the intro", View.INVISIBLE, activity.homeEmblem().visibility)
         frames(900)
         assertNotNull("still running at 0.9 s", activity.intro())
-        frames(1300)
-        assertNull("finished within about 2 s", activity.intro())
+        frames(1500)
+        assertNull("finished within 2.5 s", activity.intro())
         assertEquals(View.VISIBLE, activity.homeEmblem().visibility)
         assertTrue(activity.hasText("Hey, Imran"))
     }
@@ -107,7 +107,7 @@ class IntroTest {
     fun firstRunIntroLeadsIntoSetup() {
         Store(RuntimeEnvironment.getApplication()).setupDone = false
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        frames(2300)
+        frames(2600)
         assertNull(activity.intro())
         assertTrue(activity.hasText("Let’s go"))
     }

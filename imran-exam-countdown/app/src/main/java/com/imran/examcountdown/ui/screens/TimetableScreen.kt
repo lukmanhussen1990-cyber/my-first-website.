@@ -242,12 +242,12 @@ class TimetableScreen(host: MainActivity) : Screen(host), AmbientListener {
 
     private fun playEntrance() {
         staggerIn(rows.map { it.view }, motion = true)
-        // Each row's rail draws itself down in step with the row rising in, and its node pops.
+        // Each row's rail draws itself down in step with the row rising in, and its node appears.
         rows.forEachIndexed { i, row ->
             row.rail.reveal = 0f
             ValueAnimator.ofFloat(0f, 1f).apply {
-                startDelay = 60L + i * 55L
-                duration = 720
+                startDelay = 40L + i * 40L
+                duration = 420
                 interpolator = LinearInterpolator()
                 addUpdateListener { row.rail.reveal = it.animatedValue as Float }
                 start()

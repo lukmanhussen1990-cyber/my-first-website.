@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- The window background is the same colour as the opening animation's background, so
-         cold starts go straight from the launch window into the intro with no flash. -->
     <style name="Base.Theme.ExamCountdown" parent="@android:style/Theme.Material.Light.NoActionBar">
         <item name="android:colorPrimary">@color/green</item>
         <item name="android:colorPrimaryDark">@color/bg</item>
@@ -22,6 +20,25 @@
     <!-- Overridden per API level (values-v27, -v29, -v31). -->
     <style name="Theme.ExamCountdown" parent="Base.Theme.ExamCountdown" />
 
+    <!-- The launch window: deep forest green, exactly the first frame of the opening, so a cold
+         start goes straight into it with no flash and no second splash. MainActivity switches
+         to Theme.ExamCountdown before it draws anything. Overridden in values-v27 and -v31. -->
+    <style name="Theme.ExamCountdown.Launch" parent="Theme.ExamCountdown">
+        <item name="android:windowBackground">@color/forest</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- Sheets and dialogs open and close with a short fade and scale; a plain fade with reduced motion. -->
+    <style name="Animation.ExamCountdown.Sheet" parent="@android:style/Animation.Dialog">
+        <item name="android:windowEnterAnimation">@anim/sheet_enter</item>
+        <item name="android:windowExitAnimation">@anim/sheet_exit</item>
+    </style>
+
+    <style name="Animation.ExamCountdown.Fade" parent="@android:style/Animation.Dialog">
+        <item name="android:windowEnterAnimation">@anim/fade_in</item>
+        <item name="android:windowExitAnimation">@anim/fade_out</item>
+    </style>
+
     <style name="Theme.ExamCountdown.Dialog" parent="@android:style/Theme.Material.Light.Dialog.Alert">
         <item name="android:colorAccent">@color/green</item>
         <item name="android:colorPrimary">@color/green</item>
@@ -29,5 +46,6 @@
         <item name="android:colorBackground">@color/surface</item>
         <item name="android:textColorPrimary">@color/text</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:windowAnimationStyle">@style/Animation.ExamCountdown.Sheet</item>
     </style>
 </resources>

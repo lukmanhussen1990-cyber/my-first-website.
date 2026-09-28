@@ -16,7 +16,8 @@ import com.imran.examcountdown.ui.update
 
 /**
  * A typeset countdown: large days, hours and minutes, smaller seconds, and a label under each.
- * The number size adapts to the available width, so it fits small phones and large text.
+ * The number size adapts to the available width, so it fits small phones and large text. Digits
+ * slide only when they change (see [RollingNumberView]).
  */
 class CountdownView(context: Context) : LinearLayout(context) {
 
@@ -45,17 +46,7 @@ class CountdownView(context: Context) : LinearLayout(context) {
             u.number.countsDown = true
         }
         seconds.number.color = Ui.c.text2
-        // The bigger units flash gold as they tick over; seconds just roll.
-        listOf(days, hours, minutes).forEach { it.number.flashColor = Ui.c.gold }
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
-    }
-
-    /** Spins every drum like a slot machine and lands them one unit after another. */
-    fun spinIn(delayMs: Long = 0L) {
-        if (!animateChanges) return
-        all.filter { it.column.visibility == View.VISIBLE }.forEachIndexed { i, u ->
-            u.number.spinIn(delayMs + i * 150L)
-        }
     }
 
     private fun unit(name: String): Unit {

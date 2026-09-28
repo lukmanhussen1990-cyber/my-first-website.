@@ -208,6 +208,55 @@ class ScreenshotTest {
         shoot(activity, "14-home-with-photo")
     }
 
+    private fun MainActivity.openFrames(frame: com.imran.examcountdown.core.AvatarFrame) {
+        val app = RuntimeEnvironment.getApplication()
+        com.imran.examcountdown.data.Avatar.save(app, portrait())
+        Store(app).avatarFrame = frame
+        onAvatarChanged()
+        (currentScreen as HomeScreen).avatar.performClick()
+        idle(400)
+        // Scroll the frames into view.
+        val scroll = profileEditor!!.root.allViews().filterIsInstance<ScrollView>().single()
+        scroll.scrollTo(0, (220 * resources.displayMetrics.density).toInt())
+        idle(50)
+    }
+
+    @Test
+    fun profileFrames() {
+        val activity = launchAt(ist(2026, 9, 27, 18, 0))
+        activity.openFrames(com.imran.examcountdown.core.AvatarFrame.TWIN_COMETS)
+        shoot(activity, "22-profile-frames")
+        activity.click("Gold Orbit")
+        shoot(activity, "23-profile-frames-preview")
+    }
+
+    @Test
+    @Config(qualifiers = "+night")
+    fun profileFramesDark() {
+        val activity = launchAt(ist(2026, 9, 27, 18, 0))
+        activity.openFrames(com.imran.examcountdown.core.AvatarFrame.GOLD_SHIMMER)
+        shoot(activity, "24-profile-frames-dark")
+    }
+
+    @Test
+    @Config(qualifiers = "w320dp-h568dp-hdpi")
+    fun profileFramesSmallPhoneLargeText() {
+        RuntimeEnvironment.setFontScale(1.5f)
+        val activity = launchAt(ist(2026, 9, 27, 18, 0), threeButtons = true)
+        activity.openFrames(com.imran.examcountdown.core.AvatarFrame.EMERALD_WAVE)
+        shoot(activity, "25-small-phone-profile-frames", threeButtons = true)
+    }
+
+    @Test
+    fun homeWithFrame() {
+        val activity = launchAt(ist(2026, 9, 27, 18, 0))
+        val app = RuntimeEnvironment.getApplication()
+        com.imran.examcountdown.data.Avatar.save(app, portrait())
+        Store(app).avatarFrame = com.imran.examcountdown.core.AvatarFrame.GOLD_ORBIT
+        activity.onAvatarChanged()
+        shoot(activity, "26-home-gold-orbit")
+    }
+
     @Test
     fun celebration() {
         Store(RuntimeEnvironment.getApplication()).motion = MotionPref.FULL
@@ -228,15 +277,15 @@ class ScreenshotTest {
         try {
             val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
             activity.applySystemBars(24, 16)
-            idle(330)
-            shoot(activity, "16-intro-0.35s")
-            idle(620)
-            shoot(activity, "17-intro-0.95s")
-            idle(250)
-            shoot(activity, "18-intro-1.2s")
-            idle(450)
-            shoot(activity, "19-intro-1.65s")
-            idle(700)
+            idle(420)
+            shoot(activity, "16-intro-0.4s")
+            idle(500)
+            shoot(activity, "17-intro-0.9s")
+            idle(350)
+            shoot(activity, "18-intro-1.25s")
+            idle(600)
+            shoot(activity, "19-intro-1.85s")
+            idle(800)
             shoot(activity, "20-intro-done")
         } finally {
             ShadowChoreographer.setPaused(false)

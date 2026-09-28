@@ -13,7 +13,7 @@ import android.view.animation.LinearInterpolator
 import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.dp
 import com.imran.examcountdown.ui.dpf
-import com.imran.examcountdown.ui.spring
+import com.imran.examcountdown.ui.Ease
 import com.imran.examcountdown.ui.window
 import kotlin.math.sin
 
@@ -94,13 +94,13 @@ class SeasonProgressView(context: Context) : View(context) {
             val local = revealMs - i * STAGGER_MS
             when (segments[i]) {
                 Segment.DONE -> {
-                    val f = spring(window(local, 0f, 560f), 0.72f).coerceAtMost(1f)
+                    val f = Ease.cubicOut(window(local, 0f, 300f))
                     if (f > 0f) {
                         rect.right = left + w * f
                         paint.color = c.green
                         canvas.drawRoundRect(rect, r, r, paint)
                         // A glint runs along the bar just after it fills.
-                        val g = window(local, 200f, 420f)
+                        val g = window(local, 160f, 320f)
                         if (g > 0f && g < 1f) {
                             canvas.save()
                             canvas.clipRect(rect)
@@ -134,7 +134,7 @@ class SeasonProgressView(context: Context) : View(context) {
     }
 
     companion object {
-        private const val REVEAL_MS = 1400f
-        private const val STAGGER_MS = 90f
+        private const val REVEAL_MS = 800f
+        private const val STAGGER_MS = 50f
     }
 }

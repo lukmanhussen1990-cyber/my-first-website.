@@ -12,12 +12,16 @@ import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import com.imran.examcountdown.MainActivity
 import com.imran.examcountdown.R
 import com.imran.examcountdown.ui.widgets.ButtonStyle
 import com.imran.examcountdown.ui.widgets.pillButton
 import kotlin.math.min
 
-/** Dialogs built from plain framework views in the app's own style. */
+/**
+ * Dialogs built from plain framework views in the app's own style. They open with a short fade
+ * and scale and close with a quicker fade (a plain fade with reduced motion).
+ */
 object Dialogs {
 
     fun sheet(
@@ -48,6 +52,8 @@ object Dialogs {
             setLayout(min(metrics.widthPixels - activity.dp(32), activity.dp(440)), WindowManager.LayoutParams.WRAP_CONTENT)
             setDimAmount(0.45f)
             addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            val motion = (activity as? MainActivity)?.policy?.motion ?: true
+            setWindowAnimations(if (motion) R.style.Animation_ExamCountdown_Sheet else R.style.Animation_ExamCountdown_Fade)
         }
         dialog.show()
         return dialog

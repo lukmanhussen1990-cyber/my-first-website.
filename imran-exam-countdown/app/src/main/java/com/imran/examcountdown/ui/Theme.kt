@@ -83,6 +83,9 @@ object Ui {
         ripple = argb(0x33EEEADF),
     )
 
+    /** Deep forest green of the launch window and the opening, in both themes (@color/forest). */
+    val FOREST = argb(0xFF0F3B26)
+
     /** The scheme in use; set by the activity before it builds any views. */
     @Volatile
     var c: Colors = LIGHT

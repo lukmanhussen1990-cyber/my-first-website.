@@ -58,6 +58,9 @@ class AmbientTicker(private val fps: Int = 30) {
 
     val isRunning: Boolean get() = running
 
+    /** How many things are currently following the clock (one per visible screen at most). */
+    val listenerCount: Int get() = listeners.size
+
     fun add(listener: AmbientListener) {
         listeners += listener
     }

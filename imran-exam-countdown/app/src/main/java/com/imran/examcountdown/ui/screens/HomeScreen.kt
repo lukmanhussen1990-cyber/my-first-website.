@@ -86,10 +86,11 @@ class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
     private val greeting = ctx.heading("", 30f)
     private val identity = ctx.text("", 15f, Ui.c.text2)
     val avatar = AvatarView(ctx).apply {
-        contentDescription = "Profile photo. Double tap to change."
+        contentDescription = "Profile photo and frame. Double tap to change."
         isClickable = true
-        stateListAnimator = pressScale(this)
-        setOnClickListener { host.openProfileEditor() }
+        // A tap squeezes it briefly; it then springs back and expands into the profile screen.
+        stateListAnimator = pressScale(this, pressed = 0.92f)
+        setOnClickListener { host.openProfileEditor(this) }
     }
 
     // Live exam banner
@@ -208,7 +209,8 @@ class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
                 addView(greeting)
                 addView(identity, lp { topMargin = dp(4) })
             }, lp(0, WRAP, 1f))
-            addView(avatar, lp(dp(54), dp(54)) { marginStart = dp(12) })
+            // 62 dp: the photo keeps its old 54 dp size, with room round it for the frame.
+            addView(avatar, lp(dp(62), dp(62)) { marginStart = dp(8) })
         }, lp { topMargin = ctx.dp(18) })
 
         content.addView(liveCard, lp { topMargin = ctx.dp(22) })
@@ -266,17 +268,20 @@ class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
         host.ambient.remove(this)
     }
 
-    /** Short staggered rise-in; also used when the opening animation hands over. */
-    fun playEntrance() {
-        if (entranceDone) return
+    /**
+     * Short staggered rise-in; also used when the opening hands over (and [again] when it is
+     * replayed from Settings). The school header stays put: the emblem lands in it.
+     */
+    fun playEntrance(again: Boolean = false) {
+        if (entranceDone && !again) return
         entranceDone = true
         val views = entranceViews().filter { it !== content.getChildAt(0) }
         staggerIn(views, host.policy.motion)
-        if (!host.policy.motion) return
-        progressBar.playReveal()
-        // The countdown's drums spin up like a slot machine as its section rises in.
-        countdown.spinIn(delayMs = 90L + views.indexOf(nextSection).coerceAtLeast(0) * 55L)
+        if (host.policy.motion) progressBar.playReveal()
     }
+
+    /** Back to the top, where the header emblem is (the opening lands on it). */
+    fun scrollToTop() = scroll.scrollTo(0, 0)
 
     override fun onDataChanged() {
         subjectKey = ""
@@ -286,6 +291,7 @@ class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
 
     override fun onMotionChanged() {
         countdown.animateChanges = host.policy.motion
+        avatar.animateFrame = host.framesMoving
         aurora.moving = host.policy.ambient
         if (!host.policy.ambient) {
             track.shimmer = -1f
@@ -322,10 +328,11 @@ class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
             .filterNotNull().joinToString(" · "))
         schoolName.update(profile.school.substringBefore(",").ifBlank { "Al-Ameen Academy" })
         avatar.initials = profile.initials
+        avatar.setFrame(host.data.avatarFrame, animate = avatar.isAttachedToWindow)
         val version = host.store.avatarVersion
         if (version != avatarVersion) {
             avatarVersion = version
-            avatar.setPhoto(host.avatarBitmap(ctx.dp(54)))
+            avatar.setPhoto(host.avatarBitmap(ctx.dp(62)))
         }
     }
 
@@ -363,11 +370,11 @@ class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
         if (newMode == Mode.CELEBRATE && previous != Mode.CELEBRATE) {
             scroll.post { host.celebrate(force = false) }
             if (host.policy.motion) {
-                // "You did it!" lands with a bounce.
-                celebrateTitle.scaleX = 0.6f
-                celebrateTitle.scaleY = 0.6f
+                // "You did it!" grows in and settles on a spring.
+                celebrateTitle.scaleX = 0.8f
+                celebrateTitle.scaleY = 0.8f
                 celebrateTitle.pivotX = 0f
-                celebrateTitle.animate().scaleX(1f).scaleY(1f).setStartDelay(260).setDuration(760).setInterpolator(Spring(0.45f)).start()
+                celebrateTitle.animate().scaleX(1f).scaleY(1f).setStartDelay(200).setDuration(420).setInterpolator(Spring(0.6f)).start()
             }
         }
     }
@@ -451,13 +458,13 @@ class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
             liveKey = exam.key
             liveCard.setVisible(true)
             if (host.policy.motion && entranceDone) {
-                // The banner pops in with a spring when the exam starts while the app is open.
+                // The banner rises in when the exam starts while the app is open.
                 liveCard.alpha = 0f
-                liveCard.scaleX = 0.9f
-                liveCard.scaleY = 0.9f
-                liveCard.translationY = ctx.dp(14).toFloat()
-                liveCard.animate().scaleX(1f).scaleY(1f).translationY(0f).setDuration(620).setInterpolator(Spring(0.55f)).start()
-                liveCard.fadeTo(1f, 220)
+                liveCard.scaleX = 0.96f
+                liveCard.scaleY = 0.96f
+                liveCard.translationY = ctx.dp(10).toFloat()
+                liveCard.animate().scaleX(1f).scaleY(1f).translationY(0f).setDuration(300).setInterpolator(Spring(0.8f)).start()
+                liveCard.fadeTo(1f, 200)
             }
         }
     }
@@ -525,12 +532,12 @@ class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
             message.text = next
             return
         }
-        // The old line lifts away; the new one rises in from below on a spring.
-        message.animate().alpha(0f).translationY(-ctx.dp(10).toFloat()).setDuration(150).setInterpolator(Ease.exit).withEndAction {
+        // The old line lifts away; the new one rises in from below.
+        message.animate().alpha(0f).translationY(-ctx.dp(8).toFloat()).setDuration(120).setInterpolator(Ease.exit).withEndAction {
             message.text = next
-            message.translationY = ctx.dp(16).toFloat()
-            message.animate().translationY(0f).setDuration(560).setInterpolator(Spring.gentle).start()
-            message.fadeTo(1f, 240)
+            message.translationY = ctx.dp(10).toFloat()
+            message.animate().translationY(0f).setDuration(260).setInterpolator(Ease.out).start()
+            message.fadeTo(1f, 200)
         }.start()
     }
 

@@ -39,6 +39,19 @@ enum class MotionPref(val label: String) { SYSTEM("System"), REDUCED("Reduced"),
 /** Light or dark appearance. SYSTEM follows the phone's dark theme setting. */
 enum class ThemeMode(val label: String) { SYSTEM("System"), LIGHT("Light"), DARK("Dark") }
 
+/**
+ * The border drawn round the profile photo. Only the border ever moves; the photo stays still.
+ * [animated] frames have a moving part (shown in a fixed pose when motion is off).
+ */
+enum class AvatarFrame(val label: String, val animated: Boolean) {
+    DEFAULT("Default", false),
+    GOLD_ORBIT("Gold Orbit", true),
+    EMERALD_WAVE("Emerald Wave", true),
+    TWIN_COMETS("Twin Comets", true),
+    GOLD_SHIMMER("Gold Shimmer", true),
+    NONE("No Frame", false),
+}
+
 data class Choices(val mil: MilLanguage? = null, val elective: Elective? = null) {
     val complete: Boolean get() = mil != null && elective != null
 }

@@ -8,7 +8,6 @@ import android.view.View
 import android.view.animation.LinearInterpolator
 import com.imran.examcountdown.MainActivity
 import com.imran.examcountdown.core.Season
-import com.imran.examcountdown.ui.Blur
 import com.imran.examcountdown.ui.Ease
 import com.imran.examcountdown.ui.spring
 import com.imran.examcountdown.ui.window
@@ -48,8 +47,8 @@ fun View.setVisible(visible: Boolean) {
 private val entrances = WeakHashMap<View, ValueAnimator>()
 
 /**
- * A staggered rise-in for a list of views (skipped entirely with reduced motion): each block
- * floats up on a soft spring, growing from 97 % and coming into focus (a brief blur on Android 12+).
+ * A short staggered rise-in for a list of views (skipped entirely with reduced motion): each
+ * block fades in as it rises 14 dp on a soft spring, 300 ms each, 40 ms apart.
  */
 fun staggerIn(views: List<View>, motion: Boolean, startDelay: Long = 0L) {
     views.forEachIndexed { i, v ->
@@ -59,25 +58,17 @@ fun staggerIn(views: List<View>, motion: Boolean, startDelay: Long = 0L) {
             settle(v)
             return@forEachIndexed
         }
-        val rise = v.resources.displayMetrics.density * 26
-        val blur = v.resources.displayMetrics.density * 7
+        val rise = v.resources.displayMetrics.density * 14
         v.alpha = 0f
         v.translationY = rise
-        v.scaleX = 0.97f
-        v.scaleY = 0.97f
         entrances[v] = ValueAnimator.ofFloat(0f, ENTRANCE_MS).apply {
             duration = ENTRANCE_MS.toLong()
-            this.startDelay = startDelay + i * 55L
+            this.startDelay = startDelay + i * STAGGER_MS
             interpolator = LinearInterpolator()
             addUpdateListener {
                 val ms = it.animatedValue as Float
-                val s = spring(ms / ENTRANCE_MS, 0.7f)
-                v.alpha = Ease.cubicOut(window(ms, 0f, 260f))
-                v.translationY = rise * (1f - s)
-                val scale = 0.97f + 0.03f * s
-                v.scaleX = scale
-                v.scaleY = scale
-                Blur.set(v, blur * (1f - window(ms, 0f, 280f)))
+                v.alpha = Ease.cubicOut(window(ms, 0f, 200f))
+                v.translationY = rise * (1f - spring(ms / ENTRANCE_MS, 0.86f))
             }
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
@@ -95,7 +86,7 @@ private fun settle(v: View) {
     v.translationY = 0f
     v.scaleX = 1f
     v.scaleY = 1f
-    Blur.set(v, 0f)
 }
 
-private const val ENTRANCE_MS = 640f
+private const val ENTRANCE_MS = 300f
+private const val STAGGER_MS = 40L

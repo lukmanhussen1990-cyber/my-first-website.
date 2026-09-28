@@ -13,11 +13,11 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.imran.examcountdown.ui.Ease
 import com.imran.examcountdown.ui.Fonts
 import com.imran.examcountdown.ui.Haptics
 import com.imran.examcountdown.ui.MATCH
 import com.imran.examcountdown.ui.Shapes
-import com.imran.examcountdown.ui.Spring
 import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.WRAP
 import com.imran.examcountdown.ui.dp
@@ -26,17 +26,15 @@ import com.imran.examcountdown.ui.lerp
 import com.imran.examcountdown.ui.lerpColor
 import com.imran.examcountdown.ui.lp
 import com.imran.examcountdown.ui.separator
-import com.imran.examcountdown.ui.spring
 import com.imran.examcountdown.ui.text
-import kotlin.math.abs
 
 /**
  * Bottom navigation that sits below the content (it never overlaps it). Its bottom padding
  * covers the system navigation bar, whether that's gesture navigation or three buttons.
  *
- * The selected tab sits on a soft green pill. Choosing another tab sends the pill across like a
- * drop of liquid: its leading edge races ahead, the trailing edge catches up, and it settles
- * with a little wobble while the new icon pops.
+ * The selected tab sits on a soft green pill. Choosing another tab slides the pill smoothly
+ * across (280 ms), its leading edge just ahead of the trailing one so it stretches a touch in
+ * the middle of the move, while the colours cross-fade.
  */
 class NavBar(
     context: Context,
@@ -130,7 +128,7 @@ class NavBar(
         // Colours cross-fade while the pill travels.
         colorAnimator?.cancel()
         colorAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 240
+            duration = 200
             addUpdateListener {
                 val f = it.animatedValue as Float
                 paintItem(index, f)
@@ -143,7 +141,7 @@ class NavBar(
         movingRight = to.centerX() >= from.centerX()
         animator?.cancel()
         animator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 520
+            duration = 280
             interpolator = LinearInterpolator()
             addUpdateListener {
                 progress = it.animatedValue as Float
@@ -151,21 +149,21 @@ class NavBar(
             }
             start()
         }
-        // The new icon pops.
+        // The new icon grows in slightly.
         val icon = icons[index]
-        icon.scaleX = 0.72f
-        icon.scaleY = 0.72f
-        icon.animate().scaleX(1f).scaleY(1f).setInterpolator(Spring.bouncy).setDuration(560).start()
+        icon.scaleX = 0.88f
+        icon.scaleY = 0.88f
+        icon.animate().scaleX(1f).scaleY(1f).setInterpolator(Ease.out).setDuration(220).start()
     }
 
-    /** A small bounce when the current tab is tapped again. */
+    /** A small press when the current tab is tapped again. */
     private fun nudge(index: Int) {
         if (!animateChanges || index !in icons.indices) return
         val icon = icons[index]
         icon.animate().cancel()
-        icon.scaleX = 0.86f
-        icon.scaleY = 0.86f
-        icon.animate().scaleX(1f).scaleY(1f).setInterpolator(Spring.bouncy).setDuration(480).start()
+        icon.scaleX = 0.9f
+        icon.scaleY = 0.9f
+        icon.animate().scaleX(1f).scaleY(1f).setInterpolator(Ease.out).setDuration(200).start()
     }
 
     private fun paintItem(i: Int, on: Float) {
@@ -198,10 +196,10 @@ class NavBar(
         row.invalidate()
     }
 
-    /** Liquid motion: the leading edge moves first and fast, the trailing edge follows. */
+    /** The leading edge moves slightly ahead of the trailing one; both ease in and out. */
     private fun updatePill() {
-        val lead = spring((progress * 1.35f).coerceAtMost(1f), 0.72f)
-        val trail = spring(((progress - 0.1f) / 0.9f).coerceIn(0f, 1f), 0.6f)
+        val lead = Ease.cubicInOut((progress * 1.12f).coerceAtMost(1f))
+        val trail = Ease.cubicInOut(((progress - 0.1f) / 0.9f).coerceIn(0f, 1f))
         val l: Float
         val r: Float
         if (movingRight) {
@@ -211,11 +209,7 @@ class NavBar(
             l = lerp(from.left, to.left, lead)
             r = lerp(from.right, to.right, trail)
         }
-        // Stretched, it thins a little, like a drop.
-        val base = to.width()
-        val stretch = ((abs(r - l) - base) / base).coerceIn(0f, 1.5f)
-        val squash = to.height() * 0.1f * stretch.coerceAtMost(1f)
-        pill.set(minOf(l, r), to.top + squash, maxOf(l, r), to.bottom - squash)
+        pill.set(minOf(l, r), to.top, maxOf(l, r), to.bottom)
         row.invalidate()
     }
 

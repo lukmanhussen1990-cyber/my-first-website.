@@ -10,7 +10,7 @@ import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
 import android.view.View
-import com.imran.examcountdown.ui.Spring
+import com.imran.examcountdown.ui.Ease
 import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.dp
 import com.imran.examcountdown.ui.dpf
@@ -63,15 +63,15 @@ class ProgressTrack(context: Context) : View(context) {
 
     val fraction: Float get() = target
 
-    /** Sets the fill (0..1). With [animate] it springs there; small per-second steps are drawn directly. */
+    /** Sets the fill (0..1). With [animate] it glides there (300 ms); small per-second steps are drawn directly. */
     fun set(value: Float, animate: Boolean) {
         val v = value.coerceIn(0f, 1f)
         target = v
         if (animate && isAttachedToWindow && abs(v - shown) > 0.002f) {
             animator?.cancel()
             animator = ValueAnimator.ofFloat(shown, v).apply {
-                duration = 900
-                interpolator = Spring(0.8f)
+                duration = 300
+                interpolator = Ease.inOut
                 addUpdateListener {
                     shown = (it.animatedValue as Float).coerceIn(0f, 1f)
                     invalidate()

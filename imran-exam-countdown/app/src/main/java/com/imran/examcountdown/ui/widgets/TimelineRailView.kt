@@ -91,8 +91,8 @@ class TimelineRailView(context: Context) : View(context) {
             canvas.drawCircle(x, drawnTo, dpf(1.8f), fill)
         }
         if (reveal < 0.1f) return
-        // The node pops in with a springy overshoot.
-        val s = spring(((reveal - 0.1f) / 0.55f).coerceIn(0f, 1f), 0.5f)
+        // The node grows in, settling on a soft spring.
+        val s = spring(((reveal - 0.1f) / 0.55f).coerceIn(0f, 1f), 0.8f)
         canvas.save()
         canvas.translate(x, nodeY)
         canvas.scale(s, s)

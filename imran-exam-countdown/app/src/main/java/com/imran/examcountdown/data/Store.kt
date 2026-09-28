@@ -2,6 +2,7 @@ package com.imran.examcountdown.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.imran.examcountdown.core.AvatarFrame
 import com.imran.examcountdown.core.CheckItem
 import com.imran.examcountdown.core.Choices
 import com.imran.examcountdown.core.Elective
@@ -119,6 +120,16 @@ class Store(context: Context) {
         get() = prefs.getLong(K_AVATAR, 0L)
         set(value) = prefs.edit().putLong(K_AVATAR, value).apply()
 
+    /** The border round the profile photo (Default until one is chosen). */
+    var avatarFrame: AvatarFrame
+        get() = enumOrNull<AvatarFrame>(prefs.getString(K_FRAME, null)) ?: AvatarFrame.DEFAULT
+        set(value) = prefs.edit().putString(K_FRAME, value.name).apply()
+
+    /** Whether an animated frame moves; off keeps the chosen border still. */
+    var frameAnimated: Boolean
+        get() = prefs.getBoolean(K_FRAME_ANIMATED, true)
+        set(value) = prefs.edit().putBoolean(K_FRAME_ANIMATED, value).apply()
+
     fun checklist(key: String, defaults: List<String>): List<CheckItem> {
         val json = prefs.getString(K_CHECKLIST + key, null)
             ?: return defaults.mapIndexed { i, text -> CheckItem(i + 1L, text) }
@@ -163,6 +174,8 @@ class Store(context: Context) {
         private const val K_INTRO = "intro_enabled"
         private const val K_HAPTICS = "haptics"
         private const val K_AVATAR = "avatar_version"
+        private const val K_FRAME = "avatar_frame"
+        private const val K_FRAME_ANIMATED = "avatar_frame_animated"
 
         fun encodeExams(list: List<Exam>): String {
             val array = JSONArray()

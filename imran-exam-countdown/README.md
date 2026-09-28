@@ -4,46 +4,59 @@ An offline Android app that counts down to each paper of the Class VIII Half-Yea
 Examination 2026–2027 at Al-Ameen Academy, Badarpur, for Imran Hussain (Class VIII Blue,
 Roll 47, Hall 24).
 
-**Download:** [`dist/Imran-Exam-Countdown.apk`](dist/Imran-Exam-Countdown.apk) (version 1.2.0), with its
+**Download:** [`dist/Imran-Exam-Countdown.apk`](dist/Imran-Exam-Countdown.apk) (version 1.3.0), with its
 SHA-256 in [`dist/Imran-Exam-Countdown.apk.sha256`](dist/Imran-Exam-Countdown.apk.sha256).
 
-- Release-signed with the app’s own key (not a debug key), v2 and v3 APK signatures.
+- Release-signed with the app’s own key (the same key as 1.2.0), v2 and v3 APK signatures.
 - Android 8.0 or newer (minSdk 26), targets Android 15 (API 35).
-- About 1 MB. No internet permission, no account, no ads.
+- About 2.5 MB. No internet permission, no account, no ads.
 
-## What’s new in 1.2.0: motion
+## What’s new in 1.3.0
 
-Every animation was redesigned, in the school’s green, ivory and gold:
+- **Opening (2.3 s).** It starts on deep forest green, the same colour as Android’s launch
+  screen, so there is no flash and no second splash. Two fine gold arcs sweep up round the school
+  emblem from the bottom and join at the top into a complete border; the emblem fades in and
+  scales up gently from 92 %, settling on a soft spring; one restrained highlight passes across
+  it; “Al-Ameen Academy” and “Badarpur · Estd. 1994” settle in underneath, letter by letter. Then
+  the emblem glides into its place in Home’s header while the green gives way to the cream
+  background and Home’s greeting, countdown and controls rise in. The emblem is only faded, scaled
+  and moved, never spun or recoloured, and there are no particles or loading bars. Home is built
+  underneath from the first frame; tap or press Back to skip. **Settings → Appearance** has
+  *Opening animation* (on/off) and *Replay opening*.
+- **Tapping your avatar.** It squeezes briefly and springs back, a thin gold ripple runs round its
+  border, and it expands into the profile screen as a shared element (always round, never
+  stretched); the controls fade in once it has settled. Closing reverses the whole thing.
+- **Profile frames.** *Default* (the original gold border), *Gold Orbit* (a bright gold point with
+  a short fading trail going round a fine border), *Emerald Wave* (two soft green waves travelling
+  round), *Twin Comets* (a green and a gold trail orbiting opposite each other), *Gold Shimmer* (a
+  metallic gold border with an occasional sweep of light) and *No Frame*. The previews use your own
+  photo; tapping one previews it on the large avatar at once, **Apply** keeps it, **Cancel** goes
+  back, **Reset to Default** restores the original, and the saved frame has a check. The choice is
+  remembered and shown on Home, Settings and the profile screen. *Animate frame* keeps a chosen
+  border still. Frames are drawn only in a thin band outside the photo: the photo itself never
+  moves, changes size or gets covered.
+- **Everyday polish.** Countdown digits slide vertically, and only the digits that change (each
+  has a fixed-width slot, so nothing shifts sideways). Tab changes take 240 ms and the bottom
+  bar’s pill slides smoothly (280 ms). Buttons squeeze gently when pressed, checklist ticks draw
+  themselves in, the focus-timer line moves smoothly, and sheets and dialogs fade and scale in and
+  out. Ordinary interactions take 150–300 ms; the profile transition a little longer.
+- **Performance.** Continuous effects (drifting light, pulses, moving frames) run only on the
+  screen you are looking at, pause in the background and in Battery Saver, and never pile up
+  when you switch tabs. The screen isn’t rebuilt each second; only changed text is updated.
 
-- **Opening:** a spotlight blooms, a green and a gold ring trace round the emblem from opposite
-  sides led by glowing comets, 60 watch-bezel ticks light up, the emblem springs in with a gold
-  shockwave and a burst of sparks, light rays turn behind it, the school’s name gathers in letter by
-  letter over a gold rule, then the emblem glides into the header as the screen opens like an iris.
-  (The emblem itself is only faded, scaled and moved, never rotated or recoloured.)
-- **Countdown:** the figures sit on little drums that turn like a mechanical counter — blurred
-  while fast, landing on a spring, turning right to left like a carry. Minutes, hours and days
-  flash gold as they tick over, and on Home’s entrance every drum spins like a slot machine.
-- **Home:** soft green and gold light drifts behind the page with rising gold dust (with a gentle
-  parallax); the progress line has a glowing head and a light running along it; the exam-progress
-  bars fill one by one with a glint; the “It’s exam time!” card pings like radar and catches the light.
-- **Celebration:** confetti cannons, three fireworks and falling glitter, with pieces tumbling in 3D.
-  Marking an exam finished, completing a focus session and ticking off a task each get a small burst.
-- **Everywhere:** tabs slide along the direction of travel (the old one recedes and blurs), the
-  bottom bar’s pill travels like a drop of liquid, content rises in on springs, switches squash and
-  ripple, buttons bounce back when released, and the timetable’s rails draw themselves in.
+Motion still follows **Settings → Reduce motion** (and Android’s “Remove animations”): with reduced
+motion there is no opening at launch (a replay shows a still picture that simply fades), frames
+stay still, and screens change with simple fades.
 
-Motion still follows **Settings → Reduce motion** (and Android’s “Remove animations”): with
-reduced motion everything appears instantly. Continuous effects — the drifting light, pulses and
-shimmer — pause in Battery Saver and whenever their screen isn’t visible.
+### Updating
 
-### Updating from 1.1.0 (one time only)
-
-1.2.0 is signed with a new release key: the 1.1.0 key didn’t survive the machine it was built
-on. Android only installs an update over an app signed with the same key, so this one time:
-**uninstall the old app, then install 1.2.0.** Exam progress comes back by itself (it’s worked out
-from the dates); the name, photo, MIL/elective choices and checklist ticks need setting again.
-Keep the new key file safe (outside this public repository) and future updates will install over
-this version normally.
+- **From 1.2.0:** install over it. 1.3.0 is signed with the same key, so everything is kept:
+  profile, photo, choices, checklist ticks, focus history and settings. The frame starts as Default.
+- **From 1.1.0 (one time only):** 1.2.0 and later are signed with a new release key, because the
+  1.1.0 key didn’t survive the machine it was built on. Android only installs an update over an app
+  signed with the same key, so uninstall the old app first, then install. Exam progress comes back
+  by itself (it’s worked out from the dates); the name, photo, MIL/elective choices and checklist
+  ticks need setting again.
 
 ## Install on an Android phone
 
@@ -83,15 +96,17 @@ finished** or the day ends.
 
 ## Features
 
-- **Home:** “Hey, Imran”, a countdown on rolling drums (days, hours, minutes, seconds), the next
-  subject, date, start time and hall, a friendly message, and an exam-season progress bar.
+- **Home:** “Hey, Imran” with your framed photo, a countdown whose digits slide as they change
+  (days, hours, minutes, seconds), the next subject, date, start time and hall, a friendly message,
+  and an exam-season progress bar.
 - **Exam time:** when a paper starts, a live banner appears and the countdown moves to the following
   exam. After the final exam: confetti and “You did it, Imran! 🎉”.
 - **Timetable:** animated vertical timeline with completed, today, live and upcoming states.
 - **Study:** a 25-minute focus timer with pause, resume, reset and a 5-minute break, plus editable
   revision checklists for every subject.
+- **Profile:** photo (choose, crop, replace, remove), display name and profile frame.
 - **Settings:** profile, MIL and elective, per-exam date/time/duration edits, reminders (one day and
-  one hour before), focus alerts, reduced motion, and reset.
+  one hour before), focus alerts, theme, opening animation and replay, reduced motion, and reset.
 - Countdowns and the timer are always recalculated from timestamps, so they stay correct after the
   app is closed, backgrounded or the phone restarts.
 - Animations respect Android’s “Remove animations” setting (or the in-app Reduce motion switch), and
@@ -108,8 +123,8 @@ app/src/main/java/com/imran/examcountdown/
   core/     timetable, countdown and season logic, focus timer, reminder planning (no Android code)
   data/     SharedPreferences storage and the clock
   notify/   notifications, alarms, boot/time-change receivers
-  ui/       theme, motion (Fx.kt: springs, easing, blur), custom views (intro, drum digits, drifting
-            light, confetti and fireworks, timeline…) and screens
+  ui/       theme, motion (Fx.kt: springs and easing), custom views (opening, sliding digits,
+            framed avatar, drifting light, confetti, timeline…) and screens
 app/src/test/  unit and Robolectric tests
 tools/build-apk.sh   command-line build used to produce dist/Imran-Exam-Countdown.apk
 tools/run-tests.sh   runs the tests without the Android Gradle Plugin
@@ -135,10 +150,16 @@ Without the `KEYSTORE…` variables the script signs with a local debug key and 
 
 ### Tests, screenshots and motion frames
 
-`tools/run-tests.sh` runs the unit and Robolectric tests (JDK 17 or newer). With
+`tools/run-tests.sh` runs the unit and Robolectric tests (JDK 17 or newer). Among them:
+`OpeningTest` (green start, the arcs joining, the emblem never rotated, landing exactly on the
+header, replay and disable), `ProfileTransitionTest` (ripple, shared-element flight, reverse on
+close, rapid taps), `ProfileFramesTest` (each frame leaves the photo’s pixels untouched, the six
+differ, animated ones move only when allowed, Apply/Cancel/Reset/Save and restarts),
+`MotionLifecycleTest` (effects pause in the background, no loops pile up, only changed digits
+slide) and `LayoutTest` (small screens, large text, dark mode, landscape, navigation bars). With
 `SCREENSHOT_DIR=/some/dir` it also renders every screen to PNG, and `MotionFramesTest` records the
-animations frame by frame (intro, countdown, celebration, tab changes, switches…) into
-`/some/dir/frames/<name>/`:
+animations frame by frame (opening, profile transition, each frame style, countdown, tab
+changes…) into `/some/dir/frames/<name>/`:
 
 ```
 SCREENSHOT_DIR=/tmp/shots tools/run-tests.sh --tests '*MotionFramesTest*'

@@ -16,7 +16,7 @@ import com.imran.examcountdown.core.Subject
 import com.imran.examcountdown.ui.Fonts
 import com.imran.examcountdown.ui.MATCH
 import com.imran.examcountdown.ui.Shapes
-import com.imran.examcountdown.ui.Spring
+import com.imran.examcountdown.ui.Ease
 import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.fadeTo
 import com.imran.examcountdown.ui.WRAP
@@ -130,18 +130,18 @@ class SetupScreen(private val host: MainActivity) {
         }
         if (animate && host.policy.motion) {
             // The new page glides in from the side of travel while its parts rise in one by one.
-            val shift = ctx.dp(44).toFloat() * if (forward) 1 else -1
+            val shift = ctx.dp(20).toFloat() * if (forward) 1 else -1
             page.alpha = 0f
             page.translationX = shift
-            page.animate().translationX(0f).setDuration(560).setInterpolator(Spring.gentle).start()
-            page.fadeTo(1f, 220)
+            page.animate().translationX(0f).setDuration(260).setInterpolator(Ease.out).start()
+            page.fadeTo(1f, 200)
             staggerIn((0 until page.childCount).map { page.getChildAt(it) }, motion = true, startDelay = 40L)
             // The step just reached fills in from the left.
             if (forward) {
                 steps.getChildAt(step)?.let { bar ->
                     bar.pivotX = 0f
                     bar.scaleX = 0f
-                    bar.animate().scaleX(1f).setDuration(600).setInterpolator(Spring(0.7f)).start()
+                    bar.animate().scaleX(1f).setDuration(280).setInterpolator(Ease.out).start()
                 }
             }
         }

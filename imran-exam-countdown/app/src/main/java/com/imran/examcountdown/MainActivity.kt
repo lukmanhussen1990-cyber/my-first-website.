@@ -15,6 +15,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -25,12 +26,14 @@ import android.os.ext.SdkExtensions
 import android.provider.MediaStore
 import android.provider.Settings
 import android.view.View
+import android.view.ViewTreeObserver
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
+import com.imran.examcountdown.core.AvatarFrame
 import com.imran.examcountdown.core.Choices
 import com.imran.examcountdown.core.Exam
 import com.imran.examcountdown.core.MotionPref
@@ -47,18 +50,16 @@ import com.imran.examcountdown.notify.AppVisibility
 import com.imran.examcountdown.notify.Notifier
 import com.imran.examcountdown.notify.ReminderScheduler
 import com.imran.examcountdown.ui.AmbientTicker
-import com.imran.examcountdown.ui.Blur
 import com.imran.examcountdown.ui.Ease
 import com.imran.examcountdown.ui.Fonts
 import com.imran.examcountdown.ui.Haptics
 import com.imran.examcountdown.ui.MATCH
 import com.imran.examcountdown.ui.MotionPolicy
-import com.imran.examcountdown.ui.Spring
 import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.WRAP
-import com.imran.examcountdown.ui.dp
 import com.imran.examcountdown.ui.dpf
 import com.imran.examcountdown.ui.flp
+import com.imran.examcountdown.ui.lerp
 import com.imran.examcountdown.ui.spring
 import com.imran.examcountdown.ui.window
 import com.imran.examcountdown.ui.screens.HomeScreen
@@ -68,9 +69,12 @@ import com.imran.examcountdown.ui.screens.SettingsScreen
 import com.imran.examcountdown.ui.screens.SetupScreen
 import com.imran.examcountdown.ui.screens.StudyScreen
 import com.imran.examcountdown.ui.screens.TimetableScreen
+import com.imran.examcountdown.ui.widgets.AvatarView
 import com.imran.examcountdown.ui.widgets.ConfettiView
+import com.imran.examcountdown.ui.widgets.GoldRipple
 import com.imran.examcountdown.ui.widgets.IntroView
 import com.imran.examcountdown.ui.widgets.NavBar
+import kotlin.math.roundToInt
 
 /** Everything the screens read, loaded from [Store]. */
 data class AppData(
@@ -80,6 +84,8 @@ data class AppData(
     val markedDone: Set<String>,
     val reminders: ReminderSettings,
     val motion: MotionPref,
+    val avatarFrame: AvatarFrame,
+    val frameAnimated: Boolean,
 )
 
 class MainActivity : Activity() {
@@ -93,7 +99,12 @@ class MainActivity : Activity() {
         private const val STATE_TAB = "tab"
         private const val REQUEST_NOTIFICATIONS = 11
         private const val REQUEST_PHOTO = 12
-        private const val TRANSITION_MS = 540f
+        private const val TAB_MS = 240f
+
+        /** Profile tap: the avatar springs back from its press, then flies into the profile screen. */
+        private const val SPRING_BACK_MS = 150f
+        private const val FLY_MS = 400f
+        private const val FLY_BACK_MS = 360f
     }
 
     lateinit var store: Store
@@ -120,6 +131,9 @@ class MainActivity : Activity() {
     private var transition: ValueAnimator? = null
     private var setup: SetupScreen? = null
     private var editor: ProfileEditor? = null
+    private var editorSource: AvatarView? = null
+    private var profileMotion: ValueAnimator? = null
+    private var flying: AvatarView? = null
     private var intro: IntroView? = null
     private var insetTop = 0
     private var insetBottom = 0
@@ -141,6 +155,18 @@ class MainActivity : Activity() {
 
     val currentScreen: Screen? get() = current
 
+    /** The avatar flying between a screen and the profile editor, while it flies. */
+    val flyingAvatar: AvatarView? get() = flying
+
+    /** True while the profile screen is opening or closing. */
+    val profileTransitionRunning: Boolean get() = profileMotion != null
+
+    /**
+     * Animated profile frames move only while the app is in front, continuous motion is allowed
+     * (not reduced, not Battery Saver) and the frame animation is switched on.
+     */
+    val framesMoving: Boolean get() = resumed && policy.ambient && data.frameAnimated
+
     // ------------------------------------------------------------------ lifecycle
 
     override fun attachBaseContext(newBase: Context) {
@@ -157,6 +183,8 @@ class MainActivity : Activity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // The launch window is forest green (Theme.ExamCountdown.Launch); the app itself isn't.
+        setTheme(R.style.Theme_ExamCountdown)
         super.onCreate(savedInstanceState)
         Fonts.init(this)
         Ui.apply(this)
@@ -168,21 +196,31 @@ class MainActivity : Activity() {
         buildViews()
         // After setContentView: the window's decor (and its insets controller) now exists.
         setupWindow()
-        if (Build.VERSION.SDK_INT >= 31) {
-            // The launch window is plain background colour, identical to the intro's first
-            // frame, so remove it at once: no second splash and no blank flash.
-            splashScreen.setOnExitAnimationListener { it.remove() }
-        }
 
-        // The full opening plays only on a cold launch (fresh process), never on rotation or
-        // when returning to the app, and not with reduced motion or when switched off.
+        // The opening plays only on a cold launch (fresh process), never on rotation or when
+        // returning to the app, not when a notification opens a particular tab, and not with
+        // reduced motion or when it's switched off.
         val coldLaunch = !ExamCountdownApp.introHandled
         ExamCountdownApp.introHandled = true
-        val playIntro = savedInstanceState == null && coldLaunch && store.introEnabled && policy.motion
+        val playIntro = savedInstanceState == null && coldLaunch && store.introEnabled && policy.motion && !intent.hasExtra(EXTRA_TAB)
+        if (Build.VERSION.SDK_INT >= 31) {
+            splashScreen.setOnExitAnimationListener { view ->
+                // With the opening, the launch window is identical to its first frame: remove it
+                // at once. Without, fade it briefly into the app so there's no hard cut.
+                if (playIntro || !policy.motion) {
+                    view.remove()
+                } else {
+                    view.animate().alpha(0f).setDuration(180).withEndAction { view.remove() }.start()
+                }
+            }
+        }
+        updateLaunchWindow()
 
+        // Home waits for the opening's hand-over before it rises in.
+        introRunning = playIntro
         val tab = savedInstanceState?.getInt(STATE_TAB, TAB_HOME) ?: intent.getIntExtra(EXTRA_TAB, TAB_HOME)
         if (store.setupDone) showTab(tab, animate = false) else showSetup()
-        if (playIntro) playIntro()
+        if (playIntro) playIntro(replay = false)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -213,12 +251,18 @@ class MainActivity : Activity() {
         resumed = false
         AppVisibility.resumed = false
         handler.removeCallbacks(ticker)
-        // Decorative animation stops while the app is in the background.
-        ambient.stop()
+        // Continuous effects (drifting light, pulses, moving frames) stop in the background.
+        applyMotion()
         if (powerReceiverRegistered) {
             unregisterReceiver(powerReceiver)
             powerReceiverRegistered = false
         }
+    }
+
+    override fun onDestroy() {
+        profileMotion?.cancel()
+        transition?.cancel()
+        super.onDestroy()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -252,27 +296,44 @@ class MainActivity : Activity() {
 
     private fun setupWindow() {
         // Edge to edge: screens pad themselves using the system bar insets.
+        if (Build.VERSION.SDK_INT >= 30) window.setDecorFitsSystemWindows(false)
+        barsOnGreen(false)
+        @Suppress("DEPRECATION")
+        window.statusBarColor = Color.TRANSPARENT
+        // Android 8.0 can't draw dark navigation buttons, so give them a scrim on light backgrounds.
+        @Suppress("DEPRECATION")
+        window.navigationBarColor = if (Build.VERSION.SDK_INT < 27 && !Ui.c.dark) 0x66000000 else Color.TRANSPARENT
+    }
+
+    /** Light system-bar icons over the opening's green, dark ones over the light theme. */
+    private fun barsOnGreen(green: Boolean) {
+        val lightBars = !green && !Ui.c.dark
         if (Build.VERSION.SDK_INT >= 30) {
-            window.setDecorFitsSystemWindows(false)
-            val light = if (Ui.c.dark) 0 else WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-            window.decorView.windowInsetsController?.setSystemBarsAppearance(
-                light,
-                WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
-            )
+            val both = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+            window.decorView.windowInsetsController?.setSystemBarsAppearance(if (lightBars) both else 0, both)
         } else {
             var flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            if (!Ui.c.dark) {
+            if (lightBars) {
                 flags = flags or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
                 if (Build.VERSION.SDK_INT >= 27) flags = flags or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
             }
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = flags
         }
-        @Suppress("DEPRECATION")
-        window.statusBarColor = Color.TRANSPARENT
-        // Android 8.0 can't draw dark navigation buttons, so give them a scrim on light backgrounds.
-        @Suppress("DEPRECATION")
-        window.navigationBarColor = if (Build.VERSION.SDK_INT < 27 && !Ui.c.dark) 0x66000000 else Color.TRANSPARENT
+    }
+
+    /**
+     * Android 13+ lets the app choose its next launch window: forest green when the opening will
+     * play, the plain app background when it won't (so there's no green flash before the app).
+     */
+    private fun updateLaunchWindow() {
+        if (Build.VERSION.SDK_INT < 33) return
+        val opening = store.introEnabled && policy.motion
+        try {
+            splashScreen.setSplashScreenTheme(if (opening) R.style.Theme_ExamCountdown_Launch else R.style.Theme_ExamCountdown)
+        } catch (e: RuntimeException) {
+            // Not available here: the manifest's launch window is used instead.
+        }
     }
 
     private fun buildViews() {
@@ -328,20 +389,32 @@ class MainActivity : Activity() {
         setContentView(root)
     }
 
-    // ------------------------------------------------------------------ intro
+    // ------------------------------------------------------------------ opening
 
-    private fun playIntro() {
+    /**
+     * Plays the opening over the current screen. [replay] is Settings → Replay opening: Home is
+     * brought up underneath and rises in again at the hand-over. With reduced motion a replay is
+     * a still picture that simply fades.
+     */
+    private fun playIntro(replay: Boolean) {
+        if (intro != null) return
         val view = IntroView(this)
         intro = view
         introRunning = true
         // Settle into setup's emblem on first run, otherwise into Home's header emblem.
-        val target: () -> View? = { setup?.emblem ?: (screens[TAB_HOME] as? HomeScreen)?.emblem?.takeIf { currentTab == TAB_HOME } }
-        target()?.visibility = View.INVISIBLE
-        view.target = target
-        view.onReveal = {
-            // Hand over: Home (or setup) staggers in underneath the dissolving intro.
-            (screens[TAB_HOME] as? HomeScreen)?.takeIf { currentTab == TAB_HOME && setup == null }?.playEntrance()
+        view.target = { setup?.emblem ?: (screens[TAB_HOME] as? HomeScreen)?.emblem?.takeIf { currentTab == TAB_HOME } }
+        // A replay brings Home up underneath, scrolled to its header, once the green covers the screen.
+        view.onCovered = {
+            if (replay) {
+                showTab(TAB_HOME, animate = false)
+                (screens[TAB_HOME] as? HomeScreen)?.scrollToTop()
+            }
         }
+        view.onReveal = {
+            // Hand over: Home (or setup) rises in underneath the dissolving opening.
+            (screens[TAB_HOME] as? HomeScreen)?.takeIf { currentTab == TAB_HOME && setup == null }?.playEntrance(again = replay)
+        }
+        view.onBackdropGone = { barsOnGreen(false) }
         view.onFinished = {
             intro = null
             introRunning = false
@@ -349,7 +422,20 @@ class MainActivity : Activity() {
             tick()
         }
         root.addView(view, flp(MATCH, MATCH))
-        view.post { view.play() }
+        barsOnGreen(true)
+        val still = !policy.motion
+        view.post { if (still) view.playStill(fadeIn = replay) else view.play(fadeIn = replay) }
+    }
+
+    /** Settings → Replay opening. */
+    fun replayIntro() {
+        if (intro != null || setup != null || editor != null) return
+        playIntro(replay = true)
+    }
+
+    fun setIntroEnabled(on: Boolean) {
+        store.introEnabled = on
+        updateLaunchWindow()
     }
 
     // ------------------------------------------------------------------ navigation
@@ -390,32 +476,24 @@ class MainActivity : Activity() {
     }
 
     /**
-     * Tab change, along the direction of travel: the old tab recedes (it slips back, shrinks a
-     * touch and blurs as it fades) while the new one glides in from the side you're heading to.
+     * A short tab change (240 ms): the old tab fades out as it slips back a little, and the new
+     * one fades in, gliding a few dp from the side you're heading to.
      */
     private fun slide(outgoing: View, incoming: View, direction: Float) {
-        val shift = dpf(44)
+        val shift = dpf(16)
         incoming.alpha = 0f
         incoming.translationX = direction * shift
-        transition = ValueAnimator.ofFloat(0f, TRANSITION_MS).apply {
-            duration = TRANSITION_MS.toLong()
+        transition = ValueAnimator.ofFloat(0f, TAB_MS).apply {
+            duration = TAB_MS.toLong()
             interpolator = LinearInterpolator()
             addUpdateListener {
                 val ms = it.animatedValue as Float
-                val o = window(ms, 0f, 200f)
-                outgoing.alpha = 1f - Ease.cubicOut(o)
-                outgoing.translationX = -direction * shift * 0.45f * Ease.cubicIn(o)
-                val shrink = 1f - 0.035f * Ease.cubicOut(o)
-                outgoing.scaleX = shrink
-                outgoing.scaleY = shrink
-                Blur.set(outgoing, dpf(10) * o)
-                val s = spring(window(ms, 50f, TRANSITION_MS - 50f), 0.82f)
-                incoming.alpha = Ease.cubicOut(window(ms, 50f, 230f))
-                incoming.translationX = direction * shift * (1f - s)
-                val grow = 0.975f + 0.025f * s
-                incoming.scaleX = grow
-                incoming.scaleY = grow
-                Blur.set(incoming, dpf(8) * (1f - window(ms, 50f, 220f)))
+                val o = Ease.cubicOut(window(ms, 0f, 120f))
+                outgoing.alpha = 1f - o
+                outgoing.translationX = -direction * dpf(8) * o
+                val i = Ease.cubicOut(window(ms, 40f, TAB_MS - 40f))
+                incoming.alpha = i
+                incoming.translationX = direction * shift * (1f - i)
             }
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
@@ -436,7 +514,6 @@ class MainActivity : Activity() {
         view.translationY = 0f
         view.scaleX = 1f
         view.scaleY = 1f
-        Blur.set(view, 0f)
     }
 
     private fun createScreen(tab: Int): Screen = when (tab) {
@@ -467,8 +544,8 @@ class MainActivity : Activity() {
         showTab(TAB_HOME, animate = false)
         val view = s.root
         if (policy.motion) {
-            // Setup zooms past the viewer and dissolves as Home rises in behind it.
-            view.animate().alpha(0f).scaleX(1.06f).scaleY(1.06f).setDuration(320).setInterpolator(Ease.exit)
+            // Setup fades away over Home as Home rises in behind it.
+            view.animate().alpha(0f).scaleX(1.03f).scaleY(1.03f).setDuration(240).setInterpolator(Ease.exit)
                 .withEndAction { root.removeView(view) }.start()
             (screens[TAB_HOME] as? HomeScreen)?.playEntrance()
         } else {
@@ -476,25 +553,193 @@ class MainActivity : Activity() {
         }
     }
 
-    fun openProfileEditor() {
-        if (editor != null) return
+    // ------------------------------------------------------------------ profile screen
+
+    /**
+     * Opens the profile screen. When [from] (the avatar that was tapped) is on screen, it springs
+     * back from the press, sends a thin gold ripple round its border and then expands into the
+     * profile screen's large avatar; the controls fade in once it has settled. With reduced
+     * motion the screen simply fades in.
+     */
+    fun openProfileEditor(from: AvatarView? = null) {
+        if (editor != null || intro != null) return
+        // A closing flight still under way finishes at once.
+        profileMotion?.end()
         val e = ProfileEditor(this)
         editor = e
+        editorSource = from
         root.addView(e.root, root.indexOfChild(confetti), flp(MATCH, MATCH))
         e.applyInsets(insetTop, insetBottom)
         root.requestApplyInsets()
-        if (policy.motion) {
-            // Rises like a sheet and settles with a soft spring.
-            val view = e.root
-            view.alpha = 0f
-            view.translationY = dp(56).toFloat()
-            view.animate().translationY(0f).setDuration(560).setInterpolator(Spring.gentle).start()
-            ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = 200
-                addUpdateListener { view.alpha = it.animatedValue as Float }
-                start()
-            }
+        val source = from?.takeIf { policy.motion && it.isShown && it.width > 0 }
+        if (source == null) {
+            fade(e.root, show = true) {}
+            return
         }
+        ripple(source)
+        e.prepareEnter()
+        // The target is known once the profile screen has been laid out.
+        onNextDraw(e.root) { if (editor === e) flyIn(e, source) }
+    }
+
+    private fun flyIn(e: ProfileEditor, source: AvatarView) {
+        val from = boundsInRoot(source)
+        val to = boundsInRoot(e.avatar)
+        val press = boundsInRoot(source, untransformed = true)
+        val fly = AvatarView(this).also { source.copyTo(it) }
+        root.overlay.add(fly)
+        fly.layout(from.left, from.top, from.right, from.bottom)
+        flying = fly
+        source.visibility = View.INVISIBLE
+        val total = SPRING_BACK_MS + FLY_MS
+        profileMotion = ValueAnimator.ofFloat(0f, total).apply {
+            duration = total.toLong()
+            interpolator = LinearInterpolator()
+            addUpdateListener {
+                val ms = it.animatedValue as Float
+                if (ms < SPRING_BACK_MS) {
+                    // Springs back from the press to its full size.
+                    place(fly, from, press, spring(ms / SPRING_BACK_MS, 0.75f))
+                } else {
+                    val p = window(ms, SPRING_BACK_MS, FLY_MS)
+                    place(fly, press, to, Ease.inOut.getInterpolation(p))
+                    e.setBackdrop(Ease.cubicOut(window(p, 0f, 0.6f)))
+                }
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    root.overlay.remove(fly)
+                    if (flying === fly) flying = null
+                    e.avatar.visibility = View.VISIBLE
+                    source.visibility = View.VISIBLE
+                    e.setBackdrop(1f)
+                    e.revealControls()
+                    profileMotion = null
+                }
+            })
+            start()
+        }
+    }
+
+    fun closeProfileEditor() {
+        val e = editor ?: return
+        editor = null
+        currentFocus?.let { v ->
+            (getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager)
+                ?.hideSoftInputFromWindow(v.windowToken, 0)
+        }
+        // An opening flight still under way finishes first.
+        profileMotion?.end()
+        val target = editorSource?.takeIf { policy.motion && it.isAttachedToWindow && it.isShown && it.width > 0 }
+        editorSource = null
+        current?.onShow(false)
+        if (target == null) {
+            fade(e.root, show = false) { root.removeView(e.root) }
+            return
+        }
+        // The same path in reverse: the controls fade, then the avatar flies home while the
+        // profile screen dissolves around it.
+        e.hideControls()
+        val from = boundsInRoot(e.avatar)
+        val to = boundsInRoot(target)
+        val fly = AvatarView(this).also {
+            target.copyTo(it)
+            // Starts as the frame being previewed and cross-fades to the saved one.
+            it.setFrame(e.avatar.frame)
+            it.setFrame(target.frame, animate = true)
+        }
+        root.overlay.add(fly)
+        fly.layout(from.left, from.top, from.right, from.bottom)
+        flying = fly
+        e.avatar.visibility = View.INVISIBLE
+        target.visibility = View.INVISIBLE
+        profileMotion = ValueAnimator.ofFloat(0f, 1f).apply {
+            startDelay = 60
+            duration = FLY_BACK_MS.toLong()
+            interpolator = LinearInterpolator()
+            addUpdateListener {
+                val p = it.animatedValue as Float
+                place(fly, from, to, Ease.inOut.getInterpolation(p))
+                e.setBackdrop(1f - Ease.cubicOut(window(p, 0.1f, 0.6f)))
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    root.removeView(e.root)
+                    root.overlay.remove(fly)
+                    if (flying === fly) flying = null
+                    target.visibility = View.VISIBLE
+                    profileMotion = null
+                }
+            })
+            start()
+        }
+    }
+
+    /** A thin gold ring spreading from the tapped avatar's border. */
+    private fun ripple(avatar: AvatarView) {
+        val b = boundsInRoot(avatar)
+        val drawable = GoldRipple(b.exactCenterX(), b.exactCenterY(), b.width() / 2f, dpf(12), Ui.c.gold, dpf(1.5f))
+        root.overlay.add(drawable)
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 420
+            interpolator = LinearInterpolator()
+            addUpdateListener { drawable.progress = it.animatedValue as Float }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) = root.overlay.remove(drawable)
+            })
+            start()
+        }
+    }
+
+    /** Lays [view] out between two rectangles; always square, so the photo is never distorted. */
+    private fun place(view: View, a: Rect, b: Rect, f: Float) {
+        val size = lerp(a.width().toFloat(), b.width().toFloat(), f).roundToInt()
+        val cx = lerp(a.exactCenterX(), b.exactCenterX(), f)
+        val cy = lerp(a.exactCenterY(), b.exactCenterY(), f)
+        val left = (cx - size / 2f).roundToInt()
+        val top = (cy - size / 2f).roundToInt()
+        view.layout(left, top, left + size, top + size)
+    }
+
+    /**
+     * Where [view] is drawn, in the root's coordinates, including its own scale (a pressed
+     * avatar is slightly smaller) unless [untransformed].
+     */
+    private fun boundsInRoot(view: View, untransformed: Boolean = false): Rect {
+        val a = IntArray(2)
+        val b = IntArray(2)
+        root.getLocationInWindow(b)
+        if (untransformed) {
+            // Layout position: the centre is unaffected by a scale about the view's centre.
+            view.getLocationInWindow(a)
+            val cx = a[0] - b[0] + view.width * view.scaleX / 2f
+            val cy = a[1] - b[1] + view.height * view.scaleY / 2f
+            val half = view.width / 2f
+            return Rect((cx - half).roundToInt(), (cy - half).roundToInt(), (cx + half).roundToInt(), (cy + half).roundToInt())
+        }
+        view.getLocationInWindow(a)
+        val x = a[0] - b[0]
+        val y = a[1] - b[1]
+        return Rect(x, y, x + (view.width * view.scaleX).roundToInt(), y + (view.height * view.scaleY).roundToInt())
+    }
+
+    /** Runs [block] just before [view]'s next frame, once it has been laid out. */
+    private fun onNextDraw(view: View, block: () -> Unit) {
+        view.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                view.viewTreeObserver.removeOnPreDrawListener(this)
+                block()
+                return true
+            }
+        })
+    }
+
+    /** A plain fade (150 ms), used with reduced motion and when there's no avatar to fly. */
+    private fun fade(view: View, show: Boolean, done: () -> Unit) {
+        view.animate().cancel()
+        view.alpha = if (show) 0f else view.alpha
+        view.animate().alpha(if (show) 1f else 0f).setDuration(150).setStartDelay(0)
+            .setInterpolator(if (show) Ease.out else Ease.exit).withEndAction(done).start()
     }
 
     /**
@@ -510,24 +755,7 @@ class MainActivity : Activity() {
         confetti.burstAt(at[0] - origin[0] + view.width / 2f, at[1] - origin[1] + view.height / 2f, power)
     }
 
-    fun closeProfileEditor() {
-        val e = editor ?: return
-        editor = null
-        currentFocus?.let { v ->
-            (getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager)
-                ?.hideSoftInputFromWindow(v.windowToken, 0)
-        }
-        val view = e.root
-        if (policy.motion) {
-            view.animate().alpha(0f).translationY(dp(40).toFloat()).setDuration(220).setInterpolator(Ease.exit)
-                .withEndAction { root.removeView(view) }.start()
-        } else {
-            root.removeView(view)
-        }
-        current?.onShow(false)
-    }
-
-    // ------------------------------------------------------------------ profile photo
+    // ------------------------------------------------------------------ profile photo & frame
 
     /**
      * Opens Android's photo picker (no storage permission needed). Falls back to the system
@@ -581,7 +809,7 @@ class MainActivity : Activity() {
         if (version == 0L) return null
         val cached = avatarCache
         if (cached != null && cached.first == version) return cached.second
-        val bitmap = Avatar.load(this, maxOf(sizePx, dp(132)))
+        val bitmap = Avatar.load(this, maxOf(sizePx, (dpf(150)).roundToInt()))
         avatarCache = version to bitmap
         return bitmap
     }
@@ -591,6 +819,20 @@ class MainActivity : Activity() {
         data = loadData()
         screens.forEach { it?.onDataChanged() }
         current?.onShow(false)
+    }
+
+    /** Saves the frame round the profile photo; Home and Settings show it straight away. */
+    fun setAvatarFrame(frame: AvatarFrame) {
+        store.avatarFrame = frame
+        data = loadData()
+        screens.forEach { it?.onDataChanged() }
+    }
+
+    /** Switches the frame animation on or off (off keeps the chosen border still). */
+    fun setFrameAnimated(on: Boolean) {
+        store.frameAnimated = on
+        data = loadData()
+        applyMotion()
     }
 
     // ------------------------------------------------------------------ ticking & motion
@@ -614,6 +856,7 @@ class MainActivity : Activity() {
         nav.animateChanges = policy.motion
         if (resumed && policy.ambient) ambient.start() else ambient.stop()
         screens.forEach { it?.onMotionChanged() }
+        editor?.refreshFrameMotion()
     }
 
     /**
@@ -637,6 +880,8 @@ class MainActivity : Activity() {
         markedDone = store.markedDone,
         reminders = store.reminders,
         motion = store.motion,
+        avatarFrame = store.avatarFrame,
+        frameAnimated = store.frameAnimated,
     )
 
     private fun changed() {
@@ -675,6 +920,7 @@ class MainActivity : Activity() {
         store.motion = pref
         data = loadData()
         applyMotion()
+        updateLaunchWindow()
     }
 
     fun setHaptics(on: Boolean) {
@@ -766,8 +1012,8 @@ class MainActivity : Activity() {
 
     fun versionName(): String = try {
         @Suppress("DEPRECATION")
-        packageManager.getPackageInfo(packageName, 0).versionName ?: "1.2.0"
+        packageManager.getPackageInfo(packageName, 0).versionName ?: "1.3.0"
     } catch (e: PackageManager.NameNotFoundException) {
-        "1.2.0"
+        "1.3.0"
     }
 }
