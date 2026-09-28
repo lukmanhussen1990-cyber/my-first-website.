@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XOXO</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --cell: #273449;
+    --cell-hover: #31415a;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --x: #f472b6;
+    --o: #38bdf8;
+    --win: #facc15;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body { min-height: 100vh; }
+  body {
+    background: radial-gradient(circle at top, #1e293b 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .app { width: 100%; max-width: 420px; text-align: center; }
+  h1 {
+    margin: 0 0 16px;
+    font-size: 2.6rem;
+    letter-spacing: 0.3em;
+    padding-left: 0.3em;
+  }
+  h1 .x { color: var(--x); }
+  h1 .o { color: var(--o); }
+
+  .modes {
+    display: flex;
+    gap: 6px;
+    background: var(--panel);
+    padding: 6px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .modes button {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    padding: 10px 8px;
+    border-radius: 999px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s, color .2s;
+  }
+  .modes button.active { background: var(--cell-hover); color: var(--text); }
+
+  .options {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    color: var(--muted);
+    font-size: .9rem;
+    align-items: center;
+    flex-wrap: wrap;
+    min-height: 34px;
+  }
+  .options select {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--cell-hover);
+    border-radius: 8px;
+    padding: 6px 8px;
+    font: inherit;
+  }
+  .options.hidden { visibility: hidden; }
+
+  .scores {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .score {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 10px 6px;
+    border: 2px solid transparent;
+    transition: border-color .2s;
+  }
+  .score .label { font-size: .8rem; color: var(--muted); }
+  .score .val { font-size: 1.6rem; font-weight: 700; }
+  .score.x .val { color: var(--x); }
+  .score.o .val { color: var(--o); }
+  .score.x.turn { border-color: var(--x); }
+  .score.o.turn { border-color: var(--o); }
+
+  .status { height: 28px; font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; }
+
+  .board {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    aspect-ratio: 1;
+    background: var(--panel);
+    padding: 10px;
+    border-radius: var(--radius);
+    box-shadow: 0 20px 50px rgba(0,0,0,.4);
+  }
+  .cell {
+    border: 0;
+    background: var(--cell);
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18%;
+    transition: background .15s, transform .1s;
+  }
+  .cell:hover:not(:disabled) { background: var(--cell-hover); }
+  .cell:active:not(:disabled) { transform: scale(.96); }
+  .cell:disabled { cursor: default; }
+  .cell:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+  .cell svg { width: 100%; height: 100%; overflow: visible; }
+  .cell svg path, .cell svg circle {
+    fill: none;
+    stroke-width: 14;
+    stroke-linecap: round;
+    stroke-dasharray: 300;
+    stroke-dashoffset: 300;
+    animation: draw .35s ease-out forwards;
+  }
+  .cell svg.x path { stroke: var(--x); }
+  .cell svg.x path:nth-child(2) { animation-delay: .15s; }
+  .cell svg.o circle { stroke: var(--o); }
+  .cell.win { background: color-mix(in srgb, var(--win) 22%, var(--cell)); animation: pop .4s ease; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes pop { 50% { transform: scale(1.08); } }
+
+  .actions { display: flex; gap: 10px; margin-top: 16px; }
+  .actions button {
+    flex: 1;
+    border: 0;
+    border-radius: 12px;
+    padding: 12px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--panel);
+    color: var(--text);
+    transition: filter .15s;
+  }
+  .actions button.primary { background: linear-gradient(135deg, var(--x), var(--o)); color: #0f172a; }
+  .actions button:hover { filter: brightness(1.15); }
+  .hint { margin-top: 12px; color: var(--muted); font-size: .8rem; }
+</style>
+</head>
+<body>
+<main class="app">
+  <h1><span class="x">X</span><span class="o">O</span><span class="x">X</span><span class="o">O</span></h1>
+
+  <div class="modes" role="tablist">
+    <button id="modeAi" class="active" role="tab">vs Computer</button>
+    <button id="modePvp" role="tab">2 Players</button>
+  </div>
+
+  <div class="options" id="options">
+    <label>Difficulty
+      <select id="difficulty">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard" selected>Unbeatable</option>
+      </select>
+    </label>
+    <label>You play
+      <select id="side">
+        <option value="X" selected>X (first)</option>
+        <option value="O">O (second)</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="scores">
+    <div class="score x" id="scoreXBox"><div class="label" id="labelX">You (X)</div><div class="val" id="scoreX">0</div></div>
+    <div class="score"><div class="label">Draws</div><div class="val" id="scoreD">0</div></div>
+    <div class="score o" id="scoreOBox"><div class="label" id="labelO">CPU (O)</div><div class="val" id="scoreO">0</div></div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="board" id="board"></div>
+
+  <div class="actions">
+    <button id="resetScores">Reset scores</button>
+    <button id="newGame" class="primary">New game</button>
+  </div>
+  <div class="hint">Tip: use keys 1–9 to play, N for a new game.</div>
+</main>
+
+<script>
+(() => {
+  const LINES = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+  const SVG = {
+    X: '<svg class="x" viewBox="0 0 100 100"><path d="M15 15 L85 85"/><path d="M85 15 L15 85"/></svg>',
+    O: '<svg class="o" viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" transform="rotate(-90 50 50)"/></svg>'
+  };
+
+  const $ = id => document.getElementById(id);
+  const boardEl = $('board');
+  const statusEl = $('status');
+
+  let board, turn, over, cpuTimer;
+  let mode = 'ai';
+  let starter = 'X';
+  const scores = load();
+
+  const cells = Array.from({ length: 9 }, (_, i) => {
+    const b = document.createElement('button');
+    b.className = 'cell';
+    b.setAttribute('aria-label', `Cell ${i + 1}`);
+    b.addEventListener('click', () => humanMove(i));
+    boardEl.appendChild(b);
+    return b;
+  });
+
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem('xoxo-scores'));
+      if (s && typeof s.X === 'number') return s;
+    } catch (e) {}
+    return { X: 0, O: 0, D: 0 };
+  }
+  function save() {
+    try { localStorage.setItem('xoxo-scores', JSON.stringify(scores)); } catch (e) {}
+  }
+
+  const humanSide = () => $('side').value;
+  const cpuSide = () => humanSide() === 'X' ? 'O' : 'X';
+  const isCpuTurn = () => mode === 'ai' && turn === cpuSide() && !over;
+
+  function winner(b) {
+    for (const l of LINES) {
+      const [a, c, d] = l;
+      if (b[a] && b[a] === b[c] && b[a] === b[d]) return { player: b[a], line: l };
+    }
+    return b.every(Boolean) ? { player: null, line: [] } : null;
+  }
+
+  function newGame() {
+    clearTimeout(cpuTimer);
+    board = Array(9).fill(null);
+    over = false;
+    // In 2-player mode alternate who starts; vs CPU, X always starts.
+    turn = mode === 'pvp' ? starter : 'X';
+    cells.forEach(c => { c.innerHTML = ''; c.className = 'cell'; c.disabled = false; });
+    render();
+    maybeCpu();
+  }
+
+  function humanMove(i) {
+    if (over || board[i] || isCpuTurn()) return;
+    play(i);
+    maybeCpu();
+  }
+
+  function play(i) {
+    board[i] = turn;
+    cells[i].innerHTML = SVG[turn];
+    cells[i].disabled = true;
+    const w = winner(board);
+    if (w) return finish(w);
+    turn = turn === 'X' ? 'O' : 'X';
+    render();
+  }
+
+  function finish(w) {
+    over = true;
+    cells.forEach(c => c.disabled = true);
+    w.line.forEach(i => cells[i].classList.add('win'));
+    if (w.player) scores[w.player]++; else scores.D++;
+    save();
+    if (mode === 'pvp') starter = starter === 'X' ? 'O' : 'X';
+    render(w);
+  }
+
+  function maybeCpu() {
+    if (!isCpuTurn()) return;
+    cells.forEach(c => { if (!c.innerHTML) c.disabled = true; });
+    cpuTimer = setTimeout(() => {
+      const i = cpuPick();
+      board.forEach((v, j) => { if (!v) cells[j].disabled = false; });
+      play(i);
+    }, 450);
+  }
+
+  function cpuPick() {
+    const empty = board.map((v, i) => v ? null : i).filter(v => v !== null);
+    const diff = $('difficulty').value;
+    const random = () => empty[Math.floor(Math.random() * empty.length)];
+    if (diff === 'easy' && Math.random() < 0.75) return random();
+    if (diff === 'medium' && Math.random() < 0.35) return random();
+    return bestMove(board.slice(), cpuSide());
+  }
+
+  function minimax(b, player, me, depth) {
+    const w = winner(b);
+    if (w) return w.player === me ? 10 - depth : w.player ? depth - 10 : 0;
+    const scoresList = [];
+    for (let i = 0; i < 9; i++) {
+      if (b[i]) continue;
+      b[i] = player;
+      scoresList.push(minimax(b, player === 'X' ? 'O' : 'X', me, depth + 1));
+      b[i] = null;
+    }
+    return player === me ? Math.max(...scoresList) : Math.min(...scoresList);
+  }
+
+  function bestMove(b, me) {
+    let best = -Infinity, moves = [];
+    for (let i = 0; i < 9; i++) {
+      if (b[i]) continue;
+      b[i] = me;
+      const s = minimax(b, me === 'X' ? 'O' : 'X', me, 1);
+      b[i] = null;
+      if (s > best) { best = s; moves = [i]; }
+      else if (s === best) moves.push(i);
+    }
+    return moves[Math.floor(Math.random() * moves.length)];
+  }
+
+  function render(result) {
+    $('scoreX').textContent = scores.X;
+    $('scoreO').textContent = scores.O;
+    $('scoreD').textContent = scores.D;
+
+    if (mode === 'ai') {
+      $('labelX').textContent = humanSide() === 'X' ? 'You (X)' : 'CPU (X)';
+      $('labelO').textContent = humanSide() === 'O' ? 'You (O)' : 'CPU (O)';
+    } else {
+      $('labelX').textContent = 'Player X';
+      $('labelO').textContent = 'Player O';
+    }
+
+    $('scoreXBox').classList.toggle('turn', !over && turn === 'X');
+    $('scoreOBox').classList.toggle('turn', !over && turn === 'O');
+
+    const name = p => mode === 'ai' ? (p === humanSide() ? 'You' : 'Computer') : `Player ${p}`;
+    if (result) {
+      if (!result.player) statusEl.textContent = "It's a draw 🤝";
+      else if (mode === 'ai') statusEl.textContent = result.player === humanSide() ? 'You win! 🎉' : 'Computer wins 🤖';
+      else statusEl.textContent = `Player ${result.player} wins! 🎉`;
+    } else {
+      statusEl.textContent = mode === 'ai' && turn === cpuSide()
+        ? 'Computer is thinking…'
+        : `${name(turn)}${mode === 'ai' ? "r" : "'s"} turn (${turn})`;
+    }
+  }
+
+  function setMode(m) {
+    mode = m;
+    $('modeAi').classList.toggle('active', m === 'ai');
+    $('modePvp').classList.toggle('active', m === 'pvp');
+    $('options').classList.toggle('hidden', m !== 'ai');
+    starter = 'X';
+    scores.X = scores.O = scores.D = 0;
+    save();
+    newGame();
+  }
+
+  $('modeAi').addEventListener('click', () => setMode('ai'));
+  $('modePvp').addEventListener('click', () => setMode('pvp'));
+  $('side').addEventListener('change', () => { scores.X = scores.O = scores.D = 0; save(); newGame(); });
+  $('difficulty').addEventListener('change', newGame);
+  $('newGame').addEventListener('click', newGame);
+  $('resetScores').addEventListener('click', () => { scores.X = scores.O = scores.D = 0; save(); render(over ? winner(board) : null); });
+
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'SELECT') return;
+    if (e.key >= '1' && e.key <= '9') humanMove(Number(e.key) - 1);
+    else if (e.key.toLowerCase() === 'n') newGame();
+  });
+
+  newGame();
+})();
+</script>
+</body>
+</html>
