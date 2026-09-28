@@ -5,7 +5,7 @@ item_texture.json and the script-side ability table can never drift apart.
 """
 
 ADDON_NAME = "Gojo Satoru – Limitless Addon"
-VERSION = [1, 0, 0]
+VERSION = [1, 0, 1]
 MIN_ENGINE = [1, 21, 0]
 
 # Fixed UUIDs (never regenerate - Minecraft identifies packs by these).
