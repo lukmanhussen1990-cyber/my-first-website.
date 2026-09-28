@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "types": [],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "noImplicitAny": false,
+    "useUnknownInCatchVariables": false,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@minecraft/server": ["./node_modules/@minecraft/server/index.d.ts"],
+      "@minecraft/server-ui": ["./node_modules/@minecraft/server-ui/index.d.ts"],
+      "@minecraft/common": ["./node_modules/@minecraft/common/index.d.ts"]
+    }
+  },
+  "include": ["globals.d.ts", "../NaturalDisasters_BP/scripts/**/*.js"]
+}

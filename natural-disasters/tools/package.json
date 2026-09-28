@@ -1,0 +1,20 @@
+{
+  "name": "natural-disasters-tools",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Build, typecheck, simulate and validate the Natural Disaster Simulator addon (no game required).",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "sim": "node sim/run_all.mjs",
+    "validate": "python3 validate.py",
+    "build": "python3 build.py"
+  },
+  "devDependencies": {
+    "@minecraft/common": "1.1.0",
+    "@minecraft/server": "1.10.0",
+    "@minecraft/server-ui": "1.1.0",
+    "@minecraft/vanilla-data": "1.21.0-preview.26",
+    "typescript": "5.4.5"
+  }
+}
