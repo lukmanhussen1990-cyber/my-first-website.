@@ -1,0 +1,24 @@
+{
+  "format_version": "1.8.0",
+  "render_controllers": {
+    "controller.render.gojo.head_item": {
+      "arrays": {
+        "geometries": {
+          "Array.gojo_geo": [
+            "Geometry.default",
+            "Geometry.held"
+          ]
+        }
+      },
+      "geometry": "Array.gojo_geo[variable.gojo_held]",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ]
+    }
+  }
+}

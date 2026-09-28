@@ -1,0 +1,32 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "gojo:blindfold",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/models/gojo/blindfold"
+      },
+      "geometry": {
+        "default": "geometry.gojo.blindfold",
+        "held": "geometry.gojo.empty"
+      },
+      "scripts": {
+        "pre_animation": [
+          "variable.gojo_held = query.is_item_name_any('slot.weapon.mainhand', 0, 'gojo:blindfold');"
+        ],
+        "animate": [
+          "offset"
+        ]
+      },
+      "animations": {
+        "offset": "animation.armor.helmet.offset"
+      },
+      "render_controllers": [
+        "controller.render.gojo.head_item"
+      ]
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "gojo:hollow_purple",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.gojo"
+      }
+    },
+    "components": {
+      "minecraft:icon": "gojo_hollow_purple",
+      "minecraft:display_name": {
+        "value": "item.gojo.hollow_purple"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": false,
+      "minecraft:glint": false,
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:cooldown": {
+        "category": "gojo_hollow_purple",
+        "duration": 25.0
+      }
+    }
+  }
+}

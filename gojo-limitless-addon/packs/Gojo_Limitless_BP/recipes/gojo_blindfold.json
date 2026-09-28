@@ -1,0 +1,22 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "gojo:blindfold_recipe"
+    },
+    "tags": ["crafting_table"],
+    "pattern": [
+      "SWS"
+    ],
+    "key": {
+      "S": { "item": "minecraft:string" },
+      "W": { "item": "minecraft:black_wool" }
+    },
+    "unlock": [
+      { "item": "minecraft:black_wool" }
+    ],
+    "result": {
+      "item": "gojo:blindfold"
+    }
+  }
+}

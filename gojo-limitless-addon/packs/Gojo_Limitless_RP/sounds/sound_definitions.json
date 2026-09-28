@@ -1,0 +1,476 @@
+{
+  "format_version": "1.20.20",
+  "sound_definitions": {
+    "gojo.infinity.on": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/block/beacon/activate",
+          "pitch": 1.5,
+          "volume": 0.8
+        }
+      ]
+    },
+    "gojo.infinity.off": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/block/beacon/deactivate",
+          "pitch": 1.4,
+          "volume": 0.7
+        }
+      ]
+    },
+    "gojo.infinity.block": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/block/amethyst/resonate1",
+          "pitch": 1.8,
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/block/amethyst/resonate2",
+          "pitch": 1.8,
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/block/amethyst/resonate3",
+          "pitch": 1.8,
+          "volume": 1.0
+        }
+      ]
+    },
+    "gojo.blue.cast": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/warden/sonic_charge1",
+          "pitch": 1.4,
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/mob/warden/sonic_charge2",
+          "pitch": 1.4,
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/mob/warden/sonic_charge3",
+          "pitch": 1.4,
+          "volume": 1.0
+        }
+      ]
+    },
+    "gojo.blue.hum": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/block/beacon/power1",
+          "pitch": 0.6,
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/block/beacon/power2",
+          "pitch": 0.6,
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/block/beacon/power3",
+          "pitch": 0.6,
+          "volume": 0.9
+        }
+      ]
+    },
+    "gojo.blue.collapse": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/random/explode1",
+          "pitch": 1.6,
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/random/explode2",
+          "pitch": 1.6,
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/random/explode3",
+          "pitch": 1.6,
+          "volume": 0.8
+        }
+      ]
+    },
+    "gojo.red.charge": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/breeze/charge1",
+          "pitch": 0.8,
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/mob/breeze/charge2",
+          "pitch": 0.8,
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/mob/breeze/charge3",
+          "pitch": 0.8,
+          "volume": 1.0
+        }
+      ]
+    },
+    "gojo.red.fire": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/warden/sonic_boom1",
+          "pitch": 1.5,
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/mob/warden/sonic_boom2",
+          "pitch": 1.5,
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/mob/warden/sonic_boom3",
+          "pitch": 1.5,
+          "volume": 0.9
+        }
+      ]
+    },
+    "gojo.red.impact": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/random/explode1",
+          "pitch": 0.9,
+          "volume": 1.2
+        },
+        {
+          "name": "sounds/random/explode2",
+          "pitch": 0.9,
+          "volume": 1.2
+        },
+        {
+          "name": "sounds/random/explode3",
+          "pitch": 0.9,
+          "volume": 1.2
+        }
+      ]
+    },
+    "gojo.purple.charge": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/warden/sonic_charge1",
+          "pitch": 0.75,
+          "volume": 1.2
+        },
+        {
+          "name": "sounds/mob/warden/sonic_charge2",
+          "pitch": 0.75,
+          "volume": 1.2
+        },
+        {
+          "name": "sounds/mob/warden/sonic_charge3",
+          "pitch": 0.75,
+          "volume": 1.2
+        }
+      ]
+    },
+    "gojo.purple.merge": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/block/end_portal/endportal",
+          "pitch": 1.6,
+          "volume": 1.0
+        }
+      ]
+    },
+    "gojo.purple.fire": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/warden/sonic_boom1",
+          "pitch": 0.7,
+          "volume": 1.5
+        },
+        {
+          "name": "sounds/mob/warden/sonic_boom2",
+          "pitch": 0.7,
+          "volume": 1.5
+        },
+        {
+          "name": "sounds/mob/warden/sonic_boom3",
+          "pitch": 0.7,
+          "volume": 1.5
+        }
+      ]
+    },
+    "gojo.purple.travel": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/wither/shoot",
+          "pitch": 0.6,
+          "volume": 0.8
+        }
+      ]
+    },
+    "gojo.purple.end": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/random/explode1",
+          "pitch": 0.6,
+          "volume": 1.5
+        },
+        {
+          "name": "sounds/random/explode2",
+          "pitch": 0.6,
+          "volume": 1.5
+        },
+        {
+          "name": "sounds/random/explode3",
+          "pitch": 0.6,
+          "volume": 1.5
+        }
+      ]
+    },
+    "gojo.domain.open": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/block/end_portal/endportal",
+          "pitch": 0.6,
+          "volume": 1.2
+        }
+      ]
+    },
+    "gojo.domain.ambient": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/warden/heartbeat_1",
+          "pitch": 0.6,
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/mob/warden/heartbeat_2",
+          "pitch": 0.6,
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/mob/warden/heartbeat_3",
+          "pitch": 0.6,
+          "volume": 1.0
+        }
+      ]
+    },
+    "gojo.domain.close": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/block/conduit/deactivate",
+          "pitch": 0.8,
+          "volume": 1.2
+        }
+      ]
+    },
+    "gojo.six_eyes.on": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 20.0,
+      "sounds": [
+        {
+          "name": "sounds/block/amethyst/shimmer",
+          "pitch": 1.4,
+          "volume": 1.0
+        }
+      ]
+    },
+    "gojo.six_eyes.off": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 20.0,
+      "sounds": [
+        {
+          "name": "sounds/block/beacon/deactivate",
+          "pitch": 1.8,
+          "volume": 0.5
+        }
+      ]
+    },
+    "gojo.teleport": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/endermen/portal",
+          "pitch": 1.5,
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/mob/endermen/portal2",
+          "pitch": 1.5,
+          "volume": 0.9
+        }
+      ]
+    },
+    "gojo.rct.start": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/random/use_totem",
+          "pitch": 1.4,
+          "volume": 0.5
+        }
+      ]
+    },
+    "gojo.rct.pulse": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/block/respawn_anchor/charge1",
+          "pitch": 1.6,
+          "volume": 0.5
+        },
+        {
+          "name": "sounds/block/respawn_anchor/charge2",
+          "pitch": 1.6,
+          "volume": 0.5
+        },
+        {
+          "name": "sounds/block/respawn_anchor/charge3",
+          "pitch": 1.6,
+          "volume": 0.5
+        }
+      ]
+    },
+    "gojo.rct.end": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 20.0,
+      "sounds": [
+        {
+          "name": "sounds/random/levelup",
+          "pitch": 1.5,
+          "volume": 0.4
+        }
+      ]
+    },
+    "gojo.black_flash": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/item/mace/smash_ground_heavy",
+          "pitch": 0.9,
+          "volume": 1.0
+        }
+      ]
+    },
+    "gojo.black_flash.whiff": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/breeze/wind_burst1",
+          "pitch": 1.3,
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/mob/breeze/wind_burst2",
+          "pitch": 1.3,
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/mob/breeze/wind_burst3",
+          "pitch": 1.3,
+          "volume": 0.8
+        }
+      ]
+    },
+    "gojo.transform": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/random/use_totem",
+          "pitch": 0.8,
+          "volume": 0.8
+        }
+      ]
+    },
+    "gojo.revert": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/block/beacon/deactivate",
+          "pitch": 0.8,
+          "volume": 0.7
+        }
+      ]
+    },
+    "gojo.ui.denied": {
+      "category": "ui",
+      "min_distance": 2.0,
+      "max_distance": 8.0,
+      "sounds": [
+        {
+          "name": "sounds/note/bass",
+          "pitch": 0.7,
+          "volume": 0.6
+        }
+      ]
+    }
+  }
+}

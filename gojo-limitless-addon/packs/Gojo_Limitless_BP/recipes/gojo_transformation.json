@@ -1,0 +1,27 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "gojo:transformation_recipe"
+    },
+    "tags": ["crafting_table"],
+    "pattern": [
+      " A ",
+      "LER",
+      " D "
+    ],
+    "key": {
+      "A": { "item": "minecraft:amethyst_shard" },
+      "L": { "item": "minecraft:lapis_lazuli" },
+      "E": { "item": "minecraft:ender_eye" },
+      "R": { "item": "minecraft:redstone" },
+      "D": { "item": "minecraft:diamond" }
+    },
+    "unlock": [
+      { "item": "minecraft:ender_eye" }
+    ],
+    "result": {
+      "item": "gojo:transformation"
+    }
+  }
+}

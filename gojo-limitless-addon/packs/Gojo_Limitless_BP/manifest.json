@@ -1,0 +1,66 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "§bGojo Satoru – Limitless Addon §7[Behavior]",
+    "description": "§7The Strongest's full arsenal: Infinity, Blue, Red, Hollow Purple, Unlimited Void, Six Eyes, Teleport, Reverse Cursed Technique and Black Flash.\n§8Script API 1.10.0 • No experiments required • Made for 1.21.0.26+",
+    "uuid": "eaf0eb40-e436-49cf-9268-a1446312e1be",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "08cabe73-a795-4f73-8543-8c7557e0c947",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "description": "Gojo items"
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "0e5c9a16-3048-4918-a1bf-2d60d46deaa7",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "entry": "scripts/main.js",
+      "description": "Gojo techniques"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "66594258-38a3-4e4f-ac0d-5050896ea4d0",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.10.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.1.0"
+    }
+  ],
+  "metadata": {
+    "authors": [
+      "Gojo Limitless Addon"
+    ],
+    "product_type": "addon"
+  }
+}

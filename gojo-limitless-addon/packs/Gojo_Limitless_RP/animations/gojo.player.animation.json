@@ -1,0 +1,568 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.gojo.cast_blue": {
+      "animation_length": 1.0,
+      "bones": {
+        "rightarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.12": [
+              "variable.is_first_person ? 0 : (-110)",
+              "variable.is_first_person ? 0 : (10)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.70": [
+              "variable.is_first_person ? 0 : (-100)",
+              "variable.is_first_person ? 0 : (12)",
+              "variable.is_first_person ? 0 : (5)"
+            ],
+            "1.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        },
+        "leftarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.15": [
+              "variable.is_first_person ? 0 : (-20)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (-10)"
+            ],
+            "1.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        }
+      }
+    },
+    "animation.gojo.cast_red": {
+      "animation_length": 0.9,
+      "bones": {
+        "rightarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.10": [
+              "variable.is_first_person ? 0 : (-60)",
+              "variable.is_first_person ? 0 : (20)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.40": [
+              "variable.is_first_person ? 0 : (-95)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.55": [
+              "variable.is_first_person ? 0 : (-100)",
+              "variable.is_first_person ? 0 : (-5)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.90": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        }
+      }
+    },
+    "animation.gojo.hollow_purple": {
+      "animation_length": 2.1,
+      "bones": {
+        "rightarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.20": [
+              "variable.is_first_person ? 0 : (-80)",
+              "variable.is_first_person ? 0 : (-30)",
+              "variable.is_first_person ? 0 : (20)"
+            ],
+            "0.90": [
+              "variable.is_first_person ? 0 : (-85)",
+              "variable.is_first_person ? 0 : (-35)",
+              "variable.is_first_person ? 0 : (20)"
+            ],
+            "1.50": [
+              "variable.is_first_person ? 0 : (-90)",
+              "variable.is_first_person ? 0 : (15)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "1.75": [
+              "variable.is_first_person ? 0 : (-100)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "2.10": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        },
+        "leftarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.20": [
+              "variable.is_first_person ? 0 : (-80)",
+              "variable.is_first_person ? 0 : (30)",
+              "variable.is_first_person ? 0 : (-20)"
+            ],
+            "0.90": [
+              "variable.is_first_person ? 0 : (-85)",
+              "variable.is_first_person ? 0 : (35)",
+              "variable.is_first_person ? 0 : (-20)"
+            ],
+            "1.50": [
+              "variable.is_first_person ? 0 : (-90)",
+              "variable.is_first_person ? 0 : (-15)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "1.70": [
+              "variable.is_first_person ? 0 : (-40)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "2.10": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "1.50": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "1.70": [
+              "variable.is_first_person ? 0 : (8)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "2.10": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        }
+      }
+    },
+    "animation.gojo.domain": {
+      "animation_length": 1.6,
+      "bones": {
+        "rightarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.25": [
+              "variable.is_first_person ? 0 : (-115)",
+              "variable.is_first_person ? 0 : (25)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "1.30": [
+              "variable.is_first_person ? 0 : (-115)",
+              "variable.is_first_person ? 0 : (25)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "1.60": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        },
+        "leftarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.30": [
+              "variable.is_first_person ? 0 : (-10)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (-8)"
+            ],
+            "1.60": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.30": [
+              "variable.is_first_person ? 0 : (-8)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "1.30": [
+              "variable.is_first_person ? 0 : (-8)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "1.60": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        }
+      }
+    },
+    "animation.gojo.six_eyes": {
+      "animation_length": 0.9,
+      "bones": {
+        "rightarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.20": [
+              "variable.is_first_person ? 0 : (-155)",
+              "variable.is_first_person ? 0 : (25)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.55": [
+              "variable.is_first_person ? 0 : (-160)",
+              "variable.is_first_person ? 0 : (20)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.90": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        }
+      }
+    },
+    "animation.gojo.infinity": {
+      "animation_length": 0.8,
+      "bones": {
+        "leftarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.15": [
+              "variable.is_first_person ? 0 : (-90)",
+              "variable.is_first_person ? 0 : (20)",
+              "variable.is_first_person ? 0 : (-10)"
+            ],
+            "0.55": [
+              "variable.is_first_person ? 0 : (-90)",
+              "variable.is_first_person ? 0 : (20)",
+              "variable.is_first_person ? 0 : (-10)"
+            ],
+            "0.80": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        }
+      }
+    },
+    "animation.gojo.teleport": {
+      "animation_length": 0.45,
+      "bones": {
+        "body": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (12)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.45": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        },
+        "rightarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (30)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (10)"
+            ],
+            "0.45": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        },
+        "leftarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (30)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (-10)"
+            ],
+            "0.45": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        }
+      }
+    },
+    "animation.gojo.rct": {
+      "animation_length": 1.6,
+      "bones": {
+        "rightarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.30": [
+              "variable.is_first_person ? 0 : (-30)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (35)"
+            ],
+            "1.30": [
+              "variable.is_first_person ? 0 : (-30)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (35)"
+            ],
+            "1.60": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        },
+        "leftarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.30": [
+              "variable.is_first_person ? 0 : (-30)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (-35)"
+            ],
+            "1.30": [
+              "variable.is_first_person ? 0 : (-30)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (-35)"
+            ],
+            "1.60": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.30": [
+              "variable.is_first_person ? 0 : (-15)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "1.30": [
+              "variable.is_first_person ? 0 : (-15)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "1.60": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        }
+      }
+    },
+    "animation.gojo.black_flash": {
+      "animation_length": 0.6,
+      "bones": {
+        "rightarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (30)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.08": [
+              "variable.is_first_person ? 0 : (40)",
+              "variable.is_first_person ? 0 : (-20)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.18": [
+              "variable.is_first_person ? 0 : (-95)",
+              "variable.is_first_person ? 0 : (10)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.35": [
+              "variable.is_first_person ? 0 : (-90)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.60": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (20)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.18": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (-15)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.60": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        }
+      }
+    },
+    "animation.gojo.transform": {
+      "animation_length": 1.4,
+      "bones": {
+        "rightarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.30": [
+              "variable.is_first_person ? 0 : (-150)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (20)"
+            ],
+            "1.00": [
+              "variable.is_first_person ? 0 : (-150)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (20)"
+            ],
+            "1.40": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        },
+        "leftarm": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.30": [
+              "variable.is_first_person ? 0 : (-20)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (-30)"
+            ],
+            "1.00": [
+              "variable.is_first_person ? 0 : (-20)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (-30)"
+            ],
+            "1.40": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.00": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "0.30": [
+              "variable.is_first_person ? 0 : (-12)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "1.00": [
+              "variable.is_first_person ? 0 : (-12)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ],
+            "1.40": [
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)",
+              "variable.is_first_person ? 0 : (0)"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
