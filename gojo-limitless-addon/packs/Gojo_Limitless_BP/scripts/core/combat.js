@@ -94,7 +94,8 @@ export function setVelocity(target, velocity) {
 }
 
 /**
- * Add an effect without ever throwing.
+ * Add an effect without ever throwing. Never replaces a stronger active effect
+ * (e.g. Infinity's light slowness can't weaken the domain's full paralysis).
  * @param {Entity} target
  * @param {string} effect
  * @param {number} ticks
@@ -102,6 +103,8 @@ export function setVelocity(target, velocity) {
  */
 export function effect(target, effect, ticks, amplifier) {
   try {
+    const current = target.getEffect(effect);
+    if (current && current.amplifier > amplifier) return;
     target.addEffect(effect, ticks, { amplifier, showParticles: false });
   } catch {
     // entity may be immune (e.g. undead to regeneration) or invalid

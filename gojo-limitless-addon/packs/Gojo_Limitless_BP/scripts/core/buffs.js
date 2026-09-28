@@ -69,12 +69,17 @@ export function refreshBuffs(player, st, force = false) {
       }
       continue;
     }
+    // A stronger level that *we* applied (domain, Infinity) must drop back down
+    // as soon as its source ends; stronger potions/beacons are left alone.
+    const oursStronger = !!current && current.amplifier > amp && st.appliedEffects.get(id) === current.amplifier;
     const needs =
       !current ||
+      oursStronger ||
       current.amplifier < amp ||
       (current.amplifier === amp && (force || current.duration < REFRESH_BELOW));
     if (!needs) continue;
     try {
+      if (oursStronger) player.removeEffect(id);
       player.addEffect(id, DURATION, { amplifier: amp, showParticles: false });
       st.appliedEffects.set(id, amp);
     } catch (e) {

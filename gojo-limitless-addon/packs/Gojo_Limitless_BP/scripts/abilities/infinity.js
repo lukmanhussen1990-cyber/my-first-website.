@@ -164,7 +164,10 @@ function slowProjectile(player, st, e, center, tick) {
   const dz = loc.z - center.z;
   const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
   try {
-    if (d < FREEZE_RADIUS) {
+    const v = e.getVelocity();
+    const speed = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+    // Stop dead once close, or once Infinity has bled off nearly all its speed.
+    if (d < FREEZE_RADIUS || (speed < 0.2 && d < SCAN_RADIUS - 1)) {
       e.clearVelocity();
       st.frozen.set(e.id, { pos: { x: loc.x, y: loc.y, z: loc.z }, since: tick });
       particle(e.dimension, "gojo:infinity_ripple", loc);
@@ -177,8 +180,6 @@ function slowProjectile(player, st, e, center, tick) {
       return;
     }
     // Visible slow-down: bleed off speed the closer it gets.
-    const v = e.getVelocity();
-    const speed = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
     if (speed > 0.12) {
       const keep = d < 5 ? 0.35 : 0.6;
       e.clearVelocity();
