@@ -4,12 +4,46 @@ An offline Android app that counts down to each paper of the Class VIII Half-Yea
 Examination 2026–2027 at Al-Ameen Academy, Badarpur, for Imran Hussain (Class VIII Blue,
 Roll 47, Hall 24).
 
-**Download:** [`dist/Imran-Exam-Countdown.apk`](dist/Imran-Exam-Countdown.apk), with its SHA-256 in
-[`dist/Imran-Exam-Countdown.apk.sha256`](dist/Imran-Exam-Countdown.apk.sha256).
+**Download:** [`dist/Imran-Exam-Countdown.apk`](dist/Imran-Exam-Countdown.apk) (version 1.2.0), with its
+SHA-256 in [`dist/Imran-Exam-Countdown.apk.sha256`](dist/Imran-Exam-Countdown.apk.sha256).
 
 - Release-signed with the app’s own key (not a debug key), v2 and v3 APK signatures.
 - Android 8.0 or newer (minSdk 26), targets Android 15 (API 35).
 - About 1 MB. No internet permission, no account, no ads.
+
+## What’s new in 1.2.0: motion
+
+Every animation was redesigned, in the school’s green, ivory and gold:
+
+- **Opening:** a spotlight blooms, a green and a gold ring trace round the emblem from opposite
+  sides led by glowing comets, 60 watch-bezel ticks light up, the emblem springs in with a gold
+  shockwave and a burst of sparks, light rays turn behind it, the school’s name gathers in letter by
+  letter over a gold rule, then the emblem glides into the header as the screen opens like an iris.
+  (The emblem itself is only faded, scaled and moved, never rotated or recoloured.)
+- **Countdown:** the figures sit on little drums that turn like a mechanical counter — blurred
+  while fast, landing on a spring, turning right to left like a carry. Minutes, hours and days
+  flash gold as they tick over, and on Home’s entrance every drum spins like a slot machine.
+- **Home:** soft green and gold light drifts behind the page with rising gold dust (with a gentle
+  parallax); the progress line has a glowing head and a light running along it; the exam-progress
+  bars fill one by one with a glint; the “It’s exam time!” card pings like radar and catches the light.
+- **Celebration:** confetti cannons, three fireworks and falling glitter, with pieces tumbling in 3D.
+  Marking an exam finished, completing a focus session and ticking off a task each get a small burst.
+- **Everywhere:** tabs slide along the direction of travel (the old one recedes and blurs), the
+  bottom bar’s pill travels like a drop of liquid, content rises in on springs, switches squash and
+  ripple, buttons bounce back when released, and the timetable’s rails draw themselves in.
+
+Motion still follows **Settings → Reduce motion** (and Android’s “Remove animations”): with
+reduced motion everything appears instantly. Continuous effects — the drifting light, pulses and
+shimmer — pause in Battery Saver and whenever their screen isn’t visible.
+
+### Updating from 1.1.0 (one time only)
+
+1.2.0 is signed with a new release key: the 1.1.0 key didn’t survive the machine it was built
+on. Android only installs an update over an app signed with the same key, so this one time:
+**uninstall the old app, then install 1.2.0.** Exam progress comes back by itself (it’s worked out
+from the dates); the name, photo, MIL/elective choices and checklist ticks need setting again.
+Keep the new key file safe (outside this public repository) and future updates will install over
+this version normally.
 
 ## Install on an Android phone
 
@@ -49,7 +83,7 @@ finished** or the day ends.
 
 ## Features
 
-- **Home:** “Hey Imran 👋”, a glowing countdown ring with rolling days/hours/minutes/seconds, the next
+- **Home:** “Hey, Imran”, a countdown on rolling drums (days, hours, minutes, seconds), the next
   subject, date, start time and hall, a friendly message, and an exam-season progress bar.
 - **Exam time:** when a paper starts, a live banner appears and the countdown moves to the following
   exam. After the final exam: confetti and “You did it, Imran! 🎉”.
@@ -60,8 +94,8 @@ finished** or the day ends.
   one hour before), focus alerts, reduced motion, and reset.
 - Countdowns and the timer are always recalculated from timestamps, so they stay correct after the
   app is closed, backgrounded or the phone restarts.
-- Animations respect Android’s “Remove animations” setting (or the in-app Reduce motion switch), and the
-  floating particles pause in Battery Saver and whenever the Home screen isn’t visible.
+- Animations respect Android’s “Remove animations” setting (or the in-app Reduce motion switch), and
+  continuous effects pause in Battery Saver and whenever their screen isn’t visible.
 
 See the rest of this file (below) for how it was built and tested.
 
@@ -74,9 +108,11 @@ app/src/main/java/com/imran/examcountdown/
   core/     timetable, countdown and season logic, focus timer, reminder planning (no Android code)
   data/     SharedPreferences storage and the clock
   notify/   notifications, alarms, boot/time-change receivers
-  ui/       theme, custom views (countdown ring, rolling digits, particles, confetti, timeline…) and screens
+  ui/       theme, motion (Fx.kt: springs, easing, blur), custom views (intro, drum digits, drifting
+            light, confetti and fireworks, timeline…) and screens
 app/src/test/  unit and Robolectric tests
 tools/build-apk.sh   command-line build used to produce dist/Imran-Exam-Countdown.apk
+tools/run-tests.sh   runs the tests without the Android Gradle Plugin
 ```
 
 ### Build with Android Studio
@@ -97,7 +133,21 @@ KEYSTORE=/path/release.jks KEYSTORE_PASS=... KEY_ALIAS=imran-exam-countdown tool
 Without the `KEYSTORE…` variables the script signs with a local debug key and writes
 `dist/Imran-Exam-Countdown-debug.apk`.
 
+### Tests, screenshots and motion frames
+
+`tools/run-tests.sh` runs the unit and Robolectric tests (JDK 17 or newer). With
+`SCREENSHOT_DIR=/some/dir` it also renders every screen to PNG, and `MotionFramesTest` records the
+animations frame by frame (intro, countdown, celebration, tab changes, switches…) into
+`/some/dir/frames/<name>/`:
+
+```
+SCREENSHOT_DIR=/tmp/shots tools/run-tests.sh --tests '*MotionFramesTest*'
+```
+
+Tests that check timing pause Robolectric’s choreographer and step time one frame at a time
+(`frames()` in `TestUi.kt`), so animations play at their real speed.
+
 ## Fonts
 
-Outfit by the Outfit Project Authors, under the SIL Open Font License 1.1
-(`docs/OFL-Outfit.txt`).
+Source Serif 4 (The Source Serif 4 Project Authors) and Source Sans 3 (Adobe), under the SIL Open
+Font License 1.1 (`docs/OFL-SourceSerif4.txt`, `docs/OFL-SourceSans3.txt`).

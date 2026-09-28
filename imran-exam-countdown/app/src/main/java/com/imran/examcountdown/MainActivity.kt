@@ -1,6 +1,9 @@
 package com.imran.examcountdown
 
 import android.Manifest
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.app.Activity
 import android.app.UiModeManager
 import android.content.ActivityNotFoundException
@@ -24,6 +27,7 @@ import android.provider.Settings
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -43,14 +47,20 @@ import com.imran.examcountdown.notify.AppVisibility
 import com.imran.examcountdown.notify.Notifier
 import com.imran.examcountdown.notify.ReminderScheduler
 import com.imran.examcountdown.ui.AmbientTicker
+import com.imran.examcountdown.ui.Blur
+import com.imran.examcountdown.ui.Ease
 import com.imran.examcountdown.ui.Fonts
 import com.imran.examcountdown.ui.Haptics
 import com.imran.examcountdown.ui.MATCH
 import com.imran.examcountdown.ui.MotionPolicy
+import com.imran.examcountdown.ui.Spring
 import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.WRAP
 import com.imran.examcountdown.ui.dp
+import com.imran.examcountdown.ui.dpf
 import com.imran.examcountdown.ui.flp
+import com.imran.examcountdown.ui.spring
+import com.imran.examcountdown.ui.window
 import com.imran.examcountdown.ui.screens.HomeScreen
 import com.imran.examcountdown.ui.screens.ProfileEditor
 import com.imran.examcountdown.ui.screens.Screen
@@ -83,6 +93,7 @@ class MainActivity : Activity() {
         private const val STATE_TAB = "tab"
         private const val REQUEST_NOTIFICATIONS = 11
         private const val REQUEST_PHOTO = 12
+        private const val TRANSITION_MS = 540f
     }
 
     lateinit var store: Store
@@ -106,6 +117,7 @@ class MainActivity : Activity() {
     private val screens = arrayOfNulls<Screen>(4)
     private val shownBefore = BooleanArray(4)
     private var currentTab = -1
+    private var transition: ValueAnimator? = null
     private var setup: SetupScreen? = null
     private var editor: ProfileEditor? = null
     private var intro: IntroView? = null
@@ -356,23 +368,17 @@ class MainActivity : Activity() {
             it.applyInsets(insetTop, insetBottom)
         }
         previous?.onHide()
+        val direction = if (index > currentTab) 1f else -1f
         currentTab = index
+        // Finish any tab change still running first: it may be hiding the screen we now want.
+        transition?.end()
         val incoming = screen.root
         incoming.visibility = View.VISIBLE
         if (animate && policy.motion && previous != null) {
-            // 240 ms crossfade with a slight rise; the outgoing tab fades faster.
-            val outgoing = previous.root
-            outgoing.animate().alpha(0f).setDuration(120).withEndAction {
-                outgoing.visibility = View.GONE
-                outgoing.alpha = 1f
-            }.start()
-            incoming.alpha = 0f
-            incoming.translationY = dp(10).toFloat()
-            incoming.animate().alpha(1f).translationY(0f).setStartDelay(60).setDuration(240).start()
+            slide(previous.root, incoming, direction)
         } else {
             previous?.root?.visibility = View.GONE
-            incoming.alpha = 1f
-            incoming.translationY = 0f
+            rest(incoming)
         }
         nav.visibility = View.VISIBLE
         nav.select(index, animate)
@@ -381,6 +387,56 @@ class MainActivity : Activity() {
         screen.onShow(first)
         applyMotion()
         tick()
+    }
+
+    /**
+     * Tab change, along the direction of travel: the old tab recedes (it slips back, shrinks a
+     * touch and blurs as it fades) while the new one glides in from the side you're heading to.
+     */
+    private fun slide(outgoing: View, incoming: View, direction: Float) {
+        val shift = dpf(44)
+        incoming.alpha = 0f
+        incoming.translationX = direction * shift
+        transition = ValueAnimator.ofFloat(0f, TRANSITION_MS).apply {
+            duration = TRANSITION_MS.toLong()
+            interpolator = LinearInterpolator()
+            addUpdateListener {
+                val ms = it.animatedValue as Float
+                val o = window(ms, 0f, 200f)
+                outgoing.alpha = 1f - Ease.cubicOut(o)
+                outgoing.translationX = -direction * shift * 0.45f * Ease.cubicIn(o)
+                val shrink = 1f - 0.035f * Ease.cubicOut(o)
+                outgoing.scaleX = shrink
+                outgoing.scaleY = shrink
+                Blur.set(outgoing, dpf(10) * o)
+                val s = spring(window(ms, 50f, TRANSITION_MS - 50f), 0.82f)
+                incoming.alpha = Ease.cubicOut(window(ms, 50f, 230f))
+                incoming.translationX = direction * shift * (1f - s)
+                val grow = 0.975f + 0.025f * s
+                incoming.scaleX = grow
+                incoming.scaleY = grow
+                Blur.set(incoming, dpf(8) * (1f - window(ms, 50f, 220f)))
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    outgoing.visibility = View.GONE
+                    rest(outgoing)
+                    rest(incoming)
+                    transition = null
+                }
+            })
+            start()
+        }
+    }
+
+    /** Clears any transition transform from a screen. */
+    private fun rest(view: View) {
+        view.alpha = 1f
+        view.translationX = 0f
+        view.translationY = 0f
+        view.scaleX = 1f
+        view.scaleY = 1f
+        Blur.set(view, 0f)
     }
 
     private fun createScreen(tab: Int): Screen = when (tab) {
@@ -411,7 +467,9 @@ class MainActivity : Activity() {
         showTab(TAB_HOME, animate = false)
         val view = s.root
         if (policy.motion) {
-            view.animate().alpha(0f).setDuration(240).withEndAction { root.removeView(view) }.start()
+            // Setup zooms past the viewer and dissolves as Home rises in behind it.
+            view.animate().alpha(0f).scaleX(1.06f).scaleY(1.06f).setDuration(320).setInterpolator(Ease.exit)
+                .withEndAction { root.removeView(view) }.start()
             (screens[TAB_HOME] as? HomeScreen)?.playEntrance()
         } else {
             root.removeView(view)
@@ -426,10 +484,30 @@ class MainActivity : Activity() {
         e.applyInsets(insetTop, insetBottom)
         root.requestApplyInsets()
         if (policy.motion) {
-            e.root.alpha = 0f
-            e.root.translationY = dp(24).toFloat()
-            e.root.animate().alpha(1f).translationY(0f).setDuration(240).start()
+            // Rises like a sheet and settles with a soft spring.
+            val view = e.root
+            view.alpha = 0f
+            view.translationY = dp(56).toFloat()
+            view.animate().translationY(0f).setDuration(560).setInterpolator(Spring.gentle).start()
+            ValueAnimator.ofFloat(0f, 1f).apply {
+                duration = 200
+                addUpdateListener { view.alpha = it.animatedValue as Float }
+                start()
+            }
         }
+    }
+
+    /**
+     * A small burst of confetti and sparks from the centre of [view] (for finishing something).
+     * Skipped with reduced motion.
+     */
+    fun popAt(view: View, power: Float = 1f) {
+        if (!policy.motion || !view.isAttachedToWindow) return
+        val at = IntArray(2)
+        val origin = IntArray(2)
+        view.getLocationInWindow(at)
+        confetti.getLocationInWindow(origin)
+        confetti.burstAt(at[0] - origin[0] + view.width / 2f, at[1] - origin[1] + view.height / 2f, power)
     }
 
     fun closeProfileEditor() {
@@ -441,7 +519,8 @@ class MainActivity : Activity() {
         }
         val view = e.root
         if (policy.motion) {
-            view.animate().alpha(0f).translationY(dp(24).toFloat()).setDuration(200).withEndAction { root.removeView(view) }.start()
+            view.animate().alpha(0f).translationY(dp(40).toFloat()).setDuration(220).setInterpolator(Ease.exit)
+                .withEndAction { root.removeView(view) }.start()
         } else {
             root.removeView(view)
         }
@@ -687,8 +766,8 @@ class MainActivity : Activity() {
 
     fun versionName(): String = try {
         @Suppress("DEPRECATION")
-        packageManager.getPackageInfo(packageName, 0).versionName ?: "1.1.0"
+        packageManager.getPackageInfo(packageName, 0).versionName ?: "1.2.0"
     } catch (e: PackageManager.NameNotFoundException) {
-        "1.1.0"
+        "1.2.0"
     }
 }

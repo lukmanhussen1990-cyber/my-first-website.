@@ -81,6 +81,9 @@ tasks.test {
     systemProperty("screenshotDir", providers.gradleProperty("screenshotDir").getOrElse(""))
     systemProperty("robolectric.offline", "true")
     systemProperty("robolectric.dependency.dir", providers.gradleProperty("roboDir").get())
+    // Robolectric's file-descriptor interceptor (used when decoding the saved profile photo)
+    // reaches into java.io, which JDK 17+ keeps closed unless it's opened explicitly.
+    jvmArgs("--add-opens=java.base/java.io=ALL-UNNAMED")
     testLogging {
         events("passed", "skipped", "failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL

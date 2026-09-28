@@ -42,9 +42,20 @@ class CountdownView(context: Context) : LinearLayout(context) {
         gravity = Gravity.BOTTOM or Gravity.START
         all.forEachIndexed { i, u ->
             addView(u.column, lp(WRAP, WRAP) { if (i > 0) marginStart = dp(18) })
+            u.number.countsDown = true
         }
         seconds.number.color = Ui.c.text2
+        // The bigger units flash gold as they tick over; seconds just roll.
+        listOf(days, hours, minutes).forEach { it.number.flashColor = Ui.c.gold }
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+    }
+
+    /** Spins every drum like a slot machine and lands them one unit after another. */
+    fun spinIn(delayMs: Long = 0L) {
+        if (!animateChanges) return
+        all.filter { it.column.visibility == View.VISIBLE }.forEachIndexed { i, u ->
+            u.number.spinIn(delayMs + i * 150L)
+        }
     }
 
     private fun unit(name: String): Unit {

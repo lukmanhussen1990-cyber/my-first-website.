@@ -20,6 +20,19 @@ fun idle(millis: Long = 0) {
     if (millis > 0) looper.idleFor(Duration.ofMillis(millis)) else looper.idle()
 }
 
+/**
+ * Lets [millis] pass one 16 ms frame at a time. With a paused choreographer each idle draws a
+ * single frame, so this is what plays an animation in real time, as on a phone.
+ */
+fun frames(millis: Long) {
+    var left = millis
+    while (left > 0) {
+        val step = minOf(16L, left)
+        idle(step)
+        left -= step
+    }
+}
+
 fun View.allViews(): List<View> {
     val out = ArrayList<View>()
     fun walk(v: View) {
@@ -47,6 +60,18 @@ fun Activity.visibleTexts(): List<String> =
 /** Clicks the nearest clickable view around the text. */
 fun Activity.click(text: String) {
     val view = findText(text).firstOrNull() ?: fail("No visible text “$text”. Visible: ${visibleTexts()}") as Nothing
+    clickAround(view, text)
+}
+
+/** Clicks [text] in the dialog on screen (dialogs have their own window, apart from the activity's). */
+fun clickInDialog(text: String) {
+    val dialog = org.robolectric.shadows.ShadowDialog.getLatestDialog() ?: fail("No dialog is showing") as Nothing
+    val view = dialog.window!!.decorView.allViews().filterIsInstance<TextView>().firstOrNull { it.isShown && it.text.toString() == text }
+        ?: fail("No “$text” in the dialog") as Nothing
+    clickAround(view, text)
+}
+
+private fun clickAround(view: View, text: String) {
     var v: View? = view
     while (v != null && !v.isClickable) v = v.parent as? View
     (v ?: fail("“$text” has no clickable ancestor") as Nothing).performClick()

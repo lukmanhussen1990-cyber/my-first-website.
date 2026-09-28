@@ -16,7 +16,9 @@ import com.imran.examcountdown.core.Subject
 import com.imran.examcountdown.ui.Fonts
 import com.imran.examcountdown.ui.MATCH
 import com.imran.examcountdown.ui.Shapes
+import com.imran.examcountdown.ui.Spring
 import com.imran.examcountdown.ui.Ui
+import com.imran.examcountdown.ui.fadeTo
 import com.imran.examcountdown.ui.WRAP
 import com.imran.examcountdown.ui.column
 import com.imran.examcountdown.ui.dp
@@ -127,10 +129,21 @@ class SetupScreen(private val host: MainActivity) {
             else -> remindersStep()
         }
         if (animate && host.policy.motion) {
-            val shift = ctx.dp(20).toFloat() * if (forward) 1 else -1
+            // The new page glides in from the side of travel while its parts rise in one by one.
+            val shift = ctx.dp(44).toFloat() * if (forward) 1 else -1
             page.alpha = 0f
             page.translationX = shift
-            page.animate().alpha(1f).translationX(0f).setDuration(240).start()
+            page.animate().translationX(0f).setDuration(560).setInterpolator(Spring.gentle).start()
+            page.fadeTo(1f, 220)
+            staggerIn((0 until page.childCount).map { page.getChildAt(it) }, motion = true, startDelay = 40L)
+            // The step just reached fills in from the left.
+            if (forward) {
+                steps.getChildAt(step)?.let { bar ->
+                    bar.pivotX = 0f
+                    bar.scaleX = 0f
+                    bar.animate().scaleX(1f).setDuration(600).setInterpolator(Spring(0.7f)).start()
+                }
+            }
         }
         scroll.scrollTo(0, 0)
     }

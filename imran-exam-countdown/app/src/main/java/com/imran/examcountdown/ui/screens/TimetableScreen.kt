@@ -3,7 +3,7 @@ package com.imran.examcountdown.ui.screens
 import android.animation.ValueAnimator
 import android.view.Gravity
 import android.view.View
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -242,12 +242,13 @@ class TimetableScreen(host: MainActivity) : Screen(host), AmbientListener {
 
     private fun playEntrance() {
         staggerIn(rows.map { it.view }, motion = true)
+        // Each row's rail draws itself down in step with the row rising in, and its node pops.
         rows.forEachIndexed { i, row ->
             row.rail.reveal = 0f
             ValueAnimator.ofFloat(0f, 1f).apply {
-                startDelay = 40L + i * 45L
-                duration = 420
-                interpolator = DecelerateInterpolator()
+                startDelay = 60L + i * 55L
+                duration = 720
+                interpolator = LinearInterpolator()
                 addUpdateListener { row.rail.reveal = it.animatedValue as Float }
                 start()
             }

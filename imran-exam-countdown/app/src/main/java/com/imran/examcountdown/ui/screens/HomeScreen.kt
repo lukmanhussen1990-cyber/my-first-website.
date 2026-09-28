@@ -19,14 +19,20 @@ import com.imran.examcountdown.core.Phase
 import com.imran.examcountdown.core.Profile
 import com.imran.examcountdown.core.Season
 import com.imran.examcountdown.core.Timetable
+import com.imran.examcountdown.ui.AmbientListener
 import com.imran.examcountdown.ui.Dialogs
+import com.imran.examcountdown.ui.Ease
 import com.imran.examcountdown.ui.Fonts
+import com.imran.examcountdown.ui.Haptics
 import com.imran.examcountdown.ui.MATCH
 import com.imran.examcountdown.ui.Shapes
+import com.imran.examcountdown.ui.Spring
 import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.WRAP
 import com.imran.examcountdown.ui.column
 import com.imran.examcountdown.ui.dp
+import com.imran.examcountdown.ui.fadeTo
+import com.imran.examcountdown.ui.frame
 import com.imran.examcountdown.ui.heading
 import com.imran.examcountdown.ui.label
 import com.imran.examcountdown.ui.lp
@@ -34,18 +40,21 @@ import com.imran.examcountdown.ui.row
 import com.imran.examcountdown.ui.separator
 import com.imran.examcountdown.ui.text
 import com.imran.examcountdown.ui.update
+import com.imran.examcountdown.ui.widgets.AuroraView
 import com.imran.examcountdown.ui.widgets.AvatarView
 import com.imran.examcountdown.ui.widgets.ButtonStyle
 import com.imran.examcountdown.ui.widgets.CountdownView
 import com.imran.examcountdown.ui.widgets.FlowRow
 import com.imran.examcountdown.ui.widgets.ProgressTrack
+import com.imran.examcountdown.ui.widgets.PulseDot
 import com.imran.examcountdown.ui.widgets.SeasonProgressView
+import com.imran.examcountdown.ui.widgets.SheenCard
 import com.imran.examcountdown.ui.widgets.pillButton
 import com.imran.examcountdown.ui.widgets.pressScale
 import com.imran.examcountdown.ui.widgets.setLeadingIcon
 import java.time.ZoneId
 
-class HomeScreen(host: MainActivity) : Screen(host) {
+class HomeScreen(host: MainActivity) : Screen(host), AmbientListener {
 
     private enum class Mode { COUNTDOWN, FINAL_LIVE, CELEBRATE }
 
@@ -54,7 +63,14 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
         isFillViewport = true
     }
-    override val root: View get() = scroll
+
+    /** Drifting light behind everything; it scrolls a little slower than the content. */
+    private val aurora = AuroraView(ctx)
+    private val frame = ctx.frame {
+        addView(aurora, FrameLayout.LayoutParams(MATCH, MATCH))
+        addView(scroll, FrameLayout.LayoutParams(MATCH, MATCH))
+    }
+    override val root: View get() = frame
     private val content = ctx.column()
 
     // 1. School
@@ -89,13 +105,19 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         stateListAnimator = pressScale(this)
         setOnClickListener { onMarkFinished() }
     }
-    private val liveCard = ctx.column {
+    private val liveDot = PulseDot(ctx, Ui.c.gold)
+    private val liveCard = SheenCard(ctx, 18f).apply {
+        orientation = LinearLayout.VERTICAL
         background = Shapes.rounded(ctx, 18, Ui.c.green)
         setPadding(dp(18), dp(16), dp(18), dp(16))
         addView(ctx.row {
-            addView(View(ctx).apply { background = Shapes.oval(Ui.c.gold) }, lp(dp(8), dp(8)))
-            addView(ctx.label("Exam in progress", Ui.withAlpha(Ui.c.onGreen, 0.85f), 11.5f), lp(WRAP, WRAP) { marginStart = dp(8) })
+            addView(liveDot, lp(dp(20), dp(20)) { marginStart = -dp(6) })
+            addView(ctx.label("Exam in progress", Ui.withAlpha(Ui.c.onGreen, 0.85f), 11.5f), lp(WRAP, WRAP) { marginStart = dp(2) })
+            clipChildren = false
         })
+        // The dot's pings spread into the card's padding.
+        clipChildren = false
+        clipToPadding = false
         addView(liveTitle, lp { topMargin = dp(8) })
         addView(liveDetail, lp { topMargin = dp(6) })
         addView(liveDuration, lp { topMargin = dp(6) })
@@ -194,7 +216,8 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         nextSection.addView(nextLabel)
         nextSection.addView(subject, lp { topMargin = ctx.dp(6) })
         nextSection.addView(countdown, lp { topMargin = ctx.dp(12) })
-        nextSection.addView(track, lp(MATCH, ctx.dp(4)) { topMargin = ctx.dp(14) })
+        // 16 dp tall so the glow at the head of the 4 dp line has room; same line position as before.
+        nextSection.addView(track, lp(MATCH, ctx.dp(16)) { topMargin = ctx.dp(8) })
         nextSection.addView(trackCaption, lp { topMargin = ctx.dp(8) })
         nextSection.addView(details, lp { topMargin = ctx.dp(16) })
         nextSection.addView(localNote, lp { topMargin = ctx.dp(6) })
@@ -216,6 +239,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         content.addView(upcomingList, lp { topMargin = ctx.dp(4) })
         content.addView(timetableLink, lp(WRAP, WRAP) { topMargin = ctx.dp(4) })
 
+        scroll.setOnScrollChangeListener { _, _, y, _, _ -> aurora.scroll = y }
         onMotionChanged()
     }
 
@@ -234,15 +258,24 @@ class HomeScreen(host: MainActivity) : Screen(host) {
     override fun onShow(first: Boolean) {
         bindHeader(host.data.profile)
         tick(host.season)
+        host.ambient.add(this)
         if (first && !host.introRunning) playEntrance()
+    }
+
+    override fun onHide() {
+        host.ambient.remove(this)
     }
 
     /** Short staggered rise-in; also used when the opening animation hands over. */
     fun playEntrance() {
         if (entranceDone) return
         entranceDone = true
-        staggerIn(entranceViews().filter { it !== content.getChildAt(0) }, host.policy.motion)
-        if (host.policy.motion) progressBar.playReveal()
+        val views = entranceViews().filter { it !== content.getChildAt(0) }
+        staggerIn(views, host.policy.motion)
+        if (!host.policy.motion) return
+        progressBar.playReveal()
+        // The countdown's drums spin up like a slot machine as its section rises in.
+        countdown.spinIn(delayMs = 90L + views.indexOf(nextSection).coerceAtLeast(0) * 55L)
     }
 
     override fun onDataChanged() {
@@ -253,6 +286,25 @@ class HomeScreen(host: MainActivity) : Screen(host) {
 
     override fun onMotionChanged() {
         countdown.animateChanges = host.policy.motion
+        aurora.moving = host.policy.ambient
+        if (!host.policy.ambient) {
+            track.shimmer = -1f
+            progressBar.pulse = -1f
+            liveDot.phase = -1f
+            liveCard.sheen = -1f
+        }
+    }
+
+    /** Continuous effects: drifting light, the shimmer on the line, and the live pulses. */
+    override fun onAmbientFrame(frameTimeMs: Long) {
+        if (!host.policy.ambient) return
+        aurora.frame(frameTimeMs)
+        track.shimmer = (frameTimeMs % 3200L) / 3200f * 1.6f - 0.3f
+        progressBar.pulse = (frameTimeMs % 2400L) / 2400f
+        if (liveCard.visibility == View.VISIBLE) {
+            liveDot.phase = (frameTimeMs % 1800L) / 1800f
+            liveCard.sheen = (frameTimeMs % 4500L) / 4500f
+        }
     }
 
     override fun applyInsets(top: Int, bottom: Int) {
@@ -308,7 +360,16 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         if (newMode == Mode.FINAL_LIVE) nextLabel.update("AFTER THIS")
         // Celebrate when the final exam finishes while the app is open, or on the first
         // visit afterwards — never before the last paper is actually done.
-        if (newMode == Mode.CELEBRATE && previous != Mode.CELEBRATE) scroll.post { host.celebrate(force = false) }
+        if (newMode == Mode.CELEBRATE && previous != Mode.CELEBRATE) {
+            scroll.post { host.celebrate(force = false) }
+            if (host.policy.motion) {
+                // "You did it!" lands with a bounce.
+                celebrateTitle.scaleX = 0.6f
+                celebrateTitle.scaleY = 0.6f
+                celebrateTitle.pivotX = 0f
+                celebrateTitle.animate().scaleX(1f).scaleY(1f).setStartDelay(260).setDuration(760).setInterpolator(Spring(0.45f)).start()
+            }
+        }
     }
 
     private fun bindCountdown(season: Season, choices: Choices, profile: Profile) {
@@ -390,9 +451,13 @@ class HomeScreen(host: MainActivity) : Screen(host) {
             liveKey = exam.key
             liveCard.setVisible(true)
             if (host.policy.motion && entranceDone) {
+                // The banner pops in with a spring when the exam starts while the app is open.
                 liveCard.alpha = 0f
-                liveCard.translationY = ctx.dp(10).toFloat()
-                liveCard.animate().alpha(1f).translationY(0f).setDuration(280).start()
+                liveCard.scaleX = 0.9f
+                liveCard.scaleY = 0.9f
+                liveCard.translationY = ctx.dp(14).toFloat()
+                liveCard.animate().scaleX(1f).scaleY(1f).translationY(0f).setDuration(620).setInterpolator(Spring(0.55f)).start()
+                liveCard.fadeTo(1f, 220)
             }
         }
     }
@@ -460,9 +525,12 @@ class HomeScreen(host: MainActivity) : Screen(host) {
             message.text = next
             return
         }
-        message.animate().alpha(0f).setDuration(120).withEndAction {
+        // The old line lifts away; the new one rises in from below on a spring.
+        message.animate().alpha(0f).translationY(-ctx.dp(10).toFloat()).setDuration(150).setInterpolator(Ease.exit).withEndAction {
             message.text = next
-            message.animate().alpha(1f).setDuration(200).start()
+            message.translationY = ctx.dp(16).toFloat()
+            message.animate().translationY(0f).setDuration(560).setInterpolator(Spring.gentle).start()
+            message.fadeTo(1f, 240)
         }.start()
     }
 
@@ -474,6 +542,11 @@ class HomeScreen(host: MainActivity) : Screen(host) {
             "Finished $title?",
             "Only do this once you’ve handed in your paper. The app will then count it as done.",
             "Mark as finished",
-        ) { host.markFinished(live.exam) }
+        ) {
+            // A little burst of confetti from the button: one more paper done!
+            Haptics.confirm(liveButton)
+            host.popAt(liveButton, 1.3f)
+            host.markFinished(live.exam)
+        }
     }
 }

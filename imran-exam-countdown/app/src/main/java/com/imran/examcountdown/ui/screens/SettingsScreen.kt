@@ -357,7 +357,12 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
 
     // ---------------------------------------------------------------- lifecycle
 
-    override fun onShow(first: Boolean) = refresh()
+    override fun onShow(first: Boolean) {
+        refresh()
+        if (first && host.policy.motion) {
+            staggerIn((0 until content.childCount).map { content.getChildAt(it) }.filter { it.visibility == View.VISIBLE }.take(14), motion = true)
+        }
+    }
 
     override fun onDataChanged() {
         if (scroll.isShown) refresh()
@@ -418,8 +423,8 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
         val policy = host.policy
         motionNote.update(
             when {
-                pref == MotionPref.REDUCED -> "Movement is off: no opening animation, sliding digits or confetti. Everything still works."
-                pref == MotionPref.FULL && !policy.ambient -> "Full motion. Battery Saver is on, so continuous effects are paused."
+                pref == MotionPref.REDUCED -> "Movement is off: no opening animation, rolling digits, drifting light or confetti. Everything still works."
+                pref == MotionPref.FULL && !policy.ambient -> "Full motion. Battery Saver is on, so continuous effects (drifting light, pulses) are paused."
                 pref == MotionPref.FULL -> "Full motion, even if Android’s “Remove animations” is on."
                 !policy.motion -> "Following Android: “Remove animations” is on, so motion is reduced."
                 !policy.ambient -> "Following Android. Battery Saver is on, so continuous effects are paused."

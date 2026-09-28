@@ -10,7 +10,7 @@ import android.graphics.RectF
 import android.view.Gravity
 import android.view.View
 import android.view.animation.DecelerateInterpolator
-import android.view.animation.OvershootInterpolator
+import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -32,22 +32,27 @@ import com.imran.examcountdown.core.Subject
 import com.imran.examcountdown.data.AppClock
 import com.imran.examcountdown.ui.AmbientListener
 import com.imran.examcountdown.ui.Dialogs
+import com.imran.examcountdown.ui.Ease
 import com.imran.examcountdown.ui.Fonts
 import com.imran.examcountdown.ui.Haptics
 import com.imran.examcountdown.ui.MATCH
 import com.imran.examcountdown.ui.Shapes
+import com.imran.examcountdown.ui.Spring
 import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.WRAP
 import com.imran.examcountdown.ui.column
 import com.imran.examcountdown.ui.dp
 import com.imran.examcountdown.ui.dpf
+import com.imran.examcountdown.ui.fadeTo
 import com.imran.examcountdown.ui.heading
 import com.imran.examcountdown.ui.label
 import com.imran.examcountdown.ui.lp
 import com.imran.examcountdown.ui.row
 import com.imran.examcountdown.ui.separator
+import com.imran.examcountdown.ui.spring
 import com.imran.examcountdown.ui.text
 import com.imran.examcountdown.ui.update
+import com.imran.examcountdown.ui.window
 import com.imran.examcountdown.ui.widgets.ButtonStyle
 import com.imran.examcountdown.ui.widgets.ProgressTrack
 import com.imran.examcountdown.ui.widgets.RollingNumberView
@@ -100,7 +105,8 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
         content.addView(ctx.label("Focus timer"), lp { topMargin = ctx.dp(24) })
         content.addView(modeControl, lp { topMargin = ctx.dp(12) })
         content.addView(timerRow, lp(WRAP, WRAP) { topMargin = ctx.dp(18) })
-        content.addView(track, lp(MATCH, ctx.dp(4)) { topMargin = ctx.dp(12) })
+        // 16 dp tall so the glow at the head of the 4 dp line has room; same line position as before.
+        content.addView(track, lp(MATCH, ctx.dp(16)) { topMargin = ctx.dp(6) })
         content.addView(phaseText, lp { topMargin = ctx.dp(10) })
         content.addView(ctx.row {
             addView(primary, lp(0, WRAP, 1f))
@@ -125,6 +131,9 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
         minutes.verticalGapPx = digit * 0.06f
         seconds.verticalGapPx = digit * 0.06f
         colon.setPadding(ctx.dp(4), 0, ctx.dp(4), (digit * 0.14f).toInt())
+        minutes.countsDown = true
+        seconds.countsDown = true
+        minutes.flashColor = Ui.c.gold
 
         modeControl.onSelect = { index ->
             state = FocusTimer.select(state, FocusMode.entries[index])
@@ -147,10 +156,14 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
         updateCards(host.season)
         onMotionChanged()
         host.ambient.add(this)
+        if (first && host.policy.motion) {
+            staggerIn((0 until content.childCount).map { content.getChildAt(it) }.filter { it.visibility == View.VISIBLE }, motion = true)
+        }
     }
 
     override fun onHide() {
         host.ambient.remove(this)
+        colon.alpha = 1f
     }
 
     override fun onDataChanged() {
@@ -162,6 +175,10 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
         seconds.animateChanges = host.policy.motion
         modeControl.animateChanges = host.policy.motion
         smoothing = host.policy.ambient
+        if (!smoothing) {
+            colon.alpha = 1f
+            track.shimmer = -1f
+        }
     }
 
     override fun applyInsets(top: Int, bottom: Int) {
@@ -180,11 +197,22 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
         return (if (rest == 0L) 1000L else rest) + 5
     }
 
-    /** Smooth progress: while running, the line follows the clock every frame. */
+    /**
+     * While running: the line follows the clock every frame with a light travelling along it,
+     * and the colon breathes once a second, in time with the digits.
+     */
     override fun onAmbientFrame(frameTimeMs: Long) {
-        if (!state.running || !smoothing) return
+        if (!smoothing) return
+        if (!state.running) {
+            if (colon.alpha != 1f) colon.alpha = 1f
+            track.shimmer = -1f
+            return
+        }
         val left = FocusTimer.remaining(state, AppClock.moment(ctx))
         track.set(left.toFloat() / state.mode.durationMs, animate = false)
+        track.shimmer = (frameTimeMs % 2800L) / 2800f * 1.5f - 0.25f
+        val beat = (left % 1000L) / 1000f
+        colon.alpha = 0.35f + 0.65f * (0.5f + 0.5f * kotlin.math.cos(beat * 6.283f))
     }
 
     /** Opens the checklist for [subject] and scrolls it into view. */
@@ -278,9 +306,12 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
     private fun celebrateSession() {
         Haptics.confirm(timerRow)
         if (host.policy.motion) {
-            timerRow.animate().scaleX(1.04f).scaleY(1.04f).setDuration(150).withEndAction {
-                timerRow.animate().scaleX(1f).scaleY(1f).setInterpolator(OvershootInterpolator()).setDuration(300).start()
+            // The timer punches up, then springs back, as a burst of confetti goes off.
+            timerRow.pivotX = 0f
+            timerRow.animate().scaleX(1.08f).scaleY(1.08f).setDuration(140).setInterpolator(Ease.out).withEndAction {
+                timerRow.animate().scaleX(1f).scaleY(1f).setInterpolator(Spring(0.4f)).setDuration(700).start()
             }.start()
+            host.popAt(timerRow, 1.1f)
         }
     }
 
@@ -389,6 +420,7 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
             headerSignature = signature
             title.text = status.exam.title(choices)
             caption.text = "${Formats.dateShort(status.exam.date)} · $timing · $done of ${items.size} done"
+            ring.animateChanges = host.policy.motion
             ring.set(done, items.size)
         }
 
@@ -402,11 +434,12 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
             body.visibility = if (value) View.VISIBLE else View.GONE
             val rotation = if (value) 180f else 0f
             if (animate && host.policy.motion) {
-                chevron.animate().rotation(rotation).setDuration(200).start()
+                chevron.animate().rotation(rotation).setDuration(520).setInterpolator(Spring(0.55f)).start()
                 if (value) {
                     body.alpha = 0f
-                    body.translationY = -ctx.dp(6).toFloat()
-                    body.animate().alpha(1f).translationY(0f).setDuration(220).start()
+                    body.translationY = -ctx.dp(12).toFloat()
+                    body.animate().translationY(0f).setDuration(560).setInterpolator(Spring.gentle).start()
+                    body.fadeTo(1f, 240)
                 }
             } else {
                 chevron.rotation = rotation
@@ -441,14 +474,19 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
                 setOnClickListener {
                     val updated = item.copy(done = !item.done)
                     check.setChecked(updated.done, animate = host.policy.motion)
-                    if (updated.done) Haptics.confirm(this) else Haptics.tap(this)
+                    if (updated.done) {
+                        Haptics.confirm(this)
+                        host.popAt(check, 0.5f)
+                    } else {
+                        Haptics.tap(this)
+                    }
                     replace(item, updated)
                     label.setTextColor(if (updated.done) Ui.c.text3 else Ui.c.text)
                     label.paintFlags = if (updated.done) label.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG else label.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
                     contentDescription = "${item.text}, ${if (updated.done) "done" else "not done"}"
                     setOnClickListener(null)
                     // Rebuild after the tick animation so the row reflects the new state.
-                    postDelayed({ renderItems() }, if (host.policy.motion) 260L else 0L)
+                    postDelayed({ renderItems() }, if (host.policy.motion) 520L else 0L)
                 }
             }
         }
@@ -523,11 +561,31 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
             importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
         }
 
+        private var shown = -1f
+        private var animator: ValueAnimator? = null
+
+        /** Sets the ring; after the first time, it sweeps to the new amount on a spring. */
         fun set(done: Int, total: Int) {
             fraction = if (total == 0) 0f else done.toFloat() / total
             complete = total > 0 && done == total
-            invalidate()
+            animator?.cancel()
+            if (shown < 0f || !isAttachedToWindow || !animateChanges) {
+                shown = fraction
+                invalidate()
+                return
+            }
+            animator = ValueAnimator.ofFloat(shown, fraction).apply {
+                duration = 700
+                interpolator = Spring(0.72f)
+                addUpdateListener {
+                    shown = it.animatedValue as Float
+                    invalidate()
+                }
+                start()
+            }
         }
+
+        var animateChanges = true
 
         override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
             val inset = track.strokeWidth
@@ -536,20 +594,24 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
 
         override fun onDraw(canvas: Canvas) {
             track.color = Ui.c.track
-            arc.color = Ui.c.green
-            label.color = Ui.c.text2
+            arc.color = if (complete) Ui.c.gold else Ui.c.green
+            label.color = if (complete) Ui.c.goldText else Ui.c.text2
             canvas.drawOval(oval, track)
-            if (fraction > 0f) canvas.drawArc(oval, -90f, 360f * fraction, false, arc)
+            val f = shown.coerceIn(0f, 1f)
+            if (f > 0f) canvas.drawArc(oval, -90f, 360f * f, false, arc)
             val text = if (complete) "✓" else "${Math.round(fraction * 100)}"
             val y = height / 2f - (label.descent() + label.ascent()) / 2f
             canvas.drawText(text, width / 2f, y, label)
         }
     }
 
-    /** Round checkbox with an animated tick. */
+    /** Round checkbox: ticking it pops the green fill with a bounce and draws the tick in. */
     private class CheckCircle(context: Context) : View(context) {
         private var progress = 0f
+        private var popping = false
         private var animator: ValueAnimator? = null
+        private val partial = Path()
+        private val measure = android.graphics.PathMeasure()
         private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = context.dpf(1.8f)
@@ -572,12 +634,14 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
             val to = if (checked) 1f else 0f
             if (!animate) {
                 progress = to
+                popping = false
                 invalidate()
                 return
             }
+            popping = checked
             animator = ValueAnimator.ofFloat(progress, to).apply {
-                duration = 240
-                interpolator = DecelerateInterpolator()
+                duration = if (checked) 480 else 220
+                interpolator = if (checked) LinearInterpolator() else DecelerateInterpolator()
                 addUpdateListener {
                     progress = it.animatedValue as Float
                     invalidate()
@@ -593,17 +657,25 @@ class StudyScreen(host: MainActivity) : Screen(host), AmbientListener {
             ring.color = Ui.c.text3
             canvas.drawCircle(cx, cy, r, ring)
             if (progress <= 0f) return
+            // Checking: the fill bursts out past its size and settles; the tick then draws in.
+            val grow = if (popping) spring(progress, 0.42f) else progress
+            val drawn = if (popping) window(progress, 0.25f, 0.5f) else progress
             fill.color = Ui.c.green
-            fill.alpha = (255 * progress).toInt()
-            canvas.drawCircle(cx, cy, r * (0.6f + 0.4f * progress) + ring.strokeWidth / 2, fill)
-            // The tick draws itself in.
+            fill.alpha = (255 * if (popping) window(progress, 0f, 0.2f) else progress).toInt().coerceIn(0, 255)
+            canvas.drawCircle(cx, cy, (r + ring.strokeWidth / 2) * (0.35f + 0.65f * grow), fill)
             path.reset()
             path.moveTo(cx - r * 0.45f, cy + r * 0.02f)
             path.lineTo(cx - r * 0.1f, cy + r * 0.36f)
             path.lineTo(cx + r * 0.48f, cy - r * 0.32f)
             tick.color = Ui.c.onGreen
-            tick.alpha = (255 * progress).toInt()
-            canvas.drawPath(path, tick)
+            if (drawn >= 1f) {
+                canvas.drawPath(path, tick)
+            } else if (drawn > 0f) {
+                measure.setPath(path, false)
+                partial.reset()
+                measure.getSegment(0f, measure.length * drawn, partial, true)
+                canvas.drawPath(partial, tick)
+            }
         }
     }
 }

@@ -3,15 +3,25 @@ package com.imran.examcountdown.ui.widgets
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.LinearGradient
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Shader
 import android.view.View
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.LinearInterpolator
 import com.imran.examcountdown.ui.Ui
 import com.imran.examcountdown.ui.dp
 import com.imran.examcountdown.ui.dpf
+import com.imran.examcountdown.ui.spring
+import com.imran.examcountdown.ui.window
+import kotlin.math.sin
 
-/** One short bar per exam: green when done, gold for today or the paper in progress. */
+/**
+ * One short bar per exam: green when done, gold for today or the paper in progress.
+ * The reveal fills the done bars one after another, each chased by a glint; the live (or
+ * today's) bar breathes gently while the ambient clock runs.
+ */
 class SeasonProgressView(context: Context) : View(context) {
 
     enum class Segment { DONE, LIVE, TODAY, UPCOMING }
@@ -23,7 +33,15 @@ class SeasonProgressView(context: Context) : View(context) {
             invalidate()
         }
 
-    private var reveal = 1f
+    /** 0..1, one breath of the live/today bar; negative when still. */
+    var pulse = -1f
+        set(value) {
+            if (field == value) return
+            field = value
+            if (segments.any { it == Segment.LIVE || it == Segment.TODAY }) invalidate()
+        }
+
+    private var revealMs = REVEAL_MS
     private val rect = RectF()
     private val gap = dpf(4)
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -31,18 +49,25 @@ class SeasonProgressView(context: Context) : View(context) {
         style = Paint.Style.STROKE
         strokeWidth = dpf(1.5f)
     }
+    private val glint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val glintMatrix = Matrix()
+    private val glintShader = LinearGradient(
+        -dpf(14), 0f, dpf(14), 0f,
+        intArrayOf(0x00FFFFFF, 0xB3FFFFFF.toInt(), 0x00FFFFFF), null, Shader.TileMode.CLAMP,
+    )
 
     init {
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+        glint.shader = glintShader
     }
 
     /** Fills the done segments one after another. */
     fun playReveal() {
-        ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 700
-            interpolator = DecelerateInterpolator(1.4f)
+        ValueAnimator.ofFloat(0f, REVEAL_MS).apply {
+            duration = REVEAL_MS.toLong()
+            interpolator = LinearInterpolator()
             addUpdateListener {
-                reveal = it.animatedValue as Float
+                revealMs = it.animatedValue as Float
                 invalidate()
             }
             start()
@@ -60,29 +85,56 @@ class SeasonProgressView(context: Context) : View(context) {
         val h = height.toFloat()
         val w = (width - gap * (n - 1)) / n
         val r = h / 2f
+        val breath = if (pulse >= 0f) 0.5f + 0.5f * sin(pulse * 6.283f) else 0f
         for (i in 0 until n) {
             val left = i * (w + gap)
             rect.set(left, 0f, left + w, h)
             paint.color = c.track
             canvas.drawRoundRect(rect, r, r, paint)
-            val local = ((reveal * n) - i).coerceIn(0f, 1f)
+            val local = revealMs - i * STAGGER_MS
             when (segments[i]) {
-                Segment.DONE -> if (local > 0f) {
-                    rect.right = left + w * local
-                    paint.color = c.green
-                    canvas.drawRoundRect(rect, r, r, paint)
+                Segment.DONE -> {
+                    val f = spring(window(local, 0f, 560f), 0.72f).coerceAtMost(1f)
+                    if (f > 0f) {
+                        rect.right = left + w * f
+                        paint.color = c.green
+                        canvas.drawRoundRect(rect, r, r, paint)
+                        // A glint runs along the bar just after it fills.
+                        val g = window(local, 200f, 420f)
+                        if (g > 0f && g < 1f) {
+                            canvas.save()
+                            canvas.clipRect(rect)
+                            glintMatrix.setTranslate(left - dpf(14) + (w + dpf(28)) * g, 0f)
+                            glintShader.setLocalMatrix(glintMatrix)
+                            canvas.drawRect(rect, glint)
+                            canvas.restore()
+                        }
+                    }
                 }
                 Segment.LIVE -> {
                     paint.color = c.gold
                     canvas.drawRoundRect(rect, r, r, paint)
+                    if (breath > 0f) {
+                        paint.color = Ui.withAlpha(0xFFFFFFFF.toInt(), 0.35f * breath)
+                        canvas.drawRoundRect(rect, r, r, paint)
+                    }
                 }
                 Segment.TODAY -> {
-                    stroke.color = c.gold
+                    stroke.color = Ui.withAlpha(c.gold, 0.55f + 0.45f * (1f - breath))
                     rect.inset(stroke.strokeWidth / 2, stroke.strokeWidth / 2)
                     canvas.drawRoundRect(rect, r, r, stroke)
+                    if (breath > 0f) {
+                        paint.color = Ui.withAlpha(c.gold, 0.28f * breath)
+                        canvas.drawRoundRect(rect, r, r, paint)
+                    }
                 }
                 Segment.UPCOMING -> Unit
             }
         }
+    }
+
+    companion object {
+        private const val REVEAL_MS = 1400f
+        private const val STAGGER_MS = 90f
     }
 }

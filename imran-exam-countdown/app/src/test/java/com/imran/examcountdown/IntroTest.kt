@@ -18,6 +18,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowChoreographer
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -25,6 +26,9 @@ class IntroTest {
 
     @Before
     fun setUp() {
+        // Frames only advance with the clock, so the animation plays in real (simulated) time
+        // instead of running to its end on the first idle.
+        ShadowChoreographer.setPaused(true)
         AppClock.pinnedWall = ist(2026, 9, 27, 18, 0)
         ExamCountdownApp.introHandled = false
         Store(RuntimeEnvironment.getApplication()).setupDone = true
@@ -32,6 +36,7 @@ class IntroTest {
 
     @After
     fun tearDown() {
+        ShadowChoreographer.setPaused(false)
         AppClock.pinnedWall = null
         ExamCountdownApp.introHandled = true
     }
@@ -45,9 +50,9 @@ class IntroTest {
         idle(16)
         assertNotNull("intro plays on a cold launch", activity.intro())
         assertEquals("header emblem waits for the intro", View.INVISIBLE, activity.homeEmblem().visibility)
-        idle(900)
+        frames(900)
         assertNotNull("still running at 0.9 s", activity.intro())
-        idle(1300)
+        frames(1300)
         assertNull("finished within about 2 s", activity.intro())
         assertEquals(View.VISIBLE, activity.homeEmblem().visibility)
         assertTrue(activity.hasText("Hey, Imran"))
@@ -65,7 +70,7 @@ class IntroTest {
     @Test
     fun onlyOncePerProcess() {
         Robolectric.buildActivity(MainActivity::class.java).setup()
-        idle(2500)
+        frames(2500)
         val second = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         idle(16)
         assertNull("a second activity in the same process skips it", second.intro())
@@ -91,9 +96,9 @@ class IntroTest {
     @Test
     fun tapSkipsAhead() {
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        idle(300)
+        frames(300)
         activity.intro()!!.performClick()
-        idle(600)
+        frames(600)
         assertNull(activity.intro())
         assertEquals(View.VISIBLE, activity.homeEmblem().visibility)
     }
@@ -102,7 +107,7 @@ class IntroTest {
     fun firstRunIntroLeadsIntoSetup() {
         Store(RuntimeEnvironment.getApplication()).setupDone = false
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        idle(2300)
+        frames(2300)
         assertNull(activity.intro())
         assertTrue(activity.hasText("Let’s go"))
     }

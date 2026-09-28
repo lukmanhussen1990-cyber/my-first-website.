@@ -25,6 +25,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import org.robolectric.shadows.ShadowChoreographer
 import java.io.File
 import java.io.FileOutputStream
 
@@ -222,18 +223,24 @@ class ScreenshotTest {
         ExamCountdownApp.introHandled = false
         Store(RuntimeEnvironment.getApplication()).motion = MotionPref.FULL
         AppClock.pinnedWall = ist(2026, 9, 27, 18, 0)
-        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        activity.applySystemBars(24, 16)
-        idle(330)
-        shoot(activity, "16-intro-0.35s")
-        idle(620)
-        shoot(activity, "17-intro-0.95s")
-        idle(250)
-        shoot(activity, "18-intro-1.2s")
-        idle(450)
-        shoot(activity, "19-intro-1.65s")
-        idle(700)
-        shoot(activity, "20-intro-done")
+        // Frames advance only with the clock, so each shot shows the intro at that moment.
+        ShadowChoreographer.setPaused(true)
+        try {
+            val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+            activity.applySystemBars(24, 16)
+            idle(330)
+            shoot(activity, "16-intro-0.35s")
+            idle(620)
+            shoot(activity, "17-intro-0.95s")
+            idle(250)
+            shoot(activity, "18-intro-1.2s")
+            idle(450)
+            shoot(activity, "19-intro-1.65s")
+            idle(700)
+            shoot(activity, "20-intro-done")
+        } finally {
+            ShadowChoreographer.setPaused(false)
+        }
     }
 
     @Test

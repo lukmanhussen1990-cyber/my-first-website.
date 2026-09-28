@@ -8,6 +8,7 @@ import com.imran.examcountdown.data.AppClock
 import com.imran.examcountdown.data.Store
 import com.imran.examcountdown.ui.widgets.ConfettiView
 import com.imran.examcountdown.ui.widgets.CountdownView
+import com.imran.examcountdown.ui.widgets.RollingNumberView
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -47,12 +48,15 @@ class ExamStatesTest {
     private fun MainActivity.countdownText(): String =
         root().allViews().filterIsInstance<CountdownView>().single().contentDescription.toString()
 
+    /** The figures on the countdown's drums (they are drawn, not text views). */
+    private fun MainActivity.countdownFigures(): List<String> =
+        root().allViews().filterIsInstance<RollingNumberView>().filter { it.isShown }.map { it.value }
+
     @Test
     fun countdownIsCalculatedFromTheCurrentTime() {
         val activity = launchAt(ist(2026, 9, 27, 18, 0))
         assertEquals("18 hours and 30 minutes", activity.countdownText())
-        assertTrue(activity.hasText("18"))
-        assertTrue(activity.hasText("30"))
+        assertTrue(activity.countdownFigures().toString(), activity.countdownFigures().containsAll(listOf("18", "30", "00")))
         assertTrue(activity.hasText("NEXT EXAM · MIL"))
         assertTrue(activity.hasText("0 of 8 done"))
     }
@@ -78,7 +82,7 @@ class ExamStatesTest {
         val activity = launchAt(ist(2026, 9, 28, 15, 40))
         assertTrue(activity.hasText("It’s exam time!"))
         activity.click("Mark as finished")
-        activity.click("Mark as finished") // confirm in the dialog
+        clickInDialog("Mark as finished") // confirm in the dialog
         idle(300)
         assertFalse(activity.hasText("It’s exam time!"))
         assertTrue(activity.hasText("1 of 8 done"))
