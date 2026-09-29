@@ -44,16 +44,16 @@ All cuts land on whole seconds (on the beat).
 | 02 | macro | 96–191 (96) | 0:04–0:08 | Extreme macro, shallow DOF, camera glides across the bottle's beaded surface past the white script lettering. One big droplet slides down, merging others. | soft music intro |
 | 03 | pop | 192–287 (96) | 0:08–0:12 | Close-up bottle neck & red crown cap. At local frame 25 (global 216 = 0:09.0) the cap pops off, spinning up and away in slow motion; cold vapor wisp curls out of the neck. | **POP + hiss at 0:09.0**, music drop |
 | 04 | pour | 288–455 (168) | 0:12–0:19 | Bottle tilts, pouring a ruby-backlit cola stream into a glass of ice; level rises, ice lifts/bobs, bubbles and a foam head form. | pour + ice crackle + fizz |
-| 05 | fizz | 456–575 (120) | 0:19–0:24 | Macro inside the glass: streams of bubbles rising past ice cubes, backlit amber-red; slow upward camera. Super: "ICE COLD." | fizz texture |
+| 05 | fizz | 456–575 (120) | 0:19–0:24 | Close on the top of the frosted glass: backlit ice at the surface, bubble streams rising along the front wall, foam ring, droplets jumping from the fizz; slow push-in. Super: "ICE COLD." | fizz texture |
 | 06 | icedrop | 576–695 (120) | 0:24–0:29 | Super slow motion: an ice cube drops into the full glass; at local frame 25 (global 600 = 0:25.0) it hits, throwing a crown of cola droplets. | **PLUNK/splash at 0:25.0** |
 | 07 | hero | 696–839 (144) | 0:29–0:35 | Hero: bottle + filled glass on a black wet reflective surface, red backdrop glow, camera slowly arcs; light sweep glint across the bottle. Super: "THE TASTE YOU KNOW." | music peak |
 | 08 | endcard | 840–959 (120) | 0:35–0:40 | Coca-Cola red background, hero bottle (3D plate), animated white script wordmark "Coca-Cola" and tagline "Feel the Fizz." Small disclaimer at the bottom. | final hit at 0:35.0, resolve, tail out |
 
-Super timings (global seconds): "ICE COLD." 19.5–23.6; "THE TASTE YOU KNOW." 29.8–34.6; end card wordmark in at 35.3, tagline at 36.2,
-disclaimer 36.5–40.0. Fade to black over the last 12 frames (39.5–40.0).
+Super timings (global seconds): "ICE COLD." 19.5–23.6; "THE TASTE YOU KNOW." 29.8–34.6; end card wordmark in at 35.3, tagline "FEEL THE FIZZ." at 36.2,
+disclaimer 36.6–40.0. Music bar downbeats fall on odd seconds, so 9.0, 25.0, 29.0 and 35.0 are all downbeats. Fade to black over the last 12 frames (39.5–40.0).
 
 ## Module contract
-- `coke-ad/lib/cokelib.py`: shared scene/asset library (render setup, studio lighting, contour bottle, cap, cola, glass tumbler, ice, bubbles, condensation, camera helpers). Documented in `coke-ad/lib/API.md`.
+- `coke-ad/lib/cokelib.py`: shared scene/asset library (render setup, studio lighting, contour bottle, cap, cola, glass tumbler, ice, bubbles, condensation, camera helpers), documented inline.
 - `coke-ad/shots/shotNN_<name>.py`: each defines `SHOT = {"id": "NN", "name": ..., "frames": N}` and `build()`, which builds the whole scene
   (starting from `cokelib.reset_scene()`) with `scene.frame_start = 1`, `scene.frame_end = N`. Running the file directly with `--test` renders stills to `$S/tests/shotNN/`.
 - `coke-ad/render_shot.py NN [--start a --end b] [--res WxH] [--samples n]`: imports the shot module, builds once, and renders frames to `$S/renders/shotNN/####.png`, skipping existing ones.
