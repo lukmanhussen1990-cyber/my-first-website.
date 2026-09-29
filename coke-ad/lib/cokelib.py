@@ -1155,26 +1155,33 @@ class GlassLiquid:
         self.me = me
         self.cutters = None
 
-    def cut_with(self, ice_objects, gap_scale=1.012):
-        """Carve the ice out of the liquid (so the ice itself stays clear) using hidden, slightly larger cutters."""
+    def cut_with(self, ice_objects, gap_scale=1.03, solver=None):
+        """Carve the ice out of the liquid (so the ice itself stays clear) using hidden, slightly larger cutters.
+
+        One boolean per cube: the FAST solver is ~30x quicker than EXACT and reliable with a single operand.
+        """
+        solver = solver or os.environ.get("COKE_BOOL", "EXACT")
         col = bpy.data.collections.new(self.obj.name + "_cutters")
         bpy.context.scene.collection.children.link(col)
+        col.hide_render = True
+        mods = []
         for ice in ice_objects:
-            c = bpy.data.objects.new(ice.name + "_cut", ice.data.copy())
+            src = ICE_CUTTERS.get(ice.name)
+            c = bpy.data.objects.new(ice.name + "_cut", src if src is not None else ice.data.copy())
             c.data.materials.clear()
             col.objects.link(c)
             c.parent = ice
             c.scale = (gap_scale,) * 3
             c.hide_render = True
             c.display_type = "WIRE"
-        col.hide_render = True
-        mod = self.obj.modifiers.new("IceCut", "BOOLEAN")
-        mod.operation = "DIFFERENCE"
-        mod.operand_type = "COLLECTION"
-        mod.collection = col
-        mod.solver = os.environ.get("COKE_BOOL", "EXACT")
+            mod = self.obj.modifiers.new("IceCut_" + ice.name, "BOOLEAN")
+            mod.operation = "DIFFERENCE"
+            mod.operand_type = "OBJECT"
+            mod.object = c
+            mod.solver = solver
+            mods.append(mod)
         self.cutters = col
-        return mod
+        return mods
 
     def _profile(self, level):
         n_wall = 36
@@ -1212,7 +1219,20 @@ class GlassLiquid:
         set_verts(self.me, V)
 
 
-def make_ice_cube(name, size=0.026, seed=0, parent=None, res=10, core=False):
+ICE_CUTTERS = {}
+
+
+def make_ice_cube(name, size=0.026, seed=0, parent=None, res=10, core=False, cutter_res=5):
+    """Rounded, melted ice cube. Also registers a low-poly twin used as its boolean cutter."""
+    ob = _ice_cube(name, size, seed, parent, res, core)
+    if cutter_res:
+        tmp = _ice_cube(name + "_lo", size, seed, None, cutter_res, False)
+        ICE_CUTTERS[name] = tmp.data
+        bpy.data.objects.remove(tmp)
+    return ob
+
+
+def _ice_cube(name, size, seed, parent, res, core):
     rng = np.random.default_rng(seed + 101)
     # cube grid on each face
     g = np.linspace(-1, 1, res + 1)
@@ -1541,19 +1561,23 @@ def make_studio(style="dark", glow=1.0, backdrop_y=1.3, glow_center=(0.0, 0.11),
         # hidden kicker right behind the product: makes the cola glow ruby
         out["kick"] = area_light("Kicker", (0.0, 0.40, 0.065), size=(0.26, 0.16), energy=1.6,
                                  color=(1.0, 0.62, 0.42), look_at=(0, -1, 0.09), visible_glossy=False)
-        for k in ("frontL", "frontR"):
+        for k in ("frontL", "frontR", "rimL", "rimR"):
             exclude_receivers(out[k], [out["floor"]])
     elif style == "red":
         out["sweep"] = red_sweep()
-        out["top"] = area_light("Top", (0.0, -0.15, 0.9), size=(1.2, 0.8), energy=90.0, look_at=(0, 0.1, 0.0))
+        out["top"] = area_light("Top", (0.05, -0.1, 0.9), size=(0.9, 0.6), energy=16.0, look_at=(0.05, 0.25, 0.0))
+        out["spot"] = area_light("Spot", (0.10, 0.25, 0.6), size=(0.25, 0.25), energy=6.0, look_at=(0.10, 0.9, 0.35),
+                                 visible_glossy=False)
         out["rimL"] = emissive_card("RimL", (-0.35, 0.18, 0.14), (0.08, 0.6), (1, 0.96, 0.94), 22.0,
                                     look_at=(0, 0, 0.11))
         out["rimR"] = emissive_card("RimR", (0.35, 0.18, 0.14), (0.08, 0.6), (1, 0.96, 0.94), 22.0,
                                     look_at=(0, 0, 0.11))
         out["frontL"] = emissive_card("FrontL", (-0.24, -0.55, 0.16), (0.05, 0.7), (1, 1, 1), 14.0,
                                       look_at=(0, 0, 0.1))
-        out["kick"] = area_light("Kicker", (0.0, 0.3, 0.10), size=(0.16, 0.26), energy=16.0,
+        out["kick"] = area_light("Kicker", (0.0, 0.3, 0.065), size=(0.16, 0.14), energy=2.5,
                                  color=(1.0, 0.7, 0.55), look_at=(0, -1, 0.09), visible_glossy=False)
+        for k in ("frontL", "rimL", "rimR"):
+            exclude_receivers(out[k], [out["sweep"]])
     return out
 
 
@@ -1579,8 +1603,8 @@ def red_sweep(name="Sweep", depth=3.0, width=6.0, radius=0.6, wall_h=3.0, y_wall
     m = bpy.data.materials.new(name + "_mat")
     nt, N, L = _nodes(m)
     out = N.new("ShaderNodeOutputMaterial")
-    p = _principled(N, **{"Base Color": (0.62, 0.004, 0.018, 1), "Roughness": 0.42, "Coat Weight": 0.25,
-                          "Coat Roughness": 0.08})
+    p = _principled(N, **{"Base Color": (0.55, 0.002, 0.012, 1), "Roughness": 0.45, "Coat Weight": 0.2,
+                          "Coat Roughness": 0.1})
     L.new(p.outputs[0], out.inputs[0])
     me.materials.append(m)
     return new_object(name, me)
