@@ -1568,11 +1568,11 @@ def make_studio(style="dark", glow=1.0, backdrop_y=1.3, glow_center=(0.0, 0.11),
         out["top"] = area_light("Top", (0.05, -0.1, 0.9), size=(0.9, 0.6), energy=16.0, look_at=(0.05, 0.25, 0.0))
         out["spot"] = area_light("Spot", (0.10, 0.25, 0.6), size=(0.25, 0.25), energy=6.0, look_at=(0.10, 0.9, 0.35),
                                  visible_glossy=False)
-        out["rimL"] = emissive_card("RimL", (-0.35, 0.18, 0.14), (0.08, 0.6), (1, 0.96, 0.94), 22.0,
+        out["rimL"] = emissive_card("RimL", (-0.56, 0.20, 0.14), (0.08, 0.6), (1, 0.96, 0.94), 26.0,
                                     look_at=(0, 0, 0.11))
         out["rimR"] = emissive_card("RimR", (0.35, 0.18, 0.14), (0.08, 0.6), (1, 0.96, 0.94), 22.0,
                                     look_at=(0, 0, 0.11))
-        out["frontL"] = emissive_card("FrontL", (-0.24, -0.55, 0.16), (0.05, 0.7), (1, 1, 1), 14.0,
+        out["frontL"] = emissive_card("FrontL", (-0.24, -0.55, 0.42), (0.05, 0.5), (1, 1, 1), 14.0,
                                       look_at=(0, 0, 0.1))
         out["kick"] = area_light("Kicker", (0.0, 0.3, 0.065), size=(0.16, 0.14), energy=2.5,
                                  color=(1.0, 0.7, 0.55), look_at=(0, -1, 0.09), visible_glossy=False)
@@ -1603,8 +1603,7 @@ def red_sweep(name="Sweep", depth=3.0, width=6.0, radius=0.6, wall_h=3.0, y_wall
     m = bpy.data.materials.new(name + "_mat")
     nt, N, L = _nodes(m)
     out = N.new("ShaderNodeOutputMaterial")
-    p = _principled(N, **{"Base Color": (0.55, 0.002, 0.012, 1), "Roughness": 0.45, "Coat Weight": 0.2,
-                          "Coat Roughness": 0.1})
+    p = _principled(N, **{"Base Color": (0.55, 0.002, 0.012, 1), "Roughness": 0.4})
     L.new(p.outputs[0], out.inputs[0])
     me.materials.append(m)
     return new_object(name, me)
