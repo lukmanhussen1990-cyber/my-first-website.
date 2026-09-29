@@ -42,6 +42,7 @@ export default {
 
     ctx.say('§bTsunami warning! Get to high ground.');
     playSound(ctx.dim, 'nd.wave_crash', ctx.origin, { volume: 6 });
+    playSound(ctx.dim, 'nd.alarm_beep', ctx.origin, { volume: 4 });
 
     ctx.job(function* () {
       for (;;) {

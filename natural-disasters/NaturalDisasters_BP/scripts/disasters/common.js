@@ -14,7 +14,7 @@ export function groundAt(ctx, x, z, hint) {
 
 /** Grant fall protection to entities that must not be hurt (damage switches OFF). @param {import('@minecraft/server').Entity[]} list */
 export function shield(list) {
-  for (let i = 0; i < list.length; i++) if (!ent.mayDamage(list[i])) ent.protect(list[i], 100);
+  for (let i = 0; i < list.length; i++) if (!ent.mayDamage(list[i])) ent.protect(list[i], 160);
 }
 
 /** Random number in [a,b). @param {import('../lib/manager.js').Ctx} ctx */

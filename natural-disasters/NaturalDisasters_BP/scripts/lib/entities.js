@@ -209,8 +209,15 @@ export function mayDamage(e) {
  */
 export function push(e, vx, vy, vz) {
   if (!isValidEntity(e)) return false;
-  if (!mayDamage(e)) protect(e, 100);
+  if (!mayDamage(e)) protect(e, 240);
   try {
+    // impulses are added every update: never accelerate something that is already flying fast
+    try {
+      const v = e.getVelocity();
+      const maxUp = isPlayer(e) ? 0.9 : 1.2;
+      if (vy > 0) vy = v.y >= maxUp ? 0 : Math.min(vy, maxUp - v.y);
+      if (v.x * v.x + v.z * v.z > 4.84 && vx * v.x + vz * v.z > 0) { vx = 0; vz = 0; }
+    } catch (err) { /* velocity unavailable */ }
     if (isPlayer(e)) {
       const h = Math.sqrt(vx * vx + vz * vz);
       const str = clamp(h, 0, CAPS.maxPlayerKnockbackH);
