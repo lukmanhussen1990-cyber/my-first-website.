@@ -1,0 +1,26 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "destruct:sky_beam_staff",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "destruct_sky_beam_staff"
+      },
+      "minecraft:display_name": {
+        "value": "§bSky Beam Staff"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:glint": true,
+      "minecraft:cooldown": {
+        "category": "destruct_sky_beam_staff",
+        "duration": 5.0
+      }
+    }
+  }
+}

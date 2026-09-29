@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "destruct:meteor_staff"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "MFM",
+      " B ",
+      " B "
+    ],
+    "key": {
+      "M": {
+        "item": "minecraft:magma"
+      },
+      "F": {
+        "item": "minecraft:fire_charge"
+      },
+      "B": {
+        "item": "minecraft:blaze_rod"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:magma"
+      }
+    ],
+    "result": {
+      "item": "destruct:meteor_staff"
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Destruction Mod",
+    "description": "10 destruction weapons + Destruction Tablet. Tap: strike where you aim. Sneak+tap: choose WHERE it hits and the power. No experiments needed.",
+    "uuid": "4b5a87be-c1ff-4eeb-aa82-8311cd885013",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      20,
+      80
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "48161426-ec25-42ce-9b5d-95aba24c8cf7",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "778ef538-fd1c-49eb-a7e5-9b7b1ba52890",
+      "entry": "scripts/main.js",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "26bf7b7e-da06-4027-bdc5-37f6626226a9",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.10.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.1.0"
+    }
+  ]
+}

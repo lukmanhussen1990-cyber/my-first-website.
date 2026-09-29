@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "destruct:mega_tnt_wand"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "TTT",
+      "TDT",
+      " B "
+    ],
+    "key": {
+      "T": {
+        "item": "minecraft:tnt"
+      },
+      "D": {
+        "item": "minecraft:diamond"
+      },
+      "B": {
+        "item": "minecraft:blaze_rod"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "result": {
+      "item": "destruct:mega_tnt_wand"
+    }
+  }
+}

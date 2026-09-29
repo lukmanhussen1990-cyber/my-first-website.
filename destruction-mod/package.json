@@ -1,0 +1,16 @@
+{
+  "name": "destruction-mod",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minecraft Bedrock add-on: 10 destruction weapons with a choose-where-it-hits system.",
+  "scripts": {
+    "check": "tsc -p tsconfig.json",
+    "test": "node tools/smoke-test.mjs",
+    "build": "python3 tools/build.py"
+  },
+  "devDependencies": {
+    "@minecraft/server": "1.10.0",
+    "@minecraft/server-ui": "1.1.0",
+    "typescript": "^5.4.0"
+  }
+}

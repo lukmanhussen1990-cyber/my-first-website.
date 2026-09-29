@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "destruct:sky_beam_staff"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "ECE",
+      " B ",
+      " B "
+    ],
+    "key": {
+      "E": {
+        "item": "minecraft:end_rod"
+      },
+      "C": {
+        "item": "minecraft:end_crystal"
+      },
+      "B": {
+        "item": "minecraft:blaze_rod"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:end_rod"
+      }
+    ],
+    "result": {
+      "item": "destruct:sky_beam_staff"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "destruct:crater_wand",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "destruct_crater_wand"
+      },
+      "minecraft:display_name": {
+        "value": "§dCrater Wand"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:glint": true,
+      "minecraft:cooldown": {
+        "category": "destruct_crater_wand",
+        "duration": 1.5
+      }
+    }
+  }
+}

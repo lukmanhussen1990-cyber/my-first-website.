@@ -1,0 +1,32 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "destruct:tornado_wand"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "WWW",
+      " R ",
+      " R "
+    ],
+    "key": {
+      "W": {
+        "item": "minecraft:wind_charge"
+      },
+      "R": {
+        "item": "minecraft:breeze_rod"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:wind_charge"
+      }
+    ],
+    "result": {
+      "item": "destruct:tornado_wand"
+    }
+  }
+}

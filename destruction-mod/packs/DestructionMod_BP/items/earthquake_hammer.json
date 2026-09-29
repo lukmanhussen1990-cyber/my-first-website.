@@ -1,0 +1,25 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "destruct:earthquake_hammer",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "destruct_earthquake_hammer"
+      },
+      "minecraft:display_name": {
+        "value": "§gEarthquake Hammer"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:cooldown": {
+        "category": "destruct_earthquake_hammer",
+        "duration": 5.0
+      }
+    }
+  }
+}

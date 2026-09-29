@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "destruct:thunder_staff"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "CLC",
+      " I ",
+      " I "
+    ],
+    "key": {
+      "C": {
+        "item": "minecraft:copper_ingot"
+      },
+      "L": {
+        "item": "minecraft:lightning_rod"
+      },
+      "I": {
+        "item": "minecraft:iron_ingot"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:copper_ingot"
+      }
+    ],
+    "result": {
+      "item": "destruct:thunder_staff"
+    }
+  }
+}

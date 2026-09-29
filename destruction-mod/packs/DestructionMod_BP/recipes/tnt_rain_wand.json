@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "destruct:tnt_rain_wand"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "TPT",
+      " B ",
+      " B "
+    ],
+    "key": {
+      "T": {
+        "item": "minecraft:tnt"
+      },
+      "P": {
+        "item": "minecraft:phantom_membrane"
+      },
+      "B": {
+        "item": "minecraft:blaze_rod"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "result": {
+      "item": "destruct:tnt_rain_wand"
+    }
+  }
+}

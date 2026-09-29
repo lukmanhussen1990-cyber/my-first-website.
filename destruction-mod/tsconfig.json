@@ -1,0 +1,17 @@
+{
+  // Type-checks the add-on scripts against the exact script API versions the
+  // manifest asks for (@minecraft/server 1.10.0, @minecraft/server-ui 1.1.0).
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "lib": ["ES2022"],
+    "types": [],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["packs/DestructionMod_BP/scripts/**/*.js", "tools/globals.d.ts"]
+}
