@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_study"
+        android:shortcutId="study"
+        android:shortcutLongLabel="@string/shortcut_study_long"
+        android:shortcutShortLabel="@string/shortcut_study">
+        <intent
+            android:action="com.imran.examcountdown.action.STUDY"
+            android:targetClass="com.imran.examcountdown.MainActivity"
+            android:targetPackage="com.imran.examcountdown" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_timetable"
+        android:shortcutId="timetable"
+        android:shortcutLongLabel="@string/shortcut_timetable_long"
+        android:shortcutShortLabel="@string/shortcut_timetable">
+        <intent
+            android:action="com.imran.examcountdown.action.TIMETABLE"
+            android:targetClass="com.imran.examcountdown.MainActivity"
+            android:targetPackage="com.imran.examcountdown" />
+    </shortcut>
+</shortcuts>

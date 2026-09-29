@@ -123,7 +123,7 @@ public final class Season {
         if (getTotal() == 0) {
             return 0.0f;
         }
-        return getCompleted() / getTotal();
+        return getCompleted() / (float) getTotal();
     }
 
     public final boolean isOver() {

@@ -35,7 +35,6 @@ public final class ToggleView extends View {
         setChecked$lambda$2$lambda$1(toggleView, f, f2, valueAnimator);
     }
 
-    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
     public ToggleView(Context context) {
         super(context);
         Intrinsics.checkNotNullParameter(context, "context");
@@ -55,7 +54,7 @@ public final class ToggleView extends View {
         return this.isChecked;
     }
 
-    public final Function1<Boolean, Unit> getOnChange() {
+    public final Function1<? super Boolean, Unit> getOnChange() {
         return this.onChange;
     }
 

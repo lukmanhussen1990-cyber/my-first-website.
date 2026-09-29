@@ -144,7 +144,7 @@ public final class Dialogs {
         } else {
             linearLayout = linearLayout3;
         }
-        build.invoke(linearLayout2, new Dialogs$$ExternalSyntheticLambda6(dialog));
+        ((kotlin.jvm.functions.Function2) build).invoke(linearLayout2, new Dialogs$$ExternalSyntheticLambda6(dialog));
         ScrollView scrollView = new ScrollView(activity2);
         scrollView.setVerticalScrollBarEnabled(false);
         scrollView.addView(linearLayout);
@@ -236,7 +236,7 @@ public final class Dialogs {
         if (window != null) {
             window.setSoftInputMode(4);
         }
-        if (objectRef.element == 0) {
+        if (objectRef.element == null) {
             Intrinsics.throwUninitializedPropertyAccessException("field");
             editText = null;
         } else {
@@ -252,14 +252,14 @@ public final class Dialogs {
         Intrinsics.checkNotNullParameter(dismiss, "dismiss");
         objectRef.element = DialogsKt.inputField(activity, str, str2, i);
         EditText editText2 = null;
-        if (objectRef.element == 0) {
+        if (objectRef.element == null) {
             Intrinsics.throwUninitializedPropertyAccessException("field");
             editText = null;
         } else {
             editText = (EditText) objectRef.element;
         }
         editText.setOnEditorActionListener(new Dialogs$$ExternalSyntheticLambda7(objectRef, function0, function1, dismiss));
-        if (objectRef.element == 0) {
+        if (objectRef.element == null) {
             Intrinsics.throwUninitializedPropertyAccessException("field");
         } else {
             editText2 = (EditText) objectRef.element;
@@ -282,7 +282,7 @@ public final class Dialogs {
     private static final boolean editText$lambda$15$lambda$10(Ref.ObjectRef objectRef, Function0 function0, Function1 function1, Function0 function02, TextView textView, int i, KeyEvent keyEvent) {
         EditText editText;
         if (i == 6) {
-            if (objectRef.element == 0) {
+            if (objectRef.element == null) {
                 Intrinsics.throwUninitializedPropertyAccessException("field");
                 editText = null;
             } else {
@@ -320,7 +320,7 @@ public final class Dialogs {
     private static final Unit editText$lambda$15$lambda$14(Ref.ObjectRef objectRef, Function0 function0, Function1 function1, Function0 function02, View it) {
         EditText editText;
         Intrinsics.checkNotNullParameter(it, "it");
-        if (objectRef.element == 0) {
+        if (objectRef.element == null) {
             Intrinsics.throwUninitializedPropertyAccessException("field");
             editText = null;
         } else {

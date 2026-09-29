@@ -372,18 +372,22 @@ public final class Store {
 
         public final String encodeExams(List<Exam> list) {
             Intrinsics.checkNotNullParameter(list, "list");
-            JSONArray jSONArray = new JSONArray();
-            for (Exam exam : list) {
-                JSONObject put = new JSONObject().put("subject", exam.getSubject().name()).put("date", exam.getDate().toString()).put("start", exam.getStart().toString());
-                Object durationMinutes = exam.getDurationMinutes();
-                if (durationMinutes == null) {
-                    durationMinutes = JSONObject.NULL;
+            try {
+                JSONArray jSONArray = new JSONArray();
+                for (Exam exam : list) {
+                    JSONObject put = new JSONObject().put("subject", exam.getSubject().name()).put("date", exam.getDate().toString()).put("start", exam.getStart().toString());
+                    Object durationMinutes = exam.getDurationMinutes();
+                    if (durationMinutes == null) {
+                        durationMinutes = JSONObject.NULL;
+                    }
+                    jSONArray.put(put.put("minutes", durationMinutes));
                 }
-                jSONArray.put(put.put("minutes", durationMinutes));
+                String jSONArray2 = jSONArray.toString();
+                Intrinsics.checkNotNullExpressionValue(jSONArray2, "toString(...)");
+                return jSONArray2;
+            } catch (JSONException e) {
+                throw sneaky(e);
             }
-            String jSONArray2 = jSONArray.toString();
-            Intrinsics.checkNotNullExpressionValue(jSONArray2, "toString(...)");
-            return jSONArray2;
         }
 
         public final List<Exam> decodeExams(String str) {
@@ -455,14 +459,18 @@ public final class Store {
         public final String encodeFocus(FocusState s) {
             Object obj;
             Intrinsics.checkNotNullParameter(s, "s");
-            JSONObject put = new JSONObject().put("mode", s.getMode().name()).put("running", s.getRunning()).put("endWall", s.getEndWall()).put("endElapsed", s.getEndElapsed()).put("boot", s.getBoot()).put("remaining", s.getRemaining());
-            FocusMode finished = s.getFinished();
-            if (finished == null || (obj = finished.name()) == null) {
-                obj = JSONObject.NULL;
+            try {
+                JSONObject put = new JSONObject().put("mode", s.getMode().name()).put("running", s.getRunning()).put("endWall", s.getEndWall()).put("endElapsed", s.getEndElapsed()).put("boot", s.getBoot()).put("remaining", s.getRemaining());
+                FocusMode finished = s.getFinished();
+                if (finished == null || (obj = finished.name()) == null) {
+                    obj = JSONObject.NULL;
+                }
+                String jSONObject = put.put("finished", obj).put("sessionsToday", s.getSessionsToday()).put("sessionsDay", s.getSessionsDay()).toString();
+                Intrinsics.checkNotNullExpressionValue(jSONObject, "toString(...)");
+                return jSONObject;
+            } catch (JSONException e) {
+                throw sneaky(e);
             }
-            String jSONObject = put.put("finished", obj).put("sessionsToday", s.getSessionsToday()).put("sessionsDay", s.getSessionsDay()).toString();
-            Intrinsics.checkNotNullExpressionValue(jSONObject, "toString(...)");
-            return jSONObject;
         }
 
         public final FocusState decodeFocus(String str) {
@@ -531,13 +539,17 @@ public final class Store {
 
         public final String encodeItems(List<CheckItem> items) {
             Intrinsics.checkNotNullParameter(items, "items");
-            JSONArray jSONArray = new JSONArray();
-            for (CheckItem checkItem : items) {
-                jSONArray.put(new JSONObject().put("id", checkItem.getId()).put("text", checkItem.getText()).put("done", checkItem.getDone()));
+            try {
+                JSONArray jSONArray = new JSONArray();
+                for (CheckItem checkItem : items) {
+                    jSONArray.put(new JSONObject().put("id", checkItem.getId()).put("text", checkItem.getText()).put("done", checkItem.getDone()));
+                }
+                String jSONArray2 = jSONArray.toString();
+                Intrinsics.checkNotNullExpressionValue(jSONArray2, "toString(...)");
+                return jSONArray2;
+            } catch (JSONException e) {
+                throw sneaky(e);
             }
-            String jSONArray2 = jSONArray.toString();
-            Intrinsics.checkNotNullExpressionValue(jSONArray2, "toString(...)");
-            return jSONArray2;
         }
 
         public final List<CheckItem> decodeItems(String json) {
@@ -565,6 +577,12 @@ public final class Store {
             } catch (JSONException unused) {
                 return CollectionsKt.emptyList();
             }
+        }
+
+        // Kotlin has no checked exceptions: a JSONException from JSONObject.put propagates unchecked.
+        @SuppressWarnings("unchecked")
+        private static <T extends Throwable> RuntimeException sneaky(Throwable th) throws T {
+            throw (T) th;
         }
 
         private final <T extends Enum<T>> T enumOrNull(String str) {

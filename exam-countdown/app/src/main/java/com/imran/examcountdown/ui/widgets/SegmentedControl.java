@@ -40,7 +40,6 @@ public final class SegmentedControl extends FrameLayout {
         place$lambda$8$lambda$7(segmentedControl, f, f2, valueAnimator);
     }
 
-    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
     public SegmentedControl(Context context, List<String> labels) {
         super(context);
         Intrinsics.checkNotNullParameter(context, "context");
@@ -81,7 +80,7 @@ public final class SegmentedControl extends FrameLayout {
         return this.selected;
     }
 
-    public final Function1<Integer, Unit> getOnSelect() {
+    public final Function1<? super Integer, Unit> getOnSelect() {
         return this.onSelect;
     }
 
@@ -127,7 +126,6 @@ public final class SegmentedControl extends FrameLayout {
 
     public final void select(int i, boolean z, boolean z2) {
         Function1<? super Integer, Unit> function1;
-        boolean z3 = true;
         boolean z4 = i != this.selected;
         this.selected = i;
         int i2 = 0;
@@ -144,7 +142,7 @@ public final class SegmentedControl extends FrameLayout {
             textView.setSelected(i2 == i);
             i2 = i3;
         }
-        place((z && this.animateChanges && z4 && this.indicator.getVisibility() == 0) ? false : false);
+        place(z && this.animateChanges && z4 && this.indicator.getVisibility() == 0);
         if (z2 && z4 && (function1 = this.onSelect) != null) {
             function1.invoke(Integer.valueOf(i));
         }

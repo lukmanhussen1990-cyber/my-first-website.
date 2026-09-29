@@ -13,7 +13,6 @@ import android.view.ViewParent;
 import com.imran.examcountdown.ui.ThemeKt;
 import kotlin.Metadata;
 import kotlin.Unit;
-import kotlin.io.ConstantsKt;
 import kotlin.jvm.functions.Function1;
 import kotlin.jvm.internal.Intrinsics;
 import kotlin.ranges.RangesKt;
@@ -38,7 +37,6 @@ public final class CropView extends View {
     private float tx;
     private float ty;
 
-    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
     public CropView(Context context) {
         super(context);
         Intrinsics.checkNotNullParameter(context, "context");
@@ -63,7 +61,7 @@ public final class CropView extends View {
         return cropView.scale;
     }
 
-    public final Function1<Float, Unit> getOnZoomChanged() {
+    public final Function1<? super Float, Unit> getOnZoomChanged() {
         return this.onZoomChanged;
     }
 
@@ -78,8 +76,8 @@ public final class CropView extends View {
     }
 
     public final void reset() {
-        Bitmap bitmap;
-        if (this.bitmap == null) {
+        Bitmap bitmap = this.bitmap;
+        if (bitmap == null) {
             return;
         }
         float f = this.radius;
@@ -172,33 +170,28 @@ public final class CropView extends View {
             if (parent != null) {
                 parent.requestDisallowInterceptTouchEvent(true);
             }
-        } else {
-            if (actionMasked != 1) {
-                if (actionMasked != 2) {
-                    if (actionMasked != 3) {
-                        if (actionMasked == 5) {
-                            this.dragging = false;
-                        } else if (actionMasked == 6) {
-                            int i = event.getActionIndex() == 0 ? 1 : 0;
-                            this.lastX = event.getX(i);
-                            this.lastY = event.getY(i);
-                            this.dragging = true;
-                        }
-                    }
-                } else if (this.dragging && !this.scaler.isInProgress() && event.getPointerCount() == 1) {
-                    this.tx += event.getX() - this.lastX;
-                    this.ty += event.getY() - this.lastY;
-                    this.lastX = event.getX();
-                    this.lastY = event.getY();
-                    clamp();
-                    invalidate();
-                }
-            }
+        } else if (actionMasked == 1 || actionMasked == 3) {
             this.dragging = false;
             ViewParent parent2 = getParent();
             if (parent2 != null) {
                 parent2.requestDisallowInterceptTouchEvent(false);
             }
+        } else if (actionMasked == 2) {
+            if (this.dragging && !this.scaler.isInProgress() && event.getPointerCount() == 1) {
+                this.tx += event.getX() - this.lastX;
+                this.ty += event.getY() - this.lastY;
+                this.lastX = event.getX();
+                this.lastY = event.getY();
+                clamp();
+                invalidate();
+            }
+        } else if (actionMasked == 5) {
+            this.dragging = false;
+        } else if (actionMasked == 6) {
+            int i = event.getActionIndex() == 0 ? 1 : 0;
+            this.lastX = event.getX(i);
+            this.lastY = event.getY(i);
+            this.dragging = true;
         }
         return true;
     }
@@ -221,7 +214,7 @@ public final class CropView extends View {
 
     public static Bitmap result$default(CropView cropView, int i, int i2, Object obj) {
         if ((i2 & 1) != 0) {
-            i = ConstantsKt.MINIMUM_BLOCK_SIZE;
+            i = 512;
         }
         return cropView.result(i);
     }

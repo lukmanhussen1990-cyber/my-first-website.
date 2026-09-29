@@ -39,7 +39,7 @@ public final class NavBar extends LinearLayout {
     private final ArrayList<ImageView> icons;
     private final ArrayList<LinearLayout> items;
     private boolean movingRight;
-    private final Function1<Integer, Unit> onSelect;
+    private final Function1<? super Integer, Unit> onSelect;
     private final RectF pill;
     private final Paint pillPaint;
     private boolean pillShown;
@@ -74,8 +74,6 @@ public final class NavBar extends LinearLayout {
         return navBar.pillShown;
     }
 
-    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
-    /* JADX WARN: Multi-variable type inference failed */
     public NavBar(Context context, List<String> labels, List<Integer> iconRes, Function1<? super Integer, Unit> onSelect) {
         super(context);
         Intrinsics.checkNotNullParameter(context, "context");
@@ -359,11 +357,10 @@ public final class NavBar extends LinearLayout {
         textView.setTextSize(0, f);
     }
 
-    private final class IndicatorRow extends LinearLayout {
+    private static final class IndicatorRow extends LinearLayout {
         final NavBar this$0;
 
-        /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
-        public IndicatorRow(NavBar navBar, Context context) {
+            public IndicatorRow(NavBar navBar, Context context) {
             super(context);
             Intrinsics.checkNotNullParameter(context, "context");
             this.this$0 = navBar;

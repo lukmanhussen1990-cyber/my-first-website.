@@ -208,7 +208,7 @@ public final class StudyScreen extends Screen implements AmbientListener {
         linearLayout.setOrientation(1);
         Unit unit = Unit.INSTANCE;
         this.content = linearLayout;
-        SegmentedControl segmentedControl = new SegmentedControl(getCtx(), CollectionsKt.listOf((Object[]) new String[]{"Focus · 25 min", "Break · 5 min"}));
+        SegmentedControl segmentedControl = new SegmentedControl(getCtx(), CollectionsKt.listOf(new String[]{"Focus · 25 min", "Break · 5 min"}));
         this.modeControl = segmentedControl;
         RollingNumberView rollingNumberView = new RollingNumberView(getCtx());
         this.minutes = rollingNumberView;
@@ -405,7 +405,7 @@ public final class StudyScreen extends Screen implements AmbientListener {
         this.state = getHost().getStore().getFocus();
         this.lastPhase = null;
         AppData data = getHost().getData();
-        String str = data.getChoices() + '|' + CollectionsKt.joinToString$default(data.getExams(), null, null, null, 0, null, new StudyScreen$$ExternalSyntheticLambda18(), 31, null);
+        String str = String.valueOf(data.getChoices()) + '|' + CollectionsKt.joinToString(data.getExams(), ", ", "", "", -1, "...", new StudyScreen$$ExternalSyntheticLambda18());
         if (!Intrinsics.areEqual(str, this.builtFor)) {
             this.builtFor = str;
             buildCards();
@@ -609,19 +609,15 @@ public final class StudyScreen extends Screen implements AmbientListener {
         FocusState start;
         Moment moment = AppClock.INSTANCE.moment(getCtx());
         int i = WhenMappings.$EnumSwitchMapping$0[FocusTimer.INSTANCE.phase(this.state, moment).ordinal()];
-        if (i != 1) {
-            if (i == 2) {
-                start = FocusTimer.INSTANCE.pause(this.state, moment);
-            } else if (i != 3) {
-                if (i != 4) {
-                    throw new NoWhenBranchMatchedException();
-                }
-                start = this.state.getFinished() == FocusMode.BREAK ? FocusTimer.INSTANCE.startFocus(this.state, moment) : FocusTimer.INSTANCE.startBreak(this.state, moment);
-            }
-            this.state = start;
-            saveFocus();
+        if (i == 1 || i == 3) {
+            start = FocusTimer.INSTANCE.start(this.state, moment);
+        } else if (i == 2) {
+            start = FocusTimer.INSTANCE.pause(this.state, moment);
+        } else if (i == 4) {
+            start = this.state.getFinished() == FocusMode.BREAK ? FocusTimer.INSTANCE.startFocus(this.state, moment) : FocusTimer.INSTANCE.startBreak(this.state, moment);
+        } else {
+            throw new NoWhenBranchMatchedException();
         }
-        start = FocusTimer.INSTANCE.start(this.state, moment);
         this.state = start;
         saveFocus();
     }
@@ -1057,7 +1053,7 @@ public final class StudyScreen extends Screen implements AmbientListener {
             if (StringsKt.isBlank(text)) {
                 return Unit.INSTANCE;
             }
-            Iterator<T> it = checklistCard.items.iterator();
+            Iterator<CheckItem> it = checklistCard.items.iterator();
             if (it.hasNext()) {
                 Long valueOf = Long.valueOf(((CheckItem) it.next()).getId());
                 while (it.hasNext()) {
@@ -1171,7 +1167,7 @@ public final class StudyScreen extends Screen implements AmbientListener {
         }
 
         public final void set(int i, int i2) {
-            this.fraction = i2 == 0 ? 0.0f : i / i2;
+            this.fraction = i2 == 0 ? 0.0f : i / (float) i2;
             this.complete = i2 > 0 && i == i2;
             ValueAnimator valueAnimator = this.animator;
             if (valueAnimator != null) {

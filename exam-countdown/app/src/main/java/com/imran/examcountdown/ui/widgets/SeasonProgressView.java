@@ -69,7 +69,6 @@ public final class SeasonProgressView extends View {
         playReveal$lambda$3$lambda$2(seasonProgressView, valueAnimator);
     }
 
-    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
     public SeasonProgressView(Context context) {
         super(context);
         Intrinsics.checkNotNullParameter(context, "context");
@@ -108,7 +107,7 @@ public final class SeasonProgressView extends View {
         }
     }
 
-    public final List<Segment> getSegments() {
+    public final List<? extends Segment> getSegments() {
         return this.segments;
     }
 
@@ -125,10 +124,6 @@ public final class SeasonProgressView extends View {
         return this.pulse;
     }
 
-    /* JADX WARN: Removed duplicated region for block: B:13:0x0025  */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     public final void setPulse(float f) {
         if (this.pulse == f) {
             return;
@@ -142,8 +137,6 @@ public final class SeasonProgressView extends View {
             if (segment == Segment.LIVE || segment == Segment.TODAY) {
                 invalidate();
                 return;
-            }
-            while (r3.hasNext()) {
             }
         }
     }
@@ -172,7 +165,6 @@ public final class SeasonProgressView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        float f;
         Intrinsics.checkNotNullParameter(canvas, "canvas");
         int size = this.segments.size();
         if (size == 0) {
@@ -182,7 +174,7 @@ public final class SeasonProgressView extends View {
         float height = getHeight();
         float width = (getWidth() - (this.gap * (size - 1))) / size;
         float f2 = height / 2.0f;
-        float sin = this.pulse >= 0.0f ? (((float) Math.sin(f * 6.283f)) * 0.5f) + 0.5f : 0.0f;
+        float sin = this.pulse >= 0.0f ? (((float) Math.sin(this.pulse * 6.283f)) * 0.5f) + 0.5f : 0.0f;
         for (int i = 0; i < size; i++) {
             float f3 = i;
             float f4 = (this.gap + width) * f3;

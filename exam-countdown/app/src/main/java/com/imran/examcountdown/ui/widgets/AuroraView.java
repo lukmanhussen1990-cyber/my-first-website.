@@ -23,7 +23,6 @@ public final class AuroraView extends View {
     private int scroll;
     private float seconds;
 
-    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
     public AuroraView(Context context) {
         super(context);
         Intrinsics.checkNotNullParameter(context, "context");
@@ -33,7 +32,7 @@ public final class AuroraView extends View {
         glowArr[0] = new Glow(0.92f, 0.1f, 0.85f, Ui.INSTANCE.withAlpha(c.getGold(), c.getDark() ? 0.11f : 0.15f), 34.0f, 17.0f, 0.0f);
         glowArr[1] = new Glow(0.04f, 0.3f, 0.95f, Ui.INSTANCE.withAlpha(c.getDark() ? c.getGreen() : c.getGreenText(), c.getDark() ? 0.3f : 0.07f), 42.0f, 23.0f, 2.1f);
         glowArr[2] = new Glow(0.62f, 0.56f, 0.7f, Ui.INSTANCE.withAlpha(c.getGold(), c.getDark() ? 0.06f : 0.08f), 28.0f, 29.0f, 4.2f);
-        this.glows = CollectionsKt.listOf((Object[]) glowArr);
+        this.glows = CollectionsKt.listOf(glowArr);
         this.glowPaint = new Paint(1);
         setImportantForAccessibility(2);
     }

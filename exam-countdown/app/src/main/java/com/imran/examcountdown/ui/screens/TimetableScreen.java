@@ -333,7 +333,7 @@ public final class TimetableScreen extends Screen implements AmbientListener {
         getHost().getAmbient().add(this);
         AppData data = getHost().getData();
         ThemeKt.update(this.subtitle, data.getProfile().getExamination() + " · Class " + data.getProfile().getClassName());
-        String str = CollectionsKt.joinToString$default(data.getExams(), null, null, null, 0, null, new TimetableScreen$$ExternalSyntheticLambda0(), 31, null) + data.getChoices() + data.getProfile().getHall();
+        String str = CollectionsKt.joinToString(data.getExams(), ", ", "", "", -1, "...", new TimetableScreen$$ExternalSyntheticLambda0()) + data.getChoices() + data.getProfile().getHall();
         boolean areEqual = Intrinsics.areEqual(str, this.builtFor);
         if (!areEqual) {
             this.builtFor = str;

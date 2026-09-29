@@ -38,6 +38,7 @@ public final class SystemEventReceiver extends BroadcastReceiver {
                     return;
             }
             ReminderScheduler.INSTANCE.onWake(context);
+            com.imran.examcountdown.widget.CountdownWidget.refresh(context);
         }
     }
 }

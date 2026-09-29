@@ -510,7 +510,7 @@ public final class ProfileEditor {
         return Unit.INSTANCE;
     }
 
-    public static final class AnonymousClass16 implements SeekBar.OnSeekBarChangeListener {
+    public final class AnonymousClass16 implements SeekBar.OnSeekBarChangeListener {
         @Override
         public void onStartTrackingTouch(SeekBar bar) {
             Intrinsics.checkNotNullParameter(bar, "bar");
@@ -890,31 +890,14 @@ public final class ProfileEditor {
 
     private final void bindFrames() {
         boolean z;
-        Iterator<T> it = this.tiles.iterator();
-        while (true) {
-            z = true;
-            if (!it.hasNext()) {
-                break;
-            }
-            FrameTile frameTile = (FrameTile) it.next();
-            boolean z2 = frameTile.getFrame() == this.previewFrame;
-            if (frameTile.getFrame() != this.savedFrame) {
-                z = false;
-            }
-            frameTile.bind(z2, z);
+        for (FrameTile frameTile : this.tiles) {
+            frameTile.bind(frameTile.getFrame() == this.previewFrame, frameTile.getFrame() == this.savedFrame);
         }
+        z = true;
         boolean z3 = this.previewFrame != this.savedFrame;
-        Iterator it2 = CollectionsKt.listOf((Object[]) new TextView[]{this.applyButton, this.cancelButton}).iterator();
-        while (true) {
-            if (!it2.hasNext()) {
-                break;
-            }
-            TextView textView = (TextView) it2.next();
+        for (TextView textView : new TextView[]{this.applyButton, this.cancelButton}) {
             textView.setEnabled(z3);
-            if (!z3) {
-                r5 = 0.4f;
-            }
-            textView.setAlpha(r5);
+            textView.setAlpha(z3 ? 1.0f : 0.4f);
         }
         if (this.savedFrame == AvatarFrame.DEFAULT && this.previewFrame == AvatarFrame.DEFAULT) {
             z = false;

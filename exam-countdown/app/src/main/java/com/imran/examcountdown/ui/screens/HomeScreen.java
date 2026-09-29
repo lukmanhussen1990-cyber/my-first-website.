@@ -1015,9 +1015,9 @@ public final class HomeScreen extends Screen implements AmbientListener {
             str2 = null;
         }
         strArr[1] = str2;
-        ThemeKt.update(textView, CollectionsKt.joinToString$default(CollectionsKt.filterNotNull(CollectionsKt.listOf((Object[]) strArr)), " · ", null, null, 0, null, null, 62, null));
+        ThemeKt.update(textView, CollectionsKt.joinToString(CollectionsKt.filterNotNull(CollectionsKt.listOf(strArr)), " · ", "", "", -1, "...", null));
         TextView textView2 = this.schoolName;
-        String substringBefore$default = StringsKt.substringBefore$default(profile.getSchool(), ",", (String) null, 2, (Object) null);
+        String substringBefore$default = StringsKt.substringBefore(profile.getSchool(), ",", profile.getSchool());
         if (StringsKt.isBlank(substringBefore$default)) {
             substringBefore$default = "Al-Ameen Academy";
         }
@@ -1065,7 +1065,7 @@ public final class HomeScreen extends Screen implements AmbientListener {
         ScreenKt.setVisible(this.nextSection, mode != Mode.CELEBRATE);
         ScreenKt.setVisible(this.celebrateSection, mode == Mode.CELEBRATE);
         boolean z = mode == Mode.COUNTDOWN;
-        for (View view : CollectionsKt.listOf((Object[]) new View[]{this.subject, this.countdown, this.track, this.trackCaption, this.details, this.revise})) {
+        for (View view : CollectionsKt.listOf(new View[]{this.subject, this.countdown, this.track, this.trackCaption, this.details, this.revise})) {
             ScreenKt.setVisible(view, z);
         }
         ScreenKt.setVisible(this.localNote, false);
@@ -1089,12 +1089,6 @@ public final class HomeScreen extends Screen implements AmbientListener {
         homeScreen.getHost().celebrate(false);
     }
 
-    /* JADX WARN: Code restructure failed: missing block: B:15:0x0061, code lost:
-        if (r4 == null) goto L17;
-     */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     private final void bindCountdown(Season season, Choices choices, Profile profile) {
         String str;
         String str2;
@@ -1118,8 +1112,9 @@ public final class HomeScreen extends Screen implements AmbientListener {
             String upperCase = kicker.toUpperCase(Locale.ROOT);
             Intrinsics.checkNotNullExpressionValue(upperCase, "toUpperCase(...)");
             str2 = sb.append(upperCase).toString();
+        } else {
+            str2 = "";
         }
-        str2 = "";
         ThemeKt.update(textView, append.append(str2).toString());
         this.track.set(season.ringFraction(), !this.entranceDone);
         bindSubject(next, season, choices, profile);
@@ -1242,19 +1237,18 @@ public final class HomeScreen extends Screen implements AmbientListener {
     }
 
     private final void bindUpcoming(Season season, Choices choices) {
-        List take;
         ExamStatus next = season.getNext();
         if (next == null) {
             next = season.getLive();
         }
         List take2 = CollectionsKt.take(CollectionsKt.drop(season.getExams(), next == null ? season.getExams().size() : season.getExams().indexOf(next) + 1), 2);
-        String str = CollectionsKt.joinToString$default(take2, null, null, null, 0, null, new HomeScreen$$ExternalSyntheticLambda9(), 31, null) + choices;
+        String str = CollectionsKt.joinToString(take2, ", ", "", "", -1, "...", new HomeScreen$$ExternalSyntheticLambda9()) + choices;
         if (Intrinsics.areEqual(str, this.upcomingKey)) {
             return;
         }
         this.upcomingKey = str;
         this.upcomingList.removeAllViews();
-        ScreenKt.setVisible(this.upcomingLabel, !take.isEmpty());
+        ScreenKt.setVisible(this.upcomingLabel, !take2.isEmpty());
         int i = 0;
         for (Object obj : take2) {
             int i2 = i + 1;
@@ -1286,7 +1280,7 @@ public final class HomeScreen extends Screen implements AmbientListener {
         LinearLayout linearLayout3 = new LinearLayout(getCtx());
         linearLayout3.setOrientation(1);
         linearLayout3.addView(ThemeKt.label(getCtx(), Formats.INSTANCE.weekday(exam.getDate()), Ui.INSTANCE.getC().getText3(), 10.5f));
-        linearLayout3.addView(ThemeKt.text$default(getCtx(), StringsKt.substringAfter$default(Formats.INSTANCE.dateShort(exam.getDate()), ", ", (String) null, 2, (Object) null), 15.0f, Ui.INSTANCE.getC().getText(), Fonts.INSTANCE.getSansSemibold(), null, 16, null), ThemeKt.lp$default(0, 0, 0.0f, new HomeScreen$$ExternalSyntheticLambda0(linearLayout3), 7, null));
+        linearLayout3.addView(ThemeKt.text$default(getCtx(), StringsKt.substringAfter(Formats.INSTANCE.dateShort(exam.getDate()), ", ", Formats.INSTANCE.dateShort(exam.getDate())), 15.0f, Ui.INSTANCE.getC().getText(), Fonts.INSTANCE.getSansSemibold(), null, 16, null), ThemeKt.lp$default(0, 0, 0.0f, new HomeScreen$$ExternalSyntheticLambda0(linearLayout3), 7, null));
         linearLayout.addView(linearLayout3, ThemeKt.lp$default(ThemeKt.dp(linearLayout2, (Number) 64), -2, 0.0f, null, 12, null));
         linearLayout.addView(ThemeKt.text$default(getCtx(), exam.title(choices), 16.0f, Ui.INSTANCE.getC().getText(), null, null, 24, null), ThemeKt.lp(0, -2, 1.0f, new HomeScreen$$ExternalSyntheticLambda1(linearLayout)));
         linearLayout.addView(ThemeKt.text$default(getCtx(), Formats.INSTANCE.time(exam.getStart()), 14.0f, Ui.INSTANCE.getC().getText2(), null, null, 24, null), ThemeKt.lp$default(-2, -2, 0.0f, new HomeScreen$$ExternalSyntheticLambda2(linearLayout), 4, null));

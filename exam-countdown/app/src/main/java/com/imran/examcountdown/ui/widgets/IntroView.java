@@ -113,7 +113,6 @@ public final class IntroView extends FrameLayout {
         hold$lambda$9$lambda$8(introView, valueAnimator);
     }
 
-    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
     public IntroView(Context context) {
         super(context);
         Intrinsics.checkNotNullParameter(context, "context");
@@ -157,7 +156,7 @@ public final class IntroView extends FrameLayout {
         word2.measure(paint2);
     }
 
-    public final Function0<View> getTarget() {
+    public final Function0<? extends View> getTarget() {
         return this.target;
     }
 
@@ -352,7 +351,7 @@ public final class IntroView extends FrameLayout {
 
     private final void run(float f, float f2) {
         ValueAnimator ofFloat = ValueAnimator.ofFloat(f, 2300.0f);
-        ofFloat.setDuration((2300.0f - f) * f2);
+        ofFloat.setDuration((long) ((2300.0f - f) * f2));
         ofFloat.setInterpolator(new LinearInterpolator());
         ofFloat.addUpdateListener(new IntroView$$ExternalSyntheticLambda1(this));
         ofFloat.start();
@@ -568,7 +567,7 @@ public final class IntroView extends FrameLayout {
         int[] iArr2 = new int[2];
         invoke.getLocationInWindow(iArr);
         getLocationInWindow(iArr2);
-        return new float[]{(iArr[0] + (invoke.getWidth() / 2.0f)) - ((iArr2[0] + this.emblem.getLeft()) + (this.emblem.getWidth() / 2.0f)), (iArr[1] + (invoke.getHeight() / 2.0f)) - ((iArr2[1] + this.emblem.getTop()) + (this.emblem.getHeight() / 2.0f)), invoke.getWidth() / this.emblem.getWidth()};
+        return new float[]{(iArr[0] + (invoke.getWidth() / 2.0f)) - ((iArr2[0] + this.emblem.getLeft()) + (this.emblem.getWidth() / 2.0f)), (iArr[1] + (invoke.getHeight() / 2.0f)) - ((iArr2[1] + this.emblem.getTop()) + (this.emblem.getHeight() / 2.0f)), invoke.getWidth() / (float) this.emblem.getWidth()};
     }
 
     private final void finish() {

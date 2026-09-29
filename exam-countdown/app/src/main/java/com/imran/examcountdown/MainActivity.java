@@ -128,7 +128,7 @@ public final class MainActivity extends Activity {
     private final Runnable ticker = new MainActivity$$ExternalSyntheticLambda21(this);
     private final MainActivity$powerReceiver$1 powerReceiver = new MainActivity$powerReceiver$1(this);
 
-    public class WhenMappings {
+    public static final class WhenMappings {
         public static final int[] $EnumSwitchMapping$0;
 
         static {
@@ -394,6 +394,7 @@ public final class MainActivity extends Activity {
         int intExtra;
         setTheme(R.style.Theme_ExamCountdown);
         super.onCreate(bundle);
+        applyShortcutAction(getIntent());
         MainActivity mainActivity = this;
         Fonts.INSTANCE.init(mainActivity);
         Ui.INSTANCE.apply(mainActivity);
@@ -443,10 +444,19 @@ public final class MainActivity extends Activity {
         splashScreenView.remove();
     }
 
+    /** Launcher shortcuts open a tab through an action; translate it to the tab extra the rest of the code reads. */
+    private static void applyShortcutAction(Intent intent) {
+        if (intent == null || intent.getAction() == null) return;
+        String action = intent.getAction();
+        if ("com.imran.examcountdown.action.STUDY".equals(action)) intent.putExtra(EXTRA_TAB, 2);
+        else if ("com.imran.examcountdown.action.TIMETABLE".equals(action)) intent.putExtra(EXTRA_TAB, 1);
+    }
+
     @Override
     protected void onNewIntent(Intent intent) {
         Intrinsics.checkNotNullParameter(intent, "intent");
         super.onNewIntent(intent);
+        applyShortcutAction(intent);
         if (this.setup == null && intent.hasExtra(EXTRA_TAB)) {
             showTab(intent.getIntExtra(EXTRA_TAB, 0), true);
         }
@@ -481,6 +491,7 @@ public final class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
         this.resumed = false;
+        com.imran.examcountdown.widget.CountdownWidget.refresh(this);
         AppVisibility.INSTANCE.setResumed(false);
         this.handler.removeCallbacks(this.ticker);
         applyMotion();
@@ -576,8 +587,9 @@ public final class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT < 33) {
             return;
         }
+        boolean z = getStore().getIntroEnabled() && this.policy.getMotion();
         try {
-            getSplashScreen().setSplashScreenTheme(getStore().getIntroEnabled() && this.policy.getMotion() ? R.style.Theme_ExamCountdown_Launch : R.style.Theme_ExamCountdown);
+            getSplashScreen().setSplashScreenTheme(z ? R.style.Theme_ExamCountdown_Launch : R.style.Theme_ExamCountdown);
         } catch (RuntimeException unused) {
         }
     }
@@ -1469,6 +1481,7 @@ public final class MainActivity extends Activity {
             }
         }
         ReminderScheduler.INSTANCE.reschedule(this);
+        com.imran.examcountdown.widget.CountdownWidget.refresh(this);
         tick();
     }
 

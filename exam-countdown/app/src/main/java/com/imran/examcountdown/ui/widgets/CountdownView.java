@@ -28,7 +28,6 @@ public final class CountdownView extends LinearLayout {
         return unit$lambda$5$lambda$4(linearLayout, layoutParams);
     }
 
-    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
     public CountdownView(Context context) {
         super(context);
         Intrinsics.checkNotNullParameter(context, "context");
@@ -41,7 +40,7 @@ public final class CountdownView extends LinearLayout {
         Unit unit4 = unit("Sec");
         this.seconds = unit4;
         int i = 0;
-        List<Unit> listOf = CollectionsKt.listOf((Object[]) new Unit[]{unit, unit2, unit3, unit4});
+        List<Unit> listOf = CollectionsKt.listOf(new Unit[]{unit, unit2, unit3, unit4});
         this.all = listOf;
         this.maxSizePx = ThemeKt.dp(context, (Number) 64);
         this.lastWidth = -1;
@@ -147,9 +146,9 @@ public final class CountdownView extends LinearLayout {
             this.lastWidth = -1;
             requestLayout();
         }
-        ThemeKt.update(this.days.getLabel(), cd.getDays() == 1 ? "Day" : "Days");
+        ThemeKt.update(this.days.getLabel(), cd.getDays() == 1 ? "DAY" : "DAYS");
         RollingNumberView.setValue$default(this.hours.getNumber(), cd.getHours(), false, 2, null);
-        ThemeKt.update(this.hours.getLabel(), cd.getHours() == 1 ? "Hour" : "Hours");
+        ThemeKt.update(this.hours.getLabel(), cd.getHours() == 1 ? "HOUR" : "HOURS");
         RollingNumberView.setValue$default(this.minutes.getNumber(), cd.getMinutes(), false, 2, null);
         RollingNumberView.setValue$default(this.seconds.getNumber(), cd.getSeconds(), false, 2, null);
         setContentDescription(cd.spoken());
@@ -169,7 +168,7 @@ public final class CountdownView extends LinearLayout {
         CountdownView countdownView = this;
         float coerceAtLeast = RangesKt.coerceAtLeast(RangesKt.coerceAtMost((i - (ThemeKt.dp(countdownView, (Number) 18) * (this.showDays ? 3 : 2))) / ((((this.showDays ? this.days.getNumber().getValue().length() : 0) + 4) * 0.56f) + ((2 * 0.56f) * 0.5f)), this.maxSizePx), ThemeKt.dp(countdownView, (Number) 24));
         float f = 0.06f * coerceAtLeast;
-        for (Unit unit : CollectionsKt.listOf((Object[]) new Unit[]{this.days, this.hours, this.minutes})) {
+        for (Unit unit : CollectionsKt.listOf(new Unit[]{this.days, this.hours, this.minutes})) {
             unit.getNumber().setTextSizePx(coerceAtLeast);
             unit.getNumber().setVerticalGapPx(f);
         }

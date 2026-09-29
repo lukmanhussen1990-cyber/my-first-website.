@@ -13,6 +13,7 @@ KOTLIN_STDLIB="$TOOLS/dl/kotlin-stdlib-2.1.21.jar"
 R8_JAR="$TOOLS/dl/r8.jar"
 
 SRC="$ROOT/app/src/main"
+JDK_HOME="${JDK_HOME:-$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")}"
 BUILD="$ROOT/build"
 OUT_DIR="${OUT_DIR:-$ROOT/build/out}"
 KEYSTORE="${KEYSTORE:-$TOOLS/exam-countdown.keystore}"
@@ -20,7 +21,7 @@ KS_PASS="${KS_PASS:-examcountdown}"
 KEY_ALIAS="${KEY_ALIAS:-examcountdown}"
 
 VERSION_CODE="${VERSION_CODE:-5}"
-VERSION_NAME="${VERSION_NAME:-2.0.0}"
+VERSION_NAME="${VERSION_NAME:-1.4.0}"
 MIN_SDK=26
 TARGET_SDK=35
 APK_NAME="${APK_NAME:-Imran-Exam-Countdown-v${VERSION_NAME}.apk}"
@@ -56,6 +57,7 @@ echo "==> [4/6] R8 (shrink + dex)"
 java -cp "$R8_JAR" com.android.tools.r8.R8 \
   --release --min-api "$MIN_SDK" \
   --lib "$ANDROID_JAR" \
+  --lib "$JDK_HOME" \
   --pg-conf "$BUILD/aapt-rules.pro" \
   --pg-conf "$ROOT/app/proguard-rules.pro" \
   --output "$BUILD/dex" \

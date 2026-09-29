@@ -564,7 +564,7 @@ public final class ConfettiView extends View {
         int[] iArr = c.getDark() ? new int[]{c.getGold(), c.getGoldSoft(), c.getOnGreen(), c.getGold(), c.getGreenText()} : new int[]{c.getGold(), c.getGoldText(), c.getGreen(), c.getGold(), c.getGreenText()};
         int count = shell.getCount();
         for (int i = 0; i < count; i++) {
-            float count2 = ((i / shell.getCount()) * 6.283f) + (this.random.nextFloat() * 0.12f);
+            float count2 = ((i / (float) shell.getCount()) * 6.283f) + (this.random.nextFloat() * 0.12f);
             ConfettiView confettiView = this;
             if (shell.getRing()) {
                 nextFloat = this.random.nextFloat() * 40.0f;

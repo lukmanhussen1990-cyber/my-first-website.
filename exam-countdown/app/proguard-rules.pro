@@ -9,3 +9,6 @@
 
 # Enums are looked up by name when restoring persisted state.
 -keepclassmembers enum * { public static **[] values(); public static ** valueOf(java.lang.String); }
+
+# Shrink unused code only; skip aggressive optimisation so the shipped dex matches the tested classes.
+-dontoptimize

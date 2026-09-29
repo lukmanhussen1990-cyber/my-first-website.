@@ -91,14 +91,13 @@ public final class AvatarView extends View {
             } catch (NoSuchFieldError unused5) {
             }
             try {
-                iArr[AvatarFrame.NONE.ordinal()] = AvatarView.WAVE_CRESTS;
+                iArr[AvatarFrame.NONE.ordinal()] = 6;
             } catch (NoSuchFieldError unused6) {
             }
             $EnumSwitchMapping$0 = iArr;
         }
     }
 
-    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
     public AvatarView(Context context) {
         super(context);
         Intrinsics.checkNotNullParameter(context, "context");
@@ -308,7 +307,7 @@ public final class AvatarView extends View {
             case 5:
                 drawShimmer(canvas, f, f2, j, z, f3);
                 return;
-            case WAVE_CRESTS:
+            case 6:
                 return;
             default:
                 throw new NoWhenBranchMatchedException();
@@ -377,12 +376,12 @@ public final class AvatarView extends View {
     }
 
     private final void wave(float f, float f2, int i, float f3) {
-        float f4;
         this.path.reset();
         int i2 = 0;
         while (true) {
+            float f4 = (i2 * 6.2831855f) / 144;
             float sin = (((float) Math.sin((i * f4) - f3)) * f2) + f;
-            double d = (i2 * 6.2831855f) / 144;
+            double d = f4;
             float cos = this.cx + (((float) Math.cos(d)) * sin);
             float sin2 = this.cy + (((float) Math.sin(d)) * sin);
             Path path = this.path;
@@ -476,7 +475,7 @@ public final class AvatarView extends View {
             } else {
                 f6 = f2;
             }
-            this.shaderMatrix.setTranslate(this.cx + ((-f6) * 1.4f) + (f6 * 2.8f * Ease.INSTANCE.cubicInOut(window)), this.cy);
+            this.shaderMatrix.setTranslate(this.cx + (((-f6) * 1.4f) + ((f6 * 2.8f) * Ease.INSTANCE.cubicInOut(window))), this.cy);
             this.shaderMatrix.postRotate(45.0f, this.cx, this.cy);
             linearGradient.setLocalMatrix(this.shaderMatrix);
             this.shaded.setShader(linearGradient);

@@ -39,7 +39,6 @@ public final class RollingNumberView extends View {
     private Slide[] slides;
     private float verticalGapPx;
 
-    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
     public RollingNumberView(Context context) {
         super(context);
         Intrinsics.checkNotNullParameter(context, "context");
@@ -242,8 +241,6 @@ public final class RollingNumberView extends View {
     protected void onDraw(Canvas canvas) {
         long j;
         int i;
-        int i2;
-        int i3;
         Intrinsics.checkNotNullParameter(canvas, "canvas");
         long uptimeMillis = SystemClock.uptimeMillis();
         float height = ((getHeight() - getPaddingBottom()) - gap()) - this.bounds.bottom;
@@ -271,10 +268,10 @@ public final class RollingNumberView extends View {
                 float f2 = slide.getDown() ? 1.0f : -1.0f;
                 j = uptimeMillis;
                 i = length;
-                this.paint.setColor(Ui.INSTANCE.withAlpha(this.color, ((i2 >>> 24) / 255.0f) * (1.0f - FxKt.window(cubicOut, 0.0f, 0.7f))));
+                this.paint.setColor(Ui.INSTANCE.withAlpha(this.color, ((this.color >>> 24) / 255.0f) * (1.0f - FxKt.window(cubicOut, 0.0f, 0.7f))));
                 float f3 = f2 * gap;
                 drawDigit(canvas, slide.getFrom(), f, (f3 * cubicOut) + height);
-                this.paint.setColor(Ui.INSTANCE.withAlpha(this.color, ((i3 >>> 24) / 255.0f) * FxKt.window(cubicOut, 0.2f, 0.8f)));
+                this.paint.setColor(Ui.INSTANCE.withAlpha(this.color, ((this.color >>> 24) / 255.0f) * FxKt.window(cubicOut, 0.2f, 0.8f)));
                 drawDigit(canvas, slide.getTo(), f, height - (f3 * (1.0f - cubicOut)));
                 z = true;
             }
