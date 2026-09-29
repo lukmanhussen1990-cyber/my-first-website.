@@ -1,0 +1,28 @@
+package androidx.test.internal.runner.lifecycle;
+
+import android.app.Application;
+import androidx.test.runner.lifecycle.ApplicationLifecycleCallback;
+import androidx.test.runner.lifecycle.ApplicationLifecycleMonitor;
+import androidx.test.runner.lifecycle.ApplicationStage;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+public class ApplicationLifecycleMonitorImpl implements ApplicationLifecycleMonitor {
+  private final List<ApplicationLifecycleCallback> callbacks = new CopyOnWriteArrayList<>();
+
+  @Override
+  public void addLifecycleCallback(ApplicationLifecycleCallback callback) {
+    if (callback != null && !callbacks.contains(callback)) callbacks.add(callback);
+  }
+
+  @Override
+  public void removeLifecycleCallback(ApplicationLifecycleCallback callback) {
+    callbacks.remove(callback);
+  }
+
+  public void signalLifecycleChange(Application app, ApplicationStage stage) {
+    for (ApplicationLifecycleCallback cb : callbacks) {
+      cb.onApplicationLifecycleChanged(app, stage);
+    }
+  }
+}

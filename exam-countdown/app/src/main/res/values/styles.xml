@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Animation.ExamCountdown.Fade" parent="@android:style/Animation.Dialog">
+        <item name="android:windowEnterAnimation">@anim/fade_in</item>
+        <item name="android:windowExitAnimation">@anim/fade_out</item>
+    </style>
+    <style name="Animation.ExamCountdown.Sheet" parent="@android:style/Animation.Dialog">
+        <item name="android:windowEnterAnimation">@anim/sheet_enter</item>
+        <item name="android:windowExitAnimation">@anim/sheet_exit</item>
+    </style>
+    <style name="Base.Theme.ExamCountdown" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:colorBackground">@color/bg</item>
+        <item name="android:textColorPrimary">@color/text</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:alertDialogTheme">@style/Theme.ExamCountdown.Dialog</item>
+        <item name="android:colorControlActivated">@color/green</item>
+        <item name="android:colorPrimary">@color/green</item>
+        <item name="android:colorPrimaryDark">@color/bg</item>
+        <item name="android:colorAccent">@color/green</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:timePickerDialogTheme">@style/Theme.ExamCountdown.Dialog</item>
+        <item name="android:datePickerDialogTheme">@style/Theme.ExamCountdown.Dialog</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+    <style name="Theme.ExamCountdown" parent="@style/Base.Theme.ExamCountdown" />
+    <style name="Theme.ExamCountdown.Dialog" parent="@android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:colorBackground">@color/surface</item>
+        <item name="android:textColorPrimary">@color/text</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:windowAnimationStyle">@style/Animation.ExamCountdown.Sheet</item>
+        <item name="android:colorControlActivated">@color/green</item>
+        <item name="android:colorPrimary">@color/green</item>
+        <item name="android:colorAccent">@color/green</item>
+    </style>
+    <style name="Theme.ExamCountdown.Launch" parent="@style/Theme.ExamCountdown">
+        <item name="android:windowBackground">@color/forest</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

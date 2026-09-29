@@ -1,0 +1,17 @@
+package com.imran.examcountdown.ui.screens;
+
+import android.widget.LinearLayout;
+import kotlin.jvm.functions.Function1;
+
+public final class SetupScreen$$ExternalSyntheticLambda29 implements Function1 {
+    public final SetupScreen f$0;
+
+    public SetupScreen$$ExternalSyntheticLambda29(SetupScreen setupScreen) {
+        this.f$0 = setupScreen;
+    }
+
+    @Override
+    public final Object invoke(Object obj) {
+        return SetupScreen.$r8$lambda$nb61Jj75hc9RfL1VAv3xT0KXqlw(this.f$0, (LinearLayout.LayoutParams) obj);
+    }
+}
