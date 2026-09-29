@@ -1,0 +1,73 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "nd:ash_flake",
+      "basic_render_parameters": {
+        "material": "particles_alpha",
+        "texture": "textures/particle/nd_chip"
+      }
+    },
+    "components": {
+      "minecraft:emitter_rate_instant": {
+        "num_particles": 1
+      },
+      "minecraft:emitter_lifetime_once": {
+        "active_time": 1
+      },
+      "minecraft:emitter_shape_point": {
+        "direction": [
+          "variable.vel.x",
+          "variable.vel.y + 0.00001",
+          "variable.vel.z"
+        ]
+      },
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": "(variable.life > 0 ? variable.life : 4.0)"
+      },
+      "minecraft:particle_initial_speed": "20 * math.sqrt(variable.vel.x * variable.vel.x + variable.vel.y * variable.vel.y + variable.vel.z * variable.vel.z)",
+      "minecraft:particle_motion_dynamic": {
+        "linear_acceleration": [
+          0,
+          -0.6,
+          0
+        ],
+        "linear_drag_coefficient": 0.8
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "0.5 * 0.14 * (variable.size > 0 ? variable.size : 1) * 1.0 * 1",
+          "0.5 * 0.14 * (variable.size > 0 ? variable.size : 1) * 1.0 * 1"
+        ],
+        "facing_camera_mode": "rotate_xyz",
+        "uv": {
+          "texture_width": 8,
+          "texture_height": 8,
+          "uv": [
+            0,
+            0
+          ],
+          "uv_size": [
+            8,
+            8
+          ]
+        }
+      },
+      "minecraft:particle_initial_spin": {
+        "rotation": "math.random(0, 360)",
+        "rotation_rate": "math.random(-25, 25)"
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": {
+          "interpolant": "variable.particle_age / variable.particle_lifetime",
+          "gradient": {
+            "0": "#00A0A0A0",
+            "0.1": "#FFB4B4B4",
+            "0.9": "#FF8C8C8C",
+            "1": "#00808080"
+          }
+        }
+      }
+    }
+  }
+}

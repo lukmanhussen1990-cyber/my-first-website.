@@ -1,0 +1,22 @@
+{
+  "format_version": "1.16.100",
+  "minecraft:fog_settings": {
+    "description": {
+      "identifier": "nd:earthquake"
+    },
+    "distance": {
+      "air": {
+        "fog_start": 10,
+        "fog_end": 70,
+        "fog_color": "#8A8272",
+        "render_distance_type": "fixed"
+      },
+      "weather": {
+        "fog_start": 10,
+        "fog_end": 70,
+        "fog_color": "#8A8272",
+        "render_distance_type": "fixed"
+      }
+    }
+  }
+}

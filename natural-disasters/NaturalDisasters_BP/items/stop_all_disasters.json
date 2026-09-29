@@ -1,0 +1,22 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "nd:stop_all_disasters",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "nd_stop_all_disasters"
+      },
+      "minecraft:display_name": {
+        "value": "item.nd:stop_all_disasters.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:glint": true
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "format_version": "1.16.100",
+  "minecraft:fog_settings": {
+    "description": {
+      "identifier": "nd:sinkhole"
+    },
+    "distance": {
+      "air": {
+        "fog_start": 8,
+        "fog_end": 65,
+        "fog_color": "#7A6E5E",
+        "render_distance_type": "fixed"
+      },
+      "weather": {
+        "fog_start": 8,
+        "fog_end": 65,
+        "fog_color": "#7A6E5E",
+        "render_distance_type": "fixed"
+      }
+    }
+  }
+}

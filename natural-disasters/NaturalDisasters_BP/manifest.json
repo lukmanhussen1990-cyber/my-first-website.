@@ -1,0 +1,40 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Natural Disaster Simulator BP",
+    "description": "Spawn tornadoes, tsunamis, volcanoes, earthquakes, meteors and more with creative items.",
+    "uuid": "94f92abb-c472-4bc9-98f6-cd669a1ec9a1",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "Natural Disaster Simulator items and entities",
+      "type": "data",
+      "uuid": "127b9731-0140-47ea-aac2-cb291c77acc1",
+      "version": [1, 0, 0]
+    },
+    {
+      "description": "Natural Disaster Simulator scripts",
+      "type": "script",
+      "language": "javascript",
+      "uuid": "a9e0373b-e556-484c-93d7-b8d657e186ee",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "9ef0aa4c-d2a6-4e1c-945a-9b10af53adce",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.10.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.1.0"
+    }
+  ]
+}

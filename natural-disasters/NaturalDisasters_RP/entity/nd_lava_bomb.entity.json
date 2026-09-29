@@ -1,0 +1,29 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nd:lava_bomb",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/nd_lava_bomb"
+      },
+      "geometry": {
+        "default": "geometry.nd_cube"
+      },
+      "animations": {
+        "spin": "animation.nd.spin"
+      },
+      "scripts": {
+        "animate": [
+          "spin"
+        ],
+        "scale": "1.6"
+      },
+      "render_controllers": [
+        "controller.render.nd_entity"
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "format_version": "1.16.100",
+  "minecraft:fog_settings": {
+    "description": {
+      "identifier": "nd:supercell"
+    },
+    "distance": {
+      "air": {
+        "fog_start": 4,
+        "fog_end": 48,
+        "fog_color": "#4A5058",
+        "render_distance_type": "fixed"
+      },
+      "weather": {
+        "fog_start": 4,
+        "fog_end": 48,
+        "fog_color": "#4A5058",
+        "render_distance_type": "fixed"
+      }
+    }
+  }
+}
