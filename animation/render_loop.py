@@ -452,7 +452,7 @@ def main():
     cmd = [ff, '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'bgr24',
            '-s', f'{OUT_W}x{OUT_H}', '-r', str(FPS), '-i', '-',
            '-vf', 'scale=out_color_matrix=bt709:out_range=tv:flags=accurate_rnd+full_chroma_int',
-           '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-tune', 'grain',
+           '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-tune', 'grain',
            '-pix_fmt', 'yuv420p', '-colorspace', 'bt709', '-color_primaries', 'bt709',
            '-color_trc', 'bt709', '-color_range', 'tv', '-movflags', '+faststart', a.out]
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
