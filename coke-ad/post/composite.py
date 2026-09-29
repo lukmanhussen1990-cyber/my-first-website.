@@ -170,7 +170,7 @@ def tracked_text(text, fnt, tracking_px, fill=255, stroke=0, pad=40, ss=2):
 _SPRITES = {}
 
 
-def super_layer(text, t, t_in, t_out, y_frac=0.80, size=58, track0=0.20, track1=0.34):
+def super_layer(text, t, t_in, t_out, y_frac=0.80, size=58, track0=0.20, track1=0.34, x_frac=0.5, align="center"):
     """Lower-third super with fade, drift and tracking animation. Returns (alpha HxW float, shadow alpha)."""
     if t < t_in - 0.01 or t > t_out + 0.01:
         return None
@@ -182,8 +182,11 @@ def super_layer(text, t, t_in, t_out, y_frac=0.80, size=58, track0=0.20, track1=
     ss = 2
     spr = tracked_text(text, font("montserrat-600-normal.ttf", size * ss), track, ss=ss)
     arr = np.asarray(spr, np.float32) / 255.0
-    lay = paste(np.zeros((H, W), np.float32), arr, int(W / 2 - spr.width / 2),
-                int(H * y_frac - spr.height / 2 + 14 * (1 - a_in)))
+    if align == "right":
+        x0 = int(W * x_frac - spr.width + 40)  # sprite carries 40 px of padding
+    else:
+        x0 = int(W * x_frac - spr.width / 2)
+    lay = paste(np.zeros((H, W), np.float32), arr, x0, int(H * y_frac - spr.height / 2 + 14 * (1 - a_in)))
     shadow = cv2.GaussianBlur(np.roll(lay, 3, axis=0), (0, 0), 7) * 0.55
     return lay * alpha, shadow * alpha
 
@@ -267,8 +270,10 @@ def process(g, renders=RENDERS, preview=False):
     img = chroma_ab(img)
     img = vignette(img, 0.22 if sid != "08" else 0.30)
     # supers
-    for text, a, b in (("ICE COLD.", 19.5, 23.6), ("THE TASTE YOU KNOW.", 29.8, 34.6)):
-        s = super_layer(text, t, a, b)
+    for text, a, b, kw in (("ICE COLD.", 19.5, 23.6, {}),
+                           ("THE TASTE YOU KNOW.", 29.8, 34.6,
+                            dict(y_frac=0.15, size=46, x_frac=0.93, align="right"))):
+        s = super_layer(text, t, a, b, **kw)
         if s is not None:
             lay, shadow = s
             img = img * (1 - shadow[..., None]) + 0 * shadow[..., None]

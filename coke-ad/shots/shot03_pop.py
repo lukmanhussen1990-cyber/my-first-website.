@@ -85,7 +85,7 @@ def _vapor(name, loc, size):
 
 
 def build():
-    sc = C.reset_scene(samples=10)
+    sc = C.reset_scene(samples=int(__import__("os").environ.get("COKE_SAMPLES", "16")))
     sc.frame_end = SHOT["frames"]
     sc.render.use_motion_blur = True
     sc.render.motion_blur_shutter = 0.5
@@ -146,7 +146,7 @@ def build():
             cap.location = tuple(cap_rest + np.array([0, 0, 0.00015 * k * math.sin(f * 2.7)]))
             cap.rotation_euler = (math.radians(0.8 * k * math.sin(f * 3.1)), math.radians(0.6 * k * math.cos(f * 2.3)), 0)
         else:
-            v0, g = 0.95, 9.81
+            v0, g = 1.25, 9.81
             h = v0 * dt - 0.5 * g * dt * dt
             cap.location = tuple(cap_rest + np.array([0.18 * h, 0.05 * h, h]))
             cap.rotation_euler = (math.radians(1400 * dt), math.radians(-600 * dt), math.radians(900 * dt))
@@ -154,7 +154,7 @@ def build():
         age = max(0.0, f - POP)
         vv["amount"].outputs[0].default_value = 320.0 * float(C.smoothstep(0, 3, age)) * float(C.smoothstep(75, 20, age))
         vv["rise"].outputs[0].default_value = 0.004 + 0.0011 * age
-        vv["time"].outputs[0].default_value = 0.02 * f
+        vv["time"].outputs[0].default_value = 0.012 * f
         vv["spread"].outputs[0].default_value = 0.006 + 0.00012 * age
         # spray (slow motion ballistics); hidden before the pop
         ts = np.maximum(0.0, (f - POP - delay)) / fps * slow
