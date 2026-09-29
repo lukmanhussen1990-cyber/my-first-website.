@@ -7,6 +7,7 @@ It is a procedural cinemagraph: the original pixels are only gently warped and r
 - Girl: blinks, breathes, tilts her head slightly; her hair and ribbon sway
 - Boy: blinks, breathes; his hair, tie, shirt and jacket move
 - Grass and flowers sway in a travelling breeze, and the tree leaves stir
+- Three soft wind gusts sweep left to right: grass, leaves, hair, ribbon, tie and jacket lean and flutter, and seed fluff and a few stray leaves blow past
 - Clouds drift slowly, stars twinkle and town lights flicker
 - Fireflies drift along closed paths, and two faint shooting stars cross the sky
 - The camera floats with depth parallax, and film grain moves over the frame

@@ -31,6 +31,14 @@ def cyc(n, t, phase=0.0):
     return np.sin(TAU * n * t / LOOP + phase)
 
 
+def gust(t, x):
+    """Wind gusts sweeping left -> right (320 px/s), three per loop of varying
+    strength. Depends only on t - x/v with whole-cycle periods, so it loops."""
+    tau = TAU * (t - x / 320.0) / LOOP
+    e = (0.5 - 0.5 * np.cos(3 * tau)) ** 3
+    return e * (0.7 + 0.3 * np.cos(tau + 0.8))
+
+
 def soft_poly(shape, pts, blur):
     m = np.zeros(shape, np.float32)
     cv2.fillPoly(m, [np.array(pts, np.int32)], 1.0)
@@ -217,7 +225,20 @@ def setup(src_path):
                        px=rng.uniform(0, TAU), py=rng.uniform(0, TAU), pw=rng.uniform(0, TAU),
                        nb=int(rng.integers(3, 7)), pb=rng.uniform(0, TAU)))
 
-    G.update(img=f, H=H, W=W, xx=xx, yy=yy, depth=depth,
+    # --- wind-borne specks (seed fluff) and a few stray leaves ---
+    motes = []
+    for k in range(13):
+        motes.append(dict(kind='fluff', y0=rng.uniform(930, 1620), laps=int(rng.integers(1, 3)),
+                          x0=rng.uniform(0, 1), by=rng.uniform(6, 22), nb=int(rng.integers(2, 6)),
+                          pb=rng.uniform(0, TAU), size=rng.uniform(0.6, 1.3), alpha=rng.uniform(0.3, 0.55)))
+    for k in range(4):
+        motes.append(dict(kind='leaf', y0=rng.uniform(700, 1450), laps=1,
+                          x0=rng.uniform(0, 1), by=rng.uniform(15, 35), nb=int(rng.integers(2, 4)),
+                          pb=rng.uniform(0, TAU), size=rng.uniform(0.9, 1.4), alpha=0.8,
+                          spin=int(rng.choice([-3, -2, 2, 3])), flip=int(rng.integers(4, 8)),
+                          th0=rng.uniform(0, TAU)))
+
+    G.update(img=f, motes=motes, H=H, W=W, xx=xx, yy=yy, depth=depth,
              grass_amp=grass_amp, gph1=gph1, gph2=gph2,
              leaves=leaves, lph1=smooth_noise(shp, 12, rng) * 2.5, lph2=smooth_noise(shp, 12, rng) * 2.5,
              clouds_a=clouds_a, clouds_b=clouds_b,
@@ -262,13 +283,16 @@ def displacement(t):
     g = G
     xx, yy = g['xx'], g['yy']
     # grass & flowers: slow travelling breeze + per-blade variation
+    gw = gust(t, xx[:1, :])  # (1, W) gust strength per column, broadcast down
     s = 0.65 * np.sin(TAU * 5 * t / LOOP - 0.011 * xx + 0.004 * yy + g['gph1']) \
         + 0.35 * np.sin(TAU * 8 * t / LOOP - 0.027 * xx + g['gph2'])
-    dx = g['grass_amp'] * s
-    dy = 0.18 * g['grass_amp'] * np.abs(s)
+    s = s * (1 + 0.7 * gw) + 0.35 * gw * np.sin(TAU * 17 * t / LOOP - 0.05 * xx + g['gph2'])
+    dx = g['grass_amp'] * (s - 1.1 * gw)  # blades lean right as a gust passes
+    dy = 0.18 * g['grass_amp'] * np.abs(s) + 0.25 * g['grass_amp'] * gw
     # tree leaves
-    dx += g['leaves'] * 1.1 * np.sin(TAU * 6 * t / LOOP + g['lph1'])
-    dy += g['leaves'] * 0.7 * np.sin(TAU * 4 * t / LOOP + g['lph2'])
+    dx += g['leaves'] * ((1.1 + 1.1 * gw) * np.sin(TAU * 6 * t / LOOP + g['lph1'])
+                         + 0.5 * gw * np.sin(TAU * 19 * t / LOOP + g['lph2']) - 0.9 * gw)
+    dy += g['leaves'] * (0.7 + 0.6 * gw) * np.sin(TAU * 4 * t / LOOP + g['lph2'])
     # clouds: extremely slow drift that returns home at t = LOOP
     dx += g['clouds_a'] * 2.6 * cyc(1, t) + g['clouds_b'] * 2.0 * cyc(1, t, 1.1)
     dy += g['clouds_b'] * 0.4 * cyc(1, t, 2.0)
@@ -283,20 +307,25 @@ def displacement(t):
     dx += g['girl_head'] * (-th * (yy - 1195) + hx)
     dy += g['girl_head'] * (th * (xx - 300) + hy)
     wind = cyc(3, t) * 0.7 + cyc(5, t, 1.3) * 0.3
-    dx += g['girl_hair_w'] * 1.7 * (0.8 * wind + 0.2 * np.sin(TAU * 7 * t / LOOP + 0.03 * yy))
-    dy += g['girl_hair_w'] * 0.3 * cyc(4, t, 0.5)
-    dx += g['ribbon'] * 1.3 * cyc(4, t, 0.8)
-    dy += g['ribbon'] * 0.6 * cyc(5, t, 2.2)
+    gg = float(gust(t, 280.0))
+    flutter = gg * np.sin(TAU * 16 * t / LOOP + 0.05 * yy)
+    dx += g['girl_hair_w'] * (1.7 * (0.8 * wind + 0.2 * np.sin(TAU * 7 * t / LOOP + 0.03 * yy))
+                              + 0.6 * flutter - 1.8 * gg)
+    dy += g['girl_hair_w'] * (0.3 * cyc(4, t, 0.5) - 0.4 * gg)
+    dx += g['ribbon'] * (1.3 * cyc(4, t, 0.8) + 0.7 * gg * cyc(18, t) - 1.5 * gg)
+    dy += g['ribbon'] * (0.6 * cyc(5, t, 2.2) - 0.5 * gg)
 
     # boy: breathing (6 breaths), hair, tie, shirt, jacket
     br = 0.5 + 0.5 * cyc(6, t, 1.0)
     dy += g['boy_torso'] * (yy - 1170) * 0.0038 * br
     dx += g['boy_torso'] * (xx - 600) * 0.0015 * br
-    dx += g['boy_hair_w'] * 0.8 * (cyc(3, t, 0.6) * 0.7 + cyc(7, t, 0.03) * 0.3)
+    gb = float(gust(t, 560.0))
+    dx += g['boy_hair_w'] * (0.8 * (cyc(3, t, 0.6) * 0.7 + cyc(7, t, 0.03) * 0.3)
+                             + 0.35 * gb * cyc(17, t, 0.4) - 0.9 * gb)
     dy += g['boy_hair_w'] * 0.25 * cyc(4, t, 1.9)
-    dx += g['tie_w'] * 0.9 * cyc(4, t, 1.0)
-    dx += g['jacket_w'] * 0.8 * cyc(3, t, 2.0)
-    dx += g['shirt'] * 0.25 * np.sin(TAU * 5 * t / LOOP + 0.04 * yy)
+    dx += g['tie_w'] * (0.9 * cyc(4, t, 1.0) - 1.0 * gb)
+    dx += g['jacket_w'] * (0.8 * cyc(3, t, 2.0) - 0.8 * float(gust(t, 670.0)))
+    dx += g['shirt'] * (0.25 + 0.3 * gb) * np.sin(TAU * 5 * t / LOOP + 0.04 * yy)
     return dx, dy
 
 
@@ -316,6 +345,34 @@ def draw_glow(canvas, x, y, sigma, color, inten):
     d2 = (xs - x) ** 2 + (ys - y) ** 2
     a = np.exp(-d2 / (2 * sigma ** 2)) + 0.28 * np.exp(-d2 / (2 * (sigma * 4) ** 2))
     canvas[y0:y0 + 2 * r + 1, x0:x0 + 2 * r + 1] += a[..., None] * (color * inten)
+
+
+def draw_motes(out, t):
+    L = OUT_W + 160
+    for m in G['motes']:
+        x = (m['x0'] * L + L * m['laps'] * t / LOOP) % L - 80
+        x += 10 * cyc(m['nb'] + 1, t, m['pb'])
+        y = m['y0'] + m['by'] * cyc(m['nb'], t, m['pb']) - (G['H'] - OUT_H) / 2
+        vis = m['alpha'] * (0.3 + 0.7 * float(gust(t, x + 3)))
+        r = 6
+        x0, y0 = int(x) - r, int(y) - r
+        if x0 < 0 or y0 < 0 or x0 + 2 * r + 1 > OUT_W or y0 + 2 * r + 1 > OUT_H:
+            continue
+        ys, xs = np.mgrid[y0:y0 + 2 * r + 1, x0:x0 + 2 * r + 1].astype(np.float32)
+        ddx, ddy = xs - x, ys - y
+        if m['kind'] == 'fluff':
+            a = np.exp(-(ddx ** 2 + ddy ** 2) / (2 * (0.7 * m['size']) ** 2))
+            col = np.array([205, 212, 218], np.float32)
+        else:
+            th = m['th0'] + TAU * m['spin'] * t / LOOP
+            u = (ddx * np.cos(th) + ddy * np.sin(th)) / (2.3 * m['size'])
+            v = (-ddx * np.sin(th) + ddy * np.cos(th)) / (
+                1.1 * m['size'] * (0.25 + 0.75 * abs(np.cos(TAU * m['flip'] * t / LOOP))))
+            a = np.clip(1.6 - 1.6 * np.sqrt(u * u + v * v), 0, 1)
+            col = np.array([38, 58, 50], np.float32)
+        a = (a * vis)[..., None]
+        reg = out[y0:y0 + 2 * r + 1, x0:x0 + 2 * r + 1]
+        reg[:] = reg * (1 - a) + col * a
 
 
 def shooting_star(canvas, t, t0, dur, p0, p1, peak, tail):
@@ -358,6 +415,7 @@ def render(i):
     my = my + dy[myi, mxi]
     out = cv2.remap(src.astype(np.float32), mx.astype(np.float32), my.astype(np.float32), cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT)
 
+    draw_motes(out, t)
     fx = np.zeros_like(out)
     for f in g['fireflies']:
         x = f['x0'] + f['ax'] * cyc(f['nx'], t, f['px']) + f['wx'] * cyc(f['nw'], t, f['pw'])
