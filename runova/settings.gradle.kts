@@ -29,4 +29,5 @@ dependencyResolutionManagement {
 rootProject.name = "RUNOVA"
 
 include(":core")
+include(":claude")
 include(":app")

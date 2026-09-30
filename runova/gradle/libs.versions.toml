@@ -12,10 +12,7 @@ navigationCompose = "2.9.8"
 coroutines = "1.11.0"
 junit = "4.13.2"
 robolectric = "4.17"
-# Desktop-only tooling (tools/dev): renders the shared UI to PNG on a plain JVM.
-composeDesktop = "1.12.1"
-composeDesktopMaterial3 = "1.9.0"
-composeDesktopIcons = "1.7.3"
+anthropic = "2.66.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -34,15 +31,10 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
-kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
-compose-desktop-ui = { module = "org.jetbrains.compose.ui:ui-desktop", version.ref = "composeDesktop" }
-compose-desktop-foundation = { module = "org.jetbrains.compose.foundation:foundation-desktop", version.ref = "composeDesktop" }
-compose-desktop-animation = { module = "org.jetbrains.compose.animation:animation-desktop", version.ref = "composeDesktop" }
-compose-desktop-material3 = { module = "org.jetbrains.compose.material3:material3-desktop", version.ref = "composeDesktopMaterial3" }
-compose-desktop-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended-desktop", version.ref = "composeDesktopIcons" }
+anthropic-java = { module = "com.anthropic:anthropic-java", version.ref = "anthropic" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
