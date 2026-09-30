@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.lerp
 import kotlin.math.PI
 import kotlin.math.abs
@@ -75,35 +76,44 @@ internal fun DrawScope.drawSplash(t: Float) {
     val h = size.height
     val horizon = h * 0.505f
 
-    // ---- sky
+    // ---- sky: slate-teal at the top, a wide peach-orange glow above the ridges
     drawRect(
         Brush.verticalGradient(
-            0.00f to Color(0xFF0E1F27),
-            0.16f to Color(0xFF173039),
-            0.30f to Color(0xFF28434C),
-            0.39f to Color(0xFF4A4F50),
-            0.45f to Color(0xFF9B6750),
-            0.485f to Color(0xFFE39A62),
-            0.505f to Color(0xFFF6B976),
+            0.00f to Color(0xFF12252E),
+            0.14f to Color(0xFF1C343E),
+            0.25f to Color(0xFF334C56),
+            0.33f to Color(0xFF55605F),
+            0.39f to Color(0xFF9A6F58),
+            0.44f to Color(0xFFD38B5B),
+            0.48f to Color(0xFFEFAA6C),
+            0.505f to Color(0xFFF7C27F),
             0.56f to Color(0xFF6E6560),
             1.00f to Color(0xFF0C1214),
             endY = h,
         ),
     )
-    // cloud banks
+    // cloud banks: soft cool streaks high up, dark clouds with glowing undersides near the sun
     val cloudRnd = Random(7)
-    repeat(14) { i ->
-        val cy = h * (0.05f + i * 0.03f + cloudRnd.nextFloat() * 0.02f)
-        val cx = w * (cloudRnd.nextFloat() * 1.2f - 0.1f) + sin(t * 0.05f + i) * w * 0.02f
-        val rw = w * (0.35f + cloudRnd.nextFloat() * 0.7f)
-        val rh = h * (0.012f + cloudRnd.nextFloat() * 0.03f)
-        val warm = i >= 10
-        val col = if (warm) Color(0xFFE3905C).copy(alpha = 0.20f) else Color(0xFF3E5761).copy(alpha = 0.18f + cloudRnd.nextFloat() * 0.14f)
-        drawOval(
-            Brush.radialGradient(listOf(col, Color.Transparent), center = Offset(cx, cy), radius = rw / 2),
-            topLeft = Offset(cx - rw / 2, cy - rh / 2),
-            size = Size(rw, rh),
-        )
+    repeat(7) { band ->
+        val cy = h * (0.05f + band * 0.034f)
+        val drift = sin(t * 0.05f + band) * w * 0.02f
+        repeat(6) {
+            val cx = w * (cloudRnd.nextFloat() * 1.3f - 0.15f) + drift
+            val rx = w * (0.12f + cloudRnd.nextFloat() * 0.22f)
+            softEllipse(Offset(cx, cy + (cloudRnd.nextFloat() - 0.5f) * h * 0.012f), rx, rx * (0.07f + cloudRnd.nextFloat() * 0.06f), Color(0xFF4F6A76), 0.16f + cloudRnd.nextFloat() * 0.12f)
+        }
+    }
+    repeat(6) { band ->
+        val cy = h * (0.30f + band * 0.024f)
+        val drift = sin(t * 0.04f + band * 2) * w * 0.015f
+        val glow = 0.22f + 0.30f * (band / 5f)
+        repeat(7) {
+            val cx = w * (cloudRnd.nextFloat() * 1.3f - 0.15f) + drift
+            val rx = w * (0.10f + cloudRnd.nextFloat() * 0.20f)
+            val ry = rx * (0.08f + cloudRnd.nextFloat() * 0.07f)
+            softEllipse(Offset(cx, cy), rx, ry, Color(0xFF394245), 0.40f)
+            softEllipse(Offset(cx + rx * 0.1f, cy + ry * 0.8f), rx * 0.8f, ry * 0.55f, Color(0xFFF6AE6B), glow)
+        }
     }
     // ---- sun + glow
     val sunX = w * 0.815f
@@ -127,8 +137,9 @@ internal fun DrawScope.drawSplash(t: Float) {
     mist(t * 1.3f, horizon + h * 0.10f, h * 0.06f, 0.14f)
     mountain(31, horizon + h * 0.19f, h * 0.10f, Brush.verticalGradient(listOf(Color(0xFF151F24), Color(0xFF0D1417)), startY = horizon + h * 0.08f, endY = horizon + h * 0.2f), -drift * 2f)
 
-    // ---- road
+    // ---- road and the trees lining it
     drawRoad(t, horizon)
+    drawRoadside(horizon)
 
     // ---- runner
     drawRunner(t, Offset(w * 0.47f, h * 0.395f), h * 0.40f)
@@ -139,15 +150,19 @@ internal fun DrawScope.drawSplash(t: Float) {
     drawRect(Brush.radialGradient(listOf(Color.Transparent, Color(0x88000000)), center = Offset(w / 2, h * 0.5f), radius = h * 0.75f))
 }
 
+/** A blurred ellipse: a radial fade squashed vertically, so it has no hard edges. */
+private fun DrawScope.softEllipse(center: Offset, rx: Float, ry: Float, color: Color, alpha: Float) {
+    if (rx <= 0f || ry <= 0f) return
+    withTransform({ scale(1f, ry / rx, pivot = center) }) {
+        drawCircle(Brush.radialGradient(listOf(color.copy(alpha = alpha), color.copy(alpha = alpha * 0.4f), Color.Transparent), center = center, radius = rx), radius = rx, center = center)
+    }
+}
+
 private fun DrawScope.mist(t: Float, y: Float, height: Float, alpha: Float) {
     val w = size.width
     for (k in 0 until 3) {
         val x = ((t * 6f * (k + 1)) % (w * 2)) - w * 0.5f + k * w * 0.4f
-        drawOval(
-            Brush.radialGradient(listOf(Color(0xFFB9C7CC).copy(alpha = alpha), Color.Transparent), center = Offset(x, y), radius = w * 0.7f),
-            topLeft = Offset(x - w * 0.7f, y - height / 2),
-            size = Size(w * 1.4f, height),
-        )
+        softEllipse(Offset(x, y), w * 0.7f, height / 2, Color(0xFFB9C7CC), alpha)
     }
 }
 
@@ -165,6 +180,17 @@ private fun DrawScope.drawRoad(t: Float, horizon: Float) {
     drawPath(road, Brush.verticalGradient(listOf(Color(0xFF2A2F31), Color(0xFF14191B), Color(0xFF0B0F11)), startY = vanish.y, endY = h))
     // wet reflection of the sunset along the road
     clipPath(road) {
+        drawRect(
+            Brush.horizontalGradient(
+                0f to Color.Transparent,
+                0.5f to Color(0xFFF3A466).copy(alpha = 0.16f),
+                1f to Color.Transparent,
+                startX = w * 0.56f,
+                endX = w * 0.80f,
+            ),
+            topLeft = Offset(0f, vanish.y),
+            size = Size(w, (h - vanish.y) * 0.55f),
+        )
         drawOval(
             Brush.radialGradient(listOf(Color(0xFFF0A265).copy(alpha = 0.55f), Color(0xFFB0643A).copy(alpha = 0.18f), Color.Transparent), center = Offset(w * 0.74f, h * 0.80f), radius = w * 0.35f),
             topLeft = Offset(w * 0.48f, vanish.y),
@@ -191,6 +217,74 @@ private fun DrawScope.drawRoad(t: Float, horizon: Float) {
     }
     // soft road edges
     drawPath(road, Color(0xFF3A4246).copy(alpha = 0.35f), style = Stroke(2f))
+}
+
+private fun bezier(p0: Offset, p1: Offset, p2: Offset, p3: Offset, t: Float): Offset {
+    val u = 1 - t
+    val a = u * u * u
+    val b = 3 * u * u * t
+    val c = 3 * u * t * t
+    val d = t * t * t
+    return Offset(a * p0.x + b * p1.x + c * p2.x + d * p3.x, a * p0.y + b * p1.y + c * p2.y + d * p3.y)
+}
+
+/** Hedges and trees in silhouette along both edges of the road, taller towards the viewer. */
+private fun DrawScope.drawRoadside(horizon: Float) {
+    val w = size.width
+    val h = size.height
+    val vanishY = horizon + h * 0.155f
+    val dark = Color(0xFF070C0B)
+    val rnd = Random(42)
+
+    fun hedge(edge: (Float) -> Offset, maxP: Float, outward: Float, corner: Offset, seed: Int, heightScale: Float) {
+        val noise = ridge(seed, 129, 0.62f)
+        val n = 96
+        val path = Path()
+        val first = edge(0f)
+        path.moveTo(first.x, first.y)
+        for (i in 0..n) {
+            val p = i / n.toFloat() * maxP
+            val e = edge(p)
+            val grow = (p / maxP)
+            val height = h * (0.004f + 0.11f * grow * grow) * heightScale
+            val bump = 0.55f + 0.45f * (noise[(i * 128) / n] * 0.5f + 0.5f) + (rnd.nextFloat() - 0.5f) * 0.25f
+            path.lineTo(e.x + outward * w * (0.004f + 0.05f * grow), e.y - height * bump)
+        }
+        path.lineTo(corner.x, corner.y)
+        for (i in n downTo 0) {
+            val e = edge(i / n.toFloat() * maxP)
+            path.lineTo(e.x, e.y)
+        }
+        path.close()
+        drawPath(path, Brush.verticalGradient(listOf(Color(0xFF0B1413), dark), startY = vanishY - h * 0.02f, endY = h))
+    }
+
+    val l0 = Offset(w * 0.642f, vanishY)
+    val l1 = Offset(w * 0.40f, h * 0.74f)
+    val l2 = Offset(w * 0.05f, h * 0.86f)
+    val l3 = Offset(-w * 0.35f, h)
+    hedge({ p -> bezier(l0, l1, l2, l3, p) }, 0.85f, -1f, Offset(-w * 0.5f, h * 1.05f), 51, 1f)
+
+    val r0 = Offset(w * 0.678f, vanishY)
+    val r1 = Offset(w * 0.78f, h * 0.73f)
+    val r2 = Offset(w * 1.02f, h * 0.84f)
+    val r3 = Offset(w * 1.3f, h)
+    hedge({ p -> bezier(r0, r1, r2, r3, p) }, 0.62f, 1f, Offset(w * 1.5f, h * 1.05f), 77, 0.8f)
+
+    // trees: bumpy canopies made of many small overlapping crowns
+    fun tree(base: Offset, crownR: Float, trunk: Float) {
+        drawRect(dark, topLeft = Offset(base.x - crownR * 0.06f, base.y - trunk), size = Size(crownR * 0.12f, trunk))
+        val c = Offset(base.x, base.y - trunk - crownR * 0.55f)
+        repeat(26) {
+            val a = rnd.nextFloat() * 2 * PI.toFloat()
+            val d = kotlin.math.sqrt(rnd.nextFloat())
+            val o = Offset(c.x + kotlin.math.cos(a) * crownR * 0.75f * d, c.y + kotlin.math.sin(a) * crownR * 0.6f * d)
+            drawCircle(dark, crownR * (0.18f + rnd.nextFloat() * 0.16f), o)
+        }
+    }
+    tree(bezier(l0, l1, l2, l3, 0.16f).let { Offset(it.x - w * 0.06f, it.y) }, w * 0.035f, h * 0.012f)
+    tree(bezier(l0, l1, l2, l3, 0.30f).let { Offset(it.x - w * 0.10f, it.y) }, w * 0.055f, h * 0.02f)
+    tree(bezier(r0, r1, r2, r3, 0.22f).let { Offset(it.x + w * 0.07f, it.y) }, w * 0.045f, h * 0.016f)
 }
 
 /** Joint positions of the runner in figure units (head top = 0, soles = 100). */
