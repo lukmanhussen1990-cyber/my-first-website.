@@ -1,0 +1,51 @@
+[versions]
+agp = "8.13.0"
+kotlin = "2.4.20"
+coreKtx = "1.17.0"
+coreSplashscreen = "1.2.0"
+activityCompose = "1.12.4"
+compose = "1.11.4"
+material3 = "1.4.0"
+materialIcons = "1.7.8"
+lifecycle = "2.10.0"
+navigationCompose = "2.9.8"
+coroutines = "1.11.0"
+junit = "4.13.2"
+robolectric = "4.17"
+# Desktop-only tooling (tools/dev): renders the shared UI to PNG on a plain JVM.
+composeDesktop = "1.12.1"
+composeDesktopMaterial3 = "1.9.0"
+composeDesktopIcons = "1.7.3"
+
+[libraries]
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
+androidx-compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics", version.ref = "compose" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose" }
+androidx-compose-animation = { module = "androidx.compose.animation:animation", version.ref = "compose" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIcons" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
+junit = { module = "junit:junit", version.ref = "junit" }
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+compose-desktop-ui = { module = "org.jetbrains.compose.ui:ui-desktop", version.ref = "composeDesktop" }
+compose-desktop-foundation = { module = "org.jetbrains.compose.foundation:foundation-desktop", version.ref = "composeDesktop" }
+compose-desktop-animation = { module = "org.jetbrains.compose.animation:animation-desktop", version.ref = "composeDesktop" }
+compose-desktop-material3 = { module = "org.jetbrains.compose.material3:material3-desktop", version.ref = "composeDesktopMaterial3" }
+compose-desktop-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended-desktop", version.ref = "composeDesktopIcons" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
