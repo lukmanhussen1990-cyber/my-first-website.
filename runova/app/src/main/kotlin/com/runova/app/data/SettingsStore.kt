@@ -46,7 +46,7 @@ class SettingsStore(context: Context) {
         state.value = AppSettings()
     }
 
-    private inline fun <reified T : Enum<T>> SharedPreferences.enum(key: String, default: T): T =
+    private inline fun <reified T : Enum<T>> SharedPreferences.enumValue(key: String, default: T): T =
         getString(key, null)?.let { v -> enumValues<T>().firstOrNull { it.name == v } } ?: default
 
     private fun SharedPreferences.targets(prefix: String, d: GoalTargets) = GoalTargets(
@@ -75,7 +75,7 @@ class SettingsStore(context: Context) {
                 heightCm = p.getFloat("height_cm", d.profile.heightCm.toFloat()).toDouble(),
                 weightKg = p.getFloat("weight_kg", d.profile.weightKg.toFloat()).toDouble(),
             ),
-            units = p.enum("units", d.units),
+            units = p.enumValue("units", d.units),
             goals = Goals(
                 daily = p.targets("daily", d.goals.daily),
                 weekly = p.targets("weekly", d.goals.weekly),
@@ -85,8 +85,8 @@ class SettingsStore(context: Context) {
             autoPause = p.getBoolean("auto_pause", d.autoPause),
             keepScreenOn = p.getBoolean("keep_screen_on", d.keepScreenOn),
             countdown = p.getBoolean("countdown", d.countdown),
-            theme = p.enum("theme", d.theme),
-            mapStyle = p.enum("map_style", d.mapStyle),
+            theme = p.enumValue("theme", d.theme),
+            mapStyle = p.enumValue("map_style", d.mapStyle),
             reminderEnabled = p.getBoolean("reminder", d.reminderEnabled),
             reminderHour = p.getInt("reminder_h", d.reminderHour),
             reminderMinute = p.getInt("reminder_m", d.reminderMinute),
@@ -124,21 +124,21 @@ class SettingsStore(context: Context) {
     }
 
     // Small pieces of app state that are not user settings.
-    private val internal: SharedPreferences = context.getSharedPreferences("runova_state", Context.MODE_PRIVATE)
+    private val statePrefs: SharedPreferences = context.getSharedPreferences("runova_state", Context.MODE_PRIVATE)
 
     var avatarVersion: Long
-        get() = internal.getLong("avatar_version", 0)
-        set(v) = internal.edit().putLong("avatar_version", v).apply()
+        get() = statePrefs.getLong("avatar_version", 0)
+        set(v) = statePrefs.edit().putLong("avatar_version", v).apply()
 
-    fun resetInternal() = internal.edit().clear().apply()
+    fun resetInternal() = statePrefs.edit().clear().apply()
 
     /** Step-counter baseline used to turn the since-boot counter into daily steps. */
     data class StepBaseline(val counter: Long, val bootCount: Int)
 
     var stepBaseline: StepBaseline?
-        get() = if (internal.contains("step_counter")) StepBaseline(internal.getLong("step_counter", 0), internal.getInt("step_boot", -1)) else null
+        get() = if (statePrefs.contains("step_counter")) StepBaseline(statePrefs.getLong("step_counter", 0), statePrefs.getInt("step_boot", -1)) else null
         set(v) {
-            val e = internal.edit()
+            val e = statePrefs.edit()
             if (v == null) e.remove("step_counter").remove("step_boot") else e.putLong("step_counter", v.counter).putInt("step_boot", v.bootCount)
             e.apply()
         }

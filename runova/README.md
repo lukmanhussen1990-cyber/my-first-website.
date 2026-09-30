@@ -12,7 +12,7 @@ RUNOVA is an Android running app with GPS tracking, a live route map, calorie an
 |---|---|
 | Domain logic (`core/`): tracking, calories, steps, XP, levels, streaks, achievements, stats, GPX, offline coach | Done, **43 JVM tests pass** |
 | Claude coach client (`claude/`) on the official Anthropic Java SDK | Done, **9 tests pass** against a local fake API |
-| Screen state mapping and live-run texts (`app/src/shared/.../state`) | Done, **11 JVM tests pass** |
+| Screen state mapping, live-run texts, heart-rate parsing (`app/src/shared/.../state`) | Done, **14 JVM tests pass** |
 | All Compose screens (`app/src/shared/.../ui`) | Done; compile and render on the JVM (Compose Desktop) |
 | Android layer (`app/src/main`): SQLite, tracking service, sensors, BLE, TTS, notifications, navigation | Written; **not compiled yet** |
 | Robolectric flow tests (`app/src/test`) | Written; **not run yet** |

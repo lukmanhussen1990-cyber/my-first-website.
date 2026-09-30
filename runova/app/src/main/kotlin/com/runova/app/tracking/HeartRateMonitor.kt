@@ -235,7 +235,7 @@ class HeartRateMonitor(context: Context, private val scope: CoroutineScope) {
                         g.writeDescriptor(d, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
                     } else {
                         @Suppress("DEPRECATION")
-                        d.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                        d.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
                         @Suppress("DEPRECATION")
                         g.writeDescriptor(d)
                     }

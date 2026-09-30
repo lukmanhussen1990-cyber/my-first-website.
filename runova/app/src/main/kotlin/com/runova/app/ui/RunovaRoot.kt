@@ -307,7 +307,7 @@ private fun AppContent(pendingRoute: MutableState<String?>, main: MainViewModel,
 
     fun toast(text: String) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
 
-    fun launch(intent: Intent?) {
+    fun open(intent: Intent?) {
         if (intent == null) return
         try {
             context.startActivity(intent)
@@ -320,11 +320,10 @@ private fun AppContent(pendingRoute: MutableState<String?>, main: MainViewModel,
         permissions = Perms.summary(context)
         main.refreshHeartRate()
     }
-    LaunchedEffect(data.settings.units) { run.invalidateDetails() }
 
     fun startRun() {
         when {
-            run.running.value != null -> nav.navigate(Routes.RUNNING) { launchSingleTop = true }
+            run.isRecording() -> nav.navigate(Routes.RUNNING) { launchSingleTop = true }
             recovery != null -> Unit // the recovery dialog is showing
             !Perms.location(context) -> {
                 locationBlocked = false
@@ -383,7 +382,7 @@ private fun AppContent(pendingRoute: MutableState<String?>, main: MainViewModel,
         if (!loaded || !data.settings.onboarded || backStack == null) return@LaunchedEffect
         if (nav.currentDestination?.route == Routes.SPLASH) nav.navigate(Routes.HOME) { popUpTo(Routes.SPLASH) { inclusive = true } }
         when (route) {
-            Routes.RUNNING -> if (run.running.value != null) nav.navigate(Routes.RUNNING) { launchSingleTop = true }
+            Routes.RUNNING -> if (run.isRecording()) nav.navigate(Routes.RUNNING) { launchSingleTop = true }
             Routes.NOTIFICATIONS -> nav.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true }
         }
         pendingRoute.value = null
@@ -498,9 +497,10 @@ private fun AppContent(pendingRoute: MutableState<String?>, main: MainViewModel,
                 KeepScreenOn(state?.keepScreenOn == true)
                 if (state == null) {
                     Loading()
-                    // The run ended elsewhere (e.g. discarded); saving navigates on its own.
+                    // The run ended elsewhere (e.g. discarded); saving navigates on its own. The
+                    // session is checked directly because the UI state can lag one frame behind.
                     LaunchedEffect(saving) {
-                        if (!saving && nav.currentDestination?.route == Routes.RUNNING) nav.popBackStack()
+                        if (!saving && !run.isRecording() && nav.currentDestination?.route == Routes.RUNNING) nav.popBackStack()
                     }
                     return@composable
                 }
@@ -545,15 +545,21 @@ private fun AppContent(pendingRoute: MutableState<String?>, main: MainViewModel,
 
             composable(Routes.DETAILS, arguments = listOf(navArgument("runId") { type = NavType.LongType })) { entry ->
                 val id = entry.arguments?.getLong("runId") ?: return@composable
-                val flow = remember(id, data.settings.units) { run.details(id) }
+                LaunchedEffect(id) {
+                    if (!run.runExists(id)) {
+                        toast("This run was deleted")
+                        if (!nav.popBackStack()) nav.goHome()
+                    }
+                }
+                val flow = remember(id, data.settings.units) { run.details(id, data.settings.units) }
                 val s by flow.collectAsStateWithLifecycle()
                 val state = s ?: return@composable Loading()
                 RunDetailsScreen(
                     state,
                     RunDetailsActions(
                         onBack = { if (!nav.popBackStack()) nav.goHome() },
-                        onShare = { scope.launch { launch(run.shareIntent(id)) } },
-                        onExportGpx = { scope.launch { launch(run.gpxIntent(id)) } },
+                        onShare = { scope.launch { open(run.shareIntent(id)) } },
+                        onExportGpx = { scope.launch { open(run.gpxIntent(id)) } },
                         onDelete = { run.deleteRun(id) { if (!nav.popBackStack()) nav.goHome() } },
                     ),
                 )
@@ -569,7 +575,7 @@ private fun AppContent(pendingRoute: MutableState<String?>, main: MainViewModel,
                         onBack = { nav.popBackStack() },
                         onSelect = main::selectAchievement,
                         onAcknowledge = main::acknowledgeAchievements,
-                        onShare = { launch(main.shareAchievement(it)) },
+                        onShare = { open(main.shareAchievement(it)) },
                     ),
                 )
             }
@@ -611,11 +617,11 @@ private fun AppContent(pendingRoute: MutableState<String?>, main: MainViewModel,
                         onClearApiKey = main::clearApiKey,
                         onModel = main::setModel,
                         onTestApi = main::testApi,
-                        onOpenPermissions = { launch(Perms.appSettings(context)) },
+                        onOpenPermissions = { open(Perms.appSettings(context)) },
                         onExportAll = {
                             scope.launch {
                                 val intent = main.exportAll()
-                                if (intent == null) toast("No runs to export yet") else launch(intent)
+                                if (intent == null) toast("No runs to export yet") else open(intent)
                             }
                         },
                         onDeleteAll = {
@@ -698,7 +704,7 @@ private fun AppContent(pendingRoute: MutableState<String?>, main: MainViewModel,
             onAllow = { locationLauncher.launch(Perms.locationOnly) },
             onOpenSettings = {
                 showLocationSheet = false
-                launch(Perms.appSettings(context))
+                open(Perms.appSettings(context))
             },
             onDismiss = { showLocationSheet = false },
         )
@@ -710,7 +716,7 @@ private fun AppContent(pendingRoute: MutableState<String?>, main: MainViewModel,
             confirmText = "Open settings",
             onConfirm = {
                 showGpsOff = false
-                launch(Perms.locationSettings())
+                open(Perms.locationSettings())
             },
         )
         val r = recovery

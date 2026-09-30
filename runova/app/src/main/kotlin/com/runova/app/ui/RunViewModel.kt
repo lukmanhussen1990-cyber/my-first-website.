@@ -18,6 +18,7 @@ import com.runova.app.ui.model.PhotoUi
 import com.runova.app.ui.model.RunCompleteUiState
 import com.runova.app.ui.model.RunDetailsUiState
 import com.runova.app.ui.model.RunningUiState
+import com.runova.core.model.UnitSystem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -113,10 +114,6 @@ class RunViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun clearCompletion() {
-        completionState.value = null
-    }
-
     fun setVoice(on: Boolean) {
         repo.updateSettings { it.copy(voice = on) }
     }
@@ -139,16 +136,17 @@ class RunViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------------------------------------------------------------- details
 
-    private val detailsCache = HashMap<Long, MutableStateFlow<RunDetailsUiState?>>()
+    private val detailsCache = HashMap<Pair<Long, UnitSystem>, MutableStateFlow<RunDetailsUiState?>>()
 
-    fun details(runId: Long): StateFlow<RunDetailsUiState?> {
-        detailsCache[runId]?.let { return it }
+    /** Details of a saved run in [units], loaded once and cached. */
+    fun details(runId: Long, units: UnitSystem): StateFlow<RunDetailsUiState?> {
+        val key = runId to units
+        detailsCache[key]?.let { return it }
         val flow = MutableStateFlow<RunDetailsUiState?>(null)
-        detailsCache[runId] = flow
+        detailsCache[key] = flow
         viewModelScope.launch {
             val run = repo.run(runId) ?: return@launch
             val points = repo.points(runId)
-            val units = repo.settings.load().units
             val photos = withContext(Dispatchers.IO) {
                 repo.photos(runId).map { PhotoUi(it.id, Images.decodeSampled(it.path, 720)?.asImageBitmap()) }
             }
@@ -157,8 +155,10 @@ class RunViewModel(app: Application) : AndroidViewModel(app) {
         return flow
     }
 
-    /** Units changed or a run was edited: drop cached details. */
-    fun invalidateDetails() = detailsCache.clear()
+    suspend fun runExists(runId: Long): Boolean = repo.run(runId) != null
+
+    /** True while a run is being recorded (read from the session, not the UI state). */
+    fun isRecording(): Boolean = session.isActive
 
     suspend fun shareIntent(runId: Long): Intent? = withContext(Dispatchers.IO) {
         val run = repo.run(runId) ?: return@withContext null
@@ -174,7 +174,7 @@ class RunViewModel(app: Application) : AndroidViewModel(app) {
     fun deleteRun(runId: Long, onDone: () -> Unit) {
         viewModelScope.launch {
             repo.deleteRun(runId)
-            detailsCache.remove(runId)
+            detailsCache.keys.removeAll { it.first == runId }
             onDone()
         }
     }

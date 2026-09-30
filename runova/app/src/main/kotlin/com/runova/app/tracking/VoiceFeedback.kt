@@ -38,7 +38,7 @@ class VoiceFeedback(context: Context) : TextToSpeech.OnInitListener {
             return
         }
         val locale = Locale.getDefault()
-        engine.language = if (engine.isLanguageAvailable(locale) >= TextToSpeech.LANG_AVAILABLE) locale else Locale.US
+        engine.setLanguage(if (engine.isLanguageAvailable(locale) >= TextToSpeech.LANG_AVAILABLE) locale else Locale.US)
         engine.setAudioAttributes(ATTRIBUTES)
         engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) = Unit
