@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- The API key is encrypted with a device-bound Keystore key and cannot be restored elsewhere. -->
+    <exclude domain="sharedpref" path="runova_secrets.xml" />
+    <exclude domain="database" path="runova.db-journal" />
+</full-backup-content>

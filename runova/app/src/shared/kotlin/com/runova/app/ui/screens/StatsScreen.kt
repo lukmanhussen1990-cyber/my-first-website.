@@ -167,15 +167,15 @@ private fun MetricChips(selected: StatsMetric, onSelect: (StatsMetric) -> Unit) 
 private fun StatBox(icon: ImageVector, tint: Color, label: String, value: String, unit: String?, modifier: Modifier = Modifier) {
     val c = Runova.colors
     RunovaCard(modifier.height(98.dp), shape = RoundedCornerShape(22.dp)) {
-        Row(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 16.dp)) {
-            Icon(icon, null, tint = tint, modifier = Modifier.size(28.dp))
-            Spacer(Modifier.width(12.dp))
+        Row(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 16.dp)) {
+            Icon(icon, null, tint = tint, modifier = Modifier.size(26.dp))
+            Spacer(Modifier.width(10.dp))
             Column {
                 Text(label, style = Runova.type.body, color = c.textSecondary)
                 Spacer(Modifier.height(8.dp))
                 Text(
                     buildAnnotatedString {
-                        withStyle(SpanStyle(fontSize = 30.sp)) { append(value) }
+                        withStyle(SpanStyle(fontSize = 29.sp)) { append(value) }
                         if (unit != null) withStyle(SpanStyle(fontSize = 17.sp, fontFamily = Runova.type.body.fontFamily, fontWeight = FontWeight.Medium)) { append(" $unit") }
                     },
                     style = Runova.type.metricM,
