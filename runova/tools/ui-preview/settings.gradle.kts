@@ -3,6 +3,7 @@
 //
 //   gradle -p tools/ui-preview run            # all screens -> tools/ui-preview/build/previews
 //   gradle -p tools/ui-preview run -Pscreens=home,running
+//   gradle -p tools/ui-preview test           # tests for the shared screen-state mapping
 //
 // It deliberately uses Compose Multiplatform 1.5.x, whose artifacts are all on Maven Central,
 // so the shared UI code sticks to APIs available in both Compose 1.5 and the app's Compose.

@@ -32,6 +32,11 @@ dependencies {
     implementation(compose.material3)
     implementation(compose.materialIconsExtended)
     implementation(compose.animation)
+    testImplementation(kotlin("test-junit"))
+}
+
+tasks.test {
+    useJUnit()
 }
 
 application {
