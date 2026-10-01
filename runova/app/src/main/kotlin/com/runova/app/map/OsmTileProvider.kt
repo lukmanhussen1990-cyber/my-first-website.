@@ -97,7 +97,8 @@ class OsmTileProvider(context: Context, private val style: Style, private val sc
     /** The light tiles as they are, or redrawn through [DARK] for the dark map. Either way RGB_565 to halve memory. */
     private fun recolor(src: Bitmap): Bitmap {
         val out = Bitmap.createBitmap(src.width, src.height, Bitmap.Config.RGB_565)
-        val paint = Paint().apply { if (style == Style.DARK) colorFilter = ColorMatrixColorFilter(DARK) }
+        val paint = Paint()
+        if (style == Style.DARK) paint.colorFilter = ColorMatrixColorFilter(DARK)
         Canvas(out).drawBitmap(src, 0f, 0f, paint)
         src.recycle()
         return out
