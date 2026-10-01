@@ -73,7 +73,7 @@ class StepsTracker(context: Context, private val repository: AppRepository) {
         val sm = app.getSystemService(SensorManager::class.java) ?: return false
         val sensor = sm.getDefaultSensor(Sensor.TYPE_STEP_COUNTER) ?: return false
         val value = withTimeoutOrNull(SAMPLE_TIMEOUT_MS) {
-            suspendCancellableCoroutine { cont ->
+            suspendCancellableCoroutine<Long?> { cont ->
                 val listener = object : SensorEventListener {
                     override fun onSensorChanged(event: SensorEvent) {
                         sm.unregisterListener(this)
