@@ -10,9 +10,11 @@ local.properties
 captures/
 .externalNativeBuild/
 .cxx/
-# Signing material never goes into the repository
+# Signing material never goes into the repository, except the shared debug key
+# (public by design) that keeps debug and unconfigured release builds updatable.
 *.jks
 *.keystore
+!app/debug.keystore
 keystore.properties
 
 # Release artifacts (APK, source zip)
