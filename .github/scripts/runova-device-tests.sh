@@ -117,9 +117,11 @@ wake
 adb shell am force-stop "$PKG"
 # The relaunch also captures the splash, with animations at normal speed for that one shot.
 adb shell settings put global animator_duration_scale 1
-adb shell am start -W -n "$PKG/com.runova.app.ui.MainActivity" 2>&1 | grep -E 'Status|LaunchState|Error' | tr -d '\r' | sed 's/^/  /'
-sleep 1.6
-shot 00-splash
+adb shell am start -W -n "$PKG/com.runova.app.ui.MainActivity" 2>&1 | grep -E 'Status|LaunchState|TotalTime|Error' | tr -d '\r' | sed 's/^/  /'
+# A burst through the splash; keep the most detailed frame (blank frames compress to almost nothing).
+for i in 1 2 3 4 5 6; do sleep 0.3; shot "splash-$i"; done
+mv "$(ls -S "$OUT"/splash-*.png | head -1)" "$OUT/00-splash.png"
+rm -f "$OUT"/splash-*.png
 adb shell settings put global animator_duration_scale 0
 if wait_text "$OUT/recovery.xml" "Unfinished run found" 30; then
   echo "PASS: the relaunch after killing the app mid-run offers to recover the run"
