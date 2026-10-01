@@ -88,7 +88,8 @@ jobs:
         run: |
           status=0
           ./gradlew :app:lintRelease || status=$?
-          [ -f app/build/reports/lint-results.txt ] && tail -n 80 app/build/reports/lint-results.txt
+          # One line per finding (file:line: severity: message [IssueId]), then the totals.
+          [ -f app/build/reports/lint-results.txt ] && grep -E '^[^ ].*: (Error|Warning|Information|Hint): ' app/build/reports/lint-results.txt; tail -n 1 app/build/reports/lint-results.txt 2>/dev/null
           exit $status
 
       - name: Test summary
