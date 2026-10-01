@@ -168,7 +168,7 @@ Requirements: JDK 17+, Android SDK with platform 36, and network access to Googl
 ./gradlew :app:connectedDebugAndroidTest      # instrumented flows (device or emulator attached)
 ```
 
-On GitHub, the workflow builds, tests and lints on every push. It then runs `.github/scripts/runova-device-tests.sh` on an Android 14 emulator: the instrumented flows, the crash check and the release smoke test. Starting the workflow by hand with **publish** checked commits the device screenshots to `docs/device`. It also replaces `dist/RUNOVA.apk`, but only when every on-device check passed.
+The workflow and the device-test script live in the repository's `.github/` folder (RUNOVA-Source.zip includes them under `RUNOVA/.github/`) and expect this project in a `runova/` folder of the repository. On GitHub, the workflow builds, tests and lints on every push. It then runs `.github/scripts/runova-device-tests.sh` on an Android 14 emulator: the instrumented flows, the crash check and the release smoke test. Starting the workflow by hand with **publish** checked commits the device screenshots to `docs/device`. It also replaces `dist/RUNOVA.apk`, but only when every on-device check passed.
 
 Release signing:
 - Create `keystore.properties` in the project root with `storeFile`, `storePassword`, `keyAlias` and `keyPassword`.
