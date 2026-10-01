@@ -83,7 +83,11 @@ jobs:
 
       - name: Lint
         if: steps.compile.outcome == 'success'
-        run: ./gradlew :app:lintRelease
+        run: |
+          status=0
+          ./gradlew :app:lintRelease || status=$?
+          [ -f app/build/reports/lint-results.txt ] && tail -n 80 app/build/reports/lint-results.txt
+          exit $status
 
       - name: Test summary
         if: always()

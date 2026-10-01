@@ -91,9 +91,9 @@ android {
     lint {
         abortOnError = true
         checkReleaseBuilds = true
-        // Print findings to the build log as well as the HTML report.
+        // A plain-text copy of the findings, printed by CI next to the HTML report.
         textReport = true
-        textOutput = file("stdout")
+        textOutput = layout.buildDirectory.file("reports/lint-results.txt").get().asFile
     }
 }
 
