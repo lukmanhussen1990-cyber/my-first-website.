@@ -1,6 +1,7 @@
 # Builds and tests the RUNOVA Android app (runova/) with the official Android toolchain.
-# Pushes to the development branch build, test and lint the app. A manual run with
-# "publish" checked also commits the signed release APK to runova/dist/RUNOVA.apk.
+# Every push to the development branch compiles, unit-tests and lints the app, then runs the
+# on-device flows on an Android emulator. A manual run with "publish" checked also commits the
+# signed release APK (runova/dist/RUNOVA.apk) and the device screenshots (runova/docs/device).
 name: RUNOVA Android
 
 on:
@@ -9,10 +10,11 @@ on:
     paths:
       - "runova/**"
       - ".github/workflows/runova-android.yml"
+      - ".github/scripts/runova-device-tests.sh"
   workflow_dispatch:
     inputs:
       publish:
-        description: "Commit the release APK to runova/dist/RUNOVA.apk on this branch"
+        description: "Commit RUNOVA.apk and device screenshots to this branch"
         type: boolean
         default: false
 
@@ -24,8 +26,8 @@ jobs:
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: write
+    outputs:
+      compiled: ${{ steps.compile.outcome == 'success' }}
     defaults:
       run:
         working-directory: runova
@@ -48,30 +50,29 @@ jobs:
           yes | "$SDKM" --licenses > /dev/null || true
           "$SDKM" --install "platforms;android-36" "build-tools;36.0.0" > /dev/null
 
-      - name: Latest stable versions on Google Maven
-        continue-on-error: true
-        run: |
-          latest() { curl -fsS "https://dl.google.com/dl/android/maven2/$1/maven-metadata.xml" | grep -o '<version>[^<]*' | sed 's/<version>//' | grep -viE 'alpha|beta|rc|dev' | tail -n 3 | tr '\n' ' '; }
-          for a in com/android/tools/build/gradle androidx/core/core-ktx androidx/core/core-splashscreen \
-                   androidx/activity/activity-compose androidx/compose/ui/ui androidx/compose/foundation/foundation \
-                   androidx/compose/animation/animation androidx/compose/material3/material3 \
-                   androidx/compose/material/material-icons-extended androidx/lifecycle/lifecycle-runtime-compose \
-                   androidx/lifecycle/lifecycle-viewmodel-compose androidx/lifecycle/lifecycle-process \
-                   androidx/navigation/navigation-compose; do
-            echo "$a: $(latest $a)"
-          done
-
       - name: Compile
-        run: ./gradlew --continue :app:assembleDebug
+        id: compile
+        run: ./gradlew --continue :app:assembleDebug :app:assembleDebugAndroidTest
 
       - name: Unit tests (core, Claude client, Robolectric app flows)
         run: ./gradlew --continue :core:test :claude:test :app:testDebugUnitTest
 
       - name: Release APK
+        id: release
+        if: steps.compile.outcome == 'success'
         run: ./gradlew :app:assembleRelease
 
+      - name: Inspect release APK
+        if: steps.release.outcome == 'success'
+        run: |
+          BT="$ANDROID_HOME/build-tools/36.0.0"
+          APK=app/build/outputs/apk/release/app-release.apk
+          ls -la "$APK"
+          "$BT/aapt2" dump badging "$APK" | grep -E "^(package|sdkVersion|targetSdkVersion|application-label|launchable-activity|uses-permission)"
+          "$BT/apksigner" verify --print-certs "$APK" | head -5
+
       - name: Lint
-        if: success() || failure()
+        if: steps.compile.outcome == 'success'
         run: ./gradlew :app:lintRelease
 
       - name: Test summary
@@ -81,21 +82,104 @@ jobs:
           find . -path '*/build/test-results/*' -name 'TEST-*.xml' -print0 | xargs -0 -r grep -l '<failure' | while read -r f; do echo "== $f"; grep -A 12 '<failure' "$f" | head -40; done
 
       - uses: actions/upload-artifact@v4
+        if: steps.release.outcome == 'success'
+        with:
+          name: runova-apk
+          path: runova/app/build/outputs/apk/release/app-release.apk
+
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: runova-build
-          path: |
-            runova/app/build/outputs/apk/
-            runova/app/build/reports/
+          name: runova-reports
+          path: runova/app/build/reports/
           if-no-files-found: ignore
 
-      - name: Publish APK to this branch
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+  device:
+    needs: android
+    if: always() && needs.android.outputs.compiled == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Enable KVM
         run: |
-          mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk dist/RUNOVA.apk
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Android SDK platform 36
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" --install "platforms;android-36" "build-tools;36.0.0" > /dev/null
+
+      - name: Build app and test APKs
+        working-directory: runova
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
+
+      - name: On-device flows (Android 14 emulator)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 4096M
+          disk-size: 6000M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash .github/scripts/runova-device-tests.sh
+
+      - name: Device test summary
+        if: always()
+        run: |
+          R=runova/app/build/outputs/androidTest-results
+          find "$R" -name '*.xml' 2>/dev/null | xargs -r grep -h -o 'testsuite name="[^"]*" tests="[0-9]*" failures="[0-9]*" errors="[0-9]*" skipped="[0-9]*"' || true
+          find "$R" -name '*.xml' 2>/dev/null | xargs -r grep -l '<failure' | while read -r f; do grep -A 20 '<failure' "$f" | head -80; done
+          ls runova/app/build/device 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runova-device
+          path: |
+            runova/app/build/device/
+            runova/app/build/outputs/androidTest-results/
+          if-no-files-found: ignore
+
+      - uses: actions/download-artifact@v4
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.publish
+        continue-on-error: true
+        with:
+          name: runova-apk
+          path: runova/dist
+
+      - name: Publish APK and device screenshots to this branch
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.publish
+        working-directory: runova
+        run: |
+          mkdir -p docs/device
+          for f in app/build/device/*.png; do
+            [ -f "$f" ] || continue
+            if command -v convert > /dev/null; then convert "$f" -resize 540x -quality 85 "docs/device/$(basename "${f%.png}").jpg"; else cp "$f" docs/device/; fi
+          done
+          [ -f dist/app-release.apk ] && mv dist/app-release.apk dist/RUNOVA.apk
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f dist/RUNOVA.apk
-          git commit -m "Add RUNOVA.apk built by workflow run ${{ github.run_id }}"
+          git add -f docs/device
+          [ -f dist/RUNOVA.apk ] && git add -f dist/RUNOVA.apk
+          git commit -m "Add RUNOVA.apk and device screenshots from workflow run ${{ github.run_id }}" || exit 0
+          git pull --rebase origin "${{ github.ref_name }}"
           git push origin "HEAD:${{ github.ref_name }}"
