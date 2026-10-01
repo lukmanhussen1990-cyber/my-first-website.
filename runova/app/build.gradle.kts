@@ -82,6 +82,9 @@ android {
     lint {
         abortOnError = true
         checkReleaseBuilds = true
+        // Print findings to the build log as well as the HTML report.
+        textReport = true
+        textOutput = file("stdout")
     }
 }
 

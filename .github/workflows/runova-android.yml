@@ -1,0 +1,98 @@
+# Builds and tests the RUNOVA Android app (runova/) with the official Android toolchain.
+# Pushes to the development branch build, test and lint the app. A manual run with
+# "publish" checked also commits the signed release APK to runova/dist/RUNOVA.apk.
+name: RUNOVA Android
+
+on:
+  push:
+    branches: [ccr-15d0bd6f-rh92ie]
+    paths:
+      - "runova/**"
+      - ".github/workflows/runova-android.yml"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Commit the release APK to runova/dist/RUNOVA.apk on this branch"
+        type: boolean
+        default: false
+
+concurrency:
+  group: runova-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: runova
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Android SDK platform 36
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" --install "platforms;android-36" "build-tools;36.0.0" > /dev/null
+
+      - name: Latest stable versions on Google Maven
+        continue-on-error: true
+        run: |
+          latest() { curl -fsS "https://dl.google.com/dl/android/maven2/$1/maven-metadata.xml" | grep -o '<version>[^<]*' | sed 's/<version>//' | grep -viE 'alpha|beta|rc|dev' | tail -n 3 | tr '\n' ' '; }
+          for a in com/android/tools/build/gradle androidx/core/core-ktx androidx/core/core-splashscreen \
+                   androidx/activity/activity-compose androidx/compose/ui/ui androidx/compose/foundation/foundation \
+                   androidx/compose/animation/animation androidx/compose/material3/material3 \
+                   androidx/compose/material/material-icons-extended androidx/lifecycle/lifecycle-runtime-compose \
+                   androidx/lifecycle/lifecycle-viewmodel-compose androidx/lifecycle/lifecycle-process \
+                   androidx/navigation/navigation-compose; do
+            echo "$a: $(latest $a)"
+          done
+
+      - name: Compile
+        run: ./gradlew --continue :app:assembleDebug
+
+      - name: Unit tests (core, Claude client, Robolectric app flows)
+        run: ./gradlew --continue :core:test :claude:test :app:testDebugUnitTest
+
+      - name: Release APK
+        run: ./gradlew :app:assembleRelease
+
+      - name: Lint
+        if: success() || failure()
+        run: ./gradlew :app:lintRelease
+
+      - name: Test summary
+        if: always()
+        run: |
+          find . -path '*/build/test-results/*' -name 'TEST-*.xml' -print0 | xargs -0 -r grep -h -o 'testsuite name="[^"]*" tests="[0-9]*" skipped="[0-9]*" failures="[0-9]*" errors="[0-9]*"' || true
+          find . -path '*/build/test-results/*' -name 'TEST-*.xml' -print0 | xargs -0 -r grep -l '<failure' | while read -r f; do echo "== $f"; grep -A 12 '<failure' "$f" | head -40; done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runova-build
+          path: |
+            runova/app/build/outputs/apk/
+            runova/app/build/reports/
+          if-no-files-found: ignore
+
+      - name: Publish APK to this branch
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk dist/RUNOVA.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f dist/RUNOVA.apk
+          git commit -m "Add RUNOVA.apk built by workflow run ${{ github.run_id }}"
+          git push origin "HEAD:${{ github.ref_name }}"
