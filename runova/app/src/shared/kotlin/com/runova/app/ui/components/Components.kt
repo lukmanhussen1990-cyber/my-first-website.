@@ -73,6 +73,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.runova.app.ui.theme.Runova
 import kotlin.math.min
@@ -287,7 +288,7 @@ fun SegmentedTabs(options: List<String>, selected: Int, onSelect: (Int) -> Unit,
         val x by animateDpAsState(w * selected, spring(dampingRatio = 0.78f, stiffness = 420f))
         Box(
             Modifier
-                .offset(x = x)
+                .offset { IntOffset(x.roundToPx(), 0) }
                 .width(w)
                 .fillMaxHeight()
                 .neonGlow(c.lime, radius = 14.dp, alpha = if (c.isDark) 0.22f else 0f)

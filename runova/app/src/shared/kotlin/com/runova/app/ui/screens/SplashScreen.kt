@@ -21,7 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
@@ -55,7 +55,7 @@ private const val MIN_VISIBLE_MS = 1_400L
 @Composable
 fun SplashScreen(onFinished: () -> Unit, modifier: Modifier = Modifier, fixedTime: Float? = null) {
     val c = Runova.colors
-    var time by remember { mutableStateOf(fixedTime ?: 0f) }
+    var time by remember { mutableFloatStateOf(fixedTime ?: 0f) }
     val logo = remember { Animatable(if (fixedTime != null) 1f else 0f) }
     val word = remember { Animatable(if (fixedTime != null) 1f else 0f) }
     val tagline = remember { Animatable(if (fixedTime != null) 1f else 0f) }
