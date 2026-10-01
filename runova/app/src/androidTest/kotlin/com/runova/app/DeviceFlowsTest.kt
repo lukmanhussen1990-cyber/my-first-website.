@@ -16,7 +16,9 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -29,6 +31,11 @@ import com.runova.app.ui.MainActivity
 import com.runova.app.ui.Perms
 import com.runova.core.geo.GeoMath
 import com.runova.core.geo.LatLng
+import com.runova.core.model.BodyProfile
+import com.runova.core.tracking.LocationSample
+import com.runova.core.tracking.RunSummary
+import com.runova.core.tracking.RunTracker
+import com.runova.core.tracking.TrackPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -43,13 +50,19 @@ import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 import java.io.File
 import java.io.FileOutputStream
+import java.time.ZonedDateTime
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
  * End-to-end flows on a real Android device or emulator: onboarding, the tab screens, the
- * location explanation when permission is missing, and a full run fed by a mock GPS provider.
+ * location explanation when permission is missing, a full run fed by a mock GPS provider, and
+ * every screen with six weeks of recorded training.
  *
  * Tests run in name order. The last one leaves a run in progress on purpose: the device test
  * script then kills the app and checks that relaunching offers to recover the run.
@@ -77,6 +90,20 @@ class DeviceFlowsTest {
     private fun click(text: String) = compose.onNode(hasText(text) and hasClickAction()).performClick()
 
     private fun clickDesc(description: String) = compose.onNode(hasContentDescription(description) and hasClickAction()).performClick()
+
+    /** Clicks a node that may sit below the fold of a scrolling screen. */
+    private fun clickScrolling(text: String) {
+        val node = compose.onAllNodes(hasText(text) and hasClickAction()).onFirst()
+        runCatching { node.performScrollTo() }
+        node.performClick()
+    }
+
+    private fun waitGone(text: String, timeoutMs: Long = 10_000) = compose.waitUntil(timeoutMs) { !exists(hasText(text)) }
+
+    private fun back(scenario: ActivityScenario<MainActivity>) {
+        scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+    }
 
     /** Full-screen capture (status bar included), pulled from the device by the test script. */
     private fun screenshot(name: String) {
@@ -131,23 +158,20 @@ class DeviceFlowsTest {
 
             waitFor("START RUN")
             waitFor("Alex", substring = true)
-            screenshot("03-home")
+            screenshot("03-home-new-runner")
 
             click("Activity")
             waitFor("Run History")
-            screenshot("04-history")
+            waitFor("No runs yet")
 
             clickDesc("Statistics")
             waitFor("Calories Burned")
-            screenshot("05-stats")
 
             click("Goals")
             waitFor("Set New Goal")
-            screenshot("06-goals")
 
             click("Profile")
             waitFor("Personal Info")
-            screenshot("07-profile")
 
             click("Home")
             waitFor("START RUN")
@@ -165,7 +189,7 @@ class DeviceFlowsTest {
             waitFor("START RUN", 20_000)
             click("START RUN")
             waitFor("Location access needed")
-            screenshot("08-location-needed")
+            screenshot("04-location-needed")
             click("Not now")
             compose.waitUntil(5_000) { !exists(hasText("Location access needed")) }
             assertTrue(!app.graph.session.isActive, "no run starts without location")
@@ -189,13 +213,13 @@ class DeviceFlowsTest {
                     meters += 3.0
                     Thread.sleep(1_000)
                 }
-                screenshot("09-running")
+                screenshot("05-running")
                 val beforePause = liveDistance()
                 assertTrue(beforePause in 90.0..130.0, "distance before pause: $beforePause")
 
                 clickDesc("Pause run")
                 waitFor("PAUSED")
-                screenshot("10-paused")
+                screenshot("06-paused")
                 repeat(4) {
                     gps.push(meters)
                     meters += 3.0
@@ -216,7 +240,7 @@ class DeviceFlowsTest {
                 click("FINISH & SAVE")
                 waitFor("VIEW DETAILS", 20_000)
                 Thread.sleep(5_000) // let the summary count-up and XP animations play
-                screenshot("11-run-complete")
+                screenshot("07-run-complete")
 
                 val runs = app.graph.repository.snapshot().runs
                 assertEquals(1, runs.size)
@@ -226,7 +250,7 @@ class DeviceFlowsTest {
                 click("VIEW DETAILS")
                 waitFor("Run Details")
                 Thread.sleep(1_500)
-                screenshot("12-run-details")
+                screenshot("08-run-details")
             }
         }
         // A new repository over the same files, as after an app restart, still has the run.
@@ -239,7 +263,66 @@ class DeviceFlowsTest {
     }
 
     @Test
-    fun d_runInProgressIsLeftForTheCrashCheck() {
+    fun d_everyScreenWithSixWeeksOfRuns() {
+        resetApp(onboarded = true, countdown = true)
+        seedHistory()
+        assertTrue(app.graph.repository.snapshot().runs.size >= 20)
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            waitFor("START RUN", 20_000)
+            Thread.sleep(2_500) // count-up animations
+            screenshot("10-home")
+
+            clickScrolling("AI Coach")
+            waitFor("Ask me anything...")
+            Thread.sleep(1_000)
+            screenshot("11-coach")
+            back(scenario)
+
+            click("Activity")
+            waitFor("Run History")
+            Thread.sleep(2_000) // route thumbnails
+            screenshot("12-history")
+            compose.onAllNodes(hasText(" kcal", substring = true) and hasClickAction()).onFirst().performClick()
+            waitFor("Run Details")
+            Thread.sleep(4_000) // map tiles
+            screenshot("13-run-details")
+            back(scenario)
+
+            clickDesc("Statistics")
+            waitFor("Calories Burned")
+            Thread.sleep(1_500)
+            screenshot("14-stats")
+
+            click("Goals")
+            waitFor("Set New Goal")
+            Thread.sleep(1_500)
+            screenshot("15-goals")
+
+            click("Profile")
+            waitFor("Personal Info")
+            Thread.sleep(1_500)
+            screenshot("16-profile")
+
+            clickScrolling("Achievements")
+            waitGone("Personal Info")
+            Thread.sleep(1_500)
+            screenshot("17-achievements")
+            back(scenario)
+
+            waitFor("Units & Settings")
+            clickScrolling("Units & Settings")
+            waitGone("Personal Info")
+            Thread.sleep(1_000)
+            screenshot("18-settings")
+            back(scenario)
+
+            click("Home")
+            waitFor("START RUN")
+        }
+    }
+
+    @Test
+    fun e_runInProgressIsLeftForTheCrashCheck() {
         resetApp(onboarded = true, countdown = false)
         grantRunPermissions()
         val gps = MockGps(app, ::shell)
@@ -258,6 +341,68 @@ class DeviceFlowsTest {
         Thread.sleep(6_000)
         assertTrue(app.graph.session.isActive)
         assertNotNull(runBlocking { app.graph.repository.loadLive() })
+    }
+
+    /**
+     * Six weeks of believable training, recorded through the real tracker (so distances, paces,
+     * splits, calories and rewards are all consistent) and saved like any finished run.
+     */
+    private fun seedHistory() {
+        val body = app.graph.settings.load().profile.body
+        val now = ZonedDateTime.now()
+        // days ago, start time, distance (km), pace (s/km): a gradual build-up with a long run each week
+        val plan = listOf(
+            Seed(40, 7, 5, 4.2, 378.0), Seed(38, 18, 30, 5.0, 370.0), Seed(35, 8, 0, 6.5, 366.0),
+            Seed(33, 7, 15, 4.8, 356.0), Seed(31, 18, 45, 5.5, 361.0), Seed(28, 9, 10, 8.0, 372.0),
+            Seed(26, 7, 0, 5.2, 351.0), Seed(24, 18, 20, 6.0, 349.0), Seed(21, 8, 30, 10.0, 366.0),
+            Seed(19, 7, 10, 5.0, 343.0), Seed(17, 18, 0, 6.2, 346.0), Seed(14, 9, 0, 12.0, 361.0),
+            Seed(12, 7, 5, 5.5, 338.0), Seed(10, 18, 40, 7.0, 341.0), Seed(8, 7, 20, 4.0, 321.0),
+            Seed(7, 9, 0, 10.5, 353.0), Seed(5, 7, 0, 5.8, 336.0), Seed(3, 18, 30, 6.4, 333.0),
+            Seed(2, 7, 10, 3.5, 316.0), Seed(1, 18, 15, 8.2, 346.0),
+        )
+        val starts = plan.map { now.minusDays(it.daysAgo.toLong()).withHour(it.hour).withMinute(it.minute).withSecond(0) } +
+            now.minusMinutes(150).withSecond(0)
+        val runs = plan + Seed(0, 0, 0, 5.0, 329.0)
+        runs.forEachIndexed { i, seed ->
+            val (summary, points) = recordRun(starts[i].toInstant().toEpochMilli(), seed, i, body)
+            runBlocking { app.graph.repository.saveRun(summary, points, emptyList()) }
+        }
+    }
+
+    private data class Seed(val daysAgo: Int, val hour: Int, val minute: Int, val km: Double, val paceSecPerKm: Double)
+
+    private fun recordRun(startMs: Long, seed: Seed, index: Int, body: BodyProfile): Pair<RunSummary, List<TrackPoint>> {
+        val tracker = RunTracker(startMs, 0L, body)
+        val target = seed.km * 1000
+        var t = 0L
+        var along = 0.0
+        while (tracker.distanceM < target && t < 4 * 3_600_000L) {
+            // Pace drifts a little over the run so splits differ, like a real effort.
+            val speed = 1000.0 / seed.paceSecPerKm * (1 + 0.05 * sin(2 * PI * t / 420_000.0 + index))
+            val p = loopPoint(index, along)
+            tracker.onLocation(
+                LocationSample(
+                    elapsedMs = t, wallTimeMs = startMs + t, lat = p.lat, lng = p.lng,
+                    altitude = 34 + 7 * sin(along / 450 + index), horizontalAccuracy = 4f, verticalAccuracy = 3f, speed = speed.toFloat(),
+                ),
+            )
+            t += 2_000
+            along += speed * 2
+            tracker.tick(t)
+        }
+        return tracker.finish(t, startMs + t) to tracker.points.toList()
+    }
+
+    /** A gently wobbling park loop; [index] picks one of a few loops around Berlin's Tiergarten. */
+    private fun loopPoint(index: Int, meters: Double): LatLng {
+        val centers = listOf(LatLng(52.5145, 13.3501), LatLng(52.5163, 13.3655), LatLng(52.5112, 13.3398))
+        val center = centers[index % centers.size]
+        val rx = 720.0 + 140 * (index % 3)
+        val ry = 430.0 + 70 * (index % 4)
+        val perimeter = 2 * PI * sqrt((rx * rx + ry * ry) / 2)
+        val theta = 2 * PI * meters / perimeter + index
+        val wobble = 1 + 0.06 * sin(3 * theta + index) + 0.03 * sin(7 * theta)
+        return GeoMath.offset(GeoMath.offset(center, rx * cos(theta) * wobble, 90.0), ry * sin(theta) * wobble, 0.0)
     }
 }
 

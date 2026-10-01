@@ -1,8 +1,10 @@
 #!/bin/bash
 # On-device checks for RUNOVA, run inside the Android emulator by the CI workflow:
-#  1. the instrumented flows (onboarding, tabs, denied location, a full GPS run, restart)
+#  1. the instrumented flows (onboarding, tabs, denied location, a full GPS run, every screen
+#     with six weeks of runs, restart)
 #  2. a real crash check: the last flow leaves a run recording, the app is killed, and the
-#     relaunch must offer to recover that run, which is then saved from the dialog.
+#     relaunch must offer to recover that run, which is then saved from the dialog
+#  3. a smoke test of the shrunk release APK, including a real Claude API request
 set -u
 cd "$(dirname "$0")/../../runova"
 PKG=com.runova.app.debug
@@ -10,12 +12,29 @@ OUT=app/build/device
 mkdir -p "$OUT"
 status=0
 
-ui_dump() { adb shell uiautomator dump /sdcard/window.xml > /dev/null 2>&1; adb pull /sdcard/window.xml "$1" > /dev/null 2>&1; }
+# The checks read and tap the live screen, so keep it on and keep the lock screen away.
+wake() {
+  adb shell input keyevent KEYCODE_WAKEUP > /dev/null 2>&1
+  adb shell wm dismiss-keyguard > /dev/null 2>&1
+  adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
+}
+adb shell svc power stayon true
+adb shell settings put system screen_off_timeout 1800000
+adb shell locksettings set-disabled true > /dev/null 2>&1 || true
+wake
 
-# wait_text FILE TEXT [SECONDS]: dumps the screen until TEXT (or content description) appears.
+ui_dump() {
+  adb shell rm -f /sdcard/window.xml
+  local msg
+  msg=$(adb shell uiautomator dump /sdcard/window.xml 2>&1)
+  case "$msg" in *ERROR*) echo "$msg" | tr -d '\r' >> "$OUT/uiautomator-errors.txt";; esac
+  adb pull /sdcard/window.xml "$1" > /dev/null 2>&1 || : > "$1"
+}
+
+# wait_text FILE TEXT [SECONDS]: dumps the screen until TEXT (or a content description) appears.
 wait_text() {
-  local f=$1 t=$2 n=${3:-20}
-  for i in $(seq 1 "$n"); do
+  local f=$1 t=$2 end=$((SECONDS + ${3:-20}))
+  while [ "$SECONDS" -lt "$end" ]; do
     ui_dump "$f"
     grep -qF -- "$t" "$f" && return 0
     sleep 1
@@ -23,13 +42,32 @@ wait_text() {
   return 1
 }
 
-tap_text() {
+# What the device showed when a check failed.
+diag() {
+  echo "  -- diagnostics: $1"
+  echo "  installed: $(adb shell pm list packages 2>/dev/null | grep -i runova | tr -d '\r' | tr '\n' ' ')"
+  adb shell dumpsys power 2>/dev/null | grep -m1 'mWakefulness=' | tr -d '\r' | sed 's/^ */  /'
+  adb shell dumpsys window 2>/dev/null | grep -E -m2 'mCurrentFocus|mFocusedApp' | tr -d '\r' | sed 's/^ */  /'
+  if [ -s "$OUT/uiautomator-errors.txt" ]; then
+    echo "  uiautomator errors:"; sort "$OUT/uiautomator-errors.txt" | uniq -c | head -3 | sed 's/^/    /'
+  fi
+  if [ -s "${2:-}" ]; then
+    echo "  on screen:"; grep -o -E '(text|content-desc)="[^"]+"' "$2" | head -30 | sed 's/^/    /'
+  else
+    echo "  (no UI dump)"
+  fi
+  echo "  app log:"
+  adb logcat -d -t 600 2>/dev/null | grep -E 'runova|AndroidRuntime|ActivityTaskManager' | tail -15 | tr -d '\r' | sed 's/^/    /'
+}
+
+# tap_node FILE ATTRIBUTE VALUE: taps the centre of the first node whose attribute equals VALUE.
+tap_node() {
   local xy
-  xy=$(python3 - "$1" "$2" <<'PY'
+  xy=$(python3 - "$1" "$2" "$3" <<'PY'
 import re, sys, html
-xml, wanted = open(sys.argv[1], encoding="utf-8").read(), sys.argv[2]
+xml, attr, wanted = open(sys.argv[1], encoding="utf-8").read(), sys.argv[2], sys.argv[3]
 for node in re.findall(r"<node [^>]*>", xml):
-    t = re.search(r' text="([^"]*)"', node)
+    t = re.search(r' %s="([^"]*)"' % attr, node)
     b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', node)
     if t and b and html.unescape(t.group(1)) == wanted:
         x1, y1, x2, y2 = map(int, b.groups())
@@ -39,6 +77,8 @@ PY
 )
   [ -n "$xy" ] && adb shell input tap $xy
 }
+tap_text() { tap_node "$1" text "$2"; }
+tap_desc() { tap_node "$1" content-desc "$2"; }
 
 # Taps the first text field on screen (used when a placeholder isn't exposed as text).
 tap_edit() {
@@ -62,58 +102,37 @@ hide_keyboard() {
   sleep 1
 }
 
-tap_desc() {
-  local xy
-  xy=$(python3 - "$1" "$2" <<'PY'
-import re, sys, html
-xml, wanted = open(sys.argv[1], encoding="utf-8").read(), sys.argv[2]
-for node in re.findall(r"<node [^>]*>", xml):
-    t = re.search(r' content-desc="([^"]*)"', node)
-    b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', node)
-    if t and b and html.unescape(t.group(1)) == wanted:
-        x1, y1, x2, y2 = map(int, b.groups())
-        print((x1 + x2) // 2, (y1 + y2) // 2)
-        break
-PY
-)
-  [ -n "$xy" ] && adb shell input tap $xy
-}
+shot() { adb exec-out screencap -p > "$OUT/$1.png"; }
 
+echo "== instrumented flows"
 ./gradlew :app:connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true || status=1
 adb pull "/sdcard/Android/data/$PKG/files/screens/." "$OUT/" > /dev/null 2>&1 || true
 
 echo "== crash recovery"
+wake
 adb shell am force-stop "$PKG"
-adb shell am start -n "$PKG/com.runova.app.ui.MainActivity" > /dev/null
+adb shell am start -W -n "$PKG/com.runova.app.ui.MainActivity" 2>&1 | grep -E 'Status|LaunchState|Error' | tr -d '\r' | sed 's/^/  /'
 sleep 1.5
-adb exec-out screencap -p > "$OUT/00-splash.png"
-found=0
-for i in $(seq 1 20); do
-  sleep 1
-  ui_dump "$OUT/recovery.xml"
-  if grep -q "Unfinished run found" "$OUT/recovery.xml"; then found=1; break; fi
-done
-if [ "$found" = 1 ]; then
+shot 00-splash
+if wait_text "$OUT/recovery.xml" "Unfinished run found" 30; then
   echo "PASS: the relaunch after killing the app mid-run offers to recover the run"
-  adb exec-out screencap -p > "$OUT/13-recovery.png"
+  sleep 1
+  shot 20-recovery
   tap_text "$OUT/recovery.xml" "Finish & save"
-  saved=0
-  for i in $(seq 1 20); do
-    sleep 1
-    ui_dump "$OUT/after-recovery.xml"
-    if grep -q "VIEW DETAILS" "$OUT/after-recovery.xml"; then saved=1; break; fi
-  done
-  if [ "$saved" = 1 ]; then
+  if wait_text "$OUT/after-recovery.xml" "VIEW DETAILS" 20; then
     sleep 4
-    adb exec-out screencap -p > "$OUT/14-recovered-run-saved.png"
+    shot 21-recovered-run-saved
     echo "PASS: the recovered run was saved and its summary shown"
   else
     echo "FAIL: saving the recovered run did not show the run summary"
+    diag "after Finish & save" "$OUT/after-recovery.xml"
+    shot 21-recovery-save-failed
     status=1
   fi
 else
   echo "FAIL: no recovery dialog after killing the app mid-run"
-  adb exec-out screencap -p > "$OUT/13-recovery-missing.png"
+  diag "relaunch after kill" "$OUT/recovery.xml"
+  shot 20-recovery-missing
   status=1
 fi
 
@@ -123,14 +142,17 @@ fi
 # "rejected" (proving the Anthropic SDK still serialises and parses requests after shrinking).
 RELEASE_APK=dist/app-release.apk
 REL=com.runova.app
+rel_fail() { echo "FAIL: $1"; diag "$1" "$2"; shot "39-release-failure"; rel_ok=0; }
 if [ -f "$RELEASE_APK" ]; then
   echo "== release build smoke test"
-  adb install -r -g "$RELEASE_APK" > /dev/null
+  adb install -r -g "$RELEASE_APK" 2>&1 | tail -1 | tr -d '\r' | sed 's/^/  install: /'
+  adb shell am force-stop "$PKG"
+  wake
   adb logcat -c
-  adb shell am start -n "$REL/com.runova.app.ui.MainActivity" > /dev/null
+  adb shell am start -W -n "$REL/com.runova.app.ui.MainActivity" 2>&1 | grep -E 'Status|LaunchState|Error' | tr -d '\r' | sed 's/^/  /'
   rel_ok=1
-  if wait_text "$OUT/r1.xml" "GET STARTED" 30; then
-    adb exec-out screencap -p > "$OUT/20-release-onboarding.png"
+  if wait_text "$OUT/r1.xml" "GET STARTED" 45; then
+    shot 30-release-onboarding
     tap_text "$OUT/r1.xml" "GET STARTED"
     if wait_text "$OUT/r2.xml" "About you" 15; then
       tap_text "$OUT/r2.xml" "e.g. Imran" || tap_edit "$OUT/r2.xml"
@@ -143,20 +165,25 @@ if [ -f "$RELEASE_APK" ]; then
     fi
     if wait_text "$OUT/r5.xml" "START RUN" 20; then
       echo "PASS: release build onboarding reaches Home"
-      adb exec-out screencap -p > "$OUT/21-release-home.png"
+      sleep 2
+      shot 31-release-home
       tap_text "$OUT/r5.xml" "START RUN"
       if wait_text "$OUT/r6.xml" "Kilometers" 20; then
         sleep 6
-        adb exec-out screencap -p > "$OUT/22-release-running.png"
+        shot 32-release-running
         ui_dump "$OUT/r6.xml"; tap_desc "$OUT/r6.xml" "Finish run"
         if wait_text "$OUT/r7.xml" "Discard run" 10; then
           tap_text "$OUT/r7.xml" "Discard run"
-          wait_text "$OUT/r8.xml" "START RUN" 15 && echo "PASS: release build starts and discards a run" || { echo "FAIL: release build did not return Home after discarding"; rel_ok=0; }
+          if wait_text "$OUT/r8.xml" "START RUN" 15; then
+            echo "PASS: release build starts and discards a run"
+          else
+            rel_fail "release build did not return Home after discarding" "$OUT/r8.xml"
+          fi
         else
-          echo "FAIL: release build finish sheet missing"; rel_ok=0
+          rel_fail "release build finish sheet missing" "$OUT/r7.xml"
         fi
       else
-        echo "FAIL: release build run screen missing"; rel_ok=0
+        rel_fail "release build run screen missing" "$OUT/r6.xml"
       fi
       # Claude through the shrunk SDK: Profile > Units & Settings > AI Coach
       ui_dump "$OUT/r9.xml"; tap_text "$OUT/r9.xml" "Profile"
@@ -172,26 +199,27 @@ if [ -f "$RELEASE_APK" ]; then
         sleep 1; adb shell input text "sk-ant-api03-ci-invalid-key-000000000000000000000000"; hide_keyboard
         ui_dump "$OUT/r12.xml"; tap_text "$OUT/r12.xml" "Save key"
         verdict=""
-        for i in $(seq 1 45); do
+        end=$((SECONDS + 60))
+        while [ "$SECONDS" -lt "$end" ]; do
           sleep 1; ui_dump "$OUT/r13.xml"
           if grep -q "was rejected" "$OUT/r13.xml"; then verdict=rejected; break; fi
           if grep -q "reach Anthropic" "$OUT/r13.xml"; then verdict=offline; break; fi
           if grep -q "Connection test failed" "$OUT/r13.xml"; then verdict=failed; break; fi
         done
-        adb exec-out screencap -p > "$OUT/23-release-claude-check.png"
+        shot 33-release-claude-check
         case "$verdict" in
           rejected) echo "PASS: release build reached the Claude API through the shrunk SDK (invalid key rejected as expected)";;
           offline) echo "SKIP: emulator could not reach api.anthropic.com";;
-          *) echo "FAIL: release build Claude check ended with '${verdict:-no result}'"; grep -o 'Connection test failed[^"]*' "$OUT/r13.xml" | head -2; rel_ok=0;;
+          *) rel_fail "release build Claude check ended with '${verdict:-no result}'" "$OUT/r13.xml"; grep -o 'Connection test failed[^"]*' "$OUT/r13.xml" | head -2;;
         esac
       else
-        echo "FAIL: release build settings not reachable"; rel_ok=0
+        rel_fail "release build settings not reachable" "$OUT/r10.xml"
       fi
     else
-      echo "FAIL: release build onboarding did not reach Home"; rel_ok=0
+      rel_fail "release build onboarding did not reach Home" "$OUT/r5.xml"
     fi
   else
-    echo "FAIL: release build did not show onboarding"; rel_ok=0
+    rel_fail "release build did not show onboarding" "$OUT/r1.xml"
   fi
   adb logcat -d > "$OUT/logcat-release.txt" 2>/dev/null || true
   if grep -q "FATAL EXCEPTION" "$OUT/logcat-release.txt"; then

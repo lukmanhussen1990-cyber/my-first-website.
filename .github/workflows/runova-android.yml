@@ -9,6 +9,10 @@ on:
     branches: [ccr-15d0bd6f-rh92ie]
     paths:
       - "runova/**"
+      - "!runova/README.md"
+      - "!runova/docs/**"
+      - "!runova/dist/**"
+      - "!runova/tools/**"
       - ".github/workflows/runova-android.yml"
       - ".github/scripts/runova-device-tests.sh"
   workflow_dispatch:
@@ -152,14 +156,25 @@ jobs:
           disk-size: 6000M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
+          enable-hw-keyboard: true
           script: bash .github/scripts/runova-device-tests.sh
 
       - name: Device test summary
         if: always()
         run: |
-          R=runova/app/build/outputs/androidTest-results
-          find "$R" -name '*.xml' 2>/dev/null | xargs -r grep -h -o 'testsuite name="[^"]*" tests="[0-9]*" failures="[0-9]*" errors="[0-9]*" skipped="[0-9]*"' || true
-          find "$R" -name '*.xml' 2>/dev/null | xargs -r grep -l '<failure' | while read -r f; do grep -A 20 '<failure' "$f" | head -80; done
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          for f in sorted(glob.glob("runova/app/build/outputs/androidTest-results/**/*.xml", recursive=True)):
+              root = ET.parse(f).getroot()
+              for s in ([root] if root.tag == "testsuite" else root.findall("testsuite")):
+                  print(f"{s.get('name')}: {s.get('tests')} tests, {s.get('failures')} failures, {s.get('errors')} errors, {s.get('skipped')} skipped")
+                  for c in s.findall("testcase"):
+                      bad = c.findall("failure") + c.findall("error")
+                      state = "FAILED" if bad else ("skipped" if c.find("skipped") is not None else "passed")
+                      print(f"  {state:7} {c.get('name')} ({c.get('time')} s)")
+                      for b in bad:
+                          print("    " + (b.text or b.get("message") or "").strip()[:2000].replace("\n", "\n    "))
+          PY
           ls runova/app/build/device 2>/dev/null || true
 
       - uses: actions/upload-artifact@v4
@@ -175,15 +190,17 @@ jobs:
         if: always() && github.event_name == 'workflow_dispatch' && inputs.publish
         working-directory: runova
         run: |
-          mkdir -p docs/device
+          command -v convert > /dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick > /dev/null; } || true
+          rm -rf docs/device && mkdir -p docs/device
           for f in app/build/device/*.png; do
             [ -f "$f" ] || continue
-            if command -v convert > /dev/null; then convert "$f" -resize 540x -quality 85 "docs/device/$(basename "${f%.png}").jpg"; else cp "$f" docs/device/; fi
+            name=$(basename "${f%.png}")
+            if command -v convert > /dev/null; then convert "$f" -resize 720x -quality 85 "docs/device/$name.jpg"; else cp "$f" docs/device/; fi
           done
           [ -f dist/app-release.apk ] && mv dist/app-release.apk dist/RUNOVA.apk
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f docs/device
+          git add -A -f docs/device
           [ -f dist/RUNOVA.apk ] && git add -f dist/RUNOVA.apk
           git commit -m "Add RUNOVA.apk and device screenshots from workflow run ${{ github.run_id }}" || exit 0
           git pull --rebase origin "${{ github.ref_name }}"
