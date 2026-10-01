@@ -2,29 +2,42 @@
 
 RUNOVA is an Android running app with GPS tracking, a live route map, calorie and step estimates, goals, XP and levels, streaks, achievements and an AI coach that works offline and can optionally use Claude. It uses a dark theme with a neon-lime accent.
 
-![RUNOVA screens](docs/screenshots/overview.jpg)
+![RUNOVA on an Android 14 emulator](docs/overview.jpg)
 
-<sub>Splash · Home · Running · Run Details · Achievements · Goals · AI Coach · Statistics · Run History · Profile. These are renders of the app's Compose screens produced by the desktop preview tool in `tools/ui-preview` (with sample data and a stand-in map).</sub>
+<sub>Splash · Home · Running · Run Details · Achievements · Goals · AI Coach · Statistics · Run History · Profile. These are screenshots of the real app on an Android 14 emulator, taken by the instrumented tests in CI after recording six weeks of runs through the app's own tracker. All captures are in [`docs/device`](docs/device), including onboarding, a mock-GPS run, crash recovery and the release build.</sub>
+
+## Install
+
+`dist/RUNOVA.apk` runs on Android 8.0 (API 26) and newer.
+1. Copy the APK to your phone and open it.
+2. Allow installing apps from that source when Android asks.
+3. On first launch, a short onboarding asks for your name, units, body data and daily goals. It then asks for location, activity and notification permissions; each one can be skipped and granted later.
+
+The APK is the R8-shrunk release build. It is signed with the project's bundled debug key because no release keystore is configured (see *Release signing* below). Sign it with your own key before you distribute it.
 
 ## Status
 
-| Part | State |
-|---|---|
-| Domain logic (`core/`): tracking, calories, steps, XP, levels, streaks, achievements, stats, GPX, offline coach | Done, **43 JVM tests pass** |
-| Claude coach client (`claude/`) on the official Anthropic Java SDK | Done, **9 tests pass** against a local fake API |
-| Screen state mapping, live-run texts, heart-rate parsing (`app/src/shared/.../state`) | Done, **14 JVM tests pass** |
-| All Compose screens (`app/src/shared/.../ui`) | Done; compile and render on the JVM (Compose Desktop) |
-| Android layer (`app/src/main`): SQLite, tracking service, sensors, BLE, TTS, notifications, navigation | Written; **not compiled yet** |
-| Robolectric flow tests (`app/src/test`) | Written; **not run yet** |
-| `RUNOVA.apk` | **Not built yet** |
+GitHub Actions (`.github/workflows/runova-android.yml`) builds and checks the app on every push. It uses the official Android SDK and an Android 14 emulator.
 
-The build machine used so far cannot reach Google's Maven repository (`dl.google.com` / `maven.google.com`), which hosts the Android Gradle Plugin and AndroidX. Everything that doesn't depend on those artifacts has been compiled and tested. Once the host is reachable, the next steps are: compile the app module, fix any compile errors, run the unit, Robolectric and lint checks, then build the signed release APK.
+| Check | Result |
+|---|---|
+| Debug and release builds; the release build is shrunk with R8 | ✅ |
+| Domain tests (`core/`): tracking, calories, steps, XP, levels, streaks, achievements, rewards, stats, GPX, offline coach | ✅ 43 pass |
+| Claude client tests (`claude/`) against a local fake API | ✅ 9 pass |
+| Screen-state mapping and heart-rate parsing (`app/src/shared/.../state`), run on the JVM by `tools/ui-preview` (locally, not in CI) | ✅ 14 pass |
+| Robolectric app flows (`app/src/test`): run with pause/resume and save, discard, crash recovery, settings across restart, delete all | ✅ 5 pass |
+| Android lint (release) | ✅ 0 errors |
+| Instrumented flows on the emulator (`app/src/androidTest`): onboarding and every tab, denied location, a mock-GPS run with pause/resume/finish and a restart check, every screen with six weeks of runs, a run left recording for the crash check | ✅ 5 pass |
+| Crash check: the app is killed mid-run, relaunched, and the recovered run is saved | ✅ |
+| Release APK smoke test: onboarding, start and discard a run, live Claude API call with an invalid key that must be rejected | ✅ |
+
+The release smoke test earned its place: it caught R8 stripping two constructors that Jackson reaches only through annotations, which broke every Claude request in the shrunk build. `app/proguard-rules.pro` now keeps them.
 
 ## Features
 
 **Run tracking**
 - GPS tracking in a foreground service (type `location`), so it keeps running with the screen off. A partial wake lock and 1 s GPS updates are used.
-- Live route map (OpenStreetMap data via CARTO basemaps) with follow mode, pinch-zoom and start/current markers.
+- Live route map on OpenStreetMap tiles with follow mode, pinch-zoom and start/current markers. The dark map is the standard OSM map recoloured on the device.
 - Distance, timer, current pace (20 s window, smoothed) and average pace.
 - Pause and resume. Resuming starts a new route segment, and time spent paused never counts.
 - Optional auto-pause: the run pauses when you stop and resumes when you move.
@@ -119,7 +132,7 @@ Denied permissions are handled:
 ## Privacy
 
 Runs, routes, photos, settings and the chat history stay in the app's private storage.
-- **Map tiles:** coordinates of the visible tiles are requested from CARTO's tile servers.
+- **Map tiles:** the visible tiles are downloaded from OpenStreetMap's tile servers (`tile.openstreetmap.org`) and cached on the device.
 - **Claude (if you add a key):** your questions and a summary of your training data go to Anthropic.
 - Nothing else leaves the device. Android auto-backup covers settings and the database but excludes the encrypted API key.
 
@@ -132,12 +145,15 @@ app/src/shared/       Platform-independent Compose UI: theme, components, screen
 app/src/main/         Android: SQLite, settings, Keystore, tracking service, sensors, BLE, TTS,
                       notifications, reminders, map tiles, sharing, ViewModels, navigation
 app/src/test/         Robolectric flow tests (run tracking, pause/resume, save, recovery, reset)
+app/src/androidTest/  Instrumented flows on a device or emulator, with a mock GPS provider
 tools/ui-preview/     Compose Desktop harness: renders the shared screens to PNG; state-mapping tests
 tools/dev/            JVM-only build for running the core and claude tests without the Android SDK
+docs/device/          Emulator screenshots committed by the CI workflow
+docs/screenshots/     Desktop preview renders of the shared screens
 ```
 
 Key choices:
-- The shared screens compile both for Android and for Compose Desktop 1.5, which is how they were reviewed against the design without a device.
+- The shared screens compile both for Android and for Compose Desktop 1.5, so they can also be rendered and reviewed without a device.
 - Storage uses the framework SQLite and SharedPreferences, with no annotation processing.
 - The map is a small custom slippy-map renderer with memory and disk tile caches, so the app needs no Google Play Services.
 
@@ -146,15 +162,18 @@ Key choices:
 Requirements: JDK 17+, Android SDK with platform 36, and network access to Google Maven and Maven Central.
 
 ```bash
-./gradlew :app:assembleRelease      # app/build/outputs/apk/release/app-release.apk
-./gradlew :app:testDebugUnitTest    # Robolectric flow tests
-./gradlew :core:test :claude:test   # domain and coach tests
+./gradlew :app:assembleRelease                # app/build/outputs/apk/release/app-release.apk
+./gradlew :core:test :claude:test             # domain and coach tests
+./gradlew :app:testDebugUnitTest              # Robolectric flow tests
+./gradlew :app:connectedDebugAndroidTest      # instrumented flows (device or emulator attached)
 ```
+
+On GitHub, the workflow builds, tests and lints on every push. It then runs `.github/scripts/runova-device-tests.sh` on an Android 14 emulator: the instrumented flows, the crash check and the release smoke test. Starting the workflow by hand with **publish** checked commits the device screenshots to `docs/device`. It also replaces `dist/RUNOVA.apk`, but only when every on-device check passed.
 
 Release signing:
 - Create `keystore.properties` in the project root with `storeFile`, `storePassword`, `keyAlias` and `keyPassword`.
 - It is git-ignored. Without it, the release build is signed with the debug key so it still installs.
-- Releases are shrunk with R8. The Anthropic SDK ships its own keep rules.
+- Releases are shrunk with R8. The Anthropic SDK ships its own keep rules; `app/proguard-rules.pro` adds the few Jackson needs beyond them.
 - The SDK (with Jackson and OkHttp) is the largest dependency in the APK.
 
 JVM-only checks that need no Android SDK:
@@ -168,5 +187,5 @@ gradle -p tools/ui-preview run -Pscreens=home,running,stats   # PNGs in tools/ui
 ## Credits
 
 - Barlow typeface by The Barlow Project Authors, SIL Open Font License 1.1 (`app/src/main/assets/licenses/barlow-ofl.txt`).
-- Map data © OpenStreetMap contributors; basemaps © CARTO.
+- Map data and tiles © OpenStreetMap contributors (openstreetmap.org/copyright).
 - Calorie equations: ACSM's Guidelines for Exercise Testing and Prescription.
