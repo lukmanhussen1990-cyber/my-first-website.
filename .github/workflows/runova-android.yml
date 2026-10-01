@@ -135,6 +135,12 @@ jobs:
         working-directory: runova
         run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
 
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: runova-apk
+          path: runova/dist
+
       - name: On-device flows (Android 14 emulator)
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -164,13 +170,6 @@ jobs:
             runova/app/build/device/
             runova/app/build/outputs/androidTest-results/
           if-no-files-found: ignore
-
-      - uses: actions/download-artifact@v4
-        if: always() && github.event_name == 'workflow_dispatch' && inputs.publish
-        continue-on-error: true
-        with:
-          name: runova-apk
-          path: runova/dist
 
       - name: Publish APK and device screenshots to this branch
         if: always() && github.event_name == 'workflow_dispatch' && inputs.publish
