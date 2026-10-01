@@ -112,8 +112,6 @@ echo "== crash recovery"
 wake
 adb shell am force-stop "$PKG"
 adb shell am start -W -n "$PKG/com.runova.app.ui.MainActivity" 2>&1 | grep -E 'Status|LaunchState|Error' | tr -d '\r' | sed 's/^/  /'
-sleep 1.5
-shot 00-splash
 if wait_text "$OUT/recovery.xml" "Unfinished run found" 30; then
   echo "PASS: the relaunch after killing the app mid-run offers to recover the run"
   sleep 1
@@ -210,7 +208,16 @@ if [ -f "$RELEASE_APK" ]; then
         case "$verdict" in
           rejected) echo "PASS: release build reached the Claude API through the shrunk SDK (invalid key rejected as expected)";;
           offline) echo "SKIP: emulator could not reach api.anthropic.com";;
-          *) rel_fail "release build Claude check ended with '${verdict:-no result}'" "$OUT/r13.xml"; grep -o 'Connection test failed[^"]*' "$OUT/r13.xml" | head -2;;
+          *)
+            rel_fail "release build Claude check ended with '${verdict:-no result}'" "$OUT/r13.xml"
+            msg=$(grep -o 'Connection test failed[^"]*' "$OUT/r13.xml" | head -1)
+            echo "  $msg"
+            # Name the shrunk classes in the message with the R8 mapping of this build.
+            if [ -n "$msg" ] && [ -f dist/mapping/mapping.txt ]; then
+              for c in $(echo "$msg" | grep -o -E '[A-Za-z_$][A-Za-z0-9_$]*(\.[A-Za-z_$][A-Za-z0-9_$]*)+' | sort -u); do
+                grep -F " -> $c:" dist/mapping/mapping.txt | grep -v '^ ' | sed 's/^/  R8 mapping: /'
+              done
+            fi;;
         esac
       else
         rel_fail "release build settings not reachable" "$OUT/r10.xml"

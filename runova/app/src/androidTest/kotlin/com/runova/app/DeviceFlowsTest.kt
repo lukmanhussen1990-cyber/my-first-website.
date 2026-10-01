@@ -105,9 +105,14 @@ class DeviceFlowsTest {
         compose.waitForIdle()
     }
 
-    /** Full-screen capture (status bar included), pulled from the device by the test script. */
-    private fun screenshot(name: String) {
+    /**
+     * Full-screen capture (status bar included), pulled from the device by the test script.
+     * Compose's test clock stands still while a test sleeps, so it first lets the UI catch up.
+     */
+    private fun screenshot(name: String, sync: Boolean = true) {
+        if (sync) compose.waitForIdle()
         instrumentation.waitForIdleSync()
+        Thread.sleep(250) // the frame reaches the display
         val bitmap = instrumentation.uiAutomation.takeScreenshot() ?: return
         val dir = File(app.getExternalFilesDir(null), "screens").apply { mkdirs() }
         FileOutputStream(File(dir, "$name.png")).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
@@ -138,6 +143,21 @@ class DeviceFlowsTest {
         var d = 0.0
         instrumentation.runOnMainSync { d = app.graph.session.live.value?.snapshot?.distanceM ?: 0.0 }
         return d
+    }
+
+    @Test
+    fun a0_splashScreen() {
+        resetApp(onboarded = false, countdown = true)
+        // Hold the clock so the capture shows the splash mid-way, whatever the device speed.
+        compose.mainClock.autoAdvance = false
+        try {
+            ActivityScenario.launch(MainActivity::class.java).use {
+                compose.mainClock.advanceTimeBy(1_000)
+                screenshot("00-splash", sync = false)
+            }
+        } finally {
+            compose.mainClock.autoAdvance = true
+        }
     }
 
     @Test
@@ -401,7 +421,7 @@ class DeviceFlowsTest {
         val ry = 430.0 + 70 * (index % 4)
         val perimeter = 2 * PI * sqrt((rx * rx + ry * ry) / 2)
         val theta = 2 * PI * meters / perimeter + index
-        val wobble = 1 + 0.06 * sin(3 * theta + index) + 0.03 * sin(7 * theta)
+        val wobble = 1 + 0.11 * sin(2 * theta + index) + 0.07 * sin(5 * theta + 2 * index) + 0.03 * sin(11 * theta + index)
         return GeoMath.offset(GeoMath.offset(center, rx * cos(theta) * wobble, 90.0), ry * sin(theta) * wobble, 0.0)
     }
 }
@@ -431,9 +451,11 @@ private class MockGps(private val context: Context, shell: (String) -> String) :
         lm.setTestProviderEnabled(LocationManager.GPS_PROVIDER, true)
     }
 
-    /** A fix [meters] east of the start, moving at 3 m/s. */
+    /** A fix [meters] along a gentle left-hand curve from the start, moving at 3 m/s. */
     fun push(meters: Double) {
-        val p = GeoMath.offset(start, meters, 90.0)
+        val radius = 90.0
+        val theta = meters / radius
+        val p = GeoMath.offset(GeoMath.offset(start, radius * sin(theta), 90.0), radius * (1 - cos(theta)), 0.0)
         val location = Location(LocationManager.GPS_PROVIDER).apply {
             latitude = p.lat
             longitude = p.lng

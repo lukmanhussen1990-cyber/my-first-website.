@@ -58,7 +58,7 @@ fun loadFonts(dir: File): RunovaFonts {
 class FakeTileProvider(private val dark: Boolean = true) : TileProvider {
     private val cache = HashMap<String, ImageBitmap>()
     override val version: State<Int> = mutableStateOf(0)
-    override val attribution: String = "© OpenStreetMap © CARTO"
+    override val attribution: String = "© OpenStreetMap contributors"
 
     override fun cachedTile(z: Int, x: Int, y: Int): ImageBitmap? = tile(z, x, y)
 

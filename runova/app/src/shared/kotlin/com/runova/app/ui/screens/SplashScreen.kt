@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,9 @@ import com.runova.app.ui.components.circleGlow
 import com.runova.app.ui.theme.Runova
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.max
+
+private const val MIN_VISIBLE_MS = 1_400L
 
 /**
  * Animated splash: painted sunset scene with a running figure, the glowing RUNOVA mark and a
@@ -58,18 +62,20 @@ fun SplashScreen(onFinished: () -> Unit, modifier: Modifier = Modifier, fixedTim
     val bar = remember { Animatable(if (fixedTime != null) 0.66f else 0f) }
     LaunchedEffect(fixedTime) {
         if (fixedTime != null) return@LaunchedEffect
+        val shownAt = withFrameNanos { it }
         launch {
-            val start = withFrameNanos { it }
             while (true) {
-                val now = withFrameNanos { it }
-                time = (now - start) / 1_000_000_000f
+                val now = withInfiniteAnimationFrameNanos { it }
+                time = (now - shownAt) / 1_000_000_000f
             }
         }
         launch { logo.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 170f)) }
         launch { delay(260); word.animateTo(1f, tween(650, easing = FastOutSlowInEasing)) }
         launch { delay(560); tagline.animateTo(1f, tween(600)) }
         bar.animateTo(1f, tween(2300, easing = FastOutSlowInEasing))
-        delay(150)
+        // With system animations turned off the tweens end at once; still show the brand briefly.
+        val shownMs = (withFrameNanos { it } - shownAt) / 1_000_000
+        delay(max(150L, MIN_VISIBLE_MS - shownMs))
         onFinished()
     }
     Box(modifier.fillMaxSize().background(Color(0xFF060B0E))) {

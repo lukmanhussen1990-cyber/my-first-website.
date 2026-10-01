@@ -318,7 +318,7 @@ fun AboutScreen(version: String, onBack: () -> Unit) {
                 AboutSection("Calorie estimates", "Calories are ESTIMATES calculated with the ACSM metabolic equations from your weight, speed and elevation change, plus an estimate for everyday walking from your step count. Real energy use varies from person to person.")
                 AboutSection("Steps", "Steps come from the phone's hardware step counter when available. Without it (or without the Physical activity permission) steps are estimated from distance and stride length and marked “est.”.")
                 AboutSection("Your data", "Runs, routes, goals and achievements are stored only on this device. Nothing is uploaded unless you share a run or, if you add an API key, send a question to the AI coach (Claude by Anthropic).")
-                AboutSection("Maps", "Map data © OpenStreetMap contributors (openstreetmap.org/copyright). Map tiles © CARTO. Tiles are cached on your device.")
+                AboutSection("Maps", "Map data and tiles © OpenStreetMap contributors (openstreetmap.org/copyright), served by the OpenStreetMap Foundation. The dark map is recoloured on your device, and tiles are cached there.")
                 AboutSection(
                     "Open-source licenses",
                     "Jetpack Compose, AndroidX and Kotlin — Apache License 2.0. Barlow typeface by Jeremy Tribby — SIL Open Font License 1.1. Material Icons — Apache License 2.0.",

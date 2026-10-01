@@ -48,6 +48,7 @@ import com.runova.core.geo.LatLng
 import com.runova.core.geo.Mercator
 import kotlin.math.floor
 import kotlin.math.ln
+import kotlin.math.log2
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
@@ -65,6 +66,9 @@ interface TileProvider {
     val version: State<Int>
     val attribution: String
     val maxZoom: Int get() = 19
+
+    /** Pixel size of the tile images; maps on dense screens use deeper zoom levels of small tiles to stay sharp. */
+    val tileSizePx: Int get() = 512
 }
 
 val LocalTileProvider = staticCompositionLocalOf<TileProvider?> { null }
@@ -129,6 +133,8 @@ fun RunMap(
     val provider = LocalTileProvider.current
     val density = LocalDensity.current
     val tilePx = with(density) { 256.dp.toPx() }
+    // Zoom levels deeper than the camera's, so each tile image is shown at 1-2x its pixel size.
+    val detail = provider?.let { floor(log2(tilePx / it.tileSizePx)).toInt().coerceIn(0, 3) } ?: 0
     val pulse = if (markers == MapMarkerStyle.LIVE) {
         val infinite = rememberInfiniteTransition()
         infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart))
@@ -173,7 +179,7 @@ fun RunMap(
             @Suppress("UNUSED_VARIABLE")
             val v = provider?.version?.value // read to redraw when tiles arrive
             drawRect(c.mapBackground)
-            drawTiles(provider, camera, tilePx, c.mapGrid)
+            drawTiles(provider, camera, tilePx, detail, c.mapGrid)
             val world = tilePx * 2.0.pow(camera.zoom)
             val ox = camera.x * world - size.width / 2
             val oy = camera.y * world - size.height / 2
@@ -220,9 +226,9 @@ private fun applyZoom(camera: MapCamera, factor: Float, focus: Offset, w: Float,
     camera.y = (ny - (focus.y - h / 2) / newWorld).coerceIn(0.0, 1.0)
 }
 
-private fun DrawScope.drawTiles(provider: TileProvider?, camera: MapCamera, tilePx: Float, grid: Color) {
+private fun DrawScope.drawTiles(provider: TileProvider?, camera: MapCamera, tilePx: Float, detail: Int, grid: Color) {
     val zoom = camera.zoom
-    val z = floor(zoom + 1e-6).toInt().coerceIn(1, provider?.maxZoom ?: 19)
+    val z = (floor(zoom + 1e-6).toInt() + detail).coerceIn(1, provider?.maxZoom ?: 19)
     val scale = 2.0.pow(zoom - z)
     val tileWorld = tilePx * scale
     val world = tilePx * 2.0.pow(zoom)

@@ -6,7 +6,7 @@ import com.runova.app.data.AppRepository
 import com.runova.app.data.RunovaDatabase
 import com.runova.app.data.SecretStore
 import com.runova.app.data.SettingsStore
-import com.runova.app.map.CartoTileProvider
+import com.runova.app.map.OsmTileProvider
 import com.runova.app.tracking.HeartRateMonitor
 import com.runova.app.tracking.Notifications
 import com.runova.app.tracking.Reminders
@@ -30,8 +30,8 @@ class AppGraph(val app: Application) {
     val voice = VoiceFeedback(app)
     val session = RunSession(app, repository, heartRate, voice, scope)
     val coach = CoachRepository(repository, secrets, scope)
-    val darkTiles = CartoTileProvider(app, CartoTileProvider.Style.DARK, scope)
-    val lightTiles = CartoTileProvider(app, CartoTileProvider.Style.LIGHT, scope)
+    val darkTiles = OsmTileProvider(app, OsmTileProvider.Style.DARK, scope)
+    val lightTiles = OsmTileProvider(app, OsmTileProvider.Style.LIGHT, scope)
 }
 
 class RunovaApp : Application() {

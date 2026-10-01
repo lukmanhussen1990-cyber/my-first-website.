@@ -80,6 +80,8 @@ jobs:
           ls -la "$APK"
           "$BT/aapt2" dump badging "$APK" | grep -E "^(package|sdkVersion|targetSdkVersion|application-label|launchable-activity|uses-permission)"
           "$BT/apksigner" verify --print-certs "$APK" | head -5
+          echo "R8 names of the classes Jackson creates reflectively:"
+          grep -E '^(com\.anthropic\.core\.(ExcludeMissing|JsonField\$IsMissing)|com\.fasterxml\.jackson\.databind\.ser\.std\.NullSerializer) -> ' app/build/outputs/mapping/release/mapping.txt || true
 
       - name: Lint
         if: steps.compile.outcome == 'success'
@@ -100,6 +102,12 @@ jobs:
         with:
           name: runova-apk
           path: runova/app/build/outputs/apk/release/app-release.apk
+
+      - uses: actions/upload-artifact@v4
+        if: steps.release.outcome == 'success'
+        with:
+          name: runova-mapping
+          path: runova/app/build/outputs/mapping/release/mapping.txt
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -149,7 +157,14 @@ jobs:
           name: runova-apk
           path: runova/dist
 
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: runova-mapping
+          path: runova/dist/mapping
+
       - name: On-device flows (Android 14 emulator)
+        id: devices
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -193,6 +208,8 @@ jobs:
       - name: Publish APK and device screenshots to this branch
         if: always() && github.event_name == 'workflow_dispatch' && inputs.publish
         working-directory: runova
+        env:
+          DEVICE_CHECKS_PASSED: ${{ steps.devices.outcome == 'success' }}
         run: |
           command -v convert > /dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick > /dev/null; } || true
           rm -rf docs/device && mkdir -p docs/device
@@ -201,11 +218,17 @@ jobs:
             name=$(basename "${f%.png}")
             if command -v convert > /dev/null; then convert "$f" -resize 720x -quality 85 "docs/device/$name.jpg"; else cp "$f" docs/device/; fi
           done
-          [ -f dist/app-release.apk ] && mv dist/app-release.apk dist/RUNOVA.apk
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A -f docs/device
-          [ -f dist/RUNOVA.apk ] && git add -f dist/RUNOVA.apk
-          git commit -m "Add RUNOVA.apk and device screenshots from workflow run ${{ github.run_id }}" || exit 0
+          # The APK is only replaced by a build that passed every on-device check.
+          if [ "$DEVICE_CHECKS_PASSED" = true ] && [ -f dist/app-release.apk ]; then
+            mv dist/app-release.apk dist/RUNOVA.apk
+            git add -f dist/RUNOVA.apk
+            msg="Add RUNOVA.apk and device screenshots from workflow run ${{ github.run_id }}"
+          else
+            msg="Add device screenshots from workflow run ${{ github.run_id }} (device checks failed; APK not replaced)"
+          fi
+          git commit -m "$msg" || exit 0
           git pull --rebase origin "${{ github.ref_name }}"
           git push origin "HEAD:${{ github.ref_name }}"
