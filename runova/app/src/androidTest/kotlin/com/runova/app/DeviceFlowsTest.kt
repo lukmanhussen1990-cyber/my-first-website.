@@ -24,6 +24,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
 import com.runova.app.data.AppRepository
 import com.runova.app.data.RunovaDatabase
 import com.runova.app.data.SettingsStore
@@ -109,13 +111,24 @@ class DeviceFlowsTest {
      * Full-screen capture (status bar included), pulled from the device by the test script.
      * Compose's test clock stands still while a test sleeps, so it first lets the UI catch up.
      */
-    private fun screenshot(name: String, sync: Boolean = true) {
-        if (sync) compose.waitForIdle()
+    private fun screenshot(name: String) {
+        compose.waitForIdle()
+        dismissSystemDialogs()
         instrumentation.waitForIdleSync()
         Thread.sleep(250) // the frame reaches the display
         val bitmap = instrumentation.uiAutomation.takeScreenshot() ?: return
         val dir = File(app.getExternalFilesDir(null), "screens").apply { mkdirs() }
         FileOutputStream(File(dir, "$name.png")).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
+    /** Closes "… isn't responding" dialogs that slow CI emulators raise for their own apps (e.g. the launcher). */
+    private fun dismissSystemDialogs() {
+        val device = UiDevice.getInstance(instrumentation)
+        repeat(3) {
+            if (device.findObject(By.textContains("responding")) == null) return
+            (device.findObject(By.text("Wait")) ?: device.findObject(By.text("Close app")))?.click()
+            device.waitForIdle(1_000)
+        }
     }
 
     private fun resetApp(onboarded: Boolean, countdown: Boolean) {
@@ -143,21 +156,6 @@ class DeviceFlowsTest {
         var d = 0.0
         instrumentation.runOnMainSync { d = app.graph.session.live.value?.snapshot?.distanceM ?: 0.0 }
         return d
-    }
-
-    @Test
-    fun a0_splashScreen() {
-        resetApp(onboarded = false, countdown = true)
-        // Hold the clock so the capture shows the splash mid-way, whatever the device speed.
-        compose.mainClock.autoAdvance = false
-        try {
-            ActivityScenario.launch(MainActivity::class.java).use {
-                compose.mainClock.advanceTimeBy(1_000)
-                screenshot("00-splash", sync = false)
-            }
-        } finally {
-            compose.mainClock.autoAdvance = true
-        }
     }
 
     @Test

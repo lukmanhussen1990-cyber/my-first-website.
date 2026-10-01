@@ -21,6 +21,10 @@ wake() {
 adb shell svc power stayon true
 adb shell settings put system screen_off_timeout 1800000
 adb shell locksettings set-disabled true > /dev/null 2>&1 || true
+# Slow CI emulators raise "… isn't responding" dialogs for their own apps (the launcher), which
+# would cover the screenshots; error dialogs are for people, not for this run.
+adb shell settings put global hide_error_dialogs 1
+adb shell settings put secure anr_show_background 0
 wake
 
 ui_dump() {
@@ -111,7 +115,12 @@ adb pull "/sdcard/Android/data/$PKG/files/screens/." "$OUT/" > /dev/null 2>&1 ||
 echo "== crash recovery"
 wake
 adb shell am force-stop "$PKG"
+# The relaunch also captures the splash, with animations at normal speed for that one shot.
+adb shell settings put global animator_duration_scale 1
 adb shell am start -W -n "$PKG/com.runova.app.ui.MainActivity" 2>&1 | grep -E 'Status|LaunchState|Error' | tr -d '\r' | sed 's/^/  /'
+sleep 1.6
+shot 00-splash
+adb shell settings put global animator_duration_scale 0
 if wait_text "$OUT/recovery.xml" "Unfinished run found" 30; then
   echo "PASS: the relaunch after killing the app mid-run offers to recover the run"
   sleep 1
