@@ -515,6 +515,7 @@ export function createRevisionSchedule(context: StudyContext, now: Date = new Da
   const paperToday = subjects.filter((subject) => subject.paperIdx === 0 && subject.chapters.length).map((s) => s.name);
 
   // 1. Paper days, light-review eves and early nights.
+  const eves = new Map<number, string[]>();
   for (const paperIdx of [...paperDays].filter((idx) => idx >= 0).sort((a, b) => a - b)) {
     const sitting = subjects.filter((subject) => subject.paperIdx === paperIdx).map((subject) => subject.name);
     const label = sitting.length ? listNames(sitting) : 'Final exam';
@@ -529,18 +530,16 @@ export function createRevisionSchedule(context: StudyContext, now: Date = new Da
 
     const eve = days[paperIdx - 1];
     const crunching = paperIdx === 1 && subjects.some((s) => s.paperIdx === paperIdx && s.chapters.length > 0);
-    if (!crunching) {
-      eve.items.push({
-        kind: 'review',
-        text: `🔁 Light review${sitting.length ? `: ${label}` : ''} — skim notes, formulas & flashcards. No new chapters.`,
-      });
-    }
+    if (!crunching) eves.set(paperIdx - 1, [...(eves.get(paperIdx - 1) ?? []), ...sitting]);
     if (!eve.items.some((item) => item.kind === 'sleep')) {
       eve.items.push({ kind: 'sleep', text: '🌙 Early night — pack hall ticket, ID & pens; lights out by 10:30 PM.' });
     }
   }
 
-  // 2. Chapters, most urgent subjects first, spread evenly with a revision buffer before each paper.
+  // Eves are kept free of new chapters unless the deadline leaves no other option.
+  for (const [idx, sitting] of eves) days[idx].items.push({ kind: 'review', text: '', subject: listNames(sitting) });
+
+  // 2. Chapters, spread evenly before each subject's paper, leaving a revision buffer at the end.
   let overloaded = false;
   let scheduledChapters = 0;
   const unscheduled: RevisionSchedule['unscheduled'] = [];
@@ -578,7 +577,7 @@ export function createRevisionSchedule(context: StudyContext, now: Date = new Da
     let chosen = -1;
     for (let step = 0; step <= windowEnd + 1 && chosen < 0; step++) {
       for (const idx of step === 0 ? [target] : [target + step, target - step]) {
-        if (idx >= 0 && idx <= windowEnd && dayLoad(days[idx].items) < MAX_ITEMS_PER_DAY) {
+        if (idx >= 0 && idx <= windowEnd && !eves.has(idx) && dayLoad(days[idx].items) < MAX_ITEMS_PER_DAY) {
           chosen = idx;
           break;
         }
@@ -613,6 +612,14 @@ export function createRevisionSchedule(context: StudyContext, now: Date = new Da
         entry.item.chapter = chapter;
         entry.item.text = `${subject.name} — ${chapter}`;
       });
+  }
+
+  for (const day of days) {
+    const review = day.items.find((item) => item.kind === 'review');
+    if (!review) continue;
+    const busy = day.items.some((item) => item.kind === 'study');
+    review.text = `🔁 Light review${review.subject ? `: ${review.subject}` : ''} — skim notes, formulas & flashcards.${busy ? '' : ' No new chapters.'}`;
+    review.subject = undefined;
   }
 
   // 3. Free days become revision rounds for whatever is still ahead.
@@ -665,7 +672,7 @@ export function buildRevisionPlan(context: StudyContext, now: Date = new Date())
       ? `🗓️ Your revision plan (offline) — final exam ${relativeDays(mainIdx)}, ${formatDayLabel(mainExam)}`
       : `🗓️ Your revision plan (offline) — last paper ${relativeDays(lastIdx)}, ${formatDayLabel(fromDayKey(schedule.days[lastIdx].day))}`,
     schedule.scheduledChapters > 0
-      ? `${schedule.scheduledChapters} chapter${schedule.scheduledChapters === 1 ? '' : 's'} across ${subjectsWithWork} subject${subjectsWithWork === 1 ? '' : 's'}, interleaved so each day mixes subjects — at most ${MAX_ITEMS_PER_DAY} focus blocks a day.`
+      ? `${schedule.scheduledChapters} chapter${schedule.scheduledChapters === 1 ? '' : 's'} across ${subjectsWithWork} subject${subjectsWithWork === 1 ? '' : 's'}, ${subjectsWithWork === 1 ? 'spread out' : 'interleaved so each day mixes subjects'} — at most ${MAX_ITEMS_PER_DAY} focus blocks a day.`
       : 'Every chapter is ticked off 🎉 — so this plan is pure revision: past papers, active recall and rest.',
     '',
   ];

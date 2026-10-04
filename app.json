@@ -1,26 +1,54 @@
 {
   "expo": {
-    "name": "scaffold-default",
-    "slug": "scaffold-default",
+    "name": "Last Mile",
+    "slug": "last-mile",
     "version": "1.0.0",
+    "description": "Exam countdown, study planner and journey-home companion. One final push before freedom.",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "scaffolddefault",
+    "scheme": "lastmile",
     "userInterfaceStyle": "automatic",
+    "backgroundColor": "#070B1A",
+    "primaryColor": "#7C5CFF",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "com.lastmile.app",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.lastmile.app",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "monochromeImage": "./assets/images/android-icon-monochrome.png",
+        "backgroundColor": "#0B1230"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE"
+      ],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
-      "output": "static",
+      "output": "single",
+      "bundler": "metro",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -28,12 +56,45 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#070B1A",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#070B1A",
+            "image": "./assets/images/splash-icon.png"
+          }
         }
       ],
-      "expo-audio",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#7C5CFF"
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Last Mile adds your exam day and your trip home to your calendar, with reminders, so nothing sneaks up on you.",
+          "remindersPermission": "Last Mile uses Reminders to keep your study and packing to-dos next to your calendar."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Last Mile uses your photo library so you can add photos to your memory journal.",
+          "cameraPermission": "Last Mile uses the camera so you can capture moments for your memory journal.",
+          "microphonePermission": "Last Mile uses the microphone to record voice memories for your journal."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Last Mile uses the microphone to record voice memories for your journal.",
+          "enableBackgroundPlayback": false
+        }
+      ],
       "@react-native-community/datetimepicker"
     ],
     "experiments": {
