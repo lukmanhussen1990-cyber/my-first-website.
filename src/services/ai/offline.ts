@@ -407,6 +407,8 @@ export function generateClozeMCQs(text: string, count = 5): MCQ[] {
 /* ------------------------------------------------------------------ */
 
 export const MAX_ITEMS_PER_DAY = 4;
+/** Absolute ceiling when the deadline forces extra blocks; anything beyond is reported as unscheduled. */
+export const HEAVY_DAY_ITEMS = MAX_ITEMS_PER_DAY + 2;
 const PAPER_LOAD = 2;
 const MAX_LISTED_DAYS = 16;
 
@@ -431,6 +433,8 @@ export interface RevisionSchedule {
   scheduledChapters: number;
   /** Some day needed more than `MAX_ITEMS_PER_DAY` blocks to fit everything in. */
   overloaded: boolean;
+  /** Chapters that didn't fit even on heavy days before their paper. */
+  unscheduled: { subject: string; chapter: string }[];
   /** Subjects whose paper is today — their chapters aren't scheduled. */
   paperToday: string[];
 }
@@ -501,7 +505,7 @@ export function createRevisionSchedule(context: StudyContext, now: Date = new Da
   paperDays.add(mainIdx);
   const lastIdx = Math.max(...paperDays);
   if (lastIdx < 0) {
-    return { days: [], totalChapters, scheduledChapters: 0, overloaded: false, paperToday: [] };
+    return { days: [], totalChapters, scheduledChapters: 0, overloaded: false, unscheduled: [], paperToday: [] };
   }
 
   const days: RevisionDay[] = Array.from({ length: lastIdx + 1 }, (_, idx) => ({
@@ -539,6 +543,7 @@ export function createRevisionSchedule(context: StudyContext, now: Date = new Da
   // 2. Chapters, most urgent subjects first, spread evenly with a revision buffer before each paper.
   let overloaded = false;
   let scheduledChapters = 0;
+  const unscheduled: RevisionSchedule['unscheduled'] = [];
   const queue = subjects
     .filter((subject) => subject.paperIdx >= 1 && subject.chapters.length > 0)
     .sort(
@@ -546,34 +551,68 @@ export function createRevisionSchedule(context: StudyContext, now: Date = new Da
         a.paperIdx - b.paperIdx || a.progress - b.progress || b.chapters.length - a.chapters.length || a.order - b.order,
     );
 
-  for (const subject of queue) {
-    const windowEnd = subject.paperIdx >= 2 ? subject.paperIdx - 2 : 0;
-    const windowDays = windowEnd + 1;
-    const count = subject.chapters.length;
-    // Finish new material ~25% early (and no slower than one chapter every other day).
-    const spread = windowDays <= 3 ? windowDays : Math.max(1, Math.min(windowDays, Math.ceil(windowDays * 0.75), count * 2));
+  // Interleave by how far through its list each chapter sits (urgent subjects first on ties),
+  // so subjects share the days fairly — and, when time runs out, each loses its last chapters.
+  const placements = queue
+    .flatMap((subject, rank) => {
+      const windowEnd = subject.paperIdx >= 2 ? subject.paperIdx - 2 : 0;
+      const windowDays = windowEnd + 1;
+      const count = subject.chapters.length;
+      // Finish new material ~25% early (and no slower than one chapter every other day).
+      const spread =
+        windowDays <= 3 ? windowDays : Math.max(1, Math.min(windowDays, Math.ceil(windowDays * 0.75), count * 2));
+      return subject.chapters.map((chapter, i) => ({
+        subject,
+        chapter,
+        index: i,
+        rank,
+        windowEnd,
+        target: Math.min(windowEnd, Math.floor((i * spread) / count)),
+        progress: (i + 0.5) / count,
+      }));
+    })
+    .sort((a, b) => a.progress - b.progress || a.rank - b.rank);
 
-    subject.chapters.forEach((chapter, i) => {
-      const target = Math.min(windowEnd, Math.floor((i * spread) / count));
-      let chosen = -1;
-      for (let step = 0; step <= windowDays && chosen < 0; step++) {
-        for (const idx of step === 0 ? [target] : [target + step, target - step]) {
-          if (idx >= 0 && idx <= windowEnd && dayLoad(days[idx].items) < MAX_ITEMS_PER_DAY) {
-            chosen = idx;
-            break;
-          }
+  const placed = new Map<PlanSubject, { item: RevisionItem; day: number; index: number }[]>();
+  for (const { subject, chapter, index, windowEnd, target } of placements) {
+    let chosen = -1;
+    for (let step = 0; step <= windowEnd + 1 && chosen < 0; step++) {
+      for (const idx of step === 0 ? [target] : [target + step, target - step]) {
+        if (idx >= 0 && idx <= windowEnd && dayLoad(days[idx].items) < MAX_ITEMS_PER_DAY) {
+          chosen = idx;
+          break;
         }
       }
-      if (chosen < 0) {
-        overloaded = true;
-        chosen = 0;
-        for (let idx = 1; idx <= windowEnd; idx++) {
-          if (dayLoad(days[idx].items) < dayLoad(days[chosen].items)) chosen = idx;
-        }
+    }
+    if (chosen < 0) {
+      // Every day is at the normal limit: use the lightest day, up to the heavy-day ceiling.
+      let lightest = 0;
+      for (let idx = 1; idx <= windowEnd; idx++) {
+        if (dayLoad(days[idx].items) < dayLoad(days[lightest].items)) lightest = idx;
       }
-      days[chosen].items.push({ kind: 'study', text: `${subject.name} — ${chapter}`, subject: subject.name, chapter });
-      scheduledChapters += 1;
-    });
+      if (dayLoad(days[lightest].items) >= HEAVY_DAY_ITEMS) {
+        unscheduled.push({ subject: subject.name, chapter });
+        continue;
+      }
+      overloaded = true;
+      chosen = lightest;
+    }
+    const item: RevisionItem = { kind: 'study', text: '', subject: subject.name, chapter };
+    days[chosen].items.push(item);
+    placed.set(subject, [...(placed.get(subject) ?? []), { item, day: chosen, index }]);
+    scheduledChapters += 1;
+  }
+
+  // Overflow can land out of order — keep each subject's chapters in syllabus order across its days.
+  for (const [subject, entries] of placed) {
+    const indices = entries.map((entry) => entry.index).sort((a, b) => a - b);
+    [...entries]
+      .sort((a, b) => a.day - b.day)
+      .forEach((entry, i) => {
+        const chapter = subject.chapters[indices[i]];
+        entry.item.chapter = chapter;
+        entry.item.text = `${subject.name} — ${chapter}`;
+      });
   }
 
   // 3. Free days become revision rounds for whatever is still ahead.
@@ -589,7 +628,7 @@ export function createRevisionSchedule(context: StudyContext, now: Date = new Da
   });
 
   for (const day of days) day.items = orderDay(day.items);
-  return { days, totalChapters, scheduledChapters, overloaded, paperToday };
+  return { days, totalChapters, scheduledChapters, overloaded, unscheduled, paperToday };
 }
 
 function dayHeading(day: DayKey, idx: number): string {
@@ -647,7 +686,17 @@ export function buildRevisionPlan(context: StudyContext, now: Date = new Date())
 
   lines.push('');
   if (schedule.overloaded) {
-    lines.push('⚠️ It’s a tight squeeze — some days go over 4 blocks. Prioritise high-yield chapters and past-paper favourites.');
+    lines.push(
+      `⚠️ It’s a tight squeeze — some days go over ${MAX_ITEMS_PER_DAY} blocks. Prioritise high-yield chapters and past-paper favourites.`,
+    );
+  }
+  if (schedule.unscheduled.length) {
+    const names = schedule.unscheduled.map((entry) => `${entry.subject}: ${entry.chapter}`);
+    const shown = names.slice(0, 6).join(', ');
+    const more = names.length > 6 ? ` and ${names.length - 6} more` : '';
+    lines.push(
+      `⚠️ Not enough days for everything — ${names.length} chapter${names.length === 1 ? '' : 's'} didn’t fit (${shown}${more}). Skim their summaries or cover them through past-paper questions.`,
+    );
   }
   if (schedule.paperToday.length) {
     lines.push(`📌 ${listNames(schedule.paperToday)}: paper today, so those chapters are left out — skim your summaries instead.`);
