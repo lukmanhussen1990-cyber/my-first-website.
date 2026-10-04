@@ -182,6 +182,8 @@ function AuroraBlob({
 }
 
 const styles = StyleSheet.create({
-  passThrough: { pointerEvents: 'none' },
+  // Blobs are larger than the window and drift past its edges — clip them so
+  // they never widen the page (web) or bleed outside the screen container.
+  passThrough: { pointerEvents: 'none', overflow: 'hidden' },
   blob: { position: 'absolute' },
 });

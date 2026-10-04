@@ -48,3 +48,6 @@ server/.env
 # Local APK outputs
 *.apk
 *.aab
+
+# Published APKs for direct download
+!releases/*.apk
