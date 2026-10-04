@@ -61,6 +61,10 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
   let shuttingDown = false;
   let closing: Promise<void> | undefined;
 
+  // While draining, ask clients to drop keep-alive connections so close() can finish.
+  const send = (res: ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}) =>
+    sendJson(res, status, body, shuttingDown ? { ...headers, Connection: 'close' } : headers);
+
   async function handleAssistant(req: IncomingMessage, res: ServerResponse, log: RequestLog): Promise<void> {
     const ip = clientIp(req, config.trustProxyHops);
     log.client = hashIp(ip);
@@ -113,7 +117,7 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
     try {
       const result = await assistant.respond(request, { signal: controller.signal });
       Object.assign(log, metaFields(result.meta));
-      sendJson(res, 200, result.response);
+      send(res, 200, result.response);
     } catch (error) {
       throw toHttpError(error, { abortReason });
     } finally {
@@ -133,7 +137,6 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
     res.setHeader('X-Request-Id', requestId);
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    if (shuttingDown) res.setHeader('Connection', 'close');
 
     res.once('finish', () => {
       log.status = res.statusCode;
@@ -166,7 +169,7 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
       }
 
       if (path === '/health') {
-        sendJson(
+        send(
           res,
           shuttingDown ? 503 : 200,
           { status: shuttingDown ? 'shutting_down' : 'ok', aiConfigured: assistant !== null, model: MODEL },
@@ -179,7 +182,7 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
     } catch (error) {
       const httpError = toHttpError(error);
       log.errorCode = httpError.code;
-      if (httpError.status >= 500) Object.assign(log, describeError(httpError));
+      if (httpError.status >= 500 && httpError.cause !== undefined) Object.assign(log, describeError(httpError));
       if (res.destroyed) {
         // The client went away; there is nobody to answer, so log here ('finish' won't fire).
         logger.info('request_aborted', { ...log, durationMs: Math.round(performance.now() - startedAt) });
@@ -189,14 +192,14 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
         res.destroy();
         return;
       }
-      sendJson(res, httpError.status, httpError.toBody(), httpError.headers);
+      send(res, httpError.status, httpError.toBody(), { ...httpError.headers });
     }
   }
 
   const server = createServer((req, res) => {
     handle(req, res).catch((error: unknown) => {
       logger.error('unhandled_request_error', describeError(error));
-      if (!res.headersSent) sendJson(res, 500, toHttpError(error).toBody());
+      if (!res.headersSent) send(res, 500, toHttpError(error).toBody());
       else res.destroy();
     });
   });

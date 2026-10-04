@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 88 1024 1024" width="1024" height="1024">
+  <!-- Splash glyph on transparent: sun rising over the horizon and the road toward it. Centred
+       inside the middle 2/3 so the Android 12+ circular splash mask never clips it.
+       Generated geometry; the shared numbers also live in src/components/brand/LogoMark.tsx. -->
+  <defs>
+    <radialGradient id="halo" cx="512" cy="612" r="294" gradientUnits="userSpaceOnUse"><stop offset="0.74" stop-color="#FFB35C" stop-opacity="0.5"/><stop offset="1" stop-color="#FF8A3D" stop-opacity="0"/></radialGradient>
+    <linearGradient id="horizon" x1="182" y1="0" x2="842" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FF5E8A" stop-opacity="0"/><stop offset="0.3" stop-color="#FF7A7A"/><stop offset="0.7" stop-color="#FF7A7A"/><stop offset="1" stop-color="#FF5E8A" stop-opacity="0"/></linearGradient>
+    <linearGradient id="sun" x1="0" y1="390" x2="0" y2="612" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFC56B"/><stop offset="0.45" stop-color="#FF8A3D"/><stop offset="1" stop-color="#FF5E8A"/></linearGradient>
+    <linearGradient id="roadFade" x1="0" y1="612" x2="0" y2="900" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FF8A7A"/><stop offset="0.3" stop-color="#8A44D6"/><stop offset="0.62" stop-color="#4A32B0" stop-opacity="0.85"/><stop offset="1" stop-color="#2A2478" stop-opacity="0"/></linearGradient>
+    <linearGradient id="edgeFade" x1="0" y1="612" x2="0" y2="900" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#22D3EE" stop-opacity="0.3"/><stop offset="0.4" stop-color="#22D3EE"/><stop offset="0.7" stop-color="#22D3EE" stop-opacity="0.75"/><stop offset="1" stop-color="#22D3EE" stop-opacity="0"/></linearGradient>
+    <linearGradient id="dashFade" x1="0" y1="612" x2="0" y2="900" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF"/><stop offset="0.6" stop-color="#FFFFFF" stop-opacity="0.85"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect x="218" y="318" width="588" height="294" fill="url(#halo)"/>
+  <rect x="182" y="609" width="660" height="6" rx="3" fill="url(#horizon)"/>
+  <path d="M290 612A222 222 0 0 1 734 612Z" fill="url(#sun)"/>
+  <path d="M503 612L521 612L904 1024L120 1024Z" fill="url(#roadFade)"/>
+  <path d="M503 612L120 1024L156 1024L505.5 612ZM521 612L904 1024L868 1024L518.5 612Z" fill="url(#edgeFade)"/>
+  <path d="M497.25 949.7L526.75 949.7L530 1024L494 1024ZM503.71 801.86L520.29 801.86L522.78 858.71L501.22 858.71ZM506.23 744.05L517.77 744.05L518.87 769.25L505.13 769.25ZM507.58 713.23L516.42 713.23L517.04 727.41L506.96 727.41ZM508.41 694.07L515.59 694.07L515.98 703.15L508.02 703.15ZM508.98 681.01L515.02 681.01L515.29 687.32L508.71 687.32Z" fill="url(#dashFade)"/>
+</svg>

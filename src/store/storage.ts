@@ -100,7 +100,7 @@ export function subscribeHydration(listener: () => void): () => void {
 /* Shared persist options                                              */
 /* ------------------------------------------------------------------ */
 
-interface StorePersistConfig<S, P> {
+interface StorePersistConfig<S, P extends object> {
   /** Picks the persisted fields (drop transient ones such as `hydrated` / `pending`). */
   partialize: (state: S) => P;
   /** Custom merge of the stored payload into the initial state (default: shallow merge). */
@@ -113,7 +113,7 @@ interface StorePersistConfig<S, P> {
  * `persist` options every store shares: key `lastmile.<store>`, AsyncStorage JSON
  * storage, version 1, a migrate stub and hydration tracking.
  */
-export function persistOptions<S, P>(
+export function persistOptions<S, P extends object>(
   store: PersistedStoreName,
   { partialize, merge, onHydrated }: StorePersistConfig<S, P>,
 ): PersistOptions<S, P> {

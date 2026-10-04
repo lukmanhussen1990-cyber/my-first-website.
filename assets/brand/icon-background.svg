@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Android adaptive icon background layer: the backdrop of icon.svg (sky, glow, stars, halo,
+       hills) at the adaptive 2/3 scale so foreground + background reproduce the iOS icon inside
+       the launcher viewport.
+       Generated geometry; the shared numbers also live in src/components/brand/LogoMark.tsx. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="612" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0B1230"/><stop offset="0.42" stop-color="#21177A"/><stop offset="0.78" stop-color="#4C2FD1"/><stop offset="1" stop-color="#7C5CFF"/></linearGradient>
+    <radialGradient id="glow" cx="512" cy="612" r="520" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FF5E8A" stop-opacity="0.7"/><stop offset="0.38" stop-color="#FF5E8A" stop-opacity="0.24"/><stop offset="1" stop-color="#FF5E8A" stop-opacity="0"/></radialGradient>
+    <radialGradient id="halo" cx="512" cy="612" r="294" gradientUnits="userSpaceOnUse"><stop offset="0.74" stop-color="#FFB35C" stop-opacity="0.5"/><stop offset="1" stop-color="#FF8A3D" stop-opacity="0"/></radialGradient>
+    <linearGradient id="ground" x1="0" y1="490" x2="0" y2="1024" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#261C78"/><stop offset="0.3" stop-color="#1B1663"/><stop offset="0.62" stop-color="#10133C"/><stop offset="1" stop-color="#080C20"/></linearGradient>
+    <radialGradient id="rim" cx="512" cy="612" r="560" gradientUnits="userSpaceOnUse"><stop offset="0.2" stop-color="#FF8A7A" stop-opacity="0.95"/><stop offset="0.55" stop-color="#A78BFA" stop-opacity="0.55"/><stop offset="1" stop-color="#7C5CFF" stop-opacity="0.15"/></radialGradient>
+  </defs>
+  <g transform="translate(170.67 170.67) scale(0.666667)">
+    <rect x="-320" y="-320" width="1664" height="1664" fill="url(#sky)"/>
+    <rect x="-320" y="-320" width="1664" height="932" fill="url(#glow)"/>
+    <path d="M236 176Q242.08 207.92 274 214Q242.08 220.08 236 252Q229.92 220.08 198 214Q229.92 207.92 236 176Z" fill="#FFFFFF"/>
+    <path d="M792 146Q795.52 164.48 814 168Q795.52 171.52 792 190Q788.48 171.52 770 168Q788.48 164.48 792 146Z" fill="#FFFFFF" fill-opacity="0.9"/>
+    <circle cx="372" cy="120" r="7" fill="#FFFFFF" fill-opacity="0.7"/>
+    <rect x="218" y="318" width="588" height="294" fill="url(#halo)"/>
+    <path d="M-320 544H0C110 504 232 522 322 576C348 593 366 606 386 612L638 612C658 606 678 594 704 577C798 518 914 494 1024 528H1344V1344H-320Z" fill="url(#ground)"/>
+    <path d="M0 544C110 504 232 522 322 576C348 593 366 606 386 612M1024 528C914 494 798 518 704 577C678 594 658 606 638 612" fill="none" stroke="url(#rim)" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>
