@@ -1,0 +1,194 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.fguard.flying_guardian.move": {
+      "initial_state": "flying",
+      "states": {
+        "flying": {
+          "animations": [
+            "flight"
+          ],
+          "transitions": [
+            {
+              "sitting": "query.is_sitting"
+            },
+            {
+              "diving": "query.property('fguard:diving')"
+            }
+          ],
+          "blend_transition": 0.35
+        },
+        "sitting": {
+          "animations": [
+            "sit"
+          ],
+          "transitions": [
+            {
+              "flying": "!query.is_sitting"
+            }
+          ],
+          "blend_transition": 0.5
+        },
+        "diving": {
+          "animations": [
+            "dive"
+          ],
+          "particle_effects": [
+            {
+              "effect": "dive_trail",
+              "locator": "core"
+            }
+          ],
+          "transitions": [
+            {
+              "flying": "!query.property('fguard:diving')"
+            }
+          ],
+          "blend_transition": 0.2
+        }
+      }
+    },
+    "controller.animation.fguard.flying_guardian.attack": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "transitions": [
+            {
+              "attacking": "variable.attack_time > 0.0"
+            }
+          ]
+        },
+        "attacking": {
+          "animations": [
+            "attack"
+          ],
+          "particle_effects": [
+            {
+              "effect": "claw_slash",
+              "locator": "right_claws"
+            },
+            {
+              "effect": "claw_slash",
+              "locator": "left_claws"
+            }
+          ],
+          "sound_effects": [
+            {
+              "effect": "claw"
+            }
+          ],
+          "transitions": [
+            {
+              "default": "variable.attack_time <= 0.0"
+            }
+          ],
+          "blend_transition": 0.15
+        }
+      }
+    },
+    "controller.animation.fguard.flying_guardian.aura": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "particle_effects": [
+            {
+              "effect": "aura_embers",
+              "locator": "core"
+            },
+            {
+              "effect": "aura_smoke",
+              "locator": "core"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.fguard.flying_guardian.wing_fx": {
+      "initial_state": "calm",
+      "states": {
+        "calm": {
+          "transitions": [
+            {
+              "fast": "variable.fly_amount > 0.6 && !query.is_sitting"
+            }
+          ]
+        },
+        "fast": {
+          "particle_effects": [
+            {
+              "effect": "wing_embers",
+              "locator": "right_wing_end"
+            },
+            {
+              "effect": "wing_embers",
+              "locator": "left_wing_end"
+            }
+          ],
+          "transitions": [
+            {
+              "calm": "variable.fly_amount < 0.4 || query.is_sitting"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.fguard.flying_guardian.flap_sound": {
+      "initial_state": "up",
+      "states": {
+        "up": {
+          "transitions": [
+            {
+              "down": "math.sin(variable.flap_phase) < -0.2 && !query.is_sitting"
+            }
+          ]
+        },
+        "down": {
+          "sound_effects": [
+            {
+              "effect": "flap"
+            }
+          ],
+          "transitions": [
+            {
+              "up": "math.sin(variable.flap_phase) > 0.2"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.fguard.flying_guardian.tame": {
+      "initial_state": "init",
+      "states": {
+        "init": {
+          "transitions": [
+            {
+              "tamed": "query.is_tamed"
+            },
+            {
+              "wild": "!query.is_tamed"
+            }
+          ]
+        },
+        "wild": {
+          "transitions": [
+            {
+              "celebrate": "query.is_tamed"
+            }
+          ]
+        },
+        "celebrate": {
+          "animations": [
+            "tame_celebration"
+          ],
+          "transitions": [
+            {
+              "tamed": "query.all_animations_finished"
+            }
+          ],
+          "blend_transition": 0.3
+        },
+        "tamed": {}
+      }
+    }
+  }
+}

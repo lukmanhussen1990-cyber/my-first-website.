@@ -1,0 +1,15 @@
+{
+  "entity_sounds": {
+    "entities": {
+      "fguard:flying_guardian": {
+        "volume": 1.0,
+        "pitch": [0.9, 1.05],
+        "events": {
+          "ambient": "fguard.ambient",
+          "hurt": "fguard.hurt",
+          "death": "fguard.death"
+        }
+      }
+    }
+  }
+}

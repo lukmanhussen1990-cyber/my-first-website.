@@ -1,0 +1,74 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "fguard:flying_guardian",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/flying_guardian"
+      },
+      "geometry": {
+        "default": "geometry.fguard.flying_guardian"
+      },
+      "spawn_egg": {
+        "texture": "fguard_flying_guardian_spawn_egg",
+        "texture_index": 0
+      },
+      "scripts": {
+        "initialize": [
+          "variable.flap_phase = math.random(0.0, 360.0);",
+          "variable.fly_amount = 0.0;",
+          "variable.fly_target = 0.0;"
+        ],
+        "pre_animation": [
+          "variable.fly_target = math.clamp((query.modified_move_speed - 0.1) * 2.5, 0.0, 1.0);",
+          "variable.fly_amount = variable.fly_amount + (variable.fly_target - variable.fly_amount) * math.min(1.0, query.delta_time * 3.0);",
+          "variable.flap_phase = math.mod(variable.flap_phase + query.delta_time * (300.0 + 260.0 * variable.fly_amount), 360.0);"
+        ],
+        "animate": [
+          "look_at_target",
+          "move_controller",
+          "attack_controller",
+          "aura_controller",
+          "wing_fx_controller",
+          "flap_sound_controller",
+          "tame_controller"
+        ]
+      },
+      "animations": {
+        "look_at_target": "animation.fguard.flying_guardian.look_at_target",
+        "flight": "animation.fguard.flying_guardian.flight",
+        "sit": "animation.fguard.flying_guardian.sit",
+        "dive": "animation.fguard.flying_guardian.dive",
+        "attack": "animation.fguard.flying_guardian.attack",
+        "tame_celebration": "animation.fguard.flying_guardian.tame_celebration",
+        "move_controller": "controller.animation.fguard.flying_guardian.move",
+        "attack_controller": "controller.animation.fguard.flying_guardian.attack",
+        "aura_controller": "controller.animation.fguard.flying_guardian.aura",
+        "wing_fx_controller": "controller.animation.fguard.flying_guardian.wing_fx",
+        "flap_sound_controller": "controller.animation.fguard.flying_guardian.flap_sound",
+        "tame_controller": "controller.animation.fguard.flying_guardian.tame"
+      },
+      "particle_effects": {
+        "aura_embers": "fguard:aura_embers",
+        "aura_smoke": "fguard:aura_smoke",
+        "wing_embers": "fguard:wing_embers",
+        "claw_slash": "fguard:claw_slash",
+        "dive_trail": "fguard:dive_trail",
+        "tame_hearts": "fguard:tame_hearts",
+        "tame_ring": "fguard:tame_ring"
+      },
+      "sound_effects": {
+        "flap": "fguard.flap",
+        "claw": "fguard.claw",
+        "roar": "fguard.roar",
+        "tame": "fguard.tame"
+      },
+      "render_controllers": [
+        "controller.render.fguard.flying_guardian"
+      ]
+    }
+  }
+}

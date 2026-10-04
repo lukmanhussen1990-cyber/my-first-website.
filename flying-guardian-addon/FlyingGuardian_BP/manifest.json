@@ -1,0 +1,37 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Flying Guardian (Behavior)",
+    "description": "A tameable, devil-like Flying Guardian that protects its owner. Tame it with emeralds!",
+    "uuid": "24ca8f93-36c8-4042-bcd9-d7f7d58116bd",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 20, 80]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "3c437b10-0f45-4b27-b7fe-cf0fb2745b87",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "b2c80cd6-2427-4575-bcc4-6c1234614975",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "a1df9f08-d1d8-407e-bfdb-a98c3ade47bf",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.10.0"
+    }
+  ],
+  "metadata": {
+    "authors": ["Flying Guardian Add-On"]
+  }
+}
