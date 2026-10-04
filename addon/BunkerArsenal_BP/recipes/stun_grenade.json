@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:stun_grenade"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " K ",
+      "KYK",
+      " K "
+    ],
+    "key": {
+      "K": {
+        "item": "minecraft:gunpowder"
+      },
+      "Y": {
+        "item": "minecraft:glowstone_dust"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:stun_grenade",
+      "count": 3
+    }
+  }
+}

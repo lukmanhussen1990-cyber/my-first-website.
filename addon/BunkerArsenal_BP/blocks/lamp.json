@@ -1,0 +1,62 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "bunker:lamp",
+      "menu_category": {
+        "category": "construction"
+      },
+      "states": {
+        "bunker:mode": [
+          "on",
+          "off",
+          "alarm"
+        ]
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "bunker_lamp_on",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1.0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 30.0
+      },
+      "minecraft:map_color": "#f5e9b8",
+      "minecraft:friction": 0.6,
+      "minecraft:light_emission": 15
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('bunker:mode') == 'off'",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "bunker_lamp_off",
+              "render_method": "opaque"
+            }
+          },
+          "minecraft:light_emission": 0
+        }
+      },
+      {
+        "condition": "q.block_state('bunker:mode') == 'alarm'",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "bunker_lamp_alarm",
+              "render_method": "opaque"
+            }
+          },
+          "minecraft:light_emission": 9
+        }
+      }
+    ]
+  }
+}

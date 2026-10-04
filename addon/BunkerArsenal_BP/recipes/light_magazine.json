@@ -1,0 +1,30 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:light_magazine"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "I",
+      "K"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "K": {
+        "item": "minecraft:gunpowder"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:light_magazine",
+      "count": 2
+    }
+  }
+}

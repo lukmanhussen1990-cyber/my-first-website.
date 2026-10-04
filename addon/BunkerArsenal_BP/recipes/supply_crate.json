@@ -1,0 +1,34 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:supply_crate"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "pPp",
+      "PMP",
+      "pPp"
+    ],
+    "key": {
+      "p": {
+        "tag": "minecraft:planks"
+      },
+      "P": {
+        "item": "bunker:steel_plate"
+      },
+      "M": {
+        "item": "bunker:ammo_box"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:supply_crate",
+      "count": 1
+    }
+  }
+}

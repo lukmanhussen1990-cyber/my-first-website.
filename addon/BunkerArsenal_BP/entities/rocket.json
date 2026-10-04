@@ -1,0 +1,97 @@
+{
+  "format_version": "1.16.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "bunker:rocket",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "bunker:exploding": {
+        "minecraft:explode": {
+          "fuse_length": 0,
+          "fuse_lit": true,
+          "power": 3.5,
+          "causes_fire": false,
+          "breaks_blocks": false,
+          "destroy_affected_by_griefing": false,
+          "allow_underwater": true
+        }
+      }
+    },
+    "components": {
+      "minecraft:collision_box": {
+        "width": 0.25,
+        "height": 0.25
+      },
+      "minecraft:physics": {
+        "has_gravity": true,
+        "has_collision": true
+      },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:type_family": {
+        "family": [
+          "bunker_projectile",
+          "inanimate"
+        ]
+      },
+      "minecraft:damage_sensor": {
+        "triggers": {
+          "deals_damage": false
+        }
+      },
+      "minecraft:projectile": {
+        "on_hit": {
+          "impact_damage": {
+            "damage": 6,
+            "knockback": true,
+            "semi_random_diff_damage": false,
+            "destroy_on_hit": false
+          },
+          "definition_event": {
+            "affect_projectile": true,
+            "event_trigger": {
+              "event": "bunker:detonate",
+              "target": "self"
+            }
+          }
+        },
+        "power": 2.8,
+        "gravity": 0.012,
+        "anchor": 1,
+        "offset": [
+          0,
+          -0.1,
+          0
+        ],
+        "uncertainty_base": 0.0,
+        "uncertainty_multiplier": 0,
+        "inertia": 0.99,
+        "liquid_inertia": 0.6,
+        "should_bounce": false,
+        "stop_on_hurt": true,
+        "hit_sound": ""
+      },
+      "minecraft:timer": {
+        "time": 5.0,
+        "looping": false,
+        "time_down_event": {
+          "event": "bunker:detonate"
+        }
+      }
+    },
+    "events": {
+      "bunker:detonate": {
+        "add": {
+          "component_groups": [
+            "bunker:exploding"
+          ]
+        }
+      }
+    }
+  }
+}

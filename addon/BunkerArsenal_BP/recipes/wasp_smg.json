@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:wasp_smg"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "PPW",
+      " SW"
+    ],
+    "key": {
+      "P": {
+        "item": "bunker:steel_plate"
+      },
+      "W": {
+        "item": "bunker:weapon_parts"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:wasp_smg",
+      "count": 1
+    }
+  }
+}

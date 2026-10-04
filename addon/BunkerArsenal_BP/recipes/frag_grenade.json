@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:frag_grenade"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " K ",
+      "KPK",
+      " K "
+    ],
+    "key": {
+      "K": {
+        "item": "minecraft:gunpowder"
+      },
+      "P": {
+        "item": "bunker:steel_plate"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:frag_grenade",
+      "count": 3
+    }
+  }
+}

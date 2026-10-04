@@ -1,0 +1,22 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "bunker:light_magazine",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "bunker_light_magazine"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "item.bunker:light_magazine.name"
+      },
+      "minecraft:max_stack_size": 16
+    }
+  }
+}

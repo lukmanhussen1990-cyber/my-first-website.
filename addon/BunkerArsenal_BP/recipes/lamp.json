@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:lamp"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " P ",
+      "PLP",
+      " P "
+    ],
+    "key": {
+      "P": {
+        "item": "bunker:steel_plate"
+      },
+      "L": {
+        "item": "minecraft:glowstone"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:lamp",
+      "count": 4
+    }
+  }
+}

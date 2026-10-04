@@ -1,0 +1,33 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "ec763046-159e-4cbe-8f13-773a4cec1f58",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "a2ee6730-1a0d-4682-82ba-d8c0383d55ae",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "7a87ec8f-2262-4a0e-9591-dd6e9e92036e",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    { "uuid": "ee4c3f1c-c836-4407-af79-9fb5ff126234", "version": [1, 0, 0] },
+    { "module_name": "@minecraft/server", "version": "1.10.0" },
+    { "module_name": "@minecraft/server-ui", "version": "1.1.0" }
+  ],
+  "metadata": {
+    "authors": ["Bunker Arsenal Team"],
+    "generated_with": { "bunker_arsenal_tools": ["1.0.0"] }
+  }
+}

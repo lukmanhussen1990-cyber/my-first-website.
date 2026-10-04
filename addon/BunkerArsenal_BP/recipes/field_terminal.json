@@ -1,0 +1,37 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:field_terminal"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "GG",
+      "RW",
+      "PP"
+    ],
+    "key": {
+      "G": {
+        "item": "minecraft:glass"
+      },
+      "R": {
+        "item": "minecraft:redstone"
+      },
+      "W": {
+        "item": "bunker:weapon_parts"
+      },
+      "P": {
+        "item": "bunker:steel_plate"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:field_terminal",
+      "count": 1
+    }
+  }
+}

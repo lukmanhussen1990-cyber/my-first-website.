@@ -1,0 +1,39 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:pulse_rifle"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "APP",
+      "SWR"
+    ],
+    "key": {
+      "A": {
+        "item": "minecraft:amethyst_shard"
+      },
+      "P": {
+        "item": "bunker:steel_plate"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      },
+      "W": {
+        "item": "bunker:weapon_parts"
+      },
+      "R": {
+        "item": "minecraft:redstone"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:pulse_rifle",
+      "count": 1
+    }
+  }
+}

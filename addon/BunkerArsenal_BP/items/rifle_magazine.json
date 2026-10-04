@@ -1,0 +1,22 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "bunker:rifle_magazine",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "bunker_rifle_magazine"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "item.bunker:rifle_magazine.name"
+      },
+      "minecraft:max_stack_size": 16
+    }
+  }
+}

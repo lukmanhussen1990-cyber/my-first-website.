@@ -1,0 +1,40 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:railgun"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "BPP",
+      "WWD",
+      " S "
+    ],
+    "key": {
+      "B": {
+        "item": "minecraft:iron_block"
+      },
+      "P": {
+        "item": "bunker:steel_plate"
+      },
+      "W": {
+        "item": "bunker:weapon_parts"
+      },
+      "D": {
+        "item": "minecraft:diamond"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:railgun",
+      "count": 1
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:locker"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "PP",
+      "PP",
+      "PP"
+    ],
+    "key": {
+      "P": {
+        "item": "bunker:steel_plate"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:locker",
+      "count": 2
+    }
+  }
+}

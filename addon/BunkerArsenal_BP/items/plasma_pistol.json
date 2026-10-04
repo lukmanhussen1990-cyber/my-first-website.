@@ -1,0 +1,46 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "bunker:plasma_pistol",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.sword"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "bunker_plasma_pistol"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "item.bunker:plasma_pistol.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:durability": {
+        "max_durability": 700
+      },
+      "minecraft:damage": 2,
+      "minecraft:cooldown": {
+        "category": "bunker_plasma_pistol",
+        "duration": 0.4
+      },
+      "minecraft:use_modifiers": {
+        "use_duration": 3600,
+        "movement_modifier": 1.0
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "bunker:steel_plate"
+            ],
+            "repair_amount": 175
+          }
+        ]
+      }
+    }
+  }
+}

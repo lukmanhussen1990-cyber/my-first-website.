@@ -1,0 +1,37 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:thumper_launcher"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "PPP",
+      "WKW",
+      " S "
+    ],
+    "key": {
+      "P": {
+        "item": "bunker:steel_plate"
+      },
+      "W": {
+        "item": "bunker:weapon_parts"
+      },
+      "K": {
+        "item": "minecraft:gunpowder"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:thumper_launcher",
+      "count": 1
+    }
+  }
+}

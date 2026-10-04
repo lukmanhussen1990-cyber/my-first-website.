@@ -1,0 +1,46 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "bunker:pulse_rifle",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.sword"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "bunker_pulse_rifle"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "item.bunker:pulse_rifle.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:durability": {
+        "max_durability": 1200
+      },
+      "minecraft:damage": 2,
+      "minecraft:cooldown": {
+        "category": "bunker_pulse_rifle",
+        "duration": 0.05
+      },
+      "minecraft:use_modifiers": {
+        "use_duration": 3600,
+        "movement_modifier": 0.9
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "bunker:steel_plate"
+            ],
+            "repair_amount": 300
+          }
+        ]
+      }
+    }
+  }
+}

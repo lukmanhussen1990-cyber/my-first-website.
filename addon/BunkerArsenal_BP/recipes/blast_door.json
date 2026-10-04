@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:blast_door"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "PP",
+      "WP",
+      "PP"
+    ],
+    "key": {
+      "P": {
+        "item": "bunker:steel_plate"
+      },
+      "W": {
+        "item": "bunker:weapon_parts"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:blast_door",
+      "count": 1
+    }
+  }
+}

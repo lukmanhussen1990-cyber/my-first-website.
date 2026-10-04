@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:ranger_rifle"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "WPP",
+      "SPW"
+    ],
+    "key": {
+      "W": {
+        "item": "bunker:weapon_parts"
+      },
+      "P": {
+        "item": "bunker:steel_plate"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:ranger_rifle",
+      "count": 1
+    }
+  }
+}

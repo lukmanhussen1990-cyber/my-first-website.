@@ -1,0 +1,36 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:plasma_pistol"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "AW",
+      "RS"
+    ],
+    "key": {
+      "A": {
+        "item": "minecraft:amethyst_shard"
+      },
+      "W": {
+        "item": "bunker:weapon_parts"
+      },
+      "R": {
+        "item": "minecraft:redstone"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:plasma_pistol",
+      "count": 1
+    }
+  }
+}

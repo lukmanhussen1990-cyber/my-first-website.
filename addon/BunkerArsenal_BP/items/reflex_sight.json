@@ -1,0 +1,22 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "bunker:reflex_sight",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "bunker_reflex_sight"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "item.bunker:reflex_sight.name"
+      },
+      "minecraft:max_stack_size": 1
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:reinforced_panel"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "XC",
+      "CX"
+    ],
+    "key": {
+      "X": {
+        "item": "bunker:reinforced_wall"
+      },
+      "C": {
+        "item": "minecraft:copper_ingot"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:reinforced_panel",
+      "count": 4
+    }
+  }
+}

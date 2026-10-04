@@ -1,0 +1,20 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "bunker:stun_charge",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/bunker/stun_charge"
+      },
+      "geometry": {
+        "default": "geometry.bunker_grenade"
+      },
+      "render_controllers": [
+        "controller.render.bunker_simple"
+      ]
+    }
+  }
+}

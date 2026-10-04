@@ -1,0 +1,23 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "pack.name",
+    "description": "pack.description",
+    "uuid": "ee4c3f1c-c836-4407-af79-9fb5ff126234",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "5741ed58-cdc3-4954-b86e-1dea19cd9d4f",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    { "uuid": "ec763046-159e-4cbe-8f13-773a4cec1f58", "version": [1, 0, 0] }
+  ],
+  "metadata": {
+    "authors": ["Bunker Arsenal Team"]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:shell_box"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "IK",
+      "KI"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "K": {
+        "item": "minecraft:gunpowder"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:shell_box",
+      "count": 2
+    }
+  }
+}

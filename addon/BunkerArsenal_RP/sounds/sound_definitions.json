@@ -1,0 +1,258 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "bunker.shot_pistol": {
+      "category": "player",
+      "max_distance": 72,
+      "sounds": [
+        {
+          "name": "sounds/bunker/shot_pistol",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.shot_smg": {
+      "category": "player",
+      "max_distance": 64,
+      "sounds": [
+        {
+          "name": "sounds/bunker/shot_smg",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.shot_rifle": {
+      "category": "player",
+      "max_distance": 80,
+      "sounds": [
+        {
+          "name": "sounds/bunker/shot_rifle",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.shot_shotgun": {
+      "category": "player",
+      "max_distance": 80,
+      "sounds": [
+        {
+          "name": "sounds/bunker/shot_shotgun",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.shot_dmr": {
+      "category": "player",
+      "max_distance": 96,
+      "sounds": [
+        {
+          "name": "sounds/bunker/shot_dmr",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.shot_lmg": {
+      "category": "player",
+      "max_distance": 80,
+      "sounds": [
+        {
+          "name": "sounds/bunker/shot_lmg",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.shot_pulse": {
+      "category": "player",
+      "max_distance": 64,
+      "sounds": [
+        {
+          "name": "sounds/bunker/shot_pulse",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.shot_plasma": {
+      "category": "player",
+      "max_distance": 64,
+      "sounds": [
+        {
+          "name": "sounds/bunker/shot_plasma",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.rail_charge": {
+      "category": "player",
+      "max_distance": 48,
+      "sounds": [
+        {
+          "name": "sounds/bunker/rail_charge",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.shot_rail": {
+      "category": "player",
+      "max_distance": 110,
+      "sounds": [
+        {
+          "name": "sounds/bunker/shot_rail",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.rocket_launch": {
+      "category": "player",
+      "max_distance": 80,
+      "sounds": [
+        {
+          "name": "sounds/bunker/rocket_launch",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.reload": {
+      "category": "player",
+      "max_distance": 16,
+      "sounds": [
+        {
+          "name": "sounds/bunker/reload",
+          "volume": 0.7,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.empty_click": {
+      "category": "player",
+      "max_distance": 12,
+      "sounds": [
+        {
+          "name": "sounds/bunker/empty_click",
+          "volume": 0.6,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.door_open": {
+      "category": "block",
+      "max_distance": 24,
+      "sounds": [
+        {
+          "name": "sounds/bunker/door_open",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.door_close": {
+      "category": "block",
+      "max_distance": 24,
+      "sounds": [
+        {
+          "name": "sounds/bunker/door_close",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.console_beep": {
+      "category": "block",
+      "max_distance": 16,
+      "sounds": [
+        {
+          "name": "sounds/bunker/console_beep",
+          "volume": 0.6,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.ui_open": {
+      "category": "ui",
+      "max_distance": 8,
+      "sounds": [
+        {
+          "name": "sounds/bunker/ui_open",
+          "volume": 0.5,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.alarm": {
+      "category": "block",
+      "max_distance": 48,
+      "sounds": [
+        {
+          "name": "sounds/bunker/alarm",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.crate_open": {
+      "category": "block",
+      "max_distance": 16,
+      "sounds": [
+        {
+          "name": "sounds/bunker/crate_open",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.hit_marker": {
+      "category": "ui",
+      "max_distance": 8,
+      "sounds": [
+        {
+          "name": "sounds/bunker/hit_marker",
+          "volume": 0.6,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.grenade_pin": {
+      "category": "player",
+      "max_distance": 16,
+      "sounds": [
+        {
+          "name": "sounds/bunker/grenade_pin",
+          "volume": 0.6,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.stun_pop": {
+      "category": "neutral",
+      "max_distance": 48,
+      "sounds": [
+        {
+          "name": "sounds/bunker/stun_pop",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "bunker.weapon_jam": {
+      "category": "player",
+      "max_distance": 12,
+      "sounds": [
+        {
+          "name": "sounds/bunker/weapon_jam",
+          "volume": 0.7,
+          "load_on_low_memory": true
+        }
+      ]
+    }
+  }
+}

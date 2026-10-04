@@ -1,0 +1,223 @@
+{
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "item",
+          "name": "bunker:service_pistol",
+          "weight": 12
+        },
+        {
+          "type": "item",
+          "name": "bunker:wasp_smg",
+          "weight": 9
+        },
+        {
+          "type": "item",
+          "name": "bunker:ranger_rifle",
+          "weight": 8
+        },
+        {
+          "type": "item",
+          "name": "bunker:breacher_shotgun",
+          "weight": 7
+        },
+        {
+          "type": "item",
+          "name": "bunker:longshot_dmr",
+          "weight": 5
+        },
+        {
+          "type": "item",
+          "name": "bunker:bulwark_lmg",
+          "weight": 4
+        },
+        {
+          "type": "item",
+          "name": "bunker:pulse_rifle",
+          "weight": 4
+        },
+        {
+          "type": "item",
+          "name": "bunker:plasma_pistol",
+          "weight": 5
+        },
+        {
+          "type": "item",
+          "name": "bunker:railgun",
+          "weight": 2
+        },
+        {
+          "type": "item",
+          "name": "bunker:thumper_launcher",
+          "weight": 2
+        },
+        {
+          "type": "item",
+          "name": "bunker:combat_knife",
+          "weight": 8
+        },
+        {
+          "type": "item",
+          "name": "bunker:stun_baton",
+          "weight": 6
+        }
+      ]
+    },
+    {
+      "rolls": {
+        "min": 2,
+        "max": 4
+      },
+      "entries": [
+        {
+          "type": "item",
+          "name": "bunker:light_magazine",
+          "weight": 10,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "bunker:rifle_magazine",
+          "weight": 10,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "bunker:shell_box",
+          "weight": 6,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "bunker:energy_cell",
+          "weight": 6,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "bunker:rail_slug",
+          "weight": 3,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "bunker:rocket_ammo",
+          "weight": 3
+        }
+      ]
+    },
+    {
+      "rolls": {
+        "min": 0,
+        "max": 2
+      },
+      "entries": [
+        {
+          "type": "item",
+          "name": "bunker:suppressor",
+          "weight": 1
+        },
+        {
+          "type": "item",
+          "name": "bunker:heavy_barrel",
+          "weight": 1
+        },
+        {
+          "type": "item",
+          "name": "bunker:extended_magazine",
+          "weight": 1
+        },
+        {
+          "type": "item",
+          "name": "bunker:reflex_sight",
+          "weight": 1
+        },
+        {
+          "type": "item",
+          "name": "bunker:foregrip",
+          "weight": 1
+        },
+        {
+          "type": "item",
+          "name": "bunker:laser_sight",
+          "weight": 1
+        },
+        {
+          "type": "item",
+          "name": "bunker:frag_grenade",
+          "weight": 3,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "bunker:stun_grenade",
+          "weight": 2,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "item",
+          "name": "bunker:ammo_box",
+          "weight": 2
+        }
+      ]
+    }
+  ]
+}

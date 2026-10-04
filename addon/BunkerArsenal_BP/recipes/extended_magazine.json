@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:extended_magazine"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "I",
+      "I",
+      "I"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:extended_magazine",
+      "count": 1
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:pipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "I",
+      "I"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:pipe",
+      "count": 4
+    }
+  }
+}

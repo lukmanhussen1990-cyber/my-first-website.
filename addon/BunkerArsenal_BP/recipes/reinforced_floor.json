@@ -1,0 +1,29 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:reinforced_floor"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "XEX"
+    ],
+    "key": {
+      "X": {
+        "item": "bunker:reinforced_wall"
+      },
+      "E": {
+        "item": "minecraft:deepslate_tiles"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:reinforced_floor",
+      "count": 3
+    }
+  }
+}

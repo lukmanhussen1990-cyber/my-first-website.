@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "bunker:breacher_shotgun"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "PPP",
+      "SWW"
+    ],
+    "key": {
+      "P": {
+        "item": "bunker:steel_plate"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      },
+      "W": {
+        "item": "bunker:weapon_parts"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "bunker:breacher_shotgun",
+      "count": 1
+    }
+  }
+}

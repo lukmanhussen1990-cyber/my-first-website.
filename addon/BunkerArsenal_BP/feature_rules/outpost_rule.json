@@ -1,0 +1,23 @@
+{
+  "format_version": "1.13.0",
+  "minecraft:feature_rules": {
+    "description": {
+      "identifier": "bunker:outpost_rule",
+      "places_feature": "bunker:outpost_structure"
+    },
+    "conditions": {
+      "placement_pass": "underground_pass",
+      "minecraft:biome_filter": [
+        { "test": "has_biome_tag", "operator": "==", "value": "overworld" }
+      ]
+    },
+    "distribution": {
+      "iterations": 1,
+      "scatter_chance": { "numerator": 1, "denominator": 180 },
+      "coordinate_eval_order": "zyx",
+      "x": 2,
+      "z": 2,
+      "y": { "distribution": "uniform", "extent": [-24, 30] }
+    }
+  }
+}

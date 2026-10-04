@@ -1,0 +1,20 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "bunker:rocket",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/bunker/rocket"
+      },
+      "geometry": {
+        "default": "geometry.bunker_rocket"
+      },
+      "render_controllers": [
+        "controller.render.bunker_simple"
+      ]
+    }
+  }
+}

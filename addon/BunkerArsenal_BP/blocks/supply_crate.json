@@ -1,0 +1,65 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "bunker:supply_crate",
+      "menu_category": {
+        "category": "items"
+      },
+      "states": {
+        "bunker:opened": [
+          false,
+          true
+        ]
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "bunker_supply_crate_side",
+          "render_method": "opaque"
+        },
+        "up": {
+          "texture": "bunker_supply_crate_top",
+          "render_method": "opaque"
+        },
+        "down": {
+          "texture": "bunker_supply_crate_top",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1.5
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 20.0
+      },
+      "minecraft:map_color": "#555c2e",
+      "minecraft:friction": 0.6,
+      "minecraft:loot": "loot_tables/bunker/supply_crate.json"
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('bunker:opened')",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "bunker_supply_crate_side",
+              "render_method": "opaque"
+            },
+            "up": {
+              "texture": "bunker_supply_crate_open",
+              "render_method": "opaque"
+            },
+            "down": {
+              "texture": "bunker_supply_crate_top",
+              "render_method": "opaque"
+            }
+          },
+          "minecraft:loot": "loot_tables/empty.json"
+        }
+      }
+    ]
+  }
+}
