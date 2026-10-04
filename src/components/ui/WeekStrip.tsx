@@ -151,7 +151,6 @@ export function WeekStrip({
       {onWeekChange ? <WeekChevron delta={-1} onPress={changeWeek} /> : null}
       <Animated.View style={[styles.row, dragStyle]} onLayout={onRowLayout}>
         <Animated.View
-          pointerEvents="none"
           style={[
             styles.pill,
             { width: Math.max(0, columnWidth - PILL_INSET * 2) },
@@ -254,6 +253,7 @@ const styles = StyleSheet.create({
   column: { flex: 1 },
   pill: {
     position: 'absolute',
+    pointerEvents: 'none',
     top: 0,
     bottom: 0,
     left: PILL_INSET,
