@@ -13,6 +13,7 @@ export interface BadgeProps {
   icon?: IconName;
   /** `sm` for dense rows, `md` (default) for headers and cards. */
   size?: 'sm' | 'md';
+  /** The badge hugs its content (`alignSelf: 'flex-start'`); pass `{ alignSelf: 'center' }` to centre it in a row. */
   style?: StyleProp<ViewStyle>;
 }
 

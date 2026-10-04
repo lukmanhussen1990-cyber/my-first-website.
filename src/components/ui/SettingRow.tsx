@@ -6,7 +6,7 @@ import { Icon } from '@/components/ui/Icon';
 import { IconTile } from '@/components/ui/IconTile';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { haptic } from '@/services/haptics';
-import { spacing, useTheme, type Gradient } from '@/theme';
+import { spacing, useTheme, withAlpha, type Gradient } from '@/theme';
 import type { IconName } from '@/types';
 
 /**
@@ -14,6 +14,15 @@ import type { IconName } from '@/types';
  * toggle twice, so there only the Switch itself is interactive.
  */
 const ROW_TOGGLES = Platform.OS !== 'web';
+
+/**
+ * react-native-web's Switch only applies `thumbColor` to the "off" state and
+ * defaults the "on" thumb to Material teal; `activeThumbColor` (web-only, so not
+ * in RN's types) fixes that.
+ */
+function webSwitchColors(thumb: string): object {
+  return Platform.OS === 'web' ? { activeThumbColor: thumb } : {};
+}
 
 export interface SettingRowProps {
   icon: IconName;
@@ -71,14 +80,16 @@ export function SettingRow({
     style,
   ];
 
+  const offTrack = withAlpha(colors.textMuted, 0.4);
   const switchControl = (
     <Switch
+      {...webSwitchColors(colors.textOnAccent)}
       value={value}
       onValueChange={toggle}
       disabled={!switchEnabled}
-      trackColor={{ false: colors.track, true: colors.primary }}
-      thumbColor={Platform.OS === 'android' ? colors.textOnAccent : undefined}
-      ios_backgroundColor={colors.track}
+      trackColor={{ false: offTrack, true: colors.primary }}
+      thumbColor={Platform.OS === 'ios' ? undefined : colors.textOnAccent}
+      ios_backgroundColor={offTrack}
       accessibilityLabel={label}
     />
   );
@@ -96,7 +107,8 @@ export function SettingRow({
           </AppText>
         ) : null}
       </View>
-      {right}
+      {/* Wrapped so self-aligned content (e.g. a Badge) is still centred vertically in the row. */}
+      {right ? <View>{right}</View> : null}
       {isSwitch ? (
         ROW_TOGGLES ? (
           // The row carries the switch semantics; hide the control itself from screen readers.

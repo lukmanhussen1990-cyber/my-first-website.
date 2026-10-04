@@ -75,6 +75,8 @@ src/
     achievements.tsx           Badges + stats
     celebration.tsx            Full-screen confetti "Exams complete!" (modal)
     settings.tsx               Profile, dates, theme, notifications, calendar, AI, data
+    dev-gallery.tsx            TEMPORARY visual-QA gallery of every ui/brand component
+                               (`?theme=light|dark`) — delete before release
   components/
     ui/                        Design-system primitives (see §4)
     brand/                     LogoMark, BrandSplashOverlay
@@ -138,7 +140,7 @@ read with `const { colors, isDark } = useTheme()`.
 
 One component per file, named export, file name = component name. Screens import
 from the individual files (e.g. `import { GlassCard } from '@/components/ui/GlassCard'`).
-An `index.ts` barrel re-exports all of them.
+An `index.ts` barrel (`@/components/ui`) re-exports all of them.
 
 | Component | Props (summary) | Notes |
 |---|---|---|
@@ -182,11 +184,44 @@ sun inside a rounded square, purple→cyan with sunset sun; props `size`), and
 `BrandSplashOverlay` (animated logo + "Last Mile" + tagline "One final push before
 freedom.", fades out after ~1.1 s on cold start; props `onDone`).
 
+### 4.1 Implemented extras & usage notes (foundation integration)
+
+The table above is the minimum contract; the implementation adds optional props
+(all have defaults) and a few behaviours screens must know about:
+
+- **Extra optional props**: `Screen.aurora` (`AuroraVariant`); `IconButton.variant: 'overlay'`
+  (dark glass for use on imagery), `haptic`, `disabled`; `GradientButton.iconPosition`, `haptic`;
+  `TaskRow.checkboxPosition` (`'leading' | 'trailing'`, default trailing when `left` is set) and
+  `checkColor`; `HeroBanner.scriptVariant` (`'script' | 'scriptLg'`), `contentPosition`, `radius`;
+  `ProgressBar/ProgressRing.duration`, `accessibilityLabel`; `CountdownRing.subtitle`, `gradient`;
+  `CountdownBlocks.accessibilityLabel`; `Toast/AchievementToast.duration` (ms, `0` = sticky);
+  `MonthCalendar/WeekStrip.today` (pass `toDayKey(useNow())` for midnight rollover);
+  `WeekStrip.onWeekChange(delta)` (chevrons + swipe); `DayMarker.label`; `DateTimeField.maximumDate`,
+  `disabled`; `EmptyState.actionIcon`, `gradient`; `SettingRow.disabled`, `divider`;
+  `Avatar.gradient`; `Badge.size: 'sm' | 'md'`; most components accept `style` and `accessibilityHint`.
+- **Hugging layout**: `GradientButton` (unless `fullWidth`), `Chip`, `Badge` and `TypingDots` use
+  `alignSelf: 'flex-start'`. Inside a row, pass `style={{ alignSelf: 'center' }}` to centre them
+  (`SettingRow.right` already does this).
+- **SegmentedTabs**: fixed tracks share the width; four tabs fit at phone width only **without
+  icons** (icons + 4 labels truncate). Use `scrollable` for more/longer options.
+- **DateTimeField**: `mode="date"` shows "12 October 2026" — give it (close to) full width.
+- **SectionHeader** carries its own `marginBottom` (`spacing.md`).
+- **SettingRow**: a boolean `value` renders a Switch and wins over `onPress`; on native the whole row
+  toggles, on web only the Switch does (avoids a double toggle). `destructive` only reddens the label.
+- **Toast / AchievementToast**: render once near the root; `onHide` fires once per showing — set
+  `visible` to `false` in response. `Toast` and `WeekStrip` (swipe gestures) need the root
+  `GestureHandlerRootView`.
+- **Screen** has no scroll-ref pass-through: chat-like screens use `scroll={false}` + their own list.
+- **TaskRow** on web confirms deletes with `window.confirm` (RN-web's `Alert` is a no-op).
+
 ---
 
 ## 5. State (`src/store/`)
 
 All stores: `create<State>()(persist((set, get) => ({...}), { name: 'lastmile.<store>', storage: createJSONStorage(() => AsyncStorage), version: 1, partialize: <exclude transient fields> }))`.
+Implemented via `persistOptions(store, { partialize, merge?, onHydrated? })` from `store/storage.ts`, whose
+`createPersistStorage()` is that JSON-over-AsyncStorage storage hardened so corrupt/unavailable storage
+resolves to defaults instead of crashing. Hydration is tracked per store (`useStoresHydrated()`).
 Store files export a hook named `use<Name>Store`. Pure derived logic lives in
 `src/store/selectors.ts` (unit-tested). IDs come from `createId()` in `utils/id`.
 

@@ -93,11 +93,15 @@ describe('buildAssistantMessages', () => {
 
   it('does not duplicate a prompt already at the end of the history', () => {
     const history = [message('user', 'Make me a plan')];
-    expect(buildAssistantMessages(history, 'Make me a plan')).toEqual([{ role: 'user', content: 'Make me a plan' }]);
+    expect(buildAssistantMessages(history, 'Make me a plan')).toEqual([
+      { role: 'user', content: 'Make me a plan' },
+    ]);
   });
 
   it('keeps only the most recent turns and always starts with a user turn', () => {
-    const history = Array.from({ length: 20 }, (_, i) => message(i % 2 === 0 ? 'user' : 'assistant', `turn ${i}`));
+    const history = Array.from({ length: 20 }, (_, i) =>
+      message(i % 2 === 0 ? 'user' : 'assistant', `turn ${i}`),
+    );
     const messages = buildAssistantMessages(history, 'latest question');
     expect(messages.length).toBeLessThanOrEqual(MAX_HISTORY_MESSAGES);
     expect(messages[0].role).toBe('user');
