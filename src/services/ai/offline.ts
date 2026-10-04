@@ -124,28 +124,32 @@ export function splitSentences(text: string): string[] {
     paragraph = [];
   };
 
-  for (const raw of text.replace(/\r\n?/g, '\n').split('\n')) {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  lines.forEach((raw, index) => {
     const line = raw.trim();
     if (!line) {
       flush();
-      continue;
+      return;
     }
     const bullet = BULLET_RE.exec(line);
     if (bullet) {
       flush();
       out.push(...splitParagraph(line.slice(bullet[0].length)));
-      continue;
+      return;
     }
+    // A short unpunctuated line followed by a new sentence (not a lower-case continuation) is a heading.
     const previous = paragraph[paragraph.length - 1];
+    const next = lines[index + 1]?.trim() ?? '';
     const startsBlock = previous === undefined || /[.!?:;]["'”’)]?$/.test(previous);
-    const looksLikeHeading = wordCount(line) <= 6 && !/[.!?;,]$/.test(line) && /^[A-Z0-9]/.test(line);
+    const looksLikeHeading =
+      wordCount(line) <= 6 && !/[.!?;,]$/.test(line) && /^[A-Z0-9]/.test(line) && !/^[a-z]/.test(next);
     if (startsBlock && looksLikeHeading) {
       flush();
       out.push(line.replace(/:$/, ''));
-      continue;
+      return;
     }
     paragraph.push(line);
-  }
+  });
   flush();
   return out.map((sentence) => sentence.trim()).filter((sentence) => wordCount(sentence) >= 3);
 }

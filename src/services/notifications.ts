@@ -154,7 +154,8 @@ function buildMotivation(input: PlanInput, now: Date): Notifications.Notificatio
   const { hour, minute } = input.settings.dailyMotivationTime;
   const used = new Set<string>();
   const requests: Notifications.NotificationRequestInput[] = [];
-  for (let i = 0; i < MOTIVATION_DAYS; i++) {
+  // The next 7 mornings (today's is skipped if its time has already passed).
+  for (let i = 0; requests.length < MOTIVATION_DAYS && i <= MOTIVATION_DAYS; i++) {
     const at = withTime(addDays(startOfDay(now), i), hour, minute);
     if (at.getTime() <= now.getTime()) continue;
     const day = toDayKey(at);
