@@ -1,13 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { PersistStorage, StorageValue } from 'zustand/middleware';
+import type { PersistOptions, PersistStorage, StorageValue } from 'zustand/middleware';
 
 /** Schema version shared by every persisted store. Bump per store when its shape changes. */
 export const STORE_VERSION = 1;
 
-/** Prefix for every AsyncStorage key the app owns ("lastmile.app", "lastmile.planner", …). */
-export const STORAGE_PREFIX = 'lastmile.';
+export type PersistedStoreName = 'app' | 'planner' | 'travel' | 'journal' | 'chat';
 
-export const storageKey = (store: string) => `${STORAGE_PREFIX}${store}`;
+export const PERSISTED_STORES: readonly PersistedStoreName[] = ['app', 'planner', 'travel', 'journal', 'chat'];
+
+/** AsyncStorage key for a store: "lastmile.app", "lastmile.planner", … */
+export const storageKey = (store: PersistedStoreName) => `lastmile.${store}`;
 
 function warn(action: string, name: string, error: unknown) {
   if (__DEV__) console.warn(`[storage] ${action} "${name}" failed`, error);
@@ -27,9 +29,7 @@ export function createPersistStorage<S>(): PersistStorage<S, Promise<void>> {
         const raw = await AsyncStorage.getItem(name);
         if (raw == null) return null;
         const parsed: unknown = JSON.parse(raw);
-        return parsed && typeof parsed === 'object' && 'state' in parsed
-          ? (parsed as StorageValue<S>)
-          : null;
+        return isRecord(parsed) && 'state' in parsed ? (parsed as StorageValue<S>) : null;
       } catch (error) {
         warn('read', name, error);
         return null;
@@ -52,13 +52,83 @@ export function createPersistStorage<S>(): PersistStorage<S, Promise<void>> {
   };
 }
 
-/**
- * Migration stub shared by the stores. Version 1 is the first schema, so any older
- * payload is passed through and the store's `merge` fills in missing fields.
- */
-export function migratePersisted<P>(persisted: unknown, _version: number): P {
-  return (persisted ?? {}) as P;
-}
-
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** `value` when it is a plain object, else `{}` — guards spreads of untrusted persisted data. */
+export const recordOr = <T extends object>(value: unknown): Partial<T> =>
+  isRecord(value) ? (value as Partial<T>) : {};
+
+/** `value` when it is an array, else `fallback`. */
+export const arrayOr = <T>(value: unknown, fallback: T[]): T[] => (Array.isArray(value) ? (value as T[]) : fallback);
+
+/* ------------------------------------------------------------------ */
+/* Hydration tracking                                                  */
+/* ------------------------------------------------------------------ */
+
+const hydratedStores = new Set<PersistedStoreName>();
+const hydrationListeners = new Set<() => void>();
+
+/**
+ * Called from each store's `onRehydrateStorage` callback, which zustand runs after a
+ * successful rehydration *and* after a failed one — unlike `persist.hasHydrated()`,
+ * which stays false on error and would keep the splash screen up forever.
+ */
+export function markStoreHydrated(store: PersistedStoreName) {
+  if (hydratedStores.has(store)) return;
+  hydratedStores.add(store);
+  hydrationListeners.forEach((listener) => listener());
+}
+
+export function isStoreHydrated(store: PersistedStoreName): boolean {
+  return hydratedStores.has(store);
+}
+
+export function areStoresHydrated(stores: readonly PersistedStoreName[] = PERSISTED_STORES): boolean {
+  return stores.every((store) => hydratedStores.has(store));
+}
+
+/** Notifies `listener` whenever another store finishes hydrating. Returns an unsubscribe. */
+export function subscribeHydration(listener: () => void): () => void {
+  hydrationListeners.add(listener);
+  return () => {
+    hydrationListeners.delete(listener);
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared persist options                                              */
+/* ------------------------------------------------------------------ */
+
+interface StorePersistConfig<S, P> {
+  /** Picks the persisted fields (drop transient ones such as `hydrated` / `pending`). */
+  partialize: (state: S) => P;
+  /** Custom merge of the stored payload into the initial state (default: shallow merge). */
+  merge?: (persisted: unknown, current: S) => S;
+  /** Extra work once rehydration has finished (successfully or not). */
+  onHydrated?: () => void;
+}
+
+/**
+ * `persist` options every store shares: key `lastmile.<store>`, AsyncStorage JSON
+ * storage, version 1, a migrate stub and hydration tracking.
+ */
+export function persistOptions<S, P>(
+  store: PersistedStoreName,
+  { partialize, merge, onHydrated }: StorePersistConfig<S, P>,
+): PersistOptions<S, P> {
+  return {
+    name: storageKey(store),
+    storage: createPersistStorage<P>(),
+    version: STORE_VERSION,
+    partialize,
+    ...(merge ? { merge } : null),
+    // v1 is the first schema: older payloads pass through and `merge` fills the gaps.
+    migrate: (persisted) => recordOr<P>(persisted) as P,
+    onRehydrateStorage: () => (_state, error) => {
+      if (error) warn('rehydrate', storageKey(store), error);
+      onHydrated?.();
+      markStoreHydrated(store);
+    },
+  };
+}

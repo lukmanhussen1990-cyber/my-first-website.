@@ -3,7 +3,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 
 import { MODEL, type Assistant, type AssistantCallMeta } from './assistant.js';
 import { BODY_LIMIT_BYTES, type Config } from './config.js';
-import { describeError, HttpError, toHttpError } from './errors.js';
+import { describeError, HttpError, toHttpError, type AbortReason } from './errors.js';
 import {
   applyCors,
   clientIp,
@@ -12,6 +12,7 @@ import {
   isJsonContentType,
   readJsonBody,
   sendJson,
+  tokensMatch,
 } from './http.js';
 import type { LogFields, Logger } from './logger.js';
 import type { TokenBucketRateLimiter } from './rateLimit.js';
@@ -56,7 +57,7 @@ function metaFields(meta: AssistantCallMeta): LogFields {
 
 export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): App {
   const hashIp = createIpHasher(randomBytes(16).toString('hex'));
-  const inFlight = new Set<AbortController>();
+  const inFlight = new Set<(reason: AbortReason) => void>();
   let shuttingDown = false;
   let closing: Promise<void> | undefined;
 
@@ -75,7 +76,6 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
 
     if (config.appToken !== undefined) {
       const provided = req.headers['x-app-token'];
-      const { tokensMatch } = await import('./http.js');
       if (!tokensMatch(typeof provided === 'string' ? provided : undefined, config.appToken)) {
         throw new HttpError(401, 'unauthorized', 'Missing or invalid app token.');
       }
@@ -98,21 +98,27 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
     }
 
     // Abort the upstream call on our deadline, on client disconnect, or when shutdown runs out of grace.
-    const cancel = new AbortController();
-    const deadline = AbortSignal.timeout(config.requestTimeoutMs);
+    const controller = new AbortController();
+    let abortReason: AbortReason | undefined;
+    const abort = (reason: AbortReason) => {
+      abortReason ??= reason;
+      controller.abort();
+    };
+    const deadline = setTimeout(() => abort('timeout'), config.requestTimeoutMs);
     const onClose = () => {
-      if (!res.writableEnded) cancel.abort();
+      if (!res.writableEnded) abort('client');
     };
     res.once('close', onClose);
-    inFlight.add(cancel);
+    inFlight.add(abort);
     try {
-      const result = await assistant.respond(request, { signal: AbortSignal.any([cancel.signal, deadline]) });
+      const result = await assistant.respond(request, { signal: controller.signal });
       Object.assign(log, metaFields(result.meta));
       sendJson(res, 200, result.response);
     } catch (error) {
-      throw toHttpError(error, { timedOut: deadline.aborted });
+      throw toHttpError(error, { abortReason });
     } finally {
-      inFlight.delete(cancel);
+      clearTimeout(deadline);
+      inFlight.delete(abort);
       res.off('close', onClose);
     }
   }
@@ -120,7 +126,7 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const startedAt = performance.now();
     const requestId = randomUUID();
-    const path = new URL(req.url ?? '/', 'http://localhost').pathname;
+    const path = (req.url ?? '/').split('?')[0] ?? '/';
     const method = req.method ?? 'GET';
     const log: RequestLog = { requestId, method, path };
 
@@ -174,6 +180,11 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
       const httpError = toHttpError(error);
       log.errorCode = httpError.code;
       if (httpError.status >= 500) Object.assign(log, describeError(httpError));
+      if (res.destroyed) {
+        // The client went away; there is nobody to answer, so log here ('finish' won't fire).
+        logger.info('request_aborted', { ...log, durationMs: Math.round(performance.now() - startedAt) });
+        return;
+      }
       if (res.headersSent) {
         res.destroy();
         return;
@@ -203,7 +214,7 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
       server.close(() => resolve());
       server.closeIdleConnections();
       const force = setTimeout(() => {
-        for (const controller of inFlight) controller.abort();
+        for (const abort of inFlight) abort('shutdown');
         server.closeAllConnections();
       }, graceMs);
       force.unref();

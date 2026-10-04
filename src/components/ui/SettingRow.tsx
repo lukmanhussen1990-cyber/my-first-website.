@@ -9,12 +9,18 @@ import { haptic } from '@/services/haptics';
 import { spacing, useTheme, type Gradient } from '@/theme';
 import type { IconName } from '@/types';
 
+/**
+ * On web the Switch's native `click` would bubble to the row's press handler and
+ * toggle twice, so there only the Switch itself is interactive.
+ */
+const ROW_TOGGLES = Platform.OS !== 'web';
+
 export interface SettingRowProps {
   icon: IconName;
   gradient: Gradient;
   label: string;
   detail?: string;
-  /** When a boolean, the row renders a Switch (tapping the row toggles it too). */
+  /** When a boolean, the row renders a Switch (tapping the row toggles it too). Takes precedence over `onPress`. */
   value?: boolean;
   onValueChange?: (next: boolean) => void;
   /** Makes the row pressable and shows a chevron (unless it renders a Switch). */
@@ -51,6 +57,7 @@ export function SettingRow({
 }: SettingRowProps) {
   const { colors } = useTheme();
   const isSwitch = typeof value === 'boolean';
+  const switchEnabled = !disabled && Boolean(onValueChange);
 
   const toggle = (next: boolean) => {
     haptic('selection');
@@ -63,6 +70,18 @@ export function SettingRow({
     disabled ? styles.disabled : null,
     style,
   ];
+
+  const switchControl = (
+    <Switch
+      value={value}
+      onValueChange={toggle}
+      disabled={!switchEnabled}
+      trackColor={{ false: colors.track, true: colors.primary }}
+      thumbColor={Platform.OS === 'android' ? colors.textOnAccent : undefined}
+      ios_backgroundColor={colors.track}
+      accessibilityLabel={label}
+    />
+  );
 
   const content = (
     <>
@@ -79,34 +98,31 @@ export function SettingRow({
       </View>
       {right}
       {isSwitch ? (
-        // The row carries the switch semantics; hide the control itself from screen readers.
-        <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          <Switch
-            value={value}
-            onValueChange={toggle}
-            disabled={disabled || !onValueChange}
-            trackColor={{ false: colors.track, true: colors.primary }}
-            thumbColor={Platform.OS === 'android' ? colors.textOnAccent : undefined}
-            ios_backgroundColor={colors.track}
-          />
-        </View>
+        ROW_TOGGLES ? (
+          // The row carries the switch semantics; hide the control itself from screen readers.
+          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            {switchControl}
+          </View>
+        ) : (
+          switchControl
+        )
       ) : onPress ? (
         <Icon name="chevron-right" size={22} color="textMuted" />
       ) : null}
     </>
   );
 
-  if (isSwitch) {
+  if (isSwitch && ROW_TOGGLES) {
     return (
       <PressableScale
-        onPress={onValueChange ? () => toggle(!value) : undefined}
-        disabled={disabled || !onValueChange}
+        onPress={() => toggle(!value)}
+        disabled={!switchEnabled}
         haptic={false}
         scaleTo={0.99}
         accessibilityRole="switch"
         accessibilityLabel={detail ? `${label}, ${detail}` : label}
         accessibilityHint={accessibilityHint}
-        accessibilityState={{ checked: value, disabled: disabled || !onValueChange }}
+        accessibilityState={{ checked: value, disabled: !switchEnabled }}
         style={rowStyle}
       >
         {content}
@@ -114,7 +130,7 @@ export function SettingRow({
     );
   }
 
-  if (onPress) {
+  if (!isSwitch && onPress) {
     return (
       <PressableScale
         onPress={onPress}

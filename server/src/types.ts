@@ -63,6 +63,7 @@ export type ErrorCode =
   | 'not_configured'
   | 'refused'
   | 'timeout'
+  | 'cancelled'
   | 'upstream_auth'
   | 'upstream_rate_limited'
   | 'upstream_unavailable'

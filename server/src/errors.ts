@@ -41,6 +41,9 @@ export class RefusalError extends HttpError {
   }
 }
 
+/** Why an in-flight upstream call was aborted by us. */
+export type AbortReason = 'timeout' | 'shutdown' | 'client';
+
 /** Upstream `retry-after` in whole seconds, if the API sent a usable one. */
 function retryAfterHeader(error: InstanceType<typeof Anthropic.APIError>): Record<string, string> {
   const value = error.headers?.get('retry-after');
@@ -53,14 +56,21 @@ function retryAfterHeader(error: InstanceType<typeof Anthropic.APIError>): Recor
  * SDK messages are never forwarded — they can echo request details — and the
  * original error is kept as `cause` for server-side logging only.
  */
-export function toHttpError(error: unknown, options: { timedOut?: boolean } = {}): HttpError {
+export function toHttpError(error: unknown, options: { abortReason?: AbortReason } = {}): HttpError {
   if (error instanceof HttpError) return error;
 
-  // Our own deadline aborts the SDK call; report it as a timeout, not a client abort.
+  // We abort SDK calls ourselves (deadline, shutdown, client gone); say which.
   if (error instanceof Anthropic.APIUserAbortError) {
-    return options.timedOut
-      ? new HttpError(504, 'timeout', 'The study buddy took too long to answer. Please try again.', { cause: error })
-      : new HttpError(499, 'timeout', 'The request was cancelled.', { cause: error });
+    switch (options.abortReason) {
+      case 'timeout':
+        return new HttpError(504, 'timeout', 'The study buddy took too long to answer. Please try again.', {
+          cause: error,
+        });
+      case 'shutdown':
+        return new HttpError(503, 'shutting_down', 'The server is restarting. Please try again.', { cause: error });
+      default:
+        return new HttpError(499, 'cancelled', 'The request was cancelled.', { cause: error });
+    }
   }
   if (error instanceof Anthropic.APIConnectionTimeoutError) {
     return new HttpError(504, 'upstream_timeout', 'The AI service took too long to respond. Please try again.', {
