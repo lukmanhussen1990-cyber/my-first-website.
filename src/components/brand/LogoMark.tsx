@@ -73,19 +73,55 @@ type GradientSpec =
 
 /** Brand artwork colours (the mark is imagery, so it doesn't follow the light/dark tokens). */
 const GRADIENTS = {
-  sky: { kind: 'linear', x1: 0, y1: 0, x2: 0, y2: 612, stops: [[0, '#0B1230'], [0.42, '#21177A'], [0.78, '#4C2FD1'], [1, '#7C5CFF']] },
-  glow: { kind: 'radial', cx: 512, cy: 612, r: 520, stops: [[0, '#FF5E8A', 0.7], [0.38, '#FF5E8A', 0.24], [1, '#FF5E8A', 0]] },
-  halo: { kind: 'radial', cx: 512, cy: 612, r: 294, stops: [[0.74, '#FFB35C', 0.5], [1, '#FF8A3D', 0]] },
-  sun: { kind: 'linear', x1: 0, y1: 390, x2: 0, y2: 612, stops: [[0, '#FFC56B'], [0.45, '#FF8A3D'], [1, '#FF5E8A']] },
-  ground: { kind: 'linear', x1: 0, y1: 490, x2: 0, y2: 1024, stops: [[0, '#261C78'], [0.3, '#1B1663'], [0.62, '#10133C'], [1, '#080C20']] },
-  rim: { kind: 'radial', cx: 512, cy: 612, r: 560, stops: [[0.2, '#FF8A7A', 0.95], [0.55, '#A78BFA', 0.55], [1, '#7C5CFF', 0.15]] },
-  road: { kind: 'linear', x1: 0, y1: 612, x2: 0, y2: 1024, stops: [[0, '#FF8A7A'], [0.22, '#8A44D6'], [0.65, '#34288A'], [1, '#1D1C5C']] },
-  edge: { kind: 'linear', x1: 0, y1: 612, x2: 0, y2: 1024, stops: [[0, '#22D3EE', 0.25], [0.35, '#22D3EE'], [1, '#7DEBFA']] },
+  sky: {
+    kind: 'linear', x1: 0, y1: 0, x2: 0, y2: 612,
+    stops: [[0, '#0B1230'], [0.42, '#21177A'], [0.78, '#4C2FD1'], [1, '#7C5CFF']],
+  },
+  glow: {
+    kind: 'radial', cx: 512, cy: 612, r: 520,
+    stops: [[0, '#FF5E8A', 0.7], [0.38, '#FF5E8A', 0.24], [1, '#FF5E8A', 0]],
+  },
+  halo: {
+    kind: 'radial', cx: 512, cy: 612, r: 294,
+    stops: [[0.74, '#FFB35C', 0.5], [1, '#FF8A3D', 0]],
+  },
+  sun: {
+    kind: 'linear', x1: 0, y1: 390, x2: 0, y2: 612,
+    stops: [[0, '#FFC56B'], [0.45, '#FF8A3D'], [1, '#FF5E8A']],
+  },
+  ground: {
+    kind: 'linear', x1: 0, y1: 490, x2: 0, y2: 1024,
+    stops: [[0, '#261C78'], [0.3, '#1B1663'], [0.62, '#10133C'], [1, '#080C20']],
+  },
+  rim: {
+    kind: 'radial', cx: 512, cy: 612, r: 560,
+    stops: [[0.2, '#FF8A7A', 0.95], [0.55, '#A78BFA', 0.55], [1, '#7C5CFF', 0.15]],
+  },
+  road: {
+    kind: 'linear', x1: 0, y1: 612, x2: 0, y2: 1024,
+    stops: [[0, '#FF8A7A'], [0.22, '#8A44D6'], [0.65, '#34288A'], [1, '#1D1C5C']],
+  },
+  edge: {
+    kind: 'linear', x1: 0, y1: 612, x2: 0, y2: 1024,
+    stops: [[0, '#22D3EE', 0.25], [0.35, '#22D3EE'], [1, '#7DEBFA']],
+  },
   // Glyph: the road dissolves into whatever is behind it instead of running off the edge.
-  roadFade: { kind: 'linear', x1: 0, y1: 612, x2: 0, y2: 885, stops: [[0, '#FF8A7A'], [0.3, '#8A44D6'], [0.62, '#4A32B0', 0.85], [1, '#2A2478', 0]] },
-  edgeFade: { kind: 'linear', x1: 0, y1: 612, x2: 0, y2: 885, stops: [[0, '#22D3EE', 0.3], [0.4, '#22D3EE'], [0.7, '#22D3EE', 0.75], [1, '#22D3EE', 0]] },
-  dashFade: { kind: 'linear', x1: 0, y1: 612, x2: 0, y2: 885, stops: [[0, '#FFFFFF'], [0.6, '#FFFFFF', 0.85], [1, '#FFFFFF', 0]] },
-  horizon: { kind: 'linear', x1: 182, y1: 0, x2: 842, y2: 0, stops: [[0, '#FF5E8A', 0], [0.3, '#FF7A7A'], [0.7, '#FF7A7A'], [1, '#FF5E8A', 0]] },
+  roadFade: {
+    kind: 'linear', x1: 0, y1: 612, x2: 0, y2: 885,
+    stops: [[0, '#FF8A7A'], [0.3, '#8A44D6'], [0.62, '#4A32B0', 0.85], [1, '#2A2478', 0]],
+  },
+  edgeFade: {
+    kind: 'linear', x1: 0, y1: 612, x2: 0, y2: 885,
+    stops: [[0, '#22D3EE', 0.3], [0.4, '#22D3EE'], [0.7, '#22D3EE', 0.75], [1, '#22D3EE', 0]],
+  },
+  dashFade: {
+    kind: 'linear', x1: 0, y1: 612, x2: 0, y2: 885,
+    stops: [[0, '#FFFFFF'], [0.6, '#FFFFFF', 0.85], [1, '#FFFFFF', 0]],
+  },
+  horizon: {
+    kind: 'linear', x1: 182, y1: 0, x2: 842, y2: 0,
+    stops: [[0, '#FF5E8A', 0], [0.3, '#FF7A7A'], [0.7, '#FF7A7A'], [1, '#FF5E8A', 0]],
+  },
 } as const satisfies Record<string, GradientSpec>;
 
 type GradientName = keyof typeof GRADIENTS;

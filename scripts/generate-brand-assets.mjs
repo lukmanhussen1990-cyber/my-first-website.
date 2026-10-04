@@ -20,6 +20,7 @@
  * fully opaque; silhouettes (themed icon, notification icon) are forced to pure
  * white so only their alpha carries the shape.
  */
+import { Buffer } from 'node:buffer';
 import { execSync } from 'node:child_process';
 import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';

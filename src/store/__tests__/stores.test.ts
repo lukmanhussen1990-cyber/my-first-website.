@@ -10,6 +10,7 @@ import { useTravelStore } from '@/store/travel';
 import { toDayKey } from '@/utils/date';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock factories must be synchronous
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 

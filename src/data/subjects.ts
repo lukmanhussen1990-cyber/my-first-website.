@@ -24,7 +24,7 @@ export const DEFAULT_SUBJECT_ICON: IconName = 'book-open-variant';
 export const DEFAULT_SUBJECT_COLOR: AccentKey = 'purple';
 
 /**
- * Short code suggestion from a subject name: "Database Management System" → "DBMS",
+ * Short code suggestion from a subject name: "Computer Networks" → "CN",
  * "Aptitude" → "APT". Used to prefill the code field.
  */
 export function suggestSubjectCode(name: string): string {

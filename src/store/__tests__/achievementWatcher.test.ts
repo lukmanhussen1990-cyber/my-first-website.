@@ -5,6 +5,7 @@ import { useAchievementWatcher } from '@/hooks/useAchievementWatcher';
 import { useAppStore } from '@/store/app';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock factories must be synchronous
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 

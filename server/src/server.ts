@@ -32,15 +32,15 @@ export interface App {
   close(graceMs: number): Promise<void>;
 }
 
-const ROUTES: Readonly<Record<string, readonly string[]>> = {
-  '/health': ['GET', 'HEAD'],
-  '/v1/assistant': ['POST'],
-};
+/** Allowed methods per route (a Map, so paths like `/__proto__` can't hit Object.prototype). */
+const ROUTES: ReadonlyMap<string, readonly string[]> = new Map([
+  ['/health', ['GET', 'HEAD']],
+  ['/v1/assistant', ['POST']],
+]);
 
 const RATE_LIMIT_SWEEP_MS = 60_000;
-
-/** Per-request facts gathered for the single access-log line. Never holds message content. */
-type RequestLog = LogFields;
+/** After force-aborting in-flight calls on shutdown, how long their 503s get to flush. */
+const FORCE_CLOSE_FLUSH_MS = 1_000;
 
 function metaFields(meta: AssistantCallMeta): LogFields {
   return {
@@ -65,7 +65,7 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
   const send = (res: ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}) =>
     sendJson(res, status, body, shuttingDown ? { ...headers, Connection: 'close' } : headers);
 
-  async function handleAssistant(req: IncomingMessage, res: ServerResponse, log: RequestLog): Promise<void> {
+  async function handleAssistant(req: IncomingMessage, res: ServerResponse, log: LogFields): Promise<void> {
     const ip = clientIp(req, config.trustProxyHops);
     log.client = hashIp(ip);
 
@@ -132,7 +132,8 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
     const requestId = randomUUID();
     const path = (req.url ?? '/').split('?')[0] ?? '/';
     const method = req.method ?? 'GET';
-    const log: RequestLog = { requestId, method, path };
+    // Facts for the single access-log line; never message content.
+    const log: LogFields = { requestId, method, path };
 
     res.setHeader('X-Request-Id', requestId);
     res.setHeader('Cache-Control', 'no-store');
@@ -150,7 +151,7 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
       const cors = applyCors(req, res, config.allowedOrigins);
       if (cors === 'forbidden') throw new HttpError(403, 'forbidden_origin', 'This origin is not allowed.');
 
-      const allowedMethods = ROUTES[path];
+      const allowedMethods = ROUTES.get(path);
       if (!allowedMethods) throw new HttpError(404, 'not_found', 'Not found.');
 
       if (method === 'OPTIONS') {
@@ -218,7 +219,7 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
       server.closeIdleConnections();
       const force = setTimeout(() => {
         for (const abort of inFlight) abort('shutdown');
-        server.closeAllConnections();
+        setTimeout(() => server.closeAllConnections(), FORCE_CLOSE_FLUSH_MS).unref();
       }, graceMs);
       force.unref();
     });
