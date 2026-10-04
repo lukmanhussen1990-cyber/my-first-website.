@@ -1,10 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { Icon } from '@/components/ui/Icon';
 import { shadow, useTheme, type Gradient } from '@/theme';
 import type { IconName } from '@/types';
-
-import { Icon } from './Icon';
 
 export type IconTileSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -42,7 +41,8 @@ export function IconTile({ icon, gradient, size = 'md', radius, glow, style }: I
       importantForAccessibility="no-hide-descendants"
       style={[
         { width: spec.box, height: spec.box, borderRadius: r },
-        glow ? shadow('glow', gradient[0]) : null,
+        // Opaque backing gives Android's elevation a shape to cast the glow from.
+        glow ? [shadow('glow', gradient[0]), { backgroundColor: gradient[gradient.length - 1] }] : null,
         style,
       ]}
     >

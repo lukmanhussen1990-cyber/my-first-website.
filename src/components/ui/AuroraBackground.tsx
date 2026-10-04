@@ -25,7 +25,7 @@ interface BlobSpec {
   /** Centre as a fraction of the window. */
   cx: number;
   cy: number;
-  /** Diameter as a fraction of the window width. */
+  /** Diameter as a fraction of the window width (capped on large screens). */
   size: number;
   /** Drift amplitude in px. */
   driftX: number;
@@ -33,6 +33,9 @@ interface BlobSpec {
   /** One leg of the reversing loop, in ms. */
   duration: number;
 }
+
+/** Upper bound (px) for the width blobs are sized against. */
+const MAX_BLOB_BASE = 720;
 
 interface AuroraPalette {
   background: Gradient;
@@ -97,7 +100,7 @@ export function AuroraBackground({ variant = 'default' }: AuroraBackgroundProps)
   ];
 
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <View style={[StyleSheet.absoluteFill, styles.passThrough]}>
       <LinearGradient colors={palette.background} style={StyleSheet.absoluteFill} />
       {blobs.map((blob, i) => (
         <AuroraBlob key={i} spec={blob} windowWidth={width} windowHeight={height} />
@@ -116,7 +119,8 @@ function AuroraBlob({
   windowHeight: number;
 }) {
   const reducedMotion = useReducedMotion();
-  const gradientId = `aurora-${useId().replace(/:/g, '')}`;
+  // useId() can contain characters that are invalid inside an SVG `url(#…)` reference.
+  const gradientId = `aurora-${useId().replace(/[^\w-]/g, '')}`;
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -146,7 +150,8 @@ function AuroraBlob({
     };
   });
 
-  const size = spec.size * windowWidth;
+  // Capped so blobs stay soft (not giant flat washes) on tablets and desktop web.
+  const size = spec.size * Math.min(windowWidth, MAX_BLOB_BASE);
   const stop = toStop(spec.color);
 
   return (
@@ -177,5 +182,6 @@ function AuroraBlob({
 }
 
 const styles = StyleSheet.create({
+  passThrough: { pointerEvents: 'none' },
   blob: { position: 'absolute' },
 });

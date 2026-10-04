@@ -78,6 +78,7 @@ export function ProgressRing({
 
   return (
     <View
+      accessible={Boolean(accessibilityLabel)}
       accessibilityRole="progressbar"
       accessibilityLabel={accessibilityLabel}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(target * 100) }}
@@ -112,18 +113,14 @@ export function ProgressRing({
           animatedProps={arcProps}
         />
       </Svg>
-      {children ? (
-        <View style={styles.center}>
-          {children}
-        </View>
-      ) : null}
+      {children ? <View style={styles.center}>{children}</View> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   center: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     pointerEvents: 'box-none',

@@ -2,10 +2,9 @@ import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { AppText } from '@/components/ui/AppText';
+import { IconButton } from '@/components/ui/IconButton';
 import { spacing } from '@/theme';
-
-import { AppText } from './AppText';
-import { IconButton } from './IconButton';
 
 export interface ScreenHeaderProps {
   title: string;

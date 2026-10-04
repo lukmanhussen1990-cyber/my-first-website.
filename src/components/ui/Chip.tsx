@@ -1,11 +1,11 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { radii, spacing, useTheme, type ThemeColors } from '@/theme';
+import { AppText } from '@/components/ui/AppText';
+import { Icon } from '@/components/ui/Icon';
+import { PressableScale } from '@/components/ui/PressableScale';
+import { gradients, radii, spacing, useTheme, type Gradient, type ThemeColors } from '@/theme';
 import type { IconName } from '@/types';
-
-import { AppText } from './AppText';
-import { Icon } from './Icon';
-import { PressableScale } from './PressableScale';
 
 export type ChipTone = 'default' | 'primary' | 'sunset' | 'success';
 
@@ -19,20 +19,29 @@ export interface ChipProps {
   style?: StyleProp<ViewStyle>;
 }
 
-function toneColors(colors: ThemeColors, tone: ChipTone): { solid: string; soft: string } {
+/** Violet → blue, matching the selected pill of `SegmentedTabs`. */
+const SELECTED_DEFAULT: Gradient = ['#6D5BFF', '#3B82F6'];
+
+function toneColors(
+  colors: ThemeColors,
+  tone: ChipTone,
+): { solid: string; soft: string; fill: Gradient } {
   switch (tone) {
     case 'sunset':
-      return { solid: colors.highlight, soft: colors.highlightSoft };
+      return { solid: colors.highlight, soft: colors.highlightSoft, fill: gradients.sunset };
     case 'success':
-      return { solid: colors.success, soft: colors.successSoft };
+      return { solid: colors.success, soft: colors.successSoft, fill: gradients.success };
+    case 'primary':
+      return { solid: colors.primary, soft: colors.primarySoft, fill: gradients.violet };
     default:
-      return { solid: colors.primary, soft: colors.primarySoft };
+      return { solid: colors.primary, soft: colors.primarySoft, fill: SELECTED_DEFAULT };
   }
 }
 
 /**
  * Pill used for quick prompts and filters. Unselected chips are neutral glass
- * (or softly tinted for a non-default tone); selected chips fill with the tone.
+ * (or softly tinted for a non-default tone); selected chips fill with the
+ * tone's gradient and a white label.
  */
 export function Chip({
   label,
@@ -44,10 +53,10 @@ export function Chip({
   style,
 }: ChipProps) {
   const { colors } = useTheme();
-  const { solid, soft } = toneColors(colors, tone);
+  const { solid, soft, fill } = toneColors(colors, tone);
 
   const surface: ViewStyle = selected
-    ? { backgroundColor: solid, borderColor: solid }
+    ? { backgroundColor: 'transparent', borderColor: 'transparent' }
     : tone === 'default'
       ? { backgroundColor: colors.surfaceMuted, borderColor: colors.border }
       : { backgroundColor: soft, borderColor: soft };
@@ -55,6 +64,14 @@ export function Chip({
 
   const content = (
     <>
+      {selected ? (
+        <LinearGradient
+          colors={fill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.fill}
+        />
+      ) : null}
       {icon ? <Icon name={icon} size={16} color={fg} /> : null}
       <AppText variant="label" color={fg} numberOfLines={1}>
         {label}
@@ -95,4 +112,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     borderWidth: 1,
   },
+  // Extends under the 1px border so the gradient reaches the pill's edge.
+  fill: { position: 'absolute', top: -1, right: -1, bottom: -1, left: -1, borderRadius: radii.pill },
 });

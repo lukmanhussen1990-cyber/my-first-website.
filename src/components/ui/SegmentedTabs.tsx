@@ -11,12 +11,11 @@ import {
 } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
+import { AppText } from '@/components/ui/AppText';
+import { Icon } from '@/components/ui/Icon';
 import { haptic } from '@/services/haptics';
 import { motion, radii, shadow, spacing, useTheme, type Gradient } from '@/theme';
 import type { IconName } from '@/types';
-
-import { AppText } from './AppText';
-import { Icon } from './Icon';
 
 export interface SegmentedTabOption<T extends string> {
   value: T;
@@ -44,6 +43,11 @@ interface ItemLayout {
 const DEFAULT_PILL: Gradient = ['#6D5BFF', '#3B82F6'];
 const TRACK_PADDING = 4;
 const ITEM_HEIGHT = { sm: 32, md: 38 } as const;
+// Fixed (non-scrolling) tracks share spare width, so items need less padding of their own.
+const PADDING = {
+  scroll: { sm: spacing.md, md: spacing.lg },
+  fixed: { sm: spacing.sm, md: spacing.md },
+} as const;
 
 /** Segmented control with a spring-animated gradient pill behind the selected item. */
 export function SegmentedTabs<T extends string>({
@@ -69,7 +73,7 @@ export function SegmentedTabs<T extends string>({
   useEffect(() => {
     if (!selected) return;
     if (!placed.current) {
-      // First measurement: jump into place without animating from 0.
+      // First measurement: jump into place instead of sliding in from 0.
       placed.current = true;
       pillX.set(selected.x);
       pillWidth.set(selected.width);
@@ -105,6 +109,7 @@ export function SegmentedTabs<T extends string>({
   };
 
   const height = ITEM_HEIGHT[size];
+  const pillColor = gradient[gradient.length - 1];
 
   // The border lives on an outer shell so item `onLayout.x` and the absolutely
   // positioned pill share the same origin.
@@ -116,49 +121,50 @@ export function SegmentedTabs<T extends string>({
         scrollable ? null : styles.fullWidth,
       ]}
     >
-    <View accessibilityRole="tablist" style={styles.track}>
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.pill,
-          { height, top: TRACK_PADDING, backgroundColor: gradient[gradient.length - 1] },
-          shadow('sm', gradient[gradient.length - 1]),
-          pillStyle,
-        ]}
-      >
-        <LinearGradient
-          colors={gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[StyleSheet.absoluteFill, styles.pillFill]}
-        />
-      </Animated.View>
-      {options.map((option) => {
-        const active = option.value === value;
-        const tint = active ? colors.textOnAccent : colors.textSecondary;
-        return (
-          <Pressable
-            key={option.value}
-            onPress={() => select(option.value)}
-            onLayout={handleLayout(option.value)}
-            accessibilityRole="tab"
-            accessibilityLabel={option.label}
-            accessibilityState={{ selected: active }}
-            hitSlop={{ top: 6, bottom: 6 }}
-            style={[
-              styles.item,
-              { height, paddingHorizontal: size === 'sm' ? spacing.md : spacing.lg },
-              scrollable ? null : styles.equal,
-            ]}
-          >
-            {option.icon ? <Icon name={option.icon} size={size === 'sm' ? 14 : 16} color={tint} /> : null}
-            <AppText variant={size === 'sm' ? 'caption' : 'label'} color={tint} numberOfLines={1}>
-              {option.label}
-            </AppText>
-          </Pressable>
-        );
-      })}
-    </View>
+      <View accessibilityRole="tablist" style={styles.track}>
+        <Animated.View
+          style={[
+            styles.pill,
+            { height, top: TRACK_PADDING, backgroundColor: pillColor },
+            shadow('sm', pillColor),
+            pillStyle,
+          ]}
+        >
+          <LinearGradient
+            colors={gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[StyleSheet.absoluteFill, styles.pillFill]}
+          />
+        </Animated.View>
+        {options.map((option) => {
+          const active = option.value === value;
+          const tint = active ? colors.textOnAccent : colors.textSecondary;
+          return (
+            <Pressable
+              key={option.value}
+              onPress={() => select(option.value)}
+              onLayout={handleLayout(option.value)}
+              accessibilityRole="tab"
+              accessibilityLabel={option.label}
+              accessibilityState={{ selected: active }}
+              hitSlop={{ top: 6, bottom: 6 }}
+              style={[
+                styles.item,
+                { height, paddingHorizontal: PADDING[scrollable ? 'scroll' : 'fixed'][size] },
+                scrollable ? null : styles.grow,
+              ]}
+            >
+              {option.icon ? (
+                <Icon name={option.icon} size={size === 'sm' ? 14 : 16} color={tint} />
+              ) : null}
+              <AppText variant={size === 'sm' ? 'caption' : 'label'} color={tint} numberOfLines={1}>
+                {option.label}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 
@@ -182,7 +188,7 @@ const styles = StyleSheet.create({
   track: { flexDirection: 'row', alignItems: 'center', padding: TRACK_PADDING },
   fullWidth: { alignSelf: 'stretch' },
   scrollContent: { flexGrow: 1 },
-  pill: { position: 'absolute', left: 0, borderRadius: radii.pill },
+  pill: { position: 'absolute', left: 0, borderRadius: radii.pill, pointerEvents: 'none' },
   pillFill: { borderRadius: radii.pill },
   item: {
     flexDirection: 'row',
@@ -191,5 +197,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs + 2,
     borderRadius: radii.pill,
   },
-  equal: { flex: 1 },
+  // Share spare width evenly while letting longer labels ("Motivation") keep their size.
+  grow: { flexGrow: 1, flexShrink: 1 },
 });

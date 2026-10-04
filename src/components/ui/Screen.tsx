@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AuroraBackground, type AuroraVariant } from '@/components/ui/AuroraBackground';
 import {
   MAX_CONTENT_WIDTH,
   SCREEN_GUTTER,
@@ -18,8 +19,6 @@ import {
   TAB_BAR_CLEARANCE,
   useTheme,
 } from '@/theme';
-
-import { AuroraBackground, type AuroraVariant } from './AuroraBackground';
 
 export type ScreenEdge = 'top' | 'bottom';
 

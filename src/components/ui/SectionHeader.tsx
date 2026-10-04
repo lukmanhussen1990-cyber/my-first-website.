@@ -1,9 +1,8 @@
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { AppText } from '@/components/ui/AppText';
 import { haptic } from '@/services/haptics';
 import { spacing } from '@/theme';
-
-import { AppText } from './AppText';
 
 export interface SectionHeaderProps {
   title: string;

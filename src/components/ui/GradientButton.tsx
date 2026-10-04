@@ -1,13 +1,12 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { ActivityIndicator, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { gradients, radii, shadow, spacing, useTheme, type Gradient } from '@/theme';
+import { AppText, type TextColor } from '@/components/ui/AppText';
+import { Icon } from '@/components/ui/Icon';
+import { PressableScale } from '@/components/ui/PressableScale';
 import type { HapticKind } from '@/services/haptics';
+import { gradients, radii, shadow, spacing, useTheme, type Gradient } from '@/theme';
 import type { IconName } from '@/types';
-
-import { AppText, type TextColor } from './AppText';
-import { Icon } from './Icon';
-import { PressableScale } from './PressableScale';
 
 export type GradientButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type GradientButtonSize = 'md' | 'lg';
@@ -109,7 +108,7 @@ export function GradientButton({
             style={[StyleSheet.absoluteFill, styles.pill]}
           />
         ) : null}
-        {fill ? <View pointerEvents="none" style={styles.sheen} /> : null}
+        {fill ? <View style={styles.sheen} /> : null}
         {iconPosition === 'left' ? iconNode : null}
         <AppText variant={size === 'lg' ? 'title' : 'subtitle'} color={textColor} numberOfLines={1}>
           {label}
@@ -132,6 +131,7 @@ const styles = StyleSheet.create({
   // Hairline sheen along the top edge of gradient fills.
   sheen: {
     position: 'absolute',
+    pointerEvents: 'none',
     top: 1,
     left: radii.xl,
     right: radii.xl,

@@ -29,10 +29,10 @@ const LABELS: Record<'boxes' | 'compact', Record<LabelStyle, Record<Unit, readon
   },
   compact: {
     long: {
-      days: [' day', ' days'],
-      hours: [' hr', ' hrs'],
-      minutes: [' min', ' min'],
-      seconds: [' sec', ' sec'],
+      days: ['day', 'days'],
+      hours: ['hr', 'hrs'],
+      minutes: ['min', 'min'],
+      seconds: ['sec', 'sec'],
     },
     short: {
       days: ['d', 'd'],
@@ -102,8 +102,9 @@ export function CountdownBlocks({
   accessibilityLabel,
 }: CountdownBlocksProps) {
   const { colors } = useTheme();
-  const labelSet = LABELS[variant][labels ?? (variant === 'boxes' ? 'long' : 'short')];
   const isBoxes = variant === 'boxes';
+  const labelStyle = labels ?? (isBoxes ? 'long' : 'short');
+  const labelSet = LABELS[variant][labelStyle];
 
   return (
     <View
@@ -118,7 +119,7 @@ export function CountdownBlocks({
           const [singular, plural] = labelSet[unit];
           const label = value === 1 ? singular : plural;
           const shell = [
-            isBoxes ? styles.box : styles.chip,
+            isBoxes ? styles.box : [styles.chip, { gap: labelStyle === 'long' ? spacing.xs : spacing.xxs }],
             { backgroundColor: colors.surfaceMuted, borderColor: colors.border },
           ];
           return (

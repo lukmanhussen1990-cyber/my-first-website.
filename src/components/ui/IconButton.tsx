@@ -1,12 +1,11 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { gradients, shadow, useTheme, type Gradient } from '@/theme';
+import { Icon, type IconColor } from '@/components/ui/Icon';
+import { PressableScale } from '@/components/ui/PressableScale';
 import type { HapticKind } from '@/services/haptics';
+import { gradients, shadow, useTheme, type Gradient } from '@/theme';
 import type { IconName } from '@/types';
-
-import { Icon, type IconColor } from './Icon';
-import { PressableScale } from './PressableScale';
 
 export type IconButtonSize = 'sm' | 'md' | 'lg';
 /** `overlay` is a translucent dark circle for use over imagery. */

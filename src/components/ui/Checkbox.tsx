@@ -8,10 +8,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { Icon } from '@/components/ui/Icon';
 import { haptic } from '@/services/haptics';
 import { motion, useTheme } from '@/theme';
-
-import { Icon } from './Icon';
 
 export interface CheckboxProps {
   checked: boolean;

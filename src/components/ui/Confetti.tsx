@@ -56,7 +56,18 @@ function rand(index: number, salt: number): number {
   return x - Math.floor(x);
 }
 
-function createParticles(count: number, width: number, height: number, palette: string[]): Particle[] {
+/**
+ * Launch parameters for every particle. Velocities are in px/s and scale with
+ * the container so the burst fills phones and tablets alike; the terminal fall
+ * speed scales with `seconds` so each piece crosses the screen within the burst.
+ */
+function createParticles(
+  count: number,
+  width: number,
+  height: number,
+  seconds: number,
+  palette: readonly string[],
+): Particle[] {
   return Array.from({ length: count }, (_, i) => {
     const r = (salt: number) => rand(i, salt);
     const emitter = i % 3; // 0 = top centre, 1 = left edge, 2 = right edge
@@ -68,16 +79,20 @@ function createParticles(count: number, width: number, height: number, palette: 
     let vx: number;
     let vy: number;
     if (emitter === 0) {
-      x0 = width / 2 + (r(3) - 0.5) * width * 0.25;
-      y0 = height * 0.08;
-      vx = (r(4) - 0.5) * width * 2.2;
-      vy = -(0.35 + r(5) * 0.9) * height;
+      // Pop from just below the top centre, spraying outwards in every direction.
+      const angle = r(3) * Math.PI * 2;
+      const speed = 0.35 + r(4) * 0.75;
+      x0 = width / 2;
+      y0 = height * 0.16;
+      vx = Math.cos(angle) * speed * width * 1.6;
+      vy = Math.sin(angle) * speed * height * 0.55;
     } else {
+      // Side cannons aimed up and inwards.
       const dir = emitter === 1 ? 1 : -1;
-      x0 = emitter === 1 ? -12 : width + 12;
-      y0 = height * (0.12 + r(3) * 0.18);
-      vx = dir * (0.5 + r(4) * 1.1) * width;
-      vy = -(0.25 + r(5) * 0.7) * height;
+      x0 = emitter === 1 ? -8 : width + 8;
+      y0 = height * (0.32 + r(3) * 0.16);
+      vx = dir * (0.55 + r(4) * 0.9) * width;
+      vy = -(0.45 + r(5) * 0.55) * height;
     }
 
     return {
@@ -85,7 +100,7 @@ function createParticles(count: number, width: number, height: number, palette: 
       y0,
       vx,
       vy,
-      fall: height * (0.16 + r(6) * 0.14),
+      fall: (height * (0.95 + r(6) * 0.55)) / seconds,
       sway: 8 + r(7) * 22,
       swayFreq: 2 + r(8) * 4,
       phase: r(9) * Math.PI * 2,
@@ -157,18 +172,23 @@ export function Confetti({ active, count = 80, duration = 3200, onDone, colors }
   const reduceMotion = useReducedMotion();
   const progress = useSharedValue(0);
   const [size, setSize] = useState({ width: 0, height: 0 });
-  // Tracks the burst so particles unmount once it has finished.
+  // Tracks the current burst so particles unmount once it has finished.
   const [burst, setBurst] = useState({ active, finished: !active });
   if (burst.active !== active) {
     setBurst({ active, finished: !active });
   }
 
+  const seconds = Math.max(0.5, duration / 1000);
   const palette = colors?.length ? colors : DEFAULT_COLORS;
   const particles = useMemo(
-    () => (size.width ? createParticles(Math.max(0, Math.round(count)), size.width, size.height, palette) : []),
-    [count, size.width, size.height, palette],
+    () =>
+      size.width
+        ? createParticles(Math.max(0, Math.round(count)), size.width, size.height, seconds, palette)
+        : [],
+    [count, size.width, size.height, seconds, palette],
   );
 
+  const notifyDone = useEffectEvent(() => onDone?.());
   const finish = useEffectEvent(() => {
     setBurst((current) => ({ ...current, finished: true }));
     onDone?.();
@@ -177,7 +197,8 @@ export function Confetti({ active, count = 80, duration = 3200, onDone, colors }
   useEffect(() => {
     if (!active) return;
     if (reduceMotion) {
-      finish();
+      // Nothing is drawn, but callers still chain on completion (e.g. navigate on).
+      notifyDone();
       return;
     }
     progress.set(0);
@@ -197,10 +218,15 @@ export function Confetti({ active, count = 80, duration = 3200, onDone, colors }
   const showParticles = active && !reduceMotion && !burst.finished;
 
   return (
-    <View style={styles.container} onLayout={onLayout} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <View
+      style={styles.container}
+      onLayout={onLayout}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
       {showParticles
         ? particles.map((particle, index) => (
-            <ConfettiParticle key={index} particle={particle} progress={progress} seconds={duration / 1000} />
+            <ConfettiParticle key={index} particle={particle} progress={progress} seconds={seconds} />
           ))
         : null}
     </View>
@@ -209,7 +235,7 @@ export function Confetti({ active, count = 80, duration = 3200, onDone, colors }
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: 'hidden',
     pointerEvents: 'none',
   },

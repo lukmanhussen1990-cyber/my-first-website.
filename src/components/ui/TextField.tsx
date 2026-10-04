@@ -17,11 +17,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { AppText } from '@/components/ui/AppText';
+import { Icon } from '@/components/ui/Icon';
 import { fonts, motion, radii, spacing, useTheme } from '@/theme';
 import type { IconName } from '@/types';
-
-import { AppText } from './AppText';
-import { Icon } from './Icon';
 
 export interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   value: string;

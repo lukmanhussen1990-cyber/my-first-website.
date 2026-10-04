@@ -10,12 +10,10 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { haptic } from '@/services/haptics';
+import { AppText } from '@/components/ui/AppText';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { PressableScale } from '@/components/ui/PressableScale';
 import { radii, spacing, useTheme } from '@/theme';
-
-import { AppText } from './AppText';
-import { Checkbox } from './Checkbox';
-import { PressableScale } from './PressableScale';
 
 export interface TaskRowProps {
   title: string;
@@ -71,12 +69,8 @@ export function TaskRow({
 }: TaskRowProps) {
   const { colors } = useTheme();
 
-  const handleLongPress = onDelete
-    ? () => {
-        haptic('warning');
-        confirmDelete(title, onDelete);
-      }
-    : undefined;
+  // PressableScale already fires a medium haptic on long-press.
+  const handleLongPress = onDelete ? () => confirmDelete(title, onDelete) : undefined;
 
   const actions: AccessibilityActionInfo[] = [];
   if (onPress) actions.push({ name: 'toggle', label: checked ? 'Mark as not done' : 'Mark as done' });

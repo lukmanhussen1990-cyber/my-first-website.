@@ -60,6 +60,7 @@ export function ProgressBar({
 
   return (
     <View
+      accessible={Boolean(accessibilityLabel)}
       accessibilityRole="progressbar"
       accessibilityLabel={accessibilityLabel}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(target * 100) }}
@@ -82,8 +83,9 @@ export function ProgressBar({
 }
 
 const styles = StyleSheet.create({
+  // Stretches across a column; in a row give it `style={{ flex: 1 }}`.
   track: {
-    width: '100%',
+    alignSelf: 'stretch',
     overflow: 'hidden',
   },
   fill: {

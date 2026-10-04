@@ -3,9 +3,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
 import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { PressableScale, splitLayoutStyle } from '@/components/ui/PressableScale';
 import { radii, shadow, spacing, useTheme, withAlpha, type Gradient } from '@/theme';
-
-import { PressableScale, splitLayoutStyle } from './PressableScale';
 
 export interface GlassCardProps {
   children?: ReactNode;
@@ -74,7 +73,10 @@ export function GlassCard({
       ]}
     >
       {blur || tint ? (
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden' }]}>
+        <View
+          // Children sit inside the 1px border, so clip to the inner radius.
+          style={[StyleSheet.absoluteFill, styles.overlay, { borderRadius: Math.max(0, radius - 1) }]}
+        >
           {blur ? (
             <BlurView intensity={40} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
           ) : null}
@@ -90,7 +92,6 @@ export function GlassCard({
       ) : null}
       {highlight ? (
         <LinearGradient
-          pointerEvents="none"
           colors={['transparent', colors.borderHighlight, 'transparent']}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
@@ -120,5 +121,6 @@ export function GlassCard({
 const styles = StyleSheet.create({
   card: { borderWidth: 1 },
   fill: { flexGrow: 1 },
-  highlight: { position: 'absolute', top: 0, height: 1 },
+  overlay: { overflow: 'hidden', pointerEvents: 'none' },
+  highlight: { position: 'absolute', top: 0, height: 1, pointerEvents: 'none' },
 });

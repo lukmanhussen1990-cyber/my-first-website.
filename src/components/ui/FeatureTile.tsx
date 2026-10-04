@@ -1,12 +1,11 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { AppText } from '@/components/ui/AppText';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { IconTile } from '@/components/ui/IconTile';
 import { radii, spacing, type Gradient } from '@/theme';
 import type { IconName } from '@/types';
-
-import { AppText } from './AppText';
-import { GlassCard } from './GlassCard';
-import { IconTile } from './IconTile';
 
 export interface FeatureTileProps {
   icon: IconName;
