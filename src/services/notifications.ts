@@ -125,8 +125,8 @@ function content(kind: NotificationKind, title: string, body: string, url: strin
   return { title, body, sound: true, data: { kind, url } };
 }
 
-function withName(text: string, name: string, separator = ', '): string {
-  return name ? `${text}${separator}${name}` : text;
+function withName(text: string, name: string): string {
+  return name ? `${text}, ${name}` : text;
 }
 
 function dateRequest(id: string, date: Date, body: Content, channelId: string): Notifications.NotificationRequestInput {
