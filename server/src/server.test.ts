@@ -188,6 +188,8 @@ describe('HTTP server', () => {
   it('answers 404 and 405', async () => {
     const { url } = await start();
     await expectError(await fetch(`${url}/nope`), 404, 'not_found');
+    await expectError(await fetch(`${url}/__proto__`), 404, 'not_found');
+    await expectError(await fetch(`${url}/constructor?x=1`, { method: 'OPTIONS' }), 404, 'not_found');
     const wrongMethod = await fetch(`${url}/v1/assistant`);
     assert.equal(wrongMethod.headers.get('allow'), 'POST, OPTIONS');
     await expectError(wrongMethod, 405, 'method_not_allowed');
@@ -251,6 +253,19 @@ describe('HTTP server', () => {
     assert.equal(response.headers.get('connection'), 'close');
     await closed;
     assert.equal(app.server.listening, false);
+  });
+
+  it('cuts off in-flight work with 503 shutting_down when the grace period runs out', async () => {
+    const { url, app } = await start({}, (_request, { signal }) => {
+      return new Promise((_resolve, reject) => {
+        signal.addEventListener('abort', () => reject(new Anthropic.APIUserAbortError()));
+      });
+    });
+    const pending = post(url, validBody);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const closed = app.close(20);
+    await expectError(await pending, 503, 'shutting_down');
+    await closed;
   });
 });
 

@@ -766,7 +766,7 @@ function detectIntent(prompt: string): Intent {
 /** "Summarise this: <notes>" / "Quiz me on these notes\n<notes>" → just the notes. */
 function extractNotes(prompt: string): string {
   const match =
-    /^[^\n:]{0,80}?\b(?:summar\w*|tl;?dr|mcqs?|quiz|questions?|test me|notes?|this|these)\b[^\n:]{0,60}?(?::|\n)\s*/i.exec(
+    /^[^\n:]{0,80}?\b(?:summar\w*|tl;?dr|mcqs?|quiz|questions?|test me|notes?)\b[^\n:]{0,60}?(?::|\n)\s*/i.exec(
       prompt,
     );
   if (match && prompt.length > match[0].length) return prompt.slice(match[0].length).trim();
