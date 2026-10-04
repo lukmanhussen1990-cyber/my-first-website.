@@ -75,7 +75,6 @@ src/
     achievements.tsx           Badges + stats
     celebration.tsx            Full-screen confetti "Exams complete!" (modal)
     settings.tsx               Profile, dates, theme, notifications, calendar, AI, data
-    dev-gallery.tsx            TEMPORARY visual-QA gallery of every ui/brand component
                                (`?theme=light|dark`) — delete before release
   components/
     ui/                        Design-system primitives (see §4)
