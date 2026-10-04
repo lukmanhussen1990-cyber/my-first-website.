@@ -21,7 +21,8 @@ const STOP_WORDS = new Set(
   ).split(/\s+/),
 );
 
-const WORD_RE = /[A-Za-z][A-Za-z0-9]*(?:['’-][A-Za-z0-9]+)*/g;
+/** A word: letters/digits containing at least one letter ("1NF", "TCP", "read-heavy", "don't"). */
+const WORD_RE = /[0-9]*[A-Za-z][A-Za-z0-9]*(?:['’-][A-Za-z0-9]+)*/g;
 const DEFINITION_RE =
   /\b(?:is|are)\s+(?:a|an|the|defined|called|known|used)\b|\brefers?\s+to\b|\bmeans\b|\bdenotes\b|\bstands\s+for\b/i;
 const BULLET_RE = /^(?:[-*•▪◦‣–—>]|\d{1,2}[.)]|[a-z][.)]|\(\w{1,2}\))\s+/i;
@@ -32,6 +33,8 @@ interface Token {
   norm: string;
   stem: string;
   content: boolean;
+  /** Only whitespace separates this token from the previous one (no punctuation) — phrases can span it. */
+  joined: boolean;
 }
 
 interface TermInfo {
@@ -62,11 +65,18 @@ function stem(word: string): string {
 const isAcronym = (word: string) => word.length >= 2 && word === word.toUpperCase() && /[A-Z]/.test(word);
 
 function tokenize(sentence: string): Token[] {
-  return (sentence.match(WORD_RE) ?? []).map((word) => {
+  const tokens: Token[] = [];
+  let previousEnd = -1;
+  for (const match of sentence.matchAll(WORD_RE)) {
+    const word = match[0];
+    const start = match.index ?? 0;
     const norm = normalise(word);
     const content = !STOP_WORDS.has(norm) && (norm.length >= 3 || (norm.length === 2 && isAcronym(word)));
-    return { word, norm, stem: stem(norm), content };
-  });
+    const joined = previousEnd >= 0 && /^\s+$/.test(sentence.slice(previousEnd, start));
+    tokens.push({ word, norm, stem: stem(norm), content, joined });
+    previousEnd = start + word.length;
+  }
+  return tokens;
 }
 
 function wordCount(text: string): number {
@@ -176,7 +186,7 @@ function analyse(tokenized: Token[][]): TermStats {
       if (!token.content) return;
       bump(terms, token.stem, surfaceForm(token, i), position);
       const next = tokens[i + 1];
-      if (next?.content) {
+      if (next?.content && next.joined) {
         bump(bigrams, `${token.stem} ${next.stem}`, `${surfaceForm(token, i)} ${surfaceForm(next, i + 1)}`, position);
       }
     });
@@ -206,8 +216,8 @@ function topKeyTerms(stats: TermStats, limit: number): string[] {
     if (picked.length >= limit) break;
     const key = candidate.label.toLowerCase();
     if (seen.has(key)) continue;
-    // Skip a word that only ever appears inside an already-picked phrase.
-    if (candidate.parts.length === 1 && coveredBy.get(candidate.info.stem) === candidate.info.count) continue;
+    // Skip a word that mostly appears inside an already-picked phrase ("key" after "primary key").
+    if (candidate.parts.length === 1 && (coveredBy.get(candidate.info.stem) ?? 0) >= candidate.info.count * 0.6) continue;
     seen.add(key);
     picked.push(candidate.label);
     if (candidate.parts.length > 1) {
@@ -300,6 +310,11 @@ interface Candidate {
   score: number;
 }
 
+/** Blank-worthiness: repeated, longer (more specific) words make better cloze answers than short generic ones. */
+function clozeScore(info: TermInfo, label: string): number {
+  return info.count * (0.5 + Math.min(label.length, 10) / 10);
+}
+
 function tooSimilar(a: string, b: string): boolean {
   const x = a.toLowerCase();
   const y = b.toLowerCase();
@@ -358,7 +373,10 @@ export function generateClozeMCQs(text: string, count = 5): MCQ[] {
 
   const stats = analyse(tokenized);
   const pool: Candidate[] = [...stats.terms.values()]
-    .map((info) => ({ info, label: displayForm(info), score: termScore(info) }))
+    .map((info) => {
+      const label = displayForm(info);
+      return { info, label, score: clozeScore(info, label) };
+    })
     .filter((c) => /^[A-Za-z][A-Za-z'’-]*$/.test(c.label) && c.label.replace(/[^A-Za-z]/g, '').length >= 4)
     .sort((a, b) => b.score - a.score || a.info.firstIndex - b.info.firstIndex)
     .slice(0, 40);
@@ -650,9 +668,14 @@ const TOPIC_PREFIX_RE =
   /^(?:(?:please|pls|hey|ok|okay)[,\s]+)?(?:(?:can|could|would) you\s+)?(?:please\s+)?(?:explain|describe|define|teach me|tell me about|help me understand|break down|what (?:is|are|was|were)|what's|whats|how (?:does|do|is|are)|why (?:is|are|does|do))\s+(?:to me\s+)?(?:about\s+)?(?:the\s+(?:concept|topic|idea)\s+of\s+)?/i;
 
 function cleanTopic(input: string): string {
-  return input
-    .trim()
-    .replace(TOPIC_PREFIX_RE, '')
+  let topic = input.trim();
+  // "Explain how does X work?" carries two instruction prefixes.
+  for (let i = 0; i < 3; i++) {
+    const next = topic.replace(TOPIC_PREFIX_RE, '');
+    if (next === topic) break;
+    topic = next;
+  }
+  return topic
     .replace(/\b(?:in simple terms|simply|in detail|briefly|for my exam|for exams?)\b/gi, '')
     .replace(/\b(?:work|works)\s*\??$/i, '')
     .replace(/^(?:the|a|an)\s+/i, '')
@@ -687,10 +710,10 @@ export function explainTopic(topic: string): string {
     `📘 ${name} — study scaffold (offline)`,
     '',
     '1. What it is',
-    `   Write a one-line definition: “${name} is …”, then check it against your notes or textbook.`,
+    `   Define it in one line, in your own words: “${name} — …”. Then check it against your notes or textbook.`,
     '',
     '2. Why it matters',
-    `   • What problem does ${name} solve — what would go wrong without it?`,
+    `   • What problem does ${clean} solve — what would go wrong without it?`,
     '   • Where does it show up in your syllabus and past papers?',
     '',
     '3. How it works — steps to fill in',
@@ -700,13 +723,13 @@ export function explainTopic(topic: string): string {
     '   Step 4: Limits, edge cases or exceptions → …',
     '',
     '4. Example to try',
-    `   Work through one small, concrete example of ${name} by hand, then redraw it as a diagram or table.`,
+    `   Work through one small, concrete example of ${clean} by hand, then redraw it as a diagram or table.`,
     '',
     '5. Likely exam questions',
-    `   • Define ${name} and explain why it is important. (short answer)`,
-    `   • Explain how ${name} works with a neat diagram or example. (long answer)`,
-    `   • Compare ${name} with a closely related concept — advantages and limitations.`,
-    `   • Apply ${name} to a given scenario or problem.`,
+    `   • Define ${clean} and explain its significance. (short answer)`,
+    `   • Explain the working of ${clean} with a neat diagram or example. (long answer)`,
+    `   • Compare ${clean} with a closely related concept — advantages and limitations.`,
+    `   • Apply ${clean} to a given scenario or problem.`,
     '',
     '6. Memory hook',
     `   ${memoryHook(clean)}`,

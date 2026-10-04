@@ -12,7 +12,9 @@ type LabelStyle = 'long' | 'short';
 const UNITS: readonly Unit[] = ['days', 'hours', 'minutes', 'seconds'];
 
 /** [singular, plural] per unit, per variant and label length. */
-const LABELS: Record<'boxes' | 'compact', Record<LabelStyle, Record<Unit, readonly [string, string]>>> = {
+type LabelSet = Record<Unit, readonly [singular: string, plural: string]>;
+
+const LABELS: Record<'boxes' | 'compact', Record<LabelStyle, LabelSet>> = {
   boxes: {
     long: {
       days: ['Day', 'Days'],
@@ -43,7 +45,11 @@ const LABELS: Record<'boxes' | 'compact', Record<LabelStyle, Record<Unit, readon
   },
 };
 
-const ENTERING = FadeInDown.duration(220).withInitialValues({ opacity: 0, transform: [{ translateY: 10 }] });
+// The new value rises in from just below while the old one drifts up and out.
+const ENTERING = FadeInDown.duration(220).withInitialValues({
+  opacity: 0,
+  transform: [{ translateY: 10 }],
+});
 const EXITING = FadeOutUp.duration(180);
 
 /** Days are shown as-is; every other unit is zero-padded ("08"). */
@@ -64,7 +70,12 @@ export interface TickingNumberProps {
  * numerals keep neighbours from shifting while the digits change. Wrap a group
  * of these in `LayoutAnimationConfig skipEntering` to avoid animating on mount.
  */
-export function TickingNumber({ value, variant = 'number', color = 'text', style }: TickingNumberProps) {
+export function TickingNumber({
+  value,
+  variant = 'number',
+  color = 'text',
+  style,
+}: TickingNumberProps) {
   const { lineHeight } = textVariants[variant];
   return (
     <View style={[styles.ticker, { height: lineHeight }, style]}>
@@ -119,7 +130,8 @@ export function CountdownBlocks({
           const [singular, plural] = labelSet[unit];
           const label = value === 1 ? singular : plural;
           const shell = [
-            isBoxes ? styles.box : [styles.chip, { gap: labelStyle === 'long' ? spacing.xs : spacing.xxs }],
+            isBoxes ? styles.box : styles.chip,
+            !isBoxes && { gap: labelStyle === 'long' ? spacing.xs : spacing.xxs },
             { backgroundColor: colors.surfaceMuted, borderColor: colors.border },
           ];
           return (
@@ -132,7 +144,10 @@ export function CountdownBlocks({
                   style={[StyleSheet.absoluteFill, styles.tint]}
                 />
               ) : null}
-              <TickingNumber value={formatCountdownUnit(unit, value)} variant={isBoxes ? 'h2' : 'title'} />
+              <TickingNumber
+                value={formatCountdownUnit(unit, value)}
+                variant={isBoxes ? 'h2' : 'title'}
+              />
               <AppText variant="caption" color="textSecondary" numberOfLines={1}>
                 {label}
               </AppText>

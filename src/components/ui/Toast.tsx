@@ -178,7 +178,13 @@ function ToastShell({
   );
 }
 
-function ToastText({ overline, title, message }: { overline?: string; title: string; message?: string }) {
+interface ToastTextProps {
+  overline?: string;
+  title: string;
+  message?: string;
+}
+
+function ToastText({ overline, title, message }: ToastTextProps) {
   return (
     <View style={styles.text}>
       {overline ? (

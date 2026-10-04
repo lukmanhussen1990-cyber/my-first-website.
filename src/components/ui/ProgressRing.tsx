@@ -88,7 +88,11 @@ export function ProgressRing({
         <Defs>
           <LinearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
             {gradient.map((color, index) => (
-              <Stop key={`${color}-${index}`} offset={lastStop ? index / lastStop : 0} stopColor={color} />
+              <Stop
+                key={`${color}-${index}`}
+                offset={lastStop ? index / lastStop : 0}
+                stopColor={color}
+              />
             ))}
           </LinearGradient>
         </Defs>

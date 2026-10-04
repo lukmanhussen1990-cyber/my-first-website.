@@ -3,7 +3,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 
 import { MODEL, type Assistant, type AssistantCallMeta } from './assistant.js';
 import { BODY_LIMIT_BYTES, type Config } from './config.js';
-import { describeError, HttpError, toHttpError, type AbortReason } from './errors.js';
+import { describeError, HttpError, RefusalError, toHttpError, type AbortReason } from './errors.js';
 import {
   applyCors,
   clientIp,
@@ -183,6 +183,7 @@ export function createApp({ config, assistant, rateLimiter, logger }: AppDeps): 
     } catch (error) {
       const httpError = toHttpError(error);
       log.errorCode = httpError.code;
+      if (httpError instanceof RefusalError) log.refusalCategory = httpError.category;
       if (httpError.status >= 500 && httpError.cause !== undefined) Object.assign(log, describeError(httpError));
       if (res.destroyed) {
         // The client went away; there is nobody to answer, so log here ('finish' won't fire).

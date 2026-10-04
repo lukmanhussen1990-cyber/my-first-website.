@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, {
   Circle,
   ClipPath,
@@ -156,54 +156,50 @@ export function LogoMark({ size, variant = 'full', style, accessibilityLabel }: 
   const isFull = variant === 'full';
 
   const a11y = accessibilityLabel
-    ? { accessible: true, accessibilityRole: 'image' as const, accessibilityLabel }
-    : { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' as const };
+    ? ({ accessible: true, role: 'img', 'aria-label': accessibilityLabel } as const)
+    : ({ 'aria-hidden': true } as const);
 
   return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox={isFull ? `0 0 ${CANVAS} ${CANVAS}` : GLYPH_VIEWBOX}
-      style={style}
-      {...a11y}
-    >
-      <Defs>
-        {(isFull ? FULL_GRADIENTS : GLYPH_GRADIENTS).map((name) => (
-          <GradientDef key={name} id={id(name)} spec={GRADIENTS[name]} />
-        ))}
-        {isFull ? (
-          <ClipPath id={id('tile')}>
-            <Rect width={CANVAS} height={CANVAS} rx={CANVAS * LOGO_CORNER_RATIO} />
-          </ClipPath>
-        ) : null}
-      </Defs>
-
-      {isFull ? (
-        <G clipPath={`url(#${id('tile')})`}>
-          <Rect width={CANVAS} height={CANVAS} fill={fill('sky')} />
-          <Rect width={CANVAS} height={612} fill={fill('glow')} />
-          {SPARKLES.map((star) => (
-            <Path key={star.d} d={star.d} fill="#FFFFFF" fillOpacity={star.opacity} />
+    <View style={[{ width: size, height: size }, style]} {...a11y}>
+      <Svg width={size} height={size} viewBox={isFull ? `0 0 ${CANVAS} ${CANVAS}` : GLYPH_VIEWBOX}>
+        <Defs>
+          {(isFull ? FULL_GRADIENTS : GLYPH_GRADIENTS).map((name) => (
+            <GradientDef key={name} id={id(name)} spec={GRADIENTS[name]} />
           ))}
-          <Circle cx={STAR_DOT.cx} cy={STAR_DOT.cy} r={STAR_DOT.r} fill="#FFFFFF" fillOpacity={STAR_DOT.opacity} />
-          <Rect {...HALO} fill={fill('halo')} />
-          <Path d={SUN} fill={fill('sun')} />
-          <Path d={GROUND} fill={fill('ground')} />
-          <Path d={HILL_RIM} fill="none" stroke={fill('rim')} strokeWidth={5} strokeLinecap="round" />
-          <Path d={ROAD} fill={fill('road')} />
-          <Path d={ROAD_EDGES} fill={fill('edge')} />
-          <Path d={ROAD_DASHES} fill="#FFFFFF" />
-        </G>
-      ) : (
-        <G>
-          <Rect {...HALO} fill={fill('halo')} />
-          <Rect {...HORIZON} fill={fill('horizon')} />
-          <Path d={SUN} fill={fill('sun')} />
-          <Path d={ROAD} fill={fill('roadFade')} />
-          <Path d={ROAD_EDGES} fill={fill('edgeFade')} />
-          <Path d={ROAD_DASHES} fill={fill('dashFade')} />
-        </G>
-      )}
-    </Svg>
+          {isFull ? (
+            <ClipPath id={id('tile')}>
+              <Rect width={CANVAS} height={CANVAS} rx={CANVAS * LOGO_CORNER_RATIO} />
+            </ClipPath>
+          ) : null}
+        </Defs>
+
+        {isFull ? (
+          <G clipPath={`url(#${id('tile')})`}>
+            <Rect width={CANVAS} height={CANVAS} fill={fill('sky')} />
+            <Rect width={CANVAS} height={612} fill={fill('glow')} />
+            {SPARKLES.map((star) => (
+              <Path key={star.d} d={star.d} fill="#FFFFFF" fillOpacity={star.opacity} />
+            ))}
+            <Circle cx={STAR_DOT.cx} cy={STAR_DOT.cy} r={STAR_DOT.r} fill="#FFFFFF" fillOpacity={STAR_DOT.opacity} />
+            <Rect {...HALO} fill={fill('halo')} />
+            <Path d={SUN} fill={fill('sun')} />
+            <Path d={GROUND} fill={fill('ground')} />
+            <Path d={HILL_RIM} fill="none" stroke={fill('rim')} strokeWidth={5} strokeLinecap="round" />
+            <Path d={ROAD} fill={fill('road')} />
+            <Path d={ROAD_EDGES} fill={fill('edge')} />
+            <Path d={ROAD_DASHES} fill="#FFFFFF" />
+          </G>
+        ) : (
+          <G>
+            <Rect {...HALO} fill={fill('halo')} />
+            <Rect {...HORIZON} fill={fill('horizon')} />
+            <Path d={SUN} fill={fill('sun')} />
+            <Path d={ROAD} fill={fill('roadFade')} />
+            <Path d={ROAD_EDGES} fill={fill('edgeFade')} />
+            <Path d={ROAD_DASHES} fill={fill('dashFade')} />
+          </G>
+        )}
+      </Svg>
+    </View>
   );
 }

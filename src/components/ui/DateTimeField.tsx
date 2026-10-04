@@ -1,6 +1,14 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import Animated, { FadeInDown, SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -221,7 +229,11 @@ function IOSPickerSheet({
           entering={SlideInDown.springify().damping(20).stiffness(180)}
           style={[
             styles.sheet,
-            { backgroundColor: colors.surface, borderColor: colors.border, paddingBottom: insets.bottom + spacing.lg },
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              paddingBottom: insets.bottom + spacing.lg,
+            },
           ]}
         >
           <View style={[styles.grabber, { backgroundColor: colors.track }]} />
@@ -250,7 +262,16 @@ function IOSPickerSheet({
 }
 
 /** Web: the native picker isn't available, so use MonthCalendar + time steppers. */
-function WebPickerModal({ open, title, mode, draft, minimumDate, onDraft, onCancel, onDone }: PickerSheetProps) {
+function WebPickerModal({
+  open,
+  title,
+  mode,
+  draft,
+  minimumDate,
+  onDraft,
+  onCancel,
+  onDone,
+}: PickerSheetProps) {
   const { colors } = useTheme();
   const [month, setMonth] = useState(() => startOfMonth(draft));
   // Follow the draft when the modal (re)opens on a different month.
@@ -287,13 +308,21 @@ function WebPickerModal({ open, title, mode, draft, minimumDate, onDraft, onCanc
               month={month}
               selected={toDayKey(draft)}
               onMonthChange={setMonth}
-              onSelect={(day) => onDraft(withTime(fromDayKey(day), draft.getHours(), draft.getMinutes()))}
+              onSelect={(day) =>
+                onDraft(withTime(fromDayKey(day), draft.getHours(), draft.getMinutes()))
+              }
               minDay={minimumDate ? toDayKey(minimumDate) : undefined}
             />
           ) : null}
           {hasTime ? <TimeSteppers value={draft} onChange={onDraft} /> : null}
           <View style={styles.actions}>
-            <GradientButton label="Cancel" variant="secondary" size="md" onPress={onCancel} style={styles.flex} />
+            <GradientButton
+              label="Cancel"
+              variant="secondary"
+              size="md"
+              onPress={onCancel}
+              style={styles.flex}
+            />
             <GradientButton label="Done" size="md" onPress={onDone} style={styles.flex} />
           </View>
         </Animated.View>
@@ -313,7 +342,12 @@ function Stepper({
 }) {
   return (
     <View style={styles.stepper}>
-      <IconButton icon="minus" size="sm" accessibilityLabel={`Earlier ${label.toLowerCase()}`} onPress={() => onStep(-1)} />
+      <IconButton
+        icon="minus"
+        size="sm"
+        accessibilityLabel={`Earlier ${label.toLowerCase()}`}
+        onPress={() => onStep(-1)}
+      />
       <AppText
         variant="h2"
         tabular
@@ -328,7 +362,12 @@ function Stepper({
       >
         {display}
       </AppText>
-      <IconButton icon="plus" size="sm" accessibilityLabel={`Later ${label.toLowerCase()}`} onPress={() => onStep(1)} />
+      <IconButton
+        icon="plus"
+        size="sm"
+        accessibilityLabel={`Later ${label.toLowerCase()}`}
+        onPress={() => onStep(1)}
+      />
     </View>
   );
 }
@@ -342,9 +381,9 @@ function TimeSteppers({ value, onChange }: { value: Date; onChange: (date: Date)
 
   const stepHour = (delta: -1 | 1) => onChange(withTime(value, (hours + delta + 24) % 24, minutes));
   const stepMinute = (delta: -1 | 1) => {
-    const offset = minutes % MINUTE_STEP;
     // Snap to the 5-minute grid first, then step; wraps within the hour.
-    const next = delta > 0 ? minutes - offset + MINUTE_STEP : offset ? minutes - offset : minutes - MINUTE_STEP;
+    const floor = minutes - (minutes % MINUTE_STEP);
+    const next = delta > 0 ? floor + MINUTE_STEP : floor === minutes ? minutes - MINUTE_STEP : floor;
     onChange(withTime(value, hours, (next + 60) % 60));
   };
   const setMeridiem = (pm: boolean) => {

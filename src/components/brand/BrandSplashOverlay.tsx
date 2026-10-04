@@ -1,5 +1,5 @@
 import { useEffect, useEffectEvent, useId, useState, type ReactNode } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -95,8 +95,7 @@ export function BrandSplashOverlay({ onDone }: BrandSplashOverlayProps) {
 
   return (
     <Animated.View
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      aria-hidden
       style={[
         StyleSheet.absoluteFill,
         styles.overlay,
@@ -106,21 +105,23 @@ export function BrandSplashOverlay({ onDone }: BrandSplashOverlayProps) {
     >
       <BackdropGlow isDark={isDark} />
 
-      <Animated.View style={[styles.logo, logoStyle]}>
-        <LogoGlow isDark={isDark} />
-        <LogoMark size={LOGO_SIZE} />
-      </Animated.View>
+      <View style={styles.content}>
+        <Animated.View style={[styles.logo, logoStyle]}>
+          <LogoGlow isDark={isDark} />
+          <LogoMark size={LOGO_SIZE} />
+        </Animated.View>
 
-      <RiseIn progress={title}>
-        <AppText variant="display" align="center">
-          Last Mile
-        </AppText>
-      </RiseIn>
-      <RiseIn progress={tagline}>
-        <AppText variant="script" color="textSecondary" align="center" style={styles.tagline}>
-          One final push before freedom.
-        </AppText>
-      </RiseIn>
+        <RiseIn progress={title}>
+          <AppText variant="display" align="center">
+            Last Mile
+          </AppText>
+        </RiseIn>
+        <RiseIn progress={tagline}>
+          <AppText variant="script" color="textSecondary" align="center" style={styles.tagline}>
+            One final push before freedom.
+          </AppText>
+        </RiseIn>
+      </View>
     </Animated.View>
   );
 }
@@ -178,6 +179,9 @@ function BackdropGlow({ isDark }: { isDark: boolean }) {
 const styles = StyleSheet.create({
   overlay: {
     zIndex: 1000,
+  },
+  content: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xxl,

@@ -172,8 +172,7 @@ export function WeekStrip({
               const isSelected = index === selectedIndex;
               const isToday = key === todayKey;
               const marker = markers?.[key];
-              const dots = markerDotColors(colors, marker);
-              if (isToday) dots.unshift(colors.primary);
+              const dots = [...(isToday ? [colors.primary] : []), ...markerDotColors(colors, marker)];
               return (
                 <PressableScale
                   key={key}
@@ -192,7 +191,12 @@ export function WeekStrip({
                     day={date.getDate()}
                     selected={isSelected}
                     today={isToday}
-                    dots={<DayDots colors={dots.slice(0, 3)} tint={isSelected ? colors.textOnAccent : undefined} />}
+                    dots={
+                      <DayDots
+                        colors={dots.slice(0, 3)}
+                        tint={isSelected ? colors.textOnAccent : undefined}
+                      />
+                    }
                   />
                 </PressableScale>
               );

@@ -79,10 +79,7 @@ export function CountdownRing({
             {ROWS.map(({ unit, singular, plural }, index) => (
               <View
                 key={unit}
-                style={[
-                  styles.row,
-                  index > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-                ]}
+                style={[styles.row, index > 0 && [styles.divider, { borderTopColor: colors.border }]]}
               >
                 <TickingNumber
                   value={formatCountdownUnit(unit, parts[unit])}
@@ -123,6 +120,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.sm + 2,
+  },
+  divider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   rowNumber: {
     width: 30,

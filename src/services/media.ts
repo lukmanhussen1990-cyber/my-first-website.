@@ -58,13 +58,14 @@ export async function persistFile(uri: string, folder: MediaFolder): Promise<str
 }
 
 /**
- * Deletes a file previously persisted by `persistFile`. Only touches files inside
- * the app's document directory (never bundled assets or remote URIs). No-op on web.
+ * Deletes a file persisted by `persistFile` (or a temporary recording). Only
+ * touches files inside the app's document/cache directories — never bundled
+ * assets or remote URIs. No-op on web.
  */
 export async function deleteFile(uri?: string): Promise<void> {
   if (isWeb || !uri) return;
   try {
-    if (!uri.startsWith(Paths.document.uri)) return;
+    if (!uri.startsWith(Paths.document.uri) && !uri.startsWith(Paths.cache.uri)) return;
     const file = new File(uri);
     if (file.exists) file.delete();
   } catch {
