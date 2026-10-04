@@ -3,6 +3,7 @@ import {
   buildStudyContext,
   checklistProgress,
   computeStreak,
+  countdownStartIso,
   evaluateAchievements,
   examSchedule,
   getCountdown,
@@ -349,5 +350,23 @@ describe('evaluateAchievements', () => {
     const examCompletedAt = at(2026, 10, 12, 12).toISOString();
     expect(evaluate({ examCompletedAt, now: at(2026, 10, 12, 13) })).toEqual(['exam-conqueror']);
     expect(evaluate({ examCompletedAt, now: at(2026, 10, 12, 19) })).toEqual(['exam-conqueror', 'homebound']);
+  });
+});
+
+describe('countdownStartIso', () => {
+  const exam = new Date(2026, 9, 12, 9).toISOString();
+
+  it('uses the 30-day final stretch when the journey started recently', () => {
+    const started = new Date(2026, 9, 4, 20).toISOString();
+    expect(countdownStartIso(exam, started)).toBe(new Date(new Date(exam).getTime() - 30 * 86_400_000).toISOString());
+  });
+
+  it('keeps an earlier journey start', () => {
+    const started = new Date(2026, 7, 1).toISOString();
+    expect(countdownStartIso(exam, started)).toBe(started);
+  });
+
+  it('falls back to the journey start for a malformed exam date', () => {
+    expect(countdownStartIso('nope', exam)).toBe(exam);
   });
 });

@@ -48,6 +48,11 @@ export interface ProgressSummary {
   total: number;
 }
 
+/** Finds a subject by id (undefined for missing ids or unassigned tasks). */
+export function subjectById(subjects: readonly Subject[], id: string | undefined): Subject | undefined {
+  return id ? subjects.find((subject) => subject.id === id) : undefined;
+}
+
 /** Done / total chapters (0 when the subject has none). */
 export function subjectProgress(subject: Pick<Subject, 'chapters'>): number {
   const total = subject.chapters.length;
@@ -258,6 +263,22 @@ export interface CountdownState extends CountdownParts {
   isPast: boolean;
   /** Elapsed fraction between `start` and the target, clamped 0–1 (0/1 by isPast without a start). */
   progress: number;
+}
+
+/** Length of the "final stretch" the exam countdown ring visualises. */
+export const FINAL_STRETCH_DAYS = 30;
+
+/**
+ * Baseline for the exam countdown ring: the final 30-day stretch before the
+ * exam, or the moment the journey started if that was even earlier — so the
+ * ring is meaningful from day one instead of starting empty.
+ */
+export function countdownStartIso(examIso: IsoDateTime, journeyStartedAt: IsoDateTime): IsoDateTime {
+  const exam = timeOf(examIso);
+  if (Number.isNaN(exam)) return journeyStartedAt;
+  const stretch = exam - FINAL_STRETCH_DAYS * 24 * 60 * 60 * 1000;
+  const started = timeOf(journeyStartedAt);
+  return new Date(Number.isNaN(started) ? stretch : Math.min(started, stretch)).toISOString();
 }
 
 /** Countdown to `targetIso` at `now`; malformed targets count as already past. */
