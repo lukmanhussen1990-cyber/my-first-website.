@@ -1,0 +1,156 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Higgsfield opening</title>
+<style>
+@font-face{font-family:Manrope;src:url(fonts/Manrope700.woff2) format('woff2');font-weight:700}
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#000}
+#stage{position:absolute;inset:0;background:#000;transform-origin:50% 50%}
+#bgglow{position:absolute;inset:0;background:radial-gradient(ellipse 1150px 680px at 50% 50%,rgba(211,255,24,.06),rgba(211,255,24,0) 70%);opacity:0}
+#burst{position:absolute;width:1000px;height:1000px;border-radius:50%;background:radial-gradient(circle,rgba(245,255,190,.85) 0%,rgba(211,255,24,.4) 14%,rgba(211,255,24,0) 56%);opacity:0;transform:translate(-50%,-50%)}
+#ring,#ring2{position:absolute;border-radius:50%;border:3px solid rgba(211,255,24,.85);opacity:0;transform:translate(-50%,-50%);box-shadow:0 0 28px rgba(211,255,24,.45),inset 0 0 28px rgba(211,255,24,.25)}
+#lockup{position:absolute;left:0;top:0}
+#glyph{position:absolute;left:0;top:0;transform-origin:0 0;overflow:visible}
+#word{position:absolute;left:0;top:0;font:700 190px/1 Manrope,sans-serif;color:#D3FF18;white-space:nowrap;letter-spacing:-0.035em}
+#word .ch{display:inline-block;will-change:transform,filter,opacity}
+#shine{position:absolute;left:0;top:0;opacity:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+#shine .w{position:absolute;left:0;top:0;font:700 190px/1 Manrope,sans-serif;color:#F7FFD6;white-space:nowrap;letter-spacing:-0.035em}
+#shine svg{position:absolute;left:0;top:0;overflow:visible}
+</style></head>
+<body>
+<div id="stage">
+  <div id="bgglow"></div>
+  <div id="burst"></div><div id="ring"></div><div id="ring2"></div>
+  <div id="lockup">
+    <svg id="glyph" viewBox="0 0 20 20">
+      <defs>
+        <clipPath id="gclip"><path id="gshape" clip-rule="evenodd"/></clipPath>
+        <radialGradient id="spark"><stop offset="0" stop-color="#ffffff"/><stop offset="0.25" stop-color="#F2FFB0"/><stop offset="0.55" stop-color="#D3FF18" stop-opacity=".6"/><stop offset="1" stop-color="#D3FF18" stop-opacity="0"/></radialGradient>
+        <filter id="softblur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="0.35"/></filter>
+      </defs>
+      <g clip-path="url(#gclip)">
+        <path id="draw" fill="none" stroke="#D3FF18" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+      <circle id="tipglow" r="2.6" fill="url(#spark)" opacity="0" filter="url(#softblur)"/>
+      <circle id="tip" r="0.75" fill="#ffffff" opacity="0"/>
+    </svg>
+    <div id="word"></div>
+    <div id="shine"><svg viewBox="0 0 20 20"><path fill="#F7FFD6" fill-rule="evenodd"/></svg><div class="w">Higgsfield</div></div>
+  </div>
+</div>
+<script>
+const GLYPH="M18.3498 9.83713L18.3339 9.65759C18.1831 7.93447 17.0963 4.69261 14.0816 4.69261C11.8445 4.69261 10.1545 6.97097 8.66311 8.97967C7.47302 10.5883 6.4419 11.9683 5.3073 11.9683C5.00574 11.9357 4.61708 11.7805 4.3792 11.4294C4.16497 11.1108 4.10948 10.7026 4.22046 10.2126C4.39489 9.43684 5.39463 8.7182 6.44963 7.95063C7.02864 7.54238 7.6238 7.10955 8.03634 6.69311C9.22643 5.5091 9.82932 4.65164 9.82932 3.2717C9.82932 1.89176 9.09157 1.20565 8.47276 0.911636C7.23514 0.323844 5.41851 0.666781 4.26026 1.69583C4.08583 1.85922 3.91117 2.01418 3.75243 2.16119C2.58622 3.23097 1.80094 3.95781 0 3.40232V5.63972C2.38791 6.72588 4.39512 4.65164 5.15675 3.69633C5.74372 3.06758 6.36253 2.70006 6.82283 2.70006H6.84671C7.05298 2.70825 7.22741 2.78995 7.35454 2.93696C7.56081 3.18204 7.64018 3.46786 7.60038 3.78622C7.51305 4.45594 6.83875 5.23967 5.60113 6.09713C4.14928 7.10159 1.7218 8.78374 1.53122 10.8987C1.3884 12.4177 2.15003 13.9365 3.34012 14.5243C6.11669 15.8798 7.80665 13.5444 9.5994 11.0783C10.9719 9.1756 12.273 7.37103 14.0818 7.37103C15.7081 7.37103 16.311 8.75916 16.311 9.63301V9.80459L16.1523 9.83713C12.2095 10.5558 10.0595 14.3611 10.0595 16.1167C10.0595 17.8724 11.5034 19.375 13.2804 19.375C15.359 19.375 17.9293 17.5458 18.3419 12.4013L18.3578 12.2136H20V9.83737H18.3498V9.83713ZM16.1998 12.4746C15.8826 15.5531 14.3513 16.9904 13.4232 16.9904C13.0027 16.9904 12.4158 16.631 12.4158 15.9615C12.4158 15.2104 13.5026 12.932 15.946 12.2543L16.2316 12.1808L16.1998 12.4748V12.4746Z";
+const CENTER="M0,4.5 C2,5.0 3.2,3.6 4.3,2.6 C5.5,1.6 7.5,1.0 8.4,2.2 C9.3,3.6 8.0,5.6 6.6,6.9 C5.0,8.3 2.6,10.0 2.5,12.0 C2.5,13.8 4.3,13.6 5.5,12.6 C7.5,10.9 9.8,7.4 12.0,6.2 C14.0,5.2 16.4,5.9 17.0,8.0 C17.4,9.0 17.3,9.6 17.2,9.9 C15.0,10.6 12.0,13.0 11.3,15.5 C10.9,17.0 12.0,18.2 13.3,18.1 C15.0,18.0 16.8,14.5 17.3,12.4 C17.5,11.5 18.5,11.0 20,11.0";
+document.getElementById('gshape').setAttribute('d',GLYPH); document.querySelector('#shine path').setAttribute('d',GLYPH); document.getElementById('draw').setAttribute('d',CENTER);
+
+// ---------- timeline (seconds) ----------
+const T={draw0:0.30,draw1:1.85, burst:1.85, move0:1.86,move1:2.72, let0:2.02,stag:0.065,letDur:0.62, shine0:3.05,shine1:3.95, out0:5.25,out1:5.95, total:6.0};
+// ---------- easing ----------
+const c01=x=>Math.min(1,Math.max(0,x)), lerp=(a,b,k)=>a+(b-a)*k;
+const seg=(t,a,b)=>c01((t-a)/(b-a));
+const outExpo=x=>x>=1?1:1-Math.pow(2,-10*x);
+const outQuint=x=>1-Math.pow(1-x,5);
+const inOutCubic=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const inOutSine=x=>-(Math.cos(Math.PI*x)-1)/2;
+const inCubic=x=>x*x*x;
+const smooth=x=>x*x*(3-2*x);
+
+// ---------- layout ----------
+const W=1920,H=1080, F=190, LS=-0.035, GX=1.18;
+const el=id=>document.getElementById(id);
+let L={}, drawLen=0;
+const word=el('word');
+word.innerHTML=[...'Higgsfield'].map(c=>`<span class="ch">${c}</span>`).join('');
+const chars=[...word.querySelectorAll('.ch')];
+
+function layout(){
+  const cv=document.createElement('canvas').getContext('2d');
+  cv.font=`700 ${F}px Manrope`; cv.letterSpacing=`${LS*F}px`;
+  const mH=cv.measureText('H'); const capH=mH.actualBoundingBoxAscent;
+  const textW=word.getBoundingClientRect().width - (-LS*F); // drop trailing letter-spacing
+  const G=Math.round(capH*1.22), gap=Math.round(capH*0.36);
+  const lockW=G*GX+gap+textW;
+  const left=(W-lockW)/2;
+  const baseline=H/2+capH/2;             // cap-middle on screen centre
+  const glyphTop=baseline+capH*0.02-G*0.97; // glyph ink bottom just under baseline
+  // text: find ascent to place top so that baseline lands at `baseline`
+  const probe=document.createElement('span'); probe.style.cssText=`position:absolute;font:700 ${F}px/1 Manrope;visibility:hidden`; probe.textContent='H'; document.body.appendChild(probe);
+  const r=document.createRange(); r.selectNodeContents(probe); const pr=probe.getBoundingClientRect(); document.body.removeChild(probe);
+  // with line-height:1 the content box is F tall; baseline offset from top = ascent portion. Measure via canvas
+  const asc=cv.measureText('H').fontBoundingBoxAscent, desc=cv.measureText('H').fontBoundingBoxDescent;
+  const textTop=baseline-asc+((asc+desc)-F)/2;
+  L={capH,G,gap,textW,lockW,left,baseline,glyphTop,textTop,textLeft:left+G*GX+gap};
+  const g=el('glyph'); g.setAttribute('width',G*GX); g.setAttribute('height',G); g.setAttribute('preserveAspectRatio','none');
+  word.style.left=L.textLeft+'px'; word.style.top=textTop+'px';
+  const sh=el('shine'); sh.style.left=left+'px'; sh.style.top=Math.min(glyphTop,textTop)+'px'; sh.style.width=lockW+'px'; sh.style.height=(Math.max(glyphTop+G,textTop+F)-Math.min(glyphTop,textTop))+'px';
+  const ssvg=sh.querySelector('svg'); ssvg.setAttribute('width',G*GX); ssvg.setAttribute('height',G); ssvg.setAttribute('preserveAspectRatio','none'); ssvg.style.top=(glyphTop-parseFloat(sh.style.top))+'px';
+  const sw=sh.querySelector('.w'); sw.style.left=(G*GX+gap)+'px'; sw.style.top=(textTop-parseFloat(sh.style.top))+'px';
+  drawLen=el('draw').getTotalLength();
+  el('draw').setAttribute('stroke-dasharray',`${drawLen} ${drawLen+10}`);
+}
+
+// ---------- per-frame ----------
+window.seek=function(t){
+  const stage=el('stage');
+  // glyph transform: starts centred & larger, eases to lock-up position
+  const k=outExpo(seg(t,T.move0,T.move1));
+  const s0=2.0, s=lerp(s0,1,k);
+  const cx=lerp(W/2,L.left+L.G*GX/2,k), cy=lerp(H/2,L.glyphTop+L.G/2,k);
+  const g=el('glyph');
+  g.style.transform=`translate(${cx-L.G*GX*s/2}px,${cy-L.G*s/2}px) scale(${s})`;
+  // draw-on
+  const pd=inOutSine(seg(t,T.draw0,T.draw1));
+  const draw=el('draw');
+  draw.setAttribute('stroke-dashoffset',drawLen*(1-pd));
+  draw.style.opacity=pd>0?1:0;
+  const tipOn=pd>0&&pd<1;
+  const pt=draw.getPointAtLength(drawLen*pd);
+  for(const id of['tip','tipglow']){const c=el(id); c.setAttribute('cx',pt.x); c.setAttribute('cy',pt.y);}
+  const tipFade=Math.min(seg(t,T.draw0,T.draw0+0.12),1-seg(t,T.draw1-0.15,T.draw1));
+  el('tip').setAttribute('opacity',tipOn?0.95*tipFade:0);
+  el('tipglow').setAttribute('opacity',tipOn?0.9*tipFade:0);
+  // glyph glow: bright while drawing / bursting, settles to a soft halo, breathes on hold
+  const burst=t<T.burst?Math.exp(-Math.pow((t-T.burst)/0.07,2)):Math.exp(-(t-T.burst)/0.26);
+  const breathe=0.5+0.5*Math.sin((t-3.5)*1.6);
+  const glow=lerp(10,22,pd)+40*burst+6*breathe;
+  const ga=0.35+0.45*burst+0.12*breathe;
+  g.style.filter=`drop-shadow(0 0 ${glow}px rgba(211,255,24,${ga}))`;
+  // background glow + burst flash
+  el('bgglow').style.opacity=0.0+1.0*smooth(seg(t,T.draw0,T.draw1))*(1-0.0);
+  const b=el('burst'); b.style.left=cx+'px'; b.style.top=cy+'px'; b.style.opacity=0.9*burst;
+  b.style.transform=`translate(-50%,-50%) scale(${lerp(0.6,1.25,seg(t,T.burst-0.3,T.burst+0.5))})`;
+  // shockwave rings
+  for(const [id,off,maxD,a0] of [['ring',0,1500,0.85],['ring2',0.09,2100,0.4]]){
+    const u=seg(t,T.burst+off,T.burst+off+0.75); const e=1-Math.pow(1-u,3);
+    const R=el(id); const D=lerp(L.G*s*0.7,maxD,e);
+    R.style.left=cx+'px'; R.style.top=cy+'px'; R.style.width=D+'px'; R.style.height=D+'px';
+    R.style.opacity=(u>0&&u<1)?a0*Math.pow(1-u,1.6):0; R.style.borderWidth=lerp(5,1,e)+'px';
+  }
+  // letters cascade
+  chars.forEach((c,i)=>{
+    const u=seg(t,T.let0+i*T.stag,T.let0+i*T.stag+T.letDur);
+    const e=outQuint(u);
+    const op=c01(u*2.2);
+    c.style.opacity=op;
+    c.style.transform=`translateY(${(1-e)*0.55*F}px) scale(${lerp(0.92,1,e)})`;
+    c.style.filter=`blur(${(1-e)*14}px)`;
+  });
+  word.style.filter=`drop-shadow(0 0 ${14+6*breathe}px rgba(211,255,24,${0.28+0.1*breathe}))`;
+  // shine sweep
+  const sh=el('shine'); const sp=seg(t,T.shine0,T.shine1);
+  if(sp>0&&sp<1){
+    sh.style.opacity=1;
+    const m=`linear-gradient(104deg,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 45.5%,rgba(0,0,0,.95) 50%,rgba(0,0,0,0) 54.5%,rgba(0,0,0,0) 100%)`;
+    sh.style.webkitMaskImage=m; sh.style.maskImage=m;
+    const mw=L.lockW*2.2; sh.style.webkitMaskSize=`${mw}px 100%`; sh.style.maskSize=`${mw}px 100%`;
+    const x=lerp(-mw+ -0.1*L.lockW, L.lockW+0.1*L.lockW, inOutSine(sp)) ; // band centre at x+mw/2
+    sh.style.webkitMaskPosition=`${x+ -mw*0.0}px 0`; sh.style.maskPosition=`${x}px 0`;
+  } else sh.style.opacity=0;
+  // fade-out
+  const o=inCubic(seg(t,T.out0,T.out1));
+  stage.style.opacity=1-o;
+  stage.style.transform=`scale(${lerp(1,1.045,o)})`;
+};
+window.ready=(async()=>{await document.fonts.load('700 190px Manrope');await document.fonts.ready;layout();seek(0);})();
+// live preview when opened in a browser
+if(location.hash==='#play'){window.ready.then(()=>{const t0=performance.now();(function f(){const t=((performance.now()-t0)/1000)%T.total;seek(t);requestAnimationFrame(f);})();});}
+</script>
+</body></html>
