@@ -21,6 +21,8 @@
   .screen h1 { font-size: clamp(32px, 7vw, 72px); letter-spacing: 0.25em; margin: 0 0 0.3em; color: #f3e6a2; text-shadow: 0 0 18px rgba(255, 220, 120, 0.35); }
   .screen p { max-width: 640px; line-height: 1.5; opacity: 0.85; padding: 0 16px; }
   .btn { pointer-events: auto; cursor: pointer; background: rgba(40, 34, 14, 0.85); color: #f1e4a6; border: 1px solid #8a7a3a; padding: 12px 28px; margin: 6px; font: inherit; font-size: 18px; letter-spacing: 0.15em; min-width: 240px; }
+  #scareOverlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; z-index: 20; }
+  #scareOverlay canvas { height: 118vh; max-width: none; }
   .btn:hover { background: rgba(90, 76, 28, 0.9); }
 </style>
 </head>
@@ -35,6 +37,14 @@
   <h1>THE BACKROOMS</h1>
   <p>Click to enter. WASD to move, mouse to look, Shift to run, C to crouch.</p>
   <button class="btn" id="btnStart">ENTER</button>
+</div>
+
+<div id="scareOverlay"></div>
+
+<div id="gameOverScreen" class="screen hidden">
+  <h1>YOU WERE CAUGHT</h1>
+  <p>You survived <span id="goTime">0:00</span>.</p>
+  <button class="btn" id="btnRetry">TRY AGAIN</button>
 </div>
 
 <div id="loadError" class="screen hidden">
@@ -1317,6 +1327,625 @@ function updateAmbientAudio(dt) {
 }
 
 // ============================================================================
+//  LIGHT SAMPLING (CPU) — how lit is a point right now?
+// ============================================================================
+function sampleLight(x, z, y = 1.0) {
+  const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL);
+  let sum = 0;
+  for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) {
+    const lx = cx + dx, lz = cz + dz, t = world.lightType(lx, lz);
+    if (t < 0 || t === LIGHT.BROKEN) continue;
+    const px = (lx + 0.5) * CELL, pz = (lz + 0.5) * CELL;
+    const d2 = (px - x) ** 2 + (pz - z) ** 2 + (LIGHT_Y - y) ** 2;
+    if (d2 > LIGHT_R2) continue;
+    const lvl = lightLevelCPU(world.lightSeed(lx, lz), px, pz);
+    if (lvl <= 0.01) continue;
+    if (!world.segmentClear(px, pz, x, z)) continue;
+    let win = 1 - d2 / LIGHT_R2; win *= win;
+    sum += (lvl * LIGHT_I * win) / (1 + LIGHT_A * d2);
+  }
+  return sum;
+}
+
+// ============================================================================
+//  PATHFINDING (A* on the cell grid)
+// ============================================================================
+const PF = { open: [], g: new Map(), from: new Map(), closed: new Set() };
+const pk = (x, z) => (x + 32768) * 65536 + (z + 32768);
+const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+function heapPush(h, item) { h.push(item); let i = h.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (h[p][0] <= h[i][0]) break; [h[p], h[i]] = [h[i], h[p]]; i = p; } }
+function heapPop(h) {
+  const top = h[0], last = h.pop();
+  if (h.length) { h[0] = last; let i = 0; for (;;) { const l = i * 2 + 1, r = l + 1; let m = i; if (l < h.length && h[l][0] < h[m][0]) m = l; if (r < h.length && h[r][0] < h[m][0]) m = r; if (m === i) break; [h[m], h[i]] = [h[i], h[m]]; i = m; } }
+  return top;
+}
+function findPath(sx, sz, tx, tz, maxNodes = 3000) {
+  const { g, from, closed } = PF; const open = [];
+  g.clear(); from.clear(); closed.clear();
+  const sk = pk(sx, sz), tk = pk(tx, tz);
+  g.set(sk, 0); heapPush(open, [Math.abs(tx - sx) + Math.abs(tz - sz), sx, sz]);
+  let expanded = 0, best = null, bestH = Infinity;
+  while (open.length) {
+    const [, x, z] = heapPop(open), k = pk(x, z);
+    if (closed.has(k)) continue;
+    closed.add(k);
+    const hh = Math.abs(tx - x) + Math.abs(tz - z);
+    if (hh < bestH) { bestH = hh; best = k; }
+    if (k === tk) { best = k; break; }
+    if (++expanded > maxNodes) break;
+    const gk = g.get(k);
+    for (let d = 0; d < 4; d++) {
+      if (!world.open(x, z, d)) continue;
+      const nx = x + DIRS[d][0], nz = z + DIRS[d][1], nk = pk(nx, nz);
+      if (closed.has(nk)) continue;
+      const ng = gk + 1;
+      if (ng < (g.has(nk) ? g.get(nk) : Infinity)) { g.set(nk, ng); from.set(nk, k); heapPush(open, [ng + Math.abs(tx - nx) + Math.abs(tz - nz), nx, nz]); }
+    }
+  }
+  if (best === null) return null;
+  const path = [];
+  let k = best;
+  while (k !== sk && k !== undefined) { path.push([Math.floor(k / 65536) - 32768, (k % 65536) - 32768]); k = from.get(k); }
+  path.reverse();
+  return path;   // may end at the closest reachable cell if the target was too far
+}
+
+// ============================================================================
+//  MONSTER — model
+// ============================================================================
+const MONSTER_VERT = /* glsl */`
+uniform float uTime;
+uniform float uJitter;
+varying vec3 vWorld;
+varying vec3 vNormal;
+varying float vDepth;
+void main() {
+  vec3 p = position;
+  vec4 wp0 = modelMatrix * vec4(p, 1.0);
+  float n = sin(wp0.y * 27.0 + uTime * 37.0) * sin(wp0.x * 19.0 - uTime * 29.0 + wp0.z * 13.0);
+  p += normal * n * 0.018 * uJitter;
+  vec4 wp = modelMatrix * vec4(p, 1.0);
+  vWorld = wp.xyz;
+  vNormal = normalize(mat3(modelMatrix) * normal);
+  vec4 mv = viewMatrix * wp;
+  vDepth = -mv.z;
+  gl_Position = projectionMatrix * mv;
+}
+`;
+const MONSTER_FRAG = /* glsl */`
+${GLSL_FRAG_COMMON}
+uniform float uEnv;
+uniform float uScare;
+uniform vec3 uLightColor;
+uniform vec3 uBase;
+varying vec3 vWorld;
+varying vec3 vNormal;
+varying float vDepth;
+void main() {
+  vec3 n = normalize(vNormal);
+  vec3 v = normalize(cameraPosition - vWorld);
+  float rim = pow(1.0 - abs(dot(n, v)), 3.0);
+  float skin = texture2D(uNoise, vWorld.xy * 0.9 + vWorld.zy * 0.7).g;
+  vec3 base = uBase * (0.55 + 0.9 * skin);
+  vec3 lit = uLightColor * uEnv * 0.45 + flashlight(vWorld, n) * 0.9 + vec3(0.01);
+  vec3 col = base * lit + rim * vec3(0.012, 0.011, 0.01) * (0.3 + uEnv);
+  col += uScare * (base * 3.0 + rim * vec3(0.12, 0.02, 0.01));
+  col = applyFog(col, vDepth, uEnv * 0.5);
+  gl_FragColor = vec4(toDisplay(col), 1.0);
+}
+`;
+const EYE_FRAG = /* glsl */`
+${GLSL_FRAG_COMMON}
+uniform float uGlow;
+varying vec3 vWorld;
+varying vec3 vNormal;
+varying float vDepth;
+void main() {
+  vec3 col = vec3(0.95, 0.9, 0.8) * uGlow;
+  col = applyFog(col, vDepth * 0.7, 0.2);
+  gl_FragColor = vec4(toDisplay(col), 1.0);
+}
+`;
+const monsterMat = new THREE.ShaderMaterial({
+  uniforms: { ...U, uJitter: { value: 1 }, uEnv: { value: 0.5 }, uScare: { value: 0 }, uBase: { value: new THREE.Color(0.016, 0.014, 0.013) } },
+  vertexShader: MONSTER_VERT, fragmentShader: MONSTER_FRAG,
+});
+const mouthMat = new THREE.ShaderMaterial({
+  uniforms: { ...U, uJitter: { value: 1 }, uEnv: { value: 0.5 }, uScare: { value: 0 }, uBase: { value: new THREE.Color(0.06, 0.0, 0.0) } },
+  vertexShader: MONSTER_VERT, fragmentShader: MONSTER_FRAG,
+});
+const eyeMat = new THREE.ShaderMaterial({
+  uniforms: { ...U, uJitter: { value: 0 }, uGlow: { value: 0.5 } },
+  vertexShader: MONSTER_VERT, fragmentShader: EYE_FRAG,
+});
+
+function buildMonsterModel() {
+  const cap = (r, l, rs = 8) => new THREE.CapsuleGeometry(r, l, 3, rs);
+  const ball = (r) => new THREE.SphereGeometry(r, 8, 6);
+  const mesh = (geo, mat = monsterMat) => { const m = new THREE.Mesh(geo, mat); m.frustumCulled = false; return m; };
+  // tapered limb from a lathe profile (r0 at top, r1 at bottom), length l, hanging down from origin
+  const limb = (r0, r1, l) => {
+    const pts = [];
+    for (let i = 0; i <= 8; i++) { const t = i / 8; const bulge = Math.sin(t * Math.PI) * 0.18; pts.push(new THREE.Vector2(Math.max(0.004, lerp(r0, r1, t) * (1 + bulge)), -t * l)); }
+    pts.unshift(new THREE.Vector2(0.001, 0.01)); pts.push(new THREE.Vector2(0.001, -l - 0.01));
+    return new THREE.LatheGeometry(pts, 8);
+  };
+  const root = new THREE.Group();
+  const body = new THREE.Group(); root.add(body);
+  const hips = new THREE.Group(); hips.position.y = 1.32; body.add(hips);
+  const pelvis = mesh(cap(0.12, 0.12, 8)); pelvis.rotation.z = Math.PI / 2; pelvis.scale.set(1, 1, 0.7); hips.add(pelvis);
+  const spine = new THREE.Group(); hips.add(spine);
+  // gaunt torso: narrow waist, ribcage, hunched shoulders
+  const prof = [[0.001, 0], [0.11, 0.02], [0.085, 0.25], [0.12, 0.45], [0.19, 0.68], [0.2, 0.82], [0.15, 0.95], [0.05, 1.0], [0.001, 1.0]];
+  const torso = mesh(new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), 10));
+  torso.scale.set(1, 1, 0.62); spine.add(torso);
+  const chest = new THREE.Group(); chest.position.set(0, 0.9, 0.02); chest.rotation.x = 0.25; spine.add(chest);
+  const shoulders = mesh(cap(0.075, 0.4, 6)); shoulders.rotation.z = Math.PI / 2; shoulders.position.y = 0.02; chest.add(shoulders);
+  const neck = new THREE.Group(); neck.position.set(0, 0.06, 0.03); neck.rotation.x = 0.45; chest.add(neck);
+  const neckM = mesh(limb(0.05, 0.045, 0.26)); neckM.rotation.x = Math.PI; neck.add(neckM);
+  const head = new THREE.Group(); head.position.set(0, 0.27, 0.0); head.rotation.x = -0.5; neck.add(head);
+  const skull = mesh(new THREE.SphereGeometry(1, 16, 14)); skull.scale.set(0.12, 0.21, 0.14); skull.position.y = 0.1; head.add(skull);
+  const jawM = mesh(new THREE.SphereGeometry(1, 10, 8)); jawM.scale.set(0.085, 0.09, 0.1); jawM.position.set(0, -0.03, 0.04); head.add(jawM);
+  const jaw = new THREE.Group(); jaw.position.set(0, 0.02, 0.06); head.add(jaw);
+  const mouth = mesh(new THREE.SphereGeometry(1, 10, 8), mouthMat); mouth.scale.set(0.05, 0.02, 0.05); mouth.position.set(0, 0.0, 0.05); mouth.visible = false; jaw.add(mouth);
+  const eyes = [];
+  for (const s of [-1, 1]) {
+    const e = mesh(new THREE.SphereGeometry(0.014, 8, 6), eyeMat); e.position.set(s * 0.045, 0.15, 0.128); head.add(e); eyes.push(e);
+  }
+  const arms = [], legs = [];
+  for (const s of [-1, 1]) {
+    const sh = new THREE.Group(); sh.position.set(s * 0.25, 0.0, 0); chest.add(sh);
+    sh.add(mesh(ball(0.075)));
+    const up = mesh(limb(0.062, 0.042, 0.62)); sh.add(up);
+    const el = new THREE.Group(); el.position.y = -0.62; sh.add(el);
+    el.add(mesh(ball(0.045)));
+    const fo = mesh(limb(0.045, 0.03, 0.6)); el.add(fo);
+    const hand = new THREE.Group(); hand.position.y = -0.6; el.add(hand);
+    const palm = mesh(cap(0.032, 0.07, 6)); palm.position.y = -0.04; palm.scale.set(1.3, 1, 0.55); hand.add(palm);
+    const fingers = [];
+    for (let f = 0; f < 4; f++) {
+      const fg = new THREE.Group(); fg.position.set((f - 1.5) * 0.022, -0.08, 0); fg.rotation.z = (f - 1.5) * 0.1; hand.add(fg);
+      const fm = mesh(limb(0.011, 0.004, 0.26)); fg.add(fm); fingers.push(fg);
+    }
+    arms.push({ sh, el, hand, fingers, s });
+    const hip = new THREE.Group(); hip.position.set(s * 0.11, 0, 0); hips.add(hip);
+    const th = mesh(limb(0.085, 0.055, 0.66)); hip.add(th);
+    const kn = new THREE.Group(); kn.position.y = -0.66; hip.add(kn);
+    kn.add(mesh(ball(0.055)));
+    const sn = mesh(limb(0.06, 0.035, 0.62)); kn.add(sn);
+    const ft = mesh(cap(0.035, 0.16, 4)); ft.rotation.x = Math.PI / 2; ft.position.set(0, -0.63, 0.07); kn.add(ft);
+    legs.push({ hip, kn, s });
+  }
+  return { root, body, hips, spine, chest, neck, head, jaw, mouth, eyes, arms, legs };
+}
+
+// ============================================================================
+//  MONSTER — behaviour
+// ============================================================================
+const MONSTER_SPEED = { 1: { wander: 1.25, investigate: 2.3, chase: 4.35, search: 1.6 }, 2: { wander: 1.6, investigate: 2.8, chase: 5.0, search: 2.0 } };
+const monster = {
+  model: null,
+  pos: new THREE.Vector3(1e4, 0, 1e4),
+  heading: 0,
+  state: 'wander',            // wander | investigate | chase | search
+  path: [], pathTarget: null, repath: 0,
+  target: new THREE.Vector3(),
+  lastSeen: new THREE.Vector3(), lostTimer: 0, searchTimer: 0,
+  seeTimer: 0, sees: false, visCheck: 0,
+  phase: 0, speed: 0, env: 0.5, envTimer: 0,
+  twitch: 0, twitchTarget: new THREE.Vector2(),
+  stepPhase: 0, screechCooldown: 0, directorTimer: 0, stuckTimer: 0,
+  breath: null, active: false, alert: 0,
+};
+function initMonster() {
+  if (!monster.model) {
+    monster.model = buildMonsterModel();
+    scene.add(monster.model.root);
+  }
+  monster.model.root.visible = true;
+}
+function placeMonsterAway(minD, maxD, fromX = player.pos.x, fromZ = player.pos.z) {
+  // find a random cell at the right distance that the player can't see
+  for (let tries = 0; tries < 80; tries++) {
+    const a = Math.random() * Math.PI * 2, d = minD + Math.random() * (maxD - minD);
+    const x = fromX + Math.cos(a) * d, z = fromZ + Math.sin(a) * d;
+    const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL);
+    const mx = (cx + 0.5) * CELL, mz = (cz + 0.5) * CELL;
+    if (world.segmentClear(mx, mz, player.pos.x, player.pos.z) && tries < 60) continue;
+    monster.pos.set(mx, 0, mz);
+    monster.path = []; monster.state = 'wander'; monster.pathTarget = null; monster.sees = false;
+    return true;
+  }
+  return false;
+}
+function resetMonster() {
+  initMonster();
+  placeMonsterAway(38, 50);
+  monster.state = 'wander'; monster.active = true; monster.alert = 0; monster.lostTimer = 0; monster.searchTimer = 0;
+  monster.screechCooldown = 8; monster.directorTimer = 0; monster.heading = Math.random() * Math.PI * 2;
+}
+function monsterCell() { return [Math.floor(monster.pos.x / CELL), Math.floor(monster.pos.z / CELL)]; }
+function setMonsterGoal(x, z) {
+  const [sx, sz] = monsterCell();
+  const tx = Math.floor(x / CELL), tz = Math.floor(z / CELL);
+  monster.path = findPath(sx, sz, tx, tz) || [];
+  monster.pathTarget = [tx, tz];
+  monster.target.set(x, 0, z);
+}
+function pickWanderGoal() {
+  const [sx, sz] = monsterCell();
+  const pcx = Math.floor(player.pos.x / CELL), pcz = Math.floor(player.pos.z / CELL);
+  let tx, tz;
+  // drift towards the player's area (the backrooms "know" you're there)
+  const bias = 0.35 + 0.1 * notesCollected();
+  if (Math.random() < bias) { tx = pcx + Math.round((Math.random() - 0.5) * 16); tz = pcz + Math.round((Math.random() - 0.5) * 16); }
+  else { tx = sx + Math.round((Math.random() - 0.5) * 26); tz = sz + Math.round((Math.random() - 0.5) * 26); }
+  setMonsterGoal((tx + 0.5) * CELL, (tz + 0.5) * CELL);
+}
+// Called by the player's footsteps: loud steps can be heard
+function emitNoise(x, z, radius) {
+  if (!monster.active || game.state !== 'playing') return;
+  const d = Math.hypot(monster.pos.x - x, monster.pos.z - z);
+  const clear = world.segmentClear(monster.pos.x, monster.pos.z, x, z);
+  const eff = clear ? d : d * 1.5;
+  if (eff > radius) return;
+  monster.alert = Math.min(1, monster.alert + 0.35);
+  if (monster.state === 'chase') return;
+  if (monster.state !== 'investigate' || Math.random() < 0.5) {
+    const j = clear ? 0.5 : 2.5;   // less precise when it can't see the source
+    monster.state = 'investigate';
+    setMonsterGoal(x + (Math.random() - 0.5) * j * 2, z + (Math.random() - 0.5) * j * 2);
+  }
+}
+const _mv = new THREE.Vector3();
+function updateMonster(dt) {
+  if (!monster.active) return;
+  const m = monster, lvl = MONSTER_SPEED[world.level] || MONSTER_SPEED[1];
+  const dx = player.pos.x - m.pos.x, dz = player.pos.z - m.pos.z, dist = Math.hypot(dx, dz);
+  m.screechCooldown -= dt;
+
+  // ---------------- perception ----------------
+  m.visCheck -= dt;
+  if (m.visCheck <= 0) {
+    m.visCheck = 0.1;
+    const fx = Math.sin(m.heading), fz = Math.cos(m.heading);
+    const cosA = dist > 0.01 ? (fx * dx + fz * dz) / dist : 1;
+    const fovOk = m.state === 'chase' ? cosA > -0.2 : cosA > Math.cos(1.15) || dist < 2.5;
+    const pl = playerVisibility();
+    const range = (m.state === 'chase' ? 26 : 5 + 17 * pl) * (player.crouching && m.state !== 'chase' ? 0.6 : 1);
+    m.sees = dist < range && fovOk && world.segmentClear(m.pos.x, m.pos.z, player.pos.x, player.pos.z);
+  }
+  if (m.sees) {
+    m.lastSeen.copy(player.pos); m.lostTimer = 0;
+    if (m.state !== 'chase') {
+      m.state = 'chase'; m.path = [];
+      if (m.screechCooldown <= 0) { monsterScreech(); m.screechCooldown = 14; }
+      onChaseStart();
+    }
+  }
+
+  // ---------------- decisions ----------------
+  let goalX = null, goalZ = null, speed = lvl.wander;
+  if (m.state === 'chase') {
+    speed = lvl.chase * (1 + 0.04 * notesCollected());
+    if (m.sees) { goalX = player.pos.x; goalZ = player.pos.z; m.path = []; }
+    else {
+      m.lostTimer += dt;
+      m.repath -= dt;
+      if (m.repath <= 0 || !m.path.length) {
+        // keeps a sense of the player's position for a moment after losing sight
+        const p = m.lostTimer < 1.2 ? player.pos : m.lastSeen;
+        setMonsterGoal(p.x, p.z); m.repath = 0.6;
+      }
+      if (m.lostTimer > 1.2) m.lastSeen.copy(m.lastSeen);
+      if (m.lostTimer > 3.5 && (!m.path.length || m.path.length < 1)) { m.state = 'search'; m.searchTimer = 7 + Math.random() * 4; m.path = []; }
+      if (m.lostTimer > 9) { m.state = 'search'; m.searchTimer = 6; m.path = []; }
+    }
+  } else if (m.state === 'investigate') {
+    speed = lvl.investigate;
+    if (!m.path.length) { m.state = 'search'; m.searchTimer = 4 + Math.random() * 3; }
+  } else if (m.state === 'search') {
+    speed = lvl.search;
+    m.searchTimer -= dt;
+    if (!m.path.length) {
+      const [sx, sz] = monsterCell();
+      setMonsterGoal((sx + Math.round((Math.random() - 0.5) * 6) + 0.5) * CELL, (sz + Math.round((Math.random() - 0.5) * 6) + 0.5) * CELL);
+    }
+    if (m.searchTimer <= 0) { m.state = 'wander'; m.path = []; }
+  } else {
+    speed = lvl.wander;
+    if (!m.path.length) pickWanderGoal();
+  }
+
+  // ---------------- director: never drift too far away ----------------
+  m.directorTimer -= dt;
+  if (m.directorTimer <= 0) {
+    m.directorTimer = 4;
+    if (dist > 62 && m.state !== 'chase') placeMonsterAway(30, 42);
+  }
+
+  // ---------------- movement ----------------
+  if (goalX === null && m.path.length) {
+    const [cx, cz] = m.path[0];
+    goalX = (cx + 0.5) * CELL; goalZ = (cz + 0.5) * CELL;
+    // skip waypoints we can already walk to directly
+    if (m.path.length > 1) {
+      const [nx, nz] = m.path[1];
+      const n2x = (nx + 0.5) * CELL, n2z = (nz + 0.5) * CELL;
+      if (Math.hypot(goalX - m.pos.x, goalZ - m.pos.z) < 0.5) { m.path.shift(); goalX = n2x; goalZ = n2z; }
+    } else if (Math.hypot(goalX - m.pos.x, goalZ - m.pos.z) < 0.35) { m.path.shift(); }
+  }
+  let moving = false;
+  if (goalX !== null) {
+    _mv.set(goalX - m.pos.x, 0, goalZ - m.pos.z);
+    const len = _mv.length();
+    if (len > 0.05) {
+      _mv.multiplyScalar(1 / len);
+      const want = Math.atan2(_mv.x, _mv.z);
+      let dh = want - m.heading; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
+      m.heading += dh * Math.min(1, dt * (m.state === 'chase' ? 10 : 4));
+      // slow down for sharp turns, creep when hunting
+      const turnSlow = clamp(1 - Math.abs(dh) / 2.2, 0.25, 1);
+      m.speed += (speed * turnSlow - m.speed) * Math.min(1, dt * 3);
+      const step = Math.min(len, m.speed * dt);
+      const ox = m.pos.x, oz = m.pos.z;
+      m.pos.x += _mv.x * step; m.pos.z += _mv.z * step;
+      resolveCircle(m.pos, 0.3);
+      const moved = Math.hypot(m.pos.x - ox, m.pos.z - oz);
+      if (moved < step * 0.3 && step > 0.01) { m.stuckTimer += dt; if (m.stuckTimer > 1.0) { m.path = []; m.stuckTimer = 0; if (m.state === 'chase' && m.sees) { m.sees = false; m.visCheck = 0.4; } } }
+      else m.stuckTimer = 0;
+      moving = moved > 0.001;
+      m.phase += moved * 2.2;
+    }
+  }
+  if (!moving) m.speed *= Math.max(0, 1 - dt * 5);
+
+  // ---------------- catch ----------------
+  if (dist < 0.9 && game.state === 'playing') { startJumpScare(); return; }
+
+  // ---------------- footsteps & breath ----------------
+  const prevStep = m.stepPhase;
+  m.stepPhase = m.phase / Math.PI;
+  if (Math.floor(prevStep) !== Math.floor(m.stepPhase)) monsterFootstep(m.state === 'chase');
+  updateMonsterBreath(dist);
+
+  // ---------------- lights stutter around it ----------------
+  U.uMonster.value.set(m.pos.x, 0, m.pos.z, m.state === 'chase' ? 1.0 : 0.65);
+  m.envTimer -= dt;
+  if (m.envTimer <= 0) { m.envTimer = 0.15; m.env = sampleLight(m.pos.x, m.pos.z, 1.8); }
+  monsterMat.uniforms.uEnv.value = m.env;
+
+  animateMonster(dt, moving);
+}
+
+// Player visibility (0..1): how lit the player is + flashlight
+let _plVis = 0.5, _plVisT = 0;
+function playerVisibility() {
+  _plVisT -= 0.1;
+  if (_plVisT <= 0) { _plVisT = 0.3; _plVis = clamp(sampleLight(player.pos.x, player.pos.z, 1.2) * 0.9, 0, 1); }
+  return clamp(_plVis + (flash.on ? 0.65 : 0), 0, 1.3);
+}
+
+function animateMonster(dt, moving) {
+  const md = monster.model, m = monster, chase = m.state === 'chase';
+  md.root.position.copy(m.pos);
+  md.root.rotation.y = m.heading;
+  const s = Math.sin(m.phase), c = Math.cos(m.phase);
+  const amt = clamp(m.speed / 2.0, 0, 1.3);
+  const swing = (chase ? 0.75 : 0.45) * amt;
+  for (const L of md.legs) {
+    const ph = L.s > 0 ? s : -s;
+    L.hip.rotation.x = -ph * swing;
+    L.kn.rotation.x = Math.max(0, (L.s > 0 ? c : -c)) * swing * 1.4 + 0.05;
+  }
+  for (const A of md.arms) {
+    const ph = A.s > 0 ? -s : s;
+    A.sh.rotation.x = chase ? -0.9 - ph * 0.35 * amt : -ph * 0.35 * amt - 0.05;
+    A.sh.rotation.z = A.s * (chase ? 0.25 : 0.08);
+    A.el.rotation.x = chase ? -0.5 : -0.15 - Math.max(0, ph) * 0.2;
+    for (const f of A.fingers) f.rotation.x = -0.2 - 0.15 * Math.sin(U.uTime.value * 3 + A.s);
+  }
+  md.hips.position.y = 1.3 + Math.abs(c) * 0.05 * amt;
+  md.body.rotation.x = chase ? 0.32 : 0.08 + 0.04 * Math.sin(U.uTime.value * 0.7);
+  md.spine.rotation.z = Math.sin(m.phase * 0.5) * 0.04;
+  // head twitches
+  m.twitch -= dt;
+  if (m.twitch <= 0) { m.twitch = 0.15 + Math.random() * (chase ? 0.5 : 2.0); m.twitchTarget.set((Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 0.9); }
+  md.head.rotation.x += (m.twitchTarget.x - (chase ? 0.3 : 0) - md.head.rotation.x) * Math.min(1, dt * 25);
+  md.head.rotation.z += (m.twitchTarget.y - md.head.rotation.z) * Math.min(1, dt * 25);
+  monsterMat.uniforms.uJitter.value = chase ? 2.2 : 1.0;
+  eyeMat.uniforms.uGlow.value = chase ? 1.1 : 0.55;
+  md.jaw.scale.y = 1; md.mouth.visible = false;
+}
+
+// ---------------- monster sounds ----------------
+function monsterFootstep(chase) {
+  const ctx = Sound.ctx; if (!ctx) return;
+  const A = Sound._, t = ctx.currentTime;
+  const p = A.panner(monster.pos.x, 0.1, monster.pos.z, 2.5, 1.0, 0.5);
+  const s = A.noiseSrc(), f = A.filter('lowpass', chase ? 420 : 300, 1), g = A.gain(0);
+  s.connect(f); f.connect(g); g.connect(p); A.env(g, t, 0.004, chase ? 1.4 : 0.9, 0.2); s.start(t, Math.random() * 2, 0.3);
+  const o = ctx.createOscillator(), og = A.gain(0);
+  o.frequency.setValueAtTime(70, t); o.frequency.exponentialRampToValueAtTime(30, t + 0.15);
+  o.connect(og); og.connect(p); A.env(og, t, 0.004, chase ? 1.5 : 1.0, 0.18); o.start(t); o.stop(t + 0.3);
+}
+function updateMonsterBreath(dist) {
+  const ctx = Sound.ctx; if (!ctx) return;
+  const A = Sound._;
+  if (!monster.breath) {
+    const p = A.panner(monster.pos.x, 2.4, monster.pos.z, 1.5, 1.4, 0.3);
+    const src = A.noiseSrc(true), f1 = A.filter('bandpass', 380, 3), f2 = A.filter('bandpass', 1100, 5), g = A.gain(0), lfoG = A.gain(0);
+    src.connect(f1); src.connect(f2); f1.connect(g); f2.connect(g); g.connect(p);
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.35; lfo.connect(lfoG); lfoG.connect(g.gain);
+    const growl = ctx.createOscillator(); growl.type = 'sawtooth'; growl.frequency.value = 52;
+    const gf = A.filter('lowpass', 180, 3), gg = A.gain(0); growl.connect(gf); gf.connect(gg); gg.connect(p);
+    src.start(); lfo.start(); growl.start();
+    monster.breath = { p, g, lfoG, lfo, gg, growl };
+  }
+  const b = monster.breath, t = ctx.currentTime, chase = monster.state === 'chase';
+  A.setPos(b.p, monster.pos.x, 2.4, monster.pos.z);
+  const lvl = monster.active && game.state === 'playing' ? (chase ? 0.5 : 0.22) : 0;
+  b.g.gain.setTargetAtTime(lvl * 0.5, t, 0.3);
+  b.lfoG.gain.setTargetAtTime(lvl * 0.5, t, 0.3);
+  b.lfo.frequency.setTargetAtTime(chase ? 1.1 : 0.33, t, 0.5);
+  b.gg.gain.setTargetAtTime(monster.active && game.state === 'playing' ? (chase ? 0.25 : 0.06) : 0, t, 0.3);
+  b.growl.frequency.setTargetAtTime(chase ? 64 : 48, t, 0.3);
+}
+function monsterScreech() {
+  const ctx = Sound.ctx; if (!ctx) return;
+  const A = Sound._, t = ctx.currentTime;
+  const p = A.panner(monster.pos.x, 2.4, monster.pos.z, 6, 0.8, 0.8);
+  const g = A.gain(0), dist = ctx.createWaveShaper();
+  const curve = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; curve[i] = Math.tanh(x * 4); }
+  dist.curve = curve;
+  for (const [f, type] of [[310, 'sawtooth'], [327, 'sawtooth'], [655, 'square'], [140, 'sawtooth']]) {
+    const o = ctx.createOscillator(); o.type = type;
+    o.frequency.setValueAtTime(f * 0.8, t); o.frequency.linearRampToValueAtTime(f * 1.25, t + 0.25); o.frequency.linearRampToValueAtTime(f * 0.7, t + 1.3);
+    const lfo = ctx.createOscillator(), lg = A.gain(f * 0.04); lfo.frequency.value = 23 + Math.random() * 9; lfo.connect(lg); lg.connect(o.frequency); lfo.start(t); lfo.stop(t + 1.4);
+    o.connect(dist); o.start(t); o.stop(t + 1.4);
+  }
+  const bp = A.filter('bandpass', 1300, 1.2);
+  dist.connect(bp); bp.connect(g); g.connect(p);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.5, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.35);
+}
+function jumpScareSound() {
+  const ctx = Sound.ctx; if (!ctx) return;
+  const A = Sound._, t = ctx.currentTime;
+  const g = A.gain(0), ws = ctx.createWaveShaper();
+  const curve = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; curve[i] = Math.tanh(x * 8); }
+  ws.curve = curve;
+  for (const f of [220, 233, 466, 950, 1410, 97]) {
+    const o = ctx.createOscillator(); o.type = 'sawtooth';
+    o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 1.6, t + 0.15); o.frequency.exponentialRampToValueAtTime(f * 0.5, t + 1.6);
+    const lfo = ctx.createOscillator(), lg = A.gain(f * 0.08); lfo.frequency.value = 30 + Math.random() * 20; lfo.connect(lg); lg.connect(o.frequency); lfo.start(t); lfo.stop(t + 1.8);
+    o.connect(ws); o.start(t); o.stop(t + 1.8);
+  }
+  const n = A.noiseSrc(), nf = A.filter('bandpass', 2000, 0.6), ng = A.gain(0.6); n.connect(nf); nf.connect(ng); ng.connect(ws); n.start(t, 0, 1.8);
+  ws.connect(g); g.connect(A.master);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.85, t + 0.02); g.gain.setValueAtTime(0.85, t + 0.9); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.75);
+  const rv = A.gain(0.5); g.connect(rv); rv.connect(A.revIn);
+}
+
+// Procedural jump-scare face (2D canvas), flashed over the 3D lunge
+function makeScareFace() {
+  const W = 512, H = 640, c = makeCanvas(W, H), g = c.getContext('2d');
+  const rnd = mulberry32(666);
+  // gaunt elongated head
+  g.save();
+  g.beginPath();
+  g.moveTo(W * 0.5, H * 0.02);
+  g.bezierCurveTo(W * 0.92, H * 0.0, W * 0.9, H * 0.55, W * 0.7, H * 0.86);
+  g.bezierCurveTo(W * 0.62, H * 0.99, W * 0.38, H * 0.99, W * 0.3, H * 0.86);
+  g.bezierCurveTo(W * 0.1, H * 0.55, W * 0.08, H * 0.0, W * 0.5, H * 0.02);
+  g.closePath(); g.clip();
+  const sk = g.createRadialGradient(W * 0.5, H * 0.33, 10, W * 0.5, H * 0.45, W * 0.6);
+  sk.addColorStop(0, '#8d877c'); sk.addColorStop(0.35, '#59544c'); sk.addColorStop(0.7, '#25221e'); sk.addColorStop(1, '#050505');
+  g.fillStyle = sk; g.fillRect(0, 0, W, H);
+  // cheek hollows
+  for (const s of [-1, 1]) {
+    const ch = g.createRadialGradient(W * (0.5 + s * 0.24), H * 0.55, 5, W * (0.5 + s * 0.24), H * 0.55, 110);
+    ch.addColorStop(0, 'rgba(0,0,0,0.75)'); ch.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = ch; g.fillRect(0, 0, W, H);
+  }
+  // veins / cracks
+  g.strokeStyle = 'rgba(20,8,6,0.55)';
+  for (let i = 0; i < 46; i++) {
+    let x = W * (0.2 + rnd() * 0.6), y = H * (0.08 + rnd() * 0.75);
+    g.lineWidth = 0.6 + rnd() * 1.8; g.beginPath(); g.moveTo(x, y);
+    for (let k = 0; k < 7; k++) { x += (rnd() - 0.5) * 34; y += (rnd() - 0.3) * 30; g.lineTo(x, y); }
+    g.stroke();
+  }
+  // sunken black eye sockets with pinprick pupils
+  for (const s of [-1, 1]) {
+    const ex = W * (0.5 + s * 0.17), ey = H * 0.34;
+    const eg = g.createRadialGradient(ex, ey, 4, ex, ey, 92);
+    eg.addColorStop(0, '#000'); eg.addColorStop(0.45, 'rgba(0,0,0,0.97)'); eg.addColorStop(0.75, 'rgba(10,5,3,0.5)'); eg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = eg; g.beginPath(); g.ellipse(ex, ey, 92, 74, s * 0.25, 0, Math.PI * 2); g.fill();
+    const pg = g.createRadialGradient(ex + s * 6, ey + 4, 0, ex + s * 6, ey + 4, 16);
+    pg.addColorStop(0, 'rgba(255,250,235,1)'); pg.addColorStop(0.25, 'rgba(255,240,210,0.8)'); pg.addColorStop(1, 'rgba(255,200,150,0)');
+    g.fillStyle = pg; g.beginPath(); g.arc(ex + s * 6, ey + 4, 16, 0, Math.PI * 2); g.fill();
+  }
+  // gaping mouth with uneven teeth
+  const mx = W * 0.5, my = H * 0.7, mw = 92, mh = 150;
+  const mg = g.createRadialGradient(mx, my + 20, 5, mx, my, mh);
+  mg.addColorStop(0, '#000'); mg.addColorStop(0.6, '#0c0202'); mg.addColorStop(0.9, '#3a0806'); mg.addColorStop(1, '#1a0403');
+  g.fillStyle = mg; g.beginPath(); g.ellipse(mx, my, mw, mh, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#cfc6a8';
+  for (let i = 0; i < 15; i++) {
+    const a = Math.PI * (1.08 + (i / 14) * 0.84);
+    const x = mx + Math.cos(a) * mw * 0.96, y = my + Math.sin(a) * mh * 0.96;
+    const len = 22 + rnd() * 38;
+    g.beginPath(); g.moveTo(x - 7, y); g.lineTo(x + 7, y); g.lineTo(x + (rnd() - 0.5) * 8, y + len); g.closePath(); g.fill();
+  }
+  for (let i = 0; i < 13; i++) {
+    const a = Math.PI * (0.1 + (i / 12) * 0.8);
+    const x = mx + Math.cos(a) * mw * 0.96, y = my + Math.sin(a) * mh * 0.96;
+    const len = 18 + rnd() * 30;
+    g.beginPath(); g.moveTo(x - 6, y); g.lineTo(x + 6, y); g.lineTo(x + (rnd() - 0.5) * 8, y - len); g.closePath(); g.fill();
+  }
+  g.restore();
+  // grain + desaturated sickly tint
+  const img = g.getImageData(0, 0, W, H), d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] === 0) continue;
+    const n = (rnd() - 0.5) * 40;
+    d[i] = clamp(d[i] * 1.05 + n, 0, 255); d[i + 1] = clamp(d[i + 1] * 0.98 + n, 0, 255); d[i + 2] = clamp(d[i + 2] * 0.88 + n, 0, 255);
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+let scareFaceCanvas = null;
+
+// ---------------- jump scare ----------------
+const scare = { t: 0, active: false, yaw0: 0, pitch0: 0 };
+function startJumpScare() {
+  game.state = 'caught';
+  if (!scareFaceCanvas) { scareFaceCanvas = makeScareFace(); $('scareOverlay').appendChild(scareFaceCanvas); }
+  scare.active = true; scare.t = 0;
+  scare.yaw0 = player.yaw; scare.pitch0 = player.pitch;
+  jumpScareSound();
+  monster.state = 'chase';
+  onPlayerCaught();
+}
+function updateJumpScare(dt) {
+  scare.t += dt;
+  const md = monster.model, t = scare.t;
+  // force the camera to face the creature, which lunges into view
+  const eyeY = player.eye;
+  const fwdYaw = Math.atan2(monster.pos.x - player.pos.x, monster.pos.z - player.pos.z) + Math.PI;
+  let dy = fwdYaw - player.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+  player.yaw += dy * Math.min(1, dt * 18);
+  player.pitch += (0.05 - player.pitch) * Math.min(1, dt * 18);
+  const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw);
+  const lunge = clamp(t / 0.12, 0, 1);
+  const dist = lerp(1.4, 0.55, lunge);
+  md.root.position.set(player.pos.x + fx * dist, eyeY - 2.66, player.pos.z + fz * dist);
+  md.root.rotation.y = Math.atan2(-fx, -fz);
+  md.body.rotation.x = 0.03;
+  md.head.rotation.set((Math.random() - 0.5) * 0.3, 0, (Math.random() - 0.5) * 0.4);
+  md.jaw.scale.y = 1 + lunge * 5; md.mouth.visible = true;
+  for (const A of md.arms) { A.sh.rotation.x = -2.4 + Math.sin(t * 30) * 0.1; A.sh.rotation.z = A.s * 0.9; A.el.rotation.x = -0.9; }
+  monsterMat.uniforms.uScare.value = 0.6 + Math.random() * 0.6;
+  mouthMat.uniforms.uScare.value = 0.6;
+  monsterMat.uniforms.uJitter.value = 4;
+  eyeMat.uniforms.uGlow.value = 2.5;
+  camera.position.set(player.pos.x + (Math.random() - 0.5) * 0.06, eyeY + (Math.random() - 0.5) * 0.06, player.pos.z + (Math.random() - 0.5) * 0.06);
+  camera.rotation.set(player.pitch + (Math.random() - 0.5) * 0.05, player.yaw + (Math.random() - 0.5) * 0.05, (Math.random() - 0.5) * 0.1);
+  // 2D face flash on top, violently shaking
+  const ov = $('scareOverlay');
+  if (t > 0.1) {
+    ov.style.display = 'flex';
+    const k = clamp((t - 0.1) / 0.15, 0, 1), sc = 0.9 + k * 0.35 + (t > 0.25 ? (t - 0.25) * 0.25 : 0);
+    const jx = (Math.random() - 0.5) * 50, jy = (Math.random() - 0.5) * 50, rot = (Math.random() - 0.5) * 6;
+    scareFaceCanvas.style.transform = `translate(${jx}px, ${jy}px) scale(${sc}) rotate(${rot}deg)`;
+    scareFaceCanvas.style.opacity = t > 1.25 ? String(clamp(1 - (t - 1.25) / 0.3, 0, 1)) : '1';
+    scareFaceCanvas.style.filter = `contrast(${1.3 + Math.random() * 0.6}) brightness(${0.8 + Math.random() * 0.6})`;
+    ov.style.background = t < 0.22 ? 'radial-gradient(ellipse at center, rgba(120,0,0,0.35) 0%, rgba(40,0,0,0.95) 70%)' : t > 1.25 ? '#000' : 'radial-gradient(ellipse at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.97) 62%)';
+  }
+  if (t > 1.6 && scare.active) { scare.active = false; ov.style.display = 'none'; monsterMat.uniforms.uScare.value = 0; mouthMat.uniforms.uScare.value = 0; onGameOver(); }
+}
+
+// ============================================================================
 //  INPUT
 // ============================================================================
 const keys = Object.create(null);
@@ -1433,26 +2062,68 @@ function onFootstep() {
   footstepCount++;
   const kind = player.running ? 'run' : player.crouching ? 'crouch' : 'walk';
   Sound.footstep(kind, world.level === 2 ? 'water' : 'carpet');
+  emitNoise(player.pos.x, player.pos.z, kind === 'run' ? 21 : kind === 'crouch' ? 1.8 : 6.5);
 }
 
 // ============================================================================
 //  GAME STATE
 // ============================================================================
-const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0 };
+const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0, notes: 0, level: 1 };
+const flash = { on: false, battery: 1 };   // (expanded in the flashlight section)
+function notesCollected() { return game.notes; }
+function onChaseStart() {}
+function onPlayerCaught() { $('hud').classList.add('hidden'); }
+function onGameOver() {
+  game.state = 'gameover';
+  if (document.pointerLockElement) document.exitPointerLock();
+  $('goTime').textContent = formatTime(game.time);
+  $('gameOverScreen').classList.remove('hidden');
+}
+function formatTime(t) { const m = Math.floor(t / 60), s = Math.floor(t % 60); return m + ':' + String(s).padStart(2, '0'); }
+
+// Choose a spawn facing the most open direction
+function spawnPlayer(x, z) {
+  player.pos.set(x, 0, z); player.vel.set(0, 0, 0);
+  let best = 0, bestD = -1;
+  for (let a = 0; a < 16; a++) {
+    const yaw = (a / 16) * Math.PI * 2, dx = -Math.sin(yaw), dz = -Math.cos(yaw);
+    let d = 0; while (d < 30 && world.segmentClear(x, z, x + dx * (d + 1), z + dz * (d + 1))) d += 1;
+    if (d > bestD) { bestD = d; best = yaw; }
+  }
+  player.yaw = best; player.pitch = 0; player.crouchToggle = false; player.eye = EYE_STAND;
+}
+function newGame(level = 1) {
+  game.level = level; game.time = 0; game.notes = 0; game.danger = 0;
+  world = new World((Math.random() * 1e9) | 0, level);
+  clearChunks();
+  spawnPlayer(CELL * 0.5, CELL * 0.5);
+  updateChunks(player.pos.x, player.pos.z, true);
+  resetMonster();
+}
 function startGame() {
   $('startScreen').classList.add('hidden');
+  $('gameOverScreen').classList.add('hidden');
   $('hud').classList.remove('hidden');
+  newGame(1);
   game.state = 'playing';
   Sound.init();
   requestLock();
 }
 $('btnStart').addEventListener('click', startGame);
+$('btnRetry').addEventListener('click', startGame);
 
 // ============================================================================
 //  MAIN LOOP
 // ============================================================================
 const clock = new THREE.Clock();
 const _camDir = new THREE.Vector3();
+function updateDanger(dt) {
+  const md = Math.hypot(monster.pos.x - player.pos.x, monster.pos.z - player.pos.z);
+  let d = Math.pow(clamp(1 - md / 26, 0, 1), 1.5);
+  if (monster.state === 'chase') d = Math.max(d, 0.55 + 0.45 * clamp(1 - md / 20, 0, 1));
+  if (monster.sees) d = Math.min(1, d + 0.1);
+  game.danger += (d - game.danger) * Math.min(1, dt * 2);
+}
 function frame() {
   requestAnimationFrame(frame);
   const dt = Math.min(clock.getDelta(), 0.05);
@@ -1460,8 +2131,10 @@ function frame() {
     game.time += dt;
     U.uTime.value = (U.uTime.value + dt) % 1000;
     updatePlayer(dt);
+    updateMonster(dt);
     updateChunks(player.pos.x, player.pos.z);
     updateAmbientAudio(dt);
+    updateDanger(dt);
     camera.getWorldDirection(_camDir);
     Sound.setListener(camera.position, _camDir);
     // heartbeat when danger is near
@@ -1469,6 +2142,9 @@ function frame() {
       game.heartTimer -= dt;
       if (game.heartTimer <= 0) { Sound.heartbeat(clamp(0.25 + game.danger, 0, 1.2)); game.heartTimer = 60 / lerp(62, 165, clamp(game.danger, 0, 1)); }
     } else game.heartTimer = 0;
+  } else if (game.state === 'caught') {
+    U.uTime.value = (U.uTime.value + dt) % 1000;
+    updateJumpScare(dt);
   }
   renderer.render(scene, camera);
 }
@@ -1478,7 +2154,7 @@ updateChunks(player.pos.x, player.pos.z, true);
 frame();
 
 // Debug / test hook
-window.__bk = { THREE, Sound, ambience, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { THREE, Sound, ambience, monster, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>

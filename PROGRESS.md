@@ -44,3 +44,13 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   level 2, 8 kinds of spatialised (HRTF) distant noises (thuds, creaks, footsteps, whispers, door slams, knocking,
   groans, crackles) every 9-25 s, and a lub-dub heartbeat whose rate/volume follow `game.danger`.
   Verified with an AnalyserNode that every sound produces signal without clipping.
+- **[06:56 UTC] Feature 5 — Monster: DONE.** A 2.7 m gaunt, hunched figure built from lathe-tapered limbs with
+  very long arms and finger claws, near-black jittering skin shader (lit by the CPU-sampled fixture light at its
+  position and by the flashlight), faint glowing eyes, procedural walk/chase animation and head twitches.
+  AI states: wander (drifts towards the player's area) -> investigate (hears footsteps: run 21 m, walk 6.5 m,
+  crouch 1.8 m; walls muffle x1.5) -> chase (vision: FOV ~130 deg, range scales with how lit the player is,
+  flashlight makes you visible, crouching shrinks it; wall line-of-sight) -> search (after losing sight for a few
+  seconds it searches around the last known position) -> wander. A* pathfinding on the cell grid (~0.2 ms/query),
+  stuck detection, and a director that relocates it out of sight if it drifts > 62 m away. Spatial heavy footsteps,
+  breathing/growl loop, chase screech, nearby lights stutter. Catch -> 3D lunge + violently shaking procedural 2D
+  face (canvas) + distorted scream -> game over screen. Tested headless: sees, chases, catches, game over shown.
