@@ -580,6 +580,35 @@ class World {
   wallN(cx, cz) { const kx = fdiv(cx, CHUNK), kz = fdiv(cz, CHUNK); return this.chunk(kx, kz).wN[(cx - kx * CHUNK) + (cz - kz * CHUNK) * CHUNK] === 1; }
   // pillar centred on grid point (gx,gz) = north-west corner of cell (gx,gz)
   pillar(gx, gz) { const kx = fdiv(gx, CHUNK), kz = fdiv(gz, CHUNK); return this.chunk(kx, kz).pil[(gx - kx * CHUNK) + (gz - kz * CHUNK) * CHUNK] === 1; }
+  // rare static props against a wall of the cell (null if none); cached per cell
+  prop(cx, cz) {
+    const key = ckey(cx, cz);
+    if (this.propCache && this.propCache.has(key)) return this.propCache.get(key);
+    if (!this.propCache || this.propCache.size > 20000) this.propCache = new Map();
+    let res = null;
+    const st = this.style(fdiv(cx, CHUNK), fdiv(cz, CHUNK));
+    const p = st === STYLE.HALL ? 0.015 : st === STYLE.PILLARS ? 0.02 : 0.05;
+    if ((cx !== 0 || cz !== 0) && hash2(cx, cz, this.seed + 1313) < p) {
+      const sides = [];
+      if (this.wallW(cx, cz)) sides.push(0); if (this.wallW(cx + 1, cz)) sides.push(1);
+      if (this.wallN(cx, cz)) sides.push(2); if (this.wallN(cx, cz + 1)) sides.push(3);
+      if (sides.length) {
+        const side = sides[Math.floor(hash2(cx, cz, this.seed + 1414) * sides.length)];
+        const type = Math.floor(hash2(cx, cz, this.seed + 1515) * 4);          // 0 boxes, 1 chair, 2 wet-floor sign, 3 cabinet
+        const [w, d] = [[0.55, 0.5], [0.55, 0.55], [0.5, 0.32], [0.9, 0.45]][type];
+        const off = (hash2(cx, cz, this.seed + 1616) - 0.5) * (CELL - w - 0.6);
+        const inset = WALL_T / 2 + d / 2 + 0.03, mx = (cx + 0.5) * CELL, mz = (cz + 0.5) * CELL;
+        let x, z, rot, hx, hz;
+        if (side === 0) { x = cx * CELL + inset; z = mz + off; rot = Math.PI / 2; hx = d / 2; hz = w / 2; }
+        else if (side === 1) { x = (cx + 1) * CELL - inset; z = mz + off; rot = -Math.PI / 2; hx = d / 2; hz = w / 2; }
+        else if (side === 2) { x = mx + off; z = cz * CELL + inset; rot = 0; hx = w / 2; hz = d / 2; }
+        else { x = mx + off; z = (cz + 1) * CELL - inset; rot = Math.PI; hx = w / 2; hz = d / 2; }
+        res = { type, x, z, rot, hx, hz, flip: hash2(cx, cz, this.seed + 1717) < 0.5 };
+      }
+    }
+    this.propCache.set(key, res);
+    return res;
+  }
   dangling(cx, cz) { return this.lightType(cx, cz) === LIGHT.BROKEN && hash2(cx, cz, this.seed + 909) < 0.22; }
   height(kx, kz) { return this.level === 1 && this.style(kx, kz) === STYLE.HALL ? HALL_H : WALL_H; }
   wallsAtPoint(gx, gz) { return this.wallW(gx, gz) || this.wallW(gx, gz - 1) || this.wallN(gx, gz) || this.wallN(gx - 1, gz); }
@@ -633,6 +662,8 @@ function collectBoxes(x, z) {
     if (world.wallW(i, j)) { const b = _boxes[n++]; b.x0 = i * CELL - h; b.x1 = i * CELL + h; b.z0 = j * CELL - h; b.z1 = (j + 1) * CELL + h; }
     if (world.wallN(i, j)) { const b = _boxes[n++]; b.x0 = i * CELL - h; b.x1 = (i + 1) * CELL + h; b.z0 = j * CELL - h; b.z1 = j * CELL + h; }
     if (world.pillar(i, j)) { const b = _boxes[n++]; b.x0 = i * CELL - ph; b.x1 = i * CELL + ph; b.z0 = j * CELL - ph; b.z1 = j * CELL + ph; }
+    const pr = world.prop(i, j);
+    if (pr) { const b = _boxes[n++]; b.x0 = pr.x - pr.hx; b.x1 = pr.x + pr.hx; b.z0 = pr.z - pr.hz; b.z1 = pr.z + pr.hz; }
   }
   if (collideDyn) for (const d of dynBlockers) {
     if (n >= _boxes.length || x < d.x0 - 2 || x > d.x1 + 2 || z < d.z0 - 2 || z > d.z1 + 2) continue;
@@ -1425,18 +1456,56 @@ function mergeCand(a, b) {
 const LOAD_RADIUS = 2;
 const chunkMeshes = new Map();
 let building = null;   // { kx, kz, gen }
+// Props: cardboard boxes, a toppled office chair, the yellow wet-floor sign, low filing cabinets
+function buildProp(p) {
+  const g = new THREE.Group();
+  const box = (w, h, d, color, x, y, z, glow = 0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), itemMaterial(color, glow)); m.position.set(x, y, z); g.add(m); return m; };
+  if (p.type === 0) {
+    box(0.5, 0.42, 0.45, 0x8a6a3e, 0, 0.21, 0); box(0.08, 0.425, 0.455, 0xb09060, 0, 0.21, 0);
+    if (p.flip) { const b = box(0.4, 0.32, 0.36, 0x7d5f36, 0.03, 0.58, 0.02); b.rotation.y = 0.3; }
+  } else if (p.type === 1) {
+    const ch = new THREE.Group(); g.add(ch);
+    const add = (m) => { g.remove(m); ch.add(m); };
+    add(box(0.46, 0.07, 0.46, 0x2c2c30, 0, 0.47, 0)); add(box(0.44, 0.5, 0.06, 0x2c2c30, 0, 0.78, -0.2));
+    add(box(0.05, 0.4, 0.05, 0x5a5a5a, 0, 0.25, 0));
+    for (let i = 0; i < 5; i++) { const leg = box(0.32, 0.03, 0.04, 0x4a4a4a, 0, 0.05, 0); leg.rotation.y = i * Math.PI * 2 / 5; leg.position.set(Math.cos(i * 1.2566) * 0.14, 0.05, -Math.sin(i * 1.2566) * 0.14); add(leg); }
+    if (p.flip) { ch.rotation.z = 1.45; ch.position.set(0.42, 0.05, 0); }
+  } else if (p.type === 2) {
+    for (const s of [-1, 1]) { const b = box(0.32, 0.62, 0.02, 0xe2b81e, 0, 0.3, s * 0.08, 0.05); b.rotation.x = s * 0.28; const band = box(0.33, 0.06, 0.022, 0x1a1a1a, 0, 0.4, s * 0.105); band.rotation.x = s * 0.28; }
+  } else {
+    box(0.9, 0.74, 0.45, 0x6c685c, 0, 0.37, 0);
+    for (const y of [0.2, 0.52]) { box(0.86, 0.01, 0.01, 0x3a3830, 0, y + 0.14, 0.226); box(0.14, 0.025, 0.02, 0xb0aca0, 0, y, 0.235); }
+  }
+  g.position.set(p.x, 0, p.z); g.rotation.y = p.rot;
+  const env = sampleLight(p.x, p.z, 0.6);
+  g.traverse((o) => { if (o.material && o.material.uniforms) o.material.uniforms.uEnv.value = env; });
+  return g;
+}
+function buildChunkProps(kx, kz) {
+  let grp = null;
+  for (let lz = 0; lz < CHUNK; lz++) for (let lx = 0; lx < CHUNK; lx++) {
+    const p = world.prop(kx * CHUNK + lx, kz * CHUNK + lz);
+    if (!p) continue;
+    if (!grp) grp = new THREE.Group();
+    grp.add(buildProp(p));
+  }
+  return grp;
+}
 function finishChunk(kx, kz, g) {
   const group = new THREE.Group();
   const meshes = [new THREE.Mesh(g.walls, MAT.wall), new THREE.Mesh(g.floor, MAT.floor), new THREE.Mesh(g.ceil, MAT.ceil), new THREE.Mesh(g.panels, MAT.panel)];
   if (g.decals.attributes.position.count) meshes.push(new THREE.Mesh(g.decals, MAT.decal)); else g.decals.dispose();
   for (const m of meshes) { m.matrixAutoUpdate = false; group.add(m); }
   group.matrixAutoUpdate = false;
+  const props = buildChunkProps(kx, kz);
+  if (props) group.add(props);
   scene.add(group);
-  chunkMeshes.set(ckey(kx, kz), { kx, kz, group });
+  chunkMeshes.set(ckey(kx, kz), { kx, kz, group, props });
   spawnChunkItems(kx, kz);
 }
 function disposeChunk(c) {
   despawnChunkItems(ckey(c.kx, c.kz));
+  if (c.props) c.props.traverse((o) => { if (o.material) o.material.dispose(); });
   scene.remove(c.group);
   c.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
 }

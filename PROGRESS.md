@@ -229,3 +229,7 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[08:31 UTC] Extra — Robustness.** If WebGL can't start, a clear "NO SIGNAL" message explains what to do instead
   of a blank page; if the GPU context is lost (phones backgrounding the tab), the run is paused and saved and a
   "SIGNAL LOST — Reload" screen appears (verified with WEBGL_lose_context).
+- **[08:34 UTC] Extra — Props.** About 5% of cells (fewer in halls) get a static prop pushed against one of the cell's
+  walls: cardboard boxes (sometimes stacked), an office chair (sometimes toppled), the yellow wet-floor sign, or a low
+  filing cabinet. Deterministic per cell (cached), lit by the sampled fixture light, with collision for player and
+  creature; placement keeps the centre lane free so pathfinding is unaffected (connectivity + soak re-verified).
