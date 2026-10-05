@@ -48,9 +48,9 @@ class GameLayout {
     final u = math.min(w / 100.0, h / 182.0);
     final cx = w / 2;
 
-    final topY = 11.5 * u;
+    final topY = 12.5 * u;
     final boardSide = 90.0 * u;
-    final boardTop = math.max(44.0 * u, (h - 182.0 * u) * 0.25 + 44.0 * u);
+    final boardTop = math.max(44.0 * u, (h - 182.0 * u) * 0.1 + 44.0 * u);
     final boardRect = Rect.fromLTWH(cx - boardSide / 2, boardTop, boardSide, boardSide);
     final frame = 1.0 * u;
     final gridRect = boardRect.deflate(frame);
@@ -77,7 +77,7 @@ class GameLayout {
       bestFont: 7.4 * u,
       gearRect: Rect.fromCenter(center: Offset(cx + 40.5 * u, topY), width: 9.0 * u, height: 9.0 * u),
       scoreCenter: Offset(cx, scoreCenterY),
-      scoreFont: 15.5 * u,
+      scoreFont: 18.0 * u,
     );
   }
 

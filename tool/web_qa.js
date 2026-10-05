@@ -27,7 +27,7 @@ function layout(w, h) {
   const u = Math.min(w / 100, h / 182);
   const cx = w / 2;
   const boardSide = 90 * u;
-  const boardTop = Math.max(44 * u, (h - 182 * u) * 0.25 + 44 * u);
+  const boardTop = Math.max(44 * u, (h - 182 * u) * 0.1 + 44 * u);
   const boardLeft = cx - boardSide / 2;
   const gridLeft = boardLeft + u;
   const gridTop = boardTop + u;
@@ -35,7 +35,7 @@ function layout(w, h) {
   const trayY = boardTop + boardSide + 25 * u;
   const slotW = boardSide / 3;
   const slots = [0, 1, 2].map((i) => [boardLeft + slotW * (i + 0.5), trayY]);
-  const gear = [cx + 40.5 * u, 11.5 * u];
+  const gear = [cx + 40.5 * u, 12.5 * u];
   return { u, cell, gridLeft, gridTop, slots, gear };
 }
 

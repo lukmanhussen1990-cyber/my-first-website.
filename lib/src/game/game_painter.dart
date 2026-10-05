@@ -87,7 +87,7 @@ class GamePainter extends CustomPainter {
       final t = ctrl.newBestT;
       final s = Curves.elasticOut.transform(t.clamp(0.0, 1.0));
       if (s > 0) {
-        paintDiamond(canvas, c + Offset(0, -l.u * 1.0), l.u * 20 * s, l.u * 19 * s);
+        paintDiamond(canvas, c + Offset(0, -l.u * 0.6), l.scoreFont * 1.12 * s, l.scoreFont * 1.05 * s);
       }
     }
     final scoreStr = '${ctrl.displayScore.round()}';
