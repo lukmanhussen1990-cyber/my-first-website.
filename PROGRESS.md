@@ -73,3 +73,9 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   grows with danger (stronger while being chased) plus impulse kicks; the vignette pulses with each heartbeat and
   tightens when exhausted. Lights near the monster stutter (stronger during a chase). Exponential fog tinted by
   local light hides distant rooms. Built-in-material textures switched to raw colour space so sprites/sign match.
+- **[07:11 UTC] Feature 9 — Menus: DONE.** Title screen over a live "attract mode" view of the Backrooms (slowly
+  panning camera, flickering lights), with New Game / Continue / Level 2 / Settings / How to play. Esc (or losing
+  pointer lock / tab focus) pauses: audio context suspended, Resume / Settings / Save & quit. Settings: mouse speed,
+  invert Y, field of view, volume, graphics quality (Low 60% res / Medium 85% / High 100% + 4x MSAA) and head bob;
+  saved to localStorage and applied live. Game over (time survived, notes) and win screens (time, next level / play
+  again / menu). Keyboard focus styling on buttons. Ignores Chrome's pointer-lock mouse spikes.

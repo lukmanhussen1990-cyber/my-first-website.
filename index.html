@@ -37,7 +37,25 @@
   #noteOverlay .hint { font-family: "Courier New", monospace; font-size: 11px; letter-spacing: 0.2em; color: #7a6a4a; margin-top: 14px; text-align: right; }
   #scareOverlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; z-index: 20; }
   #scareOverlay canvas { height: 118vh; max-width: none; }
-  .btn:hover { background: rgba(90, 76, 28, 0.9); }
+  .btn:hover, .btn:focus-visible { background: rgba(90, 76, 28, 0.9); outline: none; border-color: #d9c46a; }
+  .btn:active { transform: translateY(1px); }
+  .menu { background: radial-gradient(ellipse at center, rgba(20, 16, 4, 0.45) 0%, rgba(4, 3, 1, 0.92) 75%); z-index: 10; overflow-y: auto; padding: 24px 0; box-sizing: border-box; }
+  .menu h1 { animation: flick 6s infinite; }
+  .menu h1.red { color: #e0b0a0; text-shadow: 0 0 22px rgba(255, 40, 20, 0.45); }
+  .kicker { font-size: 12px; letter-spacing: 0.4em; opacity: 0.55; margin-bottom: 10px; }
+  .subtitle { font-size: 14px; letter-spacing: 0.1em; opacity: 0.7; margin: -6px 0 22px; padding: 0 16px; }
+  .menu-buttons { display: flex; flex-direction: column; align-items: center; }
+  .records { margin-top: 16px; font-size: 13px; letter-spacing: 0.12em; opacity: 0.75; line-height: 1.7; min-height: 1em; }
+  .footer { position: absolute; bottom: 12px; font-size: 11px; letter-spacing: 0.3em; opacity: 0.4; }
+  .settings { display: grid; grid-template-columns: auto auto auto; gap: 14px 18px; align-items: center; text-align: left; margin: 8px 16px 18px; font-size: 15px; letter-spacing: 0.06em; }
+  .settings label { display: contents; }
+  .settings input[type=range] { width: min(46vw, 260px); accent-color: #c9b458; }
+  .settings input[type=checkbox] { width: 20px; height: 20px; accent-color: #c9b458; }
+  .settings select { background: #221d0c; color: #f1e4a6; border: 1px solid #8a7a3a; font: inherit; padding: 4px 8px; }
+  .howto { max-width: 640px; text-align: left; font-size: 15px; line-height: 1.65; padding: 0 20px; opacity: 0.9; }
+  .howto b { color: #fff3c0; }
+  .stats { font-size: 16px; letter-spacing: 0.08em; line-height: 1.8; }
+  @keyframes flick { 0%, 100% { opacity: 1; } 41% { opacity: 1; } 42% { opacity: 0.35; } 43% { opacity: 1; } 44% { opacity: 0.6; } 45% { opacity: 1; } 78% { opacity: 1; } 79% { opacity: 0.5; } 80% { opacity: 1; } }
 </style>
 </head>
 <body>
@@ -51,26 +69,73 @@
   <div id="battery" class="bar"><div id="batteryFill" class="fill"></div><span id="batteryPct">100%</span></div>
 </div>
 
-<div id="startScreen" class="screen">
+<div id="startScreen" class="screen menu">
+  <div class="kicker">FOUND FOOTAGE // TAPE 03</div>
   <h1>THE BACKROOMS</h1>
-  <p>Click to enter. WASD to move, mouse to look, Shift to run, C to crouch.</p>
-  <button class="btn" id="btnStart">ENTER</button>
+  <div class="subtitle">"If you're not careful and you noclip out of reality in the wrong areas..."</div>
+  <div class="menu-buttons">
+    <button class="btn hidden" id="btnContinue">CONTINUE</button>
+    <button class="btn" id="btnStart">NEW GAME</button>
+    <button class="btn hidden" id="btnLevel2">LEVEL 2: FLOODED HALLS</button>
+    <button class="btn" id="btnSettings">SETTINGS</button>
+    <button class="btn" id="btnHowto">HOW TO PLAY</button>
+  </div>
+  <div class="records" id="records"></div>
+  <div class="footer">HEADPHONES RECOMMENDED</div>
 </div>
 
+<div id="pauseScreen" class="screen menu hidden">
+  <h1>PAUSED</h1>
+  <p class="stats" id="pauseInfo"></p>
+  <button class="btn" id="btnResume">RESUME</button>
+  <button class="btn" id="btnPauseSettings">SETTINGS</button>
+  <button class="btn" id="btnQuit">SAVE &amp; QUIT TO MENU</button>
+</div>
+
+<div id="settingsScreen" class="screen menu hidden">
+  <h1>SETTINGS</h1>
+  <div class="settings">
+    <label><span>Mouse speed</span><input type="range" id="setSens" min="0.2" max="3" step="0.05"><span id="setSensVal"></span></label>
+    <label><span>Invert mouse Y</span><input type="checkbox" id="setInvert"><span></span></label>
+    <label><span>Field of view</span><input type="range" id="setFov" min="60" max="100" step="1"><span id="setFovVal"></span></label>
+    <label><span>Volume</span><input type="range" id="setVol" min="0" max="100" step="1"><span id="setVolVal"></span></label>
+    <label><span>Graphics quality</span><select id="setQuality"><option value="0">Low</option><option value="1">Medium</option><option value="2">High</option></select><span></span></label>
+    <label><span>Head bob</span><input type="checkbox" id="setBob"><span></span></label>
+  </div>
+  <button class="btn" id="btnSettingsBack">BACK</button>
+</div>
+
+<div id="howtoScreen" class="screen menu hidden">
+  <h1>HOW TO PLAY</h1>
+  <div class="howto">
+    <b>Goal:</b> find the <b>5 notes</b> pinned around the maze, then find the <b>EXIT</b> door that appears.
+    Notes crackle with radio static and the exit hums &mdash; use your ears (headphones help).<br><br>
+    <b>WASD / arrows</b> move &nbsp; <b>Mouse</b> look &nbsp; <b>Shift</b> run &nbsp; <b>C</b> crouch &nbsp; <b>F</b> flashlight &nbsp; <b>E</b> close note &nbsp; <b>Esc</b> pause<br>
+    <b>Phone:</b> left thumb moves, right thumb drags to look, buttons for run / crouch / light.<br><br>
+    <b>Something hunts you.</b> It hears running from far away, walking from closer, crouching barely at all.
+    It sees you better when you stand in the light or use the flashlight. If it spots you, break its line of sight,
+    get into the dark, crouch and wait. When the lights start to stutter, it is close.<br><br>
+    Running drains stamina. The flashlight drains its battery &mdash; spare batteries lie on the floor.
+  </div>
+  <button class="btn" id="btnHowtoBack">BACK</button>
+</div>
 <div id="noteOverlay"><div class="paper"><div id="noteNum">PAGE 1 / 5</div><div id="noteText"></div><div class="hint">[E] put away</div></div></div>
 
 <div id="scareOverlay"></div>
 
-<div id="winScreen" class="screen hidden">
-  <h1>YOU ESCAPED</h1>
-  <p>Time: <span id="winTime">0:00</span></p>
+<div id="winScreen" class="screen menu hidden">
+  <h1 id="winTitle">YOU ESCAPED</h1>
+  <p class="stats" id="winStats"></p>
+  <button class="btn" id="btnNextLevel">DESCEND TO LEVEL 2</button>
   <button class="btn" id="btnAgain">PLAY AGAIN</button>
+  <button class="btn" id="btnWinMenu">MAIN MENU</button>
 </div>
 
-<div id="gameOverScreen" class="screen hidden">
-  <h1>YOU WERE CAUGHT</h1>
-  <p>You survived <span id="goTime">0:00</span>.</p>
+<div id="gameOverScreen" class="screen menu hidden">
+  <h1 class="red">YOU WERE CAUGHT</h1>
+  <p class="stats" id="goStats"></p>
   <button class="btn" id="btnRetry">TRY AGAIN</button>
+  <button class="btn" id="btnGoMenu">MAIN MENU</button>
 </div>
 
 <div id="loadError" class="screen hidden">
@@ -2545,6 +2610,11 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyC' && !e.repeat) player.crouchToggle = !player.crouchToggle;
   if (e.code === 'KeyF' && !e.repeat) toggleFlashlight();
   if ((e.code === 'KeyE' || e.code === 'Enter') && goal.reading > 0) hideNote();
+  if (e.code === 'Escape' || e.code === 'KeyP') {
+    if (game.state === 'playing') { pauseGame(); if (document.pointerLockElement) document.exitPointerLock(); }
+    else if (!$('settingsScreen').classList.contains('hidden')) showScreen(settingsReturn);
+    else if (!$('howtoScreen').classList.contains('hidden')) showScreen('startScreen');
+  }
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
 });
 window.addEventListener('keyup', (e) => { keys[e.code] = false; });
@@ -2552,11 +2622,15 @@ window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; }
 
 document.addEventListener('mousemove', (e) => {
   if (!input.locked || game.state !== 'playing') return;
-  input.lookX += e.movementX || 0;
-  input.lookY += e.movementY || 0;
+  const mx = e.movementX || 0, my = e.movementY || 0;
+  if (Math.abs(mx) > 400 || Math.abs(my) > 400) return;   // Chrome pointer-lock spike
+  input.lookX += mx;
+  input.lookY += my;
 });
 document.addEventListener('pointerlockchange', () => {
+  const was = input.locked;
   input.locked = document.pointerLockElement === renderer.domElement;
+  if (was && !input.locked && game.state === 'playing') pauseGame();
 });
 function requestLock() {
   try {
@@ -2589,7 +2663,7 @@ function updatePlayer(dt) {
   // --- look ---
   const sens = 0.0022 * input.sensitivity;
   player.yaw -= input.lookX * sens;
-  player.pitch -= input.lookY * sens;
+  player.pitch -= input.lookY * sens * (input.invert ? -1 : 1);
   player.pitch = clamp(player.pitch, -1.45, 1.45);
   input.lookX = 0; input.lookY = 0;
 
@@ -2638,7 +2712,7 @@ function updatePlayer(dt) {
     onFootstep();
   }
 
-  const bobScale = player.running ? 0.065 : player.crouching ? 0.025 : 0.04;
+  const bobScale = (player.running ? 0.065 : player.crouching ? 0.025 : 0.04) * (settings.bob ? 1 : 0.15);
   const bobY = Math.abs(Math.sin(player.bobPhase)) * bobScale * player.bobAmt;
   const bobX = Math.cos(player.bobPhase) * bobScale * 0.6 * player.bobAmt;
   camera.position.set(
@@ -2665,23 +2739,107 @@ const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0, notes: 0, level
 function notesCollected() { return game.notes; }
 function onChaseStart() {}
 function onNotePicked() {}
+function onPlayerCaught() { $('hud').classList.add('hidden'); hideNote(); clearBeacons(); }
 function onLevelComplete() {
   game.state = 'won';
-  clearBeacons();
+  clearBeacons(); silenceMonster();
   if (document.pointerLockElement) document.exitPointerLock();
-  $('hud').classList.add('hidden');
-  $('winTime').textContent = formatTime(game.time);
-  $('winScreen').classList.remove('hidden');
+  onWin();
 }
-function onPlayerCaught() { $('hud').classList.add('hidden'); hideNote(); clearBeacons(); }
 function onGameOver() {
   game.state = 'gameover';
+  silenceMonster();
   if (document.pointerLockElement) document.exitPointerLock();
-  $('goTime').textContent = formatTime(game.time);
-  $('gameOverScreen').classList.remove('hidden');
+  $('goStats').innerHTML = `Level ${game.level} &mdash; survived ${formatTime(game.time)}<br>Notes found: ${game.notes} / ${NOTES_NEEDED}`;
+  onDeath();
+  showScreen('gameOverScreen');
 }
 function formatTime(t) { const m = Math.floor(t / 60), s = Math.floor(t % 60); return m + ':' + String(s).padStart(2, '0'); }
 
+// ---------------- screens ----------------
+const SCREENS = ['startScreen', 'pauseScreen', 'settingsScreen', 'howtoScreen', 'gameOverScreen', 'winScreen'];
+let settingsReturn = 'startScreen';
+function showScreen(id) {
+  for (const s of SCREENS) $(s).classList.toggle('hidden', s !== id);
+  $('hud').classList.toggle('hidden', id !== null);
+  if (id === 'startScreen') refreshStartScreen();
+  const first = id && $(id).querySelector('.btn:not(.hidden)');
+  if (first && !isTouch) first.focus({ preventScroll: true });
+}
+function pauseGame() {
+  if (game.state !== 'playing') return;
+  game.state = 'paused';
+  for (const k in keys) keys[k] = false;
+  Sound.suspend();
+  $('pauseInfo').innerHTML = `Level ${game.level} &mdash; ${formatTime(game.time)}<br>Notes ${game.notes} / ${NOTES_NEEDED}`;
+  onPause();
+  showScreen('pauseScreen');
+}
+function resumeGame() {
+  if (game.state !== 'paused') return;
+  showScreen(null);
+  game.state = 'playing';
+  clock.getDelta();
+  Sound.resume();
+  requestLock();
+}
+function quitToMenu() {
+  if (game.state === 'playing' || game.state === 'paused') onPause();
+  game.state = 'menu';
+  hideNote(); clearBeacons(); silenceMonster();
+  Sound.resume();
+  if (document.pointerLockElement) document.exitPointerLock();
+  setupAttract();
+  showScreen('startScreen');
+}
+function silenceMonster() {
+  const b = monster.breath, ctx = Sound.ctx;
+  if (b && ctx) { b.g.gain.setTargetAtTime(0, ctx.currentTime, 0.05); b.lfoG.gain.setTargetAtTime(0, ctx.currentTime, 0.05); b.gg.gain.setTargetAtTime(0, ctx.currentTime, 0.05); }
+}
+
+// ---------------- settings ----------------
+const SETTINGS_KEY = 'backrooms.settings.v1';
+const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0 && matchMedia('(pointer: coarse)').matches;
+const settings = { sens: 1, invert: false, fov: 75, volume: 80, quality: isTouch ? 0 : 1, bob: true };
+function loadSettings() { try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch (e) { /* storage blocked */ } }
+function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* storage blocked */ } }
+function applySettings() {
+  input.sensitivity = settings.sens;
+  input.invert = settings.invert;
+  camera.fov = settings.fov; camera.updateProjectionMatrix();
+  Sound.setVolume(settings.volume / 100);
+  if (quality.level !== +settings.quality) applyQuality(+settings.quality);
+  $('setSens').value = settings.sens; $('setSensVal').textContent = (+settings.sens).toFixed(2);
+  $('setInvert').checked = settings.invert;
+  $('setFov').value = settings.fov; $('setFovVal').textContent = settings.fov + '°';
+  $('setVol').value = settings.volume; $('setVolVal').textContent = settings.volume + '%';
+  $('setQuality').value = String(settings.quality);
+  $('setBob').checked = settings.bob;
+}
+function bindSetting(id, key, parse, evt = 'input') {
+  $(id).addEventListener(evt, (e) => { settings[key] = parse(e.target); applySettings(); saveSettings(); });
+}
+bindSetting('setSens', 'sens', (t) => parseFloat(t.value));
+bindSetting('setInvert', 'invert', (t) => t.checked, 'change');
+bindSetting('setFov', 'fov', (t) => parseInt(t.value, 10));
+bindSetting('setVol', 'volume', (t) => parseInt(t.value, 10));
+bindSetting('setQuality', 'quality', (t) => parseInt(t.value, 10), 'change');
+bindSetting('setBob', 'bob', (t) => t.checked, 'change');
+function openSettings(from) { settingsReturn = from; showScreen('settingsScreen'); }
+
+// ---------------- attract mode (menu background) ----------------
+const attract = { x: 0, z: 0, yaw: 0, t: 0 };
+function setupAttract() {
+  attract.x = player.pos.x; attract.z = player.pos.z; attract.yaw = player.yaw; attract.t = 0;
+  monster.model && (monster.model.root.visible = false);
+}
+function updateAttract(dt) {
+  attract.t += dt;
+  U.uTime.value = (U.uTime.value + dt) % 1000;
+  camera.position.set(attract.x, 1.55 + Math.sin(attract.t * 0.4) * 0.01, attract.z);
+  camera.rotation.set(-0.03 + Math.sin(attract.t * 0.13) * 0.03, attract.yaw + Math.sin(attract.t * 0.05) * 0.7, 0);
+  U.uFlash.value = 0;
+}
 // Choose a spawn facing the most open direction
 function spawnPlayer(x, z) {
   player.pos.set(x, 0, z); player.vel.set(0, 0, 0);
@@ -2707,19 +2865,47 @@ function newGame(level = 1) {
   updateChunks(player.pos.x, player.pos.z, true);
   resetMonster();
 }
-function startGame() {
-  $('startScreen').classList.add('hidden');
-  $('gameOverScreen').classList.add('hidden');
-  $('winScreen').classList.add('hidden');
-  $('hud').classList.remove('hidden');
-  newGame(1);
+function startGame(level = 1) {
+  showScreen(null);
+  newGame(level);
+  onNewRun();
   game.state = 'playing';
-  Sound.init();
+  Sound.init(); Sound.resume();
+  applySettings();
+  clock.getDelta();
   requestLock();
+  showMessage(level === 2 ? 'Level 2 — The Flooded Halls. Find 5 notes.' : 'Find the 5 notes. Listen for the static.', 5);
 }
-$('btnStart').addEventListener('click', startGame);
-$('btnRetry').addEventListener('click', startGame);
-$('btnAgain').addEventListener('click', startGame);
+$('btnStart').addEventListener('click', () => startGame(1));
+$('btnRetry').addEventListener('click', () => startGame(game.level));
+$('btnAgain').addEventListener('click', () => startGame(game.level));
+$('btnNextLevel').addEventListener('click', () => startGame(2));
+$('btnLevel2').addEventListener('click', () => startGame(2));
+$('btnResume').addEventListener('click', resumeGame);
+$('btnQuit').addEventListener('click', quitToMenu);
+$('btnGoMenu').addEventListener('click', quitToMenu);
+$('btnWinMenu').addEventListener('click', quitToMenu);
+$('btnSettings').addEventListener('click', () => { Sound.init(); openSettings('startScreen'); });
+$('btnPauseSettings').addEventListener('click', () => openSettings('pauseScreen'));
+$('btnSettingsBack').addEventListener('click', () => showScreen(settingsReturn));
+$('btnHowto').addEventListener('click', () => showScreen('howtoScreen'));
+$('btnHowtoBack').addEventListener('click', () => showScreen('startScreen'));
+$('btnContinue').addEventListener('click', () => continueGame());
+document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
+window.addEventListener('blur', () => { if (!isTouch) pauseGame(); });
+
+// hooks filled in by the save system
+function onNewRun() {}
+function onPause() {}
+function onDeath() {}
+function onWin() {
+  $('winTitle').textContent = 'YOU ESCAPED';
+  $('winStats').innerHTML = `Level ${game.level} cleared in ${formatTime(game.time)}`;
+  $('btnNextLevel').classList.toggle('hidden', game.level !== 1);
+  showScreen('winScreen');
+}
+function refreshStartScreen() {}
+function continueGame() {}
 
 // ============================================================================
 //  MAIN LOOP
@@ -2761,6 +2947,9 @@ function frame() {
   } else if (game.state === 'caught') {
     U.uTime.value = (U.uTime.value + dt) % 1000;
     updateJumpScare(dt);
+  } else if (game.state === 'menu') {
+    updateAttract(dt);
+    updateChunks(attract.x, attract.z);
   }
   updateEffects(dt);
   renderer.setRenderTarget(sceneRT);
@@ -2768,13 +2957,16 @@ function frame() {
   renderer.setRenderTarget(null);
   renderer.render(postScene, postCam);
 }
-camera.position.set(player.pos.x, EYE_STAND, player.pos.z);
-camera.rotation.set(0, player.yaw, 0);
+loadSettings();
+applySettings();
+spawnPlayer(CELL * 0.5, CELL * 0.5);
 updateChunks(player.pos.x, player.pos.z, true);
+setupAttract();
+showScreen('startScreen');
 frame();
 
 // Debug / test hook
-window.__bk = { THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>
