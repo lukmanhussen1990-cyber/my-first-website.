@@ -4144,7 +4144,7 @@ function openSettings(from) { settingsReturn = from; showScreen('settingsScreen'
 // ---------------- attract mode (menu background) ----------------
 const attract = { x: 0, z: 0, yaw: 0, t: 0 };
 function setupAttract() {
-  attract.x = player.pos.x; attract.z = player.pos.z; attract.yaw = player.yaw; attract.t = 0;
+  attract.x = player.pos.x; attract.z = player.pos.z; attract.yaw = player.yaw; attract.t = 0; attract.turn = null;
   monster.model && (monster.model.root.visible = false);
   U.uMonster.value.set(1e5, 0, 1e5, 0); U.uOutage.value.set(0, 0, 0, 0); hidePhantom();
   fx.kick = 0; fx.red = 0; fx.dip = 0;
@@ -4152,8 +4152,25 @@ function setupAttract() {
 function updateAttract(dt) {
   attract.t += dt;
   U.uTime.value = (U.uTime.value + dt) % 1000;
-  camera.position.set(attract.x, 1.55 + Math.sin(attract.t * 0.4) * 0.01, attract.z);
-  camera.rotation.set(-0.03 + Math.sin(attract.t * 0.13) * 0.03, attract.yaw + Math.sin(attract.t * 0.05) * 0.7, 0);
+  // drift slowly through the maze, turning towards open space when a wall gets close
+  const fx = -Math.sin(attract.yaw), fz = -Math.cos(attract.yaw);
+  if (attract.turn === undefined || attract.turn === null) {
+    if (!world.segmentClear(attract.x, attract.z, attract.x + fx * 3, attract.z + fz * 3)) {
+      let best = attract.yaw, bd = -1;
+      for (let a = 1; a < 16; a++) {
+        const yaw = attract.yaw + (a / 16) * Math.PI * 2; let d = 0;
+        while (d < 14 && world.segmentClear(attract.x, attract.z, attract.x - Math.sin(yaw) * (d + 1), attract.z - Math.cos(yaw) * (d + 1))) d++;
+        if (d > bd) { bd = d; best = yaw; }
+      }
+      attract.turn = best;
+    } else { attract.x += fx * dt * 0.55; attract.z += fz * dt * 0.55; }
+  } else {
+    let dh = attract.turn - attract.yaw; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
+    attract.yaw += Math.sign(dh) * Math.min(Math.abs(dh), dt * 0.35);
+    if (Math.abs(dh) < 0.01) attract.turn = null;
+  }
+  camera.position.set(attract.x, 1.55 + Math.sin(attract.t * 0.9) * 0.012, attract.z);
+  camera.rotation.set(-0.03 + Math.sin(attract.t * 0.13) * 0.03, attract.yaw + Math.sin(attract.t * 0.11) * 0.08, 0);
   U.uFlash.value = 0;
 }
 // Choose a spawn facing the most open direction
