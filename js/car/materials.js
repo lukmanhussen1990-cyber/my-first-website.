@@ -39,6 +39,14 @@ export function createNightEnvironment(renderer, moonDir) {
 
 let cache = null;
 
+/** A copy of a shared texture with its own repeat. */
+function tiled(tex, repeat) {
+  const t = tex.clone();
+  t.repeat.set(repeat, repeat);
+  t.needsUpdate = true;
+  return t;
+}
+
 export function interiorMaterials(envMap) {
   if (cache) return cache;
   const leatherN = grainNormal(3, 256, 5200, 1.4, 3.2, 1.6);
@@ -46,9 +54,10 @@ export function interiorMaterials(envMap) {
   const weave = weaveNormal(256);
   const std = (o) => new THREE.MeshStandardMaterial({ envMap, envMapIntensity: 0.6, ...o });
   cache = {
-    leather: std({ color: 0x1b1a1d, roughness: 0.52, normalMap: leatherN, normalScale: new THREE.Vector2(0.35, 0.35) }),
+    leather: std({ color: 0x232226, roughness: 0.5, normalMap: leatherN, normalScale: new THREE.Vector2(0.35, 0.35) }),
     leatherPerf: std({ color: 0x151417, roughness: 0.6, normalMap: plasticN, normalScale: new THREE.Vector2(0.6, 0.6) }),
-    fabric: std({ color: 0x3e3c3a, roughness: 0.96, normalMap: weave, normalScale: new THREE.Vector2(0.6, 0.6), envMapIntensity: 0.1 }),
+    fabric: std({ color: 0x2e2c2a, roughness: 0.96, normalMap: weave, normalScale: new THREE.Vector2(0.35, 0.35), envMapIntensity: 0.1 }),
+    headliner: std({ color: 0x2a2826, roughness: 0.97, normalMap: tiled(weave, 14), normalScale: new THREE.Vector2(0.3, 0.3), envMapIntensity: 0.05 }),
     seatFabric: std({ color: 0x232327, roughness: 0.92, normalMap: weave, normalScale: new THREE.Vector2(0.9, 0.9), envMapIntensity: 0.15 }),
     dash: std({ color: 0x141518, roughness: 0.74, normalMap: plasticN, normalScale: new THREE.Vector2(0.3, 0.3) }),
     plastic: std({ color: 0x0f1012, roughness: 0.48, normalMap: plasticN, normalScale: new THREE.Vector2(0.15, 0.15) }),

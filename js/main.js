@@ -168,10 +168,27 @@ class Game {
     for (let i = 0; i < frames; i++) this.update(dt);
   }
 
-  /** Debug: render one frame and return it as a data URL. */
-  snap(type = 'image/jpeg') {
+  /** Debug: render one frame and return it as a data URL. `free` = { pos, look } in car space. */
+  snap(free = null) {
+    const cam = this.camera;
+    if (free) {
+      const toWorld = (v) => new THREE.Vector3(...v).applyMatrix4(this.car.group.matrixWorld);
+      this.car.headPivot.remove(cam);
+      this.scene.add(cam);
+      cam.position.copy(toWorld(free.pos));
+      cam.up.set(0, 1, 0);
+      cam.lookAt(toWorld(free.look));
+      cam.updateMatrixWorld();
+    }
     this.pipeline.render(this.renderCtx());
-    return this.canvas.toDataURL(type, 0.9);
+    const url = this.canvas.toDataURL('image/jpeg', 0.9);
+    if (free) {
+      this.scene.remove(cam);
+      this.car.headPivot.add(cam);
+      cam.position.set(0, 0, 0);
+      cam.rotation.set(this.input.pitch, this.input.yaw, 0);
+    }
+    return url;
   }
 
   resize() {

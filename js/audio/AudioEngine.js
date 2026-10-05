@@ -298,16 +298,15 @@ export class AudioEngine {
     this._radio.setPower(!!on, this._ctx.currentTime + 0.02);
   }
 
-  /** Cycle FM -> AM -> OFF; returns the new label. */
+  /** Cycle FM -> AM -> OFF (with a short tuning burst; no click); returns the new label. */
   radioNext() {
     if (!this._ready) return this.radioLabel;
-    sfx.click(this._fx, 0.8);
     return this._radio.next(this._ctx.currentTime + 0.02);
   }
 
-  /** "96.4 FM · NIGHT DRIVE", "AM 1520 · ···" or "OFF" (also "OFF" before start). */
+  /** "96.4 FM · NIGHT DRIVE", "AM 1520 · ···" or "OFF". Before start() it names the station the radio starts on. */
   get radioLabel() {
-    return this._ready ? this._radio.label : 'OFF';
+    return this._ready ? this._radio.label : '96.4 FM · NIGHT DRIVE';
   }
 
   /** Failing sodium streetlight buzz: level 0..1, pan -1..1. */

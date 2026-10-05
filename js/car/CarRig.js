@@ -96,13 +96,13 @@ export class CarRig {
     });
     this.headlightIntensity = 2600;
     // Instrument glow on the driver, the wheel and the tops of the seats.
-    this.dashLight = new THREE.PointLight(0xffb27a, 1.4, 2.6, 2);
-    this.dashLight.position.set(-0.22, 1.0, -0.58);
+    this.dashLight = new THREE.PointLight(0xffb27a, 0.9, 2.2, 2);
+    this.dashLight.position.set(-0.24, 0.9, -0.55);
     // Headlight bounce off the road and mist, coming back in through the windshield.
     this.fillLight = new THREE.PointLight(0xc8d2ff, 5, 9, 2);
     this.fillLight.position.set(0, 1.35, -3.2);
     // Faint cold light from the rear window, so the seat backs read as shapes.
-    this.cabinFill = new THREE.PointLight(0x8ea4d8, 0.5, 2.6, 2);
+    this.cabinFill = new THREE.PointLight(0x8ea4d8, 1.4, 2.8, 2);
     this.cabinFill.position.set(0.1, 1.3, 1.45);
     this.tailLight = new THREE.PointLight(0xff1a0a, 0.5, 9, 2);
     this.tailLight.position.set(0, 0.85, 2.6);
@@ -252,7 +252,7 @@ export class CarRig {
     // Lights.
     const hl = this.headlightIntensity * this.lightsFlicker;
     for (const L of this.headlights) L.intensity = hl;
-    this.dashLight.intensity = 1.4 * this.dashFlicker;
+    this.dashLight.intensity = 0.9 * this.dashFlicker;
     this.dash.brightness = this.dashFlicker;
     this.tailLight.intensity = 0.5 + Math.max(0, -this.accelLong) * 0.8;
     void wetness;

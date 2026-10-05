@@ -420,7 +420,7 @@ export class Interior {
       const z = -0.42 + 1.68 * v;
       const y = 1.392 - 0.05 * (x / 0.8) ** 2 - 0.02 * Math.max(0, (z - 1.0) / 0.26) ** 2;
       t.set(x, y, z);
-    }, 16, 16, m.fabric);
+    }, 16, 16, m.headliner);
     this.add(headliner);
     // Overhead console with map lights, and the dome light.
     const over = rbox(0.2, 0.03, 0.12, 0.012, m.plastic);

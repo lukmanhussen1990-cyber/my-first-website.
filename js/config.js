@@ -6,7 +6,7 @@ export const CAR = {
   wheelbase: 2.8,
   halfWidth: 0.92,
   // Player eye (rear seat, slightly right of centre) and how far they can lean.
-  eye: { x: 0.2, y: 1.2, z: 0.93 },
+  eye: { x: 0.2, y: 1.23, z: 0.95 },
   lean: { xMin: -0.42, xMax: 0.3, zMin: -0.22, zMax: 0.06 },
   headlights: [
     { x: -0.62, y: 0.7, z: -2.36 },
