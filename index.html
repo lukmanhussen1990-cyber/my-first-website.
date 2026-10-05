@@ -245,6 +245,8 @@ uniform float uDip;
 uniform float uRed;
 uniform float uBlack;
 uniform float uWarp;
+uniform sampler2D tBloom;
+uniform float uBloom;
 varying vec2 vUv;
 float hash(vec2 p) { p = fract(p * vec2(443.897, 441.423)); p += dot(p, p.yx + 19.19); return fract((p.x + p.y) * p.x); }
 void main() {
@@ -260,6 +262,7 @@ void main() {
   col.r = texture2D(tDiffuse, uv + off).r;
   col.g = texture2D(tDiffuse, uv).g;
   col.b = texture2D(tDiffuse, uv - off).b;
+  col += texture2D(tBloom, uv).rgb * uBloom;
   // grade: a touch of contrast, slightly sickly desaturation
   float l = dot(col, vec3(0.299, 0.587, 0.114));
   col = mix(vec3(l), col, 0.9 - uDanger * 0.3);
@@ -281,6 +284,7 @@ void main() {
 const postU = {
   tDiffuse: { value: null }, uTime: { value: 0 }, uDanger: { value: 0 }, uGrain: { value: 0.08 }, uAberr: { value: 0 },
   uVig: { value: 0 }, uDip: { value: 0 }, uRed: { value: 0 }, uBlack: { value: 0 }, uWarp: { value: 0 },
+  tBloom: { value: null }, uBloom: { value: 0.0 },
 };
 const postScene = new THREE.Scene();
 const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -289,6 +293,45 @@ postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMate
   vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
   fragmentShader: POST_FRAG,
 })));
+// Bloom: bright-pass + separable blur at quarter resolution
+let bloomA = null, bloomB = null;
+const bloomQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2));
+const bloomScene = new THREE.Scene(); bloomScene.add(bloomQuad);
+const FSQ_VERT = 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
+const brightMat = new THREE.ShaderMaterial({
+  uniforms: { tDiffuse: { value: null }, uTexel: { value: new THREE.Vector2() } }, vertexShader: FSQ_VERT, depthTest: false, depthWrite: false,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 uTexel; varying vec2 vUv;
+    void main() {
+      vec3 c = texture2D(tDiffuse, vUv + uTexel * vec2(-1.0, -1.0)).rgb + texture2D(tDiffuse, vUv + uTexel * vec2(1.0, -1.0)).rgb
+             + texture2D(tDiffuse, vUv + uTexel * vec2(-1.0, 1.0)).rgb + texture2D(tDiffuse, vUv + uTexel * vec2(1.0, 1.0)).rgb;
+      c *= 0.25;
+      float l = max(c.r, max(c.g, c.b));
+      gl_FragColor = vec4(c * smoothstep(0.72, 0.98, l), 1.0);
+    }`,
+});
+const blurMat = new THREE.ShaderMaterial({
+  uniforms: { tDiffuse: { value: null }, uDir: { value: new THREE.Vector2() } }, vertexShader: FSQ_VERT, depthTest: false, depthWrite: false,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 uDir; varying vec2 vUv;
+    void main() {
+      vec3 c = texture2D(tDiffuse, vUv).rgb * 0.227;
+      c += (texture2D(tDiffuse, vUv + uDir * 1.385).rgb + texture2D(tDiffuse, vUv - uDir * 1.385).rgb) * 0.316;
+      c += (texture2D(tDiffuse, vUv + uDir * 3.231).rgb + texture2D(tDiffuse, vUv - uDir * 3.231).rgb) * 0.07;
+      gl_FragColor = vec4(c, 1.0);
+    }`,
+});
+function renderBloom() {
+  if (!bloomA || postU.uBloom.value <= 0) return;
+  bloomQuad.material = brightMat; brightMat.uniforms.tDiffuse.value = sceneRT.texture;
+  brightMat.uniforms.uTexel.value.set(1 / sceneRT.width, 1 / sceneRT.height);
+  renderer.setRenderTarget(bloomA); renderer.render(bloomScene, postCam);
+  bloomQuad.material = blurMat;
+  for (let i = 0; i < 2; i++) {
+    blurMat.uniforms.tDiffuse.value = bloomA.texture; blurMat.uniforms.uDir.value.set((i + 1) / bloomA.width, 0);
+    renderer.setRenderTarget(bloomB); renderer.render(bloomScene, postCam);
+    blurMat.uniforms.tDiffuse.value = bloomB.texture; blurMat.uniforms.uDir.value.set(0, (i + 1) / bloomA.height);
+    renderer.setRenderTarget(bloomA); renderer.render(bloomScene, postCam);
+  }
+}
 function resizeRT() {
   const pr = Math.min(window.devicePixelRatio || 1, quality.level >= 2 ? 2 : 1.25);
   renderer.setPixelRatio(pr);
@@ -299,6 +342,14 @@ function resizeRT() {
     sceneRT = new THREE.WebGLRenderTarget(w, h, { samples: quality.msaa, depthBuffer: true, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
   }
   postU.tDiffuse.value = sceneRT.texture;
+  const bw = Math.max(2, w >> 2), bh = Math.max(2, h >> 2);
+  if (bloomA && (bloomA.width !== bw || bloomA.height !== bh)) { bloomA.dispose(); bloomB.dispose(); bloomA = null; }
+  if (!bloomA) {
+    const o = { depthBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter };
+    bloomA = new THREE.WebGLRenderTarget(bw, bh, o); bloomB = new THREE.WebGLRenderTarget(bw, bh, o);
+  }
+  postU.tBloom.value = bloomA.texture;
+  postU.uBloom.value = quality.level === 0 ? 0 : 0.55;
 }
 function applyQuality(level) {
   quality.level = level;
@@ -3160,6 +3211,57 @@ function updateScares(dt) {
   scares.t = 28 + Math.random() * 30;
 }
 
+
+// ============================================================================
+//  DUST MOTES (drift in the air, catch the flashlight beam)
+// ============================================================================
+const DUST_N = 700, DUST_BOX = 14;
+const dust = (() => {
+  const g = new THREE.BufferGeometry(), p = new Float32Array(DUST_N * 3), s = new Float32Array(DUST_N);
+  const r = mulberry32(99);
+  for (let i = 0; i < DUST_N; i++) { p[i * 3] = r() * DUST_BOX; p[i * 3 + 1] = r() * WALL_H; p[i * 3 + 2] = r() * DUST_BOX; s[i] = r(); }
+  g.setAttribute('position', new THREE.BufferAttribute(p, 3)); g.setAttribute('aSeed', new THREE.BufferAttribute(s, 1));
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { ...U, uCam: { value: new THREE.Vector3() }, uEnvL: { value: 0.5 }, uPx: { value: 1 } },
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `
+      uniform float uTime; uniform vec3 uCam; uniform float uPx;
+      attribute float aSeed; varying float vA; varying vec3 vWorld; varying float vDepth;
+      void main() {
+        vec3 p = position + vec3(sin(uTime * 0.13 + aSeed * 40.0) * 0.6 + uTime * 0.05, sin(uTime * 0.21 + aSeed * 17.0) * 0.25 - uTime * 0.02, cos(uTime * 0.11 + aSeed * 23.0) * 0.6);
+        p.xz = mod(p.xz - uCam.xz + ${(DUST_BOX / 2).toFixed(1)}, ${DUST_BOX.toFixed(1)}) - ${(DUST_BOX / 2).toFixed(1)} + uCam.xz;
+        p.y = mod(p.y, ${WALL_H.toFixed(2)});
+        vWorld = p;
+        vec4 mv = viewMatrix * vec4(p, 1.0);
+        vDepth = -mv.z;
+        vA = (0.4 + 0.6 * fract(aSeed * 7.3)) * smoothstep(0.3, 1.2, vDepth) * (1.0 - smoothstep(4.0, 7.0, vDepth));
+        gl_PointSize = uPx * (1.0 + 1.2 * fract(aSeed * 3.1)) * 6.0 / max(vDepth, 0.5);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      ${GLSL_FRAG_COMMON}
+      uniform vec3 uLightColor; uniform float uEnvL;
+      varying float vA; varying vec3 vWorld; varying float vDepth;
+      void main() {
+        vec2 c = gl_PointCoord - 0.5; float d = dot(c, c);
+        if (d > 0.25) discard;
+        vec3 fl = flashlight(vWorld, -uFlashDir);
+        vec3 col = (uLightColor * uEnvL * 0.05 + fl * 0.35) * vA * (1.0 - d * 4.0);
+        gl_FragColor = vec4(toDisplay(col) * 0.6, 1.0);
+      }`,
+  });
+  const pts = new THREE.Points(g, mat);
+  pts.frustumCulled = false; pts.renderOrder = 4;
+  scene.add(pts);
+  return { pts, mat, envT: 0 };
+})();
+function updateDust(dt) {
+  dust.mat.uniforms.uCam.value.copy(camera.position);
+  dust.mat.uniforms.uPx.value = renderer.getPixelRatio() * quality.scale;
+  dust.envT -= dt;
+  if (dust.envT <= 0) { dust.envT = 0.3; dust.mat.uniforms.uEnvL.value = sampleLight(player.pos.x, player.pos.z, 1.5); }
+}
+
 // ============================================================================
 //  INPUT
 // ============================================================================
@@ -3622,6 +3724,7 @@ function frame() {
   simulate(dt);
   renderer.setRenderTarget(sceneRT);
   renderer.render(scene, camera);
+  renderBloom();
   renderer.setRenderTarget(null);
   renderer.render(postScene, postCam);
 }
@@ -3637,6 +3740,7 @@ const SIM_STEPS = [
   ['chunks', () => updateChunks(player.pos.x, player.pos.z)],
   ['ambient', (dt) => updateAmbientAudio(dt)],
   ['scares', (dt) => updateScares(dt)],
+  ['dust', (dt) => updateDust(dt)],
 ];
 function simulate(dt) {
   if (game.state === 'playing') {

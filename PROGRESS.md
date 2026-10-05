@@ -125,3 +125,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   ~0.1-0.5 ms average CPU simulation per frame. Chunk baking now yields after every wall face / floor cell: worst single
   step went from ~10 ms to 1.9 ms (p99 0.9 ms) with a 2.5 ms/frame streaming budget, so walking into new areas no longer
   hitches. HUD DOM writes are cached (only touched when a value changes). Added renderer stats to the debug hook.
+- **[07:30 UTC] Extra — Bloom + dust.** Quarter-resolution bloom (bright-pass + 2x separable Gaussian blur, off on Low)
+  makes the fluorescent panels glow through the haze. 700 dust motes drift in a box that wraps around the camera; they
+  are faint in room light and sparkle inside the flashlight beam.
