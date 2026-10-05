@@ -5080,6 +5080,8 @@ const Hud = {
       'oDist', 'oBest', 'oMult', 'oMissions', 'oAgain', 'oHome'];
     for (const id of ids) this.el[id] = $(id);
     const e = this.el;
+    // encode every icon now, behind the loading screen: a first PNG encode in the middle of a run can stall a frame
+    for (const name of Object.keys(Icons.draw)) Icons.url(name);
     e.icCap.src = Icons.url('cap');
     e.icStar.src = Icons.url('star');
     e.icCoin.src = Icons.url('coin');
@@ -5505,11 +5507,37 @@ const Game = {
     this.wireFeedback();
     document.addEventListener('visibilitychange', () => { if (document.hidden) this.autoPause(); Sound.setHidden(document.hidden); });
     window.addEventListener('blur', () => this.autoPause());
+    this.warmUp();
     const box = document.getElementById('loading');
     if (box) box.style.display = 'none';
     this.toMenu();
+    this.snapCamera(); // the menu is framed from the very first frame (no swing from the warm-up view)
     this.last = performance.now();
     requestAnimationFrame(t => this.frame(t));
+  },
+
+  // Compile every shader behind the loading screen: obstacles, pickups and effects are created lazily by their
+  // pools, and a first-time shader compile in the middle of a run would stall a frame (worst on phones).
+  warmUp() {
+    const ex = Runner.extras;
+    try {
+      const z = -14;
+      [{ type: OB.LOW, lane: 0 }, { type: OB.HIGH, lane: 1 }, { type: OB.FULL, lane: 2 },
+        { type: OB.TRAIN, lane: 0, cars: 2, scheme: 'blue' }, { type: OB.TRAIN, lane: 2, cars: 1, scheme: 'red', v: 12, trig: 0 },
+        { type: OB.RAMP, lane: 1 }].forEach((spec, i) => Obstacles.spawn(spec, z - i * 6));
+      [...PU_ORDER, 'cap'].forEach((t, i) => Pickups.spawn(t, CFG.LANE_X[i % 3], 1, z + 2 - i * 2));
+      for (const k of ['board', 'jet', 'magnet']) ex[k].visible = true;
+      Runner.blob.visible = true;
+      Fx.burst('add', 0, 1, z, 4, { color: [1, 1, 1], speed: 1, life: 0.05, s0: 0.1, shape: 1 });
+      Fx.burst('norm', 0, 1, z, 4, { color: [1, 1, 1], speed: 1, life: 0.05, s0: 0.1, shape: 0 });
+      Fx.update(1 / 60, Player, { state: 'loading', hover: false, deadT: 0 });
+      this.camTarget(this.cam);
+      this.applyCamera();
+      Gfx.renderer.compile(Gfx.scene, Gfx.camera);
+      Gfx.render();
+    } catch { /* only an optimisation: the game works without it */ }
+    for (const k of ['board', 'jet', 'magnet']) ex[k].visible = false;
+    Runner.blob.visible = false;
   },
 
   mult() { return Save.data.mult * (Powers.has('x2') ? 2 : 1); },
