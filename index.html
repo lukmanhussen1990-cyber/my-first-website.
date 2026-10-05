@@ -1439,7 +1439,8 @@ function* buildChunkGeometry(kx, kz) {
         decals.quad(mx - 0.3, H - 0.004, mz - 0.6, 0.6, 0, 0, 0, 0, 1.2, 0, -1, 0, 1, 1, 2); remapUV(4);
         decals.surf = SURF_WALL;
       } else
-      panels.quad(mx - 0.3, H - 0.012, mz - 0.6, 0.6, 0, 0, 0, 0, 1.2, 0, -1, 0, 1, 1, 2);
+      if (world.level === 3 && lt !== LIGHT.BROKEN) panels.quad(mx - 0.18, H - 0.03, mz - 0.18, 0.36, 0, 0, 0, 0, 0.36, 0, -1, 0, 1, 1, 2);   // small emergency lamp
+      else panels.quad(mx - 0.3, H - 0.012, mz - 0.6, 0.6, 0, 0, 0, 0, 1.2, 0, -1, 0, 1, 1, 2);
       for (let v = 0; v < 4; v++) { panels.extra.aSeed.data.push(seed); panels.extra.aLPos.data.push(mx, mz); }
     }
     yield;
