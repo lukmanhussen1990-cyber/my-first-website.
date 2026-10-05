@@ -1483,7 +1483,7 @@ function buildProp(p) {
     for (let i = 0; i < 5; i++) { const leg = box(0.32, 0.03, 0.04, 0x4a4a4a, 0, 0.05, 0); leg.rotation.y = i * Math.PI * 2 / 5; leg.position.set(Math.cos(i * 1.2566) * 0.14, 0.05, -Math.sin(i * 1.2566) * 0.14); add(leg); }
     if (p.flip) { ch.rotation.z = 1.45; ch.position.set(0.42, 0.05, 0); }
   } else if (p.type === 2) {
-    for (const s of [-1, 1]) { const b = box(0.32, 0.62, 0.02, 0xe2b81e, 0, 0.3, s * 0.08, 0.05); b.rotation.x = s * 0.28; const band = box(0.33, 0.06, 0.022, 0x1a1a1a, 0, 0.4, s * 0.105); band.rotation.x = s * 0.28; }
+    for (const s of [-1, 1]) { const b = box(0.32, 0.62, 0.02, 0xe2b81e, 0, 0.3, s * 0.08, 0.05); b.rotation.x = -s * 0.28; const band = box(0.33, 0.06, 0.022, 0x1a1a1a, 0, 0.38, s * 0.065); band.rotation.x = -s * 0.28; }
   } else {
     box(0.9, 0.74, 0.45, 0x6c685c, 0, 0.37, 0);
     for (const y of [0.2, 0.52]) { box(0.86, 0.01, 0.01, 0x3a3830, 0, y + 0.14, 0.226); box(0.14, 0.025, 0.02, 0xb0aca0, 0, y, 0.235); }
