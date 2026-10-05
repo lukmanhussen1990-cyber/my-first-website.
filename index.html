@@ -1747,7 +1747,7 @@ const monster = {
   phase: 0, speed: 0, env: 0.5, envTimer: 0,
   twitch: 0, twitchTarget: new THREE.Vector2(),
   stepPhase: 0, screechCooldown: 0, directorTimer: 0, stuckTimer: 0,
-  breath: null, active: false, alert: 0,
+  breath: null, active: false, alert: 0, huntTimer: 60,
 };
 function initMonster() {
   if (!monster.model) {
@@ -1775,6 +1775,7 @@ function resetMonster() {
   placeMonsterAway(38, 50);
   monster.state = 'wander'; monster.active = true; monster.alert = 0; monster.lostTimer = 0; monster.searchTimer = 0;
   monster.screechCooldown = 8; monster.directorTimer = 0; monster.heading = Math.random() * Math.PI * 2;
+  monster.huntTimer = 50 + Math.random() * 25;
 }
 function monsterCell() { return [Math.floor(monster.pos.x / CELL), Math.floor(monster.pos.z / CELL)]; }
 function setMonsterGoal(x, z) {
@@ -1844,13 +1845,10 @@ function updateMonster(dt) {
     else {
       m.lostTimer += dt;
       m.repath -= dt;
-      if (m.repath <= 0 || !m.path.length) {
-        // keeps a sense of the player's position for a moment after losing sight
-        const p = m.lostTimer < 1.2 ? player.pos : m.lastSeen;
-        setMonsterGoal(p.x, p.z); m.repath = 0.6;
-      }
-      if (m.lostTimer > 1.2) m.lastSeen.copy(m.lastSeen);
-      if (m.lostTimer > 3.5 && (!m.path.length || m.path.length < 1)) { m.state = 'search'; m.searchTimer = 7 + Math.random() * 4; m.path = []; }
+      // it keeps a sense of where you went for a moment after losing sight, then heads to that spot
+      if (m.lostTimer < 1.2) m.lastSeen.copy(player.pos);
+      if (m.repath <= 0 || !m.path.length) { setMonsterGoal(m.lastSeen.x, m.lastSeen.z); m.repath = 0.6; }
+      if (m.lostTimer > 3.5 && !m.path.length) { m.state = 'search'; m.searchTimer = 7 + Math.random() * 4; m.path = []; }
       if (m.lostTimer > 9) { m.state = 'search'; m.searchTimer = 6; m.path = []; }
     }
   } else if (m.state === 'investigate') {
@@ -1874,6 +1872,16 @@ function updateMonster(dt) {
   if (m.directorTimer <= 0) {
     m.directorTimer = 4;
     if (dist > 62 && m.state !== 'chase') placeMonsterAway(30, 42);
+  }
+  // hunt escalation: every so often it "smells" roughly where you are and comes to look
+  if (m.state === 'chase') m.huntTimer = Math.max(m.huntTimer, 40);
+  m.huntTimer -= dt * (1 + 0.15 * notesCollected());
+  if (m.huntTimer <= 0 && m.state === 'wander') {
+    m.huntTimer = (world.level === 2 ? 35 : 45) + Math.random() * 25;
+    if (dist > 45) placeMonsterAway(26, 36);
+    const a = Math.random() * Math.PI * 2, r = 3 + Math.random() * 5;
+    m.state = 'investigate';
+    setMonsterGoal(player.pos.x + Math.cos(a) * r, player.pos.z + Math.sin(a) * r);
   }
 
   // ---------------- movement ----------------
@@ -2111,13 +2119,14 @@ function makeScareFace() {
   return c;
 }
 let scareFaceCanvas = null;
+function ensureScareFace() { if (!scareFaceCanvas) { scareFaceCanvas = makeScareFace(); $('scareOverlay').appendChild(scareFaceCanvas); } }
 
 // ---------------- jump scare ----------------
 const scare = { t: 0, active: false, yaw0: 0, pitch0: 0 };
 function startJumpScare() {
   game.state = 'caught';
   fx.red = 0.9; cameraKick(1.5);
-  if (!scareFaceCanvas) { scareFaceCanvas = makeScareFace(); $('scareOverlay').appendChild(scareFaceCanvas); }
+  ensureScareFace();
   scare.active = true; scare.t = 0;
   scare.yaw0 = player.yaw; scare.pitch0 = player.pitch;
   jumpScareSound();
@@ -3204,6 +3213,7 @@ function startGame(level = 1) {
   applySettings();
   clock.getDelta();
   requestLock();
+  setTimeout(ensureScareFace, 1500);
   showMessage(level === 2 ? 'Level 2 — The Flooded Halls. Find 5 notes.' : 'Find the 5 notes. Listen for the static.', 5);
 }
 $('btnStart').addEventListener('click', () => startGame(1));
@@ -3307,23 +3317,35 @@ function updateDanger(dt) {
 function frame() {
   requestAnimationFrame(frame);
   const dt = Math.min(clock.getDelta(), 0.05);
+  simulate(dt);
+  renderer.setRenderTarget(sceneRT);
+  renderer.render(scene, camera);
+  renderer.setRenderTarget(null);
+  renderer.render(postScene, postCam);
+}
+function updateScares(dt) { if (window.__scares) window.__scares(dt); }
+const PROF = { on: false, max: {} };
+const SIM_STEPS = [
+  ['player', (dt) => { updatePlayer(dt); updateStamina(dt); updateFlashlight(dt); }],
+  ['monster', (dt) => updateMonster(dt)],
+  ['items', (dt) => updateItems(dt)],
+  ['water', (dt) => updateWater(dt)],
+  ['goal', (dt) => { updateGoal(dt); updateBeacons(); }],
+  ['save', (dt) => { autosaveT -= dt; if (autosaveT <= 0) { autosaveT = 10; snapshotRun(); } }],
+  ['hud', (dt) => { if (goal.reading > 0) { goal.reading -= dt; if (goal.reading <= 0) hideNote(); } updateHUD(dt); if (isTouch) syncTouchButtons(); }],
+  ['chunks', () => updateChunks(player.pos.x, player.pos.z)],
+  ['ambient', (dt) => updateAmbientAudio(dt)],
+  ['scares', (dt) => updateScares(dt)],
+];
+function simulate(dt) {
   if (game.state === 'playing') {
     game.time += dt;
     U.uTime.value = (U.uTime.value + dt) % 1000;
-    updatePlayer(dt);
-    updateStamina(dt);
-    updateFlashlight(dt);
-    updateMonster(dt);
-    updateItems(dt);
-    updateWater(dt);
-    updateGoal(dt);
-    updateBeacons();
-    autosaveT -= dt; if (autosaveT <= 0) { autosaveT = 10; snapshotRun(); }
-    if (goal.reading > 0) { goal.reading -= dt; if (goal.reading <= 0) hideNote(); }
-    updateHUD(dt);
-    if (isTouch) syncTouchButtons();
-    updateChunks(player.pos.x, player.pos.z);
-    updateAmbientAudio(dt);
+    for (const [name, fn] of SIM_STEPS) {
+      if (game.state !== 'playing') break;
+      if (PROF.on) { const t0 = performance.now(); fn(dt); const ms = performance.now() - t0; if (!(PROF.max[name] >= ms)) PROF.max[name] = ms; }
+      else fn(dt);
+    }
     updateDanger(dt);
     camera.getWorldDirection(_camDir);
     Sound.setListener(camera.position, _camDir);
@@ -3340,10 +3362,6 @@ function frame() {
     updateChunks(attract.x, attract.z);
   }
   updateEffects(dt);
-  renderer.setRenderTarget(sceneRT);
-  renderer.render(scene, camera);
-  renderer.setRenderTarget(null);
-  renderer.render(postScene, postCam);
 }
 loadSettings();
 loadSave();
@@ -3355,7 +3373,7 @@ showScreen('startScreen');
 frame();
 
 // Debug / test hook
-window.__bk = { get isTouch() { return isTouch; }, get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { PROF, simulate, get isTouch() { return isTouch; }, get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>
