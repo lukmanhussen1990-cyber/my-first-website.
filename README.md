@@ -104,10 +104,17 @@ flutter analyze
   tray refill, game-over detection, fair generator, random full games,
   save/restore.
 - `test/game_screen_test.dart` – real drag gestures on the game screen:
-  placement, invalid drop, two-line clear, game-over popup, settings.
+  placement, invalid drop, tap-without-drag, two-line clear, game-over
+  popup, settings toggles/restart, and that an idle screen stops
+  rendering frames (battery).
 - `test/screens_test.dart` – splash sequence, home, how-to-play, game-over
-  popup, beating the best score (paints every screen on the native test
-  engine).
+  popup, beating the best score, full-screen backgrounds, popups on a
+  320x480 screen (paints every screen on the native test engine).
+- `test/oracle_test.dart` – 60 random games (>1000 moves) checked move by
+  move against an independently written rules model (cells, lines, points,
+  combo, game over).
+- `test/layout_test.dart` – board, header and the largest tray pieces fit
+  without overlap on 15 screen sizes from 320x480 to tablets.
 - **On-device:** the *Device test* workflow installs the signed APK on
   Android 8.0 (API 26) and Android 14 (API 34) emulators and runs
   `tool/device_bot.py`, a bot that reads the board from screenshots and
