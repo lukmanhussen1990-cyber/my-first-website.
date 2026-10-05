@@ -47,6 +47,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     if (widget.startNew) ctrl.newGame();
     ctrl.onShowGameOver = _onGameOver;
     _ticker = createTicker(_onTick)..start();
+    // The ticker only runs while something moves; any change wakes it up.
+    ctrl.addListener(_wake);
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -54,6 +56,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     ctrl.saveNow();
+    ctrl.removeListener(_wake);
     _ticker.dispose();
     ctrl.dispose();
     super.dispose();
@@ -69,9 +72,25 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     }
   }
 
+  int _idleTicks = 0;
+
+  void _wake() {
+    _idleTicks = 0;
+    if (!_ticker.isActive) {
+      _last = Duration.zero;
+      _ticker.start();
+    }
+  }
+
   void _onTick(Duration elapsed) {
     final dt = ((elapsed - _last).inMicroseconds / 1e6).clamp(0.0, 0.05);
     _last = elapsed;
+    if (!ctrl.isAnimating) {
+      // Idle: stop requesting frames so the GPU can rest (saves battery).
+      if (++_idleTicks > 3) _ticker.stop();
+    } else {
+      _idleTicks = 0;
+    }
     ctrl.tick(dt);
   }
 

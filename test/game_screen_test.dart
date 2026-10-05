@@ -82,6 +82,21 @@ void main() {
     expect(game.board.filledCount, 1);
   });
 
+  testWidgets('idle game screen stops requesting frames (battery)', (tester) async {
+    final game = GameState.custom(board: Board(), tray: [p('dot', 0), p('h2', 1), p('sq2', 2)], random: Random(8));
+    final l = await setUpScreen(tester, game);
+    await pumpFrames(tester, 30);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+
+    // Touching a piece wakes the animation loop again.
+    final gesture = await tester.startGesture(l.slotCenters[0]);
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(tester.binding.hasScheduledFrame, isTrue);
+    await gesture.up();
+    await pumpFrames(tester, 60);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+  });
+
   testWidgets('a plain tap on a tall tray piece does not place it', (tester) async {
     final game = GameState.custom(board: Board(), tray: [p('v5', 0), p('sq3', 1), p('v4', 2)], random: Random(6));
     final l = await setUpScreen(tester, game);

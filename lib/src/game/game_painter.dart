@@ -137,6 +137,18 @@ class GamePainter extends CustomPainter {
           stops: const [0, 0.85, 1],
         ).createShader(br),
     );
+    // Glow around the board when a combo lands.
+    if (ctrl.comboFlash > 0) {
+      final glowColor = Palette.blocks[ctrl.lastComboColor].glow;
+      canvas.drawRRect(
+        rr.inflate(l.u * 0.4),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = l.u * 1.4
+          ..color = glowColor.withValues(alpha: 0.85 * ctrl.comboFlash)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, l.u * 1.6),
+      );
+    }
     final grid = l.gridRect;
     canvas.drawRRect(RRect.fromRectAndRadius(grid, Radius.circular(l.u * 0.8)), Paint()..color = Palette.boardInner);
 

@@ -149,6 +149,22 @@ class GameController extends ChangeNotifier {
 
   bool get isGameOver => game.gameOver;
 
+  /// True while any animation, effect or drag needs per-frame updates.
+  bool get isAnimating =>
+      drag != null ||
+      returning != null ||
+      traySpawn.any((t) => t < 1) ||
+      placedPop.isNotEmpty ||
+      clearing.isNotEmpty ||
+      particles.isNotEmpty ||
+      texts.isNotEmpty ||
+      comboFlash > 0 ||
+      bestBump > 0 ||
+      (newBest && newBestT < 1) ||
+      displayScore != game.score ||
+      overPhase == OverPhase.waiting ||
+      overPhase == OverPhase.graying;
+
   int get bestScore => math.max(SettingsStore.instance.bestScore, game.score);
 
   // ---------------------------------------------------------------------------

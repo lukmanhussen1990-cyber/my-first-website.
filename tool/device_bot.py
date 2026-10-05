@@ -73,7 +73,8 @@ def shot(name):
 
 
 def logcat_markers():
-    out = adb('logcat', '-d', '-s', 'flutter:I', 'flutter:E', 'flutter:W', timeout=60).stdout.decode(errors='replace')
+    # One filterspec only: with several for the same tag the last one wins.
+    out = adb('logcat', '-d', '-s', 'flutter:V', timeout=60).stdout.decode(errors='replace')
     return out
 
 
