@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>The Backrooms</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+  body { font-family: "Courier New", Courier, monospace; color: #e9dfae; user-select: none; -webkit-user-select: none; touch-action: none; -webkit-tap-highlight-color: transparent; }
+  #game { position: fixed; inset: 0; }
+  #game canvas { display: block; width: 100%; height: 100%; }
+  .hidden { display: none !important; }
+
+  /* HUD */
+  #hud { position: fixed; inset: 0; pointer-events: none; }
+  #crosshair { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: rgba(255, 245, 200, 0.55); }
+
+  /* Overlay screens */
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(8, 6, 2, 0.82); text-align: center; }
+  .screen h1 { font-size: clamp(32px, 7vw, 72px); letter-spacing: 0.25em; margin: 0 0 0.3em; color: #f3e6a2; text-shadow: 0 0 18px rgba(255, 220, 120, 0.35); }
+  .screen p { max-width: 640px; line-height: 1.5; opacity: 0.85; padding: 0 16px; }
+  .btn { pointer-events: auto; cursor: pointer; background: rgba(40, 34, 14, 0.85); color: #f1e4a6; border: 1px solid #8a7a3a; padding: 12px 28px; margin: 6px; font: inherit; font-size: 18px; letter-spacing: 0.15em; min-width: 240px; }
+  .btn:hover { background: rgba(90, 76, 28, 0.9); }
+</style>
+</head>
+<body>
+<div id="game"></div>
+
+<div id="hud" class="hidden">
+  <div id="crosshair"></div>
+</div>
+
+<div id="startScreen" class="screen">
+  <h1>THE BACKROOMS</h1>
+  <p>Click to enter. WASD to move, mouse to look, Shift to run, C to crouch.</p>
+  <button class="btn" id="btnStart">ENTER</button>
+</div>
+
+<div id="loadError" class="screen hidden">
+  <h1>NO SIGNAL</h1>
+  <p>Could not load Three.js from the internet. Check your connection and reload the page.</p>
+</div>
+
+<script type="module">
+// ============================================================================
+//  BOOT: load Three.js from a CDN (with fallbacks)
+// ============================================================================
+const CDN_URLS = [
+  'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js',
+  'https://unpkg.com/three@0.160.0/build/three.module.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js',
+];
+let THREE = null;
+for (const url of CDN_URLS) {
+  try { THREE = await import(url); break; } catch (e) { console.warn('Three.js CDN failed:', url, e); }
+}
+if (!THREE) {
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('loadError').classList.remove('hidden');
+  throw new Error('Three.js could not be loaded');
+}
+
+// ============================================================================
+//  CONSTANTS & UTILITIES
+// ============================================================================
+const CELL = 2.4;          // size of one grid cell (m)
+const WALL_H = 2.9;        // ceiling height (m)
+const WALL_T = 0.16;       // wall thickness (m)
+
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const $ = (id) => document.getElementById(id);
+
+// Deterministic integer hash -> [0,1)
+function hash2(x, y, s = 0) {
+  let h = (x | 0) * 374761393 + (y | 0) * 668265263 + (s | 0) * 1442695041;
+  h = (h ^ (h >>> 13)) * 1274126177;
+  h = h ^ (h >>> 16);
+  return (h >>> 0) / 4294967296;
+}
+// Small seeded PRNG (mulberry32)
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ============================================================================
+//  RENDERER
+// ============================================================================
+const container = $('game');
+const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+container.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1608);
+scene.fog = new THREE.FogExp2(0x2a2410, 0.06);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 120);
+camera.rotation.order = 'YXZ';
+
+window.addEventListener('resize', () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+// ============================================================================
+//  WORLD (temporary fixed test maze — replaced by endless chunks later)
+// ============================================================================
+const world = (() => {
+  const W = 12, H = 12;
+  const rnd = mulberry32(1234);
+  // wallsW[x][z]: wall on west edge of cell (x,z); wallsN[x][z]: wall on north edge
+  const wallsW = [], wallsN = [];
+  for (let x = 0; x <= W; x++) { wallsW[x] = []; wallsN[x] = []; for (let z = 0; z <= H; z++) { wallsW[x][z] = true; wallsN[x][z] = true; } }
+  // randomized DFS spanning tree
+  const seen = new Set(); const stack = [[0, 0]]; seen.add('0,0');
+  while (stack.length) {
+    const [x, z] = stack[stack.length - 1];
+    const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dz]) => [x + dx, z + dz, dx, dz])
+      .filter(([nx, nz]) => nx >= 0 && nz >= 0 && nx < W && nz < H && !seen.has(nx + ',' + nz));
+    if (!nb.length) { stack.pop(); continue; }
+    const [nx, nz, dx, dz] = nb[Math.floor(rnd() * nb.length)];
+    if (dx === 1) wallsW[nx][nz] = false; else if (dx === -1) wallsW[x][z] = false;
+    else if (dz === 1) wallsN[nx][nz] = false; else wallsN[x][z] = false;
+    seen.add(nx + ',' + nz); stack.push([nx, nz]);
+  }
+  // knock out extra walls to form rooms
+  for (let x = 1; x < W; x++) for (let z = 0; z < H; z++) if (rnd() < 0.45) wallsW[x][z] = false;
+  for (let x = 0; x < W; x++) for (let z = 1; z < H; z++) if (rnd() < 0.45) wallsN[x][z] = false;
+  return {
+    W, H,
+    wallW(cx, cz) { if (cz < 0 || cz >= H) return false; if (cx <= 0 || cx >= W) return cx === 0 || cx === W; return wallsW[cx][cz]; },
+    wallN(cx, cz) { if (cx < 0 || cx >= W) return false; if (cz <= 0 || cz >= H) return cz === 0 || cz === H; return wallsN[cx][cz]; },
+    pillar(gx, gz) { return false; },
+  };
+})();
+
+// Collision boxes for walls around a position
+function wallBoxW(cx, cz) { const x = cx * CELL; return { x0: x - WALL_T / 2, x1: x + WALL_T / 2, z0: cz * CELL - WALL_T / 2, z1: (cz + 1) * CELL + WALL_T / 2 }; }
+function wallBoxN(cx, cz) { const z = cz * CELL; return { x0: cx * CELL - WALL_T / 2, x1: (cx + 1) * CELL + WALL_T / 2, z0: z - WALL_T / 2, z1: z + WALL_T / 2 }; }
+const _boxes = [];
+function collectBoxes(x, z) {
+  _boxes.length = 0;
+  const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL);
+  for (let i = cx - 1; i <= cx + 1; i++) for (let j = cz - 1; j <= cz + 1; j++) {
+    if (world.wallW(i, j)) _boxes.push(wallBoxW(i, j));
+    if (world.wallN(i, j)) _boxes.push(wallBoxN(i, j));
+  }
+  return _boxes;
+}
+function resolveCircle(pos, r) {
+  const boxes = collectBoxes(pos.x, pos.z);
+  for (let iter = 0; iter < 4; iter++) {
+    let hit = false;
+    for (const b of boxes) {
+      const qx = clamp(pos.x, b.x0, b.x1), qz = clamp(pos.z, b.z0, b.z1);
+      const dx = pos.x - qx, dz = pos.z - qz, d2 = dx * dx + dz * dz;
+      if (d2 >= r * r) continue;
+      hit = true;
+      if (d2 > 1e-10) {
+        const d = Math.sqrt(d2), push = r - d;
+        pos.x += (dx / d) * push; pos.z += (dz / d) * push;
+      } else {
+        const l = pos.x - b.x0, rr = b.x1 - pos.x, u = pos.z - b.z0, dd = b.z1 - pos.z;
+        const m = Math.min(l, rr, u, dd);
+        if (m === l) pos.x = b.x0 - r; else if (m === rr) pos.x = b.x1 + r; else if (m === u) pos.z = b.z0 - r; else pos.z = b.z1 + r;
+      }
+    }
+    if (!hit) break;
+  }
+}
+
+// Temporary visual world
+(function buildTestWorld() {
+  const wallMat = new THREE.MeshLambertMaterial({ color: 0xc9b458 });
+  const floorMat = new THREE.MeshLambertMaterial({ color: 0x6b5a2e });
+  const ceilMat = new THREE.MeshLambertMaterial({ color: 0xd8d2b0 });
+  const geoW = new THREE.BoxGeometry(WALL_T, WALL_H, CELL + WALL_T);
+  const geoN = new THREE.BoxGeometry(CELL + WALL_T, WALL_H, WALL_T);
+  for (let x = 0; x <= world.W; x++) for (let z = 0; z <= world.H; z++) {
+    if (world.wallW(x, z)) { const m = new THREE.Mesh(geoW, wallMat); m.position.set(x * CELL, WALL_H / 2, (z + 0.5) * CELL); scene.add(m); }
+    if (world.wallN(x, z)) { const m = new THREE.Mesh(geoN, wallMat); m.position.set((x + 0.5) * CELL, WALL_H / 2, z * CELL); scene.add(m); }
+  }
+  const fw = world.W * CELL, fh = world.H * CELL;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(fw, fh), floorMat);
+  floor.rotation.x = -Math.PI / 2; floor.position.set(fw / 2, 0, fh / 2); scene.add(floor);
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(fw, fh), ceilMat);
+  ceil.rotation.x = Math.PI / 2; ceil.position.set(fw / 2, WALL_H, fh / 2); scene.add(ceil);
+  scene.add(new THREE.HemisphereLight(0xfff2c0, 0x403010, 0.9));
+})();
+const playerLight = new THREE.PointLight(0xfff0c0, 2.5, 14, 1.2);
+scene.add(playerLight);
+
+// ============================================================================
+//  INPUT
+// ============================================================================
+const keys = Object.create(null);
+const input = { lookX: 0, lookY: 0, sensitivity: 1.0, locked: false };
+
+window.addEventListener('keydown', (e) => {
+  keys[e.code] = true;
+  if (e.code === 'KeyC' && !e.repeat) player.crouchToggle = !player.crouchToggle;
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+});
+window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+
+document.addEventListener('mousemove', (e) => {
+  if (!input.locked || game.state !== 'playing') return;
+  input.lookX += e.movementX || 0;
+  input.lookY += e.movementY || 0;
+});
+document.addEventListener('pointerlockchange', () => {
+  input.locked = document.pointerLockElement === renderer.domElement;
+});
+function requestLock() {
+  try {
+    const p = renderer.domElement.requestPointerLock && renderer.domElement.requestPointerLock();
+    if (p && p.catch) p.catch(() => {});
+  } catch (e) { /* pointer lock unavailable (e.g. headless) */ }
+}
+renderer.domElement.addEventListener('click', () => { if (game.state === 'playing' && !input.locked) requestLock(); });
+
+// ============================================================================
+//  PLAYER
+// ============================================================================
+const player = {
+  pos: new THREE.Vector3(CELL * 0.5, 0, CELL * 0.5),
+  vel: new THREE.Vector3(),
+  yaw: Math.PI, pitch: 0,
+  radius: 0.28,
+  eye: 1.62,
+  crouchToggle: false,
+  crouching: false, running: false, moving: false,
+  bobPhase: 0, bobAmt: 0,
+  speed: 0,
+};
+const SPEED_WALK = 2.6, SPEED_RUN = 5.2, SPEED_CROUCH = 1.25;
+const EYE_STAND = 1.62, EYE_CROUCH = 0.92;
+
+const _fwd = new THREE.Vector3(), _right = new THREE.Vector3(), _wish = new THREE.Vector3();
+function updatePlayer(dt) {
+  // --- look ---
+  const sens = 0.0022 * input.sensitivity;
+  player.yaw -= input.lookX * sens;
+  player.pitch -= input.lookY * sens;
+  player.pitch = clamp(player.pitch, -1.45, 1.45);
+  input.lookX = 0; input.lookY = 0;
+
+  // --- move intent ---
+  let mx = 0, mz = 0;
+  if (keys.KeyW || keys.ArrowUp) mz += 1;
+  if (keys.KeyS || keys.ArrowDown) mz -= 1;
+  if (keys.KeyD || keys.ArrowRight) mx += 1;
+  if (keys.KeyA || keys.ArrowLeft) mx -= 1;
+  const len = Math.hypot(mx, mz);
+  if (len > 1) { mx /= len; mz /= len; }
+  player.moving = len > 0.05;
+
+  player.crouching = player.crouchToggle;
+  const wantRun = (keys.ShiftLeft || keys.ShiftRight) && player.moving && mz > 0.1 && !player.crouching;
+  player.running = wantRun;
+  const target = player.crouching ? SPEED_CROUCH : player.running ? SPEED_RUN : SPEED_WALK;
+
+  _fwd.set(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+  _right.set(-_fwd.z, 0, _fwd.x);
+  _wish.set(0, 0, 0).addScaledVector(_fwd, mz).addScaledVector(_right, mx).multiplyScalar(target);
+
+  const accel = player.moving ? 10 : 12;
+  const k = 1 - Math.exp(-accel * dt);
+  player.vel.x += (_wish.x - player.vel.x) * k;
+  player.vel.z += (_wish.z - player.vel.z) * k;
+  player.speed = Math.hypot(player.vel.x, player.vel.z);
+
+  // --- integrate with sub-steps + collision ---
+  const dist = player.speed * dt;
+  const steps = Math.max(1, Math.ceil(dist / 0.1));
+  for (let i = 0; i < steps; i++) {
+    player.pos.x += (player.vel.x * dt) / steps;
+    player.pos.z += (player.vel.z * dt) / steps;
+    resolveCircle(player.pos, player.radius);
+  }
+
+  // --- crouch height & head bob ---
+  const eyeTarget = player.crouching ? EYE_CROUCH : EYE_STAND;
+  player.eye += (eyeTarget - player.eye) * (1 - Math.exp(-10 * dt));
+  const stepLen = player.running ? 1.05 : player.crouching ? 0.55 : 0.75;
+  const prevPhase = player.bobPhase;
+  player.bobPhase += (player.speed * dt / stepLen) * Math.PI;
+  player.bobAmt += ((player.speed > 0.3 ? 1 : 0) - player.bobAmt) * (1 - Math.exp(-6 * dt));
+  if (Math.floor(prevPhase / Math.PI) !== Math.floor(player.bobPhase / Math.PI) && player.speed > 0.5) {
+    onFootstep();
+  }
+
+  const bobScale = player.running ? 0.065 : player.crouching ? 0.025 : 0.04;
+  const bobY = Math.abs(Math.sin(player.bobPhase)) * bobScale * player.bobAmt;
+  const bobX = Math.cos(player.bobPhase) * bobScale * 0.6 * player.bobAmt;
+  camera.position.set(
+    player.pos.x + _right.x * bobX,
+    player.eye + bobY - bobScale * 0.5 * player.bobAmt,
+    player.pos.z + _right.z * bobX
+  );
+  camera.rotation.set(player.pitch, player.yaw, Math.cos(player.bobPhase) * 0.004 * player.bobAmt);
+}
+
+let footstepCount = 0;
+function onFootstep() { footstepCount++; }
+
+// ============================================================================
+//  GAME STATE
+// ============================================================================
+const game = { state: 'menu', time: 0 };
+function startGame() {
+  $('startScreen').classList.add('hidden');
+  $('hud').classList.remove('hidden');
+  game.state = 'playing';
+  requestLock();
+}
+$('btnStart').addEventListener('click', startGame);
+
+// ============================================================================
+//  MAIN LOOP
+// ============================================================================
+const clock = new THREE.Clock();
+function frame() {
+  requestAnimationFrame(frame);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  if (game.state === 'playing') {
+    game.time += dt;
+    updatePlayer(dt);
+    playerLight.position.set(player.pos.x, WALL_H - 0.3, player.pos.z);
+  }
+  renderer.render(scene, camera);
+}
+camera.position.set(player.pos.x, EYE_STAND, player.pos.z);
+camera.rotation.set(0, player.yaw, 0);
+frame();
+
+// Debug / test hook
+window.__bk = { THREE, game, player, keys, input, camera, world, startGame, get footsteps() { return footstepCount; } };
+</script>
+</body>
+</html>
