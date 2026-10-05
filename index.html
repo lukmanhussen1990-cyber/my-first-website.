@@ -246,6 +246,7 @@ img { display: block; }
 }
 @media (max-aspect-ratio: 4/5) {
   .hud-bl { bottom: calc(var(--sb) + var(--pad) + var(--u) * 150); }
+  #toasts { top: calc(var(--st) + 28vh); }
 }
 @media (pointer: coarse) {
   .ctl { width: calc(var(--u) * 100); height: calc(var(--u) * 116); }
@@ -620,6 +621,8 @@ const Sound = {
     const t = this.now();
     this.coinCombo = t - this.lastCoinAt < 0.4 ? Math.min(this.coinCombo + 1, 10) : 0;
     this.lastCoinAt = t;
+    if (t - (this.lastCoinSound || 0) < 0.045) return; // magnet bursts: keep it musical, not noisy
+    this.lastCoinSound = t;
     const k = Math.pow(2, (this.coinCombo % 8) / 12);
     this.osc('triangle', 1318.5 * k, t, 0.09, 0.16);
     this.osc('sine', 1975.5 * k, t + 0.045, 0.14, 0.13);
@@ -2847,7 +2850,7 @@ const Coins = {
     this.spin = (this.spin + dt * 4.2) % TAU;
     const list = this.list;
     const px = p.x, py = p.y + (p.rollT > 0 ? 0.45 : 0.85), pz = p.z;
-    const magnet = p.magnet || 0;
+    const magnet = onCollect ? p.magnet || 0 : 0; // no collecting (or magnet) once the run is over
     let n = 0;
     const m = this._m, q = this._q, pos = this._p, s = this._s;
     for (let i = list.length - 1; i >= 0; i--) {
@@ -2855,8 +2858,8 @@ const Coins = {
       let remove = false;
       if (c.taken) {
         c.t += dt;
-        c.y += dt * 5;
-        if (c.t > 0.16) remove = true;
+        c.y += dt * 2.5;
+        if (c.t > 0.1) remove = true;
       } else {
         if (magnet > 0 && (c.mag || (c.z < pz + 2 && c.z > pz - 34))) {
           c.mag = true;
@@ -2864,7 +2867,7 @@ const Coins = {
           c.x += (px - c.x) * k; c.y += (py - c.y) * k; c.z += (pz - 0.2 - c.z) * Math.min(1, k * 1.3);
         }
         const dx = Math.abs(c.x - px), dz = Math.abs(c.z - pz), dy = Math.abs(c.y - py);
-        if (dx < 0.95 && dz < 1.0 && dy < 1.25) {
+        if (onCollect && dx < 0.95 && dz < 1.0 && dy < 1.25) {
           c.taken = true; c.t = 0;
           onCollect(c);
         } else if (c.z > pz + 12) remove = true;
@@ -2875,7 +2878,7 @@ const Coins = {
         list.pop();
         continue;
       }
-      const sc = c.taken ? Math.max(0.01, 1 - c.t / 0.16) : 1;
+      const sc = c.taken ? Math.max(0.01, 1 - c.t / 0.1) : 1;
       pos.set(c.x, c.y, c.z);
       q.setFromAxisAngle(this._axis, this.spin + (c.taken ? c.t * 30 : 0));
       s.set(sc, sc, sc);
@@ -2919,13 +2922,13 @@ const Gen = {
   },
 
   reset() {
-    this.nextZ = -46;
+    this.nextZ = -70;
     this.exitMask = GROUND_ALL;
     this.pathEnd = 2;
     this.plan.length = 0;
     this.stats = { chunks: 0, attempts: 0, fallbacks: 0, discont: 0 };
     // opening coin line in the middle lane
-    for (let z = -12; z > -44; z -= 2.4) Coins.spawn(0, 0.85, z);
+    for (let z = -14; z > -66; z -= 2.4) Coins.spawn(0, 0.85, z);
   },
 
   update(playerZ) {
@@ -3439,6 +3442,10 @@ const Runner = {
         P(RB(0.09, 0.03, 0.02, 0.01), RIO.soleStripe, { y: -0.03, z: 0.118 }),
         P(RB(0.17, 0.05, 0.31, 0.023), RIO.sole, { y: -0.13, z: -0.045 }),
         P(RB(0.175, 0.02, 0.315, 0.009), RIO.soleStripe, { y: -0.121, z: -0.045 }),
+        P(RB(0.16, 0.022, 0.29, 0.01), 0x3b3d48, { y: -0.152, z: -0.045 }),
+        P(new THREE.BoxGeometry(0.13, 0.008, 0.03), 0x22232a, { y: -0.164, z: -0.13 }),
+        P(new THREE.BoxGeometry(0.13, 0.008, 0.03), 0x22232a, { y: -0.164, z: -0.04 }),
+        P(new THREE.BoxGeometry(0.13, 0.008, 0.03), 0x22232a, { y: -0.164, z: 0.05 }),
         P(RB(0.06, 0.012, 0.09, 0.005), 0xffffff, { y: 0.008, z: -0.07 })
       ], shoeMat);
       shoe.name = 'shoe';
@@ -3746,7 +3753,7 @@ const Runner = {
 
 const Chaser = {
   root: null, bones: {}, mats: {},
-  state: 'off', t: 0, offZ: 30, x: 0, chaseT: 0, siren: 0,
+  state: 'off', t: 0, offZ: 30, x: 0, chaseT: 0, siren: 0, tuck: 0,
 
   init() {
     const mat = new THREE.MeshPhongMaterial({ vertexColors: true, specular: 0x555555, shininess: 55 });
@@ -3836,9 +3843,10 @@ const Chaser = {
   },
 
   reset(p) {
+    // the robot starts behind the camera and sprints in after the camera has swung behind the runner
     this.state = 'intro';
     this.t = 0;
-    this.offZ = 1.3;
+    this.offZ = 11;
     this.x = p.x + 1.35;
     this.chaseT = 0;
   },
@@ -3874,10 +3882,12 @@ const Chaser = {
       return;
     }
     if (s === 'intro') {
-      if (this.t > 2.2) this.offZ += dt * (4 + (this.t - 2.2) * 6);
+      if (this.t < 0.7) { this.root.visible = false; return; }
+      if (this.t < 3.0) this.offZ = damp(this.offZ, 1.0, 2.4, dt);
+      else this.offZ += dt * (4 + (this.t - 3.0) * 6);
       if (this.offZ > 26) { this.hide(); return; }
     } else if (s === 'chase') {
-      this.offZ = damp(this.offZ, 1.25, 5, dt);
+      this.offZ = damp(this.offZ, 0.95, 5, dt);
       this.chaseT -= dt;
       if (this.chaseT <= 0) { this.state = 'leave'; this.t = 0; Bus.emit('chaser', 'leave'); }
     } else if (s === 'leave') {
@@ -3886,18 +3896,30 @@ const Chaser = {
     } else if (s === 'catch') {
       this.offZ = damp(this.offZ, 1.05, 7, dt);
     } else if (s === 'arrive') {
-      this.offZ = damp(this.offZ, 1.9, 3.2, dt);
+      this.offZ = damp(this.offZ, 1.5, 3.2, dt);
     }
-    // stay on the outer side of the runner so the robot never blocks the middle of the view
-    const side = p.lane === 0 ? -1 : 1;
-    const tx = s === 'catch' ? p.x + side * 0.6 : clamp(p.x + side * 1.35, -3.9, 3.9);
+    // stay on the outer side of the runner so the robot never blocks the middle of the view;
+    // on narrow screens switch to the inner side when the outer side would be off-screen
+    let side = p.lane === 0 ? -1 : 1, inner = false;
+    if (s !== 'arrive' && s !== 'catch') {
+      const cam = Gfx.camera;
+      const depth = Math.max(1, cam.position.z - (p.z + this.offZ));
+      const half = depth * Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) * cam.aspect - 0.45;
+      const cx = cam.position.x;
+      if (Math.abs(p.x + side * 1.25 - cx) > half && Math.abs(p.x - side * 1.25 - cx) < Math.abs(p.x + side * 1.25 - cx)) { side = -side; inner = true; }
+    }
+    // on the inner side it tucks in closer behind the runner so it stays low in the frame
+    this.tuck = damp(this.tuck, inner ? 1 : 0, 4, dt);
+    const tx = s === 'catch' ? p.x + side * 0.6
+      : s === 'arrive' ? p.x + side * (1.0 + 0.45 * Math.min(1, Gfx.aspect))
+      : clamp(p.x + side * (1.25 - 0.32 * this.tuck), -3.9, 3.9);
     this.x = damp(this.x, tx, 6, dt);
     const r = this.root;
     r.visible = true;
     const bob = Math.sin(this.t * 7) * 0.06;
     const groundY = s === 'arrive' || s === 'catch' ? Math.max(0, p.groundY) : p.groundY > 3 ? CFG.TRAIN_H : 0;
-    r.position.set(this.x, groundY + 0.18 + bob, p.z + this.offZ);
-    r.rotation.y = s === 'arrive' ? Math.PI * 0.85 : 0;
+    r.position.set(this.x, groundY + 0.18 + bob, p.z + this.offZ + this.tuck * 0.6);
+    r.rotation.y = s === 'arrive' ? side * (Math.PI / 2 - 0.45) : 0;
     const b = this.bones;
     const chasing = s === 'chase' || s === 'intro' || s === 'leave';
     b.body.rotation.x = chasing ? -0.22 : s === 'catch' ? -0.35 : 0;
@@ -4365,7 +4387,7 @@ const Pickups = {
     const g = pool.length ? pool.pop() : this.make(type);
     g.visible = true;
     g.position.set(x, y, z);
-    this.list.push({ type, g, x, y, z, t: Math.random() * 3, taken: false, k: 0 });
+    this.list.push({ type, g, x, y, z, t: (Math.abs(z) * 0.37) % 3, taken: false, k: 0 });
   },
 
   reset() {
@@ -4530,7 +4552,7 @@ const Fx = {
   sys: {},
   shakeT: 0, shakeDur: 1, shakeAmp: 0,
   fov: 0, fovKick: 0,
-  dustT: 0, trailT: 0,
+  dustT: 0, trailT: 0, coinHeat: 0,
   lines: [], lineCtx: null, lineCanvas: null, lineW: 0, lineH: 0,
   stars: [],
   _v: new THREE.Vector3(),
@@ -4647,7 +4669,12 @@ const Fx = {
   },
 
   // ---------- named effects ----------
-  coin(x, y, z) { this.burst('add', x, y, z, 5, { color: [1, 0.85, 0.3], speed: 3, life: 0.35, s0: 0.45, shape: 1, drag: 4 }); },
+  coin(x, y, z) {
+    // rapid pickups (magnet, long lines) get smaller bursts so the sparkles never pile up into a blob
+    const n = this.coinHeat > 2 ? 2 : 5;
+    this.coinHeat += 1;
+    this.burst('add', x, y, z, n, { color: [1, 0.85, 0.3], speed: 3, life: 0.35, s0: n === 5 ? 0.45 : 0.34, shape: 1, drag: 4 });
+  },
   dust(x, y, z, n, big) {
     for (let i = 0; i < n; i++) {
       this.spawn('norm', {
@@ -4660,8 +4687,8 @@ const Fx = {
   },
   powerup(x, y, z, hex) {
     const c = new THREE.Color(hex);
-    this.burst('add', x, y, z, 26, { colors: [[c.r, c.g, c.b], [1, 1, 1], [1, 0.9, 0.4]], speed: 6, life: 0.6, s0: 0.5, shape: 1, drag: 3 });
-    this.burst('add', x, y, z, 10, { color: [c.r, c.g, c.b], speed: 2, life: 0.5, s0: 1.4, s1: 0.1, shape: 0, drag: 3 });
+    this.burst('add', x, y + 0.3, z - 0.6, 16, { colors: [[c.r, c.g, c.b], [1, 1, 1], [1, 0.9, 0.4]], speed: 5.5, life: 0.5, s0: 0.36, shape: 1, drag: 3 });
+    this.burst('add', x, y + 0.3, z - 0.6, 5, { color: [c.r, c.g, c.b], speed: 1.5, life: 0.4, s0: 0.8, s1: 0.1, shape: 0, drag: 3 });
   },
   crash(x, y, z) {
     this.burst('add', x, y + 1, z - 0.5, 18, { colors: [[1, 1, 1], [1, 0.85, 0.3]], speed: 7, life: 0.55, s0: 0.5, shape: 1, drag: 2.5, g: -6 });
@@ -4679,6 +4706,7 @@ const Fx = {
   // ---------- per-frame ----------
   update(dt, p, st) {
     const playing = st.state === 'playing';
+    this.coinHeat = Math.max(0, this.coinHeat - dt * 10);
     // running dust and power-up trails
     if (playing) {
       if (p.grounded && !st.hover && !p.jet) {
@@ -5100,7 +5128,7 @@ const Hud = {
     const mult = Game.mult();
     if (mult !== this.lastMult) { e.hudMult.textContent = 'x' + mult; e.hudMult.classList.toggle('boost', Powers.has('x2')); this.lastMult = mult; }
     const beaten = run.score > best && best > 0;
-    const bestText = beaten ? fmtInt(run.score) : fmtInt(best);
+    const bestText = pad6(beaten ? run.score : best);
     if (bestText !== this.lastBest) { e.hudBest.textContent = bestText; this.lastBest = bestText; }
     if (beaten && !e.hudBest.parentElement.classList.contains('beaten')) {
       e.hudBest.parentElement.classList.add('beaten');
@@ -5175,6 +5203,25 @@ const Hud = {
     const v = Math.floor(a.target * (1 - Math.pow(1 - k, 3)));
     this.el.oScore.textContent = pad6(v);
     if (k >= 1) this.overAnim = null;
+  },
+
+  go() {
+    const c = this.el.countdown;
+    c.hidden = false;
+    c.textContent = 'GO!';
+    clearTimeout(this.goTimer);
+    const hide = () => { if (Game.state === 'playing') c.hidden = true; };
+    if (c.animate) {
+      for (const old of c.getAnimations()) old.cancel();
+      const an = c.animate([
+        { transform: 'translate(-50%,-50%) scale(1.8)', opacity: 0 },
+        { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.25 },
+        { transform: 'translate(-50%,-50%) scale(1.05)', opacity: 1, offset: 0.65 },
+        { transform: 'translate(-50%,-60%) scale(1.25)', opacity: 0 }
+      ], { duration: 850, easing: 'ease-out', fill: 'forwards' });
+      an.onfinish = () => { hide(); an.cancel(); };
+    }
+    this.goTimer = setTimeout(hide, 900);
   },
 
   setCountdown(text) {
@@ -5327,6 +5374,8 @@ const Game = {
   },
 
   ready() {
+    this._onCoin = c => this.onCoin(c);
+    this._onPickup = (type, it) => this.onPickup(type, it);
     Input.handler = (a, src) => this.onAction(a, src);
     Player.events = {
       crash: o => this.onCrash(o),
@@ -5418,6 +5467,8 @@ const Game = {
     this.camBlend = fromMenu ? 1.2 : 0;
     if (fromMenu) Runner.spinT = 0.45;
     this.bestAtStart = Save.data.best;
+    this.tutorial = Save.data.runs < 2 ? 0 : -1;
+    this.runTime = 0;
     Chaser.reset(Player);
     Missions.onRunStart();
     Hud.resetRun();
@@ -5570,6 +5621,17 @@ const Game = {
 
   toast(text, cls) { Hud.toast(text, cls); },
 
+  // First runs: short hints that teach the controls (wording depends on touch or keyboard).
+  updateTutorial() {
+    if (this.tutorial < 0) return;
+    const tips = IS_TOUCH
+      ? [[1.2, 'Swipe left or right to switch lanes'], [5, 'Swipe up to jump'], [9, 'Swipe down to roll'], [13, 'Grab power-ups and finish missions!']]
+      : [[1.2, '← → or A / D to switch lanes'], [5, '↑ or W to jump'], [9, '↓ or S to roll'], [13, 'Grab power-ups and finish missions!']];
+    const tip = tips[this.tutorial];
+    if (tip && this.runTime >= tip[0]) { this.toast(tip[1]); this.tutorial++; }
+    if (this.tutorial >= tips.length) this.tutorial = -1;
+  },
+
   frame(now) {
     requestAnimationFrame(t => this.frame(t));
     let dt = (now - this.last) / 1000;
@@ -5597,18 +5659,25 @@ const Game = {
         Obstacles.update(h, Player.z);
         Player.step(h);
       }
-      Powers.update(dt);
-      r.score += Player.speed * dt * this.mult();
-      Coins.update(dt, Player, c => this.onCoin(c));
-      Pickups.update(dt, Player, (type, it) => this.onPickup(type, it));
-      Missions.setAbs('score', r.score);
-      Missions.setAbs('dist', Player.distance);
-      Gen.update(Player.z);
-      World.update(Player.z);
-      if (this.state === 'playing') Hud.update(r, this.bestAtStart);
+      // a crash inside the physics steps ends the run: nothing more is scored or collected this frame
+      if (this.state === 'playing') {
+        Powers.update(dt);
+        this.runTime += dt;
+        this.updateTutorial();
+        r.score += Player.speed * dt * this.mult();
+        Coins.update(dt, Player, this._onCoin);
+        Pickups.update(dt, Player, this._onPickup);
+        Missions.setAbs('score', r.score);
+        Missions.setAbs('dist', Player.distance);
+        Gen.update(Player.z);
+        World.update(Player.z);
+        if (this.state === 'playing') Hud.update(r, this.bestAtStart);
+      } else {
+        Coins.update(dt, Player, null);
+      }
     } else if (s === 'dead') {
       r.deadT += dt;
-      Coins.update(dt, Player, () => {});
+      Coins.update(dt, Player, null);
       if (r.deadT > 1.7) {
         this.state = 'gameover';
         Hud.showOver(r, Save.data.best, Player.distance);
@@ -5621,7 +5690,7 @@ const Game = {
       const before = Math.ceil(this.countT);
       this.countT -= dt;
       const now = Math.ceil(this.countT);
-      if (this.countT <= 0) { this.state = 'playing'; Hud.show('play'); this.keepAwake(true); Bus.emit('resume'); }
+      if (this.countT <= 0) { this.state = 'playing'; Hud.show('play'); Hud.go(); this.keepAwake(true); Bus.emit('resume'); }
       else if (now !== before) { Hud.setCountdown(String(now)); Bus.emit('countdown', now); }
     }
     const a = this.anim;
@@ -5654,6 +5723,13 @@ const Game = {
       out.lx = p.x + (tall ? 0.25 : -1.15); out.ly = tall ? 0.55 : 1.0; out.lz = p.z;
       return out;
     }
+    if (this.state === 'dead' || this.state === 'gameover') {
+      // frame the fallen runner (the body lies behind the crash point) and the arriving robot
+      const by = Math.max(0, p.groundY);
+      out.x = p.x * 0.6 + 0.9; out.y = by + 3.9; out.z = p.z + 6.6;
+      out.lx = p.x + 0.2; out.ly = by + 0.35; out.lz = p.z + 1.4;
+      return out;
+    }
     const baseTarget = p.jet ? CFG.JET_ALT : p.groundY;
     if (dt !== undefined) c.base = damp(c.base, baseTarget, p.jet ? 2.2 : 3.2, dt);
     const base = c.base;
@@ -5682,10 +5758,10 @@ const Game = {
     const k = blending ? 4.5 : menu ? 3 : 9;
     c.x = damp(c.x, t.x, k, dt);
     c.y = damp(c.y, t.y, blending ? 4.5 : menu ? 3 : 7, dt);
-    c.z = dead ? damp(c.z, t.z + 1.2, 2, dt) : (blending || menu) ? damp(c.z, t.z, blending ? 5 : 3, dt) : t.z;
-    c.lx = damp(c.lx, t.lx, blending ? 5 : 10, dt);
-    c.ly = damp(c.ly, t.ly, blending ? 5 : 7, dt);
-    c.lz = (blending || menu) ? damp(c.lz, t.lz, blending ? 6 : 4, dt) : t.lz;
+    c.z = (dead || blending || menu) ? damp(c.z, t.z, dead ? 2.2 : blending ? 5 : 3, dt) : t.z;
+    c.lx = damp(c.lx, t.lx, dead ? 2.5 : blending ? 5 : 10, dt);
+    c.ly = damp(c.ly, t.ly, dead ? 2.5 : blending ? 5 : 7, dt);
+    c.lz = (dead || blending || menu) ? damp(c.lz, t.lz, dead ? 2.5 : blending ? 6 : 4, dt) : t.lz;
     this.applyCamera();
   },
 
