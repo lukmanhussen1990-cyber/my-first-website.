@@ -1528,8 +1528,11 @@ function buildChunkProps(kx, kz, baker) {
     const r = mulberry32((hash2(kx, kz, world.seed + 2020) * 4294967296) >>> 0);
     const tmp = new THREE.Group();
     for (let i = 0; i < 10; i++) {
-      const x = (kx * CHUNK + r() * CHUNK) * CELL, z = (kz * CHUNK + r() * CHUNK) * CELL;
+      // kept inside a cell, clear of the wall lines and corner pillars, and off prop cells
+      const cx = kx * CHUNK + Math.floor(r() * CHUNK), cz = kz * CHUNK + Math.floor(r() * CHUNK);
+      const x = (cx + 0.5 + (r() - 0.5) * 0.4) * CELL, z = (cz + 0.5 + (r() - 0.5) * 0.4) * CELL;
       const tile = r() < 0.6;
+      if (world.prop(cx, cz)) continue;
       const m = new THREE.Mesh(new THREE.BoxGeometry(tile ? 0.25 + r() * 0.35 : 0.2, tile ? 0.025 : 0.004, tile ? 0.2 + r() * 0.3 : 0.28), itemMaterial(tile ? 0x9c9a8e : 0xc8c2a8));
       m.position.set(x, WATER_Y + 0.008, z); m.rotation.set((r() - 0.5) * 0.08, r() * Math.PI, (r() - 0.5) * 0.08);
       tmp.add(m);
@@ -2196,7 +2199,7 @@ function placeMonsterAway(minD, maxD, fromX = player.pos.x, fromZ = player.pos.z
 function resetMonster() {
   initMonster();
   placeMonsterAway(38, 50);
-  monster.state = 'wander'; monster.active = !diff().explore;
+  monster.state = 'wander'; monster.active = !diff().explore; game.explore = !monster.active;   // fixed for the run: no records in explore
   monster.model.root.visible = monster.active;
   if (!monster.active) { silenceMonster(); U.uMonster.value.set(1e5, 0, 1e5, 0); }
  monster.alert = 0; monster.lostTimer = 0; monster.searchTimer = 0;
@@ -2588,8 +2591,8 @@ function makeScareFace(variant = 0) {
     g.quadraticCurveTo(W * 0.5, my + 190, W * 0.86, my - 30); g.quadraticCurveTo(W * 0.5, my + 60, W * 0.14, my - 30); g.fill();
     g.fillStyle = '#d8cfae';
     for (let i = 0; i < 34; i++) {
-      const tt = i / 33, x = W * (0.16 + tt * 0.68);
-      const yTop = my - 30 + (1 - Math.pow(2 * tt - 1, 2)) * 92, yBot = my - 30 + (1 - Math.pow(2 * tt - 1, 2)) * 158;
+      const tt = i / 33, x = W * (0.16 + tt * 0.68), u = (x / W - 0.14) / 0.72, arc = 4 * u * (1 - u);
+      const yTop = my - 30 + arc * 45, yBot = my - 30 + arc * 110;   // on the two lip curves (quadratic Béziers)
       g.beginPath(); g.moveTo(x - 5, yTop); g.lineTo(x + 5, yTop); g.lineTo(x, yTop + 14 + rnd() * 18); g.fill();
       g.beginPath(); g.moveTo(x - 5, yBot); g.lineTo(x + 5, yBot); g.lineTo(x, yBot - 12 - rnd() * 16); g.fill();
     }
@@ -2859,8 +2862,10 @@ function itemMaterial(color, glow = 0) {
 // Static props/doors are baked into merged geometry with per-vertex colour + light under ONE shared material
 const VC_VERT = /* glsl */`
 attribute float aEnv;
+attribute float aGlow;
 varying vec3 vColor;
 varying float vEnv;
+varying float vGlow;
 varying vec3 vWorld;
 varying vec3 vNormal;
 varying float vDepth;
@@ -2870,6 +2875,7 @@ void main() {
   vNormal = normalize(mat3(modelMatrix) * normal);
   vColor = color;
   vEnv = aEnv;
+  vGlow = aGlow;
   vec4 mv = viewMatrix * wp;
   vDepth = -mv.z;
   gl_Position = projectionMatrix * mv;
@@ -2880,19 +2886,20 @@ ${GLSL_FRAG_COMMON}
 uniform vec3 uLightColor;
 varying vec3 vColor;
 varying float vEnv;
+varying float vGlow;
 varying vec3 vWorld;
 varying vec3 vNormal;
 varying float vDepth;
 void main() {
   vec3 n = normalize(vNormal);
-  vec3 lit = uLightColor * (vEnv * (0.55 + 0.45 * max(n.y, 0.0))) + flashlight(vWorld, n) + vec3(0.03);
+  vec3 lit = uLightColor * (vEnv * (0.55 + 0.45 * max(n.y, 0.0))) + flashlight(vWorld, n) + vec3(0.03 + vGlow);
   vec3 col = applyFog(vColor * lit, vDepth, vEnv);
   gl_FragColor = vec4(toDisplay(col), 1.0);
 }
 `;
 const vcMat = new THREE.ShaderMaterial({ uniforms: { ...U }, vertexShader: VC_VERT, fragmentShader: VC_FRAG, vertexColors: true });
 class Baker {
-  constructor() { this.p = []; this.n = []; this.c = []; this.e = []; }
+  constructor() { this.p = []; this.n = []; this.c = []; this.e = []; this.gl = []; }
   // add every mesh under 'root' (built with itemMaterial colours), expressed in the local space of 'ref'
   add(root, env, ref = null) {
     root.updateMatrixWorld(true);
@@ -2902,11 +2909,11 @@ class Baker {
       if (!o.isMesh || o.userData.skipBake) return;
       m.multiplyMatrices(inv, o.matrixWorld); nm.getNormalMatrix(m);
       const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry;
-      const pa = g.attributes.position, na = g.attributes.normal, col = o.material.uniforms.uColor.value;
+      const pa = g.attributes.position, na = g.attributes.normal, col = o.material.uniforms.uColor.value, glow = o.material.uniforms.uGlow ? o.material.uniforms.uGlow.value : 0;
       for (let i = 0; i < pa.count; i++) {
         v.fromBufferAttribute(pa, i).applyMatrix4(m); this.p.push(v.x, v.y, v.z);
         w.fromBufferAttribute(na, i).applyMatrix3(nm).normalize(); this.n.push(w.x, w.y, w.z);
-        this.c.push(col.r, col.g, col.b); this.e.push(env);
+        this.c.push(col.r, col.g, col.b); this.e.push(env); this.gl.push(glow);
       }
       if (g !== o.geometry) g.dispose();
     });
@@ -2918,6 +2925,7 @@ class Baker {
     g.setAttribute('normal', new THREE.Float32BufferAttribute(this.n, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
     g.setAttribute('aEnv', new THREE.Float32BufferAttribute(this.e, 1));
+    g.setAttribute('aGlow', new THREE.Float32BufferAttribute(this.gl, 1));
     g.computeBoundingSphere();
     return new THREE.Mesh(g, vcMat);
   }
@@ -3782,7 +3790,7 @@ function updateFakeSteps(dt) {
 
 // ---------------- 4. a phantom at the end of the corridor ----------------
 function startPhantom() {
-  if (Math.hypot(monster.pos.x - player.pos.x, monster.pos.z - player.pos.z) < 25) return false;
+  if (!monster.active || Math.hypot(monster.pos.x - player.pos.x, monster.pos.z - player.pos.z) < 25) return false;   // explore: no creature, not even a glimpse
   const f = playerForward();
   for (let tries = 0; tries < 12; tries++) {
     const a = (Math.random() - 0.5) * 0.35, d = 13 + Math.random() * 10;
@@ -4207,7 +4215,7 @@ function syncTouchButtons() {
 // ============================================================================
 //  GAME STATE
 // ============================================================================
-const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0, notes: 0, level: 1, mode: 'story', serial: 0 };
+const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0, notes: 0, level: 1, mode: 'story', serial: 0, explore: false };
 function notesCollected() { return Math.min(game.notes, game.mode === 'endless' ? 8 : 5); }
 function onChaseStart() {}
 function onNotePicked() { stinger(0.8 + 0.1 * notesCollected()); fx.dip = 0.6; scares.t = Math.min(scares.t, 12 + Math.random() * 10); }
@@ -4224,7 +4232,7 @@ function onGameOver() {
   silenceMonster();
   if (document.pointerLockElement) document.exitPointerLock();
   const TIPS = ['Crouch (C) in a dark corner and it can barely see you.', 'Running is loud. It hears sprinting from twenty metres away.', 'When the lights stutter, it is close.', 'Your flashlight makes you visible from much farther away.', 'Break its line of sight, then hide. It will search where it last saw you.', 'Follow the radio static to find the notes.', 'If footsteps follow you... turn around.'];
-  $('goStats').innerHTML = (game.mode === 'endless' ? `Endless &mdash; survived ${formatTime(game.time)}<br>Pages: ${game.notes} (record ${Math.max(save.bestEndless || 0, game.notes)})` : `Level ${game.level} &mdash; survived ${formatTime(game.time)}<br>Notes found: ${game.notes} / ${NOTES_NEEDED}`) + `<br><br><span style="opacity:0.7">TIP: ${TIPS[Math.floor(Math.random() * TIPS.length)]}</span>`;
+  $('goStats').innerHTML = (game.mode === 'endless' ? `Endless &mdash; survived ${formatTime(game.time)}<br>Pages: ${game.notes} (record ${game.explore ? save.bestEndless || 0 : Math.max(save.bestEndless || 0, game.notes)})` : `Level ${game.level} &mdash; survived ${formatTime(game.time)}<br>Notes found: ${game.notes} / ${NOTES_NEEDED}`) + `<br><br><span style="opacity:0.7">TIP: ${TIPS[Math.floor(Math.random() * TIPS.length)]}</span>`;
   onDeath();
   showScreen('gameOverScreen');
 }
@@ -4331,9 +4339,9 @@ function updateAttract(dt) {
   attract.t += dt;
   U.uTime.value = (U.uTime.value + dt) % 1000;
   // drift slowly through the maze, turning towards open space when a wall gets close
-  const fx = -Math.sin(attract.yaw), fz = -Math.cos(attract.yaw);
+  const dx = -Math.sin(attract.yaw), dz = -Math.cos(attract.yaw);
   if (attract.turn === undefined || attract.turn === null) {
-    if (!world.segmentClear(attract.x, attract.z, attract.x + fx * 3, attract.z + fz * 3)) {
+    if (!world.segmentClear(attract.x, attract.z, attract.x + dx * 3, attract.z + dz * 3)) {
       let best = attract.yaw, bd = -1;
       for (let a = 1; a < 16; a++) {
         const yaw = attract.yaw + (a / 16) * Math.PI * 2; let d = 0;
@@ -4341,7 +4349,7 @@ function updateAttract(dt) {
         if (d > bd) { bd = d; best = yaw; }
       }
       attract.turn = best;
-    } else { attract.x += fx * dt * 0.55; attract.z += fz * dt * 0.55; }
+    } else { attract.x += dx * dt * 0.55; attract.z += dz * dt * 0.55; }
   } else {
     let dh = attract.turn - attract.yaw; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
     attract.yaw += Math.sign(dh) * Math.min(Math.abs(dh), dt * 0.35);
@@ -4351,7 +4359,7 @@ function updateAttract(dt) {
   attract.ghostT = (attract.ghostT === undefined ? 20 : attract.ghostT) - dt;
   if (attract.ghostT <= 0) {
     attract.ghostT = 25 + Math.random() * 20;
-    const d = 15 + Math.random() * 6, gx = attract.x + fx * d, gz = attract.z + fz * d;
+    const d = 15 + Math.random() * 6, gx = attract.x + dx * d, gz = attract.z + dz * d;
     if (world.segmentClear(attract.x, attract.z, gx, gz)) {
       if (!scares.phantomModel) { scares.phantomModel = buildMonsterModel(); scene.add(scares.phantomModel.root); }
       const md = scares.phantomModel; md.root.visible = true; md.root.position.set(gx, 0, gz);
@@ -4461,19 +4469,19 @@ let autosaveT = 0;
 function snapshotRun() {
   if (game.state !== 'playing' && game.state !== 'paused') return;
   save.run = {
-    level: game.level, mode: game.mode, serial: game.serial, seed: world.seed, time: game.time, notes: game.notes,
+    level: game.level, mode: game.mode, explore: !!game.explore, serial: game.serial, seed: world.seed, time: game.time, notes: game.notes,
     x: player.pos.x, z: player.pos.z, yaw: player.yaw,
     battery: flash.battery, specs: goal.specs.map((s) => ({ ...s })), exitSpawned: goal.exitSpawned,
     collected: [...collectedItems],
   };
   writeSave();
 }
-function onNewRun() { if (save.run && save.run.mode === 'endless') save.bestEndless = Math.max(save.bestEndless || 0, save.run.notes || 0); save.run = null; writeSave(); autosaveT = 10; }
+function onNewRun() { if (save.run && save.run.mode === 'endless' && !save.run.explore) save.bestEndless = Math.max(save.bestEndless || 0, save.run.notes || 0); save.run = null; writeSave(); autosaveT = 10; }
 function onPause() { snapshotRun(); }
-function onDeath() { if (game.mode === 'endless') save.bestEndless = Math.max(save.bestEndless || 0, game.notes); save.deaths = (save.deaths || 0) + 1; save.run = null; writeSave(); }
+function onDeath() { if (game.mode === 'endless' && !game.explore) save.bestEndless = Math.max(save.bestEndless || 0, game.notes); save.deaths = (save.deaths || 0) + 1; save.run = null; writeSave(); }
 function onWin() {
   const lvl = game.level, prev = save.best[lvl];
-  const explore = !!diff().explore;
+  const explore = !!game.explore;
   const isBest = !explore && (!prev || game.time < prev);
   if (isBest) save.best[lvl] = game.time;
   save.unlocked = Math.max(save.unlocked || 1, Math.min(3, lvl + 1));
@@ -4517,6 +4525,7 @@ function continueGame() {
   flash.on = false; flash.battery = run.battery ?? 1; flash.intensity = 0;
   updateChunks(player.pos.x, player.pos.z, true);
   resetMonster();
+  if (run.explore) game.explore = true;
   resetScares();
   game.state = 'playing';
   Sound.init(); Sound.resume(); applySettings();

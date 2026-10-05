@@ -273,3 +273,11 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   halls.
 - **[09:03 UTC] Extra — Leak check.** Teleported across 40 spots up to 2 km apart: GPU geometries stay ~130-145, doors,
   items and chunks stay bounded, and the world-data cache is capped — no leaks.
+- **[09:16 UTC] Extra — Review round 4 fixes.**
+  - Title-screen ghost: a local variable hid the global effects object, so every vanish threw an error and skipped that frame. Renamed.
+  - Explore mode is now fixed when a run starts and stored with the saved run, so changing difficulty mid-run can't
+    set a best time or endless record from a creature-free run. Explore also never shows the phantom.
+  - Grin face: the teeth now sit on the two lip curves.
+  - Level 2 floating debris stays inside cells, away from walls, pillars and props.
+  - Baked props keep their faint self-glow (new per-vertex glow), so the wet-floor sign glows again.
+  - Tests: the ghost test now covers the vanish; new test t44 checks the explore flag across start, save and continue.
