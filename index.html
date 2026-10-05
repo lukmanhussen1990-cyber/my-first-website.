@@ -320,10 +320,10 @@ applyQuality(1);
 const CHUNK = 8;                      // cells per chunk side
 const CHUNK_SIZE = CHUNK * CELL;      // 19.2 m
 const PILLAR = 0.56;                  // pillar width (m)
-const STYLE = { ROOMS: 0, CORRIDORS: 1, HALL: 2, PILLARS: 3 };
-const STYLE_NAMES = ['rooms', 'corridors', 'hall', 'pillars'];
-const STYLE_REMOVE = [0.5, 0.08, 0.93, 0.86];   // chance to knock out a non-tree wall
-const STYLE_BORDER = [0.55, 0.8, 0.15, 0.25];   // chance a chunk-border edge is a wall
+const STYLE = { ROOMS: 0, CORRIDORS: 1, HALL: 2, PILLARS: 3, OFFICE: 4, DIVISION: 5 };
+const STYLE_NAMES = ['rooms', 'corridors', 'hall', 'pillars', 'office', 'long walls'];
+const STYLE_REMOVE = [0.5, 0.08, 0.93, 0.86, 0, 0];   // chance to knock out a non-tree wall
+const STYLE_BORDER = [0.55, 0.8, 0.15, 0.25, 0.7, 0.6];   // chance a chunk-border edge is a wall
 const LIGHT = { NORMAL: 0, FLICKER: 1, DYING: 2, BROKEN: 3 };
 const fdiv = (a, b) => Math.floor(a / b);
 const ckey = (kx, kz) => (kx + 32768) * 65536 + (kz + 32768);
@@ -338,8 +338,8 @@ class World {
   style(kx, kz) {
     if (Math.abs(kx) <= 0 && Math.abs(kz) <= 0) return STYLE.ROOMS;
     const h = hash2(kx, kz, this.seed + 7);
-    if (this.level === 2) return h < 0.3 ? STYLE.ROOMS : h < 0.55 ? STYLE.CORRIDORS : h < 0.85 ? STYLE.HALL : STYLE.PILLARS;
-    return h < 0.45 ? STYLE.ROOMS : h < 0.66 ? STYLE.CORRIDORS : h < 0.82 ? STYLE.HALL : STYLE.PILLARS;
+    if (this.level === 2) return h < 0.22 ? STYLE.ROOMS : h < 0.42 ? STYLE.CORRIDORS : h < 0.68 ? STYLE.HALL : h < 0.8 ? STYLE.PILLARS : STYLE.DIVISION;
+    return h < 0.34 ? STYLE.ROOMS : h < 0.5 ? STYLE.CORRIDORS : h < 0.62 ? STYLE.HALL : h < 0.74 ? STYLE.PILLARS : h < 0.88 ? STYLE.OFFICE : STYLE.DIVISION;
   }
   // Border edges depend only on the border's own coordinates, so both chunks agree.
   // Every border keeps at least two openings -> the endless maze is always connected.
@@ -402,7 +402,9 @@ class World {
     }
     for (let i = edges.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = edges[i]; edges[i] = edges[j]; edges[j] = t; }
     const rm = STYLE_REMOVE[style];
-    for (const e of edges) {
+    if (style === STYLE.OFFICE) this.genOffice(wW, wN, edges, rnd);
+    else if (style === STYLE.DIVISION) this.genDivision(wW, wN, rnd);
+    else for (const e of edges) {
       const i = e >> 1, isN = e & 1;
       const j = isN ? i - N : i - 1;
       const a = find(i), b = find(j);
@@ -435,6 +437,43 @@ class World {
       ls[i] = type + r3 * 0.998;
     }
     return { kx, kz, style, wW, wN, pil, lt, ls };
+  }
+  // Office blocks: 2x2-cell rooms joined by single doorways (spanning tree over rooms + a few extra doors)
+  genOffice(wW, wN, edges, rnd) {
+    const N = CHUNK, R = N >> 1, room = (i) => ((i % N) >> 1) + (((i / N) | 0) >> 1) * R;
+    const par = new Int16Array(R * R); for (let i = 0; i < par.length; i++) par[i] = i;
+    const find = (a) => { while (par[a] !== a) { par[a] = par[par[a]]; a = par[a]; } return a; };
+    const between = [];
+    for (const e of edges) {
+      const i = e >> 1, isN = e & 1, j = isN ? i - N : i - 1;
+      if (room(i) === room(j)) { if (isN) wN[i] = 0; else wW[i] = 0; } else between.push(e);
+    }
+    for (const e of between) {
+      const i = e >> 1, isN = e & 1, j = isN ? i - N : i - 1;
+      const a = find(room(i)), b = find(room(j));
+      if (a !== b || rnd() < 0.12) { par[a] = b; if (isN) wN[i] = 0; else wW[i] = 0; }
+    }
+  }
+  // Long walls: recursive division with one or two gaps per dividing wall
+  genDivision(wW, wN, rnd) {
+    const N = CHUNK;
+    for (let i = 0; i < N * N; i++) { if (i % N) wW[i] = 0; if (i >= N) wN[i] = 0; }
+    const divide = (x0, z0, w, h, depth) => {
+      if (w < 2 || h < 2 || depth > 3) return;
+      const vertical = w > h ? true : h > w ? false : rnd() < 0.5;
+      if (vertical) {
+        const x = x0 + 1 + Math.floor(rnd() * (w - 1));
+        const gap = z0 + Math.floor(rnd() * h), gap2 = h > 4 ? z0 + Math.floor(rnd() * h) : -1;
+        for (let z = z0; z < z0 + h; z++) if (z !== gap && z !== gap2) wW[x + z * N] = 1;
+        divide(x0, z0, x - x0, h, depth + 1); divide(x, z0, x0 + w - x, h, depth + 1);
+      } else {
+        const z = z0 + 1 + Math.floor(rnd() * (h - 1));
+        const gap = x0 + Math.floor(rnd() * w), gap2 = w > 4 ? x0 + Math.floor(rnd() * w) : -1;
+        for (let x = x0; x < x0 + w; x++) if (x !== gap && x !== gap2) wN[x + z * N] = 1;
+        divide(x0, z0, w, z - z0, depth + 1); divide(x0, z, w, z0 + h - z, depth + 1);
+      }
+    };
+    divide(0, 0, N, N, 0);
   }
   wallW(cx, cz) { const kx = fdiv(cx, CHUNK), kz = fdiv(cz, CHUNK); return this.chunk(kx, kz).wW[(cx - kx * CHUNK) + (cz - kz * CHUNK) * CHUNK] === 1; }
   wallN(cx, cz) { const kx = fdiv(cx, CHUNK), kz = fdiv(cz, CHUNK); return this.chunk(kx, kz).wN[(cx - kx * CHUNK) + (cz - kz * CHUNK) * CHUNK] === 1; }

@@ -116,3 +116,8 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   *footsteps creeping up behind you* (stop the instant you turn around, sometimes ending with a whisper), a *phantom*
   silhouette at the end of a corridor that vanishes in a light stutter when you look at it, and close *whispers*.
   Picking up a note plays a dissonant string stinger and brings the next scare forward.
+- **[07:27 UTC] Extra — More room types: DONE.** Two new chunk styles join rooms / tight corridors / huge empty halls /
+  pillar rooms: *office blocks* (a grid of small 2x2-cell rooms joined by single doorways — spanning tree over rooms
+  plus 12% extra doors) and *long walls* (recursive division: long straight walls with one or two gaps, giving long
+  sightlines). Level 2 favours halls, corridors and long walls. Connectivity re-verified (0 unreachable cells in a
+  121x121 area for both levels).
