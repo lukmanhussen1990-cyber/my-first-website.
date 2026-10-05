@@ -1,0 +1,16 @@
+{
+  "name": "scp-3143-explainer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Motion-graphics explainer video for SCP-3143, rendered with node-canvas + ffmpeg",
+  "license": "CC-BY-SA-3.0",
+  "scripts": {
+    "plan": "node render.js plan",
+    "sheet": "node render.js sheet",
+    "video": "node render.js video",
+    "mux": "node render.js mux"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.80"
+  }
+}

@@ -1,0 +1,301 @@
+{
+  "voice": "am_michael",
+  "speed": 1.08,
+  "note": "`text` is the caption shown in subtitles; `say` (optional) is a phonetic spelling fed to the TTS engine. `pause` is extra silence after the line, in seconds.",
+  "scenes": [
+    {
+      "id": "cold_open",
+      "lead": 2.6,
+      "tail": 1.4,
+      "lines": [
+        {
+          "text": "It always rains in this town.",
+          "pause": 0.5
+        },
+        {
+          "text": "And somewhere out there, a story is looking for its next case."
+        }
+      ]
+    },
+    {
+      "id": "title",
+      "lead": 0.8,
+      "tail": 1.6,
+      "lines": [
+        {
+          "text": "This is SCP-3143: Murphy Law in… The Foundation Always Rings Twice!",
+          "say": "This is S C P, thirty-one forty-three. Murphy Law in... The Foundation Always Rings Twice!",
+          "pause": 0.3
+        },
+        {
+          "text": "A Euclid-class anomaly from the SCP Wiki, written by The Great Hippo.",
+          "say": "A Euclid-class anomaly from the S C P Wiki, written by The Great Hippo."
+        }
+      ]
+    },
+    {
+      "id": "what",
+      "lead": 0.6,
+      "tail": 0.6,
+      "lines": [
+        {
+          "text": "SCP-3143 is an intrafictional construct: a living, thinking story that can warp reality.",
+          "say": "S C P thirty-one forty-three is an intra-fictional construct. A living, thinking story, that can warp reality.",
+          "pause": 0.3
+        },
+        {
+          "text": "When it activates, it flattens part of the real world into a movie script: a hard-boiled crime noir, straight out of the 1930s.",
+          "say": "When it activates, it flattens part of the real world into a movie script. A hard-boiled crime noir, straight out of the nineteen-thirties."
+        }
+      ]
+    },
+    {
+      "id": "how",
+      "lead": 0.6,
+      "tail": 1.0,
+      "lines": [
+        {
+          "text": "Inside that script, SCP-3143 plays the lead: a private detective hired to crack a case.",
+          "say": "Inside that script, S C P thirty-one forty-three plays the lead. A private detective, hired to crack a case.",
+          "pause": 0.2
+        },
+        {
+          "text": "Anyone caught in the effect becomes a character, talking and acting like they walked out of a pulp novel.",
+          "pause": 0.2
+        },
+        {
+          "text": "The story runs until the case is solved the way the genre demands. Then reality snaps back.",
+          "pause": 0.2
+        },
+        {
+          "text": "Whatever happened in the story really happened. But the people involved usually remember none of it."
+        }
+      ]
+    },
+    {
+      "id": "pun",
+      "lead": 0.5,
+      "tail": 1.0,
+      "lines": [
+        {
+          "text": "The detective's name? Murphy Law.",
+          "pause": 0.35
+        },
+        {
+          "text": "It's a pun on Murphy's Law: anything that can go wrong, will."
+        }
+      ]
+    },
+    {
+      "id": "containment",
+      "lead": 0.6,
+      "tail": 1.2,
+      "lines": [
+        {
+          "text": "Containing a story isn't easy.",
+          "pause": 0.2
+        },
+        {
+          "text": "A Foundation bot called I/O-ISMETA scans online fiction communities for signs that Murphy is back.",
+          "say": "A Foundation bot named I O Iz-meta scans online fiction communities for signs that Murphy is back.",
+          "pause": 0.2
+        },
+        {
+          "text": "When he surfaces, a member of the Pataphysics Department, experts in the logic of fiction, is sent to deconstruct him.",
+          "say": "When he surfaces, a member of the Pataphysics Department, experts in the logic of fiction, is sent to deconstruct him.",
+          "pause": 0.2
+        },
+        {
+          "text": "And Mobile Task Force Iota-10, the \"Damn Freds,\" hunts for SCP-3143-A: the man who wrote him.",
+          "say": "And Mobile Task Force Iota Ten, the Damn Freds, hunts for S C P thirty-one forty-three A. The man who wrote him."
+        }
+      ]
+    },
+    {
+      "id": "history",
+      "lead": 0.5,
+      "tail": 1.0,
+      "lines": [
+        {
+          "text": "SCP-3143 was first noticed in 2005, after a containment breach at Site-95.",
+          "say": "S C P thirty-one forty-three was first noticed in two thousand five, after a containment breach at Site ninety-five.",
+          "pause": 0.25
+        },
+        {
+          "text": "In 2012, the Pataphysics Department and the Department of Analytics finally made contact.",
+          "say": "In twenty twelve, the Pataphysics Department and the Department of Analytics finally made contact."
+        }
+      ]
+    },
+    {
+      "id": "int001",
+      "lead": 1.4,
+      "tail": 1.0,
+      "lines": [
+        {
+          "text": "In Interview 001, Dr. Thaddeus Thaum, a literature expert from the Pataphysics Department, walks into Murphy's office.",
+          "say": "In interview zero zero one, Doctor Thaddeus Thawm, a literature expert from the Pataphysics Department, walks into Murphy's office.",
+          "pause": 0.25
+        },
+        {
+          "text": "Murphy narrates, draws his .44… and Thaum calmly points out that he can hear the narration.",
+          "say": "Murphy narrates, draws his forty-four... and Thawm calmly points out, that he can hear the narration.",
+          "pause": 0.3
+        },
+        {
+          "text": "Then Thaum critiques the story to pieces. It isn't even proper noir, he says. No doomed anti-hero. No moral grey.",
+          "pause": 0.15,
+          "say": "Then Thawm critiques the story to pieces. It isn't even proper noir, he says. No doomed anti-hero. No moral grey."
+        },
+        {
+          "text": "Just \"fantasy escapism dressed up in a suit, a hat, and a drinking habit.\"",
+          "say": "Just fantasy escapism, dressed up in a suit, a hat, and a drinking habit.",
+          "pause": 0.4
+        },
+        {
+          "text": "As the critique lands, the screenplay collapses into a plain transcript, and Murphy is gone.",
+          "pause": 0.3
+        },
+        {
+          "text": "In his place sits SCP-3143-A: Murphy Lawden, a retired shoe salesman from New Jersey who lives alone with two cats.",
+          "say": "In his place sits S C P thirty-one forty-three A. Murphy Lawden, a retired shoe salesman from New Jersey, who lives alone with two cats.",
+          "pause": 0.2
+        },
+        {
+          "text": "Years ago, he wrote an unfinished screenplay called It Always Rains."
+        }
+      ]
+    },
+    {
+      "id": "int002",
+      "lead": 1.2,
+      "tail": 1.4,
+      "lines": [
+        {
+          "text": "The next day, Lawden asks the question every writer dreads: was the script any good?",
+          "pause": 1.6
+        },
+        {
+          "text": "\"It was fairly awful.\"",
+          "say": "It was. Fairly awful."
+        }
+      ]
+    },
+    {
+      "id": "int018",
+      "lead": 1.4,
+      "tail": 1.4,
+      "lines": [
+        {
+          "text": "By Interview 018, Lawden is miserable. He's stopped eating, and his pencils have been taken away, because he keeps writing about Murphy.",
+          "say": "By interview zero one eight, Lawden is miserable. He's stopped eating, and his pencils have been taken away, because he keeps writing about Murphy.",
+          "pause": 0.25
+        },
+        {
+          "text": "Why did the story have to stop? Murphy was helping people. It was fun.",
+          "pause": 0.4
+        },
+        {
+          "text": "Then he turns the tables. The Foundation, he says, cloaks itself in the trappings of science: the terms, the titles, the interview logs.",
+          "pause": 0.1
+        },
+        {
+          "text": "All to make its own story sound plausible.",
+          "pause": 0.4
+        },
+        {
+          "text": "The transcript snaps back into a screenplay. The subject isn't Lawden anymore. It's Murphy.",
+          "pause": 0.3
+        },
+        {
+          "text": "And he has a line for all of us: we're all just characters in that trashy dime-store novel called life.",
+          "pause": 0.3
+        },
+        {
+          "text": "He tosses Thaum aside, lights a cigarette, and walks out.",
+          "say": "He tosses Thawm aside, lights a cigarette, and walks out."
+        }
+      ]
+    },
+    {
+      "id": "twist",
+      "lead": 1.6,
+      "tail": 1.2,
+      "lines": [
+        {
+          "text": "Then comes the twist, locked behind Level 4 clearance.",
+          "say": "Then comes the twist. Locked behind level four clearance.",
+          "pause": 0.3
+        },
+        {
+          "text": "In an email, Site Director August admits that Dr. Thaum and the Pataphysics Department were made up: a test run for a fictional countermeasure.",
+          "say": "In an email, Site Director August admits that Doctor Thawm, and the Pataphysics Department, were made up. A test run for a fictional countermeasure.",
+          "pause": 0.25
+        },
+        {
+          "text": "Even Murphy Lawden and It Always Rains never existed.",
+          "pause": 0.3
+        },
+        {
+          "text": "The Foundation tried to beat a story by writing a better one… and it didn't work.",
+          "say": "The Foundation tried to beat a story, by writing a better one... and it didn't work.",
+          "pause": 0.35
+        },
+        {
+          "text": "August orders everyone to leave SCP-3143 alone. They've learned a lot about him, but he's learned a lot about them, too.",
+          "say": "August orders everyone to leave S C P thirty-one forty-three alone. They've learned a lot about him. But he's learned a lot about them, too.",
+          "pause": 0.25
+        },
+        {
+          "text": "And one more thing: SCP-423, a creature that slips itself into written stories, has gone missing.",
+          "say": "And one more thing. S C P four twenty-three, a creature that slips itself into written stories, has gone missing."
+        }
+      ]
+    },
+    {
+      "id": "credits",
+      "lead": 1.2,
+      "tail": 4.6,
+      "lines": [
+        {
+          "text": "Then, just like a movie, the file ends with credits.",
+          "pause": 0.5
+        },
+        {
+          "text": "Dr. Thaum, played by Thaddeus Thaum. The task force, played by Fred.",
+          "say": "Doctor Thawm, played by Thaddeus Thawm. The task force, played by Fred.",
+          "pause": 0.5
+        },
+        {
+          "text": "And Murphy Law… played by himself.",
+          "say": "And Murphy Law... played by himself."
+        }
+      ]
+    },
+    {
+      "id": "outro",
+      "lead": 1.0,
+      "tail": 6.2,
+      "lines": [
+        {
+          "text": "So, what is SCP-3143?",
+          "say": "So, what is S C P thirty-one forty-three?",
+          "pause": 0.4
+        },
+        {
+          "text": "A detective who knows he's fictional, and suspects that you are, too.",
+          "pause": 0.3
+        },
+        {
+          "text": "Every attempt to contain him is just another story. And Murphy Law is very good at stories."
+        }
+      ]
+    },
+    {
+      "id": "attribution",
+      "lead": 0.0,
+      "tail": 7.0,
+      "lines": []
+    }
+  ]
+}
