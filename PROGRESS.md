@@ -236,3 +236,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[08:35 UTC] Extra — Title drift, emergency lamps.** The title-screen camera now drifts slowly through the maze and
   turns towards open space at walls. In level 3 the few working fixtures are small square red emergency lamps while
   the dead ones remain full-size dark troffers.
+- **[08:36 UTC] Extra — Tutorial hints.** One-time contextual hints (remembered in the save, touch-aware wording):
+  movement basics after a few seconds, the flashlight the first time you stand in darkness, low battery, what to do
+  the first time something gets close, and the static meter after your first page.

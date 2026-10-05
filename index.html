@@ -4186,6 +4186,7 @@ function spawnPlayer(x, z) {
   player.yaw = best; player.pitch = 0; player.crouchToggle = false; player.eye = EYE_STAND;
 }
 function newGame(level = 1, mode = 'story') {
+  hintState.t = 0;
   game.level = level; game.mode = mode; game.serial = 0; game.time = 0; game.notes = 0; game.danger = 0;
   fx.kick = 0; fx.red = 0; U.uMonster.value.set(1e5, 0, 1e5, 0);
   clearTimeout(goal.msgTimer);
@@ -4389,6 +4390,23 @@ function frame() {
   renderer.setRenderTarget(null);
   renderer.render(postScene, postCam);
 }
+// One-time contextual hints for new players
+const hintState = { t: 0, envT: 0, env: 1 };
+function hint(id, text, secs = 5) {
+  if (!save.hints) save.hints = {};
+  if (save.hints[id]) return false;
+  save.hints[id] = 1; writeSave(); showMessage(text, secs); return true;
+}
+function updateHints(dt) {
+  hintState.t += dt;
+  if (hintState.t > 6 && hintState.t < 7) hint('move', isTouch ? 'Left thumb to move, drag right side to look. RUN, CROUCH, LIGHT and BREATH are on the right.' : 'WASD to move, mouse to look. Shift runs (loudly). C crouches.', 6);
+  hintState.envT -= dt;
+  if (hintState.envT <= 0) { hintState.envT = 0.5; hintState.env = sampleLight(player.pos.x, player.pos.z, 1.2); }
+  if (hintState.t > 8 && hintState.env < 0.12 && !flash.on && flash.battery > 0.1) hint('dark', isTouch ? 'It is dark here. Tap LIGHT for your flashlight.' : 'It is dark here. Press F for your flashlight.');
+  if (flash.battery < 0.3) hint('battery', 'Your batteries are running low. Spares lie on the floor \u2014 look for the glint.');
+  if (game.danger > 0.45) hint('danger', isTouch ? 'Something is close. Get out of the light, CROUCH, and hold BREATH.' : 'Something is close. Get out of the light, crouch (C) and hold your breath (Space).', 6);
+  if (game.notes >= 1) hint('static', 'The other pages crackle with static. Follow the sound \u2014 or the STATIC meter, top left.', 6);
+}
 const PROF = { on: false, max: {} };
 const SIM_STEPS = [
   ['player', (dt) => { updatePlayer(dt); updateStamina(dt); updateBreath(dt); updateFlashlight(dt); }],
@@ -4403,6 +4421,7 @@ const SIM_STEPS = [
   ['scares', (dt) => updateScares(dt)],
   ['dust', (dt) => updateDust(dt)],
   ['sparks', (dt) => updateSparks(dt)],
+  ['hints', (dt) => updateHints(dt)],
 ];
 function simulate(dt) {
   pollGamepad(dt);
