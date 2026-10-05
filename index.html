@@ -8,69 +8,362 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Dash District</title>
 <style>
-/* Layout concept: full-bleed 3D canvas, HUD floats in the four corners inside the safe area. */
+/* Layout concept: full-bleed 3D canvas; HUD panels float in the four corners inside the safe area, like a mobile runner. */
 :root {
   --ink: #1b1530;
-  --panel: rgba(22, 18, 40, 0.58);
-  --panel-edge: rgba(255, 255, 255, 0.10);
+  --panel: rgba(24, 22, 34, 0.58);
+  --panel-strong: rgba(24, 20, 40, 0.86);
+  --panel-edge: rgba(255, 255, 255, 0.14);
   --white: #ffffff;
   --gold: #ffd23f;
   --gold-deep: #f29a12;
-  --blue: #2f8cf0;
-  --blue-deep: #1758b8;
-  --green: #4fdc4a;
-  --green-deep: #23a12b;
+  --blue: #45a6ff;
+  --blue-deep: #1a64d0;
+  --green: #5fe04f;
+  --green-deep: #25a52c;
   --orange: #ff7a1a;
   --pink: #ff5fa2;
+  --purple: #7b4fd0;
   --sky: #f2a07b;
   --font: "Arial Rounded MT Bold", ui-rounded, "SF Pro Rounded", "Nunito", "Varela Round", "Baloo 2", "Trebuchet MS", "Segoe UI", Arial, sans-serif;
-  --u: clamp(0.62px, calc(min(100vw, 100vh) / 720), 1.35px);
+  --u: clamp(0.6px, calc(min(100vw, 100vh) * 0.001), 1.3px);
+  --pad: calc(var(--u) * 20);
+  --st: env(safe-area-inset-top, 0px);
+  --sb: env(safe-area-inset-bottom, 0px);
+  --sl: env(safe-area-inset-left, 0px);
+  --sr: env(safe-area-inset-right, 0px);
   color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body {
   margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
   background: var(--sky); color: var(--white);
-  font-family: var(--font);
+  font-family: var(--font); font-weight: 900;
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   touch-action: none; overscroll-behavior: none;
 }
+[hidden] { display: none !important; }
+button { font-family: inherit; font-weight: 900; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; touch-action: manipulation; }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+img { display: block; }
+
 #game { position: fixed; inset: 0; overflow: hidden; background: linear-gradient(#6f9fe0, #b5a2d8 45%, #f6a3a0 70%, #ffc58a); }
 #game canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
 #fxCanvas { pointer-events: none; }
-#loading {
-  position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
-  background: linear-gradient(#6f9fe0, #b5a2d8 45%, #f6a3a0 70%, #ffc58a); z-index: 50;
-  font-weight: 900; letter-spacing: 0.04em; text-shadow: 0 3px 0 rgba(40, 20, 60, 0.45);
+#flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 60%, rgba(255, 255, 255, 0.95), rgba(255, 240, 200, 0.55) 45%, rgba(255, 255, 255, 0) 75%); }
+#vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 55%, rgba(0, 0, 0, 0) 58%, rgba(40, 10, 40, 0.28) 100%); }
+
+/* ---------- shared text + panels ---------- */
+.panel {
+  background: var(--panel); border: 1px solid var(--panel-edge);
+  border-radius: calc(var(--u) * 16); box-shadow: 0 calc(var(--u) * 4) calc(var(--u) * 14) rgba(10, 5, 30, 0.22);
+  text-shadow: 0 calc(var(--u) * 3) 0 rgba(0, 0, 0, 0.45);
 }
-#loading .lt { font-size: calc(var(--u) * 46); }
-#loading .ls { font-size: calc(var(--u) * 20); opacity: 0.9; }
-#loading .bar { width: calc(var(--u) * 260); height: calc(var(--u) * 14); border-radius: 99px; background: rgba(20, 16, 40, 0.45); overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.5); }
+#hud { position: fixed; inset: 0; pointer-events: none; font-variant-numeric: tabular-nums; }
+#hud button { pointer-events: auto; }
+
+/* ---------- top-left ---------- */
+.hud-tl { position: absolute; top: calc(var(--st) + var(--pad)); left: calc(var(--sl) + var(--pad)); display: flex; gap: calc(var(--u) * 26); align-items: flex-start; }
+.btn-pause {
+  width: calc(var(--u) * 78); height: calc(var(--u) * 78); border-radius: calc(var(--u) * 18);
+  background: linear-gradient(#6cc0ff, #2b86ef 55%, #1d63cf); border: calc(var(--u) * 4) solid #e9f5ff;
+  box-shadow: 0 calc(var(--u) * 5) 0 #12408a, 0 calc(var(--u) * 8) calc(var(--u) * 16) rgba(0, 0, 0, 0.3), inset 0 calc(var(--u) * 4) 0 rgba(255, 255, 255, 0.35);
+  display: flex; align-items: center; justify-content: center; gap: calc(var(--u) * 11);
+}
+.btn-pause i { width: calc(var(--u) * 13); height: calc(var(--u) * 36); border-radius: calc(var(--u) * 4); background: #fff; box-shadow: 0 calc(var(--u) * 2) 0 rgba(0, 0, 0, 0.25); }
+.btn-pause:active { transform: translateY(calc(var(--u) * 3)); box-shadow: 0 calc(var(--u) * 2) 0 #12408a; }
+.caps-panel { height: calc(var(--u) * 60); padding: 0 calc(var(--u) * 18) 0 calc(var(--u) * 10); display: flex; align-items: center; gap: calc(var(--u) * 12); font-size: calc(var(--u) * 34); }
+.caps-panel img { width: calc(var(--u) * 52); height: calc(var(--u) * 52); }
+.caps-panel.pop img { animation: coinPop 0.35s ease-out; }
+
+.mission-card {
+  position: absolute; top: calc(var(--st) + var(--pad) + var(--u) * 140); left: calc(var(--sl) + var(--pad));
+  width: calc(var(--u) * 166); padding: calc(var(--u) * 12) calc(var(--u) * 14) calc(var(--u) * 12);
+  background: var(--panel); border: 1px solid var(--panel-edge); border-radius: calc(var(--u) * 16);
+  text-shadow: 0 calc(var(--u) * 3) 0 rgba(0, 0, 0, 0.45);
+}
+.mission-card.pulse { animation: cardPulse 0.45s ease-out; }
+.mission-card.done { animation: cardDone 1.2s ease-out; }
+@keyframes cardPulse { 0% { transform: scale(1); } 35% { transform: scale(1.07); } 100% { transform: scale(1); } }
+@keyframes cardDone { 0% { box-shadow: 0 0 0 0 rgba(95, 224, 79, 0.9); } 100% { box-shadow: 0 0 0 calc(var(--u) * 30) rgba(95, 224, 79, 0); } }
+.mc-text { font-size: calc(var(--u) * 21); line-height: 1.15; min-height: calc(var(--u) * 48); }
+.mc-icon { width: calc(var(--u) * 64); height: calc(var(--u) * 64); margin: calc(var(--u) * 6) 0 calc(var(--u) * 4) calc(var(--u) * 14); }
+.mc-bar { height: calc(var(--u) * 16); border-radius: 99px; background: rgba(10, 10, 20, 0.6); border: calc(var(--u) * 2) solid rgba(255, 255, 255, 0.25); overflow: hidden; }
+.mc-bar i { display: block; height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(#9cff6a, var(--green) 50%, var(--green-deep)); transition: width 0.3s; }
+.mc-count { text-align: center; font-size: calc(var(--u) * 24); margin-top: calc(var(--u) * 6); }
+
+/* ---------- top-right ---------- */
+.hud-tr { position: absolute; top: calc(var(--st) + var(--pad)); right: calc(var(--sr) + var(--pad)); display: flex; flex-direction: column; align-items: flex-end; gap: calc(var(--u) * 10); }
+.score-panel { height: calc(var(--u) * 64); padding: 0 calc(var(--u) * 20) 0 calc(var(--u) * 14); display: flex; align-items: center; gap: calc(var(--u) * 8); }
+.score-panel .mult { color: var(--gold); font-size: calc(var(--u) * 40); min-width: calc(var(--u) * 62); text-align: right; }
+.score-panel .mult.boost { animation: multPulse 0.8s ease-in-out infinite; }
+@keyframes multPulse { 50% { transform: scale(1.18); color: #fff3a0; } }
+.score-panel img { width: calc(var(--u) * 46); height: calc(var(--u) * 46); margin-right: calc(var(--u) * 14); }
+.score-panel .digits { font-size: calc(var(--u) * 52); letter-spacing: 0.02em; min-width: calc(var(--u) * 196); text-align: right; }
+.coin-panel { height: calc(var(--u) * 56); padding: 0 calc(var(--u) * 10) 0 calc(var(--u) * 18); display: flex; align-items: center; gap: calc(var(--u) * 10); font-size: calc(var(--u) * 38); }
+.coin-panel img { width: calc(var(--u) * 46); height: calc(var(--u) * 46); }
+.coin-panel.pop img { animation: coinPop 0.25s ease-out; }
+@keyframes coinPop { 50% { transform: scale(1.3) rotate(15deg); } }
+.best-panel { width: calc(var(--u) * 108); padding: calc(var(--u) * 10) calc(var(--u) * 8) calc(var(--u) * 10); display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 6); }
+.best-title { color: var(--gold); font-size: calc(var(--u) * 19); line-height: 1.05; text-align: center; letter-spacing: 0.02em; }
+.best-panel.beaten .best-title { color: #9cff6a; }
+.avatar { width: calc(var(--u) * 84); height: calc(var(--u) * 84); border-radius: calc(var(--u) * 12); border: calc(var(--u) * 3) solid #fff; box-shadow: 0 calc(var(--u) * 3) calc(var(--u) * 6) rgba(0, 0, 0, 0.3); }
+.best-val { font-size: calc(var(--u) * 22); }
+
+/* ---------- bottom-left power-up timers ---------- */
+.hud-bl { position: absolute; left: calc(var(--sl) + var(--pad)); bottom: calc(var(--sb) + var(--pad)); display: flex; flex-direction: column-reverse; gap: calc(var(--u) * 12); }
+.pu-row { display: flex; align-items: center; gap: calc(var(--u) * 6); animation: puIn 0.3s ease-out; }
+@keyframes puIn { from { transform: translateX(-30%); opacity: 0; } }
+.pu-icon {
+  width: calc(var(--u) * 82); height: calc(var(--u) * 82); border-radius: calc(var(--u) * 16); padding: calc(var(--u) * 8);
+  background: linear-gradient(#5ab6ff, #2a7de8 60%, #1b5cc4); border: calc(var(--u) * 3) solid #e9f5ff;
+  box-shadow: 0 calc(var(--u) * 4) 0 #133f86, 0 calc(var(--u) * 6) calc(var(--u) * 12) rgba(0, 0, 0, 0.3);
+}
+.pu-icon img { width: 100%; height: 100%; }
+.pu-bar { height: calc(var(--u) * 50); padding: calc(var(--u) * 8); display: flex; gap: calc(var(--u) * 5); align-items: stretch; }
+.pu-bar b { width: calc(var(--u) * 20); border-radius: calc(var(--u) * 4); background: rgba(255, 255, 255, 0.12); }
+.pu-bar b.on { background: linear-gradient(#a6ff74, var(--green) 55%, var(--green-deep)); box-shadow: inset 0 calc(var(--u) * 2) 0 rgba(255, 255, 255, 0.4); }
+.pu-row.low .pu-bar b.on { animation: blink 0.35s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0.25; } }
+
+/* ---------- bottom-right controls ---------- */
+.hud-br { position: absolute; right: calc(var(--sr) + var(--pad)); bottom: calc(var(--sb) + var(--pad)); display: flex; gap: calc(var(--u) * 8); }
+.ctl {
+  width: calc(var(--u) * 92); height: calc(var(--u) * 132); border-radius: calc(var(--u) * 16);
+  background: rgba(22, 22, 32, 0.62); border: calc(var(--u) * 2) solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 calc(var(--u) * 5) calc(var(--u) * 12) rgba(0, 0, 0, 0.3);
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: calc(var(--u) * 12);
+  text-shadow: 0 calc(var(--u) * 2) 0 rgba(0, 0, 0, 0.5);
+}
+.ctl svg { width: calc(var(--u) * 44); height: calc(var(--u) * 44); fill: #fff; filter: drop-shadow(0 calc(var(--u) * 2) 0 rgba(0, 0, 0, 0.4)); }
+.ctl .lbl { font-size: calc(var(--u) * 21); margin-top: calc(var(--u) * 6); }
+.ctl .key { width: 84%; margin-top: calc(var(--u) * 8); padding-top: calc(var(--u) * 7); border-top: calc(var(--u) * 2) solid rgba(255, 255, 255, 0.3); font-size: calc(var(--u) * 19); text-align: center; white-space: nowrap; }
+.ctl:active, .ctl.pressed { background: rgba(69, 166, 255, 0.55); transform: translateY(calc(var(--u) * 2)); }
+
+/* ---------- toasts ---------- */
+#toasts { position: absolute; left: 50%; top: calc(var(--st) + 19vh); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 8); width: 90%; }
+.toast {
+  padding: calc(var(--u) * 10) calc(var(--u) * 22); border-radius: 99px; font-size: calc(var(--u) * 28); white-space: nowrap;
+  background: linear-gradient(rgba(40, 30, 80, 0.85), rgba(25, 20, 50, 0.85)); border: calc(var(--u) * 2) solid rgba(255, 255, 255, 0.3);
+  text-shadow: 0 calc(var(--u) * 3) 0 rgba(0, 0, 0, 0.5); animation: toastIn 0.35s cubic-bezier(.2, 1.6, .4, 1);
+}
+.toast.gold { color: var(--gold); }
+.toast.green { color: #9cff6a; }
+.toast.out { animation: toastOut 0.4s ease-in forwards; }
+@keyframes toastIn { from { transform: scale(0.4); opacity: 0; } }
+@keyframes toastOut { to { transform: translateY(-40%); opacity: 0; } }
+
+/* ---------- screens ---------- */
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: calc(var(--st) + 16px) calc(var(--sr) + 16px) calc(var(--sb) + 16px) calc(var(--sl) + 16px); text-shadow: 0 calc(var(--u) * 3) 0 rgba(0, 0, 0, 0.45); }
+.screen.dim { background: radial-gradient(ellipse at center, rgba(20, 10, 40, 0.45), rgba(20, 10, 40, 0.75)); }
+.card {
+  width: min(92vw, calc(var(--u) * 560)); max-height: 100%; overflow-y: auto; padding: calc(var(--u) * 30) calc(var(--u) * 34); border-radius: calc(var(--u) * 28);
+  background: var(--panel-strong); border: calc(var(--u) * 3) solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 calc(var(--u) * 20) calc(var(--u) * 60) rgba(0, 0, 0, 0.45);
+  display: flex; flex-direction: column; align-items: stretch; gap: calc(var(--u) * 14); animation: cardIn 0.35s cubic-bezier(.2, 1.4, .4, 1);
+}
+@keyframes cardIn { from { transform: scale(0.85); opacity: 0; } }
+.card-title { text-align: center; font-size: calc(var(--u) * 58); letter-spacing: 0.03em; color: var(--gold); }
+.card-sub { text-align: center; font-size: calc(var(--u) * 24); opacity: 0.92; }
+.big-btn {
+  min-height: calc(var(--u) * 72); padding: 0 calc(var(--u) * 20); border-radius: calc(var(--u) * 18); font-size: calc(var(--u) * 30);
+  background: linear-gradient(#5a5f78, #3b3f55); border: calc(var(--u) * 3) solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 calc(var(--u) * 5) 0 rgba(0, 0, 0, 0.35); text-shadow: 0 calc(var(--u) * 2) 0 rgba(0, 0, 0, 0.45);
+}
+.big-btn.primary { background: linear-gradient(#9cff6a, #4fd044 50%, #2a9e2e); border-color: #eaffdf; box-shadow: 0 calc(var(--u) * 6) 0 #1c6b20; font-size: calc(var(--u) * 36); }
+.big-btn.ghost { background: transparent; border-color: rgba(255, 255, 255, 0.35); box-shadow: none; }
+.big-btn.small { font-size: calc(var(--u) * 24); min-height: calc(var(--u) * 60); flex: 1; }
+.big-btn:active { transform: translateY(calc(var(--u) * 3)); box-shadow: 0 calc(var(--u) * 2) 0 rgba(0, 0, 0, 0.35); }
+.btn-row { display: flex; gap: calc(var(--u) * 12); }
+
+/* game over */
+.new-best { align-self: center; padding: calc(var(--u) * 6) calc(var(--u) * 18); border-radius: 99px; background: linear-gradient(#ff8ac0, var(--pink)); font-size: calc(var(--u) * 26); animation: multPulse 0.9s ease-in-out infinite; }
+.over-score { text-align: center; font-size: calc(var(--u) * 88); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.over-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 10); }
+.og { background: rgba(255, 255, 255, 0.07); border-radius: calc(var(--u) * 14); padding: calc(var(--u) * 10) calc(var(--u) * 14); display: flex; flex-direction: column; gap: calc(var(--u) * 2); min-width: 0; }
+.og-k { font-size: calc(var(--u) * 18); opacity: 0.75; letter-spacing: 0.06em; text-transform: uppercase; }
+.og-v { font-size: calc(var(--u) * 32); font-variant-numeric: tabular-nums; }
+.gold { color: var(--gold); }
+.over-missions { display: flex; flex-direction: column; gap: calc(var(--u) * 8); }
+
+/* mission rows (menu + game over) */
+.mrow { display: grid; grid-template-columns: calc(var(--u) * 46) 1fr auto; align-items: center; column-gap: calc(var(--u) * 12); row-gap: calc(var(--u) * 6); background: rgba(255, 255, 255, 0.07); border-radius: calc(var(--u) * 14); padding: calc(var(--u) * 8) calc(var(--u) * 12); }
+.mrow img { width: calc(var(--u) * 46); height: calc(var(--u) * 46); grid-row: span 2; }
+.mrow .mt { font-size: calc(var(--u) * 20); line-height: 1.15; min-width: 0; }
+.mrow .mbar { grid-column: 2 / 4; height: calc(var(--u) * 10); border-radius: 99px; background: rgba(0, 0, 0, 0.4); overflow: hidden; }
+.mrow .mbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--green-deep), var(--green)); border-radius: 99px; }
+.mrow .mc { font-size: calc(var(--u) * 20); color: var(--gold); }
+
+/* menu */
+#menu {
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); align-items: center; justify-items: center; row-gap: calc(var(--u) * 12);
+  background: linear-gradient(rgba(30, 20, 60, 0.35), rgba(0, 0, 0, 0) 32%, rgba(0, 0, 0, 0) 62%, rgba(30, 15, 50, 0.55));
+}
+.menu-top { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 4); margin-top: calc(var(--u) * 10); }
+#logo { width: min(86vw, calc(var(--u) * 640)); height: auto; aspect-ratio: 900 / 420; max-width: 100%; filter: drop-shadow(0 calc(var(--u) * 8) calc(var(--u) * 10) rgba(30, 10, 50, 0.35)); animation: logoIn 0.8s cubic-bezier(.2, 1.4, .4, 1); }
+@keyframes logoIn { from { transform: scale(0.6) rotate(-6deg); opacity: 0; } }
+.tagline { font-size: calc(var(--u) * 24); text-align: center; opacity: 0.95; }
+.menu-side { justify-self: start; align-self: center; width: min(44vw, calc(var(--u) * 400)); display: flex; flex-direction: column; gap: calc(var(--u) * 14); }
+.stat-row { display: flex; gap: calc(var(--u) * 10); }
+.stat { flex: 1; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: calc(var(--u) * 16); padding: calc(var(--u) * 10) calc(var(--u) * 12); display: flex; flex-direction: column; min-width: 0; }
+.stat-k { font-size: calc(var(--u) * 16); opacity: 0.8; letter-spacing: 0.06em; }
+.stat-v { font-size: calc(var(--u) * 30); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
+.missions-box { background: var(--panel); border: 1px solid var(--panel-edge); border-radius: calc(var(--u) * 18); padding: calc(var(--u) * 14); display: flex; flex-direction: column; gap: calc(var(--u) * 10); }
+.mb-title { font-size: calc(var(--u) * 22); color: var(--gold); letter-spacing: 0.08em; }
+#mMissions { display: flex; flex-direction: column; gap: calc(var(--u) * 8); }
+.mb-hint { font-size: calc(var(--u) * 16); opacity: 0.8; line-height: 1.3; }
+.menu-bottom { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 10); margin-bottom: calc(var(--u) * 24); }
+.tap { font-size: calc(var(--u) * 64); letter-spacing: 0.05em; color: #fff; animation: tapPulse 1.1s ease-in-out infinite; text-shadow: 0 calc(var(--u) * 4) 0 #7b2fb0, 0 0 calc(var(--u) * 24) rgba(255, 200, 80, 0.6); }
+@keyframes tapPulse { 50% { transform: scale(1.08); } }
+.howto { font-size: calc(var(--u) * 20); opacity: 0.9; text-align: center; }
+.menu-corner { position: absolute; right: calc(var(--sr) + var(--pad)); top: calc(var(--st) + var(--pad)); display: flex; flex-direction: column; gap: calc(var(--u) * 12); }
+.round-btn {
+  width: calc(var(--u) * 72); height: calc(var(--u) * 72); border-radius: 50%;
+  background: linear-gradient(#6cc0ff, #2b86ef 55%, #1d63cf); border: calc(var(--u) * 4) solid #e9f5ff;
+  box-shadow: 0 calc(var(--u) * 5) 0 #12408a; display: flex; align-items: center; justify-content: center;
+}
+.round-btn svg { width: 56%; height: 56%; fill: #fff; }
+.round-btn.off { background: linear-gradient(#9aa0b4, #626880); box-shadow: 0 calc(var(--u) * 5) 0 #3a3e50; }
+
+/* countdown */
+#countdown { position: fixed; left: 50%; top: 45%; transform: translate(-50%, -50%); font-size: calc(var(--u) * 170); color: #fff; text-shadow: 0 calc(var(--u) * 8) 0 #7b2fb0, 0 0 calc(var(--u) * 40) rgba(255, 200, 80, 0.7); pointer-events: none; }
+#countdown.tick { animation: tick 0.9s ease-out; }
+@keyframes tick { from { transform: translate(-50%, -50%) scale(1.8); opacity: 0; } 30% { opacity: 1; } to { transform: translate(-50%, -50%) scale(0.9); } }
+
+/* loading */
+#loading {
+  position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px;
+  background: linear-gradient(#6f9fe0, #b5a2d8 45%, #f6a3a0 70%, #ffc58a); z-index: 50; text-align: center;
+  letter-spacing: 0.04em; text-shadow: 0 3px 0 rgba(40, 20, 60, 0.45);
+}
+#loading .lt { font-size: calc(var(--u) * 56); }
+#loading .ls { font-size: calc(var(--u) * 22); opacity: 0.9; max-width: 34em; }
+#loading .bar { width: calc(var(--u) * 300); height: calc(var(--u) * 16); border-radius: 99px; background: rgba(20, 16, 40, 0.45); overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.5); }
 #loading .bar i { display: block; height: 100%; width: 0%; background: linear-gradient(var(--gold), var(--gold-deep)); transition: width 0.2s; }
 #loading.err .bar { display: none; }
-#hudMini { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 14px; text-align: right; font-weight: 900; text-shadow: 0 3px 0 rgba(30, 20, 50, 0.5); pointer-events: none; }
-#hudMini .hm-score { font-size: calc(var(--u) * 54); letter-spacing: 0.02em; }
-#hudMini .hm-coins { font-size: calc(var(--u) * 26); color: var(--gold); }
-#tMsg { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); display: none; padding: 16px 22px; border-radius: 18px; background: var(--panel); font-weight: 900; font-size: calc(var(--u) * 30); text-align: center; pointer-events: none; }
-#tInfo { margin: 6px 0 0; font: 700 13px/1.35 var(--font); white-space: pre; text-align: right; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
+
+/* ---------- small / portrait screens ---------- */
+@media (max-width: 700px) {
+  .score-panel .digits { min-width: 0; }
+}
+@media (max-aspect-ratio: 9/10) {
+  .menu-side { justify-self: center; align-self: end; width: min(94vw, 460px); }
+  .missions-box { padding: calc(var(--u) * 10); gap: calc(var(--u) * 6); }
+  .mb-hint { display: none; }
+  .mrow { padding: calc(var(--u) * 5) calc(var(--u) * 10); }
+  .tap { font-size: calc(var(--u) * 54); }
+}
+@media (max-aspect-ratio: 4/5) {
+  .hud-bl { bottom: calc(var(--sb) + var(--pad) + var(--u) * 150); }
+}
+@media (pointer: coarse) {
+  .ctl { width: calc(var(--u) * 100); height: calc(var(--u) * 116); }
+  .ctl .key { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tap, .new-best, .score-panel .mult.boost, #logo { animation: none; }
+}
 </style>
 </head>
 <body>
 <div id="game">
   <canvas id="gl" tabindex="0" aria-label="Dash District game view"></canvas>
   <canvas id="fxCanvas"></canvas>
+  <div id="flash"></div>
+  <div id="vignette"></div>
 </div>
+
+<div id="hud" hidden>
+  <div class="hud-tl">
+    <button id="btnPause" class="btn-pause" aria-label="Pause game"><i></i><i></i></button>
+    <div class="panel caps-panel" title="Cap tokens collected this run"><img id="icCap" alt=""><span id="capCount">0/5</span></div>
+  </div>
+  <div class="mission-card" id="missionCard">
+    <div class="mc-text" id="mcText">Collect 5 Powerups</div>
+    <img class="mc-icon" id="mcIcon" alt="">
+    <div class="mc-bar"><i id="mcFill"></i></div>
+    <div class="mc-count" id="mcCount">0/5</div>
+  </div>
+  <div class="hud-tr">
+    <div class="panel score-panel"><span class="mult" id="hudMult">x1</span><img id="icStar" alt=""><span class="digits" id="hudScore">000000</span></div>
+    <div class="panel coin-panel"><span id="hudCoins">0</span><img id="icCoin" alt=""></div>
+    <div class="panel best-panel"><div class="best-title" id="bestTitle">HIGH<br>SCORE</div><img id="icAvatar" class="avatar" alt=""><div class="best-val" id="hudBest">0</div></div>
+  </div>
+  <div class="hud-bl" id="powerList"></div>
+  <div class="hud-br" id="ctrlPad">
+    <button class="ctl" data-act="jump" aria-label="Jump"><svg viewBox="0 0 40 40"><path d="M20 6 L34 22 H25 V34 H15 V22 H6 Z"/></svg><span class="lbl">Jump</span><span class="key">↑ / W</span></button>
+    <button class="ctl" data-act="roll" aria-label="Slide"><svg viewBox="0 0 40 40"><path d="M20 34 L34 18 H25 V6 H15 V18 H6 Z"/></svg><span class="lbl">Slide</span><span class="key">↓ / S</span></button>
+    <button class="ctl" data-act="left" aria-label="Move left"><svg viewBox="0 0 40 40"><path d="M6 20 L22 6 V15 H34 V25 H22 V34 Z"/></svg><span class="lbl">Left</span><span class="key">← / A</span></button>
+    <button class="ctl" data-act="right" aria-label="Move right"><svg viewBox="0 0 40 40"><path d="M34 20 L18 6 V15 H6 V25 H18 V34 Z"/></svg><span class="lbl">Right</span><span class="key">→ / D</span></button>
+  </div>
+  <div id="toasts"></div>
+</div>
+
+<div id="menu" class="screen" hidden>
+  <div class="menu-top">
+    <canvas id="logo" width="900" height="420" aria-label="Dash District"></canvas>
+    <div class="tagline">Run the rails. Grab the gold. Outrun Bolt-9.</div>
+  </div>
+  <div class="menu-side">
+    <div class="stat-row">
+      <div class="stat"><span class="stat-k">BEST</span><span class="stat-v" id="mBest">0</span></div>
+      <div class="stat"><span class="stat-k">COINS</span><span class="stat-v" id="mCoins">0</span></div>
+      <div class="stat"><span class="stat-k">MULTIPLIER</span><span class="stat-v gold" id="mMult">x1</span></div>
+    </div>
+    <div class="missions-box">
+      <div class="mb-title">MISSIONS</div>
+      <div id="mMissions"></div>
+      <div class="mb-hint">Each mission you finish raises your score multiplier.</div>
+    </div>
+  </div>
+  <div class="menu-bottom">
+    <div class="tap" id="tapToPlay">TAP TO PLAY</div>
+    <div class="howto" id="howto">Swipe, use the arrow keys / WASD, or the on-screen buttons</div>
+  </div>
+  <div class="menu-corner">
+    <button class="round-btn" id="mSound" aria-label="Sound on or off"></button>
+    <button class="round-btn" id="mMusic" aria-label="Music on or off"></button>
+  </div>
+</div>
+
+<div id="pause" class="screen dim" hidden>
+  <div class="card">
+    <div class="card-title">PAUSED</div>
+    <div class="card-sub" id="pScore">Score 000000 · 0 coins</div>
+    <button class="big-btn primary" id="pResume">Resume</button>
+    <button class="big-btn" id="pRestart">Restart</button>
+    <div class="btn-row">
+      <button class="big-btn small" id="pSound">Sound: On</button>
+      <button class="big-btn small" id="pMusic">Music: On</button>
+    </div>
+    <button class="big-btn ghost" id="pHome">Main menu</button>
+  </div>
+</div>
+
+<div id="over" class="screen dim" hidden>
+  <div class="card over-card">
+    <div class="card-title" id="oTitle">CRASHED!</div>
+    <div class="new-best" id="oNewBest" hidden>NEW BEST!</div>
+    <div class="over-score" id="oScore">000000</div>
+    <div class="over-grid">
+      <div class="og"><span class="og-k">Coins</span><span class="og-v gold" id="oCoins">0</span></div>
+      <div class="og"><span class="og-k">Distance</span><span class="og-v" id="oDist">0 m</span></div>
+      <div class="og"><span class="og-k">Best</span><span class="og-v" id="oBest">0</span></div>
+      <div class="og"><span class="og-k">Multiplier</span><span class="og-v gold" id="oMult">x1</span></div>
+    </div>
+    <div id="oMissions" class="over-missions"></div>
+    <button class="big-btn primary" id="oAgain">Play again</button>
+    <button class="big-btn ghost" id="oHome">Main menu</button>
+  </div>
+</div>
+
+<div id="countdown" hidden></div>
+
 <div id="loading">
   <div class="lt">DASH DISTRICT</div>
   <div class="ls" id="loadingMsg">Loading the city…</div>
   <div class="bar"><i id="loadingBar"></i></div>
 </div>
-<div id="hudMini">
-  <div class="hm-score"><span id="tScore">000000</span></div>
-  <div class="hm-coins"><span id="tCoins">0</span> coins</div>
-  <pre id="tInfo"></pre>
-</div>
-<div id="tMsg"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function () {
@@ -903,7 +1196,7 @@ const Tex = (() => {
 
   return {
     setMaxAniso(n) { maxAniso = Math.max(1, Math.min(8, n || 1)); },
-    make, canvas, rr, speckle, star, crown, heart, bolt, FONT_HEAVY, FACADES,
+    make, canvas, rr, speckle, star, crown, heart, bolt, bubbleWord, FONT_HEAVY, FACADES,
     trackAtlas, walksAtlas, stripes, chevron, ramp, train, coin,
     graffiti, facade, banner, metroSign, stone, palm, skyline, cloud, glow
   };
@@ -2744,7 +3037,7 @@ const Runner = {
   w: { idle: 1, run: 0, air: 0, roll: 0, hover: 0, jet: 0, stumble: 0, dead: 0 },
   jumpStyle: 0, wasGrounded: true, rollAngle: 0, stumbleT: 0, stumbleDir: 1,
   pose: new Float32Array(PC.length), tmp: new Float32Array(PC.length),
-  lean: 0, turn: 0, deadT: 0, blink: 0,
+  lean: 0, turn: 0, deadT: 0, spinT: 0,
 
   init() {
     const mat = new THREE.MeshPhongMaterial({ vertexColors: true, specular: 0x1c1c1c, shininess: 14 });
@@ -3049,6 +3342,10 @@ const Runner = {
       r.rotation.set(0, Math.PI, 0);
     } else {
       r.rotation.set(0, this.turn, this.lean);
+      if (this.spinT > 0) {
+        this.spinT = Math.max(0, this.spinT - dt);
+        r.rotation.y += Math.PI * smoothstep(this.spinT / 0.45);
+      }
     }
     // extras
     this.extras.board.visible = !!ctx.hover && mode !== 'menu';
@@ -3202,6 +3499,18 @@ const Chaser = {
     this.t += dt;
     const s = this.state;
     if (s === 'off') { this.root.visible = false; return; }
+    if (s === 'menu') {
+      const r = this.root;
+      r.visible = true;
+      r.position.set(p.x + 1.9, 0.2 + Math.sin(this.t * 2.4) * 0.07, p.z - 2.4);
+      r.rotation.set(0, Math.PI + 0.55, 0);
+      const b = this.bones;
+      b.body.rotation.x = 0;
+      b.lSh.rotation.set(0.2, 0, -0.5); b.lEl.rotation.x = 0.8;
+      b.rSh.rotation.set(0.2, 0, 2.5 + Math.sin(this.t * 6) * 0.35); b.rEl.rotation.x = 0.4;
+      this.animateLights(dt);
+      return;
+    }
     if (s === 'intro') {
       if (this.t > 2.2) this.offZ += dt * (4 + (this.t - 2.2) * 6);
       if (this.offZ > 26) { this.hide(); return; }
@@ -3240,6 +3549,12 @@ const Chaser = {
       b.lSh.rotation.set(0.2, 0, -0.9 - Math.sin(this.t * 3) * 0.1); b.rSh.rotation.set(0.2, 0, 0.9 + Math.sin(this.t * 3) * 0.1);
       b.lEl.rotation.x = 1.6; b.rEl.rotation.x = 1.6;
     }
+    this.animateLights(dt);
+  },
+
+  showMenu() { this.state = 'menu'; this.t = 0; },
+
+  animateLights(dt) {
     // siren: alternating red / blue
     this.siren += dt;
     const phase = Math.floor(this.siren * 5) % 2;
@@ -3845,12 +4160,402 @@ const Missions = {
   }
 };
 
+// ==== HUD ====
+// HUD + menus: canvas-drawn icons, the logo, the in-run HUD (reference layout), start / pause / game-over screens.
+
+const Icons = {
+  cache: {},
+  url(name) {
+    if (this.cache[name]) return this.cache[name];
+    const c = Tex.canvas(128, 128), g = c.getContext('2d');
+    (this.draw[name] || this.draw.star).call(this.draw, g);
+    return (this.cache[name] = c.toDataURL());
+  },
+  draw: {
+    star(g) {
+      Tex.star(g, 64, 70, 54, 24, 5);
+      g.lineJoin = 'round'; g.lineWidth = 10; g.strokeStyle = '#a85a00'; g.stroke();
+      const grd = g.createLinearGradient(20, 20, 100, 110);
+      grd.addColorStop(0, '#fff3a0'); grd.addColorStop(0.5, '#ffd23f'); grd.addColorStop(1, '#f29a12');
+      g.fillStyle = grd; g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.7)'; g.beginPath(); g.ellipse(50, 48, 12, 6, -0.6, 0, TAU); g.fill();
+    },
+    coin(g) {
+      const grd = g.createRadialGradient(48, 44, 6, 64, 64, 58);
+      grd.addColorStop(0, '#fff3a6'); grd.addColorStop(0.5, '#ffd23a'); grd.addColorStop(1, '#e08a0c');
+      g.fillStyle = '#b86a00'; g.beginPath(); g.arc(64, 68, 56, 0, TAU); g.fill();
+      g.fillStyle = grd; g.beginPath(); g.arc(64, 62, 56, 0, TAU); g.fill();
+      g.lineWidth = 6; g.strokeStyle = '#f7b21d'; g.beginPath(); g.arc(64, 62, 46, 0, TAU); g.stroke();
+      Tex.star(g, 64, 64, 30, 13, 5); g.fillStyle = '#f2a516'; g.fill();
+      Tex.star(g, 64, 61, 30, 13, 5); g.fillStyle = '#fff1a0'; g.fill(); g.lineWidth = 3; g.strokeStyle = '#d68a0a'; g.stroke();
+    },
+    cap(g) {
+      g.lineJoin = 'round';
+      g.fillStyle = '#145c2c'; g.beginPath(); g.ellipse(70, 92, 52, 14, -0.1, 0, TAU); g.fill();
+      const grd = g.createLinearGradient(20, 20, 100, 100);
+      grd.addColorStop(0, '#6ff08f'); grd.addColorStop(0.5, '#2dbe60'); grd.addColorStop(1, '#1b8a42');
+      g.beginPath(); g.moveTo(14, 84); g.quadraticCurveTo(18, 22, 70, 20); g.quadraticCurveTo(116, 24, 116, 84); g.closePath();
+      g.fillStyle = grd; g.fill(); g.lineWidth = 6; g.strokeStyle = '#0f4f25'; g.stroke();
+      g.beginPath(); g.moveTo(60, 82); g.quadraticCurveTo(100, 76, 124, 96); g.quadraticCurveTo(96, 104, 58, 96); g.closePath();
+      g.fillStyle = '#25a352'; g.fill(); g.stroke();
+      Tex.bolt(g, 66, 52, 20, '#ffd23f', '#7a5200');
+      g.fillStyle = '#0f4f25'; g.beginPath(); g.arc(66, 22, 6, 0, TAU); g.fill();
+    },
+    avatar(g) {
+      const bg = g.createLinearGradient(0, 0, 0, 128);
+      bg.addColorStop(0, '#9fdcff'); bg.addColorStop(1, '#4fa3ea');
+      g.fillStyle = bg; g.fillRect(0, 0, 128, 128);
+      g.fillStyle = 'rgba(255,255,255,0.25)'; g.beginPath(); g.arc(20, 18, 40, 0, TAU); g.fill();
+      // hoodie
+      g.fillStyle = '#ff7a1a'; g.beginPath(); g.ellipse(64, 136, 58, 34, 0, 0, TAU); g.fill();
+      g.fillStyle = '#e0600c'; g.beginPath(); g.ellipse(64, 112, 26, 10, 0, 0, TAU); g.fill();
+      g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.moveTo(56, 112); g.lineTo(54, 126); g.moveTo(72, 112); g.lineTo(74, 126); g.stroke();
+      // head
+      g.fillStyle = '#3a2618'; g.beginPath(); g.ellipse(64, 66, 41, 40, 0, 0, TAU); g.fill();
+      g.fillStyle = '#c98a5f'; g.beginPath(); g.ellipse(64, 70, 37, 38, 0, 0, TAU); g.fill();
+      g.beginPath(); g.ellipse(26, 72, 7, 10, 0, 0, TAU); g.ellipse(102, 72, 7, 10, 0, 0, TAU); g.fill();
+      // eyes
+      for (const ex of [50, 78]) {
+        g.fillStyle = '#fff'; g.beginPath(); g.ellipse(ex, 70, 9, 11, 0, 0, TAU); g.fill();
+        g.fillStyle = '#2a1a12'; g.beginPath(); g.ellipse(ex + 1, 71, 5.5, 7, 0, 0, TAU); g.fill();
+        g.fillStyle = '#fff'; g.beginPath(); g.arc(ex - 1, 68, 2.2, 0, TAU); g.fill();
+      }
+      g.strokeStyle = '#3a2618'; g.lineWidth = 3.5; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(42, 56); g.lineTo(56, 54); g.moveTo(72, 54); g.lineTo(86, 56); g.stroke();
+      g.fillStyle = '#f09a8a'; g.globalAlpha = 0.7; g.beginPath(); g.arc(40, 86, 6, 0, TAU); g.arc(88, 86, 6, 0, TAU); g.fill(); g.globalAlpha = 1;
+      g.strokeStyle = '#8a2c2a'; g.lineWidth = 4; g.beginPath(); g.arc(64, 84, 11, 0.25, Math.PI - 0.25); g.stroke();
+      // cap
+      g.fillStyle = '#2dbe60'; g.beginPath(); g.moveTo(22, 52); g.quadraticCurveTo(24, 14, 64, 14); g.quadraticCurveTo(104, 14, 106, 52); g.closePath(); g.fill();
+      g.fillStyle = '#1f8f47'; g.beginPath(); g.ellipse(64, 51, 44, 8, 0, 0, TAU); g.fill();
+      g.fillStyle = '#25a352'; g.beginPath(); g.ellipse(64, 50, 34, 6, 0, 0, Math.PI); g.fill();
+      Tex.bolt(g, 64, 32, 12, '#ffd23f', '#7a5200');
+    },
+    hover(g) {
+      g.save(); g.translate(64, 64); g.rotate(-0.7);
+      g.fillStyle = 'rgba(122,246,255,0.45)'; g.beginPath(); g.ellipse(0, 10, 54, 22, 0, 0, TAU); g.fill();
+      Tex.rr(g, -52, -16, 104, 32, 16); g.fillStyle = '#4b2a96'; g.fill();
+      Tex.rr(g, -52, -20, 104, 32, 16); g.fillStyle = '#7b4fd0'; g.fill(); g.lineWidth = 4; g.strokeStyle = '#2a1460'; g.stroke();
+      Tex.rr(g, -40, -9, 80, 10, 5); g.fillStyle = '#2ec4b6'; g.fill();
+      g.fillStyle = '#ffd23f'; g.fillRect(-40, -18, 8, 28); g.fillRect(32, -18, 8, 28);
+      g.restore();
+    },
+    magnet(g) {
+      g.lineCap = 'butt';
+      g.strokeStyle = '#7a1010'; g.lineWidth = 34; g.beginPath(); g.arc(64, 58, 34, Math.PI, 0, true); g.stroke();
+      g.strokeStyle = '#e8312a'; g.lineWidth = 26; g.beginPath(); g.arc(64, 58, 34, Math.PI, 0, true); g.stroke();
+      g.fillStyle = '#e9edf2'; g.fillRect(17, 46, 26, 30); g.fillRect(85, 46, 26, 30);
+      g.fillStyle = '#9aa3b2'; g.fillRect(17, 70, 26, 6); g.fillRect(85, 70, 26, 6);
+      g.strokeStyle = 'rgba(255,255,255,0.6)'; g.lineWidth = 5; g.beginPath(); g.arc(64, 58, 40, Math.PI * 1.1, Math.PI * 1.45); g.stroke();
+    },
+    jet(g) {
+      for (const x of [40, 88]) {
+        g.fillStyle = '#ffb030'; g.beginPath(); g.moveTo(x - 12, 92); g.lineTo(x, 126); g.lineTo(x + 12, 92); g.fill();
+        g.fillStyle = '#fff3a0'; g.beginPath(); g.moveTo(x - 6, 92); g.lineTo(x, 112); g.lineTo(x + 6, 92); g.fill();
+        Tex.rr(g, x - 20, 14, 40, 80, 20); g.fillStyle = '#d7dde6'; g.fill(); g.lineWidth = 4; g.strokeStyle = '#59606e'; g.stroke();
+        g.fillStyle = '#e0402f'; g.fillRect(x - 20, 30, 40, 12);
+        g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillRect(x - 12, 46, 6, 36);
+      }
+      g.fillStyle = '#3a3d46'; g.fillRect(56, 50, 16, 14);
+    },
+    sneakers(g) {
+      g.lineJoin = 'round';
+      g.fillStyle = '#fff'; g.beginPath(); g.moveTo(20, 50); g.lineTo(6, 34); g.lineTo(30, 40); g.lineTo(18, 22); g.lineTo(42, 38); g.closePath(); g.fill();
+      Tex.rr(g, 14, 84, 104, 22, 11); g.fillStyle = '#ffffff'; g.fill(); g.lineWidth = 4; g.strokeStyle = '#2a5a2a'; g.stroke();
+      g.beginPath(); g.moveTo(22, 86); g.quadraticCurveTo(26, 44, 58, 42); g.lineTo(78, 58); g.quadraticCurveTo(110, 62, 114, 86); g.closePath();
+      const grd = g.createLinearGradient(0, 40, 0, 90); grd.addColorStop(0, '#7dff8a'); grd.addColorStop(1, '#22a83c');
+      g.fillStyle = grd; g.fill(); g.stroke();
+      g.strokeStyle = '#fff'; g.lineWidth = 4; g.beginPath(); g.moveTo(56, 52); g.lineTo(70, 60); g.moveTo(50, 60); g.lineTo(64, 68); g.stroke();
+    },
+    x2(g) {
+      this.star(g);
+      g.font = `900 46px ${Tex.FONT_HEAVY}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.lineWidth = 9; g.strokeStyle = '#7a3a00'; g.strokeText('2X', 64, 72);
+      g.fillStyle = '#fff'; g.fillText('2X', 64, 72);
+    },
+    jump(g) {
+      g.fillStyle = 'rgba(255,255,255,0.25)'; g.beginPath(); g.arc(64, 64, 58, 0, TAU); g.fill();
+      g.beginPath(); g.moveTo(64, 14); g.lineTo(106, 58); g.lineTo(80, 58); g.lineTo(80, 104); g.lineTo(48, 104); g.lineTo(48, 58); g.lineTo(22, 58); g.closePath();
+      g.fillStyle = '#5fe04f'; g.fill(); g.lineWidth = 6; g.lineJoin = 'round'; g.strokeStyle = '#1c6b20'; g.stroke();
+    },
+    roll(g) {
+      g.lineWidth = 16; g.lineCap = 'round'; g.strokeStyle = '#45a6ff';
+      g.beginPath(); g.arc(64, 64, 40, -0.3, Math.PI * 1.55); g.stroke();
+      g.fillStyle = '#45a6ff'; g.beginPath(); g.moveTo(108, 34); g.lineTo(112, 74); g.lineTo(76, 56); g.closePath(); g.fill();
+      g.fillStyle = '#ff7a1a'; g.beginPath(); g.arc(64, 64, 16, 0, TAU); g.fill();
+    },
+    powerup(g) { Tex.bolt(g, 64, 64, 54, '#ffd23f', '#7a4a00'); },
+    run(g) { this.sneakers(g); },
+    train(g) {
+      Tex.rr(g, 22, 12, 84, 96, 20); g.fillStyle = '#4370d6'; g.fill(); g.lineWidth = 5; g.strokeStyle = '#1d3a8a'; g.stroke();
+      Tex.rr(g, 32, 24, 64, 38, 10); g.fillStyle = '#1a2a5a'; g.fill();
+      g.fillStyle = 'rgba(200,226,255,0.4)'; g.beginPath(); g.moveTo(40, 58); g.lineTo(54, 28); g.lineTo(62, 28); g.lineTo(48, 58); g.fill();
+      g.fillStyle = '#eef3fb'; g.fillRect(24, 70, 80, 10);
+      g.fillStyle = '#fff3a0'; g.beginPath(); g.arc(42, 92, 7, 0, TAU); g.arc(86, 92, 7, 0, TAU); g.fill();
+      g.fillStyle = '#2a2a33'; g.fillRect(36, 110, 14, 12); g.fillRect(78, 110, 14, 12);
+    },
+    lane(g) {
+      g.fillStyle = '#ffffff';
+      g.beginPath(); g.moveTo(8, 64); g.lineTo(42, 34); g.lineTo(42, 52); g.lineTo(60, 52); g.lineTo(60, 76); g.lineTo(42, 76); g.lineTo(42, 94); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(120, 64); g.lineTo(86, 34); g.lineTo(86, 52); g.lineTo(68, 52); g.lineTo(68, 76); g.lineTo(86, 76); g.lineTo(86, 94); g.closePath(); g.fill();
+    }
+  }
+};
+
+const SVG = {
+  sound: '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>',
+  soundOff: '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm18.6 6.2-1.4 1.4L17 13.4l-3.2 3.2-1.4-1.4 3.2-3.2-3.2-3.2 1.4-1.4 3.2 3.2 3.2-3.2 1.4 1.4-3.2 3.2z"/></svg>',
+  music: '<svg viewBox="0 0 24 24"><path d="M12 3v10.6A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>',
+  musicOff: '<svg viewBox="0 0 24 24"><path d="M12 3v6.2l2 2V7h4V3h-6zM3.3 2.6 2 3.9l10 10v-.3A4 4 0 1 0 14 17v-1.1l6.1 6.1 1.3-1.3L3.3 2.6z"/></svg>'
+};
+
+const Hud = {
+  el: {},
+  puRows: {},
+  lastMission: '', lastScore: '', lastCoins: -1, lastCaps: -1, lastMult: -1,
+  overAnim: null,
+  countdownT: 0,
+
+  init() {
+    const $ = id => document.getElementById(id);
+    const ids = ['hud', 'menu', 'pause', 'over', 'countdown', 'flash', 'btnPause', 'icCap', 'capCount', 'missionCard', 'mcText', 'mcIcon', 'mcFill', 'mcCount',
+      'hudMult', 'icStar', 'hudScore', 'hudCoins', 'icCoin', 'icAvatar', 'hudBest', 'bestTitle', 'powerList', 'ctrlPad', 'toasts', 'logo', 'mBest', 'mCoins', 'mMult',
+      'mMissions', 'tapToPlay', 'howto', 'mSound', 'mMusic', 'pScore', 'pResume', 'pRestart', 'pSound', 'pMusic', 'pHome', 'oTitle', 'oNewBest', 'oScore', 'oCoins',
+      'oDist', 'oBest', 'oMult', 'oMissions', 'oAgain', 'oHome'];
+    for (const id of ids) this.el[id] = $(id);
+    const e = this.el;
+    e.icCap.src = Icons.url('cap');
+    e.icStar.src = Icons.url('star');
+    e.icCoin.src = Icons.url('coin');
+    e.icAvatar.src = Icons.url('avatar');
+    this.drawLogo(e.logo);
+    if (!IS_TOUCH) e.howto.textContent = 'Arrow keys / WASD to move · Space to start · P to pause · M to mute';
+    else e.tapToPlay.textContent = 'TAP TO PLAY';
+
+    const act = (el, fn) => el.addEventListener('click', ev => { ev.preventDefault(); ev.stopPropagation(); fn(); });
+    act(e.btnPause, () => Game.pause());
+    for (const b of e.ctrlPad.querySelectorAll('.ctl')) {
+      b.addEventListener('pointerdown', ev => {
+        ev.preventDefault(); ev.stopPropagation();
+        b.classList.add('pressed');
+        setTimeout(() => b.classList.remove('pressed'), 120);
+        Input.fire(b.dataset.act, 'button');
+      });
+      b.addEventListener('click', ev => ev.preventDefault());
+    }
+    act(e.mSound, () => Game.toggleSound());
+    act(e.mMusic, () => Game.toggleMusic());
+    act(e.pResume, () => Game.resume());
+    act(e.pRestart, () => Game.restart());
+    act(e.pSound, () => Game.toggleSound());
+    act(e.pMusic, () => Game.toggleMusic());
+    act(e.pHome, () => Game.toMenu());
+    act(e.oAgain, () => Game.restart());
+    act(e.oHome, () => Game.toMenu());
+    e.menu.addEventListener('pointerup', ev => {
+      if (ev.target.closest('button')) return;
+      Game.startRun();
+    });
+    this.refreshSettings();
+  },
+
+  drawLogo(c) {
+    const g = c.getContext('2d');
+    g.clearRect(0, 0, c.width, c.height);
+    g.save();
+    g.translate(450, 210); g.rotate(-0.05); g.translate(-450, -210);
+    // sun burst behind the title
+    const sun = g.createRadialGradient(450, 200, 10, 450, 200, 260);
+    sun.addColorStop(0, 'rgba(255,240,180,0.55)'); sun.addColorStop(1, 'rgba(255,200,120,0)');
+    g.fillStyle = sun; g.beginPath(); g.ellipse(450, 200, 420, 200, 0, 0, TAU); g.fill();
+    Tex.bubbleWord(g, 'DASH', 470, 135, 190, { top: '#fff59a', mid: '#ffc21a', bot: '#ff6a1a', rim: '#ffe36a', outline: '#2a0f48', shadow: '#8a2bb8' }, 0, 1.05);
+    Tex.bubbleWord(g, 'DISTRICT', 455, 300, 118, { top: '#c8fbff', mid: '#5fd0ff', bot: '#2a6fe8', rim: '#ffffff', outline: '#14104a', shadow: '#ff4f9a' }, 0, 0.92);
+    Tex.bolt(g, 140, 140, 62, '#ffd23f', '#2a0f48');
+    for (const [x, y, r] of [[790, 70, 22], [820, 250, 14], [110, 300, 16], [640, 380, 11]]) {
+      Tex.star(g, x, y, r, r * 0.42, 4, 0);
+      g.fillStyle = '#ffffff'; g.fill();
+    }
+    g.restore();
+  },
+
+  show(name) {
+    const e = this.el;
+    e.menu.hidden = name !== 'menu';
+    e.hud.hidden = !(name === 'play' || name === 'pause' || name === 'countdown' || name === 'dead');
+    e.pause.hidden = name !== 'pause';
+    e.over.hidden = name !== 'over';
+    e.countdown.hidden = name !== 'countdown';
+    e.ctrlPad.style.visibility = name === 'play' || name === 'countdown' ? 'visible' : 'hidden';
+    e.btnPause.style.visibility = name === 'play' ? 'visible' : 'hidden';
+    if (name === 'menu') this.fillMenu();
+  },
+
+  refreshSettings() {
+    const d = Save.data, e = this.el;
+    e.mSound.innerHTML = d.sound ? SVG.sound : SVG.soundOff;
+    e.mSound.classList.toggle('off', !d.sound);
+    e.mMusic.innerHTML = d.music ? SVG.music : SVG.musicOff;
+    e.mMusic.classList.toggle('off', !d.music);
+    e.pSound.textContent = 'Sound: ' + (d.sound ? 'On' : 'Off');
+    e.pMusic.textContent = 'Music: ' + (d.music ? 'On' : 'Off');
+  },
+
+  missionRows(container) {
+    container.innerHTML = '';
+    for (const m of Missions.active) {
+      const row = document.createElement('div');
+      row.className = 'mrow';
+      const pct = Math.round((m.progress / m.target) * 100);
+      row.innerHTML = `<img alt="" src="${Icons.url(m.def.icon)}"><span class="mt"></span><span class="mc">${fmtInt(m.progress)}/${fmtInt(m.target)}</span><div class="mbar"><i style="width:${pct}%"></i></div>`;
+      row.querySelector('.mt').textContent = m.def.text(m.target);
+      container.appendChild(row);
+    }
+  },
+
+  fillMenu() {
+    const d = Save.data, e = this.el;
+    e.mBest.textContent = fmtInt(d.best);
+    e.mCoins.textContent = fmtInt(d.coins);
+    e.mMult.textContent = 'x' + d.mult;
+    this.missionRows(e.mMissions);
+  },
+
+  resetRun() {
+    this.lastMission = ''; this.lastScore = ''; this.lastCoins = -1; this.lastCaps = -1; this.lastMult = -1;
+    for (const k in this.puRows) this.puRows[k].remove();
+    this.puRows = {};
+    this.el.toasts.innerHTML = '';
+    this.el.bestTitle.innerHTML = 'HIGH<br>SCORE';
+    this.el.hudBest.parentElement.classList.remove('beaten');
+  },
+
+  toast(text, cls) {
+    const t = document.createElement('div');
+    t.className = 'toast' + (cls ? ' ' + cls : '');
+    t.textContent = text;
+    const box = this.el.toasts;
+    box.appendChild(t);
+    while (box.children.length > 3) box.removeChild(box.firstChild);
+    setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 420); }, 1900);
+  },
+
+  flash(color) {
+    const f = this.el.flash;
+    f.style.transition = 'none';
+    f.style.background = `radial-gradient(circle at 50% 60%, ${color || 'rgba(255,255,255,0.95)'}, rgba(255,240,200,0.45) 45%, rgba(255,255,255,0) 75%)`;
+    f.style.opacity = '1';
+    requestAnimationFrame(() => { f.style.transition = 'opacity 0.5s ease-out'; f.style.opacity = '0'; });
+  },
+
+  pop(el, cls) {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  },
+
+  // per-frame HUD refresh while running
+  update(run, best) {
+    const e = this.el;
+    const s = pad6(run.score);
+    if (s !== this.lastScore) { e.hudScore.textContent = s; this.lastScore = s; }
+    if (run.coins !== this.lastCoins) {
+      if (this.lastCoins >= 0 && run.coins > this.lastCoins) this.pop(e.hudCoins.parentElement, 'pop');
+      e.hudCoins.textContent = fmtInt(run.coins); this.lastCoins = run.coins;
+    }
+    if (run.caps !== this.lastCaps) {
+      if (this.lastCaps >= 0) this.pop(e.capCount.parentElement, 'pop');
+      e.capCount.textContent = `${run.caps}/5`; this.lastCaps = run.caps;
+    }
+    const mult = Game.mult();
+    if (mult !== this.lastMult) { e.hudMult.textContent = 'x' + mult; e.hudMult.classList.toggle('boost', Powers.has('x2')); this.lastMult = mult; }
+    const beaten = run.score > best && best > 0;
+    e.hudBest.textContent = beaten ? fmtInt(run.score) : fmtInt(best);
+    if (beaten && !e.hudBest.parentElement.classList.contains('beaten')) {
+      e.hudBest.parentElement.classList.add('beaten');
+      e.bestTitle.innerHTML = 'NEW<br>BEST!';
+      Game.toast('NEW HIGH SCORE!', 'green');
+    }
+    // mission card
+    const m = Missions.feature();
+    const key = m.id + ':' + m.progress + '/' + m.target;
+    if (key !== this.lastMission) {
+      const changedMission = !this.lastMission.startsWith(m.id + ':');
+      e.mcText.textContent = m.def.text(m.target);
+      if (changedMission) e.mcIcon.src = Icons.url(m.def.icon);
+      e.mcFill.style.width = Math.round((m.progress / m.target) * 100) + '%';
+      e.mcCount.textContent = `${fmtInt(m.progress)}/${fmtInt(m.target)}`;
+      if (this.lastMission && !changedMission) this.pop(e.missionCard, 'pulse');
+      this.lastMission = key;
+    }
+    // power-up timers
+    for (const t of PU_ORDER) {
+      const a = Powers.active[t];
+      let row = this.puRows[t];
+      if (a && !row) {
+        row = document.createElement('div');
+        row.className = 'pu-row';
+        row.innerHTML = `<div class="pu-icon"><img alt="" src="${Icons.url(t)}"></div><div class="panel pu-bar">${'<b></b>'.repeat(8)}</div>`;
+        e.powerList.appendChild(row);
+        this.puRows[t] = row;
+      } else if (!a && row) {
+        row.remove();
+        delete this.puRows[t];
+        continue;
+      }
+      if (row) {
+        const on = Math.ceil((a.t / a.max) * 8);
+        if (row._on !== on) {
+          row._on = on;
+          row.querySelectorAll('b').forEach((b, i) => b.classList.toggle('on', i < on));
+        }
+        row.classList.toggle('low', a.t < 3);
+      }
+    }
+  },
+
+  missionDone() { this.pop(this.el.missionCard, 'done'); },
+
+  showPause(run) {
+    this.el.pScore.textContent = `Score ${pad6(run.score)} · ${fmtInt(run.coins)} coins`;
+    this.refreshSettings();
+  },
+
+  showOver(run, best, distance) {
+    const e = this.el;
+    e.oTitle.textContent = run.cause === 'caught' ? 'CAUGHT!' : 'CRASHED!';
+    e.oNewBest.hidden = !run.newBest;
+    e.oCoins.textContent = fmtInt(run.coins);
+    e.oDist.textContent = fmtInt(distance) + ' m';
+    e.oBest.textContent = fmtInt(best);
+    e.oMult.textContent = 'x' + Save.data.mult;
+    e.oScore.textContent = '000000';
+    this.missionRows(e.oMissions);
+    this.overAnim = { t: 0, target: Math.floor(run.score) };
+  },
+
+  updateOver(dt) {
+    const a = this.overAnim;
+    if (!a) return;
+    a.t += dt;
+    const k = Math.min(1, a.t / 1.1);
+    const v = Math.floor(a.target * (1 - Math.pow(1 - k, 3)));
+    this.el.oScore.textContent = pad6(v);
+    if (k >= 1) this.overAnim = null;
+  },
+
+  setCountdown(text) {
+    const c = this.el.countdown;
+    c.textContent = text;
+    this.pop(c, 'tick');
+  }
+};
+
 // ==== INPUT ====
 // Input: keyboard (arrows + WASD), swipe gestures and on-screen buttons all map to the same actions.
 
 const Input = {
-  handler: null, // function(action) set by the game
+  handler: null, // function(action, source) set by the game
   touch: null,
+  lastSource: '',
 
   init() {
     const KEYMAP = {
@@ -3923,12 +4628,13 @@ const Input = {
   },
 
   fire(action, source) {
+    this.lastSource = source;
     if (this.handler) this.handler(action, source);
   }
 };
 
 // ==== GAME ====
-// Game state machine, scoring, power-up / mission / chaser wiring, camera follow and the main loop.
+// Game state machine (menu, playing, paused, countdown, dead, gameover), scoring, wiring, camera and the main loop.
 
 const Game = {
   state: 'loading',
@@ -3938,6 +4644,9 @@ const Game = {
   cam: { x: 0, y: 3.3, z: 6.4, lx: 0, ly: 1.3, lz: -8, base: 0 },
   run: null,
   anim: { stumble: false, stumbleDir: 1 },
+  camBlend: 0,
+  countT: 0,
+  bestAtStart: 0,
 
   boot() {
     const bar = document.getElementById('loadingBar');
@@ -3950,6 +4659,7 @@ const Game = {
       () => Runner.init(),
       () => Chaser.init(),
       () => Missions.init(),
+      () => Hud.init(),
       () => Input.init()
     ];
     let i = 0;
@@ -3984,51 +4694,112 @@ const Game = {
       jump: () => Bus.emit('jump'),
       roll: () => Bus.emit('roll'),
       lane: dir => Bus.emit('lane', dir),
+      laneBlocked: dir => Bus.emit('laneBlocked', dir),
       roof: () => Bus.emit('roof'),
       land: v => Bus.emit('land', v)
     };
     Gen.onExtras = (layout, res, z0) => Powers.placeInChunk(layout, res, z0);
     Missions.onComplete = (m, mult, before, reward) => this.onMission(m, mult, before, reward);
     window.addEventListener('resize', () => Gfx.resize());
-    window.addEventListener('orientationchange', () => setTimeout(() => Gfx.resize(), 120));
+    window.addEventListener('orientationchange', () => setTimeout(() => Gfx.resize(), 150));
+    document.addEventListener('visibilitychange', () => { if (document.hidden) this.autoPause(); });
+    window.addEventListener('blur', () => this.autoPause());
     const box = document.getElementById('loading');
     if (box) box.style.display = 'none';
-    this.hud = {
-      score: document.getElementById('tScore'),
-      coins: document.getElementById('tCoins'),
-      msg: document.getElementById('tMsg'),
-      info: document.getElementById('tInfo')
-    };
-    this.startRun();
+    this.toMenu();
     this.last = performance.now();
     requestAnimationFrame(t => this.frame(t));
   },
 
   mult() { return Save.data.mult * (Powers.has('x2') ? 2 : 1); },
 
-  startRun() {
+  // Reset the whole world around the start position (used by the menu and by every new run).
+  resetWorld() {
     Player.reset();
     World.reset();
     Obstacles.reset();
     Coins.reset();
     Pickups.reset();
     Powers.reset();
-    this.run = { score: 0, coins: 0, caps: 0, deadT: 0, cause: '', toasts: [] };
+    this.run = { score: 0, coins: 0, caps: 0, deadT: 0, cause: '', newBest: false };
     Gen.reset();
     Gen.update(Player.z);
+  },
+
+  toMenu() {
+    this.resetWorld();
+    this.state = 'menu';
+    Chaser.showMenu();
+    Hud.show('menu');
+    Bus.emit('menu');
+  },
+
+  startRun() {
+    const fromMenu = this.state === 'menu';
+    if (!fromMenu) this.resetWorld();
+    this.camBlend = fromMenu ? 1.2 : 0;
+    if (fromMenu) Runner.spinT = 0.45;
+    this.bestAtStart = Save.data.best;
     Chaser.reset(Player);
     Missions.onRunStart();
+    Hud.resetRun();
     this.state = 'playing';
-    this.setMsg('');
+    Hud.show('play');
     this.cam.base = 0;
-    this.snapCamera();
+    if (!this.camBlend) this.snapCamera();
+    Bus.emit('start');
+  },
+
+  restart() {
+    this.state = 'restarting';
+    this.startRun();
+  },
+
+  pause() {
+    if (this.state !== 'playing') return;
+    this.state = 'paused';
+    Hud.showPause(this.run);
+    Hud.show('pause');
+    Bus.emit('pause');
+  },
+
+  autoPause() { if (this.state === 'playing') this.pause(); },
+
+  resume() {
+    if (this.state !== 'paused') return;
+    this.state = 'countdown';
+    this.countT = 3;
+    Hud.show('countdown');
+    Hud.setCountdown('3');
+    Bus.emit('countdown', 3);
+  },
+
+  toggleSound() {
+    Save.data.sound = !Save.data.sound;
+    Save.save();
+    Hud.refreshSettings();
+    Bus.emit('settings');
+  },
+
+  toggleMusic() {
+    Save.data.music = !Save.data.music;
+    Save.save();
+    Hud.refreshSettings();
+    Bus.emit('settings');
   },
 
   onAction(a) {
-    if (this.state === 'playing') {
+    if (a === 'mute') { this.toggleSound(); return; }
+    const s = this.state;
+    if (s === 'playing') {
       if (a === 'left' || a === 'right' || a === 'jump' || a === 'roll') Player.input(a);
-    } else if (this.state === 'gameover') {
+      else if (a === 'pause') this.pause();
+    } else if (s === 'menu') {
       if (a === 'tap' || a === 'confirm' || a === 'jump') this.startRun();
+    } else if (s === 'paused') {
+      if (a === 'pause' || a === 'confirm') this.resume();
+    } else if (s === 'gameover') {
+      if (a === 'confirm' || (a === 'jump' && Input.lastSource === 'key')) this.restart();
     }
   },
 
@@ -4046,17 +4817,18 @@ const Game = {
       if (r.caps === 5) {
         r.coins += 250;
         r.score += 1000 * this.mult();
-        this.toast('CAP HUNT COMPLETE! +250 coins');
-      } else this.toast(`Cap token ${r.caps}/5`);
+        this.toast('CAP HUNT COMPLETE! +250', 'gold');
+      } else this.toast(`Cap token ${r.caps}/5`, 'green');
       return;
     }
     Powers.activate(type);
-    this.toast(PU[type].name + '!');
+    this.toast(PU[type].name + '!', 'gold');
   },
 
   onMission(m, mult, before, reward) {
     this.run.coins += reward;
-    this.toast(`Mission complete! Multiplier x${mult}`);
+    this.toast(`Mission complete! x${mult}`, 'green');
+    Hud.missionDone();
     Bus.emit('mission', { m, mult, before, reward });
   },
 
@@ -4065,17 +4837,17 @@ const Game = {
     this.anim.stumbleDir = o && o.x > Player.x ? -1 : 1;
     if (Chaser.isChasing()) { Chaser.catchPlayer(); this.endRun('caught'); return; }
     Chaser.startChase();
+    Bus.emit('stumble', kind);
   },
 
   onCrash(o) {
     if (Powers.has('hover')) {
       Powers.consume('hover');
-      // stay protected until the obstacle that was hit is fully passed
       const rel = Player.speed + (o.moving ? o.v : 0);
       const clear = o.type === OB.TRAIN ? (Player.z - o.zb) / Math.max(1, rel) + 0.35 : 0;
       Player.invuln = Math.max(1.6, clear);
       Bus.emit('hoverBreak');
-      this.toast('Hoverboard saved you!');
+      this.toast('Hoverboard saved you!', 'gold');
       return;
     }
     this.endRun('crash');
@@ -4095,20 +4867,11 @@ const Game = {
     d.coins += this.run.coins;
     if (score > d.best) d.best = score;
     Missions.save();
+    Hud.show('dead');
     Bus.emit('gameover', { cause, score });
   },
 
-  toast(text) {
-    this.run.toasts.push({ text, t: 2.2 });
-    if (this.run.toasts.length > 3) this.run.toasts.shift();
-  },
-
-  setMsg(text) {
-    if (this.hud && this.hud.msg) {
-      this.hud.msg.textContent = text;
-      this.hud.msg.style.display = text ? 'block' : 'none';
-    }
-  },
+  toast(text, cls) { Hud.toast(text, cls); },
 
   frame(now) {
     requestAnimationFrame(t => this.frame(t));
@@ -4123,10 +4886,11 @@ const Game = {
   update(dt) {
     this.time += dt;
     const r = this.run;
-    if (this.state === 'playing') {
+    const s = this.state;
+    if (s === 'playing') {
       const steps = Math.max(1, Math.ceil(dt / (1 / 120)));
       const h = dt / steps;
-      for (let s = 0; s < steps && this.state === 'playing'; s++) {
+      for (let k = 0; k < steps && this.state === 'playing'; k++) {
         Obstacles.update(h, Player.z);
         Player.step(h);
       }
@@ -4138,46 +4902,54 @@ const Game = {
       Missions.setAbs('dist', Player.distance);
       Gen.update(Player.z);
       World.update(Player.z);
-    } else if (this.state === 'dead') {
+      if (this.state === 'playing') Hud.update(r, this.bestAtStart);
+    } else if (s === 'dead') {
       r.deadT += dt;
       Coins.update(dt, Player, () => {});
-      if (r.deadT > 1.6) {
+      if (r.deadT > 1.7) {
         this.state = 'gameover';
-        this.setMsg((r.cause === 'caught' ? 'CAUGHT BY BOLT-9!' : 'CRASHED!') + '  Tap or press Enter to run again');
+        Hud.showOver(r, Save.data.best, Player.distance);
+        Hud.show('over');
       }
+    } else if (s === 'gameover') {
+      Hud.updateOver(dt);
+    } else if (s === 'countdown') {
+      const before = Math.ceil(this.countT);
+      this.countT -= dt;
+      const now = Math.ceil(this.countT);
+      if (this.countT <= 0) { this.state = 'playing'; Hud.show('play'); Bus.emit('resume'); }
+      else if (now !== before) { Hud.setCountdown(String(now)); Bus.emit('countdown', now); }
     }
-    for (const t of r.toasts) t.t -= dt;
-    while (r.toasts.length && r.toasts[0].t <= 0) r.toasts.shift();
-    this.updateHudMini();
     const a = this.anim;
-    Runner.update(dt, Player, {
-      mode: this.state === 'playing' ? 'run' : 'dead', stumble: a.stumble, stumbleDir: a.stumbleDir, invuln: Player.invuln,
-      hover: Powers.has('hover'), jet: Powers.has('jet'), magnet: Powers.has('magnet'), sneakers: Powers.has('sneakers')
-    });
-    a.stumble = false;
-    Chaser.update(dt, Player);
+    const mode = s === 'menu' ? 'menu' : (s === 'dead' || s === 'gameover') ? 'dead' : 'run';
+    if (s !== 'paused' && s !== 'countdown') {
+      Runner.update(dt, Player, {
+        mode, stumble: a.stumble, stumbleDir: a.stumbleDir, invuln: Player.invuln,
+        hover: Powers.has('hover'), jet: Powers.has('jet'), magnet: Powers.has('magnet'), sneakers: Powers.has('sneakers')
+      });
+      a.stumble = false;
+      Chaser.update(dt, Player);
+    }
     this.updateCamera(dt);
     Gfx.follow(Player.x, Player.z);
   },
 
-  updateHudMini() {
-    const h = this.hud, r = this.run;
-    if (!h || !r) return;
-    h.score.textContent = pad6(r.score);
-    h.coins.textContent = r.coins;
-    if (h.info) {
-      const lines = [`x${this.mult()}  caps ${r.caps}/5`];
-      for (const t of PU_ORDER) if (Powers.has(t)) lines.push(`${PU[t].name} ${Powers.remaining(t).toFixed(1)}s`);
-      for (const m of Missions.active) lines.push(`${m.def.text(m.target)} ${m.progress}/${m.target}`);
-      for (const t of r.toasts) lines.push('» ' + t.text);
-      h.info.textContent = lines.join('\n');
-    }
-  },
-
   camTarget(out, dt) {
     const p = Player;
-    const baseTarget = p.jet ? CFG.JET_ALT : p.groundY;
     const c = this.cam;
+    if (this.state === 'menu') {
+      // wide screens: Rio stands right of centre (menu panel on the left); tall screens: Rio higher up
+      const t = this.time;
+      const tall = Gfx.aspect < 0.9;
+      const dist = tall ? 4.4 : 3.5;
+      const ang = Math.sin(t * 0.22) * 0.28;
+      out.x = p.x + Math.sin(ang) * dist + 0.3;
+      out.y = (tall ? 1.35 : 1.5) + Math.sin(t * 0.3) * 0.08;
+      out.z = p.z + Math.cos(ang) * dist;
+      out.lx = p.x + (tall ? 0.25 : -1.15); out.ly = tall ? 0.55 : 1.0; out.lz = p.z;
+      return out;
+    }
+    const baseTarget = p.jet ? CFG.JET_ALT : p.groundY;
     if (dt !== undefined) c.base = damp(c.base, baseTarget, p.jet ? 2.2 : 3.2, dt);
     const base = c.base;
     out.x = p.x * 0.62;
@@ -4195,15 +4967,20 @@ const Game = {
   },
 
   updateCamera(dt) {
+    if (this.state === 'paused' || this.state === 'countdown') { this.applyCamera(); return; }
     const t = this.camTarget({}, dt);
     const c = this.cam;
-    const dead = this.state !== 'playing';
-    c.x = damp(c.x, t.x, 9, dt);
-    c.y = damp(c.y, t.y, 7, dt);
-    c.z = dead ? damp(c.z, t.z + 1.2, 2, dt) : t.z;
-    c.lx = damp(c.lx, t.lx, 10, dt);
-    c.ly = damp(c.ly, t.ly, 7, dt);
-    c.lz = t.lz;
+    const dead = this.state === 'dead' || this.state === 'gameover';
+    const menu = this.state === 'menu';
+    if (this.camBlend > 0) this.camBlend = Math.max(0, this.camBlend - dt);
+    const blending = this.camBlend > 0;
+    const k = blending ? 4.5 : menu ? 3 : 9;
+    c.x = damp(c.x, t.x, k, dt);
+    c.y = damp(c.y, t.y, blending ? 4.5 : menu ? 3 : 7, dt);
+    c.z = dead ? damp(c.z, t.z + 1.2, 2, dt) : (blending || menu) ? damp(c.z, t.z, blending ? 5 : 3, dt) : t.z;
+    c.lx = damp(c.lx, t.lx, blending ? 5 : 10, dt);
+    c.ly = damp(c.ly, t.ly, blending ? 5 : 7, dt);
+    c.lz = (blending || menu) ? damp(c.lz, t.lz, blending ? 6 : 4, dt) : t.lz;
     this.applyCamera();
   },
 
@@ -4214,7 +4991,7 @@ const Game = {
   }
 };
 
-if (DEBUG) window.__DD = { Game, Player, World, Gfx, Runner, Save, CFG, RNG, Gen, Obstacles, Coins, OB, T, Powers, Pickups, Missions, Chaser, Bus, PU };
+if (DEBUG) window.__DD = { Game, Player, World, Gfx, Runner, Save, CFG, RNG, Gen, Obstacles, Coins, OB, T, Powers, Pickups, Missions, Chaser, Bus, PU, Hud, Input };
 Game.boot();
 
 })();
