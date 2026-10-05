@@ -278,6 +278,7 @@ uniform sampler2D tBloom;
 uniform float uBloom;
 uniform float uGammaInv;
 uniform float uCalm;
+uniform vec3 uBeam;   // xy = beam centre on screen (0..1), z = strength
 varying vec2 vUv;
 float hash(vec2 p) { p = fract(p * vec2(443.897, 441.423)); p += dot(p, p.yx + 19.19); return fract((p.x + p.y) * p.x); }
 void main() {
@@ -294,6 +295,8 @@ void main() {
   col.g = texture2D(tDiffuse, uv).g;
   col.b = texture2D(tDiffuse, uv - off).b;
   col += texture2D(tBloom, uv).rgb * uBloom;
+  vec2 bd = (uv - uBeam.xy) * vec2(1.6, 1.0);
+  col += vec3(1.0, 0.94, 0.82) * uBeam.z * exp(-dot(bd, bd) * 9.0);
   // grade: a touch of contrast, slightly sickly desaturation
   float l = dot(col, vec3(0.299, 0.587, 0.114));
   col = mix(vec3(l), col, 0.9 - uDanger * 0.3);
@@ -316,7 +319,7 @@ void main() {
 const postU = {
   tDiffuse: { value: null }, uTime: { value: 0 }, uDanger: { value: 0 }, uGrain: { value: 0.08 }, uAberr: { value: 0 },
   uVig: { value: 0 }, uDip: { value: 0 }, uRed: { value: 0 }, uBlack: { value: 0 }, uWarp: { value: 0 },
-  tBloom: { value: null }, uBloom: { value: 0.0 }, uGammaInv: { value: 1.0 }, uCalm: { value: 0 },
+  tBloom: { value: null }, uBloom: { value: 0.0 }, uGammaInv: { value: 1.0 }, uCalm: { value: 0 }, uBeam: { value: new THREE.Vector3(0.5, 0.5, 0) },
 };
 const postScene = new THREE.Scene();
 const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -1920,11 +1923,12 @@ void main() {
 const EYE_FRAG = /* glsl */`
 ${GLSL_FRAG_COMMON}
 uniform float uGlow;
+uniform vec3 uEyeColor;
 varying vec3 vWorld;
 varying vec3 vNormal;
 varying float vDepth;
 void main() {
-  vec3 col = vec3(0.95, 0.9, 0.8) * uGlow;
+  vec3 col = uEyeColor * uGlow;
   col = applyFog(col, vDepth * 0.7, 0.2);
   gl_FragColor = vec4(toDisplay(col), 1.0);
 }
@@ -1938,7 +1942,7 @@ const mouthMat = new THREE.ShaderMaterial({
   vertexShader: MONSTER_VERT, fragmentShader: MONSTER_FRAG,
 });
 const eyeMat = new THREE.ShaderMaterial({
-  uniforms: { ...U, uJitter: { value: 0 }, uGlow: { value: 0.5 } },
+  uniforms: { ...U, uJitter: { value: 0 }, uGlow: { value: 0.5 }, uEyeColor: { value: new THREE.Color(0.95, 0.9, 0.8) } },
   vertexShader: MONSTER_VERT, fragmentShader: EYE_FRAG,
 });
 
@@ -3060,6 +3064,7 @@ function clearBeacons() {
 // ============================================================================
 //  HORROR EFFECTS (camera shake, screen flicker, post-process drivers)
 // ============================================================================
+const _beamP = new THREE.Vector3();
 const fx = { shake: 0, kick: 0, pulse: 0, dip: 0, dipT: 0, black: 0, red: 0, t: 0 };
 const snoise = (t) => Math.sin(t * 1.7) * 0.5 + Math.sin(t * 3.1 + 1.3) * 0.3 + Math.sin(t * 7.3 + 2.1) * 0.2;
 function applyShake(dt) {
@@ -3093,6 +3098,12 @@ function updateEffects(dt) {
   fx.red = Math.max(0, fx.red - dt * 1.5);
   postU.uRed.value = settings.calm ? fx.red * 0.25 : fx.red;
   postU.uBlack.value = fx.black;
+  // faint haze inside the flashlight beam, strongest in the dark
+  if (flash.intensity > 0.01 && game.state === 'playing') {
+    _beamP.copy(camera.position).addScaledVector(flash.dir, 3).project(camera);
+    const darkness = 1 - Math.min(1, dust.mat.uniforms.uEnvL.value);
+    postU.uBeam.value.set(_beamP.x * 0.5 + 0.5, _beamP.y * 0.5 + 0.5, flash.intensity * 0.022 * (0.3 + 0.7 * darkness));
+  } else postU.uBeam.value.z = 0;
 }
 
 // ============================================================================
@@ -3339,6 +3350,7 @@ function applyLevelLook(level) {
   MAT.floor.uniforms.uUvScale.value.set(L.tex === 1 ? 1 / 1.2 : 1 / 2.4, L.tex === 1 ? 1 / 1.2 : 1 / 2.4);
   renderer.setClearColor(new THREE.Color().setRGB(...L.clear, THREE.LinearSRGBColorSpace));
   water.visible = L.water;
+  eyeMat.uniforms.uEyeColor.value.setRGB(...(level === 3 ? [1.6, 0.25, 0.12] : level === 2 ? [0.7, 1.0, 0.9] : [0.95, 0.9, 0.8]), THREE.LinearSRGBColorSpace);
   for (const d of drops) { d.life = 0; d.s.visible = false; }
   monsterMat.uniforms.uBase.value.setRGB(...(L.water ? [0.012, 0.017, 0.016] : [0.016, 0.014, 0.013]), THREE.LinearSRGBColorSpace);
   ltCache.ox = NaN;

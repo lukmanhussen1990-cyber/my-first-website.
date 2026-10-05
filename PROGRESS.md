@@ -220,3 +220,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[08:23 UTC] Extra — "Reduce flashing" (photosensitivity) setting.** Flickering/stuttering lights only dip to 60%
   instead of blacking out (same in the CPU mirror), no whole-screen brightness dips or VHS glitch bands, a much
   weaker red flash, and camera / jump-scare shake reduced to 20-35%. README controls updated.
+- **[08:30 UTC] Extra — Beam haze, eye colours.** A faint screen-space haze follows the flashlight beam (projected beam
+  direction, stronger in the dark). The creature's eyes are pale in level 1, sickly green-white in level 2 and burning
+  red in level 3. Full regression suite (20 scenario tests) passes.
