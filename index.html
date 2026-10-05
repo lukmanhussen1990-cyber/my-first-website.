@@ -4557,8 +4557,8 @@ const MISSION_DEFS = [
   { id: 'lanes', icon: 'lane', ev: 'lane', tiers: [40, 80, 150, 250, 400, 600], text: n => `Change lanes ${n} times` },
   { id: 'caps', icon: 'cap', ev: 'cap', tiers: [2, 5, 8, 12, 20, 30], text: n => `Collect ${n} cap tokens` },
   { id: 'magnets', icon: 'magnet', ev: 'pu_magnet', tiers: [2, 4, 7, 10, 15, 20], text: n => `Use ${n} coin magnets` },
-  { id: 'hovers', icon: 'hover', ev: 'pu_hover', tiers: [1, 3, 5, 8, 12, 18], text: n => `Ride ${n} hoverboards` },
-  { id: 'jets', icon: 'jet', ev: 'pu_jet', tiers: [1, 2, 4, 6, 9, 14], text: n => `Fly ${n} jetpacks` },
+  { id: 'hovers', icon: 'hover', ev: 'pu_hover', tiers: [1, 3, 5, 8, 12, 18], text: n => n === 1 ? 'Ride a hoverboard' : `Ride ${n} hoverboards` },
+  { id: 'jets', icon: 'jet', ev: 'pu_jet', tiers: [1, 2, 4, 6, 9, 14], text: n => n === 1 ? 'Fly a jetpack' : `Fly ${n} jetpacks` },
   { id: 'dodge', icon: 'train', ev: 'dodge', tiers: [2, 5, 10, 15, 25, 40], text: n => `Dodge ${n} oncoming trains` }
 ];
 const MISSION_BY_ID = Object.fromEntries(MISSION_DEFS.map(d => [d.id, d]));
