@@ -61,7 +61,7 @@
   body.touch #battery { bottom: auto; top: max(22px, env(safe-area-inset-top)); right: 76px; }
   body.touch #batteryPct { bottom: auto; top: 10px; }
   body.touch #stamina { bottom: max(14px, env(safe-area-inset-bottom)); }
-  #loading { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 31; letter-spacing: 0.5em; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  #loading { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 31; letter-spacing: 0.4em; font-size: 14px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   #fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 30; transition: opacity 1.2s ease; }
   #scareOverlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; z-index: 20; }
   #scareOverlay canvas { height: 118vh; max-width: none; }
@@ -2272,6 +2272,7 @@ function animateMonster(dt, moving) {
   md.hips.position.y = 1.3 + Math.abs(c) * 0.05 * amt;
   md.body.rotation.x = chase ? 0.32 : 0.08 + 0.04 * Math.sin(U.uTime.value * 0.7);
   md.spine.rotation.z = Math.sin(m.phase * 0.5) * 0.04;
+  md.spine.scale.set(1 + Math.sin(U.uTime.value * 1.6) * 0.02 * (1 - Math.min(1, m.speed)), 1, 1 + Math.sin(U.uTime.value * 1.6) * 0.03 * (1 - Math.min(1, m.speed)));
   // head twitches
   m.twitch -= dt;
   if (m.twitch <= 0) { m.twitch = 0.15 + Math.random() * (chase ? 0.5 : 2.0); m.twitchTarget.set((Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 0.9); }
@@ -3977,6 +3978,7 @@ function startGame(level = 1) {
   showScreen(null);
   $('touchUI').classList.add('hidden'); $('hud').classList.add('hidden');
   fadeTo('#000', 1, 0);
+  $('loading').textContent = (LEVELS[level] || LEVELS[1]).name.toUpperCase();
   $('loading').style.opacity = '1';
   game.state = 'loading';
   Sound.init(); Sound.resume();
