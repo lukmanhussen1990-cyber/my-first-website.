@@ -74,8 +74,20 @@ class MainActivity : ComponentActivity() {
         }
         createWebView(root)
 
-        // back button closes the app
-        onBackPressedDispatcher.addCallback(this) { finish() }
+        // back button: the page goes back first (closes a pop-up, leaves a screen, returns to Home);
+        // only when it is already on Home (or does not answer) does the app close
+        onBackPressedDispatcher.addCallback(this) {
+            var answered = false
+            val noAnswer = Runnable { if (!answered) { answered = true; finish() } }
+            webView.postDelayed(noAnswer, 700)
+            webView.evaluateJavascript("(window.appBack ? window.appBack() : false)") { result ->
+                webView.removeCallbacks(noAnswer)
+                if (!answered) {
+                    answered = true
+                    if (result != "true") finish()
+                }
+            }
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")

@@ -54,7 +54,7 @@ def add_css(url, base=None):
         save(full, get(full), ".woff2")
 
 
-for family, weights in ((config("nameFont"), None), (config("textFont"), "400;500;600")):
+for family, weights in ((config("nameFont"), None), (config("quoteFont"), None), (config("textFont"), "400;500;600;700")):
     if not family:
         continue
     try:

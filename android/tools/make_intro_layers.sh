@@ -5,7 +5,7 @@
 #   bash android/tools/make_intro_layers.sh                    -> uses android/icon/icon-source.png
 #   bash android/tools/make_intro_layers.sh my-art.png         -> uses your own picture
 #
-# Written files (website/intro/):
+# Written files (website/assets/intro/):
 #   scene.jpg   the figure, the blood moon and the dark texture, with the lettering erased and the edges faded to black
 #   name.png    the white crown + big name (transparent background)
 #   badass.png  the red tag line with its underline (transparent background)
@@ -16,7 +16,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SRC="${1:-$HERE/../icon/icon-source.png}"
-OUT="$HERE/../../website/intro"
+OUT="$HERE/../../website/assets/intro"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$OUT"
 
