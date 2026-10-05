@@ -1306,8 +1306,8 @@ const Gfx = {
     else if (a >= 1) fov = lerp(62, 54, (a - 1) / 0.6);
     else fov = lerp(62, 76, port);
     this.baseFov = fov;
-    this.camBack = a >= 1 ? lerp(4.8, 5.4, clamp((a - 1) / 0.8, 0, 1)) : lerp(4.8, 6.3, port);
-    this.camUp = a >= 1 ? lerp(2.95, 3.2, clamp((a - 1) / 0.8, 0, 1)) : lerp(2.95, 3.55, port);
+    this.camBack = a >= 1 ? lerp(4.4, 5.1, clamp((a - 1) / 0.8, 0, 1)) : lerp(4.4, 6.0, port);
+    this.camUp = a >= 1 ? lerp(2.8, 3.1, clamp((a - 1) / 0.8, 0, 1)) : lerp(2.8, 3.45, port);
     this.camera.aspect = a;
     this.camera.fov = fov;
     this.camera.updateProjectionMatrix();
@@ -2720,58 +2720,360 @@ const Gen = {
 };
 
 // ==== RUNNER ====
-// Runner model (simple version for the core phase): body, head, cap and swinging legs.
+// Rio, the original runner: a cartoon teen built from vertex-coloured primitives on a 14-bone rig.
+// Animation = weighted blend of procedural poses (idle, run, jump x3, roll, hover, jet, stumble, dead) + root lean.
+
+const RIO = {
+  skin: 0xc98a5f, skinDark: 0xb07650, hoodie: 0xff7a1a, hoodieDark: 0xe0600c, shorts: 0x9c8d55, shortsDark: 0x7f7144,
+  cap: 0x2dbe60, capDark: 0x1f8f47, hair: 0x3a2618, bag: 0x7b4fd0, bagLight: 0x9b74e8, strap: 0xffcf3d,
+  shoe: 0xf8f6f2, sole: 0xe9e4dc, shoeAccent: 0x2ec4b6, soleStripe: 0x7b4fd0, sock: 0xffffff, eye: 0xffffff, pupil: 0x2a1a12
+};
+
+// Pose channels (index order used by every pose array)
+const PC = ['hipY', 'spineX', 'spineY', 'spineZ', 'neckX', 'neckY', 'lThigh', 'lKnee', 'lFoot', 'rThigh', 'rKnee', 'rFoot',
+  'lShX', 'lShZ', 'lElbow', 'rShX', 'rShZ', 'rElbow', 'lThighZ', 'rThighZ'];
+const PCI = Object.fromEntries(PC.map((k, i) => [k, i]));
 
 const Runner = {
-  group: null, legs: [], arms: [], body: null, phase: 0,
+  root: null, body: null, bones: {}, mats: {}, extras: {},
+  phase: 0, time: 0,
+  w: { idle: 1, run: 0, air: 0, roll: 0, hover: 0, jet: 0, stumble: 0, dead: 0 },
+  jumpStyle: 0, wasGrounded: true, rollAngle: 0, stumbleT: 0, stumbleDir: 1,
+  pose: new Float32Array(PC.length), tmp: new Float32Array(PC.length),
+  lean: 0, turn: 0, deadT: 0, blink: 0,
 
   init() {
-    const g = new THREE.Group();
-    const skin = new THREE.MeshLambertMaterial({ color: 0xc98a5e });
-    const hoodie = new THREE.MeshLambertMaterial({ color: 0xff7a1a });
-    const cap = new THREE.MeshLambertMaterial({ color: 0x2dbe60 });
-    const shorts = new THREE.MeshLambertMaterial({ color: 0x8a8a52 });
-    const body = new THREE.Group();
-    const torso = new THREE.Mesh(Geo.capsule(0.24, 0.3, 14, 5), hoodie);
-    torso.position.y = 1.05;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.27, 18, 14), skin);
-    head.position.y = 1.5;
-    const capMesh = new THREE.Mesh(new THREE.SphereGeometry(0.285, 18, 10, 0, TAU, 0, Math.PI / 2), cap);
-    capMesh.position.y = 1.55;
-    body.add(torso, head, capMesh);
+    const mat = new THREE.MeshPhongMaterial({ vertexColors: true, specular: 0x1c1c1c, shininess: 14 });
+    const shoeMat = new THREE.MeshPhongMaterial({ vertexColors: true, specular: 0x333333, shininess: 30, emissive: 0x000000 });
+    this.mats = { body: mat, shoe: shoeMat };
+    const P = (geo, color, o) => Geo.paint(Geo.place(geo, o || {}), color);
+    const S = (r, w, h) => new THREE.SphereGeometry(r, w || 16, h || 12);
+    const RB = (x, y, z, r) => Geo.roundedBox(x, y, z, r, 2);
+    const bone = (name, parent, x, y, z) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); this.bones[name] = g; return g; };
+    const mesh = (parent, parts, material) => { const m = new THREE.Mesh(Geo.merge(parts), material || mat); m.castShadow = true; parent.add(m); return m; };
+
+    const root = new THREE.Group();
+    const body = bone('body', root, 0, 0.74, 0);
+    const hips = bone('hips', body, 0, 0, 0);
+    mesh(hips, [
+      P(RB(0.36, 0.2, 0.25, 0.08), RIO.shorts, { y: 0.0 }),
+      P(RB(0.37, 0.05, 0.26, 0.02), RIO.shortsDark, { y: 0.09 }),
+      P(RB(0.04, 0.03, 0.02, 0.008), 0xd8c070, { x: 0.0, y: 0.09, z: -0.13 })
+    ]);
     for (const side of [-1, 1]) {
-      const leg = new THREE.Group();
-      leg.position.set(side * 0.12, 0.8, 0);
-      const legMesh = new THREE.Mesh(Geo.limb(0.1, 0.085, 0.62, 10, 3), shorts);
-      leg.add(legMesh);
-      body.add(leg);
-      this.legs.push(leg);
-      const arm = new THREE.Group();
-      arm.position.set(side * 0.3, 1.25, 0);
-      arm.add(new THREE.Mesh(Geo.limb(0.07, 0.06, 0.45, 8, 3), hoodie));
-      body.add(arm);
-      this.arms.push(arm);
+      const s = side < 0 ? 'l' : 'r';
+      const leg = bone(s + 'Leg', hips, side * 0.1, -0.03, 0);
+      mesh(leg, [
+        P(Geo.limb(0.105, 0.095, 0.24, 12, 4), RIO.shorts),
+        P(new THREE.CylinderGeometry(0.1, 0.106, 0.05, 12), RIO.shortsDark, { y: -0.27 }),
+        P(RB(0.05, 0.11, 0.1, 0.02), RIO.shortsDark, { x: side * 0.1, y: -0.14 }),
+        P(RB(0.055, 0.025, 0.105, 0.01), RIO.shorts, { x: side * 0.1, y: -0.08 })
+      ]);
+      const knee = bone(s + 'Knee', leg, 0, -0.29, 0);
+      mesh(knee, [
+        P(Geo.limb(0.058, 0.05, 0.25, 10, 3), RIO.skin),
+        P(new THREE.CylinderGeometry(0.056, 0.054, 0.08, 10), RIO.sock, { y: -0.23 })
+      ]);
+      const foot = bone(s + 'Foot', knee, 0, -0.285, 0);
+      const shoe = mesh(foot, [
+        P(RB(0.15, 0.11, 0.28, 0.048), RIO.shoe, { y: -0.055, z: -0.045 }),
+        P(RB(0.12, 0.065, 0.11, 0.03), RIO.shoeAccent, { y: -0.04, z: -0.14 }),
+        P(RB(0.15, 0.1, 0.07, 0.025), RIO.shoeAccent, { y: -0.05, z: 0.08 }),
+        P(RB(0.09, 0.03, 0.02, 0.01), RIO.soleStripe, { y: -0.03, z: 0.118 }),
+        P(RB(0.17, 0.05, 0.31, 0.023), RIO.sole, { y: -0.13, z: -0.045 }),
+        P(RB(0.175, 0.02, 0.315, 0.009), RIO.soleStripe, { y: -0.121, z: -0.045 }),
+        P(RB(0.06, 0.012, 0.09, 0.005), 0xffffff, { y: 0.008, z: -0.07 })
+      ], shoeMat);
+      shoe.name = 'shoe';
     }
-    g.add(body);
-    g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    const spine = bone('spine', body, 0, 0.06, 0);
+    const torso = Geo.lathe([[0.001, -0.03], [0.165, -0.02], [0.195, 0.08], [0.205, 0.2], [0.198, 0.3], [0.165, 0.37], [0.09, 0.41], [0.001, 0.415]], 18);
+    torso.scale(1, 1, 0.76);
+    const strapGeo = new THREE.BoxGeometry(0.045, 0.2, 0.025);
+    mesh(spine, [
+      Geo.paint(torso, RIO.hoodie),
+      P(new THREE.CylinderGeometry(0.168, 0.168, 0.05, 18), RIO.hoodieDark, { y: -0.01, sz: 0.78 }),
+      P(RB(0.24, 0.12, 0.04, 0.02), RIO.hoodieDark, { y: 0.1, z: -0.145 }),
+      P(new THREE.CylinderGeometry(0.008, 0.008, 0.13, 5), 0xffffff, { x: -0.04, y: 0.29, z: -0.152 }),
+      P(new THREE.CylinderGeometry(0.008, 0.008, 0.13, 5), 0xffffff, { x: 0.04, y: 0.29, z: -0.152 }),
+      P(S(0.014, 6, 4), 0xdddddd, { x: -0.04, y: 0.22, z: -0.152 }),
+      P(S(0.014, 6, 4), 0xdddddd, { x: 0.04, y: 0.22, z: -0.152 }),
+      P(S(0.16, 14, 10), RIO.hoodieDark, { y: 0.39, z: 0.08, sx: 1.0, sy: 0.55, sz: 0.85 }),
+      // backpack + straps + star charm
+      P(RB(0.3, 0.32, 0.13, 0.055), RIO.bag, { y: 0.2, z: 0.17 }),
+      P(RB(0.22, 0.13, 0.05, 0.025), RIO.bagLight, { y: 0.12, z: 0.245 }),
+      P(RB(0.2, 0.012, 0.012, 0.004), RIO.strap, { y: 0.19, z: 0.272 }),
+      P(RB(0.26, 0.03, 0.02, 0.01), RIO.strap, { y: 0.34, z: 0.17 }),
+      P(strapGeo, RIO.strap, { x: -0.1, y: 0.34, z: -0.02, rx: 1.35 }),
+      P(strapGeo, RIO.strap, { x: 0.1, y: 0.34, z: -0.02, rx: 1.35 }),
+      P(new THREE.BoxGeometry(0.045, 0.22, 0.02), RIO.strap, { x: -0.1, y: 0.25, z: -0.15 }),
+      P(new THREE.BoxGeometry(0.045, 0.22, 0.02), RIO.strap, { x: 0.1, y: 0.25, z: -0.15 }),
+      P(Geo.extrude(Geo.starShape(0.04, 0.018, 5), 0.015), 0xffd23f, { x: 0.09, y: 0.04, z: 0.26 })
+    ]);
+    const neck = bone('neck', spine, 0, 0.4, 0);
+    mesh(neck, [P(new THREE.CylinderGeometry(0.058, 0.064, 0.09, 10), RIO.skin, { y: 0.03 })]);
+    const head = bone('head', neck, 0, 0.06, 0);
+    const brim = new THREE.CylinderGeometry(0.2, 0.2, 0.024, 22);
+    const hairParts = [];
+    for (let i = 0; i < 9; i++) {
+      const a = Math.PI * 0.6 + (i / 8) * Math.PI * 0.8;
+      hairParts.push(P(S(0.05, 8, 6), RIO.hair, { x: Math.sin(a) * 0.205, y: 0.15 - Math.abs(Math.cos(a)) * 0.02, z: -Math.cos(a) * 0.2, sy: 0.8 }));
+    }
+    hairParts.push(P(new THREE.SphereGeometry(0.249, 16, 10, Math.PI * 0.1, Math.PI * 0.8, Math.PI * 0.2, Math.PI * 0.5), RIO.hair, { y: 0.2, sy: 1.04, sz: 0.99 }));
+    mesh(head, [
+      P(S(0.24, 22, 16), RIO.skin, { y: 0.2, sy: 1.04, sz: 0.98 }),
+      P(S(0.055, 10, 8), RIO.skin, { x: -0.236, y: 0.19, sx: 0.55, sz: 0.85 }),
+      P(S(0.055, 10, 8), RIO.skin, { x: 0.236, y: 0.19, sx: 0.55, sz: 0.85 }),
+      ...hairParts,
+      // cap
+      P(new THREE.SphereGeometry(0.262, 22, 10, 0, TAU, 0, Math.PI * 0.5), RIO.cap, { y: 0.23, sy: 0.9, sz: 1.04 }),
+      P(new THREE.CylinderGeometry(0.264, 0.264, 0.035, 22, 1, true), RIO.capDark, { y: 0.232, sz: 1.04 }),
+      P(brim, RIO.cap, { y: 0.245, z: -0.2, sz: 1.2, rx: -0.12 }),
+      P(new THREE.CylinderGeometry(0.19, 0.19, 0.01, 22), RIO.capDark, { y: 0.231, z: -0.2, sz: 1.18, rx: -0.12 }),
+      P(S(0.03, 8, 6), RIO.capDark, { y: 0.455 }),
+      P(new THREE.TorusGeometry(0.06, 0.015, 6, 12, Math.PI), RIO.capDark, { y: 0.27, z: 0.24, rx: 0.2 }),
+      P(Geo.extrude(Geo.roundRectShape(0.03, 0.055, 0.01), 0.01), 0xffd23f, { y: 0.31, z: 0.247, rx: -0.25 }),
+      P(Geo.extrude((() => { const s = new THREE.Shape(); s.moveTo(0.02, 0.07); s.lineTo(-0.045, -0.005); s.lineTo(-0.005, -0.005); s.lineTo(-0.02, -0.07); s.lineTo(0.045, 0.01); s.lineTo(0.005, 0.01); s.closePath(); return s; })(), 0.012), 0xffd23f, { y: 0.34, z: -0.236, rx: 0.3 }),
+      // face (front = -z)
+      P(S(0.056, 12, 10), RIO.eye, { x: -0.085, y: 0.22, z: -0.205, sx: 0.85, sy: 1.15, sz: 0.55 }),
+      P(S(0.056, 12, 10), RIO.eye, { x: 0.085, y: 0.22, z: -0.205, sx: 0.85, sy: 1.15, sz: 0.55 }),
+      P(S(0.032, 10, 8), RIO.pupil, { x: -0.083, y: 0.215, z: -0.232, sy: 1.2, sz: 0.5 }),
+      P(S(0.032, 10, 8), RIO.pupil, { x: 0.083, y: 0.215, z: -0.232, sy: 1.2, sz: 0.5 }),
+      P(S(0.011, 6, 4), 0xffffff, { x: -0.072, y: 0.232, z: -0.248 }),
+      P(S(0.011, 6, 4), 0xffffff, { x: 0.094, y: 0.232, z: -0.248 }),
+      P(new THREE.BoxGeometry(0.065, 0.017, 0.02), RIO.hair, { x: -0.088, y: 0.3, z: -0.214, rz: -0.18 }),
+      P(new THREE.BoxGeometry(0.065, 0.017, 0.02), RIO.hair, { x: 0.088, y: 0.3, z: -0.214, rz: 0.18 }),
+      P(S(0.03, 8, 6), RIO.skinDark, { y: 0.165, z: -0.238, sz: 0.8 }),
+      P(new THREE.TorusGeometry(0.052, 0.011, 6, 14, Math.PI), 0x8a2c2a, { y: 0.115, z: -0.222, rz: Math.PI, rx: -0.25 }),
+      P(S(0.034, 8, 6), 0xf09a8a, { x: -0.135, y: 0.14, z: -0.185, sz: 0.4 }),
+      P(S(0.034, 8, 6), 0xf09a8a, { x: 0.135, y: 0.14, z: -0.185, sz: 0.4 })
+    ]);
+    for (const side of [-1, 1]) {
+      const s = side < 0 ? 'l' : 'r';
+      const sh = bone(s + 'Sh', spine, side * 0.2, 0.33, 0);
+      mesh(sh, [P(Geo.limb(0.068, 0.06, 0.19, 10, 3), RIO.hoodie), P(S(0.075, 10, 8), RIO.hoodie, { y: 0.0 })]);
+      const el = bone(s + 'El', sh, 0, -0.2, 0);
+      mesh(el, [
+        P(Geo.limb(0.06, 0.056, 0.15, 10, 3), RIO.hoodie),
+        P(new THREE.CylinderGeometry(0.062, 0.06, 0.045, 10), RIO.hoodieDark, { y: -0.16 }),
+        P(S(0.062, 12, 10), RIO.skin, { y: -0.235, sx: 0.85, sz: 0.8 }),
+        P(S(0.026, 6, 5), RIO.skin, { x: side * -0.045, y: -0.215, z: -0.03 })
+      ]);
+      bone(s + 'Hand', el, 0, -0.24, 0);
+    }
+    this.root = root;
     this.body = body;
-    this.group = g;
-    Gfx.scene.add(g);
+    this.buildExtras();
+    Gfx.scene.add(root);
   },
 
-  update(dt, p) {
-    this.group.position.set(p.x, p.y, p.z);
-    const running = p.grounded && p.rollT <= 0;
-    this.phase += dt * (running ? 1.6 + p.speed * 0.42 : 0);
-    const s = Math.sin(this.phase);
-    this.legs[0].rotation.x = running ? s * 0.9 : -0.6;
-    this.legs[1].rotation.x = running ? -s * 0.9 : 0.4;
-    this.arms[0].rotation.x = running ? -s * 0.8 : -2.4;
-    this.arms[1].rotation.x = running ? s * 0.8 : -2.4;
-    this.body.position.y = running ? Math.abs(s) * 0.06 : 0;
-    const rollScale = p.rollT > 0 ? 0.5 : 1;
-    this.body.scale.y = damp(this.body.scale.y, rollScale, 20, dt);
-    this.group.rotation.z = damp(this.group.rotation.z, -p.vx * 0.025, 12, dt);
+  // Power-up props: hoverboard, jetpack (replaces backpack look), magnet in the hand.
+  buildExtras() {
+    const mat = this.mats.body;
+    const P = (geo, color, o) => Geo.paint(Geo.place(geo, o || {}), color);
+    const board = new THREE.Group();
+    const deck = new THREE.Mesh(Geo.merge([
+      P(Geo.extrude(Geo.roundRectShape(0.5, 1.3, 0.24), 0.07), 0x7b4fd0, { rx: Math.PI / 2 }),
+      P(Geo.extrude(Geo.roundRectShape(0.16, 1.1, 0.07), 0.075), 0x2ec4b6, { rx: Math.PI / 2 }),
+      P(Geo.extrude(Geo.roundRectShape(0.46, 0.08, 0.03), 0.08), 0xffd23f, { rx: Math.PI / 2, z: 0.45 }),
+      P(Geo.extrude(Geo.roundRectShape(0.46, 0.08, 0.03), 0.08), 0xffd23f, { rx: Math.PI / 2, z: -0.45 })
+    ]), mat);
+    deck.castShadow = true;
+    const glowMat = new THREE.MeshBasicMaterial({ map: Tex.glow(), color: 0x7af6ff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.8), glowMat);
+    glow.rotation.x = -Math.PI / 2;
+    glow.position.y = -0.08;
+    board.add(deck, glow);
+    board.visible = false;
+    this.root.add(board);
+
+    const jet = new THREE.Mesh(Geo.merge([
+      P(Geo.capsule(0.075, 0.22, 12, 4), 0xd7dde6, { x: -0.085, y: 0.22, z: 0.29 }),
+      P(Geo.capsule(0.075, 0.22, 12, 4), 0xd7dde6, { x: 0.085, y: 0.22, z: 0.29 }),
+      P(new THREE.CylinderGeometry(0.078, 0.078, 0.06, 12), 0xe0402f, { x: -0.085, y: 0.3, z: 0.29 }),
+      P(new THREE.CylinderGeometry(0.078, 0.078, 0.06, 12), 0xe0402f, { x: 0.085, y: 0.3, z: 0.29 }),
+      P(new THREE.CylinderGeometry(0.045, 0.065, 0.09, 10), 0x3a3d46, { x: -0.085, y: 0.04, z: 0.29 }),
+      P(new THREE.CylinderGeometry(0.045, 0.065, 0.09, 10), 0x3a3d46, { x: 0.085, y: 0.04, z: 0.29 })
+    ]), mat);
+    jet.castShadow = true;
+    const flameMat = new THREE.MeshBasicMaterial({ color: 0xffb030, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+    const flames = new THREE.Group();
+    for (const x of [-0.085, 0.085]) {
+      const f = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.32, 10), flameMat);
+      f.rotation.x = Math.PI;
+      f.position.set(x, -0.15, 0.29);
+      flames.add(f);
+    }
+    jet.add(flames);
+    jet.visible = false;
+    this.bones.spine.add(jet);
+
+    const magnet = new THREE.Mesh(Geo.merge([
+      P(new THREE.TorusGeometry(0.1, 0.04, 8, 16, Math.PI), 0xe8312a, { rz: Math.PI }),
+      P(new THREE.CylinderGeometry(0.041, 0.041, 0.07, 8), 0xdfe4ea, { x: -0.1, y: 0.035 }),
+      P(new THREE.CylinderGeometry(0.041, 0.041, 0.07, 8), 0xdfe4ea, { x: 0.1, y: 0.035 })
+    ]), mat);
+    magnet.rotation.set(Math.PI / 2, 0, 0);
+    magnet.position.set(0, -0.05, -0.06);
+    magnet.visible = false;
+    this.bones.rHand.add(magnet);
+    this.extras = { board, jet, flames, magnet };
+  },
+
+  // ---------- poses ----------
+  set(out, vals) { for (const k in vals) out[PCI[k]] = vals[k]; return out; },
+  base(out) { out.fill(0); out[PCI.hipY] = 0.74; return out; },
+
+  poseIdle(out, t) {
+    this.base(out);
+    const b = Math.sin(t * 2.2);
+    return this.set(out, {
+      hipY: 0.74 + b * 0.006, spineX: 0.02 + b * 0.015, neckY: Math.sin(t * 0.6) * 0.35, neckX: -0.05,
+      lThigh: 0.04, rThigh: -0.04, lKnee: -0.06, rKnee: -0.06, lThighZ: -0.06, rThighZ: 0.06,
+      lShX: 0.08 + b * 0.03, rShX: 0.08 + b * 0.03, lShZ: -0.22, rShZ: 0.22, lElbow: 0.25, rElbow: 0.25
+    });
+  },
+
+  poseRun(out, ph) {
+    this.base(out);
+    const s = Math.sin(ph), c = Math.cos(ph);
+    const kneeL = -(0.25 + 1.25 * Math.max(0, Math.sin(ph + 1.9)));
+    const kneeR = -(0.25 + 1.25 * Math.max(0, Math.sin(ph + 1.9 + Math.PI)));
+    return this.set(out, {
+      hipY: 0.72 + Math.abs(c) * 0.07, spineX: -0.2, spineY: s * 0.16, spineZ: 0, neckX: 0.12, neckY: -s * 0.08,
+      lThigh: s * 0.95, rThigh: -s * 0.95, lKnee: kneeL, rKnee: kneeR, lFoot: -kneeL * 0.35 - 0.1, rFoot: -kneeR * 0.35 - 0.1,
+      lShX: -s * 0.85, rShX: s * 0.85, lShZ: -0.16, rShZ: 0.16, lElbow: 1.35 + s * 0.2, rElbow: 1.35 - s * 0.2
+    });
+  },
+
+  poseAir(out, style, vy) {
+    this.base(out);
+    const up = clamp(vy / 14, -1, 1);
+    if (style === 0) { // tuck
+      return this.set(out, { hipY: 0.8, spineX: -0.25, neckX: 0.15, lThigh: 1.15 - up * 0.2, rThigh: 0.95 - up * 0.2, lKnee: -1.8, rKnee: -1.6, lFoot: 0.4, rFoot: 0.4, lShX: 2.5, rShX: 2.7, lShZ: -0.5, rShZ: 0.5, lElbow: 0.5, rElbow: 0.4 });
+    } else if (style === 1) { // stride
+      return this.set(out, { hipY: 0.78, spineX: -0.3, neckX: 0.2, lThigh: 1.2, rThigh: -0.75, lKnee: -0.5, rKnee: -1.2, lFoot: 0.2, rFoot: 0.5, lShX: -1.0, rShX: 1.6, lShZ: -0.35, rShZ: 0.3, lElbow: 0.9, rElbow: 1.0 });
+    }
+    return this.set(out, { hipY: 0.8, spineX: 0.05, neckX: -0.15, lThigh: 0.35, rThigh: 0.35, lKnee: -0.9, rKnee: -0.9, lThighZ: -0.45, rThighZ: 0.45, lShX: 0.3, rShX: 0.3, lShZ: -2.0, rShZ: 2.0, lElbow: 0.3, rElbow: 0.3 });
+  },
+
+  poseRoll(out) {
+    this.base(out);
+    return this.set(out, { hipY: 0.42, spineX: -0.85, neckX: 0.5, lThigh: 1.95, rThigh: 1.95, lKnee: -2.4, rKnee: -2.4, lFoot: 0.6, rFoot: 0.6, lShX: 1.25, rShX: 1.25, lShZ: -0.2, rShZ: 0.2, lElbow: 1.9, rElbow: 1.9, lThighZ: -0.1, rThighZ: 0.1 });
+  },
+
+  poseHover(out, t) {
+    this.base(out);
+    const b = Math.sin(t * 3.1);
+    return this.set(out, { hipY: 0.66 + b * 0.015, spineX: -0.12, spineY: 0.35, neckY: -0.3, lThigh: 0.55, rThigh: 0.1, lKnee: -0.95, rKnee: -0.5, lFoot: 0.35, rFoot: 0.3, lThighZ: -0.2, rThighZ: 0.2, lShX: 0.2, rShX: -0.3, lShZ: -1.15 - b * 0.08, rShZ: 1.0 + b * 0.08, lElbow: 0.4, rElbow: 0.5 });
+  },
+
+  poseJet(out, t) {
+    this.base(out);
+    const b = Math.sin(t * 5);
+    return this.set(out, { hipY: 0.74, spineX: -0.35, neckX: 0.3, lThigh: -0.25 + b * 0.12, rThigh: -0.1 - b * 0.12, lKnee: -0.7, rKnee: -0.5, lFoot: 0.5, rFoot: 0.5, lShX: 0.7, rShX: 0.7, lShZ: -0.35, rShZ: 0.35, lElbow: 1.2, rElbow: 1.2 });
+  },
+
+  poseStumble(out, t, dir) {
+    this.base(out);
+    const k = Math.sin(t * 22);
+    return this.set(out, { hipY: 0.7, spineX: -0.35, spineZ: dir * 0.35, neckX: 0.25, neckY: dir * -0.4, lThigh: 0.5, rThigh: -0.3, lKnee: -1.0, rKnee: -0.6, lShX: 1.6 + k * 0.6, rShX: 1.2 - k * 0.6, lShZ: -1.1, rShZ: 1.1, lElbow: 0.6, rElbow: 0.6 });
+  },
+
+  poseDead(out, t) {
+    this.base(out);
+    const k = Math.max(0, 1 - t * 1.6);
+    return this.set(out, { hipY: 0.74, spineX: 0.25, neckX: -0.3, lThigh: 0.55 + k * 0.4, rThigh: 0.2 + k * 0.6, lKnee: -0.4, rKnee: -0.9, lShX: 2.2 + Math.sin(t * 18) * k * 0.6, rShX: 2.6 - Math.sin(t * 18) * k * 0.6, lShZ: -0.9, rShZ: 0.9, lElbow: 0.4, rElbow: 0.4 });
+  },
+
+  // ctx: { mode: 'menu'|'run'|'dead', hover, jet, magnet, sneakers, invuln, stumbleT }
+  update(dt, p, ctx) {
+    this.time += dt;
+    const w = this.w;
+    const mode = ctx.mode;
+    const air = !p.grounded && !ctx.jet;
+    if (p.grounded === false && this.wasGrounded && !ctx.jet) this.jumpStyle = Math.floor(Math.random() * 3);
+    this.wasGrounded = p.grounded;
+    if (ctx.stumble) { this.stumbleT = 0.45; this.stumbleDir = ctx.stumbleDir || 1; }
+    if (this.stumbleT > 0) this.stumbleT -= dt;
+    const target = { idle: 0, run: 0, air: 0, roll: 0, hover: 0, jet: 0, stumble: 0, dead: 0 };
+    if (mode === 'menu') target.idle = 1;
+    else if (mode === 'dead') target.dead = 1;
+    else if (ctx.jet) target.jet = 1;
+    else if (p.rollT > 0) target.roll = 1;
+    else if (air) target.air = 1;
+    else if (this.stumbleT > 0) target.stumble = 1;
+    else if (ctx.hover) target.hover = 1;
+    else target.run = 1;
+    const rate = mode === 'dead' ? 10 : 16;
+    let sum = 0;
+    for (const k in w) { w[k] = damp(w[k], target[k], target[k] ? rate : rate * 0.9, dt); sum += w[k]; }
+
+    // running phase advances with speed
+    const runFreq = 1.9 + p.speed * 0.36;
+    this.phase += dt * runFreq * (target.run || target.stumble ? 1 : 0.3);
+
+    const out = this.pose.fill(0), tmp = this.tmp;
+    const addPose = (weight, fill) => { if (weight < 0.001) return; fill(tmp); for (let i = 0; i < out.length; i++) out[i] += tmp[i] * weight / sum; };
+    addPose(w.idle, o => this.poseIdle(o, this.time));
+    addPose(w.run, o => this.poseRun(o, this.phase));
+    addPose(w.air, o => this.poseAir(o, this.jumpStyle, p.vy));
+    addPose(w.roll, o => this.poseRoll(o));
+    addPose(w.hover, o => this.poseHover(o, this.time));
+    addPose(w.jet, o => this.poseJet(o, this.time));
+    addPose(w.stumble, o => this.poseStumble(o, this.time, this.stumbleDir));
+    if (mode === 'dead') this.deadT += dt; else this.deadT = 0;
+    addPose(w.dead, o => this.poseDead(o, this.deadT));
+    this.applyPose(out);
+
+    // roll: a full forward rotation over the roll time
+    const rollProg = p.rollT > 0 ? 1 - p.rollT / CFG.ROLL_TIME : 1;
+    this.body.rotation.x = -rollProg * TAU * w.roll;
+
+    // root: position, lean into lane changes, crash fall
+    const r = this.root;
+    r.position.set(p.x, p.y + (ctx.hover ? 0.2 + Math.sin(this.time * 3.1) * 0.03 : 0), p.z);
+    this.lean = damp(this.lean, mode === 'run' ? -p.vx * 0.012 : 0, 12, dt);
+    this.turn = damp(this.turn, mode === 'run' ? -p.vx * 0.008 : 0, 10, dt);
+    if (mode === 'dead') {
+      const t = this.deadT;
+      const fall = smoothstep(clamp(t / 0.45, 0, 1));
+      r.rotation.set(fall * 1.42, 0, 0);
+      r.position.z += Math.min(t, 0.35) * 2.6;
+      r.position.y = Math.max(0, p.y - t * t * 8) + Math.abs(Math.sin(clamp(t - 0.45, 0, 0.3) * 10.5)) * 0.12 * (t > 0.45 ? 1 : 0);
+    } else if (mode === 'menu') {
+      r.rotation.set(0, Math.PI, 0);
+    } else {
+      r.rotation.set(0, this.turn, this.lean);
+    }
+    // extras
+    this.extras.board.visible = !!ctx.hover && mode !== 'menu';
+    this.extras.board.position.y = -0.12;
+    this.extras.board.rotation.y = 0.35;
+    this.extras.jet.visible = !!ctx.jet;
+    if (ctx.jet) for (const f of this.extras.flames.children) f.scale.set(1, 0.7 + Math.random() * 0.6, 1);
+    this.extras.magnet.visible = !!ctx.magnet && mode === 'run';
+    this.mats.shoe.emissive.setHex(ctx.sneakers ? 0x1f8f47 : 0x000000);
+    // invulnerability blink
+    r.visible = !(ctx.invuln > 0 && mode === 'run' && Math.floor(this.time * 14) % 2 === 0);
+  },
+
+  applyPose(o) {
+    const b = this.bones;
+    b.body.position.y = o[PCI.hipY];
+    b.spine.rotation.set(o[PCI.spineX], o[PCI.spineY], o[PCI.spineZ]);
+    b.neck.rotation.set(o[PCI.neckX] * 0.5, o[PCI.neckY] * 0.5, 0);
+    b.head.rotation.set(o[PCI.neckX] * 0.5, o[PCI.neckY] * 0.5, 0);
+    b.lLeg.rotation.set(o[PCI.lThigh], 0, o[PCI.lThighZ]);
+    b.rLeg.rotation.set(o[PCI.rThigh], 0, o[PCI.rThighZ]);
+    b.lKnee.rotation.x = o[PCI.lKnee];
+    b.rKnee.rotation.x = o[PCI.rKnee];
+    b.lFoot.rotation.x = o[PCI.lFoot];
+    b.rFoot.rotation.x = o[PCI.rFoot];
+    b.lSh.rotation.set(o[PCI.lShX], 0, o[PCI.lShZ]);
+    b.rSh.rotation.set(o[PCI.rShX], 0, o[PCI.rShZ]);
+    b.lEl.rotation.x = o[PCI.lElbow];
+    b.rEl.rotation.x = o[PCI.rElbow];
   }
 };
 
@@ -2894,7 +3196,7 @@ const Player = {
   },
 
   collide(prevX, prevY, prevZ, prevH) {
-    if (this.invuln > 0) return;
+    if (this.invuln > 0 || this.god) return;
     const HW = CFG.PLAYER_HW, HD = CFG.PLAYER_HD;
     const H = this.rollT > 0 ? CFG.PLAYER_ROLL_H : CFG.PLAYER_H;
     const px0 = this.x - HW, px1 = this.x + HW, py0 = this.y, py1 = this.y + H, pz0 = this.z - HD, pz1 = this.z + HD;
@@ -3042,6 +3344,7 @@ const Game = {
   manual: DEBUG && QUERY.has('manual'),
   cam: { x: 0, y: 3.3, z: 6.4, lx: 0, ly: 1.3, lz: -8 },
   run: null,
+  anim: { stumble: false, stumbleDir: 1 },
 
   boot() {
     const bar = document.getElementById('loadingBar');
@@ -3125,8 +3428,10 @@ const Game = {
     this.run.score += 5 * this.mult();
   },
 
-  onStumble() {
+  onStumble(kind, o) {
     const r = this.run;
+    this.anim.stumble = true;
+    this.anim.stumbleDir = o && o.x > Player.x ? -1 : 1;
     if (r.chaseT > 0) { this.endRun('caught'); return; }
     r.chaseT = 7;
   },
@@ -3192,7 +3497,9 @@ const Game = {
       this.hud.score.textContent = pad6(r.score);
       this.hud.coins.textContent = r.coins;
     }
-    Runner.update(dt, Player);
+    const a = this.anim;
+    Runner.update(dt, Player, { mode: this.state === 'playing' ? 'run' : 'dead', stumble: a.stumble, stumbleDir: a.stumbleDir, invuln: Player.invuln });
+    a.stumble = false;
     this.updateCamera(dt);
     Gfx.follow(Player.x, Player.z);
   },
