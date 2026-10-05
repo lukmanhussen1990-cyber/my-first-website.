@@ -131,6 +131,9 @@ class GameController extends ChangeNotifier {
   /// 1 -> 0 bounce of the crown/best score when it is updated live.
   double bestBump = 0;
 
+  /// 1 -> 0 bump of the big score number when points land.
+  double scoreBump = 0;
+
   DragState? drag;
   ReturnAnim? returning;
   final List<double> traySpawn = [1, 1, 1];
@@ -160,6 +163,7 @@ class GameController extends ChangeNotifier {
       texts.isNotEmpty ||
       comboFlash > 0 ||
       bestBump > 0 ||
+      scoreBump > 0 ||
       (newBest && newBestT < 1) ||
       displayScore != game.score ||
       overPhase == OverPhase.waiting ||
@@ -375,9 +379,9 @@ class GameController extends ChangeNotifier {
           ),
         );
         comboFlash = 1;
-        Sound.instance.play(Sfx.combo);
+        Sound.instance.play(Sfx.combo, rate: math.min(1.0 + 0.06 * (result.combo - 2), 1.5));
       } else {
-        Sound.instance.play(Sfx.clear);
+        Sound.instance.play(Sfx.clear, rate: math.min(1.0 + 0.05 * (result.linesCleared - 1), 1.3));
       }
       if (result.praise != null) {
         final y = l.gridRect.top + l.gridRect.height * (linesCenter.dy < l.gridRect.center.dy ? 0.68 : 0.3);
@@ -398,6 +402,8 @@ class GameController extends ChangeNotifier {
         Haptics.light();
       }
     }
+
+    scoreBump = result.linesCleared > 0 ? 1.0 : 0.6;
 
     // "+N" beside the score for moves that cleared lines.
     if (result.linesCleared > 0) {
@@ -573,6 +579,10 @@ class GameController extends ChangeNotifier {
 
     if (bestBump > 0) {
       bestBump = math.max(0, bestBump - dt / 0.35);
+      dirty = true;
+    }
+    if (scoreBump > 0) {
+      scoreBump = math.max(0, scoreBump - dt / 0.3);
       dirty = true;
     }
 

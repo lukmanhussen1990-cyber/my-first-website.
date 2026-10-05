@@ -76,7 +76,8 @@ class Sound {
     _syncMusic();
   }
 
-  void play(Sfx sfx, {double volume = 1.0}) {
+  /// Plays [sfx]; [rate] > 1 raises the pitch (used for bigger combos).
+  void play(Sfx sfx, {double volume = 1.0, double rate = 1.0}) {
     if (!_ready || !SettingsStore.instance.soundOn) return;
     final list = _players[sfx];
     if (list == null || list.isEmpty) return;
@@ -87,6 +88,7 @@ class Sound {
       try {
         await p.stop();
         await p.setVolume(volume);
+        await p.setPlaybackRate(rate.clamp(0.5, 2.0));
         await p.resume();
       } catch (e) {
         debugPrint('play $sfx: $e');

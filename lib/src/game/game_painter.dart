@@ -105,7 +105,15 @@ class GamePainter extends CustomPainter {
       )..layout();
     }
     final tp = _scoreTp!;
+    final bump = ctrl.scoreBump > 0 ? math.sin(ctrl.scoreBump * math.pi) * 0.07 * ctrl.scoreBump : 0.0;
+    if (bump > 0) {
+      canvas.save();
+      canvas.translate(c.dx, c.dy);
+      canvas.scale(1 + bump);
+      canvas.translate(-c.dx, -c.dy);
+    }
     tp.paint(canvas, Offset(c.dx - tp.width / 2, c.dy - tp.height / 2 + l.u * 0.6));
+    if (bump > 0) canvas.restore();
   }
 
   // ---------------------------------------------------------------------------
