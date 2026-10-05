@@ -147,8 +147,12 @@ void main() {
     await gesture.moveTo(dropPoint(l, 1, 1, 0, 1));
     await pumpFrames(tester, 12);
     await gesture.up();
-    await pumpFrames(tester, 200);
+    await pumpFrames(tester, 40);
+    // The settings gear is ignored once the game-over sequence started.
+    await tester.tapAt(l.gearRect.center);
+    await pumpFrames(tester, 160);
 
+    expect(find.text('Vibration'), findsNothing);
     expect(game.gameOver, isTrue);
     expect(find.text('Play Again'), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);

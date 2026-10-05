@@ -112,7 +112,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     if (_pointer != null || _popupOpen) return;
     _pointer = e.pointer;
     final l = ctrl.layout;
-    if (l != null && l.gearRect.inflate(l.u * 3).contains(e.localPosition)) {
+    if (l != null && ctrl.overPhase == OverPhase.none && l.gearRect.inflate(l.u * 3).contains(e.localPosition)) {
       _gearDown = true;
       return;
     }
