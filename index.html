@@ -2438,7 +2438,8 @@ function animateMonster(dt, moving) {
   let headYaw = 0;
   if (m.state === 'spotted' || m.state === 'chase' || m.state === 'search' || m.state === 'stalk') {
     let a = Math.atan2(player.pos.x - m.pos.x, player.pos.z - m.pos.z) - m.heading; a = Math.atan2(Math.sin(a), Math.cos(a));
-    headYaw = clamp(a, -1.3, 1.3);
+    headYaw = clamp(a, m.state === 'stalk' ? -2.6 : -1.3, m.state === 'stalk' ? 2.6 : 1.3);   // stalking: the neck turns further than any neck should
+    if (m.state === 'stalk') md.head.rotation.z = 0.6 + Math.sin(U.uTime.value * 0.6) * 0.25;
   } else if (m.idleT > 0) headYaw = Math.sin(U.uTime.value * 0.7) * 1.1;
   md.neck.rotation.y += (headYaw - md.neck.rotation.y) * Math.min(1, dt * (m.state === 'spotted' ? 20 : 4));
   if (m.state === 'spotted') { md.head.rotation.z = 0.5; for (const A of md.arms) { A.sh.rotation.x = -0.4; A.sh.rotation.z = A.s * 0.5; } }
