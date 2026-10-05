@@ -215,7 +215,7 @@ class GameController extends ChangeNotifier {
 
   void _spawnTray() {
     for (var i = 0; i < 3; i++) {
-      traySpawn[i] = -0.07 * i; // staggered pop-in
+      traySpawn[i] = -0.12 * i; // quick, slightly staggered pop-in
     }
   }
 
@@ -553,7 +553,7 @@ class GameController extends ChangeNotifier {
 
     for (var i = 0; i < 3; i++) {
       if (traySpawn[i] < 1) {
-        traySpawn[i] = math.min(1, traySpawn[i] + dt / 0.28);
+        traySpawn[i] = math.min(1, traySpawn[i] + dt / 0.2);
         dirty = true;
       }
     }
