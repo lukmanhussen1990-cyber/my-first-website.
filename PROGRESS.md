@@ -155,3 +155,7 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   ceiling, tall pillars, fixtures hang at the hall ceiling and the baker compresses their vertical distance so halls
   stay as bright as rooms (CPU light sampling and scripted door headers follow the same heights). Soffit baking is
   time-sliced per cell. Connectivity unchanged (0 unreachable cells).
+- **[07:45 UTC] Extra — Hold breath.** Space (or the BREATH touch button) holds your breath for up to ~6 s: the
+  creature loses its close-range "sense" (it must actually see you) and its sight range drops 25%, all audio is
+  muffled through a low-pass filter, and a thin blue bar shows remaining breath. Releasing makes an audible exhale
+  (heard within 4.5 m); running out makes you gasp loudly (9 m). Breath refills in ~4 s. Verified in a scripted test.

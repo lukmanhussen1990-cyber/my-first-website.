@@ -27,6 +27,8 @@
   .bar { position: absolute; bottom: max(18px, env(safe-area-inset-bottom)); height: 6px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(240, 225, 160, 0.35); transition: opacity 0.5s; }
   .bar .fill { height: 100%; width: 100%; background: #d8c77a; }
   #stamina { left: 16px; width: min(26vw, 220px); }
+  #breathBar { left: 16px; width: min(26vw, 220px); bottom: max(30px, calc(env(safe-area-inset-bottom) + 12px)); height: 3px; opacity: 0; }
+  #breathBar .fill { background: #9fc3d8; }
   #battery { right: 16px; width: min(18vw, 140px); }
   #battery::before { content: ''; position: absolute; right: -5px; top: 1px; width: 3px; height: 4px; background: rgba(240, 225, 160, 0.5); }
   #batteryPct { position: absolute; right: 0; bottom: 10px; font-size: 13px; color: #e8dca0; text-shadow: 0 0 4px #000; white-space: nowrap; }
@@ -52,6 +54,7 @@
   #tRun { right: 22px; bottom: 120px; }
   #tCrouch { right: 108px; bottom: 44px; }
   #tLight { right: 22px; bottom: 30px; }
+  #tHold { right: 108px; bottom: 130px; font-size: 11px; }
   #tPause { right: 14px; top: max(12px, env(safe-area-inset-top)); }
   #noteOverlay.show { pointer-events: auto; }
   body.touch #battery { bottom: auto; top: max(22px, env(safe-area-inset-top)); right: 76px; }
@@ -93,6 +96,7 @@
   <div id="message"></div>
   <div id="caption"></div>
   <div id="stamina" class="bar"><div id="staminaFill" class="fill"></div></div>
+  <div id="breathBar" class="bar"><div id="breathFill" class="fill"></div></div>
   <div id="battery" class="bar"><div id="batteryFill" class="fill"></div><span id="batteryPct">100%</span></div>
 </div>
 
@@ -141,11 +145,11 @@
   <div class="howto">
     <b>Goal:</b> find the <b>5 notes</b> pinned around the maze, then find the <b>EXIT</b> door that appears.
     Notes crackle with radio static and the exit hums &mdash; use your ears (headphones help).<br><br>
-    <b>WASD / arrows</b> move &nbsp; <b>Mouse</b> look &nbsp; <b>Shift</b> run &nbsp; <b>C</b> crouch &nbsp; <b>F</b> flashlight &nbsp; <b>E</b> close note &nbsp; <b>Esc</b> pause<br>
+    <b>WASD / arrows</b> move &nbsp; <b>Mouse</b> look &nbsp; <b>Shift</b> run &nbsp; <b>C</b> crouch &nbsp; <b>F</b> flashlight &nbsp; <b>Space</b> hold breath &nbsp; <b>E</b> close note &nbsp; <b>Esc</b> pause<br>
     <b>Phone:</b> left thumb moves, right thumb drags to look, buttons for run / crouch / light.<br><br>
     <b>Something hunts you.</b> It hears running from far away, walking from closer, crouching barely at all.
     It sees you better when you stand in the light or use the flashlight. If it spots you, break its line of sight,
-    get into the dark, crouch and wait. When the lights start to stutter, it is close.<br><br>
+    get into the dark, crouch and wait. When it is right next to you, hold your breath &mdash; but not for too long. When the lights start to stutter, it is close.<br><br>
     Running drains stamina. The flashlight drains its battery &mdash; spare batteries lie on the floor.
   </div>
   <button class="btn" id="btnHowtoBack">BACK</button>
@@ -157,6 +161,7 @@
   <button class="tbtn" id="tCrouch">CROUCH</button>
   <button class="tbtn" id="tLight">LIGHT</button>
   <button class="tbtn small" id="tPause">II</button>
+  <button class="tbtn" id="tHold">BREATH</button>
 </div>
 
 <div id="noteOverlay"><div class="paper"><div id="noteNum">PAGE 1 / 5</div><div id="noteText"></div><div class="hint">[E] put away</div></div></div>
@@ -1392,7 +1397,7 @@ function updateChunks(px, pz, force = false, budgetMs = 2.5) {
 //  AUDIO (all procedural, Web Audio API)
 // ============================================================================
 const Sound = (() => {
-  let ctx = null, master, comp, sfx, amb, revIn, noiseBuf, brownBuf;
+  let ctx = null, master, comp, sfx, amb, revIn, noiseBuf, brownBuf, muffle = null;
   let buzzGain = null, buzzTone = null, droneGain = null, toneGain = null;
   let volume = 0.8, hrtf = true;
   const loops = [];   // persistent spatial loops (monster breath, note static, ...)
@@ -1433,7 +1438,8 @@ const Sound = (() => {
     master = ctx.createGain(); master.gain.value = volume;
     comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -12; comp.knee.value = 8; comp.ratio.value = 5; comp.attack.value = 0.003; comp.release.value = 0.25;
-    master.connect(comp); comp.connect(ctx.destination);
+    muffle = ctx.createBiquadFilter(); muffle.type = 'lowpass'; muffle.frequency.value = 20000; muffle.Q.value = 0.5;
+    master.connect(muffle); muffle.connect(comp); comp.connect(ctx.destination);
     sfx = ctx.createGain(); sfx.connect(master);
     amb = ctx.createGain(); amb.connect(master);
     const reverb = ctx.createConvolver(); reverb.buffer = makeImpulse(2.6, 2.4);
@@ -1694,12 +1700,13 @@ const Sound = (() => {
   function setDrone(level) { if (ctx && droneGain) droneGain.gain.setTargetAtTime(level, now(), 0.5); }
   function setVolume(v) { volume = v; if (master) master.gain.setTargetAtTime(v, now(), 0.05); }
   function setHRTF(on) { hrtf = on; }
+  function setMuffle(on) { if (muffle) muffle.frequency.setTargetAtTime(on ? 700 : 20000, ctx.currentTime, on ? 0.15 : 0.3); }
   function suspend() { if (ctx && ctx.state === 'running') ctx.suspend(); }
   function resume() { if (ctx && ctx.state === 'suspended') ctx.resume(); }
 
   return {
     init, footstep, click, zap, paper, heartbeat, breathe, randomDistant, distant, setListener, setBuzz, setDrone,
-    setVolume, setHRTF, suspend, resume,
+    setVolume, setHRTF, setMuffle, suspend, resume,
     get ctx() { return ctx; },
     // exposed helpers for other systems
     _: { noiseSrc: (...a) => noiseSrc(...a), filter: (...a) => filter(...a), gain: (...a) => gain(...a), panner: (...a) => panner(...a), env: (...a) => env(...a), setPos: (...a) => setPos(...a), get sfx() { return sfx; }, get revIn() { return revIn; }, get master() { return master; }, get noiseBuf() { return noiseBuf; }, get brownBuf() { return brownBuf; } },
@@ -2032,9 +2039,9 @@ function updateMonster(dt) {
     m.visCheck = 0.1;
     const fx = Math.sin(m.heading), fz = Math.cos(m.heading);
     const cosA = dist > 0.01 ? (fx * dx + fz * dz) / dist : 1;
-    const fovOk = m.state === 'chase' ? cosA > -0.2 : cosA > Math.cos(1.15) || dist < 2.5;
+    const fovOk = m.state === 'chase' ? cosA > -0.2 : cosA > Math.cos(1.15) || (dist < 2.5 && !player.holding);
     const pl = playerVisibility();
-    const range = (m.state === 'chase' ? 26 : 5 + 17 * pl) * (player.crouching && m.state !== 'chase' ? 0.6 : 1) * diff().sight;
+    const range = (m.state === 'chase' ? 26 : 5 + 17 * pl) * (player.crouching && m.state !== 'chase' ? 0.6 : 1) * (player.holding && m.state !== 'chase' ? 0.75 : 1) * diff().sight;
     m.sees = dist < range && fovOk && world.segmentClear(m.pos.x, m.pos.z, player.pos.x, player.pos.z);
   }
   if (m.sees) {
@@ -2412,6 +2419,7 @@ const hud = {
   stamina: $('staminaFill'), staminaWrap: $('stamina'),
   battery: $('batteryFill'), batteryPct: $('batteryPct'), batteryWrap: $('battery'),
   notes: $('notesCount'), msg: $('message'),
+  breathFill: $('breathFill'), breathBar: $('breathBar'),
   sigLbl: $('sigLbl'), sigBars: [...document.querySelectorAll('#signal i')],
 };
 const DISTANT_CAPTIONS = { thud: '[a distant thud]', creak: '[metal creaks somewhere]', steps: '[distant footsteps]', whisper: '[whispering]', slam: '[a door slams far away]', knock: '[knocking]', groan: '[a low groan]', crackle: '[electrical crackling]' };
@@ -2440,6 +2448,8 @@ function updateHUD(dt) {
   setText(hud.batteryPct, 'bp', Math.ceil(b * 100) + '%' + (flash.on || isTouch ? '' : ' (F)'));
   setStyle(hud.batteryWrap, 'bo', 'opacity', flash.on ? '1' : '0.6');
   setText(hud.notes, 'n', game.notes + ' / ' + NOTES_NEEDED);
+  setStyle(hud.breathFill, 'brw', 'width', (player.breath * 100).toFixed(0) + '%');
+  setStyle(hud.breathBar, 'bro', 'opacity', player.holding || player.breath < 0.99 ? '1' : '0');
   // signal meter: how close is the nearest page (or the exit) — "hot / cold" for players without headphones
   let nd = Infinity, exit = false;
   for (const s of goal.specs) { if (s.taken) continue; const d = Math.hypot(s.x - player.pos.x, s.z - player.pos.z); if (d < nd) { nd = d; exit = s.type === 'exit'; } }
@@ -2459,6 +2469,21 @@ function toggleFlashlight() {
   if (!flash.on && flash.battery <= 0.001) { Sound.click(0.2, 900); showMessage('The flashlight is dead. Find batteries.', 2.5); return; }
   flash.on = !flash.on;
   Sound.click(0.3, flash.on ? 2600 : 1800);
+}
+// Hold breath (Space / BREATH button): up to ~6 s of silence, then you gasp
+function updateBreath(dt) {
+  const want = (keys.Space || input.touchHold) && !player.running && player.breath > 0.02;
+  if (want && !player.holding) { player.holding = true; Sound.setMuffle(true); }
+  if (player.holding) {
+    player.breath = Math.max(0, player.breath - dt / 6);
+    if (!want || player.breath <= 0) {
+      player.holding = false; Sound.setMuffle(false);
+      const out = player.breath <= 0.02;
+      Sound.breathe(out ? 1.6 : 0.8); setTimeout(() => Sound.breathe(out ? 1.2 : 0.5), 450);
+      emitNoise(player.pos.x, player.pos.z, out ? 9 : 4.5);
+      if (out) showMessage('You gasp for air...', 2);
+    }
+  } else player.breath = Math.min(1, player.breath + dt / 4);
 }
 function updateStamina(dt) {
   if (player.running) {
@@ -2809,6 +2834,7 @@ function fadeTo(color, opacity, seconds = 1.2) {
 function reachExit() {
   if (game.state !== 'playing') return;
   game.state = 'escaping';
+  player.holding = false; Sound.setMuffle(false);
   silenceMonster(); clearBeacons();
   // door bursts open: rushing air and a rising chord, then a white-out
   const ctx = Sound.ctx;
@@ -3428,7 +3454,7 @@ function updateDust(dt) {
 //  INPUT
 // ============================================================================
 const keys = Object.create(null);
-const input = { lookX: 0, lookY: 0, sensitivity: 1.0, locked: false, touchRun: false, joyX: 0, joyY: 0 };
+const input = { lookX: 0, lookY: 0, sensitivity: 1.0, locked: false, touchRun: false, touchHold: false, joyX: 0, joyY: 0 };
 
 window.addEventListener('keydown', (e) => {
   keys[e.code] = true;
@@ -3483,7 +3509,7 @@ const player = {
   crouching: false, running: false, moving: false,
   bobPhase: 0, bobAmt: 0,
   speed: 0,
-  stamina: 1, exhausted: false, restTimer: 0, breathT: 0,
+  stamina: 1, exhausted: false, restTimer: 0, breathT: 0, breath: 1, holding: false,
 };
 const EYE_STAND = 1.62, EYE_CROUCH = 0.92;
 
@@ -3622,6 +3648,7 @@ function tryFullscreen() {
   btn('tCrouch', (b) => { player.crouchToggle = !player.crouchToggle; b.classList.toggle('on', player.crouchToggle); });
   btn('tLight', (b) => { toggleFlashlight(); b.classList.toggle('on', flash.on); });
   btn('tPause', () => pauseGame());
+  btn('tHold', (b) => { input.touchHold = true; b.classList.add('on'); }, (b) => { input.touchHold = false; b.classList.remove('on'); });
   $('noteOverlay').addEventListener('click', () => hideNote());
   // any real touch switches the game into touch mode (e.g. tablets with keyboards)
   window.addEventListener('touchstart', () => { if (!isTouch) { isTouch = true; if (game.state === 'playing') $('touchUI').classList.remove('hidden'); } }, { passive: true });
@@ -3638,7 +3665,7 @@ const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0, notes: 0, level
 function notesCollected() { return game.notes; }
 function onChaseStart() {}
 function onNotePicked() { stinger(0.8 + 0.1 * game.notes); fx.dip = 0.6; scares.t = Math.min(scares.t, 12 + Math.random() * 10); }
-function onPlayerCaught() { hidePhantom(); $('hud').classList.add('hidden'); $('touchUI').classList.add('hidden'); hideNote(); clearBeacons(); }
+function onPlayerCaught() { player.holding = false; Sound.setMuffle(false); hidePhantom(); $('hud').classList.add('hidden'); $('touchUI').classList.add('hidden'); hideNote(); clearBeacons(); }
 function onLevelComplete() {
   game.state = 'won';
   $('hud').classList.add('hidden');
@@ -3673,6 +3700,7 @@ function pauseGame() {
   if (game.state !== 'playing') return;
   game.state = 'paused';
   for (const k in keys) keys[k] = false;
+  if (player.holding) { player.holding = false; Sound.setMuffle(false); }
   Sound.suspend();
   $('pauseInfo').innerHTML = `Level ${game.level} &mdash; ${formatTime(game.time)}<br>Notes ${game.notes} / ${NOTES_NEEDED}`;
   const texts = NOTE_TEXTS[game.level] || NOTE_TEXTS[1];
@@ -3766,7 +3794,7 @@ function spawnPlayer(x, z) {
 }
 function newGame(level = 1) {
   game.level = level; game.time = 0; game.notes = 0; game.danger = 0;
-  player.stamina = 1; player.exhausted = false;
+  player.stamina = 1; player.exhausted = false; player.breath = 1; player.holding = false; Sound.setMuffle(false);
   flash.on = false; flash.battery = 1; flash.intensity = 0;
   collectedItems.clear(); goal.specs = [];
   world = new World((Math.random() * 1e9) | 0, level);
@@ -3932,7 +3960,7 @@ function frame() {
 }
 const PROF = { on: false, max: {} };
 const SIM_STEPS = [
-  ['player', (dt) => { updatePlayer(dt); updateStamina(dt); updateFlashlight(dt); }],
+  ['player', (dt) => { updatePlayer(dt); updateStamina(dt); updateBreath(dt); updateFlashlight(dt); }],
   ['monster', (dt) => updateMonster(dt)],
   ['items', (dt) => updateItems(dt)],
   ['water', (dt) => updateWater(dt)],
