@@ -263,3 +263,5 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   fixed what they showed: door headers now match each level's walls (they were Lobby-yellow in the tiled level 2),
   and a soft highlight roll-off in the shaders keeps the flashlight from blowing walls out at point-blank range.
   Title screen now notes "contains flickering lights" and points to Reduce flashing.
+- **[08:59 UTC] Extra — Explore difficulty.** Difficulty gains "Explore (no creature)": the creature is disabled (no
+  danger effects or heartbeat) but the atmosphere and scripted scares remain; best times aren't recorded in it.

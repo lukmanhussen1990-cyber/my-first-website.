@@ -46,5 +46,5 @@ See `PROGRESS.md` for the full build log. Highlights:
   flashlight, fog, water with fake reflections, bloom, film grain, vignette, chromatic aberration, VHS glitches.
 - A hunting creature with sight/hearing, A* pathfinding, chase/search states and a jump scare.
 - Scripted scares: lights going out one by one, slamming doors, footsteps behind you, phantoms, whispers.
-- Menus, pause, settings (difficulty, mouse speed, invert Y, FOV, brightness, volume, graphics quality, head
+- Menus, pause, settings (difficulty incl. an Explore mode with no creature, mouse speed, invert Y, FOV, brightness, volume, graphics quality, head
   bob, captions, reduce flashing), save/continue, best times, three levels + endless mode, phone touch controls, gamepad.

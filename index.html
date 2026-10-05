@@ -130,7 +130,7 @@
 <div id="settingsScreen" class="screen menu hidden">
   <h1>SETTINGS</h1>
   <div class="settings">
-    <label><span>Difficulty</span><select id="setDiff"><option value="0">Easy</option><option value="1">Normal</option><option value="2">Hard</option></select><span></span></label>
+    <label><span>Difficulty</span><select id="setDiff"><option value="3">Explore (no creature)</option><option value="0">Easy</option><option value="1">Normal</option><option value="2">Hard</option></select><span></span></label>
     <label><span>Mouse speed</span><input type="range" id="setSens" min="0.2" max="3" step="0.05"><span id="setSensVal"></span></label>
     <label><span>Invert mouse Y</span><input type="checkbox" id="setInvert"><span></span></label>
     <label><span>Field of view</span><input type="range" id="setFov" min="60" max="100" step="1"><span id="setFovVal"></span></label>
@@ -2137,7 +2137,7 @@ function buildMonsterModel() {
 // ============================================================================
 //  MONSTER — behaviour
 // ============================================================================
-const DIFF = [{ speed: 0.86, hear: 0.75, sight: 0.8, hunt: 1.6 }, { speed: 1, hear: 1, sight: 1, hunt: 1 }, { speed: 1.1, hear: 1.25, sight: 1.15, hunt: 0.7 }];
+const DIFF = [{ speed: 0.86, hear: 0.75, sight: 0.8, hunt: 1.6 }, { speed: 1, hear: 1, sight: 1, hunt: 1 }, { speed: 1.1, hear: 1.25, sight: 1.15, hunt: 0.7 }, { speed: 1, hear: 1, sight: 1, hunt: 1, explore: true }];
 const diff = () => DIFF[settings.difficulty] || DIFF[1];
 const MONSTER_SPEED = { 3: { wander: 1.7, investigate: 3.0, chase: 4.6, search: 2.2 }, 1: { wander: 1.25, investigate: 2.3, chase: 4.2, search: 1.6 }, 2: { wander: 1.6, investigate: 2.8, chase: 5.0, search: 2.0 } };
 const monster = {
@@ -2178,7 +2178,10 @@ function placeMonsterAway(minD, maxD, fromX = player.pos.x, fromZ = player.pos.z
 function resetMonster() {
   initMonster();
   placeMonsterAway(38, 50);
-  monster.state = 'wander'; monster.active = true; monster.alert = 0; monster.lostTimer = 0; monster.searchTimer = 0;
+  monster.state = 'wander'; monster.active = !diff().explore;
+  monster.model.root.visible = monster.active;
+  if (!monster.active) { silenceMonster(); U.uMonster.value.set(1e5, 0, 1e5, 0); }
+ monster.alert = 0; monster.lostTimer = 0; monster.searchTimer = 0;
   monster.screechCooldown = 8; monster.directorTimer = 0; monster.heading = Math.random() * Math.PI * 2;
   monster.huntTimer = 50 + Math.random() * 25;
   monster.stalkCd = 35 + Math.random() * 30; monster.stalkT = 0; monster.graceT = 0;
@@ -4450,14 +4453,15 @@ function onPause() { snapshotRun(); }
 function onDeath() { if (game.mode === 'endless') save.bestEndless = Math.max(save.bestEndless || 0, game.notes); save.deaths = (save.deaths || 0) + 1; save.run = null; writeSave(); }
 function onWin() {
   const lvl = game.level, prev = save.best[lvl];
-  const isBest = !prev || game.time < prev;
+  const explore = !!diff().explore;
+  const isBest = !explore && (!prev || game.time < prev);
   if (isBest) save.best[lvl] = game.time;
   save.unlocked = Math.max(save.unlocked || 1, Math.min(3, lvl + 1));
   save.escapes = (save.escapes || 0) + 1;
   save.run = null;
   writeSave();
   $('winTitle').textContent = lvl === 1 ? 'YOU ESCAPED THE LOBBY' : lvl === 2 ? 'YOU ESCAPED THE FLOODED HALLS' : 'DAYLIGHT... ?';
-  $('winStats').innerHTML = `Time: ${formatTime(game.time)}${isBest ? ' &mdash; <b style="color:#fff3a0">NEW BEST!</b>' : ''}<br>Best: ${formatTime(save.best[lvl])}`;
+  $('winStats').innerHTML = `Time: ${formatTime(game.time)}${isBest ? ' &mdash; <b style="color:#fff3a0">NEW BEST!</b>' : ''}${explore ? ' (explore mode)' : ''}<br>Best: ${save.best[lvl] ? formatTime(save.best[lvl]) : '&mdash;'}`;
   $('btnNextLevel').classList.toggle('hidden', lvl >= 3);
   $('btnNextLevel').textContent = lvl === 1 ? 'DESCEND TO LEVEL 2' : 'DESCEND TO LEVEL 3';
   if (lvl === 3) $('winStats').innerHTML += '<br><br><span style="opacity:0.75">The door opens onto a long, quiet hallway. The carpet is yellow.<br>Somewhere ahead, a fluorescent light starts to hum.</span>';
@@ -4526,6 +4530,7 @@ function updateMusic(dt) {
   music.beat++;
 }
 function updateDanger(dt) {
+  if (!monster.active) { game.danger += (0 - game.danger) * Math.min(1, dt * 2); return; }
   const md = Math.hypot(monster.pos.x - player.pos.x, monster.pos.z - player.pos.z);
   let d = Math.pow(clamp(1 - md / 26, 0, 1), 1.5);
   if (monster.state === 'chase' || monster.state === 'spotted') d = Math.max(d, 0.55 + 0.45 * clamp(1 - md / 20, 0, 1));
