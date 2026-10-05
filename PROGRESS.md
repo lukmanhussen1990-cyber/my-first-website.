@@ -79,3 +79,13 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   invert Y, field of view, volume, graphics quality (Low 60% res / Medium 85% / High 100% + 4x MSAA) and head bob;
   saved to localStorage and applied live. Game over (time survived, notes) and win screens (time, next level / play
   again / menu). Keyboard focus styling on buttons. Ignores Chrome's pointer-lock mouse spikes.
+- **[07:15 UTC] Feature 10 — Level 2 "The Flooded Halls": DONE.** Reached via "Descend to Level 2" after escaping
+  (or from the menu once unlocked). New look: grimy green ceramic tile walls/floor (canvas), greyer ceiling, cold
+  green-white light at 85% brightness, much denser darkness (lower dark-zone threshold, 8% random dead fixtures, 2x
+  flicker/dying), dense teal fog, more corridors and halls. 30 cm of murky water: a transparent shader plane with
+  scrolling ripple normals, wake rings around the player's legs, Fresnel, flashlight glare and *fake reflections of
+  the ceiling fixtures* (reflected ray traced to the ceiling plane and looked up in a live 64x64 light-state texture
+  that the CPU refreshes every other frame, so flicker and outages show in the water too). Walls are soaked below the
+  waterline with a scummy tide mark. Wading is slower (run 4.7 m/s) and louder (splashes heard 26 m running / 9 m
+  walking); the monster is faster (chase 5.0 m/s) and splashes when it walks. Batteries and floor pages float.
+  Water ambience: lapping + random spatial drips. Separate set of 5 level-2 notes.
