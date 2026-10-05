@@ -236,7 +236,9 @@ def evaluate(board, cells, r0, c0):
     return lines * 1000 + touch * 3 - (r0 + c0) * 0.01, lines
 
 
-def best_move(board, tray):
+def best_move(board, tray, greedy=True):
+    """Greedy: most lines, compact placement. Not greedy: scatter pieces and
+    avoid clears so the board fills up and the game ends quickly."""
     best = None
     for slot, p in enumerate(tray):
         if p is None:
@@ -246,6 +248,8 @@ def best_move(board, tray):
             for c0 in range(9 - cols):
                 if fits(board, cells, r0, c0):
                     score, lines = evaluate(board, cells, r0, c0)
+                    if not greedy:
+                        score = -score + ((r0 * 7 + c0 * 3) % 5) * 0.1
                     if best is None or score > best[0]:
                         best = (score, slot, r0, c0, lines)
     return best
@@ -358,7 +362,7 @@ def play_game(g, tag, max_moves):
                 fail('tray stayed empty')
                 return 'stuck'
             continue
-        mv = best_move(board, tray)
+        mv = best_move(board, tray, greedy=moves_done < 30)
         if mv is None:
             log('no valid move left -> expecting game over')
             return 'over'
