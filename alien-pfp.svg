@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Neon alien profile picture">
+  <title>Neon Alien PFP</title>
+  <defs>
+    <!-- Deep-space background -->
+    <radialGradient id="space" cx="50%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#1a1040"/>
+      <stop offset="55%" stop-color="#0b0620"/>
+      <stop offset="100%" stop-color="#03020a"/>
+    </radialGradient>
+
+    <!-- Alien skin -->
+    <linearGradient id="skin" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#b6ff6a"/>
+      <stop offset="50%" stop-color="#5de85a"/>
+      <stop offset="100%" stop-color="#1e8f4e"/>
+    </linearGradient>
+    <radialGradient id="skinShine" cx="38%" cy="22%" r="55%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Eyes -->
+    <linearGradient id="eye" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1b0033"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+    <radialGradient id="iris" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff7bff"/>
+      <stop offset="45%" stop-color="#b000ff"/>
+      <stop offset="100%" stop-color="#3a0070" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Ring / halo -->
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00f0ff"/>
+      <stop offset="50%" stop-color="#b000ff"/>
+      <stop offset="100%" stop-color="#ff2ad4"/>
+    </linearGradient>
+
+    <!-- Glow filters -->
+    <filter id="glowCyan" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowPink" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#00ff88" flood-opacity="0.35"/>
+    </filter>
+
+    <!-- Star field pattern -->
+    <pattern id="stars" width="128" height="128" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="20" r="1.2" fill="#fff" opacity="0.9"/>
+      <circle cx="60" cy="8" r="0.8" fill="#9ff" opacity="0.7"/>
+      <circle cx="100" cy="40" r="1.5" fill="#fff" opacity="0.8"/>
+      <circle cx="30" cy="90" r="0.9" fill="#f9f" opacity="0.6"/>
+      <circle cx="84" cy="110" r="1.1" fill="#fff" opacity="0.85"/>
+      <circle cx="120" cy="80" r="0.7" fill="#9ff" opacity="0.6"/>
+      <circle cx="50" cy="55" r="0.6" fill="#fff" opacity="0.5"/>
+    </pattern>
+
+    <clipPath id="circle"><circle cx="256" cy="256" r="256"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#circle)">
+    <!-- Background -->
+    <rect width="512" height="512" fill="url(#space)"/>
+    <rect width="512" height="512" fill="url(#stars)"/>
+
+    <!-- Nebula blobs -->
+    <ellipse cx="120" cy="400" rx="180" ry="90" fill="#b000ff" opacity="0.18" transform="rotate(-20 120 400)"/>
+    <ellipse cx="420" cy="120" rx="160" ry="80" fill="#00f0ff" opacity="0.14" transform="rotate(25 420 120)"/>
+
+    <!-- Orbit ring behind head -->
+    <ellipse cx="256" cy="356" rx="222" ry="56" fill="none" stroke="url(#ring)" stroke-width="5" opacity="0.9" transform="rotate(-14 256 356)" filter="url(#glowCyan)"/>
+
+    <!-- Neck -->
+    <path d="M226 392 Q256 420 286 392 L300 470 Q256 500 212 470 Z" fill="url(#skin)"/>
+    <path d="M226 392 Q256 420 286 392 L300 470 Q256 500 212 470 Z" fill="#000" opacity="0.35"/>
+
+    <!-- Head -->
+    <g filter="url(#softShadow)">
+      <path d="M256 70
+               C 360 70, 420 150, 412 240
+               C 405 320, 340 390, 290 410
+               C 270 418, 242 418, 222 410
+               C 172 390, 107 320, 100 240
+               C 92 150, 152 70, 256 70 Z" fill="url(#skin)"/>
+      <path d="M256 70
+               C 360 70, 420 150, 412 240
+               C 405 320, 340 390, 290 410
+               C 270 418, 242 418, 222 410
+               C 172 390, 107 320, 100 240
+               C 92 150, 152 70, 256 70 Z" fill="url(#skinShine)"/>
+    </g>
+
+    <!-- Subtle skin pattern -->
+    <g fill="#0b4d2a" opacity="0.25">
+      <circle cx="150" cy="200" r="6"/>
+      <circle cx="135" cy="235" r="4"/>
+      <circle cx="362" cy="200" r="6"/>
+      <circle cx="377" cy="235" r="4"/>
+      <circle cx="256" cy="110" r="5"/>
+    </g>
+
+    <!-- Eyes -->
+    <g>
+      <!-- Left eye -->
+      <path d="M128 230 C 150 170, 240 190, 236 250 C 232 300, 150 310, 128 230 Z" fill="url(#eye)"/>
+      <path d="M128 230 C 150 170, 240 190, 236 250 C 232 300, 150 310, 128 230 Z" fill="none" stroke="#00f0ff" stroke-width="2" opacity="0.8" filter="url(#glowCyan)"/>
+      <ellipse cx="185" cy="245" rx="30" ry="26" fill="url(#iris)" filter="url(#glowPink)"/>
+      <ellipse cx="170" cy="222" rx="12" ry="7" fill="#fff" opacity="0.85" transform="rotate(-25 170 222)"/>
+
+      <!-- Right eye -->
+      <path d="M384 230 C 362 170, 272 190, 276 250 C 280 300, 362 310, 384 230 Z" fill="url(#eye)"/>
+      <path d="M384 230 C 362 170, 272 190, 276 250 C 280 300, 362 310, 384 230 Z" fill="none" stroke="#00f0ff" stroke-width="2" opacity="0.8" filter="url(#glowCyan)"/>
+      <ellipse cx="327" cy="245" rx="30" ry="26" fill="url(#iris)" filter="url(#glowPink)"/>
+      <ellipse cx="342" cy="222" rx="12" ry="7" fill="#fff" opacity="0.85" transform="rotate(25 342 222)"/>
+    </g>
+
+    <!-- Nostrils -->
+    <ellipse cx="246" cy="320" rx="4" ry="6" fill="#0b4d2a" opacity="0.7"/>
+    <ellipse cx="266" cy="320" rx="4" ry="6" fill="#0b4d2a" opacity="0.7"/>
+
+    <!-- Smirk -->
+    <path d="M222 360 Q256 384 300 356" fill="none" stroke="#0b4d2a" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+    <path d="M222 360 Q256 384 300 356" fill="none" stroke="#00f0ff" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+
+    <!-- Antennae -->
+    <g stroke="url(#ring)" stroke-width="6" stroke-linecap="round" fill="none" filter="url(#glowCyan)">
+      <path d="M200 86 Q170 40 150 30"/>
+      <path d="M312 86 Q342 40 362 30"/>
+    </g>
+    <circle cx="148" cy="28" r="11" fill="#ff2ad4" filter="url(#glowPink)"/>
+    <circle cx="364" cy="28" r="11" fill="#00f0ff" filter="url(#glowCyan)"/>
+    <circle cx="146" cy="25" r="4" fill="#fff" opacity="0.9"/>
+    <circle cx="362" cy="25" r="4" fill="#fff" opacity="0.9"/>
+
+    <!-- Orbit ring in front of head -->
+    <g transform="rotate(-14 256 356)">
+      <clipPath id="ringFront"><rect x="0" y="356" width="512" height="300"/></clipPath>
+      <ellipse cx="256" cy="356" rx="222" ry="56" fill="none" stroke="url(#ring)" stroke-width="5" opacity="0.95" clip-path="url(#ringFront)" filter="url(#glowCyan)"/>
+      <circle cx="120" cy="402" r="7" fill="#00f0ff" filter="url(#glowCyan)"/>
+      <circle cx="400" cy="398" r="5" fill="#ff2ad4" filter="url(#glowPink)"/>
+    </g>
+
+    <!-- Vignette & rim -->
+    <circle cx="256" cy="256" r="256" fill="none" stroke="#000" stroke-width="40" opacity="0.35"/>
+    <circle cx="256" cy="256" r="248" fill="none" stroke="url(#ring)" stroke-width="6"/>
+  </g>
+</svg>
