@@ -560,6 +560,7 @@ class World {
   wallN(cx, cz) { const kx = fdiv(cx, CHUNK), kz = fdiv(cz, CHUNK); return this.chunk(kx, kz).wN[(cx - kx * CHUNK) + (cz - kz * CHUNK) * CHUNK] === 1; }
   // pillar centred on grid point (gx,gz) = north-west corner of cell (gx,gz)
   pillar(gx, gz) { const kx = fdiv(gx, CHUNK), kz = fdiv(gz, CHUNK); return this.chunk(kx, kz).pil[(gx - kx * CHUNK) + (gz - kz * CHUNK) * CHUNK] === 1; }
+  dangling(cx, cz) { return this.lightType(cx, cz) === LIGHT.BROKEN && hash2(cx, cz, this.seed + 909) < 0.22; }
   height(kx, kz) { return this.level === 1 && this.style(kx, kz) === STYLE.HALL ? HALL_H : WALL_H; }
   wallsAtPoint(gx, gz) { return this.wallW(gx, gz) || this.wallW(gx, gz - 1) || this.wallN(gx, gz) || this.wallN(gx - 1, gz); }
   lightType(cx, cz) { const kx = fdiv(cx, CHUNK), kz = fdiv(cz, CHUNK); return this.chunk(kx, kz).lt[(cx - kx * CHUNK) + (cz - kz * CHUNK) * CHUNK]; }
@@ -801,26 +802,43 @@ function makeNoiseTexture() {
   return canvasTex(c, { srgb: false, aniso: 1 });
 }
 
-// Decal atlas: outlet, light switch, wall vent, ceiling vent (2x2 cells)
+// Decal atlas (4x2 cells), see makeDecalTexture
 function makeDecalTexture() {
-  const S = 256, c = makeCanvas(S, S), g = c.getContext('2d'), C = 128;
+  // 4x2 atlas of 128px cells: outlet, switch, wall vent, ceiling vent / missing tile, "DON'T RUN", tally marks, "IT HEARS YOU"
+  const C = 128, c = makeCanvas(C * 4, C * 2), g = c.getContext('2d');
   const plate = (x, y, w, h) => { g.fillStyle = '#e4dcc4'; g.fillRect(x, y, w, h); g.strokeStyle = '#a89e84'; g.lineWidth = 3; g.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3); };
-  g.fillStyle = '#d8cfb2'; g.fillRect(0, 0, S, S);
-  // outlet
   plate(0, 0, C, C);
   for (const yy of [32, 76]) { g.fillStyle = '#3a352a'; g.fillRect(48, yy, 8, 18); g.fillRect(72, yy, 8, 18); g.beginPath(); g.arc(64, yy + 26, 4, 0, Math.PI * 2); g.fill(); }
-  g.fillStyle = '#8a826c'; g.beginPath(); g.arc(64, 64, 4, 0, Math.PI * 2); g.fill();
-  // switch
   plate(C, 0, C, C);
   g.fillStyle = '#cfc6ac'; g.fillRect(C + 50, 30, 28, 68); g.fillStyle = '#b6ad94'; g.fillRect(C + 54, 34, 20, 30);
-  // wall vent
-  g.fillStyle = '#9c968a'; g.fillRect(0, C, C, C);
-  g.fillStyle = '#2b2924'; for (let i = 0; i < 9; i++) g.fillRect(10, C + 12 + i * 12, C - 20, 6);
-  g.strokeStyle = '#6a665c'; g.lineWidth = 4; g.strokeRect(2, C + 2, C - 4, C - 4);
-  // ceiling vent
-  g.fillStyle = '#b4b0a4'; g.fillRect(C, C, C, C);
-  g.fillStyle = '#34322c'; for (let i = 0; i < 4; i++) { const m = 14 + i * 12; g.fillRect(C + m, C + m, C - 2 * m, 5); g.fillRect(C + m, C + C - m - 5, C - 2 * m, 5); g.fillRect(C + m, C + m, 5, C - 2 * m); g.fillRect(C + C - m - 5, C + m, 5, C - 2 * m); }
-  return canvasTex(c, { repeat: false });
+  g.fillStyle = '#9c968a'; g.fillRect(2 * C, 0, C, C);
+  g.fillStyle = '#2b2924'; for (let i = 0; i < 9; i++) g.fillRect(2 * C + 10, 12 + i * 12, C - 20, 6);
+  g.strokeStyle = '#6a665c'; g.lineWidth = 4; g.strokeRect(2 * C + 2, 2, C - 4, C - 4);
+  const X3 = 3 * C;
+  g.fillStyle = '#b4b0a4'; g.fillRect(X3, 0, C, C);
+  g.fillStyle = '#34322c'; for (let i = 0; i < 4; i++) { const m = 14 + i * 12; g.fillRect(X3 + m, m, C - 2 * m, 5); g.fillRect(X3 + m, C - m - 5, C - 2 * m, 5); g.fillRect(X3 + m, m, 5, C - 2 * m); g.fillRect(X3 + C - m - 5, m, 5, C - 2 * m); }
+  // missing ceiling tile: a black void with ragged edges
+  const r = mulberry32(5);
+  g.fillStyle = '#060504'; g.beginPath(); g.moveTo(6, C + 6);
+  for (let i = 0; i <= 12; i++) g.lineTo(6 + i * 9.6, C + 6 + r() * 8);
+  for (let i = 0; i <= 12; i++) g.lineTo(C - 6 - r() * 8, C + 6 + i * 9.6);
+  for (let i = 0; i <= 12; i++) g.lineTo(C - 6 - i * 9.6, 2 * C - 6 - r() * 8);
+  for (let i = 0; i <= 12; i++) g.lineTo(6 + r() * 8, 2 * C - 6 - i * 9.6);
+  g.fill();
+  // scrawls (transparent background, discarded in the shader)
+  const scrawl = (x0, lines, size) => {
+    g.save(); g.translate(x0 + C / 2, C + C / 2); g.rotate(-0.06);
+    g.font = `bold ${size}px "Comic Sans MS", "Segoe Print", cursive`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = 'rgba(70,18,10,0.9)';
+    lines.forEach((l, i) => { for (let k = 0; k < 2; k++) g.fillText(l, (r() - 0.5) * 2, (i - (lines.length - 1) / 2) * size * 1.05 + (r() - 0.5) * 2); });
+    g.restore();
+  };
+  scrawl(C, ["DON'T", 'RUN'], 34);
+  g.strokeStyle = 'rgba(60,20,12,0.9)'; g.lineWidth = 4;
+  for (let i = 0; i < 4; i++) for (let k = 0; k < 4; k++) { const x = 2 * C + 14 + k * 9 + i * 26 * 0 + (i % 2) * 52 + (k * 1.5), y = C + 18 + Math.floor(i / 2) * 52; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 2, y + 38); g.stroke(); if (k === 3) { g.beginPath(); g.moveTo(x - 30, y + 8); g.lineTo(x + 8, y + 30); g.stroke(); } }
+  scrawl(3 * C, ['IT', 'HEARS', 'YOU'], 26);
+  const t = canvasTex(c, { repeat: false });
+  return t;
 }
 const TEX = {
   decal: null,
@@ -952,7 +970,9 @@ varying float vLight;
 varying float vAO;
 varying float vDepth;
 void main() {
-  vec3 albedo = texture2D(map, vUv).rgb;
+  vec4 tex4 = texture2D(map, vUv);
+  if (uSurf > 2.5 && tex4.a < 0.45) discard;
+  vec3 albedo = tex4.rgb;
   vec3 n = normalize(vNormal);
   if (uSurf < 0.5) {
     // walls: vertical grime streaks, dirty skirting band, water damage near the top
@@ -1055,7 +1075,7 @@ const MAT = {
   ceil: worldMaterial(TEX.ceil[0], 2, 1 / 1.2, [-0.3, 0]),
   panel: new THREE.ShaderMaterial({
     uniforms: { ...U, map: { value: TEX.panel } },
-    vertexShader: PANEL_VERT, fragmentShader: PANEL_FRAG,
+    vertexShader: PANEL_VERT, fragmentShader: PANEL_FRAG, side: THREE.DoubleSide,
   }),
 };
 
@@ -1226,8 +1246,8 @@ function* buildChunkGeometry(kx, kz) {
   walls.surf = SURF_WALL; floor.surf = SURF_FLOOR; ceil.surf = SURF_CEIL;
   const decals = new GeoBuilder(true); decals.surf = SURF_WALL;
   const drnd = mulberry32((hash2(kx, kz, world.seed + 77) * 4294967296) >>> 0);
-  // atlas cell 0 outlet, 1 switch, 2 wall vent, 3 ceiling vent
-  const remapUV = (cell) => { const u0 = (cell & 1) * 0.5, v0 = (cell >> 1) * 0.5; for (let i = decals.uv.length - 8; i < decals.uv.length; i += 2) { decals.uv[i] = u0 + decals.uv[i] * 0.5; decals.uv[i + 1] = 1 - (v0 + (1 - decals.uv[i + 1]) * 0.5); } };
+  // atlas cells: 0 outlet, 1 switch, 2 wall vent, 3 ceiling vent, 4 missing tile, 5-7 scrawls
+  const remapUV = (cell) => { const u0 = (cell & 3) * 0.25, v0 = (cell >> 2) * 0.5; for (let i = decals.uv.length - 8; i < decals.uv.length; i += 2) { decals.uv[i] = u0 + decals.uv[i] * 0.25; decals.uv[i + 1] = 1 - (v0 + (1 - decals.uv[i + 1]) * 0.5); } };
   // decorate one wall face: (ax, az) = start of the face, (dx, dz) = unit direction along it, n = face normal
   const decorate = (ax, az, dx, dz, nx, nz, len) => {
     decals.cand = walls.cand;
@@ -1238,6 +1258,7 @@ function* buildChunkGeometry(kx, kz) {
       if (r < 0.1) { cell = 0; w = 0.075; hgt = 0.12; y = 0.28; }
       else if (r < 0.15) { cell = 1; w = 0.075; hgt = 0.12; y = 1.2; }
       else if (r < 0.2) { cell = 2; w = 0.42; hgt = 0.24; y = 2.45; }
+      else if (r < 0.215) { cell = 5 + Math.floor(drnd() * 3); w = 0.8; hgt = 0.8; y = 1.35 + drnd() * 0.2; }
       if (cell < 0) continue;
       const px = ax + dx * mid + nx * 0.006, pz = az + dz * mid + nz * 0.006;
       decals.quad(px - dx * w / 2, y - hgt / 2, pz - dz * w / 2, dx * w, 0, dz * w, 0, hgt, 0, nx, 0, nz, 1, 1, 2);
@@ -1337,8 +1358,22 @@ function* buildChunkGeometry(kx, kz) {
       remapUV(3);
       decals.surf = SURF_WALL;
     }
+    if (lt === LIGHT.BROKEN && drnd() < 0.08) {
+      decals.surf = SURF_CEIL; decals.cell = cell; decals.cand = cand;
+      const tx = x0 + (drnd() < 0.5 ? 0.3 : 1.5), tz = z0 + (drnd() < 0.5 ? 0.0 : 1.8);
+      decals.quad(tx, H - 0.005, tz, 0.6, 0, 0, 0, 0, 0.6, 0, -1, 0, 1, 1, 2); remapUV(4);
+      decals.surf = SURF_WALL;
+    }
     if (lt >= 0) {
       const mx = x0 + CELL / 2, mz = z0 + CELL / 2, seed = world.lightSeed(cx, cz);
+      if (world.dangling(cx, cz)) {
+        // a broken troffer hanging from one edge, with the black hole it fell out of
+        const a = 0.75, s = Math.sin(a), co = Math.cos(a);
+        panels.quad(mx - 0.3, H - 0.02, mz - 0.6, 0.6, 0, 0, 0, -1.2 * s, 1.2 * co, 0, -co, -s, 1, 1, 2);
+        decals.surf = SURF_CEIL; decals.cell = cell; decals.cand = cand;
+        decals.quad(mx - 0.3, H - 0.004, mz - 0.6, 0.6, 0, 0, 0, 0, 1.2, 0, -1, 0, 1, 1, 2); remapUV(4);
+        decals.surf = SURF_WALL;
+      } else
       panels.quad(mx - 0.3, H - 0.012, mz - 0.6, 0.6, 0, 0, 0, 0, 1.2, 0, -1, 0, 1, 1, 2);
       for (let v = 0; v < 4; v++) { panels.extra.aSeed.data.push(seed); panels.extra.aLPos.data.push(mx, mz); }
     }
@@ -3469,6 +3504,52 @@ function updateDust(dt) {
   if (dust.envT <= 0) { dust.envT = 0.3; dust.mat.uniforms.uEnvL.value = sampleLight(player.pos.x, player.pos.z, 1.5); }
 }
 
+
+// ============================================================================
+//  SPARKS from dangling broken fixtures
+// ============================================================================
+const sparks = { t: 3, pool: [] };
+for (let i = 0; i < 28; i++) {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTex, color: new THREE.Color().setRGB(1, 0.8, 0.45, THREE.LinearSRGBColorSpace), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0, fog: false }));
+  s.scale.setScalar(0.07); s.visible = false; s.renderOrder = 4; scene.add(s);
+  sparks.pool.push({ s, v: new THREE.Vector3(), life: 0 });
+}
+function updateSparks(dt) {
+  for (const p of sparks.pool) {
+    if (p.life <= 0) continue;
+    p.life -= dt;
+    p.v.y -= 9.8 * dt;
+    p.s.position.addScaledVector(p.v, dt);
+    if (p.s.position.y < 0.02) { p.s.position.y = 0.02; p.v.y *= -0.3; p.v.x *= 0.5; p.v.z *= 0.5; }
+    p.s.material.opacity = Math.max(0, p.life / 0.7);
+    if (p.life <= 0) p.s.visible = false;
+  }
+  sparks.t -= dt;
+  if (sparks.t > 0) return;
+  sparks.t = 1.5 + Math.random() * 4;
+  const pcx = Math.floor(player.pos.x / CELL), pcz = Math.floor(player.pos.z / CELL), cands = [];
+  for (let dz = -4; dz <= 4; dz++) for (let dx = -4; dx <= 4; dx++) if (world.dangling(pcx + dx, pcz + dz)) cands.push([pcx + dx, pcz + dz]);
+  if (!cands.length) return;
+  const [cx, cz] = cands[Math.floor(Math.random() * cands.length)];
+  const H = world.height(fdiv(cx, CHUNK), fdiv(cz, CHUNK));
+  const x = (cx + 0.5) * CELL, z = (cz + 0.5) * CELL + 0.28, y = H - 0.86;
+  if (!world.segmentClear(player.pos.x, player.pos.z, x, z)) return;
+  let n = 0;
+  for (const p of sparks.pool) {
+    if (p.life > 0 || n >= 9) continue;
+    n++; p.life = 0.4 + Math.random() * 0.4; p.s.visible = true; p.s.position.set(x + (Math.random() - 0.5) * 0.4, y, z);
+    p.v.set((Math.random() - 0.5) * 2.2, Math.random() * 1.2, (Math.random() - 0.5) * 2.2);
+  }
+  const ctx = Sound.ctx;
+  if (ctx) {
+    const A = Sound._, t = ctx.currentTime, pn = A.panner(x, y, z, 1.5, 1.2, 0.3);
+    for (let i = 0; i < 5; i++) {
+      const s = A.noiseSrc(), f = A.filter('highpass', 2200, 0.7), g = A.gain(0), tt = t + i * 0.03 + Math.random() * 0.05;
+      s.connect(f); f.connect(g); g.connect(pn); A.env(g, tt, 0.001, 0.5, 0.03); s.start(tt, Math.random() * 2, 0.06);
+    }
+  }
+}
+
 // ============================================================================
 //  INPUT
 // ============================================================================
@@ -4007,6 +4088,7 @@ const SIM_STEPS = [
   ['ambient', (dt) => updateAmbientAudio(dt)],
   ['scares', (dt) => updateScares(dt)],
   ['dust', (dt) => updateDust(dt)],
+  ['sparks', (dt) => updateSparks(dt)],
 ];
 function simulate(dt) {
   if (game.state === 'playing') {

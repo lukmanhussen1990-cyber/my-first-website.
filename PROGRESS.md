@@ -179,3 +179,7 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   red fog, office blocks and corridors dominate, batteries spawn in 62% of chunks, and the creature is the fastest
   wanderer/searcher yet (chase 4.6 m/s vs your 5.0). New set of 5 pages, its own best time, and a short ending text
   when you escape it. Panel glow now follows each level's light colour.
+- **[08:00 UTC] Extra — Decay details.** Decal atlas grew to 8 cells: rare hand-scrawled warnings on walls ("DON'T RUN",
+  tally marks, "IT HEARS YOU" — alpha-tested), missing ceiling tiles (black ragged holes) around dead fixtures, and
+  ~22% of dead fixtures now dangle from one edge out of their hole. Nearby dangling fixtures occasionally spit sparks
+  (pooled additive sprites with gravity and bounce) with a spatial crackle.
