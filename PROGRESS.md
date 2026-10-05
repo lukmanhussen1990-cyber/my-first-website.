@@ -186,3 +186,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[08:02 UTC] Extra — Shader pre-compilation.** Every material (creature, items, notes, exit, doors, water, sprites,
   post/bloom) is compiled at boot against the render target it will actually draw into, so nothing hitches the first
   time the creature or a note appears. Verified: 14 GPU programs exist at the menu and none are added during play.
+- **[08:04 UTC] Extra — Note radios, damp footsteps.** Every page now has a small tape recorder beside/below it (speaker
+  grille, antenna, blinking red LED) — the source of the static. Footsteps squelch when you walk over the visible damp
+  carpet patches (the CPU samples the exact same noise field the floor shader uses).
