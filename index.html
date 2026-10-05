@@ -1710,7 +1710,7 @@ const Sound = (() => {
   }
 
   // ---------------- one-shots ----------------
-  function footstep(kind, surface, vol = 1) {
+  function footstep(kind, surface, vol = 1, rev = 0.12) {
     if (!ctx) return;
     const t = now() + 0.005;
     const loud = kind === 'run' ? 0.5 : kind === 'crouch' ? 0.07 : 0.2;
@@ -1741,7 +1741,7 @@ const Sound = (() => {
       o.connect(og); og.connect(sfx);
       env(og, t, 0.005, v * 0.9, 0.1);
       o.start(t); o.stop(t + 0.2);
-      const sg = gain(0.12 * v); g.connect(sg); sg.connect(revIn);
+      const sg = gain(rev * v); g.connect(sg); sg.connect(revIn);
     }
   }
   function click(v = 0.25, f = 2400) {
@@ -4124,7 +4124,8 @@ let footstepCount = 0;
 function onFootstep() {
   footstepCount++;
   const kind = player.running ? 'run' : player.crouching ? 'crouch' : 'walk';
-  Sound.footstep(kind, world.level === 2 ? 'water' : carpetWetness(player.pos.x, player.pos.z) > 0.5 ? 'damp' : 'carpet');
+  const tall = world.height(fdiv(player.pos.x, CHUNK_SIZE), fdiv(player.pos.z, CHUNK_SIZE)) > WALL_H;   // big halls echo
+  Sound.footstep(kind, world.level === 2 ? 'water' : carpetWetness(player.pos.x, player.pos.z) > 0.5 ? 'damp' : 'carpet', 1, tall ? 0.55 : 0.12);
   const nz = (LEVELS[world.level] || LEVELS[1]).noise;
   emitNoise(player.pos.x, player.pos.z, nz[kind]);
 }
