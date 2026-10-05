@@ -1,0 +1,42 @@
+name: Publish APK release
+
+# Publishes the signed APK committed at release/BlockBlast.apk as a public
+# GitHub Release asset (the APK is built and signed locally; the signing key
+# is never stored in the repository).
+on:
+  push:
+    paths:
+      - release/BlockBlast.apk
+      - release/RELEASE_NOTES.md
+      - .github/workflows/release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: v
+        run: echo "version=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Create or replace the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.v.outputs.version }}
+        run: |
+          set -euo pipefail
+          test -s release/BlockBlast.apk
+          sha256sum release/BlockBlast.apk
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release delete "$TAG" --yes --cleanup-tag
+          fi
+          gh release create "$TAG" release/BlockBlast.apk \
+            --title "Block Blast $TAG" \
+            --notes-file release/RELEASE_NOTES.md \
+            --target "$GITHUB_SHA" \
+            --latest
