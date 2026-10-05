@@ -5,12 +5,17 @@ import 'package:flutter/painting.dart';
 const String kNumberFont = 'Poppins';
 const String kBubbleFont = 'Fredoka';
 
-TextStyle bubbleStyle(double size, {Color color = const Color(0xFFFFFFFF), FontWeight weight = FontWeight.w700}) {
+TextStyle bubbleStyle(
+  double size, {
+  Color color = const Color(0xFFFFFFFF),
+  FontWeight weight = FontWeight.w700,
+  double? wght,
+}) {
   return TextStyle(
     fontFamily: kBubbleFont,
     fontSize: size,
     fontWeight: weight,
-    fontVariations: [FontVariation('wght', weight.value.toDouble())],
+    fontVariations: [FontVariation('wght', wght ?? weight.value.toDouble())],
     color: color,
     height: 1.0,
   );

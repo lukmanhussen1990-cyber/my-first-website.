@@ -1,0 +1,64 @@
+name: Device test
+
+# Installs the signed release APK (release/BlockBlast.apk) on Android
+# emulators (Android 8.0 / API 26 and Android 14 / API 34) and lets
+# tool/device_bot.py play full games through adb: drag and drop, line
+# clears, scoring, game over, settings and save/restore. Screenshots and
+# logcat are uploaded as artifacts.
+on:
+  push:
+    paths:
+      - release/BlockBlast.apk
+      - tool/device_bot.py
+      - tool/device_test.sh
+      - .github/workflows/device-test.yml
+  workflow_dispatch:
+
+concurrency:
+  group: device-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 26
+            target: default
+            profile: pixel_2
+          - api: 34
+            target: google_apis
+            profile: pixel_6
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Python dependencies
+        run: python3 -m pip install --quiet pillow
+
+      - name: Play the game on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          target: ${{ matrix.target }}
+          arch: x86_64
+          profile: ${{ matrix.profile }}
+          ram-size: 3072M
+          disk-size: 4000M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash tool/device_test.sh device_out_${{ matrix.api }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: device-api${{ matrix.api }}
+          path: device_out_${{ matrix.api }}
+          if-no-files-found: ignore

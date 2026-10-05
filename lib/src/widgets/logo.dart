@@ -45,7 +45,7 @@ class _LogoPainter extends CustomPainter {
       fts.add(
         FancyText(
           text: _letters[i],
-          base: bubbleStyle(big),
+          base: bubbleStyle(big, wght: 600),
           fill: _fills[i],
           stops: const [0, 0.45, 1],
           stroke: _edges[i],
@@ -88,7 +88,7 @@ class _LogoPainter extends CustomPainter {
     // BLAST.
     final blast = FancyText(
       text: 'BLAST',
-      base: bubbleStyle(big * 0.82),
+      base: bubbleStyle(big * 0.82, wght: 640),
       fill: const [Color(0xFFDFFBFF), Color(0xFF6FE0FF), Color(0xFF1FA6F2)],
       stops: const [0, 0.45, 1],
       stroke: const Color(0xFF0B3C8A),

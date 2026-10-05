@@ -391,6 +391,8 @@ class GameController extends ChangeNotifier {
       overPhase = OverPhase.waiting;
       overT = 0;
     }
+    debugPrint('BB_MOVE n=${game.moves} piece=${result.piece.shape.id} at=$row,$col '
+        'score=${game.score} lines=${result.linesCleared} combo=${result.combo} over=${result.gameOver}');
     _save();
   }
 

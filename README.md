@@ -1,17 +1,139 @@
-# blockblast
+# Block Blast (Flutter, Android)
 
-A new Flutter project.
+<img src="docs/icon.png" width="96" align="right" alt="App icon">
 
-## Getting Started
+An 8x8 block puzzle game for Android in the style of the mobile game
+*Block Blast*: drag pieces from the tray onto the board, fill whole rows or
+columns to blast them, chain clears into combos and chase your best score.
 
-This project is a starting point for a Flutter application.
+**Download:** [BlockBlast.apk (latest release)](https://github.com/lukmanhussen1990-cyber/my-first-website./releases/latest/download/BlockBlast.apk)
+— signed release build, Android 8.0 (API 26) and newer, package
+`com.myapps.blockblast`.
 
-A few resources to get you started if this is your first Flutter project:
+> Unofficial fan-made clone for learning purposes. Not affiliated with the
+> makers of the original game. All graphics, sounds and music in this
+> repository were created from scratch (drawn in code / synthesized).
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Features
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **Screens:** white icon splash → blue splash with a studio logo and the
+  bubbly BLOCK BLAST logo (crown on the "O", animated yellow loading blocks)
+  → game. Game-over popup with *Play Again* / *Home*, a home screen,
+  settings and how-to-play popups.
+- **Gameplay:** 8x8 board, three tray pieces, drag & drop with a lifted
+  full-size piece above the finger, ghost preview, lines that would clear
+  glow in the piece color, invalid drops fly back to the tray, new set of
+  three after all are used, game over when nothing fits (tray pieces that do
+  not fit are dimmed).
+- **Pieces:** 1x1; 1x2–1x5 lines (both orientations); 2x2 and 3x3 squares;
+  2x3 / 3x2 rectangles; L and J tetrominoes and big 3x3 L corners (4
+  rotations); T (4 rotations); S and Z (both orientations); 3-cell corners
+  (4 rotations); 2- and 3-cell diagonals. Seven colors. The generator is
+  "fair": it prefers sets that can all be placed on the current board.
+- **Scoring:** +1 per placed cell; lines cleared in one move: 1 → 10,
+  2 → 30, 3 → 60, 4 → 100, 5 → 150 … (10 × n(n+1)/2); clearing on
+  consecutive moves builds a combo that multiplies the line bonus
+  ("Combo 2", "Combo 3", …). Floating "+N" texts, praise labels
+  (Good / Great / Excellent / Amazing / Unbelievable), score count-up,
+  live best score with a gem behind the score when the record is beaten.
+- **Effects & feel:** glossy beveled 3D blocks, white flash + particle burst
+  wave on line clears, piece "pop" on placement, gray sweep at game over.
+  Sound effects (pick up, drop, line clear, combo, game over, new best),
+  background music, light haptic on line clears.
+- **Persistence:** best score, settings (sound, music, vibration) and the
+  game in progress are saved on the device (the game resumes after restart).
+- Portrait only; the layout scales with the screen width (and shrinks on
+  short screens).
+
+## Build the signed release APK
+
+Requirements: Flutter 3.47+ (stable), Android SDK (platform 36,
+build-tools 36), JDK 17+.
+
+1. Create a release keystore (once):
+
+   ```bash
+   keytool -genkeypair -v -keystore ~/keys/blockblast-release.jks -storetype PKCS12 \
+     -alias blockblast -keyalg RSA -keysize 2048 -validity 10000
+   ```
+
+2. Create `android/key.properties` (it is git-ignored, never commit it):
+
+   ```properties
+   storePassword=<your store password>
+   keyPassword=<your key password>
+   keyAlias=blockblast
+   storeFile=/absolute/path/to/blockblast-release.jks
+   ```
+
+3. Build:
+
+   ```bash
+   flutter pub get
+   flutter build apk --release
+   # -> build/app/outputs/flutter-apk/app-release.apk
+   ```
+
+The release build type is always signed with this key; without
+`android/key.properties` the release build fails instead of falling back to
+debug keys. Install on a phone with `adb install app-release.apk` or by
+opening the file on the device.
+
+To publish a new download: copy the APK to `release/BlockBlast.apk` and
+push. The *Publish APK release* workflow attaches it to the GitHub Release
+`v<version from pubspec.yaml>`.
+
+## Tests
+
+```bash
+flutter test            # unit + widget tests
+flutter analyze
+```
+
+- `test/logic_test.dart` – placement validation, line clearing (incl.
+  row/column intersections), scoring table, combo multiplier and reset,
+  tray refill, game-over detection, fair generator, random full games,
+  save/restore.
+- `test/game_screen_test.dart` – real drag gestures on the game screen:
+  placement, invalid drop, two-line clear, game-over popup, settings.
+- `test/screens_test.dart` – splash sequence, home, how-to-play, game-over
+  popup, beating the best score (paints every screen on the native test
+  engine).
+- **On-device:** the *Device test* workflow installs the signed APK on
+  Android 8.0 (API 26) and Android 14 (API 34) emulators and runs
+  `tool/device_bot.py`, a bot that reads the board from screenshots and
+  plays full games through `adb` (drag & drop, clears, scoring checks via
+  logcat markers, game over, settings, save/restore). Run it locally with
+  an emulator attached: `tool/device_test.sh out_dir`.
+- **Visual QA:** `flutter build web --release --no-web-resources-cdn`,
+  serve `build/web` and run `node tool/web_qa.js http://localhost:8090/ qa`
+  (Playwright) to capture screenshots of every screen and effect. The web
+  build supports `?game&scenario=demo|clear|combo|over` for deterministic
+  scenes; these debug scenarios are disabled on Android.
+
+## Project layout
+
+```
+lib/
+  main.dart                    app entry (portrait lock, error hooks)
+  src/logic/                   pure game model (board, shapes, scoring, game state)
+  src/game/                    game screen: layout, controller (drag, animations), painter
+  src/screens/                 splash screens, home screen, transitions
+  src/widgets/                 logo, popups, candy buttons/toggles
+  src/ui/                      palette, beveled block sprites, icons, text effects
+  src/services/                settings/best/saved game, sound, haptics
+android/                       Android project (signing, MainActivity vibration channel)
+assets/                        fonts (OFL) and generated sounds
+tool/                          generators (icons, sounds) and test drivers
+```
+
+Regenerate assets: `python3 tool/gen_icons.py` (needs Pillow) and
+`python3 tool/gen_sounds.py` (needs numpy + ffmpeg).
+
+## Credits
+
+- Fonts: [Fredoka](https://fonts.google.com/specimen/Fredoka) and
+  [Poppins](https://fonts.google.com/specimen/Poppins), SIL Open Font License
+  (see `assets/fonts/OFL-*.txt`).
+- Everything else (graphics, icon, sounds, music) is original and generated
+  by the scripts in `tool/`.
