@@ -21,10 +21,13 @@ Endless yellow office rooms, damp carpet, buzzing fluorescent lights… and some
 | Put a note away | E / Enter | tap the note |
 | Pause | Esc (or P) | II button |
 
+Gamepads work too: left stick move, right stick look, RT run, RB hold breath, A crouch, X flashlight, Start pause.
+
 ## Goal
 Find the **5 notes** pinned around the maze — they crackle with radio static, and the **STATIC** meter under
 the notes counter shows how close the nearest one is. Then find the **EXIT** door (it hums) to escape.
-Escape Level 1 to unlock **Level 2 (The Flooded Halls)**, then **Level 3 (Lights Out)**.
+Escape Level 1 to unlock **Level 2 (The Flooded Halls)** and **Endless** mode (pages never stop; how many can you
+grab before it gets you?), then escape Level 2 to unlock **Level 3 (Lights Out)**.
 
 ## Survival tips
 - It **hears** running from ~20 m, walking from ~6 m, crouching barely at all (water makes everything louder).
@@ -44,4 +47,4 @@ See `PROGRESS.md` for the full build log. Highlights:
 - A hunting creature with sight/hearing, A* pathfinding, chase/search states and a jump scare.
 - Scripted scares: lights going out one by one, slamming doors, footsteps behind you, phantoms, whispers.
 - Menus, pause, settings (difficulty, mouse speed, invert Y, FOV, brightness, volume, graphics quality, head
-  bob, captions), save/continue, best times, three levels, phone touch controls.
+  bob, captions), save/continue, best times, three levels + endless mode, phone touch controls, gamepad.

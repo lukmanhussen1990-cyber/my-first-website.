@@ -110,6 +110,7 @@
     <button class="btn" id="btnStart">NEW GAME</button>
     <button class="btn hidden" id="btnLevel2">LEVEL 2: FLOODED HALLS</button>
     <button class="btn hidden" id="btnLevel3">LEVEL 3: LIGHTS OUT</button>
+    <button class="btn hidden" id="btnEndless">ENDLESS</button>
     <button class="btn" id="btnSettings">SETTINGS</button>
     <button class="btn" id="btnHowto">HOW TO PLAY</button>
   </div>
@@ -2551,7 +2552,7 @@ function updateHUD(dt) {
   setStyle(hud.battery, 'bb', 'background', b < 0.2 ? '#c0472c' : b < 0.45 ? '#d6a43a' : '#cfd88a');
   setText(hud.batteryPct, 'bp', Math.ceil(b * 100) + '%' + (flash.on || isTouch ? '' : ' (F)'));
   setStyle(hud.batteryWrap, 'bo', 'opacity', flash.on ? '1' : '0.6');
-  setText(hud.notes, 'n', game.notes + ' / ' + NOTES_NEEDED);
+  setText(hud.notes, 'n', game.mode === 'endless' ? String(game.notes) : game.notes + ' / ' + NOTES_NEEDED);
   setStyle(hud.breathFill, 'brw', 'width', (player.breath * 100).toFixed(0) + '%');
   setStyle(hud.breathBar, 'bro', 'opacity', player.holding || player.breath < 0.99 ? '1' : '0');
   // signal meter: how close is the nearest page (or the exit) — "hot / cold" for players without headphones
@@ -2894,12 +2895,21 @@ function placeNotes() {
   const base = Math.random() * Math.PI * 2;
   const dists = [26, 38, 50, 62, 74].sort(() => Math.random() - 0.5);
   goal.specs = [];
+  if (game.mode === 'endless') { for (let i = 0; i < 3; i++) addEndlessNote(25 + i * 14, 40 + i * 14); goal.exitSpawned = false; return; }
   for (let i = 0; i < NOTES_NEEDED; i++) {
     const a = base + (i / NOTES_NEEDED) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
     const s = findSpotNear(player.pos.x + Math.cos(a) * dists[i], player.pos.z + Math.sin(a) * dists[i]);
     goal.specs.push({ id: 'n' + i, type: 'note', idx: i, x: s.x, z: s.z, y: s.wall ? 1.35 : 0, rot: s.rot, wall: s.wall, taken: false });
   }
   goal.exitSpawned = false;
+}
+// Endless mode: a fresh page somewhere 'minD..maxD' metres away
+function addEndlessNote(minD, maxD) {
+  const a = Math.random() * Math.PI * 2, d = minD + Math.random() * (maxD - minD);
+  const s = findSpotNear(player.pos.x + Math.cos(a) * d, player.pos.z + Math.sin(a) * d);
+  const spec = { id: 'e' + (game.serial = (game.serial || 0) + 1), type: 'note', idx: game.serial, x: s.x, z: s.z, y: s.wall ? 1.35 : 0, rot: s.rot, wall: s.wall, taken: false };
+  goal.specs.push(spec);
+  respawnWorldItem(spec);
 }
 function respawnWorldItem(spec) {
   removeItem(spec.id);
@@ -2929,6 +2939,14 @@ function pickNote(it) {
   removeItem(it.id);
   game.notes++;
   Sound.paper();
+  if (game.mode === 'endless') {
+    const all = [...NOTE_TEXTS[1], ...NOTE_TEXTS[2], ...NOTE_TEXTS[3]];
+    showNote(all[(game.notes - 1) % all.length], game.notes);
+    goal.specs = goal.specs.filter((s) => !s.taken);
+    addEndlessNote(35, 65);
+    onNotePicked();
+    return;
+  }
   const texts = NOTE_TEXTS[world.level] || NOTE_TEXTS[1];
   showNote(texts[(game.notes - 1) % texts.length], game.notes);
   onNotePicked();
@@ -2936,7 +2954,7 @@ function pickNote(it) {
 }
 function showNote(text, n) {
   $('noteText').textContent = text;
-  $('noteNum').textContent = 'PAGE ' + n + ' / ' + NOTES_NEEDED;
+  $('noteNum').textContent = game.mode === 'endless' ? 'PAGE ' + n : 'PAGE ' + n + ' / ' + NOTES_NEEDED;
   $('noteOverlay').classList.add('show');
   goal.reading = 7;
 }
@@ -3554,7 +3572,7 @@ function updateScares(dt) {
   updateFakeSteps(dt);
   updatePhantom(dt);
   if (monster.state === 'chase' || monster.state === 'spotted' || monster.state === 'stalk' || scares.outage || scares.steps || scares.phantom) return;
-  scares.t -= dt * (1 + 0.12 * game.notes);
+  scares.t -= dt * (1 + 0.12 * notesCollected());
   if (scares.t > 0) return;
   // weighted random pick, skipping the one we just did; retry if it can't happen here
   const pool = SCARE_TYPES.filter((s) => s[0] !== scares.last);
@@ -3913,8 +3931,8 @@ function syncTouchButtons() {
 // ============================================================================
 //  GAME STATE
 // ============================================================================
-const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0, notes: 0, level: 1 };
-function notesCollected() { return game.notes; }
+const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0, notes: 0, level: 1, mode: 'story', serial: 0 };
+function notesCollected() { return Math.min(game.notes, game.mode === 'endless' ? 8 : 5); }
 function onChaseStart() {}
 function onNotePicked() { stinger(0.8 + 0.1 * game.notes); fx.dip = 0.6; scares.t = Math.min(scares.t, 12 + Math.random() * 10); }
 function onPlayerCaught() { player.holding = false; Sound.setMuffle(false); hidePhantom(); $('hud').classList.add('hidden'); $('touchUI').classList.add('hidden'); hideNote(); clearBeacons(); }
@@ -3930,7 +3948,7 @@ function onGameOver() {
   silenceMonster();
   if (document.pointerLockElement) document.exitPointerLock();
   const TIPS = ['Crouch (C) in a dark corner and it can barely see you.', 'Running is loud. It hears sprinting from twenty metres away.', 'When the lights stutter, it is close.', 'Your flashlight makes you visible from much farther away.', 'Break its line of sight, then hide. It will search where it last saw you.', 'Follow the radio static to find the notes.', 'If footsteps follow you... turn around.'];
-  $('goStats').innerHTML = `Level ${game.level} &mdash; survived ${formatTime(game.time)}<br>Notes found: ${game.notes} / ${NOTES_NEEDED}<br><br><span style="opacity:0.7">TIP: ${TIPS[Math.floor(Math.random() * TIPS.length)]}</span>`;
+  $('goStats').innerHTML = (game.mode === 'endless' ? `Endless &mdash; survived ${formatTime(game.time)}<br>Pages: ${game.notes} (record ${Math.max(save.bestEndless || 0, game.notes)})` : `Level ${game.level} &mdash; survived ${formatTime(game.time)}<br>Notes found: ${game.notes} / ${NOTES_NEEDED}`) + `<br><br><span style="opacity:0.7">TIP: ${TIPS[Math.floor(Math.random() * TIPS.length)]}</span>`;
   onDeath();
   showScreen('gameOverScreen');
 }
@@ -3954,9 +3972,9 @@ function pauseGame() {
   for (const k in keys) keys[k] = false;
   if (player.holding) { player.holding = false; Sound.setMuffle(false); }
   Sound.suspend();
-  $('pauseInfo').innerHTML = `Level ${game.level} &mdash; ${formatTime(game.time)}<br>Notes ${game.notes} / ${NOTES_NEEDED}`;
-  const texts = NOTE_TEXTS[game.level] || NOTE_TEXTS[1];
-  $('journal').innerHTML = game.notes ? texts.slice(0, game.notes).map((t, i) => `<div><b>${i + 1}.</b> ${t}</div>`).join('') : '';
+  $('pauseInfo').innerHTML = game.mode === 'endless' ? `Endless &mdash; ${formatTime(game.time)}<br>Pages ${game.notes}` : `Level ${game.level} &mdash; ${formatTime(game.time)}<br>Notes ${game.notes} / ${NOTES_NEEDED}`;
+  const texts = game.mode === 'endless' ? [...NOTE_TEXTS[1], ...NOTE_TEXTS[2], ...NOTE_TEXTS[3]] : NOTE_TEXTS[game.level] || NOTE_TEXTS[1];
+  $('journal').innerHTML = game.notes ? texts.slice(0, Math.min(game.notes, texts.length)).map((t, i) => `<div><b>${i + 1}.</b> ${t}</div>`).join('') : '';
   onPause();
   showScreen('pauseScreen');
 }
@@ -4047,8 +4065,8 @@ function spawnPlayer(x, z) {
   }
   player.yaw = best; player.pitch = 0; player.crouchToggle = false; player.eye = EYE_STAND;
 }
-function newGame(level = 1) {
-  game.level = level; game.time = 0; game.notes = 0; game.danger = 0;
+function newGame(level = 1, mode = 'story') {
+  game.level = level; game.mode = mode; game.serial = 0; game.time = 0; game.notes = 0; game.danger = 0;
   fx.kick = 0; fx.red = 0; U.uMonster.value.set(1e5, 0, 1e5, 0);
   clearTimeout(goal.msgTimer);
   player.stamina = 1; player.exhausted = false; player.breath = 1; player.holding = false; Sound.setMuffle(false);
@@ -4065,13 +4083,13 @@ function newGame(level = 1) {
   resetMonster();
   resetScares();
 }
-function startGame(level = 1) {
+function startGame(level = 1, mode = 'story') {
   if (game.state === 'loading') return;
   game.pauseAfterLoad = false;
   showScreen(null);
   $('touchUI').classList.add('hidden'); $('hud').classList.add('hidden');
   fadeTo('#000', 1, 0);
-  $('loading').textContent = (LEVELS[level] || LEVELS[1]).name.toUpperCase();
+  $('loading').textContent = mode === 'endless' ? 'ENDLESS' : (LEVELS[level] || LEVELS[1]).name.toUpperCase();
   const firstTime = level === 1 && !save.introSeen && !save.escapes && !save.deaths;
   if (firstTime) { $('loading').innerHTML = 'You were leaning against a wall.<br>Then the wall wasn\u2019t there.'; save.introSeen = true; writeSave(); }
   $('loading').style.opacity = '1';
@@ -4080,7 +4098,7 @@ function startGame(level = 1) {
   requestLock();                     // must happen inside the click gesture
   // give the browser a frame to show the loading screen before baking the first chunks
   setTimeout(() => {
-    newGame(level);
+    newGame(level, mode);
     onNewRun();
     game.state = 'playing';
     showScreen(null);
@@ -4091,15 +4109,16 @@ function startGame(level = 1) {
     setTimeout(ensureScareFace, 1500);
     requestAnimationFrame(() => requestAnimationFrame(() => fadeTo('#000', 0, 1.8)));
     $('loading').innerHTML = '';
-    showMessage(level === 3 ? 'Level 3 \u2014 Lights Out. Keep your light alive. Find 5 notes.' : level === 2 ? 'Level 2 \u2014 The Flooded Halls. Find 5 notes.' : 'Level 1 \u2014 The Lobby. Find the 5 notes. Listen for the static.', 5);
+    if (mode === 'endless') showMessage('Endless. The pages never stop. Neither does it.', 5); else showMessage(level === 3 ? 'Level 3 \u2014 Lights Out. Keep your light alive. Find 5 notes.' : level === 2 ? 'Level 2 \u2014 The Flooded Halls. Find 5 notes.' : 'Level 1 \u2014 The Lobby. Find the 5 notes. Listen for the static.', 5);
   }, firstTime ? 3200 : 60);
 }
 $('btnStart').addEventListener('click', () => startGame(1));
-$('btnRetry').addEventListener('click', () => startGame(game.level));
-$('btnAgain').addEventListener('click', () => startGame(game.level));
+$('btnRetry').addEventListener('click', () => startGame(game.level, game.mode));
+$('btnAgain').addEventListener('click', () => startGame(game.level, game.mode));
 $('btnNextLevel').addEventListener('click', () => startGame(Math.min(3, game.level + 1)));
 $('btnLevel2').addEventListener('click', () => startGame(2));
 $('btnLevel3').addEventListener('click', () => startGame(3));
+$('btnEndless').addEventListener('click', () => startGame(1, 'endless'));
 $('btnResume').addEventListener('click', resumeGame);
 $('btnQuit').addEventListener('click', quitToMenu);
 $('btnGoMenu').addEventListener('click', quitToMenu);
@@ -4130,7 +4149,7 @@ let autosaveT = 0;
 function snapshotRun() {
   if (game.state !== 'playing' && game.state !== 'paused') return;
   save.run = {
-    level: game.level, seed: world.seed, time: game.time, notes: game.notes,
+    level: game.level, mode: game.mode, serial: game.serial, seed: world.seed, time: game.time, notes: game.notes,
     x: player.pos.x, z: player.pos.z, yaw: player.yaw,
     battery: flash.battery, specs: goal.specs.map((s) => ({ ...s })), exitSpawned: goal.exitSpawned,
     collected: [...collectedItems],
@@ -4139,7 +4158,7 @@ function snapshotRun() {
 }
 function onNewRun() { save.run = null; writeSave(); autosaveT = 10; }
 function onPause() { snapshotRun(); }
-function onDeath() { save.deaths = (save.deaths || 0) + 1; save.run = null; writeSave(); }
+function onDeath() { if (game.mode === 'endless') save.bestEndless = Math.max(save.bestEndless || 0, game.notes); save.deaths = (save.deaths || 0) + 1; save.run = null; writeSave(); }
 function onWin() {
   const lvl = game.level, prev = save.best[lvl];
   const isBest = !prev || game.time < prev;
@@ -4157,13 +4176,15 @@ function onWin() {
 }
 function refreshStartScreen() {
   $('btnContinue').classList.toggle('hidden', !save.run);
-  if (save.run) $('btnContinue').textContent = `CONTINUE (LEVEL ${save.run.level}, ${save.run.notes}/5, ${formatTime(save.run.time)})`;
+  if (save.run) $('btnContinue').textContent = save.run.mode === 'endless' ? `CONTINUE (ENDLESS, ${save.run.notes} PAGES, ${formatTime(save.run.time)})` : `CONTINUE (LEVEL ${save.run.level}, ${save.run.notes}/5, ${formatTime(save.run.time)})`;
   $('btnLevel2').classList.toggle('hidden', (save.unlocked || 1) < 2);
   $('btnLevel3').classList.toggle('hidden', (save.unlocked || 1) < 3);
+  $('btnEndless').classList.toggle('hidden', (save.unlocked || 1) < 2);
   const r = [];
   if (save.best[1]) r.push('BEST LEVEL 1: ' + formatTime(save.best[1]));
   if (save.best[2]) r.push('BEST LEVEL 2: ' + formatTime(save.best[2]));
   if (save.best[3]) r.push('BEST LEVEL 3: ' + formatTime(save.best[3]));
+  if (save.bestEndless) r.push('ENDLESS RECORD: ' + save.bestEndless + ' PAGES');
   if (save.escapes || save.deaths) r.push(`ESCAPES ${save.escapes || 0} · DEATHS ${save.deaths || 0}`);
   $('records').innerHTML = r.join('<br>');
 }
@@ -4171,7 +4192,7 @@ function continueGame() {
   const run = save.run;
   if (!run) return;
   showScreen(null);
-  game.level = run.level; game.time = run.time; game.notes = run.notes; game.danger = 0;
+  game.level = run.level; game.mode = run.mode || 'story'; game.serial = run.serial || 0; game.time = run.time; game.notes = run.notes; game.danger = 0;
   clearTimeout(goal.msgTimer); fx.kick = 0; fx.red = 0;
   world = new World(run.seed, run.level);
   applyLevelLook(run.level);

@@ -213,3 +213,7 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[08:21 UTC] Extra — Feel.** Batteries stay on the floor if your light is already full (with a hint), sprinting widens
   the FOV by 5 degrees and high danger narrows it (tunnel vision), and the creature's gait phase now matches its stride
   length so its feet no longer skate.
+- **[08:22 UTC] Extra — Endless mode.** Unlocked after escaping level 1. Three pages are always out there; each one you
+  grab spawns another 35-65 m away, the creature speeds up (capped at +20%) and scares come faster. No exit — the
+  score is how many pages you collect before it catches you; the record is saved and shown on the title screen.
+  Continue/save, pause, journal and game-over screens understand the mode. README updated (endless + gamepad).
