@@ -547,7 +547,8 @@ const Sound = {
         for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
         this.apply();
       }
-      if (this.ctx.state === 'suspended') this.ctx.resume();
+      // 'suspended' (autoplay rules) or 'interrupted' (iOS after a call or app switch)
+      if (this.ctx.state !== 'running') this.ctx.resume();
       this.unlocked = true;
     } catch {
       this.ctx = null;
@@ -569,7 +570,7 @@ const Sound = {
     if (!c) return;
     try {
       if (hidden && c.state === 'running') c.suspend();
-      else if (!hidden && c.state === 'suspended' && this.unlocked) c.resume();
+      else if (!hidden && c.state !== 'running' && this.unlocked) c.resume();
     } catch { /* some browsers refuse to suspend: harmless */ }
   },
 
@@ -709,6 +710,33 @@ const Sound = {
       this.osc('sawtooth', f, t, 0.75, v, { attack: 0.05, lp: 1300, q: 1.2 });
       this.osc('sawtooth', f, t + 0.85, 0.5, v * 0.8, { attack: 0.04, lp: 1300, q: 1.2 });
     }
+  },
+  // an oncoming train rushing past: swept noise + rumble, panned to the side it passes on
+  whoosh(side) {
+    if (!this.ok()) return;
+    const c = this.ctx, t = this.now();
+    const src = c.createBufferSource();
+    src.buffer = this.noise; src.loop = true;
+    const f = c.createBiquadFilter();
+    f.type = 'bandpass'; f.Q.value = 0.9;
+    f.frequency.setValueAtTime(480, t);
+    f.frequency.exponentialRampToValueAtTime(2300, t + 0.26);
+    f.frequency.exponentialRampToValueAtTime(380, t + 0.85);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.3, t + 0.22);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+    src.connect(f); f.connect(g);
+    let out = g;
+    if (c.createStereoPanner) {
+      const p = c.createStereoPanner();
+      p.pan.value = clamp(side, -1, 1) * 0.7;
+      g.connect(p); out = p;
+    }
+    out.connect(this.sfxBus);
+    src.start(t, Math.random() * 0.5);
+    src.stop(t + 0.95);
+    this.osc('sawtooth', 72, t, 0.6, 0.08, { lp: 240, attack: 0.08 });
   },
   siren() {
     if (!this.ok()) return;
@@ -2783,6 +2811,7 @@ const Obstacles = {
     o.zb = zNear - o.len;
     o.prevZf = o.zf;
     o.dodged = false;
+    o.passing = false;
     o.mesh.position.set(o.x, 0, o.type === OB.RAMP ? zNear - CFG.RAMP_LEN : o.type === OB.TRAIN ? zNear : zNear - o.len / 2);
     return o;
   },
@@ -2804,6 +2833,7 @@ const Obstacles = {
           o.mesh.position.z = o.zf;
         }
       }
+      if (o.moving && !o.passing && o.zf > playerZ - 3) { o.passing = true; Bus.emit('trainPass', o); }
       if (o.moving && !o.dodged && o.zb > playerZ + 1) { o.dodged = true; Bus.emit('dodge'); }
       if (o.zb > playerZ + CFG.RECYCLE_BEHIND) {
         this.release(o);
@@ -3765,7 +3795,9 @@ const Runner = {
       const fall = smoothstep(clamp(t / 0.45, 0, 1));
       r.rotation.set(fall * 1.42, 0, 0);
       r.position.z += Math.min(t, 0.35) * 2.6;
-      r.position.y = Math.max(0, p.y - t * t * 8) + Math.abs(Math.sin(clamp(t - 0.45, 0, 0.3) * 10.5)) * 0.12 * (t > 0.45 ? 1 : 0);
+      // fall onto whatever is underneath (street or a train roof), with a small bounce
+      const floor = Math.max(0, p.groundY || 0);
+      r.position.y = Math.max(floor, p.y - t * t * 8) + Math.abs(Math.sin(clamp(t - 0.45, 0, 0.3) * 10.5)) * 0.12 * (t > 0.45 ? 1 : 0);
     } else if (mode === 'menu') {
       r.rotation.set(0, Math.PI, 0);
     } else {
@@ -3823,7 +3855,7 @@ const Runner = {
 
 const Chaser = {
   root: null, bones: {}, mats: {},
-  state: 'off', t: 0, offZ: 30, x: 0, chaseT: 0, siren: 0, tuck: 0,
+  state: 'off', t: 0, offZ: 30, x: 0, chaseT: 0, siren: 0, tuck: 0, gy: 0, shown: false,
 
   init() {
     const mat = new THREE.MeshPhongMaterial({ vertexColors: true, specular: 0x555555, shininess: 55 });
@@ -3919,6 +3951,7 @@ const Chaser = {
     this.offZ = 11;
     this.x = p.x + 1.35;
     this.chaseT = 0;
+    this.shown = false;
   },
 
   isChasing() { return this.state === 'chase'; },
@@ -3933,7 +3966,7 @@ const Chaser = {
 
   catchPlayer() { this.state = 'catch'; this.t = 0; Bus.emit('chaser', 'catch'); },
   arrive() { if (this.state !== 'catch') { this.state = 'arrive'; this.t = 0; if (this.offZ > 14) this.offZ = 14; } },
-  hide() { this.state = 'off'; this.root.visible = false; },
+  hide() { this.state = 'off'; this.root.visible = false; this.shown = false; },
 
   update(dt, p) {
     this.t += dt;
@@ -3987,8 +4020,11 @@ const Chaser = {
     const r = this.root;
     r.visible = true;
     const bob = Math.sin(this.t * 7) * 0.06;
+    // the robot hovers: it glides up onto train roofs (and back down) instead of popping
     const groundY = s === 'arrive' || s === 'catch' ? Math.max(0, p.groundY) : p.groundY > 3 ? CFG.TRAIN_H : 0;
-    r.position.set(this.x, groundY + 0.18 + bob, p.z + this.offZ + this.tuck * 0.6);
+    this.gy = this.shown ? damp(this.gy, groundY, 7, dt) : groundY;
+    this.shown = true;
+    r.position.set(this.x, this.gy + 0.18 + bob, p.z + this.offZ + this.tuck * 0.6);
     r.rotation.y = s === 'arrive' ? side * (Math.PI / 2 - 0.45) : 0;
     const b = this.bones;
     const chasing = s === 'chase' || s === 'intro' || s === 'leave';
@@ -4007,7 +4043,7 @@ const Chaser = {
     this.animateLights(dt);
   },
 
-  showMenu() { this.state = 'menu'; this.t = 0; },
+  showMenu() { this.state = 'menu'; this.t = 0; this.shown = false; },
 
   animateLights(dt) {
     // siren: alternating red / blue
@@ -4658,7 +4694,7 @@ const Fx = {
     }
     this.lineCanvas = document.getElementById('fxCanvas');
     this.lineCtx = this.lineCanvas.getContext('2d');
-    for (let i = 0; i < 34; i++) this.lines.push({ a: Math.random() * TAU, r: Math.random(), len: 0.1 + Math.random() * 0.2, sp: 0.8 + Math.random() * 1.4, w: 1 + Math.random() * 2 });
+    for (let i = 0; i < 46; i++) this.lines.push({ a: Math.random() * TAU, r: Math.random(), len: 0.1 + Math.random() * 0.2, sp: 0.8 + Math.random() * 1.4, w: 1 + Math.random() * 2 });
     this.resize();
   },
 
@@ -4847,7 +4883,7 @@ const Fx = {
     this.fov = this.fov ? damp(this.fov, target, 4, dt) : target;
     if (Math.abs(Gfx.camera.fov - this.fov) > 0.01) { Gfx.camera.fov = this.fov; Gfx.camera.updateProjectionMatrix(); }
     if (this.shakeT > 0) this.shakeT = Math.max(0, this.shakeT - dt);
-    this.drawSpeedLines(dt, playing ? clamp((p.speed - 24) / 10, 0, 1) * 0.8 + (p.jet ? 0.55 : 0) : 0);
+    this.drawSpeedLines(dt, playing ? clamp((p.speed - 22) / 10, 0, 1) * 0.8 + (p.jet ? 0.55 : 0) : 0);
   },
 
   applyShake(cam) {
@@ -4874,7 +4910,7 @@ const Fx = {
       if (l.r > 1.2) { l.r = 0.25 + Math.random() * 0.2; l.a = Math.random() * TAU; }
       const r0 = l.r * R, r1 = (l.r + l.len) * R;
       const ca = Math.cos(l.a), sa = Math.sin(l.a);
-      g.strokeStyle = `rgba(255,255,255,${(intensity * 0.45 * Math.min(1, (l.r - 0.25) * 3)).toFixed(3)})`;
+      g.strokeStyle = `rgba(255,255,255,${(intensity * 0.62 * clamp((l.r - 0.25) * 3, 0, 1)).toFixed(3)})`;
       g.lineWidth = l.w * (w / 1200 + 0.5);
       g.beginPath(); g.moveTo(cx + ca * r0, cy + sa * r0); g.lineTo(cx + ca * r1, cy + sa * r1); g.stroke();
     }
@@ -5073,7 +5109,7 @@ const Hud = {
     act(e.oAgain, () => Game.restart());
     act(e.oHome, () => Game.toMenu());
     e.menu.addEventListener('pointerup', ev => {
-      if (ev.target.closest('button')) return;
+      if (ev.target.closest('button') || Game.state !== 'menu') return;
       Game.startRun();
     });
     this.refreshSettings();
@@ -5479,6 +5515,12 @@ const Game = {
   mult() { return Save.data.mult * (Powers.has('x2') ? 2 : 1); },
 
   // Sounds and visual feedback for gameplay events.
+  // short vibrations on phones that support them (muting the game also mutes these)
+  haptic(pattern) {
+    if (!IS_TOUCH || !Save.data.sound || !navigator.vibrate) return;
+    try { navigator.vibrate(pattern); } catch { /* blocked by the browser: ignore */ }
+  },
+
   wireFeedback() {
     const P = Player;
     Bus.on('coin', () => Sound.coin());
@@ -5486,26 +5528,29 @@ const Game = {
     Bus.on('roll', () => { Sound.roll(); Fx.dust(P.x, P.y, P.z, 5, false); });
     Bus.on('lane', () => Sound.lane());
     Bus.on('land', v => { Sound.land(v); if (v > 9) Fx.dust(P.x, P.y, P.z, 7, true); if (v > 20) Fx.shake(0.12, 0.2); });
-    Bus.on('powerup', type => { Sound.powerup(); Hud.flash(); Fx.kick(5); if (type === 'jet') Sound.jetStart(); });
+    Bus.on('powerup', type => { Sound.powerup(); Hud.flash(); Fx.kick(5); this.haptic(15); if (type === 'jet') Sound.jetStart(); });
     Bus.on('powerEnd', type => { if (type === 'jet') Sound.jetStop(); });
     Bus.on('cap', () => Sound.cap());
-    Bus.on('hoverBreak', () => { Sound.hoverBreak(); Fx.hoverBreak(P.x, P.y, P.z); Fx.shake(0.35, 0.35); Hud.flash('rgba(160,120,255,0.9)'); });
-    Bus.on('stumble', () => { Sound.stumble(); Fx.shake(0.28, 0.3); });
+    Bus.on('hoverBreak', () => { Sound.hoverBreak(); Fx.hoverBreak(P.x, P.y, P.z); Fx.shake(0.35, 0.35); Hud.flash('rgba(160,120,255,0.9)'); this.haptic(50); });
+    Bus.on('stumble', () => { Sound.stumble(); Fx.shake(0.28, 0.3); this.haptic(35); });
     Bus.on('chaser', s => { if (s === 'chase') Sound.siren(); });
     Bus.on('trainStart', o => Sound.horn(Math.max(0, P.z - o.zf)));
+    Bus.on('trainPass', o => { const dx = o.x - P.x; if (Math.abs(dx) < 4.7 && !P.jet && this.state === 'playing') Sound.whoosh(Math.sign(dx)); });
     Bus.on('mission', () => Sound.mission());
     Bus.on('newBest', () => Sound.newBest());
     Bus.on('countdown', n => Sound.tick(n));
     Bus.on('resume', () => { Sound.tick(0); if (Save.data.music) Sound.startMusic(); if (Powers.has('jet')) Sound.jetStart(); });
     Bus.on('pause', () => { Sound.stopMusic(); Sound.jetStop(); });
-    Bus.on('menu', () => Sound.setMusicLevel(0.65));
+    Bus.on('menu', () => { Sound.setMusicLevel(0.65); Sound.jetStop(); if (Save.data.music) Sound.startMusic(); });
     Bus.on('start', () => { Sound.setMusicLevel(1); Sound.unlock(); if (Save.data.music) Sound.startMusic(); });
-    Bus.on('settings', () => { Sound.apply(); if (Save.data.music) Sound.startMusic(); });
+    // music stays stopped while paused (it restarts with the resume countdown)
+    Bus.on('settings', () => { Sound.apply(); if (Save.data.music && this.state !== 'paused' && this.state !== 'countdown') Sound.startMusic(); });
     Bus.on('gameover', e => {
       Sound.jetStop();
       if (e.cause === 'caught') { Sound.stumble(); Sound.siren(); } else Sound.crash();
       Fx.crash(P.x, P.y, P.z);
       Fx.shake(e.cause === 'caught' ? 0.3 : 0.6, 0.5);
+      this.haptic(e.cause === 'caught' ? [40, 40, 40] : [70, 50, 110]);
       Sound.setMusicLevel(0.4);
     });
     Bus.on('over', () => Sound.gameOver());
@@ -5605,7 +5650,11 @@ const Game = {
   },
 
   onAction(a) {
-    if (a === 'mute') { this.toggleSound(); return; }
+    if (a === 'mute') {
+      this.toggleSound();
+      if (this.state === 'playing') this.toast(Save.data.sound ? 'Sound on' : 'Sound off');
+      return;
+    }
     const s = this.state;
     if (s === 'playing') {
       if (a === 'left' || a === 'right' || a === 'jump' || a === 'roll') Player.input(a);
@@ -5696,8 +5745,8 @@ const Game = {
   updateTutorial() {
     if (this.tutorial < 0) return;
     const tips = IS_TOUCH
-      ? [[1.2, 'Swipe left or right to switch lanes'], [5, 'Swipe up to jump'], [9, 'Swipe down to roll'], [13, 'Grab power-ups and finish missions!']]
-      : [[1.2, '← → or A / D to switch lanes'], [5, '↑ or W to jump'], [9, '↓ or S to roll'], [13, 'Grab power-ups and finish missions!']];
+      ? [[1.0, 'Swipe left or right to switch lanes'], [3.2, 'Swipe up to jump'], [6.0, 'Swipe down to roll'], [10, 'Grab power-ups and finish missions!']]
+      : [[1.0, '← → or A / D to switch lanes'], [3.2, '↑ or W to jump'], [6.0, '↓ or S to roll'], [10, 'Grab power-ups and finish missions!']];
     const tip = tips[this.tutorial];
     if (tip && this.runTime >= tip[0]) { this.toast(tip[1]); this.tutorial++; }
     if (this.tutorial >= tips.length) this.tutorial = -1;
