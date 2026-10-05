@@ -48,6 +48,10 @@ html, body {
 #loading .bar { width: calc(var(--u) * 260); height: calc(var(--u) * 14); border-radius: 99px; background: rgba(20, 16, 40, 0.45); overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.5); }
 #loading .bar i { display: block; height: 100%; width: 0%; background: linear-gradient(var(--gold), var(--gold-deep)); transition: width 0.2s; }
 #loading.err .bar { display: none; }
+#hudMini { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 14px; text-align: right; font-weight: 900; text-shadow: 0 3px 0 rgba(30, 20, 50, 0.5); pointer-events: none; }
+#hudMini .hm-score { font-size: calc(var(--u) * 54); letter-spacing: 0.02em; }
+#hudMini .hm-coins { font-size: calc(var(--u) * 26); color: var(--gold); }
+#tMsg { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); display: none; padding: 16px 22px; border-radius: 18px; background: var(--panel); font-weight: 900; font-size: calc(var(--u) * 30); text-align: center; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -60,6 +64,11 @@ html, body {
   <div class="ls" id="loadingMsg">Loading the city…</div>
   <div class="bar"><i id="loadingBar"></i></div>
 </div>
+<div id="hudMini">
+  <div class="hm-score"><span id="tScore">000000</span></div>
+  <div class="hm-coins"><span id="tCoins">0</span> coins</div>
+</div>
+<div id="tMsg"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function () {
@@ -397,10 +406,210 @@ const Tex = (() => {
     });
   }
 
+  // ---------- obstacles ----------
+  // Red/white diagonal hazard stripes for barrier boards.
+  function stripes() {
+    return make('stripes', 256, 64, (g, w, h) => {
+      g.fillStyle = '#f4f1ec';
+      g.fillRect(0, 0, w, h);
+      g.fillStyle = '#e2302b';
+      for (let x = -h; x < w + h; x += 64) {
+        g.beginPath();
+        g.moveTo(x, h); g.lineTo(x + 32, h); g.lineTo(x + 32 + h, 0); g.lineTo(x + h, 0);
+        g.closePath(); g.fill();
+      }
+      const grd = g.createLinearGradient(0, 0, 0, h);
+      grd.addColorStop(0, 'rgba(255,255,255,0.35)');
+      grd.addColorStop(0.5, 'rgba(255,255,255,0)');
+      grd.addColorStop(1, 'rgba(0,0,0,0.25)');
+      g.fillStyle = grd;
+      g.fillRect(0, 0, w, h);
+      g.strokeStyle = 'rgba(60,20,20,0.55)';
+      g.lineWidth = 4;
+      g.strokeRect(2, 2, w - 4, h - 4);
+    }, { clamp: true });
+  }
+
+  // Big red/white chevron panel (buffer-stop style full barrier).
+  function chevron() {
+    return make('chevron', 256, 256, (g, w, h) => {
+      g.fillStyle = '#f6f3ee';
+      g.fillRect(0, 0, w, h);
+      g.fillStyle = '#e1322c';
+      const step = 64;
+      for (let y = -w; y < h + w; y += step) {
+        g.beginPath();
+        g.moveTo(0, y); g.lineTo(w / 2, y - w * 0.35); g.lineTo(w, y);
+        g.lineTo(w, y + step / 2); g.lineTo(w / 2, y + step / 2 - w * 0.35); g.lineTo(0, y + step / 2);
+        g.closePath(); g.fill();
+      }
+      const grd = g.createLinearGradient(0, 0, w, h);
+      grd.addColorStop(0, 'rgba(255,255,255,0.25)');
+      grd.addColorStop(1, 'rgba(0,0,0,0.18)');
+      g.fillStyle = grd;
+      g.fillRect(0, 0, w, h);
+      g.strokeStyle = '#3a2a2a';
+      g.lineWidth = 10;
+      g.strokeRect(5, 5, w - 10, h - 10);
+    }, { clamp: true });
+  }
+
+  // Ramp plate: steel with yellow/black hazard edges. u across the ramp, v along it.
+  function ramp() {
+    return make('ramp', 128, 256, (g, w, h) => {
+      const grd = g.createLinearGradient(0, 0, w, 0);
+      grd.addColorStop(0, '#8d949e'); grd.addColorStop(0.5, '#b4bac2'); grd.addColorStop(1, '#8d949e');
+      g.fillStyle = grd;
+      g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(70,74,82,0.55)';
+      for (let y = 6; y < h; y += 14) for (let x = 20; x < w - 20; x += 14) {
+        g.save(); g.translate(x + ((y / 14) % 2) * 7, y); g.rotate(0.6); g.fillRect(-4, -1, 8, 2.5); g.restore();
+      }
+      const edge = 16;
+      for (const x0 of [0, w - edge]) {
+        g.fillStyle = '#f3c21b'; g.fillRect(x0, 0, edge, h);
+        g.fillStyle = '#1d1d22';
+        for (let y = -edge; y < h; y += 24) {
+          g.beginPath(); g.moveTo(x0, y); g.lineTo(x0 + edge, y + edge); g.lineTo(x0 + edge, y + edge + 10); g.lineTo(x0, y + 10); g.closePath(); g.fill();
+        }
+      }
+    });
+  }
+
+  // Train texture atlas (1024x512):
+  //   side   : x 0..1024, y 0..256       -> uv v 0.5..1
+  //   front  : x 0..196,  y 256..512     -> uv u 0..0.1914, v 0..0.5
+  //   roof   : x 196..1024, y 256..384   -> v 0.25..0.5
+  //   dark   : x 196..1024, y 384..512   -> v 0..0.25
+  function train(scheme) {
+    const S = scheme === 'red'
+      ? { body: '#d33a3f', light: '#ef6a5e', dark: '#9e2230', stripe: '#fbf3ea', accent: '#ffcf3d', num: '12' }
+      : { body: '#3159c4', light: '#5f87e3', dark: '#22409a', stripe: '#eef3fb', accent: '#ff5a4f', num: '07' };
+    return make('train-' + scheme, 1024, 512, (g) => {
+      // ---- side ----
+      const sideH = 256;
+      let grd = g.createLinearGradient(0, 0, 0, sideH);
+      grd.addColorStop(0, S.light); grd.addColorStop(0.1, S.body); grd.addColorStop(0.62, S.body); grd.addColorStop(0.66, S.stripe);
+      grd.addColorStop(0.74, S.stripe); grd.addColorStop(0.75, S.dark); grd.addColorStop(1, S.dark);
+      g.fillStyle = grd;
+      g.fillRect(0, 0, 1024, sideH);
+      g.fillStyle = S.accent;
+      g.fillRect(0, 196, 1024, 6);
+      // windows
+      const drawWindow = (x, y, w, h) => {
+        rr(g, x, y, w, h, 12);
+        const wg = g.createLinearGradient(x, y, x + w * 0.6, y + h);
+        wg.addColorStop(0, '#2c4a86'); wg.addColorStop(0.45, '#14214a'); wg.addColorStop(1, '#22386e');
+        g.fillStyle = wg; g.fill();
+        g.save(); rr(g, x, y, w, h, 12); g.clip();
+        g.fillStyle = 'rgba(190,220,255,0.30)';
+        g.beginPath(); g.moveTo(x + w * 0.15, y + h); g.lineTo(x + w * 0.45, y); g.lineTo(x + w * 0.62, y); g.lineTo(x + w * 0.32, y + h); g.fill();
+        g.fillStyle = 'rgba(190,220,255,0.16)';
+        g.beginPath(); g.moveTo(x + w * 0.55, y + h); g.lineTo(x + w * 0.8, y); g.lineTo(x + w * 0.86, y); g.lineTo(x + w * 0.61, y + h); g.fill();
+        g.restore();
+        g.strokeStyle = 'rgba(220,230,255,0.85)'; g.lineWidth = 4; rr(g, x, y, w, h, 12); g.stroke();
+      };
+      const doors = [150, 690];
+      for (let x = 22; x < 1000; x += 136) {
+        if (doors.some(d => x + 118 > d - 12 && x < d + 118)) continue;
+        drawWindow(x, 30, 118, 112);
+      }
+      for (const d of doors) {
+        g.fillStyle = S.dark;
+        rr(g, d, 24, 108, 220, 8); g.fill();
+        g.fillStyle = S.body;
+        rr(g, d + 5, 28, 47, 212, 6); g.fill();
+        rr(g, d + 56, 28, 47, 212, 6); g.fill();
+        drawWindow(d + 11, 40, 35, 86);
+        drawWindow(d + 62, 40, 35, 86);
+        g.fillStyle = S.stripe;
+        g.fillRect(d + 5, 168, 98, 18);
+        g.fillStyle = 'rgba(0,0,0,0.35)';
+        g.fillRect(d + 52, 28, 4, 212);
+      }
+      g.fillStyle = 'rgba(255,255,255,0.9)';
+      g.font = 'bold 30px Arial, sans-serif';
+      g.fillText(S.num, 900, 232);
+      g.fillStyle = 'rgba(0,0,0,0.25)';
+      g.fillRect(0, 250, 1024, 6);
+      // ---- front (196 x 256 at y 256) ----
+      const fx = 0, fy = 256, fw = 196, fh = 256;
+      grd = g.createLinearGradient(0, fy, 0, fy + fh);
+      grd.addColorStop(0, S.light); grd.addColorStop(0.12, S.body); grd.addColorStop(0.7, S.body); grd.addColorStop(0.72, S.stripe);
+      grd.addColorStop(0.78, S.stripe); grd.addColorStop(0.8, S.dark); grd.addColorStop(1, S.dark);
+      g.fillStyle = grd; g.fillRect(fx, fy, fw, fh);
+      // windshield
+      rr(g, fx + 18, fy + 40, fw - 36, 92, 16);
+      const ws = g.createLinearGradient(fx, fy + 40, fx + fw, fy + 132);
+      ws.addColorStop(0, '#3a5a96'); ws.addColorStop(0.5, '#121c40'); ws.addColorStop(1, '#2a4378');
+      g.fillStyle = ws; g.fill();
+      g.strokeStyle = '#dfe6f5'; g.lineWidth = 5; g.stroke();
+      g.fillStyle = '#dfe6f5'; g.fillRect(fx + fw / 2 - 3, fy + 40, 6, 92);
+      g.fillStyle = 'rgba(200,225,255,0.28)';
+      g.beginPath(); g.moveTo(fx + 30, fy + 128); g.lineTo(fx + 60, fy + 44); g.lineTo(fx + 80, fy + 44); g.lineTo(fx + 50, fy + 128); g.fill();
+      // destination display
+      g.fillStyle = '#16120e'; rr(g, fx + 46, fy + 12, fw - 92, 22, 4); g.fill();
+      g.fillStyle = '#ffb02e'; g.font = 'bold 15px Arial, sans-serif'; g.textAlign = 'center';
+      g.fillText('DASH LINE', fx + fw / 2, fy + 29); g.textAlign = 'left';
+      // headlights
+      for (const hx of [fx + 40, fx + fw - 40]) {
+        const lg = g.createRadialGradient(hx, fy + 162, 2, hx, fy + 162, 18);
+        lg.addColorStop(0, '#fffbe8'); lg.addColorStop(0.5, '#ffe7a0'); lg.addColorStop(1, '#c79a3a');
+        g.fillStyle = lg; g.beginPath(); g.arc(hx, fy + 162, 16, 0, TAU); g.fill();
+        g.strokeStyle = '#2a2a33'; g.lineWidth = 4; g.stroke();
+      }
+      g.fillStyle = '#ff4136';
+      g.fillRect(fx + 76, fy + 156, 12, 12); g.fillRect(fx + fw - 88, fy + 156, 12, 12);
+      g.fillStyle = '#2a2a33'; rr(g, fx + 70, fy + 214, fw - 140, 30, 6); g.fill();
+      // ---- roof ----
+      const rx = 196, ry = 256, rw = 828, rh = 128;
+      grd = g.createLinearGradient(0, ry, 0, ry + rh);
+      grd.addColorStop(0, '#9aa3b2'); grd.addColorStop(0.5, '#c6ccd6'); grd.addColorStop(1, '#9aa3b2');
+      g.fillStyle = grd; g.fillRect(rx, ry, rw, rh);
+      g.fillStyle = 'rgba(70,76,90,0.45)';
+      for (let x = rx + 20; x < rx + rw; x += 46) g.fillRect(x, ry + 6, 3, rh - 12);
+      for (const vx of [rx + 120, rx + 520]) {
+        g.fillStyle = '#7d8696'; rr(g, vx, ry + 34, 150, 60, 8); g.fill();
+        g.fillStyle = '#5d6676';
+        for (let k = 0; k < 6; k++) g.fillRect(vx + 12 + k * 23, ry + 42, 10, 44);
+      }
+      // ---- dark undercarriage ----
+      g.fillStyle = '#26262e'; g.fillRect(196, 384, 828, 128);
+      g.fillStyle = '#3a3a44';
+      for (let x = 210; x < 1024; x += 60) g.fillRect(x, 400, 30, 90);
+    });
+  }
+
+  // Coin atlas (128x64): left = face with embossed star, right = ridged edge band.
+  function coin() {
+    return make('coin', 256, 128, (g) => {
+      const cx = 64, cy = 64, R = 62;
+      let grd = g.createRadialGradient(cx - 18, cy - 22, 6, cx, cy, R);
+      grd.addColorStop(0, '#fff3a6'); grd.addColorStop(0.45, '#ffd23a'); grd.addColorStop(1, '#e8960f');
+      g.fillStyle = grd; g.beginPath(); g.arc(cx, cy, R, 0, TAU); g.fill();
+      g.lineWidth = 7; g.strokeStyle = '#f7b21d'; g.beginPath(); g.arc(cx, cy, R - 9, 0, TAU); g.stroke();
+      g.lineWidth = 3; g.strokeStyle = '#c97a06'; g.beginPath(); g.arc(cx, cy, R - 13, 0, TAU); g.stroke();
+      star(g, cx + 2, cy + 3, 34, 15, 5);
+      g.fillStyle = '#c47a08'; g.fill();
+      star(g, cx, cy, 34, 15, 5);
+      grd = g.createLinearGradient(cx - 30, cy - 30, cx + 30, cy + 30);
+      grd.addColorStop(0, '#fff6c2'); grd.addColorStop(0.5, '#ffd84a'); grd.addColorStop(1, '#f2a516');
+      g.fillStyle = grd; g.fill();
+      g.lineWidth = 2.5; g.strokeStyle = '#d68a0a'; g.stroke();
+      // edge band
+      grd = g.createLinearGradient(0, 0, 0, 128);
+      grd.addColorStop(0, '#f9c334'); grd.addColorStop(0.5, '#ffe58a'); grd.addColorStop(1, '#d98b0c');
+      g.fillStyle = grd; g.fillRect(128, 0, 128, 128);
+      g.fillStyle = 'rgba(150,90,0,0.45)';
+      for (let x = 128; x < 256; x += 8) g.fillRect(x, 0, 3, 128);
+    }, { clamp: true });
+  }
+
   return {
     setMaxAniso(n) { maxAniso = Math.max(1, Math.min(8, n || 1)); },
     make, canvas, rr, speckle, star, wrapY,
-    bed, wood, tiles, curb, platform
+    bed, wood, tiles, curb, platform,
+    stripes, chevron, ramp, train, coin
   };
 })();
 
@@ -928,6 +1137,899 @@ const World = {
   }
 };
 
+// ==== OBJECTS ====
+// Pooled gameplay objects: barriers, trains (parked / oncoming), ramps and instanced coins.
+// Every obstacle stores zf (near end, larger z) and zb (far end) in world space; the runner moves toward -z.
+
+const OB = { LOW: 'low', HIGH: 'high', FULL: 'full', TRAIN: 'train', RAMP: 'ramp' };
+const OB_DIM = {
+  low: { hw: 1.15, h: 1.05, d: 0.5 },
+  high: { hw: 1.2, y0: 1.22, h: 2.5, d: 0.45 },
+  full: { hw: 1.2, h: 2.9, d: 0.6 }
+};
+
+const Obstacles = {
+  active: [],
+  pools: { low: [], high: [], full: [], train: [], ramp: [] },
+  geo: {}, mat: {},
+
+  init() {
+    const g = this.geo, m = this.mat;
+    m.stripes = new THREE.MeshLambertMaterial({ map: Tex.stripes() });
+    m.frame = new THREE.MeshLambertMaterial({ color: 0x8e96a3 });
+    m.frameDark = new THREE.MeshLambertMaterial({ color: 0x4a4f5a });
+    m.chevron = new THREE.MeshLambertMaterial({ map: Tex.chevron() });
+    m.bumper = new THREE.MeshLambertMaterial({ color: 0xd8342c });
+    m.lamp = new THREE.MeshBasicMaterial({ color: 0xff3b30 });
+    m.trainBlue = new THREE.MeshPhongMaterial({ map: Tex.train('blue'), specular: 0x3a3f4a, shininess: 38 });
+    m.trainRed = new THREE.MeshPhongMaterial({ map: Tex.train('red'), specular: 0x3a3f4a, shininess: 38 });
+    m.bellows = new THREE.MeshLambertMaterial({ color: 0x23232b });
+    m.ramp = new THREE.MeshLambertMaterial({ map: Tex.ramp() });
+
+    // low barrier: striped board on a grey frame
+    const D = OB_DIM;
+    g.lowBoard = new THREE.BoxGeometry(2.3, 0.44, 0.08);
+    g.lowBoard.translate(0, 0.8, 0);
+    g.lowFrame = Geo.merge([
+      Geo.place(new THREE.BoxGeometry(0.11, 1.05, 0.11), { x: -1.08, y: 0.525 }),
+      Geo.place(new THREE.BoxGeometry(0.11, 1.05, 0.11), { x: 1.08, y: 0.525 }),
+      Geo.place(new THREE.BoxGeometry(0.14, 0.06, 0.5), { x: -1.08, y: 0.03 }),
+      Geo.place(new THREE.BoxGeometry(0.14, 0.06, 0.5), { x: 1.08, y: 0.03 }),
+      Geo.place(new THREE.BoxGeometry(2.1, 0.07, 0.06), { y: 0.36 })
+    ]);
+    // high barrier: tall posts, striped board high up, open underneath
+    g.highBoard = new THREE.BoxGeometry(2.4, 0.95, 0.1);
+    g.highBoard.translate(0, 1.82, 0);
+    g.highFrame = Geo.merge([
+      Geo.place(new THREE.BoxGeometry(0.13, 2.5, 0.13), { x: -1.2, y: 1.25 }),
+      Geo.place(new THREE.BoxGeometry(0.13, 2.5, 0.13), { x: 1.2, y: 1.25 }),
+      Geo.place(new THREE.BoxGeometry(0.18, 0.07, 0.6), { x: -1.2, y: 0.035 }),
+      Geo.place(new THREE.BoxGeometry(0.18, 0.07, 0.6), { x: 1.2, y: 0.035 }),
+      Geo.place(new THREE.BoxGeometry(2.5, 0.1, 0.12), { y: 2.4 }),
+      Geo.place(new THREE.BoxGeometry(2.5, 0.08, 0.12), { y: 1.3 })
+    ]);
+    // full barrier: buffer stop with chevron panel and bumper
+    g.fullPanel = new THREE.BoxGeometry(2.4, 1.75, 0.14);
+    g.fullPanel.translate(0, 1.85, 0);
+    g.fullBumper = Geo.merge([
+      Geo.place(new THREE.BoxGeometry(2.3, 0.42, 0.34), { y: 0.72, z: 0.05 }),
+      Geo.place(new THREE.CylinderGeometry(0.17, 0.17, 0.3, 12), { x: -0.75, y: 0.72, z: 0.32, rx: Math.PI / 2 }),
+      Geo.place(new THREE.CylinderGeometry(0.17, 0.17, 0.3, 12), { x: 0.75, y: 0.72, z: 0.32, rx: Math.PI / 2 })
+    ]);
+    g.fullFrame = Geo.merge([
+      Geo.place(new THREE.BoxGeometry(0.18, 2.75, 0.18), { x: -1.1, y: 1.375, z: -0.1 }),
+      Geo.place(new THREE.BoxGeometry(0.18, 2.75, 0.18), { x: 1.1, y: 1.375, z: -0.1 }),
+      Geo.place(new THREE.BoxGeometry(2.3, 0.5, 0.5), { y: 0.25, z: -0.05 }),
+      Geo.place(new THREE.BoxGeometry(0.12, 1.4, 0.12), { x: -0.6, y: 1.0, z: -0.45, rx: 0.5 }),
+      Geo.place(new THREE.BoxGeometry(0.12, 1.4, 0.12), { x: 0.6, y: 1.0, z: -0.45, rx: 0.5 })
+    ]);
+    g.fullLamps = Geo.merge([
+      Geo.place(new THREE.SphereGeometry(0.12, 10, 8), { x: -0.8, y: 2.86 }),
+      Geo.place(new THREE.SphereGeometry(0.12, 10, 8), { x: 0.8, y: 2.86 })
+    ]);
+
+    g.car = this.buildCarGeometry();
+    g.bellows = new THREE.BoxGeometry(2.0, 2.3, CFG.CAR_GAP + 0.2);
+    g.ramp = this.buildRampGeometry();
+  },
+
+  // One train car with a single UV atlas (side / front / roof / undercarriage regions).
+  buildCarGeometry() {
+    const W = CFG.TRAIN_W / 2, H = CFG.TRAIN_H, L = CFG.CAR_LEN;
+    const yb = 0.42, ys = 2.7;
+    const P = [], N = [], U = [], I = [];
+    const vert = (p, n, uv) => { P.push(p[0], p[1], p[2]); N.push(n[0], n[1], n[2]); U.push(uv[0], uv[1]); return P.length / 3 - 1; };
+    const prof = [[-W, yb], [-W, ys]];
+    const ARC = 12;
+    for (let i = 1; i < ARC; i++) {
+      const a = Math.PI - (i / ARC) * Math.PI;
+      prof.push([Math.cos(a) * W, ys + Math.sin(a) * (H - ys)]);
+    }
+    prof.push([W, ys], [W, yb]);
+    const arcNormal = (x, y) => {
+      const n = new THREE.Vector2(x / (W * W), (y - ys) / ((H - ys) * (H - ys))).normalize();
+      return [n.x, n.y, 0];
+    };
+    const RU0 = 0.1914;
+    // walls and roof strips along z
+    for (let i = 0; i < prof.length - 1; i++) {
+      const p0 = prof[i], p1 = prof[i + 1];
+      let n0, n1, uv;
+      if (i === 0) { // left wall
+        n0 = n1 = [-1, 0, 0];
+        uv = (p, z) => [(z + L / 2) / L, 0.5 + 0.5 * (p[1] - yb) / (ys - yb)];
+      } else if (i === prof.length - 2) { // right wall
+        n0 = n1 = [1, 0, 0];
+        uv = (p, z) => [(L / 2 - z) / L, 0.5 + 0.5 * (p[1] - yb) / (ys - yb)];
+      } else { // roof
+        n0 = arcNormal(p0[0], p0[1]); n1 = arcNormal(p1[0], p1[1]);
+        uv = (p, z) => [RU0 + (1 - RU0) * (z + L / 2) / L, 0.25 + 0.25 * ((p[0] + W) / (2 * W))];
+      }
+      const a = vert([p0[0], p0[1], L / 2], n0, uv(p0, L / 2));
+      const b = vert([p1[0], p1[1], L / 2], n1, uv(p1, L / 2));
+      const c = vert([p1[0], p1[1], -L / 2], n1, uv(p1, -L / 2));
+      const d = vert([p0[0], p0[1], -L / 2], n0, uv(p0, -L / 2));
+      I.push(a, b, c, a, c, d);
+    }
+    // front (+z) and back (-z) caps, fan-triangulated from the centre
+    for (const side of [1, -1]) {
+      const z = side * L / 2, n = [0, 0, side];
+      const capUV = (x, y) => [RU0 * (side > 0 ? (x + W) / (2 * W) : (W - x) / (2 * W)), 0.5 * (y - yb) / (H - yb)];
+      const cy = (yb + H) / 2;
+      const center = vert([0, cy, z], n, capUV(0, cy));
+      const ids = prof.map(p => vert([p[0], p[1], z], n, capUV(p[0], p[1])));
+      for (let i = 0; i < ids.length; i++) {
+        const i2 = (i + 1) % ids.length;
+        if (side > 0) I.push(center, ids[i2], ids[i]); else I.push(center, ids[i], ids[i2]);
+      }
+    }
+    const body = new THREE.BufferGeometry();
+    body.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+    body.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
+    body.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2));
+    body.setIndex(I);
+    // undercarriage + wheels mapped to the dark atlas region
+    const dark = geo => {
+      const uv = geo.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, RU0 + 0.05 + uv.getX(i) * 0.7, 0.03 + uv.getY(i) * 0.18);
+      return geo;
+    };
+    const parts = [body, dark(Geo.place(new THREE.BoxGeometry(2.1, 0.32, L - 1.0), { y: 0.27 }))];
+    const wheel = new THREE.CylinderGeometry(0.31, 0.31, 0.14, 14);
+    for (const wz of [L / 2 - 1.45, L / 2 - 2.55, -L / 2 + 1.45, -L / 2 + 2.55]) {
+      for (const wx of [-0.8, 0.8]) parts.push(dark(Geo.place(wheel, { x: wx, y: 0.31, z: wz, rz: Math.PI / 2 })));
+    }
+    return Geo.merge(parts);
+  },
+
+  // Ramp wedge: bottom edge at local z=+RAMP_LEN (toward the runner), top edge at z=0 at roof height.
+  buildRampGeometry() {
+    const w = 1.15, H = CFG.TRAIN_H, R = CFG.RAMP_LEN;
+    const len = Math.hypot(H, R);
+    const n = [0, R / len, H / len];
+    const P = [-w, 0, R, w, 0, R, w, H, 0, -w, H, 0];
+    const top = new THREE.BufferGeometry();
+    top.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+    top.setAttribute('normal', new THREE.Float32BufferAttribute([...n, ...n, ...n, ...n], 3));
+    top.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 2.2, 0, 2.2], 2));
+    top.setIndex([0, 1, 2, 0, 2, 3]);
+    const sides = [];
+    for (const sx of [-1, 1]) {
+      const s = new THREE.BufferGeometry();
+      s.setAttribute('position', new THREE.Float32BufferAttribute([sx * w, 0, R, sx * w, 0, 0, sx * w, H, 0], 3));
+      s.setAttribute('normal', new THREE.Float32BufferAttribute([sx, 0, 0, sx, 0, 0, sx, 0, 0], 3));
+      s.setAttribute('uv', new THREE.Float32BufferAttribute([0.45, 0.1, 0.5, 0.1, 0.5, 0.2], 2));
+      s.setIndex(sx > 0 ? [0, 1, 2] : [0, 2, 1]);
+      sides.push(s);
+    }
+    const strut = new THREE.BoxGeometry(0.1, 1, 0.1);
+    const struts = [];
+    for (let k = 1; k <= 3; k++) {
+      const z = R * (1 - k / 4), hh = H * (k / 4);
+      for (const sx of [-0.9, 0.9]) {
+        const sg = Geo.place(strut, { x: sx, y: hh / 2, z, sy: hh });
+        const uv = sg.attributes.uv;
+        for (let i = 0; i < uv.count; i++) uv.setXY(i, 0.47, 0.15);
+        struts.push(sg);
+      }
+    }
+    return Geo.merge([top, ...sides, ...struts]);
+  },
+
+  make(type) {
+    const g = this.geo, m = this.mat;
+    const o = { type, mesh: new THREE.Group(), lane: 1, x: 0, zf: 0, zb: 0, prevZf: 0, v: 0, trig: 0, moving: false, cars: 1, active: false, id: 0 };
+    const add = (geo, mat, cast) => { const mesh = new THREE.Mesh(geo, mat); mesh.castShadow = !!cast; mesh.receiveShadow = false; o.mesh.add(mesh); return mesh; };
+    if (type === OB.LOW) { add(g.lowBoard, m.stripes, true); add(g.lowFrame, m.frame, true); }
+    else if (type === OB.HIGH) { add(g.highBoard, m.stripes, true); add(g.highFrame, m.frame, true); }
+    else if (type === OB.FULL) { add(g.fullPanel, m.chevron, true); add(g.fullBumper, m.bumper, true); add(g.fullFrame, m.frameDark, true); add(g.fullLamps, m.lamp, false); }
+    else if (type === OB.RAMP) { const r = add(g.ramp, m.ramp, true); r.receiveShadow = true; }
+    else if (type === OB.TRAIN) {
+      o.carMeshes = []; o.bellowsMeshes = [];
+      for (let i = 0; i < 4; i++) {
+        const car = add(g.car, m.trainBlue, true);
+        car.receiveShadow = true;
+        car.position.z = -(i * (CFG.CAR_LEN + CFG.CAR_GAP) + CFG.CAR_LEN / 2);
+        o.carMeshes.push(car);
+        if (i < 3) {
+          const b = add(g.bellows, m.bellows, false);
+          b.position.set(0, 1.7, -((i + 1) * (CFG.CAR_LEN + CFG.CAR_GAP) - CFG.CAR_GAP / 2));
+          o.bellowsMeshes.push(b);
+        }
+      }
+    }
+    Gfx.scene.add(o.mesh);
+    return o;
+  },
+
+  get(type) {
+    const pool = this.pools[type];
+    const o = pool.length ? pool.pop() : this.make(type);
+    o.mesh.visible = true;
+    o.active = true;
+    o.moving = false; o.v = 0; o.trig = 0;
+    this.active.push(o);
+    return o;
+  },
+
+  release(o) {
+    o.active = false;
+    o.mesh.visible = false;
+    this.pools[o.type].push(o);
+  },
+
+  // Spawn from a generator spec. zNear is the world z of the obstacle's near end.
+  spawn(spec, zNear) {
+    const o = this.get(spec.type);
+    o.lane = spec.lane;
+    o.x = CFG.LANE_X[spec.lane];
+    o.id = (this.nextId = (this.nextId || 0) + 1);
+    if (spec.type === OB.TRAIN) {
+      o.cars = spec.cars;
+      o.len = spec.cars * CFG.CAR_LEN + (spec.cars - 1) * CFG.CAR_GAP;
+      const mat = spec.scheme === 'red' ? this.mat.trainRed : this.mat.trainBlue;
+      for (let i = 0; i < 4; i++) {
+        o.carMeshes[i].visible = i < spec.cars;
+        o.carMeshes[i].material = mat;
+        if (i < 3) o.bellowsMeshes[i].visible = i < spec.cars - 1;
+      }
+      o.v = spec.v || 0;
+      o.trig = spec.trig || 0;
+    } else if (spec.type === OB.RAMP) {
+      o.len = CFG.RAMP_LEN;
+    } else {
+      o.len = OB_DIM[spec.type].d;
+    }
+    o.zf = zNear;
+    o.zb = zNear - o.len;
+    o.prevZf = o.zf;
+    o.mesh.position.set(o.x, 0, o.type === OB.RAMP ? zNear - CFG.RAMP_LEN : o.type === OB.TRAIN ? zNear : zNear - o.len / 2);
+    return o;
+  },
+
+  reset() {
+    for (const o of this.active) { o.active = false; o.mesh.visible = false; this.pools[o.type].push(o); }
+    this.active.length = 0;
+  },
+
+  update(dt, playerZ) {
+    const list = this.active;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const o = list[i];
+      o.prevZf = o.zf;
+      if (o.v > 0) {
+        if (!o.moving && playerZ - o.zf <= o.trig) { o.moving = true; Bus.emit('trainStart', o); }
+        if (o.moving) {
+          o.zf += o.v * dt; o.zb += o.v * dt;
+          o.mesh.position.z = o.zf;
+        }
+      }
+      if (o.zb > playerZ + CFG.RECYCLE_BEHIND) {
+        this.release(o);
+        list[i] = list[list.length - 1];
+        list.pop();
+      }
+    }
+  },
+
+  // Height of the ramp surface at world z (only valid inside the ramp's z range).
+  rampHeight(o, z) {
+    return CFG.TRAIN_H * clamp((o.zf - z) / CFG.RAMP_LEN, 0, 1);
+  },
+
+  // Highest walkable surface under (x, z) that the runner can step onto from height y.
+  supportAt(x, z, y) {
+    let best = 0;
+    const list = this.active;
+    for (let i = 0; i < list.length; i++) {
+      const o = list[i];
+      if (o.type !== OB.TRAIN && o.type !== OB.RAMP) continue;
+      if (z > o.zf + 0.25 || z < o.zb - 0.25) continue;
+      if (Math.abs(x - o.x) > CFG.TRAIN_W / 2 + 0.12) continue;
+      const h = o.type === OB.TRAIN ? CFG.TRAIN_H : this.rampHeight(o, z);
+      if (h <= y + 0.62 && h > best) best = h;
+    }
+    return best;
+  }
+};
+
+// ---------- coins (one instanced mesh for all of them) ----------
+const Coins = {
+  max: 360,
+  list: [], free: [],
+  mesh: null, spin: 0,
+  _m: new THREE.Matrix4(), _q: new THREE.Quaternion(), _p: new THREE.Vector3(), _s: new THREE.Vector3(), _axis: new THREE.Vector3(0, 1, 0),
+
+  init() {
+    const geo = this.buildGeometry();
+    const mat = new THREE.MeshPhongMaterial({ map: Tex.coin(), emissive: 0x6a4000, specular: 0xfff1b0, shininess: 70 });
+    this.mesh = new THREE.InstancedMesh(geo, mat, this.max);
+    this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.mesh.count = 0;
+    this.mesh.frustumCulled = false;
+    Gfx.scene.add(this.mesh);
+    for (let i = 0; i < this.max; i++) this.free.push({ x: 0, y: 0, z: 0, t: 0, taken: false, mag: false, vy: 0 });
+  },
+
+  buildGeometry() {
+    const R = 0.44, T = 0.12, N = 30;
+    const P = [], Nn = [], U = [], I = [];
+    const v = (x, y, z, nx, ny, nz, u, w) => { P.push(x, y, z); Nn.push(nx, ny, nz); U.push(u, w); return P.length / 3 - 1; };
+    for (const side of [1, -1]) {
+      const z = side * T / 2;
+      const c = v(0, 0, z, 0, 0, side, 0.25, 0.5);
+      const ring = [];
+      for (let i = 0; i <= N; i++) {
+        const a = (i / N) * TAU;
+        ring.push(v(Math.cos(a) * R, Math.sin(a) * R, z, 0, 0, side, 0.25 + 0.245 * Math.cos(a) * side, 0.5 + 0.49 * Math.sin(a)));
+      }
+      for (let i = 0; i < N; i++) { if (side > 0) I.push(c, ring[i], ring[i + 1]); else I.push(c, ring[i + 1], ring[i]); }
+    }
+    for (let i = 0; i < N; i++) {
+      const a0 = (i / N) * TAU, a1 = ((i + 1) / N) * TAU;
+      const c0 = Math.cos(a0), s0 = Math.sin(a0), c1 = Math.cos(a1), s1 = Math.sin(a1);
+      const u0 = 0.5 + 0.5 * (i / N), u1 = 0.5 + 0.5 * ((i + 1) / N);
+      const a = v(c0 * R, s0 * R, T / 2, c0, s0, 0, u0, 1);
+      const b = v(c0 * R, s0 * R, -T / 2, c0, s0, 0, u0, 0);
+      const cc = v(c1 * R, s1 * R, -T / 2, c1, s1, 0, u1, 0);
+      const d = v(c1 * R, s1 * R, T / 2, c1, s1, 0, u1, 1);
+      I.push(a, b, cc, a, cc, d);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(Nn, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2));
+    geo.setIndex(I);
+    return geo;
+  },
+
+  spawn(x, y, z) {
+    if (!this.free.length) return null;
+    const c = this.free.pop();
+    c.x = x; c.y = y; c.z = z; c.t = 0; c.taken = false; c.mag = false; c.vy = 0;
+    this.list.push(c);
+    return c;
+  },
+
+  reset() {
+    for (const c of this.list) this.free.push(c);
+    this.list.length = 0;
+    this.mesh.count = 0;
+  },
+
+  // Collect, animate and recycle coins; write instance matrices. onCollect(coin) is called for each pickup.
+  update(dt, p, onCollect) {
+    this.spin = (this.spin + dt * 4.2) % TAU;
+    const list = this.list;
+    const px = p.x, py = p.y + (p.rollT > 0 ? 0.45 : 0.85), pz = p.z;
+    const magnet = p.magnet || 0;
+    let n = 0;
+    const m = this._m, q = this._q, pos = this._p, s = this._s;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const c = list[i];
+      let remove = false;
+      if (c.taken) {
+        c.t += dt;
+        c.y += dt * 5;
+        if (c.t > 0.16) remove = true;
+      } else {
+        if (magnet > 0 && (c.mag || (c.z < pz + 2 && c.z > pz - 34))) {
+          c.mag = true;
+          const k = 1 - Math.exp(-dt * 11);
+          c.x += (px - c.x) * k; c.y += (py - c.y) * k; c.z += (pz - 0.2 - c.z) * Math.min(1, k * 1.3);
+        }
+        const dx = Math.abs(c.x - px), dz = Math.abs(c.z - pz), dy = Math.abs(c.y - py);
+        if (dx < 0.95 && dz < 1.0 && dy < 1.25) {
+          c.taken = true; c.t = 0;
+          onCollect(c);
+        } else if (c.z > pz + 12) remove = true;
+      }
+      if (remove) {
+        this.free.push(c);
+        list[i] = list[list.length - 1];
+        list.pop();
+        continue;
+      }
+      const sc = c.taken ? Math.max(0.01, 1 - c.t / 0.16) : 1;
+      pos.set(c.x, c.y, c.z);
+      q.setFromAxisAngle(this._axis, this.spin + (c.taken ? c.t * 30 : 0));
+      s.set(sc, sc, sc);
+      m.compose(pos, q, s);
+      this.mesh.setMatrixAt(n++, m);
+    }
+    this.mesh.count = n;
+    this.mesh.instanceMatrix.needsUpdate = true;
+  }
+};
+
+// ==== GENERATOR ====
+// Fair level generator.
+// Content is produced in chunks. Each random proposal is converted into a grid (lane x 1-unit cells) and checked by a
+// reachability search over runner states (lane, ground/roof). A chunk is only accepted when a path exists AND no
+// reachable state is "doomed" for longer than a short reaction window (this rejects corridors that end in walls).
+// Coins are then laid along one proven path so they always guide the player through safely.
+
+const CELL = { FREE: 0, JUMP: 1, SLIDE: 2, BLOCK: 3, TRAIN: 4, RAMP: 5 };
+const T = { RUN: 0, JUMP: 1, SLIDE: 2, SWITCH: 3, RAMPUP: 4, ROOF: 5, FALL: 6, ROOFSWITCH: 7 };
+const GROUND_ALL = 0b010101;
+
+const Gen = {
+  nextZ: 0,
+  exitMask: GROUND_ALL,
+  pathEnd: 2,        // state where the planned path left the previous chunk (lane 1, ground)
+  plan: [],
+  stats: { chunks: 0, attempts: 0, fallbacks: 0, discont: 0 },
+  onExtras: null, // hook used by power-ups / tokens to add pickups along the path
+
+  speedAt(dist) {
+    return CFG.SPEED_START + (CFG.SPEED_MAX - CFG.SPEED_START) * (1 - Math.exp(-Math.max(0, dist) / CFG.SPEED_DIST));
+  },
+
+  params(v) {
+    const SW = Math.ceil(v * 0.28) + 2;     // cells needed for a clean lane change
+    const HG = Math.ceil(v * 0.5) + 1;      // free cells needed after a jump / roll
+    const FALL = Math.ceil(v * 0.4) + 1;    // cells needed to drop from a roof
+    const TAIL = Math.max(SW + FALL, HG) + 4;
+    return { v, SW, HG, FALL, TAIL, COMMIT: SW + 3 };
+  },
+
+  reset() {
+    this.nextZ = -46;
+    this.exitMask = GROUND_ALL;
+    this.pathEnd = 2;
+    this.plan.length = 0;
+    this.stats = { chunks: 0, attempts: 0, fallbacks: 0, discont: 0 };
+    // opening coin line in the middle lane
+    for (let z = -12; z > -44; z -= 2.4) Coins.spawn(0, 0.85, z);
+  },
+
+  update(playerZ) {
+    let guard = 0;
+    while (this.nextZ > playerZ - CFG.SPAWN_AHEAD && guard++ < 4) this.generate();
+    // drop plan entries far behind the runner
+    let k = 0;
+    while (k < this.plan.length && this.plan[k].z > playerZ + 30) k++;
+    if (k > 0) this.plan.splice(0, k);
+  },
+
+  generate() {
+    const z0 = this.nextZ;
+    const dist = -z0;
+    const diff = clamp(dist / 2600, 0, 1);
+    let layout = null, result = null;
+    for (let attempt = 0; attempt < 30; attempt++) {
+      this.stats.attempts++;
+      const d = diff * (attempt < 10 ? 1 : attempt < 20 ? 0.7 : 0.4);
+      const cand = this.propose(dist, d);
+      const res = this.validate(cand, this.exitMask, this.pathEnd);
+      if (res) { layout = cand; result = res; break; }
+    }
+    if (!layout) {
+      this.stats.fallbacks++;
+      layout = this.fallback(dist);
+      result = this.validate(layout, this.exitMask, this.pathEnd);
+    }
+    if (result.path[0].s !== this.pathEnd) this.bridge(this.pathEnd, result.path[0].s, z0, layout.P);
+    this.commit(layout, result, z0);
+    this.exitMask = result.exitMask;
+    this.pathEnd = result.path[result.path.length - 1].s;
+    this.nextZ = z0 - layout.len;
+    this.stats.chunks++;
+  },
+
+  // The previous chunk ends with an obstacle-free tail in every lane, so when the new chunk's path has to start in a
+  // different lane, the plan switches lanes inside that tail (with a diagonal coin trail as a hint).
+  bridge(fromState, toState, z0, P) {
+    this.stats.discont++;
+    const a = fromState >> 1, b = toState >> 1;
+    const steps = Math.abs(b - a), dir = Math.sign(b - a);
+    let z = z0 + steps * P.SW + 2;
+    for (let k = 0; k < steps; k++) {
+      const la = a + k * dir, lb = la + dir;
+      this.plan.push({ z, zEnd: z - P.SW, from: la * 2, to: lb * 2, type: T.SWITCH });
+      for (let c = 1; c <= 3; c++) Coins.spawn(lerp(CFG.LANE_X[la], CFG.LANE_X[lb], c / 3), 0.85, z - (c / 3) * P.SW);
+      z -= P.SW;
+    }
+  },
+
+  // ---------------- proposal ----------------
+  propose(dist, diff) {
+    const vEnd = this.speedAt(dist + 260);
+    const P = this.params(vEnd);
+    const len = Math.round(clamp(100 + vEnd * 3.4, 140, 230)) + P.TAIL;
+    const limit = len - P.TAIL;
+    const specs = [];
+    const occ = [[], [], []];
+    const isFree = (l, a, b) => occ[l].every(r => b < r[0] || a > r[1]);
+    const occupy = (l, a, b) => occ[l].push([a, b]);
+    const R = RNG;
+    const lanesFree = (a, b) => [0, 1, 2].filter(l => isFree(l, a, b));
+    const barrierType = () => R.weighted([[4, OB.LOW], [3.4, OB.HIGH], [2.6, OB.FULL]]);
+    const passable = () => (R.chance(0.55) ? OB.LOW : OB.HIGH);
+    const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(R.next() * (i + 1)); const t = arr[i]; arr[i] = arr[j]; arr[j] = t; } return arr; };
+    const addBarrier = (type, l, d) => {
+      if (d < 3 || d >= limit || !isFree(l, d - 2, d + 2)) return false;
+      specs.push({ type, lane: l, d });
+      occupy(l, d - 2, d + 2);
+      return true;
+    };
+    const trainLen = cars => cars * CFG.CAR_LEN + (cars - 1) * CFG.CAR_GAP;
+    const addTrain = (l, d, cars, ramp, scheme) => {
+      const tl = Math.ceil(trainLen(cars));
+      const a = ramp ? d - CFG.RAMP_LEN - 2 : d - 2;
+      const b = d + tl + P.FALL + 2;
+      if (a < 2 || d + tl >= limit || !isFree(l, a, b)) return false;
+      specs.push({ type: OB.TRAIN, lane: l, d, cars, scheme: scheme || (R.chance(0.78) ? 'blue' : 'red') });
+      if (ramp) specs.push({ type: OB.RAMP, lane: l, d });
+      occupy(l, a, b);
+      return true;
+    };
+    const addOncoming = (l, dMeet, cars) => {
+      const vt = 9 + diff * 6;
+      const trig = 120;
+      const tl = trainLen(cars);
+      const v = vEnd;
+      const d0 = Math.round(dMeet + vt * trig / (v + vt));
+      const reserveA = Math.floor(dMeet - vt * trig / (0.8 * v + vt) + vt * trig / (v + vt) - 12);
+      const b = d0 + Math.ceil(tl) + 2;
+      if (reserveA < 2 || b >= limit || !isFree(l, reserveA, b)) return false;
+      specs.push({ type: OB.TRAIN, lane: l, d: d0, cars, v: vt, trig, scheme: R.chance(0.5) ? 'red' : 'blue' });
+      occupy(l, reserveA, b);
+      return true;
+    };
+
+    const W = [
+      [3.0 - 1.5 * diff, 'barrier1'],
+      [1.4 + 1.0 * diff, 'barrier2'],
+      [diff > 0.15 ? 0.3 + 1.2 * diff : 0, 'barrier3'],
+      [diff > 0.2 ? 0.2 + 1.0 * diff : 0, 'wallgap'],
+      [2.3, 'train1'],
+      [0.8 + 1.4 * diff, 'train2'],
+      [diff > 0.35 ? 0.4 + 1.0 * diff : 0, 'train3'],
+      [diff > 0.1 ? 1.1 + 1.8 * diff : 0, 'oncoming'],
+      [diff > 0.25 ? 0.3 + 0.8 * diff : 0, 'zigzag'],
+      [Math.max(0.15, 0.6 - 0.4 * diff), 'breather']
+    ];
+    const gapBase = Math.max(12, vEnd * 0.85);
+    let d = R.int(5, 10);
+    while (d < limit - 4) {
+      const pat = R.weighted(W);
+      let adv = gapBase * R.range(0.9, 1.4) * (1.15 - 0.3 * diff);
+      if (pat === 'barrier1') {
+        const ls = lanesFree(d - 2, d + 2);
+        if (ls.length) addBarrier(barrierType(), R.pick(ls), d);
+      } else if (pat === 'barrier2') {
+        const ls = shuffle(lanesFree(d - 2, d + 2));
+        if (ls.length >= 2) {
+          addBarrier(barrierType(), ls[0], d);
+          addBarrier(barrierType(), ls[1], d);
+          if (ls.length === 3 && R.chance(0.3 * diff)) addBarrier(passable(), ls[2], d);
+        }
+      } else if (pat === 'barrier3') {
+        const ls = lanesFree(d - 2, d + 2);
+        if (ls.length === 3) {
+          const types = shuffle([passable(), barrierType(), R.chance(0.5) ? passable() : barrierType()]);
+          ls.forEach((l, i) => addBarrier(types[i], l, d));
+        }
+      } else if (pat === 'wallgap') {
+        const ls = lanesFree(d - 2, d + 2);
+        if (ls.length === 3) {
+          const gap = R.int(0, 2);
+          ls.forEach(l => addBarrier(l === gap ? passable() : OB.FULL, l, d));
+        }
+      } else if (pat === 'train1') {
+        const ls = lanesFree(d - CFG.RAMP_LEN - 2, d + 20);
+        if (ls.length) {
+          const l = R.pick(ls), cars = R.int(1, 1 + Math.floor(diff * 2.99));
+          if (addTrain(l, d, cars, R.chance(0.5))) {
+            if (R.chance(0.45)) {
+              const others = lanesFree(d - 2, d + 2).filter(x => x !== l);
+              if (others.length) addBarrier(barrierType(), R.pick(others), d + R.int(0, 6));
+            }
+            adv += R.range(0, 8);
+          }
+        }
+      } else if (pat === 'train2') {
+        const pairs = shuffle([[0, 1], [1, 2], [0, 2]]);
+        for (const pr of pairs) {
+          if (!isFree(pr[0], d - CFG.RAMP_LEN - 2, d + 16) || !isFree(pr[1], d - CFG.RAMP_LEN - 2, d + 16)) continue;
+          const rampOn = R.chance(0.6) ? R.int(0, 1) : -1;
+          const off = R.int(0, 12);
+          addTrain(pr[0], d, R.int(1, 2 + Math.floor(diff * 1.99)), rampOn === 0);
+          addTrain(pr[1], d + off, R.int(1, 2 + Math.floor(diff * 1.99)), rampOn === 1);
+          adv += 6;
+          break;
+        }
+      } else if (pat === 'train3') {
+        const ls = lanesFree(d - CFG.RAMP_LEN - 2, d + 16);
+        if (ls.length === 3) {
+          const rampLane = R.int(0, 2);
+          for (const l of ls) addTrain(l, d + (l === rampLane ? 0 : R.int(2, 14)), R.int(1, 3), l === rampLane || R.chance(0.25));
+          adv += 10;
+        }
+      } else if (pat === 'oncoming') {
+        const ls = shuffle([0, 1, 2]);
+        let placed = false;
+        for (const dm of [d, d + 6, d + 14]) {
+          for (const l of ls) { if (addOncoming(l, dm, R.int(1, 3))) { placed = true; break; } }
+          if (placed) break;
+        }
+        const others = lanesFree(d - 2, d + 2);
+        if (others.length > 1 && R.chance(0.4)) addBarrier(barrierType(), R.pick(others), d + R.int(-4, 4));
+      } else if (pat === 'zigzag') {
+        const seq = R.chance(0.5) ? [0, 1, 2] : [2, 1, 0];
+        const step = Math.ceil(P.SW * 1.5) + 4;
+        let dd = d;
+        for (const l of seq) { addBarrier(OB.FULL, l, dd); dd += step; }
+        adv = Math.max(adv, step * 3);
+      } else {
+        adv *= 1.6;
+      }
+      d += Math.max(6, Math.round(adv));
+    }
+    return { len, specs, P, v: vEnd };
+  },
+
+  fallback(dist) {
+    const vEnd = this.speedAt(dist + 260);
+    const P = this.params(vEnd);
+    return { len: 120 + P.TAIL, specs: [], P, v: vEnd };
+  },
+
+  // ---------------- grid + validation ----------------
+  buildGrid(layout) {
+    const { len, specs, P } = layout;
+    const grid = [new Uint8Array(len), new Uint8Array(len), new Uint8Array(len)];
+    const set = (l, a, b, val) => { for (let d = Math.max(0, a); d <= Math.min(len - 1, b); d++) if (grid[l][d] !== CELL.BLOCK) grid[l][d] = val; };
+    for (const s of specs) {
+      if (s.type === OB.LOW) set(s.lane, s.d, s.d, CELL.JUMP);
+      else if (s.type === OB.HIGH) set(s.lane, s.d, s.d, CELL.SLIDE);
+      else if (s.type === OB.FULL) set(s.lane, s.d, s.d, CELL.BLOCK);
+      else if (s.type === OB.RAMP) set(s.lane, s.d - CFG.RAMP_LEN, s.d - 1, CELL.RAMP);
+      else if (s.type === OB.TRAIN) {
+        const tl = s.cars * CFG.CAR_LEN + (s.cars - 1) * CFG.CAR_GAP;
+        if (s.v) {
+          // oncoming train: block the stretch of track where the runner would meet it (with speed margins)
+          const v = P.v;
+          const meet = vv => s.d - s.v * s.trig / (vv + s.v);
+          const a = Math.floor(meet(0.8 * v)) - 3;
+          const b = Math.ceil(meet(v) + v * tl / (v + s.v)) + 2;
+          for (let d = Math.max(0, a); d <= Math.min(len - 1, b); d++) grid[s.lane][d] = CELL.BLOCK;
+        } else {
+          set(s.lane, s.d, Math.ceil(s.d + tl) - 1, CELL.TRAIN);
+        }
+      }
+    }
+    return grid;
+  },
+
+  validate(layout, entryMask, preferred) {
+    const { len, P } = layout;
+    const grid = this.buildGrid(layout);
+    const NS = 6;
+    const cell = (l, d) => (d >= len ? 255 : grid[l][d]);
+    const allIs = (l, a, b, val) => { for (let d = a; d <= b; d++) if (cell(l, d) !== val) return false; return true; };
+    const half = Math.ceil(P.SW / 2);
+
+    // Enumerate moves from state (lane l, level lvl) at cell d. cb(lane, level, cell, type)
+    const moves = (l, lvl, d, cb) => {
+      const cur = cell(l, d);
+      if (lvl === 0) {
+        if (cur !== CELL.FREE && cur !== CELL.RAMP) return;
+        const nx = cell(l, d + 1);
+        if (d + 1 === len || nx === CELL.FREE || nx === CELL.RAMP) cb(l, 0, d + 1, T.RUN);
+        else if (nx === CELL.TRAIN) { if (cur === CELL.RAMP) cb(l, 1, d + 1, T.RAMPUP); }
+        else if (nx === CELL.JUMP || nx === CELL.SLIDE) {
+          let ok = true;
+          for (let k = d + 2; k <= d + 1 + P.HG; k++) { const c = cell(l, k); if (c !== CELL.FREE && c !== CELL.RAMP) { ok = false; break; } }
+          if (ok) cb(l, 0, d + 1 + P.HG, nx === CELL.JUMP ? T.JUMP : T.SLIDE);
+        }
+        if (cur === CELL.FREE && allIs(l, d + 1, d + half, CELL.FREE)) {
+          for (const nl of [l - 1, l + 1]) {
+            if (nl < 0 || nl > 2) continue;
+            if (allIs(nl, d, d + P.SW, CELL.FREE)) cb(nl, 0, d + P.SW, T.SWITCH);
+          }
+        }
+      } else {
+        if (cur !== CELL.TRAIN) return;
+        const nx = cell(l, d + 1);
+        if (nx === CELL.TRAIN) cb(l, 1, d + 1, T.ROOF);
+        else if (allIs(l, d + 1, d + P.FALL, CELL.FREE)) cb(l, 0, d + P.FALL, T.FALL);
+        if (allIs(l, d + 1, d + half, CELL.TRAIN)) {
+          for (const nl of [l - 1, l + 1]) {
+            if (nl < 0 || nl > 2) continue;
+            if (allIs(nl, d, d + P.SW, CELL.TRAIN)) cb(nl, 1, d + P.SW, T.ROOFSWITCH);
+            else if (allIs(nl, d, d + P.SW + P.FALL, CELL.FREE)) cb(nl, 0, d + P.SW + P.FALL, T.ROOFSWITCH);
+          }
+        }
+      }
+    };
+
+    // forward reachability; the cheapest predecessor is kept so the extracted path is calm
+    // (few lane changes, likes ramps) instead of zig-zagging between lanes
+    const COST = [0, 1, 1, 3, -1.5, 0, 0, 3];
+    const R = new Uint8Array(len + 1);
+    const cost = new Float32Array((len + 1) * NS).fill(Infinity);
+    const pred = new Int32Array((len + 1) * NS).fill(-1);
+    R[0] = entryMask & GROUND_ALL;
+    for (let l = 0; l < 3; l++) if ((R[0] >> (l * 2)) & 1 && cell(l, 0) !== CELL.FREE) R[0] &= ~(1 << (l * 2));
+    if (!R[0]) return null;
+    // starting anywhere but where the previous planned path ended is heavily penalised (keeps the plan continuous)
+    for (let s = 0; s < NS; s++) if ((R[0] >> s) & 1) cost[s] = s === preferred ? 0 : 1000;
+    for (let d = 0; d < len; d++) {
+      const m = R[d];
+      if (!m) continue;
+      for (let s = 0; s < NS; s++) {
+        if (!((m >> s) & 1)) continue;
+        const base = cost[d * NS + s];
+        moves(s >> 1, s & 1, d, (nl, nlvl, nd, type) => {
+          if (nd > len) return;
+          const ns = nl * 2 + nlvl;
+          const c = base + COST[type] + RNG.next() * 0.2;
+          R[nd] |= 1 << ns;
+          if (c < cost[nd * NS + ns]) { cost[nd * NS + ns] = c; pred[nd * NS + ns] = ((d * NS + s) << 3) | type; }
+        });
+      }
+    }
+    const exitMask = R[len] & GROUND_ALL;
+    if (!exitMask) return null;
+
+    // backward "alive" sets and trap detection
+    const A = new Uint8Array(len + 1);
+    A[len] = GROUND_ALL;
+    for (let d = len - 1; d >= 0; d--) {
+      let m = 0;
+      for (let s = 0; s < NS; s++) {
+        let alive = false;
+        moves(s >> 1, s & 1, d, (nl, nlvl, nd) => { if (!alive && nd <= len && (A[nd] >> (nl * 2 + nlvl)) & 1) alive = true; });
+        if (alive) m |= 1 << s;
+      }
+      A[d] = m;
+    }
+    const run = new Int16Array(NS);
+    for (let d = 0; d < len; d++) {
+      for (let s = 0; s < NS; s++) {
+        if ((R[d] >> s) & 1 && !((A[d] >> s) & 1)) { if (++run[s] > P.COMMIT) return null; }
+        else run[s] = 0;
+      }
+    }
+
+    // extract one path (random exit state), forward ordered list of nodes {d, s, type}
+    let s = -1, d = len, bestC = Infinity;
+    for (let k = 0; k < NS; k++) {
+      if (!((exitMask >> k) & 1)) continue;
+      const c = cost[len * NS + k] + RNG.next() * 2.5;
+      if (c < bestC) { bestC = c; s = k; }
+    }
+    const path = [];
+    let guard = 0;
+    while (d > 0 && guard++ < 100000) {
+      const pv = pred[d * NS + s];
+      if (pv < 0) break;
+      const type = pv & 7, enc = pv >> 3;
+      path.push({ d, s, type });
+      d = Math.floor(enc / NS); s = enc % NS;
+    }
+    path.push({ d: 0, s, type: T.RUN });
+    path.reverse();
+    return { grid, exitMask, path };
+  },
+
+  // ---------------- commit: spawn obstacles, coins and plan ----------------
+  commit(layout, res, z0) {
+    const { specs, P } = layout;
+    for (const s of specs) {
+      let zNear;
+      if (s.type === OB.TRAIN) zNear = z0 - s.d;
+      else if (s.type === OB.RAMP) zNear = z0 - s.d + CFG.RAMP_LEN;
+      else zNear = z0 - s.d - 0.25;
+      Obstacles.spawn(s, zNear);
+    }
+    const path = res.path;
+    for (let i = 1; i < path.length; i++) {
+      const n = path[i];
+      if (n.type !== T.RUN && n.type !== T.ROOF) {
+        const prev = path[i - 1];
+        this.plan.push({ z: z0 - prev.d, zEnd: z0 - n.d, from: prev.s, to: n.s, type: n.type });
+      }
+    }
+    this.placeCoins(layout, res, z0);
+    if (this.onExtras) this.onExtras(layout, res, z0);
+  },
+
+  // Sample the planned path as feet height + lane x for every cell, then lay coin streaks along it.
+  samplePath(layout, res) {
+    const { len, P, v } = layout;
+    const grid = res.grid, path = res.path;
+    const xs = new Float32Array(len + 1), ys = new Float32Array(len + 1), kind = new Uint8Array(len + 1);
+    const g = CFG.GRAVITY, J = v * 2 * Math.sqrt(2 * CFG.JUMP_H / g);
+    for (let i = 0; i < path.length; i++) {
+      const n = path[i], l = n.s >> 1, lvl = n.s & 1;
+      xs[n.d] = CFG.LANE_X[l];
+      ys[n.d] = lvl ? CFG.TRAIN_H : (grid[l][Math.min(n.d, len - 1)] === CELL.RAMP ? this.rampCellHeight(grid[l], n.d, len) : 0);
+      if (i === 0) continue;
+      const p = path[i - 1], pl = p.s >> 1;
+      const a = p.d, b = n.d;
+      for (let d = a + 1; d < b; d++) {
+        const t = (d - a) / (b - a);
+        if (n.type === T.SWITCH || n.type === T.ROOFSWITCH) {
+          xs[d] = lerp(CFG.LANE_X[pl], CFG.LANE_X[l], smoothstep(clamp(t * 1.6, 0, 1)));
+          if (n.type === T.ROOFSWITCH && !lvl) {
+            const fallStart = a + P.SW;
+            ys[d] = d < fallStart ? CFG.TRAIN_H : Math.max(0, CFG.TRAIN_H - 0.5 * g * Math.pow((d - fallStart) / v, 2));
+          } else ys[d] = lvl ? CFG.TRAIN_H : 0;
+          kind[d] = 0;
+        } else if (n.type === T.FALL) {
+          xs[d] = CFG.LANE_X[l];
+          ys[d] = Math.max(0, CFG.TRAIN_H - 0.5 * g * Math.pow((d - a) / v, 2));
+        } else if (n.type === T.JUMP) {
+          xs[d] = CFG.LANE_X[l];
+          const hz = a + 1;
+          const tt = (d - (hz - J / 2)) / J;
+          ys[d] = tt > 0 && tt < 1 ? 4 * CFG.JUMP_H * tt * (1 - tt) : 0;
+          kind[d] = 1;
+        } else if (n.type === T.SLIDE) {
+          xs[d] = CFG.LANE_X[l];
+          ys[d] = 0;
+          kind[d] = d <= a + 4 ? 2 : 0;
+        } else {
+          xs[d] = CFG.LANE_X[l];
+          ys[d] = lvl ? CFG.TRAIN_H : 0;
+        }
+      }
+      if (n.type === T.JUMP) {
+        // jump arcs begin before the hazard cell: lift the cells before it too
+        for (let d = Math.max(0, Math.ceil(a + 1 - J / 2)); d <= a; d++) {
+          const tt = (d - (a + 1 - J / 2)) / J;
+          if (tt > 0 && tt < 1 && (path[i - 1].s & 1) === 0) { ys[d] = Math.max(ys[d], 4 * CFG.JUMP_H * tt * (1 - tt)); kind[d] = 1; }
+        }
+      }
+    }
+    return { xs, ys, kind };
+  },
+
+  rampCellHeight(row, d, len) {
+    // ramps rise toward the train: find the train start after this cell
+    let k = d;
+    while (k < len && row[k] === CELL.RAMP) k++;
+    return CFG.TRAIN_H * clamp(1 - (k - d) / CFG.RAMP_LEN, 0, 1);
+  },
+
+  placeCoins(layout, res, z0) {
+    const { len, P } = layout;
+    const { xs, ys, kind } = this.samplePath(layout, res);
+    const spacing = 2.35;
+    let d = RNG.int(2, 10);
+    while (d < len - 2) {
+      const streak = RNG.int(7, 15);
+      let placed = 0;
+      for (let k = 0; k < streak && d < len - 1; k++) {
+        const di = Math.round(d);
+        const y = kind[di] === 2 ? 0.5 : ys[di] + 0.85;
+        Coins.spawn(xs[di], y, z0 - d);
+        placed++;
+        d += spacing;
+      }
+      d += placed ? RNG.range(8, 26) : 4;
+    }
+    // bonus coins on roofs of trains that are not on the path
+    const grid = res.grid;
+    for (let l = 0; l < 3; l++) {
+      for (let a = 0; a < len; a++) {
+        if (grid[l][a] !== CELL.TRAIN || (a > 0 && grid[l][a - 1] === CELL.TRAIN)) continue;
+        let b = a;
+        while (b < len && grid[l][b] === CELL.TRAIN) b++;
+        const hasRamp = a > 0 && grid[l][a - 1] === CELL.RAMP;
+        const onPath = res.path.some(n => n.d >= a && n.d < b && (n.s >> 1) === l && (n.s & 1));
+        if (!onPath && (hasRamp || RNG.chance(0.35))) {
+          for (let z = a + 1.5; z < b - 1; z += spacing) Coins.spawn(CFG.LANE_X[l], CFG.TRAIN_H + 0.85, z0 - z);
+        }
+        a = b;
+      }
+    }
+  }
+};
+
 // ==== RUNNER ====
 // Runner model (simple version for the core phase): body, head, cap and swinging legs.
 
@@ -985,22 +2087,28 @@ const Runner = {
 };
 
 // ==== PLAYER ====
-// Player controller: lanes, jump (with buffer and coyote time), roll, fast-drop, gravity and forward speed.
+// Player controller: lanes, jump (buffer + coyote time), roll, fast-drop, gravity, ramps / train roofs and collisions.
+// Collision rules: hitting the front of an obstacle = crash; brushing a side while changing lanes, clipping the top of a
+// low barrier or standing up under a beam = stumble (bounce back). Two stumbles close together = caught by the chaser.
 
 const Player = {
   x: 0, y: 0, z: 0, vx: 0, vy: 0,
   lane: 1, prevLane: 1,
   grounded: true, groundY: 0, airTime: 0,
   rollT: 0, rollQueued: false, jumpBuffer: 0,
-  speed: CFG.SPEED_START, distance: 0,
+  speed: CFG.SPEED_START, distance: 0, slowT: 0,
+  graceT: 0, invuln: 0,
+  onRoof: false,
   queue: [],
+  events: null, // callbacks set by the game: { crash(o), stumble(kind, o), land(h), jump(), roll(), lane(dir) }
 
   reset() {
     this.x = 0; this.y = 0; this.z = 0; this.vx = 0; this.vy = 0;
     this.lane = 1; this.prevLane = 1;
     this.grounded = true; this.groundY = 0; this.airTime = 0;
     this.rollT = 0; this.rollQueued = false; this.jumpBuffer = 0;
-    this.speed = CFG.SPEED_START; this.distance = 0;
+    this.speed = CFG.SPEED_START; this.distance = 0; this.slowT = 0;
+    this.graceT = 0; this.invuln = 0; this.onRoof = false;
     this.queue.length = 0;
   },
 
@@ -1008,36 +2116,46 @@ const Player = {
     if (this.queue.length < 6) this.queue.push(action);
   },
 
-  jumpVelocity() {
-    return Math.sqrt(2 * CFG.GRAVITY * CFG.JUMP_H);
+  emit(name, a, b) {
+    if (this.events && this.events[name]) this.events[name](a, b);
   },
 
+  jumpHeight() { return CFG.JUMP_H; },
+
   doJump() {
-    this.vy = this.jumpVelocity();
+    this.vy = Math.sqrt(2 * CFG.GRAVITY * this.jumpHeight());
     this.grounded = false;
-    this.airTime = 0;
+    this.airTime = 0.2;
     this.rollT = 0;
     this.jumpBuffer = 0;
+    this.emit('jump');
   },
 
   handleActions() {
     while (this.queue.length) {
       const a = this.queue.shift();
       if (a === 'left' || a === 'right') {
-        const nl = clamp(this.lane + (a === 'left' ? -1 : 1), 0, 2);
-        if (nl !== this.lane) { this.prevLane = this.lane; this.lane = nl; }
+        const dir = a === 'left' ? -1 : 1;
+        const nl = clamp(this.lane + dir, 0, 2);
+        if (nl !== this.lane) { this.prevLane = this.lane; this.lane = nl; this.emit('lane', dir); }
+        else this.emit('laneBlocked', dir);
       } else if (a === 'jump') {
         if (this.grounded || this.airTime < 0.1) this.doJump();
         else this.jumpBuffer = 0.16;
       } else if (a === 'roll') {
-        if (this.grounded) { this.rollT = CFG.ROLL_TIME; }
+        if (this.grounded) { this.rollT = CFG.ROLL_TIME; this.emit('roll'); }
         else { this.vy = Math.min(this.vy, -30); this.rollQueued = true; this.jumpBuffer = 0; }
       }
     }
   },
 
+  baseSpeed() {
+    return CFG.SPEED_START + (CFG.SPEED_MAX - CFG.SPEED_START) * (1 - Math.exp(-this.distance / CFG.SPEED_DIST));
+  },
+
   step(h) {
     this.handleActions();
+    const prevX = this.x, prevY = this.y, prevZ = this.z, prevH = this.rollT > 0 ? CFG.PLAYER_ROLL_H : CFG.PLAYER_H;
 
     // lateral movement toward the target lane
     const tx = CFG.LANE_X[this.lane];
@@ -1046,30 +2164,100 @@ const Player = {
     this.x += this.vx * h;
     if (Math.abs(tx - this.x) < 0.002) { this.x = tx; this.vx = 0; }
 
-    // vertical movement
+    // forward movement (a stumble slows the runner for a moment)
+    if (this.slowT > 0) this.slowT = Math.max(0, this.slowT - h);
+    this.speed = this.baseSpeed() * (1 - 0.22 * Math.min(1, this.slowT / 0.8));
+    this.z -= this.speed * h;
+    this.distance += this.speed * h;
+
+    // vertical movement on the highest walkable surface
     if (this.jumpBuffer > 0) this.jumpBuffer -= h;
+    const sup = Obstacles.supportAt(this.x, this.z, this.y);
     if (!this.grounded) {
       this.airTime += h;
       this.vy -= CFG.GRAVITY * h;
       this.y += this.vy * h;
-      if (this.y <= this.groundY) {
-        this.y = this.groundY;
+      if (this.vy <= 0 && this.y <= sup) {
+        const fall = -this.vy;
+        this.y = sup;
         this.vy = 0;
         this.grounded = true;
+        this.emit('land', fall);
         if (this.jumpBuffer > 0) this.doJump();
-        else if (this.rollQueued) this.rollT = CFG.ROLL_TIME;
+        else if (this.rollQueued) { this.rollT = CFG.ROLL_TIME; this.emit('roll'); }
         this.rollQueued = false;
       }
-    } else {
+    } else if (sup < this.y - 0.03) {
+      this.grounded = false;     // ran off an edge (end of a train or stepped sideways off a roof)
+      this.vy = 0;
       this.airTime = 0;
-      this.y = this.groundY;
+    } else {
+      this.y = sup;
+      this.airTime = 0;
     }
+    this.groundY = sup;
+    this.onRoof = this.grounded && this.y > CFG.TRAIN_H - 0.05;
     if (this.rollT > 0) this.rollT = Math.max(0, this.rollT - h);
+    if (this.graceT > 0) this.graceT -= h;
+    if (this.invuln > 0) this.invuln -= h;
 
-    // forward movement and speed curve
-    this.speed = CFG.SPEED_START + (CFG.SPEED_MAX - CFG.SPEED_START) * (1 - Math.exp(-this.distance / CFG.SPEED_DIST));
-    this.z -= this.speed * h;
-    this.distance += this.speed * h;
+    this.collide(prevX, prevY, prevZ, prevH);
+  },
+
+  collide(prevX, prevY, prevZ, prevH) {
+    if (this.invuln > 0) return;
+    const HW = CFG.PLAYER_HW, HD = CFG.PLAYER_HD;
+    const H = this.rollT > 0 ? CFG.PLAYER_ROLL_H : CFG.PLAYER_H;
+    const px0 = this.x - HW, px1 = this.x + HW, py0 = this.y, py1 = this.y + H, pz0 = this.z - HD, pz1 = this.z + HD;
+    const list = Obstacles.active;
+    for (let i = 0; i < list.length; i++) {
+      const o = list[i];
+      if (o.zb > pz1 + 0.2 || o.zf < pz0 - 0.2) continue;
+      if (o.type === OB.RAMP) {
+        // solid wedge under the ramp surface: only reachable from the side
+        if (px1 <= o.x - 1.15 || px0 >= o.x + 1.15 || this.z > o.zf || this.z < o.zb) continue;
+        const hs = Obstacles.rampHeight(o, this.z);
+        if (this.y < hs - 0.62) { this.hit(o, 'side'); return; }
+        continue;
+      }
+      let hw, by0, by1;
+      if (o.type === OB.TRAIN) { hw = CFG.TRAIN_W / 2; by0 = 0; by1 = CFG.TRAIN_H; }
+      else { const D = OB_DIM[o.type]; hw = D.hw; by0 = D.y0 || 0; by1 = D.h; }
+      const bx0 = o.x - hw, bx1 = o.x + hw;
+      if (px1 <= bx0 || px0 >= bx1 || py1 <= by0 || py0 >= by1 || pz1 <= o.zb || pz0 >= o.zf) continue;
+      if (o.type === OB.TRAIN && this.y >= by1 - 0.62) continue; // on (or stepping onto) the roof
+      const prevFront = prevZ - HD;
+      const xOverlap = Math.min(px1, bx1) - Math.max(px0, bx0);
+      const changing = Math.abs(this.x - CFG.LANE_X[this.lane]) > 0.05;
+      if (prevFront >= o.prevZf - 0.001) {
+        if (o.type === OB.LOW && this.y > by1 - 0.42) this.hit(o, 'trip');
+        else if (changing && xOverlap < 0.42) this.hit(o, 'side');
+        else this.hit(o, 'crash');
+      } else if (prevY >= by1 - 0.02) {
+        this.hit(o, 'trip');
+      } else if (o.type === OB.HIGH && prevY + prevH <= by0 + 0.05) {
+        this.hit(o, 'trip');
+      } else {
+        this.hit(o, 'side');
+      }
+      return;
+    }
+  },
+
+  hit(o, kind) {
+    if (kind === 'crash') { this.emit('crash', o); return; }
+    if (this.graceT > 0) return;
+    if (kind === 'side') {
+      const towards = Math.sign(CFG.LANE_X[this.lane] - this.x);
+      if (towards !== 0 && Math.sign(o.x - this.x) === towards) {
+        const back = this.prevLane;
+        this.prevLane = this.lane;
+        this.lane = back;
+      }
+    }
+    this.graceT = 0.55;
+    this.slowT = 0.8;
+    this.emit('stumble', kind, o);
   }
 };
 
@@ -1156,19 +2344,23 @@ const Input = {
 };
 
 // ==== GAME ====
-// Game state, camera follow and the main loop.
+// Game state machine, scoring, camera follow and the main loop.
 
 const Game = {
   state: 'loading',
   time: 0,
   noRender: DEBUG && QUERY.has('norender'),
+  manual: DEBUG && QUERY.has('manual'),
   cam: { x: 0, y: 3.3, z: 6.4, lx: 0, ly: 1.3, lz: -8 },
+  run: null,
 
   boot() {
     const bar = document.getElementById('loadingBar');
     const steps = [
       () => Gfx.init(),
       () => World.init(),
+      () => Obstacles.init(),
+      () => Coins.init(),
       () => Runner.init(),
       () => Input.init()
     ];
@@ -1198,24 +2390,80 @@ const Game = {
 
   ready() {
     Input.handler = (a, src) => this.onAction(a, src);
+    Player.events = {
+      crash: o => this.onCrash(o),
+      stumble: (kind, o) => this.onStumble(kind, o)
+    };
     window.addEventListener('resize', () => Gfx.resize());
     window.addEventListener('orientationchange', () => setTimeout(() => Gfx.resize(), 120));
     const box = document.getElementById('loading');
     if (box) box.style.display = 'none';
+    this.hud = {
+      score: document.getElementById('tScore'),
+      coins: document.getElementById('tCoins'),
+      msg: document.getElementById('tMsg')
+    };
     this.startRun();
     this.last = performance.now();
     requestAnimationFrame(t => this.frame(t));
   },
 
+  mult() { return Save.data.mult; },
+
   startRun() {
     Player.reset();
     World.reset();
+    Obstacles.reset();
+    Coins.reset();
+    Gen.reset();
+    Gen.update(Player.z);
+    this.run = { score: 0, coins: 0, chaseT: 0, deadT: 0, cause: '' };
     this.state = 'playing';
+    this.setMsg('');
     this.snapCamera();
   },
 
   onAction(a) {
-    if (this.state === 'playing' && (a === 'left' || a === 'right' || a === 'jump' || a === 'roll')) Player.input(a);
+    if (this.state === 'playing') {
+      if (a === 'left' || a === 'right' || a === 'jump' || a === 'roll') Player.input(a);
+    } else if (this.state === 'gameover') {
+      if (a === 'tap' || a === 'confirm' || a === 'jump') this.startRun();
+    }
+  },
+
+  onCoin() {
+    this.run.coins++;
+    this.run.score += 5 * this.mult();
+  },
+
+  onStumble() {
+    const r = this.run;
+    if (r.chaseT > 0) { this.endRun('caught'); return; }
+    r.chaseT = 7;
+  },
+
+  onCrash() {
+    this.endRun('crash');
+  },
+
+  endRun(cause) {
+    if (this.state !== 'playing') return;
+    this.state = 'dead';
+    this.run.cause = cause;
+    this.run.deadT = 0;
+    const d = Save.data;
+    const score = Math.floor(this.run.score);
+    d.runs++;
+    d.coins += this.run.coins;
+    if (score > d.best) d.best = score;
+    Save.save();
+  },
+
+  setMsg(text) {
+    if (this.hud && this.hud.msg) {
+      this.hud.msg.textContent = text;
+      this.hud.msg.style.display = text ? 'block' : 'none';
+    }
   },
 
   frame(now) {
@@ -1224,17 +2472,36 @@ const Game = {
     this.last = now;
     if (!(dt > 0)) dt = 0;
     if (dt > 0.05) dt = 0.05;
-    this.update(dt);
+    if (!this.manual) this.update(dt);
     if (!this.noRender) Gfx.render();
   },
 
   update(dt) {
     this.time += dt;
+    const r = this.run;
     if (this.state === 'playing') {
       const steps = Math.max(1, Math.ceil(dt / (1 / 120)));
       const h = dt / steps;
-      for (let s = 0; s < steps; s++) Player.step(h);
+      for (let s = 0; s < steps && this.state === 'playing'; s++) {
+        Obstacles.update(h, Player.z);
+        Player.step(h);
+      }
+      r.score += Player.speed * dt * this.mult();
+      if (r.chaseT > 0) r.chaseT = Math.max(0, r.chaseT - dt);
+      Coins.update(dt, Player, () => this.onCoin());
+      Gen.update(Player.z);
       World.update(Player.z);
+    } else if (this.state === 'dead') {
+      r.deadT += dt;
+      Coins.update(dt, Player, () => {});
+      if (r.deadT > 1.1) {
+        this.state = 'gameover';
+        this.setMsg((r.cause === 'caught' ? 'CAUGHT!' : 'CRASHED!') + '  Tap or press Enter to run again');
+      }
+    }
+    if (this.hud && r) {
+      this.hud.score.textContent = pad6(r.score);
+      this.hud.coins.textContent = r.coins;
     }
     Runner.update(dt, Player);
     this.updateCamera(dt);
@@ -1276,7 +2543,7 @@ const Game = {
   }
 };
 
-if (DEBUG) window.__DD = { Game, Player, World, Gfx, Runner, Save, CFG, RNG };
+if (DEBUG) window.__DD = { Game, Player, World, Gfx, Runner, Save, CFG, RNG, Gen, Obstacles, Coins, OB, T };
 Game.boot();
 
 })();
