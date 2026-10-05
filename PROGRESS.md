@@ -146,3 +146,7 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   journal). On level 2 the creature's skin takes a wet, greenish-black tint.
 - **[07:39 UTC] Extra — Sound captions.** Optional setting: bracketed captions for distant noises, footsteps behind
   you, door slams, outages, the monster's screech and its heavy footsteps when it is close but unseen.
+- **[07:41 UTC] Extra — Difficulty, loading beat, contact shadow.** Settings gain Difficulty (Easy / Normal / Hard
+  scales the creature's speed x0.86/1/1.1, hearing x0.75/1/1.25, sight x0.8/1/1.15 and how often it hunts you).
+  Starting a run now shows "ENTERING..." on black for a frame before the first chunks bake (pointer lock is still
+  requested inside the click), so slow phones don't look frozen. The creature has a soft contact shadow.

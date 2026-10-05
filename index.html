@@ -57,6 +57,7 @@
   body.touch #battery { bottom: auto; top: max(22px, env(safe-area-inset-top)); right: 76px; }
   body.touch #batteryPct { bottom: auto; top: 10px; }
   body.touch #stamina { bottom: max(14px, env(safe-area-inset-bottom)); }
+  #loading { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 31; letter-spacing: 0.5em; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   #fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 30; transition: opacity 1.2s ease; }
   #scareOverlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; z-index: 20; }
   #scareOverlay canvas { height: 118vh; max-width: none; }
@@ -122,6 +123,7 @@
 <div id="settingsScreen" class="screen menu hidden">
   <h1>SETTINGS</h1>
   <div class="settings">
+    <label><span>Difficulty</span><select id="setDiff"><option value="0">Easy</option><option value="1">Normal</option><option value="2">Hard</option></select><span></span></label>
     <label><span>Mouse speed</span><input type="range" id="setSens" min="0.2" max="3" step="0.05"><span id="setSensVal"></span></label>
     <label><span>Invert mouse Y</span><input type="checkbox" id="setInvert"><span></span></label>
     <label><span>Field of view</span><input type="range" id="setFov" min="60" max="100" step="1"><span id="setFovVal"></span></label>
@@ -161,6 +163,7 @@
 
 <div id="scareOverlay"></div>
 <div id="fade"></div>
+<div id="loading">ENTERING&hellip;</div>
 
 <div id="winScreen" class="screen menu hidden">
   <h1 id="winTitle">YOU ESCAPED</h1>
@@ -1842,6 +1845,12 @@ const eyeMat = new THREE.ShaderMaterial({
   vertexShader: MONSTER_VERT, fragmentShader: EYE_FRAG,
 });
 
+const shadowTex = (() => {
+  const c = makeCanvas(64, 64), g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,0.75)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; return t;
+})();
 function buildMonsterModel() {
   const cap = (r, l, rs = 8) => new THREE.CapsuleGeometry(r, l, 3, rs);
   const ball = (r) => new THREE.SphereGeometry(r, 8, 6);
@@ -1899,12 +1908,17 @@ function buildMonsterModel() {
     const ft = mesh(cap(0.035, 0.16, 4)); ft.rotation.x = Math.PI / 2; ft.position.set(0, -0.63, 0.07); kn.add(ft);
     legs.push({ hip, kn, s });
   }
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.1), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false, color: 0x000000 }));
+  shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.012; shadow.renderOrder = 1; root.add(shadow);
   return { root, body, hips, spine, chest, neck, head, jaw, mouth, eyes, arms, legs };
 }
+
 
 // ============================================================================
 //  MONSTER — behaviour
 // ============================================================================
+const DIFF = [{ speed: 0.86, hear: 0.75, sight: 0.8, hunt: 1.6 }, { speed: 1, hear: 1, sight: 1, hunt: 1 }, { speed: 1.1, hear: 1.25, sight: 1.15, hunt: 0.7 }];
+const diff = () => DIFF[settings.difficulty] || DIFF[1];
 const MONSTER_SPEED = { 1: { wander: 1.25, investigate: 2.3, chase: 4.35, search: 1.6 }, 2: { wander: 1.6, investigate: 2.8, chase: 5.0, search: 2.0 } };
 const monster = {
   model: null,
@@ -1972,7 +1986,7 @@ function emitNoise(x, z, radius) {
   const d = Math.hypot(monster.pos.x - x, monster.pos.z - z);
   const clear = world.segmentClear(monster.pos.x, monster.pos.z, x, z);
   const eff = clear ? d : d * 1.5;
-  if (eff > radius) return;
+  if (eff > radius * diff().hear) return;
   monster.alert = Math.min(1, monster.alert + 0.35);
   if (monster.state === 'chase' || monster.state === 'spotted') return;
   if (monster.state !== 'investigate' || Math.random() < 0.5) {
@@ -1996,7 +2010,7 @@ function updateMonster(dt) {
     const cosA = dist > 0.01 ? (fx * dx + fz * dz) / dist : 1;
     const fovOk = m.state === 'chase' ? cosA > -0.2 : cosA > Math.cos(1.15) || dist < 2.5;
     const pl = playerVisibility();
-    const range = (m.state === 'chase' ? 26 : 5 + 17 * pl) * (player.crouching && m.state !== 'chase' ? 0.6 : 1);
+    const range = (m.state === 'chase' ? 26 : 5 + 17 * pl) * (player.crouching && m.state !== 'chase' ? 0.6 : 1) * diff().sight;
     m.sees = dist < range && fovOk && world.segmentClear(m.pos.x, m.pos.z, player.pos.x, player.pos.z);
   }
   if (m.sees) {
@@ -2055,7 +2069,7 @@ function updateMonster(dt) {
   }
   // hunt escalation: every so often it "smells" roughly where you are and comes to look
   if (m.state === 'chase') m.huntTimer = Math.max(m.huntTimer, 40);
-  m.huntTimer -= dt * (1 + 0.15 * notesCollected());
+  m.huntTimer -= dt * (1 + 0.15 * notesCollected()) / diff().hunt;
   if (m.huntTimer <= 0 && m.state === 'wander') {
     m.huntTimer = (world.level === 2 ? 35 : 45) + Math.random() * 25;
     if (dist > 45) placeMonsterAway(26, 36);
@@ -2086,7 +2100,7 @@ function updateMonster(dt) {
       m.heading += dh * Math.min(1, dt * (m.state === 'chase' ? 10 : 4));
       // slow down for sharp turns, creep when hunting
       const turnSlow = clamp(1 - Math.abs(dh) / 2.2, 0.25, 1);
-      m.speed += (speed * turnSlow - m.speed) * Math.min(1, dt * 3);
+      m.speed += (speed * diff().speed * turnSlow - m.speed) * Math.min(1, dt * 3);
       const step = Math.min(len, m.speed * dt);
       const ox = m.pos.x, oz = m.pos.z;
       m.pos.x += _mv.x * step; m.pos.z += _mv.z * step;
@@ -3667,7 +3681,7 @@ function silenceMonster() {
 // ---------------- settings ----------------
 const SETTINGS_KEY = 'backrooms.settings.v1';
 let isTouch = matchMedia('(pointer: coarse)').matches || (('ontouchstart' in window) && !matchMedia('(pointer: fine)').matches);
-const settings = { sens: 1, invert: false, fov: 75, volume: 80, quality: isTouch ? 0 : 1, bob: true, bright: 1, captions: false };
+const settings = { sens: 1, invert: false, fov: 75, volume: 80, quality: isTouch ? 0 : 1, bob: true, bright: 1, captions: false, difficulty: 1 };
 function loadSettings() { try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch (e) { /* storage blocked */ } }
 function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* storage blocked */ } }
 function applySettings() {
@@ -3683,6 +3697,7 @@ function applySettings() {
   $('setQuality').value = String(settings.quality);
   $('setBob').checked = settings.bob;
   $('setCaptions').checked = settings.captions;
+  $('setDiff').value = String(settings.difficulty);
   postU.uGammaInv.value = 1 / settings.bright;
   Sound.setHRTF(+settings.quality > 0);
   $('setBright').value = settings.bright; $('setBrightVal').textContent = Math.round(settings.bright * 100) + '%';
@@ -3698,6 +3713,7 @@ bindSetting('setQuality', 'quality', (t) => parseInt(t.value, 10), 'change');
 bindSetting('setBob', 'bob', (t) => t.checked, 'change');
 bindSetting('setBright', 'bright', (t) => parseFloat(t.value));
 bindSetting('setCaptions', 'captions', (t) => t.checked, 'change');
+bindSetting('setDiff', 'difficulty', (t) => parseInt(t.value, 10), 'change');
 function openSettings(from) { settingsReturn = from; showScreen('settingsScreen'); }
 
 // ---------------- attract mode (menu background) ----------------
@@ -3742,16 +3758,25 @@ function newGame(level = 1) {
 }
 function startGame(level = 1) {
   showScreen(null);
-  newGame(level);
-  onNewRun();
-  game.state = 'playing';
+  $('touchUI').classList.add('hidden'); $('hud').classList.add('hidden');
+  fadeTo('#000', 1, 0);
+  $('loading').style.opacity = '1';
+  game.state = 'loading';
   Sound.init(); Sound.resume();
-  applySettings();
-  clock.getDelta();
-  requestLock();
-  setTimeout(ensureScareFace, 1500);
-  fadeTo('#000', 1, 0); requestAnimationFrame(() => requestAnimationFrame(() => fadeTo('#000', 0, 1.8)));
-  showMessage(level === 2 ? 'Level 2 — The Flooded Halls. Find 5 notes.' : 'Level 1 — The Lobby. Find the 5 notes. Listen for the static.', 5);
+  requestLock();                     // must happen inside the click gesture
+  // give the browser a frame to show the loading screen before baking the first chunks
+  setTimeout(() => {
+    newGame(level);
+    onNewRun();
+    game.state = 'playing';
+    showScreen(null);
+    applySettings();
+    clock.getDelta();
+    $('loading').style.opacity = '0';
+    setTimeout(ensureScareFace, 1500);
+    requestAnimationFrame(() => requestAnimationFrame(() => fadeTo('#000', 0, 1.8)));
+    showMessage(level === 2 ? 'Level 2 \u2014 The Flooded Halls. Find 5 notes.' : 'Level 1 \u2014 The Lobby. Find the 5 notes. Listen for the static.', 5);
+  }, 60);
 }
 $('btnStart').addEventListener('click', () => startGame(1));
 $('btnRetry').addEventListener('click', () => startGame(game.level));
