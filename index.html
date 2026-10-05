@@ -3143,6 +3143,7 @@ uniform vec2 uLTOrigin;
 uniform vec3 uLightColor;
 uniform vec3 uAmbient;
 uniform vec3 uWake;       // xz = player position, z = wake strength
+uniform vec3 uWake2;      // same for the creature
 uniform float uCeil;
 varying vec3 vWorld;
 varying float vDepth;
@@ -3158,6 +3159,8 @@ void main() {
   // ripples spreading from the player's legs
   vec2 dp = p - uWake.xy; float dd = length(dp);
   n.xz += (dp / max(dd, 0.001)) * sin(dd * 16.0 - uTime * 7.0) * exp(-dd * 1.6) * uWake.z * 0.22;
+  vec2 dp2 = p - uWake2.xy; float dd2 = length(dp2);
+  n.xz += (dp2 / max(dd2, 0.001)) * sin(dd2 * 14.0 - uTime * 6.0) * exp(-dd2 * 1.2) * uWake2.z * 0.3;
   n = normalize(n);
   vec3 V = normalize(cameraPosition - vWorld);
   float fres = 0.05 + 0.95 * pow(1.0 - max(dot(n, V), 0.0), 4.0);
@@ -3191,7 +3194,7 @@ void main() {
 }
 `;
 const waterU = {
-  ...U, uLT: { value: lightTex }, uLTOrigin: { value: new THREE.Vector2() }, uWake: { value: new THREE.Vector3() }, uCeil: { value: WALL_H },
+  ...U, uLT: { value: lightTex }, uLTOrigin: { value: new THREE.Vector2() }, uWake: { value: new THREE.Vector3() }, uWake2: { value: new THREE.Vector3() }, uCeil: { value: WALL_H },
 };
 const water = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), new THREE.ShaderMaterial({
   uniforms: waterU, vertexShader: WATER_VERT, fragmentShader: WATER_FRAG, transparent: true, depthWrite: false,
@@ -3207,6 +3210,7 @@ function updateWater(dt) {
   water.position.set(Math.round(player.pos.x / 10) * 10, WATER_Y, Math.round(player.pos.z / 10) * 10);
   wakeAmt += ((player.speed > 0.3 ? Math.min(1, player.speed / 3) : 0) - wakeAmt) * Math.min(1, dt * 3);
   waterU.uWake.value.set(player.pos.x, player.pos.z, wakeAmt);
+  waterU.uWake2.value.set(monster.pos.x, monster.pos.z, monster.active ? Math.min(1, monster.speed / 2.5) : 0);
   updateLightTexture();
   updateWaterAmbience(dt);
 }
