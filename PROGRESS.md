@@ -37,3 +37,10 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   dynamic so flickering / dying / broken lights animate in the vertex shader (CPU mirror for gameplay). Dark zones
   come from a value-noise field where ~90% of fixtures are broken. Exponential fog tinted by the local light level.
   Chunk building is time-sliced with a generator (3 ms/frame budget, ~15 ms per chunk total).
+- **[06:48 UTC] Feature 4 — Sound: DONE.** Procedural Web Audio engine: compressor-protected master bus, generated
+  convolution reverb, brown-noise room tone + beating low drone, fluorescent buzz (120 Hz hum + ballast whine + sizzle)
+  whose level follows the CPU-computed brightness of nearby fixtures, electrical zaps when a nearby light flickers,
+  carpet footsteps (noise burst + thump; louder/brighter when running, near-silent crouching) and water splashes for
+  level 2, 8 kinds of spatialised (HRTF) distant noises (thuds, creaks, footsteps, whispers, door slams, knocking,
+  groans, crackles) every 9-25 s, and a lub-dub heartbeat whose rate/volume follow `game.danger`.
+  Verified with an AnalyserNode that every sound produces signal without clipping.

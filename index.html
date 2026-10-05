@@ -971,6 +971,352 @@ function updateChunks(px, pz, force = false, budgetMs = 3) {
 }
 
 // ============================================================================
+//  AUDIO (all procedural, Web Audio API)
+// ============================================================================
+const Sound = (() => {
+  let ctx = null, master, comp, sfx, amb, revIn, noiseBuf, brownBuf;
+  let buzzGain = null, buzzTone = null, droneGain = null, toneGain = null;
+  let volume = 0.8, hrtf = true;
+  const loops = [];   // persistent spatial loops (monster breath, note static, ...)
+
+  function makeNoise(seconds) {
+    const len = Math.floor(ctx.sampleRate * seconds), b = ctx.createBuffer(1, len, ctx.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    return b;
+  }
+  function makeBrown(seconds) {
+    const len = Math.floor(ctx.sampleRate * seconds), b = ctx.createBuffer(1, len, ctx.sampleRate), d = b.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+    // crossfade the ends so the loop is seamless
+    const f = Math.floor(ctx.sampleRate * 0.05);
+    for (let i = 0; i < f; i++) { const k = i / f; d[len - f + i] = d[len - f + i] * (1 - k) + d[i] * k; }
+    return b;
+  }
+  function makeImpulse(seconds, decay) {
+    const len = Math.floor(ctx.sampleRate * seconds), b = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) {
+      const d = b.getChannelData(c);
+      let lp = 0;
+      for (let i = 0; i < len; i++) {
+        const t = i / len;
+        lp = lp * 0.55 + (Math.random() * 2 - 1) * 0.45;          // slightly dull reflections
+        d[i] = lp * Math.pow(1 - t, decay) * (i < 300 ? i / 300 : 1);
+      }
+    }
+    return b;
+  }
+
+  function init() {
+    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try { ctx = new AC(); } catch (e) { ctx = null; return; }
+    master = ctx.createGain(); master.gain.value = volume;
+    comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -12; comp.knee.value = 8; comp.ratio.value = 5; comp.attack.value = 0.003; comp.release.value = 0.25;
+    master.connect(comp); comp.connect(ctx.destination);
+    sfx = ctx.createGain(); sfx.connect(master);
+    amb = ctx.createGain(); amb.connect(master);
+    const reverb = ctx.createConvolver(); reverb.buffer = makeImpulse(2.6, 2.4);
+    revIn = ctx.createGain(); revIn.connect(reverb);
+    const revOut = ctx.createGain(); revOut.gain.value = 0.55; reverb.connect(revOut); revOut.connect(master);
+    noiseBuf = makeNoise(3); brownBuf = makeBrown(6);
+    startAmbience();
+  }
+  const now = () => ctx.currentTime;
+  function noiseSrc(loop = false, buf = noiseBuf) {
+    const s = ctx.createBufferSource(); s.buffer = buf; s.loop = loop; return s;
+  }
+  function env(g, t, a, peak, d, sustain = 0.0001) {
+    g.gain.cancelScheduledValues(t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t + a);
+    g.gain.exponentialRampToValueAtTime(Math.max(sustain, 0.0001), t + a + d);
+  }
+  function filter(type, f, q = 0.7) { const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; }
+  function gain(v = 1) { const g = ctx.createGain(); g.gain.value = v; return g; }
+  // Panner placed in world space; returns the input node
+  function panner(x, y, z, ref = 2, roll = 1.1, rev = 0.3, out = sfx) {
+    const p = ctx.createPanner();
+    p.panningModel = hrtf ? 'HRTF' : 'equalpower';
+    p.distanceModel = 'inverse'; p.refDistance = ref; p.maxDistance = 200; p.rolloffFactor = roll;
+    setPos(p, x, y, z);
+    p.connect(out);
+    if (rev > 0) { const s = gain(rev); p.connect(s); s.connect(revIn); }
+    return p;
+  }
+  function setPos(p, x, y, z) {
+    if (p.positionX) { p.positionX.value = x; p.positionY.value = y; p.positionZ.value = z; }
+    else p.setPosition(x, y, z);
+  }
+
+  // ---------------- ambience ----------------
+  function startAmbience() {
+    // room tone: brown noise, very low
+    const rt = noiseSrc(true, brownBuf), rtf = filter('lowpass', 260), rtg = gain(0.05);
+    rt.connect(rtf); rtf.connect(rtg); rtg.connect(amb); rt.start();
+    // uneasy drone: beating low sines with a slow swell
+    droneGain = gain(0.0);
+    const d1 = ctx.createOscillator(); d1.frequency.value = 55;
+    const d2 = ctx.createOscillator(); d2.frequency.value = 55.37;
+    const d3 = ctx.createOscillator(); d3.type = 'triangle'; d3.frequency.value = 82.6;
+    const d3g = gain(0.25);
+    d1.connect(droneGain); d2.connect(droneGain); d3.connect(d3g); d3g.connect(droneGain);
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.07; const lfoG = gain(0.012);
+    lfo.connect(lfoG); lfoG.connect(droneGain.gain);
+    droneGain.gain.value = 0.02;
+    droneGain.connect(amb);
+    d1.start(); d2.start(); d3.start(); lfo.start();
+    // fluorescent buzz: mains hum + ballast whine + sizzle, level driven by nearby lights
+    buzzGain = gain(0);
+    const hum = ctx.createOscillator(); hum.type = 'sawtooth'; hum.frequency.value = 120;
+    const humF = filter('bandpass', 360, 1.4), humG = gain(0.55);
+    hum.connect(humF); humF.connect(humG); humG.connect(buzzGain);
+    const whine = ctx.createOscillator(); whine.type = 'square'; whine.frequency.value = 240.6;
+    const whF = filter('bandpass', 1900, 6), whG = gain(0.09);
+    whine.connect(whF); whF.connect(whG); whG.connect(buzzGain);
+    buzzTone = hum;
+    const siz = noiseSrc(true), sizF = filter('bandpass', 5200, 0.9), sizG = gain(0.05);
+    siz.connect(sizF); sizF.connect(sizG); sizG.connect(buzzGain);
+    // slight amplitude wobble at 2x mains
+    const am = ctx.createOscillator(); am.frequency.value = 0.37; const amG = gain(0.15);
+    am.connect(amG); amG.connect(humG.gain);
+    buzzGain.connect(amb);
+    hum.start(); whine.start(); siz.start(); am.start();
+    toneGain = gain(1); toneGain.connect(amb);
+  }
+
+  // ---------------- one-shots ----------------
+  function footstep(kind, surface, vol = 1) {
+    if (!ctx) return;
+    const t = now() + 0.005;
+    const loud = kind === 'run' ? 0.5 : kind === 'crouch' ? 0.07 : 0.2;
+    const v = loud * vol * (0.85 + Math.random() * 0.3);
+    if (surface === 'water') {
+      const s = noiseSrc(), f = filter('bandpass', 900 + Math.random() * 700, 0.9), g = gain(0);
+      s.connect(f); f.connect(g); g.connect(sfx);
+      env(g, t, 0.01, v * 1.3, 0.28);
+      s.start(t, Math.random() * 2, 0.4);
+      const s2 = noiseSrc(), f2 = filter('highpass', 2500, 0.7), g2 = gain(0);
+      s2.connect(f2); f2.connect(g2); g2.connect(sfx);
+      env(g2, t + 0.07, 0.02, v * 0.5, 0.22);
+      s2.start(t + 0.07, Math.random() * 2, 0.35);
+      const sg = gain(0.25 * v); g.connect(sg); sg.connect(revIn);
+    } else {
+      const s = noiseSrc(), f = filter('lowpass', (kind === 'run' ? 1500 : 850) * (0.8 + Math.random() * 0.4), 0.9), g = gain(0);
+      s.connect(f); f.connect(g); g.connect(sfx);
+      env(g, t, 0.006, v, kind === 'run' ? 0.11 : 0.14);
+      s.start(t, Math.random() * 2, 0.25);
+      const o = ctx.createOscillator(), og = gain(0);
+      o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.09);
+      o.connect(og); og.connect(sfx);
+      env(og, t, 0.005, v * 0.9, 0.1);
+      o.start(t); o.stop(t + 0.2);
+      const sg = gain(0.12 * v); g.connect(sg); sg.connect(revIn);
+    }
+  }
+  function click(v = 0.25, f = 2400) {
+    if (!ctx) return;
+    const t = now(), s = noiseSrc(), fl = filter('bandpass', f, 2), g = gain(0);
+    s.connect(fl); fl.connect(g); g.connect(sfx);
+    env(g, t, 0.002, v, 0.035);
+    s.start(t, Math.random(), 0.06);
+  }
+  function zap(v = 0.2) {
+    if (!ctx) return;
+    const t = now(), s = noiseSrc(), fl = filter('highpass', 1800, 0.7), g = gain(0);
+    s.connect(fl); fl.connect(g); g.connect(sfx);
+    env(g, t, 0.002, v, 0.05 + Math.random() * 0.08);
+    s.start(t, Math.random() * 2, 0.15);
+    const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = 120; const og = gain(0);
+    o.connect(og); og.connect(sfx); env(og, t, 0.002, v * 0.25, 0.08); o.start(t); o.stop(t + 0.12);
+  }
+  function paper() {
+    if (!ctx) return;
+    const t = now();
+    for (let i = 0; i < 4; i++) {
+      const s = noiseSrc(), f = filter('bandpass', 2500 + Math.random() * 2500, 1.2), g = gain(0);
+      s.connect(f); f.connect(g); g.connect(sfx);
+      env(g, t + i * 0.07, 0.01, 0.12, 0.08);
+      s.start(t + i * 0.07, Math.random() * 2, 0.15);
+    }
+  }
+  function heartbeat(intensity) {
+    if (!ctx) return;
+    const t = now();
+    const beat = (dt, amp) => {
+      const o = ctx.createOscillator(), g = gain(0), f = filter('lowpass', 140, 0.8);
+      o.frequency.setValueAtTime(62, t + dt); o.frequency.exponentialRampToValueAtTime(36, t + dt + 0.14);
+      o.connect(f); f.connect(g); g.connect(sfx);
+      env(g, t + dt, 0.012, 0.85 * intensity * amp, 0.16);
+      o.start(t + dt); o.stop(t + dt + 0.3);
+    };
+    beat(0, 1); beat(0.17, 0.65);
+  }
+  function breathe(intensity) {   // player panting when exhausted
+    if (!ctx) return;
+    const t = now(), s = noiseSrc(), f = filter('bandpass', 900, 1.5), g = gain(0);
+    s.connect(f); f.connect(g); g.connect(sfx);
+    env(g, t, 0.18, 0.11 * intensity, 0.35);
+    s.start(t, Math.random() * 2, 0.7);
+  }
+
+  // ---------------- distant, strange noises ----------------
+  function around(px, pz, dist) {
+    const a = Math.random() * Math.PI * 2;
+    return [px + Math.cos(a) * dist, pz + Math.sin(a) * dist];
+  }
+  const distant = {
+    thud(px, pz) {
+      const [x, z] = around(px, pz, 18 + Math.random() * 14), p = panner(x, 1.5, z, 4, 1, 0.9);
+      const t = now(), s = noiseSrc(), f = filter('lowpass', 220, 0.8), g = gain(0);
+      s.connect(f); f.connect(g); g.connect(p); env(g, t, 0.005, 1.1, 0.7); s.start(t, Math.random() * 2, 1);
+      const o = ctx.createOscillator(), og = gain(0); o.frequency.setValueAtTime(55, t); o.frequency.exponentialRampToValueAtTime(30, t + 0.4);
+      o.connect(og); og.connect(p); env(og, t, 0.005, 0.9, 0.5); o.start(t); o.stop(t + 0.7);
+    },
+    creak(px, pz) {
+      const [x, z] = around(px, pz, 12 + Math.random() * 14), p = panner(x, 2, z, 4, 1, 0.8);
+      const t = now(), dur = 1.4 + Math.random() * 1.6;
+      const o = ctx.createOscillator(); o.type = 'sawtooth';
+      const f0 = 70 + Math.random() * 60;
+      o.frequency.setValueAtTime(f0, t);
+      for (let i = 1; i <= 6; i++) o.frequency.linearRampToValueAtTime(f0 * (0.8 + Math.random() * 0.5), t + (dur * i) / 6);
+      const bp = filter('bandpass', 500, 9); bp.frequency.setValueAtTime(400, t); bp.frequency.linearRampToValueAtTime(950, t + dur);
+      const g = gain(0); o.connect(bp); bp.connect(g); g.connect(p);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.5, t + 0.3); g.gain.linearRampToValueAtTime(0.35, t + dur * 0.7); g.gain.linearRampToValueAtTime(0.0001, t + dur);
+      o.start(t); o.stop(t + dur + 0.1);
+    },
+    steps(px, pz, count = 5 + Math.floor(Math.random() * 5), dist = 14 + Math.random() * 12) {
+      const a0 = Math.random() * Math.PI * 2, t0 = now();
+      for (let i = 0; i < count; i++) {
+        const a = a0 + i * 0.05, x = px + Math.cos(a) * (dist - i * 0.6), z = pz + Math.sin(a) * (dist - i * 0.6);
+        const p = panner(x, 0.2, z, 3, 1, 0.6);
+        const t = t0 + i * (0.5 + Math.random() * 0.12);
+        const s = noiseSrc(), f = filter('lowpass', 500, 0.8), g = gain(0);
+        s.connect(f); f.connect(g); g.connect(p); env(g, t, 0.006, 0.9, 0.15); s.start(t, Math.random() * 2, 0.25);
+        const o = ctx.createOscillator(), og = gain(0); o.frequency.setValueAtTime(70, t); o.frequency.exponentialRampToValueAtTime(35, t + 0.1);
+        o.connect(og); og.connect(p); env(og, t, 0.005, 0.8, 0.12); o.start(t); o.stop(t + 0.2);
+      }
+    },
+    whisper(px, pz) {
+      const [x, z] = around(px, pz, 5 + Math.random() * 6), p = panner(x, 1.6, z, 2, 1.2, 0.7);
+      const t = now(), dur = 1.6 + Math.random() * 1.4;
+      const s = noiseSrc(), bp = filter('bandpass', 1200, 5), bp2 = filter('bandpass', 2600, 6), g = gain(0);
+      s.connect(bp); s.connect(bp2); bp.connect(g); bp2.connect(g); g.connect(p);
+      for (let tt = 0; tt < dur; tt += 0.09 + Math.random() * 0.08) {
+        bp.frequency.setValueAtTime(500 + Math.random() * 1500, t + tt);
+        bp2.frequency.setValueAtTime(1800 + Math.random() * 1800, t + tt);
+        g.gain.setValueAtTime(0.05 + Math.random() * 0.25, t + tt);
+      }
+      g.gain.setValueAtTime(0.0001, t + dur);
+      s.start(t, Math.random() * 2, dur + 0.1);
+    },
+    slam(px, pz) {
+      const [x, z] = around(px, pz, 14 + Math.random() * 12), p = panner(x, 1.2, z, 5, 1, 1.0);
+      const t = now();
+      const s = noiseSrc(), f = filter('lowpass', 900, 0.8), g = gain(0);
+      s.connect(f); f.connect(g); g.connect(p); env(g, t, 0.002, 1.4, 0.35); s.start(t, Math.random() * 2, 0.6);
+      const s2 = noiseSrc(), f2 = filter('bandpass', 1400, 3), g2 = gain(0);
+      s2.connect(f2); f2.connect(g2); g2.connect(p); env(g2, t + 0.12, 0.002, 0.4, 0.12); s2.start(t + 0.12, Math.random() * 2, 0.3);
+    },
+    knock(px, pz) {
+      const [x, z] = around(px, pz, 8 + Math.random() * 10), p = panner(x, 1.4, z, 3, 1, 0.7);
+      const t0 = now(), n = 3 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < n; i++) {
+        const t = t0 + i * 0.32 + (i === n - 1 ? 0.25 : 0);
+        const s = noiseSrc(), f = filter('bandpass', 420 + Math.random() * 120, 3), g = gain(0);
+        s.connect(f); f.connect(g); g.connect(p); env(g, t, 0.002, 1.3, 0.09); s.start(t, Math.random() * 2, 0.15);
+      }
+    },
+    groan(px, pz) {
+      const [x, z] = around(px, pz, 20 + Math.random() * 15), p = panner(x, 1.5, z, 5, 1, 1.0);
+      const t = now(), dur = 3 + Math.random() * 2;
+      const lp = filter('lowpass', 260, 2), g = gain(0);
+      for (const det of [0, 0.9, -1.3]) {
+        const o = ctx.createOscillator(); o.type = 'sawtooth';
+        o.frequency.setValueAtTime(48 + det, t); o.frequency.linearRampToValueAtTime(38 + det, t + dur);
+        o.connect(lp); o.start(t); o.stop(t + dur + 0.1);
+      }
+      lp.connect(g); g.connect(p);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.45, t + dur * 0.4); g.gain.linearRampToValueAtTime(0.0001, t + dur);
+    },
+    crackle(px, pz) {
+      const [x, z] = around(px, pz, 6 + Math.random() * 8), p = panner(x, 2.7, z, 2, 1, 0.3);
+      const t0 = now();
+      for (let i = 0; i < 9; i++) {
+        const t = t0 + Math.random() * 0.9;
+        const s = noiseSrc(), f = filter('highpass', 2500, 0.7), g = gain(0);
+        s.connect(f); f.connect(g); g.connect(p); env(g, t, 0.001, 0.25 + Math.random() * 0.3, 0.015); s.start(t, Math.random() * 2, 0.05);
+      }
+    },
+  };
+  function randomDistant(px, pz) {
+    if (!ctx) return;
+    const keys = ['thud', 'creak', 'steps', 'whisper', 'slam', 'knock', 'groan', 'crackle', 'thud', 'creak', 'crackle'];
+    const k = keys[Math.floor(Math.random() * keys.length)];
+    distant[k](px, pz);
+    return k;
+  }
+
+  // ---------------- per-frame update ----------------
+  function setListener(pos, fwd) {
+    if (!ctx) return;
+    const L = ctx.listener;
+    if (L.positionX) {
+      L.positionX.value = pos.x; L.positionY.value = pos.y; L.positionZ.value = pos.z;
+      L.forwardX.value = fwd.x; L.forwardY.value = fwd.y; L.forwardZ.value = fwd.z;
+      L.upX.value = 0; L.upY.value = 1; L.upZ.value = 0;
+    } else { L.setPosition(pos.x, pos.y, pos.z); L.setOrientation(fwd.x, fwd.y, fwd.z, 0, 1, 0); }
+  }
+  function setBuzz(level) {
+    if (!ctx || !buzzGain) return;
+    buzzGain.gain.setTargetAtTime(level, now(), 0.025);
+  }
+  function setDrone(level) { if (ctx && droneGain) droneGain.gain.setTargetAtTime(level, now(), 0.5); }
+  function setVolume(v) { volume = v; if (master) master.gain.setTargetAtTime(v, now(), 0.05); }
+  function setHRTF(on) { hrtf = on; }
+  function suspend() { if (ctx && ctx.state === 'running') ctx.suspend(); }
+  function resume() { if (ctx && ctx.state === 'suspended') ctx.resume(); }
+
+  return {
+    init, footstep, click, zap, paper, heartbeat, breathe, randomDistant, distant, setListener, setBuzz, setDrone,
+    setVolume, setHRTF, suspend, resume,
+    get ctx() { return ctx; },
+    // exposed helpers for other systems
+    _: { noiseSrc: (...a) => noiseSrc(...a), filter: (...a) => filter(...a), gain: (...a) => gain(...a), panner: (...a) => panner(...a), env: (...a) => env(...a), setPos: (...a) => setPos(...a), get sfx() { return sfx; }, get revIn() { return revIn; }, get master() { return master; }, get noiseBuf() { return noiseBuf; }, get brownBuf() { return brownBuf; } },
+  };
+})();
+
+// Ambient sound director: buzz from nearby fixtures, flicker zaps, random distant noises
+const ambience = { nextDistant: 6 + Math.random() * 6, prevLevels: new Map(), lastEvent: '' };
+function updateAmbientAudio(dt) {
+  const px = player.pos.x, pz = player.pos.z;
+  const cx = Math.floor(px / CELL), cz = Math.floor(pz / CELL);
+  let buzz = 0;
+  const seen = new Set();
+  for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) {
+    const lx = cx + dx, lz = cz + dz, t = world.lightType(lx, lz);
+    if (t < 0 || t === LIGHT.BROKEN) continue;
+    const x = (lx + 0.5) * CELL, z = (lz + 0.5) * CELL;
+    const d2 = (x - px) ** 2 + (z - pz) ** 2 + 1.3 ** 2;
+    const lvl = lightLevelCPU(world.lightSeed(lx, lz), x, z);
+    buzz += lvl / (1 + d2 * 0.35);
+    const key = ckey(lx, lz); seen.add(key);
+    const prev = ambience.prevLevels.get(key);
+    if (prev !== undefined && Math.abs(prev - lvl) > 0.5 && d2 < 30 && Math.random() < 0.6) Sound.zap(0.35 / (1 + d2 * 0.15));
+    ambience.prevLevels.set(key, lvl);
+  }
+  if (ambience.prevLevels.size > 200) for (const k of ambience.prevLevels.keys()) if (!seen.has(k)) ambience.prevLevels.delete(k);
+  Sound.setBuzz(clamp(buzz, 0, 1.5) * 0.06);
+  ambience.nextDistant -= dt;
+  if (ambience.nextDistant <= 0) {
+    ambience.lastEvent = Sound.randomDistant(px, pz) || '';
+    ambience.nextDistant = 9 + Math.random() * 16;
+  }
+}
+
+// ============================================================================
 //  INPUT
 // ============================================================================
 const keys = Object.create(null);
@@ -1083,16 +1429,21 @@ function updatePlayer(dt) {
 }
 
 let footstepCount = 0;
-function onFootstep() { footstepCount++; }
+function onFootstep() {
+  footstepCount++;
+  const kind = player.running ? 'run' : player.crouching ? 'crouch' : 'walk';
+  Sound.footstep(kind, world.level === 2 ? 'water' : 'carpet');
+}
 
 // ============================================================================
 //  GAME STATE
 // ============================================================================
-const game = { state: 'menu', time: 0 };
+const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0 };
 function startGame() {
   $('startScreen').classList.add('hidden');
   $('hud').classList.remove('hidden');
   game.state = 'playing';
+  Sound.init();
   requestLock();
 }
 $('btnStart').addEventListener('click', startGame);
@@ -1101,6 +1452,7 @@ $('btnStart').addEventListener('click', startGame);
 //  MAIN LOOP
 // ============================================================================
 const clock = new THREE.Clock();
+const _camDir = new THREE.Vector3();
 function frame() {
   requestAnimationFrame(frame);
   const dt = Math.min(clock.getDelta(), 0.05);
@@ -1109,6 +1461,14 @@ function frame() {
     U.uTime.value = (U.uTime.value + dt) % 1000;
     updatePlayer(dt);
     updateChunks(player.pos.x, player.pos.z);
+    updateAmbientAudio(dt);
+    camera.getWorldDirection(_camDir);
+    Sound.setListener(camera.position, _camDir);
+    // heartbeat when danger is near
+    if (game.danger > 0.04) {
+      game.heartTimer -= dt;
+      if (game.heartTimer <= 0) { Sound.heartbeat(clamp(0.25 + game.danger, 0, 1.2)); game.heartTimer = 60 / lerp(62, 165, clamp(game.danger, 0, 1)); }
+    } else game.heartTimer = 0;
   }
   renderer.render(scene, camera);
 }
@@ -1118,7 +1478,7 @@ updateChunks(player.pos.x, player.pos.z, true);
 frame();
 
 // Debug / test hook
-window.__bk = { THREE, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { THREE, Sound, ambience, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>
