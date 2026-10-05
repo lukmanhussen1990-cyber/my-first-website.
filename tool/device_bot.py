@@ -262,10 +262,14 @@ def drag(g, slot, rows, cols, r0, c0, ms=650):
     shell(f'input swipe {int(sx)} {int(sy)} {int(tx)} {int(ty)} {ms}')
 
 
-def find_text_bounds(text):
+def find_text_bounds(text, tries=2):
     """Finds an on-screen element by text via uiautomator (Flutter semantics)."""
-    for _ in range(3):
-        shell('uiautomator dump /sdcard/bb_ui.xml', timeout=90)
+    for _ in range(tries):
+        try:
+            shell('uiautomator dump /sdcard/bb_ui.xml', timeout=25)
+        except subprocess.TimeoutExpired:
+            log('uiautomator dump timed out')
+            continue
         xml = adb('exec-out', 'cat', '/sdcard/bb_ui.xml').stdout.decode(errors='replace')
         if '<hierarchy' not in xml:
             time.sleep(1)
@@ -299,6 +303,22 @@ def find_gear(img, g):
     if len(xs) < 15:
         return None
     return sum(xs) / len(xs), sum(ys) / len(ys)
+
+
+def looks_like_home(img):
+    """Home screen: blue gradient over the full width and a green play button."""
+    w, h = img.size
+    px = img.load()
+    def bluish(c):
+        return c[2] > 150 and c[0] < 90 and c[1] < 130
+    edges_ok = all(bluish(px[x, int(h * 0.5)]) for x in (5, w // 2, w - 6))
+    greens = 0
+    for y in range(int(h * 0.45), int(h * 0.85), 6):
+        for x in range(int(w * 0.3), int(w * 0.7), 6):
+            r, g, b = px[x, y]
+            if g > 150 and r < 140 and b < 120:
+                greens += 1
+    return edges_ok and greens > 40
 
 
 def tap(x, y):
@@ -470,8 +490,8 @@ def main():
     # Back button goes to the home screen.
     shell('input keyevent KEYCODE_BACK')
     time.sleep(1.5)
-    shot('12_home')
-    if find_text_bounds('Continue') is None and find_text_bounds('Classic') is None:
+    img = shot('12_home')
+    if not looks_like_home(img):
         fail('home screen not shown after back')
 
     errors = [l for l in logcat_markers().splitlines() if 'BB_ERROR' in l]

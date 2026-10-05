@@ -21,7 +21,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late final AnimationController _bob = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))
-    ..repeat(reverse: true);
+    ..repeat(reverse: true, count: 6); // a few gentle bobs, then rest (saves battery)
   bool _howTo = false;
 
   @override
