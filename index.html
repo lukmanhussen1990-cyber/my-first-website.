@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Night Passenger</title>
+<meta name="description" content="A cinematic late-night drive through a misty forest, seen entirely from the back seat.">
+<meta name="theme-color" content="#06080b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,500&family=Overpass+Mono:wght@400;600&family=Overpass:wght@300;400;600;700&display=swap">
+<style>
+/* Layout: a full-bleed live render with overlays docked to the lower left, like film titles. */
+:root {
+  --night: #06080b;
+  --panel: rgba(7, 10, 14, 0.78);
+  --ink: #dde3ea;
+  --mist: #8d97a5;
+  --dim: #5a6472;
+  --amber: #ffb45e;
+  --sign: #0f5c38;
+  --sign-ink: #eef3ee;
+  --line: rgba(221, 227, 234, 0.14);
+  --sans: "Overpass", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --mono: "Overpass Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --serif: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--night);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+#view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; background: var(--night); touch-action: none; }
+button { font: inherit; color: inherit; }
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  z-index: 10;
+}
+[hidden] { display: none !important; }
+.eyebrow {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+/* Title */
+#title {
+  align-items: end;
+  background: linear-gradient(90deg, rgba(4, 6, 9, 0.92) 0%, rgba(4, 6, 9, 0.72) 38%, rgba(4, 6, 9, 0.1) 75%),
+              linear-gradient(0deg, rgba(4, 6, 9, 0.8) 0%, rgba(4, 6, 9, 0) 45%);
+}
+.title-inner {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 18px;
+  padding-inline: clamp(0px, 4vw, 48px);
+  padding-block: 0 clamp(0px, 3vh, 32px);
+  animation: rise 1.6s ease-out both;
+}
+h1 {
+  margin: 0;
+  font-weight: 300;
+  font-size: clamp(2.8rem, 7.5vw, 5.4rem);
+  line-height: 0.92;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.lede {
+  margin: 0;
+  max-width: 34em;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.15rem, 2.2vw, 1.4rem);
+  line-height: 1.4;
+  color: #c4ccd6;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.primary {
+  appearance: none;
+  border: 1px solid var(--amber);
+  background: var(--amber);
+  color: #120c05;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  padding: 14px 28px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+.primary:hover { background: #ffc785; }
+.primary:active { transform: translateY(1px); }
+.ghost {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: transparent;
+  padding: 12px 20px 10px;
+  border-radius: 3px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: var(--ink);
+}
+.ghost:hover { border-color: var(--mist); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+.seg button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--mist);
+  padding: 10px 14px 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { color: var(--ink); background: rgba(255, 180, 94, 0.14); }
+.seg-label { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+.controls {
+  margin: 4px 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px 20px;
+  font-size: 0.82rem;
+  color: var(--mist);
+}
+.controls div { display: flex; gap: 10px; align-items: baseline; min-width: 0; }
+.controls dt { font-family: var(--mono); color: var(--ink); white-space: nowrap; }
+.controls dd { margin: 0; }
+.fine { margin: 0; font-size: 0.8rem; color: var(--dim); letter-spacing: 0.02em; }
+
+/* The green distance sign, as if caught in the headlights. */
+.roadsign {
+  position: absolute;
+  right: clamp(16px, 5vw, 64px);
+  bottom: clamp(24px, 8vh, 96px);
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 4px 28px;
+  align-items: baseline;
+  padding: 16px 22px 12px;
+  background: var(--sign);
+  color: var(--sign-ink);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 3px var(--sign), inset 0 0 0 5px var(--sign-ink), 0 0 60px rgba(15, 92, 56, 0.35);
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: clamp(0.95rem, 1.6vw, 1.25rem);
+  letter-spacing: 0.06em;
+  transform: perspective(600px) rotateY(-14deg);
+  opacity: 0.88;
+  animation: signIn 2.4s ease-out 0.4s both;
+}
+.roadsign b { font-weight: 700; text-align: right; }
+
+/* Pause and end panels */
+#pause, #end, #error { place-items: center; background: rgba(3, 5, 8, 0.68); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+#error { position: fixed; inset: 0; display: grid; z-index: 30; padding: 16px; }
+.panel {
+  width: min(460px, 100%);
+  display: grid;
+  gap: 16px;
+  padding: 28px clamp(18px, 4vw, 32px);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.panel h2 { margin: 0; font-weight: 300; font-size: 1.9rem; letter-spacing: 0.08em; text-transform: uppercase; text-wrap: balance; }
+.panel label { display: grid; gap: 8px; font-size: 0.82rem; letter-spacing: 0.06em; color: var(--mist); }
+.panel label.check { display: flex; gap: 10px; align-items: center; }
+input[type="range"] { width: 100%; accent-color: var(--amber); }
+input[type="checkbox"] { accent-color: var(--amber); width: 16px; height: 16px; }
+.panel .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.end { width: min(560px, 100%); }
+.end h2 { font-size: clamp(1.5rem, 4vw, 2.1rem); letter-spacing: 0.04em; text-transform: none; font-family: var(--serif); font-style: italic; font-weight: 500; }
+#end-count { color: var(--amber); font-family: var(--sans); font-style: normal; font-weight: 600; white-space: nowrap; }
+#end-time { margin: 0; font-family: var(--mono); font-size: 0.8rem; color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase; }
+#end-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 0.92rem; }
+#end-list li { display: flex; gap: 12px; align-items: baseline; color: var(--ink); }
+#end-list li::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); transform: translateY(-1px); }
+#end-list li.missed { color: var(--dim); font-style: italic; }
+#end-list li.missed::before { background: transparent; box-shadow: inset 0 0 0 1px var(--dim); }
+
+/* In-drive HUD: almost nothing, and it fades away. */
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; transition: opacity 0.6s; }
+#hud.hidden { opacity: 0; }
+#hud > * { position: absolute; margin: 0; opacity: 0; transition: opacity 1.2s ease; }
+#hud > .on { opacity: 1; }
+#caption {
+  left: 50%;
+  bottom: max(9vh, 56px);
+  transform: translateX(-50%);
+  width: min(760px, calc(100% - 32px));
+  text-align: center;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.15rem, 2.3vw, 1.55rem);
+  line-height: 1.35;
+  color: #e7ebef;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.95), 0 0 2px rgba(0, 0, 0, 0.9);
+}
+#note {
+  left: max(16px, 3vw);
+  bottom: max(16px, 3.5vh);
+  max-width: min(520px, calc(100% - 32px));
+  padding-left: 18px;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  color: var(--mist);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.9);
+}
+#note::before { content: ""; position: absolute; left: 0; top: 0.42em; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 12px var(--amber); }
+#hint {
+  left: 50%;
+  top: max(16px, 4vh);
+  transform: translateX(-50%);
+  width: min(720px, calc(100% - 32px));
+  text-align: center;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mist);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.9);
+}
+#toast {
+  right: max(16px, 3vw);
+  top: max(16px, 4vh);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  color: var(--amber);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.9);
+  transition-duration: 0.3s;
+}
+#titlecard {
+  left: max(16px, 6vw);
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  gap: 6px;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.9);
+  transition-duration: 1.8s;
+}
+#titlecard .time { font-family: var(--mono); font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 400; letter-spacing: 0.08em; }
+#titlecard .place { font-size: 0.86rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--mist); }
+
+/* Loading */
+#loading {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: var(--night);
+  transition: opacity 0.9s ease;
+  padding-inline: 16px;
+}
+#loading.gone { opacity: 0; pointer-events: none; }
+.loading-inner { display: grid; gap: 14px; width: min(320px, 100%); }
+#loading-text { margin: 0; font-family: var(--serif); font-style: italic; font-size: 1.2rem; color: var(--mist); }
+.bar { height: 1px; background: var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--amber); transform-origin: left; transform: scaleX(0.02); transition: transform 0.4s ease; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes signIn { from { opacity: 0; filter: blur(6px); } to { opacity: 0.88; filter: none; } }
+@media (max-width: 720px) {
+  .roadsign { display: none; }
+  #title { background: linear-gradient(0deg, rgba(4, 6, 9, 0.94) 0%, rgba(4, 6, 9, 0.7) 55%, rgba(4, 6, 9, 0.25) 100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .title-inner, .roadsign { animation: none; }
+  #hud > * { transition-duration: 0.2s; }
+}
+</style>
+</head>
+<body>
+<canvas id="view" aria-label="View from the back seat of a car driving through a forest at night"></canvas>
+
+<div id="hud" aria-live="polite">
+  <div id="titlecard"><span class="time"></span><span class="place"></span></div>
+  <p id="caption" role="status"></p>
+  <p id="note"></p>
+  <p id="hint"></p>
+  <p id="toast"></p>
+</div>
+
+<section id="title" class="overlay" hidden>
+  <div class="title-inner">
+    <p class="eyebrow">Route 9 · 00:13</p>
+    <h1>Night<br>Passenger</h1>
+    <p class="lede">A late drive through the pines, seen from the back seat. You can’t drive. You can only watch, and notice what is out there.</p>
+    <div class="actions">
+      <button id="btn-start" class="primary" type="button">Get in</button>
+      <span class="seg-label" id="q-label">Quality</span>
+      <div class="seg" role="group" aria-labelledby="q-label">
+        <button type="button" data-q="low" aria-pressed="false">Low</button>
+        <button type="button" data-q="medium" aria-pressed="false">Medium</button>
+        <button type="button" data-q="high" aria-pressed="false">High</button>
+      </div>
+    </div>
+    <dl class="controls">
+      <div><dt>Mouse</dt><dd>Look around</dd></div>
+      <div><dt>Q / E</dt><dd>Lean left / right</dd></div>
+      <div><dt>W / S</dt><dd>Lean forward / back</dd></div>
+      <div><dt>R</dt><dd>Change station</dd></div>
+      <div><dt>V</dt><dd>Roll window</dd></div>
+      <div><dt>Esc</dt><dd>Pause</dd></div>
+    </dl>
+    <p class="fine">About nine minutes. Best with headphones, in the dark.</p>
+  </div>
+  <div class="roadsign" aria-hidden="true"><span>HOLLOW PINES</span><b>41</b><span>CEDAR FALLS</span><b>58</b></div>
+</section>
+
+<section id="pause" class="overlay" hidden>
+  <div class="panel" role="dialog" aria-labelledby="pause-title">
+    <h2 id="pause-title">Paused</h2>
+    <button id="btn-resume" class="primary" type="button">Keep riding</button>
+    <label for="opt-volume">Volume<input type="range" id="opt-volume" min="0" max="1" step="0.01"></label>
+    <label for="opt-sens">Look sensitivity<input type="range" id="opt-sens" min="0.3" max="2.5" step="0.05"></label>
+    <label class="check" for="opt-invert"><input type="checkbox" id="opt-invert"> Invert vertical look</label>
+    <label class="check" for="opt-captions"><input type="checkbox" id="opt-captions" checked> Captions</label>
+    <div class="row">
+      <span class="seg-label" id="pq-label">Quality (restarts)</span>
+      <div class="seg" role="group" aria-labelledby="pq-label">
+        <button type="button" data-q="low" aria-pressed="false">Low</button>
+        <button type="button" data-q="medium" aria-pressed="false">Medium</button>
+        <button type="button" data-q="high" aria-pressed="false">High</button>
+      </div>
+    </div>
+    <button id="btn-restart" class="ghost" type="button">Start the drive over</button>
+  </div>
+</section>
+
+<section id="end" class="overlay" hidden>
+  <div class="panel end" role="dialog" aria-labelledby="end-title">
+    <p class="eyebrow">Hollow Pines · 02:58</p>
+    <h2 id="end-title">You noticed <span id="end-count">0 of 10</span> things on Route 9.</h2>
+    <p id="end-time"></p>
+    <ul id="end-list"></ul>
+    <div class="actions">
+      <button id="btn-again" class="primary" type="button">Ride again</button>
+      <button id="btn-endless" class="ghost" type="button">Keep driving</button>
+    </div>
+  </div>
+</section>
+
+<div id="loading">
+  <div class="loading-inner">
+    <p class="eyebrow">Night Passenger</p>
+    <p id="loading-text">Warming up the engine…</p>
+    <div class="bar"><i id="loading-bar"></i></div>
+  </div>
+</div>
+
+<div id="error" hidden>
+  <div class="panel">
+    <h2>Can’t start the drive</h2>
+    <p></p>
+  </div>
+</div>
+
+<script>
+  // ES modules cannot load from file:// — explain instead of failing silently.
+  if (location.protocol === 'file:') {
+    document.getElementById('loading').hidden = true;
+    var err = document.getElementById('error');
+    err.hidden = false;
+    err.querySelector('p').textContent = 'Browsers block this game’s modules when the page is opened straight from disk. Serve the folder instead, for example with “npx serve” or “python3 -m http.server”, then open the localhost address it prints.';
+  }
+</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
