@@ -54,3 +54,9 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   stuck detection, and a director that relocates it out of sight if it drifts > 62 m away. Spatial heavy footsteps,
   breathing/growl loop, chase screech, nearby lights stutter. Catch -> 3D lunge + violently shaking procedural 2D
   face (canvas) + distorted scream -> game over screen. Tested headless: sees, chases, catches, game over shown.
+- **[06:59 UTC] Feature 6 — Stamina + flashlight: DONE.** Stamina drains in ~6.5 s of sprinting, regenerates after a
+  short rest (faster standing still); hitting zero makes you exhausted (no sprint until 35%) with panting sounds.
+  F toggles a per-pixel spotlight (offset to the right hand, lags slightly behind the view, reflector rings) whose
+  battery lasts ~110 s and stutters below 20%; it also makes you much easier for the monster to see. Spare batteries
+  spawn deterministically in ~38% of chunks (+50% charge, remembered once collected so they don't respawn), with a
+  pulsing glint sprite so they can be spotted in the dark. HUD: notes counter, stamina bar, battery gauge, messages.

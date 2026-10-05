@@ -14,6 +14,15 @@
 
   /* HUD */
   #hud { position: fixed; inset: 0; pointer-events: none; }
+  #notesBox { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 16px; font-size: 18px; letter-spacing: 0.18em; color: #efe2a8; text-shadow: 0 0 6px #000, 0 0 2px #000; }
+  #notesBox .lbl { opacity: 0.6; font-size: 14px; }
+  #message { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%); max-width: 80vw; text-align: center; font-size: 17px; letter-spacing: 0.08em; color: #f1e6b8; text-shadow: 0 0 8px #000, 0 0 3px #000; opacity: 0; transition: opacity 0.6s; }
+  .bar { position: absolute; bottom: max(18px, env(safe-area-inset-bottom)); height: 6px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(240, 225, 160, 0.35); transition: opacity 0.5s; }
+  .bar .fill { height: 100%; width: 100%; background: #d8c77a; }
+  #stamina { left: 16px; width: min(26vw, 220px); }
+  #battery { right: 16px; width: min(18vw, 140px); }
+  #battery::before { content: ''; position: absolute; right: -5px; top: 1px; width: 3px; height: 4px; background: rgba(240, 225, 160, 0.5); }
+  #batteryPct { position: absolute; right: 0; bottom: 10px; font-size: 13px; color: #e8dca0; text-shadow: 0 0 4px #000; white-space: nowrap; }
   #crosshair { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: rgba(255, 245, 200, 0.55); }
 
   /* Overlay screens */
@@ -31,6 +40,10 @@
 
 <div id="hud" class="hidden">
   <div id="crosshair"></div>
+  <div id="notesBox"><span class="lbl">NOTES</span> <span id="notesCount">0 / 5</span></div>
+  <div id="message"></div>
+  <div id="stamina" class="bar"><div id="staminaFill" class="fill"></div></div>
+  <div id="battery" class="bar"><div id="batteryFill" class="fill"></div><span id="batteryPct">100%</span></div>
 </div>
 
 <div id="startScreen" class="screen">
@@ -230,7 +243,7 @@ class World {
       if (style === STYLE.HALL && (lx + lz) % 2 === 1) continue;
       const dark = this.darkness(cx, cz);
       let type = LIGHT.NORMAL;
-      if (dark > 0.58 && r1 < 0.9) type = LIGHT.BROKEN;
+      if (dark > 0.58 && r1 < (dark > 0.7 ? 0.97 : 0.86)) type = LIGHT.BROKEN;
       else if (r2 < 0.035) type = LIGHT.BROKEN;
       else if (r2 < 0.10) type = LIGHT.FLICKER;
       else if (r2 < 0.13) type = LIGHT.DYING;
@@ -495,7 +508,7 @@ const U = {
   uOutage: { value: new THREE.Vector4(0, 0, 0, 0) },        // xy = centre, z = radius, w = active
   uLightMul: { value: 1.0 },
   uLightColor: { value: new THREE.Color(1.0, 0.9, 0.66) },
-  uAmbient: { value: new THREE.Color(0.03, 0.026, 0.018) },
+  uAmbient: { value: new THREE.Color(0.022, 0.019, 0.013) },
   uFogColor: { value: new THREE.Color(0.25, 0.21, 0.11) },
   uFogDensity: { value: 0.045 },
   uFlashPos: { value: new THREE.Vector3() },
@@ -950,12 +963,14 @@ function finishChunk(kx, kz, g) {
   group.matrixAutoUpdate = false;
   scene.add(group);
   chunkMeshes.set(ckey(kx, kz), { kx, kz, group });
+  spawnChunkItems(kx, kz);
 }
 function disposeChunk(c) {
+  despawnChunkItems(ckey(c.kx, c.kz));
   scene.remove(c.group);
   c.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
 }
-function clearChunks() { for (const c of chunkMeshes.values()) disposeChunk(c); chunkMeshes.clear(); building = null; }
+function clearChunks() { for (const c of chunkMeshes.values()) disposeChunk(c); chunkMeshes.clear(); building = null; clearItems(); }
 const _needed = [];
 function updateChunks(px, pz, force = false, budgetMs = 3) {
   const pkx = fdiv(px, CHUNK_SIZE), pkz = fdiv(pz, CHUNK_SIZE);
@@ -1945,15 +1960,243 @@ function updateJumpScare(dt) {
   if (t > 1.6 && scare.active) { scare.active = false; ov.style.display = 'none'; monsterMat.uniforms.uScare.value = 0; mouthMat.uniforms.uScare.value = 0; onGameOver(); }
 }
 
+// Goal state (filled in by the notes/exit system)
+const NOTES_NEEDED = 5;
+const goal = { specs: [] };
+const flash = { on: false, battery: 1 };
+// ============================================================================
+//  HUD helpers
+// ============================================================================
+const hud = {
+  msgTimer: 0,
+  stamina: $('staminaFill'), staminaWrap: $('stamina'),
+  battery: $('batteryFill'), batteryPct: $('batteryPct'), batteryWrap: $('battery'),
+  notes: $('notesCount'), msg: $('message'),
+};
+function showMessage(text, seconds = 3) {
+  hud.msg.textContent = text;
+  hud.msg.style.opacity = '1';
+  hud.msgTimer = seconds;
+}
+function updateHUD(dt) {
+  if (hud.msgTimer > 0) { hud.msgTimer -= dt; if (hud.msgTimer <= 0) hud.msg.style.opacity = '0'; }
+  hud.stamina.style.width = (player.stamina * 100).toFixed(1) + '%';
+  hud.stamina.style.background = player.exhausted ? '#a5432c' : '#d8c77a';
+  hud.staminaWrap.style.opacity = player.stamina > 0.995 && !player.running ? '0.25' : '1';
+  const b = flash.battery;
+  hud.battery.style.width = (b * 100).toFixed(1) + '%';
+  hud.battery.style.background = b < 0.2 ? '#c0472c' : b < 0.45 ? '#d6a43a' : '#cfd88a';
+  hud.batteryPct.textContent = Math.ceil(b * 100) + '%' + (flash.on ? '' : ' (F)');
+  hud.batteryWrap.style.opacity = flash.on ? '1' : '0.6';
+  hud.notes.textContent = game.notes + ' / ' + NOTES_NEEDED;
+}
+
+// ============================================================================
+//  STAMINA & FLASHLIGHT
+// ============================================================================
+Object.assign(flash, { intensity: 0, dir: new THREE.Vector3(0, 0, -1), flicker: 1, flickerT: 0 });
+const FLASH_DRAIN = 1 / 110;     // seconds of light per full battery = 110
+function toggleFlashlight() {
+  if (game.state !== 'playing') return;
+  if (!flash.on && flash.battery <= 0.001) { Sound.click(0.2, 900); showMessage('The flashlight is dead. Find batteries.', 2.5); return; }
+  flash.on = !flash.on;
+  Sound.click(0.3, flash.on ? 2600 : 1800);
+}
+function updateStamina(dt) {
+  if (player.running) {
+    player.stamina = Math.max(0, player.stamina - dt / 6.5);
+    player.restTimer = 0.7;
+    if (player.stamina <= 0) { player.exhausted = true; showMessage('You are out of breath...', 2); }
+  } else {
+    player.restTimer -= dt;
+    if (player.restTimer <= 0) player.stamina = Math.min(1, player.stamina + dt / (player.moving ? 7.5 : 4.5));
+  }
+  if (player.exhausted && player.stamina >= 0.35) player.exhausted = false;
+  if (player.exhausted || player.stamina < 0.2) {
+    player.breathT -= dt;
+    if (player.breathT <= 0) { Sound.breathe(player.exhausted ? 1 : 0.5); player.breathT = player.exhausted ? 0.85 : 1.3; }
+  }
+}
+const _fRight = new THREE.Vector3(), _fUp = new THREE.Vector3();
+function updateFlashlight(dt) {
+  camera.getWorldDirection(_camDir);
+  flash.dir.lerp(_camDir, 1 - Math.exp(-dt * 16)).normalize();
+  _fRight.setFromMatrixColumn(camera.matrixWorld, 0);
+  _fUp.setFromMatrixColumn(camera.matrixWorld, 1);
+  U.uFlashPos.value.copy(camera.position).addScaledVector(_fRight, 0.14).addScaledVector(_fUp, -0.16);
+  U.uFlashDir.value.copy(flash.dir);
+  if (flash.on) {
+    flash.battery = Math.max(0, flash.battery - dt * FLASH_DRAIN);
+    if (flash.battery <= 0) { flash.on = false; Sound.click(0.2, 900); showMessage('The flashlight died.', 2.5); }
+  }
+  // weak batteries stutter
+  flash.flickerT -= dt;
+  if (flash.flickerT <= 0) {
+    flash.flickerT = 0.03 + Math.random() * 0.08;
+    const weak = flash.battery < 0.2 ? (0.2 - flash.battery) / 0.2 : 0;
+    flash.flicker = Math.random() < weak * 0.45 ? 0.15 + Math.random() * 0.4 : 1;
+    if (monster.active && game.danger > 0.7 && Math.random() < 0.08) flash.flicker *= 0.3;
+  }
+  const target = flash.on ? (0.45 + 0.55 * Math.min(1, flash.battery * 3)) * 2.4 * flash.flicker : 0;
+  flash.intensity += (target - flash.intensity) * Math.min(1, dt * 30);
+  U.uFlash.value = flash.intensity;
+}
+
+// ============================================================================
+//  ITEMS (batteries per chunk; notes & exit use the same machinery)
+// ============================================================================
+const ITEM_VERT = /* glsl */`
+varying vec2 vUv;
+varying vec3 vWorld;
+varying vec3 vNormal;
+varying float vDepth;
+void main() {
+  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vWorld = wp.xyz;
+  vUv = uv;
+  vNormal = normalize(mat3(modelMatrix) * normal);
+  vec4 mv = viewMatrix * wp;
+  vDepth = -mv.z;
+  gl_Position = projectionMatrix * mv;
+}
+`;
+const ITEM_FRAG = /* glsl */`
+${GLSL_FRAG_COMMON}
+uniform vec3 uColor;
+uniform float uEnv;
+uniform float uGlow;
+uniform vec3 uLightColor;
+uniform sampler2D map;
+uniform float uUseMap;
+varying vec2 vUv;
+varying vec3 vWorld;
+varying vec3 vNormal;
+varying float vDepth;
+void main() {
+  vec3 n = normalize(vNormal);
+  vec3 base = uColor;
+  if (uUseMap > 0.5) base *= texture2D(map, vUv).rgb;
+  vec3 lit = uLightColor * (uEnv * (0.55 + 0.45 * max(n.y, 0.0))) + flashlight(vWorld, n) + vec3(0.03);
+  vec3 col = base * lit + base * uGlow;
+  col = applyFog(col, vDepth, uEnv);
+  gl_FragColor = vec4(toDisplay(col), 1.0);
+}
+`;
+function itemMaterial(color, glow = 0) {
+  return new THREE.ShaderMaterial({
+    uniforms: { ...U, uColor: { value: new THREE.Color(color) }, uEnv: { value: 0.5 }, uGlow: { value: glow }, map: { value: null }, uUseMap: { value: 0 } },
+    vertexShader: ITEM_VERT, fragmentShader: ITEM_FRAG,
+  });
+}
+// soft sparkle sprite so items can be spotted in the dark
+const glintTex = (() => {
+  const c = makeCanvas(64, 64), g = c.getContext('2d');
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,250,220,1)'); gr.addColorStop(0.15, 'rgba(255,240,190,0.6)'); gr.addColorStop(1, 'rgba(255,230,160,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  g.fillStyle = 'rgba(255,250,230,0.8)'; g.fillRect(31, 4, 2, 56); g.fillRect(4, 31, 56, 2);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+function makeGlint(scale = 0.25) {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.6, fog: false }));
+  s.scale.set(scale, scale, scale);
+  return s;
+}
+function buildBatteryMesh() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.2, 12), itemMaterial(0x2e5a3a));
+  body.rotation.z = Math.PI / 2; g.add(body);
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.047, 0.06, 12), itemMaterial(0xd8c25a));
+  band.rotation.z = Math.PI / 2; band.position.x = 0.05; g.add(band);
+  const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.03, 8), itemMaterial(0xb08040, 0.2));
+  tip.rotation.z = Math.PI / 2; tip.position.x = 0.115; g.add(tip);
+  const glint = makeGlint(0.35); glint.position.y = 0.08; g.add(glint);
+  g.userData.glint = glint;
+  return g;
+}
+
+const items = new Map();            // id -> item
+const collectedItems = new Set();   // ids of picked-up chunk items
+function chunkItemSpots(kx, kz) {
+  // deterministic battery placement for a chunk
+  const out = [];
+  if (kx === 0 && kz === 0) return out;
+  const r = mulberry32((hash2(kx, kz, world.seed + 404) * 4294967296) >>> 0);
+  const chance = world.level === 2 ? 0.45 : 0.38;
+  if (r() < chance) {
+    const lx = Math.floor(r() * CHUNK), lz = Math.floor(r() * CHUNK);
+    const cx = kx * CHUNK + lx, cz = kz * CHUNK + lz;
+    out.push({ id: 'b' + kx + ',' + kz, type: 'battery', x: (cx + 0.25 + r() * 0.5) * CELL, z: (cz + 0.25 + r() * 0.5) * CELL, rot: r() * Math.PI * 2 });
+  }
+  return out;
+}
+function addItem(spec, chunkKey) {
+  if (items.has(spec.id)) return;
+  let mesh;
+  if (spec.type === 'battery') mesh = buildBatteryMesh();
+  else if (spec.type === 'note') mesh = buildNoteMesh(spec);
+  else if (spec.type === 'exit') mesh = buildExitMesh(spec);
+  mesh.position.set(spec.x, spec.y || (spec.type === 'battery' ? 0.045 : 0), spec.z);
+  mesh.rotation.y = spec.rot || 0;
+  scene.add(mesh);
+  const it = { ...spec, mesh, chunkKey, env: sampleLight(spec.x, spec.z, 0.3), envT: Math.random() * 0.3 };
+  items.set(spec.id, it);
+  setItemEnv(it);
+}
+function removeItem(id) {
+  const it = items.get(id); if (!it) return;
+  scene.remove(it.mesh);
+  it.mesh.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+  items.delete(id);
+}
+function setItemEnv(it) {
+  it.mesh.traverse((o) => { if (o.material && o.material.uniforms && o.material.uniforms.uEnv) o.material.uniforms.uEnv.value = it.env; });
+}
+function spawnChunkItems(kx, kz) {
+  const key = ckey(kx, kz);
+  for (const s of chunkItemSpots(kx, kz)) if (!collectedItems.has(s.id)) addItem(s, key);
+  for (const s of worldItemSpecs()) if (fdiv(s.x, CHUNK_SIZE) === kx && fdiv(s.z, CHUNK_SIZE) === kz && !s.taken) addItem(s, key);
+}
+function despawnChunkItems(key) {
+  for (const [id, it] of items) if (it.chunkKey === key) removeItem(id);
+}
+function clearItems() { for (const id of [...items.keys()]) removeItem(id); }
+// items that live at fixed world positions (notes, exit) — filled in by the goal system
+function worldItemSpecs() { return goal.specs; }
+
+function updateItems(dt) {
+  const t = U.uTime.value;
+  for (const it of [...items.values()]) {
+    it.envT -= dt;
+    if (it.envT <= 0) { it.envT = 0.25; it.env = sampleLight(it.x, it.z, 0.4); setItemEnv(it); }
+    const g = it.mesh.userData.glint;
+    if (g) g.material.opacity = (0.25 + 0.35 * (0.5 + 0.5 * Math.sin(t * 3 + it.x))) * (1.2 - Math.min(1, it.env));
+    if (it.type === 'note' && it.mesh.userData.paper) it.mesh.userData.paper.position.y = 0.02 + Math.sin(t * 1.3 + it.z) * 0.004;
+    const d = Math.hypot(it.x - player.pos.x, it.z - player.pos.z);
+    if (it.type === 'battery' && d < 0.9) {
+      collectedItems.add(it.id);
+      removeItem(it.id);
+      flash.battery = Math.min(1, flash.battery + 0.5);
+      Sound.click(0.35, 3200); setTimeout(() => Sound.click(0.25, 2200), 70);
+      showMessage('Battery found  +50%', 2.5);
+    } else if (it.type === 'note' && d < 1.1) {
+      pickNote(it);
+    } else if (it.type === 'exit' && d < 1.25) {
+      reachExit();
+    }
+  }
+}
+
 // ============================================================================
 //  INPUT
 // ============================================================================
 const keys = Object.create(null);
-const input = { lookX: 0, lookY: 0, sensitivity: 1.0, locked: false };
+const input = { lookX: 0, lookY: 0, sensitivity: 1.0, locked: false, touchRun: false };
 
 window.addEventListener('keydown', (e) => {
   keys[e.code] = true;
   if (e.code === 'KeyC' && !e.repeat) player.crouchToggle = !player.crouchToggle;
+  if (e.code === 'KeyF' && !e.repeat) toggleFlashlight();
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
 });
 window.addEventListener('keyup', (e) => { keys[e.code] = false; });
@@ -1988,6 +2231,7 @@ const player = {
   crouching: false, running: false, moving: false,
   bobPhase: 0, bobAmt: 0,
   speed: 0,
+  stamina: 1, exhausted: false, restTimer: 0, breathT: 0,
 };
 const SPEED_WALK = 2.6, SPEED_RUN = 5.2, SPEED_CROUCH = 1.25;
 const EYE_STAND = 1.62, EYE_CROUCH = 0.92;
@@ -2012,7 +2256,7 @@ function updatePlayer(dt) {
   player.moving = len > 0.05;
 
   player.crouching = player.crouchToggle;
-  const wantRun = (keys.ShiftLeft || keys.ShiftRight) && player.moving && mz > 0.1 && !player.crouching;
+  const wantRun = (keys.ShiftLeft || keys.ShiftRight || input.touchRun) && player.moving && mz > 0.1 && !player.crouching && !player.exhausted && player.stamina > 0;
   player.running = wantRun;
   const target = player.crouching ? SPEED_CROUCH : player.running ? SPEED_RUN : SPEED_WALK;
 
@@ -2069,7 +2313,6 @@ function onFootstep() {
 //  GAME STATE
 // ============================================================================
 const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0, notes: 0, level: 1 };
-const flash = { on: false, battery: 1 };   // (expanded in the flashlight section)
 function notesCollected() { return game.notes; }
 function onChaseStart() {}
 function onPlayerCaught() { $('hud').classList.add('hidden'); }
@@ -2094,6 +2337,9 @@ function spawnPlayer(x, z) {
 }
 function newGame(level = 1) {
   game.level = level; game.time = 0; game.notes = 0; game.danger = 0;
+  player.stamina = 1; player.exhausted = false;
+  flash.on = false; flash.battery = 1; flash.intensity = 0;
+  collectedItems.clear(); goal.specs = [];
   world = new World((Math.random() * 1e9) | 0, level);
   clearChunks();
   spawnPlayer(CELL * 0.5, CELL * 0.5);
@@ -2131,7 +2377,11 @@ function frame() {
     game.time += dt;
     U.uTime.value = (U.uTime.value + dt) % 1000;
     updatePlayer(dt);
+    updateStamina(dt);
+    updateFlashlight(dt);
     updateMonster(dt);
+    updateItems(dt);
+    updateHUD(dt);
     updateChunks(player.pos.x, player.pos.z);
     updateAmbientAudio(dt);
     updateDanger(dt);
@@ -2154,7 +2404,7 @@ updateChunks(player.pos.x, player.pos.z, true);
 frame();
 
 // Debug / test hook
-window.__bk = { THREE, Sound, ambience, monster, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { THREE, Sound, ambience, monster, flash, items, collectedItems, U, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>
