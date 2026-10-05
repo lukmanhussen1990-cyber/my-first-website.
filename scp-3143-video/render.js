@@ -156,7 +156,7 @@ function makeRenderer(plan) {
 async function encode(plan, from, to, out) {
   const frame = makeRenderer(plan);
   const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-r', String(FPS), '-i', '-',
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-tune', 'film', '-pix_fmt', 'yuv420p', '-threads', '2', out], { stdio: ['pipe', 'inherit', 'inherit'] });
+    '-c:v', 'libx264', '-preset', 'medium', '-crf', '24', '-tune', 'film', '-pix_fmt', 'yuv420p', '-threads', '2', out], { stdio: ['pipe', 'inherit', 'inherit'] });
   const done = new Promise((res, rej) => ff.on('close', c => (c === 0 ? res() : rej(new Error('ffmpeg exited ' + c)))));
   for (let f = from; f < to; f++) {
     const c = frame(f);
@@ -234,7 +234,7 @@ async function main() {
       '-map', '0:v', '-map', '1:a', '-map', '2:s', '-c:v', 'copy', '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11', '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', '-c:s', 'mov_text',
       '-metadata', 'title=SCP-3143 Explained: Murphy Law in... The Foundation Always Rings Twice!',
       '-metadata', 'comment=Based on SCP-3143 by The Great Hippo (scp-wiki.wikidot.com/scp-3143), CC BY-SA 3.0. This video is released under CC BY-SA 3.0.',
-      '-metadata:s:s:0', 'language=eng', '-metadata:s:a:0', 'language=eng', '-shortest', '-movflags', '+faststart', out]);
+      '-metadata:s:s:0', 'language=eng', '-metadata:s:a:0', 'language=eng', '-t', plan.duration.toFixed(3), '-movflags', '+faststart', out]);
     console.log(out);
     return;
   }
