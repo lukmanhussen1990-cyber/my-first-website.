@@ -49,6 +49,9 @@ class BlockBlastApp extends StatelessWidget {
         fontFamily: 'Fredoka',
         splashFactory: NoSplash.splashFactory,
       ),
+      // Game UI is drawn to fit the screen; keep large system font sizes
+      // from overflowing the menus.
+      builder: (context, child) => MediaQuery.withClampedTextScaling(maxScaleFactor: 1.15, child: child!),
       home: DebugScenarios.skipSplash ? const GameScreen() : const IconSplashScreen(),
     );
   }
