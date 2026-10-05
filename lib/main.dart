@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'src/game/debug_scenarios.dart';
 import 'src/game/game_screen.dart';
 import 'src/screens/splash_screens.dart';
+import 'src/services/perf_log.dart';
 import 'src/services/settings_store.dart';
 import 'src/ui/palette.dart';
 
@@ -30,6 +31,7 @@ Future<void> main() async {
     ),
   );
   await SettingsStore.load();
+  PerfLog.start();
   runApp(const BlockBlastApp());
 }
 
