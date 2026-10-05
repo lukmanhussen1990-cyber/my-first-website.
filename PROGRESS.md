@@ -197,3 +197,5 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   coming), and drops visibly fall from the ceiling: each one plinks where it lands and spreads a ripple ring
   (4-slot ring buffer in the water shader). Touch layout lifts the centre message above the buttons; the loading card
   names the level; the creature's chest breathes when it stands still.
+- **[08:14 UTC] Extra — First-run intro, tinted scare.** The very first run opens on black with "You were leaning against
+  a wall. Then the wall wasn't there." (remembered in the save). The jump-scare face is tinted per level.

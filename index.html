@@ -61,7 +61,7 @@
   body.touch #battery { bottom: auto; top: max(22px, env(safe-area-inset-top)); right: 76px; }
   body.touch #batteryPct { bottom: auto; top: 10px; }
   body.touch #stamina { bottom: max(14px, env(safe-area-inset-bottom)); }
-  #loading { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 31; letter-spacing: 0.4em; font-size: 14px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  #loading { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 31; letter-spacing: 0.3em; font-size: 14px; text-align: center; line-height: 2; width: 90vw; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   #fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 30; transition: opacity 1.2s ease; }
   #scareOverlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; z-index: 20; }
   #scareOverlay canvas { height: 118vh; max-width: none; }
@@ -4012,6 +4012,8 @@ function startGame(level = 1) {
   $('touchUI').classList.add('hidden'); $('hud').classList.add('hidden');
   fadeTo('#000', 1, 0);
   $('loading').textContent = (LEVELS[level] || LEVELS[1]).name.toUpperCase();
+  const firstTime = level === 1 && !save.introSeen && !save.escapes && !save.deaths;
+  if (firstTime) { $('loading').innerHTML = 'You were leaning against a wall.<br>Then the wall wasn\u2019t there.'; save.introSeen = true; writeSave(); }
   $('loading').style.opacity = '1';
   game.state = 'loading';
   Sound.init(); Sound.resume();
@@ -4027,8 +4029,9 @@ function startGame(level = 1) {
     $('loading').style.opacity = '0';
     setTimeout(ensureScareFace, 1500);
     requestAnimationFrame(() => requestAnimationFrame(() => fadeTo('#000', 0, 1.8)));
+    $('loading').innerHTML = '';
     showMessage(level === 3 ? 'Level 3 \u2014 Lights Out. Keep your light alive. Find 5 notes.' : level === 2 ? 'Level 2 \u2014 The Flooded Halls. Find 5 notes.' : 'Level 1 \u2014 The Lobby. Find the 5 notes. Listen for the static.', 5);
-  }, 60);
+  }, firstTime ? 3200 : 60);
 }
 $('btnStart').addEventListener('click', () => startGame(1));
 $('btnRetry').addEventListener('click', () => startGame(game.level));
