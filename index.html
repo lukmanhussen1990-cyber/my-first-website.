@@ -16,6 +16,11 @@
   #hud { position: fixed; inset: 0; pointer-events: none; }
   #notesBox { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 16px; font-size: 18px; letter-spacing: 0.18em; color: #efe2a8; text-shadow: 0 0 6px #000, 0 0 2px #000; }
   #notesBox .lbl { opacity: 0.6; font-size: 14px; }
+  #signal { margin-top: 6px; font-size: 12px; display: flex; align-items: flex-end; gap: 3px; height: 16px; }
+  #signal .lbl { font-size: 11px; margin-right: 6px; }
+  #signal i { display: inline-block; width: 5px; background: rgba(240, 225, 160, 0.18); }
+  #signal i:nth-of-type(1) { height: 4px; } #signal i:nth-of-type(2) { height: 7px; } #signal i:nth-of-type(3) { height: 10px; } #signal i:nth-of-type(4) { height: 13px; }
+  #signal i.on { background: #efe2a8; box-shadow: 0 0 4px rgba(255, 230, 150, 0.6); }
   #message { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%); max-width: 80vw; text-align: center; font-size: 17px; letter-spacing: 0.08em; color: #f1e6b8; text-shadow: 0 0 8px #000, 0 0 3px #000; opacity: 0; transition: opacity 0.6s; }
   .bar { position: absolute; bottom: max(18px, env(safe-area-inset-bottom)); height: 6px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(240, 225, 160, 0.35); transition: opacity 0.5s; }
   .bar .fill { height: 100%; width: 100%; background: #d8c77a; }
@@ -79,7 +84,7 @@
 
 <div id="hud" class="hidden">
   <div id="crosshair"></div>
-  <div id="notesBox"><span class="lbl">NOTES</span> <span id="notesCount">0 / 5</span></div>
+  <div id="notesBox"><span class="lbl">NOTES</span> <span id="notesCount">0 / 5</span><div id="signal"><span class="lbl" id="sigLbl">STATIC</span> <i></i><i></i><i></i><i></i></div></div>
   <div id="message"></div>
   <div id="stamina" class="bar"><div id="staminaFill" class="fill"></div></div>
   <div id="battery" class="bar"><div id="batteryFill" class="fill"></div><span id="batteryPct">100%</span></div>
@@ -2304,6 +2309,7 @@ const hud = {
   stamina: $('staminaFill'), staminaWrap: $('stamina'),
   battery: $('batteryFill'), batteryPct: $('batteryPct'), batteryWrap: $('battery'),
   notes: $('notesCount'), msg: $('message'),
+  sigLbl: $('sigLbl'), sigBars: [...document.querySelectorAll('#signal i')],
 };
 function showMessage(text, seconds = 3) {
   hud.msg.textContent = text;
@@ -2324,6 +2330,13 @@ function updateHUD(dt) {
   setText(hud.batteryPct, 'bp', Math.ceil(b * 100) + '%' + (flash.on || isTouch ? '' : ' (F)'));
   setStyle(hud.batteryWrap, 'bo', 'opacity', flash.on ? '1' : '0.6');
   setText(hud.notes, 'n', game.notes + ' / ' + NOTES_NEEDED);
+  // signal meter: how close is the nearest page (or the exit) — "hot / cold" for players without headphones
+  let nd = Infinity, exit = false;
+  for (const s of goal.specs) { if (s.taken) continue; const d = Math.hypot(s.x - player.pos.x, s.z - player.pos.z); if (d < nd) { nd = d; exit = s.type === 'exit'; } }
+  let bars = nd < 7 ? 4 : nd < 15 ? 3 : nd < 27 ? 2 : nd < 45 ? 1 : 0;
+  if (bars > 0 && Math.random() < 0.04) bars--;   // crackle
+  setText(hud.sigLbl, 'sl', exit ? 'EXIT HUM' : 'STATIC');
+  for (let i = 0; i < 4; i++) { const on = i < bars; if (_hudCache['sb' + i] !== on) { _hudCache['sb' + i] = on; hud.sigBars[i].classList.toggle('on', on); } }
 }
 
 // ============================================================================
