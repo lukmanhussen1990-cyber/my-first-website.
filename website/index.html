@@ -43,7 +43,7 @@ const CONFIG = {
   // ---------- social links ("" = hide that icon) ----------
   links: {
     discord:  "https://discord.com/users/YOUR_DISCORD_ID",
-    github:   "https://github.com/lukmanhussen1990-cyber",
+    github:   "https://github.com/YOUR_USERNAME",
     telegram: "https://t.me/YOUR_USERNAME",
     roblox:   "https://www.roblox.com/users/YOUR_ROBLOX_ID/profile",
     youtube:  "https://www.youtube.com/@YOUR_CHANNEL",
@@ -60,10 +60,20 @@ const CONFIG = {
   // ---------- starting values of the sliders ----------
   volume: 50,                           // 0 - 100
   brightness: 30,                       // 0 - 100 (lower = darker background)
+
+  // ---------- smoothness ----------
+  lite: "auto",                         // "auto" = light effects on phones (no live blur behind the boxes, no tilt) so nothing lags
+                                        // true = always light · false = always full effects (pretty, but heavy for weak phones)
+  adaptive: true,                       // true = if the device still can't keep up, switch off more effects by itself
 };
 
-// load the two Google Fonts named above
 (function () {
+  // light mode on / off
+  var lite = CONFIG.lite;
+  if (lite === "auto" || lite === undefined) lite = !!(window.matchMedia && matchMedia("(hover: none), (pointer: coarse)").matches);
+  if (lite) document.documentElement.classList.add("lite");
+
+  // load the two Google Fonts named above
   function load(family, weights) {
     var link = document.createElement("link");
     link.rel = "stylesheet";
@@ -85,8 +95,7 @@ const CONFIG = {
 
 <style>
   :root {
-    --dim: .55;                               /* background darkness (brightness slider) */
-    --glass: rgba(0, 0, 0, .6);
+    --dim: .64;                               /* background darkness (brightness slider) */
     --edge: rgba(255, 255, 255, .14);
     --soft: rgba(255, 255, 255, .7);
     --radius: 16px;
@@ -96,12 +105,12 @@ const CONFIG = {
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { min-height: 100%; }
   body {
-    background: radial-gradient(circle at 50% 35%, #1b1b1b, #000 70%) fixed #000;
-    color: #fff;
+    background: #000; color: #fff;
     font-family: var(--text-font), system-ui, sans-serif; font-weight: 500;
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   }
   body:not(.entered) { overflow: hidden; }
   button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
@@ -118,7 +127,6 @@ const CONFIG = {
   #enterText {
     font-size: clamp(15px, 4.6vw, 24px); letter-spacing: .25em; line-height: 1.7; text-align: center;
     text-shadow: 0 0 12px rgba(255, 255, 255, .45);
-    user-select: none; -webkit-user-select: none;
   }
   #enterText::after { content: "|"; margin-left: .05em; animation: blink 1s steps(1) infinite; }
 
@@ -127,10 +135,14 @@ const CONFIG = {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
     object-fit: cover; pointer-events: none;
   }
-  #overlay {
+  /* the brightness slider only changes the OPACITY of this black sheet (the phone's graphics chip does that for free) */
+  #dim {
     position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1; pointer-events: none;
-    background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, .45) 100%), rgba(0, 0, 0, var(--dim));
-    transition: background-color .2s;
+    background: #000; opacity: var(--dim);
+  }
+  #vig {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, .45) 100%);
   }
   #scan {
     position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 4; pointer-events: none; opacity: 0;
@@ -145,40 +157,56 @@ const CONFIG = {
     min-height: 100vh; min-height: 100svh;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 14px; padding: 28px 0;
-    transition: transform .35s ease-out;
   }
-  #stage > * { opacity: 0; transform: translateY(-34px); }
-  body.entered #stage > * { animation: rise 1s cubic-bezier(.2, .8, .2, 1) forwards; }
-  body.entered #stage > :nth-child(2) { animation-delay: .15s; }
-  body.entered #stage > :nth-child(3) { animation-delay: .3s; }
-  @keyframes rise { to { opacity: 1; transform: none; } }
+  html:not(.lite) #stage { transition: transform .35s ease-out; }       /* the tilt (full effects only) */
+  #stage > * { opacity: 0; transform: translateY(-30px); }
+  body.entered #stage > * { opacity: 1; transform: none; transition: opacity .9s ease, transform .9s cubic-bezier(.2, .8, .2, 1); }
+  body.entered #stage > :nth-child(2) { transition-delay: .12s; }
+  body.entered #stage > :nth-child(3) { transition-delay: .24s; }
 
+  /* dark glass. Full effects blur what is behind it; light mode (phones) uses a plain darker glass instead,
+     because a live blur on top of a playing video is what makes phones lag. */
   .glass {
     position: relative;
-    background: var(--glass);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, 0) 45%), rgba(0, 0, 0, .6);
     -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
     border: 1px solid var(--edge);
     border-radius: var(--radius);
     box-shadow: 0 10px 40px rgba(0, 0, 0, .45);
   }
-  /* glowing line that travels around the boxes */
-  .trace { position: absolute; overflow: visible; pointer-events: none; filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 7px rgba(255, 255, 255, .55)); }
-  .trace rect { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+  .lite .glass {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 45%), rgba(10, 10, 10, .76);
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+  }
+  .ultra .glass { background: rgba(10, 10, 10, .84); box-shadow: none; }
+
+  /* glowing lines that travel around the boxes (like crax.lol) */
+  .tick {
+    position: absolute; left: 0; top: 0; height: 2px; margin-top: -1px; border-radius: 2px;
+    background: #fff; box-shadow: 0 0 6px rgba(255, 255, 255, .9), 0 0 2px #fff;
+    pointer-events: none; will-change: transform;
+  }
+  .dash { position: absolute; overflow: visible; pointer-events: none; will-change: transform; }
+  .dash rect { fill: none; stroke: #fff; stroke-linecap: round; }
+  .dash .g { stroke-width: 6; opacity: .22; }
+  .dash .c { stroke-width: 2; }
+  .lite .dash .g { display: none; }
+  .ultra .dash, .ultra .tick { display: none; }
 
   /* ---------- 3. profile card ---------- */
   .card { width: var(--w); padding: clamp(16px, 4.4vw, 26px); }
   .top { display: flex; align-items: center; gap: clamp(14px, 4.4vw, 24px); }
   .avatar {
-    position: relative; flex: none; cursor: pointer; border-radius: 50%;
+    position: relative; flex: none; cursor: pointer; border-radius: 50%; background: #111;
     width: clamp(80px, 23vw, 132px); height: clamp(80px, 23vw, 132px);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .12);
   }
-  .avatar .clip {
-    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
-    border-radius: 50%; overflow: hidden; background: #111;
-    -webkit-mask-image: -webkit-radial-gradient(white, black);   /* keeps the video round on Safari */
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, .12), 0 0 24px rgba(255, 255, 255, .14);
+  html:not(.lite) .avatar { box-shadow: 0 0 0 2px rgba(255, 255, 255, .12), 0 0 24px rgba(255, 255, 255, .14); }
+  .avatar img, .avatar video {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: cover; display: block; border-radius: 50%;
   }
-  .avatar img, .avatar video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
   .avatar video { opacity: 0; transition: opacity .9s ease; }
   .avatar video.show { opacity: 1; }
 
@@ -189,6 +217,8 @@ const CONFIG = {
     min-height: 1.3em; overflow-wrap: anywhere;
     text-shadow: 0 0 10px rgba(255, 255, 255, .7), 0 0 26px rgba(255, 255, 255, .25);
   }
+  .lite .name { text-shadow: 0 0 10px rgba(255, 255, 255, .55); }
+  .ultra .name { text-shadow: none; }
   .caret {
     display: inline-block; width: 2px; height: .78em; margin-left: 5px; vertical-align: -.04em;
     background: #fff; box-shadow: 0 0 8px #fff; animation: blink 1s steps(1) infinite;
@@ -198,10 +228,15 @@ const CONFIG = {
     font-size: clamp(12.5px, 3.6vw, 16px); letter-spacing: .16em; color: var(--soft); white-space: nowrap;
   }
   .dot {
-    flex: none; width: .78em; height: .78em; border-radius: 50%;
-    background: currentColor; box-shadow: 0 0 8px currentColor; animation: pulse 2.4s ease-in-out infinite;
+    position: relative; flex: none; width: .78em; height: .78em; border-radius: 50%;
+    background: currentColor; box-shadow: 0 0 8px currentColor;
   }
-  @keyframes pulse { 50% { box-shadow: 0 0 2px currentColor; } }
+  .dot::after {                      /* soft ring that grows and fades (only transform + opacity = no repainting) */
+    content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%;
+    border: 2px solid currentColor; animation: ring 2.4s ease-out infinite;
+  }
+  @keyframes ring { from { transform: scale(1); opacity: .7; } to { transform: scale(2.5); opacity: 0; } }
+  .ultra .dot::after { display: none; }
   .bio {
     margin-top: 8px; min-height: 1.5em; line-height: 1.5;
     font-size: clamp(12.5px, 3.6vw, 17px); letter-spacing: .14em; color: rgba(255, 255, 255, .9);
@@ -216,32 +251,41 @@ const CONFIG = {
 
   .divider { height: 1px; background: rgba(255, 255, 255, .2); margin: clamp(14px, 4vw, 22px) 0; }
 
+  /* social icons: the glow is a text-shadow / box-shadow (drawn once), not a filter (re-drawn every frame) */
   .socials { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(8px, 3.2vw, 20px); }
   .socials a {
     position: relative; display: flex; align-items: center; justify-content: center;
     width: 1.22em; height: 1.22em; font-size: clamp(24px, 7.4vw, 36px);
     color: var(--c, #fff); text-decoration: none;
-    filter: drop-shadow(0 0 6px rgba(255, 255, 255, .5));
-    transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), filter .25s;
+    transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
   }
-  .socials a i, .socials a svg { display: block; position: relative; z-index: 1; }
-  .socials a:active, .socials a:focus-visible { transform: scale(1.22) translateY(-2px); filter: drop-shadow(0 0 9px var(--glow, #fff)) drop-shadow(0 0 2px var(--glow, #fff)); outline: none; }
-  @media (hover: hover) {
-    .socials a:hover { transform: scale(1.22) translateY(-2px); filter: drop-shadow(0 0 9px var(--glow, #fff)) drop-shadow(0 0 2px var(--glow, #fff)); }
-  }
-  /* white parts behind the brand glyph cut-outs */
-  .socials a::before { content: ""; position: absolute; z-index: 0; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; }
+  .socials a i { display: block; position: relative; z-index: 1; text-shadow: 0 0 8px rgba(255, 255, 255, .4); }
+  .socials a::before, .socials a::after { content: ""; position: absolute; top: 50%; left: 50%; z-index: 0; transform: translate(-50%, -50%); }
+  .socials a:active, .socials a:focus-visible { transform: scale(1.22) translateY(-2px); outline: none; }
+  .socials a:active i, .socials a:focus-visible i { text-shadow: 0 0 12px var(--glow, #fff), 0 0 3px var(--glow, #fff); }
   .s-discord  { --c: #5865f2; --glow: #5865f2; }
   .s-github   { --c: #0d1117; --glow: #fff; }
-  .s-github::before   { width: .74em; height: .74em; border-radius: 50%; }
+  .s-github::before   { width: .74em; height: .74em; border-radius: 50%; background: #fff; box-shadow: 0 0 8px rgba(255, 255, 255, .5); }
   .s-telegram { --c: #29a9eb; --glow: #29a9eb; }
-  .s-telegram::before { width: .62em; height: .62em; border-radius: 50%; }
-  .s-roblox   { --c: #fff; --glow: #fff; }
+  .s-telegram::before { width: .62em; height: .62em; border-radius: 50%; background: #fff; box-shadow: 0 0 8px rgba(41, 169, 235, .55); }
   .s-youtube  { --c: #ff0033; --glow: #ff0033; }
-  .s-youtube::before  { width: .42em; height: .42em; }
+  .s-youtube::before  { width: .42em; height: .42em; background: #fff; }
   .s-tiktok   { --c: #fff; --glow: #fe2c55; }
-  .s-tiktok i { text-shadow: -.06em -.045em 0 #25f4ee, .06em .045em 0 #fe2c55; }
-  .s-discord::before, .s-roblox::before, .s-tiktok::before { display: none; }
+  .socials .s-tiktok i { text-shadow: -.06em -.045em 0 #25f4ee, .06em .045em 0 #fe2c55; }
+  .socials .s-roblox::before   { width: .667em; height: .667em; border-radius: .04em; background: #fff; transform: translate(-50%, -50%) rotate(15deg); box-shadow: 0 0 8px rgba(255, 255, 255, .5); }
+  .socials .s-roblox::after    { width: .19em; height: .19em; background: #0d0d0d; transform: translate(-50%, -50%) rotate(15deg); z-index: 1; }
+  .socials .s-github:active::before, .socials .s-github:focus-visible::before,
+  .socials .s-roblox:active::before, .socials .s-roblox:focus-visible::before { box-shadow: 0 0 14px rgba(255, 255, 255, .85); }
+  .socials .s-telegram:active::before, .socials .s-telegram:focus-visible::before { box-shadow: 0 0 14px rgba(41, 169, 235, .9); }
+  .socials .s-tiktok:active i, .socials .s-tiktok:focus-visible i { text-shadow: -.06em -.045em 0 #25f4ee, .06em .045em 0 #fe2c55, 0 0 12px #fe2c55; }
+  @media (hover: hover) {
+    .socials a:hover { transform: scale(1.22) translateY(-2px); }
+    .socials a:hover i { text-shadow: 0 0 12px var(--glow, #fff), 0 0 3px var(--glow, #fff); }
+    .socials .s-github:hover::before, .socials .s-roblox:hover::before { box-shadow: 0 0 14px rgba(255, 255, 255, .85); }
+    .socials .s-telegram:hover::before { box-shadow: 0 0 14px rgba(41, 169, 235, .9); }
+    .socials .s-tiktok:hover i { text-shadow: -.06em -.045em 0 #25f4ee, .06em .045em 0 #fe2c55, 0 0 12px #fe2c55; }
+  }
+  .ultra .socials a i { text-shadow: none; }
 
   .views {
     position: relative; display: flex; align-items: center; gap: .7em; width: max-content;
@@ -265,11 +309,12 @@ const CONFIG = {
     flex: none; width: clamp(38px, 10.5vw, 46px); height: clamp(38px, 10.5vw, 46px);
     border-radius: 8px; object-fit: cover; background: #111; box-shadow: 0 2px 10px rgba(0, 0, 0, .5);
   }
+  .lite #cover { box-shadow: none; }
   .time { flex: none; min-width: 3.2em; text-align: center; font-size: clamp(10.5px, 3vw, 12.5px); letter-spacing: .1em; color: rgba(255, 255, 255, .65); font-variant-numeric: tabular-nums; }
   #seek { flex: 1; min-width: 30px; }
   .controls { flex: none; display: flex; align-items: center; gap: clamp(0px, 1vw, 8px); }
-  .controls button { width: 32px; height: 36px; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: transform .15s, opacity .15s; }
-  .controls .play { width: 38px; font-size: 21px; }
+  .controls button { width: 34px; height: 40px; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: transform .15s, opacity .15s; }
+  .controls .play { width: 40px; font-size: 21px; }
   .controls button:active { transform: scale(.85); }
   @media (hover: hover) { .controls button:hover { opacity: .65; } }
   .now {
@@ -280,35 +325,37 @@ const CONFIG = {
     font-size: 12px; letter-spacing: .14em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     opacity: 0; pointer-events: none; transition: opacity .4s, transform .4s;
   }
+  .lite .now { background: rgba(10, 10, 10, .86); -webkit-backdrop-filter: none; backdrop-filter: none; }
   .now.show { opacity: 1; transform: translate(-50%, 0); }
 
   /* ---------- 5. settings bar ---------- */
   .settings { display: flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 999px; }
-  .settings button, .settings .ico { flex: none; width: 28px; height: 30px; font-size: 15px; display: flex; align-items: center; justify-content: center; }
+  .settings button, .settings .ico { flex: none; width: 28px; height: 32px; font-size: 15px; display: flex; align-items: center; justify-content: center; }
   .settings input { width: clamp(64px, 18vw, 104px); }
   .settings .ico { margin-left: 6px; }
 
-  /* ---------- sliders ---------- */
+  /* ---------- sliders (tall invisible touch area, thin line) ---------- */
   input[type="range"] {
     --p: 0%;
-    -webkit-appearance: none; appearance: none; height: 22px; background: transparent; cursor: pointer; outline: none;
+    -webkit-appearance: none; appearance: none; height: 30px; background: transparent; cursor: pointer; outline: none;
   }
   input[type="range"]::-webkit-slider-runnable-track {
     height: 4px; border-radius: 4px;
     background: linear-gradient(90deg, #fff var(--p), rgba(255, 255, 255, .22) var(--p));
   }
   input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 13px; height: 13px; margin-top: -4.5px; border: 0; border-radius: 50%;
+    -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px; border: 0; border-radius: 50%;
     background: #fff; box-shadow: 0 0 8px rgba(255, 255, 255, .85);
   }
   input[type="range"]::-moz-range-track { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .22); }
   input[type="range"]::-moz-range-progress { height: 4px; border-radius: 4px; background: #fff; }
-  input[type="range"]::-moz-range-thumb { width: 13px; height: 13px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 8px rgba(255, 255, 255, .85); }
+  input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 8px rgba(255, 255, 255, .85); }
   input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px rgba(255, 255, 255, .35); }
+  .lite input[type="range"]::-webkit-slider-thumb { box-shadow: 0 0 4px rgba(255, 255, 255, .7); }
 
   @media (prefers-reduced-motion: reduce) {
-    #stage, .socials a { transition: none; }
-    body.entered #stage > * { animation-duration: .01s; animation-delay: 0s; }
+    body.entered #stage > * { transition-duration: .01s; transition-delay: 0s; }
+    .socials a { transition: none; }
   }
 </style>
 </head>
@@ -322,7 +369,8 @@ const CONFIG = {
   <!-- 2. BACKGROUND -->
   <video id="bg" muted loop playsinline preload="auto" disablepictureinpicture disableremoteplayback
          poster="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></video>
-  <div id="overlay"></div>
+  <div id="dim"></div>
+  <div id="vig"></div>
   <div id="scan"></div>
 
   <main id="stage">
@@ -330,11 +378,9 @@ const CONFIG = {
     <section class="glass card" id="card">
       <div class="top">
         <div class="avatar" id="avatar" title="tap me">
-          <div class="clip">
-            <img id="avImg" alt="profile picture">
-            <video id="avVid" muted playsinline preload="auto" disablepictureinpicture disableremoteplayback
-                   poster="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></video>
-          </div>
+          <img id="avImg" alt="profile picture" decoding="async">
+          <video id="avVid" muted playsinline preload="auto" disablepictureinpicture disableremoteplayback
+                 poster="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></video>
         </div>
         <div class="info">
           <h1 class="name"><span id="nameText"></span><span class="caret"></span></h1>
@@ -349,7 +395,7 @@ const CONFIG = {
 
     <!-- 4. MUSIC PLAYER -->
     <section class="glass player" id="player">
-      <img id="cover" alt="cover art">
+      <img id="cover" alt="cover art" decoding="async">
       <span class="time" id="cur">0:00</span>
       <input type="range" id="seek" min="0" max="1000" step="1" value="0" aria-label="Song position">
       <span class="time" id="dur">0:00</span>
@@ -375,7 +421,7 @@ const CONFIG = {
 <script>
 (function () {
   "use strict";
-  var C = CONFIG;
+  var C = CONFIG, root = document.documentElement;
   var $ = function (id) { return document.getElementById(id); };
   var store = {   // localStorage can be blocked (private mode etc.), so never let it crash the page
     get: function (k, d) { try { var v = localStorage.getItem("bio:" + k); return v === null ? d : v; } catch (e) { return d; } },
@@ -383,9 +429,18 @@ const CONFIG = {
   };
   var clamp = function (v, a, b) { v = parseInt(v, 10); return isNaN(v) ? a : Math.min(b, Math.max(a, v)); };
   var fmt = function (s) { if (!isFinite(s) || s < 0) s = 0; s = Math.floor(s); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); };
+  var nf = window.Intl && Intl.NumberFormat ? new Intl.NumberFormat("en-US") : null;
+  var fmtNum = function (n) { return nf ? nf.format(n) : String(n); };
   var swallow = function (p) { if (p && p.catch) p.catch(function () {}); };
-  var glitch = function (el) { el.classList.remove("glitch"); void el.offsetWidth; el.classList.add("glitch"); setTimeout(function () { el.classList.remove("glitch"); }, 220); };
-  var entered = false;
+  var isLite = function () { return root.classList.contains("lite"); };
+  var isUltra = function () { return root.classList.contains("ultra"); };
+  var reduced = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var glitch = function (el) {
+    if (isUltra()) return;
+    el.classList.remove("glitch"); void el.offsetWidth; el.classList.add("glitch");
+    setTimeout(function () { el.classList.remove("glitch"); }, 220);
+  };
+  var entered = false, paused = false;
 
   /* ---------- page title + favicon ---------- */
   document.title = C.name + "'s page";
@@ -429,7 +484,7 @@ const CONFIG = {
     })();
   }
 
-  // profile picture: picture → fade → video (plays once) → fade → picture → … forever
+  // profile picture: video (plays once) → fade → picture → … → video → … forever
   function startAvatar() {
     if (!C.avatarVideo) return;
     var broken = false, waitMs = Math.max(0, +C.avatarImageSeconds || 5) * 1000;
@@ -440,12 +495,14 @@ const CONFIG = {
     });
     function playVideo() {
       if (broken) return;
+      if (paused || document.hidden) { setTimeout(playVideo, 500); return; }
       try { avVid.currentTime = 0; } catch (e) {}
       var p = avVid.play();
       if (p && p.then) p.then(function () { avVid.classList.add("show"); }, function () { setTimeout(playVideo, waitMs); });
       else avVid.classList.add("show");
     }
-    if (C.avatarVideoFirst) playVideo(); else setTimeout(playVideo, waitMs);
+    // video first: wait a moment so the music, background video and this one don't all start in the same instant
+    setTimeout(playVideo, C.avatarVideoFirst ? 600 : waitMs);
   }
 
   // social icons (built from CONFIG.links)
@@ -453,7 +510,7 @@ const CONFIG = {
     discord:  ["Discord",  '<i class="fa-brands fa-discord"></i>'],
     github:   ["GitHub",   '<i class="fa-brands fa-github"></i>'],
     telegram: ["Telegram", '<i class="fa-brands fa-telegram"></i>'],
-    roblox:   ["Roblox",   '<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M6.34 2.2 21.8 6.34 17.66 21.8 2.2 17.66ZM10.44 9.31 14.69 10.44 13.56 14.69 9.31 13.56Z"/></svg>'],
+    roblox:   ["Roblox",   ""],                                   // drawn with CSS
     youtube:  ["YouTube",  '<i class="fa-brands fa-youtube"></i>'],
     tiktok:   ["TikTok",   '<i class="fa-brands fa-tiktok"></i>']
   };
@@ -474,13 +531,13 @@ const CONFIG = {
   store.set("visits", visits);
   var views = clamp(C.startViews, 0, 1e12) + visits - 1;
   var viewsEl = $("views");
-  viewsEl.textContent = views.toLocaleString("en-US");
+  viewsEl.textContent = fmtNum(views);
   function countUp() {
     var t0 = 0, from = Math.floor(views * 0.6);
     requestAnimationFrame(function step(t) {
       if (!t0) t0 = t;
       var p = Math.min(1, (t - t0) / 1300), e = 1 - Math.pow(1 - p, 3);
-      viewsEl.textContent = Math.round(from + (views - from) * e).toLocaleString("en-US");
+      viewsEl.textContent = fmtNum(Math.round(from + (views - from) * e));
       if (p < 1) requestAnimationFrame(step);
     });
   }
@@ -583,7 +640,7 @@ const CONFIG = {
     muteBtn.innerHTML = '<i class="fa-solid ' + icon + '"></i>';
   }
   function applyBrightness() {
-    document.documentElement.style.setProperty("--dim", (0.92 * (1 - bright / 100)).toFixed(3));
+    root.style.setProperty("--dim", (0.92 * (1 - bright / 100)).toFixed(3));
     brIn.value = bright; fill(brIn, bright);
   }
   volIn.addEventListener("input", function () { vol = +volIn.value; muted = false; applyVolume(); store.set("volume", vol); });
@@ -596,94 +653,186 @@ const CONFIG = {
   applyVolume();
   applyBrightness();
 
-  /* ---------- glowing lines that travel around the boxes (like crax.lol) ---------- */
-  var NS = "http://www.w3.org/2000/svg", traces = [];
-  function addTrace(host, dash, seconds, outside) {
-    var svg = document.createElementNS(NS, "svg"), rect = document.createElementNS(NS, "rect");
-    svg.setAttribute("class", "trace"); svg.setAttribute("aria-hidden", "true");
-    svg.appendChild(rect); host.appendChild(svg);
-    var t = { rect: rect, dash: dash, seconds: seconds, len: 0, pos: Math.random(), boost: 0 };
-    t.fit = function () {
+  /* ---------- glowing lines that travel around the boxes (like crax.lol) ----------
+     Small lines (avatar, player, settings) are moved with `transform` only, so the phone never has to redraw anything.
+     The long line around the card is a thin SVG outline in its own layer, updated 30 times per second. */
+  var NS = "http://www.w3.org/2000/svg", RAD = 180 / Math.PI, pt = { x: 0, y: 0, a: 0 };
+
+  function geometry(host, outside) {
+    var w = host.offsetWidth, h = host.offsetHeight, cs = getComputedStyle(host);
+    var border = parseFloat(cs.borderTopWidth) || 0, rr = cs.borderTopLeftRadius, r = parseFloat(rr) || 0;
+    if (rr.indexOf("%") > -1) r = Math.min(w, h) * r / 100;
+    var W = w + 2 * outside, H = h + 2 * outside;
+    r = Math.max(0, Math.min(r + outside, W / 2, H / 2));
+    var g = { W: W, H: H, r: r, off: border + outside, top: W - 2 * r, side: H - 2 * r, arc: Math.PI * r / 2 };
+    g.P = 2 * (g.top + g.side) + 4 * g.arc;                 // length of the whole outline
+    return g;
+  }
+  function pointAt(g, s) {                                  // position + direction after walking s along the outline (clockwise)
+    var r = g.r, W = g.W, H = g.H, th;
+    s = s % g.P; if (s < 0) s += g.P;
+    if (s < g.top)  { pt.x = r + s; pt.y = 0; pt.a = 0; return pt; }
+    s -= g.top;
+    if (s < g.arc)  { th = r ? s / r : 0; pt.x = W - r + r * Math.sin(th); pt.y = r - r * Math.cos(th); pt.a = th * RAD; return pt; }
+    s -= g.arc;
+    if (s < g.side) { pt.x = W; pt.y = r + s; pt.a = 90; return pt; }
+    s -= g.side;
+    if (s < g.arc)  { th = r ? s / r : 0; pt.x = W - r + r * Math.cos(th); pt.y = H - r + r * Math.sin(th); pt.a = 90 + th * RAD; return pt; }
+    s -= g.arc;
+    if (s < g.top)  { pt.x = W - r - s; pt.y = H; pt.a = 180; return pt; }
+    s -= g.top;
+    if (s < g.arc)  { th = r ? s / r : 0; pt.x = r - r * Math.sin(th); pt.y = H - r + r * Math.cos(th); pt.a = 180 + th * RAD; return pt; }
+    s -= g.arc;
+    if (s < g.side) { pt.x = 0; pt.y = H - r - s; pt.a = 270; return pt; }
+    s -= g.side;
+    th = r ? s / r : 0; pt.x = r - r * Math.cos(th); pt.y = r - r * Math.sin(th); pt.a = 270 + th * RAD; return pt;
+  }
+
+  function addTick(host, len, seconds, outside) {
+    var el = document.createElement("span");
+    el.className = "tick"; el.setAttribute("aria-hidden", "true");
+    el.style.width = len + "px"; el.style.marginLeft = (-len / 2) + "px";
+    host.appendChild(el);
+    var o = { g: null, pos: Math.random(), boost: 0 };
+    o.fit = function () { if (host.offsetWidth) o.g = geometry(host, outside); };
+    o.draw = function (dt) {
+      if (!o.g) return;
+      o.boost = Math.max(0, o.boost - dt * 1.5);
+      o.pos = (o.pos + dt / seconds * (1 + 7 * o.boost * o.boost)) % 1;
+      var p = pointAt(o.g, o.pos * o.g.P);
+      el.style.transform = "translate3d(" + (p.x - o.g.off).toFixed(1) + "px," + (p.y - o.g.off).toFixed(1) + "px,0) rotate(" + p.a.toFixed(1) + "deg)";
+    };
+    o.fit();
+    watch(host, o.fit);
+    return o;
+  }
+
+  function addDash(host, len, pxPerSecond) {
+    var svg = document.createElementNS(NS, "svg"), glow = document.createElementNS(NS, "rect"), core = document.createElementNS(NS, "rect");
+    svg.setAttribute("class", "dash"); svg.setAttribute("aria-hidden", "true");
+    glow.setAttribute("class", "g"); core.setAttribute("class", "c");
+    svg.appendChild(glow); svg.appendChild(core); host.appendChild(svg);
+    var o = { pos: Math.random(), L: 0 };
+    o.fit = function () {
       var w = host.offsetWidth, h = host.offsetHeight;
       if (!w || !h) return;
-      var cs = getComputedStyle(host), border = parseFloat(cs.borderTopWidth) || 0;
-      var r = parseFloat(cs.borderTopLeftRadius) || 0;
-      if (cs.borderTopLeftRadius.indexOf("%") > -1) r = w * r / 100;
-      var W = w + 2 * outside, H = h + 2 * outside, sw = 2;
-      r = Math.max(0, Math.min(r + outside, W / 2, H / 2) - sw / 2);
-      svg.style.left = svg.style.top = -(border + outside) + "px";
-      svg.style.width = W + "px"; svg.style.height = H + "px";
-      svg.setAttribute("viewBox", "0 0 " + W + " " + H);
-      rect.setAttribute("x", sw / 2); rect.setAttribute("y", sw / 2);
-      rect.setAttribute("width", W - sw); rect.setAttribute("height", H - sw);
-      rect.setAttribute("rx", r); rect.setAttribute("ry", r);
-      t.len = 2 * (W - sw + H - sw) - 8 * r + 2 * Math.PI * r;
-      rect.style.strokeDasharray = dash + " " + Math.max(0, t.len - dash);
-    };
-    t.fit();
-    if (window.ResizeObserver) new ResizeObserver(t.fit).observe(host);
-    else window.addEventListener("resize", t.fit);
-    traces.push(t);
-    return t;
-  }
-  function startTraces() {
-    if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    var avTrace = addTrace($("avatar"), 16, 3, 3);
-    addTrace($("card"), 80, 14, 0);
-    addTrace($("player"), 26, 7, 0);
-    addTrace($("settings"), 16, 4, 0);
-    var last = 0;
-    requestAnimationFrame(function frame(now) {
-      var dt = last ? Math.min(0.05, (now - last) / 1000) : 0; last = now;
-      traces.forEach(function (t) {
-        t.boost = Math.max(0, t.boost - dt * 1.5);
-        t.pos = (t.pos + dt / t.seconds * (1 + 7 * t.boost * t.boost)) % 1;
-        t.rect.style.strokeDashoffset = (-t.pos * t.len).toFixed(1);
+      var cs = getComputedStyle(host), border = parseFloat(cs.borderTopWidth) || 0, sw = 2;
+      var r = Math.max(0, Math.min(parseFloat(cs.borderTopLeftRadius) || 0, w / 2, h / 2) - sw / 2);
+      svg.style.left = svg.style.top = -border + "px";
+      svg.style.width = w + "px"; svg.style.height = h + "px";
+      svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+      [glow, core].forEach(function (rc) {
+        rc.setAttribute("x", sw / 2); rc.setAttribute("y", sw / 2);
+        rc.setAttribute("width", w - sw); rc.setAttribute("height", h - sw);
+        rc.setAttribute("rx", r); rc.setAttribute("ry", r);
+        rc.style.strokeDasharray = len + " " + Math.max(0, 2 * (w - sw + h - sw) - 8 * r + 2 * Math.PI * r - len);
       });
-      requestAnimationFrame(frame);
-    });
-    $("avatar").addEventListener("click", function () { avTrace.boost = 1; });   // tap the picture = fast spin
+      o.L = 2 * (w - sw + h - sw) - 8 * r + 2 * Math.PI * r;
+    };
+    o.draw = function (dt) {
+      if (!o.L) return;
+      o.pos = (o.pos + dt * pxPerSecond / o.L) % 1;
+      var off = (-o.pos * o.L).toFixed(1);
+      core.style.strokeDashoffset = off;
+      if (!isLite()) glow.style.strokeDashoffset = off;
+    };
+    o.fit();
+    watch(host, o.fit);
+    return o;
   }
 
-  // scan-line flash when you touch the picture
-  var scan = $("scan");
-  function flash() { scan.classList.add("on"); setTimeout(function () { scan.classList.remove("on"); }, 450); }
-  $("avatar").addEventListener("click", flash);
-  $("avatar").addEventListener("mouseenter", flash);
+  function watch(host, fn) {
+    if (window.ResizeObserver) new ResizeObserver(fn).observe(host);
+    else window.addEventListener("resize", fn);
+  }
 
-  /* ---------- 3D tilt that follows your mouse / finger ---------- */
-  var stage = $("stage");
+  /* if the device can't keep up (under ~38 frames per second) the page switches off more effects by itself */
+  var gov = { on: !!C.adaptive, t0: 0, n: 0, sum: 0, slow: 0 };
+  function govern(t, dt) {
+    if (!gov.on || !dt || paused || document.hidden) return;
+    if (!gov.t0) gov.t0 = t + 3500;                          // let the intro finish first
+    if (t < gov.t0 || dt > 250) return;
+    gov.n++; gov.sum += dt; if (dt > 34) gov.slow++;
+    if (t - gov.t0 > 2500 && gov.n > 20) {
+      var avg = gov.sum / gov.n, bad = avg > 26 || gov.slow / gov.n > 0.3;
+      gov.on = false;
+      if (bad) degrade(avg);
+    }
+  }
+  function degrade(avg) {
+    if (!isLite()) { root.classList.add("lite"); tiltOn = false; untilt(); }
+    else root.classList.add("ultra");
+    if (window.console) console.info("[page] slow device (" + avg.toFixed(1) + " ms per frame): " + (isUltra() ? "ultra-light" : "light") + " effects");
+    if (!isUltra()) { gov.on = true; gov.t0 = 0; gov.n = 0; gov.sum = 0; gov.slow = 0; }   // measure once more
+  }
+
+  function startOrbits() {
+    var avatarEl = $("avatar");
+    var ticks = [], dash = null, last = 0, lastDraw = 0, lastDash = 0;
+    if (!reduced) {
+      ticks = [addTick(avatarEl, 16, 3, 3), addTick($("player"), 26, 7, 0), addTick($("settings"), 18, 4, 0)];
+      dash = addDash($("card"), 80, 90);
+      avatarEl.addEventListener("click", function () { ticks[0].boost = 1; });   // tap the picture = fast spin
+    }
+    requestAnimationFrame(function frame(t) {
+      requestAnimationFrame(frame);
+      var raw = last ? t - last : 0; last = t;
+      govern(t, raw);
+      if (reduced || paused || document.hidden || isUltra()) { lastDraw = lastDash = 0; return; }
+      if (t - lastDraw < 14) return;                         // at most ~60 updates a second, even on 90/120 Hz screens
+      var dt = lastDraw ? Math.min(0.05, (t - lastDraw) / 1000) : 0.016; lastDraw = t;
+      for (var i = 0; i < ticks.length; i++) ticks[i].draw(dt);
+      if (!lastDash || t - lastDash >= 32) {                 // the long outline: 30 times a second
+        dash.draw(lastDash ? Math.min(0.1, (t - lastDash) / 1000) : 0.033); lastDash = t;
+      }
+    });
+  }
+
+  /* ---------- 3D tilt + scan-line flash (full effects only: computers, never phones) ---------- */
+  var stage = $("stage"), scan = $("scan"), tiltOn = !isLite() && !reduced;
   function tilt(x, y) {
     var rx = (y / innerHeight * 2 - 1) * 10, ry = -(x / innerWidth * 2 - 1) * 10;
     stage.style.transform = "perspective(1000px) rotateX(" + rx.toFixed(2) + "deg) rotateY(" + ry.toFixed(2) + "deg)";
   }
   function untilt() { stage.style.transform = ""; }
-  if (!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) {
-    document.addEventListener("pointermove", function (e) { if (entered && e.pointerType === "mouse") tilt(e.clientX, e.clientY); });
-    document.documentElement.addEventListener("mouseleave", untilt);
-    document.addEventListener("touchmove", function (e) {
-      if (!entered || !e.touches[0] || (e.target.closest && e.target.closest("input, button, a"))) return;
-      tilt(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
-    document.addEventListener("touchend", untilt);
-    document.addEventListener("touchcancel", untilt);
-  }
+  function flash() { if (!tiltOn) return; scan.classList.add("on"); setTimeout(function () { scan.classList.remove("on"); }, 450); }
+  document.addEventListener("pointermove", function (e) { if (tiltOn && entered && e.pointerType === "mouse") tilt(e.clientX, e.clientY); });
+  document.documentElement.addEventListener("mouseleave", untilt);
+  document.addEventListener("touchmove", function (e) {
+    if (!tiltOn || !entered || !e.touches[0] || (e.target.closest && e.target.closest("input, button, a"))) return;
+    tilt(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  document.addEventListener("touchend", untilt);
+  document.addEventListener("touchcancel", untilt);
+  $("avatar").addEventListener("click", flash);
+  $("avatar").addEventListener("mouseenter", flash);
 
   /* ---------- ENTER: the tap starts everything ---------- */
+  function firstFrame(video, maxMs) {                        // resolves when the video shows its first picture (or after maxMs)
+    return new Promise(function (resolve) {
+      var done = false, fin = function () { if (!done) { done = true; resolve(); } };
+      setTimeout(fin, maxMs);
+      if (video.readyState >= 3 && video.currentTime > 0) return fin();
+      video.addEventListener("playing", fin, { once: true });
+    });
+  }
   function enter() {
     if (entered) return;
     entered = true;
     play();                                   // music (allowed because this runs inside the tap)
     swallow(bg.play());                       // background video
     enterEl.classList.add("hide");
-    document.body.classList.add("entered");
     setTimeout(function () { enterEl.style.display = "none"; }, 950);
+    firstFrame(bg, 700).then(reveal);         // the intro starts once the video is really running, so nothing stutters
+  }
+  function reveal() {
+    document.body.classList.add("entered");
     typeLoop($("nameText"), [C.name], { type: 260, erase: 140, hold: 10000, gap: 600 });
     var bio = [].concat(C.bio || []).filter(Boolean);
     if (bio.length) typeLoop($("bioText"), bio, { type: 130, erase: 65, hold: 2000, gap: 450 });
     startAvatar();
     countUp();
-    startTraces();
+    startOrbits();
     showNow();
   }
   enterEl.addEventListener("click", enter);
@@ -692,13 +841,17 @@ const CONFIG = {
   });
   try { enterEl.focus({ preventScroll: true }); } catch (e) {}
 
-  /* ---------- Android app: pause when the app is in the background ---------- */
+  /* ---------- Android app: pause everything while the app is in the background ---------- */
   var resumeList = [];
   window.appPaused = function () {
+    if (paused) return;
+    paused = true;
     resumeList = [audio, bg, avVid].filter(function (m) { return !m.paused; });
     resumeList.forEach(function (m) { m.pause(); });
   };
   window.appResumed = function () {
+    if (!paused) return;
+    paused = false;
     resumeList.forEach(function (m) { swallow(m.play()); });
     resumeList = [];
   };

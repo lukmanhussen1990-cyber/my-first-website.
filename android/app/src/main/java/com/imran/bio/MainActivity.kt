@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -56,6 +57,8 @@ class MainActivity : ComponentActivity() {
         )
         hideStatusBar()
         volumeControlStream = AudioManager.STREAM_MUSIC // volume buttons change the music volume
+        // the page is a video + music player: don't let the screen switch off (and the music stop) while you watch it
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         if (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {
             WebView.setWebContentsDebuggingEnabled(true)

@@ -28,8 +28,8 @@ android {
         applicationId = "com.imran.bio"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
         resValue("string", "app_name", androidString(appName))
     }
 
@@ -59,6 +59,12 @@ android {
 
     buildFeatures {
         resValues = true
+    }
+
+    // photos, videos and songs are stored as they are inside the APK (not zipped again),
+    // so the phone can read and jump around in them directly instead of unpacking them first
+    androidResources {
+        noCompress += listOf("mp3", "mp4", "jpg", "png", "woff2")
     }
 
     compileOptions {
