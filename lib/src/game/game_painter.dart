@@ -67,7 +67,16 @@ class GamePainter extends CustomPainter {
       )..layout();
     }
     final tp = _bestTp!;
+    final bump = ctrl.bestBump > 0 ? math.sin(ctrl.bestBump * math.pi) * 0.18 : 0.0;
+    if (bump > 0) {
+      canvas.save();
+      final pivot = Offset(crownRect.right + l.u * 1.2, l.bestAnchor.dy);
+      canvas.translate(pivot.dx, pivot.dy);
+      canvas.scale(1 + bump);
+      canvas.translate(-pivot.dx, -pivot.dy);
+    }
     tp.paint(canvas, Offset(crownRect.right + l.u * 1.2, l.bestAnchor.dy - tp.height / 2 + l.u * 0.2));
+    if (bump > 0) canvas.restore();
 
     paintGear(canvas, l.gearRect);
   }

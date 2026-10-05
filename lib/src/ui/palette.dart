@@ -1,4 +1,4 @@
-import 'package:flutter/painting.dart';
+import 'package:flutter/services.dart';
 
 /// Shaded colors for one block color (sampled from the original game).
 class BlockColors {
@@ -23,6 +23,29 @@ class BlockColors {
 
 class Palette {
   Palette._();
+
+  /// System bar styles per screen (light icons on blue, dark on white).
+  static const SystemUiOverlayStyle overlayOnWhite = SystemUiOverlayStyle(
+    statusBarColor: Color(0x00000000),
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
+    systemNavigationBarColor: Color(0xFFFFFFFF),
+    systemNavigationBarIconBrightness: Brightness.dark,
+  );
+  static const SystemUiOverlayStyle overlayOnBlue = SystemUiOverlayStyle(
+    statusBarColor: Color(0x00000000),
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: Color(0xFF1F4FBF),
+    systemNavigationBarIconBrightness: Brightness.light,
+  );
+  static const SystemUiOverlayStyle overlayGame = SystemUiOverlayStyle(
+    statusBarColor: Color(0x00000000),
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: Color(0xFF3A5193),
+    systemNavigationBarIconBrightness: Brightness.light,
+  );
 
   // Screen colors.
   static const background = Color(0xFF3A5193);

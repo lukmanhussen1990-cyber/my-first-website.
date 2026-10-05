@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../logic/game.dart';
@@ -149,62 +150,65 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           _goHome();
         }
       },
-      child: Scaffold(
-        backgroundColor: Palette.background,
-        body: DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0, -0.2),
-              radius: 1.1,
-              colors: [Color(0xFF3E5799), Palette.background, Color(0xFF354B8C)],
-              stops: [0, 0.6, 1],
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: Palette.overlayGame,
+        child: Scaffold(
+          backgroundColor: Palette.background,
+          body: DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(0, -0.2),
+                radius: 1.1,
+                colors: [Color(0xFF3E5799), Palette.background, Color(0xFF354B8C)],
+                stops: [0, 0.6, 1],
+              ),
             ),
-          ),
-          child: SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final size = constraints.biggest;
-                if (ctrl.layout?.size != size) {
-                  ctrl.layout = GameLayout.compute(size);
-                }
-                return Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Listener(
-                        behavior: HitTestBehavior.opaque,
-                        onPointerDown: _down,
-                        onPointerMove: _move,
-                        onPointerUp: _up,
-                        onPointerCancel: _cancel,
-                        child: RepaintBoundary(
-                          child: CustomPaint(painter: GamePainter(ctrl, dpr), size: size),
+            child: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final size = constraints.biggest;
+                  if (ctrl.layout?.size != size) {
+                    ctrl.layout = GameLayout.compute(size);
+                  }
+                  return Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Listener(
+                          behavior: HitTestBehavior.opaque,
+                          onPointerDown: _down,
+                          onPointerMove: _move,
+                          onPointerUp: _up,
+                          onPointerCancel: _cancel,
+                          child: RepaintBoundary(
+                            child: CustomPaint(painter: GamePainter(ctrl, dpr), size: size),
+                          ),
                         ),
                       ),
-                    ),
-                    if (_showSettings)
-                      SettingsPopup(
-                        onClose: () => setState(() => _showSettings = false),
-                        onRestart: () {
-                          ctrl.newGame();
-                          setState(() => _showSettings = false);
-                        },
-                        onHowToPlay: () => setState(() => _showHowTo = true),
-                      ),
-                    if (_showHowTo) HowToPlayPopup(onClose: () => setState(() => _showHowTo = false)),
-                    if (_showGameOver)
-                      GameOverPopup(
-                        score: _gameOverScore,
-                        best: SettingsStore.instance.bestScore,
-                        isNewBest: _gameOverWasBest,
-                        onPlayAgain: () {
-                          ctrl.newGame();
-                          setState(() => _showGameOver = false);
-                        },
-                        onHome: _goHome,
-                      ),
-                  ],
-                );
-              },
+                      if (_showSettings)
+                        SettingsPopup(
+                          onClose: () => setState(() => _showSettings = false),
+                          onRestart: () {
+                            ctrl.newGame();
+                            setState(() => _showSettings = false);
+                          },
+                          onHowToPlay: () => setState(() => _showHowTo = true),
+                        ),
+                      if (_showHowTo) HowToPlayPopup(onClose: () => setState(() => _showHowTo = false)),
+                      if (_showGameOver)
+                        GameOverPopup(
+                          score: _gameOverScore,
+                          best: SettingsStore.instance.bestScore,
+                          isNewBest: _gameOverWasBest,
+                          onPlayAgain: () {
+                            ctrl.newGame();
+                            setState(() => _showGameOver = false);
+                          },
+                          onHome: _goHome,
+                        ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ),

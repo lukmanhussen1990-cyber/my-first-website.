@@ -124,6 +124,9 @@ class GameController extends ChangeNotifier {
   bool newBest = false;
   double newBestT = 0;
 
+  /// 1 -> 0 bounce of the crown/best score when it is updated live.
+  double bestBump = 0;
+
   DragState? drag;
   ReturnAnim? returning;
   final List<double> traySpawn = [1, 1, 1];
@@ -378,6 +381,7 @@ class GameController extends ChangeNotifier {
 
     // Live best score (crown) and new-record celebration.
     if (SettingsStore.instance.submitScore(game.score)) {
+      bestBump = 1;
       if (!newBest && bestAtStart > 0) {
         newBest = true;
         newBestT = 0;
@@ -391,8 +395,10 @@ class GameController extends ChangeNotifier {
       overPhase = OverPhase.waiting;
       overT = 0;
     }
-    debugPrint('BB_MOVE n=${game.moves} piece=${result.piece.shape.id} at=$row,$col '
-        'score=${game.score} lines=${result.linesCleared} combo=${result.combo} over=${result.gameOver}');
+    debugPrint(
+      'BB_MOVE n=${game.moves} piece=${result.piece.shape.id} at=$row,$col '
+      'score=${game.score} lines=${result.linesCleared} combo=${result.combo} over=${result.gameOver}',
+    );
     _save();
   }
 
@@ -530,6 +536,11 @@ class GameController extends ChangeNotifier {
         t.t += dt;
       }
       texts.removeWhere((t) => t.done);
+      dirty = true;
+    }
+
+    if (bestBump > 0) {
+      bestBump = math.max(0, bestBump - dt / 0.35);
       dirty = true;
     }
 

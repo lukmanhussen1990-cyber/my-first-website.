@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../game/game_screen.dart';
 import '../services/sound.dart';
@@ -42,13 +43,16 @@ class _IconSplashScreenState extends State<IconSplashScreen> {
     final w = MediaQuery.sizeOf(context).width;
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final side = w * 0.3;
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: SizedBox(
-          width: side,
-          height: side,
-          child: CustomPaint(painter: _AppIconPainter(dpr)),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: Palette.overlayOnWhite,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: SizedBox(
+            width: side,
+            height: side,
+            child: CustomPaint(painter: _AppIconPainter(dpr)),
+          ),
         ),
       ),
     );
@@ -128,54 +132,57 @@ class _LoadingSplashScreenState extends State<LoadingSplashScreen> with TickerPr
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Palette.splashTop, Palette.splashBottom],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: Palette.overlayOnBlue,
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Palette.splashTop, Palette.splashBottom],
+            ),
           ),
-        ),
-        child: Stack(
-          children: [
-            if (!_showLogo)
-              Center(
-                child: AnimatedBuilder(
-                  animation: _studio,
-                  builder: (context, child) {
-                    final t = _studio.value;
-                    final o = t < 0.2 ? t / 0.2 : (t > 0.85 ? (1 - t) / 0.15 : 1.0);
-                    return Opacity(opacity: o.clamp(0.0, 1.0), child: child);
-                  },
-                  child: StudioLogo(width: w * 0.55),
+          child: Stack(
+            children: [
+              if (!_showLogo)
+                Center(
+                  child: AnimatedBuilder(
+                    animation: _studio,
+                    builder: (context, child) {
+                      final t = _studio.value;
+                      final o = t < 0.2 ? t / 0.2 : (t > 0.85 ? (1 - t) / 0.15 : 1.0);
+                      return Opacity(opacity: o.clamp(0.0, 1.0), child: child);
+                    },
+                    child: StudioLogo(width: w * 0.55),
+                  ),
                 ),
-              ),
-            if (_showLogo) ...[
-              Align(
-                alignment: const Alignment(0, -0.45),
-                child: ScaleTransition(
-                  scale: CurvedAnimation(parent: _logo, curve: Curves.elasticOut),
-                  child: BlockBlastLogo(width: w * 0.8),
+              if (_showLogo) ...[
+                Align(
+                  alignment: const Alignment(0, -0.45),
+                  child: ScaleTransition(
+                    scale: CurvedAnimation(parent: _logo, curve: Curves.elasticOut),
+                    child: BlockBlastLogo(width: w * 0.8),
+                  ),
                 ),
-              ),
-              Align(
-                alignment: const Alignment(0, 0.25),
-                child: FadeTransition(
-                  opacity: _logo,
-                  child: SizedBox(
-                    width: w * 0.16,
-                    height: w * 0.16,
-                    child: AnimatedBuilder(
-                      animation: _loader,
-                      builder: (context, _) =>
-                          CustomPaint(painter: _LoaderPainter(_loader.value, MediaQuery.devicePixelRatioOf(context))),
+                Align(
+                  alignment: const Alignment(0, 0.25),
+                  child: FadeTransition(
+                    opacity: _logo,
+                    child: SizedBox(
+                      width: w * 0.16,
+                      height: w * 0.16,
+                      child: AnimatedBuilder(
+                        animation: _loader,
+                        builder: (context, _) =>
+                            CustomPaint(painter: _LoaderPainter(_loader.value, MediaQuery.devicePixelRatioOf(context))),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

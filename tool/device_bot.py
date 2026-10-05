@@ -87,8 +87,9 @@ def last_move():
 # ---------------------------------------------------------------------------
 
 def is_dark(c):
+    # Board cells (35,42,84) and grid lines (28,35,73); excludes the frame (44,59,116).
     r, g, b = c
-    return r < 52 and g < 62 and 55 < b < 112
+    return r < 48 and g < 56 and 55 < b < 100
 
 
 def diff_bg(c):
@@ -114,28 +115,31 @@ def find_board(img):
     """Locates the 8x8 grid on an (empty or partly empty) board."""
     w, h = img.size
     px = img.load()
-    best = None
+    rows = []
     for y in range(int(h * 0.12), int(h * 0.8), 3):
-        run_start, gap, x = None, 0, 0
-        best_row = (0, 0, 0)
+        run_start, gap, best_row = None, 0, (0, 0, 0)
         for x in range(w):
             if is_dark(px[x, y]):
                 if run_start is None:
                     run_start = x
                 gap = 0
-                end = x
-                if end - run_start > best_row[0]:
-                    best_row = (end - run_start, run_start, end)
+                if x - run_start > best_row[0]:
+                    best_row = (x - run_start, run_start, x)
             elif run_start is not None:
                 gap += 1
                 if gap > 4:
                     run_start, gap = None, 0
-        if best is None or best_row[0] > best[0] + 2:
-            best = (best_row[0], best_row[1], best_row[2], y)
-    length, left, right, y0 = best
-    if length < w * 0.5:
-        raise RuntimeError(f'board not found (longest dark run {length}px)')
-    x = left + 3
+        rows.append((best_row[0], best_row[1], best_row[2], y))
+    longest = max(r[0] for r in rows)
+    if longest < w * 0.5:
+        raise RuntimeError(f'board not found (longest dark run {longest}px)')
+    cand = [r for r in rows if r[0] >= longest * 0.97]
+    cand.sort(key=lambda r: r[3])
+    mid = cand[len(cand) // 2]
+    left = sorted(r[1] for r in cand)[len(cand) // 2]
+    right = sorted(r[2] for r in cand)[len(cand) // 2]
+    y0 = mid[3]
+    x = int(left + (right - left) / 16)  # middle of the first column
     top = y0
     while top > 0 and (is_dark(px[x, top - 1]) or is_dark(px[x, max(0, top - 4)])):
         top -= 1
@@ -300,15 +304,37 @@ def tap(x, y):
 # ---------------------------------------------------------------------------
 
 def launch(prefix, splash_shots=True):
-    shell(f'am start -W -n {PKG}/.MainActivity', timeout=120)
-    if splash_shots:
-        time.sleep(0.6)
-        shot(prefix + 'splash1')
-        time.sleep(2.2)
-        shot(prefix + 'splash2_studio')
-        time.sleep(1.8)
-        shot(prefix + 'splash2_logo')
-    time.sleep(5.5 if splash_shots else 10)
+    """Starts the app. With splash_shots the launch is screen-recorded and
+    frames are extracted (adb screencap is too slow on CI emulators)."""
+    if not splash_shots:
+        shell(f'am start -n {PKG}/.MainActivity', timeout=120)
+        time.sleep(10)
+        return
+    remote = '/sdcard/bb_launch.mp4'
+    shell(f'rm -f {remote}')
+    rec = subprocess.Popen([ADB, 'shell', 'screenrecord', '--time-limit', '11', '--bit-rate', '6000000', remote])
+    time.sleep(1.5)
+    t0 = time.time()
+    shell(f'am start -n {PKG}/.MainActivity', timeout=120)
+    try:
+        rec.wait(timeout=40)
+    except subprocess.TimeoutExpired:
+        rec.kill()
+    time.sleep(1.0)
+    local = os.path.join(OUT, prefix + 'launch.mp4')
+    adb('pull', remote, local, timeout=120)
+    if os.path.exists(local) and os.path.getsize(local) > 1000:
+        for sec in (1.8, 2.6, 3.4, 4.3, 5.2, 6.4, 7.6, 9.0, 10.5):
+            frame = os.path.join(OUT, f'{prefix}launch_{sec:04.1f}s.png')
+            subprocess.run(['ffmpeg', '-v', 'error', '-y', '-ss', str(sec), '-i', local, '-frames:v', '1', frame])
+        log('launch video saved', local)
+    else:
+        log('screenrecord unavailable, falling back to screencaps')
+        for i in range(6):
+            shot(f'{prefix}launch_cap{i}')
+    remaining = 12 - (time.time() - t0)
+    if remaining > 0:
+        time.sleep(remaining)
 
 
 def play_game(g, tag, max_moves):
