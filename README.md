@@ -9,9 +9,11 @@ website/                ← the website (everything in ONE file: index.html)
   avatar.mp4            ← profile video (takes turns with the picture)
   background.mp4        ← background video
   *.mp3                 ← songs for the music player
+  intro/                ← the three picture layers of the opening intro (logo)
 android/                ← Android Studio project (Kotlin, full-screen WebView)
   icon/icon-source.png  ← the app icon picture
   tools/make_icons.sh   ← turns a picture into every icon size the app needs
+  tools/make_intro_layers.sh ← cuts the icon artwork into the intro's picture layers
 .github/workflows/      ← GitHub builds the APK for you
 ```
 
@@ -30,6 +32,9 @@ Open `website/index.html` and edit the `CONFIG` block at the very top:
 | `startViews` | where the views counter starts |
 | `avatarVideoFirst`, `avatarImageSeconds` | profile picture ↔ video timing |
 | `volume`, `brightness` | starting positions of the two sliders |
+| `intro` | `true` (default): the cinematic opening before the "Click here" screen · `false` skips it |
+| `introSound` | `true` (default): boom + whoosh sounds for the intro and for the moment the page appears (made by the page itself, they follow the volume slider) · `false` = silent |
+| `introImages` | the three picture layers of the logo (scene, name, tag) |
 | `lite` | `"auto"` (default): phones get light effects so nothing lags, computers get the full effects. `true` / `false` forces one or the other |
 | `adaptive` | `true` (default): if a device still can't keep up, the page switches off more effects by itself |
 
@@ -38,6 +43,19 @@ To swap a photo, video or song, put the new file in `website/` with the same nam
 
 To look at the website, open `website/index.html` in a browser.
 To put it online, upload the `website` folder to any static host (GitHub Pages, Netlify, Cloudflare Pages…).
+
+## The opening intro and the animations
+
+* **Intro** (about 2.6 s): the blood moon and the figure fade in, a blade slashes across, **IMRAN** slams in with a flash and a shake,
+  **BADASS** swipes in, embers drift up, then the "Click here to see me" screen types itself.
+  **Tap anywhere during the intro to skip it and go straight in.** In a normal web browser the sounds only start after your first tap
+  (browsers don't allow sound before that); in the app they play right away.
+* **When the page appears** (after the tap): a white flash, a red slash across the screen and a short shake, with a boom.
+* **When the song changes**: the cover flies in with a ring, the player bumps, the lines around the boxes race round once,
+  the background blinks like a beat, the progress line glides back to the start, and the "now playing" pill drops in with the
+  title wiping across and a dancing equalizer. Pressing previous after 3 seconds restarts the song with a smaller version of this.
+* To change the logo, replace the artwork in `android/icon/icon-source.png` and run `bash android/tools/make_intro_layers.sh`
+  (needs ImageMagick), or just send me the picture.
 
 ## Why it is smooth on phones
 

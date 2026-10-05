@@ -65,6 +65,11 @@ const CONFIG = {
   lite: "auto",                         // "auto" = light effects on phones (no live blur behind the boxes, no tilt) so nothing lags
                                         // true = always light · false = always full effects (pretty, but heavy for weak phones)
   adaptive: true,                       // true = if the device still can't keep up, switch off more effects by itself
+
+  // ---------- opening intro ----------
+  intro: true,                          // the cinematic opening (the logo slams in) before the "Click here" screen · false = skip it
+  introSound: true,                     // boom + whoosh sounds (made by the page itself, no files); they follow the volume slider
+  introImages: { scene: "intro/scene.jpg", name: "intro/name.png", tag: "intro/badass.png" },   // the three layers of the logo
 };
 
 (function () {
@@ -116,12 +121,81 @@ const CONFIG = {
   button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
   @keyframes blink { 50% { opacity: 0; } }
 
+  /* ---------- 0. opening intro (everything here only moves with transform / opacity, so it stays smooth) ---------- */
+  #intro { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; background: #000; overflow: hidden; cursor: pointer;
+           animation: iFailsafe .01s linear 7s forwards; }          /* if the script ever fails, the intro hides itself after 7 s */
+  @keyframes iFailsafe { to { visibility: hidden; pointer-events: none; } }
+  #intro.out { opacity: 0; pointer-events: none; transition: opacity .5s ease; }
+  #intro.out.fast { transition-duration: .3s; }
+  .i-art {
+    --a: min(100vw, 64vh); --a: min(100vw, 64svh);                /* the logo's square: as wide as the screen, never taller than 64% of it */
+    position: absolute; left: 50%; top: 50%; width: var(--a); height: var(--a);
+    margin: calc(var(--a) / -2) 0 0 calc(var(--a) / -2);
+  }
+  #intro.out .i-art { transform: scale(1.1); transition: transform .5s ease-in; }
+  .i-zoom { position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform-origin: 50% 46%; will-change: transform; }
+  .i-zoom img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; -webkit-user-drag: none; will-change: transform, opacity; }
+  .i-glow {
+    position: absolute; top: -30%; right: -30%; bottom: -30%; left: -30%; opacity: 0; pointer-events: none;
+    background: radial-gradient(circle at 50% 44%, rgba(255, 45, 30, .5), rgba(255, 45, 30, 0) 56%); will-change: transform, opacity;
+  }
+  .i-vig { position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 48%, rgba(0, 0, 0, .92) 100%); }
+  .i-flash { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: #fff; opacity: 0; pointer-events: none; will-change: opacity; }
+  .i-slash {
+    position: absolute; left: -30%; top: 47%; width: 160%; height: 3px; margin-top: -1.5px; opacity: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(255, 60, 40, 0), #fff 32%, #ff3a2a 70%, rgba(255, 60, 40, 0));
+    box-shadow: 0 0 16px 3px rgba(255, 50, 35, .85); will-change: transform, opacity;
+  }
+  .i-slash.a { --r: -22deg; }
+  .i-slash.b { --r: 15deg; top: 57%; }
+  .i-embers i {
+    position: absolute; bottom: -8px; left: var(--x); width: var(--s); height: var(--s); border-radius: 50%; opacity: 0; pointer-events: none;
+    background: #ff5a3a; box-shadow: 0 0 6px 1px rgba(255, 70, 40, .85); will-change: transform, opacity;
+  }
+  .i-hint {
+    position: absolute; left: 0; right: 0; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); text-align: center; pointer-events: none;
+    font-size: 11px; letter-spacing: .32em; text-transform: uppercase; color: rgba(255, 255, 255, .42); opacity: 0;
+  }
+  /* the timeline (seconds): 0.1 scene fades in · 0.36 slash · 0.52-0.82 name slams in (impact 0.82) · 1.0 slash · 1.14-1.52 tag swipes in (impact 1.52) · 2.65 end */
+  .play .i-art     { animation: iShake 2.6s linear; }
+  .play .i-zoom    { animation: iZoom 3.3s linear both; }
+  .play .i-scene   { animation: iScene 1.1s cubic-bezier(.1, .6, .2, 1) .1s both; }
+  .play .i-glow    { animation: iGlow 2.6s ease-out .3s both; }
+  .play .i-name    { animation: iName .3s cubic-bezier(.55, 0, .95, .45) .52s both; }
+  .play .i-tag     { animation: iTag .38s cubic-bezier(.2, .8, .2, 1) 1.14s both; }
+  .play .i-slash.a { animation: iSlash .3s cubic-bezier(.3, .1, .2, 1) .36s both; }
+  .play .i-slash.b { animation: iSlash .28s cubic-bezier(.3, .1, .2, 1) 1s both; }
+  .play .i-flash   { animation: iFlash 2.6s linear both; }
+  .play .i-embers i { animation: iEmber var(--d) ease-out var(--dl) both; }
+  .play .i-hint    { animation: iHint .6s ease 1.3s both; }
+  @keyframes iZoom  { from { transform: scale(1); } to { transform: scale(1.07); } }
+  @keyframes iScene { from { opacity: 0; transform: scale(1.3); } to { opacity: 1; transform: scale(1); } }
+  @keyframes iGlow  { 0% { opacity: 0; transform: scale(.6); } 22% { opacity: .95; } 100% { opacity: .5; transform: scale(1.12); } }
+  @keyframes iName  { from { opacity: 0; transform: scale(1.9) rotate(-3deg); } to { opacity: 1; transform: none; } }
+  @keyframes iTag   { from { opacity: 1; clip-path: inset(0 100% 0 0); transform: translateX(-30px) skewX(-12deg); } to { opacity: 1; clip-path: inset(0 0 0 0); transform: none; } }
+  @keyframes iSlash { 0% { opacity: 0; transform: rotate(var(--r)) translateX(-80%); } 15% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--r)) translateX(80%); } }
+  @keyframes iFlash { 0%, 30% { opacity: 0; } 31.5% { opacity: .55; } 38% { opacity: 0; } 58% { opacity: 0; } 59.2% { opacity: .3; } 65% { opacity: 0; } 100% { opacity: 0; } }
+  @keyframes iShake {
+    0%, 30% { transform: translate(0, 0); }
+    31.5% { transform: translate(-11px, 6px); } 34% { transform: translate(9px, -7px); } 37% { transform: translate(-6px, 4px); }
+    40.5% { transform: translate(4px, -3px); } 44% { transform: translate(-2px, 1px); } 47%, 58% { transform: translate(0, 0); }
+    59.5% { transform: translate(5px, -3px); } 62.5% { transform: translate(-4px, 3px); } 66% { transform: translate(2px, -1px); } 69%, 100% { transform: translate(0, 0); }
+  }
+  @keyframes iEmber { 0% { opacity: 0; transform: translate(0, 0); } 14% { opacity: .95; } 100% { opacity: 0; transform: translate(var(--dx), -62vh); } }
+  @keyframes iHint  { from { opacity: 0; } to { opacity: 1; } }
+  /* the white flash and the red slash that punch in when you tap "Click here" */
+  #flash { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 70; background: #fff; opacity: 0; pointer-events: none; }
+  #swipe {
+    position: fixed; z-index: 71; left: -30%; top: 46%; width: 160%; height: 3px; margin-top: -1.5px; opacity: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(255, 60, 40, 0), #fff 30%, #ff3a2a 70%, rgba(255, 60, 40, 0)); box-shadow: 0 0 16px 3px rgba(255, 50, 35, .85);
+  }
+
   /* ---------- 1. enter screen ---------- */
   #enter {
     position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 50;
     display: flex; align-items: center; justify-content: center; padding: 24px;
     background: #000; cursor: pointer; outline: none;
-    transition: opacity .9s ease, visibility .9s;
+    transition: opacity .4s ease, visibility .4s;
   }
   #enter.hide { opacity: 0; visibility: hidden; pointer-events: none; }
   #enterText {
@@ -159,10 +233,10 @@ const CONFIG = {
     gap: 14px; padding: 28px 0;
   }
   html:not(.lite) #stage { transition: transform .35s ease-out; }       /* the tilt (full effects only) */
-  #stage > * { opacity: 0; transform: translateY(-30px); }
-  body.entered #stage > * { opacity: 1; transform: none; transition: opacity .9s ease, transform .9s cubic-bezier(.2, .8, .2, 1); }
-  body.entered #stage > :nth-child(2) { transition-delay: .12s; }
-  body.entered #stage > :nth-child(3) { transition-delay: .24s; }
+  #stage > * { opacity: 0; transform: translateY(46px) scale(.93); }
+  body.entered #stage > * { opacity: 1; transform: none; transition: opacity .7s ease, transform .85s cubic-bezier(.2, 1.25, .3, 1); }
+  body.entered #stage > :nth-child(2) { transition-delay: .1s; }
+  body.entered #stage > :nth-child(3) { transition-delay: .2s; }
 
   /* dark glass. Full effects blur what is behind it; light mode (phones) uses a plain darker glass instead,
      because a live blur on top of a playing video is what makes phones lag. */
@@ -305,11 +379,13 @@ const CONFIG = {
     width: var(--w); display: flex; align-items: center;
     gap: clamp(7px, 2.4vw, 14px); padding: clamp(9px, 2.6vw, 12px) clamp(11px, 3.6vw, 20px);
   }
+  .cover-box { position: relative; flex: none; width: clamp(38px, 10.5vw, 46px); height: clamp(38px, 10.5vw, 46px); }
   #cover {
-    flex: none; width: clamp(38px, 10.5vw, 46px); height: clamp(38px, 10.5vw, 46px);
+    display: block; width: 100%; height: 100%;
     border-radius: 8px; object-fit: cover; background: #111; box-shadow: 0 2px 10px rgba(0, 0, 0, .5);
   }
   .lite #cover { box-shadow: none; }
+  .cover-ring { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 10px; border: 2px solid rgba(255, 255, 255, .9); opacity: 0; pointer-events: none; }
   .time { flex: none; min-width: 3.2em; text-align: center; font-size: clamp(10.5px, 3vw, 12.5px); letter-spacing: .1em; color: rgba(255, 255, 255, .65); font-variant-numeric: tabular-nums; }
   #seek { flex: 1; min-width: 30px; }
   .controls { flex: none; display: flex; align-items: center; gap: clamp(0px, 1vw, 8px); }
@@ -318,15 +394,23 @@ const CONFIG = {
   .controls button:active { transform: scale(.85); }
   @media (hover: hover) { .controls button:hover { opacity: .65; } }
   .now {
-    position: fixed; z-index: 5; left: 50%; top: 18px; transform: translate(-50%, -12px);
-    max-width: 90vw; padding: 7px 16px; border-radius: 999px;
+    position: fixed; z-index: 5; left: 50%; top: calc(16px + env(safe-area-inset-top, 0px)); transform: translate(-50%, -30px) scale(.8);
+    display: flex; align-items: center; gap: .8em;
+    max-width: 90vw; padding: 8px 18px; border-radius: 999px;
     background: rgba(0, 0, 0, .7); border: 1px solid var(--edge);
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-    font-size: 12px; letter-spacing: .14em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    opacity: 0; pointer-events: none; transition: opacity .4s, transform .4s;
+    font-size: 12px; letter-spacing: .14em;
+    opacity: 0; pointer-events: none; transition: opacity .3s, transform .6s cubic-bezier(.2, 1.5, .4, 1);
   }
   .lite .now { background: rgba(10, 10, 10, .86); -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .now.show { opacity: 1; transform: translate(-50%, 0); }
+  .now.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  .now-text { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .eq { flex: none; display: flex; align-items: flex-end; gap: 2px; height: 13px; }
+  .eq b { width: 3px; height: 100%; border-radius: 2px; background: #fff; transform-origin: 50% 100%; transform: scaleY(.3); animation: eq .9s ease-in-out infinite; animation-play-state: paused; }
+  .eq b:nth-child(2) { animation-duration: .65s; animation-delay: -.3s; }
+  .eq b:nth-child(3) { animation-duration: 1.1s; animation-delay: -.6s; }
+  .now.show .eq b { animation-play-state: running; }
+  @keyframes eq { 0%, 100% { transform: scaleY(.25); } 50% { transform: scaleY(1); } }
 
   /* ---------- 5. settings bar ---------- */
   .settings { display: flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 999px; }
@@ -360,6 +444,24 @@ const CONFIG = {
 </style>
 </head>
 <body>
+
+  <!-- 0. OPENING INTRO (the logo is built from three layers; tap anywhere to skip) -->
+  <div id="intro" aria-hidden="true">
+    <div class="i-art">
+      <div class="i-zoom">
+        <img class="i-scene" id="i-scene" alt="" draggable="false">
+        <div class="i-glow"></div>
+        <img class="i-name" id="i-name" alt="" draggable="false">
+        <img class="i-tag" id="i-tag" alt="" draggable="false">
+      </div>
+    </div>
+    <div class="i-slash a"></div>
+    <div class="i-slash b"></div>
+    <div class="i-embers" id="iEmbers"></div>
+    <div class="i-vig"></div>
+    <div class="i-flash"></div>
+    <p class="i-hint">tap to skip</p>
+  </div>
 
   <!-- 1. ENTER SCREEN (tap needed so the browser allows sound) -->
   <div id="enter" role="button" tabindex="0" aria-label="Enter the page">
@@ -395,7 +497,7 @@ const CONFIG = {
 
     <!-- 4. MUSIC PLAYER -->
     <section class="glass player" id="player">
-      <img id="cover" alt="cover art" decoding="async">
+      <span class="cover-box"><img id="cover" alt="cover art" decoding="async"><span class="cover-ring" id="coverRing"></span></span>
       <span class="time" id="cur">0:00</span>
       <input type="range" id="seek" min="0" max="1000" step="1" value="0" aria-label="Song position">
       <span class="time" id="dur">0:00</span>
@@ -415,7 +517,9 @@ const CONFIG = {
     </section>
   </main>
 
-  <div class="now" id="now" role="status" aria-live="polite"></div>
+  <div class="now" id="now" role="status" aria-live="polite"><i class="eq"><b></b><b></b><b></b></i><span class="now-text" id="nowText"></span></div>
+  <div id="flash"></div>
+  <div id="swipe"></div>
   <audio id="music" preload="auto"></audio>
 
 <script>
@@ -440,18 +544,128 @@ const CONFIG = {
     el.classList.remove("glitch"); void el.offsetWidth; el.classList.add("glitch");
     setTimeout(function () { el.classList.remove("glitch"); }, 220);
   };
-  var entered = false, paused = false;
+  var entered = false, paused = false, orbits = null;
 
   /* ---------- page title + favicon ---------- */
   document.title = C.name + "'s page";
   var fav = document.createElement("link"); fav.rel = "icon"; fav.href = C.avatarImage; document.head.appendChild(fav);
 
-  /* ---------- 1. enter screen typing ---------- */
+  /* ---------- sound effects: made with the browser's own synthesizer (no sound files) ---------- */
+  /* sfx:begin */
+  var sfx = (function () {
+    var AC = window.AudioContext || window.webkitAudioContext, ctx = null, master = null, noise = null;
+    function make(force) {
+      if (ctx) return true;
+      if (!AC || C.introSound === false) return false;
+      try {
+        // a normal browser does not allow sound before the first tap: don't even try (that avoids a console warning)
+        if (!force && navigator.getAutoplayPolicy && navigator.getAutoplayPolicy("audiocontext") === "disallowed") return false;
+        ctx = new AC();
+        var limiter = ctx.createDynamicsCompressor();
+        master = ctx.createGain(); master.connect(limiter); limiter.connect(ctx.destination);
+        noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+        var d = noise.getChannelData(0);
+        for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      } catch (e) { ctx = null; }
+      return !!ctx;
+    }
+    function ready(gesture) {                       // can we make sound right now?
+      if (!make(gesture)) return false;
+      if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} if (!gesture) return false; }
+      master.gain.value = 0.55 * clamp(store.get("volume", C.volume), 0, 100) / 100;
+      return master.gain.value > 0;
+    }
+    function tone(type, f0, f1, sweep, peak, t, len) {              // a note that falls from f0 to f1 Hz
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + sweep);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      o.connect(g); g.connect(master); o.start(t); o.stop(t + len + 0.05);
+    }
+    function crack(t, peak, len, f0, f1) {                          // a short burst of noise that closes from f0 to f1 Hz
+      var n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+      n.buffer = noise; f.type = "lowpass"; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + len);
+      g.gain.setValueAtTime(peak, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      n.connect(f); f.connect(g); g.connect(master); n.start(t); n.stop(t + len + 0.02);
+    }
+    function hit(t, p) {                                            // heavy impact: deep thump + a body you can hear on a phone speaker + crack
+      tone("sine", 150, 38, 0.6, 0.8 * p, t, 1.1);
+      tone("triangle", 260, 70, 0.35, 0.4 * p, t, 0.5);
+      crack(t, 0.5 * p, 0.22, 2600, 260);
+    }
+    function whoosh(t, len, peak) {                                 // noise that rises in pitch and swells, like a blade passing
+      var n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+      n.buffer = noise; n.loop = true; f.type = "bandpass"; f.Q.value = 1.2;
+      f.frequency.setValueAtTime(250, t); f.frequency.exponentialRampToValueAtTime(5000, t + len);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + len * 0.8); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      n.connect(f); f.connect(g); g.connect(master); n.start(t); n.stop(t + len + 0.02);
+    }
+    return {
+      unlock: function () { if (make(true) && ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} } },   // call inside a tap
+      play: function (what, gesture) {
+        if (!ready(gesture)) return;
+        var t = ctx.currentTime + 0.01;
+        if (what === "whoosh") whoosh(t, 0.45, 0.8);
+        else if (what === "whoosh2") whoosh(t, 0.3, 0.55);
+        else if (what === "hit") hit(t, 1);
+        else if (what === "hit2") hit(t, 0.7);
+        else if (what === "reveal") { whoosh(t, 0.3, 0.6); hit(t + 0.22, 0.9); }
+      }
+    };
+  })();
+  /* sfx:end */
+
+  /* ---------- 0. opening intro ---------- */
+  var intro = { el: $("intro"), over: false, timers: [], resolve: null };
+  intro.done = new Promise(function (r) { intro.resolve = r; });
+  function introEnd(fast) {
+    if (intro.over) return;
+    intro.over = true;
+    intro.timers.forEach(clearTimeout);
+    var el = intro.el;
+    if (el) { el.classList.add("out"); if (fast) el.classList.add("fast"); setTimeout(function () { el.remove(); }, fast ? 350 : 600); }
+    intro.resolve();
+  }
+  function introStart() {
+    var imgs = C.introImages || {}, names = ["scene", "name", "tag"];
+    if (C.intro === false || reduced || !intro.el || !names.every(function (n) { return imgs[n]; })) {
+      if (intro.el) intro.el.remove();
+      intro.over = true; intro.resolve(); return;
+    }
+    var loaded = Promise.all(names.map(function (n) {
+      return new Promise(function (ok, bad) { var el = $("i-" + n); el.onload = function () { ok(el); }; el.onerror = bad; el.src = imgs[n]; });
+    })).then(function (els) {
+      return Promise.all(els.map(function (el) { return el.decode ? el.decode().catch(function () {}) : null; }));   // decode first, so nothing hitches mid-intro
+    });
+    var late = new Promise(function (ok, bad) { setTimeout(function () { bad(new Error("slow")); }, 2500); });
+    Promise.race([loaded, late]).then(introPlay, function () { introEnd(true); });   // pictures missing or too slow: no intro, no problem
+  }
+  function introPlay() {
+    if (intro.over) return;
+    intro.el.classList.add("play");
+    var box = $("iEmbers"), n = isLite() ? 9 : 14;
+    for (var i = 0; i < n; i++) {
+      var e = document.createElement("i");
+      e.style.cssText = "--x:" + (8 + Math.random() * 84).toFixed(1) + "%;--s:" + (2 + Math.random() * 3).toFixed(1) + "px;--dx:" + ((Math.random() - 0.5) * 90).toFixed(0) +
+                        "px;--d:" + (1.2 + Math.random() * 1.1).toFixed(2) + "s;--dl:" + (0.7 + Math.random() * 1.2).toFixed(2) + "s";
+      box.appendChild(e);
+    }
+    var at = function (ms, fn) { intro.timers.push(setTimeout(fn, ms)); };   // sounds line up with the animation in the CSS
+    at(250,  function () { sfx.play("whoosh"); });
+    at(780,  function () { sfx.play("hit"); });
+    at(980,  function () { sfx.play("whoosh2"); });
+    at(1500, function () { sfx.play("hit2"); });
+    at(2650, function () { introEnd(false); });
+  }
+  if (intro.el) intro.el.addEventListener("click", function () { introEnd(true); enter(); });   // a tap skips the intro and goes straight in
+  introStart();
+
+  /* ---------- 1. enter screen typing (starts when the intro is over) ---------- */
   var enterEl = $("enter"), enterText = $("enterText");
-  (function typeEnter(i) {
+  function typeEnter(i) {
     enterText.textContent = C.enterText.slice(0, i);
     if (i < C.enterText.length && !entered) setTimeout(function () { typeEnter(i + 1); }, 95);
-  })(0);
+  }
+  intro.done.then(function () { typeEnter(0); });
 
   /* ---------- 2. background ---------- */
   var bg = $("bg");
@@ -544,50 +758,88 @@ const CONFIG = {
 
   /* ---------- 4. music player ---------- */
   var audio = $("music"), cover = $("cover"), seek = $("seek"), cur = $("cur"), dur = $("dur");
-  var playBtn = $("play"), now = $("now");
+  var playBtn = $("play"), now = $("now"), nowText = $("nowText"), ring = $("coverRing"), dim = $("dim");
   var songs = (C.songs || []).filter(function (s) { return s && s.file; });
   var idx = C.randomFirstSong ? Math.floor(Math.random() * songs.length) : 0;
-  var dragging = false, nowTimer = 0, failures = 0;
+  var dragging = false, tweening = false, nowTimer = 0, failures = 0;
   var fill = function (input, pct) { input.style.setProperty("--p", pct + "%"); };
 
   function songLabel(s) { return (s.title || s.file) + (s.artist ? " — " + s.artist : ""); }
   function play() { swallow(audio.play()); }
-  function showNow() {
+  function showNow() {                                      // the pill at the top: drops in, the title wipes in, the equalizer dances
     if (!songs.length) return;
-    now.textContent = "♪ " + songLabel(songs[idx]);
+    var wasShown = now.classList.contains("show");
+    nowText.textContent = songLabel(songs[idx]);
     now.classList.add("show");
+    if (!reduced && nowText.animate) {
+      nowText.animate([{ clipPath: "inset(0 100% 0 0)", transform: "translateX(-12px)", opacity: 0 }, { clipPath: "inset(0 0 0 0)", transform: "none", opacity: 1 }],
+                      { duration: 560, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
+      if (wasShown) now.animate([{ transform: "translate(-50%, 0) scale(1)" }, { transform: "translate(-50%, 0) scale(1.07)", offset: .35 }, { transform: "translate(-50%, 0) scale(1)" }],
+                                { duration: 380, easing: "ease-out" });
+    }
     clearTimeout(nowTimer);
-    nowTimer = setTimeout(function () { now.classList.remove("show"); }, 2800);
+    nowTimer = setTimeout(function () { now.classList.remove("show"); }, 3200);
+  }
+  function tweenSeek(from) {                                // the progress line glides back to the start instead of jumping
+    var t0 = 0; tweening = true;
+    requestAnimationFrame(function step(t) {
+      if (!t0) t0 = t;
+      var p = Math.min(1, (t - t0) / 420), v = from * Math.pow(1 - p, 3);
+      seek.value = Math.round(v); fill(seek, v / 10);
+      if (p < 1) requestAnimationFrame(step); else tweening = false;
+    });
+  }
+  function animateSong(dir) {                               // everything that happens when the song changes (transform / opacity only)
+    if (reduced || !cover.animate) return;
+    var d = dir < 0 ? -1 : 1;
+    cover.animate([{ transform: "translateX(" + 22 * d + "px) scale(.5) rotate(" + 16 * d + "deg)", opacity: 0 },
+                   { transform: "translateX(0) scale(1.13) rotate(" + -4 * d + "deg)", opacity: 1, offset: .6 },
+                   { transform: "none", opacity: 1 }], { duration: 580, easing: "cubic-bezier(.2,.9,.3,1)" });
+    ring.animate([{ transform: "scale(1)", opacity: .9 }, { transform: "scale(2.4)", opacity: 0 }], { duration: 680, easing: "ease-out" });
+    $("player").animate([{ transform: "scale(1)" }, { transform: "scale(1.035)", offset: .35 }, { transform: "scale(1)" }], { duration: 440, easing: "cubic-bezier(.3,1.4,.5,1)" });
+    if (orbits && orbits.ticks.length) { orbits.ticks[1].boost = 1; orbits.ticks[0].boost = 0.5; }     // the lines race round once
+    if (!isUltra() && dim.animate) {                                                                  // the background blinks, like a beat
+      var base = parseFloat(getComputedStyle(dim).opacity) || 0.5;
+      dim.animate([{ opacity: base }, { opacity: base * 0.45, offset: .2 }, { opacity: base }], { duration: 650, easing: "ease-out" });
+    }
   }
   function setCover(src) {
     cover.onerror = function () { cover.onerror = null; cover.src = C.avatarImage; };  // missing cover → profile picture
     cover.src = src || C.avatarImage;
   }
-  function load(i, autoplay) {
+  function load(i, autoplay, dir) {                         // dir: 1 = forward, -1 = back (decides which way the cover flies in)
     if (!songs.length) return;
     idx = (i % songs.length + songs.length) % songs.length;
-    var s = songs[idx];
+    var s = songs[idx], from = +seek.value;
     audio.loop = !!C.loopSameSong || songs.length === 1;
     audio.src = s.file;
     setCover(s.cover);
-    seek.value = 0; fill(seek, 0);
+    if (entered && !reduced && from > 12) tweenSeek(from); else { seek.value = 0; fill(seek, 0); }
     cur.textContent = "0:00"; dur.textContent = "0:00";
     setMediaSession(s);
     if (autoplay) play();
-    if (entered) showNow();
+    if (entered) { showNow(); animateSong(dir || 1); }
+  }
+  function restart() {                                      // same song again: the line glides back and the cover pulses
+    var from = +seek.value;
+    audio.currentTime = 0; play();
+    if (!entered || reduced) return;
+    if (from > 12) tweenSeek(from);
+    if (ring.animate) ring.animate([{ transform: "scale(1)", opacity: .9 }, { transform: "scale(2.4)", opacity: 0 }], { duration: 680, easing: "ease-out" });
+    if (cover.animate) cover.animate([{ transform: "scale(1)" }, { transform: "scale(.88)", offset: .3 }, { transform: "scale(1)" }], { duration: 420, easing: "cubic-bezier(.3,1.5,.5,1)" });
   }
   function prevSong() {
-    if (audio.currentTime > 3 || songs.length < 2) { audio.currentTime = 0; play(); }
-    else load(idx - 1, true);
+    if (audio.currentTime > 3 || songs.length < 2) restart();
+    else load(idx - 1, true, -1);
   }
   function nextSong() {
-    if (songs.length < 2) { audio.currentTime = 0; play(); }
-    else load(idx + 1, true);
+    if (songs.length < 2) restart();
+    else load(idx + 1, true, 1);
   }
 
   audio.addEventListener("loadedmetadata", function () { dur.textContent = fmt(audio.duration); failures = 0; });
   audio.addEventListener("timeupdate", function () {
-    if (dragging) return;
+    if (dragging || tweening) return;
     var p = audio.duration ? audio.currentTime / audio.duration : 0;
     seek.value = Math.round(p * 1000); fill(seek, p * 100);
     cur.textContent = fmt(audio.currentTime);
@@ -772,6 +1024,7 @@ const CONFIG = {
     if (!reduced) {
       ticks = [addTick(avatarEl, 16, 3, 3), addTick($("player"), 26, 7, 0), addTick($("settings"), 18, 4, 0)];
       dash = addDash($("card"), 80, 90);
+      orbits = { ticks: ticks, dash: dash };
       avatarEl.addEventListener("click", function () { ticks[0].boost = 1; });   // tap the picture = fast spin
     }
     requestAnimationFrame(function frame(t) {
@@ -816,17 +1069,29 @@ const CONFIG = {
       video.addEventListener("playing", fin, { once: true });
     });
   }
+  function impact() {                         // the punch when the page appears: flash, red slash, shake, boom
+    sfx.play("reveal", true);
+    if (reduced || !stage.animate) return;
+    $("flash").animate([{ opacity: 0 }, { opacity: .5, offset: .16 }, { opacity: 0 }], { duration: 480, easing: "ease-out" });
+    $("swipe").animate([{ opacity: 0, transform: "rotate(-14deg) translateX(-75%)" }, { opacity: 1, offset: .15 }, { opacity: 1, offset: .75 }, { opacity: 0, transform: "rotate(-14deg) translateX(75%)" }],
+                       { duration: 420, easing: "cubic-bezier(.3,.1,.2,1)" });
+    stage.animate([{ transform: "translate(0, 0)" }, { transform: "translate(-7px, 4px)", offset: .12 }, { transform: "translate(6px, -4px)", offset: .3 },
+                   { transform: "translate(-4px, 2px)", offset: .5 }, { transform: "translate(2px, -1px)", offset: .72 }, { transform: "translate(0, 0)" }], { duration: 420 });
+  }
   function enter() {
     if (entered) return;
     entered = true;
+    sfx.unlock();                             // sound may start now (we are inside the tap)
+    introEnd(true);                           // tapped during the intro: skip the rest of it
     play();                                   // music (allowed because this runs inside the tap)
     swallow(bg.play());                       // background video
     enterEl.classList.add("hide");
-    setTimeout(function () { enterEl.style.display = "none"; }, 950);
-    firstFrame(bg, 700).then(reveal);         // the intro starts once the video is really running, so nothing stutters
+    setTimeout(function () { enterEl.style.display = "none"; }, 500);
+    firstFrame(bg, 700).then(reveal);         // the page appears once the video is really running, so nothing stutters
   }
   function reveal() {
     document.body.classList.add("entered");
+    impact();
     typeLoop($("nameText"), [C.name], { type: 260, erase: 140, hold: 10000, gap: 600 });
     var bio = [].concat(C.bio || []).filter(Boolean);
     if (bio.length) typeLoop($("bioText"), bio, { type: 130, erase: 65, hold: 2000, gap: 450 });
