@@ -1,0 +1,38 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "sg:shadow_guardian",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/shadow_guardian/shadow_guardian"
+      },
+      "geometry": {
+        "default": "geometry.shadow_guardian"
+      },
+      "animations": {
+        "float": "animation.shadow_guardian.float",
+        "wings": "animation.shadow_guardian.wings",
+        "move": "animation.shadow_guardian.move",
+        "attack": "animation.shadow_guardian.attack"
+      },
+      "scripts": {
+        "animate": [
+          "float",
+          "wings",
+          { "move": "query.ground_speed > 0.3" },
+          { "attack": "variable.attack_time > 0.0" }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.shadow_guardian"
+      ],
+      "spawn_egg": {
+        "base_color": "#14102a",
+        "overlay_color": "#19e6ff"
+      }
+    }
+  }
+}
