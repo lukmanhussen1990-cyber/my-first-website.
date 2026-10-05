@@ -142,3 +142,5 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   atlas (power outlets near the floor, light switches, vent grilles near the ceiling) and some dark ceiling cells get
   air-vent grilles; decals use the same baked-light shader (polygon offset, no z-fighting). Low quality uses cheaper
   equal-power audio panning instead of HRTF.
+- **[07:38 UTC] Extra — Journal + level-2 creature tint.** The pause screen lists every page collected so far (scrollable
+  journal). On level 2 the creature's skin takes a wet, greenish-black tint.

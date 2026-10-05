@@ -73,6 +73,8 @@
   .settings input[type=range] { width: min(46vw, 260px); accent-color: #c9b458; }
   .settings input[type=checkbox] { width: 20px; height: 20px; accent-color: #c9b458; }
   .settings select { background: #221d0c; color: #f1e4a6; border: 1px solid #8a7a3a; font: inherit; padding: 4px 8px; }
+  .journal { max-width: min(640px, 90vw); max-height: 30vh; overflow-y: auto; text-align: left; font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; font-size: 14px; line-height: 1.5; color: #e7dcb4; margin: 0 0 14px; padding: 0 16px; opacity: 0.85; }
+  .journal div { margin-bottom: 10px; border-left: 2px solid rgba(240, 225, 160, 0.3); padding-left: 10px; }
   .howto { max-width: 640px; text-align: left; font-size: 15px; line-height: 1.65; padding: 0 20px; opacity: 0.9; }
   .howto b { color: #fff3c0; }
   .stats { font-size: 16px; letter-spacing: 0.08em; line-height: 1.8; }
@@ -108,6 +110,7 @@
 <div id="pauseScreen" class="screen menu hidden">
   <h1>PAUSED</h1>
   <p class="stats" id="pauseInfo"></p>
+  <div class="journal" id="journal"></div>
   <button class="btn" id="btnResume">RESUME</button>
   <button class="btn" id="btnPauseSettings">SETTINGS</button>
   <button class="btn" id="btnQuit">SAVE &amp; QUIT TO MENU</button>
@@ -3066,6 +3069,7 @@ function applyLevelLook(level) {
   MAT.floor.uniforms.uUvScale.value.set(L.tex === 1 ? 1 / 1.2 : 1 / 2.4, L.tex === 1 ? 1 / 1.2 : 1 / 2.4);
   renderer.setClearColor(new THREE.Color().setRGB(...L.clear, THREE.LinearSRGBColorSpace));
   water.visible = L.water;
+  monsterMat.uniforms.uBase.value.setRGB(...(L.water ? [0.012, 0.017, 0.016] : [0.016, 0.014, 0.013]), THREE.LinearSRGBColorSpace);
   ltCache.ox = NaN;
   if (!L.water) stopWaterAmbience();
 }
@@ -3617,6 +3621,8 @@ function pauseGame() {
   for (const k in keys) keys[k] = false;
   Sound.suspend();
   $('pauseInfo').innerHTML = `Level ${game.level} &mdash; ${formatTime(game.time)}<br>Notes ${game.notes} / ${NOTES_NEEDED}`;
+  const texts = NOTE_TEXTS[game.level] || NOTE_TEXTS[1];
+  $('journal').innerHTML = game.notes ? texts.slice(0, game.notes).map((t, i) => `<div><b>${i + 1}.</b> ${t}</div>`).join('') : '';
   onPause();
   showScreen('pauseScreen');
 }
