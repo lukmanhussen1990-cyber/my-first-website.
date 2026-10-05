@@ -150,3 +150,8 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   scales the creature's speed x0.86/1/1.1, hearing x0.75/1/1.25, sight x0.8/1/1.15 and how often it hunts you).
   Starting a run now shows "ENTERING..." on black for a frame before the first chunks bake (pointer lock is still
   requested inside the click), so slow phones don't look frozen. The creature has a soft contact shadow.
+- **[07:44 UTC] Extra — Tall halls.** On level 1 the "huge empty hall" chunks now have 4.8 m ceilings (other rooms 2.9 m).
+  Border walls take the taller neighbour's height, soffit walls close the step where a tall hall meets a normal
+  ceiling, tall pillars, fixtures hang at the hall ceiling and the baker compresses their vertical distance so halls
+  stay as bright as rooms (CPU light sampling and scripted door headers follow the same heights). Soffit baking is
+  time-sliced per cell. Connectivity unchanged (0 unreachable cells).

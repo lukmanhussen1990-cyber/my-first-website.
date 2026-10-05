@@ -397,6 +397,7 @@ const STYLE_NAMES = ['rooms', 'corridors', 'hall', 'pillars', 'office', 'long wa
 const STYLE_REMOVE = [0.5, 0.08, 0.93, 0.86, 0, 0];   // chance to knock out a non-tree wall
 const STYLE_BORDER = [0.55, 0.8, 0.15, 0.25, 0.7, 0.6];   // chance a chunk-border edge is a wall
 const LIGHT = { NORMAL: 0, FLICKER: 1, DYING: 2, BROKEN: 3 };
+const HALL_H = 4.8;   // huge halls on level 1 have a much higher ceiling
 const fdiv = (a, b) => Math.floor(a / b);
 const ckey = (kx, kz) => (kx + 32768) * 65536 + (kz + 32768);
 
@@ -551,6 +552,7 @@ class World {
   wallN(cx, cz) { const kx = fdiv(cx, CHUNK), kz = fdiv(cz, CHUNK); return this.chunk(kx, kz).wN[(cx - kx * CHUNK) + (cz - kz * CHUNK) * CHUNK] === 1; }
   // pillar centred on grid point (gx,gz) = north-west corner of cell (gx,gz)
   pillar(gx, gz) { const kx = fdiv(gx, CHUNK), kz = fdiv(gz, CHUNK); return this.chunk(kx, kz).pil[(gx - kx * CHUNK) + (gz - kz * CHUNK) * CHUNK] === 1; }
+  height(kx, kz) { return this.level === 1 && this.style(kx, kz) === STYLE.HALL ? HALL_H : WALL_H; }
   wallsAtPoint(gx, gz) { return this.wallW(gx, gz) || this.wallW(gx, gz - 1) || this.wallN(gx, gz) || this.wallN(gx - 1, gz); }
   lightType(cx, cz) { const kx = fdiv(cx, CHUNK), kz = fdiv(cz, CHUNK); return this.chunk(kx, kz).lt[(cx - kx * CHUNK) + (cz - kz * CHUNK) * CHUNK]; }
   lightSeed(cx, cz) { const kx = fdiv(cx, CHUNK), kz = fdiv(cz, CHUNK); return this.chunk(kx, kz).ls[(cx - kx * CHUNK) + (cz - kz * CHUNK) * CHUNK]; }
@@ -1087,7 +1089,7 @@ function gatherLights(cx, cz) {
     const lx = cx + dx, lz = cz + dz;
     const t = world.lightType(lx, lz);
     if (t < 0 || t === LIGHT.BROKEN) continue;
-    _cand.push((lx + 0.5) * CELL, (lz + 0.5) * CELL, world.lightSeed(lx, lz));
+    _cand.push((lx + 0.5) * CELL, (lz + 0.5) * CELL, world.lightSeed(lx, lz), world.height(fdiv(lx, CHUNK), fdiv(lz, CHUNK)) - 0.03);
   }
   return _cand;
 }
@@ -1098,15 +1100,15 @@ function bakeVertex(b, x, y, z, nx, ny, nz, surf, sx, sz, ao) {
   const cand = b.cand;
   let rest = 0, nTop = 0;
   _top.fill(0);
-  for (let i = 0; i < cand.length; i += 3) {
-    const lx = cand[i], lz = cand[i + 1];
-    const ddx = lx - x, ddy = LIGHT_Y - y, ddz = lz - z;
-    const d2 = ddx * ddx + ddy * ddy + ddz * ddz;
+  for (let i = 0; i < cand.length; i += 4) {
+    const lx = cand[i], lz = cand[i + 1], ly = cand[i + 3];
+    // tall-hall fixtures hang higher: compress their vertical distance so halls stay as bright as rooms
+    const ddx = lx - x, ddy = ly - y, ddz = lz - z, dyE = ddy * (WALL_H / (ly + 0.03));
+    const d2 = ddx * ddx + dyE * dyE + ddz * ddz;
     if (d2 > LIGHT_R2) continue;
-    const d = Math.sqrt(d2);
     let ndl;
-    if (surf === SURF_CEIL) ndl = 0.32 + 0.5 * Math.exp(-d2 * 2.2);
-    else { ndl = (ddx * nx + ddy * ny + ddz * nz) / d; if (ndl <= 0) continue; ndl = 0.15 + 0.85 * ndl; }
+    if (surf === SURF_CEIL) ndl = 0.32 + 0.5 * Math.exp(-(ddx * ddx + ddy * ddy + ddz * ddz) * 2.2);
+    else { ndl = (ddx * nx + ddy * ny + ddz * nz) / Math.sqrt(ddx * ddx + ddy * ddy + ddz * ddz); if (ndl <= 0) continue; ndl = 0.15 + 0.85 * ndl; }
     let win = 1 - d2 / LIGHT_R2; win *= win;
     const w = (LIGHT_I * win * ndl) / (1 + LIGHT_A * d2);
     if (w < 0.003) continue;
@@ -1151,7 +1153,7 @@ class GeoBuilder {
         let sx, sz, ao;
         if (this.surf === SURF_WALL) {
           sx = x + nx * 0.14; sz = z + nz * 0.14;
-          ao = (0.62 + 0.38 * smoothstep(0, 0.55, y)) * (0.86 + 0.14 * smoothstep(0, 0.4, WALL_H - y));
+          ao = (0.62 + 0.38 * smoothstep(0, 0.55, y)) * (0.86 + 0.14 * smoothstep(0, 0.4, (this.wallH || WALL_H) - y));
         } else {
           const c = this.cell;
           const ccx = c[0] + CELL / 2, ccz = c[1] + CELL / 2;
@@ -1210,7 +1212,7 @@ function cellAO(c, x, z, surf) {
 const SEG = 4;   // floor/ceiling subdivisions per cell
 // Generator: yields regularly so chunk building can be spread across frames.
 function* buildChunkGeometry(kx, kz) {
-  const N = CHUNK, H = WALL_H, T = WALL_T, h = T / 2;
+  const N = CHUNK, H = world.height(kx, kz), T = WALL_T, h = T / 2;
   const walls = new GeoBuilder(true), floor = new GeoBuilder(true), ceil = new GeoBuilder(true), panels = new GeoBuilder(false);
   panels.extra = { aSeed: { size: 1, data: [] }, aLPos: { size: 2, data: [] } };
   walls.surf = SURF_WALL; floor.surf = SURF_FLOOR; ceil.surf = SURF_CEIL;
@@ -1239,6 +1241,8 @@ function* buildChunkGeometry(kx, kz) {
   // --- walls on vertical lines (x = const) ---
   for (let lx = 0; lx < N; lx++) {
     const gx = gx0 + lx, X = gx * CELL;
+    const Hw = lx === 0 ? Math.max(H, world.height(kx - 1, kz)) : H, sv = Math.max(5, Math.round(Hw / 0.58));
+    walls.wallH = Hw;
     let lz = 0;
     while (lz < N) {
       if (!world.wallW(gx, gz0 + lz)) { lz++; continue; }
@@ -1249,18 +1253,20 @@ function* buildChunkGeometry(kx, kz) {
       const contA = world.wallW(gx, gzA - 1), contB = world.wallW(gx, gzB + 1);
       const zs = gzA * CELL - (contA ? 0 : h), ze = (gzB + 1) * CELL + (contB ? 0 : h);
       const su = Math.max(1, Math.round((ze - zs) / 0.6));
-      walls.quad(X - h, 0, zs, 0, 0, ze - zs, 0, H, 0, -1, 0, 0, su, wsegV, 1);
+      walls.quad(X - h, 0, zs, 0, 0, ze - zs, 0, Hw, 0, -1, 0, 0, su, sv, 1);
       yield;
-      walls.quad(X + h, 0, zs, 0, 0, ze - zs, 0, H, 0, 1, 0, 0, su, wsegV, 1);
+      walls.quad(X + h, 0, zs, 0, 0, ze - zs, 0, Hw, 0, 1, 0, 0, su, sv, 1);
       decorate(X - h, zs, 0, 1, -1, 0, ze - zs); decorate(X + h, zs, 0, 1, 1, 0, ze - zs);
-      if (!contA && !world.wallN(gx, gzA) && !world.wallN(gx - 1, gzA)) walls.quad(X - h, 0, zs, T, 0, 0, 0, H, 0, 0, 0, -1, 1, wsegV, 1);
-      if (!contB && !world.wallN(gx, gzB + 1) && !world.wallN(gx - 1, gzB + 1)) walls.quad(X - h, 0, ze, T, 0, 0, 0, H, 0, 0, 0, 1, 1, wsegV, 1);
+      if (!contA && !world.wallN(gx, gzA) && !world.wallN(gx - 1, gzA)) walls.quad(X - h, 0, zs, T, 0, 0, 0, Hw, 0, 0, 0, -1, 1, sv, 1);
+      if (!contB && !world.wallN(gx, gzB + 1) && !world.wallN(gx - 1, gzB + 1)) walls.quad(X - h, 0, ze, T, 0, 0, 0, Hw, 0, 0, 0, 1, 1, sv, 1);
       yield;
     }
   }
   // --- walls on horizontal lines (z = const) ---
   for (let lz = 0; lz < N; lz++) {
     const gz = gz0 + lz, Z = gz * CELL;
+    const Hw = lz === 0 ? Math.max(H, world.height(kx, kz - 1)) : H, sv = Math.max(5, Math.round(Hw / 0.58));
+    walls.wallH = Hw;
     let lx = 0;
     while (lx < N) {
       if (!world.wallN(gx0 + lx, gz)) { lx++; continue; }
@@ -1271,13 +1277,30 @@ function* buildChunkGeometry(kx, kz) {
       const contA = world.wallN(gxA - 1, gz), contB = world.wallN(gxB + 1, gz);
       const xs = gxA * CELL - (contA ? 0 : h), xe = (gxB + 1) * CELL + (contB ? 0 : h);
       const su = Math.max(1, Math.round((xe - xs) / 0.6));
-      walls.quad(xs, 0, Z - h, xe - xs, 0, 0, 0, H, 0, 0, 0, -1, su, wsegV, 1);
+      walls.quad(xs, 0, Z - h, xe - xs, 0, 0, 0, Hw, 0, 0, 0, -1, su, sv, 1);
       yield;
-      walls.quad(xs, 0, Z + h, xe - xs, 0, 0, 0, H, 0, 0, 0, 1, su, wsegV, 1);
+      walls.quad(xs, 0, Z + h, xe - xs, 0, 0, 0, Hw, 0, 0, 0, 1, su, sv, 1);
       decorate(xs, Z - h, 1, 0, 0, -1, xe - xs); decorate(xs, Z + h, 1, 0, 0, 1, xe - xs);
-      if (!contA && !world.wallW(gxA, gz) && !world.wallW(gxA, gz - 1)) walls.quad(xs, 0, Z - h, 0, 0, T, 0, H, 0, -1, 0, 0, 1, wsegV, 1);
-      if (!contB && !world.wallW(gxB + 1, gz) && !world.wallW(gxB + 1, gz - 1)) walls.quad(xe, 0, Z - h, 0, 0, T, 0, H, 0, 1, 0, 0, 1, wsegV, 1);
+      if (!contA && !world.wallW(gxA, gz) && !world.wallW(gxA, gz - 1)) walls.quad(xs, 0, Z - h, 0, 0, T, 0, Hw, 0, -1, 0, 0, 1, sv, 1);
+      if (!contB && !world.wallW(gxB + 1, gz) && !world.wallW(gxB + 1, gz - 1)) walls.quad(xe, 0, Z - h, 0, 0, T, 0, Hw, 0, 1, 0, 0, 1, sv, 1);
       yield;
+    }
+  }
+  // --- soffits: close the gap above a lower neighbour's ceiling ---
+  walls.wallH = H;
+  if (H > WALL_H) {
+    const L = CHUNK_SIZE, X0 = gx0 * CELL, Z0 = gz0 * CELL;
+    const sides = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    for (const [sx, sz] of sides) {
+      const hn = world.height(kx + sx, kz + sz);
+      if (hn >= H) continue;
+      const sv2 = Math.max(2, Math.round((H - hn) / 0.6));
+      for (let k = 0; k < N; k++) {
+        walls.cand = gatherLights(sx ? (sx < 0 ? gx0 : gx0 + N - 1) : gx0 + k, sx ? gz0 + k : (sz < 0 ? gz0 : gz0 + N - 1)).slice();
+        if (sx) { const x = sx < 0 ? X0 : X0 + L; walls.quad(x, hn, Z0 + k * CELL, 0, 0, CELL, 0, H - hn, 0, -sx, 0, 0, 4, sv2, 1); }
+        else { const z = sz < 0 ? Z0 : Z0 + L; walls.quad(X0 + k * CELL, hn, z, CELL, 0, 0, 0, H - hn, 0, 0, 0, -sz, 4, sv2, 1); }
+        yield;
+      }
     }
   }
   // --- pillars, floor, ceiling, light panels (per cell) ---
@@ -1287,10 +1310,10 @@ function* buildChunkGeometry(kx, kz) {
     const cand = gatherLights(cx, cz).slice();
     walls.cand = floor.cand = ceil.cand = cand;
     if (world.pillar(cx, cz)) {
-      walls.quad(x0 - ph, 0, z0 - ph, PILLAR, 0, 0, 0, H, 0, 0, 0, -1, 1, wsegV, 1);
-      walls.quad(x0 - ph, 0, z0 + ph, PILLAR, 0, 0, 0, H, 0, 0, 0, 1, 1, wsegV, 1);
-      walls.quad(x0 - ph, 0, z0 - ph, 0, 0, PILLAR, 0, H, 0, -1, 0, 0, 1, wsegV, 1);
-      walls.quad(x0 + ph, 0, z0 - ph, 0, 0, PILLAR, 0, H, 0, 1, 0, 0, 1, wsegV, 1);
+      walls.quad(x0 - ph, 0, z0 - ph, PILLAR, 0, 0, 0, H, 0, 0, 0, -1, 1, Math.round(H / 0.58), 1);
+      walls.quad(x0 - ph, 0, z0 + ph, PILLAR, 0, 0, 0, H, 0, 0, 0, 1, 1, Math.round(H / 0.58), 1);
+      walls.quad(x0 - ph, 0, z0 - ph, 0, 0, PILLAR, 0, H, 0, -1, 0, 0, 1, Math.round(H / 0.58), 1);
+      walls.quad(x0 + ph, 0, z0 - ph, 0, 0, PILLAR, 0, H, 0, 1, 0, 0, 1, Math.round(H / 0.58), 1);
     }
     let flags = (world.wallW(cx, cz) ? 1 : 0) | (world.wallW(cx + 1, cz) ? 2 : 0) | (world.wallN(cx, cz) ? 4 : 0) | (world.wallN(cx, cz + 1) ? 8 : 0);
     for (let k = 0; k < 4; k++) if (world.pillar(cx + (k & 1), cz + ((k & 2) >> 1))) flags |= 16 | (32 << k);
@@ -1317,8 +1340,8 @@ function* buildChunkGeometry(kx, kz) {
 }
 function mergeCand(a, b) {
   const seen = new Set();
-  for (let i = 0; i < a.length; i += 3) seen.add(a[i] * 7919 + a[i + 1]);
-  for (let i = 0; i < b.length; i += 3) { const k = b[i] * 7919 + b[i + 1]; if (!seen.has(k)) { seen.add(k); a.push(b[i], b[i + 1], b[i + 2]); } }
+  for (let i = 0; i < a.length; i += 4) seen.add(a[i] * 7919 + a[i + 1]);
+  for (let i = 0; i < b.length; i += 4) { const k = b[i] * 7919 + b[i + 1]; if (!seen.has(k)) { seen.add(k); a.push(b[i], b[i + 1], b[i + 2], b[i + 3]); } }
   return a;
 }
 
@@ -1722,7 +1745,8 @@ function sampleLight(x, z, y = 1.0) {
     const lx = cx + dx, lz = cz + dz, t = world.lightType(lx, lz);
     if (t < 0 || t === LIGHT.BROKEN) continue;
     const px = (lx + 0.5) * CELL, pz = (lz + 0.5) * CELL;
-    const d2 = (px - x) ** 2 + (pz - z) ** 2 + (LIGHT_Y - y) ** 2;
+    const ly = world.height(fdiv(lx, CHUNK), fdiv(lz, CHUNK)) - 0.03, dyE = (ly - y) * (WALL_H / (ly + 0.03));
+    const d2 = (px - x) ** 2 + (pz - z) ** 2 + dyE * dyE;
     if (d2 > LIGHT_R2) continue;
     const lvl = lightLevelCPU(world.lightSeed(lx, lz), px, pz);
     if (lvl <= 0.01) continue;
@@ -3179,8 +3203,8 @@ function findDoorway() {
 function buildDoubleDoor(c) {
   const group = new THREE.Group();
   const W = CELL - WALL_T, H = 2.2, leafW = W / 2;
-  const mat = itemMaterial(0x7a6a46), frameMat = itemMaterial(0xa89a62), header = new THREE.Mesh(new THREE.BoxGeometry(W + 0.02, WALL_H - H, WALL_T), itemMaterial(0xc4ae5c));
-  header.position.set(0, H + (WALL_H - H) / 2, 0); group.add(header);
+  const mat = itemMaterial(0x7a6a46), frameMat = itemMaterial(0xa89a62), TH = world.height(fdiv(c.x, CHUNK_SIZE), fdiv(c.z, CHUNK_SIZE)), header = new THREE.Mesh(new THREE.BoxGeometry(W + 0.02, TH - H, WALL_T), itemMaterial(0xc4ae5c));
+  header.position.set(0, H + (TH - H) / 2, 0); group.add(header);
   const leaves = [];
   for (const s of [-1, 1]) {
     const hinge = new THREE.Group(); hinge.position.set(s * W / 2, 0, 0); group.add(hinge);
