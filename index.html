@@ -30,6 +30,11 @@
   .screen h1 { font-size: clamp(32px, 7vw, 72px); letter-spacing: 0.25em; margin: 0 0 0.3em; color: #f3e6a2; text-shadow: 0 0 18px rgba(255, 220, 120, 0.35); }
   .screen p { max-width: 640px; line-height: 1.5; opacity: 0.85; padding: 0 16px; }
   .btn { pointer-events: auto; cursor: pointer; background: rgba(40, 34, 14, 0.85); color: #f1e4a6; border: 1px solid #8a7a3a; padding: 12px 28px; margin: 6px; font: inherit; font-size: 18px; letter-spacing: 0.15em; min-width: 240px; }
+  #noteOverlay { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -46%) rotate(-1.5deg); opacity: 0; pointer-events: none; transition: opacity 0.5s, transform 0.5s; z-index: 5; }
+  #noteOverlay.show { opacity: 1; transform: translate(-50%, -50%) rotate(-1.5deg); }
+  #noteOverlay .paper { width: min(78vw, 420px); padding: 26px 30px 18px; background: linear-gradient(170deg, #ece4c6, #d9cfa8); color: #2b2a3a; box-shadow: 0 10px 40px rgba(0,0,0,0.8); font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; font-size: clamp(15px, 2.2vw, 19px); line-height: 1.55; }
+  #noteNum { font-family: "Courier New", monospace; font-size: 12px; letter-spacing: 0.25em; color: #6b5a3a; margin-bottom: 10px; }
+  #noteOverlay .hint { font-family: "Courier New", monospace; font-size: 11px; letter-spacing: 0.2em; color: #7a6a4a; margin-top: 14px; text-align: right; }
   #scareOverlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; z-index: 20; }
   #scareOverlay canvas { height: 118vh; max-width: none; }
   .btn:hover { background: rgba(90, 76, 28, 0.9); }
@@ -52,7 +57,15 @@
   <button class="btn" id="btnStart">ENTER</button>
 </div>
 
+<div id="noteOverlay"><div class="paper"><div id="noteNum">PAGE 1 / 5</div><div id="noteText"></div><div class="hint">[E] put away</div></div></div>
+
 <div id="scareOverlay"></div>
+
+<div id="winScreen" class="screen hidden">
+  <h1>YOU ESCAPED</h1>
+  <p>Time: <span id="winTime">0:00</span></p>
+  <button class="btn" id="btnAgain">PLAY AGAIN</button>
+</div>
 
 <div id="gameOverScreen" class="screen hidden">
   <h1>YOU WERE CAUGHT</h1>
@@ -2188,6 +2201,221 @@ function updateItems(dt) {
 }
 
 // ============================================================================
+//  GOAL: 5 notes, then the EXIT
+// ============================================================================
+const NOTE_TEXTS = {
+  1: [
+    "Day ?? — The lights never turn off. The hum is in my teeth now. If you are reading this: don't run unless you have to. It HEARS running.",
+    "The rooms repeat but they are never the same. I marked a wall with my keys. Ten minutes later I found the mark again, on a wall that wasn't there before.",
+    "It is tall. Taller than the doorways should allow. When the lights start to stutter, it is close. Get out of the light. Crouch. Stay still.",
+    "Batteries everywhere, like someone left them for us. Or like bait. Keep your light off when you can — it sees the light.",
+    "The static on these pages... it's coming from the other notes. Follow the noise. Five pages, and the EXIT shows itself. That's what the voice said.",
+  ],
+  2: [
+    "The water is warm. It shouldn't be warm. Something brushes my ankles when I stand still too long.",
+    "Down here it moves faster. It doesn't like the water either, but it doesn't slow down. I can hear it wading behind me when I splash.",
+    "Walk slowly. Every splash carries for miles. Crouching keeps the water quiet.",
+    "I saw my reflection walk away from me. I kept standing. It kept walking.",
+    "Last page. If there is another EXIT, I will find it. If you find this, I didn't.",
+  ],
+};
+Object.assign(goal, { exitSpawned: false, relocateT: 0, reading: 0 });
+
+// paper texture with scribbled handwriting lines
+const noteTex = (() => {
+  const c = makeCanvas(128, 180), g = c.getContext('2d'), r = mulberry32(31);
+  g.fillStyle = '#e9e2c8'; g.fillRect(0, 0, 128, 180);
+  for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(120,100,60,${r() * 0.08})`; g.fillRect(r() * 128, r() * 180, 2 + r() * 8, 2 + r() * 8); }
+  g.strokeStyle = 'rgba(40,40,70,0.75)'; g.lineWidth = 1.3;
+  for (let y = 22; y < 165; y += 11) {
+    g.beginPath(); let x = 12; g.moveTo(x, y);
+    const end = 100 + r() * 16;
+    while (x < end) { x += 2 + r() * 3; g.lineTo(x, y + (r() - 0.5) * 3.5); }
+    g.stroke();
+  }
+  g.fillStyle = 'rgba(110,30,20,0.55)'; g.beginPath(); g.arc(96, 150, 9, 0, Math.PI * 2); g.fill();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+function buildNoteMesh(spec) {
+  const g = new THREE.Group();
+  const mat = itemMaterial(0xffffff, 0.12); mat.uniforms.map.value = noteTex; mat.uniforms.uUseMap.value = 1;
+  const paper = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.33), mat);
+  if (spec.wall) { paper.position.set(0, 0, 0.012); }
+  else { paper.rotation.x = -Math.PI / 2; paper.position.y = 0.02; }
+  g.add(paper);
+  g.userData.paper = spec.wall ? null : paper;
+  const glint = makeGlint(0.5); glint.position.set(0, spec.wall ? 0.05 : 0.15, spec.wall ? 0.08 : 0); g.add(glint);
+  g.userData.glint = glint;
+  return g;
+}
+// EXIT door with a glowing sign
+const exitSignTex = (() => {
+  const c = makeCanvas(256, 96), g = c.getContext('2d');
+  g.fillStyle = '#0b1a0e'; g.fillRect(0, 0, 256, 96);
+  g.font = 'bold 64px Arial, Helvetica, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.shadowColor = '#5dff8a'; g.shadowBlur = 18; g.fillStyle = '#b8ffc8'; g.fillText('EXIT', 128, 50);
+  g.strokeStyle = '#3a6a44'; g.lineWidth = 6; g.strokeRect(3, 3, 250, 90);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+function buildExitMesh(spec) {
+  const g = new THREE.Group();
+  const frame = itemMaterial(0x6b6458), doorM = itemMaterial(0x4a4f4c), bar = itemMaterial(0xa8a8a0, 0.05);
+  const W = 1.0, H = 2.1;
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(W, H, 0.06), doorM); slab.position.set(0, H / 2, 0.03); g.add(slab);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(W + 0.16, 0.08, 0.1), frame); top.position.set(0, H + 0.04, 0.05); g.add(top);
+  for (const s of [-1, 1]) { const side = new THREE.Mesh(new THREE.BoxGeometry(0.08, H, 0.1), frame); side.position.set(s * (W / 2 + 0.04), H / 2, 0.05); g.add(side); }
+  const push = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.05, 0.06), bar); push.position.set(0, 1.0, 0.09); g.add(push);
+  const signMat = new THREE.MeshBasicMaterial({ map: exitSignTex });
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.225), signMat); sign.position.set(0, H + 0.35, 0.02); g.add(sign);
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTex, color: 0x66ff88, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.55, fog: false }));
+  glow.scale.set(1.6, 1.0, 1); glow.position.set(0, H + 0.35, 0.15); g.add(glow);
+  const glow2 = makeGlint(0.9); glow2.material.color.set(0x88ffaa); glow2.position.set(0, 1.0, 0.2); g.add(glow2);
+  g.userData.glint = glow2;
+  return g;
+}
+
+// Choose a spot near (x,z): prefer a wall face to pin the note on
+function findSpotNear(x, z, wantWall = true) {
+  const cx0 = Math.floor(x / CELL), cz0 = Math.floor(z / CELL);
+  for (let r = 0; r < 6; r++) for (let k = 0; k < 12; k++) {
+    const cx = cx0 + Math.round((Math.random() - 0.5) * 2 * r), cz = cz0 + Math.round((Math.random() - 0.5) * 2 * r);
+    const walls = [];
+    if (world.wallW(cx, cz)) walls.push([cx * CELL + WALL_T / 2, (cz + 0.5) * CELL, Math.PI / 2]);         // faces +x
+    if (world.wallW(cx + 1, cz)) walls.push([(cx + 1) * CELL - WALL_T / 2, (cz + 0.5) * CELL, -Math.PI / 2]);
+    if (world.wallN(cx, cz)) walls.push([(cx + 0.5) * CELL, cz * CELL + WALL_T / 2, 0]);                 // faces +z
+    if (world.wallN(cx, cz + 1)) walls.push([(cx + 0.5) * CELL, (cz + 1) * CELL - WALL_T / 2, Math.PI]);
+    if (wantWall && walls.length) { const w = walls[Math.floor(Math.random() * walls.length)]; return { x: w[0], z: w[1], rot: w[2], wall: true, cx, cz }; }
+    if (!wantWall || r >= 4) return { x: (cx + 0.3 + Math.random() * 0.4) * CELL, z: (cz + 0.3 + Math.random() * 0.4) * CELL, rot: Math.random() * 6.28, wall: false, cx, cz };
+  }
+  return { x, z, rot: 0, wall: false };
+}
+function placeNotes() {
+  const base = Math.random() * Math.PI * 2;
+  const dists = [26, 38, 50, 62, 74].sort(() => Math.random() - 0.5);
+  goal.specs = [];
+  for (let i = 0; i < NOTES_NEEDED; i++) {
+    const a = base + (i / NOTES_NEEDED) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
+    const s = findSpotNear(player.pos.x + Math.cos(a) * dists[i], player.pos.z + Math.sin(a) * dists[i]);
+    goal.specs.push({ id: 'n' + i, type: 'note', idx: i, x: s.x, z: s.z, y: s.wall ? 1.35 : 0, rot: s.rot, wall: s.wall, taken: false });
+  }
+  goal.exitSpawned = false;
+}
+function respawnWorldItem(spec) {
+  removeItem(spec.id);
+  const kx = fdiv(spec.x, CHUNK_SIZE), kz = fdiv(spec.z, CHUNK_SIZE);
+  if (!spec.taken && chunkMeshes.has(ckey(kx, kz))) addItem(spec, ckey(kx, kz));
+}
+// Director: if every remaining note is very far away, move one closer (out of sight)
+function updateGoal(dt) {
+  goal.relocateT -= dt;
+  if (goal.relocateT > 0) return;
+  goal.relocateT = 5;
+  const open = goal.specs.filter((s) => !s.taken);
+  if (!open.length) return;
+  let nearest = null, nd = Infinity;
+  for (const s of open) { const d = Math.hypot(s.x - player.pos.x, s.z - player.pos.z); if (d < nd) { nd = d; nearest = s; } }
+  if (nd > 105) {
+    const a = Math.random() * Math.PI * 2, d = 38 + Math.random() * 16;
+    const sp = findSpotNear(player.pos.x + Math.cos(a) * d, player.pos.z + Math.sin(a) * d, nearest.type === 'note');
+    Object.assign(nearest, { x: sp.x, z: sp.z, rot: sp.rot, wall: sp.wall, y: nearest.type === 'note' ? (sp.wall ? 1.35 : 0) : 0 });
+    respawnWorldItem(nearest);
+  }
+}
+function pickNote(it) {
+  const spec = goal.specs.find((s) => s.id === it.id);
+  if (!spec || spec.taken) return;
+  spec.taken = true;
+  removeItem(it.id);
+  game.notes++;
+  Sound.paper();
+  const texts = NOTE_TEXTS[world.level] || NOTE_TEXTS[1];
+  showNote(texts[(game.notes - 1) % texts.length], game.notes);
+  onNotePicked();
+  if (game.notes >= NOTES_NEEDED && !goal.exitSpawned) spawnExit();
+}
+function showNote(text, n) {
+  $('noteText').textContent = text;
+  $('noteNum').textContent = 'PAGE ' + n + ' / ' + NOTES_NEEDED;
+  $('noteOverlay').classList.add('show');
+  goal.reading = 7;
+}
+function hideNote() { $('noteOverlay').classList.remove('show'); goal.reading = 0; }
+function spawnExit() {
+  goal.exitSpawned = true;
+  // a wall far enough away to make the final stretch tense
+  let spot = null;
+  for (let tries = 0; tries < 30 && !spot; tries++) {
+    const a = Math.random() * Math.PI * 2, d = 46 + Math.random() * 20;
+    const s = findSpotNear(player.pos.x + Math.cos(a) * d, player.pos.z + Math.sin(a) * d, true);
+    if (s.wall) spot = s;
+  }
+  if (!spot) spot = findSpotNear(player.pos.x + 40, player.pos.z, false);
+  const spec = { id: 'exit', type: 'exit', x: spot.x, z: spot.z, rot: spot.rot, wall: spot.wall, y: 0, taken: false };
+  goal.specs.push(spec);
+  respawnWorldItem(spec);
+  setTimeout(() => showMessage('All pages found. Somewhere, a door hums... Find the EXIT.', 6), 2500);
+}
+function reachExit() {
+  if (game.state !== 'playing') return;
+  onLevelComplete();
+}
+
+// Spatial audio beacons: radio static at notes, a low hum at the exit
+const beacons = new Map();   // id -> nodes
+function updateBeacons() {
+  const ctx = Sound.ctx; if (!ctx) return;
+  const A = Sound._;
+  const active = new Set();
+  for (const s of goal.specs) {
+    if (s.taken) continue;
+    const d = Math.hypot(s.x - player.pos.x, s.z - player.pos.z);
+    if (d > 70) continue;
+    active.add(s.id);
+    let b = beacons.get(s.id);
+    if (!b) {
+      const p = A.panner(s.x, 1.2, s.z, s.type === 'exit' ? 3 : 1.6, 1.0, 0.25);
+      const out = A.gain(0);
+      out.connect(p);
+      const nodes = [];
+      if (s.type === 'note') {
+        const n = A.noiseSrc(true), bp = A.filter('bandpass', 2600, 0.8), ng = A.gain(0.35);
+        const cr1 = ctx.createOscillator(); cr1.type = 'square'; cr1.frequency.value = 7.3;
+        const cr2 = ctx.createOscillator(); cr2.type = 'square'; cr2.frequency.value = 12.9;
+        const cg = A.gain(0.2); cr1.connect(cg); cr2.connect(cg); cg.connect(ng.gain);
+        n.connect(bp); bp.connect(ng); ng.connect(out);
+        const tone = ctx.createOscillator(); tone.frequency.value = 523 + Math.random() * 40;
+        const vib = ctx.createOscillator(); vib.frequency.value = 5.5; const vg = A.gain(9); vib.connect(vg); vg.connect(tone.frequency);
+        const tg = A.gain(0.05); tone.connect(tg); tg.connect(out);
+        n.start(); cr1.start(); cr2.start(); tone.start(); vib.start();
+        nodes.push(n, cr1, cr2, tone, vib);
+      } else {
+        const o1 = ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 73;
+        const o2 = ctx.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = 110.4;
+        const lp = A.filter('lowpass', 420, 1.5), og = A.gain(0.3);
+        const wind = A.noiseSrc(true), wf = A.filter('bandpass', 700, 0.6), wg = A.gain(0.35);
+        o1.connect(lp); o2.connect(lp); lp.connect(og); og.connect(out); wind.connect(wf); wf.connect(wg); wg.connect(out);
+        o1.start(); o2.start(); wind.start();
+        nodes.push(o1, o2, wind);
+      }
+      out.gain.setTargetAtTime(s.type === 'exit' ? 0.9 : 0.55, ctx.currentTime, 0.5);
+      b = { p, out, nodes };
+      beacons.set(s.id, b);
+    }
+    A.setPos(b.p, s.x, s.type === 'exit' ? 1.5 : 1.2, s.z);
+  }
+  for (const [id, b] of beacons) {
+    if (active.has(id) && game.state === 'playing') continue;
+    b.out.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+    const nodes = b.nodes; setTimeout(() => { for (const n of nodes) try { n.stop(); } catch (e) {} b.out.disconnect(); }, 600);
+    beacons.delete(id);
+  }
+}
+function clearBeacons() {
+  for (const b of beacons.values()) { for (const n of b.nodes) try { n.stop(); } catch (e) {} try { b.out.disconnect(); } catch (e) {} }
+  beacons.clear();
+}
+
+// ============================================================================
 //  INPUT
 // ============================================================================
 const keys = Object.create(null);
@@ -2197,6 +2425,7 @@ window.addEventListener('keydown', (e) => {
   keys[e.code] = true;
   if (e.code === 'KeyC' && !e.repeat) player.crouchToggle = !player.crouchToggle;
   if (e.code === 'KeyF' && !e.repeat) toggleFlashlight();
+  if ((e.code === 'KeyE' || e.code === 'Enter') && goal.reading > 0) hideNote();
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
 });
 window.addEventListener('keyup', (e) => { keys[e.code] = false; });
@@ -2315,7 +2544,16 @@ function onFootstep() {
 const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0, notes: 0, level: 1 };
 function notesCollected() { return game.notes; }
 function onChaseStart() {}
-function onPlayerCaught() { $('hud').classList.add('hidden'); }
+function onNotePicked() {}
+function onLevelComplete() {
+  game.state = 'won';
+  clearBeacons();
+  if (document.pointerLockElement) document.exitPointerLock();
+  $('hud').classList.add('hidden');
+  $('winTime').textContent = formatTime(game.time);
+  $('winScreen').classList.remove('hidden');
+}
+function onPlayerCaught() { $('hud').classList.add('hidden'); hideNote(); clearBeacons(); }
 function onGameOver() {
   game.state = 'gameover';
   if (document.pointerLockElement) document.exitPointerLock();
@@ -2342,13 +2580,17 @@ function newGame(level = 1) {
   collectedItems.clear(); goal.specs = [];
   world = new World((Math.random() * 1e9) | 0, level);
   clearChunks();
+  clearBeacons();
+  hideNote();
   spawnPlayer(CELL * 0.5, CELL * 0.5);
+  placeNotes();
   updateChunks(player.pos.x, player.pos.z, true);
   resetMonster();
 }
 function startGame() {
   $('startScreen').classList.add('hidden');
   $('gameOverScreen').classList.add('hidden');
+  $('winScreen').classList.add('hidden');
   $('hud').classList.remove('hidden');
   newGame(1);
   game.state = 'playing';
@@ -2357,6 +2599,7 @@ function startGame() {
 }
 $('btnStart').addEventListener('click', startGame);
 $('btnRetry').addEventListener('click', startGame);
+$('btnAgain').addEventListener('click', startGame);
 
 // ============================================================================
 //  MAIN LOOP
@@ -2381,6 +2624,9 @@ function frame() {
     updateFlashlight(dt);
     updateMonster(dt);
     updateItems(dt);
+    updateGoal(dt);
+    updateBeacons();
+    if (goal.reading > 0) { goal.reading -= dt; if (goal.reading <= 0) hideNote(); }
     updateHUD(dt);
     updateChunks(player.pos.x, player.pos.z);
     updateAmbientAudio(dt);
@@ -2404,7 +2650,7 @@ updateChunks(player.pos.x, player.pos.z, true);
 frame();
 
 // Debug / test hook
-window.__bk = { THREE, Sound, ambience, monster, flash, items, collectedItems, U, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { THREE, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>

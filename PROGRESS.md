@@ -60,3 +60,9 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   battery lasts ~110 s and stutters below 20%; it also makes you much easier for the monster to see. Spare batteries
   spawn deterministically in ~38% of chunks (+50% charge, remembered once collected so they don't respawn), with a
   pulsing glint sprite so they can be spotted in the dark. HUD: notes counter, stamina bar, battery gauge, messages.
+- **[07:02 UTC] Feature 7 — Notes + exit: DONE.** 5 handwritten pages are pinned to walls (or dropped on the floor)
+  26-74 m from the start in different directions. Each one has a spatial radio-static beacon (crackling noise + warbling
+  tone) so players can follow the sound, and a glint. Picking one up plays a paper rustle and shows the page text
+  (lore that also teaches the mechanics). A director moves the nearest page closer if the player wanders > 105 m from
+  all of them. After 5 pages, an EXIT door (metal door + glowing green EXIT sign + low hum beacon) appears on a wall
+  46-66 m away; touching it wins. HUD shows NOTES x / 5. Tested: all 5 collected, exit spawned, win triggered.
