@@ -4053,6 +4053,7 @@ bindSetting('setInvert', 'invert', (t) => t.checked, 'change');
 bindSetting('setFov', 'fov', (t) => parseInt(t.value, 10));
 bindSetting('setVol', 'volume', (t) => parseInt(t.value, 10));
 bindSetting('setQuality', 'quality', (t) => parseInt(t.value, 10), 'change');
+$('setQuality').addEventListener('change', () => { perfMon.done = true; });
 bindSetting('setBob', 'bob', (t) => t.checked, 'change');
 bindSetting('setBright', 'bright', (t) => parseFloat(t.value));
 bindSetting('setCaptions', 'captions', (t) => t.checked, 'change');
@@ -4264,10 +4265,25 @@ function updateDanger(dt) {
   if (monster.sees) d = Math.min(1, d + 0.1);
   game.danger += (d - game.danger) * Math.min(1, dt * 2);
 }
+// Auto quality: if the first seconds of play run well below 60 FPS, step graphics quality down once
+const perfMon = { t: 0, frames: 0, done: false };
+function watchPerformance(rawDt) {
+  if (perfMon.done || game.state !== 'playing' || document.hidden) return;
+  perfMon.t += rawDt; perfMon.frames++;
+  if (perfMon.t < 5) return;
+  const fps = perfMon.frames / perfMon.t;
+  perfMon.done = true;
+  if (fps < 45 && settings.quality > 0) {
+    settings.quality = settings.quality - 1; applySettings(); saveSettings();
+    showMessage(`Running at ${Math.round(fps)} FPS \u2014 graphics lowered to ${['Low', 'Medium', 'High'][settings.quality]} (change in Settings).`, 5);
+  }
+}
 function frame() {
   requestAnimationFrame(frame);
   renderer.info.reset();
-  const dt = Math.min(clock.getDelta(), 0.05);
+  const rawDt = clock.getDelta();
+  watchPerformance(Math.min(rawDt, 0.5));
+  const dt = Math.min(rawDt, 0.05);
   simulate(dt);
   renderer.setRenderTarget(sceneRT);
   renderer.render(scene, camera);
@@ -4347,7 +4363,7 @@ showScreen('startScreen');
 frame();
 
 // Debug / test hook
-window.__bk = { buildChunkGeometry, renderInfo: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, progs: renderer.info.programs.length }), scares, startOutage, startDoorSlam, startFakeSteps, startPhantom, stinger, dynBlockers, PROF, simulate, get isTouch() { return isTouch; }, get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { perfMon, buildChunkGeometry, renderInfo: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, progs: renderer.info.programs.length }), scares, startOutage, startDoorSlam, startFakeSteps, startPhantom, stinger, dynBlockers, PROF, simulate, get isTouch() { return isTouch; }, get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>

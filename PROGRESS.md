@@ -223,3 +223,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[08:30 UTC] Extra — Beam haze, eye colours.** A faint screen-space haze follows the flashlight beam (projected beam
   direction, stronger in the dark). The creature's eyes are pale in level 1, sickly green-white in level 2 and burning
   red in level 3. Full regression suite (20 scenario tests) passes.
+- **[08:31 UTC] Extra — Automatic quality fallback.** The first 5 s of play are timed; if the machine averages under
+  45 FPS the graphics quality drops one step (once per session, saved, with an on-screen note). Choosing a quality in
+  Settings disables the auto-adjust.
