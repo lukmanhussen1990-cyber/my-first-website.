@@ -174,3 +174,8 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   depends on how lit you are (12-22 m instead of a flat 26 m), the "sense" after losing sight 1.2 -> 0.8 s, sprint
   lasts 8 s and stamina refills faster while walking. Also found and fixed: the escape-sequence timer could fire into
   a newly started run.
+- **[07:58 UTC] Extra — Level 3 "Lights Out".** Unlocked by escaping level 2 ("Descend to level 3", plus a menu
+  button). The power is gone: only ~13% of fixtures work, as dim red emergency lights (some flickering), near-black
+  red fog, office blocks and corridors dominate, batteries spawn in 62% of chunks, and the creature is the fastest
+  wanderer/searcher yet (chase 4.6 m/s vs your 5.0). New set of 5 pages, its own best time, and a short ending text
+  when you escape it. Panel glow now follows each level's light colour.
