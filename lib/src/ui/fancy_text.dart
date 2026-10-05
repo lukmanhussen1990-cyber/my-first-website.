@@ -31,10 +31,11 @@ class FancyText {
   final TextPainter _fill;
   final TextPainter _stroke;
   final TextPainter? _shadow;
+  final TextPainter? _gloss;
   final double shadowDy;
   final double skew;
 
-  FancyText._(this._fill, this._stroke, this._shadow, this.shadowDy, this.skew);
+  FancyText._(this._fill, this._stroke, this._shadow, this._gloss, this.shadowDy, this.skew);
 
   factory FancyText({
     required String text,
@@ -46,6 +47,7 @@ class FancyText {
     double shadowDy = 3,
     double skew = 0,
     List<double>? stops,
+    bool gloss = false,
   }) {
     final probe = TextPainter(
       text: TextSpan(text: text, style: base),
@@ -95,7 +97,26 @@ class FancyText {
         textDirection: TextDirection.ltr,
       )..layout();
     }
-    return FancyText._(fillTp, strokeTp, shadowTp, shadowDy, skew);
+    TextPainter? glossTp;
+    if (gloss) {
+      // White shine fading out by mid-height (glossy candy letters).
+      glossTp = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: base.copyWith(
+            color: null,
+            foreground: Paint()
+              ..shader = ui.Gradient.linear(
+                Offset(0, h * 0.15),
+                Offset(0, h * 0.55),
+                const [Color(0x99FFFFFF), Color(0x00FFFFFF)],
+              ),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+    }
+    return FancyText._(fillTp, strokeTp, shadowTp, glossTp, shadowDy, skew);
   }
 
   double get width => _fill.width;
@@ -118,6 +139,7 @@ class FancyText {
     _shadow?.paint(canvas, Offset(0, shadowDy));
     _stroke.paint(canvas, Offset.zero);
     _fill.paint(canvas, Offset.zero);
+    _gloss?.paint(canvas, Offset.zero);
     if (opacity < 1) canvas.restore();
     canvas.restore();
   }

@@ -127,6 +127,18 @@ flutter analyze
   build supports `?game&scenario=demo|clear|combo|over` for deterministic
   scenes; these debug scenarios are disabled on Android.
 
+## Known limitations
+
+- Tested on Android 8.0 and Android 14 emulators (x86_64) through the
+  device-test bot, not on a physical phone; sound playback and vibration
+  were verified through the Android logs only (emulators have no speaker
+  output or vibrator to observe).
+- Fonts are free look-alikes (Fredoka, Poppins) of the original game's
+  fonts; the studio logo is a neutral "MY APPS STUDIO" placeholder.
+- Combos follow the requested rule (clears on *consecutive* moves); a move
+  without a clear resets the combo.
+- No ads, revive, adventure mode or online features.
+
 ## Project layout
 
 ```

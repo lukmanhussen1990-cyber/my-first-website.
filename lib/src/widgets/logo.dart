@@ -51,7 +51,8 @@ class _LogoPainter extends CustomPainter {
           stroke: _edges[i],
           strokeWidth: big * 0.075,
           shadow: Color.lerp(_edges[i], const Color(0xFF000000), 0.35),
-          shadowDy: big * 0.075,
+          shadowDy: big * 0.09,
+          gloss: true,
         ),
       );
     }
@@ -94,8 +95,9 @@ class _LogoPainter extends CustomPainter {
       stroke: const Color(0xFF0B3C8A),
       strokeWidth: big * 0.07,
       shadow: const Color(0xFF07275E),
-      shadowDy: big * 0.06,
+      shadowDy: big * 0.07,
       skew: -0.16,
+      gloss: true,
     );
     blast.paint(canvas, Offset(w * 0.53, size.height * 0.70));
 
