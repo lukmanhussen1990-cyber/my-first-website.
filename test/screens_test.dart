@@ -63,6 +63,27 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('home and loading splash backgrounds fill the whole screen', (tester) async {
+    phone(tester);
+    final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+    Size gradientSize() {
+      final box = find.byWidgetPredicate(
+        (w) => w is Container && w.decoration is BoxDecoration && (w.decoration as BoxDecoration).gradient != null,
+      );
+      return tester.getSize(box.first);
+    }
+
+    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+    await pumpFrames(tester, 10);
+    expect(gradientSize(), screen);
+
+    await tester.pumpWidget(const MaterialApp(home: LoadingSplashScreen()));
+    await pumpFrames(tester, 10);
+    expect(gradientSize(), screen);
+    // Let the splash timers finish so the test ends cleanly.
+    await pumpFrames(tester, 300);
+  });
+
   testWidgets('game over popup with new best renders', (tester) async {
     phone(tester);
     await tester.pumpWidget(

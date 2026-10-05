@@ -43,6 +43,7 @@ class BlockBlastApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Palette.background),
+        scaffoldBackgroundColor: Palette.background,
         fontFamily: 'Fredoka',
         splashFactory: NoSplash.splashFactory,
       ),

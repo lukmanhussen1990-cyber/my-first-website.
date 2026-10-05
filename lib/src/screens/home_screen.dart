@@ -41,7 +41,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: Palette.overlayOnBlue,
       child: Scaffold(
+        backgroundColor: Palette.splashBottom,
         body: Container(
+          width: double.infinity,
+          height: double.infinity,
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
