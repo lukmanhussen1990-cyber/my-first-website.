@@ -52,6 +52,7 @@ html, body {
 #hudMini .hm-score { font-size: calc(var(--u) * 54); letter-spacing: 0.02em; }
 #hudMini .hm-coins { font-size: calc(var(--u) * 26); color: var(--gold); }
 #tMsg { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); display: none; padding: 16px 22px; border-radius: 18px; background: var(--panel); font-weight: 900; font-size: calc(var(--u) * 30); text-align: center; pointer-events: none; }
+#tInfo { margin: 6px 0 0; font: 700 13px/1.35 var(--font); white-space: pre; text-align: right; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
 </style>
 </head>
 <body>
@@ -67,6 +68,7 @@ html, body {
 <div id="hudMini">
   <div class="hm-score"><span id="tScore">000000</span></div>
   <div class="hm-coins"><span id="tCoins">0</span> coins</div>
+  <pre id="tInfo"></pre>
 </div>
 <div id="tMsg"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -131,7 +133,7 @@ const CFG = {
   CAR_LEN: 12.5,
   CAR_GAP: 0.55,
   RAMP_LEN: 9,
-  JET_ALT: 6.2,
+  JET_ALT: 5.6,
   BED_HALF: 4.3,         // half width of the track bed
   WALK_Y: 0.5,           // left sidewalk height
   PLATFORM_Y: 0.9        // right platform height
@@ -1592,11 +1594,11 @@ const World = {
     const parts = [];
     const c = 0x3a3d46;
     for (const x of [-4.65, 4.65]) {
-      parts.push(Geo.paint(Geo.place(new THREE.BoxGeometry(0.22, 9.9, 0.22), { x, y: 4.95 + (x > 0 ? CFG.PLATFORM_Y : CFG.WALK_Y) - 0.4 }), c));
+      parts.push(Geo.paint(Geo.place(new THREE.BoxGeometry(0.24, 11.9, 0.24), { x, y: 5.95 + (x > 0 ? CFG.PLATFORM_Y : CFG.WALK_Y) - 0.4 }), c));
     }
-    parts.push(Geo.paint(Geo.place(new THREE.BoxGeometry(9.7, 0.26, 0.22), { y: 9.75 }), c));
-    parts.push(Geo.paint(Geo.place(new THREE.BoxGeometry(9.7, 0.1, 0.12), { y: 9.35 }), c));
-    for (const lx of CFG.LANE_X) parts.push(Geo.paint(Geo.place(new THREE.BoxGeometry(0.06, 0.8, 0.06), { x: lx, y: 9.0 }), 0x55585f));
+    parts.push(Geo.paint(Geo.place(new THREE.BoxGeometry(9.7, 0.28, 0.24), { y: 11.75 }), c));
+    parts.push(Geo.paint(Geo.place(new THREE.BoxGeometry(9.7, 0.1, 0.12), { y: 11.3 }), c));
+    for (const lx of CFG.LANE_X) parts.push(Geo.paint(Geo.place(new THREE.BoxGeometry(0.06, 1.1, 0.06), { x: lx, y: 10.75 }), 0x55585f));
     return Geo.merge(parts);
   },
 
@@ -1606,10 +1608,9 @@ const World = {
     const len = 420;
     const box = new THREE.BoxGeometry(0.035, 0.035, len);
     for (const lx of CFG.LANE_X) {
-      parts.push(Geo.place(box, { x: lx, y: 8.6, z: -len / 2 + 40 }));
-      parts.push(Geo.place(box, { x: lx, y: 9.3, z: -len / 2 + 40 }));
+      parts.push(Geo.place(box, { x: lx, y: 10.2, z: -len / 2 + 40 }));
+      parts.push(Geo.place(box, { x: lx, y: 10.9, z: -len / 2 + 40 }));
     }
-    for (const x of [-4.65, 4.65]) parts.push(Geo.place(box, { x, y: 9.6, z: -len / 2 + 40, sx: 1.4, sy: 1.4 }));
     const mesh = new THREE.Mesh(Geo.merge(parts), new THREE.MeshBasicMaterial({ color: 0x2a2630 }));
     mesh.frustumCulled = false;
     return mesh;
@@ -1646,9 +1647,9 @@ const World = {
 
   buildBridge() {
     const s = new THREE.Shape();
-    s.moveTo(-17, -1.5); s.lineTo(17, -1.5); s.lineTo(17, 13); s.lineTo(-17, 13); s.closePath();
+    s.moveTo(-18, -1.5); s.lineTo(18, -1.5); s.lineTo(18, 14); s.lineTo(-18, 14); s.closePath();
     const hole = new THREE.Path();
-    const R = 9.2, spring = 2.2;
+    const R = 10, spring = 2.2;
     hole.moveTo(-R, -1); hole.lineTo(-R, spring);
     hole.absarc(0, spring, R, Math.PI, 0, true);
     hole.lineTo(R, -1); hole.closePath();
@@ -1659,15 +1660,15 @@ const World = {
     for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 4, uv.getY(i) / 4);
     const parapets = [];
     for (const z of [-3.3, 3.3]) {
-      const p = new THREE.BoxGeometry(34, 1.0, 0.4);
+      const p = new THREE.BoxGeometry(36, 1.0, 0.4);
       const puv = p.attributes.uv;
       for (let i = 0; i < puv.count; i++) puv.setXY(i, puv.getX(i) * 8, puv.getY(i) * 0.25);
-      parapets.push(Geo.place(p, { y: 13.5, z }));
+      parapets.push(Geo.place(p, { y: 14.5, z }));
     }
-    const band = new THREE.BoxGeometry(34.6, 0.5, 7.6);
+    const band = new THREE.BoxGeometry(36.6, 0.5, 7.6);
     const buv = band.attributes.uv;
     for (let i = 0; i < buv.count; i++) buv.setXY(i, buv.getX(i) * 8, buv.getY(i) * 0.12);
-    return Geo.merge([geo, ...parapets, Geo.place(band, { y: 12.9 })]);
+    return Geo.merge([geo, ...parapets, Geo.place(band, { y: 13.9 })]);
   },
 
   // ---------- pooled decoration objects ----------
@@ -2072,6 +2073,7 @@ const Obstacles = {
     o.zf = zNear;
     o.zb = zNear - o.len;
     o.prevZf = o.zf;
+    o.dodged = false;
     o.mesh.position.set(o.x, 0, o.type === OB.RAMP ? zNear - CFG.RAMP_LEN : o.type === OB.TRAIN ? zNear : zNear - o.len / 2);
     return o;
   },
@@ -2093,6 +2095,7 @@ const Obstacles = {
           o.mesh.position.z = o.zf;
         }
       }
+      if (o.moving && !o.dodged && o.zb > playerZ + 1) { o.dodged = true; Bus.emit('dodge'); }
       if (o.zb > playerZ + CFG.RECYCLE_BEHIND) {
         this.release(o);
         list[i] = list[list.length - 1];
@@ -2622,8 +2625,8 @@ const Gen = {
         this.plan.push({ z: z0 - prev.d, zEnd: z0 - n.d, from: prev.s, to: n.s, type: n.type });
       }
     }
-    this.placeCoins(layout, res, z0);
-    if (this.onExtras) this.onExtras(layout, res, z0);
+    const exclude = this.onExtras ? this.onExtras(layout, res, z0) : [];
+    this.placeCoins(layout, res, z0, exclude);
   },
 
   // Sample the planned path as feet height + lane x for every cell, then lay coin streaks along it.
@@ -2684,7 +2687,8 @@ const Gen = {
     return CFG.TRAIN_H * clamp(1 - (k - d) / CFG.RAMP_LEN, 0, 1);
   },
 
-  placeCoins(layout, res, z0) {
+  placeCoins(layout, res, z0, exclude) {
+    const blocked = z => exclude && exclude.some(ez => Math.abs(ez - z) < 2.2);
     const { len, P } = layout;
     const { xs, ys, kind } = this.samplePath(layout, res);
     const spacing = 2.35;
@@ -2695,7 +2699,7 @@ const Gen = {
       for (let k = 0; k < streak && d < len - 1; k++) {
         const di = Math.round(d);
         const y = kind[di] === 2 ? 0.5 : ys[di] + 0.85;
-        Coins.spawn(xs[di], y, z0 - d);
+        if (!blocked(z0 - d)) Coins.spawn(xs[di], y, z0 - d);
         placed++;
         d += spacing;
       }
@@ -2711,7 +2715,7 @@ const Gen = {
         const hasRamp = a > 0 && grid[l][a - 1] === CELL.RAMP;
         const onPath = res.path.some(n => n.d >= a && n.d < b && (n.s >> 1) === l && (n.s & 1));
         if (!onPath && (hasRamp || RNG.chance(0.35))) {
-          for (let z = a + 1.5; z < b - 1; z += spacing) Coins.spawn(CFG.LANE_X[l], CFG.TRAIN_H + 0.85, z0 - z);
+          for (let z = a + 1.5; z < b - 1; z += spacing) if (!blocked(z0 - z)) Coins.spawn(CFG.LANE_X[l], CFG.TRAIN_H + 0.85, z0 - z);
         }
         a = b;
       }
@@ -3077,6 +3081,175 @@ const Runner = {
   }
 };
 
+// ==== ROBOT ====
+// Bolt-9: the original hovering security robot that chases the runner.
+// States: off, intro (start of a run), chase (after a stumble), leave, catch (second stumble), arrive (after a crash).
+
+const Chaser = {
+  root: null, bones: {}, mats: {},
+  state: 'off', t: 0, offZ: 30, x: 0, chaseT: 0, siren: 0,
+
+  init() {
+    const mat = new THREE.MeshPhongMaterial({ vertexColors: true, specular: 0x555555, shininess: 55 });
+    const P = (geo, color, o) => Geo.paint(Geo.place(geo, o || {}), color);
+    const NAVY = 0x27356f, NAVY2 = 0x1c2752, WHITE = 0xf2f4f8, GREY = 0x9aa3b2, DARK = 0x16181f, YEL = 0xffd23f;
+    const root = new THREE.Group();
+    const body = new THREE.Group();
+    root.add(body);
+    const egg = Geo.lathe([[0.001, 0.22], [0.26, 0.24], [0.38, 0.42], [0.42, 0.68], [0.4, 0.92], [0.33, 1.12], [0.2, 1.24], [0.001, 1.27]], 20);
+    const torso = new THREE.Mesh(Geo.merge([
+      P(new THREE.CylinderGeometry(0.27, 0.4, 0.24, 18), NAVY2, { y: 0.14 }),
+      P(new THREE.TorusGeometry(0.38, 0.035, 6, 24), YEL, { y: 0.06, rx: Math.PI / 2 }),
+      Geo.paint(egg, NAVY),
+      P(Geo.roundedBox(0.46, 0.42, 0.12, 0.05, 2), WHITE, { y: 0.78, z: -0.34 }),
+      P(Geo.extrude(Geo.starShape(0.1, 0.045, 5), 0.03), YEL, { y: 0.82, z: -0.41 }),
+      P(Geo.roundedBox(0.36, 0.46, 0.14, 0.05, 2), GREY, { y: 0.78, z: 0.36 }),
+      P(new THREE.BoxGeometry(0.3, 0.06, 0.02), YEL, { y: 0.92, z: 0.435 }),
+      P(new THREE.BoxGeometry(0.3, 0.06, 0.02), DARK, { y: 0.85, z: 0.435 }),
+      P(new THREE.BoxGeometry(0.3, 0.06, 0.02), YEL, { y: 0.78, z: 0.435 }),
+      P(new THREE.CylinderGeometry(0.12, 0.14, 0.1, 14), GREY, { y: 1.28 }),
+      // head
+      P(new THREE.SphereGeometry(0.28, 20, 14), WHITE, { y: 1.55, sy: 0.92 }),
+      P(new THREE.CylinderGeometry(0.285, 0.285, 0.16, 20, 1, true, Math.PI * 0.6, Math.PI * 0.8), DARK, { y: 1.56 }),
+      P(new THREE.CylinderGeometry(0.02, 0.02, 0.22, 6), GREY, { x: 0.14, y: 1.86, rz: -0.25 }),
+      P(new THREE.SphereGeometry(0.035, 8, 6), 0xff4136, { x: 0.17, y: 1.97 }),
+      P(new THREE.CylinderGeometry(0.12, 0.12, 0.05, 14), GREY, { y: 1.8 }),
+      P(new THREE.SphereGeometry(0.07, 10, 8), DARK, { x: -0.27, y: 1.55, sx: 0.5 }),
+      P(new THREE.SphereGeometry(0.07, 10, 8), DARK, { x: 0.27, y: 1.55, sx: 0.5 })
+    ]), mat);
+    torso.castShadow = true;
+    body.add(torso);
+    // glowing parts
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x5ff3ff });
+    const eyes = new THREE.Mesh(Geo.merge([
+      Geo.place(new THREE.TorusGeometry(0.283, 0.018, 6, 28), { y: 1.47, rx: Math.PI / 2 }),
+      Geo.place(new THREE.BoxGeometry(0.16, 0.025, 0.02), { y: 1.62, z: 0.265 }),
+      Geo.place(new THREE.BoxGeometry(0.16, 0.025, 0.02), { y: 1.57, z: 0.272 }),
+      Geo.place(Geo.capsule(0.032, 0.05, 8, 3), { x: -0.09, y: 1.57, z: -0.272, rz: 0.35 }),
+      Geo.place(Geo.capsule(0.032, 0.05, 8, 3), { x: 0.09, y: 1.57, z: -0.272, rz: -0.35 }),
+      Geo.place(new THREE.SphereGeometry(0.025, 6, 4), { y: 0.69, z: 0.44 })
+    ]), eyeMat);
+    body.add(eyes);
+    const red = new THREE.MeshBasicMaterial({ color: 0xff2a2a });
+    const blue = new THREE.MeshBasicMaterial({ color: 0x2a6bff });
+    const sirenR = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8, 0, Math.PI), red);
+    const sirenB = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8, Math.PI, Math.PI), blue);
+    for (const s of [sirenR, sirenB]) { s.position.y = 1.84; s.scale.y = 1.2; body.add(s); }
+    const glowGeo = new THREE.BufferGeometry();
+    glowGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 1.92, 0], 3));
+    const sirenGlow = new THREE.Points(glowGeo, new THREE.PointsMaterial({ map: Tex.glow(), size: 2.2, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: 0xff3030 }));
+    sirenGlow.frustumCulled = false;
+    body.add(sirenGlow);
+    const baseGlow = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.3), new THREE.MeshBasicMaterial({ map: Tex.glow(), color: 0x6af2ff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    baseGlow.rotation.x = -Math.PI / 2;
+    baseGlow.position.y = 0.03;
+    root.add(baseGlow);
+    // arms
+    for (const side of [-1, 1]) {
+      const sh = new THREE.Group();
+      sh.position.set(side * 0.43, 1.0, 0);
+      const upper = new THREE.Mesh(Geo.merge([
+        P(new THREE.SphereGeometry(0.1, 10, 8), GREY),
+        P(Geo.limb(0.075, 0.065, 0.24, 10, 3), NAVY)
+      ]), mat);
+      upper.castShadow = true;
+      sh.add(upper);
+      const el = new THREE.Group();
+      el.position.y = -0.27;
+      const fore = new THREE.Mesh(Geo.merge([
+        P(new THREE.SphereGeometry(0.075, 10, 8), GREY),
+        P(Geo.limb(0.065, 0.06, 0.2, 10, 3), NAVY),
+        P(new THREE.SphereGeometry(0.11, 12, 10), WHITE, { y: -0.27, sx: 1.05, sz: 0.9 })
+      ]), mat);
+      fore.castShadow = true;
+      el.add(fore);
+      sh.add(el);
+      body.add(sh);
+      this.bones[side < 0 ? 'lSh' : 'rSh'] = sh;
+      this.bones[side < 0 ? 'lEl' : 'rEl'] = el;
+    }
+    this.bones.body = body;
+    this.mats = { red, blue, sirenGlow: sirenGlow.material, baseGlow: baseGlow.material, eyes: eyeMat };
+    this.root = root;
+    root.scale.setScalar(0.82);
+    root.visible = false;
+    Gfx.scene.add(root);
+  },
+
+  reset(p) {
+    this.state = 'intro';
+    this.t = 0;
+    this.offZ = 1.45;
+    this.x = p.x + 1.25;
+    this.chaseT = 0;
+  },
+
+  isChasing() { return this.state === 'chase'; },
+
+  startChase() {
+    if (this.state === 'off' || this.state === 'leave' || this.state === 'intro') this.offZ = Math.max(this.offZ, this.state === 'off' ? 14 : this.offZ);
+    this.state = 'chase';
+    this.t = 0;
+    this.chaseT = 7;
+    Bus.emit('chaser', 'chase');
+  },
+
+  catchPlayer() { this.state = 'catch'; this.t = 0; Bus.emit('chaser', 'catch'); },
+  arrive() { if (this.state !== 'catch') { this.state = 'arrive'; this.t = 0; if (this.offZ > 14) this.offZ = 14; } },
+  hide() { this.state = 'off'; this.root.visible = false; },
+
+  update(dt, p) {
+    this.t += dt;
+    const s = this.state;
+    if (s === 'off') { this.root.visible = false; return; }
+    if (s === 'intro') {
+      if (this.t > 2.2) this.offZ += dt * (4 + (this.t - 2.2) * 6);
+      if (this.offZ > 26) { this.hide(); return; }
+    } else if (s === 'chase') {
+      this.offZ = damp(this.offZ, 1.4, 5, dt);
+      this.chaseT -= dt;
+      if (this.chaseT <= 0) { this.state = 'leave'; this.t = 0; Bus.emit('chaser', 'leave'); }
+    } else if (s === 'leave') {
+      this.offZ += dt * (3 + this.t * 6);
+      if (this.offZ > 26) { this.hide(); return; }
+    } else if (s === 'catch') {
+      this.offZ = damp(this.offZ, 1.05, 7, dt);
+    } else if (s === 'arrive') {
+      this.offZ = damp(this.offZ, 1.9, 3.2, dt);
+    }
+    const side = p.lane === 2 ? -1 : 1;
+    const tx = s === 'catch' ? p.x + side * 0.6 : p.x + side * 1.3;
+    this.x = damp(this.x, tx, 6, dt);
+    const r = this.root;
+    r.visible = true;
+    const bob = Math.sin(this.t * 7) * 0.06;
+    const groundY = s === 'arrive' || s === 'catch' ? Math.max(0, p.groundY) : p.groundY > 3 ? CFG.TRAIN_H : 0;
+    r.position.set(this.x, groundY + 0.18 + bob, p.z + this.offZ);
+    r.rotation.y = s === 'arrive' ? Math.PI * 0.85 : 0;
+    const b = this.bones;
+    const chasing = s === 'chase' || s === 'intro' || s === 'leave';
+    b.body.rotation.x = chasing ? -0.22 : s === 'catch' ? -0.35 : 0;
+    const pump = Math.sin(this.t * 10);
+    if (chasing) {
+      b.lSh.rotation.set(pump * 0.9, 0, -0.2); b.rSh.rotation.set(-pump * 0.9, 0, 0.2);
+      b.lEl.rotation.x = 1.0; b.rEl.rotation.x = 1.0;
+    } else if (s === 'catch') {
+      b.lSh.rotation.set(2.2, 0, -0.35); b.rSh.rotation.set(2.2, 0, 0.35);
+      b.lEl.rotation.x = 0.4; b.rEl.rotation.x = 0.4;
+    } else {
+      b.lSh.rotation.set(0.2, 0, -0.9 - Math.sin(this.t * 3) * 0.1); b.rSh.rotation.set(0.2, 0, 0.9 + Math.sin(this.t * 3) * 0.1);
+      b.lEl.rotation.x = 1.6; b.rEl.rotation.x = 1.6;
+    }
+    // siren: alternating red / blue
+    this.siren += dt;
+    const phase = Math.floor(this.siren * 5) % 2;
+    this.mats.red.color.setHex(phase ? 0xff2a2a : 0x5a1010);
+    this.mats.blue.color.setHex(phase ? 0x18307a : 0x3a7bff);
+    this.mats.sirenGlow.color.setHex(phase ? 0xff3030 : 0x3a7bff);
+    this.mats.baseGlow.opacity = 0.7 + Math.sin(this.t * 20) * 0.2;
+  }
+};
+
 // ==== PLAYER ====
 // Player controller: lanes, jump (buffer + coyote time), roll, fast-drop, gravity, ramps / train roofs and collisions.
 // Collision rules: hitting the front of an obstacle = crash; brushing a side while changing lanes, clipping the top of a
@@ -3089,7 +3262,7 @@ const Player = {
   rollT: 0, rollQueued: false, jumpBuffer: 0,
   speed: CFG.SPEED_START, distance: 0, slowT: 0,
   graceT: 0, invuln: 0,
-  onRoof: false,
+  onRoof: false, jet: false, magnet: 0, sneakers: false, god: false,
   queue: [],
   events: null, // callbacks set by the game: { crash(o), stumble(kind, o), land(h), jump(), roll(), lane(dir) }
 
@@ -3100,6 +3273,7 @@ const Player = {
     this.rollT = 0; this.rollQueued = false; this.jumpBuffer = 0;
     this.speed = CFG.SPEED_START; this.distance = 0; this.slowT = 0;
     this.graceT = 0; this.invuln = 0; this.onRoof = false;
+    this.jet = false; this.magnet = 0; this.sneakers = false;
     this.queue.length = 0;
   },
 
@@ -3111,7 +3285,7 @@ const Player = {
     if (this.events && this.events[name]) this.events[name](a, b);
   },
 
-  jumpHeight() { return CFG.JUMP_H; },
+  jumpHeight() { return this.sneakers ? CFG.JUMP_H_SNEAKERS : CFG.JUMP_H; },
 
   doJump() {
     this.vy = Math.sqrt(2 * CFG.GRAVITY * this.jumpHeight());
@@ -3130,6 +3304,8 @@ const Player = {
         const nl = clamp(this.lane + dir, 0, 2);
         if (nl !== this.lane) { this.prevLane = this.lane; this.lane = nl; this.emit('lane', dir); }
         else this.emit('laneBlocked', dir);
+      } else if (this.jet) {
+        continue; // no jumping or rolling while flying
       } else if (a === 'jump') {
         if (this.grounded || this.airTime < 0.1) this.doJump();
         else this.jumpBuffer = 0.16;
@@ -3161,6 +3337,21 @@ const Player = {
     this.z -= this.speed * h;
     this.distance += this.speed * h;
 
+    if (this.graceT > 0) this.graceT -= h;
+    if (this.invuln > 0) this.invuln -= h;
+
+    // jetpack flight: glide up to cruising altitude, nothing below can be hit
+    if (this.jet) {
+      this.grounded = false;
+      this.rollT = 0;
+      this.vy = clamp((CFG.JET_ALT - this.y) * 3.2, -8, 9);
+      this.y += this.vy * h;
+      this.airTime = 1;
+      this.groundY = Obstacles.supportAt(this.x, this.z, this.y);
+      this.onRoof = false;
+      return;
+    }
+
     // vertical movement on the highest walkable surface
     if (this.jumpBuffer > 0) this.jumpBuffer -= h;
     const sup = Obstacles.supportAt(this.x, this.z, this.y);
@@ -3187,10 +3378,10 @@ const Player = {
       this.airTime = 0;
     }
     this.groundY = sup;
-    this.onRoof = this.grounded && this.y > CFG.TRAIN_H - 0.05;
+    const roof = this.grounded && this.y > CFG.TRAIN_H - 0.05;
+    if (roof && !this.onRoof) this.emit('roof');
+    this.onRoof = roof;
     if (this.rollT > 0) this.rollT = Math.max(0, this.rollT - h);
-    if (this.graceT > 0) this.graceT -= h;
-    if (this.invuln > 0) this.invuln -= h;
 
     this.collide(prevX, prevY, prevZ, prevH);
   },
@@ -3249,6 +3440,408 @@ const Player = {
     this.graceT = 0.55;
     this.slowT = 0.8;
     this.emit('stumble', kind, o);
+  }
+};
+
+// ==== POWERS ====
+// Power-ups (hoverboard, magnet, jetpack, super sneakers, 2x score), their pickups, and the cap-token hunt.
+
+const PU = {
+  hover: { name: 'Hoverboard', dur: 30, color: 0x9b6bff, css: '#9b6bff' },
+  magnet: { name: 'Coin Magnet', dur: 15, color: 0xff4a4a, css: '#ff4a4a' },
+  jet: { name: 'Jetpack', dur: 9, color: 0xffa21a, css: '#ffa21a' },
+  sneakers: { name: 'Super Sneakers', dur: 15, color: 0x36d65a, css: '#36d65a' },
+  x2: { name: '2x Score', dur: 20, color: 0xffd23f, css: '#ffd23f' }
+};
+const PU_ORDER = ['hover', 'magnet', 'jet', 'sneakers', 'x2'];
+
+const Powers = {
+  active: {},
+  sky: null,
+  lastType: '',
+  distSince: 0, nextGap: 260,
+  capSince: 0, capGap: 700, capsPlaced: 0,
+
+  reset() {
+    this.active = {};
+    this.sky = null;
+    this.lastType = '';
+    this.distSince = 0; this.nextGap = 240 + RNG.range(0, 80);
+    this.capSince = 0; this.capGap = RNG.range(450, 700); this.capsPlaced = 0;
+    Player.jet = false; Player.magnet = 0; Player.sneakers = false;
+  },
+
+  has(type) { return !!this.active[type]; },
+  remaining(type) { return this.active[type] ? this.active[type].t : 0; },
+
+  activate(type) {
+    const def = PU[type];
+    const prev = this.active[type];
+    this.active[type] = { t: def.dur, max: def.dur };
+    if (type === 'jet') {
+      Player.jet = true;
+      Player.rollT = 0;
+      Player.grounded = false;
+      Player.vy = 0;
+      this.sky = { nextZ: Player.z - 16, lane: Player.lane, endZ: Player.z - Player.baseSpeed() * (def.dur - 1.4), switchIn: RNG.int(6, 10) };
+    }
+    if (type === 'sneakers') Player.sneakers = true;
+    Bus.emit('powerup', type);
+    Bus.emit('pu_' + type, prev ? 'refresh' : 'new');
+  },
+
+  consume(type) {
+    if (!this.active[type]) return;
+    delete this.active[type];
+    this.expire(type);
+  },
+
+  expire(type) {
+    if (type === 'jet') {
+      Player.jet = false;
+      Player.grounded = false;
+      Player.vy = 0;
+      Player.invuln = Math.max(Player.invuln, 2.0);
+      this.sky = null;
+    }
+    if (type === 'sneakers') Player.sneakers = false;
+    if (type === 'magnet') Player.magnet = 0;
+    Bus.emit('powerEnd', type);
+  },
+
+  update(dt) {
+    for (const type of PU_ORDER) {
+      const a = this.active[type];
+      if (!a) continue;
+      a.t -= dt;
+      if (a.t <= 0) { delete this.active[type]; this.expire(type); }
+    }
+    Player.magnet = this.active.magnet ? this.active.magnet.t : 0;
+    // jetpack: lay coin lines in the sky ahead of the runner, weaving between lanes
+    const s = this.sky;
+    if (s && this.active.jet) {
+      while (s.nextZ > Player.z - 110 && s.nextZ > s.endZ) {
+        Coins.spawn(CFG.LANE_X[s.lane], CFG.JET_ALT + 0.9, s.nextZ);
+        s.nextZ -= 2.5;
+        if (--s.switchIn <= 0) {
+          const nl = clamp(s.lane + (RNG.chance(0.5) ? -1 : 1), 0, 2);
+          if (nl !== s.lane) {
+            for (let k = 1; k <= 3; k++) Coins.spawn(lerp(CFG.LANE_X[s.lane], CFG.LANE_X[nl], k / 4), CFG.JET_ALT + 0.9, s.nextZ - (k - 1) * 2.5);
+            s.nextZ -= 7.5;
+            s.lane = nl;
+          }
+          s.switchIn = RNG.int(7, 12);
+        }
+      }
+    }
+  },
+
+  // Called by the generator for every committed chunk; returns z positions where coins should not be placed.
+  placeInChunk(layout, res, z0) {
+    const out = [];
+    this.distSince += layout.len;
+    this.capSince += layout.len;
+    const wantPower = this.distSince > this.nextGap;
+    const wantCap = this.capSince > this.capGap && (Game.run ? Game.run.caps : 0) + this.capsPlaced < 5;
+    if (!wantPower && !wantCap) return out;
+    const path = res.path, grid = res.grid, P = layout.P;
+    const cands = [];
+    for (let i = 1; i < path.length - 1; i++) {
+      const n = path[i];
+      if (n.type !== T.RUN && n.type !== T.ROOF) continue;
+      if (n.d < 10 || n.d > layout.len - P.TAIL) continue;
+      const l = n.s >> 1, lvl = n.s & 1;
+      let ok = true;
+      for (let k = Math.max(1, i - 8); k <= Math.min(path.length - 1, i + 3); k++) {
+        const q = path[k];
+        if (q.type !== T.RUN && q.type !== T.ROOF && Math.abs(q.d - n.d) < 14) { ok = false; break; }
+      }
+      if (!ok) continue;
+      const c = grid[l][n.d];
+      if ((lvl === 0 && c !== CELL.FREE) || (lvl === 1 && c !== CELL.TRAIN)) continue;
+      cands.push(n);
+    }
+    if (!cands.length) return out;
+    const used = new Set();
+    const take = () => {
+      for (let tries = 0; tries < 8; tries++) {
+        const n = cands[Math.floor(RNG.next() * cands.length)];
+        if ([...used].some(d => Math.abs(d - n.d) < 30)) continue;
+        used.add(n.d);
+        return n;
+      }
+      return null;
+    };
+    if (wantPower) {
+      const n = take();
+      if (n) {
+        let type;
+        do { type = RNG.weighted([[28, 'magnet'], [22, 'sneakers'], [20, 'x2'], [15, 'jet'], [15, 'hover']]); } while (type === this.lastType && RNG.chance(0.85));
+        this.lastType = type;
+        const y = (n.s & 1 ? CFG.TRAIN_H : 0) + 1.1;
+        Pickups.spawn(type, CFG.LANE_X[n.s >> 1], y, z0 - n.d);
+        out.push(z0 - n.d);
+        this.distSince = 0;
+        this.nextGap = RNG.range(250, 420);
+      }
+    }
+    if (wantCap) {
+      const n = take();
+      if (n) {
+        const y = (n.s & 1 ? CFG.TRAIN_H : 0) + 1.1;
+        Pickups.spawn('cap', CFG.LANE_X[n.s >> 1], y, z0 - n.d);
+        out.push(z0 - n.d);
+        this.capSince = 0;
+        this.capGap = RNG.range(650, 1000);
+        this.capsPlaced++;
+      }
+    }
+    return out;
+  }
+};
+
+// Floating pickup models with a coloured halo; spin and bob in place.
+const Pickups = {
+  list: [], pools: {}, geos: {}, mats: {},
+
+  init() {
+    const mat = new THREE.MeshPhongMaterial({ vertexColors: true, specular: 0x666666, shininess: 60, emissive: 0x222222 });
+    this.mats.body = mat;
+    const P = (geo, color, o) => Geo.paint(Geo.place(geo, o || {}), color);
+    const bolt = (() => { const s = new THREE.Shape(); s.moveTo(0.05, 0.17); s.lineTo(-0.11, -0.01); s.lineTo(-0.01, -0.01); s.lineTo(-0.05, -0.17); s.lineTo(0.11, 0.02); s.lineTo(0.01, 0.02); s.closePath(); return s; })();
+    this.geos.hover = Geo.merge([
+      P(Geo.extrude(Geo.roundRectShape(0.38, 1.0, 0.18), 0.06), 0x7b4fd0, { rz: 0.5 }),
+      P(Geo.extrude(Geo.roundRectShape(0.12, 0.84, 0.05), 0.065), 0x2ec4b6, { rz: 0.5 })
+    ]);
+    this.geos.magnet = Geo.merge([
+      P(new THREE.TorusGeometry(0.26, 0.1, 10, 20, Math.PI), 0xe8312a, { rz: Math.PI }),
+      P(new THREE.CylinderGeometry(0.102, 0.102, 0.18, 12), 0xe9edf2, { x: -0.26, y: 0.09 }),
+      P(new THREE.CylinderGeometry(0.102, 0.102, 0.18, 12), 0xe9edf2, { x: 0.26, y: 0.09 })
+    ]);
+    this.geos.jet = Geo.merge([
+      P(Geo.capsule(0.12, 0.34, 12, 4), 0xd7dde6, { x: -0.14 }),
+      P(Geo.capsule(0.12, 0.34, 12, 4), 0xd7dde6, { x: 0.14 }),
+      P(new THREE.CylinderGeometry(0.125, 0.125, 0.09, 12), 0xe0402f, { x: -0.14, y: 0.12 }),
+      P(new THREE.CylinderGeometry(0.125, 0.125, 0.09, 12), 0xe0402f, { x: 0.14, y: 0.12 }),
+      P(new THREE.ConeGeometry(0.1, 0.16, 10), 0xffb030, { x: -0.14, y: -0.34, rx: Math.PI }),
+      P(new THREE.ConeGeometry(0.1, 0.16, 10), 0xffb030, { x: 0.14, y: -0.34, rx: Math.PI }),
+      P(new THREE.BoxGeometry(0.36, 0.06, 0.06), 0x3a3d46, { y: 0.0 })
+    ]);
+    this.geos.sneakers = Geo.merge([
+      P(Geo.roundedBox(0.3, 0.22, 0.56, 0.09, 2), 0x36d65a, { y: 0.0 }),
+      P(Geo.roundedBox(0.34, 0.1, 0.62, 0.04, 2), 0xffffff, { y: -0.15 }),
+      P(Geo.roundedBox(0.24, 0.12, 0.2, 0.05, 2), 0x1f8f47, { y: 0.02, z: -0.2 }),
+      P(new THREE.BoxGeometry(0.04, 0.22, 0.32), 0xffffff, { x: 0.2, y: 0.12, z: 0.06, rz: -0.6 }),
+      P(new THREE.BoxGeometry(0.04, 0.22, 0.32), 0xffffff, { x: -0.2, y: 0.12, z: 0.06, rz: 0.6 })
+    ]);
+    this.geos.x2 = Geo.merge([
+      P(Geo.extrude(Geo.starShape(0.36, 0.17, 5), 0.12), 0xffc62a),
+      P(Geo.extrude(Geo.starShape(0.24, 0.11, 5), 0.13), 0xfff07a)
+    ]);
+    this.geos.cap = Geo.merge([
+      P(new THREE.SphereGeometry(0.3, 18, 9, 0, TAU, 0, Math.PI / 2), 0x2dbe60, { sy: 0.85 }),
+      P(new THREE.CylinderGeometry(0.24, 0.24, 0.03, 18), 0x2dbe60, { y: 0.0, z: -0.24, sz: 1.2 }),
+      P(new THREE.SphereGeometry(0.04, 8, 6), 0x1f8f47, { y: 0.26 }),
+      P(Geo.extrude(bolt, 0.02), 0xffd23f, { y: 0.14, z: -0.27, s: 0.8, rx: 0.4 })
+    ]);
+    // "2X" label plane for the 2x star
+    const labelTex = Tex.make('x2label', 128, 64, (g) => {
+      g.clearRect(0, 0, 128, 64);
+      g.font = `900 52px ${Tex.FONT_HEAVY}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.lineWidth = 10; g.strokeStyle = '#5a2a00'; g.strokeText('2X', 64, 34);
+      g.fillStyle = '#ffffff'; g.fillText('2X', 64, 34);
+    }, { clamp: true });
+    this.mats.label = new THREE.MeshBasicMaterial({ map: labelTex, transparent: true, depthWrite: false, side: THREE.DoubleSide });
+    this.geos.label = new THREE.PlaneGeometry(0.42, 0.21);
+    this.geos.ring = new THREE.TorusGeometry(0.62, 0.035, 6, 32);
+    for (const t of [...PU_ORDER, 'cap']) {
+      this.mats['halo_' + t] = new THREE.MeshBasicMaterial({ map: Tex.glow(), color: t === 'cap' ? 0x6dff8a : PU[t].color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+      this.mats['ring_' + t] = new THREE.MeshBasicMaterial({ color: t === 'cap' ? 0x6dff8a : PU[t].color, transparent: true, opacity: 0.85 });
+      this.pools[t] = [];
+    }
+    this.geos.halo = new THREE.PlaneGeometry(2.6, 2.6);
+  },
+
+  make(type) {
+    const grp = new THREE.Group();
+    const spin = new THREE.Group();
+    const model = new THREE.Mesh(this.geos[type], this.mats.body);
+    model.castShadow = true;
+    spin.add(model);
+    if (type === 'x2') {
+      const l1 = new THREE.Mesh(this.geos.label, this.mats.label); l1.position.z = 0.08;
+      spin.add(l1);
+    }
+    const halo = new THREE.Mesh(this.geos.halo, this.mats['halo_' + type]);
+    const ring = new THREE.Mesh(this.geos.ring, this.mats['ring_' + type]);
+    spin.scale.setScalar(1.25);
+    ring.scale.setScalar(1.15);
+    grp.add(halo, ring, spin);
+    grp.userData = { type, spin, halo, ring };
+    Gfx.scene.add(grp);
+    return grp;
+  },
+
+  spawn(type, x, y, z) {
+    const pool = this.pools[type];
+    const g = pool.length ? pool.pop() : this.make(type);
+    g.visible = true;
+    g.position.set(x, y, z);
+    this.list.push({ type, g, x, y, z, t: Math.random() * 3, taken: false, k: 0 });
+  },
+
+  reset() {
+    for (const p of this.list) { p.g.visible = false; this.pools[p.type].push(p.g); }
+    this.list.length = 0;
+  },
+
+  update(dt, p, onCollect) {
+    const px = p.x, py = p.y + (p.rollT > 0 ? 0.45 : 0.9), pz = p.z;
+    const cam = Gfx.camera.position;
+    for (let i = this.list.length - 1; i >= 0; i--) {
+      const it = this.list[i];
+      it.t += dt;
+      const u = it.g.userData;
+      if (it.taken) {
+        it.k += dt;
+        const s = 1 + it.k * 6;
+        it.g.scale.setScalar(Math.max(0.01, (1 - it.k / 0.25)) * s * 0.5);
+        it.g.position.y += dt * 4;
+        if (it.k > 0.25) { this.free(i); continue; }
+      } else {
+        it.g.position.y = it.y + Math.sin(it.t * 3) * 0.12;
+        u.spin.rotation.y = it.t * 2.2;
+        u.spin.rotation.z = Math.sin(it.t * 1.7) * 0.15;
+        u.ring.rotation.x = it.t * 1.3;
+        u.ring.rotation.y = it.t * 0.9;
+        u.halo.quaternion.copy(Gfx.camera.quaternion);
+        u.halo.scale.setScalar(1 + Math.sin(it.t * 5) * 0.08);
+        const dx = Math.abs(it.x - px), dz = Math.abs(it.z - pz), dy = Math.abs(it.g.position.y - py);
+        if (dx < 1.05 && dz < 1.15 && dy < 1.45) {
+          it.taken = true; it.k = 0;
+          onCollect(it.type, it);
+        } else if (it.z > pz + 12 || it.z > cam.z + 30) { this.free(i); continue; }
+      }
+    }
+  },
+
+  free(i) {
+    const it = this.list[i];
+    it.g.visible = false;
+    it.g.scale.setScalar(1);
+    this.pools[it.type].push(it.g);
+    this.list[i] = this.list[this.list.length - 1];
+    this.list.pop();
+  }
+};
+
+// ==== MISSIONS ====
+// Missions: three active goals. Completing one raises the saved score multiplier (max x30) and pays a coin bonus.
+// Cumulative missions keep progress between runs; "in one run" missions restart every run.
+
+const MISSION_DEFS = [
+  { id: 'coins', icon: 'coin', ev: 'coin', tiers: [100, 250, 500, 800, 1200, 2000], text: n => `Collect ${fmtInt(n)} coins` },
+  { id: 'coinsRun', icon: 'coin', ev: 'coin', run: true, tiers: [40, 80, 150, 250, 400, 600], text: n => `Collect ${fmtInt(n)} coins in one run` },
+  { id: 'jumps', icon: 'jump', ev: 'jump', tiers: [15, 30, 60, 100, 150, 250], text: n => `Jump ${n} times` },
+  { id: 'rolls', icon: 'roll', ev: 'roll', tiers: [10, 25, 50, 80, 120, 200], text: n => `Roll ${n} times` },
+  { id: 'powerups', icon: 'powerup', ev: 'powerup', tiers: [3, 5, 8, 12, 20, 30], text: n => `Collect ${n} Powerups` },
+  { id: 'scoreRun', icon: 'star', ev: 'score', run: true, abs: true, tiers: [2000, 5000, 10000, 20000, 40000, 80000], text: n => `Score ${fmtInt(n)} in one run` },
+  { id: 'distRun', icon: 'run', ev: 'dist', run: true, abs: true, tiers: [400, 800, 1500, 2500, 4000, 6000], text: n => `Run ${fmtInt(n)} m in one run` },
+  { id: 'roofs', icon: 'train', ev: 'roof', tiers: [3, 6, 10, 15, 25, 40], text: n => `Run on ${n} train roofs` },
+  { id: 'lanes', icon: 'lane', ev: 'lane', tiers: [40, 80, 150, 250, 400, 600], text: n => `Change lanes ${n} times` },
+  { id: 'caps', icon: 'cap', ev: 'cap', tiers: [2, 5, 8, 12, 20, 30], text: n => `Collect ${n} cap tokens` },
+  { id: 'magnets', icon: 'magnet', ev: 'pu_magnet', tiers: [2, 4, 7, 10, 15, 20], text: n => `Use ${n} coin magnets` },
+  { id: 'hovers', icon: 'hover', ev: 'pu_hover', tiers: [1, 3, 5, 8, 12, 18], text: n => `Ride ${n} hoverboards` },
+  { id: 'jets', icon: 'jet', ev: 'pu_jet', tiers: [1, 2, 4, 6, 9, 14], text: n => `Fly ${n} jetpacks` },
+  { id: 'dodge', icon: 'train', ev: 'dodge', tiers: [2, 5, 10, 15, 25, 40], text: n => `Dodge ${n} oncoming trains` }
+];
+const MISSION_BY_ID = Object.fromEntries(MISSION_DEFS.map(d => [d.id, d]));
+
+const Missions = {
+  active: [],
+  featured: 0,
+  pulse: 0,
+  onComplete: null,
+
+  init() {
+    const d = Save.data;
+    this.active = [];
+    if (Array.isArray(d.missions)) {
+      for (const m of d.missions) {
+        if (m && MISSION_BY_ID[m.id] && !this.active.some(a => a.id === m.id)) {
+          this.active.push(this.make(m.id, Math.floor(m.progress) || 0));
+        }
+      }
+    }
+    while (this.active.length < 3) this.active.push(this.make(this.pickNew()));
+    const wire = (ev, fn) => Bus.on(ev, fn);
+    for (const ev of ['coin', 'jump', 'roll', 'powerup', 'roof', 'lane', 'cap', 'pu_magnet', 'pu_hover', 'pu_jet', 'dodge']) {
+      wire(ev, () => this.inc(ev, 1));
+    }
+    this.save();
+  },
+
+  make(id, progress) {
+    const def = MISSION_BY_ID[id];
+    const tier = Math.min(def.tiers.length - 1, Math.floor(Save.data.tiers[id] || 0));
+    const extra = Math.max(0, Math.floor(Save.data.tiers[id] || 0) - (def.tiers.length - 1));
+    const target = Math.round(def.tiers[tier] * (1 + extra * 0.5));
+    return { id, def, target, progress: def.run ? 0 : Math.min(progress || 0, target - 1), done: false };
+  },
+
+  pickNew() {
+    const taken = new Set(this.active.map(m => m.id));
+    const pool = MISSION_DEFS.filter(d => !taken.has(d.id));
+    return pool[Math.floor(Math.random() * pool.length)].id;
+  },
+
+  onRunStart() {
+    for (const m of this.active) if (m.def.run) m.progress = 0;
+  },
+
+  inc(ev, n) {
+    if (Game.state !== 'playing') return;
+    this.active.forEach((m, i) => {
+      if (m.done || m.def.ev !== ev || m.def.abs) return;
+      m.progress = Math.min(m.target, m.progress + n);
+      this.featured = i; this.pulse = 1;
+      if (m.progress >= m.target) this.complete(m);
+    });
+  },
+
+  // absolute "in one run" values (score, distance)
+  setAbs(ev, value) {
+    this.active.forEach((m, i) => {
+      if (m.done || m.def.ev !== ev) return;
+      const v = Math.min(m.target, Math.floor(value));
+      if (v > m.progress) {
+        if (Math.floor(v / m.target * 10) !== Math.floor(m.progress / m.target * 10)) { this.featured = i; this.pulse = 1; }
+        m.progress = v;
+      }
+      if (m.progress >= m.target) this.complete(m);
+    });
+  },
+
+  complete(m) {
+    m.done = true;
+    const d = Save.data;
+    d.tiers[m.id] = (d.tiers[m.id] || 0) + 1;
+    const before = d.mult;
+    d.mult = Math.min(30, d.mult + 1);
+    const reward = 50 + 25 * Math.min(10, d.tiers[m.id]);
+    if (this.onComplete) this.onComplete(m, d.mult, before, reward);
+    const idx = this.active.indexOf(m);
+    const next = this.make(this.pickNew());
+    this.active[idx] = next;
+    this.featured = idx;
+    this.save();
+  },
+
+  feature() { return this.active[this.featured] || this.active[0]; },
+
+  save() {
+    Save.data.missions = this.active.map(m => ({ id: m.id, progress: m.def.run ? 0 : m.progress }));
+    Save.save();
   }
 };
 
@@ -3335,14 +3928,14 @@ const Input = {
 };
 
 // ==== GAME ====
-// Game state machine, scoring, camera follow and the main loop.
+// Game state machine, scoring, power-up / mission / chaser wiring, camera follow and the main loop.
 
 const Game = {
   state: 'loading',
   time: 0,
   noRender: DEBUG && QUERY.has('norender'),
   manual: DEBUG && QUERY.has('manual'),
-  cam: { x: 0, y: 3.3, z: 6.4, lx: 0, ly: 1.3, lz: -8 },
+  cam: { x: 0, y: 3.3, z: 6.4, lx: 0, ly: 1.3, lz: -8, base: 0 },
   run: null,
   anim: { stumble: false, stumbleDir: 1 },
 
@@ -3353,7 +3946,10 @@ const Game = {
       () => World.init(),
       () => Obstacles.init(),
       () => Coins.init(),
+      () => Pickups.init(),
       () => Runner.init(),
+      () => Chaser.init(),
+      () => Missions.init(),
       () => Input.init()
     ];
     let i = 0;
@@ -3384,8 +3980,15 @@ const Game = {
     Input.handler = (a, src) => this.onAction(a, src);
     Player.events = {
       crash: o => this.onCrash(o),
-      stumble: (kind, o) => this.onStumble(kind, o)
+      stumble: (kind, o) => this.onStumble(kind, o),
+      jump: () => Bus.emit('jump'),
+      roll: () => Bus.emit('roll'),
+      lane: dir => Bus.emit('lane', dir),
+      roof: () => Bus.emit('roof'),
+      land: v => Bus.emit('land', v)
     };
+    Gen.onExtras = (layout, res, z0) => Powers.placeInChunk(layout, res, z0);
+    Missions.onComplete = (m, mult, before, reward) => this.onMission(m, mult, before, reward);
     window.addEventListener('resize', () => Gfx.resize());
     window.addEventListener('orientationchange', () => setTimeout(() => Gfx.resize(), 120));
     const box = document.getElementById('loading');
@@ -3393,25 +3996,31 @@ const Game = {
     this.hud = {
       score: document.getElementById('tScore'),
       coins: document.getElementById('tCoins'),
-      msg: document.getElementById('tMsg')
+      msg: document.getElementById('tMsg'),
+      info: document.getElementById('tInfo')
     };
     this.startRun();
     this.last = performance.now();
     requestAnimationFrame(t => this.frame(t));
   },
 
-  mult() { return Save.data.mult; },
+  mult() { return Save.data.mult * (Powers.has('x2') ? 2 : 1); },
 
   startRun() {
     Player.reset();
     World.reset();
     Obstacles.reset();
     Coins.reset();
+    Pickups.reset();
+    Powers.reset();
+    this.run = { score: 0, coins: 0, caps: 0, deadT: 0, cause: '', toasts: [] };
     Gen.reset();
     Gen.update(Player.z);
-    this.run = { score: 0, coins: 0, chaseT: 0, deadT: 0, cause: '' };
+    Chaser.reset(Player);
+    Missions.onRunStart();
     this.state = 'playing';
     this.setMsg('');
+    this.cam.base = 0;
     this.snapCamera();
   },
 
@@ -3426,17 +4035,49 @@ const Game = {
   onCoin() {
     this.run.coins++;
     this.run.score += 5 * this.mult();
+    Bus.emit('coin');
+  },
+
+  onPickup(type) {
+    const r = this.run;
+    if (type === 'cap') {
+      r.caps++;
+      Bus.emit('cap', r.caps);
+      if (r.caps === 5) {
+        r.coins += 250;
+        r.score += 1000 * this.mult();
+        this.toast('CAP HUNT COMPLETE! +250 coins');
+      } else this.toast(`Cap token ${r.caps}/5`);
+      return;
+    }
+    Powers.activate(type);
+    this.toast(PU[type].name + '!');
+  },
+
+  onMission(m, mult, before, reward) {
+    this.run.coins += reward;
+    this.toast(`Mission complete! Multiplier x${mult}`);
+    Bus.emit('mission', { m, mult, before, reward });
   },
 
   onStumble(kind, o) {
-    const r = this.run;
     this.anim.stumble = true;
     this.anim.stumbleDir = o && o.x > Player.x ? -1 : 1;
-    if (r.chaseT > 0) { this.endRun('caught'); return; }
-    r.chaseT = 7;
+    if (Chaser.isChasing()) { Chaser.catchPlayer(); this.endRun('caught'); return; }
+    Chaser.startChase();
   },
 
-  onCrash() {
+  onCrash(o) {
+    if (Powers.has('hover')) {
+      Powers.consume('hover');
+      // stay protected until the obstacle that was hit is fully passed
+      const rel = Player.speed + (o.moving ? o.v : 0);
+      const clear = o.type === OB.TRAIN ? (Player.z - o.zb) / Math.max(1, rel) + 0.35 : 0;
+      Player.invuln = Math.max(1.6, clear);
+      Bus.emit('hoverBreak');
+      this.toast('Hoverboard saved you!');
+      return;
+    }
     this.endRun('crash');
   },
 
@@ -3445,12 +4086,21 @@ const Game = {
     this.state = 'dead';
     this.run.cause = cause;
     this.run.deadT = 0;
+    if (cause !== 'caught') Chaser.arrive();
+    for (const t of PU_ORDER) if (Powers.has(t)) Powers.consume(t);
     const d = Save.data;
     const score = Math.floor(this.run.score);
+    this.run.newBest = score > d.best;
     d.runs++;
     d.coins += this.run.coins;
     if (score > d.best) d.best = score;
-    Save.save();
+    Missions.save();
+    Bus.emit('gameover', { cause, score });
+  },
+
+  toast(text) {
+    this.run.toasts.push({ text, t: 2.2 });
+    if (this.run.toasts.length > 3) this.run.toasts.shift();
   },
 
   setMsg(text) {
@@ -3480,37 +4130,61 @@ const Game = {
         Obstacles.update(h, Player.z);
         Player.step(h);
       }
+      Powers.update(dt);
       r.score += Player.speed * dt * this.mult();
-      if (r.chaseT > 0) r.chaseT = Math.max(0, r.chaseT - dt);
       Coins.update(dt, Player, () => this.onCoin());
+      Pickups.update(dt, Player, type => this.onPickup(type));
+      Missions.setAbs('score', r.score);
+      Missions.setAbs('dist', Player.distance);
       Gen.update(Player.z);
       World.update(Player.z);
     } else if (this.state === 'dead') {
       r.deadT += dt;
       Coins.update(dt, Player, () => {});
-      if (r.deadT > 1.1) {
+      if (r.deadT > 1.6) {
         this.state = 'gameover';
-        this.setMsg((r.cause === 'caught' ? 'CAUGHT!' : 'CRASHED!') + '  Tap or press Enter to run again');
+        this.setMsg((r.cause === 'caught' ? 'CAUGHT BY BOLT-9!' : 'CRASHED!') + '  Tap or press Enter to run again');
       }
     }
-    if (this.hud && r) {
-      this.hud.score.textContent = pad6(r.score);
-      this.hud.coins.textContent = r.coins;
-    }
+    for (const t of r.toasts) t.t -= dt;
+    while (r.toasts.length && r.toasts[0].t <= 0) r.toasts.shift();
+    this.updateHudMini();
     const a = this.anim;
-    Runner.update(dt, Player, { mode: this.state === 'playing' ? 'run' : 'dead', stumble: a.stumble, stumbleDir: a.stumbleDir, invuln: Player.invuln });
+    Runner.update(dt, Player, {
+      mode: this.state === 'playing' ? 'run' : 'dead', stumble: a.stumble, stumbleDir: a.stumbleDir, invuln: Player.invuln,
+      hover: Powers.has('hover'), jet: Powers.has('jet'), magnet: Powers.has('magnet'), sneakers: Powers.has('sneakers')
+    });
     a.stumble = false;
+    Chaser.update(dt, Player);
     this.updateCamera(dt);
     Gfx.follow(Player.x, Player.z);
   },
 
-  camTarget(out) {
+  updateHudMini() {
+    const h = this.hud, r = this.run;
+    if (!h || !r) return;
+    h.score.textContent = pad6(r.score);
+    h.coins.textContent = r.coins;
+    if (h.info) {
+      const lines = [`x${this.mult()}  caps ${r.caps}/5`];
+      for (const t of PU_ORDER) if (Powers.has(t)) lines.push(`${PU[t].name} ${Powers.remaining(t).toFixed(1)}s`);
+      for (const m of Missions.active) lines.push(`${m.def.text(m.target)} ${m.progress}/${m.target}`);
+      for (const t of r.toasts) lines.push('» ' + t.text);
+      h.info.textContent = lines.join('\n');
+    }
+  },
+
+  camTarget(out, dt) {
     const p = Player;
+    const baseTarget = p.jet ? CFG.JET_ALT : p.groundY;
+    const c = this.cam;
+    if (dt !== undefined) c.base = damp(c.base, baseTarget, p.jet ? 2.2 : 3.2, dt);
+    const base = c.base;
     out.x = p.x * 0.62;
-    out.y = Gfx.camUp + p.y * 0.55;
+    out.y = Gfx.camUp + base + (p.y - base) * 0.45;
     out.z = p.z + Gfx.camBack;
     out.lx = p.x * 0.8;
-    out.ly = 1.0 + p.y * 0.62;
+    out.ly = 1.0 + base + (p.y - base) * 0.6;
     out.lz = p.z - 10;
     return out;
   },
@@ -3521,11 +4195,12 @@ const Game = {
   },
 
   updateCamera(dt) {
-    const t = this.camTarget({});
+    const t = this.camTarget({}, dt);
     const c = this.cam;
+    const dead = this.state !== 'playing';
     c.x = damp(c.x, t.x, 9, dt);
     c.y = damp(c.y, t.y, 7, dt);
-    c.z = t.z;
+    c.z = dead ? damp(c.z, t.z + 1.2, 2, dt) : t.z;
     c.lx = damp(c.lx, t.lx, 10, dt);
     c.ly = damp(c.ly, t.ly, 7, dt);
     c.lz = t.lz;
@@ -3539,7 +4214,7 @@ const Game = {
   }
 };
 
-if (DEBUG) window.__DD = { Game, Player, World, Gfx, Runner, Save, CFG, RNG, Gen, Obstacles, Coins, OB, T };
+if (DEBUG) window.__DD = { Game, Player, World, Gfx, Runner, Save, CFG, RNG, Gen, Obstacles, Coins, OB, T, Powers, Pickups, Missions, Chaser, Bus, PU };
 Game.boot();
 
 })();
