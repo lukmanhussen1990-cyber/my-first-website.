@@ -233,3 +233,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   walls: cardboard boxes (sometimes stacked), an office chair (sometimes toppled), the yellow wet-floor sign, or a low
   filing cabinet. Deterministic per cell (cached), lit by the sampled fixture light, with collision for player and
   creature; placement keeps the centre lane free so pathfinding is unaffected (connectivity + soak re-verified).
+- **[08:35 UTC] Extra — Title drift, emergency lamps.** The title-screen camera now drifts slowly through the maze and
+  turns towards open space at walls. In level 3 the few working fixtures are small square red emergency lamps while
+  the dead ones remain full-size dark troffers.
