@@ -159,3 +159,12 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   creature loses its close-range "sense" (it must actually see you) and its sight range drops 25%, all audio is
   muffled through a low-pass filter, and a thin blue bar shows remaining breath. Releasing makes an audible exhale
   (heard within 4.5 m); running out makes you gasp loudly (9 m). Breath refills in ~4 s. Verified in a scripted test.
+- **[07:48 UTC] Extra — Bug-fix pass 2 (independent code review).** A reviewer agent read the whole file; fixed all
+  11 findings: touchscreen laptops now switch back to mouse mode on a real mouse click (previously one touch killed
+  mouse look); menu background no longer strobes after a death/outage (monster & outage uniforms, phantom, camera kick
+  reset); water lapping and the danger drone stop outside gameplay; the jump-scare aberration no longer sticks to the
+  game-over screen; the creature can't catch you through a wall; distant sounds are safe without Web Audio; dying
+  clears the Continue slot immediately; the delayed "find the EXIT" message can't leak into the next run; GLSL
+  smoothstep with reversed edges replaced; water light-texture lookups were half a cell off and lagged a frame when
+  crossing cells; whispers no longer cut off; C can't toggle crouch while paused; double-clicking New Game can't start
+  two runs. All regression tests pass.

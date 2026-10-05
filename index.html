@@ -293,7 +293,7 @@ void main() {
   col = (col - 0.5) * 1.07 + 0.5;
   col *= vec3(1.0, 0.985, 0.94);
   // dark screen edges
-  float vig = smoothstep(0.88, 0.18, length(c * vec2(1.0, 0.92)) * (1.0 + uVig));
+  float vig = 1.0 - smoothstep(0.18, 0.88, length(c * vec2(1.0, 0.92)) * (1.0 + uVig));
   col *= mix(0.12, 1.0, vig);
   col *= 1.0 - uDip;
   col = mix(col, vec3(0.45, 0.0, 0.0) * (0.5 + l), uRed);
@@ -1634,7 +1634,7 @@ const Sound = (() => {
         g.gain.setValueAtTime(0.05 + Math.random() * 0.25, t + tt);
       }
       g.gain.setValueAtTime(0.0001, t + dur);
-      s.start(t, Math.random() * 2, dur + 0.1);
+      s.start(t, Math.random() * Math.max(0, 2.8 - dur), dur + 0.1);
     },
     slam(px, pz) {
       const [x, z] = around(px, pz, 14 + Math.random() * 12), p = panner(x, 1.2, z, 5, 1, 1.0);
@@ -1675,6 +1675,7 @@ const Sound = (() => {
       }
     },
   };
+  for (const k of Object.keys(distant)) { const fn = distant[k]; distant[k] = (...a) => { if (ctx) fn(...a); }; }
   function randomDistant(px, pz) {
     if (!ctx) return;
     const keys = ['thud', 'creak', 'steps', 'whisper', 'slam', 'knock', 'groan', 'crackle', 'thud', 'creak', 'crackle'];
@@ -2146,7 +2147,7 @@ function updateMonster(dt) {
   if (!moving) m.speed *= Math.max(0, 1 - dt * 5);
 
   // ---------------- catch ----------------
-  if (dist < 0.9 && game.state === 'playing') { startJumpScare(); return; }
+  if (dist < 0.9 && game.state === 'playing' && world.segmentClear(m.pos.x, m.pos.z, player.pos.x, player.pos.z)) { startJumpScare(); return; }
 
   // ---------------- footsteps & breath ----------------
   const prevStep = m.stepPhase;
@@ -2361,6 +2362,7 @@ function ensureScareFace() { if (!scareFaceCanvas) { scareFaceCanvas = makeScare
 const scare = { t: 0, active: false, yaw0: 0, pitch0: 0 };
 function startJumpScare() {
   game.state = 'caught';
+  save.run = null; writeSave();
   fx.red = 0.9; cameraKick(1.5);
   ensureScareFace();
   scare.active = true; scare.t = 0;
@@ -2826,7 +2828,7 @@ function spawnExit() {
   const spec = { id: 'exit', type: 'exit', x: spot.x, z: spot.z, rot: spot.rot, wall: spot.wall, y: 0, taken: false };
   goal.specs.push(spec);
   respawnWorldItem(spec);
-  setTimeout(() => showMessage('All pages found. Somewhere, a door hums... Find the EXIT.', 6), 2500);
+  goal.msgTimer = setTimeout(() => { if (game.state === 'playing') showMessage('All pages found. Somewhere, a door hums... Find the EXIT.', 6); }, 2500);
 }
 function fadeTo(color, opacity, seconds = 1.2) {
   const f = $('fade'); f.style.transition = `opacity ${seconds}s ease`; f.style.background = color; f.style.opacity = String(opacity);
@@ -2924,6 +2926,7 @@ function cameraKick(amount) { fx.kick = Math.min(1.5, fx.kick + amount); }
 function updateEffects(dt) {
   const d = game.state === 'playing' ? game.danger : game.state === 'caught' ? 1 : 0;
   fx.pulse = Math.max(0, fx.pulse - dt * 3);
+  if (game.state !== 'playing') fx.kick = Math.max(0, fx.kick - dt * 2.5);
   // whole-view light stutter when the monster is near
   fx.dipT -= dt;
   if (fx.dipT <= 0) {
@@ -2997,14 +3000,15 @@ const ltCache = { ox: NaN, oz: NaN, seed: new Float32Array(LT_N * LT_N), frame: 
 function updateLightTexture() {
   const pcx = Math.floor(player.pos.x / CELL), pcz = Math.floor(player.pos.z / CELL);
   const ox = pcx - LT_N / 2, oz = pcz - LT_N / 2;
+  let moved = false;
   if (ox !== ltCache.ox || oz !== ltCache.oz) {
-    ltCache.ox = ox; ltCache.oz = oz;
+    ltCache.ox = ox; ltCache.oz = oz; moved = true;
     for (let j = 0; j < LT_N; j++) for (let i = 0; i < LT_N; i++) {
       const t = world.lightType(ox + i, oz + j);
       ltCache.seed[i + j * LT_N] = t < 0 ? -1 : world.lightSeed(ox + i, oz + j);
     }
   }
-  if ((ltCache.frame++ & 1) === 0) {
+  if ((ltCache.frame++ & 1) === 0 || moved) {
     for (let j = 0; j < LT_N; j++) for (let i = 0; i < LT_N; i++) {
       const k = i + j * LT_N, s = ltCache.seed[k];
       const lvl = s < 0 ? 0 : lightLevelCPU(s, (ox + i + 0.5) * CELL, (oz + j + 0.5) * CELL);
@@ -3055,7 +3059,7 @@ void main() {
   float fres = 0.05 + 0.95 * pow(1.0 - max(dot(n, V), 0.0), 4.0);
   // local light from nearby fixtures (bilinear over the cell grid)
   vec2 lc = (p / ${CELL.toFixed(2)} - uLTOrigin) / ${LT_N.toFixed(1)};
-  float L = texture2D(uLT, lc - 0.5 / ${LT_N.toFixed(1)}).r;
+  float L = texture2D(uLT, lc).r;
   // fake reflection: trace the reflected ray to the ceiling and look up the fixture there
   vec3 R = reflect(-V, n);
   vec3 refl = vec3(0.0);
@@ -3066,7 +3070,7 @@ void main() {
     vec2 loc = hit - (cell + 0.5) * ${CELL.toFixed(2)};
     vec4 lt = texture2D(uLT, (cell - uLTOrigin + 0.5) / ${LT_N.toFixed(1)});
     float panel = (1.0 - smoothstep(0.26, 0.34, abs(loc.x))) * (1.0 - smoothstep(0.54, 0.64, abs(loc.y)));
-    float ceilL = texture2D(uLT, (hit / ${CELL.toFixed(2)} - uLTOrigin) / ${LT_N.toFixed(1)} - 0.5 / ${LT_N.toFixed(1)}).r;
+    float ceilL = texture2D(uLT, (hit / ${CELL.toFixed(2)} - uLTOrigin) / ${LT_N.toFixed(1)}).r;
     refl = uLightColor * (panel * lt.g * (0.08 + lt.r * 2.4) + ceilL * 0.16);
     refl *= exp(-t * 0.07);
   }
@@ -3458,7 +3462,7 @@ const input = { lookX: 0, lookY: 0, sensitivity: 1.0, locked: false, touchRun: f
 
 window.addEventListener('keydown', (e) => {
   keys[e.code] = true;
-  if (e.code === 'KeyC' && !e.repeat) player.crouchToggle = !player.crouchToggle;
+  if (e.code === 'KeyC' && !e.repeat && game.state === 'playing') player.crouchToggle = !player.crouchToggle;
   if (e.code === 'KeyF' && !e.repeat) toggleFlashlight();
   if ((e.code === 'KeyE' || e.code === 'Enter') && goal.reading > 0) hideNote();
   if (e.code === 'Escape' || e.code === 'KeyP') {
@@ -3650,8 +3654,14 @@ function tryFullscreen() {
   btn('tPause', () => pauseGame());
   btn('tHold', (b) => { input.touchHold = true; b.classList.add('on'); }, (b) => { input.touchHold = false; b.classList.remove('on'); });
   $('noteOverlay').addEventListener('click', () => hideNote());
+  // a real mouse switches back out of touch mode (touchscreen laptops)
+  window.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || !isTouch) return;
+    isTouch = false; document.body.classList.remove('touch'); $('touchUI').classList.add('hidden');
+    if (game.state === 'playing') requestLock();
+  });
   // any real touch switches the game into touch mode (e.g. tablets with keyboards)
-  window.addEventListener('touchstart', () => { if (!isTouch) { isTouch = true; if (game.state === 'playing') $('touchUI').classList.remove('hidden'); } }, { passive: true });
+  window.addEventListener('touchstart', () => { if (!isTouch) { isTouch = true; document.body.classList.add('touch'); if (game.state === 'playing') $('touchUI').classList.remove('hidden'); } }, { passive: true });
 })();
 function syncTouchButtons() {
   $('tCrouch').classList.toggle('on', player.crouchToggle);
@@ -3726,6 +3736,7 @@ function quitToMenu() {
   showScreen('startScreen');
 }
 function silenceMonster() {
+  stopWaterAmbience(); Sound.setDrone(0.018);
   const b = monster.breath, ctx = Sound.ctx;
   if (b && ctx) { b.g.gain.setTargetAtTime(0, ctx.currentTime, 0.05); b.lfoG.gain.setTargetAtTime(0, ctx.currentTime, 0.05); b.gg.gain.setTargetAtTime(0, ctx.currentTime, 0.05); }
 }
@@ -3773,6 +3784,8 @@ const attract = { x: 0, z: 0, yaw: 0, t: 0 };
 function setupAttract() {
   attract.x = player.pos.x; attract.z = player.pos.z; attract.yaw = player.yaw; attract.t = 0;
   monster.model && (monster.model.root.visible = false);
+  U.uMonster.value.set(1e5, 0, 1e5, 0); U.uOutage.value.set(0, 0, 0, 0); hidePhantom();
+  fx.kick = 0; fx.red = 0; fx.dip = 0;
 }
 function updateAttract(dt) {
   attract.t += dt;
@@ -3794,6 +3807,8 @@ function spawnPlayer(x, z) {
 }
 function newGame(level = 1) {
   game.level = level; game.time = 0; game.notes = 0; game.danger = 0;
+  fx.kick = 0; fx.red = 0; U.uMonster.value.set(1e5, 0, 1e5, 0);
+  clearTimeout(goal.msgTimer);
   player.stamina = 1; player.exhausted = false; player.breath = 1; player.holding = false; Sound.setMuffle(false);
   flash.on = false; flash.battery = 1; flash.intensity = 0;
   collectedItems.clear(); goal.specs = [];
@@ -3809,6 +3824,7 @@ function newGame(level = 1) {
   resetScares();
 }
 function startGame(level = 1) {
+  if (game.state === 'loading') return;
   showScreen(null);
   $('touchUI').classList.add('hidden'); $('hud').classList.add('hidden');
   fadeTo('#000', 1, 0);
@@ -3898,6 +3914,7 @@ function continueGame() {
   if (!run) return;
   showScreen(null);
   game.level = run.level; game.time = run.time; game.notes = run.notes; game.danger = 0;
+  clearTimeout(goal.msgTimer); fx.kick = 0; fx.red = 0;
   world = new World(run.seed, run.level);
   applyLevelLook(run.level);
   clearChunks(); clearBeacons(); hideNote();
