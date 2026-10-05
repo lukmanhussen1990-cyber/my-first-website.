@@ -193,3 +193,7 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   stops and silently *watches*, head tracking you. Stare back for about a second and it decides once: ~65% of the
   time it slowly slips away out of sight (with a short grace period), ~35% it shrieks and charges; walking within 8 m
   always triggers the charge. Scares pause while it stalks. Verified with scripted trials (4 retreats / 2 charges of 6).
+- **[08:14 UTC] Extra — Water life (level 2).** The creature leaves its own wake rings when it wades (so you can see it
+  coming), and drops visibly fall from the ceiling: each one plinks where it lands and spreads a ripple ring
+  (4-slot ring buffer in the water shader). Touch layout lifts the centre message above the buttons; the loading card
+  names the level; the creature's chest breathes when it stands still.
