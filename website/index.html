@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Imran's page</title>
+
+<script>
+/* =====================================================================
+   ✏️  CONFIG — EDIT EVERYTHING HERE
+   Put all your files in the SAME folder as this index.html
+   (the Android app reads the app name from `name` below too).
+   ===================================================================== */
+const CONFIG = {
+  name: "Imran",                        // your name (card, page title, app name)
+
+  // ---------- your files ----------
+  avatarImage: "avatar.jpg",            // profile picture
+  avatarVideo: "avatar.mp4",            // profile video (plays muted, takes turns with the picture)
+  background:  "background.mp4",        // background video (muted, loops, fills the screen)
+
+  // ---------- music (⏮ / ⏭ switch between these) ----------
+  // cover: "" = use avatarImage as the cover art
+  songs: [
+    { title: "Jingle Bells",            artist: "",            file: "jingle-bells.mp3",            cover: "" },
+    { title: "Forever Young",           artist: "Alphaville",  file: "forever-young.mp3",           cover: "" },
+    { title: "Never Gonna Give You Up", artist: "Rick Astley", file: "never-gonna-give-you-up.mp3", cover: "" },
+    { title: "MONTAGEM PERIGOSA (Super Slowed)", artist: "KVRXD", file: "montagem-perigosa.mp3",  cover: "" },
+  ],
+  loopSameSong: false,                  // true = repeat the same song, false = play the next one (and loop the list)
+  randomFirstSong: false,               // true = start with a random song each visit
+
+  // ---------- fonts (any name from fonts.google.com, e.g. "Cherry Bomb One", "Sniglet", "Comfortaa") ----------
+  nameFont: "Pacifico",                 // your name
+  textFont: "Fredoka",                  // all other text
+
+  // ---------- text ----------
+  enterText: "Click here to see me",
+  status: { text: "Do Not Disturb", color: "#ed4245" },   // online #3ba55d · idle #faa81a · offline #747f8d
+  bio: ["Hello, World"],                // more lines = types them one after another
+
+  // ---------- social links ("" = hide that icon) ----------
+  links: {
+    discord:  "https://discord.com/users/YOUR_DISCORD_ID",
+    github:   "https://github.com/lukmanhussen1990-cyber",
+    telegram: "https://t.me/YOUR_USERNAME",
+    roblox:   "https://www.roblox.com/users/YOUR_ROBLOX_ID/profile",
+    youtube:  "https://www.youtube.com/@YOUR_CHANNEL",
+    tiktok:   "https://www.tiktok.com/@YOUR_USERNAME",
+  },
+
+  // ---------- views counter ----------
+  startViews: 2284,                     // first visit shows this number, then +1 every visit
+
+  // ---------- profile picture timing ----------
+  avatarVideoFirst: true,               // true = video plays first, false = picture first
+  avatarImageSeconds: 5,                // how long the picture stays before the video plays again
+
+  // ---------- starting values of the sliders ----------
+  volume: 50,                           // 0 - 100
+  brightness: 30,                       // 0 - 100 (lower = darker background)
+};
+
+// load the two Google Fonts named above
+(function () {
+  function load(family, weights) {
+    var link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(family.trim()).replace(/%20/g, "+") +
+                (weights ? ":wght@" + weights : "") + "&display=swap";
+    if (weights) link.onerror = function () { link.remove(); load(family); };   // font without those weights
+    document.head.appendChild(link);
+  }
+  load(CONFIG.nameFont);
+  load(CONFIG.textFont, "400;500;600");
+  document.documentElement.style.setProperty("--name-font", JSON.stringify(CONFIG.nameFont));
+  document.documentElement.style.setProperty("--text-font", JSON.stringify(CONFIG.textFont));
+})();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+<style>
+  :root {
+    --dim: .55;                               /* background darkness (brightness slider) */
+    --glass: rgba(0, 0, 0, .6);
+    --edge: rgba(255, 255, 255, .14);
+    --soft: rgba(255, 255, 255, .7);
+    --radius: 16px;
+    --w: min(92vw, 600px);
+    color-scheme: dark;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { min-height: 100%; }
+  body {
+    background: radial-gradient(circle at 50% 35%, #1b1b1b, #000 70%) fixed #000;
+    color: #fff;
+    font-family: var(--text-font), system-ui, sans-serif; font-weight: 500;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+  body:not(.entered) { overflow: hidden; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ---------- 1. enter screen ---------- */
+  #enter {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+    background: #000; cursor: pointer; outline: none;
+    transition: opacity .9s ease, visibility .9s;
+  }
+  #enter.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+  #enterText {
+    font-size: clamp(15px, 4.6vw, 24px); letter-spacing: .25em; line-height: 1.7; text-align: center;
+    text-shadow: 0 0 12px rgba(255, 255, 255, .45);
+    user-select: none; -webkit-user-select: none;
+  }
+  #enterText::after { content: "|"; margin-left: .05em; animation: blink 1s steps(1) infinite; }
+
+  /* ---------- 2. background ---------- */
+  #bg {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
+    object-fit: cover; pointer-events: none;
+  }
+  #overlay {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, .45) 100%), rgba(0, 0, 0, var(--dim));
+    transition: background-color .2s;
+  }
+  #scan {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 4; pointer-events: none; opacity: 0;
+    background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .06) 0 1px, transparent 1px 3px);
+    transition: opacity .45s;
+  }
+  #scan.on { opacity: 1; transition-duration: .08s; }
+
+  /* ---------- layout ---------- */
+  #stage {
+    position: relative; z-index: 2;
+    min-height: 100vh; min-height: 100svh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; padding: 28px 0;
+    transition: transform .35s ease-out;
+  }
+  #stage > * { opacity: 0; transform: translateY(-34px); }
+  body.entered #stage > * { animation: rise 1s cubic-bezier(.2, .8, .2, 1) forwards; }
+  body.entered #stage > :nth-child(2) { animation-delay: .15s; }
+  body.entered #stage > :nth-child(3) { animation-delay: .3s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  .glass {
+    position: relative;
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, .45);
+  }
+  /* glowing line that travels around the boxes */
+  .trace { position: absolute; overflow: visible; pointer-events: none; filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 7px rgba(255, 255, 255, .55)); }
+  .trace rect { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+
+  /* ---------- 3. profile card ---------- */
+  .card { width: var(--w); padding: clamp(16px, 4.4vw, 26px); }
+  .top { display: flex; align-items: center; gap: clamp(14px, 4.4vw, 24px); }
+  .avatar {
+    position: relative; flex: none; cursor: pointer; border-radius: 50%;
+    width: clamp(80px, 23vw, 132px); height: clamp(80px, 23vw, 132px);
+  }
+  .avatar .clip {
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    border-radius: 50%; overflow: hidden; background: #111;
+    -webkit-mask-image: -webkit-radial-gradient(white, black);   /* keeps the video round on Safari */
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .12), 0 0 24px rgba(255, 255, 255, .14);
+  }
+  .avatar img, .avatar video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .avatar video { opacity: 0; transition: opacity .9s ease; }
+  .avatar video.show { opacity: 1; }
+
+  .info { flex: 1; min-width: 0; }
+  .name {
+    font-family: var(--name-font), cursive; font-weight: 400;
+    font-size: clamp(31px, 9.2vw, 52px); line-height: 1.3; letter-spacing: .02em;
+    min-height: 1.3em; overflow-wrap: anywhere;
+    text-shadow: 0 0 10px rgba(255, 255, 255, .7), 0 0 26px rgba(255, 255, 255, .25);
+  }
+  .caret {
+    display: inline-block; width: 2px; height: .78em; margin-left: 5px; vertical-align: -.04em;
+    background: #fff; box-shadow: 0 0 8px #fff; animation: blink 1s steps(1) infinite;
+  }
+  .status {
+    display: flex; align-items: center; gap: .65em; margin-top: 6px;
+    font-size: clamp(12.5px, 3.6vw, 16px); letter-spacing: .16em; color: var(--soft); white-space: nowrap;
+  }
+  .dot {
+    flex: none; width: .78em; height: .78em; border-radius: 50%;
+    background: currentColor; box-shadow: 0 0 8px currentColor; animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { box-shadow: 0 0 2px currentColor; } }
+  .bio {
+    margin-top: 8px; min-height: 1.5em; line-height: 1.5;
+    font-size: clamp(12.5px, 3.6vw, 17px); letter-spacing: .14em; color: rgba(255, 255, 255, .9);
+    overflow-wrap: anywhere;
+  }
+  .bio .c { animation: blink 1s steps(1) infinite; }
+  .glitch { animation: jitter .2s ease-in-out; }
+  @keyframes jitter {
+    20% { transform: translate(-2px, 2px); } 40% { transform: translate(-2px, -2px); }
+    60% { transform: translate(2px, 2px); }  80% { transform: translate(2px, -2px); }
+  }
+
+  .divider { height: 1px; background: rgba(255, 255, 255, .2); margin: clamp(14px, 4vw, 22px) 0; }
+
+  .socials { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(8px, 3.2vw, 20px); }
+  .socials a {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    width: 1.22em; height: 1.22em; font-size: clamp(24px, 7.4vw, 36px);
+    color: var(--c, #fff); text-decoration: none;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, .5));
+    transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), filter .25s;
+  }
+  .socials a i, .socials a svg { display: block; position: relative; z-index: 1; }
+  .socials a:active, .socials a:focus-visible { transform: scale(1.22) translateY(-2px); filter: drop-shadow(0 0 9px var(--glow, #fff)) drop-shadow(0 0 2px var(--glow, #fff)); outline: none; }
+  @media (hover: hover) {
+    .socials a:hover { transform: scale(1.22) translateY(-2px); filter: drop-shadow(0 0 9px var(--glow, #fff)) drop-shadow(0 0 2px var(--glow, #fff)); }
+  }
+  /* white parts behind the brand glyph cut-outs */
+  .socials a::before { content: ""; position: absolute; z-index: 0; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; }
+  .s-discord  { --c: #5865f2; --glow: #5865f2; }
+  .s-github   { --c: #0d1117; --glow: #fff; }
+  .s-github::before   { width: .74em; height: .74em; border-radius: 50%; }
+  .s-telegram { --c: #29a9eb; --glow: #29a9eb; }
+  .s-telegram::before { width: .62em; height: .62em; border-radius: 50%; }
+  .s-roblox   { --c: #fff; --glow: #fff; }
+  .s-youtube  { --c: #ff0033; --glow: #ff0033; }
+  .s-youtube::before  { width: .42em; height: .42em; }
+  .s-tiktok   { --c: #fff; --glow: #fe2c55; }
+  .s-tiktok i { text-shadow: -.06em -.045em 0 #25f4ee, .06em .045em 0 #fe2c55; }
+  .s-discord::before, .s-roblox::before, .s-tiktok::before { display: none; }
+
+  .views {
+    position: relative; display: flex; align-items: center; gap: .7em; width: max-content;
+    margin: clamp(14px, 4vw, 20px) auto 0; padding: 7px 18px; border-radius: 999px;
+    background: rgba(255, 255, 255, .09); border: 1px solid rgba(255, 255, 255, .08);
+    font-size: clamp(13px, 3.7vw, 15px); letter-spacing: .22em;
+  }
+  .views .tip {
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translate(-50%, 4px);
+    padding: 4px 10px; border-radius: 6px; background: rgba(0, 0, 0, .85);
+    font-size: 11px; letter-spacing: .1em; white-space: nowrap; opacity: 0; pointer-events: none; transition: .2s;
+  }
+  .views:hover .tip { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---------- 4. music player ---------- */
+  .player {
+    width: var(--w); display: flex; align-items: center;
+    gap: clamp(7px, 2.4vw, 14px); padding: clamp(9px, 2.6vw, 12px) clamp(11px, 3.6vw, 20px);
+  }
+  #cover {
+    flex: none; width: clamp(38px, 10.5vw, 46px); height: clamp(38px, 10.5vw, 46px);
+    border-radius: 8px; object-fit: cover; background: #111; box-shadow: 0 2px 10px rgba(0, 0, 0, .5);
+  }
+  .time { flex: none; min-width: 3.2em; text-align: center; font-size: clamp(10.5px, 3vw, 12.5px); letter-spacing: .1em; color: rgba(255, 255, 255, .65); font-variant-numeric: tabular-nums; }
+  #seek { flex: 1; min-width: 30px; }
+  .controls { flex: none; display: flex; align-items: center; gap: clamp(0px, 1vw, 8px); }
+  .controls button { width: 32px; height: 36px; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: transform .15s, opacity .15s; }
+  .controls .play { width: 38px; font-size: 21px; }
+  .controls button:active { transform: scale(.85); }
+  @media (hover: hover) { .controls button:hover { opacity: .65; } }
+  .now {
+    position: fixed; z-index: 5; left: 50%; top: 18px; transform: translate(-50%, -12px);
+    max-width: 90vw; padding: 7px 16px; border-radius: 999px;
+    background: rgba(0, 0, 0, .7); border: 1px solid var(--edge);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    font-size: 12px; letter-spacing: .14em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    opacity: 0; pointer-events: none; transition: opacity .4s, transform .4s;
+  }
+  .now.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---------- 5. settings bar ---------- */
+  .settings { display: flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 999px; }
+  .settings button, .settings .ico { flex: none; width: 28px; height: 30px; font-size: 15px; display: flex; align-items: center; justify-content: center; }
+  .settings input { width: clamp(64px, 18vw, 104px); }
+  .settings .ico { margin-left: 6px; }
+
+  /* ---------- sliders ---------- */
+  input[type="range"] {
+    --p: 0%;
+    -webkit-appearance: none; appearance: none; height: 22px; background: transparent; cursor: pointer; outline: none;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px; border-radius: 4px;
+    background: linear-gradient(90deg, #fff var(--p), rgba(255, 255, 255, .22) var(--p));
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 13px; height: 13px; margin-top: -4.5px; border: 0; border-radius: 50%;
+    background: #fff; box-shadow: 0 0 8px rgba(255, 255, 255, .85);
+  }
+  input[type="range"]::-moz-range-track { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .22); }
+  input[type="range"]::-moz-range-progress { height: 4px; border-radius: 4px; background: #fff; }
+  input[type="range"]::-moz-range-thumb { width: 13px; height: 13px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 8px rgba(255, 255, 255, .85); }
+  input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px rgba(255, 255, 255, .35); }
+
+  @media (prefers-reduced-motion: reduce) {
+    #stage, .socials a { transition: none; }
+    body.entered #stage > * { animation-duration: .01s; animation-delay: 0s; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- 1. ENTER SCREEN (tap needed so the browser allows sound) -->
+  <div id="enter" role="button" tabindex="0" aria-label="Enter the page">
+    <p id="enterText"></p>
+  </div>
+
+  <!-- 2. BACKGROUND -->
+  <video id="bg" muted loop playsinline preload="auto" disablepictureinpicture disableremoteplayback
+         poster="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></video>
+  <div id="overlay"></div>
+  <div id="scan"></div>
+
+  <main id="stage">
+    <!-- 3. PROFILE CARD -->
+    <section class="glass card" id="card">
+      <div class="top">
+        <div class="avatar" id="avatar" title="tap me">
+          <div class="clip">
+            <img id="avImg" alt="profile picture">
+            <video id="avVid" muted playsinline preload="auto" disablepictureinpicture disableremoteplayback
+                   poster="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></video>
+          </div>
+        </div>
+        <div class="info">
+          <h1 class="name"><span id="nameText"></span><span class="caret"></span></h1>
+          <div class="status"><span class="dot" id="dot"></span><span id="statusText"></span></div>
+          <p class="bio" id="bio"><span id="bioText"></span><span class="c">|</span></p>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <nav class="socials" id="socials" aria-label="Social links"></nav>
+      <div class="views"><i class="fa-solid fa-eye"></i><span id="views">0</span><span class="tip">Profile Views</span></div>
+    </section>
+
+    <!-- 4. MUSIC PLAYER -->
+    <section class="glass player" id="player">
+      <img id="cover" alt="cover art">
+      <span class="time" id="cur">0:00</span>
+      <input type="range" id="seek" min="0" max="1000" step="1" value="0" aria-label="Song position">
+      <span class="time" id="dur">0:00</span>
+      <div class="controls">
+        <button id="prev" aria-label="Previous song"><i class="fa-solid fa-backward-step"></i></button>
+        <button id="play" class="play" aria-label="Play"><i class="fa-solid fa-play"></i></button>
+        <button id="next" aria-label="Next song"><i class="fa-solid fa-forward-step"></i></button>
+      </div>
+    </section>
+
+    <!-- 5. SETTINGS BAR -->
+    <section class="glass settings" id="settings">
+      <button id="mute" aria-label="Mute / unmute"><i class="fa-solid fa-volume-high"></i></button>
+      <input type="range" id="vol" min="0" max="100" aria-label="Volume">
+      <span class="ico"><i class="fa-solid fa-eye"></i></span>
+      <input type="range" id="bright" min="0" max="100" aria-label="Background brightness">
+    </section>
+  </main>
+
+  <div class="now" id="now" role="status" aria-live="polite"></div>
+  <audio id="music" preload="auto"></audio>
+
+<script>
+(function () {
+  "use strict";
+  var C = CONFIG;
+  var $ = function (id) { return document.getElementById(id); };
+  var store = {   // localStorage can be blocked (private mode etc.), so never let it crash the page
+    get: function (k, d) { try { var v = localStorage.getItem("bio:" + k); return v === null ? d : v; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem("bio:" + k, String(v)); } catch (e) {} }
+  };
+  var clamp = function (v, a, b) { v = parseInt(v, 10); return isNaN(v) ? a : Math.min(b, Math.max(a, v)); };
+  var fmt = function (s) { if (!isFinite(s) || s < 0) s = 0; s = Math.floor(s); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); };
+  var swallow = function (p) { if (p && p.catch) p.catch(function () {}); };
+  var glitch = function (el) { el.classList.remove("glitch"); void el.offsetWidth; el.classList.add("glitch"); setTimeout(function () { el.classList.remove("glitch"); }, 220); };
+  var entered = false;
+
+  /* ---------- page title + favicon ---------- */
+  document.title = C.name + "'s page";
+  var fav = document.createElement("link"); fav.rel = "icon"; fav.href = C.avatarImage; document.head.appendChild(fav);
+
+  /* ---------- 1. enter screen typing ---------- */
+  var enterEl = $("enter"), enterText = $("enterText");
+  (function typeEnter(i) {
+    enterText.textContent = C.enterText.slice(0, i);
+    if (i < C.enterText.length && !entered) setTimeout(function () { typeEnter(i + 1); }, 95);
+  })(0);
+
+  /* ---------- 2. background ---------- */
+  var bg = $("bg");
+  bg.muted = true;
+  bg.src = C.background;
+
+  /* ---------- 3. profile card ---------- */
+  var avImg = $("avImg"), avVid = $("avVid");
+  avImg.src = C.avatarImage;
+  if (C.avatarVideo) avVid.src = C.avatarVideo;
+  avVid.muted = true;
+  $("statusText").textContent = C.status.text;
+  $("dot").style.color = C.status.color;
+
+  // typewriter: types a line, waits, deletes it, goes to the next line, forever
+  function typeLoop(el, lines, speed) {
+    var li = 0, ci = 0, deleting = false;
+    (function tick() {
+      var line = lines[li], wait;
+      if (!deleting) {
+        ci++;
+        if (ci >= line.length) { ci = line.length; deleting = true; wait = speed.hold; } else wait = speed.type;
+      } else {
+        ci--;
+        if (ci <= 0) { ci = 0; deleting = false; li = (li + 1) % lines.length; wait = speed.gap; } else wait = speed.erase;
+      }
+      el.textContent = line.slice(0, ci);
+      if (Math.random() < 0.1) glitch(el.parentNode);
+      setTimeout(tick, wait);
+    })();
+  }
+
+  // profile picture: picture → fade → video (plays once) → fade → picture → … forever
+  function startAvatar() {
+    if (!C.avatarVideo) return;
+    var broken = false, waitMs = Math.max(0, +C.avatarImageSeconds || 5) * 1000;
+    avVid.addEventListener("error", function () { broken = true; avVid.classList.remove("show"); });
+    avVid.addEventListener("ended", function () {
+      avVid.classList.remove("show");               // fade back to the picture
+      setTimeout(playVideo, waitMs + 900);          // + fade time
+    });
+    function playVideo() {
+      if (broken) return;
+      try { avVid.currentTime = 0; } catch (e) {}
+      var p = avVid.play();
+      if (p && p.then) p.then(function () { avVid.classList.add("show"); }, function () { setTimeout(playVideo, waitMs); });
+      else avVid.classList.add("show");
+    }
+    if (C.avatarVideoFirst) playVideo(); else setTimeout(playVideo, waitMs);
+  }
+
+  // social icons (built from CONFIG.links)
+  var ICONS = {
+    discord:  ["Discord",  '<i class="fa-brands fa-discord"></i>'],
+    github:   ["GitHub",   '<i class="fa-brands fa-github"></i>'],
+    telegram: ["Telegram", '<i class="fa-brands fa-telegram"></i>'],
+    roblox:   ["Roblox",   '<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M6.34 2.2 21.8 6.34 17.66 21.8 2.2 17.66ZM10.44 9.31 14.69 10.44 13.56 14.69 9.31 13.56Z"/></svg>'],
+    youtube:  ["YouTube",  '<i class="fa-brands fa-youtube"></i>'],
+    tiktok:   ["TikTok",   '<i class="fa-brands fa-tiktok"></i>']
+  };
+  var socials = $("socials");
+  Object.keys(C.links || {}).forEach(function (key) {
+    var url = C.links[key], icon = ICONS[key];
+    if (!url || !icon) return;
+    var a = document.createElement("a");
+    a.className = "s-" + key;
+    a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+    a.title = icon[0]; a.setAttribute("aria-label", icon[0]);
+    a.innerHTML = icon[1];
+    socials.appendChild(a);
+  });
+
+  // views: CONFIG.startViews on the first visit, +1 on every visit after that (saved on this device)
+  var visits = clamp(store.get("visits", 0), 0, 1e9) + 1;
+  store.set("visits", visits);
+  var views = clamp(C.startViews, 0, 1e12) + visits - 1;
+  var viewsEl = $("views");
+  viewsEl.textContent = views.toLocaleString("en-US");
+  function countUp() {
+    var t0 = 0, from = Math.floor(views * 0.6);
+    requestAnimationFrame(function step(t) {
+      if (!t0) t0 = t;
+      var p = Math.min(1, (t - t0) / 1300), e = 1 - Math.pow(1 - p, 3);
+      viewsEl.textContent = Math.round(from + (views - from) * e).toLocaleString("en-US");
+      if (p < 1) requestAnimationFrame(step);
+    });
+  }
+
+  /* ---------- 4. music player ---------- */
+  var audio = $("music"), cover = $("cover"), seek = $("seek"), cur = $("cur"), dur = $("dur");
+  var playBtn = $("play"), now = $("now");
+  var songs = (C.songs || []).filter(function (s) { return s && s.file; });
+  var idx = C.randomFirstSong ? Math.floor(Math.random() * songs.length) : 0;
+  var dragging = false, nowTimer = 0, failures = 0;
+  var fill = function (input, pct) { input.style.setProperty("--p", pct + "%"); };
+
+  function songLabel(s) { return (s.title || s.file) + (s.artist ? " — " + s.artist : ""); }
+  function play() { swallow(audio.play()); }
+  function showNow() {
+    if (!songs.length) return;
+    now.textContent = "♪ " + songLabel(songs[idx]);
+    now.classList.add("show");
+    clearTimeout(nowTimer);
+    nowTimer = setTimeout(function () { now.classList.remove("show"); }, 2800);
+  }
+  function setCover(src) {
+    cover.onerror = function () { cover.onerror = null; cover.src = C.avatarImage; };  // missing cover → profile picture
+    cover.src = src || C.avatarImage;
+  }
+  function load(i, autoplay) {
+    if (!songs.length) return;
+    idx = (i % songs.length + songs.length) % songs.length;
+    var s = songs[idx];
+    audio.loop = !!C.loopSameSong || songs.length === 1;
+    audio.src = s.file;
+    setCover(s.cover);
+    seek.value = 0; fill(seek, 0);
+    cur.textContent = "0:00"; dur.textContent = "0:00";
+    setMediaSession(s);
+    if (autoplay) play();
+    if (entered) showNow();
+  }
+  function prevSong() {
+    if (audio.currentTime > 3 || songs.length < 2) { audio.currentTime = 0; play(); }
+    else load(idx - 1, true);
+  }
+  function nextSong() {
+    if (songs.length < 2) { audio.currentTime = 0; play(); }
+    else load(idx + 1, true);
+  }
+
+  audio.addEventListener("loadedmetadata", function () { dur.textContent = fmt(audio.duration); failures = 0; });
+  audio.addEventListener("timeupdate", function () {
+    if (dragging) return;
+    var p = audio.duration ? audio.currentTime / audio.duration : 0;
+    seek.value = Math.round(p * 1000); fill(seek, p * 100);
+    cur.textContent = fmt(audio.currentTime);
+  });
+  audio.addEventListener("ended", function () { if (!audio.loop) load(idx + 1, true); });
+  audio.addEventListener("error", function () {           // missing/broken file → try the next song
+    if (songs.length > 1 && ++failures < songs.length) setTimeout(function () { load(idx + 1, entered); }, 400);
+  });
+  audio.addEventListener("play", function () { playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>'; playBtn.setAttribute("aria-label", "Pause"); });
+  audio.addEventListener("pause", function () { playBtn.innerHTML = '<i class="fa-solid fa-play"></i>'; playBtn.setAttribute("aria-label", "Play"); });
+
+  playBtn.addEventListener("click", function () { if (audio.paused) play(); else audio.pause(); });
+  $("prev").addEventListener("click", prevSong);
+  $("next").addEventListener("click", nextSong);
+  seek.addEventListener("input", function () {            // dragging: preview the time
+    dragging = true;
+    fill(seek, seek.value / 10);
+    cur.textContent = fmt(seek.value / 1000 * (audio.duration || 0));
+  });
+  seek.addEventListener("change", function () {           // released: jump there
+    if (audio.duration) audio.currentTime = seek.value / 1000 * audio.duration;
+    dragging = false;
+  });
+
+  // lock-screen / notification controls on phones (browser only)
+  function setMediaSession(s) {
+    if (!("mediaSession" in navigator) || typeof MediaMetadata === "undefined") return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: s.title || s.file, artist: s.artist || C.name,
+        artwork: /^https?:$/.test(location.protocol) ? [{ src: new URL(s.cover || C.avatarImage, location.href).href }] : []
+      });
+    } catch (e) {}
+  }
+  if ("mediaSession" in navigator) {
+    [["play", play], ["pause", function () { audio.pause(); }], ["previoustrack", prevSong], ["nexttrack", nextSong]]
+      .forEach(function (h) { try { navigator.mediaSession.setActionHandler(h[0], h[1]); } catch (e) {} });
+  }
+  load(idx, false);
+
+  /* ---------- 5. settings: volume + background brightness ---------- */
+  var volIn = $("vol"), muteBtn = $("mute"), brIn = $("bright");
+  var vol = clamp(store.get("volume", C.volume), 0, 100), muted = false;
+  var bright = clamp(store.get("brightness", C.brightness), 0, 100);
+  function applyVolume() {
+    audio.volume = vol / 100;
+    audio.muted = muted || vol === 0;                       // iPhones ignore .volume, but mute still works
+    volIn.value = vol; fill(volIn, vol);
+    var icon = audio.muted ? "fa-volume-xmark" : vol < 50 ? "fa-volume-low" : "fa-volume-high";
+    muteBtn.innerHTML = '<i class="fa-solid ' + icon + '"></i>';
+  }
+  function applyBrightness() {
+    document.documentElement.style.setProperty("--dim", (0.92 * (1 - bright / 100)).toFixed(3));
+    brIn.value = bright; fill(brIn, bright);
+  }
+  volIn.addEventListener("input", function () { vol = +volIn.value; muted = false; applyVolume(); store.set("volume", vol); });
+  muteBtn.addEventListener("click", function () {
+    muted = !muted;
+    if (!muted && vol === 0) vol = 30;
+    applyVolume();
+  });
+  brIn.addEventListener("input", function () { bright = +brIn.value; applyBrightness(); store.set("brightness", bright); });
+  applyVolume();
+  applyBrightness();
+
+  /* ---------- glowing lines that travel around the boxes (like crax.lol) ---------- */
+  var NS = "http://www.w3.org/2000/svg", traces = [];
+  function addTrace(host, dash, seconds, outside) {
+    var svg = document.createElementNS(NS, "svg"), rect = document.createElementNS(NS, "rect");
+    svg.setAttribute("class", "trace"); svg.setAttribute("aria-hidden", "true");
+    svg.appendChild(rect); host.appendChild(svg);
+    var t = { rect: rect, dash: dash, seconds: seconds, len: 0, pos: Math.random(), boost: 0 };
+    t.fit = function () {
+      var w = host.offsetWidth, h = host.offsetHeight;
+      if (!w || !h) return;
+      var cs = getComputedStyle(host), border = parseFloat(cs.borderTopWidth) || 0;
+      var r = parseFloat(cs.borderTopLeftRadius) || 0;
+      if (cs.borderTopLeftRadius.indexOf("%") > -1) r = w * r / 100;
+      var W = w + 2 * outside, H = h + 2 * outside, sw = 2;
+      r = Math.max(0, Math.min(r + outside, W / 2, H / 2) - sw / 2);
+      svg.style.left = svg.style.top = -(border + outside) + "px";
+      svg.style.width = W + "px"; svg.style.height = H + "px";
+      svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+      rect.setAttribute("x", sw / 2); rect.setAttribute("y", sw / 2);
+      rect.setAttribute("width", W - sw); rect.setAttribute("height", H - sw);
+      rect.setAttribute("rx", r); rect.setAttribute("ry", r);
+      t.len = 2 * (W - sw + H - sw) - 8 * r + 2 * Math.PI * r;
+      rect.style.strokeDasharray = dash + " " + Math.max(0, t.len - dash);
+    };
+    t.fit();
+    if (window.ResizeObserver) new ResizeObserver(t.fit).observe(host);
+    else window.addEventListener("resize", t.fit);
+    traces.push(t);
+    return t;
+  }
+  function startTraces() {
+    if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var avTrace = addTrace($("avatar"), 16, 3, 3);
+    addTrace($("card"), 80, 14, 0);
+    addTrace($("player"), 26, 7, 0);
+    addTrace($("settings"), 16, 4, 0);
+    var last = 0;
+    requestAnimationFrame(function frame(now) {
+      var dt = last ? Math.min(0.05, (now - last) / 1000) : 0; last = now;
+      traces.forEach(function (t) {
+        t.boost = Math.max(0, t.boost - dt * 1.5);
+        t.pos = (t.pos + dt / t.seconds * (1 + 7 * t.boost * t.boost)) % 1;
+        t.rect.style.strokeDashoffset = (-t.pos * t.len).toFixed(1);
+      });
+      requestAnimationFrame(frame);
+    });
+    $("avatar").addEventListener("click", function () { avTrace.boost = 1; });   // tap the picture = fast spin
+  }
+
+  // scan-line flash when you touch the picture
+  var scan = $("scan");
+  function flash() { scan.classList.add("on"); setTimeout(function () { scan.classList.remove("on"); }, 450); }
+  $("avatar").addEventListener("click", flash);
+  $("avatar").addEventListener("mouseenter", flash);
+
+  /* ---------- 3D tilt that follows your mouse / finger ---------- */
+  var stage = $("stage");
+  function tilt(x, y) {
+    var rx = (y / innerHeight * 2 - 1) * 10, ry = -(x / innerWidth * 2 - 1) * 10;
+    stage.style.transform = "perspective(1000px) rotateX(" + rx.toFixed(2) + "deg) rotateY(" + ry.toFixed(2) + "deg)";
+  }
+  function untilt() { stage.style.transform = ""; }
+  if (!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+    document.addEventListener("pointermove", function (e) { if (entered && e.pointerType === "mouse") tilt(e.clientX, e.clientY); });
+    document.documentElement.addEventListener("mouseleave", untilt);
+    document.addEventListener("touchmove", function (e) {
+      if (!entered || !e.touches[0] || (e.target.closest && e.target.closest("input, button, a"))) return;
+      tilt(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    document.addEventListener("touchend", untilt);
+    document.addEventListener("touchcancel", untilt);
+  }
+
+  /* ---------- ENTER: the tap starts everything ---------- */
+  function enter() {
+    if (entered) return;
+    entered = true;
+    play();                                   // music (allowed because this runs inside the tap)
+    swallow(bg.play());                       // background video
+    enterEl.classList.add("hide");
+    document.body.classList.add("entered");
+    setTimeout(function () { enterEl.style.display = "none"; }, 950);
+    typeLoop($("nameText"), [C.name], { type: 260, erase: 140, hold: 10000, gap: 600 });
+    var bio = [].concat(C.bio || []).filter(Boolean);
+    if (bio.length) typeLoop($("bioText"), bio, { type: 130, erase: 65, hold: 2000, gap: 450 });
+    startAvatar();
+    countUp();
+    startTraces();
+    showNow();
+  }
+  enterEl.addEventListener("click", enter);
+  enterEl.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); enter(); }
+  });
+  try { enterEl.focus({ preventScroll: true }); } catch (e) {}
+
+  /* ---------- Android app: pause when the app is in the background ---------- */
+  var resumeList = [];
+  window.appPaused = function () {
+    resumeList = [audio, bg, avVid].filter(function (m) { return !m.paused; });
+    resumeList.forEach(function (m) { m.pause(); });
+  };
+  window.appResumed = function () {
+    resumeList.forEach(function (m) { swallow(m.play()); });
+    resumeList = [];
+  };
+})();
+</script>
+</body>
+</html>

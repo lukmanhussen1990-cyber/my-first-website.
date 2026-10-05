@@ -1,0 +1,53 @@
+name: Build APK
+
+# Runs every time you change the website or the app (also by hand: Actions → Build APK → Run workflow)
+on:
+  push:
+    paths:
+      - "website/**"
+      - "android/**"
+      - ".github/workflows/build-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build the APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Name the APK after CONFIG.name
+        id: apk
+        run: |
+          NAME=$(grep -oP '\bname\s*:\s*"\K[^"]+' website/index.html | head -1 | tr -cd '[:alnum:]_-')
+          FILE="${NAME:-BioPage}.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "$FILE"
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the APK (Actions → this run → Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: ${{ steps.apk.outputs.file }}
+
+      - name: Publish it under Releases (main branch only)
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: APK build ${{ github.run_number }}
+          files: ${{ steps.apk.outputs.file }}
+          make_latest: true
