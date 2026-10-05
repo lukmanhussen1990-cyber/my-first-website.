@@ -268,3 +268,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[09:01 UTC] Extra — Flood debris; soak of every mode.** Level 2's water carries floating ceiling-tile fragments and
   soggy paper (baked into the per-chunk prop mesh, no extra draw calls). The soak test now also covers level 3 and
   Endless — 4 simulated minutes each, no errors.
+- **[09:02 UTC] Extra — Small touches.** How-to-play text covers the newer mechanics and modes; while stalking, the
+  creature's head keeps following you far past any natural angle with a slow tilt; footsteps echo strongly in the tall
+  halls.
