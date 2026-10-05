@@ -202,3 +202,9 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[08:17 UTC] Extra — Gamepad support.** Standard-mapping controllers: left stick move, right stick look (curved
   response), RT/LB/L3 run, RB hold breath, A crouch, X flashlight, B/Y close note, Start pause/resume. Tested with an
   emulated pad.
+- **[08:18 UTC] Extra — Bug-fix pass 3 (second independent review).** Fixed 7 findings: holding breath past the
+  limit caused a gasp every few frames (now latched until you release); wall scrawls were mirrored on half the wall
+  orientations; level-2 radios beside floating pages hovered 28 cm above the water; the jump-scare scream was
+  low-passed if you were holding your breath (instant un-muffle); a noise during stalking skipped the stalk logic;
+  falling drops could freeze in mid-air in later runs; losing pointer lock during the loading/intro card now pauses
+  the run once it starts. Verified the breath latch (exactly 2 state changes in 12 s of holding).

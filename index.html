@@ -1272,7 +1272,8 @@ function* buildChunkGeometry(kx, kz) {
       else if (r < 0.215) { cell = 5 + Math.floor(drnd() * 3); w = 0.8; hgt = 0.8; y = 1.35 + drnd() * 0.2; }
       if (cell < 0) continue;
       const px = ax + dx * mid + nx * 0.006, pz = az + dz * mid + nz * 0.006;
-      decals.quad(px - dx * w / 2, y - hgt / 2, pz - dz * w / 2, dx * w, 0, dz * w, 0, hgt, 0, nx, 0, nz, 1, 1, 2);
+      const f = (dx !== nz || dz !== -nx) ? -1 : 1;   // keep text reading left-to-right from the front
+      decals.quad(px - f * dx * w / 2, y - hgt / 2, pz - f * dz * w / 2, f * dx * w, 0, f * dz * w, 0, hgt, 0, nx, 0, nz, 1, 1, 2);
       remapUV(cell);
     }
   };
@@ -1756,13 +1757,14 @@ const Sound = (() => {
   function setDrone(level) { if (ctx && droneGain) droneGain.gain.setTargetAtTime(level, now(), 0.5); }
   function setVolume(v) { volume = v; if (master) master.gain.setTargetAtTime(v, now(), 0.05); }
   function setHRTF(on) { hrtf = on; }
+  function unmuffleNow() { if (muffle) { const t = ctx.currentTime; muffle.frequency.cancelScheduledValues(t); muffle.frequency.setValueAtTime(20000, t); } }
   function setMuffle(on) { if (muffle) muffle.frequency.setTargetAtTime(on ? 700 : 20000, ctx.currentTime, on ? 0.15 : 0.3); }
   function suspend() { if (ctx && ctx.state === 'running') ctx.suspend(); }
   function resume() { if (ctx && ctx.state === 'suspended') ctx.resume(); }
 
   return {
     init, footstep, click, zap, paper, heartbeat, breathe, randomDistant, distant, setListener, setBuzz, setDrone,
-    setVolume, setHRTF, setMuffle, suspend, resume,
+    setVolume, setHRTF, setMuffle, unmuffleNow, suspend, resume,
     get ctx() { return ctx; },
     // exposed helpers for other systems
     _: { noiseSrc: (...a) => noiseSrc(...a), filter: (...a) => filter(...a), gain: (...a) => gain(...a), panner: (...a) => panner(...a), env: (...a) => env(...a), setPos: (...a) => setPos(...a), get sfx() { return sfx; }, get revIn() { return revIn; }, get master() { return master; }, get noiseBuf() { return noiseBuf; }, get brownBuf() { return brownBuf; } },
@@ -2076,7 +2078,7 @@ function emitNoise(x, z, radius) {
   const eff = clear ? d : d * 1.5;
   if (eff > radius * diff().hear) return;
   monster.alert = Math.min(1, monster.alert + 0.35);
-  if (monster.state === 'chase' || monster.state === 'spotted') return;
+  if (monster.state === 'chase' || monster.state === 'spotted' || monster.state === 'stalk') return;
   if (monster.state !== 'investigate' || Math.random() < 0.5) {
     const j = clear ? 0.5 : 2.5;   // less precise when it can't see the source
     monster.state = 'investigate';
@@ -2443,6 +2445,7 @@ const scare = { t: 0, active: false, yaw0: 0, pitch0: 0 };
 function startJumpScare() {
   game.state = 'caught';
   save.run = null; writeSave();
+  player.holding = false; Sound.unmuffleNow();
   fx.red = 0.9; cameraKick(1.5);
   ensureScareFace();
   scare.active = true; scare.t = 0;
@@ -2555,13 +2558,16 @@ function toggleFlashlight() {
 }
 // Hold breath (Space / BREATH button): up to ~6 s of silence, then you gasp
 function updateBreath(dt) {
-  const want = (keys.Space || input.touchHold || pad.hold) && !player.running && player.breath > 0.02;
+  const pressed = keys.Space || input.touchHold || pad.hold;
+  if (!pressed) player.breathLock = false;
+  const want = pressed && !player.breathLock && !player.running && player.breath > 0.02;
   if (want && !player.holding) { player.holding = true; Sound.setMuffle(true); }
   if (player.holding) {
     player.breath = Math.max(0, player.breath - dt / 6);
     if (!want || player.breath <= 0) {
       player.holding = false; Sound.setMuffle(false);
       const out = player.breath <= 0.02;
+      if (out) player.breathLock = true;
       Sound.breathe(out ? 1.6 : 0.8); setTimeout(() => Sound.breathe(out ? 1.2 : 0.5), 450);
       emitNoise(player.pos.x, player.pos.z, out ? 9 : 4.5);
       if (out) showMessage('You gasp for air...', 2);
@@ -2819,7 +2825,7 @@ function buildNoteMesh(spec) {
   const ledMat = itemMaterial(0xff2a10, 2.0);
   const led = new THREE.Mesh(new THREE.SphereGeometry(0.008, 6, 4), ledMat); led.position.set(0.06, 0.09, 0.043); radio.add(led);
   if (spec.wall) radio.position.set(0.32, -(spec.y || 1.35), 0.12); else { radio.position.set(0.3, 0, 0.1); radio.rotation.y = 0.5; }
-  if (world.level === 2) radio.position.y += WATER_Y - 0.03 + (spec.wall ? 0 : 0);
+  if (world.level === 2 && spec.wall) radio.position.y += WATER_Y - 0.03;
   g.add(radio);
   g.userData.led = ledMat;
   return g;
@@ -3290,6 +3296,7 @@ function applyLevelLook(level) {
   MAT.floor.uniforms.uUvScale.value.set(L.tex === 1 ? 1 / 1.2 : 1 / 2.4, L.tex === 1 ? 1 / 1.2 : 1 / 2.4);
   renderer.setClearColor(new THREE.Color().setRGB(...L.clear, THREE.LinearSRGBColorSpace));
   water.visible = L.water;
+  for (const d of drops) { d.life = 0; d.s.visible = false; }
   monsterMat.uniforms.uBase.value.setRGB(...(L.water ? [0.012, 0.017, 0.016] : [0.016, 0.014, 0.013]), THREE.LinearSRGBColorSpace);
   ltCache.ox = NaN;
   if (!L.water) stopWaterAmbience();
@@ -3674,6 +3681,7 @@ document.addEventListener('pointerlockchange', () => {
   const was = input.locked;
   input.locked = document.pointerLockElement === renderer.domElement;
   if (was && !input.locked && game.state === 'playing') pauseGame();
+  if (was && !input.locked && game.state === 'loading') game.pauseAfterLoad = true;
 });
 function requestLock() {
   if (isTouch) { tryFullscreen(); return; }
@@ -4037,6 +4045,7 @@ function newGame(level = 1) {
 }
 function startGame(level = 1) {
   if (game.state === 'loading') return;
+  game.pauseAfterLoad = false;
   showScreen(null);
   $('touchUI').classList.add('hidden'); $('hud').classList.add('hidden');
   fadeTo('#000', 1, 0);
@@ -4054,6 +4063,7 @@ function startGame(level = 1) {
     game.state = 'playing';
     showScreen(null);
     applySettings();
+    if (game.pauseAfterLoad) { game.pauseAfterLoad = false; setTimeout(pauseGame, 0); }
     clock.getDelta();
     $('loading').style.opacity = '0';
     setTimeout(ensureScareFace, 1500);
