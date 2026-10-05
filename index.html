@@ -492,9 +492,15 @@ function collectBoxes(x, z) {
     if (world.wallN(i, j)) { const b = _boxes[n++]; b.x0 = i * CELL - h; b.x1 = (i + 1) * CELL + h; b.z0 = j * CELL - h; b.z1 = j * CELL + h; }
     if (world.pillar(i, j)) { const b = _boxes[n++]; b.x0 = i * CELL - ph; b.x1 = i * CELL + ph; b.z0 = j * CELL - ph; b.z1 = j * CELL + ph; }
   }
+  if (collideDyn) for (const d of dynBlockers) {
+    if (n >= _boxes.length || x < d.x0 - 2 || x > d.x1 + 2 || z < d.z0 - 2 || z > d.z1 + 2) continue;
+    const b = _boxes[n++]; b.x0 = d.x0; b.x1 = d.x1; b.z0 = d.z0; b.z1 = d.z1;
+  }
   return n;
 }
-function resolveCircle(pos, r) {
+let collideDyn = false;   // only the player collides with scripted doors (the monster walks through)
+function resolveCircle(pos, r, dyn = false) {
+  collideDyn = dyn;
   const n = collectBoxes(pos.x, pos.z);
   let hitAny = false;
   for (let iter = 0; iter < 4; iter++) {
@@ -2865,6 +2871,251 @@ function applyLevelLook(level) {
 }
 
 // ============================================================================
+//  SCARE DIRECTOR (outages, slamming doors, footsteps behind you, phantoms)
+// ============================================================================
+const scares = { t: 40, outage: null, doors: [], steps: null, phantom: null, phantomModel: null, last: '' };
+const dynBlockers = [];   // extra collision boxes (closed doors)
+
+function resetScares() {
+  scares.t = 35 + Math.random() * 20;
+  scares.outage = null; scares.steps = null;
+  for (const d of scares.doors) { scene.remove(d.group); d.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material !== monsterMat) o.material.dispose(); }); }
+  scares.doors.length = 0; dynBlockers.length = 0;
+  if (scares.phantom) hidePhantom();
+  U.uOutage.value.set(0, 0, 0, 0);
+}
+function playerForward() { const f = new THREE.Vector3(); camera.getWorldDirection(f); f.y = 0; return f.normalize(); }
+
+// ---------------- 1. lights going out one by one ----------------
+function startOutage() {
+  const f = playerForward();
+  const cx = player.pos.x + f.x * 24, cz = player.pos.z + f.z * 24;
+  scares.outage = { cx, cz, r: 0, phase: 'spread', hold: 2.5 + Math.random() * 2, target: Math.hypot(cx - player.pos.x, cz - player.pos.z) + 7, seen: new Set() };
+  if (Math.random() < 0.45 && monster.state === 'wander') { monster.state = 'investigate'; setMonsterGoal(player.pos.x + (Math.random() - 0.5) * 8, player.pos.z + (Math.random() - 0.5) * 8); }
+  return true;
+}
+function updateOutage(dt) {
+  const o = scares.outage; if (!o) return;
+  if (o.phase === 'spread') {
+    const prev = o.r;
+    o.r += dt * 5.5;
+    // a relay "clunk" for each nearby fixture the darkness reaches
+    const pcx = Math.floor(player.pos.x / CELL), pcz = Math.floor(player.pos.z / CELL);
+    for (let dz = -7; dz <= 7; dz++) for (let dx = -7; dx <= 7; dx++) {
+      const lx = pcx + dx, lz = pcz + dz, t = world.lightType(lx, lz);
+      if (t < 0 || t === LIGHT.BROKEN) continue;
+      const x = (lx + 0.5) * CELL, z = (lz + 0.5) * CELL, d = Math.hypot(x - o.cx, z - o.cz);
+      if (d >= prev && d < o.r) clunk(x, z);
+    }
+    if (o.r >= o.target) { o.phase = 'hold'; Sound.distant.groan(player.pos.x, player.pos.z); }
+  } else if (o.phase === 'hold') {
+    o.hold -= dt;
+    if (o.hold <= 0) { o.phase = 'done'; Sound.zap(0.4); fx.dip = 0.8; }
+  }
+  U.uOutage.value.set(o.cx, o.cz, o.r, o.phase === 'done' ? 0 : 1);
+  if (o.phase === 'done') scares.outage = null;
+}
+function clunk(x, z) {
+  const ctx = Sound.ctx; if (!ctx) return;
+  const A = Sound._, t = ctx.currentTime, p = A.panner(x, 2.8, z, 2, 1.2, 0.3);
+  const s = A.noiseSrc(), f = A.filter('bandpass', 1500, 2), g = A.gain(0);
+  s.connect(f); f.connect(g); g.connect(p); A.env(g, t, 0.002, 0.7, 0.05); s.start(t, Math.random() * 2, 0.1);
+  const o = ctx.createOscillator(), og = A.gain(0); o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(50, t + 0.12);
+  o.connect(og); og.connect(p); A.env(og, t, 0.003, 0.5, 0.15); o.start(t); o.stop(t + 0.25);
+}
+
+// ---------------- 2. doors slamming shut ----------------
+function findDoorway() {
+  const f = playerForward(), pcx = Math.floor(player.pos.x / CELL), pcz = Math.floor(player.pos.z / CELL);
+  const cands = [];
+  for (let dz = -6; dz <= 6; dz++) for (let dx = -6; dx <= 6; dx++) {
+    const cx = pcx + dx, cz = pcz + dz;
+    // vertical edge at x = cx*CELL spanning row cz: an opening between two collinear walls
+    if (!world.wallW(cx, cz) && world.wallW(cx, cz - 1) && world.wallW(cx, cz + 1)) cands.push({ x: cx * CELL, z: (cz + 0.5) * CELL, axis: 'z' });
+    if (!world.wallN(cx, cz) && world.wallN(cx - 1, cz) && world.wallN(cx + 1, cz)) cands.push({ x: (cx + 0.5) * CELL, z: cz * CELL, axis: 'x' });
+  }
+  const ok = cands.filter((c) => {
+    const vx = c.x - player.pos.x, vz = c.z - player.pos.z, d = Math.hypot(vx, vz);
+    if (d < 5 || d > 15) return false;
+    if ((vx * f.x + vz * f.z) / d < 0.55) return false;
+    if (scares.doors.some((o) => Math.hypot(o.x - c.x, o.z - c.z) < 1)) return false;
+    return world.segmentClear(player.pos.x, player.pos.z, c.x - (vx / d) * 0.4, c.z - (vz / d) * 0.4);
+  });
+  return ok.length ? ok[Math.floor(Math.random() * ok.length)] : null;
+}
+function buildDoubleDoor(c) {
+  const group = new THREE.Group();
+  const W = CELL - WALL_T, H = 2.2, leafW = W / 2;
+  const mat = itemMaterial(0x7a6a46), frameMat = itemMaterial(0xa89a62), header = new THREE.Mesh(new THREE.BoxGeometry(W + 0.02, WALL_H - H, WALL_T), itemMaterial(0xc4ae5c));
+  header.position.set(0, H + (WALL_H - H) / 2, 0); group.add(header);
+  const leaves = [];
+  for (const s of [-1, 1]) {
+    const hinge = new THREE.Group(); hinge.position.set(s * W / 2, 0, 0); group.add(hinge);
+    const leaf = new THREE.Mesh(new THREE.BoxGeometry(leafW - 0.02, H - 0.02, 0.05), mat);
+    leaf.position.set(-s * leafW / 2, H / 2, 0); hinge.add(leaf);
+    const win = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.5, 0.06), frameMat); win.position.set(-s * leafW * 0.5, 1.45, 0); hinge.add(win);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(leafW * 0.6, 0.04, 0.09), frameMat); bar.position.set(-s * leafW * 0.55, 1.0, 0); hinge.add(bar);
+    leaves.push({ hinge, s });
+  }
+  group.position.set(c.x, 0, c.z);
+  group.rotation.y = c.axis === 'x' ? 0 : Math.PI / 2;
+  const env = sampleLight(c.x, c.z, 1.5);
+  group.traverse((o) => { if (o.material && o.material.uniforms && o.material.uniforms.uEnv) o.material.uniforms.uEnv.value = env; });
+  scene.add(group);
+  return { group, leaves, x: c.x, z: c.z, axis: c.axis, angle: 1.45, t: 0, phase: 'open', closedFor: 0 };
+}
+function startDoorSlam() {
+  const c = findDoorway(); if (!c) return false;
+  const d = buildDoubleDoor(c);
+  d.phase = 'slam';
+  scares.doors.push(d);
+  return true;
+}
+function updateDoors(dt) {
+  dynBlockers.length = 0;
+  for (let i = scares.doors.length - 1; i >= 0; i--) {
+    const d = scares.doors[i];
+    d.t += dt;
+    if (d.phase === 'slam') {
+      d.angle = Math.max(0, d.angle - dt * (2 + d.t * 30));
+      if (d.angle === 0) {
+        d.phase = 'closed'; d.closedFor = 0;
+        const ctx = Sound.ctx;
+        if (ctx) {
+          const A = Sound._, t = ctx.currentTime, p = A.panner(d.x, 1.2, d.z, 4, 0.9, 0.9);
+          const s = A.noiseSrc(), f = A.filter('lowpass', 1100, 0.8), g = A.gain(0);
+          s.connect(f); f.connect(g); g.connect(p); A.env(g, t, 0.002, 2.2, 0.45); s.start(t, Math.random() * 2, 0.6);
+          const o = ctx.createOscillator(), og = A.gain(0); o.frequency.setValueAtTime(65, t); o.frequency.exponentialRampToValueAtTime(32, t + 0.3);
+          o.connect(og); og.connect(p); A.env(og, t, 0.003, 1.6, 0.4); o.start(t); o.stop(t + 0.5);
+        }
+        const dist = Math.hypot(d.x - player.pos.x, d.z - player.pos.z);
+        cameraKick(clamp(1.2 - dist / 14, 0.2, 1)); fx.dip = 0.5;
+      }
+    } else if (d.phase === 'closed') {
+      d.closedFor += dt;
+      if (d.closedFor > 9) { d.phase = 'opening'; Sound.distant.creak(d.x, d.z); }
+    } else if (d.phase === 'opening') {
+      d.angle = Math.min(1.2, d.angle + dt * 0.35);
+    }
+    for (const L of d.leaves) L.hinge.rotation.y = L.s * d.angle * (1 + Math.sin(d.t * 40) * 0.02 * (d.phase === 'closed' && d.closedFor < 0.4 ? 1 : 0));
+    if (d.angle < 0.35) {
+      const h = WALL_T / 2, half = CELL / 2;
+      dynBlockers.push(d.axis === 'x' ? { x0: d.x - half, x1: d.x + half, z0: d.z - h, z1: d.z + h } : { x0: d.x - h, x1: d.x + h, z0: d.z - half, z1: d.z + half });
+    }
+    if (Math.hypot(d.x - player.pos.x, d.z - player.pos.z) > 45) {
+      scene.remove(d.group); d.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+      scares.doors.splice(i, 1);
+    }
+  }
+}
+
+// ---------------- 3. footsteps creeping up behind you ----------------
+function startFakeSteps() {
+  const f = playerForward();
+  scares.steps = { n: 0, max: 5 + Math.floor(Math.random() * 4), t: 0.2, dist: 7.5, bx: -f.x, bz: -f.z };
+  return true;
+}
+function updateFakeSteps(dt) {
+  const s = scares.steps; if (!s) return;
+  s.t -= dt;
+  if (s.t > 0) return;
+  const f = playerForward();
+  // stop the moment you turn around
+  if (s.n > 1 && f.x * s.bx + f.z * s.bz > 0.3) { scares.steps = null; return; }
+  const x = player.pos.x + s.bx * s.dist, z = player.pos.z + s.bz * s.dist;
+  const ctx = Sound.ctx;
+  if (ctx) {
+    const A = Sound._, t = ctx.currentTime, p = A.panner(x, 0.1, z, 2, 1.1, 0.25);
+    const n = A.noiseSrc(), fl = A.filter('lowpass', world.level === 2 ? 1200 : 650, 0.9), g = A.gain(0);
+    n.connect(fl); fl.connect(g); g.connect(p); A.env(g, t, 0.006, 0.8, world.level === 2 ? 0.25 : 0.13); n.start(t, Math.random() * 2, 0.3);
+    const o = ctx.createOscillator(), og = A.gain(0); o.frequency.setValueAtTime(85, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.09);
+    o.connect(og); og.connect(p); A.env(og, t, 0.005, 0.6, 0.1); o.start(t); o.stop(t + 0.2);
+  }
+  s.n++; s.dist = Math.max(2.2, s.dist - 0.9); s.t = 0.62 + Math.random() * 0.1;
+  if (s.n >= s.max) { scares.steps = null; if (Math.random() < 0.6) Sound.distant.whisper(player.pos.x, player.pos.z); }
+}
+
+// ---------------- 4. a phantom at the end of the corridor ----------------
+function startPhantom() {
+  if (Math.hypot(monster.pos.x - player.pos.x, monster.pos.z - player.pos.z) < 25) return false;
+  const f = playerForward();
+  for (let tries = 0; tries < 12; tries++) {
+    const a = (Math.random() - 0.5) * 0.35, d = 13 + Math.random() * 10;
+    const dx = f.x * Math.cos(a) - f.z * Math.sin(a), dz = f.x * Math.sin(a) + f.z * Math.cos(a);
+    const x = player.pos.x + dx * d, z = player.pos.z + dz * d;
+    if (!world.segmentClear(player.pos.x, player.pos.z, x, z)) continue;
+    if (!scares.phantomModel) { scares.phantomModel = buildMonsterModel(); scene.add(scares.phantomModel.root); }
+    const md = scares.phantomModel;
+    md.root.visible = true;
+    md.root.position.set(x, 0, z);
+    md.root.rotation.y = Math.atan2(player.pos.x - x, player.pos.z - z);
+    md.body.rotation.x = 0.12; md.head.rotation.set(0.25, 0, 0.35);
+    for (const A of md.arms) { A.sh.rotation.set(0, 0, A.s * 0.05); A.el.rotation.x = -0.1; }
+    for (const L of md.legs) { L.hip.rotation.x = 0; L.kn.rotation.x = 0.05; }
+    scares.phantom = { t: 0, looked: 0 };
+    return true;
+  }
+  return false;
+}
+function hidePhantom() {
+  if (scares.phantomModel) scares.phantomModel.root.visible = false;
+  scares.phantom = null;
+}
+function updatePhantom(dt) {
+  const p = scares.phantom; if (!p) return;
+  p.t += dt;
+  const md = scares.phantomModel;
+  const vx = md.root.position.x - player.pos.x, vz = md.root.position.z - player.pos.z, d = Math.hypot(vx, vz);
+  const f = playerForward();
+  if ((vx * f.x + vz * f.z) / d > 0.96) p.looked += dt;
+  md.head.rotation.z = 0.35 + Math.sin(p.t * 9) * 0.04;
+  if (p.looked > 0.45 || p.t > 3.5 || d < 6) {
+    fx.dip = 0.9; Sound.zap(0.3);
+    hidePhantom();
+  }
+}
+
+// ---------------- 5. stinger (note pickups, big moments) ----------------
+function stinger(strength = 1) {
+  const ctx = Sound.ctx; if (!ctx) return;
+  const A = Sound._, t = ctx.currentTime, g = A.gain(0), bp = A.filter('bandpass', 900, 0.7);
+  for (const f of [146.8, 155.6, 207.7, 293.7, 311.1]) {
+    const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f * (1 + (Math.random() - 0.5) * 0.01);
+    const trem = ctx.createOscillator(), tg = A.gain(f * 0.012); trem.frequency.value = 5 + Math.random() * 3; trem.connect(tg); tg.connect(o.frequency);
+    o.connect(bp); o.start(t); o.stop(t + 3.2); trem.start(t); trem.stop(t + 3.2);
+  }
+  bp.connect(g); g.connect(A.sfx); const rv = A.gain(0.6); g.connect(rv); rv.connect(A.revIn);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16 * strength, t + 0.08); g.gain.exponentialRampToValueAtTime(0.0001, t + 3.0);
+}
+
+// ---------------- director ----------------
+const SCARE_TYPES = [
+  ['outage', 3, startOutage],
+  ['door', 3, startDoorSlam],
+  ['steps', 3, startFakeSteps],
+  ['phantom', 2, startPhantom],
+  ['whisper', 1, () => { const f = playerForward(); Sound._ && Sound.ctx && Sound.distant.whisper(player.pos.x - f.x * 3, player.pos.z - f.z * 3); return !!Sound.ctx; }],
+];
+function updateScares(dt) {
+  updateOutage(dt);
+  updateDoors(dt);
+  updateFakeSteps(dt);
+  updatePhantom(dt);
+  if (monster.state === 'chase' || scares.outage || scares.steps || scares.phantom) return;
+  scares.t -= dt * (1 + 0.12 * game.notes);
+  if (scares.t > 0) return;
+  // weighted random pick, skipping the one we just did; retry if it can't happen here
+  const pool = SCARE_TYPES.filter((s) => s[0] !== scares.last);
+  for (let tries = 0; tries < 4; tries++) {
+    let total = 0; for (const s of pool) total += s[1];
+    let r = Math.random() * total, pick = pool[0];
+    for (const s of pool) { r -= s[1]; if (r <= 0) { pick = s; break; } }
+    if (pick[2]()) { scares.last = pick[0]; break; }
+  }
+  scares.t = 28 + Math.random() * 30;
+}
+
+// ============================================================================
 //  INPUT
 // ============================================================================
 const keys = Object.create(null);
@@ -2885,8 +3136,12 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
+// Fallback when pointer lock is unavailable: hold the mouse button and drag to look
+let mouseDrag = false;
+renderer.domElement.addEventListener('mousedown', (e) => { if (e.button === 0 && !input.locked) mouseDrag = true; });
+window.addEventListener('mouseup', () => { mouseDrag = false; });
 document.addEventListener('mousemove', (e) => {
-  if (!input.locked || game.state !== 'playing') return;
+  if ((!input.locked && !mouseDrag) || game.state !== 'playing') return;
   const mx = e.movementX || 0, my = e.movementY || 0;
   if (Math.abs(mx) > 400 || Math.abs(my) > 400) return;   // Chrome pointer-lock spike
   input.lookX += mx;
@@ -2921,7 +3176,6 @@ const player = {
   speed: 0,
   stamina: 1, exhausted: false, restTimer: 0, breathT: 0,
 };
-const SPEED_WALK = 2.6, SPEED_RUN = 5.2, SPEED_CROUCH = 1.25;
 const EYE_STAND = 1.62, EYE_CROUCH = 0.92;
 
 const _fwd = new THREE.Vector3(), _right = new THREE.Vector3(), _wish = new THREE.Vector3();
@@ -2966,7 +3220,7 @@ function updatePlayer(dt) {
   for (let i = 0; i < steps; i++) {
     player.pos.x += (player.vel.x * dt) / steps;
     player.pos.z += (player.vel.z * dt) / steps;
-    resolveCircle(player.pos, player.radius);
+    resolveCircle(player.pos, player.radius, true);
   }
 
   // --- crouch height & head bob ---
@@ -3074,8 +3328,8 @@ function syncTouchButtons() {
 const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0, notes: 0, level: 1 };
 function notesCollected() { return game.notes; }
 function onChaseStart() {}
-function onNotePicked() {}
-function onPlayerCaught() { $('hud').classList.add('hidden'); $('touchUI').classList.add('hidden'); hideNote(); clearBeacons(); }
+function onNotePicked() { stinger(0.8 + 0.1 * game.notes); fx.dip = 0.6; scares.t = Math.min(scares.t, 12 + Math.random() * 10); }
+function onPlayerCaught() { hidePhantom(); $('hud').classList.add('hidden'); $('touchUI').classList.add('hidden'); hideNote(); clearBeacons(); }
 function onLevelComplete() {
   game.state = 'won';
   clearBeacons(); silenceMonster();
@@ -3203,6 +3457,7 @@ function newGame(level = 1) {
   placeNotes();
   updateChunks(player.pos.x, player.pos.z, true);
   resetMonster();
+  resetScares();
 }
 function startGame(level = 1) {
   showScreen(null);
@@ -3294,6 +3549,7 @@ function continueGame() {
   flash.on = false; flash.battery = run.battery ?? 1; flash.intensity = 0;
   updateChunks(player.pos.x, player.pos.z, true);
   resetMonster();
+  resetScares();
   game.state = 'playing';
   Sound.init(); Sound.resume(); applySettings();
   clock.getDelta(); autosaveT = 10;
@@ -3323,7 +3579,6 @@ function frame() {
   renderer.setRenderTarget(null);
   renderer.render(postScene, postCam);
 }
-function updateScares(dt) { if (window.__scares) window.__scares(dt); }
 const PROF = { on: false, max: {} };
 const SIM_STEPS = [
   ['player', (dt) => { updatePlayer(dt); updateStamina(dt); updateFlashlight(dt); }],
@@ -3373,7 +3628,7 @@ showScreen('startScreen');
 frame();
 
 // Debug / test hook
-window.__bk = { PROF, simulate, get isTouch() { return isTouch; }, get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { scares, startOutage, startDoorSlam, startFakeSteps, startPhantom, stinger, dynBlockers, PROF, simulate, get isTouch() { return isTouch; }, get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>

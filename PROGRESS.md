@@ -102,3 +102,17 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   clash with the buttons, Low graphics by default. Tested in an emulated 844x390 phone with multi-touch CDP events.
 
 ## All 12 list features are complete (at ~55 min). Remaining time goes to the "if time is left" list.
+- **[07:26 UTC] Extra — Bug-fix pass 1.** Built a fast headless soak test (a bot plays 4 simulated minutes per level
+  through a new `simulate(dt)` step with a per-subsystem profiler). Found & fixed: a 2.5 s hitch when the jump-scare
+  face canvas was generated at the moment of the catch (now pre-generated after start); monster "last seen" logic
+  (it now keeps sensing your position for 1.2 s after losing sight, then searches there); the remaining update steps
+  no longer run in the same frame after you are caught; the monster was too passive against a moving player, so a
+  "hunt" timer now periodically sends it to investigate near you (more often as you collect notes); drag-to-look
+  fallback when pointer lock is refused; removed dead constants.
+- **[07:26 UTC] Extra — Scare director: DONE.** Every ~28-58 s (faster with more notes, paused during chases) one of:
+  *lights going out one by one* (a darkness front sweeps from ~24 m ahead towards you with a relay clunk per fixture,
+  holds 2.5-4.5 s with a distant groan, and sometimes draws the monster), *double doors slamming shut* in a doorway
+  ahead (loud slam, camera kick, they block the way for 9 s then creak open; the monster walks through them),
+  *footsteps creeping up behind you* (stop the instant you turn around, sometimes ending with a whisper), a *phantom*
+  silhouette at the end of a corridor that vanishes in a light stutter when you look at it, and close *whispers*.
+  Picking up a note plays a dissonant string stinger and brings the next scare forward.
