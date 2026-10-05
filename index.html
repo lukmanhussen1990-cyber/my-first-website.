@@ -3557,7 +3557,7 @@ function resetScares() {
     scares.doors.splice(i, 1);
   }
   dynBlockers.length = 0;
-  if (scares.phantom) hidePhantom();
+  hidePhantom();
   U.uOutage.value.set(0, 0, 0, 0);
 }
 function playerForward() { const f = new THREE.Vector3(); camera.getWorldDirection(f); f.y = 0; return f.normalize(); }
@@ -4268,7 +4268,7 @@ function openSettings(from) { settingsReturn = from; showScreen('settingsScreen'
 // ---------------- attract mode (menu background) ----------------
 const attract = { x: 0, z: 0, yaw: 0, t: 0 };
 function setupAttract() {
-  attract.x = player.pos.x; attract.z = player.pos.z; attract.yaw = player.yaw; attract.t = 0; attract.turn = null;
+  attract.x = player.pos.x; attract.z = player.pos.z; attract.yaw = player.yaw; attract.t = 0; attract.turn = null; attract.ghostT = 20; attract.ghostOn = 0;
   monster.model && (monster.model.root.visible = false);
   U.uMonster.value.set(1e5, 0, 1e5, 0); U.uOutage.value.set(0, 0, 0, 0); hidePhantom();
   fx.kick = 0; fx.red = 0; fx.dip = 0;
@@ -4293,6 +4293,19 @@ function updateAttract(dt) {
     attract.yaw += Math.sign(dh) * Math.min(Math.abs(dh), dt * 0.35);
     if (Math.abs(dh) < 0.01) attract.turn = null;
   }
+  // now and then, something stands far down the corridor... then isn't there
+  attract.ghostT = (attract.ghostT === undefined ? 20 : attract.ghostT) - dt;
+  if (attract.ghostT <= 0) {
+    attract.ghostT = 25 + Math.random() * 20;
+    const d = 15 + Math.random() * 6, gx = attract.x + fx * d, gz = attract.z + fz * d;
+    if (world.segmentClear(attract.x, attract.z, gx, gz)) {
+      if (!scares.phantomModel) { scares.phantomModel = buildMonsterModel(); scene.add(scares.phantomModel.root); }
+      const md = scares.phantomModel; md.root.visible = true; md.root.position.set(gx, 0, gz);
+      md.root.rotation.y = Math.atan2(attract.x - gx, attract.z - gz); md.head.rotation.set(0.25, 0, 0.4);
+      attract.ghostOn = 3.5;
+    }
+  }
+  if (attract.ghostOn > 0) { attract.ghostOn -= dt; if (attract.ghostOn <= 0 && scares.phantomModel) { scares.phantomModel.root.visible = false; fx.dip = 0.7; } }
   camera.position.set(attract.x, 1.55 + Math.sin(attract.t * 0.9) * 0.012, attract.z);
   camera.rotation.set(-0.03 + Math.sin(attract.t * 0.13) * 0.03, attract.yaw + Math.sin(attract.t * 0.11) * 0.08, 0);
   U.uFlash.value = 0;

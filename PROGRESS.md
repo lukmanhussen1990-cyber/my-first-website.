@@ -252,3 +252,7 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   no longer makes you easier to spot; pages/radios/exit avoid cells with props; toppled-chair collision covers the
   chair; auto-quality ignores the first 1.5 s (loading hitch); abandoning an endless run keeps its record; throat
   clicks only while it truly idles. Full suite (20 scenarios) passes.
+- **[08:54 UTC] Extra — Title-screen ghost; balance re-check.** Every 25-45 s on the title screen a still figure may stand
+  15-21 m down the corridor the camera drifts along, then vanish in a flicker. Re-ran the bots after props/doors:
+  without the creature all 6 runs win (~2.5-3 min); a traced chase confirms that breaking line of sight and moving
+  away makes it search and give up (it later drifts back to your area by design).
