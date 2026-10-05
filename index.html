@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f2a07b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Dash District</title>
+<style>
+/* Layout concept: full-bleed 3D canvas, HUD floats in the four corners inside the safe area. */
+:root {
+  --ink: #1b1530;
+  --panel: rgba(22, 18, 40, 0.58);
+  --panel-edge: rgba(255, 255, 255, 0.10);
+  --white: #ffffff;
+  --gold: #ffd23f;
+  --gold-deep: #f29a12;
+  --blue: #2f8cf0;
+  --blue-deep: #1758b8;
+  --green: #4fdc4a;
+  --green-deep: #23a12b;
+  --orange: #ff7a1a;
+  --pink: #ff5fa2;
+  --sky: #f2a07b;
+  --font: "Arial Rounded MT Bold", ui-rounded, "SF Pro Rounded", "Nunito", "Varela Round", "Baloo 2", "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+  --u: clamp(0.62px, calc(min(100vw, 100vh) / 720), 1.35px);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+  background: var(--sky); color: var(--white);
+  font-family: var(--font);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  touch-action: none; overscroll-behavior: none;
+}
+#game { position: fixed; inset: 0; overflow: hidden; background: linear-gradient(#6f9fe0, #b5a2d8 45%, #f6a3a0 70%, #ffc58a); }
+#game canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+#fxCanvas { pointer-events: none; }
+#loading {
+  position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background: linear-gradient(#6f9fe0, #b5a2d8 45%, #f6a3a0 70%, #ffc58a); z-index: 50;
+  font-weight: 900; letter-spacing: 0.04em; text-shadow: 0 3px 0 rgba(40, 20, 60, 0.45);
+}
+#loading .lt { font-size: calc(var(--u) * 46); }
+#loading .ls { font-size: calc(var(--u) * 20); opacity: 0.9; }
+#loading .bar { width: calc(var(--u) * 260); height: calc(var(--u) * 14); border-radius: 99px; background: rgba(20, 16, 40, 0.45); overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.5); }
+#loading .bar i { display: block; height: 100%; width: 0%; background: linear-gradient(var(--gold), var(--gold-deep)); transition: width 0.2s; }
+#loading.err .bar { display: none; }
+</style>
+</head>
+<body>
+<div id="game">
+  <canvas id="gl" tabindex="0" aria-label="Dash District game view"></canvas>
+  <canvas id="fxCanvas"></canvas>
+</div>
+<div id="loading">
+  <div class="lt">DASH DISTRICT</div>
+  <div class="ls" id="loadingMsg">Loading the city…</div>
+  <div class="bar"><i id="loadingBar"></i></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+'use strict';
+
+// ==== CORE ====
+// Core helpers, tuning constants, random numbers, a tiny event bus and the safe save system.
+
+if (typeof THREE === 'undefined') {
+  const box = document.getElementById('loading');
+  const msg = document.getElementById('loadingMsg');
+  if (box) box.classList.add('err');
+  if (msg) msg.textContent = 'Could not load the 3D engine. Check your internet connection and reload the page.';
+  return;
+}
+
+const TAU = Math.PI * 2;
+const DEG = Math.PI / 180;
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const invLerp = (a, b, v) => clamp((v - a) / (b - a), 0, 1);
+const smoothstep = t => t * t * (3 - 2 * t);
+const damp = (a, b, lambda, dt) => lerp(a, b, 1 - Math.exp(-lambda * dt));
+const rand = (a, b) => a + Math.random() * (b - a);
+const randInt = (a, b) => Math.floor(a + Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const chance = p => Math.random() < p;
+const pad6 = n => {
+  const s = String(Math.max(0, Math.floor(n)));
+  return s.length >= 6 ? s : '000000'.slice(s.length) + s;
+};
+const fmtInt = n => String(Math.max(0, Math.floor(n))).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+const QUERY = new URLSearchParams(location.search);
+const DEBUG = QUERY.has('debug');
+const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
+const IS_MOBILE = IS_TOUCH && Math.min(screen.width, screen.height) < 900;
+const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+const CFG = {
+  LANE_W: 2.8,
+  LANE_X: [-2.8, 0, 2.8],
+  SEG_LEN: 30,
+  SPAWN_AHEAD: 235,      // how far ahead content is generated
+  RECYCLE_BEHIND: 16,    // how far behind the player things are recycled
+  SPEED_START: 15,
+  SPEED_MAX: 36,
+  SPEED_DIST: 4200,      // distance scale of the speed curve
+  GRAVITY: 52,
+  JUMP_H: 2.15,
+  JUMP_H_SNEAKERS: 4.6,
+  ROLL_TIME: 0.62,
+  LANE_TIME: 0.16,
+  PLAYER_H: 1.75,
+  PLAYER_ROLL_H: 0.85,
+  PLAYER_HW: 0.3,        // half width of the player's collision box
+  PLAYER_HD: 0.28,       // half depth of the player's collision box
+  TRAIN_W: 2.5,
+  TRAIN_H: 3.3,
+  CAR_LEN: 12.5,
+  CAR_GAP: 0.55,
+  RAMP_LEN: 9,
+  JET_ALT: 6.2,
+  BED_HALF: 4.3,         // half width of the track bed
+  WALK_Y: 0.5,           // left sidewalk height
+  PLATFORM_Y: 0.9        // right platform height
+};
+
+// Seeded random generator used by the level generator (seedable for tests via ?seed=).
+const RNG = (() => {
+  let s = (Math.random() * 4294967296) >>> 0;
+  function next() {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  return {
+    next,
+    seed(n) { s = (n >>> 0) || 1; },
+    range: (a, b) => a + next() * (b - a),
+    int: (a, b) => Math.floor(a + next() * (b - a + 1)),
+    chance: p => next() < p,
+    pick: arr => arr[Math.floor(next() * arr.length)],
+    weighted(list) { // list of [weight, value]
+      let total = 0;
+      for (const it of list) total += Math.max(0, it[0]);
+      let r = next() * total;
+      for (const it of list) { r -= Math.max(0, it[0]); if (r <= 0) return it[1]; }
+      return list[list.length - 1][1];
+    }
+  };
+})();
+if (QUERY.has('seed')) RNG.seed(parseInt(QUERY.get('seed'), 10) || 1);
+
+// Minimal publish/subscribe bus so systems (missions, audio, effects) can react to gameplay events.
+const Bus = (() => {
+  const map = new Map();
+  return {
+    on(name, fn) { if (!map.has(name)) map.set(name, []); map.get(name).push(fn); },
+    emit(name, data) { const l = map.get(name); if (l) for (let i = 0; i < l.length; i++) l[i](data); }
+  };
+})();
+
+// Persistent save data. Every storage access is wrapped so private mode or blocked storage never crashes the game.
+const Save = (() => {
+  const KEY = 'dashdistrict.save.v1';
+  const defaults = () => ({
+    best: 0, coins: 0, mult: 1, runs: 0,
+    sound: true, music: true,
+    missions: null, tiers: {}, totals: {}
+  });
+  const num = (v, d) => (typeof v === 'number' && isFinite(v) && v >= 0 ? v : d);
+  let data = defaults();
+  function sanitize(obj) {
+    const d = defaults();
+    if (!obj || typeof obj !== 'object') return d;
+    d.best = Math.floor(num(obj.best, 0));
+    d.coins = Math.floor(num(obj.coins, 0));
+    d.mult = clamp(Math.floor(num(obj.mult, 1)), 1, 30);
+    d.runs = Math.floor(num(obj.runs, 0));
+    d.sound = obj.sound !== false;
+    d.music = obj.music !== false;
+    d.missions = Array.isArray(obj.missions) ? obj.missions : null;
+    d.tiers = obj.tiers && typeof obj.tiers === 'object' ? obj.tiers : {};
+    d.totals = obj.totals && typeof obj.totals === 'object' ? obj.totals : {};
+    return d;
+  }
+  function load() {
+    try {
+      const raw = window.localStorage ? localStorage.getItem(KEY) : null;
+      data = raw ? sanitize(JSON.parse(raw)) : defaults();
+    } catch (e) {
+      data = defaults();
+    }
+  }
+  function persist() {
+    try {
+      if (window.localStorage) localStorage.setItem(KEY, JSON.stringify(data));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  load();
+  return {
+    get data() { return data; },
+    save: persist,
+    reload: load
+  };
+})();
+
+// ==== TEXTURES ====
+// Canvas texture factory. Every texture in the game is painted here with 2D canvas code.
+
+const Tex = (() => {
+  const cache = new Map();
+  let maxAniso = 1;
+
+  function canvas(w, h) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    return c;
+  }
+
+  // Create (or fetch from cache) a CanvasTexture painted by draw(ctx, w, h).
+  function make(key, w, h, draw, opts) {
+    if (cache.has(key)) return cache.get(key);
+    opts = opts || {};
+    const c = canvas(w, h);
+    const g = c.getContext('2d');
+    draw(g, w, h);
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = opts.clamp ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
+    t.wrapT = opts.clamp ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
+    t.anisotropy = opts.aniso === false ? 1 : maxAniso;
+    if (opts.nearest) { t.magFilter = THREE.NearestFilter; }
+    if (opts.noMips) { t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; }
+    if (opts.repeat) t.repeat.set(opts.repeat[0], opts.repeat[1]);
+    cache.set(key, t);
+    return t;
+  }
+
+  // ---------- drawing helpers ----------
+  function rr(g, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  }
+  function speckle(g, w, h, count, colors, rMin, rMax, alpha) {
+    for (let i = 0; i < count; i++) {
+      g.globalAlpha = alpha === undefined ? 1 : alpha * (0.5 + Math.random() * 0.5);
+      g.fillStyle = colors[(Math.random() * colors.length) | 0];
+      const r = rMin + Math.random() * (rMax - rMin);
+      g.fillRect(Math.random() * w, Math.random() * h, r, r);
+    }
+    g.globalAlpha = 1;
+  }
+  // Draw a shape that wraps vertically (for seamless tiling along the track).
+  function wrapY(h, y, size, fn) {
+    fn(y);
+    if (y - size < 0) fn(y + h);
+    if (y + size > h) fn(y - h);
+  }
+  function star(g, cx, cy, outer, inner, points, rot) {
+    g.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+      const a = (rot || -Math.PI / 2) + (i / (points * 2)) * TAU;
+      const r = i % 2 === 0 ? outer : inner;
+      const px = cx + Math.cos(a) * r, py = cy + Math.sin(a) * r;
+      if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+    }
+    g.closePath();
+  }
+
+  // ---------- track ----------
+  // Track bed covering the full 3-lane width (u across x, v along z). Seamless vertically.
+  function bed() {
+    return make('bed', 512, 512, (g, w, h) => {
+      g.fillStyle = '#6f4b37';
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, 5000, ['#5f3f2e', '#7c5640', '#83604a', '#5a3a2a'], 1, 3, 0.8);
+      const laneU = [0.174, 0.5, 0.826];
+      for (const u of laneU) {
+        const cx = u * w, half = 0.155 * w;
+        const grd = g.createLinearGradient(cx - half, 0, cx + half, 0);
+        grd.addColorStop(0, 'rgba(70,45,32,0)');
+        grd.addColorStop(0.15, 'rgba(70,45,32,0.55)');
+        grd.addColorStop(0.85, 'rgba(70,45,32,0.55)');
+        grd.addColorStop(1, 'rgba(70,45,32,0)');
+        g.fillStyle = grd;
+        g.fillRect(cx - half, 0, half * 2, h);
+        for (let i = 0; i < 1500; i++) {
+          const x = cx + (Math.random() * 2 - 1) * half * 0.95;
+          const y = Math.random() * h;
+          const s = 1.2 + Math.random() * 2.6;
+          const tone = 92 + Math.random() * 46;
+          wrapY(h, y, s, yy => {
+            g.fillStyle = `rgb(${tone + 22 | 0},${tone + 2 | 0},${tone - 16 | 0})`;
+            g.beginPath(); g.ellipse(x, yy, s, s * 0.75, Math.random() * 3, 0, TAU); g.fill();
+            g.fillStyle = 'rgba(255,236,214,0.16)';
+            g.beginPath(); g.ellipse(x - s * 0.25, yy - s * 0.3, s * 0.45, s * 0.3, 0, 0, TAU); g.fill();
+          });
+        }
+      }
+      // grime streaks along the centre of each track
+      for (const u of laneU) {
+        g.fillStyle = 'rgba(40,24,16,0.18)';
+        g.fillRect(u * w - 6, 0, 12, h);
+      }
+    });
+  }
+
+  // Weathered wood for sleepers.
+  function wood() {
+    return make('wood', 256, 64, (g, w, h) => {
+      const grd = g.createLinearGradient(0, 0, 0, h);
+      grd.addColorStop(0, '#93603d');
+      grd.addColorStop(0.5, '#7f4f30');
+      grd.addColorStop(1, '#6a4026');
+      g.fillStyle = grd;
+      g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 26; i++) {
+        g.strokeStyle = Math.random() < 0.5 ? 'rgba(60,32,18,0.45)' : 'rgba(170,120,80,0.30)';
+        g.lineWidth = 1 + Math.random() * 2;
+        const y = Math.random() * h;
+        g.beginPath();
+        g.moveTo(0, y);
+        for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x * 0.05 + i) * 2);
+        g.stroke();
+      }
+      speckle(g, w, h, 300, ['#4e2c18', '#a4744e'], 1, 2, 0.6);
+      g.fillStyle = 'rgba(30,16,8,0.35)';
+      g.fillRect(0, 0, 6, h); g.fillRect(w - 6, 0, 6, h);
+    });
+  }
+
+  // Warm sidewalk tiles (2 x 2 tiles per texture).
+  function tiles() {
+    return make('tiles', 256, 256, (g, w, h) => {
+      const t = w / 2;
+      for (let iy = 0; iy < 2; iy++) {
+        for (let ix = 0; ix < 2; ix++) {
+          const tone = Math.random() * 14;
+          g.fillStyle = `rgb(${226 - tone | 0},${170 - tone | 0},${128 - tone | 0})`;
+          g.fillRect(ix * t, iy * t, t, t);
+          const grd = g.createLinearGradient(ix * t, iy * t, ix * t + t, iy * t + t);
+          grd.addColorStop(0, 'rgba(255,235,210,0.25)');
+          grd.addColorStop(1, 'rgba(120,70,40,0.12)');
+          g.fillStyle = grd;
+          g.fillRect(ix * t, iy * t, t, t);
+        }
+      }
+      speckle(g, w, h, 1400, ['#b8805c', '#f0c39c', '#c99070'], 1, 2.5, 0.55);
+      g.fillStyle = '#9a6446';
+      g.fillRect(0, 0, w, 4); g.fillRect(0, t - 2, w, 4); g.fillRect(0, 0, 4, h); g.fillRect(t - 2, 0, 4, h);
+      g.fillStyle = 'rgba(255,230,200,0.35)';
+      g.fillRect(4, 4, w, 2); g.fillRect(4, t + 2, w, 2);
+    });
+  }
+
+  // Curb / platform face with dark grime at the bottom.
+  function curb() {
+    return make('curb', 128, 64, (g, w, h) => {
+      const grd = g.createLinearGradient(0, 0, 0, h);
+      grd.addColorStop(0, '#f0d2b4');
+      grd.addColorStop(0.18, '#d8b090');
+      grd.addColorStop(1, '#8a5f48');
+      g.fillStyle = grd;
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, 400, ['#7a503a', '#f2d8c0'], 1, 2, 0.5);
+      g.fillStyle = 'rgba(80,50,35,0.5)';
+      g.fillRect(0, 0, 2, h);
+    });
+  }
+
+  // Station platform top: concrete with a yellow safety line near the track edge (u=0 is the track side).
+  function platform() {
+    return make('platform', 256, 256, (g, w, h) => {
+      g.fillStyle = '#d6b8a4';
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, 2500, ['#bfa08c', '#e8d0c0', '#c7a894'], 1, 2.5, 0.6);
+      for (let y = 0; y < h; y += 64) { g.fillStyle = 'rgba(120,90,75,0.35)'; g.fillRect(0, y, w, 2); }
+      g.fillStyle = '#f2c230';
+      g.fillRect(14, 0, 22, h);
+      g.fillStyle = 'rgba(160,110,0,0.45)';
+      for (let y = 4; y < h; y += 10) for (let x = 17; x < 34; x += 7) g.fillRect(x, y, 3, 3);
+      g.fillStyle = '#efe6dc';
+      g.fillRect(0, 0, 10, h);
+    });
+  }
+
+  return {
+    setMaxAniso(n) { maxAniso = Math.max(1, Math.min(8, n || 1)); },
+    make, canvas, rr, speckle, star, wrapY,
+    bed, wood, tiles, curb, platform
+  };
+})();
+
+// ==== GEOM ====
+// Geometry helpers: placement, vertex painting, merging, rounded boxes, capsules and limbs.
+
+const Geo = (() => {
+  const _m = new THREE.Matrix4();
+  const _q = new THREE.Quaternion();
+  const _e = new THREE.Euler();
+  const _p = new THREE.Vector3();
+  const _s = new THREE.Vector3();
+
+  // Clone a geometry and transform it. o: {x,y,z, rx,ry,rz, s, sx,sy,sz}
+  function place(geo, o) {
+    o = o || {};
+    const g = geo.clone();
+    _e.set(o.rx || 0, o.ry || 0, o.rz || 0, o.order || 'XYZ');
+    _q.setFromEuler(_e);
+    _p.set(o.x || 0, o.y || 0, o.z || 0);
+    const s = o.s !== undefined ? o.s : 1;
+    _s.set(o.sx !== undefined ? o.sx : s, o.sy !== undefined ? o.sy : s, o.sz !== undefined ? o.sz : s);
+    _m.compose(_p, _q, _s);
+    g.applyMatrix4(_m);
+    return g;
+  }
+
+  // Give every vertex the same color (for vertexColors materials).
+  function paint(geo, color) {
+    const c = color instanceof THREE.Color ? color : new THREE.Color(color);
+    const n = geo.attributes.position.count;
+    const arr = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b; }
+    geo.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+    return geo;
+  }
+
+  // Vertical color gradient (bottom color -> top color) based on local y.
+  function paintGradient(geo, bottom, top) {
+    geo.computeBoundingBox();
+    const b = new THREE.Color(bottom), t = new THREE.Color(top), c = new THREE.Color();
+    const pos = geo.attributes.position, n = pos.count;
+    const y0 = geo.boundingBox.min.y, y1 = geo.boundingBox.max.y, span = Math.max(1e-6, y1 - y0);
+    const arr = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      c.copy(b).lerp(t, (pos.getY(i) - y0) / span);
+      arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+    return geo;
+  }
+
+  // Merge many geometries into one indexed geometry (position, normal, uv, color).
+  function merge(list) {
+    let vCount = 0, iCount = 0, hasColor = false, hasUv = false;
+    for (const g of list) {
+      if (!g.attributes.normal) g.computeVertexNormals();
+      vCount += g.attributes.position.count;
+      iCount += g.index ? g.index.count : g.attributes.position.count;
+      if (g.attributes.color) hasColor = true;
+      if (g.attributes.uv) hasUv = true;
+    }
+    const pos = new Float32Array(vCount * 3);
+    const nor = new Float32Array(vCount * 3);
+    const uv = hasUv ? new Float32Array(vCount * 2) : null;
+    const col = hasColor ? new Float32Array(vCount * 3) : null;
+    const idx = vCount > 65535 ? new Uint32Array(iCount) : new Uint16Array(iCount);
+    let vo = 0, io = 0;
+    for (const g of list) {
+      const p = g.attributes.position, n = g.attributes.normal, u = g.attributes.uv, c = g.attributes.color;
+      const cnt = p.count;
+      for (let i = 0; i < cnt; i++) {
+        const k = (vo + i) * 3;
+        pos[k] = p.getX(i); pos[k + 1] = p.getY(i); pos[k + 2] = p.getZ(i);
+        nor[k] = n.getX(i); nor[k + 1] = n.getY(i); nor[k + 2] = n.getZ(i);
+        if (uv) {
+          const q = (vo + i) * 2;
+          if (u) { uv[q] = u.getX(i); uv[q + 1] = u.getY(i); } else { uv[q] = 0; uv[q + 1] = 0; }
+        }
+        if (col) {
+          if (c) { col[k] = c.getX(i); col[k + 1] = c.getY(i); col[k + 2] = c.getZ(i); } else { col[k] = 1; col[k + 1] = 1; col[k + 2] = 1; }
+        }
+      }
+      if (g.index) {
+        const gi = g.index;
+        for (let i = 0; i < gi.count; i++) idx[io + i] = gi.getX(i) + vo;
+        io += gi.count;
+      } else {
+        for (let i = 0; i < cnt; i++) idx[io + i] = vo + i;
+        io += cnt;
+      }
+      vo += cnt;
+    }
+    const out = new THREE.BufferGeometry();
+    out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    out.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    if (uv) out.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    if (col) out.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    out.setIndex(new THREE.BufferAttribute(idx, 1));
+    out.computeBoundingSphere();
+    out.computeBoundingBox();
+    return out;
+  }
+
+  // Rounded box with evenly distributed edge rounding and proportional UVs.
+  function roundedBox(w, h, d, r, seg) {
+    seg = seg || 3;
+    r = Math.min(r, w / 2 - 1e-4, h / 2 - 1e-4, d / 2 - 1e-4);
+    const n = seg * 2 + 1;
+    const g = new THREE.BoxGeometry(1, 1, 1, n, n, n);
+    const half = [w / 2, h / 2, d / 2];
+    const map = (coord, axis) => { // coord in [-0.5, 0.5] on a grid of n segments
+      const k = Math.round((coord + 0.5) * n);
+      const hh = half[axis];
+      if (k <= seg) return -hh + r - r * Math.tan(((seg - k) / seg) * (Math.PI / 4));
+      if (k >= seg + 1) return hh - r + r * Math.tan(((k - seg - 1) / seg) * (Math.PI / 4));
+      return 0;
+    };
+    const pos = g.attributes.position, nor = g.attributes.normal, uv = g.attributes.uv;
+    const v = new THREE.Vector3(), inner = new THREE.Vector3(), dir = new THREE.Vector3();
+    const faceUV = [[2, 1], [2, 1], [0, 2], [0, 2], [0, 1], [0, 1]]; // which axis drives u,v on each face
+    const size = [w, h, d];
+    const perFace = (n + 1) * (n + 1);
+    for (let i = 0; i < pos.count; i++) {
+      v.set(map(pos.getX(i), 0), map(pos.getY(i), 1), map(pos.getZ(i), 2));
+      const face = Math.floor(i / perFace);
+      const fa = faceUV[face] || [0, 1];
+      const uu = uv.getX(i), vv = uv.getY(i);
+      const mu = map(uu - 0.5, fa[0]), mv = map(vv - 0.5, fa[1]);
+      uv.setXY(i, (mu + half[fa[0]]) / size[fa[0]], (mv + half[fa[1]]) / size[fa[1]]);
+      inner.set(clamp(v.x, -half[0] + r, half[0] - r), clamp(v.y, -half[1] + r, half[1] - r), clamp(v.z, -half[2] + r, half[2] - r));
+      dir.subVectors(v, inner);
+      if (dir.lengthSq() < 1e-12) dir.set(0, 1, 0);
+      dir.normalize();
+      v.copy(inner).addScaledVector(dir, r);
+      pos.setXYZ(i, v.x, v.y, v.z);
+      nor.setXYZ(i, dir.x, dir.y, dir.z);
+    }
+    g.computeBoundingSphere();
+    return g;
+  }
+
+  // Capsule centred on the origin along Y. Total height = len + 2r.
+  function capsule(r, len, radial, capSeg) {
+    radial = radial || 12; capSeg = capSeg || 5;
+    const pts = [];
+    for (let i = 0; i <= capSeg; i++) {
+      const a = -Math.PI / 2 + (i / capSeg) * (Math.PI / 2);
+      pts.push(new THREE.Vector2(Math.max(1e-4, Math.cos(a) * r), Math.sin(a) * r - len / 2));
+    }
+    for (let i = 0; i <= capSeg; i++) {
+      const a = (i / capSeg) * (Math.PI / 2);
+      pts.push(new THREE.Vector2(Math.max(1e-4, Math.cos(a) * r), Math.sin(a) * r + len / 2));
+    }
+    return new THREE.LatheGeometry(pts, radial);
+  }
+
+  // Limb hanging down from a pivot at y=0: sphere of rTop at the pivot, sphere of rBot at y=-len.
+  function limb(rTop, rBot, len, radial, capSeg) {
+    radial = radial || 12; capSeg = capSeg || 4;
+    const pts = [];
+    for (let i = 0; i <= capSeg; i++) {
+      const a = -Math.PI / 2 + (i / capSeg) * (Math.PI / 2);
+      pts.push(new THREE.Vector2(Math.max(1e-4, Math.cos(a) * rBot), Math.sin(a) * rBot - len));
+    }
+    for (let i = 0; i <= capSeg; i++) {
+      const a = (i / capSeg) * (Math.PI / 2);
+      pts.push(new THREE.Vector2(Math.max(1e-4, Math.cos(a) * rTop), Math.sin(a) * rTop));
+    }
+    return new THREE.LatheGeometry(pts, radial);
+  }
+
+  // Smooth "pill" profile around Y described by [radius, y] pairs (top to bottom handled by caller order).
+  function lathe(profile, radial) {
+    return new THREE.LatheGeometry(profile.map(p => new THREE.Vector2(Math.max(1e-4, p[0]), p[1])), radial || 16);
+  }
+
+  // A flat shape extruded along Z, centred on Z.
+  function extrude(shape, depth, bevel) {
+    const g = new THREE.ExtrudeGeometry(shape, {
+      depth, bevelEnabled: !!bevel, bevelThickness: bevel || 0, bevelSize: bevel || 0, bevelSegments: bevel ? 2 : 0, curveSegments: 10
+    });
+    g.translate(0, 0, -depth / 2);
+    return g;
+  }
+
+  function roundRectShape(w, h, r) {
+    const s = new THREE.Shape();
+    const x = -w / 2, y = -h / 2;
+    s.moveTo(x + r, y);
+    s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+    s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+    s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+    return s;
+  }
+
+  function starShape(outer, inner, points) {
+    const s = new THREE.Shape();
+    for (let i = 0; i < points * 2; i++) {
+      const a = -Math.PI / 2 + (i / (points * 2)) * TAU;
+      const r = i % 2 === 0 ? outer : inner;
+      const px = Math.cos(a) * r, py = -Math.sin(a) * r;
+      if (i === 0) s.moveTo(px, py); else s.lineTo(px, py);
+    }
+    s.closePath();
+    return s;
+  }
+
+  return { place, paint, paintGradient, merge, roundedBox, capsule, limb, lathe, extrude, roundRectShape, starShape };
+})();
+
+// ==== SCENE ====
+// Renderer, scene, camera, lights, sky dome, fog, resizing and quality levels.
+
+const PALETTE = {
+  fog: 0xf6c3a0,
+  skyTop: 0x5f9ae0,
+  skyMid: 0xa9a2dc,
+  skyLow: 0xf4a5a8,
+  skyHorizon: 0xffc48e,
+  sun: 0xffe2ad
+};
+
+const QUALITY = [
+  { name: 'low', pr: 0.75, shadow: 0, fogFar: 200 },
+  { name: 'medium', pr: 1.0, shadow: 0, fogFar: 225 },
+  { name: 'high', pr: 1.5, shadow: 1024, fogFar: 235 },
+  { name: 'ultra', pr: 2.0, shadow: 2048, fogFar: 235 }
+];
+
+const Gfx = {
+  renderer: null, scene: null, camera: null, sun: null, hemi: null, sky: null,
+  width: 1, height: 1, aspect: 1,
+  quality: 3,
+  camBack: 6.4, camUp: 3.3, baseFov: 62,
+
+  init() {
+    const canvas = document.getElementById('gl');
+    const renderer = new THREE.WebGLRenderer({
+      canvas, antialias: !(IS_MOBILE && window.devicePixelRatio >= 2),
+      powerPreference: 'high-performance', stencil: false, alpha: false
+    });
+    renderer.setClearColor(PALETTE.fog, 1);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.autoUpdate = true;
+    this.renderer = renderer;
+    Tex.setMaxAniso(renderer.capabilities.getMaxAnisotropy());
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(PALETTE.fog, 48, 235);
+    this.scene = scene;
+
+    const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 420);
+    camera.position.set(0, 3.3, 6.4);
+    this.camera = camera;
+    scene.add(camera);
+
+    const hemi = new THREE.HemisphereLight(0xd4e2ff, 0xf3b28a, 0.62);
+    scene.add(hemi);
+    this.hemi = hemi;
+
+    const sun = new THREE.DirectionalLight(0xffe0b4, 0.78);
+    sun.position.set(-9, 22, 14);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    const sc = sun.shadow.camera;
+    sc.left = -15; sc.right = 15; sc.top = 32; sc.bottom = -26; sc.near = 1; sc.far = 95;
+    sun.shadow.bias = -0.0008;
+    sun.shadow.normalBias = 0.03;
+    scene.add(sun);
+    scene.add(sun.target);
+    this.sun = sun;
+
+    this.sky = this.buildSky();
+    scene.add(this.sky);
+
+    const q = parseInt(QUERY.get('q'), 10);
+    this.quality = isFinite(q) ? clamp(q, 0, 3) : (IS_MOBILE ? 2 : 3);
+    this.applyQuality(true);
+    this.resize();
+  },
+
+  buildSky() {
+    const geo = new THREE.SphereGeometry(300, 32, 16);
+    const mat = new THREE.ShaderMaterial({
+      side: THREE.BackSide, depthWrite: false, fog: false,
+      uniforms: {
+        cTop: { value: new THREE.Color(PALETTE.skyTop) },
+        cMid: { value: new THREE.Color(PALETTE.skyMid) },
+        cLow: { value: new THREE.Color(PALETTE.skyLow) },
+        cHor: { value: new THREE.Color(PALETTE.skyHorizon) },
+        cSun: { value: new THREE.Color(PALETTE.sun) },
+        cFog: { value: new THREE.Color(PALETTE.fog) },
+        sunDir: { value: new THREE.Vector3(0.12, 0.06, -1).normalize() }
+      },
+      vertexShader: `
+        varying vec3 vDir;
+        void main() {
+          vDir = position;
+          vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          gl_Position = p.xyww;
+        }`,
+      fragmentShader: `
+        uniform vec3 cTop, cMid, cLow, cHor, cSun, cFog;
+        uniform vec3 sunDir;
+        varying vec3 vDir;
+        void main() {
+          vec3 d = normalize(vDir);
+          float h = d.y;
+          vec3 col = mix(cHor, cLow, smoothstep(0.0, 0.10, h));
+          col = mix(col, cMid, smoothstep(0.07, 0.30, h));
+          col = mix(col, cTop, smoothstep(0.26, 0.80, h));
+          float s = max(dot(d, sunDir), 0.0);
+          col += cSun * (pow(s, 9.0) * 0.16 + pow(s, 70.0) * 0.28 + pow(s, 900.0) * 0.55);
+          col = mix(col, cFog, smoothstep(0.02, -0.04, h));
+          gl_FragColor = vec4(col, 1.0);
+        }`
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.renderOrder = -100;
+    mesh.frustumCulled = false;
+    return mesh;
+  },
+
+  applyQuality(initial) {
+    const preset = QUALITY[this.quality];
+    const pr = Math.min(window.devicePixelRatio || 1, preset.pr);
+    this.renderer.setPixelRatio(pr);
+    const shadows = preset.shadow > 0;
+    const sun = this.sun;
+    if (shadows) {
+      if (sun.shadow.mapSize.x !== preset.shadow) {
+        sun.shadow.mapSize.set(preset.shadow, preset.shadow);
+        if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+      }
+    }
+    const changed = sun.castShadow !== shadows || this.renderer.shadowMap.enabled !== shadows;
+    sun.castShadow = shadows;
+    this.renderer.shadowMap.enabled = shadows;
+    this.scene.fog.far = preset.fogFar;
+    if (changed && !initial) {
+      this.scene.traverse(o => {
+        if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.needsUpdate = true; });
+      });
+    }
+    if (!initial) this.resize();
+  },
+
+  setQuality(q) {
+    q = clamp(q, 0, 3);
+    if (q === this.quality) return;
+    this.quality = q;
+    this.applyQuality(false);
+  },
+
+  // Field of view and camera distance adapt to the screen shape so all 3 lanes stay visible.
+  resize() {
+    const w = Math.max(1, window.innerWidth), h = Math.max(1, window.innerHeight);
+    this.width = w; this.height = h; this.aspect = w / h;
+    const a = this.aspect;
+    // portrait (a < 1): pull back, raise and widen so the side lanes stay on screen
+    const port = clamp((1 - a) / 0.55, 0, 1);
+    let fov;
+    if (a >= 1.6) fov = 54;
+    else if (a >= 1) fov = lerp(62, 54, (a - 1) / 0.6);
+    else fov = lerp(62, 76, port);
+    this.baseFov = fov;
+    this.camBack = a >= 1 ? lerp(4.8, 5.4, clamp((a - 1) / 0.8, 0, 1)) : lerp(4.8, 6.3, port);
+    this.camUp = a >= 1 ? lerp(2.95, 3.2, clamp((a - 1) / 0.8, 0, 1)) : lerp(2.95, 3.55, port);
+    this.camera.aspect = a;
+    this.camera.fov = fov;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(w, h, false);
+  },
+
+  // Keep the sun and its shadow frustum centred around the runner.
+  follow(x, z) {
+    this.sun.position.set(x - 9, 22, z + 14);
+    this.sun.target.position.set(x, 0, z - 14);
+    this.sky.position.copy(this.camera.position);
+  },
+
+  render() {
+    this.renderer.render(this.scene, this.camera);
+  }
+};
+
+// ==== WORLD ====
+// Endless world: pooled track segments (bed, sleepers, rails, sidewalk, platform, wall).
+// A segment with index k spans z in [-(k+1)*SEG_LEN, -k*SEG_LEN]. Segments behind the runner jump to the front.
+
+const World = {
+  segs: [],
+  count: 10,
+  mats: {},
+  geos: {},
+
+  init() {
+    const L = CFG.SEG_LEN, B = CFG.BED_HALF;
+    const m = this.mats, g = this.geos;
+
+    // --- materials (shared by every segment) ---
+    const bedTex = Tex.bed();
+    bedTex.repeat.set(1, 4);
+    m.bed = new THREE.MeshLambertMaterial({ map: bedTex });
+    m.sleeper = new THREE.MeshLambertMaterial({ map: Tex.wood() });
+    m.rail = new THREE.MeshPhongMaterial({ color: 0x6d7078, specular: 0x8a8f99, shininess: 30 });
+    m.railTop = new THREE.MeshBasicMaterial({ color: 0xeef2f7 });
+    const tileTex = Tex.tiles();
+    tileTex.repeat.set(2, 12);
+    m.walk = new THREE.MeshLambertMaterial({ map: tileTex });
+    const curbTex = Tex.curb();
+    curbTex.repeat.set(12, 1);
+    m.curb = new THREE.MeshLambertMaterial({ map: curbTex });
+    const platTex = Tex.platform();
+    platTex.repeat.set(1, 8);
+    m.platform = new THREE.MeshLambertMaterial({ map: platTex });
+    m.wall = new THREE.MeshLambertMaterial({ color: 0xc98f7a });
+
+    // --- geometries ---
+    g.bed = new THREE.PlaneGeometry(B * 2, L);
+    g.bed.rotateX(-Math.PI / 2);
+    g.bed.translate(0, -0.14, 0);
+
+    const sleepers = [];
+    const sleeperBox = new THREE.BoxGeometry(2.3, 0.16, 0.36);
+    const step = 1.25;
+    for (const lx of CFG.LANE_X) {
+      for (let z = -L / 2 + step / 2; z < L / 2; z += step) {
+        sleepers.push(Geo.place(sleeperBox, { x: lx + (Math.random() - 0.5) * 0.06, y: -0.08, z, ry: (Math.random() - 0.5) * 0.03 }));
+      }
+    }
+    g.sleepers = Geo.merge(sleepers);
+
+    const railParts = [], railTops = [];
+    const flange = new THREE.BoxGeometry(0.22, 0.04, L);
+    const web = new THREE.BoxGeometry(0.05, 0.11, L);
+    const head = new THREE.BoxGeometry(0.11, 0.05, L);
+    const top = new THREE.PlaneGeometry(0.09, L);
+    top.rotateX(-Math.PI / 2);
+    for (const lx of CFG.LANE_X) {
+      for (const side of [-0.72, 0.72]) {
+        const x = lx + side;
+        railParts.push(Geo.place(flange, { x, y: 0.02 }));
+        railParts.push(Geo.place(web, { x, y: 0.095 }));
+        railParts.push(Geo.place(head, { x, y: 0.165 }));
+        railTops.push(Geo.place(top, { x, y: 0.191 }));
+      }
+    }
+    g.rails = Geo.merge(railParts);
+    g.railTops = Geo.merge(railTops);
+
+    // left sidewalk: top + curb face toward the tracks
+    const walkW = 5.3;
+    g.walkTop = new THREE.PlaneGeometry(walkW, L);
+    g.walkTop.rotateX(-Math.PI / 2);
+    g.walkTop.translate(-B - walkW / 2, CFG.WALK_Y, 0);
+    g.walkFace = new THREE.PlaneGeometry(L, CFG.WALK_Y + 0.14);
+    g.walkFace.rotateY(Math.PI / 2);
+    g.walkFace.translate(-B, (CFG.WALK_Y - 0.14) / 2, 0);
+
+    // right platform: top + face toward the tracks
+    const platW = 4.2;
+    g.platTop = new THREE.PlaneGeometry(platW, L);
+    g.platTop.rotateX(-Math.PI / 2);
+    g.platTop.translate(B + platW / 2, CFG.PLATFORM_Y, 0);
+    g.platFace = new THREE.PlaneGeometry(L, CFG.PLATFORM_Y + 0.14);
+    g.platFace.rotateY(-Math.PI / 2);
+    g.platFace.translate(B, (CFG.PLATFORM_Y - 0.14) / 2, 0);
+
+    // left wall behind the sidewalk
+    g.wall = new THREE.PlaneGeometry(L, 4.6);
+    g.wall.rotateY(Math.PI / 2);
+    g.wall.translate(-B - walkW, CFG.WALK_Y + 2.3, 0);
+
+    for (let i = 0; i < this.count; i++) {
+      const seg = new THREE.Group();
+      const add = (geo, mat, shadow) => {
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.receiveShadow = !!shadow;
+        mesh.matrixAutoUpdate = false;
+        mesh.updateMatrix();
+        seg.add(mesh);
+        return mesh;
+      };
+      add(g.bed, m.bed, true);
+      add(g.sleepers, m.sleeper, true);
+      add(g.rails, m.rail, false);
+      add(g.railTops, m.railTop, false);
+      add(g.walkTop, m.walk, true);
+      add(g.walkFace, m.curb, false);
+      add(g.platTop, m.platform, true);
+      add(g.platFace, m.curb, false);
+      seg.userData.wall = add(g.wall, m.wall, false);
+      seg.userData.index = 0;
+      seg.userData.deco = [];
+      Gfx.scene.add(seg);
+      this.segs.push(seg);
+    }
+    this.reset();
+  },
+
+  centerZ(index) { return -index * CFG.SEG_LEN - CFG.SEG_LEN / 2; },
+
+  place(seg, index) {
+    seg.userData.index = index;
+    seg.position.set(0, 0, this.centerZ(index));
+    seg.updateMatrixWorld(true);
+    if (this.onPlace) this.onPlace(seg, index);
+  },
+
+  reset() {
+    for (let i = 0; i < this.count; i++) this.place(this.segs[i], i - 1);
+  },
+
+  // Move segments that fell behind the runner to the front of the track.
+  update(playerZ) {
+    const L = CFG.SEG_LEN;
+    for (const seg of this.segs) {
+      const farEdge = -(seg.userData.index + 1) * L;
+      if (farEdge > playerZ + CFG.RECYCLE_BEHIND) this.place(seg, seg.userData.index + this.count);
+    }
+  }
+};
+
+// ==== RUNNER ====
+// Runner model (simple version for the core phase): body, head, cap and swinging legs.
+
+const Runner = {
+  group: null, legs: [], arms: [], body: null, phase: 0,
+
+  init() {
+    const g = new THREE.Group();
+    const skin = new THREE.MeshLambertMaterial({ color: 0xc98a5e });
+    const hoodie = new THREE.MeshLambertMaterial({ color: 0xff7a1a });
+    const cap = new THREE.MeshLambertMaterial({ color: 0x2dbe60 });
+    const shorts = new THREE.MeshLambertMaterial({ color: 0x8a8a52 });
+    const body = new THREE.Group();
+    const torso = new THREE.Mesh(Geo.capsule(0.24, 0.3, 14, 5), hoodie);
+    torso.position.y = 1.05;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.27, 18, 14), skin);
+    head.position.y = 1.5;
+    const capMesh = new THREE.Mesh(new THREE.SphereGeometry(0.285, 18, 10, 0, TAU, 0, Math.PI / 2), cap);
+    capMesh.position.y = 1.55;
+    body.add(torso, head, capMesh);
+    for (const side of [-1, 1]) {
+      const leg = new THREE.Group();
+      leg.position.set(side * 0.12, 0.8, 0);
+      const legMesh = new THREE.Mesh(Geo.limb(0.1, 0.085, 0.62, 10, 3), shorts);
+      leg.add(legMesh);
+      body.add(leg);
+      this.legs.push(leg);
+      const arm = new THREE.Group();
+      arm.position.set(side * 0.3, 1.25, 0);
+      arm.add(new THREE.Mesh(Geo.limb(0.07, 0.06, 0.45, 8, 3), hoodie));
+      body.add(arm);
+      this.arms.push(arm);
+    }
+    g.add(body);
+    g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    this.body = body;
+    this.group = g;
+    Gfx.scene.add(g);
+  },
+
+  update(dt, p) {
+    this.group.position.set(p.x, p.y, p.z);
+    const running = p.grounded && p.rollT <= 0;
+    this.phase += dt * (running ? 1.6 + p.speed * 0.42 : 0);
+    const s = Math.sin(this.phase);
+    this.legs[0].rotation.x = running ? s * 0.9 : -0.6;
+    this.legs[1].rotation.x = running ? -s * 0.9 : 0.4;
+    this.arms[0].rotation.x = running ? -s * 0.8 : -2.4;
+    this.arms[1].rotation.x = running ? s * 0.8 : -2.4;
+    this.body.position.y = running ? Math.abs(s) * 0.06 : 0;
+    const rollScale = p.rollT > 0 ? 0.5 : 1;
+    this.body.scale.y = damp(this.body.scale.y, rollScale, 20, dt);
+    this.group.rotation.z = damp(this.group.rotation.z, -p.vx * 0.025, 12, dt);
+  }
+};
+
+// ==== PLAYER ====
+// Player controller: lanes, jump (with buffer and coyote time), roll, fast-drop, gravity and forward speed.
+
+const Player = {
+  x: 0, y: 0, z: 0, vx: 0, vy: 0,
+  lane: 1, prevLane: 1,
+  grounded: true, groundY: 0, airTime: 0,
+  rollT: 0, rollQueued: false, jumpBuffer: 0,
+  speed: CFG.SPEED_START, distance: 0,
+  queue: [],
+
+  reset() {
+    this.x = 0; this.y = 0; this.z = 0; this.vx = 0; this.vy = 0;
+    this.lane = 1; this.prevLane = 1;
+    this.grounded = true; this.groundY = 0; this.airTime = 0;
+    this.rollT = 0; this.rollQueued = false; this.jumpBuffer = 0;
+    this.speed = CFG.SPEED_START; this.distance = 0;
+    this.queue.length = 0;
+  },
+
+  input(action) {
+    if (this.queue.length < 6) this.queue.push(action);
+  },
+
+  jumpVelocity() {
+    return Math.sqrt(2 * CFG.GRAVITY * CFG.JUMP_H);
+  },
+
+  doJump() {
+    this.vy = this.jumpVelocity();
+    this.grounded = false;
+    this.airTime = 0;
+    this.rollT = 0;
+    this.jumpBuffer = 0;
+  },
+
+  handleActions() {
+    while (this.queue.length) {
+      const a = this.queue.shift();
+      if (a === 'left' || a === 'right') {
+        const nl = clamp(this.lane + (a === 'left' ? -1 : 1), 0, 2);
+        if (nl !== this.lane) { this.prevLane = this.lane; this.lane = nl; }
+      } else if (a === 'jump') {
+        if (this.grounded || this.airTime < 0.1) this.doJump();
+        else this.jumpBuffer = 0.16;
+      } else if (a === 'roll') {
+        if (this.grounded) { this.rollT = CFG.ROLL_TIME; }
+        else { this.vy = Math.min(this.vy, -30); this.rollQueued = true; this.jumpBuffer = 0; }
+      }
+    }
+  },
+
+  step(h) {
+    this.handleActions();
+
+    // lateral movement toward the target lane
+    const tx = CFG.LANE_X[this.lane];
+    const dx = tx - this.x;
+    this.vx = clamp(dx * 19, -26, 26);
+    this.x += this.vx * h;
+    if (Math.abs(tx - this.x) < 0.002) { this.x = tx; this.vx = 0; }
+
+    // vertical movement
+    if (this.jumpBuffer > 0) this.jumpBuffer -= h;
+    if (!this.grounded) {
+      this.airTime += h;
+      this.vy -= CFG.GRAVITY * h;
+      this.y += this.vy * h;
+      if (this.y <= this.groundY) {
+        this.y = this.groundY;
+        this.vy = 0;
+        this.grounded = true;
+        if (this.jumpBuffer > 0) this.doJump();
+        else if (this.rollQueued) this.rollT = CFG.ROLL_TIME;
+        this.rollQueued = false;
+      }
+    } else {
+      this.airTime = 0;
+      this.y = this.groundY;
+    }
+    if (this.rollT > 0) this.rollT = Math.max(0, this.rollT - h);
+
+    // forward movement and speed curve
+    this.speed = CFG.SPEED_START + (CFG.SPEED_MAX - CFG.SPEED_START) * (1 - Math.exp(-this.distance / CFG.SPEED_DIST));
+    this.z -= this.speed * h;
+    this.distance += this.speed * h;
+  }
+};
+
+// ==== INPUT ====
+// Input: keyboard (arrows + WASD), swipe gestures and on-screen buttons all map to the same actions.
+
+const Input = {
+  handler: null, // function(action) set by the game
+  touch: null,
+
+  init() {
+    const KEYMAP = {
+      ArrowLeft: 'left', KeyA: 'left',
+      ArrowRight: 'right', KeyD: 'right',
+      ArrowUp: 'jump', KeyW: 'jump', Space: 'jump',
+      ArrowDown: 'roll', KeyS: 'roll',
+      KeyP: 'pause', Escape: 'pause',
+      KeyM: 'mute', Enter: 'confirm'
+    };
+    window.addEventListener('keydown', e => {
+      const a = KEYMAP[e.code];
+      if (!a) return;
+      e.preventDefault();
+      if (e.repeat && a !== 'confirm') return;
+      this.fire(a, 'key');
+    });
+
+    // Swipes: an action fires as soon as the finger travels far enough, without waiting for touchend.
+    const el = document.getElementById('game');
+    const threshold = () => Math.max(24, Math.min(window.innerWidth, window.innerHeight) * 0.045);
+    el.addEventListener('touchstart', e => {
+      const t = e.changedTouches[0];
+      this.touch = { id: t.identifier, x: t.clientX, y: t.clientY, t: performance.now(), fired: false };
+      e.preventDefault();
+    }, { passive: false });
+    el.addEventListener('touchmove', e => {
+      const s = this.touch;
+      e.preventDefault();
+      if (!s || s.fired) return;
+      for (const t of e.changedTouches) {
+        if (t.identifier !== s.id) continue;
+        const dx = t.clientX - s.x, dy = t.clientY - s.y;
+        const th = threshold();
+        if (Math.abs(dx) > th || Math.abs(dy) > th) {
+          if (Math.abs(dx) > Math.abs(dy)) this.fire(dx < 0 ? 'left' : 'right', 'swipe');
+          else this.fire(dy < 0 ? 'jump' : 'roll', 'swipe');
+          s.fired = true; // one action per swipe
+        }
+      }
+    }, { passive: false });
+    const end = e => {
+      const s = this.touch;
+      if (!s) return;
+      for (const t of e.changedTouches) {
+        if (t.identifier !== s.id) continue;
+        if (!s.fired && performance.now() - s.t < 350) this.fire('tap', 'touch');
+        this.touch = null;
+      }
+    };
+    el.addEventListener('touchend', end, { passive: true });
+    el.addEventListener('touchcancel', () => { this.touch = null; }, { passive: true });
+
+    // Mouse drag acts like a swipe on desktop; a click acts like a tap.
+    let md = null;
+    el.addEventListener('mousedown', e => { md = { x: e.clientX, y: e.clientY, t: performance.now(), fired: false }; });
+    window.addEventListener('mousemove', e => {
+      if (!md || md.fired) return;
+      const dx = e.clientX - md.x, dy = e.clientY - md.y, th = threshold();
+      if (Math.abs(dx) > th || Math.abs(dy) > th) {
+        if (Math.abs(dx) > Math.abs(dy)) this.fire(dx < 0 ? 'left' : 'right', 'swipe');
+        else this.fire(dy < 0 ? 'jump' : 'roll', 'swipe');
+        md.fired = true;
+      }
+    });
+    window.addEventListener('mouseup', () => {
+      if (md && !md.fired && performance.now() - md.t < 350) this.fire('tap', 'mouse');
+      md = null;
+    });
+  },
+
+  fire(action, source) {
+    if (this.handler) this.handler(action, source);
+  }
+};
+
+// ==== GAME ====
+// Game state, camera follow and the main loop.
+
+const Game = {
+  state: 'loading',
+  time: 0,
+  noRender: DEBUG && QUERY.has('norender'),
+  cam: { x: 0, y: 3.3, z: 6.4, lx: 0, ly: 1.3, lz: -8 },
+
+  boot() {
+    const bar = document.getElementById('loadingBar');
+    const steps = [
+      () => Gfx.init(),
+      () => World.init(),
+      () => Runner.init(),
+      () => Input.init()
+    ];
+    let i = 0;
+    const next = () => {
+      try {
+        steps[i]();
+      } catch (err) {
+        this.fail(err);
+        return;
+      }
+      i++;
+      if (bar) bar.style.width = Math.round((i / steps.length) * 100) + '%';
+      if (i < steps.length) setTimeout(next, 0);
+      else this.ready();
+    };
+    next();
+  },
+
+  fail(err) {
+    const box = document.getElementById('loading');
+    const msg = document.getElementById('loadingMsg');
+    if (box) box.classList.add('err');
+    if (msg) msg.textContent = 'Your browser could not start 3D graphics (WebGL). Try another browser or device.';
+    if (DEBUG && window.console) console.warn(err);
+  },
+
+  ready() {
+    Input.handler = (a, src) => this.onAction(a, src);
+    window.addEventListener('resize', () => Gfx.resize());
+    window.addEventListener('orientationchange', () => setTimeout(() => Gfx.resize(), 120));
+    const box = document.getElementById('loading');
+    if (box) box.style.display = 'none';
+    this.startRun();
+    this.last = performance.now();
+    requestAnimationFrame(t => this.frame(t));
+  },
+
+  startRun() {
+    Player.reset();
+    World.reset();
+    this.state = 'playing';
+    this.snapCamera();
+  },
+
+  onAction(a) {
+    if (this.state === 'playing' && (a === 'left' || a === 'right' || a === 'jump' || a === 'roll')) Player.input(a);
+  },
+
+  frame(now) {
+    requestAnimationFrame(t => this.frame(t));
+    let dt = (now - this.last) / 1000;
+    this.last = now;
+    if (!(dt > 0)) dt = 0;
+    if (dt > 0.05) dt = 0.05;
+    this.update(dt);
+    if (!this.noRender) Gfx.render();
+  },
+
+  update(dt) {
+    this.time += dt;
+    if (this.state === 'playing') {
+      const steps = Math.max(1, Math.ceil(dt / (1 / 120)));
+      const h = dt / steps;
+      for (let s = 0; s < steps; s++) Player.step(h);
+      World.update(Player.z);
+    }
+    Runner.update(dt, Player);
+    this.updateCamera(dt);
+    Gfx.follow(Player.x, Player.z);
+  },
+
+  camTarget(out) {
+    const p = Player;
+    out.x = p.x * 0.62;
+    out.y = Gfx.camUp + p.y * 0.55;
+    out.z = p.z + Gfx.camBack;
+    out.lx = p.x * 0.8;
+    out.ly = 1.0 + p.y * 0.62;
+    out.lz = p.z - 10;
+    return out;
+  },
+
+  snapCamera() {
+    this.camTarget(this.cam);
+    this.applyCamera();
+  },
+
+  updateCamera(dt) {
+    const t = this.camTarget({});
+    const c = this.cam;
+    c.x = damp(c.x, t.x, 9, dt);
+    c.y = damp(c.y, t.y, 7, dt);
+    c.z = t.z;
+    c.lx = damp(c.lx, t.lx, 10, dt);
+    c.ly = damp(c.ly, t.ly, 7, dt);
+    c.lz = t.lz;
+    this.applyCamera();
+  },
+
+  applyCamera() {
+    const c = this.cam, cam = Gfx.camera;
+    cam.position.set(c.x, c.y, c.z);
+    cam.lookAt(c.lx, c.ly, c.lz);
+  }
+};
+
+if (DEBUG) window.__DD = { Game, Player, World, Gfx, Runner, Save, CFG, RNG };
+Game.boot();
+
+})();
+</script>
+</body>
+</html>
