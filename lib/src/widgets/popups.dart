@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/settings_store.dart';
+import '../version.dart';
 import '../ui/block_painter.dart';
 import '../ui/fancy_text.dart';
 import '../ui/icons.dart';
@@ -46,6 +47,11 @@ class SettingsPopup extends StatelessWidget {
               width: double.infinity,
               height: 52,
               onTap: onHowToPlay,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Block Blast v$kAppVersion',
+              style: bubbleStyle(13, color: const Color(0xAAD5E3FF), weight: FontWeight.w500),
             ),
           ],
         ),
