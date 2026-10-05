@@ -271,3 +271,5 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[09:02 UTC] Extra — Small touches.** How-to-play text covers the newer mechanics and modes; while stalking, the
   creature's head keeps following you far past any natural angle with a slow tilt; footsteps echo strongly in the tall
   halls.
+- **[09:03 UTC] Extra — Leak check.** Teleported across 40 spots up to 2 km apart: GPU geometries stay ~130-145, doors,
+  items and chunks stay bounded, and the world-data cache is capped — no leaks.
