@@ -781,7 +781,29 @@ function makeNoiseTexture() {
   return canvasTex(c, { srgb: false, aniso: 1 });
 }
 
+// Decal atlas: outlet, light switch, wall vent, ceiling vent (2x2 cells)
+function makeDecalTexture() {
+  const S = 256, c = makeCanvas(S, S), g = c.getContext('2d'), C = 128;
+  const plate = (x, y, w, h) => { g.fillStyle = '#e4dcc4'; g.fillRect(x, y, w, h); g.strokeStyle = '#a89e84'; g.lineWidth = 3; g.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3); };
+  g.fillStyle = '#d8cfb2'; g.fillRect(0, 0, S, S);
+  // outlet
+  plate(0, 0, C, C);
+  for (const yy of [32, 76]) { g.fillStyle = '#3a352a'; g.fillRect(48, yy, 8, 18); g.fillRect(72, yy, 8, 18); g.beginPath(); g.arc(64, yy + 26, 4, 0, Math.PI * 2); g.fill(); }
+  g.fillStyle = '#8a826c'; g.beginPath(); g.arc(64, 64, 4, 0, Math.PI * 2); g.fill();
+  // switch
+  plate(C, 0, C, C);
+  g.fillStyle = '#cfc6ac'; g.fillRect(C + 50, 30, 28, 68); g.fillStyle = '#b6ad94'; g.fillRect(C + 54, 34, 20, 30);
+  // wall vent
+  g.fillStyle = '#9c968a'; g.fillRect(0, C, C, C);
+  g.fillStyle = '#2b2924'; for (let i = 0; i < 9; i++) g.fillRect(10, C + 12 + i * 12, C - 20, 6);
+  g.strokeStyle = '#6a665c'; g.lineWidth = 4; g.strokeRect(2, C + 2, C - 4, C - 4);
+  // ceiling vent
+  g.fillStyle = '#b4b0a4'; g.fillRect(C, C, C, C);
+  g.fillStyle = '#34322c'; for (let i = 0; i < 4; i++) { const m = 14 + i * 12; g.fillRect(C + m, C + m, C - 2 * m, 5); g.fillRect(C + m, C + C - m - 5, C - 2 * m, 5); g.fillRect(C + m, C + m, 5, C - 2 * m); g.fillRect(C + C - m - 5, C + m, 5, C - 2 * m); }
+  return canvasTex(c, { repeat: false });
+}
 const TEX = {
+  decal: null,
   noise: makeNoiseTexture(),
   panel: makePanelTexture(),
   wall: [makeWallpaperTexture(0), null],
@@ -931,7 +953,7 @@ void main() {
     albedo = mix(albedo, albedo * vec3(0.8, 0.85, 0.7), w);
     albedo *= 1.0 - edge * 0.25;
     albedo *= 0.9 + 0.2 * texture2D(uNoise, vWorld.xz * 0.21).g;
-  } else {
+  } else if (uSurf < 2.5) {
     // ceiling: brown water stains
     float s = texture2D(uNoise, vWorld.xz * 0.045 + 0.5).r;
     float st = smoothstep(0.6, 0.7, s);
@@ -1005,7 +1027,9 @@ function worldMaterial(map, surf, uvScale, uvOffset = [0, 0]) {
     fragmentShader: WORLD_FRAG,
   });
 }
+TEX.decal = makeDecalTexture();
 const MAT = {
+  decal: (() => { const m = worldMaterial(TEX.decal, 3, 1); m.polygonOffset = true; m.polygonOffsetFactor = -1; m.polygonOffsetUnits = -4; return m; })(),
   wall: worldMaterial(TEX.wall[0], 0, 1 / 1.2),
   floor: worldMaterial(TEX.carpet[0], 1, 1 / 2.4),
   ceil: worldMaterial(TEX.ceil[0], 2, 1 / 1.2, [-0.3, 0]),
@@ -1149,7 +1173,7 @@ class GeoBuilder {
     }
     if (this.extra) for (const k in this.extra) g.setAttribute(k, new THREE.Float32BufferAttribute(this.extra[k].data, this.extra[k].size));
     g.setIndex(this.vc > 65535 ? new THREE.Uint32BufferAttribute(this.ix, 1) : new THREE.Uint16BufferAttribute(this.ix, 1));
-    g.computeBoundingSphere();
+    if (this.vc) g.computeBoundingSphere();
     return g;
   }
 }
@@ -1180,6 +1204,26 @@ function* buildChunkGeometry(kx, kz) {
   const walls = new GeoBuilder(true), floor = new GeoBuilder(true), ceil = new GeoBuilder(true), panels = new GeoBuilder(false);
   panels.extra = { aSeed: { size: 1, data: [] }, aLPos: { size: 2, data: [] } };
   walls.surf = SURF_WALL; floor.surf = SURF_FLOOR; ceil.surf = SURF_CEIL;
+  const decals = new GeoBuilder(true); decals.surf = SURF_WALL;
+  const drnd = mulberry32((hash2(kx, kz, world.seed + 77) * 4294967296) >>> 0);
+  // atlas cell 0 outlet, 1 switch, 2 wall vent, 3 ceiling vent
+  const remapUV = (cell) => { const u0 = (cell & 1) * 0.5, v0 = (cell >> 1) * 0.5; for (let i = decals.uv.length - 8; i < decals.uv.length; i += 2) { decals.uv[i] = u0 + decals.uv[i] * 0.5; decals.uv[i + 1] = 1 - (v0 + (1 - decals.uv[i + 1]) * 0.5); } };
+  // decorate one wall face: (ax, az) = start of the face, (dx, dz) = unit direction along it, n = face normal
+  const decorate = (ax, az, dx, dz, nx, nz, len) => {
+    decals.cand = walls.cand;
+    const spans = Math.max(1, Math.round(len / CELL));
+    for (let s = 0; s < spans; s++) {
+      const r = drnd(), mid = (s + 0.5) * (len / spans) + (drnd() - 0.5) * 0.9;
+      let cell = -1, w = 0, hgt = 0, y = 0;
+      if (r < 0.1) { cell = 0; w = 0.075; hgt = 0.12; y = 0.28; }
+      else if (r < 0.15) { cell = 1; w = 0.075; hgt = 0.12; y = 1.2; }
+      else if (r < 0.2) { cell = 2; w = 0.42; hgt = 0.24; y = 2.45; }
+      if (cell < 0) continue;
+      const px = ax + dx * mid + nx * 0.006, pz = az + dz * mid + nz * 0.006;
+      decals.quad(px - dx * w / 2, y - hgt / 2, pz - dz * w / 2, dx * w, 0, dz * w, 0, hgt, 0, nx, 0, nz, 1, 1, 2);
+      remapUV(cell);
+    }
+  };
   const gx0 = kx * N, gz0 = kz * N;
   const wsegV = 5;
   // --- walls on vertical lines (x = const) ---
@@ -1198,6 +1242,7 @@ function* buildChunkGeometry(kx, kz) {
       walls.quad(X - h, 0, zs, 0, 0, ze - zs, 0, H, 0, -1, 0, 0, su, wsegV, 1);
       yield;
       walls.quad(X + h, 0, zs, 0, 0, ze - zs, 0, H, 0, 1, 0, 0, su, wsegV, 1);
+      decorate(X - h, zs, 0, 1, -1, 0, ze - zs); decorate(X + h, zs, 0, 1, 1, 0, ze - zs);
       if (!contA && !world.wallN(gx, gzA) && !world.wallN(gx - 1, gzA)) walls.quad(X - h, 0, zs, T, 0, 0, 0, H, 0, 0, 0, -1, 1, wsegV, 1);
       if (!contB && !world.wallN(gx, gzB + 1) && !world.wallN(gx - 1, gzB + 1)) walls.quad(X - h, 0, ze, T, 0, 0, 0, H, 0, 0, 0, 1, 1, wsegV, 1);
       yield;
@@ -1219,6 +1264,7 @@ function* buildChunkGeometry(kx, kz) {
       walls.quad(xs, 0, Z - h, xe - xs, 0, 0, 0, H, 0, 0, 0, -1, su, wsegV, 1);
       yield;
       walls.quad(xs, 0, Z + h, xe - xs, 0, 0, 0, H, 0, 0, 0, 1, su, wsegV, 1);
+      decorate(xs, Z - h, 1, 0, 0, -1, xe - xs); decorate(xs, Z + h, 1, 0, 0, 1, xe - xs);
       if (!contA && !world.wallW(gxA, gz) && !world.wallW(gxA, gz - 1)) walls.quad(xs, 0, Z - h, 0, 0, T, 0, H, 0, -1, 0, 0, 1, wsegV, 1);
       if (!contB && !world.wallW(gxB + 1, gz) && !world.wallW(gxB + 1, gz - 1)) walls.quad(xe, 0, Z - h, 0, 0, T, 0, H, 0, 1, 0, 0, 1, wsegV, 1);
       yield;
@@ -1243,6 +1289,13 @@ function* buildChunkGeometry(kx, kz) {
     floor.quad(x0, 0, z0, CELL, 0, 0, 0, 0, CELL, 0, 1, 0, SEG, SEG, 0);
     ceil.quad(x0, H, z0, CELL, 0, 0, 0, 0, CELL, 0, -1, 0, SEG, SEG, 0);
     const lt = world.lightType(cx, cz);
+    if ((lt < 0 || lt === LIGHT.BROKEN) && drnd() < 0.18) {
+      decals.surf = SURF_CEIL; decals.cell = cell; decals.cand = cand;
+      const vx = x0 + CELL / 2 - 0.3 + (lt < 0 ? 0 : 0.6), vz = z0 + CELL / 2 - 0.3 + (lt < 0 ? 0 : 0.7);
+      decals.quad(vx, H - 0.006, vz, 0.6, 0, 0, 0, 0, 0.6, 0, -1, 0, 1, 1, 2);
+      remapUV(3);
+      decals.surf = SURF_WALL;
+    }
     if (lt >= 0) {
       const mx = x0 + CELL / 2, mz = z0 + CELL / 2, seed = world.lightSeed(cx, cz);
       panels.quad(mx - 0.3, H - 0.012, mz - 0.6, 0.6, 0, 0, 0, 0, 1.2, 0, -1, 0, 1, 1, 2);
@@ -1250,7 +1303,7 @@ function* buildChunkGeometry(kx, kz) {
     }
     yield;
   }
-  return { walls: walls.build(), floor: floor.build(), ceil: ceil.build(), panels: panels.build() };
+  return { walls: walls.build(), floor: floor.build(), ceil: ceil.build(), panels: panels.build(), decals: decals.build() };
 }
 function mergeCand(a, b) {
   const seen = new Set();
@@ -1265,6 +1318,7 @@ let building = null;   // { kx, kz, gen }
 function finishChunk(kx, kz, g) {
   const group = new THREE.Group();
   const meshes = [new THREE.Mesh(g.walls, MAT.wall), new THREE.Mesh(g.floor, MAT.floor), new THREE.Mesh(g.ceil, MAT.ceil), new THREE.Mesh(g.panels, MAT.panel)];
+  if (g.decals.attributes.position.count) meshes.push(new THREE.Mesh(g.decals, MAT.decal)); else g.decals.dispose();
   for (const m of meshes) { m.matrixAutoUpdate = false; group.add(m); }
   group.matrixAutoUpdate = false;
   scene.add(group);
@@ -3607,6 +3661,7 @@ function applySettings() {
   $('setQuality').value = String(settings.quality);
   $('setBob').checked = settings.bob;
   postU.uGammaInv.value = 1 / settings.bright;
+  Sound.setHRTF(+settings.quality > 0);
   $('setBright').value = settings.bright; $('setBrightVal').textContent = Math.round(settings.bright * 100) + '%';
 }
 function bindSetting(id, key, parse, evt = 'input') {

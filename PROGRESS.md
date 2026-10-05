@@ -137,3 +137,8 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   rushing air and a rising chord, the screen whites out, then the win screen appears. Game-over screen shows a random
   survival tip. New Brightness setting (gamma in the post pass) for dark monitors. Level naming unified: Level 1 —
   The Lobby, Level 2 — The Flooded Halls.
+- **[07:38 UTC] Extra — Signal meter, decals.** HUD "STATIC" meter (4 bars, crackles) shows how close the nearest
+  page — or the exit hum — is, so the hunt also works without headphones. Walls get procedural decals from a canvas
+  atlas (power outlets near the floor, light switches, vent grilles near the ceiling) and some dark ceiling cells get
+  air-vent grilles; decals use the same baked-light shader (polygon offset, no z-fighting). Low quality uses cheaper
+  equal-power audio panning instead of HRTF.
