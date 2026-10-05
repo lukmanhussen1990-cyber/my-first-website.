@@ -89,3 +89,9 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   waterline with a scummy tide mark. Wading is slower (run 4.7 m/s) and louder (splashes heard 26 m running / 9 m
   walking); the monster is faster (chase 5.0 m/s) and splashes when it walks. Batteries and floor pages float.
   Water ambience: lapping + random spatial drips. Separate set of 5 level-2 notes.
+- **[07:16 UTC] Feature 11 — Saving: DONE.** localStorage `backrooms.save.v1`: best time per level (win screen shows
+  "NEW BEST!"), unlocked levels (Level 2 button appears on the menu after the first escape), escape/death counters
+  shown on the title screen, and the current run (level, world seed, position, facing, time, notes taken, note/exit
+  positions, collected batteries, flashlight charge). The run autosaves every 10 s, on pause, on quit and on page
+  unload; "CONTINUE (LEVEL x, n/5, m:ss)" rebuilds the identical world from the seed. Dying or winning clears the run.
+  Settings are saved separately. Tested: quit -> reload page -> continue restored seed/notes/time; win stored best time.

@@ -3129,18 +3129,73 @@ $('btnContinue').addEventListener('click', () => continueGame());
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
 window.addEventListener('blur', () => { if (!isTouch) pauseGame(); });
 
-// hooks filled in by the save system
-function onNewRun() {}
-function onPause() {}
-function onDeath() {}
+// ============================================================================
+//  SAVE SYSTEM (localStorage): best times, unlocked levels, mid-run progress
+// ============================================================================
+const SAVE_KEY = 'backrooms.save.v1';
+let save = { best: {}, unlocked: 1, escapes: 0, deaths: 0, run: null };
+function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && typeof s === 'object') save = Object.assign(save, s); } catch (e) { /* ignore */ } }
+function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* storage blocked */ } }
+let autosaveT = 0;
+function snapshotRun() {
+  if (game.state !== 'playing' && game.state !== 'paused') return;
+  save.run = {
+    level: game.level, seed: world.seed, time: game.time, notes: game.notes,
+    x: player.pos.x, z: player.pos.z, yaw: player.yaw,
+    battery: flash.battery, specs: goal.specs.map((s) => ({ ...s })), exitSpawned: goal.exitSpawned,
+    collected: [...collectedItems],
+  };
+  writeSave();
+}
+function onNewRun() { save.run = null; writeSave(); autosaveT = 10; }
+function onPause() { snapshotRun(); }
+function onDeath() { save.deaths = (save.deaths || 0) + 1; save.run = null; writeSave(); }
 function onWin() {
-  $('winTitle').textContent = 'YOU ESCAPED';
-  $('winStats').innerHTML = `Level ${game.level} cleared in ${formatTime(game.time)}`;
-  $('btnNextLevel').classList.toggle('hidden', game.level !== 1);
+  const lvl = game.level, prev = save.best[lvl];
+  const isBest = !prev || game.time < prev;
+  if (isBest) save.best[lvl] = game.time;
+  save.unlocked = Math.max(save.unlocked || 1, Math.min(2, lvl + 1));
+  save.escapes = (save.escapes || 0) + 1;
+  save.run = null;
+  writeSave();
+  $('winTitle').textContent = lvl === 1 ? 'YOU ESCAPED LEVEL 0' : 'YOU ESCAPED THE FLOODED HALLS';
+  $('winStats').innerHTML = `Time: ${formatTime(game.time)}${isBest ? ' &mdash; <b style="color:#fff3a0">NEW BEST!</b>' : ''}<br>Best: ${formatTime(save.best[lvl])}`;
+  $('btnNextLevel').classList.toggle('hidden', lvl !== 1);
+  $('btnNextLevel').textContent = 'DESCEND TO LEVEL 2';
   showScreen('winScreen');
 }
-function refreshStartScreen() {}
-function continueGame() {}
+function refreshStartScreen() {
+  $('btnContinue').classList.toggle('hidden', !save.run);
+  if (save.run) $('btnContinue').textContent = `CONTINUE (LEVEL ${save.run.level === 2 ? 2 : 0}, ${save.run.notes}/5, ${formatTime(save.run.time)})`;
+  $('btnLevel2').classList.toggle('hidden', (save.unlocked || 1) < 2);
+  const r = [];
+  if (save.best[1]) r.push('BEST LEVEL 0: ' + formatTime(save.best[1]));
+  if (save.best[2]) r.push('BEST LEVEL 2: ' + formatTime(save.best[2]));
+  if (save.escapes || save.deaths) r.push(`ESCAPES ${save.escapes || 0} · DEATHS ${save.deaths || 0}`);
+  $('records').innerHTML = r.join('<br>');
+}
+function continueGame() {
+  const run = save.run;
+  if (!run) return;
+  showScreen(null);
+  game.level = run.level; game.time = run.time; game.notes = run.notes; game.danger = 0;
+  world = new World(run.seed, run.level);
+  applyLevelLook(run.level);
+  clearChunks(); clearBeacons(); hideNote();
+  collectedItems.clear(); for (const id of run.collected || []) collectedItems.add(id);
+  goal.specs = run.specs || []; goal.exitSpawned = !!run.exitSpawned;
+  player.pos.set(run.x, 0, run.z); player.vel.set(0, 0, 0); player.yaw = run.yaw; player.pitch = 0;
+  player.stamina = 1; player.exhausted = false; player.crouchToggle = false;
+  flash.on = false; flash.battery = run.battery ?? 1; flash.intensity = 0;
+  updateChunks(player.pos.x, player.pos.z, true);
+  resetMonster();
+  game.state = 'playing';
+  Sound.init(); Sound.resume(); applySettings();
+  clock.getDelta(); autosaveT = 10;
+  requestLock();
+  showMessage('Progress restored. It is still out there.', 4);
+}
+window.addEventListener('beforeunload', snapshotRun);
 
 // ============================================================================
 //  MAIN LOOP
@@ -3168,6 +3223,7 @@ function frame() {
     updateWater(dt);
     updateGoal(dt);
     updateBeacons();
+    autosaveT -= dt; if (autosaveT <= 0) { autosaveT = 10; snapshotRun(); }
     if (goal.reading > 0) { goal.reading -= dt; if (goal.reading <= 0) hideNote(); }
     updateHUD(dt);
     updateChunks(player.pos.x, player.pos.z);
@@ -3194,6 +3250,7 @@ function frame() {
   renderer.render(postScene, postCam);
 }
 loadSettings();
+loadSave();
 applySettings();
 spawnPlayer(CELL * 0.5, CELL * 0.5);
 updateChunks(player.pos.x, player.pos.z, true);
@@ -3202,7 +3259,7 @@ showScreen('startScreen');
 frame();
 
 // Debug / test hook
-window.__bk = { applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>
