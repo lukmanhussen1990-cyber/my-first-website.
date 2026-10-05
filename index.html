@@ -190,12 +190,14 @@ img { display: block; }
 /* menu */
 #menu {
   display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); align-items: center; justify-items: center; row-gap: calc(var(--u) * 12);
-  background: linear-gradient(rgba(30, 20, 60, 0.35), rgba(0, 0, 0, 0) 32%, rgba(0, 0, 0, 0) 62%, rgba(30, 15, 50, 0.55));
+  background:
+    radial-gradient(ellipse 50% 30% at 50% 17%, rgba(24, 12, 44, 0.45), rgba(24, 12, 44, 0) 100%),
+    linear-gradient(rgba(30, 20, 60, 0.35), rgba(0, 0, 0, 0) 32%, rgba(0, 0, 0, 0) 62%, rgba(30, 15, 50, 0.55));
 }
 .menu-top { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 4); margin-top: calc(var(--u) * 10); }
 #logo { width: min(86vw, calc(var(--u) * 640)); height: auto; aspect-ratio: 900 / 420; max-width: 100%; filter: drop-shadow(0 calc(var(--u) * 8) calc(var(--u) * 10) rgba(30, 10, 50, 0.35)); animation: logoIn 0.8s cubic-bezier(.2, 1.4, .4, 1); }
 @keyframes logoIn { from { transform: scale(0.6) rotate(-6deg); opacity: 0; } }
-.tagline { font-size: calc(var(--u) * 24); text-align: center; opacity: 0.95; }
+.tagline { font-size: calc(var(--u) * 24); text-align: center; opacity: 0.95; text-shadow: 0 calc(var(--u) * 2) 0 rgba(30, 10, 50, 0.7), 0 0 calc(var(--u) * 14) rgba(30, 10, 50, 0.8); }
 .menu-side { justify-self: start; align-self: center; width: min(44vw, calc(var(--u) * 400)); display: flex; flex-direction: column; gap: calc(var(--u) * 14); }
 .stat-row { display: flex; gap: calc(var(--u) * 10); }
 .stat { flex: 1; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: calc(var(--u) * 16); padding: calc(var(--u) * 10) calc(var(--u) * 12); display: flex; flex-direction: column; min-width: 0; }
@@ -236,6 +238,14 @@ img { display: block; }
 /* ---------- small / portrait screens ---------- */
 @media (max-width: 700px) {
   .score-panel .digits { min-width: 0; }
+}
+/* small phones: shrink the whole HUD scale so the top row (pause, caps, score) never collides */
+@media (max-width: 389px) {
+  :root { --u: calc(100vw * 0.0015); }
+}
+/* short landscape screens: the mission card joins the top row so the power-up timers keep the left edge */
+@media (max-height: 450px) and (min-aspect-ratio: 5/4) {
+  .mission-card { top: calc(var(--st) + var(--pad)); left: calc(var(--sl) + var(--pad) + var(--u) * 285); }
 }
 @media (max-aspect-ratio: 9/10) {
   .menu-side { justify-self: center; align-self: end; width: min(94vw, 460px); }
@@ -376,13 +386,8 @@ const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
-const invLerp = (a, b, v) => clamp((v - a) / (b - a), 0, 1);
 const smoothstep = t => t * t * (3 - 2 * t);
 const damp = (a, b, lambda, dt) => lerp(a, b, 1 - Math.exp(-lambda * dt));
-const rand = (a, b) => a + Math.random() * (b - a);
-const randInt = (a, b) => Math.floor(a + Math.random() * (b - a + 1));
-const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-const chance = p => Math.random() < p;
 const pad6 = n => {
   const s = String(Math.max(0, Math.floor(n)));
   return s.length >= 6 ? s : '000000'.slice(s.length) + s;
@@ -488,7 +493,7 @@ const Save = (() => {
     try {
       const raw = window.localStorage ? localStorage.getItem(KEY) : null;
       data = raw ? sanitize(JSON.parse(raw)) : defaults();
-    } catch (e) {
+    } catch {
       data = defaults();
     }
   }
@@ -496,7 +501,7 @@ const Save = (() => {
     try {
       if (window.localStorage) localStorage.setItem(KEY, JSON.stringify(data));
       return true;
-    } catch (e) {
+    } catch {
       return false;
     }
   }
@@ -544,7 +549,7 @@ const Sound = {
       }
       if (this.ctx.state === 'suspended') this.ctx.resume();
       this.unlocked = true;
-    } catch (e) {
+    } catch {
       this.ctx = null;
     }
   },
@@ -556,6 +561,16 @@ const Sound = {
     this.master.gain.setTargetAtTime(Save.data.sound ? 0.9 : 0, t, 0.03);
     this.musicBus.gain.setTargetAtTime(Save.data.music ? 0.42 * this.music.level : 0, t, 0.08);
     this.sfxBus.gain.setTargetAtTime(0.85, t, 0.03);
+  },
+
+  // silence everything while the page is hidden (and save battery); resume when it comes back
+  setHidden(hidden) {
+    const c = this.ctx;
+    if (!c) return;
+    try {
+      if (hidden && c.state === 'running') c.suspend();
+      else if (!hidden && c.state === 'suspended' && this.unlocked) c.resume();
+    } catch { /* some browsers refuse to suspend: harmless */ }
   },
 
   setMusicLevel(level) {
@@ -623,7 +638,7 @@ const Sound = {
     this.lastCoinAt = t;
     if (t - (this.lastCoinSound || 0) < 0.045) return; // magnet bursts: keep it musical, not noisy
     this.lastCoinSound = t;
-    const k = Math.pow(2, (this.coinCombo % 8) / 12);
+    const k = Math.pow(2, [0, 2, 4, 5, 7, 9, 11, 12][this.coinCombo % 8] / 12); // a coin streak climbs a major scale
     this.osc('triangle', 1318.5 * k, t, 0.09, 0.16);
     this.osc('sine', 1975.5 * k, t + 0.045, 0.14, 0.13);
   },
@@ -780,6 +795,14 @@ const Sound = {
     const m = this.music, c = this.ctx;
     if (!m.on || !c) return;
     const sixteenth = 60 / 118 / 4;
+    // after a stall (background tab, slow device) skip the missed steps instead of firing them all at once
+    if (m.next < c.currentTime - 0.05) {
+      const missed = Math.ceil((c.currentTime - m.next) / sixteenth);
+      m.next += missed * sixteenth;
+      m.step += missed;
+      m.loop += Math.floor(m.step / 64);
+      m.step %= 64;
+    }
     while (m.next < c.currentTime + 0.14) {
       this.playStep(m.step, m.next, m.loop);
       m.next += sixteenth;
@@ -791,10 +814,16 @@ const Sound = {
     const bus = this.musicBus;
     if (!Save.data.music) return;
     const bar = Math.floor(s / 16), st = s % 16;
-    // F - C - Dm - Bb   (roots in Hz)
-    const roots = [87.31, 65.41, 73.42, 58.27];
-    const chords = [[349.23, 440, 523.25], [329.63, 392, 523.25], [349.23, 440, 587.33], [349.23, 466.16, 587.33]];
+    // song form, 4 bars per section: A (arpeggio) - A' (lead) - B (minor turn, second lead) - A' (lead)
+    const section = loop % 4, B = section === 2;
+    // A: F - C - Dm - Bb    B: Dm - Bb - Gm - C   (roots in Hz)
+    const roots = B ? [73.42, 58.27, 98.0, 65.41] : [87.31, 65.41, 73.42, 58.27];
+    const chords = B
+      ? [[293.66, 349.23, 440], [293.66, 349.23, 466.16], [293.66, 392, 466.16], [329.63, 392, 523.25]]
+      : [[349.23, 440, 523.25], [329.63, 392, 523.25], [349.23, 440, 587.33], [349.23, 466.16, 587.33]];
     const root = roots[bar];
+    // snare fill into the next section
+    if (bar === 3 && st >= 12 && (section === 1 || section === 3)) this.noiseHit(t, 0.1, 0.12 + (st - 12) * 0.05, 'bandpass', 1700 + (st - 12) * 250, 800, 0.9, bus);
     // drums
     if (st === 0 || st === 7 || st === 8 || (st === 14 && bar % 2 === 1)) this.osc('sine', 150, t, 0.22, 0.55, { to: 42, glide: 0.18, bus });
     if (st === 4 || st === 12) { this.noiseHit(t, 0.16, 0.32, 'bandpass', 1900, 900, 0.9, bus); this.osc('triangle', 220, t, 0.08, 0.12, { to: 140, glide: 0.07, bus }); }
@@ -808,8 +837,22 @@ const Sound = {
     if (st === 2 || st === 6 || st === 10 || st === 14) {
       for (const f of chords[bar]) { this.osc('sawtooth', f, t, 0.14, 0.022, { lp: 2400, lpTo: 600, bus, detune: 6 }); this.osc('sawtooth', f, t, 0.14, 0.02, { lp: 2400, lpTo: 600, bus, detune: -6 }); }
     }
-    // lead melody every other loop (two 2-bar phrases)
-    if (loop % 2 === 1) {
+    if (B) {
+      // second melody in D minor on a softer voice
+      const leadB = [
+        [74, null, 77, null, 81, null, 79, 77, 76, null, 74, null, 72, null, 74, null],
+        [77, null, 74, null, 70, null, 74, null, 77, null, 79, null, 77, null, null, null],
+        [79, null, 77, null, 74, null, 70, null, 74, null, 77, null, 79, 81, 82, null],
+        [84, null, 81, null, 79, null, 76, null, 79, null, 76, null, 72, null, null, null]
+      ];
+      const n = leadB[bar][st];
+      if (n !== null) {
+        const f = 440 * Math.pow(2, (n - 69) / 12);
+        this.osc('triangle', f, t, 0.22, 0.07, { bus });
+        this.osc('sine', f * 2, t, 0.14, 0.025, { bus });
+      }
+    } else if (section % 2 === 1) {
+      // lead melody (two 2-bar phrases)
       const lead = [
         [72, null, 74, null, 76, null, 79, null, 77, null, 76, 74, 72, null, null, null],
         [67, null, 69, null, 72, null, 72, 74, 76, null, 74, null, 72, null, 67, null],
@@ -1509,6 +1552,15 @@ const Tex = (() => {
     }, { clamp: true, aniso: false });
   }
 
+  // soft contact shadow used when the shadow map is off (low quality)
+  function shadowBlob() {
+    return make('shadowBlob', 64, 64, (g, w, h) => {
+      const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grd.addColorStop(0, 'rgba(22,10,18,1)'); grd.addColorStop(0.5, 'rgba(22,10,18,0.62)'); grd.addColorStop(1, 'rgba(22,10,18,0)');
+      g.fillStyle = grd; g.fillRect(0, 0, w, h);
+    }, { clamp: true, aniso: false });
+  }
+
   function glow() {
     return make('glow', 64, 64, (g, w, h) => {
       const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
@@ -1521,7 +1573,7 @@ const Tex = (() => {
   return {
     setMaxAniso(n) { maxAniso = Math.max(1, Math.min(8, n || 1)); },
     make, canvas, rr, speckle, star, crown, heart, bolt, bubbleWord, FONT_HEAVY, FACADES,
-    trackAtlas, walksAtlas, ramp, train, coin, obstacleAtlas, OBS_UV,
+    trackAtlas, walksAtlas, ramp, train, coin, obstacleAtlas, OBS_UV, shadowBlob,
     graffiti, facade, banner, metroSign, stone, palm, skyline, cloud, glow
   };
 })();
@@ -2383,7 +2435,8 @@ const World = {
     seg.updateMatrixWorld(true);
     const r = this.hash(index);
     const isBridge = index > 2 && index % 9 === 5;
-    seg.userData.wall.material = this.mats.walls[(index + (r * 7 | 0)) % 4];
+    // the menu backdrop (segment 0) uses the picture graffiti so no wall lettering competes with the logo
+    seg.userData.wall.material = this.mats.walls[index === 0 ? 2 : (index + (r * 7 | 0)) % 4];
     seg.userData.walk.geometry = this.geos.walkProps[(r * 4) | 0];
 
     // lamp glows
@@ -3265,7 +3318,7 @@ const Gen = {
 
   // ---------------- commit: spawn obstacles, coins and plan ----------------
   commit(layout, res, z0) {
-    const { specs, P } = layout;
+    const { specs } = layout;
     for (const s of specs) {
       let zNear;
       if (s.type === OB.TRAIN) zNear = z0 - s.d;
@@ -3345,7 +3398,7 @@ const Gen = {
 
   placeCoins(layout, res, z0, exclude) {
     const blocked = z => exclude && exclude.some(ez => Math.abs(ez - z) < 2.2);
-    const { len, P } = layout;
+    const { len } = layout;
     const { xs, ys, kind } = this.samplePath(layout, res);
     const spacing = 2.35;
     let d = RNG.int(2, 10);
@@ -3529,6 +3582,12 @@ const Runner = {
     this.body = body;
     this.buildExtras();
     Gfx.scene.add(root);
+    const blob = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 1.15).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ map: Tex.shadowBlob(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+    blob.renderOrder = 1;
+    blob.visible = false;
+    Gfx.scene.add(blob);
+    this.blob = blob;
   },
 
   // Power-up props: hoverboard, jetpack (replaces backpack look), magnet in the hand.
@@ -3726,6 +3785,17 @@ const Runner = {
     this.mats.shoe.emissive.setHex(ctx.sneakers ? 0x1f8f47 : 0x000000);
     // invulnerability blink
     r.visible = !(ctx.invuln > 0 && mode === 'run' && Math.floor(this.time * 14) % 2 === 0);
+    // blob shadow keeps the runner grounded when real shadows are off; it shrinks and fades with height
+    const blob = this.blob;
+    blob.visible = !Gfx.renderer.shadowMap.enabled;
+    if (blob.visible) {
+      const gy = Math.max(0, p.groundY || 0);
+      const k = 1 / (1 + Math.max(0, p.y - gy) * 0.5);
+      blob.position.set(p.x, gy + 0.025, p.z + (mode === 'dead' ? 0.6 : 0.05));
+      blob.scale.set(mode === 'dead' ? 1.2 : 1, 1, mode === 'dead' ? 2.0 : (p.rollT > 0 ? 1.2 : 1));
+      blob.scale.multiplyScalar(0.55 + 0.45 * k);
+      blob.material.opacity = 0.78 * k;
+    }
   },
 
   applyPose(o) {
@@ -5127,8 +5197,9 @@ const Hud = {
     }
     const mult = Game.mult();
     if (mult !== this.lastMult) { e.hudMult.textContent = 'x' + mult; e.hudMult.classList.toggle('boost', Powers.has('x2')); this.lastMult = mult; }
+    // the card follows the live score once it passes the record (no fanfare on a player's very first record)
     const beaten = run.score > best && best > 0;
-    const bestText = pad6(beaten ? run.score : best);
+    const bestText = pad6(run.score > best ? run.score : best);
     if (bestText !== this.lastBest) { e.hudBest.textContent = bestText; this.lastBest = bestText; }
     if (beaten && !e.hudBest.parentElement.classList.contains('beaten')) {
       e.hudBest.parentElement.classList.add('beaten');
@@ -5396,7 +5467,7 @@ const Game = {
     const unlock = () => { Sound.unlock(); if (Save.data.music) Sound.startMusic(); };
     for (const ev of ['pointerdown', 'keydown', 'touchend']) window.addEventListener(ev, unlock, { passive: true });
     this.wireFeedback();
-    document.addEventListener('visibilitychange', () => { if (document.hidden) this.autoPause(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) this.autoPause(); Sound.setHidden(document.hidden); });
     window.addEventListener('blur', () => this.autoPause());
     const box = document.getElementById('loading');
     if (box) box.style.display = 'none';
@@ -5494,7 +5565,7 @@ const Game = {
         this.wakeLock.release().catch(() => {});
         this.wakeLock = null;
       }
-    } catch (e) {
+    } catch {
       this.wakeLock = null;
     }
   },
