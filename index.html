@@ -5502,7 +5502,7 @@ const Game = {
     window.addEventListener('resize', onResize);
     window.addEventListener('orientationchange', () => setTimeout(onResize, 150));
     // audio may only start after a user gesture
-    const unlock = () => { Sound.unlock(); if (Save.data.music) Sound.startMusic(); };
+    const unlock = () => { Sound.unlock(); if (Save.data.music && this.state !== 'paused' && this.state !== 'countdown') Sound.startMusic(); };
     for (const ev of ['pointerdown', 'keydown', 'touchend']) window.addEventListener(ev, unlock, { passive: true });
     this.wireFeedback();
     document.addEventListener('visibilitychange', () => { if (document.hidden) this.autoPause(); Sound.setHidden(document.hidden); });
