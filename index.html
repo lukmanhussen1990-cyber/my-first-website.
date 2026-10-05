@@ -1951,7 +1951,7 @@ function buildMonsterModel() {
 // ============================================================================
 const DIFF = [{ speed: 0.86, hear: 0.75, sight: 0.8, hunt: 1.6 }, { speed: 1, hear: 1, sight: 1, hunt: 1 }, { speed: 1.1, hear: 1.25, sight: 1.15, hunt: 0.7 }];
 const diff = () => DIFF[settings.difficulty] || DIFF[1];
-const MONSTER_SPEED = { 1: { wander: 1.25, investigate: 2.3, chase: 4.35, search: 1.6 }, 2: { wander: 1.6, investigate: 2.8, chase: 5.0, search: 2.0 } };
+const MONSTER_SPEED = { 1: { wander: 1.25, investigate: 2.3, chase: 4.2, search: 1.6 }, 2: { wander: 1.6, investigate: 2.8, chase: 5.0, search: 2.0 } };
 const monster = {
   model: null,
   pos: new THREE.Vector3(1e4, 0, 1e4),
@@ -2042,7 +2042,7 @@ function updateMonster(dt) {
     const cosA = dist > 0.01 ? (fx * dx + fz * dz) / dist : 1;
     const fovOk = m.state === 'chase' ? cosA > -0.2 : cosA > Math.cos(1.15) || (dist < 2.5 && !player.holding);
     const pl = playerVisibility();
-    const range = (m.state === 'chase' ? 26 : 5 + 17 * pl) * (player.crouching && m.state !== 'chase' ? 0.6 : 1) * (player.holding && m.state !== 'chase' ? 0.75 : 1) * diff().sight;
+    const range = (m.state === 'chase' ? 12 + 10 * Math.min(1, pl) : 5 + 17 * pl) * (player.crouching && m.state !== 'chase' ? 0.6 : 1) * (player.holding && m.state !== 'chase' ? 0.75 : 1) * diff().sight;
     m.sees = dist < range && fovOk && world.segmentClear(m.pos.x, m.pos.z, player.pos.x, player.pos.z);
   }
   if (m.sees) {
@@ -2065,13 +2065,13 @@ function updateMonster(dt) {
     m.speed *= Math.max(0, 1 - dt * 8);
     if (m.spotT <= 0) { m.state = 'chase'; m.lastSeen.copy(player.pos); }
   } else if (m.state === 'chase') {
-    speed = lvl.chase * (1 + 0.04 * notesCollected());
+    speed = lvl.chase * (1 + 0.025 * notesCollected());
     if (m.sees) { goalX = player.pos.x; goalZ = player.pos.z; m.path = []; }
     else {
       m.lostTimer += dt;
       m.repath -= dt;
       // it keeps a sense of where you went for a moment after losing sight, then heads to that spot
-      if (m.lostTimer < 1.2) m.lastSeen.copy(player.pos);
+      if (m.lostTimer < 0.8) m.lastSeen.copy(player.pos);
       if (m.repath <= 0 || !m.path.length) { setMonsterGoal(m.lastSeen.x, m.lastSeen.z); m.repath = 0.6; }
       if (m.lostTimer > 3.5 && !m.path.length) { m.state = 'search'; m.searchTimer = 7 + Math.random() * 4; m.path = []; }
       if (m.lostTimer > 9) { m.state = 'search'; m.searchTimer = 6; m.path = []; }
@@ -2489,12 +2489,12 @@ function updateBreath(dt) {
 }
 function updateStamina(dt) {
   if (player.running) {
-    player.stamina = Math.max(0, player.stamina - dt / 6.5);
+    player.stamina = Math.max(0, player.stamina - dt / 8);
     player.restTimer = 0.7;
     if (player.stamina <= 0) { player.exhausted = true; showMessage('You are out of breath...', 2); }
   } else {
     player.restTimer -= dt;
-    if (player.restTimer <= 0) player.stamina = Math.min(1, player.stamina + dt / (player.moving ? 7.5 : 4.5));
+    if (player.restTimer <= 0) player.stamina = Math.min(1, player.stamina + dt / (player.moving ? 6 : 4));
   }
   if (player.exhausted && player.stamina >= 0.35) player.exhausted = false;
   if (player.exhausted || player.stamina < 0.2) {
@@ -2848,7 +2848,7 @@ function reachExit() {
     for (const fr of [220, 277.2, 329.6, 440]) { const o = ctx.createOscillator(), og = A.gain(0); o.frequency.setValueAtTime(fr * 0.5, t); o.frequency.exponentialRampToValueAtTime(fr, t + 1.5); o.connect(og); og.connect(A.sfx); og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(0.05, t + 1.2); og.gain.exponentialRampToValueAtTime(0.0001, t + 2.6); o.start(t); o.stop(t + 2.7); }
   }
   fadeTo('#fff8e0', 1, 1.4);
-  setTimeout(() => { onLevelComplete(); fadeTo('#fff8e0', 0, 1.5); }, 1600);
+  setTimeout(() => { if (game.state !== 'escaping') return; onLevelComplete(); fadeTo('#fff8e0', 0, 1.5); }, 1600);
 }
 
 // Spatial audio beacons: radio static at notes, a low hum at the exit

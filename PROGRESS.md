@@ -168,3 +168,9 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   smoothstep with reversed edges replaced; water light-texture lookups were half a cell off and lagged a frame when
   crossing cells; whispers no longer cut off; C can't toggle crouch while paused; double-clicking New Game can't start
   two runs. All regression tests pass.
+- **[07:56 UTC] Extra — Balance via play-testing bots.** Wrote a pathfinding bot that plays complete runs (A* to each
+  page, then the exit). Without the creature every run is winnable in ~2.5-3 minutes. With it, a naive bot died on
+  nearly every sighting, so: level-1 chase speed 4.35 -> 4.2 m/s, per-page speed bonus 4% -> 2.5%, chase sight now
+  depends on how lit you are (12-22 m instead of a flat 26 m), the "sense" after losing sight 1.2 -> 0.8 s, sprint
+  lasts 8 s and stamina refills faster while walking. Also found and fixed: the escape-sequence timer could fire into
+  a newly started run.
