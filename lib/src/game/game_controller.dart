@@ -64,8 +64,23 @@ class ClearingCell {
 
   ClearingCell(this.r, this.c, this.color, this.delay);
 
-  static const double duration = 0.42;
+  static const double flash = 0.08;
+  static const double duration = 0.26;
   bool get done => t >= delay + duration;
+}
+
+/// Glowing outline + fading tint left where a full row/column was cleared
+/// (like the original game's line blast).
+class ClearBeam {
+  final bool isRow;
+  final int index;
+  final int color;
+  double t = 0;
+
+  ClearBeam(this.isRow, this.index, this.color);
+
+  static const double duration = 0.7;
+  bool get done => t >= duration;
 }
 
 class DragState {
@@ -138,6 +153,7 @@ class GameController extends ChangeNotifier {
   ReturnAnim? returning;
   final List<double> traySpawn = [1, 1, 1];
   final List<ClearingCell> clearing = [];
+  final List<ClearBeam> beams = [];
   final List<Particle> particles = [];
   final List<FloatingText> texts = [];
   final Map<int, double> placedPop = {};
@@ -159,6 +175,7 @@ class GameController extends ChangeNotifier {
       traySpawn.any((t) => t < 1) ||
       placedPop.isNotEmpty ||
       clearing.isNotEmpty ||
+      beams.isNotEmpty ||
       particles.isNotEmpty ||
       texts.isNotEmpty ||
       comboFlash > 0 ||
@@ -185,6 +202,7 @@ class GameController extends ChangeNotifier {
     drag = null;
     returning = null;
     clearing.clear();
+    beams.clear();
     particles.clear();
     texts.clear();
     placedPop.clear();
@@ -355,7 +373,13 @@ class GameController extends ChangeNotifier {
       for (final cc in result.clearedCells) {
         final rect = l.cellRect(cc.r, cc.c);
         final dist = (rect.center - dropCenter).distance / l.cell;
-        clearing.add(ClearingCell(cc.r, cc.c, result.piece.color, dist * 0.028));
+        clearing.add(ClearingCell(cc.r, cc.c, result.piece.color, dist * 0.012));
+      }
+      for (final r in result.clearedLines.rows) {
+        beams.add(ClearBeam(true, r, result.piece.color));
+      }
+      for (final c in result.clearedLines.cols) {
+        beams.add(ClearBeam(false, c, result.piece.color));
       }
       final linesCenter = _linesCenter(result.clearedLines, dropCenter);
       final bonusText = '+${result.lineBonus}';
@@ -366,6 +390,8 @@ class GameController extends ChangeNotifier {
           linesCenter + Offset(0, -l.cell * 0.9),
           duration: 1.0,
           color: result.piece.color,
+          // Like the original, the bonus pops in just after the blast/combo.
+          delay: result.isCombo ? 0.22 : 0.08,
         ),
       );
       if (result.isCombo) {
@@ -467,32 +493,32 @@ class GameController extends ChangeNotifier {
     final l = layout!;
     final rect = l.cellRect(c.r, c.c);
     final base = Palette.blocks[c.color];
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < 6; i++) {
       final a = _rng.nextDouble() * math.pi * 2;
-      final speed = l.cell * (2.0 + _rng.nextDouble() * 5.0);
+      final speed = l.cell * (0.8 + _rng.nextDouble() * (i < 2 ? 5.5 : 2.4));
       particles.add(
         Particle(
-          pos: rect.center + Offset((_rng.nextDouble() - 0.5) * l.cell * 0.6, (_rng.nextDouble() - 0.5) * l.cell * 0.6),
-          vel: Offset(math.cos(a) * speed, math.sin(a) * speed - l.cell * 3.5),
-          size: l.cell * (0.12 + _rng.nextDouble() * 0.16),
+          pos: rect.center + Offset((_rng.nextDouble() - 0.5) * l.cell * 0.8, (_rng.nextDouble() - 0.5) * l.cell * 0.8),
+          vel: Offset(math.cos(a) * speed, math.sin(a) * speed - l.cell * 1.6),
+          size: l.cell * (0.09 + _rng.nextDouble() * 0.15),
           rot: _rng.nextDouble() * math.pi,
-          spin: (_rng.nextDouble() - 0.5) * 12,
-          life: 0.55 + _rng.nextDouble() * 0.45,
+          spin: (_rng.nextDouble() - 0.5) * 10,
+          life: 0.45 + _rng.nextDouble() * 0.5,
           color: i.isEven ? base.top : base.face,
         ),
       );
     }
-    if (_rng.nextDouble() < 0.6) {
+    if (_rng.nextDouble() < 0.5) {
       final a = _rng.nextDouble() * math.pi * 2;
-      final speed = l.cell * (1.0 + _rng.nextDouble() * 3.0);
+      final speed = l.cell * (0.6 + _rng.nextDouble() * 2.0);
       particles.add(
         Particle(
           pos: rect.center,
-          vel: Offset(math.cos(a) * speed, math.sin(a) * speed - l.cell * 2),
-          size: l.cell * (0.18 + _rng.nextDouble() * 0.14),
+          vel: Offset(math.cos(a) * speed, math.sin(a) * speed - l.cell * 1.2),
+          size: l.cell * (0.16 + _rng.nextDouble() * 0.14),
           rot: 0,
           spin: (_rng.nextDouble() - 0.5) * 4,
-          life: 0.5 + _rng.nextDouble() * 0.4,
+          life: 0.45 + _rng.nextDouble() * 0.4,
           color: const Color(0xFFFFFFFF),
           sparkle: true,
         ),
@@ -548,7 +574,7 @@ class GameController extends ChangeNotifier {
     if (clearing.isNotEmpty) {
       for (final c in clearing) {
         c.t += dt;
-        if (!c.burst && c.t >= c.delay + 0.1) {
+        if (!c.burst && c.t >= c.delay + ClearingCell.flash) {
           c.burst = true;
           _burst(c);
         }
@@ -557,8 +583,16 @@ class GameController extends ChangeNotifier {
       dirty = true;
     }
 
+    if (beams.isNotEmpty) {
+      for (final b in beams) {
+        b.t += dt;
+      }
+      beams.removeWhere((b) => b.done);
+      dirty = true;
+    }
+
     if (particles.isNotEmpty) {
-      final g = l.cell * 16;
+      final g = l.cell * 9;
       for (final p in particles) {
         p.age += dt;
         p.vel = Offset(p.vel.dx * (1 - dt * 0.8), p.vel.dy + g * dt);

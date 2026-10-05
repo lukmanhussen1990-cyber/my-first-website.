@@ -284,7 +284,34 @@ class GamePainter extends CustomPainter {
       }
     }
 
-    // Cells being blasted.
+    // Line beams: translucent tint + glowing outline where lines cleared.
+    for (final b in ctrl.beams) {
+      final k = (b.t / ClearBeam.duration).clamp(0.0, 1.0);
+      final fade = 1 - Curves.easeIn.transform(k);
+      final rect = b.isRow
+          ? Rect.fromLTWH(grid.left, grid.top + b.index * l.cell, grid.width, l.cell)
+          : Rect.fromLTWH(grid.left + b.index * l.cell, grid.top, l.cell, grid.height);
+      final glow = Palette.blocks[b.color].glow;
+      final face = Palette.blocks[b.color].face;
+      canvas.drawRect(rect, Paint()..color = face.withValues(alpha: 0.32 * fade));
+      canvas.drawRect(
+        rect.deflate(l.cell * 0.03),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = l.cell * 0.14
+          ..color = glow.withValues(alpha: 0.75 * fade)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, l.cell * 0.12),
+      );
+      canvas.drawRect(
+        rect.deflate(l.cell * 0.03),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = l.cell * 0.04
+          ..color = Color.lerp(glow, const Color(0xFFFFFFFF), 0.4)!.withValues(alpha: 0.9 * fade),
+      );
+    }
+
+    // Cells being blasted: brief white flash, then a quick shrink.
     for (final cc in ctrl.clearing) {
       final lt = cc.t - cc.delay;
       final rect = l.cellRect(cc.r, cc.c);
@@ -292,18 +319,19 @@ class GamePainter extends CustomPainter {
         drawBlock(canvas, rect, cc.color, _sprite);
         continue;
       }
-      if (lt < 0.1) {
-        final k = lt / 0.1;
-        final s = 1 + 0.08 * k;
+      if (lt < ClearingCell.flash) {
+        final k = lt / ClearingCell.flash;
+        final s = 1 + 0.06 * k;
         final rr2 = Rect.fromCenter(center: rect.center, width: rect.width * s, height: rect.height * s);
         drawBlock(canvas, rr2, cc.color, _sprite);
-        canvas.drawRect(rr2, Paint()..color = Color.fromRGBO(255, 255, 255, 0.75 * k));
+        canvas.drawRect(rr2, Paint()..color = Color.fromRGBO(255, 255, 255, 0.8 * k));
       } else {
-        final k = ((lt - 0.1) / (ClearingCell.duration - 0.1)).clamp(0.0, 1.0);
-        final s = 1.08 * (1 - Curves.easeIn.transform(k)) + 0.05;
+        final k = ((lt - ClearingCell.flash) / (ClearingCell.duration - ClearingCell.flash)).clamp(0.0, 1.0);
+        final s = 1.06 * (1 - Curves.easeIn.transform(k));
+        if (s <= 0.02) continue;
         final rr2 = Rect.fromCenter(center: rect.center, width: rect.width * s, height: rect.height * s);
-        drawBlock(canvas, rr2, cc.color, _sprite, opacity: 1 - k * 0.6);
-        canvas.drawRect(rr2, Paint()..color = Color.fromRGBO(255, 255, 255, 0.75 * (1 - k)));
+        drawBlock(canvas, rr2, cc.color, _sprite, opacity: 1 - k * 0.5);
+        canvas.drawRect(rr2, Paint()..color = Color.fromRGBO(255, 255, 255, 0.8 * (1 - k)));
       }
     }
   }
