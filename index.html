@@ -2017,7 +2017,7 @@ const monster = {
   phase: 0, speed: 0, env: 0.5, envTimer: 0,
   twitch: 0, twitchTarget: new THREE.Vector2(),
   stepPhase: 0, screechCooldown: 0, directorTimer: 0, stuckTimer: 0,
-  breath: null, active: false, alert: 0, huntTimer: 60, spotT: 0, idleT: 0,
+  breath: null, active: false, alert: 0, huntTimer: 60, spotT: 0, idleT: 0, stalkT: 0, stalkCd: 40, watched: 0,
 };
 function initMonster() {
   if (!monster.model) {
@@ -2046,6 +2046,7 @@ function resetMonster() {
   monster.state = 'wander'; monster.active = true; monster.alert = 0; monster.lostTimer = 0; monster.searchTimer = 0;
   monster.screechCooldown = 8; monster.directorTimer = 0; monster.heading = Math.random() * Math.PI * 2;
   monster.huntTimer = 50 + Math.random() * 25;
+  monster.stalkCd = 35 + Math.random() * 30; monster.stalkT = 0; monster.graceT = 0;
 }
 function monsterCell() { return [Math.floor(monster.pos.x / CELL), Math.floor(monster.pos.z / CELL)]; }
 function setMonsterGoal(x, z) {
@@ -2098,7 +2099,26 @@ function updateMonster(dt) {
     const range = (m.state === 'chase' ? 12 + 10 * Math.min(1, pl) : 5 + 17 * pl) * (player.crouching && m.state !== 'chase' ? 0.6 : 1) * (player.holding && m.state !== 'chase' ? 0.75 : 1) * diff().sight;
     m.sees = dist < range && fovOk && world.segmentClear(m.pos.x, m.pos.z, player.pos.x, player.pos.z);
   }
-  if (m.sees) {
+  // stalking: sometimes, instead of charging, it stops at a distance and just watches you
+  m.stalkCd -= dt;
+  if (m.state === 'wander' && m.stalkCd <= 0 && m.sees && dist > 11 && dist < 26) {
+    m.state = 'stalk'; m.stalkT = 7 + Math.random() * 5; m.watched = 0; m.path = []; m.stalkCd = 60 + Math.random() * 40;
+  }
+  if (m.state === 'stalk') {
+    m.stalkT -= dt;
+    const f = playerForward(), lookDot = dist > 0.01 ? -(f.x * dx + f.z * dz) / dist : 0;
+    if (lookDot > 0.93 && world.segmentClear(m.pos.x, m.pos.z, player.pos.x, player.pos.z)) m.watched += dt;
+    const decide = m.watched > 0.9, charge = dist < 8 || (decide && Math.random() < 0.35);
+    if (charge) { m.state = 'wander'; m.sees = true; m.watched = 0; m.screechCooldown = 0; }   // charge (handled just below)
+    else if (decide || m.stalkT <= 0) {
+      // slip away out of sight
+      m.state = 'wander'; m.watched = 0; m.idleT = 0; m.graceT = 5;
+      const ax = -dx / (dist || 1), az = -dz / (dist || 1);
+      setMonsterGoal(m.pos.x + ax * 22 + (Math.random() - 0.5) * 10, m.pos.z + az * 22 + (Math.random() - 0.5) * 10);
+    }
+  }
+  m.graceT = Math.max(0, (m.graceT || 0) - dt);
+  if (m.sees && m.state !== 'stalk' && !(m.graceT > 0 && dist > 6)) {
     m.lastSeen.copy(player.pos); m.lostTimer = 0;
     if (m.state !== 'chase' && m.state !== 'spotted') {
       // it freezes and stares for a heartbeat before it comes for you
@@ -2111,7 +2131,11 @@ function updateMonster(dt) {
 
   // ---------------- decisions ----------------
   let goalX = null, goalZ = null, speed = lvl.wander;
-  if (m.state === 'spotted') {
+  if (m.state === 'stalk') {
+    const want = Math.atan2(dx, dz); let dh = want - m.heading; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
+    m.heading += dh * Math.min(1, dt * 3);
+    m.speed *= Math.max(0, 1 - dt * 6);
+  } else if (m.state === 'spotted') {
     m.spotT -= dt;
     const want = Math.atan2(dx, dz); let dh = want - m.heading; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
     m.heading += dh * Math.min(1, dt * 14);
@@ -2254,7 +2278,7 @@ function animateMonster(dt, moving) {
   md.head.rotation.z += (m.twitchTarget.y - md.head.rotation.z) * Math.min(1, dt * 25);
   // while hunting, the head turns to follow you; when idle it slowly scans
   let headYaw = 0;
-  if (m.state === 'spotted' || m.state === 'chase' || m.state === 'search') {
+  if (m.state === 'spotted' || m.state === 'chase' || m.state === 'search' || m.state === 'stalk') {
     let a = Math.atan2(player.pos.x - m.pos.x, player.pos.z - m.pos.z) - m.heading; a = Math.atan2(Math.sin(a), Math.cos(a));
     headYaw = clamp(a, -1.3, 1.3);
   } else if (m.idleT > 0) headYaw = Math.sin(U.uTime.value * 0.7) * 1.1;
@@ -3467,7 +3491,7 @@ function updateScares(dt) {
   updateDoors(dt);
   updateFakeSteps(dt);
   updatePhantom(dt);
-  if (monster.state === 'chase' || monster.state === 'spotted' || scares.outage || scares.steps || scares.phantom) return;
+  if (monster.state === 'chase' || monster.state === 'spotted' || monster.state === 'stalk' || scares.outage || scares.steps || scares.phantom) return;
   scares.t -= dt * (1 + 0.12 * game.notes);
   if (scares.t > 0) return;
   // weighted random pick, skipping the one we just did; retry if it can't happen here

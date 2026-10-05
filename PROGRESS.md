@@ -189,3 +189,7 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[08:04 UTC] Extra — Note radios, damp footsteps.** Every page now has a small tape recorder beside/below it (speaker
   grille, antenna, blinking red LED) — the source of the static. Footsteps squelch when you walk over the visible damp
   carpet patches (the CPU samples the exact same noise field the floor shader uses).
+- **[08:11 UTC] Extra — Stalking.** Every minute or so, instead of charging when it first sees you at 11-26 m, the creature
+  stops and silently *watches*, head tracking you. Stare back for about a second and it decides once: ~65% of the
+  time it slowly slips away out of sight (with a short grace period), ~35% it shrieks and charges; walking within 8 m
+  always triggers the charge. Scares pause while it stalks. Verified with scripted trials (4 retreats / 2 charges of 6).
