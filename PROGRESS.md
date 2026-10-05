@@ -259,3 +259,7 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[08:56 UTC] Extra — Jump-scare variety.** Three procedural faces (gaping toothed maw, an impossibly wide grin,
   an eyeless face with a weeping third socket); each run draws one at random 1.5 s after it starts, so the catch
   itself never stalls.
+- **[08:58 UTC] Extra — Visual tour fixes.** Took screenshot tours of all three levels (random spots, light on/off) and
+  fixed what they showed: door headers now match each level's walls (they were Lobby-yellow in the tiled level 2),
+  and a soft highlight roll-off in the shaders keeps the flashlight from blowing walls out at point-blank range.
+  Title screen now notes "contains flickering lights" and points to Reduce flashing.

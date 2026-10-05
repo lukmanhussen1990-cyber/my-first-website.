@@ -992,7 +992,12 @@ vec3 applyFog(vec3 col, float depth, float localLight) {
   vec3 fogc = uFogColor * (0.18 + 0.82 * clamp(localLight, 0.0, 1.3));
   return mix(col, fogc, f);
 }
-vec3 toDisplay(vec3 c) { return pow(max(c, 0.0), vec3(1.0 / 2.2)); }
+vec3 toDisplay(vec3 c) {
+  c = max(c, 0.0);
+  vec3 e = max(c - 0.8, 0.0);            // soft roll-off so the flashlight doesn't blow walls out
+  c = min(c, vec3(0.8)) + e / (1.0 + e * 1.4);
+  return pow(c, vec3(1.0 / 2.2));
+}
 `;
 
 const WORLD_VERT = /* glsl */`
@@ -3654,7 +3659,7 @@ function buildDoubleDoor(c, baker = null) {
   const env = sampleLight(c.x, c.z, 1.5);
   // header above the doorway (static): into the chunk's merged mesh, or its own mesh
   const hdr = new THREE.Group(); hdr.position.copy(group.position); hdr.rotation.copy(group.rotation);
-  const header = new THREE.Mesh(new THREE.BoxGeometry(W + 0.02, TH - H, WALL_T), itemMaterial(0xc4ae5c));
+  const header = new THREE.Mesh(new THREE.BoxGeometry(W + 0.02, TH - H, WALL_T), itemMaterial(world.level === 2 ? 0x8a9a8e : 0xc4ae5c));
   header.position.set(0, H + (TH - H) / 2, 0); hdr.add(header);
   if (baker) baker.add(hdr, env);
   else { const b = new Baker(); b.add(hdr, env, hdr); const m = b.mesh(); m.position.set(0, 0, 0); group.add(m); }
