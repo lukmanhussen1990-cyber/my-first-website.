@@ -1846,7 +1846,7 @@ const monster = {
   phase: 0, speed: 0, env: 0.5, envTimer: 0,
   twitch: 0, twitchTarget: new THREE.Vector2(),
   stepPhase: 0, screechCooldown: 0, directorTimer: 0, stuckTimer: 0,
-  breath: null, active: false, alert: 0, huntTimer: 60,
+  breath: null, active: false, alert: 0, huntTimer: 60, spotT: 0, idleT: 0,
 };
 function initMonster() {
   if (!monster.model) {
@@ -1902,7 +1902,7 @@ function emitNoise(x, z, radius) {
   const eff = clear ? d : d * 1.5;
   if (eff > radius) return;
   monster.alert = Math.min(1, monster.alert + 0.35);
-  if (monster.state === 'chase') return;
+  if (monster.state === 'chase' || monster.state === 'spotted') return;
   if (monster.state !== 'investigate' || Math.random() < 0.5) {
     const j = clear ? 0.5 : 2.5;   // less precise when it can't see the source
     monster.state = 'investigate';
@@ -1929,16 +1929,24 @@ function updateMonster(dt) {
   }
   if (m.sees) {
     m.lastSeen.copy(player.pos); m.lostTimer = 0;
-    if (m.state !== 'chase') {
-      m.state = 'chase'; m.path = [];
-      if (m.screechCooldown <= 0) { monsterScreech(); m.screechCooldown = 14; }
+    if (m.state !== 'chase' && m.state !== 'spotted') {
+      // it freezes and stares for a heartbeat before it comes for you
+      const fresh = m.screechCooldown <= 0;
+      m.state = fresh ? 'spotted' : 'chase'; m.spotT = world.level === 2 ? 0.45 : 0.75; m.path = []; m.idleT = 0;
+      if (fresh) { monsterScreech(); m.screechCooldown = 14; }
       onChaseStart();
     }
   }
 
   // ---------------- decisions ----------------
   let goalX = null, goalZ = null, speed = lvl.wander;
-  if (m.state === 'chase') {
+  if (m.state === 'spotted') {
+    m.spotT -= dt;
+    const want = Math.atan2(dx, dz); let dh = want - m.heading; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
+    m.heading += dh * Math.min(1, dt * 14);
+    m.speed *= Math.max(0, 1 - dt * 8);
+    if (m.spotT <= 0) { m.state = 'chase'; m.lastSeen.copy(player.pos); }
+  } else if (m.state === 'chase') {
     speed = lvl.chase * (1 + 0.04 * notesCollected());
     if (m.sees) { goalX = player.pos.x; goalZ = player.pos.z; m.path = []; }
     else {
@@ -1963,14 +1971,15 @@ function updateMonster(dt) {
     if (m.searchTimer <= 0) { m.state = 'wander'; m.path = []; }
   } else {
     speed = lvl.wander;
-    if (!m.path.length) pickWanderGoal();
+    if (m.idleT > 0) { m.idleT -= dt; m.path = []; }
+    else if (!m.path.length) { if (Math.random() < 0.35) m.idleT = 1.5 + Math.random() * 3; else pickWanderGoal(); }
   }
 
   // ---------------- director: never drift too far away ----------------
   m.directorTimer -= dt;
   if (m.directorTimer <= 0) {
     m.directorTimer = 4;
-    if (dist > 62 && m.state !== 'chase') placeMonsterAway(30, 42);
+    if (dist > 62 && m.state !== 'chase' && m.state !== 'spotted') placeMonsterAway(30, 42);
   }
   // hunt escalation: every so often it "smells" roughly where you are and comes to look
   if (m.state === 'chase') m.huntTimer = Math.max(m.huntTimer, 40);
@@ -2029,7 +2038,7 @@ function updateMonster(dt) {
   updateMonsterBreath(dist);
 
   // ---------------- lights stutter around it ----------------
-  U.uMonster.value.set(m.pos.x, 0, m.pos.z, m.state === 'chase' ? 1.0 : 0.65);
+  U.uMonster.value.set(m.pos.x, 0, m.pos.z, m.state === 'chase' || m.state === 'spotted' ? 1.0 : 0.65);
   m.envTimer -= dt;
   if (m.envTimer <= 0) { m.envTimer = 0.15; m.env = sampleLight(m.pos.x, m.pos.z, 1.8); }
   monsterMat.uniforms.uEnv.value = m.env;
@@ -2072,6 +2081,14 @@ function animateMonster(dt, moving) {
   if (m.twitch <= 0) { m.twitch = 0.15 + Math.random() * (chase ? 0.5 : 2.0); m.twitchTarget.set((Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 0.9); }
   md.head.rotation.x += (m.twitchTarget.x - (chase ? 0.3 : 0) - md.head.rotation.x) * Math.min(1, dt * 25);
   md.head.rotation.z += (m.twitchTarget.y - md.head.rotation.z) * Math.min(1, dt * 25);
+  // while hunting, the head turns to follow you; when idle it slowly scans
+  let headYaw = 0;
+  if (m.state === 'spotted' || m.state === 'chase' || m.state === 'search') {
+    let a = Math.atan2(player.pos.x - m.pos.x, player.pos.z - m.pos.z) - m.heading; a = Math.atan2(Math.sin(a), Math.cos(a));
+    headYaw = clamp(a, -1.3, 1.3);
+  } else if (m.idleT > 0) headYaw = Math.sin(U.uTime.value * 0.7) * 1.1;
+  md.neck.rotation.y += (headYaw - md.neck.rotation.y) * Math.min(1, dt * (m.state === 'spotted' ? 20 : 4));
+  if (m.state === 'spotted') { md.head.rotation.z = 0.5; for (const A of md.arms) { A.sh.rotation.x = -0.4; A.sh.rotation.z = A.s * 0.5; } }
   monsterMat.uniforms.uJitter.value = chase ? 2.2 : 1.0;
   eyeMat.uniforms.uGlow.value = chase ? 1.1 : 0.55;
   md.jaw.scale.y = 1; md.mouth.visible = false;
@@ -2726,7 +2743,7 @@ const fx = { shake: 0, kick: 0, pulse: 0, dip: 0, dipT: 0, black: 0, red: 0, t: 
 const snoise = (t) => Math.sin(t * 1.7) * 0.5 + Math.sin(t * 3.1 + 1.3) * 0.3 + Math.sin(t * 7.3 + 2.1) * 0.2;
 function applyShake(dt) {
   fx.t += dt;
-  const target = Math.pow(game.danger, 2) * (monster.state === 'chase' ? 1 : 0.6);
+  const target = Math.pow(game.danger, 2) * (monster.state === 'chase' || monster.state === 'spotted' ? 1 : 0.6);
   fx.shake += (target - fx.shake) * Math.min(1, dt * 3);
   fx.kick = Math.max(0, fx.kick - dt * 2.5);
   const s = fx.shake * 0.012 + fx.kick * 0.03, f = 9 + fx.shake * 8;
@@ -3197,7 +3214,7 @@ function updateScares(dt) {
   updateDoors(dt);
   updateFakeSteps(dt);
   updatePhantom(dt);
-  if (monster.state === 'chase' || scares.outage || scares.steps || scares.phantom) return;
+  if (monster.state === 'chase' || monster.state === 'spotted' || scares.outage || scares.steps || scares.phantom) return;
   scares.t -= dt * (1 + 0.12 * game.notes);
   if (scares.t > 0) return;
   // weighted random pick, skipping the one we just did; retry if it can't happen here
@@ -3710,10 +3727,27 @@ window.addEventListener('beforeunload', snapshotRun);
 // ============================================================================
 const clock = new THREE.Clock();
 const _camDir = new THREE.Vector3();
+const music = { t: 0, beat: 0 };
+function updateMusic(dt) {
+  Sound.setDrone(0.018 + game.danger * 0.07);
+  const hunting = monster.state === 'chase' || monster.state === 'spotted';
+  if (!hunting || !Sound.ctx) { music.t = 0; music.beat = 0; return; }
+  music.t -= dt;
+  if (music.t > 0) return;
+  music.t = world.level === 2 ? 0.4 : 0.48;
+  const ctx = Sound.ctx, A = Sound._, t = ctx.currentTime;
+  const o = ctx.createOscillator(), g = A.gain(0), lp = A.filter('lowpass', 220, 1);
+  o.type = 'triangle'; o.frequency.setValueAtTime(music.beat % 4 === 3 ? 69 : 52, t); o.frequency.exponentialRampToValueAtTime(34, t + 0.2);
+  o.connect(lp); lp.connect(g); g.connect(A.sfx); A.env(g, t, 0.01, 0.55, 0.3); o.start(t); o.stop(t + 0.4);
+  if (music.beat % 8 === 7) {
+    for (const f of [440, 466]) { const h = ctx.createOscillator(), hg = A.gain(0); h.type = 'sawtooth'; h.frequency.value = f; const bp = A.filter('bandpass', f * 2, 3); h.connect(bp); bp.connect(hg); hg.connect(A.sfx); A.env(hg, t, 0.02, 0.06, 0.5); h.start(t); h.stop(t + 0.6); }
+  }
+  music.beat++;
+}
 function updateDanger(dt) {
   const md = Math.hypot(monster.pos.x - player.pos.x, monster.pos.z - player.pos.z);
   let d = Math.pow(clamp(1 - md / 26, 0, 1), 1.5);
-  if (monster.state === 'chase') d = Math.max(d, 0.55 + 0.45 * clamp(1 - md / 20, 0, 1));
+  if (monster.state === 'chase' || monster.state === 'spotted') d = Math.max(d, 0.55 + 0.45 * clamp(1 - md / 20, 0, 1));
   if (monster.sees) d = Math.min(1, d + 0.1);
   game.danger += (d - game.danger) * Math.min(1, dt * 2);
 }
@@ -3752,6 +3786,7 @@ function simulate(dt) {
       else fn(dt);
     }
     updateDanger(dt);
+    updateMusic(dt);
     camera.getWorldDirection(_camDir);
     Sound.setListener(camera.position, _camDir);
     // heartbeat when danger is near

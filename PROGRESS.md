@@ -128,3 +128,8 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[07:30 UTC] Extra — Bloom + dust.** Quarter-resolution bloom (bright-pass + 2x separable Gaussian blur, off on Low)
   makes the fluorescent panels glow through the haze. 700 dust motes drift in a box that wraps around the camera; they
   are faint in room light and sparkle inside the flashlight beam.
+- **[07:32 UTC] Extra — Monster behaviour + music.** New "spotted" beat: when it first sees you it freezes, snaps its
+  head towards you with arms rising and screeches for ~0.75 s (0.45 s on level 2) before charging — a moment to react.
+  While wandering it sometimes stops for a few seconds and slowly scans with its head; while hunting/searching its head
+  tracks you. A low pulsing chase ostinato (with a dissonant hit every 8 beats) plays while it hunts you, and the
+  ambient drone swells with danger. Soak test re-run clean.
