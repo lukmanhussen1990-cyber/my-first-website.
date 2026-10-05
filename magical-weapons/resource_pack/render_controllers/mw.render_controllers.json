@@ -1,0 +1,45 @@
+{
+  "format_version": "1.10",
+  "render_controllers": {
+    "controller.render.mw_solid": {
+      "geometry": "geometry.default",
+      "materials": [
+        {
+          "*": "variable.is_enchanted ? material.enchanted : material.default"
+        }
+      ],
+      "textures": [
+        "texture.default",
+        "texture.enchanted"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "glow*": false
+        }
+      ]
+    },
+    "controller.render.mw_glow": {
+      "geometry": "geometry.default",
+      "materials": [
+        {
+          "*": "material.default"
+        }
+      ],
+      "textures": [
+        "texture.default"
+      ],
+      "part_visibility": [
+        {
+          "*": false
+        },
+        {
+          "glow*": true
+        }
+      ],
+      "ignore_lighting": true
+    }
+  }
+}

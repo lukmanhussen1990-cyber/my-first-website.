@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "lib": ["es2020"],
+    "paths": {
+      "@minecraft/server": ["./node_modules/@minecraft/server/index.d.ts"],
+      "@minecraft/common": ["./node_modules/@minecraft/common/index.d.ts"]
+    },
+    "types": []
+  },
+  "include": ["../../behavior_pack/scripts/*.js", "./shim.d.ts"]
+}

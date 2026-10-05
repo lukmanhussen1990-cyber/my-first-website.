@@ -1,0 +1,56 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Magical Weapons [Behavior]",
+    "description": "Seven magical weapons with spells, cooldowns and realistic animations.",
+    "uuid": "5b8c1d0e-7a34-4c6f-9d21-3e6b0a9f4c11",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "9f2a7c54-1b8e-4d03-a6c9-72d5e8b13f20",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "description": "Magical Weapons data"
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "c3e19a6d-48f7-4b52-8e0a-1d9c6f27b834",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "entry": "scripts/main.js",
+      "description": "Magical Weapons spells"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "a47d3e92-6c1b-4f85-b3d8-0e5a29c7f146",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    }
+  ]
+}

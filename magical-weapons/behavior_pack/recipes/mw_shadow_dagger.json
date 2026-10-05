@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "mw:shadow_dagger"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " P ",
+      "OSO",
+      " P "
+    ],
+    "key": {
+      "P": {
+        "item": "minecraft:ender_pearl"
+      },
+      "O": {
+        "item": "minecraft:obsidian"
+      },
+      "S": {
+        "item": "minecraft:iron_sword"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:ender_pearl"
+      }
+    ],
+    "result": {
+      "item": "mw:shadow_dagger"
+    }
+  }
+}

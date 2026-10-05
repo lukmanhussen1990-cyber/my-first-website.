@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "mw:frostbite"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " I ",
+      "PDP",
+      " I "
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:blue_ice"
+      },
+      "P": {
+        "item": "minecraft:prismarine_crystals"
+      },
+      "D": {
+        "item": "minecraft:diamond_sword"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:blue_ice"
+      }
+    ],
+    "result": {
+      "item": "mw:frostbite"
+    }
+  }
+}

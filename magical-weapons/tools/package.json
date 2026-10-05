@@ -1,0 +1,15 @@
+{
+  "name": "magical-weapons-dev-tools",
+  "private": true,
+  "description": "Optional developer tools for the Magical Weapons add-on (software preview renderer, schema validator). Not needed to install or rebuild the add-on.",
+  "scripts": {
+    "test": "node test/run.mjs",
+    "deep-validate": "node deep_validate.mjs"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "molang": "^2.0.1",
+    "playwright-core": "^1.63.0",
+    "three": "^0.186.1"
+  }
+}

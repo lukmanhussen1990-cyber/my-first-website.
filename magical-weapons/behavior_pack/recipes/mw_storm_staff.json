@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "mw:storm_staff"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " E ",
+      "ALA",
+      " L "
+    ],
+    "key": {
+      "E": {
+        "item": "minecraft:ender_eye"
+      },
+      "A": {
+        "item": "minecraft:amethyst_shard"
+      },
+      "L": {
+        "item": "minecraft:lightning_rod"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:lightning_rod"
+      }
+    ],
+    "result": {
+      "item": "mw:storm_staff"
+    }
+  }
+}

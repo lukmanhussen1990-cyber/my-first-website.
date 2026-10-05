@@ -1,0 +1,44 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "mw:shadow_dagger",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.sword"
+      }
+    },
+    "components": {
+      "minecraft:icon": "mw_shadow_dagger",
+      "minecraft:display_name": {
+        "value": "§5Shadowfang"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:allow_off_hand": false,
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:damage": 7,
+      "minecraft:durability": {
+        "max_durability": 1500
+      },
+      "minecraft:enchantable": {
+        "slot": "sword",
+        "value": 20
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "minecraft:ender_pearl"
+            ],
+            "repair_amount": "q.max_durability * 0.25"
+          }
+        ]
+      },
+      "minecraft:cooldown": {
+        "category": "mw_shadow_dagger",
+        "duration": 7.0
+      }
+    }
+  }
+}

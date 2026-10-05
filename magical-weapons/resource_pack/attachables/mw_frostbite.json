@@ -1,0 +1,62 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "mw:frostbite",
+      "materials": {
+        "default": "entity_alphatest",
+        "enchanted": "entity_alphatest_glint"
+      },
+      "textures": {
+        "default": "textures/models/mw_frostbite",
+        "enchanted": "textures/misc/enchanted_item_glint"
+      },
+      "geometry": {
+        "default": "geometry.mw_frostbite"
+      },
+      "animations": {
+        "hold_first_person": "animation.mw_frostbite.hold_first_person",
+        "hold_third_person": "animation.mw_frostbite.hold_third_person",
+        "flicker": "animation.mw_frostbite.flicker",
+        "swing_first_person": "animation.mw_frostbite.swing_first_person",
+        "swing_third_person": "animation.mw_frostbite.swing_third_person",
+        "cast_first_person": "animation.mw_frostbite.cast_first_person",
+        "cast_third_person": "animation.mw_frostbite.cast_third_person"
+      },
+      "scripts": {
+        "pre_animation": [
+          "v.mw_swing = c.owning_entity->v.attack_time;",
+          "v.mw_cd = math.max(q.cooldown_time_remaining('mw_frostbite'), q.cooldown_time_remaining('slot.weapon.mainhand'));",
+          "v.mw_cast_t = 12.0 - v.mw_cd;",
+          "v.mw_casting = v.mw_cd > 0.0 && v.mw_cast_t < 1.25;",
+          "v.mw_move = math.clamp(q.modified_move_speed, 0.0, 1.5);"
+        ],
+        "animate": [
+          "flicker",
+          {
+            "hold_first_person": "c.is_first_person"
+          },
+          {
+            "hold_third_person": "!c.is_first_person"
+          },
+          {
+            "swing_first_person": "v.mw_swing > 0.0 && !v.mw_casting && c.is_first_person"
+          },
+          {
+            "swing_third_person": "v.mw_swing > 0.0 && !v.mw_casting && !c.is_first_person"
+          },
+          {
+            "cast_first_person": "v.mw_casting && c.is_first_person"
+          },
+          {
+            "cast_third_person": "v.mw_casting && !c.is_first_person"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.mw_solid",
+        "controller.render.mw_glow"
+      ]
+    }
+  }
+}

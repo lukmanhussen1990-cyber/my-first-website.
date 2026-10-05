@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "mw:arcane_wand"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "  A",
+      " P ",
+      "B  "
+    ],
+    "key": {
+      "A": {
+        "item": "minecraft:amethyst_shard"
+      },
+      "P": {
+        "item": "minecraft:ender_pearl"
+      },
+      "B": {
+        "item": "minecraft:blaze_rod"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:amethyst_shard"
+      }
+    ],
+    "result": {
+      "item": "mw:arcane_wand"
+    }
+  }
+}

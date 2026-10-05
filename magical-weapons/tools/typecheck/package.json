@@ -1,0 +1,12 @@
+{
+  "name": "magical-weapons-typecheck",
+  "private": true,
+  "description": "Type-checks behavior_pack/scripts against the stable @minecraft/server typings that ship with Minecraft 1.21.0.26 (preview). Beta-only API calls fail the check.",
+  "scripts": {
+    "check": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@minecraft/server": "1.11.0-rc.1.21.0-preview.26",
+    "typescript": "7.0.2"
+  }
+}

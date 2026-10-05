@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "mw:flamebrand"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " B ",
+      "MDM",
+      " B "
+    ],
+    "key": {
+      "B": {
+        "item": "minecraft:blaze_rod"
+      },
+      "M": {
+        "item": "minecraft:magma_cream"
+      },
+      "D": {
+        "item": "minecraft:diamond_sword"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:blaze_rod"
+      }
+    ],
+    "result": {
+      "item": "mw:flamebrand"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "mw:frostbite",
+      "menu_category": {
+        "category": "equipment",
+        "group": "itemGroup.name.sword"
+      }
+    },
+    "components": {
+      "minecraft:icon": "mw_frostbite",
+      "minecraft:display_name": {
+        "value": "§bFrostbite"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:allow_off_hand": false,
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:damage": 10,
+      "minecraft:durability": {
+        "max_durability": 1900
+      },
+      "minecraft:enchantable": {
+        "slot": "sword",
+        "value": 14
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "minecraft:blue_ice"
+            ],
+            "repair_amount": "q.max_durability * 0.25"
+          }
+        ]
+      },
+      "minecraft:cooldown": {
+        "category": "mw_frostbite",
+        "duration": 12.0
+      }
+    }
+  }
+}
