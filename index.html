@@ -1519,6 +1519,20 @@ function removeChunkDoors(key) {
   }
 }
 function buildChunkProps(kx, kz, baker) {
+  if (world.level === 2) {
+    // floating debris on the flood water: broken ceiling-tile pieces and soggy paper
+    const r = mulberry32((hash2(kx, kz, world.seed + 2020) * 4294967296) >>> 0);
+    const tmp = new THREE.Group();
+    for (let i = 0; i < 10; i++) {
+      const x = (kx * CHUNK + r() * CHUNK) * CELL, z = (kz * CHUNK + r() * CHUNK) * CELL;
+      const tile = r() < 0.6;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(tile ? 0.25 + r() * 0.35 : 0.2, tile ? 0.025 : 0.004, tile ? 0.2 + r() * 0.3 : 0.28), itemMaterial(tile ? 0x9c9a8e : 0xc8c2a8));
+      m.position.set(x, WATER_Y + 0.008, z); m.rotation.set((r() - 0.5) * 0.08, r() * Math.PI, (r() - 0.5) * 0.08);
+      tmp.add(m);
+    }
+    baker.add(tmp, 0.35);
+    disposeTemp(tmp);
+  }
   for (let lz = 0; lz < CHUNK; lz++) for (let lx = 0; lx < CHUNK; lx++) {
     const p = world.prop(kx * CHUNK + lx, kz * CHUNK + lz);
     if (!p) continue;

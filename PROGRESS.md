@@ -265,3 +265,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   Title screen now notes "contains flickering lights" and points to Reduce flashing.
 - **[08:59 UTC] Extra — Explore difficulty.** Difficulty gains "Explore (no creature)": the creature is disabled (no
   danger effects or heartbeat) but the atmosphere and scripted scares remain; best times aren't recorded in it.
+- **[09:01 UTC] Extra — Flood debris; soak of every mode.** Level 2's water carries floating ceiling-tile fragments and
+  soggy paper (baked into the per-chunk prop mesh, no extra draw calls). The soak test now also covers level 3 and
+  Endless — 4 simulated minutes each, no errors.
