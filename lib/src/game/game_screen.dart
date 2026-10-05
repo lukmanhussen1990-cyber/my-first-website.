@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../logic/game.dart';
 import '../screens/home_screen.dart';
 import '../screens/transitions.dart';
 import '../services/settings_store.dart';
@@ -12,9 +13,12 @@ import 'game_painter.dart';
 import 'layout.dart';
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key, this.startNew = false});
+  const GameScreen({super.key, this.startNew = false, this.initialGame});
 
   final bool startNew;
+
+  /// Optional explicit starting state (used by tests).
+  final GameState? initialGame;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -38,7 +42,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     Sound.instance.init();
-    ctrl = GameController();
+    ctrl = GameController(restored: widget.initialGame);
     if (widget.startNew) ctrl.newGame();
     ctrl.onShowGameOver = _onGameOver;
     _ticker = createTicker(_onTick)..start();

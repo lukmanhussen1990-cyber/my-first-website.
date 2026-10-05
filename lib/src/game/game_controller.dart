@@ -323,11 +323,25 @@ class GameController extends ChangeNotifier {
       }
       final linesCenter = _linesCenter(result.clearedLines, dropCenter);
       final bonusText = '+${result.lineBonus}';
-      texts.add(FloatingText(bonusText, FloatKind.plus, linesCenter + Offset(0, -l.cell * 0.9),
-          duration: 1.0, color: result.piece.color));
+      texts.add(
+        FloatingText(
+          bonusText,
+          FloatKind.plus,
+          linesCenter + Offset(0, -l.cell * 0.9),
+          duration: 1.0,
+          color: result.piece.color,
+        ),
+      );
       if (result.isCombo) {
-        texts.add(FloatingText('Combo ${result.combo}', FloatKind.combo, linesCenter + Offset(0, l.cell * 0.15),
-            duration: 1.25, color: result.piece.color));
+        texts.add(
+          FloatingText(
+            'Combo ${result.combo}',
+            FloatKind.combo,
+            linesCenter + Offset(0, l.cell * 0.15),
+            duration: 1.25,
+            color: result.piece.color,
+          ),
+        );
         comboFlash = 1;
         Sound.instance.play(Sfx.combo);
       } else {
@@ -335,8 +349,16 @@ class GameController extends ChangeNotifier {
       }
       if (result.praise != null) {
         final y = l.gridRect.top + l.gridRect.height * (linesCenter.dy < l.gridRect.center.dy ? 0.68 : 0.3);
-        texts.add(FloatingText(result.praise!, FloatKind.praise, Offset(l.gridRect.center.dx, y),
-            duration: 1.3, delay: 0.12, color: result.linesCleared));
+        texts.add(
+          FloatingText(
+            result.praise!,
+            FloatKind.praise,
+            Offset(l.gridRect.center.dx, y),
+            duration: 1.3,
+            delay: 0.12,
+            color: result.linesCleared,
+          ),
+        );
       }
       if (result.linesCleared >= 3 || result.combo >= 3) {
         Haptics.medium();
@@ -345,8 +367,14 @@ class GameController extends ChangeNotifier {
       }
     }
 
-    texts.add(FloatingText('+${result.totalPoints}', FloatKind.scorePlus,
-        l.scoreCenter + Offset(l.u * 13, -l.u * 4), duration: 0.9));
+    texts.add(
+      FloatingText(
+        '+${result.totalPoints}',
+        FloatKind.scorePlus,
+        l.scoreCenter + Offset(l.u * 13, -l.u * 4),
+        duration: 0.9,
+      ),
+    );
 
     // Live best score (crown) and new-record celebration.
     if (SettingsStore.instance.submitScore(game.score)) {
@@ -396,29 +424,33 @@ class GameController extends ChangeNotifier {
     for (var i = 0; i < 5; i++) {
       final a = _rng.nextDouble() * math.pi * 2;
       final speed = l.cell * (2.0 + _rng.nextDouble() * 5.0);
-      particles.add(Particle(
-        pos: rect.center + Offset((_rng.nextDouble() - 0.5) * l.cell * 0.6, (_rng.nextDouble() - 0.5) * l.cell * 0.6),
-        vel: Offset(math.cos(a) * speed, math.sin(a) * speed - l.cell * 3.5),
-        size: l.cell * (0.12 + _rng.nextDouble() * 0.16),
-        rot: _rng.nextDouble() * math.pi,
-        spin: (_rng.nextDouble() - 0.5) * 12,
-        life: 0.55 + _rng.nextDouble() * 0.45,
-        color: i.isEven ? base.top : base.face,
-      ));
+      particles.add(
+        Particle(
+          pos: rect.center + Offset((_rng.nextDouble() - 0.5) * l.cell * 0.6, (_rng.nextDouble() - 0.5) * l.cell * 0.6),
+          vel: Offset(math.cos(a) * speed, math.sin(a) * speed - l.cell * 3.5),
+          size: l.cell * (0.12 + _rng.nextDouble() * 0.16),
+          rot: _rng.nextDouble() * math.pi,
+          spin: (_rng.nextDouble() - 0.5) * 12,
+          life: 0.55 + _rng.nextDouble() * 0.45,
+          color: i.isEven ? base.top : base.face,
+        ),
+      );
     }
     if (_rng.nextDouble() < 0.6) {
       final a = _rng.nextDouble() * math.pi * 2;
       final speed = l.cell * (1.0 + _rng.nextDouble() * 3.0);
-      particles.add(Particle(
-        pos: rect.center,
-        vel: Offset(math.cos(a) * speed, math.sin(a) * speed - l.cell * 2),
-        size: l.cell * (0.18 + _rng.nextDouble() * 0.14),
-        rot: 0,
-        spin: (_rng.nextDouble() - 0.5) * 4,
-        life: 0.5 + _rng.nextDouble() * 0.4,
-        color: const Color(0xFFFFFFFF),
-        sparkle: true,
-      ));
+      particles.add(
+        Particle(
+          pos: rect.center,
+          vel: Offset(math.cos(a) * speed, math.sin(a) * speed - l.cell * 2),
+          size: l.cell * (0.18 + _rng.nextDouble() * 0.14),
+          rot: 0,
+          spin: (_rng.nextDouble() - 0.5) * 4,
+          life: 0.5 + _rng.nextDouble() * 0.4,
+          color: const Color(0xFFFFFFFF),
+          sparkle: true,
+        ),
+      );
     }
   }
 
@@ -565,8 +597,6 @@ class GameController extends ChangeNotifier {
   Set<int> hoverPieceCells() {
     final d = drag;
     if (d == null || d.hoverRow == null) return const {};
-    return {
-      for (final Cell c in d.piece.shape.cells) (d.hoverRow! + c.r) * Board.size + d.hoverCol! + c.c,
-    };
+    return {for (final Cell c in d.piece.shape.cells) (d.hoverRow! + c.r) * Board.size + d.hoverCol! + c.c};
   }
 }

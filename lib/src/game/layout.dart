@@ -59,9 +59,7 @@ class GameLayout {
     final traySlotWidth = boardSide / 3;
     final trayCell = math.min(cell * 0.6, (traySlotWidth - 2.0 * u) / 5.0);
     final trayCenterY = boardRect.bottom + 25.0 * u;
-    final slots = [
-      for (var i = 0; i < 3; i++) Offset(boardRect.left + traySlotWidth * (i + 0.5), trayCenterY),
-    ];
+    final slots = [for (var i = 0; i < 3; i++) Offset(boardRect.left + traySlotWidth * (i + 0.5), trayCenterY)];
     final trayBand = Rect.fromLTRB(0, boardRect.bottom + 4.0 * u, w, h);
 
     final scoreCenterY = (topY + 7 * u + boardTop) / 2;

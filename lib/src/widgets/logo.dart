@@ -31,13 +31,7 @@ class _LogoPainter extends CustomPainter {
     [Color(0xFFFFF3A0), Color(0xFFFFC62E), Color(0xFFFF9500)],
     [Color(0xFFE8B8FF), Color(0xFFB26BFF), Color(0xFF7E35E0)],
   ];
-  static const _edges = [
-    Color(0xFFB04A00),
-    Color(0xFFB86E00),
-    Color(0xFF8C0A12),
-    Color(0xFFB05A00),
-    Color(0xFF4A1A99),
-  ];
+  static const _edges = [Color(0xFFB04A00), Color(0xFFB86E00), Color(0xFF8C0A12), Color(0xFFB05A00), Color(0xFF4A1A99)];
   static const _tilts = [-0.10, 0.05, 0.0, -0.05, 0.09];
 
   @override
@@ -48,16 +42,18 @@ class _LogoPainter extends CustomPainter {
     // BLOCK letters.
     final fts = <FancyText>[];
     for (var i = 0; i < _letters.length; i++) {
-      fts.add(FancyText(
-        text: _letters[i],
-        base: bubbleStyle(big),
-        fill: _fills[i],
-        stops: const [0, 0.45, 1],
-        stroke: _edges[i],
-        strokeWidth: big * 0.075,
-        shadow: Color.lerp(_edges[i], const Color(0xFF000000), 0.35),
-        shadowDy: big * 0.075,
-      ));
+      fts.add(
+        FancyText(
+          text: _letters[i],
+          base: bubbleStyle(big),
+          fill: _fills[i],
+          stops: const [0, 0.45, 1],
+          stroke: _edges[i],
+          strokeWidth: big * 0.075,
+          shadow: Color.lerp(_edges[i], const Color(0xFF000000), 0.35),
+          shadowDy: big * 0.075,
+        ),
+      );
     }
     const overlap = 0.05;
     final total = fts.fold<double>(0, (s, f) => s + f.width) - big * overlap * (fts.length - 1);
@@ -107,8 +103,11 @@ class _LogoPainter extends CustomPainter {
     final sub = TextPainter(
       text: TextSpan(
         text: 'ADVENTURE MASTER',
-        style: bubbleStyle(big * 0.17, color: const Color(0xFF9BD8FF), weight: FontWeight.w600)
-            .copyWith(letterSpacing: big * 0.02),
+        style: bubbleStyle(
+          big * 0.17,
+          color: const Color(0xFF9BD8FF),
+          weight: FontWeight.w600,
+        ).copyWith(letterSpacing: big * 0.02),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -137,17 +136,20 @@ class StudioLogo extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('MY', style: numberStyle(big, weight: FontWeight.w800).copyWith(letterSpacing: -1)),
-              SizedBox(
-                width: big * 0.72,
-                height: big * 0.95,
-                child: CustomPaint(painter: _GemPainter()),
-              ),
-              Text('APPS', style: numberStyle(big, weight: FontWeight.w800).copyWith(letterSpacing: -1)),
-            ],
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('MY', style: numberStyle(big, weight: FontWeight.w800).copyWith(letterSpacing: -1)),
+                SizedBox(
+                  width: big * 0.72,
+                  height: big * 0.95,
+                  child: CustomPaint(painter: _GemPainter()),
+                ),
+                Text('APPS', style: numberStyle(big, weight: FontWeight.w800).copyWith(letterSpacing: -1)),
+              ],
+            ),
           ),
           Transform.translate(
             offset: Offset(width * 0.12, -big * 0.12),

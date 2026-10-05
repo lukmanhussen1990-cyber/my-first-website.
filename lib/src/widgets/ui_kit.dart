@@ -101,21 +101,31 @@ class _CandyButtonState extends State<CandyButton> {
                         ),
                       ),
                       Center(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (widget.icon != null) ...[
-                              Icon(widget.icon, color: Colors.white, size: widget.fontSize * 1.15,
-                                  shadows: [Shadow(color: widget.edge, offset: const Offset(0, 2))]),
-                              SizedBox(width: widget.fontSize * 0.35),
-                            ],
-                            Text(
-                              widget.label,
-                              style: bubbleStyle(widget.fontSize).copyWith(
-                                shadows: [Shadow(color: widget.edge, offset: const Offset(0, 2), blurRadius: 0)],
-                              ),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: widget.height * 0.2),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (widget.icon != null) ...[
+                                  Icon(
+                                    widget.icon,
+                                    color: Colors.white,
+                                    size: widget.fontSize * 1.15,
+                                    shadows: [Shadow(color: widget.edge, offset: const Offset(0, 2))],
+                                  ),
+                                  SizedBox(width: widget.fontSize * 0.35),
+                                ],
+                                Text(
+                                  widget.label,
+                                  style: bubbleStyle(widget.fontSize).copyWith(
+                                    shadows: [Shadow(color: widget.edge, offset: const Offset(0, 2), blurRadius: 0)],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ],
@@ -247,8 +257,8 @@ class GamePopup extends StatefulWidget {
 }
 
 class _GamePopupState extends State<GamePopup> with SingleTickerProviderStateMixin {
-  late final AnimationController _ac =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 380))..forward();
+  late final AnimationController _ac = AnimationController(vsync: this, duration: const Duration(milliseconds: 380))
+    ..forward();
 
   @override
   void dispose() {

@@ -86,11 +86,15 @@ class LoadingSplashScreen extends StatefulWidget {
 }
 
 class _LoadingSplashScreenState extends State<LoadingSplashScreen> with TickerProviderStateMixin {
-  late final AnimationController _studio =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..forward();
+  late final AnimationController _studio = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1500),
+  )..forward();
   late final AnimationController _logo = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
-  late final AnimationController _loader =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))..repeat();
+  late final AnimationController _loader = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  )..repeat();
   bool _showLogo = false;
   Timer? _t1;
   Timer? _t2;
@@ -164,9 +168,8 @@ class _LoadingSplashScreenState extends State<LoadingSplashScreen> with TickerPr
                     height: w * 0.16,
                     child: AnimatedBuilder(
                       animation: _loader,
-                      builder: (context, _) => CustomPaint(
-                        painter: _LoaderPainter(_loader.value, MediaQuery.devicePixelRatioOf(context)),
-                      ),
+                      builder: (context, _) =>
+                          CustomPaint(painter: _LoaderPainter(_loader.value, MediaQuery.devicePixelRatioOf(context))),
                     ),
                   ),
                 ),

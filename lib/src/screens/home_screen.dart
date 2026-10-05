@@ -19,8 +19,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  late final AnimationController _bob =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))..repeat(reverse: true);
+  late final AnimationController _bob = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))
+    ..repeat(reverse: true);
   bool _howTo = false;
 
   @override
@@ -66,8 +66,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     children: [
                       SizedBox(width: 40, height: 28, child: CustomPaint(painter: _Crown())),
                       const SizedBox(width: 8),
-                      Text('${SettingsStore.instance.bestScore}',
-                          style: numberStyle(30, color: Palette.goldText, weight: FontWeight.w700)),
+                      Text(
+                        '${SettingsStore.instance.bestScore}',
+                        style: numberStyle(30, color: Palette.goldText, weight: FontWeight.w700),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 26),

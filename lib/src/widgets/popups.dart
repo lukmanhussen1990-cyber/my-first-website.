@@ -57,23 +57,19 @@ class SettingsPopup extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 5),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-      decoration: BoxDecoration(
-        color: const Color(0x33101C55),
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(color: const Color(0x33101C55), borderRadius: BorderRadius.circular(16)),
       child: Row(
         children: [
           Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.18),
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.18)),
             child: Icon(icon, color: Colors.white, size: 22),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Text(label, style: bubbleStyle(21, weight: FontWeight.w600))),
+          Expanded(
+            child: Text(label, style: bubbleStyle(21, weight: FontWeight.w600)),
+          ),
           CandyToggle(value: value, onChanged: onChanged),
         ],
       ),
@@ -115,7 +111,10 @@ class GameOverPopup extends StatelessWidget {
                 stroke: const Color(0xFF8A3B00),
               ),
             ),
-          Text('Score', style: bubbleStyle(20, color: const Color(0xFFD5E3FF), weight: FontWeight.w600)),
+          Text(
+            'Score',
+            style: bubbleStyle(20, color: const Color(0xFFD5E3FF), weight: FontWeight.w600),
+          ),
           const SizedBox(height: 2),
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: score.toDouble()),
@@ -131,17 +130,20 @@ class GameOverPopup extends StatelessWidget {
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0x44101C55),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(width: 34, height: 24, child: CustomPaint(painter: _CrownPainter())),
-                const SizedBox(width: 8),
-                Text('Best  $best', style: numberStyle(22, color: const Color(0xFFFDB72F), weight: FontWeight.w700)),
-              ],
+            decoration: BoxDecoration(color: const Color(0x44101C55), borderRadius: BorderRadius.circular(20)),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(width: 34, height: 24, child: CustomPaint(painter: _CrownPainter())),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Best  $best',
+                    style: numberStyle(22, color: const Color(0xFFFDB72F), weight: FontWeight.w700),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 22),
@@ -201,10 +203,7 @@ class HowToPlayPopup extends StatelessWidget {
             Container(
               margin: const EdgeInsets.symmetric(vertical: 5),
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0x33101C55),
-                borderRadius: BorderRadius.circular(16),
-              ),
+              decoration: BoxDecoration(color: const Color(0x33101C55), borderRadius: BorderRadius.circular(16)),
               child: Row(
                 children: [
                   SizedBox(width: 56, height: 56, child: t.$1),
@@ -230,7 +229,8 @@ class _MiniBoard extends StatelessWidget {
   final int kind;
 
   @override
-  Widget build(BuildContext context) => CustomPaint(painter: _MiniBoardPainter(kind, MediaQuery.devicePixelRatioOf(context)));
+  Widget build(BuildContext context) =>
+      CustomPaint(painter: _MiniBoardPainter(kind, MediaQuery.devicePixelRatioOf(context)));
 }
 
 class _MiniBoardPainter extends CustomPainter {
@@ -252,14 +252,14 @@ class _MiniBoardPainter extends CustomPainter {
           [3, 0],
           [3, 1],
           [3, 2],
-          [2, 2]
+          [2, 2],
         ]) {
           drawBlock(canvas, at(rc[0], rc[1]), 5, px);
         }
         for (final rc in const [
           [0, 1],
           [1, 1],
-          [1, 2]
+          [1, 2],
         ]) {
           drawBlock(canvas, at(rc[0], rc[1]), 2, px, opacity: 0.5);
         }

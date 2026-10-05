@@ -59,7 +59,10 @@ class GamePainter extends CustomPainter {
       _bestStr = bestStr;
       _bestSize = l.bestFont;
       _bestTp = TextPainter(
-        text: TextSpan(text: bestStr, style: numberStyle(l.bestFont, color: Palette.goldText, weight: FontWeight.w700)),
+        text: TextSpan(
+          text: bestStr,
+          style: numberStyle(l.bestFont, color: Palette.goldText, weight: FontWeight.w700),
+        ),
         textDirection: TextDirection.ltr,
       )..layout();
     }
@@ -151,10 +154,16 @@ class GamePainter extends CustomPainter {
         ..color = glow.withValues(alpha: 0.85)
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, l.cell * 0.28);
       for (final r in lines.rows) {
-        canvas.drawRect(Rect.fromLTWH(grid.left, grid.top + r * l.cell, grid.width, l.cell).inflate(l.cell * 0.08), glowPaint);
+        canvas.drawRect(
+          Rect.fromLTWH(grid.left, grid.top + r * l.cell, grid.width, l.cell).inflate(l.cell * 0.08),
+          glowPaint,
+        );
       }
       for (final c in lines.cols) {
-        canvas.drawRect(Rect.fromLTWH(grid.left + c * l.cell, grid.top, l.cell, grid.height).inflate(l.cell * 0.08), glowPaint);
+        canvas.drawRect(
+          Rect.fromLTWH(grid.left + c * l.cell, grid.top, l.cell, grid.height).inflate(l.cell * 0.08),
+          glowPaint,
+        );
       }
     }
 
@@ -237,8 +246,13 @@ class GamePainter extends CustomPainter {
     final left = center.dx - w / 2;
     final top = center.dy - h / 2;
     for (final c in shape.cells) {
-      drawBlock(canvas, Rect.fromLTWH(left + c.c * cell, top + c.r * cell, cell, cell), colorOverride ?? piece.color,
-          _sprite, opacity: opacity);
+      drawBlock(
+        canvas,
+        Rect.fromLTWH(left + c.c * cell, top + c.r * cell, cell, cell),
+        colorOverride ?? piece.color,
+        _sprite,
+        opacity: opacity,
+      );
     }
   }
 
@@ -286,8 +300,14 @@ class GamePainter extends CustomPainter {
     final top = geo.center.dy - shape.rows * geo.cell / 2;
     for (final c in shape.cells) {
       canvas.drawRect(
-          Rect.fromLTWH(left + c.c * geo.cell, top + c.r * geo.cell, geo.cell, geo.cell).shift(Offset(0, geo.cell * 0.12)),
-          shadow);
+        Rect.fromLTWH(
+          left + c.c * geo.cell,
+          top + c.r * geo.cell,
+          geo.cell,
+          geo.cell,
+        ).shift(Offset(0, geo.cell * 0.12)),
+        shadow,
+      );
     }
     _paintPiece(canvas, d.piece, geo.center, geo.cell);
   }

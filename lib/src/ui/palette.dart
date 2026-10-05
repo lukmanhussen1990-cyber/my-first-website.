@@ -41,15 +41,7 @@ class Palette {
   static const splashTop = Color(0xFF2F6BE0);
   static const splashBottom = Color(0xFF1F4FBF);
 
-  static const List<String> colorNames = [
-    'red',
-    'orange',
-    'yellow',
-    'green',
-    'light blue',
-    'blue',
-    'purple',
-  ];
+  static const List<String> colorNames = ['red', 'orange', 'yellow', 'green', 'light blue', 'blue', 'purple'];
 
   /// Index 0..6 = piece colors, index 7 = gray (game over).
   static const List<BlockColors> blocks = [

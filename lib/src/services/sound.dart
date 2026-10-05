@@ -32,8 +32,11 @@ class Sound {
 
   Future<void>? _initFuture;
 
+  /// Set by widget tests: no platform audio is touched at all.
+  static bool disabled = false;
+
   /// Loads all sounds once; safe to call repeatedly.
-  Future<void> init() => _initFuture ??= _init();
+  Future<void> init() => disabled ? Future.value() : (_initFuture ??= _init());
 
   Future<void> _init() async {
     try {

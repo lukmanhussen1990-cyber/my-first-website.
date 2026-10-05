@@ -31,18 +31,12 @@ void paintBlockVector(Canvas canvas, Rect rect, BlockColors k) {
     ..close();
 
   // Bevels.
-  canvas.drawPath(
-    quad(Offset(l, t), Offset(rr, t), Offset(rr - b, t + b), Offset(l + b, t + b)),
-    fill..color = k.top,
-  );
+  canvas.drawPath(quad(Offset(l, t), Offset(rr, t), Offset(rr - b, t + b), Offset(l + b, t + b)), fill..color = k.top);
   canvas.drawPath(
     quad(Offset(l, bb), Offset(rr, bb), Offset(rr - b, bb - b), Offset(l + b, bb - b)),
     fill..color = k.bottom,
   );
-  canvas.drawPath(
-    quad(Offset(l, t), Offset(l + b, t + b), Offset(l + b, bb - b), Offset(l, bb)),
-    fill..color = k.left,
-  );
+  canvas.drawPath(quad(Offset(l, t), Offset(l + b, t + b), Offset(l + b, bb - b), Offset(l, bb)), fill..color = k.left);
   canvas.drawPath(
     quad(Offset(rr, t), Offset(rr - b, t + b), Offset(rr - b, bb - b), Offset(rr, bb)),
     fill..color = k.right,
@@ -67,7 +61,12 @@ void paintBlockVector(Canvas canvas, Rect rect, BlockColors k) {
   final shine = Paint()..color = const Color(0x55FFFFFF);
   canvas.drawRRect(
     RRect.fromRectAndRadius(
-      Rect.fromLTWH(face.left + face.width * 0.08, face.top + face.height * 0.08, face.width * 0.22, face.height * 0.12),
+      Rect.fromLTWH(
+        face.left + face.width * 0.08,
+        face.top + face.height * 0.08,
+        face.width * 0.22,
+        face.height * 0.12,
+      ),
       Radius.circular(s * 0.05),
     ),
     shine,

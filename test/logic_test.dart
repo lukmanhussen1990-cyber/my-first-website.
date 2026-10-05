@@ -315,7 +315,7 @@ void main() {
       // Checkerboard: no two orthogonally adjacent holes.
       final rows = [
         for (var r = 0; r < 8; r++)
-          String.fromCharCodes([for (var c = 0; c < 8; c++) ((r + c).isEven ? '#' : '.').codeUnitAt(0)])
+          String.fromCharCodes([for (var c = 0; c < 8; c++) ((r + c).isEven ? '#' : '.').codeUnitAt(0)]),
       ];
       final g = GameState.custom(
         board: boardFrom(rows),
@@ -328,7 +328,7 @@ void main() {
     test('not game over while one piece still fits', () {
       final rows = [
         for (var r = 0; r < 8; r++)
-          String.fromCharCodes([for (var c = 0; c < 8; c++) ((r + c).isEven ? '#' : '.').codeUnitAt(0)])
+          String.fromCharCodes([for (var c = 0; c < 8; c++) ((r + c).isEven ? '#' : '.').codeUnitAt(0)]),
       ];
       final g = GameState.custom(
         board: boardFrom(rows),
@@ -343,7 +343,7 @@ void main() {
       // Checkerboard: only single cells (and diagonals) fit.
       final rows = [
         for (var r = 0; r < 8; r++)
-          String.fromCharCodes([for (var c = 0; c < 8; c++) ((r + c).isEven ? '#' : '.').codeUnitAt(0)])
+          String.fromCharCodes([for (var c = 0; c < 8; c++) ((r + c).isEven ? '#' : '.').codeUnitAt(0)]),
       ];
       final g = GameState.custom(
         board: boardFrom(rows),
@@ -422,8 +422,20 @@ void main() {
 
     test('corrupt data is rejected', () {
       expect(GameState.fromJson(null), isNull);
-      expect(GameState.fromJson({'board': [1, 2, 3]}), isNull);
-      expect(GameState.fromJson({'board': List.filled(64, 99), 'tray': [null, null, null], 'score': 0}), isNull);
+      expect(
+        GameState.fromJson({
+          'board': [1, 2, 3],
+        }),
+        isNull,
+      );
+      expect(
+        GameState.fromJson({
+          'board': List.filled(64, 99),
+          'tray': [null, null, null],
+          'score': 0,
+        }),
+        isNull,
+      );
     });
   });
 }

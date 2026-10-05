@@ -95,13 +95,13 @@ class GameState {
   bool gameOver;
 
   GameState({Random? random})
-      : _rng = random ?? Random(),
-        board = Board(),
-        tray = List<Piece?>.filled(traySize, null),
-        score = 0,
-        combo = 0,
-        moves = 0,
-        gameOver = false {
+    : _rng = random ?? Random(),
+      board = Board(),
+      tray = List<Piece?>.filled(traySize, null),
+      score = 0,
+      combo = 0,
+      moves = 0,
+      gameOver = false {
     refillTray();
     gameOver = !anyTrayPieceFits();
   }
@@ -113,9 +113,9 @@ class GameState {
     required this.score,
     required this.combo,
     required this.moves,
-  })  : _rng = random,
-        tray = List<Piece?>.of(tray),
-        gameOver = false {
+  }) : _rng = random,
+       tray = List<Piece?>.of(tray),
+       gameOver = false {
     if (this.tray.every((p) => p == null)) refillTray();
     gameOver = !anyTrayPieceFits();
   }
@@ -282,13 +282,13 @@ class GameState {
   // ---------------------------------------------------------------------------
 
   Map<String, dynamic> toJson() => {
-        'v': 1,
-        'board': board.cells,
-        'tray': [for (final p in tray) p?.toJson()],
-        'score': score,
-        'combo': combo,
-        'moves': moves,
-      };
+    'v': 1,
+    'board': board.cells,
+    'tray': [for (final p in tray) p?.toJson()],
+    'score': score,
+    'combo': combo,
+    'moves': moves,
+  };
 
   /// Restores a saved game. Returns null for missing/corrupt/finished data.
   static GameState? fromJson(Object? json, {Random? random}) {

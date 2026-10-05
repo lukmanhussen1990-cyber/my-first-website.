@@ -17,13 +17,7 @@ TextStyle bubbleStyle(double size, {Color color = const Color(0xFFFFFFFF), FontW
 }
 
 TextStyle numberStyle(double size, {Color color = const Color(0xFFFFFFFF), FontWeight weight = FontWeight.w800}) {
-  return TextStyle(
-    fontFamily: kNumberFont,
-    fontSize: size,
-    fontWeight: weight,
-    color: color,
-    height: 1.0,
-  );
+  return TextStyle(fontFamily: kNumberFont, fontSize: size, fontWeight: weight, color: color, height: 1.0);
 }
 
 /// Text with a vertical gradient fill, a thick outline and a drop shadow,
@@ -53,10 +47,16 @@ class FancyText {
       textDirection: TextDirection.ltr,
     )..layout();
     final h = probe.height;
+    // dart:ui requires explicit stops for anything but two colors.
+    final effectiveStops =
+        stops ?? (fill.length == 2 ? null : List<double>.generate(fill.length, (i) => i / (fill.length - 1)));
     final fillPaint = Paint()
-      ..shader = ui.Gradient.linear(Offset(0, h * 0.12), Offset(0, h * 0.92), fill, stops);
+      ..shader = ui.Gradient.linear(Offset(0, h * 0.12), Offset(0, h * 0.92), fill, effectiveStops);
     final fillTp = TextPainter(
-      text: TextSpan(text: text, style: base.copyWith(foreground: fillPaint, color: null)),
+      text: TextSpan(
+        text: text,
+        style: base.copyWith(foreground: fillPaint, color: null),
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
     final strokeTp = TextPainter(

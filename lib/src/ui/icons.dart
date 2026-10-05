@@ -171,7 +171,13 @@ void paintDiamond(Canvas canvas, Offset center, double w, double h) {
     ..close();
   canvas.drawPath(
     path,
-    Paint()..shader = ui.Gradient.linear(top, bottom, const [Color(0xFF6CC4FF), Color(0xFF3F97EA), Color(0xFF2465D6)]),
+    Paint()
+      ..shader = ui.Gradient.linear(
+        top,
+        bottom,
+        const [Color(0xFF6CC4FF), Color(0xFF3F97EA), Color(0xFF2465D6)],
+        const [0, 0.5, 1],
+      ),
   );
   final facet = Path()
     ..moveTo(top.dx, top.dy)
