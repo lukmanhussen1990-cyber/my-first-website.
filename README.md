@@ -34,7 +34,8 @@ grab before it gets you?), then escape Level 2 to unlock **Level 3 (Lights Out)*
 - It **sees** you better in light and when your flashlight is on. Crouching in the dark makes you hard to spot.
 - When the lights start to stutter and the screen glitches, it is close.
 - If it spots you: break line of sight, get into the dark, crouch, and hold your breath when it is right there.
-- Stamina and flashlight battery are limited; spare batteries lie on the floor.
+- Stamina and flashlight battery are limited; spare batteries lie on the floor. Rare bottles of **almond water**
+  refill your stamina and let you run longer for 25 seconds.
 
 ## Features
 See `PROGRESS.md` for the full build log. Highlights:

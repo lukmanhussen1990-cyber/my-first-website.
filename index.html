@@ -158,7 +158,7 @@
     It sees you better when you stand in the light or use the flashlight. If it spots you, break its line of sight,
     get into the dark, crouch and wait. When it is right next to you, hold your breath &mdash; but not for too long. When the lights start to stutter, it is close.<br><br>
     Sometimes it just stands and <b>watches</b>. Stare back and it may slip away&hellip; or it may not. Never walk towards it.<br><br>
-    Running drains stamina. The flashlight drains its battery &mdash; spare batteries lie on the floor.<br><br>
+    Running drains stamina. The flashlight drains its battery &mdash; spare batteries lie on the floor. A rare bottle of almond water refills your stamina and gives you a second wind.<br><br>
     <b>Modes:</b> escape Level 1 to unlock Level 2 (flooded) and Endless; escape Level 2 to unlock Level 3 (lights out).
     Settings has difficulties from Explore (no creature) to Hard, plus captions and a Reduce-flashing option.
   </div>
@@ -1773,6 +1773,24 @@ const Sound = (() => {
       s.start(t + i * 0.07, Math.random() * 2, 0.15);
     }
   }
+  function drink() {
+    if (!ctx) return;
+    const t = now();
+    // plastic cap crackle, then three gulps (a low thump with a falling pitch and a wet bubble)
+    for (let i = 0; i < 5; i++) {
+      const s = noiseSrc(), f = filter('highpass', 3000, 0.8), g = gain(0), tt = t + i * 0.035 + Math.random() * 0.02;
+      s.connect(f); f.connect(g); g.connect(sfx); env(g, tt, 0.001, 0.12, 0.02); s.start(tt, Math.random() * 2, 0.04);
+    }
+    for (let i = 0; i < 3; i++) {
+      const tt = t + 0.45 + i * 0.42;
+      const o = ctx.createOscillator(), g = gain(0); o.type = 'sine';
+      o.frequency.setValueAtTime(190, tt); o.frequency.exponentialRampToValueAtTime(85, tt + 0.12);
+      o.connect(g); g.connect(sfx); env(g, tt, 0.01, 0.35, 0.09); o.start(tt); o.stop(tt + 0.2);
+      const b = ctx.createOscillator(), bg = gain(0); b.type = 'sine';
+      b.frequency.setValueAtTime(600, tt + 0.05); b.frequency.exponentialRampToValueAtTime(1100, tt + 0.11);
+      b.connect(bg); bg.connect(sfx); env(bg, tt + 0.05, 0.005, 0.05, 0.04); b.start(tt + 0.05); b.stop(tt + 0.15);
+    }
+  }
   function heartbeat(intensity) {
     if (!ctx) return;
     const t = now();
@@ -1933,7 +1951,7 @@ const Sound = (() => {
   function resume() { if (ctx && ctx.state === 'suspended') ctx.resume(); }
 
   return {
-    init, footstep, click, zap, paper, heartbeat, breathe, randomDistant, distant, setListener, setBuzz, setDrone,
+    init, footstep, click, zap, paper, drink, heartbeat, breathe, randomDistant, distant, setListener, setBuzz, setDrone,
     setVolume, setHRTF, setMuffle, unmuffleNow, suspend, resume,
     get ctx() { return ctx; },
     // exposed helpers for other systems
@@ -2744,7 +2762,7 @@ function updateHUD(dt) {
   if (hud.msgTimer > 0) { hud.msgTimer -= dt; if (hud.msgTimer <= 0) hud.msg.style.opacity = '0'; }
   if (captionTimer > 0) { captionTimer -= dt; if (captionTimer <= 0) $('caption').style.opacity = '0'; }
   setStyle(hud.stamina, 'sw', 'width', (player.stamina * 100).toFixed(0) + '%');
-  setStyle(hud.stamina, 'sb', 'background', player.exhausted ? '#a5432c' : '#d8c77a');
+  setStyle(hud.stamina, 'sb', 'background', player.exhausted ? '#a5432c' : player.boost > 0 ? '#eef0c4' : '#d8c77a');
   setStyle(hud.staminaWrap, 'so', 'opacity', player.stamina > 0.995 && !player.running ? '0.25' : '1');
   const b = flash.battery;
   setStyle(hud.battery, 'bw', 'width', (b * 100).toFixed(0) + '%');
@@ -2793,13 +2811,14 @@ function updateBreath(dt) {
   } else player.breath = Math.min(1, player.breath + dt / 4);
 }
 function updateStamina(dt) {
+  const boost = player.boost > 0; if (boost) player.boost -= dt;   // almond water: slower drain, faster recovery
   if (player.running) {
-    player.stamina = Math.max(0, player.stamina - dt / 8);
+    player.stamina = Math.max(0, player.stamina - dt / (boost ? 13 : 8));
     player.restTimer = 0.7;
     if (player.stamina <= 0) { player.exhausted = true; showMessage('You are out of breath...', 2); }
   } else {
     player.restTimer -= dt;
-    if (player.restTimer <= 0) player.stamina = Math.min(1, player.stamina + dt / (player.moving ? 6 : 4));
+    if (player.restTimer <= 0) player.stamina = Math.min(1, player.stamina + dt / (player.moving ? 6 : 4) * (boost ? 2 : 1));
   }
   if (player.exhausted && player.stamina >= 0.35) player.exhausted = false;
   if (player.exhausted || player.stamina < 0.2) {
@@ -2991,14 +3010,40 @@ function chunkItemSpots(kx, kz) {
   if (r() < chance) {
     const lx = Math.floor(r() * CHUNK), lz = Math.floor(r() * CHUNK);
     const cx = kx * CHUNK + lx, cz = kz * CHUNK + lz;
-    out.push({ id: 'b' + kx + ',' + kz, type: 'battery', x: (cx + 0.25 + r() * 0.5) * CELL, z: (cz + 0.25 + r() * 0.5) * CELL, rot: r() * Math.PI * 2 });
+    out.push(clearOfProp({ id: 'b' + kx + ',' + kz, type: 'battery', x: (cx + 0.25 + r() * 0.5) * CELL, z: (cz + 0.25 + r() * 0.5) * CELL, rot: r() * Math.PI * 2 }, cx, cz));
+  }
+  // now and then a bottle of almond water: full stamina and a short second wind
+  if (r() < 0.16) {
+    const cx = kx * CHUNK + Math.floor(r() * CHUNK), cz = kz * CHUNK + Math.floor(r() * CHUNK);
+    out.push(clearOfProp({ id: 'w' + kx + ',' + kz, type: 'water', x: (cx + 0.3 + r() * 0.4) * CELL, z: (cz + 0.3 + r() * 0.4) * CELL, rot: r() * Math.PI * 2 }, cx, cz));
   }
   return out;
+}
+// items never spawn inside a prop: mirror the spot to the other side of the cell (props stand against a wall)
+function clearOfProp(spec, cx, cz) {
+  const p = world.prop(cx, cz);
+  if (p && Math.abs(spec.x - p.x) < p.hx + 0.25 && Math.abs(spec.z - p.z) < p.hz + 0.25) {
+    const mx = (cx + 0.5) * CELL, mz = (cz + 0.5) * CELL;
+    spec.x = mx - (p.x - mx) * 0.8; spec.z = mz - (p.z - mz) * 0.8;
+  }
+  return spec;
+}
+function buildWaterBottleMesh(lying) {
+  const root = new THREE.Group(), g = new THREE.Group(); root.add(g);
+  if (lying) { g.rotation.z = Math.PI / 2; g.position.set(0.13, 0.042, 0); }   // knocked over (or floating on the flood)
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.042, 0.19, 12), itemMaterial(0xd9dccf, 0.06)); body.position.y = 0.095; g.add(body);
+  const shoulder = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.04, 0.05, 12), itemMaterial(0xd9dccf, 0.06)); shoulder.position.y = 0.215; g.add(shoulder);
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.025, 10), itemMaterial(0x3d6088)); cap.position.y = 0.252; g.add(cap);
+  const label = new THREE.Mesh(new THREE.CylinderGeometry(0.0425, 0.0425, 0.07, 12, 1, true), itemMaterial(0xc9a86a)); label.position.y = 0.1; g.add(label);
+  const glint = makeGlint(0.3); glint.position.y = lying ? 0.12 : 0.3; root.add(glint);
+  root.userData.glint = glint;
+  return root;
 }
 function addItem(spec, chunkKey) {
   if (items.has(spec.id)) return;
   let mesh;
   if (spec.type === 'battery') mesh = buildBatteryMesh();
+  else if (spec.type === 'water') mesh = buildWaterBottleMesh(world.level === 2 || (spec.rot * 7) % 1 < 0.35);
   else if (spec.type === 'note') mesh = buildNoteMesh(spec);
   else if (spec.type === 'exit') mesh = buildExitMesh(spec);
   const floatY = world.level === 2 && spec.type !== 'exit' && !spec.wall ? WATER_Y + 0.015 : 0;
@@ -3039,7 +3084,7 @@ function updateItems(dt) {
     if (g) g.material.opacity = (0.25 + 0.35 * (0.5 + 0.5 * Math.sin(t * 3 + it.x))) * (1.2 - Math.min(1, it.env));
     if (it.mesh.userData.led) it.mesh.userData.led.uniforms.uGlow.value = Math.sin(t * 5 + it.x) > 0.2 ? 3 : 0.15;
     if (it.type === 'note' && it.mesh.userData.paper) it.mesh.userData.paper.position.y = 0.02 + Math.sin(t * 1.3 + it.z) * 0.004;
-    if (world.level === 2 && it.type === 'battery') { it.mesh.position.y = WATER_Y + 0.02 + Math.sin(t * 1.7 + it.x) * 0.012; it.mesh.rotation.z = Math.sin(t * 1.1 + it.z) * 0.08; }
+    if (world.level === 2 && (it.type === 'battery' || it.type === 'water')) { it.mesh.position.y = WATER_Y + 0.02 + Math.sin(t * 1.7 + it.x) * 0.012; it.mesh.rotation.z = Math.sin(t * 1.1 + it.z) * 0.08; }
     const d = Math.hypot(it.x - player.pos.x, it.z - player.pos.z);
     if (it.type === 'battery' && d < 0.9 && flash.battery > 0.97) { if (!it.fullHint) { it.fullHint = true; showMessage('Flashlight already full.', 1.5); } }
     else if (it.type === 'battery' && d < 0.9) {
@@ -3048,6 +3093,12 @@ function updateItems(dt) {
       flash.battery = Math.min(1, flash.battery + 0.5);
       Sound.click(0.35, 3200); setTimeout(() => Sound.click(0.25, 2200), 70);
       showMessage('Battery found  +50%', 2.5);
+    } else if (it.type === 'water' && d < 0.9) {
+      collectedItems.add(it.id);
+      removeItem(it.id);
+      player.stamina = 1; player.exhausted = false; player.boost = 25;
+      Sound.drink();
+      showMessage('Almond water. You feel your breath come back.', 2.8);
     } else if (it.type === 'note' && d < 1.1) {
       pickNote(it);
     } else if (it.type === 'exit' && d < 1.25) {
@@ -4072,7 +4123,7 @@ const player = {
   crouching: false, running: false, moving: false,
   bobPhase: 0, bobAmt: 0,
   speed: 0,
-  stamina: 1, exhausted: false, restTimer: 0, breathT: 0, breath: 1, holding: false,
+  stamina: 1, exhausted: false, boost: 0, restTimer: 0, breathT: 0, breath: 1, holding: false,
 };
 const EYE_STAND = 1.62, EYE_CROUCH = 0.92;
 
@@ -4407,7 +4458,7 @@ function newGame(level = 1, mode = 'story') {
   game.level = level; game.mode = mode; game.serial = 0; game.time = 0; game.notes = 0; game.danger = 0;
   fx.kick = 0; fx.red = 0; U.uMonster.value.set(1e5, 0, 1e5, 0);
   clearTimeout(goal.msgTimer);
-  player.stamina = 1; player.exhausted = false; player.breath = 1; player.holding = false; Sound.setMuffle(false);
+  player.stamina = 1; player.exhausted = false; player.boost = 0; player.breath = 1; player.holding = false; Sound.setMuffle(false);
   flash.on = false; flash.battery = 1; flash.intensity = 0;
   collectedItems.clear(); goal.specs = [];
   world = new World((Math.random() * 1e9) | 0, level);
@@ -4540,7 +4591,7 @@ function continueGame() {
   collectedItems.clear(); for (const id of run.collected || []) collectedItems.add(id);
   goal.specs = run.specs || []; goal.exitSpawned = !!run.exitSpawned;
   player.pos.set(run.x, 0, run.z); player.vel.set(0, 0, 0); player.yaw = run.yaw; player.pitch = 0;
-  player.stamina = 1; player.exhausted = false; player.crouchToggle = false;
+  player.stamina = 1; player.exhausted = false; player.boost = 0; player.crouchToggle = false;
   flash.on = false; flash.battery = run.battery ?? 1; flash.intensity = 0;
   updateChunks(player.pos.x, player.pos.z, true);
   resetMonster();

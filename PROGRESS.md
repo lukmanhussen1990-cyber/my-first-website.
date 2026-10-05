@@ -284,3 +284,7 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[09:20 UTC] Extra — Distant phone.** A new distant sound: an old office phone rings two to four times
   somewhere far off (bell tones struck by a fast clapper, double-ring rhythm), then stops partway through a ring.
   Captioned "[a phone rings somewhere]".
+- **[09:29 UTC] Extra — Almond water.** A rare floor pickup (about 1 in 6 chunks), Backrooms lore: a plastic
+  bottle, sometimes knocked over and floating in Level 2. It refills stamina and gives a 25 s second wind: running
+  drains stamina slower and it recovers twice as fast; the stamina bar turns pale while it lasts. It has its own sound
+  (cap crackle, three gulps). Batteries and bottles are now also moved out of any prop that shares their cell.
