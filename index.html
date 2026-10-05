@@ -609,6 +609,12 @@ class World {
     this.propCache.set(key, res);
     return res;
   }
+  // doorway with a pair of doors on the west (axis 'z') or north (axis 'x') edge of cell (cx,cz)
+  doorAt(cx, cz, axis) {
+    if (axis === 'z') { if (this.wallW(cx, cz) || !this.wallW(cx, cz - 1) || !this.wallW(cx, cz + 1)) return false; }
+    else if (this.wallN(cx, cz) || !this.wallN(cx - 1, cz) || !this.wallN(cx + 1, cz)) return false;
+    return hash2(cx * 2 + (axis === 'z' ? 1 : 0), cz, this.seed + 1818) < 0.3;
+  }
   dangling(cx, cz) { return this.lightType(cx, cz) === LIGHT.BROKEN && hash2(cx, cz, this.seed + 909) < 0.22; }
   height(kx, kz) { return this.level === 1 && this.style(kx, kz) === STYLE.HALL ? HALL_H : WALL_H; }
   wallsAtPoint(gx, gz) { return this.wallW(gx, gz) || this.wallW(gx, gz - 1) || this.wallN(gx, gz) || this.wallN(gx - 1, gz); }
@@ -1482,6 +1488,28 @@ function buildProp(p) {
   g.traverse((o) => { if (o.material && o.material.uniforms) o.material.uniforms.uEnv.value = env; });
   return g;
 }
+function buildChunkDoors(kx, kz) {
+  const key = ckey(kx, kz);
+  for (let lz = 0; lz < CHUNK; lz++) for (let lx = 0; lx < CHUNK; lx++) {
+    const cx = kx * CHUNK + lx, cz = kz * CHUNK + lz;
+    for (const axis of ['z', 'x']) {
+      if (!world.doorAt(cx, cz, axis)) continue;
+      const c = axis === 'z' ? { x: cx * CELL, z: (cz + 0.5) * CELL, axis } : { x: (cx + 0.5) * CELL, z: cz * CELL, axis };
+      const d = buildDoubleDoor(c);
+      d.owned = key; d.phase = 'idle'; d.angle = 1.3 + hash2(cx, cz, 77) * 0.25;
+      for (const L of d.leaves) L.hinge.rotation.y = L.s * d.angle;
+      scares.doors.push(d);
+    }
+  }
+}
+function removeChunkDoors(key) {
+  for (let i = scares.doors.length - 1; i >= 0; i--) {
+    const d = scares.doors[i];
+    if (d.owned !== key) continue;
+    scene.remove(d.group); d.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    scares.doors.splice(i, 1);
+  }
+}
 function buildChunkProps(kx, kz) {
   let grp = null;
   for (let lz = 0; lz < CHUNK; lz++) for (let lx = 0; lx < CHUNK; lx++) {
@@ -1503,9 +1531,11 @@ function finishChunk(kx, kz, g) {
   scene.add(group);
   chunkMeshes.set(ckey(kx, kz), { kx, kz, group, props });
   spawnChunkItems(kx, kz);
+  buildChunkDoors(kx, kz);
 }
 function disposeChunk(c) {
   despawnChunkItems(ckey(c.kx, c.kz));
+  removeChunkDoors(ckey(c.kx, c.kz));
   if (c.props) c.props.traverse((o) => { if (o.material) o.material.dispose(); });
   scene.remove(c.group);
   c.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
@@ -3447,8 +3477,13 @@ const dynBlockers = [];   // extra collision boxes (closed doors)
 function resetScares() {
   scares.t = 35 + Math.random() * 20;
   scares.outage = null; scares.steps = null;
-  for (const d of scares.doors) { scene.remove(d.group); d.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material !== monsterMat) o.material.dispose(); }); }
-  scares.doors.length = 0; dynBlockers.length = 0;
+  for (let i = scares.doors.length - 1; i >= 0; i--) {
+    const d = scares.doors[i];
+    if (d.owned) { d.phase = 'idle'; continue; }
+    scene.remove(d.group); d.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    scares.doors.splice(i, 1);
+  }
+  dynBlockers.length = 0;
   if (scares.phantom) hidePhantom();
   U.uOutage.value.set(0, 0, 0, 0);
 }
@@ -3506,7 +3541,7 @@ function findDoorway() {
     const vx = c.x - player.pos.x, vz = c.z - player.pos.z, d = Math.hypot(vx, vz);
     if (d < 5 || d > 15) return false;
     if ((vx * f.x + vz * f.z) / d < 0.55) return false;
-    if (scares.doors.some((o) => Math.hypot(o.x - c.x, o.z - c.z) < 1)) return false;
+    if (scares.doors.some((o) => Math.hypot(o.x - c.x, o.z - c.z) < 1)) return false;   // (also skips chunk-owned doors)
     return world.segmentClear(player.pos.x, player.pos.z, c.x - (vx / d) * 0.4, c.z - (vz / d) * 0.4);
   });
   return ok.length ? ok[Math.floor(Math.random() * ok.length)] : null;
@@ -3533,6 +3568,13 @@ function buildDoubleDoor(c) {
   return { group, leaves, x: c.x, z: c.z, axis: c.axis, angle: 1.45, t: 0, phase: 'open', closedFor: 0 };
 }
 function startDoorSlam() {
+  const f = playerForward();
+  const ready = scares.doors.filter((d) => {
+    if (!d.owned || (d.phase !== 'idle' && d.phase !== 'opening')) return false;
+    const vx = d.x - player.pos.x, vz = d.z - player.pos.z, dist = Math.hypot(vx, vz);
+    return dist > 4 && dist < 16 && (vx * f.x + vz * f.z) / dist > 0.55 && world.segmentClear(player.pos.x, player.pos.z, d.x - (vx / dist) * 0.4, d.z - (vz / dist) * 0.4);
+  });
+  if (ready.length) { const d = ready[Math.floor(Math.random() * ready.length)]; d.phase = 'slam'; d.t = 0; return true; }
   const c = findDoorway(); if (!c) return false;
   const d = buildDoubleDoor(c);
   d.phase = 'slam';
@@ -3570,7 +3612,7 @@ function updateDoors(dt) {
       const h = WALL_T / 2, half = CELL / 2;
       dynBlockers.push(d.axis === 'x' ? { x0: d.x - half, x1: d.x + half, z0: d.z - h, z1: d.z + h } : { x0: d.x - h, x1: d.x + h, z0: d.z - half, z1: d.z + half });
     }
-    if (Math.hypot(d.x - player.pos.x, d.z - player.pos.z) > 45) {
+    if (!d.owned && Math.hypot(d.x - player.pos.x, d.z - player.pos.z) > 45) {
       scene.remove(d.group); d.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
       scares.doors.splice(i, 1);
     }

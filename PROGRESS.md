@@ -239,3 +239,7 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[08:36 UTC] Extra — Tutorial hints.** One-time contextual hints (remembered in the save, touch-aware wording):
   movement basics after a few seconds, the flashlight the first time you stand in darkness, low battery, what to do
   the first time something gets close, and the static meter after your first page.
+- **[08:38 UTC] Extra — Real doors.** ~30% of doorways (an opening between two collinear walls) now have a pair of
+  double doors standing open as part of the world (built/disposed with their chunk). The slam scare now prefers one
+  of these that you can actually see 4-16 m ahead, so doors no longer pop into existence before slamming (the old
+  spawn-a-door behaviour remains as a fallback).
