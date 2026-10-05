@@ -22,6 +22,8 @@
   #signal i:nth-of-type(1) { height: 4px; } #signal i:nth-of-type(2) { height: 7px; } #signal i:nth-of-type(3) { height: 10px; } #signal i:nth-of-type(4) { height: 13px; }
   #signal i.on { background: #efe2a8; box-shadow: 0 0 4px rgba(255, 230, 150, 0.6); }
   #message { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%); max-width: 80vw; text-align: center; font-size: 17px; letter-spacing: 0.08em; color: #f1e6b8; text-shadow: 0 0 8px #000, 0 0 3px #000; opacity: 0; transition: opacity 0.6s; }
+  #caption { position: absolute; left: 16px; bottom: 44px; font-size: 14px; letter-spacing: 0.05em; color: #f6eecb; background: rgba(0, 0, 0, 0.55); padding: 3px 8px; opacity: 0; transition: opacity 0.4s; }
+  body.touch #caption { left: 50%; transform: translateX(-50%); bottom: 12px; }
   .bar { position: absolute; bottom: max(18px, env(safe-area-inset-bottom)); height: 6px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(240, 225, 160, 0.35); transition: opacity 0.5s; }
   .bar .fill { height: 100%; width: 100%; background: #d8c77a; }
   #stamina { left: 16px; width: min(26vw, 220px); }
@@ -88,6 +90,7 @@
   <div id="crosshair"></div>
   <div id="notesBox"><span class="lbl">NOTES</span> <span id="notesCount">0 / 5</span><div id="signal"><span class="lbl" id="sigLbl">STATIC</span> <i></i><i></i><i></i><i></i></div></div>
   <div id="message"></div>
+  <div id="caption"></div>
   <div id="stamina" class="bar"><div id="staminaFill" class="fill"></div></div>
   <div id="battery" class="bar"><div id="batteryFill" class="fill"></div><span id="batteryPct">100%</span></div>
 </div>
@@ -125,6 +128,7 @@
     <label><span>Brightness</span><input type="range" id="setBright" min="0.7" max="1.6" step="0.05"><span id="setBrightVal"></span></label>
     <label><span>Volume</span><input type="range" id="setVol" min="0" max="100" step="1"><span id="setVolVal"></span></label>
     <label><span>Graphics quality</span><select id="setQuality"><option value="0">Low</option><option value="1">Medium</option><option value="2">High</option></select><span></span></label>
+    <label><span>Sound captions</span><input type="checkbox" id="setCaptions"><span></span></label>
     <label><span>Head bob</span><input type="checkbox" id="setBob"><span></span></label>
   </div>
   <button class="btn" id="btnSettingsBack">BACK</button>
@@ -1700,6 +1704,7 @@ function updateAmbientAudio(dt) {
   ambience.nextDistant -= dt;
   if (ambience.nextDistant <= 0) {
     ambience.lastEvent = Sound.randomDistant(px, pz) || '';
+    caption(DISTANT_CAPTIONS[ambience.lastEvent]);
     ambience.nextDistant = 9 + Math.random() * 16;
   }
 }
@@ -2163,6 +2168,8 @@ function animateMonster(dt, moving) {
 
 // ---------------- monster sounds ----------------
 function monsterFootstep(chase) {
+  const md = Math.hypot(monster.pos.x - player.pos.x, monster.pos.z - player.pos.z);
+  if (md < 16 && !monster.sees) caption(chase ? '[heavy footsteps, running]' : '[heavy footsteps nearby]', 1.5);
   const ctx = Sound.ctx; if (!ctx) return;
   const A = Sound._, t = ctx.currentTime;
   const p = A.panner(monster.pos.x, 0.1, monster.pos.z, 2.5, 1.0, 0.5);
@@ -2199,6 +2206,7 @@ function updateMonsterBreath(dist) {
   b.growl.frequency.setTargetAtTime(chase ? 64 : 48, t, 0.3);
 }
 function monsterScreech() {
+  caption('[an inhuman screech]', 2.5);
   const ctx = Sound.ctx; if (!ctx) return;
   const A = Sound._, t = ctx.currentTime;
   const p = A.panner(monster.pos.x, 2.4, monster.pos.z, 6, 0.8, 0.8);
@@ -2368,6 +2376,12 @@ const hud = {
   notes: $('notesCount'), msg: $('message'),
   sigLbl: $('sigLbl'), sigBars: [...document.querySelectorAll('#signal i')],
 };
+const DISTANT_CAPTIONS = { thud: '[a distant thud]', creak: '[metal creaks somewhere]', steps: '[distant footsteps]', whisper: '[whispering]', slam: '[a door slams far away]', knock: '[knocking]', groan: '[a low groan]', crackle: '[electrical crackling]' };
+let captionTimer = 0;
+function caption(text, seconds = 2.5) {
+  if (!text || !settings.captions || game.state !== 'playing') return;
+  const el = $('caption'); el.textContent = text; el.style.opacity = '1'; captionTimer = seconds;
+}
 function showMessage(text, seconds = 3) {
   hud.msg.textContent = text;
   hud.msg.style.opacity = '1';
@@ -2378,6 +2392,7 @@ function setStyle(el, key, prop, val) { if (_hudCache[key] !== val) { _hudCache[
 function setText(el, key, val) { if (_hudCache[key] !== val) { _hudCache[key] = val; el.textContent = val; } }
 function updateHUD(dt) {
   if (hud.msgTimer > 0) { hud.msgTimer -= dt; if (hud.msgTimer <= 0) hud.msg.style.opacity = '0'; }
+  if (captionTimer > 0) { captionTimer -= dt; if (captionTimer <= 0) $('caption').style.opacity = '0'; }
   setStyle(hud.stamina, 'sw', 'width', (player.stamina * 100).toFixed(0) + '%');
   setStyle(hud.stamina, 'sb', 'background', player.exhausted ? '#a5432c' : '#d8c77a');
   setStyle(hud.staminaWrap, 'so', 'opacity', player.stamina > 0.995 && !player.running ? '0.25' : '1');
@@ -3111,7 +3126,7 @@ function updateOutage(dt) {
       const x = (lx + 0.5) * CELL, z = (lz + 0.5) * CELL, d = Math.hypot(x - o.cx, z - o.cz);
       if (d >= prev && d < o.r) clunk(x, z);
     }
-    if (o.r >= o.target) { o.phase = 'hold'; Sound.distant.groan(player.pos.x, player.pos.z); }
+    if (o.r >= o.target) { o.phase = 'hold'; Sound.distant.groan(player.pos.x, player.pos.z); caption('[the lights die... something groans]', 3); }
   } else if (o.phase === 'hold') {
     o.hold -= dt;
     if (o.hold <= 0) { o.phase = 'done'; Sound.zap(0.4); fx.dip = 0.8; }
@@ -3183,7 +3198,7 @@ function updateDoors(dt) {
     if (d.phase === 'slam') {
       d.angle = Math.max(0, d.angle - dt * (2 + d.t * 30));
       if (d.angle === 0) {
-        d.phase = 'closed'; d.closedFor = 0;
+        d.phase = 'closed'; d.closedFor = 0; caption('[a door slams shut]', 2.5);
         const ctx = Sound.ctx;
         if (ctx) {
           const A = Sound._, t = ctx.currentTime, p = A.panner(d.x, 1.2, d.z, 4, 0.9, 0.9);
@@ -3215,6 +3230,7 @@ function updateDoors(dt) {
 
 // ---------------- 3. footsteps creeping up behind you ----------------
 function startFakeSteps() {
+  caption('[footsteps behind you]', 3);
   const f = playerForward();
   scares.steps = { n: 0, max: 5 + Math.floor(Math.random() * 4), t: 0.2, dist: 7.5, bx: -f.x, bz: -f.z };
   return true;
@@ -3651,7 +3667,7 @@ function silenceMonster() {
 // ---------------- settings ----------------
 const SETTINGS_KEY = 'backrooms.settings.v1';
 let isTouch = matchMedia('(pointer: coarse)').matches || (('ontouchstart' in window) && !matchMedia('(pointer: fine)').matches);
-const settings = { sens: 1, invert: false, fov: 75, volume: 80, quality: isTouch ? 0 : 1, bob: true, bright: 1 };
+const settings = { sens: 1, invert: false, fov: 75, volume: 80, quality: isTouch ? 0 : 1, bob: true, bright: 1, captions: false };
 function loadSettings() { try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch (e) { /* storage blocked */ } }
 function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* storage blocked */ } }
 function applySettings() {
@@ -3666,6 +3682,7 @@ function applySettings() {
   $('setVol').value = settings.volume; $('setVolVal').textContent = settings.volume + '%';
   $('setQuality').value = String(settings.quality);
   $('setBob').checked = settings.bob;
+  $('setCaptions').checked = settings.captions;
   postU.uGammaInv.value = 1 / settings.bright;
   Sound.setHRTF(+settings.quality > 0);
   $('setBright').value = settings.bright; $('setBrightVal').textContent = Math.round(settings.bright * 100) + '%';
@@ -3680,6 +3697,7 @@ bindSetting('setVol', 'volume', (t) => parseInt(t.value, 10));
 bindSetting('setQuality', 'quality', (t) => parseInt(t.value, 10), 'change');
 bindSetting('setBob', 'bob', (t) => t.checked, 'change');
 bindSetting('setBright', 'bright', (t) => parseFloat(t.value));
+bindSetting('setCaptions', 'captions', (t) => t.checked, 'change');
 function openSettings(from) { settingsReturn = from; showScreen('settingsScreen'); }
 
 // ---------------- attract mode (menu background) ----------------

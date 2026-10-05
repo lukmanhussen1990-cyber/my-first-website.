@@ -144,3 +144,5 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   equal-power audio panning instead of HRTF.
 - **[07:38 UTC] Extra — Journal + level-2 creature tint.** The pause screen lists every page collected so far (scrollable
   journal). On level 2 the creature's skin takes a wet, greenish-black tint.
+- **[07:39 UTC] Extra — Sound captions.** Optional setting: bracketed captions for distant noises, footsteps behind
+  you, door slams, outages, the monster's screech and its heavy footsteps when it is close but unseen.
