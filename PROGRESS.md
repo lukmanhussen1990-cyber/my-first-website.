@@ -183,3 +183,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   tally marks, "IT HEARS YOU" — alpha-tested), missing ceiling tiles (black ragged holes) around dead fixtures, and
   ~22% of dead fixtures now dangle from one edge out of their hole. Nearby dangling fixtures occasionally spit sparks
   (pooled additive sprites with gravity and bounce) with a spatial crackle.
+- **[08:02 UTC] Extra — Shader pre-compilation.** Every material (creature, items, notes, exit, doors, water, sprites,
+  post/bloom) is compiled at boot against the render target it will actually draw into, so nothing hitches the first
+  time the creature or a note appears. Verified: 14 GPU programs exist at the menu and none are added during play.

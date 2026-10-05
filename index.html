@@ -4120,11 +4120,27 @@ function simulate(dt) {
   }
   updateEffects(dt);
 }
+// Compile every shader up front so nothing stalls the first time the creature, a note or the water appears
+function precompileShaders() {
+  try {
+    initMonster();
+    const tmp = new THREE.Group();
+    tmp.add(buildBatteryMesh(), buildNoteMesh({ wall: true }), buildNoteMesh({ wall: false }), buildExitMesh({}), buildDoubleDoor({ x: 0, z: 0, axis: 'x' }).group);
+    scene.add(tmp);
+    renderer.setRenderTarget(sceneRT); renderer.compile(scene, camera);
+    renderer.setRenderTarget(bloomA); renderer.compile(bloomScene, postCam);
+    renderer.setRenderTarget(null); renderer.compile(postScene, postCam);
+    scene.remove(tmp);
+    tmp.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+    monster.model.root.visible = false;
+  } catch (e) { console.warn('precompile skipped', e); }
+}
 loadSettings();
 loadSave();
 applySettings();
 spawnPlayer(CELL * 0.5, CELL * 0.5);
 updateChunks(player.pos.x, player.pos.z, true);
+precompileShaders();
 setupAttract();
 showScreen('startScreen');
 frame();
