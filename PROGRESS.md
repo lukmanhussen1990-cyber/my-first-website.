@@ -281,3 +281,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   - Level 2 floating debris stays inside cells, away from walls, pillars and props.
   - Baked props keep their faint self-glow (new per-vertex glow), so the wet-floor sign glows again.
   - Tests: the ghost test now covers the vanish; new test t44 checks the explore flag across start, save and continue.
+- **[09:20 UTC] Extra — Distant phone.** A new distant sound: an old office phone rings two to four times
+  somewhere far off (bell tones struck by a fast clapper, double-ring rhythm), then stops partway through a ring.
+  Captioned "[a phone rings somewhere]".

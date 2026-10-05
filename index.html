@@ -1881,11 +1881,30 @@ const Sound = (() => {
         s.connect(f); f.connect(g); g.connect(p); env(g, t, 0.001, 0.25 + Math.random() * 0.3, 0.015); s.start(t, Math.random() * 2, 0.05);
       }
     },
+    phone(px, pz) {
+      // an old office phone ringing somewhere far off (bell partials hammered by a ~22 Hz clapper); it stops mid-ring
+      const [x, z] = around(px, pz, 16 + Math.random() * 10), p = panner(x, 1.0, z, 5, 1, 0.8);
+      const t0 = now(), rings = 2 + Math.floor(Math.random() * 3), end = t0 + (rings - 1) * 3 + 0.25 + Math.random() * 0.5;
+      const bp = filter('bandpass', 1500, 0.8), g = gain(0), am = gain(0.5), lfoG = gain(0.5);
+      const lfo = ctx.createOscillator(); lfo.type = 'square'; lfo.frequency.value = 22; lfo.connect(lfoG); lfoG.connect(am.gain);
+      am.connect(bp); bp.connect(g); g.connect(p);
+      for (const [f, a] of [[1046, 0.5], [1523, 0.3], [2384, 0.18]]) {
+        const o = ctx.createOscillator(), og = gain(a); o.frequency.value = f * (0.99 + Math.random() * 0.02);
+        o.connect(og); og.connect(am); o.start(t0); o.stop(end + 0.3);
+      }
+      lfo.start(t0); lfo.stop(end + 0.3);
+      g.gain.setValueAtTime(0, t0);
+      for (let i = 0; i < rings; i++) for (const off of [0, 0.6]) {
+        const a = t0 + i * 3 + off, b = Math.min(a + 0.4, end);
+        if (a >= end) break;
+        g.gain.setTargetAtTime(0.22, a, 0.01); g.gain.setTargetAtTime(0, b, 0.03);
+      }
+    },
   };
   for (const k of Object.keys(distant)) { const fn = distant[k]; distant[k] = (...a) => { if (ctx) fn(...a); }; }
   function randomDistant(px, pz) {
     if (!ctx) return;
-    const keys = ['thud', 'creak', 'steps', 'whisper', 'slam', 'knock', 'groan', 'crackle', 'thud', 'creak', 'crackle'];
+    const keys = ['thud', 'creak', 'steps', 'whisper', 'slam', 'knock', 'groan', 'crackle', 'thud', 'creak', 'crackle', 'phone'];
     const k = keys[Math.floor(Math.random() * keys.length)];
     distant[k](px, pz);
     return k;
@@ -2707,7 +2726,7 @@ const hud = {
   breathFill: $('breathFill'), breathBar: $('breathBar'),
   sigLbl: $('sigLbl'), sigBars: [...document.querySelectorAll('#signal i')],
 };
-const DISTANT_CAPTIONS = { thud: '[a distant thud]', creak: '[metal creaks somewhere]', steps: '[distant footsteps]', whisper: '[whispering]', slam: '[a door slams far away]', knock: '[knocking]', groan: '[a low groan]', crackle: '[electrical crackling]' };
+const DISTANT_CAPTIONS = { thud: '[a distant thud]', creak: '[metal creaks somewhere]', steps: '[distant footsteps]', whisper: '[whispering]', slam: '[a door slams far away]', knock: '[knocking]', groan: '[a low groan]', crackle: '[electrical crackling]', phone: '[a phone rings somewhere]' };
 let captionTimer = 0;
 function caption(text, seconds = 2.5) {
   if (!text || !settings.captions || game.state !== 'playing') return;
