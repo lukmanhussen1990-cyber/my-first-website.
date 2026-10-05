@@ -24,3 +24,8 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   WASD/arrow movement with smoothed acceleration, Shift to run (forward only), C toggles crouch
   (smooth eye-height change), head bob + footstep events, circle-vs-box wall collision with sub-steps.
   Tested headless: movement, running, wall collision and crouch all verified.
+- **[06:38 UTC] Feature 2 — Endless maze: DONE.** Deterministic `World` class: 8x8-cell chunks with 4 styles
+  (rooms, tight corridors, huge halls, pillar rooms). Kruskal spanning tree per chunk + hash-based shared
+  borders with guaranteed openings. Chunks within radius 2 are built (1 per frame, nearest first), chunks
+  beyond radius 3 are disposed. Walls are merged into runs per grid line (no z-fighting at joins).
+  Tested: BFS over a 161x161-cell area found 0 unreachable cells; 25 chunks build in ~135 ms.

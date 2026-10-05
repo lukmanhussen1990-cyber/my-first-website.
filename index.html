@@ -111,55 +111,190 @@ window.addEventListener('resize', () => {
 });
 
 // ============================================================================
-//  WORLD (temporary fixed test maze — replaced by endless chunks later)
+//  WORLD GENERATION (endless, deterministic, chunked)
 // ============================================================================
-const world = (() => {
-  const W = 12, H = 12;
-  const rnd = mulberry32(1234);
-  // wallsW[x][z]: wall on west edge of cell (x,z); wallsN[x][z]: wall on north edge
-  const wallsW = [], wallsN = [];
-  for (let x = 0; x <= W; x++) { wallsW[x] = []; wallsN[x] = []; for (let z = 0; z <= H; z++) { wallsW[x][z] = true; wallsN[x][z] = true; } }
-  // randomized DFS spanning tree
-  const seen = new Set(); const stack = [[0, 0]]; seen.add('0,0');
-  while (stack.length) {
-    const [x, z] = stack[stack.length - 1];
-    const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dz]) => [x + dx, z + dz, dx, dz])
-      .filter(([nx, nz]) => nx >= 0 && nz >= 0 && nx < W && nz < H && !seen.has(nx + ',' + nz));
-    if (!nb.length) { stack.pop(); continue; }
-    const [nx, nz, dx, dz] = nb[Math.floor(rnd() * nb.length)];
-    if (dx === 1) wallsW[nx][nz] = false; else if (dx === -1) wallsW[x][z] = false;
-    else if (dz === 1) wallsN[nx][nz] = false; else wallsN[x][z] = false;
-    seen.add(nx + ',' + nz); stack.push([nx, nz]);
-  }
-  // knock out extra walls to form rooms
-  for (let x = 1; x < W; x++) for (let z = 0; z < H; z++) if (rnd() < 0.45) wallsW[x][z] = false;
-  for (let x = 0; x < W; x++) for (let z = 1; z < H; z++) if (rnd() < 0.45) wallsN[x][z] = false;
-  return {
-    W, H,
-    wallW(cx, cz) { if (cz < 0 || cz >= H) return false; if (cx <= 0 || cx >= W) return cx === 0 || cx === W; return wallsW[cx][cz]; },
-    wallN(cx, cz) { if (cx < 0 || cx >= W) return false; if (cz <= 0 || cz >= H) return cz === 0 || cz === H; return wallsN[cx][cz]; },
-    pillar(gx, gz) { return false; },
-  };
-})();
+const CHUNK = 8;                      // cells per chunk side
+const CHUNK_SIZE = CHUNK * CELL;      // 19.2 m
+const PILLAR = 0.56;                  // pillar width (m)
+const STYLE = { ROOMS: 0, CORRIDORS: 1, HALL: 2, PILLARS: 3 };
+const STYLE_NAMES = ['rooms', 'corridors', 'hall', 'pillars'];
+const STYLE_REMOVE = [0.5, 0.08, 0.93, 0.86];   // chance to knock out a non-tree wall
+const STYLE_BORDER = [0.55, 0.8, 0.15, 0.25];   // chance a chunk-border edge is a wall
+const LIGHT = { NORMAL: 0, FLICKER: 1, DYING: 2, BROKEN: 3 };
+const fdiv = (a, b) => Math.floor(a / b);
+const ckey = (kx, kz) => (kx + 32768) * 65536 + (kz + 32768);
 
-// Collision boxes for walls around a position
-function wallBoxW(cx, cz) { const x = cx * CELL; return { x0: x - WALL_T / 2, x1: x + WALL_T / 2, z0: cz * CELL - WALL_T / 2, z1: (cz + 1) * CELL + WALL_T / 2 }; }
-function wallBoxN(cx, cz) { const z = cz * CELL; return { x0: cx * CELL - WALL_T / 2, x1: (cx + 1) * CELL + WALL_T / 2, z0: z - WALL_T / 2, z1: z + WALL_T / 2 }; }
-const _boxes = [];
-function collectBoxes(x, z) {
-  _boxes.length = 0;
-  const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL);
-  for (let i = cx - 1; i <= cx + 1; i++) for (let j = cz - 1; j <= cz + 1; j++) {
-    if (world.wallW(i, j)) _boxes.push(wallBoxW(i, j));
-    if (world.wallN(i, j)) _boxes.push(wallBoxN(i, j));
+class World {
+  constructor(seed, level = 1) {
+    this.seed = seed | 0;
+    this.level = level;
+    this.cache = new Map();
+    this._lk = NaN; this._ld = null;   // last-chunk lookup cache
   }
-  return _boxes;
+  style(kx, kz) {
+    if (Math.abs(kx) <= 0 && Math.abs(kz) <= 0) return STYLE.ROOMS;
+    const h = hash2(kx, kz, this.seed + 7);
+    return h < 0.45 ? STYLE.ROOMS : h < 0.66 ? STYLE.CORRIDORS : h < 0.82 ? STYLE.HALL : STYLE.PILLARS;
+  }
+  // Border edges depend only on the border's own coordinates, so both chunks agree.
+  // Every border keeps at least two openings -> the endless maze is always connected.
+  borderW(kx, kz, i) {
+    const s = this.seed;
+    if (i === Math.floor(hash2(kx, kz, s + 11) * CHUNK) || i === Math.floor(hash2(kx, kz, s + 12) * CHUNK)) return false;
+    const p = (STYLE_BORDER[this.style(kx - 1, kz)] + STYLE_BORDER[this.style(kx, kz)]) * 0.5;
+    return hash2(kx * CHUNK + i, kz, s + 13) < p;
+  }
+  borderN(kx, kz, i) {
+    const s = this.seed;
+    if (i === Math.floor(hash2(kx, kz, s + 14) * CHUNK) || i === Math.floor(hash2(kx, kz, s + 15) * CHUNK)) return false;
+    const p = (STYLE_BORDER[this.style(kx, kz - 1)] + STYLE_BORDER[this.style(kx, kz)]) * 0.5;
+    return hash2(kx, kz * CHUNK + i, s + 16) < p;
+  }
+  // Smooth value noise in [0,1]: high values = areas where most lights are broken.
+  darkness(cx, cz) {
+    const S = 5, s = this.seed;
+    const fx = cx / S, fz = cz / S, ix = Math.floor(fx), iz = Math.floor(fz);
+    let tx = fx - ix, tz = fz - iz;
+    tx = tx * tx * (3 - 2 * tx); tz = tz * tz * (3 - 2 * tz);
+    const a = hash2(ix, iz, s + 21), b = hash2(ix + 1, iz, s + 21), c = hash2(ix, iz + 1, s + 21), d = hash2(ix + 1, iz + 1, s + 21);
+    let v = lerp(lerp(a, b, tx), lerp(c, d, tx), tz);
+    const r = Math.hypot(cx, cz);
+    v *= clamp((r - 5) / 6, 0, 1);       // keep the start area lit
+    return v;
+  }
+  chunk(kx, kz) {
+    const key = ckey(kx, kz);
+    if (key === this._lk) return this._ld;
+    let d = this.cache.get(key);
+    if (!d) {
+      d = this.generate(kx, kz);
+      this.cache.set(key, d);
+      if (this.cache.size > 4000) this.cache.delete(this.cache.keys().next().value);
+    }
+    this._lk = key; this._ld = d;
+    return d;
+  }
+  generate(kx, kz) {
+    const N = CHUNK, s = this.seed;
+    const rnd = mulberry32((hash2(kx, kz, s + 1) * 4294967296) >>> 0);
+    const style = this.style(kx, kz);
+    const wW = new Uint8Array(N * N), wN = new Uint8Array(N * N), pil = new Uint8Array(N * N);
+    const lt = new Int8Array(N * N).fill(-1), ls = new Float32Array(N * N);
+    for (let lz = 0; lz < N; lz++) for (let lx = 0; lx < N; lx++) {
+      const i = lx + lz * N;
+      wW[i] = lx === 0 ? (this.borderW(kx, kz, lz) ? 1 : 0) : 1;
+      wN[i] = lz === 0 ? (this.borderN(kx, kz, lx) ? 1 : 0) : 1;
+    }
+    // Randomized Kruskal spanning tree over the chunk's cells (guarantees inner connectivity)
+    const parent = new Int16Array(N * N);
+    for (let i = 0; i < N * N; i++) parent[i] = i;
+    const find = (a) => { while (parent[a] !== a) { parent[a] = parent[parent[a]]; a = parent[a]; } return a; };
+    const edges = [];
+    for (let lz = 0; lz < N; lz++) for (let lx = 0; lx < N; lx++) {
+      const i = lx + lz * N;
+      if (lx > 0) edges.push(i * 2);
+      if (lz > 0) edges.push(i * 2 + 1);
+    }
+    for (let i = edges.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = edges[i]; edges[i] = edges[j]; edges[j] = t; }
+    const rm = STYLE_REMOVE[style];
+    for (const e of edges) {
+      const i = e >> 1, isN = e & 1;
+      const j = isN ? i - N : i - 1;
+      const a = find(i), b = find(j);
+      if (a !== b) { parent[a] = b; if (isN) wN[i] = 0; else wW[i] = 0; }
+      else if (rnd() < rm) { if (isN) wN[i] = 0; else wW[i] = 0; }
+    }
+    // Pillars on interior grid points that no wall touches
+    if (style === STYLE.PILLARS || style === STYLE.HALL) {
+      for (let lz = 1; lz < N; lz++) for (let lx = 1; lx < N; lx++) {
+        const i = lx + lz * N;
+        if (wW[i] || wW[i - N] || wN[i] || wN[i - 1]) continue;
+        const p = style === STYLE.PILLARS ? ((lx + lz) % 2 === 0 ? 0.85 : 0.1) : ((lx % 3 === 0 && lz % 3 === 0) ? 0.9 : 0);
+        if (rnd() < p) pil[i] = 1;
+      }
+    }
+    // Light fixtures (one per cell centre, sparser in halls)
+    for (let lz = 0; lz < N; lz++) for (let lx = 0; lx < N; lx++) {
+      const i = lx + lz * N;
+      const cx = kx * N + lx, cz = kz * N + lz;
+      const r1 = rnd(), r2 = rnd(), r3 = rnd();
+      if (style === STYLE.HALL && (lx + lz) % 2 === 1) continue;
+      const dark = this.darkness(cx, cz);
+      let type = LIGHT.NORMAL;
+      if (dark > 0.58 && r1 < 0.9) type = LIGHT.BROKEN;
+      else if (r2 < 0.035) type = LIGHT.BROKEN;
+      else if (r2 < 0.10) type = LIGHT.FLICKER;
+      else if (r2 < 0.13) type = LIGHT.DYING;
+      lt[i] = type;
+      ls[i] = type + r3 * 0.998;
+    }
+    return { kx, kz, style, wW, wN, pil, lt, ls };
+  }
+  wallW(cx, cz) { const kx = fdiv(cx, CHUNK), kz = fdiv(cz, CHUNK); return this.chunk(kx, kz).wW[(cx - kx * CHUNK) + (cz - kz * CHUNK) * CHUNK] === 1; }
+  wallN(cx, cz) { const kx = fdiv(cx, CHUNK), kz = fdiv(cz, CHUNK); return this.chunk(kx, kz).wN[(cx - kx * CHUNK) + (cz - kz * CHUNK) * CHUNK] === 1; }
+  // pillar centred on grid point (gx,gz) = north-west corner of cell (gx,gz)
+  pillar(gx, gz) { const kx = fdiv(gx, CHUNK), kz = fdiv(gz, CHUNK); return this.chunk(kx, kz).pil[(gx - kx * CHUNK) + (gz - kz * CHUNK) * CHUNK] === 1; }
+  wallsAtPoint(gx, gz) { return this.wallW(gx, gz) || this.wallW(gx, gz - 1) || this.wallN(gx, gz) || this.wallN(gx - 1, gz); }
+  lightType(cx, cz) { const kx = fdiv(cx, CHUNK), kz = fdiv(cz, CHUNK); return this.chunk(kx, kz).lt[(cx - kx * CHUNK) + (cz - kz * CHUNK) * CHUNK]; }
+  lightSeed(cx, cz) { const kx = fdiv(cx, CHUNK), kz = fdiv(cz, CHUNK); return this.chunk(kx, kz).ls[(cx - kx * CHUNK) + (cz - kz * CHUNK) * CHUNK]; }
+  // can an agent step from cell (cx,cz) in direction d (0:+x 1:-x 2:+z 3:-z)?
+  open(cx, cz, d) {
+    return d === 0 ? !this.wallW(cx + 1, cz) : d === 1 ? !this.wallW(cx, cz) : d === 2 ? !this.wallN(cx, cz + 1) : !this.wallN(cx, cz);
+  }
+  // 2D line of sight between two points (walls, wall ends and pillars block)
+  segmentClear(x0, z0, x1, z1) {
+    let cx = Math.floor(x0 / CELL), cz = Math.floor(z0 / CELL);
+    const ex = Math.floor(x1 / CELL), ez = Math.floor(z1 / CELL);
+    const dx = x1 - x0, dz = z1 - z0;
+    const sx = dx > 0 ? 1 : -1, sz = dz > 0 ? 1 : -1;
+    const tdx = dx !== 0 ? Math.abs(CELL / dx) : Infinity, tdz = dz !== 0 ? Math.abs(CELL / dz) : Infinity;
+    let tmx = dx !== 0 ? ((sx > 0 ? (cx + 1) * CELL - x0 : x0 - cx * CELL) / Math.abs(dx)) : Infinity;
+    let tmz = dz !== 0 ? ((sz > 0 ? (cz + 1) * CELL - z0 : z0 - cz * CELL) / Math.abs(dz)) : Infinity;
+    let n = Math.abs(ex - cx) + Math.abs(ez - cz);
+    const endR = WALL_T * 0.5 + 0.02, pilR = PILLAR * 0.5 + 0.02;
+    while (n-- > 0) {
+      if (tmx < tmz) {
+        const lx = sx > 0 ? cx + 1 : cx;
+        if (this.wallW(lx, cz)) return false;
+        // passing close to a grid point: wall ends / pillars there block too
+        const zc = z0 + dz * tmx, gz = Math.round(zc / CELL), off = Math.abs(zc - gz * CELL);
+        if (off < pilR && ((off < endR && this.wallsAtPoint(lx, gz)) || this.pillar(lx, gz))) return false;
+        cx += sx; tmx += tdx;
+      } else {
+        const lz = sz > 0 ? cz + 1 : cz;
+        if (this.wallN(cx, lz)) return false;
+        const xc = x0 + dx * tmz, gx = Math.round(xc / CELL), off = Math.abs(xc - gx * CELL);
+        if (off < pilR && ((off < endR && this.wallsAtPoint(gx, lz)) || this.pillar(gx, lz))) return false;
+        cz += sz; tmz += tdz;
+      }
+    }
+    return true;
+  }
+}
+let world = new World((Math.random() * 1e9) | 0, 1);
+
+// ---------------------------------------------------------------------------
+//  Collision against walls and pillars (circle vs axis-aligned boxes)
+// ---------------------------------------------------------------------------
+const _boxes = [];
+for (let i = 0; i < 64; i++) _boxes.push({ x0: 0, x1: 0, z0: 0, z1: 0 });
+function collectBoxes(x, z) {
+  let n = 0;
+  const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL), h = WALL_T / 2, ph = PILLAR / 2;
+  for (let i = cx - 1; i <= cx + 1; i++) for (let j = cz - 1; j <= cz + 1; j++) {
+    if (world.wallW(i, j)) { const b = _boxes[n++]; b.x0 = i * CELL - h; b.x1 = i * CELL + h; b.z0 = j * CELL - h; b.z1 = (j + 1) * CELL + h; }
+    if (world.wallN(i, j)) { const b = _boxes[n++]; b.x0 = i * CELL - h; b.x1 = (i + 1) * CELL + h; b.z0 = j * CELL - h; b.z1 = j * CELL + h; }
+    if (world.pillar(i, j)) { const b = _boxes[n++]; b.x0 = i * CELL - ph; b.x1 = i * CELL + ph; b.z0 = j * CELL - ph; b.z1 = j * CELL + ph; }
+  }
+  return n;
 }
 function resolveCircle(pos, r) {
-  const boxes = collectBoxes(pos.x, pos.z);
+  const n = collectBoxes(pos.x, pos.z);
+  let hitAny = false;
   for (let iter = 0; iter < 4; iter++) {
     let hit = false;
-    for (const b of boxes) {
+    for (let k = 0; k < n; k++) {
+      const b = _boxes[k];
       const qx = clamp(pos.x, b.x0, b.x1), qz = clamp(pos.z, b.z0, b.z1);
       const dx = pos.x - qx, dz = pos.z - qz, d2 = dx * dx + dz * dz;
       if (d2 >= r * r) continue;
@@ -174,27 +309,144 @@ function resolveCircle(pos, r) {
       }
     }
     if (!hit) break;
+    hitAny = true;
+  }
+  return hitAny;
+}
+
+// ============================================================================
+//  CHUNK MESHES
+// ============================================================================
+class GeoBuilder {
+  constructor() { this.p = []; this.n = []; this.uv = []; this.ix = []; this.vc = 0; }
+  // Grid-subdivided quad: corner (ox,oy,oz), edge vectors u and v, normal n, su x sv segments.
+  // UVs are world-space: uvMode 0 = (x,z) floor/ceiling, 1 = (along-wall, y).
+  quad(ox, oy, oz, ux, uy, uz, vx, vy, vz, nx, ny, nz, su, sv, uvMode) {
+    const base = this.vc;
+    for (let j = 0; j <= sv; j++) for (let i = 0; i <= su; i++) {
+      const a = i / su, b = j / sv;
+      const x = ox + ux * a + vx * b, y = oy + uy * a + vy * b, z = oz + uz * a + vz * b;
+      this.p.push(x, y, z); this.n.push(nx, ny, nz);
+      if (uvMode === 0) this.uv.push(x, z);
+      else this.uv.push(Math.abs(nx) > 0.5 ? z : x, y);
+      this.vc++;
+    }
+    const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+    const flip = cx * nx + cy * ny + cz * nz < 0;
+    for (let j = 0; j < sv; j++) for (let i = 0; i < su; i++) {
+      const a = base + j * (su + 1) + i, b = a + 1, c = a + su + 2, d = a + su + 1;
+      if (!flip) this.ix.push(a, b, c, a, c, d); else this.ix.push(a, c, b, a, d, c);
+    }
+  }
+  build() {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.n, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));
+    g.setIndex(this.vc > 65535 ? new THREE.Uint32BufferAttribute(this.ix, 1) : new THREE.Uint16BufferAttribute(this.ix, 1));
+    g.computeBoundingSphere();
+    return g;
   }
 }
 
-// Temporary visual world
-(function buildTestWorld() {
-  const wallMat = new THREE.MeshLambertMaterial({ color: 0xc9b458 });
-  const floorMat = new THREE.MeshLambertMaterial({ color: 0x6b5a2e });
-  const ceilMat = new THREE.MeshLambertMaterial({ color: 0xd8d2b0 });
-  const geoW = new THREE.BoxGeometry(WALL_T, WALL_H, CELL + WALL_T);
-  const geoN = new THREE.BoxGeometry(CELL + WALL_T, WALL_H, WALL_T);
-  for (let x = 0; x <= world.W; x++) for (let z = 0; z <= world.H; z++) {
-    if (world.wallW(x, z)) { const m = new THREE.Mesh(geoW, wallMat); m.position.set(x * CELL, WALL_H / 2, (z + 0.5) * CELL); scene.add(m); }
-    if (world.wallN(x, z)) { const m = new THREE.Mesh(geoN, wallMat); m.position.set((x + 0.5) * CELL, WALL_H / 2, z * CELL); scene.add(m); }
+const SEG = 4;   // floor/ceiling subdivisions per cell
+function buildChunkGeometry(kx, kz) {
+  const N = CHUNK, H = WALL_H, T = WALL_T, h = T / 2;
+  const walls = new GeoBuilder(), floor = new GeoBuilder(), ceil = new GeoBuilder(), panels = new GeoBuilder();
+  const gx0 = kx * N, gz0 = kz * N;
+  const wsegV = 5;   // vertical subdivisions on walls
+  // --- walls on vertical lines (x = const), owned edges: lx in [0,N) ---
+  for (let lx = 0; lx < N; lx++) {
+    const gx = gx0 + lx, X = gx * CELL;
+    let lz = 0;
+    while (lz < N) {
+      if (!world.wallW(gx, gz0 + lz)) { lz++; continue; }
+      const a = lz; while (lz < N && world.wallW(gx, gz0 + lz)) lz++;
+      const gzA = gz0 + a, gzB = gz0 + lz - 1;
+      const contA = world.wallW(gx, gzA - 1), contB = world.wallW(gx, gzB + 1);
+      const zs = gzA * CELL - (contA ? 0 : h), ze = (gzB + 1) * CELL + (contB ? 0 : h);
+      const su = Math.max(1, Math.round((ze - zs) / 0.6));
+      walls.quad(X - h, 0, zs, 0, 0, ze - zs, 0, H, 0, -1, 0, 0, su, wsegV, 1);
+      walls.quad(X + h, 0, zs, 0, 0, ze - zs, 0, H, 0, 1, 0, 0, su, wsegV, 1);
+      if (!contA && !world.wallN(gx, gzA) && !world.wallN(gx - 1, gzA)) walls.quad(X - h, 0, zs, T, 0, 0, 0, H, 0, 0, 0, -1, 1, wsegV, 1);
+      if (!contB && !world.wallN(gx, gzB + 1) && !world.wallN(gx - 1, gzB + 1)) walls.quad(X - h, 0, ze, T, 0, 0, 0, H, 0, 0, 0, 1, 1, wsegV, 1);
+    }
   }
-  const fw = world.W * CELL, fh = world.H * CELL;
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(fw, fh), floorMat);
-  floor.rotation.x = -Math.PI / 2; floor.position.set(fw / 2, 0, fh / 2); scene.add(floor);
-  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(fw, fh), ceilMat);
-  ceil.rotation.x = Math.PI / 2; ceil.position.set(fw / 2, WALL_H, fh / 2); scene.add(ceil);
-  scene.add(new THREE.HemisphereLight(0xfff2c0, 0x403010, 0.9));
-})();
+  // --- walls on horizontal lines (z = const), owned edges: lz in [0,N) ---
+  for (let lz = 0; lz < N; lz++) {
+    const gz = gz0 + lz, Z = gz * CELL;
+    let lx = 0;
+    while (lx < N) {
+      if (!world.wallN(gx0 + lx, gz)) { lx++; continue; }
+      const a = lx; while (lx < N && world.wallN(gx0 + lx, gz)) lx++;
+      const gxA = gx0 + a, gxB = gx0 + lx - 1;
+      const contA = world.wallN(gxA - 1, gz), contB = world.wallN(gxB + 1, gz);
+      const xs = gxA * CELL - (contA ? 0 : h), xe = (gxB + 1) * CELL + (contB ? 0 : h);
+      const su = Math.max(1, Math.round((xe - xs) / 0.6));
+      walls.quad(xs, 0, Z - h, xe - xs, 0, 0, 0, H, 0, 0, 0, -1, su, wsegV, 1);
+      walls.quad(xs, 0, Z + h, xe - xs, 0, 0, 0, H, 0, 0, 0, 1, su, wsegV, 1);
+      if (!contA && !world.wallW(gxA, gz) && !world.wallW(gxA, gz - 1)) walls.quad(xs, 0, Z - h, 0, 0, T, 0, H, 0, -1, 0, 0, 1, wsegV, 1);
+      if (!contB && !world.wallW(gxB + 1, gz) && !world.wallW(gxB + 1, gz - 1)) walls.quad(xe, 0, Z - h, 0, 0, T, 0, H, 0, 1, 0, 0, 1, wsegV, 1);
+    }
+  }
+  // --- pillars, floor, ceiling, light panels ---
+  const ph = PILLAR / 2;
+  for (let lz = 0; lz < N; lz++) for (let lx = 0; lx < N; lx++) {
+    const cx = gx0 + lx, cz = gz0 + lz, x0 = cx * CELL, z0 = cz * CELL;
+    if (world.pillar(cx, cz)) {
+      walls.quad(x0 - ph, 0, z0 - ph, PILLAR, 0, 0, 0, H, 0, 0, 0, -1, 1, wsegV, 1);
+      walls.quad(x0 - ph, 0, z0 + ph, PILLAR, 0, 0, 0, H, 0, 0, 0, 1, 1, wsegV, 1);
+      walls.quad(x0 - ph, 0, z0 - ph, 0, 0, PILLAR, 0, H, 0, -1, 0, 0, 1, wsegV, 1);
+      walls.quad(x0 + ph, 0, z0 - ph, 0, 0, PILLAR, 0, H, 0, 1, 0, 0, 1, wsegV, 1);
+    }
+    floor.quad(x0, 0, z0, CELL, 0, 0, 0, 0, CELL, 0, 1, 0, SEG, SEG, 0);
+    ceil.quad(x0, H, z0, CELL, 0, 0, 0, 0, CELL, 0, -1, 0, SEG, SEG, 0);
+    if (world.lightType(cx, cz) >= 0) {
+      const mx = x0 + CELL / 2, mz = z0 + CELL / 2;
+      panels.quad(mx - 0.3, H - 0.012, mz - 0.6, 0.6, 0, 0, 0, 0, 1.2, 0, -1, 0, 1, 1, 0);
+    }
+  }
+  return { walls: walls.build(), floor: floor.build(), ceil: ceil.build(), panels: panels.build() };
+}
+
+const MAT = {
+  wall: new THREE.MeshLambertMaterial({ color: 0xc9b458 }),
+  floor: new THREE.MeshLambertMaterial({ color: 0x6b5a2e }),
+  ceil: new THREE.MeshLambertMaterial({ color: 0xd8d2b0 }),
+  panel: new THREE.MeshBasicMaterial({ color: 0xfff8e0 }),
+};
+scene.add(new THREE.HemisphereLight(0xfff2c0, 0x403010, 0.9));
+
+const LOAD_RADIUS = 2;
+const chunkMeshes = new Map();
+function buildChunk(kx, kz) {
+  const g = buildChunkGeometry(kx, kz);
+  const group = new THREE.Group();
+  group.add(new THREE.Mesh(g.walls, MAT.wall), new THREE.Mesh(g.floor, MAT.floor), new THREE.Mesh(g.ceil, MAT.ceil), new THREE.Mesh(g.panels, MAT.panel));
+  scene.add(group);
+  chunkMeshes.set(ckey(kx, kz), { kx, kz, group });
+}
+function disposeChunk(c) {
+  scene.remove(c.group);
+  c.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+}
+function clearChunks() { for (const c of chunkMeshes.values()) disposeChunk(c); chunkMeshes.clear(); }
+const _needed = [];
+function updateChunks(px, pz, force = false) {
+  const pkx = fdiv(px, CHUNK_SIZE), pkz = fdiv(pz, CHUNK_SIZE);
+  for (const [key, c] of chunkMeshes) {
+    if (Math.max(Math.abs(c.kx - pkx), Math.abs(c.kz - pkz)) > LOAD_RADIUS + 1) { disposeChunk(c); chunkMeshes.delete(key); }
+  }
+  _needed.length = 0;
+  for (let dz = -LOAD_RADIUS; dz <= LOAD_RADIUS; dz++) for (let dx = -LOAD_RADIUS; dx <= LOAD_RADIUS; dx++) {
+    if (!chunkMeshes.has(ckey(pkx + dx, pkz + dz))) _needed.push([pkx + dx, pkz + dz, dx * dx + dz * dz]);
+  }
+  if (!_needed.length) return;
+  _needed.sort((a, b) => a[2] - b[2]);
+  let budget = force ? Infinity : 1;
+  for (const [kx, kz] of _needed) { if (budget-- <= 0) break; buildChunk(kx, kz); }
+}
+
 const playerLight = new THREE.PointLight(0xfff0c0, 2.5, 14, 1.2);
 scene.add(playerLight);
 
@@ -336,15 +588,17 @@ function frame() {
     game.time += dt;
     updatePlayer(dt);
     playerLight.position.set(player.pos.x, WALL_H - 0.3, player.pos.z);
+    updateChunks(player.pos.x, player.pos.z);
   }
   renderer.render(scene, camera);
 }
 camera.position.set(player.pos.x, EYE_STAND, player.pos.z);
 camera.rotation.set(0, player.yaw, 0);
+updateChunks(player.pos.x, player.pos.z, true);
 frame();
 
 // Debug / test hook
-window.__bk = { THREE, game, player, keys, input, camera, world, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { THREE, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>
