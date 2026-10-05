@@ -135,15 +135,95 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x2a2410);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 60);
 camera.rotation.order = 'YXZ';
 
-window.addEventListener('resize', () => {
+
+// ---------------------------------------------------------------------------
+//  Post-processing: scene -> render target -> grain / vignette / aberration
+// ---------------------------------------------------------------------------
+const quality = { level: 1, scale: 0.85, msaa: 0 };
+let sceneRT = null;
+const POST_FRAG = /* glsl */`
+uniform sampler2D tDiffuse;
+uniform float uTime;
+uniform float uDanger;
+uniform float uGrain;
+uniform float uAberr;
+uniform float uVig;
+uniform float uDip;
+uniform float uRed;
+uniform float uBlack;
+uniform float uWarp;
+varying vec2 vUv;
+float hash(vec2 p) { p = fract(p * vec2(443.897, 441.423)); p += dot(p, p.yx + 19.19); return fract((p.x + p.y) * p.x); }
+void main() {
+  vec2 c = vUv - 0.5;
+  float r2 = dot(c, c);
+  vec2 uv = 0.5 + c * (1.0 + uWarp * r2);
+  // VHS tracking glitch bands when the monster is close
+  float row = floor(uv.y * 48.0);
+  float glitch = step(1.0 - uDanger * uDanger * 0.06, hash(vec2(row, floor(uTime * 14.0))));
+  uv.x += glitch * (hash(vec2(uTime, row)) - 0.5) * 0.05;
+  vec2 off = c * (0.0025 + uAberr * 0.02);
+  vec3 col;
+  col.r = texture2D(tDiffuse, uv + off).r;
+  col.g = texture2D(tDiffuse, uv).g;
+  col.b = texture2D(tDiffuse, uv - off).b;
+  // grade: a touch of contrast, slightly sickly desaturation
+  float l = dot(col, vec3(0.299, 0.587, 0.114));
+  col = mix(vec3(l), col, 0.9 - uDanger * 0.3);
+  col = (col - 0.5) * 1.07 + 0.5;
+  col *= vec3(1.0, 0.985, 0.94);
+  // dark screen edges
+  float vig = smoothstep(0.88, 0.18, length(c * vec2(1.0, 0.92)) * (1.0 + uVig));
+  col *= mix(0.12, 1.0, vig);
+  col *= 1.0 - uDip;
+  col = mix(col, vec3(0.45, 0.0, 0.0) * (0.5 + l), uRed);
+  // film grain (stronger in shadows) + faint scanlines
+  float n = hash(gl_FragCoord.xy + fract(uTime * 7.13) * 317.0) - 0.5;
+  col += n * uGrain * (1.25 - l);
+  col *= 0.975 + 0.025 * sin(gl_FragCoord.y * 3.14159);
+  col *= 1.0 - uBlack;
+  gl_FragColor = vec4(max(col, 0.0), 1.0);
+}
+`;
+const postU = {
+  tDiffuse: { value: null }, uTime: { value: 0 }, uDanger: { value: 0 }, uGrain: { value: 0.08 }, uAberr: { value: 0 },
+  uVig: { value: 0 }, uDip: { value: 0 }, uRed: { value: 0 }, uBlack: { value: 0 }, uWarp: { value: 0 },
+};
+const postScene = new THREE.Scene();
+const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+  uniforms: postU, depthTest: false, depthWrite: false,
+  vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+  fragmentShader: POST_FRAG,
+})));
+function resizeRT() {
+  const pr = Math.min(window.devicePixelRatio || 1, quality.level >= 2 ? 2 : 1.25);
+  renderer.setPixelRatio(pr);
   renderer.setSize(window.innerWidth, window.innerHeight);
+  const w = Math.max(2, Math.floor(window.innerWidth * pr * quality.scale)), h = Math.max(2, Math.floor(window.innerHeight * pr * quality.scale));
+  if (sceneRT && (sceneRT.width !== w || sceneRT.height !== h || sceneRT.samples !== quality.msaa)) { sceneRT.dispose(); sceneRT = null; }
+  if (!sceneRT) {
+    sceneRT = new THREE.WebGLRenderTarget(w, h, { samples: quality.msaa, depthBuffer: true, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
+  }
+  postU.tDiffuse.value = sceneRT.texture;
+}
+function applyQuality(level) {
+  quality.level = level;
+  quality.scale = [0.6, 0.85, 1.0][level];
+  quality.msaa = level >= 2 ? 4 : 0;
+  resizeRT();
+}
+renderer.setClearColor(new THREE.Color().setRGB(0.12, 0.1, 0.05, THREE.LinearSRGBColorSpace));
+
+window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
+  resizeRT();
 });
+applyQuality(1);
 
 // ============================================================================
 //  WORLD GENERATION (endless, deterministic, chunked)
@@ -1928,6 +2008,7 @@ let scareFaceCanvas = null;
 const scare = { t: 0, active: false, yaw0: 0, pitch0: 0 };
 function startJumpScare() {
   game.state = 'caught';
+  fx.red = 0.9; cameraKick(1.5);
   if (!scareFaceCanvas) { scareFaceCanvas = makeScareFace(); $('scareOverlay').appendChild(scareFaceCanvas); }
   scare.active = true; scare.t = 0;
   scare.yaw0 = player.yaw; scare.pitch0 = player.pitch;
@@ -2108,7 +2189,7 @@ const glintTex = (() => {
   gr.addColorStop(0, 'rgba(255,250,220,1)'); gr.addColorStop(0.15, 'rgba(255,240,190,0.6)'); gr.addColorStop(1, 'rgba(255,230,160,0)');
   g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
   g.fillStyle = 'rgba(255,250,230,0.8)'; g.fillRect(31, 4, 2, 56); g.fillRect(4, 31, 56, 2);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; return t;
 })();
 function makeGlint(scale = 0.25) {
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.6, fog: false }));
@@ -2255,7 +2336,7 @@ const exitSignTex = (() => {
   g.font = 'bold 64px Arial, Helvetica, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.shadowColor = '#5dff8a'; g.shadowBlur = 18; g.fillStyle = '#b8ffc8'; g.fillText('EXIT', 128, 50);
   g.strokeStyle = '#3a6a44'; g.lineWidth = 6; g.strokeRect(3, 3, 250, 90);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; return t;
 })();
 function buildExitMesh(spec) {
   const g = new THREE.Group();
@@ -2267,9 +2348,9 @@ function buildExitMesh(spec) {
   const push = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.05, 0.06), bar); push.position.set(0, 1.0, 0.09); g.add(push);
   const signMat = new THREE.MeshBasicMaterial({ map: exitSignTex });
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.225), signMat); sign.position.set(0, H + 0.35, 0.02); g.add(sign);
-  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTex, color: 0x66ff88, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.55, fog: false }));
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTex, color: new THREE.Color().setRGB(0.4, 1.0, 0.55, THREE.LinearSRGBColorSpace), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.55, fog: false }));
   glow.scale.set(1.6, 1.0, 1); glow.position.set(0, H + 0.35, 0.15); g.add(glow);
-  const glow2 = makeGlint(0.9); glow2.material.color.set(0x88ffaa); glow2.position.set(0, 1.0, 0.2); g.add(glow2);
+  const glow2 = makeGlint(0.9); glow2.material.color.setRGB(0.55, 1.0, 0.68, THREE.LinearSRGBColorSpace); glow2.position.set(0, 1.0, 0.2); g.add(glow2);
   g.userData.glint = glow2;
   return g;
 }
@@ -2415,6 +2496,44 @@ function clearBeacons() {
   beacons.clear();
 }
 
+
+// ============================================================================
+//  HORROR EFFECTS (camera shake, screen flicker, post-process drivers)
+// ============================================================================
+const fx = { shake: 0, kick: 0, pulse: 0, dip: 0, dipT: 0, black: 0, red: 0, t: 0 };
+const snoise = (t) => Math.sin(t * 1.7) * 0.5 + Math.sin(t * 3.1 + 1.3) * 0.3 + Math.sin(t * 7.3 + 2.1) * 0.2;
+function applyShake(dt) {
+  fx.t += dt;
+  const target = Math.pow(game.danger, 2) * (monster.state === 'chase' ? 1 : 0.6);
+  fx.shake += (target - fx.shake) * Math.min(1, dt * 3);
+  fx.kick = Math.max(0, fx.kick - dt * 2.5);
+  const s = fx.shake * 0.012 + fx.kick * 0.03, f = 9 + fx.shake * 8;
+  camera.rotation.x += snoise(fx.t * f) * s;
+  camera.rotation.y += snoise(fx.t * f + 11.3) * s;
+  camera.rotation.z += snoise(fx.t * f * 0.7 + 5.1) * s * 0.8;
+}
+function cameraKick(amount) { fx.kick = Math.min(1.5, fx.kick + amount); }
+function updateEffects(dt) {
+  const d = game.state === 'playing' ? game.danger : game.state === 'caught' ? 1 : 0;
+  fx.pulse = Math.max(0, fx.pulse - dt * 3);
+  // whole-view light stutter when the monster is near
+  fx.dipT -= dt;
+  if (fx.dipT <= 0) {
+    fx.dipT = 0.04 + Math.random() * 0.12;
+    fx.dip = game.state === 'playing' && Math.random() < d * d * 0.35 ? 0.25 + Math.random() * 0.5 * d : 0;
+  }
+  postU.uTime.value = (postU.uTime.value + dt) % 100;
+  postU.uDanger.value = d;
+  postU.uGrain.value = 0.075 + d * 0.08 + (game.state === 'caught' ? 0.15 : 0);
+  postU.uAberr.value = d * d * 0.5 + (game.state === 'caught' ? 0.8 : 0) + fx.kick * 0.3;
+  postU.uVig.value = d * 0.45 + fx.pulse * 0.25 + (player.exhausted ? 0.25 : 0);
+  postU.uWarp.value = d * 0.12;
+  postU.uDip.value = fx.dip;
+  fx.red = Math.max(0, fx.red - dt * 1.5);
+  postU.uRed.value = fx.red;
+  postU.uBlack.value = fx.black;
+}
+
 // ============================================================================
 //  INPUT
 // ============================================================================
@@ -2528,6 +2647,7 @@ function updatePlayer(dt) {
     player.pos.z + _right.z * bobX
   );
   camera.rotation.set(player.pitch, player.yaw, Math.cos(player.bobPhase) * 0.004 * player.bobAmt);
+  applyShake(dt);
 }
 
 let footstepCount = 0;
@@ -2636,13 +2756,17 @@ function frame() {
     // heartbeat when danger is near
     if (game.danger > 0.04) {
       game.heartTimer -= dt;
-      if (game.heartTimer <= 0) { Sound.heartbeat(clamp(0.25 + game.danger, 0, 1.2)); game.heartTimer = 60 / lerp(62, 165, clamp(game.danger, 0, 1)); }
+      if (game.heartTimer <= 0) { Sound.heartbeat(clamp(0.25 + game.danger, 0, 1.2)); fx.pulse = 1; game.heartTimer = 60 / lerp(62, 165, clamp(game.danger, 0, 1)); }
     } else game.heartTimer = 0;
   } else if (game.state === 'caught') {
     U.uTime.value = (U.uTime.value + dt) % 1000;
     updateJumpScare(dt);
   }
+  updateEffects(dt);
+  renderer.setRenderTarget(sceneRT);
   renderer.render(scene, camera);
+  renderer.setRenderTarget(null);
+  renderer.render(postScene, postCam);
 }
 camera.position.set(player.pos.x, EYE_STAND, player.pos.z);
 camera.rotation.set(0, player.yaw, 0);
@@ -2650,7 +2774,7 @@ updateChunks(player.pos.x, player.pos.z, true);
 frame();
 
 // Debug / test hook
-window.__bk = { THREE, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>

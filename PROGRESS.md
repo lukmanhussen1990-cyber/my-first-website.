@@ -66,3 +66,10 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   (lore that also teaches the mechanics). A director moves the nearest page closer if the player wanders > 105 m from
   all of them. After 5 pages, an EXIT door (metal door + glowing green EXIT sign + low hum beacon) appears on a wall
   46-66 m away; touching it wins. HUD shows NOTES x / 5. Tested: all 5 collected, exit spawned, win triggered.
+- **[07:04 UTC] Feature 8 — Horror effects: DONE.** The scene now renders into an (optionally MSAA) render target
+  at a quality-dependent resolution scale and a full-screen post shader adds: animated film grain (stronger in
+  shadows), dark screen edges, faint scanlines, slight warm/sickly grade, and — scaled by danger — chromatic
+  aberration, lens warp, desaturation, VHS tracking-glitch bands and whole-view brightness dips. Camera shake
+  grows with danger (stronger while being chased) plus impulse kicks; the vignette pulses with each heartbeat and
+  tightens when exhausted. Lights near the monster stutter (stronger during a chase). Exponential fog tinted by
+  local light hides distant rooms. Built-in-material textures switched to raw colour space so sprites/sign match.
