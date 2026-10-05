@@ -50,6 +50,7 @@
   body.touch #battery { bottom: auto; top: max(22px, env(safe-area-inset-top)); right: 76px; }
   body.touch #batteryPct { bottom: auto; top: 10px; }
   body.touch #stamina { bottom: max(14px, env(safe-area-inset-bottom)); }
+  #fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 30; transition: opacity 1.2s ease; }
   #scareOverlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; z-index: 20; }
   #scareOverlay canvas { height: 118vh; max-width: none; }
   .btn:hover, .btn:focus-visible { background: rgba(90, 76, 28, 0.9); outline: none; border-color: #d9c46a; }
@@ -113,6 +114,7 @@
     <label><span>Mouse speed</span><input type="range" id="setSens" min="0.2" max="3" step="0.05"><span id="setSensVal"></span></label>
     <label><span>Invert mouse Y</span><input type="checkbox" id="setInvert"><span></span></label>
     <label><span>Field of view</span><input type="range" id="setFov" min="60" max="100" step="1"><span id="setFovVal"></span></label>
+    <label><span>Brightness</span><input type="range" id="setBright" min="0.7" max="1.6" step="0.05"><span id="setBrightVal"></span></label>
     <label><span>Volume</span><input type="range" id="setVol" min="0" max="100" step="1"><span id="setVolVal"></span></label>
     <label><span>Graphics quality</span><select id="setQuality"><option value="0">Low</option><option value="1">Medium</option><option value="2">High</option></select><span></span></label>
     <label><span>Head bob</span><input type="checkbox" id="setBob"><span></span></label>
@@ -146,6 +148,7 @@
 <div id="noteOverlay"><div class="paper"><div id="noteNum">PAGE 1 / 5</div><div id="noteText"></div><div class="hint">[E] put away</div></div></div>
 
 <div id="scareOverlay"></div>
+<div id="fade"></div>
 
 <div id="winScreen" class="screen menu hidden">
   <h1 id="winTitle">YOU ESCAPED</h1>
@@ -247,6 +250,7 @@ uniform float uBlack;
 uniform float uWarp;
 uniform sampler2D tBloom;
 uniform float uBloom;
+uniform float uGammaInv;
 varying vec2 vUv;
 float hash(vec2 p) { p = fract(p * vec2(443.897, 441.423)); p += dot(p, p.yx + 19.19); return fract((p.x + p.y) * p.x); }
 void main() {
@@ -278,13 +282,14 @@ void main() {
   col += n * uGrain * (1.25 - l);
   col *= 0.975 + 0.025 * sin(gl_FragCoord.y * 3.14159);
   col *= 1.0 - uBlack;
-  gl_FragColor = vec4(max(col, 0.0), 1.0);
+  col = pow(max(col, 0.0), vec3(uGammaInv));
+  gl_FragColor = vec4(col, 1.0);
 }
 `;
 const postU = {
   tDiffuse: { value: null }, uTime: { value: 0 }, uDanger: { value: 0 }, uGrain: { value: 0.08 }, uAberr: { value: 0 },
   uVig: { value: 0 }, uDip: { value: 0 }, uRed: { value: 0 }, uBlack: { value: 0 }, uWarp: { value: 0 },
-  tBloom: { value: null }, uBloom: { value: 0.0 },
+  tBloom: { value: null }, uBloom: { value: 0.0 }, uGammaInv: { value: 1.0 },
 };
 const postScene = new THREE.Scene();
 const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -2675,9 +2680,24 @@ function spawnExit() {
   respawnWorldItem(spec);
   setTimeout(() => showMessage('All pages found. Somewhere, a door hums... Find the EXIT.', 6), 2500);
 }
+function fadeTo(color, opacity, seconds = 1.2) {
+  const f = $('fade'); f.style.transition = `opacity ${seconds}s ease`; f.style.background = color; f.style.opacity = String(opacity);
+}
 function reachExit() {
   if (game.state !== 'playing') return;
-  onLevelComplete();
+  game.state = 'escaping';
+  silenceMonster(); clearBeacons();
+  // door bursts open: rushing air and a rising chord, then a white-out
+  const ctx = Sound.ctx;
+  if (ctx) {
+    const A = Sound._, t = ctx.currentTime;
+    const n = A.noiseSrc(), f = A.filter('bandpass', 400, 0.5), g = A.gain(0);
+    f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(3000, t + 1.6);
+    n.connect(f); f.connect(g); g.connect(A.sfx); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 1.2); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.4); n.start(t, 0, 2.5);
+    for (const fr of [220, 277.2, 329.6, 440]) { const o = ctx.createOscillator(), og = A.gain(0); o.frequency.setValueAtTime(fr * 0.5, t); o.frequency.exponentialRampToValueAtTime(fr, t + 1.5); o.connect(og); og.connect(A.sfx); og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(0.05, t + 1.2); og.gain.exponentialRampToValueAtTime(0.0001, t + 2.6); o.start(t); o.stop(t + 2.7); }
+  }
+  fadeTo('#fff8e0', 1, 1.4);
+  setTimeout(() => { onLevelComplete(); fadeTo('#fff8e0', 0, 1.5); }, 1600);
 }
 
 // Spatial audio beacons: radio static at notes, a low hum at the exit
@@ -2778,7 +2798,7 @@ function updateEffects(dt) {
 // ============================================================================
 const LEVELS = {
   1: {
-    name: 'Level 0 — The Lobby', lightColor: [1.0, 0.9, 0.66], lightMul: 1.0, ambient: [0.022, 0.019, 0.013],
+    name: 'Level 1 — The Lobby', lightColor: [1.0, 0.9, 0.66], lightMul: 1.0, ambient: [0.022, 0.019, 0.013],
     fog: [0.25, 0.21, 0.11], fogDensity: 0.045, tex: 0, water: false, walk: 2.6, run: 5.2, crouch: 1.25,
     noise: { run: 21, walk: 6.5, crouch: 1.8 }, clear: [0.12, 0.1, 0.05], panel: [1, 1, 1],
   },
@@ -3496,6 +3516,7 @@ function onNotePicked() { stinger(0.8 + 0.1 * game.notes); fx.dip = 0.6; scares.
 function onPlayerCaught() { hidePhantom(); $('hud').classList.add('hidden'); $('touchUI').classList.add('hidden'); hideNote(); clearBeacons(); }
 function onLevelComplete() {
   game.state = 'won';
+  $('hud').classList.add('hidden');
   clearBeacons(); silenceMonster();
   if (document.pointerLockElement) document.exitPointerLock();
   onWin();
@@ -3504,7 +3525,8 @@ function onGameOver() {
   game.state = 'gameover';
   silenceMonster();
   if (document.pointerLockElement) document.exitPointerLock();
-  $('goStats').innerHTML = `Level ${game.level} &mdash; survived ${formatTime(game.time)}<br>Notes found: ${game.notes} / ${NOTES_NEEDED}`;
+  const TIPS = ['Crouch (C) in a dark corner and it can barely see you.', 'Running is loud. It hears sprinting from twenty metres away.', 'When the lights stutter, it is close.', 'Your flashlight makes you visible from much farther away.', 'Break its line of sight, then hide. It will search where it last saw you.', 'Follow the radio static to find the notes.', 'If footsteps follow you... turn around.'];
+  $('goStats').innerHTML = `Level ${game.level} &mdash; survived ${formatTime(game.time)}<br>Notes found: ${game.notes} / ${NOTES_NEEDED}<br><br><span style="opacity:0.7">TIP: ${TIPS[Math.floor(Math.random() * TIPS.length)]}</span>`;
   onDeath();
   showScreen('gameOverScreen');
 }
@@ -3556,7 +3578,7 @@ function silenceMonster() {
 // ---------------- settings ----------------
 const SETTINGS_KEY = 'backrooms.settings.v1';
 let isTouch = matchMedia('(pointer: coarse)').matches || (('ontouchstart' in window) && !matchMedia('(pointer: fine)').matches);
-const settings = { sens: 1, invert: false, fov: 75, volume: 80, quality: isTouch ? 0 : 1, bob: true };
+const settings = { sens: 1, invert: false, fov: 75, volume: 80, quality: isTouch ? 0 : 1, bob: true, bright: 1 };
 function loadSettings() { try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch (e) { /* storage blocked */ } }
 function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* storage blocked */ } }
 function applySettings() {
@@ -3571,6 +3593,8 @@ function applySettings() {
   $('setVol').value = settings.volume; $('setVolVal').textContent = settings.volume + '%';
   $('setQuality').value = String(settings.quality);
   $('setBob').checked = settings.bob;
+  postU.uGammaInv.value = 1 / settings.bright;
+  $('setBright').value = settings.bright; $('setBrightVal').textContent = Math.round(settings.bright * 100) + '%';
 }
 function bindSetting(id, key, parse, evt = 'input') {
   $(id).addEventListener(evt, (e) => { settings[key] = parse(e.target); applySettings(); saveSettings(); });
@@ -3581,6 +3605,7 @@ bindSetting('setFov', 'fov', (t) => parseInt(t.value, 10));
 bindSetting('setVol', 'volume', (t) => parseInt(t.value, 10));
 bindSetting('setQuality', 'quality', (t) => parseInt(t.value, 10), 'change');
 bindSetting('setBob', 'bob', (t) => t.checked, 'change');
+bindSetting('setBright', 'bright', (t) => parseFloat(t.value));
 function openSettings(from) { settingsReturn = from; showScreen('settingsScreen'); }
 
 // ---------------- attract mode (menu background) ----------------
@@ -3633,7 +3658,8 @@ function startGame(level = 1) {
   clock.getDelta();
   requestLock();
   setTimeout(ensureScareFace, 1500);
-  showMessage(level === 2 ? 'Level 2 — The Flooded Halls. Find 5 notes.' : 'Find the 5 notes. Listen for the static.', 5);
+  fadeTo('#000', 1, 0); requestAnimationFrame(() => requestAnimationFrame(() => fadeTo('#000', 0, 1.8)));
+  showMessage(level === 2 ? 'Level 2 — The Flooded Halls. Find 5 notes.' : 'Level 1 — The Lobby. Find the 5 notes. Listen for the static.', 5);
 }
 $('btnStart').addEventListener('click', () => startGame(1));
 $('btnRetry').addEventListener('click', () => startGame(game.level));
@@ -3682,7 +3708,7 @@ function onWin() {
   save.escapes = (save.escapes || 0) + 1;
   save.run = null;
   writeSave();
-  $('winTitle').textContent = lvl === 1 ? 'YOU ESCAPED LEVEL 0' : 'YOU ESCAPED THE FLOODED HALLS';
+  $('winTitle').textContent = lvl === 1 ? 'YOU ESCAPED THE LOBBY' : 'YOU ESCAPED THE FLOODED HALLS';
   $('winStats').innerHTML = `Time: ${formatTime(game.time)}${isBest ? ' &mdash; <b style="color:#fff3a0">NEW BEST!</b>' : ''}<br>Best: ${formatTime(save.best[lvl])}`;
   $('btnNextLevel').classList.toggle('hidden', lvl !== 1);
   $('btnNextLevel').textContent = 'DESCEND TO LEVEL 2';
@@ -3690,10 +3716,10 @@ function onWin() {
 }
 function refreshStartScreen() {
   $('btnContinue').classList.toggle('hidden', !save.run);
-  if (save.run) $('btnContinue').textContent = `CONTINUE (LEVEL ${save.run.level === 2 ? 2 : 0}, ${save.run.notes}/5, ${formatTime(save.run.time)})`;
+  if (save.run) $('btnContinue').textContent = `CONTINUE (LEVEL ${save.run.level}, ${save.run.notes}/5, ${formatTime(save.run.time)})`;
   $('btnLevel2').classList.toggle('hidden', (save.unlocked || 1) < 2);
   const r = [];
-  if (save.best[1]) r.push('BEST LEVEL 0: ' + formatTime(save.best[1]));
+  if (save.best[1]) r.push('BEST LEVEL 1: ' + formatTime(save.best[1]));
   if (save.best[2]) r.push('BEST LEVEL 2: ' + formatTime(save.best[2]));
   if (save.escapes || save.deaths) r.push(`ESCAPES ${save.escapes || 0} · DEATHS ${save.deaths || 0}`);
   $('records').innerHTML = r.join('<br>');
@@ -3718,6 +3744,7 @@ function continueGame() {
   Sound.init(); Sound.resume(); applySettings();
   clock.getDelta(); autosaveT = 10;
   requestLock();
+  fadeTo('#000', 1, 0); requestAnimationFrame(() => requestAnimationFrame(() => fadeTo('#000', 0, 1.8)));
   showMessage('Progress restored. It is still out there.', 4);
 }
 window.addEventListener('beforeunload', snapshotRun);
@@ -3794,6 +3821,9 @@ function simulate(dt) {
       game.heartTimer -= dt;
       if (game.heartTimer <= 0) { Sound.heartbeat(clamp(0.25 + game.danger, 0, 1.2)); fx.pulse = 1; game.heartTimer = 60 / lerp(62, 165, clamp(game.danger, 0, 1)); }
     } else game.heartTimer = 0;
+  } else if (game.state === 'escaping') {
+    U.uTime.value = (U.uTime.value + dt) % 1000;
+    updatePlayer(dt);
   } else if (game.state === 'caught') {
     U.uTime.value = (U.uTime.value + dt) % 1000;
     updateJumpScare(dt);

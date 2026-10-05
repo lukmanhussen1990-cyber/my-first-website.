@@ -133,3 +133,7 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   While wandering it sometimes stops for a few seconds and slowly scans with its head; while hunting/searching its head
   tracks you. A low pulsing chase ostinato (with a dissonant hit every 8 beats) plays while it hunts you, and the
   ambient drone swells with danger. Soak test re-run clean.
+- **[07:35 UTC] Extra — Transitions & QoL.** Runs fade in from black; touching the EXIT bursts the door open with
+  rushing air and a rising chord, the screen whites out, then the win screen appears. Game-over screen shows a random
+  survival tip. New Brightness setting (gamma in the post pass) for dark monitors. Level naming unified: Level 1 —
+  The Lobby, Level 2 — The Flooded Halls.
