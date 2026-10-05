@@ -1,0 +1,381 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.scp096.sit_cry": {
+      "loop": true,
+      "animation_length": 6.0,
+      "bones": {
+        "root": {
+          "position": [0, -19.2, 0]
+        },
+        "waist": {
+          "rotation": ["(math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))", 0, 0]
+        },
+        "torso": {
+          "rotation": [
+            "26 + 1.2 * math.sin(query.anim_time * 60) + 3.2 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080)) + 0.5 * math.sin(query.anim_time * 1080 + 40)",
+            0,
+            "1.2 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))"
+          ]
+        },
+        "head": {
+          "rotation": [
+            "18 + 1.5 * math.sin(query.anim_time * 60) + 3.5 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080)) + 0.8 * math.sin(query.anim_time * 1080 + 40)",
+            "2 * math.sin(query.anim_time * 120)",
+            "2 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))"
+          ],
+          "position": [0, -1.5, 0]
+        },
+        "jaw": {
+          "rotation": [
+            "5 + 2.6 * math.sin(query.anim_time * 2160 + 30) + 1.5 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))",
+            0,
+            0
+          ]
+        },
+        "left_arm": {
+          "rotation": [
+            "-23.6683 + 1.6 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080)) + 0.5 * math.sin(query.anim_time * 1080 + 40)",
+            0,
+            "10.5255 + 1.5 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))"
+          ]
+        },
+        "left_forearm": {
+          "rotation": [
+            "-126.6347 + 2 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080)) + 0.8 * math.sin(query.anim_time * 1080 + 40)",
+            0,
+            "-21.5249 + 1.2 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))"
+          ]
+        },
+        "left_hand": {
+          "rotation": [
+            "-10.1886 + 3 * math.sin(query.anim_time * 1080 + 40)",
+            0,
+            "2 * math.sin(query.anim_time * 2160 + 30)"
+          ]
+        },
+        "left_leg": {
+          "rotation": [
+            "-145 + 0.8 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))",
+            0,
+            -6
+          ]
+        },
+        "left_shin": {
+          "rotation": [
+            "150 - 0.8 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))",
+            0,
+            0
+          ]
+        },
+        "right_arm": {
+          "rotation": [
+            "-23.6683 + 1.6 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080)) + 0.5 * math.sin(query.anim_time * 1080 + 40)",
+            0,
+            "-10.5255 - 1.5 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))"
+          ]
+        },
+        "right_forearm": {
+          "rotation": [
+            "-126.6347 + 2 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080)) + 0.8 * math.sin(query.anim_time * 1080 + 40)",
+            0,
+            "21.5249 - 1.2 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))"
+          ]
+        },
+        "right_hand": {
+          "rotation": [
+            "-10.1886 + 3 * math.sin(query.anim_time * 1080 + 40)",
+            0,
+            "-2 * math.sin(query.anim_time * 2160 + 30)"
+          ]
+        },
+        "right_leg": {
+          "rotation": [
+            "-145 + 0.8 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))",
+            0,
+            6
+          ]
+        },
+        "right_shin": {
+          "rotation": [
+            "150 - 0.8 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))",
+            0,
+            0
+          ]
+        }
+      },
+      "sound_effects": {
+        "0.0": {
+          "effect": "cry"
+        }
+      }
+    },
+    "animation.scp096.walk": {
+      "loop": true,
+      "animation_length": 8.0,
+      "bones": {
+        "root": {
+          "position": [0, "variable.scp_walk_lift", 0]
+        },
+        "waist": {
+          "rotation": [0, "5 * variable.scp_walk_amp * variable.scp_ws", 0]
+        },
+        "torso": {
+          "rotation": [
+            "28 + 1.5 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080)) + 0.4 * math.sin(query.anim_time * 1080 + 40) + 1.5 * variable.scp_walk_amp * variable.scp_wc",
+            "-8 * variable.scp_walk_amp * variable.scp_ws",
+            "(math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))"
+          ]
+        },
+        "head": {
+          "rotation": [
+            "20 + 2 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080)) + 0.6 * math.sin(query.anim_time * 1080 + 40)",
+            "4.8 * variable.scp_walk_amp * variable.scp_ws + 1.5 * math.sin(query.anim_time * 90)",
+            "2 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))"
+          ]
+        },
+        "jaw": {
+          "rotation": [
+            "8 + 2.2 * math.sin(query.anim_time * 2160 + 30) + (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))",
+            0,
+            0
+          ]
+        },
+        "left_arm": {
+          "rotation": [
+            "-24 + 22 * variable.scp_walk_amp * variable.scp_ws + (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))",
+            0,
+            "3 + 1.5 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))"
+          ]
+        },
+        "left_forearm": {
+          "rotation": ["-8 + 6 * variable.scp_walk_amp * variable.scp_ws", 0, 0]
+        },
+        "left_hand": {
+          "rotation": [
+            "-5 + 4 * variable.scp_walk_amp * variable.scp_ws + 3 * math.sin(query.anim_time * 1080 + 40)",
+            0,
+            0
+          ]
+        },
+        "left_leg": {
+          "rotation": ["-20 - 28 * variable.scp_walk_amp * variable.scp_ws", 0, 0]
+        },
+        "left_shin": {
+          "rotation": [
+            "20 + 42 * variable.scp_walk_amp * math.max(0, variable.scp_wc) + 14 * variable.scp_walk_amp * variable.scp_ws",
+            0,
+            0
+          ]
+        },
+        "right_arm": {
+          "rotation": [
+            "-24 - 22 * variable.scp_walk_amp * variable.scp_ws + (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))",
+            0,
+            "-3 - 1.5 * (math.max(0, math.sin(query.anim_time * 180)) * math.sin(query.anim_time * 1080))"
+          ]
+        },
+        "right_forearm": {
+          "rotation": ["-8 - 6 * variable.scp_walk_amp * variable.scp_ws", 0, 0]
+        },
+        "right_hand": {
+          "rotation": [
+            "-5 - 4 * variable.scp_walk_amp * variable.scp_ws + 3 * math.sin(query.anim_time * 1080 + 40)",
+            0,
+            0
+          ]
+        },
+        "right_leg": {
+          "rotation": ["-20 + 28 * variable.scp_walk_amp * variable.scp_ws", 0, 0]
+        },
+        "right_shin": {
+          "rotation": [
+            "20 + 42 * variable.scp_walk_amp * math.max(0, -variable.scp_wc) + 14 * variable.scp_walk_amp * -variable.scp_ws",
+            0,
+            0
+          ]
+        }
+      },
+      "sound_effects": {
+        "0.0": {
+          "effect": "cry"
+        }
+      }
+    },
+    "animation.scp096.scream": {
+      "loop": true,
+      "animation_length": 1.0,
+      "bones": {
+        "root": {
+          "position": ["0.5 * math.sin(query.anim_time * 3960 + 25)", "1.1 + 0.5 * math.sin(query.anim_time * 2520)", 0]
+        },
+        "waist": {
+          "rotation": [
+            "1.5 * math.sin(query.anim_time * 3240 + 10)",
+            "2.5 * math.sin(query.anim_time * 2520)",
+            "1.5 * math.sin(query.anim_time * 4680 + 70)"
+          ]
+        },
+        "torso": {
+          "rotation": [
+            "-14 + 3 * (0.5 + 0.5 * math.sin(query.anim_time * 720 + -90)) + 2 * math.sin(query.anim_time * 3240 + 10)",
+            "4.5 * math.sin(query.anim_time * 3960 + 25)",
+            "4 * math.sin(query.anim_time * 4680 + 70)"
+          ]
+        },
+        "head": {
+          "rotation": [
+            "-30 - 5 * (0.5 + 0.5 * math.sin(query.anim_time * 720 + -90)) + 3 * math.sin(query.anim_time * 4680 + 70)",
+            "5 * math.sin(query.anim_time * 2520)",
+            "7 * math.sin(query.anim_time * 3960 + 25)"
+          ]
+        },
+        "jaw": {
+          "rotation": [
+            "68 + 5 * math.sin(query.anim_time * 2160) - (0.5 + 0.5 * math.sin(query.anim_time * 720 + -90))",
+            0,
+            0
+          ]
+        },
+        "left_arm": {
+          "rotation": [
+            "-15 + 4 * math.sin(query.anim_time * 3240 + 10)",
+            "3 * math.sin(query.anim_time * 2520)",
+            "-72 - 10 * (0.5 + 0.5 * math.sin(query.anim_time * 720 + -90)) - 6 * math.sin(query.anim_time * 4680 + 70)"
+          ]
+        },
+        "left_forearm": {
+          "rotation": [
+            "-30 + 10 * math.sin(query.anim_time * 3960 + 25) + 6 * (0.5 + 0.5 * math.sin(query.anim_time * 720 + -90))",
+            0,
+            "-10 - 6 * math.sin(query.anim_time * 2520)"
+          ]
+        },
+        "left_hand": {
+          "rotation": [
+            "-22 + 8 * math.sin(query.anim_time * 4680 + 70)",
+            0,
+            "-12 * math.sin(query.anim_time * 3240 + 10)"
+          ]
+        },
+        "left_leg": {
+          "rotation": ["-10 + math.sin(query.anim_time * 4680 + 70)", 0, -6]
+        },
+        "left_shin": {
+          "rotation": ["20 + 1.5 * math.sin(query.anim_time * 3960 + 25)", 0, 0]
+        },
+        "right_arm": {
+          "rotation": [
+            "-15 + 4 * math.sin(query.anim_time * 3240 + 10)",
+            "-3 * math.sin(query.anim_time * 2520)",
+            "72 + 10 * (0.5 + 0.5 * math.sin(query.anim_time * 720 + -90)) + 6 * math.sin(query.anim_time * 4680 + 70)"
+          ]
+        },
+        "right_forearm": {
+          "rotation": [
+            "-30 + 10 * math.sin(query.anim_time * 3960 + 25) + 6 * (0.5 + 0.5 * math.sin(query.anim_time * 720 + -90))",
+            0,
+            "10 + 6 * math.sin(query.anim_time * 2520)"
+          ]
+        },
+        "right_hand": {
+          "rotation": ["-22 + 8 * math.sin(query.anim_time * 4680 + 70)", 0, "12 * math.sin(query.anim_time * 3240 + 10)"]
+        },
+        "right_leg": {
+          "rotation": ["-10 + math.sin(query.anim_time * 4680 + 70)", 0, 6]
+        },
+        "right_shin": {
+          "rotation": ["20 + 1.5 * math.sin(query.anim_time * 3960 + 25)", 0, 0]
+        }
+      }
+    },
+    "animation.scp096.run": {
+      "loop": true,
+      "animation_length": 2.5,
+      "bones": {
+        "root": {
+          "position": ["0.3 * math.sin(query.anim_time * 2160)", "variable.scp_run_lift", 0]
+        },
+        "waist": {
+          "rotation": [0, "6 * variable.scp_run_amp * variable.scp_rs", 0]
+        },
+        "torso": {
+          "rotation": [
+            "40 + 3 * variable.scp_run_amp * variable.scp_rc + 2 * math.sin(query.anim_time * 2880 + 50)",
+            "-10 * variable.scp_run_amp * variable.scp_rs",
+            "3 * math.sin(query.anim_time * 2160)"
+          ]
+        },
+        "head": {
+          "rotation": [
+            "-30 + 3 * math.sin(query.anim_time * 2880 + 50)",
+            "4 * math.sin(query.anim_time * 720 + 20)",
+            "6 * math.sin(query.anim_time * 2160)"
+          ]
+        },
+        "jaw": {
+          "rotation": ["58 + 9 * math.sin(query.anim_time * 2160 + 120)", 0, 0]
+        },
+        "left_arm": {
+          "rotation": [
+            "-88 + 32 * variable.scp_run_amp * variable.scp_rs + 7 * math.sin(query.anim_time * 2160 + 90)",
+            "4 * math.sin(query.anim_time * 2880 + 50)",
+            "-10 - 5 * variable.scp_run_amp * variable.scp_rc"
+          ]
+        },
+        "left_forearm": {
+          "rotation": [
+            "-40 + 25 * variable.scp_run_amp * variable.scp_rs + 9 * math.sin(query.anim_time * 2880 + 120)",
+            0,
+            "-6 - 5 * math.sin(query.anim_time * 2160)"
+          ]
+        },
+        "left_hand": {
+          "rotation": ["-20 + 12 * math.sin(query.anim_time * 2880 + 130)", 0, "-8 * math.sin(query.anim_time * 2880)"]
+        },
+        "left_leg": {
+          "rotation": ["-8 - 55 * variable.scp_run_amp * variable.scp_rs", 0, 0]
+        },
+        "left_shin": {
+          "rotation": ["20 + 90 * variable.scp_run_amp * math.max(0, variable.scp_rc)", 0, 0]
+        },
+        "right_arm": {
+          "rotation": [
+            "-88 - 32 * variable.scp_run_amp * variable.scp_rs + 7 * math.sin(query.anim_time * 2160 + -90)",
+            "-4 * math.sin(query.anim_time * 2880 + 50)",
+            "10 + 5 * variable.scp_run_amp * variable.scp_rc"
+          ]
+        },
+        "right_forearm": {
+          "rotation": [
+            "-40 - 25 * variable.scp_run_amp * variable.scp_rs + 9 * math.sin(query.anim_time * 2880 + -60)",
+            0,
+            "6 + 5 * math.sin(query.anim_time * 2160)"
+          ]
+        },
+        "right_hand": {
+          "rotation": ["-20 + 12 * math.sin(query.anim_time * 2880 + -130)", 0, "8 * math.sin(query.anim_time * 2880)"]
+        },
+        "right_leg": {
+          "rotation": ["-8 + 55 * variable.scp_run_amp * variable.scp_rs", 0, 0]
+        },
+        "right_shin": {
+          "rotation": ["20 + 90 * variable.scp_run_amp * math.max(0, -variable.scp_rc)", 0, 0]
+        }
+      },
+      "sound_effects": {
+        "0.0": {
+          "effect": "rage"
+        }
+      }
+    },
+    "animation.scp096.look_at_target": {
+      "loop": true,
+      "bones": {
+        "head": {
+          "rotation": ["variable.scp_look_x * 0.6", "variable.scp_look_y * 0.6", 0]
+        }
+      }
+    }
+  }
+}

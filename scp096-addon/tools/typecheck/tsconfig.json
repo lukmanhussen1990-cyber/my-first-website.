@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "lib": ["ES2019"],
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": [],
+    "skipLibCheck": false,
+    "baseUrl": ".",
+    "paths": {
+      "@minecraft/server": ["node_modules/@minecraft/server"],
+      "@minecraft/common": ["node_modules/@minecraft/common"]
+    }
+  },
+  "files": ["globals.d.ts", "../../SCP096_BP/scripts/main.js"]
+}

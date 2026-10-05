@@ -1,0 +1,58 @@
+== Block classification: mojang-blocks.json (1.21.0-beta.0), 1100 ids ==
+allowed (breakable): 267
+denied by rule     : 73
+neither (untouched): 760
+
+-- ALLOWED set, grouped by intent rule --
+[doors (wood, iron, copper)] (20)
+    acacia_door, bamboo_door, birch_door, cherry_door, copper_door, crimson_door, dark_oak_door, exposed_copper_door, iron_door, jungle_door, mangrove_door, oxidized_copper_door, spruce_door, warped_door, waxed_copper_door, waxed_exposed_copper_door, waxed_oxidized_copper_door, waxed_weathered_copper_door, weathered_copper_door, wooden_door
+[trapdoors (wood, iron, copper)] (20)
+    acacia_trapdoor, bamboo_trapdoor, birch_trapdoor, cherry_trapdoor, copper_trapdoor, crimson_trapdoor, dark_oak_trapdoor, exposed_copper_trapdoor, iron_trapdoor, jungle_trapdoor, mangrove_trapdoor, oxidized_copper_trapdoor, spruce_trapdoor, trapdoor, warped_trapdoor, waxed_copper_trapdoor, waxed_exposed_copper_trapdoor, waxed_oxidized_copper_trapdoor, waxed_weathered_copper_trapdoor, weathered_copper_trapdoor
+[fence gates] (11)
+    acacia_fence_gate, bamboo_fence_gate, birch_fence_gate, cherry_fence_gate, crimson_fence_gate, dark_oak_fence_gate, fence_gate, jungle_fence_gate, mangrove_fence_gate, spruce_fence_gate, warped_fence_gate
+[wooden fences] (11)
+    acacia_fence, bamboo_fence, birch_fence, cherry_fence, crimson_fence, dark_oak_fence, jungle_fence, mangrove_fence, oak_fence, spruce_fence, warped_fence
+[planks] (11)
+    acacia_planks, bamboo_planks, birch_planks, cherry_planks, crimson_planks, dark_oak_planks, jungle_planks, mangrove_planks, oak_planks, spruce_planks, warped_planks
+[bamboo mosaic] (4)
+    bamboo_mosaic, bamboo_mosaic_double_slab, bamboo_mosaic_slab, bamboo_mosaic_stairs
+[logs / wood (incl. stripped)] (32)
+    acacia_log, acacia_wood, birch_log, birch_wood, cherry_log, cherry_wood, dark_oak_log, dark_oak_wood, jungle_log, jungle_wood, mangrove_log, mangrove_wood, oak_log, oak_wood, spruce_log, spruce_wood, stripped_acacia_log, stripped_acacia_wood, stripped_birch_log, stripped_birch_wood, stripped_cherry_log, stripped_cherry_wood, stripped_dark_oak_log, stripped_dark_oak_wood, stripped_jungle_log, stripped_jungle_wood, stripped_mangrove_log, stripped_mangrove_wood, stripped_oak_log, stripped_oak_wood, stripped_spruce_log, stripped_spruce_wood
+[stems / hyphae / bamboo block (incl. stripped)] (10)
+    bamboo_block, crimson_hyphae, crimson_stem, stripped_bamboo_block, stripped_crimson_hyphae, stripped_crimson_stem, stripped_warped_hyphae, stripped_warped_stem, warped_hyphae, warped_stem
+[wooden slabs (incl. double)] (22)
+    acacia_double_slab, acacia_slab, bamboo_double_slab, bamboo_slab, birch_double_slab, birch_slab, cherry_double_slab, cherry_slab, crimson_double_slab, crimson_slab, dark_oak_double_slab, dark_oak_slab, jungle_double_slab, jungle_slab, mangrove_double_slab, mangrove_slab, oak_double_slab, oak_slab, spruce_double_slab, spruce_slab, warped_double_slab, warped_slab
+[wooden stairs] (11)
+    acacia_stairs, bamboo_stairs, birch_stairs, cherry_stairs, crimson_stairs, dark_oak_stairs, jungle_stairs, mangrove_stairs, oak_stairs, spruce_stairs, warped_stairs
+[leaves] (10)
+    acacia_leaves, azalea_leaves, azalea_leaves_flowered, birch_leaves, cherry_leaves, dark_oak_leaves, jungle_leaves, mangrove_leaves, oak_leaves, spruce_leaves
+[glass / panes / tinted] (3)
+    glass, glass_pane, tinted_glass
+[stained glass (+panes)] (32)
+    black_stained_glass, black_stained_glass_pane, blue_stained_glass, blue_stained_glass_pane, brown_stained_glass, brown_stained_glass_pane, cyan_stained_glass, cyan_stained_glass_pane, gray_stained_glass, gray_stained_glass_pane, green_stained_glass, green_stained_glass_pane, light_blue_stained_glass, light_blue_stained_glass_pane, light_gray_stained_glass, light_gray_stained_glass_pane, lime_stained_glass, lime_stained_glass_pane, magenta_stained_glass, magenta_stained_glass_pane, orange_stained_glass, orange_stained_glass_pane, pink_stained_glass, pink_stained_glass_pane, purple_stained_glass, purple_stained_glass_pane, red_stained_glass, red_stained_glass_pane, white_stained_glass, white_stained_glass_pane, yellow_stained_glass, yellow_stained_glass_pane
+[wool] (16)
+    black_wool, blue_wool, brown_wool, cyan_wool, gray_wool, green_wool, light_blue_wool, light_gray_wool, lime_wool, magenta_wool, orange_wool, pink_wool, purple_wool, red_wool, white_wool, yellow_wool
+[carpets (dyed)] (16)
+    black_carpet, blue_carpet, brown_carpet, cyan_carpet, gray_carpet, green_carpet, light_blue_carpet, light_gray_carpet, lime_carpet, magenta_carpet, orange_carpet, pink_carpet, purple_carpet, red_carpet, white_carpet, yellow_carpet
+[cobweb, ladder, scaffolding, bamboo, hay bale] (5)
+    bamboo, hay_block, ladder, scaffolding, web
+[signs (standing, wall, hanging)] (33)
+    acacia_hanging_sign, acacia_standing_sign, acacia_wall_sign, bamboo_hanging_sign, bamboo_standing_sign, bamboo_wall_sign, birch_hanging_sign, birch_standing_sign, birch_wall_sign, cherry_hanging_sign, cherry_standing_sign, cherry_wall_sign, crimson_hanging_sign, crimson_standing_sign, crimson_wall_sign, dark_oak_hanging_sign, darkoak_standing_sign, darkoak_wall_sign, jungle_hanging_sign, jungle_standing_sign, jungle_wall_sign, mangrove_hanging_sign, mangrove_standing_sign, mangrove_wall_sign, oak_hanging_sign, spruce_hanging_sign, spruce_standing_sign, spruce_wall_sign, standing_sign, wall_sign, warped_hanging_sign, warped_standing_sign, warped_wall_sign
+
+-- DENIED BY RULE (exact ids in DENIED_BLOCK_IDS) --
+(57) allow, ancient_debris, barrel, barrier, bedrock, blast_furnace, border_block, brewing_stand, camera, chain_command_block, chest, chiseled_bookshelf, client_request_placeholder_block, command_block, crafter, crying_obsidian, decorated_pot, deny, dispenser, dropper, end_gateway, end_portal, end_portal_frame, ender_chest, furnace, glowingobsidian, hopper, info_update, info_update2, invisible_bedrock, jigsaw, jukebox, lectern, light_block, lit_blast_furnace, lit_furnace, lit_smoker, mob_spawner, moving_block, netherite_block, netherreactor, obsidian, piston_arm_collision, portal, reinforced_deepslate, repeating_command_block, reserved6, respawn_anchor, smoker, sticky_piston_arm_collision, structure_block, structure_void, trapped_chest, trial_spawner, undyed_shulker_box, unknown, vault
+
+-- DENIED BY SUFFIX RULE ONLY (_command_block | _shulker_box | _spawner | _obsidian | _bedrock) --
+(16) black_shulker_box, blue_shulker_box, brown_shulker_box, cyan_shulker_box, gray_shulker_box, green_shulker_box, light_blue_shulker_box, light_gray_shulker_box, lime_shulker_box, magenta_shulker_box, orange_shulker_box, pink_shulker_box, purple_shulker_box, red_shulker_box, white_shulker_box, yellow_shulker_box
+
+-- Review aid: ids whose name contains a keyword but which are NOT allowed (deliberate exclusions) --
+[hard_* (Education Edition hardened glass)] (34)
+    hard_black_stained_glass, hard_black_stained_glass_pane, hard_blue_stained_glass, hard_blue_stained_glass_pane, hard_brown_stained_glass, hard_brown_stained_glass_pane, hard_cyan_stained_glass, hard_cyan_stained_glass_pane, hard_glass, hard_glass_pane, hard_gray_stained_glass, hard_gray_stained_glass_pane, hard_green_stained_glass, hard_green_stained_glass_pane, hard_light_blue_stained_glass, hard_light_blue_stained_glass_pane, hard_light_gray_stained_glass, hard_light_gray_stained_glass_pane, hard_lime_stained_glass, hard_lime_stained_glass_pane, hard_magenta_stained_glass, hard_magenta_stained_glass_pane, hard_orange_stained_glass, hard_orange_stained_glass_pane, hard_pink_stained_glass, hard_pink_stained_glass_pane, hard_purple_stained_glass, hard_purple_stained_glass_pane, hard_red_stained_glass, hard_red_stained_glass_pane, hard_white_stained_glass, hard_white_stained_glass_pane, hard_yellow_stained_glass, hard_yellow_stained_glass_pane
+[stone / brick / metal / mineral slabs and stairs] (91)
+    andesite_stairs, blackstone_double_slab, blackstone_slab, blackstone_stairs, brick_slab, brick_stairs, cobbled_deepslate_double_slab, cobbled_deepslate_slab, cobbled_deepslate_stairs, cobblestone_slab, cut_copper_slab, cut_copper_stairs, dark_prismarine_stairs, deepslate_brick_double_slab, deepslate_brick_slab, deepslate_brick_stairs, deepslate_tile_double_slab, deepslate_tile_slab, deepslate_tile_stairs, diorite_stairs, double_cut_copper_slab, double_stone_block_slab, end_brick_stairs, exposed_cut_copper_slab, exposed_cut_copper_stairs, exposed_double_cut_copper_slab, granite_stairs, mossy_cobblestone_stairs, mossy_stone_brick_stairs, mud_brick_double_slab, mud_brick_slab, mud_brick_stairs, nether_brick_slab, nether_brick_stairs, normal_stone_stairs, oxidized_cut_copper_slab, oxidized_cut_copper_stairs, oxidized_double_cut_copper_slab, petrified_oak_slab, polished_andesite_stairs, polished_blackstone_brick_double_slab, polished_blackstone_brick_slab, polished_blackstone_brick_stairs, polished_blackstone_double_slab, polished_blackstone_slab, polished_blackstone_stairs, polished_deepslate_double_slab, polished_deepslate_slab, polished_deepslate_stairs, polished_diorite_stairs, polished_granite_stairs, polished_tuff_double_slab, polished_tuff_slab, polished_tuff_stairs, prismarine_bricks_stairs, prismarine_stairs, purpur_stairs, quartz_slab, quartz_stairs, red_nether_brick_stairs, red_sandstone_stairs, sandstone_slab, sandstone_stairs, smooth_quartz_stairs, smooth_red_sandstone_stairs, smooth_sandstone_stairs, smooth_stone_slab, stone_brick_slab, stone_brick_stairs, stone_stairs, tuff_brick_double_slab, tuff_brick_slab, tuff_brick_stairs, tuff_double_slab, tuff_slab, tuff_stairs, waxed_cut_copper_slab, waxed_cut_copper_stairs, waxed_double_cut_copper_slab, waxed_exposed_cut_copper_slab, waxed_exposed_cut_copper_stairs, waxed_exposed_double_cut_copper_slab, waxed_oxidized_cut_copper_slab, waxed_oxidized_cut_copper_stairs, waxed_oxidized_double_cut_copper_slab, waxed_weathered_cut_copper_slab, waxed_weathered_cut_copper_stairs, waxed_weathered_double_cut_copper_slab, weathered_cut_copper_slab, weathered_cut_copper_stairs, weathered_double_cut_copper_slab
+[other] (15)
+    bamboo_button, bamboo_pressure_plate, bamboo_sapling, double_stone_block_slab2, double_stone_block_slab3, double_stone_block_slab4, melon_stem, moss_carpet, nether_brick_fence, pumpkin_stem, stone_block_slab2, stone_block_slab3, stone_block_slab4, wooden_button, wooden_pressure_plate
+
+-- All other ids (620) are unrelated blocks (stone, ores, dirt, redstone, ...) and are never touched --
+
+black-box check: placed each of the 1100 ids 1 block ahead of a raging entity and ran a pass: removed iff allowed (mismatches: 0)

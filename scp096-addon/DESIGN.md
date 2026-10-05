@@ -32,7 +32,11 @@ git tag `v1.21.0.3`) unless marked *(believed)*.
   `@minecraft/server` 1.11.0 is available (non-beta) in exactly this build**.
   Bedrock-samples `v1.21.0.3/metadata/script_modules/@minecraft/server_1.11.0.json` is the API truth
   for the script (stable max = 1.11.0; 1.12.0 is beta ⇒ forbidden).
-* `Block.typeId`, `Block.setType`, `Player.getGameMode`, `World.gameRules` are stable only from 1.11.0.
+* `Block.typeId`, `Block.setType`, `Player.getGameMode`, `World.gameRules` are stable only in the *release* 1.21.0.3 metadata.
+  **On the user's actual build (preview 26) the npm `1.11.0-rc.1.21.0-preview.26` typings mark all four `@beta`** (Beta-APIs experiment only), as are `Block.matches`, `BlockType.id`, `Dimension.playSound`.
+  ⇒ **The script must work using ONLY members that are non-beta in the preview-26 typings** (e.g. `Dimension.runCommand/getBlock/getEntities`, `Block.isAir/isLiquid/permutation/getTags/hasTag/getItemStack`,
+  `BlockPermutation.matches/getItemStack`, `ItemStack.typeId`, `Entity.getComponent/getViewDirection/isValid/triggerEvent`, `EntityVariantComponent.value`, `System.runInterval`),
+  may *opportunistically* use the beta members when present (`typeof x === 'string'`), and must never throw or lose function when they are absent. Typings: `/tmp/rcFHRUdJ/package/index.d.ts` (re-fetch: `npm pack @minecraft/server@1.11.0-rc.1.21.0-preview.26`).
 * `Entity.target` is NOT in stable 1.11.0 ⇒ script cannot read AI targets.
 * `min_engine_version` = `[1, 21, 0]`.
 * Format versions to use:
@@ -184,10 +188,11 @@ root                      parent: -
 
 Bedrock animation `rotation` is `[x, y, z]` degrees, applied about the bone pivot in
 parent space; order: X first, then Y, then Z (extrinsic; = `Rz·Ry·Rx`) *(believed — Java `rotationZYX` / Blockbench)*.
-**All three angle signs are the opposite of the right-hand rule** (verified by vanilla):
+**Sign rules (verified by vanilla; see the Y correction below):**
 
 * X: **negative = swing forward (−Z)**. `animation.zombie.attack_bare_hand` arms `−90`; cancan leg `−111`; riding arms `−36`.
-* Y: positive turns toward **+X** when facing −Z (matches `query.target_y_rotation` head tracking) *(derived)*.
+* Y: **NOT negated** (CORRECTED after calibration on vanilla skeleton bow-hand geometry and head tracking): positive Y turns a forward (−Z) bone toward **−X**, i.e. toward the mob's right
+  (right_* bones sit at −X; `query.target_y_rotation` is positive when the target is on the mob's right). Net rule: **X and Z are negated vs the right-hand rule, Y is standard**.
 * Z: a bone on the **−X** side (right) swings **outward with positive Z**, on the **+X** side (left) outward with **negative Z**
   (armor stand default pose right arm Z=+10, left −10; evoker casting arms V: right +135, left −135).
 

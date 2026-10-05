@@ -1,0 +1,72 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "scp:scp096",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/scp096"
+      },
+      "geometry": {
+        "default": "geometry.scp096"
+      },
+      "scripts": {
+        "pre_animation": [
+          "variable.scp_speed = math.clamp(query.modified_move_speed, 0, 1);",
+          "variable.scp_walk_amp = math.clamp(variable.scp_speed * 3, 0, 1);",
+          "variable.scp_run_amp = math.clamp(variable.scp_speed * 5, 0, 1);",
+          "variable.scp_ws = math.sin(query.modified_distance_moved * 32);",
+          "variable.scp_wc = math.cos(query.modified_distance_moved * 32);",
+          "variable.scp_rs = math.sin(query.modified_distance_moved * 42);",
+          "variable.scp_rc = math.cos(query.modified_distance_moved * 42);",
+          "variable.scp_look_x = math.clamp(query.target_x_rotation, -35, 35);",
+          "variable.scp_look_y = math.clamp(query.target_y_rotation, -50, 50);",
+          "variable.scp_w2c = math.cos(query.modified_distance_moved * 64);",
+          "variable.scp_w2s = math.sin(query.modified_distance_moved * 64);",
+          "variable.scp_w3c = math.cos(query.modified_distance_moved * 96);",
+          "variable.scp_w3s = math.sin(query.modified_distance_moved * 96);",
+          "variable.scp_w4c = math.cos(query.modified_distance_moved * 128);",
+          "variable.scp_w4s = math.sin(query.modified_distance_moved * 128);",
+          "variable.scp_w5c = math.cos(query.modified_distance_moved * 160);",
+          "variable.scp_w5s = math.sin(query.modified_distance_moved * 160);",
+          "variable.scp_r2c = math.cos(query.modified_distance_moved * 84);",
+          "variable.scp_r2s = math.sin(query.modified_distance_moved * 84);",
+          "variable.scp_r3c = math.cos(query.modified_distance_moved * 126);",
+          "variable.scp_r3s = math.sin(query.modified_distance_moved * 126);",
+          "variable.scp_r4c = math.cos(query.modified_distance_moved * 168);",
+          "variable.scp_r4s = math.sin(query.modified_distance_moved * 168);",
+          "variable.scp_r5c = math.cos(query.modified_distance_moved * 210);",
+          "variable.scp_r5s = math.sin(query.modified_distance_moved * 210);",
+          "variable.scp_wl = -0.66 + variable.scp_walk_amp * ((2.35 - 1.64 * variable.scp_walk_amp) + (2.62 - 1.48 * variable.scp_walk_amp) * variable.scp_wc + (-3.11 + 0.58 * variable.scp_walk_amp) * variable.scp_ws + (0.91 - 0.1 * variable.scp_walk_amp) * variable.scp_w2c + (-0.52 + 0.58 * variable.scp_walk_amp) * variable.scp_w2s + (0.36 - 0.29 * variable.scp_walk_amp) * variable.scp_w3c + (-0.12 + 0.28 * variable.scp_walk_amp) * variable.scp_w3s - 0.19 * variable.scp_w4c + 0.17 * variable.scp_w4s);",
+          "variable.scp_wr = -0.66 + variable.scp_walk_amp * ((2.35 - 1.64 * variable.scp_walk_amp) + (-2.62 + 1.48 * variable.scp_walk_amp) * variable.scp_wc + (3.11 - 0.58 * variable.scp_walk_amp) * variable.scp_ws + (0.91 - 0.1 * variable.scp_walk_amp) * variable.scp_w2c + (-0.52 + 0.58 * variable.scp_walk_amp) * variable.scp_w2s + (-0.36 + 0.29 * variable.scp_walk_amp) * variable.scp_w3c + (0.12 - 0.28 * variable.scp_walk_amp) * variable.scp_w3s - 0.19 * variable.scp_w4c + 0.17 * variable.scp_w4s);",
+          "variable.scp_walk_lift = math.max(variable.scp_wl, variable.scp_wr);",
+          "variable.scp_rl = 1.32 + variable.scp_run_amp * ((2.43 - 7.36 * variable.scp_run_amp) + (3.67 - 6.61 * variable.scp_run_amp) * variable.scp_rc + (-6.11 + 5.86 * variable.scp_run_amp) * variable.scp_rs + (1.27 + 0.51 * variable.scp_run_amp) * variable.scp_r2c + (0.41 + 2.75 * variable.scp_run_amp) * variable.scp_r2s + (0.4 - 0.68 * variable.scp_run_amp) * variable.scp_r3c + (0.08 + 1.27 * variable.scp_run_amp) * variable.scp_r3s + (0.65 - 0.23 * variable.scp_run_amp) * variable.scp_r4s + (-0.27 + 0.21 * variable.scp_run_amp) * variable.scp_r5c - 0.38 * variable.scp_run_amp * variable.scp_r5s);",
+          "variable.scp_rr = 1.32 + variable.scp_run_amp * ((2.43 - 7.36 * variable.scp_run_amp) + (-3.67 + 6.61 * variable.scp_run_amp) * variable.scp_rc + (6.11 - 5.86 * variable.scp_run_amp) * variable.scp_rs + (1.27 + 0.51 * variable.scp_run_amp) * variable.scp_r2c + (0.41 + 2.75 * variable.scp_run_amp) * variable.scp_r2s + (-0.4 + 0.68 * variable.scp_run_amp) * variable.scp_r3c + (-0.08 - 1.27 * variable.scp_run_amp) * variable.scp_r3s + (0.65 - 0.23 * variable.scp_run_amp) * variable.scp_r4s + (0.27 - 0.21 * variable.scp_run_amp) * variable.scp_r5c + 0.38 * variable.scp_run_amp * variable.scp_r5s);",
+          "variable.scp_run_lift = math.max(variable.scp_rl, variable.scp_rr);"
+        ],
+        "animate": ["main"],
+        "should_update_effects_offscreen": "1.0"
+      },
+      "animations": {
+        "sit_cry": "animation.scp096.sit_cry",
+        "walk": "animation.scp096.walk",
+        "scream": "animation.scp096.scream",
+        "run": "animation.scp096.run",
+        "look_at_target": "animation.scp096.look_at_target",
+        "main": "controller.animation.scp096.main"
+      },
+      "render_controllers": ["controller.render.scp096"],
+      "sound_effects": {
+        "cry": "mob.scp096.cry",
+        "scream": "mob.scp096.scream",
+        "rage": "mob.scp096.rage"
+      },
+      "spawn_egg": {
+        "base_color": "#E8E4D8",
+        "overlay_color": "#3B3B3B"
+      }
+    }
+  }
+}

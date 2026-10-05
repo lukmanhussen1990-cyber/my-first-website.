@@ -1,0 +1,812 @@
+{
+  "_total_bytes": 181991,
+  "cry1": {
+    "band_fraction_0_500_500_2k_2k_6k_6k_up": [
+      0.064,
+      0.93,
+      0.006,
+      0.0
+    ],
+    "bit_rate": 110000,
+    "channels": 1,
+    "clipped_samples": 0,
+    "codec": "vorbis",
+    "crest_db": 15.4,
+    "dc_offset": -1.12e-05,
+    "duration_s": 3.66,
+    "envelope_peaks_hz": {
+      "0.15-0.35s": [
+        785,
+        1275,
+        3111
+      ]
+    },
+    "f0_autocorr": [
+      {
+        "designed_amp": 0.65,
+        "designed_f0": 172.1,
+        "f0": 172.6,
+        "r": 0.88,
+        "t": 0.2
+      },
+      {
+        "designed_amp": 0.42,
+        "designed_f0": 165.0,
+        "f0": 163.6,
+        "r": 0.88,
+        "t": 0.4
+      },
+      {
+        "designed_amp": 0.75,
+        "designed_f0": 197.4,
+        "f0": 197.1,
+        "r": 0.89,
+        "t": 0.7
+      },
+      {
+        "designed_amp": 0.81,
+        "designed_f0": 216.8,
+        "f0": 217.1,
+        "r": 0.94,
+        "t": 1.2
+      },
+      {
+        "designed_amp": 0.11,
+        "designed_f0": 197.2,
+        "designed_unvoiced_gap": true,
+        "f0": 297.0,
+        "r": 0.75,
+        "t": 1.5
+      },
+      {
+        "designed_amp": 0.54,
+        "designed_f0": 219.4,
+        "f0": 218.6,
+        "r": 0.93,
+        "t": 1.9
+      },
+      {
+        "designed_amp": 0.86,
+        "designed_f0": 232.7,
+        "f0": 234.6,
+        "r": 0.95,
+        "t": 2.3
+      },
+      {
+        "designed_amp": 0.01,
+        "designed_f0": 217.7,
+        "designed_unvoiced_gap": true,
+        "f0": 220.1,
+        "r": 0.61,
+        "t": 2.7
+      },
+      {
+        "designed_amp": 0.27,
+        "designed_f0": 149.7,
+        "f0": 149.9,
+        "r": 0.85,
+        "t": 3.0
+      }
+    ],
+    "file_bytes": 29918,
+    "lpc_formants_hz_bw": {
+      "0.25s": [
+        [
+          778,
+          140
+        ],
+        [
+          1361,
+          263
+        ],
+        [
+          3084,
+          154
+        ],
+        [
+          3905,
+          379
+        ]
+      ],
+      "0.75s": [
+        [
+          834,
+          128
+        ],
+        [
+          1337,
+          99
+        ]
+      ],
+      "1.75s": [
+        [
+          750,
+          163
+        ],
+        [
+          1106,
+          243
+        ],
+        [
+          1437,
+          245
+        ],
+        [
+          3191,
+          139
+        ],
+        [
+          3943,
+          220
+        ]
+      ],
+      "2.75s": [
+        [
+          826,
+          87
+        ],
+        [
+          1459,
+          369
+        ],
+        [
+          3192,
+          219
+        ]
+      ]
+    },
+    "lufs_integrated": -18.02,
+    "max_abs_first_2ms": 0.0,
+    "max_abs_last_2ms": 0.0,
+    "md5": "885e30b534da8203a9742609e6d66d0c",
+    "peak_dbfs": -3.06,
+    "rms_dbfs": -18.46,
+    "roundtrip_lag_samples": 0,
+    "roundtrip_snr_db": 25.57,
+    "sample_rate": 44100,
+    "sob_envelope_peaks": 6,
+    "sob_modulation_peak_hz": 1.9,
+    "sob_peaks_per_second": 1.9,
+    "spectral_centroid_hz": 1114
+  },
+  "cry2": {
+    "band_fraction_0_500_500_2k_2k_6k_6k_up": [
+      0.355,
+      0.558,
+      0.086,
+      0.0
+    ],
+    "bit_rate": 110000,
+    "channels": 1,
+    "clipped_samples": 0,
+    "codec": "vorbis",
+    "crest_db": 16.49,
+    "dc_offset": 1.05e-06,
+    "duration_s": 3.31,
+    "envelope_peaks_hz": {
+      "0.15-0.35s": [
+        608,
+        1803,
+        2777,
+        3757
+      ]
+    },
+    "f0_autocorr": [
+      {
+        "designed_amp": 0.51,
+        "designed_f0": 241.8,
+        "f0": 241.5,
+        "r": 0.9,
+        "t": 0.2
+      },
+      {
+        "designed_amp": 0.35,
+        "designed_f0": 223.1,
+        "f0": 223.6,
+        "r": 0.88,
+        "t": 0.35
+      },
+      {
+        "designed_amp": 0.51,
+        "designed_f0": 195.6,
+        "f0": 196.8,
+        "r": 0.88,
+        "t": 0.7
+      },
+      {
+        "designed_amp": 0.62,
+        "designed_f0": 184.5,
+        "f0": 186.7,
+        "r": 0.71,
+        "t": 1.2
+      },
+      {
+        "designed_amp": 0.88,
+        "designed_f0": 252.5,
+        "f0": 253.1,
+        "r": 0.91,
+        "t": 1.55
+      },
+      {
+        "designed_amp": 0.83,
+        "designed_f0": 246.9,
+        "f0": 247.1,
+        "r": 0.95,
+        "t": 1.95
+      },
+      {
+        "designed_amp": 0.51,
+        "designed_f0": 197.0,
+        "f0": 196.9,
+        "r": 0.85,
+        "t": 2.4
+      },
+      {
+        "designed_amp": 0.22,
+        "designed_f0": 151.6,
+        "f0": 150.5,
+        "r": 0.84,
+        "t": 2.65
+      }
+    ],
+    "file_bytes": 28131,
+    "lpc_formants_hz_bw": {
+      "0.20s": [
+        [
+          620,
+          166
+        ],
+        [
+          1926,
+          87
+        ],
+        [
+          2900,
+          197
+        ],
+        [
+          3793,
+          214
+        ]
+      ],
+      "0.70s": [
+        [
+          587,
+          68
+        ],
+        [
+          1831,
+          130
+        ],
+        [
+          2905,
+          172
+        ],
+        [
+          3810,
+          298
+        ]
+      ],
+      "1.60s": [
+        [
+          562,
+          117
+        ],
+        [
+          1786,
+          112
+        ],
+        [
+          2885,
+          264
+        ],
+        [
+          3775,
+          237
+        ]
+      ],
+      "2.50s": [
+        [
+          521,
+          93
+        ],
+        [
+          1654,
+          315
+        ],
+        [
+          2765,
+          188
+        ]
+      ]
+    },
+    "lufs_integrated": -18.84,
+    "max_abs_first_2ms": 3.05e-05,
+    "max_abs_last_2ms": 0.0,
+    "md5": "8d62963791b50a7e05212f1fd4122a66",
+    "peak_dbfs": -3.12,
+    "rms_dbfs": -19.61,
+    "roundtrip_lag_samples": 0,
+    "roundtrip_snr_db": 22.9,
+    "sample_rate": 44100,
+    "sob_envelope_peaks": 6,
+    "sob_modulation_peak_hz": 2.36,
+    "sob_peaks_per_second": 2.14,
+    "spectral_centroid_hz": 1341
+  },
+  "death1": {
+    "band_fraction_0_500_500_2k_2k_6k_6k_up": [
+      0.176,
+      0.82,
+      0.004,
+      0.0
+    ],
+    "bit_rate": 110000,
+    "channels": 1,
+    "clipped_samples": 0,
+    "codec": "vorbis",
+    "crest_db": 10.53,
+    "dc_offset": -1.18e-05,
+    "duration_s": 2.34,
+    "envelope_peaks_hz": {
+      "0.30-0.80s": [
+        296,
+        780,
+        1232,
+        2304
+      ]
+    },
+    "f0_autocorr": [
+      {
+        "designed_amp": 0.85,
+        "designed_f0": 349.2,
+        "f0": 347.3,
+        "r": 0.86,
+        "t": 0.35
+      },
+      {
+        "designed_amp": 0.97,
+        "designed_f0": 383.7,
+        "f0": 386.5,
+        "r": 0.95,
+        "t": 0.6
+      },
+      {
+        "designed_amp": 0.9,
+        "designed_f0": 326.6,
+        "f0": 323.7,
+        "r": 0.87,
+        "t": 0.9
+      },
+      {
+        "designed_amp": 0.82,
+        "designed_f0": 241.4,
+        "f0": 242.4,
+        "r": 0.82,
+        "t": 1.2
+      },
+      {
+        "designed_amp": 0.69,
+        "designed_f0": 206.4,
+        "f0": 206.3,
+        "r": 0.86,
+        "t": 1.5
+      },
+      {
+        "designed_amp": 0.41,
+        "designed_f0": 154.0,
+        "f0": 463.3,
+        "low_confidence": true,
+        "r": 0.47,
+        "t": 1.75
+      },
+      {
+        "designed_amp": 0.22,
+        "designed_f0": 148.3,
+        "f0": 72.6,
+        "low_confidence": true,
+        "r": 0.43,
+        "t": 1.9
+      }
+    ],
+    "file_bytes": 22141,
+    "lpc_formants_hz_bw": {
+      "0.45s": [
+        [
+          774,
+          17
+        ],
+        [
+          1241,
+          126
+        ]
+      ],
+      "0.90s": [
+        [
+          720,
+          113
+        ],
+        [
+          1257,
+          131
+        ],
+        [
+          4758,
+          344
+        ]
+      ],
+      "1.40s": [
+        [
+          595,
+          67
+        ],
+        [
+          999,
+          107
+        ],
+        [
+          2179,
+          306
+        ],
+        [
+          2904,
+          340
+        ],
+        [
+          3865,
+          295
+        ]
+      ]
+    },
+    "lufs_integrated": -12.88,
+    "max_abs_first_2ms": 0.000183,
+    "max_abs_last_2ms": 0.0,
+    "md5": "b090e5f0d148b678ae536a1e89391bc3",
+    "peak_dbfs": -2.94,
+    "rms_dbfs": -13.47,
+    "roundtrip_lag_samples": 0,
+    "roundtrip_snr_db": 28.29,
+    "sample_rate": 44100,
+    "spectral_centroid_hz": 970
+  },
+  "hurt1": {
+    "band_fraction_0_500_500_2k_2k_6k_6k_up": [
+      0.077,
+      0.92,
+      0.003,
+      0.0
+    ],
+    "bit_rate": 110000,
+    "channels": 1,
+    "clipped_samples": 0,
+    "codec": "vorbis",
+    "crest_db": 12.31,
+    "dc_offset": -2.45e-05,
+    "duration_s": 0.577,
+    "envelope_peaks_hz": {},
+    "f0_autocorr": [
+      {
+        "designed_amp": 0.95,
+        "designed_f0": 255.1,
+        "f0": 251.4,
+        "r": 0.72,
+        "t": 0.03
+      },
+      {
+        "designed_amp": 0.8,
+        "designed_f0": 258.5,
+        "f0": 256.2,
+        "r": 0.97,
+        "t": 0.08
+      },
+      {
+        "designed_amp": 0.64,
+        "designed_f0": 233.4,
+        "f0": 232.7,
+        "r": 0.95,
+        "t": 0.15
+      },
+      {
+        "designed_amp": 0.5,
+        "designed_f0": 212.3,
+        "f0": 214.0,
+        "r": 0.91,
+        "t": 0.22
+      },
+      {
+        "designed_amp": 0.39,
+        "designed_f0": 178.2,
+        "f0": 178.7,
+        "r": 0.8,
+        "t": 0.3
+      },
+      {
+        "designed_amp": 0.28,
+        "designed_f0": 160.7,
+        "f0": 156.0,
+        "low_confidence": true,
+        "r": 0.43,
+        "t": 0.36
+      }
+    ],
+    "file_bytes": 8950,
+    "lpc_formants_hz_bw": {
+      "0.06s": [
+        [
+          746,
+          148
+        ],
+        [
+          1251,
+          256
+        ],
+        [
+          2623,
+          82
+        ],
+        [
+          3338,
+          353
+        ]
+      ],
+      "0.20s": [
+        [
+          673,
+          43
+        ],
+        [
+          1122,
+          41
+        ],
+        [
+          2666,
+          242
+        ]
+      ]
+    },
+    "lufs_integrated": -15.1,
+    "max_abs_first_2ms": 0.0176,
+    "max_abs_last_2ms": 0.0,
+    "md5": "49e2a67b89bd4f1d9180eed3fbf7d89d",
+    "peak_dbfs": -2.96,
+    "rms_dbfs": -15.27,
+    "roundtrip_lag_samples": 0,
+    "roundtrip_snr_db": 29.16,
+    "sample_rate": 44100,
+    "spectral_centroid_hz": 900
+  },
+  "rage1": {
+    "band_fraction_0_500_500_2k_2k_6k_6k_up": [
+      0.024,
+      0.934,
+      0.042,
+      0.0
+    ],
+    "bit_rate": 110000,
+    "channels": 1,
+    "clipped_samples": 0,
+    "codec": "vorbis",
+    "crest_db": 11.18,
+    "dc_offset": -4.29e-06,
+    "duration_s": 2.67,
+    "envelope_peaks_hz": {
+      "0.30-0.80s": [
+        775,
+        1496,
+        2153,
+        2944
+      ]
+    },
+    "f0_autocorr": [
+      {
+        "designed_amp": 0.25,
+        "designed_f0": 225.6,
+        "f0": 227.2,
+        "r": 0.7,
+        "t": 0.2
+      },
+      {
+        "designed_amp": 0.26,
+        "designed_f0": 225.1,
+        "f0": 787.6,
+        "r": 0.8,
+        "t": 0.5
+      },
+      {
+        "designed_amp": 1.0,
+        "designed_f0": 264.3,
+        "f0": 268.1,
+        "r": 0.7,
+        "t": 0.9
+      },
+      {
+        "designed_amp": 0.42,
+        "designed_f0": 235.9,
+        "f0": 906.2,
+        "r": 0.76,
+        "t": 1.2
+      },
+      {
+        "designed_amp": 0.56,
+        "designed_f0": 220.0,
+        "f0": 224.6,
+        "r": 0.72,
+        "t": 1.5
+      },
+      {
+        "designed_amp": 0.76,
+        "designed_f0": 248.7,
+        "f0": 248.9,
+        "r": 0.63,
+        "t": 1.9
+      },
+      {
+        "designed_amp": 0.49,
+        "designed_f0": 223.7,
+        "f0": 224.5,
+        "r": 0.7,
+        "t": 2.2
+      }
+    ],
+    "file_bytes": 37802,
+    "lufs_integrated": -12.99,
+    "max_abs_first_2ms": 0.00107,
+    "max_abs_last_2ms": 0.0,
+    "md5": "476261288b7bdc49286a5f81103227df",
+    "peak_dbfs": -2.95,
+    "rms_dbfs": -14.13,
+    "roundtrip_lag_samples": 0,
+    "roundtrip_snr_db": 24.33,
+    "sample_rate": 44100,
+    "spectral_centroid_hz": 1759
+  },
+  "scream1": {
+    "band_fraction_0_500_500_2k_2k_6k_6k_up": [
+      0.009,
+      0.762,
+      0.222,
+      0.006
+    ],
+    "bit_rate": 110000,
+    "channels": 1,
+    "clipped_samples": 0,
+    "codec": "vorbis",
+    "crest_db": 9.03,
+    "dc_offset": -4.56e-05,
+    "duration_s": 4.3,
+    "envelope_peaks_hz": {
+      "1.00-1.60s": [
+        317,
+        823,
+        1361,
+        2007
+      ]
+    },
+    "f0_autocorr": [
+      {
+        "designed_amp": 0.85,
+        "designed_f0": 465.7,
+        "f0": 463.7,
+        "r": 0.97,
+        "t": 0.7
+      },
+      {
+        "designed_amp": 0.89,
+        "designed_f0": 571.3,
+        "f0": 568.4,
+        "r": 0.93,
+        "t": 0.9
+      },
+      {
+        "designed_amp": 0.87,
+        "designed_f0": 709.7,
+        "f0": 713.2,
+        "r": 0.87,
+        "t": 1.2
+      },
+      {
+        "designed_amp": 0.94,
+        "designed_f0": 849.4,
+        "f0": 843.8,
+        "r": 0.88,
+        "t": 1.6
+      },
+      {
+        "designed_amp": 0.89,
+        "designed_f0": 969.0,
+        "f0": 976.0,
+        "r": 0.92,
+        "t": 2.0
+      },
+      {
+        "designed_amp": 0.8,
+        "designed_f0": 1000.2,
+        "f0": 1006.3,
+        "r": 0.88,
+        "t": 2.5
+      },
+      {
+        "designed_amp": 0.82,
+        "designed_f0": 921.5,
+        "f0": 922.3,
+        "r": 0.81,
+        "t": 3.0
+      },
+      {
+        "designed_amp": 0.9,
+        "designed_f0": 1064.7,
+        "f0": 1043.8,
+        "r": 0.86,
+        "t": 3.3
+      },
+      {
+        "designed_amp": 0.54,
+        "designed_f0": 789.5,
+        "f0": 788.5,
+        "r": 0.8,
+        "t": 3.6
+      }
+    ],
+    "file_bytes": 55049,
+    "harmonic_levels_db_re_strongest": {
+      "t=0.9s,f0~571Hz": [
+        -10.0,
+        -5.9,
+        0.0,
+        -19.8,
+        -15.1,
+        -23.1,
+        -31.6,
+        -21.0,
+        -25.9,
+        -28.0
+      ],
+      "t=1.6s,f0~849Hz": [
+        -4.0,
+        0.0,
+        -13.8,
+        -18.4,
+        -18.4,
+        -24.1,
+        -26.6,
+        -30.3,
+        -32.6,
+        -36.2
+      ],
+      "t=2.2s,f0~999Hz": [
+        -0.3,
+        0.0,
+        -9.1,
+        -14.7,
+        -17.8,
+        -22.5,
+        -25.6,
+        -29.9,
+        -35.7,
+        -39.0
+      ],
+      "t=3.0s,f0~921Hz": [
+        -3.5,
+        0.0,
+        -14.9,
+        -22.5,
+        -20.9,
+        -26.0,
+        -28.6,
+        -32.4,
+        -34.8,
+        -35.9
+      ]
+    },
+    "lufs_integrated": -9.41,
+    "max_abs_first_2ms": 0.00644,
+    "max_abs_last_2ms": 0.000183,
+    "md5": "310d708b8df001c5f5941f8a36570bc9",
+    "peak_dbfs": -2.92,
+    "rms_dbfs": -11.95,
+    "roundtrip_lag_samples": 0,
+    "roundtrip_snr_db": 22.99,
+    "sample_rate": 44100,
+    "spectral_centroid_hz": 2775
+  }
+}

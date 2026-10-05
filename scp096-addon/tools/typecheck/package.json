@@ -1,0 +1,19 @@
+{
+  "name": "scp096-script-typecheck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dev-only checks for SCP096_BP/scripts/main.js: tsc --checkJs against @minecraft/server 1.11.0 typings, API verification, simulated-world tests, mutation self-check. Not shipped in the .mcaddon.",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "verify-api": "node verify_api.mjs",
+    "test": "node ../test_script.mjs",
+    "mutation-check": "python3 mutation_check.py",
+    "all": "npm run typecheck && npm run verify-api && npm test"
+  },
+  "devDependencies": {
+    "@minecraft/common": "1.1.0",
+    "@minecraft/server": "1.11.0",
+    "acorn": "^8.18.0",
+    "typescript": "^5.6.3"
+  }
+}

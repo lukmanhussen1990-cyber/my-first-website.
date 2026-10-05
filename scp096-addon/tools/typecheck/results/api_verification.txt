@@ -1,0 +1,48 @@
+== API verification of SCP096_BP/scripts/main.js against @minecraft/server 1.11.0 ==
+metadata: /home/user/mojang/bedrock-samples/metadata/script_modules/@minecraft (stable modules: 1.0.0, 1.1.0, 1.2.0, 1.3.0, 1.4.0, 1.5.0, 1.6.0, 1.7.0, 1.8.0, 1.9.0, 1.10.0, 1.11.0)
+module json: version=1.11.0 minecraft_version=1.21.0-beta.0
+
+-- 1. syntax level (acorn, ecmaVersion 2019, sourceType module) --
+  parses as ES2019 module: OK
+
+-- 2. imports --
+  @minecraft/server: {world, system}
+
+-- 3. every .member token in the code is classified --
+  distinct .member tokens: 50
+  API:      gameRules, getBlock, getComponent, getDimension, getEntities, getViewDirection, isValid, location, mobGriefing, runCommand, runInterval, setType, successCount, typeId, value, x, y, z
+  built-in: abs, add, ceil, concat, constructor, endsWith, floor, freeze, has, hypot, isFinite, length, map, message, min, name, push, sort, test, warn
+  local:    feetEpsilon, forward, halfWidth, height, lateral, maxBreaksPerEntity, maxBreaksPerPass, maxEntitiesExaminedPerDimension, maxForward, maxRagingEntitiesPerPass, minForward, minHorizontalView
+  unclassified: none
+  bare globals/imports used: world, system, console
+
+-- 4. existence in 1.11.0 and first stable module version --
+  System.runInterval                 function  exists in 1.11.0: yes  first stable: 1.1.0   (registers the pass callback (every 3 ticks))
+  World.gameRules                    property  exists in 1.11.0: yes  first stable: 1.11.0   (read mobGriefing)
+  World.getDimension                 function  exists in 1.11.0: yes  first stable: 1.0.0   (overworld / nether / the_end)
+  GameRules.mobGriefing              property  exists in 1.11.0: yes  first stable: 1.11.0   (respect the game rule)
+  Dimension.getEntities              function  exists in 1.11.0: yes  first stable: 1.1.0   ({ type: 'scp:scp096' } query)
+  Dimension.getBlock                 function  exists in 1.11.0: yes  first stable: 1.1.0   (probe box cells)
+  Dimension.runCommand               function  exists in 1.11.0: yes  first stable: 1.2.0   (setblock x y z air destroy)
+  Entity.isValid                     function  exists in 1.11.0: yes  first stable: 1.4.0   (skip removed entities)
+  Entity.location                    property  exists in 1.11.0: yes  first stable: 1.1.0   (feet position)
+  Entity.getViewDirection            function  exists in 1.11.0: yes  first stable: 1.1.0   (heading)
+  Entity.getComponent                function  exists in 1.11.0: yes  first stable: 1.2.0   (minecraft:variant)
+  EntityVariantComponent.value       property  exists in 1.11.0: yes  first stable: 1.2.0   (state number (3 = rage run))
+  Block.typeId                       property  exists in 1.11.0: yes  first stable: 1.11.0   (allow/deny decision)
+  Block.setType                      function  exists in 1.11.0: yes  first stable: 1.11.0   (fallback when the command fails)
+  CommandResult.successCount         property  exists in 1.11.0: yes  first stable: 1.0.0   (command success)
+  Vector3.x                          property  exists in 1.11.0: yes  first stable: 1.1.0   (block / entity coordinates)
+  Vector3.y                          property  exists in 1.11.0: yes  first stable: 1.1.0   (block / entity coordinates)
+  Vector3.z                          property  exists in 1.11.0: yes  first stable: 1.1.0   (block / entity coordinates)
+
+-- 5. privilege + error notes from the metadata (1.11.0) --
+  Dimension.getBlock: privilege=read_only throws=[LocationInUnloadedChunkError, LocationOutOfWorldBoundariesError]
+  Dimension.runCommand: privilege=none throws=[CommandError]
+  Block.setType: privilege=none throws=[Error, LocationInUnloadedChunkError, LocationOutOfWorldBoundariesError]
+  Dimension.getEntities: privilege=read_only throws=[-]
+  System.runInterval: privilege=read_only throws=[-]
+  Entity.getViewDirection: privilege=read_only throws=[-]
+  module dependencies declared by 1.11.0 metadata: @minecraft/common@1.1.0
+
+RESULT: PASS

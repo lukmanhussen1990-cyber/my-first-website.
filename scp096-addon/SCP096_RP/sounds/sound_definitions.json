@@ -1,0 +1,70 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "mob.scp096.cry": {
+      "category": "neutral",
+      "max_distance": 32.0,
+      "min_distance": 0.0,
+      "sounds": [
+        {
+          "load_on_low_memory": true,
+          "name": "sounds/mob/scp096/cry1",
+          "volume": 1.0
+        },
+        {
+          "load_on_low_memory": true,
+          "name": "sounds/mob/scp096/cry2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "mob.scp096.death": {
+      "category": "neutral",
+      "max_distance": 40.0,
+      "min_distance": 0.0,
+      "sounds": [
+        {
+          "load_on_low_memory": true,
+          "name": "sounds/mob/scp096/death1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "mob.scp096.hurt": {
+      "category": "neutral",
+      "max_distance": 24.0,
+      "min_distance": 0.0,
+      "sounds": [
+        {
+          "load_on_low_memory": true,
+          "name": "sounds/mob/scp096/hurt1",
+          "volume": 1.0
+        }
+      ]
+    },
+    "mob.scp096.rage": {
+      "category": "hostile",
+      "max_distance": 48.0,
+      "min_distance": 0.0,
+      "sounds": [
+        {
+          "load_on_low_memory": true,
+          "name": "sounds/mob/scp096/rage1",
+          "volume": 0.85
+        }
+      ]
+    },
+    "mob.scp096.scream": {
+      "category": "hostile",
+      "max_distance": 80.0,
+      "min_distance": 0.0,
+      "sounds": [
+        {
+          "load_on_low_memory": true,
+          "name": "sounds/mob/scp096/scream1",
+          "volume": 0.9
+        }
+      ]
+    }
+  }
+}

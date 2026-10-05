@@ -1,0 +1,18 @@
+$ cd tools/typecheck && npm ci  (typescript, @minecraft/server@1.11.0, @minecraft/common@1.1.0, acorn)
+$ ./node_modules/.bin/tsc --version
+Version 5.9.3
+$ cat node_modules/@minecraft/server/package.json | grep version
+node_modules/@minecraft/server/package.json:  "version": "1.11.0",
+node_modules/@minecraft/common/package.json:  "version": "1.1.0",
+$ ./node_modules/.bin/tsc -p tsconfig.json --listFiles | grep -v typescript/lib
+/home/user/my-first-website./scp096-addon/tools/typecheck/globals.d.ts
+/home/user/my-first-website./scp096-addon/tools/typecheck/node_modules/@minecraft/common/index.d.ts
+/home/user/my-first-website./scp096-addon/tools/typecheck/node_modules/@minecraft/server/index.d.ts
+/home/user/my-first-website./scp096-addon/SCP096_BP/scripts/main.js
+$ ./node_modules/.bin/tsc -p tsconfig.json   # allowJs + checkJs + strict + noUnused*, target/lib ES2019, skipLibCheck=false
+tsc exit code: 0
+
+--- negative control: same config on a copy of main.js with 2 deliberate API mistakes appended (Entity.target, GameRules.nonexistent) ---
+../../../../../../tmp/scp/neg/bad.js(598,12): error TS2339: Property 'target' does not exist on type 'Entity'.
+../../../../../../tmp/scp/neg/bad.js(600,49): error TS2339: Property 'nonexistent' does not exist on type 'GameRules'.
+negative-control tsc exit code: 2 (must be non-zero)

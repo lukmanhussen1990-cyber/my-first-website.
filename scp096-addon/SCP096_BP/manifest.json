@@ -1,0 +1,39 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "SCP-096 Behavior Pack",
+    "description": "SCP-096 (the Shy Guy): behavior and rage AI. Needs the SCP-096 Resource Pack.",
+    "uuid": "c4472929-4583-4aaa-902e-4cfbe247b133",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "description": "SCP-096 entity behavior",
+      "uuid": "86da529e-3caa-424e-a71c-d89776c856a1",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "description": "SCP-096 block clearing script",
+      "language": "javascript",
+      "uuid": "85f1e82f-4389-497f-9ae6-dbad326154b9",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "578569c1-9216-4453-a08d-19facf85f970",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    }
+  ],
+  "metadata": {
+    "authors": ["SCP-096 Add-on"]
+  }
+}

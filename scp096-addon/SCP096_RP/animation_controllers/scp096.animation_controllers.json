@@ -1,0 +1,75 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.scp096.main": {
+      "initial_state": "sit",
+      "states": {
+        "sit": {
+          "animations": ["sit_cry"],
+          "transitions": [
+            {
+              "walk": "query.variant == 1"
+            },
+            {
+              "scream": "query.variant == 2"
+            },
+            {
+              "run": "query.variant == 3"
+            }
+          ],
+          "blend_transition": 0.3
+        },
+        "walk": {
+          "animations": ["walk", "look_at_target"],
+          "transitions": [
+            {
+              "sit": "query.variant == 0"
+            },
+            {
+              "scream": "query.variant == 2"
+            },
+            {
+              "run": "query.variant == 3"
+            }
+          ],
+          "blend_transition": 0.3
+        },
+        "scream": {
+          "animations": ["scream"],
+          "sound_effects": [
+            {
+              "effect": "scream"
+            }
+          ],
+          "transitions": [
+            {
+              "sit": "query.variant == 0"
+            },
+            {
+              "walk": "query.variant == 1"
+            },
+            {
+              "run": "query.variant == 3"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "run": {
+          "animations": ["run", "look_at_target"],
+          "transitions": [
+            {
+              "sit": "query.variant == 0"
+            },
+            {
+              "walk": "query.variant == 1"
+            },
+            {
+              "scream": "query.variant == 2"
+            }
+          ],
+          "blend_transition": 0.3
+        }
+      }
+    }
+  }
+}

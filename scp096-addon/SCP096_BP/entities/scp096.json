@@ -1,0 +1,363 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "scp:scp096",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "scp096:calm": {
+        "minecraft:lookat": {
+          "search_radius": 64.0,
+          "set_target": true,
+          "look_cooldown": 5.0,
+          "filters": {
+            "all_of": [
+              {
+                "subject": "other",
+                "test": "is_family",
+                "value": "player"
+              }
+            ]
+          }
+        },
+        "minecraft:on_target_acquired": {
+          "event": "scp096:enrage",
+          "target": "self"
+        }
+      },
+      "scp096:pose_sit": {
+        "minecraft:variant": {
+          "value": 0
+        },
+        "minecraft:collision_box": {
+          "width": 0.9,
+          "height": 1.5
+        },
+        "minecraft:movement": {
+          "value": 0.0
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": [12, 30],
+          "randomInterval": true,
+          "time_down_event": {
+            "event": "scp096:begin_walk",
+            "target": "self"
+          }
+        }
+      },
+      "scp096:pose_walk": {
+        "minecraft:variant": {
+          "value": 1
+        },
+        "minecraft:collision_box": {
+          "width": 0.7,
+          "height": 2.8
+        },
+        "minecraft:movement": {
+          "value": 0.06
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 7,
+          "speed_multiplier": 0.8
+        },
+        "minecraft:behavior.random_look_around": {
+          "priority": 8
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": [8, 20],
+          "randomInterval": true,
+          "time_down_event": {
+            "event": "scp096:begin_sit",
+            "target": "self"
+          }
+        }
+      },
+      "scp096:rage_scream": {
+        "minecraft:variant": {
+          "value": 2
+        },
+        "minecraft:collision_box": {
+          "width": 0.7,
+          "height": 2.8
+        },
+        "minecraft:movement": {
+          "value": 0.0
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": [3, 5],
+          "randomInterval": true,
+          "time_down_event": {
+            "event": "scp096:begin_run",
+            "target": "self"
+          }
+        },
+        "minecraft:on_target_escape": {
+          "event": "scp096:calm_down",
+          "target": "self"
+        },
+        "minecraft:environment_sensor": {
+          "triggers": [
+            {
+              "filters": {
+                "test": "has_target",
+                "subject": "self",
+                "value": false
+              },
+              "event": "scp096:calm_down"
+            },
+            {
+              "filters": {
+                "test": "actor_health",
+                "subject": "target",
+                "operator": "<=",
+                "value": 0
+              },
+              "event": "scp096:calm_down"
+            }
+          ]
+        }
+      },
+      "scp096:rage_run": {
+        "minecraft:variant": {
+          "value": 3
+        },
+        "minecraft:collision_box": {
+          "width": 0.7,
+          "height": 2.8
+        },
+        "minecraft:movement": {
+          "value": 0.4
+        },
+        "minecraft:behavior.melee_box_attack": {
+          "priority": 2,
+          "speed_multiplier": 1.0,
+          "track_target": true,
+          "on_kill": {
+            "event": "scp096:calm_down",
+            "target": "self"
+          }
+        },
+        "minecraft:break_blocks": {
+          "breakable_blocks": [
+            "acacia_leaves", "azalea_leaves", "azalea_leaves_flowered", "birch_leaves",
+            "cherry_leaves", "dark_oak_leaves", "jungle_leaves", "mangrove_leaves", "oak_leaves",
+            "spruce_leaves", "acacia_log", "birch_log", "cherry_log", "dark_oak_log", "jungle_log",
+            "mangrove_log", "oak_log", "spruce_log", "stripped_acacia_log", "stripped_birch_log",
+            "stripped_cherry_log", "stripped_dark_oak_log", "stripped_jungle_log",
+            "stripped_mangrove_log", "stripped_oak_log", "stripped_spruce_log", "acacia_wood",
+            "birch_wood", "cherry_wood", "dark_oak_wood", "jungle_wood", "mangrove_wood",
+            "oak_wood", "spruce_wood", "stripped_acacia_wood", "stripped_birch_wood",
+            "stripped_cherry_wood", "stripped_dark_oak_wood", "stripped_jungle_wood",
+            "stripped_mangrove_wood", "stripped_oak_wood", "stripped_spruce_wood", "crimson_hyphae",
+            "crimson_stem", "stripped_crimson_hyphae", "stripped_crimson_stem",
+            "stripped_warped_hyphae", "stripped_warped_stem", "warped_hyphae", "warped_stem",
+            "bamboo_block", "stripped_bamboo_block", "bamboo_mosaic", "acacia_planks",
+            "bamboo_planks", "birch_planks", "cherry_planks", "crimson_planks", "dark_oak_planks",
+            "jungle_planks", "mangrove_planks", "oak_planks", "spruce_planks", "warped_planks",
+            "acacia_door", "bamboo_door", "birch_door", "cherry_door", "crimson_door",
+            "dark_oak_door", "iron_door", "jungle_door", "mangrove_door", "spruce_door",
+            "warped_door", "wooden_door", "acacia_trapdoor", "bamboo_trapdoor", "birch_trapdoor",
+            "cherry_trapdoor", "crimson_trapdoor", "dark_oak_trapdoor", "iron_trapdoor",
+            "jungle_trapdoor", "mangrove_trapdoor", "spruce_trapdoor", "trapdoor",
+            "warped_trapdoor", "acacia_fence", "bamboo_fence", "birch_fence", "cherry_fence",
+            "crimson_fence", "dark_oak_fence", "jungle_fence", "mangrove_fence", "oak_fence",
+            "spruce_fence", "warped_fence", "acacia_fence_gate", "bamboo_fence_gate",
+            "birch_fence_gate", "cherry_fence_gate", "crimson_fence_gate", "dark_oak_fence_gate",
+            "fence_gate", "jungle_fence_gate", "mangrove_fence_gate", "spruce_fence_gate",
+            "warped_fence_gate", "black_stained_glass", "black_stained_glass_pane",
+            "blue_stained_glass", "blue_stained_glass_pane", "brown_stained_glass",
+            "brown_stained_glass_pane", "cyan_stained_glass", "cyan_stained_glass_pane", "glass",
+            "glass_pane", "gray_stained_glass", "gray_stained_glass_pane", "green_stained_glass",
+            "green_stained_glass_pane", "light_blue_stained_glass", "light_blue_stained_glass_pane",
+            "light_gray_stained_glass", "light_gray_stained_glass_pane", "lime_stained_glass",
+            "lime_stained_glass_pane", "magenta_stained_glass", "magenta_stained_glass_pane",
+            "orange_stained_glass", "orange_stained_glass_pane", "pink_stained_glass",
+            "pink_stained_glass_pane", "purple_stained_glass", "purple_stained_glass_pane",
+            "red_stained_glass", "red_stained_glass_pane", "tinted_glass", "white_stained_glass",
+            "white_stained_glass_pane", "yellow_stained_glass", "yellow_stained_glass_pane",
+            "black_wool", "blue_wool", "brown_wool", "cyan_wool", "gray_wool", "green_wool",
+            "light_blue_wool", "light_gray_wool", "lime_wool", "magenta_wool", "orange_wool",
+            "pink_wool", "purple_wool", "red_wool", "white_wool", "yellow_wool", "black_carpet",
+            "blue_carpet", "brown_carpet", "cyan_carpet", "gray_carpet", "green_carpet",
+            "light_blue_carpet", "light_gray_carpet", "lime_carpet", "magenta_carpet",
+            "moss_carpet", "orange_carpet", "pink_carpet", "purple_carpet", "red_carpet",
+            "white_carpet", "yellow_carpet", "oak_slab", "oak_double_slab", "oak_stairs",
+            "spruce_slab", "spruce_double_slab", "spruce_stairs", "birch_slab", "birch_double_slab",
+            "birch_stairs", "jungle_slab", "jungle_double_slab", "jungle_stairs", "acacia_slab",
+            "acacia_double_slab", "acacia_stairs", "dark_oak_slab", "dark_oak_double_slab",
+            "dark_oak_stairs", "mangrove_slab", "mangrove_double_slab", "mangrove_stairs",
+            "cherry_slab", "cherry_double_slab", "cherry_stairs", "bamboo_slab",
+            "bamboo_double_slab", "bamboo_stairs", "crimson_slab", "crimson_double_slab",
+            "crimson_stairs", "warped_slab", "warped_double_slab", "warped_stairs",
+            "bamboo_mosaic_slab", "bamboo_mosaic_double_slab", "bamboo_mosaic_stairs", "web",
+            "ladder", "hay_block", "scaffolding", "bamboo", "bamboo_sapling", "acacia_hanging_sign",
+            "acacia_standing_sign", "acacia_wall_sign", "bamboo_hanging_sign",
+            "bamboo_standing_sign", "bamboo_wall_sign", "birch_hanging_sign", "birch_standing_sign",
+            "birch_wall_sign", "cherry_hanging_sign", "cherry_standing_sign", "cherry_wall_sign",
+            "crimson_hanging_sign", "crimson_standing_sign", "crimson_wall_sign",
+            "dark_oak_hanging_sign", "darkoak_standing_sign", "darkoak_wall_sign",
+            "jungle_hanging_sign", "jungle_standing_sign", "jungle_wall_sign",
+            "mangrove_hanging_sign", "mangrove_standing_sign", "mangrove_wall_sign",
+            "oak_hanging_sign", "spruce_hanging_sign", "spruce_standing_sign", "spruce_wall_sign",
+            "standing_sign", "wall_sign", "warped_hanging_sign", "warped_standing_sign",
+            "warped_wall_sign"
+          ]
+        },
+        "minecraft:annotation.break_door": {
+          "break_time": 1,
+          "min_difficulty": "normal"
+        },
+        "minecraft:on_target_escape": {
+          "event": "scp096:calm_down",
+          "target": "self"
+        },
+        "minecraft:environment_sensor": {
+          "triggers": [
+            {
+              "filters": {
+                "test": "has_target",
+                "subject": "self",
+                "value": false
+              },
+              "event": "scp096:calm_down"
+            },
+            {
+              "filters": {
+                "test": "actor_health",
+                "subject": "target",
+                "operator": "<=",
+                "value": 0
+              },
+              "event": "scp096:calm_down"
+            }
+          ]
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": ["scp096", "scp", "mob"]
+      },
+      "minecraft:health": {
+        "value": 500,
+        "max": 500
+      },
+      "minecraft:attack": {
+        "damage": 300
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:follow_range": {
+        "value": 64,
+        "max": 64
+      },
+      "minecraft:collision_box": {
+        "width": 0.7,
+        "height": 2.8
+      },
+      "minecraft:damage_sensor": {
+        "triggers": {
+          "cause": "all",
+          "deals_damage": true,
+          "damage_multiplier": 0.1
+        }
+      },
+      "minecraft:persistent": {},
+      "minecraft:nameable": {},
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": true,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "can_path_over_water": false,
+        "avoid_water": true,
+        "can_pass_doors": true,
+        "can_break_doors": true
+      },
+      "minecraft:jump.static": {},
+      "minecraft:behavior.float": {
+        "priority": 0
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": {
+          "component_groups": ["scp096:calm", "scp096:pose_sit"]
+        }
+      },
+      "scp096:begin_walk": {
+        "sequence": [
+          {
+            "filters": {
+              "test": "is_variant",
+              "subject": "self",
+              "operator": "==",
+              "value": 0
+            },
+            "remove": {
+              "component_groups": ["scp096:pose_sit"]
+            },
+            "add": {
+              "component_groups": ["scp096:pose_walk"]
+            }
+          }
+        ]
+      },
+      "scp096:begin_sit": {
+        "sequence": [
+          {
+            "filters": {
+              "test": "is_variant",
+              "subject": "self",
+              "operator": "==",
+              "value": 1
+            },
+            "remove": {
+              "component_groups": ["scp096:pose_walk"]
+            },
+            "add": {
+              "component_groups": ["scp096:pose_sit"]
+            }
+          }
+        ]
+      },
+      "scp096:enrage": {
+        "remove": {
+          "component_groups": [
+            "scp096:calm", "scp096:pose_sit", "scp096:pose_walk", "scp096:rage_run"
+          ]
+        },
+        "add": {
+          "component_groups": ["scp096:rage_scream"]
+        }
+      },
+      "scp096:begin_run": {
+        "remove": {
+          "component_groups": [
+            "scp096:calm", "scp096:pose_sit", "scp096:pose_walk", "scp096:rage_scream"
+          ]
+        },
+        "add": {
+          "component_groups": ["scp096:rage_run"]
+        }
+      },
+      "scp096:calm_down": {
+        "remove": {
+          "component_groups": ["scp096:pose_walk", "scp096:rage_scream", "scp096:rage_run"]
+        },
+        "add": {
+          "component_groups": ["scp096:calm", "scp096:pose_sit"]
+        }
+      }
+    }
+  }
+}
