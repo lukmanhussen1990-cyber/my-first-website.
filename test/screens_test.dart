@@ -84,6 +84,29 @@ void main() {
     await pumpFrames(tester, 300);
   });
 
+  testWidgets('popups fit on a very small 320x480 screen', (tester) async {
+    tester.view.physicalSize = const Size(640, 960);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: HowToPlayPopup(onClose: () {}))));
+    await pumpFrames(tester, 40);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: GameOverPopup(score: 98765, best: 98765, isNewBest: true, onPlayAgain: () {}, onHome: () {}),
+        ),
+      ),
+    );
+    await pumpFrames(tester, 70);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(
+      MaterialApp(home: Scaffold(body: SettingsPopup(onClose: () {}, onRestart: () {}, onHowToPlay: () {}))),
+    );
+    await pumpFrames(tester, 40);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('game over popup with new best renders', (tester) async {
     phone(tester);
     await tester.pumpWidget(

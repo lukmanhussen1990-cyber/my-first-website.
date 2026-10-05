@@ -85,6 +85,7 @@ class GameLayout {
   int? slotAt(Offset p) {
     if (!trayBand.contains(p)) return null;
     final slotW = boardRect.width / 3;
+    if (slotW <= 0) return null;
     final i = ((p.dx - boardRect.left) / slotW).floor();
     return i.clamp(0, 2);
   }

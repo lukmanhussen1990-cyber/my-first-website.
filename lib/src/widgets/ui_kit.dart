@@ -283,86 +283,95 @@ class _GamePopupState extends State<GamePopup> with SingleTickerProviderStateMix
           ),
         ),
         Center(
-          child: ScaleTransition(
-            scale: scale,
-            child: FadeTransition(
-              opacity: fade,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: widget.width,
-                    margin: const EdgeInsets.only(top: 26),
-                    padding: const EdgeInsets.fromLTRB(20, 44, 20, 22),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0xFF5577D8), Color(0xFF3A57B5)],
-                      ),
-                      borderRadius: BorderRadius.circular(26),
-                      border: Border.all(color: const Color(0xFF8FB0FF), width: 3),
-                      boxShadow: const [
-                        BoxShadow(color: Color(0xFF1F2F70), offset: Offset(0, 6)),
-                        BoxShadow(color: Color(0x66000000), offset: Offset(0, 12), blurRadius: 24),
-                      ],
-                    ),
-                    child: widget.child,
-                  ),
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 4),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            // Shrinks the card on very small screens instead of overflowing.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: ScaleTransition(
+                scale: scale,
+                child: FadeTransition(
+                  opacity: fade,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: widget.width,
+                        margin: const EdgeInsets.only(top: 26),
+                        padding: const EdgeInsets.fromLTRB(20, 44, 20, 22),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [Color(0xFFFFC85A), Color(0xFFFF8E26)],
+                            colors: [Color(0xFF5577D8), Color(0xFF3A57B5)],
                           ),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: const Color(0xFFFFE4A3), width: 2),
-                          boxShadow: const [BoxShadow(color: Color(0xFFB4530A), offset: Offset(0, 4))],
+                          borderRadius: BorderRadius.circular(26),
+                          border: Border.all(color: const Color(0xFF8FB0FF), width: 3),
+                          boxShadow: const [
+                            BoxShadow(color: Color(0xFF1F2F70), offset: Offset(0, 6)),
+                            BoxShadow(color: Color(0x66000000), offset: Offset(0, 12), blurRadius: 24),
+                          ],
                         ),
-                        child: FancyLabel(
-                          widget.title,
-                          size: 30,
-                          fill: const [Colors.white, Color(0xFFFFF4D9)],
-                          stroke: const Color(0xFFB4530A),
-                          shadow: null,
-                        ),
+                        child: widget.child,
                       ),
-                    ),
-                  ),
-                  if (widget.onClose != null)
-                    Positioned(
-                      top: 34,
-                      right: 8,
-                      child: GestureDetector(
-                        onTap: () {
-                          Sound.instance.play(Sfx.click);
-                          widget.onClose!();
-                        },
-                        child: Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Color(0xFFFF7B7B), Color(0xFFE13434)],
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 4),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [Color(0xFFFFC85A), Color(0xFFFF8E26)],
+                              ),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(color: const Color(0xFFFFE4A3), width: 2),
+                              boxShadow: const [BoxShadow(color: Color(0xFFB4530A), offset: Offset(0, 4))],
                             ),
-                            border: Border.all(color: Colors.white, width: 2.5),
-                            boxShadow: const [BoxShadow(color: Color(0x66000000), offset: Offset(0, 2), blurRadius: 3)],
+                            child: FancyLabel(
+                              widget.title,
+                              size: 30,
+                              fill: const [Colors.white, Color(0xFFFFF4D9)],
+                              stroke: const Color(0xFFB4530A),
+                              shadow: null,
+                            ),
                           ),
-                          child: const Icon(Icons.close_rounded, color: Colors.white, size: 24),
                         ),
                       ),
-                    ),
-                ],
+                      if (widget.onClose != null)
+                        Positioned(
+                          top: 34,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () {
+                              Sound.instance.play(Sfx.click);
+                              widget.onClose!();
+                            },
+                            child: Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [Color(0xFFFF7B7B), Color(0xFFE13434)],
+                                ),
+                                border: Border.all(color: Colors.white, width: 2.5),
+                                boxShadow: const [
+                                  BoxShadow(color: Color(0x66000000), offset: Offset(0, 2), blurRadius: 3),
+                                ],
+                              ),
+                              child: const Icon(Icons.close_rounded, color: Colors.white, size: 24),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
