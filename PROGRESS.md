@@ -29,3 +29,11 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   borders with guaranteed openings. Chunks within radius 2 are built (1 per frame, nearest first), chunks
   beyond radius 3 are disposed. Walls are merged into runs per grid line (no z-fighting at joins).
   Tested: BFS over a 161x161-cell area found 0 unreachable cells; 25 chunks build in ~135 ms.
+- **[06:45 UTC] Feature 3 — Backrooms look: DONE.** Canvas textures: striped yellow wallpaper with chevron motif and
+  paper grain, damp mustard carpet with fibres/speckles, 2x2 mineral-fibre ceiling tiles with T-bar grid, prismatic
+  light-panel diffuser, plus a tileable noise texture used by the shaders for world-space carpet damp patches, wall
+  grime streaks / water damage and ceiling water stains (so tiling isn't visible). Lighting: every fixture is baked
+  per vertex with 2D wall/pillar occlusion + ambient occlusion near walls; the 4 strongest fixtures per vertex stay
+  dynamic so flickering / dying / broken lights animate in the vertex shader (CPU mirror for gameplay). Dark zones
+  come from a value-noise field where ~90% of fixtures are broken. Exponential fog tinted by the local light level.
+  Chunk building is time-sliced with a generator (3 ms/frame budget, ~15 ms per chunk total).

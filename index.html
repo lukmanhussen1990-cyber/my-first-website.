@@ -99,9 +99,8 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1608);
-scene.fog = new THREE.FogExp2(0x2a2410, 0.06);
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 120);
+scene.background = new THREE.Color(0x2a2410);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 60);
 camera.rotation.order = 'YXZ';
 
 window.addEventListener('resize', () => {
@@ -315,20 +314,491 @@ function resolveCircle(pos, r) {
 }
 
 // ============================================================================
+//  PROCEDURAL TEXTURES (canvas)
+// ============================================================================
+// Periodic (tileable) value noise + fBm, returned as Float32Array in [0,1]
+function tileNoise(size, cells, seed) {
+  const rnd = mulberry32(seed), lat = new Float32Array(cells * cells);
+  for (let i = 0; i < lat.length; i++) lat[i] = rnd();
+  const out = new Float32Array(size * size);
+  for (let y = 0; y < size; y++) {
+    const fy = (y / size) * cells, iy = Math.floor(fy); let ty = fy - iy; ty = ty * ty * (3 - 2 * ty);
+    const y0 = (iy % cells) * cells, y1 = ((iy + 1) % cells) * cells;
+    for (let x = 0; x < size; x++) {
+      const fx = (x / size) * cells, ix = Math.floor(fx); let tx = fx - ix; tx = tx * tx * (3 - 2 * tx);
+      const x0 = ix % cells, x1 = (ix + 1) % cells;
+      const a = lat[y0 + x0], b = lat[y0 + x1], c = lat[y1 + x0], d = lat[y1 + x1];
+      out[y * size + x] = a + (b - a) * tx + (c - a) * ty + (a - b - c + d) * tx * ty;
+    }
+  }
+  return out;
+}
+function tileFbm(size, cells, octaves, seed, gain = 0.5) {
+  const out = new Float32Array(size * size);
+  let amp = 1, total = 0;
+  for (let o = 0; o < octaves; o++) {
+    const n = tileNoise(size, cells << o, seed + o * 101);
+    for (let i = 0; i < out.length; i++) out[i] += n[i] * amp;
+    total += amp; amp *= gain;
+  }
+  for (let i = 0; i < out.length; i++) out[i] /= total;
+  return out;
+}
+function canvasTex(canvas, { srgb = true, repeat = true, aniso = 4 } = {}) {
+  const t = new THREE.CanvasTexture(canvas);
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
+  t.anisotropy = Math.min(aniso, renderer.capabilities.getMaxAnisotropy());
+  t.generateMipmaps = true;
+  t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.magFilter = THREE.LinearFilter;
+  t.needsUpdate = true;
+  return t;
+}
+function makeCanvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+
+// Wallpaper: mono-yellow with thin vertical stripes and a faint repeating motif.
+function makeWallpaperTexture(variant = 0) {
+  const S = 512, c = makeCanvas(S, S), g = c.getContext('2d');
+  const base = variant === 0 ? [206, 186, 108] : [118, 132, 116];
+  g.fillStyle = `rgb(${base[0]},${base[1]},${base[2]})`; g.fillRect(0, 0, S, S);
+  // stripes every 64 px (0.15 m)
+  for (let x = 0; x < S; x += 64) {
+    g.fillStyle = 'rgba(120,100,40,0.20)'; g.fillRect(x, 0, 3, S);
+    g.fillStyle = 'rgba(255,240,170,0.10)'; g.fillRect(x + 5, 0, 10, S);
+    g.fillStyle = 'rgba(120,100,40,0.10)'; g.fillRect(x + 30, 0, 2, S);
+  }
+  // motif: small chevrons between stripes
+  g.strokeStyle = 'rgba(140,118,50,0.22)'; g.lineWidth = 2;
+  for (let y = 0; y < S; y += 64) for (let x = 0; x < S; x += 64) {
+    const cx = x + 47, cy = y + 32;
+    g.beginPath(); g.moveTo(cx - 6, cy + 4); g.lineTo(cx, cy - 4); g.lineTo(cx + 6, cy + 4); g.stroke();
+    g.beginPath(); g.arc(cx, cy + 22, 1.6, 0, Math.PI * 2); g.stroke();
+  }
+  // paper grain + blotchy discolouration
+  const img = g.getImageData(0, 0, S, S), d = img.data;
+  const low = tileFbm(S, 4, 4, 777 + variant), fine = tileNoise(S, 128, 991 + variant);
+  const rnd = mulberry32(55 + variant);
+  for (let i = 0; i < S * S; i++) {
+    const k = 0.86 + 0.2 * low[i] + 0.06 * (fine[i] - 0.5) + (rnd() - 0.5) * 0.05;
+    d[i * 4] = clamp(d[i * 4] * k, 0, 255);
+    d[i * 4 + 1] = clamp(d[i * 4 + 1] * k, 0, 255);
+    d[i * 4 + 2] = clamp(d[i * 4 + 2] * (k - 0.03), 0, 255);
+  }
+  g.putImageData(img, 0, 0);
+  return canvasTex(c);
+}
+
+// Carpet: damp mustard-brown fibres
+function makeCarpetTexture(variant = 0) {
+  const S = 512, c = makeCanvas(S, S), g = c.getContext('2d');
+  const img = g.createImageData(S, S), d = img.data;
+  const low = tileFbm(S, 6, 4, 1234 + variant), mid = tileNoise(S, 64, 4321 + variant);
+  const rnd = mulberry32(99 + variant);
+  const base = variant === 0 ? [142, 120, 66] : [70, 78, 72];
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const i = y * S + x;
+    const fib = rnd();
+    // diagonal fibre texture
+    const tw = Math.sin((x + y) * 0.9 + mid[i] * 6.0) * 0.5 + 0.5;
+    let k = 0.72 + 0.28 * low[i] + 0.12 * (mid[i] - 0.5) + 0.16 * (fib - 0.5) + 0.06 * (tw - 0.5);
+    if (fib > 0.985) k *= 0.7;   // dark speckles
+    d[i * 4] = clamp(base[0] * k, 0, 255);
+    d[i * 4 + 1] = clamp(base[1] * k, 0, 255);
+    d[i * 4 + 2] = clamp(base[2] * k * (0.95 + 0.1 * low[i]), 0, 255);
+    d[i * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return canvasTex(c, { aniso: 8 });
+}
+
+// Ceiling: 2x2 mineral-fibre tiles (0.6 m each) with a T-bar grid
+function makeCeilingTexture(variant = 0) {
+  const S = 512, c = makeCanvas(S, S), g = c.getContext('2d');
+  const img = g.createImageData(S, S), d = img.data;
+  const low = tileFbm(S, 4, 3, 555 + variant), fine = tileNoise(S, 160, 556 + variant);
+  const rnd = mulberry32(77 + variant);
+  const base = variant === 0 ? [214, 208, 186] : [160, 168, 160];
+  const tileTint = [0.0, -0.035, 0.02, -0.06];
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const i = y * S + x;
+    const tIdx = (x < S / 2 ? 0 : 1) + (y < S / 2 ? 0 : 2);
+    let k = 0.93 + tileTint[tIdx] + 0.06 * (low[i] - 0.5) + 0.07 * (fine[i] - 0.5);
+    const r = rnd();
+    if (r > 0.965) k -= 0.13 + rnd() * 0.12;      // fissure holes
+    // grid (T-bars) at tile edges
+    const ex = Math.min(x % (S / 2), S / 2 - (x % (S / 2))), ey = Math.min(y % (S / 2), S / 2 - (y % (S / 2)));
+    const e = Math.min(ex, ey);
+    let tbar = 0;
+    if (e < 3) tbar = 1; else if (e < 6) k -= 0.12 * (6 - e) / 3;   // shadow next to bar
+    let R = base[0] * k, G = base[1] * k, B = base[2] * k;
+    if (tbar) { R = 172; G = 168; B = 156; }
+    d[i * 4] = clamp(R, 0, 255); d[i * 4 + 1] = clamp(G, 0, 255); d[i * 4 + 2] = clamp(B, 0, 255); d[i * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return canvasTex(c, { aniso: 8 });
+}
+
+// Fluorescent panel: prismatic diffuser + metal frame
+function makePanelTexture() {
+  const W = 64, H = 128, c = makeCanvas(W, H), g = c.getContext('2d');
+  g.fillStyle = '#fbf8ec'; g.fillRect(0, 0, W, H);
+  // two tubes glowing through the diffuser
+  const grd = g.createLinearGradient(0, 0, W, 0);
+  grd.addColorStop(0, 'rgba(255,255,255,0)'); grd.addColorStop(0.3, 'rgba(255,255,250,0.9)');
+  grd.addColorStop(0.5, 'rgba(240,236,220,0.5)'); grd.addColorStop(0.7, 'rgba(255,255,250,0.9)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(160,150,120,0.18)';
+  for (let y = 0; y < H; y += 4) g.fillRect(0, y, W, 1);
+  for (let x = 0; x < W; x += 4) g.fillRect(x, 0, 1, H);
+  g.strokeStyle = '#8f8a7c'; g.lineWidth = 6; g.strokeRect(0, 0, W, H);
+  return canvasTex(c, { repeat: false });
+}
+
+// Generic tileable noise texture for shader-side variation (stains, grime)
+function makeNoiseTexture() {
+  const S = 256, c = makeCanvas(S, S), g = c.getContext('2d');
+  const img = g.createImageData(S, S), d = img.data;
+  const a = tileFbm(S, 4, 5, 31337), b = tileFbm(S, 16, 4, 4242), rnd = mulberry32(8);
+  for (let i = 0; i < S * S; i++) {
+    d[i * 4] = a[i] * 255; d[i * 4 + 1] = b[i] * 255; d[i * 4 + 2] = rnd() * 255; d[i * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return canvasTex(c, { srgb: false, aniso: 1 });
+}
+
+const TEX = {
+  noise: makeNoiseTexture(),
+  panel: makePanelTexture(),
+  wall: [makeWallpaperTexture(0), null],
+  carpet: [makeCarpetTexture(0), null],
+  ceil: [makeCeilingTexture(0), null],
+};
+
+// ============================================================================
+//  SHADERS
+// ============================================================================
+// Shared uniforms (same objects referenced by every material)
+const U = {
+  uTime: { value: 0 },
+  uMonster: { value: new THREE.Vector4(1e5, 0, 1e5, 0) },   // xyz = monster pos, w = flicker strength
+  uOutage: { value: new THREE.Vector4(0, 0, 0, 0) },        // xy = centre, z = radius, w = active
+  uLightMul: { value: 1.0 },
+  uLightColor: { value: new THREE.Color(1.0, 0.9, 0.66) },
+  uAmbient: { value: new THREE.Color(0.03, 0.026, 0.018) },
+  uFogColor: { value: new THREE.Color(0.25, 0.21, 0.11) },
+  uFogDensity: { value: 0.045 },
+  uFlashPos: { value: new THREE.Vector3() },
+  uFlashDir: { value: new THREE.Vector3(0, 0, -1) },
+  uFlash: { value: 0.0 },
+  uFlashColor: { value: new THREE.Color(1.0, 0.95, 0.85) },
+  uNoise: { value: TEX.noise },
+};
+
+const GLSL_COMMON = /* glsl */`
+uniform float uTime;
+uniform vec4 uMonster;
+uniform vec4 uOutage;
+uniform float uLightMul;
+float h11(float p) { p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
+// Brightness of one ceiling fixture. s = type + random fraction, lp = fixture xz.
+float lightLevel(float s, vec2 lp) {
+  float type = floor(s), r = fract(s), t = uTime, lvl = 1.0;
+  if (type > 2.5) return 0.0;                                   // broken
+  if (type > 1.5) {                                             // dying: sputters, mostly dark
+    float on = step(0.5, h11(floor(t * 2.5 + r * 50.0) + r * 311.0));
+    lvl = on * step(0.3, h11(floor(t * 26.0) + r * 77.0)) * 0.8;
+  } else if (type > 0.5) {                                      // flickering now and then
+    if (h11(floor(t * 1.4 + r * 40.0) * 1.37 + r * 913.0) > 0.62)
+      lvl = step(0.45, h11(floor(t * 19.0) + r * 51.0)) * 0.92 + 0.08;
+  }
+  // the monster makes nearby lights stutter
+  float k = uMonster.w * (1.0 - smoothstep(3.5, 13.0, distance(lp, uMonster.xz)));
+  if (k > 0.001 && h11(floor(t * 21.0) + r * 97.0) < k * 0.75) lvl *= 0.04;
+  // scripted outages ("lights going out one by one")
+  if (uOutage.w > 0.5 && distance(lp, uOutage.xy) < uOutage.z) lvl = 0.0;
+  return lvl * uLightMul;
+}
+`;
+const GLSL_FRAG_COMMON = /* glsl */`
+uniform vec3 uFlashPos;
+uniform vec3 uFlashDir;
+uniform float uFlash;
+uniform vec3 uFlashColor;
+uniform vec3 uFogColor;
+uniform float uFogDensity;
+uniform sampler2D uNoise;
+vec3 flashlight(vec3 wp, vec3 n) {
+  if (uFlash <= 0.001) return vec3(0.0);
+  vec3 tf = wp - uFlashPos;
+  float d2 = dot(tf, tf), d = sqrt(d2);
+  vec3 dir = tf / d;
+  float c = dot(dir, uFlashDir);
+  float spot = smoothstep(0.82, 0.955, c) * 0.75 + smoothstep(0.955, 0.992, c) * 0.55;
+  spot *= 0.9 + 0.1 * sin(c * 160.0);                          // faint reflector rings
+  float ndl = max(dot(n, -dir), 0.0) * 0.8 + 0.2;
+  return uFlashColor * (spot * ndl * uFlash / (1.0 + 0.045 * d2));
+}
+vec3 applyFog(vec3 col, float depth, float localLight) {
+  float f = 1.0 - exp(-uFogDensity * uFogDensity * depth * depth);
+  vec3 fogc = uFogColor * (0.18 + 0.82 * clamp(localLight, 0.0, 1.3));
+  return mix(col, fogc, f);
+}
+vec3 toDisplay(vec3 c) { return pow(max(c, 0.0), vec3(1.0 / 2.2)); }
+`;
+
+const WORLD_VERT = /* glsl */`
+${GLSL_COMMON}
+attribute vec4 aLW;   // weights of the 4 strongest fixtures
+attribute vec4 aLS;   // their seeds (type + random)
+attribute vec4 aLX;   // their x positions
+attribute vec4 aLZ;   // their z positions
+attribute vec2 aMisc; // x = static light from the remaining fixtures, y = ambient occlusion
+uniform vec2 uUvScale;
+uniform vec2 uUvOffset;
+varying vec2 vUv;
+varying vec3 vWorld;
+varying vec3 vNormal;
+varying float vLight;
+varying float vAO;
+varying float vDepth;
+void main() {
+  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vWorld = wp.xyz;
+  vNormal = normal;
+  vUv = (uv + uUvOffset) * uUvScale;
+  float L = aMisc.x * uLightMul;
+  L += aLW.x * lightLevel(aLS.x, vec2(aLX.x, aLZ.x));
+  L += aLW.y * lightLevel(aLS.y, vec2(aLX.y, aLZ.y));
+  L += aLW.z * lightLevel(aLS.z, vec2(aLX.z, aLZ.z));
+  L += aLW.w * lightLevel(aLS.w, vec2(aLX.w, aLZ.w));
+  vLight = L;
+  vAO = aMisc.y;
+  vec4 mv = viewMatrix * wp;
+  vDepth = -mv.z;
+  gl_Position = projectionMatrix * mv;
+}
+`;
+
+const WORLD_FRAG = /* glsl */`
+${GLSL_FRAG_COMMON}
+uniform sampler2D map;
+uniform vec3 uLightColor;
+uniform vec3 uAmbient;
+uniform float uSurf;      // 0 wall, 1 floor, 2 ceiling
+uniform float uTime;
+varying vec2 vUv;
+varying vec3 vWorld;
+varying vec3 vNormal;
+varying float vLight;
+varying float vAO;
+varying float vDepth;
+void main() {
+  vec3 albedo = texture2D(map, vUv).rgb;
+  vec3 n = normalize(vNormal);
+  if (uSurf < 0.5) {
+    // walls: vertical grime streaks, dirty skirting band, water damage near the top
+    float along = dot(vWorld.xz, vec2(abs(n.z), abs(n.x)));
+    float streak = texture2D(uNoise, vec2(along * 0.11, vWorld.y * 0.018)).r;
+    float blotch = texture2D(uNoise, vec2(along * 0.035, vWorld.y * 0.05 + 0.3)).g;
+    float grime = smoothstep(0.55, 0.8, streak) * 0.35 + smoothstep(0.6, 0.75, blotch) * 0.25;
+    grime += (1.0 - smoothstep(0.0, 0.35, vWorld.y)) * 0.25;
+    grime += smoothstep(2.3, 2.9, vWorld.y) * smoothstep(0.5, 0.7, blotch) * 0.4;
+    albedo *= 1.0 - grime * 0.55;
+    albedo = mix(albedo, albedo * vec3(0.85, 0.85, 0.7), grime);
+  } else if (uSurf < 1.5) {
+    // floor: big damp patches on the carpet
+    float wet = texture2D(uNoise, vWorld.xz * 0.028).r;
+    float w = smoothstep(0.55, 0.72, wet);
+    float edge = smoothstep(0.5, 0.56, wet) - smoothstep(0.56, 0.64, wet);
+    albedo *= 1.0 - w * 0.45;
+    albedo = mix(albedo, albedo * vec3(0.8, 0.85, 0.7), w);
+    albedo *= 1.0 - edge * 0.25;
+    albedo *= 0.9 + 0.2 * texture2D(uNoise, vWorld.xz * 0.21).g;
+  } else {
+    // ceiling: brown water stains
+    float s = texture2D(uNoise, vWorld.xz * 0.045 + 0.5).r;
+    float st = smoothstep(0.6, 0.7, s);
+    float ring = smoothstep(0.58, 0.61, s) - smoothstep(0.61, 0.66, s);
+    albedo = mix(albedo, albedo * vec3(0.78, 0.66, 0.45), st * 0.7 + ring * 0.6);
+  }
+  vec3 light = uLightColor * vLight * vAO + uAmbient * vAO + flashlight(vWorld, n);
+  vec3 col = albedo * light;
+  col = applyFog(col, vDepth, vLight);
+  gl_FragColor = vec4(toDisplay(col), 1.0);
+}
+`;
+
+const PANEL_VERT = /* glsl */`
+${GLSL_COMMON}
+attribute float aSeed;
+attribute vec2 aLPos;
+varying vec2 vUv;
+varying vec3 vWorld;
+varying float vLvl;
+varying float vDepth;
+void main() {
+  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vWorld = wp.xyz;
+  vUv = uv;
+  vLvl = lightLevel(aSeed, aLPos);
+  vec4 mv = viewMatrix * wp;
+  vDepth = -mv.z;
+  gl_Position = projectionMatrix * mv;
+}
+`;
+const PANEL_FRAG = /* glsl */`
+${GLSL_FRAG_COMMON}
+uniform sampler2D map;
+uniform vec3 uLightColor;
+varying vec2 vUv;
+varying vec3 vWorld;
+varying float vLvl;
+varying float vDepth;
+void main() {
+  vec3 tex = texture2D(map, vUv).rgb;
+  vec3 off = tex * vec3(0.16, 0.15, 0.13) * (0.25 + flashlight(vWorld, vec3(0.0, -1.0, 0.0)));
+  vec3 on = tex * (uLightColor * 0.35 + 0.75) * 1.6;
+  vec3 col = mix(off, on, clamp(vLvl, 0.0, 1.0));
+  col = applyFog(col, vDepth * 0.85, vLvl);
+  gl_FragColor = vec4(toDisplay(col), 1.0);
+}
+`;
+
+function worldMaterial(map, surf, uvScale, uvOffset = [0, 0]) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      ...U,
+      map: { value: map },
+      uSurf: { value: surf },
+      uUvScale: { value: new THREE.Vector2(uvScale, uvScale) },
+      uUvOffset: { value: new THREE.Vector2(uvOffset[0], uvOffset[1]) },
+    },
+    vertexShader: WORLD_VERT,
+    fragmentShader: WORLD_FRAG,
+  });
+}
+const MAT = {
+  wall: worldMaterial(TEX.wall[0], 0, 1 / 1.2),
+  floor: worldMaterial(TEX.carpet[0], 1, 1 / 2.4),
+  ceil: worldMaterial(TEX.ceil[0], 2, 1 / 1.2, [-0.3, 0]),
+  panel: new THREE.ShaderMaterial({
+    uniforms: { ...U, map: { value: TEX.panel } },
+    vertexShader: PANEL_VERT, fragmentShader: PANEL_FRAG,
+  }),
+};
+
+// CPU mirror of lightLevel() (used for audio, AI visibility and item lighting)
+const fract = (x) => x - Math.floor(x);
+function h11(p) { p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
+function lightLevelCPU(s, lx, lz) {
+  const type = Math.floor(s), r = s - type, t = U.uTime.value;
+  let lvl = 1;
+  if (type > 2.5) return 0;
+  if (type > 1.5) {
+    const on = h11(Math.floor(t * 2.5 + r * 50) + r * 311) >= 0.5 ? 1 : 0;
+    lvl = on * (h11(Math.floor(t * 26) + r * 77) >= 0.3 ? 1 : 0) * 0.8;
+  } else if (type > 0.5) {
+    if (h11(Math.floor(t * 1.4 + r * 40) * 1.37 + r * 913) > 0.62) lvl = (h11(Math.floor(t * 19) + r * 51) >= 0.45 ? 1 : 0) * 0.92 + 0.08;
+  }
+  const m = U.uMonster.value;
+  const md = Math.hypot(lx - m.x, lz - m.z);
+  const k = m.w * (1 - smoothstep(3.5, 13, md));
+  if (k > 0.001 && h11(Math.floor(t * 21) + r * 97) < k * 0.75) lvl *= 0.04;
+  const o = U.uOutage.value;
+  if (o.w > 0.5 && Math.hypot(lx - o.x, lz - o.y) < o.z) lvl = 0;
+  return lvl * U.uLightMul.value;
+}
+function smoothstep(a, b, x) { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
+
+// ============================================================================
+//  LIGHT BAKING (per vertex, with 2D wall occlusion)
+// ============================================================================
+const LIGHT_R = 6.5, LIGHT_R2 = LIGHT_R * LIGHT_R, LIGHT_I = 1.25, LIGHT_A = 0.22;
+const LIGHT_Y = WALL_H - 0.03;
+const SURF_WALL = 0, SURF_FLOOR = 1, SURF_CEIL = 2;
+const _cand = [];  // scratch: candidate lights for a cell neighbourhood
+// Gather the fixtures that could light anything in cell (cx,cz)
+function gatherLights(cx, cz) {
+  _cand.length = 0;
+  const reach = 3;
+  for (let dz = -reach; dz <= reach; dz++) for (let dx = -reach; dx <= reach; dx++) {
+    const lx = cx + dx, lz = cz + dz;
+    const t = world.lightType(lx, lz);
+    if (t < 0 || t === LIGHT.BROKEN) continue;
+    _cand.push((lx + 0.5) * CELL, (lz + 0.5) * CELL, world.lightSeed(lx, lz));
+  }
+  return _cand;
+}
+const _top = new Float32Array(16);
+// Compute light attributes for one vertex; writes into builder arrays.
+function bakeVertex(b, x, y, z, nx, ny, nz, surf, sx, sz, ao) {
+  // (sx,sz) = occlusion sample point, already nudged off the surface
+  const cand = b.cand;
+  let rest = 0, nTop = 0;
+  _top.fill(0);
+  for (let i = 0; i < cand.length; i += 3) {
+    const lx = cand[i], lz = cand[i + 1];
+    const ddx = lx - x, ddy = LIGHT_Y - y, ddz = lz - z;
+    const d2 = ddx * ddx + ddy * ddy + ddz * ddz;
+    if (d2 > LIGHT_R2) continue;
+    const d = Math.sqrt(d2);
+    let ndl;
+    if (surf === SURF_CEIL) ndl = 0.32 + 0.5 * Math.exp(-d2 * 2.2);
+    else { ndl = (ddx * nx + ddy * ny + ddz * nz) / d; if (ndl <= 0) continue; ndl = 0.15 + 0.85 * ndl; }
+    let win = 1 - d2 / LIGHT_R2; win *= win;
+    const w = (LIGHT_I * win * ndl) / (1 + LIGHT_A * d2);
+    if (w < 0.003) continue;
+    if (!world.segmentClear(lx, lz, sx, sz)) continue;
+    // keep the 4 strongest in _top (w, seed, x, z), rest goes to static term
+    if (nTop < 4) { const o = nTop * 4; _top[o] = w; _top[o + 1] = cand[i + 2]; _top[o + 2] = lx; _top[o + 3] = lz; nTop++; }
+    else {
+      let mi = 0; for (let k = 1; k < 4; k++) if (_top[k * 4] < _top[mi * 4]) mi = k;
+      if (w > _top[mi * 4]) { rest += _top[mi * 4]; const o = mi * 4; _top[o] = w; _top[o + 1] = cand[i + 2]; _top[o + 2] = lx; _top[o + 3] = lz; }
+      else rest += w;
+    }
+  }
+  b.lw.push(_top[0], _top[4], _top[8], _top[12]);
+  b.ls.push(_top[1], _top[5], _top[9], _top[13]);
+  b.lx.push(_top[2], _top[6], _top[10], _top[14]);
+  b.lz.push(_top[3], _top[7], _top[11], _top[15]);
+  b.misc.push(rest, ao);
+}
+
+// ============================================================================
 //  CHUNK MESHES
 // ============================================================================
 class GeoBuilder {
-  constructor() { this.p = []; this.n = []; this.uv = []; this.ix = []; this.vc = 0; }
+  constructor(bake) {
+    this.p = []; this.n = []; this.uv = []; this.ix = []; this.vc = 0;
+    this.bake = bake;
+    if (bake) { this.lw = []; this.ls = []; this.lx = []; this.lz = []; this.misc = []; this.cand = null; }
+    this.surf = 0; this.cell = null;   // cell context for floor/ceiling vertices: [x0, z0, aoFn]
+  }
   // Grid-subdivided quad: corner (ox,oy,oz), edge vectors u and v, normal n, su x sv segments.
-  // UVs are world-space: uvMode 0 = (x,z) floor/ceiling, 1 = (along-wall, y).
+  // uvMode 0 = world (x,z), 1 = world (along-wall, y), 2 = local 0..1
   quad(ox, oy, oz, ux, uy, uz, vx, vy, vz, nx, ny, nz, su, sv, uvMode) {
     const base = this.vc;
     for (let j = 0; j <= sv; j++) for (let i = 0; i <= su; i++) {
-      const a = i / su, b = j / sv;
-      const x = ox + ux * a + vx * b, y = oy + uy * a + vy * b, z = oz + uz * a + vz * b;
+      const a = i / su, bb = j / sv;
+      const x = ox + ux * a + vx * bb, y = oy + uy * a + vy * bb, z = oz + uz * a + vz * bb;
       this.p.push(x, y, z); this.n.push(nx, ny, nz);
       if (uvMode === 0) this.uv.push(x, z);
-      else this.uv.push(Math.abs(nx) > 0.5 ? z : x, y);
+      else if (uvMode === 1) this.uv.push(Math.abs(nx) > 0.5 ? z : x, y);
+      else this.uv.push(a, bb);
+      if (this.bake) {
+        let sx, sz, ao;
+        if (this.surf === SURF_WALL) {
+          sx = x + nx * 0.14; sz = z + nz * 0.14;
+          ao = (0.62 + 0.38 * smoothstep(0, 0.55, y)) * (0.86 + 0.14 * smoothstep(0, 0.4, WALL_H - y));
+        } else {
+          const c = this.cell;
+          const ccx = c[0] + CELL / 2, ccz = c[1] + CELL / 2;
+          sx = x + (ccx - x) * 0.06; sz = z + (ccz - z) * 0.06;
+          ao = cellAO(c, x, z, this.surf);
+        }
+        bakeVertex(this, x, y, z, nx, ny, nz, this.surf, sx, sz, ao);
+      }
       this.vc++;
     }
     const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
@@ -343,19 +813,49 @@ class GeoBuilder {
     g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(this.n, 3));
     g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));
+    if (this.bake) {
+      g.setAttribute('aLW', new THREE.Float32BufferAttribute(this.lw, 4));
+      g.setAttribute('aLS', new THREE.Float32BufferAttribute(this.ls, 4));
+      g.setAttribute('aLX', new THREE.Float32BufferAttribute(this.lx, 4));
+      g.setAttribute('aLZ', new THREE.Float32BufferAttribute(this.lz, 4));
+      g.setAttribute('aMisc', new THREE.Float32BufferAttribute(this.misc, 2));
+    }
+    if (this.extra) for (const k in this.extra) g.setAttribute(k, new THREE.Float32BufferAttribute(this.extra[k].data, this.extra[k].size));
     g.setIndex(this.vc > 65535 ? new THREE.Uint32BufferAttribute(this.ix, 1) : new THREE.Uint16BufferAttribute(this.ix, 1));
     g.computeBoundingSphere();
     return g;
   }
 }
+// Ambient occlusion for floor/ceiling vertices: darker next to walls/pillars of the owning cell
+function cellAO(c, x, z, surf) {
+  const cx = c[2], cz = c[3], x0 = c[0], z0 = c[1];
+  const u = x - x0, v = z - z0, h = WALL_T / 2, R = surf === SURF_FLOOR ? 0.7 : 0.5, lo = surf === SURF_FLOOR ? 0.45 : 0.62;
+  let ao = 1;
+  if (c[4] & 1) ao *= lo + (1 - lo) * smoothstep(0, R, u - h);
+  if (c[4] & 2) ao *= lo + (1 - lo) * smoothstep(0, R, CELL - u - h);
+  if (c[4] & 4) ao *= lo + (1 - lo) * smoothstep(0, R, v - h);
+  if (c[4] & 8) ao *= lo + (1 - lo) * smoothstep(0, R, CELL - v - h);
+  if (c[4] & 16) {   // pillars at corners
+    for (let k = 0; k < 4; k++) {
+      if (!(c[4] & (32 << k))) continue;
+      const px = (k & 1) ? CELL : 0, pz = (k & 2) ? CELL : 0;
+      const dd = Math.max(Math.abs(u - px), Math.abs(v - pz)) - PILLAR / 2;
+      ao *= lo + (1 - lo) * smoothstep(0, R, dd);
+    }
+  }
+  return ao;
+}
 
 const SEG = 4;   // floor/ceiling subdivisions per cell
-function buildChunkGeometry(kx, kz) {
+// Generator: yields regularly so chunk building can be spread across frames.
+function* buildChunkGeometry(kx, kz) {
   const N = CHUNK, H = WALL_H, T = WALL_T, h = T / 2;
-  const walls = new GeoBuilder(), floor = new GeoBuilder(), ceil = new GeoBuilder(), panels = new GeoBuilder();
+  const walls = new GeoBuilder(true), floor = new GeoBuilder(true), ceil = new GeoBuilder(true), panels = new GeoBuilder(false);
+  panels.extra = { aSeed: { size: 1, data: [] }, aLPos: { size: 2, data: [] } };
+  walls.surf = SURF_WALL; floor.surf = SURF_FLOOR; ceil.surf = SURF_CEIL;
   const gx0 = kx * N, gz0 = kz * N;
-  const wsegV = 5;   // vertical subdivisions on walls
-  // --- walls on vertical lines (x = const), owned edges: lx in [0,N) ---
+  const wsegV = 5;
+  // --- walls on vertical lines (x = const) ---
   for (let lx = 0; lx < N; lx++) {
     const gx = gx0 + lx, X = gx * CELL;
     let lz = 0;
@@ -363,6 +863,8 @@ function buildChunkGeometry(kx, kz) {
       if (!world.wallW(gx, gz0 + lz)) { lz++; continue; }
       const a = lz; while (lz < N && world.wallW(gx, gz0 + lz)) lz++;
       const gzA = gz0 + a, gzB = gz0 + lz - 1;
+      walls.cand = gatherLights(gx, Math.floor((gzA + gzB) / 2)).slice();
+      if (gzB - gzA > 2) { mergeCand(walls.cand, gatherLights(gx, gzA)); mergeCand(walls.cand, gatherLights(gx, gzB)); }
       const contA = world.wallW(gx, gzA - 1), contB = world.wallW(gx, gzB + 1);
       const zs = gzA * CELL - (contA ? 0 : h), ze = (gzB + 1) * CELL + (contB ? 0 : h);
       const su = Math.max(1, Math.round((ze - zs) / 0.6));
@@ -370,9 +872,10 @@ function buildChunkGeometry(kx, kz) {
       walls.quad(X + h, 0, zs, 0, 0, ze - zs, 0, H, 0, 1, 0, 0, su, wsegV, 1);
       if (!contA && !world.wallN(gx, gzA) && !world.wallN(gx - 1, gzA)) walls.quad(X - h, 0, zs, T, 0, 0, 0, H, 0, 0, 0, -1, 1, wsegV, 1);
       if (!contB && !world.wallN(gx, gzB + 1) && !world.wallN(gx - 1, gzB + 1)) walls.quad(X - h, 0, ze, T, 0, 0, 0, H, 0, 0, 0, 1, 1, wsegV, 1);
+      yield;
     }
   }
-  // --- walls on horizontal lines (z = const), owned edges: lz in [0,N) ---
+  // --- walls on horizontal lines (z = const) ---
   for (let lz = 0; lz < N; lz++) {
     const gz = gz0 + lz, Z = gz * CELL;
     let lx = 0;
@@ -380,6 +883,8 @@ function buildChunkGeometry(kx, kz) {
       if (!world.wallN(gx0 + lx, gz)) { lx++; continue; }
       const a = lx; while (lx < N && world.wallN(gx0 + lx, gz)) lx++;
       const gxA = gx0 + a, gxB = gx0 + lx - 1;
+      walls.cand = gatherLights(Math.floor((gxA + gxB) / 2), gz).slice();
+      if (gxB - gxA > 2) { mergeCand(walls.cand, gatherLights(gxA, gz)); mergeCand(walls.cand, gatherLights(gxB, gz)); }
       const contA = world.wallN(gxA - 1, gz), contB = world.wallN(gxB + 1, gz);
       const xs = gxA * CELL - (contA ? 0 : h), xe = (gxB + 1) * CELL + (contB ? 0 : h);
       const su = Math.max(1, Math.round((xe - xs) / 0.6));
@@ -387,42 +892,52 @@ function buildChunkGeometry(kx, kz) {
       walls.quad(xs, 0, Z + h, xe - xs, 0, 0, 0, H, 0, 0, 0, 1, su, wsegV, 1);
       if (!contA && !world.wallW(gxA, gz) && !world.wallW(gxA, gz - 1)) walls.quad(xs, 0, Z - h, 0, 0, T, 0, H, 0, -1, 0, 0, 1, wsegV, 1);
       if (!contB && !world.wallW(gxB + 1, gz) && !world.wallW(gxB + 1, gz - 1)) walls.quad(xe, 0, Z - h, 0, 0, T, 0, H, 0, 1, 0, 0, 1, wsegV, 1);
+      yield;
     }
   }
-  // --- pillars, floor, ceiling, light panels ---
+  // --- pillars, floor, ceiling, light panels (per cell) ---
   const ph = PILLAR / 2;
   for (let lz = 0; lz < N; lz++) for (let lx = 0; lx < N; lx++) {
     const cx = gx0 + lx, cz = gz0 + lz, x0 = cx * CELL, z0 = cz * CELL;
+    const cand = gatherLights(cx, cz).slice();
+    walls.cand = floor.cand = ceil.cand = cand;
     if (world.pillar(cx, cz)) {
       walls.quad(x0 - ph, 0, z0 - ph, PILLAR, 0, 0, 0, H, 0, 0, 0, -1, 1, wsegV, 1);
       walls.quad(x0 - ph, 0, z0 + ph, PILLAR, 0, 0, 0, H, 0, 0, 0, 1, 1, wsegV, 1);
       walls.quad(x0 - ph, 0, z0 - ph, 0, 0, PILLAR, 0, H, 0, -1, 0, 0, 1, wsegV, 1);
       walls.quad(x0 + ph, 0, z0 - ph, 0, 0, PILLAR, 0, H, 0, 1, 0, 0, 1, wsegV, 1);
     }
+    let flags = (world.wallW(cx, cz) ? 1 : 0) | (world.wallW(cx + 1, cz) ? 2 : 0) | (world.wallN(cx, cz) ? 4 : 0) | (world.wallN(cx, cz + 1) ? 8 : 0);
+    for (let k = 0; k < 4; k++) if (world.pillar(cx + (k & 1), cz + ((k & 2) >> 1))) flags |= 16 | (32 << k);
+    const cell = [x0, z0, cx, cz, flags];
+    floor.cell = ceil.cell = cell;
     floor.quad(x0, 0, z0, CELL, 0, 0, 0, 0, CELL, 0, 1, 0, SEG, SEG, 0);
     ceil.quad(x0, H, z0, CELL, 0, 0, 0, 0, CELL, 0, -1, 0, SEG, SEG, 0);
-    if (world.lightType(cx, cz) >= 0) {
-      const mx = x0 + CELL / 2, mz = z0 + CELL / 2;
-      panels.quad(mx - 0.3, H - 0.012, mz - 0.6, 0.6, 0, 0, 0, 0, 1.2, 0, -1, 0, 1, 1, 0);
+    const lt = world.lightType(cx, cz);
+    if (lt >= 0) {
+      const mx = x0 + CELL / 2, mz = z0 + CELL / 2, seed = world.lightSeed(cx, cz);
+      panels.quad(mx - 0.3, H - 0.012, mz - 0.6, 0.6, 0, 0, 0, 0, 1.2, 0, -1, 0, 1, 1, 2);
+      for (let v = 0; v < 4; v++) { panels.extra.aSeed.data.push(seed); panels.extra.aLPos.data.push(mx, mz); }
     }
+    if ((lx & 1) === 1) yield;
   }
   return { walls: walls.build(), floor: floor.build(), ceil: ceil.build(), panels: panels.build() };
 }
-
-const MAT = {
-  wall: new THREE.MeshLambertMaterial({ color: 0xc9b458 }),
-  floor: new THREE.MeshLambertMaterial({ color: 0x6b5a2e }),
-  ceil: new THREE.MeshLambertMaterial({ color: 0xd8d2b0 }),
-  panel: new THREE.MeshBasicMaterial({ color: 0xfff8e0 }),
-};
-scene.add(new THREE.HemisphereLight(0xfff2c0, 0x403010, 0.9));
+function mergeCand(a, b) {
+  const seen = new Set();
+  for (let i = 0; i < a.length; i += 3) seen.add(a[i] * 7919 + a[i + 1]);
+  for (let i = 0; i < b.length; i += 3) { const k = b[i] * 7919 + b[i + 1]; if (!seen.has(k)) { seen.add(k); a.push(b[i], b[i + 1], b[i + 2]); } }
+  return a;
+}
 
 const LOAD_RADIUS = 2;
 const chunkMeshes = new Map();
-function buildChunk(kx, kz) {
-  const g = buildChunkGeometry(kx, kz);
+let building = null;   // { kx, kz, gen }
+function finishChunk(kx, kz, g) {
   const group = new THREE.Group();
-  group.add(new THREE.Mesh(g.walls, MAT.wall), new THREE.Mesh(g.floor, MAT.floor), new THREE.Mesh(g.ceil, MAT.ceil), new THREE.Mesh(g.panels, MAT.panel));
+  const meshes = [new THREE.Mesh(g.walls, MAT.wall), new THREE.Mesh(g.floor, MAT.floor), new THREE.Mesh(g.ceil, MAT.ceil), new THREE.Mesh(g.panels, MAT.panel)];
+  for (const m of meshes) { m.matrixAutoUpdate = false; group.add(m); }
+  group.matrixAutoUpdate = false;
   scene.add(group);
   chunkMeshes.set(ckey(kx, kz), { kx, kz, group });
 }
@@ -430,25 +945,30 @@ function disposeChunk(c) {
   scene.remove(c.group);
   c.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
 }
-function clearChunks() { for (const c of chunkMeshes.values()) disposeChunk(c); chunkMeshes.clear(); }
+function clearChunks() { for (const c of chunkMeshes.values()) disposeChunk(c); chunkMeshes.clear(); building = null; }
 const _needed = [];
-function updateChunks(px, pz, force = false) {
+function updateChunks(px, pz, force = false, budgetMs = 3) {
   const pkx = fdiv(px, CHUNK_SIZE), pkz = fdiv(pz, CHUNK_SIZE);
   for (const [key, c] of chunkMeshes) {
     if (Math.max(Math.abs(c.kx - pkx), Math.abs(c.kz - pkz)) > LOAD_RADIUS + 1) { disposeChunk(c); chunkMeshes.delete(key); }
   }
-  _needed.length = 0;
-  for (let dz = -LOAD_RADIUS; dz <= LOAD_RADIUS; dz++) for (let dx = -LOAD_RADIUS; dx <= LOAD_RADIUS; dx++) {
-    if (!chunkMeshes.has(ckey(pkx + dx, pkz + dz))) _needed.push([pkx + dx, pkz + dz, dx * dx + dz * dz]);
+  const t0 = performance.now();
+  for (;;) {
+    if (!building) {
+      _needed.length = 0;
+      for (let dz = -LOAD_RADIUS; dz <= LOAD_RADIUS; dz++) for (let dx = -LOAD_RADIUS; dx <= LOAD_RADIUS; dx++) {
+        if (!chunkMeshes.has(ckey(pkx + dx, pkz + dz))) _needed.push([pkx + dx, pkz + dz, dx * dx + dz * dz]);
+      }
+      if (!_needed.length) return;
+      _needed.sort((a, b) => a[2] - b[2]);
+      const [kx, kz] = _needed[0];
+      building = { kx, kz, gen: buildChunkGeometry(kx, kz) };
+    }
+    const r = building.gen.next();
+    if (r.done) { finishChunk(building.kx, building.kz, r.value); building = null; }
+    if (!force && performance.now() - t0 > budgetMs) return;
   }
-  if (!_needed.length) return;
-  _needed.sort((a, b) => a[2] - b[2]);
-  let budget = force ? Infinity : 1;
-  for (const [kx, kz] of _needed) { if (budget-- <= 0) break; buildChunk(kx, kz); }
 }
-
-const playerLight = new THREE.PointLight(0xfff0c0, 2.5, 14, 1.2);
-scene.add(playerLight);
 
 // ============================================================================
 //  INPUT
@@ -586,8 +1106,8 @@ function frame() {
   const dt = Math.min(clock.getDelta(), 0.05);
   if (game.state === 'playing') {
     game.time += dt;
+    U.uTime.value = (U.uTime.value + dt) % 1000;
     updatePlayer(dt);
-    playerLight.position.set(player.pos.x, WALL_H - 0.3, player.pos.z);
     updateChunks(player.pos.x, player.pos.z);
   }
   renderer.render(scene, camera);
