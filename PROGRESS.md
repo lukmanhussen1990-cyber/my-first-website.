@@ -226,3 +226,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
 - **[08:31 UTC] Extra — Automatic quality fallback.** The first 5 s of play are timed; if the machine averages under
   45 FPS the graphics quality drops one step (once per session, saved, with an on-screen note). Choosing a quality in
   Settings disables the auto-adjust.
+- **[08:31 UTC] Extra — Robustness.** If WebGL can't start, a clear "NO SIGNAL" message explains what to do instead
+  of a blank page; if the GPU context is lost (phones backgrounding the tab), the run is paused and saved and a
+  "SIGNAL LOST — Reload" screen appears (verified with WEBGL_lose_context).

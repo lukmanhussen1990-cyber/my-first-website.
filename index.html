@@ -247,7 +247,18 @@ function mulberry32(a) {
 //  RENDERER
 // ============================================================================
 const container = $('game');
-const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+function fatal(title, text) {
+  for (const el of document.querySelectorAll('.screen')) el.classList.add('hidden');
+  const e = $('loadError'); e.querySelector('h1').textContent = title; e.querySelector('p').innerHTML = text; e.classList.remove('hidden');
+}
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' }); }
+catch (err) { fatal('NO SIGNAL', 'Your browser could not start WebGL 3D graphics. Try another browser (Chrome, Edge, Firefox, Safari) or enable hardware acceleration.'); throw err; }
+renderer.domElement.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();
+  if (game.state === 'playing') pauseGame();
+  fatal('SIGNAL LOST', 'The graphics card reset (this can happen on phones in the background). Your progress was saved. <br><br><button class="btn" onclick="location.reload()">RELOAD</button>');
+});
 renderer.info.autoReset = false;
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
