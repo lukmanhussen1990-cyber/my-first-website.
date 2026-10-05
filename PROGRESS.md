@@ -95,3 +95,10 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   positions, collected batteries, flashlight charge). The run autosaves every 10 s, on pause, on quit and on page
   unload; "CONTINUE (LEVEL x, n/5, m:ss)" rebuilds the identical world from the seed. Dying or winning clears the run.
   Settings are saved separately. Tested: quit -> reload page -> continue restored seed/notes/time; win stored best time.
+- **[07:18 UTC] Feature 12 — Phone support: DONE.** Touch mode is detected (coarse pointer, or switches on at the first
+  real touch). A floating joystick appears wherever the left thumb lands (analog movement), dragging anywhere on the
+  right side looks around, and round buttons give RUN (hold), CROUCH (toggle), LIGHT (toggle) and pause. No pointer
+  lock on touch (tries fullscreen instead), tap the note to put it away, battery gauge moves to the top so it doesn't
+  clash with the buttons, Low graphics by default. Tested in an emulated 844x390 phone with multi-touch CDP events.
+
+## All 12 list features are complete (at ~55 min). Remaining time goes to the "if time is left" list.

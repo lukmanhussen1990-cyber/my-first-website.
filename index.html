@@ -35,6 +35,21 @@
   #noteOverlay .paper { width: min(78vw, 420px); padding: 26px 30px 18px; background: linear-gradient(170deg, #ece4c6, #d9cfa8); color: #2b2a3a; box-shadow: 0 10px 40px rgba(0,0,0,0.8); font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; font-size: clamp(15px, 2.2vw, 19px); line-height: 1.55; }
   #noteNum { font-family: "Courier New", monospace; font-size: 12px; letter-spacing: 0.25em; color: #6b5a3a; margin-bottom: 10px; }
   #noteOverlay .hint { font-family: "Courier New", monospace; font-size: 11px; letter-spacing: 0.2em; color: #7a6a4a; margin-top: 14px; text-align: right; }
+  #touchUI { position: fixed; inset: 0; z-index: 4; touch-action: none; }
+  #joyBase { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 2px solid rgba(240, 225, 160, 0.35); background: rgba(0, 0, 0, 0.25); display: none; pointer-events: none; }
+  #joyKnob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; background: rgba(240, 225, 160, 0.45); }
+  #lookHint { position: absolute; right: 22%; top: 30%; font-size: 11px; letter-spacing: 0.3em; opacity: 0.25; pointer-events: none; }
+  .tbtn { position: absolute; width: 74px; height: 74px; border-radius: 50%; border: 2px solid rgba(240, 225, 160, 0.45); background: rgba(30, 25, 8, 0.45); color: #f1e4a6; font: 12px "Courier New", monospace; letter-spacing: 0.1em; touch-action: none; }
+  .tbtn.on { background: rgba(200, 170, 70, 0.55); color: #111; }
+  .tbtn.small { width: 46px; height: 46px; font-size: 14px; }
+  #tRun { right: 22px; bottom: 120px; }
+  #tCrouch { right: 108px; bottom: 44px; }
+  #tLight { right: 22px; bottom: 30px; }
+  #tPause { right: 14px; top: max(12px, env(safe-area-inset-top)); }
+  #noteOverlay.show { pointer-events: auto; }
+  body.touch #battery { bottom: auto; top: max(22px, env(safe-area-inset-top)); right: 76px; }
+  body.touch #batteryPct { bottom: auto; top: 10px; }
+  body.touch #stamina { bottom: max(14px, env(safe-area-inset-bottom)); }
   #scareOverlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; z-index: 20; }
   #scareOverlay canvas { height: 118vh; max-width: none; }
   .btn:hover, .btn:focus-visible { background: rgba(90, 76, 28, 0.9); outline: none; border-color: #d9c46a; }
@@ -119,6 +134,15 @@
   </div>
   <button class="btn" id="btnHowtoBack">BACK</button>
 </div>
+<div id="touchUI" class="hidden">
+  <div id="joyBase"><div id="joyKnob"></div></div>
+  <div id="lookHint">DRAG TO LOOK</div>
+  <button class="tbtn" id="tRun">RUN</button>
+  <button class="tbtn" id="tCrouch">CROUCH</button>
+  <button class="tbtn" id="tLight">LIGHT</button>
+  <button class="tbtn small" id="tPause">II</button>
+</div>
+
 <div id="noteOverlay"><div class="paper"><div id="noteNum">PAGE 1 / 5</div><div id="noteText"></div><div class="hint">[E] put away</div></div></div>
 
 <div id="scareOverlay"></div>
@@ -2164,7 +2188,7 @@ function updateHUD(dt) {
   const b = flash.battery;
   hud.battery.style.width = (b * 100).toFixed(1) + '%';
   hud.battery.style.background = b < 0.2 ? '#c0472c' : b < 0.45 ? '#d6a43a' : '#cfd88a';
-  hud.batteryPct.textContent = Math.ceil(b * 100) + '%' + (flash.on ? '' : ' (F)');
+  hud.batteryPct.textContent = Math.ceil(b * 100) + '%' + (flash.on || isTouch ? '' : ' (F)');
   hud.batteryWrap.style.opacity = flash.on ? '1' : '0.6';
   hud.notes.textContent = game.notes + ' / ' + NOTES_NEEDED;
 }
@@ -2835,7 +2859,7 @@ function applyLevelLook(level) {
 //  INPUT
 // ============================================================================
 const keys = Object.create(null);
-const input = { lookX: 0, lookY: 0, sensitivity: 1.0, locked: false, touchRun: false };
+const input = { lookX: 0, lookY: 0, sensitivity: 1.0, locked: false, touchRun: false, joyX: 0, joyY: 0 };
 
 window.addEventListener('keydown', (e) => {
   keys[e.code] = true;
@@ -2865,6 +2889,7 @@ document.addEventListener('pointerlockchange', () => {
   if (was && !input.locked && game.state === 'playing') pauseGame();
 });
 function requestLock() {
+  if (isTouch) { tryFullscreen(); return; }
   try {
     const p = renderer.domElement.requestPointerLock && renderer.domElement.requestPointerLock();
     if (p && p.catch) p.catch(() => {});
@@ -2905,6 +2930,7 @@ function updatePlayer(dt) {
   if (keys.KeyS || keys.ArrowDown) mz -= 1;
   if (keys.KeyD || keys.ArrowRight) mx += 1;
   if (keys.KeyA || keys.ArrowLeft) mx -= 1;
+  mx += input.joyX; mz -= input.joyY;
   const len = Math.hypot(mx, mz);
   if (len > 1) { mx /= len; mz /= len; }
   player.moving = len > 0.05;
@@ -2966,6 +2992,73 @@ function onFootstep() {
   emitNoise(player.pos.x, player.pos.z, nz[kind]);
 }
 
+
+// ============================================================================
+//  TOUCH CONTROLS (phones / tablets)
+// ============================================================================
+const touchState = { joyId: null, lookId: null, jx: 0, jy: 0, lx: 0, ly: 0 };
+function tryFullscreen() {
+  const el = document.documentElement;
+  try { if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {}); } catch (e) { /* not allowed */ }
+}
+(function setupTouch() {
+  const ui = $('touchUI'), base = $('joyBase'), knob = $('joyKnob');
+  const R = 55;
+  ui.addEventListener('touchstart', (e) => {
+    if (e.cancelable) e.preventDefault();
+    for (const t of e.changedTouches) {
+      if (t.target.classList && t.target.classList.contains('tbtn')) continue;
+      if (t.clientX < window.innerWidth * 0.42 && touchState.joyId === null) {
+        touchState.joyId = t.identifier; touchState.jx = t.clientX; touchState.jy = t.clientY;
+        base.style.left = t.clientX + 'px'; base.style.top = t.clientY + 'px'; base.style.display = 'block';
+        knob.style.transform = 'translate(0px, 0px)';
+      } else if (touchState.lookId === null) {
+        touchState.lookId = t.identifier; touchState.lx = t.clientX; touchState.ly = t.clientY;
+      }
+    }
+  }, { passive: false });
+  ui.addEventListener('touchmove', (e) => {
+    if (e.cancelable) e.preventDefault();
+    for (const t of e.changedTouches) {
+      if (t.identifier === touchState.joyId) {
+        let dx = t.clientX - touchState.jx, dy = t.clientY - touchState.jy;
+        const d = Math.hypot(dx, dy);
+        if (d > R) { dx *= R / d; dy *= R / d; }
+        knob.style.transform = `translate(${dx}px, ${dy}px)`;
+        input.joyX = dx / R; input.joyY = dy / R;
+      } else if (t.identifier === touchState.lookId && game.state === 'playing') {
+        input.lookX += (t.clientX - touchState.lx) * 1.7;
+        input.lookY += (t.clientY - touchState.ly) * 1.7;
+        touchState.lx = t.clientX; touchState.ly = t.clientY;
+      }
+    }
+  }, { passive: false });
+  const end = (e) => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === touchState.joyId) { touchState.joyId = null; input.joyX = 0; input.joyY = 0; base.style.display = 'none'; }
+      if (t.identifier === touchState.lookId) touchState.lookId = null;
+    }
+  };
+  ui.addEventListener('touchend', end); ui.addEventListener('touchcancel', end);
+  const btn = (id, down, up) => {
+    const b = $(id);
+    b.addEventListener('touchstart', (e) => { if (e.cancelable) e.preventDefault(); e.stopPropagation(); down(b); }, { passive: false });
+    b.addEventListener('touchend', (e) => { if (e.cancelable) e.preventDefault(); e.stopPropagation(); if (up) up(b); }, { passive: false });
+    b.addEventListener('click', (e) => { if (e.cancelable) e.preventDefault(); });
+  };
+  btn('tRun', (b) => { input.touchRun = true; b.classList.add('on'); }, (b) => { input.touchRun = false; b.classList.remove('on'); });
+  btn('tCrouch', (b) => { player.crouchToggle = !player.crouchToggle; b.classList.toggle('on', player.crouchToggle); });
+  btn('tLight', (b) => { toggleFlashlight(); b.classList.toggle('on', flash.on); });
+  btn('tPause', () => pauseGame());
+  $('noteOverlay').addEventListener('click', () => hideNote());
+  // any real touch switches the game into touch mode (e.g. tablets with keyboards)
+  window.addEventListener('touchstart', () => { if (!isTouch) { isTouch = true; if (game.state === 'playing') $('touchUI').classList.remove('hidden'); } }, { passive: true });
+})();
+function syncTouchButtons() {
+  $('tCrouch').classList.toggle('on', player.crouchToggle);
+  $('tLight').classList.toggle('on', flash.on);
+}
+
 // ============================================================================
 //  GAME STATE
 // ============================================================================
@@ -2973,7 +3066,7 @@ const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0, notes: 0, level
 function notesCollected() { return game.notes; }
 function onChaseStart() {}
 function onNotePicked() {}
-function onPlayerCaught() { $('hud').classList.add('hidden'); hideNote(); clearBeacons(); }
+function onPlayerCaught() { $('hud').classList.add('hidden'); $('touchUI').classList.add('hidden'); hideNote(); clearBeacons(); }
 function onLevelComplete() {
   game.state = 'won';
   clearBeacons(); silenceMonster();
@@ -2996,6 +3089,8 @@ let settingsReturn = 'startScreen';
 function showScreen(id) {
   for (const s of SCREENS) $(s).classList.toggle('hidden', s !== id);
   $('hud').classList.toggle('hidden', id !== null);
+  $('touchUI').classList.toggle('hidden', id !== null || !isTouch);
+  document.body.classList.toggle('touch', isTouch);
   if (id === 'startScreen') refreshStartScreen();
   const first = id && $(id).querySelector('.btn:not(.hidden)');
   if (first && !isTouch) first.focus({ preventScroll: true });
@@ -3033,7 +3128,7 @@ function silenceMonster() {
 
 // ---------------- settings ----------------
 const SETTINGS_KEY = 'backrooms.settings.v1';
-const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0 && matchMedia('(pointer: coarse)').matches;
+let isTouch = matchMedia('(pointer: coarse)').matches || (('ontouchstart' in window) && !matchMedia('(pointer: fine)').matches);
 const settings = { sens: 1, invert: false, fov: 75, volume: 80, quality: isTouch ? 0 : 1, bob: true };
 function loadSettings() { try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch (e) { /* storage blocked */ } }
 function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* storage blocked */ } }
@@ -3226,6 +3321,7 @@ function frame() {
     autosaveT -= dt; if (autosaveT <= 0) { autosaveT = 10; snapshotRun(); }
     if (goal.reading > 0) { goal.reading -= dt; if (goal.reading <= 0) hideNote(); }
     updateHUD(dt);
+    if (isTouch) syncTouchButtons();
     updateChunks(player.pos.x, player.pos.z);
     updateAmbientAudio(dt);
     updateDanger(dt);
@@ -3259,7 +3355,7 @@ showScreen('startScreen');
 frame();
 
 // Debug / test hook
-window.__bk = { get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { get isTouch() { return isTouch; }, get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>
