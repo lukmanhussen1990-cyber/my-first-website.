@@ -203,6 +203,29 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                           ),
                         ),
                       ),
+                      // Accessibility: the canvas has no semantics of its own.
+                      Positioned.fromRect(
+                        rect: ctrl.layout!.gearRect.inflate(ctrl.layout!.u * 2),
+                        child: Semantics(
+                          button: true,
+                          label: 'Settings',
+                          onTap: _openSettings,
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: ctrl.layout!.scoreCenter.dy - ctrl.layout!.scoreFont / 2,
+                        height: ctrl.layout!.scoreFont,
+                        child: ListenableBuilder(
+                          listenable: ctrl,
+                          builder: (context, _) => Semantics(
+                            label: 'Score ${ctrl.game.score}, best ${ctrl.bestScore}',
+                            child: const SizedBox.expand(),
+                          ),
+                        ),
+                      ),
                       if (_showSettings)
                         SettingsPopup(
                           onClose: () => setState(() => _showSettings = false),

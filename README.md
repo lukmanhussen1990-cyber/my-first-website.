@@ -14,6 +14,15 @@ columns to blast them, chain clears into combos and chase your best score.
 > makers of the original game. All graphics, sounds and music in this
 > repository were created from scratch (drawn in code / synthesized).
 
+## Screenshots
+
+Captured on Android emulators from the signed release APK by the device
+test bot:
+
+| Splash | Studio | Logo | Game | Combo | Game over | Settings |
+|---|---|---|---|---|---|---|
+| <img src="docs/screens/1_splash_icon.jpg" width="110"> | <img src="docs/screens/2_splash_studio.jpg" width="110"> | <img src="docs/screens/3_splash_logo.jpg" width="110"> | <img src="docs/screens/4_game.jpg" width="110"> | <img src="docs/screens/5_combo.jpg" width="110"> | <img src="docs/screens/6_game_over.jpg" width="110"> | <img src="docs/screens/7_settings.jpg" width="110"> |
+
 ## Features
 
 - **Screens:** white icon splash → blue splash with a studio logo and the
