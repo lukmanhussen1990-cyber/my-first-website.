@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/animation.dart';
 import 'package:flutter/rendering.dart';
@@ -120,12 +121,17 @@ class GamePainter extends CustomPainter {
   // Board
   // ---------------------------------------------------------------------------
 
-  void _paintBoard(Canvas canvas, GameLayout l) {
+  /// Static part of the board (shadow, frame, inner panel, empty cells),
+  /// rasterized once per layout so each frame is a single image blit.
+  static ui.Image? _boardBase;
+  static Rect _boardBaseRegion = Rect.zero;
+  static Size _boardBaseSize = Size.zero;
+  static double _boardBaseDpr = 0;
+
+  void _paintBoardBase(Canvas canvas, GameLayout l) {
     final br = l.boardRect;
     final radius = Radius.circular(l.u * 1.6);
     final rr = RRect.fromRectAndRadius(br, radius);
-
-    // Drop shadow + frame.
     canvas.drawRRect(
       rr.shift(Offset(0, l.u * 0.9)),
       Paint()
@@ -145,6 +151,54 @@ class GamePainter extends CustomPainter {
           stops: const [0, 0.85, 1],
         ).createShader(br),
     );
+    final grid = l.gridRect;
+    canvas.drawRRect(RRect.fromRectAndRadius(grid, Radius.circular(l.u * 0.8)), Paint()..color = Palette.boardInner);
+    // Empty cells (subtle grid).
+    final cellPaint = Paint()..color = Palette.boardCell;
+    final inset = math.max(0.5, l.cell * 0.018);
+    for (var r = 0; r < Board.size; r++) {
+      for (var c = 0; c < Board.size; c++) {
+        canvas.drawRect(l.cellRect(r, c).deflate(inset), cellPaint);
+      }
+    }
+  }
+
+  void _drawBoardBase(Canvas canvas, GameLayout l) {
+    if (_boardBase == null || _boardBaseSize != l.size || _boardBaseDpr != dpr) {
+      final r0 = l.boardRect.inflate(l.u * 3);
+      final region = Rect.fromLTRB(
+        r0.left.floorToDouble(),
+        r0.top.floorToDouble(),
+        r0.right.ceilToDouble(),
+        r0.bottom.ceilToDouble(),
+      );
+      final recorder = ui.PictureRecorder();
+      final c = Canvas(recorder);
+      c.scale(dpr);
+      c.translate(-region.left, -region.top);
+      _paintBoardBase(c, l);
+      final picture = recorder.endRecording();
+      final img = picture.toImageSync((region.width * dpr).ceil(), (region.height * dpr).ceil());
+      picture.dispose();
+      _boardBase?.dispose();
+      _boardBase = img;
+      _boardBaseRegion = region;
+      _boardBaseSize = l.size;
+      _boardBaseDpr = dpr;
+    }
+    final img = _boardBase!;
+    canvas.drawImageRect(
+      img,
+      Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble()),
+      Rect.fromLTWH(_boardBaseRegion.left, _boardBaseRegion.top, img.width / dpr, img.height / dpr),
+      Paint()..filterQuality = FilterQuality.medium,
+    );
+  }
+
+  void _paintBoard(Canvas canvas, GameLayout l) {
+    final br = l.boardRect;
+    final rr = RRect.fromRectAndRadius(br, Radius.circular(l.u * 1.6));
+    _drawBoardBase(canvas, l);
     // Glow around the board when a combo lands.
     if (ctrl.comboFlash > 0) {
       final glowColor = Palette.blocks[ctrl.lastComboColor].glow;
@@ -158,16 +212,6 @@ class GamePainter extends CustomPainter {
       );
     }
     final grid = l.gridRect;
-    canvas.drawRRect(RRect.fromRectAndRadius(grid, Radius.circular(l.u * 0.8)), Paint()..color = Palette.boardInner);
-
-    // Empty cells (subtle grid).
-    final cellPaint = Paint()..color = Palette.boardCell;
-    final inset = math.max(0.5, l.cell * 0.018);
-    for (var r = 0; r < Board.size; r++) {
-      for (var c = 0; c < Board.size; c++) {
-        canvas.drawRect(l.cellRect(r, c).deflate(inset), cellPaint);
-      }
-    }
 
     final board = ctrl.game.board;
     final drag = ctrl.drag;
