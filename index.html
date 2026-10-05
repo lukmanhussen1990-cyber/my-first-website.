@@ -2513,9 +2513,10 @@ function jumpScareSound() {
 }
 
 // Procedural jump-scare face (2D canvas), flashed over the 3D lunge
-function makeScareFace() {
+function makeScareFace(variant = 0) {
+  // variant 0: gaping mouth, 1: impossibly wide grin, 2: eyeless with a third socket
   const W = 512, H = 640, c = makeCanvas(W, H), g = c.getContext('2d');
-  const rnd = mulberry32(666);
+  const rnd = mulberry32(666 + variant * 101);
   // gaunt elongated head
   g.save();
   g.beginPath();
@@ -2542,17 +2543,34 @@ function makeScareFace() {
     g.stroke();
   }
   // sunken black eye sockets with pinprick pupils
-  for (const s of [-1, 1]) {
-    const ex = W * (0.5 + s * 0.17), ey = H * 0.34;
+  const sockets = variant === 2 ? [[-1, 0.36], [1, 0.36], [0, 0.17]] : [[-1, 0.34], [1, 0.34]];
+  for (const [s, eyY] of sockets) {
+    const ex = W * (0.5 + s * 0.17), ey = H * eyY;
     const eg = g.createRadialGradient(ex, ey, 4, ex, ey, 92);
     eg.addColorStop(0, '#000'); eg.addColorStop(0.45, 'rgba(0,0,0,0.97)'); eg.addColorStop(0.75, 'rgba(10,5,3,0.5)'); eg.addColorStop(1, 'rgba(0,0,0,0)');
-    g.fillStyle = eg; g.beginPath(); g.ellipse(ex, ey, 92, 74, s * 0.25, 0, Math.PI * 2); g.fill();
+    g.fillStyle = eg; g.beginPath(); g.ellipse(ex, ey, s === 0 ? 60 : 92, s === 0 ? 50 : 74, s * 0.25, 0, Math.PI * 2); g.fill();
+    if (variant === 2) { g.fillStyle = 'rgba(60,0,0,0.6)'; g.fillRect(ex - 2, ey + 30, 4, 60 + rnd() * 80); continue; }   // weeping, no pupils
     const pg = g.createRadialGradient(ex + s * 6, ey + 4, 0, ex + s * 6, ey + 4, 16);
     pg.addColorStop(0, 'rgba(255,250,235,1)'); pg.addColorStop(0.25, 'rgba(255,240,210,0.8)'); pg.addColorStop(1, 'rgba(255,200,150,0)');
     g.fillStyle = pg; g.beginPath(); g.arc(ex + s * 6, ey + 4, 16, 0, Math.PI * 2); g.fill();
   }
+  if (variant === 1) {
+    // a grin far too wide for the face, packed with small teeth
+    const my = H * 0.64;
+    g.fillStyle = '#060101'; g.beginPath(); g.moveTo(W * 0.14, my - 30);
+    g.quadraticCurveTo(W * 0.5, my + 190, W * 0.86, my - 30); g.quadraticCurveTo(W * 0.5, my + 60, W * 0.14, my - 30); g.fill();
+    g.fillStyle = '#d8cfae';
+    for (let i = 0; i < 34; i++) {
+      const tt = i / 33, x = W * (0.16 + tt * 0.68);
+      const yTop = my - 30 + (1 - Math.pow(2 * tt - 1, 2)) * 92, yBot = my - 30 + (1 - Math.pow(2 * tt - 1, 2)) * 158;
+      g.beginPath(); g.moveTo(x - 5, yTop); g.lineTo(x + 5, yTop); g.lineTo(x, yTop + 14 + rnd() * 18); g.fill();
+      g.beginPath(); g.moveTo(x - 5, yBot); g.lineTo(x + 5, yBot); g.lineTo(x, yBot - 12 - rnd() * 16); g.fill();
+    }
+    g.restore();
+    return finishScareFace(c, g, rnd, W, H);
+  }
   // gaping mouth with uneven teeth
-  const mx = W * 0.5, my = H * 0.7, mw = 92, mh = 150;
+  const mx = W * 0.5, my = H * 0.7, mw = variant === 2 ? 40 : 92, mh = variant === 2 ? 170 : 150;
   const mg = g.createRadialGradient(mx, my + 20, 5, mx, my, mh);
   mg.addColorStop(0, '#000'); mg.addColorStop(0.6, '#0c0202'); mg.addColorStop(0.9, '#3a0806'); mg.addColorStop(1, '#1a0403');
   g.fillStyle = mg; g.beginPath(); g.ellipse(mx, my, mw, mh, 0, 0, Math.PI * 2); g.fill();
@@ -2570,6 +2588,9 @@ function makeScareFace() {
     g.beginPath(); g.moveTo(x - 6, y); g.lineTo(x + 6, y); g.lineTo(x + (rnd() - 0.5) * 8, y - len); g.closePath(); g.fill();
   }
   g.restore();
+  return finishScareFace(c, g, rnd, W, H);
+}
+function finishScareFace(c, g, rnd, W, H) {
   // grain + desaturated sickly tint
   const img = g.getImageData(0, 0, W, H), d = img.data;
   for (let i = 0; i < d.length; i += 4) {
@@ -2581,7 +2602,12 @@ function makeScareFace() {
   return c;
 }
 let scareFaceCanvas = null;
-function ensureScareFace() { if (!scareFaceCanvas) { scareFaceCanvas = makeScareFace(); $('scareOverlay').appendChild(scareFaceCanvas); } }
+// one random face per run, drawn shortly after the run starts (never at the moment of the catch)
+function ensureScareFace(fresh = false) {
+  if (scareFaceCanvas && !fresh) return;
+  if (scareFaceCanvas) scareFaceCanvas.remove();
+  scareFaceCanvas = makeScareFace(Math.floor(Math.random() * 3)); $('scareOverlay').appendChild(scareFaceCanvas);
+}
 
 // ---------------- jump scare ----------------
 const scare = { t: 0, active: false, yaw0: 0, pitch0: 0 };
@@ -4364,7 +4390,7 @@ function startGame(level = 1, mode = 'story') {
     if (game.pauseAfterLoad) { game.pauseAfterLoad = false; setTimeout(pauseGame, 0); }
     clock.getDelta();
     $('loading').style.opacity = '0';
-    setTimeout(ensureScareFace, 1500);
+    setTimeout(() => ensureScareFace(true), 1500);
     requestAnimationFrame(() => requestAnimationFrame(() => fadeTo('#000', 0, 1.8)));
     $('loading').innerHTML = '';
     if (mode === 'endless') showMessage('Endless. The pages never stop. Neither does it.', 5); else showMessage(level === 3 ? 'Level 3 \u2014 Lights Out. Keep your light alive. Find 5 notes.' : level === 2 ? 'Level 2 \u2014 The Flooded Halls. Find 5 notes.' : 'Level 1 \u2014 The Lobby. Find the 5 notes. Listen for the static.', 5);
@@ -4619,7 +4645,7 @@ showScreen('startScreen');
 frame();
 
 // Debug / test hook
-window.__bk = { perfMon, buildChunkGeometry, renderInfo: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, progs: renderer.info.programs.length }), scares, startOutage, startDoorSlam, startFakeSteps, startPhantom, stinger, dynBlockers, PROF, simulate, get isTouch() { return isTouch; }, get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { makeScareFace, perfMon, buildChunkGeometry, renderInfo: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, progs: renderer.info.programs.length }), scares, startOutage, startDoorSlam, startFakeSteps, startPhantom, stinger, dynBlockers, PROF, simulate, get isTouch() { return isTouch; }, get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>

@@ -256,3 +256,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   15-21 m down the corridor the camera drifts along, then vanish in a flicker. Re-ran the bots after props/doors:
   without the creature all 6 runs win (~2.5-3 min); a traced chase confirms that breaking line of sight and moving
   away makes it search and give up (it later drifts back to your area by design).
+- **[08:56 UTC] Extra — Jump-scare variety.** Three procedural faces (gaping toothed maw, an impossibly wide grin,
+  an eyeless face with a weeping third socket); each run draws one at random 1.5 s after it starts, so the catch
+  itself never stalls.
