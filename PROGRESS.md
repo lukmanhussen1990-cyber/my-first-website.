@@ -288,3 +288,8 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   bottle, sometimes knocked over and floating in Level 2. It refills stamina and gives a 25 s second wind: running
   drains stamina slower and it recovers twice as fast; the stamina bar turns pale while it lasts. It has its own sound
   (cap crackle, three gulps). Batteries and bottles are now also moved out of any prop that shares their cell.
+- **[09:42 UTC] Extra — Review round 5 (lifecycle) fixes.** Touch RUN/BREATH can't stay stuck after an OS
+  gesture or pause; hiding the tab during loading pauses once loading ends, and menus go silent while hidden; iOS
+  "interrupted" audio resumes; an escape is recorded the moment you reach the exit; Continue keeps the run's own
+  creature setting; corrupted saved runs are dropped instead of offering a broken Continue.
+- **[09:42 UTC] Handed over at the user's request** (about 3h10m in, before the planned 4h30m).

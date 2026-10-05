@@ -1632,7 +1632,7 @@ const Sound = (() => {
   }
 
   function init() {
-    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    if (ctx) { if (ctx.state !== 'running' && ctx.state !== 'closed') ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     try { ctx = new AC(); } catch (e) { ctx = null; return; }
@@ -1948,7 +1948,7 @@ const Sound = (() => {
   function unmuffleNow() { if (muffle) { const t = ctx.currentTime; muffle.frequency.cancelScheduledValues(t); muffle.frequency.setValueAtTime(20000, t); } }
   function setMuffle(on) { if (muffle) muffle.frequency.setTargetAtTime(on ? 700 : 20000, ctx.currentTime, on ? 0.15 : 0.3); }
   function suspend() { if (ctx && ctx.state === 'running') ctx.suspend(); }
-  function resume() { if (ctx && ctx.state === 'suspended') ctx.resume(); }
+  function resume() { if (ctx && ctx.state !== 'running' && ctx.state !== 'closed') ctx.resume(); }   // also iOS 'interrupted'
 
   return {
     init, footstep, click, zap, paper, drink, heartbeat, breathe, randomDistant, distant, setListener, setBuzz, setDrone,
@@ -3305,6 +3305,7 @@ function fadeTo(color, opacity, seconds = 1.2) {
 function reachExit() {
   if (game.state !== 'playing') return;
   game.state = 'escaping';
+  if (game.mode !== 'endless') recordWin();
   player.holding = false; Sound.setMuffle(false);
   silenceMonster(); clearBeacons();
   // door bursts open: rushing air and a rising chord, then a white-out
@@ -4260,6 +4261,7 @@ function tryFullscreen() {
     const b = $(id);
     b.addEventListener('touchstart', (e) => { if (e.cancelable) e.preventDefault(); e.stopPropagation(); down(b); }, { passive: false });
     b.addEventListener('touchend', (e) => { if (e.cancelable) e.preventDefault(); e.stopPropagation(); if (up) up(b); }, { passive: false });
+    b.addEventListener('touchcancel', () => { if (up) up(b); });
     b.addEventListener('click', (e) => { if (e.cancelable) e.preventDefault(); });
   };
   btn('tRun', (b) => { input.touchRun = true; b.classList.add('on'); }, (b) => { input.touchRun = false; b.classList.remove('on'); });
@@ -4324,6 +4326,9 @@ function pauseGame() {
   if (game.state !== 'playing') return;
   game.state = 'paused';
   for (const k in keys) keys[k] = false;
+  // held touch buttons never stay stuck across a pause (an OS gesture can swallow the touchend)
+  input.touchRun = input.touchHold = false; input.joyX = input.joyY = 0;
+  for (const id of ['tRun', 'tHold']) $(id).classList.remove('on');
   if (player.holding) { player.holding = false; Sound.setMuffle(false); }
   Sound.suspend();
   $('pauseInfo').innerHTML = game.mode === 'endless' ? `Endless &mdash; ${formatTime(game.time)}<br>Pages ${game.notes}` : `Level ${game.level} &mdash; ${formatTime(game.time)}<br>Notes ${game.notes} / ${NOTES_NEEDED}`;
@@ -4455,7 +4460,7 @@ function spawnPlayer(x, z) {
 }
 function newGame(level = 1, mode = 'story') {
   hintState.t = 0;
-  game.level = level; game.mode = mode; game.serial = 0; game.time = 0; game.notes = 0; game.danger = 0;
+  game.level = level; game.mode = mode; game.serial = 0; game.winRec = null; game.time = 0; game.notes = 0; game.danger = 0;
   fx.kick = 0; fx.red = 0; U.uMonster.value.set(1e5, 0, 1e5, 0);
   clearTimeout(goal.msgTimer);
   player.stamina = 1; player.exhausted = false; player.boost = 0; player.breath = 1; player.holding = false; Sound.setMuffle(false);
@@ -4525,15 +4530,27 @@ $('btnReset').addEventListener('click', () => {
   showMessage('Progress erased.', 2);
   if (game.state === 'menu') refreshStartScreen();
 });
-document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
-window.addEventListener('blur', () => { if (!isTouch) pauseGame(); });
+function pauseOrDefer() { if (game.state === 'loading') game.pauseAfterLoad = true; else pauseGame(); }
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { pauseOrDefer(); if (game.state !== 'playing') Sound.suspend(); }
+  else if (game.state !== 'paused') Sound.resume();     // menus keep their hum; a paused game stays silent
+});
+window.addEventListener('blur', () => { if (!isTouch) pauseOrDefer(); });
 
 // ============================================================================
 //  SAVE SYSTEM (localStorage): best times, unlocked levels, mid-run progress
 // ============================================================================
 const SAVE_KEY = 'backrooms.save.v1';
 let save = { best: {}, unlocked: 1, escapes: 0, deaths: 0, run: null };
-function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && typeof s === 'object') save = Object.assign(save, s); } catch (e) { /* ignore */ } }
+function loadSave() {
+  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && typeof s === 'object') save = Object.assign(save, s); } catch (e) { /* ignore */ }
+  if (save.run && !validRun(save.run)) save.run = null;     // corrupted / hand-edited save: no broken Continue
+}
+function validRun(r) {
+  const num = (v) => typeof v === 'number' && Number.isFinite(v);
+  return !!r && typeof r === 'object' && [1, 2, 3].includes(r.level) && ['x', 'z', 'yaw', 'time', 'notes', 'seed'].every((k) => num(r[k])) &&
+    (r.mode === 'endless' || Array.isArray(r.specs));
+}
 function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* storage blocked */ } }
 let autosaveT = 0;
 function snapshotRun() {
@@ -4549,7 +4566,8 @@ function snapshotRun() {
 function onNewRun() { if (save.run && save.run.mode === 'endless' && !save.run.explore) save.bestEndless = Math.max(save.bestEndless || 0, save.run.notes || 0); save.run = null; writeSave(); autosaveT = 10; }
 function onPause() { snapshotRun(); }
 function onDeath() { if (game.mode === 'endless' && !game.explore) save.bestEndless = Math.max(save.bestEndless || 0, game.notes); save.deaths = (save.deaths || 0) + 1; save.run = null; writeSave(); }
-function onWin() {
+// recorded the moment the exit is reached, so closing the tab during the white-out still counts the escape
+function recordWin() {
   const lvl = game.level, prev = save.best[lvl];
   const explore = !!game.explore;
   const isBest = !explore && (!prev || game.time < prev);
@@ -4558,6 +4576,13 @@ function onWin() {
   save.escapes = (save.escapes || 0) + 1;
   save.run = null;
   writeSave();
+  return (game.winRec = { isBest, explore });
+}
+function onWin() {
+  const lvl = game.level;
+  const rec = game.winRec || recordWin();
+  game.winRec = null;
+  const { isBest, explore } = rec;
   $('winTitle').textContent = lvl === 1 ? 'YOU ESCAPED THE LOBBY' : lvl === 2 ? 'YOU ESCAPED THE FLOODED HALLS' : 'DAYLIGHT... ?';
   $('winStats').innerHTML = `Time: ${formatTime(game.time)}${isBest ? ' &mdash; <b style="color:#fff3a0">NEW BEST!</b>' : ''}${explore ? ' (explore mode)' : ''}<br>Best: ${save.best[lvl] ? formatTime(save.best[lvl]) : '&mdash;'}`;
   $('btnNextLevel').classList.toggle('hidden', lvl >= 3);
@@ -4583,7 +4608,7 @@ function continueGame() {
   const run = save.run;
   if (!run) return;
   showScreen(null);
-  game.level = run.level; game.mode = run.mode || 'story'; game.serial = run.serial || 0; game.time = run.time; game.notes = run.notes; game.danger = 0;
+  game.winRec = null; game.level = run.level; game.mode = run.mode || 'story'; game.serial = run.serial || 0; game.time = run.time; game.notes = run.notes; game.danger = 0;
   clearTimeout(goal.msgTimer); fx.kick = 0; fx.red = 0;
   world = new World(run.seed, run.level);
   applyLevelLook(run.level);
@@ -4595,7 +4620,11 @@ function continueGame() {
   flash.on = false; flash.battery = run.battery ?? 1; flash.intensity = 0;
   updateChunks(player.pos.x, player.pos.z, true);
   resetMonster();
-  if (run.explore) game.explore = true;
+  if (typeof run.explore === 'boolean' && run.explore !== game.explore) {
+    // the run keeps the creature setting it started with, whatever the difficulty says now
+    game.explore = run.explore; monster.active = !run.explore; monster.model.root.visible = monster.active;
+    if (!monster.active) { silenceMonster(); U.uMonster.value.set(1e5, 0, 1e5, 0); }
+  }
   resetScares();
   game.state = 'playing';
   Sound.init(); Sound.resume(); applySettings();
@@ -4754,7 +4783,7 @@ showScreen('startScreen');
 frame();
 
 // Debug / test hook
-window.__bk = { makeScareFace, perfMon, buildChunkGeometry, renderInfo: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, progs: renderer.info.programs.length }), scares, startOutage, startDoorSlam, startFakeSteps, startPhantom, stinger, dynBlockers, PROF, simulate, get isTouch() { return isTouch; }, get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { makeScareFace, reachExit, validRun, perfMon, buildChunkGeometry, renderInfo: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, progs: renderer.info.programs.length }), scares, startOutage, startDoorSlam, startFakeSteps, startPhantom, stinger, dynBlockers, PROF, simulate, get isTouch() { return isTouch; }, get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>
