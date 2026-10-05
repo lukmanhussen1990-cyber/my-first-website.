@@ -16,6 +16,7 @@ Env:   ADB (default "adb"), MAX_MOVES (default 70)
 import io
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -324,7 +325,9 @@ def launch(prefix, splash_shots=True):
     local = os.path.join(OUT, prefix + 'launch.mp4')
     adb('pull', remote, local, timeout=120)
     if os.path.exists(local) and os.path.getsize(local) > 1000:
-        for sec in (1.8, 2.6, 3.4, 4.3, 5.2, 6.4, 7.6, 9.0, 10.5):
+        # Frames are extracted when ffmpeg is available (not on GitHub runners).
+        secs = (1.8, 2.6, 3.4, 4.3, 5.2, 6.4, 7.6, 9.0, 10.5) if shutil.which('ffmpeg') else ()
+        for sec in secs:
             frame = os.path.join(OUT, f'{prefix}launch_{sec:04.1f}s.png')
             subprocess.run(['ffmpeg', '-v', 'error', '-y', '-ss', str(sec), '-i', local, '-frames:v', '1', frame])
         log('launch video saved', local)

@@ -75,6 +75,10 @@ class DragState {
   final Offset startCenter;
   Offset pointer;
   double lift = 0;
+
+  /// True once the finger travelled far enough to count as a drag; a plain
+  /// tap on a tray piece never drops it on the board.
+  bool moved = false;
   int? hoverRow;
   int? hoverCol;
   LineSet hoverLines = LineSet.empty;
@@ -214,6 +218,9 @@ class GameController extends ChangeNotifier {
     final d = drag;
     if (d == null) return;
     d.pointer = p;
+    if (!d.moved && (p - d.startPointer).distance > (layout?.cell ?? 40) * 0.25) {
+      d.moved = true;
+    }
     _updateHover();
     notifyListeners();
   }
@@ -258,6 +265,12 @@ class GameController extends ChangeNotifier {
   void _updateHover() {
     final d = drag!;
     final l = layout!;
+    if (!d.moved) {
+      d.hoverRow = null;
+      d.hoverCol = null;
+      d.hoverLines = LineSet.empty;
+      return;
+    }
     final geo = dragGeometry(d, full: true);
     final shape = d.piece.shape;
     final left = geo.center.dx - shape.cols * l.cell / 2;
@@ -370,14 +383,17 @@ class GameController extends ChangeNotifier {
       }
     }
 
-    texts.add(
-      FloatingText(
-        '+${result.totalPoints}',
-        FloatKind.scorePlus,
-        l.scoreCenter + Offset(l.u * 13, -l.u * 4),
-        duration: 0.9,
-      ),
-    );
+    // "+N" beside the score for moves that cleared lines.
+    if (result.linesCleared > 0) {
+      texts.add(
+        FloatingText(
+          '+${result.totalPoints}',
+          FloatKind.scorePlus,
+          l.scoreCenter + Offset(l.u * 13, -l.u * 4),
+          duration: 1.0,
+        ),
+      );
+    }
 
     // Live best score (crown) and new-record celebration.
     if (SettingsStore.instance.submitScore(game.score)) {

@@ -82,6 +82,18 @@ void main() {
     expect(game.board.filledCount, 1);
   });
 
+  testWidgets('a plain tap on a tall tray piece does not place it', (tester) async {
+    final game = GameState.custom(board: Board(), tray: [p('v5', 0), p('sq3', 1), p('v4', 2)], random: Random(6));
+    final l = await setUpScreen(tester, game);
+    for (var slot = 0; slot < 3; slot++) {
+      await tester.tapAt(l.slotCenters[slot]);
+      await pumpFrames(tester, 20);
+    }
+    expect(game.board.filledCount, 0);
+    expect(game.tray.every((piece) => piece != null), isTrue);
+    expect(game.score, 0);
+  });
+
   testWidgets('completing two rows clears them with bonus', (tester) async {
     final board = Board();
     for (var r = 6; r < 8; r++) {
