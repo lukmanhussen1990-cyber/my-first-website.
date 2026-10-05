@@ -217,3 +217,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   grab spawns another 35-65 m away, the creature speeds up (capped at +20%) and scares come faster. No exit — the
   score is how many pages you collect before it catches you; the record is saved and shown on the title screen.
   Continue/save, pause, journal and game-over screens understand the mode. README updated (endless + gamepad).
+- **[08:23 UTC] Extra — "Reduce flashing" (photosensitivity) setting.** Flickering/stuttering lights only dip to 60%
+  instead of blacking out (same in the CPU mirror), no whole-screen brightness dips or VHS glitch bands, a much
+  weaker red flash, and camera / jump-scare shake reduced to 20-35%. README controls updated.

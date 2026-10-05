@@ -137,6 +137,7 @@
     <label><span>Brightness</span><input type="range" id="setBright" min="0.7" max="1.6" step="0.05"><span id="setBrightVal"></span></label>
     <label><span>Volume</span><input type="range" id="setVol" min="0" max="100" step="1"><span id="setVolVal"></span></label>
     <label><span>Graphics quality</span><select id="setQuality"><option value="0">Low</option><option value="1">Medium</option><option value="2">High</option></select><span></span></label>
+    <label><span>Reduce flashing</span><input type="checkbox" id="setCalm"><span></span></label>
     <label><span>Sound captions</span><input type="checkbox" id="setCaptions"><span></span></label>
     <label><span>Head bob</span><input type="checkbox" id="setBob"><span></span></label>
   </div>
@@ -276,6 +277,7 @@ uniform float uWarp;
 uniform sampler2D tBloom;
 uniform float uBloom;
 uniform float uGammaInv;
+uniform float uCalm;
 varying vec2 vUv;
 float hash(vec2 p) { p = fract(p * vec2(443.897, 441.423)); p += dot(p, p.yx + 19.19); return fract((p.x + p.y) * p.x); }
 void main() {
@@ -284,7 +286,7 @@ void main() {
   vec2 uv = 0.5 + c * (1.0 + uWarp * r2);
   // VHS tracking glitch bands when the monster is close
   float row = floor(uv.y * 48.0);
-  float glitch = step(1.0 - uDanger * uDanger * 0.06, hash(vec2(row, floor(uTime * 14.0))));
+  float glitch = uCalm > 0.5 ? 0.0 : step(1.0 - uDanger * uDanger * 0.06, hash(vec2(row, floor(uTime * 14.0))));
   uv.x += glitch * (hash(vec2(uTime, row)) - 0.5) * 0.05;
   vec2 off = c * (0.0025 + uAberr * 0.02);
   vec3 col;
@@ -314,7 +316,7 @@ void main() {
 const postU = {
   tDiffuse: { value: null }, uTime: { value: 0 }, uDanger: { value: 0 }, uGrain: { value: 0.08 }, uAberr: { value: 0 },
   uVig: { value: 0 }, uDip: { value: 0 }, uRed: { value: 0 }, uBlack: { value: 0 }, uWarp: { value: 0 },
-  tBloom: { value: null }, uBloom: { value: 0.0 }, uGammaInv: { value: 1.0 },
+  tBloom: { value: null }, uBloom: { value: 0.0 }, uGammaInv: { value: 1.0 }, uCalm: { value: 0 },
 };
 const postScene = new THREE.Scene();
 const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -881,6 +883,7 @@ const U = {
   uFlashColor: { value: new THREE.Color(1.0, 0.95, 0.85) },
   uNoise: { value: TEX.noise },
   uWet: { value: 0 },
+  uCalm: { value: 0 },
 };
 
 const GLSL_COMMON = /* glsl */`
@@ -888,6 +891,7 @@ uniform float uTime;
 uniform vec4 uMonster;
 uniform vec4 uOutage;
 uniform float uLightMul;
+uniform float uCalm;
 float h11(float p) { p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
 // Brightness of one ceiling fixture. s = type + random fraction, lp = fixture xz.
 float lightLevel(float s, vec2 lp) {
@@ -905,6 +909,7 @@ float lightLevel(float s, vec2 lp) {
   if (k > 0.001 && h11(floor(t * 21.0) + r * 97.0) < k * 0.75) lvl *= 0.04;
   // scripted outages ("lights going out one by one")
   if (uOutage.w > 0.5 && distance(lp, uOutage.xy) < uOutage.z) lvl = 0.0;
+  if (uCalm > 0.5 && type < 2.5) lvl = 0.6 + 0.4 * lvl;   // reduced flashing: shallow flicker
   return lvl * uLightMul;
 }
 `;
@@ -1111,6 +1116,7 @@ function lightLevelCPU(s, lx, lz) {
   if (k > 0.001 && h11(Math.floor(t * 21) + r * 97) < k * 0.75) lvl *= 0.04;
   const o = U.uOutage.value;
   if (o.w > 0.5 && Math.hypot(lx - o.x, lz - o.y) < o.z) lvl = 0;
+  if (U.uCalm.value > 0.5 && type < 2.5) lvl = 0.6 + 0.4 * lvl;
   return lvl * U.uLightMul.value;
 }
 function smoothstep(a, b, x) { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
@@ -2502,7 +2508,7 @@ function updateJumpScare(dt) {
   if (t > 0.1) {
     ov.style.display = 'flex';
     const k = clamp((t - 0.1) / 0.15, 0, 1), sc = 0.9 + k * 0.35 + (t > 0.25 ? (t - 0.25) * 0.25 : 0);
-    const jx = (Math.random() - 0.5) * 50, jy = (Math.random() - 0.5) * 50, rot = (Math.random() - 0.5) * 6;
+    const sh = settings.calm ? 0.2 : 1, jx = (Math.random() - 0.5) * 50 * sh, jy = (Math.random() - 0.5) * 50 * sh, rot = (Math.random() - 0.5) * 6 * sh;
     scareFaceCanvas.style.transform = `translate(${jx}px, ${jy}px) scale(${sc}) rotate(${rot}deg)`;
     scareFaceCanvas.style.opacity = t > 1.25 ? String(clamp(1 - (t - 1.25) / 0.3, 0, 1)) : '1';
     const tint = world.level === 2 ? ' sepia(0.5) hue-rotate(60deg) saturate(0.8)' : world.level === 3 ? ' sepia(0.7) hue-rotate(-30deg) saturate(2.2)' : '';
@@ -3061,7 +3067,7 @@ function applyShake(dt) {
   const target = Math.pow(game.danger, 2) * (monster.state === 'chase' || monster.state === 'spotted' ? 1 : 0.6);
   fx.shake += (target - fx.shake) * Math.min(1, dt * 3);
   fx.kick = Math.max(0, fx.kick - dt * 2.5);
-  const s = fx.shake * 0.012 + fx.kick * 0.03, f = 9 + fx.shake * 8;
+  const s = (fx.shake * 0.012 + fx.kick * 0.03) * (settings.calm ? 0.35 : 1), f = 9 + fx.shake * 8;
   camera.rotation.x += snoise(fx.t * f) * s;
   camera.rotation.y += snoise(fx.t * f + 11.3) * s;
   camera.rotation.z += snoise(fx.t * f * 0.7 + 5.1) * s * 0.8;
@@ -3083,9 +3089,9 @@ function updateEffects(dt) {
   postU.uAberr.value = d * d * 0.5 + (game.state === 'caught' ? 0.8 : 0) + fx.kick * 0.3;
   postU.uVig.value = d * 0.45 + fx.pulse * 0.25 + (player.exhausted ? 0.25 : 0);
   postU.uWarp.value = d * 0.12;
-  postU.uDip.value = fx.dip;
+  postU.uDip.value = settings.calm ? 0 : fx.dip;
   fx.red = Math.max(0, fx.red - dt * 1.5);
-  postU.uRed.value = fx.red;
+  postU.uRed.value = settings.calm ? fx.red * 0.25 : fx.red;
   postU.uBlack.value = fx.black;
 }
 
@@ -4004,7 +4010,7 @@ function silenceMonster() {
 // ---------------- settings ----------------
 const SETTINGS_KEY = 'backrooms.settings.v1';
 let isTouch = matchMedia('(pointer: coarse)').matches || (('ontouchstart' in window) && !matchMedia('(pointer: fine)').matches);
-const settings = { sens: 1, invert: false, fov: 75, volume: 80, quality: isTouch ? 0 : 1, bob: true, bright: 1, captions: false, difficulty: 1 };
+const settings = { sens: 1, invert: false, fov: 75, volume: 80, quality: isTouch ? 0 : 1, bob: true, bright: 1, captions: false, difficulty: 1, calm: false };
 function loadSettings() { try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch (e) { /* storage blocked */ } }
 function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* storage blocked */ } }
 function applySettings() {
@@ -4020,6 +4026,8 @@ function applySettings() {
   $('setQuality').value = String(settings.quality);
   $('setBob').checked = settings.bob;
   $('setCaptions').checked = settings.captions;
+  $('setCalm').checked = settings.calm;
+  U.uCalm.value = settings.calm ? 1 : 0; postU.uCalm.value = U.uCalm.value;
   $('setDiff').value = String(settings.difficulty);
   postU.uGammaInv.value = 1 / settings.bright;
   Sound.setHRTF(+settings.quality > 0);
@@ -4036,6 +4044,7 @@ bindSetting('setQuality', 'quality', (t) => parseInt(t.value, 10), 'change');
 bindSetting('setBob', 'bob', (t) => t.checked, 'change');
 bindSetting('setBright', 'bright', (t) => parseFloat(t.value));
 bindSetting('setCaptions', 'captions', (t) => t.checked, 'change');
+bindSetting('setCalm', 'calm', (t) => t.checked, 'change');
 bindSetting('setDiff', 'difficulty', (t) => parseInt(t.value, 10), 'change');
 function openSettings(from) { settingsReturn = from; showScreen('settingsScreen'); }
 
