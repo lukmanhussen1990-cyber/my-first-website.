@@ -257,6 +257,8 @@ catch (err) { fatal('NO SIGNAL', 'Your browser could not start WebGL 3D graphics
 renderer.domElement.addEventListener('webglcontextlost', (e) => {
   e.preventDefault();
   if (game.state === 'playing') pauseGame();
+  else if (game.state === 'paused') snapshotRun();
+  game.state = 'lost';
   fatal('SIGNAL LOST', 'The graphics card reset (this can happen on phones in the background). Your progress was saved. <br><br><button class="btn" onclick="location.reload()">RELOAD</button>');
 });
 renderer.info.autoReset = false;
@@ -595,7 +597,8 @@ class World {
       if (sides.length) {
         const side = sides[Math.floor(hash2(cx, cz, this.seed + 1414) * sides.length)];
         const type = Math.floor(hash2(cx, cz, this.seed + 1515) * 4);          // 0 boxes, 1 chair, 2 wet-floor sign, 3 cabinet
-        const [w, d] = [[0.55, 0.5], [0.55, 0.55], [0.5, 0.32], [0.9, 0.45]][type];
+        const flip = hash2(cx, cz, this.seed + 1717) < 0.5;
+        const [w, d] = [[0.55, 0.5], [flip ? 1.25 : 0.55, 0.55], [0.5, 0.32], [0.9, 0.45]][type];
         const off = (hash2(cx, cz, this.seed + 1616) - 0.5) * (CELL - w - 0.6);
         const inset = WALL_T / 2 + d / 2 + 0.03, mx = (cx + 0.5) * CELL, mz = (cz + 0.5) * CELL;
         let x, z, rot, hx, hz;
@@ -603,7 +606,7 @@ class World {
         else if (side === 1) { x = (cx + 1) * CELL - inset; z = mz + off; rot = -Math.PI / 2; hx = d / 2; hz = w / 2; }
         else if (side === 2) { x = mx + off; z = cz * CELL + inset; rot = 0; hx = w / 2; hz = d / 2; }
         else { x = mx + off; z = (cz + 1) * CELL - inset; rot = Math.PI; hx = w / 2; hz = d / 2; }
-        res = { type, x, z, rot, hx, hz, flip: hash2(cx, cz, this.seed + 1717) < 0.5 };
+        res = { type, x, z, rot, hx, hz, flip, side };
       }
     }
     this.propCache.set(key, res);
@@ -613,7 +616,7 @@ class World {
   doorAt(cx, cz, axis) {
     if (axis === 'z') { if (this.wallW(cx, cz) || !this.wallW(cx, cz - 1) || !this.wallW(cx, cz + 1)) return false; }
     else if (this.wallN(cx, cz) || !this.wallN(cx - 1, cz) || !this.wallN(cx + 1, cz)) return false;
-    return hash2(cx * 2 + (axis === 'z' ? 1 : 0), cz, this.seed + 1818) < 0.3;
+    return hash2(cx * 2 + (axis === 'z' ? 1 : 0), cz, this.seed + 1818) < 0.14;
   }
   dangling(cx, cz) { return this.lightType(cx, cz) === LIGHT.BROKEN && hash2(cx, cz, this.seed + 909) < 0.22; }
   height(kx, kz) { return this.level === 1 && this.style(kx, kz) === STYLE.HALL ? HALL_H : WALL_H; }
@@ -948,7 +951,9 @@ float h11(float p) { p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return f
 float lightLevel(float s, vec2 lp) {
   float type = floor(s), r = fract(s), t = uTime, lvl = 1.0;
   if (type > 2.5) return 0.0;                                   // broken
-  if (type > 1.5) {                                             // dying: sputters, mostly dark
+  if (uCalm > 0.5) {                                            // reduced flashing: steady average levels
+    if (type > 1.5) lvl = 0.3;
+  } else if (type > 1.5) {                                      // dying: sputters, mostly dark
     float on = step(0.5, h11(floor(t * 2.5 + r * 50.0) + r * 311.0));
     lvl = on * step(0.3, h11(floor(t * 26.0) + r * 77.0)) * 0.8;
   } else if (type > 0.5) {                                      // flickering now and then
@@ -957,10 +962,9 @@ float lightLevel(float s, vec2 lp) {
   }
   // the monster makes nearby lights stutter
   float k = uMonster.w * (1.0 - smoothstep(3.5, 13.0, distance(lp, uMonster.xz)));
-  if (k > 0.001 && h11(floor(t * 21.0) + r * 97.0) < k * 0.75) lvl *= 0.04;
+  if (k > 0.001 && h11(floor(t * 21.0) + r * 97.0) < k * 0.75) lvl *= uCalm > 0.5 ? 0.55 : 0.04;
   // scripted outages ("lights going out one by one")
   if (uOutage.w > 0.5 && distance(lp, uOutage.xy) < uOutage.z) lvl = 0.0;
-  if (uCalm > 0.5 && type < 2.5) lvl = 0.6 + 0.4 * lvl;   // reduced flashing: shallow flicker
   return lvl * uLightMul;
 }
 `;
@@ -1155,7 +1159,9 @@ function lightLevelCPU(s, lx, lz) {
   const type = Math.floor(s), r = s - type, t = U.uTime.value;
   let lvl = 1;
   if (type > 2.5) return 0;
-  if (type > 1.5) {
+  const calm = U.uCalm.value > 0.5;
+  if (calm) { if (type > 1.5) lvl = 0.3; }
+  else if (type > 1.5) {
     const on = h11(Math.floor(t * 2.5 + r * 50) + r * 311) >= 0.5 ? 1 : 0;
     lvl = on * (h11(Math.floor(t * 26) + r * 77) >= 0.3 ? 1 : 0) * 0.8;
   } else if (type > 0.5) {
@@ -1164,10 +1170,9 @@ function lightLevelCPU(s, lx, lz) {
   const m = U.uMonster.value;
   const md = Math.hypot(lx - m.x, lz - m.z);
   const k = m.w * (1 - smoothstep(3.5, 13, md));
-  if (k > 0.001 && h11(Math.floor(t * 21) + r * 97) < k * 0.75) lvl *= 0.04;
+  if (k > 0.001 && h11(Math.floor(t * 21) + r * 97) < k * 0.75) lvl *= calm ? 0.55 : 0.04;
   const o = U.uOutage.value;
   if (o.w > 0.5 && Math.hypot(lx - o.x, lz - o.y) < o.z) lvl = 0;
-  if (U.uCalm.value > 0.5 && type < 2.5) lvl = 0.6 + 0.4 * lvl;
   return lvl * U.uLightMul.value;
 }
 function smoothstep(a, b, x) { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
@@ -1484,18 +1489,16 @@ function buildProp(p) {
     for (const y of [0.2, 0.52]) { box(0.86, 0.01, 0.01, 0x3a3830, 0, y + 0.14, 0.226); box(0.14, 0.025, 0.02, 0xb0aca0, 0, y, 0.235); }
   }
   g.position.set(p.x, 0, p.z); g.rotation.y = p.rot;
-  const env = sampleLight(p.x, p.z, 0.6);
-  g.traverse((o) => { if (o.material && o.material.uniforms) o.material.uniforms.uEnv.value = env; });
   return g;
 }
-function buildChunkDoors(kx, kz) {
+function buildChunkDoors(kx, kz, baker) {
   const key = ckey(kx, kz);
   for (let lz = 0; lz < CHUNK; lz++) for (let lx = 0; lx < CHUNK; lx++) {
     const cx = kx * CHUNK + lx, cz = kz * CHUNK + lz;
     for (const axis of ['z', 'x']) {
       if (!world.doorAt(cx, cz, axis)) continue;
       const c = axis === 'z' ? { x: cx * CELL, z: (cz + 0.5) * CELL, axis } : { x: (cx + 0.5) * CELL, z: cz * CELL, axis };
-      const d = buildDoubleDoor(c);
+      const d = buildDoubleDoor(c, baker);
       d.owned = key; d.phase = 'idle'; d.angle = 1.3 + hash2(cx, cz, 77) * 0.25;
       for (const L of d.leaves) L.hinge.rotation.y = L.s * d.angle;
       scares.doors.push(d);
@@ -1506,19 +1509,18 @@ function removeChunkDoors(key) {
   for (let i = scares.doors.length - 1; i >= 0; i--) {
     const d = scares.doors[i];
     if (d.owned !== key) continue;
-    scene.remove(d.group); d.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    scene.remove(d.group); d.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
     scares.doors.splice(i, 1);
   }
 }
-function buildChunkProps(kx, kz) {
-  let grp = null;
+function buildChunkProps(kx, kz, baker) {
   for (let lz = 0; lz < CHUNK; lz++) for (let lx = 0; lx < CHUNK; lx++) {
     const p = world.prop(kx * CHUNK + lx, kz * CHUNK + lz);
     if (!p) continue;
-    if (!grp) grp = new THREE.Group();
-    grp.add(buildProp(p));
+    const tmp = buildProp(p);
+    baker.add(tmp, sampleLight(p.x, p.z, 0.6));
+    disposeTemp(tmp);
   }
-  return grp;
 }
 function finishChunk(kx, kz, g) {
   const group = new THREE.Group();
@@ -1526,17 +1528,18 @@ function finishChunk(kx, kz, g) {
   if (g.decals.attributes.position.count) meshes.push(new THREE.Mesh(g.decals, MAT.decal)); else g.decals.dispose();
   for (const m of meshes) { m.matrixAutoUpdate = false; group.add(m); }
   group.matrixAutoUpdate = false;
-  const props = buildChunkProps(kx, kz);
+  const baker = new Baker();
+  buildChunkProps(kx, kz, baker);
+  buildChunkDoors(kx, kz, baker);           // door headers join the merged static mesh
+  const props = baker.mesh();
   if (props) group.add(props);
   scene.add(group);
-  chunkMeshes.set(ckey(kx, kz), { kx, kz, group, props });
+  chunkMeshes.set(ckey(kx, kz), { kx, kz, group });
   spawnChunkItems(kx, kz);
-  buildChunkDoors(kx, kz);
 }
 function disposeChunk(c) {
   despawnChunkItems(ckey(c.kx, c.kz));
   removeChunkDoors(ckey(c.kx, c.kz));
-  if (c.props) c.props.traverse((o) => { if (o.material) o.material.dispose(); });
   scene.remove(c.group);
   c.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
 }
@@ -2438,7 +2441,7 @@ function monsterFootstep(chase) {
 // throat clicks while it watches or searches for you
 let clickT = 2;
 function monsterClicks(dt) {
-  if (monster.state !== 'stalk' && monster.state !== 'search' && monster.idleT <= 0) { clickT = 1; return; }
+  if (monster.state !== 'stalk' && monster.state !== 'search' && !(monster.state === 'wander' && monster.idleT > 0)) { clickT = 1; return; }
   clickT -= dt;
   if (clickT > 0 || !Sound.ctx) return;
   clickT = 1.4 + Math.random() * 2.2;
@@ -2800,6 +2803,75 @@ function itemMaterial(color, glow = 0) {
     vertexShader: ITEM_VERT, fragmentShader: ITEM_FRAG,
   });
 }
+// Static props/doors are baked into merged geometry with per-vertex colour + light under ONE shared material
+const VC_VERT = /* glsl */`
+attribute float aEnv;
+varying vec3 vColor;
+varying float vEnv;
+varying vec3 vWorld;
+varying vec3 vNormal;
+varying float vDepth;
+void main() {
+  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vWorld = wp.xyz;
+  vNormal = normalize(mat3(modelMatrix) * normal);
+  vColor = color;
+  vEnv = aEnv;
+  vec4 mv = viewMatrix * wp;
+  vDepth = -mv.z;
+  gl_Position = projectionMatrix * mv;
+}
+`;
+const VC_FRAG = /* glsl */`
+${GLSL_FRAG_COMMON}
+uniform vec3 uLightColor;
+varying vec3 vColor;
+varying float vEnv;
+varying vec3 vWorld;
+varying vec3 vNormal;
+varying float vDepth;
+void main() {
+  vec3 n = normalize(vNormal);
+  vec3 lit = uLightColor * (vEnv * (0.55 + 0.45 * max(n.y, 0.0))) + flashlight(vWorld, n) + vec3(0.03);
+  vec3 col = applyFog(vColor * lit, vDepth, vEnv);
+  gl_FragColor = vec4(toDisplay(col), 1.0);
+}
+`;
+const vcMat = new THREE.ShaderMaterial({ uniforms: { ...U }, vertexShader: VC_VERT, fragmentShader: VC_FRAG, vertexColors: true });
+class Baker {
+  constructor() { this.p = []; this.n = []; this.c = []; this.e = []; }
+  // add every mesh under 'root' (built with itemMaterial colours), expressed in the local space of 'ref'
+  add(root, env, ref = null) {
+    root.updateMatrixWorld(true);
+    const inv = new THREE.Matrix4(); if (ref) { ref.updateMatrixWorld(true); inv.copy(ref.matrixWorld).invert(); }
+    const m = new THREE.Matrix4(), nm = new THREE.Matrix3(), v = new THREE.Vector3(), w = new THREE.Vector3();
+    root.traverse((o) => {
+      if (!o.isMesh || o.userData.skipBake) return;
+      m.multiplyMatrices(inv, o.matrixWorld); nm.getNormalMatrix(m);
+      const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry;
+      const pa = g.attributes.position, na = g.attributes.normal, col = o.material.uniforms.uColor.value;
+      for (let i = 0; i < pa.count; i++) {
+        v.fromBufferAttribute(pa, i).applyMatrix4(m); this.p.push(v.x, v.y, v.z);
+        w.fromBufferAttribute(na, i).applyMatrix3(nm).normalize(); this.n.push(w.x, w.y, w.z);
+        this.c.push(col.r, col.g, col.b); this.e.push(env);
+      }
+      if (g !== o.geometry) g.dispose();
+    });
+  }
+  mesh() {
+    if (!this.p.length) return null;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.n, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
+    g.setAttribute('aEnv', new THREE.Float32BufferAttribute(this.e, 1));
+    g.computeBoundingSphere();
+    return new THREE.Mesh(g, vcMat);
+  }
+}
+// throw away the temporary per-part meshes/materials used for baking
+function disposeTemp(root) { root.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material !== vcMat) o.material.dispose(); }); }
+
 // soft sparkle sprite so items can be spotted in the dark
 const glintTex = (() => {
   const c = makeCanvas(64, 64), g = c.getContext('2d');
@@ -3002,6 +3074,7 @@ function findSpotNear(x, z, wantWall = true) {
   const cx0 = Math.floor(x / CELL), cz0 = Math.floor(z / CELL);
   for (let r = 0; r < 6; r++) for (let k = 0; k < 12; k++) {
     const cx = cx0 + Math.round((Math.random() - 0.5) * 2 * r), cz = cz0 + Math.round((Math.random() - 0.5) * 2 * r);
+    if (world.prop(cx, cz) && r < 5) continue;   // keep pages, radios and the exit clear of props
     const walls = [];
     if (world.wallW(cx, cz)) walls.push([cx * CELL + WALL_T / 2, (cz + 0.5) * CELL, Math.PI / 2]);         // faces +x
     if (world.wallW(cx + 1, cz)) walls.push([(cx + 1) * CELL - WALL_T / 2, (cz + 0.5) * CELL, -Math.PI / 2]);
@@ -3480,7 +3553,7 @@ function resetScares() {
   for (let i = scares.doors.length - 1; i >= 0; i--) {
     const d = scares.doors[i];
     if (d.owned) { d.phase = 'idle'; continue; }
-    scene.remove(d.group); d.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    scene.remove(d.group); d.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
     scares.doors.splice(i, 1);
   }
   dynBlockers.length = 0;
@@ -3546,24 +3619,32 @@ function findDoorway() {
   });
   return ok.length ? ok[Math.floor(Math.random() * ok.length)] : null;
 }
-function buildDoubleDoor(c) {
+function buildDoubleDoor(c, baker = null) {
   const group = new THREE.Group();
   const W = CELL - WALL_T, H = 2.2, leafW = W / 2;
-  const mat = itemMaterial(0x7a6a46), frameMat = itemMaterial(0xa89a62), TH = world.height(fdiv(c.x, CHUNK_SIZE), fdiv(c.z, CHUNK_SIZE)), header = new THREE.Mesh(new THREE.BoxGeometry(W + 0.02, TH - H, WALL_T), itemMaterial(0xc4ae5c));
-  header.position.set(0, H + (TH - H) / 2, 0); group.add(header);
-  const leaves = [];
-  for (const s of [-1, 1]) {
-    const hinge = new THREE.Group(); hinge.position.set(s * W / 2, 0, 0); group.add(hinge);
-    const leaf = new THREE.Mesh(new THREE.BoxGeometry(leafW - 0.02, H - 0.02, 0.05), mat);
-    leaf.position.set(-s * leafW / 2, H / 2, 0); hinge.add(leaf);
-    const win = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.5, 0.06), frameMat); win.position.set(-s * leafW * 0.5, 1.45, 0); hinge.add(win);
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(leafW * 0.6, 0.04, 0.09), frameMat); bar.position.set(-s * leafW * 0.55, 1.0, 0); hinge.add(bar);
-    leaves.push({ hinge, s });
-  }
+  const TH = world.height(fdiv(c.x, CHUNK_SIZE), fdiv(c.z, CHUNK_SIZE));
   group.position.set(c.x, 0, c.z);
   group.rotation.y = c.axis === 'x' ? 0 : Math.PI / 2;
   const env = sampleLight(c.x, c.z, 1.5);
-  group.traverse((o) => { if (o.material && o.material.uniforms && o.material.uniforms.uEnv) o.material.uniforms.uEnv.value = env; });
+  // header above the doorway (static): into the chunk's merged mesh, or its own mesh
+  const hdr = new THREE.Group(); hdr.position.copy(group.position); hdr.rotation.copy(group.rotation);
+  const header = new THREE.Mesh(new THREE.BoxGeometry(W + 0.02, TH - H, WALL_T), itemMaterial(0xc4ae5c));
+  header.position.set(0, H + (TH - H) / 2, 0); hdr.add(header);
+  if (baker) baker.add(hdr, env);
+  else { const b = new Baker(); b.add(hdr, env, hdr); const m = b.mesh(); m.position.set(0, 0, 0); group.add(m); }
+  disposeTemp(hdr);
+  // each leaf (slab + window + push bar) is one baked mesh hanging from its hinge
+  const leaves = [];
+  for (const s of [-1, 1]) {
+    const hinge = new THREE.Group(); hinge.position.set(s * W / 2, 0, 0); group.add(hinge);
+    const tmp = new THREE.Group();
+    const leaf = new THREE.Mesh(new THREE.BoxGeometry(leafW - 0.02, H - 0.02, 0.05), itemMaterial(0x7a6a46)); leaf.position.set(-s * leafW / 2, H / 2, 0); tmp.add(leaf);
+    const win = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.5, 0.06), itemMaterial(0xa89a62)); win.position.set(-s * leafW * 0.5, 1.45, 0); tmp.add(win);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(leafW * 0.6, 0.04, 0.09), itemMaterial(0xa89a62)); bar.position.set(-s * leafW * 0.55, 1.0, 0); tmp.add(bar);
+    const b = new Baker(); b.add(tmp, env, tmp); disposeTemp(tmp);
+    hinge.add(b.mesh());
+    leaves.push({ hinge, s });
+  }
   scene.add(group);
   return { group, leaves, x: c.x, z: c.z, axis: c.axis, angle: 1.45, t: 0, phase: 'open', closedFor: 0 };
 }
@@ -3613,7 +3694,7 @@ function updateDoors(dt) {
       dynBlockers.push(d.axis === 'x' ? { x0: d.x - half, x1: d.x + half, z0: d.z - h, z1: d.z + h } : { x0: d.x - h, x1: d.x + h, z0: d.z - half, z1: d.z + half });
     }
     if (!d.owned && Math.hypot(d.x - player.pos.x, d.z - player.pos.z) > 45) {
-      scene.remove(d.group); d.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+      scene.remove(d.group); d.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
       scares.doors.splice(i, 1);
     }
   }
@@ -4075,7 +4156,7 @@ function syncTouchButtons() {
 const game = { state: 'menu', time: 0, danger: 0, heartTimer: 0, notes: 0, level: 1, mode: 'story', serial: 0 };
 function notesCollected() { return Math.min(game.notes, game.mode === 'endless' ? 8 : 5); }
 function onChaseStart() {}
-function onNotePicked() { stinger(0.8 + 0.1 * game.notes); fx.dip = 0.6; scares.t = Math.min(scares.t, 12 + Math.random() * 10); }
+function onNotePicked() { stinger(0.8 + 0.1 * notesCollected()); fx.dip = 0.6; scares.t = Math.min(scares.t, 12 + Math.random() * 10); }
 function onPlayerCaught() { player.holding = false; Sound.setMuffle(false); hidePhantom(); $('hud').classList.add('hidden'); $('touchUI').classList.add('hidden'); hideNote(); clearBeacons(); }
 function onLevelComplete() {
   game.state = 'won';
@@ -4261,6 +4342,7 @@ function startGame(level = 1, mode = 'story') {
   requestLock();                     // must happen inside the click gesture
   // give the browser a frame to show the loading screen before baking the first chunks
   setTimeout(() => {
+    if (game.state !== 'loading') return;
     newGame(level, mode);
     onNewRun();
     game.state = 'playing';
@@ -4319,7 +4401,7 @@ function snapshotRun() {
   };
   writeSave();
 }
-function onNewRun() { save.run = null; writeSave(); autosaveT = 10; }
+function onNewRun() { if (save.run && save.run.mode === 'endless') save.bestEndless = Math.max(save.bestEndless || 0, save.run.notes || 0); save.run = null; writeSave(); autosaveT = 10; }
 function onPause() { snapshotRun(); }
 function onDeath() { if (game.mode === 'endless') save.bestEndless = Math.max(save.bestEndless || 0, game.notes); save.deaths = (save.deaths || 0) + 1; save.run = null; writeSave(); }
 function onWin() {
@@ -4410,6 +4492,8 @@ function updateDanger(dt) {
 const perfMon = { t: 0, frames: 0, done: false };
 function watchPerformance(rawDt) {
   if (perfMon.done || game.state !== 'playing' || document.hidden) return;
+  perfMon.warm = (perfMon.warm || 0) + rawDt;
+  if (perfMon.warm < 1.5) return;          // ignore the loading hitch and first chunk bakes
   perfMon.t += rawDt; perfMon.frames++;
   if (perfMon.t < 5) return;
   const fps = perfMon.frames / perfMon.t;

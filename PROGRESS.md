@@ -243,3 +243,12 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   double doors standing open as part of the world (built/disposed with their chunk). The slam scare now prefers one
   of these that you can actually see 4-16 m ahead, so doors no longer pop into existence before slamming (the old
   spawn-a-door behaviour remains as a fallback).
+- **[08:47 UTC] Extra — Draw-call fix + bug-fix pass 4 (third review).** Doors and props were made of many small meshes
+  (would have added several hundred draw calls); they are now baked into merged geometry with per-vertex colour and
+  light under one shared material: props + door headers = 1 mesh per chunk, each door leaf = 1 mesh, and doorways
+  with doors are rarer (14%). Back to ~160 draw calls total. Fixed the review's 8 findings: losing the GPU context
+  now freezes the game in a 'lost' state (the save survives; a pending load is cancelled); endless-mode stinger
+  volume is capped; "Reduce flashing" keeps outages dark, uses steady average levels for flickering/dying lights and
+  no longer makes you easier to spot; pages/radios/exit avoid cells with props; toppled-chair collision covers the
+  chair; auto-quality ignores the first 1.5 s (loading hitch); abandoning an endless run keeps its record; throat
+  clicks only while it truly idles. Full suite (20 scenarios) passes.
