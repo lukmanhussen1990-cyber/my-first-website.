@@ -140,6 +140,7 @@
     <label><span>Head bob</span><input type="checkbox" id="setBob"><span></span></label>
   </div>
   <button class="btn" id="btnSettingsBack">BACK</button>
+  <button class="btn" id="btnReset" style="font-size:13px;min-width:0;opacity:0.7">RESET PROGRESS</button>
 </div>
 
 <div id="howtoScreen" class="screen menu hidden">
@@ -2235,6 +2236,7 @@ function updateMonster(dt) {
   m.stepPhase = m.phase / Math.PI;
   if (Math.floor(prevStep) !== Math.floor(m.stepPhase)) monsterFootstep(m.state === 'chase');
   updateMonsterBreath(dist);
+  monsterClicks(dt);
 
   // ---------------- lights stutter around it ----------------
   U.uMonster.value.set(m.pos.x, 0, m.pos.z, m.state === 'chase' || m.state === 'spotted' ? 1.0 : 0.65);
@@ -2310,6 +2312,22 @@ function monsterFootstep(chase) {
   const o = ctx.createOscillator(), og = A.gain(0);
   o.frequency.setValueAtTime(70, t); o.frequency.exponentialRampToValueAtTime(30, t + 0.15);
   o.connect(og); og.connect(p); A.env(og, t, 0.004, chase ? 1.5 : 1.0, 0.18); o.start(t); o.stop(t + 0.3);
+}
+// throat clicks while it watches or searches for you
+let clickT = 2;
+function monsterClicks(dt) {
+  if (monster.state !== 'stalk' && monster.state !== 'search' && monster.idleT <= 0) { clickT = 1; return; }
+  clickT -= dt;
+  if (clickT > 0 || !Sound.ctx) return;
+  clickT = 1.4 + Math.random() * 2.2;
+  const ctx = Sound.ctx, A = Sound._, t0 = ctx.currentTime, p = A.panner(monster.pos.x, 2.5, monster.pos.z, 2, 1.1, 0.4);
+  const n = 3 + Math.floor(Math.random() * 6);
+  for (let i = 0; i < n; i++) {
+    const t = t0 + i * (0.045 + Math.random() * 0.03);
+    const s = A.noiseSrc(), f = A.filter('bandpass', 1800 + Math.random() * 900, 6), g = A.gain(0);
+    s.connect(f); f.connect(g); g.connect(p); A.env(g, t, 0.001, 0.9, 0.02); s.start(t, Math.random() * 2, 0.04);
+  }
+  if (Math.hypot(monster.pos.x - player.pos.x, monster.pos.z - player.pos.z) < 18) caption('[clicking]', 1.5);
 }
 function updateMonsterBreath(dist) {
   const ctx = Sound.ctx; if (!ctx) return;
@@ -4088,6 +4106,12 @@ $('btnSettingsBack').addEventListener('click', () => showScreen(settingsReturn))
 $('btnHowto').addEventListener('click', () => showScreen('howtoScreen'));
 $('btnHowtoBack').addEventListener('click', () => showScreen('startScreen'));
 $('btnContinue').addEventListener('click', () => continueGame());
+$('btnReset').addEventListener('click', () => {
+  if (!confirm('Erase best times, unlocked levels and the saved run?')) return;
+  save = { best: {}, unlocked: 1, escapes: 0, deaths: 0, run: null, introSeen: true }; writeSave();
+  showMessage('Progress erased.', 2);
+  if (game.state === 'menu') refreshStartScreen();
+});
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
 window.addEventListener('blur', () => { if (!isTouch) pauseGame(); });
 

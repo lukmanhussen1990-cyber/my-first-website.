@@ -208,3 +208,5 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   low-passed if you were holding your breath (instant un-muffle); a noise during stalking skipped the stalk logic;
   falling drops could freeze in mid-air in later runs; losing pointer lock during the loading/intro card now pauses
   the run once it starts. Verified the breath latch (exactly 2 state changes in 12 s of holding).
+- **[08:20 UTC] Extra — Clicks, reset.** While it stalks, searches or stands scanning, the creature makes bursts of
+  spatial throat clicks (an audio tell, captioned). Settings has a "Reset progress" button (with confirmation).
