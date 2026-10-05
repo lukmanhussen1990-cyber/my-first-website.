@@ -148,6 +148,7 @@
     <b>Goal:</b> find the <b>5 notes</b> pinned around the maze, then find the <b>EXIT</b> door that appears.
     Notes crackle with radio static and the exit hums &mdash; use your ears (headphones help).<br><br>
     <b>WASD / arrows</b> move &nbsp; <b>Mouse</b> look &nbsp; <b>Shift</b> run &nbsp; <b>C</b> crouch &nbsp; <b>F</b> flashlight &nbsp; <b>Space</b> hold breath &nbsp; <b>E</b> close note &nbsp; <b>Esc</b> pause<br>
+    <b>Gamepad:</b> left stick move, right stick look, RT run, RB hold breath, A crouch, X flashlight, Start pause.<br>
     <b>Phone:</b> left thumb moves, right thumb drags to look, buttons for run / crouch / light.<br><br>
     <b>Something hunts you.</b> It hears running from far away, walking from closer, crouching barely at all.
     It sees you better when you stand in the light or use the flashlight. If it spots you, break its line of sight,
@@ -2554,7 +2555,7 @@ function toggleFlashlight() {
 }
 // Hold breath (Space / BREATH button): up to ~6 s of silence, then you gasp
 function updateBreath(dt) {
-  const want = (keys.Space || input.touchHold) && !player.running && player.breath > 0.02;
+  const want = (keys.Space || input.touchHold || pad.hold) && !player.running && player.breath > 0.02;
   if (want && !player.holding) { player.holding = true; Sound.setMuffle(true); }
   if (player.holding) {
     player.breath = Math.max(0, player.breath - dt / 6);
@@ -3683,6 +3684,34 @@ function requestLock() {
 }
 renderer.domElement.addEventListener('click', () => { if (game.state === 'playing' && !input.locked) requestLock(); });
 
+
+// ============================================================================
+//  GAMEPAD (left stick move, right stick look, RT/LB run, RB hold breath, A crouch, X flashlight, Start pause)
+// ============================================================================
+const pad = { prev: [], x: 0, y: 0, lookX: 0, lookY: 0, run: false, hold: false, active: false };
+function pollGamepad(dt) {
+  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  let gp = null; for (const p of pads) if (p && p.connected) { gp = p; break; }
+  if (!gp) { pad.active = false; pad.x = pad.y = pad.lookX = pad.lookY = 0; pad.run = pad.hold = false; return; }
+  const dz = (v) => (Math.abs(v) < 0.15 ? 0 : (v - Math.sign(v) * 0.15) / 0.85);
+  const b = (i) => !!(gp.buttons[i] && (gp.buttons[i].pressed || gp.buttons[i].value > 0.5));
+  const edge = (i) => b(i) && !pad.prev[i];
+  pad.x = dz(gp.axes[0] || 0); pad.y = dz(gp.axes[1] || 0);
+  pad.lookX = dz(gp.axes[2] || 0); pad.lookY = dz(gp.axes[3] || 0);
+  pad.run = b(7) || b(4) || b(10); pad.hold = b(5);
+  if (pad.x || pad.y || pad.lookX || pad.lookY || gp.buttons.some((x) => x && x.pressed)) pad.active = true;
+  if (game.state === 'playing') {
+    if (edge(0) || edge(11)) player.crouchToggle = !player.crouchToggle;
+    if (edge(2)) toggleFlashlight();
+    if ((edge(1) || edge(3)) && goal.reading > 0) hideNote();
+    if (edge(9)) pauseGame();
+    // right stick look (radians/sec), scaled like mouse sensitivity
+    input.lookX += pad.lookX * Math.abs(pad.lookX) * 1400 * dt;
+    input.lookY += pad.lookY * Math.abs(pad.lookY) * 900 * dt;
+  } else if (game.state === 'paused' && edge(9)) resumeGame();
+  for (let i = 0; i < gp.buttons.length; i++) pad.prev[i] = b(i);
+}
+
 // ============================================================================
 //  PLAYER
 // ============================================================================
@@ -3715,13 +3744,13 @@ function updatePlayer(dt) {
   if (keys.KeyS || keys.ArrowDown) mz -= 1;
   if (keys.KeyD || keys.ArrowRight) mx += 1;
   if (keys.KeyA || keys.ArrowLeft) mx -= 1;
-  mx += input.joyX; mz -= input.joyY;
+  mx += input.joyX + pad.x; mz -= input.joyY + pad.y;
   const len = Math.hypot(mx, mz);
   if (len > 1) { mx /= len; mz /= len; }
   player.moving = len > 0.05;
 
   player.crouching = player.crouchToggle;
-  const wantRun = (keys.ShiftLeft || keys.ShiftRight || input.touchRun) && player.moving && mz > 0.1 && !player.crouching && !player.exhausted && player.stamina > 0;
+  const wantRun = (keys.ShiftLeft || keys.ShiftRight || input.touchRun || pad.run) && player.moving && mz > 0.1 && !player.crouching && !player.exhausted && player.stamina > 0;
   player.running = wantRun;
   const LV = LEVELS[world.level] || LEVELS[1];
   const target = player.crouching ? LV.crouch : player.running ? LV.run : LV.walk;
@@ -4182,6 +4211,7 @@ const SIM_STEPS = [
   ['sparks', (dt) => updateSparks(dt)],
 ];
 function simulate(dt) {
+  pollGamepad(dt);
   if (game.state === 'playing') {
     game.time += dt;
     U.uTime.value = (U.uTime.value + dt) % 1000;

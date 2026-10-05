@@ -199,3 +199,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   names the level; the creature's chest breathes when it stands still.
 - **[08:14 UTC] Extra — First-run intro, tinted scare.** The very first run opens on black with "You were leaning against
   a wall. Then the wall wasn't there." (remembered in the save). The jump-scare face is tinted per level.
+- **[08:17 UTC] Extra — Gamepad support.** Standard-mapping controllers: left stick move, right stick look (curved
+  response), RT/LB/L3 run, RB hold breath, A crouch, X flashlight, B/Y close note, Start pause/resume. Tested with an
+  emulated pad.
