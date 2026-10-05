@@ -2223,7 +2223,7 @@ function updateMonster(dt) {
       if (moved < step * 0.3 && step > 0.01) { m.stuckTimer += dt; if (m.stuckTimer > 1.0) { m.path = []; m.stuckTimer = 0; if (m.state === 'chase' && m.sees) { m.sees = false; m.visCheck = 0.4; } } }
       else m.stuckTimer = 0;
       moving = moved > 0.001;
-      m.phase += moved * 2.2;
+      m.phase += moved * (m.state === 'chase' ? 1.8 : 2.75);   // matches stride length so the feet don't skate
     }
   }
   if (!moving) m.speed *= Math.max(0, 1 - dt * 5);

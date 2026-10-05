@@ -210,3 +210,6 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   the run once it starts. Verified the breath latch (exactly 2 state changes in 12 s of holding).
 - **[08:20 UTC] Extra — Clicks, reset.** While it stalks, searches or stands scanning, the creature makes bursts of
   spatial throat clicks (an audio tell, captioned). Settings has a "Reset progress" button (with confirmation).
+- **[08:21 UTC] Extra — Feel.** Batteries stay on the floor if your light is already full (with a hint), sprinting widens
+  the FOV by 5 degrees and high danger narrows it (tunnel vision), and the creature's gait phase now matches its stride
+  length so its feet no longer skate.
