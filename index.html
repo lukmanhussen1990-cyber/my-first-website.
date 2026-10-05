@@ -219,6 +219,7 @@ function mulberry32(a) {
 // ============================================================================
 const container = $('game');
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+renderer.info.autoReset = false;
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 container.appendChild(renderer.domElement);
@@ -1134,6 +1135,7 @@ function* buildChunkGeometry(kx, kz) {
       const zs = gzA * CELL - (contA ? 0 : h), ze = (gzB + 1) * CELL + (contB ? 0 : h);
       const su = Math.max(1, Math.round((ze - zs) / 0.6));
       walls.quad(X - h, 0, zs, 0, 0, ze - zs, 0, H, 0, -1, 0, 0, su, wsegV, 1);
+      yield;
       walls.quad(X + h, 0, zs, 0, 0, ze - zs, 0, H, 0, 1, 0, 0, su, wsegV, 1);
       if (!contA && !world.wallN(gx, gzA) && !world.wallN(gx - 1, gzA)) walls.quad(X - h, 0, zs, T, 0, 0, 0, H, 0, 0, 0, -1, 1, wsegV, 1);
       if (!contB && !world.wallN(gx, gzB + 1) && !world.wallN(gx - 1, gzB + 1)) walls.quad(X - h, 0, ze, T, 0, 0, 0, H, 0, 0, 0, 1, 1, wsegV, 1);
@@ -1154,6 +1156,7 @@ function* buildChunkGeometry(kx, kz) {
       const xs = gxA * CELL - (contA ? 0 : h), xe = (gxB + 1) * CELL + (contB ? 0 : h);
       const su = Math.max(1, Math.round((xe - xs) / 0.6));
       walls.quad(xs, 0, Z - h, xe - xs, 0, 0, 0, H, 0, 0, 0, -1, su, wsegV, 1);
+      yield;
       walls.quad(xs, 0, Z + h, xe - xs, 0, 0, 0, H, 0, 0, 0, 1, su, wsegV, 1);
       if (!contA && !world.wallW(gxA, gz) && !world.wallW(gxA, gz - 1)) walls.quad(xs, 0, Z - h, 0, 0, T, 0, H, 0, -1, 0, 0, 1, wsegV, 1);
       if (!contB && !world.wallW(gxB + 1, gz) && !world.wallW(gxB + 1, gz - 1)) walls.quad(xe, 0, Z - h, 0, 0, T, 0, H, 0, 1, 0, 0, 1, wsegV, 1);
@@ -1184,7 +1187,7 @@ function* buildChunkGeometry(kx, kz) {
       panels.quad(mx - 0.3, H - 0.012, mz - 0.6, 0.6, 0, 0, 0, 0, 1.2, 0, -1, 0, 1, 1, 2);
       for (let v = 0; v < 4; v++) { panels.extra.aSeed.data.push(seed); panels.extra.aLPos.data.push(mx, mz); }
     }
-    if ((lx & 1) === 1) yield;
+    yield;
   }
   return { walls: walls.build(), floor: floor.build(), ceil: ceil.build(), panels: panels.build() };
 }
@@ -1214,7 +1217,7 @@ function disposeChunk(c) {
 }
 function clearChunks() { for (const c of chunkMeshes.values()) disposeChunk(c); chunkMeshes.clear(); building = null; clearItems(); }
 const _needed = [];
-function updateChunks(px, pz, force = false, budgetMs = 3) {
+function updateChunks(px, pz, force = false, budgetMs = 2.5) {
   const pkx = fdiv(px, CHUNK_SIZE), pkz = fdiv(pz, CHUNK_SIZE);
   for (const [key, c] of chunkMeshes) {
     if (Math.max(Math.abs(c.kx - pkx), Math.abs(c.kz - pkz)) > LOAD_RADIUS + 1) { disposeChunk(c); chunkMeshes.delete(key); }
@@ -2234,17 +2237,20 @@ function showMessage(text, seconds = 3) {
   hud.msg.style.opacity = '1';
   hud.msgTimer = seconds;
 }
+const _hudCache = {};
+function setStyle(el, key, prop, val) { if (_hudCache[key] !== val) { _hudCache[key] = val; el.style[prop] = val; } }
+function setText(el, key, val) { if (_hudCache[key] !== val) { _hudCache[key] = val; el.textContent = val; } }
 function updateHUD(dt) {
   if (hud.msgTimer > 0) { hud.msgTimer -= dt; if (hud.msgTimer <= 0) hud.msg.style.opacity = '0'; }
-  hud.stamina.style.width = (player.stamina * 100).toFixed(1) + '%';
-  hud.stamina.style.background = player.exhausted ? '#a5432c' : '#d8c77a';
-  hud.staminaWrap.style.opacity = player.stamina > 0.995 && !player.running ? '0.25' : '1';
+  setStyle(hud.stamina, 'sw', 'width', (player.stamina * 100).toFixed(0) + '%');
+  setStyle(hud.stamina, 'sb', 'background', player.exhausted ? '#a5432c' : '#d8c77a');
+  setStyle(hud.staminaWrap, 'so', 'opacity', player.stamina > 0.995 && !player.running ? '0.25' : '1');
   const b = flash.battery;
-  hud.battery.style.width = (b * 100).toFixed(1) + '%';
-  hud.battery.style.background = b < 0.2 ? '#c0472c' : b < 0.45 ? '#d6a43a' : '#cfd88a';
-  hud.batteryPct.textContent = Math.ceil(b * 100) + '%' + (flash.on || isTouch ? '' : ' (F)');
-  hud.batteryWrap.style.opacity = flash.on ? '1' : '0.6';
-  hud.notes.textContent = game.notes + ' / ' + NOTES_NEEDED;
+  setStyle(hud.battery, 'bw', 'width', (b * 100).toFixed(0) + '%');
+  setStyle(hud.battery, 'bb', 'background', b < 0.2 ? '#c0472c' : b < 0.45 ? '#d6a43a' : '#cfd88a');
+  setText(hud.batteryPct, 'bp', Math.ceil(b * 100) + '%' + (flash.on || isTouch ? '' : ' (F)'));
+  setStyle(hud.batteryWrap, 'bo', 'opacity', flash.on ? '1' : '0.6');
+  setText(hud.notes, 'n', game.notes + ' / ' + NOTES_NEEDED);
 }
 
 // ============================================================================
@@ -3611,6 +3617,7 @@ function updateDanger(dt) {
 }
 function frame() {
   requestAnimationFrame(frame);
+  renderer.info.reset();
   const dt = Math.min(clock.getDelta(), 0.05);
   simulate(dt);
   renderer.setRenderTarget(sceneRT);
@@ -3667,7 +3674,7 @@ showScreen('startScreen');
 frame();
 
 // Debug / test hook
-window.__bk = { scares, startOutage, startDoorSlam, startFakeSteps, startPhantom, stinger, dynBlockers, PROF, simulate, get isTouch() { return isTouch; }, get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
+window.__bk = { buildChunkGeometry, renderInfo: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, progs: renderer.info.programs.length }), scares, startOutage, startDoorSlam, startFakeSteps, startPhantom, stinger, dynBlockers, PROF, simulate, get isTouch() { return isTouch; }, get save() { return save; }, continueGame, snapshotRun, applyLevelLook, water, lightTex, pauseGame, resumeGame, quitToMenu, settings, showScreen, THREE, fx, postU, applyQuality, quality, Sound, ambience, monster, flash, items, collectedItems, U, goal, beacons, spawnExit, findPath, sampleLight, newGame, emitNoise, game, player, keys, input, camera, get world() { return world; }, chunkMeshes, updateChunks, startGame, get footsteps() { return footstepCount; } };
 </script>
 </body>
 </html>

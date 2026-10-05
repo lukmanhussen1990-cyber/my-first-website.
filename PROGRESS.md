@@ -121,3 +121,7 @@ Target: work until at least 10:55:30 UTC (4h 30m).
   plus 12% extra doors) and *long walls* (recursive division: long straight walls with one or two gaps, giving long
   sightlines). Level 2 favours halls, corridors and long walls. Connectivity re-verified (0 unreachable cells in a
   121x121 area for both levels).
+- **[07:29 UTC] Extra — Performance pass.** Measured in-browser: ~100 draw calls / ~110k triangles on screen,
+  ~0.1-0.5 ms average CPU simulation per frame. Chunk baking now yields after every wall face / floor cell: worst single
+  step went from ~10 ms to 1.9 ms (p99 0.9 ms) with a 2.5 ms/frame streaming budget, so walking into new areas no longer
+  hitches. HUD DOM writes are cached (only touched when a value changes). Added renderer stats to the debug hook.
