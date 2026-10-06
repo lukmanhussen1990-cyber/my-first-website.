@@ -27,7 +27,11 @@
     { key: 'BL', c: [585, 785], small: [888, 599], big: [824, 639], tS: 5.20, tB: 5.28, tP: 5.36, w0: 5.50, word: 'try this!', wrot: -2, r0: 6.62, ph: 1.2, iS: 7.42, iB: 7.47, Ti: 7.52, seed: 303 },
     { key: 'BR', c: [1335, 785], small: [1032, 599], big: [1096, 639], tS: 5.60, tB: 5.68, tP: 5.76, w0: 5.90, word: 'for Imran', wrot: 3, r0: 6.85, ph: 1.8, iS: 7.25, iB: 7.30, Ti: 7.35, seed: 404, hero: true },
   ];
-  const WRITE_DUR = 0.35, RESOLVE_DUR = 0.28;
+  const WRITE_DUR = 0.35, RESOLVE_DUR = 0.28, POP_ANCHOR = 0.6;
+  const UNWRITE_K = 0.4, WORD_FADE = 0.08;
+  const NIB_R = 8; // spec r 6, scaled with the bolder scribble stroke so the nib still reads at the head
+  // Tick sizes: spec 30×7 (action) and 14×4 (joy) read as specks next to 440 px bubbles, so they are a bit larger.
+  const TICK_LEN = 40, TICK_W = 8, JOY_LEN = 18, JOY_W = 5;
   const WORD_SIZE = 108, WORD_MAXW = 380, WORD_MIN = 100;
 
   // Bubble outline: WHITE 14-gon on an ellipse rx 220 / ry 170, radial jitter ±4 %, angle jitter ±5° (local coords).
@@ -66,47 +70,75 @@
   }
 
   // ---------------- cursive scribble ribbon (spec §3.4 Beat B) ----------------
-  // Prolate cycloid x = 10φ − 30 sin φ, y = −26·h(φ)·cos φ. We take φ ∈ [π, 9π] (trough to trough) so the
-  // ribbon has exactly 4 full ascender loops ("lulu"), plus a 20 px lead-in swash and a 40 px trailing flick.
-  // Tuned against the source frames: narrower slanted ascender loops and a bolder nib than the literal spec
-  // values (a 10, b 30, c 26, ×1.2, 5→11→4 px), which rendered as round "eeee" curls.
-  const SCRIB = { a: 11, b: 17, c: 30, slant: 0.5, scale: 1.3, w: [7, 14, 6] };
-  function makeScribble(seed, P = SCRIB) {
+  // Each scribble is a chain of cursive "letters", one trough-to-trough cycle each, of a prolate cycloid
+  //   x = a·ψ + b·sin ψ,  y = −H·(1 − cos ψ)/2   (trough at ψ = 0, top at ψ = π), sheared forward by `slant`.
+  // b > a gives a loop at the top whose counter opens as b/a grows; b < a gives a rounded hump with no loop.
+  // Deviation from the literal spec cycloid (one height-modulated cycloid, φ ∈ [0, 8π]): that rendered as four
+  // near-identical round curls. Here every bubble gets its own letter rhythm (like the source frames: ulle / lulu /
+  // ulu / lull), tall "l" loops have open counters, "u" humps are about half as tall, and the lead-in and tail
+  // vary per bubble (rising flick, long flat trail, hook), so the 6.25 frame reads as four different thoughts.
+  const LETTER = {
+    l: { H: 96, a: 11.0, k: 2.45, n: 1 },  // tall ascender loop, open counter
+    e: { H: 46, a: 9.5, k: 2.1, n: 1 },    // small loop
+    u: { H: 42, a: 7.4, k: 1.05, n: 2 },   // two short pointed humps, no loop
+  };
+  const SCRIB = { slant: 0.55, w: [9, 16, 8] };
+  const SCRIB_SPEC = {
+    TL: { pat: 'ulle', lead: [-46, 14], tail: [58, -44], off: [10, 6] },  // ends in a rising flick
+    TR: { pat: 'lulu', lead: [-40, 24], tail: [86, 6], off: [14, 4] },    // long flat trailing stroke
+    BL: { pat: 'ulu', lead: [-50, 10], tail: [104, -12], off: [16, 6] },  // short word, long trail
+    BR: { pat: 'lull', lead: [-44, 20], tail: [46, -18], off: [10, 4] },  // tall and busy, small hook
+  };
+  function makeScribble(seed, spec, P = SCRIB) {
     const r = L.rng(seed);
-    const hs = []; for (let k = 0; k <= 5; k++) hs.push(0.7 + r() * 0.7);
-    const sw = []; for (let k = 0; k <= 5; k++) sw.push(0.9 + r() * 0.22); // slight per-loop width rhythm
-    const hAt = (phi) => {
-      const u = phi / (2 * Math.PI), k = Math.floor(u), f = u - k, w = (1 - Math.cos(Math.PI * f)) / 2;
-      return [lerp(hs[k], hs[k + 1], w), lerp(sw[k], sw[k + 1], w)];
-    };
-    const raw = [];
-    let xAcc = P.a * Math.PI, prevPhi = Math.PI;
-    for (let phi = Math.PI; phi <= 9 * Math.PI + 1e-9; phi += 0.03) {
-      const [h, s] = hAt(phi);
-      xAcc += P.a * (phi - prevPhi) * s; prevPhi = phi;
-      const hf = 1 + (h - 1) * (0.5 + 0.5 * Math.cos(phi));
-      const y = -P.c * hf * Math.cos(phi);
-      raw.push([xAcc - P.b * Math.sin(phi) - P.slant * y, y]);
-    }
-    // lead-in swash (enters the first trough horizontally) and trailing flick
+    const pat = spec.pat.split('');
+    const base = [0]; for (let k = 0; k < 12; k++) base.push((r() - 0.5) * 2 * 5); // baseline drift ±5 px
+    let raw = [], x0 = 0;
+    const cyc = []; pat.forEach((ch) => { for (let q = 0; q < LETTER[ch].n; q++) cyc.push(ch); });
+    cyc.forEach((ch, k) => {
+      const Lt = LETTER[ch];
+      const H = Lt.H * (0.92 + r() * 0.16), a = Lt.a * (0.94 + r() * 0.12), b = a * Lt.k * (0.95 + r() * 0.1);
+      const sl = P.slant * (0.9 + r() * 0.2);
+      const n = 70;
+      for (let j = k ? 1 : 0; j <= n; j++) {
+        const psi = (j / n) * 2 * Math.PI;
+        const yb = lerp(base[k], base[k + 1], (1 - Math.cos(psi / 2)) / 2);
+        const hy = H * (1 - Math.cos(psi)) / 2;
+        raw.push([x0 + a * psi + b * Math.sin(psi) + sl * hy, yb - hy]);
+      }
+      x0 += 2 * Math.PI * a;
+    });
+    // lead-in from lower left, arriving horizontally at the first trough; tail leaving the last trough horizontally
+    const quad = (A, Cc, B, n) => { const o = []; for (let i = 0; i <= n; i++) { const t = i / n, u = 1 - t; o.push([u * u * A[0] + 2 * u * t * Cc[0] + t * t * B[0], u * u * A[1] + 2 * u * t * Cc[1] + t * t * B[1]]); } return o; };
     const p0 = raw[0], pN = raw[raw.length - 1];
-    const quad = (a, c, b, n) => { const o = []; for (let i = 0; i < n; i++) { const t = i / n, u = 1 - t; o.push([u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]); } return o; };
-    const lead = quad([p0[0] - 20, p0[1] - 13], [p0[0] - 9, p0[1] + 1], p0, 10);
-    const tail = quad(pN, [pN[0] + 24, pN[1] + 3], [pN[0] + 40, pN[1] - 12], 14).slice(1).concat([[pN[0] + 40, pN[1] - 12]]);
+    const S0 = [p0[0] + spec.lead[0], p0[1] + spec.lead[1]];
+    const lead = quad(S0, [p0[0] + spec.lead[0] * 0.45, p0[1] + 1], p0, 16).slice(0, -1);
+    const E = [pN[0] + spec.tail[0], pN[1] + spec.tail[1]];
+    const tail = quad(pN, [pN[0] + spec.tail[0] * 0.55, pN[1] + (spec.tail[1] < -20 ? 4 : spec.tail[1] * 0.3)], E, 24).slice(1);
     let pts = lead.concat(raw, tail);
-    // center, scale ×1.2, tilt −4°, place at bubble center + (−6, +4)
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const p of pts) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
-    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, ca = Math.cos(-4 * DEG), sa = Math.sin(-4 * DEG);
-    pts = pts.map(([x, y]) => { x = (x - cx) * P.scale; y = (y - cy) * P.scale; return [x * ca - y * sa - 6, x * sa + y * ca + 4]; });
+    const leadLen = L.polyLength(lead.concat([p0]), false);
+    // center on the bubble (ink bbox), tilt −4°, offset slightly right/down so any overflow is on the right
+    let bx0 = Infinity, bx1 = -Infinity, by0 = Infinity, by1 = -Infinity;
+    for (const p of pts) { bx0 = Math.min(bx0, p[0]); bx1 = Math.max(bx1, p[0]); by0 = Math.min(by0, p[1]); by1 = Math.max(by1, p[1]); }
+    const cx = (bx0 + bx1) / 2, cy = (by0 + by1) / 2, ca = Math.cos(-4 * DEG), sa = Math.sin(-4 * DEG);
+    pts = pts.map(([x, y]) => { x -= cx; y -= cy; return [x * ca - y * sa + spec.off[0], x * sa + y * ca + spec.off[1]]; });
     const dense = L.resampleBySpacing(pts, 2, false);
     const cum = [0];
     for (let i = 1; i < dense.length; i++) cum.push(cum[i - 1] + L.dist(dense[i - 1], dense[i]));
     const len = cum[cum.length - 1];
     const u = cum.map((c) => c / len);
-    // width 5 → 11 → 4 px along the length
-    const w = u.map((s) => (s < 0.45 ? lerp(P.w[0], P.w[1], ease.inOutSine(s / 0.45)) : lerp(P.w[1], P.w[2], ease.inOutSine((s - 0.45) / 0.55))));
-    return { pts: dense, u, w, len, seed };
+    // width 8 → 15 → 7 px along the length, with brush pressure: downstrokes ~25 % heavier than upstrokes
+    const n = dense.length, press = dense.map((p, i) => {
+      const a = dense[Math.max(0, i - 3)], b = dense[Math.min(n - 1, i + 3)];
+      const dl = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      return (b[1] - a[1]) / dl; // +1 straight down, −1 straight up
+    });
+    const w = u.map((s, i) => {
+      const w0 = s < 0.4 ? lerp(P.w[0], P.w[1], ease.inOutSine(s / 0.4)) : lerp(P.w[1], P.w[2], ease.inOutSine((s - 0.4) / 0.6));
+      return w0 * (0.9 + 0.22 * press[i]);
+    });
+    // uMeet: arc fraction of the first trough (end of the lead-in), where the un-write converges (see drawThoughts)
+    return { pts: dense, u, w, len, seed, width: bx1 - bx0, height: by1 - by0, uMeet: leadLen / len };
   }
 
   // Variable-width ink ribbon along a precomputed line {pts, u (0..1 arc fraction), w, len, seed},
@@ -115,6 +147,7 @@
   function ribbon(ctx, line, from, to, t, o = {}) {
     if (to - from <= 1e-4) return null;
     const { pts, u, w, len, seed } = line, n = pts.length, b = L.boil(t);
+    if ((to - from) * len < (o.minLen ?? 0)) return null; // never leave a lone speck or dot behind
     const ws = o.wscale ?? 1, cap = o.caps ?? true;
     const idx = (f) => { let lo = 0, hi = n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (u[m] <= f) lo = m; else hi = m; } return lo; };
     const at = (f) => { const i = idx(f), j = Math.min(n - 1, i + 1), k = u[j] > u[i] ? clamp((f - u[i]) / (u[j] - u[i])) : 0; return [L.lerpPt(pts[i], pts[j], k), lerp(w[i], w[j], k)]; };
@@ -152,10 +185,11 @@
     d.toSeed = Math.atan2(SEED_C[1] - d.c[1], SEED_C[0] - d.c[0]); // bubble -> seed direction
     d.out = d.toSeed + Math.PI;                                    // seed -> bubble direction (outward)
     d.rimSeed = rayHit(d.poly, d.toSeed);                          // rim point nearest the seed
-    d.tickRim = [-28, 0, 28].map((da) => { const a = d.out + da * DEG; return { a, r: rayHit(d.poly, a) }; });
-    d.scribble = makeScribble(d.seed + 7);
+    // TR's fan is turned 6° counter-clockwise and its top tick shortened, so it ends well left of the badge corner
+    d.tickRim = (d.key === 'TR' ? [-34, -6, 22] : [-28, 0, 28]).map((da, k) => { const a = d.out + da * DEG; return { a, r: rayHit(d.poly, a), len: d.key === 'TR' && k === 0 ? 32 : TICK_LEN }; });
+    d.scribble = makeScribble(d.seed + 7, SCRIB_SPEC[d.key]);
     d.puffPoly = { small: ngon(8, 0.09, d.seed + 31), big: ngon(8, 0.09, d.seed + 47) };
-    d.spillPoly = ngon(12, 0.10, d.seed + 59, 0);
+    d.spillPoly = ngon(20, 0.10, d.seed + 59, 0); // spec: 12-gon; 20 reads as a liquid flood rather than a polygon wipe
   });
   const SEED_POLY = ngon(10, 0.06, 1234);
 
@@ -279,7 +313,10 @@
     const [bdy, brot] = bob(i, t);
     const pulse = ignPulse(t - d.Ti);
     const x = d.c[0] + Math.cos(d.toSeed) * em, y = d.c[1] + Math.sin(d.toSeed) * em + bdy;
-    return MX.chain(MX.tr(x, y), MX.rot(rot + brot), MX.sc(s * (1 + wob) * pulse, s * (1 - wob) * pulse));
+    // The pop spring scales about a point 60 % of the way to the rim facing the seed (not the bubble center),
+    // so the bubble visibly inflates out of its puff tail instead of appearing mid-air.
+    const ox = Math.cos(d.toSeed) * d.rimSeed * POP_ANCHOR, oy = Math.sin(d.toSeed) * d.rimSeed * POP_ANCHOR;
+    return MX.chain(MX.tr(x, y), MX.rot(rot + brot), MX.tr(ox, oy), MX.sc(s * (1 + wob) * pulse, s * (1 - wob) * pulse), MX.tr(-ox, -oy));
   }
 
   // World-space, boiled outline of a bubble under matrix m.
@@ -344,7 +381,7 @@
 
   // ---------------- small tapered ink tick ----------------
   function tick(ctx, p0, p1, from, to, width, id, t) {
-    if (to - from <= 0.001) return;
+    if ((to - from) * L.dist(p0, p1) < 6) return; // no end-of-stroke dots
     const pts = S.boilPts([p0, L.lerpPt(p0, p1, 0.5), p1], id, t, 1.2);
     L.brushStroke(ctx, pts, { width: width * (1 + 0.08 * L.noise1(L.boil(t) * 3.3, id)), from, to, taperIn: 0.3, taperOut: 0.35, wob: 0.06, seed: id, spacing: 1.5 });
   }
@@ -384,19 +421,30 @@
       ctx.transform(...m);
       const wt = t - d.w0, ru = (t - d.r0) / RESOLVE_DUR;
       // scribble write-on (easeInOutSine, 0.35 s) and, in Beat C, un-write from its end (easeInCubic)
-      if (wt > 0 && ru < 1) {
+      if (wt > 0 && ru < UNWRITE_K) {
         const p = ease.inOutSine(clamp(wt / WRITE_DUR));
-        const trim = ru > 0 ? 1 - ease.inCubic(clamp(ru)) : 1;
-        const head = ribbon(ctx, d.scribble, 0, p * trim, t);
+        // Un-write (spec: from its end, easeInCubic over the whole 0.28 s). That left the full scribble crossing the
+        // solid word for several frames ("for Imran" read as crossed out). Instead it retracts fast (easeOutCubic, gone
+        // by ru 0.4) and thins to 0.3: the end retracts first (clearing the right of the word, i.e. "Imran", first)
+        // while the lead-in swash is eaten from the start, both meeting at the first letter's foot, under the word.
+        let from = 0, to = p, ws = 1;
+        if (ru > 0) {
+          const k = clamp(ru / UNWRITE_K);
+          const meet = d.scribble.uMeet;
+          to = lerp(p, meet, ease.outCubic(k));
+          from = meet * ease.inOutSine(k);
+          ws = lerp(1, 0.3, ease.outCubic(k));
+        }
+        const head = ribbon(ctx, d.scribble, from, to, t, { wscale: ws, minLen: ru > 0 ? 6 : 0 });
         // pen nib: INK dot r 6 riding the head while writing, scaling out over 0.06 s afterwards
         const nibS = wt < WRITE_DUR ? ease.outQuad(clamp(wt / 0.04)) : 1 - ease.inQuad(clamp((wt - WRITE_DUR) / 0.06));
-        if (head && nibS > 0 && ru <= 0) { ctx.fillStyle = PAL.ink; ctx.beginPath(); ctx.arc(head[0], head[1], 6 * nibS, 0, Math.PI * 2); ctx.fill(); }
+        if (head && nibS > 0 && ru <= 0) { ctx.fillStyle = PAL.ink; ctx.beginPath(); ctx.arc(head[0], head[1], NIB_R * nibS, 0, Math.PI * 2); ctx.fill(); }
       }
       // focus pull: the word comes out of the scribble (opacity, scale 1.15/1.25 → 1, displacement 28 → 3)
       if (ru > 0) {
         const tau = t - d.r0;
         drawWord(ctx, d, t, {
-          alpha: clamp(tau / 0.12),
+          alpha: clamp(tau / WORD_FADE), // spec 0.12 s; shorter so the half-opacity grey ghost lasts one frame
           scale: lerp(d.hero ? 1.25 : 1.15, 1, ease.outBack(clamp(ru))),
           disp: lerp(28, 3, ease.outCubic(clamp(ru))),
           dy: wordHop(ti),
@@ -416,7 +464,7 @@
         if (tt < 0.07) to = ease.outQuad(tt / 0.07);
         else if (tt > 0.13) { const u = (tt - 0.13) / 0.07; from = ease.inQuad(u); drift = 10 * ease.outQuad(u); }
         const r0 = rk.r * pulse + 18 + drift, dir = [Math.cos(rk.a), Math.sin(rk.a)];
-        tick(ctx, [ctr[0] + dir[0] * r0, ctr[1] + dir[1] * r0], [ctr[0] + dir[0] * (r0 + 30), ctr[1] + dir[1] * (r0 + 30)], from, to, 7, 61 + d.i * 3 + k, t);
+        tick(ctx, [ctr[0] + dir[0] * r0, ctr[1] + dir[1] * r0], [ctr[0] + dir[0] * (r0 + rk.len), ctr[1] + dir[1] * (r0 + rk.len)], from, to, TICK_W, 61 + d.i * 3 + k, t);
       });
     }
     // seed (on top)
@@ -429,7 +477,7 @@
       if (tt < 0.06) to = ease.outQuad(tt / 0.06); else if (tt > 0.08) from = ease.inQuad(clamp((tt - 0.08) / 0.06));
       [-30, 30].forEach((ang, k) => {
         const a = -Math.PI / 2 + ang * DEG, dir = [Math.cos(a), Math.sin(a)], c = [SEED_C[0], SEED_C[1] + ss.dy];
-        tick(ctx, [c[0] + dir[0] * 46, c[1] + dir[1] * 46], [c[0] + dir[0] * 60, c[1] + dir[1] * 60], from, to, 4, 71 + k, t);
+        tick(ctx, [c[0] + dir[0] * 46, c[1] + dir[1] * 46], [c[0] + dir[0] * (46 + JOY_LEN), c[1] + dir[1] * (46 + JOY_LEN)], from, to, JOY_W, 71 + k, t);
       });
     }
   }
@@ -437,5 +485,5 @@
   SCENE({ id: 'thoughts', start: 4.20, end: 8.21, layer: 'world', page: 'thought', z: 0,
     draw(ctx, lt, t) { drawThoughts(ctx, t); } });
 
-  window.THOUGHTS = { makeScribble, SCRIB, DEFS, SEED_C, SEED_R, MX, bob, puffBob, bubbleMatrix, bubbleWorld, fillShape, drawPuff, drawSeed, seedState, drawWord, wordLocalCenter, ribbon, tick, ignPulse };
+  window.THOUGHTS = { makeScribble, SCRIB, SCRIB_SPEC, LETTER, DEFS, SEED_C, SEED_R, MX, bob, puffBob, bubbleMatrix, bubbleWorld, fillShape, drawPuff, drawSeed, seedState, drawWord, wordLocalCenter, ribbon, tick, ignPulse };
 })();

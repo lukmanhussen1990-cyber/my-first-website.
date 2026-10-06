@@ -3,7 +3,8 @@
 // jump-spins into a big cut-paper thumbs-up, lands with the PAYOFF (creases, radial burst,
 // confetti, sparkles), pumps, holds and dips. Confetti is registered separately and keeps
 // simulating on the thought page until 13.12 (it rides the camera pan out of frame).
-// Exports window.BLOB = { pose, thumbPose } so flight.js can pick the thumb up at 12.42.
+// Exports window.BLOB = { pose, thumbPose, drawThumbSmooth, … } so flight.js picks the thumb up at 12.42
+// pixel-identically.
 (function () {
   const { PAL, ease, remap, clamp, lerp } = L;
   const D2R = Math.PI / 180;
@@ -14,10 +15,59 @@
   // ---------------------------------------------------------------- morph pairs (spec §1.5)
   // S.pair always returns the same canonical base `A0`, so all three targets share its indexing.
   const [A0, BC1] = S.pair(S.HERO_BASE, S.C_SHAPE);
-  const [, BC2] = S.pair(S.HERO_BASE, S.C2_SHAPE);
+  // C2 (spec §3.6): head lifted 14 px, jaw dropped 14 px, scaled (1.08, 1.12), rotated −8°. Shared
+  // S.C2_SHAPE applies the ±14 px as hard steps at y −60 / +40, which cuts 14 px stair-step notches
+  // into the outline (neck and lower jaw). Same displacement here, but ramped smoothly over 40 px.
+  const C2_LOCAL = (() => {
+    const ramp = (y) => -14 * L.smoothstep((-40 - y) / 40) + 14 * L.smoothstep((y - 20) / 40);
+    const a = -8 * D2R, co = Math.cos(a), si = Math.sin(a);
+    return S.canon(S.C_SHAPE.map(([x, y]) => {
+      y += ramp(y); x *= 1.08; y *= 1.12;
+      return [x * co - y * si, x * si + y * co];
+    }));
+  })();
+  const [, BC2] = S.pair(S.HERO_BASE, C2_LOCAL);
   const [, BTH] = S.pair(S.HERO_BASE, S.THUMB);
   const BASE_BOTTOM = Math.max(...S.HERO_BASE.map((p) => p[1]));      // ≈187 (blob bottom, local)
   const THUMB_BOTTOM = Math.max(...S.THUMB.map((p) => p[1]));         // ≈196 → y 756 at center 560
+
+  // ---------------------------------------------------------------- smooth boil
+  // Spec §1.3 boils every cut-paper *vertex* ±2.5 px. Our hero contours are resampled to 96 points,
+  // and independent per-point jitter on them reads as a serrated (pinking-shears) edge. Instead the
+  // ±amp offsets live on K control vertices spaced evenly along the contour and are blended between
+  // them, so edges stay straight-ish and the outline still re-draws at 12 fps (3-drawing cycle).
+  function boilSmooth(pts, id, t, amp = 2.5, K = 16) {
+    const r = L.rng(id * 7919 + L.boil(t));
+    const ox = new Array(K), oy = new Array(K);
+    for (let k = 0; k < K; k++) { ox[k] = (r() - 0.5) * 2 * amp; oy[k] = (r() - 0.5) * 2 * amp; }
+    const n = pts.length;
+    return pts.map((p, i) => {
+      const f = (i / n) * K, k0 = Math.floor(f) % K, k1 = (k0 + 1) % K, u = f - Math.floor(f);
+      const w = u * u * (3 - 2 * u);
+      return [p[0] + ox[k0] + (ox[k1] - ox[k0]) * w, p[1] + oy[k0] + (oy[k1] - oy[k0]) * w];
+    });
+  }
+  // S.drawThumb, but with the smooth boil (amplitude follows the scale so small thumbs stay crisp).
+  function drawThumbSmooth(ctx, o) {
+    const s = o.s ?? 1, t = o.t ?? 0;
+    ctx.save();
+    ctx.translate(o.x ?? 0, o.y ?? 0);
+    if (o.rot) ctx.rotate(o.rot);
+    if (o.sx || o.sy) ctx.scale(o.sx ?? 1, o.sy ?? 1);
+    const pts = (o.shape || S.THUMB).map(([x, y]) => [x * s, y * s]);
+    // boil ≈1 px at the chip size (s 0.2) → full ±2.5 px from s 0.8; one curve shared by blob.js, flight.js and
+    // chatpage.js (which calls this with defaults), so the 13.12 hand-off has no boil-amplitude jump
+    const amp = o.amp ?? lerp(1.0, 2.5, clamp((s - 0.2) / 0.6));
+    S.fill(ctx, boilSmooth(pts, o.id ?? ID, t, amp), o.color ?? PAL.orange, 6 * Math.min(1, s * 2));
+    const cr = o.creases ?? [1, 1, 1];
+    S.THUMB_CREASES.forEach((sg, k) => {
+      if (cr[k] <= 0) return;
+      const p = sg.map(([x, y]) => [x * s, y * s]);
+      L.brushStroke(ctx, S.boilPts([p[0], L.lerpPt(p[0], p[1], 0.5), p[1]], 300 + k, t, 1.2 * Math.min(1, s * 2)),
+        { width: Math.max(o.creaseMin ?? 2.6, 7 * s), to: cr[k], taperIn: 0.25, taperOut: 0.3, wob: 0.08, seed: k + 1 });
+    });
+    ctx.restore();
+  }
 
   // ---------------------------------------------------------------- timing helpers
   const seg = (t, a, b) => remap(t, a, b);
@@ -34,7 +84,8 @@
     if (t < 10.87) return 1;
     return 1 - ease.inOutCubic(seg(t, 10.87, 11.02));
   }
-  const kTH = (t) => ease.inOutCubic(seg(t, 11.36, 11.66));
+  // morph starts 0.04 s before the spec's 11.36 so the thumb is recognisable through the last third of the spin
+  const kTH = (t) => ease.inOutCubic(seg(t, 11.32, 11.62));
   const spin = (t) => 2 * Math.PI * ease.inOutCubic(seg(t, T.T_JUMP, 11.72));
   // "shout" vibrato while a C pose holds (tiny, 5 Hz, enveloped)
   function vibrato(t, a, b) {
@@ -172,12 +223,12 @@
     ctx.save();
     applyPose(ctx, P);
     if (P.thumb || t >= 11.6667) {
-      S.drawThumb(ctx, { x: 0, y: 0, s: 1, t, creases: opt.noCreases ? [0, 0, 0] : P.cr, id: ID });
+      drawThumbSmooth(ctx, { x: 0, y: 0, s: 1, t, creases: opt.noCreases ? [0, 0, 0] : P.cr, id: ID });
     } else {
       const [pts, gs] = bodyPts(P, t);
       const b = P.br * gs;
       const sc = b !== 1 ? pts.map(([x, y]) => [x * b, y * b]) : pts;
-      S.fill(ctx, S.boilPts(sc, ID, t), PAL.orange);
+      S.fill(ctx, boilSmooth(sc, ID, t), PAL.orange);
     }
     ctx.restore();
     return P;
@@ -187,6 +238,40 @@
   function thumbPose(t) {
     const P = pose(t);
     return { x: P.x, y: P.y, sx: P.sx * P.g, sy: P.sy * P.g, rot: P.rotC + P.rotP };
+  }
+
+  // ---------------------------------------------------------------- straight ink stroke (spec §1.3)
+  // Width profile w·sin(πs)^pow along normalized length s, round ends; draws arc range [from, to]
+  // (write-on: to < 1, write-off from the tail: from > 0). Endpoints boil ±1.2 px, width ±8% at 12 fps.
+  function inkLine(ctx, p0, p1, o) {
+    const from = clamp(o.from ?? 0), to = clamp(o.to ?? 1);
+    if (to - from < 1e-3 || o.width <= 0.05) return;
+    const t = o.t, id = o.id;
+    const [a, b] = S.boilPts([p0, p1], id, t, 1.2);
+    const wj = o.width * (1 + 0.08 * (L.hash(id * 13.7 + L.boil(t)) * 2 - 1));
+    const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len, ny = dx / len, pow = o.pow ?? 0.45, minW = o.minW ?? 0.8;
+    const n = 18, Lp = [], Rp = [];
+    let w0 = 0, w1 = 0;
+    for (let i = 0; i <= n; i++) {
+      const u = from + (to - from) * (i / n);
+      const w = Math.max(minW, wj * Math.pow(Math.sin(Math.PI * u), pow));
+      const x = a[0] + dx * u, y = a[1] + dy * u;
+      Lp.push([x + nx * w / 2, y + ny * w / 2]); Rp.push([x - nx * w / 2, y - ny * w / 2]);
+      if (i === 0) w0 = w; if (i === n) w1 = w;
+    }
+    ctx.fillStyle = o.color ?? PAL.ink;
+    ctx.beginPath();
+    ctx.moveTo(Lp[0][0], Lp[0][1]);
+    for (let i = 1; i <= n; i++) ctx.lineTo(Lp[i][0], Lp[i][1]);
+    // round cap at the head, then back along the other side, round cap at the tail
+    const hx = a[0] + dx * to, hy = a[1] + dy * to, ang = Math.atan2(ny, nx);
+    ctx.arc(hx, hy, w1 / 2, ang, ang - Math.PI, true);
+    for (let i = n - 1; i >= 0; i--) ctx.lineTo(Rp[i][0], Rp[i][1]);
+    const tx = a[0] + dx * from, ty = a[1] + dy * from;
+    ctx.arc(tx, ty, w0 / 2, ang + Math.PI, ang, true);
+    ctx.closePath();
+    ctx.fill();
   }
 
   // ---------------------------------------------------------------- ink action lines
@@ -215,22 +300,20 @@
     const f = ease.outQuad(seg(t, tf, tf + fl));
     const off = 18 * f;
     const a = [p0[0] + ux * off, p0[1] + uy * off], b = [p1[0] + ux * off, p1[1] + uy * off];
-    const pts = S.boilPts([a, L.lerpPt(a, b, 0.5), b], id, t, 1.2);
-    const wj = 1 + 0.08 * (L.hash(id * 13 + L.boil(t)) * 2 - 1);   // ±8% width boil
-    L.brushStroke(ctx, pts, {
-      width: width * wj * (1 - f), to: wOn, from: 0.35 * f, taperIn: 0.3, taperOut: 0.3, wob: 0.06, seed: id,
-    });
+    // flat brush-dash profile with blunt round ends (the source's 3 dashes), thinning to 0 as it flicks out
+    const w = width * (1 - f);
+    inkLine(ctx, a, b, { width: w, to: wOn, from: 0.35 * f, t, id, pow: 0.2, minW: 0.35 * w });
   }
   function drawActionLines(ctx, t) {
     if (t >= 9.92 && t < 10.20) {
       LINES1.forEach((l, k) => actionLine(ctx, t, l, {
-        tw: 9.92 + 0.04 * k, dur: 0.06, tf: 10.06 + 0.02 * k, fl: 0.10 - 0.0 * k, width: 10, id: 500 + k,
+        tw: 9.92 + 0.04 * k, dur: 0.06, tf: 10.06 + 0.02 * k, fl: 0.10, width: 12, id: 500 + k,
       }));
     }
     if (t >= 10.56 && t < 11.0) {
       LINES2.forEach((l, k) => {
         const tw = 10.56 + 0.04 * k;
-        actionLine(ctx, t, l, { tw, dur: 0.06, tf: tw + 0.06 + 0.08, fl: 0.10, width: 12, id: 520 + k });
+        actionLine(ctx, t, l, { tw, dur: 0.06, tf: tw + 0.06 + 0.08, fl: 0.10, width: 14, id: 520 + k });
       });
     }
   }
@@ -249,8 +332,7 @@
       const ra = lerp(B.r0, B.f0, f), rb = lerp(B.r1, B.f1, f);
       const c = Math.cos(B.a), s = Math.sin(B.a);
       const a = [BURST_C[0] + c * ra, BURST_C[1] + s * ra], b = [BURST_C[0] + c * rb, BURST_C[1] + s * rb];
-      const pts = S.boilPts([a, L.lerpPt(a, b, 0.5), b], 540 + k, t, 1.2);
-      L.brushStroke(ctx, pts, { width: 8 * (1 - f), to: wOn, from: 0.3 * f, taperIn: 0.25, taperOut: 0.3, wob: 0.06, seed: 40 + k });
+      inkLine(ctx, a, b, { width: 8 * (1 - f), to: wOn, from: 0.3 * f, t, id: 540 + k, pow: 0.3, minW: 0.3 * 8 * (1 - f) });
     });
   }
 
@@ -266,7 +348,7 @@
       // 0→1 (easeOutBack, first 40%) → 0 (easeInQuad)
       const s = u < 0.4 ? ease.outBack(u / 0.4, 2.0) : 1 - ease.inQuad((u - 0.4) / 0.6);
       if (s <= 0.01) return;
-      const r = sp.size * 0.9 * s;
+      const r = sp.size * 1.0 * s;
       const rot = (45 * D2R) * u;
       const j = S.boilPts([[sp.x, sp.y]], 560 + k, t, 0.8)[0];
       ctx.save();
@@ -282,6 +364,10 @@
   }
 
   // ---------------------------------------------------------------- confetti (deterministic sim)
+  // Launch point: spec (960,500) is deep behind the palm, so the fan only showed through the notch above the
+  // fingers as a clump for the first ~4 frames. Launched from just under the thumb's top instead, the
+  // pieces clear the silhouette at once and read as a crown burst over the thumb.
+  const CONF_Y0 = 430;
   const CONF = (() => {
     const cols = [].concat(
       Array(8).fill(PAL.orange), Array(6).fill(PAL.badge), Array(4).fill(PAL.lav),
@@ -294,8 +380,10 @@
     const out = [];
     for (let i = 0; i < N; i++) {
       const ang = (-150 + 120 * (i + 0.5) / N + (r() - 0.5) * 3.5) * D2R;
-      const sp = 700 + 500 * r();
-      const size = 12 + 16 * r();
+      // spec: 700–1200 px/s with drag 0.8/s. That reads as a slow lob from behind the thumb, so the paper
+      // gets a faster pop (1300–2100 px/s) with heavier paper drag (3/s): same apex heights, real "burst".
+      const sp = 1300 + 800 * r();
+      const size = 20 + 16 * r();                 // spec 12–28 px; enlarged so the paper reads at 1080p
       const sides = r() < 0.5 ? 3 : 4;
       const a0 = r() * Math.PI * 2;
       const shape = [];
@@ -308,17 +396,18 @@
       const flipF = 1.2 + 2.3 * r(), flipPh = r() * Math.PI * 2, swayPh = r() * Math.PI * 2;
       const rot0 = r() * Math.PI * 2;
       const wantFront = r() < 0.55;
-      // integrate: gravity 1600, drag 0.8/s while rising; paper "catches air" once falling
-      let x = 960, y = 500, vx = Math.cos(ang) * sp, vy = Math.sin(ang) * sp;
-      const termK = 3.2 + 1.6 * r();             // falling drag → terminal ≈ 330–500 px/s
+      // integrate: gravity 1600; drag 3/s while bursting out, paper "catches air" once falling
+      let x = 960 + (r() - 0.5) * 50, y = CONF_Y0 + (r() - 0.5) * 30;
+      let vx = Math.cos(ang) * sp, vy = Math.sin(ang) * sp;
+      const termK = 3.4 + 1.6 * r();             // falling drag → terminal ≈ 320–470 px/s
       const xs = new Float32Array(STEPS), ys = new Float32Array(STEPS);
       let tSlow = -1, tApex = -1;
       for (let s = 0; s < STEPS; s++) {
         xs[s] = x; ys[s] = y;
         const tau = s * DT;
         if (tApex < 0 && vy > 0) tApex = tau;
-        const fall = tApex < 0 ? 0 : clamp((tau - tApex) / 0.35);
-        const ky = lerp(0.8, termK, fall), kx = lerp(0.8, 1.8, fall);
+        const fall = tApex < 0 ? 0 : clamp((tau - tApex) / 0.3);
+        const ky = lerp(3.0, termK, fall), kx = lerp(3.0, 2.2, fall);
         vx += -kx * vx * DT; vy += (1600 - ky * vy) * DT;
         x += vx * DT; y += vy * DT;
         if (tSlow < 0 && Math.hypot(vx, vy) < 250) tSlow = tau;
@@ -344,15 +433,18 @@
     }
     return [x, y];
   }
+  // The burst is shown from the frame after the landing (11.7333) with the sim already 0.07 s in, so the
+  // first drawn frame is a spread fan around the thumb top, not a 28-piece clump at the launch point.
+  const CONF_LEAD = 0.04;
   function drawConfetti(ctx, t, front) {
-    const tau = t - T.T_PAYOFF;
-    if (tau < 0) return;
+    if (t - T.T_PAYOFF < 0.01) return;
+    const tau = t - T.T_PAYOFF + CONF_LEAD;
     for (const c of CONF) {
       const isFront = tau >= c.tFront;
       if (isFront !== front) continue;
       const [x, y] = confettiState(c, tau);
       if (y > 1200 || x < -60 || x > 1980) continue;
-      const pop = ease.outBack(clamp(tau / 0.10), 1.8);
+      const pop = 0.55 + 0.45 * ease.outQuad(clamp(tau / 0.14));
       const flip = Math.cos(2 * Math.PI * c.flipF * tau + c.flipPh);
       const fy = Math.sign(flip || 1) * Math.max(0.18, Math.abs(flip));
       ctx.save();
@@ -370,12 +462,16 @@
     draw(ctx, lt, t) {
       // smear echoes during the jump-spin (opacity 0.35/0.20/0.10, behind), enveloped in/out
       if (t >= 11.26 && t < 11.66) {
-        const env = ease.inOutSine(seg(t, 11.26, 11.32)) * (1 - ease.inQuad(seg(t, 11.56, 11.66)));
+        // dimmed to 60% while the shape unfolds (11.46–11.54) so the fast spin doesn't leave a ghost cloud
+        const env = ease.inOutSine(seg(t, 11.26, 11.32)) * (1 - 0.4 * ease.inOutSine(seg(t, 11.46, 11.54)))
+          * (1 - ease.inQuad(seg(t, 11.56, 11.66)));
         const op = [0.10, 0.20, 0.35];
         for (let k = 3; k >= 1; k--) {
+          const tt = t - k / 30;
+          if (tt < T.T_JUMP) continue;               // only trail the airborne body, not the squash
           ctx.save();
           ctx.globalAlpha *= op[3 - k] * env;
-          drawHero(ctx, t - k / 30, { noCreases: true });
+          drawHero(ctx, tt, { noCreases: true });
           ctx.restore();
         }
       }
@@ -391,5 +487,5 @@
   SCENE({ id: 'confetti', start: T.T_PAYOFF, end: T.T_LAND_CHIP, layer: 'world', page: 'thought', z: 20,
     draw(ctx, lt, t) { drawConfetti(ctx, t, true); } });
 
-  window.BLOB = { pose, thumbPose, drawHero, CONF };
+  window.BLOB = { pose, thumbPose, drawHero, drawThumbSmooth, boilSmooth, CONF };
 })();
