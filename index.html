@@ -706,7 +706,7 @@ const G = {
   state: 'attract',                     // attract | ready | playing | paused | dying | over
   snake: [], prev: [], dir: { x: 1, y: 0 }, queue: [],
   grow: 0, bulges: [], food: null, bonus: null, eating: null,
-  score: 0, best: store.get('best', 0), eaten: 0, sinceBonus: 0, newBest: false,
+  score: 0, best: store.get('best', 0), eaten: 0, bonusEaten: 0, sinceBonus: 0, newBest: false,
   tickMs: START_TICK, acc: 0, t: 0, tick: 0, time: 0,
   shake: 0, flash: 0, dyingFor: 0, won: false, deathBy: '',
   mouth: 0, tongue: { next: 1.2, p: -1 }, blink: { next: 3, p: -1 },
@@ -753,7 +753,7 @@ function resetState(attract) {
   G.snake = [{ x: cx + 2, y: cy }, { x: cx + 1, y: cy }, { x: cx, y: cy }];
   G.prev = G.snake.slice();
   G.dir = { x: 1, y: 0 }; G.queue = []; G.grow = 0; G.bulges = []; G.eating = null; G.food = null; G.bonus = null;
-  G.score = 0; G.eaten = 0; G.sinceBonus = 0; G.newBest = false; G.acc = 0; G.t = 0; G.tick = 0;
+  G.score = 0; G.eaten = 0; G.bonusEaten = 0; G.sinceBonus = 0; G.newBest = false; G.acc = 0; G.t = 0; G.tick = 0;
   G.tickMs = attract ? 125 : START_TICK;
   G.shake = 0; G.flash = 0; G.mouth = 0; G.dyingFor = 0;
   Particles.clear();
@@ -789,7 +789,7 @@ function eat(kind, item) {
   G.score += pts;
   G.eating = { kind, x: item.x, y: item.y, tick: G.tick, fired: false, pts };
   G.bulges.push({ born: G.tick + 0.8, big: bonus });
-  if (bonus) { G.bulges.push({ born: G.tick + 1.8, big: false }); G.bonus = null; }
+  if (bonus) { G.bulges.push({ born: G.tick + 1.8, big: false }); G.bonus = null; G.bonusEaten++; }
   else {
     G.eaten++; G.sinceBonus++; G.food = null;
     spawnFood();
@@ -827,10 +827,10 @@ function win() {
 
 function setDir(dx, dy) {
   if (G.state !== 'playing' && G.state !== 'ready') return;
-  const last = G.queue.length ? G.queue[G.queue.length - 1] : G.dir;
-  if ((dx === last.x && dy === last.y) || (dx === -last.x && dy === -last.y)) return;
-  if (G.queue.length < 2) G.queue.push({ x: dx, y: dy });
-  if (G.state === 'ready') { G.state = 'playing'; Sound.play('start'); hooks.onStart(); }
+  const last = G.queue.length ? G.queue[G.queue.length - 1] : G.dir;     // compare with the newest pending turn, not the old heading
+  if (dx === -last.x && dy === -last.y) return;                          // never reverse into the neck
+  if ((dx !== last.x || dy !== last.y) && G.queue.length < 3) G.queue.push({ x: dx, y: dy });
+  if (G.state === 'ready') { G.state = 'playing'; Sound.play('start'); hooks.onStart(); }   // any legal key launches the run
 }
 
 /* ── attract-mode autopilot: BFS to the fruit, with a flood-fill sanity check ── */
@@ -1298,7 +1298,7 @@ function togglePause() {
 }
 function toggleMute() { Sound.setMuted(!Sound.muted); el.btnMute.classList.toggle('alt-on', Sound.muted); }
 function gameOver() {
-  G.state = 'over';
+  G.state = 'over'; G.overAt = performance.now();
   $('finalScore').textContent = G.score; $('finalLen').textContent = G.snake.length;
   $('newBest').hidden = !(G.newBest && G.score > 0);
   $('overMsg').textContent = G.won ? 'You filled the whole garden. Legendary.' :
@@ -1320,19 +1320,21 @@ function buildSkinPicker() {
 }
 
 /* input */
-const KEYMAP = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0] };
+const KEYMAP = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], KeyW: [0, -1], KeyS: [0, 1], KeyA: [-1, 0], KeyD: [1, 0] };
+const canRestart = () => performance.now() - (G.overAt || 0) > 450;       // ignore panicky key mashing right after dying
 addEventListener('keydown', e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
-  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key, dir = KEYMAP[k];
+  const dir = KEYMAP[e.code];
   if (dir) { e.preventDefault(); Sound.unlock(); setDir(dir[0], dir[1]); return; }
-  if (k === ' ' || k === 'p' || k === 'Escape') {
+  const k = e.code;
+  if (k === 'Space' || k === 'KeyP' || k === 'Escape') {
     e.preventDefault();
     if (G.state === 'playing' || G.state === 'paused') togglePause();
-    else if ((G.state === 'attract' || G.state === 'over') && k === ' ') startGame();
+    else if ((G.state === 'attract' || G.state === 'over') && k === 'Space' && canRestart()) startGame();
   } else if (k === 'Enter') {
     e.preventDefault();
-    if (G.state === 'attract' || G.state === 'over') startGame(); else if (G.state === 'paused') togglePause();
-  } else if (k === 'm') toggleMute();
+    if ((G.state === 'attract' || G.state === 'over') && canRestart()) startGame(); else if (G.state === 'paused') togglePause();
+  } else if (k === 'KeyM') toggleMute();
 });
 let tx = 0, ty = 0, touching = false;
 stage.addEventListener('touchstart', e => { const t = e.touches[0]; tx = t.clientX; ty = t.clientY; touching = true; Sound.unlock(); }, { passive: true });
@@ -1424,7 +1426,7 @@ resetState(true);
 el.btnMute.classList.toggle('alt-on', Sound.muted);
 updateHud();
 requestAnimationFrame(frame);
-window.__viper = { G, L, step, update, render, startGame, setDir, aiSteer, resetState, computeLayout };      // handle used by the automated tests
+window.__viper = { G, L, step, update, render, startGame, setDir, aiSteer, resetState, computeLayout, togglePause };      // handle used by the automated tests
 })();
 </script>
 </body>
