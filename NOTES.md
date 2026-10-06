@@ -29,6 +29,19 @@ Nobody can be asked questions during this long run, so every ambiguous call is w
 - Quality governor: if the real frame rate drops, expensive extras (glow, ambient particles) switch off automatically.
 - Debug handle `window.__viper` is kept (small) because the automated tests drive the game through it.
 
+## Later decisions (added during the run)
+- **Combo**: fruit eaten within 4.2 s of the previous one raises a multiplier (×2…×4) applied to that fruit's points; the HUD chip drains and resets.
+- **Snake skins** are independent of themes: "Theme" uses the theme's own skin; Viper / Coral / Rattler / King are always available.
+- **Ambient sound** is a very quiet loop per theme (wind, water, synth hum). It starts after the first click/tap (browser rule) and obeys mute.
+- **Grid size**: 24×15 on normal landscape screens; wider (up to 40 columns) when the window is much wider than tall; 13×(14…26) in portrait.
+  The arrow pad sits at the right edge in landscape and under the board in portrait; the board leaves room for it.
+- **Performance design**: the board (ground, frame, lighting) is painted once and copied 1:1 each frame; ambient effects (clouds, caustics, neon pulses,
+  dark spotlight) run on a half-resolution overlay canvas at ~30 Hz; glows use cached soft sprites. A governor watches real frame times and sheds work in
+  three steps: ambient effects + glow + blur → resolution cap 1.25× → 1×. Pixel budget for the canvas is 7.5 M device pixels.
+- **Accessibility**: `prefers-reduced-motion` removes shake / hit-stop / confetti / title animation; every button is keyboard reachable with a visible focus ring.
+- **Not done on purpose**: online leaderboards or accounts (needs a server), background music (kept to quiet ambience), more themes than the five requested.
+- The test hooks (`window.__viper`, `dbg.freeze`) stay in the file but do nothing unless called.
+
 ## Testing approach
 - Headless Chromium (Playwright) from the sandbox: smoke test, scripted playthroughs, a logic fuzzer that
   checks invariants (no overlap, food never on snake, no 180° turns, collisions) and frame-time measurements.

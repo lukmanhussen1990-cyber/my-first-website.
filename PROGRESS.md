@@ -72,3 +72,10 @@ Running log. Newest entries at the bottom. Start: 2026-10-06 14:10 UTC.
 - **Bug found by the audio test**: the menu overlay covered the mute / fullscreen buttons → HUD buttons now sit above the cards.
 - Full regression (`tests/all.sh`: lint, fuzz ×4 configs, UI playthrough, mobile portrait/landscape/rotation, audio graph, perf) all green.
 - Next: FPS overlay for verification, README, code tidy-up, more visual polish (neon/dark head, death pieces), final summary.
+
+### 15:30 — More polish ✅
+- Gamepad (d-pad / stick / A / Start), Share button (Web Share or clipboard), metallic golden fruit, ocean ripples, menu card tilt,
+  golden-fruit expiry burst, theme cross-fade keeps running while paused, favicon + meta, FPS overlay (Shift+F), governor in all states.
+- Added behavioural UI test (22 checks: keys, pause, focus, settings persistence, arrow pad), soak test (10 long AI games incl. wrap + obstacles:
+  lengths 59-122, no NaN geometry, bounded particles) and a gamepad test with a mocked controller.
+- Next: final cleanups, full re-test, summary; keep looking for visual polish while time remains.

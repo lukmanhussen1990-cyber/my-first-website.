@@ -203,7 +203,7 @@ html.lite .card { background: var(--card); }
     <div class="stat"><small>Best</small><b id="best">0</b></div>
     <div class="stat hide-small hide-menu"><small>Length</small><b id="length">3</b></div>
     <div class="stat hide-small hide-menu"><small>Speed</small><div class="meter" id="meter"><i></i><i></i><i></i><i></i><i></i></div></div>
-    <div class="stat hide-small hide-menu" id="comboStat"><small>Combo</small><b id="combo">×2</b><div class="cbar"><i id="comboBar"></i></div></div>
+    <div class="stat hide-menu" id="comboStat"><small>Combo</small><b id="combo">×2</b><div class="cbar"><i id="comboBar"></i></div></div>
     <div class="spacer"></div>
     <div class="btns">
       <button class="icon-btn hide-menu" id="btnPause" aria-label="Pause">
@@ -2552,7 +2552,8 @@ function gameOver() {
 function shareScore() {
   const text = `I scored ${G.score} in Viper (${THEME.name} · ${diff().label}${CFG.wrap ? ' · wrap-around' : ''}${CFG.obstacles ? ' · obstacles' : ''}) — length ${G.snake.length}. Can you beat it?`;
   const done = () => toast('Copied to clipboard');
-  if (navigator.share) navigator.share({ title: 'Viper', text, url: location.href.split('#')[0] }).catch(() => {});
+  const page = /^https?:/.test(location.protocol) ? { url: location.href.split('#')[0] } : {};   // a file:// link would be useless to share
+  if (navigator.share) navigator.share(Object.assign({ title: 'Viper', text }, page)).catch(() => {});
   else if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => {});
 }
 $('btnShare').hidden = !(navigator.share || navigator.clipboard);
@@ -2691,7 +2692,7 @@ addEventListener('blur', () => { if (G.state === 'playing') togglePause(); });
 /* ── sizing ── */
 let resizeTimer = 0;
 function rebuildAssets(fade) { buildScene(fade); spriteKey = ''; }
-const PIXEL_BUDGET = 5.0e6;                                       // device pixels we are willing to paint per frame
+const PIXEL_BUDGET = 7.5e6;                                       // device pixels we are willing to paint per frame
 const pickDpr = () => Math.max(1, Math.min(window.devicePixelRatio || 1, 3, Math.sqrt(PIXEL_BUDGET / (window.innerWidth * window.innerHeight)), Quality.dprCap || 3));
 function resize() {
   DPR = pickDpr();
