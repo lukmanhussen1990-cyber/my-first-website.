@@ -1,0 +1,91 @@
+/* Compact one-liner: ── CREATED BY  IMRAN ── */
+.compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.rule {
+  width: 22px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 43, 56, 0.7));
+}
+
+.rule:last-child {
+  background: linear-gradient(90deg, rgba(255, 43, 56, 0.7), transparent);
+}
+
+.by {
+  margin-right: -0.32em;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.38em;
+  margin-right: -0.38em;
+  color: var(--text);
+  text-shadow: 0 0 10px rgba(255, 43, 56, 0.55);
+}
+
+/* Stacked studio credit */
+.stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.kicker {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.42em;
+  margin-right: -0.42em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.big {
+  position: relative;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 34px;
+  letter-spacing: 0.32em;
+  margin-right: -0.32em;
+  color: #fff;
+  text-shadow:
+    0 0 10px rgba(255, 43, 56, 0.75),
+    0 0 34px rgba(227, 18, 31, 0.45);
+}
+
+.big::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: calc(8% + 0.32em);
+  bottom: -10px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--red-2), transparent);
+  box-shadow: 0 0 8px var(--red-2);
+}
+
+.role {
+  margin-top: 12px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  margin-right: -0.24em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}

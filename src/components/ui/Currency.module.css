@@ -1,0 +1,25 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.crown {
+  color: var(--gold);
+  filter: drop-shadow(0 0 6px rgba(246, 185, 43, 0.5));
+}
+
+.gem {
+  color: var(--red-2);
+  filter: drop-shadow(0 0 6px var(--red-glow));
+}

@@ -1,0 +1,137 @@
+/*
+ * Shared visual effects: glass, neon, glitch, scanlines, grain.
+ * Utility classes are global so any screen can opt in with a class name.
+ */
+
+/* ── Glass panel ─────────────────────────────────────────────── */
+.glass {
+  position: relative;
+  background: var(--glass);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  backdrop-filter: blur(var(--blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(140%);
+}
+
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--glass-hi);
+  pointer-events: none;
+}
+
+/* ── Neon ────────────────────────────────────────────────────── */
+.neon-text {
+  color: var(--red-2);
+  text-shadow: 0 0 6px var(--red-glow), 0 0 18px var(--red-glow-soft);
+}
+
+.neon-border {
+  box-shadow: var(--glow-red);
+  border-color: rgba(255, 43, 56, 0.7) !important;
+}
+
+/* ── Glitch text (pair with data-text attr) ──────────────────── */
+.glitch {
+  position: relative;
+  display: inline-block;
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.glitch::before {
+  color: #ff1f3d;
+  transform: translate(-2px, 0);
+  mix-blend-mode: screen;
+}
+
+.glitch::after {
+  color: #19e3ff;
+  transform: translate(2px, 0);
+  mix-blend-mode: screen;
+}
+
+.glitch.is-glitching::before {
+  opacity: 0.85;
+  animation: glitch-slice-a 0.42s steps(2, end) both;
+}
+
+.glitch.is-glitching::after {
+  opacity: 0.7;
+  animation: glitch-slice-b 0.42s steps(2, end) both;
+}
+
+.glitch.is-glitching {
+  animation: glitch-jitter 0.42s steps(3, end) both;
+}
+
+@keyframes glitch-slice-a {
+  0% { clip-path: inset(12% 0 64% 0); transform: translate(-4px, 0); }
+  25% { clip-path: inset(58% 0 22% 0); transform: translate(3px, 0); }
+  50% { clip-path: inset(30% 0 46% 0); transform: translate(-6px, 0); }
+  75% { clip-path: inset(80% 0 4% 0); transform: translate(2px, 0); }
+  100% { clip-path: inset(44% 0 40% 0); transform: translate(0, 0); opacity: 0; }
+}
+
+@keyframes glitch-slice-b {
+  0% { clip-path: inset(70% 0 10% 0); transform: translate(4px, 0); }
+  25% { clip-path: inset(8% 0 78% 0); transform: translate(-3px, 0); }
+  50% { clip-path: inset(46% 0 30% 0); transform: translate(5px, 0); }
+  75% { clip-path: inset(20% 0 62% 0); transform: translate(-2px, 0); }
+  100% { clip-path: inset(36% 0 50% 0); transform: translate(0, 0); opacity: 0; }
+}
+
+@keyframes glitch-jitter {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-1px, 1px); }
+  40% { transform: translate(1px, -1px); }
+  60% { transform: translate(-1px, 0); }
+  80% { transform: translate(1px, 1px); }
+}
+
+/* ── Scanlines + grain overlays ───────────────────────────────── */
+.scanlines {
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.025) 0,
+    rgba(255, 255, 255, 0.025) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+}
+
+/* ── Pulse used by "available" markers and live dots ─────────── */
+@keyframes pulse-ring {
+  0% { transform: scale(0.7); opacity: 0.85; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+
+@keyframes flicker {
+  0%, 19%, 21%, 23%, 54%, 56%, 100% { opacity: 1; }
+  20%, 22%, 55% { opacity: 0.35; }
+}
+
+.flicker {
+  animation: flicker 4.2s linear infinite;
+}
+
+@keyframes shimmer {
+  from { transform: translateX(-120%); }
+  to { transform: translateX(220%); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

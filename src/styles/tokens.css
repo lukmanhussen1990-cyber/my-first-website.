@@ -1,0 +1,112 @@
+/*
+ * Border Trials — design tokens
+ * Single source of truth for colour, type, spacing, radii, depth and motion.
+ * Every component and screen reads from these variables; never hard-code
+ * a brand colour in a component stylesheet.
+ */
+:root {
+  /* ── Surfaces ─────────────────────────────────────────── */
+  --bg-0: #040405;            /* void — behind everything */
+  --bg-1: #09090b;            /* app background */
+  --bg-2: #111114;            /* panel */
+  --bg-3: #18181d;            /* raised panel / tile */
+  --bg-4: #222229;            /* pressed / hover tile */
+
+  --line: rgba(255, 255, 255, 0.07);
+  --line-2: rgba(255, 255, 255, 0.12);
+  --line-3: rgba(255, 255, 255, 0.2);
+
+  --glass: rgba(16, 16, 20, 0.58);
+  --glass-2: rgba(12, 12, 16, 0.78);
+  --glass-hi: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 42%);
+  --blur: 18px;
+
+  /* ── Brand ────────────────────────────────────────────── */
+  --red: #e3121f;
+  --red-2: #ff2b38;           /* hot highlight */
+  --red-3: #a80a14;           /* pressed */
+  --red-deep: #4a0207;        /* deep tint */
+  --red-glow: rgba(227, 18, 31, 0.55);
+  --red-glow-soft: rgba(227, 18, 31, 0.22);
+  --red-tint: rgba(227, 18, 31, 0.1);
+
+  /* ── Signals ──────────────────────────────────────────── */
+  --gold: #f6b92b;
+  --gold-2: #ffd56a;
+  --silver: #c8ced8;
+  --bronze: #c97a3d;
+  --green: #35d07f;
+  --green-glow: rgba(53, 208, 127, 0.45);
+  --amber: #ff8a1f;
+  --amber-glow: rgba(255, 138, 31, 0.45);
+  --blue: #3b8cff;
+  --blue-glow: rgba(59, 140, 255, 0.5);
+
+  /* ── Text ─────────────────────────────────────────────── */
+  --text: #f3f3f5;
+  --text-2: #a9a9b2;
+  --text-3: #6d6d77;
+  --text-4: #45454d;
+
+  /* ── Type ─────────────────────────────────────────────── */
+  --font-display: 'Orbitron', 'Rajdhani', system-ui, sans-serif;   /* logo, big numerals, credits */
+  --font-ui: 'Rajdhani', 'Inter', system-ui, sans-serif;           /* headings, labels, buttons */
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Share Tech Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  --fs-xs: 11px;
+  --fs-sm: 12.5px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 26px;
+  --fs-3xl: 34px;
+
+  --track-tight: 0.02em;
+  --track: 0.08em;
+  --track-wide: 0.18em;
+  --track-xwide: 0.34em;
+
+  /* ── Space & shape ────────────────────────────────────── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --gutter: 18px;
+
+  --r-xs: 6px;
+  --r-sm: 9px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  /* ── Depth ────────────────────────────────────────────── */
+  --shadow-1: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 6px 18px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 14px 40px rgba(0, 0, 0, 0.6);
+  --glow-red: 0 0 0 1px rgba(255, 43, 56, 0.55), 0 0 18px var(--red-glow), 0 0 42px var(--red-glow-soft);
+  --glow-red-sm: 0 0 12px var(--red-glow);
+
+  /* ── Motion ───────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-snap: cubic-bezier(0.2, 0.9, 0.1, 1.2);
+  --dur-1: 120ms;
+  --dur-2: 220ms;
+  --dur-3: 380ms;
+  --dur-4: 620ms;
+
+  /* ── Layout ───────────────────────────────────────────── */
+  --nav-h: 64px;
+  --topbar-h: 52px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  color-scheme: dark;
+}

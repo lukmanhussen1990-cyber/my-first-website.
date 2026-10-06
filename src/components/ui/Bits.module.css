@@ -1,0 +1,175 @@
+/* ProgressBar */
+.track {
+  position: relative;
+  width: 100%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+  overflow: visible;
+}
+
+.fill {
+  position: relative;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 900ms var(--ease-out);
+}
+
+.tone_red {
+  background: linear-gradient(90deg, #8f0710, var(--red) 60%, var(--red-2));
+  box-shadow: 0 0 10px var(--red-glow);
+}
+
+/* XP — crimson body with a cold blue leading edge, as in the key art */
+.tone_xp {
+  background: linear-gradient(90deg, #8f0710 0%, var(--red) 55%, #ff3a46 80%, #4d8dff 100%);
+  box-shadow: 0 0 10px var(--red-glow-soft);
+}
+
+.tone_green {
+  background: linear-gradient(90deg, #11663a, var(--green));
+  box-shadow: 0 0 10px var(--green-glow);
+}
+
+.tone_gold {
+  background: linear-gradient(90deg, #8a5a08, var(--gold) 70%, var(--gold-2));
+  box-shadow: 0 0 10px rgba(246, 185, 43, 0.45);
+}
+
+.tone_white {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.4), #fff);
+}
+
+.spark {
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 8px #fff,
+    0 0 16px var(--red-2);
+  animation: spark 1.8s ease-in-out infinite;
+}
+
+@keyframes spark {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+/* Stars */
+.stars {
+  display: inline-flex;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.starOn {
+  color: var(--red);
+  filter: drop-shadow(0 0 4px var(--red-glow));
+}
+
+.starOff {
+  color: var(--text-4);
+}
+
+/* StatRow */
+.statRow {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  margin: 0;
+  text-align: center;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 1px;
+  min-width: 0;
+}
+
+.statValue {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.statAccent {
+  color: var(--red-2);
+}
+
+.statLabel {
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.statCompact .statValue {
+  font-size: 18px;
+}
+
+/* Pill */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid var(--line-2);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-2);
+}
+
+.pill_red {
+  color: var(--red-2);
+  border-color: rgba(255, 43, 56, 0.45);
+  background: var(--red-tint);
+}
+
+.pill_green {
+  color: var(--green);
+  border-color: rgba(53, 208, 127, 0.4);
+  background: rgba(53, 208, 127, 0.08);
+}
+
+.pill_amber {
+  color: var(--amber);
+  border-color: rgba(255, 138, 31, 0.4);
+  background: rgba(255, 138, 31, 0.08);
+}
+
+.pill_gold {
+  color: var(--gold);
+  border-color: rgba(246, 185, 43, 0.4);
+  background: rgba(246, 185, 43, 0.08);
+}
+
+.divider {
+  border: 0;
+  height: 1px;
+  margin: var(--sp-4) 0;
+  background: linear-gradient(90deg, transparent, var(--line-2), transparent);
+}

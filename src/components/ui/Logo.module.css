@@ -1,0 +1,70 @@
+.logo {
+  --logo-size: 38px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  font-family: var(--font-display);
+  line-height: 1;
+  user-select: none;
+}
+
+.xl {
+  --logo-size: 38px;
+}
+
+.lg {
+  --logo-size: 30px;
+}
+
+.md {
+  --logo-size: 22px;
+}
+
+.sm {
+  --logo-size: 15px;
+}
+
+.top,
+.bottom {
+  font-size: var(--logo-size);
+  letter-spacing: 0.42em;
+  /* letter-spacing adds trailing space after the last glyph — pull it back */
+  margin-right: -0.42em;
+}
+
+.top {
+  font-weight: 500;
+  color: #f5f5f7;
+  text-shadow:
+    0 0 1px rgba(255, 255, 255, 0.6),
+    0 2px 18px rgba(0, 0, 0, 0.8);
+}
+
+.bottom {
+  margin-top: 0.28em;
+  font-weight: 700;
+  color: var(--red-2);
+  text-shadow:
+    0 0 8px rgba(255, 43, 56, 0.75),
+    0 0 26px rgba(227, 18, 31, 0.45),
+    0 2px 18px rgba(0, 0, 0, 0.8);
+}
+
+.tagline {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  margin-top: calc(var(--logo-size) * 0.7);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: max(10px, calc(var(--logo-size) * 0.3));
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.tagline i {
+  font-style: normal;
+  color: var(--red);
+}
