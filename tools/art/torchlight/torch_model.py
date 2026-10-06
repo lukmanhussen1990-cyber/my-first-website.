@@ -224,9 +224,10 @@ def geometry_json() -> dict:
                     "identifier": GEO_ID,
                     "texture_width": TEX_W,
                     "texture_height": TEX_H,
-                    "visible_bounds_width": 2,
-                    "visible_bounds_height": 2,
-                    "visible_bounds_offset": [0, 1, 0],
+                    # generous, like vanilla geometry.spyglass: never cull a held item early
+                    "visible_bounds_width": 3,
+                    "visible_bounds_height": 3,
+                    "visible_bounds_offset": [0, 1.5, 0],
                 },
                 "bones": [
                     {
