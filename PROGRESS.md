@@ -89,7 +89,7 @@ Running log. Newest entries at the bottom. Start: 2026-10-06 14:10 UTC.
 - Full regression (lint, fuzz ×4, playthrough, mobile, landscape, audio, perf) and the UI test (22 checks) pass; 60 s chaos run: no errors.
 - Next: more in-game visual polish (look at every theme with fresh eyes), then another full regression.
 
-### 16:05 — Graphics round 2 ✅
+### 15:47 — Graphics round 2 ✅
 - **Fruit variety**: apples now come in red / green / orange (matching bite crumbs); the golden fruit flashes the screen edge gold when eaten.
 - **Combo heat**: from ×3 the screen edge glows in the theme colour (CSS only, pulses while the combo is alive).
 - **Neon**: every bite sends a shockwave through the glowing grid. **Dark**: a bite flares the gem's warm light.
