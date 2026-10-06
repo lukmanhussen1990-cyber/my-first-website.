@@ -39,6 +39,12 @@ Nobody can be asked questions during this long run, so every ambiguous call is w
   dark spotlight) run on a half-resolution overlay canvas at ~30 Hz; glows use cached soft sprites. A governor watches real frame times and sheds work in
   three steps: ambient effects + glow + blur → resolution cap 1.25× → 1×. Pixel budget for the canvas is 7.5 M device pixels.
 - **Accessibility**: `prefers-reduced-motion` removes shake / hit-stop / confetti / title animation; every button is keyboard reachable with a visible focus ring.
+- **Big screens**: cells grow up to 76 px and the HUD / cards / toast are zoomed (CSS `zoom`, 1× … 1.7×, from the window height) so they keep their proportion to the board on 1440p / 4K monitors.
+- **Fruit variety** is cosmetic only (red / green / orange apples, same points). The golden fruit is always the metallic one.
+- **Combo heat / golden gleam** are CSS-only edge glows (no canvas cost) and are switched off in lite mode and with reduced motion.
+- The first snake option is called **Auto** (shorter than "Theme", fits 320 px phones).
+- **Default theme** on a first visit is Forest (the most realistic board — the original brief was "realistic graphics"); the chips still list Classic first. The choice is remembered afterwards.
+- **Turning round before the first move**: while the snake is waiting at the start, pressing the opposite direction flips it round instead of being ignored.
 - **Not done on purpose**: online leaderboards or accounts (needs a server), background music (kept to quiet ambience), more themes than the five requested.
 - The test hooks (`window.__viper`, `dbg.freeze`) stay in the file but do nothing unless called.
 

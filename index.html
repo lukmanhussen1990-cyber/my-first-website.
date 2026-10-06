@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="classic">
+<html lang="en" data-theme="forest">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0b1a12">
+<meta name="theme-color" content="#0d0f09">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Viper — Realistic Snake</title>
@@ -46,6 +46,7 @@ body.hot #heat::before { animation: heat 1.1s ease-in-out infinite; }
 @keyframes heat { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 
 /* ───────── HUD ───────── */
+.card, #hud, #toast, #hint { zoom: var(--ui, 1); }
 #hud {
   position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 20px; pointer-events: none;
   padding: max(10px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
@@ -128,7 +129,7 @@ body.in-menu .hide-menu { opacity: 0; pointer-events: none; }
 .btn.ghost:hover { background: rgba(255, 255, 255, .15); box-shadow: inset 0 0 0 1px var(--accent), 0 0 22px var(--glow); }
 .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.ripple { position: absolute; border-radius: 50%; transform: scale(0); background: rgba(255, 255, 255, .45); animation: ripple .6s ease-out forwards; pointer-events: none; }
+.ripple { position: absolute; width: 200%; aspect-ratio: 1; margin: -100% 0 0 -100%; border-radius: 50%; transform: scale(0); background: rgba(255, 255, 255, .45); animation: ripple .6s ease-out forwards; pointer-events: none; }
 @keyframes ripple { to { transform: scale(1); opacity: 0; } }
 
 /* settings */
@@ -542,7 +543,7 @@ const SKIN_LIB = {
   rattler: { id: 'rattler', seed: 37, pattern: 'diamond', base: hex('#b99a62'), dark: hex('#3f2814'), light: hex('#eadcb0'), eye: hex('#d9a21b'), eyeStyle: 'slit', thick: 1.06, headK: 1.16, marks: 'stripes', keel: true, scaleA: 1, rim: null },
   king:    { id: 'king', seed: 41, pattern: 'rings', base: hex('#171513'), dark: hex('#050505'), light: hex('#efe6cc'), eye: hex('#7a5a22'), eyeStyle: 'slit', thick: 1.06, headK: 1.1, marks: 'black', keel: false, scaleA: 0.5, rim: null }
 };
-let THEME = THEME_BY_ID[store.get('theme', 'classic')] || THEMES[0];
+let THEME = THEME_BY_ID[store.get('theme', 'forest')] || THEME_BY_ID.forest;      // first visit: the most realistic board
 let SKIN = THEME.skin, THICK = SKIN.thick || 1, HEADK = SKIN.headK || 1;   // the skin in use + its body-thickness / head-size multipliers
 
 /* ════════════════════════ layout ════════════════════════ */
@@ -551,7 +552,7 @@ const canvas = document.getElementById('game');
 const world = document.getElementById('world'), fxCanvas = document.getElementById('fx'), fxCtx = fxCanvas.getContext('2d');
 let FXR = 0.5;                                          // fx-canvas pixels per CSS pixel
 const ctx = canvas.getContext('2d', { alpha: false });      // opaque: cheaper to composite, the scene image covers every pixel
-let DPR = 1, W = 1, H = 1, SX = 1, SY = 1;            // CSS px → device px scale (SX/SY differ from DPR only by pixel rounding)
+let DPR = 1, W = 1, H = 1, SX = 1, SY = 1, UI = 1;            // CSS px → device px scale (SX/SY differ from DPR only by pixel rounding)
 const fitCanvas = () => { canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR); SX = canvas.width / W; SY = canvas.height / H; };
 const L = { cols: 24, rows: 15, cs: 40, wall: 24, x: 0, y: 0, w: 0, h: 0, ox: 0, oy: 0 };
 function clipRect(g, x, y, w, h) {                       // pixel-aligned clip: anti-aliased clips are very slow in software rasterisers
@@ -567,10 +568,11 @@ const dpadAtSide = () => dpadVisible() && W > H * 1.05;                   // lan
 const padReserve = () => (dpadVisible() && !dpadAtSide() ? 188 : 0);     // otherwise room is kept free under the board
 const padSide = () => (dpadAtSide() ? 190 : 0);
 
+const hudTop = () => Math.round((W < 560 ? 60 : 68) * UI), edgePad = () => (W < 560 ? 8 : 20);     // room kept free above / around the board (the HUD scales with UI on big screens)
+
 function computeLayout() {
-  const small = W < 560;
-  const top = small ? 60 : 68, pad = small ? 8 : 20, wf = 0.62, bottom = padReserve(), side = padSide();
-  const cs = Math.floor(Math.min((W - pad * 2 - side) / (L.cols + wf * 2), (H - top - pad - bottom) / (L.rows + wf * 2), 58));
+  const top = hudTop(), pad = edgePad(), wf = 0.62, bottom = padReserve(), side = padSide();
+  const cs = Math.floor(Math.min((W - pad * 2 - side) / (L.cols + wf * 2), (H - top - pad - bottom) / (L.rows + wf * 2), 76));
   L.cs = Math.max(cs, 10);
   L.wall = Math.round(L.cs * wf);
   L.w = L.cols * L.cs + L.wall * 2;
@@ -835,10 +837,23 @@ function paintFoliage(g, w, h) {                                    // ferns gro
 
 SCENES.forest = {
   grain: 0.18, blend: 'normal',
-  backdrop(g, w, h) {
-    const bg = g.createRadialGradient(w / 2, h * 0.45, 0, w / 2, h * 0.45, Math.max(w, h) * 0.75);
-    bg.addColorStop(0, '#1d2314'); bg.addColorStop(1, '#070904');
+  backdrop(g, w, h) {                                     // the forest floor around the wall: dark mottled earth, a few leaves and tufts, fading to black at the edges
+    const R = rng(808), s = L.cs / 40, bg = g.createRadialGradient(w / 2, h * 0.45, 0, w / 2, h * 0.45, Math.max(w, h) * 0.75);
+    bg.addColorStop(0, '#2b2619'); bg.addColorStop(1, '#0a0b06');
     g.fillStyle = bg; g.fillRect(0, 0, w, h);
+    const earth = ['#4a3c24', '#2d3519', '#5a4528', '#1d2511', '#3d3320'];
+    for (let i = 0; i < 90; i++) {
+      const x = R() * w, y = R() * h, r = R.range(30, 120) * s, c = hex(R.pick(earth)), a = R.range(0.1, 0.28), rg = g.createRadialGradient(x, y, 0, x, y, r);
+      rg.addColorStop(0, rgb(c, a)); rg.addColorStop(1, rgb(c, 0)); g.fillStyle = rg; g.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    for (let i = 0; i < 40; i++) {                        // fallen leaves
+      const x = R() * w, y = R() * h, a = R() * TAU, ll = R.range(8, 16) * s, c = hex(R.pick(['#7d4e1f', '#8c6a2a', '#6e5a22', '#7a3a1a']));
+      g.save(); g.translate(x, y); g.rotate(a); g.fillStyle = rgb(shade(c, -0.15), 0.55); leafPath(g, ll, ll * R.range(0.35, 0.5)); g.fill(); g.restore();
+    }
+    for (let i = 0; i < 70; i++) tuft(g, R, R() * w, R() * h, R.range(9, 16) * s, s);
+    const dim = g.createRadialGradient(w / 2, h * 0.5, Math.min(w, h) * 0.25, w / 2, h * 0.5, Math.max(w, h) * 0.72);   // keep the ground dim so the board stays the star
+    dim.addColorStop(0, 'rgba(4,6,2,.45)'); dim.addColorStop(1, 'rgba(4,6,2,.9)');
+    g.fillStyle = dim; g.fillRect(0, 0, w, h);
   },
   paint(g, w, h, wrap) { paintGround(g, w, h); paintWalls(g, w, h); paintFoliage(g, w, h); frameShade(g, w, h, '10,6,0', 0.5, '255,226,150'); },
   dyn(g, time) {                                          // a few leaves tumbling down through the clearing
@@ -1538,7 +1553,7 @@ const COMBO_WINDOW = 4.2;                                      // seconds betwee
 const hooks = { onScore: () => {}, onStart: () => {}, onOver: () => {}, onLevel: () => {}, onBonus: () => {}, onGold: () => {} };   // filled in by the UI layer
 
 function chooseGrid() {
-  const portrait = H > W * 1.05, small = W < 560, top = small ? 60 : 68, pad = small ? 8 : 20;
+  const portrait = H > W * 1.05, top = hudTop(), pad = edgePad();
   if (!portrait) {                                                // landscape: widen the board on very wide screens so it fills them
     const ratio = (W - pad * 2 - padSide()) / (H - top - pad - padReserve());
     L.rows = 15; L.cols = ratio > 1.9 ? clamp(Math.round(ratio * (15 + 1.24) - 1.24), 24, 40) : 24;
@@ -1728,6 +1743,9 @@ function win() {
 
 function setDir(dx, dy) {
   if (G.state !== 'playing' && G.state !== 'ready') return;
+  if (G.state === 'ready' && dx === -G.dir.x && dy === -G.dir.y) {       // not moving yet: turning round is harmless, so do it instead of ignoring the key
+    G.snake.reverse(); G.prev = G.snake.slice(); G.dir = { x: dx, y: dy }; G.look = { x: dx, y: dy };
+  }
   const last = G.queue.length ? G.queue[G.queue.length - 1] : G.dir;     // compare with the newest pending turn, not the old heading
   if (dx === -last.x && dy === -last.y) return;                          // never reverse into the neck
   if ((dx !== last.x || dy !== last.y) && G.queue.length < 3) G.queue.push({ x: dx, y: dy });
@@ -2734,8 +2752,8 @@ document.addEventListener('pointerdown', e => {
   if (!b) return;
   Sound.unlock(); Sound.play('click');
   if (!b.matches('.btn, .seg button, .icon-btn')) return;
-  const r = b.getBoundingClientRect(), size = Math.max(r.width, r.height) * 2, s = document.createElement('span');
-  s.className = 'ripple'; s.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - r.left - size / 2}px;top:${e.clientY - r.top - size / 2}px`;
+  const r = b.getBoundingClientRect(), s = document.createElement('span');          // percentages keep the ripple on the touch point whatever the UI zoom is
+  s.className = 'ripple'; s.style.cssText = `left:${(e.clientX - r.left) / r.width * 100}%;top:${(e.clientY - r.top) / r.height * 100}%`;
   b.appendChild(s); setTimeout(() => s.remove(), 650);
 });
 $('btnPlay').onclick = startGame; $('btnAgain').onclick = startGame; $('btnRestart').onclick = startGame;
@@ -2803,9 +2821,13 @@ let resizeTimer = 0;
 function rebuildAssets(fade) { buildScene(fade); spriteKey = ''; }
 const PIXEL_BUDGET = 7.5e6;                                       // device pixels we are willing to paint per frame
 const pickDpr = () => Math.max(1, Math.min(window.devicePixelRatio || 1, 3, Math.sqrt(PIXEL_BUDGET / (window.innerWidth * window.innerHeight)), Quality.dprCap || 3));
+function setUiScale() {                                           // HUD and cards grow on big monitors so they keep their proportion to the board
+  UI = clamp(Math.round(Math.min(W / 900, H / 1000) * 20) / 20, 1, 1.7);
+  document.documentElement.style.setProperty('--ui', UI);
+}
 function resize() {
   DPR = pickDpr();
-  W = stage.clientWidth; H = stage.clientHeight; fitCanvas();
+  W = stage.clientWidth; H = stage.clientHeight; fitCanvas(); setUiScale();
   if (G.state === 'attract') { const c = L.cols, r = L.rows; chooseGrid(); if (c !== L.cols || r !== L.rows) resetState(true); }
   computeLayout(); updateDpad();
   clearTimeout(resizeTimer); resizeTimer = setTimeout(rebuildAssets, 150);
@@ -2903,7 +2925,7 @@ refreshSkin(); buildThemePicker(); syncSettings(); Sound.setTheme(THEME.id);
 Motes.init();
 {
   DPR = pickDpr();
-  W = stage.clientWidth; H = stage.clientHeight; fitCanvas();
+  W = stage.clientWidth; H = stage.clientHeight; fitCanvas(); setUiScale();
 }
 chooseGrid(); computeLayout(); rebuildAssets();
 resetState(true);
