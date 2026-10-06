@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- API 23+: dark status-bar icons on the cream status bar. -->
+    <style name="Platform.V23.AppTheme" parent="Platform.AppTheme">
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <style name="AppTheme" parent="Platform.V23.AppTheme" />
+</resources>

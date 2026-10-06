@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- API 29+: the game has its own themes; never let the system force-darken it. -->
+    <style name="Platform.V29.AppTheme" parent="Platform.V28.AppTheme">
+        <item name="android:forceDarkAllowed">false</item>
+    </style>
+
+    <style name="AppTheme" parent="Platform.V29.AppTheme" />
+</resources>

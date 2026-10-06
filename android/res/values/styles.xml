@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Theme chain (each API level adds to the one below it):
+        values      Platform.AppTheme       (API 24+ base)
+        values-v23  Platform.V23.AppTheme   dark status-bar icons
+        values-v27  Platform.V27.AppTheme   cream navigation bar with dark icons
+        values-v28  Platform.V28.AppTheme   display cutout mode
+        values-v29  Platform.V29.AppTheme   no force-dark
+        values-v31  Platform.V31.AppTheme   Android 12+ system splash screen
+      AppTheme always points at the newest one available for the device.
+    -->
+    <style name="Platform.AppTheme" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/arrowgo_cream</item>
+        <item name="android:colorBackground">@color/arrowgo_cream</item>
+        <item name="android:colorPrimary">@color/arrowgo_cream</item>
+        <item name="android:colorPrimaryDark">@color/arrowgo_cream</item>
+        <item name="android:colorAccent">@color/arrowgo_coral</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:statusBarColor">@color/arrowgo_cream</item>
+        <item name="android:navigationBarColor">@color/arrowgo_nav_legacy</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">false</item>
+    </style>
+
+    <style name="AppTheme" parent="Platform.AppTheme" />
+</resources>

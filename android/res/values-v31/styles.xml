@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      API 31+: the system splash screen. Cream background (same as the page) with the
+      adaptive launcher icon (indigo-to-teal tile with the three arrows) in the middle.
+      The transparent foreground layer alone is not used because its cream arrow would
+      disappear on the cream background.
+    -->
+    <style name="Platform.V31.AppTheme" parent="Platform.V29.AppTheme">
+        <item name="android:windowSplashScreenBackground">@color/arrowgo_cream</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+    </style>
+
+    <style name="AppTheme" parent="Platform.V31.AppTheme" />
+</resources>

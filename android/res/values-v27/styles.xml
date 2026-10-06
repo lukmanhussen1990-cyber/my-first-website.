@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- API 27+: the navigation bar can be cream too, with dark icons. -->
+    <style name="Platform.V27.AppTheme" parent="Platform.V23.AppTheme">
+        <item name="android:navigationBarColor">@color/arrowgo_cream</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
+    <style name="AppTheme" parent="Platform.V27.AppTheme" />
+</resources>

@@ -15,6 +15,7 @@
  * Options (environment variables):
  *   ARROWGO_SKIP_TIMING=1   do not fail on the timing budget (slow CI machines)
  *   ARROWGO_LEVELS=500      test levels 1..500 only (quick run; golden check skipped)
+ *   ARROWGO_DAILIES=30      test the first 30 dailies only (quick run; golden check skipped)
  */
 'use strict';
 
@@ -22,6 +23,7 @@ const path = require('path');
 const AL = require(path.join(__dirname, '..', 'levels.js'));
 
 const LEVEL_COUNT = Number(process.env.ARROWGO_LEVELS) || 2000;
+const DAILY_LIMIT = Number(process.env.ARROWGO_DAILIES) || 0; // 0 = all 730
 const SKIP_TIMING = process.env.ARROWGO_SKIP_TIMING === '1';
 const AVG_BUDGET_MS = 30;
 const WORST_BUDGET_MS = 250;
@@ -369,8 +371,9 @@ function main() {
     if (SAMPLE_LEVELS.includes(n)) samples.set('L' + n, { p, m, t });
   }
 
-  const dates = dailyDates();
-  check(dates.length === 730, 'daily date range should be 730 days');
+  const allDates = dailyDates();
+  check(allDates.length === 730, 'daily date range should be 730 days');
+  const dates = DAILY_LIMIT ? allDates.slice(0, DAILY_LIMIT) : allDates;
   let dailyMsSum = 0;
   let dailyMsMax = 0;
   let hDaily = 0x811c9dc5;
@@ -392,7 +395,7 @@ function main() {
     check(params.size === 10 && params.arrows >= 38 && params.arrows <= 42, `D${date}: dailyParams outside the table`);
     const m = validatePuzzle(p, params, 'D' + date, { level: null });
     addToGroup(dailyG, p, m, t);
-    if (date === '2026-10-06') samples.set('D' + date, { p, m, t });
+    if (date === '2026-10-06' || (dates.length < 279 && date === dates[0])) samples.set('D' + date, { p, m, t });
   }
   groups.set('daily', dailyG);
 
@@ -409,7 +412,9 @@ function main() {
   if (LEVEL_COUNT === 2000) {
     check(fpLevels === GOLDEN.levels, `golden fingerprint of levels 1..2000 changed: ${fpLevels} (expected ${GOLDEN.levels})`);
   }
-  check(fpDaily === GOLDEN.daily, `golden fingerprint of dailies changed: ${fpDaily} (expected ${GOLDEN.daily})`);
+  if (dates.length === 730) {
+    check(fpDaily === GOLDEN.daily, `golden fingerprint of dailies changed: ${fpDaily} (expected ${GOLDEN.daily})`);
+  }
 
   /* ---- report ---------------------------------------------------------------------- */
   console.log('\nArrowGO! levels.js test  -  levels 1..' + LEVEL_COUNT + ' + ' + dates.length + ' dailies (2026-01-01..2027-12-31)\n');

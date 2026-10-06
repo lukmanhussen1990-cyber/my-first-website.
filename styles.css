@@ -749,8 +749,16 @@ h1, h2, h3, p { margin: 0; }
 
 .home-bottom { padding: 0 16px 12px; }
 
-#btn-play { animation: breathe 2.8s ease-in-out infinite; }
-#btn-play:active { animation: none; }
+#btn-play::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 22px;
+  border: 3px solid var(--primary);
+  opacity: 0;
+  pointer-events: none;
+  animation: ringPulse 2.6s ease-out 1.2s infinite;
+}
 
 /* ==========================================================================
    GAME
@@ -830,7 +838,7 @@ h1, h2, h3, p { margin: 0; }
 
 .game-bottom {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   gap: 18px;
   min-height: 84px;
@@ -1495,7 +1503,7 @@ button.list-row:active { background: var(--surface-2); }
 @keyframes numberBump { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
 @keyframes dotPop { from { transform: scale(0); } to { transform: scale(1); } }
 @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+@keyframes ringPulse { 0% { opacity: 0.55; transform: scale(0.98); } 70%, 100% { opacity: 0; transform: scale(1.07, 1.16); } }
 @keyframes boardIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: none; } }
 @keyframes hintPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 @keyframes dotSettle { 0% { fill: var(--arrow-ok); r: 0.11; } 100% { fill: var(--dot); } }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      API 28+: the status bar stays visible and the window is laid out below it, so the
+      cutout (notch / punch hole) always sits inside the coloured status bar. "default"
+      keeps content out of the cutout in every orientation.
+    -->
+    <style name="Platform.V28.AppTheme" parent="Platform.V27.AppTheme">
+        <item name="android:windowLayoutInDisplayCutoutMode">default</item>
+    </style>
+
+    <style name="AppTheme" parent="Platform.V28.AppTheme" />
+</resources>

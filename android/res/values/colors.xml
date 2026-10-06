@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand cream: window background, splash and default system bars (no white flash). -->
+    <color name="arrowgo_cream">#FFF5EBD8</color>
+    <!-- Brand coral accent (matches icons/logo.svg). -->
+    <color name="arrowgo_coral">#FFFF7A5C</color>
+    <!--
+      Navigation bar on API 24-26: light navigation-bar icons (dark glyphs) only exist from
+      API 26 (flag) / 27 (theme attribute), so a cream bar there would show white icons on
+      cream. Those versions get a dark bar instead; values-v27 switches to cream.
+    -->
+    <color name="arrowgo_nav_legacy">#FF000000</color>
+</resources>
