@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Claude Promo</title>
+<!--
+  10-second Claude promo, 1920x1080.
+  Every frame is a pure function of time: render.js calls window.renderFrame(t)
+  and screenshots the stage. Open this file in a browser and add ?t=5.6 to
+  inspect a single moment, or ?play to watch it loop in real time.
+-->
+<style>
+  @font-face { font-family: 'Newsreader'; src: url('fonts/newsreader-latin-opsz-normal.woff2') format('woff2'); font-weight: 200 800; }
+  @font-face { font-family: 'Inter Var'; src: url('fonts/inter-latin-opsz-normal.woff2') format('woff2'); font-weight: 100 900; }
+
+  :root {
+    --dark: #141413;
+    --ivory: #FAF9F5;
+    --orange: #D97757;
+    --beige: #F0EEE6;
+    --ink: #1F1E1D;
+    --muted: #8A887F;
+    --line: #E4E1D7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--dark); }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--dark); }
+  .layer { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; }
+  .abs { position: absolute; left: 0; top: 0; }
+  .serif { font-family: 'Newsreader', Georgia, serif; font-weight: 400; }
+  .sans { font-family: 'Inter Var', 'Inter', system-ui, sans-serif; }
+  svg { overflow: visible; display: block; }
+  .ch { display: inline-block; white-space: pre; }
+  .glow { position: absolute; left: 0; top: 0; border-radius: 50%; pointer-events: none; }
+
+  /* ---------- scene 1: ignition ---------- */
+  #s1 { background: radial-gradient(ellipse 70% 70% at 50% 50%, #1E1D1B 0%, #141413 58%, #0E0E0D 100%); }
+  #s1glow { background: radial-gradient(circle closest-side, rgba(217,119,87,.50) 0%, rgba(217,119,87,.16) 42%, rgba(217,119,87,0) 100%); }
+  #s1fill { position: absolute; left: 0; top: 0; border-radius: 50%; background: var(--orange); }
+  #s1ring { position: absolute; left: 0; top: 0; border-radius: 50%; border: 3px solid var(--orange); }
+
+  /* ---------- scene 2: word montage ---------- */
+  .word { position: absolute; left: 0; top: 0; width: 1920px; height: 1000px; display: flex; align-items: center; justify-content: center; }
+  .word .mask { display: inline-block; overflow: hidden; font-size: 250px; line-height: 1; padding: .08em .04em .22em; letter-spacing: -.02em; }
+  .brace { font-size: 250px; line-height: 1; padding-bottom: .14em; margin: 0 .07em; color: var(--orange); font-weight: 300; display: inline-block; }
+
+  /* ---------- scene 3: product moment ---------- */
+  #s3 { background: radial-gradient(ellipse 85% 80% at 50% 45%, #FCFBF7 0%, #F6F4ED 70%, #EFECE3 100%); }
+  #cam { transform-origin: 960px 540px; }
+  #greet { position: absolute; left: 0; top: 330px; width: 1920px; display: flex; justify-content: center; align-items: center; gap: 28px; }
+  #greetSpark { width: 84px; height: 84px; }
+  #greetText { font-size: 86px; line-height: 1.12; color: var(--ink); letter-spacing: -.018em; }
+
+  #composer { position: absolute; left: 410px; top: 500px; width: 1100px; height: 178px; background: #FFFFFF;
+              border: 1.5px solid var(--line); border-radius: 30px;
+              box-shadow: 0 2px 4px rgba(31,30,29,.03), 0 34px 70px -30px rgba(31,30,29,.24); }
+  #ctext { position: absolute; left: 44px; top: 34px; font-size: 38px; line-height: 46px; height: 46px; color: var(--ink); white-space: pre; }
+  #caret { display: inline-block; width: 3px; height: 44px; margin-left: 2px; vertical-align: top; border-radius: 2px; background: var(--ink); }
+  .ph { position: absolute; left: 44px; top: 34px; font-size: 38px; line-height: 46px; color: #A7A49A; white-space: pre; }
+  #cplus { position: absolute; left: 28px; bottom: 22px; width: 54px; height: 54px; border: 1.5px solid var(--line); border-radius: 15px;
+           display: flex; align-items: center; justify-content: center; }
+  #cplus svg { width: 26px; height: 26px; fill: none; stroke: #6F6D66; stroke-width: 2; stroke-linecap: round; }
+  #csend { position: absolute; right: 24px; bottom: 22px; width: 58px; height: 58px; border-radius: 16px; background: var(--orange);
+           display: flex; align-items: center; justify-content: center; }
+  #csend svg { width: 28px; height: 28px; fill: none; stroke: #FFFFFF; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  #sendRing { position: absolute; right: 24px; bottom: 22px; width: 58px; height: 58px; border-radius: 18px; border: 3px solid var(--orange); opacity: 0; }
+
+  #ububble { position: absolute; z-index: 2; left: 0; top: 0; padding: 20px 30px; border-radius: 24px; font-size: 34px; line-height: 41px;
+             color: var(--ink); white-space: pre; }
+  #ububbleBg { position: absolute; inset: 0; border-radius: 24px; background: var(--beige); }
+  #ubText { position: relative; display: inline-block; }
+
+  #resp { position: absolute; left: 410px; top: 352px; height: 64px; display: flex; align-items: center; gap: 22px; }
+  #avatar { width: 62px; height: 62px; flex: none; }
+  #rhead { font-size: 46px; line-height: 64px; color: var(--ink); letter-spacing: -.01em; white-space: nowrap; }
+  #rhead .w { display: inline-block; white-space: pre; }
+
+  #cards { position: absolute; left: 410px; top: 462px; width: 1100px; display: flex; gap: 28px; }
+  .card { position: relative; width: 348px; height: 300px; background: #FFFFFF; border: 1.5px solid var(--line); border-radius: 26px;
+          box-shadow: 0 2px 4px rgba(31,30,29,.03), 0 26px 54px -28px rgba(31,30,29,.22); }
+  .card .num { position: absolute; left: 30px; top: 24px; font-size: 70px; line-height: 1.1; color: var(--orange); letter-spacing: -.02em; }
+  .card .icon { position: absolute; right: 28px; top: 36px; width: 48px; height: 48px; fill: none; stroke: var(--ink); stroke-width: 1.7;
+                stroke-linecap: round; stroke-linejoin: round; opacity: .78; }
+  .card .check { position: absolute; right: 25px; top: 33px; width: 54px; height: 54px; border-radius: 50%; background: var(--orange); opacity: 0; }
+  .card .check svg { width: 54px; height: 54px; fill: none; stroke: #FFFFFF; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+  .card .title { position: absolute; left: 30px; top: 150px; font-size: 31px; font-weight: 600; color: var(--ink); letter-spacing: -.012em; white-space: nowrap; }
+  .card .sub { position: absolute; left: 30px; top: 196px; font-size: 24px; color: var(--muted); white-space: nowrap; }
+  .card .track { position: absolute; left: 30px; right: 30px; bottom: 34px; height: 8px; border-radius: 4px; background: #EFECE4; overflow: hidden; }
+  .card .fill { height: 100%; width: 0; border-radius: 4px; background: var(--orange); }
+
+  /* ---------- scene 5: end card ---------- */
+  #s5wipe { position: absolute; left: 0; top: 0; border-radius: 50%; background: var(--dark); }
+  #s5bg { background: radial-gradient(ellipse 75% 75% at 50% 45%, #1E1D1B 0%, #141413 60%, #0E0E0D 100%); }
+  #s5glow { background: radial-gradient(circle closest-side, rgba(217,119,87,.42) 0%, rgba(217,119,87,.12) 45%, rgba(217,119,87,0) 100%); }
+  #wordmark { position: absolute; left: 0; top: 0; font-size: 206px; line-height: 1; color: var(--ivory); letter-spacing: -.022em; white-space: nowrap; }
+  #tagline { position: absolute; left: 0; top: 0; width: 1920px; text-align: center; font-size: 46px; line-height: 56px; color: #BDBAAF; letter-spacing: -.005em; }
+  #cta { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 14px; padding: 15px 34px 16px; border: 2px solid var(--orange);
+         border-radius: 999px; font-size: 31px; line-height: 40px; color: var(--ivory); white-space: nowrap; }
+  #cta b { font-weight: 600; }
+  #cta svg { width: 26px; height: 26px; fill: none; stroke: var(--orange); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- Scene 1: a spark ignites in the dark, then we fly through it -->
+  <div id="s1" class="layer">
+    <div id="s1glow" class="glow"></div>
+    <div id="s1ring"></div>
+    <div id="s1fill"></div>
+    <svg id="s1parts" class="layer" viewBox="0 0 1920 1080"></svg>
+    <svg id="s1spark" class="abs"></svg>
+  </div>
+
+  <!-- Scene 2: four beats, four words -->
+  <div id="p1" class="layer" style="background:var(--orange)">
+    <div class="word"><div class="mask serif" style="color:var(--ivory)">Write.</div></div>
+    <svg class="layer" viewBox="0 0 1920 1080">
+      <path id="p1line" d="M 712 744 C 820 722, 900 760, 1000 738 S 1150 716, 1214 736" pathLength="1"
+            fill="none" stroke="#FAF9F5" stroke-width="13" stroke-linecap="round" stroke-dasharray="1 1"/>
+    </svg>
+  </div>
+  <div id="p2" class="layer" style="background:var(--dark)">
+    <div class="word"><span id="p2l" class="brace serif">{</span><div class="mask serif" style="color:var(--ivory)">Code.</div><span id="p2r" class="brace serif">}</span></div>
+  </div>
+  <div id="p3" class="layer" style="background:var(--ivory)">
+    <div class="word"><div class="mask serif" style="color:var(--ink)">Analyze.</div></div>
+    <svg class="layer" viewBox="0 0 1920 1080">
+      <polyline id="p3line" points="" pathLength="1" fill="none" stroke="#D97757" stroke-width="9"
+                stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 1"/>
+      <g id="p3dots"></g>
+    </svg>
+  </div>
+  <div id="p4" class="layer" style="background:var(--orange)">
+    <div class="word"><div class="mask serif" style="color:var(--ivory)">Create.</div></div>
+    <svg id="p4stars" class="layer" viewBox="0 0 1920 1080"></svg>
+  </div>
+
+  <!-- Scene 3: the product moment -->
+  <div id="s3" class="layer">
+    <div id="cam" class="layer">
+      <div id="greet">
+        <svg id="greetSpark"></svg>
+        <div id="greetText" class="serif">What’s the big idea?</div>
+      </div>
+
+      <div id="ububble" class="sans"><div id="ububbleBg"></div><span id="ubText">Turn my idea into a launch plan</span></div>
+
+      <div id="resp">
+        <svg id="avatar"></svg>
+        <div id="rhead" class="serif">Here’s a launch plan in three steps:</div>
+      </div>
+
+      <div id="cards">
+        <div class="card">
+          <div class="num serif">01</div>
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3" fill="#1F1E1D"/></svg>
+          <div class="check"><svg viewBox="0 0 54 54"><path d="M17 28 L24 35 L38 20" pathLength="1" stroke-dasharray="1 1"/></svg></div>
+          <div class="title sans">Know your audience</div>
+          <div class="sub sans">Who it’s for, and why</div>
+          <div class="track"><div class="fill"></div></div>
+        </div>
+        <div class="card">
+          <div class="num serif">02</div>
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 20l1.2-4.6L16.4 4.2a2.1 2.1 0 0 1 3 3L8.2 18.4z"/><path d="M14.5 6.1l3 3"/></svg>
+          <div class="check"><svg viewBox="0 0 54 54"><path d="M17 28 L24 35 L38 20" pathLength="1" stroke-dasharray="1 1"/></svg></div>
+          <div class="title sans">Shape the story</div>
+          <div class="sub sans">One clear message</div>
+          <div class="track"><div class="fill"></div></div>
+        </div>
+        <div class="card">
+          <div class="num serif">03</div>
+          <svg class="icon" viewBox="0 0 24 24"><path d="M21 3L3 10.4l7.2 2.6L12.8 20.6z"/><path d="M21 3L10.2 13"/></svg>
+          <div class="check"><svg viewBox="0 0 54 54"><path d="M17 28 L24 35 L38 20" pathLength="1" stroke-dasharray="1 1"/></svg></div>
+          <div class="title sans">Launch &amp; learn</div>
+          <div class="sub sans">Ship, measure, iterate</div>
+          <div class="track"><div class="fill"></div></div>
+        </div>
+      </div>
+
+      <div id="composer">
+        <div id="cph" class="ph sans">How can I help you today?</div>
+        <div id="ctext" class="sans"><span id="ctyped"></span><span id="caret"></span></div>
+        <div id="cplus"><svg viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg></div>
+        <div id="sendRing"></div>
+        <div id="csend"><svg viewBox="0 0 24 24"><path d="M12 18.5V5.5M6.5 11L12 5.5 17.5 11"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 5: brand lockup -->
+  <div id="s5" class="layer">
+    <div id="s5wipe"></div>
+    <div id="s5bg" class="layer"></div>
+    <div id="s5glow" class="glow"></div>
+    <svg id="s5parts" class="layer" viewBox="0 0 1920 1080"></svg>
+    <div id="wordmark" class="serif">Claude</div>
+    <div id="tagline" class="sans">Big ideas start here.</div>
+    <div id="cta" class="sans"><span>Try it at <b>claude.ai</b></span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+  </div>
+
+  <!-- The spark that travels from the chat into the logo -->
+  <svg id="hero" class="abs"></svg>
+</div>
+
+<script>
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const W = 1920, H = 1080, CX = 960, CY = 540;
+const $ = id => document.getElementById(id);
+
+// ---------------------------------------------------------------- math
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const prog = (t, start, dur) => clamp((t - start) / dur);
+const E = {
+  inQuad: x => x * x,
+  outQuad: x => 1 - (1 - x) * (1 - x),
+  inCubic: x => x * x * x,
+  outCubic: x => 1 - Math.pow(1 - x, 3),
+  inOutCubic: x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
+  inQuart: x => x * x * x * x,
+  outQuart: x => 1 - Math.pow(1 - x, 4),
+  outQuint: x => 1 - Math.pow(1 - x, 5),
+  outExpo: x => x >= 1 ? 1 : 1 - Math.pow(2, -10 * x),
+  inOutSine: x => -(Math.cos(Math.PI * x) - 1) / 2,
+  outBack: x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); },
+  // damped spring, ~12% overshoot
+  spring: x => x <= 0 ? 0 : x >= 1 ? 1 : 1 - Math.exp(-6.5 * x) * Math.cos(9.5 * x),
+};
+// 0 -> 1 -> 0 envelope: rises until `peak`, falls until `end`
+const bump = (t, start, peak, end) =>
+  t <= start || t >= end ? 0 : t < peak ? E.outCubic((t - start) / (peak - start)) : 1 - E.inOutCubic((t - peak) / (end - peak));
+function rng(seed) {
+  return () => {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let r = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const px = v => v.toFixed(2) + 'px';
+const show = (el, on) => { el.style.display = on ? '' : 'none'; };
+function place(el, cx, cy, size) {          // centre a square element at (cx, cy)
+  el.style.width = px(size);
+  el.style.height = px(size);
+  el.style.transform = `translate(${px(cx - size / 2)}, ${px(cy - size / 2)})`;
+}
+
+// ---------------------------------------------------------------- timeline (seconds)
+const T = {
+  beats: [1.0, 1.5, 2.0, 2.5],
+  chatIn: 2.84,
+  typeStart: 3.62, typeEnd: 4.58,
+  send: 4.78,
+  convo: 4.86,
+  think: 4.98,
+  stream: 5.28,
+  cards: [5.5, 5.65, 5.8],
+  outro: 7.0,
+  wipe: 7.42,
+  impact: 8.0,
+  lockup: 8.12,
+  wordmark: 8.32,
+  tagline: 8.75,
+  cta: 9.05,
+};
+const PROMPT = 'Turn my idea into a launch plan';
+const TYPE_TIMES = (() => {
+  const r = rng(21);
+  const gaps = [...PROMPT].map(ch => (ch === ' ' ? 1.45 : 1) * (0.7 + r() * 0.6));
+  const total = gaps.reduce((a, b) => a + b, 0);
+  let acc = 0;
+  return gaps.map(g => { const at = T.typeStart + acc / total * (T.typeEnd - T.typeStart); acc += g; return at; });
+})();
+
+// ---------------------------------------------------------------- the spark mark
+const SPARK = (() => {
+  const r = rng(7), rays = [];
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2 - Math.PI / 2 + (r() - .5) * .12;
+    const len = 80 + (r() - .5) * 22;
+    const w = 7 + (r() - .5) * 2;
+    rays.push({ a, len, w });
+  }
+  return rays;
+})();
+const f2 = (x, y) => x.toFixed(2) + ' ' + y.toFixed(2);
+function rayPath(a, r1, w0, w1) {              // capsule from the centre out to r1, narrow at the root
+  const ux = Math.cos(a), uy = Math.sin(a), vx = -uy, vy = ux;
+  return `M${f2(vx * w0, vy * w0)}L${f2(ux * r1 + vx * w1, uy * r1 + vy * w1)}` +
+         `A${w1.toFixed(2)} ${w1.toFixed(2)} 0 0 0 ${f2(ux * r1 - vx * w1, uy * r1 - vy * w1)}` +
+         `L${f2(-vx * w0, -vy * w0)}A${w0.toFixed(2)} ${w0.toFixed(2)} 0 0 0 ${f2(vx * w0, vy * w0)}Z`;
+}
+function makeSpark(svg, color = '#D97757') {
+  svg.setAttribute('viewBox', '-100 -100 200 200');
+  const g = document.createElementNS(NS, 'g');
+  svg.appendChild(g);
+  const paths = SPARK.map(() => {
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('fill', color);
+    g.appendChild(p);
+    return p;
+  });
+  const core = document.createElementNS(NS, 'circle');
+  core.setAttribute('fill', color);
+  g.appendChild(core);
+  return { svg, g, paths, core };
+}
+// lenFn(i) -> 0..1+ growth of ray i
+function setSpark(sp, lenFn, coreR = 9, rot = 0) {
+  SPARK.forEach((ray, i) => {
+    const f = Math.max(0, lenFn(i));
+    if (f < 0.003) { sp.paths[i].setAttribute('d', ''); return; }
+    const w1 = ray.w * clamp(f * 2.5, 0.3, 1);
+    const r1 = Math.max(0.01, ray.len * f - w1);
+    sp.paths[i].setAttribute('d', rayPath(ray.a, r1, w1 * .62, w1));
+  });
+  sp.core.setAttribute('r', Math.max(0, coreR).toFixed(2));
+  sp.g.setAttribute('transform', `rotate(${rot.toFixed(3)})`);
+}
+
+// ---------------------------------------------------------------- particles
+function makeParticles(svg, n, seed, o) {
+  const r = rng(seed);
+  return Array.from({ length: n }, () => {
+    const el = document.createElementNS(NS, 'circle');
+    svg.appendChild(el);
+    const p = { el, a: r() * Math.PI * 2, v: lerp(o.vmin, o.vmax, r()), delay: r() * o.spread,
+                life: lerp(o.lmin, o.lmax, r()), size: lerp(o.smin, o.smax, r()), ivory: r() < o.ivory };
+    el.setAttribute('fill', p.ivory ? '#FAF9F5' : '#E58F6F');
+    return p;
+  });
+}
+function updateParticles(list, t, t0, cx, cy, r0, zoom = 1) {
+  for (const p of list) {
+    const k = (t - t0 - p.delay) / p.life;
+    if (k <= 0 || k >= 1) { p.el.setAttribute('r', '0'); continue; }
+    const d = (r0 + p.v * p.life * E.outCubic(k)) * zoom;
+    p.el.setAttribute('cx', (cx + Math.cos(p.a) * d).toFixed(2));
+    p.el.setAttribute('cy', (cy + Math.sin(p.a) * d).toFixed(2));
+    p.el.setAttribute('r', (p.size * (1 - k * .55) * Math.sqrt(zoom)).toFixed(2));
+    p.el.setAttribute('opacity', ((1 - E.inQuad(k)) * Math.min(1, k * 10)).toFixed(3));
+  }
+}
+
+function splitChars(el) {
+  const text = el.textContent;
+  el.textContent = '';
+  return [...text].map(ch => {
+    const s = document.createElement('span');
+    s.className = 'ch';
+    s.textContent = ch;
+    el.appendChild(s);
+    return s;
+  });
+}
+
+// ================================================================ build
+const s1Spark = makeSpark($('s1spark'));
+const s1Parts = makeParticles($('s1parts'), 36, 3, { vmin: 260, vmax: 760, spread: .12, lmin: .45, lmax: .8, smin: 2, smax: 5.5, ivory: .35 });
+
+const panels = ['p1', 'p2', 'p3', 'p4'].map((id, k) => ({
+  el: $(id), b: T.beats[k], word: $(id).querySelector('.word'), chars: splitChars($(id).querySelector('.mask')),
+}));
+
+// "Analyze." chart
+const P3_PTS = [[690, 800], [770, 776], [850, 786], [930, 748], [1010, 760], [1090, 722], [1170, 732], [1250, 684]];
+$('p3line').setAttribute('points', P3_PTS.map(p => p.join(',')).join(' '));
+const p3Dots = P3_PTS.map(([x, y]) => {
+  const c = document.createElementNS(NS, 'circle');
+  c.setAttribute('cx', x); c.setAttribute('cy', y);
+  c.setAttribute('fill', '#FAF9F5'); c.setAttribute('stroke', '#D97757'); c.setAttribute('stroke-width', '6');
+  $('p3dots').appendChild(c);
+  return c;
+});
+const P3_LEN = (() => {                          // cumulative arc length so dots pop as the line reaches them
+  const acc = [0];
+  for (let i = 1; i < P3_PTS.length; i++) acc.push(acc[i - 1] + Math.hypot(P3_PTS[i][0] - P3_PTS[i - 1][0], P3_PTS[i][1] - P3_PTS[i - 1][1]));
+  return acc.map(v => v / acc[acc.length - 1]);
+})();
+
+// "Create." sparkles
+const STAR_D = 'M0 -1 C .1 -.1 .1 -.1 1 0 C .1 .1 .1 .1 0 1 C -.1 .1 -.1 .1 -1 0 C -.1 -.1 -.1 -.1 0 -1 Z';
+const P4_STARS = [[548, 352, 54], [1392, 330, 40], [1352, 712, 60], [600, 716, 34], [1478, 540, 24], [452, 548, 22], [980, 236, 28], [1120, 800, 20]]
+  .map(([x, y, s], i) => {
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', STAR_D);
+    p.setAttribute('fill', '#FAF9F5');
+    $('p4stars').appendChild(p);
+    return { el: p, x, y, s, t0: T.beats[3] + .04 + i * .032 };
+  });
+
+// chat
+const greetSpark = makeSpark($('greetSpark'));
+const avatar = makeSpark($('avatar'));
+const rheadWords = (() => {
+  const el = $('rhead'), words = el.textContent.split(' ');
+  el.textContent = '';
+  return words.map((w, i) => {
+    const s = document.createElement('span');
+    s.className = 'w';
+    s.textContent = (i ? ' ' : '') + w;
+    el.appendChild(s);
+    return s;
+  });
+})();
+const cards = [...document.querySelectorAll('.card')].map((el, i) => ({
+  el, t0: T.cards[i],
+  fill: el.querySelector('.fill'), icon: el.querySelector('.icon'),
+  check: el.querySelector('.check'), tick: el.querySelector('.check path'),
+}));
+
+// end card
+const heroSpark = makeSpark($('hero'));
+const s5Parts = makeParticles($('s5parts'), 44, 11, { vmin: 220, vmax: 620, spread: .08, lmin: .6, lmax: 1.1, smin: 1.6, smax: 4.2, ivory: .45 });
+
+// ---------------------------------------------------------------- layout measured once
+const L = {};
+function measure() {
+  const typed = $('ctyped');
+  typed.textContent = PROMPT;
+  const tr = typed.getBoundingClientRect();
+  typed.textContent = '';
+
+  // user bubble sits right-aligned at the top of the conversation column
+  const bub = $('ububble');
+  const bw = bub.offsetWidth;
+  L.bubble = { left: 1510 - bw, top: 238 };
+  bub.style.left = px(L.bubble.left);
+  bub.style.top = px(L.bubble.top);
+  const ur = $('ubText').getBoundingClientRect();
+  // start transform: bubble text overlaps the composer text exactly
+  L.fly = { dx: tr.left - ur.left, dy: tr.top - ur.top, s: 38 / 34, ox: ur.left - L.bubble.left, oy: ur.top - L.bubble.top };
+  bub.style.transformOrigin = `${px(L.fly.ox)} ${px(L.fly.oy)}`;
+
+  const ar = $('avatar').getBoundingClientRect();
+  L.avatar = { x: ar.left + ar.width / 2, y: ar.top + ar.height / 2, d: ar.width };
+
+  // brand lockup: spark + wordmark, centred as a group
+  const wm = $('wordmark');
+  const ww = wm.getBoundingClientRect().width;
+  const sparkD = 196, gap = 26, sparkY = 410;
+  const total = sparkD + gap + ww;
+  const x0 = CX - total / 2;
+  L.lock = { x: x0 + sparkD / 2, y: sparkY, d: sparkD };
+  // spark centre sits between the word's cap-height and x-height midlines
+  L.word = { left: x0 + sparkD + gap, top: sparkY - 84 };
+  wm.style.left = px(L.word.left);
+  wm.style.top = px(L.word.top);
+  L.taglineTop = 588;
+  const cta = $('cta');
+  L.cta = { left: CX - cta.offsetWidth / 2, top: 688 };
+}
+
+// ================================================================ scenes
+function scene1(t) {
+  const on = t < .97;
+  show($('s1'), on);
+  if (!on) return;
+  const pop = E.outBack(prog(t, 0, .24));
+  const dive = prog(t, .62, .35);
+  const zoom = Math.pow(70, E.inQuad(dive));            // exponential dive into the core
+  const rot = lerp(-50, 0, E.outCubic(prog(t, 0, .95))) + 70 * E.inQuad(dive);
+  const breathe = 1 + .07 * bump(t, .46, .56, .66);
+  setSpark(s1Spark, i => E.outExpo(prog(t, .14 + i * .016, .5)) * breathe, lerp(10, 16, dive) * pop, rot);
+  place($('s1spark'), CX, CY, 340 * zoom);
+  const g = $('s1glow');
+  place(g, CX, CY, 1000 * (.55 + .45 * E.outCubic(prog(t, 0, .6))) * Math.sqrt(zoom));
+  g.style.opacity = (.9 * clamp(pop)).toFixed(3);
+  // shockwave as the rays burst out
+  const rk = prog(t, .16, .62), ring = $('s1ring');
+  place(ring, CX, CY, 60 + 1500 * E.outCubic(rk));
+  ring.style.opacity = rk > 0 && rk < 1 ? (.55 * (1 - E.outQuad(rk))).toFixed(3) : '0';
+  // safety fill so the hand-off to the first panel is seamless
+  place($('s1fill'), CX, CY, 2400 * E.inQuart(prog(t, .87, .09)));
+  updateParticles(s1Parts, t, .16, CX, CY, 24, zoom);
+}
+
+function montage(t) {
+  panels.forEach((p, k) => {
+    const next = k < 3 ? T.beats[k + 1] : T.chatIn + .16;
+    const start = k === 0 ? .97 : p.b - .16;
+    const on = t >= start && t < next + .12;
+    show(p.el, on);
+    if (!on) return;
+    let y = k === 0 ? 0 : H * (1 - E.outQuart(prog(t, p.b - .16, .26)));
+    y -= 180 * E.inOutCubic(prog(t, next - .16, .26));
+    p.el.style.transform = `translate3d(0, ${px(y)}, 0)`;
+    p.word.style.transform = `scale(${lerp(1.06, 1, E.outCubic(prog(t, p.b - .1, .7))).toFixed(4)})`;   // slow push
+    p.chars.forEach((c, j) => {
+      const q = E.outExpo(prog(t, p.b - .06 + j * .018, .42));
+      c.style.transform = `translate3d(0, ${((1 - q) * 140).toFixed(2)}%, 0)`;
+    });
+  });
+
+  // Write. — underline stroke
+  $('p1line').style.strokeDashoffset = (1 - E.inOutCubic(prog(t, 1.08, .34))).toFixed(4);
+
+  // Code. — braces slide in
+  const bq = E.outExpo(prog(t, 1.52, .4));
+  $('p2l').style.transform = `translate3d(${px((1 - bq) * 90)}, 0, 0)`;
+  $('p2r').style.transform = `translate3d(${px(-(1 - bq) * 90)}, 0, 0)`;
+  $('p2l').style.opacity = $('p2r').style.opacity = E.outCubic(prog(t, 1.52, .2)).toFixed(3);
+
+  // Analyze. — chart draws, dots pop as the line reaches them
+  const lq = E.inOutCubic(prog(t, 2.04, .38));
+  $('p3line').style.strokeDashoffset = (1 - lq).toFixed(4);
+  p3Dots.forEach((d, i) => {
+    const at = 2.04 + .38 * P3_LEN[i] * .92;
+    const s = E.outBack(prog(t, at, .16));
+    d.setAttribute('r', (s * (i === P3_PTS.length - 1 ? 13 : 9)).toFixed(2));
+  });
+
+  // Create. — sparkles twinkle in
+  P4_STARS.forEach(st => {
+    const k = prog(t, st.t0, .42);
+    const s = E.spring(k) * (1 + .08 * Math.sin((t - st.t0) * 14));
+    const rot = (1 - E.outCubic(k)) * -120;
+    st.el.setAttribute('transform', `translate(${st.x} ${st.y}) rotate(${rot.toFixed(2)}) scale(${(st.s * Math.max(0, s)).toFixed(3)})`);
+  });
+}
+
+const camScale = t => 1.1 + .04 * E.inOutSine(prog(t, 3, 4)) + .3 * E.inCubic(prog(t, T.outro, .45));
+const avatarRot = t => 40 * (t - T.think) + 150 * E.outCubic(prog(t, T.think, .7));
+
+function chat(t) {
+  const on = t >= T.chatIn && t < 7.95;
+  show($('s3'), on);
+  if (!on) return;
+  $('s3').style.transform = `translate3d(0, ${px(H * (1 - E.outQuart(prog(t, T.chatIn, .26))))}, 0)`;
+  const cam = $('cam');
+  cam.style.transform = `scale(${camScale(t).toFixed(5)})`;
+  cam.style.opacity = (1 - E.inOutCubic(prog(t, T.outro, .4))).toFixed(3);
+
+  // greeting — clears out quickly so the message bubble never flies through it
+  const gIn = E.outCubic(prog(t, 3.04, .5)), gOut = E.inCubic(prog(t, T.send - .02, .22));
+  const greet = $('greet');
+  show(greet, gOut < 1);
+  greet.style.opacity = (gIn * (1 - gOut)).toFixed(3);
+  greet.style.transform = `translate3d(0, ${px((1 - gIn) * 36 - gOut * 70)}, 0)`;
+  setSpark(greetSpark, i => E.outExpo(prog(t, 3.06 + i * .018, .5)), 9 * E.outBack(prog(t, 3.04, .3)), 30 * (t - 3) - 30);
+
+  // composer — rises in, then drops away once the message is sent
+  const cIn = prog(t, 3.12, .62);
+  const drop = E.inCubic(prog(t, T.convo + .02, .42));
+  const comp = $('composer');
+  show(comp, drop < 1);
+  comp.style.opacity = (E.outCubic(prog(t, 3.12, .24)) * (1 - E.inQuad(prog(t, T.convo + .12, .32)))).toFixed(3);
+  comp.style.transform = `translate3d(0, ${px((1 - E.spring(cIn)) * 80 + drop * 640)}, 0) scale(${lerp(.965, 1, E.outCubic(cIn)).toFixed(4)})`;
+
+  const n = TYPE_TIMES.filter(at => t >= at).length;
+  const sent = t >= T.convo;
+  $('ctyped').textContent = sent ? '' : PROMPT.slice(0, n);
+  $('cph').style.opacity = n === 0 && !sent ? '1' : '0';
+  const typing = t >= T.typeStart - .05 && t <= T.typeEnd + .12;
+  const blinkOn = Math.floor((t - 3.3) / .5) % 2 === 0;
+  $('caret').style.opacity = (!sent && t > 3.3 && (typing || blinkOn)) ? '1' : '0';
+  const press = 1 - .13 * bump(t, T.send - .05, T.send + .02, T.send + .2);
+  const send = $('csend');
+  send.style.opacity = n > 0 || sent ? '1' : '.42';
+  send.style.transform = `scale(${press.toFixed(4)})`;
+  const rk = prog(t, T.send, .42);
+  const ring = $('sendRing');
+  ring.style.opacity = rk > 0 && rk < 1 ? (.7 * (1 - E.outQuad(rk))).toFixed(3) : '0';
+  ring.style.transform = `scale(${(1 + .9 * E.outCubic(rk)).toFixed(4)})`;
+
+  // user bubble flies out of the composer
+  const bub = $('ububble');
+  show(bub, sent);
+  if (sent) {
+    const q = E.inOutCubic(prog(t, T.convo, .44));
+    const f = L.fly;
+    bub.style.transform = `translate3d(${px(f.dx * (1 - q))}, ${px(f.dy * (1 - q))}, 0) scale(${lerp(f.s, 1, q).toFixed(4)})`;
+    $('ububbleBg').style.opacity = E.outCubic(prog(t, T.convo + .1, .3)).toFixed(3);
+  }
+
+  // Claude thinks, then answers
+  // a soft ripple travels around the rays while it thinks
+  const thinking = bump(t, T.think + .1, T.think + .22, T.stream + .3);
+  setSpark(avatar, i => E.outExpo(prog(t, T.think + i * .014, .4)) * (1 - .16 * thinking * (.5 + .5 * Math.sin((t * 2.6 - i / 12) * Math.PI * 2))),
+           9 * E.outBack(prog(t, T.think, .25)), avatarRot(t));
+  $('avatar').style.opacity = t >= T.think && t < T.outro ? '1' : '0';
+  rheadWords.forEach((w, i) => {
+    const q = E.outCubic(prog(t, T.stream + i * .045, .26));
+    w.style.opacity = q.toFixed(3);
+    w.style.transform = `translate3d(0, ${px((1 - q) * 16)}, 0)`;
+  });
+
+  cards.forEach(c => {
+    const k = prog(t, c.t0, .62);
+    const s = E.spring(k);
+    c.el.style.opacity = E.outCubic(prog(t, c.t0, .2)).toFixed(3);
+    c.el.style.transform = `translate3d(0, ${px((1 - s) * 70)}, 0) scale(${lerp(.9, 1, s).toFixed(4)})`;
+    c.fill.style.width = (100 * E.inOutCubic(prog(t, c.t0 + .25, .55))).toFixed(2) + '%';
+    const ck = prog(t, c.t0 + .8, .4);
+    c.icon.style.opacity = (.78 * (1 - E.outCubic(prog(t, c.t0 + .78, .14)))).toFixed(3);
+    c.check.style.opacity = ck > 0 ? '1' : '0';
+    c.check.style.transform = `scale(${E.spring(ck).toFixed(4)})`;
+    c.tick.style.strokeDashoffset = (1 - E.outCubic(prog(t, c.t0 + .86, .26))).toFixed(4);
+  });
+}
+
+function heroPos(t) {
+  // where the avatar sits on screen at the hand-off moment
+  const s0 = camScale(T.outro);
+  const ax = CX + (L.avatar.x - CX) * s0, ay = CY + (L.avatar.y - CY) * s0, ad = L.avatar.d * s0;
+  const q = E.inOutCubic(prog(t, T.outro, .86));
+  // gentle arc into the centre
+  const mx = lerp(ax, CX, .5) - 40, my = lerp(ay, CY, .5) + 150;
+  let x = (1 - q) * (1 - q) * ax + 2 * (1 - q) * q * mx + q * q * CX;
+  let y = (1 - q) * (1 - q) * ay + 2 * (1 - q) * q * my + q * q * CY;
+  let d = lerp(ad, 330, q);
+  const m = E.inOutCubic(prog(t, T.lockup, .62));
+  x = lerp(x, L.lock.x, m); y = lerp(y, L.lock.y, m); d = lerp(d, L.lock.d, m);
+  return { x, y, d };
+}
+
+function outro(t) {
+  const heroOn = t >= T.outro;
+  show($('hero'), heroOn);
+  const s5on = t >= T.wipe;
+  show($('s5'), s5on);
+  if (!heroOn) return;
+
+  const h = heroPos(t);
+  const impact = bump(t, T.impact - .1, T.impact + .03, T.impact + .42);
+  const idle = 1 + .03 * Math.sin(Math.max(0, t - 8.7) * 3.4);
+  const rot = avatarRot(t) + 230 * E.inOutCubic(prog(t, T.outro, .9));
+  setSpark(heroSpark, i => (1 + .2 * impact * (.75 + .25 * Math.sin(i * 2.1))) * idle, 9, rot);
+  place($('hero'), h.x, h.y, h.d);
+
+  if (!s5on) return;
+  const wr = 1200 * E.inOutCubic(prog(t, T.wipe, .5));
+  place($('s5wipe'), h.x, h.y, 2 * wr);
+  $('s5bg').style.opacity = t >= T.wipe + .5 ? '1' : '0';
+
+  const glow = $('s5glow');
+  place(glow, h.x, h.y, 1250 * (h.d / 300) + 220);
+  glow.style.opacity = (clamp(prog(t, 7.6, .4)) * (.55 + .45 * impact)).toFixed(3);
+  updateParticles(s5Parts, t, T.impact - .02, h.x, h.y, h.d * .3);
+
+  // wordmark slides out from behind the spark
+  const wq = E.outExpo(prog(t, T.wordmark, .8));
+  const wm = $('wordmark');
+  const slide = (1 - wq) * -150;
+  const clipL = Math.max(0, h.x - (L.word.left + slide));
+  wm.style.transform = `translate3d(${px(slide)}, 0, 0)`;
+  wm.style.clipPath = `inset(-30% -10% -40% ${px(clipL)})`;
+  wm.style.opacity = E.outCubic(prog(t, T.wordmark, .3)).toFixed(3);
+
+  const tq = E.outCubic(prog(t, T.tagline, .55));
+  const tag = $('tagline');
+  tag.style.opacity = tq.toFixed(3);
+  tag.style.transform = `translate3d(0, ${px(L.taglineTop + (1 - tq) * 26)}, 0)`;
+
+  const ck = prog(t, T.cta, .55);
+  const cta = $('cta');
+  cta.style.opacity = E.outCubic(prog(t, T.cta, .25)).toFixed(3);
+  cta.style.transform = `translate3d(${px(L.cta.left)}, ${px(L.cta.top + (1 - E.outCubic(ck)) * 18)}, 0) scale(${lerp(.9, 1, E.spring(ck)).toFixed(4)})`;
+}
+
+// ================================================================ entry points
+window.DURATION = 10;
+window.renderFrame = t => { scene1(t); montage(t); chat(t); outro(t); };
+// event times for the soundtrack (consumed by build/music.py via render.js)
+window.getCues = () => ({
+  duration: 10,
+  ignite: 0.0, burst: 0.16, wipeIn: [0.70, 0.96],
+  beats: T.beats, panelWhoosh: [T.chatIn - 0.12, T.chatIn + 0.14],
+  composer: 3.12, typing: TYPE_TIMES, send: T.send, convo: T.convo,
+  think: T.think, stream: T.stream, cards: T.cards, checks: T.cards.map(c => c + 0.8),
+  outro: T.outro, wipe: T.wipe, impact: T.impact, wordmark: T.wordmark, tagline: T.tagline, cta: T.cta,
+});
+window.ready = document.fonts.ready.then(() => {
+  measure();
+  const q = new URLSearchParams(location.search);
+  if (q.has('play')) {
+    const t0 = performance.now();
+    const loop = () => { renderFrame(((performance.now() - t0) / 1000) % window.DURATION); requestAnimationFrame(loop); };
+    loop();
+  } else {
+    renderFrame(parseFloat(q.get('t') || '0'));
+  }
+});
+</script>
+</body>
+</html>
