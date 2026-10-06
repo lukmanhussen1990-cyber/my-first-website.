@@ -1,0 +1,195 @@
+{
+  "entity_sounds": {
+    "entities": {
+      "pas:parasite": {
+        "volume": 1.0,
+        "pitch": [
+          0.9,
+          1.12
+        ],
+        "events": {
+          "ambient": "pas.parasite.ambient",
+          "hurt": "pas.parasite.hurt",
+          "death": "pas.parasite.death",
+          "attack": "pas.parasite.attack",
+          "step": {
+            "sound": "pas.parasite.step",
+            "volume": 0.5,
+            "pitch": [
+              0.9,
+              1.15
+            ]
+          }
+        }
+      },
+      "pas:infected_villager": {
+        "volume": 1.0,
+        "pitch": [
+          0.9,
+          1.05
+        ],
+        "events": {
+          "ambient": "pas.infected_villager.ambient",
+          "hurt": "pas.infected_villager.hurt",
+          "death": "pas.infected_villager.death",
+          "attack": {
+            "sound": "pas.parasite.attack",
+            "volume": 0.7,
+            "pitch": [
+              0.6,
+              0.75
+            ]
+          },
+          "step": {
+            "sound": "mob.zombie.step",
+            "volume": 0.4,
+            "pitch": [
+              0.8,
+              0.95
+            ]
+          }
+        }
+      },
+      "pas:infected_cow": {
+        "volume": 1.0,
+        "pitch": [
+          0.88,
+          1.02
+        ],
+        "events": {
+          "ambient": "pas.infected_cow.ambient",
+          "hurt": "pas.infected_cow.hurt",
+          "death": "pas.infected_cow.death",
+          "attack": {
+            "sound": "pas.parasite.attack",
+            "volume": 0.7,
+            "pitch": [
+              0.6,
+              0.75
+            ]
+          },
+          "step": {
+            "sound": "mob.cow.step",
+            "volume": 0.55,
+            "pitch": [
+              0.8,
+              0.95
+            ]
+          }
+        }
+      },
+      "pas:infected_pig": {
+        "volume": 1.0,
+        "pitch": [
+          0.9,
+          1.05
+        ],
+        "events": {
+          "ambient": "pas.infected_pig.ambient",
+          "hurt": "pas.infected_pig.hurt",
+          "death": "pas.infected_pig.death",
+          "attack": {
+            "sound": "pas.parasite.attack",
+            "volume": 0.7,
+            "pitch": [
+              0.6,
+              0.75
+            ]
+          },
+          "step": {
+            "sound": "mob.pig.step",
+            "volume": 0.25,
+            "pitch": [
+              0.8,
+              0.95
+            ]
+          }
+        }
+      },
+      "pas:infected_sheep": {
+        "volume": 1.0,
+        "pitch": [
+          0.9,
+          1.05
+        ],
+        "events": {
+          "ambient": "pas.infected_sheep.ambient",
+          "hurt": "pas.infected_sheep.hurt",
+          "death": "pas.infected_sheep.death",
+          "attack": {
+            "sound": "pas.parasite.attack",
+            "volume": 0.7,
+            "pitch": [
+              0.6,
+              0.75
+            ]
+          },
+          "step": {
+            "sound": "mob.sheep.step",
+            "volume": 0.4,
+            "pitch": [
+              0.8,
+              0.95
+            ]
+          }
+        }
+      },
+      "pas:infected_chicken": {
+        "volume": 1.0,
+        "pitch": [
+          0.9,
+          1.05
+        ],
+        "events": {
+          "ambient": "pas.infected_chicken.ambient",
+          "hurt": "pas.infected_chicken.hurt",
+          "death": "pas.infected_chicken.death",
+          "attack": {
+            "sound": "pas.parasite.attack",
+            "volume": 0.7,
+            "pitch": [
+              0.6,
+              0.75
+            ]
+          },
+          "step": {
+            "sound": "mob.chicken.step",
+            "volume": 0.25,
+            "pitch": [
+              0.8,
+              0.95
+            ]
+          }
+        }
+      },
+      "pas:infected_human": {
+        "volume": 1.0,
+        "pitch": [
+          0.88,
+          1.05
+        ],
+        "events": {
+          "ambient": "pas.infected_human.ambient",
+          "hurt": "pas.infected_human.hurt",
+          "death": "pas.infected_human.death",
+          "attack": {
+            "sound": "pas.parasite.attack",
+            "volume": 0.7,
+            "pitch": [
+              0.6,
+              0.75
+            ]
+          },
+          "step": {
+            "sound": "mob.zombie.step",
+            "volume": 0.45,
+            "pitch": [
+              0.8,
+              0.95
+            ]
+          }
+        }
+      }
+    }
+  }
+}
