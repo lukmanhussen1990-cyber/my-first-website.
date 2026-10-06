@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en" data-theme="cream">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>ArrowGO! – Arrow puzzle by ImranO</title>
+  <meta name="description" content="ArrowGO! by ImranO: a calm arrow-untangle puzzle. Tap arrows to slide them off the board, keep your water drops and grow your daily streak.">
+  <meta name="theme-color" content="#F5EBD8">
+  <meta name="application-name" content="ArrowGO!">
+  <meta name="author" content="ImranO">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ArrowGO!">
+  <meta name="format-detection" content="telephone=no">
+  <meta property="og:title" content="ArrowGO! by ImranO">
+  <meta property="og:description" content="Tap arrows, untangle the board, keep your streak. Play for 10 minutes daily.">
+  <meta property="og:image" content="icons/og-image.png">
+  <meta property="og:type" content="website">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preload" href="fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Icon sprite (kept rendered at 0x0 so gradients inside <symbol>s keep working) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="g-star" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#FFF0A0"/>
+        <stop offset="0.55" stop-color="#FFD23F"/>
+        <stop offset="1" stop-color="#F7A928"/>
+      </linearGradient>
+      <linearGradient id="g-gold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#FFE59A"/>
+        <stop offset="1" stop-color="#EFA53A"/>
+      </linearGradient>
+      <linearGradient id="g-dropfill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#9BDCFF"/>
+        <stop offset="1" stop-color="#3B9BEA"/>
+      </linearGradient>
+    </defs>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M20 12H4.5M10.5 5.5 4 12l6.5 6.5"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path d="M12 2.6l8.2 4.7v9.4L12 21.4l-8.2-4.7V7.3z"/><circle cx="12" cy="12" r="3.1"/></symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7h2A4.5 4.5 0 0 0 21 10.7C21 6.4 17 3 12 3z"/><circle cx="7.5" cy="11.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="10" cy="7.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="14.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="17" cy="11" r="1.2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1.1 1.3 1.1 2.2v.5h5V16c0-.9.5-1.7 1.1-2.2A6 6 0 0 0 12 3z"/><path d="M10.5 10.5l1.5 1.5 1.5-1.5" opacity=".7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.6"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+    <symbol id="i-crown" viewBox="0 0 24 24"><path d="M3.5 8l4.3 3.8L12 5l4.2 6.8L20.5 8l-1.8 10.5H5.3z"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.2"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4.8h-4.8"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2M6.5 9.5V20h11V9.5"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9.2h3.6L12.5 5v14l-4.9-4.2H4z"/><path d="M16 9a4.5 4.5 0 0 1 0 6M18.6 6.5a8 8 0 0 1 0 11"/></symbol>
+    <symbol id="i-vibrate" viewBox="0 0 24 24"><rect x="8" y="3.5" width="8" height="17" rx="2"/><path d="M4.5 8.5v7M19.5 8.5v7"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M10 11v6M14 11v6M6.5 7l.9 12.5h9.2L17.5 7M9 7V4.5h6V7"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5.5a4 4 0 0 1-8 0zM8 6H5.2a3.2 3.2 0 0 0 3.3 4.5M16 6h2.8a3.2 3.2 0 0 1-3.3 4.5M12 13.5V17M8.5 20.5h7M9.5 17h5v3.5h-5z"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z"/></symbol>
+    <symbol id="i-ad" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 15l2.2-6 2.2 6M7.7 13.2h3M14 9v6h1.5a3 3 0 0 0 0-6z"/></symbol>
+    <symbol id="i-league" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 16.5v-8M8.5 11.5 12 8l3.5 3.5"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol>
+    <symbol id="i-drop" viewBox="0 0 26 34"><path d="M13 1.8C13 1.8 2.2 15.2 2.2 22.2a10.8 10.8 0 0 0 21.6 0C23.8 15.2 13 1.8 13 1.8z" fill="currentColor" stroke="none"/><path d="M8 22.5a5.4 6 0 0 0 3 5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-bigstar" viewBox="0 0 100 100">
+      <polygon points="50,6 62.3,33.8 92.6,36.6 69.8,56.6 76.4,86.2 50,70.8 23.6,86.2 30.2,56.6 7.4,36.6 37.7,33.8" fill="#F29A22" stroke="#F29A22" stroke-width="10" stroke-linejoin="round"/>
+      <polygon points="50,6 62.3,33.8 92.6,36.6 69.8,56.6 76.4,86.2 50,70.8 23.6,86.2 30.2,56.6 7.4,36.6 37.7,33.8" fill="url(#g-star)" stroke="#FFC93C" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M50 52 50 6 62.3 33.8zM50 52 92.6 36.6 69.8 56.6zM50 52 76.4 86.2 50 70.8zM50 52 23.6 86.2 30.2 56.6zM50 52 7.4 36.6 37.7 33.8z" fill="#FFFFFF" opacity=".28"/>
+      <path d="M50 52 62.3 33.8 92.6 36.6zM50 52 69.8 56.6 76.4 86.2zM50 52 50 70.8 23.6 86.2zM50 52 30.2 56.6 7.4 36.6zM50 52 37.7 33.8 50 6z" fill="#E9861A" opacity=".18"/>
+    </symbol>
+    <symbol id="i-crown-art" viewBox="0 0 120 100">
+      <path d="M18 74 10 26l30 22L60 12l20 36 30-22-8 48z" fill="url(#g-gold)" stroke="#D88A2C" stroke-width="5" stroke-linejoin="round"/>
+      <rect x="18" y="72" width="84" height="16" rx="6" fill="#F3B64A" stroke="#D88A2C" stroke-width="5"/>
+      <circle cx="60" cy="52" r="7" fill="#4DA3F0"/><circle cx="34" cy="58" r="5" fill="#FF7A5C"/><circle cx="86" cy="58" r="5" fill="#7FD3A4"/>
+      <circle cx="10" cy="26" r="6" fill="#FFE59A" stroke="#D88A2C" stroke-width="4"/><circle cx="60" cy="12" r="6" fill="#FFE59A" stroke="#D88A2C" stroke-width="4"/><circle cx="110" cy="26" r="6" fill="#FFE59A" stroke="#D88A2C" stroke-width="4"/>
+    </symbol>
+    <symbol id="i-trophy-art" viewBox="0 0 120 120">
+      <path d="M38 22h44v26a22 22 0 0 1-44 0z" fill="url(#g-gold)" stroke="#D88A2C" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M38 30H24a14 14 0 0 0 16 18M82 30h14a14 14 0 0 1-16 18" fill="none" stroke="#D88A2C" stroke-width="5" stroke-linecap="round"/>
+      <rect x="54" y="68" width="12" height="18" rx="3" fill="#E9A23B"/>
+      <rect x="38" y="84" width="44" height="16" rx="5" fill="#F3B64A" stroke="#D88A2C" stroke-width="4"/>
+      <path d="M60 30l3.5 7 7.7 1.1-5.6 5.4 1.3 7.7L60 47.6l-6.9 3.6 1.3-7.7-5.6-5.4 7.7-1.1z" fill="#FFF6D6"/>
+    </symbol>
+    <symbol id="i-hand" viewBox="0 0 48 48"><path d="M18 3.5c2.2 0 4 1.8 4 4v13.8l1.2-.2c.4-1.8 2-3.1 3.9-3.1 1.5 0 2.8.8 3.5 2.1.7-.8 1.8-1.4 3-1.4 1.7 0 3.1 1.1 3.6 2.6.6-.4 1.3-.6 2.1-.6 2.2 0 4 1.8 4 4v8c0 7.2-5.8 13-13 13h-2.7c-4 0-7.7-1.9-10.1-5.1l-7.2-9.7c-1.2-1.7-.9-4 .8-5.2 1.6-1.2 3.8-1 5.1.5L14 28.5V7.5c0-2.2 1.8-4 4-4z" fill="#FFFFFF" stroke="#5C3F26" stroke-width="2" stroke-linejoin="round"/><path d="M22 21v7M29 20.5v7.5M36 22v6" stroke="#5C3F26" stroke-width="1.6" stroke-linecap="round" opacity=".5"/></symbol>
+  </svg>
+
+  <div id="app">
+
+    <!-- ================= SPLASH ================= -->
+    <section id="screen-splash" class="screen active" aria-label="ArrowGO! is loading">
+      <div class="splash-publisher" id="splash-publisher">
+        <div class="publisher-word" aria-label="ImranO">
+          <span style="animation-delay:.05s">I</span><span style="animation-delay:.12s">m</span><span style="animation-delay:.19s">r</span><span style="animation-delay:.26s">a</span><span style="animation-delay:.33s">n</span><span class="o-mark" style="animation-delay:.42s">O</span>
+        </div>
+        <div class="publisher-sub">Games</div>
+        <div class="publisher-bar"></div>
+      </div>
+      <div class="splash-game" id="splash-game">
+        <div class="splash-logo logo-slot" data-logo="draw"></div>
+        <h1 class="splash-title">Arrow<b>GO!</b></h1>
+        <blockquote class="splash-tip"><span id="splash-tip">Play for 10 minutes daily, your focus will thank you.</span><cite>— ArrowGO!</cite></blockquote>
+        <div class="splash-loader"><i></i></div>
+      </div>
+    </section>
+
+    <!-- ================= DAILY STREAK ================= -->
+    <section id="screen-streak" class="screen" aria-label="Daily streak">
+      <svg class="streak-badge" viewBox="0 0 200 220" aria-hidden="true">
+        <defs>
+          <linearGradient id="sb-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE7A0"/><stop offset=".5" stop-color="#E8B144"/><stop offset="1" stop-color="#C98A24"/></linearGradient>
+          <linearGradient id="sb-blue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4B8EE6"/><stop offset="1" stop-color="#2F62C4"/></linearGradient>
+          <linearGradient id="sb-deep" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2F5FC2"/><stop offset="1" stop-color="#1D3E92"/></linearGradient>
+          <linearGradient id="sb-drop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A6E6FF"/><stop offset="1" stop-color="#46AEEF"/></linearGradient>
+          <clipPath id="sb-clip"><polygon points="100,44 157.2,77 157.2,143 100,176 42.8,143 42.8,77"/></clipPath>
+        </defs>
+        <polygon points="100,12 184.9,61 184.9,159 100,208 15.1,159 15.1,61" fill="url(#sb-gold)" stroke="url(#sb-gold)" stroke-width="14" stroke-linejoin="round"/>
+        <polygon points="100,24 174.5,67 174.5,153 100,196 25.5,153 25.5,67" fill="url(#sb-blue)" stroke="#3F7FDB" stroke-width="8" stroke-linejoin="round"/>
+        <polygon points="100,44 157.2,77 157.2,143 100,176 42.8,143 42.8,77" fill="url(#sb-deep)" stroke="url(#sb-gold)" stroke-width="5" stroke-linejoin="round"/>
+        <g clip-path="url(#sb-clip)">
+          <path d="M30 158 Q 62 140 96 156 T 170 150 V 200 H 30 Z" fill="#5EC3F0" opacity=".85"/>
+          <path d="M30 158 Q 62 140 96 156 T 170 150" fill="none" stroke="#F3C55B" stroke-width="3.5"/>
+        </g>
+        <path d="M100 64C100 64 71 99 71 119a29 29 0 0 0 58 0c0-20-29-55-29-55z" fill="url(#sb-drop)" stroke="#F3C55B" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M86 117a14 16 0 0 0 7 18" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="5" stroke-linecap="round"/>
+        <path class="sparkle" d="M62 84q0 10 10 10q-10 0-10 10q0-10-10-10q10 0 10-10z" fill="#FFF3C4"/>
+        <path class="sparkle" d="M142 82q0 7 7 7q-7 0-7 7q0-7-7-7q7 0 7-7z" fill="#FFF3C4"/>
+        <path class="sparkle" d="M140 116q0 9 9 9q-9 0-9 9q0-9-9-9q9 0 9-9z" fill="#FFF3C4"/>
+      </svg>
+      <div class="streak-number" id="streak-number">1</div>
+      <h2 class="streak-title">Daily Streak</h2>
+      <div class="week-row" id="week-row" role="list"></div>
+      <p class="streak-msg" id="streak-msg">You are ready for a great week!</p>
+      <button class="btn" id="btn-streak-continue">Continue</button>
+    </section>
+
+    <!-- ================= HOME ================= -->
+    <section id="screen-home" class="screen" aria-label="Home">
+      <div class="home-top">
+        <div class="home-chips">
+          <button class="chip" id="chip-streak" aria-label="Daily streak">
+            <svg viewBox="0 0 26 34" style="color:var(--drop)"><use href="#i-drop"/></svg><span id="home-streak">1</span>
+          </button>
+          <button class="chip premium" id="chip-premium" hidden aria-label="Premium active">
+            <svg class="icon" style="width:20px;height:20px;stroke-width:2.2"><use href="#i-crown"/></svg>Premium
+          </button>
+        </div>
+        <button class="icon-btn" id="btn-home-settings" aria-label="Settings"><svg class="icon"><use href="#i-gear"/></svg></button>
+      </div>
+
+      <div class="carousel" id="carousel">
+        <button class="card card-league" id="card-league" aria-label="Bronze League">
+          <svg class="card-art" viewBox="0 0 200 270" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="g-bronze" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F6CB98"/><stop offset="1" stop-color="#A9662F"/></linearGradient>
+              <linearGradient id="g-bronze2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#CF8A4A"/><stop offset="1" stop-color="#8E5226"/></linearGradient>
+            </defs>
+            <g stroke="rgba(255,240,220,.2)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 66h46v34"/><path d="M182 52v44h-40"/><path d="M26 238v-40h40"/><path d="M176 244h-46v-26"/><path d="M14 150h22"/><path d="M164 148h22"/>
+            </g>
+            <circle cx="100" cy="142" r="56" fill="url(#g-bronze)"/>
+            <circle cx="100" cy="142" r="43" fill="url(#g-bronze2)"/>
+            <circle cx="100" cy="142" r="43" fill="none" stroke="rgba(255,230,200,.45)" stroke-width="3"/>
+            <path d="M100 114l22 24h-12v22H90v-22H78z" fill="#F6D2A6" stroke="#F6D2A6" stroke-width="6" stroke-linejoin="round"/>
+          </svg>
+          <span class="card-label">Bronze League</span>
+          <span class="card-cta" id="cta-league">Unlock Lv.11</span>
+        </button>
+
+        <button class="card card-daily" id="card-daily" aria-label="Daily Challenge">
+          <svg class="card-art" viewBox="0 0 200 270" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g fill="rgba(255,236,214,.25)">
+              <path d="M150 70l6 12 13 2-9 9 2 13-12-6-12 6 2-13-9-9 13-2z"/>
+              <path d="M40 200l4 8 9 1-6 6 1 9-8-4-8 4 1-9-6-6 9-1z"/>
+            </g>
+            <use href="#i-trophy-art" x="40" y="80" width="120" height="120"/>
+            <g fill="#FFE59A">
+              <path d="M150 104l3.6 7.4 8.1 1.2-5.9 5.7 1.4 8.1-7.2-3.8-7.2 3.8 1.4-8.1-5.9-5.7 8.1-1.2z"/>
+              <path d="M52 112l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/>
+            </g>
+          </svg>
+          <span class="card-label">Daily Challenge<em id="daily-date">Oct 6</em></span>
+          <span class="card-cta" id="cta-daily">Unlock Lv.20</span>
+        </button>
+
+        <button class="card card-themes" id="card-themes" aria-label="Themes">
+          <svg class="card-art" viewBox="0 0 200 270" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g transform="rotate(-9 70 118)"><rect x="34" y="82" width="72" height="72" rx="15" fill="#F5EBD8"/><path d="M52 100h30v34" fill="none" stroke="#6E4A2C" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M75 128l7 10 7-10z" fill="#6E4A2C" stroke="#6E4A2C" stroke-width="3" stroke-linejoin="round"/></g>
+            <g transform="rotate(7 130 116)"><rect x="94" y="80" width="72" height="72" rx="15" fill="#1D1B2C"/><path d="M148 134h-30v-30" fill="none" stroke="#EBDDC6" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M111 106l7-10 7 10z" fill="#EBDDC6" stroke="#EBDDC6" stroke-width="3" stroke-linejoin="round"/></g>
+            <g transform="rotate(6 72 182)"><rect x="36" y="146" width="72" height="72" rx="15" fill="#DDEFF3"/><path d="M54 200v-32h32" fill="none" stroke="#164D61" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M82 161l10 7-10 7z" fill="#164D61" stroke="#164D61" stroke-width="3" stroke-linejoin="round"/></g>
+            <g transform="rotate(-6 130 184)"><rect x="94" y="148" width="72" height="72" rx="15" fill="#E5EDDB"/><path d="M148 166h-32v32" fill="none" stroke="#344F2A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M109 196l7 10 7-10z" fill="#344F2A" stroke="#344F2A" stroke-width="3" stroke-linejoin="round"/></g>
+          </svg>
+          <span class="card-label">Themes<em>4 styles</em></span>
+          <span class="card-cta" id="cta-themes">Choose</span>
+        </button>
+
+        <button class="card card-premium" id="card-premium" aria-label="ImranO Premium">
+          <svg class="card-art" viewBox="0 0 200 270" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g fill="#FFE59A" opacity=".55">
+              <path d="M40 70q0 12 12 12q-12 0-12 12q0-12-12-12q12 0 12-12z"/>
+              <path d="M160 200q0 9 9 9q-9 0-9 9q0-9-9-9q9 0 9-9z"/>
+              <path d="M164 64q0 7 7 7q-7 0-7 7q0-7-7-7q7 0 7-7z"/>
+            </g>
+            <use href="#i-crown-art" x="40" y="96" width="120" height="100"/>
+          </svg>
+          <span class="card-label">ImranO<em>Premium</em></span>
+          <span class="card-cta" id="cta-premium">Go Premium</span>
+        </button>
+      </div>
+
+      <div class="home-center">
+        <div class="home-logo logo-slot"></div>
+        <h1 class="home-title">Arrow<b>GO!</b></h1>
+        <div class="home-sub">by ImranO Games</div>
+        <div class="home-stats">
+          <span class="stat-pill"><svg class="icon"><use href="#i-check"/></svg><span id="home-today">0 today</span></span>
+          <span class="stat-pill"><svg class="icon"><use href="#i-bulb"/></svg><span id="home-hints">3 hints</span></span>
+        </div>
+      </div>
+
+      <div class="home-bottom">
+        <button class="btn" id="btn-play">Play<small id="play-level">Level 1</small></button>
+      </div>
+    </section>
+
+    <!-- ================= GAME ================= -->
+    <section id="screen-game" class="screen" aria-label="Game">
+      <div class="topbar">
+        <div class="left"><button class="icon-btn" id="btn-game-back" aria-label="Back to home"><svg class="icon"><use href="#i-back"/></svg></button></div>
+        <h2 id="game-title">Level 1</h2>
+        <div class="right">
+          <button class="icon-btn" id="btn-game-theme" aria-label="Themes"><svg class="icon"><use href="#i-palette"/></svg></button>
+          <button class="icon-btn" id="btn-game-settings" aria-label="Settings"><svg class="icon"><use href="#i-gear"/></svg></button>
+        </div>
+      </div>
+      <div class="game-divider"></div>
+      <div class="game-status">
+        <div class="drops" id="drops" aria-label="Water drops left: 3">
+          <svg class="drop" viewBox="0 0 26 34"><path d="M13 1.8C13 1.8 2.2 15.2 2.2 22.2a10.8 10.8 0 0 0 21.6 0C23.8 15.2 13 1.8 13 1.8z"/></svg>
+          <svg class="drop" viewBox="0 0 26 34"><path d="M13 1.8C13 1.8 2.2 15.2 2.2 22.2a10.8 10.8 0 0 0 21.6 0C23.8 15.2 13 1.8 13 1.8z"/></svg>
+          <svg class="drop" viewBox="0 0 26 34"><path d="M13 1.8C13 1.8 2.2 15.2 2.2 22.2a10.8 10.8 0 0 0 21.6 0C23.8 15.2 13 1.8 13 1.8z"/></svg>
+        </div>
+        <div class="game-meta"><span id="game-timer">00:00</span><span class="sep">•</span><span id="game-left">0 left</span></div>
+      </div>
+      <div class="board-wrap" id="board-wrap">
+        <svg id="board" role="application" aria-label="Puzzle board. Tap an arrow to slide it off the board."></svg>
+        <div class="tutorial" id="tutorial" aria-hidden="true">
+          <div class="tut-bubble" id="tut-bubble">Tap an arrow</div>
+          <div class="tut-ripple" id="tut-ripple"></div>
+          <svg class="tut-hand" id="tut-hand" viewBox="0 0 48 48"><use href="#i-hand"/></svg>
+        </div>
+        <div class="board-toast" id="board-toast" role="status"></div>
+      </div>
+      <div class="game-bottom">
+        <div class="round-wrap">
+          <button class="round-btn small" id="btn-restart" aria-label="Restart level"><svg class="icon"><use href="#i-refresh"/></svg></button>
+          <span class="round-label">Restart</span>
+        </div>
+        <div class="round-wrap">
+          <button class="round-btn" id="btn-hint" aria-label="Hint"><svg class="icon"><use href="#i-bulb"/></svg><span class="count-badge" id="hint-count">3</span></button>
+          <span class="round-label">Hint</span>
+        </div>
+        <div class="round-wrap">
+          <button class="round-btn small" id="btn-game-home" aria-label="Home"><svg class="icon"><use href="#i-home"/></svg></button>
+          <span class="round-label">Home</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RESULT ================= -->
+    <section id="screen-result" class="screen" aria-label="Level cleared">
+      <div class="rays" aria-hidden="true"></div>
+      <div class="result-wrap">
+        <div class="result-card">
+          <div class="stars" aria-hidden="true">
+            <svg class="star" viewBox="0 0 100 100"><use href="#i-bigstar"/></svg>
+            <svg class="star mid" viewBox="0 0 100 100"><use href="#i-bigstar"/></svg>
+            <svg class="star" viewBox="0 0 100 100"><use href="#i-bigstar"/></svg>
+          </div>
+          <h2 class="result-title" id="result-title">Flawless!</h2>
+          <div class="result-stats">
+            <div class="result-row"><span>Difficulty</span><b id="r-diff">Normal</b></div>
+            <div class="result-row"><span>Time</span><b id="r-time">00:00</b></div>
+            <div class="result-row"><span>Score</span><b><span class="grade grade-A" id="r-grade">A</span><span id="r-score">0</span></b></div>
+            <div class="result-row"><span id="r-today-label">Today's Levels</span><b id="r-today">1</b></div>
+          </div>
+          <div class="result-mini">
+            <div title="Accuracy"><svg class="icon"><use href="#i-target"/></svg><span id="r-acc">100%</span></div>
+            <div title="Mistakes"><svg class="icon"><use href="#i-x"/></svg><span id="r-miss">0</span></div>
+            <div title="Hints used"><svg class="icon"><use href="#i-bulb"/></svg><span id="r-hints">0</span></div>
+          </div>
+          <div class="result-extra" id="result-extra"></div>
+        </div>
+        <div class="result-actions">
+          <button class="btn" id="btn-next">Next Level</button>
+          <button class="link-btn" id="btn-result-home"><svg class="icon" style="width:20px;height:20px"><use href="#i-home"/></svg>Home</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PREMIUM ================= -->
+    <section id="screen-premium" class="screen subpage" aria-label="ImranO Premium">
+      <div class="topbar">
+        <div class="left"><button class="icon-btn" data-back aria-label="Back"><svg class="icon"><use href="#i-back"/></svg></button></div>
+        <h2 class="subpage-title">Premium</h2>
+        <div class="right"></div>
+      </div>
+      <div class="subpage-body" id="premium-body">
+        <div class="prem-hero">
+          <svg class="prem-crown" viewBox="0 0 120 100" aria-hidden="true"><use href="#i-crown-art"/></svg>
+          <h1>ImranO <span>Premium</span></h1>
+          <p>Play calmer. No interruptions.</p>
+          <div class="demo-label"><svg class="icon" style="width:16px;height:16px"><use href="#i-info"/></svg>Demo: no payment is processed</div>
+        </div>
+
+        <div class="list benefits">
+          <div class="list-row"><span class="ico"><svg class="icon"><use href="#i-ad"/></svg></span><span class="grow">No ad breaks<span class="sub">Jump straight to the next level</span></span></div>
+          <div class="list-row"><span class="ico"><svg class="icon"><use href="#i-bulb"/></svg></span><span class="grow">Unlimited hints<span class="sub">Never get stuck again</span></span></div>
+          <div class="list-row"><span class="ico"><svg viewBox="0 0 26 34" style="width:18px;height:22px;color:var(--drop)"><use href="#i-drop"/></svg></span><span class="grow">Instant drop refill<span class="sub">Keep your progress when you run dry</span></span></div>
+          <div class="list-row"><span class="ico"><svg class="icon"><use href="#i-palette"/></svg></span><span class="grow">All themes<span class="sub">Ocean and Forest included</span></span></div>
+          <div class="list-row"><span class="ico"><svg class="icon"><use href="#i-trophy"/></svg></span><span class="grow">Leagues &amp; Daily Challenge early<span class="sub">No need to reach Lv.11 / Lv.20</span></span></div>
+        </div>
+
+        <div class="plans" id="plans">
+          <button class="plan" data-plan="monthly"><h4>Monthly</h4><div class="price">$2.99</div><div class="per">per month</div></button>
+          <button class="plan selected" data-plan="yearly"><span class="save">BEST VALUE · SAVE 44%</span><h4>Yearly</h4><div class="price">$19.99</div><div class="per">per year</div></button>
+        </div>
+
+        <div class="prem-active">
+          <h3>Premium is active</h3>
+          <p>Thanks for supporting ImranO!</p>
+        </div>
+
+        <div class="prem-actions">
+          <button class="btn gold" id="btn-subscribe">Subscribe</button>
+          <div class="list">
+            <label class="list-row" for="sw-premium">
+              <span class="ico"><svg class="icon"><use href="#i-crown"/></svg></span>
+              <span class="grow" id="premium-switch-label">Premium (demo)<span class="sub" id="premium-switch-sub">Off · switch on to unlock instantly</span></span>
+              <span class="switch"><input type="checkbox" id="sw-premium" role="switch" aria-label="Premium demo switch"><span class="switch-track"></span></span>
+            </label>
+          </div>
+        </div>
+        <p class="fine">Demo build for the author: no payment is processed and no account is charged. Subscribe simply unlocks Premium on this device (saved locally). Use the switch to cancel Premium and test both states.</p>
+      </div>
+    </section>
+
+    <!-- ================= LEAGUE ================= -->
+    <section id="screen-league" class="screen subpage" aria-label="Bronze League">
+      <div class="topbar">
+        <div class="left"><button class="icon-btn" data-back aria-label="Back"><svg class="icon"><use href="#i-back"/></svg></button></div>
+        <h2 class="subpage-title">Bronze League</h2>
+        <div class="right"></div>
+      </div>
+      <div class="subpage-body">
+        <div class="league-hero">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle cx="60" cy="60" r="54" fill="url(#g-bronze)"/><circle cx="60" cy="60" r="41" fill="url(#g-bronze2)"/>
+            <path d="M60 33l22 24H70v22H50V57H38z" fill="#F6D2A6" stroke="#F6D2A6" stroke-width="6" stroke-linejoin="round"/>
+          </svg>
+          <div><h3>Weekly League</h3><p id="league-ends">Ends in 6d 12h</p><p id="league-week">Week 41</p></div>
+        </div>
+        <div class="league-me">
+          <div><b id="league-rank">#20</b><span>Your rank</span></div>
+          <div><b id="league-score">0</b><span>Weekly score</span></div>
+        </div>
+        <div class="board-list" id="league-list"></div>
+        <p class="fine">Clear levels to earn points. The top 5 players are promoted to Silver League when the week ends.</p>
+      </div>
+    </section>
+
+    <!-- ================= DAILY CHALLENGE ================= -->
+    <section id="screen-daily" class="screen subpage" aria-label="Daily Challenge">
+      <div class="topbar">
+        <div class="left"><button class="icon-btn" data-back aria-label="Back"><svg class="icon"><use href="#i-back"/></svg></button></div>
+        <h2 class="subpage-title">Daily Challenge</h2>
+        <div class="right"></div>
+      </div>
+      <div class="subpage-body">
+        <div class="daily-hero">
+          <svg class="trophy" viewBox="0 0 120 120" aria-hidden="true"><use href="#i-trophy-art"/></svg>
+          <h3 id="daily-title">Tuesday, Oct 6</h3>
+          <p id="daily-sub">One big 10×10 puzzle, new every day</p>
+        </div>
+        <div class="daily-week" id="daily-week"></div>
+        <p class="daily-info" id="daily-info">Clear today's board to earn a trophy.</p>
+        <div id="daily-actions"><button class="btn" id="btn-daily-start">Start Challenge</button></div>
+      </div>
+    </section>
+
+    <!-- ================= THEMES ================= -->
+    <section id="screen-themes" class="screen subpage" aria-label="Themes">
+      <div class="topbar">
+        <div class="left"><button class="icon-btn" data-back aria-label="Back"><svg class="icon"><use href="#i-back"/></svg></button></div>
+        <h2 class="subpage-title">Themes</h2>
+        <div class="right"></div>
+      </div>
+      <div class="subpage-body">
+        <div class="theme-grid" id="theme-grid"></div>
+        <p class="fine">Cream and Night are free. Ocean and Forest come with ImranO Premium.</p>
+      </div>
+    </section>
+
+    <!-- ================= OVERLAYS ================= -->
+    <div class="overlay" id="fail-overlay" role="dialog" aria-modal="true" aria-labelledby="fail-title">
+      <div class="dialog">
+        <svg class="dialog-art" viewBox="0 0 26 34" style="color:var(--drop-empty)"><use href="#i-drop"/></svg>
+        <h3 id="fail-title">Out of drops</h3>
+        <p id="fail-text">You used all three water drops. Take a breath and try this board again.</p>
+        <button class="btn gold" id="btn-refill" hidden>Refill drops</button>
+        <button class="btn" id="btn-retry">Retry</button>
+        <button class="link-btn" id="btn-fail-premium"><svg class="icon" style="width:18px;height:18px"><use href="#i-crown"/></svg>Refill instantly with Premium</button>
+        <div><button class="link-btn" id="btn-fail-home" style="color:var(--text-faint)">Home</button></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="ad-break" role="dialog" aria-modal="true" aria-label="Ad break">
+      <div class="ad-card">
+        <div class="ad-head"><span>Ad break</span><span class="ad-timer"><svg viewBox="0 0 36 36"><circle class="track" cx="18" cy="18" r="15.9"/><circle class="prog" id="ad-prog" cx="18" cy="18" r="15.9" pathLength="100"/></svg><b id="ad-count">3</b></span></div>
+        <div class="ad-body" id="ad-body"></div>
+        <div class="ad-foot"></div>
+      </div>
+      <button class="link-btn" id="btn-ad-premium"><svg class="icon" style="width:18px;height:18px"><use href="#i-crown"/></svg>Remove ads with Premium</button>
+    </div>
+
+    <div class="overlay sheet-wrap" id="settings-sheet" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="sheet">
+        <div class="sheet-grip"></div>
+        <h3 id="settings-title">Settings</h3>
+        <div class="list">
+          <label class="list-row" for="sw-sound">
+            <span class="ico"><svg class="icon"><use href="#i-sound"/></svg></span><span class="grow">Sound</span>
+            <span class="switch"><input type="checkbox" id="sw-sound" role="switch"><span class="switch-track"></span></span>
+          </label>
+          <label class="list-row" for="sw-vibration">
+            <span class="ico"><svg class="icon"><use href="#i-vibrate"/></svg></span><span class="grow">Vibration</span>
+            <span class="switch"><input type="checkbox" id="sw-vibration" role="switch"><span class="switch-track"></span></span>
+          </label>
+        </div>
+        <div class="list">
+          <button class="list-row" id="row-themes"><span class="ico"><svg class="icon"><use href="#i-palette"/></svg></span><span class="grow">Themes<span class="sub" id="row-theme-sub">Cream</span></span><svg class="icon chev"><use href="#i-chev"/></svg></button>
+          <button class="list-row" id="row-premium"><span class="ico"><svg class="icon"><use href="#i-crown"/></svg></span><span class="grow">ImranO Premium<span class="sub" id="row-premium-sub">Not active</span></span><svg class="icon chev"><use href="#i-chev"/></svg></button>
+          <button class="list-row" id="row-install" hidden><span class="ico"><svg class="icon"><use href="#i-download"/></svg></span><span class="grow">Install app<span class="sub">Play offline from your home screen</span></span><svg class="icon chev"><use href="#i-chev"/></svg></button>
+        </div>
+        <div class="list">
+          <button class="list-row" id="row-about"><span class="ico"><svg class="icon"><use href="#i-info"/></svg></span><span class="grow">About ImranO</span><svg class="icon chev"><use href="#i-chev"/></svg></button>
+          <button class="list-row danger" id="row-reset"><span class="ico"><svg class="icon"><use href="#i-trash"/></svg></span><span class="grow">Reset progress</span></button>
+        </div>
+        <p class="fine" id="settings-version">ArrowGO! v1.0.0 · ImranO Games</p>
+      </div>
+    </div>
+
+    <div class="overlay sheet-wrap" id="theme-sheet" role="dialog" aria-modal="true" aria-labelledby="theme-sheet-title">
+      <div class="sheet">
+        <div class="sheet-grip"></div>
+        <h3 id="theme-sheet-title">Themes</h3>
+        <div class="theme-grid" id="theme-grid-sheet"></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="dialog">
+        <div id="modal-art"></div>
+        <h3 id="modal-title">Title</h3>
+        <p id="modal-text">Text</p>
+        <div id="modal-actions"></div>
+      </div>
+    </div>
+
+    <canvas id="confetti" aria-hidden="true"></canvas>
+    <div id="toast" role="status" aria-live="polite"></div>
+  </div>
+
+  <script src="levels.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

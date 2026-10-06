@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs><filter id="agm-depth" x="-15%" y="-15%" width="130%" height="140%" color-interpolation-filters="sRGB"><feComponentTransfer in="SourceGraphic"><feFuncR type="linear" slope=".78"/><feFuncG type="linear" slope=".7"/><feFuncB type="linear" slope=".68"/></feComponentTransfer><feOffset dy="10" result="d"/><feMerge><feMergeNode in="d"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <g class="logo-arrows" filter="url(#agm-depth)">
+    <g class="logo-arrow-group arrow-1" fill="#FF7A5C" stroke="#FF7A5C">
+      <path class="logo-shaft" pathLength="1" fill="none" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" d="M109 398V104H346.2"/>
+      <path class="logo-head" stroke-width="12" stroke-linejoin="round" d="M397 104L340.2 145L340.2 63Z"/>
+    </g>
+    <g class="logo-arrow-group arrow-2" fill="#FFB93B" stroke="#FFB93B">
+      <path class="logo-shaft" pathLength="1" fill="none" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" d="M403 164V398H295.8"/>
+      <path class="logo-head" stroke-width="12" stroke-linejoin="round" d="M245 398L301.8 357L301.8 439Z"/>
+    </g>
+    <g class="logo-arrow-group arrow-3" fill="#F5EBD8" stroke="#F5EBD8">
+      <path class="logo-shaft" pathLength="1" fill="none" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" d="M207 340V202H302.2"/>
+      <path class="logo-head" stroke-width="12" stroke-linejoin="round" d="M353 202L296.2 243L296.2 161Z"/>
+    </g>
+  </g>
+</svg>

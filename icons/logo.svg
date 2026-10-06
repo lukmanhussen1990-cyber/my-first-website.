@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs><linearGradient id="ag-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2B2672"/><stop offset=".5" stop-color="#1F4E96"/><stop offset="1" stop-color="#0F9C98"/></linearGradient><linearGradient id="ag-shine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".1"/><stop offset=".48" stop-color="#fff" stop-opacity="0"/><stop offset=".62" stop-color="#06052A" stop-opacity="0"/><stop offset="1" stop-color="#06052A" stop-opacity=".14"/></linearGradient><filter id="ag-depth" x="-15%" y="-15%" width="130%" height="140%" color-interpolation-filters="sRGB"><feComponentTransfer in="SourceGraphic"><feFuncR type="linear" slope=".78"/><feFuncG type="linear" slope=".7"/><feFuncB type="linear" slope=".68"/></feComponentTransfer><feOffset dy="10" result="d"/><feGaussianBlur in="SourceAlpha" stdDeviation="7"/><feOffset dy="17" result="b"/><feFlood flood-color="#08062A" flood-opacity=".42"/><feComposite in2="b" operator="in" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="d"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <rect class="logo-tile" width="512" height="512" rx="112" fill="url(#ag-bg)"/>
+  <rect class="logo-shine" width="512" height="512" rx="112" fill="url(#ag-shine)"/>
+  <rect class="logo-rim" x="4" y="4" width="504" height="504" rx="108" fill="none" stroke="#fff" stroke-opacity=".1" stroke-width="8"/>
+  <g class="logo-arrows" filter="url(#ag-depth)">
+    <g class="logo-arrow-group arrow-1" fill="#FF7A5C" stroke="#FF7A5C">
+      <path class="logo-shaft" pathLength="1" fill="none" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" d="M109 398V104H346.2"/>
+      <path class="logo-head" stroke-width="12" stroke-linejoin="round" d="M397 104L340.2 145L340.2 63Z"/>
+    </g>
+    <g class="logo-arrow-group arrow-2" fill="#FFB93B" stroke="#FFB93B">
+      <path class="logo-shaft" pathLength="1" fill="none" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" d="M403 164V398H295.8"/>
+      <path class="logo-head" stroke-width="12" stroke-linejoin="round" d="M245 398L301.8 357L301.8 439Z"/>
+    </g>
+    <g class="logo-arrow-group arrow-3" fill="#F5EBD8" stroke="#F5EBD8">
+      <path class="logo-shaft" pathLength="1" fill="none" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" d="M207 340V202H302.2"/>
+      <path class="logo-head" stroke-width="12" stroke-linejoin="round" d="M353 202L296.2 243L296.2 161Z"/>
+    </g>
+  </g>
+</svg>
