@@ -16,7 +16,7 @@
 #   ARROWGO_KEY_PASS                 key password (default: same as ARROWGO_KS_PASS)
 #
 # Runnable from any directory (bash 3.2+, Linux or macOS). Intermediate files go to android/build/
-# (gitignored). The build is reproducible: the same inputs and key give a byte-identical APK.
+# (gitignored). Rebuilding with the same inputs, key and tools gives a byte-identical APK.
 
 set -euo pipefail
 

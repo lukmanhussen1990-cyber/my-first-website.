@@ -24,6 +24,7 @@ Requirements:
   `$ANDROID_HOME`, then `$ANDROID_SDK_ROOT`, then `/opt/android-sdk`.
 - JDK 11 or newer. The script uses `$JAVA_HOME` if set, otherwise `javac`/`keytool` from `PATH`.
 - `zip`, or `python3` as a fallback.
+- bash 3.2 or newer (the stock macOS bash works), plus `sha256sum` or `shasum` for the printed hash.
 
 ```sh
 android/build-apk.sh                     # run it from any directory
@@ -33,9 +34,11 @@ android/build-apk.sh --allow-placeholder # pipeline test when the game files are
 Steps:
 
 1. Copy `index.html`, `styles.css`, `app.js`, `levels.js`, `sw.js`, `manifest.json`, `icons/` and
-   `fonts/` into `build/assets/www/`. No other files go into the APK. The build stops if
+   `fonts/` into `build/assets/www/`. No other files go into the APK, and `icons/og-image.png` (the
+   link-preview image, never loaded by the page) is left out. The build stops if
    `index.html`, `app.js` or `levels.js` is missing. With `--allow-placeholder` it builds anyway
-   with a generated bridge test page instead. That test page is written only to `build/`.
+   with a generated bridge test page instead; that APK goes to `build/ArrowGO-placeholder.apk`
+   and `dist/ArrowGO.apk` is not touched.
 2. `aapt2 compile` the resources, then `aapt2 link` them with the manifest and the staged assets
    into `build/unsigned.apk`. This step also generates `R.java`.
 3. Compile `MainActivity.java` and `R.java` with `javac --release 11 -parameters` against
@@ -45,6 +48,10 @@ Steps:
 5. `zipalign -p -f 4`, then sign with `apksigner sign` (v1 + v2 + v3).
 6. Check the result with `apksigner verify` and `zipalign -c`, then copy it to `dist/ArrowGO.apk`.
    The script prints the APK's size and SHA-256.
+
+The build is reproducible: `classes.dex` gets the same fixed 1980-01-01 entry time that `aapt2`
+gives every other entry, so rebuilding unchanged files with the same key and tools produces a
+byte-identical APK (no spurious binary diff in `dist/`).
 
 The version comes from `AndroidManifest.xml` (`android:versionCode` / `android:versionName`).
 To release a new version, bump both there. `AndroidBridge.getAppVersion()` reads `versionName`
@@ -148,11 +155,16 @@ after 1.5 s, the next back press closes the app, so a stuck page can never trap 
   also fires `visibilitychange`, so the page may see both; its handlers should be idempotent.
 - `onResume`: calls `webView.onResume()`, then `window.ArrowGO.onResume()`.
 - `onDestroy`: destroys the WebView.
-- WebView state is saved and restored with the activity.
+- WebView state is not saved: every (re)creation of the activity loads `index.html` fresh, and the
+  game restores itself from `localStorage`. (A saved WebView Bundle would add nothing for a
+  single-URL game and could hit `TransactionTooLargeException` on Android 7+.)
 - `configChanges` covers rotation, screen size, density, UI mode, fonts, locale and similar
   changes, so the WebView is never recreated.
 - If the WebView renderer crashes or is killed (API 26+), the page is reloaded instead of the app
-  crashing.
+  crashing. If that happens while the app is in the background (usually the system reclaiming
+  memory), the reload waits until the app is visible again. More than 3 reloads within 60 s
+  close the app.
+- Volume keys control the media stream (the game's sounds), not the ringer.
 
 **Look and feel.**
 
