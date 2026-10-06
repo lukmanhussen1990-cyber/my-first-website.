@@ -33,6 +33,7 @@ import {
   syncPlayerCells,
   releasePlayerCells,
   cellsOf,
+  hasCells,
   playersWithCells,
   startupCleanup,
   processPending,
@@ -183,7 +184,7 @@ function release(playerId, reason, onlyDimId) {
 
 /** @param {string} playerId @returns {boolean} */
 function isTracked(playerId) {
-  return beams.has(playerId) || cellsOf(playerId).size > 0;
+  return beams.has(playerId) || hasCells(playerId);
 }
 
 /**

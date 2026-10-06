@@ -381,6 +381,14 @@ export function cellsOf(playerId) {
   return new Map(playerCells.get(playerId) ?? []);
 }
 
+/**
+ * @param {string} playerId
+ * @returns {boolean} whether the player owns any cell (no allocation)
+ */
+export function hasCells(playerId) {
+  return playerCells.has(playerId);
+}
+
 /** @returns {string[]} ids of players that own cells */
 export function playersWithCells() {
   return [...playerCells.keys()];

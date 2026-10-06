@@ -314,9 +314,10 @@ def paint_flesh_rod(canvas: Canvas, part: Part, seed: int, style: str = "tendril
         cols[seg] = PAL["crimson_xdk"]
         hi = (T.face == "up") | (T.face == "west")
         cols[hi & (n1 > 0.55)] = PAL["crimson_hi"]
-    cols[(T.face == "down") | (T.face == "up")] = np.where(
-        ((T.face == "down") | (T.face == "up"))[:, None], np.array(PAL["crimson_xdk"], np.uint8), cols
-    )[(T.face == "down") | (T.face == "up")] if style != "claw" else cols[(T.face == "down") | (T.face == "up")]
+    if style != "claw":
+        cap_faces = {0: ("east", "west"), 1: ("up", "down"), 2: ("north", "south")}[ax]
+        caps = np.isin(T.face, cap_faces)
+        cols[caps] = PAL["crimson_xdk"]
     canvas.put_many(T.u, T.v, cols)
 
 

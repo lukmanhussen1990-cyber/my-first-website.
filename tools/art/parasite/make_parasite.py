@@ -156,29 +156,50 @@ class Painter:
         out[m] = red[m]
         return out
 
+    def splats(self, h, w, count):
+        """Irregular blood splats: 2-5 px clusters (1 = core, 0.5 = soft edge)."""
+        m = np.zeros((h, w), dtype=float)
+        for _ in range(count):
+            y, x = int(self.rng.integers(0, h)), int(self.rng.integers(0, w))
+            for _ in range(int(self.rng.integers(2, 6))):
+                if 0 <= y < h and 0 <= x < w:
+                    m[y, x] = 1.0
+                    for dy, dx in ((0, 1), (1, 0), (0, -1), (-1, 0)):
+                        yy, xx = y + dy, x + dx
+                        if 0 <= yy < h and 0 <= xx < w and m[yy, xx] == 0 and self.rng.random() < 0.3:
+                            m[yy, xx] = 0.5
+                d = int(self.rng.integers(0, 4))
+                y += (0, 1, 0, -1)[d]
+                x += (1, 0, -1, 0)[d]
+        return m
+
     def skin(self, h, w, blotch_count=None, bloody=0.0):
-        n = self.noise(h, w)
-        a = self.pick([0.22, 0.55, 0.85], ["skin_lo", "skin_mid", "skin", "skin_hi"], 1 - n)
-        bc = blotch_count if blotch_count is not None else max(1, (h * w) // 45)
-        m = self.blotches(h, w, bc, 1, 2)
-        dark = self.rng.random((h, w))
-        a[m >= 1.0] = C("blotch")
-        a[(m >= 1.0) & (dark < 0.35)] = C("blotch_dk")
-        a[(m > 0.0) & (m < 1.0)] = C("blotch_lt")
+        """Pale beige-pink skin with dark crimson splats (the reference head)."""
+        n = self.noise(h, w, 2)
+        a = self.pick([0.18, 0.62, 0.9], ["skin_mid", "skin", "skin_hi", "skin"], 1 - n)
+        lo = self.rng.random((h, w)) < 0.06
+        a[lo] = C("skin_lo")
+        bc = blotch_count if blotch_count is not None else max(1, (h * w) // 40)
+        m = self.splats(h, w, bc)
+        core = m >= 1.0
+        dark = self.rng.random((h, w)) < 0.4
+        a[core] = C("blotch")
+        a[core & dark] = C("blotch_dk")
+        a[(m > 0) & (m < 1)] = C("blotch_lt")
         if bloody > 0:
-            # blood soaks in from the bottom edge
             yy = np.linspace(0, 1, h)[:, None] * np.ones((1, w))
             r = self.rng.random((h, w))
             soak = r < (yy ** 1.6) * bloody
             a[soak] = C("blood")
-            a[soak & (r < (yy ** 2.2) * bloody * 0.45)] = C("blotch_dk")
         return a
 
     def flesh(self, h, w, pale=0.12):
-        n = self.noise(h, w)
-        a = self.pick([0.16, 0.38, 0.62, 0.84], ["flesh_deep", "flesh_dk", "flesh", "flesh_brown", "flesh_lt"], n)
-        m = self.blotches(h, w, max(1, int(h * w * pale / 6)), 0, 1)
+        """Mottled crimson / brown flesh with pale pink flecks (body and limbs)."""
+        n = self.noise(h, w, 2)
+        a = self.pick([0.16, 0.36, 0.6, 0.82], ["flesh_deep", "flesh_dk", "flesh", "flesh_brown", "flesh_lt"], n)
+        m = self.splats(h, w, max(1, int(h * w * pale / 4)))
         a[m >= 1.0] = C("flesh_pale")
+        a[(m >= 1.0) & (self.rng.random((h, w)) < 0.35)] = C("skin_mid")
         a[(m > 0) & (m < 1)] = C("flesh_lt")
         return a
 
@@ -340,7 +361,7 @@ def paint(seed: int = 7) -> np.ndarray:
         f = faces(reg)
         for fname, rect in f.items():
             h, w = dims(rect)
-            a = pt.flesh(h, w, pale=0.16 if fname in ("up", "east", "west") else 0.08)
+            a = pt.flesh(h, w, pale=0.24 if fname in ("up", "east", "west") else 0.14)
             if fname in ("east", "west", "south", "north"):
                 # rib-like darker bands
                 for r in range(3, h - 1, 4):
@@ -358,7 +379,7 @@ def paint(seed: int = 7) -> np.ndarray:
             if fname in ("up", "down"):
                 fill(rect, pt.pick([0.5], ["joint", "flesh_deep"], pt.noise(h, w, 1)))
                 continue
-            a = pt.flesh(h, w, pale=0.2)
+            a = pt.flesh(h, w, pale=0.3)
             a = pt.shade_rows(a, joint_top, joint_bottom, "joint", 0.85)
             fill(rect, a)
     for reg in ("lump", "elbow"):

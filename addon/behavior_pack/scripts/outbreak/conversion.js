@@ -318,6 +318,38 @@ export function convertMob(e, budget = new HordeBudget()) {
 }
 
 /**
+ * Convert up to `limit` mobs from the conversion queue (stops when the horde is full;
+ * held mobs are re-evaluated by the next incubation cycle).
+ * @param {number} limit
+ * @returns {number} attempts
+ */
+export function processConvertQueue(limit) {
+  if (limit <= 0 || rt.convertQueue.size === 0) return 0;
+  const budget = new HordeBudget();
+  let n = 0;
+  for (const [id, e] of rt.convertQueue) {
+    if (n >= limit) break;
+    rt.convertQueue.delete(id);
+    n++;
+    /** @type {ConvertResult | undefined} */
+    let r;
+    try {
+      r = convertMob(e, budget);
+    } catch (err) {
+      logError("outbreak.convert", err);
+    }
+    if (r === "held") {
+      // no room left: everything still queued holds at 0 until a slot frees
+      rt.held.add(id);
+      for (const rest of rt.convertQueue.keys()) rt.held.add(rest);
+      rt.convertQueue.clear();
+      break;
+    }
+  }
+  return n;
+}
+
+/**
  * Parse pas:origin_data of an infected creature.
  * @param {Entity} e
  * @returns {OriginData | undefined}
