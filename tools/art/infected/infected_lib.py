@@ -179,23 +179,8 @@ class Model:
         return [(b, p) for b in self.bones for p in b.parts]
 
     # -- UV packing ---------------------------------------------------------
-    def pack(self, start_v: int = 0) -> None:
-        """Shelf-pack every part's UV footprint (tallest first) into the texture."""
-        items = sorted(self.parts(), key=lambda bp: (-bp[1].footprint()[1], -bp[1].footprint()[0]))
-        x = y = 0
-        shelf_h = 0
-        y = start_v
-        for _, p in items:
-            w, h = p.footprint()
-            if x + w > self.tex_w:
-                x = 0
-                y += shelf_h
-                shelf_h = 0
-            if y + h > self.tex_h:
-                raise ValueError(f"{self.identifier}: texture {self.tex_w}x{self.tex_h} too small")
-            p.uv = (x, y)
-            x += w
-            shelf_h = max(shelf_h, h)
+    def pack(self) -> None:
+        pack_parts([p for _, p in self.parts()], self.tex_w, self.tex_h, self.identifier)
 
     # -- JSON ---------------------------------------------------------------
     def to_json(self) -> dict:
@@ -212,7 +197,9 @@ class Model:
                 c: dict = {"origin": [_r(v) for v in p.origin], "size": [_r(v) for v in p.size]}
                 if abs(p.inflate) > 1e-9:
                     c["inflate"] = _r(p.inflate)
-                if p.glow_face:
+                if "uv_json" in p.meta:
+                    c["uv"] = p.meta["uv_json"]
+                elif p.glow_face:
                     fw, fh = p.footprint()
                     c["uv"] = {p.glow_face: {"uv": [p.uv[0], p.uv[1]], "uv_size": [fw, fh]}}
                 else:
@@ -233,6 +220,24 @@ class Model:
             },
             "bones": bones,
         }
+
+
+def pack_parts(parts: Sequence[Part], tex_w: int, tex_h: int, what: str = "") -> None:
+    """Shelf-pack every part's box-UV footprint (tallest first) into one texture."""
+    items = sorted([p for p in parts if "uv_json" not in p.meta],
+                   key=lambda p: (-p.footprint()[1], -p.footprint()[0]))
+    x = y = shelf_h = 0
+    for p in items:
+        w, h = p.footprint()
+        if x + w > tex_w:
+            x = 0
+            y += shelf_h
+            shelf_h = 0
+        if y + h > tex_h:
+            raise ValueError(f"{what}: texture {tex_w}x{tex_h} too small")
+        p.uv = (x, y)
+        x += w
+        shelf_h = max(shelf_h, h)
 
 
 def _r(v: float):

@@ -18,7 +18,8 @@ import { rt } from "./state.js";
 /** @typedef {import("@minecraft/server").EntityTypeFamilyComponent} EntityTypeFamilyComponent */
 
 /** Every entity type that belongs to the horde (all have family pas_horde). */
-export const HORDE_TYPES = Object.freeze(new Set(Object.values(ENTITIES)));
+/** @type {ReadonlySet<string>} */
+export const HORDE_TYPES = new Set(Object.values(ENTITIES));
 
 /**
  * @param {string | undefined} typeId

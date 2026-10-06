@@ -39,7 +39,7 @@ DEFAULT_REFERENCE_IMG = Path("/root/.claude/uploads/6f33ccbb-4073-57f5-b83c-87aa
 REFERENCE_CROP = (585, 375, 1045, 715)       # creature region of the user's screenshot (x0, y0, x1, y1)
 
 WALK_Q = {"modified_distance_moved": "t*14", "modified_move_speed": 0.7}
-LOOK_Q = {"target_y_rotation": 14.0, "target_x_rotation": -4.0}
+LOOK_Q = {"target_y_rotation": 0.0, "target_x_rotation": 0.0}
 
 
 def our_pack():

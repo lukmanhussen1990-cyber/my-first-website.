@@ -166,21 +166,25 @@ function startNormal(dir) {
  * @returns {Beam}
  */
 export function castBeam(dim, origin, dir, maxDistance = MAX_DISTANCE) {
+  /** @type {import("@minecraft/server").BlockRaycastHit | undefined} */
+  let hit;
+  /** @type {Vector3} */
+  let cell;
   try {
-    const hit = apiRaycast(dim, origin, dir, maxDistance);
+    hit = apiRaycast(dim, origin, dir, maxDistance);
     if (!hit) return { dist: maxDistance, hitCell: undefined, normal: undefined, method: "api" };
-    const block = hit.block;
-    if (isLightBlockId(block.typeId)) throw new Error("raycast stopped at a light block");
-    const cell = floorVec(block.location);
-    const entry = rayEntry(origin, dir, cell);
-    const normal = faceNormal(hit.face) ?? entry?.normal ?? startNormal(dir);
-    let dist = entry ? entry.t : len(sub(add(cell, { x: 0.5, y: 0.5, z: 0.5 }), origin)) - 0.5;
-    dist = Math.min(maxDistance, Math.max(0, dist));
-    return { dist, hitCell: cell, normal, method: "api" };
+    // A build that reports our own (collision-less) light blocks as hits: walk past them manually.
+    if (isLightBlockId(hit.block.typeId)) return castBeamManual(dim, origin, dir, maxDistance);
+    cell = floorVec(hit.block.location);
   } catch (e) {
-    if (!(e instanceof Error && e.message === "raycast stopped at a light block")) logError("torch.getBlockFromRay", e);
+    logError("torch.getBlockFromRay", e);
     return castBeamManual(dim, origin, dir, maxDistance);
   }
+  const entry = rayEntry(origin, dir, cell);
+  const normal = faceNormal(hit.face) ?? entry?.normal ?? startNormal(dir);
+  let dist = entry ? entry.t : len(sub(add(cell, { x: 0.5, y: 0.5, z: 0.5 }), origin)) - 0.5;
+  dist = Math.min(maxDistance, Math.max(0, dist));
+  return { dist, hitCell: cell, normal, method: "api" };
 }
 
 /**

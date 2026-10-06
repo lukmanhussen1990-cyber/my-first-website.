@@ -48,9 +48,14 @@ import { conversionBurst } from "./fx.js";
  */
 
 /** Infected types that have pas:make_baby. */
-export const BABY_CAPABLE = Object.freeze(
-  new Set([ENTITIES.INFECTED_VILLAGER, ENTITIES.INFECTED_COW, ENTITIES.INFECTED_PIG, ENTITIES.INFECTED_SHEEP, ENTITIES.INFECTED_CHICKEN]),
-);
+/** @type {ReadonlySet<string>} */
+export const BABY_CAPABLE = new Set([
+  ENTITIES.INFECTED_VILLAGER,
+  ENTITIES.INFECTED_COW,
+  ENTITIES.INFECTED_PIG,
+  ENTITIES.INFECTED_SHEEP,
+  ENTITIES.INFECTED_CHICKEN,
+]);
 
 /** villager v1 minecraft:variant -> villager_v2 profession index. */
 export const V1_TO_V2 = Object.freeze([1, 5, 7, 8, 11]);

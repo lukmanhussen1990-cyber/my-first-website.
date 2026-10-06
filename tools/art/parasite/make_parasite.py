@@ -67,9 +67,9 @@ P = {
     "blood": (132, 10, 8),
     "blood_hi": (176, 24, 18),
     "tongue": (122, 30, 30),
-    "tooth": (190, 156, 134),
-    "tooth_mid": (160, 108, 90),
-    "tooth_stain": (128, 52, 42),
+    "tooth": (176, 118, 98),
+    "tooth_mid": (146, 66, 52),
+    "tooth_stain": (112, 24, 18),
     # eyes (emissive)
     "eye": (255, 252, 246),
     "eye_rim": (255, 196, 188),
@@ -240,7 +240,7 @@ def paint_hole(pt, a, hole):
     h, w = a.shape[:2]
     for r, (lo, hi) in hole.items():
         for c in range(max(0, lo), min(w, hi + 1)):
-            a[r, c] = C("mouth_black") if pt.rng.random() < 0.82 else C("mouth_deep")
+            a[r, c] = C("mouth_black") if pt.rng.random() < 0.9 else C("mouth_deep")
         for c in (lo - 1, hi + 1):      # rim
             if 0 <= c < w:
                 a[r, c] = C("blood") if pt.rng.random() < 0.6 else C("blotch_dk")
@@ -249,9 +249,9 @@ def paint_hole(pt, a, hole):
         lo, hi = hole[r]
         for c in range(max(0, lo), min(w, hi + 1)):
             if (r - 1) not in hole or not (hole[r - 1][0] <= c <= hole[r - 1][1]):
-                if pt.rng.random() < 0.55:
+                if pt.rng.random() < 0.4:
                     a[r, c] = C("blood")
-                    if (r + 1) in hole and pt.rng.random() < 0.4:
+                    if (r + 1) in hole and pt.rng.random() < 0.35:
                         a[r + 1, c] = C("mouth_red")
 
 
@@ -309,7 +309,7 @@ def paint(seed: int = 7) -> np.ndarray:
                 if pt.rng.random() < 0.8:
                     face[r, c] = C("blood_hi") if pt.rng.random() < 0.6 else C("blood")
         face[5:9, c0:c1] = C("eye")
-    hole = mouth_hole_rows(pt, top=5, rows=h, centre=9.5, widths=[1.0, 1.5, 2.0, 2.5, 4.0, 5.5, 6.0])
+    hole = mouth_hole_rows(pt, top=4, rows=h, centre=9.5, widths=[1.0, 2.0, 2.5, 3.0, 3.0, 4.5, 5.5, 6.0])
     paint_hole(pt, face, hole)
     fill(f["north"], face)
 
@@ -317,7 +317,7 @@ def paint(seed: int = 7) -> np.ndarray:
     f = faces("jaw")
     h, w = dims(f["north"])            # 8 x 20 px; row 0 = y 10, col 0 = x -5
     jf = pt.red_field(h, w)
-    hole = mouth_hole_rows(pt, top=0, rows=h, centre=9.5, widths=[6.0, 6.0, 5.5, 4.5, 3.5, 2.0])
+    hole = mouth_hole_rows(pt, top=0, rows=h, centre=9.5, widths=[6.0, 6.0, 5.5, 5.0, 4.5, 3.5, 2.5])
     paint_hole(pt, jf, hole)
     for c in range(w):                 # drool streaks down the chin
         if pt.rng.random() < 0.3:
@@ -382,13 +382,12 @@ def paint(seed: int = 7) -> np.ndarray:
             a = pt.flesh(h, w, pale=0.3)
             a = pt.shade_rows(a, joint_top, joint_bottom, "joint", 0.85)
             fill(rect, a)
-    for reg in ("lump", "elbow"):
+    for reg in ("elbow",):
         f = faces(reg)
         for fname, rect in f.items():
             h, w = dims(rect)
-            a = pt.flesh(h, w, pale=0.25 if reg == "lump" else 0.1)
-            if reg == "elbow":
-                a = pt.shade_rows(pt.shade_cols(a, 1, 1, "joint", 0.6), 1, 1, "joint", 0.6)
+            a = pt.flesh(h, w, pale=0.1)
+            a = pt.shade_rows(pt.shade_cols(a, 1, 1, "joint", 0.6), 1, 1, "joint", 0.6)
             fill(rect, a)
     f = faces("knuckle")
     for fname, rect in f.items():
@@ -419,7 +418,6 @@ def paint(seed: int = 7) -> np.ndarray:
     gradient(swatch("tooth_low"), [(0, "blood"), (0.3, "tooth_stain"), (0.65, "tooth_mid"), (1, "tooth")])
     gradient(swatch("drip"), [(0, "mouth_deep"), (0.35, "blood"), (0.75, "blood_hi"), (1, "blotch_dk")])
     gradient(swatch("claw"), [(0, "claw_lt"), (0.35, "claw"), (1, "claw_dk")])
-    gradient(swatch("spike"), [(0, "flesh_dk"), (0.5, "flesh_brown"), (1, "claw_dk")])
     return pt.img
 
 

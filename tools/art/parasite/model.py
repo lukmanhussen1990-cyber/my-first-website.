@@ -101,8 +101,8 @@ def seg_cube(a, b, t, uv, ext0=0.0, ext1=0.0, mirror=False, tz=None):
 # back legs: hip at the rear of the body, knee high, foot far out and back.
 LEGS = {
     #       shoulder            elbow/knee           foot
-    "fr": ((-3.5, 8.0, -3.0), (-10.0, 12.5, -7.0), (-12.0, 0.6, -11.5)),
-    "br": ((-3.0, 10.0, 5.0), (-10.5, 14.0, 9.5), (-13.5, 0.6, 15.0)),
+    "fr": ((-4.0, 8.5, -4.0), (-9.5, 12.0, -7.0), (-10.5, 0.6, -11.0)),
+    "br": ((-3.5, 10.0, 6.0), (-10.5, 13.5, 9.0), (-13.0, 0.6, 14.0)),
 }
 LEG_T_UPPER = 3
 LEG_T_LOWER = 2
@@ -132,17 +132,10 @@ JAW_PIVOT = (0.0, 10.0, -4.5)
 def build_bones():
     bones: list[Bone] = []
     bones.append(Bone("root", None, (0.0, 0.0, 0.0)))
-    # body: chest (front, low) + raised abdomen (hunched back) + fleshy lumps on the hump
+    # body: chest right behind the head + a raised abdomen (hunched back)
     bones.append(Bone("body", "root", (0.0, 8.0, 2.0), [
-        Cube((-4.0, 4.5, -6.0), (8, 7, 8), "chest"),
-        Cube((-3.5, 6.5, -1.0), (7, 8, 9), "abdomen", rotation=(8.0, 0.0, 0.0), pivot=(0.0, 10.0, 3.0)),
-    ]))
-    bones.append(Bone("spikes", "body", (0.0, 14.0, 3.0), [
-        Cube((-2.5, 13.2, 0.0), (3, 2, 3), "lump", rotation=(10.0, 20.0, -12.0), pivot=(-1.0, 14.0, 1.5)),
-        Cube((0.0, 13.6, 3.5), (3, 2, 3), "lump", rotation=(-8.0, -15.0, 10.0), pivot=(1.5, 14.5, 5.0), mirror=True),
-        seg_cube((0.0, 14.6, 5.5), (0.4, 16.4, 7.4), 1, "swatch:spike", ext0=0.6),
-        seg_cube((-1.2, 14.0, 1.0), (-2.2, 15.6, 2.4), 1, "swatch:spike", ext0=0.6),
-        seg_cube((2.0, 13.6, 2.0), (3.0, 15.0, 3.4), 1, "swatch:spike", ext0=0.6),
+        Cube((-4.5, 4.5, -6.0), (9, 8, 8), "chest"),
+        Cube((-3.5, 7.0, 0.0), (7, 7, 9), "abdomen", rotation=(6.0, 0.0, 0.0), pivot=(0.0, 10.5, 1.0)),
     ]))
     # head: upper skull (eyes, upper lip); jaw below it is hinged at the back
     bones.append(Bone("head", "body", HEAD_PIVOT, [
@@ -154,21 +147,21 @@ def build_bones():
     ]))
     # mouth: dark throat box inside the head + ragged upper teeth hanging from the skull's front edge
     mouth = [Cube((-4.5, 7.5, -13.0), (9, 3, 8), "swatch:throat")]
-    for x, ln in ((-3.6, 1.7), (-1.4, 2.3), (1.2, 1.4), (3.4, 2.0)):
-        mouth.append(seg_cube((x, 10.2, -13.4), (x + 0.15 * (1 if x < 0 else -1), 10.2 - ln, -13.3), 1, "swatch:tooth", tz=1))
+    for x, ln in ((-3.4, 1.5), (-1.2, 2.1), (1.0, 1.2), (3.2, 1.9)):
+        mouth.append(seg_cube((x, 10.2, -13.4), (x + 0.15 * (1 if x < 0 else -1), 10.2 - ln, -13.3), 0.8, "swatch:tooth", tz=0.8))
     for z, ln in ((-11.8, 1.3),):
         for sx in (-1, 1):
-            mouth.append(seg_cube((sx * 3.6, 10.2, z), (sx * 3.5, 10.2 - ln, z), 1, "swatch:tooth"))
+            mouth.append(seg_cube((sx * 3.8, 10.2, z), (sx * 3.7, 10.2 - ln, z), 0.8, "swatch:tooth"))
     bones.append(Bone("mouth", "head", (0.0, 10.0, -9.0), mouth))
     jaw = [Cube((-5.0, 6.0, -14.0), (10, 4, 10), "jaw")]
     for x, ln in ((-2.6, 1.3), (0.2, 0.9), (2.7, 1.5)):
-        jaw.append(seg_cube((x, 9.8, -13.3), (x, 9.8 + ln, -13.2), 1, "swatch:tooth_low"))
+        jaw.append(seg_cube((x, 9.8, -13.3), (x, 9.8 + ln, -13.2), 0.8, "swatch:tooth_low"))
     bones.append(Bone("jaw", "head", JAW_PIVOT, jaw))
     # dripping strands of blood/flesh under the jaw front
     drips = []
-    for x, z, ln in ((-3.5, -13.5, 3.5), (-1.5, -13.6, 2.2), (0.5, -13.5, 4.5), (2.5, -13.4, 2.8), (4.2, -13.0, 1.8),
-                     (-4.6, -11.5, 2.0)):
-        drips.append(seg_cube((x, 6.3, z), (x, 6.3 - ln, z), 1, "swatch:drip", tz=1))
+    for x, z, ln, t in ((-3.2, -13.6, 3.6, 0.7), (-1.6, -13.7, 1.6, 0.6), (-0.2, -13.6, 4.6, 0.8), (1.7, -13.5, 2.4, 0.6),
+                        (3.3, -13.4, 3.1, 0.7), (4.6, -12.6, 1.4, 0.6), (-4.6, -11.8, 2.2, 0.6)):
+        drips.append(seg_cube((x, 6.4, z), (x + 0.1, 6.4 - ln, z - 0.15), t, "swatch:drip", tz=t))
     bones.append(Bone("drips", "jaw", (0.0, 6.0, -13.5), drips))
     # legs
     for k, (s, e, f) in leg_joints().items():
@@ -228,7 +221,6 @@ SWATCHES = {            # name -> (w, h) in texture units
     "tooth_low": (1, 3),
     "drip": (1, 5),
     "claw": (1, 4),
-    "spike": (1, 4),
 }
 
 
