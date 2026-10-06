@@ -567,7 +567,7 @@ describe("save / reload", () => {
         const p = mock.addPlayer({ name: "Reloader" });
         mock.tick(2);
         const big = Array.from({ length: 5000 }, (_, i) => ["minecraft:overworld", i, 64, i]);
-        store.saveJSON("pas:torch_cells", big);
+        store.saveJSON("pas:test_big_store", big);
         const inv = mock.inventory(p);
         const kit = [];
         for (let i = 0; i < inv.size; i++) if (inv.getItem(i)) kit.push(inv.getItem(i).typeId);
@@ -588,7 +588,7 @@ describe("save / reload", () => {
         const inv = mock.inventory(p);
         let count = 0;
         for (let i = 0; i < inv.size; i++) if (inv.getItem(i)) count++;
-        sc.end({ loaded: sc.loaded, name: p.name, count, cells: store.loadJSON("pas:torch_cells", []).length, tick: mock.currentTick });
+        sc.end({ loaded: sc.loaded, name: p.name, count, cells: store.loadJSON("pas:test_big_store", []).length, tick: mock.currentTick });
       `,
     });
     assert.equal(b.result.loaded, true);
