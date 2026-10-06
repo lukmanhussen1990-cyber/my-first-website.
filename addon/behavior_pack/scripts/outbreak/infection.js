@@ -14,7 +14,6 @@
 // when the horde has room (otherwise they hold at 0 with "dormant" feedback)
 // and players move to stage 2.
 
-import { world, system } from "@minecraft/server";
 import { CONVERSIONS, ITEMS, PROPS, SOUNDS, TAGS } from "../lib/ids.js";
 import { findHeld, isSurvivalLike, isValidEntity, runSafe, title, logError, playSoundTo } from "../lib/util.js";
 import { getConfig } from "./config.js";
@@ -337,18 +336,4 @@ export function startIncubationCycle() {
 /** Remaining incubation seconds of a stage-1 entity (for UI). @param {Entity} e @returns {number} */
 export function incubationSecondsLeft(e) {
   return Math.ceil((numProp(e, PROPS.INC_TICKS) ?? 0) / 20);
-}
-
-/** Current tick (re-exported for modules that only need the clock). @returns {number} */
-export function nowTick() {
-  return system.currentTick;
-}
-
-/** All online players (never throws). @returns {Player[]} */
-export function onlinePlayers() {
-  try {
-    return world.getAllPlayers();
-  } catch {
-    return [];
-  }
 }

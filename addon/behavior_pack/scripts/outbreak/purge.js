@@ -12,7 +12,7 @@
 // incubation cycle or the sweep) the first purge recorded after their epoch is
 // applied to them.
 
-import { world, system } from "@minecraft/server";
+import { system } from "@minecraft/server";
 import { CONVERSIONS, PROPS, TAGS } from "../lib/ids.js";
 import { isValidEntity, runSafe } from "../lib/util.js";
 import { S, rt, saveState, recordPurge, purgeKindAfter } from "./state.js";
@@ -191,13 +191,4 @@ export function processSweepQueue(limit) {
     rt.sweepPos = 0;
   }
   return n;
-}
-
-/** Online players (never throws). @returns {Player[]} */
-export function allPlayers() {
-  try {
-    return world.getAllPlayers();
-  } catch {
-    return [];
-  }
 }

@@ -14,7 +14,7 @@ Binding model (derived from bedrock-samples v1.21.0.26, see docs/TORCHLIGHT_MODE
       world(p) = J . ( pivot - (0,24,0) + anim_position + R(anim_rotation) . S . (p - pivot) )
 
   J = the hand bone's joint frame (origin at its pivot, rotated with the arm).
-  Checks: vanilla shield third person puts its handle 0.6 units from the hand pivot with the
+  Checks: vanilla shield third person puts its handle 0.8 units from the hand pivot with the
   plate just outside the arm; spyglass scoping lands at the right eye; first-person main- and
   off-hand shields come out as exact mirror images (x = +7.0 / -7.3, same y, z, orientation).
 

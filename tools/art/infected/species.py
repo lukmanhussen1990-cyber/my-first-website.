@@ -190,8 +190,8 @@ def build_pig() -> Spec:
     sp.growth_bones = {"heads": ["pas_g0", "pas_g1"], "tendrils": [t0, t1, t2, t3], "jaw": "pas_jaw"}
     cfg = SkinConfig(
         seed=202,
-        sites=[Site((-1.5, 14, 1), 3.2, veins=6, vein_len=10), Site((2.5, 14, 5.5), 2.0, veins=4),
-               Site((5, 10, -2), 2.0, veins=4), Site((4, 13.5, -4), 1.0, flesh=False, veins=3, vein_len=6),
+        sites=[Site((-1.5, 14, 1), 2.6, veins=5, vein_len=9), Site((2.5, 14, 5.5), 1.6, veins=3),
+               Site((5, 10, -2), 1.6, veins=3), Site((4, 13.5, -4), 1.0, flesh=False, veins=3, vein_len=6),
                Site((-4, 13.5, -4), 1.0, flesh=False, veins=3, vein_len=6)],
         eyes=eyes,
         mouths=[Mouth((-2.5, 7.9, -14.1), (2.5, 8.95, -12.0), drips=2, max_drip=2),
@@ -240,8 +240,8 @@ def _sheep_model(identifier: str, sheared: bool, seed: int):
     gb = {"heads": ["pas_g0", "pas_g1"], "tendrils": [t0, t1, t2, t3]}
     cfg = SkinConfig(
         seed=seed,
-        sites=[Site((1, top, 0.5), 3.4, veins=6, vein_len=11), Site((-2, top, 6), 2.2, veins=4),
-               Site((-side, 14.5, -3), 2.2, veins=4), Site((s, top, -4), 1.0, flesh=False, veins=3, vein_len=6),
+        sites=[Site((1, top, 0.5), 2.8, veins=5, vein_len=10), Site((-2, top, 6), 1.8, veins=3),
+               Site((-side, 14.5, -3), 1.8, veins=3), Site((s, top, -4), 1.0, flesh=False, veins=3, vein_len=6),
                Site((-s, top, -4), 1.0, flesh=False, veins=3, vein_len=6)],
         eyes=eyes,
         mouths=[Mouth((-1.6, 15.9, -14.1), (1.6, 17.2, -12.5), drips=3, max_drip=2)],
@@ -282,7 +282,7 @@ def build_chicken() -> Spec:
     skin(m, "wing0", (-4, 7, -3), (1, 4, 6), tag="wing")
     skin(m, "wing1", (3, 7, -3), (1, 4, 6), tag="wing")
     eyes = [Eye(-2, -1, 13, 14, -6, inner=+1), Eye(1, 2, 13, 14, -6, inner=-1)]
-    glow_eyes(m, "head", (0, 9, -4), eyes, [[WHITE], [WHITE]])
+    glow_eyes(m, "head", (0, 9, -4), eyes, [[RED], [RED]])   # white would vanish on white feathers
     parasite_head(m, "body", "pas_g0", (0.5, 11, 1.5), (-34, 0, 14), head=(3, 3, 3), stalk=(1, 2, 1), seed=14)
     t0 = tendril(m, "body", "pas_t0", (2.5, 10.5, 2.5), [(20, 0, 50), (0, 0, 70), (0, 0, 28)], [3, 3, 2],
                  thick=(1, 1, 1), seed=44)
@@ -326,21 +326,21 @@ def build_villager() -> Spec:
     glow_eyes(m, "head", (0, 24, 0), eyes, [[WHITE, RED], [RED, WHITE]])
     parasite_head(m, "body", "pas_g0", (-2.5, 22.5, 3.5), (-38, 0, -24), head=(5, 4, 4), stalk=(2, 3, 2), seed=15)
     parasite_head(m, "body", "pas_g1", (3.0, 24.0, 1.0), (-8, 0, 30), head=(3, 3, 3), stalk=(2, 2, 2), seed=25)
-    t0 = tendril(m, "body", "pas_t0", (2, 21, 3.5), [(-28, 0, 22), (105, 0, 0), (55, 0, 0)], [7, 7, 4], seed=60)
-    t1 = tendril(m, "body", "pas_t1", (-2, 20, 3.5), [(-28, 0, -26), (105, 0, 0), (55, 0, 0)], [7, 7, 4], seed=64)
-    t2 = tendril(m, "body", "pas_t2", (2.5, 17, 3.5), [(-75, 0, 55), (0, 0, 55), (0, 0, 30)], [4, 5, 3], seed=68)
-    t3 = tendril(m, "body", "pas_t3", (-2.5, 17, 3.5), [(-75, 0, -55), (0, 0, -55), (0, 0, -30)], [4, 5, 3], seed=72)
+    t0 = tendril(m, "body", "pas_t0", (3, 22, 3.5), [(-30, 0, 48), (0, 0, 72), (0, 0, 32)], [6, 6, 3], seed=60)
+    t1 = tendril(m, "body", "pas_t1", (-3, 21.5, 3.5), [(-30, 0, -48), (0, 0, -72), (0, 0, -32)], [6, 6, 3], seed=64)
+    t2 = tendril(m, "body", "pas_t2", (2.5, 16, 3.5), [(-80, 0, 40), (0, 0, 60), (0, 0, 30)], [4, 5, 3], seed=68)
+    t3 = tendril(m, "body", "pas_t3", (-2.5, 16, 3.5), [(-80, 0, -40), (0, 0, -60), (0, 0, -30)], [4, 5, 3], seed=72)
     sp.models.append(m)
     sp.growth_bones = {"heads": ["pas_g0", "pas_g1"], "tendrils": [t0, t1, t2, t3]}
     cfg = SkinConfig(
         seed=505,
         sites=[Site((-2.5, 22.5, 3.5), 3.0, veins=6, vein_len=10), Site((3, 24, 1), 2.0, veins=4),
-               Site((2, 19, 3.5), 1.4, flesh=False, veins=3), Site((-2, 18, 3.5), 1.4, flesh=False, veins=3),
+               Site((3, 22, 3.5), 1.4, flesh=False, veins=3), Site((-3, 21.5, 3.5), 1.4, flesh=False, veins=3),
                Site((4.5, 12, -3.5), 2.0, veins=4)],
         eyes=eyes,
-        mouths=[Mouth((-2.2, 24.4, -4.1), (2.2, 26.2, -3.0), drips=3, max_drip=2),
+        mouths=[Mouth((-2.05, 24.95, -4.1), (2.05, 26.05, -3.0), drips=3, max_drip=2),
                 Mouth((-1.1, 22.9, -6.1), (1.1, 24.3, -4.0), drips=1, max_drip=1)],
-        mottle=0.11, vein_walks=16, sores=10,
+        mottle=0.09, vein_walks=9, sores=9,
     )
     sp.skin_cfgs.append((m, cfg))
     return sp
@@ -371,20 +371,20 @@ def build_human() -> Spec:
     glow_eyes(m, "head", (0, 24, 0), eyes, [[WHITE, RED], [RED, WHITE]])
     parasite_head(m, "body", "pas_g0", (2.5, 23.5, 0.5), (-6, 0, 34), head=(5, 4, 4), stalk=(2, 3, 2), seed=16)
     parasite_head(m, "body", "pas_g1", (-1.5, 21, 2), (-58, 0, -18), head=(3, 3, 3), stalk=(2, 2, 2), seed=26)
-    t0 = tendril(m, "body", "pas_t0", (2, 20, 2), [(-40, 0, 28), (100, 0, 0), (45, 0, 0)], [5, 6, 3], seed=61)
-    t1 = tendril(m, "body", "pas_t1", (-2.5, 19, 2), [(-40, 0, -32), (100, 0, 0), (45, 0, 0)], [5, 6, 3], seed=65)
-    t2 = tendril(m, "body", "pas_t2", (2.5, 15, 2), [(-70, 0, 50), (0, 0, 60), (0, 0, 30)], [4, 5, 3], seed=69)
-    t3 = tendril(m, "body", "pas_t3", (-2.5, 15, 2), [(-70, 0, -50), (0, 0, -60), (0, 0, -30)], [4, 5, 3], seed=73)
+    t0 = tendril(m, "body", "pas_t0", (3, 22, 2), [(-30, 0, 48), (0, 0, 72), (0, 0, 32)], [6, 6, 3], seed=61)
+    t1 = tendril(m, "body", "pas_t1", (-3, 21.5, 2), [(-30, 0, -48), (0, 0, -72), (0, 0, -32)], [6, 6, 3], seed=65)
+    t2 = tendril(m, "body", "pas_t2", (2.5, 16, 2), [(-80, 0, 40), (0, 0, 60), (0, 0, 30)], [4, 5, 3], seed=69)
+    t3 = tendril(m, "body", "pas_t3", (-2.5, 16, 2), [(-80, 0, -40), (0, 0, -60), (0, 0, -30)], [4, 5, 3], seed=73)
     sp.models.append(m)
     sp.growth_bones = {"heads": ["pas_g0", "pas_g1"], "tendrils": [t0, t1, t2, t3]}
     cfg = SkinConfig(
         seed=606,
-        sites=[Site((2.5, 23.5, 0.5), 2.6, veins=5, vein_len=9), Site((-1.5, 21, 2), 2.6, veins=6, vein_len=10),
-               Site((-2, 17, -2), 2.0, veins=5), Site((2, 15, 2), 1.4, flesh=False, veins=3),
-               Site((-6, 9, -2), 1.6, veins=3)],
+        sites=[Site((2.5, 23.5, 0.5), 2.2, veins=3, vein_len=8), Site((-1.5, 21, 2), 2.4, veins=4, vein_len=9),
+               Site((-2, 17, -2), 1.5, veins=3), Site((2.5, 16, 2), 1.2, flesh=False, veins=2),
+               Site((-6, 9, -2), 1.3, veins=2)],
         eyes=eyes,
-        mouths=[Mouth((-2.5, 24.4, -4.1), (2.5, 26.2, -3.0), drips=4, max_drip=2)],
-        mottle=0.12, vein_walks=18, sores=11,
+        mouths=[Mouth((-2.05, 24.95, -4.1), (2.05, 26.05, -3.0), drips=3, max_drip=2)],
+        mottle=0.08, vein_walks=9, sores=9,
     )
     sp.skin_cfgs.append((m, cfg))
     return sp

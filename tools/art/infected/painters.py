@@ -136,7 +136,7 @@ def paint_skin(canvas: Canvas, T: Texels, cfg: SkinConfig) -> None:
     # 3) veins (surface random walks) from sites and random spots
     def vein(part: Part, start, direction, length, thick_start=True):
         lo, hi = part.lo, part.hi
-        pts = surface_walk(lo, hi, start, direction, length, rng, wiggle=0.45, step=0.33)
+        pts = surface_walk(lo, hi, start, direction, length, rng, wiggle=0.32, step=0.4)
         branch_budget = 2
         for k, (p, n) in enumerate(pts):
             tx = point_to_texel(part, p, n)
@@ -170,7 +170,8 @@ def paint_skin(canvas: Canvas, T: Texels, cfg: SkinConfig) -> None:
         for _ in range(s.veins):
             dist, p, q = cands[rng.choice(len(cands), p=wts / wts.sum())]
             vein(p, q, rng.normal(size=3), s.vein_len * (0.6 + 0.6 * rng.random()))
-    vparts = [p for p in skin_parts if cfg.vein_tags is None or p.tag in cfg.vein_tags]
+    vparts = [p for p in skin_parts if (cfg.vein_tags is None and p.tag not in cfg.calm_tags)
+              or (cfg.vein_tags is not None and p.tag in cfg.vein_tags)]
     if vparts:
         areas = np.array([max(1.0, float(np.prod(np.sort(p.size)[1:]))) for p in vparts])
         for _ in range(cfg.vein_walks):
