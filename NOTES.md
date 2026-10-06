@@ -31,7 +31,7 @@ Nobody can be asked questions during this long run, so every ambiguous call is w
 
 ## Later decisions (added during the run)
 - **Combo**: fruit eaten within 4.2 s of the previous one raises a multiplier (×2…×4) applied to that fruit's points; the HUD chip drains and resets.
-- **Snake skins** are independent of themes: "Theme" uses the theme's own skin; Viper / Coral / Rattler / King are always available.
+- **Snake skins** are independent of themes: "Auto" uses the theme's own skin; Viper / Coral / Rattler / King are always available.
 - **Ambient sound** is a very quiet loop per theme (wind, water, synth hum). It starts after the first click/tap (browser rule) and obeys mute.
 - **Grid size**: 24×15 on normal landscape screens; wider (up to 40 columns) when the window is much wider than tall; 13×(14…26) in portrait.
   The arrow pad sits at the right edge in landscape and under the board in portrait; the board leaves room for it.

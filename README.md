@@ -24,7 +24,7 @@ The snake speeds up as you eat; the speed meter in the HUD shows how fast it is.
   Each changes the board, frame, snake, food, obstacles, particles, UI colours and ambient sound.
 - **Realistic snake** — one smooth, tapered body drawn from a spline with scale textures, pattern, lighting and a soft shadow;
   head with live eyes (pupils look where it is going), blinking, tongue flicks, jaws that open for fruit, a gulp when it bites,
-  and a slithering wave. Pick a skin independently of the theme: Theme · Viper · Coral · Rattler · King.
+  and a slithering wave. Pick a skin independently of the theme: Auto (the theme's own) · Viper · Coral · Rattler · King.
 - **Modes** — Easy / Normal / Hard · Walls or Wrap-around · optional Obstacles · optional Glow (neon bloom) · high score saved per combination.
 - **Effects** — particles, "+10" pop-ups, shockwave rings, screen shake, hit-stop and a game over where the snake strobes and breaks into pieces;
   cross-fading screens, animated title and buttons (hover, press, ripple), confetti on a new best.

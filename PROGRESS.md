@@ -88,3 +88,13 @@ Running log. Newest entries at the bottom. Start: 2026-10-06 14:10 UTC.
 - **Theme picker**: the plain colour dots became mini board previews (frame, ground, snake in the theme's own colours, and its fruit) drawn as inline SVG.
 - Full regression (lint, fuzz ×4, playthrough, mobile, landscape, audio, perf) and the UI test (22 checks) pass; 60 s chaos run: no errors.
 - Next: more in-game visual polish (look at every theme with fresh eyes), then another full regression.
+
+### 16:05 — Graphics round 2 ✅
+- **Fruit variety**: apples now come in red / green / orange (matching bite crumbs); the golden fruit flashes the screen edge gold when eaten.
+- **Combo heat**: from ×3 the screen edge glows in the theme colour (CSS only, pulses while the combo is alive).
+- **Neon**: every bite sends a shockwave through the glowing grid. **Dark**: a bite flares the gem's warm light.
+- **Forest**: ferns grow out of the stone wall at the corners and along the edges (baked into the board, with soft shadows).
+- **Ocean**: swaying kelp in the four corners.
+- Heads are a little wider and more distinct on every skin.
+- Small phones (≤ 420 × 660): the theme / snake rows no longer clip — the first snake option is now "Auto".
+- Next: more fresh-eyes review, full regression, summary.

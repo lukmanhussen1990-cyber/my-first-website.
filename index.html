@@ -36,6 +36,14 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 #fx { inset: auto; pointer-events: none; }          /* ambient effects: board-sized, half resolution, blended by the compositor */
 
 #veil { position: absolute; inset: 0; background: var(--bg); opacity: 0; pointer-events: none; transition: opacity .55s ease, background .6s; }
+#heat { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .6s ease; }       /* edge glow while a x3+ combo is alive */
+#heat::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 52%, var(--glow) 150%); }
+#gleam { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, transparent 42%, rgba(255, 214, 90, .6) 145%); }       /* golden flash when the bonus fruit is eaten */
+#gleam.go { animation: gleam .75s ease-out; }
+@keyframes gleam { 0% { opacity: 0; } 14% { opacity: 1; } 100% { opacity: 0; } }
+body.hot #heat { opacity: 1; }
+body.hot #heat::before { animation: heat 1.1s ease-in-out infinite; }
+@keyframes heat { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 
 /* ───────── HUD ───────── */
 #hud {
@@ -188,16 +196,20 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border-radius: 6
   .hide-small { display: none !important; } .btn.big { padding: 15px 44px; }
 }
 @media (max-height: 660px) { .keys, .tagline { display: none; } .logo { font-size: 38px; } .settings { margin-top: 10px; gap: 8px; } .card { padding: 14px 18px; } .row { grid-template-columns: 80px 1fr; } .chip i { max-width: 34px; margin-bottom: 2px; } }
+@media (max-height: 660px) and (max-width: 420px) { .row { grid-template-columns: 66px 1fr; gap: 6px; } .row > label { font-size: 9px; letter-spacing: .1em; } .chip { font-size: 8px; letter-spacing: 0; } .seg button { font-size: 11px; padding: 8px 1px; } }       /* small phones: keep the labelled rows on one line */
 /* lite mode (set automatically on slow devices): no live blur behind glass panels */
 html.lite .card, html.lite .icon-btn, html.lite #dpad button { backdrop-filter: none; -webkit-backdrop-filter: none; }
 html.lite .card { background: var(--card); }
-@media (prefers-reduced-motion: reduce) { .logo span, .swoosh circle, .btn.big, .badge, #hint.show { animation: none; } .swoosh path { animation: none; stroke-dashoffset: 0; } }
+html.lite #heat, html.lite #gleam { display: none; }
+@media (prefers-reduced-motion: reduce) { body.hot #heat::before, #gleam.go { animation: none; } .logo span, .swoosh circle, .btn.big, .badge, #hint.show { animation: none; } .swoosh path { animation: none; stroke-dashoffset: 0; } }
 </style>
 </head>
 <body class="in-menu">
 <div id="stage">
   <div id="world"><canvas id="game"></canvas><canvas id="fx"></canvas></div>
   <div id="veil"></div>
+  <div id="heat"></div>
+  <div id="gleam"></div>
 
   <div id="hud">
     <div class="stat"><small>Score</small><b id="score">0</b></div>
@@ -243,7 +255,7 @@ html.lite .card { background: var(--card); }
       <button class="btn big" id="btnPlay">Play</button>
       <div class="settings">
         <div class="row"><label>Theme</label><div class="chips" id="themes"></div></div>
-        <div class="row"><label>Snake</label><div class="seg" id="segSkin"><button data-v="auto">Theme</button><button data-v="viper">Viper</button><button data-v="coral">Coral</button><button data-v="rattler">Rattler</button><button data-v="king">King</button></div></div>
+        <div class="row"><label>Snake</label><div class="seg" id="segSkin"><button data-v="auto" title="The snake that belongs to the theme">Auto</button><button data-v="viper">Viper</button><button data-v="coral">Coral</button><button data-v="rattler">Rattler</button><button data-v="king">King</button></div></div>
         <div class="row"><label>Difficulty</label><div class="seg" id="segDiff"><button data-v="easy">Easy</button><button data-v="normal">Normal</button><button data-v="hard">Hard</button></div></div>
         <div class="row"><label>Mode</label><div class="seg" id="segMode"><button data-v="walls">Walls</button><button data-v="wrap">Wrap-around</button></div></div>
         <div class="toggles">
@@ -470,31 +482,31 @@ const Sound = (() => {
 const THEMES = [
   {
     id: 'classic', name: 'Classic',
-    skin: { id: 'classic', seed: 11, pattern: 'chevron', base: hex('#2f84e6'), dark: hex('#0d3a86'), light: hex('#b4dcff'), eye: hex('#ffffff'), eyeStyle: 'round', eyeSize: 1.3, thick: 1.12, headK: 1.07, marks: 'plain', keel: false, scaleA: 0.5, rim: [150, 215, 255] },
+    skin: { id: 'classic', seed: 11, pattern: 'chevron', base: hex('#2f84e6'), dark: hex('#0d3a86'), light: hex('#b4dcff'), eye: hex('#ffffff'), eyeStyle: 'round', eyeSize: 1.3, thick: 1.12, headK: 1.14, marks: 'plain', keel: false, scaleA: 0.5, rim: [150, 215, 255] },
     food: 'apple', obstacle: 'rock', shadow: 1, glowColor: [120, 190, 255], glowDefault: false,
     fx: { style: 'crumb', ring: [255, 255, 255], eat: ['#e8352d', '#b9121d', '#ff7a66', '#f3e6b8'], gold: ['#ffe27a', '#ffc933', '#fff3b0'], dust: [190, 170, 120], mote: [255, 255, 225], text: '#fff6d8', textGold: '#ffd54a' }
   },
   {
     id: 'neon', name: 'Neon',
-    skin: { id: 'neon', seed: 23, pattern: 'hex', base: hex('#18226e'), dark: hex('#04061a'), light: hex('#35f2ff'), accent: hex('#ff3df0'), eye: hex('#ffffff'), eyeStyle: 'glow', eyeSize: 1.3, thick: 1.14, headK: 1.12, marks: 'neon', keel: false, scaleA: 0.0, rim: [53, 242, 255] },
+    skin: { id: 'neon', seed: 23, pattern: 'hex', base: hex('#18226e'), dark: hex('#04061a'), light: hex('#35f2ff'), accent: hex('#ff3df0'), eye: hex('#ffffff'), eyeStyle: 'glow', eyeSize: 1.3, thick: 1.14, headK: 1.15, marks: 'neon', keel: false, scaleA: 0.0, rim: [53, 242, 255] },
     food: 'orb', obstacle: 'crystal', shadow: 0.25, glowColor: [53, 242, 255], glowDefault: true,
     fx: { style: 'spark', ring: [53, 242, 255], eat: ['#35f2ff', '#ff3df0', '#ffffff', '#8a5cff'], gold: ['#fff35c', '#ffffff', '#ffb12b'], dust: [120, 80, 255], mote: [140, 235, 255], text: '#c9fbff', textGold: '#fff35c' }
   },
   {
     id: 'forest', name: 'Forest',
-    skin: { id: 'forest', seed: 11, pattern: 'zigzag', base: hex('#5f8f2c'), dark: hex('#202c0d'), light: hex('#c6dc78'), eye: hex('#f0b020'), eyeStyle: 'slit', thick: 1.06, marks: 'vee', keel: true, scaleA: 1, rim: null },
+    skin: { id: 'forest', seed: 11, pattern: 'zigzag', base: hex('#5f8f2c'), dark: hex('#202c0d'), light: hex('#c6dc78'), eye: hex('#f0b020'), eyeStyle: 'slit', thick: 1.06, headK: 1.12, marks: 'vee', keel: true, scaleA: 1, rim: null },
     food: 'apple', obstacle: 'boulder', shadow: 1, glowColor: [190, 235, 110], glowDefault: false,
     fx: { style: 'crumb', ring: [255, 240, 200], eat: ['#e8352d', '#b9121d', '#ff7a66', '#f3e6b8'], gold: ['#ffe27a', '#ffc933', '#fff3b0'], dust: [170, 140, 95], mote: [255, 240, 200], text: '#fff1c9', textGold: '#ffd54a' }
   },
   {
     id: 'ocean', name: 'Ocean',
-    skin: { id: 'ocean', seed: 37, pattern: 'ripple', base: hex('#16b5c9'), dark: hex('#06455f'), light: hex('#dcfcff'), eye: hex('#ffe08a'), eyeStyle: 'round', eyeSize: 1.2, thick: 1.1, marks: 'plain', keel: false, scaleA: 0.55, rim: [160, 245, 255] },
+    skin: { id: 'ocean', seed: 37, pattern: 'ripple', base: hex('#16b5c9'), dark: hex('#06455f'), light: hex('#dcfcff'), eye: hex('#ffe08a'), eyeStyle: 'round', eyeSize: 1.2, thick: 1.1, headK: 1.12, marks: 'plain', keel: false, scaleA: 0.55, rim: [160, 245, 255] },
     food: 'pearl', obstacle: 'coral', shadow: 0.6, glowColor: [120, 235, 255], glowDefault: false,
     fx: { style: 'bubble', ring: [190, 245, 255], eat: ['#ffffff', '#bff4ff', '#7fe3ff', '#ffd9ec'], gold: ['#ffe9a0', '#ffd24d', '#ffffff'], dust: [200, 245, 255], mote: [215, 250, 255], text: '#e9fdff', textGold: '#ffe08a' }
   },
   {
     id: 'dark', name: 'Dark',
-    skin: { id: 'dark', seed: 41, pattern: 'ghost', base: hex('#e4e7f3'), dark: hex('#565a78'), light: hex('#ffffff'), accent: hex('#8d6bff'), eye: hex('#b79cff'), eyeStyle: 'glow', eyeSize: 1.25, thick: 1.12, headK: 1.1, sheen: 0.14, marks: 'ghost', keel: false, scaleA: 0.6, rim: [160, 130, 255] },
+    skin: { id: 'dark', seed: 41, pattern: 'ghost', base: hex('#e4e7f3'), dark: hex('#565a78'), light: hex('#ffffff'), accent: hex('#8d6bff'), eye: hex('#b79cff'), eyeStyle: 'glow', eyeSize: 1.25, thick: 1.12, headK: 1.15, sheen: 0.14, marks: 'ghost', keel: false, scaleA: 0.6, rim: [160, 130, 255] },
     food: 'gem', obstacle: 'obsidian', shadow: 0.7, glowColor: [150, 120, 255], glowDefault: false,
     fx: { style: 'spark', ring: [183, 156, 255], eat: ['#ffb454', '#ff7a3d', '#ffe3b0', '#b79cff'], gold: ['#fff2b0', '#ffe066', '#ffffff'], dust: [150, 140, 190], mote: [195, 175, 255], text: '#f4eeff', textGold: '#ffe066' }
   }
@@ -526,9 +538,9 @@ function themePreview(t) {
 /* Snake skins the player can pick independently of the theme ("Theme" = the theme's own skin). */
 const SKIN_LIB = {
   viper:   THEME_BY_ID.forest.skin,
-  coral:   { id: 'coral', seed: 23, pattern: 'bands', base: hex('#c4161f'), dark: hex('#0c0c0c'), light: hex('#f2c823'), eye: hex('#111111'), eyeStyle: 'slit', thick: 1.06, marks: 'bands', keel: false, scaleA: 0.5, rim: null },
-  rattler: { id: 'rattler', seed: 37, pattern: 'diamond', base: hex('#b99a62'), dark: hex('#3f2814'), light: hex('#eadcb0'), eye: hex('#d9a21b'), eyeStyle: 'slit', thick: 1.06, marks: 'stripes', keel: true, scaleA: 1, rim: null },
-  king:    { id: 'king', seed: 41, pattern: 'rings', base: hex('#171513'), dark: hex('#050505'), light: hex('#efe6cc'), eye: hex('#7a5a22'), eyeStyle: 'slit', thick: 1.06, marks: 'black', keel: false, scaleA: 0.5, rim: null }
+  coral:   { id: 'coral', seed: 23, pattern: 'bands', base: hex('#c4161f'), dark: hex('#0c0c0c'), light: hex('#f2c823'), eye: hex('#111111'), eyeStyle: 'slit', thick: 1.06, headK: 1.1, marks: 'bands', keel: false, scaleA: 0.5, rim: null },
+  rattler: { id: 'rattler', seed: 37, pattern: 'diamond', base: hex('#b99a62'), dark: hex('#3f2814'), light: hex('#eadcb0'), eye: hex('#d9a21b'), eyeStyle: 'slit', thick: 1.06, headK: 1.16, marks: 'stripes', keel: true, scaleA: 1, rim: null },
+  king:    { id: 'king', seed: 41, pattern: 'rings', base: hex('#171513'), dark: hex('#050505'), light: hex('#efe6cc'), eye: hex('#7a5a22'), eyeStyle: 'slit', thick: 1.06, headK: 1.1, marks: 'black', keel: false, scaleA: 0.5, rim: null }
 };
 let THEME = THEME_BY_ID[store.get('theme', 'classic')] || THEMES[0];
 let SKIN = THEME.skin, THICK = SKIN.thick || 1, HEADK = SKIN.headK || 1;   // the skin in use + its body-thickness / head-size multipliers
@@ -786,6 +798,41 @@ function paintWalls(g, w, h, opt) {
   g.strokeStyle = 'rgba(0,0,0,.6)'; g.lineWidth = 2 * s; g.strokeRect(t, t, w - 2 * t, h - 2 * t);
 }
 
+function frond(g, len, s, seed, shadow) {                       // one fern frond along +x from the origin: arching stem, paired leaflets that taper towards the tip
+  const R = rng(seed), n = 13, bend = len * R.range(0.1, 0.24) * (R() < 0.5 ? -1 : 1), dark = [34, 82, 28], light = [128, 196, 72];
+  g.lineCap = 'round';
+  g.strokeStyle = shadow ? 'rgba(10,6,0,.3)' : '#2b4d18'; g.lineWidth = 1.7 * s;
+  g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(len / 2, bend, len, 0); g.stroke();
+  for (let i = 1; i <= n; i++) {
+    const t = i / (n + 1), x = t * len, y = bend * t * (1 - t) * 2, ang = Math.atan2(2 * bend * (1 - 2 * t) * 0.5 * 2, len);
+    const size = len * 0.34 * Math.sin(Math.PI * Math.pow(t, 0.72)) + len * 0.03;
+    for (const side of [-1, 1]) {
+      const a = ang + side * (1.22 - 0.5 * t) + R.range(-0.08, 0.08), sz = size * R.range(0.88, 1.08);
+      g.save(); g.translate(x, y); g.rotate(a);
+      g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(sz * 0.45, -sz * 0.2, sz, 0); g.quadraticCurveTo(sz * 0.45, sz * 0.2, 0, 0); g.closePath();
+      if (shadow) g.fillStyle = 'rgba(10,6,0,.3)';
+      else { const lg = g.createLinearGradient(0, 0, sz, 0), k = clamp(0.2 + 0.5 * t + R.range(-0.12, 0.12), 0, 1); lg.addColorStop(0, rgb(mixc(dark, light, k * 0.55))); lg.addColorStop(1, rgb(mixc(dark, light, k))); g.fillStyle = lg; }
+      g.fill();
+      if (!shadow) { g.strokeStyle = 'rgba(8,30,6,.5)'; g.lineWidth = 0.7 * s; g.stroke(); g.strokeStyle = 'rgba(210,255,160,.22)'; g.beginPath(); g.moveTo(sz * 0.1, 0); g.lineTo(sz * 0.85, 0); g.stroke(); }
+      g.restore();
+    }
+  }
+}
+function paintFoliage(g, w, h) {                                    // ferns growing out of the wall: corners and a few spots along the edges
+  const t = L.wall, cs = L.cs, s = cs / 40, R = rng(2024);
+  const fern = (x, y, rot, len) => {
+    const seed = Math.floor(R() * 1e6);
+    for (const shadow of [true, false]) { g.save(); g.translate(x + (shadow ? 3 * s : 0), y + (shadow ? 5 * s : 0)); g.rotate(rot); frond(g, len, s, seed, shadow); g.restore(); }
+  };
+  for (const [x, y, base] of [[t * 0.45, t * 0.45, 0], [w - t * 0.45, t * 0.45, Math.PI / 2], [w - t * 0.45, h - t * 0.45, Math.PI], [t * 0.45, h - t * 0.45, -Math.PI / 2]])
+    for (const da of [0.14, 0.62, 1.08]) fern(x, y, base + da + R.range(-0.08, 0.08), cs * R.range(1.1, 1.4));
+  const edge = (n, from, to, place) => { for (let i = 0; i < n; i++) place(lerp(from, to, (i + 0.5 + R.range(-0.25, 0.25)) / n)); };
+  edge(4, t * 2.2, w - t * 2.2, x => fern(x, t * 0.55, Math.PI / 2 + R.range(-0.45, 0.45), cs * R.range(0.62, 0.78)));
+  edge(4, t * 2.2, w - t * 2.2, x => fern(x, h - t * 0.55, -Math.PI / 2 + R.range(-0.45, 0.45), cs * R.range(0.62, 0.78)));
+  edge(3, t * 2.2, h - t * 2.2, y => fern(t * 0.55, y, R.range(-0.45, 0.45), cs * R.range(0.62, 0.78)));
+  edge(3, t * 2.2, h - t * 2.2, y => fern(w - t * 0.55, y, Math.PI + R.range(-0.45, 0.45), cs * R.range(0.62, 0.78)));
+}
+
 SCENES.forest = {
   grain: 0.18, blend: 'normal',
   backdrop(g, w, h) {
@@ -793,7 +840,7 @@ SCENES.forest = {
     bg.addColorStop(0, '#1d2314'); bg.addColorStop(1, '#070904');
     g.fillStyle = bg; g.fillRect(0, 0, w, h);
   },
-  paint(g, w, h, wrap) { paintGround(g, w, h); paintWalls(g, w, h); frameShade(g, w, h, '10,6,0', 0.5, '255,226,150'); },
+  paint(g, w, h, wrap) { paintGround(g, w, h); paintWalls(g, w, h); paintFoliage(g, w, h); frameShade(g, w, h, '10,6,0', 0.5, '255,226,150'); },
   dyn(g, time) {                                          // a few leaves tumbling down through the clearing
     const cs = L.cs, bw = L.cols * cs, bh = L.rows * cs, s = cs / 40, cols = ['#a8742a', '#c98a2e', '#8c3f1d', '#b59a3a', '#7d5a22'];
     clipRect(g, L.ox, L.oy, bw, bh);
@@ -972,6 +1019,17 @@ SCENES.neon = {
     const by = L.oy + (((time * 0.1) % 1.4) - 0.2) * gh, bg = g.createLinearGradient(0, by - cs * 3, 0, by + cs * 3);
     bg.addColorStop(0, 'rgba(53,242,255,0)'); bg.addColorStop(0.5, 'rgba(53,242,255,.08)'); bg.addColorStop(1, 'rgba(53,242,255,0)');
     g.fillStyle = bg; g.fillRect(L.ox, by - cs * 3, gw, cs * 6);
+    const b = G.bite, age = b ? time - b.t : 9;
+    if (age < 1.5) {                                                // every bite sends a shockwave through the grid
+      const r = age * cs * 13, band = cs * 1.5, fade = 1 - age / 1.5, col = b.gold ? [255, 240, 120] : [140, 245, 255];
+      g.strokeStyle = rgb(col, 0.55 * fade); g.lineWidth = 1.8; g.beginPath(); g.arc(b.x, b.y, r, 0, TAU); g.stroke();
+      const i0 = Math.max(1, Math.floor((b.x - r - band - L.ox) / cs)), i1 = Math.min(L.cols - 1, Math.ceil((b.x + r + band - L.ox) / cs));
+      const j0 = Math.max(1, Math.floor((b.y - r - band - L.oy) / cs)), j1 = Math.min(L.rows - 1, Math.ceil((b.y + r + band - L.oy) / cs));
+      for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
+        const nx = L.ox + i * cs, ny = L.oy + j * cs, k = (Math.hypot(nx - b.x, ny - b.y) - r) / band, a = Math.exp(-k * k) * fade;
+        if (a > 0.04) drawSoft(g, col, nx, ny, cs * 0.5, a * 0.9, true);
+      }
+    }
     g.restore();
   }
 };
@@ -994,6 +1052,37 @@ function causticTile(size, cells, seed) {                       // seamless Worl
   }
   x.putImageData(id, 0, 0);
   return c;
+}
+
+const KELP_ROOTS = [[0, 0, 0.78], [1, 0, 2.36], [1, 1, -2.36], [0, 1, -0.78]];         // board corner (fractions) + the direction the blades fan towards
+const KELP_TONES = ['#2a8079', '#2f9486', '#1f6f6c', '#3aa592'];
+function drawKelp(g, time) {                                      // swaying kelp blades growing from the corners (under the snake)
+  const cs = L.cs, bw = L.cols * cs, bh = L.rows * cs, N = 9, hash = n => Math.abs(Math.sin(n * 12.9898 + 4.1) * 43758.5453) % 1;
+  clipRect(g, L.ox, L.oy, bw, bh);
+  for (let c = 0; c < KELP_ROOTS.length; c++) {
+    const [fx, fy, base] = KELP_ROOTS[c], rx = L.ox + fx * bw, ry = L.oy + fy * bh;
+    for (let b = 0; b < 7; b++) {
+      const r1 = hash(c * 10 + b), r2 = hash(c * 10 + b + 50), a = base + (b - 3) * 0.26 + (r1 - 0.5) * 0.12, len = cs * (1.15 + r2 * 0.75);
+      const dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx, w0 = cs * (0.1 + r1 * 0.04), bend = (r2 - 0.5) * len * 0.5, ph = r1 * TAU;
+      const pts = [];
+      for (let i = 0; i <= N; i++) {
+        const u = i / N, off = Math.sin(time * 1.15 + ph - u * 3.2) * cs * 0.2 * u + bend * u * u, w = w0 * Math.pow(1 - u, 0.8) + cs * 0.004;
+        pts.push(rx + dx * len * u + nx * off, ry + dy * len * u + ny * off, w);
+      }
+      const ribbon = (ox, oy, grow) => {
+        g.beginPath();
+        for (let i = 0; i <= N; i++) g.lineTo(pts[i * 3] + nx * (pts[i * 3 + 2] + grow) + ox, pts[i * 3 + 1] + ny * (pts[i * 3 + 2] + grow) + oy);
+        for (let i = N; i >= 0; i--) g.lineTo(pts[i * 3] - nx * (pts[i * 3 + 2] + grow) + ox, pts[i * 3 + 1] - ny * (pts[i * 3 + 2] + grow) + oy);
+        g.closePath();
+      };
+      g.fillStyle = 'rgba(0,28,48,.2)'; ribbon(cs * 0.08, cs * 0.12, 0); g.fill();
+      g.fillStyle = KELP_TONES[(c + b) & 3]; g.globalAlpha = 0.86; ribbon(0, 0, 0); g.fill(); g.globalAlpha = 1;
+      g.strokeStyle = 'rgba(190,255,230,.24)'; g.lineWidth = Math.max(1, w0 * 0.5); g.lineCap = 'round'; g.beginPath();
+      for (let i = 0; i <= N - 2; i++) g.lineTo(pts[i * 3], pts[i * 3 + 1]);
+      g.stroke();
+    }
+  }
+  g.restore();
 }
 
 SCENES.ocean = {
@@ -1070,7 +1159,8 @@ SCENES.ocean = {
       g.save(); g.globalAlpha = a; g.translate(tx, ty); g.scale(k, k); g.fillStyle = this.pat; g.fillRect((L.ox - tx) / k, (L.oy - ty) / k, bw / k, bh / k); g.restore();
     }
   },
-  dyn(g, time) {                                                   // lazy fish shadows + rising bubbles (small, drawn on the main canvas)
+  dyn(g, time) {                                                   // kelp, lazy fish shadows and rising bubbles (small, drawn on the main canvas)
+    drawKelp(g, time);
     const cs = L.cs, bw = L.cols * cs, bh = L.rows * cs;
     clipRect(g, L.ox, L.oy, bw, bh);
     g.fillStyle = 'rgba(0,25,45,.14)';                             // lazy fish shadows
@@ -1130,6 +1220,8 @@ SCENES.dark = {
     const cs = L.cs, bw = L.cols * cs, bh = L.rows * cs, hx = SP.hpx || L.ox + bw / 2, hy = SP.hpy || L.oy + bh / 2;
     drawSoft(g, [70, 66, 98], hx, hy, cs * 13, 0.75);
     drawSoft(g, [141, 107, 255], hx, hy, cs * 6, 0.22);
+    const b = G.bite, age = b ? time - b.t : 9;
+    if (age < 0.9) drawSoft(g, b.gold ? [255, 224, 102] : [255, 180, 84], b.x, b.y, cs * (1.6 + age * 4.5), 0.6 * (1 - age / 0.9));   // a bite flares the gem's warm light
   }
 };
 
@@ -1438,11 +1530,12 @@ const G = {
   score: 0, best: loadBest(), eaten: 0, bonusEaten: 0, sinceBonus: 0, newBest: false, level: 0,
   tickMs: 175, acc: 0, t: 0, tick: 0, time: 0,
   shake: 0, flash: 0, hitStop: 0, chomp: 0, combo: 1, lastEat: -99, dyingFor: 0, broken: false, won: false, deathBy: '', overAt: 0,
-  mouth: 0, tongue: { next: 1.2, p: -1 }, blink: { next: 3, p: -1 }, look: { x: 1, y: 0 }
+  mouth: 0, tongue: { next: 1.2, p: -1 }, blink: { next: 3, p: -1 }, look: { x: 1, y: 0 },
+  bite: null                          // last fruit eaten: { x, y, t, gold } in pixels / seconds, used by theme effects
 };
 const REDUCED_MOTION = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const COMBO_WINDOW = 4.2;                                      // seconds between fruit to keep a combo alive
-const hooks = { onScore: () => {}, onStart: () => {}, onOver: () => {}, onLevel: () => {}, onBonus: () => {} };   // filled in by the UI layer
+const hooks = { onScore: () => {}, onStart: () => {}, onOver: () => {}, onLevel: () => {}, onBonus: () => {}, onGold: () => {} };   // filled in by the UI layer
 
 function chooseGrid() {
   const portrait = H > W * 1.05, small = W < 560, top = small ? 60 : 68, pad = small ? 8 : 20;
@@ -1483,7 +1576,8 @@ function spawnFood() {
   const cells = freeCells();
   if (!cells.length) { win(); return; }
   const c = pick(cells);
-  G.food = { x: c.x, y: c.y, born: G.time };
+  const r = Math.random();
+  G.food = { x: c.x, y: c.y, born: G.time, v: r < 0.6 ? 0 : r < 0.85 ? 1 : 2 };       // apple colour: red / green / orange (other fruit ignore it)
   if (G.state === 'playing') Sound.play('spawn');
 }
 function spawnBonus() {
@@ -1546,7 +1640,7 @@ function resetState(attract) {
   G.dir = { x: 1, y: 0 }; G.queue = []; G.grow = 0; G.bulges = []; G.eating = null; G.food = null; G.bonus = null;
   G.score = 0; G.eaten = 0; G.bonusEaten = 0; G.sinceBonus = 0; G.newBest = false; G.level = 0; G.acc = 0; G.t = 0; G.tick = 0;
   G.tickMs = attract ? 125 : d.start;
-  G.shake = 0; G.flash = 0; G.hitStop = 0; G.chomp = 0; G.combo = 1; G.lastEat = -99; G.mouth = 0; G.dyingFor = 0; G.broken = false; G.won = false; G.deathBy = '';
+  G.shake = 0; G.flash = 0; G.hitStop = 0; G.chomp = 0; G.bite = null; G.combo = 1; G.lastEat = -99; G.mouth = 0; G.dyingFor = 0; G.broken = false; G.won = false; G.deathBy = '';
   G.best = loadBest();
   Particles.clear();
   placeObstacles(CFG.obstacles ? d.obstacles : 0);
@@ -1587,7 +1681,7 @@ function eat(kind, item) {
   G.lastEat = G.time;
   const pts = (bonus ? d.pts * 5 : d.pts) * G.combo;
   G.score += pts;
-  G.eating = { kind, x: item.x, y: item.y, tick: G.tick, fired: false, pts, combo: G.combo };
+  G.eating = { kind, x: item.x, y: item.y, v: item.v || 0, tick: G.tick, fired: false, pts, combo: G.combo };
   G.bulges.push({ born: G.tick + 0.8, big: bonus });
   if (bonus) { G.bulges.push({ born: G.tick + 1.8, big: false }); G.bonus = null; G.bonusEaten++; }
   else {
@@ -1610,9 +1704,10 @@ function fireBite() {                                         // the moment the 
   e.fired = true;
   const x = cellX(e.x), y = cellY(e.y);
   if (G.state === 'playing') Sound.play(e.kind === 'bonus' ? 'gold' : 'eat');
-  Particles.crumbs(x, y, e.kind === 'bonus');
+  Particles.crumbs(x, y, e.kind === 'bonus', e.v);
   Particles.popup(x, y - L.cs * 0.45, '+' + e.pts + (e.combo > 1 ? ' ×' + e.combo : ''), e.kind === 'bonus' || e.combo > 2);
-  G.chomp = 1;
+  G.chomp = 1; G.bite = { x, y, t: G.time, gold: e.kind === 'bonus' };
+  if (e.kind === 'bonus' && G.state === 'playing') hooks.onGold();
   if (G.state === 'playing') buzz(e.kind === 'bonus' ? [14, 30, 20] : 12);
 }
 
@@ -1853,8 +1948,8 @@ function drawSnakeLight(g, j0) {                  // glossy highlight on the sun
 const Particles = {
   list: [],
   clear() { this.list.length = 0; },
-  crumbs(x, y, gold) {                                        // fruit burst: style depends on the theme (crumbs, bubbles or sparks)
-    const k = L.cs / 40, st = THEME.fx.style, cols = gold ? THEME.fx.gold : THEME.fx.eat;
+  crumbs(x, y, gold, v) {                                     // fruit burst: style depends on the theme (crumbs, bubbles or sparks)
+    const k = L.cs / 40, st = THEME.fx.style, cols = gold ? THEME.fx.gold : THEME.food === 'apple' ? APPLE_TONES[v || 0].crumbs : THEME.fx.eat;
     this.list.push({ type: 'ring', x, y, life: 0, max: 0.55, r0: L.cs * 0.25, r1: L.cs * (gold ? 1.9 : 1.35), col: gold ? [255, 214, 90] : THEME.fx.ring });
     if (st === 'bubble') {
       for (let i = 0; i < (gold ? 20 : 13); i++) this.list.push({ type: 'bubble', x: x + rnd(-10, 10) * k, y: y + rnd(-6, 6) * k, vx: rnd(-26, 26) * k, vy: -rnd(30, 120) * k, wob: rnd(0, TAU), life: 0, max: rnd(0.7, 1.4), r: rnd(1.6, 5.5) * k });
@@ -1972,20 +2067,26 @@ const Motes = {                                              // dust floating th
   }
 };
 
-function drawApple(g, x, y, r, gold, sq, rot) {
+const APPLE_TONES = [                                          // [highlight, light, mid, shadow] skin colours, rim light, bite crumbs
+  { st: ['#ff9d88', '#ee3b31', '#b3111c', '#560610'], rim: 'rgba(255,130,95,.3)', crumbs: ['#e8352d', '#b9121d', '#ff7a66', '#f3e6b8'] },
+  { st: ['#eaff9e', '#a4dd4a', '#4f9a22', '#1d4a0c'], rim: 'rgba(205,255,120,.3)', crumbs: ['#8fd14f', '#4d9a22', '#c9f27f', '#f3e6b8'] },
+  { st: ['#ffd9a0', '#ffa13f', '#d9611a', '#6a2a08'], rim: 'rgba(255,200,120,.3)', crumbs: ['#ff9a3c', '#d9611a', '#ffd29a', '#f3e6b8'] }
+];
+function drawApple(g, x, y, r, gold, sq, rot, v) {
+  const tone = APPLE_TONES[v || 0] || APPLE_TONES[0];
   g.save(); g.translate(x, y); g.rotate(rot); g.scale(r * (1 + sq), r * (1 - sq));
   const body = () => {
     g.beginPath(); g.moveTo(0, -0.62);
     g.bezierCurveTo(0.34, -0.98, 1.06, -0.82, 1.0, -0.1); g.bezierCurveTo(0.96, 0.58, 0.5, 1.0, 0, 0.9);
     g.bezierCurveTo(-0.5, 1.0, -0.96, 0.58, -1.0, -0.1); g.bezierCurveTo(-1.06, -0.82, -0.34, -0.98, 0, -0.62); g.closePath();
   };
-  const st = gold ? ['#fffbd0', '#ffe55a', '#e0a21c', '#7a4a06'] : ['#ff9d88', '#ee3b31', '#b3111c', '#560610'];
+  const st = gold ? ['#fffbd0', '#ffe55a', '#e0a21c', '#7a4a06'] : tone.st;
   const gr = g.createRadialGradient(-0.35, -0.4, 0.05, -0.1, -0.1, 1.55);
   gr.addColorStop(0, st[0]); gr.addColorStop(0.22, st[1]); gr.addColorStop(0.62, st[2]); gr.addColorStop(1, st[3]);
   body(); g.fillStyle = gr; g.fill();
   g.save(); body(); g.clip();
   const rim = g.createRadialGradient(0.58, 0.66, 0, 0.58, 0.66, 0.75);
-  rim.addColorStop(0, gold ? 'rgba(255,236,150,.38)' : 'rgba(255,130,95,.3)'); rim.addColorStop(1, 'rgba(255,130,95,0)');
+  rim.addColorStop(0, gold ? 'rgba(255,236,150,.38)' : tone.rim); rim.addColorStop(1, 'rgba(255,130,95,0)');
   g.fillStyle = rim; g.fillRect(-1.2, -1.2, 2.4, 2.4);
   if (gold) {                                                       // metallic banding: bright sky reflection on top, dark horizon, warm ground bounce
     const mt = g.createLinearGradient(0, -1, 0, 1);
@@ -2029,10 +2130,10 @@ function softShadow(g, x, y, rx, ry, a) {
   [[1.3, 0.35], [1.12, 0.35], [0.95, 0.5]].forEach(([k, f]) => { g.fillStyle = `rgba(12,7,0,${a * f})`; g.beginPath(); g.ellipse(x, y, rx * k, ry * k, 0, 0, TAU); g.fill(); });
 }
 
-const FOODS = {                                               // food painters: (g, x, y, radius, gold, squash, rotation)
-  apple: (g, x, y, r, gold, sq, rot) => drawApple(g, x, y, r, gold, sq, rot)
+const FOODS = {                                               // food painters: (g, x, y, radius, gold, squash, rotation, variant)
+  apple: (g, x, y, r, gold, sq, rot, v) => drawApple(g, x, y, r, gold, sq, rot, v)
 };
-const drawFood = (g, x, y, r, gold, sq, rot) => FOODS[THEME.food](g, x, y, r, gold, sq, rot);
+const drawFood = (g, x, y, r, gold, sq, rot, v) => FOODS[THEME.food](g, x, y, r, gold, sq, rot, v);
 
 function drawFruit(g, f, gold) {                              // f = {x, y (cells), born}
   clipRect(g, L.x, L.y, L.w, L.h);                              // nothing may fall in from outside the board
@@ -2057,7 +2158,7 @@ function drawFruitInner(g, f, gold) {
     g.beginPath(); g.arc(x, y, cs * 0.52, -Math.PI / 2, -Math.PI / 2 + TAU * k); g.stroke(); g.restore();
   }
   g.globalAlpha = 1 - fall * 0.2;
-  drawFood(g, x, y - z, r * pulse * (1 + fall * 0.3), gold, land, Math.sin(G.time * 1.7 + f.y) * 0.04 + fall * 0.6);
+  drawFood(g, x, y - z, r * pulse * (1 + fall * 0.3), gold, land, Math.sin(G.time * 1.7 + f.y) * 0.04 + fall * 0.6, f.v);
   g.globalAlpha = 1;
   if (gold && fall === 0 && Math.random() < 0.08) Particles.list.push({ type: 'spark', x: x + rnd(-r, r), y: y + rnd(-r, r), vx: 0, vy: -14, life: 0, max: 0.7, r: rnd(2.5, 4.5) * (cs / 40), rot: rnd(0, 3) });
 }
@@ -2242,7 +2343,7 @@ function render() {
     const e = G.eating, k = smooth(clamp((G.t - 0.38) / 0.5, 0, 1)), bw = L.cols * cs, bh = L.rows * cs;
     let ax = cellX(e.x), ay = cellY(e.y);
     if (G.wrap) { ax = hxp + wrapD(ax - hxp, bw); ay = hyp + wrapD(ay - hyp, bh); }
-    drawFood(g, lerp(ax, hxp, k), lerp(ay, hyp, k) - k * cs * 0.06, cs * 0.37 * (1 - k * 0.85), e.kind === 'bonus', 0, 0);
+    drawFood(g, lerp(ax, hxp, k), lerp(ay, hyp, k) - k * cs * 0.06, cs * 0.37 * (1 - k * 0.85), e.kind === 'bonus', 0, 0, e.v);
   }
   if (!G.broken) {
     g.save();
@@ -2480,6 +2581,7 @@ function updateCombo() {                                          // multiplier 
   if (G.combo > 1 && left <= 0) G.combo = 1;
   const on = G.state === 'playing' && G.combo > 1;
   el.comboStat.classList.toggle('on', on);
+  document.body.classList.toggle('hot', on && G.combo >= 3);                      // screen-edge glow while the combo is burning
   if (on) { const t = '×' + G.combo; if (el.combo.textContent !== t) { el.combo.textContent = t; el.combo.classList.remove('pop'); void el.combo.offsetWidth; el.combo.classList.add('pop'); } el.comboBar.style.transform = `scaleX(${clamp(left, 0, 1)})`; }
 }
 function updateDpad() { el.dpad.classList.toggle('show', dpadVisible() && (G.state === 'ready' || G.state === 'playing')); }
@@ -2488,6 +2590,7 @@ hooks.onScore = () => updateHud(true);
 hooks.onStart = () => { el.hint.classList.remove('show'); updateDpad(); };
 hooks.onLevel = () => { toast('Speed up!'); Sound.play('level'); kick(1.012, 320); };
 hooks.onBonus = () => { if (G.state === 'playing') toast('Golden apple!'); };
+hooks.onGold = () => { const n = $('gleam'); n.classList.remove('go'); void n.offsetWidth; n.classList.add('go'); };
 hooks.onOver = gameOver;
 
 /* ── game flow ── */
