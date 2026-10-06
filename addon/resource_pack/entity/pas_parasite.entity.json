@@ -1,0 +1,50 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "pas:parasite",
+      "materials": {
+        "default": "spider",
+        "invisible": "spider_invisible"
+      },
+      "textures": {
+        "default": "textures/entity/pas/parasite"
+      },
+      "geometry": {
+        "default": "geometry.pas.parasite"
+      },
+      "scripts": {
+        "pre_animation": [
+          "variable.pas_hurt = math.clamp(query.hurt_time / 10.0, 0.0, 1.0);",
+          "variable.pas_twitch = math.pow(math.max(0.0, math.sin(query.life_time * 97.0)), 24.0);",
+          "variable.pas_walk = math.min(1.0, query.modified_move_speed * 1.4);"
+        ],
+        "animate": [
+          "move_controller",
+          "attack_controller",
+          "life_controller"
+        ]
+      },
+      "animations": {
+        "idle": "animation.pas_parasite.idle",
+        "walk": "animation.pas_parasite.walk",
+        "look_at_target": "animation.pas_parasite.look_at_target",
+        "hunt": "animation.pas_parasite.hunt",
+        "attack": "animation.pas_parasite.attack",
+        "hurt": "animation.pas_parasite.hurt",
+        "death": "animation.pas_parasite.death",
+        "move_controller": "controller.animation.pas_parasite.move",
+        "attack_controller": "controller.animation.pas_parasite.attack",
+        "life_controller": "controller.animation.pas_parasite.life"
+      },
+      "render_controllers": [
+        "controller.render.pas_parasite"
+      ],
+      "enable_attachables": false,
+      "spawn_egg": {
+        "base_color": "#6e1610",
+        "overlay_color": "#d6a08a"
+      }
+    }
+  }
+}

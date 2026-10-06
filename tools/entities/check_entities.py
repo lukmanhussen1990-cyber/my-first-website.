@@ -806,6 +806,7 @@ def main() -> int:
             err("ids.js", f"EVENTS.{key} missing")
 
     # generator freshness
+    sys.dont_write_bytecode = True  # keep tools/entities free of __pycache__
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     try:
         import gen_entities  # type: ignore

@@ -77,6 +77,12 @@ const DEFAULT_OPTIONS = Object.freeze({
   defaultRayDistance: 1000,
   /** Seed of the deterministic RNG (randomize events, integrity). */
   seed: 12345,
+  /**
+   * Direction of StructureRotation.Rotate90 in structureManager.place (and /structure load 90_degrees):
+   * "cw" = clockwise viewed from above (default), "ccw" = counter-clockwise (Rotate90 and Rotate270 swap).
+   * Lets tests prove that code calibrates the rotation instead of assuming it.
+   */
+  rotate90: "cw",
 });
 
 function makeRng(seed) {
@@ -2635,6 +2641,8 @@ function rotatePerm(perm, quarterTurns) {
 }
 
 const ROT_TURNS = { None: 0, Rotate90: 1, Rotate180: 2, Rotate270: 3 };
+/** Clockwise equivalent of each rotation when the engine's Rotate90 is counter-clockwise (option rotate90: "ccw"). */
+const ROT_CCW_EQUIV = { None: "None", Rotate90: "Rotate270", Rotate180: "Rotate180", Rotate270: "Rotate90" };
 
 /** Map a local structure position to its offset inside the rotated/mirrored box. */
 export function structureTransform(local, size, rotation = "None", mirror = "None") {
@@ -2794,8 +2802,10 @@ export class StructureManager {
     const ds = dimension[ST];
     const integrity = options.integrity ?? 1;
     if (!(integrity >= 0 && integrity <= 1)) throw new RangeError("ArgumentOutOfBoundsError: integrity must be within [0, 1]");
-    const rotation = options.rotation ?? E.StructureRotation.None;
-    if (!(rotation in ROT_TURNS)) throw new TypeError(`Invalid rotation ${rotation}`);
+    const requested = options.rotation ?? E.StructureRotation.None;
+    if (!(requested in ROT_TURNS)) throw new TypeError(`Invalid rotation ${requested}`);
+    // option rotate90: "ccw" simulates an engine whose Rotate90 turns counter-clockwise (= clockwise Rotate270)
+    const rotation = S.options.rotate90 === "ccw" ? ROT_CCW_EQUIV[requested] : requested;
     const mirror = options.mirror ?? E.StructureMirrorAxis.None;
     const mode = options.animationMode ?? E.StructureAnimationMode.None;
     if (!Object.values(E.StructureAnimationMode).includes(mode)) throw new TypeError(`Invalid animationMode ${mode}`);
@@ -3399,15 +3409,18 @@ export const __mock = {
     if (spawn) queueAfter("playerSpawn", { player: ent, initialSpawn: true });
     return ent;
   },
-  /** Player leaves: beforeEvents.playerLeave (sync, read-only) then afterEvents.playerLeave (queued). */
-  removePlayer(player) {
+  /**
+   * Player leaves: beforeEvents.playerLeave (sync, read-only) then afterEvents.playerLeave (queued).
+   * `{before: false}` / `{after: false}` suppress one of the two events (to test each code path alone).
+   */
+  removePlayer(player, { before = true, after = true } = {}) {
     const st = entState(player);
     return guarded(() => {
-      deliver(beforeEvents.playerLeave, { player });
+      if (before) deliver(beforeEvents.playerLeave, { player });
       st.offline = true;
       S.entities.delete(st.id);
       S.offlinePlayers.set(st.name, player);
-      queueAfter("playerLeave", { playerId: st.id, playerName: st.name });
+      if (after) queueAfter("playerLeave", { playerId: st.id, playerName: st.name });
     });
   },
   /** Respawn a (dead) player: full health, queues playerSpawn(initialSpawn=false). */

@@ -97,7 +97,7 @@ cached `world.getDimension("overworld")` stays valid. `setOptions({...})`, `opti
 `setLoadedPredicate(dimId, (cx, cz) => bool)` (no load/unload events), `isChunkLoaded(dimId, loc)`.
 
 **players** – `addPlayer({name, location, dimension, gameMode, rotation, spawn=true})` (a player that left
-rejoins with the same id/inventory/props), `removePlayer(p)` (beforeEvents.playerLeave sync + afterEvents queued),
+rejoins with the same id/inventory/props), `removePlayer(p, {before=true, after=true})` (beforeEvents.playerLeave sync + afterEvents queued; either can be suppressed),
 `respawnPlayer(p, {location})`, `setMainhand(p, idOrStack, n)`, `setOffhand(...)`, `give(p, id, n, slot?)`,
 `inventory(p)`, `setView(p, {headLocation, viewDirection, rotation})` (otherwise derived from rotation:
 yaw 0 = +z, yaw 90 = −x, pitch 90 = down; head = feet + 1.62).

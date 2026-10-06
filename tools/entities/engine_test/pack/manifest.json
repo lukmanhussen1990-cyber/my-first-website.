@@ -1,0 +1,15 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "PAS entity engine test",
+    "description": "Test-only pack for tools/entities/engine_test (never shipped)",
+    "uuid": "5b0e7d3a-1f7c-4c58-9d0a-6a2f3e1b9c11",
+    "version": [0, 0, 1],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    { "type": "data", "uuid": "0c8b6f1e-2a4d-4e7b-8f33-91d2c5a7e602", "version": [0, 0, 1] },
+    { "type": "script", "language": "javascript", "uuid": "a4f1c2d9-6e0b-4b3a-b7c8-5d9e2f1a7b33", "version": [0, 0, 1], "entry": "scripts/main.js" }
+  ],
+  "dependencies": [ { "module_name": "@minecraft/server", "version": "1.11.0" } ]
+}
