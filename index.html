@@ -28,14 +28,19 @@ html, body {
 }
 button { font: inherit; color: inherit; cursor: pointer; }
 #stage { position: fixed; inset: 0; touch-action: none; }
+#world { position: absolute; inset: 0; will-change: transform; }
 canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#fx { inset: auto; pointer-events: none; }          /* ambient effects: board-sized, half resolution, blended by the compositor */
+
+#veil { position: absolute; inset: 0; background: var(--bg); opacity: 0; pointer-events: none; transition: opacity .55s ease, background .6s; }
 
 /* ───────── HUD ───────── */
 #hud {
   position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 20px; pointer-events: none;
   padding: max(10px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
-  text-shadow: 0 1px 10px rgba(0, 0, 0, .75);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, .75); z-index: 2; padding-bottom: 6px;
 }
+#hud::before { content: ""; position: absolute; inset: 0 0 -22px 0; background: linear-gradient(180deg, rgba(0, 0, 0, .5), rgba(0, 0, 0, 0)); z-index: -1; pointer-events: none; }
 .stat { display: flex; flex-direction: column; min-width: 50px; transition: opacity .4s; }
 .stat small { font-size: 10px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; font-weight: 600; }
 .stat b { font-size: 25px; line-height: 1.1; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
@@ -53,6 +58,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .icon-btn:hover { background: rgba(255, 255, 255, .12); border-color: var(--accent); box-shadow: 0 0 16px var(--glow); transform: translateY(-1px); }
 .icon-btn:active { transform: scale(.92); }
 .icon-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon-btn[hidden] { display: none; }
 .icon-btn .alt { display: none; }
 .icon-btn.alt-on .alt { display: block; }
 .icon-btn.alt-on .main { display: none; }
@@ -170,7 +176,8 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border-radius: 6
 </head>
 <body class="in-menu">
 <div id="stage">
-  <canvas id="game"></canvas>
+  <div id="world"><canvas id="game"></canvas><canvas id="fx"></canvas></div>
+  <div id="veil"></div>
 
   <div id="hud">
     <div class="stat"><small>Score</small><b id="score">0</b></div>
@@ -182,6 +189,10 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border-radius: 6
       <button class="icon-btn hide-menu" id="btnPause" aria-label="Pause">
         <svg class="main" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg>
         <svg class="alt" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg>
+      </button>
+      <button class="icon-btn hide-small" id="btnFull" aria-label="Fullscreen" hidden>
+        <svg class="main" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+        <svg class="alt" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
       </button>
       <button class="icon-btn" id="btnMute" aria-label="Sound">
         <svg class="main" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>
@@ -293,6 +304,23 @@ function makeCanvas(w, h) {                       // w/h in device pixels
   return c;
 }
 
+/* Soft glowing discs are pre-rendered once per colour and then just scaled — far cheaper than shading a huge radial gradient every frame. */
+const softCache = new Map();
+function softDisc(c) {
+  const key = c[0] + ',' + c[1] + ',' + c[2];
+  let s = softCache.get(key);
+  if (!s) {
+    s = makeCanvas(96, 96); const g = s.getContext('2d'), gr = g.createRadialGradient(48, 48, 0, 48, 48, 48);
+    for (let i = 0; i <= 8; i++) { const t = i / 8; gr.addColorStop(t, rgb(c, Math.pow(1 - t, 2.2))); }
+    g.fillStyle = gr; g.fillRect(0, 0, 96, 96); softCache.set(key, s);
+  }
+  return s;
+}
+function drawSoft(g, c, x, y, r, alpha, additive) {              // glow of colour c centred on (x, y) with radius r
+  g.save(); if (additive) g.globalCompositeOperation = 'lighter';
+  g.globalAlpha = alpha; g.drawImage(softDisc(c), x - r, y - r, r * 2, r * 2); g.restore();
+}
+
 function roundRectPath(g, x, y, w, h, r) {
   r = Math.min(r, w / 2, h / 2);
   g.beginPath();
@@ -399,9 +427,16 @@ let THICK = THEME.skin.thick || 1;                           // body-thickness m
 /* ════════════════════════ layout ════════════════════════ */
 const stage = document.getElementById('stage');
 const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-let DPR = 1, W = 1, H = 1;
+const world = document.getElementById('world'), fxCanvas = document.getElementById('fx'), fxCtx = fxCanvas.getContext('2d');
+let FXR = 0.5;                                          // fx-canvas pixels per CSS pixel
+const ctx = canvas.getContext('2d', { alpha: false });      // opaque: cheaper to composite, the scene image covers every pixel
+let DPR = 1, W = 1, H = 1, SX = 1, SY = 1;            // CSS px → device px scale (SX/SY differ from DPR only by pixel rounding)
+const fitCanvas = () => { canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR); SX = canvas.width / W; SY = canvas.height / H; };
 const L = { cols: 24, rows: 15, cs: 40, wall: 24, x: 0, y: 0, w: 0, h: 0, ox: 0, oy: 0 };
+function clipRect(g, x, y, w, h) {                       // pixel-aligned clip: anti-aliased clips are very slow in software rasterisers
+  const x0 = Math.round(x * SX), y0 = Math.round(y * SY), x1 = Math.round((x + w) * SX), y1 = Math.round((y + h) * SY);
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.beginPath(); g.rect(x0, y0, x1 - x0, y1 - y0); g.clip(); g.setTransform(SX, 0, 0, SY, 0, 0);
+}
 const cellX = cx => L.ox + (cx + 0.5) * L.cs;           // cell coordinate → pixel centre
 const cellY = cy => L.oy + (cy + 0.5) * L.cs;
 const LIGHT = { x: -0.55, y: -0.83 };                   // unit vector pointing towards the sun (upper left)
@@ -420,6 +455,19 @@ function computeLayout() {
   L.x = Math.round((W - L.w) / 2);
   L.y = Math.round(top + (H - top - pad - bottom - L.h) / 2);
   L.ox = L.x + L.wall; L.oy = L.y + L.wall;
+  fitFx();
+}
+
+function fitFx() {                                        // ambient-effects overlay sits exactly on the playfield
+  const bw = L.cols * L.cs, bh = L.rows * L.cs;
+  FXR = Math.max(0.35, DPR * 0.5);
+  fxCanvas.width = Math.round(bw * FXR); fxCanvas.height = Math.round(bh * FXR);
+  fxCanvas.style.left = L.ox + 'px'; fxCanvas.style.top = L.oy + 'px'; fxCanvas.style.width = bw + 'px'; fxCanvas.style.height = bh + 'px';
+  FXR = fxCanvas.width / bw;
+}
+const plusLighter = typeof CSS !== 'undefined' && CSS.supports && CSS.supports('mix-blend-mode', 'plus-lighter');
+function setFxBlend(sc) {                                   // additive themes use plus-lighter, shadow-like ones plain alpha
+  fxCanvas.style.mixBlendMode = sc.blend === 'add' ? (plusLighter ? 'plus-lighter' : 'screen') : 'normal';
 }
 
 /* ════════════════════════ procedural ground, walls & lighting (rendered once) ════════════════════════ */
@@ -460,8 +508,8 @@ function portalEdge(g, w, h) {                            // no walls in wrap mo
 }
 
 function buildScene(fade) {
-  const sc = SCENES[THEME.id], c = makeCanvas(W * DPR, H * DPR), g = c.getContext('2d');
-  g.scale(DPR, DPR);
+  const sc = SCENES[THEME.id], c = makeCanvas(canvas.width, canvas.height), g = c.getContext('2d');
+  g.setTransform(SX, 0, 0, SY, 0, 0);
   sc.backdrop(g, W, H);                                   // everything outside the board
   g.save();                                               // soft drop shadow under the board
   g.shadowColor = sc.boardShadow || 'rgba(0,0,0,.75)'; g.shadowBlur = 44 * DPR; g.shadowOffsetY = 14 * DPR;
@@ -476,6 +524,7 @@ function buildScene(fade) {
   grain(g, W, H, noiseTile(128, 120, 8), sc.grain == null ? 0.18 : sc.grain, 'soft-light', true);
   sceneOld = fade && scene ? scene : null; sceneFade = sceneOld ? 0 : 1;
   scene = c;
+  setFxBlend(sc);
   if (sc.init) sc.init();
 }
 
@@ -624,7 +673,7 @@ function paintLight(g, w, h) {
 
 
 SCENES.forest = {
-  grain: 0.18,
+  grain: 0.18, blend: 'normal',
   backdrop(g, w, h) {
     const bg = g.createRadialGradient(w / 2, h * 0.45, 0, w / 2, h * 0.45, Math.max(w, h) * 0.75);
     bg.addColorStop(0, '#1d2314'); bg.addColorStop(1, '#070904');
@@ -634,9 +683,7 @@ SCENES.forest = {
   fx(g, time) {                                           // dappled sunlight drifting over the clearing
     for (let i = 0; i < 6; i++) {
       const x = L.x + ((i * 0.37 + time * 0.011 * (1 + i * 0.13)) % 1) * L.w, y = L.y + ((i * 0.23 + 0.1 + time * 0.007) % 1) * L.h, r = L.cs * (3.2 + i * 0.4);
-      const gr = g.createRadialGradient(x, y, 0, x, y, r);
-      gr.addColorStop(0, 'rgba(255,238,180,.07)'); gr.addColorStop(1, 'rgba(255,238,180,0)');
-      g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+      drawSoft(g, [255, 236, 170], x, y, r, 0.13);
     }
   }
 };
@@ -683,7 +730,7 @@ function bevelFrame(g, w, h, c, studs) {
 }
 
 SCENES.classic = {
-  grain: 0.14,
+  grain: 0.14, blend: 'normal',
   backdrop(g, w, h) {
     const bg = g.createRadialGradient(w / 2, h * 0.4, 0, w / 2, h * 0.4, Math.max(w, h) * 0.8);
     bg.addColorStop(0, '#1b4a33'); bg.addColorStop(0.6, '#0e2a1e'); bg.addColorStop(1, '#050f0a');
@@ -728,13 +775,11 @@ SCENES.classic = {
   fx(g, time) {                                                    // drifting cloud shadows + a slow light sweep
     for (let i = 0; i < 3; i++) {
       const p = ((time * (0.011 + i * 0.003) + i * 0.37) % 1.5) - 0.25, x = L.x + p * L.w, y = L.y + (0.25 + i * 0.3 + Math.sin(time * 0.05 + i) * 0.05) * L.h, r = L.cs * (5 + i * 1.5);
-      const gr = g.createRadialGradient(x, y, 0, x, y, r);
-      gr.addColorStop(0, 'rgba(0,40,10,.13)'); gr.addColorStop(1, 'rgba(0,40,10,0)');
-      g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+      drawSoft(g, [0, 40, 10], x, y, r, 0.16);
     }
-    const sx = L.x + (((time * 0.045) % 1.6) - 0.3) * L.w, gr = g.createLinearGradient(sx - L.cs * 4, 0, sx + L.cs * 4, 0);
+    const sx = L.x + (((time * 0.045) % 1.6) - 0.3) * L.w, hw = L.cs * 4, gr = g.createLinearGradient(sx - hw, 0, sx + hw, 0);
     gr.addColorStop(0, 'rgba(255,255,220,0)'); gr.addColorStop(0.5, 'rgba(255,255,220,.06)'); gr.addColorStop(1, 'rgba(255,255,220,0)');
-    g.fillStyle = gr; g.fillRect(L.ox, L.oy, L.cols * L.cs, L.rows * L.cs);
+    g.fillStyle = gr; g.fillRect(sx - hw, L.oy, hw * 2, L.rows * L.cs);
   }
 };
 
@@ -749,7 +794,7 @@ function neonTube(g, x, y, w, h, dashed) {                    // multi-pass glow
 }
 
 SCENES.neon = {
-  grain: 0.08, ownWrap: true,
+  grain: 0.08, ownWrap: true, blend: 'add',
   boardShadow: 'rgba(70,20,140,.9)',
   backdrop(g, w, h) {
     const bg = g.createRadialGradient(w / 2, h * 0.45, 0, w / 2, h * 0.45, Math.max(w, h) * 0.8);
@@ -791,7 +836,7 @@ SCENES.neon = {
   },
   fx(g, time) {                                                     // grid pulses + a slow scan band
     const cs = L.cs, gw = L.cols * cs, gh = L.rows * cs;
-    g.save(); g.globalCompositeOperation = 'lighter'; g.lineWidth = 1.4;
+    g.save(); g.lineWidth = 1.4;
     for (let i = 1; i < L.cols; i++) {
       g.strokeStyle = `rgba(53,242,255,${0.03 + 0.11 * Math.pow(0.5 + 0.5 * Math.sin(time * 1.7 - i * 0.5), 4)})`;
       g.beginPath(); g.moveTo(L.ox + i * cs + 0.5, L.oy); g.lineTo(L.ox + i * cs + 0.5, L.oy + gh); g.stroke();
@@ -828,7 +873,7 @@ function causticTile(size, cells, seed) {                       // seamless Worl
 }
 
 SCENES.ocean = {
-  grain: 0.1,
+  grain: 0.1, blend: 'add',
   boardShadow: 'rgba(0,20,40,.85)',
   tile: null, pat: null,
   init() { this.tile = causticTile(256, 5, 4); this.pat = null; },
@@ -892,15 +937,18 @@ SCENES.ocean = {
     g.restore();
     frameShade(g, w, h, 1, null);
   },
-  fx(g, time) {
-    const cs = L.cs, bw = L.cols * cs, bh = L.rows * cs;
+  fx(g, time) {                                                    // two drifting caustic layers (additive overlay)
+    const bw = L.cols * L.cs, bh = L.rows * L.cs;
     if (!this.pat && this.tile) this.pat = g.createPattern(this.tile, 'repeat');
-    g.save(); g.globalCompositeOperation = 'lighter';
-    if (this.pat) for (const [k, vx, vy, a] of [[1.7, 8, 5, 0.11], [1.15, -6, 9, 0.08]]) {   // two drifting caustic layers
-      const tx = (L.ox + time * vx) % (256 * k), ty = (L.oy + time * vy) % (256 * k);
+    if (!this.pat) return;
+    for (const [k, vx, vy, a] of [[1.7, 8, 5, 0.13], [1.15, -6, 9, 0.09]]) {
+      const tile = 256 * k, tx = (L.ox + time * vx) % tile, ty = (L.oy + time * vy) % tile;
       g.save(); g.globalAlpha = a; g.translate(tx, ty); g.scale(k, k); g.fillStyle = this.pat; g.fillRect((L.ox - tx) / k, (L.oy - ty) / k, bw / k, bh / k); g.restore();
     }
-    g.restore();
+  },
+  dyn(g, time) {                                                   // lazy fish shadows + rising bubbles (small, drawn on the main canvas)
+    const cs = L.cs, bw = L.cols * cs, bh = L.rows * cs;
+    clipRect(g, L.ox, L.oy, bw, bh);
     g.fillStyle = 'rgba(0,25,45,.14)';                             // lazy fish shadows
     for (let i = 0; i < 3; i++) {
       const sp = (0.9 + i * 0.35) * cs, len = cs * (1.1 + i * 0.35), dir = i & 1 ? -1 : 1;
@@ -916,12 +964,13 @@ SCENES.ocean = {
       const sp = 0.05 + (i % 5) * 0.012, yy = 1 - ((time * sp + i * 0.137) % 1.1), x = L.ox + ((i * 0.173) % 1) * bw + Math.sin(time * 1.3 + i * 2) * cs * 0.3, y = L.oy + yy * bh, r = (1.5 + (i % 4)) * cs / 40 * 1.2;
       g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); g.stroke();
     }
+    g.restore();
   }
 };
 
 /* ════════════════════════ dark scene: matte tiles, violet edge-light, roaming spotlight ════════════════════════ */
 SCENES.dark = {
-  grain: 0.12, ownWrap: true,
+  grain: 0.12, ownWrap: true, blend: 'add',
   boardShadow: 'rgba(0,0,0,.9)',
   backdrop(g, w, h) {
     const bg = g.createRadialGradient(w / 2, h * 0.4, 0, w / 2, h * 0.4, Math.max(w, h) * 0.8);
@@ -936,12 +985,12 @@ SCENES.dark = {
   paint(g, w, h, wrap) {
     const t = L.wall, cs = L.cs, s = cs / 40, gw = L.cols * cs, gh = L.rows * cs;
     g.fillStyle = '#07080c'; g.fillRect(0, 0, w, h);
-    const base = g.createLinearGradient(0, t, 0, t + gh); base.addColorStop(0, '#171a22'); base.addColorStop(1, '#0d0f15');
+    const base = g.createLinearGradient(0, t, 0, t + gh); base.addColorStop(0, '#0c0d12'); base.addColorStop(1, '#07080b');
     g.fillStyle = base; g.fillRect(t, t, gw, gh);
     const inset = 1.6 * s;
     for (let cy = 0; cy < L.rows; cy++) for (let cx = 0; cx < L.cols; cx++) {   // soft raised tiles
       const x = t + cx * cs + inset, y = t + cy * cs + inset, a = (cx + cy) & 1, gr = g.createLinearGradient(0, y, 0, y + cs);
-      gr.addColorStop(0, a ? '#212430' : '#1c1f2a'); gr.addColorStop(1, a ? '#15171f' : '#12141b');
+      gr.addColorStop(0, a ? '#12141b' : '#0f1117'); gr.addColorStop(1, a ? '#0b0c11' : '#090a0e');
       roundRectPath(g, x, y, cs - inset * 2, cs - inset * 2, cs * 0.2); g.fillStyle = gr; g.fill();
       g.strokeStyle = 'rgba(255,255,255,.045)'; g.lineWidth = 1; g.stroke();
     }
@@ -953,14 +1002,10 @@ SCENES.dark = {
     g.restore();
     g.strokeStyle = 'rgba(255,255,255,.1)'; g.lineWidth = 1.2 * s; g.strokeRect(t * 0.35, t * 0.35, w - t * 0.7, h - t * 0.7);
   },
-  fx(g, time) {                                                    // darkness with a soft light that follows the snake
+  fx(g, time) {                                                    // a soft light that follows the snake
     const cs = L.cs, bw = L.cols * cs, bh = L.rows * cs, hx = SP.hpx || L.ox + bw / 2, hy = SP.hpy || L.oy + bh / 2;
-    const gr = g.createRadialGradient(hx, hy, cs * 4, hx, hy, cs * 16);
-    gr.addColorStop(0, 'rgba(3,3,9,0)'); gr.addColorStop(1, 'rgba(3,3,9,.5)');
-    g.fillStyle = gr; g.fillRect(L.ox, L.oy, bw, bh);
-    g.save(); g.globalCompositeOperation = 'lighter';
-    const bl = g.createRadialGradient(hx, hy, 0, hx, hy, cs * 8); bl.addColorStop(0, 'rgba(141,107,255,.13)'); bl.addColorStop(1, 'rgba(141,107,255,0)');
-    g.fillStyle = bl; g.fillRect(L.ox, L.oy, bw, bh); g.restore();
+    drawSoft(g, [70, 66, 98], hx, hy, cs * 13, 0.75);
+    drawSoft(g, [141, 107, 255], hx, hy, cs * 6, 0.22);
   }
 };
 
@@ -1267,6 +1312,7 @@ const G = {
   shake: 0, flash: 0, dyingFor: 0, broken: false, won: false, deathBy: '', overAt: 0,
   mouth: 0, tongue: { next: 1.2, p: -1 }, blink: { next: 3, p: -1 }, look: { x: 1, y: 0 }
 };
+const REDUCED_MOTION = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const hooks = { onScore: () => {}, onStart: () => {}, onOver: () => {}, onLevel: () => {}, onBonus: () => {} };   // filled in by the UI layer
 
 function chooseGrid() {
@@ -1435,7 +1481,7 @@ function fireBite() {                                         // the moment the 
 function crash(why) {
   if (G.state === 'attract') { resetState(true); return; }
   G.deathBy = why;
-  G.state = 'dying'; G.dyingFor = 0; G.shake = 1; G.flash = 1; G.broken = false;
+  G.state = 'dying'; G.dyingFor = 0; G.shake = REDUCED_MOTION ? 0.2 : 1; G.flash = REDUCED_MOTION ? 0.3 : 1; G.broken = false;
   G.prev = G.snake.slice(); G.t = 0; G.acc = 0;                // freeze the snake exactly on its cells
   Sound.play('die'); buzz([40, 40, 90]);
   const h = G.snake[0], d = G.dir;
@@ -1553,7 +1599,7 @@ function buildSpine(waveAmp) {
     }
     for (let i = 1; i < m; i++) { cx[i] += w0x[i]; cy[i] += w0y[i]; }
   }
-  const K = S.K = n > 70 ? 5 : n > 40 ? 6 : 8, M = S.M;
+  const K = S.K = n > 36 ? 4 : n > 12 ? 5 : 7, M = S.M;
   const X = S.x, Y = S.y;
   let j = 0;
   const tip = cs * 0.5;
@@ -1626,8 +1672,8 @@ function drawSnakeShadow(g, k) {
 }
 
 function drawSnakeBody(g, tex) {
-  const S = SP, N = S.n, TW = tex.TW, TH = tex.TH, img = tex.canvas, pad = Math.max(1, TW / 60), d = DPR;
-  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+  const S = SP, N = S.n, TW = tex.TW, TH = tex.TH, img = tex.canvas, pad = Math.max(1, TW / 60);
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'low';
   for (let j = 0; j < N - 1; j++) {
     const h0 = S.hw[j], h1 = S.hw[j + 1];
     if (h0 + h1 < 0.12) continue;
@@ -1637,11 +1683,11 @@ function drawSnakeBody(g, tex) {
     const vm = (S.v[j] + S.v[j + 1]) * 0.5 * TW;
     const a = Ux / TW, b = Uy / TW, c = Vx / dv, e2 = Vy / dv;
     const cxm = (S.x[j] + S.x[j + 1]) * 0.5, cym = (S.y[j] + S.y[j + 1]) * 0.5;
-    g.setTransform(d * a, d * b, d * c, d * e2, d * (cxm - a * TW * 0.5 - c * vm), d * (cym - b * TW * 0.5 - e2 * vm));
+    g.setTransform(SX * a, SY * b, SX * c, SY * e2, SX * (cxm - a * TW * 0.5 - c * vm), SY * (cym - b * TW * 0.5 - e2 * vm));
     const top = vm - dv * 0.5 - pad, sy = ((top % TH) + TH) % TH;
     g.drawImage(img, 0, sy, TW, dv + pad * 2, 0, top, TW, dv + pad * 2);
   }
-  g.setTransform(d, 0, 0, d, 0, 0);
+  g.setTransform(SX, 0, 0, SY, 0, 0);
 }
 
 function drawSnakeLight(g, j0) {                  // glossy highlight on the sun side, soft occlusion on the far side
@@ -1751,7 +1797,7 @@ const Motes = {                                              // dust floating th
   draw(g) {
     for (const m of this.list) {
       const a = 0.1 + 0.12 * (0.5 + 0.5 * Math.sin(m.ph)), x = L.x + m.x * L.w, y = L.y + m.y * L.h;
-      g.fillStyle = rgb(THEME.fx.mote, a); g.beginPath(); g.arc(x, y, m.r * (L.cs / 40), 0, TAU); g.fill();
+      drawSoft(g, THEME.fx.mote, x, y, m.r * (L.cs / 40) * 2.2, a * 2.2);
     }
   }
 };
@@ -1807,16 +1853,19 @@ const FOODS = {                                               // food painters: 
 const drawFood = (g, x, y, r, gold, sq, rot) => FOODS[THEME.food](g, x, y, r, gold, sq, rot);
 
 function drawFruit(g, f, gold) {                              // f = {x, y (cells), born}
+  clipRect(g, L.x, L.y, L.w, L.h);                              // nothing may fall in from outside the board
+  drawFruitInner(g, f, gold);
+  g.restore();
+}
+function drawFruitInner(g, f, gold) {
   const cs = L.cs, x = cellX(f.x), y = cellY(f.y), age = G.time - f.born, r = cs * 0.37;
-  const fall = age < 0.5 ? Math.pow(1 - age / 0.5, 2) : 0, z = fall * cs * 3.2;
+  const fall = age < 0.5 ? Math.pow(1 - age / 0.5, 2) : 0, z = fall * cs * 1.7;
   const land = age > 0.5 && age < 0.75 ? Math.sin((age - 0.5) / 0.25 * Math.PI) * 0.1 : 0;
-  const pulse = 1 + Math.sin(G.time * 3 + f.x) * 0.02;
+  const pulse = 1 + Math.sin(G.time * 2.6 + f.x) * 0.035;
   if (THEME.shadow > 0.05) softShadow(g, x + r * 0.3, y + r * 0.62, r * 0.9 * (1 - fall * 0.3), r * 0.45 * (1 - fall * 0.3), 0.3 * THEME.shadow * (1 - fall * 0.7));
   if (glowOn() || gold) {                                       // slow pulsing halo
-    const pulseG = 0.6 + 0.4 * Math.sin(G.time * 2.4 + f.y), gc = gold ? [255, 214, 90] : THEME.glowColor, hr = cs * (gold ? 1.0 : 0.85) * (1 + pulseG * 0.12);
-    const gl = g.createRadialGradient(x, y - z, 0, x, y - z, hr);
-    gl.addColorStop(0, rgb(gc, (gold ? 0.3 : 0.22) * pulseG * (1 - fall))); gl.addColorStop(1, rgb(gc, 0));
-    g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = gl; g.fillRect(x - hr, y - z - hr, hr * 2, hr * 2); g.restore();
+    const pulseG = 0.6 + 0.4 * Math.sin(G.time * 2.4 + f.y);
+    drawSoft(g, gold ? [255, 214, 90] : THEME.glowColor, x, y - z, cs * (gold ? 1.0 : 0.85) * (1 + pulseG * 0.12), (gold ? 0.55 : 0.4) * pulseG * (1 - fall), true);
   }
   if (gold) {                                                 // countdown ring on the ground
     const k = clamp(1 - age / f.life, 0, 1);
@@ -1825,7 +1874,9 @@ function drawFruit(g, f, gold) {                              // f = {x, y (cell
     g.strokeStyle = k < 0.3 && Math.floor(age * 6) % 2 ? 'rgba(255,120,60,.95)' : 'rgba(255,214,90,.95)';
     g.beginPath(); g.arc(x, y, cs * 0.52, -Math.PI / 2, -Math.PI / 2 + TAU * k); g.stroke(); g.restore();
   }
-  drawFood(g, x, y - z, r * pulse * (1 + fall * 0.25), gold, land, Math.sin(G.time * 1.7 + f.y) * 0.04 + fall * 0.6);
+  g.globalAlpha = 1 - fall * 0.7;
+  drawFood(g, x, y - z, r * pulse * (1 + fall * 0.3), gold, land, Math.sin(G.time * 1.7 + f.y) * 0.04 + fall * 0.6);
+  g.globalAlpha = 1;
   if (gold && fall === 0 && Math.random() < 0.08) Particles.list.push({ type: 'spark', x: x + rnd(-r, r), y: y + rnd(-r, r), vx: 0, vy: -14, life: 0, max: 0.7, r: rnd(2.5, 4.5) * (cs / 40), rot: rnd(0, 3) });
 }
 
@@ -1971,19 +2022,25 @@ function wrapCopies() {                                       // offsets at whic
   return out;
 }
 
-let spriteKey = '', shaking = false;
+let spriteKey = '', shaking = false, fxFrame = 0;
 function texWidth() { return clamp(Math.round(L.cs * 0.66 * THICK * DPR * 1.15), 24, 160); }
 
 function render() {
   if (!scene) return;
   const g = ctx, cs = L.cs, sk = THEME.skin, sc = SCENES[THEME.id];
-  g.setTransform(DPR, 0, 0, DPR, 0, 0);
-  g.clearRect(0, 0, W, H);
-  if (G.shake > 0.01) { canvas.style.transform = `translate(${rnd(-1, 1) * G.shake * cs * 0.22}px,${rnd(-1, 1) * G.shake * cs * 0.22}px)`; shaking = true; }
-  else if (shaking) { canvas.style.transform = ''; shaking = false; }
-  if (sceneOld && sceneFade < 1) { g.drawImage(sceneOld, 0, 0, W, H); g.globalAlpha = smooth(sceneFade); g.drawImage(scene, 0, 0, W, H); g.globalAlpha = 1; }
-  else g.drawImage(scene, 0, 0, W, H);
-  if (sc.fx) { g.save(); g.beginPath(); g.rect(L.ox, L.oy, L.cols * cs, L.rows * cs); g.clip(); sc.fx(g, G.time); g.restore(); }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  if (G.shake > 0.01) { world.style.transform = `translate(${rnd(-1, 1) * G.shake * cs * 0.22}px,${rnd(-1, 1) * G.shake * cs * 0.22}px)`; shaking = true; }
+  else if (shaking) { world.style.transform = ''; shaking = false; }
+  const blit = img => (img.width === canvas.width && img.height === canvas.height ? g.drawImage(img, 0, 0) : g.drawImage(img, 0, 0, canvas.width, canvas.height));   // 1:1 copy whenever possible (fast)
+  if (sceneOld && sceneFade < 1) { blit(sceneOld); g.globalAlpha = smooth(sceneFade); blit(scene); g.globalAlpha = 1; }
+  else blit(scene);
+  g.setTransform(SX, 0, 0, SY, 0, 0);
+  fxFrame++;
+  if (sc.fx && !Quality.low && !dbg.noFx) {                   // ambient layer: redrawn at ~30 Hz onto its own half-resolution canvas
+    if (fxCanvas.style.visibility === 'hidden') fxCanvas.style.visibility = 'visible';
+    if (!(fxFrame & 1)) { fxCtx.setTransform(FXR, 0, 0, FXR, -L.ox * FXR, -L.oy * FXR); fxCtx.clearRect(L.ox, L.oy, L.cols * cs, L.rows * cs); sc.fx(fxCtx, G.time); }
+  } else if (fxCanvas.style.visibility !== 'hidden') fxCanvas.style.visibility = 'hidden';
+  if (sc.dyn) sc.dyn(g, G.time);
 
   const key = THEME.id + '|' + cs + '|' + DPR;
   if (key !== spriteKey) { headSprite = makeHeadSprite(sk); spriteKey = key; }
@@ -2005,7 +2062,7 @@ function render() {
   }
   if (!G.broken) {
     g.save();
-    if (G.wrap) { g.beginPath(); g.rect(L.ox, L.oy, L.cols * cs, L.rows * cs); g.clip(); }
+    if (G.wrap) clipRect(g, L.ox, L.oy, L.cols * cs, L.rows * cs);
     for (const [ox, oy] of wrapCopies()) {                    // in wrap mode the snake is drawn again on the far side
       if (ox || oy) shiftSpine(ox, oy);
       drawSnakeFull(g, sk, tex, dying);
@@ -2015,7 +2072,7 @@ function render() {
   }
 
   Particles.draw(g);
-  Motes.draw(g);
+  if (!Quality.low && !dbg.noMotes) Motes.draw(g);
   if (G.flash > 0.01) {
     const v = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.25, W / 2, H / 2, Math.max(W, H) * 0.75);
     v.addColorStop(0, 'rgba(170,20,10,0)'); v.addColorStop(1, `rgba(170,20,10,${G.flash * 0.5})`);
@@ -2028,11 +2085,8 @@ function render() {
 FOODS.orb = (g, x, y, r, gold, sq) => {
   const t = G.time, c1 = gold ? [255, 232, 80] : [255, 61, 240], c2 = gold ? [255, 255, 255] : [53, 242, 255];
   g.save(); g.translate(x, y);
-  g.globalCompositeOperation = 'lighter';
-  let gr = g.createRadialGradient(0, 0, 0, 0, 0, r * 2.7);
-  gr.addColorStop(0, rgb(c1, 0.5)); gr.addColorStop(0.4, rgb(c1, 0.16)); gr.addColorStop(1, rgb(c1, 0));
-  g.fillStyle = gr; g.fillRect(-r * 2.7, -r * 2.7, r * 5.4, r * 5.4);
-  g.globalCompositeOperation = 'source-over';
+  drawSoft(g, c1, 0, 0, r * 2.7, 0.7, true);
+  let gr;
   g.lineCap = 'round'; g.lineWidth = r * 0.11;
   for (let k = 0; k < 2; k++) {                               // two counter-rotating arcs
     const a0 = t * (k ? -1.7 : 1.3) + k * 2;
@@ -2050,11 +2104,8 @@ FOODS.pearl = (g, x, y, r, gold, sq) => {
   const t = G.time;
   g.save(); g.translate(x, y);
   const halo = gold ? [255, 220, 110] : [130, 235, 255];
-  g.globalCompositeOperation = 'lighter';
-  let gr = g.createRadialGradient(0, 0, r * 0.6, 0, 0, r * 2.2);
-  gr.addColorStop(0, rgb(halo, 0.55)); gr.addColorStop(1, rgb(halo, 0));
-  g.fillStyle = gr; g.fillRect(-r * 2.2, -r * 2.2, r * 4.4, r * 4.4);
-  g.globalCompositeOperation = 'source-over';
+  drawSoft(g, halo, 0, 0, r * 2.2, 0.65, true);
+  let gr;
   g.fillStyle = 'rgba(0,25,50,.35)'; g.beginPath(); g.arc(r * 0.12, r * 0.18, r * 1.08, 0, TAU); g.fill();
   g.scale(1 + sq, 1 - sq);
   const st = gold ? ['#fffbe3', '#ffe9a0', '#f1b73a', '#8a5a0a'] : ['#ffffff', '#fdf0f8', '#cfdcf3', '#8aa2cf'];
@@ -2083,11 +2134,8 @@ FOODS.pearl = (g, x, y, r, gold, sq) => {
 FOODS.gem = (g, x, y, r, gold, sq) => {
   const t = G.time, base = gold ? [255, 238, 170] : [255, 138, 56], lightA = Math.atan2(LIGHT.y, LIGHT.x);
   g.save(); g.translate(x, y);
-  g.globalCompositeOperation = 'lighter';
-  let gr = g.createRadialGradient(0, 0, 0, 0, 0, r * 2.2);
-  gr.addColorStop(0, rgb(base, 0.32)); gr.addColorStop(1, rgb(base, 0));
-  g.fillStyle = gr; g.fillRect(-r * 2.2, -r * 2.2, r * 4.4, r * 4.4);
-  g.globalCompositeOperation = 'source-over';
+  drawSoft(g, base, 0, 0, r * 2.2, 0.45, true);
+  let gr;
   g.scale(1 + sq, 1 - sq);
   const N = 8, ro = r * 1.02, ri = r * 0.5, off = Math.PI / N;
   const pt = (rad, i) => [Math.cos(i * TAU / N + off) * rad, Math.sin(i * TAU / N + off) * rad];
@@ -2199,9 +2247,7 @@ function drawObstacles(g) {
     g.drawImage(obstacleSprite(o), x - s / 2, y - s / 2, s, s);
     if (THEME.obstacle === 'crystal' || THEME.obstacle === 'obsidian') {                       // slow pulsing glow
       const c = THEME.obstacle === 'crystal' ? [255, 61, 240] : [150, 120, 255], p = 0.5 + 0.5 * Math.sin(G.time * 2 + o.seed);
-      g.save(); g.globalCompositeOperation = 'lighter';
-      const gr = g.createRadialGradient(x, y, 0, x, y, cs * 0.9); gr.addColorStop(0, rgb(c, 0.16 * p + 0.04)); gr.addColorStop(1, rgb(c, 0));
-      g.fillStyle = gr; g.fillRect(x - cs, y - cs, cs * 2, cs * 2); g.restore();
+      drawSoft(g, c, x, y, cs * 0.95, 0.3 * p + 0.08, true);
     }
   }
 }
@@ -2217,6 +2263,7 @@ const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
 
 /* ── screens: cross-fading overlays ── */
 function show(name) {
+  $('veil').style.opacity = { menu: 0.3, pause: 0.5, over: 0.55 }[name] || 0;      // dims the board behind a card
   for (const k of ['menu', 'pause', 'over']) el[k].classList.toggle('show', k === name);
   document.body.classList.toggle('in-menu', name === 'menu');
 }
@@ -2256,6 +2303,7 @@ function startGame() {
   resetState(false);
   G.state = 'ready';
   show(null); el.btnPause.classList.remove('alt-on');
+  el.hint.textContent = dpadVisible() ? 'Swipe or tap the arrows to slither' : 'Swipe or press an arrow key to slither';
   el.hint.classList.add('show'); updateHud(); updateDpad();
 }
 function toMenu() {
@@ -2271,6 +2319,10 @@ function togglePause() {
   } else if (G.state === 'paused') {
     G.state = 'playing'; Sound.play('resume'); show(null); el.btnPause.classList.remove('alt-on'); updateDpad();
   }
+}
+const fsOk = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
+function toggleFullscreen() {
+  try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen({ navigationUI: 'hide' }); } catch (e) { /* not allowed here */ }
 }
 function toggleMute() { Sound.setMuted(!Sound.muted); el.btnMute.classList.toggle('alt-on', Sound.muted); }
 const MESSAGES = {
@@ -2341,6 +2393,8 @@ document.addEventListener('pointerdown', e => {
 $('btnPlay').onclick = startGame; $('btnAgain').onclick = startGame; $('btnRestart').onclick = startGame;
 $('btnMenu').onclick = toMenu; $('btnMenu2').onclick = toMenu; $('btnResume').onclick = togglePause;
 el.btnPause.onclick = togglePause; el.btnMute.onclick = toggleMute;
+$('btnFull').hidden = !fsOk; $('btnFull').onclick = toggleFullscreen;
+document.addEventListener('fullscreenchange', () => $('btnFull').classList.toggle('alt-on', !!document.fullscreenElement));
 
 /* ── keyboard, touch swipe, on-screen arrows ── */
 const KEYMAP = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], KeyW: [0, -1], KeyS: [0, 1], KeyA: [-1, 0], KeyD: [1, 0] };
@@ -2358,6 +2412,7 @@ addEventListener('keydown', e => {
     e.preventDefault();
     if ((G.state === 'attract' || G.state === 'over') && (G.state === 'attract' || canRestart())) startGame(); else if (G.state === 'paused') togglePause();
   } else if (k === 'KeyM') toggleMute();
+  else if (k === 'KeyF' && fsOk) toggleFullscreen();
   else if (k === 'KeyT' && G.state !== 'dying') applyTheme(THEMES[(THEMES.indexOf(THEME) + 1) % THEMES.length].id);
 });
 let tx = 0, ty = 0, touching = false;
@@ -2382,11 +2437,11 @@ addEventListener('blur', () => { if (G.state === 'playing') togglePause(); });
 /* ── sizing ── */
 let resizeTimer = 0;
 function rebuildAssets(fade) { buildScene(fade); spriteKey = ''; }
+const PIXEL_BUDGET = 5.0e6;                                       // device pixels we are willing to paint per frame
+const pickDpr = () => Math.max(1, Math.min(window.devicePixelRatio || 1, 3, Math.sqrt(PIXEL_BUDGET / (window.innerWidth * window.innerHeight)), Quality.dprCap || 3));
 function resize() {
-  const small = window.innerWidth * window.innerHeight < 700000;
-  DPR = Math.min(window.devicePixelRatio || 1, small ? 3 : 2, Quality.dprCap || 3);
-  W = stage.clientWidth; H = stage.clientHeight;
-  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+  DPR = pickDpr();
+  W = stage.clientWidth; H = stage.clientHeight; fitCanvas();
   if (G.state === 'attract') { const c = L.cols, r = L.rows; chooseGrid(); if (c !== L.cols || r !== L.rows) resetState(true); }
   computeLayout(); updateDpad();
   clearTimeout(resizeTimer); resizeTimer = setTimeout(rebuildAssets, 150);
@@ -2423,7 +2478,7 @@ function update(dt) {
     }
   } else if (st === 'dying') {
     G.dyingFor += dt;
-    if (!G.broken && G.dyingFor > 0.5) { G.broken = true; Particles.breakSnake(); Sound.play('smash'); G.shake = Math.max(G.shake, 0.55); }
+    if (!G.broken && G.dyingFor > 0.5) { G.broken = true; Particles.breakSnake(); Sound.play('smash'); G.shake = Math.max(G.shake, REDUCED_MOTION ? 0.15 : 0.55); }
     if (G.dyingFor > 1.7) hooks.onOver();
   }
   G.mouth += (mouthTarget - G.mouth) * Math.min(1, dt * 12);
@@ -2460,17 +2515,15 @@ document.documentElement.dataset.theme = THEME.id;
 buildThemePicker(); syncSettings();
 Motes.init();
 {
-  const small = window.innerWidth * window.innerHeight < 700000;
-  DPR = Math.min(window.devicePixelRatio || 1, small ? 3 : 2);
-  W = stage.clientWidth; H = stage.clientHeight;
-  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+  DPR = pickDpr();
+  W = stage.clientWidth; H = stage.clientHeight; fitCanvas();
 }
 chooseGrid(); computeLayout(); rebuildAssets();
 resetState(true);
 el.btnMute.classList.toggle('alt-on', Sound.muted);
 updateHud(); updateDpad();
 requestAnimationFrame(frame);
-window.__viper = { G, L, CFG, DIFFS, THEMES, step, update, render, startGame, setDir, aiSteer, resetState, computeLayout, togglePause, applyTheme, setSetting, dbg };   // handle used by the automated tests
+window.__viper = { G, L, CFG, DIFFS, THEMES, step, update, render, startGame, setDir, aiSteer, resetState, computeLayout, togglePause, applyTheme, setSetting, dbg, Quality, getScene: () => scene };   // handle used by the automated tests
 })();
 </script>
 </body>

@@ -50,3 +50,14 @@ Running log. Newest entries at the bottom. Start: 2026-10-06 14:10 UTC.
 - **Mobile**: on-screen arrow pad (auto on touch devices, toggle in menu), swipe, DPR up to 3 on small screens, haptics.
 - Tests: fuzzer re-run in default / wrap / obstacles / hard+wrap+obstacles → all invariants hold; UI playthrough passes.
 - Next: review each theme closely and polish, mobile pass (portrait + landscape screenshots), HUD/score polish, code cleanup.
+
+### 14:50 — Task 12 (part): performance pass ✅
+- Measured with a forced raster flush (software rendering = worst case): a full frame cost 25-110 ms at 2828×1768 px.
+- Found and fixed: 1-px mismatch between canvas and scene image made every frame a 5-million-pixel resample (now an exact 1:1 copy, ~2 ms);
+  opaque canvas; pixel budget instead of a flat DPR cap; pixel-aligned clips; glows use cached soft sprites instead of huge gradients.
+- Ambient background effects (cloud shadows, caustics, neon pulses, dark spotlight) moved onto their own half-resolution overlay canvas,
+  redrawn at ~30 Hz and blended by the compositor (plus-lighter for additive themes). Main canvas now ~9-12 ms in software (30-segment snake),
+  i.e. comfortably 60 FPS on anything with a GPU. A frame-rate governor still drops glow/ambient effects (then resolution) automatically if a device is slow.
+- Veil behind menus is a CSS layer (no per-frame cost). Fullscreen button, reduced-motion support, HUD legibility strip added.
+- Tests: fuzz (default, wrap+obstacles) still green.
+- Next: snake glint + death pieces polish, theme-specific eat particles, landscape/resize tests, FPS overlay, cleanup.
