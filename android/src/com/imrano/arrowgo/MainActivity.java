@@ -10,11 +10,13 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.os.VibratorManager;
@@ -85,9 +87,10 @@ public class MainActivity extends Activity {
     static final long VIBRATE_MAX_MS = 1000L;
     static final long DEFAULT_VIBRATE_MS = 20L;
 
-    private static final String STATE_WEBVIEW = "arrowgo.webview";
     private static final long BACK_TIMEOUT_MS = 1500L;
+    /** More renderer deaths than this within RENDERER_RESTART_WINDOW_MS closes the app. */
     private static final int MAX_RENDERER_RESTARTS = 3;
+    private static final long RENDERER_RESTART_WINDOW_MS = 60_000L;
 
     private static final String JS_HANDLE_BACK =
             "(function(){try{return !!(window.ArrowGO&&window.ArrowGO.handleBack&&window.ArrowGO.handleBack());}catch(e){return false;}})()";
@@ -111,6 +114,11 @@ public class MainActivity extends Activity {
     /** Identifies the current back press so a late answer to an older one is ignored. */
     private int backToken;
     private int rendererRestarts;
+    private long firstRendererRestartAt;
+    /** Between onStart and onStop (the activity is visible). */
+    private boolean started;
+    /** The renderer died while the activity was stopped; rebuild the WebView in onStart. */
+    private boolean webViewRestartPending;
     private volatile boolean destroyed;
 
     // ------------------------------------------------------------------------------------------
@@ -121,6 +129,9 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         appVersion = readVersionName();
+        // Volume keys change the game's sound volume (on Android 7-8 they would otherwise change
+        // the ringer volume whenever no sound happens to be playing).
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         container = new FrameLayout(this);
         container.setBackgroundColor(COLOR_CREAM);
@@ -142,21 +153,28 @@ public class MainActivity extends Activity {
         }
         container.addView(webView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        // Always a fresh load, also after the system recreated the activity: the game is a single
+        // URL and keeps its own state in localStorage, so WebView.saveState()/restoreState() would
+        // add nothing but risk (an oversized saved-state Bundle is a TransactionTooLargeException
+        // crash on Android 7+, and restored history replays whatever the old page was showing).
+        webView.loadUrl(START_URL);
+    }
 
-        boolean restored = false;
-        if (savedInstanceState != null) {
-            Bundle webState = savedInstanceState.getBundle(STATE_WEBVIEW);
-            if (webState != null) {
-                try {
-                    restored = webView.restoreState(webState) != null;
-                } catch (RuntimeException e) {
-                    Log.w(TAG, "Could not restore WebView state", e);
-                }
-            }
+    @Override
+    protected void onStart() {
+        super.onStart();
+        started = true;
+        if (webViewRestartPending) {
+            // The renderer was killed while we were in the background: rebuild now.
+            webViewRestartPending = false;
+            recreateWebView();
         }
-        if (!restored) {
-            webView.loadUrl(START_URL);
-        }
+    }
+
+    @Override
+    protected void onStop() {
+        started = false;
+        super.onStop();
     }
 
     @Override
@@ -174,21 +192,6 @@ public class MainActivity extends Activity {
         if (webView != null) {
             webView.onResume();
             runPageScript(JS_ON_RESUME);
-        }
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        if (webView != null) {
-            try {
-                Bundle webState = new Bundle();
-                if (webView.saveState(webState) != null) {
-                    outState.putBundle(STATE_WEBVIEW, webState);
-                }
-            } catch (RuntimeException e) {
-                Log.w(TAG, "Could not save WebView state", e);
-            }
         }
     }
 
@@ -245,18 +248,31 @@ public class MainActivity extends Activity {
     // WebView setup
     // ------------------------------------------------------------------------------------------
 
-    @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
-    @SuppressWarnings("deprecation")
+    /** Returns a configured WebView, or null if Android System WebView cannot be used. */
     private WebView createWebView() {
-        final WebView wv;
+        WebView wv = null;
         try {
             wv = new WebView(this);
-        } catch (RuntimeException e) {
-            // Android System WebView missing, disabled or being updated.
+            configureWebView(wv);
+            return wv;
+        } catch (RuntimeException | LinkageError e) {
+            // Android System WebView missing, disabled or in the middle of an update
+            // (AndroidRuntimeException, Resources.NotFoundException, UnsatisfiedLinkError...).
             Log.e(TAG, "Cannot create WebView", e);
+            if (wv != null) {
+                try {
+                    wv.destroy();
+                } catch (RuntimeException ignored) {
+                    // Nothing more to clean up.
+                }
+            }
             return null;
         }
+    }
 
+    @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
+    @SuppressWarnings("deprecation")
+    private void configureWebView(WebView wv) {
         wv.setBackgroundColor(COLOR_CREAM);
         wv.setOverScrollMode(View.OVER_SCROLL_NEVER);
         wv.setVerticalScrollBarEnabled(false);
@@ -297,16 +313,20 @@ public class MainActivity extends Activity {
         String ua = s.getUserAgentString();
         s.setUserAgentString((ua == null ? "" : ua + " ") + "ArrowGOApp/" + appVersion);
         // The game has its own light/dark themes: never let WebView darken it on its own.
-        if (Build.VERSION.SDK_INT >= 33) {
-            Api33.disableAlgorithmicDarkening(s);
-        } else if (Build.VERSION.SDK_INT >= 29) {
-            Api29.disableForceDark(s);
+        // (Purely cosmetic, so a WebView build that lacks these methods must not stop the app.)
+        try {
+            if (Build.VERSION.SDK_INT >= 33) {
+                Api33.disableAlgorithmicDarkening(s);
+            } else if (Build.VERSION.SDK_INT >= 29) {
+                Api29.disableForceDark(s);
+            }
+        } catch (RuntimeException | LinkageError e) {
+            Log.w(TAG, "Could not turn off WebView darkening", e);
         }
 
         wv.setWebViewClient(new ArrowWebViewClient());
         wv.setWebChromeClient(new ArrowChromeClient());
         wv.addJavascriptInterface(new AndroidBridge(), BRIDGE_NAME);
-        return wv;
     }
 
     private void destroyWebView() {
@@ -379,27 +399,46 @@ public class MainActivity extends Activity {
         if (destroyed || isFinishing()) {
             return;
         }
+        uiHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                recreateWebView();
+            }
+        });
+    }
+
+    /**
+     * Builds a new WebView after the old renderer died. While the activity is stopped this is
+     * deferred to onStart(): the system usually kills a background renderer to reclaim memory,
+     * and reloading the game there at once would only fight the low-memory killer (and run the
+     * page without the onPause() it got before).
+     */
+    void recreateWebView() {
+        if (destroyed || isFinishing() || webView != null) {
+            return;
+        }
+        if (!started) {
+            webViewRestartPending = true;
+            return;
+        }
+        long now = SystemClock.elapsedRealtime();
+        if (rendererRestarts == 0 || now - firstRendererRestartAt > RENDERER_RESTART_WINDOW_MS) {
+            rendererRestarts = 0;
+            firstRendererRestartAt = now;
+        }
         if (++rendererRestarts > MAX_RENDERER_RESTARTS) {
             Log.e(TAG, "WebView renderer keeps dying; closing");
             finish();
             return;
         }
-        uiHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (destroyed || isFinishing() || webView != null) {
-                    return;
-                }
-                webView = createWebView();
-                if (webView == null) {
-                    showWebViewMissing();
-                    return;
-                }
-                container.addView(webView, new FrameLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-                webView.loadUrl(START_URL);
-            }
-        });
+        webView = createWebView();
+        if (webView == null) {
+            showWebViewMissing();
+            return;
+        }
+        container.addView(webView, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        webView.loadUrl(START_URL);
     }
 
     // ------------------------------------------------------------------------------------------

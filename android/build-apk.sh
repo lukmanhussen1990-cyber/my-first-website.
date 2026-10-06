@@ -15,7 +15,8 @@
 #   ARROWGO_KS_PASS                  keystore password (default arrowgo-imrano)
 #   ARROWGO_KEY_PASS                 key password (default: same as ARROWGO_KS_PASS)
 #
-# Runnable from any directory. Intermediate files go to android/build/ (gitignored).
+# Runnable from any directory (bash 3.2+, Linux or macOS). Intermediate files go to android/build/
+# (gitignored). The build is reproducible: the same inputs and key give a byte-identical APK.
 
 set -euo pipefail
 
@@ -26,8 +27,9 @@ Usage: android/build-apk.sh [--allow-placeholder]
 Builds dist/ArrowGO.apk (signed, zipaligned) from the web files in the repository root.
 
   --allow-placeholder  if index.html, app.js or levels.js is missing, build anyway with a
-                       small generated test page (written to android/build/ only) instead
-                       of failing. For testing the pipeline; never ship such an APK.
+                       small generated test page instead of failing. Such a build is written
+                       to android/build/ArrowGO-placeholder.apk only; dist/ArrowGO.apk is
+                       left untouched. For testing the pipeline; never ship it.
   -h, --help           show this help
 EOF
 }
@@ -90,6 +92,13 @@ command -v java >/dev/null 2>&1 || die "java not found on PATH (needed by d8 and
 if ! command -v zip >/dev/null 2>&1 && ! command -v python3 >/dev/null 2>&1; then
     die "need either 'zip' or 'python3' to add classes.dex to the APK"
 fi
+if command -v sha256sum >/dev/null 2>&1; then
+    sha256_of() { sha256sum "$1" | cut -d ' ' -f 1; }
+elif command -v shasum >/dev/null 2>&1; then
+    sha256_of() { shasum -a 256 "$1" | cut -d ' ' -f 1; }
+else
+    sha256_of() { echo "(sha256sum/shasum not found)"; }
+fi
 
 # ----------------------------------------------------------------------------------------------
 # Version info: AndroidManifest.xml is the single source of truth
@@ -121,6 +130,9 @@ mkdir -p "$WWW"
 WEB_FILES=(index.html styles.css app.js levels.js sw.js manifest.json)
 WEB_DIRS=(icons fonts)
 REQUIRED_FILES=(index.html app.js levels.js)
+# Never requested inside the app: og-image.png is only the link-preview image named by an
+# og:image <meta> tag (about a quarter of the APK's size).
+EXCLUDE_FROM_APK=(icons/og-image.png)
 
 missing=()
 for f in "${REQUIRED_FILES[@]}"; do
@@ -144,6 +156,9 @@ for d in "${WEB_DIRS[@]}"; do
         cp -RL "$REPO_ROOT/$d" "$WWW/$d"
         # No hidden files or docs in the APK.
         find "$WWW/$d" -depth -mindepth 1 \( -name '.*' -o -name '*.md' \) -exec rm -rf {} +
+        for x in "${EXCLUDE_FROM_APK[@]}"; do
+            case "$x" in "$d"/*) rm -f "$WWW/$x" ;; esac
+        done
         echo "  www/$d/ ($(find "$WWW/$d" -type f | wc -l | tr -d ' ') files)"
     else
         warn "web directory $d/ not found, skipped"
@@ -230,7 +245,10 @@ step "aapt2 link"
 # 3. Java -> classes -> classes.dex
 # ----------------------------------------------------------------------------------------------
 step "javac (--release 11)"
-mapfile -t SOURCES < <(find "$SRC_DIR" "$BUILD_DIR/gen" -name '*.java' | LC_ALL=C sort)
+# (Plain read loops rather than mapfile, which bash 3.2 on macOS does not have.)
+SOURCES=()
+while IFS= read -r -d '' f; do SOURCES+=("$f"); done \
+    < <(find "$SRC_DIR" "$BUILD_DIR/gen" -name '*.java' -print0 | LC_ALL=C sort -z)
 [ "${#SOURCES[@]}" -gt 0 ] || die "no Java sources found"
 # -parameters: JDK 21 javac writes nameless MethodParameters entries for the synthetic
 # constructor parameters of anonymous classes, which crash d8 8.2 (NPE); naming them avoids it.
@@ -238,13 +256,18 @@ mapfile -t SOURCES < <(find "$SRC_DIR" "$BUILD_DIR/gen" -name '*.java' | LC_ALL=
     -classpath "$ANDROID_JAR" -d "$BUILD_DIR/classes" "${SOURCES[@]}"
 
 step "d8 (--min-api $MIN_SDK)"
-mapfile -t CLASSES < <(find "$BUILD_DIR/classes" -name '*.class' | LC_ALL=C sort)
+CLASSES=()
+while IFS= read -r -d '' f; do CLASSES+=("$f"); done \
+    < <(find "$BUILD_DIR/classes" -name '*.class' -print0 | LC_ALL=C sort -z)
 "$BT/d8" --release --min-api "$MIN_SDK" --lib "$ANDROID_JAR" \
     --output "$BUILD_DIR/dex" "${CLASSES[@]}"
 [ -f "$BUILD_DIR/dex/classes.dex" ] || die "d8 did not produce classes.dex"
 
 step "Adding classes.dex"
 cp "$BUILD_DIR/unsigned.apk" "$BUILD_DIR/unaligned.apk"
+# Same fixed entry time as aapt2 uses (1980-01-01), so rebuilding unchanged sources gives a
+# byte-identical APK instead of a new binary diff in dist/ every time.
+touch -t 198001010000 "$BUILD_DIR/dex/classes.dex"
 if command -v zip >/dev/null 2>&1; then
     zip -q -j -X "$BUILD_DIR/unaligned.apk" "$BUILD_DIR/dex/classes.dex"
 else
@@ -298,10 +321,15 @@ step "Verifying"
 # ----------------------------------------------------------------------------------------------
 # 5. Output
 # ----------------------------------------------------------------------------------------------
-mkdir -p "$DIST_DIR"
+if [ "$PLACEHOLDER" -eq 1 ]; then
+    # A pipeline test must never replace the real, committed release APK.
+    OUT_APK="$BUILD_DIR/ArrowGO-placeholder.apk"
+else
+    mkdir -p "$DIST_DIR"
+fi
 cp "$SIGNED_APK" "$OUT_APK"
 SIZE_BYTES="$(wc -c < "$OUT_APK" | tr -d ' ')"
-SHA256="$(sha256sum "$OUT_APK" | cut -d ' ' -f 1)"
+SHA256="$(sha256_of "$OUT_APK")"
 
 step "Done"
 echo "APK:     $OUT_APK"
@@ -311,4 +339,5 @@ echo "SHA-256: $SHA256"
 if [ "$PLACEHOLDER" -eq 1 ]; then
     echo
     echo "*** PLACEHOLDER BUILD (missing: ${missing[*]}) - for pipeline testing only, do not ship. ***"
+    echo "*** Written to $OUT_APK; dist/ArrowGO.apk was not changed. ***"
 fi
