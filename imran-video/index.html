@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Imran, I got you!</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  html, body { margin: 0; background: #111; }
+  canvas { display: block; width: 100vw; height: auto; }
+</style>
+</head>
+<body>
+<!-- Hand-drawn edge filters: turbulence displacement, 4 seeds each so edges "boil" at 12fps. -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="rough-soft-0" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="1"/><feDisplacementMap in="SourceGraphic" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-soft-1" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="2"/><feDisplacementMap in="SourceGraphic" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-soft-2" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-soft-3" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-mid-0" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="5"/><feDisplacementMap in="SourceGraphic" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-mid-1" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="6"/><feDisplacementMap in="SourceGraphic" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-mid-2" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-mid-3" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="8"/><feDisplacementMap in="SourceGraphic" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-hard-0" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="9"/><feDisplacementMap in="SourceGraphic" scale="10" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-hard-1" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="10"/><feDisplacementMap in="SourceGraphic" scale="10" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-hard-2" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="11"/><feDisplacementMap in="SourceGraphic" scale="10" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-hard-3" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="12"/><feDisplacementMap in="SourceGraphic" scale="10" xChannelSelector="R" yChannelSelector="G"/></filter>
+  </defs>
+</svg>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="lib.js"></script>
+<script src="parts.js"></script>
+<script>
+  // Scene registry. Each scene file calls SCENE({id, start, end, z, draw(ctx, lt, t, scene)}).
+  // `lt` = local time (t - start). Scenes may overlap; higher z draws on top.
+  window.SCENES = [];
+  window.SCENE = (s) => { SCENES.push(s); };
+  window.SCENE_INIT = []; // optional async setup functions, run after fonts load
+  window.__errors = [];
+  window.addEventListener('error', (e) => { window.__errors.push(`${e.filename}:${e.lineno} ${e.message}`); });
+  // Global timeline knobs (overridden by timeline.js).
+  window.TIMELINE = { duration: 15, badge: (t) => 1, grain: 0.07 };
+</script>
+<script src="timeline.js"></script>
+<script src="scenes/manifest.js"></script>
+<script>
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const params = new URLSearchParams(location.search);
+  const SOLO = params.get('solo'); // render only one scene id (debugging)
+
+  window.renderFrame = function (t) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1; ctx.filter = 'none'; ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = L.PAL.bg; ctx.fillRect(0, 0, L.W, L.H);
+    const active = SCENES
+      .filter((s) => t >= s.start && t < s.end && (!SOLO || s.id === SOLO))
+      .sort((a, b) => (a.z || 0) - (b.z || 0));
+    for (const s of active) {
+      ctx.save();
+      try { s.draw(ctx, t - s.start, t, s); }
+      catch (e) { console.error(`scene ${s.id} @${t}:`, e); window.__errors = (window.__errors || []).concat(`${s.id}@${t}: ${e.stack || e}`); }
+      ctx.restore();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = 1; ctx.filter = 'none'; ctx.globalCompositeOperation = 'source-over';
+    }
+    const ba = TIMELINE.badge(t);
+    if (ba > 0) L.drawBadge(ctx, ba);
+    if (TIMELINE.grain > 0) L.grain(ctx, t, TIMELINE.grain);
+  };
+
+  // Load every declared font face before signalling ready.
+  window.READY = (async () => {
+    const faces = [];
+    document.fonts.forEach((f) => faces.push(f.load().catch(() => null)));
+    await Promise.all(faces);
+    await document.fonts.ready;
+    // Wait for scene scripts loaded dynamically by the manifest.
+    if (window.SCENES_LOADED) await window.SCENES_LOADED;
+    if (window.SCENE_INIT) await Promise.all(SCENE_INIT.map((f) => f()));
+    return true;
+  })();
+
+  // Live preview when opened in a normal browser (?play=1)
+  if (params.get('play')) {
+    const t0 = performance.now();
+    const loop = () => { renderFrame(((performance.now() - t0) / 1000) % TIMELINE.duration); requestAnimationFrame(loop); };
+    READY.then(loop);
+  } else if (params.get('t')) {
+    READY.then(() => renderFrame(parseFloat(params.get('t'))));
+  }
+</script>
+</body>
+</html>
