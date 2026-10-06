@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Viper — Realistic Snake</title>
+<meta name="description" content="Viper: a beautiful, realistic snake game. Five themes, three difficulties, wrap-around and obstacle modes — plays on desktop and phones.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%230b1a12'/%3E%3Cpath d='M17 46C17 31 46 39 46 25C46 14 27 14 22 22' fill='none' stroke='%238be65f' stroke-width='9' stroke-linecap='round'/%3E%3Ccircle cx='21' cy='21' r='8.5' fill='%23b6f27a'/%3E%3Ccircle cx='18' cy='19' r='2.6' fill='%23fff'/%3E%3Ccircle cx='24' cy='19' r='2.6' fill='%23fff'/%3E%3Ccircle cx='18.4' cy='19.4' r='1.2' fill='%23111'/%3E%3Ccircle cx='24.4' cy='19.4' r='1.2' fill='%23111'/%3E%3C/svg%3E">
 <style>
 /* ───────── theme tokens (the game switches html[data-theme]) ───────── */
 html { --bg: #0b1a12; --ink: #f3f8ee; --muted: #b4c4b0; --accent: #8be65f; --accent-2: #ffd45e; --card: rgba(10, 30, 20, .78); --line: rgba(255, 255, 255, .14);
@@ -28,7 +30,8 @@ html, body {
 }
 button { font: inherit; color: inherit; cursor: pointer; }
 #stage { position: fixed; inset: 0; touch-action: none; }
-#world { position: absolute; inset: 0; will-change: transform; }
+#world { position: absolute; inset: 0; will-change: transform; opacity: 0; transition: opacity .7s ease; }
+body.loaded #world { opacity: 1; }
 canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 #fx { inset: auto; pointer-events: none; }          /* ambient effects: board-sized, half resolution, blended by the compositor */
 
@@ -82,8 +85,9 @@ body.in-menu .hide-menu { opacity: 0; pointer-events: none; }
   box-shadow: 0 30px 80px rgba(0, 0, 0, .6), 0 0 60px -20px var(--glow), inset 0 1px 0 rgba(255, 255, 255, .1);
   transform: translateY(18px) scale(.96); transition: transform .5s cubic-bezier(.2, .9, .25, 1.15);
 }
+.overlay.show .card.tilt { transition: transform .18s ease-out; }
 .card::-webkit-scrollbar { display: none; }
-.overlay.show .card { transform: none; }
+.overlay.show .card { transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
 .card h2 { margin: 0 0 4px; font-size: 30px; letter-spacing: .1em; text-transform: uppercase; font-weight: 800; }
 .card p { margin: 6px 0; color: var(--muted); }
 
@@ -162,6 +166,8 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border-radius: 6
 .conf { position: absolute; top: -14px; width: 8px; height: 14px; border-radius: 2px; pointer-events: none; z-index: 6; animation: fall var(--d) cubic-bezier(.3, .6, .5, 1) var(--w) forwards; opacity: 0; }
 @keyframes fall { 0% { opacity: 1; transform: translateY(0) rotate(0); } 100% { opacity: 0; transform: translateY(var(--h)) translateX(var(--x)) rotate(var(--r)); } }
 
+#fps { position: absolute; right: 10px; bottom: 8px; z-index: 9; display: none; padding: 4px 9px; border-radius: 8px; background: rgba(0, 0, 0, .6); color: #9fe870; font: 600 11px ui-monospace, Menlo, Consolas, monospace; pointer-events: none; }
+
 /* in-game extras */
 #hint { position: absolute; left: 0; right: 0; bottom: max(14px, env(safe-area-inset-bottom)); text-align: center; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; opacity: 0; pointer-events: none; text-shadow: 0 1px 8px #000; transition: opacity .3s; }
 #hint.show { opacity: .92; animation: blink 1.6s ease-in-out infinite; }
@@ -174,12 +180,16 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border-radius: 6
 #dpad button:active, #dpad button.down { transform: scale(.9); background: rgba(255, 255, 255, .22); box-shadow: 0 0 22px var(--glow); }
 #dpad svg { width: 26px; height: 26px; fill: currentColor; }
 #dpad .u { left: 58px; top: 0; } #dpad .d { left: 58px; bottom: 0; } #dpad .l { left: 0; top: 58px; } #dpad .r { right: 0; top: 58px; }
-@media (orientation: landscape) and (max-height: 520px) { #dpad { left: auto; right: max(14px, env(safe-area-inset-right)); transform: none; width: 150px; height: 150px; } #dpad button { width: 50px; height: 50px; } #dpad .u, #dpad .d { left: 50px; } #dpad .l, #dpad .r { top: 50px; } }
+@media (orientation: landscape) { #dpad { left: auto; right: max(18px, env(safe-area-inset-right)); transform: none; } }
+@media (orientation: landscape) and (max-height: 520px) { #dpad { width: 150px; height: 150px; } #dpad button { width: 50px; height: 50px; } #dpad .u, #dpad .d { left: 50px; } #dpad .l, #dpad .r { top: 50px; } }
 @media (max-width: 560px) {
   .card { padding: 20px 16px 16px; border-radius: 22px; } .logo { font-size: 44px; } .stat b { font-size: 21px; } #hud { gap: 14px; } .row { grid-template-columns: 1fr; gap: 6px; } .big { font-size: 56px; }
   .hide-small { display: none !important; } .btn.big { padding: 15px 44px; }
 }
 @media (max-height: 560px) { .keys, .tagline { display: none; } .logo { font-size: 38px; } .settings { margin-top: 10px; gap: 8px; } .card { padding: 14px 18px; } .row { grid-template-columns: 80px 1fr; } .chip i { max-width: 34px; margin-bottom: 2px; } }
+/* lite mode (set automatically on slow devices): no live blur behind glass panels */
+html.lite .card, html.lite .icon-btn, html.lite #dpad button { backdrop-filter: none; -webkit-backdrop-filter: none; }
+html.lite .card { background: var(--card); }
 @media (prefers-reduced-motion: reduce) { .logo span, .swoosh circle, .btn.big, .badge, #hint.show { animation: none; } .swoosh path { animation: none; stroke-dashoffset: 0; } }
 </style>
 </head>
@@ -213,6 +223,7 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border-radius: 6
 
   <div id="hint">Swipe or press an arrow key to slither</div>
   <div id="toast"></div>
+  <div id="fps"></div>
   <div id="dpad" aria-label="On-screen arrows">
     <button class="u" data-d="0,-1" aria-label="Up"><svg viewBox="0 0 24 24"><path d="M12 6l8 12H4z"/></svg></button>
     <button class="l" data-d="-1,0" aria-label="Left"><svg viewBox="0 0 24 24"><path d="M6 12l12-8v16z"/></svg></button>
@@ -270,6 +281,27 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border-radius: 6
 <script>
 (() => {
 'use strict';
+
+/* ════════════════════════════════════════════════════════════════════════════════════════════
+   VIPER — a realistic snake game in a single file.
+
+   How it is put together (search for the ════ banners):
+     helpers · audio ........ small utilities, seeded RNG, colour maths, synthesised sound + ambience
+     layout & scenes ........ board layout, procedural boards/frames/lighting per theme (drawn once, then blitted)
+     themes ................. data: colours, skins, food, obstacles, particle styles
+     skins & head ........... tileable scale textures, pre-rendered head details
+     rules ................. grid game logic, difficulty, obstacles, wrap-around, autopilot used behind the menu
+     snake geometry ......... grid positions → smooth spline → tapered ribbon → textured quads
+     fx, food, obstacles .... particles, fruit and obstacle painters
+     renderer ............... one frame: board image → ambient overlay → fruit → snake → particles
+     UI & main loop ......... screens, settings, input, frame loop with a frame-rate governor
+
+   Conventions
+     • Rules live on a grid; `G.snake[i]` is a cell, `G.prev[i]` where that segment was one tick ago, `G.t` ∈ [0,1) the progress
+       of the current tick — rendering interpolates between the two, which is what makes the motion smooth.
+     • Drawing code works in CSS pixels; the canvas transform (SX, SY) maps them to device pixels.
+     • Cell units (1 = one grid cell) are used for the head and obstacle sprites.
+   ════════════════════════════════════════════════════════════════════════════════════════════ */
 
 /* ════════════════════════ helpers ════════════════════════ */
 const TAU = Math.PI * 2;
@@ -445,7 +477,7 @@ const THEMES = [
   {
     id: 'neon', name: 'Neon',
     swatch: 'radial-gradient(circle at 68% 34%,#ff3df0 0 13%,transparent 14%),radial-gradient(circle at 34% 66%,#35f2ff 0 22%,transparent 23%),linear-gradient(135deg,#1d0f4d,#07061c)',
-    skin: { id: 'neon', seed: 23, pattern: 'hex', base: hex('#18226e'), dark: hex('#04061a'), light: hex('#35f2ff'), accent: hex('#ff3df0'), eye: hex('#ffffff'), eyeStyle: 'glow', eyeSize: 1.15, thick: 1.14, headK: 1.06, marks: 'neon', keel: false, scaleA: 0.0, rim: [53, 242, 255] },
+    skin: { id: 'neon', seed: 23, pattern: 'hex', base: hex('#18226e'), dark: hex('#04061a'), light: hex('#35f2ff'), accent: hex('#ff3df0'), eye: hex('#ffffff'), eyeStyle: 'glow', eyeSize: 1.3, thick: 1.14, headK: 1.12, marks: 'neon', keel: false, scaleA: 0.0, rim: [53, 242, 255] },
     food: 'orb', obstacle: 'crystal', shadow: 0.25, glowColor: [53, 242, 255], glowDefault: true,
     fx: { style: 'spark', ring: [53, 242, 255], eat: ['#35f2ff', '#ff3df0', '#ffffff', '#8a5cff'], gold: ['#fff35c', '#ffffff', '#ffb12b'], dust: [120, 80, 255], mote: [140, 235, 255], text: '#c9fbff', textGold: '#fff35c' }
   },
@@ -466,7 +498,7 @@ const THEMES = [
   {
     id: 'dark', name: 'Dark',
     swatch: 'radial-gradient(circle at 68% 34%,#ffb454 0 13%,transparent 14%),radial-gradient(circle at 34% 66%,#e6e8f2 0 24%,transparent 25%),linear-gradient(135deg,#262932,#0b0c10)',
-    skin: { id: 'dark', seed: 41, pattern: 'ghost', base: hex('#e4e7f3'), dark: hex('#565a78'), light: hex('#ffffff'), accent: hex('#8d6bff'), eye: hex('#b79cff'), eyeStyle: 'glow', eyeSize: 1.1, thick: 1.12, marks: 'ghost', keel: false, scaleA: 0.6, rim: [160, 130, 255] },
+    skin: { id: 'dark', seed: 41, pattern: 'ghost', base: hex('#e4e7f3'), dark: hex('#565a78'), light: hex('#ffffff'), accent: hex('#8d6bff'), eye: hex('#b79cff'), eyeStyle: 'glow', eyeSize: 1.25, thick: 1.12, headK: 1.1, sheen: 0.14, marks: 'ghost', keel: false, scaleA: 0.6, rim: [160, 130, 255] },
     food: 'gem', obstacle: 'obsidian', shadow: 0.7, glowColor: [150, 120, 255], glowDefault: false,
     fx: { style: 'spark', ring: [183, 156, 255], eat: ['#ffb454', '#ff7a3d', '#ffe3b0', '#b79cff'], gold: ['#fff2b0', '#ffe066', '#ffffff'], dust: [150, 140, 190], mote: [195, 175, 255], text: '#f4eeff', textGold: '#ffe066' }
   }
@@ -500,7 +532,7 @@ const cellY = cy => L.oy + (cy + 0.5) * L.cs;
 const LIGHT = { x: -0.55, y: -0.83 };                   // unit vector pointing towards the sun (upper left)
 
 const dpadVisible = () => (CFG.dpad == null ? matchMedia('(pointer: coarse)').matches : CFG.dpad);
-const dpadAtSide = () => dpadVisible() && W > H * 1.05 && H <= 520;      // landscape phones: the arrows sit at the right edge
+const dpadAtSide = () => dpadVisible() && W > H * 1.05;                   // landscape: the arrows sit at the right edge, portrait: under the board
 const padReserve = () => (dpadVisible() && !dpadAtSide() ? 188 : 0);     // otherwise room is kept free under the board
 const padSide = () => (dpadAtSide() ? 190 : 0);
 
@@ -1395,6 +1427,7 @@ const diff = () => DIFFS[CFG.difficulty];
 function refreshSkin() {                                       // the theme's own skin unless the player picked another one
   SKIN = SKIN_LIB[CFG.skin] || THEME.skin; THICK = SKIN.thick || 1; HEADK = SKIN.headK || 1; spriteKey = '';
 }
+const loadBest = () => Number(store.get(bestKey(), 0)) || 0;                  // tolerate corrupt storage
 const bestKey = () => `best.${CFG.difficulty}.${CFG.wrap ? 'wrap' : 'walls'}${CFG.obstacles ? '.obst' : ''}`;
 const glowOn = () => !Quality.low && (CFG.glow == null ? THEME.glowDefault : CFG.glow);
 
@@ -1402,7 +1435,7 @@ const G = {
   state: 'attract',                   // attract | ready | playing | paused | dying | over
   snake: [], prev: [], dir: { x: 1, y: 0 }, queue: [],
   grow: 0, bulges: [], food: null, bonus: null, eating: null, obstacles: [], obstSet: new Set(), wrap: false,
-  score: 0, best: store.get(bestKey(), 0), eaten: 0, bonusEaten: 0, sinceBonus: 0, newBest: false, level: 0,
+  score: 0, best: loadBest(), eaten: 0, bonusEaten: 0, sinceBonus: 0, newBest: false, level: 0,
   tickMs: 175, acc: 0, t: 0, tick: 0, time: 0,
   shake: 0, flash: 0, hitStop: 0, chomp: 0, combo: 1, lastEat: -99, dyingFor: 0, broken: false, won: false, deathBy: '', overAt: 0,
   mouth: 0, tongue: { next: 1.2, p: -1 }, blink: { next: 3, p: -1 }, look: { x: 1, y: 0 }
@@ -1514,7 +1547,7 @@ function resetState(attract) {
   G.score = 0; G.eaten = 0; G.bonusEaten = 0; G.sinceBonus = 0; G.newBest = false; G.level = 0; G.acc = 0; G.t = 0; G.tick = 0;
   G.tickMs = attract ? 125 : d.start;
   G.shake = 0; G.flash = 0; G.hitStop = 0; G.chomp = 0; G.combo = 1; G.lastEat = -99; G.mouth = 0; G.dyingFor = 0; G.broken = false; G.won = false; G.deathBy = '';
-  G.best = store.get(bestKey(), 0);
+  G.best = loadBest();
   Particles.clear();
   placeObstacles(CFG.obstacles ? d.obstacles : 0);
   spawnFood();
@@ -1899,13 +1932,15 @@ const Particles = {
         g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 1 - k; g.strokeStyle = p.col; g.lineWidth = p.w; g.lineCap = 'round';
         g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.x - p.vx * 0.06, p.y - p.vy * 0.06); g.stroke(); g.restore();
       } else if (p.type === 'piece') {
-        const sk = SKIN, sc = 1 - 0.35 * k, al = k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4, c = p.alt ? sk.light : sk.base;
+        const sk = SKIN, sc = 1 - 0.35 * k, al = k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4, c = p.alt ? sk.light : sk.base, r = Math.min(p.wid, p.len) * 0.42;
+        if (THEME.shadow > 0.05) { g.save(); g.translate(p.x + L.cs * 0.1, p.y + L.cs * 0.16); g.rotate(p.ang + p.rot); g.scale(sc, sc); g.globalAlpha = 0.3 * al * THEME.shadow; g.fillStyle = '#000'; roundRectPath(g, -p.len / 2, -p.wid / 2, p.len, p.wid, r); g.fill(); g.restore(); }
         g.save(); g.translate(p.x, p.y); g.rotate(p.ang + p.rot); g.scale(sc, sc); g.globalAlpha = al;
         const gr = g.createLinearGradient(0, -p.wid / 2, 0, p.wid / 2);
         gr.addColorStop(0, rgb(shade(c, -0.5))); gr.addColorStop(0.38, rgb(c)); gr.addColorStop(0.55, rgb(shade(c, 0.28))); gr.addColorStop(1, rgb(shade(sk.dark, -0.2)));
-        roundRectPath(g, -p.len / 2, -p.wid / 2, p.len, p.wid, Math.min(p.wid, p.len) * 0.42); g.fillStyle = gr; g.fill();
-        g.lineWidth = 1; g.strokeStyle = sk.rim ? rgb(sk.rim, 0.6) : 'rgba(0,0,0,.4)'; g.stroke();
-        if (p.head) { g.strokeStyle = 'rgba(0,0,0,.65)'; g.lineWidth = Math.max(1, L.cs * 0.03); for (const s of [-1, 1]) { const ex = p.len * 0.14, ey = s * p.wid * 0.3, r = p.wid * 0.07; g.beginPath(); g.moveTo(ex - r, ey - r); g.lineTo(ex + r, ey + r); g.moveTo(ex + r, ey - r); g.lineTo(ex - r, ey + r); g.stroke(); } }
+        roundRectPath(g, -p.len / 2, -p.wid / 2, p.len, p.wid, r); g.fillStyle = gr; g.fill();
+        g.save(); g.clip(); g.fillStyle = rgb(sk.dark, 0.5); g.fillRect(-p.len * 0.1, -p.wid / 2, p.len * 0.2, p.wid); g.restore();      // a band of the pattern
+        g.lineWidth = 1; g.strokeStyle = sk.rim ? rgb(sk.rim, 0.6) : 'rgba(0,0,0,.4)'; roundRectPath(g, -p.len / 2, -p.wid / 2, p.len, p.wid, r); g.stroke();
+        if (p.head) { g.strokeStyle = 'rgba(0,0,0,.65)'; g.lineWidth = Math.max(1, L.cs * 0.03); for (const s of [-1, 1]) { const ex = p.len * 0.14, ey = s * p.wid * 0.3, r2 = p.wid * 0.07; g.beginPath(); g.moveTo(ex - r2, ey - r2); g.lineTo(ex + r2, ey + r2); g.moveTo(ex + r2, ey - r2); g.lineTo(ex - r2, ey + r2); g.stroke(); } }
         g.restore();
       } else if (p.type === 'spark') {
         g.save(); g.translate(p.x, p.y); g.rotate(p.rot + p.life * 4); g.globalAlpha = 1 - k; g.fillStyle = '#fff3b0';
@@ -2096,7 +2131,7 @@ function drawHead(g, sk, sprite) {
   g.scale(cs, cs);
   g.save(); headPath(g); g.clip();
   let gr = g.createRadialGradient(lx * 0.16 + 0.04, ly * 0.16, 0, lx * 0.16 + 0.04, ly * 0.16, 0.36);
-  gr.addColorStop(0, 'rgba(255,250,225,.34)'); gr.addColorStop(1, 'rgba(255,250,225,0)');
+  gr.addColorStop(0, `rgba(255,250,225,${sk.sheen == null ? 0.34 : sk.sheen})`); gr.addColorStop(1, 'rgba(255,250,225,0)');
   g.fillStyle = gr; g.fillRect(-0.7, -0.5, 1.3, 1);
   gr = g.createLinearGradient(-lx * 0.4, -ly * 0.4, lx * 0.4, ly * 0.4);
   gr.addColorStop(0, 'rgba(0,0,0,.22)'); gr.addColorStop(0.5, 'rgba(0,0,0,0)');
@@ -2442,11 +2477,15 @@ function updateDpad() { el.dpad.classList.toggle('show', dpadVisible() && (G.sta
 
 hooks.onScore = () => updateHud(true);
 hooks.onStart = () => { el.hint.classList.remove('show'); updateDpad(); };
-hooks.onLevel = () => { toast('Speed up!'); Sound.play('level'); };
+hooks.onLevel = () => { toast('Speed up!'); Sound.play('level'); kick(1.012, 320); };
 hooks.onBonus = () => { if (G.state === 'playing') toast('Golden apple!'); };
 hooks.onOver = gameOver;
 
 /* ── game flow ── */
+function kick(scale, ms) {                                        // quick camera push-in (compositor-only animation)
+  if (REDUCED_MOTION || !world.animate) return;
+  world.animate([{ transform: `scale(${scale})` }, { transform: 'scale(1)' }], { duration: ms, easing: 'cubic-bezier(.2,.8,.2,1)' });
+}
 function relayout(fade) { chooseGrid(); computeLayout(); rebuildAssets(fade); }
 function startGame() {
   Sound.unlock();
@@ -2454,7 +2493,7 @@ function startGame() {
   chooseGrid(); computeLayout();
   if (c !== L.cols || r !== L.rows || was !== L.cs) rebuildAssets();
   resetState(false);
-  G.state = 'ready';
+  G.state = 'ready'; kick(1.05, 700);
   show(null); el.btnPause.classList.remove('alt-on');
   el.hint.textContent = dpadVisible() ? 'Swipe or tap the arrows to slither' : 'Swipe or press an arrow key to slither';
   el.hint.classList.add('show'); updateHud(); updateDpad();
@@ -2578,9 +2617,12 @@ addEventListener('keydown', e => {
     e.preventDefault();
     if ((G.state === 'attract' || G.state === 'over') && (G.state === 'attract' || canRestart())) startGame(); else if (G.state === 'paused') togglePause();
   } else if (k === 'KeyM') toggleMute();
+  else if (k === 'KeyF' && e.shiftKey) showFps(!fpsOn);
   else if (k === 'KeyF' && fsOk) toggleFullscreen();
   else if (k === 'KeyT' && (G.state === 'attract' || G.state === 'paused' || G.state === 'over')) applyTheme(THEMES[(THEMES.indexOf(THEME) + 1) % THEMES.length].id);
 });
+addEventListener('keyup', e => { if (e.code === 'Space') e.preventDefault(); });                // a focused button must not re-fire on Space
+document.addEventListener('click', e => { const b = e.target.closest('button'); if (b && e.detail > 0) b.blur(); });   // mouse/touch users keep the keyboard for steering
 let tx = 0, ty = 0, touching = false;
 stage.addEventListener('touchstart', e => { const t = e.touches[0]; tx = t.clientX; ty = t.clientY; touching = !e.target.closest('#dpad, .card, .btns'); Sound.unlock(); }, { passive: true });
 stage.addEventListener('touchmove', e => {
@@ -2597,6 +2639,16 @@ el.dpad.querySelectorAll('button').forEach(b => {
   b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('down'); Sound.unlock(); setDir(dx, dy); buzz(8); });
   for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => b.classList.remove('down'));
 });
+if (matchMedia('(hover: hover) and (pointer: fine)').matches) {                  // desktop: the menu card tilts gently towards the mouse
+  addEventListener('pointermove', e => {
+    const card = document.querySelector('.overlay.show .card');
+    if (!card || REDUCED_MOTION) return;
+    card.classList.add('tilt');
+    card.style.setProperty('--ry', ((e.clientX / innerWidth - 0.5) * 7).toFixed(2) + 'deg');
+    card.style.setProperty('--rx', ((0.5 - e.clientY / innerHeight) * 5).toFixed(2) + 'deg');
+  });
+}
+stage.addEventListener('contextmenu', e => e.preventDefault());                    // no long-press menus while steering
 document.addEventListener('visibilitychange', () => { if (document.hidden && G.state === 'playing') togglePause(); });
 addEventListener('blur', () => { if (G.state === 'playing') togglePause(); });
 
@@ -2633,8 +2685,17 @@ function update(dt) {
     }
     if (G.state === 'playing' || G.state === 'attract') {
       G.t = clamp(G.acc / G.tickMs, 0, 1);
+      if (THEME.id === 'ocean' && G.time - rippleAt > 0.32) {                                 // the swimming snake sends ripples across the water
+        rippleAt = G.time;
+        Particles.list.push({ type: 'ring', x: SP.x[SP.headIdx] || 0, y: SP.y[SP.headIdx] || 0, life: 0, max: 1.1, r0: L.cs * 0.3, r1: L.cs * 1.5, col: [200, 245, 255] });
+      }
       if (G.eating && !G.eating.fired && G.t >= 0.5) fireBite();
-      if (G.bonus && G.time - G.bonus.born > G.bonus.life) G.bonus = null;
+      if (G.bonus && G.time - G.bonus.born > G.bonus.life) {                                  // the golden fruit fades away in a little burst
+        const bx = cellX(G.bonus.x), by = cellY(G.bonus.y);
+        Particles.list.push({ type: 'ring', x: bx, y: by, life: 0, max: 0.5, r0: L.cs * 0.6, r1: L.cs * 1.4, col: [255, 214, 90] });
+        for (let i = 0; i < 8; i++) Particles.list.push({ type: 'spark', x: bx + rnd(-10, 10), y: by + rnd(-10, 10), vx: rnd(-25, 25), vy: rnd(-60, -15), life: 0, max: rnd(0.4, 0.8), r: rnd(2.5, 5) * (L.cs / 40), rot: rnd(0, 3) });
+        G.bonus = null;
+      }
       const hx = lerp(G.prev[0].x, G.snake[0].x, G.t), hy = lerp(G.prev[0].y, G.snake[0].y, G.t);
       for (const f of [G.food, G.bonus]) {
         if (!f) continue;
@@ -2663,20 +2724,31 @@ function update(dt) {
 
 /* ── frame loop with a small frame-rate governor ── */
 const dbg = { freeze: false };                                    // tests set this to step the simulation by hand
-let last = performance.now(), slowFrames = 0, fastFrames = 0;
-function governor(dt) {
-  if (G.state !== 'playing' && G.state !== 'attract') return;
+let last = performance.now(), slowFrames = 0, fastFrames = 0, rippleAt = 0;
+function governor(dt) {                                           // if frames take too long, shed cost in three steps: effects → resolution → more resolution
+  if (document.hidden) return;
   if (dt > 0.026) { slowFrames++; fastFrames = 0; } else { fastFrames++; if (fastFrames > 30) slowFrames = Math.max(0, slowFrames - 1); }
-  if (slowFrames > 90 && !Quality.low) { Quality.low = true; slowFrames = 0; }                 // stage 1: drop glow + ambient extras
-  else if (slowFrames > 120 && Quality.low && !Quality.dprCap) { Quality.dprCap = 1.25; slowFrames = 0; resize(); }   // stage 2: lower resolution
+  if (slowFrames < 100) return;
+  slowFrames = 0;
+  if (!Quality.low) { Quality.low = true; document.documentElement.classList.add('lite'); }
+  else if (!Quality.dprCap) { Quality.dprCap = 1.25; resize(); }
+  else if (Quality.dprCap > 1) { Quality.dprCap = 1; resize(); }
 }
+const fpsEl = $('fps');
+let fpsOn = /fps/.test(location.hash), fpsFrames = 0, fpsCost = 0, fpsTime = 0;                   // press Shift+F (or open the page with #fps) for a live frame-rate readout
+function showFps(on) { fpsOn = on; fpsEl.style.display = on ? 'block' : 'none'; fpsFrames = fpsCost = fpsTime = 0; }
 function frame(now) {
   requestAnimationFrame(frame);
   if (dbg.freeze) { last = now; return; }
-  const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+  const raw = Math.max(0, (now - last) / 1000), dt = Math.min(0.05, raw);
   last = now;
   governor(dt);
+  const t0 = performance.now();
   update(dt); render();
+  if (fpsOn) {
+    fpsFrames++; fpsCost += performance.now() - t0; fpsTime += raw;
+    if (fpsTime >= 0.5) { fpsEl.textContent = `${Math.round(fpsFrames / fpsTime)} fps · ${(fpsCost / fpsFrames).toFixed(1)} ms/frame · ${DPR.toFixed(2)}x${Quality.low ? ' · lite' : ''}`; fpsFrames = fpsCost = fpsTime = 0; }
+  }
 }
 
 /* ── boot ── */
@@ -2690,9 +2762,10 @@ Motes.init();
 chooseGrid(); computeLayout(); rebuildAssets();
 resetState(true);
 el.btnMute.classList.toggle('alt-on', Sound.muted);
-updateHud(); updateDpad();
+updateHud(); updateDpad(); showFps(fpsOn);
 requestAnimationFrame(frame);
-window.__viper = { G, L, CFG, DIFFS, THEMES, step, update, render, startGame, setDir, aiSteer, resetState, computeLayout, togglePause, applyTheme, setSetting, dbg, Quality, getScene: () => scene };   // handle used by the automated tests
+requestAnimationFrame(() => document.body.classList.add('loaded'));          // fade the board in once the first frame is ready
+window.__viper = { G, L, CFG, DIFFS, THEMES, step, update, render, startGame, setDir, aiSteer, resetState, computeLayout, togglePause, applyTheme, setSetting, dbg, Quality, getScene: () => scene, SP, Particles };   // handle used by the automated tests
 })();
 </script>
 </body>
