@@ -1,0 +1,19 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "pas:luxury_base_spawner",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": "pas_base_spawner",
+      "minecraft:display_name": {
+        "value": "Luxury Base Spawner"
+      },
+      "minecraft:max_stack_size": 16,
+      "minecraft:interact_button": "Build Base"
+    }
+  }
+}

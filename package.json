@@ -1,0 +1,27 @@
+{
+  "name": "parasite-apocalypse-survival",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minecraft Bedrock add-on (target: Bedrock Preview 1.21.0.26) - dev tooling, typings and tests",
+  "type": "module",
+  "scripts": {
+    "test": "node --import ./tests/mock/register.mjs --test \"tests/**/*.test.mjs\"",
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "python3 tools/build.py",
+    "validate": "python3 tools/validate.py"
+  },
+  "devDependencies": {
+    "@minecraft/server": "1.11.0-rc.1.21.0-preview.26",
+    "@minecraft/server-ui": "1.1.0",
+    "typescript": "5.9.3"
+  },
+  "overrides": {
+    "@minecraft/server-ui": {
+      "@minecraft/server": "1.11.0-rc.1.21.0-preview.26"
+    },
+    "@minecraft/common": "1.2.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

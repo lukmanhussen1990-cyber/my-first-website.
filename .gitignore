@@ -1,0 +1,15 @@
+# dependencies
+node_modules/
+
+# build caches (the .mcaddon / .mcpack files in dist/ are committed; unpacked copies are not)
+dist/unpacked/
+
+# python
+__pycache__/
+*.pyc
+
+# editor / OS junk
+.DS_Store
+Thumbs.db
+*.swp
+*~
