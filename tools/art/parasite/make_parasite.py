@@ -303,12 +303,12 @@ def paint(seed: int = 7) -> np.ndarray:
     h, w = dims(f["north"])
     face = pt.skin(h, w, blotch_count=5)
     face = pt.soak(face, pt.red_field(h, w), [0.0, 0.03, 0.12, 0.3, 0.55, 0.75, 0.88, 0.95, 1, 1, 1, 1][:h])
-    for c0, c1 in ((2, 6), (14, 18)):  # eye cubes x -4..-2 / 2..4 -> cols 2..5 / 14..17, rows 5..8
+    for c0, c1 in ((2, 6), (14, 18)):  # eye cubes x -3.75..-2.25 / 2.25..3.75 -> cols 2.5..5.5 / 14.5..17.5
         for r in range(4, 10):
             for c in range(c0 - 1, c1 + 1):
                 if pt.rng.random() < 0.8:
-                    face[r, c] = C("blood_hi") if pt.rng.random() < 0.6 else C("blood")
-        face[5:9, c0:c1] = C("eye")
+                    face[r, c] = C("blood") if pt.rng.random() < 0.55 else C("blotch_dk")
+        face[5:9, c0:c1] = C("blood_hi")   # under the eye cube; any visible edge reads as a red rim
     hole = mouth_hole_rows(pt, top=4, rows=h, centre=9.5, widths=[1.0, 2.0, 2.5, 3.0, 3.0, 4.5, 5.5, 6.0])
     paint_hole(pt, face, hole)
     fill(f["north"], face)
@@ -347,18 +347,13 @@ def paint(seed: int = 7) -> np.ndarray:
     h, w = dims(f["south"])
     fill(f["south"], pt.pick([0.5], ["flesh_deep", "flesh_dk"], pt.noise(h, w)))
 
-    # ---------------- eyes (emissive) ----------------------------------------
-    f = faces("eye")
-    for fname, rect in f.items():
-        h, w = dims(rect)
-        a = np.zeros((h, w, 4), dtype=np.uint8)
-        if fname == "north":            # 4x4 px: white square, faint warm corners
-            a[:] = C("eye", EMISSIVE_ALPHA)
-            for (yy, xx) in ((0, 0), (0, w - 1), (h - 1, 0), (h - 1, w - 1)):
-                a[yy, xx] = C("eye_rim", EMISSIVE_ALPHA)
-        else:                           # the 0.3-unit protrusion glows pink-red
-            a[:] = C("eye_glow", EMISSIVE_ALPHA)
-        fill(rect, a)
+    # ---------------- eyes (emissive, alpha 3 like vanilla spider.tga) -------
+    u, v, w, h = swatches["eye_front"]
+    x0, y0, x1, y1 = pt.rect_px((u, v, u + w, v + h))
+    pt.img[y0:y1, x0:x1] = C("eye", EMISSIVE_ALPHA)
+    u, v, w, h = swatches["eye_side"]
+    x0, y0, x1, y1 = pt.rect_px((u, v, u + w, v + h))
+    pt.img[y0:y1, x0:x1] = C("eye_glow", EMISSIVE_ALPHA)
 
     # ---------------- body ----------------------------------------------------
     for reg in ("chest", "abdomen"):

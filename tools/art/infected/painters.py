@@ -163,10 +163,13 @@ def paint_skin(canvas: Canvas, T: Texels, cfg: SkinConfig) -> None:
             if dist < s.r * 1.5:
                 cands.append((dist, p, q))
         cands.sort(key=lambda t: t[0])
-        for dist, p, q in cands[:3]:
-            for _ in range(s.veins):
-                dirn = rng.normal(size=3)
-                vein(p, q, dirn, s.vein_len * (0.6 + 0.6 * rng.random()))
+        cands = cands[:3]
+        if not cands:
+            continue
+        wts = np.array([1.0 / (1.0 + d) for d, _, _ in cands])
+        for _ in range(s.veins):
+            dist, p, q = cands[rng.choice(len(cands), p=wts / wts.sum())]
+            vein(p, q, rng.normal(size=3), s.vein_len * (0.6 + 0.6 * rng.random()))
     vparts = [p for p in skin_parts if cfg.vein_tags is None or p.tag in cfg.vein_tags]
     if vparts:
         areas = np.array([max(1.0, float(np.prod(np.sort(p.size)[1:]))) for p in vparts])
@@ -217,31 +220,31 @@ def paint_skin(canvas: Canvas, T: Texels, cfg: SkinConfig) -> None:
                     ok = True
                 done += ok
 
-    # 6) eyes: sockets, angry brows, tears; the eye texels stay clear for the glow quads
+    # 6) eyes: angry brows slanting down to the nose, a dark lower lid and bloody tears from the
+    #    inner corner; the eye texels themselves stay clear for the glow quads
+    def mark(sel_x, sel_y, col, front):
+        sel = front & (np.abs(P[:, 0] - sel_x) < 0.5) & (np.abs(P[:, 1] - sel_y) < 0.5)
+        if sel.any():
+            canvas.put_many(T.u[sel], T.v[sel], np.broadcast_to(np.array(col, np.uint8), (int(sel.sum()), 4)))
+
     for e in cfg.eyes:
         front = (np.abs(P[:, 2] - e.z) < 0.01) & (T.face == "north")
-        x, y = P[:, 0], P[:, 1]
-        eye = front & (x > e.x0) & (x < e.x1) & (y > e.y0) & (y < e.y1)
-        ring = front & ~eye & (x > e.x0 - 1) & (x < e.x1 + 1) & (y > e.y0 - 1) & (y < e.y1 + 1)
-        # sockets: darker below/sides, keep the corners lighter so it reads as a squint
-        canvas.put_many(T.u[ring], T.v[ring], np.broadcast_to(np.array(PAL["crimson_xdk"], np.uint8), (int(ring.sum()), 4)))
+        s_in = 1 if e.inner >= 0 else -1
+        outer = e.x0 + 0.5 if s_in > 0 else e.x1 - 0.5
+        inner = e.x1 - 0.5 if s_in > 0 else e.x0 + 0.5
+        top, bot = e.y1 + 0.5, e.y0 - 0.5
+        wide = abs(outer - inner) > 0.1
         if cfg.brows:
-            # angry brow: one texel above the outer end, dropping to the eye top at the inner end
-            ew = e.x1 - e.x0
-            for k in range(int(round(ew)) + 2):
-                if e.inner > 0:
-                    bx = e.x0 - 0.5 + k        # outer end at x0
-                    by = e.y1 + 1.5 - (1.0 if k >= (ew + 1) / 2 else 0.0)
-                else:
-                    bx = e.x1 + 0.5 - k
-                    by = e.y1 + 1.5 - (1.0 if k >= (ew + 1) / 2 else 0.0)
-                sel = front & (np.abs(x - bx) < 0.5) & (np.abs(y - by) < 0.5)
-                canvas.put_many(T.u[sel], T.v[sel], np.broadcast_to(np.array(PAL["vein_dk"], np.uint8), (int(sel.sum()), 4)))
+            if wide:
+                mark(outer, top + 1.0, PAL["vein_dk"], front)
+                mark(inner, top, PAL["vein_dk"], front)
+                mark(outer - s_in, e.y0 + 0.5, PAL["crimson_xdk"], front)
+            mark(inner + s_in, top, PAL["crimson_xdk"] if wide else PAL["vein_dk"], front)
+        mark(inner, bot, PAL["crimson_xdk"], front)
         if cfg.tears:
-            tx = e.x0 + 0.5 if e.inner > 0 else e.x1 - 0.5
-            for k in range(1, 4):
-                sel = front & (np.abs(x - tx) < 0.5) & (np.abs(y - (e.y0 - k + 0.5)) < 0.5)
-                canvas.put_many(T.u[sel], T.v[sel], np.broadcast_to(np.array(PAL["blood_fresh"] if k < 3 else PAL["blood_dk"], np.uint8), (int(sel.sum()), 4)))
+            mark(inner, bot - 1.0, PAL["blood_fresh"], front)
+            mark(inner, bot - 2.0, PAL["blood_dk"], front)
+        eye = front & (P[:, 0] > e.x0) & (P[:, 0] < e.x1) & (P[:, 1] > e.y0) & (P[:, 1] < e.y1)
         canvas.put_many(T.u[eye], T.v[eye], np.broadcast_to(np.array(CLEAR, np.uint8), (int(eye.sum()), 4)))
 
     for (lo, hi) in cfg.clean_boxes:
@@ -305,8 +308,9 @@ def paint_flesh_rod(canvas: Canvas, part: Part, seed: int, style: str = "tendril
     t = P[:, ax] / max(L, 1e-6)
     n1 = nz.fbm(P, freq=0.7, octaves=2)
     if style == "claw":
-        cols = pick([PAL["bone"], PAL["bone_sh"], PAL["pale_sh"]], (n1 * 3).astype(int))
-        cols[t < 0.35] = PAL["crimson_dk"]
+        cols = pick([PAL["crimson_xdk"], PAL["crimson_dk"], PAL["brown_dk"]], (n1 * 3).astype(int))
+        tip = t > 0.62
+        cols[tip] = pick([PAL["bone"], PAL["bone_sh"]], (n1[tip] > 0.5).astype(int))
     elif style == "stalk":
         cols = pick([PAL["crimson"], PAL["crimson_dk"], PAL["flesh_hi"]], np.where(n1 > 0.62, 2, np.where(n1 < 0.42, 1, 0)))
         ring = (np.floor(P[:, ax]) % 2 == 0) & (n1 < 0.5)

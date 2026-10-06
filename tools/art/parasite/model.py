@@ -83,10 +83,17 @@ class Bone:
 
 def seg_cube(a, b, t, uv, ext0=0.0, ext1=0.0, mirror=False, tz=None):
     """Cube of cross-section t x tz running from joint a to joint b (extended by
-    ext0 before a and ext1 past b), rotated about a."""
+    ext0 before a and ext1 past b), rotated about a.
+
+    Box-UV cubes get an integer length (ext1 grows by < 1 unit): box UV strips
+    are laid out from the cube size, and Blockbench floors fractional sizes
+    while the engine's handling of fractions is not documented, so every
+    box-UV cube in this model has whole-unit dimensions."""
     tz = t if tz is None else tz
     d = _unit(_sub(b, a))
     L = _len(_sub(b, a)) + ext0 + ext1
+    if not uv.startswith("swatch:"):
+        L = float(math.ceil(L - 1e-6))
     top = _sub(a, _mul(d, ext0))           # where the cube starts (centre of its top face)
     # canonical hanging cube below `top`; the rotation pivot is `top`
     origin = (top[0] - t / 2, top[1] - L, top[2] - tz / 2)
@@ -144,8 +151,8 @@ def build_bones():
         Cube((-5.0, 10.0, -14.0), (10, 6, 10), "skull"),
     ], rotation=(-10.0, 0.0, 0.0)))
     bones.append(Bone("eyes", "head", (0.0, 12.5, -14.0), [
-        Cube((-4.0, 11.5, -14.3), (2, 2, 1), "eye"),
-        Cube((2.0, 11.5, -14.3), (2, 2, 1), "eye", mirror=True),
+        Cube((-3.75, 11.75, -14.3), (1.5, 1.5, 1), "eyeface"),
+        Cube((2.25, 11.75, -14.3), (1.5, 1.5, 1), "eyeface"),
     ]))
     # mouth: dark throat box inside the head + ragged upper teeth hanging from the skull's front edge
     mouth = [Cube((-4.5, 7.5, -13.0), (9, 3, 8), "swatch:throat")]
@@ -208,7 +215,7 @@ def region_sizes(bones):
     out = {}
     for b in bones:
         for c in b.cubes:
-            if isinstance(c.uv, str) and not c.uv.startswith("swatch:"):
+            if isinstance(c.uv, str) and not c.uv.startswith("swatch:") and c.uv != "eyeface":
                 dims = box_dims(c.size)
                 if c.uv in out and out[c.uv] != dims:
                     # shared regions must have the same floored size
@@ -218,6 +225,8 @@ def region_sizes(bones):
 
 
 SWATCHES = {            # name -> (w, h) in texture units
+    "eye_front": (2, 2),
+    "eye_side": (1, 1),
     "throat": (4, 4),
     "tooth": (1, 3),
     "tooth_low": (1, 3),
@@ -282,7 +291,13 @@ def cube_json(c: Cube, regions, swatches):
         out["pivot"] = [_r(x) for x in c.pivot]
     if c.rotation is not None and any(abs(r) > 1e-9 for r in c.rotation):
         out["rotation"] = [_r(x) for x in c.rotation]
-    if c.uv.startswith("swatch:"):
+    if c.uv == "eyeface":
+        # glowing eye: white front, glowing rim on the 0.3-unit protrusion
+        fu, fv, fw, fh = swatches["eye_front"]
+        su, sv, sw, sh = swatches["eye_side"]
+        out["uv"] = {f: ({"uv": [fu, fv], "uv_size": [fw, fh]} if f == "north" else {"uv": [su, sv], "uv_size": [sw, sh]})
+                     for f in ("north", "east", "south", "west", "up", "down")}
+    elif c.uv.startswith("swatch:"):
         u, v, w, h = swatches[c.uv[7:]]
         face = {"uv": [u, v], "uv_size": [w, h]}
         out["uv"] = {f: dict(face) for f in ("north", "east", "south", "west", "up", "down")}

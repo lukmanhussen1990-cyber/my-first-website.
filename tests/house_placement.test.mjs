@@ -236,6 +236,17 @@ describe("blocked sites (test 2)", { skip: skipNoRef }, () => {
     assert.ok(messages(p).includes(MSG.inside));
     assert.equal(spawnerCount(p), 2);
   });
+
+  test("another player standing inside the build area", () => {
+    const c = { x: 0, y: 63, z: 0 };
+    grassPlane(c);
+    const p = addBuilder({ click: c, facing: "north" });
+    addBuilder({ name: "Alex", click: rel(c, "north", 6, 0, 63), facing: "south", back: 0, count: 0 });
+    useOn(p, c);
+    mock.tick(2);
+    assert.ok(messages(p).includes("§cCan't build here: Alex is standing inside the build area."), messages(p).join(" | "));
+    assert.equal(spawnerCount(p), 2);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -400,6 +411,56 @@ describe("fallback to /structure load (test 6)", { skip: skipNoRef }, () => {
     } finally {
       restore();
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe("completion check", { skip: skipNoRef }, () => {
+  test("a door missing at completion is reported honestly (no 'complete' message)", () => {
+    const c = { x: 1, y: 63, z: 1 };
+    grassPlane(c);
+    const p = addBuilder({ click: c, facing: "south" });
+    useOn(p, c);
+    runUntilMessage(p, /Building your Luxury Base/, 60);
+    mock.runUntil(() => mock.structureAnimationsPending() === 0, BUILD_TICKS);
+    const door = rel(c, "south", 2, 1, 65); // left leaf, lower half
+    assert.equal(mock.blockName(OW, door), "minecraft:dark_oak_door");
+    mock.setBlock(OW, door, "minecraft:air");
+    const msg = runUntilMessage(p, /Luxury Base finished, but|Luxury Base complete!/, 60);
+    assert.equal(msg, `§eLuxury Base finished, but dark_oak_door is missing at ${xyz(door)} (found air). The build may have been interrupted.`);
+    assert.ok(!messages(p).includes(MSG.done));
+    assert.equal(__houseState.jobs.size, 0, "reservation released");
+  });
+
+  test("an engine that accepts the placement but builds nothing is not reported as complete", () => {
+    const c = { x: 1, y: 63, z: 1 };
+    grassPlane(c);
+    const p = addBuilder({ click: c, facing: "north" });
+    const sm = world.structureManager;
+    const orig = sm.place;
+    sm.place = function (s, ...rest) {
+      if (s === HOUSE.structureId) return undefined; // "success", but nothing happens
+      return orig.call(this, s, ...rest);
+    };
+    try {
+      useOn(p, c);
+      const msg = runUntilMessage(p, /Luxury Base finished, but|Luxury Base complete!/, BUILD_TICKS);
+      assert.match(msg, /dark_oak_door is missing/);
+    } finally {
+      delete sm.place;
+    }
+  });
+
+  test("area unloaded at completion: says it could not be checked", () => {
+    const c = { x: 1, y: 63, z: 1 };
+    grassPlane(c);
+    const p = addBuilder({ click: c, facing: "north" });
+    useOn(p, c);
+    runUntilMessage(p, /Building your Luxury Base/, 60);
+    mock.runUntil(() => mock.structureAnimationsPending() === 0, BUILD_TICKS);
+    mock.unloadAt(OW, rel(c, "north", 2, 0, 65));
+    const msg = runUntilMessage(p, /Luxury Base finished, but|Luxury Base complete!/, 60);
+    assert.equal(msg, MSG.verifyUnloaded);
   });
 });
 

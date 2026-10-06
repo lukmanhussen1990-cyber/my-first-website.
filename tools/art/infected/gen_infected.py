@@ -44,9 +44,17 @@ def texture_path(key: str) -> str:
 
 def build(key: str) -> tuple[Spec, Canvas]:
     sp = BUILDERS[key]()
-    w, h = sp.tex_size
     parts = [p for m in sp.models for _, p in m.parts()]
-    pack_parts(parts, w, h, key)
+    # smallest texture that fits (power-of-two sizes, width >= height)
+    for w, h in ((64, 32), (64, 64), (128, 64), (128, 128), (256, 128), (256, 256)):
+        try:
+            pack_parts(parts, w, h, key)
+            break
+        except ValueError:
+            continue
+    sp.tex_size = (w, h)
+    for m in sp.models:
+        m.tex_w, m.tex_h = w, h
     cv = Canvas(w, h)
     for m, cfg in sp.skin_cfgs:
         skin_parts = [p for _, p in m.parts() if p.kind == "skin"]

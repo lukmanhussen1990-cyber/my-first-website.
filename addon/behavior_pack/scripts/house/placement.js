@@ -140,6 +140,8 @@ export const MSG = Object.freeze({
   overlap: (p) =>
     `§cCan't build here: another Luxury Base is being built in this area (near ${xyz(p)}). Wait for it to finish or pick another spot.`,
   inside: "§cCan't build here: you are standing inside the build area. Step back and try again.",
+  /** @param {string} name */
+  otherInside: (name) => `§cCan't build here: ${name} is standing inside the build area.`,
   noItem: "§cYou no longer have a Luxury Base Spawner.",
   /** @param {number} secs */
   started: (secs) => `§aBuilding your Luxury Base... (${secs}s)`,
@@ -380,6 +382,24 @@ export function resolveGround(block) {
   return { block, reads };
 }
 
+/**
+ * Whether a player's body (feet or head cell) is inside the box.
+ * @param {Player} p
+ * @param {Placement} pl
+ * @returns {boolean}
+ */
+function standsIn(p, pl) {
+  try {
+    const f = p.location;
+    const x = Math.floor(f.x);
+    const y = Math.floor(f.y);
+    const z = Math.floor(f.z);
+    return x >= pl.min.x && x <= pl.max.x && z >= pl.min.z && z <= pl.max.z && y >= pl.min.y - 1 && y <= pl.max.y;
+  } catch {
+    return false;
+  }
+}
+
 /** Whether `player` has a build in progress. @param {Player} player @returns {boolean} */
 export function isBusy(player) {
   return activeByPlayer.has(player.id);
@@ -420,14 +440,16 @@ export function requestBuild(player, clicked) {
     reportBlocked(player, MSG.tooLow(range.min), "§cToo low");
     return undefined;
   }
-  // the player must not stand inside the box (they would be built in)
-  const f = player.location;
-  const fx = Math.floor(f.x);
-  const fy = Math.floor(f.y);
-  const fz = Math.floor(f.z);
-  if (player.dimension.id === dim.id && fx >= pl.min.x && fx <= pl.max.x && fz >= pl.min.z && fz <= pl.max.z && fy >= pl.min.y - 1 && fy <= pl.max.y) {
+  // no player may stand inside the box (they would be built in)
+  if (standsIn(player, pl)) {
     reportBlocked(player, MSG.inside, "§cStep out of the build area");
     return undefined;
+  }
+  for (const other of dim.getPlayers()) {
+    if (other.id !== player.id && standsIn(other, pl)) {
+      reportBlocked(player, MSG.otherInside(other.name), "§cSomeone is in the build area");
+      return undefined;
+    }
   }
   // overlap with builds in progress (scanning or animating)
   for (const other of jobs) {

@@ -15,51 +15,39 @@
         "default": "geometry.pas.tactical_torchlight"
       },
       "animations": {
-        "hold_first_person_main_hand": "animation.pas.torchlight.first_person_main_hand",
-        "hold_first_person_off_hand": "animation.pas.torchlight.first_person_off_hand",
-        "hold_third_person_main_hand": "animation.pas.torchlight.third_person_main_hand",
-        "hold_third_person_off_hand": "animation.pas.torchlight.third_person_off_hand"
+        "first_person_anchor_main_hand": "animation.pas.torchlight.first_person_anchor_main_hand",
+        "first_person_anchor_off_hand": "animation.pas.torchlight.first_person_anchor_off_hand",
+        "hold_first_person": "animation.pas.torchlight.hold_first_person",
+        "hold_third_person": "animation.pas.torchlight.hold_third_person"
       },
       "scripts": {
         "initialize": [
-          "variable.pas_fp_main_pos_x = -0.62;",
-          "variable.pas_fp_main_pos_y = -3.56;",
-          "variable.pas_fp_main_pos_z = -3.38;",
-          "variable.pas_fp_main_rot_x = 7.23;",
-          "variable.pas_fp_main_rot_y = 71.59;",
-          "variable.pas_fp_main_rot_z = -126.14;",
-          "variable.pas_fp_off_pos_x = -16.0;",
-          "variable.pas_fp_off_pos_y = 6.0;",
-          "variable.pas_fp_off_pos_z = 18.5;",
-          "variable.pas_fp_off_rot_x = 177.97;",
-          "variable.pas_fp_off_rot_y = -14.65;",
-          "variable.pas_fp_off_rot_z = 154.38;",
-          "variable.pas_tp_main_pos_x = 0.0;",
-          "variable.pas_tp_main_pos_y = -1.5;",
-          "variable.pas_tp_main_pos_z = -1.0;",
-          "variable.pas_tp_main_rot_x = 18.0;",
-          "variable.pas_tp_main_rot_y = 0.0;",
-          "variable.pas_tp_main_rot_z = 0.0;",
-          "variable.pas_tp_off_pos_x = 0.0;",
-          "variable.pas_tp_off_pos_y = -1.5;",
-          "variable.pas_tp_off_pos_z = -1.0;",
-          "variable.pas_tp_off_rot_x = 18.0;",
-          "variable.pas_tp_off_rot_y = 0.0;",
-          "variable.pas_tp_off_rot_z = 0.0;",
+          "variable.pas_fp_pos_x = -10.0;",
+          "variable.pas_fp_pos_y = -6.65;",
+          "variable.pas_fp_pos_z = -18.5;",
+          "variable.pas_fp_rot_x = -2.03;",
+          "variable.pas_fp_rot_y = -14.65;",
+          "variable.pas_fp_rot_z = -25.62;",
+          "variable.pas_tp_pos_x = 0.0;",
+          "variable.pas_tp_pos_y = -1.5;",
+          "variable.pas_tp_pos_z = -1.0;",
+          "variable.pas_tp_rot_x = 18.0;",
+          "variable.pas_tp_rot_y = 0.0;",
+          "variable.pas_tp_rot_z = 0.0;",
           "variable.pas_fp_scale = 1.25;"
         ],
         "animate": [
           {
-            "hold_first_person_main_hand": "c.is_first_person && c.item_slot == 'main_hand'"
+            "first_person_anchor_main_hand": "c.is_first_person && c.item_slot == 'main_hand'"
           },
           {
-            "hold_first_person_off_hand": "c.is_first_person && c.item_slot != 'main_hand'"
+            "first_person_anchor_off_hand": "c.is_first_person && c.item_slot != 'main_hand'"
           },
           {
-            "hold_third_person_main_hand": "!c.is_first_person && c.item_slot == 'main_hand'"
+            "hold_first_person": "c.is_first_person"
           },
           {
-            "hold_third_person_off_hand": "!c.is_first_person && c.item_slot != 'main_hand'"
+            "hold_third_person": "!c.is_first_person"
           }
         ]
       },

@@ -1,72 +1,55 @@
 {
   "format_version": "1.10.0",
   "animations": {
-    "animation.pas.torchlight.first_person_main_hand": {
+    "animation.pas.torchlight.first_person_anchor_main_hand": {
+      "loop": true,
+      "bones": {
+        "torch_anchor": {
+          "position": [-14.973, 9.241, -14.175],
+          "rotation": [82.636, 61.26, -51.574]
+        }
+      }
+    },
+    "animation.pas.torchlight.first_person_anchor_off_hand": {
+      "loop": true,
+      "bones": {
+        "torch_anchor": {
+          "position": [-6.0, 12.648, 0.0],
+          "rotation": [0.0, 180.0, 0.0]
+        }
+      }
+    },
+    "animation.pas.torchlight.hold_first_person": {
       "loop": true,
       "bones": {
         "torch": {
           "position": [
-            "variable.pas_fp_main_pos_x",
-            "variable.pas_fp_main_pos_y",
-            "variable.pas_fp_main_pos_z"
+            "(c.item_slot == 'main_hand' ? 1.0 : -1.0) * variable.pas_fp_pos_x",
+            "variable.pas_fp_pos_y",
+            "variable.pas_fp_pos_z"
           ],
           "rotation": [
-            "variable.pas_fp_main_rot_x",
-            "variable.pas_fp_main_rot_y",
-            "variable.pas_fp_main_rot_z"
+            "variable.pas_fp_rot_x",
+            "(c.item_slot == 'main_hand' ? 1.0 : -1.0) * variable.pas_fp_rot_y",
+            "(c.item_slot == 'main_hand' ? 1.0 : -1.0) * variable.pas_fp_rot_z"
           ],
           "scale": "variable.pas_fp_scale"
         }
       }
     },
-    "animation.pas.torchlight.first_person_off_hand": {
+    "animation.pas.torchlight.hold_third_person": {
       "loop": true,
       "bones": {
         "torch": {
           "position": [
-            "variable.pas_fp_off_pos_x",
-            "variable.pas_fp_off_pos_y",
-            "variable.pas_fp_off_pos_z"
+            "(c.item_slot == 'main_hand' ? 1.0 : -1.0) * variable.pas_tp_pos_x",
+            "variable.pas_tp_pos_y",
+            "variable.pas_tp_pos_z"
           ],
           "rotation": [
-            "variable.pas_fp_off_rot_x",
-            "variable.pas_fp_off_rot_y",
-            "variable.pas_fp_off_rot_z"
-          ],
-          "scale": "variable.pas_fp_scale"
-        }
-      }
-    },
-    "animation.pas.torchlight.third_person_main_hand": {
-      "loop": true,
-      "bones": {
-        "torch": {
-          "position": [
-            "variable.pas_tp_main_pos_x",
-            "variable.pas_tp_main_pos_y",
-            "variable.pas_tp_main_pos_z"
-          ],
-          "rotation": [
-            "variable.pas_tp_main_rot_x",
-            "variable.pas_tp_main_rot_y",
-            "variable.pas_tp_main_rot_z"
-          ]
-        }
-      }
-    },
-    "animation.pas.torchlight.third_person_off_hand": {
-      "loop": true,
-      "bones": {
-        "torch": {
-          "position": [
-            "variable.pas_tp_off_pos_x",
-            "variable.pas_tp_off_pos_y",
-            "variable.pas_tp_off_pos_z"
-          ],
-          "rotation": [
-            "variable.pas_tp_off_rot_x",
-            "variable.pas_tp_off_rot_y",
-            "variable.pas_tp_off_rot_z"
+            "variable.pas_tp_rot_x",
+            "(c.item_slot == 'main_hand' ? 1.0 : -1.0) * variable.pas_tp_rot_y",
+            "(c.item_slot == 'main_hand' ? 1.0 : -1.0) * variable.pas_tp_rot_z"
           ]
         }
       }

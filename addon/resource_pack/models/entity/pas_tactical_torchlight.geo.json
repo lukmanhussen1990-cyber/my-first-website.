@@ -12,8 +12,13 @@
       },
       "bones": [
         {
-          "name": "torch",
+          "name": "torch_anchor",
           "binding": "q.item_slot_to_bone_name(c.item_slot)",
+          "pivot": [0, 24, 0]
+        },
+        {
+          "name": "torch",
+          "parent": "torch_anchor",
           "pivot": [0, 24, 0],
           "cubes": [
             {

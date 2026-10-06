@@ -25,7 +25,7 @@ import { toWorld, WAIT } from "./rotation.js";
 /** Max Dimension.getBlock calls per game tick for all house work together (mobile-friendly). */
 export const SCAN_BUDGET_PER_TICK = 600;
 /** Structure cells read per tick while building the write mask (memory reads, no world access). */
-const MASK_READS_PER_TICK = 1500;
+const MASK_READS_PER_TICK = 1000;
 
 const AIR = "minecraft:air";
 

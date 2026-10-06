@@ -13,6 +13,7 @@ Local design frame (used throughout tools/art/torchlight):
 Geometry ("attachable") space: X = x, Y = 24 + y, Z = GRIP_L - L, so the lens points to
 geo -Z (the "north"/front face) and the grip centre sits at (0, 24, 0), the bone pivot.
 (0, 24, 0) is the point that lands on the bound hand bone's pivot (see docs/TORCHLIGHT_MODEL.md).
+Bones: "torch_anchor" (root, binding to the hand bone, no cubes) -> "torch" (all cubes).
 
 Usage: python3 tools/art/torchlight/torch_model.py      (writes the .geo.json)
 Deterministic output; imported by make_torch_texture.py, solve_transforms.py and
@@ -32,7 +33,8 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[3]
 GEO_PATH = ROOT / "addon" / "resource_pack" / "models" / "entity" / "pas_tactical_torchlight.geo.json"
 GEO_ID = "geometry.pas.tactical_torchlight"
-BONE = "torch"
+ANCHOR_BONE = "torch_anchor"   # root, bound to the hand bone; animated with fixed derived constants
+BONE = "torch"                 # child of the anchor, carries the cubes and the tweakable hold pose
 TEX_W = TEX_H = 64          # texture size in texels == geometry texture units (1 texel / unit)
 GRIP_L = 5.0                # L of the grip centre (the bone pivot / where the fist closes)
 PIVOT = (0.0, 24.0, 0.0)
@@ -228,11 +230,16 @@ def geometry_json() -> dict:
                 },
                 "bones": [
                     {
-                        "name": BONE,
+                        "name": ANCHOR_BONE,
                         "binding": "q.item_slot_to_bone_name(c.item_slot)",
                         "pivot": [_r(v) for v in PIVOT],
+                    },
+                    {
+                        "name": BONE,
+                        "parent": ANCHOR_BONE,
+                        "pivot": [_r(v) for v in PIVOT],
                         "cubes": cubes,
-                    }
+                    },
                 ],
             }
         ],

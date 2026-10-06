@@ -1,7 +1,8 @@
 // @ts-check
 // The pas:parasite_outbreak item (SPEC §7 "Start").
 //   onUseOn: release a parasite on top of the clicked block (or in front of the
-//            clicked face when the cell above is blocked);
+//            clicked face when the cell above is blocked; inside a clicked
+//            plant/snow layer);
 //   onUse:   (air) raycast up to RELEASE_RAY_DISTANCE blocks along the view
 //            direction, else ask the player to aim at the ground.
 // startOutbreak() does the cap check; the item is consumed in survival/adventure
@@ -31,13 +32,19 @@ const FACE_OFFSET = {
 
 /**
  * Feet location for a parasite released on `block`: the cell on top of it,
- * or the cell in front of the clicked face when the top is blocked.
+ * or the cell in front of the clicked face when the top is blocked. A clicked
+ * plant/snow layer standing on solid ground is used itself.
  * @param {Block} block
  * @param {Direction | string} face
  * @returns {Vector3 | undefined}
  */
 export function releaseSpot(block, face) {
   const dim = block.dimension;
+  // clicked a plant / snow layer on the ground: release inside that cell
+  if (isOpenBlock(block) && !block.isAir && !block.isLiquid) {
+    const below = safeGetBlock(dim, { x: block.x, y: block.y - 1, z: block.z });
+    if (below && !isOpenBlock(below)) return { x: block.x + 0.5, y: block.y, z: block.z + 0.5 };
+  }
   const cells = [{ x: block.x, y: block.y + 1, z: block.z }];
   const o = FACE_OFFSET[String(face)];
   if (o && String(face) !== "Up") cells.push({ x: block.x + o.x, y: block.y + o.y, z: block.z + o.z });

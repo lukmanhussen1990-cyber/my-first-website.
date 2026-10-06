@@ -141,7 +141,7 @@ def build_cow() -> Spec:
                Site((-5, 21.5, -5), 1.2, flesh=False, veins=3, vein_len=6)],
         eyes=eyes,
         mouths=[Mouth((-3, 15.9, -14.1), (3, 17.1, -11.5), drips=3, max_drip=2)],
-        mottle=0.13, vein_walks=9, sores=9, fur_dark=True,
+        mottle=0.12, vein_walks=10, sores=9, fur_dark=True,
     )
     sp.skin_cfgs.append((m, cfg))
     # mooshroom mushrooms (vanilla block textures referenced by path, 16x16)
@@ -194,9 +194,10 @@ def build_pig() -> Spec:
                Site((5, 10, -2), 2.0, veins=4), Site((4, 13.5, -4), 1.0, flesh=False, veins=3, vein_len=6),
                Site((-4, 13.5, -4), 1.0, flesh=False, veins=3, vein_len=6)],
         eyes=eyes,
-        mouths=[Mouth((-2.5, 7.9, -15.1), (2.5, 9.6, -12.0), drips=3, max_drip=2),
-                Mouth((-2.1, 8.9, -15.1), (2.1, 9.8, -14.9), drips=0)],
-        mottle=0.30, vein_walks=12, sores=12,
+        mouths=[Mouth((-2.5, 7.9, -14.1), (2.5, 8.95, -12.0), drips=2, max_drip=2),
+                Mouth((-2.05, 8.95, -15.1), (-0.95, 10.0, -14.9), drips=0),
+                Mouth((0.95, 8.95, -15.1), (2.05, 10.0, -14.9), drips=0)],
+        mottle=0.11, vein_walks=14, sores=9,
     )
     sp.skin_cfgs.append((m, cfg))
     return sp
@@ -244,7 +245,7 @@ def _sheep_model(identifier: str, sheared: bool, seed: int):
                Site((-s, top, -4), 1.0, flesh=False, veins=3, vein_len=6)],
         eyes=eyes,
         mouths=[Mouth((-1.6, 15.9, -14.1), (1.6, 17.2, -12.5), drips=3, max_drip=2)],
-        mottle=0.24, vein_walks=12, sores=12,
+        mottle=0.10, vein_walks=14, sores=9,
     )
     return m, cfg, gb
 
@@ -293,9 +294,8 @@ def build_chicken() -> Spec:
         seed=404,
         sites=[Site((0.5, 11, 1.5), 2.2, veins=5, vein_len=7), Site((3, 8, -1), 1.3, veins=3, vein_len=5)],
         eyes=eyes,
-        mouths=[Mouth((-2.1, 10.9, -8.1), (2.1, 12.3, -7.3), drips=2, max_drip=1),
-                Mouth((-1.1, 8.9, -7.1), (1.1, 9.6, -5.0), drips=1, max_drip=1)],
-        mottle=0.24, vein_walks=6, vein_len=5, sores=6, brows=True, tears=False,
+        mouths=[Mouth((-1.1, 10.9, -8.1), (1.1, 11.95, -7.3), drips=1, max_drip=1)],
+        mottle=0.10, vein_walks=8, vein_len=5, sores=5, brows=True, tears=False,
     )
     sp.skin_cfgs.append((m, cfg))
     return sp
@@ -326,10 +326,10 @@ def build_villager() -> Spec:
     glow_eyes(m, "head", (0, 24, 0), eyes, [[WHITE, RED], [RED, WHITE]])
     parasite_head(m, "body", "pas_g0", (-2.5, 22.5, 3.5), (-38, 0, -24), head=(5, 4, 4), stalk=(2, 3, 2), seed=15)
     parasite_head(m, "body", "pas_g1", (3.0, 24.0, 1.0), (-8, 0, 30), head=(3, 3, 3), stalk=(2, 2, 2), seed=25)
-    t0 = tendril(m, "body", "pas_t0", (2, 20, 3.5), [(-40, 0, 30), (95, 0, 0), (45, 0, 0)], [5, 6, 3], seed=60)
-    t1 = tendril(m, "body", "pas_t1", (-2, 18, 3.5), [(-40, 0, -34), (95, 0, 0), (45, 0, 0)], [5, 6, 3], seed=64)
-    t2 = tendril(m, "body", "pas_t2", (2.5, 13, 3.5), [(-70, 0, 50), (0, 0, 60), (0, 0, 30)], [4, 5, 3], seed=68)
-    t3 = tendril(m, "body", "pas_t3", (-2.5, 13, 3.5), [(-70, 0, -50), (0, 0, -60), (0, 0, -30)], [4, 5, 3], seed=72)
+    t0 = tendril(m, "body", "pas_t0", (2, 21, 3.5), [(-28, 0, 22), (105, 0, 0), (55, 0, 0)], [7, 7, 4], seed=60)
+    t1 = tendril(m, "body", "pas_t1", (-2, 20, 3.5), [(-28, 0, -26), (105, 0, 0), (55, 0, 0)], [7, 7, 4], seed=64)
+    t2 = tendril(m, "body", "pas_t2", (2.5, 17, 3.5), [(-75, 0, 55), (0, 0, 55), (0, 0, 30)], [4, 5, 3], seed=68)
+    t3 = tendril(m, "body", "pas_t3", (-2.5, 17, 3.5), [(-75, 0, -55), (0, 0, -55), (0, 0, -30)], [4, 5, 3], seed=72)
     sp.models.append(m)
     sp.growth_bones = {"heads": ["pas_g0", "pas_g1"], "tendrils": [t0, t1, t2, t3]}
     cfg = SkinConfig(
@@ -340,7 +340,7 @@ def build_villager() -> Spec:
         eyes=eyes,
         mouths=[Mouth((-2.2, 24.4, -4.1), (2.2, 26.2, -3.0), drips=3, max_drip=2),
                 Mouth((-1.1, 22.9, -6.1), (1.1, 24.3, -4.0), drips=1, max_drip=1)],
-        mottle=0.24, vein_walks=14, sores=12,
+        mottle=0.11, vein_walks=16, sores=10,
     )
     sp.skin_cfgs.append((m, cfg))
     return sp
@@ -384,7 +384,7 @@ def build_human() -> Spec:
                Site((-6, 9, -2), 1.6, veins=3)],
         eyes=eyes,
         mouths=[Mouth((-2.5, 24.4, -4.1), (2.5, 26.2, -3.0), drips=4, max_drip=2)],
-        mottle=0.28, vein_walks=16, sores=14,
+        mottle=0.12, vein_walks=18, sores=11,
     )
     sp.skin_cfgs.append((m, cfg))
     return sp

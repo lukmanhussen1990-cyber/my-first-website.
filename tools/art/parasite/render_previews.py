@@ -7,6 +7,8 @@ Repo images (our own texture only):
   docs/images/parasite_attack.png         lunge, side and 3/4 rows
   docs/images/parasite_poses.png          idle twitch, hunting stance, hurt flinch, death curl, invisible
   docs/images/parasite_vs_reference.png   reference crop | preview | night simulation (emissive eyes)
+  docs/images/parasite_uv.png             texture with every face's UV rect (painting aid)
+  docs/images/parasite_scale.png          side view with 1-block lines, player and collision boxes
 Scratchpad only (contains vanilla textures):
   <scratch>/parasite_scale.png            next to vanilla zombie and player models
   <scratch>/parasite_walk.gif, parasite_attack.gif
@@ -205,6 +207,44 @@ def scale_check(rp_ours, out):
     print("wrote", out)
 
 
+def uv_sheet(out):
+    lib = g.load_geometries(str(RP / "models" / "entity" / "pas_parasite.geo.json"))
+    tex = g.load_texture(str(RP / "textures" / "entity" / "pas" / "parasite.png"))
+    im, problems = g.uv_map_image(lib.get(), tex, scale=8)
+    for pr in problems:
+        print("UV problem:", pr)
+    im.save(out)
+    print("wrote", out)
+
+
+def scale_ruler(rp, out):
+    """Our model only, side view at a fixed scale with 1-block grid lines and the
+    player's 0.6 x 1.8 hit box outline (no vanilla textures)."""
+    ppu = 10.0
+    W, H = 520, 380
+    cam = g.Camera(yaw=90, pitch=0, ortho=True, ppu=ppu, target=(0, 16, 0))
+    layers, plays, v = entity(rp)
+    im = g.render(layers, cam, size=(W, H), plays=plays, variables=v, background="262626")
+    dr = ImageDraw.Draw(im)
+    y0 = H / 2 + 16 * ppu                     # target y=16 is the image centre -> ground line
+    for k in range(3):
+        y = y0 - k * 16 * ppu
+        dr.line([(0, y), (W, y)], fill=(110, 170, 255, 255), width=1)
+        dr.text((4, y - 14), f"{k} block" + ("s" if k != 1 else ""), fill=(150, 200, 255, 255), font=g._font(11))
+    # player hit box 0.6 x 1.8 blocks, drawn at the right edge
+    x1 = W - 20
+    x0 = x1 - 0.6 * 16 * ppu
+    dr.rectangle([x0, y0 - 1.8 * 16 * ppu, x1, y0], outline=(240, 240, 240, 255), width=2)
+    dr.text((x0 - 4, y0 - 1.8 * 16 * ppu - 16), "player 0.6 x 1.8", fill=(240, 240, 240, 255), font=g._font(11))
+    # parasite collision box 0.8 x 0.6 (BP minecraft:collision_box), centred on the origin
+    cx = W / 2
+    dr.rectangle([cx - 0.4 * 16 * ppu, y0 - 0.6 * 16 * ppu, cx + 0.4 * 16 * ppu, y0], outline=(255, 210, 60, 255), width=1)
+    dr.text((cx - 0.4 * 16 * ppu, y0 + 4), "collision box 0.8 x 0.6", fill=(255, 210, 60, 255), font=g._font(11))
+    label(im, "pas:parasite scale (side view, 10 px per unit)")
+    im.save(out)
+    print("wrote", out)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--scratch", default=str(DEFAULT_SCRATCH))
@@ -225,6 +265,8 @@ def main(argv=None):
                  gif=scratch / "parasite_attack.gif")
     poses(rp, DOCS / "parasite_poses.png")
     comparison(rp, DOCS / "parasite_vs_reference.png", a.reference)
+    uv_sheet(DOCS / "parasite_uv.png")
+    scale_ruler(rp, DOCS / "parasite_scale.png")
     if (DEFAULT_REF / "resource_pack").is_dir():
         scale_check(rp, scratch / "parasite_scale.png")
 

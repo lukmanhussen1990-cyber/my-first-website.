@@ -166,7 +166,7 @@ def item_plays(desc: dict, anims: g.AnimationLibrary, first_person: bool, slot: 
         w = g.Molang(cond).eval(g.frame_context(0.0, None, variables, ctx))
         if w:
             plays.append(g.Play(anims.get(desc["animations"][key])))
-    assert len(plays) == 1, f"expected exactly one hold animation, got {len(plays)}"
+    assert len(plays) == (2 if first_person else 1), f"unexpected animate result: {len(plays)} animations"
     return plays, variables, ctx
 
 
@@ -262,13 +262,13 @@ def hold_sheet(player, torch_geo, van, ours) -> Image.Image:
     skin = neutral_skin()
     rows = []
     tp = []
-    hand_target = {"main_hand": (-6.0, 14.0, -2.0), "off_hand": (6.0, 14.0, -2.0)}
+    hand_target = {"main_hand": (-6.0, 14.5, -2.5), "off_hand": (6.0, 14.5, -2.5)}
     for slot, nice in (("main_hand", "main hand"), ("off_hand", "off hand")):
         tp.append(render_third_person(player, torch_geo, van, ours, skin, slot, False, "iso", f"3rd person {nice}: iso"))
         tp.append(render_third_person(player, torch_geo, van, ours, skin, slot, True, "front", f"{nice}: front (ON)"))
         side = "right" if slot == "main_hand" else "left"
         tp.append(render_third_person(player, torch_geo, van, ours, skin, slot, False,
-                                      side, f"{nice}: side close-up", zoom=2.6, target=hand_target[slot], ortho=True))
+                                      side, f"{nice}: side close-up", zoom=1.7, target=hand_target[slot], ortho=True))
     rows.append(tp)
     fp = []
     for slot, nice in (("main_hand", "main hand"), ("off_hand", "off hand")):
@@ -296,6 +296,34 @@ def hold_sheet(player, torch_geo, van, ours) -> Image.Image:
             sheet.alpha_composite(fp[r * 2 + cidx], (pad + cidx * (fw + pad), y))
         y += fh + pad
     return sheet
+
+
+def check_against_solver(player, torch_geo, van, ours) -> None:
+    """georender's own hierarchy evaluation of the SHIPPED JSON must put the torch where hold.py's
+    solver intended (differences only from the rounding in the JSON)."""
+    q = {"get_default_bone_pivot": default_bone_pivot(player)}
+    probes = [(0, 24, 0), (0, 24, tm.GRIP_L - 10.5), (0, 24, tm.GRIP_L + 0.5), (2, 26, 0)]
+    n = 0
+    for on in (False, True):
+        desc = attachable_desc(on)
+        for slot in ("main_hand", "off_hand"):
+            for fp in (True, False):
+                plays_i, variables, ctx = item_plays(desc, ours, fp, slot)
+                variables = dict(variables, is_holding_right=1.0 if slot == "main_hand" else 0.0,
+                                 is_holding_left=1.0 if slot != "main_hand" else 0.0)
+                geo = attach(player, torch_geo, slot)
+                pose = g.compute_pose(geo, player_plays(van, fp) + plays_i, 0.0, q, variables, ctx)
+                m = g.bone_matrices(geo, pose)[tm.BONE.lower()]
+                hand = geo.bone("rightItem" if slot == "main_hand" else "leftItem")
+                delta = np.array(hand.pivot) - hold.BIND_ORIGIN
+                for p in probes:
+                    w = m @ np.append(g.geo_to_rs(np.array(p, float) + delta), 1.0)
+                    got = np.array((-w[0], w[1], w[2]))
+                    want = hold.world_of(slot, fp, p)
+                    if not np.allclose(got, want, atol=0.02):
+                        raise SystemExit(f"pose mismatch {slot} fp={fp} on={on} point {p}: georender {got} vs solver {want}")
+                    n += 1
+    print(f"check: georender pose of the shipped attachable JSON == hold.py solver ({n} probes)")
 
 
 # --- calibration: vanilla items through the same binding + camera model (flat colours) ------
@@ -362,6 +390,7 @@ def main(argv: list[str]) -> int:
     van = vanilla_anims()
     ours = our_anims()
     torch_geo = g.load_geometries(str(tm.GEO_PATH)).get(tm.GEO_ID)
+    check_against_solver(player, torch_geo, van, ours)
     DOCS.mkdir(parents=True, exist_ok=True)
     out = {
         DOCS / "torchlight_model.png": model_sheet(),

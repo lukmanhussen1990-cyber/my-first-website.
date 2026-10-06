@@ -111,6 +111,18 @@ describe("1. start via the pas:parasite_outbreak item", () => {
     assert.ok(mock.messagesTo(p).some((m) => m.includes("population cap")));
   });
 
+  test("a clicked plant on the ground: released inside its cell", () => {
+    const p = mock.addPlayer({ name: "Plant", location: { x: 0.5, y: 64, z: 0.5 } });
+    mock.tick();
+    mock.setMainhand(p, ITEMS.OUTBREAK, 1);
+    mock.setBlock(OW, { x: 7, y: 64, z: 7 }, "minecraft:short_grass");
+    mock.useItemOn(p, { x: 7, y: 64, z: 7 }, "Up");
+    mock.tick();
+    const list = dim().getEntities({ type: ENTITIES.PARASITE });
+    assert.equal(list.length, 1);
+    assert.deepEqual(list[0].location, { x: 7.5, y: 64, z: 7.5 });
+  });
+
   test("blocked top: released in front of the clicked face; fully blocked: message, nothing consumed", () => {
     const p = mock.addPlayer({ name: "Wall", location: { x: 0.5, y: 64, z: 0.5 } });
     mock.tick();
@@ -371,8 +383,11 @@ describe("12. robustness", () => {
     for (const c of cows) if (api.infect(c, p)) infected++;
     assert.equal(infected, 400);
     mock.clearRecords();
-    mock.tick(20); // one full cycle
+    // align to the start of a 1 Hz incubation cycle, then watch the whole 20-tick window
+    mock.runUntil(() => mock.records.particles.some((r) => r.id === "pas:infection_spores"), 40);
+    mock.tick(19);
     const spores = mock.records.particles.filter((r) => r.id === "pas:infection_spores");
+    assert.equal(perTick(spores).size, 13, "400 mobs spread over 13 ticks (32 per tick)");
     assert.equal(spores.length, 400, "every incubating mob was processed once in the cycle");
     assert.ok(maxPerTick(spores) <= 32, `<= 32 per tick (got ${maxPerTick(spores)})`);
     assert.ok(cows.every((c) => c.getDynamicProperty(PROPS.INC_TICKS) === 80));
