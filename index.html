@@ -172,7 +172,6 @@ const TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = t => t * t * (3 - 2 * t);
-const easeOut = t => 1 - (1 - t) * (1 - t);
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
@@ -216,21 +215,6 @@ function roundRectPath(g, x, y, w, h, r) {
   g.arcTo(x + w, y + h, x, y + h, r);
   g.arcTo(x, y + h, x, y, r);
   g.arcTo(x, y, x + w, y, r);
-  g.closePath();
-}
-
-// smooth closed curve through points (Catmull-Rom → Bézier)
-function smoothClosed(g, pts) {
-  const n = pts.length;
-  g.beginPath();
-  g.moveTo(pts[0][0], pts[0][1]);
-  for (let i = 0; i < n; i++) {
-    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
-    g.bezierCurveTo(
-      p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6,
-      p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6,
-      p2[0], p2[1]);
-  }
   g.closePath();
 }
 
@@ -724,7 +708,7 @@ const G = {
   grow: 0, bulges: [], food: null, bonus: null, eating: null,
   score: 0, best: store.get('best', 0), eaten: 0, sinceBonus: 0, newBest: false,
   tickMs: START_TICK, acc: 0, t: 0, tick: 0, time: 0,
-  shake: 0, flash: 0, dyingFor: 0,
+  shake: 0, flash: 0, dyingFor: 0, won: false, deathBy: '',
   mouth: 0, tongue: { next: 1.2, p: -1 }, blink: { next: 3, p: -1 },
   skin: clamp(store.get('skin', 0), 0, SKINS.length - 1)
 };
@@ -838,6 +822,7 @@ function crash() {
 function win() {
   if (G.state === 'attract') { resetState(true); return; }
   G.state = 'dying'; G.dyingFor = 0; G.won = true;
+  G.prev = G.snake.slice(); G.t = 0; G.acc = 0;
 }
 
 function setDir(dx, dy) {
@@ -884,7 +869,8 @@ function floodCount(x, y, blocked) {
 }
 function aiSteer() {
   const head = G.snake[0], C = L.cols, blocked = new Uint8Array(C * L.rows);
-  for (let i = 0; i < G.snake.length - 1; i++) blocked[G.snake[i].y * C + G.snake[i].x] = 1;
+  const solid = G.snake.length - (G.grow > 0 ? 0 : 1);          // the tail cell only frees up if we are not growing
+  for (let i = 0; i < solid; i++) blocked[G.snake[i].y * C + G.snake[i].x] = 1;
   const dist = p => Math.abs(p.x - head.x) + Math.abs(p.y - head.y);
   const target = G.bonus && dist(G.bonus) < dist(G.food) + 4 ? G.bonus : G.food;
   const cands = [];
@@ -1438,7 +1424,7 @@ resetState(true);
 el.btnMute.classList.toggle('alt-on', Sound.muted);
 updateHud();
 requestAnimationFrame(frame);
-window.__viper = { G, L, step, update, render, startGame, setDir };      // handle used by the automated tests
+window.__viper = { G, L, step, update, render, startGame, setDir, aiSteer, resetState, computeLayout };      // handle used by the automated tests
 })();
 </script>
 </body>
