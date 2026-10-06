@@ -1,0 +1,83 @@
+{
+  "format_version": "1.8.0",
+  "render_controllers": {
+    "controller.render.pas_infected_overlay": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.overlay",
+      "materials": [
+        {
+          "*": "Material.overlay"
+        },
+        {
+          "glow*": "Material.glow"
+        }
+      ],
+      "textures": [
+        "Texture.overlay"
+      ]
+    },
+    "controller.render.pas_infected_sheep_overlay": {
+      "rebuild_animation_matrices": true,
+      "arrays": {
+        "geometries": {
+          "Array.overlays": [
+            "Geometry.overlay",
+            "Geometry.overlay_sheared"
+          ]
+        }
+      },
+      "geometry": "Array.overlays[query.is_sheared]",
+      "materials": [
+        {
+          "*": "Material.overlay"
+        },
+        {
+          "glow*": "Material.glow"
+        }
+      ],
+      "textures": [
+        "Texture.overlay"
+      ]
+    },
+    "controller.render.pas_infected_cow": {
+      "arrays": {
+        "textures": {
+          "Array.skins": [
+            "Texture.default",
+            "Texture.red",
+            "Texture.brown"
+          ]
+        }
+      },
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Array.skins[query.variant]"
+      ]
+    },
+    "controller.render.pas_infected_cow_mushrooms": {
+      "rebuild_animation_matrices": true,
+      "arrays": {
+        "textures": {
+          "Array.mushrooms": [
+            "Texture.mushroom_red",
+            "Texture.mushroom_brown"
+          ]
+        }
+      },
+      "geometry": "Geometry.mushrooms",
+      "materials": [
+        {
+          "*": "Material.mushroom"
+        }
+      ],
+      "textures": [
+        "Array.mushrooms[query.variant == 2]"
+      ]
+    }
+  }
+}

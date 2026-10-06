@@ -1,0 +1,863 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.pas.infected_human",
+        "texture_width": 128,
+        "texture_height": 128,
+        "visible_bounds_width": 2.0,
+        "visible_bounds_height": 3.0,
+        "visible_bounds_offset": [
+          0,
+          1.25,
+          0
+        ]
+      },
+      "bones": [
+        {
+          "name": "root",
+          "pivot": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "name": "waist",
+          "parent": "root",
+          "pivot": [
+            0,
+            12,
+            0
+          ]
+        },
+        {
+          "name": "body",
+          "parent": "waist",
+          "pivot": [
+            0,
+            24,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -4,
+                12,
+                -2
+              ],
+              "size": [
+                8,
+                12,
+                4
+              ],
+              "inflate": 0.2,
+              "uv": [
+                32,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "head",
+          "parent": "body",
+          "pivot": [
+            0,
+            24,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -4,
+                24,
+                -4
+              ],
+              "size": [
+                8,
+                8,
+                8
+              ],
+              "inflate": 0.2,
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "rightArm",
+          "parent": "body",
+          "pivot": [
+            -5,
+            22,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -8,
+                12,
+                -2
+              ],
+              "size": [
+                4,
+                12,
+                4
+              ],
+              "inflate": 0.2,
+              "uv": [
+                56,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "leftArm",
+          "parent": "body",
+          "pivot": [
+            5,
+            22,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                4,
+                12,
+                -2
+              ],
+              "size": [
+                4,
+                12,
+                4
+              ],
+              "inflate": 0.2,
+              "uv": [
+                72,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "rightLeg",
+          "parent": "root",
+          "pivot": [
+            -1.9,
+            12,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3.9,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                12,
+                4
+              ],
+              "inflate": 0.2,
+              "uv": [
+                88,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "leftLeg",
+          "parent": "root",
+          "pivot": [
+            1.9,
+            12,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -0.1,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                12,
+                4
+              ],
+              "inflate": 0.2,
+              "uv": [
+                104,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "glow_eyes",
+          "parent": "head",
+          "pivot": [
+            0,
+            24,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                27,
+                -4.26
+              ],
+              "size": [
+                2,
+                1,
+                0
+              ],
+              "uv": {
+                "north": {
+                  "uv": [
+                    110,
+                    16
+                  ],
+                  "uv_size": [
+                    2,
+                    1
+                  ]
+                }
+              }
+            },
+            {
+              "origin": [
+                1,
+                27,
+                -4.26
+              ],
+              "size": [
+                2,
+                1,
+                0
+              ],
+              "uv": {
+                "north": {
+                  "uv": [
+                    112,
+                    16
+                  ],
+                  "uv_size": [
+                    2,
+                    1
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "pas_g0",
+          "parent": "body",
+          "pivot": [
+            2.5,
+            23.5,
+            0.5
+          ],
+          "rotation": [
+            -6,
+            0,
+            34
+          ],
+          "cubes": [
+            {
+              "origin": [
+                1.5,
+                22.5,
+                -0.5
+              ],
+              "size": [
+                2,
+                4,
+                2
+              ],
+              "uv": [
+                70,
+                16
+              ]
+            },
+            {
+              "origin": [
+                0,
+                26.5,
+                -1.5
+              ],
+              "size": [
+                5,
+                4,
+                4
+              ],
+              "uv": [
+                0,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "glow_pas_g0",
+          "parent": "pas_g0",
+          "pivot": [
+            2.5,
+            23.5,
+            0.5
+          ],
+          "cubes": [
+            {
+              "origin": [
+                1,
+                28.5,
+                -1.56
+              ],
+              "size": [
+                1,
+                1,
+                0
+              ],
+              "uv": {
+                "north": {
+                  "uv": [
+                    114,
+                    16
+                  ],
+                  "uv_size": [
+                    1,
+                    1
+                  ]
+                }
+              }
+            },
+            {
+              "origin": [
+                3,
+                28.5,
+                -1.56
+              ],
+              "size": [
+                1,
+                1,
+                0
+              ],
+              "uv": {
+                "north": {
+                  "uv": [
+                    115,
+                    16
+                  ],
+                  "uv_size": [
+                    1,
+                    1
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "pas_g1",
+          "parent": "body",
+          "pivot": [
+            -1.5,
+            21,
+            2
+          ],
+          "rotation": [
+            -58,
+            0,
+            -18
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -2.5,
+                20,
+                1
+              ],
+              "size": [
+                2,
+                3,
+                2
+              ],
+              "uv": [
+                86,
+                16
+              ]
+            },
+            {
+              "origin": [
+                -3,
+                23,
+                0.5
+              ],
+              "size": [
+                3,
+                3,
+                3
+              ],
+              "uv": [
+                58,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "glow_pas_g1",
+          "parent": "pas_g1",
+          "pivot": [
+            -1.5,
+            21,
+            2
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                25,
+                0.44
+              ],
+              "size": [
+                1,
+                1,
+                0
+              ],
+              "uv": {
+                "north": {
+                  "uv": [
+                    116,
+                    16
+                  ],
+                  "uv_size": [
+                    1,
+                    1
+                  ]
+                }
+              }
+            },
+            {
+              "origin": [
+                -1,
+                25,
+                0.44
+              ],
+              "size": [
+                1,
+                1,
+                0
+              ],
+              "uv": {
+                "north": {
+                  "uv": [
+                    117,
+                    16
+                  ],
+                  "uv_size": [
+                    1,
+                    1
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "pas_t0a",
+          "parent": "body",
+          "pivot": [
+            2,
+            20,
+            2
+          ],
+          "rotation": [
+            -40,
+            0,
+            28
+          ],
+          "cubes": [
+            {
+              "origin": [
+                1,
+                19,
+                1
+              ],
+              "size": [
+                2,
+                6,
+                2
+              ],
+              "uv": [
+                18,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pas_t0b",
+          "parent": "pas_t0a",
+          "pivot": [
+            2,
+            25,
+            2
+          ],
+          "rotation": [
+            100,
+            0,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                1.5,
+                24.5,
+                1.5
+              ],
+              "size": [
+                1,
+                6.5,
+                1
+              ],
+              "uv": [
+                50,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pas_t0c",
+          "parent": "pas_t0b",
+          "pivot": [
+            2,
+            31,
+            2
+          ],
+          "rotation": [
+            45,
+            0,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                1.5,
+                30.5,
+                1.5
+              ],
+              "size": [
+                1,
+                3.5,
+                1
+              ],
+              "uv": [
+                94,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pas_t1a",
+          "parent": "body",
+          "pivot": [
+            -2.5,
+            19,
+            2
+          ],
+          "rotation": [
+            -40,
+            0,
+            -32
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3.5,
+                18,
+                1
+              ],
+              "size": [
+                2,
+                6,
+                2
+              ],
+              "uv": [
+                26,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pas_t1b",
+          "parent": "pas_t1a",
+          "pivot": [
+            -2.5,
+            24,
+            2
+          ],
+          "rotation": [
+            100,
+            0,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                23.5,
+                1.5
+              ],
+              "size": [
+                1,
+                6.5,
+                1
+              ],
+              "uv": [
+                54,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pas_t1c",
+          "parent": "pas_t1b",
+          "pivot": [
+            -2.5,
+            30,
+            2
+          ],
+          "rotation": [
+            45,
+            0,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                29.5,
+                1.5
+              ],
+              "size": [
+                1,
+                3.5,
+                1
+              ],
+              "uv": [
+                98,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pas_t2a",
+          "parent": "body",
+          "pivot": [
+            2.5,
+            15,
+            2
+          ],
+          "rotation": [
+            -70,
+            0,
+            50
+          ],
+          "cubes": [
+            {
+              "origin": [
+                1.5,
+                14,
+                1
+              ],
+              "size": [
+                2,
+                5,
+                2
+              ],
+              "uv": [
+                34,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pas_t2b",
+          "parent": "pas_t2a",
+          "pivot": [
+            2.5,
+            19,
+            2
+          ],
+          "rotation": [
+            0,
+            0,
+            60
+          ],
+          "cubes": [
+            {
+              "origin": [
+                2,
+                18.5,
+                1.5
+              ],
+              "size": [
+                1,
+                5.5,
+                1
+              ],
+              "uv": [
+                78,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pas_t2c",
+          "parent": "pas_t2b",
+          "pivot": [
+            2.5,
+            24,
+            2
+          ],
+          "rotation": [
+            0,
+            0,
+            30
+          ],
+          "cubes": [
+            {
+              "origin": [
+                2,
+                23.5,
+                1.5
+              ],
+              "size": [
+                1,
+                3.5,
+                1
+              ],
+              "uv": [
+                102,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pas_t3a",
+          "parent": "body",
+          "pivot": [
+            -2.5,
+            15,
+            2
+          ],
+          "rotation": [
+            -70,
+            0,
+            -50
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3.5,
+                14,
+                1
+              ],
+              "size": [
+                2,
+                5,
+                2
+              ],
+              "uv": [
+                42,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pas_t3b",
+          "parent": "pas_t3a",
+          "pivot": [
+            -2.5,
+            19,
+            2
+          ],
+          "rotation": [
+            0,
+            0,
+            -60
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                18.5,
+                1.5
+              ],
+              "size": [
+                1,
+                5.5,
+                1
+              ],
+              "uv": [
+                82,
+                16
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pas_t3c",
+          "parent": "pas_t3b",
+          "pivot": [
+            -2.5,
+            24,
+            2
+          ],
+          "rotation": [
+            0,
+            0,
+            -30
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                23.5,
+                1.5
+              ],
+              "size": [
+                1,
+                3.5,
+                1
+              ],
+              "uv": [
+                106,
+                16
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

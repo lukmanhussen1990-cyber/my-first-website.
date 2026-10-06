@@ -1,0 +1,58 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "pas:infected_cow",
+      "materials": {
+        "default": "cow",
+        "overlay": "entity_alphatest",
+        "glow": "spider",
+        "mushroom": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/cow/cow",
+        "red": "textures/entity/cow/mooshroom",
+        "brown": "textures/entity/cow/brown_mooshroom",
+        "overlay": "textures/entity/pas/infected_cow",
+        "mushroom_red": "textures/blocks/mushroom_red",
+        "mushroom_brown": "textures/blocks/mushroom_brown"
+      },
+      "geometry": {
+        "default": "geometry.cow.v1.8",
+        "overlay": "geometry.pas.infected_cow",
+        "mushrooms": "geometry.pas.infected_cow.mushrooms"
+      },
+      "animations": {
+        "setup": "animation.cow.setup",
+        "walk": "animation.quadruped.walk",
+        "look_at_target": "animation.common.look_at_target",
+        "baby_transform": "animation.cow.baby_transform",
+        "twitch": "animation.pas_infected.cow.twitch",
+        "attack": "animation.pas_infected.cow.attack",
+        "attack_controller": "controller.animation.pas_infected.attack"
+      },
+      "scripts": {
+        "animate": [
+          "setup",
+          {
+            "walk": "query.modified_move_speed"
+          },
+          "look_at_target",
+          "twitch",
+          "attack_controller",
+          {
+            "baby_transform": "query.is_baby"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.pas_infected_cow",
+        "controller.render.pas_infected_overlay",
+        {
+          "controller.render.pas_infected_cow_mushrooms": "query.variant > 0"
+        }
+      ],
+      "enable_attachables": false
+    }
+  }
+}

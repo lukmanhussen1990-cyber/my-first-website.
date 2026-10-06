@@ -166,21 +166,23 @@ def attack_animation():
         "animation_length": ATTACK_LEN,
         "bones": {
             "body": {
-                "rotation": _kf([(0, z3), (0.12, [-14.0, 0.0, 0.0]), (0.26, [12.0, 0.0, 0.0]), (0.4, [6.0, 0.0, 0.0]), (ATTACK_LEN, z3)]),
-                "position": _kf([(0, z3), (0.12, [0.0, 1.2, 1.5]), (0.26, [0.0, -0.6, -3.5]), (0.4, [0.0, -0.3, -2.0]), (ATTACK_LEN, z3)]),
+                "rotation": _kf([(0, z3), (0.12, [-14.0, 0.0, 0.0]), (0.26, [7.0, 0.0, 0.0]), (0.4, [4.0, 0.0, 0.0]), (ATTACK_LEN, z3)]),
+                "position": _kf([(0, z3), (0.12, [0.0, 1.2, 1.5]), (0.26, [0.0, -0.2, -3.5]), (0.4, [0.0, 0.0, -2.0]), (ATTACK_LEN, z3)]),
             },
             "head": {
-                "rotation": _kf([(0, z3), (0.12, [-24.0, 0.0, 0.0]), (0.26, [16.0, 0.0, 0.0]), (0.4, [8.0, 0.0, 0.0]), (ATTACK_LEN, z3)]),
+                "rotation": _kf([(0, z3), (0.12, [-24.0, 0.0, 0.0]), (0.26, [8.0, 0.0, 0.0]), (0.4, [4.0, 0.0, 0.0]), (ATTACK_LEN, z3)]),
             },
+            # gape during the lunge, snap shut on contact (bite), relax
             "jaw": {
-                "rotation": _kf([(0, z3), (0.1, [36.0, 0.0, 0.0]), (0.22, [44.0, 0.0, 0.0]), (0.3, [12.0, 0.0, 0.0]), (ATTACK_LEN, z3)]),
+                "rotation": _kf([(0, z3), (0.1, [34.0, 0.0, 0.0]), (0.2, [40.0, 0.0, 0.0]), (0.26, [-9.0, 0.0, 0.0]),
+                                 (0.36, [8.0, 0.0, 0.0]), (ATTACK_LEN, z3)]),
             },
             "leg_fr_upper": {
-                "rotation": _kf([(0, z3), (0.12, [0.0, -22.0, 42.0]), (0.26, [0.0, -34.0, -6.0]), (0.4, [0.0, -18.0, -4.0]), (ATTACK_LEN, z3)]),
+                "rotation": _kf([(0, z3), (0.12, [0.0, -22.0, 42.0]), (0.26, [0.0, -34.0, -2.0]), (0.4, [0.0, -18.0, -2.0]), (ATTACK_LEN, z3)]),
                 "position": _kf([(0, z3), (0.26, [0.0, 0.0, -2.5]), (ATTACK_LEN, z3)]),
             },
             "leg_fl_upper": {
-                "rotation": _kf([(0, z3), (0.12, [0.0, 22.0, -42.0]), (0.26, [0.0, 34.0, 6.0]), (0.4, [0.0, 18.0, 4.0]), (ATTACK_LEN, z3)]),
+                "rotation": _kf([(0, z3), (0.12, [0.0, 22.0, -42.0]), (0.26, [0.0, 34.0, 2.0]), (0.4, [0.0, 18.0, 2.0]), (ATTACK_LEN, z3)]),
                 "position": _kf([(0, z3), (0.26, [0.0, 0.0, -2.5]), (ATTACK_LEN, z3)]),
             },
             "leg_fr_lower": {
@@ -221,11 +223,12 @@ def death_animation():
     bones = {}
     for leg in LEGS:
         sgn = 1 if leg[1] == "r" else -1
-        bones[f"leg_{leg}_upper"] = {"rotation": _kf([(0, [0.0, 0.0, 0.0]), (DEATH_LEN, [0.0, 0.0, 35.0 * sgn])])}
-        bones[f"leg_{leg}_lower"] = {"rotation": _kf([(0, [0.0, 0.0, 0.0]), (DEATH_LEN, [0.0, 0.0, -75.0 * sgn])])}
-        bones[f"leg_{leg}_claw"] = {"rotation": _kf([(0, [0.0, 0.0, 0.0]), (DEATH_LEN, [0.0, 0.0, -40.0 * sgn])])}
-    bones["jaw"] = {"rotation": _kf([(0, [0.0, 0.0, 0.0]), (DEATH_LEN, [30.0, 0.0, 0.0])])}
-    bones["head"] = {"rotation": _kf([(0, [0.0, 0.0, 0.0]), (DEATH_LEN, [18.0, 0.0, 10.0])])}
+        bones[f"leg_{leg}_upper"] = {"rotation": _kf([(0, [0.0, 0.0, 0.0]), (DEATH_LEN, [0.0, 0.0, 12.0 * sgn])])}
+        bones[f"leg_{leg}_lower"] = {"rotation": _kf([(0, [0.0, 0.0, 0.0]), (DEATH_LEN, [0.0, 0.0, -85.0 * sgn])])}
+        bones[f"leg_{leg}_claw"] = {"rotation": _kf([(0, [0.0, 0.0, 0.0]), (DEATH_LEN, [0.0, 0.0, -50.0 * sgn])])}
+    bones["jaw"] = {"rotation": _kf([(0, [0.0, 0.0, 0.0]), (DEATH_LEN, [26.0, 0.0, 0.0])])}
+    bones["head"] = {"rotation": _kf([(0, [0.0, 0.0, 0.0]), (DEATH_LEN, [-6.0, 0.0, 12.0])])}
+    bones["body"] = {"position": _kf([(0, [0.0, 0.0, 0.0]), (DEATH_LEN, [0.0, -3.5, 0.0])])}
     return {"loop": "hold_on_last_frame", "animation_length": DEATH_LEN, "bones": bones}
 
 

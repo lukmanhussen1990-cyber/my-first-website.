@@ -1,0 +1,51 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "pas:infected_sheep",
+      "materials": {
+        "default": "sheep",
+        "overlay": "entity_alphatest",
+        "glow": "spider"
+      },
+      "textures": {
+        "default": "textures/entity/sheep/sheep",
+        "overlay": "textures/entity/pas/infected_sheep"
+      },
+      "geometry": {
+        "default": "geometry.sheep.v1.8",
+        "sheared": "geometry.sheep.sheared.v1.8",
+        "overlay": "geometry.pas.infected_sheep",
+        "overlay_sheared": "geometry.pas.infected_sheep.sheared"
+      },
+      "animations": {
+        "setup": "animation.sheep.setup",
+        "grazing": "animation.sheep.grazing",
+        "walk": "animation.quadruped.walk",
+        "look_at_target": "animation.common.look_at_target",
+        "baby_transform": "animation.sheep.baby_transform",
+        "move": "controller.animation.sheep.move",
+        "twitch": "animation.pas_infected.sheep.twitch",
+        "attack": "animation.pas_infected.sheep.attack",
+        "attack_controller": "controller.animation.pas_infected.attack"
+      },
+      "scripts": {
+        "animate": [
+          "setup",
+          "look_at_target",
+          "move",
+          "twitch",
+          "attack_controller",
+          {
+            "baby_transform": "query.is_baby"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.sheep",
+        "controller.render.pas_infected_sheep_overlay"
+      ],
+      "enable_attachables": false
+    }
+  }
+}

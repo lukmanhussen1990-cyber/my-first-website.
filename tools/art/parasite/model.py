@@ -78,6 +78,7 @@ class Bone:
     parent: str | None
     pivot: tuple
     cubes: list = field(default_factory=list)
+    rotation: tuple | None = None      # rest rotation (animations add to it)
 
 
 def seg_cube(a, b, t, uv, ext0=0.0, ext1=0.0, mirror=False, tz=None):
@@ -138,23 +139,24 @@ def build_bones():
         Cube((-3.5, 7.0, 0.0), (7, 7, 9), "abdomen", rotation=(6.0, 0.0, 0.0), pivot=(0.0, 10.5, 1.0)),
     ]))
     # head: upper skull (eyes, upper lip); jaw below it is hinged at the back
+    # held forward and tilted up (rest rotation x -10) like the reference
     bones.append(Bone("head", "body", HEAD_PIVOT, [
         Cube((-5.0, 10.0, -14.0), (10, 6, 10), "skull"),
-    ]))
+    ], rotation=(-10.0, 0.0, 0.0)))
     bones.append(Bone("eyes", "head", (0.0, 12.5, -14.0), [
         Cube((-4.0, 11.5, -14.3), (2, 2, 1), "eye"),
         Cube((2.0, 11.5, -14.3), (2, 2, 1), "eye", mirror=True),
     ]))
     # mouth: dark throat box inside the head + ragged upper teeth hanging from the skull's front edge
     mouth = [Cube((-4.5, 7.5, -13.0), (9, 3, 8), "swatch:throat")]
-    for x, ln in ((-3.4, 1.5), (-1.2, 2.1), (1.0, 1.2), (3.2, 1.9)):
+    for x, ln in ((-3.3, 2.1), (-0.6, 1.0), (3.2, 2.4)):
         mouth.append(seg_cube((x, 10.2, -13.4), (x + 0.15 * (1 if x < 0 else -1), 10.2 - ln, -13.3), 0.8, "swatch:tooth", tz=0.8))
-    for z, ln in ((-11.8, 1.3),):
+    for z, ln in ((-12.0, 1.4),):
         for sx in (-1, 1):
             mouth.append(seg_cube((sx * 3.8, 10.2, z), (sx * 3.7, 10.2 - ln, z), 0.8, "swatch:tooth"))
     bones.append(Bone("mouth", "head", (0.0, 10.0, -9.0), mouth))
     jaw = [Cube((-5.0, 6.0, -14.0), (10, 4, 10), "jaw")]
-    for x, ln in ((-2.6, 1.3), (0.2, 0.9), (2.7, 1.5)):
+    for x, ln in ((-2.4, 1.2), (2.2, 1.0)):
         jaw.append(seg_cube((x, 9.8, -13.3), (x, 9.8 + ln, -13.2), 0.8, "swatch:tooth_low"))
     bones.append(Bone("jaw", "head", JAW_PIVOT, jaw))
     # dripping strands of blood/flesh under the jaw front
@@ -301,6 +303,8 @@ def geometry_json(bones=None):
         if b.parent:
             bj["parent"] = b.parent
         bj["pivot"] = [_r(x) for x in b.pivot]
+        if b.rotation is not None:
+            bj["rotation"] = [_r(x) for x in b.rotation]
         if b.cubes:
             bj["cubes"] = [cube_json(c, regions, swatches) for c in b.cubes]
         jb.append(bj)

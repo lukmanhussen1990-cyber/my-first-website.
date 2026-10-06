@@ -72,6 +72,8 @@ class SkinConfig:
     vein_tags: tuple | None = None  # restrict random veins to parts with these tags
     no_paint_tags: tuple = ()       # parts that only receive features, no random noise
     fur_dark: bool = False          # host is dark (cow): use lighter flesh accents
+    calm_tags: tuple = ("head", "face", "nose", "snout", "beak", "wattle", "horn")  # less random noise here
+    rim: bool = False               # darker rim around mottling patches
 
 
 def _in_box(P, lo, hi, pad=0.0):
@@ -101,7 +103,8 @@ def paint_skin(canvas: Canvas, T: Texels, cfg: SkinConfig) -> None:
     # 1) brown-red mottling
     m1 = nz.fbm(P, freq=cfg.mottle_freq, octaves=3)
     m2 = nz2.fbm(P, freq=0.55, octaves=2)
-    thr = np.quantile(m1, 1.0 - cfg.mottle) - 0.08 * I
+    calm = np.array([t in cfg.calm_tags for t in tags])
+    thr = np.quantile(m1, 1.0 - cfg.mottle) - 0.08 * I + 0.12 * calm
     mott = (m1 > thr) & paintable
     shade = np.where(m2 > 0.6, 2, np.where(m2 < 0.4, 1, 0))
     cols = pick([PAL["brown"], PAL["brown_dk"], PAL["brown_red"]], shade)
@@ -110,7 +113,7 @@ def paint_skin(canvas: Canvas, T: Texels, cfg: SkinConfig) -> None:
     cols[speck] = PAL["crimson_dk"]
     canvas.put_many(T.u[mott], T.v[mott], cols[mott])
     # darker rim around patches (1-texel feel): texels just under threshold
-    rim = (m1 > thr - 0.035) & ~mott & paintable
+    rim = (m1 > thr - 0.035) & ~mott & paintable & cfg.rim
     canvas.put_many(T.u[rim], T.v[rim], np.broadcast_to(np.array(PAL["brown_red"], np.uint8), (int(rim.sum()), 4)))
 
     # 2) exposed flesh at burst sites
@@ -176,7 +179,7 @@ def paint_skin(canvas: Canvas, T: Texels, cfg: SkinConfig) -> None:
 
     # 4) sores
     idx_of = {(int(u), int(v)): i for i, (u, v) in enumerate(zip(T.u, T.v))}
-    w = (I + 0.05) * paintable
+    w = (I + 0.05) * paintable * np.where(calm, 0.25, 1.0)
     if w.sum() > 0 and cfg.sores:
         chosen = rng.choice(len(T), size=min(cfg.sores, int((w > 0).sum())), replace=False, p=w / w.sum())
         for i in chosen:

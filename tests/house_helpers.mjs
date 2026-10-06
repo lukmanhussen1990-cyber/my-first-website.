@@ -153,3 +153,60 @@ export function instrumentGetBlock() {
     },
   };
 }
+
+const xyz = (p) => `${p.x} ${p.y} ${p.z}`;
+
+/**
+ * Assert the finished house for a click at c (ground y gy) by a player facing `facing`.
+ * Only blocks within `radius` of the click are attributed to this house.
+ */
+export function assertHouse(c, gy, facing, radius = Infinity) {
+  const floor = gy + 1 + HOUSE.floorY; // feet level of the ground floor
+  // front door: both leaves 2 cells beyond the click, lower + upper halves, facing into the house
+  const right = rel(c, facing, 2, 0, floor); // local x 9 (in line with the click)
+  const left = rel(c, facing, 2, 1, floor); // local x 8
+  for (const [leaf, hinge] of [
+    [right, true],
+    [left, false],
+  ]) {
+    for (const [dy, upper] of [
+      [0, false],
+      [1, true],
+    ]) {
+      const p = { ...leaf, y: leaf.y + dy };
+      assert.equal(mock.blockName(OW, p), "minecraft:dark_oak_door", `${facing}: door at ${xyz(p)}`);
+      const perm = mock.blockPerm(OW, p);
+      assert.equal(perm.getState("upper_block_bit"), upper, `${facing}: upper bit at ${xyz(p)}`);
+      assert.equal(perm.getState("direction"), DOOR_DIR[facing], `${facing}: door direction at ${xyz(p)}`);
+      assert.equal(perm.getState("door_hinge_bit"), hinge, `${facing}: hinge at ${xyz(p)}`);
+      assert.equal(perm.getState("open_bit"), false);
+    }
+  }
+  // entrance cell (where the player stands, 1 beyond the click): free, terrace floor below
+  const entrance = rel(c, facing, 1, 0, floor);
+  assert.equal(mock.blockName(OW, entrance), "minecraft:air", "entrance cell is free");
+  assert.equal(mock.blockName(OW, { ...entrance, y: entrance.y + 1 }), "minecraft:air", "head room at the entrance");
+  assert.equal(mock.blockName(OW, { ...entrance, y: gy + 1 }), "minecraft:quartz_block", "terrace under the entrance");
+  // the clicked column itself is terrace (walk straight in)
+  assert.equal(mock.blockName(OW, rel(c, facing, 0, 0, gy + 1)), "minecraft:quartz_block");
+  assert.equal(mock.blockName(OW, rel(c, facing, 0, 0, floor)), "minecraft:air");
+  // front steps on the player's side of the click, rising toward the house
+  for (const left2 of [-2, -1, 0, 1, 2, 3]) {
+    const s = rel(c, facing, -1, left2, gy + 1);
+    assert.equal(mock.blockName(OW, s), "minecraft:quartz_stairs", `${facing}: step at ${xyz(s)}`);
+    assert.equal(mock.blockPerm(OW, s).getState("weirdo_direction"), STAIR_DIR[facing], `${facing}: step direction`);
+    assert.equal(mock.blockName(OW, { ...s, y: s.y + 1 }), "minecraft:air", "nothing on the steps");
+  }
+  // nothing in front of the steps (toward the player)
+  assert.equal(mock.blockName(OW, rel(c, facing, -2, 0, gy + 1)), "minecraft:air");
+  // every block of the house is inside the expected box, which extends away from the player
+  const box = expectedBox(c, gy, facing);
+  const placed = mock.listBlocks(OW).filter((b) => b.y > gy && Math.abs(b.x - c.x) <= radius && Math.abs(b.z - c.z) <= radius);
+  const outside = placed.filter((b) => !inBox(b, box));
+  assert.deepEqual(outside, [], `${facing}: blocks outside the expected box`);
+  assert.equal(placed.length, houseSolidCellCount(), `${facing}: every structure block was placed`);
+  // the back wall is 13 rows beyond the click (foundation corners exist at both ends)
+  assert.notEqual(mock.blockName(OW, rel(c, facing, 13, 9, gy + 1)), "minecraft:air", "back-left foundation corner");
+  assert.notEqual(mock.blockName(OW, rel(c, facing, 13, -8, gy + 1)), "minecraft:air", "back-right foundation corner");
+  assert.equal(mock.blockName(OW, rel(c, facing, 14, 0, gy + 1)), "minecraft:air", "nothing beyond the back wall");
+}

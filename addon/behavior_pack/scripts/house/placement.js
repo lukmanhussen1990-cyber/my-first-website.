@@ -350,31 +350,34 @@ function anchorCenter(pl) {
 
 /**
  * The clicked block, or the real ground below it when a plant / snow layer was clicked.
+ * `reads` = getBlock calls made (charged to the tick budget).
  * @param {Block} block
- * @returns {Block}
+ * @returns {{block: Block, reads: number}}
  */
 export function resolveGround(block) {
   let b = block;
+  let reads = 0;
   for (let i = 0; i <= GROUND_SEARCH_DEPTH; i++) {
     /** @type {string} */
     let t;
     try {
       t = b.typeId;
     } catch {
-      return block;
+      return { block, reads };
     }
-    if (t === "minecraft:air" || !isReplaceable(t)) return b;
+    if (t === "minecraft:air" || !isReplaceable(t)) return { block: b, reads };
     /** @type {Block | undefined} */
     let below;
     try {
+      reads++;
       below = b.below();
     } catch {
       below = undefined;
     }
-    if (!below) return block;
+    if (!below) return { block, reads };
     b = below;
   }
-  return block;
+  return { block, reads };
 }
 
 /** Whether `player` has a build in progress. @param {Player} player @returns {boolean} */
@@ -398,7 +401,12 @@ export function requestBuild(player, clicked) {
     return undefined;
   }
   const dim = clicked.dimension;
-  const ground = resolveGround(clicked);
+  const resolved = resolveGround(clicked);
+  if (resolved.reads) {
+    budgetRemaining();
+    budgetLeft -= resolved.reads; // may go negative: the first scan slice then waits a tick
+  }
+  const ground = resolved.block;
   const facing = cardinalFromYaw(player.getRotation().y);
   const pl = computePlacement(ground.location, facing);
 

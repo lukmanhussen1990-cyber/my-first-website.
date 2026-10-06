@@ -115,8 +115,8 @@ def views(rp, out):
 def frames_sheet(rp, out, times, queries, variables, title, gif=None):
     layers, plays, v = entity(rp, queries=queries, variables=variables)
     rows = []
-    for cam in (g.Camera.view("right", ortho=True), g.Camera(yaw=35, pitch=20)):
-        rows += g.render_frames(layers, times, cam, size=230, plays=plays, queries=queries, variables=v, ground=True)
+    for cam in (g.Camera.view("right", ortho=True), g.Camera.view("top", ortho=True), g.Camera(yaw=35, pitch=20)):
+        rows += g.render_frames(layers, times, cam, size=210, plays=plays, queries=queries, variables=v, ground=True)
     sheet = g.contact_sheet(rows, cols=len(times), title=title)
     sheet.save(out)
     print("wrote", out)
@@ -161,8 +161,8 @@ def poses(rp, out):
 
 def comparison(rp, out, reference):
     W, H = 460, 340
-    cam = g.Camera(yaw=32, pitch=24, fov=34, zoom=1.0)
-    q = dict(LOOK_Q)
+    cam = g.Camera(yaw=24, pitch=27, fov=50)
+    q = dict(LOOK_Q, has_target=1)
     layers, plays, v = entity(rp, queries=q)
     prev = g.render(layers, cam, size=(W, H), plays=plays, variables=v, queries=q, background="1d2416")
     nt = night(layers, cam, (W, H), plays, q, v, 0.0)
@@ -184,7 +184,7 @@ def scale_check(rp_ours, out):
     rp_v = g.ResourcePack([str(DEFAULT_REF / "resource_pack")])
     cam = g.Camera(yaw=60, pitch=8, ortho=True, ppu=9.0, target=(0, 16, 0))
     panels = []
-    for ident, rp, w in (("pas:parasite", rp_ours, 360), ("minecraft:zombie", rp_v, 200), ("minecraft:player", rp_v, 200)):
+    for ident, rp, w in (("pas:parasite", rp_ours, 440), ("minecraft:zombie", rp_v, 200), ("minecraft:player", rp_v, 200)):
         try:
             layers, plays, v, _ = g.entity_layers(rp, ident)
         except KeyError:

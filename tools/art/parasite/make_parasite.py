@@ -302,7 +302,7 @@ def paint(seed: int = 7) -> np.ndarray:
     # face (north): 20 x 12 px, col 0 = entity's right (x = -5), row 0 = y 16
     h, w = dims(f["north"])
     face = pt.skin(h, w, blotch_count=5)
-    face = pt.soak(face, pt.red_field(h, w), [0.0, 0.08, 0.3, 0.55, 0.75, 0.9, 0.95, 1, 1, 1, 1, 1][:h])
+    face = pt.soak(face, pt.red_field(h, w), [0.0, 0.03, 0.12, 0.3, 0.55, 0.75, 0.88, 0.95, 1, 1, 1, 1][:h])
     for c0, c1 in ((2, 6), (14, 18)):  # eye cubes x -4..-2 / 2..4 -> cols 2..5 / 14..17, rows 5..8
         for r in range(4, 10):
             for c in range(c0 - 1, c1 + 1):
@@ -319,6 +319,10 @@ def paint(seed: int = 7) -> np.ndarray:
     jf = pt.red_field(h, w)
     hole = mouth_hole_rows(pt, top=0, rows=h, centre=9.5, widths=[6.0, 6.0, 5.5, 5.0, 4.5, 3.5, 2.5])
     paint_hole(pt, jf, hole)
+    for r in range(6, h):              # darker, ragged lower lip
+        for c in range(w):
+            if pt.rng.random() < 0.5:
+                jf[r, c] = C("blotch_dk") if pt.rng.random() < 0.6 else C("mouth_deep")
     for c in range(w):                 # drool streaks down the chin
         if pt.rng.random() < 0.3:
             r0 = max([r for r, (lo, hi) in hole.items() if lo <= c <= hi] or [2]) + 1

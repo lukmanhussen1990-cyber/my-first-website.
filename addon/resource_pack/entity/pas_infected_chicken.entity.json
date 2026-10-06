@@ -1,0 +1,53 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "pas:infected_chicken",
+      "materials": {
+        "default": "chicken",
+        "legs": "chicken_legs",
+        "overlay": "entity_alphatest",
+        "glow": "spider"
+      },
+      "textures": {
+        "default": "textures/entity/chicken",
+        "overlay": "textures/entity/pas/infected_chicken"
+      },
+      "geometry": {
+        "default": "geometry.chicken.v1.12",
+        "overlay": "geometry.pas.infected_chicken"
+      },
+      "scripts": {
+        "pre_animation": [
+          "variable.wing_flap = query.is_on_ground ? 0.0 : (math.sin(query.life_time * 1600.0) + 1.0) * 40.0;"
+        ],
+        "animate": [
+          "general",
+          {
+            "move": "query.modified_move_speed"
+          },
+          "look_at_target",
+          "twitch",
+          "attack_controller",
+          {
+            "baby_transform": "query.is_baby"
+          }
+        ]
+      },
+      "animations": {
+        "move": "animation.chicken.move",
+        "general": "animation.chicken.general",
+        "look_at_target": "animation.common.look_at_target",
+        "baby_transform": "animation.chicken.baby_transform",
+        "twitch": "animation.pas_infected.chicken.twitch",
+        "attack": "animation.pas_infected.chicken.attack",
+        "attack_controller": "controller.animation.pas_infected.attack"
+      },
+      "render_controllers": [
+        "controller.render.chicken",
+        "controller.render.pas_infected_overlay"
+      ],
+      "enable_attachables": false
+    }
+  }
+}

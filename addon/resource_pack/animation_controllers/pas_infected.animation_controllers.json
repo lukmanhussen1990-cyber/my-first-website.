@@ -1,0 +1,37 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.pas_infected.attack": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "transitions": [
+            {
+              "attacking": "variable.attack_time > 0.0"
+            }
+          ]
+        },
+        "attacking": {
+          "animations": [
+            "attack"
+          ],
+          "transitions": [
+            {
+              "default": "variable.attack_time <= 0.0"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.pas_infected.twitch": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "animations": [
+            "twitch"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -110,19 +110,19 @@ def paint_texel(part: tm.Part, face: str, a: float, b: float, i: int, j: int, cw
         else:
             col = P["s"] if top else P["x"]
     elif st == "cap":
-        if face == "south":          # rear face: dark rim around the switch boot
+        if face == "south":          # rear face: rim around the switch boot
             rim = i in (0, cw - 1) or j in (0, ch - 1)
             corner = i in (0, cw - 1) and j in (0, ch - 1)
-            col = P["K"] if corner else (P["L"] if (rim and j == 0) else (P["D"] if rim else P["r"]))
+            col = P["D"] if corner else (P["L"] if (rim and j == 0) else (P["M"] if rim else P["r"]))
         elif face == "north":
             col = P["D"]
         else:
             rear = L < 1.0
             mid_across = 0.25 < across < 0.75
-            if rear and mid_across and face in ("east", "west", "up", "down"):
+            if rear and mid_across:
                 col = P["r"]         # scalloped cut-outs in the tail cap
             elif rear:
-                col = tone("M", "D", "K")
+                col = P["L"] if top else (P["D"] if bottom else P["M"])
             else:                    # knurled ring
                 k = (int(across * n_across) + along_idx) % 2
                 col = (P["L"] if top else P["M"]) if k == 0 else P["D"]

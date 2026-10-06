@@ -136,12 +136,12 @@ def build_cow() -> Spec:
     sp.growth_bones = {"heads": ["pas_g0", "pas_g1"], "tendrils": [t0, t1, t2, t3], "jaw": "pas_jaw"}
     cfg = SkinConfig(
         seed=101,
-        sites=[Site((2, 22, 0), 3.4, veins=6, vein_len=10), Site((-2.5, 22, 6), 2.2, veins=4),
-               Site((-6, 17, 3), 2.0, veins=4), Site((5, 21.5, -5), 1.2, flesh=False, veins=3, vein_len=6),
+        sites=[Site((2, 22, 0), 3.0, veins=6, vein_len=10), Site((-2.5, 22, 6), 1.8, veins=4),
+               Site((-6, 17, 3), 1.7, veins=4), Site((5, 21.5, -5), 1.2, flesh=False, veins=3, vein_len=6),
                Site((-5, 21.5, -5), 1.2, flesh=False, veins=3, vein_len=6)],
         eyes=eyes,
         mouths=[Mouth((-3, 15.9, -14.1), (3, 17.1, -11.5), drips=3, max_drip=2)],
-        mottle=0.26, vein_walks=12, sores=12, fur_dark=True,
+        mottle=0.13, vein_walks=9, sores=9, fur_dark=True,
     )
     sp.skin_cfgs.append((m, cfg))
     # mooshroom mushrooms (vanilla block textures referenced by path, 16x16)

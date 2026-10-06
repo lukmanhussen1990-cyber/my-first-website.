@@ -234,14 +234,14 @@ def render_first_person(player, torch_geo, van, ours, slot: str, on: bool, label
 
 
 def render_third_person(player, torch_geo, van, ours, skin, slot: str, on: bool, view: str, label: str,
-                        size=(300, 360), zoom=1.0, target=None) -> Image.Image:
+                        size=(300, 360), zoom=1.0, target=None, ortho=False) -> Image.Image:
     desc = attachable_desc(on)
     plays_i, variables, ctx = item_plays(desc, ours, False, slot)
     variables = dict(variables, is_holding_right=1.0 if slot == "main_hand" else 0.0,
                      is_holding_left=1.0 if slot != "main_hand" else 0.0)
     geo = attach(player, torch_geo, slot)
     layers = [g.Layer(player, skin), item_layer(geo, on)]
-    cam = g.Camera.view(view, zoom=zoom, target=target)
+    cam = g.Camera.view(view, zoom=zoom, target=target, ortho=ortho)
     return g.render(layers, cam, size=size, background=BG, supersample=3,
                     plays=player_plays(van, False) + plays_i, variables=variables, context=ctx, label=label)
 
@@ -262,13 +262,13 @@ def hold_sheet(player, torch_geo, van, ours) -> Image.Image:
     skin = neutral_skin()
     rows = []
     tp = []
-    hand_target = {"main_hand": (-6.0, 15.0, -3.0), "off_hand": (6.0, 15.0, -3.0)}
+    hand_target = {"main_hand": (-6.0, 14.0, -2.0), "off_hand": (6.0, 14.0, -2.0)}
     for slot, nice in (("main_hand", "main hand"), ("off_hand", "off hand")):
         tp.append(render_third_person(player, torch_geo, van, ours, skin, slot, False, "iso", f"3rd person {nice}: iso"))
         tp.append(render_third_person(player, torch_geo, van, ours, skin, slot, True, "front", f"{nice}: front (ON)"))
         side = "right" if slot == "main_hand" else "left"
         tp.append(render_third_person(player, torch_geo, van, ours, skin, slot, False,
-                                      side, f"{nice}: hand close-up", zoom=3.2, target=hand_target[slot]))
+                                      side, f"{nice}: side close-up", zoom=2.6, target=hand_target[slot], ortho=True))
     rows.append(tp)
     fp = []
     for slot, nice in (("main_hand", "main hand"), ("off_hand", "off hand")):
@@ -289,7 +289,7 @@ def hold_sheet(player, torch_geo, van, ours) -> Image.Image:
     y = 24
     for r in range(2):
         for cidx in range(3):
-            sheet.alpha_composite(tp[r * 3 + cidx] if False else tp[cidx + 3 * r], (pad + cidx * (tw + pad), y))
+            sheet.alpha_composite(tp[r * 3 + cidx], (pad + cidx * (tw + pad), y))
         y += th + pad
     for r in range(2):
         for cidx in range(2):
@@ -320,7 +320,11 @@ def static_anim(bone: str, pos, r, scale=(1, 1, 1)) -> g.Animation:
                                                                     "scale": list(scale)}}})
 
 
-def calibration_sheet(player, van, textures: dict | None = None, tex_note: str = "flat colours") -> Image.Image:
+CALIB_NOTE = ("face colours: red = north (front, shield face), blue = south (back), green = east, "
+              "yellow = west, white = up, magenta = down")
+
+
+def calibration_sheet(player, van, textures: dict | None = None, tex_note: str = CALIB_NOTE) -> Image.Image:
     skin = neutral_skin()
     tiles = []
     cam, fr = fp_camera()

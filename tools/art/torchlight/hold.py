@@ -112,11 +112,11 @@ def joint_frame(slot: str, first_person: bool) -> np.ndarray:
     return arm @ item @ T
 
 
-def world_of(slot: str, first_person: bool, pos, r, p_geo, geo_pivot=tm.PIVOT) -> np.ndarray:
+def world_of(slot: str, first_person: bool, pos, r, p_geo, geo_pivot=tm.PIVOT, scale: float = 1.0) -> np.ndarray:
     """Body-frame position of attachable point p_geo for the given animation values."""
     J = joint_frame(slot, first_person)
     piv = np.asarray(geo_pivot, float)
-    local = piv - BIND_ORIGIN + np.asarray(pos, float) + rot(r) @ (np.asarray(p_geo, float) - piv)
+    local = piv - BIND_ORIGIN + np.asarray(pos, float) + rot(r) @ (scale * (np.asarray(p_geo, float) - piv))
     return (J @ np.append(local, 1.0))[:3]
 
 
@@ -151,10 +151,10 @@ def solve(slot: str, first_person: bool, centre, A: np.ndarray) -> tuple[tuple, 
 # The grip centre sits where vanilla puts held items (lower right, beside the shield/trident
 # hand region), the lens aims at the crosshair AIM_DISTANCE units ahead, the clip side is
 # rolled a little toward the screen centre so the top and the tail switch stay visible.
-FP_MAIN_CENTRE = (8.5, 18.0, 15.0)
+FP_MAIN_CENTRE = (10.0, 21.0, 18.5)
 FP_AIM_DISTANCE = 64.0          # 4 blocks
-FP_ROLL = 20.0                  # degrees, top leans toward the screen centre
-FP_SCALE = 1.0
+FP_ROLL = 25.0                  # degrees, top leans toward the screen centre
+FP_SCALE = 1.25                 # vanilla first-person items read larger than in third person
 # Third person, relative to the hand bone: grip centre 1.5 below the item pivot and centred in
 # the fist (z 0), lens forward, x +18 cancels the vanilla holding pose (-18) so the light is level.
 TP_POS = (0.0, -1.5, -1.0)
@@ -275,8 +275,9 @@ def report() -> None:
     for slot, tag in (("main_hand", "main"), ("off_hand", "off")):
         for fp in (True, False):
             pos, r = s[("fp_" if fp else "tp_") + tag]
-            t = world_of(slot, fp, pos, r, tail)
-            l = world_of(slot, fp, pos, r, lens)
+            sc = FP_SCALE if fp else 1.0
+            t = world_of(slot, fp, pos, r, tail, scale=sc)
+            l = world_of(slot, fp, pos, r, lens, scale=sc)
             extra = ""
             if fp:
                 def ang(p):

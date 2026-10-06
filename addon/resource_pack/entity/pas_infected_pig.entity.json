@@ -1,0 +1,50 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "pas:infected_pig",
+      "materials": {
+        "default": "pig",
+        "overlay": "entity_alphatest",
+        "glow": "spider"
+      },
+      "textures": {
+        "default": "textures/entity/pig/pig",
+        "saddled": "textures/entity/pig/pig_saddle",
+        "overlay": "textures/entity/pas/infected_pig"
+      },
+      "geometry": {
+        "default": "geometry.pig.v1.8",
+        "overlay": "geometry.pas.infected_pig"
+      },
+      "animations": {
+        "setup": "animation.pig.setup",
+        "walk": "animation.quadruped.walk",
+        "look_at_target": "animation.common.look_at_target",
+        "baby_transform": "animation.pig.baby_transform",
+        "twitch": "animation.pas_infected.pig.twitch",
+        "attack": "animation.pas_infected.pig.attack",
+        "attack_controller": "controller.animation.pas_infected.attack"
+      },
+      "scripts": {
+        "animate": [
+          "setup",
+          {
+            "walk": "query.modified_move_speed"
+          },
+          "look_at_target",
+          "twitch",
+          "attack_controller",
+          {
+            "baby_transform": "query.is_baby"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.pig",
+        "controller.render.pas_infected_overlay"
+      ],
+      "enable_attachables": false
+    }
+  }
+}

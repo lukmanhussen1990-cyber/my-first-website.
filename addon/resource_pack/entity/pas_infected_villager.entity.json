@@ -1,0 +1,88 @@
+{
+  "format_version": "1.8.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "pas:infected_villager",
+      "materials": {
+        "default": "villager_v2",
+        "masked": "villager_v2_masked",
+        "overlay": "entity_alphatest",
+        "glow": "spider"
+      },
+      "textures": {
+        "base": "textures/entity/villager2/villager",
+        "base2": "textures/entity/villager2/villager",
+        "base3": "textures/entity/villager2/villager",
+        "base4": "textures/entity/villager2/villager",
+        "base5": "textures/entity/villager2/villager",
+        "base6": "textures/entity/villager2/villager",
+        "desert": "textures/entity/villager2/biomes/biome_desert",
+        "jungle": "textures/entity/villager2/biomes/biome_jungle",
+        "plains": "textures/entity/villager2/biomes/biome_plains",
+        "savanna": "textures/entity/villager2/biomes/biome_savanna",
+        "snow": "textures/entity/villager2/biomes/biome_snow",
+        "swamp": "textures/entity/villager2/biomes/biome_swamp",
+        "taiga": "textures/entity/villager2/biomes/biome_taiga",
+        "armorer": "textures/entity/villager2/professions/armorer",
+        "butcher": "textures/entity/villager2/professions/butcher",
+        "cartographer": "textures/entity/villager2/professions/cartographer",
+        "cleric": "textures/entity/villager2/professions/cleric",
+        "farmer": "textures/entity/villager2/professions/farmer",
+        "fisherman": "textures/entity/villager2/professions/fisherman",
+        "fletcher": "textures/entity/villager2/professions/fletcher",
+        "leatherworker": "textures/entity/villager2/professions/leatherworker",
+        "librarian": "textures/entity/villager2/professions/librarian",
+        "shepherd": "textures/entity/villager2/professions/shepherd",
+        "tool_smith": "textures/entity/villager2/professions/toolsmith",
+        "weapon_smith": "textures/entity/villager2/professions/weaponsmith",
+        "stonemason": "textures/entity/villager2/professions/stonemason",
+        "nitwit": "textures/entity/villager2/professions/nitwit",
+        "unskilled": "textures/entity/villager2/professions/unskilled",
+        "overlay": "textures/entity/pas/infected_villager"
+      },
+      "geometry": {
+        "default": "geometry.villager_v2",
+        "overlay": "geometry.pas.infected_villager"
+      },
+      "scripts": {
+        "scale": "0.9375",
+        "pre_animation": [
+          "variable.num_professions = 15;",
+          "variable.profession_index = (query.variant < variable.num_professions ? query.variant : 0);"
+        ]
+      },
+      "animations": {
+        "general": "animation.villager.general",
+        "look_at_target": "animation.common.look_at_target",
+        "move": "animation.villager.move",
+        "baby_transform": "animation.villager.baby_transform",
+        "get_in_bed": "animation.villager.get_in_bed",
+        "twitch": "animation.pas_infected.villager.twitch",
+        "attack": "animation.pas_infected.villager.attack"
+      },
+      "animation_controllers": [
+        {
+          "general": "controller.animation.villager_v2.general"
+        },
+        {
+          "move": "controller.animation.villager_v2.move"
+        },
+        {
+          "baby": "controller.animation.villager_v2.baby"
+        },
+        {
+          "pas_attack": "controller.animation.pas_infected.attack"
+        },
+        {
+          "pas_twitch": "controller.animation.pas_infected.twitch"
+        }
+      ],
+      "render_controllers": [
+        "controller.render.villager_v2_base",
+        "controller.render.villager_v2_masked",
+        "controller.render.pas_infected_overlay"
+      ],
+      "enable_attachables": false
+    }
+  }
+}
