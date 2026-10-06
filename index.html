@@ -425,7 +425,11 @@ const Sound = (() => {
     s.connect(f); f.connect(g); g.connect(master); s.start(t);
   }
   const SFX = {
-    eat(t)   { burst(t, 0.09, 'bandpass', 1900, 1.1, 0.55); burst(t + 0.075, 0.08, 'bandpass', 1400, 1.2, 0.4); tone(150, t, 0.13, 'sine', 0.35, 60); },
+    eat(t, combo) {                                                   // a crunch (every bite a little different) + a rising chime while a combo is alive
+      const j = 0.92 + Math.random() * 0.16;
+      burst(t, 0.09, 'bandpass', 1900 * j, 1.1, 0.55); burst(t + 0.075, 0.08, 'bandpass', 1400 * j, 1.2, 0.4); tone(150 * j, t, 0.13, 'sine', 0.35, 60);
+      if (combo > 1) tone(440 * Math.pow(1.1225, combo * 2), t + 0.05, 0.16, 'triangle', 0.1 + combo * 0.02);
+    },
     gold(t)  { SFX.eat(t); [660, 880, 1320, 1760].forEach((f, i) => tone(f, t + 0.05 + i * 0.065, 0.2, 'triangle', 0.18)); },
     start(t) { tone(330, t, 0.12, 'triangle', 0.2); tone(495, t + 0.09, 0.18, 'triangle', 0.2); },
     die(t)   { tone(170, t, 0.55, 'sawtooth', 0.3, 38); burst(t, 0.45, 'lowpass', 700, 0.7, 0.55); },
@@ -480,7 +484,7 @@ const Sound = (() => {
     setMuted(m) { muted = m; store.set('muted', m); if (m) stopAmbient(); else if (ac) startAmbient(); },
     unlock() { if (ensure() && !amb) startAmbient(); },
     setTheme(id) { ambId = id; if (ac) startAmbient(); },
-    play(name) { if (muted || !ensure()) return; try { SFX[name](ac.currentTime); } catch (e) { /* ignore audio errors */ } }
+    play(name, arg) { if (muted || !ensure()) return; try { SFX[name](ac.currentTime, arg); } catch (e) { /* ignore audio errors */ } }
   };
 })();
 
@@ -1735,7 +1739,7 @@ function fireBite() {                                         // the moment the 
   if (!e || e.fired) return;
   e.fired = true;
   const x = cellX(e.x), y = cellY(e.y);
-  if (G.state === 'playing') Sound.play(e.kind === 'bonus' ? 'gold' : 'eat');
+  if (G.state === 'playing') Sound.play(e.kind === 'bonus' ? 'gold' : 'eat', e.combo);
   Particles.crumbs(x, y, e.kind === 'bonus', e.v);
   Particles.popup(x, y - L.cs * 0.45, '+' + e.pts + (e.combo > 1 ? ' ×' + e.combo : ''), e.kind === 'bonus' || e.combo > 2);
   G.chomp = 1; G.bite = { x, y, t: G.time, gold: e.kind === 'bonus' };
@@ -2170,12 +2174,8 @@ const FOODS = {                                               // food painters: 
 };
 const drawFood = (g, x, y, r, gold, sq, rot, v) => FOODS[THEME.food](g, x, y, r, gold, sq, rot, v);
 
-function drawFruit(g, f, gold) {                              // f = {x, y (cells), born}
+function drawFruit(g, f, gold) {                              // f = {x, y (cells), born, v}
   clipRect(g, L.x, L.y, L.w, L.h);                              // nothing may fall in from outside the board
-  drawFruitInner(g, f, gold);
-  g.restore();
-}
-function drawFruitInner(g, f, gold) {
   const cs = L.cs, x = cellX(f.x), y = cellY(f.y), age = G.time - f.born, r = cs * 0.37;
   const fall = age < 0.5 ? Math.pow(1 - age / 0.5, 2) : 0, z = fall * cs * 1.3;
   const land = age > 0.5 && age < 0.75 ? Math.sin((age - 0.5) / 0.25 * Math.PI) * 0.1 : 0;
@@ -2196,6 +2196,7 @@ function drawFruitInner(g, f, gold) {
   drawFood(g, x, y - z, r * pulse * (1 + fall * 0.3), gold, land, Math.sin(G.time * 1.7 + f.y) * 0.04 + fall * 0.6, f.v);
   g.globalAlpha = 1;
   if (gold && fall === 0 && Math.random() < 0.08) Particles.list.push({ type: 'spark', x: x + rnd(-r, r), y: y + rnd(-r, r), vx: 0, vy: -14, life: 0, max: 0.7, r: rnd(2.5, 4.5) * (cs / 40), rot: rnd(0, 3) });
+  g.restore();
 }
 
 /* ════════════════════════ head extras (tongue, jaws, eyes) + frame renderer ════════════════════════ */

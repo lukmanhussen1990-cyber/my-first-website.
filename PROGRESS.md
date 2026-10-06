@@ -104,3 +104,10 @@ Running log. Newest entries at the bottom. Start: 2026-10-06 14:10 UTC.
 - **First visit** now opens in the Forest theme (the realistic one); forest floor painted around the stone wall.
 - Waiting snake turns round when the opposite key is pressed (it used to ignore it, which looked like a dead key).
 - Tests: UI test now 23 checks (turn-round added), fuzz knows about the turn-round; full regression green on the build before this batch.
+
+### 15:59 — Delivered on request ✅
+- The user asked for the game right away, so the long run stops here (about 1 h 50 min of the planned 4 h used); everything listed above is in the final file.
+- Last additions: top-five table on the result card, shorter tail taper on long snakes, combo glow as an inset edge light, animated scenery switched off in lite mode,
+  eat sound varies per bite and chimes upward with the combo, fruit drawing tidied.
+- Final checks on the delivered build: lint clean, UI test 23/23, logic fuzz (default and wrap + obstacles + hard) all invariants held, audio graph builds, no page errors.
+- Not re-run on the very last build: the long soak and 70 s chaos test (both passed on the build before the final small batch).

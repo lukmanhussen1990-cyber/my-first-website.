@@ -20,15 +20,17 @@ The snake speeds up as you eat; the speed meter in the HUD shows how fast it is.
 
 ## Features
 
-- **Five themes** — Classic (striped lawn), Neon (glowing grid), Forest (earth + stone wall), Ocean (caustics, fish, bubbles), Dark (tiles + roaming light).
-  Each changes the board, frame, snake, food, obstacles, particles, UI colours and ambient sound.
+- **Five themes** — Classic (striped lawn), Neon (glowing grid with a shockwave on every bite), Forest (earth, ferns and a stone wall — the default), Ocean (caustics, kelp, fish, bubbles), Dark (tiles + roaming light).
+  Each changes the board, frame, snake, food, obstacles, particles, UI colours and ambient sound. The theme picker shows a live-looking preview of every board.
 - **Realistic snake** — one smooth, tapered body drawn from a spline with scale textures, pattern, lighting and a soft shadow;
   head with live eyes (pupils look where it is going), blinking, tongue flicks, jaws that open for fruit, a gulp when it bites,
   and a slithering wave. Pick a skin independently of the theme: Auto (the theme's own) · Viper · Coral · Rattler · King.
-- **Modes** — Easy / Normal / Hard · Walls or Wrap-around · optional Obstacles · optional Glow (neon bloom) · high score saved per combination.
+- **Modes** — Easy / Normal / Hard · Walls or Wrap-around · optional Obstacles · optional Glow (neon bloom) · best score and a top-five table saved per combination.
+- **Fruit** — red, green and orange apples (or orbs, pearls and gems depending on the theme) and a golden bonus fruit that flashes the screen gold.
 - **Effects** — particles, "+10" pop-ups, shockwave rings, screen shake, hit-stop and a game over where the snake strobes and breaks into pieces;
   cross-fading screens, animated title and buttons (hover, press, ripple), confetti on a new best.
 - **Phones** — swipe or on-screen arrows, safe-area aware, sharp on high-DPI screens (up to 3×), wider board in landscape, haptics on Android.
+- **Big screens** — the board and the HUD scale up on 1440p / 4K monitors.
 - **Sound** — synthesised effects (eat, golden, level-up, crash, UI clicks) and quiet per-theme ambience, all behind the mute button.
 - **Smooth** — movement is interpolated between grid cells; the board is a pre-rendered image, ambient effects live on a half-resolution overlay,
   and a frame-rate governor sheds effects and resolution automatically on slow devices.
