@@ -37,7 +37,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 
 #veil { position: absolute; inset: 0; background: var(--bg); opacity: 0; pointer-events: none; transition: opacity .55s ease, background .6s; }
 #heat { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .6s ease; }       /* edge glow while a x3+ combo is alive */
-#heat::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 52%, var(--glow) 150%); }
+#heat::before { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 80px 6px rgba(255, 190, 70, .38); box-shadow: inset 0 0 80px 6px color-mix(in srgb, var(--accent-2) 52%, transparent); }
 #gleam { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, transparent 42%, rgba(255, 214, 90, .6) 145%); }       /* golden flash when the bonus fruit is eaten */
 #gleam.go { animation: gleam .75s ease-out; }
 @keyframes gleam { 0% { opacity: 0; } 14% { opacity: 1; } 100% { opacity: 0; } }
@@ -97,6 +97,13 @@ body.in-menu .hide-menu { opacity: 0; pointer-events: none; }
 .overlay.show .card.tilt { transition: transform .18s ease-out; }
 .card::-webkit-scrollbar { display: none; }
 .overlay.show .card { transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
+.top { margin-top: 14px; } .top > small { display: block; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.top5 { display: flex; justify-content: center; gap: 6px; margin-top: 6px; }
+.top5 span { flex: 1 1 0; min-width: 0; max-width: 64px; padding: 6px 2px 5px; border-radius: 10px; background: rgba(0, 0, 0, .28); box-shadow: inset 0 0 0 1px var(--line); font-size: 14px; font-weight: 750; text-align: center; font-variant-numeric: tabular-nums; }
+.top5 i { display: block; font-style: normal; font-size: 9px; letter-spacing: .12em; color: var(--muted); font-weight: 700; margin-bottom: 1px; }
+.top5 .me { background: rgba(255, 255, 255, .1); box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 14px var(--glow); }
+.top5 .me i { color: var(--accent); }
+@media (max-height: 700px) { .top { display: none; } }
 .card h2 { margin: 0 0 4px; font-size: 30px; letter-spacing: .1em; text-transform: uppercase; font-weight: 800; }
 .card p { margin: 6px 0; color: var(--muted); }
 
@@ -288,6 +295,7 @@ html.lite #heat, html.lite #gleam { display: none; }
       <div class="big" id="finalScore">0</div>
       <div class="badge" id="newBest" hidden>New best score</div>
       <div class="stats3"><div><b id="finalLen">3</b><small>Length</small></div><div><b id="finalApples">0</b><small>Apples</small></div><div><b id="finalBest">0</b><small>Best</small></div></div>
+      <div class="top" id="topBox" hidden><small>Top scores</small><div class="top5" id="top5"></div></div>
       <div class="actions"><button class="btn" id="btnAgain">Play again</button><button class="btn ghost" id="btnMenu">Menu</button><button class="btn ghost" id="btnShare" hidden>Share</button></div>
     </div>
   </div>
@@ -1536,6 +1544,15 @@ function refreshSkin() {                                       // the theme's ow
 }
 const loadBest = () => Number(store.get(bestKey(), 0)) || 0;                  // tolerate corrupt storage
 const bestKey = () => `best.${CFG.difficulty}.${CFG.wrap ? 'wrap' : 'walls'}${CFG.obstacles ? '.obst' : ''}`;
+const topKey = () => bestKey().replace(/^best/, 'top');                          // the five best runs for the current difficulty / mode
+const loadTop = () => { const a = store.get(topKey(), []); return Array.isArray(a) ? a.filter(n => Number.isFinite(n)).slice(0, 5) : []; };
+function recordScore(score) {                                                  // adds a finished run to the table; returns its place (0 = best) or -1
+  if (!(score > 0)) return -1;
+  const t = loadTop(); t.push(score); t.sort((a, b) => b - a);
+  const place = t.indexOf(score); t.length = Math.min(t.length, 5);
+  store.set(topKey(), t);
+  return place < 5 ? place : -1;
+}
 const glowOn = () => !Quality.low && (CFG.glow == null ? THEME.glowDefault : CFG.glow);
 
 const G = {
@@ -1813,7 +1830,7 @@ function ensureCap(n) {
 
 function bodyProfile(d, T) {                      // half-width in cells at distance d (cells) from the snout tip; T = total length
   let w = d < 1.6 ? hwHead(0.5 - d) : THICK * lerp(0.285, 0.33, smooth(clamp((d - 1.6) / 1.8, 0, 1)));
-  const ts = clamp(T * 0.42, 2.2, T - 1), g = clamp((d - ts) / (T - ts), 0, 1);
+  const ts = clamp(Math.max(T * 0.42, T - 16), 2.2, T - 1), g = clamp((d - ts) / (T - ts), 0, 1);       // the taper never stretches over more than ~16 cells, so a long snake keeps a firm body
   if (g > 0) w *= Math.pow(1 - smooth(g) * 0.985, 0.7);
   return w;
 }
@@ -2343,7 +2360,7 @@ function render() {
     if (fxCanvas.style.visibility === 'hidden') fxCanvas.style.visibility = 'visible';
     if (!(fxFrame & 1)) { fxCtx.setTransform(FXR, 0, 0, FXR, -L.ox * FXR, -L.oy * FXR); fxCtx.clearRect(L.ox, L.oy, L.cols * cs, L.rows * cs); sc.fx(fxCtx, G.time); }
   } else if (fxCanvas.style.visibility !== 'hidden') fxCanvas.style.visibility = 'hidden';
-  if (sc.dyn) sc.dyn(g, G.time);
+  if (sc.dyn && !Quality.low) sc.dyn(g, G.time);              // butterflies, leaves, kelp, fish: first thing to go on a slow device
 
   const key = SKIN.id + '|' + cs + '|' + DPR;
   if (key !== spriteKey) { headSprite = makeHeadSprite(sk); spriteKey = key; }
@@ -2667,6 +2684,9 @@ function gameOver() {
   $('overMsg').textContent = G.won ? 'You filled the whole board. Legendary.' : pick(MESSAGES[G.deathBy] || MESSAGES.wall);
   $('finalLen').textContent = totalLength(); $('finalApples').textContent = G.eaten + G.bonusEaten; $('finalBest').textContent = G.best;
   $('newBest').hidden = !(G.newBest && G.score > 0);
+  const place = recordScore(G.score), top = loadTop();
+  $('topBox').hidden = !top.length;
+  $('top5').innerHTML = top.map((s, i) => `<span${i === place ? ' class="me"' : ''}><i>#${i + 1}</i>${s}</span>`).join('');
   countUp($('finalScore'), G.score, 900);
   updateHud(); show('over'); updateDpad();
   if (G.newBest && G.score > 0) { Sound.play('level'); confetti(); }
