@@ -55,7 +55,10 @@
   var DR = [-1, 1, 0, 0];
   var DC = [0, 0, -1, 1];
 
-  var MAX_LEVEL = 1000000000; // larger level numbers (and +Infinity) are clamped to this
+  // Larger level numbers (and +Infinity) are clamped to this. It is the largest integer a
+  // double holds exactly, so every level a player could ever reach keeps its own board and
+  // generateLevel(n).level === n for every integer n >= 1 up to it.
+  var MAX_LEVEL = 9007199254740991; // Number.MAX_SAFE_INTEGER (spelled out for old engines)
   var MAX_ATTEMPTS = 80; // seeded retries before the constructive fallback kicks in
 
   var DEBUG = { lastAttempt: 0 };
@@ -185,15 +188,42 @@
   }
 
   /**
-   * Canonical daily key. A 'YYYY-MM-DD' string is used as-is. Anything else still gets
-   * a deterministic key (so the game never crashes on bad input): 'X' + the input
-   * stripped to [0-9A-Za-z_-] (max 24 chars) + '-' + base36 hash of the raw input.
+   * Canonical daily key.
+   *   - 'YYYY-MM-DD' is used as-is (this is what the game passes).
+   *   - Forgiving forms of the same day map to that day: surrounding whitespace
+   *     (' 2026-10-06 '), an ISO date-time ('2026-10-06T08:00:00Z' -> '2026-10-06', the
+   *     date as written, no timezone maths) and a valid Date object (its LOCAL calendar
+   *     day, like the game's own todayKey()). Without this a Date would be keyed by its
+   *     toString() text, i.e. a different "daily" every second and per timezone.
+   *   - Anything else still gets a deterministic key (so the game never crashes on bad
+   *     input): 'X' + the input stripped to [0-9A-Za-z_-] (max 24 chars) + '-' + base36
+   *     hash of the raw input.
    */
   function dailyKey(date) {
+    if (date instanceof Date) {
+      try {
+        var t = date.getTime();
+        if (t === t) return pad4(date.getFullYear()) + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate());
+      } catch (e) {
+        // not a real Date (subclass / prototype trick): use the generic path below
+      }
+    }
     var s = safeString(date);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    var m = /^\s*(\d{4}-\d{2}-\d{2})(?:[T ][0-9:.]*(?:Z|[+-]\d{2}:?\d{2})?)?\s*$/.exec(s);
+    if (m) return m[1];
     var clean = s.replace(/[^0-9A-Za-z_-]/g, '').slice(0, 24);
     return 'X' + (clean || 'invalid') + '-' + hashString(s).toString(36);
+  }
+
+  function pad2(v) {
+    return (v < 10 ? '0' : '') + v;
+  }
+
+  /** Year as 4 digits. Years outside 0..9999 cannot be written as YYYY: they get a
+   *  'Y' prefix ('Y10000', 'Y-5') so the key stays deterministic and URL-safe. */
+  function pad4(v) {
+    if (v < 0 || v > 9999) return 'Y' + v;
+    return ('000' + v).slice(-4);
   }
 
   /** Daily boards: 10x10, 38..42 arrows (seeded by the date), maxLen 8. */
@@ -474,8 +504,10 @@
    *                     (such an arrow can never be blocked, it is a giveaway);
    *        - length:    -wLen per cell away from the target length;
    *        - noise:     a little seeded randomness for variety.
-   *   6. Commit the best candidate. If there is no legal head at all, the attempt
-   *      fails and the caller retries with the next seed (attempt + 1).
+   *   6. Commit the best candidate (every candidate is first re-checked literally
+   *      against the acceptance rule by walking its ray). If there is no legal head
+   *      or no acceptable candidate, the attempt fails and the caller retries with
+   *      the next seed (attempt + 1).
    *
    * Lengths: "spare" = live cells - 2 * (arrows still to place). Minus an allowance for
    * cells that will die before the end, that is the budget for cells beyond 2 per
@@ -728,6 +760,13 @@
           mark[pick] = stamp;
         }
 
+        // THE acceptance rule, checked literally: walk the exit ray from the head to the
+        // edge and reject the candidate if it meets any previously placed arrow or the
+        // candidate's own body. (Head selection uses clear[][] and body growth skips
+        // ray cells, so this never fires in practice; it is the safety net that keeps
+        // the solvability guarantee independent of the heuristics.)
+        if (!rayIsClear(hr, hc, hd)) continue;
+
         var score = scoreCandidate(len, hd, hr, hc, liveCount, after, progress, target);
         if (score > bestScore) {
           bestScore = score;
@@ -736,6 +775,8 @@
           for (var m = 0; m < len; m++) best[m] = cand[m];
         }
       }
+
+      if (bestLen === 0) return null; // no acceptable candidate -> caller retries
 
       // ---- step 6: commit ------------------------------------------------------------
       var cellsTH = [];
@@ -758,6 +799,16 @@
     function onRay(r, c, hr2, hc2, d) {
       if (d < 2) return c === hc2 && (r - hr2) * DR[d] > 0;
       return r === hr2 && (c - hc2) * DC[d] > 0;
+    }
+
+    // Acceptance rule: is every cell from head (hr, hc) exclusive, in direction d, up
+    // to the edge free of placed arrows (grid) and of the candidate itself (mark)?
+    function rayIsClear(hr2, hc2, d) {
+      for (var r = hr2 + DR[d], c = hc2 + DC[d]; r >= 0 && r < size && c >= 0 && c < size; r += DR[d], c += DC[d]) {
+        var x = r * size + c;
+        if (grid[x] >= 0 || mark[x] === stamp) return false;
+      }
+      return true;
     }
 
     // Would the new body cell (r, c) touch the candidate anywhere but the current tail?
@@ -1096,7 +1147,8 @@
 
   /**
    * generateDaily('YYYY-MM-DD') -> Puzzle on a 10x10 board, seeded by the date.
-   * A malformed argument still yields a valid, deterministic puzzle (see dailyKey).
+   * ' YYYY-MM-DD ', an ISO date-time string or a Date object give that day's daily; any
+   * other argument still yields a valid, deterministic puzzle (see dailyKey).
    */
   function generateDaily(date) {
     var key = dailyKey(date);

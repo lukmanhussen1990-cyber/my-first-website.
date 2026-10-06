@@ -678,7 +678,7 @@
       num.classList.add('bump');
       Sound.chime();
       buzz(20);
-    }, 900);
+    }, 560);
   }
 
   function continueFromStreak() {
@@ -1096,7 +1096,10 @@
     animate({
       update(t) {
         if (token !== G.token) return false;
-        const s = Math.min(dist, 7 * t + 40 * t * t);
+        // tiny wind-up (a 70 ms dip backwards), then accelerate out along the track
+        const tw = 0.07;
+        const u = t - tw;
+        const s = t < tw ? -0.07 * Math.sin((Math.PI * t) / tw) : Math.min(dist, 4.5 * u + 30 * u * u);
         drawArrow(a, s);
         while (vacated < len && s > vacated + 0.55) { addDot(a.cells[vacated]); vacated++; }
         a.el.style.opacity = String(s < ray + 0.6 ? 1 : clamp(1 - (s - ray - 0.6) / len, 0, 1));
@@ -1116,6 +1119,7 @@
     a.state = 'bumping';
     G.mistakes++;
     G.drops = Math.max(0, G.drops - 1);
+    const lostIndex = G.drops;                  // the drop that empties when this bump lands
     if (G.drops === 0) {
       G.over = true;
       pauseGame();
@@ -1165,7 +1169,7 @@
         const off = 'translate(' + (dd[1] * 0.14).toFixed(2) + 'px,' + (dd[0] * 0.14).toFixed(2) + 'px)';
         b.el.animate([{ transform: 'translate(0px,0px)' }, { transform: off }, { transform: 'translate(0px,0px)' }], { duration: 220, easing: 'ease-out' });
       }
-      loseDropUI();
+      loseDropUI(lostIndex);
       if (G.mistakes === 1 || (G.mode === 'level' && G.level <= 3)) showBoardToast(G.drops > 0 ? 'Blocked! −1 drop' : 'Out of drops!');
     }
   }
@@ -1194,8 +1198,8 @@
     $('#drops').setAttribute('aria-label', 'Water drops left: ' + G.drops);
   }
 
-  function loseDropUI() {
-    const d = $$('#drops .drop')[G.drops];
+  function loseDropUI(index) {
+    const d = $$('#drops .drop')[index];
     if (d) {
       d.classList.remove('lose');
       void d.getBoundingClientRect();
@@ -1484,7 +1488,7 @@
     $('#r-miss').textContent = String(G.mistakes);
     $('#r-hints').textContent = String(G.hintsUsed);
     $('#result-extra').textContent = r.extras.join(' · ');
-    $('#btn-next').textContent = G.mode === 'daily' ? 'Back to Home' : 'Next Level';
+    $('#btn-next').innerHTML = G.mode === 'daily' ? 'Back to Home' : 'Next Level<small>Level ' + S.level + '</small>';
     const stars = $$('#screen-result .star');
     stars.forEach((s) => s.classList.remove('pop', 'dim'));
     showScreen('result');
