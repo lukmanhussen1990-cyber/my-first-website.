@@ -1,0 +1,25 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "PAS engine tests",
+    "description": "Test-only GameTest pack for tools/engine/run_engine.py (never shipped)",
+    "uuid": "4333e7f9-1a2a-415c-b657-82c1b8a7287d",
+    "version": [0, 1, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    { "type": "data", "uuid": "277037a3-8e0f-47ae-94c4-aa204b16b69d", "version": [0, 1, 0] },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "2248807b-0402-4348-b52f-75c576f34f3d",
+      "version": [0, 1, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    { "uuid": "d49c4c97-9b2f-4e88-a2ad-7e392e64ca1a", "version": [1, 0, 0] },
+    { "module_name": "@minecraft/server", "version": "1.11.0" },
+    { "module_name": "@minecraft/server-gametest", "version": "1.0.0-beta" }
+  ]
+}
