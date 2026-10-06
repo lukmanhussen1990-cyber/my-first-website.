@@ -130,9 +130,10 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .chips { display: flex; gap: 6px; justify-content: space-between; }
 .chip { flex: 1; min-width: 0; padding: 0; border: 0; background: none; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: center; }
 .chip i {
-  display: block; width: 100%; max-width: 46px; aspect-ratio: 1; margin: 0 auto 5px; border-radius: 14px; border: 2px solid transparent; position: relative; overflow: hidden;
+  display: block; width: 100%; max-width: 52px; aspect-ratio: 1; margin: 0 auto 5px; border-radius: 14px; border: 2px solid transparent; position: relative; overflow: hidden;
   box-shadow: 0 5px 12px rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(255, 255, 255, .12); transition: transform .2s cubic-bezier(.2, 1.5, .4, 1), border-color .2s, box-shadow .2s;
 }
+.chip i svg { display: block; width: 100%; height: 100%; }
 .chip:hover i { transform: translateY(-3px) scale(1.06); }
 .chip.on i { border-color: var(--ink); box-shadow: 0 6px 18px var(--glow), inset 0 0 0 1px rgba(255, 255, 255, .2); transform: scale(1.08); }
 .chip.on { color: var(--ink); font-weight: 700; }
@@ -186,7 +187,7 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border-radius: 6
   .card { padding: 20px 16px 16px; border-radius: 22px; } .logo { font-size: 44px; } .stat b { font-size: 21px; } #hud { gap: 14px; } .row { grid-template-columns: 1fr; gap: 6px; } .big { font-size: 56px; }
   .hide-small { display: none !important; } .btn.big { padding: 15px 44px; }
 }
-@media (max-height: 560px) { .keys, .tagline { display: none; } .logo { font-size: 38px; } .settings { margin-top: 10px; gap: 8px; } .card { padding: 14px 18px; } .row { grid-template-columns: 80px 1fr; } .chip i { max-width: 34px; margin-bottom: 2px; } }
+@media (max-height: 660px) { .keys, .tagline { display: none; } .logo { font-size: 38px; } .settings { margin-top: 10px; gap: 8px; } .card { padding: 14px 18px; } .row { grid-template-columns: 80px 1fr; } .chip i { max-width: 34px; margin-bottom: 2px; } }
 /* lite mode (set automatically on slow devices): no live blur behind glass panels */
 html.lite .card, html.lite .icon-btn, html.lite #dpad button { backdrop-filter: none; -webkit-backdrop-filter: none; }
 html.lite .card { background: var(--card); }
@@ -469,41 +470,59 @@ const Sound = (() => {
 const THEMES = [
   {
     id: 'classic', name: 'Classic',
-    swatch: 'radial-gradient(circle at 68% 34%,#ff4f4f 0 13%,transparent 14%),radial-gradient(circle at 34% 66%,#3f93f0 0 24%,transparent 25%),linear-gradient(135deg,#9be46a,#5bb54a)',
     skin: { id: 'classic', seed: 11, pattern: 'chevron', base: hex('#2f84e6'), dark: hex('#0d3a86'), light: hex('#b4dcff'), eye: hex('#ffffff'), eyeStyle: 'round', eyeSize: 1.3, thick: 1.12, headK: 1.07, marks: 'plain', keel: false, scaleA: 0.5, rim: [150, 215, 255] },
     food: 'apple', obstacle: 'rock', shadow: 1, glowColor: [120, 190, 255], glowDefault: false,
     fx: { style: 'crumb', ring: [255, 255, 255], eat: ['#e8352d', '#b9121d', '#ff7a66', '#f3e6b8'], gold: ['#ffe27a', '#ffc933', '#fff3b0'], dust: [190, 170, 120], mote: [255, 255, 225], text: '#fff6d8', textGold: '#ffd54a' }
   },
   {
     id: 'neon', name: 'Neon',
-    swatch: 'radial-gradient(circle at 68% 34%,#ff3df0 0 13%,transparent 14%),radial-gradient(circle at 34% 66%,#35f2ff 0 22%,transparent 23%),linear-gradient(135deg,#1d0f4d,#07061c)',
     skin: { id: 'neon', seed: 23, pattern: 'hex', base: hex('#18226e'), dark: hex('#04061a'), light: hex('#35f2ff'), accent: hex('#ff3df0'), eye: hex('#ffffff'), eyeStyle: 'glow', eyeSize: 1.3, thick: 1.14, headK: 1.12, marks: 'neon', keel: false, scaleA: 0.0, rim: [53, 242, 255] },
     food: 'orb', obstacle: 'crystal', shadow: 0.25, glowColor: [53, 242, 255], glowDefault: true,
     fx: { style: 'spark', ring: [53, 242, 255], eat: ['#35f2ff', '#ff3df0', '#ffffff', '#8a5cff'], gold: ['#fff35c', '#ffffff', '#ffb12b'], dust: [120, 80, 255], mote: [140, 235, 255], text: '#c9fbff', textGold: '#fff35c' }
   },
   {
     id: 'forest', name: 'Forest',
-    swatch: 'radial-gradient(circle at 68% 34%,#e8352d 0 13%,transparent 14%),radial-gradient(circle at 34% 66%,#6f9a32 0 24%,transparent 25%),linear-gradient(135deg,#a58a58,#5d4a2b)',
     skin: { id: 'forest', seed: 11, pattern: 'zigzag', base: hex('#5f8f2c'), dark: hex('#202c0d'), light: hex('#c6dc78'), eye: hex('#f0b020'), eyeStyle: 'slit', thick: 1.06, marks: 'vee', keel: true, scaleA: 1, rim: null },
     food: 'apple', obstacle: 'boulder', shadow: 1, glowColor: [190, 235, 110], glowDefault: false,
     fx: { style: 'crumb', ring: [255, 240, 200], eat: ['#e8352d', '#b9121d', '#ff7a66', '#f3e6b8'], gold: ['#ffe27a', '#ffc933', '#fff3b0'], dust: [170, 140, 95], mote: [255, 240, 200], text: '#fff1c9', textGold: '#ffd54a' }
   },
   {
     id: 'ocean', name: 'Ocean',
-    swatch: 'radial-gradient(circle at 68% 34%,#fff6fb 0 13%,transparent 14%),radial-gradient(circle at 34% 66%,#17c3d6 0 24%,transparent 25%),linear-gradient(135deg,#2bb7d8,#0a3558)',
     skin: { id: 'ocean', seed: 37, pattern: 'ripple', base: hex('#16b5c9'), dark: hex('#06455f'), light: hex('#dcfcff'), eye: hex('#ffe08a'), eyeStyle: 'round', eyeSize: 1.2, thick: 1.1, marks: 'plain', keel: false, scaleA: 0.55, rim: [160, 245, 255] },
     food: 'pearl', obstacle: 'coral', shadow: 0.6, glowColor: [120, 235, 255], glowDefault: false,
     fx: { style: 'bubble', ring: [190, 245, 255], eat: ['#ffffff', '#bff4ff', '#7fe3ff', '#ffd9ec'], gold: ['#ffe9a0', '#ffd24d', '#ffffff'], dust: [200, 245, 255], mote: [215, 250, 255], text: '#e9fdff', textGold: '#ffe08a' }
   },
   {
     id: 'dark', name: 'Dark',
-    swatch: 'radial-gradient(circle at 68% 34%,#ffb454 0 13%,transparent 14%),radial-gradient(circle at 34% 66%,#e6e8f2 0 24%,transparent 25%),linear-gradient(135deg,#262932,#0b0c10)',
     skin: { id: 'dark', seed: 41, pattern: 'ghost', base: hex('#e4e7f3'), dark: hex('#565a78'), light: hex('#ffffff'), accent: hex('#8d6bff'), eye: hex('#b79cff'), eyeStyle: 'glow', eyeSize: 1.25, thick: 1.12, headK: 1.1, sheen: 0.14, marks: 'ghost', keel: false, scaleA: 0.6, rim: [160, 130, 255] },
     food: 'gem', obstacle: 'obsidian', shadow: 0.7, glowColor: [150, 120, 255], glowDefault: false,
     fx: { style: 'spark', ring: [183, 156, 255], eat: ['#ffb454', '#ff7a3d', '#ffe3b0', '#b79cff'], gold: ['#fff2b0', '#ffe066', '#ffffff'], dust: [150, 140, 190], mote: [195, 175, 255], text: '#f4eeff', textGold: '#ffe066' }
   }
 ];
 const THEME_BY_ID = Object.fromEntries(THEMES.map(t => [t.id, t]));
+
+/* Mini board previews for the theme picker: a tiny SVG of each theme's ground, frame, snake and food. */
+const PREVIEW_BOARD = {                                  // theme id → [frame colour, ground markup] in a 56×56 viewBox (board = 5…51)
+  classic: ['#2d7d58', '<defs><pattern id="pvc" width="20" height="20" patternUnits="userSpaceOnUse" x="5" y="5"><rect width="20" height="20" fill="#86da62"/><rect width="10" height="10" fill="#a3ee7b"/><rect x="10" y="10" width="10" height="10" fill="#a3ee7b"/></pattern></defs><rect x="5" y="5" width="46" height="46" fill="url(#pvc)"/>'],
+  neon: ['#07041a', '<rect x="5" y="5" width="46" height="46" fill="#150b3a"/><path d="M5 16.5h46M5 28h46M5 39.5h46M16.5 5v46M28 5v46M39.5 5v46" stroke="#35f2ff" stroke-opacity=".32" stroke-width=".8"/><rect x="4.6" y="4.6" width="46.8" height="46.8" fill="none" stroke="#35f2ff" stroke-width="1.3"/><rect x="1.4" y="1.4" width="53.2" height="53.2" fill="none" stroke="#ff3df0" stroke-opacity=".7" stroke-width=".9"/>'],
+  forest: ['#85806f', '<rect x="5" y="5" width="46" height="46" fill="#8b7248"/><g fill="#cdbb92" fill-opacity=".75"><circle cx="11" cy="46" r=".8"/><circle cx="24" cy="12" r=".7"/><circle cx="36" cy="48" r=".8"/><circle cx="46" cy="30" r=".7"/><circle cx="18" cy="31" r=".6"/><circle cx="31" cy="8" r=".6"/></g><path d="M40 16l1-3.2 1 3.2M20 46l.9-2.8.9 2.8M9 22l.8-2.4.8 2.4" stroke="#6f9a32" stroke-width="1" fill="none" stroke-linecap="round"/><rect x="2.5" y="2.5" width="51" height="51" fill="none" stroke="#2b2720" stroke-width="1" stroke-dasharray="7 3.5"/><rect x="5" y="5" width="46" height="46" fill="none" stroke="#2b2720" stroke-opacity=".7" stroke-width="1.2"/>'],
+  ocean: ['#6b8f94', '<defs><linearGradient id="pvo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34c0e0"/><stop offset="1" stop-color="#0a4a78"/></linearGradient></defs><rect x="5" y="5" width="46" height="46" fill="url(#pvo)"/><path d="M6 15q7-6 13 0t13 0 12-3M6 30q8-6 15 0t15 0 11-2M9 44q8-5 14 0t14-1" fill="none" stroke="#d7ffff" stroke-opacity=".3" stroke-width="1.1"/><rect x="2.5" y="2.5" width="51" height="51" fill="none" stroke="#0b2630" stroke-width="1" stroke-dasharray="7 3.5"/><rect x="5" y="5" width="46" height="46" fill="none" stroke="#0b2630" stroke-opacity=".6" stroke-width="1.2"/>'],
+  dark: ['#0b0c10', '<rect x="5" y="5" width="46" height="46" fill="#171921"/><path d="M16.5 5v46M28 5v46M39.5 5v46M5 16.5h46M5 28h46M5 39.5h46" stroke="#07080c" stroke-width="1.8"/><rect x="5" y="5" width="46" height="46" fill="none" stroke="#8d6bff" stroke-opacity=".85" stroke-width="1.1"/>']
+};
+const PREVIEW_FOOD = {                                   // food kind → markup at the preview's fruit spot (14, 16)
+  apple: '<circle cx="14" cy="16.4" r="4.4" fill="#e23a2f"/><circle cx="12.6" cy="15" r="1.3" fill="#fff" fill-opacity=".7"/><path d="M14 12.2q.8-2.4 3-3" stroke="#4a2c14" stroke-width="1" fill="none" stroke-linecap="round"/>',
+  orb: '<circle cx="14" cy="16" r="7" fill="#ff3df0" fill-opacity=".22"/><circle cx="14" cy="16" r="3.9" fill="#ff3df0"/><circle cx="13" cy="15" r="1.2" fill="#fff"/>',
+  pearl: '<circle cx="14" cy="16" r="4.3" fill="#fff6fb"/><circle cx="15.2" cy="17.4" r="2.8" fill="#ffd0e8" fill-opacity=".55"/><circle cx="12.8" cy="14.8" r="1.3" fill="#fff"/>',
+  gem: '<path d="M14 11.4l3.4 1.4 1.4 3.4-1.4 3.4-3.4 1.4-3.4-1.4-1.4-3.4 1.4-3.4z" fill="#ffb454" stroke="#fff3d0" stroke-width=".8"/>'
+};
+function themePreview(t) {
+  const sk = t.skin, glow = t.glowDefault, body = rgb(mixc(sk.base, sk.light, glow ? 0.1 : 0.25)), edge = glow ? rgb(sk.light) : rgb(shade(sk.dark, -0.3));
+  const d = 'M13 42C17 27 29 27 31 36S42 45 44 22', line = (w, col, extra) => `<path d="${d}" fill="none" stroke-linecap="round" stroke="${col}" stroke-width="${w}" ${extra || ''}/>`;
+  const [frame, ground] = PREVIEW_BOARD[t.id];
+  return `<svg viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" fill="${frame}"/>${ground}${PREVIEW_FOOD[t.food]}`
+    + line(9, 'rgba(0,0,0,.35)', 'transform="translate(1.2 1.8)"') + line(8, edge) + line(6.2, body) + line(1.5, rgb(sk.light), 'stroke-opacity=".5" transform="translate(-1 -1)"')
+    + `<circle cx="44" cy="22" r="4.7" fill="${body}" stroke="${edge}" stroke-width="1"/><circle cx="42.3" cy="20.5" r="1.25" fill="#fff"/><circle cx="46.1" cy="20.5" r="1.25" fill="#fff"/></svg>`;
+}
 /* Snake skins the player can pick independently of the theme ("Theme" = the theme's own skin). */
 const SKIN_LIB = {
   viper:   THEME_BY_ID.forest.skin,
@@ -589,6 +608,29 @@ function grain(g, w, h, tile, alpha, mode, devicePx) {
   g.restore();
 }
 
+
+// ambient occlusion where the playfield meets the frame, a vignette and an optional warm sun glow (upper left).
+// tint / sunRgb are 'r,g,b' strings; `vignette` is the edge darkness (0…1)
+function frameShade(g, w, h, tint, vignette, sunRgb) {
+  const t = L.wall, d = L.cs * 0.6;
+  const strip = (x0, y0, x1, y1, rx, ry, rw, rh, a) => {
+    const gr = g.createLinearGradient(x0, y0, x1, y1);
+    gr.addColorStop(0, `rgba(${tint},${a})`); gr.addColorStop(1, `rgba(${tint},0)`);
+    g.fillStyle = gr; g.fillRect(rx, ry, rw, rh);
+  };
+  strip(0, t, 0, t + d, t, t, w - 2 * t, d, 0.55);
+  strip(t, 0, t + d, 0, t, t, d, h - 2 * t, 0.5);
+  strip(0, h - t, 0, h - t - d * 0.7, t, h - t - d * 0.7, w - 2 * t, d * 0.7, 0.32);
+  strip(w - t, 0, w - t - d * 0.7, 0, w - t - d * 0.7, t, d * 0.7, h - 2 * t, 0.3);
+  const v = g.createRadialGradient(w * 0.42, h * 0.38, Math.min(w, h) * 0.2, w * 0.5, h * 0.5, Math.max(w, h) * 0.78);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, `rgba(${tint},${vignette})`);
+  g.fillStyle = v; g.fillRect(0, 0, w, h);
+  if (sunRgb) {
+    const sg = g.createRadialGradient(w * 0.25, h * 0.16, 0, w * 0.25, h * 0.16, Math.max(w, h) * 0.7);
+    sg.addColorStop(0, `rgba(${sunRgb},.2)`); sg.addColorStop(1, `rgba(${sunRgb},0)`);
+    g.fillStyle = sg; g.fillRect(0, 0, w, h);
+  }
+}
 
 function portalEdge(g, w, h) {                            // no walls in wrap mode: dim the frame, draw a dashed energy line
   const t = L.wall, s = L.cs / 40, c = THEME.glowColor;
@@ -744,26 +786,6 @@ function paintWalls(g, w, h, opt) {
   g.strokeStyle = 'rgba(0,0,0,.6)'; g.lineWidth = 2 * s; g.strokeRect(t, t, w - 2 * t, h - 2 * t);
 }
 
-function paintLight(g, w, h) {
-  const t = L.wall, d = L.cs * 0.6;
-  const strip = (x0, y0, x1, y1, rx, ry, rw, rh, a) => {      // ambient occlusion where ground meets wall
-    const gr = g.createLinearGradient(x0, y0, x1, y1);
-    gr.addColorStop(0, `rgba(10,6,0,${a})`); gr.addColorStop(1, 'rgba(10,6,0,0)');
-    g.fillStyle = gr; g.fillRect(rx, ry, rw, rh);
-  };
-  strip(0, t, 0, t + d, t, t, w - 2 * t, d, 0.55);
-  strip(t, 0, t + d, 0, t, t, d, h - 2 * t, 0.5);
-  strip(0, h - t, 0, h - t - d * 0.7, t, h - t - d * 0.7, w - 2 * t, d * 0.7, 0.32);
-  strip(w - t, 0, w - t - d * 0.7, 0, w - t - d * 0.7, t, d * 0.7, h - 2 * t, 0.3);
-  const v = g.createRadialGradient(w * 0.42, h * 0.38, Math.min(w, h) * 0.2, w * 0.5, h * 0.5, Math.max(w, h) * 0.78);
-  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.5)');
-  g.fillStyle = v; g.fillRect(0, 0, w, h);
-  const sun = g.createRadialGradient(w * 0.25, h * 0.18, 0, w * 0.25, h * 0.18, Math.max(w, h) * 0.7);
-  sun.addColorStop(0, 'rgba(255,226,150,.2)'); sun.addColorStop(1, 'rgba(255,226,150,0)');
-  g.fillStyle = sun; g.fillRect(0, 0, w, h);
-}
-
-
 SCENES.forest = {
   grain: 0.18, blend: 'normal',
   backdrop(g, w, h) {
@@ -771,7 +793,7 @@ SCENES.forest = {
     bg.addColorStop(0, '#1d2314'); bg.addColorStop(1, '#070904');
     g.fillStyle = bg; g.fillRect(0, 0, w, h);
   },
-  paint(g, w, h, wrap) { paintGround(g, w, h); paintWalls(g, w, h); paintLight(g, w, h); },
+  paint(g, w, h, wrap) { paintGround(g, w, h); paintWalls(g, w, h); frameShade(g, w, h, '10,6,0', 0.5, '255,226,150'); },
   dyn(g, time) {                                          // a few leaves tumbling down through the clearing
     const cs = L.cs, bw = L.cols * cs, bh = L.rows * cs, s = cs / 40, cols = ['#a8742a', '#c98a2e', '#8c3f1d', '#b59a3a', '#7d5a22'];
     clipRect(g, L.ox, L.oy, bw, bh);
@@ -793,29 +815,7 @@ SCENES.forest = {
 };
 
 /* ════════════════════════ classic scene: striped lawn, bevelled frame ════════════════════════ */
-// shared helper: darkening where the playfield meets the frame (ambient occlusion), plus vignette and sun
-function frameShade(g, w, h, strength, sun) {
-  const t = L.wall, d = L.cs * 0.6;
-  const strip = (x0, y0, x1, y1, rx, ry, rw, rh, a) => {
-    const gr = g.createLinearGradient(x0, y0, x1, y1);
-    gr.addColorStop(0, `rgba(0,10,4,${a * strength})`); gr.addColorStop(1, 'rgba(0,10,4,0)');
-    g.fillStyle = gr; g.fillRect(rx, ry, rw, rh);
-  };
-  strip(0, t, 0, t + d, t, t, w - 2 * t, d, 0.55);
-  strip(t, 0, t + d, 0, t, t, d, h - 2 * t, 0.5);
-  strip(0, h - t, 0, h - t - d * 0.7, t, h - t - d * 0.7, w - 2 * t, d * 0.7, 0.32);
-  strip(w - t, 0, w - t - d * 0.7, 0, w - t - d * 0.7, t, d * 0.7, h - 2 * t, 0.3);
-  const v = g.createRadialGradient(w * 0.42, h * 0.38, Math.min(w, h) * 0.2, w * 0.5, h * 0.5, Math.max(w, h) * 0.78);
-  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, `rgba(0,10,4,${0.42 * strength})`);
-  g.fillStyle = v; g.fillRect(0, 0, w, h);
-  if (sun) {
-    const sg = g.createRadialGradient(w * 0.25, h * 0.15, 0, w * 0.25, h * 0.15, Math.max(w, h) * 0.7);
-    sg.addColorStop(0, sun[0]); sg.addColorStop(1, sun[1]);
-    g.fillStyle = sg; g.fillRect(0, 0, w, h);
-  }
-}
-
-// shared helper: gradient frame with bevel and corner studs; `c` = [top, mid, bottom] colours
+// gradient frame with bevel and corner studs; `c` = [top, mid, bottom] colours
 function bevelFrame(g, w, h, c, studs) {
   const t = L.wall, s = L.cs / 40;
   const fr = g.createLinearGradient(0, 0, 0, h);
@@ -874,7 +874,7 @@ SCENES.classic = {
       g.fillStyle = '#ffc928'; g.beginPath(); g.arc(x, y, r * 0.55, 0, TAU); g.fill();
     }
     g.restore();
-    frameShade(g, w, h, 1, ['rgba(255,244,190,.2)', 'rgba(255,244,190,0)']);
+    frameShade(g, w, h, '0,10,4', 0.42, '255,244,190');
   },
   dyn(g, time) {                                                   // two butterflies fluttering over the lawn
     const cs = L.cs, bw = L.cols * cs, bh = L.rows * cs, s = cs / 40;
@@ -1059,7 +1059,7 @@ SCENES.ocean = {
     const lc = g.createRadialGradient(t + gw * 0.4, t + gh * 0.35, 0, t + gw * 0.4, t + gh * 0.35, gw * 0.6); lc.addColorStop(0, 'rgba(150,245,255,.2)'); lc.addColorStop(1, 'rgba(150,245,255,0)');
     g.fillStyle = lc; g.fillRect(t, t, gw, gh);
     g.restore();
-    frameShade(g, w, h, 1, null);
+    frameShade(g, w, h, '0,10,4', 0.42, null);
   },
   fx(g, time) {                                                    // two drifting caustic layers (additive overlay)
     const bw = L.cols * L.cs, bh = L.rows * L.cs;
@@ -1601,6 +1601,7 @@ function eat(kind, item) {
   if (G.state === 'playing' && G.score > G.best) { G.best = G.score; G.newBest = true; store.set(bestKey(), G.best); }
   hooks.onScore();
 }
+const totalLength = () => G.snake.length + G.bulges.length + G.grow;     // what the player counts: the body plus meals still on their way down
 const speedFraction = () => { const d = diff(); return clamp((d.start - G.tickMs) / (d.start - d.min), 0, 1); };
 
 function fireBite() {                                         // the moment the jaws close on the fruit
@@ -2205,6 +2206,7 @@ function wrapCopies() {                                       // offsets at whic
 }
 
 let spriteKey = '', shaking = false, fxFrame = 0;
+const fruitSlots = [{ f: null, gold: false }, { f: null, gold: true }], isFalling = f => G.time - f.born < 0.55;
 function texWidth() { return clamp(Math.round(L.cs * 0.66 * THICK * DPR * 1.15), 24, 160); }
 
 function render() {
@@ -2228,8 +2230,8 @@ function render() {
   if (key !== spriteKey) { headSprite = makeHeadSprite(sk); spriteKey = key; }
   const tex = getSkinTexture(sk, texWidth());
 
-  if (G.food) drawFruit(g, G.food, false);
-  if (G.bonus) drawFruit(g, G.bonus, true);
+  fruitSlots[0].f = G.food; fruitSlots[1].f = G.bonus;
+  for (const s of fruitSlots) if (s.f && !isFalling(s.f)) drawFruit(g, s.f, s.gold);     // resting fruit lies under the snake, a fruit still dropping in passes over it
 
   drawObstacles(g);
 
@@ -2253,6 +2255,7 @@ function render() {
     g.restore();
   }
 
+  for (const s of fruitSlots) if (s.f && isFalling(s.f)) drawFruit(g, s.f, s.gold);
   if (G.state === 'ready') {                                  // a breathing ring shows where the snake is waiting
     const k = (G.time % 1.4) / 1.4, hx2 = SP.x[SP.headIdx], hy2 = SP.y[SP.headIdx];
     g.strokeStyle = rgb(THEME.glowColor, 0.7 * (1 - k)); g.lineWidth = Math.max(1.5, cs * 0.07 * (1 - k)); g.beginPath(); g.arc(hx2, hy2, cs * (0.5 + k * 1.2), 0, TAU); g.stroke();
@@ -2466,7 +2469,7 @@ function toast(text) {
 function updateHud(pop) {
   const live = G.state !== 'attract';
   el.score.textContent = live ? G.score : 0;
-  el.length.textContent = live ? G.snake.length + G.bulges.length + G.grow : 3;
+  el.length.textContent = live ? totalLength() : 3;
   el.best.textContent = G.best;
   const lit = live ? 1 + Math.floor(speedFraction() * 4.999) : 1;
   for (let i = 0; i < el.meter.length; i++) el.meter[i].classList.toggle('on', i < lit);
@@ -2512,7 +2515,7 @@ function toMenu() {
 function togglePause() {
   if (G.state === 'playing') {
     G.state = 'paused'; Sound.play('pause');
-    $('pScore').textContent = G.score; $('pLen').textContent = G.snake.length; $('pBest').textContent = G.best;
+    $('pScore').textContent = G.score; $('pLen').textContent = totalLength(); $('pBest').textContent = G.best;
     show('pause'); el.btnPause.classList.add('alt-on'); updateDpad();
   } else if (G.state === 'paused') {
     G.state = 'playing'; Sound.play('resume'); show(null); el.btnPause.classList.remove('alt-on'); updateDpad();
@@ -2541,7 +2544,7 @@ function confetti() {
 function gameOver() {
   G.state = 'over'; G.overAt = performance.now();
   $('overMsg').textContent = G.won ? 'You filled the whole board. Legendary.' : pick(MESSAGES[G.deathBy] || MESSAGES.wall);
-  $('finalLen').textContent = G.snake.length; $('finalApples').textContent = G.eaten + G.bonusEaten; $('finalBest').textContent = G.best;
+  $('finalLen').textContent = totalLength(); $('finalApples').textContent = G.eaten + G.bonusEaten; $('finalBest').textContent = G.best;
   $('newBest').hidden = !(G.newBest && G.score > 0);
   countUp($('finalScore'), G.score, 900);
   updateHud(); show('over'); updateDpad();
@@ -2550,7 +2553,7 @@ function gameOver() {
 
 /* ── share the result (Web Share sheet on phones, clipboard elsewhere) ── */
 function shareScore() {
-  const text = `I scored ${G.score} in Viper (${THEME.name} · ${diff().label}${CFG.wrap ? ' · wrap-around' : ''}${CFG.obstacles ? ' · obstacles' : ''}) — length ${G.snake.length}. Can you beat it?`;
+  const text = `I scored ${G.score} in Viper (${THEME.name} · ${diff().label}${CFG.wrap ? ' · wrap-around' : ''}${CFG.obstacles ? ' · obstacles' : ''}) — length ${totalLength()}. Can you beat it?`;
   const done = () => toast('Copied to clipboard');
   const page = /^https?:/.test(location.protocol) ? { url: location.href.split('#')[0] } : {};   // a file:// link would be useless to share
   if (navigator.share) navigator.share(Object.assign({ title: 'Viper', text }, page)).catch(() => {});
@@ -2574,7 +2577,7 @@ function pollGamepad() {
   const press = b(0) || b(9);
   if (press && !padBtn) {
     if (G.state === 'playing' || G.state === 'paused') togglePause();
-    else if ((G.state === 'attract' || G.state === 'over') && canRestart()) startGame();
+    else if (canStart()) startGame();
   }
   padBtn = press;
 }
@@ -2585,7 +2588,7 @@ function buildThemePicker() {
   THEMES.forEach(t => {
     const b = document.createElement('button');
     b.className = 'chip'; b.type = 'button'; b.dataset.id = t.id;
-    b.innerHTML = `<i style="background:${t.swatch}"></i>${t.name}`;
+    b.innerHTML = `<i>${themePreview(t)}</i>${t.name}`;
     b.onclick = () => applyTheme(t.id);
     box.appendChild(b);
   });
@@ -2640,25 +2643,28 @@ document.addEventListener('fullscreenchange', () => $('btnFull').classList.toggl
 
 /* ── keyboard, touch swipe, on-screen arrows ── */
 const KEYMAP = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], KeyW: [0, -1], KeyS: [0, 1], KeyA: [-1, 0], KeyD: [1, 0] };
+const onButton = e => !!(e.target && e.target.closest && e.target.closest('button'));        // keyboard users on a focused button: Space/Enter belong to the button
 const canRestart = () => performance.now() - G.overAt > 450;       // ignore panicky key mashing right after dying
+const canStart = () => G.state === 'attract' || (G.state === 'over' && canRestart());       // from the title screen, or the result card once the guard has passed
 addEventListener('keydown', e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const dir = KEYMAP[e.code];
   if (dir) { e.preventDefault(); Sound.unlock(); setDir(dir[0], dir[1]); return; }
   const k = e.code;
+  if ((k === 'Space' || k === 'Enter') && onButton(e)) return;
   if (k === 'Space' || k === 'KeyP' || k === 'Escape') {
     e.preventDefault();
     if (G.state === 'playing' || G.state === 'paused') togglePause();
-    else if ((G.state === 'attract' || G.state === 'over') && k === 'Space' && (G.state === 'attract' || canRestart())) startGame();
+    else if (k === 'Space' && canStart()) startGame();
   } else if (k === 'Enter') {
     e.preventDefault();
-    if ((G.state === 'attract' || G.state === 'over') && (G.state === 'attract' || canRestart())) startGame(); else if (G.state === 'paused') togglePause();
+    if (canStart()) startGame(); else if (G.state === 'paused') togglePause();
   } else if (k === 'KeyM') toggleMute();
   else if (k === 'KeyF' && e.shiftKey) showFps(!fpsOn);
   else if (k === 'KeyF' && fsOk) toggleFullscreen();
   else if (k === 'KeyT' && (G.state === 'attract' || G.state === 'paused' || G.state === 'over')) applyTheme(THEMES[(THEMES.indexOf(THEME) + 1) % THEMES.length].id);
 });
-addEventListener('keyup', e => { if (e.code === 'Space') e.preventDefault(); });                // a focused button must not re-fire on Space
+addEventListener('keyup', e => { if (e.code === 'Space' && !onButton(e)) e.preventDefault(); });
 document.addEventListener('click', e => { const b = e.target.closest('button'); if (b && e.detail > 0) b.blur(); });   // mouse/touch users keep the keyboard for steering
 let tx = 0, ty = 0, touching = false;
 stage.addEventListener('touchstart', e => { const t = e.touches[0]; tx = t.clientX; ty = t.clientY; touching = !e.target.closest('#dpad, .card, .btns'); Sound.unlock(); }, { passive: true });

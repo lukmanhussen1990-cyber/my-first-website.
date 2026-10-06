@@ -79,3 +79,12 @@ Running log. Newest entries at the bottom. Start: 2026-10-06 14:10 UTC.
 - Added behavioural UI test (22 checks: keys, pause, focus, settings persistence, arrow pad), soak test (10 long AI games incl. wrap + obstacles:
   lengths 59-122, no NaN geometry, bounded particles) and a gamepad test with a mocked controller.
 - Next: final cleanups, full re-test, summary; keep looking for visual polish while time remains.
+
+### 15:35 — Review pass + theme previews ✅
+- Full code read-through of the script: merged the two copies of the "frame shading" code into one shared `frameShade()`, simplified the
+  start/restart key logic (`canStart()`), one `totalLength()` used by HUD, pause card, result card and share text
+  (the pause card used to show a length that was one lower than the HUD while a meal was still travelling down the body).
+- A fruit that is still dropping in now passes over the snake instead of under it.
+- **Theme picker**: the plain colour dots became mini board previews (frame, ground, snake in the theme's own colours, and its fruit) drawn as inline SVG.
+- Full regression (lint, fuzz ×4, playthrough, mobile, landscape, audio, perf) and the UI test (22 checks) pass; 60 s chaos run: no errors.
+- Next: more in-game visual polish (look at every theme with fresh eyes), then another full regression.
