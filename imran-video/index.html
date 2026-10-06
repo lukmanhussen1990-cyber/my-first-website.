@@ -1,0 +1,120 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Imran, I got you!</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  html, body { margin: 0; background: #111; }
+  canvas { display: block; width: 100vw; height: auto; }
+</style>
+</head>
+<body>
+<!-- Hand-drawn edge filters: turbulence displacement, 4 seeds each so edges "boil" at 12fps. -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="rough-soft-0" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="1"/><feDisplacementMap in="SourceGraphic" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-soft-1" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="2"/><feDisplacementMap in="SourceGraphic" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-soft-2" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-soft-3" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-mid-0" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="5"/><feDisplacementMap in="SourceGraphic" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-mid-1" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="6"/><feDisplacementMap in="SourceGraphic" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-mid-2" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-mid-3" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="8"/><feDisplacementMap in="SourceGraphic" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-hard-0" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="9"/><feDisplacementMap in="SourceGraphic" scale="10" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-hard-1" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="10"/><feDisplacementMap in="SourceGraphic" scale="10" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-hard-2" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="11"/><feDisplacementMap in="SourceGraphic" scale="10" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <filter id="rough-hard-3" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="12"/><feDisplacementMap in="SourceGraphic" scale="10" xChannelSelector="R" yChannelSelector="G"/></filter>
+  </defs>
+</svg>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="lib.js"></script>
+<script src="parts.js"></script>
+<script src="core.js"></script>
+<script src="shapes.js"></script>
+<script>
+  // Scene registry. Each scene file calls SCENE({...}):
+  //   id, start, end            active time range [start, end) in absolute seconds
+  //   layer: 'world' | 'screen' | 'overlay'   (default 'world')
+  //   page:  'chat' | 'thought'  (world layer only; draw in that page's own 1920x1080 coordinates)
+  //   z                          order within its layer/page (higher = on top)
+  //   draw(ctx, lt, t, scene)    lt = t - start
+  // Layer order (spec §1.2): BG, world (camera: pages + FX), screen flyers, overlay (wipe), badge, grain.
+  window.SCENES = [];
+  window.SCENE = (s) => { SCENES.push(Object.assign({ layer: 'world', page: 'chat', z: 0 }, s)); };
+  window.SCENE_INIT = []; // optional async setup functions, run after fonts + timeline load
+  window.__errors = [];
+  window.addEventListener('error', (e) => { window.__errors.push(`${e.filename}:${e.lineno} ${e.message}`); });
+
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const params = new URLSearchParams(location.search);
+  const SOLO = params.get('solo'); // comma-separated scene ids to render alone (debugging)
+  const soloSet = SOLO ? new Set(SOLO.split(',')) : null;
+
+  function resetCtx() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1; ctx.filter = 'none'; ctx.globalCompositeOperation = 'source-over';
+  }
+  function runScene(s, t) {
+    ctx.save();
+    try { s.draw(ctx, t - s.start, t, s); }
+    catch (e) { console.error(`scene ${s.id} @${t}:`, e); window.__errors.push(`${s.id}@${t.toFixed(3)}: ${e.stack || e}`); }
+    ctx.restore();
+  }
+
+  window.renderFrame = function (t) {
+    resetCtx();
+    ctx.fillStyle = L.PAL.bg; ctx.fillRect(0, 0, L.W, L.H);
+    const active = SCENES.filter((s) => t >= s.start && t < s.end && (!soloSet || soloSet.has(s.id)))
+      .sort((a, b) => a.z - b.z);
+    for (const [page, pageY] of Object.entries(CAM.PAGE)) {
+      if (!CAM.pageVisible(t, pageY)) continue;
+      const list = active.filter((s) => s.layer === 'world' && s.page === page);
+      if (!list.length) continue;
+      ctx.save();
+      CAM.applyCamera(ctx, t, pageY);
+      for (const s of list) runScene(s, t);
+      ctx.restore();
+      resetCtx();
+    }
+    for (const layer of ['screen', 'overlay']) {
+      for (const s of active.filter((s) => s.layer === layer)) { runScene(s, t); resetCtx(); }
+    }
+    L.drawBadge(ctx, 1);
+    L.grain(ctx, t, 0.055);
+  };
+
+  function loadScript(src) {
+    return new Promise((res) => {
+      const el = document.createElement('script');
+      el.src = src; el.onload = res;
+      el.onerror = () => { window.__errors.push('failed to load ' + src); res(); };
+      document.head.appendChild(el);
+    });
+  }
+
+  window.READY = (async () => {
+    window.T = await (await fetch('timeline.json', { cache: 'no-store' })).json();
+    const faces = [];
+    document.fonts.forEach((f) => faces.push(f.load().catch(() => null)));
+    await Promise.all(faces);
+    await document.fonts.ready;
+    await loadScript('scenes/manifest.js');
+    await loadScript('layout.js');
+    for (const f of window.SCENE_FILES) await loadScript('scenes/' + f);
+    if (params.get('extra')) for (const f of params.get('extra').split(',')) await loadScript(f);
+    await Promise.all(SCENE_INIT.map((f) => f()));
+    return true;
+  })();
+
+  if (params.get('play')) {
+    const t0 = performance.now();
+    const loop = () => { renderFrame(((performance.now() - t0) / 1000) % T.DURATION); requestAnimationFrame(loop); };
+    READY.then(loop);
+  } else if (params.get('t')) {
+    READY.then(() => renderFrame(parseFloat(params.get('t'))));
+  }
+</script>
+</body>
+</html>
