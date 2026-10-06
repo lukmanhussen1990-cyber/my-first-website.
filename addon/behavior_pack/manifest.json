@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Parasite Apocalypse Survival BP",
+    "description": "Parasite outbreak, tactical torchlight and luxury base. Target: Bedrock 1.21.0.26.",
+    "uuid": "d49c4c97-9b2f-4e88-a2ad-7e392e64ca1a",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "7e47444f-e8b2-4e20-821d-0df732d70ddc",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "3fdec22c-e4dd-4d51-a8eb-c5925814fd04",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    { "uuid": "2d23c19d-333a-44bc-ae3b-cb4e9f8e808e", "version": [1, 0, 0] },
+    { "module_name": "@minecraft/server", "version": "1.11.0" },
+    { "module_name": "@minecraft/server-ui", "version": "1.1.0" }
+  ]
+}
