@@ -46,10 +46,7 @@
       },
       "scripts": {
         "scale": "0.9375",
-        "pre_animation": [
-          "variable.num_professions = 15;",
-          "variable.profession_index = (query.variant < variable.num_professions ? query.variant : 0);"
-        ]
+        "pre_animation": ["variable.num_professions = 15;", "variable.profession_index = (query.variant < variable.num_professions ? query.variant : 0);"]
       },
       "animations": {
         "general": "animation.villager.general",
@@ -77,11 +74,7 @@
           "pas_twitch": "controller.animation.pas_infected.twitch"
         }
       ],
-      "render_controllers": [
-        "controller.render.villager_v2_base",
-        "controller.render.villager_v2_masked",
-        "controller.render.pas_infected_overlay"
-      ],
+      "render_controllers": ["controller.render.villager_v2_base", "controller.render.villager_v2_masked", "controller.render.pas_infected_overlay"],
       "enable_attachables": false
     }
   }

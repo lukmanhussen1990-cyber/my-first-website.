@@ -100,16 +100,8 @@ def check_vanilla(ref: str) -> int:
             b.inflate = 0.0
             for c in b.cubes:
                 c.inflate = 0.0
-        boxes = {}
-        for q in g.build_mesh(g2):
-            v = q.verts.copy()
-            v[:, 0] *= -1
-            boxes.setdefault(q.bone.lower(), []).append(v)
-        vb = {}
-        for bone, vs in boxes.items():
-            pass
         sp = BUILDERS[key]()
-        for m in sp.models[:1]:
+        for m in sp.models:
             for b in m.bones:
                 vbone = geo.bone(b.name)
                 if vbone is None:

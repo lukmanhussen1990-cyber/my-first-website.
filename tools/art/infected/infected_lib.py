@@ -250,10 +250,29 @@ def write_geometry_file(path: str, models: Sequence[Model]) -> None:
     write_json(path, data)
 
 
+def dumps(data, indent: int = 2, _level: int = 0) -> str:
+    """json.dumps with 2-space indent, but lists of scalars kept on one line."""
+    pad = " " * (indent * (_level + 1))
+    end = " " * (indent * _level)
+    if isinstance(data, dict):
+        if not data:
+            return "{}"
+        items = [f"{pad}{json.dumps(k)}: {dumps(v, indent, _level + 1)}" for k, v in data.items()]
+        return "{\n" + ",\n".join(items) + "\n" + end + "}"
+    if isinstance(data, list):
+        if all(not isinstance(x, (dict, list)) for x in data):
+            return "[" + ", ".join(json.dumps(x) for x in data) + "]"
+        items = [pad + dumps(x, indent, _level + 1) for x in data]
+        return "[\n" + ",\n".join(items) + "\n" + end + "]"
+    return json.dumps(data)
+
+
 def write_json(path: str, data) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    text = dumps(data) + "\n"
+    assert json.loads(text) == json.loads(json.dumps(data))
     with open(path, "w", encoding="utf-8", newline="\n") as f:
-        f.write(json.dumps(data, indent=2) + "\n")
+        f.write(text)
 
 
 # ---------------------------------------------------------------------------
@@ -447,22 +466,3 @@ class Canvas:
 def pick(cols: Sequence[tuple], idx: np.ndarray) -> np.ndarray:
     arr = np.array(cols, dtype=np.uint8)
     return arr[np.clip(idx, 0, len(cols) - 1)]
-
-
-def rot_matrix_geo(r) -> np.ndarray:
-    """3x3 rotation of a bone rotation [rx,ry,rz] in GEO space (see georender README:
-    R_geo = Rz(-rz) . Ry(+ry) . Rx(-rx), standard right-handed matrices)."""
-    rx, ry, rz = (math.radians(float(a)) for a in r)
-
-    def Rx(a):
-        c, s = math.cos(a), math.sin(a)
-        return np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
-
-    def Ry(a):
-        c, s = math.cos(a), math.sin(a)
-        return np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
-
-    def Rz(a):
-        c, s = math.cos(a), math.sin(a)
-        return np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
-    return Rz(-rz) @ Ry(ry) @ Rx(-rx)

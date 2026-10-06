@@ -18,9 +18,7 @@
         "overlay": "geometry.pas.infected_chicken"
       },
       "scripts": {
-        "pre_animation": [
-          "variable.wing_flap = query.is_on_ground ? 0.0 : (math.sin(query.life_time * 1600.0) + 1.0) * 40.0;"
-        ],
+        "pre_animation": ["variable.wing_flap = query.is_on_ground ? 0.0 : (math.sin(query.life_time * 1600.0) + 1.0) * 40.0;"],
         "animate": [
           "general",
           {
@@ -43,10 +41,7 @@
         "attack": "animation.pas_infected.chicken.attack",
         "attack_controller": "controller.animation.pas_infected.attack"
       },
-      "render_controllers": [
-        "controller.render.chicken",
-        "controller.render.pas_infected_overlay"
-      ],
+      "render_controllers": ["controller.render.chicken", "controller.render.pas_infected_overlay"],
       "enable_attachables": false
     }
   }

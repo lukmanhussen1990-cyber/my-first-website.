@@ -99,13 +99,17 @@ def _f(x: float) -> str:
     return "%g" % round(float(x), 4)
 
 
+def _arg(speed: float, phase: float) -> str:
+    return f"{TWITCH_T} * {_f(speed)}" + (f" + {_f(phase)}" if abs(phase) > 1e-9 else "")
+
+
 def wobble(speed: float, phase: float, amp: float) -> str:
-    return f"math.sin({TWITCH_T} * {_f(speed)} + {_f(phase)}) * {_f(amp)}"
+    return f"math.sin({_arg(speed, phase)}) * {_f(amp)}"
 
 
 def spike(speed: float, phase: float, amp: float) -> str:
     """Short jerks: sin^9 is near 0 most of the time and snaps to +-1 twice per period."""
-    return f"math.pow(math.sin({TWITCH_T} * {_f(speed)} + {_f(phase)}), 9.0) * {_f(amp)}"
+    return f"math.pow(math.sin({_arg(speed, phase)}), 9.0) * {_f(amp)}"
 
 
 AGITATION = "(1.0 + variable.has_target * 0.8)"
