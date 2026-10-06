@@ -61,3 +61,14 @@ Running log. Newest entries at the bottom. Start: 2026-10-06 14:10 UTC.
 - Veil behind menus is a CSS layer (no per-frame cost). Fullscreen button, reduced-motion support, HUD legibility strip added.
 - Tests: fuzz (default, wrap+obstacles) still green.
 - Next: snake glint + death pieces polish, theme-specific eat particles, landscape/resize tests, FPS overlay, cleanup.
+
+### 15:00 — Polish batch ✅ (game feel, skins, audio, fixes)
+- **Game feel**: hit-stop freeze on impact, head "chomp" when eating, travelling glint along the scales, shockwave ring on every bite,
+  theme-specific bite bursts (crumbs / bubbles / neon streaks), apple shine sweep, ready-ring around the waiting snake, new-best confetti.
+- **Combo**: fruit eaten within ~4 s multiplies points (×2…×4) with a draining chip in the HUD.
+- **Snake picker** restored: "Theme" (the theme's own skin) or Viper / Coral / Rattler / King on any theme.
+- **Ambient sound** per theme (water, wind, synth hum) — very quiet, follows the mute button.
+- **Layout**: wide landscape screens get a wider grid (up to 40 columns) so phones in landscape use their full width; arrow pad sits at the side.
+- **Bug found by the audio test**: the menu overlay covered the mute / fullscreen buttons → HUD buttons now sit above the cards.
+- Full regression (`tests/all.sh`: lint, fuzz ×4 configs, UI playthrough, mobile portrait/landscape/rotation, audio graph, perf) all green.
+- Next: FPS overlay for verification, README, code tidy-up, more visual polish (neon/dark head, death pieces), final summary.
