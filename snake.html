@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Snake Game</title>
 <style>
+  * { box-sizing: border-box; }
   body {
     margin: 0;
     min-height: 100vh;
@@ -15,34 +16,74 @@
     background: #1a1a2e;
     color: #eee;
     font-family: Arial, sans-serif;
+    touch-action: none;
   }
-  h1 { margin: 0 0 10px; }
+  h1 { margin: 10px 0; }
   #score { font-size: 20px; margin-bottom: 10px; }
-  canvas { background: #0f3460; border: 3px solid #e94560; border-radius: 6px; }
-  #msg { margin-top: 10px; font-size: 16px; color: #aaa; }
+  canvas {
+    background: #0f3460;
+    border: 3px solid #e94560;
+    border-radius: 6px;
+    width: min(90vw, 400px);
+    height: min(90vw, 400px);
+  }
+  #msg { margin: 10px; font-size: 14px; color: #aaa; text-align: center; }
+  #pad { display: grid; grid-template-columns: repeat(3, 60px); gap: 6px; margin-bottom: 20px; }
+  #pad button {
+    width: 60px; height: 60px; font-size: 24px;
+    background: #e94560; color: #fff; border: none; border-radius: 8px;
+    cursor: pointer; user-select: none;
+  }
+  #pad button:active { background: #c73650; }
+  #pad .blank { visibility: hidden; }
 </style>
 </head>
 <body>
   <h1>🐍 Snake</h1>
   <div id="score">Score: 0 | High: 0</div>
   <canvas id="game" width="400" height="400"></canvas>
-  <div id="msg">Arrow keys / WASD to move · Space to pause · Enter to restart</div>
+  <div id="msg">Arrows / WASD / swipe to move · Space to pause · Enter to restart</div>
+  <div id="pad">
+    <button class="blank"></button>
+    <button data-dir="up">▲</button>
+    <button class="blank"></button>
+    <button data-dir="left">◀</button>
+    <button data-dir="pause">⏯</button>
+    <button data-dir="right">▶</button>
+    <button class="blank"></button>
+    <button data-dir="down">▼</button>
+    <button data-dir="restart">↻</button>
+  </div>
 
 <script>
-  const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d');
-  const scoreEl = document.getElementById('score');
-  const msgEl = document.getElementById('msg');
+(function () {
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var scoreEl = document.getElementById('score');
+  var msgEl = document.getElementById('msg');
 
-  const GRID = 20;
-  const CELLS = canvas.width / GRID;
+  var GRID = 20;
+  var CELLS = canvas.width / GRID;
+  var DIRS = {
+    up: { x: 0, y: -1 },
+    down: { x: 0, y: 1 },
+    left: { x: -1, y: 0 },
+    right: { x: 1, y: 0 }
+  };
 
-  let snake, dir, nextDir, food, score, high, gameOver, paused, speed, timer;
-  high = Number(localStorage.getItem('snakeHigh')) || 0;
+  var snake, dir, nextDir, food, score, gameOver, paused, speed, timer;
+  var high = loadHigh();
+
+  function loadHigh() {
+    try { return Number(localStorage.getItem('snakeHigh')) || 0; } catch (e) { return 0; }
+  }
+  function saveHigh(v) {
+    try { localStorage.setItem('snakeHigh', String(v)); } catch (e) {}
+  }
 
   function init() {
     snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
-    dir = { x: 1, y: 0 };
+    dir = DIRS.right;
     nextDir = dir;
     score = 0;
     speed = 150;
@@ -50,35 +91,47 @@
     paused = false;
     placeFood();
     updateScore();
-    msgEl.textContent = 'Arrow keys / WASD to move · Space to pause · Enter to restart';
-    clearInterval(timer);
-    timer = setInterval(loop, speed);
+    msgEl.textContent = 'Arrows / WASD / swipe to move · Space to pause · Enter to restart';
+    restartTimer();
     draw();
   }
 
+  function restartTimer() {
+    clearInterval(timer);
+    timer = setInterval(loop, speed);
+  }
+
   function placeFood() {
-    do {
+    var ok = false;
+    while (!ok) {
       food = {
         x: Math.floor(Math.random() * CELLS),
         y: Math.floor(Math.random() * CELLS)
       };
-    } while (snake.some(s => s.x === food.x && s.y === food.y));
+      ok = true;
+      for (var i = 0; i < snake.length; i++) {
+        if (snake[i].x === food.x && snake[i].y === food.y) { ok = false; break; }
+      }
+    }
   }
 
   function updateScore() {
-    scoreEl.textContent = `Score: ${score} | High: ${high}`;
+    scoreEl.textContent = 'Score: ' + score + ' | High: ' + high;
+  }
+
+  function hits(x, y) {
+    for (var i = 0; i < snake.length; i++) {
+      if (snake[i].x === x && snake[i].y === y) return true;
+    }
+    return false;
   }
 
   function loop() {
     if (gameOver || paused) return;
     dir = nextDir;
-    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+    var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
 
-    if (
-      head.x < 0 || head.x >= CELLS ||
-      head.y < 0 || head.y >= CELLS ||
-      snake.some(s => s.x === head.x && s.y === head.y)
-    ) {
+    if (head.x < 0 || head.x >= CELLS || head.y < 0 || head.y >= CELLS || hits(head.x, head.y)) {
       endGame();
       return;
     }
@@ -87,21 +140,13 @@
 
     if (head.x === food.x && head.y === food.y) {
       score++;
-      if (score > high) {
-        high = score;
-        localStorage.setItem('snakeHigh', high);
-      }
+      if (score > high) { high = score; saveHigh(high); }
       updateScore();
       placeFood();
-      if (speed > 60) {
-        speed -= 5;
-        clearInterval(timer);
-        timer = setInterval(loop, speed);
-      }
+      if (speed > 60) { speed -= 5; restartTimer(); }
     } else {
       snake.pop();
     }
-
     draw();
   }
 
@@ -114,10 +159,10 @@
     ctx.arc(food.x * GRID + GRID / 2, food.y * GRID + GRID / 2, GRID / 2 - 2, 0, Math.PI * 2);
     ctx.fill();
 
-    snake.forEach((s, i) => {
+    for (var i = 0; i < snake.length; i++) {
       ctx.fillStyle = i === 0 ? '#4ade80' : '#22c55e';
-      ctx.fillRect(s.x * GRID + 1, s.y * GRID + 1, GRID - 2, GRID - 2);
-    });
+      ctx.fillRect(snake[i].x * GRID + 1, snake[i].y * GRID + 1, GRID - 2, GRID - 2);
+    }
 
     if (paused) overlay('PAUSED');
     if (gameOver) overlay('GAME OVER');
@@ -136,32 +181,68 @@
   function endGame() {
     gameOver = true;
     clearInterval(timer);
-    msgEl.textContent = `Game over! Final score: ${score}. Press Enter to play again.`;
+    msgEl.textContent = 'Game over! Final score: ' + score + '. Press Enter or ↻ to play again.';
     draw();
   }
 
-  document.addEventListener('keydown', e => {
-    const k = e.key;
-    if (k === 'Enter') { init(); return; }
-    if (k === ' ') {
-      e.preventDefault();
-      if (!gameOver) { paused = !paused; draw(); }
-      return;
-    }
-    const map = {
-      ArrowUp: { x: 0, y: -1 }, w: { x: 0, y: -1 }, W: { x: 0, y: -1 },
-      ArrowDown: { x: 0, y: 1 }, s: { x: 0, y: 1 }, S: { x: 0, y: 1 },
-      ArrowLeft: { x: -1, y: 0 }, a: { x: -1, y: 0 }, A: { x: -1, y: 0 },
-      ArrowRight: { x: 1, y: 0 }, d: { x: 1, y: 0 }, D: { x: 1, y: 0 }
-    };
-    const nd = map[k];
-    if (!nd) return;
-    e.preventDefault();
+  function setDir(name) {
+    var nd = DIRS[name];
+    if (!nd || gameOver) return;
     if (nd.x === -dir.x && nd.y === -dir.y) return;
     nextDir = nd;
+  }
+
+  function togglePause() {
+    if (gameOver) return;
+    paused = !paused;
+    draw();
+  }
+
+  function action(name) {
+    if (name === 'restart') init();
+    else if (name === 'pause') togglePause();
+    else setDir(name);
+  }
+
+  var KEYS = {
+    ArrowUp: 'up', w: 'up', W: 'up',
+    ArrowDown: 'down', s: 'down', S: 'down',
+    ArrowLeft: 'left', a: 'left', A: 'left',
+    ArrowRight: 'right', d: 'right', D: 'right',
+    ' ': 'pause', Enter: 'restart'
+  };
+
+  document.addEventListener('keydown', function (e) {
+    var name = KEYS[e.key];
+    if (!name) return;
+    e.preventDefault();
+    action(name);
   });
 
+  var pad = document.getElementById('pad');
+  pad.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-dir]');
+    if (b) action(b.getAttribute('data-dir'));
+  });
+
+  var touchStart = null;
+  canvas.addEventListener('touchstart', function (e) {
+    var t = e.touches[0];
+    touchStart = { x: t.clientX, y: t.clientY };
+  }, { passive: true });
+  canvas.addEventListener('touchend', function (e) {
+    if (!touchStart) return;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - touchStart.x;
+    var dy = t.clientY - touchStart.y;
+    touchStart = null;
+    if (Math.abs(dx) < 20 && Math.abs(dy) < 20) { togglePause(); return; }
+    if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? 'right' : 'left');
+    else setDir(dy > 0 ? 'down' : 'up');
+  }, { passive: true });
+
   init();
+})();
 </script>
 </body>
 </html>
