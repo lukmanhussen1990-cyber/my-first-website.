@@ -45,6 +45,7 @@ import {
 import {
   scanSite,
   loadStructureInfo,
+  getStructureInfo,
   keyCells,
   readType,
   shortName,
@@ -61,7 +62,6 @@ import {
 /** @typedef {import("./rotation.js").Vec3i} Vec3i */
 /** @typedef {import("./rotation.js").Convention} Convention */
 /** @typedef {import("./checks.js").ScanBlocked} ScanBlocked */
-/** @typedef {import("./checks.js").StructureInfo} StructureInfo */
 
 /** Max raycast distance when the spawner is used in the air. */
 export const AIM_DISTANCE = 12;
@@ -213,8 +213,8 @@ function pump() {
     const shift = system.currentTick % list.length; // rotate so no job always goes first
     for (const job of [...list.slice(shift), ...list.slice(0, shift)]) {
       if (!jobs.has(job)) continue;
-      if (job.phase !== "build" && !isValidEntity(job.player)) {
-        abortJob(job); // player left before anything was changed
+      if (job.phase === "scan" && !isValidEntity(job.player)) {
+        abortJob(job); // player left while the site was being checked: nothing was changed
         continue;
       }
       runSlice(job);
@@ -624,12 +624,7 @@ function sparkle(job) {
  * @returns {VerifyResult}
  */
 function verifyBuild(job, keys) {
-  /** @type {StructureInfo | undefined} */
-  let info;
-  const gen = loadStructureInfo();
-  // already cached by the scan: the generator returns immediately
-  const r = gen.next();
-  if (r.done) info = r.value;
+  const info = getStructureInfo(); // cached by the scan
   for (const local of keys) {
     const at = toWorld(job.pl, local);
     const found = readType(job.dim, at);

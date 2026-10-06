@@ -634,6 +634,51 @@ describe("7. robustness and performance", { skip: NEEDS_REF }, () => {
     assert.ok((getErrorCounts().get("torch.getBlockFromRay") ?? 0) > (errorSnapshot.get("torch.getBlockFromRay") ?? 0));
   });
 
+  test("a build that rejects excludeTypes: the filter is dropped once, the API raycast keeps working", () => {
+    standardRoom();
+    const dim = world.getDimension("overworld");
+    const orig = mc.Dimension.prototype.getBlockFromRay;
+    let calls = 0;
+    dim.getBlockFromRay = function (o, d, opts) {
+      calls++;
+      if (opts?.excludeTypes) throw new TypeError("unsupported option excludeTypes");
+      return orig.call(this, o, d, opts);
+    };
+    try {
+      addTorchPlayer("OldApi", { yaw: YAW.south });
+      mock.tick(2);
+      assert.deepEqual(lights(), SOUTH_LIGHTS);
+      assert.equal(T.beam.rayFilter.excludeLights, false);
+      const before = calls;
+      mock.tick(2);
+      assert.equal(calls - before, 1, "one plain raycast per update afterwards");
+    } finally {
+      delete dim.getBlockFromRay;
+    }
+  });
+
+  test("a raycast that reports our own light blocks as hits (filter ignored) still yields stable anchors", () => {
+    standardRoom();
+    const dim = world.getDimension("overworld");
+    const orig = mc.Dimension.prototype.getBlockFromRay;
+    // light blocks count as hits, excludeTypes is ignored
+    dim.getBlockFromRay = function (o, d, opts) {
+      return orig.call(this, o, d, { ...opts, excludeTypes: undefined, includePassableBlocks: true });
+    };
+    try {
+      const p = addTorchPlayer("Solid", { yaw: YAW.south });
+      for (let i = 0; i < 30; i++) {
+        mock.tick(2);
+        assert.deepEqual(lights(), SOUTH_LIGHTS, `update ${i}`);
+      }
+      look(p, YAW.east);
+      mock.tick(2);
+      assert.deepEqual(lights(), EAST_LIGHTS);
+    } finally {
+      delete dim.getBlockFromRay;
+    }
+  });
+
   test("manual DDA agrees with getBlockFromRay (hit cell, face normal, distance) in a random cave", () => {
     let seed = 99;
     const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);

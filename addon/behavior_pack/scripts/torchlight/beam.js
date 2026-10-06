@@ -16,6 +16,7 @@ import {
   WALL_MARGIN,
   WALK_BACK_STEP,
   WALK_BACK_STEPS,
+  LIGHT_BLOCK,
   isLightBlockId,
   stopsBeam,
 } from "./constants.js";
@@ -50,6 +51,13 @@ import {
 
 /** Options for Dimension.getBlockFromRay (names verified against the 1.11.0 typings: BlockRaycastOptions). */
 const RAY_OPTIONS_BASE = Object.freeze({ includeLiquidBlocks: false, includePassableBlocks: false });
+
+/**
+ * BlockRaycastOptions extends BlockFilter in 1.11.0, so our own light blocks are also excluded
+ * by type (they have no collision and should be skipped anyway). If a build rejects the filter
+ * (e.g. a newer build without the "minecraft:light_block" id) it is switched off for the session.
+ */
+const rayFilter = { excludeLights: true };
 
 /** Outward normal per block face (the cell in front of the face is hitCell + normal). */
 const FACE_NORMALS = Object.freeze({
@@ -159,7 +167,7 @@ function startNormal(dir) {
  */
 export function castBeam(dim, origin, dir, maxDistance = MAX_DISTANCE) {
   try {
-    const hit = dim.getBlockFromRay(origin, dir, { ...RAY_OPTIONS_BASE, maxDistance });
+    const hit = apiRaycast(dim, origin, dir, maxDistance);
     if (!hit) return { dist: maxDistance, hitCell: undefined, normal: undefined, method: "api" };
     const block = hit.block;
     if (isLightBlockId(block.typeId)) throw new Error("raycast stopped at a light block");
@@ -172,6 +180,29 @@ export function castBeam(dim, origin, dir, maxDistance = MAX_DISTANCE) {
   } catch (e) {
     if (!(e instanceof Error && e.message === "raycast stopped at a light block")) logError("torch.getBlockFromRay", e);
     return castBeamManual(dim, origin, dir, maxDistance);
+  }
+}
+
+/**
+ * Dimension.getBlockFromRay with our options (see rayFilter). Throws what the API throws.
+ * @param {Dimension} dim
+ * @param {Vector3} origin
+ * @param {Vector3} dir
+ * @param {number} maxDistance
+ * @returns {import("@minecraft/server").BlockRaycastHit | undefined}
+ */
+function apiRaycast(dim, origin, dir, maxDistance) {
+  /** @type {import("@minecraft/server").BlockRaycastOptions} */
+  const opts = { ...RAY_OPTIONS_BASE, maxDistance };
+  if (!rayFilter.excludeLights) return dim.getBlockFromRay(origin, dir, opts);
+  try {
+    return dim.getBlockFromRay(origin, dir, { ...opts, excludeTypes: [LIGHT_BLOCK] });
+  } catch (e) {
+    // Retry without the filter; only if that works was the filter the problem.
+    const hit = dim.getBlockFromRay(origin, dir, opts);
+    rayFilter.excludeLights = false;
+    logError("torch.getBlockFromRay(excludeTypes)", e);
+    return hit;
   }
 }
 
@@ -330,3 +361,6 @@ export function resolveAnchors(origin, dir, raw, isFree, keyOf) {
   }
   return out;
 }
+
+/** Test/diagnostic access. */
+export const __beamInternals = Object.freeze({ rayFilter });

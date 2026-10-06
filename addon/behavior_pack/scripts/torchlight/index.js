@@ -26,7 +26,7 @@ import {
   len,
   blockKey,
 } from "../lib/util.js";
-import { castBeam, rawAnchors, resolveAnchors, anchorSignature } from "./beam.js";
+import { castBeam, rawAnchors, resolveAnchors, anchorSignature, __beamInternals } from "./beam.js";
 import {
   makeReader,
   isFreeCell,
@@ -318,6 +318,7 @@ export const __torchInternals = Object.freeze({
   options,
   lightStats,
   lights: __lightsInternals,
+  beam: __beamInternals,
   updateAll,
   maintenance,
   cellsOf,
@@ -329,6 +330,7 @@ export const __torchInternals = Object.freeze({
     deadPlayers.clear();
     releaseLog.length = 0;
     options.sweepOffline = true;
+    __beamInternals.rayFilter.excludeLights = true;
     __lightsInternals.reset();
   },
 });
