@@ -11,7 +11,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument('start', nargs='?'); ap.add_argument('end', nargs='?'); ap.add_argument('count', nargs='?')
 ap.add_argument('out')
 ap.add_argument('--times'); ap.add_argument('--cols', type=int, default=4); ap.add_argument('--width', type=int, default=640)
-ap.add_argument('--solo')
+ap.add_argument('--solo'); ap.add_argument('--extra')
 a = ap.parse_args()
 if a.times:
     times = [float(x) for x in a.times.split(',')]
@@ -21,6 +21,7 @@ else:
 tmp = tempfile.mkdtemp()
 cmd = ['node', os.path.join(ROOT, 'render.cjs'), '--times', ','.join(f'{t:.4f}' for t in times), '--out', tmp, '--format', 'jpg']
 if a.solo: cmd += ['--solo', a.solo]
+if a.extra: cmd += ['--extra', a.extra]
 r = subprocess.run(cmd, capture_output=True, text=True)
 sys.stderr.write(r.stderr); print(r.stdout.strip())
 cols = min(a.cols, len(times)); rows = (len(times) + cols - 1) // cols

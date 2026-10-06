@@ -4,7 +4,7 @@
 //   node render.cjs --times 1.5,3,4.25 --out previews/       # stills (PNG) named t_1.500.png
 //   node render.cjs --start 0 --end 15 --fps 30 --out frames/  # numbered frames
 //   node render.cjs --start 0 --end 15 --fps 30 --video out.mp4 # straight to H.264
-//   options: --workers 3  --format png|jpg  --solo <sceneId>  --crf 14
+//   options: --workers 3  --format png|jpg  --solo <id,id>  --extra <file.js>  --crf 14
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -49,7 +49,10 @@ function serve() {
   }
   const server = await serve();
   const port = server.address().port;
-  const url = `http://127.0.0.1:${port}/index.html${args.solo ? '?solo=' + args.solo : ''}`;
+  const q = new URLSearchParams();
+  if (args.solo) q.set('solo', args.solo);
+  if (args.extra) q.set('extra', args.extra); // extra script(s) relative to project root, e.g. scratch/test.js
+  const url = `http://127.0.0.1:${port}/index.html${q.toString() ? '?' + q : ''}`;
 
   const browser = await playwright.chromium.launch({ args: ['--disable-gpu-vsync', '--force-color-profile=srgb'] });
   const pages = [];

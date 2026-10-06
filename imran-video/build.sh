@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p out
-DUR=$(node -e "global.TIMELINE={};eval(require('fs').readFileSync('timeline.js','utf8'));console.log(TIMELINE.duration)")
+DUR=$(python3 -c "import json;print(json.load(open('timeline.json'))['DURATION'])")
 echo "duration: ${DUR}s"
 node render.cjs --start 0 --end "$DUR" --fps 30 --video out/video_silent.mp4 --workers 3 --crf 14
 python3 -I audio/score.py out/soundtrack.wav "$DUR"

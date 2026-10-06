@@ -65,6 +65,34 @@
     return 1 - Math.exp(-damp * w * t) * Math.cos(w * Math.sqrt(1 - Math.min(damp * damp, 0.99)) * t);
   }
 
+  // Spec §1.4: SPRING_IN(τ; f, ζ) = 1 − e^(−ζωτ)·cos(ω_d τ)  (0 -> 1 pop with overshoot)
+  function SPRING_IN(tau, f = 3.2, z = 0.55) {
+    if (tau <= 0) return 0;
+    const w = 2 * Math.PI * f, wd = w * Math.sqrt(1 - z * z);
+    return 1 - Math.exp(-z * w * tau) * Math.cos(wd * tau);
+  }
+  // Spec §1.4: WOBBLE(τ; A, f, T) = 1 + A·e^(−τ/T)·cos(2πfτ)  (squash recovery, starts at 1+A)
+  function WOBBLE(tau, A, f, T) {
+    if (tau < 0) return 1;
+    return 1 + A * Math.exp(-tau / T) * Math.cos(2 * Math.PI * f * tau);
+  }
+  // Spec §1.4 smear echoes: call draw(tt, alpha) for t-3/30, t-2/30, t-1/30 (behind), then the caller draws t.
+  function smear(ctx, t, draw, from = -Infinity, to = Infinity) {
+    const op = [0.10, 0.20, 0.35];
+    for (let k = 3; k >= 1; k--) {
+      const tt = t - k / 30;
+      if (t < from || t > to) continue;
+      ctx.save(); ctx.globalAlpha *= op[3 - k]; draw(tt); ctx.restore();
+    }
+  }
+  // Spec §1.4 stretch along velocity: apply to ctx at the object's center. v = [vx, vy] px/s.
+  function stretchAlong(ctx, v, Smax = 0.35) {
+    const sp = Math.hypot(v[0], v[1]);
+    if (sp < 1e-3) return;
+    const s = 1 + Math.min(Smax, sp / 3000), a = Math.atan2(v[1], v[0]);
+    ctx.rotate(a); ctx.scale(s, 1 / s); ctx.rotate(-a);
+  }
+
   // Squash & stretch pair for a pop-in: returns [sx, sy] around 1.
   // `v` is a signed "velocity-ish" amount (e.g. spring(t) overshoot).
   function squash(amount) { return [1 + amount, 1 - amount * 0.8]; }
@@ -87,8 +115,10 @@
     const u = f * f * (3 - 2 * f);
     return a + (b - a) * u;
   }
-  // Hand-drawn "boil": an integer that changes `fps` times per second (default 12fps, like the source).
-  const boil = (t, fps = 12) => Math.floor(t * fps + 1e-6);
+  // Hand-drawn "boil": classic 3-drawing cycle at 12fps (spec §1.3). Returns 0, 1 or 2.
+  const boil = (t, fps = 12) => Math.floor(t * fps + 1e-6) % 3;
+  // Monotonic 12fps step counter (for things that should not repeat every 3 drawings).
+  const step12 = (t) => Math.floor(t * 12 + 1e-6);
 
   // ---------- shapes ----------
   // Irregular "cut paper" polygon around (cx,cy). Returns [[x,y],...].
@@ -214,9 +244,16 @@
     const mid = lerpPt(pts[n - 1], pts[0], 0.5);
     ctx.moveTo(mid[0], mid[1]);
     for (let i = 0; i < n; i++) {
-      const p = pts[i], q = pts[(i + 1) % n];
-      const rr = Math.min(r, dist(p, q) * 0.45, dist(p, pts[(i - 1 + n) % n]) * 0.45);
-      ctx.arcTo(p[0], p[1], q[0], q[1], rr);
+      const p = pts[i], q = pts[(i + 1) % n], o = pts[(i - 1 + n) % n];
+      // limit radius so the arc's tangent points stay within 45% of each adjacent edge,
+      // otherwise very sharp (cusp) corners shoot out long spikes
+      const e1 = dist(p, o), e2 = dist(p, q);
+      const ax = o[0] - p[0], ay = o[1] - p[1], bx = q[0] - p[0], by = q[1] - p[1];
+      const cosA = (ax * bx + ay * by) / ((e1 * e2) || 1);
+      const theta = Math.acos(Math.max(-1, Math.min(1, cosA))); // interior angle at p
+      const rr = Math.max(0, Math.min(r, Math.min(e1, e2) * 0.45 * Math.tan(theta / 2)));
+      if (rr < 0.5 || theta < 1e-3) ctx.lineTo(p[0], p[1]);
+      else ctx.arcTo(p[0], p[1], q[0], q[1], rr);
     }
     ctx.closePath();
   }
@@ -380,7 +417,7 @@
   const _grain = [];
   function grainTiles() {
     if (_grain.length) return _grain;
-    for (let k = 0; k < 4; k++) {
+    for (let k = 0; k < 3; k++) {
       const c = document.createElement('canvas'); c.width = c.height = 256;
       const cx = c.getContext('2d'); const id = cx.createImageData(256, 256); const r = rng(1000 + k);
       for (let i = 0; i < 256 * 256; i++) {
@@ -391,20 +428,20 @@
     }
     return _grain;
   }
-  function grain(ctx, t, amount = 0.07) {
+  function grain(ctx, t, amount = 0.055) {
     const tiles = grainTiles();
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = 'overlay';
     ctx.globalAlpha = amount;
-    ctx.fillStyle = ctx.createPattern(tiles[boil(t) % 4], 'repeat');
+    ctx.fillStyle = ctx.createPattern(tiles[boil(t) % 3], 'repeat');
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
   }
 
   window.L = {
     W, H, PAL, clamp, lerp, invLerp, remap, smoothstep, lerpPt, dist, ease, spring, squash,
-    rng, hash, noise1, boil, blobPoints, jitter, transformPts, polyLength, resample, resampleBySpacing,
+    rng, hash, noise1, boil, step12, SPRING_IN, WOBBLE, smear, stretchAlong, blobPoints, jitter, transformPts, polyLength, resample, resampleBySpacing,
     signedArea, centroid, morphPair, morph, catmull, polyPath, roundPolyPath, smoothPath, fillPoly,
     brushStroke, font, roughFilter, text, measure, at, camera, shake, offscreen, sparklePath, sparkle,
     drawBadge, grain,
