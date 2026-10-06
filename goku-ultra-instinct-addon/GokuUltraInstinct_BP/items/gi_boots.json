@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "goku:gi_boots",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": "goku_gi_boots",
+      "minecraft:display_name": {
+        "value": "§9Goku's Boots"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:wearable": {
+        "slot": "slot.armor.feet",
+        "protection": 3
+      },
+      "minecraft:enchantable": {
+        "slot": "armor_feet",
+        "value": 15
+      },
+      "minecraft:tags": {
+        "tags": [
+          "goku:outfit"
+        ]
+      }
+    }
+  }
+}

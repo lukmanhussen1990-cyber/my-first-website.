@@ -1,0 +1,28 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "goku:nimbus",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/goku/nimbus"
+      },
+      "geometry": {
+        "default": "geometry.goku.nimbus"
+      },
+      "render_controllers": [
+        "controller.render.goku_nimbus"
+      ],
+      "animations": {
+        "bob": "animation.goku.nimbus.bob"
+      },
+      "scripts": {
+        "animate": [
+          "bob"
+        ]
+      }
+    }
+  }
+}

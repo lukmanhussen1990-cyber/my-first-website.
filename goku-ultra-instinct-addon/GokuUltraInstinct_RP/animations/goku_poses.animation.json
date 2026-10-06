@@ -1,0 +1,333 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.goku.kamehameha_charge": {
+      "animation_length": 1.6,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0.00": [
+              0,
+              0,
+              0
+            ],
+            "0.30": [
+              35,
+              0,
+              12
+            ]
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0.00": [
+              0,
+              0,
+              0
+            ],
+            "0.30": [
+              35,
+              0,
+              42
+            ]
+          }
+        }
+      },
+      "loop": "hold_on_last_frame"
+    },
+    "animation.goku.kamehameha_fire": {
+      "animation_length": 1.6,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0.00": [
+              35,
+              0,
+              12
+            ],
+            "0.12": [
+              -88,
+              14,
+              0
+            ]
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0.00": [
+              35,
+              0,
+              42
+            ],
+            "0.12": [
+              -88,
+              -14,
+              0
+            ]
+          }
+        }
+      },
+      "loop": "hold_on_last_frame"
+    },
+    "animation.goku.spirit_bomb": {
+      "animation_length": 3.0,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0.00": [
+              0,
+              0,
+              0
+            ],
+            "0.35": [
+              180,
+              0,
+              -14
+            ]
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0.00": [
+              0,
+              0,
+              0
+            ],
+            "0.35": [
+              180,
+              0,
+              14
+            ]
+          }
+        }
+      },
+      "loop": "hold_on_last_frame"
+    },
+    "animation.goku.spirit_bomb_throw": {
+      "animation_length": 0.6,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0.00": [
+              180,
+              0,
+              -14
+            ],
+            "0.25": [
+              -80,
+              10,
+              0
+            ],
+            "0.60": [
+              -40,
+              0,
+              0
+            ]
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0.00": [
+              180,
+              0,
+              14
+            ],
+            "0.25": [
+              -80,
+              -10,
+              0
+            ],
+            "0.60": [
+              -40,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    },
+    "animation.goku.instant_transmission": {
+      "animation_length": 0.7,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0.00": [
+              0,
+              0,
+              0
+            ],
+            "0.15": [
+              -150,
+              32,
+              0
+            ],
+            "0.55": [
+              -150,
+              32,
+              0
+            ],
+            "0.70": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    },
+    "animation.goku.punch": {
+      "animation_length": 0.6,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0.00": [
+              0,
+              0,
+              0
+            ],
+            "0.08": [
+              -92,
+              8,
+              0
+            ],
+            "0.45": [
+              -92,
+              8,
+              0
+            ],
+            "0.60": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    },
+    "animation.goku.blast_right": {
+      "animation_length": 0.35,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0.00": [
+              -20,
+              0,
+              0
+            ],
+            "0.06": [
+              -90,
+              6,
+              0
+            ],
+            "0.35": [
+              -20,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    },
+    "animation.goku.blast_left": {
+      "animation_length": 0.35,
+      "bones": {
+        "leftArm": {
+          "rotation": {
+            "0.00": [
+              -20,
+              0,
+              0
+            ],
+            "0.06": [
+              -90,
+              -6,
+              0
+            ],
+            "0.35": [
+              -20,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    },
+    "animation.goku.power_up": {
+      "animation_length": 1.5,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0.00": [
+              0,
+              0,
+              0
+            ],
+            "0.20": [
+              12,
+              0,
+              28
+            ],
+            "1.20": [
+              12,
+              0,
+              28
+            ],
+            "1.50": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0.00": [
+              0,
+              0,
+              0
+            ],
+            "0.20": [
+              12,
+              0,
+              -28
+            ],
+            "1.20": [
+              12,
+              0,
+              -28
+            ],
+            "1.50": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.00": [
+              0,
+              0,
+              0
+            ],
+            "0.20": [
+              -12,
+              0,
+              0
+            ],
+            "1.20": [
+              -12,
+              0,
+              0
+            ],
+            "1.50": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    }
+  }
+}

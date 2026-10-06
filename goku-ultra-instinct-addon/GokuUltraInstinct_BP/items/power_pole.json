@@ -1,0 +1,35 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "goku:power_pole",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": "goku_power_pole",
+      "minecraft:display_name": {
+        "value": "§c§lPower Pole§r\n§8Hit: strong staff\n§8Use: EXTEND! hits far away"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:damage": 9,
+      "minecraft:enchantable": {
+        "slot": "sword",
+        "value": 15
+      },
+      "minecraft:interact_button": "Extend!",
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:cooldown": {
+        "category": "goku_power_pole",
+        "duration": 1.5
+      },
+      "minecraft:tags": {
+        "tags": [
+          "goku:power"
+        ]
+      }
+    }
+  }
+}

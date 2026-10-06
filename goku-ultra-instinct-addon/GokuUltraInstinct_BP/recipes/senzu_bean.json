@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "goku:senzu_bean"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:wheat_seeds"
+      },
+      {
+        "item": "minecraft:golden_apple"
+      }
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:golden_apple"
+      }
+    ],
+    "result": {
+      "item": "goku:senzu_bean",
+      "count": 3
+    }
+  }
+}

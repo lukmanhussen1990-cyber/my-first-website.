@@ -1,0 +1,34 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "goku:gi_boots.player",
+      "materials": {
+        "default": "armor",
+        "enchanted": "armor_enchanted"
+      },
+      "textures": {
+        "default": "textures/models/armor/goku_gi",
+        "enchanted": "textures/misc/enchanted_actor_glint"
+      },
+      "geometry": {
+        "default": "geometry.goku.gi_boots"
+      },
+      "scripts": {
+        "parent_setup": "variable.boot_layer_visible = 0.0;",
+        "animate": [
+          "offset"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.armor"
+      ],
+      "item": {
+        "goku:gi_boots": "query.owner_identifier == 'minecraft:player'"
+      },
+      "animations": {
+        "offset": "animation.armor.boots.offset"
+      }
+    }
+  }
+}

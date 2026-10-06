@@ -1,0 +1,38 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "§bGoku §7Ultra Instinct §r(Behavior)",
+    "description": "Ultra Instinct transformation, Kamehameha, Spirit Bomb, Instant Transmission and more.",
+    "uuid": "f20ac005-9d89-4868-a668-087af0a642eb",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 20, 80]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "713525e5-eed4-4a23-bb35-413f11bcd049",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "c97d1fa6-313a-4852-a4ad-d8ac212104bd",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "4c4a64ff-9861-4f75-8883-764fff0fd419",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.10.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.1.0"
+    }
+  ]
+}

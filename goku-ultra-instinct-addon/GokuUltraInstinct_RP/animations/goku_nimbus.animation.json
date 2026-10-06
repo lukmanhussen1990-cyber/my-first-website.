@@ -1,0 +1,22 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.goku.nimbus.bob": {
+      "loop": true,
+      "bones": {
+        "cloud": {
+          "position": [
+            0,
+            "math.sin(query.life_time * 120) * 0.6",
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            "math.sin(query.life_time * 90) * 2"
+          ]
+        }
+      }
+    }
+  }
+}
