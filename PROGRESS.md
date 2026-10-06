@@ -99,7 +99,7 @@ Running log. Newest entries at the bottom. Start: 2026-10-06 14:10 UTC.
 - Small phones (≤ 420 × 660): the theme / snake rows no longer clip — the first snake option is now "Auto".
 - Next: more fresh-eyes review, full regression, summary.
 
-### 16:08 — Big screens, first impression ✅
+### 15:52 — Big screens, first impression ✅
 - **Big monitors**: cells up to 76 px; HUD, cards and toasts scale up (CSS zoom, 1×–1.7×) with the window height, ripples are zoom-proof.
 - **First visit** now opens in the Forest theme (the realistic one); forest floor painted around the stone wall.
 - Waiting snake turns round when the opposite key is pressed (it used to ignore it, which looked like a dead key).
