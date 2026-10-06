@@ -100,7 +100,7 @@ heart choice scenario · city map · leaderboard · profile.
 
 ## Verifying your work
 
-- Type-check: `npx tsc -b` (other agents may have work in progress — fix only errors in your files).
+- Type-check: `npx tsc -p tsconfig.app.json` (other agents may have work in progress — fix only errors in your files).
 - Lint: `npx oxlint src/<your files>`.
 - A dev server normally runs at `http://localhost:5173/`. Screenshot any route at phone size:
   `node tools/shoot.mjs /home shots/home.png --seed 6` (see the header of `tools/shoot.mjs`
