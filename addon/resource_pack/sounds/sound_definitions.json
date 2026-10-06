@@ -1,0 +1,1099 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "pas.base.build": {
+      "category": "neutral",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/base/build1",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/base/build2",
+          "volume": 0.8
+        }
+      ]
+    },
+    "pas.base.done": {
+      "category": "neutral",
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/base/done1",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "pas.infected.ambient": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/ambient1",
+          "volume": 0.85,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/ambient2",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/pas/infected/ambient3",
+          "volume": 0.85
+        },
+        {
+          "name": "sounds/pas/infected/ambient4",
+          "volume": 0.85
+        }
+      ]
+    },
+    "pas.infected.death": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/death1",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/death2",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/pas/infected/death3",
+          "volume": 1.0
+        }
+      ]
+    },
+    "pas.infected.hurt": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/hurt1",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/hurt2",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/pas/infected/hurt3",
+          "volume": 0.9
+        }
+      ]
+    },
+    "pas.infected_chicken.ambient": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/ambient1",
+          "volume": 0.9,
+          "pitch": 1.6,
+          "weight": 27,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/ambient2",
+          "volume": 0.9,
+          "pitch": 1.6,
+          "weight": 27
+        },
+        {
+          "name": "sounds/pas/infected/ambient3",
+          "volume": 0.9,
+          "pitch": 1.6,
+          "weight": 27
+        },
+        {
+          "name": "sounds/pas/infected/ambient4",
+          "volume": 0.9,
+          "pitch": 1.6,
+          "weight": 27
+        },
+        {
+          "name": "sounds/mob/chicken/say1",
+          "volume": 0.9,
+          "pitch": 0.7,
+          "weight": 44
+        },
+        {
+          "name": "sounds/mob/chicken/say2",
+          "volume": 0.9,
+          "pitch": 0.7,
+          "weight": 44
+        },
+        {
+          "name": "sounds/mob/chicken/say3",
+          "volume": 0.9,
+          "pitch": 0.7,
+          "weight": 44
+        }
+      ]
+    },
+    "pas.infected_chicken.death": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/death1",
+          "volume": 1.0,
+          "pitch": 1.6,
+          "weight": 6,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/death2",
+          "volume": 1.0,
+          "pitch": 1.6,
+          "weight": 6
+        },
+        {
+          "name": "sounds/pas/infected/death3",
+          "volume": 1.0,
+          "pitch": 1.6,
+          "weight": 6
+        },
+        {
+          "name": "sounds/mob/chicken/hurt1",
+          "volume": 1.0,
+          "pitch": 0.6,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/chicken/hurt2",
+          "volume": 1.0,
+          "pitch": 0.6,
+          "weight": 11
+        }
+      ]
+    },
+    "pas.infected_chicken.hurt": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/hurt1",
+          "volume": 0.95,
+          "pitch": 1.6,
+          "weight": 6,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/hurt2",
+          "volume": 0.95,
+          "pitch": 1.6,
+          "weight": 6
+        },
+        {
+          "name": "sounds/pas/infected/hurt3",
+          "volume": 0.95,
+          "pitch": 1.6,
+          "weight": 6
+        },
+        {
+          "name": "sounds/mob/chicken/hurt1",
+          "volume": 0.95,
+          "pitch": 0.72,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/chicken/hurt2",
+          "volume": 0.95,
+          "pitch": 0.72,
+          "weight": 11
+        }
+      ]
+    },
+    "pas.infected_cow.ambient": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/ambient1",
+          "volume": 0.9,
+          "pitch": 0.88,
+          "weight": 9,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/ambient2",
+          "volume": 0.9,
+          "pitch": 0.88,
+          "weight": 9
+        },
+        {
+          "name": "sounds/pas/infected/ambient3",
+          "volume": 0.9,
+          "pitch": 0.88,
+          "weight": 9
+        },
+        {
+          "name": "sounds/pas/infected/ambient4",
+          "volume": 0.9,
+          "pitch": 0.88,
+          "weight": 9
+        },
+        {
+          "name": "sounds/mob/cow/say1",
+          "volume": 0.9,
+          "pitch": 0.62,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/cow/say2",
+          "volume": 0.9,
+          "pitch": 0.62,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/cow/say3",
+          "volume": 0.9,
+          "pitch": 0.62,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/cow/say4",
+          "volume": 0.9,
+          "pitch": 0.62,
+          "weight": 11
+        }
+      ]
+    },
+    "pas.infected_cow.death": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/death1",
+          "volume": 1.0,
+          "pitch": 0.88,
+          "weight": 9,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/death2",
+          "volume": 1.0,
+          "pitch": 0.88,
+          "weight": 9
+        },
+        {
+          "name": "sounds/pas/infected/death3",
+          "volume": 1.0,
+          "pitch": 0.88,
+          "weight": 9
+        },
+        {
+          "name": "sounds/mob/cow/hurt1",
+          "volume": 1.0,
+          "pitch": 0.55,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/cow/hurt2",
+          "volume": 1.0,
+          "pitch": 0.55,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/cow/hurt3",
+          "volume": 1.0,
+          "pitch": 0.55,
+          "weight": 11
+        }
+      ]
+    },
+    "pas.infected_cow.hurt": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/hurt1",
+          "volume": 0.95,
+          "pitch": 0.88,
+          "weight": 9,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/hurt2",
+          "volume": 0.95,
+          "pitch": 0.88,
+          "weight": 9
+        },
+        {
+          "name": "sounds/pas/infected/hurt3",
+          "volume": 0.95,
+          "pitch": 0.88,
+          "weight": 9
+        },
+        {
+          "name": "sounds/mob/cow/hurt1",
+          "volume": 0.95,
+          "pitch": 0.66,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/cow/hurt2",
+          "volume": 0.95,
+          "pitch": 0.66,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/cow/hurt3",
+          "volume": 0.95,
+          "pitch": 0.66,
+          "weight": 11
+        }
+      ]
+    },
+    "pas.infected_human.ambient": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/ambient1",
+          "volume": 0.9,
+          "pitch": 1.0,
+          "weight": 27,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/ambient2",
+          "volume": 0.9,
+          "pitch": 1.0,
+          "weight": 27
+        },
+        {
+          "name": "sounds/pas/infected/ambient3",
+          "volume": 0.9,
+          "pitch": 1.0,
+          "weight": 27
+        },
+        {
+          "name": "sounds/pas/infected/ambient4",
+          "volume": 0.9,
+          "pitch": 1.0,
+          "weight": 27
+        },
+        {
+          "name": "sounds/mob/zombie/say1",
+          "volume": 0.9,
+          "pitch": 0.82,
+          "weight": 44
+        },
+        {
+          "name": "sounds/mob/zombie/say2",
+          "volume": 0.9,
+          "pitch": 0.82,
+          "weight": 44
+        },
+        {
+          "name": "sounds/mob/zombie/say3",
+          "volume": 0.9,
+          "pitch": 0.82,
+          "weight": 44
+        }
+      ]
+    },
+    "pas.infected_human.death": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/death1",
+          "volume": 1.0,
+          "pitch": 1.0,
+          "weight": 3,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/death2",
+          "volume": 1.0,
+          "pitch": 1.0,
+          "weight": 3
+        },
+        {
+          "name": "sounds/pas/infected/death3",
+          "volume": 1.0,
+          "pitch": 1.0,
+          "weight": 3
+        },
+        {
+          "name": "sounds/mob/zombie/death",
+          "volume": 1.0,
+          "pitch": 0.8,
+          "weight": 11
+        }
+      ]
+    },
+    "pas.infected_human.hurt": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/hurt1",
+          "volume": 0.95,
+          "pitch": 1.0,
+          "weight": 6,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/hurt2",
+          "volume": 0.95,
+          "pitch": 1.0,
+          "weight": 6
+        },
+        {
+          "name": "sounds/pas/infected/hurt3",
+          "volume": 0.95,
+          "pitch": 1.0,
+          "weight": 6
+        },
+        {
+          "name": "sounds/mob/zombie/hurt1",
+          "volume": 0.95,
+          "pitch": 0.85,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/zombie/hurt2",
+          "volume": 0.95,
+          "pitch": 0.85,
+          "weight": 11
+        }
+      ]
+    },
+    "pas.infected_pig.ambient": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/ambient1",
+          "volume": 0.9,
+          "pitch": 1.15,
+          "weight": 27,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/ambient2",
+          "volume": 0.9,
+          "pitch": 1.15,
+          "weight": 27
+        },
+        {
+          "name": "sounds/pas/infected/ambient3",
+          "volume": 0.9,
+          "pitch": 1.15,
+          "weight": 27
+        },
+        {
+          "name": "sounds/pas/infected/ambient4",
+          "volume": 0.9,
+          "pitch": 1.15,
+          "weight": 27
+        },
+        {
+          "name": "sounds/mob/pig/say1",
+          "volume": 0.9,
+          "pitch": 0.62,
+          "weight": 44
+        },
+        {
+          "name": "sounds/mob/pig/say2",
+          "volume": 0.9,
+          "pitch": 0.62,
+          "weight": 44
+        },
+        {
+          "name": "sounds/mob/pig/say3",
+          "volume": 0.9,
+          "pitch": 0.62,
+          "weight": 44
+        }
+      ]
+    },
+    "pas.infected_pig.death": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/death1",
+          "volume": 1.0,
+          "pitch": 1.15,
+          "weight": 3,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/death2",
+          "volume": 1.0,
+          "pitch": 1.15,
+          "weight": 3
+        },
+        {
+          "name": "sounds/pas/infected/death3",
+          "volume": 1.0,
+          "pitch": 1.15,
+          "weight": 3
+        },
+        {
+          "name": "sounds/mob/pig/death",
+          "volume": 1.0,
+          "pitch": 0.6,
+          "weight": 11
+        }
+      ]
+    },
+    "pas.infected_pig.hurt": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/hurt1",
+          "volume": 0.95,
+          "pitch": 1.15,
+          "weight": 9,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/hurt2",
+          "volume": 0.95,
+          "pitch": 1.15,
+          "weight": 9
+        },
+        {
+          "name": "sounds/pas/infected/hurt3",
+          "volume": 0.95,
+          "pitch": 1.15,
+          "weight": 9
+        },
+        {
+          "name": "sounds/mob/pig/say1",
+          "volume": 0.95,
+          "pitch": 0.72,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/pig/say2",
+          "volume": 0.95,
+          "pitch": 0.72,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/pig/say3",
+          "volume": 0.95,
+          "pitch": 0.72,
+          "weight": 11
+        }
+      ]
+    },
+    "pas.infected_sheep.ambient": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/ambient1",
+          "volume": 0.9,
+          "pitch": 1.2,
+          "weight": 27,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/ambient2",
+          "volume": 0.9,
+          "pitch": 1.2,
+          "weight": 27
+        },
+        {
+          "name": "sounds/pas/infected/ambient3",
+          "volume": 0.9,
+          "pitch": 1.2,
+          "weight": 27
+        },
+        {
+          "name": "sounds/pas/infected/ambient4",
+          "volume": 0.9,
+          "pitch": 1.2,
+          "weight": 27
+        },
+        {
+          "name": "sounds/mob/sheep/say1",
+          "volume": 0.9,
+          "pitch": 0.6,
+          "weight": 44
+        },
+        {
+          "name": "sounds/mob/sheep/say2",
+          "volume": 0.9,
+          "pitch": 0.6,
+          "weight": 44
+        },
+        {
+          "name": "sounds/mob/sheep/say3",
+          "volume": 0.9,
+          "pitch": 0.6,
+          "weight": 44
+        }
+      ]
+    },
+    "pas.infected_sheep.death": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/death1",
+          "volume": 1.0,
+          "pitch": 1.2,
+          "weight": 9,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/death2",
+          "volume": 1.0,
+          "pitch": 1.2,
+          "weight": 9
+        },
+        {
+          "name": "sounds/pas/infected/death3",
+          "volume": 1.0,
+          "pitch": 1.2,
+          "weight": 9
+        },
+        {
+          "name": "sounds/mob/sheep/say1",
+          "volume": 1.0,
+          "pitch": 0.55,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/sheep/say2",
+          "volume": 1.0,
+          "pitch": 0.55,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/sheep/say3",
+          "volume": 1.0,
+          "pitch": 0.55,
+          "weight": 11
+        }
+      ]
+    },
+    "pas.infected_sheep.hurt": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/hurt1",
+          "volume": 0.95,
+          "pitch": 1.2,
+          "weight": 9,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/hurt2",
+          "volume": 0.95,
+          "pitch": 1.2,
+          "weight": 9
+        },
+        {
+          "name": "sounds/pas/infected/hurt3",
+          "volume": 0.95,
+          "pitch": 1.2,
+          "weight": 9
+        },
+        {
+          "name": "sounds/mob/sheep/say1",
+          "volume": 0.95,
+          "pitch": 0.7,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/sheep/say2",
+          "volume": 0.95,
+          "pitch": 0.7,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/sheep/say3",
+          "volume": 0.95,
+          "pitch": 0.7,
+          "weight": 11
+        }
+      ]
+    },
+    "pas.infected_villager.ambient": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/ambient1",
+          "volume": 0.9,
+          "pitch": 1.08,
+          "weight": 27,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/ambient2",
+          "volume": 0.9,
+          "pitch": 1.08,
+          "weight": 27
+        },
+        {
+          "name": "sounds/pas/infected/ambient3",
+          "volume": 0.9,
+          "pitch": 1.08,
+          "weight": 27
+        },
+        {
+          "name": "sounds/pas/infected/ambient4",
+          "volume": 0.9,
+          "pitch": 1.08,
+          "weight": 27
+        },
+        {
+          "name": "sounds/mob/villager/idle1",
+          "volume": 0.9,
+          "pitch": 0.68,
+          "weight": 44
+        },
+        {
+          "name": "sounds/mob/villager/idle2",
+          "volume": 0.9,
+          "pitch": 0.68,
+          "weight": 44
+        },
+        {
+          "name": "sounds/mob/villager/idle3",
+          "volume": 0.9,
+          "pitch": 0.68,
+          "weight": 44
+        }
+      ]
+    },
+    "pas.infected_villager.death": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/death1",
+          "volume": 1.0,
+          "pitch": 1.08,
+          "weight": 3,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/death2",
+          "volume": 1.0,
+          "pitch": 1.08,
+          "weight": 3
+        },
+        {
+          "name": "sounds/pas/infected/death3",
+          "volume": 1.0,
+          "pitch": 1.08,
+          "weight": 3
+        },
+        {
+          "name": "sounds/mob/villager/death",
+          "volume": 1.0,
+          "pitch": 0.62,
+          "weight": 11
+        }
+      ]
+    },
+    "pas.infected_villager.hurt": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infected/hurt1",
+          "volume": 0.95,
+          "pitch": 1.08,
+          "weight": 12,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infected/hurt2",
+          "volume": 0.95,
+          "pitch": 1.08,
+          "weight": 12
+        },
+        {
+          "name": "sounds/pas/infected/hurt3",
+          "volume": 0.95,
+          "pitch": 1.08,
+          "weight": 12
+        },
+        {
+          "name": "sounds/mob/villager/hit1",
+          "volume": 0.95,
+          "pitch": 0.7,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/villager/hit2",
+          "volume": 0.95,
+          "pitch": 0.7,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/villager/hit3",
+          "volume": 0.95,
+          "pitch": 0.7,
+          "weight": 11
+        },
+        {
+          "name": "sounds/mob/villager/hit4",
+          "volume": 0.95,
+          "pitch": 0.7,
+          "weight": 11
+        }
+      ]
+    },
+    "pas.infection.convert": {
+      "category": "hostile",
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infection/convert1",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infection/convert2",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/pas/infection/convert3",
+          "volume": 1.0
+        }
+      ]
+    },
+    "pas.infection.heartbeat": {
+      "category": "hostile",
+      "max_distance": 12.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infection/heartbeat1",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infection/heartbeat2",
+          "volume": 0.8
+        }
+      ]
+    },
+    "pas.infection.start": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/infection/start1",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/infection/start2",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/pas/infection/start3",
+          "volume": 0.9
+        }
+      ]
+    },
+    "pas.outbreak.start": {
+      "category": "hostile",
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/outbreak/start1",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/outbreak/start2",
+          "volume": 1.0
+        }
+      ]
+    },
+    "pas.parasite.ambient": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/parasite/ambient1",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/parasite/ambient2",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/pas/parasite/ambient3",
+          "volume": 0.8
+        },
+        {
+          "name": "sounds/pas/parasite/ambient4",
+          "volume": 0.8
+        }
+      ]
+    },
+    "pas.parasite.attack": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/parasite/attack1",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/parasite/attack2",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/pas/parasite/attack3",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/pas/parasite/attack4",
+          "volume": 0.9
+        }
+      ]
+    },
+    "pas.parasite.birth": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/parasite/birth1",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/parasite/birth2",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/pas/parasite/birth3",
+          "volume": 0.9
+        }
+      ]
+    },
+    "pas.parasite.death": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/parasite/death1",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/parasite/death2",
+          "volume": 1.0
+        },
+        {
+          "name": "sounds/pas/parasite/death3",
+          "volume": 1.0
+        }
+      ]
+    },
+    "pas.parasite.hurt": {
+      "category": "hostile",
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/parasite/hurt1",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/parasite/hurt2",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/pas/parasite/hurt3",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/pas/parasite/hurt4",
+          "volume": 0.9
+        }
+      ]
+    },
+    "pas.parasite.step": {
+      "category": "hostile",
+      "max_distance": 12.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/parasite/step1",
+          "volume": 0.5,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/parasite/step2",
+          "volume": 0.5
+        },
+        {
+          "name": "sounds/pas/parasite/step3",
+          "volume": 0.5
+        },
+        {
+          "name": "sounds/pas/parasite/step4",
+          "volume": 0.5
+        }
+      ]
+    },
+    "pas.torch.off": {
+      "category": "player",
+      "max_distance": 8.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/torch/off1",
+          "volume": 0.6,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/torch/off2",
+          "volume": 0.6
+        }
+      ]
+    },
+    "pas.torch.on": {
+      "category": "player",
+      "max_distance": 8.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/torch/on1",
+          "volume": 0.6,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/pas/torch/on2",
+          "volume": 0.6
+        }
+      ]
+    },
+    "pas.ui.open": {
+      "category": "player",
+      "max_distance": 8.0,
+      "sounds": [
+        {
+          "name": "sounds/pas/ui/open1",
+          "volume": 0.5,
+          "load_on_low_memory": true
+        }
+      ]
+    }
+  }
+}

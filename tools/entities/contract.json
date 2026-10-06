@@ -1,0 +1,429 @@
+{
+  "format_version": "1.21.0",
+  "target_filter": {
+    "all_of": [
+      {
+        "any_of": [
+          {
+            "test": "is_family",
+            "subject": "other",
+            "value": "player"
+          },
+          {
+            "test": "is_family",
+            "subject": "other",
+            "value": "villager"
+          },
+          {
+            "test": "is_family",
+            "subject": "other",
+            "value": "wandering_trader"
+          },
+          {
+            "test": "is_family",
+            "subject": "other",
+            "value": "cow"
+          },
+          {
+            "test": "is_family",
+            "subject": "other",
+            "value": "mushroomcow"
+          },
+          {
+            "test": "is_family",
+            "subject": "other",
+            "value": "pig"
+          },
+          {
+            "test": "is_family",
+            "subject": "other",
+            "value": "sheep"
+          },
+          {
+            "test": "is_family",
+            "subject": "other",
+            "value": "chicken"
+          }
+        ]
+      },
+      {
+        "test": "is_family",
+        "subject": "other",
+        "operator": "!=",
+        "value": "pas_horde"
+      },
+      {
+        "test": "has_tag",
+        "subject": "other",
+        "operator": "!=",
+        "value": "pas_incubating"
+      },
+      {
+        "test": "has_tag",
+        "subject": "other",
+        "operator": "!=",
+        "value": "pas_infected_player"
+      }
+    ]
+  },
+  "entities": {
+    "pas:parasite": {
+      "file": "addon/behavior_pack/entities/pas_parasite.json",
+      "families": [
+        "pas_horde",
+        "pas_parasite",
+        "monster",
+        "mob",
+        "arthropod"
+      ],
+      "health": 12,
+      "attack": 3,
+      "movement": 0.32,
+      "collision_box": {
+        "width": 0.8,
+        "height": 0.6
+      },
+      "loot_table": "loot_tables/pas/parasite.json",
+      "component_groups": [
+        "pas:dormant",
+        "pas:hunting",
+        "pas:juvenile",
+        "pas:newborn"
+      ],
+      "events": [
+        "minecraft:entity_born",
+        "minecraft:entity_spawned",
+        "minecraft:entity_transformed",
+        "pas:become_active",
+        "pas:become_dormant",
+        "pas:born",
+        "pas:newborn_done",
+        "pas:newborn_grow"
+      ],
+      "variant_ranges": {},
+      "has_baby": false,
+      "has_sheared": false
+    },
+    "pas:infected_villager": {
+      "file": "addon/behavior_pack/entities/pas_infected_villager.json",
+      "families": [
+        "pas_horde",
+        "pas_infected",
+        "pas_infected_villager",
+        "monster",
+        "mob"
+      ],
+      "health": 24,
+      "attack": 4,
+      "movement": 0.32,
+      "collision_box": {
+        "width": 0.6,
+        "height": 1.9
+      },
+      "loot_table": "loot_tables/pas/infected_villager.json",
+      "component_groups": [
+        "pas:baby",
+        "pas:dormant",
+        "pas:hunting",
+        "pas:mark_0",
+        "pas:mark_1",
+        "pas:mark_2",
+        "pas:mark_3",
+        "pas:mark_4",
+        "pas:mark_5",
+        "pas:mark_6",
+        "pas:skin_0",
+        "pas:skin_1",
+        "pas:skin_2",
+        "pas:skin_3",
+        "pas:skin_4",
+        "pas:skin_5",
+        "pas:variant_0",
+        "pas:variant_1",
+        "pas:variant_10",
+        "pas:variant_11",
+        "pas:variant_12",
+        "pas:variant_13",
+        "pas:variant_14",
+        "pas:variant_2",
+        "pas:variant_3",
+        "pas:variant_4",
+        "pas:variant_5",
+        "pas:variant_6",
+        "pas:variant_7",
+        "pas:variant_8",
+        "pas:variant_9"
+      ],
+      "events": [
+        "minecraft:entity_born",
+        "minecraft:entity_spawned",
+        "minecraft:entity_transformed",
+        "pas:become_active",
+        "pas:become_dormant",
+        "pas:make_baby",
+        "pas:set_mark_0",
+        "pas:set_mark_1",
+        "pas:set_mark_2",
+        "pas:set_mark_3",
+        "pas:set_mark_4",
+        "pas:set_mark_5",
+        "pas:set_mark_6",
+        "pas:set_skin_0",
+        "pas:set_skin_1",
+        "pas:set_skin_2",
+        "pas:set_skin_3",
+        "pas:set_skin_4",
+        "pas:set_skin_5",
+        "pas:set_variant_0",
+        "pas:set_variant_1",
+        "pas:set_variant_10",
+        "pas:set_variant_11",
+        "pas:set_variant_12",
+        "pas:set_variant_13",
+        "pas:set_variant_14",
+        "pas:set_variant_2",
+        "pas:set_variant_3",
+        "pas:set_variant_4",
+        "pas:set_variant_5",
+        "pas:set_variant_6",
+        "pas:set_variant_7",
+        "pas:set_variant_8",
+        "pas:set_variant_9"
+      ],
+      "variant_ranges": {
+        "minecraft:variant": [
+          0,
+          14
+        ],
+        "minecraft:mark_variant": [
+          0,
+          6
+        ],
+        "minecraft:skin_id": [
+          0,
+          5
+        ]
+      },
+      "has_baby": true,
+      "has_sheared": false
+    },
+    "pas:infected_cow": {
+      "file": "addon/behavior_pack/entities/pas_infected_cow.json",
+      "families": [
+        "pas_horde",
+        "pas_infected",
+        "pas_infected_cow",
+        "monster",
+        "mob"
+      ],
+      "health": 14,
+      "attack": 4,
+      "movement": 0.28,
+      "collision_box": {
+        "width": 0.9,
+        "height": 1.3
+      },
+      "loot_table": "loot_tables/pas/infected_cow.json",
+      "component_groups": [
+        "pas:baby",
+        "pas:dormant",
+        "pas:hunting",
+        "pas:variant_0",
+        "pas:variant_1",
+        "pas:variant_2"
+      ],
+      "events": [
+        "minecraft:entity_born",
+        "minecraft:entity_spawned",
+        "minecraft:entity_transformed",
+        "pas:become_active",
+        "pas:become_dormant",
+        "pas:make_baby",
+        "pas:set_variant_0",
+        "pas:set_variant_1",
+        "pas:set_variant_2"
+      ],
+      "variant_ranges": {
+        "minecraft:variant": [
+          0,
+          2
+        ]
+      },
+      "has_baby": true,
+      "has_sheared": false
+    },
+    "pas:infected_pig": {
+      "file": "addon/behavior_pack/entities/pas_infected_pig.json",
+      "families": [
+        "pas_horde",
+        "pas_infected",
+        "pas_infected_pig",
+        "monster",
+        "mob"
+      ],
+      "health": 14,
+      "attack": 3,
+      "movement": 0.28,
+      "collision_box": {
+        "width": 0.9,
+        "height": 0.9
+      },
+      "loot_table": "loot_tables/pas/infected_pig.json",
+      "component_groups": [
+        "pas:baby",
+        "pas:dormant",
+        "pas:hunting"
+      ],
+      "events": [
+        "minecraft:entity_born",
+        "minecraft:entity_spawned",
+        "minecraft:entity_transformed",
+        "pas:become_active",
+        "pas:become_dormant",
+        "pas:make_baby"
+      ],
+      "variant_ranges": {},
+      "has_baby": true,
+      "has_sheared": false
+    },
+    "pas:infected_sheep": {
+      "file": "addon/behavior_pack/entities/pas_infected_sheep.json",
+      "families": [
+        "pas_horde",
+        "pas_infected",
+        "pas_infected_sheep",
+        "monster",
+        "mob"
+      ],
+      "health": 12,
+      "attack": 3,
+      "movement": 0.28,
+      "collision_box": {
+        "width": 0.9,
+        "height": 1.3
+      },
+      "loot_table": "loot_tables/pas/infected_sheep.json",
+      "component_groups": [
+        "pas:baby",
+        "pas:color_0",
+        "pas:color_1",
+        "pas:color_10",
+        "pas:color_11",
+        "pas:color_12",
+        "pas:color_13",
+        "pas:color_14",
+        "pas:color_15",
+        "pas:color_2",
+        "pas:color_3",
+        "pas:color_4",
+        "pas:color_5",
+        "pas:color_6",
+        "pas:color_7",
+        "pas:color_8",
+        "pas:color_9",
+        "pas:dormant",
+        "pas:hunting",
+        "pas:sheared"
+      ],
+      "events": [
+        "minecraft:entity_born",
+        "minecraft:entity_spawned",
+        "minecraft:entity_transformed",
+        "pas:become_active",
+        "pas:become_dormant",
+        "pas:make_baby",
+        "pas:set_color_0",
+        "pas:set_color_1",
+        "pas:set_color_10",
+        "pas:set_color_11",
+        "pas:set_color_12",
+        "pas:set_color_13",
+        "pas:set_color_14",
+        "pas:set_color_15",
+        "pas:set_color_2",
+        "pas:set_color_3",
+        "pas:set_color_4",
+        "pas:set_color_5",
+        "pas:set_color_6",
+        "pas:set_color_7",
+        "pas:set_color_8",
+        "pas:set_color_9",
+        "pas:set_sheared"
+      ],
+      "variant_ranges": {
+        "minecraft:color": [
+          0,
+          15
+        ]
+      },
+      "has_baby": true,
+      "has_sheared": true
+    },
+    "pas:infected_chicken": {
+      "file": "addon/behavior_pack/entities/pas_infected_chicken.json",
+      "families": [
+        "pas_horde",
+        "pas_infected",
+        "pas_infected_chicken",
+        "monster",
+        "mob"
+      ],
+      "health": 6,
+      "attack": 2,
+      "movement": 0.28,
+      "collision_box": {
+        "width": 0.6,
+        "height": 0.8
+      },
+      "loot_table": "loot_tables/pas/infected_chicken.json",
+      "component_groups": [
+        "pas:baby",
+        "pas:dormant",
+        "pas:hunting"
+      ],
+      "events": [
+        "minecraft:entity_born",
+        "minecraft:entity_spawned",
+        "minecraft:entity_transformed",
+        "pas:become_active",
+        "pas:become_dormant",
+        "pas:make_baby"
+      ],
+      "variant_ranges": {},
+      "has_baby": true,
+      "has_sheared": false
+    },
+    "pas:infected_human": {
+      "file": "addon/behavior_pack/entities/pas_infected_human.json",
+      "families": [
+        "pas_horde",
+        "pas_infected",
+        "pas_infected_human",
+        "monster",
+        "mob"
+      ],
+      "health": 26,
+      "attack": 5,
+      "movement": 0.26,
+      "collision_box": {
+        "width": 0.6,
+        "height": 1.9
+      },
+      "loot_table": "loot_tables/pas/infected_human.json",
+      "component_groups": [
+        "pas:dormant",
+        "pas:hunting"
+      ],
+      "events": [
+        "minecraft:entity_born",
+        "minecraft:entity_spawned",
+        "minecraft:entity_transformed",
+        "pas:become_active",
+        "pas:become_dormant"
+      ],
+      "variant_ranges": {},
+      "has_baby": false,
+      "has_sheared": false
+    }
+  }
+}
