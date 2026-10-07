@@ -166,7 +166,9 @@ flutter analyze
 - `android/app/src/test` – JVM tests of the purchase signature check
   (`./gradlew :app:testDebugUnitTest` in `android/`).
 - **On-device:** the *Device test* workflow installs the signed APK on
-  Android 8.0 (API 26) and Android 14 (API 34) emulators and runs
+  Android 8.0 (API 26) and Android 14 (API 34) emulators (the API 34 job
+  is best effort: on GitHub's runners that emulator dies a few minutes
+  into a game) and runs
   `tool/device_bot.py`, a bot that reads the board from screenshots and
   plays full games through `adb` (drag & drop, clears, scoring checks via
   logcat markers, revive offer, game over, settings, save/restore, hint,
@@ -181,8 +183,10 @@ flutter analyze
 
 ## Known limitations
 
-- Tested on Android 8.0 and Android 14 emulators (x86_64) through the
-  device-test bot, not on a physical phone; sound playback and vibration
+- Tested on emulators (x86_64) through the device-test bot, not on a
+  physical phone: the full scenario passes on Android 8.0; on Android 14
+  the app starts, plays 10–35 verified moves and shows the test banner
+  ad before the CI emulator itself crashes. Sound playback and vibration
   were verified through the Android logs only (emulators have no speaker
   output or vibrator to observe).
 - Fonts are free look-alikes (Fredoka, Poppins) of the original game's
