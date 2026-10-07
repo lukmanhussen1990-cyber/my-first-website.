@@ -1,0 +1,154 @@
+.viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 50% 55%, #121216 0%, var(--bg-1) 60%, var(--bg-0) 100%);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  contain: strict;
+}
+
+.viewport:active {
+  cursor: grabbing;
+}
+
+.viewport:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--red-2);
+}
+
+/* ── Art layer: transformed as a whole (translate + scale) ───────── */
+.art {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  opacity: 0;
+  transition: opacity 600ms var(--ease-out);
+}
+
+.artLoaded {
+  opacity: 1;
+}
+
+/* promote only while moving: crisp re-raster at rest, compositor-only motion */
+.viewport[data-moving] .art {
+  will-change: transform;
+}
+
+.art img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* faint tactical grid printed on the map — scales with the art */
+.grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(255, 43, 56, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 43, 56, 0.05) 1px, transparent 1px);
+  background-size:
+    8.333% 6.25%,
+    8.333% 6.25%,
+    33.333% 25%,
+    33.333% 25%;
+  mix-blend-mode: screen;
+}
+
+/* ── Atmosphere ───────────────────────────────────────────────────── */
+.fog {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.fogA,
+.fogB {
+  position: absolute;
+  inset: -20% -45%;
+  will-change: transform;
+}
+
+.fogA {
+  opacity: 0.55;
+  background:
+    radial-gradient(28% 18% at 22% 30%, rgba(170, 170, 190, 0.16), transparent 70%),
+    radial-gradient(34% 20% at 70% 62%, rgba(150, 150, 170, 0.14), transparent 70%),
+    radial-gradient(26% 16% at 40% 86%, rgba(160, 160, 180, 0.12), transparent 70%);
+  animation: driftA 64s ease-in-out infinite alternate;
+}
+
+.fogB {
+  opacity: 0.6;
+  background:
+    radial-gradient(30% 16% at 75% 22%, rgba(227, 18, 31, 0.1), transparent 70%),
+    radial-gradient(24% 18% at 28% 58%, rgba(140, 140, 160, 0.12), transparent 70%),
+    radial-gradient(32% 14% at 62% 92%, rgba(227, 18, 31, 0.08), transparent 70%);
+  animation: driftB 90s ease-in-out infinite alternate;
+}
+
+@keyframes driftA {
+  from {
+    transform: translate3d(-9%, 1%, 0);
+  }
+  to {
+    transform: translate3d(9%, -3%, 0);
+  }
+}
+
+@keyframes driftB {
+  from {
+    transform: translate3d(8%, -2%, 0);
+  }
+  to {
+    transform: translate3d(-8%, 2%, 0);
+  }
+}
+
+.lines {
+  position: absolute;
+  inset: 0;
+  opacity: 0.7;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(5, 5, 6, 0.7) 0%, rgba(5, 5, 6, 0) 12%, rgba(5, 5, 6, 0) 80%, rgba(5, 5, 6, 0.82) 100%),
+    radial-gradient(130% 85% at 50% 48%, transparent 52%, rgba(0, 0, 0, 0.62) 100%);
+}
+
+/* ── Plot layer: translated with the art, never scaled ───────────── */
+.plot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fogA,
+  .fogB {
+    animation: none;
+  }
+}
+
+:global(.reduce-motion) .fogA,
+:global(.reduce-motion) .fogB {
+  animation: none;
+}

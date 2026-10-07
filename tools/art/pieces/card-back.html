@@ -1,0 +1,356 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Border Trials — card back</title>
+    <meta name="art" data-out="src/assets/art/card-back.webp" data-w="600" data-h="900" data-scale="1.5" data-quality="82" />
+    <style>
+      html, body { margin: 0; background: #000; }
+      canvas { display: block; max-width: 100vw; height: auto; }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script type="module">
+      import { setup, done, grain, vignette, glow, layer, paintFog, rng } from '../lib/paint.js';
+      import { renderSuitObject, SUIT_BOX, fillSuit } from '../lib/cards-suits.js';
+      import { frame, filigree, wornEdge, surface, bloom, dropShadow, roundRect, starGlint } from '../lib/cards-fx.js';
+
+      // Paint after `load` so the runner's page.goto never waits on the painting.
+      function main() {
+        /*
+         * Card back (600×900): crimson + black concentric diamond lattice with
+         * fine filigree, a central emblem (four suits in a ring around a small
+         * ruby diamond), worn metallic edge and a soft sheen. 180° symmetric.
+         */
+        const { ctx, W, H } = setup();
+        const s = W / 600;
+        const cx = W / 2, cy = H / 2;
+        const RED = '227,18,31';
+        const HOT = '255,60,66';
+
+        // ── base
+        ctx.fillStyle = '#050304';
+        ctx.fillRect(0, 0, W, H);
+        {
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, H * 0.62);
+          g.addColorStop(0, '#2b0308');
+          g.addColorStop(0.45, '#140205');
+          g.addColorStop(1, '#050203');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, W, H);
+        }
+        paintFog(ctx, W, H, { seed: 41, color: [150, 6, 16], alpha: 0.22, scale: 0.004 / s, octaves: 5, step: 3 });
+        paintFog(ctx, W, H, { seed: 42, color: [0, 0, 0], alpha: 0.25, scale: 0.006 / s, octaves: 4, step: 3 });
+
+        // ── lattice (inside the inner frame)
+        const inset = 42 * s;
+        const { c: lat, ctx: L } = layer(W, H);
+        L.save();
+        roundRect(L, inset, inset, W - inset * 2, H - inset * 2, 10 * s);
+        L.clip();
+        L.lineCap = 'round';
+        // fine diagonal diamond grid
+        const ax = 1, ay = 1.5; // rhombus aspect (card-like)
+        const step = 30 * s;
+        const n = Math.ceil(H / step) + 4;
+        for (let k = -n; k <= n; k++) {
+          for (const sign of [1, -1]) {
+            // lines |x|/ax ± y/ay = k*step through centre
+            const off = k * step;
+            L.strokeStyle = `rgba(${RED},${k % 2 === 0 ? 0.22 : 0.11})`;
+            L.lineWidth = (k % 2 === 0 ? 1.1 : 0.7) * s;
+            L.beginPath();
+            const t = H;
+            // direction vector of line: (ax, -sign*ay) normalised
+            const dx = ax, dy = -sign * ay;
+            const l = Math.hypot(dx, dy);
+            // a point on the line: x/ax + sign*y/ay = off/ax -> pick y=0 → x = off
+            const px = cx + off, py = cy;
+            L.moveTo(px - (dx / l) * t * 2, py - (dy / l) * t * 2);
+            L.lineTo(px + (dx / l) * t * 2, py + (dy / l) * t * 2);
+            L.stroke();
+          }
+        }
+        // concentric diamonds (brighter toward the centre)
+        for (let k = 1; k <= 18; k++) {
+          const a = k * 22 * s, b = a * ay;
+          const fall = Math.max(0, 1 - k / 19);
+          L.strokeStyle = `rgba(${k % 3 === 0 ? HOT : RED},${0.12 + 0.55 * fall * fall})`;
+          L.lineWidth = (k % 3 === 0 ? 1.8 : 0.9) * s;
+          L.beginPath();
+          L.moveTo(cx, cy - b);
+          L.lineTo(cx + a, cy);
+          L.lineTo(cx, cy + b);
+          L.lineTo(cx - a, cy);
+          L.closePath();
+          L.stroke();
+          // pips at the vertices of every third ring
+          if (k % 3 === 0) {
+            L.fillStyle = `rgba(${HOT},${0.3 + 0.6 * fall})`;
+            for (const [vx, vy] of [
+              [cx, cy - b],
+              [cx + a, cy],
+              [cx, cy + b],
+              [cx - a, cy],
+            ]) {
+              const r = 4 * s;
+              L.beginPath();
+              L.moveTo(vx, vy - r * 1.4);
+              L.lineTo(vx + r, vy);
+              L.lineTo(vx, vy + r * 1.4);
+              L.lineTo(vx - r, vy);
+              L.closePath();
+              L.fill();
+            }
+          }
+        }
+        // dotted intersections of the grid
+        const r0 = rng(7);
+        for (let i = -14; i <= 14; i++) {
+          for (let j = -14; j <= 14; j++) {
+            const x = cx + (i + j) * step * 0.5;
+            const y = cy + (i - j) * step * 0.5 * ay;
+            if (x < inset || x > W - inset || y < inset || y > H - inset) continue;
+            const dist = Math.hypot((x - cx) / W, (y - cy) / H);
+            L.fillStyle = `rgba(${HOT},${0.12 + 0.4 * Math.max(0, 0.55 - dist) + r0() * 0.05})`;
+            L.beginPath();
+            L.arc(x, y, 1.3 * s, 0, Math.PI * 2);
+            L.fill();
+          }
+        }
+        // filigree scrolls along the main diagonals (symmetric quartets)
+        const scroll = (x, y, rot, size, a) => {
+          for (const [mx, my] of [
+            [1, 1],
+            [-1, 1],
+            [1, -1],
+            [-1, -1],
+          ]) {
+            L.save();
+            L.translate(cx + (x - cx) * mx, cy + (y - cy) * my);
+            L.scale(mx, my);
+            L.rotate(rot);
+            L.strokeStyle = `rgba(${HOT},${a})`;
+            L.lineWidth = 1.2 * s;
+            L.beginPath();
+            L.moveTo(0, 0);
+            L.bezierCurveTo(size * 0.4, -size * 0.5, size, -size * 0.2, size * 0.8, size * 0.25);
+            L.bezierCurveTo(size * 0.65, size * 0.55, size * 0.35, size * 0.35, size * 0.5, size * 0.15);
+            L.stroke();
+            L.beginPath();
+            L.moveTo(0, 0);
+            L.bezierCurveTo(-size * 0.1, size * 0.5, size * 0.3, size, size * 0.65, size * 0.75);
+            L.stroke();
+            L.restore();
+          }
+        };
+        scroll(cx + 118 * s, cy - 118 * s * 1.5 + 30 * s, 0.5, 46 * s, 0.6);
+        // fleurons on the vertices of the 9th ring
+        const fleur = (x, y, rot, size, a) => {
+          L.save();
+          L.translate(x, y);
+          L.rotate(rot);
+          L.strokeStyle = `rgba(${HOT},${a})`;
+          L.fillStyle = `rgba(${HOT},${a})`;
+          L.lineWidth = 1.3 * s;
+          for (const m of [1, -1]) {
+            L.beginPath();
+            L.moveTo(0, size * 0.1);
+            L.bezierCurveTo(m * size * 0.15, -size * 0.35, m * size * 0.75, -size * 0.45, m * size * 0.62, size * 0.05);
+            L.bezierCurveTo(m * size * 0.55, size * 0.3, m * size * 0.3, size * 0.2, m * size * 0.38, size * 0.02);
+            L.stroke();
+            L.beginPath();
+            L.moveTo(m * size * 0.08, size * 0.3);
+            L.quadraticCurveTo(m * size * 0.5, size * 0.42, m * size * 0.85, size * 0.3);
+            L.stroke();
+          }
+          L.beginPath();
+          L.moveTo(0, -size * 0.62);
+          L.lineTo(size * 0.12, -size * 0.36);
+          L.lineTo(0, -size * 0.1);
+          L.lineTo(-size * 0.12, -size * 0.36);
+          L.closePath();
+          L.fill();
+          L.beginPath();
+          L.moveTo(0, size * 0.1);
+          L.lineTo(0, size * 0.7);
+          L.stroke();
+          L.restore();
+        };
+        const fa = 9 * 22 * s, fb = fa * ay;
+        fleur(cx, cy - fb - 4 * s, 0, 44 * s, 0.75);
+        fleur(cx, cy + fb + 4 * s, Math.PI, 44 * s, 0.75);
+        fleur(cx + fa + 4 * s, cy, Math.PI / 2, 40 * s, 0.6);
+        fleur(cx - fa - 4 * s, cy, -Math.PI / 2, 40 * s, 0.6);
+        L.restore();
+        // lattice glow + crisp
+        ctx.save();
+        ctx.filter = `blur(${5 * s}px)`;
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.65;
+        ctx.drawImage(lat, 0, 0);
+        ctx.restore();
+        ctx.drawImage(lat, 0, 0);
+
+        // fade the lattice under a dark ring so the emblem pops
+        {
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 175 * s);
+          g.addColorStop(0, 'rgba(4,1,2,0.92)');
+          g.addColorStop(0.62, 'rgba(4,1,2,0.82)');
+          g.addColorStop(1, 'rgba(4,1,2,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, W, H);
+        }
+        glow(ctx, cx, cy, 210 * s, 'rgba(227,18,31,A)', 0.28);
+
+        // ── central emblem: ring
+        const R = 122 * s;
+        ctx.save();
+        const ring = (r, lw, col) => {
+          ctx.strokeStyle = col;
+          ctx.lineWidth = lw;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
+        };
+        // metallic ring
+        {
+          const g = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+          g.addColorStop(0, '#f2f3f6');
+          g.addColorStop(0.3, '#6c707a');
+          g.addColorStop(0.5, '#d8dbe2');
+          g.addColorStop(0.7, '#3a3c43');
+          g.addColorStop(1, '#a5a9b3');
+          ctx.shadowColor = 'rgba(0,0,0,0.9)';
+          ctx.shadowBlur = 12 * s;
+          ring(R, 4 * s, g);
+          ctx.shadowBlur = 0;
+          ring(R - 9 * s, 1.2 * s, `rgba(${HOT},0.85)`);
+          ring(R + 9 * s, 1.2 * s, `rgba(${HOT},0.7)`);
+        }
+        // ticks
+        for (let i = 0; i < 48; i++) {
+          const a = (i / 48) * Math.PI * 2;
+          const long = i % 4 === 0;
+          const r1 = R + 13 * s, r2 = R + (long ? 24 : 18) * s;
+          ctx.strokeStyle = `rgba(${HOT},${long ? 0.8 : 0.45})`;
+          ctx.lineWidth = (long ? 1.6 : 1) * s;
+          ctx.beginPath();
+          ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+          ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // ── four suits around the ring + ruby diamond in the middle
+        const place = (suit, px, py, size, mat, seed) => {
+          const box = SUIT_BOX[suit];
+          // supersample: render big, downscale (cleaner reflections at emblem size)
+          const SS = 2.5;
+          const u = size / Math.max(box[2] - box[0], box[3] - box[1]);
+          const big = renderSuitObject(suit, u * SS, mat, { seed, bevel: mat === 'chrome' ? 0.08 : 0.12 });
+          const { c: small, ctx: sc } = layer(Math.ceil(big.w / SS), Math.ceil(big.h / SS));
+          sc.imageSmoothingQuality = 'high';
+          sc.drawImage(big.canvas, 0, 0, big.w / SS, big.h / SS);
+          const o = { canvas: small, ox: big.ox / SS, oy: big.oy / SS, hot: [big.hot[0] / SS, big.hot[1] / SS] };
+          const X = px - (o.ox + ((box[0] + box[2]) / 2) * u);
+          const Y = py - (o.oy + ((box[1] + box[3]) / 2) * u);
+          if (mat !== 'chrome') bloom(ctx, o.canvas, X, Y, 14 * s, 0.85);
+          else bloom(ctx, o.canvas, X, Y, 12 * s, 0.25);
+          dropShadow(ctx, o.canvas, X + 2 * s, Y + 5 * s, 5 * s, 0.9);
+          ctx.drawImage(o.canvas, X, Y);
+          return { o, X, Y };
+        };
+        const sr = R - 56 * s;
+        const sz = 64 * s;
+        place('spade', cx, cy - sr, sz, 'chrome', 3);
+        place('heart', cx + sr, cy, sz, 'ruby', 4);
+        place('club', cx, cy + sr, sz, 'chrome', 5);
+        place('diamond', cx - sr, cy, sz * 0.95, 'gem', 6);
+        const mid = place('diamond', cx, cy, 40 * s, 'gem', 8);
+        starGlint(ctx, mid.X + mid.o.hot[0], mid.Y + mid.o.hot[1], 34 * s, '255,230,225', 0.9);
+
+        // ── crowns of filigree above/below the emblem
+        ctx.save();
+        for (const flip of [1, -1]) {
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.scale(1, flip);
+          ctx.strokeStyle = `rgba(${HOT},0.75)`;
+          ctx.fillStyle = `rgba(${HOT},0.85)`;
+          ctx.lineWidth = 1.3 * s;
+          const y0 = -R - 34 * s;
+          for (const m of [1, -1]) {
+            ctx.beginPath();
+            ctx.moveTo(0, y0);
+            ctx.bezierCurveTo(m * 30 * s, y0 - 8 * s, m * 52 * s, y0 + 6 * s, m * 60 * s, y0 + 22 * s);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(m * 60 * s + m * 5 * s, y0 + 22 * s, 5 * s, m > 0 ? Math.PI : 0, m > 0 ? Math.PI * 2.5 : Math.PI * 1.5, m < 0);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, y0 - 6 * s);
+            ctx.bezierCurveTo(m * 22 * s, y0 - 22 * s, m * 44 * s, y0 - 14 * s, m * 46 * s, y0 - 4 * s);
+            ctx.stroke();
+          }
+          // diamond finial
+          ctx.beginPath();
+          ctx.moveTo(0, y0 - 22 * s);
+          ctx.lineTo(6 * s, y0 - 12 * s);
+          ctx.lineTo(0, y0 - 2 * s);
+          ctx.lineTo(-6 * s, y0 - 12 * s);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+        ctx.restore();
+
+        // ── sheen, texture, frame, edge
+        vignette(ctx, W, H, 0.75);
+        {
+          const g = ctx.createLinearGradient(0, 0, W, H);
+          g.addColorStop(0.0, 'rgba(255,255,255,0)');
+          g.addColorStop(0.3, 'rgba(255,255,255,0)');
+          g.addColorStop(0.42, 'rgba(255,220,220,0.07)');
+          g.addColorStop(0.47, 'rgba(255,255,255,0.03)');
+          g.addColorStop(0.6, 'rgba(255,255,255,0)');
+          ctx.fillStyle = g;
+          ctx.globalCompositeOperation = 'screen';
+          ctx.fillRect(0, 0, W, H);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        surface(ctx, W, H, { seed: 12, color: '255,150,150', scratches: 160, dust: 180, sheen: 0.02 });
+        frame(ctx, W, H, {
+          seed: 13,
+          inset: 18 * s,
+          gap: 6 * s,
+          radius: 14 * s,
+          color: '235,28,40',
+          glow: 6,
+          glowAlpha: 0.85,
+          wear: 0.5,
+          extra: (l) => {
+            const fc = 'rgba(235,40,50,0.9)';
+            const fs = 80 * s;
+            filigree(l, 27 * s, 27 * s, fs, 0, fc, 1.4 * s);
+            filigree(l, W - 27 * s, 27 * s, fs, Math.PI / 2, fc, 1.4 * s);
+            filigree(l, W - 27 * s, H - 27 * s, fs, Math.PI, fc, 1.4 * s);
+            filigree(l, 27 * s, H - 27 * s, fs, -Math.PI / 2, fc, 1.4 * s);
+            // inner border line around the lattice
+            l.strokeStyle = 'rgba(235,28,40,0.55)';
+            l.lineWidth = 1 * s;
+            roundRect(l, 42 * s, 42 * s, W - 84 * s, H - 84 * s, 10 * s);
+            l.stroke();
+          },
+        });
+        wornEdge(ctx, W, H, { seed: 14, metal: '230,200,200' });
+        grain(ctx, W, H, { amount: 8, seed: 15 });
+        done();
+      }
+      // The runner's first visit (no ?v=) only reads the meta tags — skip painting it.
+      const metaPass = navigator.webdriver && !new URLSearchParams(location.search).has('v');
+      if (!metaPass) addEventListener('load', () => setTimeout(main, 30));
+    </script>
+  </body>
+</html>

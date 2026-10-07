@@ -1,0 +1,250 @@
+.plate {
+  --plate-delay: 0.5s;
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  isolation: isolate;
+  padding: 16px 18px 16px;
+  border-radius: 18px;
+  text-align: center;
+  background:
+    radial-gradient(120% 80% at 50% 58%, rgba(227, 18, 31, 0.2), rgba(227, 18, 31, 0) 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 38%),
+    rgba(10, 10, 13, 0.82);
+  border: 1px solid rgba(255, 43, 56, 0.32);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 40px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 18px 50px rgba(0, 0, 0, 0.6),
+    0 0 46px rgba(227, 18, 31, 0.14);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Corner brackets */
+.corner {
+  position: absolute;
+  z-index: 2;
+  width: 16px;
+  height: 16px;
+  border-color: var(--red-2);
+  border-style: solid;
+  border-width: 0;
+  filter: drop-shadow(0 0 4px var(--red-glow));
+  pointer-events: none;
+}
+
+.tl {
+  top: 7px;
+  left: 7px;
+  border-top-width: 2px;
+  border-left-width: 2px;
+  border-top-left-radius: 6px;
+}
+
+.tr {
+  top: 7px;
+  right: 7px;
+  border-top-width: 2px;
+  border-right-width: 2px;
+  border-top-right-radius: 6px;
+}
+
+.bl {
+  bottom: 7px;
+  left: 7px;
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+  border-bottom-left-radius: 6px;
+}
+
+.br {
+  bottom: 7px;
+  right: 7px;
+  border-bottom-width: 2px;
+  border-right-width: 2px;
+  border-bottom-right-radius: 6px;
+}
+
+/* CRT scanlines */
+.scan {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.028) 0 1px, transparent 1px 3px);
+  opacity: 0.8;
+}
+
+/* One-shot crimson scan bar travelling down the plate */
+.sweep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 1;
+  height: 46px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(180deg, rgba(255, 43, 56, 0), rgba(255, 43, 56, 0.16) 70%, rgba(255, 120, 128, 0.55) 100%);
+  border-bottom: 1px solid rgba(255, 160, 165, 0.6);
+}
+
+.animated .sweep {
+  animation: plate-sweep 1.25s var(--ease-in-out) var(--plate-delay) both;
+}
+
+@keyframes plate-sweep {
+  0% {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(260px);
+    opacity: 0;
+  }
+}
+
+.top,
+.bottom {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.bottom {
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.serial {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suits {
+  display: inline-flex;
+  gap: 5px;
+  flex: none;
+  color: var(--text-3);
+}
+
+.suits svg:nth-child(2),
+.suits svg:nth-child(3) {
+  color: var(--red-2);
+}
+
+.foot {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.est {
+  color: var(--red-2);
+  flex: none;
+}
+
+.caption {
+  position: relative;
+  z-index: 2;
+  margin-top: 22px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.5em;
+  margin-right: -0.5em;
+  text-transform: uppercase;
+  color: var(--text-4);
+}
+
+.credit {
+  position: relative;
+  z-index: 2;
+  padding: 10px 0 24px;
+}
+
+.creditSolo {
+  padding-top: 26px;
+}
+
+/* RGB-split glitch on the creator name as it resolves */
+.credit [data-text]::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: #19e3ff;
+  text-shadow: none;
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.animated .credit [data-text] {
+  animation: plate-name 0.9s steps(1, end) calc(var(--plate-delay) + 0.25s) both;
+}
+
+.animated .credit [data-text]::before {
+  animation: plate-split 0.7s steps(2, end) calc(var(--plate-delay) + 0.3s) both;
+}
+
+@keyframes plate-name {
+  0% {
+    opacity: 0.15;
+  }
+  12% {
+    opacity: 1;
+  }
+  18% {
+    opacity: 0.4;
+  }
+  26%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes plate-split {
+  0% {
+    opacity: 0.9;
+    clip-path: inset(10% 0 62% 0);
+    transform: translateX(-5px);
+  }
+  25% {
+    opacity: 0.8;
+    clip-path: inset(55% 0 20% 0);
+    transform: translateX(4px);
+  }
+  50% {
+    opacity: 0.7;
+    clip-path: inset(30% 0 44% 0);
+    transform: translateX(-3px);
+  }
+  75% {
+    opacity: 0.5;
+    clip-path: inset(72% 0 6% 0);
+    transform: translateX(2px);
+  }
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}

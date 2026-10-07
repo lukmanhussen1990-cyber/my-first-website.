@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Border Trials — character avatars</title>
+    <meta name="art" data-out="src/assets/art/avatar-00.webp" data-w="256" data-h="256" data-scale="2" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/avatar-01.webp" data-w="256" data-h="256" data-scale="2" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/avatar-02.webp" data-w="256" data-h="256" data-scale="2" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/avatar-03.webp" data-w="256" data-h="256" data-scale="2" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/avatar-04.webp" data-w="256" data-h="256" data-scale="2" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/avatar-05.webp" data-w="256" data-h="256" data-scale="2" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/avatar-06.webp" data-w="256" data-h="256" data-scale="2" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/avatar-07.webp" data-w="256" data-h="256" data-scale="2" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/avatar-08.webp" data-w="256" data-h="256" data-scale="2" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/avatar-09.webp" data-w="256" data-h="256" data-scale="2" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/avatar-10.webp" data-w="256" data-h="256" data-scale="2" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/avatar-11.webp" data-w="256" data-h="256" data-scale="2" data-quality="82" />
+    <style>
+      html, body { margin: 0; background: #000; }
+      canvas { display: block; }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script type="module">
+      import { setup, done, grain } from '../lib/paint.js';
+      import { paintAvatar } from '../lib/cards-avatar.js';
+      import { CAST } from '../lib/cards-avatar-cast.js';
+
+      // Paint after `load` so the runner's page.goto never waits on the painting.
+      function main() {
+        /*
+         * Twelve original character portraits (256×256, rendered at 2×):
+         * head & shoulders, crimson rim light, cool fill, red city bokeh.
+         * Order matches AVATAR_NAMES in src/assets/art/index.ts.
+         */
+        const { ctx, W, variant } = setup();
+        const spec = CAST[variant] ?? CAST[0];
+        paintAvatar(ctx, W, spec);
+        grain(ctx, W, W, { amount: 6, seed: 300 + variant });
+        done();
+      }
+      // The runner's first visit (no ?v=) only reads the meta tags — skip painting it.
+      const metaPass = navigator.webdriver && !new URLSearchParams(location.search).has('v');
+      if (!metaPass) addEventListener('load', () => setTimeout(main, 30));
+    </script>
+  </body>
+</html>

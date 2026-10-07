@@ -1,0 +1,488 @@
+/*
+ * PlayingCard. All internal measurements use container-query units (cqw) so a
+ * card looks identical at any width — the size prop only tunes proportions.
+ */
+
+.card {
+  --tone: var(--silver);
+  --tone-line: rgba(200, 206, 216, 0.42);
+  --tone-ink: #eef0f4;
+  --tone-ink-glow: rgba(255, 255, 255, 0.35);
+  --tone-caption: var(--text-2);
+  --tone-spill: rgba(210, 216, 228, 0.1);
+  --rx: 0deg;
+  --ry: 0deg;
+  --gx: 50%;
+  --gy: 30%;
+  --lift: 0px;
+  --scale: 1;
+
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  container-type: inline-size;
+  perspective: 900px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.toneRed {
+  --tone: var(--red-2);
+  --tone-line: rgba(255, 43, 56, 0.55);
+  --tone-ink: #ff2b38;
+  --tone-ink-glow: rgba(255, 43, 56, 0.6);
+  --tone-caption: #ff5a64;
+  --tone-spill: rgba(227, 18, 31, 0.2);
+}
+
+.interactive {
+  cursor: pointer;
+}
+
+.interactive:focus-visible {
+  outline: none;
+}
+
+.interactive:focus-visible .face {
+  outline: 2px solid var(--red-2);
+  outline-offset: 3px;
+}
+
+/* ── 3D stack ─────────────────────────────────────────────────── */
+.tilt,
+.lift,
+.flip {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform-style: preserve-3d;
+}
+
+.tilt {
+  transform: translate3d(0, var(--lift), 0) rotateX(var(--rx)) rotateY(var(--ry)) scale(var(--scale));
+  transition: transform 420ms var(--ease-out);
+  will-change: transform;
+}
+
+.card[data-tilting] .tilt {
+  transition-duration: 90ms;
+}
+
+.card[data-pressed] {
+  --scale: 0.965;
+}
+
+.selected {
+  --lift: -6px;
+  --scale: 1.035;
+}
+
+.selected[data-pressed] {
+  --scale: 1;
+}
+
+.flip {
+  transform: rotateY(0deg);
+  transition: transform 780ms cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.down .flip {
+  transform: rotateY(180deg);
+}
+
+/* weight: the card lifts toward the camera mid-flip */
+.revealed .lift {
+  animation: lift-pop 780ms var(--ease-out) both;
+}
+
+@keyframes lift-pop {
+  0% {
+    transform: translateZ(0);
+  }
+  42% {
+    transform: translateZ(10cqw);
+  }
+  100% {
+    transform: translateZ(0);
+  }
+}
+
+/* ── Faces ────────────────────────────────────────────────────── */
+.face {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  border-radius: 6.2cqw;
+  background: #0b0b0e;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow:
+    0 0 0 1px var(--tone-line),
+    0 3.5cqw 9cqw rgba(0, 0, 0, 0.6),
+    0 1cqw 2cqw rgba(0, 0, 0, 0.55);
+  transition: box-shadow var(--dur-3) var(--ease-out);
+}
+
+.front {
+  transform: rotateY(0deg) translateZ(0.5px);
+}
+
+.back {
+  transform: rotateY(180deg) translateZ(0.5px);
+  box-shadow:
+    0 0 0 1px rgba(255, 43, 56, 0.4),
+    0 3.5cqw 9cqw rgba(0, 0, 0, 0.6),
+    0 1cqw 2cqw rgba(0, 0, 0, 0.55);
+}
+
+.selected .face {
+  box-shadow:
+    0 0 0 1px rgba(255, 80, 90, 0.95),
+    0 0 4cqw rgba(255, 43, 56, 0.75),
+    0 0 14cqw var(--red-glow),
+    0 4cqw 12cqw rgba(0, 0, 0, 0.6);
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  transition: filter var(--dur-3) var(--ease-out);
+}
+
+/* darkens the corners for the indices and the lower third for the plate */
+.shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(42% 24% at 0% 0%, rgba(0, 0, 0, 0.5), transparent 100%),
+    radial-gradient(42% 24% at 100% 100%, rgba(0, 0, 0, 0.45), transparent 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, 0.5) 70%, rgba(4, 4, 6, 0.9) 100%);
+}
+
+/* no title plate (the large detail card): only the corners need help, and
+   the art's dark lower band gets a faint light spill instead of more black */
+.plain .shade {
+  background:
+    radial-gradient(42% 24% at 0% 0%, rgba(0, 0, 0, 0.45), transparent 100%),
+    radial-gradient(42% 24% at 100% 100%, rgba(0, 0, 0, 0.4), transparent 100%),
+    radial-gradient(70% 22% at 50% 100%, var(--tone-spill), transparent 100%);
+}
+
+/* engraved name plate centred in the art's empty lower band, above the
+   rotated corner index so the rules can run wide */
+.engrave {
+  position: absolute;
+  left: 12cqw;
+  right: 12cqw;
+  bottom: 25cqw;
+  display: flex;
+  align-items: center;
+  gap: 3cqw;
+  pointer-events: none;
+}
+
+.engraveLine {
+  flex: 1 1 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--tone-line));
+}
+
+.engraveLine:last-child {
+  background: linear-gradient(90deg, var(--tone-line), transparent);
+}
+
+.engraveText {
+  flex: none;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 4.5cqw;
+  line-height: 1;
+  letter-spacing: 0.3em;
+  margin-right: -0.3em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--tone-ink);
+  opacity: 0.7;
+  text-shadow: 0 0 2cqw var(--tone-ink-glow);
+}
+
+/* thin inset frame line in the suit's metal */
+.frame {
+  position: absolute;
+  inset: 3.1cqw;
+  border: 1px solid var(--tone-line);
+  border-radius: 3.6cqw;
+  pointer-events: none;
+  box-shadow: inset 0 0 3cqw rgba(0, 0, 0, 0.35);
+  opacity: 0.85;
+}
+
+.toneRed .frame {
+  box-shadow:
+    inset 0 0 3cqw rgba(0, 0, 0, 0.35),
+    0 0 2cqw rgba(255, 43, 56, 0.25);
+}
+
+.backFrame {
+  border-color: rgba(255, 43, 56, 0.4);
+}
+
+/* ── Corner indices ───────────────────────────────────────────── */
+.index {
+  position: absolute;
+  top: 5.6cqw;
+  left: 6.4cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 11cqw;
+  color: var(--tone-ink);
+  filter: drop-shadow(0 0 1.6cqw var(--tone-ink-glow)) drop-shadow(0 0.4cqw 0.6cqw rgba(0, 0, 0, 0.8));
+  pointer-events: none;
+}
+
+.indexFlipped {
+  top: auto;
+  left: auto;
+  right: 6.4cqw;
+  bottom: 5.6cqw;
+  transform: rotate(180deg);
+}
+
+.rank {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11.5cqw;
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+}
+
+.pip {
+  width: 7cqw;
+  height: 7cqw;
+  margin-top: 0.8cqw;
+}
+
+/* ── Title plate ──────────────────────────────────────────────── */
+.plate {
+  position: absolute;
+  left: 7cqw;
+  right: 7cqw;
+  bottom: 6.5cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.title {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 9.6cqw;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  margin-right: -0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow:
+    0 0 2.5cqw rgba(0, 0, 0, 0.9),
+    0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+}
+
+.caption {
+  margin-top: 1.8cqw;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 5.6cqw;
+  line-height: 1.15;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tone-caption);
+  text-shadow: 0 0.4cqw 1cqw rgba(0, 0, 0, 0.9);
+}
+
+.footer {
+  display: block;
+  width: 100%;
+  margin-top: 3.2cqw;
+  pointer-events: none;
+}
+
+/* ── Size presets ─────────────────────────────────────────────── */
+.mini .face {
+  border-radius: 7cqw;
+}
+
+.mini .frame {
+  inset: 3.6cqw;
+  border-radius: 4.4cqw;
+}
+
+.mini .index {
+  top: 7cqw;
+  left: 7.5cqw;
+  width: 15cqw;
+}
+
+.mini .rank {
+  font-size: 15.5cqw;
+}
+
+.mini .pip {
+  width: 10cqw;
+  height: 10cqw;
+}
+
+.mini .plate {
+  left: 4cqw;
+  right: 4cqw;
+  bottom: 8cqw;
+}
+
+.mini .title {
+  font-size: max(9.5px, 13.4cqw);
+  letter-spacing: 0.08em;
+  margin-right: -0.08em;
+}
+
+.mini .caption {
+  margin-top: 2.4cqw;
+  font-size: max(7.5px, 9.8cqw);
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.lg .index {
+  top: 5.2cqw;
+  left: 6cqw;
+  width: 10cqw;
+}
+
+.lg .indexFlipped {
+  top: auto;
+  left: auto;
+  right: 6cqw;
+  bottom: 5.2cqw;
+}
+
+.lg .rank {
+  font-size: 10.5cqw;
+}
+
+.lg .pip {
+  width: 6.4cqw;
+  height: 6.4cqw;
+}
+
+/* ── Locked ───────────────────────────────────────────────────── */
+.locked .front .art {
+  filter: grayscale(0.85) brightness(0.42);
+}
+
+.locked .index {
+  color: var(--text-3);
+  filter: none;
+}
+
+.locked .title,
+.locked .caption,
+.locked .engraveText {
+  color: var(--text-3);
+  text-shadow: none;
+}
+
+.lockMark {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  display: grid;
+  place-items: center;
+  width: 30cqw;
+  height: 30cqw;
+  margin: -15cqw 0 0 -15cqw;
+  border-radius: 50%;
+  color: var(--text-2);
+  background: rgba(10, 10, 13, 0.72);
+  border: 1px solid var(--line-2);
+  box-shadow: 0 0 0 4cqw rgba(0, 0, 0, 0.18);
+}
+
+/* ── Light ────────────────────────────────────────────────────── */
+/* pointer-following glare */
+.glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(70% 50% at var(--gx) var(--gy), rgba(255, 255, 255, 0.16), transparent 60%);
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  transition: opacity var(--dur-3) var(--ease-out);
+}
+
+.card[data-tilting] .glare,
+.selected .glare {
+  opacity: 1;
+}
+
+/* one-shot specular sweep when the card is revealed */
+.gloss {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: 0;
+  width: 70%;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 30%,
+    rgba(255, 255, 255, 0.42) 48%,
+    rgba(255, 220, 220, 0.12) 56%,
+    rgba(255, 255, 255, 0) 72%
+  );
+  mix-blend-mode: screen;
+  transform: translateX(-110%) skewX(-8deg);
+  animation: gloss 950ms var(--ease-out) forwards;
+}
+
+@keyframes gloss {
+  0% {
+    transform: translateX(-110%) skewX(-8deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(210%) skewX(-8deg);
+    opacity: 0;
+  }
+}
+
+/* subtle sheen on the back so a face-down card still feels like lacquer */
+.backSheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(125deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 32%),
+    radial-gradient(80% 60% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+}

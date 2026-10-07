@@ -1,0 +1,228 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Border Trials — card faces</title>
+    <meta name="art" data-out="src/assets/art/card-spade.webp" data-w="600" data-h="900" data-scale="1.5" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/card-heart.webp" data-w="600" data-h="900" data-scale="1.5" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/card-diamond.webp" data-w="600" data-h="900" data-scale="1.5" data-quality="82" />
+    <meta name="art" data-out="src/assets/art/card-club.webp" data-w="600" data-h="900" data-scale="1.5" data-quality="82" />
+    <style>
+      html, body { margin: 0; background: #000; }
+      canvas { display: block; max-width: 100vw; height: auto; }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script type="module">
+      import { setup, done, grain, vignette, glow } from '../lib/paint.js';
+      import { renderSuitObject, SUIT_BOX } from '../lib/cards-suits.js';
+      import { smokeBurst, sparks, shards, frame, filigree, wornEdge, surface, bloom, dropShadow, starGlint } from '../lib/cards-fx.js';
+
+      // Paint after `load` so the runner's page.goto never waits on the painting.
+      function main() {
+        /*
+         * Four playing-card faces (600×900): a big 3D suit object in swirling
+         * smoke. Rank/suit indices and the caption are overlaid in HTML, so the
+         * top-left + bottom-right corners and the lower quarter stay calm.
+         */
+        const { ctx, W, H, variant } = setup();
+        const SUITS = ['spade', 'heart', 'diamond', 'club'];
+        const suit = SUITS[variant] ?? 'spade';
+        const red = suit === 'heart' || suit === 'diamond';
+        const s = W / 600;
+        const cx = W / 2;
+        const cy = H * 0.42;
+        const seed = 101 + variant * 37;
+
+        // corners (index overlays) + bottom caption band stay calm
+        const calm = (x, y) => {
+          const tl = Math.max(0, 1 - Math.hypot(x / 0.22, y / 0.17));
+          const br = Math.max(0, 1 - Math.hypot((1 - x) / 0.22, (1 - y) / 0.17));
+          const bottom = y > 0.74 ? 1 - Math.min(1, (y - 0.74) / 0.12) * 0.7 : 1;
+          return Math.max(0, 1 - tl * 1.2 - br * 1.2) * bottom;
+        };
+
+        // ── 1. base
+        ctx.fillStyle = '#050506';
+        ctx.fillRect(0, 0, W, H);
+        {
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, W * 0.95);
+          if (red) {
+            g.addColorStop(0, '#2a0306');
+            g.addColorStop(0.5, '#120103');
+            g.addColorStop(1, '#040304');
+          } else {
+            g.addColorStop(0, '#1b1b1f');
+            g.addColorStop(0.5, '#0c0c0e');
+            g.addColorStop(1, '#040405');
+          }
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, W, H);
+        }
+
+        // ── 2. smoke burst
+        smokeBurst(ctx, W, H, {
+          seed,
+          cx,
+          cy,
+          radius: 0.6,
+          inner: 0.6,
+          intensity: red ? 1.12 : 1.05,
+          mask: calm,
+          palette: red
+            ? [
+                [0, [18, 0, 2]],
+                [0.25, [90, 3, 8]],
+                [0.55, [196, 14, 24]],
+                [0.82, [255, 60, 52]],
+                [1, [255, 170, 140]],
+              ]
+            : [
+                [0, [10, 10, 12]],
+                [0.25, [52, 52, 58]],
+                [0.55, [128, 128, 136]],
+                [0.82, [200, 200, 208]],
+                [1, [245, 245, 250]],
+              ],
+        });
+        // a second, thinner wisp layer for depth
+        smokeBurst(ctx, W, H, {
+          seed: seed + 50,
+          cx: cx + 20 * s,
+          cy: cy - 10 * s,
+          radius: 0.78,
+          inner: 0.75,
+          intensity: 0.45,
+          squash: 0.7,
+          mask: calm,
+          blend: 'screen',
+          palette: red
+            ? [
+                [0, [0, 0, 0]],
+                [0.5, [120, 8, 14]],
+                [1, [255, 80, 70]],
+              ]
+            : [
+                [0, [0, 0, 0]],
+                [0.5, [70, 70, 78]],
+                [1, [210, 210, 220]],
+              ],
+        });
+
+        // dark char smoke breaking up the colour
+        smokeBurst(ctx, W, H, {
+          seed: seed + 90,
+          cx: cx - 30 * s,
+          cy: cy + 20 * s,
+          radius: 0.7,
+          inner: 0.2,
+          intensity: red ? 0.5 : 0.38,
+          squash: 0.9,
+          palette: [
+            [0, [0, 0, 0]],
+            [1, [0, 0, 0]],
+          ],
+        });
+
+        // ── 3. the symbol
+        const box = SUIT_BOX[suit];
+        const bw = box[2] - box[0];
+        const bh = box[3] - box[1];
+        const targetW = (suit === 'diamond' ? 0.52 : 0.58) * W;
+        const u = Math.min(targetW / bw, (0.5 * H) / bh);
+        const material = suit === 'diamond' ? 'gem' : red ? 'ruby' : 'chrome';
+        const obj = renderSuitObject(suit, u, material, { seed: seed + 9 });
+        const X = cx - (obj.ox + ((box[0] + box[2]) / 2) * u);
+        const Y = cy - (obj.oy + ((box[1] + box[3]) / 2) * u);
+
+        // dark charred halo right behind the symbol
+        {
+          const g = ctx.createRadialGradient(cx, cy, W * 0.05, cx, cy, W * 0.42);
+          g.addColorStop(0, 'rgba(0,0,0,0.85)');
+          g.addColorStop(0.55, 'rgba(0,0,0,0.55)');
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, W, H);
+        }
+        // colour bloom behind (back-light)
+        if (red) {
+          glow(ctx, cx, cy, W * 0.46, 'rgba(255,20,30,A)', 0.42);
+          bloom(ctx, obj.canvas, X, Y, 46 * s, 0.9);
+        } else {
+          glow(ctx, cx, cy, W * 0.44, 'rgba(200,205,220,A)', 0.1);
+          bloom(ctx, obj.canvas, X, Y, 40 * s, 0.35);
+        }
+        dropShadow(ctx, obj.canvas, X + 6 * s, Y + 16 * s, 14 * s, 0.85);
+        ctx.drawImage(obj.canvas, X, Y);
+        // highlight bloom on top (tight)
+        bloom(ctx, obj.canvas, X, Y, 9 * s, red ? 0.35 : 0.22, 'screen');
+        starGlint(ctx, X + obj.hot[0], Y + obj.hot[1], 70 * s, red ? '255,225,220' : '255,255,255', 0.9);
+
+        // ── 4. sparks + shards
+        shards(ctx, W, H, {
+          seed: seed + 3,
+          count: 14,
+          cx,
+          cy,
+          r0: 0.32,
+          r1: 0.62,
+          mask: calm,
+          edge: red ? '255,70,70' : '210,215,225',
+        });
+        sparks(ctx, W, H, {
+          seed: seed + 4,
+          count: red ? 120 : 90,
+          cx,
+          cy,
+          r0: 0.24,
+          r1: 0.72,
+          mask: calm,
+          colors: red ? ['255,60,30', '255,120,40', '255,30,40'] : ['220,225,235', '255,255,255', '255,60,60'],
+          hot: red ? 200 : 240,
+        });
+
+        // ── 5. lower caption band darkening + top fade
+        {
+          const g = ctx.createLinearGradient(0, H * 0.62, 0, H);
+          g.addColorStop(0, 'rgba(0,0,0,0)');
+          g.addColorStop(0.45, 'rgba(0,0,0,0.6)');
+          g.addColorStop(1, 'rgba(0,0,0,0.88)');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, W, H);
+          const t = ctx.createLinearGradient(0, 0, 0, H * 0.16);
+          t.addColorStop(0, 'rgba(0,0,0,0.5)');
+          t.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = t;
+          ctx.fillRect(0, 0, W, H);
+        }
+        vignette(ctx, W, H, 0.8);
+
+        // ── 6. texture + frame + filigree + edge
+        surface(ctx, W, H, { seed: seed + 6, color: red ? '255,140,140' : '230,230,240', scratches: 120, dust: 160 });
+        const lineCol = red ? '235,28,40' : '196,200,210';
+        frame(ctx, W, H, {
+          seed: seed + 7,
+          inset: 18 * s,
+          gap: 6 * s,
+          radius: 14 * s,
+          color: lineCol,
+          glow: red ? 7 : 4,
+          glowAlpha: red ? 0.9 : 0.45,
+          wear: 0.5,
+          extra: (l) => {
+            const fc = `rgba(${lineCol},0.85)`;
+            filigree(l, W - 27 * s, 27 * s, 88 * s, Math.PI / 2, fc, 1.4 * s);
+            filigree(l, 27 * s, H - 27 * s, 88 * s, -Math.PI / 2, fc, 1.4 * s);
+          },
+        });
+        wornEdge(ctx, W, H, { seed: seed + 8, metal: red ? '255,90,90' : '220,224,232' });
+        grain(ctx, W, H, { amount: 9, seed: seed + 10 });
+        done();
+      }
+      // The runner's first visit (no ?v=) only reads the meta tags — skip painting it.
+      const metaPass = navigator.webdriver && !new URLSearchParams(location.search).has('v');
+      if (!metaPass) addEventListener('load', () => setTimeout(main, 30));
+    </script>
+  </body>
+</html>

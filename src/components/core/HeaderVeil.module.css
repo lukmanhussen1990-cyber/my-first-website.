@@ -1,0 +1,27 @@
+.sentinel {
+  display: block;
+  flex: none;
+  height: 1px;
+  margin-bottom: -1px;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* sits behind the TopBar inside the Screen header (its own stacking context) */
+.veil {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(180deg, rgba(9, 9, 11, 0.86), rgba(9, 9, 11, 0.74));
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  transition: opacity var(--dur-3) var(--ease-out);
+}
+
+.show {
+  opacity: 1;
+}

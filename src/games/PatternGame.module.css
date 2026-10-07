@@ -1,0 +1,232 @@
+.status {
+  flex: none;
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 4px;
+  max-width: 100%;
+}
+
+.tick {
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  transition:
+    background-color var(--dur-2),
+    box-shadow var(--dur-2);
+}
+
+.tickOn {
+  background: var(--red-2);
+  box-shadow: 0 0 8px var(--red-glow);
+}
+
+.tickMiss {
+  background: rgba(255, 43, 56, 0.3);
+}
+
+.arena {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  contain: size;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+}
+
+.pads {
+  display: grid;
+  gap: 12px;
+  justify-content: center;
+  align-content: center;
+}
+
+/* ── Pad ────────────────────────────────────────────────────── */
+.pad {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--pw);
+  height: var(--ph);
+  border-radius: calc(var(--pw) * 0.13);
+  overflow: hidden;
+  border: 1px solid var(--line-2);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 46%),
+    radial-gradient(90% 70% at 50% 110%, rgba(227, 18, 31, 0.07), transparent 70%),
+    rgba(17, 17, 21, 0.82);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 -10px 24px rgba(0, 0, 0, 0.35) inset,
+    0 10px 24px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition:
+    transform 140ms var(--ease-out),
+    border-color 160ms,
+    box-shadow 240ms var(--ease-out);
+  touch-action: manipulation;
+}
+
+.pad:active:not(.locked) {
+  transform: scale(0.97);
+}
+
+.locked {
+  cursor: default;
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 180ms var(--ease-out);
+}
+
+.toneRed .face {
+  background:
+    radial-gradient(70% 70% at 50% 45%, rgba(255, 110, 118, 0.95), rgba(227, 18, 31, 0.92) 45%, rgba(90, 4, 12, 0.95) 100%);
+}
+
+.toneWhite .face {
+  background:
+    radial-gradient(70% 70% at 50% 45%, rgba(255, 255, 255, 0.55), rgba(200, 206, 216, 0.24) 45%, rgba(24, 24, 30, 0.9) 100%);
+}
+
+.glyph {
+  position: relative;
+  z-index: 1;
+  width: calc(var(--pw) * 0.36);
+  height: calc(var(--pw) * 0.36);
+  display: grid;
+  place-items: center;
+  transition:
+    color 160ms,
+    transform 220ms var(--ease-out),
+    filter 220ms;
+}
+
+.glyph svg {
+  width: 100%;
+  height: 100%;
+}
+
+.toneRed .glyph {
+  color: rgba(255, 43, 56, 0.62);
+  filter: drop-shadow(0 0 6px rgba(227, 18, 31, 0.35));
+}
+
+.toneWhite .glyph {
+  color: rgba(200, 206, 216, 0.55);
+}
+
+.corner {
+  position: absolute;
+  top: 9px;
+  left: 11px;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--text-4);
+  transition: color 160ms;
+}
+
+/* lit by playback or a correct press */
+.lit .face {
+  opacity: 1;
+}
+
+.lit .glyph {
+  color: #fff;
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.85));
+}
+
+.lit .corner {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.toneRed.lit {
+  border-color: rgba(255, 140, 146, 0.9);
+  box-shadow:
+    0 0 0 1px rgba(255, 43, 56, 0.6),
+    0 0 26px var(--red-glow),
+    0 0 64px var(--red-glow-soft);
+}
+
+.toneWhite.lit {
+  border-color: rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 0 26px rgba(255, 255, 255, 0.35),
+    0 0 64px rgba(200, 206, 216, 0.16);
+}
+
+/* wrong press */
+.wrong {
+  border-color: rgba(255, 43, 56, 0.9);
+  box-shadow:
+    0 0 0 1px rgba(255, 43, 56, 0.5),
+    0 0 22px var(--red-glow);
+  animation: pad-shake 380ms var(--ease-out) both;
+}
+
+.wrong .face {
+  opacity: 1;
+  background: radial-gradient(70% 70% at 50% 45%, rgba(120, 6, 16, 0.9), rgba(40, 2, 6, 0.95));
+}
+
+.wrong .glyph {
+  color: var(--red-2);
+}
+
+@keyframes pad-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  75% {
+    transform: translateX(-3px);
+  }
+}
+
+/* win: every pad breathes once */
+.allLit .face {
+  animation: celebrate 1s var(--ease-out) both;
+}
+
+.allLit .glyph {
+  color: #fff;
+}
+
+@keyframes celebrate {
+  0% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.35;
+  }
+}

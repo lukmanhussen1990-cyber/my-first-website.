@@ -1,0 +1,256 @@
+.stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  /* size containment: the stage takes only the free space, so the measured
+     size never feeds back from the card grid */
+  contain: size;
+  display: grid;
+  place-items: center;
+}
+
+.grid {
+  display: grid;
+  gap: 9px;
+  justify-content: center;
+  align-content: center;
+}
+
+.count {
+  display: inline-block;
+  min-width: 1ch;
+  margin-left: 6px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0;
+  color: #fff;
+  text-shadow:
+    0 0 8px var(--red-glow),
+    0 0 18px var(--red-glow-soft);
+}
+
+/* ── Card shell ─────────────────────────────────────────────── */
+.card {
+  position: relative;
+  width: var(--cw);
+  aspect-ratio: 2 / 3;
+  padding: 0;
+  border-radius: calc(var(--cw) * 0.1);
+  perspective: 700px;
+  transition: transform var(--dur-1) var(--ease-out), opacity var(--dur-3);
+}
+
+.card:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.card:focus-visible {
+  outline-offset: 3px;
+}
+
+.inner {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transform-style: preserve-3d;
+  transition: transform 460ms var(--ease-out);
+}
+
+.up {
+  transform: rotateY(180deg);
+}
+
+.back,
+.face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* ── Back: art + engraved frame ─────────────────────────────── */
+.back {
+  background: #1a0508;
+  box-shadow:
+    0 0 0 1px rgba(255, 70, 80, 0.28) inset,
+    0 8px 18px rgba(0, 0, 0, 0.55);
+}
+
+.back img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.back::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 38%);
+  pointer-events: none;
+}
+
+/* ── Face ───────────────────────────────────────────────────── */
+.face {
+  transform: rotateY(180deg);
+  background:
+    radial-gradient(120% 70% at 30% 0%, rgba(255, 255, 255, 0.09), transparent 60%),
+    linear-gradient(180deg, #1d1d23, #0d0d10);
+  border: 1px solid var(--line-2);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.55);
+}
+
+.face::before {
+  content: '';
+  position: absolute;
+  inset: 5%;
+  border-radius: calc(var(--cw) * 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.red {
+  color: var(--red-2);
+}
+
+.silver {
+  color: var(--silver);
+}
+
+.corner {
+  position: absolute;
+  top: 6%;
+  left: 9%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: calc(var(--cw) * 0.22);
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+}
+
+.corner svg {
+  width: 0.62em;
+  height: 0.62em;
+}
+
+.cornerBr {
+  top: auto;
+  left: auto;
+  right: 9%;
+  bottom: 6%;
+  transform: rotate(180deg);
+}
+
+.pip {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.pip svg {
+  width: 50%;
+  height: auto;
+}
+
+.red .pip svg {
+  filter: drop-shadow(0 0 8px rgba(227, 18, 31, 0.55));
+}
+
+.silver .pip svg {
+  filter: drop-shadow(0 0 6px rgba(200, 206, 216, 0.25));
+}
+
+/* ── States ─────────────────────────────────────────────────── */
+.glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow:
+    0 0 0 1px rgba(255, 43, 56, 0.85),
+    0 0 16px var(--red-glow),
+    0 0 34px var(--red-glow-soft);
+}
+
+.matched .glow {
+  animation: match-pulse 1s var(--ease-out) 0.28s both;
+}
+
+.matched .face {
+  border-color: rgba(255, 43, 56, 0.5);
+}
+
+@keyframes match-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+}
+
+.shaking {
+  animation: card-shake 420ms var(--ease-out) both;
+}
+
+.shaking .face {
+  border-color: rgba(255, 43, 56, 0.7);
+  box-shadow:
+    0 0 0 1px rgba(255, 43, 56, 0.4) inset,
+    0 0 18px var(--red-glow-soft);
+}
+
+@keyframes card-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px) rotate(-1.5deg);
+  }
+  40% {
+    transform: translateX(5px) rotate(1deg);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+.lostCard {
+  opacity: 0.45;
+}
+
+.dealing .card {
+  animation: deal-in 520ms var(--ease-out) both;
+  animation-delay: calc(var(--i) * 26ms);
+}
+
+@keyframes deal-in {
+  from {
+    opacity: 0;
+    transform: translateY(-26px) scale(0.86) rotate(-5deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -1,0 +1,468 @@
+/* ── Scene scrim ──────────────────────────────────────────────── */
+/* Darkens the top of the scene art behind the transparent TopBar so the
+   title stays legible over bright backdrops. Painted after the Screen's own
+   bg + shade (z 0) and beneath its content (z 1) and header (z 3). */
+.screen::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 0;
+  height: calc(var(--safe-top) + 150px);
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(5, 5, 6, 0.78) 0%,
+    rgba(5, 5, 6, 0.5) 38%,
+    rgba(5, 5, 6, 0.16) 72%,
+    rgba(5, 5, 6, 0) 100%
+  );
+}
+
+/* ── Top bar title: "♦ DIAMOND TRIAL" ─────────────────────────── */
+.barTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42em;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.85);
+}
+
+.barGlyph {
+  flex: none;
+  color: var(--silver);
+}
+
+.barGlyphRed {
+  flex: none;
+  color: var(--red-2);
+  filter: drop-shadow(0 0 5px var(--red-glow));
+}
+
+.barRed {
+  color: var(--red-2);
+  text-shadow: 0 0 10px var(--red-glow-soft);
+}
+
+/* ── Layout ───────────────────────────────────────────────────── */
+.content {
+  /* leave the top of the scene art visible behind the title */
+  padding-top: clamp(96px, 19vh, 170px);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* = .fadeOut height, so at full scroll the fade only ever covers empty space */
+  padding-bottom: 30px;
+}
+
+/* pinned to the scrollport's bottom edge (the -sp-4 cancels the content's
+   bottom padding, which sticky positioning insets by) */
+.fadeOut {
+  position: sticky;
+  bottom: calc(-1 * var(--sp-4));
+  z-index: 2;
+  flex: none;
+  height: 30px;
+  margin-top: -30px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(9, 9, 11, 0), var(--bg-1) 92%);
+}
+
+/* ── Heading ──────────────────────────────────────────────────── */
+.heading {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+/* soft local shadow so the title block reads over any scene art */
+.heading::before {
+  content: '';
+  position: absolute;
+  inset: -28px calc(-1 * var(--gutter)) -14px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(90% 75% at 30% 60%, rgba(5, 5, 6, 0.55), rgba(5, 5, 6, 0) 100%);
+}
+
+/* badges sit over the art: give them an opaque, blurred base */
+.pill.pill {
+  height: 26px;
+  padding: 0 10px;
+  background-color: rgba(8, 8, 10, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.title {
+  margin-top: 12px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 33px;
+  line-height: 1.02;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow:
+    0 2px 22px rgba(0, 0, 0, 0.85),
+    0 0 1px rgba(255, 255, 255, 0.5);
+  overflow-wrap: anywhere;
+}
+
+.hook {
+  margin-top: 8px;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+
+/* ── Panels ───────────────────────────────────────────────────── */
+.panel {
+  padding: 15px 16px 16px;
+  border-radius: var(--r-lg);
+}
+
+.panelTitle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 9px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.tick {
+  width: 3px;
+  height: 13px;
+  border-radius: 2px;
+  background: var(--red-2);
+  box-shadow: 0 0 8px var(--red-glow);
+}
+
+.briefing {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rules li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+/* crimson diamond markers */
+.rules li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.58em;
+  width: 7px;
+  height: 7px;
+  transform: rotate(45deg);
+  background: var(--red-2);
+  box-shadow: 0 0 8px var(--red-glow);
+}
+
+/* ── Vitals grid ──────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 84px;
+  padding: 12px 14px 13px;
+  border-radius: var(--r-md);
+}
+
+.tileLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.tileLabel svg {
+  color: var(--red-2);
+}
+
+.tileValue {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.1;
+  letter-spacing: 0.03em;
+  color: var(--text);
+}
+
+.clock {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 25px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.18);
+}
+
+.rewards {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rewardPts {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.rewardPts svg {
+  color: var(--gold);
+  filter: drop-shadow(0 0 5px rgba(246, 185, 43, 0.45));
+}
+
+.rewardSub {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: var(--text-2);
+}
+
+.rewardGems {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--red-2);
+}
+
+/* ── Location ─────────────────────────────────────────────────── */
+.location {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 10px 10px 12px;
+  border-radius: var(--r-md);
+  text-align: left;
+  transition:
+    border-color var(--dur-2),
+    transform var(--dur-1) var(--ease-out);
+}
+
+.location:hover {
+  border-color: rgba(255, 43, 56, 0.45);
+}
+
+.location:active {
+  transform: scale(0.985);
+}
+
+.pin {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--red-2);
+  background: var(--red-tint);
+  border: 1px solid rgba(255, 43, 56, 0.4);
+  box-shadow: 0 0 14px var(--red-glow-soft);
+}
+
+.locText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.locLabel {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.locName {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.locationHidden .locName {
+  color: var(--amber);
+}
+
+.locationHidden .pin {
+  color: var(--amber);
+  background: rgba(255, 138, 31, 0.08);
+  border-color: rgba(255, 138, 31, 0.4);
+  box-shadow: 0 0 14px rgba(255, 138, 31, 0.2);
+}
+
+.locMap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ── Personal record ──────────────────────────────────────────── */
+.record {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 4px 0 0;
+}
+
+.record > div {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 3px;
+  text-align: center;
+}
+
+.record > div + div {
+  border-left: 1px solid var(--line);
+}
+
+.record dt {
+  font-size: 11px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.record dd {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 19px;
+  color: var(--text);
+}
+
+.earned {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.earned svg {
+  width: 14px;
+  height: 14px;
+}
+
+.starOn {
+  fill: var(--gold);
+  filter: drop-shadow(0 0 3px rgba(246, 185, 43, 0.6));
+}
+
+.starOff {
+  fill: none;
+  stroke: var(--text-4);
+  stroke-width: 1.5;
+}
+
+/* ── Locked footer ────────────────────────────────────────────── */
+.lockedFoot {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.lockedNote {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.lockedBtn.lockedBtn {
+  font-size: 14.5px;
+  letter-spacing: 0.08em;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.15;
+  color: var(--text-2);
+}
+
+.lockedBtn.lockedBtn:disabled {
+  opacity: 0.9;
+}
+
+.lockedBtn svg {
+  color: var(--red-2);
+}
+
+@media (max-width: 370px) {
+  .title {
+    font-size: 29px;
+  }
+
+  .tile {
+    padding: 11px 12px 12px;
+  }
+}

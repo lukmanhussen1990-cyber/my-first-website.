@@ -1,0 +1,220 @@
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--safe-top) + 24px) var(--gutter) calc(var(--safe-bottom) + 24px);
+  overflow: hidden;
+  container-type: size;
+  cursor: pointer;
+  background:
+    radial-gradient(70% 42% at 50% 34%, rgba(227, 18, 31, 0.26), transparent 70%),
+    radial-gradient(120% 60% at 50% 110%, rgba(227, 18, 31, 0.12), transparent 60%),
+    rgba(5, 5, 6, 0.86);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  user-select: none;
+}
+
+.leave {
+  position: absolute;
+  top: calc(var(--safe-top) + 6px);
+  left: calc(var(--safe-left) + 6px);
+  z-index: 1;
+  color: var(--text-2);
+}
+
+.scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 3px);
+  mix-blend-mode: overlay;
+}
+
+.inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--red-2);
+  text-shadow: 0 0 10px var(--red-glow-soft);
+}
+
+.stage {
+  position: relative;
+  margin: 26px 0 14px;
+  perspective: 900px;
+}
+
+.flipper {
+  position: relative;
+  width: 132px;
+  height: 198px;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.front,
+.back {
+  position: absolute !important;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.back {
+  transform: rotateY(180deg);
+}
+
+.floor {
+  position: absolute;
+  left: 50%;
+  bottom: -18px;
+  width: 190px;
+  height: 26px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(227, 18, 31, 0.38), transparent);
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.rank {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: var(--track-xwide);
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.title {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1.05;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-shadow: 0 0 24px rgba(227, 18, 31, 0.35);
+}
+
+.hook {
+  max-width: 300px;
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.stars {
+  margin-top: 4px;
+}
+
+.count {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 112px;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.numeral {
+  grid-area: 1 / 1;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 84px;
+  line-height: 1;
+  color: #fff;
+  text-shadow:
+    0 0 18px rgba(255, 43, 56, 0.85),
+    0 0 46px rgba(227, 18, 31, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.go {
+  color: var(--red-2);
+  letter-spacing: 0.12em;
+  text-shadow:
+    0 0 14px rgba(255, 43, 56, 0.95),
+    0 0 50px rgba(227, 18, 31, 0.7);
+}
+
+.ready {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: var(--track-xwide);
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.ready span {
+  width: 34px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--red));
+}
+
+.ready span:last-child {
+  background: linear-gradient(90deg, var(--red), transparent);
+}
+
+.skip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + 18px);
+  transform: translateX(-50%);
+  min-height: 44px;
+  padding: 0 18px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.skip:hover {
+  color: var(--text-2);
+}
+
+@container (max-height: 700px) {
+  .stage {
+    margin-top: 16px;
+  }
+  .count {
+    height: 92px;
+  }
+  .numeral {
+    font-size: 70px;
+  }
+}

@@ -1,0 +1,175 @@
+.card {
+  --u: 1;
+  position: relative;
+  flex: none;
+  border-radius: calc(12px * var(--u));
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ── Face ─────────────────────────────────────────────────── */
+.face {
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.07), transparent 60%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.018) 0 2px, transparent 2px 6px),
+    linear-gradient(180deg, #1a1a20 0%, #0d0d10 70%, #08080a 100%);
+  border: 1px solid var(--line-3);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 18px 40px rgba(0, 0, 0, 0.65);
+}
+
+.red {
+  border-color: rgba(255, 43, 56, 0.75);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 0 0 1px rgba(120, 0, 8, 0.6),
+    0 0 22px var(--red-glow),
+    0 0 60px var(--red-glow-soft),
+    0 18px 40px rgba(0, 0, 0, 0.65);
+}
+
+.silver {
+  border-color: rgba(220, 226, 236, 0.45);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.18) inset,
+    0 0 22px rgba(200, 206, 216, 0.18),
+    0 18px 40px rgba(0, 0, 0, 0.65);
+}
+
+.frame {
+  position: absolute;
+  inset: calc(7px * var(--u));
+  border-radius: calc(7px * var(--u));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.red .frame {
+  border-color: rgba(255, 43, 56, 0.28);
+}
+
+.halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 92%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(227, 18, 31, 0.42), rgba(227, 18, 31, 0.08) 45%, transparent 68%);
+  pointer-events: none;
+}
+
+.silver .halo {
+  background: radial-gradient(circle, rgba(210, 220, 235, 0.22), rgba(210, 220, 235, 0.04) 45%, transparent 68%);
+}
+
+.emblem {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
+}
+
+.red .emblem {
+  filter: drop-shadow(0 0 calc(10px * var(--u)) rgba(255, 30, 45, 0.6)) drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
+}
+
+.index {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(1px * var(--u));
+  font-size: calc(13px * var(--u));
+  line-height: 1;
+}
+
+.index b {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: calc(21px * var(--u));
+  letter-spacing: 0;
+}
+
+.tl {
+  top: calc(11px * var(--u));
+  left: calc(12px * var(--u));
+}
+
+.br {
+  right: calc(12px * var(--u));
+  bottom: calc(11px * var(--u));
+  transform: rotate(180deg);
+}
+
+.red .index {
+  color: var(--red-2);
+  text-shadow: 0 0 8px var(--red-glow);
+}
+
+.silver .index {
+  color: var(--silver);
+}
+
+.pip {
+  display: block;
+}
+
+.sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.1) 46%, transparent 58%);
+  pointer-events: none;
+}
+
+.dim {
+  filter: saturate(0.25) brightness(0.6);
+}
+
+/* ── Back ─────────────────────────────────────────────────── */
+.back {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 60, 70, 0.35), transparent 55%),
+    repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.28) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.28) 0 1px, transparent 1px 9px),
+    linear-gradient(160deg, #8f0710, #4a0207 70%, #2a0104);
+  border: 1px solid rgba(255, 90, 100, 0.55);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.2) inset,
+    0 0 26px var(--red-glow-soft),
+    0 18px 40px rgba(0, 0, 0, 0.65);
+}
+
+.backFrame {
+  position: absolute;
+  inset: calc(8px * var(--u));
+  border-radius: calc(7px * var(--u));
+  border: 1px solid rgba(255, 190, 195, 0.35);
+}
+
+.backRing {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) rotate(45deg);
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 200, 205, 0.55);
+  background: rgba(40, 0, 4, 0.55);
+  box-shadow: 0 0 18px rgba(255, 43, 56, 0.45);
+}
+
+.backRing span {
+  transform: rotate(-45deg);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: calc(17px * var(--u));
+  letter-spacing: 0.12em;
+  color: #ffd9dc;
+  text-shadow: 0 0 10px rgba(255, 43, 56, 0.8);
+}

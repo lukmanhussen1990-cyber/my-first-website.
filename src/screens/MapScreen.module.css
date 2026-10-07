@@ -1,0 +1,264 @@
+/* The map fills the space between the top bar and the bottom tab bar. */
+.stage {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: calc(var(--nav-h) + var(--safe-bottom));
+  overflow: hidden;
+}
+
+/* ── HUD ──────────────────────────────────────────────────────────── */
+.hud {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.hud > * {
+  pointer-events: auto;
+}
+
+.glassBase {
+  background: linear-gradient(180deg, rgba(28, 28, 34, 0.82), rgba(10, 10, 13, 0.86));
+  border: 1px solid var(--line-2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 10px 26px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+
+.cleared {
+  composes: glassBase;
+  position: absolute;
+  left: calc(14px + var(--safe-left));
+  bottom: 14px;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  column-gap: 14px;
+  row-gap: 7px;
+  min-height: 52px;
+  padding: 10px 14px 10px;
+  border-radius: 13px;
+}
+
+.clearedLabel {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.clearedValue {
+  justify-self: end;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 19px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.clearedValue em {
+  font-style: normal;
+  font-size: 14px;
+  color: var(--text-3);
+}
+
+.clearedBar {
+  grid-column: 1 / -1;
+  position: relative;
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.clearedBar i {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 50%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #11663a, var(--green));
+  box-shadow: 0 0 8px var(--green-glow);
+  transition: transform 900ms var(--ease-out);
+}
+
+/* ── camera controls (right column) ───────────────────────────────── */
+/* sits in the bottom band, which holds no labels at the base zoom */
+.controls {
+  position: absolute;
+  right: calc(14px + var(--safe-right));
+  bottom: calc(14px + 52px + 10px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.round,
+.zoom button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--text);
+  transition:
+    color var(--dur-2),
+    background-color var(--dur-2),
+    transform var(--dur-1);
+}
+
+.round {
+  composes: glassBase;
+  border-radius: 13px;
+}
+
+.round:active,
+.zoom button:active:not([aria-disabled='true']) {
+  transform: scale(0.92);
+}
+
+.round:hover,
+.zoom button:hover:not([aria-disabled='true']) {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.zoom {
+  composes: glassBase;
+  display: flex;
+  align-items: center;
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+.zoom button[aria-disabled='true'] {
+  color: var(--text-4);
+  cursor: default;
+}
+
+.zoomRule {
+  width: 1px;
+  height: 22px;
+  background: var(--line-2);
+}
+
+/* ── SCAN ─────────────────────────────────────────────────────────── */
+.scan {
+  position: absolute;
+  right: calc(14px + var(--safe-right));
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 20px 0 8px;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(180deg, #f2232f 0%, var(--red) 46%, #a80a14 100%);
+  border: 1px solid rgba(255, 120, 128, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 0 20px var(--red-glow),
+    0 10px 26px rgba(0, 0, 0, 0.55);
+  transition:
+    transform var(--dur-1),
+    filter var(--dur-2);
+}
+
+.scan:active:not([aria-disabled='true']) {
+  transform: scale(0.96);
+}
+
+.scan[aria-disabled='true'] {
+  cursor: progress;
+}
+
+.scanIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.scanText {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  min-width: 46px;
+}
+
+.scanning {
+  filter: saturate(0.85) brightness(0.92);
+}
+
+.scanning .scanIcon svg {
+  animation: spin 1s linear infinite;
+}
+
+.scanning .scanText {
+  animation: flicker 1.6s linear infinite;
+}
+
+/* "signal detected" beacon */
+.scanBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--red);
+  box-shadow: 0 0 10px var(--red-glow);
+}
+
+.scanBadge::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--red-2);
+  opacity: 0;
+  animation: pulse-ring 1.8s var(--ease-out) infinite;
+}
+
+/* ── sheets sit above the tab bar, inside the map area ────────────── */
+.sheetHost {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.sheetHost > * {
+  pointer-events: auto;
+}
+
+@media (max-width: 370px) {
+  .cleared {
+    column-gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .clearedLabel {
+    letter-spacing: 0.12em;
+  }
+
+  .scan {
+    padding-right: 16px;
+  }
+}

@@ -1,0 +1,223 @@
+.content {
+  padding-bottom: calc(var(--safe-bottom) + 28px);
+}
+
+.hero {
+  display: flex;
+  justify-content: center;
+  padding: 22px 0 6px;
+}
+
+/* ── Premise ──────────────────────────────────────────────── */
+.premise {
+  position: relative;
+  margin: 22px auto 30px;
+  max-width: 320px;
+  padding: 0 8px;
+  text-align: center;
+}
+
+.premise::before,
+.premise::after {
+  content: '';
+  display: block;
+  width: 36px;
+  height: 1px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, transparent, var(--red-2), transparent);
+  box-shadow: 0 0 6px var(--red-glow);
+}
+
+.premise p {
+  margin: 16px 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-2);
+  font-style: italic;
+  text-wrap: balance;
+}
+
+.premise em {
+  font-style: italic;
+  color: var(--text);
+  text-shadow: 0 0 14px rgba(255, 43, 56, 0.35);
+}
+
+.plate {
+  margin: 0 2px;
+}
+
+/* ── Credit roll ─────────────────────────────────────────── */
+.roll {
+  margin-top: 36px;
+}
+
+.rollTitle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.rollTitle span {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line-3));
+}
+
+.rollTitle span:last-child {
+  background: linear-gradient(90deg, var(--line-3), transparent);
+}
+
+.group {
+  position: relative;
+  padding: 4px 0 18px;
+}
+
+.group + .group {
+  padding-top: 22px;
+}
+
+.group + .group::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18%;
+  right: 18%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line-2), transparent);
+}
+
+.groupMark {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  margin-left: -10px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 12px;
+  color: var(--text-3);
+  background: transparent;
+}
+
+.group:first-of-type .groupMark {
+  display: none;
+}
+
+.groupMarkRed {
+  color: var(--red-2);
+}
+
+.credits {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+}
+
+.credit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+}
+
+.credit dt {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  margin-right: -0.3em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.credit dd {
+  margin: 0;
+  max-width: 300px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+.credit dd small {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+
+/* the creator's name gets the display face and crimson bloom */
+.credit dd.creator {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.34em;
+  margin-right: -0.34em;
+  text-shadow:
+    0 0 10px rgba(255, 43, 56, 0.55),
+    0 0 26px rgba(227, 18, 31, 0.3);
+}
+
+/* ── Disclaimer ──────────────────────────────────────────── */
+.disclaimer {
+  margin-top: 26px;
+  padding: 16px 18px;
+  text-align: center;
+}
+
+.disclaimerKicker {
+  display: block;
+  margin-bottom: 8px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.disclaimer p {
+  position: relative;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+  text-align: center;
+}
+
+.footSuits {
+  display: inline-flex;
+  gap: 8px;
+  color: var(--text-4);
+}
+
+.footer p {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+}

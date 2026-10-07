@@ -1,0 +1,564 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="art" data-out="src/assets/art/scene-spade.webp" data-w="1080" data-h="900" data-scale="1" data-quality="78">
+<title>scene-spade</title>
+</head><body style="margin:0;background:#000"><canvas id="c"></canvas>
+<script type="module">
+/*
+ * SPADE TRIAL — the bare edge of a skyscraper roof in the rain. A red aircraft
+ * beacon on a lattice mast, a tangle of exposed cable with a severed end
+ * throwing sparks, and the city dropping away 150 m below (ray-marched block
+ * grid with lit windows, glowing streets and fog). Cold steel / silver with
+ * crimson accents. Bottom ~35% fades into #09090b for UI text.
+ */
+import { setup, done } from '../lib/paint.js';
+import {
+  rand, layer, clamp, lerp, smooth, rgba, TAU, bloom, brightPass, fadeBottom, cinematicGrade,
+  rainLit, particles, grainLuma, light, chroma, noiseLayer,
+} from '../lib/world-kit.js';
+import { makeCamera, scatter, renderPixels, tone, valueNoise } from '../lib/world-3d.js';
+
+const { ctx, W, H } = setup();
+if (!new URLSearchParams(location.search).has('v')) done();
+else setTimeout(paint, 20);
+
+function paint() {
+  const cam = makeCamera({ F: 880, cx: 540, cy: 300, pos: [0, 1.7, 0], pitch: -0.235, yaw: 0.2 });
+  const EZ = 4.2; // the roof ends at z = EZ (a low curb, then nothing)
+  const G = -150; // street level far below
+  const CP = 26; // city cell pitch (m)
+  const n1 = valueNoise(21), n2 = valueNoise(22), n3 = valueNoise(23);
+  const P = (x, y, z) => cam.project([x, y, z]);
+  const quad = (c2, pts) => { c2.beginPath(); pts.forEach((p, i) => (i ? c2.lineTo(p[0], p[1]) : c2.moveTo(p[0], p[1]))); c2.closePath(); };
+  const E = layer(W, H);
+  const e = E.ctx;
+  const hash = (a, b2, c = 0) => {
+    let h = (a * 374761393 + b2 * 668265263 + c * 1442695041) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+  };
+  const mod3 = (v) => ((v % 3) + 3) % 3;
+
+  /* ---------------------------------------------------------- sky backdrop */
+  const SKY = layer(W, H);
+  const horizon = P(0, 1.7, 1e5)[1];
+  {
+    const b = SKY.ctx;
+    const g = b.createLinearGradient(0, 0, 0, horizon + 10);
+    g.addColorStop(0, 'rgb(14,16,22)');
+    g.addColorStop(0.5, 'rgb(44,48,60)');
+    g.addColorStop(1, 'rgb(104,100,114)');
+    b.fillStyle = g;
+    b.fillRect(0, 0, W, H);
+    b.drawImage(noiseLayer(W, Math.ceil(horizon + 20), { seed: 31, scale: 0.0045, octaves: 6, step: 2, lo: 0.38, hi: 0.85, color: [130, 138, 152], alpha: 0.4, warp: 160 }), 0, 0);
+    b.drawImage(noiseLayer(W, Math.ceil(horizon + 20), { seed: 32, scale: 0.008, octaves: 5, step: 2, lo: 0.5, hi: 0.9, color: [200, 80, 84], alpha: 0.22, mask: (x, y) => smooth(horizon * 0.3, horizon, y) }), 0, 0);
+    b.drawImage(noiseLayer(W, Math.ceil(horizon + 20), { seed: 33, scale: 0.014, octaves: 4, step: 2, lo: 0.5, hi: 0.95, color: [0, 0, 0], alpha: 0.45 }), 0, 0);
+  }
+  const skyD = SKY.ctx.getImageData(0, 0, W, H).data;
+  const skyAt = (sx, sy, out) => {
+    const x = clamp(Math.round(sx), 0, W - 1), y = clamp(Math.round(sy), 0, H - 1);
+    const i = (y * W + x) * 4;
+    out[0] = (skyD[i] / 255) ** 1.6 * 1.3; out[1] = (skyD[i + 1] / 255) ** 1.6 * 1.3; out[2] = (skyD[i + 2] / 255) ** 1.6 * 1.3;
+    return out;
+  };
+
+  /* ---------------------------------------------------------- the city (ray-marched block grid) */
+  function building(i, j) {
+    if (mod3(i) === 0 || mod3(j) === 0) return null; // streets
+    const x0 = i * CP, z0 = j * CP;
+    if (x0 > -60 && x0 < 40 && z0 < 30 && z0 > -80) return null; // our own tower's footprint
+    const r = hash(i, j);
+    if (r < 0.05) return null; // empty lot / rubble
+    const down = Math.exp(-(((i * CP - 260) / 500) ** 2 + ((j * CP - 900) / 600) ** 2));
+    const near = Math.exp(-(((i * CP - 40) / 220) ** 2 + ((j * CP - 160) / 200) ** 2));
+    let h = 14 + Math.pow(hash(i, j, 1), 2.2) * 100 + down * 120 * hash(i, j, 2) + near * 40 * hash(i, j, 3);
+    const dist = Math.hypot(x0 + CP / 2, z0 + CP / 2);
+    if (hash(i, j, 4) < 0.03 && dist > 380) h += 130; // a few spires rising above us, far off
+    // keep the blocks right below us low so we look down into the canyons
+    h = Math.min(h, 40 + Math.max(0, dist - 90) * 0.55);
+    const m = 1.5 + hash(i, j, 5) * 3;
+    const bld = { x0: x0 + m, x1: x0 + CP - m, z0: z0 + m, z1: z0 + CP - m, top: G + h, h, i, j, lit: 0.04 + Math.pow(hash(i, j, 6), 2) * 0.32, warm: hash(i, j, 7), base: G };
+    if (h > 60 && hash(i, j, 8) < 0.6) {
+      // a setback tower on top
+      const k = 0.18 + hash(i, j, 9) * 0.18;
+      const w = (CP - 2 * m) * k;
+      const up = 10 + hash(i, j, 10) * h * 0.35;
+      bld.upper = { x0: bld.x0 + w, x1: bld.x1 - w, z0: bld.z0 + w, z1: bld.z1 - w, top: bld.top + up, base: bld.top, h: h + up, i, j, lit: bld.lit, warm: bld.warm };
+    }
+    return bld;
+  }
+  const cache = new Map();
+  const bAt = (i, j) => {
+    const k = i * 100003 + j;
+    if (!cache.has(k)) cache.set(k, building(i, j));
+    return cache.get(k);
+  };
+  function boxHit(o, d, b2) {
+    let t0 = 0, t1 = Infinity, ax = -1;
+    const mn = [b2.x0, b2.base ?? G, b2.z0], mx = [b2.x1, b2.top, b2.z1];
+    for (let a = 0; a < 3; a++) {
+      if (Math.abs(d[a]) < 1e-9) { if (o[a] < mn[a] || o[a] > mx[a]) return null; continue; }
+      let ta = (mn[a] - o[a]) / d[a], tb = (mx[a] - o[a]) / d[a];
+      if (ta > tb) { const t = ta; ta = tb; tb = t; }
+      if (ta > t0) { t0 = ta; ax = a; }
+      if (tb < t1) t1 = tb;
+      if (t0 > t1) return null;
+    }
+    return ax < 0 ? null : { t: t0, ax };
+  }
+  function cityTrace(o, d, tMax = 4000) {
+    const tG = d[1] < 0 ? (G - o[1]) / d[1] : Infinity;
+    const tEnd = Math.min(tMax, tG);
+    let i = Math.floor(o[0] / CP), j = Math.floor(o[2] / CP);
+    const sx = d[0] > 0 ? 1 : -1, sz = d[2] > 0 ? 1 : -1;
+    const dtx = Math.abs(CP / (d[0] || 1e-9)), dtz = Math.abs(CP / (d[2] || 1e-9));
+    let tx = d[0] !== 0 ? ((sx > 0 ? (i + 1) * CP - o[0] : o[0] - i * CP) / Math.abs(d[0])) : Infinity;
+    let tz = d[2] !== 0 ? ((sz > 0 ? (j + 1) * CP - o[2] : o[2] - j * CP) / Math.abs(d[2])) : Infinity;
+    let tCell = 0;
+    for (let k = 0; k < 400 && tCell < tEnd; k++) {
+      const bb = bAt(i, j);
+      if (bb) {
+        // quick reject: is the ray below the roof anywhere in this cell?
+        const h = boxHit(o, d, bb);
+        const h2 = bb.upper ? boxHit(o, d, bb.upper) : null;
+        if (h2 && h2.t < tEnd && (!h || h2.t < h.t)) return { kind: 'bld', t: h2.t, ax: h2.ax, b: bb.upper };
+        if (h && h.t < tEnd) return { kind: 'bld', t: h.t, ax: h.ax, b: bb };
+      }
+      if (tx < tz) { tCell = tx; tx += dtx; i += sx; } else { tCell = tz; tz += dtz; j += sz; }
+    }
+    if (tG < tMax) return { kind: 'ground', t: tG };
+    return { kind: 'sky', t: Infinity };
+  }
+  const WIN = [[1.0, 0.86, 0.66], [1.0, 0.86, 0.66], [1.0, 0.62, 0.32], [1.0, 0.62, 0.32], [0.7, 0.82, 1.0], [0.7, 0.82, 1.0], [1.0, 0.16, 0.14]];
+  function shadeCity(o, d, hit, out) {
+    const t = hit.t;
+    const p = [o[0] + d[0] * t, o[1] + d[1] * t, o[2] + d[2] * t];
+    const foot = t / cam.F; // metres per pixel
+    let r = 0, g = 0, b = 0;
+    if (hit.kind === 'bld') {
+      const bb = hit.b;
+      if (hit.ax === 1) {
+        // roof: dark membrane, faint sky sheen, red aircraft light on tall ones
+        const v = 0.02 + n1(p[0] * 0.2, p[2] * 0.2) * 0.012;
+        r = v * 1.0; g = v * 1.05; b = v * 1.2;
+        const cx = (bb.x0 + bb.x1) / 2, cz = (bb.z0 + bb.z1) / 2;
+        if (bb.h > 70) {
+          const dd = Math.hypot(p[0] - cx, p[2] - cz);
+          const k = Math.max(0, 1 - dd / Math.max(1.2, foot * 2.5));
+          r += 3.0 * k; g += 0.25 * k; b += 0.2 * k;
+        }
+        // rooftop unit silhouettes
+        const ux = (p[0] - bb.x0) / 5, uz = (p[2] - bb.z0) / 5;
+        if (hash(Math.floor(ux), Math.floor(uz), bb.i * 7 + bb.j) < 0.2) { r *= 1.8; g *= 1.8; b *= 1.8; }
+      } else {
+        // facade with windows
+        const u = hit.ax === 0 ? p[2] : p[0];
+        const y = p[1] - G;
+        const fl = Math.floor(y / 3.3), col = Math.floor(u / 1.9);
+        const fy = y / 3.3 - fl, fu = u / 1.9 - col;
+        const glow = Math.max(0, 1 - y / 70); // street light washing up the facade
+        const baseR = 0.018 + glow * 0.05, baseG = 0.018 + glow * 0.028, baseB = 0.024 + glow * 0.016;
+        const isWin = fu > 0.24 && fu < 0.76 && fy > 0.3 && fy < 0.76;
+        const hv = hash(bb.i * 131 + col, bb.j * 71 + fl, hit.ax);
+        const lit = hv < bb.lit;
+        const wc = WIN[Math.floor(hash(col, fl, bb.i) * WIN.length)];
+        const wb = 0.35 + 0.65 * hash(fl, col, bb.j);
+        const detail = clamp(1 - (foot - 0.35) / 0.9);
+        const avg = bb.lit * 0.36;
+        const k = isWin ? (lit ? wb : 0) : 0;
+        const kk = lerp(avg, k, detail);
+        const wi = 0.8 + bb.warm * 0.6;
+        r = baseR + kk * wc[0] * wi * 0.6 + (isWin && !lit ? 0.01 : 0) * detail;
+        g = baseG + kk * wc[1] * wi * 0.6 + (isWin && !lit ? 0.012 : 0) * detail;
+        b = baseB + kk * wc[2] * wi * 0.6 + (isWin && !lit ? 0.016 : 0) * detail;
+        // faces turned away from the camera's light side are darker
+        const side = hit.ax === 0 ? 0.75 : 1.0;
+        r *= side; g *= side; b *= side;
+      }
+    } else if (hit.kind === 'ground') {
+      const i = Math.floor(p[0] / CP), j = Math.floor(p[2] / CP);
+      const inStreet = mod3(i) === 0 || mod3(j) === 0;
+      if (inStreet) {
+        // sodium wash, brighter along the centre; car lights as streaks
+        const cx = mod3(i) === 0 ? Math.abs(p[0] - (i * CP + CP / 2)) / (CP / 2) : 1;
+        const cz = mod3(j) === 0 ? Math.abs(p[2] - (j * CP + CP / 2)) / (CP / 2) : 1;
+        const c = Math.min(cx, cz);
+        const wash = 0.35 + 0.65 * (1 - c * c);
+        r = 0.5 * wash; g = 0.3 * wash; b = 0.16 * wash;
+        // cars
+        const along = mod3(i) === 0 ? p[2] : p[0];
+        const lane = mod3(i) === 0 ? p[0] - (i * CP + CP / 2) : p[2] - (j * CP + CP / 2);
+        const seg = Math.floor(along / 9);
+        if (hash(seg, Math.floor(lane / 3), i * 3 + j) < 0.22) {
+          const fa = along / 9 - seg;
+          const kk = clamp(1 - Math.abs(fa - 0.5) / Math.max(0.12, foot * 0.3)) * clamp(1 - foot / 4);
+          const red = lane > 0;
+          r += (red ? 2.2 : 1.8) * kk; g += (red ? 0.18 : 1.6) * kk; b += (red ? 0.14 : 1.4) * kk;
+        }
+      } else {
+        r = 0.01; g = 0.01; b = 0.012;
+      }
+    } else {
+      const sp = cam.project([o[0] + d[0] * 1e5, o[1] + d[1] * 1e5, o[2] + d[2] * 1e5]);
+      skyAt(sp[0], sp[1], out);
+      return out;
+    }
+    // atmospheric perspective: distance haze + warm ground fog
+    const f = Math.exp(-t / 780);
+    const low = clamp(1 - (p[1] - G) / 60);
+    const hr = 0.058 + low * 0.07, hg = 0.062 + low * 0.04, hb = 0.08 + low * 0.025;
+    out[0] = r * f + hr * (1 - f);
+    out[1] = g * f + hg * (1 - f);
+    out[2] = b * f + hb * (1 - f);
+    return out;
+  }
+
+  /* ---------------------------------------------------------- roof + curb + lights */
+  const BEACON = [1.35, 1.62, EZ - 0.15];
+  const SPARK = [0.05, 0.08, 3.25];
+  const LIGHTS = [
+    { p: BEACON, c: [1.0, 0.1, 0.1], I: 2.6, fog: 0.1 },
+    { p: SPARK, c: [1.0, 0.62, 0.32], I: 0.7, fog: 0.08 },
+  ];
+  const SIG = 0.06;
+  const CURB = { min: [-80, 0, EZ - 0.25], max: [80, 0.22, EZ] };
+  function roofTrace(o, d) {
+    let best = null;
+    if (d[1] < 0) {
+      const t = -o[1] / d[1];
+      const z = o[2] + d[2] * t;
+      if (t > 1e-4 && z < EZ - 0.25) best = { t, kind: 'roof', n: [0, 1, 0] };
+    }
+    // curb box
+    let t0 = 1e-4, t1 = Infinity, n = null;
+    for (let a = 0; a < 3; a++) {
+      if (Math.abs(d[a]) < 1e-9) { if (o[a] < CURB.min[a] || o[a] > CURB.max[a]) { t0 = Infinity; break; } continue; }
+      let ta = (CURB.min[a] - o[a]) / d[a], tb = (CURB.max[a] - o[a]) / d[a];
+      if (ta > tb) { const tt = ta; ta = tb; tb = tt; }
+      if (ta > t0) { t0 = ta; n = [0, 0, 0]; n[a] = d[a] > 0 ? -1 : 1; }
+      if (tb < t1) t1 = tb;
+      if (t0 > t1) { t0 = Infinity; break; }
+    }
+    if (n && t0 < Infinity && (!best || t0 < best.t)) best = { t: t0, kind: 'curb', n };
+    return best;
+  }
+  function shadeLocal(P3, N, alb, spec, V, rough, out) {
+    const sky = Math.max(0, N[1]);
+    let r = 0.02 + sky * 0.05, g = 0.022 + sky * 0.062, b = 0.03 + sky * 0.088;
+    for (const L of LIGHTS) {
+      const dx = L.p[0] - P3[0], dy = L.p[1] - P3[1], dz = L.p[2] - P3[2];
+      const d2 = dx * dx + dy * dy + dz * dz, d = Math.sqrt(d2);
+      const ndl = Math.max(0, (N[0] * dx + N[1] * dy + N[2] * dz) / d);
+      let k = (L.I * ndl) / (d2 + 0.3);
+      if (spec) {
+        const hx = dx / d - V[0], hy = dy / d - V[1], hz = dz / d - V[2];
+        const hl = Math.hypot(hx, hy, hz) || 1;
+        k += (spec * L.I * Math.pow(Math.max(0, (N[0] * hx + N[1] * hy + N[2] * hz) / hl), rough)) / (d2 * 0.2 + 1);
+      }
+      r += L.c[0] * k; g += L.c[1] * k; b += L.c[2] * k;
+    }
+    out[0] = r * alb; out[1] = g * alb; out[2] = b * alb;
+    return out;
+  }
+
+  const tmp = [0, 0, 0], tmp2 = [0, 0, 0];
+  const o = cam.pos;
+  renderPixels(ctx, W, H, (sx, sy, out) => {
+    const d = cam.ray(sx, sy);
+    const near = roofTrace(o, d);
+    let R, Gc, B, tHit;
+    if (near) {
+      const P3 = [o[0] + d[0] * near.t, o[1] + d[1] * near.t, o[2] + d[2] * near.t];
+      tHit = near.t;
+      if (near.kind === 'roof') {
+        const gx = P3[0] / 0.9, gz = P3[2] / 0.9;
+        const fx = gx - Math.floor(gx), fz = gz - Math.floor(gz);
+        const nearK = clamp(1 - near.t / 10);
+        const joint = (fx < 0.035 || fz < 0.035) ? 1 : 0;
+        let alb = 0.17 + (n3(Math.floor(gx) * 3.1, Math.floor(gz) * 5.7) - 0.5) * 0.07 + (n1.fbm(P3[0] * 1.4, P3[2] * 1.4, 4) - 0.5) * 0.12;
+        alb *= 1 - joint * 0.55 * nearK;
+        const w = smooth(0.36, 0.56, n2.fbm(P3[0] * 0.6 + 7, P3[2] * 0.6, 4));
+        shadeLocal(P3, [0, 1, 0], alb * (1 - w * 0.5), 0.4 + w * 1.6, d, 60 + w * 220, tmp);
+        R = tmp[0]; Gc = tmp[1]; B = tmp[2];
+        // reflections in the wet roof: city glow / sky
+        const jx = (n3(P3[0] * 30, P3[2] * 30) - 0.5) * (0.015 + (1 - w) * 0.07), jz = (n3(P3[0] * 30 + 5, P3[2] * 30) - 0.5) * (0.015 + (1 - w) * 0.07);
+        const rd = [d[0] + jx, -d[1], d[2] + jz];
+        const rl = Math.hypot(rd[0], rd[1], rd[2]);
+        rd[0] /= rl; rd[1] /= rl; rd[2] /= rl;
+        const ch = cityTrace(P3, rd, 2500);
+        shadeCity(P3, rd, ch, tmp2);
+        let fr = 0, fg = 0, fb = 0;
+        for (const L of LIGHTS) { const s2 = scatter(P3, rd, 20, L.p) * L.I * SIG * L.fog; fr += L.c[0] * s2; fg += L.c[1] * s2; fb += L.c[2] * s2; }
+        const fres = 0.14 + 0.6 * w;
+        R += (tmp2[0] + fr) * fres; Gc += (tmp2[1] + fg) * fres; B += (tmp2[2] + fb) * fres;
+      } else {
+        const top = near.n[1] > 0.5;
+        shadeLocal(P3, near.n, top ? 0.3 : 0.16, top ? 1.4 : 0.3, d, top ? 50 : 20, tmp);
+        R = tmp[0] + (top ? 0.012 : 0); Gc = tmp[1] + (top ? 0.014 : 0); B = tmp[2] + (top ? 0.018 : 0);
+      }
+    } else {
+      const ch = cityTrace(o, d);
+      shadeCity(o, d, ch, tmp);
+      R = tmp[0]; Gc = tmp[1]; B = tmp[2];
+      tHit = 60;
+    }
+    let fr = 0, fg = 0, fb = 0;
+    for (const L of LIGHTS) { const s2 = scatter(o, d, tHit, L.p) * L.I * SIG * L.fog; fr += L.c[0] * s2; fg += L.c[1] * s2; fb += L.c[2] * s2; }
+    out[0] = tone((R + fr) * 1.25);
+    out[1] = tone((Gc + fg) * 1.25);
+    out[2] = tone((B + fb) * 1.25);
+  });
+
+  /* ---------------------------------------------------------- foreground props */
+  const s = (p) => cam.scaleAt(p);
+  // hidden behind the roof edge? (beyond the edge and below the line of sight over it)
+  const hidden = (p) => {
+    if (p[2] <= EZ) return false;
+    const k = (EZ - o[2]) / (p[2] - o[2]);
+    const yAtEdge = o[1] + (p[1] - o[1]) * k;
+    return yAtEdge < 0.22;
+  };
+  // lattice mast + beacon at the edge
+  {
+    const bx = BEACON[0], bz = BEACON[2], top = BEACON[1] - 0.12;
+    const legs = [[-0.09, -0.07], [0.09, -0.07], [0, 0.08]];
+    const lp = (t, i) => [bx + legs[i][0] * (1 - t * 0.5), t * top, bz + legs[i][1] * (1 - t * 0.5)];
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {
+      ctx.strokeStyle = i === 2 ? 'rgb(44,48,56)' : 'rgb(70,76,88)';
+      ctx.lineWidth = Math.max(1.2, 0.025 * s([bx, 1, bz]));
+      ctx.beginPath(); ctx.moveTo(...P(...lp(0, i))); ctx.lineTo(...P(...lp(1, i))); ctx.stroke();
+    }
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(120,128,142,0.75)';
+    for (let t = 0; t < 1; t += 0.1) {
+      for (let i = 0; i < 3; i++) {
+        const j = (i + 1) % 3;
+        ctx.beginPath(); ctx.moveTo(...P(...lp(t, i))); ctx.lineTo(...P(...lp(t + 0.1, j))); ctx.stroke();
+      }
+    }
+    // red specular down the near legs
+    ctx.strokeStyle = 'rgba(255,70,70,0.6)';
+    ctx.lineWidth = 1;
+    const a0 = P(...lp(0.25, 0)), a1 = P(...lp(1, 0));
+    ctx.beginPath(); ctx.moveTo(a0[0] + 1.2, a0[1]); ctx.lineTo(a1[0] + 1.2, a1[1]); ctx.stroke();
+    // lamp housing + dome
+    const bc = P(...BEACON);
+    const rr = 0.07 * s(BEACON);
+    ctx.fillStyle = 'rgb(26,28,32)';
+    ctx.fillRect(bc[0] - rr * 1.3, bc[1] + rr * 0.7, rr * 2.6, rr * 0.55);
+    const g = ctx.createRadialGradient(bc[0] - rr * 0.3, bc[1] - rr * 0.3, 0, bc[0], bc[1], rr * 1.1);
+    g.addColorStop(0, 'rgb(255,210,200)');
+    g.addColorStop(0.3, 'rgb(255,50,44)');
+    g.addColorStop(1, 'rgb(110,6,10)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(bc[0], bc[1], rr, rr * 1.15, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(16,16,20,0.9)';
+    ctx.lineWidth = 1.3;
+    for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.moveTo(bc[0] + k * rr * 0.62, bc[1] - rr * 1.1); ctx.lineTo(bc[0] + k * rr * 0.62, bc[1] + rr * 0.9); ctx.stroke(); }
+    e.fillStyle = 'rgb(255,50,44)';
+    e.beginPath(); e.ellipse(bc[0], bc[1], rr * 1.15, rr * 1.3, 0, 0, TAU); e.fill();
+    light(e, bc[0], bc[1], rr * 9, [255, 30, 30], 0.7);
+    light(e, bc[0], bc[1], rr * 2.2, [255, 170, 160], 0.7);
+  }
+  // junction box with its door hanging open
+  {
+    const x0 = -1.9, x1 = -1.25, y1 = 0.8, z0 = 2.6, z1 = 2.9;
+    quad(ctx, [P(x1, 0, z0), P(x1, 0, z1), P(x1, y1, z1), P(x1, y1, z0)]); ctx.fillStyle = 'rgb(30,34,40)'; ctx.fill();
+    quad(ctx, [P(x0, y1, z0), P(x1, y1, z0), P(x1, y1, z1), P(x0, y1, z1)]); ctx.fillStyle = 'rgb(76,82,94)'; ctx.fill();
+    quad(ctx, [P(x0, 0, z0), P(x1, 0, z0), P(x1, y1, z0), P(x0, y1, z0)]); ctx.fillStyle = 'rgb(14,15,18)'; ctx.fill();
+    const r = rand(61);
+    for (let k = 0; k < 14; k++) {
+      const a = P(lerp(x0 + 0.05, x1 - 0.05, r()), lerp(0.1, 0.75, r()), z0 - 0.01), c = P(lerp(x0 + 0.05, x1 - 0.05, r()), lerp(0.1, 0.75, r()), z0 - 0.01);
+      ctx.strokeStyle = r() < 0.3 ? 'rgba(170,40,40,0.8)' : 'rgba(100,106,116,0.7)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(...a); ctx.quadraticCurveTo((a[0] + c[0]) / 2 + 5, (a[1] + c[1]) / 2 + 6, ...c); ctx.stroke();
+    }
+    quad(ctx, [P(x0, 0.05, z0), P(x0 - 0.45, 0.05, z0 - 0.5), P(x0 - 0.45, y1 - 0.05, z0 - 0.5), P(x0, y1 - 0.05, z0)]);
+    ctx.fillStyle = 'rgb(54,60,70)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(180,192,210,0.4)'; ctx.lineWidth = 1; ctx.stroke();
+    const led = P(x1 - 0.08, 0.7, z0 - 0.01);
+    ctx.fillStyle = '#ff5050'; ctx.fillRect(led[0] - 1, led[1] - 1, 2.5, 2.5);
+    e.fillStyle = '#ff3030'; e.beginPath(); e.arc(led[0], led[1], 3, 0, TAU); e.fill();
+  }
+  // cables
+  {
+    const r = rand(71);
+    const cables = [];
+    const mk = (pts, rad, col) => cables.push({ pts, rad, col });
+    mk([[-1.35, 0.15, 2.6], [-0.9, 0.04, 2.3], [-0.3, 0.04, 2.5], [0.3, 0.04, 3.0], [0.55, 0.12, EZ - 0.3], [0.62, 0.26, EZ - 0.1], [0.68, 0.1, EZ + 0.15], [0.7, -1.5, EZ + 0.2]], 0.045, [26, 27, 31]);
+    mk([[-1.5, 0.12, 2.6], [-1.3, 0.04, 2.1], [-0.5, 0.04, 2.15], [0.4, 0.04, 2.6], [0.95, 0.12, EZ - 0.3], [1.0, 0.26, EZ - 0.1], [1.05, 0.0, EZ + 0.15], [1.08, -2.5, EZ + 0.2]], 0.035, [30, 25, 27]);
+    mk([[-1.7, 0.1, 2.6], [-1.5, 0.04, 2.25], [-0.8, 0.04, 2.85], [-0.3, 0.04, 2.95], [SPARK[0] - 0.05, 0.05, SPARK[2] - 0.02]], 0.03, [36, 36, 40]);
+    mk([[BEACON[0], 0.04, BEACON[2] - 0.08], [1.1, 0.04, 3.6], [0.7, 0.04, 2.85], [0.1, 0.05, 2.35], [-0.7, 0.04, 2.0], [-1.1, 0.04, 2.3], [-1.3, 0.1, 2.6]], 0.025, [24, 26, 30]);
+    mk([[-3.2, 0.04, 1.9], [-2.4, 0.04, 2.45], [-1.8, 0.12, 2.6]], 0.05, [22, 22, 26]);
+    for (let k = 0; k < 5; k++) {
+      const x = -0.1 + r() * 1.5;
+      mk([[x - 0.5, 0.04, 2.6 + r() * 0.4], [x + r() * 0.3, 0.12, EZ - 0.3], [x + 0.2, 0.25, EZ - 0.1], [x + 0.3, 0.08, EZ + 0.12], [x + 0.32, -2, EZ + 0.18]], 0.012, [42, 40, 44]);
+    }
+    const sampleC = (pts, n = 18) => {
+      const out = [];
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+        for (let k = 0; k < n; k++) {
+          const t = k / n, t2 = t * t, t3 = t2 * t;
+          const f = (a, b2, c2, d2) => 0.5 * (2 * b2 + (-a + c2) * t + (2 * a - 5 * b2 + 4 * c2 - d2) * t2 + (-a + 3 * b2 - 3 * c2 + d2) * t3);
+          out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1]), f(p0[2], p1[2], p2[2], p3[2])]);
+        }
+      }
+      out.push(pts[pts.length - 1]);
+      return out;
+    };
+    for (const c of cables) {
+      const pts = sampleC(c.pts);
+      ctx.save();
+      ctx.filter = 'blur(2px)';
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      let started = false;
+      for (const p of pts) {
+        if (p[1] > 0.3 || p[2] > EZ - 0.25) { started = false; continue; }
+        const q = P(p[0], 0, p[2]);
+        ctx.lineWidth = c.rad * 3 * s([p[0], 0, p[2]]);
+        if (!started) { ctx.moveTo(...q); started = true; } else ctx.lineTo(...q);
+      }
+      ctx.stroke();
+      ctx.restore();
+      // body, then a red specular from the beacon and a silver one from the sky (continuous strokes)
+      const vis = pts.map((p) => !hidden(p));
+      const sp = pts.map((p) => P(...p));
+      const wpx = pts.map((p) => Math.max(1, 2 * c.rad * s(p)));
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      for (let i = 1; i < pts.length; i++) {
+        if (!vis[i] || !vis[i - 1]) continue;
+        ctx.strokeStyle = rgba(c.col);
+        ctx.lineWidth = wpx[i];
+        ctx.beginPath(); ctx.moveTo(...sp[i - 1]); ctx.lineTo(...sp[i]); ctx.stroke();
+      }
+      const run = (offx, offy, widthK, style) => {
+        ctx.beginPath();
+        let on = false;
+        for (let i = 0; i < pts.length; i++) {
+          if (!vis[i]) { on = false; continue; }
+          const x = sp[i][0] + wpx[i] * offx, y = sp[i][1] + wpx[i] * offy;
+          if (!on) { ctx.moveTo(x, y); on = true; } else ctx.lineTo(x, y);
+        }
+        ctx.lineWidth = Math.max(0.6, wpx[Math.floor(pts.length / 2)] * widthK);
+        ctx.strokeStyle = style;
+        ctx.stroke();
+      };
+      const mid = pts[Math.floor(pts.length * 0.7)];
+      const dB = Math.hypot(mid[0] - BEACON[0], mid[1] - BEACON[1], mid[2] - BEACON[2]);
+      run(0.22, -0.26, 0.2, `rgba(255,70,70,${0.18 + clamp(2.0 / (dB * dB + 0.6)) * 0.7})`);
+      run(-0.18, -0.3, 0.14, 'rgba(195,210,232,0.3)');
+    }
+    const se = P(...SPARK);
+    const sc = s(SPARK);
+    ctx.strokeStyle = 'rgba(230,150,95,0.95)';
+    ctx.lineWidth = 1;
+    for (let k = 0; k < 10; k++) {
+      const a = -0.7 + r() * 1.4;
+      ctx.beginPath(); ctx.moveTo(se[0], se[1]); ctx.lineTo(se[0] + Math.cos(a) * sc * 0.05, se[1] + Math.sin(a) * sc * 0.03 - 1); ctx.stroke();
+    }
+  }
+  // sparks: ballistic arcs, some bouncing, some sailing out over the edge
+  {
+    const r = rand(81);
+    const se = P(...SPARK);
+    const sc = s(SPARK);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 110; i++) {
+      const ang = -0.4 + r() * 2.4, el = 0.25 + r() * 1.0, sp = 1.0 + r() * 3.0;
+      const v = [Math.cos(ang) * Math.cos(el) * sp, Math.sin(el) * sp, Math.sin(ang) * Math.cos(el) * sp];
+      const T = 0.15 + r() * 0.55;
+      const pts = [];
+      let vy = v[1], py = SPARK[1], px = SPARK[0], pz = SPARK[2];
+      const steps = 12;
+      for (let k = 0; k <= steps; k++) {
+        const dt = T / steps;
+        px += v[0] * dt; pz += v[2] * dt; vy -= 9.8 * dt; py += vy * dt;
+        if (py < 0 && pz < EZ) { py = 0; vy = -vy * 0.35; }
+        pts.push([px, py, pz]);
+      }
+      const hot = r();
+      for (let k = 1; k < pts.length; k++) {
+        if (hidden(pts[k])) break;
+        const f = k / pts.length;
+        const col = hot > 0.5 ? [255, 235 - f * 110, 190 - f * 170] : [255, 160 - f * 90, 70 - f * 50];
+        const a = P(...pts[k - 1]), b2 = P(...pts[k]);
+        ctx.strokeStyle = rgba(col, (1 - f) * 0.85);
+        ctx.lineWidth = Math.max(0.6, 1.4 * (1 - f));
+        ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b2); ctx.stroke();
+        e.strokeStyle = rgba(col, (1 - f) * 0.55);
+        e.lineWidth = 1.6;
+        e.beginPath(); e.moveTo(...a); e.lineTo(...b2); e.stroke();
+      }
+    }
+    ctx.restore();
+    light(ctx, se[0], se[1], sc * 0.45, [255, 150, 70], 0.25);
+    light(e, se[0], se[1], sc * 0.05, [255, 245, 230], 0.9);
+    light(e, se[0], se[1], sc * 0.18, [255, 140, 60], 0.45);
+    light(ctx, se[0], se[1] + 4, sc * 0.9, [255, 110, 50], 0.12, 0.35);
+  }
+
+  /* ---------------------------------------------------------- rain + mist */
+  {
+    const small = layer(108, 90);
+    small.ctx.drawImage(ctx.canvas, 0, 0, 108, 90);
+    const lum = small.ctx.getImageData(0, 0, 108, 90).data;
+    const L = (x, y) => {
+      const i = (clamp(Math.floor(y / 10), 0, 89) * 108 + clamp(Math.floor(x / 10), 0, 107)) * 4;
+      return (lum[i] * 0.4 + lum[i + 1] * 0.35 + lum[i + 2] * 0.25) / 255;
+    };
+    const bc = P(...BEACON);
+    const nearB = (x, y) => Math.exp(-((x - bc[0]) ** 2 + (y - bc[1]) ** 2) / (2 * 150 * 150));
+    rainLit(ctx, W, H, { count: 3000, seed: 91, angle: -0.14, len: [18, 52], width: 1, color: (x, y) => (nearB(x, y) > 0.25 ? [255, 120, 120] : [205, 214, 232]), alpha: 0.38, lum: (x, y) => 0.3 + L(x, y) * 1.2 + nearB(x, y) * 1.6, minLum: 0.1 });
+    rainLit(ctx, W, H, { count: 220, seed: 92, angle: -0.16, len: [80, 150], width: 1.5, color: [210, 220, 236], alpha: 0.12, lum: (x, y) => 0.4 + L(x, y) + nearB(x, y) });
+    const r = rand(93);
+    for (let i = 0; i < 300; i++) {
+      const x = -5 + r() * 9, z = 1.0 + r() * (EZ - 1.3);
+      const p = P(x, 0, z);
+      if (p[1] < 0 || p[1] > H) continue;
+      const sc = s([x, 0, z]);
+      ctx.strokeStyle = `rgba(200,212,230,${0.12 + r() * 0.25})`;
+      ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.ellipse(p[0], p[1], 0.035 * sc, 0.012 * sc, 0, Math.PI, TAU); ctx.stroke();
+    }
+    // low cloud drifting between the towers below
+    const edgeY = P(0, 0, EZ)[1];
+    const mist = noiseLayer(W, H, { seed: 94, scale: 0.004, octaves: 5, step: 3, lo: 0.45, hi: 0.85, color: [150, 148, 162], alpha: 0.24, warp: 140, mask: (x, y) => smooth(horizon - 40, horizon + 60, y) * (1 - smooth(edgeY - 40, edgeY + 10, y)) });
+    ctx.drawImage(mist, 0, 0);
+    particles(ctx, W, H, { count: 180, seed: 95, size: [0.6, 2.2], color: [255, 110, 100], alpha: 0.45, lum: (x, y) => nearB(x, y) * 1.4 });
+  }
+
+  /* ---------------------------------------------------------- post */
+  {
+    const bp = brightPass(ctx.canvas, 0.62, 0.2, 0.6);
+    const em = layer(W, H);
+    em.ctx.drawImage(bp, 0, 0);
+    em.ctx.globalCompositeOperation = 'lighter';
+    em.ctx.drawImage(E.c, 0, 0);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.55;
+    ctx.drawImage(E.c, 0, 0);
+    ctx.restore();
+    bloom(ctx, em.c, W, H, [{ r: 2.5, a: 0.5 }, { r: 12, a: 0.45 }, { r: 44, a: 0.4 }, { r: 120, a: 0.3 }]);
+  }
+  cinematicGrade(ctx, W, H, { contrast: 1.12, sat: 0.7, lift: [0.006, 0.008, 0.012], shadowTint: [0, 0.004, 0.012], highTint: [0.012, 0.004, 0.0], keepRed: 0.9 });
+  chroma(ctx, W, H, 1.4);
+  {
+    const g = ctx.createRadialGradient(W * 0.5, H * 0.32, W * 0.25, W * 0.5, H * 0.4, W * 0.85);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(0,0,0,0.5)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+  fadeBottom(ctx, W, H, H * 0.52, H * 0.9, [9, 9, 11]);
+  grainLuma(ctx, W, H, { amount: 9, seed: 96 });
+  fadeBottom(ctx, W, H, H * 0.86, H * 0.97, [9, 9, 11]);
+  done();
+}
+</script></body></html>

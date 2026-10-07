@@ -1,0 +1,206 @@
+/* ── Stat strip ─────────────────────────────────────────────── */
+.hud {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  flex: none;
+  padding: 9px 4px 8px;
+  border-radius: 14px;
+  border: 1px solid var(--line-2);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 55%),
+    var(--glass-2);
+  box-shadow: var(--shadow-1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.stat {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.stat + .stat::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--line-2), transparent);
+}
+
+.label {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.value {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 21px;
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.unit {
+  margin-left: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+
+.of {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.tone_default {
+  color: var(--text);
+}
+
+.tone_red {
+  color: var(--red-2);
+  text-shadow: 0 0 10px var(--red-glow);
+}
+
+.tone_green {
+  color: var(--green);
+  text-shadow: 0 0 10px var(--green-glow);
+}
+
+.tone_dim {
+  color: var(--text-2);
+}
+
+/* ── Life pips ──────────────────────────────────────────────── */
+.pips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 21px;
+}
+
+.pip {
+  width: 9px;
+  height: 9px;
+  transform: rotate(45deg);
+  border-radius: 2px;
+  transition:
+    background-color var(--dur-3) var(--ease-out),
+    box-shadow var(--dur-3) var(--ease-out),
+    opacity var(--dur-3);
+}
+
+.pipOn {
+  background: linear-gradient(135deg, #ff6b74, var(--red) 55%, var(--red-3));
+  box-shadow:
+    0 0 8px var(--red-glow),
+    0 0 1px #fff inset;
+}
+
+.pipOff {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--text-4);
+  opacity: 0.8;
+}
+
+.noLives {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--red-2);
+}
+
+/* ── Phase banner ───────────────────────────────────────────── */
+.phase {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 30px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  text-align: center;
+  transition: color var(--dur-2);
+}
+
+.phase > span:last-child {
+  /* optical centring for wide tracking */
+  margin-right: -0.26em;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.phase_red {
+  color: var(--red-2);
+  text-shadow: 0 0 12px var(--red-glow);
+}
+
+.phase_white {
+  color: var(--text);
+}
+
+.phase_green {
+  color: var(--green);
+  text-shadow: 0 0 12px var(--green-glow);
+}
+
+.phase_blue {
+  color: #8ec1ff;
+  text-shadow: 0 0 12px var(--blue-glow);
+}
+
+.phase_dim {
+  color: var(--text-3);
+}
+
+/* ── Typewriter ─────────────────────────────────────────────── */
+.typed {
+  font-family: var(--font-mono);
+  letter-spacing: 0.03em;
+}
+
+.caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -0.16em;
+  background: var(--red-2);
+  box-shadow: 0 0 8px var(--red-glow);
+}
+
+.caretIdle {
+  animation: caret-blink 1s steps(2, start) infinite;
+}
+
+@keyframes caret-blink {
+  to {
+    visibility: hidden;
+  }
+}

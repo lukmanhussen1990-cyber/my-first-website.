@@ -1,0 +1,477 @@
+.content {
+  padding-top: 0;
+}
+
+.progress {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  margin-right: 10px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  background: rgba(12, 12, 15, 0.6);
+  border: 1px solid var(--line-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress b {
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* full-bleed so the halo is clipped at the screen edge, not scrollable past it */
+  margin-inline: calc(-1 * var(--gutter));
+  padding: 16px var(--gutter) 6px;
+  overflow-x: clip;
+}
+
+.halo {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 135%;
+  max-width: 520px;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  /* the glow reaches past the top of the scroll area: fade it out before it is clipped */
+  mask-image: linear-gradient(180deg, transparent 22%, #000 48%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 22%, #000 48%);
+  animation: halo 5.5s ease-in-out infinite alternate;
+}
+
+.haloRed {
+  background: radial-gradient(closest-side, rgba(255, 30, 45, 0.34), rgba(227, 18, 31, 0.1) 48%, transparent 72%);
+}
+
+.haloSilver {
+  background: radial-gradient(
+    closest-side,
+    rgba(210, 215, 228, 0.16),
+    rgba(227, 18, 31, 0.08) 50%,
+    transparent 72%
+  );
+}
+
+@keyframes halo {
+  from {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+
+.float {
+  position: relative;
+  width: min(44%, 172px, 27vh);
+  animation: float 5.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.6deg);
+  }
+  50% {
+    transform: translateY(-9px) rotate(0.6deg);
+  }
+}
+
+/* soft contact shadow that breathes with the float */
+.floor {
+  width: min(36%, 140px);
+  height: 14px;
+  margin-top: 10px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.75), transparent);
+  animation: floor 5.2s ease-in-out infinite;
+}
+
+@keyframes floor {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scaleX(0.82);
+    opacity: 0.55;
+  }
+}
+
+/* ── Copy ─────────────────────────────────────────────────────── */
+.body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.name {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: 0.42em;
+  margin-right: -0.42em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow:
+    0 0 1px rgba(255, 255, 255, 0.6),
+    0 2px 22px rgba(0, 0, 0, 0.9);
+}
+
+.category {
+  margin-top: 10px;
+  text-align: center;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.categoryRed {
+  color: var(--red-2);
+  text-shadow: 0 0 10px var(--red-glow-soft);
+}
+
+.desc {
+  margin: 14px auto 0;
+  max-width: 330px;
+  text-align: center;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+/* ── Info panel ───────────────────────────────────────────────── */
+.info {
+  margin: 22px 0 16px;
+  padding: 14px 16px 6px;
+}
+
+.infoHead {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.infoKicker {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--red-2);
+}
+
+.infoTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.infoName {
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rows {
+  margin: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  min-height: 42px;
+  border-bottom: 1px solid var(--line);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row dt {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.row dt svg {
+  flex: none;
+  color: var(--text);
+}
+
+.row dd {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+  color: var(--text);
+}
+
+/* ── All trials ───────────────────────────────────────────────── */
+.all {
+  margin-top: 30px;
+}
+
+.sectionH {
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trial {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 70px;
+  padding: 8px 8px 8px 10px;
+  border-radius: var(--r-md);
+  text-align: left;
+  background: var(--glass);
+  border: 1px solid var(--line-2);
+  box-shadow: var(--shadow-1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    transform var(--dur-1) var(--ease-out),
+    border-color var(--dur-2);
+}
+
+.trial:active {
+  transform: scale(0.985);
+}
+
+.trial:hover {
+  border-color: var(--line-3);
+}
+
+.isNext {
+  border-color: rgba(255, 43, 56, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(255, 43, 56, 0.18),
+    0 0 18px var(--red-glow-soft);
+}
+
+.isNext::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--red-2);
+  box-shadow: 0 0 10px var(--red-glow);
+}
+
+.locked {
+  background: rgba(12, 12, 15, 0.5);
+}
+
+.locked .trialTitle {
+  color: var(--text-3);
+}
+
+.trialMain {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.trialTitle {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15.5px;
+  line-height: 1.1;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trialMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.trialZone {
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trialStatus {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+.lock,
+.open {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.lock {
+  color: var(--text-3);
+  border: 1px solid var(--line-2);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.open {
+  color: var(--amber);
+  border: 1px solid rgba(255, 138, 31, 0.42);
+  background: rgba(255, 138, 31, 0.08);
+}
+
+.isNext .open {
+  color: #fff;
+  border-color: rgba(255, 120, 128, 0.5);
+  background: linear-gradient(180deg, #f01a27, #c10a15);
+  box-shadow: 0 0 12px var(--red-glow-soft);
+}
+
+.cleared {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.earned {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.starOn {
+  color: var(--gold);
+  filter: drop-shadow(0 0 3px rgba(246, 185, 43, 0.55));
+}
+
+.starOff {
+  color: var(--text-4);
+}
+
+.check {
+  color: var(--green);
+  filter: drop-shadow(0 0 4px var(--green-glow));
+}
+
+.chev {
+  flex: none;
+  color: var(--text-4);
+}
+
+@media (max-width: 370px) {
+  .name {
+    font-size: 26px;
+  }
+
+  .row dt {
+    gap: 8px;
+    font-size: 12.5px;
+  }
+}
+
+.locked .trialMeta {
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+
+/* Short phones (e.g. 360×740): tighten the hero and the vitals so START
+   CHALLENGE still lands above the fold, as in the reference. */
+@media (max-height: 780px) {
+  .hero {
+    /* keep clear of the header through the float's 9px rise */
+    padding-top: 13px;
+  }
+
+  .float {
+    width: min(37%, 172px, 24vh);
+  }
+
+  .floor {
+    margin-top: 6px;
+    height: 12px;
+  }
+
+  .desc {
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+
+  .info {
+    margin: 16px 0 14px;
+    padding-top: 12px;
+  }
+
+  .infoHead {
+    gap: 6px;
+    padding-bottom: 10px;
+  }
+
+  .row {
+    min-height: 37px;
+  }
+}

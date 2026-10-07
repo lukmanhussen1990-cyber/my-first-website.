@@ -1,0 +1,627 @@
+/* Background: the city, pushed out of focus. Our own shade (Screen shade="none")
+ * lets the blurred red sky glow through behind the heading, then sinks to near
+ * black under the form. */
+.root > div:first-child > img {
+  transform: scale(1.08);
+  filter: blur(3px) saturate(1.1);
+}
+
+.root > div:first-child::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 40% at 50% 4%, rgba(227, 18, 31, 0.14), rgba(227, 18, 31, 0) 70%),
+    radial-gradient(90% 40% at 50% 100%, rgba(227, 18, 31, 0.07), rgba(227, 18, 31, 0) 70%),
+    linear-gradient(
+      180deg,
+      rgba(5, 5, 6, 0.5) 0%,
+      rgba(5, 5, 6, 0.6) 20%,
+      rgba(5, 5, 6, 0.84) 40%,
+      rgba(5, 5, 6, 0.94) 64%,
+      rgba(5, 5, 6, 0.97) 100%
+    );
+  pointer-events: none;
+}
+
+/* Screen's content column does not scroll here (the rain canvas lives in it);
+ * .scroller below does. It is also the size container for the spacing rules. */
+.root .content {
+  padding: 0;
+  container-type: size;
+}
+
+.scroller {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0 calc(var(--gutter) + var(--safe-right)) calc(var(--sp-5) + var(--safe-bottom))
+    calc(var(--gutter) + var(--safe-left));
+}
+
+.scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.stage {
+  position: relative;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* Top breathing room scales with the available height but never with the
+ * form's own height, so inline errors grow the page downwards instead of
+ * shoving the heading up. */
+.growTop {
+  flex: none;
+}
+
+.login .growTop {
+  height: clamp(0px, calc(25cqh - 120px), 96px);
+}
+
+.reg .growTop {
+  height: clamp(0px, calc(24cqh - 150px), 56px);
+}
+
+/* ── Heading ────────────────────────────────────────────────── */
+.head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--sp-2) 0 var(--sp-6);
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--red-2);
+  text-shadow: 0 0 10px var(--red-glow-soft);
+}
+
+.kicker svg {
+  flex: none;
+  filter: drop-shadow(0 0 4px var(--red-glow));
+}
+
+.kicker span:nth-last-child(2) {
+  margin-right: -0.32em;
+}
+
+.rule {
+  width: 26px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 43, 56, 0), rgba(255, 43, 56, 0.7));
+}
+
+.rule:last-child {
+  background: linear-gradient(90deg, rgba(255, 43, 56, 0.7), rgba(255, 43, 56, 0));
+}
+
+.title {
+  margin-top: 12px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 31px;
+  line-height: 1.05;
+  letter-spacing: 0.14em;
+  margin-right: -0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.8);
+}
+
+.subtitle {
+  margin-top: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+/* ── Form panel ─────────────────────────────────────────────── */
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 36px 22px 34px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 30%),
+    var(--glass-2);
+  box-shadow:
+    var(--shadow-2),
+    0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+/* inner hairline: the panel reads as a face-down playing card */
+.panel::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(255, 43, 56, 0.09);
+  border-radius: 11px;
+  pointer-events: none;
+}
+
+/* playing-card corner indices */
+.corner {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--red-2);
+  opacity: 0.85;
+  filter: drop-shadow(0 0 4px rgba(227, 18, 31, 0.55));
+  pointer-events: none;
+}
+
+.corner b {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 0.85;
+}
+
+.cornerBr {
+  top: auto;
+  left: auto;
+  right: 12px;
+  bottom: 12px;
+  transform: rotate(180deg);
+}
+
+/* ── Field ──────────────────────────────────────────────────── */
+.field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.label {
+  margin: 0 0 7px 2px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  border-radius: 11px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(8, 8, 10, 0.7));
+  border: 1px solid var(--line-2);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.7),
+    0 1px 0 rgba(255, 255, 255, 0.04);
+  transition:
+    border-color var(--dur-2),
+    box-shadow var(--dur-2);
+}
+
+.control:hover {
+  border-color: var(--line-3);
+}
+
+.control:focus-within {
+  border-color: rgba(255, 43, 56, 0.85);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.7),
+    0 0 0 3px rgba(227, 18, 31, 0.2),
+    0 0 18px rgba(227, 18, 31, 0.28);
+}
+
+.field[data-invalid] .control {
+  border-color: rgba(255, 43, 56, 0.6);
+}
+
+.fieldIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  color: var(--text-3);
+  transition: color var(--dur-2);
+}
+
+.control:focus-within .fieldIcon,
+.field[data-invalid] .fieldIcon {
+  color: var(--red-2);
+}
+
+.input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 50px;
+  padding: 0 14px 0 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 16px; /* ≥16px stops iOS zooming on focus */
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  caret-color: var(--red-2);
+}
+
+.input:focus-visible {
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+.input[type='password'] {
+  letter-spacing: 0.12em;
+}
+
+.input[type='password']::placeholder {
+  letter-spacing: 0.01em;
+}
+
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  -webkit-box-shadow: 0 0 0 100px #0a0a0c inset;
+  caret-color: var(--red-2);
+}
+
+.eye {
+  flex: none;
+  margin-right: 5px;
+  color: var(--text-3);
+}
+
+.eye:hover,
+.eye[aria-pressed='true'] {
+  color: var(--text);
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 8px 0 0 2px;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: #ff5d66;
+  animation: rise var(--dur-3) var(--ease-out) both;
+}
+
+.error svg {
+  flex: none;
+  margin-top: 1.5px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Strength meter ─────────────────────────────────────────── */
+.strength {
+  margin: 10px 2px 0;
+}
+
+.strengthRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.segs {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+
+.seg {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.09);
+  transition:
+    background-color var(--dur-3),
+    box-shadow var(--dur-3);
+}
+
+.seg[data-on='red'] {
+  background: var(--red);
+  box-shadow: 0 0 8px var(--red-glow);
+}
+
+.seg[data-on='amber'] {
+  background: var(--amber);
+  box-shadow: 0 0 8px var(--amber-glow);
+}
+
+.seg[data-on='green'] {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green-glow);
+}
+
+.strengthLabel {
+  flex: none;
+  min-width: 64px;
+  text-align: right;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  opacity: 0.75;
+}
+
+.strengthLabel[data-tone] {
+  opacity: 1;
+}
+
+.strengthLabel[data-tone='red'] {
+  color: var(--red-2);
+}
+
+.strengthLabel[data-tone='amber'] {
+  color: var(--amber);
+}
+
+.strengthLabel[data-tone='green'] {
+  color: var(--green);
+}
+
+.hint {
+  margin-top: 7px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-2);
+  opacity: 0.8;
+}
+
+/* ── Remember-me switch ─────────────────────────────────────── */
+.switchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  min-height: 48px;
+  margin-top: -4px;
+  padding: 6px 2px 0;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  border-radius: 0;
+}
+
+.switchText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding-top: 8px;
+}
+
+.switchLabel {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.switchSub {
+  font-size: 12px;
+  color: var(--text-2);
+  opacity: 0.8;
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 26px;
+  margin-top: 8px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line-2);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+  transition:
+    background-color var(--dur-2),
+    border-color var(--dur-2),
+    box-shadow var(--dur-2);
+}
+
+.knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #f4f4f6, #b9b9c2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.55);
+  transition: transform var(--dur-3) var(--ease-out);
+}
+
+.switch[data-on] {
+  background: linear-gradient(180deg, #f01a27, #b10914);
+  border-color: rgba(255, 120, 128, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 14px var(--red-glow-soft);
+}
+
+.switch[data-on] .knob {
+  transform: translateX(20px);
+  background: #fff;
+}
+
+/* ── Alerts & submit ────────────────────────────────────────── */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid rgba(255, 43, 56, 0.45);
+  background: linear-gradient(180deg, rgba(227, 18, 31, 0.16), rgba(227, 18, 31, 0.07));
+  color: #ffd5d8;
+  font-size: 13px;
+  line-height: 1.4;
+  animation: rise var(--dur-3) var(--ease-out) both;
+}
+
+.alert svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--red-2);
+}
+
+.countdown {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-2);
+}
+
+.countdown b {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.submit {
+  margin-top: 20px;
+}
+
+/* ── Below the form ─────────────────────────────────────────── */
+.below {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex: 1 0 auto;
+}
+
+.switchLink {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.switchLink strong {
+  margin-left: 4px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 14.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--red-2);
+  text-shadow: 0 0 10px var(--red-glow-soft);
+}
+
+.switchLink:hover strong {
+  color: #ff5d66;
+}
+
+.trust {
+  display: block;
+  margin-top: auto;
+  padding-top: 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--text-2);
+  opacity: 0.75;
+}
+
+.trust svg {
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: -3px;
+  color: var(--green);
+  opacity: 0.85;
+}
+
+/* Short phones (≈360×740 and below): tighten the rhythm so the whole register
+ * form, its CTA and the trust note fit without scrolling. */
+@container (max-height: 720px) {
+  .head {
+    padding-bottom: 18px;
+  }
+
+  .title {
+    margin-top: 10px;
+  }
+
+  .panel {
+    gap: 14px;
+    padding: 34px 22px 28px;
+  }
+
+  .label {
+    margin-bottom: 6px;
+  }
+
+  .submit {
+    margin-top: 16px;
+  }
+
+  .below {
+    margin-top: 4px;
+    gap: 4px;
+  }
+
+  .trust {
+    padding-top: 6px;
+  }
+}

@@ -1,0 +1,696 @@
+/* ── Hero ───────────────────────────────────────────────────── */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 26px 0 22px;
+  text-align: center;
+}
+
+.avatarBtn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.avatarBtn:active {
+  transform: scale(0.97);
+}
+
+.halo {
+  position: absolute;
+  inset: -22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(227, 18, 31, 0.32) 0%, rgba(227, 18, 31, 0.1) 45%, transparent 70%);
+  pointer-events: none;
+}
+
+/* thin outer orbit ring with tick marks */
+.halo::after {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 43, 56, 0.28);
+}
+
+.avatarEdit {
+  position: absolute;
+  right: 4px;
+  bottom: 6px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(180deg, #f01a27, #b30914);
+  border: 2px solid var(--bg-1);
+  box-shadow: 0 0 12px var(--red-glow);
+}
+
+.nameRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 18px;
+  max-width: 100%;
+  padding: 0 40px;
+}
+
+.name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 27px;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  color: var(--text);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.7);
+}
+
+.nameEdit {
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  margin-top: -20px;
+  color: var(--text-2);
+}
+
+.idRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.archetype {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ── Level card ─────────────────────────────────────────────── */
+.card {
+  padding: 16px 14px 16px;
+}
+
+.levelRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 2px;
+}
+
+.levelInfo {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.levelTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.levelTop b {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.04em;
+}
+
+.levelTop span {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.levelNext {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+.cardDivider {
+  margin: 14px 0 12px;
+}
+
+/* ── Guest banner ───────────────────────────────────────────── */
+.guestBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 13px 12px 13px 14px;
+  border-radius: var(--r-lg);
+  text-align: left;
+  background: linear-gradient(100deg, rgba(227, 18, 31, 0.16), rgba(227, 18, 31, 0.04) 70%);
+  border: 1px solid rgba(255, 43, 56, 0.55);
+  box-shadow:
+    0 0 18px var(--red-glow-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: transform var(--dur-1) var(--ease-out);
+}
+
+.guestBanner:active {
+  transform: scale(0.985);
+}
+
+.guestIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  color: var(--red-2);
+  background: rgba(227, 18, 31, 0.14);
+  border: 1px solid rgba(255, 43, 56, 0.35);
+}
+
+.guestText {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.guestText b {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.guestText small {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.guestChev {
+  flex: none;
+  color: var(--red-2);
+}
+
+/* ── Sections ───────────────────────────────────────────────── */
+.section {
+  margin-top: 28px;
+}
+
+/* Achievements */
+.badgeGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 6px;
+}
+
+.badgeCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 2px 8px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  border: 1px solid var(--line);
+  transition:
+    transform var(--dur-1) var(--ease-out),
+    border-color var(--dur-2);
+}
+
+.badgeCell:hover {
+  border-color: var(--line-2);
+}
+
+.badgeCell:active {
+  transform: scale(0.95);
+}
+
+.badgeName {
+  max-width: 100%;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  color: var(--text-2);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.badgeLocked {
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.badgeLocked .badgeName {
+  color: var(--text-3);
+}
+
+/* "View all achievements" disclosure */
+.moreBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  border-radius: 12px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  border: 1px dashed var(--line-2);
+  transition:
+    color var(--dur-2),
+    border-color var(--dur-2);
+}
+
+.moreBtn:hover {
+  color: var(--text);
+  border-color: var(--line-3);
+}
+
+.moreBtn svg {
+  color: var(--red-2);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.moreOpen svg {
+  transform: rotate(180deg);
+}
+
+/* Statistics grid */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.statTile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  padding: 14px 12px;
+}
+
+/* hairline grid between tiles */
+.statTile:nth-child(odd)::after {
+  content: '';
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  right: 0;
+  width: 1px;
+  background: var(--line);
+}
+
+.statTile:nth-child(n + 3) {
+  border-top: 1px solid var(--line);
+}
+
+.statIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--text-2);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+}
+
+.statIcon_gold {
+  color: var(--gold);
+  background: rgba(246, 185, 43, 0.08);
+  border-color: rgba(246, 185, 43, 0.22);
+}
+
+.statIcon_red {
+  color: var(--red-2);
+  background: rgba(227, 18, 31, 0.1);
+  border-color: rgba(255, 43, 56, 0.25);
+}
+
+.statText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.statText b {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.statText b i {
+  margin-left: 2px;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.statText small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+/* Suit mastery */
+.suitList {
+  overflow: hidden;
+}
+
+.suitRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  transition: background-color var(--dur-2);
+}
+
+.suitRow:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.suitRow + .suitRow {
+  border-top: 1px solid var(--line);
+}
+
+/* tiny playing-card frame around the suit glyph */
+.suitGlyph {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 44px;
+  border-radius: 6px;
+  background: linear-gradient(160deg, #1d1d23, #0c0c0f);
+  border: 1px solid var(--line-2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.suitGlyphRed {
+  border-color: rgba(255, 43, 56, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 0 10px rgba(227, 18, 31, 0.15);
+}
+
+.suitBody {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suitTop {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.suitTop b {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.suitTop small {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+.suitCount {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.suitCount span {
+  color: var(--text);
+}
+
+.suitDone span {
+  color: var(--gold);
+}
+
+/* Recent trials */
+.historyList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+}
+
+.historyRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.historyRow + .historyRow {
+  border-top: 1px solid var(--line);
+}
+
+.historyGlyph {
+  flex: none;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.historyGlyph em {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 5px;
+  font-family: var(--font-ui);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  color: var(--text);
+  background: var(--bg-3);
+  border: 1px solid var(--line-2);
+}
+
+.historyWon {
+  color: var(--text);
+}
+
+.historyRed {
+  color: var(--red-2);
+}
+
+.historyLost {
+  opacity: 0.6;
+  border-style: dashed;
+}
+
+.historyBody {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.historyBody b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+}
+
+.historyBody small {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+.historyRight {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.historyPts {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 16px;
+  text-align: center;
+}
+
+.empty p {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+/* ── Avatar picker sheet ────────────────────────────────────── */
+.avatarGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px 6px;
+  padding-bottom: 6px;
+}
+
+.avatarPick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 0;
+  border-radius: 12px;
+  transition: transform var(--dur-1) var(--ease-out);
+}
+
+.avatarPick:active {
+  transform: scale(0.94);
+}
+
+.avatarPickImg {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+}
+
+.avatarPick:not(.avatarCurrent) .avatarPickImg > span:first-child {
+  opacity: 0.78;
+  transition: opacity var(--dur-2);
+}
+
+.avatarPick:hover .avatarPickImg > span:first-child {
+  opacity: 1;
+}
+
+.avatarCheck {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--red);
+  border: 2px solid #15151a;
+  box-shadow: 0 0 10px var(--red-glow);
+}
+
+.avatarPickName {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.avatarCurrent .avatarPickName {
+  color: var(--red-2);
+}
+
+/* ── Achievement sheet ──────────────────────────────────────── */
+.badgeSheet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.badgeSheetArt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin: 6px 0 18px;
+}
+
+.badgeSheetArt::before {
+  content: '';
+  position: absolute;
+  inset: -30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08), transparent 65%);
+}
+
+.badgeSheetDate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: -6px 0 20px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.badgeSheetDate svg {
+  color: var(--green);
+}
+
+/* @username keeps its case inside the uppercase pill */
+.handle {
+  text-transform: none;
+  letter-spacing: 0.04em;
+  font-size: 12.5px;
+}

@@ -1,0 +1,508 @@
+/* ── Key art treatment ───────────────────────────────────────────
+ * <Screen bg> renders the art as its first child (div > img). We push in
+ * slowly on the floating card (Ken Burns, transform only) and light the card
+ * with a pulsing bloom + anamorphic streak blended over the art.
+ */
+.root > div:first-child > img {
+  /* between the card (28%) and the figure's feet (~61%): neither drifts far */
+  transform-origin: 50% 42%;
+  will-change: transform;
+  animation: kenburns 12s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.root > div:first-child::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 28%;
+  width: 84%;
+  aspect-ratio: 1 / 1.2;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 92, 102, 0.5),
+    rgba(227, 18, 31, 0.3) 38%,
+    rgba(227, 18, 31, 0.1) 66%,
+    rgba(227, 18, 31, 0) 100%
+  );
+  mix-blend-mode: screen;
+  /* resting values double as the still frame when motion is reduced */
+  opacity: 0.7;
+  transform: translate(-50%, -50%);
+  will-change: transform, opacity;
+  animation: card-glow 3.6s ease-in-out infinite;
+}
+
+.root > div:first-child::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 28%;
+  width: 130%;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 43, 56, 0) 8%,
+    rgba(255, 70, 82, 0.45) 38%,
+    rgba(255, 210, 214, 0.75) 50%,
+    rgba(255, 70, 82, 0.45) 62%,
+    rgba(255, 43, 56, 0) 92%
+  );
+  box-shadow: 0 0 10px 2px rgba(227, 18, 31, 0.35);
+  mix-blend-mode: screen;
+  opacity: 0.3;
+  transform: translate(-50%, -50%) scaleX(0.8);
+  will-change: transform, opacity;
+  animation: card-flare 3.6s ease-in-out infinite;
+}
+
+@keyframes kenburns {
+  from {
+    transform: scale(1.001);
+  }
+  to {
+    transform: scale(1.09);
+  }
+}
+
+@keyframes card-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+@keyframes card-flare {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: translate(-50%, -50%) scaleX(0.7);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scaleX(1);
+  }
+}
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.stage {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.growTop {
+  flex: 10 1 0;
+  min-height: 24px;
+}
+
+.growBottom {
+  flex: 1 1 0;
+  min-height: 18px;
+  max-height: 26px;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logoWrap {
+  position: relative;
+}
+
+/* RGB-split ghosts of the wordmark — only visible during glitch bursts */
+.ghosts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ghostR,
+.ghostC {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+}
+
+.ghosts .ghostR > div {
+  color: #ff1f3d;
+  text-shadow: none;
+}
+
+.ghosts .ghostC > div {
+  color: #19e3ff;
+  text-shadow: none;
+}
+
+.ghostR {
+  animation: ghost-in-r 0.75s steps(1, end) 0.35s both;
+}
+
+.ghostC {
+  animation: ghost-in-c 0.75s steps(1, end) 0.35s both;
+}
+
+.tagline {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  margin-top: 26px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 11.5px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.tagline span:last-child {
+  margin-right: -0.34em;
+}
+
+.tagline i {
+  font-style: normal;
+  color: var(--red);
+  text-shadow: 0 0 6px var(--red-glow);
+}
+
+/* ── Progress ───────────────────────────────────────────────── */
+.meter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: 34px;
+}
+
+.pct {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.9);
+}
+
+.pct small {
+  margin-left: 1px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.track {
+  position: relative;
+  width: min(62%, 236px);
+  height: 3px;
+  margin-top: 11px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+.fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #5a040b 0%, var(--red) 62%, var(--red-2) 100%);
+  box-shadow: 0 0 8px var(--red-glow);
+  will-change: transform;
+}
+
+.headLane {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.head {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 5px 1px rgba(255, 255, 255, 0.9),
+    0 0 12px 3px rgba(255, 43, 56, 0.8),
+    0 0 26px 8px rgba(227, 18, 31, 0.35);
+  animation: head-pulse 1.4s ease-in-out infinite;
+}
+
+.head::before {
+  content: '';
+  position: absolute;
+  right: 3px;
+  top: 50%;
+  width: 34px;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(255, 140, 150, 0), rgba(255, 225, 228, 0.9));
+}
+
+@keyframes head-pulse {
+  0%,
+  100% {
+    transform: scale(0.85);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.status {
+  min-height: 14px;
+  margin-top: 15px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-2);
+}
+
+.statusText {
+  display: inline-block;
+  margin-right: -0.34em;
+}
+
+/* ── Credit ─────────────────────────────────────────────────── */
+.foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: var(--safe-bottom);
+}
+
+.foot .credit {
+  color: var(--text-2);
+}
+
+.version {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  margin-right: -0.24em;
+  color: var(--text-3);
+}
+
+/* Short phones: keep the wordmark below the figure's feet in the key art. */
+@media (max-height: 780px) {
+  .tagline {
+    margin-top: 20px;
+  }
+
+  .meter {
+    margin-top: 24px;
+  }
+
+  .status {
+    margin-top: 12px;
+  }
+
+  .growBottom {
+    min-height: 14px;
+    max-height: 22px;
+  }
+
+  .foot {
+    gap: 5px;
+  }
+}
+
+/* ── Glitch-out hand-off ────────────────────────────────────── */
+.fx {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.fx > span {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.flashWhite {
+  background: #fff;
+}
+
+.flashRed {
+  background:
+    radial-gradient(90% 60% at 50% 66%, rgba(255, 43, 56, 0.75), rgba(227, 18, 31, 0.35) 55%, rgba(74, 2, 7, 0.65));
+}
+
+.slices i {
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  display: block;
+}
+
+.slices i:nth-child(1) {
+  top: 21%;
+  height: 7px;
+  background: rgba(255, 43, 56, 0.55);
+}
+
+.slices i:nth-child(2) {
+  top: 47%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.slices i:nth-child(3) {
+  top: 66%;
+  height: 16px;
+  background: linear-gradient(90deg, rgba(25, 227, 255, 0.25), rgba(255, 43, 56, 0.45));
+  mix-blend-mode: screen;
+}
+
+.slices i:nth-child(4) {
+  top: 83%;
+  height: 4px;
+  background: rgba(255, 43, 56, 0.6);
+}
+
+.blackout {
+  background: #050506;
+}
+
+.out .flashWhite {
+  animation: flash-white 0.62s linear both;
+}
+
+.out .flashRed {
+  animation: flash-red 0.62s steps(1, end) both;
+}
+
+.out .slices {
+  animation: slices 0.62s steps(1, end) both;
+}
+
+.out .blackout {
+  animation: blackout 0.62s cubic-bezier(0.55, 0, 0.75, 0.3) both;
+}
+
+.out .brand {
+  animation: jitter 0.5s steps(1, end) both;
+}
+
+.out .ghostR {
+  animation: ghost-out-r 0.55s steps(1, end) both;
+}
+
+.out .ghostC {
+  animation: ghost-out-c 0.55s steps(1, end) both;
+}
+
+@keyframes ghost-in-r {
+  0% { opacity: 0; transform: translate(0, 0); clip-path: inset(0 0 0 0); }
+  16% { opacity: 0.85; transform: translate(-7px, 0); clip-path: inset(8% 0 52% 0); }
+  30% { opacity: 0.6; transform: translate(4px, 1px); clip-path: inset(58% 0 6% 0); }
+  46% { opacity: 0.75; transform: translate(-3px, 0); clip-path: inset(30% 0 34% 0); }
+  62% { opacity: 0; transform: translate(0, 0); clip-path: inset(0 0 0 0); }
+  100% { opacity: 0; }
+}
+
+@keyframes ghost-in-c {
+  0% { opacity: 0; transform: translate(0, 0); clip-path: inset(0 0 0 0); }
+  16% { opacity: 0.7; transform: translate(6px, 0); clip-path: inset(54% 0 10% 0); }
+  30% { opacity: 0.55; transform: translate(-5px, -1px); clip-path: inset(12% 0 60% 0); }
+  46% { opacity: 0.6; transform: translate(3px, 0); clip-path: inset(40% 0 22% 0); }
+  62% { opacity: 0; transform: translate(0, 0); clip-path: inset(0 0 0 0); }
+  100% { opacity: 0; }
+}
+
+@keyframes ghost-out-r {
+  0% { opacity: 0.9; transform: translate(-9px, 0); clip-path: inset(0 0 46% 0); }
+  18% { opacity: 0.7; transform: translate(6px, -1px); clip-path: inset(50% 0 0 0); }
+  36% { opacity: 0.95; transform: translate(-14px, 0); clip-path: inset(20% 0 30% 0); }
+  56% { opacity: 0.6; transform: translate(10px, 0); clip-path: inset(0 0 0 0); }
+  80% { opacity: 0.4; transform: translate(-18px, 0); clip-path: inset(36% 0 40% 0); }
+  100% { opacity: 0; }
+}
+
+@keyframes ghost-out-c {
+  0% { opacity: 0.8; transform: translate(9px, 0); clip-path: inset(48% 0 0 0); }
+  18% { opacity: 0.65; transform: translate(-6px, 1px); clip-path: inset(0 0 52% 0); }
+  36% { opacity: 0.85; transform: translate(13px, 0); clip-path: inset(34% 0 18% 0); }
+  56% { opacity: 0.55; transform: translate(-10px, 0); clip-path: inset(0 0 0 0); }
+  80% { opacity: 0.4; transform: translate(17px, 0); clip-path: inset(10% 0 64% 0); }
+  100% { opacity: 0; }
+}
+
+@keyframes jitter {
+  0% { transform: translate(0, 0); }
+  12% { transform: translate(-4px, 1px); }
+  24% { transform: translate(5px, -1px); }
+  38% { transform: translate(-2px, 0); }
+  52% { transform: translate(7px, 1px); }
+  70% { transform: translate(-6px, 0); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes flash-white {
+  0% { opacity: 0; }
+  5% { opacity: 0.72; }
+  12% { opacity: 0.05; }
+  26% { opacity: 0; }
+  31% { opacity: 0.32; }
+  36% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes flash-red {
+  0% { opacity: 0; }
+  10% { opacity: 0.55; }
+  22% { opacity: 0.18; }
+  40% { opacity: 0.5; }
+  58% { opacity: 0.2; }
+  76% { opacity: 0.35; }
+  100% { opacity: 0; }
+}
+
+@keyframes slices {
+  0% { opacity: 0; transform: translateX(0); }
+  8% { opacity: 1; transform: translateX(-6%); }
+  20% { opacity: 0.4; transform: translateX(9%); }
+  34% { opacity: 1; transform: translateX(-3%); }
+  50% { opacity: 0.6; transform: translateX(12%); }
+  66% { opacity: 0.9; transform: translateX(-10%); }
+  84% { opacity: 0.3; transform: translateX(4%); }
+  100% { opacity: 0; transform: translateX(0); }
+}
+
+@keyframes blackout {
+  0%,
+  40% { opacity: 0; }
+  100% { opacity: 1; }
+}

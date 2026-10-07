@@ -1,0 +1,279 @@
+.body {
+  --c: var(--red);
+  --glow: var(--red-glow);
+  padding-bottom: var(--sp-2);
+}
+
+.locked {
+  --c: var(--red);
+  --glow: rgba(227, 18, 31, 0.5);
+}
+
+.available {
+  --c: var(--amber);
+  --glow: var(--amber-glow);
+}
+
+.completed {
+  --c: var(--green);
+  --glow: var(--green-glow);
+}
+
+.discovered {
+  --c: var(--red-2);
+  --glow: var(--red-glow);
+}
+
+/* ── header ───────────────────────────────────────────────────────── */
+.head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.emblem {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 52px;
+  color: var(--c);
+  filter: drop-shadow(0 0 8px var(--glow));
+}
+
+.emblem svg {
+  width: 40px;
+  height: 47px;
+}
+
+.headText {
+  min-width: 0;
+}
+
+.kickerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.kicker {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.sep {
+  color: var(--red);
+  margin: 0 2px;
+}
+
+.title {
+  margin-top: 4px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 23px;
+  line-height: 1.05;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.statusPill {
+  flex: none;
+}
+
+.here {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--sp-3);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red-2);
+}
+
+.desc {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-md);
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+/* ── locked notice ────────────────────────────────────────────────── */
+.lock {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  margin-top: var(--sp-4);
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid rgba(255, 43, 56, 0.4);
+  background:
+    linear-gradient(90deg, rgba(227, 18, 31, 0.14), rgba(227, 18, 31, 0.03)),
+    var(--bg-2);
+  box-shadow: inset 0 0 22px rgba(227, 18, 31, 0.08);
+}
+
+.lockIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--red-2);
+  background: rgba(227, 18, 31, 0.14);
+  border: 1px solid rgba(255, 43, 56, 0.35);
+}
+
+.lockText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.lockText strong {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.lockText span {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.lockBar {
+  margin-top: 8px;
+}
+
+.bonus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--sp-3);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--red-2);
+}
+
+/* ── trials ───────────────────────────────────────────────────────── */
+.sectionTitle {
+  margin-top: var(--sp-5);
+}
+
+.trials {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trial {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 68px;
+  padding: 7px 10px 7px 8px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-2);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.01)), var(--bg-2);
+  box-shadow: var(--shadow-1);
+  text-align: left;
+  transition:
+    border-color var(--dur-2),
+    background-color var(--dur-2),
+    transform var(--dur-1);
+}
+
+.trial:hover {
+  border-color: var(--line-3);
+}
+
+.trial:active {
+  transform: scale(0.985);
+}
+
+.trialLocked {
+  opacity: 0.72;
+}
+
+/* mini playing card: rank + suit (shared RankChip, as on the dashboard) */
+.card {
+  flex: none;
+  display: flex;
+}
+
+.trialBody {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+
+.trialTitle {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trialMeta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--text-4);
+}
+
+.trialPill {
+  flex: none;
+}
+
+.chev {
+  flex: none;
+  color: var(--text-3);
+  margin-left: -4px;
+}
+
+.cta {
+  margin-top: var(--sp-5);
+}

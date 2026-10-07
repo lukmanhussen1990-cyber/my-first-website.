@@ -1,0 +1,177 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Border Trials — app icons</title>
+    <meta name="art" data-out="public/icons/icon-512.png" data-w="512" data-h="512" data-scale="2" />
+    <meta name="art" data-out="public/icons/icon-192.png" data-w="192" data-h="192" data-scale="4" />
+    <meta name="art" data-out="public/icons/maskable-512.png" data-w="512" data-h="512" data-scale="2" />
+    <meta name="art" data-out="public/icons/apple-touch-icon.png" data-w="180" data-h="180" data-scale="4" />
+    <style>
+      html, body { margin: 0; background: #000; }
+      canvas { display: block; max-width: 100vw; height: auto; }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script type="module">
+      import { setup, done, glow, paintFog, layer } from '../lib/paint.js';
+      import { renderSuitObject, SUIT_BOX, fillSuit } from '../lib/cards-suits.js';
+      import { roundRect, bloom, dropShadow, starGlint } from '../lib/cards-fx.js';
+
+      // Paint after `load` so the runner's page.goto never waits on the painting.
+      function main() {
+        /*
+         * App icon: a slightly tilted playing card with a glowing crimson neon
+         * outline and a ruby spade with red bloom, on black. Variants:
+         *   0 icon-512 · 1 icon-192 · 2 maskable-512 (art inside the 80% safe
+         *   zone, full-bleed background) · 3 apple-touch-icon (180, opaque).
+         */
+        const { ctx, W, H, variant } = setup();
+        const maskable = variant === 2;
+        const small = variant === 1 || variant === 3; // thicker lines for tiny sizes
+        const S = W; // square
+        const cx = S / 2, cy = S / 2;
+
+        // ── background (full bleed, opaque)
+        ctx.fillStyle = '#050506';
+        ctx.fillRect(0, 0, S, S);
+        {
+          const g = ctx.createRadialGradient(cx, cy * 0.96, 0, cx, cy, S * 0.72);
+          g.addColorStop(0, '#2a0408');
+          g.addColorStop(0.45, '#12030560');
+          g.addColorStop(1, '#050506');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, S, S);
+        }
+        paintFog(ctx, S, S, { seed: 5, color: [170, 10, 22], alpha: 0.16, scale: 3.2 / S, octaves: 4, step: 2 });
+
+        // ── card geometry
+        const cardH = S * (maskable ? 0.6 : 0.74);
+        const cardW = cardH * 0.68;
+        const tilt = -0.2;
+        const rad = cardW * 0.1;
+        const lw = cardW * (small ? 0.03 : 0.022);
+
+        const cardPath = (c, inset = 0) => roundRect(c, -cardW / 2 + inset, -cardH / 2 + inset, cardW - inset * 2, cardH - inset * 2, Math.max(2, rad - inset));
+
+        // shadow under the card
+        ctx.save();
+        ctx.translate(cx + S * 0.012, cy + S * 0.03);
+        ctx.rotate(tilt);
+        ctx.filter = `blur(${S * 0.03}px)`;
+        ctx.fillStyle = 'rgba(0,0,0,0.85)';
+        cardPath(ctx);
+        ctx.fill();
+        ctx.restore();
+
+        // card body: dark glass
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(tilt);
+        {
+          const g = ctx.createLinearGradient(-cardW / 2, -cardH / 2, cardW / 2, cardH / 2);
+          g.addColorStop(0, '#1b1b21');
+          g.addColorStop(0.5, '#0b0b0e');
+          g.addColorStop(1, '#060607');
+          ctx.fillStyle = g;
+          cardPath(ctx);
+          ctx.fill();
+          // inner crimson haze
+          ctx.save();
+          cardPath(ctx);
+          ctx.clip();
+          const rg = ctx.createRadialGradient(0, -cardH * 0.04, 0, 0, 0, cardW * 0.75);
+          rg.addColorStop(0, 'rgba(200,10,24,0.45)');
+          rg.addColorStop(1, 'rgba(200,10,24,0)');
+          ctx.fillStyle = rg;
+          ctx.fillRect(-cardW, -cardH, cardW * 2, cardH * 2);
+          // glass sheen
+          const sg = ctx.createLinearGradient(-cardW / 2, -cardH / 2, cardW * 0.1, cardH * 0.1);
+          sg.addColorStop(0, 'rgba(255,255,255,0.10)');
+          sg.addColorStop(0.5, 'rgba(255,255,255,0.02)');
+          sg.addColorStop(0.51, 'rgba(255,255,255,0)');
+          ctx.fillStyle = sg;
+          ctx.fillRect(-cardW, -cardH, cardW * 2, cardH * 2);
+          ctx.restore();
+        }
+        // inner hairline frame
+        if (!small) {
+          ctx.strokeStyle = 'rgba(255,60,70,0.35)';
+          ctx.lineWidth = lw * 0.35;
+          cardPath(ctx, cardW * 0.07);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // ── neon outline with bloom
+        const neon = (blur, width, color, alpha) => {
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(tilt);
+          if (blur) ctx.filter = `blur(${blur}px)`;
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = color;
+          ctx.lineWidth = width;
+          cardPath(ctx);
+          ctx.stroke();
+          ctx.restore();
+        };
+        neon(S * 0.05, lw * 4, '#ff1424', 0.55);
+        neon(S * 0.016, lw * 2.2, '#ff1f2e', 0.9);
+        neon(0, lw, '#ff3a46', 1);
+        neon(0, lw * 0.4, '#ffd6d9', 0.9);
+
+        // ── ruby spade emblem
+        const box = SUIT_BOX.spade;
+        const symW = cardW * 0.66;
+        const u = symW / (box[2] - box[0]);
+        const SS = 2;
+        const big = renderSuitObject('spade', u * SS, 'ruby', { seed: 21, bevel: 0.1, edgeMin: 0.6 });
+        const { c: sym, ctx: sc } = layer(Math.ceil(big.w / SS), Math.ceil(big.h / SS));
+        sc.imageSmoothingQuality = 'high';
+        sc.drawImage(big.canvas, 0, 0, big.w / SS, big.h / SS);
+        const ox = big.ox / SS, oy = big.oy / SS;
+        ctx.save();
+        ctx.translate(cx, cy - cardH * 0.01);
+        ctx.rotate(tilt);
+        const X = -(ox + ((box[0] + box[2]) / 2) * u);
+        const Y = -(oy + ((box[1] + box[3]) / 2) * u);
+        glow(ctx, 0, 0, symW * 0.9, 'rgba(255,20,34,A)', 0.55);
+        bloom(ctx, sym, X, Y, S * 0.04, 1);
+        dropShadow(ctx, sym, X, Y + S * 0.012, S * 0.01, 0.9);
+        ctx.drawImage(sym, X, Y);
+        bloom(ctx, sym, X, Y, S * 0.008, 0.35, 'screen');
+        starGlint(ctx, X + big.hot[0] / SS, Y + big.hot[1] / SS, symW * 0.32, '255,225,225', 0.85);
+        // corner pips
+        if (!small) {
+          ctx.fillStyle = '#ff2a38';
+          ctx.shadowColor = 'rgba(255,30,40,0.9)';
+          ctx.shadowBlur = S * 0.012;
+          const pu = cardW * 0.0013;
+          fillSuit(ctx, 'spade', -cardW / 2 + cardW * 0.09, -cardH / 2 + cardH * 0.06, pu);
+          ctx.save();
+          ctx.rotate(Math.PI);
+          fillSuit(ctx, 'spade', -cardW / 2 + cardW * 0.09, -cardH / 2 + cardH * 0.06, pu);
+          ctx.restore();
+        }
+        ctx.restore();
+
+        // edge vignette
+        {
+          const g = ctx.createRadialGradient(cx, cy, S * 0.35, cx, cy, S * 0.75);
+          g.addColorStop(0, 'rgba(0,0,0,0)');
+          g.addColorStop(1, 'rgba(0,0,0,0.6)');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, S, S);
+        }
+        void H;
+        done();
+      }
+      // The runner's first visit (no ?v=) only reads the meta tags — skip painting it.
+      const metaPass = navigator.webdriver && !new URLSearchParams(location.search).has('v');
+      if (!metaPass) addEventListener('load', () => setTimeout(main, 30));
+    </script>
+  </body>
+</html>

@@ -1,0 +1,189 @@
+.content {
+  padding-top: 10px;
+  overflow-x: hidden;
+}
+
+/* felt-dark table glow behind the spread. The box spans exactly the screen
+   width (the scroll area's padding box) so it never adds horizontal overflow;
+   the 75% × 50% ellipse on a 2:3 box is a circle 1.5× the screen wide. */
+.table {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 34%;
+  aspect-ratio: 2 / 3;
+  transform: translateY(-50%);
+  pointer-events: none;
+  background: radial-gradient(
+    75% 50% at 50% 50%,
+    rgba(227, 18, 31, 0.13),
+    rgba(227, 18, 31, 0.04) 55%,
+    transparent 75%
+  );
+  z-index: 0;
+}
+
+.center {
+  /* auto margins centre the spread when there is room and collapse to 0 when it scrolls */
+  margin-block: auto;
+  padding-bottom: 8px;
+}
+
+.grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 14px;
+  margin-top: 6px;
+}
+
+.slot {
+  position: relative;
+  will-change: transform;
+}
+
+.dim {
+  transition:
+    opacity var(--dur-3) var(--ease-out),
+    filter var(--dur-3) var(--ease-out);
+}
+
+/* the other three fall back while the chosen card lifts */
+.dimmed {
+  opacity: 0.32;
+  filter: saturate(0.6);
+}
+
+/* ── Card footer strip (sized in card cqw units) ─────────────── */
+.strip {
+  display: flex;
+  flex-direction: column;
+  gap: 1.8cqw;
+  width: 100%;
+  padding: 2.6cqw 3.6cqw 3cqw;
+  border-radius: 3.4cqw;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)), rgba(8, 8, 11, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stripRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.diff {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.4cqw;
+  font-size: max(9px, 5.8cqw);
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+
+.star {
+  width: max(9px, 5.6cqw);
+  height: max(9px, 5.6cqw);
+  color: var(--red-2);
+  filter: drop-shadow(0 0 3px var(--red-glow));
+}
+
+.count {
+  font-size: max(9px, 5.8cqw);
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.count b {
+  color: var(--text);
+}
+
+.bar {
+  position: relative;
+  display: block;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.bar span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  background: linear-gradient(90deg, #8f0710, var(--red-2));
+  box-shadow: 0 0 6px var(--red-glow);
+}
+
+.reward {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4cqw;
+  font-size: max(8.5px, 5.2cqw);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.crown {
+  flex: none;
+  width: max(9px, 5.6cqw);
+  height: max(9px, 5.6cqw);
+  color: var(--gold);
+}
+
+/* ── Footer ───────────────────────────────────────────────────── */
+.foot {
+  position: relative;
+  z-index: 1;
+  margin-top: 24px;
+  padding: 14px 16px 14px;
+  border-radius: var(--r-md);
+  background: rgba(14, 14, 18, 0.5);
+  border: 1px solid var(--line);
+}
+
+.footRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.footLabel {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.footValue {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.footValue b {
+  font-size: 16px;
+  color: var(--text);
+}
+
+.hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-3);
+}

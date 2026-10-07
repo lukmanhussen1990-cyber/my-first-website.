@@ -1,0 +1,438 @@
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  container-type: inline-size;
+  background: linear-gradient(180deg, rgba(6, 6, 8, 0.9) 0%, rgba(6, 6, 8, 0.96) 60%, var(--bg-1) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(90% 40% at 50% 16%, rgba(227, 18, 31, 0.28), transparent 70%),
+    radial-gradient(60% 26% at 50% 22%, rgba(255, 255, 255, 0.06), transparent 70%);
+}
+
+.loss .glow {
+  background:
+    radial-gradient(100% 46% at 50% 14%, rgba(227, 18, 31, 0.36), transparent 70%),
+    radial-gradient(120% 40% at 50% 110%, rgba(120, 0, 8, 0.4), transparent 70%);
+}
+
+.scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px);
+  mix-blend-mode: overlay;
+}
+
+.loss .scan {
+  background: repeating-linear-gradient(to bottom, rgba(255, 43, 56, 0.05) 0 1px, transparent 1px 3px);
+}
+
+.flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(80% 50% at 50% 22%, rgba(255, 255, 255, 0.55), rgba(255, 43, 56, 0.25) 50%, transparent 80%);
+  opacity: 0;
+  animation: flash 0.9s var(--ease-out) both;
+}
+
+.loss .flash {
+  background: rgba(227, 18, 31, 0.45);
+  animation: flash-loss 0.7s steps(6, end) both;
+}
+
+@keyframes flash {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes flash-loss {
+  0% {
+    opacity: 0.8;
+  }
+  30% {
+    opacity: 0.15;
+  }
+  45% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.ghostSuit {
+  position: absolute;
+  left: 50%;
+  top: 4%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.035);
+  pointer-events: none;
+}
+
+.win .ghostSuit {
+  color: rgba(255, 43, 56, 0.07);
+}
+
+.scroll {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: calc(var(--safe-top) + 28px) var(--gutter) 16px;
+  text-align: center;
+}
+
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* centre the stack in the free space (slightly high); scrolls when it overflows */
+.scroll::before,
+.scroll::after {
+  content: '';
+  flex: 1 1 0;
+}
+
+.scroll::after {
+  flex-grow: 1.5;
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.kicker svg {
+  flex: none;
+  color: var(--red-2);
+}
+
+.kicker span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.headline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 18px;
+}
+
+.rule {
+  flex: 1;
+  height: 1px;
+  min-width: 10px;
+  background: linear-gradient(90deg, transparent, rgba(255, 43, 56, 0.7));
+}
+
+.rule:last-child {
+  background: linear-gradient(90deg, rgba(255, 43, 56, 0.7), transparent);
+}
+
+.title {
+  flex: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: min(34px, 8.4cqi);
+  line-height: 1.1;
+  letter-spacing: 0.14em;
+  padding-left: 0.14em;
+  text-transform: uppercase;
+}
+
+.win .title {
+  color: #fff;
+  text-shadow:
+    0 0 10px rgba(255, 43, 56, 0.85),
+    0 0 28px rgba(227, 18, 31, 0.6),
+    0 0 60px rgba(227, 18, 31, 0.35);
+}
+
+.loss .title {
+  color: var(--red-2);
+  font-size: min(30px, 7.4cqi);
+  text-shadow:
+    0 0 12px rgba(255, 43, 56, 0.7),
+    0 0 36px rgba(227, 18, 31, 0.45);
+}
+
+.summary {
+  margin-top: 10px;
+  font-size: 15px;
+  color: var(--text-2);
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Stars */
+.stars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 14px;
+  margin: 24px 0 24px;
+  height: 72px;
+}
+
+.star {
+  display: grid;
+  place-items: center;
+  will-change: transform;
+}
+
+.starMid {
+  transform-origin: center;
+  margin-bottom: 12px;
+}
+
+.starOn {
+  color: var(--red-2);
+  filter: drop-shadow(0 0 8px rgba(255, 43, 56, 0.85)) drop-shadow(0 0 22px rgba(227, 18, 31, 0.45));
+}
+
+.starOn svg {
+  stroke: #ff8a92;
+}
+
+.starOff {
+  color: rgba(255, 255, 255, 0.06);
+}
+
+.starOff svg {
+  stroke: var(--text-4);
+}
+
+/* Rewards */
+.rewards {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  max-width: 380px;
+  padding: 14px 8px;
+}
+
+.counter {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.counter + .counter::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--line-2);
+}
+
+.counter b {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.counter small {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.counterZero b {
+  color: var(--text-3);
+}
+
+.counterIcon {
+  display: grid;
+  place-items: center;
+  height: 22px;
+}
+
+.tone_gold {
+  color: var(--gold);
+  filter: drop-shadow(0 0 6px rgba(246, 185, 43, 0.5));
+}
+
+.tone_red {
+  color: var(--red-2);
+  filter: drop-shadow(0 0 6px var(--red-glow));
+}
+
+.tone_white {
+  color: #fff;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.4));
+}
+
+.counterZero .counterIcon {
+  opacity: 0.45;
+  filter: none;
+}
+
+/* Level up */
+.levelUp {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 380px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  text-align: left;
+  border: 1px solid rgba(255, 43, 56, 0.7);
+  background:
+    linear-gradient(90deg, rgba(227, 18, 31, 0.28), rgba(227, 18, 31, 0.06)),
+    rgba(14, 14, 18, 0.8);
+  box-shadow: var(--glow-red);
+}
+
+.levelIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: #fff;
+  background: linear-gradient(180deg, #f01a27, #a80a14);
+  box-shadow: 0 0 14px var(--red-glow);
+}
+
+.levelText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.levelText b {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+}
+
+.levelText small {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.levelNum {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  color: #fff;
+  text-shadow: 0 0 14px var(--red-glow);
+}
+
+/* Achievements */
+.badges {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 380px;
+  margin-top: 16px;
+}
+
+.badgesTitle {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--gold);
+  text-align: left;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  text-align: left;
+}
+
+.badge > span:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.badge b {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+}
+
+.badge small {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+/* Actions */
+.actions {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px var(--gutter) calc(var(--safe-bottom) + 20px);
+  background: linear-gradient(180deg, rgba(9, 9, 11, 0), rgba(9, 9, 11, 0.9) 30%);
+}
+
+@container (max-width: 370px) {
+  .stars {
+    margin: 16px 0;
+  }
+}

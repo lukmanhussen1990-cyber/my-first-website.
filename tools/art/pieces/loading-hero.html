@@ -1,0 +1,933 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>loading-hero</title>
+<!-- Loading screen key art: red moon, floating card, lone figure in a flooded street. -->
+<meta name="art" data-out="src/assets/art/loading-hero.webp" data-w="900" data-h="1950" data-scale="1.5" data-quality="80">
+</head>
+<body style="margin:0;background:#000">
+<canvas id="c"></canvas>
+<script type="module">
+import { setup, done } from '../lib/paint.js';
+import * as K from '../lib/hero-kit.js';
+import { drawFigure } from '../lib/hero-figure.js';
+
+// The runner first loads the page without ?v= only to read the <meta> tags; paint on the real pass.
+if (new URLSearchParams(location.search).has('v')) window.addEventListener('load', () => setTimeout(paint, 0));
+function paint() {
+const { ctx, W, H } = setup();
+const U = W / 900;
+const R = K.rng(1971);
+const HZ = Math.round(H * 0.478);
+const CX = W / 2;
+const cam = K.camera({ cx: CX, cy: HZ, f: W * 0.56, h: 1.1 });
+const STREET = 15;
+
+/* ── palette ── */
+const SKY_TOP = [6, 2, 4];
+const SKY_MID = [28, 4, 8];
+const SKY_LOW = [92, 14, 19];
+const HAZE = [104, 16, 21];
+const WALL = [11, 8, 10];
+
+const skyColor = (sy) => {
+  const t = K.clamp(Math.abs(HZ - sy) / HZ);
+  return t < 0.45 ? K.mixc(SKY_LOW, SKY_MID, t / 0.45) : K.mixc(SKY_MID, SKY_TOP, (t - 0.45) / 0.55);
+};
+const fog = (z) => 1 - Math.exp(-z / 115);
+const fogColor = (sy) => K.mixc(skyColor(sy), HAZE, 0.3);
+
+/* ── focal geometry ── */
+const MX = W * 0.535;
+const MY = H * 0.17;
+const MR = W * 0.295;
+const CARD = { x: W * 0.5, y: H * 0.282, w: W * 0.185, rot: -0.1 };
+const FIG = { x: W * 0.5, y: H * 0.6, h: H * 0.2 };
+
+/* ═════════════════════ 1. SKY ═════════════════════ */
+const sky = K.layer(W, H);
+{
+  const s = sky.ctx;
+  const g = s.createLinearGradient(0, 0, 0, HZ + 60);
+  for (let k = 0; k <= 12; k++) g.addColorStop(k / 12, K.css(skyColor(((HZ + 60) * k) / 12)));
+  s.fillStyle = g;
+  s.fillRect(0, 0, W, HZ + 60);
+  // moon atmosphere
+  const mg = s.createRadialGradient(MX, MY, MR * 0.8, MX, MY, MR * 3.3);
+  mg.addColorStop(0, 'rgba(170,20,28,0.85)');
+  mg.addColorStop(0.18, 'rgba(120,12,20,0.6)');
+  mg.addColorStop(0.45, 'rgba(60,6,12,0.35)');
+  mg.addColorStop(1, 'rgba(30,3,8,0)');
+  s.globalCompositeOperation = 'lighter';
+  s.fillStyle = mg;
+  s.fillRect(0, 0, W, H);
+  s.globalCompositeOperation = 'source-over';
+  // smoky haze texture across the sky
+  s.drawImage(K.fogLayer(W, H, { seed: 11, color: [130, 18, 26], alpha: 0.22, sx: 0.0016, sy: 0.0045, mask: (v) => (v < 0.5 ? 1 : 0), lo: -0.1, hi: 0.8 }), 0, 0);
+}
+
+/* moon disc */
+function moonLayer(R0) {
+  const size = Math.ceil(R0 * 2 + 6);
+  const n = K.perlin(31);
+  const n2 = K.perlin(32);
+  const n3 = K.perlin(33);
+  const rr = K.rng(77);
+  const craters = [];
+  for (let i = 0; i < 170; i++) {
+    const rad = 0.01 + Math.pow(rr(), 2.8) * 0.12;
+    craters.push([rr() * 2.4 - 1.2, rr() * 2.4 - 1.2, rad, 0.6 + rr() * 0.8]);
+  }
+  const dark = [70, 4, 8];
+  const mid = [196, 22, 26];
+  const hot = [255, 96, 80];
+  return K.pixels(size, size, (x, y, o) => {
+    const dx = (x - size / 2) / R0;
+    const dy = (y - size / 2) / R0;
+    const d2 = dx * dx + dy * dy;
+    const d = Math.sqrt(d2);
+    if (d > 1 + 2 / R0) {
+      o[3] = 0;
+      return;
+    }
+    const nz = Math.sqrt(Math.max(0, 1 - d2));
+    const k = 0.3 + 0.7 * nz;
+    const u = dx / k;
+    const v = dy / k;
+    const maria = K.fbm(n, u * 1.25 + 2.1, v * 1.25 - 0.7, 5);
+    const m = K.smooth(-0.15, 0.4, maria);
+    const det = K.fbm(n2, u * 6, v * 6, 5);
+    const fine = n3(u * 38, v * 38);
+    let c = 0;
+    for (const [cu, cv, cr, ck] of craters) {
+      const ex = u - cu;
+      const ey = v - cv;
+      if (ex > cr * 1.6 || ex < -cr * 1.6 || ey > cr * 1.6 || ey < -cr * 1.6) continue;
+      const q = Math.sqrt(ex * ex + ey * ey) / cr;
+      if (q < 1) c -= 0.15 * ck * (1 - q * q) * (0.7 + 0.5 * ((ex - ey) / cr));
+      c += 0.1 * ck * Math.exp(-(((q - 1) / 0.14) ** 2));
+    }
+    let b = 0.74 - 0.46 * m + det * 0.13 + fine * 0.04 + c;
+    b *= 0.5 + 0.5 * Math.pow(nz, 0.5);
+    // bright eclipse rim
+    b += 0.42 * K.smooth(0.84, 0.995, d);
+    b = K.clamp(b, 0, 1.15);
+    const col = b < 0.62 ? K.mixc(dark, mid, b / 0.62) : K.mixc(mid, hot, (b - 0.62) / 0.53);
+    o[0] = col[0];
+    o[1] = col[1];
+    o[2] = col[2];
+    o[3] = K.clamp((1 - d) * R0 + 0.5) * 255;
+  });
+}
+{
+  const m = moonLayer(MR);
+  sky.ctx.drawImage(m, MX - m.width / 2, MY - m.height / 2);
+}
+
+/* clouds: domain-warped fBm, back-lit by the moon */
+function cloudLayer() {
+  const step = 2;
+  const top = 0;
+  const bot = HZ + 40;
+  const w = Math.ceil(W / step);
+  const h = Math.ceil((bot - top) / step);
+  const nA = K.perlin(51);
+  const nB = K.perlin(52);
+  const nC = K.perlin(53);
+  const BY = MY + MR * 0.62;
+  const BH = MR * 0.17;
+  const dens = (X, Y) => {
+    const nx = X * 0.0012;
+    const ny = Y * 0.0036;
+    const wx = K.fbm(nA, nx * 0.9, ny * 0.9, 3);
+    const wy = K.fbm(nB, nx * 0.9 + 4.2, ny * 0.9 + 1.3, 3);
+    const v = K.fbm(nC, nx * 1.4 + wx * 0.9, ny * 1.4 + wy * 0.5, 6);
+    const yb = (Y - BY) / BH;
+    const band = Math.exp(-yb * yb) * 0.7 + Math.exp(-(((Y - (BY + BH * 2.6)) / (BH * 1.4)) ** 2)) * 0.45;
+    const dm = Math.hypot(X - MX, Y - MY) / MR;
+    const clear = -0.32 * Math.exp(-Math.pow(dm / 1.05, 6)) * (1 - Math.exp(-yb * yb));
+    const corners = 0.34 * K.smooth(0.3, 0, Y / H) * K.smooth(0.12, 0.5, Math.abs(X / W - 0.5)) + 0.12;
+    const low = 0.12 * K.smooth(HZ * 0.7, HZ, Y);
+    return v + band + clear + corners + low - 0.14;
+  };
+  return K.pixels(w, h, (x, y, o) => {
+    const X = x * step;
+    const Y = top + y * step;
+    const d = dens(X, Y);
+    if (d < -0.05) {
+      o[3] = 0;
+      return;
+    }
+    const lx = MX - X;
+    const ly = MY - Y;
+    const ll = Math.hypot(lx, ly) || 1;
+    const d2 = dens(X + (lx / ll) * 16, Y + (ly / ll) * 16);
+    const lit = K.clamp((d - d2) * 3.2);
+    const a = K.smooth(-0.02, 0.42, d);
+    const thin = 1 - K.smooth(0.02, 0.5, d);
+    const dm = ll / MR;
+    const prox = Math.exp(-Math.max(0, dm - 0.55) * 1.35);
+    const lum = K.clamp((thin * 0.45 + lit * 1.1) * prox + thin * 0.04);
+    const base = K.mixc([7, 2, 4], [40, 5, 9], K.clamp(1 - dm * 0.3) * 0.5);
+    const col = K.mixc(base, [255, 54, 50], lum);
+    o[0] = col[0];
+    o[1] = col[1];
+    o[2] = col[2];
+    o[3] = a * 0.97 * 255;
+  });
+}
+{
+  const c = cloudLayer();
+  sky.ctx.imageSmoothingQuality = 'high';
+  sky.ctx.drawImage(c, 0, 0, W, Math.ceil((HZ + 40) / 2) * 2);
+}
+
+/* far skyline (behind the street canyon) */
+function farSkyline(s, lights, zs, count, seed) {
+  const r = K.rng(seed);
+  for (const z of zs) {
+    for (let i = 0; i < count; i++) {
+      const X = K.range(r, -420, 420);
+      const w = K.range(r, 12, 40);
+      let h = K.range(r, 20, 110) * (r() < 0.15 ? 1.8 : 1);
+      // keep the moon/card corridor open
+      const sx = cam.p(X, 0, z)[0];
+      const dc = Math.abs(sx - CX) / W;
+      if (dc < 0.08) h *= 0.5;
+      const t = fog(z);
+      const col = K.mixc(WALL, fogColor(HZ - cam.px(h * 0.5, z)), Math.min(0.97, t + 0.05));
+      s.fillStyle = K.css(col);
+      const pts = [cam.p(X, 0, z), cam.p(X, h, z)];
+      const kind = r();
+      if (kind < 0.25) {
+        // spire
+        pts.push(cam.p(X + w * 0.45, h + K.range(r, 8, 30), z));
+        pts.push(cam.p(X + w * 0.55, h + K.range(r, 8, 30), z));
+      } else if (kind < 0.5) {
+        // stepped
+        pts.push(cam.p(X + w * 0.2, h, z), cam.p(X + w * 0.2, h + 12, z), cam.p(X + w * 0.7, h + 12, z), cam.p(X + w * 0.7, h, z));
+      } else if (kind < 0.75) {
+        // broken top
+        let xx = X;
+        for (let k = 0; k < 6; k++) {
+          xx += w / 6;
+          pts.push(cam.p(xx, h - K.range(r, 0, 14), z));
+        }
+      }
+      pts.push(cam.p(X + w, h, z), cam.p(X + w, 0, z));
+      K.poly(s, pts);
+      s.fill();
+      // sparse lit windows
+      if (lights) {
+        for (let k = 0; k < 6; k++) {
+          if (r() > 0.45) continue;
+          const p = cam.p(X + K.range(r, 0.1, 0.9) * w, K.range(r, 4, h - 2), z);
+          const sz = Math.max(1, cam.px(1.1, z));
+          const lc = r() < 0.5 ? [255, 120, 70] : [255, 40, 40];
+          s.fillStyle = K.css(K.mixc(lc, fogColor(p[1]), t * 0.7), 0.8);
+          s.fillRect(p[0], p[1], sz, sz * 0.8);
+        }
+      }
+    }
+  }
+}
+farSkyline(sky.ctx, true, [700, 520, 380, 290], 26, 404);
+
+/* ═════════════════════ 2. CARD ═════════════════════ */
+const lights = K.layer(W, H);
+
+function drawRays(s) {
+  const r = K.rng(808);
+  const l = K.layer(W, H);
+  const c = l.ctx;
+  c.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 70; i++) {
+    const a = K.range(r, 0, Math.PI * 2);
+    const len = K.range(r, W * 0.25, W * 0.9);
+    const spread = K.range(r, 0.008, 0.035);
+    const g = c.createRadialGradient(CARD.x, CARD.y, CARD.w * 0.3, CARD.x, CARD.y, len);
+    const al = K.range(r, 0.03, 0.11);
+    g.addColorStop(0, K.css([255, 40, 50], al));
+    g.addColorStop(0.5, K.css([200, 20, 30], al * 0.4));
+    g.addColorStop(1, K.css([200, 20, 30], 0));
+    c.fillStyle = g;
+    c.beginPath();
+    c.moveTo(CARD.x, CARD.y);
+    c.lineTo(CARD.x + Math.cos(a - spread) * len, CARD.y + Math.sin(a - spread) * len);
+    c.lineTo(CARD.x + Math.cos(a + spread) * len, CARD.y + Math.sin(a + spread) * len);
+    c.closePath();
+    c.fill();
+  }
+  K.comp(s, K.blurred(l.c, 4 * U), 'lighter', 1);
+}
+
+function indexMark(c, x, y, s, w) {
+  // an "A"-like index glyph drawn as strokes + a small heart beneath
+  c.beginPath();
+  c.moveTo(x - s * 0.42, y + s * 0.5);
+  c.lineTo(x, y - s * 0.5);
+  c.lineTo(x + s * 0.42, y + s * 0.5);
+  c.moveTo(x - s * 0.22, y + s * 0.12);
+  c.lineTo(x + s * 0.22, y + s * 0.12);
+  c.lineWidth = w;
+  c.lineJoin = 'miter';
+  c.stroke();
+  K.heartPath(c, x, y + s * 0.95, s * 0.26);
+  c.fill();
+}
+
+function drawCard(c, L, { x, y, w, rot }, mirror = false) {
+  const h = w * 1.42;
+  const rad = w * 0.075;
+  for (const g of [c, L]) {
+    g.save();
+    g.translate(x, y);
+    if (mirror) g.scale(1, -1);
+    g.rotate(rot);
+  }
+  // body
+  K.rrect(c, -w / 2, -h / 2, w, h, rad);
+  const bg = c.createLinearGradient(0, -h / 2, 0, h / 2);
+  bg.addColorStop(0, 'rgba(46,5,12,0.94)');
+  bg.addColorStop(0.5, 'rgba(18,2,6,0.95)');
+  bg.addColorStop(1, 'rgba(30,3,8,0.95)');
+  c.fillStyle = bg;
+  c.fill();
+  c.save();
+  c.clip();
+  const rg = c.createRadialGradient(0, 0, 0, 0, 0, w * 0.75);
+  rg.addColorStop(0, 'rgba(210,16,32,0.5)');
+  rg.addColorStop(1, 'rgba(120,6,16,0)');
+  c.fillStyle = rg;
+  c.fillRect(-w, -h, w * 2, h * 2);
+  // holographic hatching
+  c.strokeStyle = 'rgba(255,80,90,0.05)';
+  c.lineWidth = 1;
+  for (let i = -h; i < h; i += 4 * U) {
+    c.beginPath();
+    c.moveTo(-w, i);
+    c.lineTo(w, i + w * 0.6);
+    c.stroke();
+  }
+  // glassy top sheen
+  const sh = c.createLinearGradient(-w / 2, -h / 2, w / 2, h * 0.1);
+  sh.addColorStop(0, 'rgba(255,160,170,0.14)');
+  sh.addColorStop(0.45, 'rgba(255,160,170,0.02)');
+  sh.addColorStop(1, 'rgba(255,160,170,0)');
+  c.fillStyle = sh;
+  c.fillRect(-w, -h, w * 2, h * 2);
+  c.restore();
+  // inner frame
+  K.rrect(c, -w / 2 + w * 0.075, -h / 2 + w * 0.075, w - w * 0.15, h - w * 0.15, rad * 0.6);
+  c.strokeStyle = 'rgba(255,50,66,0.42)';
+  c.lineWidth = 1.2 * U;
+  c.stroke();
+  // outline
+  K.rrect(c, -w / 2, -h / 2, w, h, rad);
+  c.strokeStyle = 'rgb(255,52,64)';
+  c.lineWidth = 3.2 * U;
+  c.stroke();
+  K.rrect(L, -w / 2, -h / 2, w, h, rad);
+  L.strokeStyle = 'rgb(255,36,52)';
+  L.lineWidth = 6 * U;
+  L.stroke();
+  L.strokeStyle = 'rgba(255,215,220,0.9)';
+  L.lineWidth = 1.6 * U;
+  L.stroke();
+  // centre pip
+  const ps = w * 0.21;
+  K.heartPath(c, 0, h * 0.02, ps);
+  const pg = c.createLinearGradient(-ps, -ps, ps, ps);
+  pg.addColorStop(0, 'rgb(255,96,104)');
+  pg.addColorStop(0.3, 'rgb(226,20,36)');
+  pg.addColorStop(1, 'rgb(96,3,10)');
+  c.fillStyle = pg;
+  c.fill();
+  K.heartPath(L, 0, h * 0.02, ps);
+  L.fillStyle = 'rgba(255,20,36,0.22)';
+  L.fill();
+  L.strokeStyle = 'rgba(255,90,100,0.55)';
+  L.lineWidth = 1.4 * U;
+  L.stroke();
+  // index marks (top-left and rotated bottom-right)
+  for (const g of [c, L]) {
+    g.fillStyle = g === L ? 'rgba(255,60,70,0.9)' : 'rgb(255,70,80)';
+    g.strokeStyle = g.fillStyle;
+    indexMark(g, -w / 2 + w * 0.15, -h / 2 + w * 0.2, w * 0.12, w * 0.028);
+    g.save();
+    g.rotate(Math.PI);
+    indexMark(g, -w / 2 + w * 0.15, -h / 2 + w * 0.2, w * 0.12, w * 0.028);
+    g.restore();
+  }
+  // faint interior fill glow
+  K.rrect(L, -w / 2, -h / 2, w, h, rad);
+  L.fillStyle = 'rgba(255,30,40,0.05)';
+  L.fill();
+  c.restore();
+  L.restore();
+}
+
+drawRays(sky.ctx);
+drawCard(sky.ctx, lights.ctx, CARD);
+
+/* ═════════════════════ 3. BUILDINGS ═════════════════════ */
+const frontL = K.streetRow(R, { side: -1, street: STREET, z0: 6.5, z1: 320, hMin: 20, hMax: 46, tall: { p: 0.35, k: 1.9 }, brokenP: 0.55, gap: 0.3 });
+const frontR = K.streetRow(R, { side: 1, street: STREET, z0: 7.5, z1: 320, hMin: 20, hMax: 46, tall: { p: 0.35, k: 1.9 }, brokenP: 0.55, gap: 0.3 });
+const backL = K.streetRow(R, { side: -1, street: STREET + 27, z0: 26, z1: 340, hMin: 55, hMax: 140, brokenP: 0.75, gap: 0.7, jitterX: 25 });
+const backR = K.streetRow(R, { side: 1, street: STREET + 27, z0: 26, z1: 340, hMin: 55, hMax: 140, brokenP: 0.75, gap: 0.7, jitterX: 25 });
+for (const b of [...frontL, ...frontR]) b.out = K.range(R, 10, 20);
+// framing: keep a V of open sky for the moon and the card
+const allowedTop = (sx) => {
+  const dc = Math.abs(sx - CX) / W;
+  return K.mix(H * 0.37, -H * 0.3, K.smooth(0.13, 0.44, dc));
+};
+for (const b of [...frontL, ...frontR, ...backL, ...backR]) {
+  let cap = Infinity;
+  for (const z of [b.z0, (b.z0 + b.z1) / 2, b.z1]) {
+    const sx = cam.p(b.side * b.x, 0, z)[0];
+    cap = Math.min(cap, ((HZ - allowedTop(sx)) * z) / cam.f + cam.h);
+  }
+  if (b.h > cap) {
+    const k = Math.max(0.15, cap / b.h);
+    b.h *= k;
+    for (const p of b.profile) p[1] *= k;
+    if (b.broken) b.broken.depth *= k;
+  }
+}
+const byFar = (a, b) => b.z0 - a.z0;
+// concrete grime texture for facades (overlay blend: 128 = neutral)
+const facadeTex = (() => {
+  const n = K.perlin(140);
+  const n2 = K.perlin(141);
+  const n3 = K.perlin(142);
+  const c = K.pixels(Math.ceil(W / 2), Math.ceil(H / 2), (x, y, o) => {
+    const blot = K.fbm(n, x * 0.012, y * 0.012, 5);
+    const streak = K.fbm(n2, x * 0.14, y * 0.006, 3);
+    const fine = n3(x * 0.6, y * 0.6);
+    const v = 128 + blot * 55 + streak * 40 + fine * 22;
+    o[0] = v;
+    o[1] = v;
+    o[2] = v;
+  });
+  const l = K.layer(W, H);
+  l.ctx.drawImage(c, 0, 0, W, H);
+  return l.c;
+})();
+const backs = [...backL, ...backR].sort(byFar);
+const fronts = [...frontL, ...frontR].sort(byFar);
+
+const envBase = {
+  cam,
+  fog,
+  fogColor,
+  wall: WALL,
+  litP: 0.085,
+  warm: 0.42,
+  white: 0.14,
+  brokenWin: 0.2,
+  glass: [7, 4, 6],
+  glassSky: [120, 22, 28],
+  edge: { color: [255, 60, 60], alpha: 0.22 },
+  sill: [120, 26, 32],
+  rim: null,
+  tex: facadeTex,
+  texAlpha: 0.9,
+  streetGlow: [120, 16, 22],
+  skyGlow: [80, 10, 16],
+  neon: { p: 0.12, vertical: 0.7, k: 0.7 },
+};
+
+/* ═════════════════════ 4. COMPOSE ═════════════════════ */
+// sky onto main
+ctx.drawImage(sky.c, 0, 0);
+
+// reflection layer (mirror about the horizon + mirrored geometry)
+const refl = K.layer(W, H);
+const mlights = K.layer(W, H);
+{
+  const r = refl.ctx;
+  r.save();
+  r.translate(0, HZ * 2);
+  r.scale(1, -1);
+  r.drawImage(sky.c, 0, 0);
+  r.restore();
+  mlights.ctx.save();
+  mlights.ctx.translate(0, HZ * 2);
+  mlights.ctx.scale(1, -1);
+  mlights.ctx.drawImage(lights.c, 0, 0);
+  mlights.ctx.restore();
+  const env = { ...envBase, mirror: true, lights: mlights.ctx, mirrorLights: mlights.ctx, rim: null };
+  for (const b of backs) K.paintBlock(r, b, env);
+  for (const b of fronts) K.paintBlock(r, b, env);
+}
+
+// water base
+{
+  const g = ctx.createLinearGradient(0, HZ, 0, H);
+  g.addColorStop(0, 'rgb(70,12,16)');
+  g.addColorStop(0.15, 'rgb(22,6,9)');
+  g.addColorStop(1, 'rgb(7,5,6)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, HZ, W, H - HZ);
+}
+
+/* street props (lamp posts, signs, cables) — drawn into both main and mirror */
+function streetProps(c, L, mirror) {
+  const M = mirror ? -1 : 1;
+  const P = (X, Y, Z) => cam.p(X, Y * M, Z);
+  const r = K.rng(5150);
+  const shade = (z, k = 1) => K.mixc(K.scalec(WALL, k), fogColor(HZ - 300), fog(z));
+  const items = [];
+  // lamp posts
+  for (const side of [-1, 1]) {
+    for (let z = side < 0 ? 15 : 24; z < 190; z += K.range(r, 20, 30)) items.push({ kind: 'lamp', side, z, lit: r() < 0.28, tilt: r() < 0.2 ? K.range(r, -0.25, 0.25) : 0, broken: r() < 0.2 });
+  }
+  // blade neon signs
+  items.push({ kind: 'sign', side: -1, z: 27, y0: 7, hh: 7, w: 2.1, seed: 1, lvl: 0.75 });
+  items.push({ kind: 'sign', side: 1, z: 44, y0: 9, hh: 10, w: 2.6, seed: 2, lvl: 0.7 });
+  items.push({ kind: 'sign', side: -1, z: 74, y0: 5, hh: 7, w: 2.4, seed: 3, lvl: 0.55 });
+  // barriers / debris
+  items.push({ kind: 'barrier', X: -10.5, z: 19, w: 3.2 });
+  items.push({ kind: 'barrier', X: -7.2, z: 21.5, w: 3.2 });
+  items.push({ kind: 'barrier', X: 8.5, z: 38, w: 3.2 });
+  items.push({ kind: 'crate', X: 11.5, z: 15, w: 1.4 });
+  items.push({ kind: 'crate', X: -4.5, z: 52, w: 1.2 });
+  items.push({ kind: 'car', X: 10.8, z: 27, flip: 1 });
+  items.push({ kind: 'car', X: -11.5, z: 60, flip: -1 });
+  items.sort((a, b) => b.z - a.z);
+  for (const it of items) {
+    const z = it.z;
+    const col = K.css(shade(z));
+    c.fillStyle = col;
+    c.strokeStyle = col;
+    if (it.kind === 'lamp') {
+      const X = it.side * (STREET - 1.4);
+      const top = 8.2;
+      const tx = X + it.tilt * 6;
+      const a = P(X, 0, z);
+      const b = P(tx, top, z);
+      c.lineWidth = Math.max(1, cam.px(0.2, z));
+      c.beginPath();
+      c.moveTo(a[0], a[1]);
+      c.lineTo(b[0], b[1]);
+      c.stroke();
+      if (it.broken) continue;
+      // arm reaching over the street
+      const ax = tx - it.side * 2.6;
+      const m = P(tx - it.side * 1.2, top + 0.5, z);
+      const e = P(ax, top + 0.2, z);
+      c.lineWidth = Math.max(0.8, cam.px(0.12, z));
+      c.beginPath();
+      c.moveTo(b[0], b[1]);
+      c.quadraticCurveTo(m[0], m[1], e[0], e[1]);
+      c.stroke();
+      const head = [P(ax - 0.5, top + 0.25, z), P(ax + 0.5, top + 0.25, z), P(ax + 0.35, top - 0.1, z), P(ax - 0.35, top - 0.1, z)];
+      K.poly(c, head);
+      c.fill();
+      if (it.lit) {
+        const lc = r() < 0.5 ? [255, 120, 60] : [255, 50, 44];
+        const p = P(ax, top - 0.15, z);
+        L.fillStyle = K.css(lc, mirror ? 0.5 : 0.95);
+        L.beginPath();
+        L.ellipse(p[0], p[1], cam.px(0.45, z), cam.px(0.16, z), 0, 0, Math.PI * 2);
+        L.fill();
+        if (!mirror) {
+          // light cone falling on the water
+          const g = c.createLinearGradient(p[0], p[1], p[0], P(ax, 0, z)[1]);
+          g.addColorStop(0, K.css(lc, 0.12));
+          g.addColorStop(1, K.css(lc, 0));
+          c.save();
+          c.globalCompositeOperation = 'lighter';
+          c.fillStyle = g;
+          const b0 = P(ax - 2.4, 0, z);
+          const b1 = P(ax + 2.4, 0, z);
+          c.beginPath();
+          c.moveTo(p[0] - cam.px(0.3, z), p[1]);
+          c.lineTo(p[0] + cam.px(0.3, z), p[1]);
+          c.lineTo(b1[0], b1[1]);
+          c.lineTo(b0[0], b0[1]);
+          c.closePath();
+          c.fill();
+          c.restore();
+        }
+      }
+    } else if (it.kind === 'sign') {
+      const s = it.side;
+      const x0 = s * STREET;
+      const x1 = s * (STREET - it.w);
+      const q = [P(x0, it.y0, z), P(x0, it.y0 + it.hh, z), P(x1, it.y0 + it.hh, z), P(x1, it.y0, z)];
+      K.poly(c, q);
+      c.fillStyle = K.css(shade(z, 1.6));
+      c.fill();
+      // brackets
+      c.lineWidth = Math.max(1, cam.px(0.12, z));
+      for (const yy of [it.y0 + it.hh * 0.15, it.y0 + it.hh * 0.85]) {
+        const a = P(x0, yy, z);
+        const b = P(x0 + s * 0.6, yy, z);
+        c.beginPath();
+        c.moveTo(a[0], a[1]);
+        c.lineTo(b[0], b[1]);
+        c.stroke();
+      }
+      // abstract neon tubes (no letters)
+      const rr = K.rng(900 + it.seed);
+      const tubes = [];
+      const inset = 0.35;
+      const xa = s * (STREET - inset);
+      const xb = s * (STREET - it.w + inset);
+      tubes.push([[xa, it.y0 + inset], [xa, it.y0 + it.hh - inset], [xb, it.y0 + it.hh - inset], [xb, it.y0 + inset], [xa, it.y0 + inset]]);
+      {
+        const xm = (xa + xb) / 2;
+        const hw = Math.abs(xb - xa) * 0.3;
+        const yc = it.y0 + it.hh * 0.66;
+        const shape = [];
+        if (it.seed % 2) {
+          // diamond outline
+          shape.push([xm, yc + hw * 1.5], [xm + hw, yc], [xm, yc - hw * 1.5], [xm - hw, yc], [xm, yc + hw * 1.5]);
+        } else {
+          // heart outline (points down)
+          for (let a = 0; a <= 24; a++) {
+            const t = (a / 24) * Math.PI * 2;
+            const hx = 16 * Math.sin(t) ** 3;
+            const hy = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+            shape.push([xm + (hx / 17) * hw, yc + (hy / 17) * hw]);
+          }
+        }
+        tubes.push(shape);
+        let yy = it.y0 + it.hh * 0.36;
+        while (yy > it.y0 + 0.8) {
+          tubes.push([[xm - hw, yy], [xm + hw * (rr() < 0.5 ? 1 : 0.2), yy]]);
+          yy -= K.range(rr, 0.7, 1.1);
+        }
+      }
+      for (const t of tubes) {
+        const on = rr() < 0.8;
+        const pts = t.map(([X, Y]) => P(X, Y, z));
+        const draw = (g, w, colr) => {
+          g.strokeStyle = colr;
+          g.lineWidth = w;
+          g.lineJoin = 'round';
+          g.lineCap = 'round';
+          g.beginPath();
+          pts.forEach((p, i) => (i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])));
+          g.stroke();
+        };
+        const tw = Math.max(1, cam.px(0.16, z));
+        if (on) {
+          const k = it.lvl * (mirror ? 0.5 : 1);
+          draw(c, tw, K.css(K.mixc([255, 70, 80], fogColor(pts[0][1]), fog(z) * 0.5)));
+          draw(L, tw * 1.6, K.css([255, 30, 46], 0.6 * k));
+          draw(L, tw * 0.6, K.css([255, 200, 205], 0.35 * k));
+        } else draw(c, tw, K.css(shade(z, 3)));
+      }
+    } else if (it.kind === 'barrier') {
+      const X = it.X;
+      const q = [P(X - it.w / 2, 0, z), P(X - it.w / 2 + 0.3, 0.85, z), P(X + it.w / 2 - 0.3, 0.85, z), P(X + it.w / 2, 0, z)];
+      K.poly(c, q);
+      c.fillStyle = K.css(shade(z, 1.4));
+      c.fill();
+      // reflective stripe
+      const a = P(X - it.w / 2 + 0.4, 0.55, z);
+      const b = P(X + it.w / 2 - 0.4, 0.55, z);
+      c.strokeStyle = K.css(K.mixc([150, 30, 34], fogColor(a[1]), fog(z)), 0.6);
+      c.lineWidth = Math.max(1, cam.px(0.08, z));
+      c.beginPath();
+      c.moveTo(a[0], a[1]);
+      c.lineTo(b[0], b[1]);
+      c.stroke();
+    } else if (it.kind === 'crate') {
+      const X = it.X;
+      const q = [P(X - it.w / 2, -0.1, z), P(X - it.w / 2, it.w * 0.55, z), P(X + it.w / 2, it.w * 0.7, z), P(X + it.w / 2, -0.1, z)];
+      K.poly(c, q);
+      c.fillStyle = K.css(shade(z, 1.2));
+      c.fill();
+    } else if (it.kind === 'car') {
+      // half-submerged wreck seen from behind, slightly turned
+      const X = it.X;
+      const f = it.flip;
+      const body = [
+        [X - 1.0, 0],
+        [X - 1.05, 0.75],
+        [X - 0.85, 0.9],
+        [X - 0.65, 1.45],
+        [X + 0.6, 1.45],
+        [X + 0.85, 0.92],
+        [X + 1.05, 0.8],
+        [X + 1.0, 0],
+      ].map(([xx, yy]) => P(f > 0 ? xx : 2 * X - xx, yy, z));
+      K.poly(c, body);
+      c.fillStyle = K.css(shade(z, 1.1));
+      c.fill();
+      // rear window + tail lights (one still glowing faintly)
+      const win = [[X - 0.55, 1.0], [X - 0.48, 1.32], [X + 0.48, 1.32], [X + 0.55, 1.0]].map(([xx, yy]) => P(xx, yy, z));
+      K.poly(c, win);
+      c.fillStyle = K.css(K.mixc([40, 14, 18], fogColor(win[0][1]), fog(z)));
+      c.fill();
+      const tl = P(X + f * 0.82, 0.72, z);
+      c.fillStyle = K.css([120, 10, 14]);
+      c.fillRect(tl[0] - cam.px(0.15, z), tl[1] - cam.px(0.06, z), cam.px(0.3, z), cam.px(0.12, z));
+      L.fillStyle = K.css([255, 20, 30], mirror ? 0.25 : 0.55);
+      L.fillRect(tl[0] - cam.px(0.15, z), tl[1] - cam.px(0.06, z), cam.px(0.3, z), cam.px(0.12, z));
+    }
+  }
+  // cables strung across the street + a hanging signal
+  const cr = K.rng(77);
+  for (const z of [18, 29, 41, 57, 83, 120]) {
+    for (let k = 0; k < 2; k++) {
+      const ya = K.range(cr, 9, 17);
+      const yb = ya + K.range(cr, -3, 3);
+      const a = P(-STREET, ya, z + K.range(cr, -1, 1));
+      const b = P(STREET, yb, z + K.range(cr, -1, 1));
+      const sag = cam.px(K.range(cr, 1.5, 4.5), z) * M;
+      if (cr() < 0.2) {
+        // snapped: dangling from one side
+        const pts = [];
+        for (let i = 0; i <= 16; i++) {
+          const t = i / 16;
+          pts.push([K.mix(a[0], K.mix(a[0], b[0], 0.35), t), a[1] + (t * t * cam.px(9, z) + Math.sin(t * 3) * cam.px(0.6, z)) * M]);
+        }
+        c.strokeStyle = K.css(shade(z, 0.8));
+        c.lineWidth = Math.max(0.8, cam.px(0.06, z));
+        c.beginPath();
+        pts.forEach((p, i) => (i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])));
+        c.stroke();
+      } else K.cable(c, a, b, sag, Math.max(0.8, cam.px(0.06, z)), K.css(shade(z, 0.8)));
+    }
+  }
+  // hanging signal box
+  {
+    const z = 29;
+    const p = P(-3.2, 11.2, z);
+    const q = P(-3.2, 13.6, z);
+    c.strokeStyle = K.css(shade(z));
+    c.lineWidth = Math.max(1, cam.px(0.05, z));
+    c.beginPath();
+    c.moveTo(p[0], p[1]);
+    c.lineTo(q[0], q[1]);
+    c.stroke();
+    const bw = cam.px(0.5, z);
+    const bh = cam.px(1.4, z) * M;
+    c.fillStyle = K.css(shade(z, 0.9));
+    c.fillRect(p[0] - bw / 2, p[1], bw, bh);
+    const lp = [p[0], p[1] + bh * 0.2];
+    L.fillStyle = K.css([255, 30, 36], mirror ? 0.45 : 0.9);
+    L.beginPath();
+    L.arc(lp[0], lp[1], bw * 0.28, 0, Math.PI * 2);
+    L.fill();
+  }
+}
+streetProps(refl.ctx, mlights.ctx, true);
+
+// figure reflection (mirrored about its waterline)
+const WATERLINE = FIG.y - FIG.h * 0.022;
+{
+  const r = refl.ctx;
+  r.save();
+  r.translate(0, WATERLINE * 2);
+  r.scale(1, -1);
+  mlights.ctx.save();
+  mlights.ctx.translate(0, WATERLINE * 2);
+  mlights.ctx.scale(1, -1);
+  drawFigure(r, mlights.ctx, { ...FIG, y: FIG.y, mirror: true });
+  mlights.ctx.restore();
+  r.restore();
+}
+
+// ripple the reflection and lay it onto the water
+{
+  K.comp(refl.ctx, mlights.c, 'lighter', 0.8);
+  const rip = K.rippleReflect(ctx, refl.c, {
+    seed: 12,
+    top: HZ,
+    amp: [0.6, 22 * U],
+    freq: [0.5, 0.05],
+    smear: 8,
+    smearStep: 1.8 * U,
+    fresnel: (t) => K.mix(0.95, 0.38, Math.pow(t, 0.8)),
+    band: 0.45,
+  });
+  K.comp(ctx, rip, 'source-over', 1);
+  // glow of the reflected lights
+  const ml = K.rippleReflect(ctx, mlights.c, { seed: 12, top: HZ, amp: [0.6, 22 * U], freq: [0.5, 0.05], smear: 18, smearStep: 3 * U, fresnel: (t) => K.mix(0.9, 0.35, t), band: 0.6 });
+  K.emit(ctx, ml, { core: 0.4, passes: [[6, 0.4], [24, 0.35], [70, 0.25]] });
+}
+
+// buildings
+{
+  const env = { ...envBase, mirror: false, lights: lights.ctx };
+  // far layer gets a touch of depth-of-field blur
+  const far = K.layer(W, H);
+  for (const b of backs) K.paintBlock(far.ctx, b, env);
+  for (const b of fronts) if (b.z0 > 70) K.paintBlock(far.ctx, b, env);
+  ctx.save();
+  ctx.filter = `blur(${0.6 * U}px)`;
+  ctx.drawImage(far.c, 0, 0);
+  ctx.restore();
+  // horizon haze between the rows
+  ctx.drawImage(
+    K.fogLayer(W, H, { seed: 23, color: [140, 22, 28], alpha: 0.5, sx: 0.0014, sy: 0.012, mask: (v) => Math.exp(-(((v - 0.47) / 0.045) ** 2)), lo: -0.5, hi: 0.6 }),
+    0,
+    0,
+  );
+  // drifting smoke between the far and near layers
+  ctx.drawImage(
+    K.fogLayer(W, H, { seed: 37, color: [110, 14, 22], alpha: 0.3, sx: 0.0009, sy: 0.006, mask: (v) => Math.exp(-(((v - 0.33) / 0.1) ** 2)) * 0.8, lo: 0.0, hi: 0.8 }),
+    0,
+    0,
+  );
+  for (const b of fronts) if (b.z0 <= 70) K.paintBlock(ctx, b, env);
+}
+
+streetProps(ctx, lights.ctx, false);
+
+// low mist over the water, behind the figure
+ctx.drawImage(
+  K.fogLayer(W, H, { seed: 31, color: [130, 22, 28], alpha: 0.3, sx: 0.0011, sy: 0.01, mask: (v) => Math.exp(-(((v - 0.53) / 0.06) ** 2)), lo: -0.3, hi: 0.7 }),
+  0,
+  0,
+);
+/* water surface: rain rings, glints, submerged street markings */
+function waterSurface() {
+  const s = K.sampler(ctx.canvas, 6);
+  const r = K.rng(4242);
+  const l = K.layer(W, H);
+  const c = l.ctx;
+  // submerged lane markings (dashed, converging)
+  for (const X of [-STREET + 4, 0, STREET - 4]) {
+    for (let z = 4; z < 120; z += 6) {
+      if (X === 0 && r() < 0.3) continue;
+      const a = cam.p(X, -0.02, z);
+      const b = cam.p(X, -0.02, z + (X === 0 ? 3 : 6));
+      c.strokeStyle = `rgba(150,60,64,${0.14 * (1 - fog(z))})`;
+      c.lineWidth = Math.max(0.8, cam.px(0.14, z));
+      c.beginPath();
+      c.moveTo(a[0], a[1]);
+      c.lineTo(b[0], b[1]);
+      c.stroke();
+    }
+  }
+  // rain rings
+  for (let i = 0; i < 3200; i++) {
+    const y = HZ + 6 + Math.pow(r(), 0.75) * (H - HZ);
+    const x = r() * W;
+    const z = (cam.f * cam.h) / Math.max(1, y - HZ);
+    const rad = cam.px(K.range(r, 0.03, 0.12), z);
+    if (rad < 0.8) continue;
+    const asp = K.clamp((y - HZ) / cam.f, 0.03, 0.6);
+    const col = s(x, y - rad * asp);
+    const lum = (col[0] + col[1] + col[2]) / 765;
+    c.strokeStyle = K.css([Math.min(255, col[0] * 2 + 30), col[1] * 1.6 + 16, col[2] * 1.6 + 18], K.clamp(0.05 + lum * 1.2) * 0.3);
+    c.lineWidth = Math.max(0.5, rad * 0.08);
+    c.beginPath();
+    c.ellipse(x, y, rad, rad * asp, 0, 0, Math.PI * 2);
+    c.stroke();
+    if (r() < 0.4) {
+      c.beginPath();
+      c.ellipse(x, y, rad * 0.55, rad * 0.55 * asp, 0, 0, Math.PI * 2);
+      c.stroke();
+    }
+  }
+  // glints: short horizontal flecks where the reflection is bright
+  for (let i = 0; i < 2200; i++) {
+    const y = HZ + 4 + Math.pow(r(), 1.3) * (H - HZ) * 0.85;
+    const x = r() * W;
+    const col = s(x, y);
+    const lum = (col[0] + col[1] + col[2]) / 765;
+    if (lum < 0.08) continue;
+    const len = K.range(r, 3, 18) * U * (0.4 + (y - HZ) / (H - HZ));
+    c.strokeStyle = K.css([255, 120 + lum * 100, 120 + lum * 90], K.clamp(lum * 1.6) * 0.5);
+    c.lineWidth = 0.9 * U;
+    c.beginPath();
+    c.moveTo(x - len / 2, y);
+    c.lineTo(x + len / 2, y);
+    c.stroke();
+  }
+  K.comp(ctx, l.c, 'lighter', 0.9);
+}
+waterSurface();
+
+/* wet asphalt breaking the surface near the camera */
+{
+  const n = K.perlin(88);
+  const n2 = K.perlin(89);
+  const top = H * 0.66;
+  const tex = K.pixels(Math.ceil(W / 2), Math.ceil((H - top) / 2), (x, y, o) => {
+    const X = x * 2;
+    const Y = top + y * 2;
+    const t = K.clamp((Y - top) / (H - top));
+    const persp = 0.004 / (0.25 + t);
+    const v = K.fbm(n, X * persp * 2.2, Y * persp * 7, 5);
+    const cover = K.smooth(0.0, 0.5, v + t * 0.5 - 0.15);
+    const speck = n2(X * 0.5, Y * 0.5) * 0.5 + 0.5;
+    const b = 6 + speck * 6;
+    o[0] = b + 2;
+    o[1] = b;
+    o[2] = b + 1;
+    o[3] = cover * 170 * K.smooth(0, 0.35, t);
+  });
+  ctx.drawImage(tex, 0, top, W, (H - top));
+}
+
+/* volumetric shaft: the card's light falling toward the figure */
+{
+  const l = K.layer(W, H);
+  const c = l.ctx;
+  const top = CARD.y + CARD.w * 0.6;
+  const bot = FIG.y + FIG.h * 0.05;
+  const g = c.createLinearGradient(0, top, 0, bot);
+  g.addColorStop(0, 'rgba(255,40,52,0.16)');
+  g.addColorStop(0.6, 'rgba(200,24,36,0.07)');
+  g.addColorStop(1, 'rgba(160,16,28,0)');
+  c.fillStyle = g;
+  c.beginPath();
+  c.moveTo(CARD.x - CARD.w * 0.42, top);
+  c.lineTo(CARD.x + CARD.w * 0.42, top);
+  c.lineTo(FIG.x + FIG.h * 0.42, bot);
+  c.lineTo(FIG.x - FIG.h * 0.42, bot);
+  c.closePath();
+  c.fill();
+  K.comp(ctx, K.blurred(l.c, 30 * U, 4), 'lighter', 1);
+}
+
+/* ═════════════════════ 5. FIGURE ═════════════════════ */
+drawFigure(ctx, lights.ctx, { ...FIG, rimFrom: [CARD.x, CARD.y] });
+// ripple rings around the legs
+{
+  const c = ctx;
+  for (const [dx, k] of [[-0.035, 1], [0.04, 1.1]]) {
+    for (let i = 1; i <= 4; i++) {
+      const rx = FIG.h * (0.03 + i * 0.028) * k;
+      c.strokeStyle = `rgba(255,90,96,${0.32 / i})`;
+      c.lineWidth = 1.4 * U;
+      c.beginPath();
+      c.ellipse(FIG.x + dx * FIG.h, WATERLINE + i * 0.6 * U, rx, rx * 0.16, 0, 0, Math.PI * 2);
+      c.stroke();
+    }
+  }
+}
+
+// foreground mist
+ctx.drawImage(
+  K.fogLayer(W, H, { seed: 41, color: [110, 18, 24], alpha: 0.3, sx: 0.0008, sy: 0.005, mask: (v) => Math.exp(-(((v - 0.66) / 0.08) ** 2)), lo: 0.0, hi: 0.9 }),
+  0,
+  0,
+);
+
+/* ═════════════════════ 6. LIGHT, RAIN, GRADE ═════════════════════ */
+K.emit(ctx, lights.c, { core: 0.85, passes: [[2.5 * U, 0.75], [8 * U, 0.6], [24 * U, 0.45], [64 * U, 0.28], [150 * U, 0.16]] });
+K.bloom(ctx, { threshold: 0.66, knee: 0.3, passes: [[8 * U, 0.3], [32 * U, 0.24], [100 * U, 0.16]] });
+
+{
+  const light = K.sampler(ctx.canvas, 6);
+  K.comp(ctx, K.rainLayer(W, H, { seed: 1, count: 7000, len: [14 * U, 34 * U], width: [0.6 * U, 1 * U], angle: 0.07, alpha: 0.16, light }), 'lighter', 1);
+  K.comp(ctx, K.rainLayer(W, H, { seed: 2, count: 2200, len: [40 * U, 90 * U], width: [0.9 * U, 1.5 * U], angle: 0.07, alpha: 0.2, light }), 'lighter', 1);
+  K.comp(ctx, K.rainLayer(W, H, { seed: 3, count: 130, len: [140 * U, 300 * U], width: [2.5 * U, 4 * U], angle: 0.07, alpha: 0.16, light, blur: 3 * U }), 'lighter', 1);
+}
+
+K.finish(ctx, { seed: 5, grain: 11, vignette: 0.62, vx: 0.5, vy: 0.36, vr: 0.85, shadow: [7, 3, 5], contrast: 1.06, sat: 1.04, ca: 1 });
+done();
+}
+</script>
+</body>
+</html>

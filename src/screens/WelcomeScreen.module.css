@@ -1,0 +1,126 @@
+/* Slight push-in on the city so the title card never feels static. */
+.root > div:first-child > img {
+  transform-origin: 40% 30%;
+  will-change: transform;
+  animation: drift 16s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes drift {
+  from {
+    transform: scale(1.08) translate3d(0, -1%, 0);
+  }
+  to {
+    transform: scale(1.001) translate3d(0, 0, 0);
+  }
+}
+
+.content {
+  padding-bottom: calc(var(--sp-4) + var(--safe-bottom));
+}
+
+.stage {
+  position: relative;
+  z-index: 1;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.growTop {
+  flex: 5 1 0;
+  min-height: 40px;
+}
+
+.growMid {
+  flex: 5 1 0;
+  min-height: 40px;
+}
+
+/* ── Wordmark ───────────────────────────────────────────────── */
+.brand {
+  position: relative;
+  isolation: isolate;
+}
+
+/* soft dark pool behind the logo so it reads on any part of the art */
+.halo {
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 46%;
+  width: 150%;
+  height: 230%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  background:
+    radial-gradient(closest-side, rgba(4, 4, 5, 0.62), rgba(4, 4, 5, 0.3) 55%, rgba(4, 4, 5, 0) 100%),
+    radial-gradient(closest-side, rgba(227, 18, 31, 0.12), rgba(227, 18, 31, 0) 70%);
+}
+
+/* ── Entry stack ────────────────────────────────────────────── */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 360px;
+  /* a touch inside the gutter, like the reference title card */
+  padding: 0 6px;
+}
+
+.guest {
+  margin-top: -2px;
+  min-height: 46px;
+  letter-spacing: 0.18em;
+  color: var(--text-2);
+}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  opacity: 0.85;
+  transition:
+    color var(--dur-2),
+    opacity var(--dur-2);
+}
+
+.link:hover,
+.link:focus-visible {
+  color: var(--text);
+  opacity: 1;
+}
+
+.dot {
+  color: var(--red);
+  text-shadow: 0 0 6px var(--red-glow);
+}
+
+.foot .credit {
+  color: var(--text-2);
+}

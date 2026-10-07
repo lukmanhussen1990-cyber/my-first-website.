@@ -1,0 +1,441 @@
+/*
+ * Pin geometry (relative to the anchor point, must match PIN_GEOM in mapModel):
+ *   marker 34×40 centred on x = 0, from y = -54 to -14
+ *   stem   y = -16 … 0, ground dot centred on the anchor
+ *   chip   34px tall (y = -50 … -16), starting 4px past the anchor
+ */
+.pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  will-change: transform;
+}
+
+.btn {
+  position: absolute;
+  top: -54px;
+  height: 58px;
+  display: flex;
+  align-items: flex-start;
+  color: var(--c);
+  -webkit-tap-highlight-color: transparent;
+  animation: pinIn 620ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 55ms + 140ms);
+  transform-origin: 17px 54px;
+}
+
+.right {
+  left: -17px;
+  padding-left: 13px;
+}
+
+.left {
+  right: -17px;
+  padding-right: 13px;
+  flex-direction: row-reverse;
+  transform-origin: calc(100% - 17px) 54px;
+}
+
+/* ── status palettes ─────────────────────────────────────────────── */
+.locked {
+  --c: var(--red);
+  --glow: rgba(227, 18, 31, 0.55);
+  --edge: rgba(255, 255, 255, 0.1);
+  /* dim, but still ≥ 4.5:1 on the chip for 10.5px text */
+  --ink: color-mix(in srgb, var(--text-2) 45%, var(--text-3));
+}
+
+.available {
+  --c: var(--amber);
+  --glow: var(--amber-glow);
+  --edge: rgba(255, 138, 31, 0.34);
+  --ink: rgba(255, 166, 92, 0.95);
+}
+
+.completed {
+  --c: var(--green);
+  --glow: var(--green-glow);
+  --edge: rgba(53, 208, 127, 0.3);
+  --ink: rgba(96, 222, 152, 0.92);
+}
+
+.discovered {
+  --c: var(--red-2);
+  --glow: var(--red-glow);
+  --edge: rgba(255, 43, 56, 0.5);
+  --ink: var(--red-2);
+}
+
+/* ── marker ───────────────────────────────────────────────────────── */
+.marker {
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  filter: drop-shadow(0 0 5px var(--glow)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
+  transition: transform var(--dur-2) var(--ease-snap);
+}
+
+.right .marker {
+  left: 0;
+}
+
+.left .marker {
+  right: 0;
+}
+
+.stem {
+  position: absolute;
+  top: 38px;
+  width: 1.5px;
+  height: 16px;
+  background: linear-gradient(180deg, var(--c), rgba(255, 255, 255, 0.05));
+  opacity: 0.85;
+}
+
+.right .stem {
+  left: 16.25px;
+}
+
+.left .stem {
+  right: 16.25px;
+}
+
+.ground {
+  position: absolute;
+  top: 51px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.55),
+    0 0 8px var(--glow);
+}
+
+.right .ground {
+  left: 14px;
+}
+
+.left .ground {
+  right: 14px;
+}
+
+/* available: two staggered pulse rings around the marker */
+.pulse {
+  position: absolute;
+  top: 3px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--c);
+  box-shadow: 0 0 10px var(--glow);
+  opacity: 0;
+  animation: pulse-ring 2.4s var(--ease-out) infinite;
+  animation-delay: 0.8s;
+  pointer-events: none;
+}
+
+.pulseLate {
+  animation-delay: 2s;
+}
+
+.right .pulse {
+  left: 0;
+}
+
+.left .pulse {
+  right: 0;
+}
+
+/* ── label chip ───────────────────────────────────────────────────── */
+.chip {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 34px;
+  margin-top: 4px;
+  border-radius: 7px;
+  background: linear-gradient(180deg, rgba(26, 26, 32, 0.92), rgba(9, 9, 12, 0.9));
+  border: 1px solid var(--edge);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 20px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  text-align: left;
+  transition:
+    border-color var(--dur-2),
+    box-shadow var(--dur-2),
+    opacity 240ms var(--ease-out),
+    transform 240ms var(--ease-out),
+    visibility 0s;
+}
+
+.right .chip {
+  padding: 0 12px 0 26px;
+}
+
+.left .chip {
+  padding: 0 26px 0 12px;
+  text-align: right;
+}
+
+.name {
+  position: relative;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12.5px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.locked .name {
+  color: var(--text-2);
+}
+
+.status {
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 10.5px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.discovered .chip {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 14px rgba(227, 18, 31, 0.28),
+    0 8px 20px rgba(0, 0, 0, 0.6);
+}
+
+/* ── folded label (no clean side at this camera position) ─────────
+ * marker only; the label returns on zoom, focus, hover or selection.
+ * The invisible chip must not swallow taps meant for the map. */
+.folded {
+  pointer-events: none;
+}
+
+.folded::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  width: 44px;
+  height: 62px;
+  pointer-events: auto;
+}
+
+.right.folded::before {
+  left: -5px;
+}
+
+.left.folded::before {
+  right: -5px;
+}
+
+.folded .chip {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-12px) scale(0.94);
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out),
+    visibility 0s linear 180ms;
+}
+
+.left.folded .chip {
+  transform: translateX(12px) scale(0.94);
+}
+
+.folded:hover .chip,
+.folded:focus-visible .chip {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out),
+    visibility 0s;
+}
+
+/* ── interaction ──────────────────────────────────────────────────── */
+.btn:hover .chip {
+  border-color: rgba(255, 255, 255, 0.26);
+}
+
+.btn:active .marker {
+  transform: scale(0.92);
+}
+
+.btn:focus-visible {
+  outline: none;
+}
+
+.btn:focus-visible .chip {
+  outline: 2px solid var(--red-2);
+  outline-offset: 2px;
+}
+
+.selected .marker {
+  transform: scale(1.1);
+}
+
+.selected .chip {
+  border-color: var(--c);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 1px var(--glow),
+    0 0 18px var(--glow),
+    0 8px 20px rgba(0, 0, 0, 0.6);
+}
+
+/* ── entrance ─────────────────────────────────────────────────────── */
+@keyframes pinIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.86);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* a pin revealed by a scan glitches into existence */
+.fresh {
+  animation: glitchIn 1s linear both;
+  animation-delay: 0.15s;
+}
+
+.fresh .name::before,
+.fresh .name::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fresh .name::before {
+  color: #ff1f3d;
+  animation: rgbA 1s steps(1, end) 0.15s both;
+}
+
+.fresh .name::after {
+  color: #19e3ff;
+  animation: rgbB 1s steps(1, end) 0.15s both;
+}
+
+@keyframes glitchIn {
+  0% {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+    transform: translateX(0);
+  }
+  8% {
+    opacity: 1;
+    clip-path: inset(40% 0 38% 0);
+    transform: translateX(-7px);
+  }
+  16% {
+    clip-path: inset(72% 0 4% 0);
+    transform: translateX(6px);
+  }
+  24% {
+    opacity: 0.2;
+    clip-path: inset(10% 0 64% 0);
+    transform: translateX(-3px);
+  }
+  34% {
+    opacity: 1;
+    clip-path: inset(0 0 30% 0);
+    transform: translateX(4px);
+  }
+  46% {
+    opacity: 0.55;
+    clip-path: inset(0 0 0 0);
+    transform: translateX(-2px);
+  }
+  58% {
+    opacity: 1;
+    transform: translateX(1px);
+  }
+  70% {
+    opacity: 0.75;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    transform: none;
+  }
+}
+
+@keyframes rgbA {
+  0% {
+    opacity: 0.9;
+    transform: translateX(-3px);
+  }
+  20% {
+    transform: translateX(2px);
+  }
+  40% {
+    transform: translateX(-2px);
+  }
+  60%,
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
+
+@keyframes rgbB {
+  0% {
+    opacity: 0.8;
+    transform: translateX(3px);
+  }
+  20% {
+    transform: translateX(-2px);
+  }
+  40% {
+    transform: translateX(2px);
+  }
+  60%,
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .fresh,
+  .pulse {
+    animation: none;
+  }
+
+  .fresh .name::before,
+  .fresh .name::after {
+    display: none;
+  }
+}
+
+:global(.reduce-motion) .btn,
+:global(.reduce-motion) .fresh,
+:global(.reduce-motion) .pulse {
+  animation: none;
+}
+
+:global(.reduce-motion) .fresh .name::before,
+:global(.reduce-motion) .fresh .name::after {
+  display: none;
+}

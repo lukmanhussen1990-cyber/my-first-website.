@@ -1,0 +1,157 @@
+.group + .group {
+  margin-top: var(--sp-6);
+}
+
+.title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin: 0 2px 10px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.titleText {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+/* tiny crimson tick before every section title */
+.titleText::before {
+  content: '';
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--red);
+  box-shadow: 0 0 8px var(--red-glow);
+}
+
+.title small {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  color: var(--text-3);
+}
+
+.panel {
+  overflow: hidden;
+  border-radius: var(--r-lg);
+}
+
+.row {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 13px 14px;
+  text-align: left;
+  color: var(--text);
+}
+
+.row + .row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 60px;
+  right: 0;
+  height: 1px;
+  background: var(--line);
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 34px;
+}
+
+.action {
+  transition: background-color var(--dur-2);
+}
+
+.action:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.action:active {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--red-2);
+  background: linear-gradient(160deg, rgba(227, 18, 31, 0.2), rgba(227, 18, 31, 0.05));
+  border: 1px solid rgba(255, 43, 56, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.label {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15.5px;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+.sub {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-3);
+}
+
+.right {
+  flex: none;
+  max-width: 55%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: right;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--text-2);
+}
+
+.chev {
+  flex: none;
+  margin-right: -4px;
+  color: var(--text-3);
+}
+
+.stack {
+  padding: 12px 0 2px 47px;
+}
+
+/* tones */
+.tone_danger .label {
+  color: var(--red-2);
+}
+
+.tone_danger .icon {
+  background: rgba(227, 18, 31, 0.12);
+  border-color: rgba(255, 43, 56, 0.4);
+}
+
+.tone_accent .label {
+  color: var(--text);
+}

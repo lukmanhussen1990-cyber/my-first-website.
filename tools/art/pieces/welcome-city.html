@@ -1,0 +1,585 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>welcome-city</title>
+<!-- Welcome screen key art: a rain-soaked avenue looking up at an original hexagonal truss spire piercing red-lit low clouds. -->
+<meta name="art" data-out="src/assets/art/welcome-city.webp" data-w="900" data-h="1950" data-scale="1.5" data-quality="80">
+</head>
+<body style="margin:0;background:#000">
+<canvas id="c"></canvas>
+<script type="module">
+import { setup, done } from '../lib/paint.js';
+import * as K from '../lib/hero-kit.js';
+
+// The runner first loads the page without ?v= only to read the <meta> tags; paint on the real pass.
+if (new URLSearchParams(location.search).has('v')) window.addEventListener('load', () => setTimeout(paint, 0));
+
+function paint() {
+  const { ctx, W, H } = setup();
+  const U = W / 900;
+  const R = K.rng(2049);
+  const cam = K.camera({ cx: W / 2, cy: H / 2, f: W * 1.12, h: 1.7, pitch: 0.3 });
+  const HZ = cam.horizon;
+  const STREET = 18;
+
+  /* ── palette ── */
+  const WALL = [10, 7, 9];
+  const CLOUD_Y = H * 0.215;
+  const SKY = [
+    [0, [5, 2, 4]],
+    [0.08, [16, 3, 6]],
+    [0.17, [64, 10, 15]],
+    [0.24, [80, 12, 17]],
+    [0.32, [40, 7, 11]],
+    [0.48, [22, 4, 7]],
+    [0.6, [34, 6, 10]],
+    [HZ / (H * 1.0), [66, 12, 16]],
+    [1, [18, 4, 7]],
+  ];
+  const skyColor = (sy) => {
+    const v = sy / H;
+    for (let i = 1; i < SKY.length; i++) {
+      if (v <= SKY[i][0]) {
+        const [a, ca] = SKY[i - 1];
+        const [b, cb] = SKY[i];
+        return K.mixc(ca, cb, (v - a) / (b - a));
+      }
+    }
+    return SKY[SKY.length - 1][1];
+  };
+  const fog = (z) => 1 - Math.exp(-z / 170);
+  const fogColor = (sy) => K.mixc(skyColor(sy), [72, 12, 16], 0.25);
+
+  /* ═════════════════════ SKY ═════════════════════ */
+  const sky = K.layer(W, H);
+  {
+    const s = sky.ctx;
+    const g = s.createLinearGradient(0, 0, 0, H);
+    for (let k = 0; k <= 30; k++) g.addColorStop(k / 30, K.css(skyColor((H * k) / 30)));
+    s.fillStyle = g;
+    s.fillRect(0, 0, W, H);
+    // city glow lighting the cloud deck from below
+    s.save();
+    s.translate(W * 0.42, CLOUD_Y + H * 0.05);
+    s.scale(1, 0.42);
+    const rg = s.createRadialGradient(0, 0, 0, 0, 0, W * 0.8);
+    rg.addColorStop(0, 'rgba(220,34,40,0.5)');
+    rg.addColorStop(0.4, 'rgba(150,18,26,0.25)');
+    rg.addColorStop(1, 'rgba(80,8,14,0)');
+    s.globalCompositeOperation = 'lighter';
+    s.fillStyle = rg;
+    s.fillRect(-W * 2, -W * 2, W * 4, W * 4);
+    s.restore();
+    // high smoky haze
+    s.drawImage(K.fogLayer(W, H, { seed: 60, color: [110, 16, 24], alpha: 0.25, sx: 0.0015, sy: 0.004, mask: (v) => K.smooth(0.2, 0.02, v), lo: -0.1, hi: 0.8 }), 0, 0);
+  }
+
+  /* far skyline at the end of the avenue */
+  {
+    const r = K.rng(77);
+    const s = sky.ctx;
+    for (const z of [700, 520, 380]) {
+      for (let i = 0; i < 36; i++) {
+        const X = K.range(r, -420, 420);
+        const w = K.range(r, 16, 46);
+        const h = K.range(r, 30, 150) * (r() < 0.2 ? 1.6 : 1);
+        const pts = [cam.p(X, 0, z), cam.p(X, h, z)];
+        if (r() < 0.3) pts.push(cam.p(X + w * 0.5, h + K.range(r, 10, 40), z));
+        pts.push(cam.p(X + w, h, z), cam.p(X + w, 0, z));
+        const t = Math.min(0.94, fog(z) + 0.02);
+        s.fillStyle = K.css(K.mixc(WALL, fogColor(pts[1][1]), t));
+        K.poly(s, pts);
+        s.fill();
+        for (let k = 0; k < 6; k++) {
+          if (r() > 0.4) continue;
+          const p = cam.p(X + K.range(r, 0.1, 0.9) * w, K.range(r, 4, h - 2), z);
+          const sz = Math.max(1, cam.px(1.4, z));
+          s.fillStyle = K.css(K.mixc([255, 50, 44], fogColor(p[1]), t * 0.6), 0.9);
+          s.fillRect(p[0], p[1], sz, sz);
+        }
+      }
+    }
+  }
+
+  /* ═════════════════════ THE SPIRE ═════════════════════ */
+  const lights = K.layer(W, H);
+  const T = { x: -42, z: 320, h: 440, mast: 62, r0: 30, rt: 3, decks: [[272, 22, 10], [376, 14, 8]] };
+  const rAt = (y) => T.r0 * Math.pow(Math.max(0, 1 - y / T.h), 1.05) + T.rt;
+  const hexA = (k) => (k * Math.PI) / 3 + Math.PI / 6;
+  function spire(c, L) {
+    const P = (X, Y, Z) => cam.p(X, Y, Z);
+    const legW = (k, y) => {
+      const a = hexA(k);
+      const r = rAt(y);
+      return [T.x + r * Math.cos(a), y, T.z + r * Math.sin(a)];
+    };
+    const legPt = (k, y) => P(...legW(k, y));
+    const ft = 0.3;
+    const cloudBase = 285;
+    const col = (y) => {
+      const base = K.mixc([8, 5, 7], fogColor(P(T.x, y, T.z)[1]), ft + (y / T.h) * 0.08);
+      return K.css(K.mixc(base, [120, 20, 28], K.smooth(cloudBase, cloudBase + 60, y) * 0.75));
+    };
+    const levels = [];
+    let y = 0;
+    let step = 22;
+    while (y < T.h - 4) {
+      levels.push(y);
+      y += step;
+      step = Math.max(9, step * 0.955);
+    }
+    levels.push(T.h);
+    c.lineCap = 'round';
+    // legs
+    for (let k = 0; k < 6; k++) {
+      for (let i = 1; i < levels.length; i++) {
+        const a = legPt(k, levels[i - 1]);
+        const b = legPt(k, levels[i]);
+        c.strokeStyle = col(levels[i]);
+        c.lineWidth = Math.max(1, cam.px(K.mix(2.4, 0.8, levels[i] / T.h), T.z));
+        c.beginPath();
+        c.moveTo(a[0], a[1]);
+        c.lineTo(b[0], b[1]);
+        c.stroke();
+      }
+    }
+    // rings + X bracing on every face
+    for (let i = 0; i < levels.length; i++) {
+      const y0 = levels[i];
+      c.strokeStyle = col(y0);
+      c.lineWidth = Math.max(0.8, cam.px(K.mix(1, 0.4, y0 / T.h), T.z));
+      c.beginPath();
+      for (let k = 0; k <= 6; k++) {
+        const p = legPt(k % 6, y0);
+        if (k === 0) c.moveTo(p[0], p[1]);
+        else c.lineTo(p[0], p[1]);
+      }
+      c.stroke();
+      if (i === levels.length - 1) break;
+      const y1 = levels[i + 1];
+      c.lineWidth = Math.max(0.7, cam.px(K.mix(0.7, 0.3, y0 / T.h), T.z));
+      c.beginPath();
+      for (let k = 0; k < 6; k++) {
+        const a0 = legPt(k, y0);
+        const b1 = legPt((k + 1) % 6, y1);
+        const b0 = legPt((k + 1) % 6, y0);
+        const a1 = legPt(k, y1);
+        c.moveTo(a0[0], a0[1]);
+        c.lineTo(b1[0], b1[1]);
+        c.moveTo(b0[0], b0[1]);
+        c.lineTo(a1[0], a1[1]);
+      }
+      c.stroke();
+    }
+    // ring decks: underside, then the faces turned toward the camera with a lit window band
+    for (const [dy, out, th] of T.decks) {
+      const rr = rAt(dy) + out;
+      const hp = (k, yy) => {
+        const a = hexA(k);
+        return P(T.x + rr * Math.cos(a), yy, T.z + rr * Math.sin(a));
+      };
+      const under = [];
+      for (let k = 0; k < 6; k++) under.push(hp(k, dy));
+      K.poly(c, under);
+      {
+        const ctr0 = P(T.x, dy, T.z);
+        const ug = c.createRadialGradient(ctr0[0], ctr0[1], 0, ctr0[0], ctr0[1], cam.px(rr, T.z) * 1.1);
+        ug.addColorStop(0, 'rgb(30,7,10)');
+        ug.addColorStop(0.75, 'rgb(70,12,17)');
+        ug.addColorStop(1, 'rgb(118,20,26)');
+        c.fillStyle = ug;
+      }
+      c.fill();
+      // underside ribs
+      c.strokeStyle = 'rgba(20,6,9,0.4)';
+      c.lineWidth = Math.max(0.8, cam.px(0.4, T.z));
+      const ctr = P(T.x, dy, T.z);
+      // lit outer edge of the deck
+      K.poly(c, under);
+      c.strokeStyle = 'rgba(200,36,44,0.4)';
+      c.lineWidth = Math.max(1, cam.px(0.5, T.z));
+      c.stroke();
+      K.poly(L, under);
+      L.strokeStyle = 'rgba(255,30,44,0.15)';
+      L.lineWidth = Math.max(1, cam.px(0.8, T.z));
+      L.stroke();
+      for (let k = 0; k < 12; k++) {
+        const a = (k * Math.PI) / 6;
+        const e = P(T.x + rr * 0.92 * Math.cos(a), dy, T.z + rr * 0.92 * Math.sin(a));
+        c.beginPath();
+        c.moveTo(ctr[0], ctr[1]);
+        c.lineTo(e[0], e[1]);
+        c.stroke();
+      }
+      for (let k = 0; k < 6; k++) {
+        const am = hexA(k) + Math.PI / 6;
+        const nx = Math.cos(am);
+        const nz = Math.sin(am);
+        const fc = [T.x + rr * Math.cos(am) * 0.87, T.z + rr * Math.sin(am) * 0.87];
+        if (nx * (0 - fc[0]) + nz * (0 - fc[1]) <= 0) continue;
+        const q = [hp(k, dy), hp(k, dy + th), hp(k + 1, dy + th), hp(k + 1, dy)];
+        K.poly(c, q);
+        c.fillStyle = K.css(K.mixc([16, 8, 10], fogColor(q[0][1]), ft));
+        c.fill();
+        const lerpQ = (t0, t1) => {
+          const y0 = dy + th * t0;
+          const y1 = dy + th * t1;
+          return [hp(k, y0), hp(k, y1), hp(k + 1, y1), hp(k + 1, y0)];
+        };
+        const wb = lerpQ(0.3, 0.72);
+        K.poly(c, wb);
+        const wg = c.createLinearGradient(0, wb[1][1], 0, wb[0][1]);
+        wg.addColorStop(0, 'rgb(150,18,28)');
+        wg.addColorStop(1, 'rgb(255,60,64)');
+        c.fillStyle = wg;
+        c.fill();
+        K.poly(L, wb);
+        L.fillStyle = 'rgba(255,34,46,0.55)';
+        L.fill();
+        // mullions
+        c.strokeStyle = 'rgba(14,5,8,0.9)';
+        c.lineWidth = Math.max(1, cam.px(0.35, T.z));
+        for (let m = 1; m < 8; m++) {
+          const t = m / 8;
+          c.beginPath();
+          c.moveTo(K.mix(wb[0][0], wb[3][0], t), K.mix(wb[0][1], wb[3][1], t));
+          c.lineTo(K.mix(wb[1][0], wb[2][0], t), K.mix(wb[1][1], wb[2][1], t));
+          c.stroke();
+        }
+        // roof edge
+        c.strokeStyle = 'rgba(160,30,38,0.5)';
+        c.lineWidth = Math.max(1, cam.px(0.4, T.z));
+        c.beginPath();
+        c.moveTo(q[1][0], q[1][1]);
+        c.lineTo(q[2][0], q[2][1]);
+        c.stroke();
+      }
+    }
+    // mast with cross bars
+    const m0 = P(T.x, T.h, T.z);
+    const m1 = P(T.x, T.h + T.mast, T.z);
+    c.strokeStyle = col(T.h);
+    c.lineWidth = Math.max(1.2, cam.px(1.6, T.z));
+    c.beginPath();
+    c.moveTo(m0[0], m0[1]);
+    c.lineTo(m1[0], m1[1]);
+    c.stroke();
+    for (let i = 1; i < 6; i++) {
+      const yy = T.h + (T.mast * i) / 7;
+      const w = 4 * (1 - i / 7);
+      const a = P(T.x - w, yy, T.z);
+      const b = P(T.x + w, yy, T.z);
+      c.lineWidth = Math.max(0.8, cam.px(0.4, T.z));
+      c.beginPath();
+      c.moveTo(a[0], a[1]);
+      c.lineTo(b[0], b[1]);
+      c.stroke();
+    }
+    // aviation lights
+    const dot = (p, r, a) => {
+      L.fillStyle = `rgba(255,40,44,${a})`;
+      L.beginPath();
+      L.arc(p[0], p[1], r * 1.4, 0, Math.PI * 2);
+      L.fill();
+      c.fillStyle = 'rgb(255,150,140)';
+      c.beginPath();
+      c.arc(p[0], p[1], r * 0.55, 0, Math.PI * 2);
+      c.fill();
+    };
+    const lr = Math.max(2, cam.px(1.4, T.z));
+    dot(m1, lr * 1.6, 1);
+    dot(P(T.x, T.h + T.mast * 0.5, T.z), lr, 0.85);
+    dot(P(T.x, T.h + T.mast * 0.25, T.z), lr * 0.8, 0.7);
+    dot(P(T.x, T.h + T.mast * 0.75, T.z), lr * 0.8, 0.7);
+    for (const k of [1, 2, 3, 4]) dot(legPt(k, T.h), lr * 0.8, 0.8);
+    for (const [dy, out, th] of T.decks) {
+      for (let k = 0; k < 6; k++) {
+        const a = hexA(k);
+        const rr = rAt(dy) + out;
+        if (Math.sin(a) > 0.6) continue;
+        dot(P(T.x + rr * Math.cos(a), dy + th + 0.6, T.z + rr * Math.sin(a)), lr * 0.75, 0.8);
+      }
+    }
+    for (const yy of [70, 140, 210]) for (const k of [3, 4, 5]) dot(legPt(k, yy), lr * 0.55, 0.55);
+    // a run of small lights up the front legs of the upper spire
+    for (let i = 0; i < levels.length; i += 2) {
+      const yy = levels[i];
+      if (yy < 170) continue;
+      for (const k of [3, 4, 5]) dot(legPt(k, yy), lr * 0.38, K.mix(0.35, 0.7, yy / T.h));
+    }
+  }
+  spire(sky.ctx, lights.ctx);
+  // halo of the upper deck and the beacon in the wet air
+  {
+    const d2 = cam.p(T.x, T.decks[1][0] + 4, T.z);
+    const top = cam.p(T.x, T.h + T.mast, T.z);
+    const d1 = cam.p(T.x, T.decks[0][0], T.z);
+    K.glowAt(sky.ctx, d2[0], d2[1], W * 0.2, [255, 30, 40], 0.3);
+    K.glowAt(sky.ctx, top[0], top[1], W * 0.1, [255, 40, 44], 0.3);
+    K.glowAt(sky.ctx, d1[0], d1[1], W * 0.22, [255, 30, 40], 0.18);
+  }
+
+  /* low cloud deck, lit red from below; drawn over the spire so it pierces through */
+  function cloudLayer() {
+    const step = 2;
+    const bot = H * 0.44;
+    const w = Math.ceil(W / step);
+    const h = Math.ceil(bot / step);
+    const nA = K.perlin(61);
+    const nB = K.perlin(62);
+    const nC = K.perlin(63);
+    const nD = K.perlin(64);
+    const TXs = W * 0.4;
+    const dens = (X, Y) => {
+      const nx = X * 0.0014;
+      const ny = Y * 0.0034;
+      const wx = K.fbm(nA, nx * 0.8, ny * 0.8, 3);
+      const wy = K.fbm(nB, nx * 0.8 + 3.3, ny * 0.8 + 7.1, 3);
+      const v = K.fbm(nC, nx * 1.3 + wx * 0.5, ny * 1.3 + wy * 0.35, 6);
+      const billow = 1 - Math.abs(K.fbm(nD, nx * 2.2 + wx * 0.4, ny * 2.2 + wy * 0.3, 5));
+      const band = Math.exp(-(((Y - CLOUD_Y) / (H * 0.065)) ** 2)) * 0.6;
+      const upper = 0.18 * K.smooth(H * 0.13, 0, Y);
+      const below = -0.8 * K.smooth(H * 0.27, H * 0.38, Y);
+      return v * 0.7 + billow * 0.42 + band + upper + below - 0.5;
+    };
+    return K.pixels(w, h, (x, y, o) => {
+      const X = x * step;
+      const Y = y * step;
+      const d = dens(X, Y);
+      if (d < -0.06) {
+        o[3] = 0;
+        return;
+      }
+      const lit = K.clamp((d - dens(X - 4, Y + 26)) * 3.2);
+      const a = K.smooth(-0.04, 0.34, d);
+      const thin = 1 - K.smooth(0.02, 0.4, d);
+      const glow = Math.exp(-(((X - TXs) / (W * 0.55)) ** 2)) * K.smooth(H * 0.04, H * 0.24, Y);
+      const lum = K.clamp((lit * 1.35 + thin * 0.32) * glow + thin * 0.04);
+      const col = lum < 0.7 ? K.mixc([8, 2, 4], [210, 34, 36], lum / 0.7) : K.mixc([210, 34, 36], [255, 120, 100], (lum - 0.7) / 0.3);
+      o[0] = col[0];
+      o[1] = col[1];
+      o[2] = col[2];
+      o[3] = a * 0.95 * 255;
+    });
+  }
+  {
+    const cl = cloudLayer();
+    const ch = Math.ceil((H * 0.44) / 2) * 2;
+    sky.ctx.imageSmoothingQuality = 'high';
+    sky.ctx.drawImage(cl, 0, 0, W, ch);
+    lights.ctx.save();
+    lights.ctx.globalCompositeOperation = 'destination-out';
+    lights.ctx.globalAlpha = 0.8;
+    lights.ctx.drawImage(cl, 0, 0, W, ch);
+    lights.ctx.restore();
+  }
+  // wisps wrapped around the spire at the cloud base
+  sky.ctx.drawImage(
+    K.fogLayer(W, H, { seed: 65, color: [170, 26, 34], alpha: 0.32, sx: 0.0012, sy: 0.009, mask: (v) => Math.exp(-(((v - 0.25) / 0.04) ** 2)), lo: -0.2, hi: 0.7 }),
+    0,
+    0,
+  );
+
+  /* ═════════════════════ BUILDINGS ═════════════════════ */
+  const frontL = K.streetRow(R, { side: -1, street: STREET, z0: 4, z1: 300, hMin: 30, hMax: 95, tall: { p: 0.3, k: 1.8 }, brokenP: 0.3, gap: 0.25 });
+  const frontR = K.streetRow(R, { side: 1, street: STREET, z0: 5, z1: 300, hMin: 30, hMax: 95, tall: { p: 0.3, k: 1.8 }, brokenP: 0.3, gap: 0.25 });
+  const backL = K.streetRow(R, { side: -1, street: STREET + 30, z0: 40, z1: 340, hMin: 80, hMax: 200, brokenP: 0.4, gap: 0.6, jitterX: 40 });
+  const backR = K.streetRow(R, { side: 1, street: STREET + 30, z0: 40, z1: 340, hMin: 80, hMax: 200, brokenP: 0.4, gap: 0.6, jitterX: 40 });
+  for (const b of [...frontL, ...frontR]) b.out = K.range(R, 10, 22);
+  // keep a V of sky open around the spire
+  const AX = W * 0.39;
+  const open = (sx) => K.mix(H * 0.4, -H, K.smooth(W * 0.13, W * 0.42, Math.abs(sx - AX)));
+  K.capBlocks([...frontL, ...frontR, ...backL, ...backR], cam, (sx, sy) => sy > open(sx));
+  const byFar = (a, b) => b.z0 - a.z0;
+  const backs = [...backL, ...backR].sort(byFar);
+  const fronts = [...frontL, ...frontR].sort(byFar);
+
+  const env = {
+    cam,
+    fog,
+    fogColor,
+    wall: WALL,
+    litP: 0.08,
+    warm: 0.22,
+    white: 0.1,
+    brokenWin: 0.18,
+    glass: [7, 4, 6],
+    glassSky: [110, 20, 26],
+    sill: [120, 26, 32],
+    rim: null,
+    tex: K.concreteTex(W, H, 150),
+    texAlpha: 0.85,
+    edge: { color: [255, 50, 56], alpha: 0.2 },
+    streetGlow: [110, 16, 22],
+    skyGlow: [90, 12, 18],
+    neon: { p: 0.45, vertical: 0.75, k: 0.6, w: 0.14, maxLen: 24 },
+    lights: lights.ctx,
+    unit: U,
+  };
+
+  /* ═════════════════════ COMPOSE ═════════════════════ */
+  ctx.drawImage(sky.c, 0, 0);
+  {
+    const g = ctx.createLinearGradient(0, HZ, 0, H);
+    g.addColorStop(0, 'rgb(54,10,14)');
+    g.addColorStop(0.25, 'rgb(18,5,8)');
+    g.addColorStop(1, 'rgb(7,4,5)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, HZ, W, H - HZ);
+  }
+  {
+    const far = K.layer(W, H);
+    for (const b of backs) K.paintBlock(far.ctx, b, env);
+    for (const b of fronts) if (b.z0 > 70) K.paintBlock(far.ctx, b, env);
+    ctx.save();
+    ctx.filter = `blur(${0.6 * U}px)`;
+    ctx.drawImage(far.c, 0, 0);
+    ctx.restore();
+    // haze at the end of the avenue and a darker drift through the middle band
+    ctx.drawImage(
+      K.fogLayer(W, H, { seed: 71, color: [130, 20, 26], alpha: 0.45, sx: 0.0014, sy: 0.01, mask: (v) => Math.exp(-(((v - HZ / H + 0.025) / 0.05) ** 2)), lo: -0.4, hi: 0.6 }),
+      0,
+      0,
+    );
+    ctx.drawImage(
+      K.fogLayer(W, H, { seed: 72, color: [50, 7, 12], alpha: 0.35, sx: 0.0009, sy: 0.005, mask: (v) => Math.exp(-(((v - 0.42) / 0.12) ** 2)), lo: -0.1, hi: 0.8 }),
+      0,
+      0,
+    );
+    // distant city light glowing at the end of the avenue
+    {
+      const vp = cam.p(0, 6, 400);
+      ctx.save();
+      ctx.translate(vp[0], vp[1]);
+      ctx.scale(1, 0.55);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, W * 0.3);
+      g.addColorStop(0, 'rgba(200,34,40,0.38)');
+      g.addColorStop(0.4, 'rgba(140,18,26,0.16)');
+      g.addColorStop(1, 'rgba(80,8,14,0)');
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = g;
+      ctx.fillRect(-W, -W, W * 2, W * 2);
+      ctx.restore();
+    }
+    for (const b of fronts) if (b.z0 <= 70) K.paintBlock(ctx, b, env);
+  }
+  // building tops dissolving into the lit cloud base
+  ctx.drawImage(
+    K.fogLayer(W, H, { seed: 66, color: [150, 22, 30], alpha: 0.38, sx: 0.0011, sy: 0.007, mask: (v) => Math.exp(-(((v - 0.22) / 0.07) ** 2)), lo: -0.2, hi: 0.7 }),
+    0,
+    0,
+  );
+
+  /* puddles: the street mirrors the scene above the horizon */
+  const n = K.perlin(23);
+  const puddles = K.pixels(Math.ceil(W / 3), Math.ceil(H / 3), (x, y, o) => {
+    const Y = y * 3;
+    if (Y < HZ - 4) {
+      o[3] = 0;
+      return;
+    }
+    const t = K.clamp((Y - HZ) / (H - HZ));
+    const persp = 0.006 / (0.08 + t);
+    const v = K.fbm(n, x * 3 * persp, (Y - HZ) * persp * 5, 4);
+    o[0] = o[1] = o[2] = 255;
+    o[3] = K.smooth(-0.2, 0.15, v + 0.32 - t * 0.3) * 255;
+  });
+  {
+    const src = K.layer(W, H);
+    src.ctx.save();
+    src.ctx.translate(0, HZ * 2);
+    src.ctx.scale(1, -1);
+    src.ctx.drawImage(ctx.canvas, 0, 0);
+    src.ctx.restore();
+    const ml = K.layer(W, H);
+    ml.ctx.save();
+    ml.ctx.translate(0, HZ * 2);
+    ml.ctx.scale(1, -1);
+    ml.ctx.drawImage(lights.c, 0, 0);
+    ml.ctx.restore();
+    K.comp(src.ctx, ml.c, 'lighter', 0.9);
+    const rip = K.rippleReflect(ctx, src.c, { seed: 21, top: HZ, amp: [0.6, 16 * U], freq: [0.5, 0.06], smear: 9, smearStep: 2.2 * U, fresnel: (t) => K.mix(1, 0.45, Math.pow(t, 0.7)), band: 0.45 });
+    const pl = K.layer(W, H);
+    pl.ctx.drawImage(rip, 0, 0);
+    pl.ctx.globalCompositeOperation = 'destination-in';
+    pl.ctx.drawImage(puddles, 0, 0, W, H);
+    K.comp(ctx, pl.c, 'source-over', 1);
+    const mlr = K.rippleReflect(ctx, ml.c, { seed: 21, top: HZ, amp: [0.6, 16 * U], freq: [0.5, 0.06], smear: 14, smearStep: 2.6 * U, fresnel: (t) => K.mix(0.9, 0.4, t), band: 0.6 });
+    const mll = K.layer(W, H);
+    mll.ctx.drawImage(mlr, 0, 0);
+    mll.ctx.globalCompositeOperation = 'destination-in';
+    mll.ctx.drawImage(puddles, 0, 0, W, H);
+    K.emit(ctx, mll.c, { core: 0.45, passes: [[6, 0.35], [22, 0.3], [60, 0.2]] });
+  }
+
+  /* street detail: kerbs, lane dashes, rain rings in the puddles */
+  {
+    const s = K.sampler(ctx.canvas, 6);
+    const r = K.rng(99);
+    const l = K.layer(W, H);
+    const c = l.ctx;
+    for (const X of [-STREET + 4, STREET - 4]) {
+      const a = cam.p(X, 0.02, 3);
+      const b = cam.p(X, 0.02, 260);
+      c.strokeStyle = 'rgba(120,30,36,0.22)';
+      c.lineWidth = 2 * U;
+      c.beginPath();
+      c.moveTo(a[0], a[1]);
+      c.lineTo(b[0], b[1]);
+      c.stroke();
+    }
+    for (let z = 3; z < 160; z += 8) {
+      const a = cam.p(0, 0.01, z);
+      const b = cam.p(0, 0.01, z + 3.5);
+      c.strokeStyle = `rgba(170,70,72,${0.18 * (1 - fog(z))})`;
+      c.lineWidth = Math.max(1, cam.px(0.16, z));
+      c.beginPath();
+      c.moveTo(a[0], a[1]);
+      c.lineTo(b[0], b[1]);
+      c.stroke();
+    }
+    for (let i = 0; i < 3000; i++) {
+      const y = HZ + 4 + Math.pow(r(), 0.8) * (H - HZ);
+      const x = r() * W;
+      const t = (y - HZ) / (H - HZ);
+      const rad = (2 + r() * 9) * U * (0.2 + t * 1.6);
+      const asp = 0.08 + t * 0.3;
+      const col = s(x, y);
+      const lum = (col[0] + col[1] + col[2]) / 765;
+      c.strokeStyle = K.css([Math.min(255, col[0] * 2 + 40), col[1] * 1.6 + 20, col[2] * 1.6 + 22], K.clamp(0.06 + lum * 1.4) * 0.32);
+      c.lineWidth = Math.max(0.5, rad * 0.08);
+      c.beginPath();
+      c.ellipse(x, y, rad, rad * asp, 0, 0, Math.PI * 2);
+      c.stroke();
+    }
+    K.comp(ctx, l.c, 'lighter', 0.9);
+  }
+
+  /* glow, rain, grade */
+  K.emit(ctx, lights.c, { core: 0.85, passes: [[2.5 * U, 0.75], [8 * U, 0.6], [24 * U, 0.45], [64 * U, 0.3], [150 * U, 0.18]] });
+  K.bloom(ctx, { threshold: 0.62, knee: 0.3, passes: [[8 * U, 0.3], [32 * U, 0.25], [100 * U, 0.18]] });
+  {
+    const light = K.sampler(ctx.canvas, 6);
+    K.comp(ctx, K.rainLayer(W, H, { seed: 5, count: 12000, len: [16 * U, 40 * U], width: [0.6 * U, 1 * U], angle: 0.1, alpha: 0.18, light }), 'lighter', 1);
+    K.comp(ctx, K.rainLayer(W, H, { seed: 6, count: 4000, len: [50 * U, 110 * U], width: [0.9 * U, 1.6 * U], angle: 0.1, alpha: 0.2, light }), 'lighter', 1);
+    K.comp(ctx, K.rainLayer(W, H, { seed: 7, count: 240, len: [160 * U, 340 * U], width: [2.5 * U, 4.5 * U], angle: 0.1, alpha: 0.15, light, blur: 3 * U }), 'lighter', 1);
+  }
+  // keep the logo band and the button area calm
+  {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, 'rgba(4,2,3,0)');
+    g.addColorStop(0.3, 'rgba(4,2,3,0)');
+    g.addColorStop(0.42, 'rgba(4,2,3,0.28)');
+    g.addColorStop(0.55, 'rgba(4,2,3,0.1)');
+    g.addColorStop(0.7, 'rgba(4,2,3,0.05)');
+    g.addColorStop(1, 'rgba(4,2,3,0.3)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+  K.finish(ctx, { seed: 8, grain: 11, vignette: 0.58, vx: 0.45, vy: 0.3, vr: 0.85, shadow: [7, 3, 5], contrast: 1.06, sat: 1.04, ca: 1 });
+  done();
+}
+</script>
+</body>
+</html>

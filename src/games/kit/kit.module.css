@@ -1,0 +1,78 @@
+/*
+ * Shared layout + feedback classes for the mini-games.
+ * The runner hands each game the remaining height as a flex column; .root
+ * fills it and lays out HUD → stage → controls.
+ */
+.root {
+  position: relative;
+  isolation: isolate;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Freeze every CSS animation while the runner reports `paused`. */
+.paused,
+.paused * {
+  animation-play-state: paused !important;
+}
+
+.paused {
+  pointer-events: none;
+}
+
+/* Full-area crimson flash for wrong inputs (re-key to replay). */
+.flash {
+  position: absolute;
+  inset: -6px;
+  z-index: 30;
+  border-radius: 18px;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(120% 90% at 50% 50%, rgba(227, 18, 31, 0) 40%, rgba(227, 18, 31, 0.32));
+  box-shadow: inset 0 0 0 1px rgba(255, 43, 56, 0.55);
+  animation: flash 520ms var(--ease-out) both;
+}
+
+@keyframes flash {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.shake {
+  animation: shake 420ms var(--ease-out) both;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(-7px);
+  }
+  30% {
+    transform: translateX(6px);
+  }
+  45% {
+    transform: translateX(-5px);
+  }
+  60% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+}

@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="art" data-out="src/assets/art/map-city.webp" data-w="1800" data-h="2400" data-scale="1" data-quality="78">
+<title>map-city</title>
+</head><body style="margin:0;background:#000"><canvas id="c"></canvas>
+<script type="module">
+// Aerial map of the abandoned city (Border Map). All geometry lives in ../lib/world-map.js.
+import { setup, done } from '../lib/paint.js';
+import { paintMap } from '../lib/world-map.js';
+const { ctx, W, H } = setup();
+// paint after the load event so the runner's navigation resolves immediately
+// (the runner first opens the page without ?v= only to read the meta tags — skip painting then)
+if (!new URLSearchParams(location.search).has('v')) done();
+else setTimeout(() => {
+  const t0 = performance.now();
+  paintMap(ctx, W, H);
+  console.warn(`map-city painted in ${((performance.now() - t0) / 1000).toFixed(1)}s`);
+  done();
+}, 30);
+</script></body></html>

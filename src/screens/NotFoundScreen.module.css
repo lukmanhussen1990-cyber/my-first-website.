@@ -1,0 +1,187 @@
+.content {
+  justify-content: space-between;
+  padding-top: calc(var(--safe-top) + 18px);
+  padding-bottom: calc(var(--safe-bottom) + 22px);
+}
+
+/* effect layer clipped to the visible area so it never adds scroll overflow */
+.fx {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* TV static over the whole screen — transform-only animation */
+.static {
+  position: absolute;
+  inset: -80px;
+  opacity: 0.09;
+  background-size: 140px 140px;
+  mix-blend-mode: screen;
+  animation: nf-static 0.5s steps(4) infinite;
+}
+
+@keyframes nf-static {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-31px, 19px); }
+  50% { transform: translate(23px, -27px); }
+  75% { transform: translate(-13px, -9px); }
+  100% { transform: translate(0, 0); }
+}
+
+.scan {
+  position: absolute;
+  inset: 0;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.status i {
+  font-style: normal;
+  color: var(--red-2);
+}
+
+.live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red-2);
+  box-shadow: 0 0 8px var(--red-glow);
+  animation: flicker 2.4s linear infinite;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* ── Torn card ─────────────────────────────────────────────── */
+.card {
+  position: relative;
+  width: 132px;
+  aspect-ratio: 2 / 3;
+  margin-bottom: 26px;
+  transform: rotate(-7deg);
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 26px rgba(227, 18, 31, 0.32));
+}
+
+.cardDrift {
+  animation: nf-drift 6s var(--ease-in-out) infinite;
+}
+
+@keyframes nf-drift {
+  0%, 100% { transform: rotate(-7deg) translateY(0); }
+  50% { transform: rotate(-5deg) translateY(-6px); }
+}
+
+.half {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 9px;
+}
+
+/* jagged diagonal tear */
+.halfA {
+  clip-path: polygon(0 0, 100% 0, 100% 38%, 82% 44%, 66% 40%, 52% 50%, 36% 47%, 20% 56%, 0 52%);
+  transform: translate(-5px, -7px) rotate(-3deg);
+}
+
+.halfB {
+  clip-path: polygon(0 55%, 20% 59%, 36% 50%, 52% 53%, 66% 43%, 82% 47%, 100% 41%, 100% 100%, 0 100%);
+  transform: translate(6px, 8px) rotate(4deg);
+  filter: brightness(0.8);
+}
+
+/* crimson energy leaking through the tear */
+.tear {
+  position: absolute;
+  left: -14%;
+  right: -14%;
+  top: 46%;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--red-2) 20%, #fff 50%, var(--red-2) 80%, transparent);
+  box-shadow:
+    0 0 12px var(--red-2),
+    0 0 30px var(--red-glow);
+  transform: rotate(-11deg);
+  opacity: 0.85;
+}
+
+/* ── Type ─────────────────────────────────────────────────── */
+.code {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 76px;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  margin-right: -0.12em;
+  color: #fff;
+  text-shadow:
+    0 0 14px rgba(255, 43, 56, 0.8),
+    0 0 44px rgba(227, 18, 31, 0.5);
+}
+
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: 0.36em;
+  margin-right: -0.36em;
+  color: var(--red-2);
+  text-shadow: 0 0 12px var(--red-glow);
+}
+
+.title svg {
+  flex: none;
+}
+
+.reason {
+  margin-top: 14px;
+  max-width: 280px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.path {
+  margin-top: 16px;
+  max-width: 100%;
+  padding: 6px 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-3);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px dashed rgba(255, 43, 56, 0.35);
+}
+
+.actions {
+  display: grid;
+  gap: 6px;
+}

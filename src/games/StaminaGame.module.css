@@ -1,0 +1,280 @@
+.root {
+  gap: 12px;
+}
+
+.arena {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+/* red edge pulse while the meter is near the kill line */
+.arena::after {
+  content: '';
+  position: absolute;
+  inset: -4px -6px;
+  border-radius: 18px;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 43, 56, 0.35),
+    inset 0 0 46px rgba(227, 18, 31, 0.32);
+  transition: opacity var(--dur-3);
+}
+
+.danger .arena::after {
+  opacity: 1;
+  animation: danger-pulse 0.76s var(--ease-in-out) infinite;
+}
+
+@keyframes danger-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ── Meter ──────────────────────────────────────────────────── */
+.meter {
+  flex: none;
+  width: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pct {
+  width: 30px;
+  text-align: center;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.gauge {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 120px;
+}
+
+.track {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 30px;
+  overflow: hidden;
+  border-radius: 15px;
+  border: 1px solid var(--line-2);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 60%),
+    rgba(0, 0, 0, 0.5);
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.7),
+    0 6px 18px rgba(0, 0, 0, 0.45);
+  transition: box-shadow var(--dur-3);
+}
+
+.danger .track {
+  border-color: rgba(255, 43, 56, 0.6);
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.7),
+    0 0 18px var(--red-glow);
+}
+
+.dangerZone {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  height: calc(var(--kill) * 100%);
+  background:
+    repeating-linear-gradient(135deg, rgba(0, 0, 0, 0.42) 0 4px, transparent 4px 8px),
+    rgba(227, 18, 31, 0.08);
+  pointer-events: none;
+}
+
+.fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 100%;
+  will-change: transform;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 45%),
+    linear-gradient(0deg, #6a0510 0%, var(--red) 55%, #ff5a63 100%);
+  box-shadow: inset 0 0 12px rgba(80, 0, 6, 0.5);
+}
+
+.capWrap {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.cap {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  top: -1px;
+  height: 3px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow:
+    0 0 8px #fff,
+    0 0 16px var(--red-2);
+}
+
+.ticks {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0 calc(10% - 1px), rgba(255, 255, 255, 0.16) calc(10% - 1px) 10%);
+  -webkit-mask: linear-gradient(90deg, transparent 0 55%, #000 55%);
+  mask: linear-gradient(90deg, transparent 0 55%, #000 55%);
+}
+
+.kill {
+  position: absolute;
+  left: -6px;
+  width: 42px;
+  bottom: calc(var(--kill) * 100%);
+  height: 2px;
+  margin-bottom: -1px;
+  background: var(--red-2);
+  box-shadow:
+    0 0 6px var(--red-glow),
+    0 0 14px var(--red-glow);
+}
+
+.killTag {
+  position: absolute;
+  left: 44px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--red-2);
+  text-shadow: 0 0 8px var(--red-glow);
+}
+
+/* ── Tap pad ────────────────────────────────────────────────── */
+.padWrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  container-type: size;
+}
+
+.pad {
+  position: relative;
+  width: min(96cqw, 86cqh, 290px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ripple {
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 70, 80, 0.75);
+  box-shadow: 0 0 18px var(--red-glow);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.padFace {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.padRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background:
+    repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.12) 0deg 0.7deg, transparent 0.7deg 10deg),
+    radial-gradient(circle closest-side, #121216 82%, #1d1d23 92%, #0c0c0f 100%);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(227, 18, 31, 0.14);
+}
+
+.padCore {
+  position: absolute;
+  inset: 11%;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  overflow: hidden;
+  background:
+    radial-gradient(70% 50% at 50% 18%, rgba(255, 255, 255, 0.35), transparent 70%),
+    radial-gradient(circle at 50% 50%, #f5222f, #d10f1b 45%, #7a0610 85%, #3f0206 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 150, 156, 0.5),
+    inset 0 -22px 44px rgba(50, 0, 4, 0.55),
+    0 0 42px var(--red-glow),
+    0 0 90px var(--red-glow-soft);
+  transition:
+    filter var(--dur-3),
+    box-shadow var(--dur-3);
+}
+
+.padCore b {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(28px, 11cqmin, 42px);
+  letter-spacing: 0.2em;
+  margin-right: -0.2em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 2px 14px rgba(70, 0, 5, 0.85);
+}
+
+.padCore small {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  margin-right: -0.26em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.padDone {
+  pointer-events: none;
+}
+
+.padDone .padCore {
+  filter: saturate(0.4) brightness(0.7);
+}
+
+.padLost .padCore {
+  filter: grayscale(0.7) brightness(0.45);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}

@@ -1,0 +1,642 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>banner-ferris</title>
+<!-- Dashboard banner: an abandoned amusement park at night — broken ferris wheel, coaster rails, ruined skyline, wet ground. Left side kept dark for overlaid text. -->
+<meta name="art" data-out="src/assets/art/banner-ferris.webp" data-w="1200" data-h="560" data-scale="1.5" data-quality="80">
+</head>
+<body style="margin:0;background:#000">
+<canvas id="c"></canvas>
+<script type="module">
+import { setup, done } from '../lib/paint.js';
+import * as K from '../lib/hero-kit.js';
+
+// The runner first loads the page without ?v= only to read the <meta> tags; paint on the real pass.
+if (new URLSearchParams(location.search).has('v')) window.addEventListener('load', () => setTimeout(paint, 0));
+
+function paint() {
+  const { ctx, W, H } = setup();
+  const U = W / 1200;
+  const GY = H * 0.8; // ground line
+  const HZ = H * 0.74; // far horizon
+  const WHEEL = { x: W * 0.755, y: H * 0.385, r: H * 0.37 };
+  const lights = K.layer(W, H);
+
+  /* ═════════════════════ SKY ═════════════════════ */
+  const sky = K.layer(W, H);
+  {
+    const s = sky.ctx;
+    const g = s.createLinearGradient(0, 0, 0, GY);
+    g.addColorStop(0, 'rgb(10,3,5)');
+    g.addColorStop(0.4, 'rgb(40,6,10)');
+    g.addColorStop(0.85, 'rgb(104,16,21)');
+    g.addColorStop(1, 'rgb(120,20,24)');
+    s.fillStyle = g;
+    s.fillRect(0, 0, W, GY + 4);
+    // red glow behind the wheel
+    s.save();
+    s.translate(W * 0.74, H * 0.62);
+    s.scale(1, 0.55);
+    const rg = s.createRadialGradient(0, 0, 0, 0, 0, W * 0.5);
+    rg.addColorStop(0, 'rgba(230,36,40,0.55)');
+    rg.addColorStop(0.45, 'rgba(150,16,24,0.25)');
+    rg.addColorStop(1, 'rgba(60,6,10,0)');
+    s.globalCompositeOperation = 'lighter';
+    s.fillStyle = rg;
+    s.fillRect(-W, -W, W * 2, W * 2);
+    s.restore();
+    // smoky cloud banks
+    const nA = K.perlin(81);
+    const nB = K.perlin(82);
+    const cl = K.pixels(Math.ceil(W / 2), Math.ceil(GY / 2), (x, y, o) => {
+      const X = x * 2;
+      const Y = y * 2;
+      const wx = K.fbm(nB, X * 0.0012, Y * 0.003, 3);
+      const v = K.fbm(nA, X * 0.0016 + wx * 0.7, Y * 0.0045, 6);
+      const d = v + 0.18 * K.smooth(H * 0.45, 0, Y) - 0.15;
+      if (d < -0.05) {
+        o[3] = 0;
+        return;
+      }
+      const lit = K.clamp((d - K.fbm(nA, X * 0.0016 + wx * 0.7, (Y + 18) * 0.0045, 6) - 0.18 * K.smooth(H * 0.45, 0, Y + 18) + 0.15) * 3);
+      const glow = Math.exp(-(((X - W * 0.72) / (W * 0.35)) ** 2)) * K.smooth(0, H * 0.5, Y);
+      const lum = K.clamp(lit * 1.2 * glow + (1 - K.smooth(0, 0.4, d)) * 0.25 * glow);
+      const col = K.mixc([9, 3, 5], [240, 50, 48], lum);
+      o[0] = col[0];
+      o[1] = col[1];
+      o[2] = col[2];
+      o[3] = K.smooth(-0.04, 0.4, d) * 0.92 * 255;
+    });
+    s.imageSmoothingQuality = 'high';
+    s.drawImage(cl, 0, 0, W, Math.ceil(GY / 2) * 2);
+  }
+
+  /* far ruined skyline */
+  function skyline(s, seed, base, hMin, hMax, color, count, lit) {
+    const r = K.rng(seed);
+    for (let i = 0; i < count; i++) {
+      const x = K.range(r, -0.05, 1.05) * W;
+      const w = K.range(r, 0.02, 0.06) * W;
+      const h = K.range(r, hMin, hMax) * H * (r() < 0.15 ? 1.6 : 1);
+      const gg = s.createLinearGradient(0, base - h, 0, base);
+      gg.addColorStop(0, K.css(K.scalec(color, 0.85)));
+      gg.addColorStop(1, K.css(K.mixc(color, [150, 24, 30], 0.35)));
+      s.fillStyle = gg;
+      s.beginPath();
+      s.moveTo(x, base);
+      s.lineTo(x, base - h);
+      if (r() < 0.55) {
+        // broken top
+        const steps = 5 + Math.floor(r() * 5);
+        for (let k = 1; k <= steps; k++) s.lineTo(x + (w * k) / steps, base - h + K.range(r, 0, h * 0.25) * Math.sin((k / steps) * Math.PI));
+      } else if (r() < 0.5) {
+        s.lineTo(x + w * 0.45, base - h);
+        s.lineTo(x + w * 0.5, base - h - K.range(r, 0.04, 0.1) * H);
+        s.lineTo(x + w * 0.55, base - h);
+        s.lineTo(x + w, base - h);
+      } else s.lineTo(x + w, base - h);
+      s.lineTo(x + w, base);
+      s.closePath();
+      s.fill();
+      if (lit) {
+        for (let k = 0; k < 9; k++) {
+          if (r() > 0.45) continue;
+          const px = x + K.range(r, 0.15, 0.85) * w;
+          const py = base - K.range(r, 0.1, 0.85) * h;
+          lit.fillStyle = r() < 0.25 ? `rgba(255,150,90,${K.range(r, 0.3, 0.7)})` : `rgba(255,50,46,${K.range(r, 0.3, 0.8)})`;
+          lit.fillRect(px, py, 2 * U, 1.6 * U);
+        }
+      }
+    }
+  }
+  skyline(sky.ctx, 11, HZ, 0.12, 0.34, [92, 15, 20], 40, null);
+  sky.ctx.drawImage(K.fogLayer(W, H, { seed: 12, color: [150, 24, 30], alpha: 0.45, sx: 0.002, sy: 0.012, mask: (v) => Math.exp(-(((v - 0.68) / 0.08) ** 2)), lo: -0.3, hi: 0.7 }), 0, 0);
+  skyline(sky.ctx, 13, HZ + 4, 0.06, 0.22, [52, 9, 13], 34, lights.ctx);
+
+  /* ═════════════════════ ROLLERCOASTER (behind) ═════════════════════ */
+  function coaster(s) {
+    const col = 'rgb(30,6,10)';
+    // track centreline: a lift hill, a drop and a curve sweeping behind the wheel
+    const pts = [
+      [W * 0.36, H * 0.6],
+      [W * 0.45, H * 0.52],
+      [W * 0.52, H * 0.3],
+      [W * 0.56, H * 0.22],
+      [W * 0.6, H * 0.3],
+      [W * 0.66, H * 0.58],
+      [W * 0.74, H * 0.62],
+      [W * 0.84, H * 0.44],
+      [W * 0.9, H * 0.36],
+      [W * 0.97, H * 0.46],
+      [W * 1.04, H * 0.6],
+    ];
+    // sample the Catmull-Rom spline into a polyline
+    const poly = [];
+    const n = pts.length;
+    for (let i = 0; i < n - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(n - 1, i + 2)];
+      for (let k = 0; k < 24; k++) {
+        const t = k / 24;
+        const t2 = t * t;
+        const t3 = t2 * t;
+        const x = 0.5 * (2 * p1[0] + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3);
+        const y = 0.5 * (2 * p1[1] + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3);
+        poly.push([x, y]);
+      }
+    }
+    poly.push(pts[n - 1]);
+    // supports
+    s.strokeStyle = col;
+    s.lineCap = 'butt';
+    for (let i = 0; i < poly.length; i += 9) {
+      const [x, y] = poly[i];
+      s.lineWidth = 2.2 * U;
+      s.beginPath();
+      s.moveTo(x, y + 3 * U);
+      s.lineTo(x + 3 * U, HZ + 6);
+      s.stroke();
+      if (i + 9 < poly.length) {
+        const [x2, y2] = poly[i + 9];
+        s.lineWidth = 1 * U;
+        const bottom = HZ + 6;
+        const levels = Math.max(1, Math.floor((bottom - Math.max(y, y2)) / (26 * U)));
+        for (let l = 0; l < levels; l++) {
+          const ya = K.mix(Math.max(y, y2) + 6 * U, bottom, l / levels);
+          const yb = K.mix(Math.max(y, y2) + 6 * U, bottom, (l + 1) / levels);
+          s.beginPath();
+          s.moveTo(x, ya);
+          s.lineTo(x2, yb);
+          s.moveTo(x2, ya);
+          s.lineTo(x, yb);
+          s.stroke();
+        }
+      }
+    }
+    // rails + ties
+    for (const off of [-3.5 * U, 3.5 * U]) {
+      s.lineWidth = 2 * U;
+      s.beginPath();
+      poly.forEach(([x, y], i) => (i ? s.lineTo(x, y + off) : s.moveTo(x, y + off)));
+      s.stroke();
+    }
+    s.lineWidth = 1.2 * U;
+    for (let i = 0; i < poly.length; i += 2) {
+      const [x, y] = poly[i];
+      s.beginPath();
+      s.moveTo(x, y - 5 * U);
+      s.lineTo(x, y + 5 * U);
+      s.stroke();
+    }
+    // a broken gap with a dangling rail
+    const g = poly[Math.floor(poly.length * 0.62)];
+    s.save();
+    s.globalCompositeOperation = 'destination-out';
+    s.fillRect(g[0] - 10 * U, g[1] - 12 * U, 22 * U, 24 * U);
+    s.restore();
+    s.lineWidth = 2 * U;
+    s.beginPath();
+    s.moveTo(g[0] - 10 * U, g[1]);
+    s.quadraticCurveTo(g[0] - 6 * U, g[1] + 30 * U, g[0] - 14 * U, g[1] + 56 * U);
+    s.stroke();
+  }
+  {
+    const l = K.layer(W, H);
+    coaster(l.ctx);
+    sky.ctx.save();
+    sky.ctx.filter = `blur(${0.6 * U}px)`;
+    sky.ctx.drawImage(l.c, 0, 0);
+    sky.ctx.restore();
+  }
+  sky.ctx.drawImage(K.fogLayer(W, H, { seed: 14, color: [140, 20, 28], alpha: 0.3, sx: 0.0016, sy: 0.01, mask: (v) => Math.exp(-(((v - 0.66) / 0.1) ** 2)), lo: -0.2, hi: 0.8 }), 0, 0);
+
+  /* ═════════════════════ FERRIS WHEEL ═════════════════════ */
+  function wheel(s, L) {
+    const { x: cx, y: cy, r } = WHEEL;
+    const ex = 0.93; // slight side-on ellipse
+    const col = 'rgb(12,5,8)';
+    const P = (a, rr) => [cx + Math.cos(a) * rr * ex, cy + Math.sin(a) * rr];
+    const rnd = K.rng(321);
+    // A-frame legs (back pair lighter, front pair darker)
+    const legs = (dx, w, c) => {
+      s.strokeStyle = c;
+      s.lineWidth = w;
+      s.beginPath();
+      s.moveTo(cx + dx, cy);
+      s.lineTo(cx - r * 0.5 + dx, GY + 2);
+      s.moveTo(cx + dx, cy);
+      s.lineTo(cx + r * 0.5 + dx, GY + 2);
+      s.stroke();
+      // cross bracing
+      s.lineWidth = w * 0.4;
+      for (let k = 1; k < 6; k++) {
+        const t = k / 6;
+        const ya = K.mix(cy, GY, t);
+        s.beginPath();
+        s.moveTo(K.mix(cx + dx, cx - r * 0.5 + dx, t), ya);
+        s.lineTo(K.mix(cx + dx, cx + r * 0.5 + dx, t), ya);
+        s.stroke();
+        if (k < 5) {
+          const yb = K.mix(cy, GY, t + 1 / 6);
+          s.beginPath();
+          s.moveTo(K.mix(cx + dx, cx - r * 0.5 + dx, t), ya);
+          s.lineTo(K.mix(cx + dx, cx + r * 0.5 + dx, t + 1 / 6), yb);
+          s.stroke();
+        }
+      }
+    };
+    legs(12 * U, 6.5 * U, 'rgb(28,7,11)');
+    // rims (outer + inner) with truss between, one section missing
+    const gapA = 1.1;
+    const gapB = 1.32;
+    const inGap = (a) => {
+      const t = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      return t > gapA && t < gapB;
+    };
+    const ring = (rr, w) => {
+      s.lineWidth = w;
+      s.beginPath();
+      let pen = false;
+      for (let i = 0; i <= 360; i++) {
+        const a = (i / 360) * Math.PI * 2;
+        if (inGap(a)) {
+          pen = false;
+          continue;
+        }
+        const p = P(a, rr);
+        if (!pen) s.moveTo(p[0], p[1]);
+        else s.lineTo(p[0], p[1]);
+        pen = true;
+      }
+      s.stroke();
+    };
+    s.strokeStyle = col;
+    ring(r, 5.5 * U);
+    ring(r * 0.9, 3.4 * U);
+    ring(r * 0.32, 3 * U);
+    // truss zig-zag between rims
+    s.lineWidth = 1.6 * U;
+    s.beginPath();
+    for (let i = 0; i < 96; i++) {
+      const a0 = (i / 96) * Math.PI * 2;
+      const a1 = ((i + 1) / 96) * Math.PI * 2;
+      if (inGap(a0) || inGap(a1)) continue;
+      const p0 = P(a0, r);
+      const p1 = P(a1, r * 0.9);
+      s.moveTo(p0[0], p0[1]);
+      s.lineTo(p1[0], p1[1]);
+    }
+    s.stroke();
+    // spokes (pairs to the hub), a couple bent or snapped
+    const N = 24;
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2 + 0.05;
+      if (inGap(a)) continue;
+      const p = P(a, r * 0.9);
+      s.lineWidth = 2.2 * U;
+      s.beginPath();
+      if (i === 7) {
+        // snapped spoke hanging
+        const m = P(a, r * 0.55);
+        s.moveTo(cx, cy);
+        s.lineTo(m[0], m[1]);
+        s.lineTo(m[0] + 8 * U, m[1] + 40 * U);
+      } else if (i === 15) {
+        const m = P(a + 0.08, r * 0.6);
+        s.moveTo(cx, cy);
+        s.quadraticCurveTo(m[0], m[1], p[0], p[1]);
+      } else {
+        s.moveTo(cx, cy);
+        s.lineTo(p[0], p[1]);
+      }
+      s.stroke();
+    }
+    // hub
+    s.fillStyle = col;
+    s.beginPath();
+    s.arc(cx, cy, r * 0.075, 0, Math.PI * 2);
+    s.fill();
+    s.strokeStyle = 'rgba(160,30,38,0.5)';
+    s.lineWidth = 1.5 * U;
+    s.beginPath();
+    s.arc(cx, cy, r * 0.075, Math.PI * 1.1, Math.PI * 1.75);
+    s.stroke();
+    // gondolas hanging from the rim (gravity), some missing, one dropped
+    const G = 16;
+    for (let i = 0; i < G; i++) {
+      const a = (i / G) * Math.PI * 2 + 0.12;
+      if (inGap(a) || i === 4 || i === 11) continue;
+      const p = P(a, r);
+      const tilt = i === 9 ? 0.5 : K.range(rnd, -0.08, 0.08);
+      s.save();
+      s.translate(p[0], p[1]);
+      s.rotate(tilt);
+      const gw = r * 0.13;
+      const gh = r * 0.12;
+      // hanger
+      s.strokeStyle = col;
+      s.lineWidth = 1.4 * U;
+      s.beginPath();
+      s.moveTo(0, 0);
+      s.lineTo(0, gh * 0.3);
+      s.stroke();
+      // cabin with domed roof and windows
+      s.fillStyle = col;
+      s.beginPath();
+      s.moveTo(-gw * 0.42, gh * 0.42);
+      s.quadraticCurveTo(0, gh * 0.12, gw * 0.42, gh * 0.42);
+      s.lineTo(gw * 0.5, gh * 0.5);
+      s.lineTo(gw * 0.46, gh * 1.15);
+      s.quadraticCurveTo(0, gh * 1.3, -gw * 0.46, gh * 1.15);
+      s.lineTo(-gw * 0.5, gh * 0.5);
+      s.closePath();
+      s.fill();
+      // windows: mostly dark, a couple dim red
+      const lit = rnd() < 0.18;
+      s.fillStyle = lit ? 'rgb(150,22,30)' : 'rgb(36,10,14)';
+      s.fillRect(-gw * 0.36, gh * 0.58, gw * 0.72, gh * 0.3);
+      s.fillStyle = col;
+      s.fillRect(-gw * 0.04, gh * 0.58, gw * 0.08, gh * 0.3);
+      if (lit) {
+        L.save();
+        L.translate(p[0], p[1]);
+        L.rotate(tilt);
+        L.fillStyle = 'rgba(255,40,44,0.45)';
+        L.fillRect(-gw * 0.36, gh * 0.58, gw * 0.72, gh * 0.3);
+        L.restore();
+      }
+      s.restore();
+    }
+    // front legs over the wheel
+    legs(-7 * U, 8 * U, col);
+    // a few bulbs left on the rim
+    for (let i = 0; i < 48; i++) {
+      const a = (i / 48) * Math.PI * 2;
+      if (inGap(a) || rnd() > 0.32) continue;
+      const p = P(a, r * 0.95);
+      const warm = rnd() < 0.3;
+      const al = K.range(rnd, 0.35, 1);
+      L.fillStyle = warm ? `rgba(255,140,70,${al})` : `rgba(255,40,44,${al})`;
+      L.beginPath();
+      L.arc(p[0], p[1], 2.4 * U, 0, Math.PI * 2);
+      L.fill();
+      s.fillStyle = warm ? 'rgb(255,190,140)' : 'rgb(255,120,110)';
+      s.beginPath();
+      s.arc(p[0], p[1], 1.3 * U, 0, Math.PI * 2);
+      s.fill();
+    }
+    // rim edge catching the glow behind
+    s.strokeStyle = 'rgba(255,60,64,0.18)';
+    s.lineWidth = 1.2 * U;
+    s.beginPath();
+    s.ellipse(cx, cy, r * ex + 2 * U, r + 2 * U, 0, Math.PI * 0.05, Math.PI * 0.95);
+    s.stroke();
+  }
+
+  /* ═════════════════════ FOREGROUND PARK ═════════════════════ */
+  function park(s, L) {
+    const col = 'rgb(8,5,7)';
+    // mid-ground booths with striped awnings, slightly hazed
+    for (const [bx, bw] of [[W * 0.45, W * 0.06], [W * 0.53, W * 0.05], [W * 0.88, W * 0.07]]) {
+      const by = GY - H * 0.12;
+      s.fillStyle = 'rgb(20,6,9)';
+      s.fillRect(bx, by, bw, GY - by);
+      s.beginPath();
+      s.moveTo(bx - bw * 0.08, by);
+      s.lineTo(bx + bw / 2, by - H * 0.05);
+      s.lineTo(bx + bw * 1.08, by);
+      s.closePath();
+      s.fill();
+      s.fillStyle = 'rgb(32,8,12)';
+      for (let k = 0; k < 6; k += 2) s.fillRect(bx + (bw * k) / 6, by, bw / 6, H * 0.018);
+      s.fillStyle = 'rgb(60,12,16)';
+      s.fillRect(bx + bw * 0.15, by + H * 0.04, bw * 0.7, H * 0.035);
+    }
+    s.fillStyle = col;
+    s.strokeStyle = col;
+    // carousel canopy (left, dark)
+    const cx = W * 0.2;
+    const top = H * 0.42;
+    s.beginPath();
+    s.moveTo(cx, top);
+    s.lineTo(cx + W * 0.13, top + H * 0.16);
+    s.lineTo(cx + W * 0.12, top + H * 0.19);
+    s.lineTo(cx - W * 0.12, top + H * 0.19);
+    s.lineTo(cx - W * 0.13, top + H * 0.16);
+    s.closePath();
+    s.fill();
+    s.fillRect(cx - 2 * U, top - H * 0.05, 4 * U, H * 0.05);
+    s.fillRect(cx - W * 0.115, top + H * 0.19, W * 0.23, 6 * U);
+    for (let k = -4; k <= 4; k++) s.fillRect(cx + k * W * 0.026 - 1.5 * U, top + H * 0.19, 3 * U, GY - top - H * 0.19);
+    // scalloped valance
+    for (let k = 0; k < 12; k++) {
+      const x = cx - W * 0.12 + (k + 0.5) * ((W * 0.24) / 12);
+      s.beginPath();
+      s.arc(x, top + H * 0.19, (W * 0.24) / 24, 0, Math.PI);
+      s.fill();
+    }
+    // fence along the ground
+    s.lineWidth = 1.6 * U;
+    s.beginPath();
+    s.moveTo(0, GY - H * 0.05);
+    s.lineTo(W, GY - H * 0.052);
+    s.moveTo(0, GY - H * 0.025);
+    s.lineTo(W, GY - H * 0.026);
+    s.stroke();
+    for (let x = 0; x < W; x += 14 * U) {
+      const lean = Math.sin(x * 0.05) * 2 * U;
+      s.beginPath();
+      s.moveTo(x, GY + 1);
+      s.lineTo(x + lean, GY - H * 0.065);
+      s.stroke();
+    }
+    // lamp posts
+    for (const [x, on] of [[W * 0.06, false], [W * 0.4, true], [W * 0.93, false]]) {
+      s.lineWidth = 3 * U;
+      s.beginPath();
+      s.moveTo(x, GY);
+      s.lineTo(x, H * 0.5);
+      s.quadraticCurveTo(x, H * 0.47, x + 14 * U, H * 0.47);
+      s.stroke();
+      s.fillRect(x + 8 * U, H * 0.47, 14 * U, 5 * U);
+      if (on) {
+        L.fillStyle = 'rgba(255,110,60,0.7)';
+        L.beginPath();
+        L.ellipse(x + 15 * U, H * 0.478 + 4 * U, 7 * U, 3 * U, 0, 0, Math.PI * 2);
+        L.fill();
+      }
+    }
+    // crooked neon sign on two posts (abstract tubes, no letters)
+    {
+      const sx = W * 0.69;
+      const sy = H * 0.635;
+      const sw = W * 0.056;
+      const sh = H * 0.078;
+      s.lineWidth = 3 * U;
+      s.beginPath();
+      s.moveTo(sx - sw * 0.3, GY);
+      s.lineTo(sx - sw * 0.3, sy - sh * 0.75);
+      s.moveTo(sx + sw * 0.42, GY);
+      s.lineTo(sx + sw * 0.45, sy + sh * 0.2);
+      s.stroke();
+      for (const g of [s, L]) {
+        g.save();
+        g.translate(sx, sy);
+        g.rotate(0.21);
+      }
+      K.rrect(s, -sw / 2, -sh / 2, sw, sh, 6 * U);
+      s.fillStyle = 'rgb(14,5,8)';
+      s.fill();
+      const tubes = [
+        (g) => K.rrect(g, -sw / 2 + 5 * U, -sh / 2 + 5 * U, sw - 10 * U, sh - 10 * U, 4 * U),
+        (g) => {
+          g.beginPath();
+          for (let k = 0; k <= 10; k++) {
+            const a = (k / 10) * Math.PI * 2 - Math.PI / 2;
+            const rr = k % 2 ? sh * 0.13 : sh * 0.28;
+            const px = -sw * 0.24 + Math.cos(a) * rr;
+            const py = Math.sin(a) * rr;
+            if (k) g.lineTo(px, py);
+            else g.moveTo(px, py);
+          }
+        },
+        (g) => {
+          g.beginPath();
+          g.moveTo(-sw * 0.02, -sh * 0.2);
+          g.lineTo(sw * 0.34, -sh * 0.2);
+          g.moveTo(-sw * 0.02, 0);
+          g.lineTo(sw * 0.22, 0);
+          g.moveTo(-sw * 0.02, sh * 0.2);
+          g.lineTo(sw * 0.3, sh * 0.2);
+        },
+      ];
+      tubes.forEach((t, i) => {
+        t(s);
+        s.strokeStyle = 'rgb(255,80,90)';
+        s.lineWidth = 1.6 * U;
+        s.stroke();
+        t(L);
+        L.strokeStyle = i === 0 ? 'rgba(255,30,44,0.7)' : 'rgba(255,30,44,0.55)';
+        L.lineWidth = 3.2 * U;
+        L.stroke();
+      });
+      // a dead section of the frame tube
+      s.strokeStyle = 'rgb(30,10,14)';
+      s.lineWidth = 2.4 * U;
+      s.beginPath();
+      s.moveTo(sw * 0.1, sh / 2 - 5 * U);
+      s.lineTo(sw * 0.42, sh / 2 - 5 * U);
+      s.stroke();
+      L.save();
+      L.globalCompositeOperation = 'destination-out';
+      L.lineWidth = 6 * U;
+      L.beginPath();
+      L.moveTo(sw * 0.1, sh / 2 - 5 * U);
+      L.lineTo(sw * 0.42, sh / 2 - 5 * U);
+      L.stroke();
+      L.restore();
+      s.restore();
+      L.restore();
+    }
+  }
+
+  /* ═════════════════════ COMPOSE ═════════════════════ */
+  ctx.drawImage(sky.c, 0, 0);
+  {
+    const wl = K.layer(W, H);
+    wheel(wl.ctx, lights.ctx);
+    // red light scattering around the structure (it stands in front of the glow)
+    const halo = K.layer(W, H);
+    halo.ctx.filter = `blur(${5 * U}px)`;
+    halo.ctx.drawImage(wl.c, 0, 0);
+    halo.ctx.filter = 'none';
+    halo.ctx.globalCompositeOperation = 'source-in';
+    halo.ctx.fillStyle = 'rgb(255,46,52)';
+    halo.ctx.fillRect(0, 0, W, H);
+    K.comp(ctx, halo.c, 'lighter', 0.22);
+    ctx.drawImage(wl.c, 0, 0);
+  }
+  ctx.drawImage(K.fogLayer(W, H, { seed: 15, color: [120, 18, 24], alpha: 0.22, sx: 0.0016, sy: 0.012, mask: (v) => Math.exp(-(((v - 0.7) / 0.06) ** 2)), lo: -0.3, hi: 0.7 }), 0, 0);
+  park(ctx, lights.ctx);
+
+  // wet ground
+  {
+    const g = ctx.createLinearGradient(0, GY, 0, H);
+    g.addColorStop(0, 'rgb(40,8,12)');
+    g.addColorStop(0.3, 'rgb(14,5,8)');
+    g.addColorStop(1, 'rgb(6,4,5)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, GY, W, H - GY);
+    const src = K.layer(W, H);
+    src.ctx.save();
+    src.ctx.translate(0, GY * 2);
+    src.ctx.scale(1, -1);
+    src.ctx.drawImage(ctx.canvas, 0, 0);
+    src.ctx.drawImage(lights.c, 0, 0);
+    src.ctx.restore();
+    const rip = K.rippleReflect(ctx, src.c, { seed: 7, top: GY, amp: [0.5, 8 * U], freq: [0.7, 0.12], smear: 6, smearStep: 1.4 * U, fresnel: (t) => K.mix(0.98, 0.4, t), band: 0.4 });
+    const n = K.perlin(9);
+    const pm = K.pixels(Math.ceil(W / 2), Math.ceil(H / 2), (x, y, o) => {
+      const Y = y * 2;
+      if (Y < GY - 2) {
+        o[3] = 0;
+        return;
+      }
+      const t = (Y - GY) / (H - GY);
+      const v = K.fbm(n, x * 2 * 0.004, (Y - GY) * 0.02 / (0.1 + t), 4);
+      o[0] = o[1] = o[2] = 255;
+      o[3] = K.smooth(-0.3, 0.05, v + 0.25) * 255;
+    });
+    const pl = K.layer(W, H);
+    pl.ctx.drawImage(rip, 0, 0);
+    pl.ctx.globalCompositeOperation = 'destination-in';
+    pl.ctx.drawImage(pm, 0, 0, W, H);
+    K.comp(ctx, pl.c, 'source-over', 1);
+    // ripple rings
+    const s = K.sampler(ctx.canvas, 4);
+    const r = K.rng(31);
+    const l = K.layer(W, H);
+    for (let i = 0; i < 700; i++) {
+      const y = GY + 3 + r() * (H - GY);
+      const x = r() * W;
+      const t = (y - GY) / (H - GY);
+      const rad = (2 + r() * 7) * U * (0.4 + t);
+      const c = s(x, y);
+      const lum = (c[0] + c[1] + c[2]) / 765;
+      l.ctx.strokeStyle = K.css([255, 110, 110], K.clamp(0.04 + lum * 1.2) * 0.35);
+      l.ctx.lineWidth = 0.7 * U;
+      l.ctx.beginPath();
+      l.ctx.ellipse(x, y, rad, rad * (0.12 + t * 0.15), 0, 0, Math.PI * 2);
+      l.ctx.stroke();
+    }
+    K.comp(ctx, l.c, 'lighter', 1);
+  }
+
+  /* glow, rain, grade */
+  K.emit(ctx, lights.c, { core: 0.9, passes: [[2 * U, 0.8], [6 * U, 0.6], [18 * U, 0.45], [50 * U, 0.3]] });
+  K.bloom(ctx, { threshold: 0.6, knee: 0.3, passes: [[6 * U, 0.3], [24 * U, 0.25], [70 * U, 0.15]] });
+  {
+    const light = K.sampler(ctx.canvas, 4);
+    K.comp(ctx, K.rainLayer(W, H, { seed: 41, count: 4200, len: [8 * U, 20 * U], width: [0.6 * U, 1 * U], angle: 0.12, alpha: 0.18, light }), 'lighter', 1);
+    K.comp(ctx, K.rainLayer(W, H, { seed: 42, count: 1100, len: [24 * U, 50 * U], width: [0.9 * U, 1.4 * U], angle: 0.12, alpha: 0.2, light }), 'lighter', 1);
+    K.comp(ctx, K.rainLayer(W, H, { seed: 43, count: 60, len: [80 * U, 160 * U], width: [2 * U, 3 * U], angle: 0.12, alpha: 0.14, light, blur: 2 * U }), 'lighter', 1);
+  }
+  // keep the left 55% dark for the overlaid copy and button
+  {
+    const g = ctx.createLinearGradient(0, 0, W, 0);
+    g.addColorStop(0, 'rgba(5,2,4,0.82)');
+    g.addColorStop(0.35, 'rgba(5,2,4,0.62)');
+    g.addColorStop(0.55, 'rgba(5,2,4,0.25)');
+    g.addColorStop(0.7, 'rgba(5,2,4,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+  K.finish(ctx, { seed: 3, grain: 10, vignette: 0.45, vx: 0.65, vy: 0.45, vr: 1, shadow: [7, 3, 5], contrast: 1.06, sat: 1.04, ca: 0.6 });
+  done();
+}
+</script>
+</body>
+</html>
