@@ -29,9 +29,16 @@ jobs:
           - api: 26
             target: default
             profile: pixel_2
+            gpu: swiftshader_indirect
+            ram: 3072M
+          # The API 34 emulator process died mid-game with SwiftShader (also
+          # with the ad-free 1.0 build); ANGLE on SwiftShader is the
+          # recommended software renderer for newer system images.
           - api: 34
             target: google_apis
             profile: pixel_6
+            gpu: swangle_indirect
+            ram: 4096M
     steps:
       - uses: actions/checkout@v4
 
@@ -51,9 +58,9 @@ jobs:
           target: ${{ matrix.target }}
           arch: x86_64
           profile: ${{ matrix.profile }}
-          ram-size: 3072M
+          ram-size: ${{ matrix.ram }}
           disk-size: 4000M
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu ${{ matrix.gpu }} -noaudio -no-boot-anim -camera-back none
           script: bash tool/device_test.sh device_out_${{ matrix.api }}
 
       - uses: actions/upload-artifact@v4
