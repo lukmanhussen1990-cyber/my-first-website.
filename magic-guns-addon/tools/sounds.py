@@ -4,19 +4,26 @@ and encodes it to mono 44.1 kHz Ogg Vorbis with ffmpeg.
 
     python3 sounds.py <resource_pack_dir>
 
-Every gunshot is built the same way a real one is mixed:
+Every gunshot is built the way a real one is layered (see gunshot()):
 
-    transient   blast pulse (Friedlander wave) + sub-ms noise crack
-    action      modal "click" of the mechanism (hammer, bolt, cylinder)
-    body        three noise bands (crack 2-10 kHz / body 200-2k / low 40-400)
-                that decay at different speeds, so the shot darkens naturally
-    thump       pitch-dropping sine kick, saturated so phones still hear it
-    tail        early reflections + frequency-dependent reverb (+ echoes)
+    transient   Friedlander blast pulse + sub-ms noise crack (+ N-wave for
+                the supersonic sniper) - attack well under 1 ms
+    body        noise bands (crack 2-10 kHz / body 200-2.5k / low 40-400 Hz)
+                with crest-reduced carriers, decaying at different speeds so
+                the shot darkens naturally
+    thump       pitch-dropping sine kick, carrier saturated so the harmonics
+                still read on phone speakers
+    action      modal metal clicks (cylinder, bolt-action, SMG bolt)
+    tail        early reflections + frequency-dependent reverb (+ slap-back
+                echoes for the outdoor guns)
 
-then the magic layer of each weapon is laid on top, slightly after the
-transient, and the whole thing goes through a punchy bus compressor, a
-look-ahead peak limiter and loudness normalisation (EBU R128 / LUFS) so all
-fire sounds sit at the same perceived level.
+The weapon's magic layer sits on top, a few ms after the transient so it
+never masks the shot.  finish() is the master bus: sub-sonic high-pass, an
+encoder-friendly low-pass, then the gain that reaches the EBU R128 loudness
+target (LUFS) *through* a fast look-ahead limiter that only shaves the first
+spike.  All fire sounds land at ~-19 LUFS, hits ~3-4 LU lower, and
+write_sound() re-renders with a lower ceiling if the Vorbis encoder overshoots,
+so every decoded file peaks at or below -1 dBTP.
 
 VARIANTS lists how many files each sound has (<name>.ogg, <name>_2.ogg ...);
 the game picks one at random per shot.  Output is fully deterministic.
@@ -379,23 +386,6 @@ def _db(x):
     return 20 * np.log10(np.abs(x) + 1e-9)
 
 
-def compress(x, thr=-16.0, ratio=3.0, attack_ms=2.5, release_ms=80, knee=6.0):
-    """Punchy bus compressor (peak detector, instant attack + linear-dB
-    release, then the gain reduction is smoothed over attack_ms so the first
-    milliseconds of the transient slip through)."""
-    x = norm(x)
-    n = np.arange(len(x))
-    k = 20.0 / (release_ms * SR / 1000)  # dB per sample
-    e = np.maximum.accumulate(_db(x) + n * k) - n * k
-    over = e - thr
-    gr = np.where(over <= -knee / 2, 0.0,
-                  np.where(over >= knee / 2, over * (1 - 1 / ratio),
-                           (1 - 1 / ratio) * (over + knee / 2) ** 2 / (2 * knee)))
-    a = max(1, int(SR * attack_ms / 1000))
-    gr = np.convolve(gr, np.ones(a) / a)[:len(x)]
-    return x * 10 ** (-gr / 20)
-
-
 def limit(x, ceiling=-1.6, attack_ms=1.0, release_ms=50):
     """Look-ahead brick-wall limiter with linear-dB attack/release ramps."""
     need = np.minimum(0.0, ceiling - _db(x))
@@ -453,17 +443,15 @@ DEBUG = bool(os.environ.get("SOUNDS_DEBUG"))
 _CEIL = -1.3   # limiter ceiling (dBFS); main() lowers it per file if Vorbis overshoots
 
 
-def finish(x, loud=LOUD_FIRE, ceiling=None, comp=None, max_dur=3.0, fade=0.04, hp=25):
-    """Master bus: sub-sonic high-pass + encoder-friendly low-pass, slow-attack
-    glue compression (lifts the tail, leaves the attack alone), then the
-    gain that hits the loudness target *after* a fast transient limiter that
-    only shaves the first spike; finally silent-tail trim and click-free fades."""
+def finish(x, loud=LOUD_FIRE, ceiling=None, max_dur=3.0, fade=0.04, hp=25):
+    """Master bus: sub-sonic high-pass + encoder-friendly low-pass, then the
+    gain that hits the loudness target *after* a fast look-ahead limiter
+    (0.5 ms attack, 12 ms release) that only shaves the transient spikes;
+    finally silent-tail trim (-60 dBFS) and click-free fades."""
     if ceiling is None:
         ceiling = _CEIL
     x = iir(x, ("hp", hp), ("lp", 15500, 0.6), ("lp", 15500, 0.6))
     x = norm(x - np.mean(x))
-    if comp:
-        x = norm(compress(x, *comp))
     G = loud - lufs(x)
     for _ in range(8):
         y = limit(x * 10 ** (G / 20), ceiling, attack_ms=0.5, release_ms=12)
@@ -512,6 +500,7 @@ def gunshot(dur=1.0, blast_ms=1.2, blast_amt=1.0, crack=0.6, crack_band=(2500, 1
         e = env2(d, 0.0003, dec, dec * 3, 0.15)
         if hold:
             e = np.concatenate([np.clip(t_axis(hold) / 0.0003, 0, 1), e[int(SR * 0.0003):]])[:len(nb)]
+            e *= tail(len(e))
         return norm(nb * e) * g
 
     cr = bandpass(noise(0.02), *crack_band) * env(0.02, 0.00005, crack_ms / 1000, fade_ms=4)
@@ -567,13 +556,13 @@ def arcane_fire(v=0):
     shot = gunshot(1.0, blast_ms=0.8, blast_amt=0.6, crack=0.75, crack_band=(2600, 11000), crack_ms=1.2,
                    hi=(2200, 9000, 0.011, 0.65), mid=(320, 2700, 0.045, 1.0), low=(70, 450, 0.07, 0.7),
                    kick=(165, 58, 0.022, 0.04, 1.0), drive=2.5, lows=0.55, grit=1.3, hold=0.008, p=p)
-    cyl = click((1850, 3100, 4700, 6900), (0.012, 0.008, 0.005, 0.003), (1, 0.6, 0.3, 0.15)) * 0.05
-    notes = [(1046.5, 1318.5, 1568.0), (987.8, 1318.5, 1661.2), (1108.7, 1396.9, 1760.0)][v]
+    cyl = click((1850, 3100, 4700, 6900), (0.012, 0.008, 0.005, 0.003), (1, 0.6, 0.3, 0.15)) * 0.08
+    notes = [(1046.5, 1318.5, 1568.0), (987.8, 1318.5, 1661.2), (1174.7, 1480.0, 1760.0)][v]
     mag = mix(*[at(chime(0.8, f * p, 0.38, a), t0) for f, a, t0 in zip(notes, (1.0, 0.8, 0.7), (0.006, 0.03, 0.055))])
     pew = chirp(0.22, 1900 * p, 280 * p, harmonics=(1, 0.3, 0.1)) * env(0.22, 0.002, 0.05)
     glit = sparkles(0.7, 18, 2400, 7500, spread=0.18)
     magic = mix(norm(mag) * 0.3, pew * 0.22, norm(glit) * 0.06)
-    dry = mix(shot, at(cyl, 0.105 + 0.01 * v), at(magic, 0.004))
+    dry = mix(shot, at(cyl, 0.12 + 0.01 * v), at(magic, 0.004))
     wet = reverb(dry, size=0.9, mix=0.3, damp=4800, er=(6.5, 11, 17.5, 26, 37))
     return finish(wet, LOUD_FIRE, max_dur=1.1)
 
@@ -772,7 +761,7 @@ def holy_fire(v=0):
     shot = gunshot(1.6, blast_ms=3.5, crack=0.45, crack_band=(2000, 9000), crack_ms=1.6,
                    hi=(1800, 8000, 0.014, 0.35), mid=(120, 1800, 0.085, 1.0), low=(35, 320, 0.2, 1.0),
                    kick=(96, 28, 0.06, 0.16, 1.4), drive=3.5, lows=0.85, grit=1.5, p=p)
-    chords = [(329.63, 440.0, 554.37, 659.26), (293.66, 440.0, 554.37, 739.99), (329.63, 415.3, 554.37, 659.26)]
+    chords = [(329.63, 440.0, 554.37, 659.26), (293.66, 440.0, 554.37, 739.99), (329.63, 415.3, 493.88, 659.26)]
     voices = choir(2.6, [f * p for f in chords[v]], attack=0.2, hold=0.3, decay=0.75)
     bells = mix(*[chime(1.8, f * p, 0.7, a, ratios=(1, 2.0, 3.0), pamps=(1, 0.2, 0.05), beat=1.2)
                   for f, a in ((1318.5, 1.0), (1760.0, 0.7), (2217.5, 0.45))])

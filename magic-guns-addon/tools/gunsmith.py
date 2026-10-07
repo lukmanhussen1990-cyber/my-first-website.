@@ -979,12 +979,14 @@ def feathers(base, dark, tip=None):
         span = float(h if ctx.grain_along_u else w)
         c = (span - 1) / 2.0
         d = np.abs(across - c) / max(1.0, span / 2.0)
-        img = _mix(np.broadcast_to(base, (h, w, 3)), dark, np.clip(d, 0, 1) ** 2 * 0.65)
+        # vane: lit, slightly cupped, with a soft shadow along the lower edge
+        low = np.clip((across - c) / max(1.0, span / 2.0), 0, 1)
+        img = _mix(np.broadcast_to(base, (h, w, 3)), dark, np.clip(d, 0, 1) ** 3 * 0.35 + low ** 2 * 0.3)
         barbs = ((along + np.abs(across - c)) % 3) < 1
-        img = img * (1 - barbs * 0.1)[..., None]
+        img = img * (1 - barbs * 0.06)[..., None]
         if span >= 3:
             shaft = np.abs(across - c) < 0.6
-            img[shaft] = shaft_c
+            img[shaft] = shaft_c * 0.92
         if tip is not None and ctx.is_side and not ctx.grain_along_u and h >= 6:
             k = max(2, int(h * 0.18))
             img[:k] = _mix(img[:k], tip, 0.85)

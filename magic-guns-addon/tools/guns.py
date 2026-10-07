@@ -78,7 +78,7 @@ def trigger_group(m, b, mat, z_front, z_back, y_top, y_bot, trig, trig_mat=None,
     m.box(b, (-0.25, y_bot, z_front + 0.3), (0.25, y_bot + 0.38, z_back), mat)
     if front:
         m.box(b, (-0.25, y_bot + 0.3, z_front), (0.25, y_top, z_front + 0.38), mat)
-        m.box(b, (-0.25, y_bot + 0.08, z_front + 0.08), (0.25, y_bot + 0.53, z_front + 0.53), mat,
+        m.box(b, (-0.22, y_bot + 0.08, z_front + 0.08), (0.22, y_bot + 0.53, z_front + 0.53), mat,
               rotation=(45, 0, 0))
 
 
@@ -117,7 +117,7 @@ def arcane_revolver():
     b = "body"
     rake = dict(rotation=(-14, 0, 0), pivot=(0, 0, 1.1))
     # purpleheart grip, gold backstrap + flared butt cap, amethyst medallions
-    grip = m.box(b, (-0.75, -4.6, 0.1), (0.75, 0.2, 2.1), "grip_wood", **rake)
+    grip = m.box(b, (-0.7, -4.6, 0.1), (0.7, 0.2, 2.1), "grip_wood", **rake)
     m.box(b, (-0.5, -4.45, 2.1), (0.5, 0.0, 2.45), "gold", **rake)
     m.box(b, (-0.85, -5.0, 0.4), (0.85, -4.4, 2.6), "gold", **rake)
     m.mirror_x(b, (0.75, -2.55, 0.75), (1.0, -1.8, 1.5), "medallion", **rake)
@@ -125,7 +125,7 @@ def arcane_revolver():
     m.box(b, (-0.75, -0.2, -2.9), (0.75, 1.0, 2.1), "engraved")
     m.box(b, (-0.7, 1.0, 0.4), (0.7, 2.7, 2.3), "recoil_shield")
     m.box(b, (-0.6, 2.7, -3.1), (0.6, 3.15, 0.9), "frame_top")
-    m.box(b, (-0.62, 1.0, -3.15), (0.62, 2.7, -2.5), "frame_top")
+    m.box(b, (-0.66, 1.0, -3.15), (0.66, 2.7, -2.5), "frame_top")
     m.box(b, (-0.38, 3.15, 0.35), (0.38, 3.5, 0.9), "sight")
     # hammer: body leaning back + knurled spur, cocked
     m.box(b, (-0.28, 2.2, 1.95), (0.28, 3.3, 2.55), "gold", rotation=(24, 0, 0), pivot=(0, 2.2, 2.25))
@@ -137,7 +137,7 @@ def arcane_revolver():
     m.box("cylinder", (-1.0, 0.75, -2.4), (1.0, 2.75, 0.3), "cyl_c")
     # barrel with glowing sigils, full-length underlug, vent rib, front sight
     m.box(b, (-0.62, 1.35, -8.6), (0.62, 2.6, -3.1), "rune_barrel")
-    m.box(b, (-0.5, 0.75, -8.0), (0.5, 1.4, -2.5), "gunmetal")
+    m.box(b, (-0.5, 0.75, -8.0), (0.5, 1.4, -2.6), "gunmetal")
     m.box(b, (-0.25, 0.85, -8.35), (0.25, 1.3, -8.0), "gold")
     m.box(b, (-0.3, 2.6, -8.4), (0.3, 2.95, -2.6), "gunmetal")
     m.box(b, (-0.15, 2.95, -8.4), (0.15, 3.45, -7.75), "gold")
@@ -236,7 +236,7 @@ def frostbite_rifle():
     m.box(b, (-0.8, 0.1, -10.0), (0.8, 1.1, -4.4), "birch")
     m.box(b, (-0.15, -0.4, -9.6), (0.15, 0.1, -9.1), "silver")
     # fluted barrel, frost coils, ported muzzle brake, ice spike
-    m.box(b, (-0.5, 1.0, -16.0), (0.5, 1.95, -4.4), "barrel")
+    m.box(b, (-0.5, 1.0, -16.0), (0.5, 1.95, -4.2), "barrel")
     for z in (-11.6, -13.1, -14.6):
         m.box(b, (-0.78, 0.72, z), (0.78, 2.23, z + 1.0), "frost_coil")
     m.box(b, (-0.72, 0.78, -17.0), (0.72, 2.17, -15.8), "brake")
@@ -341,9 +341,9 @@ def soul_reaper():
     m.mirror_x(b, (0.25, 1.7, -9.45), (0.52, 2.15, -8.7), "bone", rotation=(14, 0, 0), pivot=(0.38, 1.9, -8.7))
     # scythe blade hooked under the muzzle (dark steel, honed silver edge)
     m.box(b, (-0.3, 0.05, -8.75), (0.3, 0.75, -7.85), "dark_steel")
-    m.box(b, (-0.125, -1.1, -9.15), (0.125, 0.3, -8.45), "blade", rotation=(18, 0, 0), pivot=(0, 0.3, -8.8))
-    m.box(b, (-0.125, -1.75, -9.2), (0.125, -1.1, -7.3), "blade", rotation=(-10, 0, 0), pivot=(0, -1.4, -9.2))
-    m.box(b, (-0.125, -1.45, -7.5), (0.125, -1.0, -5.8), "blade", rotation=(-30, 0, 0), pivot=(0, -1.2, -7.5))
+    m.box(b, (-0.15, -1.1, -9.15), (0.15, 0.3, -8.45), "blade", rotation=(18, 0, 0), pivot=(0, 0.3, -8.8))
+    m.box(b, (-0.13, -1.75, -9.2), (0.13, -1.1, -7.3), "blade", rotation=(-10, 0, 0), pivot=(0, -1.4, -9.2))
+    m.box(b, (-0.15, -1.45, -7.5), (0.15, -1.0, -5.8), "blade", rotation=(-30, 0, 0), pivot=(0, -1.2, -7.5))
     # soul-lantern magazine: caged glass between steel collar and floor plate
     m.box(b, (-0.55, -2.9, -2.6), (0.55, -0.45, -1.2), "lantern")
     m.box(b, (-0.66, -3.22, -2.72), (0.66, -2.9, -1.08), "dark_steel")
@@ -394,7 +394,7 @@ def void_phaser():
     m.box("orb", (-0.75, 0.45, -10.15), (0.75, 1.95, -8.65), "pearl")
     m.box("orb", (-0.52, 0.68, -9.92), (0.52, 1.72, -8.88), "void_glow", rotation=(45, 45, 0), pivot=(0, 1.2, -9.4))
     # energy-cell magazine with a glowing window
-    m.box(b, (-0.5, -2.6, -2.4), (0.5, -0.3, -0.9), "cell")
+    m.box(b, (-0.5, -2.6, -2.4), (0.5, -0.4, -0.9), "cell")
     m.box(b, (-0.6, -2.9, -2.5), (0.6, -2.6, -0.8), "dark_steel")
     trigger_group(m, b, "purpur", -0.7, 1.5, -0.65, -1.75, (0.3, 0.65))
     hands(m, grip, fore=(-0.3, -4.6, 1.0))
@@ -409,7 +409,7 @@ def celestial_cannon():
         rune_white=runes(WHITE_PLATE, HOLY, 0.6),
         crown=bore(GOLD, HOLY, size=5),
         halo=glow((1.0, 0.95, 0.70), (0.95, 0.70, 0.25), facets=False),
-        feather=feathers((0.98, 0.97, 0.93), (0.74, 0.72, 0.70), tip=(0.95, 0.76, 0.30)),
+        feather=feathers((1.0, 0.99, 0.95), (0.70, 0.68, 0.66), tip=(0.95, 0.76, 0.30)),
     ), atlas_width=256)
     m.bone("magic_gun")
     m.bone("body", "magic_gun")
@@ -431,21 +431,24 @@ def celestial_cannon():
     m.box(b, (-0.55, 2.85, -3.05), (0.55, 4.35, -1.95), "sun", rotation=(0, 45, 0), pivot=(0, 3.6, -2.5))
     m.box(b, (-0.32, 4.3, -2.82), (0.32, 4.9, -2.18), "sun", rotation=(0, 45, 0), pivot=(0, 4.6, -2.5))
     m.mirror_x(b, (0.5, 2.9, -2.68), (0.78, 3.55, -2.32), "gold")
-    # folded angel wings: a gilded arm and four feathers sweeping back
-    m.mirror_x(b, (1.35, 1.4, 0.4), (1.7, 3.8, 1.2), "gold", rotation=(35, 0, 0), pivot=(1.5, 1.6, 0.8))
-    for i, (ang, ln) in enumerate(((80, 4.2), (64, 3.6), (48, 3.0), (30, 2.2))):
-        x0 = 1.38 + 0.07 * i
-        m.mirror_x(b, (x0, 3.0, 1.2), (x0 + 0.25, 3.0 + ln, 2.0), "feather",
-                   rotation=(ang, 0, 0), pivot=(x0 + 0.12, 3.0, 1.6))
+    # folded angel wings: gilded leading edge, feathers rooted along it
+    # sweeping back over the stock (longest primaries outermost at the top)
+    m.mirror_x(b, (1.5, 1.6, 0.25), (1.9, 4.3, 0.95), "gold", rotation=(22, 0, 0), pivot=(1.7, 1.8, 0.6))
+    for i, (pz, py, ang, ln) in enumerate(((1.45, 3.95, 96, 5.0), (1.2, 3.35, 106, 4.3),
+                                           (0.95, 2.75, 116, 3.5), (0.75, 2.2, 124, 2.7))):
+        x0 = 1.36 + 0.06 * i
+        m.mirror_x(b, (x0, py, pz - 0.6), (x0 + 0.25, py + ln, pz + 0.6), "feather",
+                   rotation=(ang, 0, 0), pivot=(x0 + 0.12, py, pz))
     # front handle (two-handed) with gold mount and cap
     m.box(b, (-0.55, -2.9, -5.2), (0.55, -0.4, -4.1), "leather")
-    m.box(b, (-0.65, -0.72, -5.4), (0.65, -0.4, -3.9), "gold")
+    m.box(b, (-0.65, -0.72, -5.4), (0.65, -0.38, -3.9), "gold")
     m.box(b, (-0.62, -3.2, -5.28), (0.62, -2.9, -4.02), "gold")
     # octagonal halo floating ahead of the muzzle (spins)
     cy, z0, z1, a, t = 1.2, -13.1, -12.7, 2.2, 0.42
     half = 0.95
     for rot in (0, 45, 90, 135, 180, 225, 270, 315):
-        m.box("halo", (-half, cy + a - t, z0), (half, cy + a, z1), "halo",
+        d = 0.05 if rot % 90 else 0.0  # diagonal bars a hair thinner: no coplanar overlap
+        m.box("halo", (-half, cy + a - t, z0 + d), (half, cy + a, z1 - d), "halo",
               rotation=(0, 0, rot) if rot else None, pivot=(0, cy, (z0 + z1) / 2))
     trigger_group(m, b, "gold", -1.45, 0.6, -0.4, -1.5, (-0.45, -0.1))
     hands(m, grip, handle=(0.0, -1.65, -4.65))
