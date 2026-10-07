@@ -139,9 +139,11 @@ class PremiumService extends ChangeNotifier {
   StorePurchase? _activePurchase;
   StreamSubscription<List<StorePurchase>>? _sub;
 
-  bool _initialized = false;
+  Future<void>? _initFuture;
   final Completer<void> _cacheChecked = Completer<void>();
 
+  /// False until the first Google Play availability check has finished.
+  bool storeChecked = false;
   bool storeAvailable = false;
   bool loadingProducts = false;
   bool purchasing = false;
@@ -186,9 +188,11 @@ class PremiumService extends ChangeNotifier {
   // Startup
   // ---------------------------------------------------------------------------
 
-  Future<void> init() async {
-    if (_initialized) return;
-    _initialized = true;
+  /// Restores the cached entitlement, connects to the store, loads prices
+  /// and re-checks owned subscriptions. Safe to call more than once.
+  Future<void> init() => _initFuture ??= _init();
+
+  Future<void> _init() async {
     await _loadCache();
     if (!_cacheChecked.isCompleted) _cacheChecked.complete();
     _sub = store.purchaseUpdates.listen(_onPurchaseUpdates, onError: (Object e) {
@@ -199,9 +203,14 @@ class PremiumService extends ChangeNotifier {
     } catch (e) {
       storeAvailable = false;
     }
+    if (storeAvailable) {
+      loadingProducts = true; // keep "connecting" until prices are in
+    }
+    storeChecked = true;
     debugPrint('BB_IAP available=$storeAvailable premium=$isPremium');
     notifyListeners();
     if (!storeAvailable) return;
+    loadingProducts = false;
     await refreshProducts();
     await _syncOwned(userInitiated: false);
   }
@@ -283,6 +292,9 @@ class PremiumService extends ChangeNotifier {
       return false;
     }
     if (purchasing) return false;
+    // Tapped while the store is still connecting: wait for the prices.
+    final starting = _initFuture;
+    if (starting != null && (!storeChecked || loadingProducts)) await starting;
     if (_entitlement != null && activePlan == plan) {
       _notify('You already have the ${plan.label} plan.', NoticeKind.info);
       return false;
@@ -430,6 +442,8 @@ class PremiumService extends ChangeNotifier {
       return RestoreOutcome.restored;
     }
     if (restoring) return RestoreOutcome.failed;
+    final starting = _initFuture;
+    if (starting != null && !storeChecked) await starting;
     if (!storeAvailable) {
       try {
         storeAvailable = await store.isAvailable();

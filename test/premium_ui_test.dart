@@ -11,6 +11,7 @@ import 'package:blockblast/src/premium/premium_service.dart';
 import 'package:blockblast/src/premium/store.dart';
 import 'package:blockblast/src/screens/home_screen.dart';
 import 'package:blockblast/src/screens/premium_screen.dart';
+import 'package:blockblast/src/services/ads_service.dart';
 import 'package:blockblast/src/services/settings_store.dart';
 import 'package:blockblast/src/services/sound.dart';
 import 'package:blockblast/src/ui/palette.dart';
@@ -230,6 +231,44 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('custom buttons can be activated by screen readers', (tester) async {
+      final handle = tester.ensureSemantics();
+      useSize(tester, const Size(412, 915));
+      await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+      await pumpFrames(tester, 90);
+      for (final label in ['Premium', 'About', 'Classic', 'How to Play', 'Block Skins']) {
+        expect(
+          find.bySemanticsLabel(label),
+          findsOneWidget,
+          reason: label,
+        );
+        expect(
+          tester.getSemantics(find.bySemanticsLabel(label)),
+          isSemantics(isButton: true, hasTapAction: true),
+          reason: label,
+        );
+      }
+      await tester.pumpWidget(const MaterialApp(home: PremiumScreen()));
+      await pumpFrames(tester, 70);
+      for (final label in ['Close', 'Restore Purchases', 'Manage Subscription', 'Start Premium']) {
+        expect(
+          tester.getSemantics(find.bySemanticsLabel(label)),
+          isSemantics(isButton: true, hasTapAction: true),
+          reason: label,
+        );
+      }
+      expect(
+        tester.getSemantics(find.bySemanticsLabel(RegExp('^Monthly plan'))),
+        isSemantics(isButton: true, hasTapAction: true, isSelected: false),
+      );
+      expect(
+        tester.getSemantics(find.bySemanticsLabel(RegExp('^Yearly plan'))),
+        isSemantics(isButton: true, hasTapAction: true, isSelected: true),
+      );
+      await pumpFrames(tester, 700);
+      handle.dispose();
+    });
+
     testWidgets('shows Continue and the saved best score', (tester) async {
       useSize(tester, const Size(393, 852));
       SettingsStore.instance.submitScore(168);
@@ -379,6 +418,38 @@ void main() {
       await tester.tap(find.text('No thanks'));
       await pumpFrames(tester, 100);
       expect(find.text('Play Again'), findsOneWidget);
+    });
+  });
+
+  group('Free-tier banner space', () {
+    testWidgets('the board and tray stay above the banner on small phones', (tester) async {
+      AdsService.instance.enabled = true; // as on Android
+      addTearDown(() => AdsService.instance.enabled = false);
+      for (final size in const [Size(320, 568), Size(360, 640), Size(412, 915)]) {
+        useSize(tester, size);
+        final game = GameState.custom(board: Board(), tray: [p('v5', 0), p('sq3', 1), p('h5', 2)], random: Random(5));
+        await tester.pumpWidget(MaterialApp(home: GameScreen(initialGame: game)));
+        await pumpFrames(tester, 30);
+        expect(tester.takeException(), isNull, reason: '$size');
+        final banner = tester.getRect(find.byType(BannerAdSlot));
+        expect(banner.bottom, closeTo(size.height, 0.5), reason: '$size');
+        expect(banner.height, BannerAdSlot.height);
+        // Tallest tray piece (5 cells) ends above the banner.
+        final l = GameLayout.compute(Size(size.width, size.height - BannerAdSlot.height));
+        final trayBottom = l.slotCenters[0].dy + 2.5 * l.trayCell;
+        expect(trayBottom, lessThan(banner.top), reason: '$size');
+        await tester.pumpWidget(const SizedBox());
+      }
+    });
+
+    testWidgets('Premium players get the full height (no banner)', (tester) async {
+      AdsService.instance.enabled = true;
+      addTearDown(() => AdsService.instance.enabled = false);
+      usePremiumPreview();
+      useSize(tester, const Size(360, 640));
+      await tester.pumpWidget(MaterialApp(home: GameScreen(initialGame: GameState(random: Random(1)))));
+      await pumpFrames(tester, 30);
+      expect(find.byType(BannerAdSlot), findsNothing);
     });
   });
 

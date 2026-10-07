@@ -102,6 +102,9 @@ class AdsService extends ChangeNotifier {
           ConsentForm.loadAndShowConsentFormIfRequired((FormError? error) {
             if (error != null) debugPrint('BB_ADS consent form: ${error.message}');
             if (!done.isCompleted) done.complete();
+          }).catchError((Object e) {
+            debugPrint('BB_ADS consent form failed: $e');
+            if (!done.isCompleted) done.complete();
           });
         },
         (FormError error) {

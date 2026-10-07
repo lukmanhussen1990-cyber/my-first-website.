@@ -36,7 +36,8 @@ function layout(w, h) {
   const slotW = boardSide / 3;
   const slots = [0, 1, 2].map((i) => [boardLeft + slotW * (i + 0.5), trayY]);
   const gear = [cx + 40.5 * u, 12.5 * u];
-  return { u, cell, gridLeft, gridTop, slots, gear };
+  const hint = [cx + 27.5 * u, 12.5 * u];
+  return { u, cell, gridLeft, gridTop, slots, gear, hint };
 }
 
 const L = layout(W, H);
@@ -72,15 +73,22 @@ async function findText(page, text) {
   });
   await sleep(300);
   const box = await page.evaluate((t) => {
+    // Exact label first, then prefix; the smallest node wins (containers
+    // concatenate their children's text).
     const nodes = Array.from(document.querySelectorAll('flt-semantics, [role]'));
+    let best = null;
     for (const n of nodes) {
       const label = (n.getAttribute('aria-label') || n.textContent || '').trim();
-      if (label === t || label.startsWith(t)) {
-        const r = n.getBoundingClientRect();
-        if (r.width > 0) return [r.x + r.width / 2, r.y + r.height / 2];
+      const rank = label === t ? 0 : label.startsWith(t) ? 1 : -1;
+      if (rank < 0) continue;
+      const r = n.getBoundingClientRect();
+      if (r.width <= 0) continue;
+      const area = r.width * r.height;
+      if (!best || rank < best.rank || (rank === best.rank && area < best.area)) {
+        best = { rank, area, at: [r.x + r.width / 2, r.y + r.height / 2] };
       }
     }
-    return null;
+    return best ? best.at : null;
   }, text);
   if (!box) throw new Error('text not found: ' + text);
   return box;
@@ -186,6 +194,115 @@ async function openPage(browser, query) {
     await page.mouse.click(how[0], how[1]);
     await sleep(900);
     await shot(page, '22_howto');
+    await ctx.close();
+  }
+
+  // --- 1.1: home, Premium, hints, skins, revive -----------------------------
+
+  const tag = `${W}x${H}`;
+
+  if (want('home')) {
+    const { ctx, page } = await openPage(browser, '?screen=home');
+    await sleep(400);
+    await shot(page, `h00_home_intro_${tag}`);
+    await sleep(1800);
+    await shot(page, `h01_home_${tag}`);
+    const about = await findText(page, 'About');
+    await page.mouse.click(about[0], about[1]);
+    await sleep(800);
+    await shot(page, `h02_about_${tag}`);
+    const close = await findText(page, 'Close');
+    await page.mouse.click(close[0], close[1]);
+    await sleep(500);
+    const skins = await findText(page, 'Block Skins');
+    await page.mouse.click(skins[0], skins[1]);
+    await sleep(800);
+    await shot(page, `h03_skins_${tag}`);
+    await page.keyboard.press('Escape');
+    await ctx.close();
+    const second = await openPage(browser, '?screen=home');
+    await sleep(2200);
+    const prem = await findText(second.page, 'Premium');
+    await second.page.mouse.click(prem[0], prem[1]);
+    await sleep(250);
+    await shot(second.page, `h04_premium_opening_${tag}`);
+    await sleep(900);
+    await shot(second.page, `h05_premium_from_home_${tag}`);
+    await second.ctx.close();
+  }
+
+  if (want('premium')) {
+    const { ctx, page } = await openPage(browser, '?screen=premium');
+    await sleep(1600);
+    await shot(page, `p01_premium_${tag}`);
+    const monthly = await findText(page, 'Monthly plan');
+    await page.mouse.click(monthly[0], monthly[1]);
+    await sleep(500);
+    await shot(page, `p02_monthly_selected_${tag}`);
+    await page.mouse.move(W / 2, H * 0.45);
+    await page.mouse.wheel(0, 2000);
+    await sleep(700);
+    await shot(page, `p03_premium_bottom_${tag}`);
+    const start = await findText(page, 'Start Premium');
+    await page.mouse.click(start[0], start[1]);
+    await sleep(600);
+    await shot(page, `p04_store_unavailable_${tag}`);
+    await ctx.close();
+  }
+
+  if (want('premiumActive')) {
+    const { ctx, page } = await openPage(browser, '?screen=premium&premium=1');
+    await sleep(1600);
+    await shot(page, `p05_premium_active_${tag}`);
+    await ctx.close();
+  }
+
+  if (want('hint')) {
+    const { ctx, page } = await openPage(browser, '?game&scenario=demo');
+    await sleep(1500);
+    await shot(page, `g01_hint_button_${tag}`);
+    await page.mouse.click(L.hint[0], L.hint[1]);
+    await sleep(500);
+    await shot(page, `g02_hint_shown_${tag}`);
+    await ctx.close();
+  }
+
+  if (want('upsell')) {
+    const { ctx, page } = await openPage(browser, '?game&scenario=demo');
+    await sleep(1500);
+    await page.mouse.click(L.hint[0], L.hint[1]);
+    await sleep(400);
+    await drag(page, 2, 1, 2, 5, 5);
+    await sleep(800);
+    await page.mouse.click(L.hint[0], L.hint[1]);
+    await sleep(800);
+    await shot(page, `g03_hint_upsell_${tag}`);
+    await ctx.close();
+  }
+
+  if (want('skins')) {
+    for (const skin of ['candy', 'neon', 'gem']) {
+      const { ctx, page } = await openPage(browser, `?game&scenario=demo&premium=1&skin=${skin}`);
+      await sleep(1500);
+      await drag(page, 2, 1, 2, 5, 5, { holdShot: `s_${skin}_drag_${tag}` });
+      await sleep(600);
+      await shot(page, `s_${skin}_${tag}`);
+      await ctx.close();
+    }
+  }
+
+  if (want('revive')) {
+    const { ctx, page } = await openPage(browser, '?game&scenario=over&premium=1');
+    await sleep(1500);
+    await drag(page, 0, 1, 1, 0, 1);
+    await sleep(1400);
+    await shot(page, `r01_revive_offer_${tag}`);
+    const revive = await findText(page, 'Revive');
+    await page.mouse.click(revive[0], revive[1]);
+    await sleep(160);
+    await shot(page, `r02_reviving_${tag}`);
+    await sleep(1200);
+    await shot(page, `r03_revived_${tag}`);
     await ctx.close();
   }
 

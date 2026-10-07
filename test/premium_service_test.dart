@@ -48,6 +48,16 @@ void main() {
     expect(store.bought, isEmpty);
   });
 
+  test('a purchase tapped while the store is still connecting waits for it', () async {
+    final s = service();
+    final starting = s.init(); // not awaited: the player taps right away
+    expect(s.storeChecked, isFalse);
+    expect(await s.buy(PremiumPlan.yearly), isTrue);
+    await starting;
+    expect(store.bought.single.$1, 'premium_yearly');
+    expect(s.storeChecked, isTrue);
+  });
+
   test('shows the localized prices returned by Google Play', () async {
     final s = service();
     await s.init();

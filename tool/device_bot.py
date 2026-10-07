@@ -2,13 +2,15 @@
 """End-to-end device test: plays Block Blast on a real Android device or
 emulator through adb, using only what is visible on screen.
 
-It launches the installed release APK, captures the splash screens, then
-repeatedly reads the board and the tray from a screenshot, picks the best
-move (most lines cleared), drags the piece with `adb shell input swipe`
-and checks through the app's logcat markers (BB_MOVE) that the move was
-accepted and scored. It plays until game over, checks the game-over popup,
-starts a new game, opens the settings popup and finally verifies that an
-unfinished game is restored after the app is killed.
+It launches the installed release APK, captures the splash screens and the
+home screen, starts a game, then repeatedly reads the board and the tray
+from a screenshot, picks the best move (most lines cleared), drags the
+piece with `adb shell input swipe` and checks through the app's logcat
+markers (BB_MOVE) that the move was accepted and scored. It plays until
+game over (declining the revive offer if one appears), checks the
+game-over popup, starts a new game, opens the settings popup, verifies
+that an unfinished game is restored after the app is killed, uses a hint
+and finally checks the home screen, the Premium screen and About.
 
 Usage: python3 tool/device_bot.py <out_dir>
 Env:   ADB (default "adb"), MAX_MOVES (default 70)
@@ -330,7 +332,8 @@ def looks_like_home(img):
     px = img.load()
     def bluish(c):
         return c[2] > 150 and c[0] < 90 and c[1] < 130
-    edges_ok = all(bluish(px[x, int(h * 0.5)]) for x in (5, w // 2, w - 6))
+    edge_points = [(x, int(h * f)) for x in (5, w - 6) for f in (0.3, 0.5, 0.7)]
+    edges_ok = sum(1 for p in edge_points if bluish(px[p[0], p[1]])) >= 5
     greens = 0
     for y in range(int(h * 0.45), int(h * 0.85), 6):
         for x in range(int(w * 0.3), int(w * 0.7), 6):
@@ -342,6 +345,56 @@ def looks_like_home(img):
 
 def tap(x, y):
     shell(f'input tap {int(x)} {int(y)}')
+
+
+def enter_game(tag):
+    """The app opens on the home screen: tap Continue (or Classic)."""
+    for _ in range(4):
+        dismiss_system_dialogs()
+        img = screencap()
+        if looks_like_home(img):
+            save(img, f'{tag}home')
+            pos = find_text_bounds('Continue', tries=1) or find_text_bounds('Classic')
+            if pos:
+                tap(*pos)
+                time.sleep(1.8)
+                return True
+        else:
+            # Google's ad consent form (UMP) may cover the home screen.
+            for label in ('Consent', 'Accept', 'Agree'):
+                pos = find_text_bounds(label, tries=1)
+                if pos:
+                    save(img, f'{tag}consent_form')
+                    log('dismissing the consent form via', label)
+                    tap(*pos)
+                    time.sleep(2.0)
+                    break
+        time.sleep(1.5)
+    fail('home screen with Continue/Classic not shown')
+    return False
+
+
+def wait_game_over(tag):
+    """After the last move: free players with a rewarded ad ready are offered
+    a revive first (BB_REVIVE_OFFER); decline it with Back right away (the
+    offer has a 10 s countdown) and wait for the game-over popup."""
+    deadline = time.time() + 25
+    declined = False
+    while time.time() < deadline:
+        markers = logcat_markers()
+        if 'BB_GAMEOVER' in markers:
+            if declined and 'BB_REVIVE_DECLINED' not in markers:
+                fail('revive offer was not declined by Back')
+            return True
+        if 'BB_REVIVE_OFFER' in markers and not declined:
+            time.sleep(0.6)  # popup animates in
+            shot(f'{tag}revive_offer')
+            shell('input keyevent KEYCODE_BACK')
+            declined = True
+            log('declined the revive offer')
+        time.sleep(0.5)
+    fail('game-over popup not reported (BB_GAMEOVER)')
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -460,6 +513,7 @@ def main():
     log('device sdk', sdk, size)
     launch('01_')
     dismiss_system_dialogs()
+    enter_game('02_')
     img = shot('02_game_start')
     try:
         g = find_board(img)
@@ -475,7 +529,8 @@ def main():
     log('game 1 result:', result)
     shot('04_last_move')
     if result == 'over':
-        time.sleep(3.5)
+        wait_game_over('05_')
+        time.sleep(1.2)
         shot('05_game_over')
         markers = logcat_markers()
         if 'over=true' not in markers:
@@ -514,17 +569,58 @@ def main():
     shell(f'am force-stop {PKG}')
     time.sleep(1.0)
     launch('10_', splash_shots=False)
+    enter_game('10_')
     img = shot('11_restored')
     after = read_board(img, g)
     if before != after:
         fail('saved game was not restored after restart')
 
+    # Hint button (left of the gear): highlights a move.
+    gear = find_gear(img, g)
+    if gear is not None:
+        tap(gear[0] - 13 * g.u, gear[1])
+        time.sleep(1.2)
+        shot('11b_hint')
+        if 'BB_HINT' not in logcat_markers():
+            fail('hint button did not give a hint')
+    else:
+        fail('gear not found for the hint check')
+
     # Back button goes to the home screen.
     shell('input keyevent KEYCODE_BACK')
-    time.sleep(1.5)
+    time.sleep(2.0)
     img = shot('12_home')
     if not looks_like_home(img):
         fail('home screen not shown after back')
+
+    # Premium screen from the top-right button, then back.
+    pos = find_text_bounds('Premium')
+    if pos is None:
+        fail('Premium button not found on the home screen')
+    else:
+        tap(*pos)
+        time.sleep(2.0)
+        shot('13_premium')
+        for text in ('Start Premium', 'Restore Purchases', 'Manage Subscription', 'Yearly plan'):
+            if find_text_bounds(text, tries=1) is None:
+                fail(f'"{text}" missing on the Premium screen')
+        shell('input keyevent KEYCODE_BACK')
+        time.sleep(1.5)
+
+    # About with the creator credit.
+    pos = find_text_bounds('About')
+    if pos is None:
+        fail('About button not found on the home screen')
+    else:
+        tap(*pos)
+        time.sleep(1.2)
+        shot('14_about')
+        if find_text_bounds('Game Creator: IMRAN', tries=1) is None:
+            fail('creator credit missing in About')
+        shell('input keyevent KEYCODE_BACK')
+        time.sleep(1.0)
+    if find_text_bounds('CREATED BY IMRAN', tries=1) is None:
+        fail('creator credit missing on the home screen')
 
     errors = [l for l in logcat_markers().splitlines() if 'BB_ERROR' in l]
     if errors:

@@ -249,6 +249,7 @@ class _PremiumLink extends StatelessWidget {
       button: true,
       label: text,
       excludeSemantics: true,
+      onTap: onTap,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -329,7 +330,7 @@ class HintsUpsellPopup extends StatelessWidget {
           if (!premium) ...[
             CandyButton(
               label: 'Get Premium',
-              leading: const SizedBox(width: 28, height: 21, child: CustomPaint(painter: _CrownPainter())),
+              leading: const CrownGlyph.onGold(),
               colors: CandyButton.gold,
               edge: CandyButton.goldEdge,
               width: double.infinity,
@@ -413,7 +414,7 @@ class SkinPickerPopup extends StatelessWidget {
               else
                 CandyButton(
                   label: 'Unlock All Skins',
-                  leading: const SizedBox(width: 28, height: 21, child: CustomPaint(painter: _CrownPainter())),
+                  leading: const CrownGlyph.onGold(),
                   colors: CandyButton.gold,
                   edge: CandyButton.goldEdge,
                   width: double.infinity,
@@ -444,6 +445,7 @@ class _SkinTile extends StatelessWidget {
       selected: selected,
       label: '${skin.label} skin${locked ? ', Premium' : selected ? ', in use' : ''}',
       excludeSemantics: true,
+      onTap: onTap,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,

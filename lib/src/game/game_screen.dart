@@ -123,6 +123,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
 
   void _onGameOver() {
     AdsService.instance.noteGameFinished();
+    debugPrint('BB_GAMEOVER score=${ctrl.game.score}');
     setState(() {
       _gameOverScore = ctrl.game.score;
       _gameOverWasBest = ctrl.game.score > ctrl.bestAtStart && ctrl.game.score > 0;
@@ -131,6 +132,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   }
 
   void _onReviveOffer() {
+    debugPrint('BB_REVIVE_OFFER premium=${PremiumService.instance.isPremium} left=${ctrl.revivesLeft}');
     setState(() => _showRevive = true);
   }
 
@@ -239,6 +241,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   }
 
   void _declineRevive() {
+    debugPrint('BB_REVIVE_DECLINED');
     setState(() => _showRevive = false);
     ctrl.declineRevive();
   }

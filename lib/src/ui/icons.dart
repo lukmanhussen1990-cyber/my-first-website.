@@ -7,8 +7,8 @@ import 'block_painter.dart';
 import 'palette.dart';
 import 'skins.dart';
 
-/// Gold crown (best score marker and logo decoration).
-void paintCrown(Canvas canvas, Rect r) {
+/// Crown outline shared by the gold and single-color versions.
+({Path body, RRect band, List<Offset> tips}) _crownShape(Rect r) {
   final w = r.width, h = r.height;
   Offset p(double x, double y) => Offset(r.left + x * w, r.top + y * h);
   final body = Path()
@@ -21,16 +21,24 @@ void paintCrown(Canvas canvas, Rect r) {
     ..lineTo(p(0.16, 0.80).dx, p(0.16, 0.80).dy)
     ..close();
   final band = RRect.fromRectAndRadius(Rect.fromPoints(p(0.15, 0.80), p(0.85, 0.97)), Radius.circular(h * 0.06));
+  return (body: body, band: band, tips: [p(0.06, 0.27), p(0.50, 0.11), p(0.94, 0.27)]);
+}
+
+/// Gold crown (best score marker and logo decoration).
+void paintCrown(Canvas canvas, Rect r) {
+  final w = r.width, h = r.height;
+  Offset p(double x, double y) => Offset(r.left + x * w, r.top + y * h);
+  final shape = _crownShape(r);
   final shade = Paint()..color = const Color(0xFFD98A00);
-  canvas.drawPath(body.shift(Offset(0, h * 0.04)), shade);
+  canvas.drawPath(shape.body.shift(Offset(0, h * 0.04)), shade);
   canvas.drawPath(
-    body,
+    shape.body,
     Paint()..shader = ui.Gradient.linear(r.topCenter, r.bottomCenter, const [Color(0xFFFFE15A), Color(0xFFFFB300)]),
   );
-  canvas.drawRRect(band, Paint()..color = const Color(0xFFFFA200));
+  canvas.drawRRect(shape.band, Paint()..color = const Color(0xFFFFA200));
   // Balls on the tips.
   final ball = Paint()..color = const Color(0xFFFFD43B);
-  for (final t in [p(0.06, 0.27), p(0.50, 0.11), p(0.94, 0.27)]) {
+  for (final t in shape.tips) {
     canvas.drawCircle(t, w * 0.075, ball);
   }
   // Highlight.
@@ -42,6 +50,22 @@ void paintCrown(Canvas canvas, Rect r) {
       ..close(),
     Paint()..color = const Color(0x88FFFFFF),
   );
+}
+
+/// Single-color crown with an optional drop shadow (for gold buttons, where
+/// the gold crown would disappear).
+void paintCrownMono(Canvas canvas, Rect r, Color color, {Color? shadow}) {
+  final shape = _crownShape(r);
+  void draw(Paint paint, Offset shift) {
+    canvas.drawPath(shape.body.shift(shift), paint);
+    canvas.drawRRect(shape.band.shift(shift), paint);
+    for (final t in shape.tips) {
+      canvas.drawCircle(t + shift, r.width * 0.075, paint);
+    }
+  }
+
+  if (shadow != null) draw(Paint()..color = shadow, Offset(0, r.height * 0.09));
+  draw(Paint()..color = color, Offset.zero);
 }
 
 /// Settings gear with the small red notification badge.

@@ -108,7 +108,8 @@ class _PremiumScreenState extends State<PremiumScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final compact = size.height < 700;
+    // Most phones are 740-800dp tall once the system bars are taken off.
+    final compact = size.height < 800;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Color(0x00000000),
@@ -130,16 +131,15 @@ class _PremiumScreenState extends State<PremiumScreen> with SingleTickerProvider
                   constraints: const BoxConstraints(maxWidth: 520),
                   child: Column(
                     children: [
-                      _topBar(),
                       Expanded(
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                           child: Column(
                             children: [
                               _stagger(0, _header(compact)),
-                              SizedBox(height: compact ? 14 : 20),
+                              SizedBox(height: compact ? 12 : 16),
                               _stagger(1, _benefits(compact)),
-                              SizedBox(height: compact ? 16 : 22),
+                              SizedBox(height: compact ? 12 : 16),
                               _stagger(2, _plans()),
                               const SizedBox(height: 18),
                               _stagger(3, _terms()),
@@ -152,6 +152,11 @@ class _PremiumScreenState extends State<PremiumScreen> with SingleTickerProvider
                   ),
                 ),
               ),
+            ),
+            Positioned(
+              top: MediaQuery.paddingOf(context).top + 2,
+              right: 6,
+              child: _closeButton(),
             ),
             if (_toast != null) _toastView(_toast!),
           ],
@@ -174,42 +179,33 @@ class _PremiumScreenState extends State<PremiumScreen> with SingleTickerProvider
     );
   }
 
-  Widget _topBar() {
-    return SizedBox(
-      height: 56,
-      child: Row(
-        children: [
-          const SizedBox(width: 56),
-          const Spacer(),
-          Semantics(
-            button: true,
-            label: 'Close',
-            excludeSemantics: true,
-            child: InkResponse(
-              onTap: () {
-                Sound.instance.play(Sfx.click);
-                _close();
-              },
-              radius: 28,
-              child: Container(
-                width: 48,
-                height: 48,
-                margin: const EdgeInsets.only(right: 8),
-                alignment: Alignment.center,
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.14),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.45), width: 1.5),
-                  ),
-                  child: const Icon(Icons.close_rounded, color: Colors.white, size: 24),
-                ),
-              ),
+  Widget _closeButton() {
+    return Semantics(
+      button: true,
+      label: 'Close',
+      excludeSemantics: true,
+      onTap: _close,
+      child: InkResponse(
+        onTap: () {
+          Sound.instance.play(Sfx.click);
+          _close();
+        },
+        radius: 26,
+        child: Container(
+          width: 52,
+          height: 52,
+          alignment: Alignment.center,
+          child: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0x66081A55),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.55), width: 1.5),
             ),
+            child: const Icon(Icons.close_rounded, color: Colors.white, size: 24),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -217,7 +213,7 @@ class _PremiumScreenState extends State<PremiumScreen> with SingleTickerProvider
   Widget _header(bool compact) {
     final active = _premium.isPremium;
     final plan = _premium.activePlan;
-    final crownW = compact ? 64.0 : 84.0;
+    final crownW = compact ? 50.0 : 62.0;
     return Column(
       children: [
         AnimatedBuilder(
@@ -234,25 +230,25 @@ class _PremiumScreenState extends State<PremiumScreen> with SingleTickerProvider
         ),
         const SizedBox(height: 4),
         const _PremiumPill(),
-        SizedBox(height: compact ? 10 : 14),
+        SizedBox(height: compact ? 8 : 12),
         Text(
           active ? "You're Premium!" : 'Unlock a Better\nBlock Blast Experience',
           textAlign: TextAlign.center,
-          style: bubbleStyle(compact ? 24 : 27, weight: FontWeight.w700).copyWith(
+          style: bubbleStyle(compact ? 22 : 25, weight: FontWeight.w700).copyWith(
             height: 1.15,
             shadows: const [Shadow(color: Color(0x80061033), offset: Offset(0, 2), blurRadius: 4)],
           ),
         ),
-        const SizedBox(height: 6),
-        Text(
-          active
-              ? plan != null
-                    ? '${plan.label} plan · ${_premium.entitlement!.autoRenewing ? 'renews automatically' : 'canceled, active until the period ends'}'
-                    : 'All Premium benefits are unlocked.'
-              : 'Play without interruptions and get extra help when it counts.',
-          textAlign: TextAlign.center,
-          style: bubbleStyle(14.5, color: _P.soft, weight: FontWeight.w500).copyWith(height: 1.25),
-        ),
+        if (active) ...[
+          const SizedBox(height: 6),
+          Text(
+            plan != null
+                ? '${plan.label} plan · ${_premium.entitlement!.autoRenewing ? 'renews automatically' : 'canceled, active until the period ends'}'
+                : 'All Premium benefits are unlocked.',
+            textAlign: TextAlign.center,
+            style: bubbleStyle(14.5, color: _P.soft, weight: FontWeight.w500).copyWith(height: 1.25),
+          ),
+        ],
       ],
     );
   }
@@ -277,7 +273,7 @@ class _PremiumScreenState extends State<PremiumScreen> with SingleTickerProvider
             children: [Expanded(child: card(0)), const SizedBox(width: 10), Expanded(child: card(1))],
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 4),
         IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -317,7 +313,7 @@ class _PremiumScreenState extends State<PremiumScreen> with SingleTickerProvider
           children: [
             Text('Choose your plan', style: bubbleStyle(18, weight: FontWeight.w600)),
             const Spacer(),
-            if (_premium.loadingProducts)
+            if (_premium.loadingProducts || !_premium.storeChecked)
               const SizedBox(
                 width: 16,
                 height: 16,
@@ -350,7 +346,7 @@ class _PremiumScreenState extends State<PremiumScreen> with SingleTickerProvider
           current: _premium.activePlan == PremiumPlan.weekly,
           onTap: () => _select(PremiumPlan.weekly),
         ),
-        if (!_premium.hasStorePrices && !_premium.loadingProducts && !_premium.preview) ...[
+        if (!_premium.hasStorePrices && !_premium.preview) ...[
           const SizedBox(height: 10),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,8 +358,10 @@ class _PremiumScreenState extends State<PremiumScreen> with SingleTickerProvider
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  _premium.storeAvailable
-                      ? 'Prices shown in USD. Google Play shows the price in your currency before you pay.'
+                  !_premium.storeChecked || _premium.loadingProducts
+                      ? 'Connecting to Google Play…'
+                      : _premium.storeAvailable
+                      ? "Plans aren't available from Google Play yet, so prices are shown in USD."
                       : 'Google Play is not available on this device, so prices are shown in USD and purchases are turned off.',
                   style: bubbleStyle(12.5, color: _P.faint, weight: FontWeight.w500).copyWith(height: 1.25),
                 ),
@@ -427,19 +425,20 @@ class _PremiumScreenState extends State<PremiumScreen> with SingleTickerProvider
   Widget _purchaseBar() {
     final offer = _premium.offerFor(_selected);
     final active = _premium.isPremium;
-    final current = active && _premium.activePlan == _selected;
+    // Preview builds are Premium without a store plan: treat as current.
+    final current = active && (_premium.activePlan == _selected || _premium.activePlan == null);
     final busy = _premium.purchasing;
     String label;
     if (busy) {
       label = 'Opening Google Play…';
-    } else if (current || (active && _premium.activePlan == null)) {
+    } else if (current) {
       label = 'Premium Active';
     } else if (active) {
       label = 'Switch to ${_selected.label}';
     } else {
       label = 'Start Premium';
     }
-    final canTap = !busy && !current && !(active && _premium.activePlan == null);
+    final canTap = !busy && !current;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
       decoration: const BoxDecoration(
@@ -498,7 +497,7 @@ class _PremiumScreenState extends State<PremiumScreen> with SingleTickerProvider
                         )
                       : current
                       ? const Icon(Icons.check_circle_rounded, color: Colors.white, size: 24)
-                      : SizedBox(width: 26, height: 20, child: CustomPaint(painter: _CrownIconPainter())),
+                      : const CrownGlyph.onGold(width: 30),
                   enabled: canTap || current,
                   height: 54,
                   fontSize: 20,
@@ -511,10 +510,13 @@ class _PremiumScreenState extends State<PremiumScreen> with SingleTickerProvider
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            'Auto-renews at ${offer.perPeriodText}. Cancel anytime in Google Play.',
-            textAlign: TextAlign.center,
-            style: bubbleStyle(12, color: _P.faint, weight: FontWeight.w500),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              'Auto-renews at ${offer.perPeriodText}. Cancel anytime in Google Play.',
+              maxLines: 1,
+              style: bubbleStyle(12, color: _P.faint, weight: FontWeight.w500),
+            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -649,57 +651,70 @@ class _BenefitCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconSize = compact ? 40.0 : 46.0;
-    return Container(
-      padding: EdgeInsets.fromLTRB(12, compact ? 10 : 12, 12, compact ? 10 : 12),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF2A52BF), _P.card],
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _P.cardBorder.withValues(alpha: 0.75), width: 1.5),
-        boxShadow: const [BoxShadow(color: Color(0x44000A30), offset: Offset(0, 4), blurRadius: 8)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final iconSize = compact ? 34.0 : 38.0;
+    return Padding(
+      // Room for the corner chip.
+      padding: const EdgeInsets.only(top: 8),
+      child: Stack(
+        fit: StackFit.passthrough,
+        clipBehavior: Clip.none,
         children: [
-          Row(
-            children: [
-              Container(
-                width: iconSize,
-                height: iconSize,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const RadialGradient(colors: [Color(0xFF3F6CE0), Color(0xFF16307D)]),
-                  border: Border.all(color: _P.gold.withValues(alpha: 0.85), width: 1.5),
-                ),
-                padding: EdgeInsets.all(iconSize * 0.17),
-                child: CustomPaint(painter: _BenefitIconPainter(icon, MediaQuery.devicePixelRatioOf(context))),
+          Container(
+            padding: EdgeInsets.fromLTRB(10, compact ? 11 : 13, 10, compact ? 9 : 11),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF2A52BF), _P.card],
               ),
-              const Spacer(),
-              Flexible(
-                flex: 4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: _P.gold.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _P.gold.withValues(alpha: 0.55)),
-                  ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(chip, style: bubbleStyle(11, color: _P.goldLight, weight: FontWeight.w600)),
-                  ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: _P.cardBorder.withValues(alpha: 0.75), width: 1.5),
+              boxShadow: const [BoxShadow(color: Color(0x44000A30), offset: Offset(0, 4), blurRadius: 8)],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: iconSize,
+                      height: iconSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const RadialGradient(colors: [Color(0xFF3F6CE0), Color(0xFF16307D)]),
+                        border: Border.all(color: _P.gold.withValues(alpha: 0.85), width: 1.5),
+                      ),
+                      padding: EdgeInsets.all(iconSize * 0.17),
+                      child: CustomPaint(painter: _BenefitIconPainter(icon, MediaQuery.devicePixelRatioOf(context))),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 2,
+                        style: bubbleStyle(compact ? 14.5 : 15.5, weight: FontWeight.w700).copyWith(height: 1.08),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                SizedBox(height: compact ? 5 : 7),
+                Text(body, style: bubbleStyle(12.5, color: _P.soft, weight: FontWeight.w500).copyWith(height: 1.2)),
+              ],
+            ),
           ),
-          SizedBox(height: compact ? 7 : 9),
-          Text(title, style: bubbleStyle(compact ? 15.5 : 16.5, weight: FontWeight.w700)),
-          const SizedBox(height: 3),
-          Text(body, style: bubbleStyle(12.5, color: _P.soft, weight: FontWeight.w500).copyWith(height: 1.2)),
+          Positioned(
+            top: -8,
+            right: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [_P.goldLight, _P.gold]),
+                borderRadius: BorderRadius.circular(9),
+                boxShadow: const [BoxShadow(color: Color(0xFFA85F00), offset: Offset(0, 1.5))],
+              ),
+              child: Text(chip, style: bubbleStyle(10.5, color: _P.goldDark, weight: FontWeight.w700)),
+            ),
+          ),
         ],
       ),
     );
@@ -732,6 +747,7 @@ class _PlanCard extends StatelessWidget {
       label:
           '${offer.plan.label} plan, ${offer.perPeriodText}${note != null ? ', $note' : ''}${badge != null ? ', $badge' : ''}${current ? ', current plan' : ''}',
       excludeSemantics: true,
+      onTap: onTap,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -785,12 +801,18 @@ class _PlanCard extends StatelessWidget {
                           ),
                           if (note != null) ...[
                             const SizedBox(height: 3),
-                            Text(
-                              note!,
-                              style: bubbleStyle(
-                                12.5,
-                                color: selected ? _P.goldLight : _P.soft,
-                                weight: FontWeight.w600,
+                            // One line on every width (scaled down if needed).
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                note!,
+                                maxLines: 1,
+                                style: bubbleStyle(
+                                  12.5,
+                                  color: selected ? _P.goldLight : _P.soft,
+                                  weight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
@@ -899,6 +921,7 @@ class _LinkButton extends StatelessWidget {
       enabled: onTap != null,
       label: label,
       excludeSemantics: true,
+      onTap: onTap,
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: onTap == null
@@ -934,14 +957,6 @@ class _LinkButton extends StatelessWidget {
 // -----------------------------------------------------------------------------
 // Painters
 // -----------------------------------------------------------------------------
-
-class _CrownIconPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) => paintCrown(canvas, Offset.zero & size);
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 /// Big crown with a golden halo and sparkles.
 class _GlowCrownPainter extends CustomPainter {

@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late final AnimationController _float = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 2200),
-  )..repeat(reverse: true, count: 5);
+  )..repeat(reverse: true, count: 3);
 
   bool _howTo = false;
   bool _about = false;
@@ -250,7 +250,7 @@ class _PremiumBadgeButtonState extends State<PremiumBadgeButton> with SingleTick
   late final AnimationController _shine = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 2600),
-  )..repeat(count: 3);
+  )..repeat(count: 2);
 
   @override
   void dispose() {
@@ -264,6 +264,7 @@ class _PremiumBadgeButtonState extends State<PremiumBadgeButton> with SingleTick
       button: true,
       label: widget.active ? 'Premium, active' : 'Premium',
       excludeSemantics: true,
+      onTap: widget.onTap,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapDown: (_) {
@@ -307,7 +308,7 @@ class _PremiumBadgeButtonState extends State<PremiumBadgeButton> with SingleTick
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const SizedBox(width: 27, height: 20, child: CustomPaint(painter: _CrownPainter())),
+                        const CrownGlyph(width: 26, color: Color(0xFF8A4B00), shadow: Color(0x80FFF6CF)),
                         const SizedBox(width: 6),
                         Text(
                           'PREMIUM',
@@ -383,6 +384,7 @@ class _RoundIconButtonState extends State<_RoundIconButton> {
       button: true,
       label: widget.label,
       excludeSemantics: true,
+      onTap: widget.onTap,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapDown: (_) => setState(() => _down = true),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/haptics.dart';
 import '../services/sound.dart';
 import '../ui/fancy_text.dart';
+import '../ui/icons.dart';
 
 /// Glossy 3D "candy" button used across menus and popups.
 class CandyButton extends StatefulWidget {
@@ -433,4 +434,46 @@ class _GamePopupState extends State<GamePopup> with SingleTickerProviderStateMix
       ],
     );
   }
+}
+
+/// Crown icon: gold by default, or a single [color] (white on gold buttons).
+class CrownGlyph extends StatelessWidget {
+  const CrownGlyph({super.key, this.width = 28, this.color, this.shadow});
+
+  final double width;
+  final Color? color;
+  final Color? shadow;
+
+  /// White crown with the gold button's edge color as its shadow.
+  const CrownGlyph.onGold({super.key, this.width = 28}) : color = Colors.white, shadow = CandyButton.goldEdge;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: width * 0.76,
+      child: CustomPaint(painter: _CrownGlyphPainter(color, shadow)),
+    );
+  }
+}
+
+class _CrownGlyphPainter extends CustomPainter {
+  _CrownGlyphPainter(this.color, this.shadow);
+
+  final Color? color;
+  final Color? shadow;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final r = Offset.zero & size;
+    if (color == null) {
+      paintCrown(canvas, r);
+    } else {
+      paintCrownMono(canvas, r, color!, shadow: shadow);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _CrownGlyphPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.shadow != shadow;
 }
