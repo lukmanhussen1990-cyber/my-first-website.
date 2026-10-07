@@ -69,6 +69,7 @@ Quality checks:
 ```bash
 npm run typecheck
 npm run lint
+npm test             # game rules, data integrity, account security
 ```
 
 ### Install on a phone

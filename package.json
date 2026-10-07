@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "art": "node tools/art/render.mjs",
-    "cap:sync": "npm run build && cap sync"
+    "cap:sync": "npm run build && cap sync",
+    "test": "vitest run"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.2",
@@ -32,11 +33,14 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "fake-indexeddb": "^6.2.5",
+    "happy-dom": "^20.14.5",
     "oxlint": "^1.81.0",
     "playwright-core": "^1.63.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
-    "vite-plugin-pwa": "^2.0.0"
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.3"
   },
   "description": "Border Trials — a cinematic survival-challenge game companion app. Created by IMRAN.",
   "author": "IMRAN"
