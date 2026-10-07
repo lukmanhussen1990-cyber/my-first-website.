@@ -37,7 +37,7 @@ DIST = os.path.join(ROOT, "dist")
 DOCS = os.path.join(ROOT, "docs")
 
 NS = "magic_guns"
-VERSION = [1, 0, 0]
+VERSION = [1, 1, 0]
 MIN_ENGINE = [1, 21, 0]
 SCRIPT_API = "1.11.0"
 ITEM_FORMAT = "1.20.80"
