@@ -10,6 +10,10 @@ mkdir -p "$OUT"
 adb wait-for-device
 { echo "sdk=$(adb shell getprop ro.build.version.sdk)"; adb shell wm size; adb shell wm density; } | tee "$OUT/device.txt"
 
+# Keep emulator ANR/crash dialogs of other apps from covering the game.
+adb shell settings put global hide_error_dialogs 1 > /dev/null 2>&1 || true
+adb shell settings put global anr_show_background 0 > /dev/null 2>&1 || true
+
 adb uninstall "$PKG" > /dev/null 2>&1 || true
 adb install "$APK" 2>&1 | tee "$OUT/install.txt"
 grep -q Success "$OUT/install.txt" || { echo "install failed"; exit 1; }
