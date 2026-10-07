@@ -318,6 +318,9 @@ class PremiumService extends ChangeNotifier {
         return false;
       }
     }
+    // Re-checked here (no await before it is set) so a double tap that
+    // waited for the store above cannot start a second purchase.
+    if (purchasing) return false;
     purchasing = true;
     paymentPending = false;
     notifyListeners();

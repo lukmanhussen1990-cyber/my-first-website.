@@ -58,6 +58,16 @@ void main() {
     expect(s.storeChecked, isTrue);
   });
 
+  test('a double tap starts only one purchase', () async {
+    final s = service();
+    final starting = s.init();
+    final first = s.buy(PremiumPlan.monthly);
+    final second = s.buy(PremiumPlan.monthly);
+    await starting;
+    expect([await first, await second].where((started) => started).length, 1);
+    expect(store.bought.length, 1);
+  });
+
   test('shows the localized prices returned by Google Play', () async {
     final s = service();
     await s.init();
