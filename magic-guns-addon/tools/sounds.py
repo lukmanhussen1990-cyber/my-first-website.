@@ -278,7 +278,7 @@ def crackle(dur, rate=120, decay=0.4, bright=6000, lo=900, start=0.0):
         if p >= n - 400:
             continue
         L = int(rng.integers(20, 220))
-        g = rng.uniform(0.15, 1) ** 2
+        g = rng.uniform(0.15, 1) ** 2 * np.exp(-(p / SR - start) / (decay * 1.5))
         out[p:p + L] += rng.uniform(-1, 1, L) * np.exp(-np.arange(L) / (L / 5)) * g
     out = bandpass(out, lo, bright)
     return norm(out) * tail(n, 30)
@@ -447,13 +447,16 @@ def lufs(x):
 
 
 DEBUG = bool(os.environ.get("SOUNDS_DEBUG"))
+_CEIL = -1.3   # limiter ceiling (dBFS); main() lowers it per file if Vorbis overshoots
 
 
-def finish(x, loud=LOUD_FIRE, ceiling=-1.6, comp=None, max_dur=3.0, fade=0.04, hp=25):
+def finish(x, loud=LOUD_FIRE, ceiling=None, comp=None, max_dur=3.0, fade=0.04, hp=25):
     """Master bus: sub-sonic high-pass + encoder-friendly low-pass, slow-attack
     glue compression (lifts the tail, leaves the attack alone), then the
     gain that hits the loudness target *after* a fast transient limiter that
     only shaves the first spike; finally silent-tail trim and click-free fades."""
+    if ceiling is None:
+        ceiling = _CEIL
     x = iir(x, ("hp", hp), ("lp", 15500, 0.6), ("lp", 15500, 0.6))
     x = norm(x - np.mean(x))
     if comp:
@@ -521,11 +524,15 @@ def gunshot(dur=1.0, blast_ms=1.2, blast_amt=1.0, crack=0.6, crack_band=(2500, 1
 
 
 def chime(dur, f, decay, amp=1.0, ratios=(1.0, 2.76, 5.40), pamps=(1.0, 0.22, 0.06), beat=2.0):
-    """Amethyst-like crystal chime: inharmonic bar partials with a slow beat."""
+    """Amethyst-like crystal chime: inharmonic bar partials with a slow beat.
+    Partials landing in the ear's most sensitive 2.8-6.5 kHz zone are turned
+    down and shortened so the chime sparkles instead of whistling."""
     t = t_axis(dur)
     out = np.zeros_like(t)
     for r, a in zip(ratios, pamps):
         d = decay / (r ** 0.9)
+        if 2800 < f * r < 6500:
+            a, d = a * 0.3, d * 0.5
         for det in (-beat / 2, beat / 2):
             out += a * np.sin(2 * np.pi * (f * r + det) * t) * np.exp(-t / d)
     return out * amp * np.clip(t / 0.0015, 0, 1) * tail(len(t), 30)
@@ -540,7 +547,7 @@ def choir(dur, notes, attack=0.15, decay=0.9, hold=0.25, vowel="ah"):
             rate = rng.uniform(4.8, 6.2)
             vib = 1 + 0.007 * np.sin(2 * np.pi * rate * t + rng.uniform(0, 6.28)) * np.clip(t / 0.4, 0, 1)
             ph = 2 * np.pi * np.cumsum(f * (1 + det) * vib) / SR + rng.uniform(0, 6.28)
-            for k in range(1, int(5000 / f) + 1):
+            for k in range(1, int(3600 / f) + 1):
                 out += np.sin(ph * k) / k ** 1.1
     breath = noise(dur) * 0.6
     peaks = {"ah": [(750, 110, 1.0), (1180, 130, 0.55), (2850, 200, 0.22), (3500, 250, 0.08)],
@@ -554,8 +561,8 @@ def choir(dur, notes, attack=0.15, decay=0.9, hold=0.25, vowel="ah"):
 
 def arcane_fire(v=0):
     p = PITCH[v]
-    shot = gunshot(1.0, blast_ms=0.8, blast_amt=0.6, crack=0.7, crack_band=(2600, 11000), crack_ms=0.8,
-                   hi=(2200, 9000, 0.009, 0.5), mid=(320, 2700, 0.045, 1.0), low=(70, 450, 0.07, 0.7),
+    shot = gunshot(1.0, blast_ms=0.8, blast_amt=0.6, crack=0.75, crack_band=(2600, 11000), crack_ms=1.2,
+                   hi=(2200, 9000, 0.011, 0.65), mid=(320, 2700, 0.045, 1.0), low=(70, 450, 0.07, 0.7),
                    kick=(165, 58, 0.022, 0.04, 1.0), drive=2.5, lows=0.55, grit=1.3, hold=0.008, p=p)
     cyl = click((1850, 3100, 4700, 6900), (0.012, 0.008, 0.005, 0.003), (1, 0.6, 0.3, 0.15)) * 0.05
     notes = [(1046.5, 1318.5, 1568.0), (987.8, 1318.5, 1661.2), (1108.7, 1396.9, 1760.0)][v]
@@ -591,7 +598,7 @@ def inferno_fire(v=0):
     whoosh = sweep_noise(0.9, 320 * p, 1300 * p, bw=1.8, curve=0.6) * env(0.9, 0.03, 0.26)
     roar = bandpass(noise(0.9), 70, 520) * env(0.9, 0.04, 0.3)
     cr = crackle(1.1, rate=80, decay=0.3, bright=7000, lo=1200, start=0.04)
-    dry = mix(shot, norm(brass) * 0.05, at(whoosh * 0.42, 0.006), at(norm(roar) * 0.3, 0.004), cr * 0.2)
+    dry = mix(shot, norm(brass) * 0.05, at(whoosh * 0.85, 0.006), at(norm(roar) * 0.3, 0.004), cr * 0.28)
     wet = reverb(dry, size=1.1, mix=0.28, damp=3500, er=(8, 15, 23, 36))
     return finish(wet, LOUD_FIRE, max_dur=1.4)
 
@@ -602,15 +609,16 @@ def inferno_hit(v=0):
     puff = thump(0.2, 130 * p, 48 * p, 0.02, 0.05)
     cr = crackle(0.8, rate=150, decay=0.22, bright=7500, lo=1200, start=0.01)
     sizzle = bandpass(noise(0.6), 5500, 11000) * env(0.6, 0.02, 0.18)
-    dry = mix(whoomph, puff * 0.5, cr * 0.32, norm(sizzle) * 0.04)
+    pop = norm(bandpass(noise(0.03), 300, 4000) * env(0.03, 0.00005, 0.004))
+    dry = mix(whoomph, pop * 0.4, puff * 0.5, cr * 0.32, norm(sizzle) * 0.04)
     wet = reverb(dry, size=0.7, mix=0.22, damp=4000, er=(6, 11, 19))
     return finish(wet, LOUD_HIT - 1.0, max_dur=0.9)
 
 
 def frost_fire(v=0):
     p = PITCH[v]
-    shot = gunshot(1.0, blast_ms=1.6, blast_amt=0.6, crack=0.7, crack_band=(3000, 14000), crack_ms=0.7,
-                   hi=(2500, 11000, 0.011, 0.55), mid=(250, 2500, 0.055, 1.0), low=(45, 380, 0.11, 1.0),
+    shot = gunshot(1.0, blast_ms=1.6, blast_amt=0.6, crack=0.85, crack_band=(3000, 14000), crack_ms=1.5,
+                   hi=(2500, 11000, 0.014, 0.75), mid=(250, 2500, 0.055, 1.0), low=(45, 380, 0.11, 1.0),
                    kick=(135, 40, 0.03, 0.065, 1.1), drive=2.8, lows=0.6, grit=1.3, hold=0.008, p=p)
     shot = mix(shot, nwave(0.33) * 0.35)
     bolt_t = 0.6 + 0.025 * v
@@ -621,10 +629,10 @@ def frost_fire(v=0):
     lock = click((1600, 3100, 4500), (0.01, 0.006, 0.004), (1, 0.4, 0.2)) * 0.04
     bolt = mix(lift, at(slide, 0.03), at(back, 0.075), at(fwd, 0.17), at(lock, 0.225))
     ring = mix(chime(1.3, 988 * p, 0.85, 1.0, ratios=(1, 2.32, 4.25), pamps=(1, 0.28, 0.06), beat=1.6),
-               chime(1.3, 1480 * p, 0.6, 0.7, ratios=(1, 2.32, 4.25), pamps=(1, 0.2, 0.04), beat=2.3))
+               chime(1.3, 1175 * p, 0.6, 0.7, ratios=(1, 2.32, 4.25), pamps=(1, 0.2, 0.04), beat=2.3))
     frost = bandpass(noise(0.6), 6000, 13000) * env(0.6, 0.015, 0.16)
     tail_ = echoes(shot, [(0.19 + 0.02 * v, 0.28, 2600), (0.43 + 0.03 * v, 0.16, 1800), (0.8, 0.08, 1200)])
-    dry = mix(tail_, at(norm(ring) * 0.1, 0.008), norm(frost) * 0.035)
+    dry = mix(tail_, at(norm(ring) * 0.22, 0.008), norm(frost) * 0.05)
     wet = reverb(dry, size=1.8, mix=0.28, damp=2800, lo=90, er=(9, 17, 29, 44, 61))
     wet = mix(wet, at(bolt, bolt_t))
     return finish(wet, LOUD_FIRE, max_dur=2.2)
@@ -640,7 +648,7 @@ def frost_hit(v=0):
     for i in range(48):
         t0 = 0.002 + min(rng.exponential(0.05), 0.5)
         f = np.exp(rng.uniform(np.log(1400), np.log(8500))) * p
-        w = 0.5 if 2800 < f < 6000 else 1.0   # keep the 3-6 kHz whistle down
+        w = 0.35 if 2800 < f < 6500 else 1.0   # keep the 3-6 kHz whistle down
         L = int(SR * rng.uniform(0.03, 0.12))
         tt = np.arange(L) / SR
         d = rng.uniform(0.012, 0.05)
@@ -667,13 +675,13 @@ def storm_fire(v=0):
                    kick=(122, 38, 0.035, 0.075, 1.2), drive=3.0, lows=0.65, grit=1.4, double=(0.0026 + 0.0006 * v, 0.75), p=p)
     zap = np.tanh(4 * chirp(0.1, 3000 * p, 220 * p)) * env(0.1, 0.0005, 0.028)
     zap = bandpass(zap, 300, 6500)
-    bolt = arc(0.6, rate=118 * p, decay=0.17, lo=400, hi=7000)
+    bolt = arc(0.6, rate=118 * p, decay=0.22, lo=400, hi=7000)
     sparks = crackle(0.75, rate=170, decay=0.18, bright=9000, lo=2000, start=0.01)
     t = t_axis(0.5)
     fw = 260 * p * (700 / 260) ** (t / 0.5)
     whine = np.tanh(1.8 * np.sin(2 * np.pi * np.cumsum(fw) / SR)) * (0.6 + 0.4 * np.sin(2 * np.pi * 31 * t))
     whine = whine * np.clip(t / 0.25, 0, 1) ** 2 * tail(len(t), 120)
-    dry = mix(shot, at(zap * 0.22, 0.001), at(bolt * 0.3, 0.015), sparks * 0.18, at(whine * 0.025, 0.62))
+    dry = mix(shot, at(zap * 0.3, 0.001), at(bolt * 0.8, 0.015), sparks * 0.4, at(whine * 0.012, 0.62))
     wet = reverb(dry, size=1.0, mix=0.26, damp=4200, er=(7, 13, 21, 33))
     return finish(wet, LOUD_FIRE, max_dur=1.2)
 
@@ -742,15 +750,16 @@ def void_fire(v=0):
 
 def void_hit(v=0):
     p = PITCH[v]
-    ds = 0.16
+    ds = 0.13
     t = t_axis(ds)
-    rise = (0.2 + 0.8 * (t / ds) ** 2.2) * tail(len(t), 4)
+    rise = (0.35 + 0.65 * (t / ds) ** 2) * np.clip(t / 0.002, 0, 1) * tail(len(t), 4)
     suck = sweep_noise(ds, 300 * p, 3600 * p, bw=1.5) * rise
     up = chirp(ds, 180 * p, 950 * p, harmonics=(1, 0.4, 0.2)) * rise
     pop = mix(iir(blast(1.5), ("hp", 60)) * 0.8,
               norm(bandpass(noise(0.03), 1000, 8000) * env(0.03, 0.00005, 0.003)) * 0.6,
               thump(0.4, 170 * p, 40 * p, 0.025, 0.09) * 1.0)
-    dry = mix(norm(suck) * 0.45 + up * 0.18, at(pop, ds))
+    tick = norm(bandpass(noise(0.02), 1500, 8000) * env(0.02, 0.00005, 0.002))  # contact
+    dry = mix(tick * 0.3, norm(suck) * 0.45 + up * 0.18, at(pop, ds))
     wet = reverb(dry, size=0.9, mix=0.3, damp=2500, er=(7, 13))
     return finish(wet, LOUD_HIT, max_dur=1.1)
 
@@ -765,9 +774,9 @@ def holy_fire(v=0):
     bells = mix(*[chime(1.8, f * p, 0.7, a, ratios=(1, 2.0, 3.0), pamps=(1, 0.2, 0.05), beat=1.2)
                   for f, a in ((1318.5, 1.0), (1760.0, 0.7), (2217.5, 0.45))])
     glit = sparkles(1.6, 26, 2500, 8000, spread=0.5, glen=(0.02, 0.06))
-    boom = echoes(shot, [(0.23 + 0.02 * v, 0.24, 1500), (0.52, 0.13, 1000)])
-    dry = mix(boom, at(voices * 0.22, 0.03), at(norm(bells) * 0.05, 0.05), at(norm(glit) * 0.03, 0.08))
-    wet = reverb(dry, size=2.4, mix=0.3, damp=2600, lo=80, er=(11, 21, 34, 52, 71))
+    boom = echoes(shot, [(0.23 + 0.02 * v, 0.2, 1500), (0.52, 0.11, 1000)])
+    dry = mix(boom, at(voices * 0.6, 0.03), at(norm(bells) * 0.08, 0.05), at(norm(glit) * 0.04, 0.08))
+    wet = reverb(dry, size=2.4, mix=0.25, damp=2600, lo=80, er=(11, 21, 34, 52, 71))
     return finish(wet, LOUD_FIRE + 0.5, max_dur=2.8, fade=0.15)
 
 
@@ -775,16 +784,21 @@ def holy_hit(v=0):
     p = PITCH[v]
     base = (523.25, 587.33)[v] * p
     ratios = (0.5, 1.0, 1.2, 1.5, 2.0, 2.5, 2.67, 3.0, 4.0)
-    decs = (0.9, 0.7, 0.55, 0.45, 0.4, 0.25, 0.2, 0.15, 0.1)
-    amps = (0.5, 0.8, 0.55, 0.35, 1.0, 0.3, 0.2, 0.18, 0.08)
-    bell = modal(2.2, [base * r for r in ratios], decs, amps)
-    bell2 = modal(2.2, [base * 1.5 * r for r in ratios], [d * 0.8 for d in decs], amps)
+    decs = (0.55, 0.5, 0.42, 0.36, 0.34, 0.2, 0.16, 0.12, 0.08)
+    amps = (0.35, 0.8, 0.55, 0.35, 1.0, 0.3, 0.2, 0.18, 0.08)
+
+    def bell(f0, k):
+        fr = [f0 * r * (1 + d) for r in ratios for d in (-0.0012, 0.0012)]  # doublets -> shimmer
+        return modal(1.9, fr, [d * k for d in decs for _ in (0, 1)], [a for a in amps for _ in (0, 1)])
+
     strike = norm(bandpass(noise(0.03), 1000, 7000) * env(0.03, 0.00005, 0.003))
-    radiance = bandpass(noise(0.6), 1800, 10000) * env(0.6, 0.006, 0.12)
+    radiance = sweep_noise(0.7, 1500, 6000, bw=2.2, curve=0.5) * env(0.7, 0.004, 0.14)
     thud = thump(0.3, 115 * p, 45 * p, 0.02, 0.07)
-    dry = mix(norm(bell) * 0.55, norm(bell2) * 0.3, strike * 0.5, norm(radiance) * 0.16, thud * 0.45)
+    glit = sparkles(1.0, 22, 2000, 7000, spread=0.25, glen=(0.015, 0.05))
+    dry = mix(norm(bell(base, 1.0)) * 0.55, norm(bell(base * 1.5, 0.8)) * 0.3, strike * 0.5,
+              radiance * 0.18, thud * 0.45, norm(glit) * 0.06)
     wet = reverb(dry, size=1.8, mix=0.3, damp=4500, er=(8, 15, 25))
-    return finish(wet, LOUD_HIT + 0.5, max_dur=2.3, fade=0.12)
+    return finish(wet, LOUD_HIT + 0.5, max_dur=2.0, fade=0.12)
 
 
 SOUNDS = {
@@ -798,10 +812,11 @@ SOUNDS = {
 }
 
 
-def render(name, v=0):
+def render(name, v=0, ceiling=-1.3):
     """Deterministic render of one variant (v = 0 is the base file)."""
-    global rng
+    global rng, _CEIL
     rng = np.random.default_rng(zlib.crc32(f"{name}:{v}".encode()))
+    _CEIL = ceiling
     return SOUNDS[name](v)
 
 
@@ -822,18 +837,38 @@ def _encode(x, path):
         os.unlink(wav_path)
 
 
+def _decoded_peak(path):
+    raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", path, "-f", "s16le", "-ac", "1", "-"],
+                         capture_output=True, check=True).stdout
+    return 20 * np.log10(np.max(np.abs(np.frombuffer(raw, "<i2"))) / 32768 + 1e-9)
+
+
 def write_ogg(x, path, max_peak=-1.0):
-    """Encode, decode again and, if the lossy codec overshot the -1 dBFS
-    ceiling, turn the PCM down by the overshoot and re-encode."""
+    """Encode and return the decoded peak (dBFS); if the codec overshot
+    max_peak the PCM is turned down by the overshoot and re-encoded."""
     for _ in range(4):
         _encode(x, path)
-        raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", path, "-f", "s16le", "-ac", "1", "-"],
-                             capture_output=True, check=True).stdout
-        pk = 20 * np.log10(np.max(np.abs(np.frombuffer(raw, "<i2"))) / 32768 + 1e-9)
+        pk = _decoded_peak(path)
         if pk <= max_peak:
-            return pk
-        x = x * 10 ** ((max_peak - 0.1 - pk) / 20)
+            break
+        x = x * 10 ** ((max_peak - 0.05 - pk) / 20)
     return pk
+
+
+def write_sound(name, v, path, max_peak=-1.0):
+    """Render + encode.  Lossy Vorbis can overshoot the limiter ceiling on
+    dense transients, so the variant is re-rendered (deterministically) with
+    the ceiling lowered by the overshoot: loudness stays on target and the
+    decoded file peaks at or below max_peak."""
+    ceil = -1.3
+    for _ in range(5):
+        x = render(name, v, ceil)
+        _encode(x, path)
+        pk = _decoded_peak(path)
+        if pk <= max_peak:
+            return x, pk
+        ceil -= pk - max_peak + 0.1
+    return x, write_ogg(x, path, max_peak)
 
 
 def main(rp_dir):
@@ -841,9 +876,8 @@ def main(rp_dir):
     os.makedirs(out_dir, exist_ok=True)
     for name in SOUNDS:
         for v in range(VARIANTS.get(name, 1)):
-            x = render(name, v)
             fname = name + ("" if v == 0 else f"_{v + 1}")
-            pk = write_ogg(x, os.path.join(out_dir, fname + ".ogg"))
+            x, pk = write_sound(name, v, os.path.join(out_dir, fname + ".ogg"))
             print("sound", fname, "%.2fs  peak %.1f dBFS" % (len(x) / SR, pk))
 
 

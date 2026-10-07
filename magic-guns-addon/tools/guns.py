@@ -198,7 +198,7 @@ def frostbite_rifle():
     m = Model("frostbite_rifle", palette(
         ice=glow(FROST, (0.20, 0.55, 0.85)),
         frost_coil=coil(FROST_STEEL, FROST, 4),
-        rune_frost=inset(runes(FROST_STEEL, FROST, 0.4), (0.62, 0.08, 0.82, 0.3), faces=("east",)),
+        rune_frost=inset(runes(FROST_STEEL, FROST, 0.4), (0.62, 0.08, 0.82, 0.3)),
         barrel=inset(FROST_STEEL, (0.03, 0.4, 0.97, 0.6), inner=(0.25, 0.32, 0.40)),
         brake=slots(SILVER, n=3, rect=(0.15, 0.3, 0.85, 0.7), glow_rgb=FROST),
         rail=rail(GUNMETAL),

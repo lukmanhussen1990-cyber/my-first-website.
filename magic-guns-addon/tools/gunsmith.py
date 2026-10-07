@@ -304,18 +304,19 @@ def wood(base, dark, rings=5.0, pores=1.0, sheen=0.14):
         else:
             along, across = (xx, yy) if ctx.grain_along_u else (yy, xx)
             length = float(w if ctx.grain_along_u else h)
-            warp = (_smooth_noise(rng, h, w, max(4.0, length / 3.0)) - 0.5) * 5.0
+            warp = (_smooth_noise(rng, h, w, max(5.0, length / 2.0)) - 0.5) * 2.6
             c0 = rng.uniform(0.25, 0.75) * length
-            arch = ((along - c0) / max(length, 1.0)) ** 2 * rng.uniform(5, 12) * (1 if rng.random() < 0.5 else -1)
+            arch = ((along - c0) / max(length, 1.0)) ** 2 * rng.uniform(2, 6) * (1 if rng.random() < 0.5 else -1)
             ring = across + warp + arch
         phase = (ring / rings + rng.random()) % 1.0
-        late = np.clip(1 - phase / 0.28, 0, 1) ** 1.5
-        t = np.clip(late * 0.75 + (1 - phase) * 0.22, 0, 1)
+        late = np.clip(1 - phase / 0.24, 0, 1) ** 1.8
+        t = np.clip(late * 0.62 + (1 - phase) * 0.2, 0, 1)
         img = _mix(np.broadcast_to(light, (h, w, 3)), dark, t)
-        img += (_fbm(rng, h, w, 3) - 0.5)[..., None] * 0.05
+        img += _streaks(ctx, 1.0, 0.05)[..., None]
+        img += (_fbm(rng, h, w, 3) - 0.5)[..., None] * 0.03
         if pores and h >= 3 and w >= 3:
             pm = np.zeros((h, w))
-            for _ in range(int(h * w / 12 * pores)):
+            for _ in range(int(h * w / 22 * pores)):
                 y0, x0 = int(rng.integers(0, h)), int(rng.integers(0, w))
                 ln = int(rng.integers(1, 4))
                 if ctx.end_face:
@@ -324,7 +325,7 @@ def wood(base, dark, rings=5.0, pores=1.0, sheen=0.14):
                     pm[y0, x0:x0 + ln] = 1
                 else:
                     pm[y0:y0 + ln, x0] = 1
-            img = _mix(img, dark * 0.8, pm * 0.3)
+            img = _mix(img, dark * 0.8, pm * 0.2)
         img = _mix(img, np.minimum(light * 1.25 + 0.05, 1), _spec_band(ctx, 0.3, 0.18, 1.0) * sheen)
         img = _ao(img, ctx, 0.3)
         if ctx.is_down:
@@ -497,11 +498,11 @@ def patina(copper=(0.72, 0.43, 0.29), green=(0.29, 0.62, 0.52)):
         h, w = ctx.h, ctx.w
         img, g = base_paint(ctx)
         n = _fbm(rng, h, w, 5, 3)
-        amt = np.clip((n - 0.42) * 3.0, 0, 1)
+        amt = np.clip((n - 0.52) * 3.5, 0, 1)
         if h >= 3 and w >= 3:
             t, b, l, r = _edge_dist(h, w)
-            occ = np.exp(-np.minimum(b, np.minimum(l, r)) / 1.5)
-            amt = np.clip(amt + occ * 0.55, 0, 1)
+            occ = np.exp(-np.minimum(b, np.minimum(l, r)) / 1.1)
+            amt = np.clip(amt + occ * 0.6, 0, 1)
             if ctx.is_side:
                 amt[0, :] *= 0.15
         verd = _mix(np.broadcast_to(green, (h, w, 3)), verd_hi, (rng.random((h, w)) > 0.8) * 0.6)
