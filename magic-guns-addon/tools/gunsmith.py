@@ -939,6 +939,60 @@ def inset(paint_fn, rect, faces=("east", "west"), inner=(0.03, 0.03, 0.04), glow
     return paint
 
 
+def holes(paint_fn, spots, size=2, faces=("north",), inner=(0.03, 0.03, 0.04), glow_rgb=None):
+    """Round-ish bores / chambers (size x size texels) centred on (u, v)
+    fractions.  With `glow_rgb` they burn with the gun's magic."""
+    glow_rgb = _c(glow_rgb) if glow_rgb is not None else None
+    inner = _c(inner)
+
+    def paint(ctx):
+        img, g = paint_fn(ctx)
+        img, g = img.copy(), g.copy()
+        h, w = ctx.h, ctx.w
+        if ctx.face not in faces or h < size or w < size:
+            return img, g
+        for (u, v) in spots:
+            if ctx.face == "west":
+                u = 1 - u
+            x0 = int(np.clip(round(u * w - size / 2.0), 0, w - size))
+            y0 = int(np.clip(round(v * h - size / 2.0), 0, h - size))
+            _recess(img, g, y0, y0 + size, x0, x0 + size, inner, glow_rgb)
+            if size >= 3:  # knock the corners off -> rounder bore
+                for (yy, xx) in ((y0, x0), (y0, x0 + size - 1), (y0 + size - 1, x0), (y0 + size - 1, x0 + size - 1)):
+                    img[yy, xx] = img[yy, xx] * 0.6 + (glow_rgb * 0.4 if glow_rgb is not None else inner * 0.4)
+        return img, g
+    return paint
+
+
+def feathers(base, dark, tip=None):
+    """Feather plates: lit vane with a pale shaft down the middle, fine
+    diagonal barbs, darker edges and an optional gilded tip."""
+    base, dark = _c(base), _c(dark)
+    tip = _c(tip) if tip is not None else None
+    shaft_c = np.minimum(base * 1.1 + 0.08, 1)
+
+    def paint(ctx):
+        h, w = ctx.h, ctx.w
+        yy, xx = _grid(h, w)
+        along, across = (xx, yy) if ctx.grain_along_u else (yy, xx)
+        span = float(h if ctx.grain_along_u else w)
+        c = (span - 1) / 2.0
+        d = np.abs(across - c) / max(1.0, span / 2.0)
+        img = _mix(np.broadcast_to(base, (h, w, 3)), dark, np.clip(d, 0, 1) ** 2 * 0.65)
+        barbs = ((along + np.abs(across - c)) % 3) < 1
+        img = img * (1 - barbs * 0.1)[..., None]
+        if span >= 3:
+            shaft = np.abs(across - c) < 0.6
+            img[shaft] = shaft_c
+        if tip is not None and ctx.is_side and not ctx.grain_along_u and h >= 6:
+            k = max(2, int(h * 0.18))
+            img[:k] = _mix(img[:k], tip, 0.85)
+        img = _ao(img, ctx, 0.18)
+        img = _bevel(img, ctx, 0.08, 0.12)
+        return img, np.zeros((h, w))
+    return paint
+
+
 def rail(paint_fn, period=4, axis=2):
     """Picatinny-style rail: raised cross ridges on the top face and matching
     notches along the top edge of the flanks."""
