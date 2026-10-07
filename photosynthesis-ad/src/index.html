@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Powered by Sunlight</title>
+<style>
+  @font-face { font-family: 'Fraunces Text'; src: url(fonts/FrauncesText.ttf); }
+  @font-face { font-family: 'Fraunces Title'; src: url(fonts/FrauncesTitle.ttf); }
+  @font-face { font-family: 'Fraunces Italic'; src: url(fonts/FrauncesItalic.ttf); }
+  @font-face { font-family: 'DM Sans Label'; src: url(fonts/DMSansLabel.ttf); }
+  @font-face { font-family: 'DM Sans Label Bold'; src: url(fonts/DMSansLabelBold.ttf); }
+  @font-face { font-family: 'DM Sans Medium'; src: url(fonts/DMSansMedium.ttf); }
+  @font-face { font-family: 'DM Sans Display'; src: url(fonts/DMSansDisplayBold.ttf); }
+  html, body { margin: 0; padding: 0; background: #F4EDDC; overflow: hidden; }
+  body.alpha { background: transparent; }
+  body.alpha #art { display: none; }
+  #stage { position: relative; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  canvas { position: absolute; left: 0; top: 0; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="art" width="1920" height="1080"></canvas>
+  <canvas id="text" width="1920" height="1080"></canvas>
+</div>
+<script src="js/core.js"></script>
+<script src="js/shapes.js"></script>
+<script src="js/scene.js"></script>
+<script>
+  // Fonts must be ready before any text is measured or drawn.
+  window.ready = (async () => {
+    const faces = ["64px 'Fraunces Text'", "116px 'Fraunces Title'", "56px 'Fraunces Italic'",
+      "30px 'DM Sans Label'", "30px 'DM Sans Label Bold'", "40px 'DM Sans Medium'", "92px 'DM Sans Display'"];
+    await Promise.all(faces.map((f) => document.fonts.load(f, 'AaCO2')));
+    await document.fonts.ready;
+    return true;
+  })();
+
+  // Live preview: open index.html?play (served over http) to watch it in real time.
+  const params = new URLSearchParams(location.search);
+  if (params.has('play')) {
+    window.ready.then(() => {
+      const stage = document.getElementById('stage');
+      const fit = () => { const s = Math.min(innerWidth / 1920, innerHeight / 1080); stage.style.transform = `scale(${s})`; };
+      fit(); addEventListener('resize', fit);
+      const audio = params.get('audio') ? new Audio(params.get('audio')) : null;
+      let t0 = performance.now();
+      if (audio) audio.play().catch(() => {});
+      const loop = (now) => {
+        const t = ((now - t0) / 1000) % 25;
+        if (t < 0.05 && audio && audio.paused) audio.play().catch(() => {});
+        PS.renderFrame(t);
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    });
+  }
+</script>
+</body>
+</html>
