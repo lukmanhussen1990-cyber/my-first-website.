@@ -1,6 +1,8 @@
 package com.myapps.blockblast
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -13,7 +15,9 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.myapps.blockblast/haptics")
+        val messenger = flutterEngine.dartExecutor.binaryMessenger
+
+        MethodChannel(messenger, "com.myapps.blockblast/haptics")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "vibrate" -> {
@@ -25,6 +29,46 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+
+        MethodChannel(messenger, "com.myapps.blockblast/platform")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    // Google Play purchase signature check (see PurchaseSecurity).
+                    "verifyPurchase" -> {
+                        val signedData = call.argument<String>("signedData") ?: ""
+                        val signature = call.argument<String>("signature") ?: ""
+                        result.success(PurchaseSecurity.verify(BuildConfig.PLAY_LICENSE_KEY, signedData, signature))
+                    }
+                    "isLicenseKeyConfigured" -> result.success(BuildConfig.PLAY_LICENSE_KEY.isNotBlank())
+                    "installerPackage" -> result.success(installerPackage())
+                    "openUrl" -> {
+                        val url = call.argument<String>("url") ?: ""
+                        result.success(openUrl(url))
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+    }
+
+    private fun installerPackage(): String? = try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            packageManager.getInstallSourceInfo(packageName).installingPackageName
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.getInstallerPackageName(packageName)
+        }
+    } catch (_: Exception) {
+        null
+    }
+
+    private fun openUrl(url: String): Boolean {
+        if (!url.startsWith("https://")) return false
+        return try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 
     private fun vibrate(ms: Long, amplitude: Int) {

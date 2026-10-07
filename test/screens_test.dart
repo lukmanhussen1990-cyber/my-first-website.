@@ -35,7 +35,7 @@ void main() {
     SettingsStore.memory();
   });
 
-  testWidgets('splash sequence runs into the game screen', (tester) async {
+  testWidgets('splash sequence runs into the home screen', (tester) async {
     phone(tester);
     await tester.pumpWidget(const MaterialApp(home: IconSplashScreen()));
     await pumpFrames(tester, 10);
@@ -43,9 +43,12 @@ void main() {
     // 2 s icon splash, then the loading splash.
     await pumpFrames(tester, 140);
     expect(find.byType(LoadingSplashScreen), findsOneWidget);
-    // Studio logo, BLOCK BLAST logo + loader, then the game.
+    // Studio logo, BLOCK BLAST logo + loader, then the home screen.
     await pumpFrames(tester, 300);
-    expect(find.byType(GameScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.text('CREATED BY IMRAN'), findsOneWidget);
+    // Let the home animations finish so the test ends cleanly.
+    await pumpFrames(tester, 800);
     expect(tester.takeException(), isNull);
   });
 
@@ -75,7 +78,8 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
     await pumpFrames(tester, 10);
-    expect(gradientSize(), screen);
+    expect(tester.getSize(find.byKey(const ValueKey('home-backdrop'))), screen);
+    await pumpFrames(tester, 800);
 
     await tester.pumpWidget(const MaterialApp(home: LoadingSplashScreen()));
     await pumpFrames(tester, 10);
@@ -101,7 +105,7 @@ void main() {
     await pumpFrames(tester, 70);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(
-      MaterialApp(home: Scaffold(body: SettingsPopup(onClose: () {}, onRestart: () {}, onHowToPlay: () {}))),
+      MaterialApp(home: Scaffold(body: SettingsPopup(onClose: () {}, onRestart: () {}, onHowToPlay: () {}, onSkins: () {}, onAbout: () {}))),
     );
     await pumpFrames(tester, 40);
     expect(tester.takeException(), isNull);

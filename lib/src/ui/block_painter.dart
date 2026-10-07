@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/painting.dart';
 
 import 'palette.dart';
+import 'skins.dart';
 
 /// Draws one glossy, beveled 3D block filling [rect].
 ///
@@ -73,22 +74,22 @@ void paintBlockVector(Canvas canvas, Rect rect, BlockColors k) {
   );
 }
 
-/// Caches pre-rendered block images per color and pixel size so the board
-/// can be drawn with cheap image blits every frame.
+/// Caches pre-rendered block images per skin, color and pixel size so the
+/// board can be drawn with cheap image blits every frame.
 class BlockSprites {
   BlockSprites._();
   static final BlockSprites instance = BlockSprites._();
 
   final Map<int, ui.Image> _cache = {};
 
-  ui.Image get(int color, double sizePx) {
+  ui.Image get(int color, double sizePx, [BlockSkin skin = BlockSkin.classic]) {
     final px = sizePx.round().clamp(4, 512);
-    final key = color * 1000 + px;
+    final key = (skin.index * Palette.blocks.length + color) * 1000 + px;
     final cached = _cache[key];
     if (cached != null) return cached;
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
-    paintBlockVector(canvas, Rect.fromLTWH(0, 0, px.toDouble(), px.toDouble()), Palette.blocks[color]);
+    paintSkinBlock(canvas, Rect.fromLTWH(0, 0, px.toDouble(), px.toDouble()), Palette.blocks[color], skin);
     final picture = recorder.endRecording();
     final image = picture.toImageSync(px, px);
     picture.dispose();
@@ -107,11 +108,12 @@ class BlockSprites {
 final Paint _spritePaint = Paint()..filterQuality = FilterQuality.medium;
 
 /// Draws a block of [color] into [rect] using a cached sprite that is
-/// [spritePx] pixels wide (quantized so animations reuse the same images).
-void drawBlock(Canvas canvas, Rect rect, int color, double spritePx, {double opacity = 1.0}) {
+/// [spritePx] pixels wide (quantized so animations reuse the same images),
+/// in the active skin unless [skin] is given.
+void drawBlock(Canvas canvas, Rect rect, int color, double spritePx, {double opacity = 1.0, BlockSkin? skin}) {
   if (opacity <= 0.0 || rect.width <= 0.5) return;
   final q = ((spritePx / 8).ceil() * 8).toDouble();
-  final img = BlockSprites.instance.get(color, q);
+  final img = BlockSprites.instance.get(color, q, skin ?? ActiveSkin.value);
   final src = Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble());
   if (opacity >= 1.0) {
     canvas.drawImageRect(img, src, rect, _spritePaint);

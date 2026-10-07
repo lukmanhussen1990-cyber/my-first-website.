@@ -22,6 +22,7 @@ class GameLayout {
   final Offset bestAnchor;
   final double bestFont;
   final Rect gearRect;
+  final Rect hintRect;
   final Offset scoreCenter;
   final double scoreFont;
 
@@ -37,6 +38,7 @@ class GameLayout {
     required this.bestAnchor,
     required this.bestFont,
     required this.gearRect,
+    required this.hintRect,
     required this.scoreCenter,
     required this.scoreFont,
   });
@@ -76,6 +78,7 @@ class GameLayout {
       bestAnchor: Offset(cx - 45.0 * u, topY),
       bestFont: 7.4 * u,
       gearRect: Rect.fromCenter(center: Offset(cx + 40.5 * u, topY), width: 9.0 * u, height: 9.0 * u),
+      hintRect: Rect.fromCenter(center: Offset(cx + 27.5 * u, topY), width: 9.0 * u, height: 9.0 * u),
       scoreCenter: Offset(cx, scoreCenterY),
       scoreFont: 18.0 * u,
     );

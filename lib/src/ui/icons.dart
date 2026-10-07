@@ -5,6 +5,7 @@ import 'package:flutter/painting.dart';
 
 import 'block_painter.dart';
 import 'palette.dart';
+import 'skins.dart';
 
 /// Gold crown (best score marker and logo decoration).
 void paintCrown(Canvas canvas, Rect r) {
@@ -118,7 +119,7 @@ void paintAppIcon(Canvas canvas, Rect r, {bool rounded = true, double spritePx =
     [0, 1],
     [1, 0],
   ]) {
-    drawBlock(canvas, at(rc[0].toDouble(), rc[1].toDouble()), red, spritePx);
+    drawBlock(canvas, at(rc[0].toDouble(), rc[1].toDouble()), red, spritePx, skin: BlockSkin.classic);
   }
   for (final rc in const [
     [2, 0],
@@ -126,14 +127,14 @@ void paintAppIcon(Canvas canvas, Rect r, {bool rounded = true, double spritePx =
     [3, 0],
     [3, 1],
   ]) {
-    drawBlock(canvas, at(rc[0].toDouble(), rc[1].toDouble()), green, spritePx);
+    drawBlock(canvas, at(rc[0].toDouble(), rc[1].toDouble()), green, spritePx, skin: BlockSkin.classic);
   }
   for (final rc in const [
     [2, 3],
     [3, 2],
     [3, 3],
   ]) {
-    drawBlock(canvas, at(rc[0].toDouble(), rc[1].toDouble()), blue, spritePx);
+    drawBlock(canvas, at(rc[0].toDouble(), rc[1].toDouble()), blue, spritePx, skin: BlockSkin.classic);
   }
   // Floating yellow piece with a soft shadow, as if being dragged.
   const fr = 0.6, fc = 1.55;
@@ -152,7 +153,7 @@ void paintAppIcon(Canvas canvas, Rect r, {bool rounded = true, double spritePx =
     [0.0, 1.0],
     [1.0, 1.0],
   ]) {
-    drawBlock(canvas, at(fr + rc[0], fc + rc[1]), yellow, spritePx);
+    drawBlock(canvas, at(fr + rc[0], fc + rc[1]), yellow, spritePx, skin: BlockSkin.classic);
   }
   canvas.restore();
 }
@@ -193,4 +194,68 @@ void paintDiamond(Canvas canvas, Offset center, double w, double h) {
       ..strokeWidth = w * 0.025
       ..color = const Color(0x66FFFFFF),
   );
+}
+
+/// Hint light bulb for the top bar (dim when no hints are left).
+void paintLightBulb(Canvas canvas, Rect r, {bool lit = true}) {
+  final w = r.width, h = r.height;
+  final c = Offset(r.center.dx, r.top + h * 0.40);
+  final radius = w * 0.31;
+  if (lit) {
+    canvas.drawCircle(
+      c,
+      radius * 1.5,
+      Paint()
+        ..color = const Color(0x66FFE066)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.1),
+    );
+  }
+  final neck = Path()
+    ..moveTo(c.dx - radius * 0.64, c.dy + radius * 0.6)
+    ..lineTo(c.dx + radius * 0.64, c.dy + radius * 0.6)
+    ..lineTo(c.dx + radius * 0.44, r.top + h * 0.80)
+    ..lineTo(c.dx - radius * 0.44, r.top + h * 0.80)
+    ..close();
+  final shadow = Paint()..color = const Color(0xFF2A3D78);
+  canvas.drawCircle(c + Offset(0, h * 0.04), radius, shadow);
+  canvas.drawPath(neck.shift(Offset(0, h * 0.04)), shadow);
+  final glass = Paint()
+    ..shader = ui.Gradient.linear(
+      Offset(r.center.dx, c.dy - radius),
+      Offset(r.center.dx, r.top + h * 0.8),
+      lit ? const [Color(0xFFFFF7B8), Color(0xFFFFC21F)] : const [Color(0xFFE3E8F2), Color(0xFFAEB8CC)],
+    );
+  canvas.drawCircle(c, radius, glass);
+  canvas.drawPath(neck, glass);
+  // Filament.
+  final filament = Path()
+    ..moveTo(c.dx - radius * 0.34, c.dy + radius * 0.58)
+    ..lineTo(c.dx - radius * 0.22, c.dy - radius * 0.02)
+    ..lineTo(c.dx, c.dy + radius * 0.26)
+    ..lineTo(c.dx + radius * 0.22, c.dy - radius * 0.02)
+    ..lineTo(c.dx + radius * 0.34, c.dy + radius * 0.58);
+  canvas.drawPath(
+    filament,
+    Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.045
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..color = lit ? const Color(0xFFD9822B) : const Color(0xFF8590A8),
+  );
+  // Screw base.
+  final base = RRect.fromRectAndRadius(
+    Rect.fromLTRB(c.dx - radius * 0.5, r.top + h * 0.79, c.dx + radius * 0.5, r.top + h * 0.96),
+    Radius.circular(w * 0.05),
+  );
+  canvas.drawRRect(base, Paint()..color = const Color(0xFF8E9BC0));
+  canvas.drawLine(
+    Offset(base.left + w * 0.02, r.top + h * 0.875),
+    Offset(base.right - w * 0.02, r.top + h * 0.875),
+    Paint()
+      ..color = const Color(0xFF55618A)
+      ..strokeWidth = w * 0.035,
+  );
+  // Glass highlight.
+  canvas.drawCircle(c + Offset(-radius * 0.38, -radius * 0.36), radius * 0.18, Paint()..color = const Color(0xB3FFFFFF));
 }

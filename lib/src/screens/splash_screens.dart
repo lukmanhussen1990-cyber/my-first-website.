@@ -4,12 +4,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../game/game_screen.dart';
 import '../services/sound.dart';
 import '../ui/block_painter.dart';
 import '../ui/icons.dart';
 import '../ui/palette.dart';
 import '../widgets/logo.dart';
+import 'home_screen.dart';
 import 'transitions.dart';
 
 /// Splash 1: plain white background with the app icon (~2 seconds).
@@ -115,7 +115,7 @@ class _LoadingSplashScreenState extends State<LoadingSplashScreen> with TickerPr
     });
     _t2 = Timer(const Duration(milliseconds: 4100), () {
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(fadeRoute(const GameScreen(), ms: 450));
+      Navigator.of(context).pushReplacement(fadeRoute(const HomeScreen(), ms: 450));
     });
   }
 

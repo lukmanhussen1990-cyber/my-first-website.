@@ -2,20 +2,23 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/animation.dart';
+import 'package:flutter/foundation.dart' show Listenable;
 import 'package:flutter/rendering.dart';
 
 import '../logic/board.dart';
 import '../logic/game.dart';
+import '../premium/premium_service.dart';
 import '../ui/block_painter.dart';
 import '../ui/fancy_text.dart';
 import '../ui/icons.dart';
 import '../ui/palette.dart';
+import '../ui/skins.dart';
 import 'game_controller.dart';
 import 'layout.dart';
 
 /// Paints the whole game screen (except popups) in one pass.
 class GamePainter extends CustomPainter {
-  GamePainter(this.ctrl, this.dpr) : super(repaint: ctrl);
+  GamePainter(this.ctrl, this.dpr) : super(repaint: Listenable.merge([ctrl, ActiveSkin.notifier]));
 
   final GameController ctrl;
   final double dpr;
@@ -37,12 +40,27 @@ class GamePainter extends CustomPainter {
     if (l == null) return;
     _paintTopBar(canvas, l);
     _paintScore(canvas, l);
+    final shaking = ctrl.shake > 0;
+    if (shaking) {
+      // Short decaying jolt after big clears.
+      final t = (1 - ctrl.shake) * 0.35;
+      final a = l.u * 0.8 * ctrl.shake;
+      canvas.save();
+      canvas.translate(math.sin(t * 70) * a, math.cos(t * 55) * a * 0.5);
+    }
     _paintBoard(canvas, l);
     _paintTray(canvas, l);
+    if (shaking) canvas.restore();
     _paintReturning(canvas, l);
     _paintDragged(canvas, l);
     _paintParticles(canvas, l);
     _paintTexts(canvas, l);
+  }
+
+  /// 0..1 pulse used by the hint highlight.
+  double get _hintPulse {
+    if (ctrl.hintT >= GameController.hintPulseSeconds) return 0.5;
+    return 0.5 + 0.5 * math.sin(ctrl.hintT * math.pi * 2 * 1.1);
   }
 
   // ---------------------------------------------------------------------------
@@ -80,6 +98,56 @@ class GamePainter extends CustomPainter {
     if (bump > 0) canvas.restore();
 
     paintGear(canvas, l.gearRect);
+    _paintHintButton(canvas, l);
+  }
+
+  static TextPainter? _hintCountTp;
+  static String _hintCountStr = '';
+  static double _hintCountSize = 0;
+
+  void _paintHintButton(Canvas canvas, GameLayout l) {
+    final left = ctrl.hintsLeft;
+    final premium = PremiumService.instance.isPremium;
+    final r = l.hintRect;
+    final active = left > 0 && !ctrl.inputLocked;
+    if (!active) {
+      canvas.saveLayer(r.inflate(r.width), Paint()..color = const Color(0x8C000000));
+    }
+    paintLightBulb(canvas, r, lit: left > 0);
+    if (!active) canvas.restore();
+
+    // Badge: hints left, or a small crown when a free player ran out.
+    final badge = Rect.fromLTWH(r.right - r.width * 0.34, r.top - r.height * 0.12, r.width * 0.5, r.width * 0.5);
+    if (left == 0 && !premium) {
+      canvas.drawCircle(badge.center, badge.width / 2, Paint()..color = const Color(0xFF7A3AD0));
+      paintCrown(canvas, badge.deflate(badge.width * 0.16));
+      return;
+    }
+    canvas.drawCircle(
+      badge.center,
+      badge.width / 2,
+      Paint()..color = left > 0 ? const Color(0xFF35B32B) : const Color(0xFF6B7591),
+    );
+    canvas.drawCircle(
+      badge.center,
+      badge.width / 2,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = l.u * 0.35
+        ..color = const Color(0xFFFFFFFF),
+    );
+    final str = '$left';
+    final size = badge.width * 0.62;
+    if (_hintCountTp == null || _hintCountStr != str || _hintCountSize != size) {
+      _hintCountStr = str;
+      _hintCountSize = size;
+      _hintCountTp = TextPainter(
+        text: TextSpan(text: str, style: numberStyle(size, weight: FontWeight.w800)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+    }
+    final tp = _hintCountTp!;
+    tp.paint(canvas, badge.center - Offset(tp.width / 2, tp.height / 2 - size * 0.04));
   }
 
   void _paintScore(Canvas canvas, GameLayout l) {
@@ -216,6 +284,9 @@ class GamePainter extends CustomPainter {
     final board = ctrl.game.board;
     final drag = ctrl.drag;
     final ghost = ctrl.hoverPieceCells();
+    final hintCells = ctrl.hintCells();
+    final hintColor = ctrl.hint != null ? (ctrl.game.tray[ctrl.hint!.slot]?.color ?? 0) : 0;
+    final hintPulse = _hintPulse;
     final lines = drag?.hoverLines ?? LineSet.empty;
     final lineColor = drag?.piece.color ?? 0;
     final linesActive = drag != null && drag.hoverRow != null && lines.isNotEmpty;
@@ -253,6 +324,16 @@ class GamePainter extends CustomPainter {
             } else {
               drawBlock(canvas, l.cellRect(r, c), lineColor, _sprite, opacity: 0.42);
             }
+          } else if (hintCells.contains(idx)) {
+            final rect = l.cellRect(r, c);
+            drawBlock(canvas, rect, hintColor, _sprite, opacity: 0.3 + 0.35 * hintPulse);
+            canvas.drawRect(
+              rect.deflate(l.cell * 0.04),
+              Paint()
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = l.cell * 0.07
+                ..color = Color.fromRGBO(255, 255, 255, 0.45 + 0.45 * hintPulse),
+            );
           }
           continue;
         }
@@ -268,6 +349,10 @@ class GamePainter extends CustomPainter {
         } else {
           drawBlock(canvas, rect, color, _sprite);
           if (gray > 0) drawBlock(canvas, rect, Palette.gray, _sprite, opacity: gray);
+        }
+        if (pop != null) {
+          // Quick white flash as the piece lands.
+          canvas.drawRect(rect, Paint()..color = Color.fromRGBO(255, 255, 255, 0.42 * (1 - pop)));
         }
       }
     }
@@ -368,6 +453,28 @@ class GamePainter extends CustomPainter {
       if (spawn <= 0) continue;
       final s = Curves.easeOutBack.transform(spawn.clamp(0.0, 1.0));
       final fits = game.board.canFitAnywhere(piece.shape);
+      if (ctrl.hint?.slot == i) {
+        final cell = l.trayCell * s;
+        final rect = Rect.fromCenter(
+          center: l.slotCenters[i],
+          width: piece.shape.cols * cell,
+          height: piece.shape.rows * cell,
+        ).inflate(l.u * 2.2);
+        final pulse = _hintPulse;
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(rect, Radius.circular(l.u * 2.5)),
+          Paint()
+            ..color = Color.fromRGBO(255, 236, 140, 0.25 + 0.3 * pulse)
+            ..maskFilter = MaskFilter.blur(BlurStyle.normal, l.u * 1.6),
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(rect, Radius.circular(l.u * 2.5)),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = l.u * 0.5
+            ..color = Color.fromRGBO(255, 244, 190, 0.5 + 0.4 * pulse),
+        );
+      }
       _paintPiece(
         canvas,
         piece,

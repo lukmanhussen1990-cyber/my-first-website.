@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/haptics.dart';
 import '../services/sound.dart';
 import '../ui/fancy_text.dart';
 
@@ -15,11 +16,19 @@ class CandyButton extends StatefulWidget {
     this.width,
     this.height = 56,
     this.fontSize = 22,
+    this.enabled = true,
+    this.leading,
+    this.semanticsLabel,
   });
 
   final String label;
   final VoidCallback onTap;
   final IconData? icon;
+
+  /// Custom leading graphic (used instead of [icon]).
+  final Widget? leading;
+  final bool enabled;
+  final String? semanticsLabel;
   final List<Color> colors;
   final Color edge;
   final double? width;
@@ -32,6 +41,12 @@ class CandyButton extends StatefulWidget {
   static const blueEdge = Color(0xFF1A47A3);
   static const orange = [Color(0xFFFFC65C), Color(0xFFFF8A1F)];
   static const orangeEdge = Color(0xFFB4530A);
+  static const gold = [Color(0xFFFFEA8A), Color(0xFFFFC21F), Color(0xFFF59E0B)];
+  static const goldEdge = Color(0xFFA85F00);
+  static const purple = [Color(0xFFC79BFF), Color(0xFF8A4FE0)];
+  static const purpleEdge = Color(0xFF51239A);
+  static const disabled = [Color(0xFF9AA4BE), Color(0xFF6E7894)];
+  static const disabledEdge = Color(0xFF4A536E);
 
   @override
   State<CandyButton> createState() => _CandyButtonState();
@@ -42,97 +57,136 @@ class _CandyButtonState extends State<CandyButton> {
 
   @override
   Widget build(BuildContext context) {
-    final edgeH = widget.height * 0.1;
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _down = true),
-      onTapCancel: () => setState(() => _down = false),
-      onTapUp: (_) {
-        setState(() => _down = false);
-        Sound.instance.play(Sfx.click);
-        widget.onTap();
-      },
-      child: AnimatedScale(
-        scale: _down ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 80),
-        child: SizedBox(
-          width: widget.width,
-          height: widget.height + edgeH,
-          child: Stack(
-            children: [
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: widget.height,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: widget.edge,
-                    borderRadius: BorderRadius.circular(widget.height * 0.32),
+    final enabled = widget.enabled;
+    final colors = enabled ? widget.colors : CandyButton.disabled;
+    final edge = enabled ? widget.edge : CandyButton.disabledEdge;
+    final h = widget.height;
+    final edgeH = h * 0.12;
+    final radius = BorderRadius.circular(h * 0.32);
+    final gradientStops = colors.length > 2 ? [for (var i = 0; i < colors.length; i++) i / (colors.length - 1)] : null;
+    final pressed = _down && enabled;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: widget.semanticsLabel ?? widget.label,
+      excludeSemantics: true,
+      onTap: enabled ? widget.onTap : null,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) {
+          if (!enabled) return;
+          setState(() => _down = true);
+          Haptics.tick();
+        },
+        onTapCancel: () => setState(() => _down = false),
+        onTapUp: (_) {
+          setState(() => _down = false);
+          if (!enabled) return;
+          Sound.instance.play(Sfx.click);
+          widget.onTap();
+        },
+        child: AnimatedScale(
+          scale: pressed ? 0.96 : 1.0,
+          duration: const Duration(milliseconds: 70),
+          child: SizedBox(
+            width: widget.width,
+            height: h + edgeH,
+            child: Stack(
+              children: [
+                // Edge (the button's side) with a soft shadow below it.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: h,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: edge,
+                      borderRadius: radius,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0x55081230),
+                          offset: Offset(0, pressed ? edgeH * 0.3 : edgeH * 0.8),
+                          blurRadius: pressed ? edgeH : edgeH * 1.8,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                left: 0,
-                right: 0,
-                top: _down ? edgeH * 0.6 : 0,
-                height: widget.height,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: widget.colors,
-                    ),
-                    borderRadius: BorderRadius.circular(widget.height * 0.32),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.5),
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        left: widget.height * 0.25,
-                        right: widget.height * 0.25,
-                        top: widget.height * 0.08,
-                        height: widget.height * 0.28,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.28),
-                            borderRadius: BorderRadius.circular(widget.height),
-                          ),
-                        ),
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 70),
+                  left: 0,
+                  right: 0,
+                  top: pressed ? edgeH * 0.75 : 0,
+                  height: h,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: colors,
+                        stops: gradientStops,
                       ),
-                      Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: widget.height * 0.2),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (widget.icon != null) ...[
-                                  Icon(
-                                    widget.icon,
-                                    color: Colors.white,
-                                    size: widget.fontSize * 1.15,
-                                    shadows: [Shadow(color: widget.edge, offset: const Offset(0, 2))],
-                                  ),
-                                  SizedBox(width: widget.fontSize * 0.35),
-                                ],
-                                Text(
-                                  widget.label,
-                                  style: bubbleStyle(widget.fontSize).copyWith(
-                                    shadows: [Shadow(color: widget.edge, offset: const Offset(0, 2), blurRadius: 0)],
-                                  ),
-                                ),
-                              ],
+                      borderRadius: radius,
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
+                    ),
+                    child: Stack(
+                      children: [
+                        // Glossy band.
+                        Positioned(
+                          left: h * 0.22,
+                          right: h * 0.22,
+                          top: h * 0.07,
+                          height: h * 0.3,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [Colors.white.withValues(alpha: 0.42), Colors.white.withValues(alpha: 0.12)],
+                              ),
+                              borderRadius: BorderRadius.circular(h),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                        Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: h * 0.22),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (widget.leading != null) ...[
+                                    widget.leading!,
+                                    SizedBox(width: widget.fontSize * 0.35),
+                                  ] else if (widget.icon != null) ...[
+                                    Icon(
+                                      widget.icon,
+                                      color: Colors.white,
+                                      size: widget.fontSize * 1.15,
+                                      shadows: [Shadow(color: edge, offset: const Offset(0, 2))],
+                                    ),
+                                    SizedBox(width: widget.fontSize * 0.35),
+                                  ],
+                                  Text(
+                                    widget.label,
+                                    style: bubbleStyle(widget.fontSize).copyWith(
+                                      letterSpacing: widget.fontSize * 0.01,
+                                      shadows: [Shadow(color: edge, offset: const Offset(0, 2), blurRadius: 0)],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

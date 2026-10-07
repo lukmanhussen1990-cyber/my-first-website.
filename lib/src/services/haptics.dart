@@ -30,6 +30,9 @@ class Haptics {
     } catch (_) {}
   }
 
+  /// Barely-there tick when a piece lands.
+  static Future<void> tick() => _vibrate(12, 60, HapticFeedback.selectionClick);
+
   /// Light tap used for line clears.
   static Future<void> light() => _vibrate(25, 90, HapticFeedback.lightImpact);
 

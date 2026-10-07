@@ -79,6 +79,15 @@ class MoveResult {
   bool get isCombo => combo >= 2 && linesCleared > 0;
 }
 
+/// Outcome of a revive: the lines that were emptied (for the animation).
+class ReviveResult {
+  final LineSet lines;
+  final List<ClearedCell> clearedCells;
+  final bool trayRefilled;
+
+  const ReviveResult(this.lines, this.clearedCells, this.trayRefilled);
+}
+
 /// Pure game model: board, tray, score, combo and game-over detection.
 class GameState {
   static const int traySize = 3;
@@ -94,6 +103,10 @@ class GameState {
   int moves;
   bool gameOver;
 
+  /// Hints and revives used in this game (allowances depend on the tier).
+  int hintsUsed;
+  int revivesUsed;
+
   GameState({Random? random})
     : _rng = random ?? Random(),
       board = Board(),
@@ -101,6 +114,8 @@ class GameState {
       score = 0,
       combo = 0,
       moves = 0,
+      hintsUsed = 0,
+      revivesUsed = 0,
       gameOver = false {
     refillTray();
     gameOver = !anyTrayPieceFits();
@@ -113,6 +128,8 @@ class GameState {
     required this.score,
     required this.combo,
     required this.moves,
+    this.hintsUsed = 0,
+    this.revivesUsed = 0,
   }) : _rng = random,
        tray = List<Piece?>.of(tray),
        gameOver = false {
@@ -127,6 +144,8 @@ class GameState {
     int score = 0,
     int combo = 0,
     int moves = 0,
+    int hintsUsed = 0,
+    int revivesUsed = 0,
     Random? random,
   }) {
     assert(tray.length == traySize);
@@ -137,6 +156,8 @@ class GameState {
       score: score,
       combo: combo,
       moves: moves,
+      hintsUsed: hintsUsed,
+      revivesUsed: revivesUsed,
     );
   }
 
@@ -210,6 +231,45 @@ class GameState {
   }
 
   // ---------------------------------------------------------------------------
+  // Revive
+  // ---------------------------------------------------------------------------
+
+  /// Second chance after the game ended: empties the two fullest rows and
+  /// the two fullest columns (no points, combo resets) and makes sure at
+  /// least one tray piece fits again. Returns null when the game isn't over.
+  ReviveResult? revive() {
+    if (!gameOver) return null;
+    int filledRow(int r) => [for (var c = 0; c < Board.size; c++) board.isEmptyAt(r, c) ? 0 : 1].fold(0, (a, b) => a + b);
+    int filledCol(int c) => [for (var r = 0; r < Board.size; r++) board.isEmptyAt(r, c) ? 0 : 1].fold(0, (a, b) => a + b);
+    // Fullest first; ties go to lines nearer the middle (more useful space).
+    int byFill(int a, int b, int Function(int) fill) {
+      final d = fill(b).compareTo(fill(a));
+      if (d != 0) return d;
+      return (2 * a - 7).abs().compareTo((2 * b - 7).abs());
+    }
+
+    final rows = List<int>.generate(Board.size, (i) => i)..sort((a, b) => byFill(a, b, filledRow));
+    final cols = List<int>.generate(Board.size, (i) => i)..sort((a, b) => byFill(a, b, filledCol));
+    final lines = LineSet(rows.take(2).toList()..sort(), cols.take(2).toList()..sort());
+    final cleared = board.clearLines(lines);
+    combo = 0;
+    revivesUsed++;
+    var refilled = false;
+    if (!anyTrayPieceFits()) {
+      refillTray();
+      refilled = true;
+    }
+    if (!anyTrayPieceFits()) {
+      // Practically impossible after emptying four lines, but never leave
+      // the player stuck: a single block always fits.
+      tray[0] = Piece(kShapeById['dot']!, _rng.nextInt(kColorCount));
+      refilled = true;
+    }
+    gameOver = false;
+    return ReviveResult(lines, cleared, refilled);
+  }
+
+  // ---------------------------------------------------------------------------
   // Piece generation
   // ---------------------------------------------------------------------------
 
@@ -252,10 +312,12 @@ class GameState {
     }
   }
 
+  static bool _setFullyPlaceable(Board board, List<Piece> pieces) => canPlaceAll(board, pieces);
+
   /// Depth-first search: can all [pieces] be placed in some order (clearing
-  /// lines in between)? Bounded so it never stalls the UI thread.
-  static bool _setFullyPlaceable(Board board, List<Piece> pieces) {
-    var budget = 6000;
+  /// lines in between)? Bounded by [budget] placement checks so it never
+  /// stalls the UI thread (an exhausted search counts as "yes").
+  static bool canPlaceAll(Board board, List<Piece> pieces, {int budget = 6000}) {
     bool solve(Board b, List<Piece> remaining) {
       if (remaining.isEmpty) return true;
       for (var i = 0; i < remaining.length; i++) {
@@ -288,6 +350,8 @@ class GameState {
     'score': score,
     'combo': combo,
     'moves': moves,
+    'hints': hintsUsed,
+    'revives': revivesUsed,
   };
 
   /// Restores a saved game. Returns null for missing/corrupt/finished data.
@@ -307,6 +371,9 @@ class GameState {
         score: (json['score'] as num).toInt(),
         combo: (json['combo'] as num?)?.toInt() ?? 0,
         moves: (json['moves'] as num?)?.toInt() ?? 0,
+        // Added in 1.1; saves from 1.0 have neither.
+        hintsUsed: (json['hints'] as num?)?.toInt() ?? 0,
+        revivesUsed: (json['revives'] as num?)?.toInt() ?? 0,
       );
       if (state.gameOver) return null;
       return state;

@@ -16,6 +16,15 @@ class DebugScenarios {
 
   static bool get skipSplash => kIsWeb && Uri.base.queryParameters.containsKey('game');
 
+  /// `?screen=home|premium` opens that screen directly (web QA only).
+  static String? get screen => kIsWeb ? Uri.base.queryParameters['screen'] : null;
+
+  /// `?premium=1` simulates an active subscription (web QA only).
+  static bool get premiumPreview => kIsWeb && Uri.base.queryParameters['premium'] == '1';
+
+  /// `?skin=neon` picks a block skin (web QA only).
+  static String? get skin => kIsWeb ? Uri.base.queryParameters['skin'] : null;
+
   static Board _board(List<String> rows) {
     final b = Board();
     for (var r = 0; r < 8; r++) {

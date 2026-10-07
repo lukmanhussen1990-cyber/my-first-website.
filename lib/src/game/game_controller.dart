@@ -5,7 +5,10 @@ import 'package:flutter/foundation.dart';
 
 import '../logic/board.dart';
 import '../logic/game.dart';
+import '../logic/hint.dart';
 import '../logic/shapes.dart';
+import '../premium/premium_service.dart';
+import '../services/ads_service.dart';
 import '../services/haptics.dart';
 import '../services/settings_store.dart';
 import '../services/sound.dart';
@@ -112,7 +115,10 @@ class ReturnAnim {
   ReturnAnim(this.slot, this.piece, this.fromCenter, this.fromCell);
 }
 
-enum OverPhase { none, waiting, graying, popup }
+/// Game-over sequence: short pause, optional revive offer, gray sweep, popup.
+enum OverPhase { none, waiting, reviveOffer, graying, popup }
+
+enum HintOutcome { shown, noneLeft, noMove }
 
 /// Owns the game model plus every animation on the game screen.
 class GameController extends ChangeNotifier {
@@ -163,8 +169,19 @@ class GameController extends ChangeNotifier {
   double comboFlash = 0;
   int lastComboColor = 0;
 
+  /// 1 -> 0 board shake after big clears.
+  double shake = 0;
+
+  /// Suggested move currently highlighted, and its animation clock.
+  Hint? hint;
+  double hintT = 0;
+  static const double hintPulseSeconds = 5;
+
   /// Called by the screen when the game-over popup should appear.
   VoidCallback? onShowGameOver;
+
+  /// Called when the player is stuck and may revive.
+  VoidCallback? onShowRevive;
 
   bool get isGameOver => game.gameOver;
 
@@ -179,6 +196,8 @@ class GameController extends ChangeNotifier {
       particles.isNotEmpty ||
       texts.isNotEmpty ||
       comboFlash > 0 ||
+      shake > 0 ||
+      (hint != null && hintT < hintPulseSeconds) ||
       bestBump > 0 ||
       scoreBump > 0 ||
       (newBest && newBestT < 1) ||
@@ -187,6 +206,15 @@ class GameController extends ChangeNotifier {
       overPhase == OverPhase.graying;
 
   int get bestScore => math.max(SettingsStore.instance.bestScore, game.score);
+
+  int get hintsLeft => math.max(0, PremiumService.instance.hintsPerGame - game.hintsUsed);
+
+  int get revivesLeft => math.max(0, PremiumService.instance.revivesPerGame - game.revivesUsed);
+
+  /// Premium players revive instantly; free players by watching an ad, so
+  /// they are only offered a revive when an ad is ready.
+  bool get canOfferRevive =>
+      revivesLeft > 0 && (!PremiumService.instance.revivesNeedAd || AdsService.instance.rewardedReady);
 
   // ---------------------------------------------------------------------------
   // Lifecycle
@@ -208,6 +236,8 @@ class GameController extends ChangeNotifier {
     placedPop.clear();
     overPhase = OverPhase.none;
     overT = 0;
+    hint = null;
+    shake = 0;
     _spawnTray();
     _save();
     notifyListeners();
@@ -228,6 +258,9 @@ class GameController extends ChangeNotifier {
   }
 
   void saveNow() => _save();
+
+  /// Repaint after outside state changed (Premium status, skins).
+  void refresh() => notifyListeners();
 
   // ---------------------------------------------------------------------------
   // Input
@@ -352,11 +385,14 @@ class GameController extends ChangeNotifier {
     final l = layout!;
     final result = game.place(d.slot, row, col);
     if (result == null) return;
+    hint = null;
 
     Sound.instance.play(Sfx.drop, volume: 0.9);
     for (final c in result.placedCells) {
       placedPop[c.r * Board.size + c.c] = 0;
     }
+    _dust(result.placedCells, result.piece.color);
+    if (result.linesCleared == 0) Haptics.tick();
 
     // Center of the placed piece (for floating text).
     var cx = 0.0, cy = 0.0;
@@ -427,6 +463,7 @@ class GameController extends ChangeNotifier {
       } else {
         Haptics.light();
       }
+      if (result.linesCleared >= 3 || result.combo >= 4) shake = 1;
     }
 
     scoreBump = result.linesCleared > 0 ? 1.0 : 0.6;
@@ -464,6 +501,118 @@ class GameController extends ChangeNotifier {
       'score=${game.score} lines=${result.linesCleared} combo=${result.combo} over=${result.gameOver}',
     );
     _save();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Hints & revives
+  // ---------------------------------------------------------------------------
+
+  /// Highlights a good move. Uses one of this game's hints.
+  HintOutcome requestHint() {
+    if (inputLocked) return HintOutcome.noMove;
+    if (hint != null) {
+      hintT = 0; // already showing: pulse it again for free
+      notifyListeners();
+      return HintOutcome.shown;
+    }
+    if (hintsLeft <= 0) return HintOutcome.noneLeft;
+    final h = HintSolver.find(game);
+    if (h == null) return HintOutcome.noMove;
+    game.hintsUsed++;
+    hint = h;
+    hintT = 0;
+    Sound.instance.play(Sfx.pickup, volume: 0.6);
+    debugPrint('BB_HINT slot=${h.slot} at=${h.row},${h.col} left=$hintsLeft');
+    _save();
+    notifyListeners();
+    return HintOutcome.shown;
+  }
+
+  /// Cells of the hinted placement (board indices).
+  Set<int> hintCells() {
+    final h = hint;
+    if (h == null) return const {};
+    final piece = game.tray[h.slot];
+    if (piece == null) return const {};
+    return {for (final Cell c in piece.shape.cells) (h.row + c.r) * Board.size + h.col + c.c};
+  }
+
+  /// Second chance: empties the fullest lines and continues the game.
+  void revive() {
+    if (overPhase != OverPhase.reviveOffer) return;
+    final l = layout;
+    final result = game.revive();
+    if (result == null) return;
+    overPhase = OverPhase.none;
+    overT = 0;
+    hint = null;
+    final center = l?.gridRect.center ?? Offset.zero;
+    if (l != null) {
+      for (final cc in result.clearedCells) {
+        final dist = (l.cellRect(cc.r, cc.c).center - center).distance / l.cell;
+        clearing.add(ClearingCell(cc.r, cc.c, cc.color, dist * 0.02));
+      }
+      final color = _rng.nextInt(kColorCount);
+      for (final r in result.lines.rows) {
+        beams.add(ClearBeam(true, r, color));
+      }
+      for (final c in result.lines.cols) {
+        beams.add(ClearBeam(false, c, color));
+      }
+      texts.add(FloatingText('Revived!', FloatKind.praise, center, duration: 1.3, delay: 0.1, color: 5));
+    }
+    if (result.trayRefilled) _spawnTray();
+    comboFlash = 1;
+    lastComboColor = 3;
+    shake = 0.6;
+    Sound.instance.play(Sfx.combo, rate: 1.1);
+    Haptics.medium();
+    debugPrint('BB_REVIVE used=${game.revivesUsed} left=$revivesLeft');
+    _save();
+    notifyListeners();
+  }
+
+  /// The player passed on the revive: finish the game-over sequence.
+  void declineRevive() {
+    if (overPhase != OverPhase.reviveOffer) return;
+    _startGraying();
+    notifyListeners();
+  }
+
+  void _startGraying() {
+    overPhase = OverPhase.graying;
+    overT = 0;
+    Sound.instance.play(Sfx.gameOver);
+    Haptics.heavy();
+  }
+
+  /// A few specks of dust around a freshly placed piece.
+  void _dust(List<Cell> cells, int color) {
+    final l = layout;
+    if (l == null) return;
+    final glow = Palette.blocks[color].glow;
+    final occupied = {for (final c in cells) c.r * Board.size + c.c};
+    var n = 0;
+    for (final c in cells) {
+      if (n >= 10) break;
+      // Only cells on the piece's lower edge.
+      if (occupied.contains((c.r + 1) * Board.size + c.c)) continue;
+      final rect = l.cellRect(c.r, c.c);
+      for (final side in const [-1.0, 1.0]) {
+        particles.add(
+          Particle(
+            pos: Offset(rect.center.dx + side * rect.width * 0.3, rect.bottom - rect.height * 0.05),
+            vel: Offset(side * l.cell * (0.6 + _rng.nextDouble() * 0.8), -l.cell * (0.4 + _rng.nextDouble() * 0.6)),
+            size: l.cell * (0.06 + _rng.nextDouble() * 0.05),
+            rot: _rng.nextDouble() * math.pi,
+            spin: (_rng.nextDouble() - 0.5) * 6,
+            life: 0.28 + _rng.nextDouble() * 0.12,
+            color: glow.withValues(alpha: 0.85),
+          ),
+        );
+        n++;
+      }
+    }
   }
 
   Offset _linesCenter(LineSet lines, Offset fallback) {
@@ -538,7 +687,7 @@ class GameController extends ChangeNotifier {
 
     final d = drag;
     if (d != null && d.lift < 1) {
-      d.lift = math.min(1, d.lift + dt / 0.12);
+      d.lift = math.min(1, d.lift + dt / 0.085);
       dirty = true;
     }
     // Keep the "lines will clear" highlight pulsing while hovering.
@@ -625,6 +774,16 @@ class GameController extends ChangeNotifier {
       dirty = true;
     }
 
+    if (shake > 0) {
+      shake = math.max(0, shake - dt / 0.35);
+      dirty = true;
+    }
+
+    if (hint != null && hintT < hintPulseSeconds) {
+      hintT += dt;
+      dirty = true;
+    }
+
     if (newBest && newBestT < 1) {
       newBestT = math.min(1, newBestT + dt / 0.45);
       dirty = true;
@@ -646,12 +805,17 @@ class GameController extends ChangeNotifier {
       case OverPhase.waiting:
         overT += dt;
         if (overT >= 0.55 && clearing.isEmpty) {
-          overPhase = OverPhase.graying;
-          overT = 0;
-          Sound.instance.play(Sfx.gameOver);
-          Haptics.heavy();
+          if (canOfferRevive) {
+            overPhase = OverPhase.reviveOffer;
+            overT = 0;
+            onShowRevive?.call();
+          } else {
+            _startGraying();
+          }
         }
         dirty = true;
+      case OverPhase.reviveOffer:
+        break;
       case OverPhase.graying:
         overT += dt;
         if (overT >= 1.25) {

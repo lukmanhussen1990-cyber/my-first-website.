@@ -8,11 +8,20 @@ import '../ui/icons.dart';
 import 'ui_kit.dart';
 
 class SettingsPopup extends StatelessWidget {
-  const SettingsPopup({super.key, required this.onClose, required this.onRestart, required this.onHowToPlay});
+  const SettingsPopup({
+    super.key,
+    required this.onClose,
+    required this.onRestart,
+    required this.onHowToPlay,
+    required this.onSkins,
+    required this.onAbout,
+  });
 
   final VoidCallback onClose;
   final VoidCallback onRestart;
   final VoidCallback onHowToPlay;
+  final VoidCallback onSkins;
+  final VoidCallback onAbout;
 
   @override
   Widget build(BuildContext context) {
@@ -39,19 +48,48 @@ class SettingsPopup extends StatelessWidget {
               onTap: onRestart,
             ),
             const SizedBox(height: 12),
-            CandyButton(
-              label: 'How to Play',
-              icon: Icons.help_outline_rounded,
-              colors: CandyButton.blue,
-              edge: CandyButton.blueEdge,
-              width: double.infinity,
-              height: 52,
-              onTap: onHowToPlay,
+            Row(
+              children: [
+                Expanded(
+                  child: CandyButton(
+                    label: 'How to Play',
+                    icon: Icons.help_outline_rounded,
+                    colors: CandyButton.blue,
+                    edge: CandyButton.blueEdge,
+                    height: 50,
+                    fontSize: 18,
+                    onTap: onHowToPlay,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: CandyButton(
+                    label: 'Skins',
+                    icon: Icons.palette_rounded,
+                    colors: CandyButton.purple,
+                    edge: CandyButton.purpleEdge,
+                    height: 50,
+                    fontSize: 18,
+                    onTap: onSkins,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-            Text(
-              'Block Blast v$kAppVersion',
-              style: bubbleStyle(13, color: const Color(0xAAD5E3FF), weight: FontWeight.w500),
+            const SizedBox(height: 6),
+            TextButton(
+              onPressed: onAbout,
+              style: TextButton.styleFrom(minimumSize: const Size(160, 40)),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFFD5E3FF)),
+                  const SizedBox(width: 6),
+                  Text(
+                    'About & Credits · v$kAppVersion',
+                    style: bubbleStyle(15, color: const Color(0xFFD5E3FF), weight: FontWeight.w500),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
