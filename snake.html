@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snake</title>
+<style>
+  :root { --bg: #0b0f1a; --panel: #121a2b; --text: #e6edf7; --muted: #7c8aa5; --accent: #39ff88; --danger: #ff4d6d; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; user-select: none; -webkit-user-select: none; touch-action: none; }
+  header { display: flex; gap: 28px; align-items: baseline; }
+  .stat { display: flex; flex-direction: column; align-items: center; }
+  .stat span { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .stat b { font-size: 26px; font-variant-numeric: tabular-nums; }
+  .board { position: relative; border-radius: 14px; padding: 6px; background: var(--panel); box-shadow: 0 20px 60px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.04); max-width: 100%; }
+  canvas { display: block; width: min(86vw, 70vh, 520px); height: auto; aspect-ratio: 1; border-radius: 10px; background: #070b14; }
+  .overlay { position: absolute; inset: 6px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(7,11,20,.72); backdrop-filter: blur(3px); text-align: center; cursor: pointer; }
+  .overlay.hidden { display: none; }
+  .overlay h1 { margin: 0; font-size: clamp(26px, 6vw, 38px); letter-spacing: .04em; }
+  .overlay p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+  .overlay .big { color: var(--accent); font-weight: 700; }
+  .hint { color: var(--muted); font-size: 13px; }
+  kbd { font: inherit; font-size: 12px; padding: 2px 6px; border-radius: 5px; background: #1c2740; border: 1px solid #2a3858; color: var(--text); }
+</style>
+</head>
+<body>
+<header>
+  <div class="stat"><span>Score</span><b id="score">0</b></div>
+  <div class="stat"><span>Best</span><b id="best">0</b></div>
+</header>
+
+<div class="board">
+  <canvas id="game" width="400" height="400" aria-label="Snake game board"></canvas>
+  <div class="overlay" id="overlay">
+    <h1 id="title">SNAKE</h1>
+    <p id="message">Eat the glowing orbs. Don't hit the walls or yourself.</p>
+    <p class="big" id="sub">Press any arrow key or tap to start</p>
+  </div>
+</div>
+
+<div class="hint"><kbd>Arrows</kbd> / <kbd>WASD</kbd> move &nbsp;·&nbsp; <kbd>Space</kbd> pause &nbsp;·&nbsp; swipe on touch</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const titleEl = document.getElementById('title');
+  const msgEl = document.getElementById('message');
+  const subEl = document.getElementById('sub');
+
+  const COLS = 20, ROWS = 20;
+  const CELL = canvas.width / COLS;
+  const BASE_MS = 130, MIN_MS = 60, STEP_MS = 3;
+  const STORE_KEY = 'snake-best';
+
+  const DIRS = {
+    ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
+    w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0],
+    W: [0, -1], S: [0, 1], A: [-1, 0], D: [1, 0],
+  };
+
+  let snake, dir, nextDir, food, score, best, state, lastTick, speedMs, particles, t0;
+
+  function loadBest() {
+    try { return parseInt(localStorage.getItem(STORE_KEY), 10) || 0; } catch (e) { return 0; }
+  }
+  function saveBest(v) {
+    try { localStorage.setItem(STORE_KEY, String(v)); } catch (e) { /* storage unavailable */ }
+  }
+
+  function randomFreeCell() {
+    const free = [];
+    for (let x = 0; x < COLS; x++) for (let y = 0; y < ROWS; y++) {
+      if (!snake.some(p => p.x === x && p.y === y)) free.push({ x, y });
+    }
+    return free[Math.floor(Math.random() * free.length)];
+  }
+
+  function reset() {
+    const cx = Math.floor(COLS / 2), cy = Math.floor(ROWS / 2);
+    snake = [{ x: cx, y: cy }, { x: cx - 1, y: cy }, { x: cx - 2, y: cy }];
+    dir = [1, 0];
+    nextDir = [1, 0];
+    score = 0;
+    speedMs = BASE_MS;
+    particles = [];
+    food = randomFreeCell();
+    lastTick = 0;
+    updateHud();
+  }
+
+  function updateHud() {
+    scoreEl.textContent = score;
+    bestEl.textContent = best;
+  }
+
+  function showOverlay(title, msg, sub) {
+    titleEl.textContent = title;
+    msgEl.textContent = msg;
+    subEl.textContent = sub;
+    overlay.classList.remove('hidden');
+  }
+
+  function start() {
+    reset();
+    state = 'playing';
+    overlay.classList.add('hidden');
+  }
+
+  function gameOver() {
+    for (let i = 0; i < 40; i++) {
+      const a = Math.random() * Math.PI * 2, v = 60 + Math.random() * 180;
+      particles.push({
+        x: (snake[0].x + 0.5) * CELL, y: (snake[0].y + 0.5) * CELL,
+        vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1,
+        color: Math.random() < 0.5 ? '#ff4d6d' : '#ffd166',
+      });
+    }
+    endGame('GAME OVER', isNewBest => `You scored ${score}${isNewBest ? ' — new best!' : '.'}`, 'Press Enter, Space or tap to play again');
+  }
+
+  function togglePause() {
+    if (state === 'playing') { state = 'paused'; showOverlay('PAUSED', 'Take a breath.', 'Press Space or tap to resume'); }
+    else if (state === 'paused') { state = 'playing'; overlay.classList.add('hidden'); }
+  }
+
+  function turn(key) {
+    const d = DIRS[key];
+    if (!d) return;
+    if (d[0] === -dir[0] && d[1] === -dir[1]) return;
+    if (state === 'playing' && (nextDir[0] !== dir[0] || nextDir[1] !== dir[1])) return;
+    nextDir = d;
+  }
+
+  function endGame(title, msg, sub) {
+    state = 'over';
+    const isNewBest = score > best;
+    if (isNewBest) { best = score; saveBest(best); }
+    updateHud();
+    showOverlay(title, msg(isNewBest), sub);
+  }
+
+  function step() {
+    dir = nextDir;
+    const head = { x: snake[0].x + dir[0], y: snake[0].y + dir[1] };
+    const eating = head.x === food.x && head.y === food.y;
+    const body = eating ? snake : snake.slice(0, -1);
+    const hitWall = head.x < 0 || head.y < 0 || head.x >= COLS || head.y >= ROWS;
+    const hitSelf = body.some(p => p.x === head.x && p.y === head.y);
+    if (hitWall || hitSelf) { gameOver(); return; }
+
+    snake.unshift(head);
+    if (eating) {
+      score++;
+      speedMs = Math.max(MIN_MS, speedMs - STEP_MS);
+      burst(food.x, food.y);
+      if (snake.length >= COLS * ROWS) { endGame('YOU WIN', () => 'The board is full!', 'Press Enter to play again'); return; }
+      food = randomFreeCell();
+      updateHud();
+    } else {
+      snake.pop();
+    }
+  }
+
+  function burst(cx, cy) {
+    for (let i = 0; i < 14; i++) {
+      const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 120;
+      particles.push({ x: (cx + 0.5) * CELL, y: (cy + 0.5) * CELL, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, color: '#7dffb3' });
+    }
+  }
+
+  function drawRounded(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawGrid() {
+    ctx.strokeStyle = 'rgba(255,255,255,0.035)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 1; i < COLS; i++) {
+      ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, canvas.height);
+      ctx.moveTo(0, i * CELL); ctx.lineTo(canvas.width, i * CELL);
+    }
+    ctx.stroke();
+  }
+
+  function drawFood(now) {
+    const pulse = 0.5 + 0.5 * Math.sin(now / 180);
+    const cx = (food.x + 0.5) * CELL, cy = (food.y + 0.5) * CELL;
+    const r = CELL * (0.28 + 0.06 * pulse);
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, CELL * 0.9);
+    g.addColorStop(0, 'rgba(255,209,102,0.55)');
+    g.addColorStop(1, 'rgba(255,209,102,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx, cy, CELL * 0.9, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  }
+
+  function drawSnake() {
+    const pad = CELL * 0.08;
+    for (let i = snake.length - 1; i >= 0; i--) {
+      const p = snake[i];
+      const t = i / Math.max(1, snake.length - 1);
+      const x = p.x * CELL + pad, y = p.y * CELL + pad, s = CELL - pad * 2;
+      const shade = 1 - t * 0.55;
+      const green = Math.round(255 * shade);
+      ctx.shadowColor = `rgba(57,255,136,${0.5 * shade})`;
+      ctx.shadowBlur = i === 0 ? 18 : 8;
+      ctx.fillStyle = `rgb(${Math.round(40 * shade)}, ${green}, ${Math.round(136 * shade + 60)})`;
+      drawRounded(x, y, s, s, i === 0 ? CELL * 0.35 : CELL * 0.22);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    const h = snake[0];
+    const hx = (h.x + 0.5) * CELL, hy = (h.y + 0.5) * CELL;
+    const [dx, dy] = dir;
+    const px = -dy, py = dx;
+    ctx.fillStyle = '#0b0f1a';
+    for (const side of [-1, 1]) {
+      const ex = hx + dx * CELL * 0.12 + px * side * CELL * 0.18;
+      const ey = hy + dy * CELL * 0.12 + py * side * CELL * 0.18;
+      ctx.beginPath(); ctx.arc(ex, ey, CELL * 0.07, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function drawParticles(dt) {
+    for (const p of particles) {
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      p.vx *= 0.96; p.vy *= 0.96;
+      p.life -= dt * 1.6;
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 3 * Math.max(0.3, p.life), 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    particles = particles.filter(p => p.life > 0);
+  }
+
+  function render(now, dt) {
+    const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    bg.addColorStop(0, '#070b14');
+    bg.addColorStop(1, '#0c1424');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawGrid();
+    drawFood(now);
+    drawSnake();
+    drawParticles(dt);
+  }
+
+  function frame(now) {
+    if (!t0) t0 = now;
+    const dt = Math.min(0.05, (now - (frame.prev || now)) / 1000);
+    frame.prev = now;
+    if (state === 'playing') {
+      if (now - lastTick >= speedMs) { lastTick = now; step(); }
+    }
+    render(now, dt);
+    requestAnimationFrame(frame);
+  }
+
+  function onKey(e) {
+    if (e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      if (state === 'idle' || state === 'over') start();
+      else togglePause();
+      return;
+    }
+    if (e.key === 'Enter') {
+      if (state === 'idle' || state === 'over') start();
+      return;
+    }
+    if (DIRS[e.key]) {
+      e.preventDefault();
+      if (state === 'idle' || state === 'over') { start(); }
+      if (state === 'paused') return;
+      turn(e.key);
+    }
+  }
+
+  let touchStart = null;
+  canvas.addEventListener('touchstart', e => {
+    const t = e.changedTouches[0];
+    touchStart = { x: t.clientX, y: t.clientY };
+  }, { passive: true });
+  canvas.addEventListener('touchend', e => {
+    const t = e.changedTouches[0];
+    if (!touchStart) return;
+    const dx = t.clientX - touchStart.x, dy = t.clientY - touchStart.y;
+    touchStart = null;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) {
+      if (state === 'idle' || state === 'over') start();
+      else togglePause();
+      return;
+    }
+    if (state === 'idle' || state === 'over') { start(); return; }
+    if (state !== 'playing') return;
+    turn(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'ArrowRight' : 'ArrowLeft') : (dy > 0 ? 'ArrowDown' : 'ArrowUp'));
+  }, { passive: true });
+
+  overlay.addEventListener('click', () => {
+    if (state === 'idle' || state === 'over') start();
+    else if (state === 'paused') togglePause();
+  });
+
+  document.addEventListener('keydown', onKey);
+
+  best = loadBest();
+  reset();
+  state = 'idle';
+  updateHud();
+  showOverlay('SNAKE', 'Eat the glowing orbs. Don\'t hit the walls or yourself.', 'Press any arrow key or tap to start');
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
