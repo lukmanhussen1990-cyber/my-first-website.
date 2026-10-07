@@ -44,8 +44,8 @@ VARIANTS = {
 # small per-variant pitch offsets (the script adds its own +-8 % on top)
 PITCH = (1.0, 0.972, 1.03)
 
-LOUD_FIRE = -14.0   # integrated loudness targets (LUFS)
-LOUD_HIT = -18.0
+LOUD_FIRE = -17.0   # integrated loudness targets (LUFS)
+LOUD_HIT = -21.0
 
 
 # ------------------------------------------------------------------ basics
@@ -330,14 +330,15 @@ def flange(x, d0_ms, d1_ms, mix_=0.7, curve=1.0):
 
 # ------------------------------------------------------------------ space
 
-def reverb(x, size=0.35, mix=0.3, damp=5000, lo=150, pre=0.004, er=(), er_amt=0.35):
-    """Convolution reverb with frequency-dependent decay (highs die first)
-    and optional early reflections er = (ms, ms, ...)."""
-    L = int(SR * min(size * 5, 3.0))
+def reverb(x, size=0.9, mix=0.3, damp=5000, lo=180, pre=0.004, er=(), er_amt=0.35):
+    """Convolution reverb.  size = decay time (T60, s) of the low-mids; highs
+    above `damp` die faster, lows below `lo` are thinned out.  er = early
+    reflection times in ms."""
+    L = int(SR * min(size * 1.1, 3.0))
 
     def m(t, f):
-        tau = size * (0.3 + 0.7 / (1 + (f / damp) ** 1.4))
-        return np.exp(-np.maximum(t, 0) / tau) / (1 + (lo / np.maximum(f, 1)) ** 2)
+        tau = size / 6.9 * (0.3 + 0.7 / (1 + (f / damp) ** 1.4))
+        return np.exp(-np.maximum(t, 0) / tau) / (1 + (lo / np.maximum(f, 1)) ** 3)
 
     ir = stft_shape(rng.standard_normal(L), m)
     ir *= np.clip(np.arange(L) / (SR * 0.006), 0, 1) * tail(L, 60)
@@ -346,7 +347,7 @@ def reverb(x, size=0.35, mix=0.3, damp=5000, lo=150, pre=0.004, er=(), er_amt=0.
         e = np.zeros(L)
         for i, ms in enumerate(er):
             e[int(SR * ms / 1000)] += (0.85 ** i) * (1 if rng.random() < 0.6 else -1)
-        e = iir(e, ("lp", 6000), ("hp", 120))
+        e = iir(e, ("lp", 6000), ("hp", 150))
         e /= np.sqrt(np.sum(e ** 2))
         ir = ir * np.sqrt(1 - er_amt) + e * np.sqrt(er_amt)
     ir = at(ir, pre)
@@ -445,24 +446,36 @@ def lufs(x):
     return -0.691 + 10 * np.log10(z.mean())
 
 
-def finish(x, loud=LOUD_FIRE, ceiling=-1.6, comp=(-16.0, 3.0, 2.5, 80), max_dur=3.0, fade=0.04, hp=30):
-    """Master bus: sub-sonic high-pass, compression, loudness normalisation,
-    look-ahead limiting, silent-tail trim and a click-free fade."""
+DEBUG = bool(os.environ.get("SOUNDS_DEBUG"))
+
+
+def finish(x, loud=LOUD_FIRE, ceiling=-1.6, comp=(-10.0, 2.5, 3.0, 60), max_dur=3.0, fade=0.04, hp=30):
+    """Master bus: sub-sonic high-pass, glue compression, loudness
+    normalisation, look-ahead limiting, silent-tail trim, click-free fades."""
     x = iir(x, ("hp", hp), ("hp", hp))
-    x = x - np.mean(x)
+    x = norm(x - np.mean(x))
+    pre = x.copy()
     if comp:
         x = compress(x, *comp)
+    cgr = np.max(_db(pre) - _db(x + 1e-12 * np.sign(pre))) if comp else 0.0
     x = norm(x)
     for _ in range(5):
-        x = limit(x * 10 ** ((loud - lufs(x)) / 20), ceiling)
-    x = x - np.mean(x)
-    thr = np.where(np.abs(x) > 10 ** (-58 / 20))[0]
-    end = min(len(x), (thr[-1] + int(SR * 0.01)) if len(thr) else len(x), int(SR * max_dur))
-    x = x[:end].copy()
+        y = x * 10 ** ((loud - lufs(x)) / 20)
+        x = limit(y, ceiling)
+    lgr = np.max(_db(y) - _db(x))
+    thr = np.where(np.abs(x) > 10 ** (-60 / 20))[0]
+    end = (thr[-1] + int(SR * 0.01)) if len(thr) else len(x)
+    if end > SR * max_dur:          # still ringing: taper the tail instead of chopping it
+        end = int(SR * max_dur)
+        fade = max(fade, 0.25)
+    x = x[:min(end, len(x))].copy()
+    x -= np.mean(x)
     f = min(len(x), int(SR * fade))
     x[-f:] *= np.cos(np.linspace(0, np.pi / 2, f)) ** 2
     k = int(SR * 0.00015)
     x[:k] *= np.linspace(0, 1, k)
+    if DEBUG:
+        print("   comp GR %.1f dB  limiter GR %.1f dB  LUFS %.1f  len %.2fs" % (cgr, lgr, lufs(x), len(x) / SR))
     return x
 
 
@@ -480,7 +493,7 @@ def gunshot(dur=1.0, blast_ms=1.2, blast_amt=1.0, crack=0.6, crack_band=(2500, 1
     parts.append(norm(cr) * crack)
     for lo_f, hi_f, dec, g in (hi, mid, low):
         d = min(dur, dec * 9 + 0.02)
-        layer = bandpass(noise(d), lo_f * p, hi_f * p) * env2(d, 0.0003, dec, dec * 3.5, 0.25)
+        layer = bandpass(noise(d), lo_f * p, hi_f * p) * env2(d, 0.0003, dec, dec * 3, 0.15)
         parts.append(norm(layer) * g)
     f0, f1, ptau, dec, g = kick
     parts.append(thump(min(dur, dec * 7 + 0.03), f0 * p, f1 * p, ptau, dec) * g)
@@ -536,8 +549,8 @@ def arcane_fire(v=0):
     glit = sparkles(0.7, 18, 2400, 7500, spread=0.18)
     magic = mix(norm(mag) * 0.22, pew * 0.18, norm(glit) * 0.05)
     dry = mix(shot, at(cyl, 0.105 + 0.01 * v), at(magic, 0.004))
-    wet = reverb(dry, size=0.32, mix=0.32, damp=4800, er=(6.5, 11, 17.5, 26, 37))
-    return finish(wet, LOUD_FIRE, comp=(-15, 3.0, 2.5, 70), max_dur=1.1)
+    wet = reverb(dry, size=0.9, mix=0.3, damp=4800, er=(6.5, 11, 17.5, 26, 37))
+    return finish(wet, LOUD_FIRE, comp=(-10, 2.5, 3, 60), max_dur=1.1)
 
 
 def arcane_hit(v=0):
@@ -550,8 +563,8 @@ def arcane_hit(v=0):
     glit = sparkles(0.6, 28, 2200, 8000, spread=0.12)
     air = bandpass(noise(0.2), 2500, 10000) * env(0.2, 0.002, 0.04)
     dry = mix(norm(pop) * 0.6, thud * 0.55, at(norm(arp) * 0.55, 0.0), norm(glit) * 0.12, norm(air) * 0.12)
-    wet = reverb(dry, size=0.28, mix=0.3, damp=6000, er=(5, 9, 14))
-    return finish(wet, LOUD_HIT, comp=(-14, 2.5, 2, 60), max_dur=1.0)
+    wet = reverb(dry, size=0.8, mix=0.3, damp=6000, er=(5, 9, 14))
+    return finish(wet, LOUD_HIT, comp=(-10, 2.0, 2, 60), max_dur=1.0)
 
 
 def inferno_fire(v=0):
@@ -564,8 +577,8 @@ def inferno_fire(v=0):
     roar = bandpass(noise(0.9), 70, 520) * env(0.9, 0.04, 0.3)
     cr = crackle(1.1, rate=80, decay=0.3, bright=7000, lo=1200, start=0.04)
     dry = mix(shot, norm(brass) * 0.05, at(whoosh * 0.42, 0.006), at(norm(roar) * 0.3, 0.004), cr * 0.2)
-    wet = reverb(dry, size=0.42, mix=0.26, damp=3500, er=(8, 15, 23, 36))
-    return finish(wet, LOUD_FIRE, comp=(-15, 3.0, 3, 90), max_dur=1.4)
+    wet = reverb(dry, size=1.1, mix=0.28, damp=3500, er=(8, 15, 23, 36))
+    return finish(wet, LOUD_FIRE, comp=(-10, 2.5, 3, 80), max_dur=1.4)
 
 
 def inferno_hit(v=0):
@@ -575,8 +588,8 @@ def inferno_hit(v=0):
     cr = crackle(0.8, rate=150, decay=0.22, bright=7500, lo=1200, start=0.01)
     sizzle = bandpass(noise(0.6), 5500, 11000) * env(0.6, 0.02, 0.18)
     dry = mix(whoomph, puff * 0.5, cr * 0.32, norm(sizzle) * 0.04)
-    wet = reverb(dry, size=0.3, mix=0.2, damp=4000, er=(6, 11, 19))
-    return finish(wet, LOUD_HIT - 1.0, comp=(-14, 2.5, 3, 70), max_dur=0.9)
+    wet = reverb(dry, size=0.7, mix=0.22, damp=4000, er=(6, 11, 19))
+    return finish(wet, LOUD_HIT - 1.0, comp=(-10, 2.0, 3, 60), max_dur=0.9)
 
 
 def frost_fire(v=0):
@@ -597,9 +610,9 @@ def frost_fire(v=0):
     frost = bandpass(noise(0.6), 6000, 13000) * env(0.6, 0.015, 0.16)
     tail_ = echoes(shot, [(0.19 + 0.02 * v, 0.28, 2600), (0.43 + 0.03 * v, 0.16, 1800), (0.8, 0.08, 1200)])
     dry = mix(tail_, at(norm(ring) * 0.1, 0.008), norm(frost) * 0.035)
-    wet = reverb(dry, size=0.65, mix=0.3, damp=2800, lo=70, er=(9, 17, 29, 44, 61))
+    wet = reverb(dry, size=1.8, mix=0.28, damp=2800, lo=90, er=(9, 17, 29, 44, 61))
     wet = mix(wet, at(bolt, bolt_t))
-    return finish(wet, LOUD_FIRE, comp=(-16, 3.0, 2.5, 90), max_dur=2.2)
+    return finish(wet, LOUD_FIRE, comp=(-10, 2.5, 3, 80), max_dur=2.2)
 
 
 def frost_hit(v=0):
@@ -628,8 +641,8 @@ def frost_hit(v=0):
         crunch[s:s + L] += rng.uniform(-1, 1, L) * rng.uniform(0.3, 1)
     crunch = bandpass(crunch, 900, 7000)
     dry = mix(imp, norm(shards) * 0.55, norm(crunch) * 0.35)
-    wet = reverb(dry, size=0.26, mix=0.26, damp=7000, er=(5, 9, 15))
-    return finish(wet, LOUD_HIT, comp=(-14, 2.5, 2, 60), max_dur=1.0)
+    wet = reverb(dry, size=0.7, mix=0.26, damp=7000, er=(5, 9, 15))
+    return finish(wet, LOUD_HIT, comp=(-10, 2.0, 2, 60), max_dur=1.0)
 
 
 def storm_fire(v=0):
@@ -646,8 +659,8 @@ def storm_fire(v=0):
     whine = np.tanh(1.8 * np.sin(2 * np.pi * np.cumsum(fw) / SR)) * (0.6 + 0.4 * np.sin(2 * np.pi * 31 * t))
     whine = whine * np.clip(t / 0.25, 0, 1) ** 2 * tail(len(t), 120)
     dry = mix(shot, at(zap * 0.22, 0.001), at(bolt * 0.3, 0.015), sparks * 0.18, at(whine * 0.025, 0.62))
-    wet = reverb(dry, size=0.38, mix=0.26, damp=4200, er=(7, 13, 21, 33))
-    return finish(wet, LOUD_FIRE, comp=(-15, 3.0, 2.5, 80), max_dur=1.2)
+    wet = reverb(dry, size=1.0, mix=0.26, damp=4200, er=(7, 13, 21, 33))
+    return finish(wet, LOUD_FIRE, comp=(-10, 2.5, 3, 70), max_dur=1.2)
 
 
 def storm_hit(v=0):
@@ -657,8 +670,8 @@ def storm_hit(v=0):
     bolt = arc(0.32, rate=150 * p, decay=0.08, lo=500, hi=8000)
     sparks = crackle(0.35, rate=260, decay=0.08, bright=10000, lo=2000)
     dry = mix(crack, iir(blast(0.5), ("hp", 150)) * 0.5, zap * 0.4, bolt * 0.6, sparks * 0.3)
-    wet = reverb(dry, size=0.16, mix=0.18, damp=6000, er=(4, 8))
-    return finish(wet, LOUD_HIT, comp=(-14, 2.5, 2, 50), max_dur=0.45)
+    wet = reverb(dry, size=0.4, mix=0.18, damp=6000, er=(4, 8))
+    return finish(wet, LOUD_HIT, comp=(-10, 2.0, 2, 50), max_dur=0.45)
 
 
 def soul_fire(v=0):
@@ -674,8 +687,8 @@ def soul_fire(v=0):
     f = (690 - 140 * t / 0.3) * p * (1 + 0.02 * np.sin(2 * np.pi * 9 * t))
     ghost = (np.sin(2 * np.pi * np.cumsum(f) / SR) + np.sin(2 * np.pi * np.cumsum(f * 1.012) / SR)) * env(0.3, 0.006, 0.045)
     dry = mix(shot, bolt1, at(bolt2, 0.042), at(norm(whoo) * 0.32, 0.003), at(ghost * 0.06, 0.004))
-    wet = reverb(dry, size=0.1, mix=0.16, damp=3500, er=(4, 7, 11))
-    return finish(wet, LOUD_FIRE - 1.0, comp=(-14, 2.5, 2.5, 50), max_dur=0.33, fade=0.05)
+    wet = reverb(dry, size=0.25, mix=0.16, damp=3500, er=(4, 7, 11))
+    return finish(wet, LOUD_FIRE - 1.0, comp=(-10, 2.0, 2.5, 50), max_dur=0.33, fade=0.05)
 
 
 def soul_hit(v=0):
@@ -688,8 +701,8 @@ def soul_hit(v=0):
     moan = norm(moan) * env(0.5, 0.025, 0.13)
     thud = thump(0.12, 150 * p, 70 * p, 0.015, 0.03)
     dry = mix(whoosh, moan * 0.3, thud * 0.35)
-    wet = reverb(dry, size=0.3, mix=0.3, damp=3000, er=(6, 12))
-    return finish(wet, LOUD_HIT - 1.0, comp=(-14, 2.5, 3, 70), max_dur=1.0)
+    wet = reverb(dry, size=0.8, mix=0.3, damp=3000, er=(6, 12))
+    return finish(wet, LOUD_HIT - 1.0, comp=(-10, 2.0, 3, 60), max_dur=1.0)
 
 
 def void_fire(v=0):
@@ -708,8 +721,8 @@ def void_fire(v=0):
     portal = sparkles(0.6, 10, 500, 1500, spread=0.15, glen=(0.03, 0.07))
     dry = mix(punch, at(norm(las) * 0.4, 0.002), norm(warp) * 0.22, sub * 0.45, at(norm(portal) * 0.06, 0.05))
     dry = echoes(dry, [(0.13, 0.22, 3500), (0.27, 0.11, 2500)])
-    wet = reverb(dry, size=0.5, mix=0.32, damp=4000, er=(8, 15, 26))
-    return finish(wet, LOUD_FIRE, comp=(-15, 3.0, 2.5, 80), max_dur=1.5)
+    wet = reverb(dry, size=1.3, mix=0.3, damp=4000, er=(8, 15, 26))
+    return finish(wet, LOUD_FIRE, comp=(-10, 2.5, 3, 70), max_dur=1.5)
 
 
 def void_hit(v=0):
@@ -723,8 +736,8 @@ def void_hit(v=0):
               norm(bandpass(noise(0.03), 1000, 8000) * env(0.03, 0.00005, 0.003)) * 0.6,
               thump(0.4, 170 * p, 40 * p, 0.025, 0.09) * 1.0)
     dry = mix(norm(suck) * 0.45 + up * 0.18, at(pop, ds))
-    wet = reverb(dry, size=0.34, mix=0.3, damp=2500, er=(7, 13))
-    return finish(wet, LOUD_HIT, comp=(-14, 2.5, 3, 70), max_dur=1.1)
+    wet = reverb(dry, size=0.9, mix=0.3, damp=2500, er=(7, 13))
+    return finish(wet, LOUD_HIT, comp=(-10, 2.0, 3, 60), max_dur=1.1)
 
 
 def holy_fire(v=0):
@@ -739,8 +752,8 @@ def holy_fire(v=0):
     glit = sparkles(1.6, 26, 2500, 8000, spread=0.5, glen=(0.02, 0.06))
     boom = echoes(shot, [(0.23 + 0.02 * v, 0.24, 1500), (0.52, 0.13, 1000)])
     dry = mix(boom, at(voices * 0.22, 0.03), at(norm(bells) * 0.05, 0.05), at(norm(glit) * 0.03, 0.08))
-    wet = reverb(dry, size=0.8, mix=0.34, damp=2600, lo=50, er=(11, 21, 34, 52, 71))
-    return finish(wet, LOUD_FIRE + 0.5, comp=(-17, 3.5, 3.5, 110), max_dur=2.8, fade=0.15)
+    wet = reverb(dry, size=2.4, mix=0.3, damp=2600, lo=80, er=(11, 21, 34, 52, 71))
+    return finish(wet, LOUD_FIRE + 0.5, comp=(-10, 2.5, 3.5, 90), max_dur=2.8, fade=0.15)
 
 
 def holy_hit(v=0):
@@ -755,8 +768,8 @@ def holy_hit(v=0):
     radiance = bandpass(noise(0.6), 1800, 10000) * env(0.6, 0.006, 0.12)
     thud = thump(0.3, 115 * p, 45 * p, 0.02, 0.07)
     dry = mix(norm(bell) * 0.55, norm(bell2) * 0.3, strike * 0.5, norm(radiance) * 0.16, thud * 0.45)
-    wet = reverb(dry, size=0.6, mix=0.32, damp=4500, er=(8, 15, 25))
-    return finish(wet, LOUD_HIT + 0.5, comp=(-15, 2.5, 3, 90), max_dur=2.3, fade=0.12)
+    wet = reverb(dry, size=1.8, mix=0.3, damp=4500, er=(8, 15, 25))
+    return finish(wet, LOUD_HIT + 0.5, comp=(-10, 2.0, 3, 80), max_dur=2.3, fade=0.12)
 
 
 SOUNDS = {
