@@ -1,0 +1,39 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "magic_guns:arcane_revolver"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "IIM",
+      " AS",
+      "  S"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "M": {
+        "item": "magic_guns:mana_crystal"
+      },
+      "A": {
+        "item": "minecraft:amethyst_shard"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "magic_guns:mana_crystal"
+      }
+    ],
+    "result": {
+      "item": "magic_guns:arcane_revolver",
+      "count": 1
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "magic_guns:mana_crystal",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "magic_guns_mana_crystal"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "item.magic_guns.mana_crystal.name"
+      },
+      "minecraft:max_stack_size": 64,
+      "minecraft:glint": true
+    }
+  }
+}

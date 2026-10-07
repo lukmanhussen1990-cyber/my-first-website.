@@ -1,0 +1,57 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "magic_guns:frostbite_rifle",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "magic_guns_frostbite_rifle"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "item.magic_guns.frostbite_rifle.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:allow_off_hand": false,
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:damage": 3,
+      "minecraft:durability": {
+        "max_durability": 450
+      },
+      "minecraft:use_modifiers": {
+        "use_duration": 30,
+        "movement_modifier": 0.85
+      },
+      "minecraft:interact_button": "Shoot",
+      "minecraft:cooldown": {
+        "category": "magic_guns_frostbite_rifle",
+        "duration": 1.3
+      },
+      "minecraft:enchantable": {
+        "slot": "bow",
+        "value": 12
+      },
+      "minecraft:repairable": {
+        "repair_items": [
+          {
+            "items": [
+              "magic_guns:mana_crystal"
+            ],
+            "repair_amount": 112
+          }
+        ]
+      },
+      "minecraft:tags": {
+        "tags": [
+          "magic_guns:gun"
+        ]
+      }
+    }
+  }
+}

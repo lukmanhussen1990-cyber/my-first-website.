@@ -1,0 +1,51 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "magic_guns:arcane_revolver",
+      "materials": {
+        "default": "entity_alphatest",
+        "enchanted": "entity_alphatest_glint",
+        "glow": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/magic_guns/arcane_revolver",
+        "enchanted": "textures/misc/enchanted_item_glint"
+      },
+      "geometry": {
+        "default": "geometry.magic_guns.arcane_revolver"
+      },
+      "animations": {
+        "fp_main": "animation.magic_guns.pistol.fp_main",
+        "fp_off": "animation.magic_guns.pistol.fp_off",
+        "tp": "animation.magic_guns.pistol.tp",
+        "recoil": "animation.magic_guns.recoil",
+        "spin": "animation.magic_guns.arcane_revolver.spin"
+      },
+      "scripts": {
+        "pre_animation": [
+          "v.cd_total = q.cooldown_time('slot.weapon.mainhand');",
+          "v.recoil = (v.cd_total > 0.0) ? math.clamp(q.cooldown_time_remaining('slot.weapon.mainhand') / v.cd_total, 0.0, 1.0) : 0.0;"
+        ],
+        "animate": [
+          {
+            "fp_main": "c.is_first_person && c.item_slot == 'main_hand'"
+          },
+          {
+            "fp_off": "c.is_first_person && c.item_slot != 'main_hand'"
+          },
+          {
+            "tp": "!c.is_first_person"
+          },
+          {
+            "recoil": "c.item_slot == 'main_hand' && v.recoil > 0.0"
+          },
+          "spin"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.magic_guns.gun"
+      ]
+    }
+  }
+}

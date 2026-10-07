@@ -1,0 +1,39 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "magic_guns:inferno_blaster"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "GGF",
+      " MB",
+      "  B"
+    ],
+    "key": {
+      "G": {
+        "item": "minecraft:gold_ingot"
+      },
+      "F": {
+        "item": "minecraft:fire_charge"
+      },
+      "M": {
+        "item": "magic_guns:mana_crystal"
+      },
+      "B": {
+        "item": "minecraft:blaze_rod"
+      }
+    },
+    "unlock": [
+      {
+        "item": "magic_guns:mana_crystal"
+      }
+    ],
+    "result": {
+      "item": "magic_guns:inferno_blaster",
+      "count": 1
+    }
+  }
+}

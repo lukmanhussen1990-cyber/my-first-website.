@@ -1,0 +1,39 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "magic_guns:soul_reaper"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "OOL",
+      " MB",
+      "  B"
+    ],
+    "key": {
+      "O": {
+        "item": "minecraft:obsidian"
+      },
+      "L": {
+        "item": "minecraft:soul_lantern"
+      },
+      "M": {
+        "item": "magic_guns:mana_crystal"
+      },
+      "B": {
+        "item": "minecraft:bone"
+      }
+    },
+    "unlock": [
+      {
+        "item": "magic_guns:mana_crystal"
+      }
+    ],
+    "result": {
+      "item": "magic_guns:soul_reaper",
+      "count": 1
+    }
+  }
+}

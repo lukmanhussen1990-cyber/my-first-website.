@@ -1,0 +1,39 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "magic_guns:void_phaser"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "REO",
+      " MO",
+      "  O"
+    ],
+    "key": {
+      "R": {
+        "item": "minecraft:end_rod"
+      },
+      "E": {
+        "item": "minecraft:ender_eye"
+      },
+      "O": {
+        "item": "minecraft:obsidian"
+      },
+      "M": {
+        "item": "magic_guns:mana_crystal"
+      }
+    },
+    "unlock": [
+      {
+        "item": "magic_guns:mana_crystal"
+      }
+    ],
+    "result": {
+      "item": "magic_guns:void_phaser",
+      "count": 1
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "magic_guns:frostbite_rifle"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "PII",
+      "SMD",
+      "S  "
+    ],
+    "key": {
+      "P": {
+        "item": "minecraft:packed_ice"
+      },
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      },
+      "M": {
+        "item": "magic_guns:mana_crystal"
+      },
+      "D": {
+        "item": "minecraft:diamond"
+      }
+    },
+    "unlock": [
+      {
+        "item": "magic_guns:mana_crystal"
+      }
+    ],
+    "result": {
+      "item": "magic_guns:frostbite_rifle",
+      "count": 1
+    }
+  }
+}

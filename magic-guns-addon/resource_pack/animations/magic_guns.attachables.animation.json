@@ -1,0 +1,194 @@
+{
+  "format_version": "1.10.0",
+  "animations": {
+    "animation.magic_guns.pistol.fp_main": {
+      "loop": true,
+      "bones": {
+        "magic_gun": {
+          "position": [
+            -1.87,
+            28.54,
+            -4.89
+          ],
+          "rotation": [
+            82.64,
+            61.26,
+            -51.57
+          ]
+        },
+        "body": {
+          "position": [
+            0,
+            2.5,
+            0
+          ]
+        }
+      }
+    },
+    "animation.magic_guns.pistol.fp_off": {
+      "loop": true,
+      "bones": {
+        "magic_gun": {
+          "position": [
+            -12.0,
+            26.65,
+            12.0
+          ],
+          "rotation": [
+            0.0,
+            180.0,
+            0.0
+          ]
+        },
+        "body": {
+          "position": [
+            0,
+            2.5,
+            0
+          ]
+        }
+      }
+    },
+    "animation.magic_guns.pistol.tp": {
+      "loop": true,
+      "bones": {
+        "magic_gun": {
+          "position": [
+            0.0,
+            22.5,
+            -1.0
+          ],
+          "rotation": [
+            90.0,
+            0.0,
+            0.0
+          ]
+        },
+        "fp_hands": {
+          "scale": 0
+        }
+      }
+    },
+    "animation.magic_guns.rifle.fp_main": {
+      "loop": true,
+      "bones": {
+        "magic_gun": {
+          "position": [
+            -3.93,
+            29.35,
+            -5.24
+          ],
+          "rotation": [
+            82.64,
+            61.26,
+            -51.57
+          ]
+        },
+        "body": {
+          "position": [
+            0,
+            2.5,
+            0
+          ]
+        }
+      }
+    },
+    "animation.magic_guns.rifle.fp_off": {
+      "loop": true,
+      "bones": {
+        "magic_gun": {
+          "position": [
+            -12.0,
+            27.65,
+            10.0
+          ],
+          "rotation": [
+            0.0,
+            180.0,
+            0.0
+          ]
+        },
+        "body": {
+          "position": [
+            0,
+            2.5,
+            0
+          ]
+        }
+      }
+    },
+    "animation.magic_guns.rifle.tp": {
+      "loop": true,
+      "bones": {
+        "magic_gun": {
+          "position": [
+            "c.item_slot == 'main_hand' ? 3.0 : -3.0",
+            22.5,
+            -1.0
+          ],
+          "rotation": [
+            90.0,
+            0.0,
+            0.0
+          ]
+        },
+        "fp_hands": {
+          "scale": 0
+        }
+      }
+    },
+    "animation.magic_guns.recoil": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "position": [
+            0,
+            0,
+            "1.6 * math.pow(v.recoil, 3)"
+          ],
+          "rotation": [
+            "-12 * math.pow(v.recoil, 3)",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.magic_guns.arcane_revolver.spin": {
+      "loop": true,
+      "bones": {
+        "cylinder": {
+          "rotation": [
+            0,
+            0,
+            "q.life_time * 120"
+          ]
+        }
+      }
+    },
+    "animation.magic_guns.void_phaser.spin": {
+      "loop": true,
+      "bones": {
+        "orb": {
+          "rotation": [
+            0,
+            "q.life_time * 120",
+            0
+          ]
+        }
+      }
+    },
+    "animation.magic_guns.celestial_cannon.spin": {
+      "loop": true,
+      "bones": {
+        "halo": {
+          "rotation": [
+            0,
+            0,
+            "q.life_time * 120"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "magic_guns:celestial_cannon"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "DGS",
+      "GMG",
+      "G  "
+    ],
+    "key": {
+      "D": {
+        "item": "minecraft:diamond"
+      },
+      "G": {
+        "item": "minecraft:gold_ingot"
+      },
+      "S": {
+        "item": "minecraft:glowstone"
+      },
+      "M": {
+        "item": "magic_guns:mana_crystal"
+      }
+    },
+    "unlock": [
+      {
+        "item": "magic_guns:mana_crystal"
+      }
+    ],
+    "result": {
+      "item": "magic_guns:celestial_cannon",
+      "count": 1
+    }
+  }
+}
