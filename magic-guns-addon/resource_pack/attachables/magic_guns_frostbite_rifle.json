@@ -2,22 +2,21 @@
   "format_version": "1.10.0",
   "minecraft:attachable": {
     "description": {
-      "identifier": "magic_guns:stormcaller",
+      "identifier": "magic_guns:frostbite_rifle",
       "materials": {
         "default": "entity_alphatest",
         "enchanted": "entity_alphatest_glint",
         "glow": "entity_emissive_alpha"
       },
       "textures": {
-        "default": "textures/entity/magic_guns/stormcaller",
+        "default": "textures/entity/magic_guns/frostbite_rifle",
         "enchanted": "textures/misc/enchanted_item_glint"
       },
       "geometry": {
-        "default": "geometry.magic_guns.stormcaller"
+        "default": "geometry.magic_guns.frostbite_rifle"
       },
       "animations": {
-        "fp_main": "animation.magic_guns.rifle.fp_main",
-        "fp_off": "animation.magic_guns.rifle.fp_off",
+        "fp": "animation.magic_guns.rifle.fp",
         "tp": "animation.magic_guns.rifle.tp",
         "recoil": "animation.magic_guns.recoil"
       },
@@ -28,16 +27,13 @@
         ],
         "animate": [
           {
-            "fp_main": "c.is_first_person && c.item_slot == 'main_hand'"
-          },
-          {
-            "fp_off": "c.is_first_person && c.item_slot != 'main_hand'"
+            "fp": "c.is_first_person"
           },
           {
             "tp": "!c.is_first_person"
           },
           {
-            "recoil": "c.item_slot == 'main_hand' && v.recoil > 0.0"
+            "recoil": "v.recoil > 0.0"
           }
         ]
       },

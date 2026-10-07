@@ -37,7 +37,7 @@ DIST = os.path.join(ROOT, "dist")
 DOCS = os.path.join(ROOT, "docs")
 
 NS = "magic_guns"
-VERSION = [1, 1, 0]
+VERSION = [1, 2, 0]
 MIN_ENGINE = [1, 21, 0]
 SCRIPT_API = "1.11.0"
 ITEM_FORMAT = "1.20.80"
@@ -86,7 +86,7 @@ GUNS = {
         key={"D": "minecraft:diamond", "G": "minecraft:gold_ingot", "S": "minecraft:glowstone", "M": f"{NS}:mana_crystal"}),
 }
 
-FP_EYE = {"pistol": (-6.0, 10.0, 12.0), "rifle": (-6.0, 9.0, 10.0)}
+# (first-person previews come from fp_preview.py, which replays the vanilla rig)
 
 
 def glow_alpha(mask):
@@ -149,8 +149,9 @@ def build_models():
         # Centre the model on the middle of the grip (inside the fist): every
         # hold animation assumes the hand sits at the root bone's origin.
         offset = -gunsmith.cube_center(meta["grip"])
+        # no visible_bounds: vanilla trident / shield / crossbow omit them too
         geo = m.to_bedrock(f"geometry.{NS}.{name}", binding=BINDING, root_bone="magic_gun",
-                           visible=(4, 3, (0, 1, 0)), offset=offset, split_glow=True)
+                           visible=None, offset=offset, split_glow=True)
         write_json(os.path.join(RP, "models", "entity", NS, f"{name}.geo.json"), geo)
         tex = m.atlas_image(glow_alpha)
         os.makedirs(os.path.join(RP, "textures", "entity", NS), exist_ok=True)
@@ -163,8 +164,9 @@ def build_models():
         os.makedirs(os.path.join(RP, "textures", "items", NS), exist_ok=True)
         icon.save(os.path.join(RP, "textures", "items", NS, f"{name}.png"))
         results[name] = dict(model=m, meta=meta, geo=geo, opaque=opaque, glow=glow_mask, icon=icon)
-        ex, ey, ez = FP_EYE[meta["kind"]]
-        fp = gunsmith.render_first_person(geo, opaque, glow_mask, eye=(ex, ey - FP_LIFT, ez), fov=60, size=(868, 400))
+        import fp_preview
+        hold = HOLD[meta["kind"]]["fp"]
+        fp = fp_preview.render_fp(geo, opaque, glow_mask, hold["position"], hold["rotation"], size=(868, 400))
         os.makedirs(os.path.join(DOCS, "first_person"), exist_ok=True)
         fp.convert("RGB").save(os.path.join(DOCS, "first_person", f"{name}.png"))
         print("model", name, tex.size)
@@ -274,25 +276,27 @@ def write_recipes():
 
 
 # Hold transforms for the root bone (grip centred at the origin, barrel -Z).
-# Worked out by the attachable research in a re-implementation of Bedrock's
-# bone maths and checked against vanilla spyglass / shield / trident numbers.
-# The +24-ish Y cancels the engine's -24 px shift of bound geometry.
+#
+# First person: solved against the vanilla first-person rig (player.animation
+# .json: rightarm pos [13.5,-10,12] rot [95,-45,115], rightitem pos (0,0,-1),
+# bound geometry hung 24 px below the rightitem pivot) so that the grip sits
+# 6.3 px right, 6.5 px below and 9.5 px in front of the eye with the barrel
+# parallel to the view - an FPS framing in the lower right of the screen.
+# The same chain reproduces the vanilla trident (upright, prongs at eye level
+# on the right) and the spyglass eyepiece at the eye, so it is trusted.
+# Third person: for the raised-arm aim pose of player.entity.json.
 HOLD = {
     "pistol": {
-        "fp_main": {"position": [-1.87, 28.54, -4.89], "rotation": [82.64, 61.26, -51.57]},
-        "fp_off": {"position": [-12.0, 26.65, 12.0], "rotation": [0.0, 180.0, 0.0]},
+        "fp": {"position": [-5.82, 28.23, -6.02], "rotation": [82.64, 61.26, -51.57]},
         "tp": {"position": [0.0, 22.5, -1.0], "rotation": [90.0, 0.0, 0.0]},
     },
     "rifle": {
-        "fp_main": {"position": [-3.93, 29.35, -5.24], "rotation": [82.64, 61.26, -51.57]},
-        "fp_off": {"position": [-12.0, 27.65, 10.0], "rotation": [0.0, 180.0, 0.0]},
-        # with the optional aim pose the arms are raised, so the rifle points forward
-        "tp": {"position": ["c.item_slot == 'main_hand' ? 3.0 : -3.0", 22.5, -1.0], "rotation": [90.0, 0.0, 0.0]},
+        "fp": {"position": [-5.82, 28.23, -6.02], "rotation": [82.64, 61.26, -51.57]},
+        "tp": {"position": [3.0, 22.5, -1.0], "rotation": [90.0, 0.0, 0.0]},
     },
 }
 
 RENDER_CONTROLLER = f"controller.render.{NS}.gun"
-FP_LIFT = 2.5
 
 
 def write_attachables(models):
@@ -303,10 +307,6 @@ def write_attachables(models):
             if view == "tp":
                 # the player's own arm holds the gun in third person: hide the glove
                 bones["fp_hands"] = {"scale": 0}
-            else:
-                # first person: lift the gun 2.5 px so the hand and frame sit
-                # inside the bottom-right of the screen (FPS framing)
-                bones["body"] = {"position": [0, FP_LIFT, 0]}
             anims[f"animation.{NS}.{kind}.{view}"] = {"loop": True, "bones": bones}
     # recoil kick, driven by the item cooldown the script starts on every shot
     anims[f"animation.{NS}.recoil"] = {"loop": True, "bones": {"body": {
@@ -316,17 +316,19 @@ def write_attachables(models):
     for name, r in models.items():
         meta = r["meta"]
         kind = meta["kind"]
+        # Conditions use only c.is_first_person, exactly like the vanilla bow and
+        # crossbow.  Guns cannot go in the off hand (allow_off_hand false), so no
+        # slot check is needed - and c.item_slot is not used by any vanilla
+        # attachable condition, so it is not relied on here.
         animations = {
-            "fp_main": f"animation.{NS}.{kind}.fp_main",
-            "fp_off": f"animation.{NS}.{kind}.fp_off",
+            "fp": f"animation.{NS}.{kind}.fp",
             "tp": f"animation.{NS}.{kind}.tp",
             "recoil": f"animation.{NS}.recoil",
         }
         animate = [
-            {"fp_main": "c.is_first_person && c.item_slot == 'main_hand'"},
-            {"fp_off": "c.is_first_person && c.item_slot != 'main_hand'"},
+            {"fp": "c.is_first_person"},
             {"tp": "!c.is_first_person"},
-            {"recoil": "c.item_slot == 'main_hand' && v.recoil > 0.0"},
+            {"recoil": "v.recoil > 0.0"},
         ]
         for bone_name, axis in meta["spin"].items():
             key = f"animation.{NS}.{name}.spin"
@@ -361,7 +363,8 @@ def write_attachables(models):
                 }
             },
         }
-        write_json(os.path.join(RP, "attachables", NS, f"{name}.json"), att)
+        # top level, like every vanilla attachable
+        write_json(os.path.join(RP, "attachables", f"{NS}_{name}.json"), att)
     write_json(os.path.join(RP, "animations", f"{NS}.attachables.animation.json"),
                {"format_version": "1.10.0", "animations": anims})
     # Metal parts: alpha-test (glint when enchanted).  Bones named glow_*:

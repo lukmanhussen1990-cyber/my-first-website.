@@ -83,8 +83,9 @@ All recipes appear in the recipe book once you pick up a Mana Crystal.
 
 ## Realistic holding
 
-* **First person:** each gun points at the crosshair like in a shooter game. Bedrock hides your own arm
-  while you hold an item, so every gun comes with a **gloved hand with a gold cuff**.
+* **First person:** each gun sits in the lower right and points at the crosshair like in a shooter game
+  (placement replays Bedrock's own first-person arm rig, see `tools/fp_preview.py`). Bedrock hides your
+  own arm while you hold an item, so every gun comes with a **gloved hand with a gold cuff**.
   Rifles and the cannon are held with **both hands**.
 * **Third person:** your character raises the gun and aims it where you look. Pistols are held
   one-handed, rifles two-handed. Armor stands and mobs also show the 3D models.

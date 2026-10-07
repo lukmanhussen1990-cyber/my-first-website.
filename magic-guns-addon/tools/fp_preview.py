@@ -1,102 +1,116 @@
 """
-fp_preview.py - first-person preview that reproduces Blockbench's Bedrock
-"attachable_first" preview (js/formats/bedrock/attachable_preview.js), the
-view creators use to pose held items so they match the game:
+fp_preview.py - first-person preview that replays Bedrock's own first-person
+rig for a bound attachable, so what it shows is what the game shows.
 
-  * a bound root is placed at (-20, 21, 0) and rotated Euler ZYX (-95, 45, 115)
-    (Blockbench space), i.e. the vanilla first-person right-arm transform;
-  * the camera sits at (0, 19, -40) looking at (0, 16, 0), focal length 18 mm
-    (35 mm film, 16:9) -> ~57 deg vertical field of view.
+Chain (vanilla player.animation.json, animation.player.first_person.empty_hand):
+  rightarm  pivot (-5,22,0)  position (13.5,-10,12)  rotation (95,-45,115)
+  rightitem pivot (-6,15,1)  position (0,0,-1)
+  bound geometry origin = rightitem pivot - (0,24,0)   (Blockbench attaches bound
+  groups the same way; the Bedrock Wiki's method-1/method-2 numbers differ by
+  exactly that offset)
+Camera: eye (0,27.41,0), looking +Z, screen-right = +X  (the spyglass "scoping"
+pose puts its eyepiece at (-1,27,-3) in the 180-degree-turned head frame, and
+the trident comes out upright at eye level on the right, as in the game).
 
-Bedrock animation values are converted like Blockbench does on import:
-position x and rotation x/y are negated.
+Everything here is in Bedrock *file* space: rotation (x,y,z) -> Rz(-z)Ry(y)Rx(-x).
 """
 
 import math
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
 import gunsmith
 
 
-def _M(pivot, pos=(0, 0, 0), rot=(0, 0, 0)):
+def _rx(t):
+    c, s = math.cos(math.radians(t)), math.sin(math.radians(t))
+    return np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
+
+
+def _ry(t):
+    c, s = math.cos(math.radians(t)), math.sin(math.radians(t))
+    return np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
+
+
+def _rz(t):
+    c, s = math.cos(math.radians(t)), math.sin(math.radians(t))
+    return np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
+
+
+def rot_file(rot):
+    x, y, z = rot
+    return _rz(-z) @ _ry(y) @ _rx(-x)
+
+
+def bone_matrix(pivot, position=(0, 0, 0), rotation=(0, 0, 0)):
     p = np.array(pivot, float)
-    R = gunsmith._rot_matrix(rot)
+    R = rot_file(rotation)
     M = np.eye(4)
     M[:3, :3] = R
-    M[:3, 3] = p + np.array(pos, float) - R @ p
+    M[:3, 3] = p + np.array(position, float) - R @ p
     return M
 
 
-def _file_anim_to_bb(pos, rot):
-    return (-pos[0], pos[1], pos[2]), (-rot[0], -rot[1], rot[2])
+ARM = bone_matrix((-5, 22, 0), (13.5, -10, 12), (95, -45, 115))
+ITEM_SHIFT = np.array([-6, 15, 1.0]) + np.array([0, 0, -1.0]) - np.array([0, 24, 0.0])
+EYE = np.array([0.0, 27.41, 0.0])
+VFOV = 70.0
 
 
-def render_fp(geo, tex_rgba, glow_mask, root_pos, root_rot, body_pos=(0, 0, 0), hide=(),
-              size=(960, 540), bg=(120, 165, 225, 255), crosshair=True):
-    """root_pos/root_rot/body_pos are the numbers written in the .animation.json."""
-    rp, rr = _file_anim_to_bb(root_pos, root_rot)
-    bp, _ = _file_anim_to_bb(body_pos, (0, 0, 0))
-    place = _M((0, 0, 0), (-20, 21, 0), (-95, 45, 115))
-    root = _M((0, 0, 0), rp, rr)
-    body = _M((0, 0, 0), bp)
-    M = place @ root @ body
-    quads = []
-    for q, uv, n in gunsmith.bedrock_to_quads(geo, hide=hide):
-        Q = q @ M[:3, :3].T + M[:3, 3]
-        quads.append((Q, uv, M[:3, :3] @ n))
-    # camera basis: eye (0,19,-40) -> target (0,16,0)
-    eye = np.array([0.0, 19.0, -40.0])
-    fwd = np.array([0.0, 16.0, 0.0]) - eye
-    fwd /= np.linalg.norm(fwd)
-    right = np.cross(fwd, [0, 1, 0])
-    right /= np.linalg.norm(right)
-    up = np.cross(right, fwd)
+def chain_matrix(root_pos, root_rot):
+    """Model (file space) -> entity space for the first-person right hand."""
+    root = bone_matrix((0, 0, 0), root_pos, root_rot)
+    shift = np.eye(4)
+    shift[:3, 3] = ITEM_SHIFT
+    return ARM @ shift @ root
+
+
+def render_fp(geo, tex_rgba, glow_mask, root_pos, root_rot, size=(960, 540), bg=(120, 165, 225, 255),
+              hud=True, light=(0.3, 0.9, -0.4)):
+    M = chain_matrix(root_pos, root_rot)
     W, H = size
-    film_h = 35.0 / (W / H)
-    f = (H / 2) / (0.5 * film_h / 18.0)
+    f = (H / 2) / math.tan(math.radians(VFOV) / 2)
     tex = np.asarray(tex_rgba).astype(float) / 255.0
     TH, TW = tex.shape[:2]
     gm = np.asarray(glow_mask, float)
     img = np.zeros((H, W, 4))
     img[:] = np.array(bg, float) / 255
     zbuf = np.full((H, W), -1e9)
-    L = np.array([0.3, 0.9, -0.4])
+    L = np.array(light, float)
     L /= np.linalg.norm(L)
-    for Q, (u, v, w, h), n in quads:
-        rel = Q - eye
-        cx, cy, cz = rel @ right, rel @ up, rel @ fwd
-        if (cz < 0.5).any():
+    for q, (u, v, w, h), n in gunsmith.bedrock_to_quads(geo):
+        Q = q.copy()
+        Q[:, 0] *= -1  # Blockbench space -> file space
+        P = Q @ M[:3, :3].T + M[:3, 3]
+        nf = n.copy()
+        nf[0] *= -1
+        nf = M[:3, :3] @ nf
+        C = P - EYE
+        depth = C[:, 2]
+        if (depth < 0.5).any():
             continue
-        if n @ (eye - Q.mean(0)) <= 0:
+        if nf @ (EYE - P.mean(0)) <= 0:
             continue
-        sx = W / 2 + f * cx / cz
-        sy = H / 2 - f * cy / cz
+        sx = W / 2 + f * C[:, 0] / depth
+        sy = H / 2 - f * C[:, 1] / depth
         uvc = np.array([[u, v], [u + w, v], [u + w, v + h], [u, v + h]], float)
-        shade = 0.5 + 0.5 * max(0.0, float(n @ L))
+        shade = 0.5 + 0.5 * max(0.0, float(nf @ L))
         for tri in ((0, 1, 2), (0, 2, 3)):
             t = list(tri)
-            gunsmith._raster_tri_rect(img, zbuf, sx[t], sy[t], -cz[t], uvc[t], tex, gm, TW, TH, shade)
+            gunsmith._raster_tri_rect(img, zbuf, sx[t], sy[t], -depth[t], uvc[t], tex, gm, TW, TH, shade)
     out = Image.fromarray((np.clip(img, 0, 1) * 255 + 0.5).astype(np.uint8), "RGBA")
-    if crosshair:
-        from PIL import ImageDraw
-        d = ImageDraw.Draw(out)
-        d.line([(W / 2 - 8, H / 2), (W / 2 + 8, H / 2)], fill=(255, 255, 255, 255), width=2)
-        d.line([(W / 2, H / 2 - 8), (W / 2, H / 2 + 8)], fill=(255, 255, 255, 255), width=2)
-    return out, M
+    d = ImageDraw.Draw(out, "RGBA")
+    d.line([(W / 2 - 8, H / 2), (W / 2 + 8, H / 2)], fill=(255, 255, 255, 255), width=2)
+    d.line([(W / 2, H / 2 - 8), (W / 2, H / 2 + 8)], fill=(255, 255, 255, 255), width=2)
+    if hud:
+        # where a phone's hotbar / Shoot button sit (see the player's screenshot)
+        d.rectangle([W * 0.29, H * 0.89, W * 0.71, H], fill=(0, 0, 0, 90), outline=(255, 255, 255, 120))
+        d.rectangle([W * 0.45, H * 0.80, W * 0.55, H * 0.88], fill=(0, 0, 0, 90), outline=(255, 255, 255, 120))
+    return out
 
 
-def screen_of(M, point, size=(960, 540)):
-    """Screen position + depth of a model-space (Blockbench) point."""
-    eye = np.array([0.0, 19.0, -40.0])
-    fwd = np.array([0.0, 16.0, 0.0]) - eye
-    fwd /= np.linalg.norm(fwd)
-    right = np.cross(fwd, [0, 1, 0])
-    right /= np.linalg.norm(right)
-    up = np.cross(right, fwd)
-    W, H = size
-    f = (H / 2) / (0.5 * (35.0 / (W / H)) / 18.0)
-    P = M[:3, :3] @ np.array(point, float) + M[:3, 3] - eye
-    cx, cy, cz = P @ right, P @ up, P @ fwd
-    return (W / 2 + f * cx / cz, H / 2 - f * cy / cz, cz)
+def camera_point(root_pos, root_rot, model_point):
+    """Where a model-space (file) point lands: (right, up, forward) from the eye."""
+    M = chain_matrix(root_pos, root_rot)
+    return M[:3, :3] @ np.array(model_point, float) + M[:3, 3] - EYE

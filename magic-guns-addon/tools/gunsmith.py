@@ -1234,21 +1234,12 @@ class Model:
             emit_bone(b.name, b.parent, b.pivot, b.rotation, plain, is_root)
             if lit:
                 emit_bone("glow_" + b.name, b.name, b.pivot, None, lit, False)
-        vw, vh, voff = visible
-        return {
-            "format_version": "1.16.0",
-            "minecraft:geometry": [{
-                "description": {
-                    "identifier": identifier,
-                    "texture_width": W,
-                    "texture_height": H,
-                    "visible_bounds_width": vw,
-                    "visible_bounds_height": vh,
-                    "visible_bounds_offset": list(voff),
-                },
-                "bones": bones,
-            }],
-        }
+        desc = {"identifier": identifier, "texture_width": W, "texture_height": H}
+        if visible is not None:
+            vw, vh, voff = visible
+            desc.update({"visible_bounds_width": vw, "visible_bounds_height": vh,
+                         "visible_bounds_offset": list(voff)})
+        return {"format_version": "1.16.0", "minecraft:geometry": [{"description": desc, "bones": bones}]}
 
     def _cube_json(self, c, off):
         size = c.to - c.frm
