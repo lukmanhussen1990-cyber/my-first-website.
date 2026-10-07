@@ -64,12 +64,61 @@ def _mix(a, b, t):
     return a + (b - a) * t
 
 
+def _grid(h, w):
+    yy, xx = np.mgrid[0:h, 0:w]
+    return yy.astype(float), xx.astype(float)
+
+
+def _edge_dist(h, w):
+    """Texel distance to the top, bottom, left and right edge of a face."""
+    yy, xx = _grid(h, w)
+    return yy, (h - 1) - yy, xx, (w - 1) - xx
+
+
+def _dilate(m):
+    out = m.copy()
+    out[1:, :] = np.maximum(out[1:, :], m[:-1, :])
+    out[:-1, :] = np.maximum(out[:-1, :], m[1:, :])
+    out[:, 1:] = np.maximum(out[:, 1:], m[:, :-1])
+    out[:, :-1] = np.maximum(out[:, :-1], m[:, 1:])
+    return out
+
+
+def _voronoi(rng, h, w, cell):
+    """Distance to the nearest / second nearest feature point and the cell id
+    of every texel (facets, cracks, pebbled leather...)."""
+    n = max(2, int(round(h * w / float(cell * cell))) + 1)
+    py = rng.random(n) * (h + 2) - 1
+    px = rng.random(n) * (w + 2) - 1
+    yy, xx = _grid(h, w)
+    d = np.sqrt((yy[..., None] + 0.5 - py) ** 2 + (xx[..., None] + 0.5 - px) ** 2)
+    order = np.argsort(d, axis=-1)[..., :2]
+    ds = np.take_along_axis(d, order, axis=-1)
+    return ds[..., 0], ds[..., 1], order[..., 0], n
+
+
+def _draw_line(m, y0, x0, y1, x1, val=1.0):
+    n = int(max(abs(y1 - y0), abs(x1 - x0))) + 1
+    ys = np.round(np.linspace(y0, y1, n)).astype(int)
+    xs = np.round(np.linspace(x0, x1, n)).astype(int)
+    ok = (ys >= 0) & (ys < m.shape[0]) & (xs >= 0) & (xs < m.shape[1])
+    m[ys[ok], xs[ok]] = np.maximum(m[ys[ok], xs[ok]], val)
+
+
 # ------------------------------------------------------------------ materials
 #
 # Each material paints an (h, w, 3) RGB float image plus an (h, w) glow mask
 # in [0,1].  `ctx` tells the painter about the face: which texture axis runs
 # along the cube's longest dimension (for grain / brushing direction) and
 # whether it is a side, top or bottom face (for bevel lighting).
+#
+# Face texture orientation (Blockbench space, barrel towards -Z):
+#   east (+X, the side shown by icons): u runs rear -> muzzle, v top -> bottom
+#   west (-X): u runs muzzle -> rear, v top -> bottom
+#   north / south: u across X, v top -> bottom;  up / down: u across X, v along Z
+
+_NORMAL_AXIS = {"north": 2, "south": 2, "east": 0, "west": 0, "up": 1, "down": 1}
+
 
 class FaceCtx:
     def __init__(self, face, w, h, grain_along_u, cube_size, seed):
@@ -82,6 +131,33 @@ class FaceCtx:
         self.is_side = face in ("north", "south", "east", "west")
         self.is_up = face == "up"
         self.is_down = face == "down"
+        size = np.asarray(cube_size, dtype=float)
+        self.normal_axis = _NORMAL_AXIS[face]
+        self.long_axis = int(np.argmax(size))
+        # the face looks down the cube's long axis (end grain, coil ends...)
+        self.end_face = self.normal_axis == self.long_axis and size[self.long_axis] > 1.25 * np.sort(size)[1]
+
+    def axis_dir(self, axis):
+        """'u' or 'v' when model axis `axis` runs along this face's texture
+        u or v, None when the face is perpendicular to it."""
+        f = self.face
+        if axis == 2:
+            return "u" if f in ("east", "west") else ("v" if f in ("up", "down") else None)
+        if axis == 0:
+            return "u" if f in ("north", "south", "up", "down") else None
+        return "v" if f in ("north", "south", "east", "west") else None
+
+    def axis_coord(self, axis):
+        """Texel coordinate running along model axis `axis` on this face (None
+        when the face is perpendicular to it).  Along Z it always counts from
+        the rear toward the muzzle."""
+        d = self.axis_dir(axis)
+        if d is None:
+            return None
+        yy, xx = _grid(self.h, self.w)
+        if d == "u":
+            return (self.w - 1) - xx if (axis == 2 and self.face == "west") else xx
+        return yy
 
 
 def _streaks(ctx, cell_across=1.5, strength=1.0):
@@ -128,239 +204,645 @@ def _spec_band(ctx, pos=0.3, width=0.18, strength=0.25):
     return np.repeat(band[:, None], ctx.w, axis=1)
 
 
-def metal(base, hi=None, streak=0.10, band=0.22, noise=0.05):
+def _ao(img, ctx, strength=0.25, width=1.6):
+    """Ambient occlusion: darken toward the edges where parts meet (mostly
+    the bottom of side faces and the ends of long faces)."""
+    h, w = ctx.h, ctx.w
+    if h < 3 or w < 3 or strength <= 0:
+        return img
+    t, b, l, r = _edge_dist(h, w)
+
+    def e(d):
+        return np.exp(-d / width)
+    if ctx.is_side:
+        occ = 0.3 * e(t + 1) + 1.0 * e(b) + 0.55 * e(np.minimum(l, r))
+    elif ctx.is_up:
+        occ = 0.35 * e(np.minimum(np.minimum(t, b), np.minimum(l, r)))
+    else:
+        occ = 0.9 * e(np.minimum(np.minimum(t, b), np.minimum(l, r)))
+    return img * (1 - strength * np.clip(occ, 0, 1))[..., None]
+
+
+def _wear(img, ctx, bare, amount=0.5):
+    """Scuffed, lighter bare metal chipped along exposed edges."""
+    h, w = ctx.h, ctx.w
+    if amount <= 0 or h < 3 or w < 3:
+        return img
+    t, b, l, r = _edge_dist(h, w)
+    rng = ctx.rng
+    clump = _smooth_noise(rng, h, w, 2.5)
+    speck = rng.random((h, w))
+    if ctx.is_side:
+        rim = (t < 1) * 1.0 + (np.minimum(l, r) < 1) * 0.55 + ((t >= 1) & (t < 2)) * 0.3
+    elif ctx.is_up:
+        rim = (np.minimum(np.minimum(t, b), np.minimum(l, r)) < 1) * 0.85
+    else:
+        rim = (np.minimum(t, b) < 1) * 0.25
+    m = np.clip(rim, 0, 1) * (clump > 0.42) * (speck > 0.18)
+    return _mix(img, bare, m * amount)
+
+
+def _scratches(ctx, density=1.0):
+    """A few hairline scratches, mostly along the long axis."""
+    h, w = ctx.h, ctx.w
+    m = np.zeros((h, w))
+    if h < 4 or w < 4 or density <= 0:
+        return m
+    rng = ctx.rng
+    n = int(rng.poisson(density * h * w / 150.0))
+    base_ang = 0.0 if ctx.grain_along_u else math.pi / 2
+    for _ in range(n):
+        y0, x0 = rng.uniform(0, h), rng.uniform(0, w)
+        ln = rng.uniform(2, 6)
+        ang = base_ang + rng.normal(0, 0.35) + (math.pi / 2 if rng.random() < 0.15 else 0.0)
+        _draw_line(m, y0, x0, y0 + ln * math.sin(ang), x0 + ln * math.cos(ang), rng.uniform(0.5, 1.0))
+    return m
+
+
+def metal(base, hi=None, streak=0.10, band=0.22, noise=0.05, wear=0.5, scratch=1.0, grad=0.18):
+    """Machined metal: brushed along the long axis, polished reflection band,
+    hairline scratches, AO toward the seams and scuffed bright edges."""
     base = _c(base)
     hi = _c(hi) if hi is not None else np.minimum(base * 1.6 + 0.08, 1)
+    bare = np.minimum(hi * 0.85 + 0.12, 1)
 
     def paint(ctx):
-        img = np.empty((ctx.h, ctx.w, 3))
+        h, w = ctx.h, ctx.w
+        img = np.empty((h, w, 3))
         img[:] = base
+        if ctx.is_side and h >= 3:
+            v = (np.arange(h) + 0.5) / h
+            img *= (1 + grad * 0.5 - grad * v)[:, None, None]
         img += _streaks(ctx, 1.2, streak)[..., None]
-        img += (_fbm(ctx.rng, ctx.h, ctx.w, 4) - 0.5)[..., None] * noise
-        b = _spec_band(ctx, 0.28, 0.2, 1.0)
-        img = _mix(img, hi, b * band)
+        img += (_fbm(ctx.rng, h, w, 4) - 0.5)[..., None] * noise
+        img = _mix(img, hi, _spec_band(ctx, 0.28, 0.2, 1.0) * band)
+        if scratch:
+            img = _mix(img, bare, _scratches(ctx, scratch) * 0.3)
+        img = _ao(img, ctx, 0.28)
         if ctx.is_down:
             img *= 0.8
         img = _bevel(img, ctx)
-        return img, np.zeros((ctx.h, ctx.w))
+        img = _wear(img, ctx, bare, wear)
+        return img, np.zeros((h, w))
     return paint
 
 
-def wood(base, dark, rings=5.0):
+def wood(base, dark, rings=5.0, pores=1.0, sheen=0.14):
+    """Oiled hardwood: growth rings with cathedral figure, open pores along
+    the grain, end grain rings on the faces that look down the long axis."""
+    base, dark = _c(base), _c(dark)
+    light = np.minimum(base * 1.2 + 0.03, 1)
+
+    def paint(ctx):
+        rng = ctx.rng
+        h, w = ctx.h, ctx.w
+        yy, xx = _grid(h, w)
+        if ctx.end_face:
+            cy = rng.uniform(-0.8, 1.8) * h
+            cx = rng.uniform(-0.8, 1.8) * w
+            ring = np.sqrt((yy - cy) ** 2 + (xx - cx) ** 2) + (_smooth_noise(rng, h, w, 3) - 0.5) * 1.6
+        else:
+            along, across = (xx, yy) if ctx.grain_along_u else (yy, xx)
+            length = float(w if ctx.grain_along_u else h)
+            warp = (_smooth_noise(rng, h, w, max(4.0, length / 3.0)) - 0.5) * 5.0
+            c0 = rng.uniform(0.25, 0.75) * length
+            arch = ((along - c0) / max(length, 1.0)) ** 2 * rng.uniform(5, 12) * (1 if rng.random() < 0.5 else -1)
+            ring = across + warp + arch
+        phase = (ring / rings + rng.random()) % 1.0
+        late = np.clip(1 - phase / 0.28, 0, 1) ** 1.5
+        t = np.clip(late * 0.75 + (1 - phase) * 0.22, 0, 1)
+        img = _mix(np.broadcast_to(light, (h, w, 3)), dark, t)
+        img += (_fbm(rng, h, w, 3) - 0.5)[..., None] * 0.05
+        if pores and h >= 3 and w >= 3:
+            pm = np.zeros((h, w))
+            for _ in range(int(h * w / 12 * pores)):
+                y0, x0 = int(rng.integers(0, h)), int(rng.integers(0, w))
+                ln = int(rng.integers(1, 4))
+                if ctx.end_face:
+                    pm[y0, x0] = 1
+                elif ctx.grain_along_u:
+                    pm[y0, x0:x0 + ln] = 1
+                else:
+                    pm[y0:y0 + ln, x0] = 1
+            img = _mix(img, dark * 0.8, pm * 0.3)
+        img = _mix(img, np.minimum(light * 1.25 + 0.05, 1), _spec_band(ctx, 0.3, 0.18, 1.0) * sheen)
+        img = _ao(img, ctx, 0.3)
+        if ctx.is_down:
+            img *= 0.85
+        img = _bevel(img, ctx, 0.07, 0.12)
+        img = _wear(img, ctx, np.minimum(light * 1.15, 1), 0.3)
+        return img, np.zeros((h, w))
+    return paint
+
+
+def cloth(base, dark):
+    """Woven twill (coat sleeves): diagonal weave + soft folds."""
     base, dark = _c(base), _c(dark)
 
     def paint(ctx):
         rng = ctx.rng
         h, w = ctx.h, ctx.w
-        if ctx.grain_along_u:
-            across = np.arange(h)[:, None] + _smooth_noise(rng, h, w, max(3, w // 4)) * 3.0
-        else:
-            across = np.arange(w)[None, :] + _smooth_noise(rng, h, w, max(3, h // 4)) * 3.0
-        grain = 0.5 + 0.5 * np.sin(across / max(1.0, rings / 2.0) * math.pi)
-        grain = grain ** 3
-        img = _mix(np.broadcast_to(base, (h, w, 3)), dark, grain * 0.55)
-        img += (_fbm(rng, h, w, 3) - 0.5)[..., None] * 0.05
-        img = _bevel(img, ctx, 0.08, 0.12)
+        yy, xx = _grid(h, w)
+        twill = ((xx + yy) % 4 < 2).astype(float)
+        img = _mix(np.broadcast_to(base, (h, w, 3)), dark, twill * 0.35)
+        folds = _smooth_noise(rng, h, w, max(3, min(h, w) // 2 + 2))
+        img *= (0.88 + 0.24 * folds)[..., None]
+        img += (rng.random((h, w)) - 0.5)[..., None] * 0.04
+        img = _ao(img, ctx, 0.2)
+        img = _bevel(img, ctx, 0.05, 0.1)
         return img, np.zeros((h, w))
     return paint
 
 
-def leather_wrap(base, dark, period=3):
+def leather(base, dark, stitch=None):
+    """Pebbled leather (gloves): fine grain, soft creases, optional stitching."""
     base, dark = _c(base), _c(dark)
+    stitch = _c(stitch) if stitch is not None else None
 
     def paint(ctx):
+        rng = ctx.rng
         h, w = ctx.h, ctx.w
-        yy, xx = np.mgrid[0:h, 0:w]
-        if ctx.grain_along_u:
-            diag = (xx + yy * 0.6) % period
-        else:
-            diag = (yy + xx * 0.6) % period
-        seam = (diag < 1).astype(float)
-        img = _mix(np.broadcast_to(base, (h, w, 3)), dark, seam * 0.7)
-        img += (_fbm(ctx.rng, h, w, 3) - 0.5)[..., None] * 0.08
+        img = np.empty((h, w, 3))
+        img[:] = base
+        if h >= 3 and w >= 3:
+            d1, d2, _, _ = _voronoi(rng, h, w, 1.8)
+            img = _mix(img, dark, np.clip(1 - (d2 - d1) / 0.7, 0, 1) * 0.45)
+        img *= (0.9 + 0.2 * _fbm(rng, h, w, 4))[..., None]
+        img = _mix(img, np.minimum(base * 2.2 + 0.08, 1), _spec_band(ctx, 0.3, 0.2, 1.0) * 0.12)
+        if stitch is not None and ctx.is_side and h >= 8 and w >= 6:
+            img[2, 1:-1:2] = stitch
+        img = _ao(img, ctx, 0.22)
         img = _bevel(img, ctx, 0.06, 0.1)
         return img, np.zeros((h, w))
     return paint
 
 
-def knurl(base, hi):
+def leather_wrap(base, dark, period=4):
+    """Grip wrapped in diagonal leather straps: each strap rounded and lit
+    on its upper edge, dark gaps between the turns, pebbled grain."""
+    base, dark = _c(base), _c(dark)
+    hi = np.minimum(base * 1.45 + 0.05, 1)
+
+    def paint(ctx):
+        h, w = ctx.h, ctx.w
+        yy, xx = _grid(h, w)
+        along, across = (xx, yy) if ctx.grain_along_u else (yy, xx)
+        phase = ((along + across * 0.7) % period) / period
+        strap = np.sin(np.pi * np.clip(phase * period / max(1, period - 1), 0, 1)) ** 0.6
+        img = _mix(np.broadcast_to(dark, (h, w, 3)), base, strap)
+        img = _mix(img, hi, np.clip(1 - np.abs(phase - 0.3) * 6, 0, 1) * 0.35)
+        gap = phase >= (period - 1) / period
+        img[gap] = dark * 0.7
+        img += (ctx.rng.random((h, w)) - 0.5)[..., None] * 0.05
+        img = _ao(img, ctx, 0.25)
+        img = _bevel(img, ctx, 0.06, 0.1)
+        return img, np.zeros((h, w))
+    return paint
+
+
+def knurl(base, hi, cell=4):
+    """Diamond checkering: little lit pyramids between dark grooves."""
     base, hi = _c(base), _c(hi)
 
     def paint(ctx):
         h, w = ctx.h, ctx.w
-        yy, xx = np.mgrid[0:h, 0:w]
-        dots = (((xx + yy) % 3 == 0) | ((xx - yy) % 3 == 0)).astype(float)
-        img = _mix(np.broadcast_to(base, (h, w, 3)), hi, dots * 0.5)
+        yy, xx = _grid(h, w)
+        a = (xx + yy) % cell
+        b = (xx - yy) % cell
+        groove = (a == 0) | (b == 0)
+        half = cell / 2.0
+        s = (half - a) / half * 0.6 + (half - b) / half * 0.25
+        img = np.empty((h, w, 3))
+        img[:] = base
+        img = np.where(s[..., None] > 0, _mix(img, hi, np.clip(s, 0, 1) * 0.8), img * (1 + np.clip(s, -1, 0) * 0.5)[..., None])
+        img[groove] = base * 0.45
+        img = _ao(img, ctx, 0.25)
         img = _bevel(img, ctx, 0.1, 0.12)
         return img, np.zeros((h, w))
     return paint
 
 
 def bone(base=(0.88, 0.85, 0.74), crack=(0.45, 0.40, 0.32)):
+    """Old bone: long fibres, pores, yellow-brown grime in the crevices and a
+    hairline crack or two."""
     base, crack = _c(base), _c(crack)
+    grime = crack * 1.25
 
     def paint(ctx):
         rng = ctx.rng
         h, w = ctx.h, ctx.w
         n = _fbm(rng, h, w, 6, 4)
-        img = _mix(np.broadcast_to(base, (h, w, 3)), base * 0.78, n)
-        ridge = np.abs(_smooth_noise(rng, h, w, 5) - 0.5)
-        img = _mix(img, crack, (ridge < 0.035).astype(float) * 0.8)
-        img = _bevel(img, ctx, 0.05, 0.18)
+        img = _mix(np.broadcast_to(base, (h, w, 3)), base * 0.8, n * 0.8)
+        img += _streaks(ctx, 1.0, 0.07)[..., None]
+        if h >= 3 and w >= 3:
+            t, b, l, r = _edge_dist(h, w)
+            occ = np.exp(-np.minimum(np.minimum(t + 1, b), np.minimum(l, r)) / 1.4)
+            img = _mix(img, grime, occ * 0.45)
+            pits = rng.random((h, w)) > 0.965
+            img[pits] = img[pits] * 0.72
+            if h >= 6 and w >= 6:
+                cm = np.zeros((h, w))
+                for _ in range(1 + int(h * w > 160)):
+                    y, x = rng.uniform(0, h), rng.uniform(0, w)
+                    ang = rng.uniform(0, 2 * math.pi)
+                    for _ in range(int(min(h, w) * 0.9)):
+                        ang += rng.normal(0, 0.6)
+                        y2, x2 = y + math.sin(ang), x + math.cos(ang)
+                        _draw_line(cm, y, x, y2, x2)
+                        y, x = y2, x2
+                img = _mix(img, crack, cm * 0.75)
+        img = _bevel(img, ctx, 0.08, 0.18)
         return img, np.zeros((h, w))
     return paint
 
 
-def obsidian(base=(0.07, 0.04, 0.11), fleck=(0.36, 0.16, 0.55)):
-    base, fleck = _c(base), _c(fleck)
+def obsidian(base=(0.07, 0.04, 0.11), fleck=(0.36, 0.16, 0.55), sheen=(0.55, 0.45, 0.75)):
+    """Volcanic glass: conchoidal facets with bright ridges, purple sheen,
+    a crisp reflection and a few glittering flecks."""
+    base, fleck, sheen = _c(base), _c(fleck), _c(sheen)
 
     def paint(ctx):
         rng = ctx.rng
         h, w = ctx.h, ctx.w
-        n = _fbm(rng, h, w, 4, 3)
-        img = _mix(np.broadcast_to(base, (h, w, 3)), base * 2.2, n * 0.6)
-        f = rng.random((h, w)) > 0.93
-        img[f] = _mix(img[f], fleck, 0.8)
-        img = _mix(img, np.array([0.55, 0.45, 0.75]), _spec_band(ctx, 0.25, 0.15, 0.25))
-        img = _bevel(img, ctx, 0.12, 0.05)
+        img = np.empty((h, w, 3))
+        img[:] = base
+        yy, xx = _grid(h, w)
+        if h >= 3 and w >= 3:
+            d1, d2, cid, n = _voronoi(rng, h, w, 4.0)
+            tone = rng.random(n)[cid]
+            grad = np.clip(d1 / 3.0, 0, 1)  # each chip darkens toward its centre
+            img = img * (1.0 + tone[..., None] * 1.3 + (1 - grad)[..., None] * 0.3)
+            ridge = np.clip(1 - (d2 - d1) / 0.8, 0, 1)
+            img = _mix(img, fleck * 0.9, ridge * 0.4)
+        diag = np.clip(xx / max(1, w) * 0.6 + yy / max(1, h) * 0.4, 0, 1)
+        img = _mix(img, fleck, (1 - diag) * 0.18)
+        img = _mix(img, sheen, _spec_band(ctx, 0.24, 0.1, 1.0) * 0.32)
+        f = rng.random((h, w)) > 0.95
+        img[f] = _mix(img[f], np.minimum(fleck * 1.8, 1), 0.8)
+        img = _ao(img, ctx, 0.2)
+        img = _bevel(img, ctx, 0.14, 0.04)
         return img, np.zeros((h, w))
     return paint
 
 
 def patina(copper=(0.72, 0.43, 0.29), green=(0.29, 0.62, 0.52)):
+    """Copper gone green: verdigris pooling in the crevices and blotches,
+    rubbed bright copper on the exposed edges."""
     copper, green = _c(copper), _c(green)
+    base_paint = metal(copper, (0.98, 0.74, 0.56), streak=0.06, band=0.28, wear=0.7)
+    verd_hi = np.minimum(green * 1.35 + 0.08, 1)
 
     def paint(ctx):
         rng = ctx.rng
         h, w = ctx.h, ctx.w
+        img, g = base_paint(ctx)
         n = _fbm(rng, h, w, 5, 3)
-        img = _mix(np.broadcast_to(copper, (h, w, 3)), green, np.clip((n - 0.38) * 3.0, 0, 1))
-        img += _streaks(ctx, 1.2, 0.06)[..., None]
-        img = _mix(img, np.array([0.95, 0.75, 0.6]), _spec_band(ctx, 0.3, 0.15, 0.25))
-        img = _bevel(img, ctx)
-        return img, np.zeros((h, w))
+        amt = np.clip((n - 0.42) * 3.0, 0, 1)
+        if h >= 3 and w >= 3:
+            t, b, l, r = _edge_dist(h, w)
+            occ = np.exp(-np.minimum(b, np.minimum(l, r)) / 1.5)
+            amt = np.clip(amt + occ * 0.55, 0, 1)
+            if ctx.is_side:
+                amt[0, :] *= 0.15
+        verd = _mix(np.broadcast_to(green, (h, w, 3)), verd_hi, (rng.random((h, w)) > 0.8) * 0.6)
+        img = _mix(img, verd, amt * 0.9)
+        return img, g
     return paint
 
 
-def trimmed(inner_paint, trim_paint, border=1):
-    """Plate with an inlaid border of another material (gold filigree...)."""
+def trimmed(inner_paint, trim_paint, border=1, scroll=True, gem=None):
+    """Plate with an inlaid border of another material and deliberate,
+    mirror-symmetric filigree: a scroll vine along big side faces, corner
+    fleurons, and an optional little glowing gem in a diamond setting."""
+    gem = _c(gem) if gem is not None else None
+
     def paint(ctx):
         a, ga = inner_paint(ctx)
         b, gb = trim_paint(ctx)
         h, w = ctx.h, ctx.w
         m = np.zeros((h, w))
+        gm = np.zeros((h, w))
         if h > 2 * border + 1 and w > 2 * border + 1:
             m[:border, :] = 1
             m[-border:, :] = 1
             m[:, :border] = 1
             m[:, -border:] = 1
-            # a little scroll-work: dotted mid line on big side faces
-            if ctx.is_side and h >= 7 and w >= 10:
-                mid = h // 2
-                m[mid, 2:-2:3] = 1
+            # engraved step just inside the inlay
+            a = a.copy()
+            a[border, border:w - border] *= 0.72
+            a[border:h - border, border] *= 0.85
+            big = h >= 2 * border + 6 and w >= 2 * border + 9
+            if big:
+                for (y, x, dy, dx) in ((border + 1, border + 1, 1, 1), (border + 1, w - border - 2, 1, -1),
+                                       (h - border - 2, border + 1, -1, 1), (h - border - 2, w - border - 2, -1, -1)):
+                    m[y, x] = 1
+                    m[y + dy, x + dx] = 0.8
+            if scroll and ctx.is_side and big:
+                mid = (h - 1) / 2.0
+                cx = (w - 1) / 2.0
+                amp = 1.0 if h < 11 else 2.0
+                period = 8.0
+                gap = 3 if gem is not None else 1
+                for x in range(border + 3, w - border - 3):
+                    dx = abs(x - cx)
+                    if dx < gap:
+                        continue
+                    y = mid + amp * math.sin(2 * math.pi * (dx - gap) / period)
+                    yi = int(round(y))
+                    m[yi, x] = max(m[yi, x], 0.9)
+                    # curl / leaf at every crest
+                    ph = ((dx - gap) / period) % 1.0
+                    if abs(ph - 0.25) < 0.07 or abs(ph - 0.75) < 0.07:
+                        yl = yi + (-1 if ph < 0.5 else 1)
+                        if 0 < yl < h - 1:
+                            m[yl, x] = max(m[yl, x], 0.7)
+                cyi, cxi = int(round(mid)), int(round(cx))
+                for (dy, dx) in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                    m[cyi + dy, cxi + dx] = 1
+                if gem is not None:
+                    gm[cyi, cxi] = 1
+                else:
+                    m[cyi, cxi] = 1
+            elif ctx.is_up and big:
+                cy, cx = h // 2, w // 2
+                m[cy, cx] = 1
         img = _mix(a, b, m)
-        glow = ga * (1 - m) + gb * m
-        return img, glow
+        glow_m = ga * (1 - m) + gb * m
+        if gem is not None and gm.any():
+            img[gm > 0] = np.minimum(gem * 1.2 + 0.2, 1)
+            glow_m = np.maximum(glow_m, gm)
+        return img, glow_m
     return paint
 
 
-def glow(core, edge=None, facets=True, sparkle=True, lines=None):
-    """Emissive crystal / energy material.  Whole face glows."""
+def glow(core, edge=None, facets=True, sparkle=True, lines=None, style="veins"):
+    """Emissive crystal / energy material.  Whole face glows.  `facets`
+    cuts it like a gem (radial facets, a bright table, a diagonal glint),
+    `lines` adds bright veins (magma cracks, "veins") or zigzag bolts."""
     core = _c(core)
     edge = _c(edge) if edge is not None else core * 0.55
 
     def paint(ctx):
         rng = ctx.rng
         h, w = ctx.h, ctx.w
-        yy, xx = np.mgrid[0:h, 0:w]
+        yy, xx = _grid(h, w)
         cy, cx = (h - 1) / 2.0, (w - 1) / 2.0
-        r = np.sqrt(((yy - cy) / max(1, h / 2)) ** 2 + ((xx - cx) / max(1, w / 2)) ** 2)
+        ny = (yy - cy) / max(1.0, h / 2.0)
+        nx = (xx - cx) / max(1.0, w / 2.0)
+        r = np.sqrt(ny ** 2 + nx ** 2)
         t = np.clip(r / 1.3, 0, 1)
         img = _mix(np.broadcast_to(np.minimum(core * 1.25 + 0.15, 1), (h, w, 3)), edge, t)
-        if facets and h >= 3 and w >= 3:
-            diag = ((xx / max(1, w) - yy / max(1, h)) > 0).astype(float)
-            img = img * (0.9 + 0.12 * diag[..., None])
-        img += (_fbm(rng, h, w, 3) - 0.5)[..., None] * 0.12
+        if facets and h >= 4 and w >= 4:
+            ang = np.arctan2(ny, nx)
+            fid = np.floor((ang + math.pi) / (math.pi / 4.0))
+            ftone = np.cos((fid + 0.5) * (math.pi / 4.0) - math.pi + math.radians(135))
+            img = img * (1.0 + 0.13 * ftone)[..., None]
+            table = (np.abs(ny) < 0.38) & (np.abs(nx) < 0.38)
+            img[table] = np.minimum(img[table] * 1.08 + 0.04, 1)
+            glint = np.abs((xx + 0.5) / w + (yy + 0.5) / h - 0.62) < 0.07
+            img = _mix(img, np.ones(3), glint * (r < 1.1) * 0.45)
+            rim = np.zeros((h, w), bool)
+            rim[0, :] = rim[-1, :] = rim[:, 0] = rim[:, -1] = True
+            img[rim] = img[rim] * 0.82
+        img += (_fbm(rng, h, w, 3) - 0.5)[..., None] * 0.1
         if lines is not None:
             lc = _c(lines)
-            zig = np.abs(((xx + 2 * np.sin(yy * 0.9)) % 5) - 2.5) < 0.5
-            img = _mix(img, lc, zig.astype(float) * 0.85)
-        if sparkle:
-            s = rng.random((h, w)) > 0.92
-            img[s] = np.minimum(img[s] + 0.35, 1)
+            if style == "bolt":
+                lm = np.zeros((h, w))
+                for _ in range(max(1, (h * w) // 120)):
+                    y, x = rng.uniform(0, h), rng.uniform(0, w * 0.2)
+                    while x < w:
+                        y2 = np.clip(y + rng.uniform(-2.5, 2.5), 0, h - 1)
+                        x2 = x + rng.uniform(1.5, 3.0)
+                        _draw_line(lm, y, x, y2, x2)
+                        y, x = y2, x2
+                img = _mix(img, lc, lm * 0.9)
+            elif h >= 3 and w >= 3:
+                d1, d2, _, _ = _voronoi(rng, h, w, 3.2)
+                vein = np.clip(1 - (d2 - d1) / 0.9, 0, 1)
+                img = _mix(img, lc, vein * 0.85)
+        if sparkle and h >= 3 and w >= 3:
+            for _ in range(max(1, (h * w) // 90)):
+                sy, sx = int(rng.integers(0, h)), int(rng.integers(0, w))
+                img[sy, sx] = np.minimum(img[sy, sx] + 0.45, 1)
+                for (dy, dx) in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                    yy2, xx2 = sy + dy, sx + dx
+                    if 0 <= yy2 < h and 0 <= xx2 < w:
+                        img[yy2, xx2] = np.minimum(img[yy2, xx2] + 0.18, 1)
         return img, np.ones((h, w))
     return paint
 
 
-def runes(metal_paint, rune_rgb, density=0.5):
-    """Metal engraved with glowing glyphs (procedural little sigils)."""
+# hand-drawn sigils (mirror symmetric, one-texel strokes): 5x5 for big faces,
+# 3x3 for slim ones
+_GLYPHS5 = [
+    "#.#.# .###. ..#.. ..#.. ..#..",   # elk / ward
+    "#...# .#.#. ..#.. .#.#. #...#",   # gift
+    "#...# ##.## #.#.# ##.## #...#",   # day
+    "..#.. .#.#. #.#.# #...# #####",   # eye of the pyramid
+    "..#.. .#.#. #.#.# .#.#. ..#..",   # seed
+    "#.#.# #.#.# .###. ..#.. ..#..",   # trident
+    "##### .#.#. ..#.. .#.#. #####",   # hourglass
+    "..#.. #.#.# .###. #.#.# ..#..",   # star
+    "#...# #.#.# .###. ..#.. .###.",   # chalice
+    ".###. #.#.# ##### #.#.# .###.",   # sun wheel
+    "#...# ##.## #.#.# #...# #...#",   # twin pillars
+    ".###. #...# #.#.# #...# #...#",   # arch
+]
+_GLYPHS3 = ["#.# .#. #.#", ".#. ### .#.", "### .#. .#.", ".#. #.# .#.", "#.# ### #.#", "#.# .#. ###"]
+
+
+def _glyph(s):
+    return np.array([[ch == "#" for ch in row] for row in s.split()], dtype=float)
+
+
+_G5 = [_glyph(s) for s in _GLYPHS5]
+_G3 = [_glyph(s) for s in _GLYPHS3]
+
+
+def runes(metal_paint, rune_rgb, density=0.5, channel=True):
+    """Metal engraved with a band of glowing sigils.  Glyphs come from a
+    hand-drawn library, sit evenly spaced and centred in an engraved channel
+    along the long axis, with a faint tinted bleed around the strokes."""
     rune_rgb = _c(rune_rgb)
+    hot = np.minimum(rune_rgb * 1.15 + 0.18, 1)
+    core = np.minimum(rune_rgb * 0.6 + 0.55, 1)
 
     def paint(ctx):
         img, g = metal_paint(ctx)
+        img = img.copy()
         h, w = ctx.h, ctx.w
-        mask = np.zeros((h, w))
         rng = ctx.rng
-        if h >= 5 and w >= 5:
-            # sigils are 3x3 stroke patterns spaced along the long axis
-            step = 5
-            if ctx.grain_along_u or w >= h:
-                cy = h // 2 - 1
-                for x0 in range(1, w - 3, step):
-                    if rng.random() < density + 0.35:
-                        glyph = rng.random((3, 3)) > 0.45
-                        glyph[1, 1] = True
-                        mask[cy:cy + 3, x0:x0 + 3] = np.maximum(mask[cy:cy + 3, x0:x0 + 3], glyph)
+        mask = np.zeros((h, w))
+        horiz = ctx.grain_along_u or w >= h
+        span, thick = (w, h) if horiz else (h, w)
+        lib = None
+        if thick >= 7 and span >= 7:
+            lib, gs = _G5, 5
+        elif thick >= 5 and span >= 5:
+            lib, gs = _G3, 3
+        if lib is not None:
+            step = gs + 2
+            count = max(1, (span - 2) // step)
+            total = count * step - 2
+            start = (span - total) // 2
+            c0 = (thick - gs) // 2
+            if channel and thick >= gs + 2:
+                lo, hi_ = max(0, c0 - 1), min(thick, c0 + gs + 1)
+                s0, s1 = max(0, start - 1), min(span, start + total + 1)
+                if horiz:
+                    img[lo:hi_, s0:s1] *= 0.62
+                    if lo > 0:
+                        img[lo - 1, s0:s1] *= 0.8
+                    if hi_ < h:
+                        img[hi_, s0:s1] = np.minimum(img[hi_, s0:s1] * 1.2 + 0.03, 1)
+                else:
+                    img[s0:s1, lo:hi_] *= 0.62
+            for i in range(count):
+                p = start + i * step
+                if rng.random() < density + 0.35:
+                    gl = lib[int(rng.integers(len(lib)))]
+                else:
+                    gl = np.zeros((gs, gs))
+                    gl[gs // 2, gs // 2] = 1
+                if horiz:
+                    mask[c0:c0 + gs, p:p + gs] = np.maximum(mask[c0:c0 + gs, p:p + gs], gl)
+                else:
+                    mask[p:p + gs, c0:c0 + gs] = np.maximum(mask[p:p + gs, c0:c0 + gs], gl)
+        elif thick >= 2 and span >= 6:
+            k = np.arange(span)
+            dash = ((k % 4) < 2) & (k > 0) & (k < span - 1)
+            mid = thick // 2
+            if horiz:
+                mask[mid, dash] = 1
             else:
-                cx = w // 2 - 1
-                for y0 in range(1, h - 3, step):
-                    if rng.random() < density + 0.35:
-                        glyph = rng.random((3, 3)) > 0.45
-                        glyph[1, 1] = True
-                        mask[y0:y0 + 3, cx:cx + 3] = np.maximum(mask[y0:y0 + 3, cx:cx + 3], glyph)
-        elif h >= 2 and w >= 4:
-            mask[h // 2, 1:-1:2] = 1
-        img = _mix(img, np.minimum(rune_rgb * 1.2 + 0.1, 1), mask)
+                mask[dash, mid] = 1
+        if mask.any():
+            bleed = _dilate(mask) * (1 - mask)
+            img = _mix(img, rune_rgb * 0.75, bleed * 0.35)
+            dense = (np.roll(mask, 1, 0) + np.roll(mask, -1, 0) + np.roll(mask, 1, 1) + np.roll(mask, -1, 1)) * mask
+            img = _mix(img, hot, mask)
+            img = _mix(img, core, (dense >= 3) * 0.55)
         return img, np.maximum(g, mask)
     return paint
 
 
-def coil(metal_paint, glow_rgb, period=3):
-    """Alternating metal windings and glowing gaps (tesla / frost coils)."""
+def coil(metal_paint, glow_rgb, period=4, axis=2):
+    """Windings around model axis `axis` (z = the barrel): each turn is
+    rounded and lit on one side, a thin glowing gap between the turns, and
+    the end faces show a glowing ring around the dark bore."""
     glow_rgb = _c(glow_rgb)
+    hot = np.minimum(glow_rgb * 1.2 + 0.25, 1)
 
     def paint(ctx):
         img, g = metal_paint(ctx)
+        img = img.copy()
+        g = g.copy()
         h, w = ctx.h, ctx.w
-        yy, xx = np.mgrid[0:h, 0:w]
-        if ctx.grain_along_u:
-            m = (xx % period == 0).astype(float)
-        else:
-            m = (yy % period == 0).astype(float)
-        img = _mix(img, glow_rgb, m)
-        return img, np.maximum(g, m)
+        yy, xx = _grid(h, w)
+        t = ctx.axis_coord(axis)
+        if t is None:
+            if h >= 5 and w >= 5:
+                ry = np.abs(yy - (h - 1) / 2.0) / (h / 2.0)
+                rx = np.abs(xx - (w - 1) / 2.0) / (w / 2.0)
+                r = np.maximum(ry, rx)
+                ring = (r > 0.5) & (r < 0.72)
+                img[r <= 0.5] = img[r <= 0.5] * 0.35
+                img[ring] = _mix(img[ring], hot, 0.9)
+                g[ring] = 1
+            return img, g
+        ph = t % period
+        gap = ph >= period - 1
+        k = ph / max(1, period - 1)
+        img = img * (1.18 - 0.42 * k)[..., None]
+        img[gap] = glow_rgb
+        if h >= 3 and w >= 3:
+            across = yy - (h - 1) / 2.0 if ctx.axis_dir(axis) == "u" else xx - (w - 1) / 2.0
+            n_across = h if ctx.axis_dir(axis) == "u" else w
+            img[gap & (np.abs(across) <= n_across * 0.3)] = hot
+        g = np.maximum(g, gap.astype(float))
+        return img, g
     return paint
 
 
 def skull_face(bone_paint, eye_rgb):
-    """Bone with glowing eye sockets on the north (front) face."""
+    """Bone skull: the front face (north) and back face (south) get the full
+    face, the flanks a profile (eye socket at the front, cheekbone, teeth),
+    the top cranial sutures.  Eye sockets glow."""
     eye_rgb = _c(eye_rgb)
+    hot = np.minimum(eye_rgb * 1.1 + 0.35, 1)
+
+    def socket(img, g, y0, x0, eh, ew):
+        y1, x1 = y0 + eh, x0 + ew
+        img[y0:y1, x0:x1] = eye_rgb
+        g[y0:y1, x0:x1] = 1
+        # rounded corners -> dark
+        for (yy, xx) in ((y0, x0), (y0, x1 - 1), (y1 - 1, x0), (y1 - 1, x1 - 1)):
+            if eh >= 3 and ew >= 3:
+                img[yy, xx] = img[yy, xx] * 0.25
+                g[yy, xx] = 0
+        cy, cx = y0 + eh // 2, x0 + ew // 2
+        img[cy, cx] = hot
+        # dark brow ridge above the socket
+        if y0 - 1 >= 0:
+            img[y0 - 1, x0:x1] *= 0.6
 
     def paint(ctx):
         img, g = bone_paint(ctx)
+        img = img.copy()
+        g = g.copy()
         h, w = ctx.h, ctx.w
-        if ctx.face in ("north", "south") and h >= 6 and w >= 6:
-            ey = int(h * 0.38)
-            ew = max(1, w // 4)
-            eh = max(1, h // 5)
-            for ex in (int(w * 0.18), w - int(w * 0.18) - ew):
-                img[ey:ey + eh, ex:ex + ew] = eye_rgb
-                g[ey:ey + eh, ex:ex + ew] = 1
-            # nose + teeth
+        f = ctx.face
+        if f in ("north", "south") and h >= 6 and w >= 6:
+            ew = max(2, int(round(w * 0.3)))
+            eh = max(2, int(round(h * 0.3)))
+            ey = max(1, int(round(h * 0.28)))
+            gapx = max(1, w - 2 * ew - 2 * max(1, int(round(w * 0.1))))
+            ex0 = (w - (2 * ew + gapx)) // 2
+            socket(img, g, ey, ex0, eh, ew)
+            socket(img, g, ey, ex0 + ew + gapx, eh, ew)
+            # nose: small inverted triangle
+            ny = ey + eh
             nx = w // 2
-            img[ey + eh + 1:ey + eh + 2, nx - 1:nx + 1] = img[ey + eh + 1:ey + eh + 2, nx - 1:nx + 1] * 0.35
-            ty = int(h * 0.8)
-            img[ty, 1:-1:2] = img[ty, 1:-1:2] * 0.4
+            if ny + 1 < h:
+                img[ny, nx - 1:nx + 1] *= 0.3
+                img[ny + 1, nx - 1:nx + 1] *= 0.5
+            # cheek shadows -> narrower jaw
+            img[ny:, 0] *= 0.55
+            img[ny:, -1] *= 0.55
+            # teeth
+            ty = h - 2
+            if ty > ny + 1:
+                img[ty - 1, 1:-1] *= 0.45
+                img[ty, 1:-1:2] *= 0.5
+                img[ty, 2:-1:2] = np.minimum(img[ty, 2:-1:2] * 1.12, 1)
+        elif f in ("east", "west") and h >= 6 and w >= 6:
+            eh = max(2, int(round(h * 0.3)))
+            ew = max(2, int(round(w * 0.28)))
+            ey = max(1, int(round(h * 0.28)))
+            x0 = w - 1 - ew if f == "east" else 1
+            socket(img, g, ey, x0, eh, ew)
+            # cheekbone ridge + temple hollow
+            cyb = ey + eh
+            if cyb < h - 2:
+                xs = range(1, w - 1)
+                for x in xs:
+                    img[cyb, x] = img[cyb, x] * 0.7
+                back = range(0, max(1, w // 3)) if f == "east" else range(w - max(1, w // 3), w)
+                for x in back:
+                    img[cyb + 1:, x] *= 0.62
+            # teeth at the front of the jaw
+            ty = h - 2
+            tx = range(w - 1 - max(2, w // 2), w - 1) if f == "east" else range(1, 1 + max(2, w // 2))
+            for x in tx:
+                img[ty, x] = img[ty, x] * (0.5 if x % 2 else 1.08)
+                img[ty - 1, x] *= 0.6
+        elif f == "up" and h >= 6 and w >= 6:
+            cxm = w // 2
+            sut = np.zeros((h, w))
+            _draw_line(sut, 1, cxm, h - 2, cxm + 0.5)
+            _draw_line(sut, h * 0.35, 1, h * 0.4, w - 2)
+            img = _mix(img, img * 0.6, sut * 0.8)
         return img, g
     return paint
 
@@ -372,6 +854,135 @@ def flat(rgb, glow_on=False):
         img = np.empty((ctx.h, ctx.w, 3))
         img[:] = rgb
         return img, np.ones((ctx.h, ctx.w)) if glow_on else np.zeros((ctx.h, ctx.w))
+    return paint
+
+
+# --------------------------------------------------- detail decals (wrappers)
+#
+# These wrap another painter and cut machined details into chosen faces.
+# `rect` = (u0, v0, u1, v1) as fractions of the face, given for the EAST face
+# (u = rear -> muzzle); on the west face it is mirrored so features line up
+# on both flanks.  On up/down faces u runs across X, v from muzzle to rear.
+
+def _face_rect(ctx, rect):
+    u0, v0, u1, v1 = rect
+    if ctx.face == "west":
+        u0, u1 = 1 - u1, 1 - u0
+    x0 = int(round(u0 * ctx.w))
+    x1 = max(x0 + 1, int(round(u1 * ctx.w)))
+    y0 = int(round(v0 * ctx.h))
+    y1 = max(y0 + 1, int(round(v1 * ctx.h)))
+    return max(0, y0), min(ctx.h, y1), max(0, x0), min(ctx.w, x1)
+
+
+def _recess(img, g, y0, y1, x0, x1, inner, glow_rgb=None):
+    """Cut a recessed window: dark (or glowing) inside, shadowed upper lip,
+    bright lower lip."""
+    if glow_rgb is not None:
+        hot = np.minimum(glow_rgb * 1.2 + 0.25, 1)
+        img[y0:y1, x0:x1] = glow_rgb
+        if y1 - y0 >= 3 and x1 - x0 >= 3:
+            img[y0 + 1:y1 - 1, x0 + 1:x1 - 1] = hot
+        elif y1 - y0 >= 3:
+            img[y0 + 1:y1 - 1, x0:x1] = hot
+        g[y0:y1, x0:x1] = 1
+        img[y0:y1, x0:x1][0] = glow_rgb * 0.7
+    else:
+        img[y0:y1, x0:x1] = img[y0:y1, x0:x1] * 0.25 + inner * 0.75
+        img[y0, x0:x1] = img[y0, x0:x1] * 0.5
+    if y1 < img.shape[0]:
+        img[y1, x0:x1] = np.minimum(img[y1, x0:x1] * 1.25 + 0.06, 1)
+    if y0 - 1 >= 0:
+        img[y0 - 1, x0:x1] *= 0.75
+
+
+def slots(paint_fn, n=4, rect=(0.15, 0.3, 0.85, 0.7), faces=("east", "west"), along="u", glow_rgb=None,
+          inner=(0.03, 0.03, 0.04)):
+    """A row of `n` cut slots (vents, cooling ports, slide serrations).  With
+    `glow_rgb` the slots show the magic burning inside."""
+    glow_rgb = _c(glow_rgb) if glow_rgb is not None else None
+    inner = _c(inner)
+
+    def paint(ctx):
+        img, g = paint_fn(ctx)
+        img, g = img.copy(), g.copy()
+        if ctx.face not in faces or ctx.h < 3 or ctx.w < 3:
+            return img, g
+        y0, y1, x0, x1 = _face_rect(ctx, rect)
+        span = (x1 - x0) if along == "u" else (y1 - y0)
+        k = min(n, max(1, (span + 1) // 2))
+        sw = max(1, int((span + 1) / (2 * k - 1) * 0.999)) if k > 1 else span
+        pitch = (span - sw) / max(1, k - 1) if k > 1 else 0
+        for i in range(k):
+            p = int(round(i * pitch))
+            if along == "u":
+                _recess(img, g, y0, y1, x0 + p, min(x1, x0 + p + sw), inner, glow_rgb)
+            else:
+                _recess(img, g, y0 + p, min(y1, y0 + p + sw), x0, x1, inner, glow_rgb)
+        return img, g
+    return paint
+
+
+def inset(paint_fn, rect, faces=("east", "west"), inner=(0.03, 0.03, 0.04), glow_rgb=None):
+    """One recessed window (ejection port, magazine window, sight notch...)."""
+    glow_rgb = _c(glow_rgb) if glow_rgb is not None else None
+    inner = _c(inner)
+
+    def paint(ctx):
+        img, g = paint_fn(ctx)
+        img, g = img.copy(), g.copy()
+        if ctx.face not in faces or ctx.h < 2 or ctx.w < 2:
+            return img, g
+        y0, y1, x0, x1 = _face_rect(ctx, rect)
+        _recess(img, g, y0, y1, x0, x1, inner, glow_rgb)
+        return img, g
+    return paint
+
+
+def rail(paint_fn, period=4, axis=2):
+    """Picatinny-style rail: raised cross ridges on the top face and matching
+    notches along the top edge of the flanks."""
+    def paint(ctx):
+        img, g = paint_fn(ctx)
+        img = img.copy()
+        t = ctx.axis_coord(axis)
+        if t is None:
+            return img, g
+        slot = (t % period) >= period / 2.0
+        lead = (t % period) == 0
+        if ctx.is_up:
+            img[slot] = img[slot] * 0.42
+            img[lead] = np.minimum(img[lead] * 1.25 + 0.08, 1)
+        elif ctx.is_side and ctx.h >= 3:
+            rows = slice(0, min(2, ctx.h - 1))
+            sub = img[rows]
+            s = slot[rows]
+            sub[s] = sub[s] * 0.42
+            img[rows] = sub
+        return img, g
+    return paint
+
+
+def screws(paint_fn, faces=("east", "west"), spots=((0.12, 0.5), (0.88, 0.5)), inset_px=0):
+    """Slotted screw heads at the given (u, v) fractions (east orientation)."""
+    def paint(ctx):
+        img, g = paint_fn(ctx)
+        img = img.copy()
+        h, w = ctx.h, ctx.w
+        if ctx.face not in faces or h < 4 or w < 4:
+            return img, g
+        for (u, v) in spots:
+            if ctx.face == "west":
+                u = 1 - u
+            x = int(np.clip(round(u * w - 0.5), 1, w - 3))
+            y = int(np.clip(round(v * h - 0.5), 1, h - 3))
+            c = img[y:y + 2, x:x + 2].mean(axis=(0, 1))
+            img[y - 1:y + 3, x - 1:x + 3] = img[y - 1:y + 3, x - 1:x + 3] * 0.6  # countersink ring
+            img[y, x] = np.minimum(c * 1.6 + 0.12, 1)
+            img[y, x + 1] = np.minimum(c * 1.25 + 0.06, 1)
+            img[y + 1, x] = c * 0.95
+            img[y + 1, x + 1] = c * 0.55
+        return img, g
     return paint
 
 

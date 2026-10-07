@@ -381,6 +381,45 @@ def write_attachables(models):
     })
 
 
+def write_player_aim(models):
+    """Third-person aim pose.  Bedrock only has aiming poses for the vanilla bow
+    and crossbow, so the player client entity is copied verbatim from the
+    1.21.0.26 vanilla resource pack (tools/vanilla/) and only gains a variable,
+    two animations and two animate entries.  Never active in first person,
+    where the attachable's hand placement relies on the vanilla arm."""
+    with open(os.path.join(HERE, "vanilla", "player.entity.json"), encoding="utf-8") as f:
+        player = json.load(f)
+    desc = player["minecraft:client_entity"]["description"]
+    pistols = [f"'{NS}:{n}'" for n, r in models.items() if r["meta"]["kind"] == "pistol"]
+    rifles = [f"'{NS}:{n}'" for n, r in models.items() if r["meta"]["kind"] == "rifle"]
+    desc["scripts"]["pre_animation"].append(
+        "variable.magic_guns_aim = query.is_item_name_any('slot.weapon.mainhand', %s) ? 1.0 : "
+        "(query.is_item_name_any('slot.weapon.mainhand', %s) ? 2.0 : 0.0);" % (", ".join(pistols), ", ".join(rifles)))
+    desc["animations"]["magic_guns_aim_pistol"] = f"animation.{NS}.player.aim_pistol"
+    desc["animations"]["magic_guns_aim_rifle"] = f"animation.{NS}.player.aim_rifle"
+    cond = "!variable.is_first_person && !query.is_sleeping"
+    desc["scripts"]["animate"] += [
+        {"magic_guns_aim_pistol": f"variable.magic_guns_aim == 1.0 && {cond}"},
+        {"magic_guns_aim_rifle": f"variable.magic_guns_aim == 2.0 && {cond}"},
+    ]
+    write_json(os.path.join(RP, "entity", "player.entity.json"), player)
+    # same arm angles as vanilla animation.player.crossbow_hold ("- this"
+    # cancels the walk / attack swing so the arms stay on target)
+    right = ["query.is_swimming ? 0.0 : -93.0 + query.target_x_rotation - query.is_sneaking * 27.0 - this",
+             "query.is_swimming ? 0.0 : math.clamp(query.target_y_rotation, -60.0, 45.0) - this", 0.0]
+    left = ["query.is_swimming ? 0.0 : -93.0 + query.target_x_rotation - query.is_sneaking * 27.0 - this",
+            "query.is_swimming ? 0.0 : 42.0 + math.clamp(query.target_y_rotation, -45.0, 5.0) - this",
+            "query.is_sneaking * -15.0"]
+    write_json(os.path.join(RP, "animations", f"{NS}.player.animation.json"), {
+        "format_version": "1.10.0",
+        "animations": {
+            f"animation.{NS}.player.aim_pistol": {"loop": True, "bones": {"rightarm": {"rotation": right}}},
+            f"animation.{NS}.player.aim_rifle": {"loop": True, "bones": {"rightarm": {"rotation": right},
+                                                                         "leftarm": {"rotation": left}}},
+        },
+    })
+
+
 def write_rp_text(models):
     tex = {
         "resource_pack_name": NS,
@@ -570,6 +609,7 @@ def main():
     write_items()
     write_recipes()
     write_attachables(models)
+    write_player_aim(models)
     write_rp_text(models)
     particles.main(RP)
     sounds.main(RP)
