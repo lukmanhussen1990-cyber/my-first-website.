@@ -46,8 +46,25 @@ def fail(msg):
     failures.append(msg)
 
 
+_timeouts = 0
+
+
 def adb(*args, check=False, timeout=60):
-    return subprocess.run([ADB, *args], capture_output=True, timeout=timeout, check=check)
+    """Runs adb; a command that hangs counts as a timeout instead of
+    crashing the bot. Several in a row mean the emulator stopped
+    responding, which is reported and ends the run early."""
+    global _timeouts
+    try:
+        r = subprocess.run([ADB, *args], capture_output=True, timeout=timeout, check=check)
+        _timeouts = 0
+        return r
+    except subprocess.TimeoutExpired:
+        _timeouts += 1
+        log(f'adb timed out ({_timeouts}): {" ".join(args)[:80]}')
+        if _timeouts >= 3:
+            fail('the device stopped responding to adb (emulator offline)')
+            finish()
+        return subprocess.CompletedProcess([ADB, *args], -1, b'', b'')
 
 
 def shell(cmd, timeout=60):
@@ -87,10 +104,29 @@ def shot(name):
     return img
 
 
-def logcat_markers():
+LOG_FILE = os.path.join(OUT, 'flutter_log.txt')
+_log_proc = None
+
+
+def start_log_stream():
+    """Streams the app's log lines into a file over one long-lived adb
+    connection. Dumping the whole log buffer after every move overloaded
+    the Android 14 emulator until adb lost it."""
+    global _log_proc
+    out = open(LOG_FILE, 'ab')
     # One filterspec only: with several for the same tag the last one wins.
-    out = adb('logcat', '-d', '-s', 'flutter:V', timeout=60).stdout.decode(errors='replace')
-    return out
+    _log_proc = subprocess.Popen([ADB, 'logcat', '-s', 'flutter:V'], stdout=out, stderr=subprocess.DEVNULL)
+
+
+def logcat_markers():
+    if _log_proc is None or _log_proc.poll() is not None:
+        start_log_stream()
+        time.sleep(0.5)
+    try:
+        with open(LOG_FILE, 'rb') as f:
+            return f.read().decode(errors='replace')
+    except OSError:
+        return ''
 
 
 def last_move():
@@ -508,6 +544,7 @@ def play_game(g, tag, max_moves):
 
 
 def main():
+    start_log_stream()
     sdk = shell('getprop ro.build.version.sdk').strip()
     size = shell('wm size').strip()
     log('device sdk', sdk, size)
@@ -626,11 +663,17 @@ def main():
     if errors:
         fail('app reported errors: ' + ' | '.join(errors[:5]))
 
+    finish()
+
+
+def finish():
     with open(os.path.join(OUT, 'result.txt'), 'w') as f:
         f.write('PASS\n' if not failures else 'FAIL\n' + '\n'.join(failures) + '\n')
         for w in warnings:
             f.write('warning: ' + w + '\n')
     log('RESULT', 'PASS' if not failures else 'FAIL', failures, 'warnings:', warnings)
+    if _log_proc is not None:
+        _log_proc.terminate()
     sys.exit(1 if failures else 0)
 
 

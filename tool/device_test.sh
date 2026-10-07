@@ -23,7 +23,8 @@ adb logcat -c
 python3 tool/device_bot.py "$OUT"
 status=$?
 
-adb logcat -d > "$OUT/logcat.txt"
+# Bounded: if the emulator went offline, don't wait for it until the job times out.
+timeout 120 adb logcat -d > "$OUT/logcat.txt" || echo "could not read logcat (device offline?)"
 grep -E "BB_" "$OUT/logcat.txt" | tail -120
 if grep -E "FATAL EXCEPTION|BB_ERROR" "$OUT/logcat.txt" > "$OUT/errors.txt"; then
   echo "Errors found in logcat:"; cat "$OUT/errors.txt"; status=1
