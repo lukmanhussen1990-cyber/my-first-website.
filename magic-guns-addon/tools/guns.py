@@ -511,13 +511,14 @@ def hands(m, grip, fore=None, handle=None):
         _forearm(m, h, (hx - 0.3, hy - 0.4, hz + 1.2), rot=(34, -38, 0))
 
 
-def _forearm(m, h, wrist, rot, length=12.0):
+def _forearm(m, h, wrist, rot):
+    """Glove wrist + gold cuff only.  A full sleeve pointed back along the arm
+    runs through the first-person camera (it sits almost on the arm's line),
+    which put the camera inside the sleeve in game - so the arm stops at the cuff."""
     wx, wy, wz = wrist
     m.box(h, (wx - 1.35, wy - 1.35, wz), (wx + 1.35, wy + 1.35, wz + 1.2), "glove",
           rotation=rot, pivot=wrist)
-    m.box(h, (wx - 1.6, wy - 1.6, wz + 1.2), (wx + 1.6, wy + 1.6, wz + 2.0), "gold",
-          rotation=rot, pivot=wrist)
-    m.box(h, (wx - 1.5, wy - 1.5, wz + 2.0), (wx + 1.5, wy + 1.5, wz + length), "coat",
+    m.box(h, (wx - 1.55, wy - 1.55, wz + 1.2), (wx + 1.55, wy + 1.55, wz + 1.9), "gold",
           rotation=rot, pivot=wrist)
 
 

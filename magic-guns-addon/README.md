@@ -47,6 +47,24 @@ open `MagicGuns_BP.mcpack` and `MagicGuns_RP.mcpack` the same way.
 | **Void Phaser** `magic_guns:void_phaser` | Shoot a block and you **teleport** there. Hit mobs blink away and float | slow |
 | **Celestial Cannon** `magic_guns:celestial_cannon` | Holy blast: big area damage (double vs undead), heals nearby players | very slow |
 
+## Block magic
+
+The guns change and destroy blocks:
+
+| Gun | What it does to blocks |
+|---|---|
+| Arcane Revolver | **Disintegrates** the block it hits; it crumbles and drops like it was mined |
+| Inferno Blaster | Blasts a **fire crater** and sets the ground around it burning |
+| Frostbite Rifle | **Freezes**: water turns to ice, lava to obsidian, fires go out, snow covers the ground. Glass, ice, leaves and plants **shatter** |
+| Stormcaller | Pellets smash glass, leaves and plants. A far-away shot **calls lightning** onto the spot |
+| Soul Reaper | **Soul corruption**: grass and dirt rot into soul soil, sand into soul sand, flowers wither |
+| Void Phaser | The block it hits is **swallowed by the void**, and you teleport to that spot |
+| Celestial Cannon | A **holy crater** where stone and earth dissolve into light |
+
+Bedrock, obsidian, portals, command blocks and other special blocks are never touched, and craters never open
+under your own feet. To switch block magic off for a world (cheats on): `/scriptevent magic_guns:blocks off`
+(and `on` to switch it back).
+
 ## Crafting
 
 First craft **Mana Crystals** (shapeless): amethyst shard + lapis lazuli + glowstone dust + redstone → 2 crystals.
@@ -66,7 +84,7 @@ All recipes appear in the recipe book once you pick up a Mana Crystal.
 ## Realistic holding
 
 * **First person:** each gun points at the crosshair like in a shooter game. Bedrock hides your own arm
-  while you hold an item, so every gun comes with a **gloved hand and magic-coat sleeve**.
+  while you hold an item, so every gun comes with a **gloved hand with a gold cuff**.
   Rifles and the cannon are held with **both hands**.
 * **Third person:** your character raises the gun and aims it where you look. Pistols are held
   one-handed, rifles two-handed. Armor stands and mobs also show the 3D models.

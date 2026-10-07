@@ -194,8 +194,10 @@ def main(samples=None):
 
     # 8. particles
     customs = {load(p)["particle_effect"]["description"]["identifier"] for p in glob.glob(os.path.join(RP, "particles", "*.json"))}
-    props = set(re.findall(r'DynamicProperty\("([^"]+)"', js))
-    for pid in set(re.findall(r'"((?:magic_guns|minecraft):[a-z_]+_?[a-z_]*)"', js)) - props:
+    # particle ids: fx(dim, "id", ...), particle: "id", trail: "id", impact: "id"
+    pids = set(re.findall(r'fx\([^,]+,\s*"([a-z_]+:[a-z_]+)"', js))
+    pids |= set(re.findall(r'(?:particle|trail|impact):\s*"([a-z_]+:[a-z_]+)"', js))
+    for pid in pids:
         if pid.startswith(NS + ":"):
             if pid.split(":")[1] in {i.split(":")[1] for i in items}:
                 continue  # item id, not a particle

@@ -8,6 +8,7 @@
 import { EntityDamageCause } from "@minecraft/server";
 import * as V from "./vec.js";
 import { fx, hurt, heal, nearbyTargets, safeTeleport, isUndead, sound } from "./fx.js";
+import { shatter, crater, freeze, corrupt, isFragile, breakable } from "./terrain.js";
 
 /** @typedef {import("@minecraft/server").Entity} Entity */
 /** @typedef {import("@minecraft/server").Player} Player */
@@ -112,6 +113,10 @@ const LIST = [
     fireSound: "magic_guns.arcane.fire",
     hitSound: "magic_guns.arcane.hit",
     cause: EntityDamageCause.magic,
+    onHitBlock(shot, hit) {
+      // Arcane disintegration: the block crumbles into amethyst dust (and drops).
+      shatter(shot.dim, hit.block, { particle: "magic_guns:arcane_impact", color: shot.weapon.color });
+    },
   },
   {
     id: "magic_guns:inferno_blaster",
@@ -153,6 +158,10 @@ const LIST = [
           e.setOnFire(4, true);
         } catch {}
       });
+      // Fire crater - never right under the shooter's feet.
+      if (V.dist(at, shot.owner.location) > 3.5) {
+        crater(shot.dim, at, 2.3, { dropChance: 0.3, fireChance: 0.3, particle: "magic_guns:fire_impact", color: shot.weapon.color });
+      }
     },
   },
   {
@@ -186,22 +195,15 @@ const LIST = [
       fx(shot.dim, "minecraft:snowflake_particle", V.bodyCenter(target));
     },
     onHitBlock(shot, hit) {
-      // Freeze water into frosted ice (it melts back on its own, like Frost Walker).
+      // Glass, ice and plants shatter; everything else is frozen over: water ->
+      // frosted ice (melts back like Frost Walker), lava -> obsidian, fire out, snow.
       const b = hit.block;
-      try {
-        if (b.typeId === "minecraft:water" || b.typeId === "minecraft:flowing_water") {
-          for (let dx = -1; dx <= 1; dx++) {
-            for (let dz = -1; dz <= 1; dz++) {
-              const n = b.offset({ x: dx, y: 0, z: dz });
-              if (n && (n.typeId === "minecraft:water" || n.typeId === "minecraft:flowing_water")) {
-                const above = n.above();
-                if (above && above.isAir) n.setType("minecraft:frosted_ice");
-              }
-            }
-          }
-          sound(shot.dim, "random.glass", b.location, 1.4, 0.7);
-        }
-      } catch {}
+      if (breakable(b) && isFragile(b)) {
+        shatter(shot.dim, b, { particle: "magic_guns:frost_impact", color: shot.weapon.color });
+      } else {
+        freeze(shot.dim, b, 2.2);
+      }
+      sound(shot.dim, "random.glass", b.location, 1.4, 0.7);
     },
   },
   {
@@ -252,6 +254,15 @@ const LIST = [
       }
       if (jumps) sound(shot.dim, "magic_guns.storm.hit", tc, 1.3);
     },
+    onHitBlock(shot, hit, at) {
+      if (isFragile(hit.block)) shatter(shot.dim, hit.block, { particle: "magic_guns:storm_impact", color: shot.weapon.color });
+      // The first pellet that lands far enough away calls lightning onto the spot.
+      if (shot.volley.struck || V.dist(at, shot.owner.location) < 7) return;
+      shot.volley.struck = true;
+      try {
+        shot.dim.spawnEntity("minecraft:lightning_bolt", at);
+      } catch {}
+    },
   },
   {
     id: "magic_guns:soul_reaper",
@@ -281,6 +292,12 @@ const LIST = [
       // Life steal: 30 % of the damage flows back to the shooter as soul energy.
       heal(shot.owner, shot.weapon.damage * 0.3);
       fx(shot.dim, "minecraft:soul_particle", V.bodyCenter(target));
+    },
+    onHitBlock(shot, hit) {
+      // Soul corruption: grass and dirt rot into soul soil, sand into soul sand,
+      // flowers wither, leaves and grass crumble.
+      if (isFragile(hit.block)) shatter(shot.dim, hit.block, { drop: false, particle: "magic_guns:soul_impact", color: shot.weapon.color });
+      else corrupt(shot.dim, hit.block, 1.5);
     },
   },
   {
@@ -323,7 +340,9 @@ const LIST = [
       }
     },
     onHitBlock(shot, hit, at) {
-      // Rift-walk: the shooter steps through to where the orb landed.
+      // Void erasure: the struck block is swallowed by the void (no drops)...
+      shatter(shot.dim, hit.block, { drop: false, particle: "magic_guns:void_impact", color: shot.weapon.color });
+      // ...and the shooter rift-walks to where the orb landed.
       const owner = shot.owner;
       if (!owner.isValid()) return;
       const face = faceOffset(hit.face);
@@ -375,6 +394,10 @@ const LIST = [
       });
       for (const p of shot.dim.getPlayers({ location: at, maxDistance: 4.5 })) {
         heal(p, 4);
+      }
+      // Holy crater: stone and earth dissolve into light.
+      if (V.dist(at, shot.owner.location) > 4.5) {
+        crater(shot.dim, at, 3.2, { dropChance: 0.2, particle: "magic_guns:holy_impact", color: shot.weapon.color });
       }
     },
   },
