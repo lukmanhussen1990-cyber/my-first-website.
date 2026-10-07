@@ -55,19 +55,22 @@ const memory = {
 
 function db(): Promise<IDBPDatabase<BorderTrialsDB> | null> {
   if (!dbPromise) {
-    dbPromise = (typeof indexedDB === 'undefined'
-      ? Promise.resolve(null)
-      : openDB<BorderTrialsDB>(DB_NAME, DB_VERSION, {
+    dbPromise = (async () => {
+      try {
+        // even reading `indexedDB` can throw in locked-down frames
+        if (typeof indexedDB === 'undefined' || !indexedDB) return null;
+        return await openDB<BorderTrialsDB>(DB_NAME, DB_VERSION, {
           upgrade(d) {
             const accounts = d.createObjectStore('accounts', { keyPath: 'usernameKey' });
             accounts.createIndex('byId', 'id', { unique: true });
             d.createObjectStore('progress');
           },
-        })
-    ).catch((err) => {
-      console.warn('[border-trials] IndexedDB unavailable, using memory store', err);
-      return null;
-    });
+        });
+      } catch (err) {
+        console.warn('[border-trials] IndexedDB unavailable, using memory store', err);
+        return null;
+      }
+    })();
   }
   return dbPromise;
 }

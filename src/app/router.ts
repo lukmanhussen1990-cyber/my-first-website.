@@ -104,6 +104,21 @@ function currentIdx(): number {
 let idx = currentIdx();
 let state: RouterState = { route: match(currentPath()), transition: 'none', seq: 0 };
 const listeners = new Set<() => void>();
+/** false once the History API refuses us (some sandboxed frames); routing then runs in memory */
+let historyOk = true;
+const memStack: string[] = [];
+
+function writeHistory(mode: 'push' | 'replace', url: string): boolean {
+  if (!historyOk) return false;
+  try {
+    if (mode === 'push') window.history.pushState({ btIdx: idx }, '', url);
+    else window.history.replaceState({ btIdx: idx }, '', url);
+    return true;
+  } catch {
+    historyOk = false;
+    return false;
+  }
+}
 
 function emit(next: Omit<RouterState, 'seq'>) {
   state = { ...next, seq: state.seq + 1 };
@@ -118,9 +133,7 @@ window.addEventListener('popstate', () => {
 });
 
 // Ensure the initial entry carries an index so back-navigation is detectable.
-if (window.history.state?.btIdx === undefined) {
-  window.history.replaceState({ btIdx: 0 }, '', window.location.href);
-}
+if (window.history.state?.btIdx === undefined) writeHistory('replace', window.location.href);
 
 export interface NavigateOptions {
   replace?: boolean;
@@ -132,18 +145,26 @@ export function navigate(to: string, opts: NavigateOptions = {}): void {
   if (path === state.route.path && !opts.replace) return;
   const url = `${window.location.pathname}${window.location.search}#${path}`;
   if (opts.replace) {
-    window.history.replaceState({ btIdx: idx }, '', url);
+    writeHistory('replace', url);
   } else {
+    const from = state.route.path;
     idx += 1;
-    window.history.pushState({ btIdx: idx }, '', url);
+    if (!writeHistory('push', url)) memStack.push(from);
   }
   emit({ route: match(path), transition: opts.transition ?? 'push' });
 }
 
 /** Go back one screen; if there is no in-app history, replace with `fallback`. */
 export function back(fallback = '/home'): void {
-  if (idx > 0) window.history.back();
-  else navigate(fallback, { replace: true, transition: 'pop' });
+  if (historyOk && idx > 0) {
+    window.history.back();
+    return;
+  }
+  const prev = memStack.pop();
+  if (prev) {
+    idx = Math.max(0, idx - 1);
+    emit({ route: match(prev), transition: 'pop' });
+  } else navigate(fallback, { replace: true, transition: 'pop' });
 }
 
 export function getRouter(): RouterState {
