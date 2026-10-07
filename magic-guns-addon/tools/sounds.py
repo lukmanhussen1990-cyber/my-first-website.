@@ -268,8 +268,10 @@ def click(freqs, decays, amps, ping=0.6, dur=0.08):
     return norm(norm(m) + ping * norm(tick))
 
 
-def crackle(dur, rate=120, decay=0.4, bright=6000, lo=900, start=0.0):
-    """Sparse fire/spark pops whose density thins out over time."""
+def crackle(dur, rate=120, decay=0.4, bright=6000, lo=900, start=0.0, fall=None):
+    """Sparse fire/spark pops whose density (time constant `decay`) and
+    loudness (time constant `fall`) thin out over time."""
+    fall = fall or decay * 1.5
     n = int(SR * dur)
     out = np.zeros(n)
     count = int(rate * dur)
@@ -278,7 +280,7 @@ def crackle(dur, rate=120, decay=0.4, bright=6000, lo=900, start=0.0):
         if p >= n - 400:
             continue
         L = int(rng.integers(20, 220))
-        g = rng.uniform(0.15, 1) ** 2 * np.exp(-(p / SR - start) / (decay * 1.5))
+        g = rng.uniform(0.15, 1) ** 2 * np.exp(-(p / SR - start) / fall)
         out[p:p + L] += rng.uniform(-1, 1, L) * np.exp(-np.arange(L) / (L / 5)) * g
     out = bandpass(out, lo, bright)
     return norm(out) * tail(n, 30)
@@ -316,7 +318,8 @@ def arc(dur, rate=120, decay=0.2, jitter=0.35, lo=500, hi=7000):
     k = bandpass(noise(0.004), 800, 9000) * np.exp(-np.arange(int(SR * 0.004)) / (SR * 0.0006))
     buzz = fftconv(imp, k)[:n]
     buzz = bandpass(buzz, lo, hi)
-    return norm(np.tanh(norm(buzz) * 2.5)) * env(dur, 0.002, decay)
+    buzz = iir(np.tanh(norm(buzz) * 2.5), ("peak", 4300, 0.8, -4.0))  # tame the 3-6 kHz bite
+    return norm(buzz) * env(dur, 0.002, decay)
 
 
 def flange(x, d0_ms, d1_ms, mix_=0.7, curve=1.0):
@@ -607,7 +610,7 @@ def inferno_hit(v=0):
     p = PITCH[v]
     whoomph = sweep_noise(0.7, 1700 * p, 380 * p, bw=2.0, curve=0.5) * env(0.7, 0.006, 0.14)
     puff = thump(0.2, 130 * p, 48 * p, 0.02, 0.05)
-    cr = crackle(0.8, rate=150, decay=0.22, bright=7500, lo=1200, start=0.01)
+    cr = crackle(0.8, rate=150, decay=0.22, bright=7500, lo=1200, start=0.01, fall=0.13)
     sizzle = bandpass(noise(0.6), 5500, 11000) * env(0.6, 0.02, 0.18)
     pop = norm(bandpass(noise(0.03), 300, 4000) * env(0.03, 0.00005, 0.004))
     dry = mix(whoomph, pop * 0.4, puff * 0.5, cr * 0.32, norm(sizzle) * 0.04)
@@ -838,9 +841,13 @@ def _encode(x, path):
 
 
 def _decoded_peak(path):
+    """True peak (dBTP, 4x oversampled) of the decoded file."""
     raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", path, "-f", "s16le", "-ac", "1", "-"],
                          capture_output=True, check=True).stdout
-    return 20 * np.log10(np.max(np.abs(np.frombuffer(raw, "<i2"))) / 32768 + 1e-9)
+    y = np.frombuffer(raw, "<i2") / 32768.0
+    Y = np.fft.rfft(y)
+    up = np.fft.irfft(np.concatenate([Y, np.zeros(len(y) * 2)]), len(y) * 4) * 4
+    return 20 * np.log10(max(np.max(np.abs(up)), np.max(np.abs(y))) + 1e-9)
 
 
 def write_ogg(x, path, max_peak=-1.0):
@@ -878,7 +885,7 @@ def main(rp_dir):
         for v in range(VARIANTS.get(name, 1)):
             fname = name + ("" if v == 0 else f"_{v + 1}")
             x, pk = write_sound(name, v, os.path.join(out_dir, fname + ".ogg"))
-            print("sound", fname, "%.2fs  peak %.1f dBFS" % (len(x) / SR, pk))
+            print("sound", fname, "%.2fs  true peak %.1f dBTP" % (len(x) / SR, pk))
 
 
 if __name__ == "__main__":

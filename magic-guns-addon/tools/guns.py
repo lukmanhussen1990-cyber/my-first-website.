@@ -19,6 +19,8 @@ from gunsmith import (Model, metal, wood, leather_wrap, leather, cloth, knurl, b
 # ------------------------------------------------------------------ palette
 
 GUNMETAL = metal((0.22, 0.24, 0.28), (0.55, 0.60, 0.68))
+STEEL = metal((0.34, 0.36, 0.42), (0.74, 0.78, 0.86))
+PURPUR = metal((0.50, 0.38, 0.56), (0.86, 0.76, 0.94), band=0.25)
 DARK_STEEL = metal((0.11, 0.11, 0.13), (0.38, 0.38, 0.44), band=0.18)
 BLUED = metal((0.13, 0.17, 0.27), (0.42, 0.52, 0.70))
 FROST_STEEL = metal((0.70, 0.78, 0.85), (0.95, 0.98, 1.0), streak=0.07)
@@ -94,16 +96,17 @@ def bore(paint, rgb, size=3):
 
 def arcane_revolver():
     m = Model("arcane_revolver", palette(
-        engraved=screws(trimmed(GUNMETAL, GOLD), spots=((0.1, 0.62), (0.88, 0.62))),
-        frame_top=trimmed(GUNMETAL, GOLD, scroll=False),
-        recoil_shield=trimmed(GUNMETAL, GOLD, gem=ARCANE),
+        engraved=screws(trimmed(STEEL, GOLD), spots=((0.1, 0.62), (0.88, 0.62))),
+        frame_top=trimmed(STEEL, GOLD, scroll=False),
+        recoil_shield=trimmed(STEEL, GOLD, gem=ARCANE),
         grip_wood=PURPLEHEART,
-        rune_barrel=runes(BLUED, ARCANE),
-        cyl=holes(runes(DARK_STEEL, ARCANE, 0.8), ((0.13, 0.5), (0.87, 0.5)), faces=("north",), glow_rgb=ARCANE),
-        cyl_b=holes(DARK_STEEL, ((0.5, 0.14), (0.5, 0.86)), faces=("north",), glow_rgb=ARCANE),
-        cyl_c=holes(GUNMETAL, ((0.2, 0.2), (0.8, 0.2), (0.2, 0.8), (0.8, 0.8)), faces=("north",), glow_rgb=ARCANE),
+        rune_barrel=runes(BLUED, ARCANE, 0.3),
+        cyl=holes(runes(DARK_STEEL, ARCANE, 0.9), ((0.13, 0.5), (0.87, 0.5)), faces=("north",), glow_rgb=ARCANE),
+        cyl_b=holes(runes(DARK_STEEL, ARCANE, 0.9), ((0.5, 0.14), (0.5, 0.86)), faces=("north",), glow_rgb=ARCANE),
+        cyl_c=holes(runes(DARK_STEEL, ARCANE, 0.9), ((0.15, 0.15), (0.85, 0.15), (0.15, 0.85), (0.85, 0.85)),
+                    faces=("north",), glow_rgb=ARCANE),
         crown=bore(GOLD, ARCANE),
-        sight=notch(GUNMETAL),
+        sight=notch(STEEL),
         spur=knurl((0.62, 0.45, 0.13), (1.0, 0.86, 0.45)),
         medallion=inset(GOLD, (0.3, 0.3, 0.7, 0.7), faces=("east", "west"), glow_rgb=ARCANE),
         amethyst=glow(ARCANE, (0.36, 0.12, 0.62)),
@@ -121,18 +124,19 @@ def arcane_revolver():
     # frame: engraved lower frame, recoil shield, top strap + rear sight
     m.box(b, (-0.75, -0.2, -2.9), (0.75, 1.0, 2.1), "engraved")
     m.box(b, (-0.7, 1.0, 0.4), (0.7, 2.7, 2.3), "recoil_shield")
-    m.box(b, (-0.6, 2.7, -2.7), (0.6, 3.15, 0.9), "frame_top")
+    m.box(b, (-0.6, 2.7, -3.1), (0.6, 3.15, 0.9), "frame_top")
+    m.box(b, (-0.62, 1.0, -3.15), (0.62, 2.7, -2.5), "frame_top")
     m.box(b, (-0.38, 3.15, 0.35), (0.38, 3.5, 0.9), "sight")
-    # hammer: body + knurled spur, cocked back
+    # hammer: body leaning back + knurled spur, cocked
     m.box(b, (-0.28, 2.2, 1.95), (0.28, 3.3, 2.55), "gold", rotation=(24, 0, 0), pivot=(0, 2.2, 2.25))
-    m.box(b, (-0.34, 3.0, 2.35), (0.34, 3.4, 3.3), "spur", rotation=(24, 0, 0), pivot=(0, 2.2, 2.25))
+    m.box(b, (-0.32, 2.95, 2.5), (0.32, 3.32, 3.25), "spur")
     trigger_group(m, b, "gold", -1.85, 0.35, -0.2, -1.6, (-0.75, -0.4))
     # cylinder: stepped 12-sided drum, glowing chambers in front
     m.box("cylinder", (-1.2, 1.05, -2.5), (1.2, 2.45, 0.4), "cyl")
     m.box("cylinder", (-0.7, 0.55, -2.45), (0.7, 2.95, 0.35), "cyl_b")
     m.box("cylinder", (-1.0, 0.75, -2.4), (1.0, 2.75, 0.3), "cyl_c")
     # barrel with glowing sigils, full-length underlug, vent rib, front sight
-    m.box(b, (-0.62, 1.35, -8.6), (0.62, 2.6, -2.5), "rune_barrel")
+    m.box(b, (-0.62, 1.35, -8.6), (0.62, 2.6, -3.1), "rune_barrel")
     m.box(b, (-0.5, 0.75, -8.0), (0.5, 1.4, -2.5), "gunmetal")
     m.box(b, (-0.25, 0.85, -8.35), (0.25, 1.3, -8.0), "gold")
     m.box(b, (-0.3, 2.6, -8.4), (0.3, 2.95, -2.6), "gunmetal")
@@ -148,7 +152,7 @@ def arcane_revolver():
 def inferno_blaster():
     m = Model("inferno_blaster", palette(
         magma=glow(FIRE, (0.75, 0.16, 0.02), lines=(1.0, 0.95, 0.6)),
-        frame=screws(DARK_STEEL, spots=((0.1, 0.55), (0.62, 0.55))),
+        frame=screws(trimmed(DARK_STEEL, BRASS, scroll=False), spots=((0.1, 0.55), (0.62, 0.55))),
         shroud=slots(slots(DARK_STEEL, n=4, rect=(0.12, 0.3, 0.88, 0.72), glow_rgb=FIRE),
                      n=4, rect=(0.28, 0.1, 0.72, 0.9), faces=("up",), along="v", glow_rgb=FIRE),
         rune_brass=runes(BRASS, FIRE),
@@ -169,7 +173,7 @@ def inferno_blaster():
     m.box(b, (-1.0, 1.1, 0.0), (1.0, 2.9, 2.5), "rune_brass")
     m.box(b, (-0.42, 2.9, 0.05), (0.42, 3.25, 0.6), "sight")
     m.box(b, (-0.3, 2.5, 2.05), (0.3, 3.5, 2.65), "brass", rotation=(28, 0, 0), pivot=(0, 2.5, 2.35))
-    m.box(b, (-0.36, 3.2, 2.4), (0.36, 3.6, 3.35), "spur", rotation=(28, 0, 0), pivot=(0, 2.5, 2.35))
+    m.box(b, (-0.36, 3.1, 2.7), (0.36, 3.45, 3.5), "spur")
     # magma chamber (stepped glass drum) caged in brass
     m.box("core", (-1.25, 0.75, -3.0), (1.25, 2.35, -0.2), "magma")
     m.box("core", (-0.8, 0.3, -2.95), (0.8, 2.8, -0.25), "magma")
@@ -184,7 +188,7 @@ def inferno_blaster():
     m.box(b, (-0.25, 2.35, -7.7), (0.25, 2.65, -3.65), "brass")
     m.box(b, (-0.15, 2.65, -7.7), (0.15, 3.2, -7.1), "brass")
     # pilot-light tube under the barrel
-    m.box(b, (-0.4, -0.15, -7.9), (0.4, 0.55, -3.2), "dark_steel")
+    m.box(b, (-0.4, -0.15, -7.9), (0.4, 0.55, -3.2), "brass")
     m.box(b, (-0.28, 0.0, -8.3), (0.28, 0.4, -7.9), "magma")
     # flared bell muzzle
     m.box(b, (-1.2, 0.25, -9.0), (1.2, 2.65, -8.2), "brass")
@@ -258,13 +262,14 @@ def stormcaller():
         muzzle=holes(COPPER, ((0.27, 0.5), (0.73, 0.5)), size=3, faces=("north",), glow_rgb=STORM),
         grip_check=CHECKERED_WALNUT,
         tower=coil(COPPER, STORM, 3, axis=1),
+        stock=trimmed(WALNUT, COPPER, gem=STORM),
     ), atlas_width=256)
     m.bone("magic_gun")
     m.bone("body", "magic_gun")
     b = "body"
     # walnut stock + copper butt plate + sling swivel
     srake = dict(rotation=(-8, 0, 0), pivot=(0, 1.0, 2.2))
-    m.box(b, (-0.9, -2.3, 2.2), (0.9, 1.0, 8.0), "walnut", **srake)
+    m.box(b, (-0.9, -2.3, 2.2), (0.9, 1.0, 8.0), "stock", **srake)
     m.box(b, (-1.0, -2.6, 7.8), (1.0, 1.15, 8.4), "copper", **srake)
     m.box(b, (-0.15, -2.85, 6.4), (0.15, -2.3, 6.9), "copper", **srake)
     grip = m.box(b, (-0.72, -3.4, 0.6), (0.72, 0.2, 2.3), "grip_check", rotation=(-14, 0, 0), pivot=(0, 0, 1.4))
@@ -278,9 +283,10 @@ def stormcaller():
     m.mirror_x(b, (1.05, 0.28, -1.95), (1.65, 1.42, -1.55), "copper")
     m.mirror_x(b, (1.05, 0.28, 1.15), (1.65, 1.42, 1.55), "copper")
     # tesla tower on the action: coiled post + storm orb
-    m.box(b, (-0.3, 1.9, -1.15), (0.3, 2.85, -0.55), "tower")
-    m.box(b, (-0.5, 2.7, -1.35), (0.5, 3.6, -0.35), "spark")
-    m.box(b, (-0.5, 2.75, -1.35), (0.5, 3.55, -0.35), "spark", rotation=(0, 45, 0), pivot=(0, 3.15, -0.85))
+    m.box(b, (-0.3, 1.9, -1.15), (0.3, 3.2, -0.55), "tower")
+    m.box(b, (-0.75, 3.0, -1.6), (0.75, 3.35, -0.1), "copper")
+    m.box(b, (-0.5, 3.35, -1.35), (0.5, 4.25, -0.35), "spark")
+    m.box(b, (-0.5, 3.4, -1.35), (0.5, 4.2, -0.35), "spark", rotation=(0, 45, 0), pivot=(0, 3.8, -0.85))
     # side-by-side barrels, rib with glowing bead, double muzzle
     m.box(b, (-1.1, 0.15, -13.0), (-0.05, 1.55, -2.0), "blued")
     m.box(b, (0.05, 0.15, -13.0), (1.1, 1.55, -2.0), "blued")
@@ -321,7 +327,7 @@ def soul_reaper():
     m.box(b, (-1.1, 1.5, 0.6), (1.1, 3.6, 3.0), "skull")
     # vertebra spikes raked back along the spine
     for z, hgt in ((-3.7, 0.75), (-2.6, 0.9), (-1.5, 1.05)):
-        m.box(b, (-0.2, 1.85, z), (0.2, 1.9 + hgt, z + 0.55), "bone", rotation=(-28, 0, 0), pivot=(0, 1.9, z + 0.3))
+        m.box(b, (-0.2, 1.85, z), (0.2, 1.9 + hgt, z + 0.55), "bone", rotation=(25, 0, 0), pivot=(0, 1.9, z + 0.3))
     # soul vials on both flanks, capped in steel
     m.mirror_x(b, (0.85, 0.45, -3.4), (1.25, 1.35, -0.2), "soulfire")
     m.mirror_x(b, (0.8, 0.32, -3.8), (1.32, 1.48, -3.4), "dark_steel")
@@ -333,11 +339,11 @@ def soul_reaper():
     m.box(b, (-0.66, 0.58, -8.9), (0.66, 1.87, -8.3), "muzzle")
     m.mirror_x(b, (0.25, 0.25, -9.6), (0.52, 0.75, -8.7), "bone", rotation=(-14, 0, 0), pivot=(0.38, 0.5, -8.7))
     m.mirror_x(b, (0.25, 1.7, -9.45), (0.52, 2.15, -8.7), "bone", rotation=(14, 0, 0), pivot=(0.38, 1.9, -8.7))
-    # scythe blade below the barrel (dark steel, honed silver edge)
-    m.box(b, (-0.3, -0.25, -5.0), (0.3, 0.75, -4.2), "dark_steel")
-    m.box(b, (-0.125, -0.9, -8.0), (0.125, 0.0, -4.4), "blade", rotation=(-18, 0, 0), pivot=(0, 0, -4.4))
-    m.box(b, (-0.125, -1.5, -8.6), (0.125, -0.7, -7.7), "blade", rotation=(-18, 0, 0), pivot=(0, 0, -4.4))
-    m.box(b, (-0.125, -1.3, -9.4), (0.125, -0.8, -8.4), "blade", rotation=(-48, 0, 0), pivot=(0, -1.0, -8.4))
+    # scythe blade hooked under the muzzle (dark steel, honed silver edge)
+    m.box(b, (-0.3, 0.05, -8.75), (0.3, 0.75, -7.85), "dark_steel")
+    m.box(b, (-0.125, -1.1, -9.15), (0.125, 0.3, -8.45), "blade", rotation=(18, 0, 0), pivot=(0, 0.3, -8.8))
+    m.box(b, (-0.125, -1.75, -9.2), (0.125, -1.1, -7.3), "blade", rotation=(-10, 0, 0), pivot=(0, -1.4, -9.2))
+    m.box(b, (-0.125, -1.45, -7.5), (0.125, -1.0, -5.8), "blade", rotation=(-30, 0, 0), pivot=(0, -1.2, -7.5))
     # soul-lantern magazine: caged glass between steel collar and floor plate
     m.box(b, (-0.55, -2.9, -2.6), (0.55, -0.45, -1.2), "lantern")
     m.box(b, (-0.66, -3.22, -2.72), (0.66, -2.9, -1.08), "dark_steel")
@@ -352,10 +358,10 @@ def void_phaser():
         void_glow=glow(VOID, (0.30, 0.05, 0.45)),
         pearl=glow((0.62, 0.30, 0.95), (0.12, 0.04, 0.22), lines=(0.95, 0.75, 1.0)),
         rune_void=runes(OBSIDIAN, VOID, 0.6),
-        prong=metal((0.16, 0.10, 0.22), (0.55, 0.40, 0.70)),
-        heatsink=slots(metal((0.16, 0.10, 0.22), (0.55, 0.40, 0.70)), n=4, rect=(0.1, 0.22, 0.9, 0.78), glow_rgb=VOID),
+        purpur=PURPUR,
+        heatsink=slots(PURPUR, n=4, rect=(0.1, 0.22, 0.9, 0.78), glow_rgb=VOID),
         collar=coil(DARK_STEEL, VOID, 3),
-        cell=inset(metal((0.16, 0.10, 0.22), (0.55, 0.40, 0.70)), (0.22, 0.1, 0.78, 0.85), glow_rgb=VOID),
+        cell=inset(PURPUR, (0.22, 0.1, 0.78, 0.85), glow_rgb=VOID),
         rail=rail(DARK_STEEL),
     ), atlas_width=256)
     m.bone("magic_gun")
@@ -366,30 +372,31 @@ def void_phaser():
     m.box(b, (-1.0, -0.3, -6.2), (1.0, 2.0, 3.8), "rune_void")
     m.box(b, (-0.5, 2.0, -5.9), (0.5, 2.3, 3.2), "rail")
     m.box(b, (-1.15, 0.25, -6.0), (1.15, 1.55, -3.6), "heatsink")
+    m.box(b, (-0.9, -0.65, -2.6), (0.9, -0.3, 1.9), "purpur")
     # reflex sight: base, hood posts + top bar, glowing void lens
-    m.box(b, (-0.5, 2.3, -1.3), (0.5, 2.6, 0.5), "prong")
-    m.mirror_x(b, (0.3, 2.6, -1.2), (0.55, 3.5, -0.75), "prong")
-    m.box(b, (-0.55, 3.5, -1.2), (0.55, 3.8, -0.75), "prong")
-    m.box(b, (-0.3, 2.6, -1.05), (0.3, 3.5, -0.8), "void_glow")
-    # skeletal stock + rubber pad
-    m.box(b, (-0.5, 0.6, 3.8), (0.5, 1.6, 8.2), "prong")
-    m.box(b, (-0.5, -1.9, 3.8), (0.5, -1.0, 7.4), "prong", rotation=(-8, 0, 0), pivot=(0, -1.0, 3.8))
-    m.box(b, (-0.6, -2.2, 7.6), (0.6, 1.8, 8.6), "prong")
+    m.box(b, (-0.55, 2.3, -1.45), (0.55, 2.6, 0.6), "purpur")
+    m.mirror_x(b, (0.3, 2.6, -1.3), (0.6, 3.75, -0.8), "purpur")
+    m.box(b, (-0.6, 3.75, -1.3), (0.6, 4.05, -0.8), "purpur")
+    m.box(b, (-0.3, 2.6, -1.15), (0.3, 3.75, -0.9), "void_glow")
+    # skeletal purpur stock + rubber pad
+    m.box(b, (-0.5, 0.6, 3.8), (0.5, 1.6, 8.2), "purpur")
+    m.box(b, (-0.5, -1.9, 3.8), (0.5, -1.0, 7.4), "purpur", rotation=(-8, 0, 0), pivot=(0, -1.0, 3.8))
+    m.box(b, (-0.6, -2.2, 7.6), (0.6, 1.8, 8.6), "purpur")
     m.box(b, (-0.65, -2.3, 8.6), (0.65, 1.9, 9.0), "rubber")
     # emitter core + coiled collar, three claw prongs bending toward the orb
     m.box(b, (-0.45, 0.65, -7.8), (0.45, 1.75, -6.2), "dark_steel")
     m.box(b, (-0.75, 0.42, -7.3), (0.75, 1.98, -6.5), "collar")
-    m.box(b, (-0.22, 2.0, -10.6), (0.22, 2.45, -6.2), "prong")
+    m.box(b, (-0.22, 2.0, -10.6), (0.22, 2.45, -6.2), "purpur")
     m.box(b, (-0.2, 1.95, -12.2), (0.2, 2.35, -10.5), "void_glow", rotation=(-16, 0, 0), pivot=(0, 2.2, -10.55))
-    m.mirror_x(b, (1.0, 0.95, -10.6), (1.45, 1.45, -6.2), "prong")
+    m.mirror_x(b, (1.0, 0.95, -10.6), (1.45, 1.45, -6.2), "purpur")
     m.mirror_x(b, (0.95, 1.0, -12.2), (1.35, 1.4, -10.5), "void_glow", rotation=(0, -16, 0), pivot=(1.2, 1.2, -10.55))
     # floating ender orb between the prongs
-    m.box("orb", (-0.7, 0.5, -10.1), (0.7, 1.9, -8.7), "pearl")
-    m.box("orb", (-0.5, 0.7, -10.3), (0.5, 1.7, -8.5), "void_glow", rotation=(45, 45, 0), pivot=(0, 1.2, -9.4))
+    m.box("orb", (-0.75, 0.45, -10.15), (0.75, 1.95, -8.65), "pearl")
+    m.box("orb", (-0.52, 0.68, -9.92), (0.52, 1.72, -8.88), "void_glow", rotation=(45, 45, 0), pivot=(0, 1.2, -9.4))
     # energy-cell magazine with a glowing window
     m.box(b, (-0.5, -2.6, -2.4), (0.5, -0.3, -0.9), "cell")
-    m.box(b, (-0.6, -2.9, -2.5), (0.6, -2.6, -0.8), "prong")
-    trigger_group(m, b, "prong", -0.7, 1.5, -0.3, -1.45, (0.3, 0.65))
+    m.box(b, (-0.6, -2.9, -2.5), (0.6, -2.6, -0.8), "dark_steel")
+    trigger_group(m, b, "purpur", -0.7, 1.5, -0.65, -1.75, (0.3, 0.65))
     hands(m, grip, fore=(-0.3, -4.6, 1.0))
     return m, {"kind": "rifle", "spin": {"orb": "y"}, "grip": grip}
 
@@ -402,7 +409,7 @@ def celestial_cannon():
         rune_white=runes(WHITE_PLATE, HOLY, 0.6),
         crown=bore(GOLD, HOLY, size=5),
         halo=glow((1.0, 0.95, 0.70), (0.95, 0.70, 0.25), facets=False),
-        feather=feathers((0.97, 0.96, 0.92), (0.66, 0.64, 0.62), tip=(0.93, 0.72, 0.25)),
+        feather=feathers((0.98, 0.97, 0.93), (0.74, 0.72, 0.70), tip=(0.95, 0.76, 0.30)),
     ), atlas_width=256)
     m.bone("magic_gun")
     m.bone("body", "magic_gun")
@@ -424,12 +431,12 @@ def celestial_cannon():
     m.box(b, (-0.55, 2.85, -3.05), (0.55, 4.35, -1.95), "sun", rotation=(0, 45, 0), pivot=(0, 3.6, -2.5))
     m.box(b, (-0.32, 4.3, -2.82), (0.32, 4.9, -2.18), "sun", rotation=(0, 45, 0), pivot=(0, 4.6, -2.5))
     m.mirror_x(b, (0.5, 2.9, -2.68), (0.78, 3.55, -2.32), "gold")
-    # angel wings: gold shoulder + three fanned feathers per side
-    m.mirror_x(b, (1.35, 0.7, -0.4), (1.7, 1.9, 1.9), "gold")
-    for i, (ang, ln) in enumerate(((62, 4.4), (40, 3.9), (18, 3.3))):
-        x0 = 1.4 + 0.07 * i
-        m.mirror_x(b, (x0, 1.3, 0.3), (x0 + 0.25, 1.3 + ln, 1.25), "feather",
-                   rotation=(ang, 0, 0), pivot=(x0 + 0.12, 1.3, 0.8))
+    # folded angel wings: a gilded arm and four feathers sweeping back
+    m.mirror_x(b, (1.35, 1.4, 0.4), (1.7, 3.8, 1.2), "gold", rotation=(35, 0, 0), pivot=(1.5, 1.6, 0.8))
+    for i, (ang, ln) in enumerate(((80, 4.2), (64, 3.6), (48, 3.0), (30, 2.2))):
+        x0 = 1.38 + 0.07 * i
+        m.mirror_x(b, (x0, 3.0, 1.2), (x0 + 0.25, 3.0 + ln, 2.0), "feather",
+                   rotation=(ang, 0, 0), pivot=(x0 + 0.12, 3.0, 1.6))
     # front handle (two-handed) with gold mount and cap
     m.box(b, (-0.55, -2.9, -5.2), (0.55, -0.4, -4.1), "leather")
     m.box(b, (-0.65, -0.72, -5.4), (0.65, -0.4, -3.9), "gold")
