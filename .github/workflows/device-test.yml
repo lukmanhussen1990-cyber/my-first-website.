@@ -22,6 +22,7 @@ jobs:
   emulator:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    continue-on-error: ${{ matrix.best_effort }}
     strategy:
       fail-fast: false
       matrix:
@@ -31,14 +32,17 @@ jobs:
             profile: pixel_2
             gpu: swiftshader_indirect
             ram: 3072M
-          # The API 34 emulator process died mid-game with SwiftShader (also
-          # with the ad-free 1.0 build); ANGLE on SwiftShader is the
-          # recommended software renderer for newer system images.
+            best_effort: false
+          # Best effort: on GitHub's runners the API 34 emulator process dies
+          # a few minutes into the game (with the 1.0 build too; ANGLE
+          # rendering died even sooner). Its results are kept as artifacts
+          # but do not fail the workflow.
           - api: 34
             target: google_apis
             profile: pixel_6
-            gpu: swangle_indirect
+            gpu: swiftshader_indirect
             ram: 4096M
+            best_effort: true
     steps:
       - uses: actions/checkout@v4
 
