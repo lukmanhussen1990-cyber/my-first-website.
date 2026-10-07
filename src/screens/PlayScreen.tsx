@@ -36,7 +36,7 @@ import s from './PlayScreen.module.css';
 
 type Phase = 'intro' | 'playing' | 'result';
 
-const ABANDONED: GameResult = { outcome: 'loss', score: 0, summary: 'Abandoned' };
+const ABANDONED: GameResult = { outcome: 'loss', score: 0, summary: 'Abandoned', abandoned: true };
 const EXPIRED: GameResult = { outcome: 'loss', score: 0, summary: 'Time expired' };
 
 export default function PlayScreen({ params }: ScreenProps) {

@@ -36,16 +36,21 @@ export const useSession = create<SessionStore>((set, get) => ({
   user: null,
 
   boot: async () => {
-    const user = await restoreSession();
-    if (user) {
-      await useGame.getState().hydrate(user.id, user.username);
-      set({ status: 'user', user });
-      return;
-    }
-    if (isGuestActive()) {
-      await useGame.getState().hydrate(GUEST_ID, 'Guest');
-      set({ status: 'guest', user: null });
-      return;
+    try {
+      const user = await restoreSession();
+      if (user) {
+        await useGame.getState().hydrate(user.id, user.username);
+        set({ status: 'user', user });
+        return;
+      }
+      if (isGuestActive()) {
+        await useGame.getState().hydrate(GUEST_ID, 'Guest');
+        set({ status: 'guest', user: null });
+        return;
+      }
+    } catch (err) {
+      // Storage blocked or corrupted: never leave the app stuck on the splash.
+      console.error('[border-trials] session restore failed', err);
     }
     set({ status: 'signedOut', user: null });
   },

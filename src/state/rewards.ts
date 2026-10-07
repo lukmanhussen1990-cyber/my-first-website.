@@ -54,7 +54,9 @@ export function applyResult(prev: PlayerProgress, c: Challenge, r: GameResult): 
   let points = 0;
   let xp = 0;
   let gems = 0;
-  if (c.practice) {
+  if (r.abandoned) {
+    xp = 0; // quitting must never be a way to farm participation XP
+  } else if (c.practice) {
     xp = win ? c.rewardXp : Math.round(c.rewardXp / 4);
   } else if (win) {
     const perf = 0.7 + 0.3 * (score / 100);

@@ -5,6 +5,7 @@
  *   node tools/shoot.mjs <route> <out.png> [options]
  *
  *   route        hash route, e.g. /home, /cards/spade, /play/diamond-3
+ *                ("/" captures the loading screen itself, --wait ms after it appears)
  *   --base URL   app URL (default http://localhost:5173/)
  *   --guest      start as a signed-in guest (default for protected routes)
  *   --fresh      start signed out with empty storage
@@ -44,6 +45,18 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 
+// Ignore Vite's HMR socket so file edits elsewhere can't reload the page or
+// raise the error overlay mid-capture.
+await ctx.addInitScript(() => {
+  const NativeWS = window.WebSocket;
+  window.WebSocket = function (url, protocols) {
+    if (String(protocols).includes('vite')) {
+      return { addEventListener() {}, removeEventListener() {}, send() {}, close() {}, readyState: 0 };
+    }
+    return new NativeWS(url, protocols);
+  };
+});
+
 if (!fresh) {
   await ctx.addInitScript(() => {
     if (!localStorage.getItem('bt.session')) localStorage.setItem('bt.guest', '1');
@@ -51,12 +64,17 @@ if (!fresh) {
 }
 
 await page.goto(base + '#/');
-await page.waitForFunction(() => window.__bt && window.__bt.ready(), null, { timeout: 20000 });
+if (route === '/') {
+  // Capture the splash itself: --wait is measured from its first paint.
+  await page.waitForSelector('[role=progressbar]', { timeout: 20000 });
+} else {
+  await page.waitForFunction(() => window.__bt && window.__bt.ready(), null, { timeout: 30000 });
+}
 
 if (seed > 0) {
   await page.evaluate((n) => window.__bt.simulateWins(n), seed);
 }
-if (route !== '/') {
+if (route !== '/' && route !== '') {
   await page.evaluate((r) => window.__bt.navigate(r, { transition: 'none' }), route);
 }
 await page.waitForTimeout(wait);

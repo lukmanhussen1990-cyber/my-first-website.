@@ -3,6 +3,7 @@
  * loading screen first; the originally requested path is remembered here and
  * restored once the session is known.
  */
+import { audio } from '../services/audio';
 import { getRouter, navigate } from './router';
 
 const initial = getRouter().route;
@@ -19,6 +20,8 @@ export function finishBoot(signedIn: boolean): void {
   let dest = target;
   target = null;
   if (signedIn) {
+    // Returning players get the soundscape too (it starts on their first tap).
+    audio.startAmbience('city');
     if (!dest || PUBLIC_ONLY.has(dest)) dest = '/home';
   } else if (!dest || !(dest === '/about' || dest === '/info' || PUBLIC_ONLY.has(dest))) {
     dest = '/welcome';

@@ -206,6 +206,8 @@ export interface GameResult {
   summary: string;
   /** game-specific numeric stats (bestReactionMs, mistakes, moves, empathy…) */
   stats?: Record<string, number>;
+  /** the player quit mid-run — recorded as a loss with no participation XP */
+  abandoned?: boolean;
 }
 
 export interface RewardSummary {

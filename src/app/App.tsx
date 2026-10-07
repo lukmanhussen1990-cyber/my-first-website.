@@ -3,6 +3,7 @@ import { Suspense, useEffect } from 'react';
 import { ART } from '../assets/art';
 import { BottomNav } from '../components/BottomNav';
 import { Toaster } from '../components/Toaster';
+import { APP_ROOT_ID } from '../components/ui/Sheet';
 import { audio } from '../services/audio';
 import { useGame } from '../state/game';
 import { useSession } from '../state/session';
@@ -96,7 +97,12 @@ export function App() {
   useEffect(() => {
     if (status === 'booting' || route.name === 'loading') return;
     if (route.auth && !signedIn) navigate('/welcome', { replace: true, transition: 'fade' });
-    else if (signedIn && (route.name === 'welcome' || route.name === 'login' || route.name === 'register'))
+    // Signed-in players skip the entry screens; guests may still open
+    // /login and /register to upgrade (their progress carries over).
+    else if (
+      (status === 'user' && (route.name === 'welcome' || route.name === 'login' || route.name === 'register')) ||
+      (status === 'guest' && route.name === 'welcome')
+    )
       navigate('/home', { replace: true, transition: 'fade' });
   }, [route, status, signedIn]);
 
@@ -107,7 +113,7 @@ export function App() {
   return (
     <div className={s.device}>
       <div className={s.backdrop} style={{ backgroundImage: `url(${ART.welcomeCity})` }} aria-hidden />
-      <div className={[s.app, reduceMotion && 'reduce-motion'].filter(Boolean).join(' ')}>
+      <div id={APP_ROOT_ID} className={[s.app, reduceMotion && 'reduce-motion'].filter(Boolean).join(' ')}>
         <AnimatePresence initial={false} custom={t}>
           <motion.div
             key={route.path}

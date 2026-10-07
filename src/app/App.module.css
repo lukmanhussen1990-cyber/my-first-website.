@@ -24,6 +24,9 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
+  /* clip (not just hide) so the oversized grain layer can never make the
+     container programmatically scrollable */
+  overflow: clip;
   background: var(--bg-1);
   isolation: isolate;
   contain: layout paint;
