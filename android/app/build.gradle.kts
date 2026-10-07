@@ -76,6 +76,7 @@ android {
             // Always signed with the release key; the build fails if
             // android/key.properties is missing instead of using debug keys.
             signingConfig = signingConfigs.getByName("release")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }
@@ -91,5 +92,9 @@ flutter {
 }
 
 dependencies {
+    // The Google Mobile Ads SDK depends on WorkManager 2.7 (Room 2.2), whose
+    // keep rules predate R8 full mode; a current WorkManager brings Room
+    // rules that work with it (see proguard-rules.pro).
+    implementation("androidx.work:work-runtime:2.10.5")
     testImplementation("junit:junit:4.13.2")
 }
