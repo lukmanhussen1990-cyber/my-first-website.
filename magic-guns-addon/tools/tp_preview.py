@@ -112,7 +112,7 @@ def render_tp(geo, tex_rgba, glow_mask, kind, hold, size=640, yaw=-35, pitch=12,
     for V, uv in quads:
         B = V.copy()
         B[:, 0] *= -1
-        n = np.cross(B[1] - B[0], B[3] - B[0])
+        n = np.cross(B[3] - B[0], B[1] - B[0])  # outward
         nn = np.linalg.norm(n)
         if nn == 0:
             continue

@@ -259,9 +259,10 @@ def _scratches(ctx, density=1.0):
     return m
 
 
-def metal(base, hi=None, streak=0.10, band=0.22, noise=0.05, wear=0.5, scratch=1.0, grad=0.18):
-    """Machined metal: brushed along the long axis, polished reflection band,
-    hairline scratches, AO toward the seams and scuffed bright edges."""
+def metal(base, hi=None, streak=0.10, band=0.22, noise=0.05, wear=0.6, scratch=1.0, grad=0.18, polish=0.5):
+    """Machined metal: brushed along the long axis, polished reflection band
+    over a darker "horizon" line, hairline scratches, AO toward the seams and
+    scuffed bright edges."""
     base = _c(base)
     hi = _c(hi) if hi is not None else np.minimum(base * 1.6 + 0.08, 1)
     bare = np.minimum(hi * 0.85 + 0.12, 1)
@@ -276,6 +277,9 @@ def metal(base, hi=None, streak=0.10, band=0.22, noise=0.05, wear=0.5, scratch=1
         img += _streaks(ctx, 1.2, streak)[..., None]
         img += (_fbm(ctx.rng, h, w, 4) - 0.5)[..., None] * noise
         img = _mix(img, hi, _spec_band(ctx, 0.28, 0.2, 1.0) * band)
+        if polish and ctx.is_side and ctx.h >= 5:
+            img = _mix(img, hi, _spec_band(ctx, 0.2, 0.07, 1.0) * band * polish)
+            img *= (1 - _spec_band(ctx, 0.56, 0.08, 1.0) * 0.22 * polish)[..., None]
         if scratch:
             img = _mix(img, bare, _scratches(ctx, scratch) * 0.3)
         img = _ao(img, ctx, 0.28)
@@ -766,10 +770,11 @@ def coil(metal_paint, glow_rgb, period=4, axis=2):
     return paint
 
 
-def skull_face(bone_paint, eye_rgb):
-    """Bone skull: the front face (north) and back face (south) get the full
-    face, the flanks a profile (eye socket at the front, cheekbone, teeth),
-    the top cranial sutures.  Eye sockets glow."""
+def skull_face(bone_paint, eye_rgb, facing="south"):
+    """Bone skull looking toward `facing` ("south" = at the wielder, "north" =
+    down the barrel): that face gets the full face, the flanks a matching
+    profile (eye socket + teeth at the facing edge, temple hollow behind), the
+    top and the back of the cranium suture lines.  Eye sockets glow."""
     eye_rgb = _c(eye_rgb)
     hot = np.minimum(eye_rgb * 1.1 + 0.35, 1)
 
@@ -794,7 +799,7 @@ def skull_face(bone_paint, eye_rgb):
         g = g.copy()
         h, w = ctx.h, ctx.w
         f = ctx.face
-        if f in ("north", "south") and h >= 6 and w >= 6:
+        if f == facing and h >= 6 and w >= 6:
             ew = max(2, int(round(w * 0.3)))
             eh = max(2, int(round(h * 0.3)))
             ey = max(1, int(round(h * 0.28)))
@@ -821,7 +826,9 @@ def skull_face(bone_paint, eye_rgb):
             eh = max(2, int(round(h * 0.3)))
             ew = max(2, int(round(w * 0.28)))
             ey = max(1, int(round(h * 0.28)))
-            x0 = w - 1 - ew if f == "east" else 1
+            # east u runs rear -> front, west front -> rear
+            face_right = (f == "east") == (facing == "north")
+            x0 = w - 1 - ew if face_right else 1
             socket(img, g, ey, x0, eh, ew)
             # cheekbone ridge + temple hollow
             cyb = ey + eh
@@ -829,16 +836,16 @@ def skull_face(bone_paint, eye_rgb):
                 xs = range(1, w - 1)
                 for x in xs:
                     img[cyb, x] = img[cyb, x] * 0.7
-                back = range(0, max(1, w // 3)) if f == "east" else range(w - max(1, w // 3), w)
+                back = range(0, max(1, w // 3)) if face_right else range(w - max(1, w // 3), w)
                 for x in back:
                     img[cyb + 1:, x] *= 0.62
             # teeth at the front of the jaw
             ty = h - 2
-            tx = range(w - 1 - max(2, w // 2), w - 1) if f == "east" else range(1, 1 + max(2, w // 2))
+            tx = range(w - 1 - max(2, w // 2), w - 1) if face_right else range(1, 1 + max(2, w // 2))
             for x in tx:
                 img[ty, x] = img[ty, x] * (0.5 if x % 2 else 1.08)
                 img[ty - 1, x] *= 0.6
-        elif f == "up" and h >= 6 and w >= 6:
+        elif f in ("up", "north", "south") and h >= 6 and w >= 6:
             cxm = w // 2
             sut = np.zeros((h, w))
             _draw_line(sut, 1, cxm, h - 2, cxm + 0.5)
@@ -988,7 +995,7 @@ def feathers(base, dark, tip=None):
             shaft = np.abs(across - c) < 0.6
             img[shaft] = shaft_c * 0.92
         if tip is not None and ctx.is_side and not ctx.grain_along_u and h >= 6:
-            k = max(2, int(h * 0.18))
+            k = max(2, int(h * 0.24))
             img[:k] = _mix(img[:k], tip, 0.85)
         img = _ao(img, ctx, 0.18)
         img = _bevel(img, ctx, 0.08, 0.12)
@@ -1020,7 +1027,7 @@ def rail(paint_fn, period=4, axis=2):
     return paint
 
 
-def screws(paint_fn, faces=("east", "west"), spots=((0.12, 0.5), (0.88, 0.5)), inset_px=0):
+def screws(paint_fn, faces=("east", "west"), spots=((0.12, 0.5), (0.88, 0.5))):
     """Slotted screw heads at the given (u, v) fractions (east orientation)."""
     def paint(ctx):
         img, g = paint_fn(ctx)
@@ -1362,7 +1369,7 @@ def bedrock_to_quads(geo, extra_bone_rot=None, hide=()):
                 if f in ("up", "down"):  # undo the export flip
                     u, v, w, h = u + w, v + h, -w, -h
                 q = V[idx[f]]
-                n = np.cross(q[1] - q[0], q[3] - q[0])
+                n = np.cross(q[3] - q[0], q[1] - q[0])  # outward
                 nn = np.linalg.norm(n)
                 if nn == 0:
                     continue
