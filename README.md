@@ -20,8 +20,8 @@ boosts and exclusive block skins) through Google Play subscriptions.
 
 ## Screenshots
 
-Captured on Android emulators from the signed release APK by the device
-test bot:
+Version 1.0, captured on Android emulators from the signed release APK by
+the device test bot:
 
 | Splash | Studio | Logo | Game | Combo | Game over | Settings |
 |---|---|---|---|---|---|---|
