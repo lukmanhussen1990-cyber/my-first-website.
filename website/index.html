@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "1.8.1",                       // shown in Settings → About
+  version: "1.8.2",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -639,6 +639,20 @@ const CONFIG = {
   .setprof .sp-txt b { display: flex; align-items: center; gap: 7px; font-size: 21px; font-weight: 800; line-height: 1.2; }
   .setprof .sp-txt b .crown { width: 19px; height: 19px; color: #ffd36a; stroke-width: 2; filter: drop-shadow(0 0 4px rgba(255, 170, 60, .6)); }
   .setprof .sp-txt i { display: block; font-style: normal; color: var(--text2); font-size: 14.5px; margin-top: 1px; }
+  /* the blue verified tick next to the name: a crisp vector seal that turns slowly, a shine across it now and then, a soft blue glow */
+  .vtick { position: relative; display: block; flex: none; width: 21px; height: 21px; margin: 0 -1px 0 -2px; }
+  .vtick svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 4px rgba(0, 163, 238, .55)); }
+  .vt-seal { fill: #00a3ee; transform-origin: 50px 50px; animation: vtSpin 14s linear infinite; }
+  .vt-ck { fill: none; stroke: #fff; stroke-width: 9; stroke-linecap: square; stroke-linejoin: miter; }
+  .vt-shine { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; pointer-events: none; }
+  .vt-shine::after { content: ""; position: absolute; top: -20%; bottom: -20%; left: 0; width: 45%; transform: translateX(-130%) skewX(-18deg);
+                     background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .75), rgba(255, 255, 255, 0)); animation: vtShine 4.5s ease-in-out infinite 1s; }
+  @keyframes vtSpin { to { transform: rotate(360deg); } }
+  @keyframes vtShine { 0%, 70% { transform: translateX(-130%) skewX(-18deg); } 92%, 100% { transform: translateX(330%) skewX(-18deg); } }
+  .setprof:active .vtick, .setprof.tap .vtick { animation: vtPop .45s cubic-bezier(.3, 1.6, .5, 1); }
+  @keyframes vtPop { 40% { transform: scale(1.3); } }
+  .app-bg .vtick *, .app-bg .vt-shine::after { animation-play-state: paused !important; }
+  .ultra .vt-seal, .ultra .vt-shine::after { animation: none !important; }
   .sp-st { display: flex; align-items: center; gap: 7px; margin-top: 6px; font-size: 13.5px; font-weight: 600; }
   .sp-st .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--good); color: var(--good); box-shadow: 0 0 8px currentColor; flex: none; }
 
@@ -1257,6 +1271,7 @@ const CONFIG = {
                 radial-gradient(ellipse 80% 34% at 50% 58%, rgba(255, 10, 50, .16), rgba(255, 10, 50, 0) 72%),
                 linear-gradient(180deg, rgba(150, 6, 36, .46) 0, rgba(165, 6, 52, .4) 45%, rgba(140, 4, 48, .42) 74%, rgba(50, 0, 20, .6) 100%); }
   #ptfx { top: 0; left: 0; width: 100%; height: 100%; }
+  .pt-haze { top: 0; right: 0; bottom: 0; left: 0; background: center / 100% 100% no-repeat; opacity: .85; will-change: opacity; }   /* the lights' glow: one picture, made once */
 
   /* rings behind the music card: two faint ones always, and one pulsing out on every beat (the script places them) */
   /* the still rings are thin glowing lines drawn by one radial gradient each (::before: the bright inner set, ::after: the fainter outer set, out past the screen edges) */
@@ -1351,7 +1366,7 @@ const CONFIG = {
   @media (prefers-reduced-motion: reduce) { #party *, #party *::before, #party *::after { animation: none !important; } #party canvas, #party .pt-rings i { display: none; } }
 
   @media (prefers-reduced-motion: reduce) {
-    #bg, .ring, .bars i, .wf *, .wf *::after, .pop, .pop *, .pop *::after, #player *, #player *::after, #s-home .hero * { animation: none !important; }
+    #bg, .ring, .bars i, .wf *, .wf *::after, .pop, .pop *, .pop *::after, #player *, #player *::after, #s-home .hero *, .vtick *, .vt-shine::after { animation: none !important; }
     body.entered #app { transition-duration: .01s; }
   }
 
@@ -1538,6 +1553,7 @@ const CONFIG = {
   <div id="party" aria-hidden="true">
     <div class="pt-tint"></div>
     <div class="pt-rings" id="ptRings"><i></i><i></i><i></i><i></i></div>
+    <div class="pt-haze" id="ptHaze"></div>
     <canvas id="ptfx"></canvas>
     <div class="pt-ball"><div class="pt-ball-glow"></div><div class="pt-ball-in"><div class="pt-ball-tex"></div><div class="pt-ball-shine"></div></div></div>
   </div>
@@ -1798,7 +1814,7 @@ const CONFIG = {
             </span>
           </span>
           <span class="sp-txt">
-            <b><span class="js-name"></span><svg class="ic crown"><use href="#i-crown"/></svg></b>
+            <b><span class="js-name"></span><span class="vtick" aria-label="Verified" role="img"><svg viewBox="0 0 100 100" aria-hidden="true"><path class="vt-seal" d="M50.00 -1.20 L51.65 -0.48 L53.18 1.50 L54.51 4.22 L55.66 6.97 L56.76 9.06 L57.96 9.98 L59.42 9.59 L61.23 8.08 L63.35 5.98 L65.62 3.98 L67.79 2.73 L69.59 2.70 L70.84 4.00 L71.50 6.41 L71.68 9.43 L71.70 12.41 L71.91 14.76 L72.67 16.08 L74.17 16.27 L76.42 15.57 L79.18 14.44 L82.04 13.46 L84.52 13.14 L86.20 13.80 L86.86 15.48 L86.54 17.96 L85.56 20.82 L84.43 23.58 L83.73 25.83 L83.92 27.33 L85.24 28.09 L87.59 28.30 L90.57 28.32 L93.59 28.50 L96.00 29.16 L97.30 30.41 L97.27 32.21 L96.02 34.38 L94.02 36.65 L91.92 38.77 L90.41 40.58 L90.02 42.04 L90.94 43.24 L93.03 44.34 L95.78 45.49 L98.50 46.82 L100.48 48.35 L101.20 50.00 L100.48 51.65 L98.50 53.18 L95.78 54.51 L93.03 55.66 L90.94 56.76 L90.02 57.96 L90.41 59.42 L91.92 61.23 L94.02 63.35 L96.02 65.62 L97.27 67.79 L97.30 69.59 L96.00 70.84 L93.59 71.50 L90.57 71.68 L87.59 71.70 L85.24 71.91 L83.92 72.67 L83.73 74.17 L84.43 76.42 L85.56 79.18 L86.54 82.04 L86.86 84.52 L86.20 86.20 L84.52 86.86 L82.04 86.54 L79.18 85.56 L76.42 84.43 L74.17 83.73 L72.67 83.92 L71.91 85.24 L71.70 87.59 L71.68 90.57 L71.50 93.59 L70.84 96.00 L69.59 97.30 L67.79 97.27 L65.62 96.02 L63.35 94.02 L61.23 91.92 L59.42 90.41 L57.96 90.02 L56.76 90.94 L55.66 93.03 L54.51 95.78 L53.18 98.50 L51.65 100.48 L50.00 101.20 L48.35 100.48 L46.82 98.50 L45.49 95.78 L44.34 93.03 L43.24 90.94 L42.04 90.02 L40.58 90.41 L38.77 91.92 L36.65 94.02 L34.38 96.02 L32.21 97.27 L30.41 97.30 L29.16 96.00 L28.50 93.59 L28.32 90.57 L28.30 87.59 L28.09 85.24 L27.33 83.92 L25.83 83.73 L23.58 84.43 L20.82 85.56 L17.96 86.54 L15.48 86.86 L13.80 86.20 L13.14 84.52 L13.46 82.04 L14.44 79.18 L15.57 76.42 L16.27 74.17 L16.08 72.67 L14.76 71.91 L12.41 71.70 L9.43 71.68 L6.41 71.50 L4.00 70.84 L2.70 69.59 L2.73 67.79 L3.98 65.62 L5.98 63.35 L8.08 61.23 L9.59 59.42 L9.98 57.96 L9.06 56.76 L6.97 55.66 L4.22 54.51 L1.50 53.18 L-0.48 51.65 L-1.20 50.00 L-0.48 48.35 L1.50 46.82 L4.22 45.49 L6.97 44.34 L9.06 43.24 L9.98 42.04 L9.59 40.58 L8.08 38.77 L5.98 36.65 L3.98 34.38 L2.73 32.21 L2.70 30.41 L4.00 29.16 L6.41 28.50 L9.43 28.32 L12.41 28.30 L14.76 28.09 L16.08 27.33 L16.27 25.83 L15.57 23.58 L14.44 20.82 L13.46 17.96 L13.14 15.48 L13.80 13.80 L15.48 13.14 L17.96 13.46 L20.82 14.44 L23.58 15.57 L25.83 16.27 L27.33 16.08 L28.09 14.76 L28.30 12.41 L28.32 9.43 L28.50 6.41 L29.16 4.00 L30.41 2.70 L32.21 2.73 L34.38 3.98 L36.65 5.98 L38.77 8.08 L40.58 9.59 L42.04 9.98 L43.24 9.06 L44.34 6.97 L45.49 4.22 L46.82 1.50 L48.35 -0.48 Z"/><path class="vt-ck" d="M29.5 51.5 L43.5 65.5 L71 37.5"/></svg><span class="vt-shine"></span></span><svg class="ic crown"><use href="#i-crown"/></svg></b>
             <i>@<span class="js-handle"></span></i>
             <span class="sp-st"><span class="dot js-stdot"></span><span class="js-sttext js-stcolor">Online</span></span>
           </span>
@@ -3146,7 +3162,7 @@ const CONFIG = {
      (the app); otherwise the song's beat (CONFIG bpm + beat) drives a smooth imitation. The song itself is never touched.
      ===================================================================== */
   var pt = { on: false, wave: false, song: null, offT: 0, raf: 0, last: 0, acc: 0, t: 0, frames: 0, cv: $("ptfx"), g: null, W: 0, H: 0, k: 1,
-             spr: null, beamSpr: null, beams: [], dots: [], spots: [], n: 0, bars: [], bv: [], perm: [], avg: 0, lastBeat: 0, ph: 0, ring: 0, rip: 0, beamOp: -1, rate: 1, L: 0 };
+             spr: null, hazeOp: -1, lacc: 0, beamSpr: null, beams: [], dots: [], spots: [], n: 0, bars: [], bv: [], perm: [], avg: 0, lastBeat: 0, ph: 0, ring: 0, rip: 0, beamOp: -1, rate: 1, L: 0 };
   var ptEl = $("party"), ptRingBox = $("ptRings"), ptRings = qa("#ptRings i"), ptWaveEl = $("pwave");
   var PT_DOT = [["255,140,130", "255,40,62", "255,30,60"], ["255,252,230", "255,226,160", "255,60,50"], ["255,175,255", "232,70,255", "175,50,255"], ["255,225,242", "255,72,165", "255,40,130"]];   // bokeh: centre, disc, halo (red, warm white, purple, hot pink)
   function ptSong() { var s = songs[idx]; return s && s.party ? s : null; }
@@ -3185,7 +3201,7 @@ const CONFIG = {
   }
   function ptSize() {                                       // the canvas lights: stage spotlights + lasers (flares where they shine from), bokeh dots, light spots from the disco ball
     var w = ptEl.clientWidth, h = ptEl.clientHeight, lite = isLite(); if (!w || !h) { pt.W = 0; return; }
-    pt.k = Math.min(window.devicePixelRatio || 1, lite ? .75 : 1.25);          // soft glows: a lighter canvas looks the same
+    pt.k = Math.min(window.devicePixelRatio || 1, lite ? .6 : 1.25);           // soft glows: a lighter canvas looks the same
     pt.cv.width = Math.round(w * pt.k); pt.cv.height = Math.round(h * pt.k); pt.W = w; pt.H = h; pt.g = pt.cv.getContext("2d");
     if (!pt.spr) pt.spr = PT_DOT.map(function (p) { return ptDotSprite(p); });   // bokeh dots, one per colour (drawn once)
     if (!pt.fl) pt.fl = [["255,255,255", "255,90,215", "255,40,160"], ["255,240,240", "255,60,95", "255,30,70"], ["255,250,255", "215,130,255", "170,60,255"]].map(function (p) { return ptDotSprite(p, 1); })
@@ -3203,6 +3219,7 @@ const CONFIG = {
       .map(function (b, k) { return { x: b[0] * w, y: b[1] * h, r: b[2], s: b[3], T: b[4], c: b[5], a: b[6], l: b[7], ph: k * 1.3 }; });
     // the red-pink glow the lights throw around: [x, y, size, sprite, brightness]
     pt.haze = [[.22, .12, 240, 3, .5], [.74, .2, 190, 3, .42], [.0, .45, 140, 4, .55], [.0, .75, 130, 3, .5], [1, .75, 130, 3, .5], [.03, .97, 140, 4, .5]].map(function (f) { return { x: f[0] * w, y: f[1] * h, s: f[2], c: f[3], a: f[4] }; });
+    ptHazePic(w, h);
     // the bright points they shine from: [x, y, size, sprite]
     pt.flares = [[.107, .011, 116, 0], [.315, .059, 44, 1], [.652, .0, 32, 2], [.833, .073, 26, 0]].map(function (f) { return { x: f[0] * w, y: f[1] * h, s: f[2], c: f[3] }; });
     var nd = lite ? 44 : 58, i, r; pt.dots = []; pt.spots = [];
@@ -3210,6 +3227,12 @@ const CONFIG = {
       pt.dots.push({ x: ptDotX(w), y: (i + Math.random()) / nd * h, s: 16 + 44 * Math.pow(Math.random(), 1.5), vy: -(3 + Math.random() * 9), sw: 3 + Math.random() * 8,
                      ph: Math.random() * 6.28, tw: .8 + Math.random() * 2.2, c: r < .46 ? 0 : r < .6 ? 1 : r < .76 ? 2 : 3 }); }
     for (i = 0; i < 7; i++) pt.spots.push({ a: Math.random() * 6.28, r: h * (.25 + Math.random() * .7), va: (Math.random() < .5 ? -1 : 1) * (.05 + Math.random() * .08), s: 20 + Math.random() * 26, c: i % 2 ? 3 : 2 });
+  }
+  function ptHazePic(w, h) {                                // the glow the lights throw around barely changes: draw it once (it only fades with the music)
+    var el = $("ptHaze"), k = .5, c = document.createElement("canvas"), x = c.getContext("2d"), i;
+    c.width = Math.round(w * k); c.height = Math.round(h * k); x.scale(k, k); x.globalCompositeOperation = "lighter";
+    for (i = 0; i < pt.haze.length; i++) { var z = pt.haze[i]; x.globalAlpha = z.a; x.drawImage(pt.fl[z.c], z.x - z.s / 2, z.y - z.s / 2, z.s, z.s); }
+    try { el.style.backgroundImage = "url(" + c.toDataURL() + ")"; } catch (e) {}
   }
   function ptDotX(w) { var r = Math.random(); return r < .28 ? r / .28 * w * .13 : r < .56 ? w - (r - .28) / .28 * w * .13 : Math.random() * w; }   // more dots along the sides (the cards cover the middle)
   function ptDotSprite(p, fl) {                             // one bokeh dot (drawn once): a bright centre, a soft-edged disc, a faint halo · fl: a flare (white-hot, a bigger glow)
@@ -3275,9 +3298,8 @@ const CONFIG = {
     if (!g) return;
     g.setTransform(k, 0, 0, k, 0, 0); g.clearRect(0, 0, W, H);
     g.globalCompositeOperation = "lighter";
-    for (i = 0; i < pt.haze.length; i++) {                  // the glow they throw around (brighter on loud parts)
-      var z = pt.haze[i]; g.globalAlpha = z.a * (.7 + .3 * L); g.drawImage(pt.fl[z.c], z.x - z.s / 2, z.y - z.s / 2, z.s, z.s);
-    }
+    var ho = .7 + .3 * L;                                   // the glow (a picture under the canvas) brightens on loud parts
+    if (Math.abs(ho - pt.hazeOp) > .04) { pt.hazeOp = ho; $("ptHaze").style.opacity = ho.toFixed(2); }
     for (i = 0; i < pt.beams.length; i++) {                 // spotlights + lasers swing left and right (each at its own pace), flaring on the loud parts
       var bm = pt.beams[i], b = pt.beamSpr[bm.c]; bm.ph += dt * sp * Math.PI * 2 / (bm.T * 2);
       var ang = (bm.r + bm.s * Math.sin(bm.ph)) * Math.PI / 180, cs = Math.cos(ang), sn = Math.sin(ang);
@@ -3316,7 +3338,8 @@ const CONFIG = {
     var r = ptLevel(t, dt), shown = ptFxShown(), home = curScreen === "home";
     if (shown) {
       if (!pt.W) ptSize();
-      ptDraw(dt);
+      pt.lacc += dt;
+      if (pt.lacc >= .048) { ptDraw(pt.lacc); pt.lacc = 0; }   // the lights: about 20 pictures a second is smooth for their slow moves
       if (r.beat) ptBeat();
       if (++pt.frames % 30 === 0 && home) ptPlace();
     }
