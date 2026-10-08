@@ -28,8 +28,8 @@ android {
         applicationId = "com.imran.bio"
         minSdk = 24
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.5"
+        versionCode = 7
+        versionName = "1.6"
         resValue("string", "app_name", androidString(appName))
     }
 
@@ -82,4 +82,7 @@ kotlin {
 dependencies {
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("androidx.activity:activity-ktx:1.11.0")
+    // WebViewAssetLoader: the page opens from https://appassets.androidplatform.net instead of file://
+    implementation("androidx.webkit:webkit:1.14.0")
+    testImplementation("junit:junit:4.13.2")
 }

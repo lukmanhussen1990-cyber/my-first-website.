@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "1.5",                       // shown in Settings → About
+  version: "1.6",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -102,6 +102,15 @@ const CONFIG = {
 
 (function () {
   var root = document.documentElement;
+  // app 1.6 runs the page from https://appassets.androidplatform.net (so Web Audio can read the music) instead of file://.
+  // The first time, the app hands over what the old page had saved (views, theme, likes, …) in the address: keep it here.
+  if (location.hash.indexOf("#moved=") === 0) {
+    try {
+      var moved = JSON.parse(decodeURIComponent(location.hash.slice(7)));
+      Object.keys(moved).forEach(function (k) { if (k.indexOf("bio:") === 0 && localStorage.getItem(k) === null) localStorage.setItem(k, String(moved[k])); });
+    } catch (e) {}
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+  }
   // theme (remembered from last time)
   var THEMES = ["glass", "academia", "cyber", "midnight", "noir"], t = CONFIG.theme;
   try { var saved = localStorage.getItem("bio:theme"); if (saved) t = saved; } catch (e) {}
@@ -635,63 +644,161 @@ const CONFIG = {
   .sp-st .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--good); color: var(--good); box-shadow: 0 0 8px currentColor; flex: none; }
 
   /* =====================================================================
-     3. FULL-SCREEN MUSIC PLAYER
+     3. FULL-SCREEN MUSIC PLAYER ("Now Playing"): always red, like the reference.
+     Dark red smoke · spinning cover inside a segmented progress ring (white dot = how far the song is) and a thick glowing
+     red ring · a glass side panel (mute, volume, •••, equalizer) · title + red star · progress · controls · waveform · volume.
+     --cs is the size of the cover; --pq (0 … 1) squeezes everything a little on short screens (set by the script).
+     Only transform / opacity are animated, and only while the player is open (the waveform is one canvas).
      ===================================================================== */
   #player {
+    --pq: 0; --cs: calc(min(48vw, 27vh, 230px) * (1 - .2 * var(--pq))); --box: calc(var(--cs) * 1.3);
+    --red: #ff2d55; --red2: #ff1f3d; --redglow: rgba(255, 30, 60, .55);
     position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; overflow: hidden;
-    padding: calc(14px + env(safe-area-inset-top, 0px)) 22px calc(16px + env(safe-area-inset-bottom, 0px));
-    background: radial-gradient(ellipse at 50% 30%, rgba(var(--accent2-rgb), .1), rgba(0, 0, 0, 0) 60%), linear-gradient(180deg, rgba(var(--surface-rgb), .8), rgba(var(--surface-rgb), .95));
-    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
-    visibility: hidden; transform: translateY(100%); transition: transform .5s cubic-bezier(.2, .8, .2, 1), visibility 0s .5s; touch-action: pan-y;
+    padding: calc(6px + env(safe-area-inset-top, 0px)) 16px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: #0b0103; color: #fff;
+    visibility: hidden; opacity: 0; transform: translateY(100%);
+    transition: transform .52s cubic-bezier(.2, .8, .2, 1), opacity .4s ease, visibility 0s .52s; touch-action: manipulation;
   }
-  .lite:not(.softblur) #player, .noblur #player, .ultra #player { background: radial-gradient(ellipse at 50% 30%, rgba(var(--accent2-rgb), .1), rgba(0, 0, 0, 0) 60%), linear-gradient(180deg, rgba(var(--surface-rgb), .9), rgba(var(--surface-rgb), .97)); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  #player.open { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
   #screens, #tabs { transition: opacity .3s ease .2s; }
   #app.pl-open #screens, #app.pl-open #tabs { opacity: 0; }                       /* hidden under the player once it has slid up (no ghosting) */
-  #player.open { visibility: visible; transform: none; transition-delay: 0s; }
-  .fp-bar { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 42px; margin-bottom: 12px; }
-  .fp-bar h2 { font-size: 16.5px; font-weight: 600; }
-  .fp-bar .ibtn { background: none; border: 0; }
-  .fp-cover { --sz: min(66vw, 35vh, 300px); position: relative; width: var(--sz); height: var(--sz); margin: auto auto 24px; flex: none; touch-action: pan-y; cursor: grab; }
-  .fp-cover::before { content: ""; position: absolute; top: -30px; right: -30px; bottom: -30px; left: -30px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .09); pointer-events: none; }
-  .fp-cover::after { content: ""; position: absolute; top: -46px; right: -46px; bottom: -46px; left: -46px; border-radius: 50%; pointer-events: none; z-index: -1;
-                     background: radial-gradient(circle, rgba(var(--accent2-rgb), 0) 60%, rgba(var(--accent2-rgb), .3) 68%, rgba(var(--accent-rgb), .12) 76%, rgba(var(--accent-rgb), 0) 86%); }
-  .fp-disc { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; }
-  /* the player's animations only exist while it is open (animations inside a hidden panel still cost the phone main-thread time) */
-  #player.open .fp-disc { animation: spin 16s linear infinite; animation-play-state: paused; }
-  body.playing #player.open .fp-disc { animation-play-state: running; }
-  /* a thin ring made of bright pieces (white, soft blue, violet) with a glow */
-  .fp-disc .ring {
-    top: -11px; right: -11px; bottom: -11px; left: -11px; animation: none; box-shadow: none;
-    background: conic-gradient(from 12deg, #fff 0 60deg, transparent 60deg 68deg, #dfe6ff 68deg 126deg, transparent 126deg 135deg, #8d9bff 135deg 196deg, transparent 196deg 205deg,
-                               #c486ff 205deg 262deg, transparent 262deg 271deg, #fff 271deg 330deg, transparent 330deg 338deg, #fff 338deg 360deg);
+
+  /* dark red smoke with soft blurred red glows (big soft gradients drifting slowly, no picture behind) */
+  .fp-bg { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 0; overflow: hidden; pointer-events: none;
+    background: radial-gradient(120% 75% at 50% 30%, #26050d 0%, #140307 42%, #090103 100%); }
+  .fp-bg i { position: absolute; border-radius: 50%; }
+  .fp-bg .s1 { width: 125%; height: 62%; left: -38%; top: 2%; background: radial-gradient(closest-side, rgba(200, 16, 42, .27), rgba(200, 16, 42, 0)); }
+  .fp-bg .s2 { width: 115%; height: 58%; right: -42%; top: 36%; background: radial-gradient(closest-side, rgba(150, 10, 30, .26), rgba(150, 10, 30, 0)); }
+  .fp-bg .s3 { width: 90%; height: 40%; left: -20%; bottom: -8%; background: radial-gradient(closest-side, rgba(120, 6, 24, .4), rgba(120, 6, 24, 0)); }
+  .fp-bg::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: radial-gradient(ellipse 85% 70% at 50% 42%, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, .55)); }
+  #player.open .fp-bg .s1 { animation: smoke1 21s ease-in-out infinite alternate; }
+  #player.open .fp-bg .s2 { animation: smoke2 25s ease-in-out infinite alternate; }
+  @keyframes smoke1 { from { transform: translate(0, 0) scale(1); } to { transform: translate(16%, 7%) scale(1.18); } }
+  @keyframes smoke2 { from { transform: translate(0, 0) scale(1.1); } to { transform: translate(-14%, -6%) scale(.92); } }
+  #player > *:not(.fp-bg) { position: relative; z-index: 1; }
+
+  /* top bar */
+  .fp-bar { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 46px; flex: none; }
+  .fp-bar h2 { font-size: 18.5px; font-weight: 700; letter-spacing: .005em; }
+  .fp-bar h2 em { font-style: normal; color: var(--red); text-shadow: 0 0 12px rgba(255, 45, 85, .45); }
+  .fp-bar .ibtn { background: none; border: 0; width: 44px; height: 44px; }
+  .fp-bar .ibtn svg.ic { width: 26px; height: 26px; }
+
+  /* the middle: cover + side panel + title + progress (the side panel floats on the left, nothing goes under it) */
+  .fp-main { width: 100%; display: flex; flex-direction: column; align-items: center; flex: none; margin-top: auto; padding-top: calc(8px - 6px * var(--pq)); }
+  .fp-cover { position: relative; width: var(--box); height: var(--box); flex: none; touch-action: pan-y; cursor: grab; }
+  .fp-cover > * { position: absolute; pointer-events: none; }
+  .fp-glow { top: -22%; right: -22%; bottom: -22%; left: -22%; border-radius: 50%; opacity: .55; will-change: transform, opacity;
+    background: radial-gradient(closest-side, rgba(255, 20, 50, 0) 60%, rgba(255, 24, 56, .5) 70%, rgba(255, 12, 44, .2) 84%, rgba(255, 0, 32, 0) 100%); }
+  .fp-outer { top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; border: calc(var(--cs) * .042) solid var(--red2);
+    box-shadow: 0 0 12px 2px rgba(255, 26, 56, .8), 0 0 30px 6px rgba(255, 10, 40, .35), inset 0 0 10px 2px rgba(255, 40, 72, .7), inset 0 0 0 1.5px rgba(255, 160, 172, .55); }
+  .fp-outer::before { content: ""; position: absolute; top: -3px; right: -3px; bottom: -3px; left: -3px; border-radius: 50%; border: 1.5px solid rgba(255, 150, 165, .5); }
+  .fp-prog { top: calc(50% - var(--cs) * .556); left: calc(50% - var(--cs) * .556); width: calc(var(--cs) * 1.112); height: calc(var(--cs) * 1.112); overflow: visible; }
+  .fp-prog .trk { fill: none; stroke: rgba(255, 236, 240, .62); stroke-width: 1.6; }
+  .fp-prog .done { fill: none; stroke: url(#fpPink); stroke-width: 3.2; stroke-linecap: round; }
+  .fp-prog .halo { fill: none; stroke: rgba(255, 45, 85, .28); stroke-width: 7; stroke-linecap: round; }
+  .fp-dotw { top: calc(50% - var(--cs) * .556); left: calc(50% - var(--cs) * .556); width: calc(var(--cs) * 1.112); height: calc(var(--cs) * 1.112); will-change: transform; }
+  .fp-dotw i { position: absolute; left: 50%; top: 0; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #fff;
+    box-shadow: 0 0 6px 2px rgba(255, 255, 255, .85), 0 0 14px 5px rgba(255, 45, 85, .6); }
+  .fp-disc { top: calc(50% - var(--cs) / 2); left: calc(50% - var(--cs) / 2); width: var(--cs); height: var(--cs); border-radius: 50%; overflow: hidden; background: #140306; will-change: transform;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .12), 0 6px 22px rgba(0, 0, 0, .6); }
+  .fp-disc img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+  .fp-cover .cover-ring { top: calc(50% - var(--cs) / 2); left: calc(50% - var(--cs) / 2); width: var(--cs); height: var(--cs); border-radius: 50%; border-color: var(--red); }
+
+  /* the side panel: dark glass pill with a thin glowing red border; slides in from the left when the player opens */
+  .fp-side {
+    position: absolute; left: -6px; top: calc(var(--box) * .4); width: 46px; height: calc(176px - 22px * var(--pq)); z-index: 3;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 0;
+    border-radius: 23px; background: linear-gradient(180deg, rgba(46, 8, 14, .8), rgba(20, 3, 7, .88)); border: 1px solid rgba(255, 70, 92, .6);
+    box-shadow: 0 0 12px rgba(255, 30, 60, .4), inset 0 1px 0 rgba(255, 255, 255, .09), inset 0 0 12px rgba(255, 40, 70, .14);
+    transform: translateX(-170%); opacity: 0; transition: transform .55s cubic-bezier(.2, 1.15, .3, 1), opacity .3s;
   }
-  .fp-disc .ring::after { top: 2.5px; right: 2.5px; bottom: 2.5px; left: 2.5px; }
-  .fp-disc img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #111; }
-  .fp-title { display: flex; align-items: center; justify-content: center; gap: 9px; max-width: 100%; font-size: 26px; font-weight: 700; text-align: center; }
-  .fp-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .fp-title svg.ic { width: 16px; height: 16px; color: #fff; fill: currentColor; flex: none; }
-  .fp-artist { margin: 3px 0 14px; color: var(--text2); font-size: 15.5px; }
-  .fp-seek { width: 100%; margin-top: auto; padding-top: 6px; }
-  .fp-ctrls { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 330px; padding: 10px 0 16px; }
-  .fp-ctrls .pbtn { width: 80px; height: 80px; }
-  .fp-ctrls .pbtn svg.ic { width: 32px; height: 32px; }
-  .wave { display: flex; align-items: center; justify-content: space-between; gap: 3px; width: 100%; height: 52px; margin-top: auto; flex: none; }
-  .wave i { flex: 1; max-width: 3.5px; height: calc(var(--h) * 1%); min-height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .26); transform-origin: 50% 50%; }
-  .wave i.on { background: #fff; }
-  #player.open .wave i { animation: wob var(--d) ease-in-out infinite alternate; animation-play-state: paused; }
-  body.playing #player.open .wave i { animation-play-state: running; }
-  .lite #player.open .wave i:nth-child(even) { animation: none; }
-  @keyframes wob { from { transform: scaleY(.35); } to { transform: scaleY(1); } }
-  .fp-vol { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 330px; margin: 14px 0 8px; color: var(--text2); }
-  .fp-vol svg.ic { width: 20px; height: 20px; }
-  .swipehint { margin-top: auto; padding-top: 8px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text3); letter-spacing: .04em; }
-  .swipehint svg.ic { width: 15px; height: 15px; }
+  #player.open .fp-side { transform: none; opacity: 1; transition-delay: .22s, .22s; }
+  .fp-side.flash { box-shadow: 0 0 16px 3px rgba(255, 40, 70, .75), inset 0 0 14px rgba(255, 60, 90, .3); }
+  .fps-ic { width: 36px; height: 34px; border-radius: 12px; display: grid; place-items: center; color: #fff; flex: none; position: relative; }
+  .fps-ic svg.ic { width: 21px; height: 21px; }
+  .fps-dots { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none; color: #fff; border: 1.5px solid rgba(255, 255, 255, .35); background: rgba(255, 255, 255, .05); font-size: 15px; letter-spacing: 1px; line-height: 1; }
+  /* a thin vertical volume slider (red fill from the bottom) */
+  .vsl { position: relative; flex: 1; min-height: 46px; width: 30px; margin: 6px 0; cursor: pointer; touch-action: none; outline: none; }
+  .vsl::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; margin-left: -2px; border-radius: 3px; background: rgba(255, 255, 255, .2); }
+  .vsl i { position: absolute; left: 50%; bottom: 0; width: 4px; height: 100%; margin-left: -2px; border-radius: 3px; transform-origin: 50% 100%; transform: scaleY(var(--v, .5));
+    background: linear-gradient(0deg, #ff1f3d, #ff5d7e); box-shadow: 0 0 8px rgba(255, 40, 70, .8); }
+  .vsl:focus-visible::before { box-shadow: 0 0 0 3px rgba(255, 255, 255, .25); }
+
+  /* title + red star (like), artist */
+  .fp-info { width: 100%; padding: 0 56px; margin-top: calc(14px - 6px * var(--pq)); text-align: center; flex: none; }
+  .fp-title { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; font-size: 26px; font-weight: 800; line-height: 1.2; }
+  .fp-title .js-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fp-star { position: relative; flex: none; width: 32px; height: 32px; margin-right: -6px; display: grid; place-items: center; color: var(--red); }
+  .fp-star svg.ic { width: 23px; height: 23px; stroke-width: 2; }
+  .fp-star.liked svg.ic { fill: currentColor; filter: drop-shadow(0 0 6px rgba(255, 40, 80, .75)); }
+  .fp-star.pop svg.ic { animation: heartpop .45s cubic-bezier(.3, 1.6, .5, 1); }
+  .fp-artist { margin-top: 3px; color: rgba(255, 236, 240, .68); font-size: 15.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .burst { position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, #fff 0 25%, #ff3d63 45%, rgba(255, 40, 80, 0) 72%); }
+
+  /* progress bar: thin, white → red fill, white knob, times under it */
+  .fp-seek { width: 100%; padding: 0 50px; margin-top: calc(12px - 6px * var(--pq)); flex: none; }
+  #player input[type="range"] { height: 26px; }
+  #player input[type="range"]::-webkit-slider-runnable-track { height: 3.5px; border-radius: 3px; background: linear-gradient(90deg, #fff 0, var(--red) var(--p), rgba(255, 255, 255, .17) var(--p)); }
+  #player input[type="range"]::-webkit-slider-thumb { width: 15px; height: 15px; margin-top: -5.75px; background: #fff; box-shadow: 0 0 0 3px rgba(255, 45, 85, .25), 0 0 10px 2px rgba(255, 60, 95, .75); }
+  #player input[type="range"]::-moz-range-progress { background: linear-gradient(90deg, #fff, var(--red)); }
+  .fp-seek .times { margin-top: 0; color: rgba(255, 236, 240, .62); font-size: 12.5px; }
+
+  /* controls: shuffle · previous · play / pause (dark circle, glowing red ring) · next · repeat (red when on) */
+  .fp-ctrls { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 330px; padding: calc(12px - 8px * var(--pq)) 4px 0; margin-top: auto; flex: none; }
+  .fp-ctrls .cbtn { width: 48px; height: 48px; color: #fff; }
+  .fp-ctrls .cbtn svg.ic { width: 25px; height: 25px; }
+  .fp-ctrls .cbtn.on { color: var(--red); }
+  .fp-ctrls .cbtn.on svg.ic { filter: drop-shadow(0 0 6px rgba(255, 45, 85, .7)); }
+  #player .pbtn { width: calc(70px - 8px * var(--pq)); height: calc(70px - 8px * var(--pq)); color: #fff; border: 2.5px solid var(--red2);
+    background: radial-gradient(circle at 50% 38%, #2c0a10, #0e0205 72%);
+    box-shadow: 0 0 14px 3px rgba(255, 30, 60, .6), inset 0 0 12px rgba(255, 40, 72, .45), inset 0 0 0 1px rgba(255, 150, 165, .35); }
+  #player .pbtn svg.ic { width: 30px; height: 30px; }
+  #player .pbtn::after { content: ""; position: absolute; top: -7px; right: -7px; bottom: -7px; left: -7px; border-radius: 50%; pointer-events: none;
+    box-shadow: 0 0 22px 7px rgba(255, 30, 60, .55); opacity: 0; }
+  body.playing #player.open .pbtn::after { animation: pbPulse 1.9s ease-in-out infinite; }
+  @keyframes pbPulse { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+
+  /* waveform: one canvas (bars move with the music, the played part is red, a faded mirror under it); tap it to jump */
+  .fp-wave { display: block; width: 100%; height: calc(66px - 12px * var(--pq)); margin-top: auto; flex: none; cursor: pointer; touch-action: none; }
+
+  /* volume (stays in step with the side panel and Settings) */
+  .fp-vol { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 340px; padding: calc(8px - 6px * var(--pq)) 8px 0; margin-top: auto; flex: none; }
+  .fp-vol .vbtn { width: 34px; height: 34px; margin-left: -6px; display: grid; place-items: center; color: #fff; flex: none; }
+  .fp-vol .vbtn svg.ic { width: 23px; height: 23px; }
+  .swipehint { margin-top: auto; padding: 6px 0 4px; display: flex; align-items: center; gap: 12px; font-size: 14px; color: rgba(255, 236, 240, .55); letter-spacing: .03em; flex: none; }
+  .swipehint svg.ic { width: 16px; height: 16px; color: #ff4d6d; }
   #player.open .swipehint svg.ic { animation: nudge 2s ease-in-out infinite; }
   #player.open .swipehint svg.ic:last-child { animation-name: nudge2; }
   @keyframes nudge { 50% { transform: translateX(-4px); } } @keyframes nudge2 { 50% { transform: translateX(4px); } }
-  .fp-cover .cover-ring { top: -11px; right: -11px; bottom: -11px; left: -11px; border-radius: 50%; }
-  .fp-cover.drag .fp-disc { animation-play-state: paused !important; }
-  .ultra .fp-disc, .ultra .wave i, .ultra .swipehint svg.ic { animation: none !important; }
+  .ultra .fp-bg i, .ultra #player .pbtn::after, .ultra .swipehint svg.ic { animation: none !important; }
+  .app-bg #player, .app-bg #player * { animation-play-state: paused !important; }
+
+  /* the equalizer: a small glass popup with three sliders */
+  #eqpop { position: absolute; z-index: 61; width: 236px; padding: 14px 16px 12px; border-radius: 20px; display: none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 55%), rgba(24, 4, 9, .97); border: 1px solid rgba(255, 70, 92, .55);
+    box-shadow: 0 0 16px rgba(255, 30, 60, .35), 0 14px 40px rgba(0, 0, 0, .6);
+    opacity: 0; transform: scale(.9) translateY(8px); transform-origin: 0 100%; transition: opacity .18s, transform .28s cubic-bezier(.2, 1.3, .4, 1); }
+  #eqpop.open { opacity: 1; transform: none; }
+  #eqpop h4 { display: flex; align-items: center; justify-content: space-between; font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  #eqpop h4 button { font-size: 12.5px; font-weight: 600; color: #ff6b88; padding: 4px 2px; }
+  .eqrow { display: grid; grid-template-columns: 54px 1fr 40px; align-items: center; gap: 8px; font-size: 13.5px; color: rgba(255, 236, 240, .8); }
+  .eqrow b { font-weight: 600; } .eqrow span { text-align: right; font-variant-numeric: tabular-nums; color: #fff; }
+  #eqpop input[type="range"]::-webkit-slider-runnable-track { background: linear-gradient(90deg, rgba(255, 255, 255, .17) 0, rgba(255, 255, 255, .17) 100%); }
+  #eqpop input[type="range"] { height: 30px; }
+  #eqpop input[type="range"]::-webkit-slider-thumb { background: #fff; box-shadow: 0 0 8px rgba(255, 60, 95, .9); }
+  #eqpop .eqnote { margin-top: 6px; font-size: 12px; color: rgba(255, 236, 240, .5); line-height: 1.35; }
+
+  /* the phone's volume buttons: a small red panel shows the new volume (instead of the phone's own pop-up) */
+  #volhud { position: fixed; z-index: 118; left: calc(50% - min(100vw, 412px) / 2 + 10px); top: 34%; width: 44px; height: 150px; padding: 12px 0 10px; border-radius: 22px; pointer-events: none;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    background: linear-gradient(180deg, rgba(46, 8, 14, .9), rgba(20, 3, 7, .94)); border: 1px solid rgba(255, 70, 92, .6); box-shadow: 0 0 14px rgba(255, 30, 60, .45);
+    opacity: 0; transform: translateX(-150%); transition: transform .35s cubic-bezier(.2, 1.2, .3, 1), opacity .25s; }
+  #volhud.show { opacity: 1; transform: none; }
+  #volhud svg.ic { width: 20px; height: 20px; color: #fff; flex: none; }
+  #volhud .vsl { pointer-events: none; }
+  #volhud b { font-size: 11.5px; font-weight: 700; color: rgba(255, 236, 240, .85); font-variant-numeric: tabular-nums; }
   a.btn { display: block; }
 
   /* =====================================================================
@@ -1030,7 +1137,7 @@ const CONFIG = {
   .ultra .wf *, .ultra .wf *::after { animation: none !important; }
 
   @media (prefers-reduced-motion: reduce) {
-    #bg, .ring, .fp-disc, .bars i, .wave i, .wf *, .wf *::after, .pop, .pop *, .pop *::after { animation: none !important; }
+    #bg, .ring, .bars i, .wf *, .wf *::after, .pop, .pop *, .pop *::after, #player *, #player *::after { animation: none !important; }
     body.entered #app { transition-duration: .01s; }
   }
 
@@ -1490,22 +1597,45 @@ const CONFIG = {
       </section>
     </main>
 
-    <!-- ===================== 3. FULL-SCREEN MUSIC PLAYER ===================== -->
+    <!-- ===================== 3. FULL-SCREEN MUSIC PLAYER ("Now Playing") ===================== -->
     <section id="player" aria-label="Now playing" aria-hidden="true">
+      <div class="fp-bg" aria-hidden="true"><i class="s1"></i><i class="s2"></i><i class="s3"></i></div>
       <div class="fp-bar">
         <button class="ibtn rip" data-act="close-player" aria-label="Close the player"><svg class="ic"><use href="#i-chevron-down"/></svg></button>
-        <h2>Now Playing</h2>
+        <h2>Now <em>Playing</em></h2>
         <span class="ibtn" aria-hidden="true"><svg class="ic"><use href="#i-audio-lines"/></svg></span>
       </div>
-      <div class="fp-cover" id="fpCover">
-        <div class="fp-disc"><div class="ring"></div><img class="js-cover" alt="" decoding="async"></div>
-        <span class="cover-ring js-ring" style="border-radius:50%"></span>
-      </div>
-      <div class="fp-title"><span class="js-title"></span><svg class="ic"><use href="#i-star"/></svg></div>
-      <p class="fp-artist">· <span class="js-artist"></span> ·</p>
-      <div class="fp-seek">
-        <input type="range" class="js-seek" min="0" max="1000" step="1" value="0" aria-label="Song position">
-        <div class="times"><span class="js-cur">0:00</span><span class="js-dur">0:00</span></div>
+      <div class="fp-main">
+        <div class="fp-cover" id="fpCover">
+          <div class="fp-glow" id="fpGlow"></div>
+          <div class="fp-outer"></div>
+          <svg class="fp-prog" viewBox="0 0 200 200" aria-hidden="true">
+            <defs>
+              <linearGradient id="fpPink" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff2d55"/><stop offset=".55" stop-color="#ff5a80"/><stop offset="1" stop-color="#ffa3b8"/></linearGradient>
+              <mask id="fpGaps" maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="200"><circle cx="100" cy="100" r="97" fill="none" stroke="#fff" stroke-width="9" stroke-dasharray="114.89 7" transform="rotate(-78 100 100)"/></mask>
+            </defs>
+            <circle class="trk" cx="100" cy="100" r="97" stroke-dasharray="114.89 7" transform="rotate(-78 100 100)"/>
+            <circle class="halo" id="fpHalo" cx="100" cy="100" r="97" stroke-dasharray="0 1000" transform="rotate(-90 100 100)" mask="url(#fpGaps)"/>
+            <circle class="done" id="fpDone" cx="100" cy="100" r="97" stroke-dasharray="0 1000" transform="rotate(-90 100 100)" mask="url(#fpGaps)"/>
+          </svg>
+          <div class="fp-disc" id="fpDisc"><img class="js-cover" alt="" decoding="async"></div>
+          <div class="fp-dotw" id="fpDot"><i></i></div>
+          <span class="cover-ring js-ring"></span>
+        </div>
+        <div class="fp-side" id="fpSide">
+          <button class="fps-ic js-mute" data-act="mute" aria-label="Mute"><svg class="ic"><use class="js-voliconuse" href="#i-volume-2"/></svg></button>
+          <div class="vsl js-vvol" role="slider" tabindex="0" aria-label="Volume" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><i></i></div>
+          <button class="fps-dots rip" data-act="fp-more" aria-label="More: like, song info, sleep timer">&bull;&bull;&bull;</button>
+          <button class="fps-ic" data-act="fp-eq" aria-label="Equalizer"><svg class="ic"><use href="#i-sliders-horizontal"/></svg></button>
+        </div>
+        <div class="fp-info">
+          <div class="fp-title"><span class="js-title"></span><button class="fp-star js-like" data-act="like" aria-label="Like this song"><svg class="ic"><use href="#i-star"/></svg></button></div>
+          <p class="fp-artist">· <span class="js-artist"></span> ·</p>
+        </div>
+        <div class="fp-seek">
+          <input type="range" class="js-seek" min="0" max="1000" step="1" value="0" aria-label="Song position">
+          <div class="times"><span class="js-cur">0:00</span><span class="js-dur">0:00</span></div>
+        </div>
       </div>
       <div class="fp-ctrls">
         <button class="cbtn rip js-shuffle" data-act="shuffle" aria-label="Shuffle"><svg class="ic"><use href="#i-shuffle"/></svg></button>
@@ -1514,10 +1644,19 @@ const CONFIG = {
         <button class="cbtn rip" data-act="next" aria-label="Next song"><svg class="ic fill"><use href="#i-skip-forward"/></svg></button>
         <button class="cbtn rip js-repeat" data-act="repeat" aria-label="Repeat this song"><svg class="ic"><use href="#i-repeat"/></svg></button>
       </div>
-      <div class="wave" id="wave" aria-hidden="true"></div>
-      <div class="fp-vol"><svg class="ic"><use class="js-voliconuse" href="#i-volume-2"/></svg><input type="range" class="js-vol" min="0" max="100" aria-label="Volume"></div>
+      <canvas class="fp-wave" id="fpWave" role="slider" tabindex="-1" aria-label="Waveform: tap to jump in the song"></canvas>
+      <div class="fp-vol"><button class="vbtn js-mute" data-act="mute" aria-label="Mute"><svg class="ic"><use class="js-voliconuse" href="#i-volume-2"/></svg></button><input type="range" class="js-vol" min="0" max="100" aria-label="Volume"></div>
       <div class="swipehint"><svg class="ic"><use href="#i-chevron-left"/></svg><span>Swipe for next</span><svg class="ic"><use href="#i-chevron-right"/></svg></div>
     </section>
+
+    <!-- the equalizer (opens from the player's side panel) -->
+    <div id="eqpop" role="dialog" aria-label="Equalizer">
+      <h4>Equalizer <button data-act="eq-reset">Reset</button></h4>
+      <label class="eqrow"><b>Bass</b><input type="range" class="js-eq" data-band="0" min="-12" max="12" step="1" value="0" aria-label="Bass"><span>0 dB</span></label>
+      <label class="eqrow"><b>Mid</b><input type="range" class="js-eq" data-band="1" min="-12" max="12" step="1" value="0" aria-label="Mid"><span>0 dB</span></label>
+      <label class="eqrow"><b>Treble</b><input type="range" class="js-eq" data-band="2" min="-12" max="12" step="1" value="0" aria-label="Treble"><span>0 dB</span></label>
+      <p class="eqnote" id="eqNote"></p>
+    </div>
 
     <!-- floating mini player (shows on every screen except Home while music is on) -->
     <div id="mini" class="frame" role="region" aria-label="Mini player">
@@ -1564,6 +1703,8 @@ const CONFIG = {
 
   <!-- popup messages (above everything); the gold gradient for their icons -->
   <div id="toast" aria-live="polite"></div>
+  <!-- the phone's volume buttons show this (instead of the phone's own pop-up); above the intro too -->
+  <div id="volhud" aria-hidden="true"><svg class="ic"><use class="js-voliconuse" href="#i-volume-2"/></svg><div class="vsl js-vvol"><i></i></div><b id="volhudNum">50</b></div>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
     <defs><linearGradient id="g-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff5c6"/><stop offset=".5" stop-color="#ffd24f"/><stop offset="1" stop-color="#ff9a1c"/></linearGradient></defs>
   </svg>
@@ -1630,7 +1771,7 @@ const CONFIG = {
     function ready(gesture) {                       // can we make sound right now?
       if (!make(gesture)) return false;
       if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} if (!gesture) return false; }
-      master.gain.value = 0.55 * clamp(store.get("volume", C.volume), 0, 100) / 100;
+      master.gain.value = 0.55 * (window.AndroidAudio ? 1 : clamp(store.get("volume", C.volume), 0, 100) / 100);
       return master.gain.value > 0;
     }
     function tone(type, f0, f1, sweep, peak, t, len) {              // a note that falls from f0 to f1 Hz
@@ -1890,6 +2031,21 @@ const CONFIG = {
      MUSIC PLAYER (one audio element; every player on every screen mirrors it)
      ===================================================================== */
   var audio = $("music");
+  var audioHandlers = [];
+  function onAudio(type, fn) { audioHandlers.push([type, fn]); audio.addEventListener(type, fn); }
+  function swapAudio() {                                // a fresh, plain <audio> carries on at the same spot (the song never goes silent)
+    var old = audio, n = document.createElement("audio"), t = old.currentTime || 0, was = !old.paused;
+    audioHandlers.forEach(function (h) { old.removeEventListener(h[0], h[1]); });
+    try { old.pause(); } catch (e) {}
+    n.id = old.id; n.preload = "auto"; n.loop = old.loop;
+    audioHandlers.forEach(function (h) { n.addEventListener(h[0], h[1]); });
+    old.parentNode.replaceChild(n, old);
+    audio = n; n.src = old.getAttribute("src") || old.src;
+    var go = function () { try { n.currentTime = t; } catch (e) {} if (was) play(); };
+    if (n.readyState >= 1) go(); else n.addEventListener("loadedmetadata", go, { once: true });
+    old.removeAttribute("src"); try { old.load(); } catch (e) {}
+    applyVolume();
+  }
   var songs = (C.songs || []).filter(function (s) { return s && s.file; });
   var idx = C.randomFirstSong ? Math.floor(Math.random() * songs.length) : 0;
   var shuffleOn = store.get("shuffle", "0") === "1", repeatOn = store.get("repeat", "0") === "1";
@@ -1903,55 +2059,36 @@ const CONFIG = {
   var visible = function (el) { return !!(el && el.offsetParent !== null); };
   function play() { swallow(audio.play()); }
 
-  /* the waveform: a fixed shape per song (so it looks like that song), bars wobble while playing, played part lights up */
-  var waveEl = $("wave"), waveBars = [], waveOn = 0;
-  function buildWave(s) {
-    var seed = 0, str = s.file; for (var i = 0; i < str.length; i++) seed = (seed * 31 + str.charCodeAt(i)) >>> 0;
-    var rnd = function () { seed = (seed + 0x6D2B79F5) >>> 0; var t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-    var N = 46, html = "";
-    for (var k = 0; k < N; k++) {
-      var env = 0.5 + 0.5 * Math.sin(Math.PI * (k + 0.5) / N), h = Math.round(16 + 84 * rnd() * (0.45 + 0.55 * env));
-      html += '<i style="--h:' + h + ';--d:' + (0.5 + rnd() * 0.9).toFixed(2) + 's;animation-delay:-' + (rnd() * 1.4).toFixed(2) + 's"></i>';
-    }
-    waveEl.innerHTML = html; waveBars = qa("i", waveEl); waveOn = 0;
-  }
-  function updateWave(p) {
-    var n = Math.round(p * waveBars.length);
-    if (n === waveOn) return;
-    for (var i = Math.min(n, waveOn); i < Math.max(n, waveOn); i++) waveBars[i].classList.toggle("on", i < n);
-    waveOn = n;
-  }
-
   function renderSong() {
     var s = songs[idx]; if (!s) return;
     qa(".js-title").forEach(function (e) { e.textContent = s.title || s.file; });
     qa(".js-artist").forEach(function (e) { e.textContent = artistOf(s); });
     qa(".js-cover").forEach(function (e) { e.onerror = function () { e.onerror = null; e.src = C.avatarImage; }; e.src = coverOf(s); });
-    qa(".js-like").forEach(function (e) { e.classList.toggle("liked", !!likes[s.file]); });
-    buildWave(s);
+    qa(".js-like").forEach(function (e) { e.classList.toggle("liked", !!likes[s.file]); e.setAttribute("aria-pressed", likes[s.file] ? "true" : "false"); });
+    if (typeof pvSong === "function") pvSong(s);
   }
   function setPlayingUI(p) {
     document.body.classList.toggle("playing", p);
     qa(".js-playicon").forEach(function (u) { u.setAttribute("href", p ? "#i-pause" : "#i-play"); });
     qa('[data-act="toggle"]').forEach(function (b) { b.setAttribute("aria-label", p ? "Pause" : "Play"); });
   }
-  audio.addEventListener("play", function () { setPlayingUI(true); });
-  audio.addEventListener("pause", function () { setPlayingUI(false); });
+  onAudio("play", function () { setPlayingUI(true); });
+  onAudio("pause", function () { setPlayingUI(false); });
+  onAudio("playing", function () { mxStart(); });
 
   function setTimes(cur, p) {
     var t = fmt(cur);
     curs.forEach(function (e) { e.textContent = t; });
-    updateWave(p);
   }
-  audio.addEventListener("timeupdate", function () {
+  onAudio("timeupdate", function () {
     if (dragging || tweening) return;
     var p = audio.duration ? audio.currentTime / audio.duration : 0;
     seeks.forEach(function (s) { s.value = Math.round(p * 1000); fillIn(s, p * 100); });
     setTimes(audio.currentTime, p);
   });
-  audio.addEventListener("loadedmetadata", function () { var d = fmt(audio.duration); durs.forEach(function (e) { e.textContent = d; }); failures = 0; });
-  audio.addEventListener("ended", function () { if (!audio.loop) nextSong(); });
-  audio.addEventListener("error", function () {       // missing/broken file → try the next song
+  onAudio("loadedmetadata", function () { var d = fmt(audio.duration); durs.forEach(function (e) { e.textContent = d; }); failures = 0; });
+  onAudio("ended", function () { if (!audio.loop) nextSong(); });
+  onAudio("error", function () {                      // missing/broken file → try the next song
     if (songs.length > 1 && ++failures < songs.length) setTimeout(function () { load(idx + 1, entered, 1); }, 400);
   });
   seeks.forEach(function (s) {
@@ -1975,13 +2112,13 @@ const CONFIG = {
       if (p < 1) requestAnimationFrame(step); else tweening = false;
     });
   }
-  function resetSeek() { seeks.forEach(function (s) { s.value = 0; fillIn(s, 0); }); updateWave(0); }
+  function resetSeek() { seeks.forEach(function (s) { s.value = 0; fillIn(s, 0); }); }
 
   function animateSong(dir) {                           // everything that moves when the song changes (transform / opacity only)
     if (reduced) return;
     var d = dir < 0 ? -1 : 1, bump = function (el, scale, ms) { if (visible(el) && el.animate) el.animate([{ transform: "scale(1)" }, { transform: "scale(" + scale + ")", offset: .35 }, { transform: "scale(1)" }], { duration: ms, easing: "cubic-bezier(.3,1.4,.5,1)" }); };
     qa(".js-cover").forEach(function (c) {
-      if (!visible(c) || !c.animate) return;
+      if (!visible(c) || !c.animate || (swiping && c.closest("#player"))) return;
       c.animate([{ transform: "translateX(" + 22 * d + "px) scale(.5) rotate(" + 16 * d + "deg)", opacity: 0 },
                  { transform: "translateX(0) scale(1.13) rotate(" + -4 * d + "deg)", opacity: 1, offset: .6 },
                  { transform: "none", opacity: 1 }], { duration: 580, easing: "cubic-bezier(.2,.9,.3,1)" });
@@ -2034,7 +2171,8 @@ const CONFIG = {
     if (likes[s.file]) delete likes[s.file]; else likes[s.file] = true;
     store.set("likes", JSON.stringify(likes));
     var on = !!likes[s.file];
-    qa(".js-like").forEach(function (e) { e.classList.toggle("liked", on); e.classList.remove("pop"); void e.offsetWidth; e.classList.add("pop"); });
+    qa(".js-like").forEach(function (e) { e.classList.toggle("liked", on); e.setAttribute("aria-pressed", on ? "true" : "false"); e.classList.remove("pop"); void e.offsetWidth; e.classList.add("pop"); });
+    if (on) qa(".fp-star").forEach(burst);
     toast(on ? "Added to favorites" : "Removed from favorites", (s.title || s.file), { icon: "heart", hl: s.title || s.file });
   }
   function setToggle(sel, on) { qa(sel).forEach(function (e) { e.classList.toggle("on", on); e.setAttribute("aria-pressed", on ? "true" : "false"); }); }
@@ -2056,22 +2194,111 @@ const CONFIG = {
       .forEach(function (h) { try { navigator.mediaSession.setActionHandler(h[0], h[1]); } catch (e) {} });
   }
 
-  /* ---------- volume + background brightness ---------- */
-  var vol = clamp(store.get("volume", C.volume), 0, 100), muted = false;
+  /* ---------- volume + background brightness ----------
+     In the Android app the volume IS the phone's music volume: the sliders (player side panel, player bottom, Settings) and the
+     phone's volume buttons all move the same thing, and the phone's own volume pop-up never covers the page.
+     In a browser it is this page's own volume (remembered). */
+  var nativeVol = !!(window.AndroidAudio && typeof AndroidAudio.getVolume === "function" && typeof AndroidAudio.setVolume === "function");
+  var readNative = function () { try { return clamp(Math.round(+AndroidAudio.getVolume() * 100), 0, 100); } catch (e) { return 50; } };
+  var vol = nativeVol ? readNative() : clamp(store.get("volume", C.volume), 0, 100), muted = false, fadeK = 1;
   var bright = clamp(store.get("brightness", C.brightness), 0, 100);
+  function outLevel() { return (muted ? 0 : nativeVol ? 1 : vol / 100) * fadeK; }       // what the page itself multiplies the music by
   function applyVolume() {
-    audio.volume = vol / 100;
-    audio.muted = muted || vol === 0;                       // iPhones ignore .volume, but mute still works
+    var lvl = outLevel();
+    if (mx.on) { audio.volume = 1; audio.muted = false; mxGain(lvl); }
+    else { audio.volume = Math.min(1, lvl); audio.muted = lvl === 0; }                  // iPhones ignore .volume, but mute still works
     qa(".js-vol").forEach(function (i) { i.value = vol; fillIn(i, vol); });
+    qa(".js-vvol").forEach(function (v) { v.style.setProperty("--v", (vol / 100).toFixed(3)); v.setAttribute("aria-valuenow", vol); });
     qa(".js-volnum").forEach(function (e) { e.textContent = vol; });
-    qa(".js-voliconuse").forEach(function (u) { u.setAttribute("href", audio.muted ? "#i-volume-x" : "#i-volume-2"); });
+    var silent = muted || vol === 0;
+    qa(".js-voliconuse").forEach(function (u) { u.setAttribute("href", silent ? "#i-volume-x" : "#i-volume-2"); });
+    qa(".js-mute").forEach(function (b) { b.setAttribute("aria-label", silent ? "Unmute" : "Mute"); b.setAttribute("aria-pressed", muted ? "true" : "false"); });
   }
+  function setVol(v) {                                     // from a slider on the page
+    vol = clamp(v, 0, 100); muted = false;
+    if (nativeVol) { try { AndroidAudio.setVolume(vol / 100); } catch (e) {} } else store.set("volume", vol);
+    applyVolume();
+  }
+  function toggleMute() { if (!muted && vol === 0) { setVol(30); return; } muted = !muted; applyVolume(); }
+  var hudTimer = 0;
+  window.appVolume = function (f, fromKey) {              // the app tells the page the phone's volume (after a volume button, or coming back)
+    vol = clamp(Math.round(+f * 100), 0, 100); if (fromKey && vol > 0) muted = false;
+    applyVolume();
+    if (!fromKey) return;
+    clearTimeout(hudTimer);
+    if (playerOpen) { var sd = $("fpSide"); sd.classList.add("flash"); hudTimer = setTimeout(function () { sd.classList.remove("flash"); }, 900); return; }
+    var h = $("volhud"); $("volhudNum").textContent = vol; h.classList.add("show");
+    hudTimer = setTimeout(function () { h.classList.remove("show"); }, 1600);
+  };
+
+  /* =====================================================================
+     MUSIC FX: Web Audio reads the music (the equalizer, and everything in the player that moves with the sound).
+     Only where that is safe: the page and its songs come from the same http(s) address (the Android app, or a web server).
+     Opened as a file, in an old browser, or if anything fails: a smooth imitation on the song's beat, and the music plays as before.
+     The song never goes silent: if the Web Audio path stops making sound, a fresh plain <audio> takes over at the same spot.
+     ===================================================================== */
+  var EQ_BANDS = [["lowshelf", 220, .8], ["peaking", 1100, .9], ["highshelf", 3800, .8]];          // Bass · Mid · Treble
+  var eqGain = (function () { try { var a = JSON.parse(store.get("eq", "[0,0,0]")); return [0, 1, 2].map(function (i) { return clamp(a[i], -12, 12); }); } catch (e) { return [0, 0, 0]; } })();
+  var mx = { ctx: null, src: null, an: null, out: null, eq: [], on: false, failed: false, f: null, t: null, quiet: 0, down: 0, lastT: -1, lastC: -1 };
+  var AC = window.AudioContext || window.webkitAudioContext;
+  function mxSafe() {
+    if (mx.failed || !AC || !/^https?:$/.test(location.protocol)) return false;     // a page opened as a file would hand Web Audio only silence
+    try { return new URL(audio.currentSrc || audio.src || location.href, location.href).origin === location.origin; } catch (e) { return false; }
+  }
+  function mxPrime() {                                     // make the audio engine inside a tap (browsers only allow it there)
+    if (mx.ctx || !mxSafe()) return;
+    try { mx.ctx = new AC({ latencyHint: "playback" }); } catch (e) { try { mx.ctx = new AC(); } catch (x) { mx.failed = true; return; } }
+    if (mx.ctx.state === "suspended") { try { mx.ctx.resume().catch(function () {}); } catch (e) {} }
+  }
+  function mxStart() {                                     // once a song really plays: equalizer + analyser in its path
+    if (mx.on || !mxSafe()) return;
+    mxPrime(); if (!mx.ctx) return;
+    var go = function () {
+      if (mx.on || mx.failed || mx.ctx.state !== "running" || audio.paused || !mxSafe()) return;
+      try {
+        var c = mx.ctx, src = c.createMediaElementSource(audio);
+        var eq = EQ_BANDS.map(function (b, i) { var f = c.createBiquadFilter(); f.type = b[0]; f.frequency.value = b[1]; f.Q.value = b[2]; f.gain.value = eqGain[i]; return f; });
+        var an = c.createAnalyser(); an.fftSize = 512; an.smoothingTimeConstant = .72;
+        var out = c.createGain(); out.gain.value = outLevel();
+        src.connect(eq[0]); eq[0].connect(eq[1]); eq[1].connect(eq[2]); eq[2].connect(out); out.connect(c.destination); eq[2].connect(an);
+        mx.src = src; mx.eq = eq; mx.an = an; mx.out = out; mx.f = new Uint8Array(an.frequencyBinCount); mx.t = new Float32Array(an.fftSize);
+        mx.on = true; mx.quiet = 0; mx.down = 0; mx.lastT = audio.currentTime; mx.lastC = c.currentTime;
+        applyVolume();
+      } catch (e) { mx.failed = true; }
+    };
+    if (mx.ctx.state === "running") go(); else { try { mx.ctx.resume().then(go, function () {}); } catch (e) {} }
+  }
+  function mxGain(v) { if (!mx.out) return; try { mx.out.gain.setTargetAtTime(v, mx.ctx.currentTime, .025); } catch (e) { mx.out.gain.value = v; } }
+  function mxEq(i, db) { eqGain[i] = db; store.set("eq", JSON.stringify(eqGain)); if (mx.on) { try { mx.eq[i].gain.setTargetAtTime(db, mx.ctx.currentTime, .04); } catch (e) { mx.eq[i].gain.value = db; } } }
+  function mxCheck() {                                     // twice a second while the music plays: is the Web Audio path still making sound?
+    if (!mx.on || audio.paused || audio.ended) { mx.down = mx.quiet = 0; if (mx.on) { mx.lastT = audio.currentTime; mx.lastC = mx.ctx.currentTime; } return; }
+    var c = mx.ctx, t = audio.currentTime, moved = t > mx.lastT + .2;
+    if (c.state !== "running") { try { c.resume().catch(function () {}); } catch (e) {} }
+    var ticking = c.state === "running" && c.currentTime > mx.lastC + .1;
+    mx.lastT = t; mx.lastC = c.currentTime;
+    mx.down = ticking ? 0 : mx.down + .5;                  // the engine stopped (closed, suspended, broken): the song is stuck or silent
+    if (moved) {
+      mx.an.getFloatTimeDomainData(mx.t);
+      var peak = 0; for (var i = 0; i < mx.t.length; i += 2) { var a = Math.abs(mx.t[i]); if (a > peak) peak = a; }
+      mx.quiet = peak < 1e-5 ? mx.quiet + .5 : 0;          // the song moves on but nothing at all comes out
+    }
+    if (mx.down >= 2 || mx.quiet >= 4) mxRescue();
+  }
+  function mxRescue() {
+    mx.on = false; mx.failed = true;
+    try { mx.src.disconnect(); } catch (e) {}
+    swapAudio();
+    try { if (mx.ctx.state !== "closed") mx.ctx.close().catch(function () {}); } catch (e) {}
+    if (window.console) console.info("[music] Web Audio went quiet: back to plain playback (the visuals imitate the beat now)");
+  }
+  setInterval(mxCheck, 500);
+
   function applyBrightness() {
     root.style.setProperty("--dim", (0.92 * (1 - bright / 100)).toFixed(3));
     qa(".js-bright").forEach(function (i) { i.value = bright; fillIn(i, bright); });
     qa(".js-brnum").forEach(function (e) { e.textContent = bright; });
   }
-  qa(".js-vol").forEach(function (i) { i.addEventListener("input", function () { vol = +i.value; muted = false; applyVolume(); store.set("volume", vol); }); });
+  qa(".js-vol").forEach(function (i) { i.addEventListener("input", function () { setVol(+i.value); }); });
   qa(".js-bright").forEach(function (i) { i.addEventListener("input", function () { bright = +i.value; applyBrightness(); store.set("brightness", bright); }); });
 
   /* =====================================================================
@@ -2165,7 +2392,7 @@ const CONFIG = {
   function closeMenu() {
     if (!menuOpen) return;
     menuOpen = false; $("menu").classList.remove("open"); $("viewpill").classList.remove("open");
-    setTimeout(function () { if (!menuOpen) { $("menu").style.display = "none"; $("menuback").style.display = "none"; } }, 220);
+    setTimeout(function () { if (!menuOpen) { $("menu").style.display = "none"; if (!eqOpen) $("menuback").style.display = "none"; } }, 220);
   }
   $("menuback").addEventListener("click", closeMenu);
 
@@ -2322,10 +2549,24 @@ const CONFIG = {
     stack = [t];
     if (curScreen !== t) showScreen(t, dir); else updateChrome();
   }
-  function openPlayer() { if (playerOpen) return; closeMenu(); closeSheet(); playerOpen = true; $("player").classList.add("open"); updateChrome(); }
-  function closePlayer(silent) { if (!playerOpen) return; playerOpen = false; $("player").classList.remove("open"); updateChrome(); }
+  var bgHeld = false;
+  function openPlayer() {
+    if (playerOpen) return;
+    closeMenu(); closeSheet(); closeEq(); playerOpen = true;
+    var pl = $("player"); pl.classList.add("open"); pl.setAttribute("aria-hidden", "false");
+    if (!bg.paused) { bg.pause(); bgHeld = true; }        // the player covers the background video: let it rest
+    fitPlayer(); fitTitle(); updateChrome(); pvUpdate();
+  }
+  function closePlayer(silent) {
+    if (!playerOpen) return;
+    closeEq(); playerOpen = false;
+    var pl = $("player"); pl.classList.remove("open"); pl.setAttribute("aria-hidden", "true");
+    if (bgHeld) { bgHeld = false; if (!paused) swallow(bg.play()); }
+    updateChrome(); pvUpdate();
+  }
   function handleBack() {                                   // used by the Android back button (and the Escape key)
     if (termOpen) { closeTerm(); return true; }
+    if (eqOpen) { closeEq(); return true; }
     if (menuOpen) { closeMenu(); return true; }
     if (sheetOpen) { closeSheet(); return true; }
     if (playerOpen) { closePlayer(); return true; }
@@ -2471,7 +2712,7 @@ const CONFIG = {
     requestAnimationFrame(function frame(t) {
       if (!fx.running) return;
       requestAnimationFrame(frame);
-      if (paused || document.hidden || isUltra() || !entered) { fx.last = 0; return; }
+      if (paused || document.hidden || isUltra() || !entered || playerOpen) { fx.last = 0; return; }
       var dt = fx.last ? Math.min(.1, (t - fx.last) / 1000) : .033; fx.last = t;
       acc += dt; if (acc < (isLite() ? .04 : .032)) return; var step = acc; acc = 0;     // about 25 / 30 frames a second
       var g = fx.g; g.clearRect(0, 0, fx.W, fx.H);
@@ -2571,9 +2812,18 @@ const CONFIG = {
     if (t.dataset.themeId) { applyTheme(t.dataset.themeId); return; }
     if (t.dataset.sw) { var on = t.getAttribute("aria-checked") !== "true"; setSwitch(t, on); flagChange(t.dataset.sw, on); return; }
     switch (a) {
-      case "toggle": if (audio.paused) play(); else audio.pause(); break;
-      case "next": nextSong(); break;
-      case "prev": prevSong(); break;
+      case "toggle":
+        mxPrime();
+        if (audio.paused) play(); else audio.pause();
+        if (t.classList.contains("pbtn") && t.closest("#player") && t.animate && !reduced)
+          t.animate([{ transform: "scale(1)" }, { transform: "scale(.84)", offset: .3 }, { transform: "scale(1.09)", offset: .65 }, { transform: "scale(1)" }], { duration: 440, easing: "ease-out" });
+        break;
+      case "mute": toggleMute(); break;
+      case "fp-more": moreMenu(t); break;
+      case "fp-eq": if (eqOpen) closeEq(); else openEq(t); break;
+      case "eq-reset": [0, 1, 2].forEach(function (i) { mxEq(i, 0); qa(".js-eq")[i].value = 0; eqLabel(i); }); break;
+      case "next": mxPrime(); nextSong(); break;
+      case "prev": mxPrime(); prevSong(); break;
       case "shuffle": toggleShuffle(); break;
       case "repeat": toggleRepeat(); break;
       case "like": toggleLike(); break;
@@ -2605,30 +2855,6 @@ const CONFIG = {
                      { icon: "share-2", label: "Share profile", run: function () { try { if (navigator.share) { navigator.share({ title: C.name, text: C.name + " · @" + C.handle }).catch(function () {}); return; } } catch (x) {} toast("Share", "Sharing isn't available here.", { icon: "share-2" }); } }]); break;
     }
   });
-
-  // swipe left / right anywhere on the big player (not on sliders or buttons) to change the song
-  (function () {
-    var pl = $("player"), cv = $("fpCover"), sx = 0, sy = 0, dx = 0, on = false, locked = false;
-    pl.addEventListener("pointerdown", function (e) {
-      if (e.target.closest("input,button,.ibtn")) return;
-      on = true; locked = false; sx = e.clientX; sy = e.clientY; dx = 0;
-      try { pl.setPointerCapture(e.pointerId); } catch (x) {}
-    });
-    pl.addEventListener("pointermove", function (e) {
-      if (!on) return; dx = e.clientX - sx;
-      if (!locked && Math.abs(e.clientY - sy) > Math.abs(dx) + 10) { on = false; cv.style.transform = ""; cv.classList.remove("drag"); return; }
-      if (!locked && Math.abs(dx) > 6) { locked = true; cv.classList.add("drag"); }
-      if (locked) cv.style.transform = "translateX(" + dx * .6 + "px) rotate(" + dx / 28 + "deg)";
-    });
-    function end() {
-      if (!on) return; on = false;
-      var go = locked && Math.abs(dx) > 60;
-      if (locked && cv.animate && !reduced) cv.animate([{ transform: cv.style.transform || "none" }, { transform: "none" }], { duration: 320, easing: "cubic-bezier(.2,1.3,.4,1)" });
-      cv.style.transform = ""; cv.classList.remove("drag");
-      if (go) { if (dx < 0) nextSong(); else prevSong(); }
-    }
-    pl.addEventListener("pointerup", end); pl.addEventListener("pointercancel", end);
-  })();
 
   qa("#avHome,#avProfile").forEach(function (a) { a.addEventListener("click", avatarTap); });
   $("termx").addEventListener("click", closeTerm);
@@ -2663,6 +2889,7 @@ const CONFIG = {
     if (entered) return;
     entered = true;
     sfx.unlock();                             // sound may start now (we are inside the tap)
+    mxPrime();
     introEnd(true);                           // tapped during the intro: skip the rest of it
     play();                                   // music (allowed because this runs inside the tap)
     swallow(bg.play());                       // background video
@@ -2719,14 +2946,16 @@ const CONFIG = {
     paused = true; root.classList.add("app-bg");                       // CSS animations stand still while the app is in the background
     resumeList = [audio, bg, avVid].filter(function (m) { return !m.paused; });
     resumeList.forEach(function (m) { m.pause(); });
-    wfUpdate();
+    wfUpdate(); pvUpdate();
   };
   window.appResumed = function () {
     if (!paused) return;
     paused = false; root.classList.remove("app-bg");
+    if (mx.ctx && mx.ctx.state !== "running") { try { mx.ctx.resume().catch(function () {}); } catch (e) {} }
     resumeList.forEach(function (m) { swallow(m.play()); });
     resumeList = [];
-    wfUpdate(); wfBeat(true);
+    if (nativeVol) { vol = readNative(); applyVolume(); }    // the phone's volume may have changed meanwhile
+    wfUpdate(); wfBeat(true); pvUpdate();
   };
   window.appBack = handleBack;
 
@@ -2807,7 +3036,7 @@ const CONFIG = {
     g.globalAlpha = 1;
   }
   window.addEventListener("resize", function () { if (wf.run) { wfStop(); wfStart(); } });
-  document.addEventListener("visibilitychange", wfUpdate);
+  document.addEventListener("visibilitychange", function () { wfUpdate(); pvUpdate(); });
 
   // the glow pulses on the beat while music plays (each song's tempo + first beat are in CONFIG), slowly when paused
   var wfBeatAt = 0, wfBeatVar = "";
@@ -2830,8 +3059,8 @@ const CONFIG = {
       });
     });
   }
-  ["play", "pause", "seeked", "loadedmetadata"].forEach(function (ev) { audio.addEventListener(ev, function () { wfBeat(true); }); });
-  audio.addEventListener("timeupdate", function () { wfBeat(false); });
+  ["play", "pause", "seeked", "loadedmetadata"].forEach(function (ev) { onAudio(ev, function () { wfBeat(true); }); });
+  onAudio("timeupdate", function () { wfBeat(false); });
 
   /* =====================================================================
      ROOM AT THE BOTTOM: every screen can scroll its last row above the floating mini player and the nav bar,
@@ -2868,6 +3097,269 @@ const CONFIG = {
       s.style.setProperty("--d", (7 + Math.random() * 3).toFixed(2) + "s"); s.style.setProperty("--dl", (-i * 1.37).toFixed(2) + "s");
     });
   }
+
+  /* =====================================================================
+     PLAYER VIEW ("Now Playing"): one loop runs only while the player is open (and the app is in front):
+     the cover turns (and slows down to a stop when paused), the white dot + pink arc follow the song,
+     the red glow pulses with the loudness, and the waveform (one canvas) moves with the music; its red part is what has played.
+     ===================================================================== */
+  var swiping = false;
+  var pv = { raf: 0, last: 0, acc: 0, ang: 0, spd: 0, deg: -1, lvl: 0, gl: -1, fx: null, cv: $("fpWave"), g: null, W: 0, H: 0, k: 1, n: 0, base: [], v: [], song: null, seekDrag: false };
+  var pvDisc = $("fpDisc"), pvDot = $("fpDot"), pvDone = $("fpDone"), pvHalo = $("fpHalo"), pvGlow = $("fpGlow"), PV_C = 2 * Math.PI * 97;
+  function pvWanted() { return playerOpen && !paused && !document.hidden; }
+  function pvUpdate() {
+    if (pvWanted()) { if (!pv.raf) { pvSize(); pv.last = 0; pv.raf = requestAnimationFrame(pvFrame); } }
+    else { if (pv.raf) { cancelAnimationFrame(pv.raf); pv.raf = 0; } if (pvSpinA) pvSpinA.pause(); }
+  }
+  // the cover turns by itself (on the graphics side, smooth at any screen speed); the loop only changes how fast
+  var pvSpinA = null;
+  function pvSpin(rate, dt) {
+    if (!pvSpinA) {
+      if (!pvDisc.animate) { if (rate > 0) { pv.ang = (pv.ang + 22.5 * rate * dt) % 360; pvDisc.style.transform = "rotate(" + pv.ang.toFixed(2) + "deg)"; } return; }
+      pvSpinA = pvDisc.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }], { duration: 16000, iterations: Infinity });
+      pvSpinA.pause();
+    }
+    var on = pvSpinA.playState === "running";
+    if (rate <= 0) { if (on) pvSpinA.pause(); return; }
+    if (on && Math.abs(rate - pvSpinA.playbackRate) < .01) return;
+    if (pvSpinA.updatePlaybackRate) pvSpinA.updatePlaybackRate(rate); else pvSpinA.playbackRate = rate;
+    if (!on) pvSpinA.play();
+  }
+  function pvSong(s) {                                     // each song gets its own waveform shape (so it looks like that song)
+    pv.song = s; pvShape();
+    if (playerOpen) fitTitle();
+  }
+  function pvShape() {
+    var s = pv.song || songs[idx]; if (!s || !pv.n) return;
+    var seed = 0, str = s.file; for (var i = 0; i < str.length; i++) seed = (seed * 31 + str.charCodeAt(i)) >>> 0;
+    var rnd = function () { seed = (seed + 0x6D2B79F5) >>> 0; var t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    pv.base = []; for (var k = 0; k < pv.n; k++) pv.base.push(.25 + .75 * rnd());
+    if (pv.v.length !== pv.n) { pv.v = []; for (k = 0; k < pv.n; k++) pv.v.push(.2); }
+  }
+  function pvSize() {
+    var c = pv.cv, w = c.clientWidth, h = c.clientHeight; if (!w || !h) return;
+    pv.k = Math.min(window.devicePixelRatio || 1, isLite() ? 1.5 : 2);
+    c.width = Math.round(w * pv.k); c.height = Math.round(h * pv.k); pv.W = w; pv.H = h;
+    pv.g = c.getContext("2d"); pv.fx = null;
+    var n = Math.max(30, Math.floor(w / 3.7)); if (n !== pv.n) { pv.n = n; pv.v = []; pvShape(); }
+  }
+  function pvLevel(now, dt) {                              // loudness 0..1, and the bars' targets (from Web Audio, or an imitation on the beat)
+    var n = pv.n, i, lvl = 0, playing = !audio.paused;
+    if (mx.on && playing) {
+      mx.an.getByteFrequencyData(mx.f);
+      var f = mx.f, lo = 0; for (i = 1; i < 24; i++) lo += f[i];
+      var all = lo; for (i = 24; i < 96; i++) all += f[i];
+      lvl = Math.min(1, Math.pow((lo / 23 * .65 + all / 95 * .35) / 210, 1.6));
+      for (i = 0; i < n; i++) {                            // the middle of the waveform is the bass, the ends the treble
+        var d = Math.abs(i - (n - 1) / 2) / ((n - 1) / 2), bin = 1 + Math.floor(Math.pow(d, 1.5) * 92);
+        var target = Math.min(1, f[bin] / 235 * (.75 + .5 * pv.base[i]));
+        pv.v[i] += (target - pv.v[i]) * (target > pv.v[i] ? .55 : .18);
+      }
+    } else {
+      var b = songs[idx] || {}, per = +b.bpm > 30 ? 60 / b.bpm : .6, ph = ((audio.currentTime - (+b.beat || 0)) % per + per) % per / per;
+      var env = playing ? Math.exp(-ph * 4.2) : 0, ts = now / 1000;
+      lvl = playing ? .3 + .55 * env : 0;
+      for (i = 0; i < n; i++) {
+        var wob = .5 + .5 * Math.sin(ts * (1.3 + pv.base[i] * 2.1) + i * .7);
+        var tgt = playing ? pv.base[i] * (.35 + .45 * env + .3 * wob) : pv.base[i] * .28;
+        pv.v[i] += (Math.min(1, tgt) - pv.v[i]) * Math.min(1, dt * (playing ? 9 : 3));
+      }
+    }
+    pv.lvl += (lvl - pv.lvl) * (lvl > pv.lvl ? .5 : .12);
+    return pv.lvl;
+  }
+  function pvDraw(p) {
+    var g = pv.g; if (!g || !pv.n) return;
+    var W = pv.W, H = pv.H, n = pv.n, gap = W / n, bw = Math.min(2, gap * .48), r = bw / 2, k = pv.k;
+    var base = Math.round(H * .62), top = base - 2, refl = H - base - 3, px = p * W;
+    if (!pv.fx) pvFx(g, W, H, base);
+    g.setTransform(k, 0, 0, k, 0, 0); g.clearRect(0, 0, W, H);
+    for (var played = 0; played < 2; played++) {           // the bars: played (red) and still to come (grey)
+      g.beginPath();
+      for (var i = 0; i < n; i++) {
+        var x = gap * (i + .5); if ((x <= px) !== (played === 1)) continue;
+        var t = Math.pow(Math.sin(Math.PI * (i + .5) / n), .8);             // smaller towards both ends, where they become dots
+        var h = Math.max(bw, t * top * (.1 + .9 * pv.v[i]));
+        g.rect(x - r, base - h, bw, h);
+      }
+      g.fillStyle = played ? pv.fx.red : "rgba(255, 236, 240, .32)";
+      g.fill();
+    }
+    // the mirror: the same bars, flipped, flattened and faint (one copy of the canvas onto itself)
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = .3;
+    g.drawImage(pv.cv, 0, 0, pv.cv.width, base * k, 0, (base + 3) * k + refl * k, pv.cv.width, -refl * k);
+    g.globalAlpha = 1; g.setTransform(k, 0, 0, k, 0, 0);
+    g.globalCompositeOperation = "destination-out";        // the ends fade away, and so does the mirror, downwards
+    g.fillStyle = pv.fx.ends; g.fillRect(0, 0, W, H);
+    g.fillStyle = pv.fx.down; g.fillRect(0, base + 2, W, H - base);
+    g.globalCompositeOperation = "source-over";
+  }
+  function pvFx(g, W, H, base) {                          // gradients made once per size
+    var red = g.createLinearGradient(0, 0, 0, base); red.addColorStop(0, "#ff9ab2"); red.addColorStop(.45, "#ff3d68"); red.addColorStop(1, "#ff1f45");
+    var ends = g.createLinearGradient(0, 0, W, 0);
+    ends.addColorStop(0, "rgba(0,0,0,.8)"); ends.addColorStop(.07, "rgba(0,0,0,0)"); ends.addColorStop(.93, "rgba(0,0,0,0)"); ends.addColorStop(1, "rgba(0,0,0,.8)");
+    var down = g.createLinearGradient(0, base, 0, H); down.addColorStop(0, "rgba(0,0,0,0)"); down.addColorStop(1, "rgba(0,0,0,.95)");
+    pv.fx = { red: red, ends: ends, down: down };
+  }
+  function pvFrame(t) {
+    pv.raf = requestAnimationFrame(pvFrame);
+    var dt = pv.last ? Math.min(.1, (t - pv.last) / 1000) : .016; pv.last = t;
+    pv.acc += dt; if (pv.acc < .031) return;                               // about 30 frames a second
+    dt = pv.acc; pv.acc = 0;
+    var target = audio.paused || reduced ? 0 : 1;                          // the cover: one turn in 16 s, slows down smoothly when paused
+    pv.spd += (target - pv.spd) * Math.min(1, dt * 3.2);
+    if (Math.abs(target - pv.spd) < .015) pv.spd = target;                   // comes to rest in about a second
+    pvSpin(pv.spd, dt);
+    var p = (dragging || pv.seekDrag) ? +seeks[0].value / 1000 : audio.duration ? audio.currentTime / audio.duration : 0;
+    var deg = p * 360;
+    if (Math.abs(deg - pv.deg) > .35) {                                     // the white dot + the pink arc: how far the song is
+      pv.deg = deg; pvDot.style.transform = "rotate(" + deg.toFixed(2) + "deg)";
+      pvDone.setAttribute("stroke-dasharray", (p * PV_C).toFixed(1) + " 1000"); pvHalo.setAttribute("stroke-dasharray", (p * PV_C).toFixed(1) + " 1000");
+    }
+    var L = pvLevel(t, dt);
+    if (!isUltra() && Math.abs(L - pv.gl) > .012) {                          // the red glow follows the loudness (only real changes)
+      pv.gl = L; pvGlow.style.opacity = (.42 + .58 * L).toFixed(3); pvGlow.style.transform = "scale(" + (1 + .06 * L).toFixed(3) + ")";
+    }
+    pvDraw(p);
+  }
+  // tap (or drag) on the waveform to jump to that part of the song
+  (function () {
+    var c = pv.cv, on = false;
+    var at = function (e) { var r = c.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
+    var show = function (f) { seeks.forEach(function (s) { s.value = Math.round(f * 1000); fillIn(s, f * 100); }); setTimes(f * (audio.duration || 0), f); };
+    c.addEventListener("pointerdown", function (e) { on = true; pv.seekDrag = true; try { c.setPointerCapture(e.pointerId); } catch (x) {} show(at(e)); });
+    c.addEventListener("pointermove", function (e) { if (on) show(at(e)); });
+    var end = function (e) { if (!on) return; on = false; var f = at(e); if (audio.duration) audio.currentTime = f * audio.duration; pv.seekDrag = false; };
+    c.addEventListener("pointerup", end); c.addEventListener("pointercancel", function () { on = false; pv.seekDrag = false; });
+  })();
+  function fitTitle() {                                    // a long song name gets a little smaller (then "…")
+    var t = qa("#player .fp-title")[0], sp = t && t.querySelector(".js-title"); if (!sp || !t.clientWidth) return;
+    var fs = 26; t.style.fontSize = fs + "px";
+    while (sp.scrollWidth > sp.clientWidth + 1 && fs > 18) { fs -= 1; t.style.fontSize = fs + "px"; }
+  }
+  function fitPlayer() {                                   // everything on one screen: squeeze a little on short screens
+    var pl = $("player"); if (!pl.clientHeight) return;
+    var over = function (q) { pl.style.setProperty("--pq", q.toFixed(3)); return pl.scrollHeight - pl.clientHeight > 0; };
+    if (!over(0)) return;
+    if (over(1)) return;
+    var lo = 0, hi = 1;
+    for (var i = 0; i < 7; i++) { var mid = (lo + hi) / 2; if (over(mid)) lo = mid; else hi = mid; }
+    over(hi);
+  }
+  window.addEventListener("resize", function () { if (playerOpen) { fitPlayer(); pvSize(); fitTitle(); } });
+
+  // swipe left / right on the cover: it slides out, the next (or previous) song's cover slides in, and it plays
+  (function () {
+    var cv = $("fpCover"), sx = 0, sy = 0, dx = 0, on = false, locked = false;
+    cv.addEventListener("pointerdown", function (e) { on = true; locked = false; sx = e.clientX; sy = e.clientY; dx = 0; try { cv.setPointerCapture(e.pointerId); } catch (x) {} });
+    cv.addEventListener("pointermove", function (e) {
+      if (!on) return; dx = e.clientX - sx;
+      if (!locked && Math.abs(e.clientY - sy) > Math.abs(dx) + 10) { on = false; cv.style.transform = ""; cv.classList.remove("drag"); return; }
+      if (!locked && Math.abs(dx) > 6) { locked = true; cv.classList.add("drag"); }
+      if (locked) cv.style.transform = "translateX(" + dx * .8 + "px) rotate(" + dx / 26 + "deg)";
+    });
+    function end() {
+      if (!on) return; on = false; cv.classList.remove("drag");
+      var from = cv.style.transform || "none";
+      if (!(locked && Math.abs(dx) > 60)) {
+        if (locked && cv.animate && !reduced) cv.animate([{ transform: from }, { transform: "none" }], { duration: 320, easing: "cubic-bezier(.2,1.3,.4,1)" });
+        cv.style.transform = ""; return;
+      }
+      swipeSong(dx < 0 ? 1 : -1, from);
+    }
+    cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
+  })();
+  function swipeSong(d, from) {                            // d: 1 = next (swiped left), -1 = previous (swiped right)
+    var cv = $("fpCover"), w = cv.offsetWidth * .9 + 80;
+    var change = function () { swiping = true; if (songs.length < 2) restart(); else if (d > 0) nextSong(); else load(idx - 1, true, -1); swiping = false; };
+    cv.style.transform = "";
+    if (reduced || !cv.animate) { change(); return; }
+    var out = cv.animate([{ transform: from || "none", opacity: 1 }, { transform: "translateX(" + (-d * w) + "px) rotate(" + (-d * 14) + "deg)", opacity: 0 }],
+                         { duration: 230, easing: "cubic-bezier(.4,0,.8,.4)", fill: "forwards" });
+    out.onfinish = function () {
+      change(); out.cancel();
+      cv.animate([{ transform: "translateX(" + (d * w) + "px) rotate(" + (d * 14) + "deg)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 440, easing: "cubic-bezier(.2,.9,.3,1)" });
+    };
+  }
+  function burst(el) {                                     // a small burst of red sparkles round the star
+    if (reduced || !el.animate || !visible(el)) return;
+    for (var i = 0; i < 10; i++) {
+      var s = document.createElement("i"); s.className = "burst"; el.appendChild(s);
+      var a = i / 10 * Math.PI * 2 + Math.random() * .5, r = 16 + Math.random() * 12, x = Math.cos(a) * r, y = Math.sin(a) * r;
+      s.animate([{ transform: "translate(0,0) scale(.5)", opacity: 1 }, { transform: "translate(" + x.toFixed(1) + "px," + y.toFixed(1) + "px) scale(1.1)", opacity: 1, offset: .55 },
+                 { transform: "translate(" + (x * 1.35).toFixed(1) + "px," + (y * 1.35).toFixed(1) + "px) scale(.3)", opacity: 0 }],
+                { duration: 520 + Math.random() * 200, easing: "cubic-bezier(.2,.8,.3,1)" }).onfinish = (function (n) { return function () { n.remove(); }; })(s);
+    }
+  }
+
+  // the side panel's volume (drag it up / down; arrow keys too)
+  qa("#fpSide .js-vvol").forEach(function (v) {
+    var drag = false, at = function (e) { var r = v.getBoundingClientRect(); setVol(Math.round(Math.max(0, Math.min(1, (r.bottom - e.clientY) / r.height)) * 100)); };
+    v.addEventListener("pointerdown", function (e) { drag = true; e.preventDefault(); try { v.setPointerCapture(e.pointerId); } catch (x) {} at(e); });
+    v.addEventListener("pointermove", function (e) { if (drag) at(e); });
+    v.addEventListener("pointerup", function () { drag = false; }); v.addEventListener("pointercancel", function () { drag = false; });
+    v.addEventListener("keydown", function (e) {
+      var d = e.key === "ArrowUp" || e.key === "ArrowRight" ? 5 : e.key === "ArrowDown" || e.key === "ArrowLeft" ? -5 : 0;
+      if (d) { e.preventDefault(); setVol(vol + d); }
+    });
+  });
+
+  /* ---------- the ••• menu: Like · Song info · Sleep timer ---------- */
+  var sleepAt = 0, sleepMin = 0, sleepTimer = 0;
+  function sleepLeft() { return sleepAt ? Math.max(0, sleepAt - Date.now()) : 0; }
+  function setSleep(m) {
+    clearTimeout(sleepTimer); sleepAt = 0; sleepMin = 0;
+    if (!m) { toast("Sleep timer off", "The music keeps playing.", { icon: "moon" }); return; }
+    sleepMin = m; sleepAt = Date.now() + m * 60000; sleepTimer = setTimeout(sleepNow, m * 60000);
+    toast("Sleep timer on", "The music stops in " + m + " min.", { icon: "moon", hl: m + " min" });
+  }
+  function sleepNow() {                                    // fade out over 8 s, pause, and put the volume back
+    sleepAt = 0; sleepMin = 0;
+    var t0 = Date.now();
+    (function step() {
+      var k = 1 - (Date.now() - t0) / 8000;
+      if (k <= 0 || audio.paused) { audio.pause(); fadeK = 1; applyVolume(); toast("Good night", "The sleep timer stopped the music.", { icon: "moon" }); return; }
+      fadeK = k; applyVolume(); setTimeout(step, 100);
+    })();
+  }
+  function moreMenu(anchor) {
+    var s = songs[idx] || {}, liked = !!likes[s.file], left = sleepLeft();
+    var items = [{ icon: "heart", label: liked ? "Unlike this song" : "Like this song", run: toggleLike },
+                 { icon: "info", label: "Song info", run: songInfo }];
+    [15, 30, 60].forEach(function (m) { items.push({ icon: "moon", label: "Sleep timer: " + m + " min", check: left > 0 && sleepMin === m, run: function () { setSleep(m); } }); });
+    if (left > 0) items.push({ cls: "sep", icon: "x", label: "Sleep timer off (" + Math.ceil(left / 60000) + " min left)", run: function () { setSleep(0); } });
+    openMenu(anchor, items);
+  }
+  function songInfo() {
+    var s = songs[idx] || {};
+    openSheet("Song info", '<div class="facts">' + fact("music", "Title", s.title || s.file) + fact("user", "Artist", artistOf(s)) +
+      fact("clock", "Length", audio.duration ? fmt(audio.duration) : "–") + fact("activity", "Tempo", +s.bpm > 30 ? Math.round(s.bpm) + " BPM" : "–") +
+      fact("heart", "Liked", likes[s.file] ? "Yes" : "No") + fact("file-text", "File", String(s.file || "").split("/").pop()) + "</div>");
+  }
+
+  /* ---------- the equalizer popup (Bass · Mid · Treble) ---------- */
+  var eqOpen = false;
+  function eqLabel(i) { var r = qa(".js-eq")[i]; r.parentNode.querySelector("span").textContent = (eqGain[i] > 0 ? "+" : "") + eqGain[i] + " dB"; fillIn(r, (eqGain[i] + 12) / 24 * 100); }
+  qa(".js-eq").forEach(function (r, i) {
+    r.value = eqGain[i]; eqLabel(i);
+    r.addEventListener("input", function () { mxEq(i, +r.value); eqLabel(i); });
+  });
+  function openEq(anchor) {
+    closeMenu();
+    var p = $("eqpop"), app = $("app"), ar = anchor.getBoundingClientRect(), pr = app.getBoundingClientRect();
+    $("eqNote").textContent = mx.on ? "" : mxSafe() ? "It starts working as soon as a song plays." : "The equalizer works in the app (or when the page is on a web server).";
+    p.style.display = "block";
+    var h = p.offsetHeight, w = p.offsetWidth;
+    p.style.left = Math.min(pr.width - w - 10, ar.right - pr.left + 10) + "px";
+    p.style.top = Math.max(10, Math.min(pr.height - h - 10, ar.bottom - pr.top - h + 6)) + "px";
+    $("menuback").style.display = "block"; void p.offsetWidth; p.classList.add("open"); eqOpen = true;
+  }
+  function closeEq() {
+    if (!eqOpen) return;
+    eqOpen = false; $("eqpop").classList.remove("open");
+    setTimeout(function () { if (!eqOpen) { $("eqpop").style.display = "none"; if (!menuOpen) $("menuback").style.display = "none"; } }, 220);
+  }
+  $("menuback").addEventListener("click", closeEq);
 
   /* ---------- start up ---------- */
   var clockEl = $("clock");

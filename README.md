@@ -33,7 +33,7 @@ android/                ← Android Studio project (Kotlin, full-screen WebView)
 | --- | --- |
 | **Home** | the song pill on top, your pictures and clips (one by one) inside an animated wings + crown frame, **Imran** (handwritten) + crown, status (tap it: Online / Idle / Do Not Disturb), "Hello, World!" typing, your social icons, the views counter (tap it for numbers), and the music card (progress, shuffle, previous, play/pause, next, like) |
 | **Profile** | tap your name on Home (or the card in Settings). Bigger picture + pencil (edit your bio), @imran, Online badge, typed bio, Followers / Following / Posts, and About Me / Interests / Badges / Activity pop-ups. The ⋮ menu: edit, copy @imran, share |
-| **Music player** | tap the song pill, the music card or the **Music** tab. Big spinning cover, progress, shuffle, previous, play/pause, next, repeat, a moving waveform and a volume slider. **Swipe left / right** to change the song, the ⌄ arrow closes it |
+| **Music player** ("Now Playing") | tap the song pill, the music card or the **Music** tab. Dark red smoke, a spinning round cover inside a progress ring (the white dot shows how far the song is) and a glowing red ring, a small glass side panel (volume, •••, equalizer), title + red ★, progress, shuffle / previous / play / next / repeat, a waveform you can tap to jump, and a volume slider. **Swipe the cover left / right** to change the song, the ⌄ arrow closes it (see below) |
 | **Social** | one big row per link (Discord, GitHub, Telegram, Roblox, YouTube, TikTok) and the "Better Things Ahead." card |
 | **Stats** | Total Views, Followers, Following, Posts and the Weekly Activity chart (touch it to read a day) |
 | **Themes** | Dark Academia, Cyberpunk, Midnight, Red Noir, Glass. Tap one and the whole app changes colour; it is remembered |
@@ -114,6 +114,24 @@ every 4 s, the ring's red-gold glow pulses, a thin line of light runs round the 
 Tap the card: it grows a little with a flash of light, then your profile opens.
 The animations only run while Settings is on screen, stop in the background, and the sparkles go off with "Floating particles".
 
+## The Now Playing player
+
+* **Opens** sliding up with a fade (the side panel slides in from the left), **closes** sliding down.
+* **The cover** turns slowly while the song plays and comes smoothly to a stop when you pause. The thin ring around it is the
+  progress: the pink part and the white dot move round as the song plays. The thick red ring glows stronger on the loud parts.
+* **The waveform** moves with the music; the played part is red, the rest grey, with a faded mirror underneath.
+  Tap or drag on it to jump to that part of the song.
+* **★** likes / unlikes the song (with a little burst of red sparkles). **Shuffle** and **repeat** turn red when they are on.
+* **•••** opens a small menu: Like, Song info, Sleep timer (15 / 30 / 60 min; the music fades out and stops).
+* **Equalizer** (the sliders icon): Bass, Mid and Treble. It needs the page to come from a web address (the app or a web server);
+  opened as a plain file it says so, and the music plays as before.
+* **Volume**: the side slider, the bottom slider and the one in Settings always show the same volume.
+  In the app this is the phone's music volume, and the **volume buttons** show the app's own red volume panel
+  (instead of the phone's pop-up, which used to cover the player).
+* The music-reactive parts use the Web Audio API. If it can't read the music, they move on the song's beat instead,
+  and if Web Audio ever goes quiet the song switches back to plain playback on its own: the music never goes silent.
+* Everything stops moving when the player is closed or the app is in the background.
+
 ## The opening intro and the animations
 
 * **Intro** (about 2.6 s): the blood moon and the figure fade in, a blade slashes across, **IMRAN** slams in with a flash and a shake,
@@ -171,11 +189,16 @@ Every build is signed with the same key (`android/app/debug.keystore`), so a new
 ## What the app does
 
 * shows `website/index.html` from the app's assets in a full-screen WebView (JavaScript + localStorage on,
-  music allowed to start without an extra tap)
+  music allowed to start without an extra tap). Since 1.6 it opens it as `https://appassets.androidplatform.net/assets/index.html`
+  (with `WebViewAssetLoader`: a made-up secure address, nothing goes to the internet) instead of `file://`, so Web Audio can read
+  the music; songs and videos are served in pieces (Range requests), so you can jump anywhere in a song.
+  The first time after updating from 1.5 or older, `android/app/src/main/assets/move.html` brings your saved settings,
+  likes and views along to the new address (once)
+* the volume buttons change the phone's music volume without the phone's volume pop-up; the page shows its own red panel
 * portrait only, status bar hidden, the screen stays on while the app is open
 * the page always ends just above the 3-button navigation bar (or fills the screen with gesture navigation),
   and on short screens Home squeezes a little so the whole music card is always above the bottom bar
-* the **back button works inside the app**: it closes a pop-up, then leaves a screen, then returns to Home,
+* the **back button works inside the app**: it closes the music player or a pop-up, then leaves a screen, then returns to Home,
   and only on Home does it close the app
 * music and videos pause when you leave the app and continue when you come back
 * social links open in their own apps (Discord, YouTube, TikTok…) or the browser

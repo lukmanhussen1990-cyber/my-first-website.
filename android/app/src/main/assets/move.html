@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Moving…</title>
+<style>html, body { margin: 0; height: 100%; background: #000; }</style>
+<script>
+  // App update 1.6, opened once: the page used to open from file://, now from https://appassets.androidplatform.net
+  // (so Web Audio can read the music). That is a new address with its own storage, so the saved settings, likes,
+  // views and slider positions (the "bio:" keys) come along in the address; the page keeps them and removes them from it.
+  (function () {
+    var page = "https://appassets.androidplatform.net/assets/index.html", saved = {}, n = 0;
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf("bio:") === 0) { saved[k] = localStorage.getItem(k); n++; }
+      }
+    } catch (e) {}
+    location.replace(n ? page + "#moved=" + encodeURIComponent(JSON.stringify(saved)) : page);
+  })();
+</script>
+</head>
+<body></body>
+</html>
