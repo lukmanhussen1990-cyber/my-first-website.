@@ -30,7 +30,7 @@ except ImportError:                       # textures pass is optional while deve
 # Stable identifiers => re-importing a newer build replaces the old one.
 RP_UUID = "9d1b6c4e-5a3f-4e0b-8c27-71f0a4b2d3e5"
 RP_MODULE_UUID = "2f8e0a7b-6c14-49d2-b5a3-0e9d7c1f4a68"
-VERSION = [1, 1, 2]
+VERSION = [1, 1, 3]
 
 # Short names: the game prints them under the pack-settings slider on a narrow phone screen.
 SUBPACKS = [
@@ -95,8 +95,9 @@ def build_pack(vanilla: Path, verbose=True):
             print(f"[{time.time() - t0:6.1f}s] {msg}", flush=True)
 
     # ---- base pack == "Standard"
-    log("base: atmosphere (fog / water colours / colormaps)")
-    gen_atmosphere.generate(vanilla, PACK_DIR, "standard")
+    log("base: atmosphere (Standard biomes_client / colour maps) + the fog definitions of ALL presets")
+    gen_atmosphere.generate(vanilla, PACK_DIR, "standard", own_fogs=False)
+    gen_atmosphere.generate_all_fogs(vanilla, PACK_DIR)
     log("base: sky bodies + weather + clouds")
     gen_sky.generate(vanilla, PACK_DIR, "standard")
     log("base: animated water")
@@ -111,11 +112,12 @@ def build_pack(vanilla: Path, verbose=True):
     gen_ui.write_icon(PACK_DIR)
     write_json(PACK_DIR / "manifest.json", manifest())
 
-    # ---- presets (subpacks): only the things that differ
+    # ---- presets (subpacks): only the things that differ (which fog set biomes_client.json points to,
+    #      colour maps, cloud/sun/moon textures, HUD overlay) -- never fog definitions, those are all in the base
     for preset in PRESETS:
         sp = PACK_DIR / "subpacks" / preset
         log(f"subpack {preset}")
-        gen_atmosphere.generate(vanilla, sp, preset, own_fogs=(preset != "standard"))
+        gen_atmosphere.generate(vanilla, sp, preset, own_fogs=False)
         gen_sky.generate(vanilla, sp, preset)
         if preset == "ultra":
             gen_ui.write_overlay(sp)

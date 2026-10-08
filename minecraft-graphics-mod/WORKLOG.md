@@ -27,6 +27,7 @@
 - 2026-10-08 03:45:21Z | elapsed 01:33:19 | 01:26:41 left — Visual-QA re-check (no regressions) follow-ups applied: warm split-tone fades earlier, leather/wolf/horse dye masks untouched, grass-side tint fringe gets no relief (dL .015 = grass_top .014); version 1.1.2; rebuilt + validated; README auditor still running
 - 2026-10-08 03:47:33Z | elapsed 01:35:31 | 01:24:29 left — Packaging made deterministic (fixed zip timestamps: two builds are byte-identical, fresh-clone pack tree reproduces exactly); README counts corrected; README auditor still running
 - 2026-10-08 03:49:20Z | elapsed 01:37:18 | 01:22:42 left — README rewritten after the phone-user audit (honest 'not tested' box, direct links for all 4 files, install/troubleshooting fixes, corrected legal wording); all four reviewers done
+- 2026-10-08 03:55:03Z | elapsed 01:43:01 | 01:16:59 left — Fog definitions moved into the base pack (presets only swap biomes_client.json; validator enforces + mutation-tested), README re-audit fixes applied (per-world uninstall, honest AI-review wording, install gaps), version 1.1.3
 
 ## Key decisions (why the pack looks the way it does)
 
@@ -35,6 +36,9 @@
 * **Exact reference data.** Mojang's `bedrock-samples` tag `v1.21.0.26-preview` (the very build on the phone) is the source for every derived file.
 * **Fogs use their own `hg:` identifiers** and `hg_*.json` file names (Bedrock Wiki, "Overwriting assets": vanilla fogs cannot be
   overwritten); Lite / Standard / Ultra each get unique ids so no registry can keep "the first one" and silently ignore a preset.
+* **All 273 fog definitions live in the base pack.** A preset subpack only swaps `biomes_client.json` (plus colour maps, sky textures,
+  HUD overlay), so a preset can never point at a fog the game did not load (we cannot know whether fog files inside a subpack folder
+  are enumerated). If the subpack's `biomes_client.json` were ignored, the worst case is the Standard look. The validator enforces this.
 * **Partial `terrain_texture.json`** (grass side overlay colours only) and a partial `ui/hud_screen.json` are safe because
   reference files and UI files merge per key (same wiki page).
 * **Colour grading in OKLab with "walk-back" gamut mapping** + a hard cap on how far any texel may move: saturated yellows (gold, sponge)
@@ -46,6 +50,6 @@
   (the validator fails if one slips through); near-grey dye masks (leather / wolf / horse armour) are left to the game's own files.
 * **Reproducible packaging.** Zip members carry a fixed timestamp and mode, so two builds give byte-identical `.mcaddon` / `.mcpack` files
   (a download can be verified by checksum).
-* **Independent review rounds** (format/docs, Ambient FX, visual QA twice, README audit for a phone user) found no blockers in the final
+* **Separate AI review passes** (format/docs, Ambient FX, visual QA twice, README audit for a phone user) found no blockers in the final
   state; every finding that could be acted on without a device is applied (see the checkpoints above). What can only be settled on a phone
   is listed in the README under "Honest limits".

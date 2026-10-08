@@ -225,7 +225,7 @@ NEW_BIOMES = ["birch_forest_hills_mutated", "birch_forest_mutated", "deep_dark",
               "redwood_taiga_mutated", "roofed_forest_mutated", "savanna_plateau_mutated", "snowy_slopes", "stony_peaks"]
 
 
-def generate_biomes_and_new_fogs(vanilla, out_dir: Path, preset: str, write_fogs=True, fog_preset=None):
+def generate_biomes_and_new_fogs(vanilla, out_dir: Path, preset: str, write_fogs=True, fog_preset=None, write_biomes=True):
     p = PRESET[preset]
     fp = fog_preset or preset            # which preset's fog ids the biome entries point to
     vb = load_json_lenient(vanilla / "biomes_client.json")["biomes"]
@@ -268,8 +268,18 @@ def generate_biomes_and_new_fogs(vanilla, out_dir: Path, preset: str, write_fogs
         alpha = min(0.97, p["water_alpha"] + 0.42) if fam == "swamp" else p["water_alpha"]
         out[b] = entry(fid, biome_water_color(b), alpha)
 
-    write_json(out_dir / "biomes_client.json", {"biomes": dict(sorted(out.items()))})
+    if write_biomes:
+        write_json(out_dir / "biomes_client.json", {"biomes": dict(sorted(out.items()))})
     return out
+
+
+def generate_all_fogs(vanilla, out_dir: Path):
+    """Fog definitions of EVERY preset go into the base pack (each with its own unique id).  A preset
+    subpack then only swaps biomes_client.json to pick its set, so no preset can ever point at a fog
+    that the game did not load (it does not have to load fog files out of a subpack folder)."""
+    for preset in ("standard", "lite", "ultra"):
+        generate_fogs(vanilla, out_dir, preset, write=True)
+        generate_biomes_and_new_fogs(vanilla, out_dir, preset, write_fogs=True, write_biomes=False)
 
 
 # ---------------------------------------------------------------- colormaps + overlay

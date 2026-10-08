@@ -125,10 +125,10 @@ def check_fogs(root: Path, label: str, vanilla: Path, extra_ids=frozenset()):
         err(f"{label}: biomes_client lacks vanilla biome entries (would keep vanilla fog ids): {missing}")
     if "default" not in bc:
         err(f"{label}: biomes_client lacks default")
-    unused = fog_ids - {v["fog_identifier"] for v in bc.values()}   # (only this root's own definitions)
-    if unused:
-        warn(f"{label}: fog definitions never referenced: {sorted(unused)}")
-    return len(files), len(bc), fog_ids
+    if label != "base" and files:
+        err(f"{label}: fog definitions must live in the base pack (a preset must not depend on the game loading fog files "
+            f"out of a subpack folder); found {len(files)}")
+    return len(files), len(bc), fog_ids, {v["fog_identifier"] for v in bc.values()}
 
 
 def image_size(p: Path):
@@ -287,23 +287,28 @@ def main():
     print(f"manifest ok; {n_json} json files parse")
     base_ids: set = set()
     seen_ids: dict = {}
+    all_refs: set = set()
     for label, root in [("base", pack)] + [(sp["folder_name"], pack / "subpacks" / sp["folder_name"]) for sp in m["subpacks"]]:
         if not root.is_dir():
             err(f"{label}: folder {root} is missing")
             continue
         try:
-            nf, nb, ids = check_fogs(root, label, vanilla, extra_ids=base_ids if label != "base" else frozenset())
+            nf, nb, ids, refs = check_fogs(root, label, vanilla, extra_ids=base_ids if label != "base" else frozenset())
         except Exception as e:  # noqa: BLE001 - a broken file must be reported, not crash the whole validator
             err(f"{label}: could not check fogs/biomes_client: {type(e).__name__}: {e}")
             continue
         if label == "base":
             base_ids = set(ids)
+        all_refs |= refs
         for i in ids:
             if i in seen_ids:
                 err(f"fog identifier {i} defined in both '{seen_ids[i]}' and '{label}' (a first-wins registry would ignore one)")
             seen_ids[i] = label
         has_ui = check_ui(root)
-        print(f"{label:9s}: {nf} own fogs, {nb} biome entries, hud overlay: {has_ui}")
+        print(f"{label:9s}: {nf} fog definitions, {nb} biome entries, hud overlay: {has_ui}")
+    unused = sorted(set(seen_ids) - all_refs)
+    if unused:
+        warn(f"fog definitions that no biomes_client.json (base or subpack) references: {unused}")
     n_img = check_images(pack, vanilla)
     print(f"{n_img} images checked against vanilla sizes")
     check_ambient(vanilla, m)

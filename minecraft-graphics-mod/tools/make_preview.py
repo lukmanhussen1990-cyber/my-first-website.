@@ -82,7 +82,7 @@ def main():
     names = ["plains", "forest", "taiga", "ice_plains", "jungle", "swampland", "desert", "savanna", "mesa", "extreme_hills",
              "ocean", "warm_ocean", "cherry_grove", "mushroom_island", "meadow", "river"]
     fogs = {}
-    for f in (ultra / "fogs").glob("*.json"):
+    for f in (pk / "fogs").glob("*.json"):          # every preset's fogs live in the base pack (unique ids)
         fj = json.loads(f.read_text())["minecraft:fog_settings"]
         fogs[fj["description"]["identifier"]] = fj
     cw, ch = 94, 52
