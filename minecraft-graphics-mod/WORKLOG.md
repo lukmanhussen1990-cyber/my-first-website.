@@ -10,3 +10,24 @@
 - 2026-10-08 02:20:10Z | elapsed 00:08:08 | 02:51:52 left — Research: vanilla 1.21.0.26 files cloned; fog/biomes_client/subpack/UI-modifications formats verified from official docs + web
 - 2026-10-08 02:31:26Z | elapsed 00:19:24 | 02:40:36 left — v0.1 built: atmosphere+sky+water+overlay+icon, validator written
 - 2026-10-08 02:34:43Z | elapsed 00:22:41 | 02:37:19 left — Texture grading (blocks+items, relief shading, ore glints) integrated; v0.2 built
+- 2026-10-08 02:38:32Z | elapsed 00:26:30 | 02:33:30 left — v0.2 committed+pushed (graded textures, validator clean)
+- 2026-10-08 02:46:36Z | elapsed 00:34:34 | 02:25:26 left — Ambient FX pack + consistency pass drafted; waiting on 2 reviewers
+- 2026-10-08 02:49:12Z | elapsed 00:37:10 | 02:22:50 left — TGA writer verified vs independent decoder (164 files identical); sandbox full build passes; awaiting reviewers
+- 2026-10-08 02:54:52Z | elapsed 00:42:50 | 02:17:10 left — KEY FIX: fogs now use own hg: identifiers + hg_*.json names (Bedrock Wiki: vanilla fogs cannot be overwritten); partial terrain_texture.json + UI merge confirmed by wiki 'Overwriting assets'
+- 2026-10-08 03:01:11Z | elapsed 00:49:09 | 02:10:51 left — Docs (README, asset preview script, how-to-verify) done; ambient FX + consistency pass built in sandbox; waiting for reviewers
+- 2026-10-08 03:03:36Z | elapsed 00:51:34 | 02:08:26 left — Fixed colour-washing: gamut mapping now walks back along the edit (never desaturates), OKLab delta cap 0.085, warm split-tone only on neutral texels (found via numeric outlier scan)
+
+## Key decisions (why the pack looks the way it does)
+
+* **Resource pack only.** On 1.21.0.26 / Android a normal add-on cannot replace RenderDragon `.material.bin` shaders, so
+  "shader-like" is built from what packs *can* change: fog, water, sky bodies, clouds, weather, colour maps, textures, HUD.
+* **Exact reference data.** Mojang's `bedrock-samples` tag `v1.21.0.26-preview` (the very build on the phone) is the source for every derived file.
+* **Fogs use their own `hg:` identifiers** and `hg_*.json` file names (Bedrock Wiki, "Overwriting assets": vanilla fogs cannot be
+  overwritten); Lite / Standard / Ultra each get unique ids so no registry can keep "the first one" and silently ignore a preset.
+* **Partial `terrain_texture.json`** (grass side overlay colours only) and a partial `ui/hud_screen.json` are safe because
+  reference files and UI files merge per key (same wiki page).
+* **Colour grading in OKLab with "walk-back" gamut mapping** + a hard cap on how far any texel may move: saturated yellows (gold, sponge)
+  stay saturated, marker textures such as `entity/char.png` are untouched. (Found by a numeric outlier scan, not by eye.)
+* **TGA files** are re-written with the same origin bit as the vanilla file; verified against an independent decoder (164/164 identical).
+* **Ambient FX is a separate optional pack** because it must replace the player client entity file (version-bound).
+* Not shipped: dynamic torch light (world-modifying scripts, untestable here).

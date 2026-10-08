@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from common import (Grade, rgb_to_oklab, oklab_to_rgb, smoothstep, save_image, tga_orientation_of)
+from common import (Grade, rgb_to_oklab, smoothstep, save_image, tga_orientation_of, map_toward, limit_delta)
 import gen_atmosphere
 
 BLOCK_GRADE = Grade(chroma=1.14, contrast=0.09, lift=0.015, warm=1.4)
@@ -45,44 +45,55 @@ def relief_shade(rgb_out, arr):
     map and its slope along the light direction nudges lightness by a few percent.
     Only for fully opaque, square, non-animated block textures; edges are replicated
     (not wrapped) so frames / borders of e.g. bookshelves don't bleed into each other."""
-    lab = rgb_to_oklab(rgb_out)
-    L = lab[..., 0]
+    lab0 = rgb_to_oklab(rgb_out)
+    L = lab0[..., 0]
     P = np.pad(L, 1, mode="edge")
     nw, se = P[:-2, :-2], P[2:, 2:]
     n, s_ = P[:-2, 1:-1], P[2:, 1:-1]
     w, e = P[1:-1, :-2], P[1:-1, 2:]
     d = (nw - se) * 0.5 + ((n - s_) + (w - e)) * 0.25
+    lab = lab0.copy()
     lab[..., 0] = L + np.clip(d * RELIEF_K, -RELIEF_CLAMP, RELIEF_CLAMP)
-    return oklab_to_rgb(lab)
+    return map_toward(lab0, lab)
 
 
-def _grade_special(arr, base_grade, name, relief=False):
+MAX_DELTA = 0.085      # OKLab distance a texel may move from the vanilla colour (all passes together)
+
+
+def _grade_special(arr, base_grade, name, relief=False, special=True):
     """arr: (H,W,4) uint8 -> graded (H,W,4) uint8."""
     a = arr.astype(np.float64) / 255.0
     rgb = a[..., :3]
     alpha = arr[..., 3]
+    lab_vanilla = rgb_to_oklab(rgb)
     g = base_grade
-    if LEAVES.search(name):
+    if special and LEAVES.search(name):
         g = LEAF_GRADE
     out_rgb = g.apply_rgb(rgb)
 
-    if ORES.search(name):
-        c0 = np.hypot(*(rgb_to_oklab(rgb)[..., 1:].transpose(2, 0, 1)))
+    if special and ORES.search(name):
+        c0 = np.hypot(lab_vanilla[..., 1], lab_vanilla[..., 2])
         mask = smoothstep(0.035, 0.085, c0)
-        lab = rgb_to_oklab(out_rgb)
+        lab0 = rgb_to_oklab(out_rgb)
+        lab = lab0.copy()
         lab[..., 0] += 0.055 * mask
         lab[..., 1] *= 1 + 0.20 * mask
         lab[..., 2] *= 1 + 0.20 * mask
-        out_rgb = oklab_to_rgb(lab)
-    elif EMISSIVE.search(name):
-        lab = rgb_to_oklab(out_rgb)
-        lab[..., 0] += 0.035
+        out_rgb = map_toward(lab0, lab)
+    elif special and EMISSIVE.search(name):
+        lab0 = rgb_to_oklab(out_rgb)
+        lab = lab0.copy()
+        lab[..., 0] += 0.030
         lab[..., 1] *= 1.10
         lab[..., 2] *= 1.10
-        out_rgb = oklab_to_rgb(lab)
+        out_rgb = map_toward(lab0, lab)
 
     if relief and arr.shape[0] == arr.shape[1] and (alpha == 255).all():
         out_rgb = relief_shade(out_rgb, arr)
+
+    # final safety net: no texel may drift further than MAX_DELTA from its vanilla colour
+    lab_fin = rgb_to_oklab(out_rgb)
+    out_rgb = map_toward(lab_vanilla, limit_delta(lab_vanilla, lab_fin, MAX_DELTA))
 
     out = arr.copy()
     res = np.clip(np.round(out_rgb * 255), 0, 255).astype(np.uint8)

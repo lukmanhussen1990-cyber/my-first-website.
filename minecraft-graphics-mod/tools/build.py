@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import common
 from common import PACK_DIR, ROOT, PRESETS, write_json, env_vanilla
-import gen_atmosphere, gen_sky, gen_water, gen_ui
+import gen_atmosphere, gen_sky, gen_water, gen_ui, gen_ambient, gen_consistency
 
 try:
     import gen_textures
@@ -81,6 +81,8 @@ def build_pack(vanilla: Path, verbose=True):
     if gen_textures is not None:
         log("base: texture grading")
         gen_textures.generate(vanilla, PACK_DIR, log=log)
+        log("base: consistency pass (mobs, armour, particle sprites)")
+        gen_consistency.generate(vanilla, PACK_DIR, log=log)
     gen_ui.write_icon(PACK_DIR)
     write_json(PACK_DIR / "manifest.json", manifest())
 
@@ -88,11 +90,18 @@ def build_pack(vanilla: Path, verbose=True):
     for preset in PRESETS:
         sp = PACK_DIR / "subpacks" / preset
         log(f"subpack {preset}")
-        gen_atmosphere.generate(vanilla, sp, preset)
+        gen_atmosphere.generate(vanilla, sp, preset, own_fogs=(preset != "standard"))
         gen_sky.generate(vanilla, sp, preset)
         if preset == "ultra":
             gen_ui.write_overlay(sp)
     log("pack tree done")
+
+    # ---- optional second pack (separate on purpose, see gen_ambient.py)
+    amb = ROOT / "pack" / gen_ambient.AMBIENT_RP_NAME
+    if amb.exists():
+        shutil.rmtree(amb)
+    gen_ambient.generate(vanilla, amb)
+    log("ambient FX pack done")
 
 
 def _zip_dir(zf: zipfile.ZipFile, src: Path, arc_prefix: str):
@@ -105,15 +114,25 @@ def package(dist: Path):
     dist.mkdir(parents=True, exist_ok=True)
     for old in dist.glob("*"):
         old.unlink()
-    mcaddon = dist / "HorizonGlow_Graphics_1.21.0.mcaddon"
-    mcpack = dist / "HorizonGlow_Graphics_1.21.0.mcpack"
-    # .mcaddon: zip with the pack folder at its root (the game imports every pack inside)
-    with zipfile.ZipFile(mcaddon, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+    amb_dir = ROOT / "pack" / gen_ambient.AMBIENT_RP_NAME
+    out = {
+        # .mcaddon = zip containing the pack folder(s); the game imports every pack inside
+        "main_addon": dist / "HorizonGlow_Graphics_1.21.0.mcaddon",
+        "full_addon": dist / "HorizonGlow_Graphics_and_AmbientFX_1.21.0.mcaddon",
+        # .mcpack = pack contents directly at the zip root
+        "main_pack": dist / "HorizonGlow_Graphics_1.21.0.mcpack",
+        "ambient_pack": dist / "HorizonGlow_AmbientFX_OPTIONAL_1.21.0.x.mcpack",
+    }
+    with zipfile.ZipFile(out["main_addon"], "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
         _zip_dir(zf, PACK_DIR, f"{PACK_DIR.name}/")
-    # .mcpack: the pack contents directly at the root
-    with zipfile.ZipFile(mcpack, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+    with zipfile.ZipFile(out["full_addon"], "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+        _zip_dir(zf, PACK_DIR, f"{PACK_DIR.name}/")
+        _zip_dir(zf, amb_dir, f"{amb_dir.name}/")
+    with zipfile.ZipFile(out["main_pack"], "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
         _zip_dir(zf, PACK_DIR, "")
-    return mcaddon, mcpack
+    with zipfile.ZipFile(out["ambient_pack"], "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+        _zip_dir(zf, amb_dir, "")
+    return list(out.values())
 
 
 def main():
@@ -125,8 +144,7 @@ def main():
     vanilla = env_vanilla(args.vanilla)
     build_pack(vanilla, verbose=not args.quiet)
     if not args.no_package:
-        a, b = package(ROOT / "dist")
-        for f in (a, b):
+        for f in package(ROOT / "dist"):
             print(f"packaged {f.relative_to(ROOT)}  {f.stat().st_size / 1024:.0f} KiB")
 
 

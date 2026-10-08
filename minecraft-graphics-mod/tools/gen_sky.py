@@ -41,7 +41,7 @@ def _moon_tile(phase_idx, seed=11):
     """phase 0 full, 1 waning gibbous, 2 last quarter, 3 waning crescent, 4 new,
     5 waxing crescent, 6 first quarter, 7 waxing gibbous (vanilla order)."""
     dx, dy = _grid()
-    R = 8.0
+    R = 6.2            # vanilla's moon core is ~8 px wide; a touch larger (12 px) reads better on a phone
     r = np.hypot(dx, dy)
     nx, ny = dx / R, dy / R
     inside = r <= R
@@ -51,7 +51,7 @@ def _moon_tile(phase_idx, seed=11):
     maria = periodic_noise(N, N, beta=2.8, seed=seed)
     fine = periodic_noise(N, N, beta=1.6, seed=seed + 1)
     albedo = 0.86 + 0.22 * (maria - 0.5) + 0.07 * (fine - 0.5)
-    for cx, cy, cr in [(-2.5, -2, 1.5), (3, 1.5, 1.2), (-1, 4, 1.0), (2, -4, 0.9)]:
+    for cx, cy, cr in [(-1.9, -1.5, 1.2), (2.3, 1.2, 1.0), (-0.8, 3.1, 0.8), (1.5, -3.1, 0.7)]:
         d = np.hypot(dx - cx, dy - cy)
         albedo -= 0.12 * np.exp(-(d / cr) ** 2) - 0.05 * np.exp(-((d - cr) / 0.6) ** 2)
     limb = 0.70 + 0.30 * np.sqrt(nz)
@@ -68,7 +68,7 @@ def _moon_tile(phase_idx, seed=11):
     body = np.clip(body, 0, 1)
 
     illum = {0: 1.0, 1: 0.8, 2: 0.5, 3: 0.2, 4: 0.0, 5: 0.2, 6: 0.5, 7: 0.8}[phase_idx]
-    halo = np.exp(-(r / 6.3) ** 1.3) * (0.16 + 0.34 * illum) * (1.0 - smoothstep(11.0, 15.5, r))
+    halo = np.exp(-(r / 5.2) ** 1.3) * (0.16 + 0.34 * illum) * (1.0 - smoothstep(10.0, 15.0, r))
     halo = np.where(inside, 0.0, halo)
 
     moon_col = np.array([0.88, 0.93, 1.00])

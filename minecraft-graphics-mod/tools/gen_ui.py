@@ -9,13 +9,13 @@ from PIL import Image
 from common import smoothstep, periodic_noise, write_json, save_image
 
 
-def make_vignette(strength=0.42, w=256, h=144, seed=4):
+def make_vignette(strength=0.34, w=256, h=144, seed=4):
     """Soft film vignette.  Stretched over the whole screen, drawn *behind* the HUD."""
     y, x = np.mgrid[0:h, 0:w].astype(np.float64)
     u = (x + 0.5) / w * 2 - 1
     v = (y + 0.5) / h * 2 - 1
     r = np.sqrt(u * u * 0.80 + v * v * 1.0)
-    a = strength * smoothstep(0.52, 1.28, r) ** 1.6
+    a = strength * smoothstep(0.60, 1.30, r) ** 1.7
     rng = np.random.default_rng(seed)
     a = a + rng.uniform(-0.5, 0.5, a.shape) / 255.0          # dither => no banding
     out = np.zeros((h, w, 4), dtype=np.uint8)
@@ -52,7 +52,7 @@ def hud_modification():
     }
 
 
-def write_overlay(out_dir: Path, strength=0.42):
+def write_overlay(out_dir: Path, strength=0.34):
     save_image(make_vignette(strength), out_dir / "textures" / "ui" / "hg_vignette.png")
     write_json(out_dir / "ui" / "hud_screen.json", hud_modification())
 

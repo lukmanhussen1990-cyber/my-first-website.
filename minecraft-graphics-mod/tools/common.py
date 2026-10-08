@@ -86,6 +86,45 @@ def oklab_to_rgb(lab, gamut_clip=True):
     return linear_to_srgb(lin)
 
 
+def _in_gamut(lin, eps=1e-4):
+    return ~((lin < -eps) | (lin > 1.0 + eps)).any(axis=-1)
+
+
+def map_toward(lab_from, lab_to):
+    """Return sRGB (0..1) of the point on the segment lab_from -> lab_to that is farthest
+    along the way while still inside the sRGB gamut.
+
+    Used instead of 'reduce chroma until it fits': when a bright, saturated colour (gold,
+    yellow, emissive blocks) is nudged up in lightness, clipping chroma would wash it out to a
+    pastel.  Walking back along the edit instead keeps the colour exactly as saturated as
+    the original unless the edit itself asked for less."""
+    lab_from = np.asarray(lab_from, dtype=np.float64)
+    shape = np.shape(lab_to)
+    lf = lab_from.reshape(-1, 3)
+    lt = np.asarray(lab_to, dtype=np.float64).reshape(-1, 3).copy()
+    lt[:, 0] = np.clip(lt[:, 0], 0.0, 1.0)
+    bad = ~_in_gamut(_oklab_to_linear(lt))
+    t = np.ones(len(lt))
+    if bad.any():
+        f, g = lf[bad], lt[bad]
+        lo, hi = np.zeros(len(f)), np.ones(len(f))
+        for _ in range(18):
+            mid = (lo + hi) / 2
+            ok = _in_gamut(_oklab_to_linear(f + (g - f) * mid[:, None]))
+            lo, hi = np.where(ok, mid, lo), np.where(ok, hi, mid)
+        t[bad] = lo
+    res = lf + (lt - lf) * t[:, None]
+    return linear_to_srgb(_oklab_to_linear(res)).reshape(shape)
+
+
+def limit_delta(lab_from, lab_to, max_delta):
+    """Cap the OKLab distance of an edit (keeps every texel recognisably the same colour)."""
+    d = np.asarray(lab_to) - np.asarray(lab_from)
+    n = np.sqrt((d ** 2).sum(axis=-1, keepdims=True))
+    scale = np.minimum(1.0, max_delta / np.maximum(n, 1e-9))
+    return np.asarray(lab_from) + d * scale
+
+
 def hex_to_rgb(h: str):
     h = h.lstrip("#")
     return np.array([int(h[i:i + 2], 16) for i in (0, 2, 4)], dtype=np.float64) / 255.0
@@ -110,9 +149,11 @@ class Grade:
         # smooth S-curve around mid-grey (keeps black/white anchored)
         x = L - 0.5
         L2 = L + self.contrast * x * (1.0 - np.abs(2.0 * x)) * 2.0
-        # lift: raise the very darkest tones slightly (more readable shadows)
-        L2 = L2 + self.lift * (1.0 - L) ** 3
-        L2 = L2 + self.lightness
+        # lift: raise the very darkest tones slightly (more readable shadows) -- but never pure black,
+        # which some textures use as "nothing" (additive layers, masks)
+        not_black = smoothstep(0.0, 0.06, L)
+        L2 = L2 + self.lift * (1.0 - L) ** 3 * not_black
+        L2 = L2 + self.lightness * not_black
         out = np.empty_like(lab)
         out[..., 0] = L2
         # "vibrance": boost dull colours more than already-vivid ones, so nothing goes neon
@@ -123,11 +164,14 @@ class Grade:
         out[..., 2] = lab[..., 2] * boost
         # split-tone: warm highlights / cool shadows (tiny)
         if self.warm:
+            # split-tone only on (near-)neutral texels: it should give grey stone / gravel a little
+            # life, not push the hue of textures that already have a colour of their own
+            neutral = (1.0 - smoothstep(0.03, 0.10, c)) * not_black
             hi = np.clip((L - 0.55) / 0.45, 0, 1)
             sh = np.clip((0.45 - L) / 0.45, 0, 1)
-            out[..., 1] += self.warm * 0.010 * (hi - 0.6 * sh)
-            out[..., 2] += self.warm * 0.022 * (hi - sh)
-        return oklab_to_rgb(out)
+            out[..., 1] += neutral * self.warm * 0.010 * (hi - 0.6 * sh)
+            out[..., 2] += neutral * self.warm * 0.022 * (hi - sh)
+        return map_toward(lab, out)
 
     def apply_hex(self, h):
         return rgb_to_hex(self.apply_rgb(hex_to_rgb(h)))

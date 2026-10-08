@@ -171,7 +171,26 @@ def build_fog(base, fam_name, biome, p, is_default=False):
     return fog
 
 
-def generate_fogs(vanilla, out_dir: Path, preset: str):
+HG_NS = "hg"
+# Standard (= the base pack) uses plain names; Lite / Ultra use their own so that no two packs or
+# subpacks ever define the same fog identifier (a registry that keeps the first definition would
+# otherwise silently ignore the preset).
+PRESET_TAG = {"standard": "", "lite": "lite_", "ultra": "ultra_"}
+
+
+def hg_fog_id(vanilla_id: str, preset: str = "standard") -> str:
+    """minecraft:fog_plains -> hg:fog_plains / hg:lite_fog_plains / hg:ultra_fog_plains.
+    Vanilla fog identifiers cannot be overwritten (Bedrock Wiki, "Overwriting assets"): the
+    supported way is a fog under another namespace that biomes_client.json points to."""
+    return f"{HG_NS}:{PRESET_TAG[preset]}{vanilla_id.split(':', 1)[1]}"
+
+
+def fog_file_name(stem: str, preset: str) -> str:
+    """plains_fog_setting.json -> hg_plains_fog_setting.json / hg_lite_... / hg_ultra_..."""
+    return f"hg_{PRESET_TAG[preset]}{stem}"
+
+
+def generate_fogs(vanilla, out_dir: Path, preset: str, write=True):
     p = PRESET[preset]
     vb = load_json_lenient(vanilla / "biomes_client.json")["biomes"]
     # fog identifier -> biomes using it
@@ -184,7 +203,7 @@ def generate_fogs(vanilla, out_dir: Path, preset: str):
         base = load_json_lenient(f)
         ident = base["minecraft:fog_settings"]["description"]["identifier"]
         if ident == "minecraft:fog_powder_snow":
-            continue                       # untouched
+            continue                       # untouched (not biome-bound)
         users = fog_users.get(ident, [])
         if ident == "minecraft:fog_default":
             fog = build_fog(base, "temperate", None, p, is_default=True)
@@ -192,10 +211,11 @@ def generate_fogs(vanilla, out_dir: Path, preset: str):
             biome = users[0] if users else f.stem.replace("_fog_setting", "")
             fam = BIOME_FAMILY.get(biome, "temperate")
             fog = build_fog(base, fam, biome, p)
-        fogs_out[f.name] = fog
-        write_json(out_dir / "fogs" / f.name, fog)
-
-    # biomes the vanilla pack leaves on the default fog: give them their own
+        fog["minecraft:fog_settings"]["description"]["identifier"] = hg_fog_id(ident, preset)
+        name = fog_file_name(f.name, preset)
+        fogs_out[name] = fog
+        if write:
+            write_json(out_dir / "fogs" / name, fog)
     return fogs_out
 
 
@@ -205,8 +225,9 @@ NEW_BIOMES = ["birch_forest_hills_mutated", "birch_forest_mutated", "deep_dark",
               "redwood_taiga_mutated", "roofed_forest_mutated", "savanna_plateau_mutated", "snowy_slopes", "stony_peaks"]
 
 
-def generate_biomes_and_new_fogs(vanilla, out_dir: Path, preset: str):
+def generate_biomes_and_new_fogs(vanilla, out_dir: Path, preset: str, write_fogs=True, fog_preset=None):
     p = PRESET[preset]
+    fp = fog_preset or preset            # which preset's fog ids the biome entries point to
     vb = load_json_lenient(vanilla / "biomes_client.json")["biomes"]
     template = {"format_version": "1.16.100",
                 "minecraft:fog_settings": {"description": {"identifier": ""}, "distance": {}}}
@@ -223,7 +244,7 @@ def generate_biomes_and_new_fogs(vanilla, out_dir: Path, preset: str):
     for b, v in vb.items():
         fam = BIOME_FAMILY.get(b, "temperate")
         if b == "default":
-            out[b] = entry(v["fog_identifier"], FAMILY["temperate"]["water"], p["water_alpha"], {"remove_all_prior_fog": False})
+            out[b] = entry(hg_fog_id(v["fog_identifier"], fp), FAMILY["temperate"]["water"], p["water_alpha"], {"remove_all_prior_fog": False})
             continue
         wc = v["water_surface_color"] if b in KEEP_VANILLA_WATER else biome_water_color(b)
         alpha = p["water_alpha"]
@@ -231,18 +252,19 @@ def generate_biomes_and_new_fogs(vanilla, out_dir: Path, preset: str):
             alpha = min(0.97, p["water_alpha"] + 0.42)
         elif fam in ("nether", "end"):
             alpha = v.get("water_surface_transparency", 0.65)
-        out[b] = entry(v["fog_identifier"], wc, alpha)
+        out[b] = entry(hg_fog_id(v["fog_identifier"], fp), wc, alpha)
 
     # new biomes: dedicated fog ids so each can have its own atmosphere
     for b in NEW_BIOMES:
         fam = BIOME_FAMILY[b]
-        fid = f"hg:fog_{b}"
+        fid = f"{HG_NS}:{PRESET_TAG[fp]}fog_{b}"
         fog = build_fog(copy.deepcopy(template), fam, b, p)
         fog["minecraft:fog_settings"]["description"]["identifier"] = fid
         if not fog["minecraft:fog_settings"]["distance"]:
             # cave biomes: only water colour is customised; air stays vanilla
             fog["minecraft:fog_settings"]["distance"] = {"water": _water(_scale_L(biome_water_color(b), 0.88), p["water_end"])}
-        write_json(out_dir / "fogs" / f"{b}_fog_setting.json", fog)
+        if write_fogs:
+            write_json(out_dir / "fogs" / fog_file_name(f"{b}_fog_setting.json", fp), fog)
         alpha = min(0.97, p["water_alpha"] + 0.42) if fam == "swamp" else p["water_alpha"]
         out[b] = entry(fid, biome_water_color(b), alpha)
 
@@ -286,8 +308,10 @@ def generate_terrain_overlay(vanilla, out_dir: Path, preset: str):
     write_json(out_dir / "textures" / "terrain_texture.json", out)
 
 
-def generate(vanilla: Path, out_dir: Path, preset: str):
-    generate_fogs(vanilla, out_dir, preset)
-    generate_biomes_and_new_fogs(vanilla, out_dir, preset)
+def generate(vanilla: Path, out_dir: Path, preset: str, own_fogs=True):
+    """own_fogs=False (the 'standard' subpack): reuse the base pack's fog definitions and
+    only write the files that are safe to repeat (biomes_client / colormaps / overlay)."""
+    generate_fogs(vanilla, out_dir, preset, write=own_fogs)
+    generate_biomes_and_new_fogs(vanilla, out_dir, preset, write_fogs=own_fogs)
     generate_colormaps(vanilla, out_dir, preset)
     generate_terrain_overlay(vanilla, out_dir, preset)
