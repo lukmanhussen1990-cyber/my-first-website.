@@ -1,0 +1,114 @@
+:root {
+  --bg: #000;
+  --hint: rgba(255, 120, 120, 0.75);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+}
+
+/* Keep the artwork at the reference's 941 x 1672 ratio, as large as the screen allows */
+.frame {
+  position: relative;
+  width: min(100vw, calc(100vh * 941 / 1672));
+  width: min(100vw, calc(100dvh * 941 / 1672));
+  aspect-ratio: 941 / 1672;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.smoke,
+#fx {
+  pointer-events: none;
+}
+
+.smoke {
+  will-change: transform, opacity;
+  transform-origin: 50% 50%;
+}
+
+.smoke-top {
+  animation: drift-top 16s ease-in-out infinite alternate;
+}
+
+.smoke-bottom {
+  animation: drift-bottom 19s ease-in-out infinite alternate;
+}
+
+#fx {
+  mix-blend-mode: screen;
+}
+
+#photoHit {
+  cursor: pointer;
+  outline: none;
+}
+
+#photoHit:focus-visible {
+  stroke: #ff8080;
+  stroke-width: 3;
+  stroke-dasharray: 6 8;
+}
+
+.hint {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  margin: 0;
+  padding: 0 16px;
+  text-align: center;
+  font: 500 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: 0.04em;
+  color: var(--hint);
+  pointer-events: none;
+  animation: hint-fade 7s ease-in forwards;
+}
+
+.dragging .frame {
+  filter: brightness(1.25);
+}
+
+@keyframes drift-top {
+  from { transform: translate(-0.6%, 0.4%) scale(1); opacity: 0.85; }
+  to   { transform: translate(0.6%, -1.2%) scale(1.04); opacity: 1; }
+}
+
+@keyframes drift-bottom {
+  from { transform: translate(0.5%, 0) scale(1.02); opacity: 1; }
+  to   { transform: translate(-0.5%, -1%) scale(1); opacity: 0.8; }
+}
+
+@keyframes hint-fade {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smoke,
+  .hint {
+    animation: none;
+  }
+}

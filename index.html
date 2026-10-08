@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Crimson Halo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="stage">
+    <div class="frame" id="frame">
+
+      <!-- Back smoke (top cloud), its own layer so it can drift without repainting the art -->
+      <svg class="layer smoke smoke-top" viewBox="0 0 941 1672" aria-hidden="true">
+        <defs>
+          <filter id="fSmokeTop" filterUnits="userSpaceOnUse" x="0" y="0" width="941" height="1672" color-interpolation-filters="sRGB">
+            <!-- soft blobs, pushed around by low-frequency noise -->
+            <feGaussianBlur in="SourceGraphic" stdDeviation="30" result="blob"/>
+            <feTurbulence type="fractalNoise" baseFrequency="0.006 0.009" numOctaves="4" seed="21" result="warp"/>
+            <feDisplacementMap in="blob" in2="warp" scale="190" xChannelSelector="R" yChannelSelector="G" result="shape"/>
+            <!-- curly wisps: detailed noise, domain-warped by a second noise -->
+            <feTurbulence type="fractalNoise" baseFrequency="0.011 0.018" numOctaves="6" seed="5" result="tex0"/>
+            <feTurbulence type="fractalNoise" baseFrequency="0.004 0.006" numOctaves="3" seed="44" result="warp2"/>
+            <feDisplacementMap in="tex0" in2="warp2" scale="140" xChannelSelector="R" yChannelSelector="G" result="tex"/>
+            <feColorMatrix in="tex" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  3 0 0 0 -1.25" result="texA"/>
+            <feComposite in="shape" in2="texA" operator="in" result="wisps"/>
+            <feColorMatrix in="tex" type="matrix" values="0 0 0 0 1  0 0 0 0 .5  0 0 0 0 .55  3 0 0 0 -1.95" result="hiA"/>
+            <feComposite in="hiA" in2="shape" operator="in" result="highlights"/>
+            <feComponentTransfer in="shape" result="haze"><feFuncA type="linear" slope="0.24"/></feComponentTransfer>
+            <feMerge><feMergeNode in="haze"/><feMergeNode in="wisps"/><feMergeNode in="highlights"/></feMerge>
+          </filter>
+        </defs>
+        <g filter="url(#fSmokeTop)">
+          <ellipse cx="205" cy="320" rx="125" ry="115" fill="#ff1a30"/>
+          <ellipse cx="735" cy="320" rx="125" ry="115" fill="#ff1a30"/>
+          <ellipse cx="470" cy="290" rx="130" ry="90" fill="#9a0a1c"/>
+          <ellipse cx="150" cy="450" rx="80" ry="70" fill="#e01226"/>
+          <ellipse cx="790" cy="450" rx="80" ry="70" fill="#e01226"/>
+          <ellipse cx="320" cy="205" rx="90" ry="55" fill="#d00c22"/>
+          <ellipse cx="620" cy="205" rx="90" ry="55" fill="#d00c22"/>
+          <ellipse cx="300" cy="490" rx="60" ry="40" fill="#c00c1e"/>
+          <ellipse cx="640" cy="490" rx="60" ry="40" fill="#c00c1e"/>
+        </g>
+      </svg>
+
+      <!-- Back smoke (bottom cloud) -->
+      <svg class="layer smoke smoke-bottom" viewBox="0 0 941 1672" aria-hidden="true">
+        <defs>
+          <filter id="fSmokeBottom" filterUnits="userSpaceOnUse" x="0" y="0" width="941" height="1672" color-interpolation-filters="sRGB">
+            <!-- soft blobs, pushed around by low-frequency noise -->
+            <feGaussianBlur in="SourceGraphic" stdDeviation="32" result="blob"/>
+            <feTurbulence type="fractalNoise" baseFrequency="0.0065 0.008" numOctaves="4" seed="9" result="warp"/>
+            <feDisplacementMap in="blob" in2="warp" scale="210" xChannelSelector="R" yChannelSelector="G" result="shape"/>
+            <!-- curly wisps: detailed noise, domain-warped by a second noise -->
+            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.017" numOctaves="6" seed="13" result="tex0"/>
+            <feTurbulence type="fractalNoise" baseFrequency="0.004 0.006" numOctaves="3" seed="31" result="warp2"/>
+            <feDisplacementMap in="tex0" in2="warp2" scale="140" xChannelSelector="R" yChannelSelector="G" result="tex"/>
+            <feColorMatrix in="tex" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  3 0 0 0 -1.25" result="texA"/>
+            <feComposite in="shape" in2="texA" operator="in" result="wisps"/>
+            <feColorMatrix in="tex" type="matrix" values="0 0 0 0 1  0 0 0 0 .5  0 0 0 0 .55  3 0 0 0 -1.95" result="hiA"/>
+            <feComposite in="hiA" in2="shape" operator="in" result="highlights"/>
+            <feComponentTransfer in="shape" result="haze"><feFuncA type="linear" slope="0.08"/></feComponentTransfer>
+            <feMerge><feMergeNode in="haze"/><feMergeNode in="wisps"/><feMergeNode in="highlights"/></feMerge>
+          </filter>
+        </defs>
+        <g filter="url(#fSmokeBottom)">
+          <ellipse cx="250" cy="1240" rx="105" ry="120" fill="#a00c20"/>
+          <ellipse cx="690" cy="1225" rx="105" ry="110" fill="#a00c20"/>
+          <ellipse cx="470" cy="1410" rx="120" ry="95" fill="#700818"/>
+          <ellipse cx="320" cy="1470" rx="70" ry="60" fill="#600614"/>
+          <ellipse cx="630" cy="1455" rx="65" ry="55" fill="#5a0612"/>
+          <ellipse cx="190" cy="1060" rx="60" ry="55" fill="#b00e24"/>
+          <ellipse cx="750" cy="1050" rx="60" ry="55" fill="#b00e24"/>
+        </g>
+      </svg>
+
+      <!-- Main artwork -->
+      <svg id="art" class="layer" viewBox="0 0 941 1672" role="img"
+           aria-label="Gothic crimson ring frame with a cross, bat wings, chains and dripping blood">
+        <defs>
+          <!-- Metals -->
+          <linearGradient id="gFacetLight" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#e2e2e2"/>
+            <stop offset=".3" stop-color="#5e5e5e"/>
+            <stop offset=".62" stop-color="#151515"/>
+            <stop offset="1" stop-color="#7c7c7c"/>
+          </linearGradient>
+          <linearGradient id="gFacetDark" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#303030"/>
+            <stop offset=".5" stop-color="#050505"/>
+            <stop offset="1" stop-color="#2a2a2a"/>
+          </linearGradient>
+          <linearGradient id="gBladeLight" gradientUnits="userSpaceOnUse" x1="220" y1="370" x2="30" y2="790">
+            <stop offset="0" stop-color="#9a9a9a"/>
+            <stop offset=".18" stop-color="#2a2a2a"/>
+            <stop offset=".38" stop-color="#d8d8d8"/>
+            <stop offset=".55" stop-color="#3a3a3a"/>
+            <stop offset=".75" stop-color="#101010"/>
+            <stop offset="1" stop-color="#5a5a5a"/>
+          </linearGradient>
+          <linearGradient id="gFacetMid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#6a6a6a"/>
+            <stop offset=".55" stop-color="#1a1a1a"/>
+            <stop offset="1" stop-color="#3c3c3c"/>
+          </linearGradient>
+          <linearGradient id="gBand" gradientUnits="userSpaceOnUse" x1="160" y1="500" x2="780" y2="1120">
+            <stop offset="0" stop-color="#3a3a3a"/>
+            <stop offset=".14" stop-color="#060606"/>
+            <stop offset=".3" stop-color="#454545"/>
+            <stop offset=".44" stop-color="#080808"/>
+            <stop offset=".58" stop-color="#2c2c2c"/>
+            <stop offset=".72" stop-color="#040404"/>
+            <stop offset=".86" stop-color="#3a3a3a"/>
+            <stop offset="1" stop-color="#060606"/>
+          </linearGradient>
+          <radialGradient id="gBandRed" gradientUnits="userSpaceOnUse" cx="470" cy="810" r="331">
+            <stop offset=".88" stop-color="#ff1a1a" stop-opacity=".45"/>
+            <stop offset=".94" stop-color="#ff1a1a" stop-opacity=".05"/>
+            <stop offset="1" stop-color="#ff1a1a" stop-opacity=".35"/>
+          </radialGradient>
+          <linearGradient id="gLink" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#a8a8a8"/>
+            <stop offset=".4" stop-color="#2e2e2e"/>
+            <stop offset=".7" stop-color="#0a0a0a"/>
+            <stop offset="1" stop-color="#555"/>
+          </linearGradient>
+          <linearGradient id="gMembrane" gradientUnits="userSpaceOnUse" x1="235" y1="410" x2="55" y2="790">
+            <stop offset="0" stop-color="#0c0001"/>
+            <stop offset=".4" stop-color="#3a0006"/>
+            <stop offset=".78" stop-color="#a80a16"/>
+            <stop offset="1" stop-color="#ff2a2a"/>
+          </linearGradient>
+          <linearGradient id="gBeam" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ff2020" stop-opacity="0"/>
+            <stop offset=".35" stop-color="#ff3a3a"/>
+            <stop offset=".5" stop-color="#ffe6e6"/>
+            <stop offset=".72" stop-color="#ff2a2a"/>
+            <stop offset="1" stop-color="#ff2020" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="gBeamDown" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffd0d0"/>
+            <stop offset=".25" stop-color="#ff2a2a"/>
+            <stop offset="1" stop-color="#ff1010" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="gDrip" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#6a0006"/>
+            <stop offset=".35" stop-color="#ff2a30"/>
+            <stop offset=".6" stop-color="#e0101a"/>
+            <stop offset="1" stop-color="#5a0004"/>
+          </linearGradient>
+          <radialGradient id="gGem" cx=".4" cy=".35" r=".75">
+            <stop offset="0" stop-color="#ffe4e4"/>
+            <stop offset=".25" stop-color="#ff5050"/>
+            <stop offset=".65" stop-color="#d00010"/>
+            <stop offset="1" stop-color="#4a0004"/>
+          </radialGradient>
+          <radialGradient id="gHubCore" cx=".5" cy=".5" r=".7">
+            <stop offset="0" stop-color="#ff4040"/>
+            <stop offset=".45" stop-color="#c00010"/>
+            <stop offset="1" stop-color="#300002"/>
+          </radialGradient>
+          <radialGradient id="gInnerGlow" gradientUnits="userSpaceOnUse" cx="470" cy="810" r="290">
+            <stop offset="0" stop-color="#000" stop-opacity="0"/>
+            <stop offset=".8" stop-color="#500000" stop-opacity="0"/>
+            <stop offset=".93" stop-color="#d00a0a" stop-opacity=".28"/>
+            <stop offset="1" stop-color="#ff2020" stop-opacity=".65"/>
+          </radialGradient>
+          <radialGradient id="gFlare" cx=".5" cy=".5" r=".5">
+            <stop offset="0" stop-color="#fff"/>
+            <stop offset=".25" stop-color="#ff7070" stop-opacity=".8"/>
+            <stop offset="1" stop-color="#ff0000" stop-opacity="0"/>
+          </radialGradient>
+
+          <!-- Glows -->
+          <filter id="fGlow" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="a"/>
+            <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
+            <feGaussianBlur in="SourceGraphic" stdDeviation="20" result="c"/>
+            <feMerge>
+              <feMergeNode in="c"/><feMergeNode in="b"/><feMergeNode in="a"/><feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <filter id="fGlowSoft" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="a"/>
+            <feMerge><feMergeNode in="a"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="fBlur4" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter>
+          <filter id="fBlur28" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="28"/></filter>
+
+          <clipPath id="clipInner"><circle cx="470" cy="810" r="289"/></clipPath>
+
+          <!-- Cross arm, pointing along +x from the cross centre -->
+          <path id="armShape" d="M40,-24 L86,-24 L106,-50 L128,-27 Q152,-11 174,0 Q152,11 128,27 L106,50 L86,24 L40,24 Z"/>
+          <path id="armUpper" d="M40,-24 L86,-24 L106,-50 L128,-27 Q152,-11 174,0 L40,0 Z"/>
+          <path id="armLower" d="M40,0 L174,0 Q152,11 128,27 L106,50 L86,24 L40,24 Z"/>
+          <path id="hubSpike" d="M26,-40 L58,-58 L40,-26 Z"/>
+
+          <!-- Left bat wing; the right one is a mirrored <use> -->
+          <g id="wing">
+            <path d="M224,370 C158,420 104,492 76,585 C56,650 50,725 42,792 Q58,716 78,700 Q112,668 142,724 Q168,650 215,635 L285,540 L250,470 Z"
+                  fill="url(#gMembrane)"/>
+            <g fill="none" stroke="#000" stroke-linecap="round" opacity=".6" filter="url(#fBlur4)">
+              <path d="M215,470 C170,540 140,610 130,690" stroke-width="9"/>
+              <path d="M235,520 C200,580 175,640 165,700" stroke-width="7"/>
+              <path d="M150,440 C110,480 80,540 66,620" stroke-width="8"/>
+              <path d="M240,470 C200,500 170,540 150,600" stroke-width="10"/>
+            </g>
+            <ellipse cx="96" cy="650" rx="44" ry="80" fill="#ff2a2a" opacity=".35" filter="url(#fBlur28)"/>
+            <path d="M42,792 Q58,716 78,700 Q112,668 142,724 Q168,650 215,635" fill="none"
+                  stroke="#ff3434" stroke-width="3" filter="url(#fGlow)"/>
+            <!-- rib -->
+            <path d="M198,468 L214,480 L142,724 Z" fill="url(#gFacetDark)" stroke="#ff3030" stroke-width="1.2"/>
+            <path d="M206,474 L144,716" stroke="rgba(255,255,255,.45)" stroke-width="1"/>
+            <!-- inner finger blade -->
+            <path d="M204,426 C132,462 92,532 80,608 C76,640 76,670 78,700 C96,664 112,630 128,598 C150,544 172,490 204,426 Z"
+                  fill="none" stroke="#ff2020" stroke-width="5" filter="url(#fGlow)"/>
+            <path d="M204,426 C132,462 92,532 80,608 C76,640 76,670 78,700 C96,664 112,630 128,598 C150,544 172,490 204,426 Z"
+                  fill="url(#gFacetDark)" stroke="#ff5050" stroke-width="1.2"/>
+            <path d="M204,426 C132,462 92,532 80,608 C76,640 76,670 78,700 C86,660 96,622 104,592 C122,532 156,474 204,426 Z" fill="url(#gBladeLight)" opacity=".9"/>
+            <!-- main leading-edge blade -->
+            <path d="M224,370 C140,378 62,438 36,540 C20,610 24,700 42,792 C50,725 56,650 76,585 C104,492 158,420 224,370 Z"
+                  fill="none" stroke="#ff1c1c" stroke-width="6" filter="url(#fGlow)"/>
+            <path d="M224,370 C140,378 62,438 36,540 C20,610 24,700 42,792 C50,725 56,650 76,585 C104,492 158,420 224,370 Z"
+                  fill="url(#gFacetDark)"/>
+            <path d="M224,370 C140,378 62,438 36,540 C20,610 24,700 42,792 C32,710 34,630 46,556 C66,460 140,394 224,370 Z"
+                  fill="url(#gBladeLight)"/>
+            <path d="M224,370 C140,378 62,438 36,540 C20,610 24,700 42,792 C50,725 56,650 76,585 C104,492 158,420 224,370 Z"
+                  fill="none" stroke="#ff5a5a" stroke-width="1.4"/>
+            <path d="M42,792 C50,725 56,650 76,585 C104,492 158,420 224,370" fill="none" stroke="#ff2a2a" stroke-width="2.5" filter="url(#fGlowSoft)"/>
+            <path d="M206,378 C140,396 82,450 56,530 C44,580 40,640 40,700" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.6" stroke-linecap="round"/>
+            <!-- upper claw -->
+            <path d="M158,414 C170,456 204,490 258,508 L240,542 C186,522 156,476 158,414 Z"
+                  fill="none" stroke="#ff1c1c" stroke-width="5" filter="url(#fGlow)"/>
+            <path d="M158,414 C170,456 204,490 258,508 L240,542 C186,522 156,476 158,414 Z"
+                  fill="url(#gFacetLight)" stroke="#ff5050" stroke-width="1.2"/>
+          </g>
+        </defs>
+
+        <!-- Halo and light beam behind the cross -->
+        <g id="halo">
+          <circle cx="470" cy="332" r="172" fill="none" stroke="#ff1a1a" stroke-width="10" opacity=".45" filter="url(#fBlur4)"/>
+          <circle cx="470" cy="332" r="172" fill="none" stroke="#ff4040" stroke-width="2.2"/>
+          <line x1="470" y1="50" x2="470" y2="290" stroke="url(#gBeam)" stroke-width="10" opacity=".6" filter="url(#fBlur4)"/>
+          <line x1="470" y1="50" x2="470" y2="290" stroke="url(#gBeam)" stroke-width="3"/>
+          <circle cx="470" cy="160" r="26" fill="url(#gFlare)" opacity=".75"/>
+        </g>
+
+        <!-- Wings -->
+        <use href="#wing"/>
+        <use href="#wing" transform="matrix(-1 0 0 1 940 0)"/>
+
+        <!-- Cross -->
+        <g id="cross" transform="translate(470 385)">
+          <g fill="none" stroke="#ff1a1a" stroke-width="10" stroke-linejoin="round" filter="url(#fGlow)">
+            <use href="#armShape"/>
+            <use href="#armShape" transform="scale(-1 1)"/>
+            <use href="#armShape" transform="rotate(-90)"/>
+            <rect x="-24" y="38" width="48" height="112"/>
+            <use href="#hubSpike"/>
+            <use href="#hubSpike" transform="rotate(90)"/>
+            <use href="#hubSpike" transform="rotate(180)"/>
+            <use href="#hubSpike" transform="rotate(270)"/>
+            <rect x="-40" y="-40" width="80" height="80"/>
+          </g>
+          <g>
+            <g fill="url(#gFacetMid)">
+              <use href="#hubSpike"/>
+              <use href="#hubSpike" transform="rotate(90)"/>
+              <use href="#hubSpike" transform="rotate(180)"/>
+              <use href="#hubSpike" transform="rotate(270)"/>
+            </g>
+            <g><use href="#armUpper" fill="url(#gFacetLight)"/><use href="#armLower" fill="url(#gFacetDark)"/></g>
+            <g transform="scale(-1 1)"><use href="#armUpper" fill="url(#gFacetLight)"/><use href="#armLower" fill="url(#gFacetDark)"/></g>
+            <g transform="rotate(-90)"><use href="#armUpper" fill="url(#gFacetDark)"/><use href="#armLower" fill="url(#gFacetLight)"/></g>
+            <rect x="-24" y="38" width="24" height="112" fill="url(#gFacetLight)"/>
+            <rect x="0" y="38" width="24" height="112" fill="url(#gFacetDark)"/>
+            <rect x="-40" y="-40" width="80" height="80" fill="url(#gHubCore)"/>
+          </g>
+          <g fill="none" stroke="#ff6a6a" stroke-width="2" stroke-linejoin="round">
+            <use href="#armShape"/>
+            <use href="#armShape" transform="scale(-1 1)"/>
+            <use href="#armShape" transform="rotate(-90)"/>
+            <path d="M40,0 L172,0 M-40,0 L-172,0 M0,-40 L0,-172 M0,40 L0,150" stroke="rgba(255,255,255,.5)" stroke-width="1"/>
+          </g>
+          <path d="M-10,-31 H10 V-10 H31 V10 H10 V31 H-10 V10 H-31 V-10 H-10 Z" fill="#ff2a2a" filter="url(#fGlow)"/>
+          <path d="M-8,-28 H8 V-8 H28 V8 H8 V28 H-8 V8 H-28 V-8 H-8 Z" fill="#ffd2d2"/>
+          <path d="M-4,-24 H4 V-4 H24 V4 H4 V24 H-4 V4 H-24 V-4 H-4 Z" fill="#fff"/>
+        </g>
+
+        <!-- Horns and thorns that grow out of the ring (generated) -->
+        <g id="thorns"></g>
+
+        <!-- The ring -->
+        <g id="ring">
+          <circle cx="470" cy="810" r="312" fill="none" stroke="#ff0a0a" stroke-width="70" opacity=".3" filter="url(#fBlur28)"/>
+          <circle cx="470" cy="810" r="311" fill="none" stroke="url(#gBand)" stroke-width="40"/>
+          <circle cx="470" cy="810" r="311" fill="none" stroke="url(#gBandRed)" stroke-width="40"/>
+          <circle cx="470" cy="810" r="303" fill="none" stroke="#000" stroke-width="10" opacity=".55"/>
+          <circle cx="470" cy="810" r="318" fill="none" stroke="#fff" stroke-width="2" opacity=".5"
+                  stroke-dasharray="120 260 60 330 150 290 90 460" stroke-linecap="round"/>
+          <circle cx="470" cy="810" r="326" fill="none" stroke="#ff3a3a" stroke-width="2" opacity=".7"
+                  stroke-dasharray="80 200 140 240 60 300 120 280" stroke-dashoffset="90" stroke-linecap="round"/>
+          <circle cx="470" cy="810" r="331" fill="none" stroke="#ff2424" stroke-width="2.2" opacity=".85" filter="url(#fGlowSoft)"/>
+          <circle cx="470" cy="810" r="289" fill="#000"/>
+          <image id="photo" x="180" y="520" width="580" height="580" preserveAspectRatio="xMidYMid slice"
+                 clip-path="url(#clipInner)" style="display:none"/>
+          <circle cx="470" cy="810" r="289" fill="url(#gInnerGlow)"/>
+          <circle cx="470" cy="810" r="292" fill="none" stroke="#ff1414" stroke-width="8" filter="url(#fGlow)"/>
+          <circle cx="470" cy="810" r="292" fill="none" stroke="#ffb0b0" stroke-width="2"/>
+        </g>
+
+        <g id="chains"></g>
+
+        <!-- Bottom beam and blade -->
+        <g id="bottomBeam">
+          <line x1="470" y1="1300" x2="470" y2="1530" stroke="url(#gBeamDown)" stroke-width="7" opacity=".5" filter="url(#fBlur4)"/>
+          <line x1="470" y1="1300" x2="470" y2="1530" stroke="url(#gBeamDown)" stroke-width="2.2"/>
+          <line x1="481" y1="1330" x2="481" y2="1480" stroke="url(#gBeamDown)" stroke-width="1.2" opacity=".6"/>
+        </g>
+        <g id="bottomBlade">
+          <path d="M402,1180 L538,1180 L470,1354 Z" fill="none" stroke="#ff1a1a" stroke-width="8" stroke-linejoin="round" filter="url(#fGlow)"/>
+          <path d="M402,1180 L470,1354 L470,1180 Z" fill="url(#gFacetLight)"/>
+          <path d="M538,1180 L470,1354 L470,1180 Z" fill="url(#gFacetDark)"/>
+          <path d="M424,1188 L516,1188 L470,1312 Z" fill="#050505" opacity=".85"/>
+          <path d="M402,1180 L538,1180 L470,1354 Z" fill="none" stroke="#ff7070" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M452,1126 C408,1128 356,1150 318,1204 C364,1176 410,1170 452,1180 Z"
+                fill="none" stroke="#ff1a1a" stroke-width="6" filter="url(#fGlow)"/>
+          <path d="M452,1126 C408,1128 356,1150 318,1204 C364,1176 410,1170 452,1180 Z" fill="url(#gFacetDark)"/>
+          <path d="M452,1126 C408,1128 356,1150 318,1204 C366,1166 410,1150 452,1150 Z" fill="url(#gFacetLight)"/>
+          <path d="M452,1126 C408,1128 356,1150 318,1204 C364,1176 410,1170 452,1180 Z" fill="none" stroke="#ff5a5a" stroke-width="1.3"/>
+          <g transform="matrix(-1 0 0 1 940 0)">
+            <path d="M452,1126 C408,1128 356,1150 318,1204 C364,1176 410,1170 452,1180 Z"
+                  fill="none" stroke="#ff1a1a" stroke-width="6" filter="url(#fGlow)"/>
+            <path d="M452,1126 C408,1128 356,1150 318,1204 C364,1176 410,1170 452,1180 Z" fill="url(#gFacetDark)"/>
+            <path d="M452,1126 C408,1128 356,1150 318,1204 C366,1166 410,1150 452,1150 Z" fill="url(#gFacetLight)"/>
+            <path d="M452,1126 C408,1128 356,1150 318,1204 C364,1176 410,1170 452,1180 Z" fill="none" stroke="#ff5a5a" stroke-width="1.3"/>
+          </g>
+        </g>
+
+        <!-- Star ornaments with gems (generated) -->
+        <g id="ornaments"></g>
+
+        <!-- Blood (generated) -->
+        <g id="drips"></g>
+
+        <!-- Click / tap target for adding a photo -->
+        <circle id="photoHit" cx="470" cy="810" r="289" fill="transparent" tabindex="0" role="button"
+                aria-label="Add your photo to the circle"/>
+      </svg>
+
+      <!-- Embers, falling drops and pulsing glow -->
+      <canvas id="fx" class="layer" aria-hidden="true"></canvas>
+    </div>
+
+    <input type="file" id="photoInput" accept="image/*" hidden>
+    <p class="hint" id="hint">Tap the circle to add your photo</p>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
