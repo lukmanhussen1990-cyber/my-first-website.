@@ -26,6 +26,7 @@
 - 2026-10-08 03:42:56Z | elapsed 01:30:54 | 01:29:06 left — Ambient FX review (no blockers) applied: is_in_ui guard, plankton only in water, alpha clamp, boxes above feet, ambient pack 1.0.1; rebuilt + validated + pushed; README + visual-QA re-check reviewers still running
 - 2026-10-08 03:45:21Z | elapsed 01:33:19 | 01:26:41 left — Visual-QA re-check (no regressions) follow-ups applied: warm split-tone fades earlier, leather/wolf/horse dye masks untouched, grass-side tint fringe gets no relief (dL .015 = grass_top .014); version 1.1.2; rebuilt + validated; README auditor still running
 - 2026-10-08 03:47:33Z | elapsed 01:35:31 | 01:24:29 left — Packaging made deterministic (fixed zip timestamps: two builds are byte-identical, fresh-clone pack tree reproduces exactly); README counts corrected; README auditor still running
+- 2026-10-08 03:49:20Z | elapsed 01:37:18 | 01:22:42 left — README rewritten after the phone-user audit (honest 'not tested' box, direct links for all 4 files, install/troubleshooting fixes, corrected legal wording); all four reviewers done
 
 ## Key decisions (why the pack looks the way it does)
 
