@@ -23,6 +23,7 @@
 - 2026-10-08 03:26:16Z | elapsed 01:14:14 | 01:45:46 left — v1.1.0 rebuilt in repo (validator 0 errors, schemas ok, 2170 textures vs vanilla ok) and pushed; reviewers (format, ambient, README) still running
 - 2026-10-08 03:29:54Z | elapsed 01:17:52 | 01:42:08 left — Fresh-clone rebuild reproduces the committed pack exactly (2512 files, 0 diffs); raw download links verified; visual-QA re-check + format/ambient/README reviewers running
 - 2026-10-08 03:38:09Z | elapsed 01:26:07 | 01:33:53 left — Format review (no blockers) applied: short preset names, 5 vanilla-identical textures dropped (build + validator now enforce it), version 1.1.1; rebuilt + validated; ambient / README / visual-QA reviewers still running
+- 2026-10-08 03:42:56Z | elapsed 01:30:54 | 01:29:06 left — Ambient FX review (no blockers) applied: is_in_ui guard, plankton only in water, alpha clamp, boxes above feet, ambient pack 1.0.1; rebuilt + validated + pushed; README + visual-QA re-check reviewers still running
 
 ## Key decisions (why the pack looks the way it does)
 

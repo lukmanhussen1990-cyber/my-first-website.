@@ -18,12 +18,12 @@
       "minecraft:emitter_shape_box": {
         "offset": [
           0,
-          1.2,
+          1.6,
           0
         ],
         "half_dimensions": [
           10,
-          3.0,
+          2.4,
           10
         ]
       },
@@ -62,7 +62,7 @@
           0.8,
           1.0,
           0.3,
-          "Math.sin(variable.particle_age / variable.particle_lifetime * 180) * (0.25 + 0.75 * (0.5 + 0.5 * Math.sin(variable.particle_age * (140 + 220 * variable.particle_random_3) + variable.particle_random_4 * 360)))"
+          "Math.sin(Math.clamp(variable.particle_age / variable.particle_lifetime, 0, 1) * 180) * (0.25 + 0.75 * (0.5 + 0.5 * Math.sin(variable.particle_age * (140 + 220 * variable.particle_random_3) + variable.particle_random_4 * 360)))"
         ]
       }
     }

@@ -24,8 +24,9 @@ If Android saves a file as `.zip`, rename it to `.mcaddon` / `.mcpack` and tap i
 ## Install (30 seconds)
 
 1. Open the downloaded `.mcaddon` → choose **Minecraft** (it says "Import started … success").
-2. In Minecraft: **Settings → Global Resources → My Packs → Horizon Glow Graphics → Activate**
-   (and, if you imported the full add-on, **Horizon Glow Ambient FX → Activate** as well).
+2. In Minecraft: **Settings → Global Resources → My Packs → Horizon Glow Graphics → Activate**.
+   *Optional extra:* if you imported the full add-on you can also activate **Horizon Glow Ambient FX** (fireflies, dust, plankton).
+   It is independent of the graphics pack — if your character ever looks odd, simply deactivate it.
    Global = applies to every world. You can also activate packs per world: *Edit world → Resource Packs*.
 3. Tap the **gear / settings icon** on the active pack and move the slider to pick a preset
    (on a phone like yours the game should pick **Ultra** by default).
@@ -67,7 +68,8 @@ All three keep the textures at 16×16 and add no shaders, so FPS stays close to 
 
 ## Optional: Ambient FX pack
 
-`HorizonGlow_AmbientFX_OPTIONAL_1.21.0.x.mcpack` adds **fireflies at night, drifting sunlit dust by day and plankton underwater** — pure vanilla particles, no scripting, a few dozen particles on screen at most.
+`HorizonGlow_AmbientFX_OPTIONAL_1.21.0.x.mcpack` adds **fireflies at night, drifting sunlit dust by day and plankton underwater** — pure vanilla particles, no scripting, at most about 60 tiny particles around you (and only one of the three kinds at a time).
+They are switched on by the game clock and your height, not by the dimension, so a few may also drift around you in the Nether or the End.
 It is a *separate* pack because, to emit particles around the camera, it has to replace Mojang's client file for the player (`entity/player.entity.json`, the only change is three added lines — see `tools/gen_ambient.py`). That file belongs to the game version it was copied from, so **use it on 1.21.0.x only** and remove it after a game update. Activate it *in addition to* Horizon Glow. If you also use another pack that changes the player model/animations (it replaces the same file), only one of the two can take effect.
 
 ## Honest limits (please read)

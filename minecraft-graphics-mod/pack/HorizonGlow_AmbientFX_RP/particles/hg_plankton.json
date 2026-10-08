@@ -62,9 +62,14 @@
           0.86,
           0.96,
           1.0,
-          "Math.sin(variable.particle_age / variable.particle_lifetime * 180) * 0.50"
+          "Math.sin(Math.clamp(variable.particle_age / variable.particle_lifetime, 0, 1) * 180) * 0.50"
         ]
       },
+      "minecraft:particle_expire_if_not_in_blocks": [
+        "minecraft:water",
+        "minecraft:flowing_water",
+        "minecraft:bubble_column"
+      ],
       "minecraft:particle_appearance_lighting": {}
     }
   }

@@ -20,11 +20,12 @@ from common import smoothstep, load_json_lenient, write_json, save_image, period
 AMBIENT_RP_NAME = "HorizonGlow_AmbientFX_RP"
 AMBIENT_UUID = "5c0e7f31-2d8a-4b96-a1c4-8e3f60d9b712"
 AMBIENT_MODULE_UUID = "b7a4d2e9-13c5-4f08-9a6b-4d1e82c7f035"
-VERSION = [1, 0, 0]
+VERSION = [1, 0, 1]
 
 # ----------------------------------------------------------------------------- conditions
 # `query.time_of_day`: midnight 0.0, sunrise 0.25, noon 0.5, sunset 0.75 (Molang docs 1.21.0.26)
-NEAR = "query.distance_from_camera < 8"                       # local player (any camera) + very close friends only
+# `query.is_in_ui` keeps the inventory / paper-doll / map-icon passes of the player from emitting.
+NEAR = "query.distance_from_camera < 8 && !query.is_in_ui"    # local player (any camera) + very close friends only
 SURFACE = "query.position(1) > 56 && !query.is_in_water"      # not deep underground, not in water
 DAY = "query.time_of_day > 0.26 && query.time_of_day < 0.74"
 NIGHT = "(query.time_of_day < 0.20 || query.time_of_day > 0.80)"
@@ -50,7 +51,7 @@ def animation():
 
 
 # ----------------------------------------------------------------------------- particles
-def _particle(ident, material, half_dims, offset, life, size, color, accel, drag, lighting):
+def _particle(ident, material, half_dims, offset, life, size, color, accel, drag, lighting, only_in_blocks=None):
     comps = {
         "minecraft:emitter_rate_instant": {"num_particles": "variable.hg_n"},
         "minecraft:emitter_lifetime_once": {"active_time": 0.1},
@@ -64,6 +65,8 @@ def _particle(ident, material, half_dims, offset, life, size, color, accel, drag
         },
         "minecraft:particle_appearance_tinting": {"color": color},
     }
+    if only_in_blocks:      # vanilla bubble pattern (basic_bubble.json): vanish outside these blocks
+        comps["minecraft:particle_expire_if_not_in_blocks"] = list(only_in_blocks)
     if lighting:
         comps["minecraft:particle_appearance_lighting"] = {}
     return {"format_version": "1.10.0",
@@ -73,19 +76,20 @@ def _particle(ident, material, half_dims, offset, life, size, color, accel, drag
                                 "components": comps}}
 
 
-FADE = "Math.sin(variable.particle_age / variable.particle_lifetime * 180)"
+# clamped like vanilla's shriek/warden particles: the last frame must never give a negative alpha
+FADE = "Math.sin(Math.clamp(variable.particle_age / variable.particle_lifetime, 0, 1) * 180)"
 
 
 def particles():
     wob = lambda a, f, r: f"{a} * Math.sin(variable.particle_age * {f} + variable.particle_random_{r} * 360)"
     dust = _particle(
-        "hg:ambient_dust", "particles_blend", [9, 4.5, 9], [0, 1.8, 0],
+        "hg:ambient_dust", "particles_blend", [9, 3.6, 9], [0, 2.6, 0],      # y -1.0 .. 6.2 around the feet
         "6 + variable.particle_random_1 * 5",
         "0.030 + variable.particle_random_2 * 0.035",
         [1.0, 0.95, 0.80, f"{FADE} * 0.55"],
         [wob(0.07, 40, 2), wob(0.035, 55, 3), wob(0.07, 33, 4)], 0.9, True)
     firefly = _particle(
-        "hg:ambient_firefly", "particles_blend", [10, 3.0, 10], [0, 1.2, 0],
+        "hg:ambient_firefly", "particles_blend", [10, 2.4, 10], [0, 1.6, 0],  # y -0.8 .. 4.0 around the feet
         "7 + variable.particle_random_1 * 5",
         "0.060 + variable.particle_random_2 * 0.040",
         [0.80, 1.0, 0.30,
@@ -96,7 +100,8 @@ def particles():
         "8 + variable.particle_random_1 * 5",
         "0.028 + variable.particle_random_2 * 0.030",
         [0.86, 0.96, 1.0, f"{FADE} * 0.50"],
-        [wob(0.05, 36, 2), 0.012, wob(0.05, 30, 4)], 0.9, True)
+        [wob(0.05, 36, 2), 0.012, wob(0.05, 30, 4)], 0.9, True,
+        only_in_blocks=("minecraft:water", "minecraft:flowing_water", "minecraft:bubble_column"))
     return {"hg_dust.json": dust, "hg_firefly.json": firefly, "hg_plankton.json": plankton}
 
 

@@ -7,35 +7,35 @@
       "particle_effects": {
         "0.0": {
           "effect": "hg_dust",
-          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && query.position(1) > 56 && !query.is_in_water && query.time_of_day > 0.26 && query.time_of_day < 0.74) ? 3 : 0;"
+          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && !query.is_in_ui && query.position(1) > 56 && !query.is_in_water && query.time_of_day > 0.26 && query.time_of_day < 0.74) ? 3 : 0;"
         },
         "0.25": {
           "effect": "hg_plankton",
-          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && query.is_in_water) ? 3 : 0;"
+          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && !query.is_in_ui && query.is_in_water) ? 3 : 0;"
         },
         "0.5": {
           "effect": "hg_firefly",
-          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && query.position(1) > 56 && !query.is_in_water && (query.time_of_day < 0.20 || query.time_of_day > 0.80)) ? 2 : 0;"
+          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && !query.is_in_ui && query.position(1) > 56 && !query.is_in_water && (query.time_of_day < 0.20 || query.time_of_day > 0.80)) ? 2 : 0;"
         },
         "0.75": {
           "effect": "hg_plankton",
-          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && query.is_in_water) ? 3 : 0;"
+          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && !query.is_in_ui && query.is_in_water) ? 3 : 0;"
         },
         "1.0": {
           "effect": "hg_dust",
-          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && query.position(1) > 56 && !query.is_in_water && query.time_of_day > 0.26 && query.time_of_day < 0.74) ? 3 : 0;"
+          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && !query.is_in_ui && query.position(1) > 56 && !query.is_in_water && query.time_of_day > 0.26 && query.time_of_day < 0.74) ? 3 : 0;"
         },
         "1.25": {
           "effect": "hg_plankton",
-          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && query.is_in_water) ? 3 : 0;"
+          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && !query.is_in_ui && query.is_in_water) ? 3 : 0;"
         },
         "1.5": {
           "effect": "hg_firefly",
-          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && query.position(1) > 56 && !query.is_in_water && (query.time_of_day < 0.20 || query.time_of_day > 0.80)) ? 2 : 0;"
+          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && !query.is_in_ui && query.position(1) > 56 && !query.is_in_water && (query.time_of_day < 0.20 || query.time_of_day > 0.80)) ? 2 : 0;"
         },
         "1.75": {
           "effect": "hg_plankton",
-          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && query.is_in_water) ? 3 : 0;"
+          "pre_effect_script": "variable.hg_n = (query.distance_from_camera < 8 && !query.is_in_ui && query.is_in_water) ? 3 : 0;"
         }
       }
     }

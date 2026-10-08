@@ -18,12 +18,12 @@
       "minecraft:emitter_shape_box": {
         "offset": [
           0,
-          1.8,
+          2.6,
           0
         ],
         "half_dimensions": [
           9,
-          4.5,
+          3.6,
           9
         ]
       },
@@ -62,7 +62,7 @@
           1.0,
           0.95,
           0.8,
-          "Math.sin(variable.particle_age / variable.particle_lifetime * 180) * 0.55"
+          "Math.sin(Math.clamp(variable.particle_age / variable.particle_lifetime, 0, 1) * 180) * 0.55"
         ]
       },
       "minecraft:particle_appearance_lighting": {}
