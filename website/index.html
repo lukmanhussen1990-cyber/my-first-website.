@@ -1240,8 +1240,8 @@ const CONFIG = {
 
   /* =====================================================================
      PARTY MODE (a song with party: true, e.g. Dracula): from the moment it plays until the song changes (fades in / out in 1 s).
-     A layer behind the cards: red-purple tint · laser beams sweeping · rings pulsing on the beat behind the music card ·
-     light dots + light spots (the one canvas, #ptfx) · a spinning disco ball. The cards get neon edges, the music card a waveform.
+     A layer behind the cards: red-purple tint · rings pulsing on the beat behind the music card ·
+     the lights: laser beams sweeping, light dots, light spots (the one canvas, #ptfx) · a spinning disco ball. The cards get neon edges, the music card a waveform.
      Paused: slower and dimmer. "Floating particles" off: only the neon edges and the waveform.
      ===================================================================== */
   #party { position: fixed; top: 0; bottom: 0; left: 50%; z-index: 1; width: min(100vw, 440px); margin-left: calc(min(100vw, 440px) / -2);
@@ -1256,22 +1256,6 @@ const CONFIG = {
                 radial-gradient(ellipse 90% 50% at 50% 60%, rgba(255, 20, 70, .38), rgba(255, 20, 70, 0) 72%),
                 linear-gradient(180deg, rgba(120, 10, 70, .34), rgba(70, 0, 60, .42)); }
   #ptfx { top: 0; left: 0; width: 100%; height: 100%; }
-
-  /* laser beams: a light cone from a point at the top or a side, swinging left and right (each at its own pace) */
-  .pt-beams { top: 0; right: 0; bottom: 0; left: 0; opacity: .8; mix-blend-mode: screen; }
-  .pt-beams i { position: absolute; width: 0; height: 0; transform: rotate(var(--r)); }
-  .pt-beams b { position: absolute; left: calc(var(--pw) * -.18); top: 0; width: calc(var(--pw) * .36); height: calc(var(--pw) * 2.7); transform-origin: 50% 0;
-    clip-path: polygon(49% 0, 51% 0, 100% 100%, 0 100%);
-    background: linear-gradient(90deg, rgba(var(--c), 0) 4%, rgba(var(--c), .5) 26%, rgba(var(--c), .95) 44%, rgba(var(--hc), 1) 49%, rgba(255, 250, 252, 1) 50%, rgba(var(--hc), 1) 51%, rgba(var(--c), .95) 56%, rgba(var(--c), .5) 74%, rgba(var(--c), 0) 96%);
-    -webkit-mask-image: linear-gradient(180deg, #000, rgba(0, 0, 0, .55) 38%, rgba(0, 0, 0, 0) 82%); mask-image: linear-gradient(180deg, #000, rgba(0, 0, 0, .55) 38%, rgba(0, 0, 0, 0) 82%);
-    animation: ptSweep var(--d) ease-in-out infinite alternate; animation-delay: var(--dl, 0s); }
-  @keyframes ptSweep { from { transform: rotate(calc(var(--s) * -1)); } to { transform: rotate(var(--s)); } }
-  .pt-beams .b1 { left: 14%; top: -2%; --r: 16deg; --s: 18deg; --d: 6.2s; --c: 255, 20, 60; --hc: 255, 90, 120; }
-  .pt-beams .b2 { left: 40%; top: -3%; --r: -8deg; --s: 22deg; --d: 7.6s; --dl: -3s; --c: 255, 30, 70; --hc: 255, 100, 130; }
-  .pt-beams .b3 { left: 70%; top: -3%; --r: 24deg; --s: 16deg; --d: 5.4s; --dl: -1.4s; --c: 255, 40, 110; --hc: 255, 120, 180; }
-  .pt-beams .b4 { left: -3%; top: 20%; --r: -62deg; --s: 14deg; --d: 6.8s; --dl: -2.2s; --c: 160, 40, 255; --hc: 205, 130, 255; }
-  .pt-beams .b5 { left: -3%; top: 64%; --r: -112deg; --s: 15deg; --d: 8.2s; --dl: -5s; --c: 140, 30, 255; --hc: 195, 120, 255; }
-  .pt-beams .b6 { left: 103%; top: 42%; --r: 72deg; --s: 16deg; --d: 7.1s; --dl: -4s; --c: 165, 45, 255; --hc: 210, 140, 255; }
 
   /* rings behind the music card: two faint ones always, and one pulsing out on every beat (the script places them) */
   .pt-rings { left: var(--rx, 50%); top: var(--ry, 60%); width: 0; height: 0; --rr: calc(var(--pw) * .48); }
@@ -1514,10 +1498,9 @@ const CONFIG = {
   <div id="tint"></div>
   <div id="shade"></div>
   <canvas id="fx" aria-hidden="true"></canvas>
-  <!-- party mode (a song with party: true): red-purple tint · laser beams · rings · light dots (the one canvas) · disco ball -->
+  <!-- party mode (a song with party: true): red-purple tint · rings · the lights (laser beams, light dots, light spots: one canvas) · disco ball -->
   <div id="party" aria-hidden="true">
     <div class="pt-tint"></div>
-    <div class="pt-beams"><i class="b1"><b></b></i><i class="b2"><b></b></i><i class="b3"><b></b></i><i class="b4"><b></b></i><i class="b5"><b></b></i><i class="b6"><b></b></i></div>
     <div class="pt-rings" id="ptRings"><i></i><i></i><i></i><i></i></div>
     <canvas id="ptfx"></canvas>
     <div class="pt-ball"><div class="pt-ball-glow"></div><div class="pt-ball-in"><div class="pt-ball-tex"></div><div class="pt-ball-shine"></div></div></div>
@@ -3127,8 +3110,8 @@ const CONFIG = {
      (the app); otherwise the song's beat (CONFIG bpm + beat) drives a smooth imitation. The song itself is never touched.
      ===================================================================== */
   var pt = { on: false, wave: false, song: null, offT: 0, raf: 0, last: 0, acc: 0, t: 0, frames: 0, cv: $("ptfx"), g: null, W: 0, H: 0, k: 1,
-             spr: null, dots: [], spots: [], n: 0, bars: [], bv: [], perm: [], avg: 0, lastBeat: 0, ph: 0, ring: 0, rip: 0, beamOp: -1, rate: 1, L: 0 };
-  var ptEl = $("party"), ptBeams = qa("#party .pt-beams")[0], ptRingBox = $("ptRings"), ptRings = qa("#ptRings i"), ptWaveEl = $("pwave");
+             spr: null, beamSpr: null, beams: [], dots: [], spots: [], n: 0, bars: [], bv: [], perm: [], avg: 0, lastBeat: 0, ph: 0, ring: 0, rip: 0, beamOp: -1, rate: 1, L: 0 };
+  var ptEl = $("party"), ptRingBox = $("ptRings"), ptRings = qa("#ptRings i"), ptWaveEl = $("pwave");
   var PT_RGB = ["255,45,85", "255,92,168", "176,76,255", "255,64,128"];
   function ptSong() { var s = songs[idx]; return s && s.party ? s : null; }
   function ptFxShown() { return fx.on && !isUltra() && !reduced; }
@@ -3158,17 +3141,33 @@ const CONFIG = {
   }
   function ptSize() {                                       // the canvas: light dots floating and twinkling, light spots from the disco ball
     var w = ptEl.clientWidth, h = ptEl.clientHeight; if (!w || !h) { pt.W = 0; return; }
-    pt.k = Math.min(window.devicePixelRatio || 1, isLite() ? 1 : 1.5);
+    pt.k = Math.min(window.devicePixelRatio || 1, isLite() ? .75 : 1.25);          // soft glows: a lighter canvas looks the same
     pt.cv.width = Math.round(w * pt.k); pt.cv.height = Math.round(h * pt.k); pt.W = w; pt.H = h; pt.g = pt.cv.getContext("2d");
     if (!pt.spr) pt.spr = PT_RGB.map(function (rgb) {         // one soft glowing dot per colour, drawn once
       var c = document.createElement("canvas"), x = c.getContext("2d"), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); c.width = c.height = 64;
       g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(.13, "rgba(255,255,255,.9)"); g.addColorStop(.26, "rgba(" + rgb + ",1)"); g.addColorStop(.52, "rgba(" + rgb + ",.32)"); g.addColorStop(1, "rgba(" + rgb + ",0)");
       x.fillStyle = g; x.fillRect(0, 0, 64, 64); return c;
     });
+    pt.beamSpr = [["255,20,60", "255,95,125"], ["255,40,110", "255,120,180"], ["160,40,255", "205,130,255"]].map(function (c) { return ptBeamSprite(w, c[0], c[1]); });
+    // laser beams: where they shine from (part of the width / height), which way, how far they swing, how fast, colour
+    pt.beams = [[.14, -.02, 16, 18, 6.2, 0], [.40, -.03, -8, 22, 7.6, 0], [.70, -.03, 24, 16, 5.4, 1], [-.03, .20, -62, 14, 6.8, 2], [-.03, .64, -112, 15, 8.2, 2], [1.03, .42, 72, 16, 7.1, 2]]
+      .map(function (b, k) { return { x: b[0] * w, y: b[1] * h, r: b[2], s: b[3], T: b[4], c: b[5], ph: k * 1.3 }; });
     var nd = isLite() ? 40 : 56, i; pt.dots = []; pt.spots = [];
     for (i = 0; i < nd; i++) pt.dots.push({ x: Math.random() * w, y: Math.random() * h, s: 16 + Math.random() * 34, vy: -(5 + Math.random() * 14), sw: 4 + Math.random() * 10,
                                             ph: Math.random() * 6.28, tw: .8 + Math.random() * 2.2, c: Math.floor(Math.random() * 4) });
     for (i = 0; i < 7; i++) pt.spots.push({ a: Math.random() * 6.28, r: h * (.25 + Math.random() * .7), va: (Math.random() < .5 ? -1 : 1) * (.05 + Math.random() * .08), s: 26 + Math.random() * 40, c: i % 2 ? 1 : 2 });
+  }
+  function ptBeamSprite(w, c, hc) {                        // one light cone (drawn once): bright core, soft sides, fading out downwards
+    var bw = Math.round(w * .36), bh = Math.round(w * 1.75), k = isLite() ? .5 : .75, cv = document.createElement("canvas"), x = cv.getContext("2d");
+    cv.width = Math.max(8, Math.round(bw * k)); cv.height = Math.max(8, Math.round(bh * k)); x.scale(k, k);
+    var g = x.createLinearGradient(0, 0, bw, 0);
+    g.addColorStop(.04, "rgba(" + c + ",0)"); g.addColorStop(.26, "rgba(" + c + ",.5)"); g.addColorStop(.44, "rgba(" + c + ",.95)"); g.addColorStop(.49, "rgba(" + hc + ",1)");
+    g.addColorStop(.5, "rgba(255,250,252,1)"); g.addColorStop(.51, "rgba(" + hc + ",1)"); g.addColorStop(.56, "rgba(" + c + ",.95)"); g.addColorStop(.74, "rgba(" + c + ",.5)"); g.addColorStop(.96, "rgba(" + c + ",0)");
+    x.beginPath(); x.moveTo(bw * .49, 0); x.lineTo(bw * .51, 0); x.lineTo(bw, bh); x.lineTo(0, bh); x.closePath(); x.fillStyle = g; x.fill();
+    x.globalCompositeOperation = "destination-out";
+    var f = x.createLinearGradient(0, 0, 0, bh); f.addColorStop(0, "rgba(0,0,0,0)"); f.addColorStop(.45, "rgba(0,0,0,.4)"); f.addColorStop(.96, "rgba(0,0,0,1)");
+    x.fillStyle = f; x.fillRect(0, 0, bw, bh);
+    return { cv: cv, w: bw, h: bh };
   }
   function ptLevel(now, dt) {                               // how loud right now (0..1), whether a beat just hit, and the waveform targets
     var n = pt.n, i, L = 0, beat = false, playing = !audio.paused && pt.on, tgt = [];
@@ -3204,6 +3203,13 @@ const CONFIG = {
     if (!g) return;
     g.setTransform(pt.k, 0, 0, pt.k, 0, 0); g.clearRect(0, 0, W, H);
     g.globalCompositeOperation = "lighter";
+    for (i = 0; i < pt.beams.length; i++) {                 // laser beams swing left and right, flaring on the loud parts
+      var bm = pt.beams[i], sp2 = pt.beamSpr[bm.c]; bm.ph += dt * sp * Math.PI * 2 / (bm.T * 2);
+      var ang = (bm.r + bm.s * Math.sin(bm.ph)) * Math.PI / 180;
+      g.setTransform(pt.k, 0, 0, pt.k, 0, 0); g.translate(bm.x, bm.y); g.rotate(ang);
+      g.globalAlpha = .38 + .5 * L; g.drawImage(sp2.cv, -sp2.w / 2, 0, sp2.w, sp2.h);
+    }
+    g.setTransform(pt.k, 0, 0, pt.k, 0, 0);
     var bx = W * .9, by = H * .02;                          // light spots thrown by the disco ball, slowly going round
     for (i = 0; i < pt.spots.length; i++) {
       var q = pt.spots[i]; q.a += q.va * dt * sp;
@@ -3228,8 +3234,6 @@ const CONFIG = {
     if (shown) {
       if (!pt.W) ptSize();
       ptDraw(dt);
-      var op = .45 + .55 * r.L;                             // the beams flare on the loud parts
-      if (Math.abs(op - pt.beamOp) > .02) { pt.beamOp = op; ptBeams.style.opacity = op.toFixed(2); }
       if (r.beat) ptBeat();
       if (++pt.frames % 30 === 0 && home) ptPlace();
     }
