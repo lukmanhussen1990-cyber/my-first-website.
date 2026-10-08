@@ -1,5 +1,16 @@
 {
   "namespace": "hud",
+  "hg_vignette": {
+    "type": "image",
+    "texture": "textures/ui/hg_vignette",
+    "size": [
+      "100%",
+      "100%"
+    ],
+    "layer": 0,
+    "alpha": 1.0,
+    "keep_ratio": false
+  },
   "root_panel": {
     "modifications": [
       {
@@ -7,19 +18,7 @@
         "operation": "insert_front",
         "value": [
           {
-            "hg_vignette": {
-              "type": "image",
-              "texture": "textures/ui/hg_vignette",
-              "size": [
-                "100%",
-                "100%"
-              ],
-              "anchor_from": "center",
-              "anchor_to": "center",
-              "layer": 0,
-              "alpha": 1.0,
-              "keep_ratio": false
-            }
+            "hg_vignette@hud.hg_vignette": {}
           }
         ]
       }

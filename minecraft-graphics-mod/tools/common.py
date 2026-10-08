@@ -185,17 +185,26 @@ def write_json(path, obj, indent=2):
     path.write_text(json.dumps(obj, indent=indent, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
-def save_image(arr_or_img, path, fmt=None):
+def save_image(arr_or_img, path, tga_orientation=-1):
     """Save numpy (H,W,3|4) uint8 or PIL image. Format from extension; TGA kept
-    as TGA so we never create a .png/.tga pair (the engine prefers .tga)."""
+    as TGA so we never create a .png/.tga pair (the engine prefers .tga).
+    tga_orientation: -1 => bottom-left origin (descriptor 0x08, Mojang's usual),
+    1 => top-left origin (0x28, used by a couple of vanilla files)."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     im = Image.fromarray(arr_or_img) if isinstance(arr_or_img, np.ndarray) else arr_or_img
     ext = path.suffix.lower()
     if ext == ".tga":
-        im.convert("RGBA").save(path, format="TGA")
+        im.convert("RGBA").save(path, format="TGA", orientation=tga_orientation)
     else:
         im.save(path, format="PNG", optimize=True)
+
+
+def tga_orientation_of(path):
+    """Read the origin bit of an existing TGA so a rewritten file matches it."""
+    with open(path, "rb") as fh:
+        hdr = fh.read(18)
+    return 1 if hdr[17] & 0x20 else -1
 
 
 def read_rgba(path):

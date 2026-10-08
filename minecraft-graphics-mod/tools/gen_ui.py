@@ -25,29 +25,27 @@ def make_vignette(strength=0.42, w=256, h=144, seed=4):
 
 
 def hud_modification():
-    """Adds one image to the *front* of the HUD root panel.  Uses the UI `modifications`
-    mechanism, so Mojang's own hud_screen.json is not copied or replaced."""
+    """Defines one image control and inserts a reference to it at the *front* of the HUD's
+    root_panel (same pattern as the Bedrock Wiki's "Add HUD elements" tutorial).  Uses the
+    UI `modifications` mechanism, so Mojang's own hud_screen.json is not copied or replaced.
+    root_panel is full-screen and children without a parent-relative size inherit it, so
+    100% x 100% stretches the vignette over the whole view, behind every HUD element."""
     return {
         "namespace": "hud",
+        "hg_vignette": {
+            "type": "image",
+            "texture": "textures/ui/hg_vignette",
+            "size": ["100%", "100%"],
+            "layer": 0,
+            "alpha": 1.0,
+            "keep_ratio": False,
+        },
         "root_panel": {
             "modifications": [
                 {
                     "array_name": "controls",
                     "operation": "insert_front",
-                    "value": [
-                        {
-                            "hg_vignette": {
-                                "type": "image",
-                                "texture": "textures/ui/hg_vignette",
-                                "size": ["100%", "100%"],
-                                "anchor_from": "center",
-                                "anchor_to": "center",
-                                "layer": 0,
-                                "alpha": 1.0,
-                                "keep_ratio": False,
-                            }
-                        }
-                    ],
+                    "value": [{"hg_vignette@hud.hg_vignette": {}}],
                 }
             ]
         },

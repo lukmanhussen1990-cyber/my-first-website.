@@ -138,7 +138,11 @@ def check_images(pack: Path, vanilla: Path):
         key = re.sub(r"^subpacks/[^/]+/", "", rel)
         stem = re.sub(r"\.(png|tga)$", "", rel, flags=re.I)
         if stem in seen and seen[stem] != f.suffix.lower():
-            err(f"both .png and .tga for {stem}")
+            twin = [(vanilla / (re.sub(r"^subpacks/[^/]+/", "", stem) + e)).exists() for e in (".png", ".tga")]
+            if all(twin):
+                warn(f"both .png and .tga for {stem} (vanilla ships both too)")
+            else:
+                err(f"both .png and .tga for {stem}")
         seen[stem] = f.suffix.lower()
         try:
             size, mode = image_size(f)
@@ -161,7 +165,7 @@ def check_images(pack: Path, vanilla: Path):
         vsize, vmode = image_size(vp)
         if vsize != size:
             err(f"size mismatch {rel}: pack {size} vs vanilla {vsize}")
-        if ("A" in vmode) != ("A" in mode) and key.endswith(".png"):
+        if ("A" in vmode) != ("A" in mode) and key.endswith(".png") and vmode != "P":
             warn(f"alpha channel differs {rel}: {vmode} -> {mode}")
     return checked
 
@@ -192,7 +196,9 @@ def check_ui(root: Path):
     assert d["namespace"] == "hud"
     mod = d["root_panel"]["modifications"][0]
     assert mod["array_name"] == "controls" and mod["operation"] == "insert_front"
-    tex = mod["value"][0]["hg_vignette"]["texture"]
+    ref = list(mod["value"][0])[0]
+    assert ref == "hg_vignette@hud.hg_vignette", ref
+    tex = d["hg_vignette"]["texture"]
     if not (root / (tex + ".png")).exists():
         err(f"HUD overlay texture missing: {tex}")
     return True
