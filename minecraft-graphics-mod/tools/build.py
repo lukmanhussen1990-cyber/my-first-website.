@@ -129,10 +129,15 @@ def build_pack(vanilla: Path, verbose=True):
     log("ambient FX pack done")
 
 
+_ZIP_TIME = (2026, 1, 1, 0, 0, 0)       # fixed member timestamp => a rebuild gives byte-identical archives
+
+
 def _zip_dir(zf: zipfile.ZipFile, src: Path, arc_prefix: str):
     for f in sorted(src.rglob("*")):
         if f.is_file():
-            zf.write(f, f"{arc_prefix}{f.relative_to(src).as_posix()}")
+            info = zipfile.ZipInfo(f"{arc_prefix}{f.relative_to(src).as_posix()}", date_time=_ZIP_TIME)
+            info.external_attr = 0o644 << 16            # plain rw-r--r-- file for tools that honour unix modes
+            zf.writestr(info, f.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
 
 
 def package(dist: Path):
