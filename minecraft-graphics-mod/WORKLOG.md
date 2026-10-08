@@ -42,3 +42,10 @@
 * **TGA files** are re-written with the same origin bit as the vanilla file; verified against an independent decoder (164/164 identical).
 * **Ambient FX is a separate optional pack** because it must replace the player client entity file (version-bound).
 * Not shipped: dynamic torch light (world-modifying scripts, untestable here).
+* **No redundant Mojang copies.** A texture that comes out pixel-identical to Mojang's file is dropped by `build.prune_unchanged`
+  (the validator fails if one slips through); near-grey dye masks (leather / wolf / horse armour) are left to the game's own files.
+* **Reproducible packaging.** Zip members carry a fixed timestamp and mode, so two builds give byte-identical `.mcaddon` / `.mcpack` files
+  (a download can be verified by checksum).
+* **Independent review rounds** (format/docs, Ambient FX, visual QA twice, README audit for a phone user) found no blockers in the final
+  state; every finding that could be acted on without a device is applied (see the checkpoints above). What can only be settled on a phone
+  is listed in the README under "Honest limits".
