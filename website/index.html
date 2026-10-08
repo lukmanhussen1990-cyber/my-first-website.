@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "1.9.3",                       // shown in Settings → About
+  version: "1.9.4",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -678,7 +678,7 @@ const CONFIG = {
      Only transform / opacity are animated, and only while the player is open (the waveform is one canvas).
      ===================================================================== */
   #player {
-    --pq: 0; --cs: calc(min(48vw, 27vh, 230px) * (1 - .2 * var(--pq))); --box: calc(var(--cs) * 1.3);
+    --pq: 0; --cs: calc(min(41vw, 19.2vh, 196px) * (1 - .18 * var(--pq))); --box: calc(var(--cs) * 2.215);
     --red: #ff2d55; --red2: #ff1f3d; --redglow: rgba(255, 30, 60, .55);
     position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; overflow: hidden;
     padding: calc(6px + env(safe-area-inset-top, 0px)) 16px calc(8px + env(safe-area-inset-bottom, 0px));
@@ -713,28 +713,106 @@ const CONFIG = {
 
   /* the middle: cover + side panel + title + progress (the side panel floats on the left, nothing goes under it) */
   .fp-main { width: 100%; display: flex; flex-direction: column; align-items: center; flex: none; margin-top: auto; padding-top: calc(8px - 6px * var(--pq)); }
-  .fp-cover { position: relative; width: var(--box); height: var(--box); flex: none; touch-action: pan-y; cursor: grab; }
+  /* the cover inside the gothic frame. The frame's picture is 1.6509 x 2.9333 covers; the centre of its empty circle is 0.8253 / 1.4270 covers in.
+     .fp-cover is the room between the title bar and the song name: 1.17 covers above the centre (the cross and the light over it), 1.045 below (the spike and its light). */
+  .fp-cover { position: relative; width: calc(var(--cs) * 1.75); height: calc(var(--cs) * 2.215); flex: none; touch-action: pan-y; cursor: grab; }
   .fp-cover > * { position: absolute; pointer-events: none; }
-  .fp-glow { top: -22%; right: -22%; bottom: -22%; left: -22%; border-radius: 50%; opacity: .55; will-change: transform, opacity;
-    background: radial-gradient(closest-side, rgba(255, 20, 50, 0) 60%, rgba(255, 24, 56, .5) 70%, rgba(255, 12, 44, .2) 84%, rgba(255, 0, 32, 0) 100%); }
-  .fp-outer { top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; border: calc(var(--cs) * .042) solid var(--red2);
-    box-shadow: 0 0 12px 2px rgba(255, 26, 56, .8), 0 0 30px 6px rgba(255, 10, 40, .35), inset 0 0 10px 2px rgba(255, 40, 72, .7), inset 0 0 0 1.5px rgba(255, 160, 172, .55); }
-  .fp-outer::before { content: ""; position: absolute; top: -3px; right: -3px; bottom: -3px; left: -3px; border-radius: 50%; border: 1.5px solid rgba(255, 150, 165, .5); }
-  .fp-prog { top: calc(50% - var(--cs) * .556); left: calc(50% - var(--cs) * .556); width: calc(var(--cs) * 1.112); height: calc(var(--cs) * 1.112); overflow: visible; }
-  .fp-prog .trk { fill: none; stroke: rgba(255, 236, 240, .62); stroke-width: 1.6; }
-  .fp-prog .done { fill: none; stroke: url(#fpPink); stroke-width: 3.2; stroke-linecap: round; }
-  .fp-prog .halo { fill: none; stroke: rgba(255, 45, 85, .28); stroke-width: 7; stroke-linecap: round; }
-  .fp-dotw { top: calc(50% - var(--cs) * .556); left: calc(50% - var(--cs) * .556); width: calc(var(--cs) * 1.112); height: calc(var(--cs) * 1.112); will-change: transform; }
-  .fp-dotw i { position: absolute; left: 50%; top: 0; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #fff;
-    box-shadow: 0 0 6px 2px rgba(255, 255, 255, .85), 0 0 14px 5px rgba(255, 45, 85, .6); }
-  .fp-disc { top: calc(50% - var(--cs) / 2); left: calc(50% - var(--cs) / 2); width: var(--cs); height: var(--cs); border-radius: 50%; overflow: hidden; background: #140306; will-change: transform;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, .12), 0 6px 22px rgba(0, 0, 0, .6); }
+  .fp-hole { left: calc(50% - var(--cs) / 2); top: calc(var(--cs) * 0.6700); width: var(--cs); height: var(--cs); border-radius: 50%; overflow: hidden; background: #140306; }
+  .fp-slot { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+  .fp-disc { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; overflow: hidden; background: #140306; will-change: transform; }
   .fp-disc img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-  .fp-cover .cover-ring { top: calc(50% - var(--cs) / 2); left: calc(50% - var(--cs) / 2); width: var(--cs); height: var(--cs); border-radius: 50%; border-color: var(--red); }
+  .fp-cover .cover-ring { left: calc(50% - var(--cs) / 2); top: calc(var(--cs) * 0.6700); width: var(--cs); height: var(--cs); border-radius: 50%; border-color: var(--red); }
+  /* the thin progress ring + white dot: just inside the frame's red ring */
+  .fp-prog { left: calc(50% - var(--cs) * .4897); top: calc(var(--cs) * 0.6803); width: calc(var(--cs) * .9794); height: calc(var(--cs) * .9794); overflow: visible; }
+  .fp-prog .trk { fill: none; stroke: rgba(255, 236, 240, .5); stroke-width: 1.6; }
+  .fp-prog .done { fill: none; stroke: url(#fpPink); stroke-width: 3.4; stroke-linecap: round; }
+  .fp-prog .halo { fill: none; stroke: rgba(255, 45, 85, .3); stroke-width: 7; stroke-linecap: round; }
+  .fp-dotw { left: calc(50% - var(--cs) * .475); top: calc(var(--cs) * 0.6950); width: calc(var(--cs) * .95); height: calc(var(--cs) * .95); will-change: transform; }
+  .fp-dotw i { position: absolute; left: 50%; top: 0; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; background: #fff;
+    box-shadow: 0 0 6px 2px rgba(255, 255, 255, .85), 0 0 14px 5px rgba(255, 45, 85, .6); }
+  /* the frame: its picture box (the picture runs a little past .fp-cover's top: there it has faded out) */
+  .fg { left: calc(50% - var(--cs) * 0.8253); top: calc(var(--cs) * -0.2570); width: calc(var(--cs) * 1.6509); height: calc(var(--cs) * 2.9333); }
+  .fg > i, .fg-glows > i { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+  .fg-glows { position: absolute; top: 0; right: 0; bottom: 0; left: 0; transition: opacity .8s ease; }
+  .fg-wing, .fg-body, .fg-drip, .fg-cross, .fg-ring { background: url("assets/frame-gothic.png") 0 0 / 100% 100% no-repeat; }
+  /* the wings flap (about 4 degrees, mirrored, round where they join the frame); they sit behind the rest, so the chains and spikes stay in front */
+  .fg-wing.l { clip-path: polygon(25.29% 21.17%, 21.89% 21.95%, 16.05% 23.62%, 10.73% 25.66%, 5.95% 28.47%, 1.81% 31.76%, 1.81% 32.00%, 2.34% 32.24%, 4.78% 30.80%, 6.48% 30.44%, 6.70% 30.92%, 6.38% 31.10%, 6.38% 31.46%, 5.63% 32.12%, 5.74% 32.30%, 5.42% 32.36%, 4.57% 32.95%, 4.68% 33.13%, 4.36% 33.43%, 4.78% 33.67%, 5.63% 33.01%, 6.91% 32.54%, 7.44% 33.19%, 7.23% 33.37%, 6.59% 33.37%, 6.16% 33.61%, 6.70% 33.97%, 6.06% 34.69%, 5.74% 34.63%, 5.31% 34.87%, 5.63% 35.11%, 4.78% 36.18%, 4.14% 36.42%, 3.72% 36.42%, 2.98% 36.84%, 3.19% 37.56%, 2.34% 38.04%, 2.66% 38.22%, 2.66% 39.00%, 2.34% 39.17%, 2.66% 39.35%, 2.66% 39.59%, 2.13% 39.89%, 1.91% 40.61%, 1.49% 40.85%, 1.70% 41.27%, 1.49% 41.69%, 1.49% 43.48%, 2.02% 45.28%, 2.44% 45.75%, 2.44% 46.11%, 2.02% 46.35%, 2.44% 46.59%, 2.76% 46.59%, 3.61% 47.31%, 4.57% 47.31%, 5.84% 46.77%, 6.27% 45.51%, 6.91% 45.87%, 6.91% 46.59%, 7.23% 46.77%, 9.99% 42.46%, 10.41% 42.17%, 11.90% 41.87%, 13.50% 41.87%, 13.71% 41.57%, 14.13% 41.75%, 16.37% 37.98%, 18.17% 36.00%, 18.07% 35.83%, 17.64% 35.77%, 18.07% 35.11%, 17.64% 34.75%, 16.58% 35.23%, 16.37% 35.11%, 15.62% 35.17%, 14.56% 35.83%, 14.35% 35.65%, 14.77% 35.29%, 17.22% 33.85%, 20.09% 32.54%, 20.19% 32.30%, 19.98% 32.12%, 20.30% 31.94%, 20.94% 32.24%, 21.57% 32.00%, 21.68% 32.54%, 22.21% 32.83%, 22.95% 32.48%, 22.95% 32.06%, 23.49% 32.12%, 24.65% 31.52%, 24.76% 30.80%, 24.34% 30.56%, 24.55% 30.38%, 25.72% 30.98%, 27.84% 29.78%, 26.89% 25.36%); transform-origin: 26.78% 30.62%; }
+  .fg-wing.r { clip-path: polygon(74.71% 21.17%, 73.22% 25.00%, 72.16% 29.78%, 74.28% 30.98%, 75.45% 30.38%, 76.09% 30.98%, 75.24% 30.92%, 74.81% 31.22%, 76.51% 32.12%, 77.05% 31.82%, 77.26% 31.94%, 77.26% 32.60%, 77.68% 32.83%, 78.00% 32.83%, 78.43% 32.60%, 78.43% 32.30%, 79.60% 31.94%, 80.02% 32.18%, 79.81% 32.30%, 80.02% 32.60%, 82.78% 33.85%, 85.12% 35.29%, 85.02% 35.41%, 84.38% 35.05%, 83.85% 35.35%, 83.00% 34.99%, 81.83% 35.59%, 81.83% 36.00%, 83.42% 37.68%, 84.70% 39.53%, 85.65% 41.39%, 86.18% 41.57%, 86.29% 41.87%, 88.10% 41.87%, 89.59% 42.17%, 89.90% 42.34%, 92.35% 45.99%, 93.62% 46.05%, 94.69% 47.19%, 95.11% 47.43%, 95.54% 47.43%, 96.92% 46.77%, 97.34% 46.35%, 97.98% 44.62%, 98.30% 44.26%, 98.51% 43.60%, 98.41% 38.76%, 97.77% 38.52%, 97.56% 38.16%, 97.87% 37.56%, 97.45% 37.32%, 96.71% 37.20%, 96.60% 36.60%, 97.13% 36.18%, 96.60% 35.94%, 95.86% 36.36%, 95.86% 36.06%, 94.58% 35.53%, 94.05% 34.93%, 94.58% 34.57%, 94.05% 34.21%, 94.58% 33.91%, 94.69% 34.09%, 95.32% 34.33%, 95.86% 34.03%, 96.07% 33.31%, 95.54% 32.72%, 94.58% 32.36%, 94.37% 31.88%, 93.73% 31.40%, 93.94% 31.28%, 94.26% 31.34%, 94.69% 31.10%, 94.26% 30.80%, 94.58% 30.68%, 95.75% 31.10%, 97.56% 32.24%, 98.09% 32.00%, 98.09% 31.70%, 93.94% 28.41%, 89.27% 25.66%, 83.95% 23.62%, 78.11% 21.95%); transform-origin: 73.22% 30.62%; }
+  .fg-body { clip-path: polygon(100.00% 100.00%, 100.00% 43.62%, 98.51% 43.62%, 98.30% 44.26%, 97.98% 44.62%, 97.34% 46.35%, 96.92% 46.77%, 95.54% 47.43%, 95.11% 47.43%, 94.69% 47.19%, 93.62% 46.05%, 92.35% 45.99%, 89.90% 42.34%, 89.59% 42.17%, 88.10% 41.87%, 86.29% 41.87%, 86.18% 41.57%, 85.65% 41.39%, 84.70% 39.53%, 83.42% 37.68%, 81.83% 36.00%, 81.83% 35.59%, 83.00% 34.99%, 83.85% 35.35%, 84.38% 35.05%, 85.02% 35.41%, 85.12% 35.29%, 82.78% 33.85%, 80.02% 32.60%, 79.81% 32.30%, 80.02% 32.18%, 79.60% 31.94%, 78.43% 32.30%, 78.43% 32.60%, 78.00% 32.83%, 77.68% 32.83%, 77.26% 32.60%, 77.26% 31.94%, 77.05% 31.82%, 76.51% 32.12%, 74.81% 31.22%, 75.24% 30.92%, 76.09% 30.98%, 75.45% 30.38%, 74.28% 30.98%, 72.16% 29.78%, 73.22% 25.00%, 74.71% 21.17%, 78.11% 21.95%, 83.95% 23.62%, 89.27% 25.66%, 93.94% 28.41%, 98.09% 31.70%, 98.09% 32.00%, 97.56% 32.24%, 95.75% 31.10%, 94.58% 30.68%, 94.26% 30.80%, 94.69% 31.10%, 94.26% 31.34%, 93.94% 31.28%, 93.73% 31.40%, 94.37% 31.88%, 94.58% 32.36%, 95.54% 32.72%, 96.07% 33.31%, 95.86% 34.03%, 95.32% 34.33%, 94.69% 34.09%, 94.58% 33.91%, 94.05% 34.21%, 94.58% 34.57%, 94.05% 34.93%, 94.58% 35.53%, 95.86% 36.06%, 95.86% 36.36%, 96.60% 35.94%, 97.13% 36.18%, 96.60% 36.60%, 96.71% 37.20%, 97.45% 37.32%, 97.87% 37.56%, 97.56% 38.16%, 97.77% 38.52%, 98.41% 38.76%, 98.51% 43.58%, 100.00% 43.58%, 100.00% 0.00%, 0.00% 0.00%, 0.00% 40.83%, 1.52% 40.83%, 1.91% 40.61%, 2.13% 39.89%, 2.66% 39.59%, 2.66% 39.35%, 2.34% 39.17%, 2.66% 39.00%, 2.66% 38.22%, 2.34% 38.04%, 3.19% 37.56%, 2.98% 36.84%, 3.72% 36.42%, 4.14% 36.42%, 4.78% 36.18%, 5.63% 35.11%, 5.31% 34.87%, 5.74% 34.63%, 6.06% 34.69%, 6.70% 33.97%, 6.16% 33.61%, 6.59% 33.37%, 7.23% 33.37%, 7.44% 33.19%, 6.91% 32.54%, 5.63% 33.01%, 4.78% 33.67%, 4.36% 33.43%, 4.68% 33.13%, 4.57% 32.95%, 5.42% 32.36%, 5.74% 32.30%, 5.63% 32.12%, 6.38% 31.46%, 6.38% 31.10%, 6.70% 30.92%, 6.48% 30.44%, 4.78% 30.80%, 2.34% 32.24%, 1.81% 32.00%, 1.81% 31.76%, 5.95% 28.47%, 10.73% 25.66%, 16.05% 23.62%, 21.89% 21.95%, 25.29% 21.17%, 26.89% 25.36%, 27.84% 29.78%, 25.72% 30.98%, 24.55% 30.38%, 24.34% 30.56%, 24.76% 30.80%, 24.65% 31.52%, 23.49% 32.12%, 22.95% 32.06%, 22.95% 32.48%, 22.21% 32.83%, 21.68% 32.54%, 21.57% 32.00%, 20.94% 32.24%, 20.30% 31.94%, 19.98% 32.12%, 20.19% 32.30%, 20.09% 32.54%, 17.22% 33.85%, 14.77% 35.29%, 14.35% 35.65%, 14.56% 35.83%, 15.62% 35.17%, 16.37% 35.11%, 16.58% 35.23%, 17.64% 34.75%, 18.07% 35.11%, 17.64% 35.77%, 18.07% 35.83%, 18.17% 36.00%, 16.37% 37.98%, 14.13% 41.75%, 13.71% 41.57%, 13.50% 41.87%, 11.90% 41.87%, 10.41% 42.17%, 9.99% 42.46%, 7.23% 46.77%, 6.91% 46.59%, 6.91% 45.87%, 6.27% 45.51%, 5.84% 46.77%, 4.57% 47.31%, 3.61% 47.31%, 2.76% 46.59%, 2.44% 46.59%, 2.02% 46.35%, 2.44% 46.11%, 2.44% 45.75%, 2.02% 45.28%, 1.49% 43.48%, 1.49% 41.69%, 1.70% 41.27%, 1.50% 40.87%, 0.00% 40.87%, 0.00% 100.00%); }
+  #player.open .fg-wing.l { animation: fgFlapL 3s ease-in-out infinite; }
+  #player.open .fg-wing.r { animation: fgFlapR 3s ease-in-out infinite; }
+  @keyframes fgFlapL { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(4deg); } }
+  @keyframes fgFlapR { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-4deg); } }
+  /* the blood drips stretch down slowly, a drop falls off, the drip is back (and stretches again) */
+  .fg-drip.l1 { clip-path: polygon(7.76% 52.87%, 7.76% 53.17%, 7.44% 53.71%, 7.44% 55.50%, 7.76% 55.68%, 7.86% 56.16%, 7.86% 57.54%, 7.44% 58.73%, 7.55% 58.91%, 8.29% 59.27%, 9.03% 58.91%, 9.03% 58.07%, 8.82% 57.66%, 9.03% 54.31%, 8.50% 53.89%, 8.29% 54.01%, 8.08% 53.95%, 8.29% 53.53%, 8.29% 52.93%); transform-origin: 8.24% 52.87%; --st: 1.50; animation-duration: 6.2s; animation-delay: -0.4s; }
+  .fg > i.fg-drop.l1 { left: calc(8.24% - .55%); top: calc(62.47% - .55%); animation-duration: 6.2s; animation-delay: -0.4s; }
+  .fg-drip.l2 { clip-path: polygon(9.46% 55.26%, 9.46% 56.82%, 9.67% 57.12%, 9.56% 57.24%, 9.99% 58.91%, 9.99% 60.89%, 9.46% 62.20%, 9.46% 63.22%, 10.20% 63.70%, 10.84% 63.70%, 11.37% 63.40%, 11.37% 61.66%, 10.95% 59.99%, 11.16% 59.81%, 11.05% 59.33%, 11.26% 59.03%, 11.05% 58.91%, 11.26% 58.79%, 11.37% 58.37%, 11.37% 55.98%, 10.84% 55.62%, 10.52% 55.74%); transform-origin: 10.47% 55.26%; --st: 1.32; animation-duration: 7.4s; animation-delay: -3.1s; }
+  .fg > i.fg-drop.l2 { left: calc(10.47% - .55%); top: calc(66.39% - .55%); animation-duration: 7.4s; animation-delay: -3.1s; }
+  .fg-drip.l3 { clip-path: polygon(23.06% 65.67%, 23.06% 70.33%, 23.27% 70.45%, 23.06% 70.57%, 23.06% 70.75%, 23.59% 71.05%, 23.59% 71.29%, 23.49% 71.35%, 23.17% 71.23%, 23.06% 71.53%, 23.27% 71.59%, 23.59% 71.41%, 23.70% 71.47%, 23.59% 72.13%, 23.49% 72.19%, 23.06% 71.95%, 23.06% 74.52%, 23.38% 74.70%, 25.72% 74.70%, 25.61% 74.58%, 25.82% 74.46%, 25.82% 71.65%, 25.19% 71.47%, 25.08% 71.05%, 25.29% 70.87%, 25.29% 70.51%, 25.82% 70.69%, 25.82% 69.98%, 25.40% 69.62%, 25.82% 69.44%, 25.82% 65.85%, 25.72% 65.67%); transform-origin: 24.43% 65.67%; --st: 1.32; animation-duration: 8.1s; animation-delay: -5.2s; }
+  .fg > i.fg-drop.l3 { left: calc(24.43% - .55%); top: calc(77.59% - .55%); animation-duration: 8.1s; animation-delay: -5.2s; }
+  .fg-drip.r1 { clip-path: polygon(90.97% 51.91%, 91.18% 52.27%, 91.18% 53.05%, 91.07% 53.11%, 90.65% 52.93%, 90.54% 53.23%, 90.75% 53.29%, 91.07% 53.11%, 91.29% 53.23%, 91.29% 54.19%, 90.54% 56.28%, 91.07% 56.64%, 92.03% 56.64%, 92.35% 56.46%, 92.67% 55.92%, 92.14% 54.43%, 92.03% 53.65%, 92.24% 53.17%, 92.14% 52.63%, 92.35% 52.51%, 92.24% 52.15%, 92.56% 51.91%); transform-origin: 91.63% 51.91%; --st: 1.50; animation-duration: 6.8s; animation-delay: -1.7s; }
+  .fg > i.fg-drop.r1 { left: calc(91.63% - .55%); top: calc(59.00% - .55%); animation-duration: 6.8s; animation-delay: -1.7s; }
+  .fg-drip.r2 { clip-path: polygon(89.48% 59.69%, 88.52% 59.69%, 88.20% 59.87%, 88.20% 60.77%, 87.67% 61.00%, 88.20% 61.30%, 88.10% 62.74%, 87.57% 63.94%, 87.57% 64.53%, 87.78% 64.77%, 88.52% 65.13%, 89.16% 65.07%, 89.69% 64.77%, 89.90% 64.41%, 89.90% 63.82%, 89.59% 63.40%, 89.69% 63.34%, 89.37% 62.38%); transform-origin: 88.74% 59.69%; --st: 1.50; animation-duration: 7.9s; animation-delay: -6.3s; }
+  .fg > i.fg-drop.r2 { left: calc(88.74% - .55%); top: calc(67.85% - .55%); animation-duration: 7.9s; animation-delay: -6.3s; }
+  .fg-drip.r3 { clip-path: polygon(73.96% 66.51%, 73.96% 69.38%, 74.60% 69.38%, 74.81% 70.04%, 74.60% 71.23%, 74.18% 71.71%, 74.28% 71.83%, 73.96% 72.07%, 74.18% 73.09%, 74.92% 73.50%, 76.09% 73.50%, 76.83% 73.03%, 76.83% 72.13%, 76.30% 70.81%, 76.20% 69.50%, 76.51% 69.32%, 76.51% 69.08%, 77.05% 69.14%, 77.05% 66.51%); transform-origin: 75.48% 66.51%; --st: 1.50; animation-duration: 8.6s; animation-delay: -2.4s; }
+  .fg > i.fg-drop.r3 { left: calc(75.48% - .55%); top: calc(77.00% - .55%); animation-duration: 8.6s; animation-delay: -2.4s; }
+  #player.open .fg-drip { animation-name: fgDrip; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+  @keyframes fgDrip { 0%, 8% { transform: scaleY(1); } 62% { transform: scaleY(var(--st)); } 66% { transform: scaleY(.96); } 72%, 100% { transform: scaleY(1); } }
+  .fg > i.fg-drop { top: auto; right: auto; bottom: auto; width: 1.1%; height: 1.1%; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; opacity: 0;
+    background: radial-gradient(circle at 40% 40%, #ffb3b3 0 14%, #ff1f3d 42%, #b0001c 78%, rgba(160, 0, 20, 0) 100%); }
+  #player.open .fg-drop { animation-name: fgDrop; animation-timing-function: linear; animation-iteration-count: infinite; }
+  @keyframes fgDrop { 0%, 61% { opacity: 0; transform: translateY(0) scale(.6); } 63% { opacity: 1; transform: translateY(0) scale(1); }
+                      78% { opacity: .9; transform: translateY(700%) scale(.9, 1.25); } 84%, 100% { opacity: 0; transform: translateY(1100%) scale(.7); } }
+  /* the halo behind the cross: light slowly going round it, and it glows in and out */
+  .fg-glows > i.fg-halo { left: calc(49.95% - 18.49%); top: calc(21.89% - 10.41%); right: auto; bottom: auto; width: 36.98%; height: 20.81%;
+    -webkit-mask-image: radial-gradient(closest-side, rgba(0, 0, 0, 0) 90%, #000 95%, #000 98.5%, rgba(0, 0, 0, 0) 100%), linear-gradient(180deg, #000 52%, rgba(0, 0, 0, 0) 70%);
+    -webkit-mask-composite: source-in; mask-image: radial-gradient(closest-side, rgba(0, 0, 0, 0) 90%, #000 95%, #000 98.5%, rgba(0, 0, 0, 0) 100%), linear-gradient(180deg, #000 52%, rgba(0, 0, 0, 0) 70%);
+    mask-composite: intersect; opacity: .8; }
+  .fg-halo b { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%;
+    background: conic-gradient(rgba(255, 60, 80, 0) 0 8%, rgba(255, 190, 200, 1) 13%, rgba(255, 60, 80, .2) 21%, rgba(255, 60, 80, 0) 30%, rgba(255, 60, 80, 0) 52%,
+                               rgba(255, 120, 140, .85) 60%, rgba(255, 60, 80, .15) 68%, rgba(255, 60, 80, 0) 76%); }
+  #player.open .fg-halo { animation: fgPulse 2.8s ease-in-out infinite; }
+  #player.open .fg-halo b { animation: spin 16s linear infinite; }
+  /* the cross's glowing centre: a brighter copy of it and a red glow, pulsing */
+  .fg-cross { clip-path: ellipse(6.2% 3.5% at 49.95% 22.95%); filter: brightness(1.6) saturate(1.25); opacity: .5; }
+  .fg-glows > i.fg-crossglow { left: calc(49.95% - 13%); top: calc(22.95% - 7.3%); right: auto; bottom: auto; width: 26%; height: 14.6%; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 70, 90, .75), rgba(255, 30, 60, .3) 45%, rgba(255, 20, 50, 0) 100%); opacity: .5; }
+  #player.open .fg-cross, #player.open .fg-crossglow { animation: fgPulse 2.4s ease-in-out infinite; }
+  @keyframes fgPulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+  /* the ring's glow: a brighter copy of the red ring, lit on the music's beat (the script sets #fgRing's opacity) */
+  @property --fgsw { syntax: "<angle>"; inherits: false; initial-value: 360deg; }
+  .fg-ringw { opacity: .45; }
+  .fg-ring { position: absolute; top: 0; right: 0; bottom: 0; left: 0; filter: brightness(1.75) saturate(1.3); --fgsw: 360deg;
+    -webkit-mask-image: radial-gradient(circle calc(var(--cs) * .545) at 49.99% 48.65%, rgba(0, 0, 0, 0) 85%, #000 91%, #000 96.5%, rgba(0, 0, 0, 0) 100%),
+                        conic-gradient(from 0deg at 49.99% 48.65%, #000 var(--fgsw), rgba(0, 0, 0, 0) var(--fgsw));
+    -webkit-mask-composite: source-in;
+    mask-image: radial-gradient(circle calc(var(--cs) * .545) at 49.99% 48.65%, rgba(0, 0, 0, 0) 85%, #000 91%, #000 96.5%, rgba(0, 0, 0, 0) 100%),
+                conic-gradient(from 0deg at 49.99% 48.65%, #000 var(--fgsw), rgba(0, 0, 0, 0) var(--fgsw));
+    mask-composite: intersect; }
+  /* the light beams over the cross and under the bottom spike flicker softly */
+  .fg > i.fg-beam { left: calc(49.96% - 2.5px); right: auto; width: 5px; filter: blur(.4px);
+    background: linear-gradient(180deg, rgba(255, 40, 70, 0), rgba(255, 90, 110, .8) 45%, rgba(255, 225, 230, .95) 75%, rgba(255, 60, 90, .2)); }
+  .fg > i.fg-beam.t { top: 9.4%; height: 3.9%; bottom: auto; }
+  .fg > i.fg-beam.b { top: 80.9%; height: 3.2%; bottom: auto; transform: scaleY(-1); }
+  #player.open .fg-beam { animation: fgBeam 2.6s linear infinite; }
+  #player.open .fg-beam.b { animation-delay: -1.1s; }
+  @keyframes fgBeam { 0%, 100% { opacity: .35; } 9% { opacity: .9; } 14% { opacity: .45; } 31% { opacity: .8; } 46% { opacity: .3; } 58% { opacity: 1; } 70% { opacity: .5; } 86% { opacity: .85; } }
+  /* opening: the frame fades in, the cross lights first, then the ring lights up round from the top */
+  #player.fg-open .fg { animation: fgIn .7s ease-out both; }
+  #player.fg-open .fg-cross, #player.fg-open .fg-crossglow { animation: fgCrossOn 1.1s ease-out .2s both, fgPulse 2.4s ease-in-out 1.3s infinite; }
+  #player.fg-open .fg-ring { animation: fgSweep 1.1s cubic-bezier(.45, .05, .25, 1) .65s both; }
+  @keyframes fgIn { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: none; } }
+  @keyframes fgCrossOn { 0% { opacity: 0; } 35% { opacity: 1; } 100% { opacity: .35; } }
+  @keyframes fgSweep { from { --fgsw: 0deg; } to { --fgsw: 360deg; } }
+  /* paused: the glows dim (the smoke and embers slow down in the script) */
+  #player.fg-dim .fg-glows { opacity: .5; }
+  /* red smoke + embers: one canvas round the frame (off with "Floating particles") */
+  .fg-fx { left: -12%; top: 0; width: 124%; height: 100%; }
+  .nofx .fg-fx, .ultra .fg-fx { display: none; }
 
   /* the side panel: dark glass pill with a thin glowing red border; slides in from the left when the player opens */
   .fp-side {
-    position: absolute; left: -6px; top: calc(var(--box) * .4); width: 46px; height: calc(176px - 22px * var(--pq)); z-index: 3;
+    position: absolute; left: -6px; top: calc(8px + var(--cs) * 1.24); width: 44px; height: calc(162px - 20px * var(--pq)); z-index: 3;   /* beside the lower ring, clear of the left wing */
     display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 0;
     border-radius: 23px; background: linear-gradient(180deg, rgba(46, 8, 14, .8), rgba(20, 3, 7, .88)); border: 1px solid rgba(255, 70, 92, .6);
     box-shadow: 0 0 12px rgba(255, 30, 60, .4), inset 0 1px 0 rgba(255, 255, 255, .09), inset 0 0 12px rgba(255, 40, 70, .14);
@@ -753,7 +831,7 @@ const CONFIG = {
   .vsl:focus-visible::before { box-shadow: 0 0 0 3px rgba(255, 255, 255, .25); }
 
   /* title + red star (like), artist */
-  .fp-info { width: 100%; padding: 0 56px; margin-top: calc(14px - 6px * var(--pq)); text-align: center; flex: none; }
+  .fp-info { width: 100%; padding: 0 56px; margin-top: calc(4px - 3px * var(--pq)); text-align: center; flex: none; }
   .fp-title { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; font-size: 26px; font-weight: 800; line-height: 1.2; }
   .fp-title .js-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fp-star { position: relative; flex: none; width: 32px; height: 32px; margin-right: -6px; display: grid; place-items: center; color: var(--red); }
@@ -1947,8 +2025,17 @@ const CONFIG = {
       </div>
       <div class="fp-main">
         <div class="fp-cover" id="fpCover">
-          <div class="fp-glow" id="fpGlow"></div>
-          <div class="fp-outer"></div>
+          <!-- the gothic frame round the cover (assets/frame-gothic.png): red smoke + embers behind it (one canvas), the cover in its empty circle,
+               the frame itself split by clip-path (two flapping wings behind, the rest in front), its blood drips, glows and light beams on top -->
+          <canvas class="fg-fx" id="fgFx"></canvas>
+          <div class="fp-hole"><div class="fp-slot" id="fpSlot"><div class="fp-disc" id="fpDisc"><img class="js-cover" alt="" decoding="async"></div></div></div>
+          <div class="fg" id="fg">
+            <i class="fg-wing l"></i><i class="fg-wing r"></i><i class="fg-body"></i>
+            <i class="fg-drip l1"></i><i class="fg-drip l2"></i><i class="fg-drip l3"></i><i class="fg-drip r1"></i><i class="fg-drip r2"></i><i class="fg-drip r3"></i>
+            <div class="fg-glows"><i class="fg-halo"><b></b></i><i class="fg-crossglow"></i><i class="fg-cross"></i><i class="fg-ringw" id="fgRing"><b class="fg-ring"></b></i></div>
+            <i class="fg-beam t"></i><i class="fg-beam b"></i>
+            <i class="fg-drop l1"></i><i class="fg-drop l2"></i><i class="fg-drop l3"></i><i class="fg-drop r1"></i><i class="fg-drop r2"></i><i class="fg-drop r3"></i>
+          </div>
           <svg class="fp-prog" viewBox="0 0 200 200" aria-hidden="true">
             <defs>
               <linearGradient id="fpPink" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff2d55"/><stop offset=".55" stop-color="#ff5a80"/><stop offset="1" stop-color="#ffa3b8"/></linearGradient>
@@ -1958,7 +2045,6 @@ const CONFIG = {
             <circle class="halo" id="fpHalo" cx="100" cy="100" r="97" stroke-dasharray="0 1000" transform="rotate(-90 100 100)" mask="url(#fpGaps)"/>
             <circle class="done" id="fpDone" cx="100" cy="100" r="97" stroke-dasharray="0 1000" transform="rotate(-90 100 100)" mask="url(#fpGaps)"/>
           </svg>
-          <div class="fp-disc" id="fpDisc"><img class="js-cover" alt="" decoding="async"></div>
           <div class="fp-dotw" id="fpDot"><i></i></div>
           <span class="cover-ring js-ring"></span>
         </div>
@@ -2930,6 +3016,7 @@ const CONFIG = {
     closeMenu(); closeSheet(); closeEq(); playerOpen = true;
     var pl = $("player"); pl.classList.add("open"); pl.setAttribute("aria-hidden", "false");
     if (!bg.paused) { bg.pause(); bgHeld = true; }        // the player covers the background video: let it rest
+    pl.classList.remove("fg-open"); void pl.offsetWidth; pl.classList.add("fg-open");   // the frame's opening: fade in, the cross lights, then the ring
     fitPlayer(); fitTitle(); updateChrome(); pvUpdate();
   }
   function closePlayer(silent) {
@@ -4081,10 +4168,11 @@ const CONFIG = {
      PLAYER VIEW ("Now Playing"): one loop runs only while the player is open (and the app is in front):
      the cover turns (and slows down to a stop when paused), the white dot + pink arc follow the song,
      the red glow pulses with the loudness, and the waveform (one canvas) moves with the music; its red part is what has played.
+     Round the cover, the gothic frame: its ring glows on the beat, and red smoke drifts and embers float up round it (one more canvas, #fgFx).
      ===================================================================== */
   var swiping = false;
-  var pv = { raf: 0, last: 0, acc: 0, ang: 0, spd: 0, deg: -1, lvl: 0, gl: -1, fx: null, cv: $("fpWave"), g: null, W: 0, H: 0, k: 1, n: 0, base: [], v: [], song: null, seekDrag: false };
-  var pvDisc = $("fpDisc"), pvDot = $("fpDot"), pvDone = $("fpDone"), pvHalo = $("fpHalo"), pvGlow = $("fpGlow"), PV_C = 2 * Math.PI * 97;
+  var pv = { raf: 0, dim: null, last: 0, acc: 0, ang: 0, spd: 0, deg: -1, lvl: 0, gl: -1, fx: null, cv: $("fpWave"), g: null, W: 0, H: 0, k: 1, n: 0, base: [], v: [], song: null, seekDrag: false };
+  var pvDisc = $("fpDisc"), pvDot = $("fpDot"), pvDone = $("fpDone"), pvHalo = $("fpHalo"), pvGlow = $("fgRing"), PV_C = 2 * Math.PI * 97;
   function pvWanted() { return playerOpen && !paused && !document.hidden; }
   function pvUpdate() {
     if (pvWanted()) { if (!pv.raf) { pvSize(); pv.last = 0; pv.raf = requestAnimationFrame(pvFrame); } }
@@ -4121,6 +4209,61 @@ const CONFIG = {
     c.width = Math.round(w * pv.k); c.height = Math.round(h * pv.k); pv.W = w; pv.H = h;
     pv.g = c.getContext("2d"); pv.fx = null;
     var n = Math.max(30, Math.floor(w / 3.7)); if (n !== pv.n) { pv.n = n; pv.v = []; pvShape(); }
+    fgSize();
+  }
+  /* ---------- the gothic frame's red smoke + embers (one canvas behind the frame; "Floating particles" off = none) ---------- */
+  var fg = { cv: $("fgFx"), g: null, W: 0, H: 0, k: 1, cs: 0, cx: 0, cy: 0, smoke: [], emb: [], spr: null, espr: null, acc: 0, fade: null, sp: 1 };
+  function fgOn() { return fx.on && !isUltra() && !reduced; }
+  function fgSprite(stops, size) {                         // a soft round light, drawn once
+    var c = document.createElement("canvas"), x = c.getContext("2d"), g = x.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2); c.width = c.height = size;
+    stops.forEach(function (s) { g.addColorStop(s[0], s[1]); }); x.fillStyle = g; x.fillRect(0, 0, size, size); return c;
+  }
+  function fgSize() {
+    var c = fg.cv, w = c.clientWidth, h = c.clientHeight; if (!w || !h) return;
+    fg.k = Math.min(window.devicePixelRatio || 1, isLite() ? 1 : 1.5);
+    c.width = Math.round(w * fg.k); c.height = Math.round(h * fg.k); fg.W = w; fg.H = h; fg.g = c.getContext("2d");
+    fg.cs = w / 1.24 / 1.75; fg.cx = w / 2; fg.cy = fg.cs * 1.17;         // the cover's size and centre inside the canvas (124% of the frame's room)
+    if (!fg.spr) fg.spr = [fgSprite([[0, "rgba(200,14,40,.55)"], [.45, "rgba(150,8,30,.28)"], [1, "rgba(120,0,20,0)"]], 128),
+                          fgSprite([[0, "rgba(255,40,70,.45)"], [.5, "rgba(190,10,40,.18)"], [1, "rgba(150,0,30,0)"]], 128)];
+    if (!fg.espr) fg.espr = fgSprite([[0, "rgba(255,245,220,1)"], [.25, "rgba(255,140,90,.9)"], [.6, "rgba(255,40,40,.3)"], [1, "rgba(255,20,30,0)"]], 32);
+    var fd = fg.g.createLinearGradient(0, 0, 0, h), fs = fg.g.createLinearGradient(0, 0, w, 0);   // soft edges all round (the title above, the song name below)
+    fd.addColorStop(0, "rgba(0,0,0,1)"); fd.addColorStop(.1, "rgba(0,0,0,0)"); fd.addColorStop(.88, "rgba(0,0,0,0)"); fd.addColorStop(1, "rgba(0,0,0,1)"); fg.fade = fd;
+    fs.addColorStop(0, "rgba(0,0,0,1)"); fs.addColorStop(.14, "rgba(0,0,0,0)"); fs.addColorStop(.86, "rgba(0,0,0,0)"); fs.addColorStop(1, "rgba(0,0,0,1)"); fg.fadeS = fs;
+    fg.smoke = [];
+    for (var i = 0; i < (isLite() ? 10 : 14); i++)
+      fg.smoke.push({ a: Math.random() * 6.283, va: (Math.random() < .5 ? -1 : 1) * (.05 + Math.random() * .09), r: .5 + Math.random() * .42, s: .45 + Math.random() * .5,
+                      al: .35 + Math.random() * .45, ph: Math.random() * 6.283, c: i % 2 });
+    fg.emb = [];
+  }
+  function fgDraw(dt) {                                    // smoke swirls slowly round the frame, embers rise and fade (slower and dimmer when paused)
+    var g = fg.g; if (!g || !fg.W) return;
+    var want = audio.paused ? .35 : 1; fg.sp += (want - fg.sp) * Math.min(1, dt * 2);
+    var sp = fg.sp, dim = .55 + .45 * sp, cs = fg.cs, cx = fg.cx, cy = fg.cy, i;
+    g.setTransform(fg.k, 0, 0, fg.k, 0, 0); g.clearRect(0, 0, fg.W, fg.H);
+    for (i = 0; i < fg.smoke.length; i++) {                // smoke: big soft clouds going round the ring, breathing
+      var m = fg.smoke[i]; m.a += m.va * dt * sp; m.ph += .4 * dt * sp;
+      var rr = m.r * cs * (1 + .08 * Math.sin(m.ph)), x = cx + Math.cos(m.a) * rr * 1.12, y = cy + Math.sin(m.a) * rr * 1.5 + Math.sin(m.ph * .7) * cs * .05;
+      var s = m.s * cs * (1 + .12 * Math.sin(m.ph * 1.3));
+      g.globalAlpha = m.al * dim * (.75 + .25 * Math.sin(m.ph)); g.drawImage(fg.spr[m.c], x - s / 2, y - s / 2, s, s);
+    }
+    g.globalCompositeOperation = "lighter";
+    var max = isLite() ? 18 : 28;
+    fg.acc += dt * sp;
+    while (fg.acc > .11 && fg.emb.length < max) {          // new embers come off the ring, the wings and the bottom spike
+      fg.acc -= .11; var an = Math.random() * 6.283, rr2 = cs * (.5 + Math.random() * .38);
+      fg.emb.push({ x: cx + Math.cos(an) * rr2 * 1.25, y: cy + Math.sin(an) * rr2 * 1.2 + cs * .1, vx: (Math.random() - .5) * cs * .06, vy: -cs * (.1 + Math.random() * .16),
+                    t: 0, T: 1.8 + Math.random() * 2.2, s: 2 + Math.random() * 3.2, w: Math.random() * 6.283 });
+    }
+    if (fg.acc > .11) fg.acc = .11;
+    for (i = fg.emb.length - 1; i >= 0; i--) {
+      var e = fg.emb[i]; e.t += dt * sp;
+      if (e.t >= e.T || e.y < -10) { fg.emb.splice(i, 1); continue; }
+      e.x += (e.vx + Math.sin(e.t * 2.2 + e.w) * cs * .03) * dt * sp; e.y += e.vy * dt * sp;
+      var u = e.t / e.T; g.globalAlpha = dim * Math.min(1, u * 5) * (1 - u) * (.7 + .3 * Math.sin(e.t * 9 + e.w));
+      g.drawImage(fg.espr, e.x - e.s, e.y - e.s, e.s * 2, e.s * 2);
+    }
+    g.globalAlpha = 1; g.globalCompositeOperation = "destination-out"; g.fillStyle = fg.fade; g.fillRect(0, 0, fg.W, fg.H); g.fillStyle = fg.fadeS; g.fillRect(0, 0, fg.W, fg.H);
+    g.globalCompositeOperation = "source-over";
   }
   function pvLevel(now, dt) {                              // loudness 0..1, and the bars' targets (from Web Audio, or an imitation on the beat)
     var n = pv.n, i, lvl = 0, playing = !audio.paused;
@@ -4196,10 +4339,12 @@ const CONFIG = {
       pvDone.setAttribute("stroke-dasharray", (p * PV_C).toFixed(1) + " 1000"); pvHalo.setAttribute("stroke-dasharray", (p * PV_C).toFixed(1) + " 1000");
     }
     var L = pvLevel(t, dt);
-    if (!isUltra() && Math.abs(L - pv.gl) > .012) {                          // the red glow follows the loudness (only real changes)
-      pv.gl = L; pvGlow.style.opacity = (.42 + .58 * L).toFixed(3); pvGlow.style.transform = "scale(" + (1 + .06 * L).toFixed(3) + ")";
+    if (!isUltra() && Math.abs(L - pv.gl) > .012) {                          // the frame's ring glows on the beat (only real changes)
+      pv.gl = L; pvGlow.style.opacity = (.22 + .78 * L).toFixed(3);
     }
+    var dimNow = audio.paused; if (dimNow !== pv.dim) { pv.dim = dimNow; $("player").classList.toggle("fg-dim", dimNow); }
     pvDraw(p);
+    if (fgOn()) fgDraw(dt);
   }
   // tap (or drag) on the waveform to jump to that part of the song
   (function () {
@@ -4229,27 +4374,27 @@ const CONFIG = {
 
   // swipe left / right on the cover: it slides out, the next (or previous) song's cover slides in, and it plays
   (function () {
-    var cv = $("fpCover"), sx = 0, sy = 0, dx = 0, on = false, locked = false;
+    var cv = $("fpCover"), slot = $("fpSlot"), sx = 0, sy = 0, dx = 0, on = false, locked = false;
     cv.addEventListener("pointerdown", function (e) { on = true; locked = false; sx = e.clientX; sy = e.clientY; dx = 0; try { cv.setPointerCapture(e.pointerId); } catch (x) {} });
     cv.addEventListener("pointermove", function (e) {
       if (!on) return; dx = e.clientX - sx;
-      if (!locked && Math.abs(e.clientY - sy) > Math.abs(dx) + 10) { on = false; cv.style.transform = ""; cv.classList.remove("drag"); return; }
+      if (!locked && Math.abs(e.clientY - sy) > Math.abs(dx) + 10) { on = false; slot.style.transform = ""; cv.classList.remove("drag"); return; }
       if (!locked && Math.abs(dx) > 6) { locked = true; cv.classList.add("drag"); }
-      if (locked) cv.style.transform = "translateX(" + dx * .8 + "px) rotate(" + dx / 26 + "deg)";
+      if (locked) slot.style.transform = "translateX(" + dx * .8 + "px) rotate(" + dx / 26 + "deg)";
     });
     function end() {
       if (!on) return; on = false; cv.classList.remove("drag");
-      var from = cv.style.transform || "none";
+      var from = slot.style.transform || "none";
       if (!(locked && Math.abs(dx) > 60)) {
-        if (locked && cv.animate && !reduced) cv.animate([{ transform: from }, { transform: "none" }], { duration: 320, easing: "cubic-bezier(.2,1.3,.4,1)" });
-        cv.style.transform = ""; return;
+        if (locked && slot.animate && !reduced) slot.animate([{ transform: from }, { transform: "none" }], { duration: 320, easing: "cubic-bezier(.2,1.3,.4,1)" });
+        slot.style.transform = ""; return;
       }
       swipeSong(dx < 0 ? 1 : -1, from);
     }
     cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
   })();
   function swipeSong(d, from) {                            // d: 1 = next (swiped left), -1 = previous (swiped right)
-    var cv = $("fpCover"), w = cv.offsetWidth * .9 + 80;
+    var cv = $("fpSlot"), w = cv.offsetWidth * 1.1 + 20;                // (only the cover slides, inside the frame's circle)
     var change = function () { swiping = true; if (songs.length < 2) restart(); else if (d > 0) nextSong(); else load(idx - 1, true, -1); swiping = false; };
     cv.style.transform = "";
     if (reduced || !cv.animate) { change(); return; }
