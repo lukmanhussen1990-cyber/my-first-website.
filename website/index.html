@@ -16,13 +16,14 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "1.9",                       // shown in Settings → About
+  version: "1.9.1",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
   avatarMedia: [                        // the profile picture on Home / Profile: these show one by one, each fading in over the last
     "assets/avatar.mp4",                //   (a picture stays avatarImageSeconds, a clip plays to its end; then it starts again)
     "assets/avatar.jpg",
+    "assets/avatar-hood.mp4",
     "assets/avatar-crown.mp4",
     "assets/avatar-selfie.jpg",
     "assets/avatar-purple.jpg",
@@ -30,7 +31,7 @@ const CONFIG = {
     "assets/avatar-drawing.jpg",
     "assets/avatar-cooked.jpg",
   ],
-  background:  "assets/background.mp4", // background video (muted, loops, slowly zooms)
+  background:  "assets/background-anime.mp4", // background video (muted, loops, slowly zooms)
   frame:       "assets/frame.png",      // the wings + crown frame around the profile clip on Home ("" = no frame, a plain glowing ring instead)
   frame2:      "assets/frame2.png",     // the wings + crown frame on the Settings card; its crown is also in the popup messages ("" = plain ring)
   frameTint:   "gold",                  // "gold" = the Home frame glows warm orange-gold (to match the logo and the name) · "" = red
@@ -38,16 +39,18 @@ const CONFIG = {
   badge: { image: "assets/claude-logo.png", title: "Built with Claude", text: "This app was designed and coded with Claude." },
 
   // ---------- music ----------
+  // songs are .m4a (AAC 128 kbps: the same sound in about two thirds of the space of a 192 kbps .mp3, so more songs fit in the app); .mp3 works too
   // cover: "" = use the profile picture as the cover art · artist: "" = "Unknown Artist"
   // bpm + beat: the song's tempo and the second its first beat falls on, so the frame's glow pulses on the beat
   // party: true = "party mode" while that song plays (disco ball, laser beams, light dots, neon cards, a waveform on the music card)
   //             (leave them out for a new song: the glow then pulses at a steady pace while it plays)
   songs: [
-    { title: "Jingle Bells",            artist: "",            file: "assets/jingle-bells.mp3",            cover: "", bpm: 132.00, beat: 0.410 },
-    { title: "Forever Young",           artist: "Alphaville",  file: "assets/forever-young.mp3",           cover: "", bpm: 136.84, beat: 0.400 },
-    { title: "Never Gonna Give You Up", artist: "Rick Astley", file: "assets/never-gonna-give-you-up.mp3", cover: "", bpm: 113.63, beat: 0.255 },
-    { title: "MONTAGEM PERIGOSA (Super Slowed)", artist: "KVRXD", file: "assets/montagem-perigosa.mp3",    cover: "", bpm: 95.24, beat: 0.595 },
-    { title: "Dracula",                 artist: "Tame Impala", file: "assets/dracula.mp3",                 cover: "", bpm: 114.99, beat: 0.040, party: true },
+    { title: "Jingle Bells",            artist: "",            file: "assets/jingle-bells.m4a",            cover: "", bpm: 132.00, beat: 0.410 },
+    { title: "Forever Young",           artist: "Alphaville",  file: "assets/forever-young.m4a",           cover: "", bpm: 136.84, beat: 0.400 },
+    { title: "Never Gonna Give You Up", artist: "Rick Astley", file: "assets/never-gonna-give-you-up.m4a", cover: "", bpm: 113.63, beat: 0.255 },
+    { title: "MONTAGEM PERIGOSA (Super Slowed)", artist: "KVRXD", file: "assets/montagem-perigosa.m4a",    cover: "", bpm: 95.24, beat: 0.595 },
+    { title: "Dracula",                 artist: "Tame Impala", file: "assets/dracula.m4a",                 cover: "", bpm: 114.99, beat: 0.040, party: true },
+    { title: "Espresso",                artist: "Sabrina Carpenter", file: "assets/espresso.m4a",          cover: "", bpm: 104.00, beat: 0.100 },
   ],
   randomFirstSong: false,               // true = start with a random song each visit
 
@@ -1255,7 +1258,9 @@ const CONFIG = {
   /* =====================================================================
      PARTY MODE (a song with party: true, e.g. Dracula): from the moment it plays until the song changes (fades in / out in 1 s).
      A layer behind the cards: red-purple tint · rings pulsing on the beat behind the music card ·
-     the lights: laser beams sweeping, light dots, light spots (the one canvas, #ptfx) · a spinning disco ball. The cards get neon edges, the music card a waveform.
+     the lights: laser beams sweeping, light dots, light spots and their glow (the one canvas, #ptfx) · a spinning disco ball. The cards get neon edges, the music card a waveform.
+     Kept light for phones: few layers for the screen to stack (the tint and the still rings are one flat picture, the glow is in the canvas),
+     the waveform is one small canvas, and the background's floating dots rest while the party's own dots are out.
      Paused: slower and dimmer. "Floating particles" off: only the neon edges and the waveform.
      ===================================================================== */
   #party { position: fixed; top: 0; bottom: 0; left: 50%; z-index: 1; width: min(100vw, 440px); margin-left: calc(min(100vw, 440px) / -2);
@@ -1271,27 +1276,26 @@ const CONFIG = {
                 radial-gradient(ellipse 80% 34% at 50% 58%, rgba(255, 10, 50, .16), rgba(255, 10, 50, 0) 72%),
                 linear-gradient(180deg, rgba(150, 6, 36, .46) 0, rgba(165, 6, 52, .4) 45%, rgba(140, 4, 48, .42) 74%, rgba(50, 0, 20, .6) 100%); }
   #ptfx { top: 0; left: 0; width: 100%; height: 100%; }
-  .pt-haze { top: 0; right: 0; bottom: 0; left: 0; background: center / 100% 100% no-repeat; opacity: .85; will-change: opacity; }   /* the lights' glow: one picture, made once */
 
   /* rings behind the music card: two faint ones always, and one pulsing out on every beat (the script places them) */
-  /* the still rings are thin glowing lines drawn by one radial gradient each (::before: the bright inner set, ::after: the fainter outer set, out past the screen edges) */
+  /* the still rings are thin glowing lines drawn by one radial gradient each (::before: the bright inner set, ::after: the fainter outer set, out past the screen edges);
+     they stand still (painted once with the tint), so the screen has no extra layers to stack for them */
   .pt-rings { left: var(--rx, 50%); top: calc(var(--ry, 60%) + 12px); width: 0; height: 0; --rr: calc(var(--pw) * .32); }
   .pt-rings::before, .pt-rings::after { content: ""; position: absolute; left: calc(var(--rr) * -2); top: calc(var(--rr) * -2); width: calc(var(--rr) * 4); height: calc(var(--rr) * 4); }
-  .pt-rings::before { animation: ptRingGlow 2.6s ease-in-out infinite;
+  .pt-rings::before { opacity: .86;
     background: radial-gradient(circle closest-side,
       rgba(255, 25, 60, 0) calc(var(--rr) * .91), rgba(255, 25, 60, .55) calc(var(--rr) * .945), #ff4060 calc(var(--rr) * .955), rgba(255, 25, 60, .55) calc(var(--rr) * .965), rgba(255, 25, 60, .1) calc(var(--rr) * .99),
       rgba(255, 25, 60, .55) calc(var(--rr) * 1.01), #ff3a5a calc(var(--rr) * 1.02), rgba(255, 25, 60, .55) calc(var(--rr) * 1.03), rgba(255, 25, 60, .1) calc(var(--rr) * 1.055),
       rgba(255, 25, 60, .5) calc(var(--rr) * 1.075), #ff4462 calc(var(--rr) * 1.085), rgba(255, 25, 60, .5) calc(var(--rr) * 1.095), rgba(255, 25, 60, .08) calc(var(--rr) * 1.12),
       rgba(255, 30, 70, .42) calc(var(--rr) * 1.14), #ff4a6c calc(var(--rr) * 1.15), rgba(255, 30, 70, .42) calc(var(--rr) * 1.16), rgba(255, 30, 70, 0) calc(var(--rr) * 1.2)),
       radial-gradient(circle closest-side, rgba(255, 20, 60, 0) calc(var(--rr) * .86), rgba(255, 20, 60, .13) calc(var(--rr) * 1.04), rgba(255, 20, 60, 0) calc(var(--rr) * 1.3)); }
-  .pt-rings::after { animation: ptRingGlow 2.6s ease-in-out -1.3s infinite;
+  .pt-rings::after { opacity: .86;
     background: radial-gradient(circle closest-side,
       rgba(255, 35, 80, 0) calc(var(--rr) * 1.26), rgba(255, 35, 80, .3) calc(var(--rr) * 1.29), #ff4a72 calc(var(--rr) * 1.3), rgba(255, 35, 80, .3) calc(var(--rr) * 1.31), rgba(255, 35, 80, 0) calc(var(--rr) * 1.34),
       rgba(250, 45, 120, .22) calc(var(--rr) * 1.44), rgba(255, 70, 140, .6) calc(var(--rr) * 1.45), rgba(250, 45, 120, .22) calc(var(--rr) * 1.46), rgba(250, 45, 120, 0) calc(var(--rr) * 1.5),
       rgba(255, 40, 90, .18) calc(var(--rr) * 1.64), rgba(255, 60, 100, .5) calc(var(--rr) * 1.65), rgba(255, 40, 90, .18) calc(var(--rr) * 1.66), rgba(255, 40, 90, 0) calc(var(--rr) * 1.7)); }
   .pt-rings i { position: absolute; left: calc(var(--rr) * -1.25); top: calc(var(--rr) * -1.25); width: calc(var(--rr) * 2.5); height: calc(var(--rr) * 2.5); border-radius: 50%;
     border: 1.5px solid #ff4a6a; box-shadow: 0 0 8px rgba(255, 30, 70, .8), inset 0 0 8px rgba(255, 30, 70, .45); opacity: 0; transform: scale(.75); }
-  @keyframes ptRingGlow { 0%, 100% { opacity: .72; } 50% { opacity: 1; } }
   #party.nohome .pt-rings { display: none; }
 
   /* the disco ball (top right, cut by the screen's top and right edges): a mirror sphere seen from a little below, turning (50 tiles round, .24 s a tile: 12 s a turn).
@@ -1349,18 +1353,21 @@ const CONFIG = {
       rgba(255, 40, 70, 0) 40.5px, rgba(255, 40, 70, .15) 41.5px, rgba(255, 40, 70, 0) 42.5px, rgba(255, 40, 70, 0) 45px, rgba(255, 40, 70, .1) 46px, rgba(255, 40, 70, 0) 47px); }
   .party .pr0 { opacity: 1; }
   .pr1, .pr2 { border: 1.5px solid rgba(255, 60, 100, .85); box-shadow: 0 0 8px rgba(255, 30, 70, .55); }
-  /* (it reaches up under the buttons by 24px with a matching negative margin, so the bars can be taller while the card keeps its size; taps pass through) */
-  .pwave { display: none; align-items: flex-end; justify-content: space-between; height: calc(64px - 18px * var(--q, 0)); margin: calc(-18px - 4px * var(--q, 0)) 2px calc(14px - 6px * var(--q, 0));
+  /* (it reaches up under the buttons by 24px with a matching negative margin, so the bars can be taller while the card keeps its size; taps pass through)
+     One small canvas: 6px of room for the bars' glow on top, the bars (--wh), then 1px and their faint mirror image below; the margins keep the card's layout as it was */
+  .pwave { display: none; --wh: calc(64px - 18px * var(--q, 0)); width: calc(100% - 4px); height: calc(var(--wh) * 2 + 7px);
+           margin: calc(-24px - 4px * var(--q, 0)) 2px calc(13px - 6px * var(--q, 0) - var(--wh));
            opacity: 0; transition: opacity 1s ease; pointer-events: none;
-           background: radial-gradient(ellipse 52% 26% at 50% 100%, rgba(255, 30, 80, .16), rgba(255, 30, 80, 0));
-           -webkit-box-reflect: below 1px linear-gradient(rgba(0, 0, 0, 0) 66%, rgba(0, 0, 0, .68)); }
-  .party-wave .pwave { display: flex; }
+           background: radial-gradient(ellipse 52% 26% at 50% 100%, rgba(255, 30, 80, .16), rgba(255, 30, 80, 0)) 0 6px / 100% var(--wh) no-repeat; }
+  .party-wave .pwave { display: block; }
   .party .pwave { opacity: 1; }
-  .pwave i { flex: none; width: 2px; height: 100%; border-radius: 1px; transform-origin: 50% 100%; transform: scaleY(.08); }
+  /* the background's floating dots rest while the party's own dots are out (fading with it) */
+  #fx { transition: opacity 1s ease; }
+  .party #fx { opacity: 0; visibility: hidden; transition: opacity 1s ease, visibility 0s linear 1s; }
 
   /* still: in the background, under the player, and for people who turned animations off; "Floating particles" off = edges + waveform */
   .app-bg #party *, .app-bg #party *::before, .app-bg #party *::after, #party.hold *, #party.hold *::before, #party.hold *::after { animation-play-state: paused !important; }
-  .app-bg #party, .app-bg .neon, .app-bg .pwave, .app-bg .pr0 { transition: none; }
+  .app-bg #party, .app-bg .neon, .app-bg .pwave, .app-bg .pr0, .app-bg #fx { transition: none; }
   .nofx #party, .ultra #party, .nofx .pr1, .nofx .pr2, .ultra .pr1, .ultra .pr2 { display: none !important; }
   @media (min-width: 600px) and (min-height: 600px) { #party { top: 14px; bottom: 14px; width: 412px; margin-left: -206px; border-radius: 46px; --pw: 412px; } }
   @media (prefers-reduced-motion: reduce) { #party *, #party *::before, #party *::after { animation: none !important; } #party canvas, #party .pt-rings i { display: none; } }
@@ -1629,7 +1636,6 @@ const CONFIG = {
   <div id="party" aria-hidden="true">
     <div class="pt-tint"></div>
     <div class="pt-rings" id="ptRings"><i></i><i></i><i></i><i></i></div>
-    <div class="pt-haze" id="ptHaze"></div>
     <canvas id="ptfx"></canvas>
     <div class="pt-ball"><div class="pt-ball-glow"></div><div class="pt-ball-in"><div class="pt-ball-tex"></div><div class="pt-ball-shine"></div></div></div>
   </div>
@@ -1717,7 +1723,7 @@ const CONFIG = {
             <button class="cbtn rip" data-act="next" aria-label="Next song"><svg class="ic fill"><use href="#i-skip-forward"/></svg></button>
             <button class="cbtn rip js-like" data-act="like" aria-label="Like this song"><svg class="ic"><use href="#i-heart"/></svg></button>
           </div>
-          <div class="pwave" id="pwave" aria-hidden="true"></div>
+          <canvas class="pwave" id="pwave" aria-hidden="true"></canvas>
         </article>
       </section>
 
@@ -2396,6 +2402,15 @@ const CONFIG = {
   var shuffleOn = store.get("shuffle", "0") === "1", repeatOn = store.get("repeat", "0") === "1";
   var likes = {};
   try { likes = JSON.parse(store.get("likes", "{}")) || {}; } catch (e) { likes = {}; }
+  (function () {                                           // a song's file changed type (1.9.1: .mp3 → .m4a): its heart moves with it
+    var base = function (f) { return String(f).replace(/\.[a-z0-9]+$/i, ""); }, moved = false;
+    songs.forEach(function (s) {
+      Object.keys(likes).forEach(function (k) {
+        if (k !== s.file && base(k) === base(s.file)) { if (likes[k]) likes[s.file] = true; delete likes[k]; moved = true; }
+      });
+    });
+    if (moved) store.set("likes", JSON.stringify(likes));
+  })();
   var dragging = false, tweening = false, failures = 0;
   var seeks = qa(".js-seek"), curs = qa(".js-cur"), durs = qa(".js-dur");
   var fillIn = function (input, pct) { input.style.setProperty("--p", pct + "%"); };
@@ -3060,7 +3075,7 @@ const CONFIG = {
     requestAnimationFrame(function frame(t) {
       if (!fx.running) return;
       requestAnimationFrame(frame);
-      if (paused || document.hidden || isUltra() || !entered || playerOpen) { fx.last = 0; return; }
+      if (paused || document.hidden || isUltra() || !entered || playerOpen || pt.fxOff) { fx.last = 0; return; }   // (party mode: its own dots instead)
       var dt = fx.last ? Math.min(.1, (t - fx.last) / 1000) : .033; fx.last = t;
       acc += dt; if (acc < (isLite() ? .04 : .032)) return; var step = acc; acc = 0;     // about 25 / 30 frames a second
       var g = fx.g; g.clearRect(0, 0, fx.W, fx.H);
@@ -3256,12 +3271,13 @@ const CONFIG = {
 
   /* =====================================================================
      PARTY MODE: a song with party: true (Dracula) turns it on when it starts playing; changing the song turns it off.
-     Everything moves on the CSS side except the light dots + light spots (one canvas) and what follows the music:
-     the beams' brightness, the rings (one per beat) and the waveform. The music is read with Web Audio when the page can
+     Everything moves on the CSS side except the lights (one canvas: beams, light dots, light spots and their glow) and what follows the music:
+     the beams' brightness, the rings (one per beat) and the waveform (one small canvas). The music is read with Web Audio when the page can
      (the app); otherwise the song's beat (CONFIG bpm + beat) drives a smooth imitation. The song itself is never touched.
      ===================================================================== */
   var pt = { on: false, wave: false, song: null, offT: 0, raf: 0, last: 0, acc: 0, t: 0, frames: 0, cv: $("ptfx"), g: null, W: 0, H: 0, k: 1,
-             spr: null, hazeOp: -1, lacc: 0, beamSpr: null, beams: [], dots: [], spots: [], n: 0, bars: [], bv: [], perm: [], avg: 0, lastBeat: 0, ph: 0, ring: 0, rip: 0, beamOp: -1, rate: 1, L: 0 };
+             spr: null, hazeCv: null, lacc: 0, beamSpr: null, beams: [], dots: [], spots: [], n: 0, bv: [], perm: [], avg: 0, lastBeat: 0, ph: 0, ring: 0, rip: 0, beamOp: -1, rate: 1, L: 0,
+             wg: null, wAtlas: null, wx: [], wh: [], wRg: [], wW: 0, wH: 0, wk: 1, wDirty: false, fxOff: false, fxT: 0 };
   var ptEl = $("party"), ptRingBox = $("ptRings"), ptRings = qa("#ptRings i"), ptWaveEl = $("pwave");
   var PT_DOT = [["255,140,130", "255,40,62", "255,30,60"], ["255,252,230", "255,226,160", "255,60,50"], ["255,175,255", "232,70,255", "175,50,255"], ["255,225,242", "255,72,165", "255,40,130"]];   // bokeh: centre, disc, halo (red, warm white, purple, hot pink)
   function ptSong() { var s = songs[idx]; return s && s.party ? s : null; }
@@ -3272,25 +3288,54 @@ const CONFIG = {
     });
     qa("#mcard .pbtn").forEach(function (b) { if (!b.querySelector(".pr")) for (var i = 0; i < 3; i++) { var r = document.createElement("i"); r.className = "pr pr" + i; b.appendChild(r); } });
   }
+  var PW_TOP = 6, PW_PAD = 5;                               // the waveform canvas: room for the glow above the bars · each bar's glow either side
   function ptBuildWave() {                                  // the waveform bars along the bottom of the music card: dense, in clusters (tall red / purple groups, low under the play button)
-    var w = ptWaveEl.clientWidth || 300, n = Math.max(40, Math.floor(w / 4.8)),
+    var cw = ptWaveEl.clientWidth, chh = ptWaveEl.clientHeight; if (!cw || !chh) return;
+    var w = cw, H = (chh - PW_TOP - 1) / 2, n = Math.max(40, Math.floor(w / 4.8)),
         stops = [[0, 255, 60, 125], [.1, 255, 45, 72], [.2, 255, 55, 125], [.27, 185, 70, 255], [.34, 255, 50, 88], [.46, 255, 45, 72], [.56, 245, 60, 190], [.64, 215, 70, 255],
                  [.73, 180, 70, 255], [.8, 255, 60, 105], [.87, 255, 48, 75], [.93, 240, 60, 205], [1, 200, 72, 255]],
         peaks = [[.13, 1, .065], [.27, .95, .045], [.37, .72, .045], [.63, .7, .045], [.73, 1, .05], [.86, .95, .06], [.94, .62, .035]];
-    if (n === pt.n && pt.bars.length) return;
-    pt.n = n; pt.bars = []; pt.bv = []; pt.perm = []; ptWaveEl.innerHTML = "";
+    if (n === pt.n && w === pt.wW && H === pt.wH && pt.wAtlas) return;
+    var keep = pt.n === n ? pt.bv : null;
+    pt.n = n; pt.wW = w; pt.wH = H; pt.bv = []; pt.perm = []; pt.wx = []; pt.wh = []; pt.wRg = [];
+    var k = pt.wk = Math.min(window.devicePixelRatio || 1, 2), SW = 2 + 2 * PW_PAD, SH = PW_TOP + H + PW_TOP;
+    ptWaveEl.width = Math.round(w * k); ptWaveEl.height = Math.round(chh * k); pt.wg = ptWaveEl.getContext("2d"); ptWaveEl.setAttribute("data-bars", n);
+    // every bar drawn once, at full height with its colour and glow, side by side in a sprite sheet; each frame just squeezes them (from the bottom) to the music
+    var at = document.createElement("canvas"), x = at.getContext("2d"); at.width = Math.ceil(n * SW * k); at.height = Math.ceil(SH * k); x.scale(k, k);
     var seed = 7, s2 = 3; for (var i = 0; i < n; i++) { seed = (seed * 9301 + 49297) % 233280; pt.perm.push(seed / 233280); }
     for (i = 0; i < n; i++) {
-      var u = i / (n - 1), k = 1; while (k < stops.length - 1 && u > stops[k][0]) k++;
-      var a = stops[k - 1], b = stops[k], f = (u - a[0]) / (b[0] - a[0]), c = [0, 1, 2].map(function (j) { return Math.round(a[j + 1] + (b[j + 1] - a[j + 1]) * f); }).join(",");
+      var u = i / (n - 1), j = 1; while (j < stops.length - 1 && u > stops[j][0]) j++;
+      var a = stops[j - 1], b = stops[j], f = (u - a[0]) / (b[0] - a[0]), c = [0, 1, 2].map(function (q) { return Math.round(a[q + 1] + (b[q + 1] - a[q + 1]) * f); }).join(",");
       var env = .3; peaks.forEach(function (p) { env = Math.max(env, p[1] * Math.exp(-Math.pow((u - p[0]) / p[2], 2))); });
       s2 = (s2 * 9301 + 49297) % 233280;
-      var bar = document.createElement("i");
-      bar.style.background = "linear-gradient(180deg, rgba(255,232,240,.95), rgb(" + c + ") 16%, rgb(" + c + ") 70%, rgba(" + c + ", .7))";
-      bar.style.boxShadow = "0 0 3px rgba(" + c + ", .75)";
-      bar.style.height = Math.min(100, Math.round((16 + 74 * env) * (.88 + .24 * s2 / 233280))) + "%";   // the cluster shape (the beat / the music scales each bar)
-      ptWaveEl.appendChild(bar); pt.bars.push(bar); pt.bv.push(.08);
+      var hb = H * Math.min(100, Math.round((16 + 74 * env) * (.88 + .24 * s2 / 233280))) / 100, x0 = i * SW + PW_PAD, y0 = PW_TOP + H - hb;   // the cluster shape (the music scales each bar)
+      var gr = x.createLinearGradient(0, y0, 0, y0 + hb);
+      gr.addColorStop(0, "rgba(255,232,240,.95)"); gr.addColorStop(.16, "rgb(" + c + ")"); gr.addColorStop(.7, "rgb(" + c + ")"); gr.addColorStop(1, "rgba(" + c + ",.7)");
+      x.shadowColor = "rgba(" + c + ",.75)"; x.shadowBlur = 3 * k; x.fillStyle = gr; x.fillRect(x0, y0, 2, hb);
+      // its faint mirror image below: only toward the far end (from 66% of the way down), fading in
+      var m0 = PW_TOP + H + 1 + .66 * H, mg = pt.wg.createLinearGradient(0, m0, 0, PW_TOP + 2 * H + 1);
+      mg.addColorStop(0, "rgba(" + c + ",0)"); mg.addColorStop(1, "rgba(" + c + ",.6)");
+      pt.wx.push(i * (w - 2) / (n - 1)); pt.wh.push(hb); pt.wRg.push(mg); pt.bv.push(keep ? keep[i] : .08);
     }
+    pt.wAtlas = at;
+    pt.wDirty = true;
+  }
+  function ptWaveDraw() {                                   // the bars at their levels (each one squeezed from its bottom), then the mirror image
+    var g = pt.wg, cv = ptWaveEl, k = pt.wk, H = pt.wH, SW = 2 + 2 * PW_PAD, SH = PW_TOP + H + PW_TOP, base = PW_TOP + H, i;
+    if (!g || !pt.wAtlas) return;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height);
+    for (i = 0; i < pt.n; i++) {
+      var s = Math.max(.06, pt.bv[i]);
+      g.drawImage(pt.wAtlas, i * SW * k, 0, SW * k, SH * k, (pt.wx[i] - PW_PAD) * k, base * (1 - s) * k, SW * k, SH * s * k);
+    }
+    g.setTransform(k, 0, 0, k, 0, 0);                        // the mirror image (no reading back from the canvas: a bar tall enough reaches the visible part)
+    var m0 = .66 * H, top = PW_TOP + H + 1;
+    for (i = 0; i < pt.n; i++) {
+      var hs = Math.max(.06, pt.bv[i]) * pt.wh[i];
+      if (hs > m0) { g.fillStyle = pt.wRg[i]; g.fillRect(pt.wx[i], top + m0, 2, hs - m0); }
+    }
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    pt.wDirty = false;
   }
   function ptPlace() {                                      // the rings sit behind the top of the music card
     var c = $("mcard"); if (!c || !c.offsetWidth || !ptEl.offsetWidth) return;
@@ -3327,11 +3372,11 @@ const CONFIG = {
                      ph: Math.random() * 6.28, tw: .8 + Math.random() * 2.2, c: r < .46 ? 0 : r < .6 ? 1 : r < .76 ? 2 : 3 }); }
     for (i = 0; i < 7; i++) pt.spots.push({ a: Math.random() * 6.28, r: h * (.25 + Math.random() * .7), va: (Math.random() < .5 ? -1 : 1) * (.05 + Math.random() * .08), s: 20 + Math.random() * 26, c: i % 2 ? 3 : 2 });
   }
-  function ptHazePic(w, h) {                                // the glow the lights throw around barely changes: draw it once (it only fades with the music)
-    var el = $("ptHaze"), k = .5, c = document.createElement("canvas"), x = c.getContext("2d"), i;
+  function ptHazePic(w, h) {                                // the glow the lights throw around barely changes: drawn once (the canvas lays it under the lights, fading with the music)
+    var k = .5, c = document.createElement("canvas"), x = c.getContext("2d"), i;
     c.width = Math.round(w * k); c.height = Math.round(h * k); x.scale(k, k); x.globalCompositeOperation = "lighter";
     for (i = 0; i < pt.haze.length; i++) { var z = pt.haze[i]; x.globalAlpha = z.a; x.drawImage(pt.fl[z.c], z.x - z.s / 2, z.y - z.s / 2, z.s, z.s); }
-    try { el.style.backgroundImage = "url(" + c.toDataURL() + ")"; } catch (e) {}
+    pt.hazeCv = c;
   }
   function ptDotX(w) { var r = Math.random(); return r < .28 ? r / .28 * w * .13 : r < .56 ? w - (r - .28) / .28 * w * .13 : Math.random() * w; }   // more dots along the sides (the cards cover the middle)
   function ptDotSprite(p, fl) {                             // one bokeh dot (drawn once): a bright centre, a soft-edged disc, a faint halo · fl: a flare (white-hot, a bigger glow)
@@ -3397,8 +3442,6 @@ const CONFIG = {
     if (!g) return;
     g.setTransform(k, 0, 0, k, 0, 0); g.clearRect(0, 0, W, H);
     g.globalCompositeOperation = "lighter";
-    var ho = .7 + .3 * L;                                   // the glow (a picture under the canvas) brightens on loud parts
-    if (Math.abs(ho - pt.hazeOp) > .04) { pt.hazeOp = ho; $("ptHaze").style.opacity = ho.toFixed(2); }
     for (i = 0; i < pt.beams.length; i++) {                 // spotlights + lasers swing left and right (each at its own pace), flaring on the loud parts
       var bm = pt.beams[i], b = pt.beamSpr[bm.c]; bm.ph += dt * sp * Math.PI * 2 / (bm.T * 2);
       var ang = (bm.r + bm.s * Math.sin(bm.ph)) * Math.PI / 180, cs = Math.cos(ang), sn = Math.sin(ang);
@@ -3426,6 +3469,9 @@ const CONFIG = {
       g.globalAlpha = (.6 + .4 * (.5 + .5 * Math.sin(d.ph))) * (.8 + .2 * L);
       g.drawImage(pt.spr[d.c], d.x + Math.sin(d.ph * .7) * d.sw - d.s / 2, d.y - d.s / 2, d.s, d.s);
     }
+    if (pt.hazeCv) {                                        // the glow the lights throw, laid under all of it (as if it were a layer below), brighter on loud parts
+      g.globalCompositeOperation = "destination-over"; g.globalAlpha = .7 + .3 * L; g.drawImage(pt.hazeCv, 0, 0, W, H);
+    }
     g.globalAlpha = 1; g.globalCompositeOperation = "source-over"; g.setTransform(1, 0, 0, 1, 0, 0);
   }
   function ptFrame(t) {
@@ -3433,21 +3479,24 @@ const CONFIG = {
     var dt = pt.last ? Math.min(.1, (t - pt.last) / 1000) : .033; pt.last = t;
     pt.acc += dt; if (pt.acc < .031) return;                // about 30 frames a second
     dt = pt.acc; pt.acc = 0;
-    if (!pt.n) ptBuildWave();
+    if (!pt.wAtlas) ptBuildWave();
     var r = ptLevel(t, dt), shown = ptFxShown(), home = curScreen === "home";
     if (shown) {
       if (!pt.W) ptSize();
       pt.lacc += dt;
       if (pt.lacc >= .048) { ptDraw(pt.lacc); pt.lacc = 0; }   // the lights: about 20 pictures a second is smooth for their slow moves
       if (r.beat) ptBeat();
-      if (++pt.frames % 30 === 0 && home) ptPlace();
+      if (pt.frames % 30 === 0 && home) ptPlace();
     }
-    if (home && pt.bars.length) {                           // the waveform: quick to rise, slower to fall
+    if (++pt.frames % 30 === 0 && home) ptBuildWave();       // (only rebuilds when the card changed size)
+    if (home && pt.wAtlas) {                                // the waveform: quick to rise, slower to fall
+      var moved = pt.wDirty;
       for (var i = 0; i < pt.n; i++) {
         var v = pt.bv[i], g = r.tgt[i] === undefined ? .07 : r.tgt[i];
         v += (g - v) * Math.min(1, dt * (g > v ? 16 : 5));
-        if (Math.abs(v - pt.bv[i]) > .004) { pt.bv[i] = v; pt.bars[i].style.transform = "scaleY(" + Math.max(.06, v).toFixed(3) + ")"; }
+        if (Math.abs(v - pt.bv[i]) > .004) { pt.bv[i] = v; moved = true; }
       }
+      if (moved) ptWaveDraw();
     }
   }
   function ptWanted() { return !!pt && (pt.on || pt.wave) && !paused && !document.hidden && !playerOpen && !termOpen; }
@@ -3578,6 +3627,7 @@ const CONFIG = {
     ptNeon();
     var tex = qa("#party .pt-ball-tex")[0]; if (tex && !tex.style.backgroundImage) ptBallTex(tex);   // (the disco ball's pictures: a stand-in at once, drawn in slices)
     if (!pt.wave) { pt.wave = true; root.classList.add("party-wave"); fitHome(); ptBuildWave(); }
+    clearTimeout(pt.fxT); pt.fxT = setTimeout(function () { if (pt.on) { pt.fxOff = true; if (fx.g) fx.g.clearRect(0, 0, fx.W, fx.H); } }, 1100);   // the background's dots rest once the party has faded in
     ptSize(); ptPlace(); ptUpdate(); ptPaused();
     setTimeout(fitHome, 1100);                              // once the waveform has settled in: make sure Home still fits
     requestAnimationFrame(function () { requestAnimationFrame(function () { if (pt.on) root.classList.add("party"); }); });   // fades in (1 s)
@@ -3586,13 +3636,14 @@ const CONFIG = {
   function partyStop() {
     if (!pt.on) return;
     pt.on = false; root.classList.remove("party", "party-dim");                     // fades out (1 s), then everything is back to normal
+    clearTimeout(pt.fxT); pt.fxOff = false;
     clearTimeout(pt.offT);
-    pt.offT = setTimeout(function () { if (pt.on) return; pt.wave = false; root.classList.remove("party-wave"); ptUpdate(); fitHome(); setTimeout(fitHome, 300); if (pt.g) pt.g.clearRect(0, 0, pt.cv.width, pt.cv.height); }, 1050);
+    pt.offT = setTimeout(function () { if (pt.on) return; pt.wave = false; root.classList.remove("party-wave"); ptUpdate(); fitHome(); setTimeout(fitHome, 300); if (pt.g) pt.g.clearRect(0, 0, pt.cv.width, pt.cv.height); if (pt.wg) pt.wg.clearRect(0, 0, ptWaveEl.width, ptWaveEl.height); }, 1050);
   }
   function partySongChanged(s) { if (pt && pt.on && s !== pt.song) partyStop(); }
   onAudio("playing", function () { var s = ptSong(); if (s && !pt.on) partyStart(s); ptPaused(); });
   onAudio("pause", ptPaused);
-  window.addEventListener("resize", function () { if (pt.on || pt.wave) { ptSize(); ptPlace(); pt.n = 0; } });
+  window.addEventListener("resize", function () { if (pt.on || pt.wave) { ptSize(); ptPlace(); ptBuildWave(); } });
 
   /* =====================================================================
      CHARGING: plug the charger in (the app tells the page with window.appCharging; a browser's Battery API works too) →
