@@ -28,6 +28,7 @@
 - 2026-10-08 03:47:33Z | elapsed 01:35:31 | 01:24:29 left — Packaging made deterministic (fixed zip timestamps: two builds are byte-identical, fresh-clone pack tree reproduces exactly); README counts corrected; README auditor still running
 - 2026-10-08 03:49:20Z | elapsed 01:37:18 | 01:22:42 left — README rewritten after the phone-user audit (honest 'not tested' box, direct links for all 4 files, install/troubleshooting fixes, corrected legal wording); all four reviewers done
 - 2026-10-08 03:55:03Z | elapsed 01:43:01 | 01:16:59 left — Fog definitions moved into the base pack (presets only swap biomes_client.json; validator enforces + mutation-tested), README re-audit fixes applied (per-world uninstall, honest AI-review wording, install gaps), version 1.1.3
+- 2026-10-08 03:57:44Z | elapsed 01:45:42 | 01:14:18 left — FINAL: v1.1.3 pushed; fresh-clone rebuild reproduces every committed file byte-for-byte; all 4 raw download links serve the committed bytes and decode cleanly (2213 images); final numeric texture scan clean; four review passes applied
 
 ## Key decisions (why the pack looks the way it does)
 
