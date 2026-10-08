@@ -58,7 +58,8 @@ function createHole(player) {
   player.setDynamicProperty(PLAYER_ACTIVE_KEY, entity.id);
 
   hole.burst();
-  hole.sound("mob.warden.sonic_charge", 1.5, 0.8);
+  hole.sound("mob.breeze.inhale", 1.5, 0.6);
+  hole.sound("mob.warden.sonic_charge", 1.2, 0.8);
   hole.sound("beacon.activate", 1.5, 0.6);
   player.onScreenDisplay.setActionBar("§dA black hole has formed! §7Use again to recall it.");
 }
@@ -103,10 +104,15 @@ world.afterEvents.itemUse.subscribe((event) => {
   onUse(event.source);
 });
 
-world.afterEvents.itemUseOn.subscribe((event) => {
+// Tapping a block: cancel it (so chests and doors don't open) and handle it like a normal use.
+// Before-events are read-only, so the real work runs on the next tick.
+world.beforeEvents.itemUseOn.subscribe((event) => {
   if (event.itemStack?.typeId !== ITEM_ID) return;
-  const source = event.source;
-  if (source.typeId === "minecraft:player") onUse(/** @type {Player} */ (source));
+  event.cancel = true;
+  const player = event.source;
+  system.run(() => {
+    if (player.isValid()) onUse(player);
+  });
 });
 
 // Every new player gets a free black hole the first time they join.

@@ -78,7 +78,7 @@ export const TUNING = {
   collapseTicks: 20,
 
   // Housekeeping
-  useDebounceTicks: 8,
+  useDebounceTicks: 10,
   saveEvery: 10,
   rescanEntitiesEvery: 20,
   deliverStacksPerTick: 16,
@@ -98,6 +98,10 @@ export const NEVER_PULL = [
   "minecraft:evocation_fang",
   "minecraft:eye_of_ender_signal",
   "minecraft:fishing_hook",
+  "minecraft:ender_dragon",
+  "minecraft:wither",
+  "minecraft:tripod_camera",
+  "minecraft:ominous_item_spawner",
 ];
 
 /** Entities that are swallowed as an item instead of being killed (so nothing explodes). */
@@ -135,4 +139,12 @@ export const UNBREAKABLE = new Set([
   "minecraft:bubble_column",
   "minecraft:trial_spawner",
   "minecraft:vault",
+  "minecraft:mob_spawner",
+  "minecraft:info_update",
+  "minecraft:info_update2",
+  "minecraft:unknown",
+  "minecraft:reserved6",
+  "minecraft:netherreactor",
+  "minecraft:glowingobsidian",
+  "minecraft:camera",
 ]);

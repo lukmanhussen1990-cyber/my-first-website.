@@ -3,9 +3,33 @@
   "render_controllers": {
     "controller.render.blackhole.black_hole": {
       "geometry": "Geometry.default",
-      "materials": [{ "*": "Material.default" }],
-      "textures": ["Texture.default"],
-      "ignore_lighting": true
+      "materials": [
+        {
+          "*": "Material.default"
+        },
+        {
+          "disk*": "Material.disk"
+        },
+        {
+          "ring*": "Material.disk"
+        }
+      ],
+      "textures": [
+        "Texture.default"
+      ],
+      "ignore_lighting": true,
+      "is_hurt_color": {
+        "r": 0.0,
+        "g": 0.0,
+        "b": 0.0,
+        "a": 0.0
+      },
+      "on_fire_color": {
+        "r": 0.0,
+        "g": 0.0,
+        "b": 0.0,
+        "a": 0.0
+      }
     }
   }
 }

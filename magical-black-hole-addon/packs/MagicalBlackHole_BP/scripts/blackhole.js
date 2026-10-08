@@ -273,8 +273,11 @@ export class Hole {
   // -------------------------------------------------------------- effects
   /** @param {string} soundId @param {number} volume @param {number} pitch */
   sound(soundId, volume, pitch) {
+    // world.playSound ignores dimensions, so play it only for players near the hole
     try {
-      world.playSound(soundId, this.center, { volume, pitch });
+      for (const player of this.dimension.getPlayers({ location: this.center, maxDistance: 64 })) {
+        player.playSound(soundId, { location: this.center, volume, pitch });
+      }
     } catch {
       // sound outside loaded area
     }
