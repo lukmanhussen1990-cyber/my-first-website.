@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "1.9.2",                       // shown in Settings → About
+  version: "1.9.3",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -43,6 +43,10 @@ const CONFIG = {
   // cover: "" = use the profile picture as the cover art · artist: "" = "Unknown Artist"
   // bpm + beat: the song's tempo and the second its first beat falls on, so the frame's glow pulses on the beat
   // party: true = "party mode" while that song plays (disco ball, laser beams, light dots, neon cards, a waveform on the music card)
+  // lyrics: { lrclib: id, offset: seconds } = the song's current line under the artist on the music card (♫ + the line, in pink).
+  //         The synced lyrics come from lrclib.net (id = the song's number there) the first time, then stay saved in the app (offline too);
+  //         offset = how many seconds later the singing starts in this file than in the album version (a music video with an intro, say).
+  //         (or lyrics: "assets/song.lrc" for your own .lrc file)
   //             (leave them out for a new song: the glow then pulses at a steady pace while it plays)
   songs: [
     { title: "Jingle Bells",            artist: "",            file: "assets/jingle-bells.m4a",            cover: "", bpm: 132.00, beat: 0.410 },
@@ -50,7 +54,8 @@ const CONFIG = {
     { title: "Never Gonna Give You Up", artist: "Rick Astley", file: "assets/never-gonna-give-you-up.m4a", cover: "", bpm: 113.63, beat: 0.255 },
     { title: "MONTAGEM PERIGOSA (Super Slowed)", artist: "KVRXD", file: "assets/montagem-perigosa.m4a",    cover: "", bpm: 95.24, beat: 0.595 },
     { title: "Dracula",                 artist: "Tame Impala", file: "assets/dracula.m4a",                 cover: "", bpm: 114.99, beat: 0.040, party: true },
-    { title: "Espresso",                artist: "Sabrina Carpenter", file: "assets/espresso.m4a",          cover: "", bpm: 104.00, beat: 0.100 },
+    { title: "Espresso",                artist: "Sabrina Carpenter", file: "assets/espresso.m4a",          cover: "", bpm: 104.00, beat: 0.100,
+      lyrics: { lrclib: 36945061, offset: 14.0 } },                   // (this file is the music video: the song starts 14 s in)
   ],
   randomFirstSong: false,               // true = start with a random song each visit
 
@@ -403,6 +408,12 @@ const CONFIG = {
   #mini:not(.show) .bars i { animation: none; }
   .mhead .chev { width: 20px; height: 20px; color: var(--text2); }
   .seekrow { padding: 2px 2px 0; }
+  /* the song's current line (a song with lyrics): ♫ + the line in soft pink, just under the artist, lined up with the title (the card grows a little for it) */
+  .mlyr { display: none; align-items: center; gap: 7px; height: 16px; margin: calc(-12.4px + 6px * var(--q, 0)) 0 0 63px; padding-right: 6px;
+          color: #e59a93; font-size: 10.5px; font-weight: 500; line-height: 16px; overflow: hidden; pointer-events: none; }
+  #mcard.has-lyr .mlyr { display: flex; }
+  .mlyr .ic { flex: none; width: 11px; height: 11px; stroke-width: 2.2; }
+  .mlyr-t { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .times { display: flex; justify-content: space-between; margin-top: 2px; font-size: 12.5px; color: var(--text2); font-variant-numeric: tabular-nums; }
   .ctrls { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 2px; }
   .cbtn { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: var(--text); position: relative; }
@@ -1712,6 +1723,7 @@ const CONFIG = {
             <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
             <svg class="ic chev"><use href="#i-chevron-right"/></svg>
           </div>
+          <div class="mlyr" id="mlyr"><svg class="ic" aria-hidden="true"><use href="#i-music"/></svg><span class="mlyr-t js-lyr"></span></div>
           <div class="seekrow">
             <input type="range" class="js-seek" min="0" max="1000" step="1" value="0" aria-label="Song position">
             <div class="times"><span class="js-cur">0:00</span><span class="js-dur">0:00</span></div>
@@ -2427,6 +2439,7 @@ const CONFIG = {
     qa(".js-like").forEach(function (e) { e.classList.toggle("liked", !!likes[s.file]); e.setAttribute("aria-pressed", likes[s.file] ? "true" : "false"); });
     if (typeof pvSong === "function") pvSong(s);
     partySongChanged(s);                                   // another song: party mode (if on) fades out
+    lyrSong(s);                                            // its lyrics line (if it has lyrics)
   }
   function setPlayingUI(p) {
     document.body.classList.toggle("playing", p);
@@ -3644,6 +3657,79 @@ const CONFIG = {
   onAudio("playing", function () { var s = ptSong(); if (s && !pt.on) partyStart(s); ptPaused(); });
   onAudio("pause", ptPaused);
   window.addEventListener("resize", function () { if (pt.on || pt.wave) { ptSize(); ptPlace(); ptBuildWave(); } });
+
+  /* =====================================================================
+     LYRICS: a song with `lyrics` in CONFIG shows the line being sung under the artist on the music card (♫ + the line, soft pink).
+     The timed lines (LRC) come from lrclib.net the first time and are kept in the saved data, so afterwards they work offline;
+     `offset` lines them up with this file. Before the first line the first line shows (as in the picture). No lyrics yet = no line.
+     ===================================================================== */
+  var lyr = { song: null, lines: null, i: -1, tm: 0, row: $("mlyr"), txt: qa("#mcard .js-lyr")[0], busy: {} };
+  function lyrSrc(s) { var L = s && s.lyrics; return !L ? null : typeof L === "string" ? { file: L } : L; }
+  function lyrParse(text, off) {                            // "[mm:ss.xx]words" lines (a line can have several times) → [{ t, s }] sorted by time
+    var out = [], re = /\[(\d+):(\d+(?:[.:]\d+)?)\]/g, m, tag = /\[offset:\s*([+-]?\d+)\s*\]/i.exec(text);
+    off = (+off || 0) - (tag ? +tag[1] / 1000 : 0);         // (an [offset:ms] tag inside: + = the words come sooner)
+    String(text).split(/\r?\n/).forEach(function (line) {
+      var times = [], words = line.replace(/\[[^\]]*\]/g, "").trim(); re.lastIndex = 0;
+      while ((m = re.exec(line))) times.push(+m[1] * 60 + parseFloat(m[2].replace(":", ".")));
+      if (words) times.forEach(function (t) { out.push({ t: t + off, s: words }); });
+    });
+    out.sort(function (a, b) { return a.t - b.t; });
+    return out.length ? out : null;
+  }
+  function lyrLoad(s, show) {                               // saved → straight away; otherwise fetched once (quietly nothing when offline)
+    var L = lyrSrc(s); if (!L) return;
+    var key = "lyr:" + s.file, saved = store.get(key, "");
+    if (saved) { if (show) lyrSet(s, saved); return; }
+    if (lyr.busy[key] || !window.fetch) return; lyr.busy[key] = true;
+    var q = function (v) { return encodeURIComponent(v || ""); };
+    var url = L.file || (L.lrclib ? "https://lrclib.net/api/get/" + L.lrclib : "https://lrclib.net/api/search?track_name=" + q(s.title) + "&artist_name=" + q(s.artist));
+    fetch(url).then(function (r) { if (!r.ok) throw new Error("lyrics " + r.status); return L.file ? r.text() : r.json(); })
+      .then(function (d) {
+        var t = typeof d === "string" ? d : (Array.isArray(d) ? d.filter(function (x) { return x && x.syncedLyrics; })[0] || {} : d || {}).syncedLyrics;
+        if (!t || !lyrParse(t, 0)) return;
+        store.set(key, t);
+        if (songs[idx] === s) lyrSet(s, t);
+      })
+      .catch(function () {})
+      .then(function () { lyr.busy[key] = false; });
+  }
+  function lyrSet(s, text) {
+    lyr.lines = lyrParse(text, (lyrSrc(s) || {}).offset); lyr.song = s; lyr.i = -1;
+    if (!lyr.lines) return lyrSong(null);
+    $("mcard").classList.add("has-lyr"); setTimeout(fitHome, 0);
+    lyrTick();
+  }
+  function lyrSong(s) {                                     // another song: its line (or none)
+    if (!lyr || (s && s === lyr.song && lyr.lines)) return;   // (the first song is shown before this part of the script has run: it calls again below)
+    clearTimeout(lyr.tm); lyr.song = s; lyr.lines = null; lyr.i = -1;
+    var had = $("mcard").classList.contains("has-lyr");
+    $("mcard").classList.remove("has-lyr"); if (lyr.txt) lyr.txt.textContent = "";
+    if (lyrSrc(s)) lyrLoad(s, true);
+    if (had && !lyr.lines) setTimeout(fitHome, 0);
+  }
+  function lyrAt(t) {                                       // the last line that has started by time t (-1 = none yet)
+    var a = lyr.lines, lo = 0, hi = a.length - 1, r = -1;
+    while (lo <= hi) { var mid = (lo + hi) >> 1; if (a[mid].t <= t + .05) { r = mid; lo = mid + 1; } else hi = mid - 1; }
+    return r;
+  }
+  function lyrTick() {                                      // show the line being sung, and wake up right when the next one starts
+    clearTimeout(lyr.tm); lyr.tm = 0;
+    if (!lyr.lines || songs[idx] !== lyr.song) return;
+    var t = audio.currentTime || 0, i = lyrAt(t), show = Math.max(0, i), nx = lyr.lines[i + 1];
+    if (show !== lyr.i) {
+      var first = lyr.i < 0; lyr.i = show;
+      if (lyr.txt) {
+        lyr.txt.textContent = lyr.lines[show].s; lyr.row.title = lyr.lines[show].s;
+        if (!first && !reduced && lyr.txt.animate && curScreen === "home" && !paused) lyr.txt.animate([{ opacity: 0, transform: "translateY(7px)" }, { opacity: 1, transform: "none" }], { duration: 320, easing: "cubic-bezier(.2,.7,.3,1)" });
+      }
+    }
+    if (nx && !audio.paused) lyr.tm = setTimeout(lyrTick, Math.max(40, (nx.t - t) * 1000 / (audio.playbackRate || 1)));
+  }
+  ["timeupdate", "play", "seeked", "ratechange", "loadedmetadata"].forEach(function (ev) { onAudio(ev, function () { if (lyr.lines) lyrTick(); }); });
+  onAudio("pause", function () { clearTimeout(lyr.tm); lyr.tm = 0; });
+  setTimeout(function () { songs.forEach(function (s) { lyrLoad(s, false); }); }, 6000);   // fetch the other songs' lyrics early, so they show at once
+  window.addEventListener("online", function () { var s = songs[idx]; if (s && !lyr.lines) lyrLoad(s, true); });
+  if (songs[idx]) lyrSong(songs[idx]);
 
   /* =====================================================================
      CHARGING: plug the charger in (the app tells the page with window.appCharging; a browser's Battery API works too) →
