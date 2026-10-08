@@ -5,8 +5,8 @@
 It uses the same layered approach as the sunset loop one folder up:
 
 - **The man:** clearly sways on his feet and takes deep breaths, leaning back and tilting his head up with each one. His hair, jacket and trousers blow in the wind, and his face is unchanged.
-- **The meadow:** strong, frequent wind gusts and rustle move the grass, and about 430 flower heads nod and bend on their own stems.
-- **Sky and background:** sun rays shimmer, clouds drift, mist moves through the valley, trees sway, and petals drift past.
+- **The meadow:** strong, frequent wind gusts and rustle move the grass. About 630 flower heads are separate layers over a flower-free background, so they nod with the wind and never smear.
+- **Sky and background:** sun rays pulse (brighten-only, no dark bands), clouds billow smoothly with the sun held still, mist drifts through the valley behind the trees, trees sway, and petals drift past.
 
 ## Regenerate
 
@@ -17,6 +17,7 @@ mkdir -p work out
 python3 scripts/segment2.py models/isnet-anime.onnx src/source.png work 230 225 1030 1235
 python3 scripts/m2_prep.py .
 python3 scripts/m2_flowers.py .
+python3 scripts/m2_flowers_v3.py .      # stricter flower heads used by the renderer
 python3 scripts/m2_render.py . full out/master.mkv
 python3 scripts/check_loop.py out/master.mkv 1150 1380
 ```
