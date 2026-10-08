@@ -33,7 +33,7 @@ const CONFIG = {
   background:  "assets/background.mp4", // background video (muted, loops, slowly zooms)
   frame:       "assets/frame.png",      // the wings + crown frame around the profile clip on Home ("" = no frame, a plain glowing ring instead)
   frame2:      "assets/frame2.png",     // the wings + crown frame on the Settings card; its crown is also in the popup messages ("" = plain ring)
-  frameTint:   "",                      // "gold" = the Home frame glows warm orange-gold (to match the logo and the name) instead of red
+  frameTint:   "gold",                  // "gold" = the Home frame glows warm orange-gold (to match the logo and the name) · "" = red
   // the logo tile next to the Home frame (tap it: the logo spins, sparks fly and this popup shows) · image: "" = no tile
   badge: { image: "assets/claude-logo.png", title: "Built with Claude", text: "This app was designed and coded with Claude." },
 
@@ -1221,7 +1221,7 @@ const CONFIG = {
 
   /* sparks and sparkles go with "Floating particles"; everything stands still in the background and on very slow phones */
   .nofx .csp { display: none; }
-  .app-bg #s-home .hero *, .app-bg #s-home .hero *::after { animation-play-state: paused !important; }
+  .app-bg #s-home .hero *, .app-bg #s-home .hero *::after, .app-bg #bg { animation-play-state: paused !important; }
   .ultra .ct-float, .ultra .ct-glow, .ultra .ct-breathe, .ultra .ct-spin, .ultra .crownw, .ultra .nm-shine, .ultra .nm-shine-in { animation: none !important; }
   .ultra .nm-shine, .ultra .csp { display: none; }
   @media (min-width: 600px) and (min-height: 600px) {             /* a computer: the app is a 412 px phone, so use that phone's sizes */
@@ -2994,11 +2994,12 @@ const CONFIG = {
   }
   function fitHero() {                                      // the name and the status always fit next to the frame (a little smaller if needed)
     var who = heroEl && heroEl.querySelector(".who"); if (!who || !who.clientWidth) return;
-    var row = who.querySelector(".namerow"), st = who.querySelector(".status"), room = who.clientWidth;
+    var row = who.querySelector(".namerow"), st = who.querySelector(".status"), room = who.getBoundingClientRect().width;
+    var wide = function (e) { var r = e.getBoundingClientRect(); return Math.max(r.width, e.scrollWidth) > room + .25; };   // exact widths, not rounded
     row.style.fontSize = ""; st.style.fontSize = "";
     var fs = parseFloat(getComputedStyle(row).fontSize), ss = parseFloat(getComputedStyle(st).fontSize);
-    while (row.scrollWidth > room + 1 && fs > 15) { fs -= .5; row.style.fontSize = fs + "px"; }
-    while (st.offsetWidth > room + 1 && ss > 10.5) { ss -= .5; st.style.fontSize = ss + "px"; }
+    while (wide(row) && fs > 15) { fs -= .5; row.style.fontSize = fs + "px"; }
+    while (wide(st) && ss > 10.5) { ss -= .5; st.style.fontSize = ss + "px"; }
     paintName();
   }
   if (document.fonts && document.fonts.load) document.fonts.load('italic 800 30px "Hero Name"').then(fitHero, fitHero);
@@ -3154,6 +3155,12 @@ const CONFIG = {
     wf.run = true; wf.last = 0; wf.acc = 0;
     requestAnimationFrame(wfFrame);
   }
+  function wfFeatherSprite() {                  // the loose feather, cut out of frame.png once (orange-gold like the wings when the frame is gold)
+    var c = document.createElement("canvas"), x = c.getContext("2d"); c.width = WF_FEATHER[2]; c.height = WF_FEATHER[3];
+    if (root.classList.contains("wfgold")) x.filter = "hue-rotate(26deg) saturate(1.3) brightness(1.04)";
+    x.drawImage(wf.img, WF_FEATHER[0], WF_FEATHER[1], WF_FEATHER[2], WF_FEATHER[3], 0, 0, WF_FEATHER[2], WF_FEATHER[3]);
+    return c;
+  }
   function wfStop() { wf.run = false; if (wf.g) wf.g.clearRect(0, 0, wf.cv.width, wf.cv.height); }
   function wfFrame(t) {
     if (!wf.run) return;
@@ -3171,6 +3178,7 @@ const CONFIG = {
       g.globalAlpha = a; g.drawImage(wf.spr, s.x - z / 2, s.y - z / 2, z, z);
     }
     var im = wf.img, ok = im && im.complete && im.naturalWidth;
+    if (ok && !wf.fsp) wf.fsp = wfFeatherSprite();
     for (i = 0; ok && i < wf.fe.length; i++) {                          // feathers drift down, sway and fade out
       var f = wf.fe[i]; f.t += step;
       if (f.t < f.d) continue;
@@ -3181,7 +3189,7 @@ const CONFIG = {
       g.save(); g.globalAlpha = a;
       g.translate(f.x0 + f.vx * e + Math.sin(f.ph + e * 1.7) * f.amp, f.y0 + f.vy * e); g.rotate(f.r + f.vr * e);
       if (f.flip) g.scale(-1, 1);
-      g.drawImage(im, WF_FEATHER[0], WF_FEATHER[1], WF_FEATHER[2], WF_FEATHER[3], -dw / 2, -dh / 2, dw, dh);
+      g.drawImage(wf.fsp, -dw / 2, -dh / 2, dw, dh);
       g.restore();
     }
     g.globalAlpha = 1;
