@@ -1374,15 +1374,17 @@ const CONFIG = {
          background: radial-gradient(circle at 50% 52%, rgba(110, 0, 40, .32), rgba(30, 0, 14, .66) 70%), rgba(12, 0, 6, .32); }
   #chg.on { display: block; }
   #chg.show { opacity: 1; }
-  /* the picture fills the app column; the live ring sits exactly in the hole the picture leaves (centre 50% / 54.8%, 58.6% of the width) */
+  /* the picture keeps its own shape (840 x 1780), centred in the app column; its ring's centre is at 50.381% / 53.787% of it,
+     which puts the ring 0.08024 x the column width below the middle of the screen. Ring layers: 556 px of the picture (66.19% of the width). */
   .chg-box { position: absolute; top: 0; bottom: 0; left: 50%; width: min(100vw, 440px); margin-left: calc(min(100vw, 440px) / -2); --bw: min(100vw, 440px); overflow: hidden; }
+  .chg-pic { position: absolute; left: 0; width: 100%; top: calc(50% - var(--bw) * 1.05952); height: calc(var(--bw) * 2.11905); }
   .chg-art, .chg-zap, .chg-shine-in { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: url("assets/charging-fx.webp") 0 0 / 100% 100% no-repeat; }
-  .chg-art { animation: chgBreath 3.2s ease-in-out infinite; transform-origin: 50% 54.8%; }
+  .chg-art { animation: chgBreath 3.2s ease-in-out infinite; transform-origin: 50.381% 53.787%; }
   @keyframes chgBreath { 0%, 100% { opacity: .86; transform: scale(1); } 50% { opacity: 1; transform: scale(1.012); } }
   /* the electricity round the ring crackles: a brighter copy of it, flickering */
   .chg-zap { filter: brightness(1.7) saturate(1.25); opacity: 0; animation: chgZap 1.1s steps(1) infinite;
-    -webkit-mask-image: radial-gradient(circle calc(var(--bw) * .44) at 50% 54.8%, rgba(0, 0, 0, 0) 64%, #000 68%, #000 86%, rgba(0, 0, 0, 0) 100%);
-    mask-image: radial-gradient(circle calc(var(--bw) * .44) at 50% 54.8%, rgba(0, 0, 0, 0) 64%, #000 68%, #000 86%, rgba(0, 0, 0, 0) 100%); }
+    -webkit-mask-image: radial-gradient(circle calc(var(--bw) * .44) at 50.381% 53.787%, rgba(0, 0, 0, 0) 71%, #000 75%, #000 88%, rgba(0, 0, 0, 0) 100%);
+    mask-image: radial-gradient(circle calc(var(--bw) * .44) at 50.381% 53.787%, rgba(0, 0, 0, 0) 71%, #000 75%, #000 88%, rgba(0, 0, 0, 0) 100%); }
   @keyframes chgZap { 0% { opacity: .9; transform: translate(.6px, -.4px); } 9% { opacity: 0; } 17% { opacity: .65; transform: translate(-.5px, .5px); } 23% { opacity: 0; }
                       41% { opacity: 1; transform: none; } 47% { opacity: .2; } 55% { opacity: .75; transform: translate(.4px, .6px); } 61% { opacity: 0; } 79% { opacity: .85; transform: translate(-.6px, 0); } 86% { opacity: 0; } }
   /* a band of light sweeping down through the swirls (a brighter copy seen through a moving window) */
@@ -1399,40 +1401,44 @@ const CONFIG = {
   @keyframes chgTw { 0%, 100% { opacity: 0; transform: scale(.4) rotate(0deg); } 45% { opacity: 1; transform: scale(1.1) rotate(45deg); } 70% { opacity: .2; transform: scale(.6) rotate(70deg); } }
   #chgfx { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
   @media (min-width: 600px) and (min-height: 600px) { .chg-box { top: 14px; bottom: 14px; width: 412px; margin-left: -206px; --bw: 412px; border-radius: 46px; } }
-  .chg-ring { --rs: calc(var(--bw) * .586); position: absolute; left: 50%; top: 54.8%; width: var(--rs); height: var(--rs); margin: calc(var(--rs) / -2) 0 0 calc(var(--rs) / -2);
+  /* the ring: your picture's own ring. As in the picture, the band's straight part stops 3.3% short of the level and a round end follows (78% = band to 74.7% + its round end to 76.5%) */
+  .chg-ring { --rs: calc(var(--bw) * .6619); position: absolute; width: var(--rs); height: var(--rs);
+              left: calc(var(--bw) * .50381 - var(--rs) / 2); top: calc(50% + var(--bw) * .08024 - var(--rs) / 2);
               transform: scale(.55); opacity: 0; transition: transform .8s cubic-bezier(.25, 1.5, .45, 1), opacity .35s ease, --lv 1.6s cubic-bezier(.3, .7, .2, 1); }
   #chg.show .chg-ring { transform: none; opacity: 1; }
-  .chg-ring > i { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; }
-  .chg-track { background: radial-gradient(closest-side, rgba(0, 0, 0, 0) 79%, rgba(110, 10, 50, .75) 80%, rgba(70, 4, 36, .75) 95%, rgba(0, 0, 0, 0) 96%); }
-  /* the coloured band (magenta at the top → purple on the right → pink → red on the left), cut to the battery level */
-  .chg-band {
-    position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%;
-    background: conic-gradient(from 0deg, #ff3df2 0%, #d24dff 12%, #a43dff 26%, #8b33ff 38%, #b03dff 49%, #ff3dc4 60%, #ff2d86 69%, #ff2d5c 80%, #ff4d6d 90%, #ff2d55 100%);
-    -webkit-mask: conic-gradient(#000 calc(var(--lv) * 1%), rgba(0, 0, 0, 0) 0), radial-gradient(closest-side, rgba(0, 0, 0, 0) 79%, #000 80%, #000 95%, rgba(0, 0, 0, 0) 96%);
-    -webkit-mask-composite: source-in;
-    mask: conic-gradient(#000 calc(var(--lv) * 1%), rgba(0, 0, 0, 0) 0), radial-gradient(closest-side, rgba(0, 0, 0, 0) 79%, #000 80%, #000 95%, rgba(0, 0, 0, 0) 96%);
-    mask-composite: intersect;
-  }
-  .chg-arc { filter: saturate(1.2) brightness(1.08); }
-  /* its neon glow: the same band, blurred (the blur sits on the wrapper, so it spreads beyond the band) */
-  .chg-glow { filter: blur(7px); opacity: 1; }
-  .chg-glow.g2 { filter: blur(22px); opacity: .9; transform: scale(1.04); }
-  .chg-edge { top: 1.5%; right: 1.5%; bottom: 1.5%; left: 1.5%; border: 1.5px solid rgba(255, 190, 240, .7); box-shadow: 0 0 8px rgba(255, 70, 210, .7), inset 0 0 8px rgba(255, 70, 210, .4); }
-  .chg-edge.in { top: 11.5%; right: 11.5%; bottom: 11.5%; left: 11.5%; border-width: 1px; border-color: rgba(255, 150, 210, .45); box-shadow: 0 0 6px rgba(255, 60, 160, .45); }
-  .chg-cap { transform: rotate(calc(var(--lv) * 3.6deg)); }
-  .chg-cap > i { position: absolute; left: 50%; top: -1.5%; width: 15%; height: 15%; margin-left: -7.5%; border-radius: 50%;
-                 background: radial-gradient(circle, #fff 0 22%, rgba(255, 225, 245, .95) 34%, rgba(255, 90, 190, .45) 55%, rgba(255, 80, 180, 0) 72%); }
-  .chg-disc { position: absolute; top: 12.5%; right: 12.5%; bottom: 12.5%; left: 12.5%; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;
-              background: radial-gradient(circle at 50% 38%, #25050f, #0a0108 72%); box-shadow: inset 0 0 24px rgba(255, 40, 110, .42), 0 0 0 1px rgba(255, 110, 170, .3); }
-  .chg-bolt { width: 27%; height: auto; fill: #ff2d55; filter: drop-shadow(0 0 5px rgba(255, 50, 90, 1)) drop-shadow(0 0 16px rgba(255, 30, 100, .75)); animation: chgBolt 1.3s ease-in-out infinite; }
-  @keyframes chgBolt { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.12); opacity: 1; } }
-  #chgPct { margin-top: 4%; font-size: calc(var(--rs) * .19); font-weight: 600; line-height: 1.05; color: #fff; letter-spacing: -.01em; font-variant-numeric: tabular-nums; text-shadow: 0 0 14px rgba(255, 60, 140, .55); }
-  .chg-txt { margin-top: 3%; font-size: calc(var(--rs) * .074); font-weight: 600; color: #ff5c8a; text-shadow: 0 0 8px rgba(255, 40, 100, .5); }
+  .chg-ring > i, .chg-glow > i { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+  .chg-ring > .chg-hole { top: 22.3%; right: 22.3%; bottom: 22.3%; left: 22.3%; border-radius: 50%; background: #0e0003; }
+  .chg-track { background: url("assets/charging-track.webp") 0 0 / 100% 100% no-repeat; }
+  .chg-fill, .chg-capi { background: url("assets/charging-ring.webp") 0 0 / 100% 100% no-repeat; }
+  .chg-fill { -webkit-mask-image: conic-gradient(#000 calc(var(--lv) * 1% - 3.3%), rgba(0, 0, 0, 0) 0); mask-image: conic-gradient(#000 calc(var(--lv) * 1% - 3.3%), rgba(0, 0, 0, 0) 0); }
+  /* the band breathes: a soft neon bloom of itself, pulsing */
+  .chg-glow { filter: blur(calc(var(--rs) * .03)); opacity: 0; animation: chgGlow 2.6s ease-in-out infinite; }
+  @keyframes chgGlow { 0%, 100% { opacity: 0; } 50% { opacity: .55; } }
+  /* fully charged: the whole ring, no end */
+  .chg-fill.chg-full { -webkit-mask-image: none; mask-image: none; opacity: 0; transition: opacity .7s ease; }
+  #chg.full .chg-full { opacity: 1; }
+  /* the band's round end: a round window on the band (the band seen through it, standing still) carried round to the level */
+  .chg-capw { transform: rotate(calc((var(--lv) - 3.3) * 3.6deg)); opacity: clamp(0, calc(var(--lv) - 3.6), 1); transition: visibility .7s; }
+  #chg.full .chg-capw { visibility: hidden; }
+  .chg-capd { position: absolute; left: 45.41%; top: 4.68%; width: 9.17%; height: 9.17%; border-radius: 50%; overflow: hidden; }
+  .chg-capi { position: absolute; left: -495.1%; top: -50.98%; width: 1090.2%; height: 1090.2%; transform: rotate(calc((var(--lv) - 3.3) * -3.6deg)); }
+  /* its lit, glossy face (as in the picture), glowing brighter and softer */
+  .chg-capd::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; animation: chgGlare 1.5s ease-in-out infinite;
+                     background: radial-gradient(circle at 80% 44%, rgba(255, 246, 250, .92) 0 10%, rgba(255, 196, 218, .62) 34%, rgba(255, 150, 190, 0) 62%); }
+  @keyframes chgGlare { 0%, 100% { opacity: .62; } 50% { opacity: 1; } }
+  /* the middle: the picture's bolt; the number and "Charging..." where the picture has them */
+  .chg-disc { position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; text-align: center; }
+  .chg-bolt { position: absolute; left: 41.33%; top: 22.59%; width: 17.99%; height: 25.18%; background: url("assets/charging-bolt.webp") 0 0 / 100% 100% no-repeat; animation: chgBolt 1.6s ease-in-out infinite; }
+  @keyframes chgBolt { 0%, 100% { transform: scale(1); opacity: .88; } 50% { transform: scale(1.07); opacity: 1; } }
+  #chgPct { position: absolute; left: 0; right: 0; top: 54.4%; transform: translateY(-50%); font-family: Roboto, "Noto Sans", system-ui, sans-serif; font-size: calc(var(--rs) * .1594); font-weight: 400; line-height: 1;
+            color: #fff; letter-spacing: 0; font-variant-numeric: tabular-nums; text-shadow: 0 0 10px rgba(255, 30, 70, .85), 0 0 26px rgba(255, 20, 60, .55); }
+  .chg-txt { position: absolute; left: 0; right: 0; top: 67.3%; transform: translateY(-50%); font-family: Roboto, "Noto Sans", system-ui, sans-serif; font-size: calc(var(--rs) * .0547); font-weight: 400; line-height: 1.2;
+             color: #ff6f9c; text-shadow: 0 0 8px rgba(255, 40, 100, .55); white-space: nowrap; }
   .chg-txt i { font-style: normal; animation: chgDot 1.4s steps(1) infinite; }
   .chg-txt i:nth-child(3) { animation-delay: .25s; } .chg-txt i:nth-child(4) { animation-delay: .5s; }
   @keyframes chgDot { 0%, 15% { opacity: 0; } 16%, 100% { opacity: 1; } }
-  .app-bg #chg * { animation-play-state: paused !important; }
-  .nofx #chgfx, .ultra #chgfx, .nofx .chg-tw, .ultra .chg-tw, .ultra .chg-shine, .ultra .chg-zap { display: none; }
+  .app-bg #chg *, .app-bg #chg *::after { animation-play-state: paused !important; }
+  .nofx #chgfx, .ultra #chgfx, .nofx .chg-tw, .ultra .chg-tw, .ultra .chg-shine, .ultra .chg-zap, .ultra .chg-glow { display: none; }
   @media (prefers-reduced-motion: reduce) { #chg *, #chg *::after { animation: none !important; } #chgfx { display: none; } }
 
   @media (prefers-reduced-motion: reduce) {
@@ -2022,18 +2028,23 @@ const CONFIG = {
   <!-- the charger: plugged in = a full-screen charging animation until it is unplugged (the app tells the page; a browser's Battery API too) -->
   <div id="chg" role="status" aria-live="polite" aria-hidden="true">
     <div class="chg-box">
-      <!-- your picture's neon swirls, diamonds and electricity (assets/charging-fx.webp): breathing, a light sweeping through it, the electricity flickering -->
-      <div class="chg-art"></div><div class="chg-zap"></div><div class="chg-shine"><div class="chg-shine-in"></div></div>
-      <i class="chg-tw" style="--x:89.5%;--y:11.5%;--d:-0.0s"></i><i class="chg-tw" style="--x:8.3%;--y:30.4%;--d:-0.5s"></i><i class="chg-tw" style="--x:86.9%;--y:38.9%;--d:-1.1s"></i><i class="chg-tw" style="--x:96.7%;--y:44.4%;--d:-1.6s"></i><i class="chg-tw" style="--x:94.6%;--y:71.2%;--d:-2.1s"></i><i class="chg-tw" style="--x:25.2%;--y:90.3%;--d:-0.1s"></i><i class="chg-tw" style="--x:79.2%;--y:92.4%;--d:-0.6s"></i><i class="chg-tw" style="--x:8.3%;--y:95.5%;--d:-1.1s"></i><i class="chg-tw" style="--x:96.7%;--y:96.4%;--d:-1.6s"></i><i class="chg-tw" style="--x:17.3%;--y:92.6%;--d:-2.2s"></i>
-      <canvas id="chgfx"></canvas>
-    <div class="chg-ring">
-      <i class="chg-glow g2"><i class="chg-band"></i></i><i class="chg-glow"><i class="chg-band"></i></i><i class="chg-track"></i><i class="chg-band chg-arc"></i><i class="chg-edge"></i><i class="chg-edge in"></i><i class="chg-cap"><i></i></i>
-      <div class="chg-disc">
-        <svg class="chg-bolt" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.6 1.6 4.4 13.5h6.4l-1.5 8.9 9.3-12.3h-6.4z"/></svg>
-        <b id="chgPct">0%</b>
-        <span class="chg-txt"><span id="chgTxt">Charging</span><i>.</i><i>.</i><i>.</i></span>
+      <!-- your picture, kept in its own shape: neon swirls, diamonds and electricity (assets/charging-fx.webp) breathing, a light sweeping through, the electricity flickering -->
+      <div class="chg-pic">
+        <div class="chg-art"></div><div class="chg-zap"></div><div class="chg-shine"><div class="chg-shine-in"></div></div>
+        <i class="chg-tw" style="--x:89.5%;--y:11.5%;--d:-0.0s"></i><i class="chg-tw" style="--x:8.3%;--y:30.4%;--d:-0.5s"></i><i class="chg-tw" style="--x:86.9%;--y:38.9%;--d:-1.1s"></i><i class="chg-tw" style="--x:96.7%;--y:44.4%;--d:-1.6s"></i><i class="chg-tw" style="--x:94.6%;--y:71.2%;--d:-2.1s"></i><i class="chg-tw" style="--x:25.2%;--y:90.3%;--d:-0.1s"></i><i class="chg-tw" style="--x:79.2%;--y:92.4%;--d:-0.6s"></i><i class="chg-tw" style="--x:8.3%;--y:95.5%;--d:-1.1s"></i><i class="chg-tw" style="--x:96.7%;--y:96.4%;--d:-1.6s"></i><i class="chg-tw" style="--x:17.3%;--y:92.6%;--d:-2.2s"></i>
       </div>
-    </div>
+      <canvas id="chgfx"></canvas>
+      <!-- your picture's ring (cut out of it): the empty ring, the coloured band cut to the battery level, its round glowing end -->
+      <div class="chg-ring">
+        <i class="chg-hole"></i><i class="chg-track"></i>
+        <i class="chg-glow"><i class="chg-fill"></i></i><i class="chg-fill"></i><i class="chg-fill chg-full"></i>
+        <i class="chg-capw"><i class="chg-capd"><i class="chg-capi"></i></i></i>
+        <div class="chg-disc">
+          <i class="chg-bolt"></i>
+          <b id="chgPct">0%</b>
+          <span class="chg-txt"><span id="chgTxt">Charging</span><i>.</i><i>.</i><i>.</i></span>
+        </div>
+      </div>
     </div>
   </div>
   <!-- the phone's volume buttons show this (instead of the phone's own pop-up); above the intro too -->
@@ -3586,32 +3597,39 @@ const CONFIG = {
   /* =====================================================================
      CHARGING: plug the charger in (the app tells the page with window.appCharging; a browser's Battery API works too) →
      a full-screen charging animation that stays until the charger is unplugged (the back button can close it early).
-     The ring fills to the battery level; around it your picture's neon swirls, diamonds and electricity (assets/charging-fx.webp)
-     breathe, flicker and twinkle (CSS); the canvas throws sparks off the ring.
+     The ring is your picture's own ring (charging-track / charging-ring.webp), its band cut to the battery level with a round glowing end;
+     around it your picture's neon swirls, diamonds and electricity (charging-fx.webp) breathe, flicker and twinkle (CSS);
+     the canvas throws sparks off the band's end and the band.
      ===================================================================== */
   var chg = { el: $("chg"), cv: $("chgfx"), ring: qa("#chg .chg-ring")[0], g: null, on: false, raf: 0, last: 0, acc: 0, t: 0, offT: 0, level: -1, shown: 0, from: 0,
               W: 0, H: 0, k: 1, cx: 0, cy: 0, R: 0, spr: null, sparks: [] };
-  (function () { var im = new Image(); im.decoding = "async"; setTimeout(function () { im.src = "assets/charging-fx.webp"; }, 4000); chg.art = im; })();   // ready before the first plug-in
+  chg.art = [];
+  setTimeout(function () {                                  // ready before the first plug-in
+    ["charging-fx", "charging-track", "charging-ring", "charging-bolt"].forEach(function (n) { var im = new Image(); im.decoding = "async"; im.src = "assets/" + n + ".webp"; chg.art.push(im); });
+  }, 4000);
   function chgSprite(rgb) {                                 // one glowing spark (drawn once)
     var c = document.createElement("canvas"), x = c.getContext("2d"); c.width = c.height = 64;
     var g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
     g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(.18, "rgba(" + rgb + ",1)"); g.addColorStop(.45, "rgba(" + rgb + ",.35)"); g.addColorStop(1, "rgba(" + rgb + ",0)");
     x.fillStyle = g; x.fillRect(0, 0, 64, 64); return c;
   }
-  function chgSize() {                                      // the canvas covers the picture; the ring's centre + radius (offset sizes: not affected by its pop-in scale)
+  function chgSize() {                                      // the canvas covers the screen; the band's centre + radius (offset sizes: not affected by the ring's pop-in scale)
     var box = chg.cv.parentNode, W = box.clientWidth, H = box.clientHeight, rg = chg.ring;
     chg.k = Math.min(window.devicePixelRatio || 1, isLite() ? 1.25 : 1.5);
     chg.cv.width = Math.round(W * chg.k); chg.cv.height = Math.round(H * chg.k); chg.W = W; chg.H = H; chg.g = chg.cv.getContext("2d");
-    chg.R = rg.offsetWidth / 2; chg.cx = rg.offsetLeft + chg.R; chg.cy = rg.offsetTop + chg.R;
+    chg.cx = rg.offsetLeft + rg.offsetWidth / 2; chg.cy = rg.offsetTop + rg.offsetWidth / 2;
+    chg.R = rg.offsetWidth / 2 * 226.5 / 278; chg.bw = rg.offsetWidth / 2 * 25 / 278;   // the band: middle radius, half its width
     if (!chg.spr) chg.spr = ["255,90,170", "255,70,60", "200,90,255"].map(chgSprite);
   }
-  function chgDraw(dt) {                                    // sparks fly off the ring: red-orange on the left, pink-violet on the right
-    var g = chg.g, i, want = isLite() ? 34 : 50;
+  function chgDraw(dt) {                                    // sparks: most fly off the band's glowing end, some off the band; red-orange on the left, pink-violet on the right
+    var g = chg.g, i, want = isLite() ? 34 : 50, lv = Math.max(0, chg.shown) / 100;
     g.setTransform(chg.k, 0, 0, chg.k, 0, 0); g.clearRect(0, 0, chg.W, chg.H); g.globalCompositeOperation = "lighter";
-    for (i = 0; i < 3 && chg.sparks.length < want; i++) {
-      var an = Math.random() * Math.PI * 2, sp = 30 + Math.random() * 120, left = Math.cos(an) < 0;
-      chg.sparks.push({ x: chg.cx + Math.cos(an) * chg.R, y: chg.cy + Math.sin(an) * chg.R, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp, life: 0, max: .4 + Math.random() * .8,
-                        s: 3 + Math.random() * 8, c: left ? (Math.random() < .5 ? 1 : 0) : (Math.random() < .5 ? 2 : 0) });
+    for (i = 0; i < 3 && chg.sparks.length < want && lv > .04; i++) {
+      var tip = Math.random() < .55, f = tip ? lv - .02 + Math.random() * .008 : Math.random() * (lv - .02),            // where on the ring (0 = top, clockwise)
+          an = f * Math.PI * 2 - Math.PI / 2, r = chg.R + (Math.random() * 2 - 1) * chg.bw,
+          out = an + (Math.random() - .5) * 1.4, sp = (tip ? 50 : 25) + Math.random() * (tip ? 140 : 90), left = Math.cos(an) < 0;
+      chg.sparks.push({ x: chg.cx + Math.cos(an) * r, y: chg.cy + Math.sin(an) * r, vx: Math.cos(out) * sp, vy: Math.sin(out) * sp, life: 0, max: .35 + Math.random() * (tip ? .7 : .5),
+                        s: (tip ? 4 : 3) + Math.random() * (tip ? 9 : 6), c: left ? (Math.random() < .5 ? 1 : 0) : (Math.random() < .5 ? 2 : 0) });
     }
     for (i = chg.sparks.length - 1; i >= 0; i--) {
       var p = chg.sparks[i]; p.life += dt;
@@ -3644,6 +3662,7 @@ const CONFIG = {
     chg.ring.style.setProperty("--lv", pct);
     if (!chg.raf || chg.t > 1.5) { chg.shown = pct; $("chgPct").textContent = pct + "%"; }
     $("chgTxt").textContent = pct >= 100 ? "Fully charged" : "Charging";
+    chg.el.classList.toggle("full", pct >= 100);
   }
   function chgShow(level) {
     if (level >= 0) chg.level = level;
