@@ -4,8 +4,8 @@
 
 It uses the same layered approach as the sunset loop one folder up:
 
-- **The man:** sways on his feet and takes deep breaths with his head tilting back. His hair, jacket and trousers move in the wind, and his face is unchanged.
-- **The meadow:** wind gusts and rustle move the grass, and about 430 flower heads nod and bend on their own stems.
+- **The man:** clearly sways on his feet and takes deep breaths, leaning back and tilting his head up with each one. His hair, jacket and trousers blow in the wind, and his face is unchanged.
+- **The meadow:** strong, frequent wind gusts and rustle move the grass, and about 430 flower heads nod and bend on their own stems.
 - **Sky and background:** sun rays shimmer, clouds drift, mist moves through the valley, trees sway, and petals drift past.
 
 ## Regenerate

@@ -42,7 +42,7 @@ def rot_back(theta, px, py, x, y):
     return np.float32(c - 1) * dx + np.float32(s_) * dy, -np.float32(s_) * dx + np.float32(c - 1) * dy
 
 # ---------------- wind (shared) ----------------
-S_G1, P_G1, S_G2, P_G2 = 6.0, 10.0, 9.0, 15.0
+S_G1, P_G1, S_G2, P_G2 = 5.0, 7.5, 9.0, 15.0
 def gust_at(t, x, y):
     gxv, gzv = (x - 572) / (y - 480), 1400 / (y - 480)
     g1 = (1 - np.cos(2 * np.pi * (t - gxv * S_G1) / P_G1)) / 2
@@ -54,6 +54,7 @@ Xm, Ym = X[RM], Y[RM]
 mm = {k: m[k][RM] for k in ("w_mhead", "w_mhair", "w_jacket", "w_trouser")}
 P_FEET, P_NECK = (650, 1155), (640, 368)
 w_sway = sm((1060 - Ym) / 200)
+w_upper = sm((700 - Ym) / 200)
 g_breath = (220 * sm((640 - Ym) / 220)).astype(np.float32)
 mh1 = osc_parts(2 * np.pi * (Xm - 580) / 160); mh2 = osc_parts(2 * np.pi * (Xm / 110 + Ym / 140))
 mh1q = osc_parts(2 * np.pi * (Xm - 580) / 160 + np.pi / 2)
@@ -61,19 +62,21 @@ jk1 = osc_parts(2 * np.pi * (Ym - 540) / 150); jk2 = osc_parts(2 * np.pi * (Ym -
 tr1 = osc_parts(2 * np.pi * (Ym - 720) / 220 + 2 * np.pi * Xm / 300)
 def man_map(t):
     G = gust_at(t, 650.0, 1150.0)
-    sx, sy = rot_back(D2R * (0.8 * np.sin(W(3) * t) + 0.25 * np.sin(W(5) * t)), *P_FEET, Xm, Ym)   # sway
+    sx, sy = rot_back(D2R * (1.3 * np.sin(W(3) * t) + 0.4 * np.sin(W(5) * t)), *P_FEET, Xm, Ym)    # sway
     bx, by = w_sway * sx, w_sway * sy
     br = (1 - np.cos(W(5) * t)) / 2                                                       # deep breaths (6 s)
-    by += np.float32(0.016 * br) * g_breath
-    hx, hy = rot_back(D2R * (2.5 * br + 1.2 * np.sin(W(2) * t)), *P_NECK, Xm, Ym)        # head tilts back
+    by += np.float32(0.022 * br) * g_breath
+    lx, ly = rot_back(D2R * 1.2 * br, 630, 660, Xm, Ym)                                   # leans back on the inhale
+    bx += w_upper * lx; by += w_upper * ly
+    hx, hy = rot_back(D2R * (4.0 * br + 2.0 * np.sin(W(2) * t)), *P_NECK, Xm, Ym)        # head tilts back
     bx += mm["w_mhead"] * hx; by += mm["w_mhead"] * hy
     a6, a8, a10 = W(6) * t, W(8) * t, W(10) * t
     hair = 0.6 * osc(a6, *mh1) + 0.4 * osc(a10, *mh2)
-    bx -= mm["w_mhair"] * (4.5 * hair + np.float32(3.5 * G))                              # hair in the wind
-    by -= mm["w_mhair"] * (1.2 * osc(a6, *mh1q) - np.float32(1.5 * G))
-    bx -= mm["w_jacket"] * (2.2 * osc(a6, *jk1) + np.float32(1.8 * G))                    # jacket flaps
-    by -= mm["w_jacket"] * 0.5 * osc(a8, *jk2)
-    bx -= mm["w_trouser"] * (1.0 * osc(a8, *tr1) + np.float32(0.8 * G))                   # trouser fabric
+    bx -= mm["w_mhair"] * (6.0 * hair + np.float32(5.0 * G))                              # hair in the wind
+    by -= mm["w_mhair"] * (1.6 * osc(a6, *mh1q) - np.float32(2.0 * G))
+    bx -= mm["w_jacket"] * (3.5 * osc(a6, *jk1) + np.float32(2.6 * G))                    # jacket flaps
+    by -= mm["w_jacket"] * 0.8 * osc(a8, *jk2)
+    bx -= mm["w_trouser"] * (1.8 * osc(a8, *tr1) + np.float32(1.2 * G))                   # trouser fabric
     return Xm + bx, Ym + by
 
 # ---------------- meadow ----------------
@@ -88,11 +91,11 @@ def ground_noise(n=6, lo=0.45, hi=1.1, amp=1.5, zf=0.12):
     return acc * (amp / np.sqrt(n / 2))
 A_g = (m["A_grass"] * (1 - CALM_SOFT)).astype(np.float32)
 SWAY = []
-for k, a, lx, lz in ((5, 3.2, 1.6, 8.0), (8, 1.5, 0.9, -12.0), (12, 0.75, 0.55, 5.0)):
-    C, Sn = osc_parts(2 * np.pi * (gx / lx + gz / lz) + ground_noise())
+for k, a, lx, lz in ((5, 4.5, 1.6, 8.0), (8, 2.2, 0.9, -12.0), (12, 1.0, 0.55, 5.0)):
+    C, Sn = osc_parts(2 * np.pi * (gx / lx + gz / lz) + ground_noise(amp=1.25))
     SWAY.append((k, (A_g * a * C).astype(np.float32), (A_g * a * Sn).astype(np.float32)))
 RUSTLE = []
-for k, a in ((15, 1.3), (12, 0.9)):
+for k, a in ((15, 1.8), (12, 1.2)):
     C, Sn = osc_parts(2 * np.pi * (gx / 0.16 + gz / 1.7) + ground_noise(6, 0.12, 0.3, 1.2, 0.08))
     RUSTLE.append((k, (A_g * a * C).astype(np.float32), (A_g * a * Sn).astype(np.float32)))
 TH1 = 2 * np.pi * gx * S_G1 / P_G1; TH2 = 2 * np.pi * (gx * S_G2 + gz * 0.35) / P_G2
@@ -102,7 +105,7 @@ def gust_field(t):
     g1 = (1 - (np.float32(np.cos(a1)) * cT1 + np.float32(np.sin(a1)) * sT1)) / 2
     g2 = (1 - (np.float32(np.cos(a2)) * cT2 + np.float32(np.sin(a2)) * sT2)) / 2
     return 0.7 * g1 * g1 + 0.3 * g2 * g2
-LEAN_PX = 11.0
+LEAN_PX = 16.0
 BPH = 2 * np.pi * gx / 0.6
 cB, sB = np.cos(BPH).astype(np.float32), np.sin(BPH).astype(np.float32)
 MEADOW = (m["A_grass"] > 0.02).astype(np.float32) * (1 - CALM_SOFT)
@@ -127,7 +130,7 @@ for l, sl in enumerate(ndi.find_objects(lab_out), start=1):
     fid = len(FLW)
     _rows.append(yy_[nz].astype(np.int64) * OW + xx_[nz].astype(np.int64)); _cols.append(np.full(int(nz.sum()), fid)); _vals.append(w[nz])
     srcy = cyl * S; persp = max(0.05, (srcy - 480) / (H0 - 480))
-    FLW.append((cxl * S, srcy, min(10.0 * persp, 0.9 * (r + f) + 1.0)))
+    FLW.append((cxl * S, srcy, min(14.0 * persp, 0.95 * (r + f) + 1.5)))
 FLM = sps.csr_matrix((np.concatenate(_vals).astype(np.float32), (np.concatenate(_rows), np.concatenate(_cols))), shape=(OH * OW, len(FLW)))
 FL_NRM = ((1.0 / np.maximum(1.0, np.asarray(FLM.sum(axis=1)).ravel())).astype(np.float32).reshape(OH, OW)) * (1 - CALM_SOFT)
 FLW = np.array(FLW, np.float32); NF = len(FLW)
@@ -143,14 +146,14 @@ def flower_field(t):
 TREES = []
 for name, ph in (("t1", 0.0), ("t2", 1.7), ("t3", 3.1)):
     C, Sn = osc_parts(ph + 2 * np.pi * X / 400)
-    TREES.append(((2.2 * m[name] * C).astype(np.float32), (2.2 * m[name] * Sn).astype(np.float32)))
+    TREES.append(((3.5 * m[name] * C).astype(np.float32), (3.5 * m[name] * Sn).astype(np.float32)))
 SKY = m["w_sky"].astype(np.float32); SKY_ROWS = int(np.searchsorted(v, 325))
-V_SKY, L_SKY = 2.2, 6.0
+V_SKY, L_SKY = 3.2, 5.0
 # ---------------- sun rays (zero-mean shimmer around the sun) ----------------
 SUN = (15.0, 12.0)
 rr_ = np.hypot(X - SUN[0], Y - SUN[1]); th_ = np.arctan2(Y - SUN[1], X - SUN[0])
 RAY_S = (sm(rr_ / 90) * np.exp(-rr_ / 420) * (1 - sm((Y - 560) / 120))).astype(np.float32)
-RAYS = [(13, 1, 0.50, 0.3), (21, -1, 0.35, 1.9), (34, 2, 0.25, 4.0), (8, 1, 0.30, 2.2)]
+RAYS = [(13, 1, 0.50, 0.3), (21, -2, 0.35, 1.9), (34, 3, 0.25, 4.0), (8, 1, 0.30, 2.2)]
 RAY_C = [(np.cos(n * th_ + ph).astype(np.float32), np.sin(n * th_ + ph).astype(np.float32), mk, a) for n, mk, a, ph in RAYS]
 RAY_COL = np.array([255, 245, 215], np.float32) / 255.0
 # ---------------- mist ----------------
@@ -161,7 +164,7 @@ rrf = np.sqrt((2.4 * fx) ** 2 + fy ** 2) + 1e-9; lam_ = 1 / rrf
 amp = np.clip((lam_ - 60) / 40, 0, 1) * np.clip((900 - lam_) / 300, 0, 1) * rrf ** -1.15
 Z = (rng.standard_normal((NY, NX)) + 1j * rng.standard_normal((NY, NX))) * amp
 drift = (1 / (np.abs(fx) + 1e-9) * np.ones_like(fy)) <= 380
-mq = np.round(fx * 12.0 * T * np.ones_like(fy)).astype(int)
+mq = np.round(fx * 16.0 * T * np.ones_like(fy)).astype(int)
 mq = np.where(drift, mq + rng.choice([-1, 0, 0, 0, 1], size=mq.shape), 0)
 qmod = rng.choice([1, 2], size=mq.shape); rho = rng.uniform(0, 2 * np.pi, size=mq.shape)
 Zd = np.where(drift, Z, 0); Zs = np.where(drift, 0, Z)
@@ -183,8 +186,8 @@ def add_petal(front):
                        ay=prng.uniform(10, 30), ky=int(prng.integers(2, 5)), py=prng.uniform(0, 2 * np.pi),
                        ax=prng.uniform(6, 18), kx=int(prng.integers(3, 6)), px=prng.uniform(0, 2 * np.pi),
                        th0=prng.uniform(0, np.pi), kr=int(prng.choice([-4, -3, -2, 2, 3, 4])), col=col))
-for _ in range(16): add_petal(False)
-for _ in range(6): add_petal(True)
+for _ in range(24): add_petal(False)
+for _ in range(9): add_petal(True)
 def draw_petals(img, t, front):
     WT = OW + 2 * MARGIN
     for p in PETALS:
@@ -222,7 +225,7 @@ def bg_maps(t):
         qx, qy = X - Dq[..., 0], Y - Dq[..., 1]
     ab = 2 * np.pi * t / 3.75
     band = np.float32(np.cos(ab)) * cB + np.float32(np.sin(ab)) * sB
-    return qx, qy, 1 + 0.06 * G * band * MEADOW
+    return qx, qy, 1 + 0.09 * G * band * MEADOW
 
 def render(t):
     mx, my, shade = bg_maps(t)
@@ -241,10 +244,10 @@ def render(t):
         ph = 2 * np.pi * mk * t / T
         pat += a * (C * np.float32(np.cos(ph)) + Sn * np.float32(np.sin(ph)))
     pat *= np.float32(1 + 0.25 * np.sin(W(2) * t))
-    out += (34.0 * RAY_S * pat)[..., None] * RAY_COL
+    out += (50.0 * RAY_S * pat)[..., None] * RAY_COL
     draw_petals(out, t, front=False)
     f = cv2.remap(fog_raw(t), FX, FY, cv2.INTER_CUBIC, borderMode=cv2.BORDER_WRAP) / FOG_STD
-    al = (0.24 * FOG_BAND * sm((f + 0.3) / 2.2))[..., None]
+    al = (0.32 * FOG_BAND * sm((f + 0.3) / 2.2))[..., None]
     out[:FOG_ROWS] += (FOG_COL - out[:FOG_ROWS]) * al
     ax, ay = man_map(t)
     man = cv2.remap(MAN4, ax, ay, cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
