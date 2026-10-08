@@ -1250,62 +1250,98 @@ const CONFIG = {
   .party #party { opacity: 1; }
   .party.party-dim #party { opacity: .45; }
   #party > *, #party canvas { position: absolute; }
-  .pt-tint { top: 0; right: 0; bottom: 0; left: 0;
-    background: radial-gradient(ellipse 75% 45% at 88% 4%, rgba(200, 60, 255, .42), rgba(200, 60, 255, 0) 72%),
-                radial-gradient(ellipse 85% 55% at 10% 28%, rgba(255, 30, 80, .34), rgba(255, 30, 80, 0) 70%),
-                radial-gradient(ellipse 90% 50% at 50% 60%, rgba(255, 20, 70, .38), rgba(255, 20, 70, 0) 72%),
-                linear-gradient(180deg, rgba(120, 10, 70, .34), rgba(70, 0, 60, .42)); }
+  .pt-tint { top: 0; right: 0; bottom: 0; left: 0;           /* a rich red-magenta wash (the picture still shows through), darker at the bottom */
+    background: radial-gradient(ellipse 30% 15% at 0% 70%, rgba(255, 20, 50, .3), rgba(255, 20, 50, 0) 75%),
+                radial-gradient(ellipse 30% 15% at 100% 66%, rgba(255, 20, 50, .28), rgba(255, 20, 50, 0) 75%),
+                radial-gradient(ellipse 70% 26% at 0% 30%, rgba(225, 20, 90, .18), rgba(225, 20, 90, 0) 70%),
+                radial-gradient(ellipse 80% 34% at 50% 58%, rgba(255, 10, 50, .16), rgba(255, 10, 50, 0) 72%),
+                linear-gradient(180deg, rgba(150, 6, 36, .46) 0, rgba(165, 6, 52, .4) 45%, rgba(140, 4, 48, .42) 74%, rgba(50, 0, 20, .6) 100%); }
   #ptfx { top: 0; left: 0; width: 100%; height: 100%; }
 
   /* rings behind the music card: two faint ones always, and one pulsing out on every beat (the script places them) */
-  .pt-rings { left: var(--rx, 50%); top: var(--ry, 60%); width: 0; height: 0; --rr: calc(var(--pw) * .48); }
-  .pt-rings::before, .pt-rings::after, .pt-rings i { content: ""; position: absolute; border-radius: 50%; border: 2px solid rgba(255, 40, 85, .9);
-    box-shadow: 0 0 14px rgba(255, 30, 80, .55), inset 0 0 14px rgba(255, 30, 80, .3); }
-  .pt-rings::before { left: calc(var(--rr) * -.66); top: calc(var(--rr) * -.66); width: calc(var(--rr) * 1.32); height: calc(var(--rr) * 1.32); animation: ptRingGlow 2.6s ease-in-out infinite; }
-  .pt-rings::after { left: calc(var(--rr) * -.98); top: calc(var(--rr) * -.98); width: calc(var(--rr) * 1.96); height: calc(var(--rr) * 1.96); border-width: 1.5px; animation: ptRingGlow 2.6s ease-in-out -1.3s infinite; }
-  .pt-rings i { left: calc(var(--rr) * -1); top: calc(var(--rr) * -1); width: calc(var(--rr) * 2); height: calc(var(--rr) * 2); opacity: 0; transform: scale(.3); }
-  @keyframes ptRingGlow { 0%, 100% { opacity: .38; } 50% { opacity: .75; } }
+  /* the still rings are thin glowing lines drawn by one radial gradient each (::before: the bright inner set, ::after: the fainter outer set, out past the screen edges) */
+  .pt-rings { left: var(--rx, 50%); top: calc(var(--ry, 60%) + 12px); width: 0; height: 0; --rr: calc(var(--pw) * .32); }
+  .pt-rings::before, .pt-rings::after { content: ""; position: absolute; left: calc(var(--rr) * -2); top: calc(var(--rr) * -2); width: calc(var(--rr) * 4); height: calc(var(--rr) * 4); }
+  .pt-rings::before { animation: ptRingGlow 2.6s ease-in-out infinite;
+    background: radial-gradient(circle closest-side,
+      rgba(255, 25, 60, 0) calc(var(--rr) * .91), rgba(255, 25, 60, .55) calc(var(--rr) * .945), #ff4060 calc(var(--rr) * .955), rgba(255, 25, 60, .55) calc(var(--rr) * .965), rgba(255, 25, 60, .1) calc(var(--rr) * .99),
+      rgba(255, 25, 60, .55) calc(var(--rr) * 1.01), #ff3a5a calc(var(--rr) * 1.02), rgba(255, 25, 60, .55) calc(var(--rr) * 1.03), rgba(255, 25, 60, .1) calc(var(--rr) * 1.055),
+      rgba(255, 25, 60, .5) calc(var(--rr) * 1.075), #ff4462 calc(var(--rr) * 1.085), rgba(255, 25, 60, .5) calc(var(--rr) * 1.095), rgba(255, 25, 60, .08) calc(var(--rr) * 1.12),
+      rgba(255, 30, 70, .42) calc(var(--rr) * 1.14), #ff4a6c calc(var(--rr) * 1.15), rgba(255, 30, 70, .42) calc(var(--rr) * 1.16), rgba(255, 30, 70, 0) calc(var(--rr) * 1.2)),
+      radial-gradient(circle closest-side, rgba(255, 20, 60, 0) calc(var(--rr) * .86), rgba(255, 20, 60, .13) calc(var(--rr) * 1.04), rgba(255, 20, 60, 0) calc(var(--rr) * 1.3)); }
+  .pt-rings::after { animation: ptRingGlow 2.6s ease-in-out -1.3s infinite;
+    background: radial-gradient(circle closest-side,
+      rgba(255, 35, 80, 0) calc(var(--rr) * 1.26), rgba(255, 35, 80, .3) calc(var(--rr) * 1.29), #ff4a72 calc(var(--rr) * 1.3), rgba(255, 35, 80, .3) calc(var(--rr) * 1.31), rgba(255, 35, 80, 0) calc(var(--rr) * 1.34),
+      rgba(250, 45, 120, .22) calc(var(--rr) * 1.44), rgba(255, 70, 140, .6) calc(var(--rr) * 1.45), rgba(250, 45, 120, .22) calc(var(--rr) * 1.46), rgba(250, 45, 120, 0) calc(var(--rr) * 1.5),
+      rgba(255, 40, 90, .18) calc(var(--rr) * 1.64), rgba(255, 60, 100, .5) calc(var(--rr) * 1.65), rgba(255, 40, 90, .18) calc(var(--rr) * 1.66), rgba(255, 40, 90, 0) calc(var(--rr) * 1.7)); }
+  .pt-rings i { position: absolute; left: calc(var(--rr) * -1.25); top: calc(var(--rr) * -1.25); width: calc(var(--rr) * 2.5); height: calc(var(--rr) * 2.5); border-radius: 50%;
+    border: 1.5px solid #ff4a6a; box-shadow: 0 0 8px rgba(255, 30, 70, .8), inset 0 0 8px rgba(255, 30, 70, .45); opacity: 0; transform: scale(.75); }
+  @keyframes ptRingGlow { 0%, 100% { opacity: .72; } 50% { opacity: 1; } }
   #party.nohome .pt-rings { display: none; }
 
-  /* the disco ball (top right): mirror tiles sliding round a lit sphere, a pink-purple glow, glints moving with it */
-  .pt-ball { right: -2%; top: -3.5%; width: 32%; aspect-ratio: 1; }
-  .pt-ball-glow { position: absolute; top: -60%; right: -60%; bottom: -60%; left: -60%; border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 110, 220, .6) 0 24%, rgba(190, 70, 255, .32) 42%, rgba(160, 50, 255, 0) 68%); animation: ptGlow 2.4s ease-in-out infinite; }
-  @keyframes ptGlow { 0%, 100% { opacity: .65; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.05); } }
-  .pt-ball-in { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; overflow: hidden; background: #3a0d55;
-    box-shadow: 0 0 16px rgba(235, 100, 255, .85), 0 0 38px rgba(255, 60, 170, .45); }
-  .pt-ball-tex { position: absolute; top: 0; left: 0; width: 200%; height: 100%; background: #5a1a80 center / 100% 100% no-repeat; animation: ptBallSpin 12s linear infinite; }
-  @keyframes ptBallSpin { to { transform: translateX(-50%); } }
-  .pt-ball-shine { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%;
-    background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, .55), rgba(255, 255, 255, 0) 28%), radial-gradient(circle at 50% 50%, rgba(20, 0, 30, 0) 38%, rgba(30, 0, 50, .55) 72%, rgba(20, 0, 30, .9) 100%); }
+  /* the disco ball (top right, cut by the screen's top and right edges): a mirror sphere seen from a little below, turning (50 tiles round, .24 s a tile: 12 s a turn).
+     .pt-ball-tex is a strip of 12 pictures drawn once by ptBallTex() (only the part of the ball that shows; until they're ready the plain ball shows); steps() shows them in turn, each
+     one 1/12 of a tile further round, and after one tile it is the same picture again, so it loops. Glow and rim around it. */
+  .pt-ball { right: -12.1%; top: calc(var(--pw) * -.214); width: 42.8%; aspect-ratio: 1; }
+  .pt-ball-glow { position: absolute; top: -40%; right: -40%; bottom: -40%; left: -40%; border-radius: 50%;
+    background: radial-gradient(circle, rgba(215, 50, 255, .55) 0 34%, rgba(180, 35, 255, .3) 40%, rgba(160, 30, 255, .1) 50%, rgba(150, 30, 255, 0) 64%); animation: ptGlow 2.4s ease-in-out infinite; }
+  @keyframes ptGlow { 0%, 100% { opacity: .7; transform: scale(.97); } 50% { opacity: 1; transform: scale(1.03); } }
+  .pt-ball-in { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; overflow: hidden;
+    background: radial-gradient(circle at 45% 55%, #3a0420, #2a0330 45%, #5a10a0 85%, #b050f0);
+    box-shadow: -3px 0 8px rgba(240, 100, 255, .85), 0 4px 10px rgba(130, 40, 255, .9), 0 0 24px rgba(185, 45, 255, .65); }
+  .pt-ball-tex { position: absolute; top: 48%; left: 0; width: 912%; height: 52%; background: 0 0 / 100% 100% no-repeat; animation: ptBallSpin .24s steps(12) infinite; }
+  @keyframes ptBallSpin { to { transform: translateX(-100%); } }
+  .pt-ball-shine { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(230, 160, 255, .7), inset 0 0 8px rgba(190, 80, 255, .5); }
 
   /* neon edges on the song pill, the social bar, the views pill, the music card and the nav bar */
   #s-home .pill { position: relative; }
+  /* a crisp thin red line (purple toward the right end), brightest along the top and bottom (::before), a soft red glow outside, a faint red sheen inside */
   .neon { position: absolute; top: -1px; right: -1px; bottom: -1px; left: -1px; z-index: 2; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 1s ease;
-          box-shadow: 0 0 9px 1px rgba(255, 40, 90, .7), 0 0 24px 4px rgba(170, 40, 255, .28), inset 0 0 12px rgba(255, 40, 90, .26); }
-  .neon::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: inherit; padding: 1.6px;
-    background: linear-gradient(100deg, #ff2d55, #ff4d8d 40%, #c04dff 78%, #ff2d55);
+          box-shadow: 0 0 4px rgba(255, 30, 65, .7), 0 0 14px rgba(255, 20, 60, .3), inset 0 0 10px rgba(255, 30, 70, .22), inset 0 6px 14px -8px rgba(255, 40, 80, .45); }
+  .neon::before, .neon::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: inherit; padding: 1.25px;
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
     mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+  .neon::after { background: linear-gradient(100deg, #ff2a4c 0, #ff3658 48%, #ff3f78 70%, #a84dff 88%, #d04dcc 100%); opacity: .62; }
+  .neon::before { z-index: 1; background: linear-gradient(180deg, rgba(255, 95, 120, .85) 0, rgba(255, 70, 100, 0) 24%, rgba(255, 70, 100, 0) 78%, rgba(255, 70, 105, .7) 100%); }
   .party .neon { opacity: 1; }
   .party.party-dim .neon { opacity: .6; }
-  .party .tabhl { background: linear-gradient(180deg, rgba(255, 40, 80, .3), rgba(150, 20, 90, .18)); box-shadow: inset 0 0 0 1.5px rgba(255, 60, 100, .95), 0 0 18px rgba(255, 40, 90, .6); }
+  .party .tabhl { background: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(255, 40, 70, .3), rgba(255, 40, 70, 0) 75%), linear-gradient(180deg, rgba(190, 8, 40, .5), rgba(90, 0, 22, .45));
+                  box-shadow: inset 0 0 0 1.5px #ff3352, inset 0 0 12px rgba(255, 30, 60, .5), 0 0 6px rgba(255, 30, 60, .8), 0 0 18px rgba(255, 20, 55, .45); }
+  .party #tabs { background: linear-gradient(180deg, rgba(255, 60, 90, .07), rgba(255, 255, 255, 0) 55%), rgba(24, 4, 10, .93); }
   .party #s-home .pill svg.ic { stroke: url(#g-party); }
+  /* the song pill and the views pill clip what spills out (for their tap ripple), so their outer glow and edge line sit on the pill itself */
+  .party #s-home .pill, .party #viewpill { border-color: transparent; box-shadow: 0 0 4px rgba(255, 30, 65, .6), 0 0 14px rgba(255, 20, 60, .3);
+    background: linear-gradient(rgba(14, 1, 5, .86), rgba(14, 1, 5, .86)) padding-box, linear-gradient(100deg, #ff4060, #ff2a4c 50%, #ff3a62 80%, #ff4a8a) border-box; }
 
-  /* the music card: red sound bars, red heart (filled when liked), red-pink progress, a glowing play button with ripples, a waveform */
-  .party #mcard .bars i { background: linear-gradient(180deg, #ff7a9a, #ff2d55); }
+  /* the music card: darker red glass, red sound bars, red heart (filled when liked), red-pink progress, a play button with a thin red-to-purple glowing ring
+     and faint circles round it (beat ripples leave it), a dense red / purple waveform in clusters with a soft mirror image */
+  .party #mcard { background: linear-gradient(180deg, rgba(150, 0, 35, .2), rgba(60, 0, 15, .06) 38%, rgba(0, 0, 0, 0) 60%), rgba(17, 0, 5, .93);
+                  --frame: linear-gradient(90deg, rgba(255, 60, 90, 0) 50%, rgba(255, 60, 90, .2) 80%, rgba(255, 130, 160, .28) 96%, rgba(255, 90, 120, .18)); }
+  .party #mcard .bars i { background: linear-gradient(180deg, #ff2d55, #ff4f6e 55%, #ffc2cb); box-shadow: 0 0 5px rgba(255, 40, 80, .6); }
   .party #mcard .js-like { color: #ff2d55; }
   .party #mcard .js-like.liked svg.ic { filter: drop-shadow(0 0 6px rgba(255, 40, 80, .8)); }
-  .party #mcard input[type="range"]::-webkit-slider-runnable-track { background: linear-gradient(90deg, #ff9db3 0, #ff2d55 var(--p), rgba(255, 255, 255, .2) var(--p)); }
+  .party #mcard input[type="range"]::-webkit-slider-runnable-track { background: linear-gradient(90deg, #ff8095 0, #ff2d55 var(--p), rgba(255, 255, 255, .2) var(--p)); }
+  .party #mcard input[type="range"]::-webkit-slider-thumb { box-shadow: 0 0 6px 1px rgba(255, 50, 90, .9); }
+  .party #mcard .pbtn { border-color: transparent; background: radial-gradient(circle at 50% 42%, rgba(255, 60, 90, .1), rgba(12, 0, 4, .5) 74%); box-shadow: none; }
   .pr { position: absolute; top: -2px; right: -2px; bottom: -2px; left: -2px; border-radius: 50%; pointer-events: none; opacity: 0; }
-  .pr0 { border: 2px solid #ff2d55; box-shadow: 0 0 14px rgba(255, 40, 90, .85), 0 0 30px rgba(170, 50, 255, .45), inset 0 0 12px rgba(255, 40, 90, .4); transition: opacity 1s ease; }
+  .pr0 { box-shadow: 0 0 6px rgba(255, 30, 70, .75), 0 0 16px rgba(255, 20, 60, .3), inset 0 0 6px rgba(255, 30, 70, .28); transition: opacity 1s ease; }
+  .pr0::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; padding: 2.3px;
+    background: conic-gradient(#ff4258, #ff2c46 70deg, #ff4a5e 120deg, #ff8088 165deg, #b65cff 196deg, #a855f7 228deg, #e46ab0 262deg, #ff98a8 300deg, #ffb0ba 330deg, #ff4258);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+  .pr0::before { content: ""; position: absolute; top: -18px; right: -18px; bottom: -18px; left: -18px; border-radius: 50%;
+    background: radial-gradient(circle closest-side, rgba(255, 40, 70, 0) 36px, rgba(255, 40, 70, .2) 37px, rgba(255, 40, 70, 0) 38px,
+      rgba(255, 40, 70, 0) 40.5px, rgba(255, 40, 70, .15) 41.5px, rgba(255, 40, 70, 0) 42.5px, rgba(255, 40, 70, 0) 45px, rgba(255, 40, 70, .1) 46px, rgba(255, 40, 70, 0) 47px); }
   .party .pr0 { opacity: 1; }
-  .pr1, .pr2 { border: 1.5px solid rgba(255, 70, 130, .9); box-shadow: 0 0 10px rgba(200, 50, 255, .5); }
-  .pwave { display: none; align-items: flex-end; justify-content: space-between; height: calc(40px - 18px * var(--q, 0)); margin: calc(6px - 4px * var(--q, 0)) 2px calc(14px - 6px * var(--q, 0)); opacity: 0; transition: opacity 1s ease;
-           -webkit-box-reflect: below 1px linear-gradient(rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, .5)); }
+  .pr1, .pr2 { border: 1.5px solid rgba(255, 60, 100, .85); box-shadow: 0 0 8px rgba(255, 30, 70, .55); }
+  /* (it reaches up under the buttons by 24px with a matching negative margin, so the bars can be taller while the card keeps its size; taps pass through) */
+  .pwave { display: none; align-items: flex-end; justify-content: space-between; height: calc(64px - 18px * var(--q, 0)); margin: calc(-18px - 4px * var(--q, 0)) 2px calc(14px - 6px * var(--q, 0));
+           opacity: 0; transition: opacity 1s ease; pointer-events: none;
+           background: radial-gradient(ellipse 52% 26% at 50% 100%, rgba(255, 30, 80, .16), rgba(255, 30, 80, 0));
+           -webkit-box-reflect: below 1px linear-gradient(rgba(0, 0, 0, 0) 66%, rgba(0, 0, 0, .68)); }
   .party-wave .pwave { display: flex; }
   .party .pwave { opacity: 1; }
-  .pwave i { flex: none; width: 2.8px; height: 100%; border-radius: 2px; transform-origin: 50% 100%; transform: scaleY(.08); }
+  .pwave i { flex: none; width: 2px; height: 100%; border-radius: 1px; transform-origin: 50% 100%; transform: scaleY(.08); }
 
   /* still: in the background, under the player, and for people who turned animations off; "Floating particles" off = edges + waveform */
   .app-bg #party *, .app-bg #party *::before, .app-bg #party *::after, #party.hold *, #party.hold *::before, #party.hold *::after { animation-play-state: paused !important; }
@@ -3121,15 +3157,23 @@ const CONFIG = {
     });
     qa("#mcard .pbtn").forEach(function (b) { if (!b.querySelector(".pr")) for (var i = 0; i < 3; i++) { var r = document.createElement("i"); r.className = "pr pr" + i; b.appendChild(r); } });
   }
-  function ptBuildWave() {                                  // the waveform bars along the bottom of the music card (red → purple → pink → purple → red)
-    var w = ptWaveEl.clientWidth || 300, n = Math.max(24, Math.floor(w / 6.2)), stops = [[0, 255, 45, 85], [.3, 176, 76, 255], [.5, 255, 92, 168], [.72, 176, 76, 255], [1, 255, 45, 85]];
+  function ptBuildWave() {                                  // the waveform bars along the bottom of the music card: dense, in clusters (tall red / purple groups, low under the play button)
+    var w = ptWaveEl.clientWidth || 300, n = Math.max(40, Math.floor(w / 4.8)),
+        stops = [[0, 255, 60, 125], [.1, 255, 45, 72], [.2, 255, 55, 125], [.27, 185, 70, 255], [.34, 255, 50, 88], [.46, 255, 45, 72], [.56, 245, 60, 190], [.64, 215, 70, 255],
+                 [.73, 180, 70, 255], [.8, 255, 60, 105], [.87, 255, 48, 75], [.93, 240, 60, 205], [1, 200, 72, 255]],
+        peaks = [[.13, 1, .065], [.27, .95, .045], [.37, .72, .045], [.63, .7, .045], [.73, 1, .05], [.86, .95, .06], [.94, .62, .035]];
     if (n === pt.n && pt.bars.length) return;
     pt.n = n; pt.bars = []; pt.bv = []; pt.perm = []; ptWaveEl.innerHTML = "";
-    var seed = 7; for (var i = 0; i < n; i++) { seed = (seed * 9301 + 49297) % 233280; pt.perm.push(seed / 233280); }
+    var seed = 7, s2 = 3; for (var i = 0; i < n; i++) { seed = (seed * 9301 + 49297) % 233280; pt.perm.push(seed / 233280); }
     for (i = 0; i < n; i++) {
       var u = i / (n - 1), k = 1; while (k < stops.length - 1 && u > stops[k][0]) k++;
       var a = stops[k - 1], b = stops[k], f = (u - a[0]) / (b[0] - a[0]), c = [0, 1, 2].map(function (j) { return Math.round(a[j + 1] + (b[j + 1] - a[j + 1]) * f); }).join(",");
-      var bar = document.createElement("i"); bar.style.background = "linear-gradient(180deg, rgb(" + c + "), rgba(" + c + ", .55))";
+      var env = .3; peaks.forEach(function (p) { env = Math.max(env, p[1] * Math.exp(-Math.pow((u - p[0]) / p[2], 2))); });
+      s2 = (s2 * 9301 + 49297) % 233280;
+      var bar = document.createElement("i");
+      bar.style.background = "linear-gradient(180deg, rgba(255,232,240,.95), rgb(" + c + ") 16%, rgb(" + c + ") 70%, rgba(" + c + ", .7))";
+      bar.style.boxShadow = "0 0 3px rgba(" + c + ", .75)";
+      bar.style.height = Math.min(100, Math.round((16 + 74 * env) * (.88 + .24 * s2 / 233280))) + "%";   // the cluster shape (the beat / the music scales each bar)
       ptWaveEl.appendChild(bar); pt.bars.push(bar); pt.bv.push(.08);
     }
   }
@@ -3194,9 +3238,9 @@ const CONFIG = {
   function ptBeat() {                                       // a beat: a ring pulses out behind the music card, a ripple leaves the play button
     if (reduced || !ptFxShown()) return;
     var r = ptRings[pt.ring++ % ptRings.length];
-    if (r && r.animate && curScreen === "home") r.animate([{ transform: "scale(.3)", opacity: .85 }, { transform: "scale(1.3)", opacity: 0 }], { duration: 1700, easing: "cubic-bezier(.2,.6,.3,1)" });
+    if (r && r.animate && curScreen === "home") r.animate([{ transform: "scale(.74)", opacity: .95 }, { transform: "scale(1.4)", opacity: 0 }], { duration: 1600, easing: "cubic-bezier(.2,.6,.3,1)" });
     var p = qa("#mcard .pr" + (1 + (pt.rip++ % 2)))[0];
-    if (p && p.animate && curScreen === "home") p.animate([{ transform: "scale(1)", opacity: .9 }, { transform: "scale(1.75)", opacity: 0 }], { duration: 900, easing: "ease-out" });
+    if (p && p.animate && curScreen === "home") p.animate([{ transform: "scale(1)", opacity: .8 }, { transform: "scale(1.55)", opacity: 0 }], { duration: 900, easing: "ease-out" });
   }
   function ptDraw(dt) {
     var g = pt.g, W = pt.W, H = pt.H, i, L = pt.L, sp = pt.rate;
@@ -3268,19 +3312,110 @@ const CONFIG = {
       if (a.updatePlaybackRate) a.updatePlaybackRate(pt.rate); else a.playbackRate = pt.rate;
     });
   }
-  function ptBallTex() {                                    // the disco ball's mirror tiles: drawn once into a picture (two identical halves, so it loops)
-    var c = document.createElement("canvas"), x = c.getContext("2d"), cols = 18, rows = 16, ts = 12, i, j, seed = 11, tiles = [];
-    var rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-    var pal = [[255, 120, 220], [190, 80, 255], [255, 80, 170], [140, 60, 255], [235, 150, 255]];
-    c.width = cols * 2 * ts; c.height = rows * ts; x.fillStyle = "#24062f"; x.fillRect(0, 0, c.width, c.height);
-    for (j = 0; j < rows; j++) for (i = 0; i < cols; i++) { var p = pal[Math.floor(rnd() * pal.length)], b = .5 + rnd() * .65; tiles.push(rnd() < .07 ? [255, 255, 255] : p.map(function (v) { return Math.min(255, Math.round(v * b)); })); }
-    for (j = 0; j < rows; j++) for (i = 0; i < cols * 2; i++) { var t = tiles[j * cols + (i % cols)]; x.fillStyle = "rgb(" + t.join(",") + ")"; x.fillRect(i * ts + 1, j * ts + 1, ts - 2, ts - 2); }
-    return c.toDataURL();
+  function ptBallTex(el) {                                  // the disco ball: F pictures of a lit mirror sphere, each turned 1/F of a tile further, side by side (CSS steps through them)
+    // Only the part that shows is drawn (the left 76 %, bottom 52 % of the ball; the screen edges cut the rest). The lights stay put while the
+    // ball turns, so one tile further round the picture is the same again: the F frames loop seamlessly. (CSS: width F x 76 %, steps(F))
+    // Drawn once, in slices of ~10 ms so the song's start never stutters: el gets a stand-in now and the pictures a moment later.
+    var F = 12, D = 360, W = Math.round(D * .76), H = Math.round(D * .52), Y0 = .48, n = W * H;
+    var NL = 50, DP = 2 * Math.PI / NL, NR = 25, DL = Math.PI / NR, RO = .33, E = .13, ce = Math.cos(E), se = Math.sin(E);   // 50 tiles round, 25 rows, seen from ~7° below
+    var GL = [[-.48, .14, .055, 255, 30, 70], [.17, .07, .055, 255, 50, 95], [-.09, .58, .05, 240, 15, 55], [-.83, .25, .06, 255, 150, 255],
+              [-.45, .72, .08, 255, 120, 220], [.36, .56, .07, 240, 170, 255]];          // the glints (bright tiles): where (x, y), how big, colour
+    var G = 6, GW = Math.ceil(W / G) + 2, GH = Math.ceil(H / G) + 2, GC = new Float32Array(GW * GH * 6);                // a coarse grid (every 6 px) for the smooth colours
+    var LO = new Float32Array((W + 1) * (H + 1)), LA = new Float32Array((W + 1) * (H + 1)), LP = new Float32Array(n), IO = new Float32Array(n), AO = new Float32Array(n),
+        WO = new Float32Array(n), MV = new Float32Array(n), V2 = new Float32Array(n), JR = new Int32Array(n), K1 = new Float32Array(n), LC = new Float32Array(n * 3),
+        AD = new Float32Array(n * 3), IN = new Uint8Array(n), tc = new Float32Array(NL * NR * 3), th = new Float32Array(NL * NR * 3), seen = new Int16Array(NL * NR), o = [0, 0, 0];
+    var c = document.createElement("canvas"), x = c.getContext("2d"), img, d, st = 0, ri = 0, fi = 0;
+    el.style.backgroundImage = "url(data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==)";   // (stand-in: the plain ball under it shows)
+    function sst(a, b, v) { var t = (v - a) / (b - a); t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 - 2 * t); }
+    function hash(i, j) { var h = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return h - Math.floor(h); }
+    function noise(u, v) { var i = Math.floor(u), j = Math.floor(v), a = hash(i, j), b = hash(i + 1, j), e = hash(i, j + 1), g = hash(i + 1, j + 1); u -= i; v -= j;
+      u = u * u * (3 - 2 * u); v = v * v * (3 - 2 * v); return a + (b - a) * u + (e - a) * v + (a - b - e + g) * u * v; }
+    function line(t, s) { t = t < .5 ? t : 1 - t; t *= s; var m = 1.3 - t, g = 1 - t * t / 12; m = m < 0 ? 0 : m > 1 ? 1 : m; return g > 0 ? m + .4 * g * g : m; }   // a lit grid line (t: place in the tile, s: tile size in px)
+    function rgb(r, g, b) { r = r > 255 ? 255 : r < 0 ? 0 : r | 0; g = g > 255 ? 255 : g < 0 ? 0 : g | 0; b = b > 255 ? 255 : b < 0 ? 0 : b | 0; return (0xff000000 | (b << 16) | (g << 8) | r) >>> 0; }
+    function light(sx, sy) {                                // the colour the lights give at a spot (x right, y down, -1..1): red from above-left, purple-magenta on the left, violet at the right and bottom, a bright rim
+      var r = Math.sqrt(sx * sx + sy * sy), a = r ? Math.acos(Math.max(-1, Math.min(1, sx / r))) / Math.PI : 0;     // a: 0 right, .5 bottom, 1 left
+      var red = Math.exp(-((sx + .45) * (sx + .45) / .03 + (sy - .28) * (sy - .28) / .12)), top = .45 * Math.exp(-sy * sy / .03) * sst(.6, .3, sx) * sst(-.8, -.5, sx);
+      var pur = sst(-.45, -.8, sx) * (1 - .5 * sst(.5, .8, sy)), vio = .9 * sst(.1, .5, sx) * sst(0, .3, sy) + .5 * sst(.65, .95, sy);
+      var mg = sst(.76, .9, a) * (.45 + .55 * sst(-.05, .25, sy)), pk = Math.exp(-(a - .7) * (a - .7) / .012), vl = sst(.64, .52, a), rim = sst(.75, 1, r);
+      rim = rim * rim * (1 - mg) * (1 - .25 * vl) + Math.pow(sst(.55, 1, r), 1.5) * mg;
+      var dk = 1 - .4 * Math.exp(-(sx * sx + (sy - .45) * (sy - .45)) / .12);
+      o[0] = (40 - 20 * sst(.6, .95, sy) + 175 * red + 150 * top + 95 * pur + 60 * vio + rim * (180 * mg + 255 * pk + 80 * vl)) * dk;
+      o[1] = (2 * red + 2 * top + 6 * pur + 3 * vio + rim * (25 * mg + 25 * pk + 8 * vl)) * dk;
+      o[2] = (16 + 5 * red + 15 * top + 140 * pur + 230 * vio + rim * (250 * mg + 100 * pk + 235 * vl)) * dk;
+    }
+    function grid(py) {                                     // where each pixel of a row sits on the ball (in tiles: round, up)
+      for (var px = 0; px <= W; px++) {
+        var sx = (px + .5) / D * 2 - 1, sy = ((py + .5) / D + Y0) * 2 - 1, r = sx * sx + sy * sy;
+        if (r > .9999) { r = Math.sqrt(.9999 / r); sx *= r; sy *= r; }
+        var z = Math.sqrt(1 - sx * sx - sy * sy), oy = -sy * ce - z * se, oz = -sy * se + z * ce;
+        LO[py * (W + 1) + px] = Math.atan2(sx, oz) / DP + NL; LA[py * (W + 1) + px] = (Math.asin(oy) + Math.PI / 2) / DL + RO;
+      }
+    }
+    function coarse() {                                     // the grid lines' colour and the glow round the glints, on the coarse grid
+      for (var py = 0; py < GH; py++) for (var px = 0; px < GW; px++) {
+        var sx = px * G / D * 2 - 1, sy = (py * G / D + Y0) * 2 - 1, p = (py * GW + px) * 6, k;
+        light(sx, sy); GC[p] = o[0] * 1.5 + 60 - 40 * sst(.6, .95, sy); GC[p + 1] = o[1] * 1.35 + 4; GC[p + 2] = o[2] * 1.35 + 50 - 30 * Math.min(1, o[0] / 160) * (1 - Math.min(1, o[2] / 160));
+        for (k = 0; k < GL.length; k++) { var gb = GL[k], bd = Math.exp(-((sx - gb[0]) * (sx - gb[0]) + (sy - gb[1]) * (sy - gb[1])) / (gb[2] * gb[2] * 5)) * .25; GC[p + 3] += gb[3] * bd; GC[p + 4] += gb[4] * bd; GC[p + 5] += gb[5] * bd; }
+      }
+    }
+    function prep(py) {                                     // per pixel of a row: how big a tile is there, the row lines, the grid lines' colour, the rim, the glow round the glints
+      for (var px = 0; px < W; px++) {
+        var q = py * (W + 1) + px, p = py * W + px, lo = LO[q], la = LA[q], ax = LO[q + 1] - lo, ay = LO[q + W + 1] - lo, bx = LA[q + 1] - la, by = LA[q + W + 1] - la;
+        var sx = (px + .5) / D * 2 - 1, sy = ((py + .5) / D + Y0) * 2 - 1, r = Math.sqrt(sx * sx + sy * sy), k, b0 = 0, b1 = 0, b2 = 0;
+        var aa = r ? Math.acos(Math.max(-1, Math.min(1, sx / r))) / Math.PI : 0, lt = sst(.45, .85, aa), rw = r < 1 ? .85 * sst(.925, .995, r) : 1;
+        if (ax > NL / 2) ax -= NL; if (ax < -NL / 2) ax += NL; if (ay > NL / 2) ay -= NL; if (ay < -NL / 2) ay += NL;
+        K1[p] = 1 - rw; IN[p] = r < 1 ? 1 : 0; LP[p] = lo;
+        if (r < 1) {
+          var so = Math.sqrt(ax * ax + ay * ay), sa = Math.sqrt(bx * bx + by * by), j = Math.floor(la), v = la - j, mv = line(v, 1 / sa);
+          IO[p] = 1 / so; AO[p] = Math.min(.6, 1.2 * so); WO[p] = sst(4, 2, 1 / so); V2[p] = (v - .5) * (v - .5);
+          MV[p] = mv + (Math.min(.6, 1.2 * sa) - mv) * sst(4, 2, 1 / sa); JR[p] = Math.min(NR - 1, Math.max(0, j)) * NL;
+          var gx = (px + .5) / G, gy = (py + .5) / G, g0 = Math.floor(gx), h0 = Math.floor(gy), fx = gx - g0, fy = gy - h0, c00 = (h0 * GW + g0) * 6, c10 = c00 + 6, c01 = c00 + GW * 6, c11 = c01 + 6;
+          for (k = 0; k < 6; k++) { var gv = (GC[c00 + k] * (1 - fx) + GC[c10 + k] * fx) * (1 - fy) + (GC[c01 + k] * (1 - fx) + GC[c11 + k] * fx) * fy; if (k < 3) LC[p * 3 + k] = gv; else if (k === 3) b0 = gv; else if (k === 4) b1 = gv; else b2 = gv; }
+        }
+        AD[p * 3] = b0 * (1 - rw) + (150 + 95 * lt) * rw; AD[p * 3 + 1] = b1 * (1 - rw) + (40 + 90 * lt) * rw; AD[p * 3 + 2] = b2 * (1 - rw) + 255 * rw;
+      }
+    }
+    function tile(i, key, f) {                              // a tile's colour: the lights where its middle is now, a little unevenness, the glints
+      var lc = (i + .5 - f / F) * DP, la = (Math.floor(key / NL) + .5 - RO) * DL - Math.PI / 2, ox = Math.cos(la) * Math.sin(lc), oy = Math.sin(la), oz = Math.cos(la) * Math.cos(lc);
+      var tx = ox, ty = -(oy * ce + oz * se), nf = noise(tx * 5 + 3.1, ty * 5 + 7.7), gi, kk, k3 = key * 3;
+      light(tx, ty); nf = .45 + 1.3 * nf * nf;
+      for (kk = 0; kk < 3; kk++) { tc[k3 + kk] = o[kk] * nf; th[k3 + kk] = 0; }
+      for (gi = 0; gi < GL.length; gi++) { var g = GL[gi], gd = ((tx - g[0]) * (tx - g[0]) + (ty - g[1]) * (ty - g[1])) / (g[2] * g[2]), gw = Math.exp(-gd * gd);
+        if (gw > .01) for (kk = 0; kk < 3; kk++) { tc[k3 + kk] += (g[3 + kk] - tc[k3 + kk]) * gw; th[k3 + kk] += (g[3 + kk] * .35 + 60) * gw; } }
+    }
+    function row(f, py) {                                   // one row of pixels of frame f
+      for (var px = 0, p = py * W, ff = f / F; px < W; px++, p++) {
+        var at = py * W * F + f * W + px, p3 = p * 3;
+        if (!IN[p]) { d[at] = rgb(AD[p3], AD[p3 + 1], AD[p3 + 2]); continue; }
+        var tl = LP[p] + ff, i = tl | 0, u = tl - i, key = JR[p] + i % NL, k3 = key * 3;
+        if (seen[key] !== f) { seen[key] = f; tile(i, key, f); }
+        var mu = line(u, IO[p]), m, hot = 1 - 3 * ((u - .5) * (u - .5) + V2[p]), k1 = K1[p];
+        mu += (AO[p] - mu) * WO[p]; m = mu > MV[p] ? mu : MV[p]; if (m > 1) m = 1; if (hot < 0) hot = 0;
+        d[at] = rgb((tc[k3] * (1 - m) + LC[p3] * m + th[k3] * hot) * k1 + AD[p3], (tc[k3 + 1] * (1 - m) + LC[p3 + 1] * m + th[k3 + 1] * hot) * k1 + AD[p3 + 1],
+                    (tc[k3 + 2] * (1 - m) + LC[p3 + 2] * m + th[k3 + 2] * hot) * k1 + AD[p3 + 2]);
+      }
+    }
+    function done() {                                       // into a JPEG (encoded off the main thread where the browser can) and onto the ball
+      x.putImageData(img, 0, 0);
+      var set = function (u) { el.style.backgroundImage = "url(\"" + u + "\")"; };
+      if (c.toBlob) c.toBlob(function (b) { set(b ? URL.createObjectURL(b) : c.toDataURL("image/jpeg", .92)); }, "image/jpeg", .92); else set(c.toDataURL("image/jpeg", .92));
+    }
+    (function work() {                                      // the steps, a slice at a time: rows of the grid, the coarse grid, the per-pixel things, then frame by frame
+      var t0 = Date.now(), k;
+      while (Date.now() - t0 < 10) {
+        if (st === 0) { grid(ri++); if (ri > H) { st = 1; ri = 0; } }
+        else if (st === 1) { coarse(); st = 2; c.width = W * F; c.height = H; img = x.createImageData(W * F, H); d = new Uint32Array(img.data.buffer); }   // (d: one RGBA pixel per write)
+        else if (st === 2) { prep(ri++); if (ri >= H) { st = 3; ri = 0; } }
+        else if (st === 3) { if (!ri) for (k = 0; k < seen.length; k++) seen[k] = -1; row(fi, ri++); if (ri >= H) { ri = 0; if (++fi >= F) st = 4; } }
+        else return done();
+      }
+      setTimeout(work, 0);
+    })();
   }
   function partyStart(s) {
     pt.on = true; pt.song = s; clearTimeout(pt.offT);
     ptNeon();
-    var tex = qa("#party .pt-ball-tex")[0]; if (tex && !tex.style.backgroundImage) tex.style.backgroundImage = "url(" + ptBallTex() + ")";
+    var tex = qa("#party .pt-ball-tex")[0]; if (tex && !tex.style.backgroundImage) ptBallTex(tex);   // (the disco ball's pictures: a stand-in at once, drawn in slices)
     if (!pt.wave) { pt.wave = true; root.classList.add("party-wave"); fitHome(); ptBuildWave(); }
     ptSize(); ptPlace(); ptUpdate(); ptPaused();
     setTimeout(fitHome, 1100);                              // once the waveform has settled in: make sure Home still fits
