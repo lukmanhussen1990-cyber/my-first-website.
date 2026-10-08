@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Magical Black Hole (Behavior)",
+    "description": "A magical black hole that swallows everything!",
+    "uuid": "f48c40f8-9be2-44e9-b06a-b8dd56b200b5",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 20, 80]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "7df82342-47d5-4de5-b6da-25cb543e49cc",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "eef8ed4b-bc52-4737-84cc-a6ca3db46107",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    { "module_name": "@minecraft/server", "version": "1.10.0" },
+    { "module_name": "@minecraft/server-ui", "version": "1.1.0" },
+    { "uuid": "6331a912-c425-4404-b0cb-d4361fe22fe2", "version": [1, 0, 0] }
+  ]
+}

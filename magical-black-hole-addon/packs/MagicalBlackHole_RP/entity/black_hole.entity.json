@@ -1,0 +1,20 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "blackhole:black_hole",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/black_hole" },
+      "geometry": { "default": "geometry.blackhole.black_hole" },
+      "render_controllers": ["controller.render.blackhole.black_hole"],
+      "animations": { "idle": "animation.blackhole.black_hole.idle" },
+      "scripts": {
+        "initialize": ["variable.visual_size = 0.0;"],
+        "pre_animation": [
+          "variable.visual_size = variable.visual_size + (query.property('blackhole:size') - variable.visual_size) * math.min(1.0, query.delta_time * 6.0);"
+        ],
+        "animate": ["idle"]
+      }
+    }
+  }
+}

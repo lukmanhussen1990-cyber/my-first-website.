@@ -1,0 +1,20 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Magical Black Hole (Resources)",
+    "description": "Textures, model and particles for the Magical Black Hole",
+    "uuid": "6331a912-c425-4404-b0cb-d4361fe22fe2",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 20, 80]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "e6f95ec4-eea0-4b07-8b92-1f939f0e6e19",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    { "uuid": "f48c40f8-9be2-44e9-b06a-b8dd56b200b5", "version": [1, 0, 0] }
+  ]
+}
