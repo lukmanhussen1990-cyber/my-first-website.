@@ -1,0 +1,30 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Red Light, Green Light",
+    "description": "Squid Game minigame. Use the whistle to start or stop the game.",
+    "uuid": "80d1952f-787b-409c-bf33-8a79ae6dab44",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "b197012c-fb99-4cae-8ef5-30f5448078d9",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "bfa1b2d3-d70b-4684-ae91-001ac8bda192",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.10.0"
+    }
+  ]
+}
