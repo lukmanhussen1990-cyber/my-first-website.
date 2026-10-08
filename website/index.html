@@ -16,13 +16,23 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "1.4",                       // shown in Settings → About
+  version: "1.5",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
-  avatarImage: "assets/avatar.jpg",     // profile picture (the "old photo")
-  avatarVideo: "assets/avatar.mp4",     // profile clip: plays, fades back to the photo, then plays again
+  avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
+  avatarMedia: [                        // the profile picture on Home / Profile: these show one by one, each fading in over the last
+    "assets/avatar.mp4",                //   (a picture stays avatarImageSeconds, a clip plays to its end; then it starts again)
+    "assets/avatar.jpg",
+    "assets/avatar-crown.mp4",
+    "assets/avatar-selfie.jpg",
+    "assets/avatar-purple.jpg",
+    "assets/avatar-painting.jpg",
+    "assets/avatar-drawing.jpg",
+    "assets/avatar-cooked.jpg",
+  ],
   background:  "assets/background.mp4", // background video (muted, loops, slowly zooms)
   frame:       "assets/frame.png",      // the wings + crown frame around the profile clip on Home ("" = no frame, a plain glowing ring instead)
+  frame2:      "assets/frame2.png",     // the wings + crown frame on the Settings card; its crown is also in the popup messages ("" = plain ring)
 
   // ---------- music ----------
   // cover: "" = use the profile picture as the cover art · artist: "" = "Unknown Artist"
@@ -33,6 +43,7 @@ const CONFIG = {
     { title: "Forever Young",           artist: "Alphaville",  file: "assets/forever-young.mp3",           cover: "", bpm: 136.84, beat: 0.400 },
     { title: "Never Gonna Give You Up", artist: "Rick Astley", file: "assets/never-gonna-give-you-up.mp3", cover: "", bpm: 113.63, beat: 0.255 },
     { title: "MONTAGEM PERIGOSA (Super Slowed)", artist: "KVRXD", file: "assets/montagem-perigosa.mp3",    cover: "", bpm: 95.24, beat: 0.595 },
+    { title: "Dracula",                 artist: "Tame Impala", file: "assets/dracula.mp3",                 cover: "", bpm: 114.99, beat: 0.040 },
   ],
   randomFirstSong: false,               // true = start with a random song each visit
 
@@ -70,9 +81,8 @@ const CONFIG = {
   // ---------- views counter ----------
   startViews: 2300,                     // first visit shows this number, then +1 every visit
 
-  // ---------- profile clip timing ----------
-  avatarVideoFirst: true,               // true = the clip plays first, false = the photo first
-  avatarImageSeconds: 5,                // how long the photo stays before the clip plays again
+  // ---------- profile picture timing ----------
+  avatarImageSeconds: 5,                // how long each picture in avatarMedia stays before the next one fades in
 
   // ---------- starting values ----------
   volume: 50,                           // 0 - 100
@@ -117,12 +127,15 @@ const CONFIG = {
   }
   load(CONFIG.nameFont);
   load(CONFIG.quoteFont);
-  load(CONFIG.textFont, "400;500;600;700");
+  load(CONFIG.textFont, "400;500;600;700;800");
   root.style.setProperty("--name-font", JSON.stringify(CONFIG.nameFont));
   root.style.setProperty("--text-font", JSON.stringify(CONFIG.textFont));
   root.style.setProperty("--quote-font", JSON.stringify(CONFIG.quoteFont));
   if (CONFIG.frame) root.style.setProperty("--frame-img", "url(" + JSON.stringify(CONFIG.frame) + ")");
   else root.classList.add("noframe");
+  if (CONFIG.frame2) root.style.setProperty("--frame2-img", "url(" + JSON.stringify(CONFIG.frame2) + ")");
+  else root.classList.add("noframe2");
+  try { if (localStorage.getItem("bio:fx") === "0") root.classList.add("nofx"); } catch (e) {}   // "Floating particles" off: no sparkles either
 })();
 </script>
 
@@ -226,7 +239,7 @@ const CONFIG = {
   #s-home { display: flex; flex-direction: column; padding-bottom: calc(var(--nav-h) + 24px + env(safe-area-inset-bottom, 0px)); }
   #s-home > * { flex-shrink: 0; }
   .vgap { flex: 1 1 0; min-height: 0; max-height: 58px; }
-  #app.mini-on .screen { padding-bottom: calc(var(--nav-h) + 142px + env(safe-area-inset-bottom, 0px)); }
+  #app.mini-on .screen { padding-bottom: var(--mini-space, calc(var(--nav-h) + 160px + env(safe-area-inset-bottom, 0px))); }
 
   /* computer / tablet: the app sits in a phone-shaped frame (rounded corners, bright thin edge), the page around it is darker */
   @media (min-width: 600px) and (min-height: 600px) {
@@ -246,7 +259,7 @@ const CONFIG = {
     #statusbar svg { fill: currentColor; }
     .screen { padding-top: 58px; }
     #player { padding-top: 50px; }
-    #toast { top: 50px; }
+    #toast { top: 62px; width: 380px; margin-left: -190px; }
   }
 
   /* glass: see-through black card, thin light border, a soft sheen on top. Full effects blur what is behind it;
@@ -292,7 +305,12 @@ const CONFIG = {
   .ultra .ring { animation: none; box-shadow: none; }
   .avmedia { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: #111; }
   .avmedia img, .avmedia video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
-  .avmedia video { opacity: 0; transition: opacity .9s ease; }
+  /* the profile pictures and clips take turns: the new one fades in over the last one */
+  .avmedia img { z-index: 1; opacity: 0; transition: opacity .9s ease; }
+  .avmedia img.on { opacity: 1; }
+  .avmedia img.top { z-index: 2; }
+  .avmedia img.now { transition: none; }
+  .avmedia video { z-index: 3; opacity: 0; transition: opacity .9s ease; }
   .avmedia video.show { opacity: 1; }
   .avatar.pulse { animation: avpulse .3s ease-out; }
   @keyframes avpulse { 40% { transform: scale(.93); } }
@@ -341,6 +359,20 @@ const CONFIG = {
   .viewpill svg.ic { width: 21px; height: 21px; }
   .viewpill .dd { width: 17px; height: 17px; color: var(--text2); transition: transform .25s; }
   .viewpill.open .dd { transform: rotate(180deg); }
+
+  /* short screens (or tall system bars): the script raises --q from 0 to 1 until everything fits above the nav bar */
+  #s-home { --q: 0; }
+  #s-home .pill { margin-bottom: calc(10px - 6px * var(--q)); }
+  #s-home .hero { margin-top: calc(clamp(50px, 7.6vh, 64px) - 20px * var(--q)); margin-bottom: calc(24px - 12px * var(--q)); }
+  #s-home .hero .avatar { --sz: calc(min(33vw, 134px, 15.8vh) * (1 - .15 * var(--q))); }
+  #s-home .socialbar { padding-top: calc(14px - 5px * var(--q)); padding-bottom: calc(14px - 5px * var(--q)); margin-bottom: calc(12px - 6px * var(--q)); }
+  #s-home .sb { width: calc(52px - 6px * var(--q)); height: calc(52px - 6px * var(--q)); }
+  #s-home .viewpill { padding-top: calc(11px - 4px * var(--q)); padding-bottom: calc(11px - 4px * var(--q)); margin-bottom: calc(12px - 6px * var(--q)); }
+  #s-home .mcard { padding-top: calc(14px - 4px * var(--q)); padding-bottom: calc(12px - 4px * var(--q)); }
+  #s-home .mhead { padding-bottom: calc(12px - 6px * var(--q)); }
+  #s-home .ctrls { padding-top: calc(8px - 5px * var(--q)); }
+  #s-home .pbtn { width: calc(64px - 8px * var(--q)); height: calc(64px - 8px * var(--q)); }
+  #s-home .cbtn { width: calc(46px - 4px * var(--q)); height: calc(46px - 4px * var(--q)); }
 
   /* music card */
   .mcard { padding: 14px 16px 12px; border-radius: 28px; --frame: linear-gradient(90deg, rgba(255, 255, 255, 0) 36%, rgba(var(--accent-rgb), .8) 74%, #fff 95%, rgba(255, 255, 255, .5)); }
@@ -490,12 +522,9 @@ const CONFIG = {
      7. SETTINGS
      ===================================================================== */
   .setprof { display: flex; align-items: center; gap: 15px; width: 100%; padding: 14px 16px; margin-bottom: 14px; border-radius: 24px; }
-  .setprof .avatar { --sz: 58px; }
   .setprof .ring { top: -3px; right: -3px; bottom: -3px; left: -3px; animation: none; box-shadow: 0 0 14px var(--glow); }
   .setprof .ring::after { top: 2px; right: 2px; bottom: 2px; left: 2px; }
   .setprof img.sav { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-  .setprof b { display: block; font-size: 18px; font-weight: 700; }
-  .setprof i { display: block; font-style: normal; color: var(--text2); font-size: 14px; }
   .setprof .chev { width: 19px; height: 19px; color: var(--text); }
   .grp { margin-bottom: 14px; }
   .ctl { display: flex; align-items: center; gap: 14px; padding: 10px 14px; }
@@ -511,6 +540,99 @@ const CONFIG = {
   .sw[aria-checked="true"] { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
   .sw[aria-checked="true"]::after { transform: translateX(20px); }
   .logout { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin-top: 18px; padding: 15px; border-radius: 20px; font-size: 16.5px; font-weight: 600; color: #ff7c82; border: 1px solid rgba(255, 90, 95, .6); background: linear-gradient(180deg, rgba(255, 60, 70, .14), rgba(255, 60, 70, .07)); }
+
+  /* =====================================================================
+     SETTINGS PROFILE CARD: the picture inside the second wings + crown frame (assets/frame2.png, 1254 x 1254).
+     The frame's empty middle is a very slightly wide ellipse (half-axes 336.47 x 332.11 px, centre 626.88 / 704.49), so the
+     picture is drawn 1.3 % narrower than tall (--fx / --fy) and the ellipse becomes exactly the round picture: no gap, no overlap.
+     Layers (back → front): wings · picture · ring + swirls · ring glow · light line · crown (+ shine) · sparkles
+     ===================================================================== */
+  .setprof { min-height: 138px; padding: 10px 16px 10px 10px; border-radius: 26px; gap: 10px; overflow: visible;
+    border: 1.5px solid rgba(255, 64, 48, .85); }
+  .setprof.glass, .lite .setprof.glass, .noblur .setprof.glass {         /* (stronger than the phone glass rule, so phones get the glow too) */
+    box-shadow: 0 0 0 1px rgba(120, 0, 0, .5), 0 0 14px 2px rgba(255, 36, 26, .45), 0 0 34px 6px rgba(255, 20, 0, .18), inset 0 0 16px rgba(255, 40, 30, .22), inset 0 1px 0 rgba(255, 220, 150, .25); }
+  .setprof::before {                                                /* gold light line inside the red border, brightest on top */
+    content: ""; position: absolute; top: 3px; right: 3px; bottom: 3px; left: 3px; border-radius: 23px; padding: 1.2px; pointer-events: none;
+    background: linear-gradient(180deg, rgba(255, 228, 150, .8), rgba(255, 190, 90, .16) 30%, rgba(255, 170, 70, 0) 55%), linear-gradient(-12deg, rgba(255, 200, 110, .5), rgba(255, 170, 70, 0) 30%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+  .setprof::after {                                                 /* the red glow breathes slowly; a bright flash when tapped */
+    content: ""; position: absolute; top: -1.5px; right: -1.5px; bottom: -1.5px; left: -1.5px; border-radius: 26px; pointer-events: none;
+    box-shadow: 0 0 10px 2px rgba(255, 50, 30, .6), 0 0 26px 6px rgba(255, 30, 0, .28); opacity: .4; animation: cardGlow 2.8s ease-in-out infinite alternate; }
+  @keyframes cardGlow { to { opacity: 1; } }
+  .setprof.tapfx { animation: cardTap .42s cubic-bezier(.3, 1.5, .5, 1); }
+  .setprof.tapfx::after { animation: cardFlash .5s ease-out; }
+  .setprof .flash { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: inherit; pointer-events: none; opacity: 0;
+    background: radial-gradient(120% 160% at 22% 50%, rgba(255, 210, 140, .5), rgba(255, 60, 30, .25) 45%, rgba(255, 40, 20, 0) 75%); }
+  .setprof.tapfx .flash { animation: flashIn .5s ease-out; }
+  @keyframes cardTap { 0% { transform: scale(.97); } 45% { transform: scale(1.035); } 100% { transform: none; } }
+  @keyframes cardFlash { 0% { opacity: 1; box-shadow: 0 0 18px 5px rgba(255, 120, 60, .95), 0 0 46px 12px rgba(255, 40, 0, .55); } 100% { opacity: .6; } }
+  @keyframes flashIn { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
+
+  .setprof .avatar { --sz: 72px; --fx: calc(var(--sz) / 672.94); --fy: calc(var(--sz) / 664.22); margin: 34px 30px 10px 31px; isolation: isolate; }
+  .setprof .avatar > .ring { display: none; }
+  .noframe2 .setprof .avatar > .ring { display: block; }
+  .noframe2 .wf2 { display: none; }
+  .noframe2 .setprof .avatar { margin: 6px 6px 6px 8px; }
+  .setprof img.sav { z-index: 3; top: -1px; left: -1px; width: calc(100% + 2px); height: calc(100% + 2px); }    /* tucked 1 px under the ring */
+  .wf2 { position: absolute; left: calc(var(--sz) / 2 - 626.88 * var(--fx)); top: calc(var(--sz) / 2 - 704.49 * var(--fy));
+         width: calc(1254 * var(--fx)); height: calc(1254 * var(--fy)); pointer-events: none; }
+  .wf2 > *, .wf2-shine, .wf2-shine-in { position: absolute; pointer-events: none; }
+  .wf2-lay { background-image: var(--frame2-img); background-repeat: no-repeat; background-size: calc(1254 * var(--fx)) calc(1254 * var(--fy)); }
+  .wf2-wl, .wf2-wr { z-index: 2; }
+  .wf2-wl { left: calc(0 * var(--fx)); top: calc(0 * var(--fy)); width: calc(370 * var(--fx)); height: calc(735 * var(--fy)); background-position: calc(0 * var(--fx)) calc(0 * var(--fy));
+    clip-path: polygon(0.00% 0.00%, 0.00% 100.00%, 69.84% 100.00%, 69.40% 95.33%, 70.18% 89.13%, 72.54% 83.04%, 75.31% 78.58%, 80.30% 72.89%, 84.97% 68.84%, 92.35% 63.82%, 100.00% 59.75%, 100.00% 53.45%, 98.92% 53.88%, 98.92% 4.06%, 100.00% 4.06%, 100.00% 0.00%);
+    -webkit-mask-image: radial-gradient(circle at calc(626.88 * var(--fx)) calc(704.49 * var(--fy)), transparent calc(var(--sz) * .56), #000 calc(var(--sz) * .61));
+    mask-image: radial-gradient(circle at calc(626.88 * var(--fx)) calc(704.49 * var(--fy)), transparent calc(var(--sz) * .56), #000 calc(var(--sz) * .61));
+    transform-origin: calc(300 * var(--fx)) calc(560 * var(--fy)); animation: flap2L 3s ease-in-out infinite; }
+  .wf2-wr { left: calc(883 * var(--fx)); top: calc(0 * var(--fy)); width: calc(371 * var(--fx)); height: calc(735 * var(--fy)); background-position: calc(-883 * var(--fx)) calc(0 * var(--fy));
+    clip-path: polygon(100.00% 0.00%, 0.20% 0.00%, 0.20% 4.06%, 1.28% 4.06%, 1.28% 53.88%, 0.20% 53.45%, 0.20% 59.75%, 7.83% 63.82%, 15.20% 68.84%, 19.85% 72.89%, 24.83% 78.58%, 27.59% 83.04%, 29.94% 89.13%, 30.73% 95.33%, 30.28% 100.00%, 100.00% 100.00%);
+    -webkit-mask-image: radial-gradient(circle at calc(-256.12 * var(--fx)) calc(704.49 * var(--fy)), transparent calc(var(--sz) * .56), #000 calc(var(--sz) * .61));
+    mask-image: radial-gradient(circle at calc(-256.12 * var(--fx)) calc(704.49 * var(--fy)), transparent calc(var(--sz) * .56), #000 calc(var(--sz) * .61));
+    transform-origin: calc(70.76 * var(--fx)) calc(560 * var(--fy)); animation: flap2R 3s ease-in-out infinite; }
+  @keyframes flap2L { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }     /* 6 degrees, mirrored */
+  @keyframes flap2R { 0%, 100% { transform: rotate(3deg); } 50% { transform: rotate(-3deg); } }
+  .wf2-ring { z-index: 4; left: calc(0 * var(--fx)); top: calc(304 * var(--fy)); width: calc(1254 * var(--fx)); height: calc(950 * var(--fy)); background-position: calc(0 * var(--fx)) calc(-304 * var(--fy));
+    clip-path: polygon(82.26% 39.51%, 81.75% 34.26%, 80.74% 29.14%, 79.25% 24.22%, 77.29% 19.58%, 74.90% 15.31%, 72.12% 11.45%, 70.71% 9.83%, 68.79% 7.89%, 65.51% 5.20%, 62.09% 3.10%, 60.06% 2.13%, 58.01% 1.35%, 55.95% 0.75%, 53.88% 0.34%, 51.80% 0.10%, 49.71% 0.04%, 46.10% 0.34%, 44.03% 0.75%, 41.97% 1.35%, 39.92% 2.13%, 37.89% 3.10%, 34.47% 5.20%, 32.51% 6.73%, 30.40% 8.65%, 28.61% 10.56%, 27.13% 12.37%, 25.74% 14.30%, 23.83% 17.40%, 21.66% 21.86%, 19.93% 26.65%, 18.94% 30.40%, 18.44% 32.97%, 17.80% 38.19%, 17.67% 40.83%, 17.72% 44.74%, 0.00% 44.74%, 0.00% 100.00%, 100.00% 100.00%, 100.00% 44.74%, 82.26% 44.74%); }
+  /* the red / gold glow around the ring pulses slowly */
+  .wf2-halo { z-index: 5; left: calc(626.88 * var(--fx) - var(--sz) * .78); top: calc(704.49 * var(--fy) - var(--sz) * .78); width: calc(var(--sz) * 1.56); height: calc(var(--sz) * 1.56); border-radius: 50%;
+    background: radial-gradient(circle closest-side, rgba(255, 220, 150, 0) 72%, rgba(255, 226, 160, .42) 77%, rgba(255, 170, 70, .34) 81%, rgba(255, 60, 30, .36) 86%, rgba(255, 40, 20, .14) 93%, rgba(255, 40, 20, 0) 100%);
+    animation: halo2 2.8s ease-in-out infinite; }
+  @keyframes halo2 { 0%, 100% { opacity: .45; transform: scale(.985); } 50% { opacity: 1; transform: scale(1.025); } }
+  /* a thin light line runs round the ring (on its black band) */
+  .wf2-spin { z-index: 5; left: calc(626.88 * var(--fx) - var(--sz) * .58); top: calc(704.49 * var(--fy) - var(--sz) * .58); width: calc(var(--sz) * 1.16); height: calc(var(--sz) * 1.16); border-radius: 50%;
+    background: conic-gradient(from 0deg, rgba(255, 240, 200, 0) 0deg, rgba(255, 240, 200, 0) 230deg, rgba(255, 210, 140, .8) 320deg, #fff 352deg, rgba(255, 255, 255, 0) 357deg);
+    -webkit-mask-image: radial-gradient(circle closest-side, transparent 90.5%, #000 92.5%, #000 95.5%, transparent 97.5%);
+    mask-image: radial-gradient(circle closest-side, transparent 90.5%, #000 92.5%, #000 95.5%, transparent 97.5%);
+    animation: spin 5.5s linear infinite; }
+  /* the crown floats a few pixels; a shine sweeps across it every 4 s */
+  .wf2-crown { z-index: 6; left: calc(366 * var(--fx)); top: calc(30 * var(--fy)); width: calc(522 * var(--fx)); height: calc(369 * var(--fy)); background-position: calc(-366 * var(--fx)) calc(-30 * var(--fy));
+    clip-path: polygon(0.00% 99.77%, 5.13% 94.24%, 10.25% 89.59%, 15.38% 85.69%, 23.07% 81.05%, 28.19% 78.69%, 35.88% 76.14%, 41.01% 75.06%, 48.70% 74.35%, 56.38% 74.70%, 64.07% 76.14%, 71.76% 78.69%, 76.89% 81.05%, 84.58% 85.69%, 89.70% 89.59%, 94.83% 94.24%, 99.95% 99.77%, 99.95% 0.00%, 0.00% 0.00%);
+    animation: crown2 3.4s ease-in-out infinite; }
+  @keyframes crown2 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7%); } }
+  .wf2-shine { left: 0; top: 0; width: 34%; height: 100%; overflow: hidden; transform: translateX(-100%);
+    -webkit-mask-image: linear-gradient(100deg, transparent 6%, #000 40%, #000 60%, transparent 94%); mask-image: linear-gradient(100deg, transparent 6%, #000 40%, #000 60%, transparent 94%);
+    animation: shineWin 4s ease-in-out infinite; }
+  .wf2-shine-in { left: 0; top: 0; width: calc(522 * var(--fx)); height: calc(369 * var(--fy)); background-position: calc(-366 * var(--fx)) calc(-30 * var(--fy));
+    filter: brightness(1.75) saturate(1.15); transform: translateX(34%); animation: shineIn2 4s ease-in-out infinite; }
+  @keyframes shineIn2 { 0%, 52% { transform: translateX(34%); } 84%, 100% { transform: translateX(-98.6%); } }
+  /* gold sparkles twinkle around the frame (placed at random spots by the script) */
+  .wf2-sp { z-index: 7; left: 0; top: 0; width: 15px; height: 15px; margin: -7.5px 0 0 -7.5px; opacity: 0;
+    background: radial-gradient(circle, rgba(255, 240, 190, .95) 0, rgba(255, 196, 90, .5) 24%, rgba(255, 150, 40, 0) 60%);
+    animation: tw4 var(--d, 8s) var(--dl, 0s) linear infinite; }
+  .wf2-sp::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: #fffbea;
+    clip-path: polygon(50% 0, 56.5% 43.5%, 100% 50%, 56.5% 56.5%, 50% 100%, 43.5% 56.5%, 0 50%, 43.5% 43.5%); }
+  .nofx .wf2-sp { display: none; }
+  .app-bg .wf2 *, .app-bg .setprof, .app-bg .setprof::after { animation-play-state: paused !important; }
+  .ultra .wf2-spin, .ultra .wf2-shine, .ultra .wf2-sp { display: none; }
+  .ultra .wf2 *, .ultra .setprof::after { animation: none !important; }
+
+  .sp-txt { flex: 1; min-width: 0; text-align: left; }
+  .setprof .sp-txt b { display: flex; align-items: center; gap: 7px; font-size: 21px; font-weight: 800; line-height: 1.2; }
+  .setprof .sp-txt b .crown { width: 19px; height: 19px; color: #ffd36a; stroke-width: 2; filter: drop-shadow(0 0 4px rgba(255, 170, 60, .6)); }
+  .setprof .sp-txt i { display: block; font-style: normal; color: var(--text2); font-size: 14.5px; margin-top: 1px; }
+  .sp-st { display: flex; align-items: center; gap: 7px; margin-top: 6px; font-size: 13.5px; font-weight: 600; }
+  .sp-st .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--good); color: var(--good); box-shadow: 0 0 8px currentColor; flex: none; }
 
   /* =====================================================================
      3. FULL-SCREEN MUSIC PLAYER
@@ -660,15 +782,135 @@ const CONFIG = {
   .mi .num { color: var(--text); font-weight: 600; } .mi.info { cursor: default; } .mi.info b { color: var(--text2); }
   .mi.sep { box-shadow: 0 -1px 0 rgba(255, 255, 255, .08); border-radius: 0 0 12px 12px; margin-top: 4px; padding-top: 14px; color: var(--accent); font-weight: 600; }
 
-  #toast { position: absolute; left: 14px; right: 14px; top: calc(12px + env(safe-area-inset-top, 0px)); z-index: 70; display: flex; justify-content: center; pointer-events: none; }
-  .tcardx {
-    position: relative; display: flex; align-items: center; gap: 14px; max-width: 100%; padding: 14px 24px 14px 14px; border-radius: 26px; opacity: 0; transform: translateY(-18px) scale(.94);
-    background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 60%), rgba(var(--surface-rgb), .98); box-shadow: 0 0 22px rgba(255, 255, 255, .08), 0 12px 32px rgba(0, 0, 0, .5);
-    --frame: linear-gradient(135deg, #fff 0, rgba(255, 255, 255, .7) 10%, rgba(255, 255, 255, .32) 30%, rgba(255, 255, 255, .32) 70%, rgba(255, 255, 255, .7) 90%, #fff 100%);
+  /* =====================================================================
+     POPUP MESSAGE ("Status updated!" and every other message): a glowing pill at the top, above everything.
+     Black glass with a diagonal reflection · thick glowing red border with a gold line · gold sparkles on the border ·
+     a round medallion on the left (spinning red-gold ring, orbiting light, the crown or an icon) · a close button.
+     Only transform / opacity are animated; it all stops while the app is in the background.
+     ===================================================================== */
+  #toast { position: fixed; z-index: 120; top: calc(10px + env(safe-area-inset-top, 0px)); left: 50%; width: min(92vw, 410px); margin-left: calc(min(92vw, 410px) / -2); pointer-events: none; }
+  .pop { position: relative; display: flex; align-items: center; min-height: 80px; padding: 11px 46px 12px 90px; pointer-events: auto; transform-origin: 50% 0;
+         animation: popIn .62s cubic-bezier(.22, 1.35, .36, 1) both; }
+  .pop.out { animation: popOut .36s cubic-bezier(.55, 0, .8, .45) forwards; pointer-events: none; }
+  @keyframes popIn { 0% { opacity: 0; transform: translateY(-118%) scale(.8); } 45% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+  @keyframes popOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-110%) scale(.94); } }
+
+  /* outer red glow (pulses softly) */
+  .pop-glow { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 999px; pointer-events: none;
+    box-shadow: 0 0 0 1.5px rgba(255, 70, 50, .95), 0 0 10px 3px rgba(255, 32, 22, .9), 0 0 28px 8px rgba(255, 10, 0, .5), 0 0 54px 14px rgba(255, 40, 0, .2);
+    animation: popGlow 1.6s ease-in-out infinite alternate; }
+  @keyframes popGlow { from { opacity: .5; } to { opacity: 1; } }
+  /* the pill: black glass, a red glow inside, a diagonal reflection, the thick red border with a dark inner edge */
+  .pop-body { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 999px; overflow: hidden; pointer-events: none;
+    background:
+      linear-gradient(113deg, rgba(255, 255, 255, 0) 34%, rgba(255, 228, 214, .07) 42%, rgba(255, 236, 226, .2) 48%, rgba(255, 228, 214, .06) 54%, rgba(255, 255, 255, 0) 62%),
+      radial-gradient(64% 130% at 16% 28%, rgba(176, 14, 12, .6), rgba(176, 14, 12, 0) 72%),
+      radial-gradient(56% 120% at 90% 78%, rgba(130, 10, 8, .45), rgba(130, 10, 8, 0) 72%),
+      linear-gradient(180deg, #2c0709, #0a0203 50%, #180306);
+    box-shadow: inset 0 0 0 3px #ff2a22, inset 0 0 0 4.5px rgba(110, 0, 0, .95), inset 0 0 18px 5px rgba(255, 28, 24, .42), inset 0 12px 16px rgba(255, 130, 100, .07); }
+  /* the gold light line just inside the red border: brightest along the top and the lower right */
+  .pop-body::before { content: ""; position: absolute; top: 3.5px; right: 3.5px; bottom: 3.5px; left: 3.5px; border-radius: 999px; padding: 1.8px;
+    background: linear-gradient(180deg, #fff4c4, rgba(255, 200, 96, .45) 30%, rgba(255, 170, 70, 0) 50%),
+                linear-gradient(-14deg, #ffe08c, rgba(255, 170, 70, .35) 22%, rgba(255, 150, 60, 0) 40%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+  /* the shine: sweeps across once, left to right, right after the pill has landed */
+  .pop-shine { position: absolute; top: -10%; bottom: -10%; left: 0; width: 30%;
+    background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(255, 240, 214, .28) 42%, rgba(255, 252, 240, .55) 50%, rgba(255, 240, 214, .28) 58%, rgba(255, 255, 255, 0));
+    transform: translateX(-140%) skewX(-18deg); animation: popShine 1.05s .62s cubic-bezier(.45, 0, .3, 1) both; }
+  @keyframes popShine { from { transform: translateX(-140%) skewX(-18deg); } to { transform: translateX(380%) skewX(-18deg); } }
+
+  /* glowing light streaks around the medallion and along the bottom of the pill (drawn once) */
+  .pop-streak { position: absolute; left: -22px; top: -16px; width: calc(100% + 40px); height: calc(100% + 32px); overflow: visible; pointer-events: none; }
+  .pop-streak path { fill: none; stroke-linecap: round; }
+  .pop-streak .glo { stroke-width: 7; opacity: .45; }
+  .pop-streak .lin { stroke-width: 2.2; }
+  .pop-streak .thin { stroke-width: 1.3; }
+
+  /* gold sparkles that twinkle on the border (placed at random spots by the script) */
+  .pop-sp { position: absolute; left: 0; top: 0; width: 18px; height: 18px; margin: -9px 0 0 -9px; pointer-events: none; opacity: 0;
+    background: radial-gradient(circle, rgba(255, 240, 190, .95) 0, rgba(255, 196, 90, .5) 24%, rgba(255, 150, 40, 0) 60%);
+    animation: tw4 var(--d, 4.4s) var(--dl, 0s) linear infinite; }
+  .pop-sp::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: #fffbea;
+    clip-path: polygon(50% 0, 56.5% 43.5%, 100% 50%, 56.5% 56.5%, 50% 100%, 43.5% 56.5%, 0 50%, 43.5% 43.5%); }
+  /* a sparkle twinkles at four spots in turn (--x1/--y1 … --x4/--y4, set once by the script); it moves only while invisible */
+  @keyframes tw4 {
+    0%, 25% { opacity: 0; transform: translate(var(--x1), var(--y1)) scale(.25) rotate(0deg); }
+    6% { opacity: 1; transform: translate(var(--x1), var(--y1)) scale(1) rotate(45deg); }
+    12.5% { opacity: 0; transform: translate(var(--x1), var(--y1)) scale(.25) rotate(90deg); }
+    25.01%, 50% { opacity: 0; transform: translate(var(--x2), var(--y2)) scale(.25) rotate(0deg); }
+    31% { opacity: 1; transform: translate(var(--x2), var(--y2)) scale(1) rotate(45deg); }
+    37.5% { opacity: 0; transform: translate(var(--x2), var(--y2)) scale(.25) rotate(90deg); }
+    50.01%, 75% { opacity: 0; transform: translate(var(--x3), var(--y3)) scale(.25) rotate(0deg); }
+    56% { opacity: 1; transform: translate(var(--x3), var(--y3)) scale(1) rotate(45deg); }
+    62.5% { opacity: 0; transform: translate(var(--x3), var(--y3)) scale(.25) rotate(90deg); }
+    75.01%, 100% { opacity: 0; transform: translate(var(--x4), var(--y4)) scale(.25) rotate(0deg); }
+    81% { opacity: 1; transform: translate(var(--x4), var(--y4)) scale(1) rotate(45deg); }
+    87.5% { opacity: 0; transform: translate(var(--x4), var(--y4)) scale(.25) rotate(90deg); }
   }
-  .tk { width: 40px; height: 40px; flex: none; border-radius: 50%; display: grid; place-items: center; color: #fff; background: rgba(110, 124, 140, .42); border: 2px solid #4fd9a0; }
-  .tk svg.ic { width: 21px; height: 21px; stroke-width: 2.6; }
-  .tcardx b { display: block; font-size: 15.5px; font-weight: 700; } .tcardx span { display: block; font-size: 13.5px; color: var(--text2); }
+
+  /* the medallion: red glow, dark red disc, a spinning red-gold ring, light orbiting on a tilted ellipse, the crown (or an icon) */
+  .pm { position: absolute; left: -2px; top: 50%; width: 86px; height: 86px; margin-top: -43px; pointer-events: none; }
+  .pm-glow { position: absolute; top: -16px; right: -16px; bottom: -16px; left: -16px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 50, 24, .55) 38%, rgba(255, 24, 0, .2) 58%, rgba(255, 0, 0, 0) 71%); }
+  .pm-disc { position: absolute; top: 7px; right: 7px; bottom: 7px; left: 7px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 40%, #8a0d0b, #420407 52%, #170104 82%);
+    box-shadow: inset 0 0 14px rgba(255, 70, 40, .6), inset 0 0 0 1.5px rgba(255, 130, 90, .55), 0 0 0 2px #ff3a26, 0 0 14px 4px rgba(255, 60, 20, .9), 0 0 30px 7px rgba(255, 30, 0, .4); }
+  .pm-ring { position: absolute; top: 2px; right: 2px; bottom: 2px; left: 2px; border-radius: 50%;
+    background: conic-gradient(from 0deg, #ff2a16, #ffb03c 40deg, #fff3bf 62deg, #ffb03c 84deg, #ff2a16 132deg, #a70b0b 190deg, #ff3416 240deg, #ffcf68 288deg, #fff 300deg, #ffcf68 312deg, #ff2a16 360deg);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4.1px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4.1px));
+    animation: spin 5.5s linear infinite; }
+  .pm-orbit { position: absolute; left: -18px; top: -18px; width: 122px; height: 122px; transform: rotate(-24deg) scaleY(.36); }
+  .pm-orbit i { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%;
+    background: conic-gradient(from 0deg, rgba(255, 190, 80, 0) 0deg, rgba(255, 190, 80, 0) 236deg, rgba(255, 160, 60, .85) 326deg, #fff 350deg, rgba(255, 255, 255, 0) 355deg);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px), #000 calc(100% - .6px), transparent 100%);
+    mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px), #000 calc(100% - .6px), transparent 100%);
+    animation: spin 2.4s linear infinite; }
+  .pm-orbit i + i { animation-duration: 3.4s; animation-direction: reverse; opacity: .7; }
+  /* the crown: a cut-out of the crown in assets/frame2.png (box 512 x 306 px of that picture, from 372 / 44) */
+  .pm-crown { position: absolute; left: 50%; top: 50%; width: 64px; height: 38.25px; margin: -22px 0 0 -32px; filter: drop-shadow(0 0 4px rgba(255, 170, 60, .65));
+    animation: pmDrop .78s .26s cubic-bezier(.25, .8, .35, 1) both, pmBob 2.6s 1.1s ease-in-out infinite; }
+  .pm-crown-in { width: 100%; height: 100%; background-image: var(--frame2-img); background-repeat: no-repeat;
+    background-size: calc(1254px * 64 / 512) calc(1254px * 64 / 512); background-position: calc(-372px * 64 / 512) calc(-44px * 64 / 512);
+    clip-path: polygon(1.56% 47.06%, 10.35% 47.06%, 25.00% 34.64%, 44.53% 1.96%, 55.27% 1.96%, 74.22% 34.64%, 89.45% 47.06%, 98.24% 47.06%, 98.24% 63.40%, 85.94% 98.37%, 75.78% 94.44%, 64.06% 91.83%, 49.80% 90.85%, 35.74% 91.83%, 24.02% 94.44%, 13.67% 98.37%, 1.56% 63.40%); }
+  .pm-crown.pm-ic { width: 40px; height: 40px; margin: -20px 0 0 -20px; display: grid; place-items: center; filter: drop-shadow(0 0 5px rgba(255, 160, 50, .8)); }
+  .pm-ic svg.ic { width: 34px; height: 34px; stroke: url(#g-gold); stroke-width: 2.1; }
+  @keyframes pmDrop { 0% { opacity: 0; transform: translateY(-120%) scale(.55); } 45% { opacity: 1; transform: translateY(10%) scale(1.04); } 68% { transform: translateY(-6%) scale(.99); } 84% { transform: translateY(2%); } 100% { opacity: 1; transform: none; } }
+  @keyframes pmBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8%); } }
+
+  /* the words: title letters fade in one by one ("Status" gold, the rest pink-white), then the highlighted word glows */
+  .pop-txt { position: relative; flex: 1; min-width: 0; }
+  .pop-title { display: block; font-size: 22.5px; font-weight: 800; line-height: 1.15; letter-spacing: .004em; white-space: nowrap; overflow: hidden;
+    filter: drop-shadow(0 0 5px rgba(255, 120, 70, .5)); padding: 2px 0; }
+  .pop-title i { display: inline-block; font-style: normal; -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: popLetter .44s cubic-bezier(.2, .9, .3, 1.25) both; animation-delay: calc(.34s + var(--i) * 30ms); }
+  .pop-title .g i { background-image: linear-gradient(180deg, #fff7cf 6%, #ffd84f 48%, #ff9f1a 94%); }
+  .pop-title .p i { background-image: linear-gradient(180deg, #ffffff 6%, #ffe3ea 44%, #ff92ae 96%); }
+  @keyframes popLetter { from { opacity: 0; transform: translateY(46%) scale(.66); } to { opacity: 1; transform: none; } }
+  .pop-sub { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0 -8px -4px; padding: 4px 8px 5px; font-size: 15.5px; font-weight: 600; line-height: 1.28; color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .6); animation: popFade .5s .55s ease-out both; }
+  @keyframes popFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .pop-hl { position: relative; display: inline-block; font-style: normal; font-weight: 800; color: var(--hl, #ffcf3d); animation: hlPop .55s 1s cubic-bezier(.3, 1.6, .5, 1) both; }
+  .pop-hl::after { content: attr(data-w); position: absolute; left: 0; top: 0; white-space: nowrap; color: transparent; pointer-events: none;
+    text-shadow: 0 0 7px var(--hl, #ffcf3d), 0 0 16px var(--hl, #ffcf3d); opacity: 0; animation: hlGlow 1.6s 1s ease-in-out forwards; }
+  @keyframes hlPop { 0% { transform: none; } 45% { transform: scale(1.14); } 100% { transform: none; } }
+  @keyframes hlGlow { 0% { opacity: 0; } 35% { opacity: 1; } 100% { opacity: .62; } }
+
+  /* the close button: red glowing ring; the X spins when pressed */
+  .pop-x { position: absolute; right: 11px; top: 50%; width: 30px; height: 30px; margin-top: -15px; border-radius: 50%; display: grid; place-items: center; color: #fff;
+    background: radial-gradient(circle at 50% 38%, #3d0b0d, #120204 72%);
+    box-shadow: 0 0 0 2px #ff3030, 0 0 10px 2px rgba(255, 44, 30, .75), inset 0 0 8px rgba(255, 60, 40, .5);
+    transition: transform .4s cubic-bezier(.3, 1.4, .5, 1); animation: popFade .4s .5s ease-out both; }
+  .pop-x::before { content: ""; position: absolute; top: -8px; right: -8px; bottom: -8px; left: -8px; border-radius: 50%; }   /* bigger tap area */
+  .pop-x svg.ic { width: 16px; height: 16px; stroke-width: 2.8; }
+  .pop-x.spin { transform: rotate(180deg) scale(.88); }
+
+  /* app in the background · very slow phone · "Floating particles" off · animations turned off */
+  .app-bg .pop, .app-bg .pop *, .app-bg .pop *::after { animation-play-state: paused !important; }
+  .ultra .pop-sp, .ultra .pm-orbit, .ultra .pop-shine { display: none; }
+  .ultra .pm-ring, .ultra .pop-glow, .ultra .pm-crown { animation: none !important; }
+  .nofx .pop-sp { display: none; }
 
   /* =====================================================================
      8. EASTER EGG: TERMINAL
@@ -684,7 +926,7 @@ const CONFIG = {
   #termcrown svg.ic { width: 46px; height: 46px; stroke-width: 1.2; }
 
   /* =====================================================================
-     WINGS + 0.00% 0.00%, 99.89% 0.00%, 99.89% 69.33%, 94.27% 100.00%, 5.62% 100.00%, 0.00% 69.33% FRAME around the Home picture. ONE picture (assets/frame.png, 1536 x 1024) cut into layers with clip-path:
+     WINGS + CROWN FRAME around the Home picture. ONE picture (assets/frame.png, 1536 x 1024) cut into layers with clip-path:
      left wing · right wing · ring + swirls · crown. Every size is in frame.png pixels x --fs, so the frame's empty circle
      (radius 254 px, centre 762.8 / 655.6) is exactly the avatar at any screen size.
      Order (back → front): glow · wings · picture · ring · ring light · crown · sparkles + feathers (canvas)
@@ -788,7 +1030,7 @@ const CONFIG = {
   .ultra .wf *, .ultra .wf *::after { animation: none !important; }
 
   @media (prefers-reduced-motion: reduce) {
-    #bg, .ring, .fp-disc, .bars i, .wave i, .wf *, .wf *::after { animation: none !important; }
+    #bg, .ring, .fp-disc, .bars i, .wave i, .wf *, .wf *::after, .pop, .pop *, .pop *::after { animation: none !important; }
     body.entered #app { transition-duration: .01s; }
   }
 
@@ -1004,6 +1246,7 @@ const CONFIG = {
             </div>
             <div class="avmedia" id="avStack">
               <img id="avImg" alt="" decoding="async">
+              <img id="avImg2" alt="" decoding="async">
               <video id="avVid" muted playsinline preload="auto" disablepictureinpicture disableremoteplayback
                      poster="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></video>
             </div>
@@ -1201,9 +1444,27 @@ const CONFIG = {
           <button class="ibtn rip" data-act="back" aria-label="Back"><svg class="ic"><use href="#i-arrow-left"/></svg></button>
           <h2>Settings</h2>
         </div>
-        <button class="glass setprof rip" data-go="profile" aria-label="Open my profile">
-          <span class="avatar"><span class="ring"></span><img class="sav" src="assets/avatar.jpg" alt="" decoding="async"></span>
-          <span style="flex:1;min-width:0"><b class="js-name"></b><i>@<span class="js-handle"></span></i></span>
+        <button class="glass setprof rip" data-act="profile-card" aria-label="Open my profile">
+          <span class="flash"></span>
+          <span class="avatar" id="avSet">
+            <span class="ring"></span>
+            <img class="sav" alt="" decoding="async">
+            <!-- wings + crown frame: ONE picture (assets/frame2.png) cut into layers with clip-path -->
+            <span class="wf2" aria-hidden="true">
+              <span class="wf2-halo"></span>
+              <span class="wf2-lay wf2-wl"></span>
+              <span class="wf2-lay wf2-wr"></span>
+              <span class="wf2-lay wf2-ring"></span>
+              <span class="wf2-spin"></span>
+              <span class="wf2-lay wf2-crown"><span class="wf2-shine"><span class="wf2-lay wf2-shine-in"></span></span></span>
+              <i class="wf2-sp"></i><i class="wf2-sp"></i><i class="wf2-sp"></i><i class="wf2-sp"></i><i class="wf2-sp"></i><i class="wf2-sp"></i>
+            </span>
+          </span>
+          <span class="sp-txt">
+            <b><span class="js-name"></span><svg class="ic crown"><use href="#i-crown"/></svg></b>
+            <i>@<span class="js-handle"></span></i>
+            <span class="sp-st"><span class="dot js-stdot"></span><span class="js-sttext js-stcolor">Online</span></span>
+          </span>
           <svg class="ic chev"><use href="#i-chevron-right"/></svg>
         </button>
 
@@ -1291,7 +1552,6 @@ const CONFIG = {
 
     <div id="menuback"></div>
     <div id="menu" role="menu"></div>
-    <div id="toast" aria-live="polite"></div>
   </div>
 
   <!-- 8. EASTER EGG: terminal (tap the avatar 7 times fast) -->
@@ -1301,6 +1561,12 @@ const CONFIG = {
     <div id="tx"></div>
     <div id="termcrown"><svg class="ic"><use href="#i-crown"/></svg></div>
   </section>
+
+  <!-- popup messages (above everything); the gold gradient for their icons -->
+  <div id="toast" aria-live="polite"></div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs><linearGradient id="g-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff5c6"/><stop offset=".5" stop-color="#ffd24f"/><stop offset="1" stop-color="#ff9a1c"/></linearGradient></defs>
+  </svg>
 
   <div id="flash"></div>
   <div id="swipe"></div>
@@ -1464,31 +1730,69 @@ const CONFIG = {
   bg.muted = true;
   bg.src = C.background;
 
-  /* ---------- profile clip: clip (plays once) → fades back to the old photo → photo for a few seconds → clip again … ---------- */
-  var avStack = $("avStack"), avImg = $("avImg"), avVid = $("avVid");
-  avImg.src = C.avatarImage;
-  if (C.avatarVideo) avVid.src = C.avatarVideo;
+  /* ---------- profile picture: the pictures and clips in CONFIG.avatarMedia show one by one ----------
+     a picture stays avatarImageSeconds, a clip plays to its end; each new one fades in over the last, then it starts again */
+  var avStack = $("avStack"), avImgs = [$("avImg"), $("avImg2")], avVid = $("avVid");
+  var AV = (C.avatarMedia && C.avatarMedia.length ? C.avatarMedia : [C.avatarVideo, C.avatarImage]).filter(Boolean)
+    .map(function (src) { return { src: src, vid: /\.(mp4|webm|m4v|mov)(\?|#|$)/i.test(src) }; });
+  if (!AV.length) AV = [{ src: C.avatarImage, vid: false }];
   avVid.muted = true;
-  var avatarVisible = true;                       // the clip only plays while an avatar is on screen
+  var avatarVisible = true;                       // clips only play (and pictures only change) while an avatar is on screen
+  var avAt = -1, avFront = 0, avTimer = 0, avFade = 0, avBad = 0;
+  var avPics = AV.filter(function (m) { return !m.vid; });
+  avImgs[0].src = avPics.length ? avPics[0].src : C.avatarImage;   // a picture is there straight away, the circle is never empty
+  avImgs[0].classList.add("on", "top");
 
-  function startAvatar() {
-    if (!C.avatarVideo) return;
-    var broken = false, waitMs = Math.max(0, +C.avatarImageSeconds || 5) * 1000;
-    avVid.addEventListener("error", function () { broken = true; avVid.classList.remove("show"); });
-    avVid.addEventListener("ended", function () {
-      avVid.classList.remove("show");               // fade back to the photo
-      setTimeout(playVideo, waitMs + 900);          // + fade time
-    });
-    function playVideo() {
-      if (broken) return;
-      if (paused || document.hidden || !avatarVisible) { setTimeout(playVideo, 500); return; }
+  function avBusy() { return paused || document.hidden || !avatarVisible; }
+  function avLater(ms) {                          // go to the next one after ms (waits while the avatar is hidden or the app is in the background)
+    clearTimeout(avTimer);
+    avTimer = setTimeout(function again() { if (avBusy()) { avTimer = setTimeout(again, 400); return; } avNext(); }, ms);
+  }
+  function avNext() {
+    if (AV.length === 1 && avAt === 0 && !AV[0].vid) return;      // only one picture: nothing to change
+    avShow((avAt + 1) % AV.length);
+  }
+  function avSkip() { avVid.classList.remove("show"); if (++avBad <= AV.length) avLater(300); }   // a file that won't load: on to the next one
+  function avPreload(i) { var m = AV[(i + 1) % AV.length]; if (m && !m.vid) { var im = new Image(); im.decoding = "async"; im.src = m.src; } }
+  function avShow(i) {
+    avAt = i; clearTimeout(avTimer); clearTimeout(avFade);
+    var m = AV[i];
+    avPreload(i);
+    if (m.vid) {
+      if (avVid.getAttribute("src") !== m.src) { avVid.classList.remove("show"); avVid.src = m.src; }
       try { avVid.currentTime = 0; } catch (e) {}
       var p = avVid.play();
-      if (p && p.then) p.then(function () { avVid.classList.add("show"); }, function () { setTimeout(playVideo, waitMs); });
+      if (p && p.then) p.then(function () { if (AV[avAt] === m) { avVid.classList.add("show"); avBad = 0; } }, function () { if (AV[avAt] === m) avSkip(); });
       else avVid.classList.add("show");
+      return;
     }
-    // clip first: wait a moment so the music, background video and this one don't all start in the same instant
-    setTimeout(playVideo, C.avatarVideoFirst ? 600 : waitMs);
+    var front = avImgs[avFront], back = avImgs[1 - avFront], fromClip = avVid.classList.contains("show");
+    var go = function () {
+      if (AV[avAt] !== m) return;
+      avBad = 0;
+      if (fromClip) {                             // coming from a clip: the picture is already in place under it, the clip fades away
+        back.classList.add("now", "on", "top"); front.classList.remove("top");
+        void back.offsetWidth; back.classList.remove("now");
+        avVid.classList.remove("show");
+      } else {                                    // picture → picture: the new one fades in on top
+        back.classList.add("on", "top"); front.classList.remove("top");
+      }
+      avFront = 1 - avFront;
+      avFade = setTimeout(function () { front.classList.remove("on"); if (!avVid.classList.contains("show") && !avVid.paused) avVid.pause(); }, 950);
+      avLater(Math.max(1, +C.avatarImageSeconds || 5) * 1000 + 900);
+    };
+    if (back.getAttribute("src") === m.src && back.complete && back.naturalWidth) { go(); return; }
+    back.onload = function () { back.onload = back.onerror = null; if (back.decode) back.decode().then(go, go); else go(); };
+    back.onerror = function () { back.onload = back.onerror = null; if (AV[avAt] === m) avSkip(); };
+    back.src = m.src;
+  }
+  avVid.addEventListener("ended", function () { if (AV[avAt] && AV[avAt].vid) { if (AV.length === 1) { swallow(avVid.play()); return; } avNext(); } });
+  avVid.addEventListener("error", function () { if (AV[avAt] && AV[avAt].vid) avSkip(); });
+
+  function startAvatar() {
+    // a clip first: wait a moment so the music, the background video and this one don't all start in the same instant
+    if (AV[0].vid) setTimeout(function () { avShow(0); }, 600);
+    else { avAt = 0; avLater(Math.max(1, +C.avatarImageSeconds || 5) * 1000); }
   }
   function avatarWatch() {                        // pause the clip when its avatar is hidden, carry on when it is back
     if (!avatarVisible) { if (!avVid.paused) avVid.pause(); }
@@ -1558,9 +1862,9 @@ const CONFIG = {
     });
   }
   function setStatus(k) {
-    status = k; store.set("status", k); applyStatus();
+    status = k; store.set("status", k); applyStatus(); fitHome();
     logEvent("Status: " + STATUS[k].label);
-    toast("Status updated!", "You are now " + STATUS[k].label + ".");
+    toast("Status updated!", "You are now " + STATUS[k].label + ".", { crown: true, hl: STATUS[k].label + ".", hlColor: STATUS[k].color });
   }
 
   /* ---------- views ---------- */
@@ -1706,7 +2010,7 @@ const CONFIG = {
     if (entered) {
       animateSong(dir || 1);
       logEvent("Played " + (s.title || s.file));
-      if (store.get("alerts", "1") === "1" && curScreen !== "home" && !playerOpen) toast("Now playing", (s.title || s.file) + " · " + artistOf(s));
+      if (store.get("alerts", "1") === "1" && curScreen !== "home" && !playerOpen) toast("Now playing", (s.title || s.file) + " · " + artistOf(s), { icon: "music", hl: s.title || s.file });
     }
   }
   function randomOther() { if (songs.length < 2) return idx; var n; do { n = Math.floor(Math.random() * songs.length); } while (n === idx); return n; }
@@ -1731,11 +2035,11 @@ const CONFIG = {
     store.set("likes", JSON.stringify(likes));
     var on = !!likes[s.file];
     qa(".js-like").forEach(function (e) { e.classList.toggle("liked", on); e.classList.remove("pop"); void e.offsetWidth; e.classList.add("pop"); });
-    toast(on ? "Added to favorites" : "Removed from favorites", (s.title || s.file));
+    toast(on ? "Added to favorites" : "Removed from favorites", (s.title || s.file), { icon: "heart", hl: s.title || s.file });
   }
   function setToggle(sel, on) { qa(sel).forEach(function (e) { e.classList.toggle("on", on); e.setAttribute("aria-pressed", on ? "true" : "false"); }); }
-  function toggleShuffle() { shuffleOn = !shuffleOn; store.set("shuffle", shuffleOn ? "1" : "0"); setToggle(".js-shuffle", shuffleOn); toast(shuffleOn ? "Shuffle on" : "Shuffle off", shuffleOn ? "Songs play in a random order." : "Songs play in order."); }
-  function toggleRepeat() { repeatOn = !repeatOn; store.set("repeat", repeatOn ? "1" : "0"); audio.loop = repeatOn || songs.length === 1; setToggle(".js-repeat", repeatOn); toast(repeatOn ? "Repeat on" : "Repeat off", repeatOn ? "This song plays again and again." : "On to the next song when it ends."); }
+  function toggleShuffle() { shuffleOn = !shuffleOn; store.set("shuffle", shuffleOn ? "1" : "0"); setToggle(".js-shuffle", shuffleOn); toast(shuffleOn ? "Shuffle on" : "Shuffle off", shuffleOn ? "Songs play in a random order." : "Songs play in order.", { icon: "shuffle" }); }
+  function toggleRepeat() { repeatOn = !repeatOn; store.set("repeat", repeatOn ? "1" : "0"); audio.loop = repeatOn || songs.length === 1; setToggle(".js-repeat", repeatOn); toast(repeatOn ? "Repeat on" : "Repeat off", repeatOn ? "This song plays again and again." : "On to the next song when it ends.", { icon: "repeat" }); }
 
   // lock-screen / notification controls on phones (browser only)
   function setMediaSession(s) {
@@ -1771,22 +2075,67 @@ const CONFIG = {
   qa(".js-bright").forEach(function (i) { i.addEventListener("input", function () { bright = +i.value; applyBrightness(); store.set("brightness", bright); }); });
 
   /* =====================================================================
-     TOAST · MENU · SHEET
+     POPUP MESSAGE · MENU · SHEET
      ===================================================================== */
-  var toastTimer = 0;
-  function toast(title, msg) {                              // small glass message with a green check
-    var box = $("toast"); box.innerHTML = "";
-    var c = document.createElement("div"); c.className = "tcardx frame";
-    c.innerHTML = '<span class="tk">' + ic("check") + '</span><span><b></b><span></span></span>';
-    c.querySelector("b").textContent = title; c.lastChild.lastChild.textContent = msg || "";
-    box.appendChild(c);
-    if (c.animate && !reduced) c.animate([{ opacity: 0, transform: "translateY(-18px) scale(.94)" }, { opacity: 1, transform: "none" }], { duration: 380, easing: "cubic-bezier(.2,1.3,.4,1)", fill: "forwards" });
-    else { c.style.opacity = 1; c.style.transform = "none"; }
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () {
-      if (c.animate && !reduced) c.animate([{ opacity: 1 }, { opacity: 0, transform: "translateY(-12px)" }], { duration: 260, fill: "forwards" }).onfinish = function () { c.remove(); };
-      else c.remove();
-    }, 2800);
+  // toast(title, message, { crown: true | icon: "heart", hl: "word in the message to light up", hlColor: "css colour" })
+  // The title's first word is gold, the rest pink-white; every letter fades in one by one. Hides by itself after 3 s.
+  var toastTimer = 0, toastEl = null;
+  var POP_STREAKS = '<svg class="pop-streak" viewBox="0 0 420 112" preserveAspectRatio="none" aria-hidden="true">' +
+    '<defs><linearGradient id="ps1" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#fff6c8"/><stop offset=".12" stop-color="#ffd25a"/><stop offset=".3" stop-color="#ff7a24"/><stop offset=".62" stop-color="#ff2c18"/><stop offset=".9" stop-color="#ff4a20" stop-opacity=".8"/><stop offset="1" stop-color="#ffb04a" stop-opacity="0"/></linearGradient>' +
+    '<linearGradient id="ps2" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#ff2a1a" stop-opacity="0"/><stop offset=".5" stop-color="#ff6a26"/><stop offset=".85" stop-color="#ffd76e"/><stop offset="1" stop-color="#fff2c0" stop-opacity="0"/></linearGradient>' +
+    '<linearGradient id="ps3" x1="0" x2="1" y1="1" y2="0"><stop offset="0" stop-color="#ff5a22" stop-opacity="0"/><stop offset=".45" stop-color="#ffc35a"/><stop offset=".6" stop-color="#fff8dc"/><stop offset="1" stop-color="#ff7a2a" stop-opacity="0"/></linearGradient></defs>' +
+    // a big orbit round the medallion that runs on along the bottom of the pill and out past its right end
+    '<path class="glo" stroke="url(#ps1)" vector-effect="non-scaling-stroke" d="M104 12C58 -4 2 10 4 54C6 96 64 108 150 104C240 100 340 104 418 84"/>' +
+    '<path class="lin" stroke="url(#ps1)" vector-effect="non-scaling-stroke" d="M104 12C58 -4 2 10 4 54C6 96 64 108 150 104C240 100 340 104 418 84"/>' +
+    // a second, thinner one crossing in front of the medallion
+    '<path class="thin" stroke="url(#ps3)" vector-effect="non-scaling-stroke" d="M10 92C40 70 90 40 128 14"/>' +
+    // the comet tail at the right end
+    '<path class="glo" stroke="url(#ps2)" vector-effect="non-scaling-stroke" d="M292 106C350 106 404 96 416 60C421 44 414 32 404 24"/>' +
+    '<path class="thin" stroke="url(#ps2)" vector-effect="non-scaling-stroke" d="M292 106C350 106 404 96 416 60C421 44 414 32 404 24"/></svg>';
+  function sparkSpots(s, pick) {                            // a sparkle twinkles at 4 spots in turn (all in CSS, see @keyframes tw4)
+    for (var k = 1; k <= 4; k++) { var q = pick(); s.style.setProperty("--x" + k, q[0].toFixed(1) + "px"); s.style.setProperty("--y" + k, q[1].toFixed(1) + "px"); }
+  }
+  function popSpot(w, h) {                                  // a random spot on the popup's border: top, bottom or the right end
+    var r = h / 2, k = Math.random();
+    if (k < .78) return [w * (.27 + Math.random() * .62), Math.random() < .55 ? 1 + Math.random() * 3 : h - 1 - Math.random() * 3];
+    var a = (Math.random() - .5) * Math.PI; return [w - r + Math.cos(a) * (r - 2), r + Math.sin(a) * (r - 2)];
+  }
+  function hideToast(p) {
+    if (!p || p.classList.contains("out")) return;
+    if (toastEl === p) { toastEl = null; clearTimeout(toastTimer); }
+    if (reduced) { p.remove(); return; }
+    p.classList.add("out");
+    setTimeout(function () { p.remove(); }, 380);
+  }
+  function toast(title, msg, o) {
+    o = o || {};
+    var box = $("toast");
+    clearTimeout(toastTimer); toastEl = null;
+    qa(".pop", box).forEach(function (old) { old.remove(); });
+    var p = document.createElement("div"); p.className = "pop"; p.setAttribute("role", "status");
+    var n = 0, words = String(title).split(" ");
+    var th = words.map(function (w, k) {
+      return '<span class="' + (k ? "p" : "g") + '">' + w.split("").map(function (ch) { return '<i style="--i:' + (n++) + '">' + esc(ch) + "</i>"; }).join("") + "</span>";
+    }).join(" ");
+    var sub = esc(msg || ""), hl = o.hl && msg && String(msg).indexOf(o.hl) > -1 ? String(o.hl) : "";
+    if (hl) {
+      var at = String(msg).indexOf(hl);
+      sub = esc(String(msg).slice(0, at)) + '<em class="pop-hl" data-w="' + esc(hl) + '"' + (o.hlColor ? ' style="--hl:' + esc(o.hlColor) + '"' : "") + ">" + esc(hl) + "</em>" + esc(String(msg).slice(at + hl.length));
+    }
+    var mid = o.crown && C.frame2 ? '<div class="pm-crown"><div class="pm-crown-in"></div></div>' : '<div class="pm-crown pm-ic">' + ic(o.crown ? "crown" : o.icon || "check") + "</div>";
+    p.innerHTML = '<div class="pop-glow"></div><div class="pop-body"><div class="pop-shine"></div></div>' + POP_STREAKS +
+      '<div class="pm"><div class="pm-glow"></div><div class="pm-disc"></div><div class="pm-ring"></div><div class="pm-orbit"><i></i><i></i></div>' + mid + "</div>" +
+      '<div class="pop-txt"><b class="pop-title">' + th + '</b><span class="pop-sub">' + sub + "</span></div>" +
+      '<button class="pop-x" aria-label="Close the message">' + ic("x") + "</button>";
+    for (var i = 0; i < 9; i++) { var s = document.createElement("i"); s.className = "pop-sp"; s.style.setProperty("--dl", (.5 + i * .13 - Math.random() * 1.1).toFixed(2) + "s"); s.style.setProperty("--d", (3.6 + Math.random() * 1.6).toFixed(2) + "s"); p.appendChild(s); }
+    box.appendChild(p); toastEl = p;
+    var tt = p.querySelector(".pop-title"), fs = 22.5;              // a long title gets a little smaller so it always fits
+    while (tt.scrollWidth > tt.clientWidth + 1 && fs > 14) { fs -= .5; tt.style.fontSize = fs + "px"; }
+    var pw = p.offsetWidth, ph = p.offsetHeight;
+    qa(".pop-sp", p).forEach(function (s) { sparkSpots(s, function () { return popSpot(pw, ph); }); });
+    var x = p.querySelector(".pop-x");
+    x.addEventListener("click", function () { x.classList.add("spin"); setTimeout(function () { hideToast(p); }, reduced ? 0 : 230); });
+    toastTimer = setTimeout(function () { hideToast(p); }, 3000);
   }
 
   var menuOpen = false;
@@ -1857,7 +2206,7 @@ const CONFIG = {
   function unlockBadge(id, name) {
     if (store.get("b:" + id, "0") === "1") return;
     store.set("b:" + id, "1"); logEvent("Unlocked the " + name + " badge");
-    setTimeout(function () { toast("Badge unlocked!", name); }, 600);
+    setTimeout(function () { toast("Badge unlocked!", name, { icon: "award", hl: name }); }, 600);
   }
   var hourNow = new Date().getHours(); if (hourNow >= 22 || hourNow < 5) store.set("b:night", "1");
   var opened = []; try { opened = JSON.parse(store.get("opened", "[]")) || []; } catch (e) { opened = []; }
@@ -1915,7 +2264,7 @@ const CONFIG = {
     if (v) store.set("pbio", v);
     closeSheet(); logEvent("Updated my bio");
     typeOnce($("pfBio"), store.get("pbio", C.profileBio), 30);
-    toast("Profile updated!", "Changes saved successfully.");
+    toast("Profile updated!", "Changes saved successfully.", { icon: "pencil" });
   }
 
   /* =====================================================================
@@ -1956,6 +2305,8 @@ const CONFIG = {
   }
   function afterShow(id) {
     updateChrome();
+    if (id === "home") fitHome();
+    if (id === "settings") wf2Spots();
     if (id === "profile") { typeOnce($("pfBio"), store.get("pbio", C.profileBio), 30); countStat(".js-followers", C.stats.followers); countStat(".js-following", C.stats.following); countStat(".js-posts", C.stats.posts); }
     if (id === "stats") drawChart();
     if (id === "themes") markThemes();
@@ -2077,7 +2428,7 @@ const CONFIG = {
     root.setAttribute("data-theme", id); store.set("theme", id); markThemes();
     var meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute("content", getComputedStyle(root).getPropertyValue("--surface").trim() || "#05060f");
     fxColor();
-    if (!silent) { logEvent("Theme: " + THEME_NAMES[id]); toast("Theme changed!", THEME_NAMES[id] + " is on."); }
+    if (!silent) { logEvent("Theme: " + THEME_NAMES[id]); toast("Theme changed!", THEME_NAMES[id] + " is on.", { icon: "palette", hl: THEME_NAMES[id] }); }
   }
   function setSwitch(btn, on) { btn.setAttribute("aria-checked", on ? "true" : "false"); }
   function blurIsOn() { return isLite() ? root.classList.contains("softblur") : !root.classList.contains("noblur"); }
@@ -2088,7 +2439,7 @@ const CONFIG = {
   }
   function applyFlags() {
     var vp = $("viewpill"); vp.style.display = store.get("showviews", "1") === "1" ? "" : "none";
-    applyStatus();
+    applyStatus(); fitHome();
   }
   function flagChange(key, on) {
     store.set(key, on ? "1" : "0");
@@ -2232,10 +2583,16 @@ const CONFIG = {
       case "close-sheet": closeSheet(); break;
       case "edit": editBio(); break;
       case "save-bio": saveBio(); break;
-      case "custom-theme": toast("Custom themes", "Coming soon…"); break;
-      case "language": toast("Language", "English only for now. More soon!"); break;
-      case "logout": toast("Logged out", "Just a demo, nothing was changed."); break;
-      case "reset": try { Object.keys(localStorage).filter(function (k) { return k.indexOf("bio:") === 0; }).forEach(function (k) { localStorage.removeItem(k); }); } catch (x) {} toast("Saved data cleared", "Reloading…"); setTimeout(function () { location.reload(); }, 900); break;
+      case "custom-theme": toast("Custom themes", "Coming soon…", { icon: "palette", hl: "Coming soon…" }); break;
+      case "profile-card":
+        if (t.classList.contains("tapfx")) break;
+        t.classList.add("tapfx");
+        setTimeout(function () { goSub("profile"); }, reduced ? 0 : 280);
+        setTimeout(function () { t.classList.remove("tapfx"); }, 650);
+        break;
+      case "language": toast("Language", "English only for now. More soon!", { icon: "globe", hl: "English" }); break;
+      case "logout": toast("Logged out", "Just a demo, nothing was changed.", { icon: "log-out" }); break;
+      case "reset": try { Object.keys(localStorage).filter(function (k) { return k.indexOf("bio:") === 0; }).forEach(function (k) { localStorage.removeItem(k); }); } catch (x) {} toast("Saved data cleared", "Reloading…", { icon: "check" }); setTimeout(function () { location.reload(); }, 900); break;
       case "status":
         openMenu(t, ["online", "idle", "dnd"].map(function (k) { return { dot: STATUS[k].color, label: STATUS[k].label, check: k === status, run: function () { setStatus(k); } }; })); break;
       case "views":
@@ -2244,8 +2601,8 @@ const CONFIG = {
                                  { cls: "sep", icon: "activity", label: "View stats", run: function () { goSub("stats"); } }]); break;
       case "pmenu":
         openMenu(t, [{ icon: "pencil", label: "Edit bio", run: editBio },
-                     { icon: "copy", label: "Copy @" + C.handle, run: function () { var done = function () { toast("Copied!", "@" + C.handle); }; try { navigator.clipboard.writeText("@" + C.handle).then(done, done); } catch (x) { done(); } } },
-                     { icon: "share-2", label: "Share profile", run: function () { try { if (navigator.share) { navigator.share({ title: C.name, text: C.name + " · @" + C.handle }).catch(function () {}); return; } } catch (x) {} toast("Share", "Sharing isn't available here."); } }]); break;
+                     { icon: "copy", label: "Copy @" + C.handle, run: function () { var done = function () { toast("Copied!", "@" + C.handle + " is on your clipboard.", { icon: "copy", hl: "@" + C.handle }); }; try { navigator.clipboard.writeText("@" + C.handle).then(done, done); } catch (x) { done(); } } },
+                     { icon: "share-2", label: "Share profile", run: function () { try { if (navigator.share) { navigator.share({ title: C.name, text: C.name + " · @" + C.handle }).catch(function () {}); return; } } catch (x) {} toast("Share", "Sharing isn't available here.", { icon: "share-2" }); } }]); break;
     }
   });
 
@@ -2338,7 +2695,7 @@ const CONFIG = {
     });
   }
   function degrade(avg) {
-    if (blurIsOn()) { setBlur(false); toast("Soft blur turned off", "To keep things smooth."); }
+    if (blurIsOn()) { setBlur(false); toast("Soft blur turned off", "To keep things smooth.", { icon: "sparkles" }); }
     else if (!isLite()) { root.classList.add("lite"); setSwitch($("swBlur"), false); }
     else { root.classList.add("ultra"); fxStop(); wfUpdate(); }
     if (window.console) console.info("[page] slow device (" + avg.toFixed(1) + " ms per frame): " + (isUltra() ? "ultra-light" : "light") + " effects");
@@ -2403,7 +2760,7 @@ const CONFIG = {
     f.r = (Math.random() - .5) * 1.4; f.vr = (Math.random() - .5) * .9; f.sc = (.5 + Math.random() * .32) * wf.w / 1536; f.flip = Math.random() < .5;
     return f;
   }
-  function wfWanted() { return entered && !!C.frame && curScreen === "home" && !playerOpen && !termOpen && !paused && !document.hidden && !isUltra() && !reduced; }
+  function wfWanted() { return entered && !!C.frame && fx.on && curScreen === "home" && !playerOpen && !termOpen && !paused && !document.hidden && !isUltra() && !reduced; }
   function wfUpdate() { if (!wf.cv) return; if (wfWanted()) { if (!wf.run) wfStart(); } else if (wf.run) wfStop(); }
   function wfStart() {
     var w = wf.cv.offsetWidth, h = wf.cv.offsetHeight; if (!w || !h) return;
@@ -2476,6 +2833,42 @@ const CONFIG = {
   ["play", "pause", "seeked", "loadedmetadata"].forEach(function (ev) { audio.addEventListener(ev, function () { wfBeat(true); }); });
   audio.addEventListener("timeupdate", function () { wfBeat(false); });
 
+  /* =====================================================================
+     ROOM AT THE BOTTOM: every screen can scroll its last row above the floating mini player and the nav bar,
+     and Home squeezes a little on short screens so the whole music card is always above the nav bar
+     ===================================================================== */
+  function fitBottom() {
+    var app = $("app"), mini = $("mini");
+    if (!app.clientHeight || !mini.offsetHeight) return;
+    app.style.setProperty("--mini-space", Math.ceil(app.clientHeight - mini.offsetTop + 22) + "px");   // up to the mini player + a gap
+  }
+  function fitHome() {
+    var h = el.home;
+    if (!h || h.style.display === "none" || !h.clientHeight) return;
+    var over = function (q) { h.style.setProperty("--q", q.toFixed(3)); return h.scrollHeight - h.clientHeight > 0; };
+    if (!over(0)) return;                                   // fits as designed
+    if (over(1)) return;                                    // a very small screen: fully squeezed, the rest scrolls
+    var lo = 0, hi = 1;
+    for (var i = 0; i < 7; i++) { var mid = (lo + hi) / 2; if (over(mid)) lo = mid; else hi = mid; }
+    over(hi);
+  }
+  function fitAll() { fitBottom(); fitHome(); }
+  window.addEventListener("resize", fitAll);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
+
+  /* ---------- the Settings card: its picture, and the gold sparkles that twinkle around its frame ---------- */
+  var WF2_SPARKS = [[0.8804,0.6627],[0.3325,0.8652],[0.9378,0.437],[0.5303,0.1483],[0.429,0.8971],[0.6069,0.1475],[0.0271,0.2033],[0.508,0.9067],[0.2129,0.2903],[0.8142,0.2313],[0.0821,0.5646],[0.7974,0.2568],[0.2089,0.2687],[0.0463,0.1212],[0.0861,0.1427],[0.3884,0.1443],[0.996,0.3214],[0.0191,0.2935],[0.8142,0.248],[0.0478,0.4258],[0.0957,0.6292],[0.193,0.2679],[0.6523,0.2368],[0.8349,0.2089],[0.9298,0.1451],[0.3828,0.1754],[0.0718,0.4968],[0.799,0.74],[0.6499,0.87],[0.3708,0.1834],[0.953,0.2177],[0.9051,0.6124],[0.5973,0.1427],[0.1858,0.7169],[0.0199,0.3668],[0.2751,0.8525],[0.0534,0.0909],[0.756,0.3325],[0.1627,0.6898],[0.0311,0.2943]];      // spots on / around the wings, crown and swirls (0..1 of frame2.png)
+  qa(".setprof img.sav").forEach(function (e) { e.src = C.avatarImage; });
+  var wf2Placed = false;
+  function wf2Spots() {
+    var f = document.querySelector(".wf2"); if (wf2Placed || !f || !f.offsetWidth) return;
+    var w = f.offsetWidth, h = f.offsetHeight; wf2Placed = true;
+    qa(".wf2-sp").forEach(function (s, i) {
+      sparkSpots(s, function () { var q = WF2_SPARKS[Math.floor(Math.random() * WF2_SPARKS.length)]; return [q[0] * w, q[1] * h]; });
+      s.style.setProperty("--d", (7 + Math.random() * 3).toFixed(2) + "s"); s.style.setProperty("--dl", (-i * 1.37).toFixed(2) + "s");
+    });
+  }
+
   /* ---------- start up ---------- */
   var clockEl = $("clock");
   function tickClock() { var d = new Date(); clockEl.textContent = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
@@ -2492,13 +2885,20 @@ const CONFIG = {
   setToggle(".js-shuffle", shuffleOn); setToggle(".js-repeat", repeatOn);
   var swb = $("swBlur"), swf = $("swFx");
   setSwitch(swb, blurIsOn()); setSwitch(swf, fx.on);
-  swb.addEventListener("click", function () { var on = swb.getAttribute("aria-checked") !== "true"; setBlur(on); toast(on ? "Soft blur on" : "Soft blur off", on ? "Prettier glass. Turn it off if it lags." : "Plain glass, smoothest."); });
-  swf.addEventListener("click", function () { fx.on = swf.getAttribute("aria-checked") !== "true"; setSwitch(swf, fx.on); store.set("fx", fx.on ? "1" : "0"); if (fx.on) fxStart(); else fxStop(); });
+  swb.addEventListener("click", function () { var on = swb.getAttribute("aria-checked") !== "true"; setBlur(on); toast(on ? "Soft blur on" : "Soft blur off", on ? "Prettier glass. Turn it off if it lags." : "Plain glass, smoothest.", { icon: "sparkles" }); });
+  swf.addEventListener("click", function () {
+    fx.on = swf.getAttribute("aria-checked") !== "true"; setSwitch(swf, fx.on); store.set("fx", fx.on ? "1" : "0");
+    root.classList.toggle("nofx", !fx.on);                 // the gold sparkles go too (popup, Settings frame, Home frame)
+    if (fx.on) fxStart(); else fxStop();
+    wfUpdate();
+  });
   applyTheme(root.getAttribute("data-theme"), true);
   applyStatus(); applyFlags();
+  root.classList.toggle("nofx", !fx.on);
   load(idx, false);
   applyVolume(); applyBrightness();
   updateChrome();
+  fitAll();
 })();
 </script>
 </body>

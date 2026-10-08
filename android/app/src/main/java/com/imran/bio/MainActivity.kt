@@ -66,11 +66,13 @@ class MainActivity : ComponentActivity() {
 
         val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
         setContentView(root)
-        // keep the page above the 3-button navigation bar (with gesture navigation it fills the whole screen)
+        // keep the page above the 3-button navigation bar (with gesture navigation it fills the whole screen),
+        // and hand the page only the insets that are left: the navigation bar is already out of its way, so the page
+        // must not add that space again (it did: env(safe-area-inset-bottom) lifted the bottom bar a whole bar-height)
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.tappableElement())
             view.setPadding(bars.left, 0, bars.right, bars.bottom)
-            insets
+            insets.inset(bars.left, 0, bars.right, bars.bottom)
         }
         createWebView(root)
 
