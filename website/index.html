@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "1.7",                       // shown in Settings → About
+  version: "1.8",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -40,13 +40,14 @@ const CONFIG = {
   // ---------- music ----------
   // cover: "" = use the profile picture as the cover art · artist: "" = "Unknown Artist"
   // bpm + beat: the song's tempo and the second its first beat falls on, so the frame's glow pulses on the beat
+  // party: true = "party mode" while that song plays (disco ball, laser beams, light dots, neon cards, a waveform on the music card)
   //             (leave them out for a new song: the glow then pulses at a steady pace while it plays)
   songs: [
     { title: "Jingle Bells",            artist: "",            file: "assets/jingle-bells.mp3",            cover: "", bpm: 132.00, beat: 0.410 },
     { title: "Forever Young",           artist: "Alphaville",  file: "assets/forever-young.mp3",           cover: "", bpm: 136.84, beat: 0.400 },
     { title: "Never Gonna Give You Up", artist: "Rick Astley", file: "assets/never-gonna-give-you-up.mp3", cover: "", bpm: 113.63, beat: 0.255 },
     { title: "MONTAGEM PERIGOSA (Super Slowed)", artist: "KVRXD", file: "assets/montagem-perigosa.mp3",    cover: "", bpm: 95.24, beat: 0.595 },
-    { title: "Dracula",                 artist: "Tame Impala", file: "assets/dracula.mp3",                 cover: "", bpm: 114.99, beat: 0.040 },
+    { title: "Dracula",                 artist: "Tame Impala", file: "assets/dracula.mp3",                 cover: "", bpm: 114.99, beat: 0.040, party: true },
   ],
   randomFirstSong: false,               // true = start with a random song each visit
 
@@ -1237,6 +1238,98 @@ const CONFIG = {
   .ultra .wf-spin, .ultra .wf-shine, .ultra .wf-fx { display: none; }
   .ultra .wf *, .ultra .wf *::after { animation: none !important; }
 
+  /* =====================================================================
+     PARTY MODE (a song with party: true, e.g. Dracula): from the moment it plays until the song changes (fades in / out in 1 s).
+     A layer behind the cards: red-purple tint · laser beams sweeping · rings pulsing on the beat behind the music card ·
+     light dots + light spots (the one canvas, #ptfx) · a spinning disco ball. The cards get neon edges, the music card a waveform.
+     Paused: slower and dimmer. "Floating particles" off: only the neon edges and the waveform.
+     ===================================================================== */
+  #party { position: fixed; top: 0; bottom: 0; left: 50%; z-index: 1; width: min(100vw, 440px); margin-left: calc(min(100vw, 440px) / -2);
+           pointer-events: none; overflow: hidden; display: none; opacity: 0; transition: opacity 1s ease; --pw: min(100vw, 440px); }
+  .party-wave #party { display: block; }
+  .party #party { opacity: 1; }
+  .party.party-dim #party { opacity: .45; }
+  #party > *, #party canvas { position: absolute; }
+  .pt-tint { top: 0; right: 0; bottom: 0; left: 0;
+    background: radial-gradient(ellipse 75% 45% at 88% 4%, rgba(200, 60, 255, .42), rgba(200, 60, 255, 0) 72%),
+                radial-gradient(ellipse 85% 55% at 10% 28%, rgba(255, 30, 80, .34), rgba(255, 30, 80, 0) 70%),
+                radial-gradient(ellipse 90% 50% at 50% 60%, rgba(255, 20, 70, .38), rgba(255, 20, 70, 0) 72%),
+                linear-gradient(180deg, rgba(120, 10, 70, .34), rgba(70, 0, 60, .42)); }
+  #ptfx { top: 0; left: 0; width: 100%; height: 100%; }
+
+  /* laser beams: a light cone from a point at the top or a side, swinging left and right (each at its own pace) */
+  .pt-beams { top: 0; right: 0; bottom: 0; left: 0; opacity: .8; mix-blend-mode: screen; }
+  .pt-beams i { position: absolute; width: 0; height: 0; transform: rotate(var(--r)); }
+  .pt-beams b { position: absolute; left: calc(var(--pw) * -.18); top: 0; width: calc(var(--pw) * .36); height: calc(var(--pw) * 2.7); transform-origin: 50% 0;
+    clip-path: polygon(49% 0, 51% 0, 100% 100%, 0 100%);
+    background: linear-gradient(90deg, rgba(var(--c), 0) 4%, rgba(var(--c), .5) 26%, rgba(var(--c), .95) 44%, rgba(var(--hc), 1) 49%, rgba(255, 250, 252, 1) 50%, rgba(var(--hc), 1) 51%, rgba(var(--c), .95) 56%, rgba(var(--c), .5) 74%, rgba(var(--c), 0) 96%);
+    -webkit-mask-image: linear-gradient(180deg, #000, rgba(0, 0, 0, .55) 38%, rgba(0, 0, 0, 0) 82%); mask-image: linear-gradient(180deg, #000, rgba(0, 0, 0, .55) 38%, rgba(0, 0, 0, 0) 82%);
+    animation: ptSweep var(--d) ease-in-out infinite alternate; animation-delay: var(--dl, 0s); }
+  @keyframes ptSweep { from { transform: rotate(calc(var(--s) * -1)); } to { transform: rotate(var(--s)); } }
+  .pt-beams .b1 { left: 14%; top: -2%; --r: 16deg; --s: 18deg; --d: 6.2s; --c: 255, 20, 60; --hc: 255, 90, 120; }
+  .pt-beams .b2 { left: 40%; top: -3%; --r: -8deg; --s: 22deg; --d: 7.6s; --dl: -3s; --c: 255, 30, 70; --hc: 255, 100, 130; }
+  .pt-beams .b3 { left: 70%; top: -3%; --r: 24deg; --s: 16deg; --d: 5.4s; --dl: -1.4s; --c: 255, 40, 110; --hc: 255, 120, 180; }
+  .pt-beams .b4 { left: -3%; top: 20%; --r: -62deg; --s: 14deg; --d: 6.8s; --dl: -2.2s; --c: 160, 40, 255; --hc: 205, 130, 255; }
+  .pt-beams .b5 { left: -3%; top: 64%; --r: -112deg; --s: 15deg; --d: 8.2s; --dl: -5s; --c: 140, 30, 255; --hc: 195, 120, 255; }
+  .pt-beams .b6 { left: 103%; top: 42%; --r: 72deg; --s: 16deg; --d: 7.1s; --dl: -4s; --c: 165, 45, 255; --hc: 210, 140, 255; }
+
+  /* rings behind the music card: two faint ones always, and one pulsing out on every beat (the script places them) */
+  .pt-rings { left: var(--rx, 50%); top: var(--ry, 60%); width: 0; height: 0; --rr: calc(var(--pw) * .48); }
+  .pt-rings::before, .pt-rings::after, .pt-rings i { content: ""; position: absolute; border-radius: 50%; border: 2px solid rgba(255, 40, 85, .9);
+    box-shadow: 0 0 14px rgba(255, 30, 80, .55), inset 0 0 14px rgba(255, 30, 80, .3); }
+  .pt-rings::before { left: calc(var(--rr) * -.66); top: calc(var(--rr) * -.66); width: calc(var(--rr) * 1.32); height: calc(var(--rr) * 1.32); animation: ptRingGlow 2.6s ease-in-out infinite; }
+  .pt-rings::after { left: calc(var(--rr) * -.98); top: calc(var(--rr) * -.98); width: calc(var(--rr) * 1.96); height: calc(var(--rr) * 1.96); border-width: 1.5px; animation: ptRingGlow 2.6s ease-in-out -1.3s infinite; }
+  .pt-rings i { left: calc(var(--rr) * -1); top: calc(var(--rr) * -1); width: calc(var(--rr) * 2); height: calc(var(--rr) * 2); opacity: 0; transform: scale(.3); }
+  @keyframes ptRingGlow { 0%, 100% { opacity: .38; } 50% { opacity: .75; } }
+  #party.nohome .pt-rings { display: none; }
+
+  /* the disco ball (top right): mirror tiles sliding round a lit sphere, a pink-purple glow, glints moving with it */
+  .pt-ball { right: -2%; top: -3.5%; width: 32%; aspect-ratio: 1; }
+  .pt-ball-glow { position: absolute; top: -60%; right: -60%; bottom: -60%; left: -60%; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 110, 220, .6) 0 24%, rgba(190, 70, 255, .32) 42%, rgba(160, 50, 255, 0) 68%); animation: ptGlow 2.4s ease-in-out infinite; }
+  @keyframes ptGlow { 0%, 100% { opacity: .65; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.05); } }
+  .pt-ball-in { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; overflow: hidden; background: #3a0d55;
+    box-shadow: 0 0 16px rgba(235, 100, 255, .85), 0 0 38px rgba(255, 60, 170, .45); }
+  .pt-ball-tex { position: absolute; top: 0; left: 0; width: 200%; height: 100%; background: #5a1a80 center / 100% 100% no-repeat; animation: ptBallSpin 12s linear infinite; }
+  @keyframes ptBallSpin { to { transform: translateX(-50%); } }
+  .pt-ball-shine { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%;
+    background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, .55), rgba(255, 255, 255, 0) 28%), radial-gradient(circle at 50% 50%, rgba(20, 0, 30, 0) 38%, rgba(30, 0, 50, .55) 72%, rgba(20, 0, 30, .9) 100%); }
+
+  /* neon edges on the song pill, the social bar, the views pill, the music card and the nav bar */
+  #s-home .pill { position: relative; }
+  .neon { position: absolute; top: -1px; right: -1px; bottom: -1px; left: -1px; z-index: 2; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 1s ease;
+          box-shadow: 0 0 9px 1px rgba(255, 40, 90, .7), 0 0 24px 4px rgba(170, 40, 255, .28), inset 0 0 12px rgba(255, 40, 90, .26); }
+  .neon::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: inherit; padding: 1.6px;
+    background: linear-gradient(100deg, #ff2d55, #ff4d8d 40%, #c04dff 78%, #ff2d55);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+  .party .neon { opacity: 1; }
+  .party.party-dim .neon { opacity: .6; }
+  .party .tabhl { background: linear-gradient(180deg, rgba(255, 40, 80, .3), rgba(150, 20, 90, .18)); box-shadow: inset 0 0 0 1.5px rgba(255, 60, 100, .95), 0 0 18px rgba(255, 40, 90, .6); }
+  .party #s-home .pill svg.ic { stroke: url(#g-party); }
+
+  /* the music card: red sound bars, red heart (filled when liked), red-pink progress, a glowing play button with ripples, a waveform */
+  .party #mcard .bars i { background: linear-gradient(180deg, #ff7a9a, #ff2d55); }
+  .party #mcard .js-like { color: #ff2d55; }
+  .party #mcard .js-like.liked svg.ic { filter: drop-shadow(0 0 6px rgba(255, 40, 80, .8)); }
+  .party #mcard input[type="range"]::-webkit-slider-runnable-track { background: linear-gradient(90deg, #ff9db3 0, #ff2d55 var(--p), rgba(255, 255, 255, .2) var(--p)); }
+  .pr { position: absolute; top: -2px; right: -2px; bottom: -2px; left: -2px; border-radius: 50%; pointer-events: none; opacity: 0; }
+  .pr0 { border: 2px solid #ff2d55; box-shadow: 0 0 14px rgba(255, 40, 90, .85), 0 0 30px rgba(170, 50, 255, .45), inset 0 0 12px rgba(255, 40, 90, .4); transition: opacity 1s ease; }
+  .party .pr0 { opacity: 1; }
+  .pr1, .pr2 { border: 1.5px solid rgba(255, 70, 130, .9); box-shadow: 0 0 10px rgba(200, 50, 255, .5); }
+  .pwave { display: none; align-items: flex-end; justify-content: space-between; height: calc(40px - 18px * var(--q, 0)); margin: calc(6px - 4px * var(--q, 0)) 2px calc(14px - 6px * var(--q, 0)); opacity: 0; transition: opacity 1s ease;
+           -webkit-box-reflect: below 1px linear-gradient(rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, .5)); }
+  .party-wave .pwave { display: flex; }
+  .party .pwave { opacity: 1; }
+  .pwave i { flex: none; width: 2.8px; height: 100%; border-radius: 2px; transform-origin: 50% 100%; transform: scaleY(.08); }
+
+  /* still: in the background, under the player, and for people who turned animations off; "Floating particles" off = edges + waveform */
+  .app-bg #party *, .app-bg #party *::before, .app-bg #party *::after, #party.hold *, #party.hold *::before, #party.hold *::after { animation-play-state: paused !important; }
+  .app-bg #party, .app-bg .neon, .app-bg .pwave, .app-bg .pr0 { transition: none; }
+  .nofx #party, .ultra #party, .nofx .pr1, .nofx .pr2, .ultra .pr1, .ultra .pr2 { display: none !important; }
+  @media (min-width: 600px) and (min-height: 600px) { #party { top: 14px; bottom: 14px; width: 412px; margin-left: -206px; border-radius: 46px; --pw: 412px; } }
+  @media (prefers-reduced-motion: reduce) { #party *, #party *::before, #party *::after { animation: none !important; } #party canvas, #party .pt-rings i { display: none; } }
+
   @media (prefers-reduced-motion: reduce) {
     #bg, .ring, .bars i, .wf *, .wf *::after, .pop, .pop *, .pop *::after, #player *, #player *::after, #s-home .hero * { animation: none !important; }
     body.entered #app { transition-duration: .01s; }
@@ -1421,6 +1514,14 @@ const CONFIG = {
   <div id="tint"></div>
   <div id="shade"></div>
   <canvas id="fx" aria-hidden="true"></canvas>
+  <!-- party mode (a song with party: true): red-purple tint · laser beams · rings · light dots (the one canvas) · disco ball -->
+  <div id="party" aria-hidden="true">
+    <div class="pt-tint"></div>
+    <div class="pt-beams"><i class="b1"><b></b></i><i class="b2"><b></b></i><i class="b3"><b></b></i><i class="b4"><b></b></i><i class="b5"><b></b></i><i class="b6"><b></b></i></div>
+    <div class="pt-rings" id="ptRings"><i></i><i></i><i></i><i></i></div>
+    <canvas id="ptfx"></canvas>
+    <div class="pt-ball"><div class="pt-ball-glow"></div><div class="pt-ball-in"><div class="pt-ball-tex"></div><div class="pt-ball-shine"></div></div></div>
+  </div>
 
   <div id="app">
     <div id="statusbar" aria-hidden="true">
@@ -1505,6 +1606,7 @@ const CONFIG = {
             <button class="cbtn rip" data-act="next" aria-label="Next song"><svg class="ic fill"><use href="#i-skip-forward"/></svg></button>
             <button class="cbtn rip js-like" data-act="like" aria-label="Like this song"><svg class="ic"><use href="#i-heart"/></svg></button>
           </div>
+          <div class="pwave" id="pwave" aria-hidden="true"></div>
         </article>
       </section>
 
@@ -1815,7 +1917,8 @@ const CONFIG = {
   <!-- the phone's volume buttons show this (instead of the phone's own pop-up); above the intro too -->
   <div id="volhud" aria-hidden="true"><svg class="ic"><use class="js-voliconuse" href="#i-volume-2"/></svg><div class="vsl js-vvol"><i></i></div><b id="volhudNum">50</b></div>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-    <defs><linearGradient id="g-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff5c6"/><stop offset=".5" stop-color="#ffd24f"/><stop offset="1" stop-color="#ff9a1c"/></linearGradient></defs>
+    <defs><linearGradient id="g-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff5c6"/><stop offset=".5" stop-color="#ffd24f"/><stop offset="1" stop-color="#ff9a1c"/></linearGradient>
+      <linearGradient id="g-party" gradientUnits="userSpaceOnUse" x1="2" y1="0" x2="22" y2="0"><stop offset="0" stop-color="#ff5c9a"/><stop offset="1" stop-color="#b65cff"/></linearGradient></defs>
   </svg>
 
   <div id="flash"></div>
@@ -2175,6 +2278,7 @@ const CONFIG = {
     qa(".js-cover").forEach(function (e) { e.onerror = function () { e.onerror = null; e.src = C.avatarImage; }; e.src = coverOf(s); });
     qa(".js-like").forEach(function (e) { e.classList.toggle("liked", !!likes[s.file]); e.setAttribute("aria-pressed", likes[s.file] ? "true" : "false"); });
     if (typeof pvSong === "function") pvSong(s);
+    partySongChanged(s);                                   // another song: party mode (if on) fades out
   }
   function setPlayingUI(p) {
     document.body.classList.toggle("playing", p);
@@ -2638,7 +2742,7 @@ const CONFIG = {
     var host = curScreen === "profile" ? $("avProfile") : $("avHome");
     if (avStack.parentNode !== host) { var was = !avVid.paused; host.appendChild(avStack); if (was) swallow(avVid.play()); }
     avatarVisible = (curScreen === "home" || curScreen === "profile") && !playerOpen && !termOpen;
-    avatarWatch(); wfUpdate();
+    avatarWatch(); wfUpdate(); ptUpdate();
   }
   function afterShow(id) {
     updateChrome();
@@ -3017,6 +3121,180 @@ const CONFIG = {
   }
 
   /* =====================================================================
+     PARTY MODE: a song with party: true (Dracula) turns it on when it starts playing; changing the song turns it off.
+     Everything moves on the CSS side except the light dots + light spots (one canvas) and what follows the music:
+     the beams' brightness, the rings (one per beat) and the waveform. The music is read with Web Audio when the page can
+     (the app); otherwise the song's beat (CONFIG bpm + beat) drives a smooth imitation. The song itself is never touched.
+     ===================================================================== */
+  var pt = { on: false, wave: false, song: null, offT: 0, raf: 0, last: 0, acc: 0, t: 0, frames: 0, cv: $("ptfx"), g: null, W: 0, H: 0, k: 1,
+             spr: null, dots: [], spots: [], n: 0, bars: [], bv: [], perm: [], avg: 0, lastBeat: 0, ph: 0, ring: 0, rip: 0, beamOp: -1, rate: 1, L: 0 };
+  var ptEl = $("party"), ptBeams = qa("#party .pt-beams")[0], ptRingBox = $("ptRings"), ptRings = qa("#ptRings i"), ptWaveEl = $("pwave");
+  var PT_RGB = ["255,45,85", "255,92,168", "176,76,255", "255,64,128"];
+  function ptSong() { var s = songs[idx]; return s && s.party ? s : null; }
+  function ptFxShown() { return fx.on && !isUltra() && !reduced; }
+  function ptNeon() {                                       // the neon edge layers (added once; the social bar is filled in by the script, so do it late)
+    ["#s-home .pill", "#socialbar", "#viewpill", "#mcard", "#tabs"].forEach(function (s) {
+      qa(s).forEach(function (e) { if (!e.querySelector(":scope > .neon")) { var n = document.createElement("i"); n.className = "neon"; e.appendChild(n); } });
+    });
+    qa("#mcard .pbtn").forEach(function (b) { if (!b.querySelector(".pr")) for (var i = 0; i < 3; i++) { var r = document.createElement("i"); r.className = "pr pr" + i; b.appendChild(r); } });
+  }
+  function ptBuildWave() {                                  // the waveform bars along the bottom of the music card (red → purple → pink → purple → red)
+    var w = ptWaveEl.clientWidth || 300, n = Math.max(24, Math.floor(w / 6.2)), stops = [[0, 255, 45, 85], [.3, 176, 76, 255], [.5, 255, 92, 168], [.72, 176, 76, 255], [1, 255, 45, 85]];
+    if (n === pt.n && pt.bars.length) return;
+    pt.n = n; pt.bars = []; pt.bv = []; pt.perm = []; ptWaveEl.innerHTML = "";
+    var seed = 7; for (var i = 0; i < n; i++) { seed = (seed * 9301 + 49297) % 233280; pt.perm.push(seed / 233280); }
+    for (i = 0; i < n; i++) {
+      var u = i / (n - 1), k = 1; while (k < stops.length - 1 && u > stops[k][0]) k++;
+      var a = stops[k - 1], b = stops[k], f = (u - a[0]) / (b[0] - a[0]), c = [0, 1, 2].map(function (j) { return Math.round(a[j + 1] + (b[j + 1] - a[j + 1]) * f); }).join(",");
+      var bar = document.createElement("i"); bar.style.background = "linear-gradient(180deg, rgb(" + c + "), rgba(" + c + ", .55))";
+      ptWaveEl.appendChild(bar); pt.bars.push(bar); pt.bv.push(.08);
+    }
+  }
+  function ptPlace() {                                      // the rings sit behind the top of the music card
+    var c = $("mcard"); if (!c || !c.offsetWidth || !ptEl.offsetWidth) return;
+    var r = c.getBoundingClientRect(), p = ptEl.getBoundingClientRect();
+    ptRingBox.style.setProperty("--rx", (r.left + r.width / 2 - p.left).toFixed(1) + "px");
+    ptRingBox.style.setProperty("--ry", (r.top + r.height * .12 - p.top).toFixed(1) + "px");
+  }
+  function ptSize() {                                       // the canvas: light dots floating and twinkling, light spots from the disco ball
+    var w = ptEl.clientWidth, h = ptEl.clientHeight; if (!w || !h) { pt.W = 0; return; }
+    pt.k = Math.min(window.devicePixelRatio || 1, isLite() ? 1 : 1.5);
+    pt.cv.width = Math.round(w * pt.k); pt.cv.height = Math.round(h * pt.k); pt.W = w; pt.H = h; pt.g = pt.cv.getContext("2d");
+    if (!pt.spr) pt.spr = PT_RGB.map(function (rgb) {         // one soft glowing dot per colour, drawn once
+      var c = document.createElement("canvas"), x = c.getContext("2d"), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); c.width = c.height = 64;
+      g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(.13, "rgba(255,255,255,.9)"); g.addColorStop(.26, "rgba(" + rgb + ",1)"); g.addColorStop(.52, "rgba(" + rgb + ",.32)"); g.addColorStop(1, "rgba(" + rgb + ",0)");
+      x.fillStyle = g; x.fillRect(0, 0, 64, 64); return c;
+    });
+    var nd = isLite() ? 40 : 56, i; pt.dots = []; pt.spots = [];
+    for (i = 0; i < nd; i++) pt.dots.push({ x: Math.random() * w, y: Math.random() * h, s: 16 + Math.random() * 34, vy: -(5 + Math.random() * 14), sw: 4 + Math.random() * 10,
+                                            ph: Math.random() * 6.28, tw: .8 + Math.random() * 2.2, c: Math.floor(Math.random() * 4) });
+    for (i = 0; i < 7; i++) pt.spots.push({ a: Math.random() * 6.28, r: h * (.25 + Math.random() * .7), va: (Math.random() < .5 ? -1 : 1) * (.05 + Math.random() * .08), s: 26 + Math.random() * 40, c: i % 2 ? 1 : 2 });
+  }
+  function ptLevel(now, dt) {                               // how loud right now (0..1), whether a beat just hit, and the waveform targets
+    var n = pt.n, i, L = 0, beat = false, playing = !audio.paused && pt.on, tgt = [];
+    if (mx.on && playing) {
+      mx.an.getByteFrequencyData(mx.f);
+      var f = mx.f, bass = (f[1] + f[2] + f[3] + f[4]) / 1020, mid = 0;
+      for (i = 5; i < 64; i++) mid += f[i];
+      mid /= 59 * 255;
+      L = Math.min(1, Math.pow(bass * .72 + mid * .55, 1.25) * 1.1);
+      pt.avg += (bass - pt.avg) * Math.min(1, dt * 2.2);
+      if (bass > pt.avg * 1.15 + .035 && now - pt.lastBeat > 300) { beat = true; pt.lastBeat = now; }
+      for (i = 0; i < n; i++) tgt.push(Math.min(1, f[2 + Math.floor(pt.perm[i] * 110)] / 255 * 1.15));
+    } else {
+      var s = pt.song || songs[idx] || {}, spb = 60 / (s.bpm || 120), ph = (((audio.currentTime - (s.beat || 0)) / spb) % 1 + 1) % 1;
+      if (playing && ph < pt.ph - .5) { beat = true; pt.lastBeat = now; }
+      pt.ph = ph;
+      var env = playing ? Math.exp(-ph * 4.2) : 0;
+      L = playing ? .14 + .74 * env + .06 * Math.sin(now / 330) : .04;
+      for (i = 0; i < n; i++) tgt.push(playing ? Math.min(1, (.18 + .62 * pt.perm[i]) * (.35 + .65 * env) + .12 * Math.sin(now / 210 + i * 1.7)) : .07);
+    }
+    pt.L += (L - pt.L) * Math.min(1, dt * 10);
+    return { L: pt.L, beat: beat, tgt: tgt };
+  }
+  function ptBeat() {                                       // a beat: a ring pulses out behind the music card, a ripple leaves the play button
+    if (reduced || !ptFxShown()) return;
+    var r = ptRings[pt.ring++ % ptRings.length];
+    if (r && r.animate && curScreen === "home") r.animate([{ transform: "scale(.3)", opacity: .85 }, { transform: "scale(1.3)", opacity: 0 }], { duration: 1700, easing: "cubic-bezier(.2,.6,.3,1)" });
+    var p = qa("#mcard .pr" + (1 + (pt.rip++ % 2)))[0];
+    if (p && p.animate && curScreen === "home") p.animate([{ transform: "scale(1)", opacity: .9 }, { transform: "scale(1.75)", opacity: 0 }], { duration: 900, easing: "ease-out" });
+  }
+  function ptDraw(dt) {
+    var g = pt.g, W = pt.W, H = pt.H, i, L = pt.L, sp = pt.rate;
+    if (!g) return;
+    g.setTransform(pt.k, 0, 0, pt.k, 0, 0); g.clearRect(0, 0, W, H);
+    g.globalCompositeOperation = "lighter";
+    var bx = W * .9, by = H * .02;                          // light spots thrown by the disco ball, slowly going round
+    for (i = 0; i < pt.spots.length; i++) {
+      var q = pt.spots[i]; q.a += q.va * dt * sp;
+      var x = bx + Math.cos(q.a) * q.r * .9, y = by + Math.abs(Math.sin(q.a)) * q.r;
+      g.globalAlpha = .14 + .16 * L; g.drawImage(pt.spr[q.c], x - q.s / 2, y - q.s / 2, q.s, q.s);
+    }
+    for (i = 0; i < pt.dots.length; i++) {                  // light dots drift up, sway and twinkle (brighter on loud parts)
+      var d = pt.dots[i]; d.y += d.vy * dt * sp; d.ph += d.tw * dt * sp;
+      if (d.y < -d.s) { d.y = H + d.s; d.x = Math.random() * W; }
+      var a = (.45 + .55 * (.5 + .5 * Math.sin(d.ph))) * (.7 + .3 * L);
+      g.globalAlpha = a; g.drawImage(pt.spr[d.c], d.x + Math.sin(d.ph * .7) * d.sw - d.s / 2, d.y - d.s / 2, d.s, d.s);
+    }
+    g.globalAlpha = 1; g.globalCompositeOperation = "source-over";
+  }
+  function ptFrame(t) {
+    pt.raf = requestAnimationFrame(ptFrame);
+    var dt = pt.last ? Math.min(.1, (t - pt.last) / 1000) : .033; pt.last = t;
+    pt.acc += dt; if (pt.acc < .031) return;                // about 30 frames a second
+    dt = pt.acc; pt.acc = 0;
+    if (!pt.n) ptBuildWave();
+    var r = ptLevel(t, dt), shown = ptFxShown(), home = curScreen === "home";
+    if (shown) {
+      if (!pt.W) ptSize();
+      ptDraw(dt);
+      var op = .45 + .55 * r.L;                             // the beams flare on the loud parts
+      if (Math.abs(op - pt.beamOp) > .02) { pt.beamOp = op; ptBeams.style.opacity = op.toFixed(2); }
+      if (r.beat) ptBeat();
+      if (++pt.frames % 30 === 0 && home) ptPlace();
+    }
+    if (home && pt.bars.length) {                           // the waveform: quick to rise, slower to fall
+      for (var i = 0; i < pt.n; i++) {
+        var v = pt.bv[i], g = r.tgt[i] === undefined ? .07 : r.tgt[i];
+        v += (g - v) * Math.min(1, dt * (g > v ? 16 : 5));
+        if (Math.abs(v - pt.bv[i]) > .004) { pt.bv[i] = v; pt.bars[i].style.transform = "scaleY(" + Math.max(.06, v).toFixed(3) + ")"; }
+      }
+    }
+  }
+  function ptWanted() { return !!pt && (pt.on || pt.wave) && !paused && !document.hidden && !playerOpen && !termOpen; }
+  function ptUpdate() {
+    if (!pt) return;
+    var w = ptWanted();
+    ptEl.classList.toggle("hold", !w);
+    ptEl.classList.toggle("nohome", curScreen !== "home");
+    if (w && !pt.raf) { pt.last = 0; pt.raf = requestAnimationFrame(ptFrame); }
+    else if (!w && pt.raf) { cancelAnimationFrame(pt.raf); pt.raf = 0; }
+    if (!w && ptEl.getAnimations) {                          // the beat's rings and ripples (one-off animations) end right away too
+      ptEl.getAnimations({ subtree: true }).concat(qa("#mcard .pr1, #mcard .pr2").reduce(function (a, e) { return a.concat(e.getAnimations()); }, []))
+        .forEach(function (a) { if (!(window.CSSAnimation && a instanceof CSSAnimation)) { try { a.finish(); } catch (e) {} } });
+    }
+  }
+  function ptPaused() {                                     // paused: slower and dimmer · playing: full speed
+    if (!pt) return;
+    var dim = pt.on && audio.paused; root.classList.toggle("party-dim", dim);
+    pt.rate = dim ? .3 : 1;
+    var list = ptEl.getAnimations ? ptEl.getAnimations({ subtree: true }) : [];            // (the rings' glow lives on ::before / ::after)
+    list.forEach(function (a) {
+      if (window.CSSTransition && a instanceof CSSTransition) return;                     // (not the 1 s fades themselves)
+      if (a.updatePlaybackRate) a.updatePlaybackRate(pt.rate); else a.playbackRate = pt.rate;
+    });
+  }
+  function ptBallTex() {                                    // the disco ball's mirror tiles: drawn once into a picture (two identical halves, so it loops)
+    var c = document.createElement("canvas"), x = c.getContext("2d"), cols = 18, rows = 16, ts = 12, i, j, seed = 11, tiles = [];
+    var rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    var pal = [[255, 120, 220], [190, 80, 255], [255, 80, 170], [140, 60, 255], [235, 150, 255]];
+    c.width = cols * 2 * ts; c.height = rows * ts; x.fillStyle = "#24062f"; x.fillRect(0, 0, c.width, c.height);
+    for (j = 0; j < rows; j++) for (i = 0; i < cols; i++) { var p = pal[Math.floor(rnd() * pal.length)], b = .5 + rnd() * .65; tiles.push(rnd() < .07 ? [255, 255, 255] : p.map(function (v) { return Math.min(255, Math.round(v * b)); })); }
+    for (j = 0; j < rows; j++) for (i = 0; i < cols * 2; i++) { var t = tiles[j * cols + (i % cols)]; x.fillStyle = "rgb(" + t.join(",") + ")"; x.fillRect(i * ts + 1, j * ts + 1, ts - 2, ts - 2); }
+    return c.toDataURL();
+  }
+  function partyStart(s) {
+    pt.on = true; pt.song = s; clearTimeout(pt.offT);
+    ptNeon();
+    var tex = qa("#party .pt-ball-tex")[0]; if (tex && !tex.style.backgroundImage) tex.style.backgroundImage = "url(" + ptBallTex() + ")";
+    if (!pt.wave) { pt.wave = true; root.classList.add("party-wave"); fitHome(); ptBuildWave(); }
+    ptSize(); ptPlace(); ptUpdate(); ptPaused();
+    setTimeout(fitHome, 1100);                              // once the waveform has settled in: make sure Home still fits
+    requestAnimationFrame(function () { requestAnimationFrame(function () { if (pt.on) root.classList.add("party"); }); });   // fades in (1 s)
+    logEvent("Party mode: " + (s.title || s.file));
+  }
+  function partyStop() {
+    if (!pt.on) return;
+    pt.on = false; root.classList.remove("party", "party-dim");                     // fades out (1 s), then everything is back to normal
+    clearTimeout(pt.offT);
+    pt.offT = setTimeout(function () { if (pt.on) return; pt.wave = false; root.classList.remove("party-wave"); ptUpdate(); fitHome(); setTimeout(fitHome, 300); if (pt.g) pt.g.clearRect(0, 0, pt.cv.width, pt.cv.height); }, 1050);
+  }
+  function partySongChanged(s) { if (pt && pt.on && s !== pt.song) partyStop(); }
+  onAudio("playing", function () { var s = ptSong(); if (s && !pt.on) partyStart(s); ptPaused(); });
+  onAudio("pause", ptPaused);
+  window.addEventListener("resize", function () { if (pt.on || pt.wave) { ptSize(); ptPlace(); pt.n = 0; } });
+
+  /* =====================================================================
      ENTER: the tap starts everything
      ===================================================================== */
   function firstFrame(video, maxMs) {                      // resolves when the video shows its first picture (or after maxMs)
@@ -3098,7 +3376,7 @@ const CONFIG = {
     paused = true; root.classList.add("app-bg");                       // CSS animations stand still while the app is in the background
     resumeList = [audio, bg, avVid].filter(function (m) { return !m.paused; });
     resumeList.forEach(function (m) { m.pause(); });
-    wfUpdate(); pvUpdate();
+    wfUpdate(); pvUpdate(); ptUpdate();
   };
   window.appResumed = function () {
     if (!paused) return;
@@ -3107,7 +3385,7 @@ const CONFIG = {
     resumeList.forEach(function (m) { swallow(m.play()); });
     resumeList = [];
     if (nativeVol) { vol = readNative(); applyVolume(); }    // the phone's volume may have changed meanwhile
-    wfUpdate(); wfBeat(true); pvUpdate();
+    wfUpdate(); wfBeat(true); pvUpdate(); ptUpdate();
   };
   window.appBack = handleBack;
 
@@ -3195,7 +3473,7 @@ const CONFIG = {
     g.globalAlpha = 1;
   }
   window.addEventListener("resize", function () { if (wf.run) { wfStop(); wfStart(); } });
-  document.addEventListener("visibilitychange", function () { wfUpdate(); pvUpdate(); });
+  document.addEventListener("visibilitychange", function () { wfUpdate(); pvUpdate(); ptUpdate(); });
 
   // the glow pulses on the beat while music plays (each song's tempo + first beat are in CONFIG), slowly when paused
   var wfBeatAt = 0, wfBeatVar = "";
@@ -3230,7 +3508,7 @@ const CONFIG = {
     if (!app.clientHeight || !mini.offsetHeight) return;
     app.style.setProperty("--mini-space", Math.ceil(app.clientHeight - mini.offsetTop + 22) + "px");   // up to the mini player + a gap
   }
-  function fitHome() { fitHomeV(); fitHero(); }
+  function fitHome() { fitHomeV(); fitHero(); if (pt && (pt.on || pt.wave)) ptPlace(); }
   function fitHomeV() {
     var h = el.home;
     if (!h || h.style.display === "none" || !h.clientHeight) return;

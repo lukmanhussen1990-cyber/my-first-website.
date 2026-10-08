@@ -31,7 +31,7 @@ android/                ← Android Studio project (Kotlin, full-screen WebView)
 
 | screen | what is there |
 | --- | --- |
-| **Home** | the song pill on top; one row with your pictures and clips (one by one) inside an animated wings + crown frame, the **Claude logo tile**, a thin gold line and your name block: **Imran** (heavy italic, orange → gold) + gold crown, status (tap it: Online / Idle / Do Not Disturb) and "Hello, World!" typing; your social icons, the views counter (tap it for numbers), and the music card (progress, shuffle, previous, play/pause, next, like) |
+| **Home** | (with Dracula playing: party mode, see below) the song pill on top; one row with your pictures and clips (one by one) inside an animated wings + crown frame, the **Claude logo tile**, a thin gold line and your name block: **Imran** (heavy italic, orange → gold) + gold crown, status (tap it: Online / Idle / Do Not Disturb) and "Hello, World!" typing; your social icons, the views counter (tap it for numbers), and the music card (progress, shuffle, previous, play/pause, next, like) |
 | **Profile** | tap your name on Home (or the card in Settings). Bigger picture + pencil (edit your bio), @imran, Online badge, typed bio, Followers / Following / Posts, and About Me / Interests / Badges / Activity pop-ups. The ⋮ menu: edit, copy @imran, share |
 | **Music player** ("Now Playing") | tap the song pill, the music card or the **Music** tab. Dark red smoke, a spinning round cover inside a progress ring (the white dot shows how far the song is) and a glowing red ring, a small glass side panel (volume, •••, equalizer), title + red ★, progress, shuffle / previous / play / next / repeat, a waveform you can tap to jump, and a volume slider. **Swipe the cover left / right** to change the song, the ⌄ arrow closes it (see below) |
 | **Social** | one big row per link (Discord, GitHub, Telegram, Roblox, YouTube, TikTok) and the "Better Things Ahead." card |
@@ -128,6 +128,25 @@ Everything is sized from the screen width, and the name / status get a little sm
 * **Frame colour**: `frameTint: "gold"` in the CONFIG makes the wings and the ring glow warm orange-gold (to match the logo and
   the name); `""` keeps the red frame.
 * The sparks and sparkles go off with "Floating particles" in Settings; everything stands still while the app is in the background.
+
+## Dracula party mode
+
+When **Dracula** starts playing, the app throws a party (fades in over 1 second) until you skip or change the song
+(then it fades out and everything is back to normal). Pause Dracula and the effects slow down and dim; play again for the full show.
+
+* a disco ball in the top-right corner (spinning mirror tiles, pink-purple glow) and light spots moving around
+* red and purple laser beams from the top and the sides, sweeping left and right, flaring on the loud parts
+* glowing red, pink and purple light dots floating up and twinkling, and a red-purple tint over the background
+* red rings pulsing out from behind the music card on every beat
+* neon red-purple edges on the song pill, the social icons, the views counter, the music card and the nav bar
+* on the music card: a red-purple waveform moving with the music, red sound bars, a red heart (filled when you like the song),
+  and a glowing play button that sends out ripples on the beat; the song pill's sound-wave icon turns pink-purple
+
+The beams, rings and waveform follow the music with the Web Audio API (in the app); where that can't read the music they
+follow the song's beat instead (`bpm` + `beat` in the CONFIG). The music itself is never touched, so it can't go silent.
+The light dots and spots are drawn on one canvas, everything else is CSS, and it all stops while the app is in the background
+or the full player covers it. With "Floating particles" off you get only the neon edges and the waveform.
+Any song can have it: add `party: true` to that song in the CONFIG.
 
 ## The Now Playing player
 
