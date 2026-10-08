@@ -168,7 +168,7 @@ class Grade:
             # life, not push the hue of textures that already have a colour of their own
             neutral = (1.0 - smoothstep(0.03, 0.10, c)) * not_black
             # ...and fade it out at the extremes: pure whites must not turn cream, blacks must not turn navy
-            hi = np.clip((L - 0.55) / 0.45, 0, 1) * (1.0 - smoothstep(0.78, 0.94, L))
+            hi = np.clip((L - 0.55) / 0.45, 0, 1) * (1.0 - smoothstep(0.66, 0.90, L))
             sh = np.clip((0.45 - L) / 0.45, 0, 1) * smoothstep(0.04, 0.35, L)
             out[..., 1] += neutral * self.warm * 0.010 * (hi - 0.6 * sh)
             out[..., 2] += neutral * self.warm * 0.022 * (hi - sh)

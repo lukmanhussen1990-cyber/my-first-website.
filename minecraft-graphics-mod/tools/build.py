@@ -30,7 +30,7 @@ except ImportError:                       # textures pass is optional while deve
 # Stable identifiers => re-importing a newer build replaces the old one.
 RP_UUID = "9d1b6c4e-5a3f-4e0b-8c27-71f0a4b2d3e5"
 RP_MODULE_UUID = "2f8e0a7b-6c14-49d2-b5a3-0e9d7c1f4a68"
-VERSION = [1, 1, 1]
+VERSION = [1, 1, 2]
 
 # Short names: the game prints them under the pack-settings slider on a narrow phone screen.
 SUBPACKS = [

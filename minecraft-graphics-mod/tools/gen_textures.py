@@ -101,7 +101,11 @@ def _grade_special(arr, base_grade, name, relief=False, special=True):
         out_rgb = map_toward(lab0, lab)
 
     if relief and arr.shape[0] == arr.shape[1] and ((alpha == 255).all() or mask_alpha):
-        out_rgb = relief_shade(out_rgb, arr)
+        shaded = relief_shade(out_rgb, arr)
+        # the tinted fringe of grass_side (alpha 255) is multiplied by the biome colour at run time, exactly like
+        # grass_top; shading it here as well made the fringe visibly lighter than the top face, so only the dirt
+        # part of such a texture gets the baked relief
+        out_rgb = np.where(((alpha == 255) & mask_alpha)[..., None], out_rgb, shaded)
 
     # final safety net: no texel may drift further than MAX_DELTA from its vanilla colour
     lab_fin = rgb_to_oklab(out_rgb)

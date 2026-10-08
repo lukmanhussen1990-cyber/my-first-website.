@@ -9,6 +9,7 @@ colours that already have some.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import numpy as np
@@ -21,6 +22,9 @@ ENTITY_GRADE = Grade(chroma=1.10, contrast=0.06, lift=0.010, warm=0.6)
 ARMOR_GRADE = Grade(chroma=1.10, contrast=0.07, lift=0.012, warm=0.6)
 FLAME_GRADE = Grade(chroma=1.15, contrast=0.08, lightness=0.025, warm=0.0)
 PARTICLE_GRADE = Grade(chroma=1.25, contrast=0.05, lightness=0.01, warm=0.0)
+
+# near-grey masks that the engine multiplies by the dye colour: a few % of warmth would shift every dye
+DYE_MASKS = re.compile(r"^(leather_[12]|wolf_armor_dyed|horse_armor_leather)$")
 
 
 def _grade_file(src: Path, dst: Path, grade: Grade, only_colored=False, skip_neutral=False):
@@ -67,8 +71,8 @@ def _tree(vanilla: Path, out_dir: Path, sub: str, grade: Grade, skip=None, only_
 
 
 def generate(vanilla: Path, out_dir: Path, log=print):
-    n_ent = _tree(vanilla, out_dir, "entity", ENTITY_GRADE)
-    n_arm = _tree(vanilla, out_dir, "models", ARMOR_GRADE)
+    n_ent = _tree(vanilla, out_dir, "entity", ENTITY_GRADE, skip=DYE_MASKS)
+    n_arm = _tree(vanilla, out_dir, "models", ARMOR_GRADE, skip=DYE_MASKS)
     # flame / particle atlases: coloured sprites only (the white/grey ones are tinted by the emitters)
     _grade_file(vanilla / "textures" / "flame_atlas.png", out_dir / "textures" / "flame_atlas.png", FLAME_GRADE)
     _grade_file(vanilla / "textures" / "particle" / "particles.png",
