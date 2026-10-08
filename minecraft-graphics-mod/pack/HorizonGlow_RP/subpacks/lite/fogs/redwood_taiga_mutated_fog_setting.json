@@ -1,0 +1,40 @@
+{
+  "format_version": "1.16.100",
+  "minecraft:fog_settings": {
+    "description": {
+      "identifier": "hg:fog_redwood_taiga_mutated"
+    },
+    "distance": {
+      "air": {
+        "fog_start": 0.773,
+        "fog_end": 1.0,
+        "fog_color": "#ADD0F3",
+        "render_distance_type": "render"
+      },
+      "weather": {
+        "fog_start": 0.226,
+        "fog_end": 0.7,
+        "fog_color": "#97B1CC",
+        "render_distance_type": "render"
+      },
+      "water": {
+        "fog_start": 0.0,
+        "fog_end": 68.0,
+        "fog_color": "#007CAB",
+        "render_distance_type": "fixed",
+        "transition_fog": {
+          "init_fog": {
+            "fog_start": 0.0,
+            "fog_end": 0.01,
+            "fog_color": "#007CAB",
+            "render_distance_type": "fixed"
+          },
+          "min_percent": 0.25,
+          "mid_seconds": 5,
+          "mid_percent": 0.6,
+          "max_seconds": 30
+        }
+      }
+    }
+  }
+}

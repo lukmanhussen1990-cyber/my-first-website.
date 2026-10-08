@@ -1,0 +1,28 @@
+{
+  "namespace": "hud",
+  "root_panel": {
+    "modifications": [
+      {
+        "array_name": "controls",
+        "operation": "insert_front",
+        "value": [
+          {
+            "hg_vignette": {
+              "type": "image",
+              "texture": "textures/ui/hg_vignette",
+              "size": [
+                "100%",
+                "100%"
+              ],
+              "anchor_from": "center",
+              "anchor_to": "center",
+              "layer": 0,
+              "alpha": 1.0,
+              "keep_ratio": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
