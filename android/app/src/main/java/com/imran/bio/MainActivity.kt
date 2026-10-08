@@ -11,6 +11,7 @@ import android.content.res.AssetManager
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.media.AudioManager
+import android.os.BatteryManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
@@ -91,6 +92,32 @@ class MainActivity : ComponentActivity() {
     /** Until when a volume change is our own (a volume button or a slider in the page), so the page already knows. */
     @Volatile
     private var ownVolumeUntil = 0L
+
+    /** Last known: is a charger plugged in (null = not known yet), and the battery level (0..1). */
+    private var plugged: Boolean? = null
+    private var batteryLevel = -1f
+
+    /**
+     * The battery: plugging a charger in (also while the app was in the background) plays the page's charging animation;
+     * unplugging closes it; the level keeps its percentage up to date.
+     */
+    private val batteryWatch = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
+            val now = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
+            val oldLevel = batteryLevel
+            if (level >= 0 && scale > 0) batteryLevel = level.toFloat() / scale
+            val was = plugged
+            plugged = now
+            if (!::webView.isInitialized) return
+            if (was != null && was != now) {
+                webView.evaluateJavascript("window.appCharging && window.appCharging($now, $batteryLevel)", null)
+            } else if (batteryLevel >= 0 && batteryLevel != oldLevel) { // (this broadcast also comes for temperature etc.)
+                webView.evaluateJavascript("window.appBattery && window.appBattery($batteryLevel, $now)", null)
+            }
+        }
+    }
 
     /** The volume changed some other way (headphone buttons, the phone's quick settings): the page's sliders follow. */
     private val volumeWatch = object : BroadcastReceiver() {
@@ -197,9 +224,11 @@ class MainActivity : ComponentActivity() {
 
     // pause the music/videos while the app is in the background, continue when you come back
     override fun onPause() {
-        try {
-            unregisterReceiver(volumeWatch)
-        } catch (ignored: IllegalArgumentException) {
+        for (watch in listOf(volumeWatch, batteryWatch)) {
+            try {
+                unregisterReceiver(watch)
+            } catch (ignored: IllegalArgumentException) {
+            }
         }
         webView.evaluateJavascript("window.appPaused && window.appPaused()", null)
         webView.onPause()
@@ -212,6 +241,10 @@ class MainActivity : ComponentActivity() {
         webView.evaluateJavascript("window.appResumed && window.appResumed()", null)
         ContextCompat.registerReceiver(
             this, volumeWatch, IntentFilter("android.media.VOLUME_CHANGED_ACTION"), ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+        // the battery's current state arrives straight away (a charger plugged in while away also plays the animation)
+        ContextCompat.registerReceiver(
+            this, batteryWatch, IntentFilter(Intent.ACTION_BATTERY_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED,
         )
     }
 
