@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "1.6",                       // shown in Settings → About
+  version: "1.7",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -33,6 +33,9 @@ const CONFIG = {
   background:  "assets/background.mp4", // background video (muted, loops, slowly zooms)
   frame:       "assets/frame.png",      // the wings + crown frame around the profile clip on Home ("" = no frame, a plain glowing ring instead)
   frame2:      "assets/frame2.png",     // the wings + crown frame on the Settings card; its crown is also in the popup messages ("" = plain ring)
+  frameTint:   "",                      // "gold" = the Home frame glows warm orange-gold (to match the logo and the name) instead of red
+  // the logo tile next to the Home frame (tap it: the logo spins, sparks fly and this popup shows) · image: "" = no tile
+  badge: { image: "assets/claude-logo.png", title: "Built with Claude", text: "This app was designed and coded with Claude." },
 
   // ---------- music ----------
   // cover: "" = use the profile picture as the cover art · artist: "" = "Unknown Artist"
@@ -48,7 +51,8 @@ const CONFIG = {
   randomFirstSong: false,               // true = start with a random song each visit
 
   // ---------- fonts (any name from fonts.google.com) ----------
-  nameFont: "Pacifico",                 // your name only (handwritten)
+  nameFont: "Pacifico",                 // your name on the Profile screen and the Settings card (handwritten)
+  // your name on Home: Montserrat ExtraBold Italic, from assets/montserrat-800-italic.woff2 (in the app, so it also works offline)
   textFont: "Inter",                    // everything else
   quoteFont: "Courier Prime",           // the "Better Things Ahead." card (typewriter)
 
@@ -142,6 +146,7 @@ const CONFIG = {
   root.style.setProperty("--quote-font", JSON.stringify(CONFIG.quoteFont));
   if (CONFIG.frame) root.style.setProperty("--frame-img", "url(" + JSON.stringify(CONFIG.frame) + ")");
   else root.classList.add("noframe");
+  if (CONFIG.frameTint === "gold") root.classList.add("wfgold");
   if (CONFIG.frame2) root.style.setProperty("--frame2-img", "url(" + JSON.stringify(CONFIG.frame2) + ")");
   else root.classList.add("noframe2");
   try { if (localStorage.getItem("bio:fx") === "0") root.classList.add("nofx"); } catch (e) {}   // "Floating particles" off: no sparkles either
@@ -340,11 +345,6 @@ const CONFIG = {
   .hero .avatar { --sz: min(33vw, 134px, 15.8vh); }
   .who { min-width: 0; flex: 1; }
   .namerow { display: flex; align-items: center; gap: 8px; }
-  .name {
-    font-family: var(--name-font), cursive; font-weight: 400; font-size: clamp(36px, 10.4vw, 46px); line-height: 1.3; letter-spacing: .01em; min-height: 1.3em;
-    text-shadow: 0 0 6px rgba(160, 170, 255, .9), 0 0 18px rgba(var(--accent-rgb), .75), 0 0 36px rgba(var(--accent2-rgb), .5); white-space: nowrap;
-  }
-  .caret { display: inline-block; width: 2px; height: .72em; margin-left: 4px; vertical-align: -.02em; background: var(--text); box-shadow: 0 0 8px var(--glow); animation: blink 1s steps(1) infinite; }
   .crown { width: 28px; height: 28px; color: var(--text); stroke-width: 1.7; filter: none; opacity: .95; }
   .status { display: inline-flex; align-items: center; gap: 9px; margin: 3px 0; padding: 5px 4px 5px 2px; font-size: 18px; font-weight: 600; }
   .status .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--good); color: var(--good); box-shadow: 0 0 12px currentColor; }
@@ -372,8 +372,6 @@ const CONFIG = {
   /* short screens (or tall system bars): the script raises --q from 0 to 1 until everything fits above the nav bar */
   #s-home { --q: 0; }
   #s-home .pill { margin-bottom: calc(10px - 6px * var(--q)); }
-  #s-home .hero { margin-top: calc(clamp(50px, 7.6vh, 64px) - 20px * var(--q)); margin-bottom: calc(24px - 12px * var(--q)); }
-  #s-home .hero .avatar { --sz: calc(min(33vw, 134px, 15.8vh) * (1 - .15 * var(--q))); }
   #s-home .socialbar { padding-top: calc(14px - 5px * var(--q)); padding-bottom: calc(14px - 5px * var(--q)); margin-bottom: calc(12px - 6px * var(--q)); }
   #s-home .sb { width: calc(52px - 6px * var(--q)); height: calc(52px - 6px * var(--q)); }
   #s-home .viewpill { padding-top: calc(11px - 4px * var(--q)); padding-bottom: calc(11px - 4px * var(--q)); margin-bottom: calc(12px - 6px * var(--q)); }
@@ -983,6 +981,8 @@ const CONFIG = {
     clip-path: polygon(1.56% 47.06%, 10.35% 47.06%, 25.00% 34.64%, 44.53% 1.96%, 55.27% 1.96%, 74.22% 34.64%, 89.45% 47.06%, 98.24% 47.06%, 98.24% 63.40%, 85.94% 98.37%, 75.78% 94.44%, 64.06% 91.83%, 49.80% 90.85%, 35.74% 91.83%, 24.02% 94.44%, 13.67% 98.37%, 1.56% 63.40%); }
   .pm-crown.pm-ic { width: 40px; height: 40px; margin: -20px 0 0 -20px; display: grid; place-items: center; filter: drop-shadow(0 0 5px rgba(255, 160, 50, .8)); }
   .pm-ic svg.ic { width: 34px; height: 34px; stroke: url(#g-gold); stroke-width: 2.1; }
+  .pm-crown.pm-img { width: 40px; height: 40px; margin: -20px 0 0 -20px; display: grid; place-items: center; }
+  .pm-img img { width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(255, 150, 60, .85)); }
   @keyframes pmDrop { 0% { opacity: 0; transform: translateY(-120%) scale(.55); } 45% { opacity: 1; transform: translateY(10%) scale(1.04); } 68% { transform: translateY(-6%) scale(.99); } 84% { transform: translateY(2%); } 100% { opacity: 1; transform: none; } }
   @keyframes pmBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8%); } }
 
@@ -1069,9 +1069,9 @@ const CONFIG = {
   }
 
   /* the wings are drawn a little larger than in the picture (spread wide like the mockup); the right one reaches behind the name */
-  .wf-wl { transform: scale(1.1); } .wf-wr { transform: scale(1.25); }
-  @keyframes flapL { 0%, 100% { transform: rotate(-2deg) scale(1.1); } 50% { transform: rotate(4deg) scale(1.1); } }     /* 6 degrees up and down, mirrored */
-  @keyframes flapR { 0%, 100% { transform: rotate(2deg) scale(1.25); } 50% { transform: rotate(-4deg) scale(1.25); } }
+  .wf-wl, .wf-wr { transform: scale(1.06); }
+  @keyframes flapL { 0%, 100% { transform: rotate(-2deg) scale(1.06); } 50% { transform: rotate(4deg) scale(1.06); } }     /* 6 degrees up and down, mirrored */
+  @keyframes flapR { 0%, 100% { transform: rotate(2deg) scale(1.06); } 50% { transform: rotate(-4deg) scale(1.06); } }
 
   /* the ring, the swirls and the loose feathers under it (still) */
   .wf-ring {
@@ -1127,8 +1127,109 @@ const CONFIG = {
   /* sparkles + falling feathers are drawn on this one small canvas */
   .wf-fx { z-index: 7; left: 0; top: 0; width: 100%; height: 100%; }
 
+  /* =====================================================================
+     HOME NAME AREA, in one row: the frame · the Claude logo tile (over the edge of the right wing) · a thin gold line · the name block.
+     Every size follows the screen width (clamp), and the script makes the name / status a little smaller if they would not fit.
+     ===================================================================== */
+  @font-face { font-family: "Hero Name"; font-style: italic; font-weight: 800; font-display: swap; src: url("assets/montserrat-800-italic.woff2") format("woff2"); }
+  #s-home .hero {
+    --hsz: calc(clamp(58px, 19vw, 86px) * (1 - .12 * var(--q)));     /* the picture inside the frame */
+    --tile: clamp(48px, 15.6vw, 64px);                                 /* the logo tile: about 60 px on a phone */
+    --nmfs: clamp(22px, 7.7vw, 36px);                                  /* the name */
+    gap: 0; margin: calc(var(--hsz) * .74 + 6px - 12px * var(--q)) -10px calc(26px - 10px * var(--q)) calc(var(--hsz) * .975 - 14px);
+  }
+  #s-home .hero .avatar { --sz: var(--hsz); }
+  #s-home .who { flex: 1; min-width: 0; }
+
+  /* the tile: cream, a soft shadow inside, a glowing warm orange edge; the logo in the middle (70 %) */
+  .ctile { position: relative; z-index: 3; flex: none; width: var(--tile); height: var(--tile); margin-left: calc(var(--hsz) * .31); padding: 0; -webkit-tap-highlight-color: transparent; }
+  .ct-pop, .ct-float, .ct-glow, .ct-face { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 27%; }
+  .ct-glow { box-shadow: 0 0 10px 2px rgba(255, 138, 52, .85), 0 0 26px 7px rgba(255, 112, 28, .42), 0 6px 14px rgba(0, 0, 0, .45); opacity: .75; }
+  .ct-face {
+    display: grid; place-items: center; transition: transform .18s;
+    background: radial-gradient(120% 120% at 30% 22%, #fffaf2 0%, #F5EBDD 46%, #ebdac4 100%); border: 1.6px solid #ff9a4a;
+    box-shadow: inset 0 0 0 1px rgba(255, 238, 216, .75), inset 0 3px 7px rgba(146, 84, 34, .3), inset 0 -4px 9px rgba(170, 100, 50, .2), 0 0 5px rgba(255, 150, 60, .9);
+  }
+  .ctile:active .ct-face { transform: scale(.93); }
+  .ct-fast { display: block; width: 70%; height: 70%; }
+  .ct-breathe, .ct-spin, .ct-spin img { display: block; width: 100%; height: 100%; }
+  .ct-spin img { object-fit: contain; -webkit-user-drag: none; }
+  .ct-float { animation: ctFloat 4.2s ease-in-out infinite; }                  /* floats up and down a few px */
+  .ct-glow { animation: ctGlow 3.6s ease-in-out infinite; }                     /* its orange glow pulses */
+  .ct-breathe { animation: ctBreathe 3.4s ease-in-out infinite; }               /* the logo breathes … */
+  .ct-spin { animation: spin 12s linear infinite; }                             /* … and turns once every 12 s */
+  @keyframes ctFloat { 0%, 100% { transform: translateY(1.5px); } 50% { transform: translateY(-3.5px); } }
+  @keyframes ctGlow { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+  @keyframes ctBreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+  .burst.orange { background: radial-gradient(circle, #fff 0 25%, #ffa040 45%, rgba(255, 120, 30, 0) 72%); }
+
+  /* the thin gold line between the tile and the name */
+  .hdiv { position: relative; z-index: 3; flex: none; width: 1.5px; height: calc(var(--nmfs) * 2.8); margin: 0 clamp(7px, 2.3vw, 11px) 0 clamp(8px, 2.6vw, 12px); border-radius: 1px;
+          background: linear-gradient(180deg, rgba(217, 194, 74, 0), #D9C24A 18%, #f7dc85 50%, #D9C24A 82%, rgba(217, 194, 74, 0)); box-shadow: 0 0 6px rgba(242, 163, 58, .6); }
+
+  /* the name: heavy italic, orange → gold, a soft dark shadow under it. Each letter shows its own slice of one gradient
+     (the script measures where each letter sits), so the letters can slide in one by one and still read as one word */
+  #s-home .namerow { gap: .1em; font-size: var(--nmfs); line-height: 1.15; }
+  .nm { position: relative; display: inline-block; flex: none; font-family: "Hero Name", "Montserrat", var(--text-font), sans-serif; font-style: italic; font-weight: 800; white-space: nowrap; }
+  .nm-w { position: relative; display: inline-flex; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .6)); }
+  .nm-l, .nm-s { display: inline-block; padding: .08em .16em .12em .04em; margin: -.08em -.16em -.12em -.04em; }   /* room for the slanted letters' edges */
+  .nm-l {
+    color: transparent; -webkit-text-fill-color: transparent; -webkit-background-clip: text; background-clip: text;
+    background-image: linear-gradient(90deg, #E8743B 0, #F2A33A calc(var(--nw, 3.2em) * .5), #D9C24A var(--nw, 3.2em));
+    background-repeat: no-repeat; background-size: calc(var(--nw, 3.2em) + 1em) 100%; background-position: calc(var(--lx, 0px) * -1) 0;
+  }
+  /* a light sweeps across the name every 4 s: a bright copy of it, seen through a moving soft-edged window */
+  .nm-shine { position: absolute; left: 0; top: 0; width: 36%; height: 100%; overflow: hidden; pointer-events: none; transform: translateX(-100%);
+              -webkit-mask-image: linear-gradient(100deg, transparent 8%, #000 44%, #000 56%, transparent 92%); mask-image: linear-gradient(100deg, transparent 8%, #000 44%, #000 56%, transparent 92%);
+              animation: nmWin 4s ease-in-out infinite; }
+  .nm-shine-in { position: absolute; left: 0; top: 0; display: inline-flex; white-space: nowrap; transform: translateX(36%); animation: nmShIn 4s ease-in-out infinite; }
+  .nm-s { color: rgba(255, 248, 226, .92); }
+  @keyframes nmWin { 0%, 60% { transform: translateX(-100%); } 92%, 100% { transform: translateX(280%); } }
+  @keyframes nmShIn { 0%, 60% { transform: translateX(36%); } 92%, 100% { transform: translateX(-100.8%); } }
+
+  /* the crown after the name: gold outline, tilts gently, a sparkle now and then */
+  .crownw { position: relative; display: block; flex: none; width: .74em; height: .74em; margin-left: .06em; transform-origin: 50% 90%; animation: crownTilt 3.4s ease-in-out infinite; }
+  #s-home .crownw .crown { display: block; width: 100%; height: 100%; color: #D9C24A; fill: none; stroke-width: 1.9; opacity: 1; filter: drop-shadow(0 0 3px rgba(217, 194, 74, .5)); }
+  @keyframes crownTilt { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+  .csp { position: absolute; width: .4em; height: .4em; margin: -.2em 0 0 -.2em; opacity: 0; pointer-events: none;
+         background: radial-gradient(circle, #fff 0 16%, #ffeaa8 34%, rgba(255, 214, 110, 0) 70%);
+         clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); animation: cspTw 5.2s ease-in-out infinite; }
+  .csp:nth-child(2) { left: 88%; top: -6%; }
+  .csp:nth-child(3) { left: -4%; top: 18%; animation-delay: 1.9s; }
+  .csp:nth-child(4) { left: 100%; top: 70%; animation-delay: 3.5s; }
+  @keyframes cspTw { 0%, 82% { opacity: 0; transform: scale(.2) rotate(0deg); } 89% { opacity: 1; transform: scale(1) rotate(45deg); } 96%, 100% { opacity: 0; transform: scale(.3) rotate(90deg); } }
+
+  /* status (green dot · Online · white arrow) and the typed hello, under the name */
+  #s-home .status { font-size: clamp(12.5px, 3.95vw, 17px); gap: .5em; margin: .12em 0 0; padding: .2em .2em .2em 0; white-space: nowrap; }
+  #s-home .status .dot { width: .68em; height: .68em; flex: none; }
+  #s-home .status .chev { width: .95em; height: .95em; color: #fff; flex: none; }
+  #s-home .hello { font-size: clamp(12.5px, 3.95vw, 17px); margin-top: .1em; color: #fff; }
+
+  /* opening (the page appears, or you come back to Home): the line grows from its middle, the letters slide in from the right,
+     then the tile pops in with a small bounce */
+  #s-home .hero.play .hdiv { animation: divGrow .7s cubic-bezier(.2, .8, .2, 1) calc(var(--d0, 0s) + .12s) both; }
+  #s-home .hero.play .nm-l { animation: nmSlide .55s cubic-bezier(.2, .9, .3, 1.12) calc(var(--d0, 0s) + .28s + var(--i) * 70ms) both; }
+  #s-home .hero.play .ct-pop { animation: ctPop .7s cubic-bezier(.3, 1.4, .5, 1) calc(var(--d0, 0s) + .5s) both; }
+  @keyframes divGrow { from { transform: scaleY(0); opacity: .3; } to { transform: scaleY(1); opacity: 1; } }
+  @keyframes nmSlide { from { opacity: 0; transform: translateX(.9em); } to { opacity: 1; transform: none; } }
+  @keyframes ctPop { 0% { opacity: 0; transform: scale(.3); } 55% { opacity: 1; transform: scale(1.12); } 78% { transform: scale(.96); } 100% { opacity: 1; transform: none; } }
+
+  /* the frame glows warm orange-gold (CONFIG.frameTint "gold"): the wings, the ring and the halo change colour, the gold crown stays */
+  .wfgold .wf-wl, .wfgold .wf-wr, .wfgold .wf-ring { filter: hue-rotate(26deg) saturate(1.3) brightness(1.04); }
+  .wfgold .wf-halo { background: radial-gradient(circle closest-side, rgba(255, 222, 150, 0) 64.5%, rgba(255, 234, 176, .5) 71%, rgba(255, 192, 84, .45) 75.5%,
+                     rgba(255, 140, 40, .42) 80%, rgba(255, 120, 30, .2) 88%, rgba(255, 110, 20, 0) 100%); }
+
+  /* sparks and sparkles go with "Floating particles"; everything stands still in the background and on very slow phones */
+  .nofx .csp { display: none; }
+  .app-bg #s-home .hero *, .app-bg #s-home .hero *::after { animation-play-state: paused !important; }
+  .ultra .ct-float, .ultra .ct-glow, .ultra .ct-breathe, .ultra .ct-spin, .ultra .crownw, .ultra .nm-shine, .ultra .nm-shine-in { animation: none !important; }
+  .ultra .nm-shine, .ultra .csp { display: none; }
+  @media (min-width: 600px) and (min-height: 600px) {             /* a computer: the app is a 412 px phone, so use that phone's sizes */
+    #s-home .hero { --hsz: calc(78px * (1 - .12 * var(--q))); --tile: 62px; --nmfs: 31px; }
+    #s-home .status, #s-home .hello { font-size: 16px; }
+  }
+
   /* readable text on top of the wings */
-  .hero .name { text-shadow: 0 2px 5px rgba(0, 0, 0, .55), 0 0 6px rgba(255, 180, 200, .95), 0 0 18px rgba(var(--accent-rgb), .8), 0 0 36px rgba(var(--accent2-rgb), .55); }
   .hero .status, .hero .hello { text-shadow: 0 1px 3px rgba(0, 0, 0, .9), 0 0 12px rgba(0, 0, 0, .6); }
 
   /* in the background (app minimised), on very slow phones, and for people who turned animations off */
@@ -1137,7 +1238,7 @@ const CONFIG = {
   .ultra .wf *, .ultra .wf *::after { animation: none !important; }
 
   @media (prefers-reduced-motion: reduce) {
-    #bg, .ring, .bars i, .wf *, .wf *::after, .pop, .pop *, .pop *::after, #player *, #player *::after { animation: none !important; }
+    #bg, .ring, .bars i, .wf *, .wf *::after, .pop, .pop *, .pop *::after, #player *, #player *::after, #s-home .hero * { animation: none !important; }
     body.entered #app { transition-duration: .01s; }
   }
 
@@ -1358,10 +1459,18 @@ const CONFIG = {
                      poster="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></video>
             </div>
           </div>
+          <!-- the Claude logo tile: it floats, its logo turns and breathes; tap it -->
+          <button class="ctile" id="ctile" data-act="claude" aria-label="Built with Claude">
+            <span class="ct-pop"><span class="ct-float">
+              <span class="ct-glow"></span>
+              <span class="ct-face"><span class="ct-fast"><span class="ct-breathe"><span class="ct-spin"><img id="ctImg" src="assets/claude-logo.png" alt="" decoding="async"></span></span></span></span>
+            </span></span>
+          </button>
+          <i class="hdiv" aria-hidden="true"></i>
           <div class="who">
             <button class="namerow" data-go="profile" aria-label="Open my profile">
-              <span class="name"><span id="nameText"></span><span class="caret"></span></span>
-              <svg class="ic crown"><use href="#i-crown"/></svg>
+              <span class="nm" id="nameText"></span>
+              <span class="crownw" aria-hidden="true"><svg class="ic crown"><use href="#i-crown"/></svg><i class="csp"></i><i class="csp"></i><i class="csp"></i></span>
             </button>
             <button class="status rip" data-act="status" aria-label="Change status">
               <span class="dot js-stdot"></span><span class="js-sttext js-stcolor">Online</span><svg class="ic chev"><use href="#i-chevron-right"/></svg>
@@ -2349,7 +2458,8 @@ const CONFIG = {
       var at = String(msg).indexOf(hl);
       sub = esc(String(msg).slice(0, at)) + '<em class="pop-hl" data-w="' + esc(hl) + '"' + (o.hlColor ? ' style="--hl:' + esc(o.hlColor) + '"' : "") + ">" + esc(hl) + "</em>" + esc(String(msg).slice(at + hl.length));
     }
-    var mid = o.crown && C.frame2 ? '<div class="pm-crown"><div class="pm-crown-in"></div></div>' : '<div class="pm-crown pm-ic">' + ic(o.crown ? "crown" : o.icon || "check") + "</div>";
+    var mid = o.img ? '<div class="pm-crown pm-img"><img src="' + esc(o.img) + '" alt=""></div>' :
+              o.crown && C.frame2 ? '<div class="pm-crown"><div class="pm-crown-in"></div></div>' : '<div class="pm-crown pm-ic">' + ic(o.crown ? "crown" : o.icon || "check") + "</div>";
     p.innerHTML = '<div class="pop-glow"></div><div class="pop-body"><div class="pop-shine"></div></div>' + POP_STREAKS +
       '<div class="pm"><div class="pm-glow"></div><div class="pm-disc"></div><div class="pm-ring"></div><div class="pm-orbit"><i></i><i></i></div>' + mid + "</div>" +
       '<div class="pop-txt"><b class="pop-title">' + th + '</b><span class="pop-sub">' + sub + "</span></div>" +
@@ -2532,7 +2642,7 @@ const CONFIG = {
   }
   function afterShow(id) {
     updateChrome();
-    if (id === "home") fitHome();
+    if (id === "home") { fitHome(); if (entered) heroPlay(false); }
     if (id === "settings") wf2Spots();
     if (id === "profile") { typeOnce($("pfBio"), store.get("pbio", C.profileBio), 30); countStat(".js-followers", C.stats.followers); countStat(".js-following", C.stats.following); countStat(".js-posts", C.stats.posts); }
     if (id === "stats") drawChart();
@@ -2843,6 +2953,7 @@ const CONFIG = {
       case "language": toast("Language", "English only for now. More soon!", { icon: "globe", hl: "English" }); break;
       case "logout": toast("Logged out", "Just a demo, nothing was changed.", { icon: "log-out" }); break;
       case "reset": try { Object.keys(localStorage).filter(function (k) { return k.indexOf("bio:") === 0; }).forEach(function (k) { localStorage.removeItem(k); }); } catch (x) {} toast("Saved data cleared", "Reloading…", { icon: "check" }); setTimeout(function () { location.reload(); }, 900); break;
+      case "claude": claudeTap(t); break;
       case "status":
         openMenu(t, ["online", "idle", "dnd"].map(function (k) { return { dot: STATUS[k].color, label: STATUS[k].label, check: k === status, run: function () { setStatus(k); } }; })); break;
       case "views":
@@ -2863,6 +2974,46 @@ const CONFIG = {
     var t = e.target;                                      // div / section with role="button": Enter and Space press it, like a real button
     if ((e.key === "Enter" || e.key === " ") && t && t.getAttribute && t.getAttribute("role") === "button" && t.tagName !== "BUTTON") { e.preventDefault(); t.click(); }
   });
+
+  /* =====================================================================
+     HOME NAME AREA: the name (its letters slide in, a shine sweeps across it), the Claude logo tile, the gold line
+     ===================================================================== */
+  var heroEl = qa("#s-home .hero")[0];
+  (function buildName() {                                   // one span per letter (+ the same letters again for the shine)
+    var letters = function (cls) {
+      return String(C.name).split("").map(function (ch, i) { return '<span class="' + cls + '" style="--i:' + i + '">' + (ch === " " ? "&nbsp;" : esc(ch)) + "</span>"; }).join("");
+    };
+    $("nameText").innerHTML = '<span class="nm-w">' + letters("nm-l") + '</span><span class="nm-shine" aria-hidden="true"><span class="nm-shine-in">' + letters("nm-s") + "</span></span>";
+  })();
+  if (!C.badge || !C.badge.image) $("ctile").style.display = "none";
+  else $("ctImg").src = C.badge.image;
+  function paintName() {                                    // one orange → gold gradient over the whole word: each letter shows its slice
+    var w = qa("#nameText .nm-w")[0]; if (!w || !w.offsetWidth) return;
+    w.style.setProperty("--nw", w.offsetWidth + "px");
+    qa(".nm-l", w).forEach(function (l) { l.style.setProperty("--lx", l.offsetLeft + "px"); });
+  }
+  function fitHero() {                                      // the name and the status always fit next to the frame (a little smaller if needed)
+    var who = heroEl && heroEl.querySelector(".who"); if (!who || !who.clientWidth) return;
+    var row = who.querySelector(".namerow"), st = who.querySelector(".status"), room = who.clientWidth;
+    row.style.fontSize = ""; st.style.fontSize = "";
+    var fs = parseFloat(getComputedStyle(row).fontSize), ss = parseFloat(getComputedStyle(st).fontSize);
+    while (row.scrollWidth > room + 1 && fs > 15) { fs -= .5; row.style.fontSize = fs + "px"; }
+    while (st.offsetWidth > room + 1 && ss > 10.5) { ss -= .5; st.style.fontSize = ss + "px"; }
+    paintName();
+  }
+  if (document.fonts && document.fonts.load) document.fonts.load('italic 800 30px "Hero Name"').then(fitHero, fitHero);
+  function heroPlay(first) {                                // the opening: the line grows, the letters slide in, the tile pops in
+    if (!heroEl || reduced) return;
+    heroEl.style.setProperty("--d0", first ? ".35s" : "0s");
+    heroEl.classList.remove("play"); void heroEl.offsetWidth; heroEl.classList.add("play");
+  }
+  function claudeTap(btn) {                                 // tap the tile: the logo spins fast, orange sparks fly, the popup says so
+    var f = btn.querySelector(".ct-fast");
+    if (!reduced && f.animate) f.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(720deg)" }], { duration: 1000, easing: "cubic-bezier(.2,.7,.25,1)" });
+    if (fx.on) burst(btn, 14, 34, 58, "orange");
+    var b = C.badge || {};
+    toast(b.title || "Built with Claude", b.text || "", { img: b.image, hl: "Claude", hlColor: "#F2A33A" });
+  }
 
   /* =====================================================================
      ENTER: the tap starts everything
@@ -2900,7 +3051,7 @@ const CONFIG = {
   function reveal() {
     document.body.classList.add("entered");
     impact();
-    typeLoop($("nameText"), [C.name], { type: 260, erase: 140, hold: 10000, gap: 600 });
+    heroPlay(true);
     var bio = [].concat(C.bio || []).filter(Boolean);
     if (bio.length) typeLoop($("helloText"), bio, { type: 130, erase: 65, hold: 2000, gap: 450 });
     startAvatar(); countUp(); fxStart(); updateChrome(); govStart(); wfBeat(true);
@@ -3071,7 +3222,8 @@ const CONFIG = {
     if (!app.clientHeight || !mini.offsetHeight) return;
     app.style.setProperty("--mini-space", Math.ceil(app.clientHeight - mini.offsetTop + 22) + "px");   // up to the mini player + a gap
   }
-  function fitHome() {
+  function fitHome() { fitHomeV(); fitHero(); }
+  function fitHomeV() {
     var h = el.home;
     if (!h || h.style.display === "none" || !h.clientHeight) return;
     var over = function (q) { h.style.setProperty("--q", q.toFixed(3)); return h.scrollHeight - h.clientHeight > 0; };
@@ -3281,11 +3433,12 @@ const CONFIG = {
       cv.animate([{ transform: "translateX(" + (d * w) + "px) rotate(" + (d * 14) + "deg)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 440, easing: "cubic-bezier(.2,.9,.3,1)" });
     };
   }
-  function burst(el) {                                     // a small burst of red sparkles round the star
+  function burst(el, n, r0, r1, cls) {                     // a small burst of sparkles round el (red round the star by default)
     if (reduced || !el.animate || !visible(el)) return;
-    for (var i = 0; i < 10; i++) {
-      var s = document.createElement("i"); s.className = "burst"; el.appendChild(s);
-      var a = i / 10 * Math.PI * 2 + Math.random() * .5, r = 16 + Math.random() * 12, x = Math.cos(a) * r, y = Math.sin(a) * r;
+    n = n || 10; r0 = r0 || 16; r1 = r1 || 28;
+    for (var i = 0; i < n; i++) {
+      var s = document.createElement("i"); s.className = "burst" + (cls ? " " + cls : ""); el.appendChild(s);
+      var a = i / n * Math.PI * 2 + Math.random() * .5, r = r0 + Math.random() * (r1 - r0), x = Math.cos(a) * r, y = Math.sin(a) * r;
       s.animate([{ transform: "translate(0,0) scale(.5)", opacity: 1 }, { transform: "translate(" + x.toFixed(1) + "px," + y.toFixed(1) + "px) scale(1.1)", opacity: 1, offset: .55 },
                  { transform: "translate(" + (x * 1.35).toFixed(1) + "px," + (y * 1.35).toFixed(1) + "px) scale(.3)", opacity: 0 }],
                 { duration: 520 + Math.random() * 200, easing: "cubic-bezier(.2,.8,.3,1)" }).onfinish = (function (n) { return function () { n.remove(); }; })(s);

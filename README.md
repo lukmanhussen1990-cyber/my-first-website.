@@ -31,7 +31,7 @@ android/                ← Android Studio project (Kotlin, full-screen WebView)
 
 | screen | what is there |
 | --- | --- |
-| **Home** | the song pill on top, your pictures and clips (one by one) inside an animated wings + crown frame, **Imran** (handwritten) + crown, status (tap it: Online / Idle / Do Not Disturb), "Hello, World!" typing, your social icons, the views counter (tap it for numbers), and the music card (progress, shuffle, previous, play/pause, next, like) |
+| **Home** | the song pill on top; one row with your pictures and clips (one by one) inside an animated wings + crown frame, the **Claude logo tile**, a thin gold line and your name block: **Imran** (heavy italic, orange → gold) + gold crown, status (tap it: Online / Idle / Do Not Disturb) and "Hello, World!" typing; your social icons, the views counter (tap it for numbers), and the music card (progress, shuffle, previous, play/pause, next, like) |
 | **Profile** | tap your name on Home (or the card in Settings). Bigger picture + pencil (edit your bio), @imran, Online badge, typed bio, Followers / Following / Posts, and About Me / Interests / Badges / Activity pop-ups. The ⋮ menu: edit, copy @imran, share |
 | **Music player** ("Now Playing") | tap the song pill, the music card or the **Music** tab. Dark red smoke, a spinning round cover inside a progress ring (the white dot shows how far the song is) and a glowing red ring, a small glass side panel (volume, •••, equalizer), title + red ★, progress, shuffle / previous / play / next / repeat, a waveform you can tap to jump, and a volume slider. **Swipe the cover left / right** to change the song, the ⌄ arrow closes it (see below) |
 | **Social** | one big row per link (Discord, GitHub, Telegram, Roblox, YouTube, TikTok) and the "Better Things Ahead." card |
@@ -113,6 +113,21 @@ the ring and the crown. Your picture sits exactly inside its empty circle. The w
 every 4 s, the ring's red-gold glow pulses, a thin line of light runs round the ring and gold sparkles twinkle around it.
 Tap the card: it grows a little with a flash of light, then your profile opens.
 The animations only run while Settings is on screen, stop in the background, and the sparkles go off with "Floating particles".
+
+## The name area on Home
+
+One row: the wings + crown frame · the Claude logo tile (over the edge of the right wing) · a thin gold line · your name block.
+Everything is sized from the screen width, and the name / status get a little smaller by themselves if they would not fit.
+
+* **Name**: Montserrat ExtraBold Italic (`assets/montserrat-800-italic.woff2`, inside the app, so it works offline), an orange → gold
+  gradient with a soft shadow. When Home opens, the letters slide in from the right one by one and the gold line grows from its
+  middle; a light sweeps across the name every 4 s. The gold crown tilts gently and sparkles now and then.
+* **Logo tile** (`assets/claude-logo.png`): cream with a glowing orange edge. It pops in with a bounce, floats, its glow pulses and
+  the logo turns once every 12 s while it softly breathes. **Tap it**: the logo spins fast, orange sparks fly out and the popup
+  says "Built with Claude". Change the picture or the popup text in `badge` in the CONFIG (`image: ""` hides the tile).
+* **Frame colour**: `frameTint: "gold"` in the CONFIG makes the wings and the ring glow warm orange-gold (to match the logo and
+  the name); `""` keeps the red frame.
+* The sparks and sparkles go off with "Floating particles" in Settings; everything stands still while the app is in the background.
 
 ## The Now Playing player
 
