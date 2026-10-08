@@ -1,0 +1,13 @@
+{
+  "name": "leaf-animation",
+  "private": true,
+  "type": "module",
+  "description": "Hand-drawn leaf branch animation rendered to MP4 with headless Chromium + ffmpeg",
+  "scripts": {
+    "render": "node render.mjs",
+    "preview": "node render.mjs --preview preview 1 2 3 4 6"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}

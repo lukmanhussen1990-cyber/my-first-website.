@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leaf Branch Animation</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #ffffff; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  svg { width: 100vw; height: 100vh; display: block; background: #ffffff; }
+</style>
+</head>
+<body>
+<svg id="stage" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="9" flood-color="#000" flood-opacity="0.16"/>
+    </filter>
+    <filter id="glow" x="-200%" y="-200%" width="500%" height="500%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+    <filter id="softglow" x="-200%" y="-200%" width="500%" height="500%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+    <radialGradient id="penGlow">
+      <stop offset="0" stop-color="#ff3b2f" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#ff3b2f" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#ff3b2f" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#ffffff"/>
+
+  <!-- whole drawing lives in a 1500x1060 coordinate space, centred on the 16:9 stage -->
+  <g id="cam">
+  <g id="world" transform="translate(210 10)">
+    <g id="particles"></g>
+    <g id="sway">
+      <g id="berryGlow" filter="url(#glow)"></g>
+      <g id="branch" filter="url(#shadow)">
+        <path id="stem" fill="none" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"
+              d="M572 995 C575 900 600 830 660 760 C720 690 790 610 835 540 C880 470 905 380 915 290 C921 240 926 200 927 160"/>
+        <g id="tendrils"></g>
+        <g id="leaves"></g>
+        <g id="berries"></g>
+      </g>
+      <g id="ripples"></g>
+      <circle id="pen" r="34" fill="url(#penGlow)" opacity="0"/>
+    </g>
+  </g>
+  </g>
+  <rect id="fade" width="1920" height="1080" fill="#ffffff" opacity="0"/>
+</svg>
+
+<script>
+(() => {
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = id => document.getElementById(id);
+  const el = (tag, attrs = {}, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+
+  // ---------- timing ----------
+  const DURATION = 9.0;          // seconds
+  const DRAW_END = 3.0;          // stem finishes drawing
+  const FADE_START = 8.3;        // fade to white for a clean loop
+  const RED = '#d11a1a';
+  const INK = '#000';
+
+  // ---------- easing ----------
+  const clamp01 = x => Math.max(0, Math.min(1, x));
+  const easeInOutCubic = u => u < 0.5 ? 4*u*u*u : 1 - Math.pow(-2*u + 2, 3) / 2;
+  const easeInOutQuad = u => u < 0.5 ? 2*u*u : 1 - Math.pow(-2*u + 2, 2) / 2;
+  const easeOutCubic = u => 1 - Math.pow(1 - u, 3);
+  const backOut = (u, s = 1.4) => { u = u - 1; return 1 + (s + 1)*u*u*u + s*u*u; };
+  const elasticOut = u => u === 0 ? 0 : u === 1 ? 1 : Math.pow(2, -9*u) * Math.sin((u*10 - 0.75) * (2*Math.PI/3)) + 1;
+  const seg = (t, t0, d) => clamp01((t - t0) / d);       // 0..1 progress of a segment
+
+  // ---------- stem ----------
+  const stem = $('stem');
+  const STEM_LEN = stem.getTotalLength();
+  stem.setAttribute('stroke-dasharray', STEM_LEN);
+  stem.setAttribute('stroke-dashoffset', STEM_LEN);
+  const BASE = stem.getPointAtLength(0);                 // sway pivot
+
+  // length fraction along the stem closest to a point (for birth timing)
+  const fracAt = (x, y) => {
+    let best = 0, bestD = Infinity;
+    for (let i = 0; i <= 400; i++) {
+      const p = stem.getPointAtLength(STEM_LEN * i / 400);
+      const d = (p.x - x)**2 + (p.y - y)**2;
+      if (d < bestD) { bestD = d; best = i / 400; }
+    }
+    return best;
+  };
+  const drawProgress = t => easeInOutQuad(seg(t, 0, DRAW_END));
+  // time at which the pen reaches a given fraction of the stem
+  const timeAtFrac = f => {
+    let lo = 0, hi = DRAW_END;
+    for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; (drawProgress(m) < f ? lo = m : hi = m); }
+    return lo;
+  };
+
+  // ---------- leaves ----------
+  // base point, direction angle (deg, SVG coords), length, width
+  const LEAF_DEFS = [
+    { x: 905, y: 290, a: -121, L: 128, W: 44 },   // left, upper
+    { x: 927, y: 288, a: -44,  L: 132, W: 44 },   // right, upper
+    { x: 892, y: 408, a: -133, L: 134, W: 46 },   // left, mid
+    { x: 885, y: 455, a: -30,  L: 146, W: 48 },   // right, mid
+    { x: 836, y: 565, a: -128, L: 150, W: 48 },   // left, lower
+    { x: 800, y: 617, a: -14,  L: 152, W: 48 },   // right, lower
+    { x: 742, y: 700, a: -117, L: 158, W: 50 },   // left, bottom
+  ];
+  const BUD = { x: 927, y: 160, a: -92, L: 110, W: 42, bud: true };
+
+  const topEdge = (L, W) => `M0 0 C${L*0.30} ${-W} ${L*0.74} ${-W*0.78} ${L} 0`;
+  const botEdge = (L, W) => `M0 0 C${L*0.30} ${W} ${L*0.74} ${W*0.78} ${L} 0`;
+  const leafFill = (L, W) => `${topEdge(L, W)} C${L*0.74} ${W*0.78} ${L*0.30} ${W} 0 0 Z`;
+  const veinPath = (L, V) =>
+    `M${L*0.18} 0 C${L*0.42} ${-V} ${L*0.66} ${-V*1.05} ${L*0.82} 0 C${L*0.66} ${V*1.05} ${L*0.42} ${V} ${L*0.18} 0 Z`;
+
+  const leaves = [];
+  [...LEAF_DEFS, BUD].forEach((d, i) => {
+    const g = el('g', {}, $('leaves'));
+    const inner = el('g', {}, g);
+    const fill = el('path', { d: leafFill(d.L, d.W), fill: '#fff', stroke: 'none' }, inner);
+    const rib = el('path', { d: `M0 0 L${d.L*0.55} 0`, fill: 'none', stroke: INK, 'stroke-width': 3.2, 'stroke-linecap': 'round' }, inner);
+    const vein = el('path', { d: veinPath(d.L, d.bud ? 7 : 9.5), fill: RED, stroke: 'none' }, inner);
+    const edges = [topEdge(d.L, d.W), botEdge(d.L, d.W)].map(dd =>
+      el('path', { d: dd, fill: 'none', stroke: INK, 'stroke-width': 9, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, inner));
+    const len = edges[0].getTotalLength();
+    edges.forEach(e => e.setAttribute('stroke-dasharray', len));
+    const birth = timeAtFrac(fracAt(d.x, d.y)) + (d.bud ? 0.25 : 0.05);
+    leaves.push({ ...d, g, inner, fill, rib, vein, edges, len, birth, idx: i });
+  });
+
+  // ---------- tendrils (thin curls) ----------
+  const TENDRIL_DEFS = [
+    { d: 'M745 700 C780 722 815 718 834 702', ax: 745, ay: 700 },                         // right, berry at the end
+    { d: 'M657 800 C700 802 740 794 785 792', ax: 657, ay: 800, bud: { x: 785, y: 792, a: -12 } },   // right, red teardrop tip
+    { d: 'M622 848 C690 835 745 870 730 910 C718 945 668 950 660 920 C655 900 675 892 683 905', ax: 622, ay: 848 }, // spiral
+    { d: 'M650 792 C632 786 628 770 640 758', ax: 650, ay: 792 },                         // small left hook
+  ];
+  const tendrils = TENDRIL_DEFS.map(d => {
+    const g = el('g', {}, $('tendrils'));
+    const p = el('path', { d: d.d, fill: 'none', stroke: INK, 'stroke-width': 5.5, 'stroke-linecap': 'round' }, g);
+    const len = p.getTotalLength();
+    p.setAttribute('stroke-dasharray', len);
+    let tip = null;
+    if (d.bud) {
+      tip = el('g', {}, g);
+      el('path', { d: 'M0 0 C8 -9 24 -9 34 0 C24 9 8 9 0 0 Z', fill: RED, stroke: INK, 'stroke-width': 5, 'stroke-linejoin': 'round' }, tip);
+      el('circle', { r: 4.5, fill: INK, cx: 2, cy: 0 }, tip);
+    }
+    return { ...d, g, p, len, tip, birth: timeAtFrac(fracAt(d.ax, d.ay)) + 0.05 };
+  });
+
+  // ---------- berries ----------
+  const BERRY_DEFS = [
+    { x: 605, y: 1000 }, { x: 780, y: 895 }, { x: 630, y: 735 }, { x: 837, y: 700 },
+    { x: 720, y: 565 }, { x: 880, y: 510 }, { x: 795, y: 445 }, { x: 960, y: 325 },
+  ];
+  const berries = BERRY_DEFS.map((d, i) => {
+    const g = el('g', {}, $('berries'));
+    el('circle', { r: 10.5, fill: RED, stroke: INK, 'stroke-width': 5 }, g);
+    el('circle', { r: 3, cx: -3, cy: -3, fill: '#ff8a7a', opacity: 0.9 }, g);
+    const glow = el('circle', { cx: d.x, cy: d.y, r: 18, fill: '#ff2d1f', opacity: 0 }, $('berryGlow'));
+    const ripple = el('circle', { cx: d.x, cy: d.y, r: 12, fill: 'none', stroke: RED, 'stroke-width': 3, opacity: 0 }, $('ripples'));
+    const birth = timeAtFrac(fracAt(d.x, d.y)) + 0.12 + (i % 2) * 0.08;
+    return { ...d, g, glow, ripple, birth, idx: i };
+  });
+
+  // ---------- floating particles ----------
+  const rnd = (seed => () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; })(1234567);
+  // the branch runs roughly from (572,995) to (927,160); pollen is born close to that line
+  const stemXAtY = y => 572 + (995 - y) * 0.425;
+  const particles = Array.from({ length: 26 }, () => {
+    const c = el('circle', { r: 1.6 + rnd() * 2.0, fill: RED, opacity: 0 }, $('particles'));
+    const y0 = 260 + rnd() * 760;
+    return { c, x0: stemXAtY(y0) + (rnd() - 0.5) * 220, y0, speed: 28 + rnd() * 34, phase: rnd() * Math.PI * 2,
+             wob: 10 + rnd() * 16, start: 2.0 + rnd() * 4.5, life: 3.5 + rnd() * 2.5 };
+  });
+
+  const pen = $('pen');
+  const fade = $('fade');
+  const cam = $('cam');
+  const swayG = $('sway');
+
+  // ---------- master render ----------
+  function render(t) {
+    // stem
+    const p = drawProgress(t);
+    stem.setAttribute('stroke-dashoffset', STEM_LEN * (1 - p));
+
+    // pen glow leads the ink
+    if (t < DRAW_END + 0.35) {
+      const pt = stem.getPointAtLength(STEM_LEN * p);
+      pen.setAttribute('cx', pt.x); pen.setAttribute('cy', pt.y);
+      const pulse = 0.85 + 0.15 * Math.sin(t * 28);
+      const fadeOut = 1 - seg(t, DRAW_END - 0.1, 0.45);
+      pen.setAttribute('opacity', (seg(t, 0, 0.3) * fadeOut * pulse).toFixed(3));
+      pen.setAttribute('r', 26 + 10 * Math.sin(t * 9));
+    } else pen.setAttribute('opacity', 0);
+
+    // global sway (wind) about the base, ramps in once the stem is up
+    const swayAmp = 2.4 * easeOutCubic(seg(t, 1.6, 2.6));
+    const sway = swayAmp * Math.sin(t * 1.45) + 0.5 * swayAmp * Math.sin(t * 3.1 + 1.2);
+    swayG.setAttribute('transform', `rotate(${sway.toFixed(3)} ${BASE.x} ${BASE.y})`);
+
+    // leaves
+    for (const lf of leaves) {
+      const u = seg(t, lf.birth, 0.95);
+      if (u <= 0) { lf.g.setAttribute('visibility', 'hidden'); continue; }
+      lf.g.setAttribute('visibility', 'visible');
+      const s = Math.max(0.0001, backOut(easeOutCubic(u), 1.35));
+      const flutterAmp = (lf.bud ? 2.0 : 4.0) * seg(t, lf.birth + 0.6, 1.2);
+      const flutter = flutterAmp * Math.sin(t * (2.1 + lf.idx * 0.23) + lf.idx * 1.7);
+      lf.g.setAttribute('transform', `translate(${lf.x} ${lf.y}) rotate(${(lf.a + flutter).toFixed(3)}) scale(${s.toFixed(4)})`);
+      const drawn = easeOutCubic(seg(t, lf.birth, 0.8));
+      lf.edges.forEach(e => e.setAttribute('stroke-dashoffset', lf.len * (1 - drawn)));
+      lf.fill.setAttribute('opacity', drawn.toFixed(3));
+      const v = easeOutCubic(seg(t, lf.birth + 0.35, 0.5));
+      lf.rib.setAttribute('opacity', easeOutCubic(seg(t, lf.birth + 0.2, 0.4)).toFixed(3));
+      if (lf.bud) {
+        // the bud's flame flickers once it is alive
+        const alive = seg(t, lf.birth + 0.6, 0.6);
+        const flick = 1 + 0.08 * alive * Math.sin(t * 17) + 0.05 * alive * Math.sin(t * 29 + 2);
+        lf.vein.setAttribute('transform', `scale(${(v * flick).toFixed(4)} ${v.toFixed(4)})`);
+        lf.vein.setAttribute('opacity', (0.75 + 0.25 * v).toFixed(3));
+      } else {
+        lf.vein.setAttribute('transform', `translate(${lf.L*0.18} 0) scale(${v.toFixed(4)}) translate(${-lf.L*0.18} 0)`);
+        lf.vein.setAttribute('opacity', v.toFixed(3));
+      }
+    }
+
+    // tendrils
+    for (const td of tendrils) {
+      const u = easeOutCubic(seg(t, td.birth, 0.9));
+      td.p.setAttribute('stroke-dashoffset', td.len * (1 - u));
+      if (td.tip) {
+        const s = Math.max(0.0001, backOut(seg(t, td.birth + 0.55, 0.6), 1.6));
+        td.tip.setAttribute('transform', `translate(${td.bud.x} ${td.bud.y}) rotate(${td.bud.a}) scale(${s.toFixed(4)})`);
+      }
+    }
+
+    // berries: pop, ripple, breathing glow
+    for (const b of berries) {
+      const u = seg(t, b.birth, 0.6);
+      if (u <= 0) { b.g.setAttribute('visibility', 'hidden'); b.glow.setAttribute('opacity', 0); b.ripple.setAttribute('opacity', 0); continue; }
+      b.g.setAttribute('visibility', 'visible');
+      const s = Math.max(0.0001, elasticOut(u));
+      b.g.setAttribute('transform', `translate(${b.x} ${b.y}) scale(${s.toFixed(4)})`);
+      const r = seg(t, b.birth, 0.75);
+      b.ripple.setAttribute('r', 12 + 46 * easeOutCubic(r));
+      b.ripple.setAttribute('opacity', ((1 - r) * 0.7).toFixed(3));
+      b.ripple.setAttribute('stroke-width', 3.5 * (1 - r) + 0.5);
+      const breathe = 0.22 + 0.16 * Math.sin(t * 2.6 + b.idx * 0.9);
+      b.glow.setAttribute('opacity', (breathe * easeOutCubic(seg(t, b.birth + 0.2, 0.8))).toFixed(3));
+      b.glow.setAttribute('r', 16 + 4 * Math.sin(t * 2.6 + b.idx * 0.9));
+    }
+
+    // particles drift upward through the drawing
+    for (const q of particles) {
+      const age = t - q.start;
+      if (age <= 0 || age > q.life) { q.c.setAttribute('opacity', 0); continue; }
+      const k = age / q.life;
+      const op = 0.38 * Math.sin(Math.PI * k);
+      q.c.setAttribute('cx', (q.x0 + Math.sin(age * 1.3 + q.phase) * q.wob).toFixed(1));
+      q.c.setAttribute('cy', (q.y0 - age * q.speed).toFixed(1));
+      q.c.setAttribute('opacity', op.toFixed(3));
+    }
+
+    // slow camera push-in (centred on the branch) for a touch of depth
+    const zoom = 0.985 + 0.045 * easeInOutCubic(seg(t, 0, DURATION));
+    cam.setAttribute('transform', `translate(960 560) scale(${zoom.toFixed(4)}) translate(-960 -560)`);
+
+    // fade to white so the clip loops cleanly
+    fade.setAttribute('opacity', easeInOutCubic(seg(t, FADE_START, DURATION - FADE_START)).toFixed(3));
+  }
+
+  window.render = render;
+  window.DURATION = DURATION;
+  window.READY = true;
+
+  // autoplay when opened in a browser (the frame renderer passes ?render=1)
+  if (!/[?&]render=1/.test(location.search)) {
+    let start = null;
+    const loop = ts => {
+      if (start === null) start = ts;
+      render(((ts - start) / 1000) % DURATION);
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  } else {
+    render(0);
+  }
+})();
+</script>
+</body>
+</html>
