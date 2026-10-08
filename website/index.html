@@ -2632,7 +2632,7 @@ const CONFIG = {
     store.set("likes", JSON.stringify(likes));
     var on = !!likes[s.file];
     qa(".js-like").forEach(function (e) { e.classList.toggle("liked", on); e.setAttribute("aria-pressed", on ? "true" : "false"); e.classList.remove("pop"); void e.offsetWidth; e.classList.add("pop"); });
-    if (on) qa(".fp-star").forEach(burst);
+    if (on) qa(".fp-star").forEach(function (e) { burst(e); });   // (forEach would pass the index and the list as burst's count and radius)
     toast(on ? "Added to favorites" : "Removed from favorites", (s.title || s.file), { icon: "heart", hl: s.title || s.file });
   }
   function setToggle(sel, on) { qa(sel).forEach(function (e) { e.classList.toggle("on", on); e.setAttribute("aria-pressed", on ? "true" : "false"); }); }
