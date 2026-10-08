@@ -47,13 +47,12 @@ def _moon_tile(phase_idx, seed=11):
     inside = r <= R
     nz = np.sqrt(np.clip(1.0 - nx ** 2 - ny ** 2, 0, 1))
     # surface albedo: soft maria + a few craters
-    yy, xx = np.mgrid[0:N, 0:N]
     maria = periodic_noise(N, N, beta=2.8, seed=seed)
     fine = periodic_noise(N, N, beta=1.6, seed=seed + 1)
-    albedo = 0.86 + 0.22 * (maria - 0.5) + 0.07 * (fine - 0.5)
+    albedo = 0.84 + 0.40 * (maria - 0.5) + 0.12 * (fine - 0.5)
     for cx, cy, cr in [(-1.9, -1.5, 1.2), (2.3, 1.2, 1.0), (-0.8, 3.1, 0.8), (1.5, -3.1, 0.7)]:
         d = np.hypot(dx - cx, dy - cy)
-        albedo -= 0.12 * np.exp(-(d / cr) ** 2) - 0.05 * np.exp(-((d - cr) / 0.6) ** 2)
+        albedo -= 0.20 * np.exp(-(d / cr) ** 2) - 0.07 * np.exp(-((d - cr) / 0.6) ** 2)
     limb = 0.70 + 0.30 * np.sqrt(nz)
 
     phi = {0: 0.0, 1: np.pi / 4, 2: np.pi / 2, 3: 3 * np.pi / 4, 4: np.pi,

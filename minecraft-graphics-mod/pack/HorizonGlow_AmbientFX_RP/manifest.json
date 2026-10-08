@@ -1,0 +1,36 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "§bHorizon Glow§r Ambient FX §7(optional)",
+    "description": "§7Fireflies at night, sunlit dust by day, plankton underwater. Made for 1.21.0.x only - replaces the player client entity file.",
+    "uuid": "5c0e7f31-2d8a-4b96-a1c4-8e3f60d9b712",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "description": "Horizon Glow ambient particles",
+      "type": "resources",
+      "uuid": "b7a4d2e9-13c5-4f08-9a6b-4d1e82c7f035",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "metadata": {
+    "authors": [
+      "Horizon Glow (generated with Claude Code)"
+    ],
+    "license": "Personal use. player.entity.json is a modified copy of Mojang's file (c) Mojang AB."
+  }
+}

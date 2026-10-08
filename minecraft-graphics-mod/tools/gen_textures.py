@@ -20,17 +20,24 @@ from PIL import Image
 from common import (Grade, rgb_to_oklab, smoothstep, save_image, tga_orientation_of, map_toward, limit_delta)
 import gen_atmosphere
 
-BLOCK_GRADE = Grade(chroma=1.14, contrast=0.09, lift=0.015, warm=1.4)
-ITEM_GRADE = Grade(chroma=1.10, contrast=0.07, lift=0.012, warm=0.6)
+BLOCK_GRADE = Grade(chroma=1.12, contrast=0.09, lift=0.015, warm=1.0)
+ITEM_GRADE = Grade(chroma=1.16, contrast=0.10, lift=0.012, warm=0.8)
 LEAF_GRADE = Grade(chroma=1.10, contrast=0.20, lift=0.0, warm=0.0)
 LAVA_GRADE = Grade(chroma=1.18, contrast=0.10, lightness=0.02, warm=0.0)
 
 SKIP = re.compile(
     r"(_mipmap$|_placeholder$|^missing_tile$|^barrier$|^structure_|^build_(allow|deny)$|^border$|^camera_"
-    r"|^water_|^cauldron_water|^bubble_column_|^end_portal|^end_gateway|^destroy_stage|^itemframe_background$)")
+    r"|^water_|^cauldron_water|^bubble_column_|^end_portal|^end_gateway|^destroy_stage|^itemframe_background$"
+    # command blocks: terrain_texture.json points at the *_mipmap files, so graded twins would be dead/inconsistent
+    r"|^(chain_|repeating_)?command_block"
+    # pure-grey masks that the engine tints (power level, growth stage, dye, potion/egg colour): leave exactly neutral
+    r"|^redstone_dust_|^(pumpkin|melon)_stem_|^spawn_egg|^potion_overlay$|^tipped_arrow_head$|^fireworks_charge$"
+    r"|^leather_(helmet|chestplate|leggings|boots|horse_armor)$|^wolf_armor_dyed$)")
 CARRIED = re.compile(r"(_carried$|^carried_)")
 LEAVES = re.compile(r"(^leaves_|_leaves(_opaque|_flowers|_flowers_opaque)?$|^azalea_leaves)")
-ORES = re.compile(r"(_ore$|^ancient_debris|^gilded_blackstone$|^budding_amethyst$|^amethyst_)")
+ORES = re.compile(r"(_ore$|^ancient_debris|^gilded_blackstone$)")
+# textures whose ALPHA is the biome-tint mask (alpha 0 = still opaque dirt, not "transparent")
+MASK_ALPHA = re.compile(r"^grass_side(_snowed)?$")
 EMISSIVE = re.compile(
     r"(froglight|^glowstone$|^sea_lantern$|^shroomlight$|^redstone_lamp_on$|^magma$|^pumpkin_face_on$|torch|lantern"
     r"|campfire.*_lit$|^fire_|^soul_fire|^beacon$|^end_rod$|_lit($|_)|^crying_obsidian$|^glowing_obsidian$"
@@ -65,15 +72,20 @@ def _grade_special(arr, base_grade, name, relief=False, special=True):
     a = arr.astype(np.float64) / 255.0
     rgb = a[..., :3]
     alpha = arr[..., 3]
+    mask_alpha = bool(MASK_ALPHA.search(name))
     lab_vanilla = rgb_to_oklab(rgb)
     g = base_grade
-    if special and LEAVES.search(name):
+    if special and LEAVES.search(name) and not CARRIED.search(name):     # carried leaves keep the colormap grade
         g = LEAF_GRADE
     out_rgb = g.apply_rgb(rgb)
 
     if special and ORES.search(name):
+        # glint = flecks that are more colourful than the stone/netherrack around them (relative to the
+        # texture's own median chroma, otherwise a red netherrack background would "glint" as a whole)
         c0 = np.hypot(lab_vanilla[..., 1], lab_vanilla[..., 2])
-        mask = smoothstep(0.035, 0.085, c0)
+        vis_ = (alpha > 0) | mask_alpha
+        ref = np.median(c0[vis_]) if vis_.any() else 0.0
+        mask = smoothstep(0.035, 0.085, c0 - ref)
         lab0 = rgb_to_oklab(out_rgb)
         lab = lab0.copy()
         lab[..., 0] += 0.055 * mask
@@ -88,7 +100,7 @@ def _grade_special(arr, base_grade, name, relief=False, special=True):
         lab[..., 2] *= 1.10
         out_rgb = map_toward(lab0, lab)
 
-    if relief and arr.shape[0] == arr.shape[1] and (alpha == 255).all():
+    if relief and arr.shape[0] == arr.shape[1] and ((alpha == 255).all() or mask_alpha):
         out_rgb = relief_shade(out_rgb, arr)
 
     # final safety net: no texel may drift further than MAX_DELTA from its vanilla colour
@@ -97,7 +109,7 @@ def _grade_special(arr, base_grade, name, relief=False, special=True):
 
     out = arr.copy()
     res = np.clip(np.round(out_rgb * 255), 0, 255).astype(np.uint8)
-    visible = alpha > 0                                  # never touch fully transparent texels
+    visible = (alpha > 0) | mask_alpha                   # never touch fully transparent texels (but alpha-as-tint-mask is not transparency)
     out[..., :3] = np.where(visible[..., None], res, arr[..., :3])
     return out
 

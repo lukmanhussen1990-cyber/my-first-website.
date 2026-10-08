@@ -283,7 +283,14 @@ def main():
     base_ids: set = set()
     seen_ids: dict = {}
     for label, root in [("base", pack)] + [(sp["folder_name"], pack / "subpacks" / sp["folder_name"]) for sp in m["subpacks"]]:
-        nf, nb, ids = check_fogs(root, label, vanilla, extra_ids=base_ids if label != "base" else frozenset())
+        if not root.is_dir():
+            err(f"{label}: folder {root} is missing")
+            continue
+        try:
+            nf, nb, ids = check_fogs(root, label, vanilla, extra_ids=base_ids if label != "base" else frozenset())
+        except Exception as e:  # noqa: BLE001 - a broken file must be reported, not crash the whole validator
+            err(f"{label}: could not check fogs/biomes_client: {type(e).__name__}: {e}")
+            continue
         if label == "base":
             base_ids = set(ids)
         for i in ids:

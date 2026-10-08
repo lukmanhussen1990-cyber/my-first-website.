@@ -167,8 +167,9 @@ class Grade:
             # split-tone only on (near-)neutral texels: it should give grey stone / gravel a little
             # life, not push the hue of textures that already have a colour of their own
             neutral = (1.0 - smoothstep(0.03, 0.10, c)) * not_black
-            hi = np.clip((L - 0.55) / 0.45, 0, 1)
-            sh = np.clip((0.45 - L) / 0.45, 0, 1)
+            # ...and fade it out at the extremes: pure whites must not turn cream, blacks must not turn navy
+            hi = np.clip((L - 0.55) / 0.45, 0, 1) * (1.0 - smoothstep(0.78, 0.94, L))
+            sh = np.clip((0.45 - L) / 0.45, 0, 1) * smoothstep(0.04, 0.35, L)
             out[..., 1] += neutral * self.warm * 0.010 * (hi - 0.6 * sh)
             out[..., 2] += neutral * self.warm * 0.022 * (hi - sh)
         return map_toward(lab, out)

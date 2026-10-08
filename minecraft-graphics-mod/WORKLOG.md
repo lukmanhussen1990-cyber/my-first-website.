@@ -16,6 +16,10 @@
 - 2026-10-08 02:54:52Z | elapsed 00:42:50 | 02:17:10 left — KEY FIX: fogs now use own hg: identifiers + hg_*.json names (Bedrock Wiki: vanilla fogs cannot be overwritten); partial terrain_texture.json + UI merge confirmed by wiki 'Overwriting assets'
 - 2026-10-08 03:01:11Z | elapsed 00:49:09 | 02:10:51 left — Docs (README, asset preview script, how-to-verify) done; ambient FX + consistency pass built in sandbox; waiting for reviewers
 - 2026-10-08 03:03:36Z | elapsed 00:51:34 | 02:08:26 left — Fixed colour-washing: gamut mapping now walks back along the edit (never desaturates), OKLab delta cap 0.085, warm split-tone only on neutral texels (found via numeric outlier scan)
+- 2026-10-08 03:09:53Z | elapsed 00:57:51 | 02:02:09 left — MS docs confirm: fog identifiers need a non-minecraft namespace and must be unique (our hg: ids OK); added restart-after-preset note; version bumped to 1.1.0; 3 reviewers running
+- 2026-10-08 03:13:06Z | elapsed 01:01:04 | 01:58:56 left — Visual-QA reviewer done: fixed neutral-white/black split-tone, tint-mask TGAs (grass_side), ore glint misfires, flow-water streak direction, still-water glint lattice, skip lists, moon contrast, item grade; verified in sandbox
+- 2026-10-08 03:19:47Z | elapsed 01:07:45 | 01:52:15 left — Worklog tidied (checkpoints grouped above the decisions section); format + ambient reviewers still running
+- 2026-10-08 03:23:07Z | elapsed 01:11:05 | 01:48:55 left — Validator mutation-tested (6/6 injected defects caught) + hardened; entity pass leaves pure-grey tint masks bit-exact; 0 byte-identical vanilla files; waiting on format+ambient+README reviewers
 
 ## Key decisions (why the pack looks the way it does)
 

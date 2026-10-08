@@ -1,0 +1,70 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "hg:ambient_firefly",
+      "basic_render_parameters": {
+        "material": "particles_blend",
+        "texture": "textures/particle/hg_glow"
+      }
+    },
+    "components": {
+      "minecraft:emitter_rate_instant": {
+        "num_particles": "variable.hg_n"
+      },
+      "minecraft:emitter_lifetime_once": {
+        "active_time": 0.1
+      },
+      "minecraft:emitter_shape_box": {
+        "offset": [
+          0,
+          1.2,
+          0
+        ],
+        "half_dimensions": [
+          10,
+          3.0,
+          10
+        ]
+      },
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": "7 + variable.particle_random_1 * 5"
+      },
+      "minecraft:particle_motion_dynamic": {
+        "linear_acceleration": [
+          "0.45 * Math.sin(variable.particle_age * 45 + variable.particle_random_2 * 360)",
+          "0.3 * Math.sin(variable.particle_age * 60 + variable.particle_random_3 * 360)",
+          "0.45 * Math.sin(variable.particle_age * 38 + variable.particle_random_4 * 360)"
+        ],
+        "linear_drag_coefficient": 2.0
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "0.060 + variable.particle_random_2 * 0.040",
+          "0.060 + variable.particle_random_2 * 0.040"
+        ],
+        "facing_camera_mode": "lookat_xyz",
+        "uv": {
+          "texture_width": 16,
+          "texture_height": 16,
+          "uv": [
+            0,
+            0
+          ],
+          "uv_size": [
+            16,
+            16
+          ]
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": [
+          0.8,
+          1.0,
+          0.3,
+          "Math.sin(variable.particle_age / variable.particle_lifetime * 180) * (0.25 + 0.75 * (0.5 + 0.5 * Math.sin(variable.particle_age * (140 + 220 * variable.particle_random_3) + variable.particle_random_4 * 360)))"
+        ]
+      }
+    }
+  }
+}

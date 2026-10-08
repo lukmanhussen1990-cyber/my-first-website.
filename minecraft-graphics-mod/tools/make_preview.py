@@ -30,7 +30,7 @@ def main():
     pk = PACK_DIR
     ultra = pk / "subpacks" / "ultra"
     W = 1180
-    sheet = Image.new("RGB", (W, 1010), (24, 28, 40))
+    sheet = Image.new("RGB", (W, 1100), (24, 28, 40))
     d = ImageDraw.Draw(sheet)
     white = (235, 240, 250)
 
@@ -118,7 +118,7 @@ def main():
                 sheet.paste(bgi.convert("RGB").resize((44, 44), Image.NEAREST), (x, y2 + 16))
                 x += 48
                 break
-    sheet = sheet.crop((0, 0, W, y2 + 16 + 52))
+    sheet = sheet.crop((0, 0, W, y2 + 16 + 54))
     OUT.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(OUT, optimize=True)
     print("wrote", OUT, sheet.size)

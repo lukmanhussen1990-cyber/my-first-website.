@@ -4,7 +4,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
 
 from common import smoothstep, periodic_noise, write_json, save_image
 

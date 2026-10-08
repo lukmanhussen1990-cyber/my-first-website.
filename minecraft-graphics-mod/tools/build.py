@@ -17,7 +17,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import common
 from common import PACK_DIR, ROOT, PRESETS, write_json, env_vanilla
 import gen_atmosphere, gen_sky, gen_water, gen_ui, gen_ambient, gen_consistency
 
@@ -29,10 +28,10 @@ except ImportError:                       # textures pass is optional while deve
 # Stable identifiers => re-importing a newer build replaces the old one.
 RP_UUID = "9d1b6c4e-5a3f-4e0b-8c27-71f0a4b2d3e5"
 RP_MODULE_UUID = "2f8e0a7b-6c14-49d2-b5a3-0e9d7c1f4a68"
-VERSION = [1, 0, 0]
+VERSION = [1, 1, 0]
 
 SUBPACKS = [
-    {"folder_name": "lite",     "name": "Lite - best FPS",        "memory_tier": 1},
+    {"folder_name": "lite",     "name": "Lite - subtle",          "memory_tier": 1},
     {"folder_name": "standard", "name": "Standard - balanced",    "memory_tier": 2},
     {"folder_name": "ultra",    "name": "Ultra - full atmosphere", "memory_tier": 3},
 ]
@@ -56,7 +55,7 @@ def manifest():
         "metadata": {
             "authors": ["Horizon Glow (generated with Claude Code)"],
             "license": "Personal use. Contains modified derivatives of Minecraft assets (c) Mojang AB; not affiliated with Mojang or Microsoft.",
-            "generated_with": {"horizon_glow_build": ["1.0.0"]},
+            "generated_with": {"horizon_glow_build": ["1.1.0"]},
         },
     }
 

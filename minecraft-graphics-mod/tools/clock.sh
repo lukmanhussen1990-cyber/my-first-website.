@@ -12,4 +12,17 @@ fmt(){ local s=$1; printf '%02d:%02d:%02d' $((s/3600)) $((s%3600/60)) $((s%60));
 if [ "$REM" -lt 0 ]; then R="OVER budget by $(fmt $((-REM)))"; else R="$(fmt $REM) left"; fi
 LINE="$(date -u +%Y-%m-%d\ %H:%M:%S)Z | elapsed $(fmt $EL) | $R"
 echo "$LINE"
-if [ "${1:-}" != "" ]; then echo "- $LINE — $1" >> "$DIR/WORKLOG.md"; fi
+if [ "${1:-}" != "" ]; then
+  python3 - "$DIR/WORKLOG.md" "- $LINE — $1" <<'PY'
+import sys
+path, line = sys.argv[1], sys.argv[2]
+text = open(path, encoding="utf-8").read()
+marker = "\n## Key decisions"
+if marker in text:
+    head, tail = text.split(marker, 1)
+    text = head.rstrip("\n") + "\n" + line + "\n" + marker + tail
+else:
+    text = text.rstrip("\n") + "\n" + line + "\n"
+open(path, "w", encoding="utf-8").write(text)
+PY
+fi

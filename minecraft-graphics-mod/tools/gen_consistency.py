@@ -9,7 +9,6 @@ colours that already have some.
 """
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 import numpy as np
@@ -24,11 +23,18 @@ FLAME_GRADE = Grade(chroma=1.15, contrast=0.08, lightness=0.025, warm=0.0)
 PARTICLE_GRADE = Grade(chroma=1.25, contrast=0.05, lightness=0.01, warm=0.0)
 
 
-def _grade_file(src: Path, dst: Path, grade: Grade, only_colored=False):
+def _grade_file(src: Path, dst: Path, grade: Grade, only_colored=False, skip_neutral=False):
+    """Returns False when the file was deliberately left alone."""
     im = Image.open(src)
     arr = np.array(im.convert("RGBA"))
     rgb = arr[..., :3].astype(np.float64) / 255.0
     lab_v = rgb_to_oklab(rgb)
+    if skip_neutral:
+        vis = arr[..., 3] > 0
+        # pure-greyscale textures are almost always masks that the engine tints (banner / shield patterns,
+        # tropical-fish and horse markings, dyed armour): keep them bit-exact
+        if not vis.any() or np.hypot(lab_v[..., 1], lab_v[..., 2])[vis].max() < 0.02:
+            return False
     out_rgb = grade.apply_rgb(rgb)
     if only_colored:                       # leave grey / white / black sprites (tinted by emitters) untouched
         c0 = np.hypot(lab_v[..., 1], lab_v[..., 2])
@@ -45,6 +51,7 @@ def _grade_file(src: Path, dst: Path, grade: Grade, only_colored=False):
         Image.fromarray(out[..., :3], "RGB").save(dst, optimize=True)
     else:
         save_image(out, dst)
+    return True
 
 
 def _tree(vanilla: Path, out_dir: Path, sub: str, grade: Grade, skip=None, only_colored=False):
@@ -54,8 +61,8 @@ def _tree(vanilla: Path, out_dir: Path, sub: str, grade: Grade, skip=None, only_
             continue
         if skip and skip.search(f.stem):
             continue
-        _grade_file(f, out_dir / f.relative_to(vanilla), grade, only_colored)
-        n += 1
+        if _grade_file(f, out_dir / f.relative_to(vanilla), grade, only_colored, skip_neutral=True):
+            n += 1
     return n
 
 
@@ -66,4 +73,4 @@ def generate(vanilla: Path, out_dir: Path, log=print):
     _grade_file(vanilla / "textures" / "flame_atlas.png", out_dir / "textures" / "flame_atlas.png", FLAME_GRADE)
     _grade_file(vanilla / "textures" / "particle" / "particles.png",
                 out_dir / "textures" / "particle" / "particles.png", PARTICLE_GRADE, only_colored=True)
-    log(f"consistency pass: {n_ent} entity, {n_arm} armour textures + flame/particle atlases")
+    log(f"consistency pass: {n_ent} entity, {n_arm} armour textures graded (pure-grey tint masks left untouched) + flame/particle atlases")
