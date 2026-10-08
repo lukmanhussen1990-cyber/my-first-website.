@@ -3312,9 +3312,9 @@ const CONFIG = {
       var gr = x.createLinearGradient(0, y0, 0, y0 + hb);
       gr.addColorStop(0, "rgba(255,232,240,.95)"); gr.addColorStop(.16, "rgb(" + c + ")"); gr.addColorStop(.7, "rgb(" + c + ")"); gr.addColorStop(1, "rgba(" + c + ",.7)");
       x.shadowColor = "rgba(" + c + ",.75)"; x.shadowBlur = 3 * k; x.fillStyle = gr; x.fillRect(x0, y0, 2, hb);
-      // its faint mirror image below: only toward the far end (from 66% of the way down), fading in
-      var m0 = PW_TOP + H + 1 + .66 * H, mg = pt.wg.createLinearGradient(0, m0, 0, PW_TOP + 2 * H + 1);
-      mg.addColorStop(0, "rgba(" + c + ",0)"); mg.addColorStop(1, "rgba(" + c + ",.6)");
+      // its faint mirror image just below (1px under the bars, fading out over the first third of the way down)
+      var m0 = PW_TOP + H + 1, mg = pt.wg.createLinearGradient(0, m0, 0, m0 + .34 * H);
+      mg.addColorStop(0, "rgba(" + c + ",.6)"); mg.addColorStop(1, "rgba(" + c + ",0)");
       pt.wx.push(i * (w - 2) / (n - 1)); pt.wh.push(hb); pt.wRg.push(mg); pt.bv.push(keep ? keep[i] : .08);
     }
     pt.wAtlas = at;
@@ -3328,11 +3328,11 @@ const CONFIG = {
       var s = Math.max(.06, pt.bv[i]);
       g.drawImage(pt.wAtlas, i * SW * k, 0, SW * k, SH * k, (pt.wx[i] - PW_PAD) * k, base * (1 - s) * k, SW * k, SH * s * k);
     }
-    g.setTransform(k, 0, 0, k, 0, 0);                        // the mirror image (no reading back from the canvas: a bar tall enough reaches the visible part)
-    var m0 = .66 * H, top = PW_TOP + H + 1;
+    g.setTransform(k, 0, 0, k, 0, 0);                        // the mirror image: each bar flipped below its foot, fading out (drawn, not read back from the canvas)
+    var m1 = .34 * H, top = PW_TOP + H + 1;
     for (i = 0; i < pt.n; i++) {
-      var hs = Math.max(.06, pt.bv[i]) * pt.wh[i];
-      if (hs > m0) { g.fillStyle = pt.wRg[i]; g.fillRect(pt.wx[i], top + m0, 2, hs - m0); }
+      var hs = Math.min(m1, Math.max(.06, pt.bv[i]) * pt.wh[i]);
+      g.fillStyle = pt.wRg[i]; g.globalAlpha = .35; g.fillRect(pt.wx[i] - 1, top, 4, hs); g.globalAlpha = 1; g.fillRect(pt.wx[i], top, 2, hs);
     }
     g.setTransform(1, 0, 0, 1, 0, 0);
     pt.wDirty = false;
