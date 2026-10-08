@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>রাজাল ডিজিটাল স্টোর — মোশন গ্রাফিক্স</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* preview controls (hidden while rendering: add ?render=1) */
+  #ui{position:fixed;left:0;right:0;bottom:0;z-index:999;display:flex;align-items:center;gap:14px;padding:10px 18px;background:rgba(0,0,0,.72);color:#fff;font:14px/1 system-ui,sans-serif}
+  #ui button{background:#FFB020;color:#0B1250;border:0;border-radius:6px;padding:7px 16px;font-weight:700;cursor:pointer}
+  #ui input{flex:1}
+  .render #ui{display:none}
+</style>
+</head>
+<body>
+
+<!-- ============ shared SVG defs & icons ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="gLogo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD875"/><stop offset="1" stop-color="#FF8A00"/></linearGradient>
+    <linearGradient id="gGloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".62"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+
+    <symbol id="logo" viewBox="0 0 200 200">
+      <rect x="8" y="8" width="184" height="184" rx="54" fill="url(#gLogo)"/>
+      <path d="M8 62 A54 54 0 0 1 62 8 H138 A54 54 0 0 1 192 62 V80 Q100 118 8 80 Z" fill="url(#gGloss)"/>
+      <text x="100" y="150" text-anchor="middle" font-family="Baloo" font-weight="800" font-size="150" fill="#0B1250">র</text>
+      <rect x="148" y="30" width="13" height="13" rx="3.5" fill="#0B1250"/>
+      <rect x="165" y="30" width="13" height="13" rx="3.5" fill="#0B1250" opacity=".55"/>
+      <rect x="165" y="47" width="13" height="13" rx="3.5" fill="#0B1250" opacity=".28"/>
+    </symbol>
+
+    <symbol id="i-check" viewBox="0 0 34 34"><path d="M7 18.5 L14 25 L27 9.5" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 34 34"><path d="M19.5 2 L6 19.5 H15 L12.5 32 L28 13.5 H19 Z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 34 34"><path d="M17 2 C10 2 5 7 5 13.5 C5 22.5 17 32.5 17 32.5 C17 32.5 29 22.5 29 13.5 C29 7 24 2 17 2 Z" fill="currentColor"/><circle cx="17" cy="13.5" r="5" style="fill:var(--pin-hole,#fff)"/></symbol>
+    <symbol id="i-house" viewBox="0 0 34 34"><path d="M17 3 L2.5 16.5 H7 V30 H14 V20.5 H20 V30 H27 V16.5 H31.5 Z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-plane" viewBox="0 0 24 24"><path transform="rotate(90 12 12)" d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="currentColor"/></symbol>
+    <symbol id="i-card" viewBox="0 0 34 34"><rect x="3" y="7" width="28" height="20" rx="4.5" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="12" cy="15" r="3" fill="currentColor"/><path d="M7.5 22.5 q4.5 -6 9 0" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="20" y="13" width="8" height="3" rx="1.5" fill="currentColor"/><rect x="20" y="19" width="6" height="3" rx="1.5" fill="currentColor"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 34 34"><path d="M6 17 H27 M19 8 L28 17 L19 26" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-spark" viewBox="-12 -12 24 24"><path d="M0,-12 Q1.6,-1.6 12,0 Q1.6,1.6 0,12 Q-1.6,1.6 -12,0 Q-1.6,-1.6 0,-12 Z" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<div id="frame">
+<div id="stage">
+
+  <!-- =====================================================================
+       SCENE 1 — INTRO : logo + welcome
+       ===================================================================== -->
+  <section class="scene" id="s-intro">
+    <div class="bg bg-intro"></div>
+    <div class="dots" id="intro-dots"></div>
+    <div class="particles" id="p-intro"></div>
+    <div class="cam" id="cam-intro">
+      <div class="halo" id="intro-halo"></div>
+      <div class="glow-ring" id="intro-ring1"></div>
+      <div class="glow-ring r2" id="intro-ring2"></div>
+      <div class="particles" id="intro-sparks"></div>
+      <svg class="logo-big" id="intro-logo" viewBox="0 0 200 200"><use href="#logo"/></svg>
+      <h1 class="brand pop-shadow" id="intro-brand">
+        <span class="mask"><span class="w" id="ib1">রাজাল</span></span>
+        <span class="mask"><span class="w gold" id="ib2">ডিজিটাল</span></span>
+        <span class="mask"><span class="w gold" id="ib3">স্টোর</span></span>
+      </h1>
+      <div class="brand-en" id="intro-en">RAJAL DIGITAL STORE</div>
+      <div class="welcome" id="intro-welcome"><span>স্বাগতম!</span></div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SCENE 2 — PAN CARD
+       ===================================================================== -->
+  <section class="scene" id="s-pan">
+    <div class="bg bg-pan"></div>
+    <div class="watermark" id="pan-wm">PAN</div>
+    <div class="beam" id="pan-beam1" style="left:420px"></div>
+    <div class="beam" id="pan-beam2" style="left:1300px;width:170px"></div>
+    <div class="dots" style="opacity:.32"></div>
+    <div class="particles" id="p-pan"></div>
+    <div class="cam" id="cam-pan">
+      <div class="tag" id="pan-tag"><span class="t">সেবা</span><div class="num">১</div></div>
+      <h2 class="title-xl pop-shadow" id="pan-title">
+        <span class="mask"><span class="w ice" id="pt1">প্যান</span></span>
+        <span class="mask"><span class="w gold" id="pt2">কার্ড</span></span>
+      </h2>
+      <svg class="abs" id="pan-underline" style="left:128px;top:500px;width:820px;height:44px;overflow:visible" viewBox="0 0 880 44" preserveAspectRatio="none"><path id="pan-ul-path" d="M8 30 C 220 6, 470 4, 650 16 S 820 32, 872 12" fill="none" stroke="#FFB020" stroke-width="13" stroke-linecap="round"/></svg>
+      <div id="pan-chips">
+        <div class="chip" id="pc1" style="top:600px"><div class="ic" style="background:linear-gradient(180deg,#52F0B2,#12B76A);color:#fff"><svg><use href="#i-check"/></svg></div><div class="tx">সহজে</div></div>
+        <div class="chip" id="pc2" style="top:724px"><div class="ic" style="background:linear-gradient(180deg,#FFD166,#FFA81E);color:#0B1250"><svg><use href="#i-bolt"/></svg></div><div class="tx">দ্রুত</div></div>
+        <div class="chip" id="pc3" style="top:848px"><div class="ic" style="background:linear-gradient(180deg,#5BE7FF,#1EA7E8);color:#fff;--pin-hole:#1EA7E8"><svg><use href="#i-pin"/></svg></div><div class="tx">এখানেই</div></div>
+      </div>
+
+      <div class="card-stage" id="pan-stage">
+        <div class="card-glow" id="pan-glow"></div>
+        <div class="card-shadow" id="pan-shadow"></div>
+        <div class="card-float" id="pan-float">
+          <div class="pancard" id="pancard">
+            <div class="pc-head"><span class="t">স্থায়ী অ্যাকাউন্ট নম্বর</span><span class="b">PAN</span></div>
+            <div class="pc-photo"><svg viewBox="0 0 100 122" preserveAspectRatio="xMidYMax slice"><circle cx="50" cy="46" r="21" fill="#8EA9E0"/><path d="M6 122 C6 86 26 74 50 74 C74 74 94 86 94 122 Z" fill="#8EA9E0"/></svg></div>
+            <div class="pc-label" style="top:130px">নাম</div>
+            <div class="pc-bar" style="top:166px;width:270px"></div>
+            <div class="pc-label" style="top:206px">জন্ম তারিখ</div>
+            <div class="pc-bar" style="top:242px;width:200px"></div>
+            <div class="pc-label" style="top:282px">স্থায়ী অ্যাকাউন্ট নম্বর</div>
+            <div class="pc-num">XXXXX0000X</div>
+            <svg class="pc-qr" id="pc-qr" viewBox="0 0 21 21" shape-rendering="crispEdges"></svg>
+            <svg class="pc-sign" viewBox="0 0 210 70"><path d="M8 48 C24 8 38 8 44 36 C48 56 60 20 76 26 C92 32 78 56 98 40 C112 28 122 30 132 42 C150 54 160 24 196 34" fill="none" stroke="#2B3A8C" stroke-width="4" stroke-linecap="round"/></svg>
+            <div class="pc-chipgold"></div>
+            <div class="pc-shine" id="pc-shine"></div>
+          </div>
+          <div id="pan-q"><div class="face f1">?</div><div class="face f2" style="color:#fff"><svg><use href="#i-check"/></svg></div></div>
+          <div id="pan-stamp"><span>ঝামেলা নেই!</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SCENE 3 — FLIGHT TICKET BOOKING
+       ===================================================================== -->
+  <section class="scene" id="s-flight">
+    <div class="bg bg-sky"></div>
+    <div class="stars" id="fl-stars"></div>
+    <div class="sun" id="fl-sun"></div>
+    <svg class="fill" id="fl-clouds-far" viewBox="0 0 1920 1080"></svg>
+    <svg class="fill" id="fl-clouds-near" viewBox="0 0 1920 1080" style="pointer-events:none"></svg>
+    <div class="cam" id="cam-flight">
+      <div class="tag" id="fl-tag"><span class="t">সেবা</span><div class="num">২</div></div>
+      <h2 id="fl-title" class="pop-shadow">
+        <span class="line"><span class="mask"><span class="w ice" id="ft1">ফ্লাইট</span></span> <span class="mask"><span class="w ice" id="ft2">টিকিট</span></span></span>
+        <span class="line"><span class="mask"><span class="w gold" id="ft3">বুকিং</span></span></span>
+      </h2>
+
+      <div class="book-btn" id="fl-btn">
+        <div class="bi" id="fl-bi" style="color:#fff"><svg class="i1"><use href="#i-plane"/></svg><svg class="i2"><use href="#i-check"/></svg></div>
+        <div class="tx"><span class="t1">বুক করুন</span><span class="t2">বুক হয়েছে!</span></div>
+        <div class="tap-ring" id="fl-tap"></div>
+      </div>
+
+      <div class="pass-stage" id="pass-stage">
+        <div class="pass-wrap" id="pass-wrap">
+          <div class="pass" id="pass">
+            <div class="pass-head"><span class="a">BOARDING PASS</span><span class="b">বোর্ডিং পাস</span></div>
+            <div class="pass-route">
+              <div class="pr-city"><div class="pr-ic"><svg><use href="#i-house"/></svg></div><div class="pr-name">আপনার ঘর</div></div>
+              <div class="pr-line"><svg><use href="#i-plane"/></svg></div>
+              <div class="pr-city"><div class="pr-ic" style="background:#FFE8D2;color:#E5532A;--pin-hole:#FFE8D2"><svg><use href="#i-pin"/></svg></div><div class="pr-name">পছন্দের গন্তব্য</div></div>
+            </div>
+            <div class="pass-meta">
+              <div><div class="k">ফ্লাইট</div><div class="v">RD 101</div></div>
+              <div><div class="k">গেট</div><div class="v">A1</div></div>
+              <div><div class="k">সিট</div><div class="v">12A</div></div>
+            </div>
+            <div class="pass-stub"><svg id="barcode" viewBox="0 0 150 200" shape-rendering="crispEdges"></svg><div class="s">12A</div></div>
+          </div>
+        </div>
+      </div>
+
+      <svg class="fill" id="route-svg" viewBox="0 0 1920 1080">
+        <defs>
+          <filter id="fGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <mask id="mRoute"><path id="route-mask" d="M260 930 C700 880 1150 560 1690 840" fill="none" stroke="#fff" stroke-width="40"/></mask>
+        <path id="route" d="M260 930 C700 880 1150 560 1690 840" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="7" stroke-dasharray="4 22" stroke-linecap="round" mask="url(#mRoute)"/>
+        <path id="route-trail" d="M260 930 C700 880 1150 560 1690 840" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" filter="url(#fGlow)" opacity=".9"/>
+
+        <g id="pin-home">
+          <circle cx="260" cy="930" r="62" fill="#fff"/>
+          <circle cx="260" cy="930" r="62" fill="none" stroke="#FFB020" stroke-width="8"/>
+          <use href="#i-house" x="226" y="896" width="68" height="68" style="color:#1A2A8C"/>
+        </g>
+        <g id="pin-dest">
+          <g id="pin-dest-body">
+            <path d="M1690 840 C1640 790 1612 750 1612 704 C1612 656 1646 620 1690 620 C1734 620 1768 656 1768 704 C1768 750 1740 790 1690 840 Z" fill="#E5303A"/>
+            <circle cx="1690" cy="704" r="34" fill="#fff"/>
+            <text id="pin-q" x="1690" y="728" text-anchor="middle" font-family="Poppins" font-weight="800" font-size="62" fill="#E5303A">?</text>
+            <use id="pin-ok" href="#i-check" x="1662" y="676" width="56" height="56" style="color:#12B76A" opacity="0"/>
+          </g>
+        </g>
+
+        <g id="plane">
+          <g id="plane-art" transform="scale(.86)">
+            <!-- far wing & stabiliser -->
+            <path d="M-6,-22 L-62,-60 L-32,-60 L46,-22 Z" fill="#B7C3E2"/>
+            <path d="M-118,-6 L-152,-34 L-128,-34 L-86,-6 Z" fill="#B7C3E2"/>
+            <!-- fuselage -->
+            <path d="M-128,-10 C-128,-26 -106,-28 -82,-28 H58 C100,-28 132,-14 146,2 C132,18 100,26 58,26 H-82 C-106,26 -128,14 -128,-10 Z" fill="#fff"/>
+            <path d="M-128,-2 C-128,14 -106,26 -82,26 H58 C100,26 132,18 146,2 Z" fill="#DCE4F6"/>
+            <path d="M-120,8 H116" stroke="#2F5BFF" stroke-width="7" stroke-linecap="round"/>
+            <!-- tail fin -->
+            <path d="M-128,-16 L-146,-80 L-100,-80 L-62,-26 Z" fill="#FFB020"/>
+            <circle cx="-117" cy="-58" r="10" fill="#fff" opacity=".92"/>
+            <!-- windows -->
+            <g fill="#7FAAF5"><circle cx="-84" cy="-8" r="5.5"/><circle cx="-64" cy="-8" r="5.5"/><circle cx="-44" cy="-8" r="5.5"/><circle cx="-24" cy="-8" r="5.5"/><circle cx="-4" cy="-8" r="5.5"/><circle cx="16" cy="-8" r="5.5"/><circle cx="36" cy="-8" r="5.5"/><circle cx="56" cy="-8" r="5.5"/></g>
+            <path d="M92,-16 L118,-12 L130,-2 L98,-2 Z" fill="#3E6BE0"/>
+            <!-- near wing + engine -->
+            <path d="M-8,10 L-76,70 L-32,70 L58,10 Z" fill="#E9EEFA"/>
+            <path d="M-8,10 L-76,70 L-62,70 L8,10 Z" fill="#C9D4EF"/>
+            <rect x="-30" y="38" width="52" height="24" rx="12" fill="#9AA9D1"/>
+            <rect x="12" y="42" width="12" height="16" rx="6" fill="#6F7FB0"/>
+          </g>
+        </g>
+      </svg>
+
+      <div class="abs" id="fl-lab-home" style="left:340px;top:888px;opacity:0"><div class="chip" style="position:relative;height:84px;padding:0 36px;border-radius:42px;background:#fff;border-color:#fff"><div class="tx" style="font-size:46px;color:#0B1250;padding-top:6px">ঘরের কাছেই</div></div></div>
+      <div class="abs" id="fl-lab-dest" style="left:1300px;top:872px;opacity:0"><div class="chip" style="position:relative;height:84px;padding:0 36px;border-radius:42px;background:#fff;border-color:#fff"><div class="tx" style="font-size:46px;color:#0B1250;padding-top:6px">পছন্দের গন্তব্য</div></div></div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SCENE 4 — CTA : come to Uttar Fulbari
+       ===================================================================== -->
+  <section class="scene" id="s-cta">
+    <div class="bg bg-warm"></div>
+    <div class="rays" id="cta-rays"></div>
+    <div class="particles" id="cta-confetti"></div>
+    <div class="cam" id="cam-cta">
+      <div class="kicker" id="cta-kicker">
+        <svg id="cta-clock" viewBox="0 0 100 100">
+          <circle cx="50" cy="56" r="38" fill="#fff" stroke="#0B1250" stroke-width="8"/>
+          <rect x="40" y="6" width="20" height="10" rx="4" fill="#0B1250"/>
+          <rect x="47" y="14" width="6" height="8" fill="#0B1250"/>
+          <g id="clock-hand-m" style="transform-origin:50px 56px"><path d="M50 56 V30" stroke="#0B1250" stroke-width="7" stroke-linecap="round"/></g>
+          <g id="clock-hand-h" style="transform-origin:50px 56px"><path d="M50 56 L66 64" stroke="#E5303A" stroke-width="7" stroke-linecap="round"/></g>
+          <circle cx="50" cy="56" r="6" fill="#0B1250"/>
+        </svg>
+        <div class="kw">
+          <span class="mask"><span class="w" id="ck1">তাহলে</span></span>
+          <span class="mask"><span class="w" id="ck2">আর</span></span>
+          <span class="mask"><span class="w" id="ck3">দেরি</span></span>
+          <span class="mask"><span class="w" id="ck4">কেন?</span></span>
+        </div>
+      </div>
+
+      <h2 class="cta-big" id="cta-big">
+        <div class="row"><span class="mask"><span class="w" id="cb1">আজই</span></span><span class="mask"><span class="w" id="cb2">চলে</span></span></div>
+        <div class="row row2"><span class="mask"><span class="w big2" id="cb3">আসুন!</span></span></div>
+      </h2>
+
+      <div class="loc-chip" id="cta-loc"><div class="li"><svg style="color:#fff;--pin-hole:#E5303A"><use href="#i-pin"/></svg></div><div class="tx">উত্তর ফুলবাড়ি</div></div>
+
+      <svg id="store" viewBox="0 0 820 780">
+        <defs>
+          <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DDE5FA"/></linearGradient>
+          <linearGradient id="gGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D5F5FF"/><stop offset="1" stop-color="#7CC4F5"/></linearGradient>
+          <linearGradient id="gLight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF8D6"/><stop offset="1" stop-color="#FFC64A"/></linearGradient>
+          <linearGradient id="gShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B1250" stop-opacity=".22"/><stop offset="1" stop-color="#0B1250" stop-opacity="0"/></linearGradient>
+          <filter id="fSign" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="16"/></filter>
+        </defs>
+        <ellipse id="st-shadow" cx="410" cy="748" rx="400" ry="24" fill="#5A2A00" opacity=".3"/>
+
+        <g id="st-plants">
+          <g id="st-plantL"><path d="M34 700 h58 l-9 46 h-40 z" fill="#E5532A"/><path d="M63 700 C38 656 40 622 63 592 C86 622 88 656 63 700 Z" fill="#22B573"/><path d="M63 700 C36 690 22 668 24 640 C50 650 62 672 63 700 Z" fill="#17935B"/><path d="M63 700 C90 690 104 668 102 640 C76 650 64 672 63 700 Z" fill="#2FD08A"/></g>
+          <g id="st-plantR"><path d="M728 700 h58 l-9 46 h-40 z" fill="#E5532A"/><path d="M757 700 C732 656 734 622 757 592 C780 622 782 656 757 700 Z" fill="#22B573"/><path d="M757 700 C730 690 716 668 718 640 C744 650 756 672 757 700 Z" fill="#17935B"/><path d="M757 700 C784 690 798 668 796 640 C770 650 758 672 757 700 Z" fill="#2FD08A"/></g>
+        </g>
+
+        <g id="st-body">
+          <rect x="70" y="236" width="680" height="500" rx="26" fill="url(#gBody)"/>
+          <rect x="70" y="700" width="680" height="36" rx="12" fill="#C3CEEF"/>
+          <rect x="70" y="326" width="680" height="30" fill="url(#gShade)"/>
+        </g>
+
+        <g id="st-winL">
+          <rect x="108" y="372" width="196" height="238" rx="18" fill="url(#gGlass)" stroke="#0B1250" stroke-width="8"/>
+          <path d="M132 440 V428 a12 12 0 0 1 12 -12 H268 a12 12 0 0 1 12 12 V440 Z" fill="#2347C9"/>
+          <rect x="132" y="440" width="148" height="66" rx="0" fill="#fff"/>
+          <path d="M132 506 V516 a12 12 0 0 0 12 12 H268 a12 12 0 0 0 12 -12 V506 Z" fill="#fff"/>
+          <rect x="144" y="450" width="36" height="46" rx="6" fill="#A9C2F2"/>
+          <rect x="192" y="454" width="76" height="9" rx="4.5" fill="#B9CBF0"/>
+          <rect x="192" y="472" width="58" height="9" rx="4.5" fill="#B9CBF0"/>
+          <rect x="192" y="490" width="70" height="9" rx="4.5" fill="#2B3A8C"/>
+          <rect x="124" y="544" width="164" height="50" rx="25" fill="#FFB020"/>
+          <text x="206" y="582" text-anchor="middle" font-family="Baloo" font-weight="800" font-size="31" fill="#0B1250">প্যান কার্ড</text>
+        </g>
+        <g id="st-winR">
+          <rect x="516" y="372" width="196" height="238" rx="18" fill="url(#gGlass)" stroke="#0B1250" stroke-width="8"/>
+          <circle cx="614" cy="458" r="58" fill="#fff" opacity=".75"/>
+          <use href="#i-plane" x="560" y="404" width="108" height="108" style="color:#2F5BFF"/>
+          <rect x="528" y="544" width="172" height="50" rx="25" fill="#FFB020"/>
+          <text x="614" y="582" text-anchor="middle" font-family="Baloo" font-weight="800" font-size="28" fill="#0B1250">ফ্লাইট টিকিট</text>
+        </g>
+
+        <g id="st-door">
+          <rect x="324" y="356" width="172" height="344" rx="20" fill="#0B1250"/>
+          <rect id="st-interior" x="340" y="372" width="140" height="328" rx="12" fill="url(#gLight)"/>
+          <g id="st-doorpanel">
+            <rect x="340" y="372" width="140" height="328" rx="12" fill="url(#gGlass)"/>
+            <rect x="356" y="388" width="108" height="150" rx="8" fill="#fff" opacity=".28"/>
+            <circle cx="462" cy="548" r="9" fill="#FFB020"/>
+          </g>
+          <g id="st-open" style="transform-origin:410px 404px">
+            <path d="M386 404 V380 M434 404 V380" stroke="#0B1250" stroke-width="3"/>
+            <rect x="362" y="404" width="96" height="46" rx="12" fill="#FFB020" stroke="#0B1250" stroke-width="4"/>
+            <text x="410" y="438" text-anchor="middle" font-family="Baloo" font-weight="800" font-size="30" fill="#0B1250">খোলা</text>
+          </g>
+          <path id="st-lightbeam" d="M340 700 L480 700 L640 790 L180 790 Z" fill="#FFE9A6" opacity="0"/>
+        </g>
+
+        <g id="st-awning">
+          <rect x="56" y="222" width="708" height="30" rx="15" fill="#1A2A8C"/>
+          <g id="st-stripes"></g>
+        </g>
+
+        <g id="st-signwrap">
+          <rect id="st-signglow" x="112" y="56" width="596" height="168" rx="36" fill="#FFB020" filter="url(#fSign)" opacity="0"/>
+          <g id="st-sign">
+            <rect x="196" y="204" width="14" height="24" fill="#0B1250"/><rect x="610" y="204" width="14" height="24" fill="#0B1250"/>
+            <rect x="120" y="64" width="580" height="148" rx="30" fill="#0B1250" stroke="#FFB020" stroke-width="8"/>
+            <text x="410" y="146" text-anchor="middle" font-family="Baloo" font-weight="800" font-size="58" fill="#fff">রাজাল ডিজিটাল স্টোর</text>
+            <text x="410" y="188" text-anchor="middle" font-family="Poppins" font-weight="600" font-size="21" letter-spacing="7" fill="#7DD3FC">RAJAL DIGITAL STORE</text>
+          </g>
+          <g id="st-bulbs"></g>
+        </g>
+
+        <g id="st-pin"><g id="st-pin-bob">
+          <path d="M410 56 C364 6 338 -30 338 -72 C338 -116 370 -146 410 -146 C450 -146 482 -116 482 -72 C482 -30 456 6 410 56 Z" fill="#E5303A"/>
+          <circle cx="410" cy="-74" r="30" fill="#fff"/>
+        </g></g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SCENE 5 — OUTRO
+       ===================================================================== -->
+  <section class="scene" id="s-outro">
+    <div class="bg bg-outro"></div>
+    <div class="dots"></div>
+    <div class="particles" id="p-outro"></div>
+    <div class="cam" id="cam-outro">
+      <div class="halo" id="outro-halo" style="top:240px;width:800px;height:800px;margin:-400px 0 0 -400px"></div>
+      <svg class="logo-mid" id="outro-logo" viewBox="0 0 200 200"><use href="#logo"/></svg>
+      <h2 class="brand2 pop-shadow" id="outro-brand">
+        <span class="mask"><span class="w" id="ob1">রাজাল</span></span>
+        <span class="mask"><span class="w gold" id="ob2">ডিজিটাল</span></span>
+        <span class="mask"><span class="w gold" id="ob3">স্টোর</span></span>
+      </h2>
+      <div class="tagline" id="outro-tag">
+        <span class="mask"><span class="w" id="tg1">আপনার</span></span>
+        <span class="mask"><span class="w" id="tg2">বিশ্বস্ত</span></span>
+        <span class="mask"><span class="w" id="tg3">ডিজিটাল</span></span>
+        <span class="mask"><span class="w" id="tg4">সঙ্গী</span></span>
+      </div>
+      <div class="svc-row" id="svc-row">
+        <div class="svc" id="sv1"><div class="ic" style="background:linear-gradient(180deg,#7FA2FF,#2F5BFF);color:#fff"><svg><use href="#i-card"/></svg></div><div class="tx">প্যান কার্ড</div></div>
+        <div class="svc" id="sv2"><div class="ic" style="background:linear-gradient(180deg,#FFD166,#FFA81E);color:#0B1250"><svg><use href="#i-plane"/></svg></div><div class="tx">ফ্লাইট টিকিট</div></div>
+        <div class="svc" id="sv3"><div class="ic" style="background:linear-gradient(180deg,#FF7A7A,#E5303A);color:#fff;--pin-hole:#E5303A"><svg><use href="#i-pin"/></svg></div><div class="tx">উত্তর ফুলবাড়ি</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ persistent overlays ============ -->
+  <div id="bug"><svg viewBox="0 0 200 200"><use href="#logo"/></svg><span>রাজাল ডিজিটাল স্টোর</span></div>
+  <div id="wipes">
+    <div class="wipe-ring" id="wr1"></div>
+    <div class="wipe-ring" id="wr2" style="border-color:#22D3EE;box-shadow:0 0 60px rgba(34,211,238,.7),inset 0 0 60px rgba(34,211,238,.5)"></div>
+    <div class="wipe-band" id="wb1" style="background:#FFB020;width:150px"></div>
+    <div class="wipe-band" id="wb2" style="background:#fff;width:90px"></div>
+    <div class="wipe-band" id="wb3" style="background:#FF8A00;width:150px"></div>
+    <div class="wipe-band" id="wb4" style="background:#0B1250;width:90px"></div>
+  </div>
+  <div id="vignette"></div>
+  <div id="grain"></div>
+  <div id="fade"></div>
+
+</div>
+</div>
+
+<div id="ui"><button id="ui-play">Play</button><input id="ui-seek" type="range" min="0" max="3000" value="0"><span id="ui-time">0.00 s</span></div>
+
+<script src="assets/vendor/gsap.min.js"></script>
+<script src="assets/vendor/CustomEase.min.js"></script>
+<script src="assets/vendor/MotionPathPlugin.min.js"></script>
+<script src="assets/vendor/DrawSVGPlugin.min.js"></script>
+<script src="build/timeline.js"></script>
+<script src="animation.js"></script>
+</body>
+</html>
