@@ -18,8 +18,9 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import numpy as np
 from PIL import Image
-from common import PACK_DIR, ROOT, load_json_lenient, env_vanilla
+from common import PACK_DIR, ROOT, load_json_lenient, env_vanilla, read_rgba
 
 HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
 errors: list[str] = []
@@ -60,7 +61,7 @@ def check_manifest(pack: Path):
             err(f"subpack folder missing: {d}")
         if not isinstance(sp["memory_tier"], int):
             err("memory_tier must be an int")
-        if len(sp["name"]) > 40:
+        if len(sp["name"]) > 12:            # shown under the settings slider on a phone
             warn(f"subpack name long: {sp['name']}")
     return m
 
@@ -176,6 +177,10 @@ def check_images(pack: Path, vanilla: Path):
         vsize, vmode = image_size(vp)
         if vsize != size:
             err(f"size mismatch {rel}: pack {size} vs vanilla {vsize}")
+        elif vp.suffix.lower() == f.suffix.lower() and rel == key:
+            # base-pack file with exactly Mojang's pixels: redundant, and ships their art verbatim
+            if np.array_equal(read_rgba(f), read_rgba(vp)):
+                err(f"{rel} is pixel-identical to vanilla (build.prune_unchanged should have dropped it)")
         if ("A" in vmode) != ("A" in mode) and key.endswith(".png") and vmode != "P":
             warn(f"alpha channel differs {rel}: {vmode} -> {mode}")
     return checked

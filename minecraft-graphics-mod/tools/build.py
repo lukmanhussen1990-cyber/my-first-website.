@@ -17,7 +17,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from common import PACK_DIR, ROOT, PRESETS, write_json, env_vanilla
+import numpy as np
+
+from common import PACK_DIR, ROOT, PRESETS, write_json, env_vanilla, read_rgba
 import gen_atmosphere, gen_sky, gen_water, gen_ui, gen_ambient, gen_consistency
 
 try:
@@ -28,12 +30,13 @@ except ImportError:                       # textures pass is optional while deve
 # Stable identifiers => re-importing a newer build replaces the old one.
 RP_UUID = "9d1b6c4e-5a3f-4e0b-8c27-71f0a4b2d3e5"
 RP_MODULE_UUID = "2f8e0a7b-6c14-49d2-b5a3-0e9d7c1f4a68"
-VERSION = [1, 1, 0]
+VERSION = [1, 1, 1]
 
+# Short names: the game prints them under the pack-settings slider on a narrow phone screen.
 SUBPACKS = [
-    {"folder_name": "lite",     "name": "Lite - subtle",          "memory_tier": 1},
-    {"folder_name": "standard", "name": "Standard - balanced",    "memory_tier": 2},
-    {"folder_name": "ultra",    "name": "Ultra - full atmosphere", "memory_tier": 3},
+    {"folder_name": "lite",     "name": "Lite",     "memory_tier": 1},
+    {"folder_name": "standard", "name": "Standard", "memory_tier": 2},
+    {"folder_name": "ultra",    "name": "Ultra",    "memory_tier": 3},
 ]
 
 
@@ -42,7 +45,7 @@ def manifest():
         "format_version": 2,
         "header": {
             "name": "§bHorizon Glow§r Graphics",
-            "description": "§7Mobile shader-style look for 1.21.0: haze, glowing sun & moon, soft clouds, vivid water. "
+            "description": "§7Shader-style look for Minecraft 1.21.0.x (mobile): haze, glowing sun & moon, soft clouds, vivid water. "
                            "Tap the gear on this pack to choose Lite / Standard / Ultra.",
             "uuid": RP_UUID,
             "version": VERSION,
@@ -55,9 +58,30 @@ def manifest():
         "metadata": {
             "authors": ["Horizon Glow (generated with Claude Code)"],
             "license": "Personal use. Contains modified derivatives of Minecraft assets (c) Mojang AB; not affiliated with Mojang or Microsoft.",
-            "generated_with": {"horizon_glow_build": ["1.1.0"]},
+            "generated_with": {"horizon_glow_build": [".".join(map(str, VERSION))]},
         },
     }
+
+
+def prune_unchanged(vanilla: Path, pack: Path):
+    """Delete textures whose pixels equal Mojang's own file.  A re-encoded copy changes nothing
+    on screen, but it would still ship Mojang's art verbatim and pin that file to this game
+    version.  A file is kept when the pack also holds its other-extension twin (.png/.tga),
+    because which twin wins is decided by the engine, not by us."""
+    removed = []
+    for f in sorted((pack / "textures").rglob("*")):
+        if f.suffix.lower() not in (".png", ".tga"):
+            continue
+        rel = f.relative_to(pack)
+        vp = vanilla / rel
+        if not vp.exists():
+            continue
+        if any(f.with_suffix(e).exists() for e in (".png", ".tga") if e != f.suffix.lower()):
+            continue
+        if np.array_equal(read_rgba(f), read_rgba(vp)):
+            f.unlink()
+            removed.append(rel.as_posix())
+    return removed
 
 
 def build_pack(vanilla: Path, verbose=True):
@@ -82,6 +106,8 @@ def build_pack(vanilla: Path, verbose=True):
         gen_textures.generate(vanilla, PACK_DIR, log=log)
         log("base: consistency pass (mobs, armour, particle sprites)")
         gen_consistency.generate(vanilla, PACK_DIR, log=log)
+        dropped = prune_unchanged(vanilla, PACK_DIR)
+        log(f"base: dropped {len(dropped)} texture(s) that came out pixel-identical to vanilla: {', '.join(dropped) or '-'}")
     gen_ui.write_icon(PACK_DIR)
     write_json(PACK_DIR / "manifest.json", manifest())
 

@@ -2,12 +2,12 @@
   "format_version": 2,
   "header": {
     "name": "§bHorizon Glow§r Graphics",
-    "description": "§7Mobile shader-style look for 1.21.0: haze, glowing sun & moon, soft clouds, vivid water. Tap the gear on this pack to choose Lite / Standard / Ultra.",
+    "description": "§7Shader-style look for Minecraft 1.21.0.x (mobile): haze, glowing sun & moon, soft clouds, vivid water. Tap the gear on this pack to choose Lite / Standard / Ultra.",
     "uuid": "9d1b6c4e-5a3f-4e0b-8c27-71f0a4b2d3e5",
     "version": [
       1,
       1,
-      0
+      1
     ],
     "min_engine_version": [
       1,
@@ -23,24 +23,24 @@
       "version": [
         1,
         1,
-        0
+        1
       ]
     }
   ],
   "subpacks": [
     {
       "folder_name": "lite",
-      "name": "Lite - subtle",
+      "name": "Lite",
       "memory_tier": 1
     },
     {
       "folder_name": "standard",
-      "name": "Standard - balanced",
+      "name": "Standard",
       "memory_tier": 2
     },
     {
       "folder_name": "ultra",
-      "name": "Ultra - full atmosphere",
+      "name": "Ultra",
       "memory_tier": 3
     }
   ],
@@ -51,7 +51,7 @@
     "license": "Personal use. Contains modified derivatives of Minecraft assets (c) Mojang AB; not affiliated with Mojang or Microsoft.",
     "generated_with": {
       "horizon_glow_build": [
-        "1.1.0"
+        "1.1.1"
       ]
     }
   }

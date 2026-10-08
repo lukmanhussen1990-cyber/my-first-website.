@@ -20,6 +20,9 @@
 - 2026-10-08 03:13:06Z | elapsed 01:01:04 | 01:58:56 left — Visual-QA reviewer done: fixed neutral-white/black split-tone, tint-mask TGAs (grass_side), ore glint misfires, flow-water streak direction, still-water glint lattice, skip lists, moon contrast, item grade; verified in sandbox
 - 2026-10-08 03:19:47Z | elapsed 01:07:45 | 01:52:15 left — Worklog tidied (checkpoints grouped above the decisions section); format + ambient reviewers still running
 - 2026-10-08 03:23:07Z | elapsed 01:11:05 | 01:48:55 left — Validator mutation-tested (6/6 injected defects caught) + hardened; entity pass leaves pure-grey tint masks bit-exact; 0 byte-identical vanilla files; waiting on format+ambient+README reviewers
+- 2026-10-08 03:26:16Z | elapsed 01:14:14 | 01:45:46 left — v1.1.0 rebuilt in repo (validator 0 errors, schemas ok, 2170 textures vs vanilla ok) and pushed; reviewers (format, ambient, README) still running
+- 2026-10-08 03:29:54Z | elapsed 01:17:52 | 01:42:08 left — Fresh-clone rebuild reproduces the committed pack exactly (2512 files, 0 diffs); raw download links verified; visual-QA re-check + format/ambient/README reviewers running
+- 2026-10-08 03:38:09Z | elapsed 01:26:07 | 01:33:53 left — Format review (no blockers) applied: short preset names, 5 vanilla-identical textures dropped (build + validator now enforce it), version 1.1.1; rebuilt + validated; ambient / README / visual-QA reviewers still running
 
 ## Key decisions (why the pack looks the way it does)
 

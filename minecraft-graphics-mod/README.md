@@ -58,7 +58,7 @@ All three keep the textures at 16×16 and add no shaders, so FPS stays close to 
 ![Generated assets: sun, moon phases, clouds, water, colour maps, haze/water palette, graded textures](docs/asset_preview.png)
 *The assets the pack ships (an asset sheet, not an in-game screenshot).*
 
-* **Atmosphere** – 91 biome fog definitions: distant terrain fades into a coloured horizon haze (warm over desert/savanna, teal over jungle, pale blue on snow, murky green in swamps, pink over cherry groves), cave biomes left alone. Rain gets a brighter, bluer overcast. Nether fog is pushed out so it is readable on a phone; the End gets a faint violet haze.
+* **Atmosphere** – 91 biome fog definitions: distant terrain fades into a coloured horizon haze (warm over desert/savanna, teal over jungle, pale blue on snow, murky green in swamps, pink over cherry groves); cave biomes (lush / dripstone / deep dark) only get tuned water colour. Rain gets a brighter, bluer overcast. Nether fog is pushed out so it is readable on a phone; the End gets a faint violet haze.
 * **Water** – every biome has its own clear, saturated water colour and lower opacity (see the sea floor); swamps stay murky. New animated water with soft ripples and sun glints (loops seamlessly), re-authored flowing water.
 * **Sky** – round, glowing sun with bloom; smooth moon with maria, 8 correct phases; new cloud pattern (fluffy banks with gaps instead of speckle); brighter, more visible rain.
 * **Colour** – grass, leaves, birch/spruce and swamp colour maps re-graded in a perceptual colour space ("vibrance": dull colours gain more than already vivid ones, so nothing goes neon). The grass-block side fringe uses the exact same grade so tops and sides match.
@@ -87,6 +87,10 @@ It is a *separate* pack because, to emit particles around the camera, it has to 
 * **Colours look too strong** → pick *Standard* or *Lite* with the gear icon.
 * **Other resource packs** → anything above Horizon Glow in the list wins; keep other texture packs *below* it if you want both.
 * **No vignette** → it only exists in the *Ultra* preset.
+
+## Uninstall
+
+Settings → Global Resources → *Active* → tap *Horizon Glow …* → **Deactivate** (do the same for *Ambient FX*). To delete a pack completely, select it under *My Packs* and tap the trash/delete icon. Nothing is ever written into your worlds, so removing the pack restores vanilla visuals instantly.
 
 ## Legal
 
