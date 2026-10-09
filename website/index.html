@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "2.0",                       // shown in Settings → About
+  version: "2.1",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -2262,7 +2262,7 @@ const CONFIG = {
   .nofx .gmf-cv, .ultra .gmf-cv, .ultra .gmf-rays, .ultra .gmf-forge { display: none; }
 
   /* =====================================================================
-     GAME: FLAPPY BIRD  (the pixel art is drawn by the code on one small canvas; CSS only scales it up with square pixels)
+     GAME: FLAPPY BIRD  (drawn by the code on one canvas at the screen's own sharpness)
      ===================================================================== */
   /* the second Games card on Social: sky-blue glass, the Flappy Bird icon in the tile */
   .fb-card { text-align: left; overflow: hidden; border-color: rgba(74, 206, 255, .5);
@@ -2281,16 +2281,102 @@ const CONFIG = {
   /* the screen: the canvas fills it (288 canvas pixels wide; a taller phone gets more sky). --fbpx = CSS pixels per canvas pixel (set by the code) */
   #s-flappy { --fbpx: 1.365; padding: 0; overflow: hidden; background: #0bc0fd; touch-action: none; -webkit-user-select: none; user-select: none; }
   #app.fb-on #tabs { opacity: 0; visibility: hidden; transform: translateY(26px); pointer-events: none; transition: opacity .2s ease, transform .3s ease, visibility 0s linear .3s; }
-  .fb-cv { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; image-rendering: crisp-edges; image-rendering: pixelated; }
+  .fb-cv { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; }   /* (drawn at the screen's own sharpness: no scaling) */
 
   /* pixel buttons: their pictures come from the code (crisp, the same pixel size as the game); placed by the code, except the corner one */
   .fb-pix { position: absolute; z-index: 2; padding: 0; border-radius: 0; background: center / 100% 100% no-repeat; image-rendering: crisp-edges; image-rendering: pixelated; }
+  .fb-pix.fb-hd { image-rendering: auto; }   /* the pause button shows its piece of the picture: smooth, not blocky */
   .fb-pix:not(.fb-on) { visibility: hidden; pointer-events: none; }
   .fb-pix:active { transform: translateY(calc(var(--fbpx) * 3px)); }
   .fb-pix:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
   .fb-hud { left: calc(var(--fbpx) * 11px); top: calc(var(--fbpx) * 14px + env(safe-area-inset-top, 0px)); width: calc(var(--fbpx) * 36px); height: calc(var(--fbpx) * 36px); }
   @media (min-width: 600px) and (min-height: 600px) { .fb-hud { top: calc(44px + var(--fbpx) * 3px); left: calc(var(--fbpx) * 14px); } }
   @media (prefers-reduced-motion: reduce) { .fb-card *, .fb-card::after { animation: none !important; } }
+
+  /* =====================================================================
+     AUTOPILOT BOT  (its button on Home, the glow round the screen while it drives, its finger, its status capsule)
+     ===================================================================== */
+  /* the bot's face (on the button and in the capsule): a dark head with a cyan edge, a visor with two eyes, an antenna */
+  .ap-face { display: block; width: 100%; height: 100%; overflow: visible; }
+  .ap-face .apf-head { fill: #0c1324; stroke: #63f3ff; stroke-width: 2.2; }
+  .ap-face .apf-visor { fill: #04070f; stroke: rgba(99, 243, 255, .35); stroke-width: 1; }
+  .ap-face .apf-ear { fill: #2f8fa8; }
+  .ap-face .apf-ant path { fill: none; stroke: #63f3ff; stroke-width: 2.2; stroke-linecap: round; }
+  .ap-face .apf-tip { fill: #ff5fd2; transform-box: fill-box; transform-origin: center; animation: apTip 2.2s ease-in-out infinite; }
+  .ap-face .apf-eyes { fill: #63f3ff; transform-box: fill-box; transform-origin: center; animation: apBlink 4.6s infinite; }
+  .ap-face .apf-scan { fill: rgba(255, 255, 255, .75); opacity: 0; }
+  .ap-face .apf-mouth { fill: none; stroke: rgba(99, 243, 255, .55); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 2 1.6; }
+  @keyframes apTip { 0%, 100% { opacity: .55; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.2); } }
+  @keyframes apBlink { 0%, 44%, 50%, 100% { transform: scaleY(1); } 47% { transform: scaleY(.12); } }
+  /* driving: the eyes glow and look round, a light sweeps the visor, the antenna blinks fast */
+  .ap-on .ap-face .apf-eyes { filter: drop-shadow(0 0 2.5px #63f3ff); }
+  .ap-on .ap-face .apf-look { animation: apLook 3.2s ease-in-out infinite; }
+  .ap-on .ap-face .apf-scan { animation: apScan 1.8s ease-in-out infinite; }
+  .ap-on .ap-face .apf-tip { animation-duration: .9s; }
+  @keyframes apLook { 0%, 18%, 100% { transform: none; } 30%, 46% { transform: translateX(-2.2px); } 62%, 80% { transform: translateX(2.2px); } }
+  @keyframes apScan { 0% { transform: translateX(0); opacity: 0; } 15%, 85% { opacity: .85; } 100% { transform: translateX(17.5px); opacity: 0; } }
+
+  /* the button: top right on Home, level with the song pill; it floats, and spins a colour ring while the bot drives */
+  .ap-btn { position: absolute; z-index: 6; top: calc(17px + env(safe-area-inset-top, 0px)); right: 14px; width: 46px; height: 46px; padding: 7px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 35%, rgba(99, 243, 255, .17), rgba(var(--surface-rgb), .92) 70%); border: 1px solid rgba(99, 243, 255, .42);
+    box-shadow: 0 0 14px rgba(99, 243, 255, .22), inset 0 1px 0 rgba(255, 255, 255, .1); animation: apBob 3.4s ease-in-out infinite; transition: box-shadow .3s; }
+  @keyframes apBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  .ap-btn .ap-face { transition: transform .15s; }
+  .ap-btn:active .ap-face { transform: scale(.88); }
+  .ap-ring { position: absolute; top: -4px; right: -4px; bottom: -4px; left: -4px; border-radius: 50%; opacity: 0; transition: opacity .3s; pointer-events: none;
+    background: conic-gradient(#63f3ff, #b24bff, #ff5fd2, #63f3ff);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px)); }
+  .ap-on .ap-ring { opacity: 1; animation: apSpin 1.6s linear infinite; }
+  .ap-on .ap-btn { box-shadow: 0 0 22px rgba(99, 243, 255, .55), 0 0 40px rgba(178, 75, 255, .3); }
+  @keyframes apSpin { to { transform: rotate(1turn); } }
+
+  /* the glow round the screen while the bot drives (it breathes) */
+  #apEdge { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 110; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity .5s, visibility 0s linear .5s;
+    box-shadow: inset 0 0 0 2px rgba(99, 243, 255, .6), inset 0 0 26px 3px rgba(99, 243, 255, .32), inset 0 0 70px 12px rgba(178, 75, 255, .18); }
+  .ap-on #apEdge { visibility: visible; opacity: 1; transition: opacity .5s; animation: apBreath 2.6s ease-in-out infinite; }
+  @keyframes apBreath { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+
+  /* the bot's finger: a glowing dot that glides to what it taps; a press sends a ring out */
+  #apFinger { position: fixed; top: 0; left: 0; z-index: 119; width: 0; height: 0; pointer-events: none; opacity: 0; transition: transform .52s cubic-bezier(.3, .8, .3, 1), opacity .3s; }
+  #apFinger.show { opacity: 1; }
+  #apFinger i { position: absolute; left: -18px; top: -18px; width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .92);
+    background: radial-gradient(circle, rgba(99, 243, 255, .6), rgba(99, 243, 255, .14) 62%, rgba(99, 243, 255, 0) 72%); box-shadow: 0 0 16px rgba(99, 243, 255, .85), 0 0 3px rgba(0, 0, 0, .5); }
+  #apFinger i::after { content: ""; position: absolute; top: -2px; right: -2px; bottom: -2px; left: -2px; border-radius: 50%; border: 2px solid #63f3ff; opacity: 0; }
+  #apFinger.press i { animation: apPress .32s ease-out; }
+  #apFinger.press i::after { animation: apWave .6s ease-out; }
+  @keyframes apPress { 0%, 100% { transform: scale(1); } 35% { transform: scale(.72); } }
+  @keyframes apWave { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(2.4); opacity: 0; } }
+
+  /* the capsule: the bot, AUTOPILOT, what it is doing; tap it to stop. In the games (their score is at the top) it sits at the bottom */
+  #apHud { position: fixed; z-index: 116; top: calc(10px + env(safe-area-inset-top, 0px)); left: 50%; display: flex; align-items: center; gap: 9px; max-width: min(88vw, 380px);
+    padding: 5px 7px 5px 6px; border-radius: 999px; background: rgba(5, 9, 20, .9); border: 1px solid rgba(99, 243, 255, .5); color: #fff; cursor: pointer;
+    box-shadow: 0 0 18px rgba(99, 243, 255, .35), inset 0 0 14px rgba(99, 243, 255, .1); -webkit-tap-highlight-color: transparent;
+    transform: translate(-50%, calc(-100% - 24px)); opacity: 0; visibility: hidden; transition: transform .45s cubic-bezier(.2, 1.3, .4, 1), opacity .3s, visibility 0s linear .45s; }
+  #app.fb-on ~ #apHud, #app.game-on ~ #apHud { top: auto; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, calc(100% + 24px)); }
+  .ap-on #apHud, .ap-on #app.fb-on ~ #apHud, .ap-on #app.game-on ~ #apHud { transform: translate(-50%, 0); opacity: 1; visibility: visible; transition: transform .5s cubic-bezier(.2, 1.3, .4, 1), opacity .3s; }
+  .ap-hbot { flex: none; width: 34px; height: 34px; padding: 3px; border-radius: 50%; background: rgba(99, 243, 255, .1); }
+  .ap-htxt { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+  .ap-htxt b { font-size: 10px; letter-spacing: .22em; color: #63f3ff; text-shadow: 0 0 8px rgba(99, 243, 255, .7); }
+  #apSay { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #apSay.new { animation: apSayIn .35s ease-out; }
+  @keyframes apSayIn { 0% { opacity: 0; transform: translateY(6px); } 100% { opacity: 1; transform: none; } }
+  .ap-stop { flex: none; width: 28px; height: 28px; margin-left: 4px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .1); }
+  .ap-stop svg.ic { width: 15px; height: 15px; }
+
+  /* computer / tablet: inside the phone-shaped frame */
+  @media (min-width: 600px) and (min-height: 600px) {
+    .ap-btn { top: 57px; }
+    #apEdge { top: 14px; bottom: 14px; left: 50%; right: auto; width: 412px; margin-left: -206px; border-radius: 46px; }
+    #apHud { top: 56px; }
+    #app.fb-on ~ #apHud, #app.game-on ~ #apHud { bottom: 30px; }
+  }
+  .app-bg .ap-face *, .app-bg .ap-btn, .app-bg .ap-ring, .app-bg #apEdge { animation-play-state: paused !important; }
+  @media (prefers-reduced-motion: reduce) { .ap-face *, .ap-btn, .ap-ring, #apEdge, #apSay.new { animation: none !important; } #apFinger { transition: opacity .2s; } }
+
+  /* while it drives: the capsule takes the song pill's place on Home; Tic Tac Toe makes room for it at the bottom */
+  #s-home > .pill { transition: opacity .3s; }
+  .ap-on #s-home > .pill { opacity: 0; }
+  .ap-on #s-game .gm { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
 
   /* ---------- 0. opening intro (everything here only moves with transform / opacity, so it stays smooth) ---------- */
   #intro { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; background: #000; overflow: hidden; cursor: pointer;
@@ -2502,6 +2588,8 @@ const CONFIG = {
 
       <!-- ===================== 1. HOME ===================== -->
       <section class="screen" id="s-home" aria-label="Home">
+        <!-- the autopilot bot: tap it and the app drives itself (any touch gives you the controls back) -->
+        <button class="ap-btn" id="apBtn" data-act="bot" aria-label="Autopilot bot: the app drives itself" aria-pressed="false"><span class="ap-ring"></span><svg class="ap-face" viewBox="0 0 48 48" aria-hidden="true"><g class="apf-ant"><path d="M24 12V7"/><circle class="apf-tip" cx="24" cy="5" r="3"/></g><rect class="apf-ear" x="3.5" y="21" width="5" height="11" rx="2.5"/><rect class="apf-ear" x="39.5" y="21" width="5" height="11" rx="2.5"/><rect class="apf-head" x="8" y="12" width="32" height="29" rx="10"/><rect class="apf-visor" x="12.5" y="18" width="23" height="12.5" rx="6.25"/><g class="apf-look"><g class="apf-eyes"><rect x="17" y="21" width="4.5" height="6.5" rx="2.25"/><rect x="26.5" y="21" width="4.5" height="6.5" rx="2.25"/></g></g><rect class="apf-scan" x="14" y="19.5" width="2.2" height="9.5" rx="1.1"/><path class="apf-mouth" d="M19.5 35h9"/></svg></button>
         <button class="pill rip" data-act="open-player" aria-label="Open the music player">
           <svg class="ic"><use href="#i-audio-lines"/></svg><span class="sep">·</span><span class="pt js-title"></span>
         </button>
@@ -2770,6 +2858,7 @@ const CONFIG = {
           <div class="ctl"><svg class="ic lead"><use href="#i-eye"/></svg><div class="grow"><input type="range" class="js-bright" min="0" max="100" aria-label="Background brightness"></div><span class="num js-brnum">30</span></div>
           <div class="ctl"><svg class="ic lead"><use href="#i-sparkles"/></svg><div class="grow"><b>Soft blur</b><small>Prettier glass, but can lag on some phones</small></div><button class="sw" id="swBlur" role="switch" aria-checked="false" aria-label="Soft blur"></button></div>
           <div class="ctl"><svg class="ic lead"><use href="#i-sparkles"/></svg><div class="grow"><b>Floating particles</b></div><button class="sw" id="swFx" role="switch" aria-checked="true" aria-label="Floating particles"></button></div>
+          <div class="ctl"><svg class="ic lead"><use href="#i-bot"/></svg><div class="grow"><b>Autopilot bot</b><small>The app drives itself: music, screens, both games. Touch to take over</small></div><button class="sw" id="swBot" role="switch" aria-checked="false" aria-label="Autopilot bot"></button></div>
         </div>
 
         <div class="glass list">
@@ -2978,6 +3067,14 @@ const CONFIG = {
 
   <!-- popup messages (above everything); the gold gradient for their icons -->
   <div id="toast" aria-live="polite"></div>
+  <!-- the autopilot bot: a glow round the screen while it drives, its finger, its capsule (what it is doing; tap it to stop) -->
+  <div id="apEdge" aria-hidden="true"></div>
+  <div id="apFinger" aria-hidden="true"><i></i></div>
+  <div id="apHud" role="button" aria-label="Autopilot is on. Tap to stop it">
+    <span class="ap-hbot"><svg class="ap-face" viewBox="0 0 48 48" aria-hidden="true"><g class="apf-ant"><path d="M24 12V7"/><circle class="apf-tip" cx="24" cy="5" r="3"/></g><rect class="apf-ear" x="3.5" y="21" width="5" height="11" rx="2.5"/><rect class="apf-ear" x="39.5" y="21" width="5" height="11" rx="2.5"/><rect class="apf-head" x="8" y="12" width="32" height="29" rx="10"/><rect class="apf-visor" x="12.5" y="18" width="23" height="12.5" rx="6.25"/><g class="apf-look"><g class="apf-eyes"><rect x="17" y="21" width="4.5" height="6.5" rx="2.25"/><rect x="26.5" y="21" width="4.5" height="6.5" rx="2.25"/></g></g><rect class="apf-scan" x="14" y="19.5" width="2.2" height="9.5" rx="1.1"/><path class="apf-mouth" d="M19.5 35h9"/></svg></span>
+    <span class="ap-htxt"><b>AUTOPILOT</b><span id="apSay" aria-live="polite"></span></span>
+    <span class="ap-stop" aria-hidden="true"><svg class="ic"><use href="#i-x"/></svg></span>
+  </div>
   <!-- the charger: plugged in = a full-screen charging animation until it is unplugged (the app tells the page; a browser's Battery API too) -->
   <div id="chg" role="status" aria-live="polite" aria-hidden="true">
     <div class="chg-box">
@@ -3126,6 +3223,9 @@ const CONFIG = {
         else if (what === "fbhit") { tone("sine", 170, 52, 0.12, 0.34, t, 0.2); crack(t, 0.2, 0.07, 3400, 380); }                               // the crash: a short thud
         else if (what === "fbdie") { tone("triangle", 820, 170, 0.5, 0.06, t, 0.55); fbSwish(t, 0.5, 0.12, 2800, 380); }                         // falling: a swoosh that drops
         else if (what === "fbswoosh") fbSwish(t, 0.3, 0.13, 480, 3000);                                                                        // the panels slide in
+        else if (what === "boton") { tone("square", 440, 880, 0.12, 0.045, t, 0.16); tone("square", 660, 1320, 0.1, 0.04, t + 0.12, 0.18); tone("sine", 1760, 2637, 0.25, 0.06, t + 0.24, 0.45); }   // the autopilot bot wakes up: beep-boop, up
+        else if (what === "botoff") { tone("square", 880, 440, 0.12, 0.04, t, 0.16); tone("square", 660, 330, 0.14, 0.035, t + 0.12, 0.22); }   // it rests: down
+        else if (what === "bottap") tone("sine", 1900, 1400, 0.04, 0.035, t, 0.06);   // its finger taps: a tiny click
       }
     };
   })();
@@ -3915,6 +4015,7 @@ const CONFIG = {
     updateChrome(); pvUpdate();
   }
   function handleBack() {                                   // used by the Android back button (and the Escape key)
+    if (apBackKey()) return true;                           // the autopilot bot is driving: back only stops it
     if (chg && chg.on && chg.el.classList.contains("show")) { chgHide(); return true; }   // the charging animation first
     if (termOpen) { closeTerm(); return true; }
     if (eqOpen) { closeEq(); return true; }
@@ -4181,6 +4282,7 @@ const CONFIG = {
       case "open-player": openPlayer(); break;
       case "close-player": closePlayer(); break;
       case "back": handleBack(); break;
+      case "bot": apToggle(); break;
       case "close-sheet": closeSheet(); break;
       case "edit": editBio(); break;
       case "save-bio": saveBio(); break;
@@ -5498,7 +5600,7 @@ const CONFIG = {
     b: ["", "", "", "", "", "", "", "", ""], turn: "X", over: false, busy: false, lock: false, timer: 0, inT: 0, seq: 0,
     mode: store.get("ttt:mode", "ai") === "pvp" ? "pvp" : "ai", shown: [0, 0, 0], opened: false,
     diff: GM_DIFFS.indexOf(store.get("ttt:diff", "")) > -1 ? store.get("ttt:diff", "") : "normal",   // the AI's level (new players: Normal)
-    hist: [], first: "X", round: 0, hints: GM_HINTS, undos: 0, line: null, hintI: -1, hintT: 0, hintNow: null, hintCell: -1, badgeN: String(GM_HINTS), sayT: 0, kf: 4
+    hist: [], first: "X", round: 0, hints: GM_HINTS, undos: 0, line: null, hintI: -1, hintT: 0, hintNow: null, hintCell: -1, badgeN: String(GM_HINTS), sayT: 0, kf: 4, bot: false
   };
   // other parts of the game (stats, effects) listen to these: gmOn.end.push(function (d) { ... })
   var gmOn = { open: [], leave: [], place: [], turn: [], end: [], reset: [], mode: [], diff: [], undo: [], hint: [] };
@@ -5625,7 +5727,7 @@ const CONFIG = {
   function gmEnd() {                                        // win or draw? save the score and show it
     var w = gmWinner(gm.b); if (!w) return false;
     gm.over = true; gm.busy = false; gm.line = w.line || null; gm.el.classList.add("gm-ended"); gmTurnUI(); gmIdle(false); gmActsUI();
-    var s = gmScores(gm.mode); s[w.p === "X" ? 0 : w.p === "O" ? 1 : 2]++; store.set("ttt:" + gm.mode, s.join(","));
+    var s = gmScores(gm.mode); s[w.p === "X" ? 0 : w.p === "O" ? 1 : 2]++; if (!gm.bot) store.set("ttt:" + gm.mode, s.join(","));   // (the autopilot bot's rounds are not saved)
     if (w.p) {
       w.line.forEach(function (i) { gm.cells[i].classList.add("win"); });
       gm.grid.classList.add("over"); gmBeam(w.line);
@@ -5642,7 +5744,7 @@ const CONFIG = {
     gmEndSay();
     setTimeout(function () { gmShowScores(true); }, reduced ? 0 : w.p ? 650 : 950);   // a draw: the cells flash grey first, then the number bumps
     gmEmit("end", { p: w.p, line: w.line || null, mode: gm.mode, lost: !!(w.p && gm.mode === "ai" && w.p === "O"), scores: s, board: gm.b.slice(),
-                    diff: gm.diff, first: gm.first, round: gm.round, moves: gm.hist.length, hints: GM_HINTS - gm.hints, undos: gm.undos });
+                    diff: gm.diff, first: gm.first, round: gm.round, moves: gm.hist.length, hints: GM_HINTS - gm.hints, undos: gm.undos, bot: !!gm.bot });
     return true;
   }
   function gmBeamAt(L) {                                    // put the beam on a line (in the grid's pixels)
@@ -6129,6 +6231,7 @@ const CONFIG = {
 
   // a round is over: count it once (an undo can only happen before the end, so it never changes these numbers)
   gmOn.end.push(function (d) {
+    if (d.bot) return;                                      // (the autopilot bot's rounds don't count)
     var m = gmxLoad(), p = d.p === "X" || d.p === "O" ? d.p : "", won = false, day = gmxDay();
     if (d.mode === "pvp") {
       if (p) { m.xn = m.xs === p ? m.xn + 1 : 1; m.xs = p; } else { m.xs = ""; m.xn = 0; }
@@ -6657,9 +6760,9 @@ const CONFIG = {
   /* =====================================================================
      GAME: FLAPPY BIRD  (the second card under Games on Social)
      All of it is pixel art drawn by this code. The pieces (bird, pipes, ground, scenery, digits, panel, medals, buttons)
-     are drawn once into small canvases; a frame only copies them onto one small canvas, 288 pixels wide and as tall as
-     the screen's shape (a taller phone simply gets more sky), which the CSS scales up with crisp square pixels.
-     One art pixel = 3 × 3 canvas pixels (about 96 across the screen: chunky). The physics run at a fixed 60 steps a
+     are drawn once into small canvases; a frame only copies them onto one canvas laid out 288 game pixels wide and as tall
+     as the screen's shape (a taller phone simply gets more sky), drawn at the screen's real sharpness: the pieces of the
+     picture smooth, the pixel art with crisp square pixels. One art pixel = 3 × 3 game pixels (about 96 across: chunky). The physics run at a fixed 60 steps a
      second; the loop runs only while this screen is shown and the app is in front.
      ===================================================================== */
   var FB_W = 288, FB_GND = 84, FB_PW = 60, FB_LH = 30, FB_GAP = 138, FB_SPACE = 180, FB_SPEED = 2.5, FB_BX = 88, FB_R = 17;
@@ -6667,28 +6770,35 @@ const CONFIG = {
   var FB_INK = "#1d0e05", FB_ORANGE = { o: FB_INK, w: "#fffaf2", q: "#df5f02", O: "#e86c02", Q: "#d15805", W: "#fff", z: "rgba(30, 12, 2, .5)" };
   var FB_SKY = ["#0bc0fd", "#0fc2fd", "#14c4fd", "#19c6fd", "#1fc8fd", "#25cbfc", "#2bcdfc", "#31cffc", "#37d1fc", "#3dd4fc", "#44d7fc", "#4adafc", "#50dcfc"];
 
-  /* ---------- the pieces cut out of your Flappy Bird picture (assets/flappy-sprites.webp, at this game's scale):
+  /* ---------- the pieces cut out of your Flappy Bird picture (assets/flappy-sprites.webp, 3 sheet pixels per game pixel, so they stay sharp):
      the sky, the clouds + city + bushes (mirrored so it repeats without a seam), the pipe (one row of the long part, the two lips),
      the bird with its wing up / level / down, the pause button. Until it has loaded, the drawn pieces below stand in. ---------- */
-  var FB_SHEET = { sky: [0, 0, 1, 242], band: [3, 0, 204, 184], tube: [308, 0, 60, 1], lipT: [370, 0, 66, 30], lipB: [438, 0, 66, 30],
-                   bird0: [506, 0, 59, 41], bird1: [567, 0, 59, 41], bird2: [628, 0, 59, 41], pause: [689, 0, 36, 35] };
+  var FB_SS = 3, FB_SHEET = { sky: [0, 0, 1, 726], band: [5, 0, 612, 552], tube: [621, 0, 180, 1], lipT: [805, 0, 198, 90], lipB: [1007, 0, 198, 90],
+                   bird0: [1209, 0, 177, 123], bird1: [1390, 0, 177, 123], bird2: [1571, 0, 177, 123], pause: [1752, 0, 108, 105] };
   var fbSheet = null;
   function fbLoadSheet() {
     if (fbSheet) return;
     fbSheet = new Image(); fbSheet.onload = fbUseSheet; fbSheet.src = "assets/flappy-sprites.webp";
   }
-  function fbLabel(lip) {                           // the credit on each bottom pipe's rim: "MADE BY" over a bigger "IMRAN"
-    var c = fbCanvas(lip.width, lip.height), x = c.getContext("2d");
-    x.drawImage(lip, 0, 0);
+  function fbLabel(lip) {                           // the credit on each bottom pipe's rim: "MADE BY" over a bigger "IMRAN" (crisp at the lip's scale)
+    var c = fbCanvas(lip.width, lip.height), x = c.getContext("2d"), s = lip.sm ? FB_SS : 1;
+    x.drawImage(lip, 0, 0); x.imageSmoothingEnabled = false;
     var txt = function (str, k, col) { return fbArt(fbThin(str).map(function (r) { return r.replace(/#/g, "w"); }), { w: col }, k); };
     var put = function (str, k, y) {
-      var w = txt(str, k, "#fff"), sh = txt(str, k, "rgba(8, 54, 8, .8)"), x0 = Math.round((c.width - w.width) / 2);
-      x.drawImage(sh, x0 + 1, y + 1); x.drawImage(w, x0, y);
+      var w = txt(str, k, "#fff"), sh = txt(str, k, "rgba(8, 54, 8, .8)"), x0 = Math.round((c.width / s - w.width) / 2), ww = w.width * s, wh = w.height * s;
+      x.drawImage(sh, (x0 + 1) * s, (y + 1) * s, ww, wh); x.drawImage(w, x0 * s, y * s, ww, wh);
     };
     put("MADE BY", 1, 4); put("IMRAN", 2, 12);
+    c.uw = lip.uw; c.uh = lip.uh; c.sm = lip.sm;
     return c;
   }
-  function fbCut(k) { var r = FB_SHEET[k], c = fbCanvas(r[2], r[3]); c.getContext("2d").drawImage(fbSheet, r[0], r[1], r[2], r[3], 0, 0, r[2], r[3]); return c; }
+  function fbCut(k) {                               // a piece of the sheet; uw × uh = its size in game pixels, sm = draw it smoothly (a picture, not pixel art)
+    var r = FB_SHEET[k], c = fbCanvas(r[2], r[3]);
+    c.getContext("2d").drawImage(fbSheet, r[0], r[1], r[2], r[3], 0, 0, r[2], r[3]);
+    c.uw = r[2] / FB_SS; c.uh = r[3] / FB_SS; c.sm = true; return c;
+  }
+  function fbUW(i) { return i.uw || i.width; }
+  function fbUH(i) { return i.uh || i.height; }
   function fbUseSheet() {                            // the picture's pieces take over from the drawn ones
     var S = fb.S; if (!S || !fbSheet || !fbSheet.naturalWidth || S.pic) return;
     S.pic = true; S.skyCol = fbCut("sky"); S.band = fbCut("band"); S.tube = fbCut("tube"); S.lipT = fbCut("lipT"); S.lipB = fbLabel(fbCut("lipB"));
@@ -6696,6 +6806,7 @@ const CONFIG = {
     var r = FB_SHEET.pause, sw = fbSheet.naturalWidth, sh = fbSheet.naturalHeight, ps = $("fbPause").style;   // (the button shows its piece of the sheet)
     ps.backgroundImage = "url(assets/flappy-sprites.webp)"; ps.backgroundSize = (sw / r[2] * 100) + "% " + (sh / r[3] * 100) + "%";
     ps.backgroundPosition = (r[0] / (sw - r[2]) * 100) + "% " + (sh > r[3] ? r[1] / (sh - r[3]) * 100 : 0) + "%";
+    $("fbPause").classList.add("fb-hd");
     if (fb.g) fbDraw(1);
   }
 
@@ -6741,7 +6852,7 @@ const CONFIG = {
 
   var fb = { el: $("s-flappy"), cv: $("fbCv"), g: null, S: null, W: 0, H: 0, G: 0, px: 1, hud: 20, run: false, raf: 0, last: 0, acc: 0, opened: false,
              mode: "ready", t: 0, x: FB_BX, y: 0, py: 0, ry: 0, vy: 0, rot: 0, prot: 0, rv: 0, wing: 1, wt: 0, scroll: 0, ps: 0, pipes: [], parts: [], flaps: 0,
-             score: 0, best: 0, newBest: false, cnt: 0, overT: 0, doneT: -1, dieT: 0, medal: -1, spark: null, flash: 0, shake: 0, fade: 0 };
+             score: 0, best: 0, newBest: false, bot: false, botRun: false, botEnd: 0, cnt: 0, overT: 0, doneT: -1, dieT: 0, medal: -1, spark: null, flash: 0, shake: 0, fade: 0 };
 
   /* ---------- pixel helpers ---------- */
   function fbCanvas(w, h) { var c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
@@ -6924,16 +7035,17 @@ const CONFIG = {
     return c;
   }
 
-  /* ---------- size: 288 wide (a wider screen: 512 tall and wider) ---------- */
+  /* ---------- size: 288 game pixels wide (a wider screen: 512 tall and wider), drawn at the screen's real sharpness (k device pixels per game pixel) ---------- */
   function fbSize() {
     var w = fb.el.clientWidth, h = fb.el.clientHeight; if (!w || !h || !fb.S) return false;
     var W = FB_W, H = Math.round(FB_W * h / w);
     if (H < 512) { H = 512; W = Math.max(FB_W, Math.round(512 * w / h)); }
     fb.px = w / W; fb.el.style.setProperty("--fbpx", fb.px.toFixed(4));
     fb.hud = Math.round($("fbPause").offsetTop / fb.px);
-    if (W === fb.W && H === fb.H && fb.g) { fbPlace(); return false; }
+    var k = Math.round(Math.max(1, Math.min(isUltra() ? 3 : 4, fb.px * (window.devicePixelRatio || 1))) * 100) / 100;
+    if (W === fb.W && H === fb.H && k === fb.k && fb.g) { fbPlace(); return false; }
     var dG = fb.G ? H - FB_GND - fb.G : 0;
-    fb.W = fb.cv.width = W; fb.H = fb.cv.height = H; fb.G = H - FB_GND;
+    fb.W = W; fb.H = H; fb.k = k; fb.cv.width = Math.round(W * k); fb.cv.height = Math.round(H * k); fb.G = H - FB_GND;
     fb.g = fb.cv.getContext("2d", { alpha: false }); fb.g.imageSmoothingEnabled = false;
     if (!fb.S.ground || fb.S.ground.width < W + 54) fb.S.ground = fbGround(Math.ceil((W + 54) / 18) * 6);
     fb.S.sky = fbSkyArt(H, fb.G);
@@ -6961,12 +7073,12 @@ const CONFIG = {
     return { x: x, c: c, gy: Math.round(c - FB_GAP / 2), done: false };
   }
   function fbBegin() {
-    fb.mode = "play"; fb.t = 0; fb.score = 0;
+    fb.mode = "play"; fb.t = 0; fb.score = 0; fb.botRun = fb.bot;   // (a flight the autopilot bot starts is never saved)
     fb.pipes = [fbNewPipe(Math.max(FB_BX + 330, fb.W + 40))];
     fbFlap(); fbUI(); fbSay("");
   }
   function fbFlap() {
-    fb.vy = FB_FLAP; fb.rv = 0; fb.flaps++; sfx.play("fbwing", true);
+    fb.vy = FB_FLAP; fb.rv = 0; fb.flaps++; sfx.play("fbwing", true); if (fb.bot) apPulse();
     for (var i = 0; i < 4; i++) fb.parts.push({ x: fb.x - 24 - i * 6, y: fb.y + 6 + i * 4 + Math.random() * 3, vy: .2 + Math.random() * .3, life: 12 + i * 3, c: (i + fb.flaps) % 2 });
   }
   function fbWingStep(n) { if (!n) { fb.wing = 1; fb.wt = 0; return; } if (++fb.wt >= n) { fb.wt = 0; fb.wing = (fb.wing + 1) % 4; } }
@@ -6985,8 +7097,8 @@ const CONFIG = {
   function fbCrash(ground) {
     sfx.play("fbhit"); fbBuzz("lose");
     fb.flash = 14; fb.shake = reduced ? 0 : 18;
-    store.set("fb:games", (parseInt(store.get("fb:games", "0"), 10) || 0) + 1);
-    fb.newBest = fb.score > fb.best;
+    if (!fb.botRun) store.set("fb:games", (parseInt(store.get("fb:games", "0"), 10) || 0) + 1);
+    fb.newBest = !fb.botRun && fb.score > fb.best;
     if (fb.newBest) { fb.best = fb.score; store.set("fb:best", fb.best); }
     fbCard();
     if (ground) fbLand();
@@ -7011,6 +7123,7 @@ const CONFIG = {
       fbWingStep(6);
     } else if (m === "play") {
       fb.scroll += FB_SPEED;
+      if (fb.bot && fbBotFlap()) fbFlap();          // (the autopilot bot flying)
       fb.vy = Math.min(FB_VMAX, fb.vy + FB_GRAV); fb.y = Math.max(-60, fb.y + fb.vy);
       if (fb.vy < 2) { fb.rot = Math.max(-25, fb.rot - 14); fb.rv = 0; }               // going up: nose up
       else { fb.rv = Math.min(6, fb.rv + .4); fb.rot = Math.min(90, fb.rot + fb.rv); }   // falling: the nose drops, faster and faster
@@ -7050,7 +7163,12 @@ const CONFIG = {
   }
 
   /* ---------- drawing ---------- */
-  function fbTile(img, off, y) { var g = fb.g, w = img.width, x = -(Math.round(off) % w); if (x > -9) x -= w; for (; x < fb.W + 9; x += w) g.drawImage(img, x, y); }
+  function fbTile(img, off, y) {                   // a strip repeated across (a picture: placed to the device pixel, a hair wider so no seam shows)
+    var g = fb.g, w = fbUW(img), h = fbUH(img), k = fb.k, x = -((img.sm ? Math.round(off * k) / k : Math.round(off)) % w), e = img.sm ? 1 / k : 0;
+    if (x > -9) x -= w;
+    for (; x < fb.W + 9; x += w) g.drawImage(img, x, y, w + e, h);
+  }
+  function fbDev(v) { return Math.round(v * fb.k) / fb.k; }   // to the nearest device pixel (smooth movement, still crisp)
   function fbNum(n, x, y, right) {                  // a number from digit pictures, centred on x (or ending at x); gives back its left edge
     var s = String(n), D = fb.S.dig, w = 3, i, d;
     for (i = 0; i < s.length; i++) w += D[s.charCodeAt(i) - 48].width - 3;
@@ -7064,32 +7182,37 @@ const CONFIG = {
     var W = fb.W, H = fb.H, G = fb.G, m = fb.mode, i, p;
     var lag = (fb.scroll - fb.ps) * (1 - a), sc = fb.scroll - lag, ox = 0, oy = 0;
     if (fb.shake) { var q = Math.ceil(fb.shake / 6); ox = Math.round((Math.random() * 2 - 1) * q); oy = Math.round((Math.random() * 2 - 1) * q); }
-    g.setTransform(1, 0, 0, 1, ox, oy);
+    g.setTransform(fb.k, 0, 0, fb.k, ox * fb.k, oy * fb.k);   // everything below is in game pixels
     var still = isUltra();                          // slow devices: the far scenery stands still
     if (S.pic) {                                    // the picture's sky down to the scenery, then its clouds, city and bushes (drifting slowly)
-      g.drawImage(S.skyCol, -9, -9, W + 18, G - S.band.height + 12);
-      fbTile(S.band, still ? 0 : sc * .12, G - S.band.height);
+      g.imageSmoothingEnabled = true;
+      g.drawImage(S.skyCol, -9, -9, W + 18, G - S.band.uh + 12);
+      fbTile(S.band, still ? 0 : sc * .12, G - S.band.uh);
     } else {
       g.drawImage(S.sky, -9, -9, W + 18, S.sky.height);
       fbTile(S.cloud, still ? 0 : sc * .1, G - 180);
       fbTile(S.city, still ? 0 : sc * .25, G - 112);
       fbTile(S.bush, still ? 0 : sc * .5, G - 72);
     }
+    g.imageSmoothingEnabled = !!S.tube.sm;
     for (i = 0; i < fb.pipes.length; i++) {
       p = fb.pipes[i];
-      var px = Math.round(p.x + lag), top = p.gy, bot = p.gy + FB_GAP;
+      var px = fbDev(p.x + lag), top = p.gy, bot = p.gy + FB_GAP;
       if (px > W + 9 || px < -FB_PW - 12) continue;
       g.drawImage(S.tube, px, -9, FB_PW, top - FB_LH + 9);
-      g.drawImage(S.lipT, px - 3, top - FB_LH);
-      g.drawImage(S.lipB, px - 3, bot);
+      g.drawImage(S.lipT, px - 3, top - FB_LH, fbUW(S.lipT), fbUH(S.lipT));
+      g.drawImage(S.lipB, px - 3, bot, fbUW(S.lipB), fbUH(S.lipB));
       g.drawImage(S.tube, px, bot + FB_LH, FB_PW, Math.max(0, G - bot - FB_LH));
     }
-    g.drawImage(S.ground, -(Math.round(sc) % 18) - 18, G);
+    g.imageSmoothingEnabled = false;
+    g.drawImage(S.ground, -(fbDev(sc) % 18) - 18, G);
     for (i = 0; i < fb.parts.length; i++) { p = fb.parts[i]; g.fillStyle = p.c ? "#8aecfe" : "#d4fafc"; g.fillRect(Math.round(p.x), Math.round(p.y), 3, 3); }
     var by = fb.py + (fb.y - fb.py) * a, br = fb.prot + (fb.rot - fb.prot) * a;
-    g.save(); g.translate(Math.round(fb.x), Math.round(by));
-    if (Math.abs(br) > .5) { g.rotate(br * Math.PI / 180); g.imageSmoothingEnabled = true; }   // (tilted: smooth edges instead of jagged ones)
-    var bd = S.bird[FB_WINGS[fb.wing]]; g.drawImage(bd, -Math.round(bd.width / 2), -Math.round(bd.height / 2)); g.restore(); g.imageSmoothingEnabled = false;
+    var bd = S.bird[FB_WINGS[fb.wing]], bw = fbUW(bd), bh = fbUH(bd);
+    g.save(); g.translate(fbDev(fb.x), fbDev(by));
+    if (Math.abs(br) > .5) g.rotate(br * Math.PI / 180);
+    g.imageSmoothingEnabled = !!bd.sm || Math.abs(br) > .5;   // (the picture, or tilted: smooth edges instead of jagged ones)
+    g.drawImage(bd, -Math.round(bw / 2), -Math.round(bh / 2), bw, bh); g.restore(); g.imageSmoothingEnabled = false;
 
     if (m === "ready") {
       g.drawImage(S.ready, Math.round(W / 2 - S.ready.width / 2), Math.round(G * .17));
@@ -7203,6 +7326,212 @@ const CONFIG = {
   };
   fb.best = Math.max(0, parseInt(store.get("fb:best", "0"), 10) || 0);
   fbCard();
+
+  /* =====================================================================
+     AUTOPILOT BOT  (the bot button on Home, or the switch in Settings)
+     Turned on, the app drives itself: a glowing finger taps through it like a person would: the music on, the
+     profile, the player (and the next song), Social, a round of Tic Tac Toe (the bot plays your side with the best
+     moves), a flight in Flappy Bird, Settings, Home, and round again. The bot's games never change your scores,
+     stats or best. Any real touch, a key, the back button or the capsule at the top gives you the controls back.
+     ===================================================================== */
+  var AP_SAY = { win: "Winning move!", block: "Blocking the AI", fork: "Setting a trap", stop: "Stopping a trap", center: "Taking the centre", corner: "Taking a corner", side: "Taking a side" };
+  var ap = { on: false, tok: 0, i: 0, tapping: false, hud: $("apHud"), say: $("apSay"), finger: $("apFinger"), btn: $("apBtn"), sw: $("swBot") };
+
+  function apLater(ms, fn) {                        // the next step after ms: dropped if the autopilot stops; waits while the app is in the background
+    var tok = ap.tok;
+    setTimeout(function tick() {
+      if (tok !== ap.tok) return;
+      if (paused || document.hidden) { setTimeout(tick, 500); return; }
+      if (fn) fn();
+    }, ms);
+  }
+  function apSay(t) {                               // what the bot is doing (the capsule's second line slides in)
+    if (ap.say.textContent === t) return;
+    ap.say.textContent = t; ap.say.classList.remove("new"); void ap.say.offsetWidth; ap.say.classList.add("new");
+  }
+  function apSeen(t) { return !!(t && t.getClientRects().length && getComputedStyle(t).visibility !== "hidden"); }
+  function apFind(sel) { return qa(sel).filter(apSeen)[0] || null; }
+  function apFingerAt(x, y) { ap.finger.style.transform = "translate(" + Math.round(x) + "px," + Math.round(y) + "px)"; ap.finger.classList.add("show"); }
+  function apPulse() { ap.finger.classList.remove("press"); void ap.finger.offsetWidth; ap.finger.classList.add("press"); }
+  function apPress(fn) { apPulse(); sfx.play("bottap", true); apLater(110, fn); }
+  function apRipple(t, x, y) {                      // the same ripple a real tap makes
+    var host = t.closest && t.closest(".rip"); if (!host || !host.animate || isUltra() || reduced) return;
+    var r = host.getBoundingClientRect(), s = Math.max(r.width, r.height) * 2.1, d = document.createElement("span");
+    d.className = "ripple"; d.style.cssText = "width:" + s + "px;height:" + s + "px;left:" + (x - r.left - s / 2) + "px;top:" + (y - r.top - s / 2) + "px";
+    host.appendChild(d);
+    d.animate([{ transform: "scale(0)", opacity: .9 }, { transform: "scale(1)", opacity: 0 }], { duration: 540, easing: "cubic-bezier(.2,.7,.3,1)" }).onfinish = function () { d.remove(); };
+  }
+  function apTap(t, then, scrolled) {               // the finger glides to t, presses, and t gets a click (like a real tap)
+    if (typeof t === "string") t = apFind(t);
+    if (!t || !apSeen(t)) { apLater(200, then); return; }      // (not there right now: carry on)
+    var r = t.getBoundingClientRect();
+    if (!scrolled && t.closest(".screen") && (r.top < 70 || r.bottom > window.innerHeight - 110)) {   // off screen, or under the tabs: scroll to it first
+      t.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
+      apLater(reduced ? 80 : 560, function () { apTap(t, then, true); });
+      return;
+    }
+    apFingerAt(r.left + r.width / 2, r.top + r.height / 2);
+    apLater(reduced ? 120 : 580, function () {
+      apPress(function () {
+        var q = t.getBoundingClientRect();
+        apRipple(t, q.left + q.width / 2, q.top + q.height / 2);
+        ap.tapping = true;
+        try { if (t.click) t.click(); else t.dispatchEvent(new MouseEvent("click", { bubbles: true })); } finally { ap.tapping = false; }
+        apLater(240, then);
+      });
+    });
+  }
+  function apScroll(px, then) {                     // the screen scrolls down a little, then back up (to show what is there)
+    var sc = el[curScreen]; if (!sc || reduced || sc.scrollHeight - sc.clientHeight < 40) { apLater(900, then); return; }
+    sc.scrollBy({ top: px, behavior: "smooth" });
+    apLater(1500, function () { sc.scrollTo({ top: 0, behavior: "smooth" }); apLater(800, then); });
+  }
+
+  /* ---------- the tour (round and round) ---------- */
+  var AP_PLAN = [
+    { fn: apHome },
+    { fn: apMusic },
+    { say: "Opening your profile", tap: "#s-home .namerow", wait: 1500 },
+    { say: "Looking around", fn: function (next) { apScroll(320, next); } },
+    { say: "Back to Home", tap: '#s-profile [data-act="back"]', wait: 1100 },
+    { say: "Opening the player", tap: '.tab[data-tab="music"]', wait: 3800 },
+    { say: "Next song", tap: '#player [data-act="next"]', wait: 4200 },
+    { say: "Closing the player", tap: '#player [data-act="close-player"]', wait: 1000 },
+    { say: "Going to Social", tap: '.tab[data-tab="social"]', wait: 1500 },
+    { say: "Let's play Tic Tac Toe", tap: "#s-social .gm-card", wait: 1700 },
+    { fn: apTicTacToe },
+    { say: "Leaving the game", tap: '#s-game [data-act="back"]', wait: 1300 },
+    { say: "Flappy Bird time", tap: "#s-social .fb-card", wait: 1500 },
+    { fn: apFlappy },
+    { say: "Leaving the game", tap: "#fbBack", wait: 1300 },
+    { say: "Checking the settings", tap: '.tab[data-tab="settings"]', wait: 1300 },
+    { say: "Looking around", fn: function (next) { apScroll(280, next); } },
+    { say: "Back home", tap: '.tab[data-tab="home"]', wait: 5500 }
+  ];
+  function apRun() {
+    if (!ap.on) return;
+    var s = AP_PLAN[ap.i++ % AP_PLAN.length], after = function () { apLater(s.wait || 300, apRun); };
+    if (s.say) apSay(s.say);
+    if (s.tap) apTap(s.tap, after); else if (s.fn) s.fn(after); else after();
+  }
+  function apHome(next) {                           // start from Home (anything open closes first)
+    closeMenu(); closeSheet(); if (eqOpen) closeEq(); if (termOpen) closeTerm(); if (playerOpen) closePlayer(true);
+    if (curScreen === "home" && stack.length === 1) { next(); return; }
+    apSay("Going home");
+    var t = apFind('.tab[data-tab="home"]');
+    if (t) apTap(t, function () { apLater(800, next); }); else { setTab("home"); apLater(900, next); }
+  }
+  function apMusic(next) {                          // the music: on, if it is off (the play button on Home)
+    if (!songs.length) { next(); return; }
+    if (!audio.paused) { apSay("Vibing to " + ((songs[idx] || {}).title || "your music")); apLater(1800, next); return; }
+    apSay("Turning the music on");
+    apTap('#s-home .pbtn[data-act="toggle"]', function () { apLater(1800, next); });
+  }
+  function apTicTacToe(next) {                      // one round: the bot plays your side (both sides with two players), always the best move
+    gm.bot = true;
+    var first = true, turn = function () {
+      if (curScreen !== "game") { gm.bot = false; next(); return; }
+      if (gm.over) {
+        var w = gmWinner(gm.b), p = w ? w.p : "";
+        apSay(!p ? "A draw. Good game!" : gm.mode === "pvp" ? p + " wins!" : p === "X" ? "The bot wins!" : "The AI got me!");
+        apLater(3000, function () { gm.bot = false; next(); });
+        return;
+      }
+      if (gm.lock || gm.busy || (gm.mode === "ai" && gm.turn !== "X")) { apLater(260, turn); return; }   // the board is busy, or the AI is thinking
+      var h = first ? null : gmHintFor(gm.b, gm.turn), i = h ? h.i : gmPick([0, 2, 4, 6, 8]);
+      apSay((gm.mode === "pvp" ? gm.turn + ": " : "") + (h ? AP_SAY[h.kind] || "Thinking" : "Opening move"));
+      first = false;
+      apTap(gm.cells[i], function () { apLater(650, turn); });
+    };
+    if (gm.over || gm.b.join("")) { apSay("New round"); gmReset(); apLater(1000, turn); } else apLater(400, turn);
+  }
+  function apFlappy(next) {                         // one flight: the bot flies to a score it picked, then lets go (your best stays yours)
+    if (curScreen !== "flappy") { next(); return; }
+    if (fb.mode === "paused") fbReset();            // (a run you left half-way makes room for the bot's)
+    fb.bot = true; fb.botEnd = 8 + Math.floor(Math.random() * 17);
+    var shown = -1, go = function () {
+      if (fb.mode !== "ready" || fb.fade) { apLater(300, go); return; }
+      apSay("Tap to fly");
+      var r = fb.el.getBoundingClientRect();
+      apFingerAt(r.left + r.width * .5, r.top + r.height * .64);
+      apLater(620, function () { apPress(function () { fbAction(); watch(); }); });
+    }, watch = function () {
+      if (curScreen !== "flappy") { fb.bot = false; next(); return; }
+      if (fb.mode === "play" || fb.mode === "dying") {
+        if (fb.score !== shown) { shown = fb.score; apSay(fb.score >= fb.botEnd ? "Letting go…" : "Flying · score " + fb.score); }
+        apLater(200, watch); return;
+      }
+      if (fb.mode === "over" && fbBtnOn()) { apSay("Score " + fb.score + (fb.medal >= 0 ? " and a medal!" : "")); apLater(2400, function () { fb.bot = false; next(); }); return; }
+      apLater(300, watch);
+    };
+    apLater(300, go);
+  }
+  /* how the bot flies: a simple rule (stay above a safe line in the next gap, quick taps when far below it), checked by
+     looking ahead: a pretend bird flies 1.5 s on, once flapping now and once not, and the bot does what lasts longer */
+  function fbBotRule(y, vy, pipes) {
+    var T = fb.G * .5;
+    for (var i = 0; i < pipes.length; i++) if (pipes[i].x + FB_PW + 3 > fb.x - FB_R) { T = pipes[i].gy + FB_GAP - FB_R - 20; break; }
+    return y > T && (vy > -1 || y > T + 30);
+  }
+  function fbBotSafe(y, rot, pipes) {               // the game's own crash test, for the pretend bird
+    var a = rot * Math.PI / 180;
+    if (y + (a > 0 ? 21 * Math.cos(a) + 28 * Math.sin(a) : 21) - 4 >= fb.G) return false;
+    var cx = fb.x + 3 * Math.cos(a), cy = y + 3 * Math.sin(a), r = FB_R;
+    for (var i = 0; i < pipes.length; i++) {
+      var p = pipes[i], top = p.gy, bot = p.gy + FB_GAP;
+      if (p.x - 3 > cx + r || p.x + FB_PW + 3 < cx - r) continue;
+      if (fbHit(cx, cy, r, p.x - 3, top - FB_LH, FB_PW + 6, FB_LH) || fbHit(cx, cy, r, p.x, top - 3000, FB_PW, 3000 - FB_LH) ||
+          fbHit(cx, cy, r, p.x - 3, bot, FB_PW + 6, FB_LH) || fbHit(cx, cy, r, p.x, bot + FB_LH, FB_PW, 3000)) return false;
+    }
+    return true;
+  }
+  function fbBotSim(flap) {                         // how many steps (of 90) the pretend bird lasts
+    var y = fb.y, vy = fb.vy, rot = fb.rot, rv = fb.rv, pipes = fb.pipes.map(function (p) { return { x: p.x, gy: p.gy }; });
+    for (var t = 0; t < 90; t++) {
+      if (t ? fbBotRule(y, vy, pipes) : flap) { vy = FB_FLAP; rv = 0; }
+      vy = Math.min(FB_VMAX, vy + FB_GRAV); y = Math.max(-60, y + vy);
+      if (vy < 2) { rot = Math.max(-25, rot - 14); rv = 0; } else { rv = Math.min(6, rv + .4); rot = Math.min(90, rot + rv); }
+      for (var i = 0; i < pipes.length; i++) pipes[i].x -= FB_SPEED;
+      if (!fbBotSafe(y, rot, pipes)) return t;
+    }
+    return 90;
+  }
+  function fbBotFlap() {                            // (from the game's step) flap now?
+    if (fb.score >= fb.botEnd) return false;        // its score: it lets go
+    var want = fbBotRule(fb.y, fb.vy, fb.pipes), a = fbBotSim(false), b = fbBotSim(true);
+    return want ? b >= a : b > a;
+  }
+
+  /* ---------- on / off ---------- */
+  function apSet(on) { root.classList.toggle("ap-on", on); ap.btn.setAttribute("aria-pressed", on ? "true" : "false"); setSwitch(ap.sw, on); }
+  function apStart() {
+    if (ap.on || !entered) return;
+    ap.on = true; ap.tok++; ap.i = 0; apSet(true);
+    sfx.play("boton", true); gmBuzz("win");
+    apSay("Engaged. Sit back!");
+    apLater(1400, apRun);
+  }
+  function apStop(why) {
+    if (!ap.on) return;
+    ap.on = false; ap.tok++; apSet(false);
+    ap.finger.classList.remove("show", "press");
+    if (gm.bot) { gm.bot = false; if (!gm.over && gm.b.join("")) gmReset(true); }   // a round the bot started is not yours: a clean board
+    fb.bot = false;                                 // (a flight the bot started still won't count: you can fly on from there)
+    if (curScreen === "game") gmFit();              // (the board gets back the room the capsule had)
+    sfx.play("botoff", true);
+    toast("Autopilot off", why === "you" ? "You took the controls back" : "The bot is resting now", { icon: "bot", hl: why === "you" ? "controls" : "resting" });
+  }
+  function apToggle() { if (ap.on) apStop("off"); else apStart(); }
+  function apBackKey() { if (!ap.on || ap.tapping) return false; apStop("you"); return true; }   // the back button only stops the bot
+  function apHuman(e) {                             // a real touch or key: you take the controls back
+    if (!ap.on || !e.isTrusted || (e.key && /^(Audio|Unidentified)/.test(e.key))) return;
+    if (e.target && e.target.closest && e.target.closest("#apHud, #apBtn, #swBot")) return;   // (those switch it off themselves)
+    apStop("you");
+  }
+  document.addEventListener("pointerdown", apHuman, true);
+  document.addEventListener("keydown", apHuman, true);
+  ap.hud.addEventListener("click", function () { apStop("off"); });
+  ap.sw.addEventListener("click", apToggle);
 
   /* ---------- start up ---------- */
   var clockEl = $("clock");
