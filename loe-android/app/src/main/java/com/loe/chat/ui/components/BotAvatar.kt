@@ -1,6 +1,8 @@
 package com.loe.chat.ui.components
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -8,52 +10,113 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import coil.compose.AsyncImage
+import com.loe.chat.R
 import com.loe.chat.data.AvatarStyle
 import com.loe.chat.data.Bot
 import com.loe.chat.data.Profile
 import java.io.File
-import kotlin.math.cos
-import kotlin.math.sin
 
-/** Rounded-square bot avatar. Every style is drawn in code (no bitmap assets). */
+/** Rounded-square bot avatar: provider logos for the official bots, drawn shapes for the rest. */
 @Composable
 fun BotAvatar(bot: Bot, size: Dp, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(size * 0.25f)
-    when (bot.avatar) {
-        AvatarStyle.CUSTOM -> CustomAvatar(bot, size, modifier.clip(shape))
-        AvatarStyle.GEMINI_BANANA -> EmojiAvatar(
+    val logo = brandLogo(bot.avatar)
+    when {
+        bot.avatar == AvatarStyle.CUSTOM -> CustomAvatar(bot, size, modifier.clip(shape))
+        bot.avatar == AvatarStyle.LOE -> Image(
+            painterResource(R.drawable.loe_icon),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = modifier.size(size).clip(shape),
+        )
+        bot.avatar == AvatarStyle.GEMINI_BANANA -> EmojiAvatar(
             "🍌", size,
             Brush.linearGradient(listOf(Color(0xFFFFF1A6), Color(0xFFFFCF3F))),
             modifier.clip(shape),
         )
-        AvatarStyle.GEMINI_BANANA_PRO -> EmojiAvatar(
+        bot.avatar == AvatarStyle.GEMINI_BANANA_PRO -> EmojiAvatar(
             "🍌", size,
             Brush.linearGradient(listOf(Color(0xFF1E293B), Color(0xFF0B1020))),
             modifier.clip(shape),
         )
+        logo != null -> Box(
+            modifier.size(size).clip(shape).drawBehind { drawAvatar(bot.avatar) },
+            contentAlignment = Alignment.Center,
+        ) {
+            if (bot.avatar == AvatarStyle.OPENAI_SPACE) {
+                Image(
+                    cachedBitmap(R.drawable.bot_astra_galaxy),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    colorFilter = ColorFilter.tint(Color(0x73000000), BlendMode.SrcAtop),
+                    modifier = Modifier.matchParentSize(),
+                )
+            }
+            Image(
+                cachedBitmap(logo.image),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(logo.tint),
+                modifier = Modifier.size(size * logo.scale),
+            )
+        }
         else -> Canvas(modifier.size(size).clip(shape)) { drawAvatar(bot.avatar) }
+    }
+}
+
+/** A provider's logo: a white mask in drawable-nodpi, tinted when drawn. */
+private class BrandLogo(@DrawableRes val image: Int, val tint: Color, val scale: Float)
+
+private fun brandLogo(style: AvatarStyle): BrandLogo? = when (style) {
+    AvatarStyle.CLAUDE_DARK -> BrandLogo(R.drawable.logo_claude, Color(0xFFD97757), 0.72f)
+    AvatarStyle.CLAUDE_CREAM -> BrandLogo(R.drawable.logo_claude, Color(0xFFD97757), 0.72f)
+    AvatarStyle.CLAUDE_WARM -> BrandLogo(R.drawable.logo_claude, Color(0xFFE8A07E), 0.72f)
+    AvatarStyle.CLAUDE_LIGHT -> BrandLogo(R.drawable.logo_claude, Color(0xFFDE8460), 0.72f)
+    AvatarStyle.OPENAI_SPACE, AvatarStyle.OPENAI_SUNSET, AvatarStyle.OPENAI_BLOSSOM, AvatarStyle.OPENAI_LAGOON,
+    AvatarStyle.OPENAI_OCEAN, AvatarStyle.OPENAI_AURORA, AvatarStyle.OPENAI_IMAGE,
+    -> BrandLogo(R.drawable.logo_openai, Color.White, 0.66f)
+    AvatarStyle.PERPLEXITY, AvatarStyle.PERPLEXITY_PRO -> BrandLogo(R.drawable.logo_perplexity, Color(0xFF1FB8CD), 0.64f)
+    else -> null
+}
+
+/** Decoded once per process; mipmaps keep the logos smooth at small sizes. */
+private val bitmapCache = HashMap<Int, ImageBitmap>()
+
+@Composable
+private fun cachedBitmap(@DrawableRes id: Int): ImageBitmap {
+    val resources = LocalContext.current.resources
+    return remember(id) {
+        bitmapCache.getOrPut(id) {
+            ImageBitmap.imageResource(resources, id).also { it.asAndroidBitmap().setHasMipMap(true) }
+        }
     }
 }
 
@@ -115,64 +178,34 @@ private val whalePath: Path by lazy {
     ).toPath()
 }
 
+/** Draws a whole avatar, or just the background for styles that carry a [BrandLogo]. */
 private fun DrawScope.drawAvatar(style: AvatarStyle) {
     val s = size.minDimension
     when (style) {
-        AvatarStyle.LOE -> {
-            drawRect(Color(0xFF5C5ADD))
-            val box = s * 0.74f
-            drawLoeFace(Offset((s - box) / 2f, (s - box) / 2f), box, SolidColor(Color(0xFFEAEAFA)), Color(0xFF5C5ADD))
-        }
+        AvatarStyle.LOE -> drawRect(Color(0xFF6C58F5))
         AvatarStyle.LOE_SEARCH -> {
             drawRect(Brush.linearGradient(listOf(Color(0xFF2DD4BF), Color(0xFF0E7490)), Offset.Zero, Offset(s, s)))
             drawGlobe(Color.White, s)
         }
-        AvatarStyle.OPENAI_SPACE -> {
-            drawRect(Brush.radialGradient(listOf(Color(0xFF34364F), Color(0xFF06060A)), center, s * 0.75f))
-            drawStars(s)
-            drawRosette(Color.White, s)
-        }
-        AvatarStyle.OPENAI_SUNSET -> {
+        AvatarStyle.OPENAI_SPACE -> drawRect(Color(0xFF06060A))
+        AvatarStyle.OPENAI_SUNSET ->
             drawRect(Brush.linearGradient(listOf(Color(0xFFA9C3F0), Color(0xFFF0A6CF), Color(0xFFF5A15C)), Offset.Zero, Offset(s, s)))
-            drawRosette(Color.White, s)
-        }
-        AvatarStyle.OPENAI_BLOSSOM -> {
+        AvatarStyle.OPENAI_BLOSSOM ->
             drawRect(Brush.linearGradient(listOf(Color(0xFFF7A1D9), Color(0xFFC084FC), Color(0xFFF472B6)), Offset.Zero, Offset(s, s)))
-            drawRosette(Color.White, s)
-        }
         AvatarStyle.OPENAI_LAGOON -> {
             drawRect(Brush.linearGradient(listOf(Color(0xFF14B8C9), Color(0xFF34D399), Color(0xFF1D72E8)), Offset(0f, s), Offset(s, 0f)))
             drawRect(Brush.radialGradient(listOf(Color(0x5534D399), Color.Transparent), Offset(s * 0.2f, s * 0.25f), s * 0.6f))
-            drawRosette(Color.White, s)
         }
-        AvatarStyle.OPENAI_OCEAN -> {
+        AvatarStyle.OPENAI_OCEAN ->
             drawRect(Brush.linearGradient(listOf(Color(0xFF5EE0D6), Color(0xFF2FA4E7), Color(0xFF2563EB)), Offset.Zero, Offset(s, s)))
-            drawRosette(Color.White, s)
-        }
-        AvatarStyle.OPENAI_AURORA -> {
+        AvatarStyle.OPENAI_AURORA ->
             drawRect(Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF3730A3), Color(0xFF7C3AED)), Offset(0f, s), Offset(s, 0f)))
-            drawRosette(Color.White, s)
-        }
-        AvatarStyle.OPENAI_IMAGE -> {
+        AvatarStyle.OPENAI_IMAGE ->
             drawRect(Brush.linearGradient(listOf(Color(0xFFFDBA74), Color(0xFFFB7185), Color(0xFFA78BFA)), Offset.Zero, Offset(s, s)))
-            drawPicture(Color.White, s)
-        }
-        AvatarStyle.CLAUDE_DARK -> {
-            drawRect(Color.Black)
-            drawBurst(Color(0xFFD97757), s)
-        }
-        AvatarStyle.CLAUDE_CREAM -> {
-            drawRect(Color(0xFFE7E7E2))
-            drawBurst(Color(0xFFE0603E), s)
-        }
-        AvatarStyle.CLAUDE_WARM -> {
-            drawRect(Color(0xFF2B2622))
-            drawBurst(Color(0xFFE8A07E), s)
-        }
-        AvatarStyle.CLAUDE_LIGHT -> {
-            drawRect(Color(0xFFFAF7F2))
-            drawBurst(Color(0xFFE79A7B), s)
-        }
+        AvatarStyle.CLAUDE_DARK -> drawRect(Color.Black)
+        AvatarStyle.CLAUDE_CREAM -> drawRect(Color(0xFFE9E8E1))
+        AvatarStyle.CLAUDE_WARM -> drawRect(Color(0xFF2B2622))
+        AvatarStyle.CLAUDE_LIGHT -> drawRect(Color(0xFFFAF7F2))
         AvatarStyle.GEMINI_OUTLINE -> {
             drawRect(Color(0xFFF2F1F5))
             drawPath(
@@ -212,57 +245,9 @@ private fun DrawScope.drawAvatar(style: AvatarStyle) {
                 }
             }
         }
-        AvatarStyle.PERPLEXITY, AvatarStyle.PERPLEXITY_PRO -> {
-            drawRect(if (style == AvatarStyle.PERPLEXITY) Color(0xFF1F8A8A) else Color(0xFF0F3D44))
-            drawAsterisk(Color(0xFFE6FFFB), s)
-        }
-        AvatarStyle.GEMINI_BANANA, AvatarStyle.GEMINI_BANANA_PRO, AvatarStyle.CUSTOM -> drawRect(Color(0xFF5C5ADD))
-    }
-}
-
-/** Six interlocking loops, in the spirit of the GPT bots' icons. */
-private fun DrawScope.drawRosette(color: Color, s: Float) {
-    val w = s * 0.19f
-    val h = s * 0.44f
-    val offset = s * 0.085f
-    val stroke = Stroke(width = s * 0.042f)
-    repeat(6) { i ->
-        rotate(degrees = i * 60f, pivot = center) {
-            drawRoundRect(
-                color = color,
-                topLeft = Offset(center.x + offset - w / 2f, center.y - h * 0.62f),
-                size = Size(w, h),
-                cornerRadius = CornerRadius(w / 2f, w / 2f),
-                style = stroke,
-            )
-        }
-    }
-}
-
-private fun DrawScope.drawStars(s: Float) {
-    val random = java.util.Random(11)
-    repeat(70) {
-        val x = random.nextFloat() * s
-        val y = random.nextFloat() * s
-        val r = (0.003f + random.nextFloat() * 0.007f) * s
-        drawCircle(Color.White.copy(alpha = 0.25f + random.nextFloat() * 0.6f), r, Offset(x, y))
-    }
-}
-
-/** A radial burst of uneven rays, in the spirit of the Claude bots' icons. */
-private fun DrawScope.drawBurst(color: Color, s: Float) {
-    val lengths = floatArrayOf(0.36f, 0.29f, 0.37f, 0.31f, 0.38f, 0.28f, 0.36f, 0.30f, 0.37f, 0.29f, 0.35f, 0.32f)
-    val inner = s * 0.06f
-    lengths.forEachIndexed { i, length ->
-        val angle = Math.toRadians(i * 30.0 + if (i % 2 == 0) 4.0 else -3.0)
-        val direction = Offset(cos(angle).toFloat(), sin(angle).toFloat())
-        drawLine(
-            color = color,
-            start = center + direction * inner,
-            end = center + direction * (s * length),
-            strokeWidth = s * 0.072f,
-            cap = StrokeCap.Round,
-        )
+        AvatarStyle.PERPLEXITY -> drawRect(Color(0xFF13292C))
+        AvatarStyle.PERPLEXITY_PRO -> drawRect(Color(0xFF091717))
+        AvatarStyle.GEMINI_BANANA, AvatarStyle.GEMINI_BANANA_PRO, AvatarStyle.CUSTOM -> drawRect(Color(0xFF6C58F5))
     }
 }
 
@@ -291,21 +276,6 @@ private fun DrawScope.drawGlobe(color: Color, s: Float) {
     drawLine(color, Offset(center.x - r * 0.86f, center.y + r * 0.5f), Offset(center.x + r * 0.86f, center.y + r * 0.5f), strokeWidth = s * 0.03f)
 }
 
-private fun DrawScope.drawPicture(color: Color, s: Float) {
-    val stroke = Stroke(width = s * 0.045f)
-    drawRoundRect(color, Offset(s * 0.24f, s * 0.27f), Size(s * 0.52f, s * 0.46f), CornerRadius(s * 0.07f), style = stroke)
-    drawCircle(color, s * 0.05f, Offset(s * 0.40f, s * 0.41f))
-    val mountains = Path().apply {
-        moveTo(s * 0.28f, s * 0.68f)
-        lineTo(s * 0.45f, s * 0.50f)
-        lineTo(s * 0.55f, s * 0.60f)
-        lineTo(s * 0.62f, s * 0.53f)
-        lineTo(s * 0.72f, s * 0.68f)
-        close()
-    }
-    drawPath(mountains, color)
-}
-
 private fun DrawScope.drawFilm(color: Color, s: Float) {
     drawRoundRect(color, Offset(s * 0.22f, s * 0.29f), Size(s * 0.56f, s * 0.42f), CornerRadius(s * 0.08f), style = Stroke(width = s * 0.045f))
     val play = Path().apply {
@@ -315,13 +285,4 @@ private fun DrawScope.drawFilm(color: Color, s: Float) {
         close()
     }
     drawPath(play, color)
-}
-
-private fun DrawScope.drawAsterisk(color: Color, s: Float) {
-    repeat(4) { i ->
-        rotate(degrees = i * 45f, pivot = center) {
-            drawLine(color, Offset(center.x, center.y - s * 0.27f), Offset(center.x, center.y + s * 0.27f), strokeWidth = s * 0.05f, cap = StrokeCap.Round)
-        }
-    }
-    drawCircle(color, s * 0.075f, center)
 }

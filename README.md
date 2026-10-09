@@ -1,9 +1,11 @@
 # Loe — AI chat app for Android
 
+<img src="loe-android/docs/loe-icon.svg" width="96" alt="Loe app icon">
+
 Loe puts GPT, Claude, Gemini, Grok, DeepSeek, Perplexity and image/video bots in one app, with the same
 Home / Explore / History / Menu layout as the reference recording.
 
-**Download:** [`Loe-v1.0.0.apk`](Loe-v1.0.0.apk) (3 MB, Android 8.0 or newer)
+**Download:** [`Loe-v1.0.1.apk`](Loe-v1.0.1.apk) (3 MB, Android 8.0 or newer)
 
 | Home | Explore | Chat | Thinking | Dark mode |
 |---|---|---|---|---|
@@ -11,7 +13,7 @@ Home / Explore / History / Menu layout as the reference recording.
 
 ## Install
 
-1. Download `Loe-v1.0.0.apk` on your phone and open it.
+1. Download `Loe-v1.0.1.apk` on your phone and open it. It installs over an earlier Loe and keeps your chats.
 2. If Android asks, allow your browser or file manager to **install unknown apps**.
 3. Open Loe, type your name and tap **Continue**.
 
@@ -57,6 +59,10 @@ cd loe-android
 Needs JDK 17+ and the Android SDK (platform 36). Release signing reads `loe-android/keystore.properties`
 (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`); without it, release builds use the debug key.
 The keystore is never committed.
+
+The app icon, splash icon and header logo are vector drawables written by `tools/logo/build_icons.py`
+(run it from `loe-android/` after changing `tools/logo/mascot.py`). Bot avatars for Claude, GPT and
+Perplexity use the provider logos in `app/src/main/res/drawable-nodpi/`.
 
 Code map (`loe-android/app/src/main/java/com/loe/chat`):
 
