@@ -12,9 +12,11 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.media.AudioManager
 import android.os.BatteryManager
+import android.os.Build
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
+import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -196,6 +198,7 @@ class MainActivity : ComponentActivity() {
             }
 
             addJavascriptInterface(AudioBridge(), "AndroidAudio")
+            addJavascriptInterface(HapticsBridge(), "AndroidHaptics")
             webViewClient = PageClient()
             webChromeClient = object : WebChromeClient() {
                 // hides the grey "play" placeholder Android draws on videos before they start
@@ -281,6 +284,21 @@ class MainActivity : ComponentActivity() {
     private fun tellVolume(fromKey: Boolean) {
         if (!::webView.isInitialized) return
         webView.evaluateJavascript("window.appVolume && window.appVolume(${musicVolume()}, $fromKey)", null)
+    }
+
+    /** window.AndroidHaptics in the page: a short buzz from the phone (the game uses it; follows the phone's touch-feedback setting). */
+    private inner class HapticsBridge {
+        @JavascriptInterface
+        fun buzz(kind: String?) {
+            if (!::webView.isInitialized) return
+            val effect = when (kind) {
+                "win" -> if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.LONG_PRESS
+                "lose" -> if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS
+                "soft" -> HapticFeedbackConstants.CLOCK_TICK
+                else -> HapticFeedbackConstants.KEYBOARD_TAP
+            }
+            webView.post { webView.performHapticFeedback(effect) }
+        }
     }
 
     /** window.AndroidAudio in the page: its volume sliders are the phone's music volume, so they always agree. */
