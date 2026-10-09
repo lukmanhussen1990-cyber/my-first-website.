@@ -14,6 +14,7 @@ website/                ← the website
     *.m4a               ← songs for the music player (AAC, 96 kbps)
     frame.png           ← the wings + crown frame around the picture on Home (transparent)
     frame2.png          ← the wings + crown frame on the Settings card; its crown is also in the popup messages (transparent)
+    frame-crown.webp    ← the gold crown, stars, orbits + clouds frame round the picture on Profile (+ frame-crown-glow.webp, its glow)
     theme-glass.jpg, theme-noir.jpg   ← preview pictures on the Themes screen
     intro/              ← the three picture layers of the opening intro (logo)
 android/                ← Android Studio project (Kotlin, full-screen WebView)
@@ -23,6 +24,7 @@ android/                ← Android Studio project (Kotlin, full-screen WebView)
   tools/update_offline_fonts.py ← bundles the Google Fonts into the app (offline use)
   tools/make_frame.py   ← turns the frame artwork into assets/frame.png (background removed)
   tools/make_frame2.py  ← turns the second frame artwork into assets/frame2.png (checker pattern removed)
+  tools/make_frame_crown.py ← turns the crown frame artwork into assets/frame-crown.webp + its glow (checker pattern removed)
   tools/find_beats.py   ← finds a song's tempo + first beat (for the glow that pulses on the beat)
 .github/workflows/      ← GitHub builds the APK for you
 ```
