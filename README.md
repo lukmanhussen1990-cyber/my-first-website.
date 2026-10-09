@@ -11,7 +11,7 @@ website/                ← the website
     avatar.jpg          ← your main picture (Settings card, song covers)
     avatar.mp4, avatar-crown.mp4, avatar-*.jpg   ← the profile pictures and clips that show one by one on Home / Profile
     background.mp4      ← background video
-    *.mp3               ← songs for the music player
+    *.ogg               ← songs for the music player (Opus, 96 kbps)
     frame.png           ← the wings + crown frame around the picture on Home (transparent)
     frame2.png          ← the wings + crown frame on the Settings card; its crown is also in the popup messages (transparent)
     theme-glass.jpg, theme-noir.jpg   ← preview pictures on the Themes screen

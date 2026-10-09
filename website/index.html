@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "2.6",                       // shown in Settings → About
+  version: "2.7",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -33,6 +33,7 @@ const CONFIG = {
     "assets/avatar-painting.jpg",
     "assets/avatar-meadow.mp4",               //   (the sunny meadow clip)
     "assets/avatar-drawing.jpg",
+    "assets/avatar-fanum.mp4",                //   (Fanum tossing the broccoli)
     "assets/avatar-cooked.jpg",
   ],
   background:  "assets/background-anime.mp4", // background video (muted, loops, slowly zooms)
@@ -51,15 +52,19 @@ const CONFIG = {
   //         The synced lyrics come from lrclib.net (id = the song's number there) the first time, then stay saved in the app (offline too);
   //         offset = how many seconds later the singing starts in this file than in the album version (a music video with an intro, say).
   //         (or lyrics: "assets/song.lrc" for your own .lrc file)
+  // shake: [[from, to], ...] = moments (seconds into the file) when the whole app shakes on every beat (the first beat hardest)
   //             (leave them out for a new song: the glow then pulses at a steady pace while it plays)
   songs: [
-    { title: "Jingle Bells",            artist: "",            file: "assets/jingle-bells.m4a",            cover: "", bpm: 132.00, beat: 0.410 },
-    { title: "Forever Young",           artist: "Alphaville",  file: "assets/forever-young.m4a",           cover: "", bpm: 136.84, beat: 0.400 },
-    { title: "Never Gonna Give You Up", artist: "Rick Astley", file: "assets/never-gonna-give-you-up.m4a", cover: "", bpm: 113.63, beat: 0.255 },
-    { title: "MONTAGEM PERIGOSA (Super Slowed)", artist: "KVRXD", file: "assets/montagem-perigosa.m4a",    cover: "", bpm: 95.24, beat: 0.595 },
-    { title: "Dracula",                 artist: "Tame Impala", file: "assets/dracula.m4a",                 cover: "", bpm: 114.99, beat: 0.040, party: true },
-    { title: "Espresso",                artist: "Sabrina Carpenter", file: "assets/espresso.m4a",          cover: "", bpm: 104.00, beat: 0.100,
+    { title: "Jingle Bells",            artist: "",            file: "assets/jingle-bells.ogg",            cover: "", bpm: 132.00, beat: 0.410 },
+    { title: "Forever Young",           artist: "Alphaville",  file: "assets/forever-young.ogg",           cover: "", bpm: 136.84, beat: 0.400 },
+    { title: "Never Gonna Give You Up", artist: "Rick Astley", file: "assets/never-gonna-give-you-up.ogg", cover: "", bpm: 113.63, beat: 0.255 },
+    { title: "MONTAGEM PERIGOSA (Super Slowed)", artist: "KVRXD", file: "assets/montagem-perigosa.ogg",    cover: "", bpm: 95.24, beat: 0.595 },
+    { title: "Dracula",                 artist: "Tame Impala", file: "assets/dracula.ogg",                 cover: "", bpm: 114.99, beat: 0.040, party: true },
+    { title: "Espresso",                artist: "Sabrina Carpenter", file: "assets/espresso.ogg",          cover: "", bpm: 104.00, beat: 0.100,
       lyrics: { lrclib: 36945061, offset: 14.0 } },                   // (this file is the music video: the song starts 14 s in)
+    { title: "Hymn For The Weekend",    artist: "Coldplay",    file: "assets/hymn-for-the-weekend.ogg",    cover: "", bpm: 90.00, beat: 0.185,
+      lyrics: { lrclib: 37516438, offset: 0 },
+      shake: [[10.40, 14.15], [21.55, 25.07], [84.02, 87.27], [95.20, 97.97], [159.14, 161.93]] },   // "drink from me, drink from me" · "put your wings on me, wings on me"
   ],
   randomFirstSong: false,               // true = start with a random song each visit
 
@@ -3932,7 +3937,7 @@ const CONFIG = {
       setTimes(p * (audio.duration || 0), p);
     });
     s.addEventListener("change", function () {         // released: jump there
-      if (audio.duration) audio.currentTime = s.value / 1000 * audio.duration;
+      if (isFinite(audio.duration) && audio.duration) audio.currentTime = s.value / 1000 * audio.duration;   // (a length not known yet: no jump)
       dragging = false;
     });
   });
@@ -5764,7 +5769,7 @@ const CONFIG = {
     var show = function (f) { seeks.forEach(function (s) { s.value = Math.round(f * 1000); fillIn(s, f * 100); }); setTimes(f * (audio.duration || 0), f); };
     c.addEventListener("pointerdown", function (e) { on = true; pv.seekDrag = true; try { c.setPointerCapture(e.pointerId); } catch (x) {} show(at(e)); });
     c.addEventListener("pointermove", function (e) { if (on) show(at(e)); });
-    var end = function (e) { if (!on) return; on = false; var f = at(e); if (audio.duration) audio.currentTime = f * audio.duration; pv.seekDrag = false; };
+    var end = function (e) { if (!on) return; on = false; var f = at(e); if (isFinite(audio.duration) && audio.duration) audio.currentTime = f * audio.duration; pv.seekDrag = false; };
     c.addEventListener("pointerup", end); c.addEventListener("pointercancel", function () { on = false; pv.seekDrag = false; });
   })();
   function fitTitle() {                                    // a long song name gets a little smaller (then "…")
@@ -8734,6 +8739,49 @@ const CONFIG = {
     });
     return out;
   }
+
+  /* =====================================================================
+     BEAT SHAKE  (a song can shake the whole app on its beats at chosen moments: CONFIG songs[].shake = [[from, to], ...] seconds.
+     Hymn For The Weekend: "drink from me, drink from me" and "put your wings on me, wings on me".)
+     Each beat in a moment punches the screen; the first one hardest, with a flash and a buzz. A light check four times a
+     second finds the moments; only inside one does it follow the song frame by frame (so the beats land exactly).
+     Not in the games, not while the app is in the background, not with "reduce motion".
+     ===================================================================== */
+  var bs = { raf: 0, k: -1 };
+  function bsSpan(s, t, early) {                    // the moment the song is in at t (early: a little before it too)
+    var w = s && s.shake; if (!w) return null;
+    for (var i = 0; i < w.length; i++) if (t >= w[i][0] - (early || 0) - .15 && t < w[i][1]) return w[i];
+    return null;
+  }
+  function bsOk() { var s = songs[idx]; return !!(s && s.shake && entered && !audio.paused && !reduced && !paused && !document.hidden && curScreen !== "game" && curScreen !== "flappy"); }
+  function bsCheck() { if (!bs.raf && bsOk() && bsSpan(songs[idx], audio.currentTime, .6)) bs.raf = requestAnimationFrame(bsFrame); }
+  function bsFrame() {
+    bs.raf = 0;
+    if (!bsOk()) return;
+    var s = songs[idx], t = audio.currentTime, b = beatOf(), w = bsSpan(s, t);
+    if (!w && !bsSpan(s, t, .6)) return;            // past the moment: back to the light check
+    if (w) {
+      var k = Math.floor((t - b.o) / b.p + .02), at = b.o + k * b.p;   // the latest beat
+      if (k !== bs.k && t - at < .12 && at >= w[0] - .15) { bs.k = k; bsHit(at < w[0] + b.p * .6); }
+    }
+    bs.raf = requestAnimationFrame(bsFrame);
+  }
+  function bsHit(big) {                             // one punch: a quick shake (and a little zoom); the first beat of a moment also flashes and buzzes
+    var app = $("app"), a = big ? 10 : 6, z = big ? 1.03 : 1.014;
+    if (app.animate) app.animate([
+      { transform: "translate(0, 0) scale(1)" },
+      { transform: "translate(" + -a + "px, " + a * .6 + "px) scale(" + z + ")", offset: .12 },
+      { transform: "translate(" + a * .8 + "px, " + -a * .7 + "px) scale(" + (1 + (z - 1) * .6) + ")", offset: .32 },
+      { transform: "translate(" + -a * .5 + "px, " + a * .4 + "px)", offset: .55 },
+      { transform: "translate(" + a * .25 + "px, " + -a * .2 + "px)", offset: .78 },
+      { transform: "translate(0, 0) scale(1)" }], { duration: big ? 400 : 270, easing: "ease-out" });
+    if (big) {
+      var f = $("flash"); if (f.animate) f.animate([{ opacity: 0 }, { opacity: .16, offset: .15 }, { opacity: 0 }], { duration: 420, easing: "ease-out" });
+      gmBuzz("soft");
+    }
+  }
+  setInterval(bsCheck, 250);
+  ["play", "seeked"].forEach(function (ev) { onAudio(ev, function () { bs.k = -1; bsCheck(); }); });
 
   /* ---------- start up ---------- */
   var clockEl = $("clock");
