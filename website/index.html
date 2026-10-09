@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "2.2",                       // shown in Settings → About
+  version: "2.3",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -77,7 +77,7 @@ const CONFIG = {
   quotes: { social: "Better Things Ahead.", stats: "Small steps every day lead to big results." },
 
   // ---------- Profile screen ----------
-  stats: { followers: 248, following: 36, posts: 12 },
+  stats: { followers: 1200000, following: 0 },   // shown as 1.2M · 0 (Posts counts your real posts)
   about: "Hey, I'm Imran. I love music, games and making cool things. This is my little corner of the internet.",
   joined: "2026",
   interests: ["Music", "Gaming", "Coding", "Edits", "Movies"],
@@ -2390,6 +2390,49 @@ const CONFIG = {
   #apNop.in video { transform: none; }
   @media (min-width: 600px) and (min-height: 600px) { #apNop { top: 14px; bottom: 14px; left: 50%; right: auto; width: 412px; margin-left: -206px; border-radius: 46px; overflow: hidden; } }
 
+  /* =====================================================================
+     POSTS  (Profile: your posts in a grid, the + button, the new-post sheet, a post's sheet)
+     ===================================================================== */
+  .pp-head { display: flex; align-items: center; justify-content: space-between; margin: 22px 4px 10px; scroll-margin-top: 70px; }
+  .pp-head b { font-size: 18px; font-weight: 700; }
+  .pp-add { display: flex; align-items: center; gap: 6px; padding: 8px 15px 8px 11px; border-radius: 999px; font-size: 14px; font-weight: 700; color: #fff;
+    background: linear-gradient(90deg, var(--accent), var(--accent2)); box-shadow: 0 0 16px rgba(var(--accent-rgb), .35); }
+  .pp-add svg.ic { width: 18px; height: 18px; }
+  .pp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; border-radius: 18px; overflow: hidden; }
+  .pp-grid:empty { display: none; }
+  .pp-cell { position: relative; aspect-ratio: 1 / 1; padding: 0; border: 0; border-radius: 0; background: rgba(255, 255, 255, .06); overflow: hidden; }
+  .pp-cell img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .pp-cell svg.pp-vid { position: absolute; top: 7px; right: 7px; width: 18px; height: 18px; fill: #fff; stroke: #fff; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .7)); }
+  .pp-cell.fresh { animation: ppIn .6s cubic-bezier(.2, 1.2, .3, 1); }
+  @keyframes ppIn { 0% { transform: scale(.55); opacity: 0; } 100% { transform: none; opacity: 1; } }
+  .pp-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 26px 16px 22px; text-align: center;
+    border-radius: var(--radius); border: 1px dashed var(--edge); background: rgba(255, 255, 255, .03); }
+  .pp-empty svg.ic { width: 34px; height: 34px; opacity: .85; }
+  .pp-empty b { font-size: 16px; }
+  .pp-empty span { color: var(--text2); font-size: 14px; }
+  .pp-first { margin-top: 8px; padding: 10px 18px; border-radius: 999px; font-weight: 700; background: rgba(255, 255, 255, .1); border: 1px solid var(--edge); }
+  /* the new-post sheet: the picture, the caption, Share */
+  .pp-prev, .pp-view { display: grid; place-items: center; border-radius: 18px; overflow: hidden; background: #000; }
+  .pp-prev img, .pp-prev video { display: block; max-width: 100%; max-height: 44vh; object-fit: contain; }
+  .pp-cap { display: block; width: 100%; margin-top: 12px; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--edge); background: rgba(255, 255, 255, .06);
+    color: inherit; font: inherit; font-size: 15px; line-height: 1.4; resize: none; outline: none; }
+  .pp-cap:focus { border-color: rgba(var(--accent-rgb), .7); }
+  .pp-share { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px; padding: 13px; border-radius: 16px;
+    font-size: 16px; font-weight: 700; color: #fff; background: linear-gradient(90deg, var(--accent), var(--accent2)); box-shadow: 0 6px 20px rgba(var(--accent-rgb), .3); }
+  .pp-share svg.ic { width: 19px; height: 19px; }
+  .pp-share.busy { opacity: .7; }
+  /* a post: the picture, likes and when, the caption, delete */
+  .pp-view img, .pp-view video { display: block; max-width: 100%; max-height: 56vh; object-fit: contain; }
+  .pp-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; color: var(--text2); font-size: 14px; }
+  .pp-likes { display: flex; align-items: center; gap: 7px; font-weight: 600; color: var(--text); }
+  .pp-likes svg.ic { width: 22px; height: 22px; }
+  .sheet-b p.pp-text { margin-top: 8px; color: var(--text); }
+  .pp-text b { font-weight: 700; margin-right: 4px; }
+  .pp-del { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 16px; padding: 12px; border-radius: 14px;
+    color: #ff6b6b; font-weight: 700; background: rgba(255, 80, 80, .08); border: 1px solid rgba(255, 80, 80, .25); }
+  .pp-del svg.ic { width: 18px; height: 18px; }
+  .pp-del.sure { color: #fff; background: rgba(255, 60, 60, .28); }
+
   /* ---------- 0. opening intro (everything here only moves with transform / opacity, so it stays smooth) ---------- */
   #intro { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; background: #000; overflow: hidden; cursor: pointer;
            animation: iFailsafe .01s linear 7s forwards; }          /* if the script ever fails, the intro hides itself after 7 s */
@@ -2483,6 +2526,7 @@ const CONFIG = {
 <symbol id="i-audio-lines" viewBox="0 0 24 24"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></symbol>
 <symbol id="i-award" viewBox="0 0 24 24"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></symbol>
 <symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></symbol>
+<symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
 <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></symbol>
 <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
 <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
@@ -2516,6 +2560,7 @@ const CONFIG = {
 <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
 <symbol id="i-repeat-1" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/><path d="M11 10h1v4"/></symbol>
 <symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></symbol>
 <symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></symbol>
 <symbol id="i-share-2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></symbol>
 <symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
@@ -2524,7 +2569,9 @@ const CONFIG = {
 <symbol id="i-skip-forward" viewBox="0 0 24 24"><path d="M21 4v16"/><path d="M6.029 4.285A2 2 0 0 0 3 6v12a2 2 0 0 0 3.029 1.715l9.997-5.998a2 2 0 0 0 .003-3.432z"/></symbol>
 <symbol id="i-sliders-horizontal" viewBox="0 0 24 24"><path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/></symbol>
 <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></symbol>
+<symbol id="i-square-plus" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 12h8"/><path d="M12 8v8"/></symbol>
 <symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></symbol>
+<symbol id="i-trash-2" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
 <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2"/><path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2"/><path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3"/></symbol>
 <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
 <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></symbol>
@@ -2682,6 +2729,7 @@ const CONFIG = {
         <div class="bar">
           <button class="ibtn rip" data-act="back" aria-label="Back"><svg class="ic"><use href="#i-arrow-left"/></svg></button>
           <span class="sp"></span>
+          <button class="ibtn rip pp-new" data-act="new-post" aria-label="New post: upload a photo or a video"><svg class="ic"><use href="#i-square-plus"/></svg></button>
           <button class="ibtn rip" data-act="pmenu" aria-label="More options"><svg class="ic"><use href="#i-ellipsis-vertical"/></svg></button>
         </div>
         <div class="pf-top">
@@ -2697,7 +2745,7 @@ const CONFIG = {
         <div class="stats3">
           <button class="glass stat3 rip" data-go="stats"><b class="js-followers">0</b><span>Followers</span></button>
           <button class="glass stat3 rip" data-go="stats"><b class="js-following">0</b><span>Following</span></button>
-          <button class="glass stat3 rip" data-go="stats"><b class="js-posts">0</b><span>Posts</span></button>
+          <button class="glass stat3 rip" data-act="posts"><b class="js-posts">0</b><span>Posts</span></button>
         </div>
         <div class="glass list">
           <button class="row rip" data-sheet="about"><svg class="ic lead"><use href="#i-user"/></svg><b>About Me</b><svg class="ic chev"><use href="#i-chevron-right"/></svg></button>
@@ -2705,6 +2753,14 @@ const CONFIG = {
           <button class="row rip" data-sheet="badges"><svg class="ic lead"><use href="#i-shield-check"/></svg><b>Badges</b><svg class="ic chev"><use href="#i-chevron-right"/></svg></button>
           <button class="row rip" data-sheet="activity"><svg class="ic lead"><use href="#i-audio-lines"/></svg><b>Activity</b><svg class="ic chev"><use href="#i-chevron-right"/></svg></button>
         </div>
+        <!-- your posts: the + uploads a photo or a video from the phone (kept inside the app); tap one to see it -->
+        <div class="pp-head" id="ppHead"><b>Posts</b><button class="pp-add rip" data-act="new-post"><svg class="ic"><use href="#i-plus"/></svg>New post</button></div>
+        <div class="pp-grid" id="ppGrid"></div>
+        <div class="pp-empty" id="ppEmpty">
+          <svg class="ic"><use href="#i-camera"/></svg><b>No posts yet</b><span>Share your first photo or video</span>
+          <button class="pp-first rip" data-act="new-post">Upload a post</button>
+        </div>
+        <input type="file" id="ppFile" accept="image/*,video/*" hidden>
       </section>
 
       <!-- ===================== 4. SOCIAL LINKS ===================== -->
@@ -3138,6 +3194,8 @@ const CONFIG = {
   var fmt = function (s) { if (!isFinite(s) || s < 0) s = 0; s = Math.floor(s); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); };
   var nf = window.Intl && Intl.NumberFormat ? new Intl.NumberFormat("en-US") : null;
   var fmtNum = function (n) { return nf ? nf.format(n) : String(n); };
+  var nfS = window.Intl && Intl.NumberFormat ? new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }) : null;
+  var fmtShort = function (n) { return nfS ? nfS.format(n) : fmtNum(n); };    // 1200000 → "1.2M"
   var fmtK = function (n) { return n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "K" : String(n); };
   var swallow = function (p) { if (p && p.catch) p.catch(function () {}); };
   var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
@@ -3997,7 +4055,7 @@ const CONFIG = {
     updateChrome();
     if (id === "home") { fitHome(); if (entered) heroPlay(false); }
     if (id === "settings") wf2Spots();
-    if (id === "profile") { typeOnce($("pfBio"), store.get("pbio", C.profileBio), 30); countStat(".js-followers", C.stats.followers); countStat(".js-following", C.stats.following); countStat(".js-posts", C.stats.posts); }
+    if (id === "profile") { typeOnce($("pfBio"), store.get("pbio", C.profileBio), 30); countStat(".js-followers", C.stats.followers, fmtShort); countStat(".js-following", C.stats.following); countStat(".js-posts", pp.list.length); }
     if (id === "stats") drawChart();
     if (id === "themes") markThemes();
     if (id === "game") gmOpen(); else gmLeave();
@@ -4042,10 +4100,11 @@ const CONFIG = {
     if (stack[0] !== "home") { setTab("home"); return true; }
     return false;
   }
-  function countStat(sel, n) {
+  function countStat(sel, n, f) {
+    f = f || fmtNum;
     qa(sel).forEach(function (e) {
-      if (reduced) { e.textContent = fmtNum(n); return; }
-      var t0 = 0; requestAnimationFrame(function step(t) { if (!t0) t0 = t; var p = Math.min(1, (t - t0) / 700); e.textContent = fmtNum(Math.round(n * (1 - Math.pow(1 - p, 3)))); if (p < 1) requestAnimationFrame(step); });
+      if (reduced) { e.textContent = f(n); return; }
+      var t0 = 0; requestAnimationFrame(function step(t) { if (!t0) t0 = t; var p = Math.min(1, (t - t0) / 700); e.textContent = f(Math.round(n * (1 - Math.pow(1 - p, 3)))); if (p < 1) requestAnimationFrame(step); });
     });
   }
 
@@ -4299,6 +4358,8 @@ const CONFIG = {
       case "close-player": closePlayer(); break;
       case "back": handleBack(); break;
       case "bot": apToggle(); break;
+      case "new-post": ppPick(); break;
+      case "posts": ppShow(); break;
       case "close-sheet": closeSheet(); break;
       case "edit": editBio(); break;
       case "save-bio": saveBio(); break;
@@ -7580,6 +7641,158 @@ const CONFIG = {
   ap.hud.addEventListener("click", function () { apStop("off"); });
   ap.sw.addEventListener("click", apToggle);
 
+  /* =====================================================================
+     POSTS  (on Profile: the + button uploads a photo or a video from the phone, with a caption)
+     Kept on the phone inside the app (IndexedDB: photos made smaller, videos as they are), shown in a grid under the
+     profile, newest first; tap one to see it (or delete it). Posts on the profile = how many there are.
+     Every post has likes: 0 for now ("No likes yet"); the like bots can raise it later.
+     ===================================================================== */
+  var pp = { db: null, list: [], urls: {}, file: $("ppFile"), grid: $("ppGrid"), empty: $("ppEmpty"), busy: false, prev: "" };
+
+  function ppDb(cb) {                               // the posts' own little database (opened once)
+    if (pp.db || !window.indexedDB) { cb(pp.db); return; }
+    try {
+      var rq = indexedDB.open("imran-posts", 1);
+      rq.onupgradeneeded = function () { rq.result.createObjectStore("posts", { keyPath: "id" }); };
+      rq.onsuccess = function () { pp.db = rq.result; cb(pp.db); };
+      rq.onerror = rq.onblocked = function () { cb(null); };
+    } catch (e) { cb(null); }
+  }
+  function ppTx(mode, fn, done) {                   // one go at the posts: fn(store) asks, done(ok, answer) when it is all written
+    ppDb(function (db) {
+      if (!db) { if (done) done(false); return; }
+      try {
+        var tx = db.transaction("posts", mode), rq = fn(tx.objectStore("posts"));
+        tx.oncomplete = function () { if (done) done(true, rq && rq.result); };
+        tx.onerror = tx.onabort = function () { if (done) done(false); };
+      } catch (e) { if (done) done(false); }
+    });
+  }
+  function ppLoad() {
+    ppTx("readonly", function (st) { return st.getAll(); }, function (ok, all) {
+      pp.list = ok && all ? all.sort(function (a, b) { return b.t - a.t; }) : [];
+      ppRender(); ppCount();
+    });
+  }
+  function ppUrl(p, k) { var u = pp.urls[p.id] || (pp.urls[p.id] = {}); return u[k] || (u[k] = URL.createObjectURL(p[k])); }
+  function ppCount() { qa(".js-posts").forEach(function (e) { e.textContent = fmtNum(pp.list.length); }); }
+  function ppRender(fresh) {                        // the grid: three across, square, a play mark on videos
+    pp.grid.innerHTML = "";
+    pp.list.forEach(function (p, i) {
+      var b = document.createElement("button");
+      b.className = "pp-cell rip" + (fresh && i === 0 ? " fresh" : "");
+      b.setAttribute("aria-label", (p.type === "video" ? "Video" : "Photo") + (p.caption ? ": " + p.caption : ""));
+      b.innerHTML = '<img alt="" decoding="async" src="' + ppUrl(p, "thumb") + '">' + (p.type === "video" ? ic("play", "pp-vid") : "");
+      b.addEventListener("click", function () { ppView(p); });
+      pp.grid.appendChild(b);
+    });
+    pp.empty.style.display = pp.list.length ? "none" : "";
+  }
+  function ppShow() {                               // Posts on the profile: down to the grid
+    var h = $("ppHead"); if (h.scrollIntoView) h.scrollIntoView({ block: "start", behavior: reduced ? "auto" : "smooth" });
+  }
+
+  /* ---------- a new post: choose → caption → Share ---------- */
+  function ppPick() { if (pp.busy) return; pp.file.value = ""; pp.file.click(); }
+  pp.file.addEventListener("change", function () {
+    var f = pp.file.files && pp.file.files[0]; if (!f) return;
+    var video = /^video\//.test(f.type) || (!f.type && /\.(mp4|webm|mov|3gp|mkv)$/i.test(f.name));
+    if (!video && !/^image\//.test(f.type) && !/\.(jpe?g|png|webp|gif|avif|bmp)$/i.test(f.name)) { toast("Can't post that", "Choose a photo or a video", { icon: "x" }); return; }
+    if (video && f.size > 250 * 1048576) { toast("Too big", "Videos up to 250 MB", { icon: "x" }); return; }
+    ppCompose(f, video);
+  });
+  function ppCompose(f, video) {
+    if (pp.prev) URL.revokeObjectURL(pp.prev);
+    var url = pp.prev = URL.createObjectURL(f);
+    openSheet("New post",
+      '<div class="pp-prev">' + (video ? '<video src="' + url + '" muted loop autoplay playsinline></video>' : '<img alt="" src="' + url + '">') + "</div>" +
+      '<textarea class="pp-cap" maxlength="2200" rows="2" placeholder="Write a caption…" aria-label="Caption"></textarea>' +
+      '<button class="pp-share rip">' + ic("send") + "<span>Share</span></button>",
+      function (body) {
+        var btn = body.querySelector(".pp-share");
+        btn.addEventListener("click", function () { ppShare(f, video, body.querySelector(".pp-cap").value.trim(), btn); });
+      });
+  }
+  function ppShare(f, video, caption, btn) {
+    if (pp.busy) return;
+    pp.busy = true; btn.disabled = true; btn.classList.add("busy"); btn.lastChild.textContent = "Posting…";
+    var fail = function (why) { pp.busy = false; btn.disabled = false; btn.classList.remove("busy"); btn.lastChild.textContent = "Share"; toast("Couldn't post", why, { icon: "x" }); };
+    var save = function (full, thumb) {
+      if (!full || !thumb) { fail(video ? "This video can't be read" : "This photo can't be read"); return; }
+      var p = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), t: Date.now(), type: video ? "video" : "image", full: full, thumb: thumb, caption: caption, likes: 0 };
+      ppTx("readwrite", function (st) { return st.put(p); }, function (ok) {
+        if (!ok) { fail("There isn't room for it on the phone"); return; }
+        pp.busy = false; pp.list.unshift(p); ppRender(true); ppCount();
+        closeSheet(); sfx.play("chime", true);
+        toast("Posted!", "Your post is up. No likes yet…", { icon: "check", hl: "No likes yet…" });
+        setTimeout(ppShow, reduced ? 0 : 450);
+      });
+    };
+    if (video) ppVideoThumb(pp.prev, function (thumb) { save(f, thumb || ppPlainThumb()); });
+    else ppShrink(pp.prev, 1600, .88, false, function (full) { if (!full) { save(null); return; } ppShrink(pp.prev, 420, .82, true, function (thumb) { save(full, thumb); }); });
+  }
+  function ppShrink(src, max, q, square, cb) {      // the photo as a JPEG at most max pixels (square: its middle square, for the grid)
+    var im = new Image();
+    im.onload = function () {
+      var w = im.naturalWidth, h = im.naturalHeight, sx = 0, sy = 0, sw = w, sh = h;
+      if (!w || !h) { cb(null); return; }
+      if (square) { var m = Math.min(w, h); sx = (w - m) / 2; sy = (h - m) / 2; sw = sh = m; }
+      var k = Math.min(1, max / Math.max(sw, sh)), c = document.createElement("canvas"), g;
+      c.width = Math.max(1, Math.round(sw * k)); c.height = Math.max(1, Math.round(sh * k)); g = c.getContext("2d");
+      g.fillStyle = "#000"; g.fillRect(0, 0, c.width, c.height); g.imageSmoothingQuality = "high";
+      g.drawImage(im, sx, sy, sw, sh, 0, 0, c.width, c.height);
+      if (c.toBlob) c.toBlob(function (b) { cb(b); }, "image/jpeg", q); else cb(null);
+    };
+    im.onerror = function () { cb(null); };
+    im.src = src;
+  }
+  function ppVideoThumb(src, cb) {                  // a frame from the video (half a second in), square, for the grid
+    var v = document.createElement("video"), done = false;
+    var end = function (b) { if (done) return; done = true; clearTimeout(t); v.removeAttribute("src"); try { v.load(); } catch (e) {} cb(b); };
+    var t = setTimeout(function () { end(null); }, 8000);
+    v.muted = true; v.playsInline = true; v.preload = "auto";
+    v.onloadeddata = function () { try { v.currentTime = Math.min(.5, (v.duration || 1) / 2); } catch (e) { end(null); } };
+    v.onseeked = function () {
+      var w = v.videoWidth, h = v.videoHeight; if (!w || !h) { end(null); return; }
+      var m = Math.min(w, h), k = Math.min(1, 420 / m), c = document.createElement("canvas");
+      c.width = c.height = Math.max(1, Math.round(m * k));
+      try { c.getContext("2d").drawImage(v, (w - m) / 2, (h - m) / 2, m, m, 0, 0, c.width, c.height); c.toBlob(function (b) { end(b); }, "image/jpeg", .82); } catch (e) { end(null); }
+    };
+    v.onerror = function () { end(null); };
+    v.src = src;
+  }
+  function ppPlainThumb() {                         // (a video the phone can't show a frame of: a dark square with a play mark)
+    var c = document.createElement("canvas"), g = c.getContext("2d"), s = 420;
+    c.width = c.height = s; g.fillStyle = "#15151c"; g.fillRect(0, 0, s, s);
+    g.fillStyle = "rgba(255,255,255,.85)"; g.beginPath(); g.moveTo(170, 140); g.lineTo(290, 210); g.lineTo(170, 280); g.closePath(); g.fill();
+    var bin = atob(c.toDataURL("image/png").split(",")[1]), a = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+    return new Blob([a], { type: "image/png" });
+  }
+
+  /* ---------- one post: the photo / video, likes, when, the caption, delete ---------- */
+  function ppView(p) {
+    openSheet("Post",
+      '<div class="pp-view">' + (p.type === "video" ? '<video src="' + ppUrl(p, "full") + '" muted loop autoplay playsinline controls></video>' : '<img alt="" src="' + ppUrl(p, "full") + '">') + "</div>" +
+      '<div class="pp-meta"><span class="pp-likes">' + ic("heart") + (p.likes > 0 ? fmtNum(p.likes) + (p.likes === 1 ? " like" : " likes") : "No likes yet") + '</span><span>' + esc(ago(p.t)) + "</span></div>" +
+      (p.caption ? '<p class="pp-text"><b>' + esc(C.handle) + "</b> " + esc(p.caption) + "</p>" : "") +
+      '<button class="pp-del rip">' + ic("trash-2") + "<span>Delete post</span></button>",
+      function (body) {
+        var btn = body.querySelector(".pp-del");
+        btn.addEventListener("click", function () { ppDelete(p, btn); });
+      });
+  }
+  function ppDelete(p, btn) {                       // two taps: "Delete post", then "Tap again to delete"
+    if (!btn.classList.contains("sure")) { btn.classList.add("sure"); btn.lastChild.textContent = "Tap again to delete"; return; }
+    ppTx("readwrite", function (st) { return st.delete(p.id); }, function (ok) {
+      if (!ok) { toast("Couldn't delete it", "Try again", { icon: "x" }); return; }
+      pp.list = pp.list.filter(function (q) { return q.id !== p.id; }); ppRender(); ppCount();
+      closeSheet(); toast("Post deleted", "It's gone from your profile", { icon: "trash-2" });
+      setTimeout(function () { var u = pp.urls[p.id]; if (u) { if (u.thumb) URL.revokeObjectURL(u.thumb); if (u.full) URL.revokeObjectURL(u.full); delete pp.urls[p.id]; } }, 800);
+    });
+  }
+  ppLoad();
+
   /* ---------- start up ---------- */
   var clockEl = $("clock");
   function tickClock() { var d = new Date(); clockEl.textContent = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
@@ -7589,9 +7802,9 @@ const CONFIG = {
   qa(".js-handle").forEach(function (e) { e.textContent = C.handle; });
   qa(".js-q-social").forEach(function (e) { e.textContent = "“" + C.quotes.social + "”"; });
   qa(".js-q-stats").forEach(function (e) { e.textContent = "“" + C.quotes.stats + "”"; });
-  qa(".js-followers").forEach(function (e) { e.textContent = fmtNum(C.stats.followers); });
+  qa(".js-followers").forEach(function (e) { e.textContent = fmtShort(C.stats.followers); });
   qa(".js-following").forEach(function (e) { e.textContent = fmtNum(C.stats.following); });
-  qa(".js-posts").forEach(function (e) { e.textContent = fmtNum(C.stats.posts); });
+  qa(".js-posts").forEach(function (e) { e.textContent = fmtNum(pp.list.length); });
   $("pfBio").textContent = "";
   setToggle(".js-shuffle", shuffleOn); setToggle(".js-repeat", repeatOn);
   var swb = $("swBlur"), swf = $("swFx");

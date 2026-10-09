@@ -23,6 +23,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.webkit.RenderProcessGoneDetail
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -33,6 +34,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.graphics.createBitmap
@@ -72,6 +75,13 @@ class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private val audio by lazy { getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     private val prefs by lazy { getSharedPreferences("app", MODE_PRIVATE) }
+
+    /** The page asked for a file (a new post): the phone's photo picker opens, and what you choose goes back to the page. */
+    private var fileCallback: ValueCallback<Array<Uri>>? = null
+    private val pickMedia = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        fileCallback?.onReceiveValue(uri?.let { arrayOf(it) })
+        fileCallback = null
+    }
 
     /** https://appassets.androidplatform.net/assets/... -> the files in the app's assets folder. */
     private val assetLoader by lazy {
@@ -203,6 +213,28 @@ class MainActivity : ComponentActivity() {
             webChromeClient = object : WebChromeClient() {
                 // hides the grey "play" placeholder Android draws on videos before they start
                 override fun getDefaultVideoPoster(): Bitmap = createBitmap(1, 1)
+
+                // a file input on the page (Profile → New post): the phone's photo picker, photos and videos, no permission needed
+                override fun onShowFileChooser(
+                    view: WebView?, callback: ValueCallback<Array<Uri>>?, params: FileChooserParams?,
+                ): Boolean {
+                    if (callback == null) return false
+                    fileCallback?.onReceiveValue(null)
+                    fileCallback = callback
+                    val accept = params?.acceptTypes?.joinToString(",").orEmpty()
+                    val type = when {
+                        "video" in accept && "image" !in accept -> ActivityResultContracts.PickVisualMedia.VideoOnly
+                        "image" in accept && "video" !in accept -> ActivityResultContracts.PickVisualMedia.ImageOnly
+                        else -> ActivityResultContracts.PickVisualMedia.ImageAndVideo
+                    }
+                    return try {
+                        pickMedia.launch(PickVisualMediaRequest(type))
+                        true
+                    } catch (e: ActivityNotFoundException) {
+                        fileCallback = null
+                        false
+                    }
+                }
             }
         }
         root.addView(
