@@ -1,0 +1,1023 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "minecraft:player",
+      "spawn_category": "creature",
+      "is_spawnable": false,
+      "is_summonable": false
+    },
+    "component_groups": {
+      "minecraft:add_raid_omen": {
+        "minecraft:spell_effects": {
+          "add_effects": [
+            {
+              "effect": "raid_omen",
+              "duration": 30,
+              "display_on_screen_animation": true
+            }
+          ],
+          "remove_effects": "bad_omen"
+        },
+        "minecraft:timer": {
+          "time": [
+            0.0,
+            0.0
+          ],
+          "looping": false,
+          "time_down_event": {
+            "event": "minecraft:clear_add_raid_omen",
+            "target": "self"
+          }
+        }
+      },
+      "minecraft:clear_raid_omen_spell_effect": {
+        "minecraft:spell_effects": {}
+      },
+      "minecraft:raid_trigger": {
+        "minecraft:raid_trigger": {
+          "triggered_event": {
+            "event": "minecraft:remove_raid_trigger",
+            "target": "self"
+          }
+        }
+      },
+      "pd:none": {
+        "minecraft:variant": {
+          "value": 0
+        },
+        "minecraft:type_family": {
+          "family": [
+            "player"
+          ]
+        }
+      },
+      "pd:zombie": {
+        "minecraft:variant": {
+          "value": 1
+        },
+        "minecraft:type_family": {
+          "family": [
+            "zombie",
+            "undead",
+            "monster",
+            "mob",
+            "pd_disguised"
+          ]
+        }
+      },
+      "pd:skeleton": {
+        "minecraft:variant": {
+          "value": 2
+        },
+        "minecraft:type_family": {
+          "family": [
+            "skeleton",
+            "undead",
+            "monster",
+            "mob",
+            "pd_disguised"
+          ]
+        }
+      },
+      "pd:creeper": {
+        "minecraft:variant": {
+          "value": 3
+        },
+        "minecraft:type_family": {
+          "family": [
+            "creeper",
+            "monster",
+            "mob",
+            "pd_disguised"
+          ]
+        },
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "entity_explosion",
+              "deals_damage": false
+            },
+            {
+              "cause": "block_explosion",
+              "deals_damage": false
+            }
+          ]
+        }
+      },
+      "pd:spider": {
+        "minecraft:variant": {
+          "value": 4
+        },
+        "minecraft:type_family": {
+          "family": [
+            "spider",
+            "monster",
+            "mob",
+            "arthropod",
+            "pd_disguised"
+          ]
+        }
+      },
+      "pd:enderman": {
+        "minecraft:variant": {
+          "value": 5
+        },
+        "minecraft:type_family": {
+          "family": [
+            "enderman",
+            "monster",
+            "mob",
+            "pd_disguised"
+          ]
+        }
+      },
+      "pd:villager": {
+        "minecraft:variant": {
+          "value": 6
+        },
+        "minecraft:type_family": {
+          "family": [
+            "villager",
+            "peasant",
+            "farmer",
+            "mob",
+            "pd_disguised"
+          ]
+        }
+      },
+      "pd:pig": {
+        "minecraft:variant": {
+          "value": 7
+        },
+        "minecraft:type_family": {
+          "family": [
+            "pig",
+            "mob",
+            "pd_disguised"
+          ]
+        }
+      },
+      "pd:cow": {
+        "minecraft:variant": {
+          "value": 8
+        },
+        "minecraft:type_family": {
+          "family": [
+            "cow",
+            "mob",
+            "pd_disguised"
+          ]
+        }
+      },
+      "pd:sheep": {
+        "minecraft:variant": {
+          "value": 9
+        },
+        "minecraft:type_family": {
+          "family": [
+            "sheep",
+            "mob",
+            "pd_disguised"
+          ]
+        },
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "fall",
+              "deals_damage": false
+            },
+            {
+              "cause": "fire",
+              "damage_modifier": 1.0
+            },
+            {
+              "cause": "fire_tick",
+              "damage_modifier": 1.0
+            }
+          ]
+        }
+      },
+      "pd:wolf": {
+        "minecraft:variant": {
+          "value": 10
+        },
+        "minecraft:type_family": {
+          "family": [
+            "wolf",
+            "mob",
+            "pd_disguised"
+          ]
+        }
+      },
+      "pd:chicken": {
+        "minecraft:variant": {
+          "value": 11
+        },
+        "minecraft:type_family": {
+          "family": [
+            "chicken",
+            "mob",
+            "pd_disguised"
+          ]
+        },
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "fall",
+              "deals_damage": false
+            }
+          ]
+        }
+      },
+      "pd:bee": {
+        "minecraft:variant": {
+          "value": 12
+        },
+        "minecraft:type_family": {
+          "family": [
+            "bee",
+            "mob",
+            "arthropod",
+            "pd_disguised"
+          ]
+        },
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "all",
+              "damage_modifier": 1.0
+            }
+          ]
+        }
+      },
+      "pd:charged": {
+        "minecraft:is_charged": {}
+      },
+      "pd:mark_0": {
+        "minecraft:mark_variant": {
+          "value": 0
+        }
+      },
+      "pd:mark_1": {
+        "minecraft:mark_variant": {
+          "value": 1
+        }
+      },
+      "pd:mark_2": {
+        "minecraft:mark_variant": {
+          "value": 2
+        }
+      },
+      "pd:wet": {
+        "minecraft:skin_id": {
+          "value": 1
+        }
+      },
+      "pd:dry": {
+        "minecraft:skin_id": {
+          "value": 0
+        }
+      }
+    },
+    "components": {
+      "minecraft:experience_reward": {
+        "on_death": "Math.Min(query.player_level * 7, 100)"
+      },
+      "minecraft:type_family": {
+        "family": [
+          "player"
+        ]
+      },
+      "minecraft:is_hidden_when_invisible": {},
+      "minecraft:loot": {
+        "table": "loot_tables/empty.json"
+      },
+      "minecraft:collision_box": {
+        "width": 0.6,
+        "height": 1.8
+      },
+      "minecraft:can_climb": {},
+      "minecraft:movement": {
+        "value": 0.1
+      },
+      "minecraft:hurt_on_condition": {
+        "damage_conditions": [
+          {
+            "filters": {
+              "test": "in_lava",
+              "subject": "self",
+              "operator": "==",
+              "value": true
+            },
+            "cause": "lava",
+            "damage_per_tick": 4
+          }
+        ]
+      },
+      "minecraft:attack": {
+        "damage": 1
+      },
+      "minecraft:exhaustion_values": {
+        "heal": 6,
+        "jump": 0.05,
+        "sprint_jump": 0.2,
+        "mine": 0.005,
+        "attack": 0.1,
+        "damage": 0.1,
+        "walk": 0.0,
+        "sprint": 0.1,
+        "swim": 0.01
+      },
+      "minecraft:player.saturation": {
+        "value": 5,
+        "max": 20
+      },
+      "minecraft:player.exhaustion": {
+        "value": 0,
+        "max": 20
+      },
+      "minecraft:player.level": {
+        "value": 0,
+        "max": 24791
+      },
+      "minecraft:player.experience": {
+        "value": 0,
+        "max": 1
+      },
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": -1,
+        "inhale_time": 3.75,
+        "generates_bubbles": false
+      },
+      "minecraft:nameable": {
+        "always_show": true,
+        "allow_name_tag_renaming": false
+      },
+      "minecraft:physics": {
+        "push_towards_closest_space": true
+      },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:insomnia": {
+        "days_until_insomnia": 3
+      },
+      "minecraft:rideable": {
+        "seat_count": 2,
+        "family_types": [
+          "parrot_tame"
+        ],
+        "pull_in_entities": true,
+        "seats": [
+          {
+            "position": [
+              0.4,
+              -0.2,
+              -0.1
+            ],
+            "min_rider_count": 0,
+            "max_rider_count": 0,
+            "lock_rider_rotation": 0
+          },
+          {
+            "position": [
+              -0.4,
+              -0.2,
+              -0.1
+            ],
+            "min_rider_count": 1,
+            "max_rider_count": 2,
+            "lock_rider_rotation": 0
+          }
+        ]
+      },
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:block_climber": {},
+      "minecraft:environment_sensor": {
+        "triggers": [
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "has_mob_effect",
+                  "subject": "self",
+                  "value": "bad_omen"
+                },
+                {
+                  "test": "is_in_village",
+                  "subject": "self",
+                  "value": true
+                }
+              ]
+            },
+            "event": "minecraft:gain_raid_omen"
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_variant",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": 0
+                },
+                {
+                  "test": "in_contact_with_water",
+                  "subject": "self",
+                  "operator": "==",
+                  "value": true
+                },
+                {
+                  "test": "is_skin_id",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": 1
+                }
+              ]
+            },
+            "event": "pd:sensor_wet"
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "in_contact_with_water",
+                  "subject": "self",
+                  "operator": "!=",
+                  "value": true
+                },
+                {
+                  "test": "is_skin_id",
+                  "subject": "self",
+                  "operator": "==",
+                  "value": 1
+                }
+              ]
+            },
+            "event": "pd:sensor_dry"
+          }
+        ]
+      }
+    },
+    "events": {
+      "minecraft:gain_raid_omen": {
+        "add": {
+          "component_groups": [
+            "minecraft:add_raid_omen"
+          ]
+        }
+      },
+      "minecraft:clear_add_raid_omen": {
+        "remove": {
+          "component_groups": [
+            "minecraft:add_raid_omen"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "minecraft:clear_raid_omen_spell_effect"
+          ]
+        }
+      },
+      "minecraft:trigger_raid": {
+        "add": {
+          "component_groups": [
+            "minecraft:raid_trigger"
+          ]
+        }
+      },
+      "minecraft:remove_raid_trigger": {
+        "remove": {
+          "component_groups": [
+            "minecraft:raid_trigger"
+          ]
+        }
+      },
+      "pd:set_zombie": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:none",
+                "pd:zombie",
+                "pd:skeleton",
+                "pd:creeper",
+                "pd:spider",
+                "pd:enderman",
+                "pd:villager",
+                "pd:pig",
+                "pd:cow",
+                "pd:sheep",
+                "pd:wolf",
+                "pd:chicken",
+                "pd:bee",
+                "pd:charged"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:zombie"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:set_skeleton": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:none",
+                "pd:zombie",
+                "pd:skeleton",
+                "pd:creeper",
+                "pd:spider",
+                "pd:enderman",
+                "pd:villager",
+                "pd:pig",
+                "pd:cow",
+                "pd:sheep",
+                "pd:wolf",
+                "pd:chicken",
+                "pd:bee",
+                "pd:charged"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:skeleton"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:set_creeper": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:none",
+                "pd:zombie",
+                "pd:skeleton",
+                "pd:creeper",
+                "pd:spider",
+                "pd:enderman",
+                "pd:villager",
+                "pd:pig",
+                "pd:cow",
+                "pd:sheep",
+                "pd:wolf",
+                "pd:chicken",
+                "pd:bee",
+                "pd:charged"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:creeper"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:set_spider": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:none",
+                "pd:zombie",
+                "pd:skeleton",
+                "pd:creeper",
+                "pd:spider",
+                "pd:enderman",
+                "pd:villager",
+                "pd:pig",
+                "pd:cow",
+                "pd:sheep",
+                "pd:wolf",
+                "pd:chicken",
+                "pd:bee",
+                "pd:charged"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:spider"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:set_enderman": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:none",
+                "pd:zombie",
+                "pd:skeleton",
+                "pd:creeper",
+                "pd:spider",
+                "pd:enderman",
+                "pd:villager",
+                "pd:pig",
+                "pd:cow",
+                "pd:sheep",
+                "pd:wolf",
+                "pd:chicken",
+                "pd:bee",
+                "pd:charged"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:enderman"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:set_villager": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:none",
+                "pd:zombie",
+                "pd:skeleton",
+                "pd:creeper",
+                "pd:spider",
+                "pd:enderman",
+                "pd:villager",
+                "pd:pig",
+                "pd:cow",
+                "pd:sheep",
+                "pd:wolf",
+                "pd:chicken",
+                "pd:bee",
+                "pd:charged"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:villager"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:set_pig": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:none",
+                "pd:zombie",
+                "pd:skeleton",
+                "pd:creeper",
+                "pd:spider",
+                "pd:enderman",
+                "pd:villager",
+                "pd:pig",
+                "pd:cow",
+                "pd:sheep",
+                "pd:wolf",
+                "pd:chicken",
+                "pd:bee",
+                "pd:charged"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:pig"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:set_cow": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:none",
+                "pd:zombie",
+                "pd:skeleton",
+                "pd:creeper",
+                "pd:spider",
+                "pd:enderman",
+                "pd:villager",
+                "pd:pig",
+                "pd:cow",
+                "pd:sheep",
+                "pd:wolf",
+                "pd:chicken",
+                "pd:bee",
+                "pd:charged"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:cow"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:set_sheep": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:none",
+                "pd:zombie",
+                "pd:skeleton",
+                "pd:creeper",
+                "pd:spider",
+                "pd:enderman",
+                "pd:villager",
+                "pd:pig",
+                "pd:cow",
+                "pd:sheep",
+                "pd:wolf",
+                "pd:chicken",
+                "pd:bee",
+                "pd:charged"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:sheep"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:set_wolf": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:none",
+                "pd:zombie",
+                "pd:skeleton",
+                "pd:creeper",
+                "pd:spider",
+                "pd:enderman",
+                "pd:villager",
+                "pd:pig",
+                "pd:cow",
+                "pd:sheep",
+                "pd:wolf",
+                "pd:chicken",
+                "pd:bee",
+                "pd:charged"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:wolf"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:set_chicken": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:none",
+                "pd:zombie",
+                "pd:skeleton",
+                "pd:creeper",
+                "pd:spider",
+                "pd:enderman",
+                "pd:villager",
+                "pd:pig",
+                "pd:cow",
+                "pd:sheep",
+                "pd:wolf",
+                "pd:chicken",
+                "pd:bee",
+                "pd:charged"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:chicken"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:set_bee": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:none",
+                "pd:zombie",
+                "pd:skeleton",
+                "pd:creeper",
+                "pd:spider",
+                "pd:enderman",
+                "pd:villager",
+                "pd:pig",
+                "pd:cow",
+                "pd:sheep",
+                "pd:wolf",
+                "pd:chicken",
+                "pd:bee",
+                "pd:charged"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:bee"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:remove_disguise": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:none",
+                "pd:zombie",
+                "pd:skeleton",
+                "pd:creeper",
+                "pd:spider",
+                "pd:enderman",
+                "pd:villager",
+                "pd:pig",
+                "pd:cow",
+                "pd:sheep",
+                "pd:wolf",
+                "pd:chicken",
+                "pd:bee",
+                "pd:charged",
+                "pd:mark_0",
+                "pd:mark_1",
+                "pd:mark_2",
+                "pd:wet",
+                "pd:dry"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:none",
+                "pd:mark_0",
+                "pd:dry"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:mark_0": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:mark_0",
+                "pd:mark_1",
+                "pd:mark_2"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:mark_0"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:mark_1": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:mark_0",
+                "pd:mark_1",
+                "pd:mark_2"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:mark_1"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:mark_2": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:mark_0",
+                "pd:mark_1",
+                "pd:mark_2"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:mark_2"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:charge_on": {
+        "add": {
+          "component_groups": [
+            "pd:charged"
+          ]
+        }
+      },
+      "pd:charge_off": {
+        "remove": {
+          "component_groups": [
+            "pd:charged"
+          ]
+        }
+      },
+      "pd:sensor_wet": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:wet",
+                "pd:dry"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:wet"
+              ]
+            }
+          }
+        ]
+      },
+      "pd:sensor_dry": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "pd:wet",
+                "pd:dry"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "pd:dry"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

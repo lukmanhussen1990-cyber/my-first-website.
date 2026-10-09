@@ -1,0 +1,27 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Perfect Disguises (Resources)",
+    "description": "Mob disguise models, menu icons and the Disguise Wand. Needs the Perfect Disguises behavior pack.",
+    "uuid": "ee628217-2a8c-46b6-a2ac-b270bb98d1cd",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "Perfect Disguises resources",
+      "type": "resources",
+      "uuid": "a1aa12f6-d26e-4f88-9b2d-32acbcb29b78",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "5828db11-41f1-468c-b5ce-32743f2ddd56",
+      "version": [1, 0, 0]
+    }
+  ],
+  "metadata": {
+    "authors": ["Perfect Disguises"]
+  }
+}

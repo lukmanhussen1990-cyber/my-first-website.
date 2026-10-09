@@ -1,0 +1,1525 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.pd.hidden": {
+      "loop": true,
+      "bones": {
+        "pd_hidden": {
+          "scale": 0.0
+        }
+      }
+    },
+    "animation.pd.look_at_target": {
+      "loop": true,
+      "bones": {
+        "pd_head": {
+          "relative_to": {
+            "rotation": "entity"
+          },
+          "rotation": [
+            "query.target_x_rotation - this",
+            "query.target_y_rotation - this",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.humanoid.look_at_target": {
+      "loop": true,
+      "bones": {
+        "pd_head": {
+          "relative_to": {
+            "rotation": "entity"
+          },
+          "rotation": [
+            "query.target_x_rotation",
+            "query.target_y_rotation",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.humanoid.move": {
+      "loop": true,
+      "bones": {
+        "pd_leftArm": {
+          "rotation": [
+            "variable.tcos0",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leftLeg": {
+          "rotation": [
+            "variable.tcos0 * -1.4",
+            -0.1,
+            -0.1
+          ]
+        },
+        "pd_rightArm": {
+          "rotation": [
+            "-variable.tcos0",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_rightLeg": {
+          "rotation": [
+            "variable.tcos0 * 1.4",
+            0.1,
+            0.1
+          ]
+        }
+      }
+    },
+    "animation.pd.humanoid.riding.arms": {
+      "loop": true,
+      "bones": {
+        "pd_leftArm": {
+          "rotation": [
+            -36.0,
+            0.0,
+            0.0
+          ]
+        },
+        "pd_rightArm": {
+          "rotation": [
+            -36.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.humanoid.riding.legs": {
+      "loop": true,
+      "bones": {
+        "pd_leftLeg": {
+          "rotation": [
+            "-72.0 - this",
+            "-18.0 - this",
+            "-this"
+          ]
+        },
+        "pd_rightLeg": {
+          "rotation": [
+            "-72.0 - this",
+            "18.0 - this",
+            "-this"
+          ]
+        }
+      }
+    },
+    "animation.pd.humanoid.holding": {
+      "loop": true,
+      "bones": {
+        "pd_leftArm": {
+          "rotation": [
+            "variable.is_holding_left ? (-this * 0.5 - 18.0) : 0.0",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_rightArm": {
+          "rotation": [
+            "variable.is_holding_right ? (-this * 0.5 - 18.0) : 0.0",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.humanoid.attack.rotations": {
+      "loop": true,
+      "bones": {
+        "pd_body": {
+          "rotation": [
+            0.0,
+            "math.sin(math.sqrt(variable.attack_time) * 360) * 11.46 - this",
+            0.0
+          ]
+        },
+        "pd_leftArm": {
+          "rotation": [
+            "math.sin(math.sqrt(variable.attack_time) * 360) * 11.46",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_rightArm": {
+          "rotation": [
+            "math.sin(1.0 - math.pow(1.0 - variable.attack_time, 3.0) * 180.0) * (variable.is_brandishing_spear || variable.is_holding_spyglass ? -1.0 : 1.0 )",
+            "variable.is_brandishing_spear || variable.is_holding_spyglass ? 0.0 : (math.sin(math.sqrt(variable.attack_time) * 360) * 11.46) * 2.0",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.humanoid.bob": {
+      "loop": true,
+      "bones": {
+        "pd_leftArm": {
+          "rotation": [
+            0.0,
+            0.0,
+            "((math.cos(query.life_time * 103.2) * 2.865) + 2.865) *-1.0"
+          ]
+        },
+        "pd_rightArm": {
+          "rotation": [
+            0.0,
+            0.0,
+            "(math.cos(query.life_time * 103.2) * 2.865) + 2.865"
+          ]
+        }
+      }
+    },
+    "animation.pd.humanoid.bow_and_arrow": {
+      "loop": true,
+      "bones": {
+        "pd_leftArm": {
+          "rotation": [
+            "query.target_x_rotation - 90.0 - math.sin(query.life_time * 76.8) * 2.865 - this",
+            "query.target_y_rotation + 28.65",
+            "-(math.cos(query.life_time * 103.2) * 2.865) - 2.865"
+          ]
+        },
+        "pd_rightArm": {
+          "rotation": [
+            "query.target_x_rotation - 90.0 + math.sin(query.life_time * 76.8) * 2.865 - this",
+            "query.target_y_rotation - 5.73",
+            "(math.cos(query.life_time * 103.2) * 2.865) + 2.865"
+          ]
+        }
+      }
+    },
+    "animation.pd.zombie.arms": {
+      "loop": true,
+      "bones": {
+        "pd_leftArm": {
+          "rotation": [
+            "-90.0 - ((math.sin(variable.attack_time * 180.0) * 57.3) * 1.2 - (math.sin((1.0 - (1.0 - variable.attack_time) * (1.0 - variable.attack_time)) * 180.0) * 57.3) * 0.4) - (math.sin(query.life_time * 76.776372) * 2.865) - this",
+            "5.73 - ((math.sin(variable.attack_time * 180.0) * 57.3) * 0.6) - this",
+            "math.cos(query.life_time * 103.13244) * -2.865 - 2.865 - this"
+          ]
+        },
+        "pd_rightArm": {
+          "rotation": [
+            "90.0 * (variable.is_brandishing_spear - 1.0) - ((math.sin(variable.attack_time * 180.0) * 57.3) * 1.2 - (math.sin((1.0 - (1.0 - variable.attack_time) * (1.0 - variable.attack_time)) * 180.0) * 57.3) * 0.4) + (math.sin(query.life_time * 76.776372) * 2.865) - this",
+            "(math.sin(variable.attack_time * 180.0) * 57.3) * 0.6 - 5.73 - this",
+            "math.cos(query.life_time * 103.13244) * 2.865 + 2.865 - this"
+          ]
+        }
+      }
+    },
+    "animation.pd.enderman.move": {
+      "loop": true,
+      "bones": {
+        "pd_leftArm": {
+          "rotation": [
+            "variable.pd_tcos0_ender",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leftLeg": {
+          "rotation": [
+            "variable.pd_tcos0_ender * -1.4",
+            -0.1,
+            -0.1
+          ]
+        },
+        "pd_rightArm": {
+          "rotation": [
+            "-variable.pd_tcos0_ender",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_rightLeg": {
+          "rotation": [
+            "variable.pd_tcos0_ender * 1.4",
+            0.1,
+            0.1
+          ]
+        }
+      }
+    },
+    "animation.pd.enderman.base_pose": {
+      "loop": true,
+      "bones": {
+        "pd_body": {
+          "position": [
+            "-this",
+            "11.0 - this",
+            "-this"
+          ],
+          "rotation": [
+            "-this",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_hat": {
+          "position": [
+            "-this",
+            "-this",
+            "-this"
+          ],
+          "rotation": [
+            "-this",
+            "-this",
+            "-this"
+          ]
+        },
+        "pd_head": {
+          "position": [
+            "-this",
+            "-this",
+            "-this"
+          ]
+        },
+        "pd_leftArm": {
+          "position": [
+            "4.0-this",
+            0.0,
+            "-this"
+          ]
+        },
+        "pd_leftLeg": {
+          "position": [
+            0.0,
+            "-5.0 - this",
+            0.0
+          ]
+        },
+        "pd_rightArm": {
+          "position": [
+            "-4.0-this",
+            0.0,
+            "-this"
+          ]
+        },
+        "pd_rightLeg": {
+          "position": [
+            0.0,
+            "-5.0 - this",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.enderman.arms_legs": {
+      "loop": true,
+      "bones": {
+        "pd_leftArm": {
+          "rotation": [
+            "math.clamp(this, -22.92, 22.92) - this",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leftLeg": {
+          "rotation": [
+            "math.clamp(this, -22.92, 22.92) - this",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_rightArm": {
+          "rotation": [
+            "math.clamp(this, -22.92, 22.92) - this",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_rightLeg": {
+          "rotation": [
+            "math.clamp(this, -22.92, 22.92) - this",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.creeper.legs": {
+      "loop": true,
+      "bones": {
+        "pd_leg0": {
+          "rotation": [
+            "variable.pd_leg_rot - this",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leg1": {
+          "rotation": [
+            "-variable.pd_leg_rot - this",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leg2": {
+          "rotation": [
+            "-variable.pd_leg_rot - this",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leg3": {
+          "rotation": [
+            "variable.pd_leg_rot - this",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.creeper.swelling": {
+      "loop": true,
+      "bones": {
+        "pd_body": {
+          "scale": [
+            "variable.pd_swell_scale1",
+            "variable.pd_swell_scale2",
+            "variable.pd_swell_scale1"
+          ]
+        },
+        "pd_head": {
+          "scale": [
+            "variable.pd_swell_scale1",
+            "variable.pd_swell_scale2",
+            "variable.pd_swell_scale1"
+          ]
+        },
+        "pd_leg0": {
+          "scale": [
+            "variable.pd_swell_scale1",
+            "variable.pd_swell_scale2",
+            "variable.pd_swell_scale1"
+          ]
+        },
+        "pd_leg1": {
+          "scale": [
+            "variable.pd_swell_scale1",
+            "variable.pd_swell_scale2",
+            "variable.pd_swell_scale1"
+          ]
+        },
+        "pd_leg2": {
+          "scale": [
+            "variable.pd_swell_scale1",
+            "variable.pd_swell_scale2",
+            "variable.pd_swell_scale1"
+          ]
+        },
+        "pd_leg3": {
+          "scale": [
+            "variable.pd_swell_scale1",
+            "variable.pd_swell_scale2",
+            "variable.pd_swell_scale1"
+          ]
+        }
+      }
+    },
+    "animation.pd.spider.default_leg_pose": {
+      "loop": true,
+      "bones": {
+        "pd_leg0": {
+          "rotation": [
+            0.0,
+            "45.0 - this",
+            "-45.0 - this"
+          ]
+        },
+        "pd_leg1": {
+          "rotation": [
+            0.0,
+            "-45.0 - this",
+            "45.0 - this"
+          ]
+        },
+        "pd_leg2": {
+          "rotation": [
+            0.0,
+            "22.5 - this",
+            "-33.3 - this"
+          ]
+        },
+        "pd_leg3": {
+          "rotation": [
+            0.0,
+            "-22.5 - this",
+            "33.3 - this"
+          ]
+        },
+        "pd_leg4": {
+          "rotation": [
+            0.0,
+            "-22.5 - this",
+            "-33.3 - this"
+          ]
+        },
+        "pd_leg5": {
+          "rotation": [
+            0.0,
+            "22.5 - this",
+            "33.3 - this"
+          ]
+        },
+        "pd_leg6": {
+          "rotation": [
+            0.0,
+            "-45.0 - this",
+            "-45.0 - this"
+          ]
+        },
+        "pd_leg7": {
+          "rotation": [
+            0.0,
+            "45.0 - this",
+            "45.0 - this"
+          ]
+        }
+      }
+    },
+    "animation.pd.spider.walk": {
+      "anim_time_update": "query.modified_distance_moved",
+      "loop": true,
+      "bones": {
+        "pd_leg0": {
+          "rotation": [
+            0.0,
+            "-math.abs(math.cos(query.anim_time * 76.34 + 90 * 0) * 22.92)",
+            "math.abs(math.sin(query.anim_time * 38.17 + 90 * 0) * 22.92)"
+          ]
+        },
+        "pd_leg1": {
+          "rotation": [
+            0.0,
+            "math.abs(math.cos(query.anim_time * 76.34 + 90 * 0) * 22.92)",
+            "-math.abs(math.sin(query.anim_time * 38.17 + 90 * 0) * 22.92)"
+          ]
+        },
+        "pd_leg2": {
+          "rotation": [
+            0.0,
+            "-math.abs(math.cos(query.anim_time * 76.34 + 90 * 1) * 22.92)",
+            "math.abs(math.sin(query.anim_time * 38.17 + 90 * 1) * 22.92)"
+          ]
+        },
+        "pd_leg3": {
+          "rotation": [
+            0.0,
+            "math.abs(math.cos(query.anim_time * 76.34 + 90 * 1) * 22.92)",
+            "-math.abs(math.sin(query.anim_time * 38.17 + 90 * 1) * 22.92)"
+          ]
+        },
+        "pd_leg4": {
+          "rotation": [
+            0.0,
+            "-math.abs(math.cos(query.anim_time * 76.34 + 90 * 2) * 22.92)",
+            "math.abs(math.sin(query.anim_time * 38.17 + 90 * 2) * 22.92)"
+          ]
+        },
+        "pd_leg5": {
+          "rotation": [
+            0.0,
+            "math.abs(math.cos(query.anim_time * 76.34 + 90 * 2) * 22.92)",
+            "-math.abs(math.sin(query.anim_time * 38.17 + 90 * 2) * 22.92)"
+          ]
+        },
+        "pd_leg6": {
+          "rotation": [
+            0.0,
+            "-math.abs(math.cos(query.anim_time * 76.34 + 90 * 3) * 22.92)",
+            "math.abs(math.sin(query.anim_time * 38.17 + 90 * 3) * 22.92)"
+          ]
+        },
+        "pd_leg7": {
+          "rotation": [
+            0.0,
+            "math.abs(math.cos(query.anim_time * 76.34 + 90 * 3) * 22.92)",
+            "-math.abs(math.sin(query.anim_time * 38.17 + 90 * 3) * 22.92)"
+          ]
+        }
+      }
+    },
+    "animation.pd.spider.look_at_target": {
+      "loop": true,
+      "bones": {
+        "pd_head": {
+          "rotation": [
+            "query.target_x_rotation",
+            "query.target_y_rotation",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.villager.general": {
+      "loop": true,
+      "bones": {
+        "pd_arms": {
+          "position": [
+            0.0,
+            -1.0,
+            -1.0
+          ],
+          "rotation": [
+            "-42.97 - this",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.villager.move": {
+      "anim_time_update": "query.modified_distance_moved",
+      "loop": true,
+      "bones": {
+        "pd_leg0": {
+          "rotation": [
+            "(math.cos(query.anim_time * 38.17) * 40.0) - this",
+            "-this",
+            0.0
+          ]
+        },
+        "pd_leg1": {
+          "rotation": [
+            "(math.cos(query.anim_time * 38.17 + 180) * 40.0) - this",
+            "-this",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.quadruped.setup": {
+      "loop": true,
+      "bones": {
+        "pd_body": {
+          "rotation": [
+            "-this",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.quadruped.walk": {
+      "anim_time_update": "query.modified_distance_moved",
+      "loop": true,
+      "bones": {
+        "pd_leg0": {
+          "rotation": [
+            "math.cos(query.anim_time * 38.17) *  80.0",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leg1": {
+          "rotation": [
+            "math.cos(query.anim_time * 38.17) * -80.0",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leg2": {
+          "rotation": [
+            "math.cos(query.anim_time * 38.17) * -80.0",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leg3": {
+          "rotation": [
+            "math.cos(query.anim_time * 38.17) *  80.0",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.sheep.setup": {
+      "loop": true,
+      "bones": {
+        "pd_body": {
+          "rotation": [
+            "-this",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_head": {
+          "position": [
+            0.0,
+            "-6.0 - this",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.sheep.grazing": {
+      "animation_length": 2.0,
+      "loop": true,
+      "bones": {
+        "pd_head": {
+          "position": {
+            "0": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "0.2": [
+              0.0,
+              -9.0,
+              0.0
+            ],
+            "1.8": [
+              0.0,
+              -9.0,
+              0.0
+            ],
+            "2": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "rotation": {
+            "0.2": {
+              "post": [
+                "180.0 * (0.2 + 0.07 * math.sin(query.key_frame_lerp_time * 1644.39))",
+                0.0,
+                0.0
+              ],
+              "pre": [
+                36.0,
+                0.0,
+                0.0
+              ]
+            },
+            "1.8": {
+              "post": [
+                36.0,
+                0.0,
+                0.0
+              ],
+              "pre": [
+                "180.0 * (0.2 + 0.07 * math.sin(query.key_frame_lerp_time * 1644.39))",
+                0.0,
+                0.0
+              ]
+            }
+          }
+        }
+      }
+    },
+    "animation.pd.wolf.setup": {
+      "loop": true,
+      "bones": {
+        "pd_body": {
+          "position": [
+            "-this",
+            "-14 - this",
+            "2.0 - this"
+          ],
+          "rotation": [
+            "90 - this",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leg0": {
+          "position": [
+            "-2.5 - this",
+            "-16 - this",
+            "7 - this"
+          ]
+        },
+        "pd_leg1": {
+          "position": [
+            "0.5 - this",
+            "-16 - this",
+            "7 - this"
+          ]
+        },
+        "pd_leg2": {
+          "position": [
+            "-2.5 - this",
+            "-16 - this",
+            "-4 - this"
+          ]
+        },
+        "pd_leg3": {
+          "position": [
+            "0.5 - this",
+            "-16 - this",
+            "-4 - this"
+          ]
+        },
+        "pd_tail": {
+          "position": [
+            "-1.0 - this",
+            "-12 - this",
+            "8.0 - this"
+          ]
+        },
+        "pd_upperBody": {
+          "position": [
+            "-1.0 - this",
+            "-14 - this",
+            "-3.0 - this"
+          ],
+          "rotation": [
+            "90 - this",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.wolf.leg_default": {
+      "loop": true,
+      "bones": {
+        "pd_leg0": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17) * 80.22 * query.modified_move_speed - this",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leg1": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 + 180) * 80.22 * query.modified_move_speed - this",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leg2": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17 + 180) * 80.22 * query.modified_move_speed - this",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leg3": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17) * 80.22 * query.modified_move_speed - this",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.wolf.tail": {
+      "loop": true,
+      "bones": {
+        "pd_tail": {
+          "rotation": [
+            "36.0 - this",
+            0.0,
+            "0.0 - this"
+          ]
+        }
+      }
+    },
+    "animation.pd.wolf.tail_wag": {
+      "loop": true,
+      "bones": {
+        "pd_tail": {
+          "rotation": [
+            0.0,
+            "0.0 ? -this : (math.cos(query.modified_distance_moved * 38.17) * query.modified_move_speed * 80.22 - this)",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.chicken.general": {
+      "loop": true,
+      "bones": {
+        "pd_body": {
+          "rotation": [
+            "-this",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_wing0": {
+          "rotation": [
+            0.0,
+            0.0,
+            "variable.pd_wing_flap - this"
+          ]
+        },
+        "pd_wing1": {
+          "rotation": [
+            0.0,
+            0.0,
+            "-variable.pd_wing_flap - this"
+          ]
+        }
+      }
+    },
+    "animation.pd.chicken.move": {
+      "anim_time_update": "query.modified_distance_moved",
+      "loop": true,
+      "bones": {
+        "pd_leg0": {
+          "rotation": [
+            "math.cos(query.anim_time * 38.17) *  80.0",
+            0.0,
+            0.0
+          ]
+        },
+        "pd_leg1": {
+          "rotation": [
+            "math.cos(query.anim_time * 38.17) * -80.0",
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.pd.bee.flying": {
+      "loop": true,
+      "animation_length": 2.55,
+      "bones": {
+        "pd_body": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "1.30": [
+              5,
+              0,
+              0
+            ],
+            "2.55": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "pd_leftwing_bone": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              35
+            ],
+            "0.05": [
+              0,
+              0,
+              0
+            ],
+            "0.10": [
+              0,
+              0,
+              -35
+            ],
+            "0.15": [
+              0,
+              0,
+              0
+            ],
+            "0.2": [
+              0,
+              0,
+              35
+            ],
+            "0.25": [
+              0,
+              0,
+              0
+            ],
+            "0.30": [
+              0,
+              0,
+              -35
+            ],
+            "0.35": [
+              0,
+              0,
+              0
+            ],
+            "0.40": [
+              0,
+              0,
+              35
+            ],
+            "0.45": [
+              0,
+              0,
+              0
+            ],
+            "0.50": [
+              0,
+              0,
+              -35
+            ],
+            "0.55": [
+              0,
+              0,
+              0
+            ],
+            "0.60": [
+              0,
+              0,
+              35
+            ],
+            "0.65": [
+              0,
+              0,
+              0
+            ],
+            "0.70": [
+              0,
+              0,
+              -35
+            ],
+            "0.75": [
+              0,
+              0,
+              0
+            ],
+            "0.80": [
+              0,
+              0,
+              35
+            ],
+            "0.85": [
+              0,
+              0,
+              0
+            ],
+            "0.90": [
+              0,
+              0,
+              -35
+            ],
+            "0.95": [
+              0,
+              0,
+              0
+            ],
+            "1.0": [
+              0,
+              0,
+              35
+            ],
+            "1.05": [
+              0,
+              0,
+              0
+            ],
+            "1.10": [
+              0,
+              0,
+              -35
+            ],
+            "1.15": [
+              0,
+              0,
+              0
+            ],
+            "1.20": [
+              0,
+              0,
+              35
+            ],
+            "1.25": [
+              0,
+              0,
+              0
+            ],
+            "1.30": [
+              0,
+              0,
+              -35
+            ],
+            "1.35": [
+              0,
+              0,
+              0
+            ],
+            "1.40": [
+              0,
+              0,
+              35
+            ],
+            "1.45": [
+              0,
+              0,
+              0
+            ],
+            "1.50": [
+              0,
+              0,
+              -35
+            ],
+            "1.55": [
+              0,
+              0,
+              0
+            ],
+            "1.60": [
+              0,
+              0,
+              35
+            ],
+            "1.65": [
+              0,
+              0,
+              0
+            ],
+            "1.70": [
+              0,
+              0,
+              -35
+            ],
+            "1.75": [
+              0,
+              0,
+              0
+            ],
+            "1.80": [
+              0,
+              0,
+              35
+            ],
+            "1.85": [
+              0,
+              0,
+              0
+            ],
+            "1.90": [
+              0,
+              0,
+              -35
+            ],
+            "1.95": [
+              0,
+              0,
+              0
+            ],
+            "2.0": [
+              0,
+              0,
+              35
+            ],
+            "2.05": [
+              0,
+              0,
+              0
+            ],
+            "2.10": [
+              0,
+              0,
+              -35
+            ],
+            "2.15": [
+              0,
+              0,
+              0
+            ],
+            "2.20": [
+              0,
+              0,
+              35
+            ],
+            "2.25": [
+              0,
+              0,
+              0
+            ],
+            "2.30": [
+              0,
+              0,
+              -35
+            ],
+            "2.35": [
+              0,
+              0,
+              0
+            ],
+            "2.40": [
+              0,
+              0,
+              35
+            ],
+            "2.45": [
+              0,
+              0,
+              0
+            ],
+            "2.50": [
+              0,
+              0,
+              -35
+            ],
+            "2.55": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "pd_leg_front": {
+          "rotation": {
+            "0.0": [
+              15,
+              0,
+              0
+            ],
+            "1.20": [
+              25,
+              0,
+              0
+            ],
+            "2.55": [
+              15,
+              0,
+              0
+            ]
+          }
+        },
+        "pd_leg_mid": {
+          "rotation": {
+            "0.0": [
+              15,
+              0,
+              0
+            ],
+            "1.30": [
+              35,
+              0,
+              0
+            ],
+            "2.55": [
+              15,
+              0,
+              0
+            ]
+          }
+        },
+        "pd_leg_back": {
+          "rotation": {
+            "0.0": [
+              30,
+              0,
+              0
+            ],
+            "1.60": [
+              45,
+              0,
+              0
+            ],
+            "2.55": [
+              30,
+              0,
+              0
+            ]
+          }
+        },
+        "pd_rightwing_bone": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              -35
+            ],
+            "0.05": [
+              0,
+              0,
+              0
+            ],
+            "0.10": [
+              0,
+              0,
+              35
+            ],
+            "0.15": [
+              0,
+              0,
+              0
+            ],
+            "0.2": [
+              0,
+              0,
+              -35
+            ],
+            "0.25": [
+              0,
+              0,
+              0
+            ],
+            "0.30": [
+              0,
+              0,
+              35
+            ],
+            "0.35": [
+              0,
+              0,
+              0
+            ],
+            "0.40": [
+              0,
+              0,
+              -35
+            ],
+            "0.45": [
+              0,
+              0,
+              0
+            ],
+            "0.50": [
+              0,
+              0,
+              35
+            ],
+            "0.55": [
+              0,
+              0,
+              0
+            ],
+            "0.60": [
+              0,
+              0,
+              -35
+            ],
+            "0.65": [
+              0,
+              0,
+              0
+            ],
+            "0.70": [
+              0,
+              0,
+              35
+            ],
+            "0.75": [
+              0,
+              0,
+              0
+            ],
+            "0.80": [
+              0,
+              0,
+              -35
+            ],
+            "0.85": [
+              0,
+              0,
+              0
+            ],
+            "0.90": [
+              0,
+              0,
+              35
+            ],
+            "0.95": [
+              0,
+              0,
+              0
+            ],
+            "1.0": [
+              0,
+              0,
+              -35
+            ],
+            "1.05": [
+              0,
+              0,
+              0
+            ],
+            "1.10": [
+              0,
+              0,
+              35
+            ],
+            "1.15": [
+              0,
+              0,
+              0
+            ],
+            "1.20": [
+              0,
+              0,
+              -35
+            ],
+            "1.25": [
+              0,
+              0,
+              0
+            ],
+            "1.30": [
+              0,
+              0,
+              35
+            ],
+            "1.35": [
+              0,
+              0,
+              0
+            ],
+            "1.40": [
+              0,
+              0,
+              -35
+            ],
+            "1.45": [
+              0,
+              0,
+              0
+            ],
+            "1.50": [
+              0,
+              0,
+              35
+            ],
+            "1.55": [
+              0,
+              0,
+              0
+            ],
+            "1.60": [
+              0,
+              0,
+              -35
+            ],
+            "1.65": [
+              0,
+              0,
+              0
+            ],
+            "1.70": [
+              0,
+              0,
+              35
+            ],
+            "1.75": [
+              0,
+              0,
+              0
+            ],
+            "1.80": [
+              0,
+              0,
+              -35
+            ],
+            "1.85": [
+              0,
+              0,
+              0
+            ],
+            "1.90": [
+              0,
+              0,
+              35
+            ],
+            "1.95": [
+              0,
+              0,
+              0
+            ],
+            "2.0": [
+              0,
+              0,
+              -35
+            ],
+            "2.05": [
+              0,
+              0,
+              0
+            ],
+            "2.10": [
+              0,
+              0,
+              35
+            ],
+            "2.15": [
+              0,
+              0,
+              0
+            ],
+            "2.20": [
+              0,
+              0,
+              -35
+            ],
+            "2.25": [
+              0,
+              0,
+              0
+            ],
+            "2.30": [
+              0,
+              0,
+              35
+            ],
+            "2.35": [
+              0,
+              0,
+              0
+            ],
+            "2.40": [
+              0,
+              0,
+              -35
+            ],
+            "2.45": [
+              0,
+              0,
+              0
+            ],
+            "2.50": [
+              0,
+              0,
+              35
+            ],
+            "2.55": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    },
+    "animation.pd.bee.bobbing": {
+      "loop": true,
+      "bones": {
+        "pd_body": {
+          "position": [
+            0.0,
+            "math.cos(query.life_time * 343.774) * 1.6",
+            0.0
+          ],
+          "rotation": [
+            0,
+            "20 * math.cos(query.life_time * 343.774 / 2)",
+            0
+          ]
+        }
+      }
+    },
+    "animation.pd.bee.sting": {
+      "loop": true,
+      "bones": {
+        "pd_body": {
+          "rotation": [
+            "-175 * math.sin(variable.attack_time * 180)",
+            0,
+            0
+          ]
+        }
+      }
+    }
+  }
+}

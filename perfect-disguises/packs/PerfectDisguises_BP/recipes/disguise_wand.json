@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "pd:disguise_wand"
+    },
+    "tags": [ "crafting_table" ],
+    "pattern": [
+      " L ",
+      "GSG",
+      " S "
+    ],
+    "key": {
+      "L": {
+        "item": "minecraft:leather"
+      },
+      "G": {
+        "item": "minecraft:gold_nugget"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:leather"
+      }
+    ],
+    "result": {
+      "item": "pd:disguise_wand"
+    }
+  }
+}

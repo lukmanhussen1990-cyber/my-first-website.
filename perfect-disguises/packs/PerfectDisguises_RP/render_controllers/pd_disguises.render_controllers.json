@@ -1,0 +1,206 @@
+{
+  "format_version": "1.8.0",
+  "render_controllers": {
+    "controller.render.pd.zombie": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_zombie",
+      "materials": [
+        {
+          "*": "Material.pd_zombie"
+        }
+      ],
+      "textures": [
+        "Texture.pd_zombie"
+      ]
+    },
+    "controller.render.pd.skeleton": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_skeleton",
+      "materials": [
+        {
+          "*": "Material.pd_skeleton"
+        }
+      ],
+      "textures": [
+        "Texture.pd_skeleton"
+      ]
+    },
+    "controller.render.pd.spider": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_spider",
+      "materials": [
+        {
+          "*": "Material.pd_spider"
+        }
+      ],
+      "textures": [
+        "Texture.pd_spider"
+      ]
+    },
+    "controller.render.pd.enderman": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_enderman",
+      "materials": [
+        {
+          "*": "Material.pd_enderman"
+        }
+      ],
+      "textures": [
+        "Texture.pd_enderman"
+      ]
+    },
+    "controller.render.pd.pig": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_pig",
+      "materials": [
+        {
+          "*": "Material.pd_pig"
+        }
+      ],
+      "textures": [
+        "Texture.pd_pig"
+      ]
+    },
+    "controller.render.pd.cow": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_cow",
+      "materials": [
+        {
+          "*": "Material.pd_cow"
+        }
+      ],
+      "textures": [
+        "Texture.pd_cow"
+      ]
+    },
+    "controller.render.pd.sheep": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_sheep",
+      "materials": [
+        {
+          "*": "Material.pd_sheep"
+        }
+      ],
+      "textures": [
+        "Texture.pd_sheep"
+      ]
+    },
+    "controller.render.pd.wolf": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_wolf",
+      "materials": [
+        {
+          "*": "Material.pd_wolf"
+        }
+      ],
+      "textures": [
+        "Texture.pd_wolf"
+      ]
+    },
+    "controller.render.pd.bee": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_bee",
+      "materials": [
+        {
+          "*": "Material.pd_bee"
+        }
+      ],
+      "textures": [
+        "Texture.pd_bee"
+      ]
+    },
+    "controller.render.pd.creeper": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_creeper",
+      "materials": [
+        {
+          "*": "Material.pd_creeper"
+        }
+      ],
+      "textures": [
+        "Texture.pd_creeper"
+      ],
+      "overlay_color": {
+        "r": "variable.pd_flash > 0.0 ? 1.0 : this",
+        "g": "variable.pd_flash > 0.0 ? 1.0 : this",
+        "b": "variable.pd_flash > 0.0 ? 1.0 : this",
+        "a": "variable.pd_flash > 0.0 ? 1.0 : this"
+      }
+    },
+    "controller.render.pd.creeper_charged": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_creeper_charged",
+      "part_visibility": [
+        {
+          "*": "query.is_powered"
+        }
+      ],
+      "materials": [
+        {
+          "*": "Material.pd_creeper_charged"
+        }
+      ],
+      "textures": [
+        "Texture.pd_creeper_charged"
+      ],
+      "overlay_color": {
+        "r": 1.0,
+        "g": 1.0,
+        "b": 1.0,
+        "a": 1.0
+      },
+      "uv_anim": {
+        "offset": [
+          "(query.is_powered) ? (Math.floor(query.life_time * 20.0) + query.frame_alpha) * 0.01 : 0.0",
+          "(query.is_powered) ? (Math.floor(query.life_time * 20.0) + query.frame_alpha) * 0.01 : 0.0"
+        ],
+        "scale": [
+          1.0,
+          1.0
+        ]
+      },
+      "light_color_multiplier": 0.5,
+      "ignore_lighting": true
+    },
+    "controller.render.pd.villager_base": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_villager",
+      "materials": [
+        {
+          "*": "Material.pd_villager"
+        }
+      ],
+      "textures": [
+        "Texture.pd_villager_base"
+      ]
+    },
+    "controller.render.pd.villager_clothes": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_villager",
+      "materials": [
+        {
+          "*": "Material.pd_villager_masked"
+        }
+      ],
+      "textures": [
+        "Texture.pd_villager_biome",
+        "Texture.pd_villager_profession"
+      ]
+    },
+    "controller.render.pd.chicken": {
+      "rebuild_animation_matrices": true,
+      "geometry": "Geometry.pd_chicken",
+      "materials": [
+        {
+          "*": "Material.pd_chicken"
+        },
+        {
+          "pd_leg*": "Material.pd_chicken_legs"
+        }
+      ],
+      "textures": [
+        "Texture.pd_chicken"
+      ]
+    }
+  }
+}
