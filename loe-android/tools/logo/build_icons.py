@@ -1,35 +1,99 @@
 #!/usr/bin/env python3
-"""Writes the Loe logo drawables. Run from loe-android/: python3 tools/logo/build_icons.py"""
-import os, sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from mascot import *
+"""Builds every Loe logo asset from art/loe-logo.png (the logo on black).
 
-RES = 'app/src/main/res/drawable'
-def write(name, text):
-    with open(os.path.join(RES, name), 'w') as fh: fh.write(text)
+Run from loe-android/:  python3 tools/logo/build_icons.py
+Needs Pillow and numpy."""
+import os
+import numpy as np
+from PIL import Image, ImageDraw, ImageFilter
 
-# Adaptive launcher icon layers (108 x 108 dp).
-write('ic_launcher_background.xml', vd(bg_violet(), 108))
-write('ic_launcher_foreground.xml', vd(on_icon(mascot_white()), 108))
-write('ic_launcher_monochrome.xml', vd(on_icon(mascot_mono()), 108))
+SRC = 'art/loe-logo.png'
+RES = 'app/src/main/res'
+DENSITIES = {'mdpi': 1, 'hdpi': 1.5, 'xhdpi': 2, 'xxhdpi': 3, 'xxxhdpi': 4}
 
-# The finished icon (the 72 dp a launcher shows), for in-app use. Callers clip the corners.
-icon = [bg_violet(), on_icon(mascot_white())]
-write('loe_icon.xml', vd(G(icon, tx=-18, ty=-18), 72))
+rgb = np.asarray(Image.open(SRC).convert('RGB')).astype(np.float32)
+h, w = rgb.shape[:2]
+peak = rgb.max(axis=2)
 
-# Android 12+ splash: the icon as a rounded square inside the 192 dp circle of a 288 dp canvas.
-k = 152 / 72
-write('splash_icon.xml', vd(G([G(icon, clip=rrect(18, 18, 72, 72, 40 / k))], tx=68 - 18 * k, ty=68 - 18 * k, sx=k), 288))
+# ---- Cut the logo out of the black background ----------------------------------------------
+# Dark pixels joined to the image border are background. The dark visor is enclosed by the
+# white body, so it stays opaque.
+dark = Image.fromarray(np.where(peak < 100, 255, 0).astype(np.uint8)).copy()  # copy: arrays give read-only images
+ImageDraw.floodfill(dark, (0, 0), 128)
+background = np.asarray(dark) == 128
+edge = np.asarray(Image.fromarray(background.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(7))) > 0
+# On a black background a pixel is alpha * colour, so peak / 255 recovers alpha for glows and edges.
+alpha = np.where(edge, np.clip(peak / 255.0, 0, 1), 1.0)
+colour = np.where(alpha[..., None] > 0, np.clip(rgb / np.maximum(alpha, 1e-6)[..., None], 0, 255), 0)
+cutout = Image.fromarray(np.dstack([colour, alpha * 255]).round().astype(np.uint8), 'RGBA')
 
-# Header mark: the gradient mascot, cropped to its bounds.
-write('loe_mark.xml', vd(G(mascot_color(), tx=-13, ty=-4), 84, wdp=24, hdp=24))
+# Smallest circle around everything visible, so the logo can be centred and sized by it.
+ys, xs = np.where(peak > 24)
+pts = np.stack([xs, ys], 1).astype(np.float64)
+centre = pts.mean(0)
+for step in (64, 32, 16, 8, 4, 2, 1, 0.5):
+    while True:
+        radius = np.sqrt(((pts - centre) ** 2).sum(1)).max()
+        moves = [centre + d for d in ((step, 0), (-step, 0), (0, step), (0, -step))]
+        best = min(moves, key=lambda c: np.sqrt(((pts - c) ** 2).sum(1)).max())
+        if np.sqrt(((pts - best) ** 2).sum(1)).max() >= radius: break
+        centre = best
+radius = np.sqrt(((pts - centre) ** 2).sum(1)).max()
 
-# Status bar icon.
-s = 22 / 84
-write('ic_notification.xml', vd(G(mascot_mono(), tx=1 - 13 * s, ty=1 - 4 * s, sx=s), 24))
+def framed(image, size, fill, background=(0, 0, 0, 0)):
+    """The logo centred on a size x size canvas, its enclosing circle `fill` of the width across."""
+    scale = size * fill / (2 * radius)
+    big = image.resize((round(w * scale), round(h * scale)), Image.LANCZOS)
+    canvas = Image.new(image.mode, (size, size), background if image.mode == 'RGBA' else 0)
+    canvas.paste(big, (round(size / 2 - centre[0] * scale), round(size / 2 - centre[1] * scale)))
+    return canvas
 
-# Full icon as SVG for the README.
-os.makedirs('docs', exist_ok=True)
-with open('docs/loe-icon.svg', 'w') as fh:
-    fh.write(svg([G([G(icon, clip=rrect(18, 18, 72, 72, 17))])], (18, 18, 72, 72), 160))
-print('ok')
+def save(image, path, **kw):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    image.save(path, **kw)
+
+# In-app art. The splash draws loe_logo at 288 dp under a 192 dp circle (67%), so the logo spans 62%.
+save(framed(cutout, 1024, 0.62), f'{RES}/drawable-nodpi/loe_logo.webp', quality=92, alpha_quality=100, method=6)
+tile = Image.alpha_composite(Image.new('RGBA', (384, 384), (0, 0, 0, 255)), framed(cutout, 384, 0.88))
+save(tile.convert('RGB'), f'{RES}/drawable-nodpi/loe_logo_tile.webp', quality=92, method=6)
+
+# Launcher icon: 108 dp layers; the logo fits a 64 dp circle, inside the 66 dp every launcher shows.
+glyph = Image.fromarray((np.clip((peak - 90) / 80, 0, 1) * 255).astype(np.uint8))
+mono = Image.merge('RGBA', [Image.new('L', (w, h), 255)] * 3 + [glyph])
+for name, d in DENSITIES.items():
+    px = round(108 * d)
+    save(framed(cutout, px, 64 / 108), f'{RES}/mipmap-{name}/ic_launcher_foreground.webp', lossless=True, method=6)
+    save(framed(mono, px, 64 / 108), f'{RES}/mipmap-{name}/ic_launcher_monochrome.webp', lossless=True, method=6)
+
+# Status bar icon: the bubble and bow with the face screen cut out and two round eyes (the trailing
+# lines and fine details vanish at 24 dp).
+solid = Image.fromarray(np.where(peak > 110, 255, 0).astype(np.uint8)).copy()  # copy: arrays give read-only images
+ImageDraw.floodfill(solid, (430, 260), 128)   # a point on the white body
+body = np.asarray(solid) == 128
+screen = (peak < 100) & ~background
+sy, sx = np.where(screen)
+screen_box = (sx.min(), sy.min(), sx.max(), sy.max())
+shape = Image.fromarray(np.where(body, 255, 0).astype(np.uint8))
+draw = ImageDraw.Draw(shape)
+draw.rounded_rectangle(screen_box, radius=(screen_box[3] - screen_box[1]) * 0.32, fill=0)
+eye_y = screen_box[1] + (screen_box[3] - screen_box[1]) * 0.42
+eye_r = (screen_box[3] - screen_box[1]) * 0.16
+for fx in (0.3, 0.7):
+    ex = screen_box[0] + (screen_box[2] - screen_box[0]) * fx
+    draw.ellipse((ex - eye_r, eye_y - eye_r, ex + eye_r, eye_y + eye_r), fill=255)
+shape = shape.crop(shape.getbbox())
+for name, d in DENSITIES.items():
+    px = round(24 * d)
+    k = round(22 * d) / max(shape.size)
+    small = shape.resize((max(1, round(shape.width * k)), max(1, round(shape.height * k))), Image.LANCZOS)
+    icon = Image.new('RGBA', (px, px), (255, 255, 255, 0))
+    icon.paste(Image.new('RGBA', small.size, (255, 255, 255, 255)), ((px - small.width) // 2, (px - small.height) // 2), small)
+    save(icon, f'{RES}/drawable-{name}/ic_notification.png', optimize=True)
+
+# README icon: the tile with rounded corners.
+corner = Image.new('L', (384, 384), 0)
+ImageDraw.Draw(corner).rounded_rectangle((0, 0, 383, 383), radius=92, fill=255)
+readme = tile.copy()
+readme.putalpha(corner)
+save(readme.resize((160, 160), Image.LANCZOS), 'docs/loe-icon.png', optimize=True)
+print(f'centre={centre.round(1)} radius={radius:.1f}')

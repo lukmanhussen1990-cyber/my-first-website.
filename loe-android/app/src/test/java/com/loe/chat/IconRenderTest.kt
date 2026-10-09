@@ -54,10 +54,9 @@ class IconRenderTest {
 
     @Test
     fun splashAndSmallIcons() {
-        render("splash", context.getDrawable(R.drawable.splash_icon)!!, 576, Color.WHITE)
+        render("splash", context.getDrawable(R.drawable.loe_logo)!!, 576, Color.BLACK)
         val notification = context.getDrawable(R.drawable.ic_notification)!!.mutate().apply { setTintMode(PorterDuff.Mode.SRC_IN) }
         render("notification", notification, 96, Color.parseColor("#202124"))
-        render("loe_icon", context.getDrawable(R.drawable.loe_icon)!!, 288)
-        render("loe_mark", context.getDrawable(R.drawable.loe_mark)!!, 288, Color.WHITE)
+        render("loe_logo_tile", context.getDrawable(R.drawable.loe_logo_tile)!!, 288)
     }
 }

@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,8 +21,6 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -32,10 +29,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.imageResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import coil.compose.AsyncImage
@@ -53,7 +47,7 @@ fun BotAvatar(bot: Bot, size: Dp, modifier: Modifier = Modifier) {
     when {
         bot.avatar == AvatarStyle.CUSTOM -> CustomAvatar(bot, size, modifier.clip(shape))
         bot.avatar == AvatarStyle.LOE -> Image(
-            painterResource(R.drawable.loe_icon),
+            cachedBitmap(R.drawable.loe_logo_tile),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = modifier.size(size).clip(shape),
@@ -105,19 +99,6 @@ private fun brandLogo(style: AvatarStyle): BrandLogo? = when (style) {
     -> BrandLogo(R.drawable.logo_openai, Color.White, 0.66f)
     AvatarStyle.PERPLEXITY, AvatarStyle.PERPLEXITY_PRO -> BrandLogo(R.drawable.logo_perplexity, Color(0xFF1FB8CD), 0.64f)
     else -> null
-}
-
-/** Decoded once per process; mipmaps keep the logos smooth at small sizes. */
-private val bitmapCache = HashMap<Int, ImageBitmap>()
-
-@Composable
-private fun cachedBitmap(@DrawableRes id: Int): ImageBitmap {
-    val resources = LocalContext.current.resources
-    return remember(id) {
-        bitmapCache.getOrPut(id) {
-            ImageBitmap.imageResource(resources, id).also { it.asAndroidBitmap().setHasMipMap(true) }
-        }
-    }
 }
 
 @Composable
