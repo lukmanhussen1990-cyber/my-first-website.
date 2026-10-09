@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "2.5",                       // shown in Settings → About
+  version: "2.6",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -2506,6 +2506,34 @@ const CONFIG = {
   .fd-time { display: block; padding: 6px 14px 0; font-size: 12px; color: var(--text3); }
   @media (prefers-reduced-motion: reduce) { #pfeed, #pfeed.open { transition: none; } }
 
+  /* the tabs over the grid: all · reels · saved (a line slides under the one that is on) */
+  .pp-tabs { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); margin: 0 0 8px; border-bottom: 1px solid rgba(255, 255, 255, .1); }
+  .pp-tab { height: 42px; display: grid; place-items: center; color: var(--text3); transition: color .2s; }
+  .pp-tab svg.ic { width: 22px; height: 22px; }
+  .pp-tab.on { color: var(--text); }
+  .pp-tabhl { position: absolute; left: 0; bottom: -1px; width: 33.333%; height: 2px; border-radius: 1px; background: var(--text); transform: translateX(calc(var(--i, 0) * 100%)); transition: transform .32s cubic-bezier(.2, .9, .25, 1); }
+  .pp-none { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 28px 10px; text-align: center; font-size: 14px; color: var(--text2); background: rgba(255, 255, 255, .03); }
+  .pp-none svg.ic { width: 30px; height: 30px; }
+  .pp-cell svg.pp-mark { position: absolute; top: 7px; right: 7px; width: 18px; height: 18px; stroke: #fff; color: #fff; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .75)); }
+
+  /* several photos in one post: they sit side by side and snap as you swipe; "2/5" and dots */
+  .pp-prev { position: relative; }
+  .pp-track { display: flex; width: 100%; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .pp-track::-webkit-scrollbar, .fd-car .fd-track::-webkit-scrollbar { display: none; }
+  .pp-slide { flex: none; width: 100%; display: grid; place-items: center; scroll-snap-align: center; }
+  .pp-prev.multi .pp-slide { height: min(44vh, 100vw); }
+  .pp-pc, .fd-pc { position: absolute; top: 10px; right: 10px; z-index: 1; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #fff; background: rgba(0, 0, 0, .6); pointer-events: none; }
+  .pp-dots, .fd-dots { display: flex; justify-content: center; gap: 5px; padding-top: 9px; }
+  .pp-dots i, .fd-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, .3); transition: background .2s, transform .2s; }
+  .pp-dots i.on, .fd-dots i.on { background: #4cb5ff; transform: scale(1.15); }
+  .fd-car .fd-track { display: flex; height: min(100vw, 440px, 70vh); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .fd-slide { flex: none; width: 100%; height: 100%; display: grid; place-items: center; scroll-snap-align: center; background: #000; }
+  .fd-car .fd-slide img, .fd-car .fd-slide video { width: 100%; height: 100%; max-height: none; object-fit: contain; }
+  .fd-car + .fd-dots + .fd-acts { padding-top: 0; }
+  .fd-views { padding: 2px 14px 0; font-size: 14.5px; font-weight: 700; }
+  .fd-pin { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; font-size: 12px; font-weight: 600; color: var(--text3); }
+  .fd-pin svg.ic { width: 13px; height: 13px; }
+
   /* =====================================================================
      NOTIFICATIONS  (the heart buttons and their red number, the pop-up at the top, the list)
      ===================================================================== */
@@ -2611,68 +2639,135 @@ const CONFIG = {
   .cm-newp[hidden] { display: none; }
   @keyframes cmPill { 0% { opacity: 0; transform: translateY(-8px) scale(.9); } 100% { opacity: 1; transform: none; } }
 
-  /* ---------- 0. opening intro (everything here only moves with transform / opacity, so it stays smooth) ---------- */
-  #intro { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; background: #000; overflow: hidden; cursor: pointer;
-           animation: iFailsafe .01s linear 7s forwards; }          /* if the script ever fails, the intro hides itself after 7 s */
+  /* ---------- 0. opening intro: one cinematic scene (everything moves with transform / opacity / clip-path, so it stays smooth)
+     timeline (s): 0.1 a red line · 0.42 the black bars open on the scene · 0.82 the crown drops (glint) · 1.02 IMRAN wipes in,
+     red / cyan ghosts closing in · 1.42 impact · 1.62 BADASS stamps down (dust) · 1.94 impact · 2.15 a shine runs over the
+     letters · 2.85 the logo rises, the fingerprint ring + "Click here to see me" (it waits there for your tap) ---------- */
+  #intro { --a: min(100vw, 62vh); --a: min(100vw, 62svh);       /* the logo's square: as wide as the screen, never taller than 62% of it */
+           position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; background: #000; overflow: hidden; cursor: pointer;
+           animation: iFailsafe .01s linear 7s forwards; }          /* if the script never starts, the intro hides itself after 7 s */
+  #intro.play { animation: none; }
   @keyframes iFailsafe { to { visibility: hidden; pointer-events: none; } }
-  #intro.out { opacity: 0; pointer-events: none; transition: opacity .5s ease; }
-  #intro.out.fast { transition-duration: .3s; }
-  .i-art {
-    --a: min(100vw, 64vh); --a: min(100vw, 64svh);                /* the logo's square: as wide as the screen, never taller than 64% of it */
-    position: absolute; left: 50%; top: 50%; width: var(--a); height: var(--a);
-    margin: calc(var(--a) / -2) 0 0 calc(var(--a) / -2);
-  }
-  #intro.out .i-art { transform: scale(1.1); transition: transform .5s ease-in; }
+  #intro.out { opacity: 0; pointer-events: none; transition: opacity .5s ease .12s; }
+  #intro.out .i-art { transform: translateY(-10%) scale(1.65); transition: transform .62s cubic-bezier(.6, 0, .2, 1); }
+  #intro.out .i-cta { opacity: 0; transform: scale(1.35); transition: opacity .3s ease, transform .4s ease; }
+
+  /* the backdrop: the scene again, big and blurred, so the logo's square melts into the whole screen; light rays; drifting red fog */
+  .i-back { position: absolute; top: -8%; right: -8%; bottom: -8%; left: -8%; background: center / cover no-repeat; opacity: 0; filter: blur(22px) brightness(.42) saturate(1.3); will-change: transform, opacity; }
+  .i-rays { position: absolute; left: 50%; top: 44%; width: calc(var(--a) * 1.75); height: calc(var(--a) * 1.75); margin: calc(var(--a) * -.875) 0 0 calc(var(--a) * -.875); opacity: 0; pointer-events: none;
+    background: repeating-conic-gradient(rgba(255, 60, 40, 0) 0deg 9deg, rgba(255, 70, 45, .2) 11deg 13deg, rgba(255, 60, 40, 0) 15deg 24deg);
+    -webkit-mask: radial-gradient(circle, #000 0, rgba(0, 0, 0, .55) 22%, transparent 60%); mask: radial-gradient(circle, #000 0, rgba(0, 0, 0, .55) 22%, transparent 60%); will-change: transform, opacity; }
+  html.lite .i-rays { display: none; }
+  .i-fog { position: absolute; left: -30%; width: 160%; height: 55%; opacity: 0; pointer-events: none; will-change: transform, opacity;
+    background: radial-gradient(ellipse at center, rgba(150, 12, 8, .42), rgba(150, 12, 8, 0) 66%); }
+  .i-fog.a { top: 48%; } .i-fog.b { top: -4%; background: radial-gradient(ellipse at center, rgba(110, 8, 30, .36), rgba(110, 8, 30, 0) 66%); }
+
+  /* the logo: the scene (its square edges fade out), its glow, the crown, the letters (+ two coloured ghosts), the shine, the tag, the dust */
+  .i-art { position: absolute; left: 50%; top: 50%; width: var(--a); height: var(--a); margin: calc(var(--a) / -2) 0 0 calc(var(--a) / -2); transition: transform .9s cubic-bezier(.2, 1, .3, 1); }
+  #intro.ready .i-art { transform: translateY(-10%) scale(.86); }
   .i-zoom { position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform-origin: 50% 46%; will-change: transform; }
   .i-zoom img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; -webkit-user-drag: none; will-change: transform, opacity; }
-  .i-glow {
-    position: absolute; top: -30%; right: -30%; bottom: -30%; left: -30%; opacity: 0; pointer-events: none;
-    background: radial-gradient(circle at 50% 44%, rgba(255, 45, 30, .5), rgba(255, 45, 30, 0) 56%); will-change: transform, opacity;
-  }
-  .i-vig { position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 48%, rgba(0, 0, 0, .92) 100%); }
+  .i-scene { -webkit-mask: radial-gradient(circle at 50% 47%, #000 50%, transparent 71%); mask: radial-gradient(circle at 50% 47%, #000 50%, transparent 71%); }
+  .i-glow { position: absolute; top: -30%; right: -30%; bottom: -30%; left: -30%; opacity: 0; pointer-events: none;
+    background: radial-gradient(circle at 50% 44%, rgba(255, 45, 30, .5), rgba(255, 45, 30, 0) 56%); will-change: transform, opacity; }
+  .i-crown { clip-path: inset(0 0 53.75% 0); transform-origin: 50% 36%; }
+  .i-name { clip-path: inset(46.25% 0 0 0); }
+  .i-rgb { mix-blend-mode: screen; }
+  .i-rgb.r { filter: brightness(.55) sepia(1) saturate(12) hue-rotate(-50deg); }
+  .i-rgb.c { filter: brightness(.55) sepia(1) saturate(12) hue-rotate(150deg); }
+  .i-shine { position: absolute; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; pointer-events: none;
+    -webkit-mask: var(--m) center / 100% 100% no-repeat; mask: var(--m) center / 100% 100% no-repeat; }
+  .i-shine i { position: absolute; top: -20%; bottom: -20%; left: 0; width: 26%; opacity: 0; transform: translateX(-120%) skewX(-18deg);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 236, 200, .95) 50%, rgba(255, 255, 255, 0)); }
+  .i-dust i { position: absolute; left: 50%; top: 83%; width: var(--s); height: var(--s); margin: calc(var(--s) / -2); border-radius: 50%; opacity: 0;
+    background: #ff4a2e; box-shadow: 0 0 6px rgba(255, 60, 40, .8); }
+  .i-vig { position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, .9) 100%); }
   .i-flash { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: #fff; opacity: 0; pointer-events: none; will-change: opacity; }
-  .i-slash {
-    position: absolute; left: -30%; top: 47%; width: 160%; height: 3px; margin-top: -1.5px; opacity: 0; pointer-events: none;
-    background: linear-gradient(90deg, rgba(255, 60, 40, 0), #fff 32%, #ff3a2a 70%, rgba(255, 60, 40, 0));
-    box-shadow: 0 0 16px 3px rgba(255, 50, 35, .85); will-change: transform, opacity;
-  }
-  .i-slash.a { --r: -22deg; }
-  .i-slash.b { --r: 15deg; top: 57%; }
-  .i-embers i {
-    position: absolute; bottom: -8px; left: var(--x); width: var(--s); height: var(--s); border-radius: 50%; opacity: 0; pointer-events: none;
-    background: #ff5a3a; box-shadow: 0 0 6px 1px rgba(255, 70, 40, .85); will-change: transform, opacity;
-  }
-  .i-hint {
-    position: absolute; left: 0; right: 0; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); text-align: center; pointer-events: none;
-    font-size: 11px; letter-spacing: .32em; text-transform: uppercase; color: rgba(255, 255, 255, .42); opacity: 0;
-  }
-  /* the timeline (seconds): 0.1 scene fades in · 0.36 slash · 0.52-0.82 name slams in (impact 0.82) · 1.0 slash · 1.14-1.52 tag swipes in (impact 1.52) · 2.65 end */
-  .play .i-art     { animation: iShake 2.6s linear; }
-  .play .i-zoom    { animation: iZoom 3.3s linear both; }
-  .play .i-scene   { animation: iScene 1.1s cubic-bezier(.1, .6, .2, 1) .1s both; }
-  .play .i-glow    { animation: iGlow 2.6s ease-out .3s both; }
-  .play .i-name    { animation: iName .3s cubic-bezier(.55, 0, .95, .45) .52s both; }
-  .play .i-tag     { animation: iTag .38s cubic-bezier(.2, .8, .2, 1) 1.14s both; }
-  .play .i-slash.a { animation: iSlash .3s cubic-bezier(.3, .1, .2, 1) .36s both; }
-  .play .i-slash.b { animation: iSlash .28s cubic-bezier(.3, .1, .2, 1) 1s both; }
-  .play .i-flash   { animation: iFlash 2.6s linear both; }
-  .play .i-embers i { animation: iEmber var(--d) ease-out var(--dl) both; }
-  .play .i-hint    { animation: iHint .6s ease 1.3s both; }
-  @keyframes iZoom  { from { transform: scale(1); } to { transform: scale(1.07); } }
-  @keyframes iScene { from { opacity: 0; transform: scale(1.3); } to { opacity: 1; transform: scale(1); } }
-  @keyframes iGlow  { 0% { opacity: 0; transform: scale(.6); } 22% { opacity: .95; } 100% { opacity: .5; transform: scale(1.12); } }
-  @keyframes iName  { from { opacity: 0; transform: scale(1.9) rotate(-3deg); } to { opacity: 1; transform: none; } }
-  @keyframes iTag   { from { opacity: 1; clip-path: inset(0 100% 0 0); transform: translateX(-30px) skewX(-12deg); } to { opacity: 1; clip-path: inset(0 0 0 0); transform: none; } }
-  @keyframes iSlash { 0% { opacity: 0; transform: rotate(var(--r)) translateX(-80%); } 15% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--r)) translateX(80%); } }
-  @keyframes iFlash { 0%, 30% { opacity: 0; } 31.5% { opacity: .55; } 38% { opacity: 0; } 58% { opacity: 0; } 59.2% { opacity: .3; } 65% { opacity: 0; } 100% { opacity: 0; } }
+  .i-embers i { position: absolute; bottom: -8px; left: var(--x); width: var(--s); height: var(--s); border-radius: 50%; opacity: 0; pointer-events: none;
+    background: #ff5a3a; box-shadow: 0 0 6px 1px rgba(255, 70, 40, .85); will-change: transform, opacity; }
+
+  /* the opening: black bars over the scene, a red line flicks across the middle, then the bars part */
+  .i-bars i { position: absolute; left: 0; right: 0; height: 50.5%; background: #000; will-change: transform; }
+  .i-bars .t { top: 0; } .i-bars .b { bottom: 0; }
+  .i-line { position: absolute; left: 50%; top: 50%; width: 84vw; height: 2px; margin: -1px 0 0 -42vw; opacity: 0; transform: scaleX(0);
+    background: linear-gradient(90deg, rgba(255, 50, 30, 0), #ff3a2a 25%, #fff 50%, #ff3a2a 75%, rgba(255, 50, 30, 0)); box-shadow: 0 0 18px 3px rgba(255, 40, 30, .8); }
+
+  /* the end: the fingerprint ring (a scan line, two pulses, a light going round) and the words typing under it */
+  .i-cta { position: absolute; left: 0; right: 0; bottom: calc(10vh + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: center; gap: 18px;
+    opacity: 0; transform: translateY(18px); pointer-events: none; }
+  #intro.ready .i-ring { pointer-events: auto; }
+  #intro.ready .i-cta { opacity: 1; transform: none; transition: opacity .6s ease, transform .8s cubic-bezier(.2, 1, .3, 1); }
+  .i-ring { position: relative; width: 86px; height: 86px; border-radius: 50%; display: grid; place-items: center;
+    background: radial-gradient(circle, rgba(255, 40, 30, .26), rgba(255, 40, 30, .05) 62%, rgba(255, 40, 30, 0) 72%); border: 1.5px solid rgba(255, 80, 60, .8);
+    box-shadow: 0 0 26px rgba(255, 40, 30, .45), inset 0 0 18px rgba(255, 40, 30, .3); }
+  .i-ring svg.ic { width: 44px; height: 44px; color: #fff; stroke-width: 1.6; filter: drop-shadow(0 0 6px rgba(255, 60, 40, .9)); }
+  .i-ring::after { content: ""; position: absolute; left: 20px; right: 20px; top: 21px; height: 2px; border-radius: 1px;
+    background: linear-gradient(90deg, rgba(255, 70, 50, 0), #ff5a3a, rgba(255, 70, 50, 0)); box-shadow: 0 0 8px #ff3a2a; animation: iScan 1.7s ease-in-out infinite alternate; }
+  @keyframes iScan { from { transform: translateY(0); } to { transform: translateY(42px); } }
+  .i-pulse { position: absolute; top: -2px; right: -2px; bottom: -2px; left: -2px; border-radius: 50%; border: 1.5px solid rgba(255, 70, 50, .7); animation: iPulse 2.2s ease-out infinite; }
+  .i-pulse.b { animation-delay: 1.1s; }
+  @keyframes iPulse { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(1.9); opacity: 0; } }
+  .i-orbit { position: absolute; top: -9px; right: -9px; bottom: -9px; left: -9px; animation: iOrbit 3s linear infinite; }
+  .i-orbit i { position: absolute; top: -3px; left: 50%; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px 2px #ff4a32; }
+  @keyframes iOrbit { to { transform: rotate(1turn); } }
+  .i-say { min-height: 1.5em; font-size: clamp(12px, 3.4vw, 15px); letter-spacing: .3em; text-transform: uppercase; color: rgba(255, 255, 255, .92); text-shadow: 0 0 14px rgba(255, 60, 40, .7); }
+  .i-say::after { content: "|"; margin-left: .1em; animation: blink 1s steps(1) infinite; }
+  .i-hint { position: absolute; left: 0; right: 0; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); text-align: center; pointer-events: none;
+    font-size: 11px; letter-spacing: .32em; text-transform: uppercase; color: rgba(255, 255, 255, .42); opacity: 0; }
+  #intro.ready .i-hint { opacity: 0 !important; transition: opacity .3s; }
+
+  /* the timeline */
+  .play .i-line    { animation: iLine .6s cubic-bezier(.3, .7, .2, 1) .1s both; }
+  .play .i-bars .t { animation: iBarT .75s cubic-bezier(.7, 0, .2, 1) .42s both; }
+  .play .i-bars .b { animation: iBarB .75s cubic-bezier(.7, 0, .2, 1) .42s both; }
+  .play .i-back    { animation: iBack 3.4s cubic-bezier(.15, .6, .2, 1) .35s both; }
+  .play .i-rays    { animation: iFadeIn 1.6s ease .7s both, iSpin 46s linear infinite; }
+  .play .i-fog.a   { animation: iFadeIn 1.6s ease .5s both, iDrift 9s ease-in-out infinite alternate; }
+  .play .i-fog.b   { animation: iFadeIn 1.6s ease .8s both, iDrift 11s ease-in-out -4s infinite alternate-reverse; }
+  .play .i-zoom    { animation: iZoom 3.6s cubic-bezier(.15, .6, .2, 1) .35s both; }
+  .play .i-scene   { animation: iScene 1.3s ease .4s both; }
+  .play .i-glow    { animation: iGlow 2.6s ease-out .5s both; }
+  #intro.ready .i-glow { animation: iBreath 3.2s ease-in-out infinite; }
+  .play .i-crown   { animation: iCrown .6s cubic-bezier(.3, 1.45, .5, 1) .82s both; }
+  .play .i-name    { animation: iWipe .42s cubic-bezier(.6, 0, .2, 1) 1.02s both; }
+  .play .i-rgb.r   { animation: iRgbR .62s cubic-bezier(.3, .6, .3, 1) 1.02s both; }
+  .play .i-rgb.c   { animation: iRgbC .62s cubic-bezier(.3, .6, .3, 1) 1.02s both; }
+  .play .i-tag     { animation: iStamp .34s cubic-bezier(.55, 0, .9, .4) 1.62s both; }
+  .play .i-dust i  { animation: iDust .75s cubic-bezier(.1, .8, .3, 1) 1.94s forwards; }
+  .play .i-shine i { animation: iShine .8s ease-in-out 2.15s both; }
+  #intro.ready .i-shine i { animation: iShineLoop 4.2s ease-in-out 1.4s infinite; }
+  .play .i-art     { animation: iShake 2.4s linear .1s; }
+  .play .i-flash   { animation: iFlash 2.4s linear .1s both; }
+  .play .i-embers i { animation: iEmber var(--d) ease-out var(--dl) infinite; }
+  .play .i-hint    { animation: iFadeIn .6s ease 1.2s both; }
+  @keyframes iLine  { 0% { opacity: 1; transform: scaleX(0); } 55% { opacity: 1; transform: scaleX(1); } 100% { opacity: 0; transform: scaleX(1.25); } }
+  @keyframes iBarT  { to { transform: translateY(-100%); } }
+  @keyframes iBarB  { to { transform: translateY(100%); } }
+  @keyframes iBack  { from { opacity: 0; transform: scale(1.35); } to { opacity: 1; transform: scale(1.12); } }
+  @keyframes iFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes iSpin  { to { transform: rotate(1turn); } }
+  @keyframes iDrift { from { transform: translateX(-7%); } to { transform: translateX(7%); } }
+  @keyframes iZoom  { from { transform: scale(1.2); } to { transform: scale(1); } }
+  @keyframes iScene { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes iGlow  { 0% { opacity: 0; transform: scale(.6); } 22% { opacity: .95; } 100% { opacity: .55; transform: scale(1.12); } }
+  @keyframes iBreath { 0%, 100% { opacity: .55; transform: scale(1.12); } 50% { opacity: .85; transform: scale(1.2); } }
+  @keyframes iCrown { from { opacity: 0; transform: translateY(-75%) rotate(-9deg) scale(1.3); } to { opacity: 1; transform: none; } }
+  @keyframes iWipe  { from { opacity: 1; clip-path: polygon(0% 46.25%, 0% 46.25%, -12% 100%, -12% 100%); } to { opacity: 1; clip-path: polygon(0% 46.25%, 112% 46.25%, 100% 100%, 0% 100%); } }
+  @keyframes iRgbR  { 0% { opacity: .95; transform: translate(-18px, 3px); clip-path: polygon(0% 46.25%, 0% 46.25%, -12% 100%, -12% 100%); } 65% { opacity: .7; clip-path: polygon(0% 46.25%, 112% 46.25%, 100% 100%, 0% 100%); } 100% { opacity: 0; transform: none; clip-path: polygon(0% 46.25%, 112% 46.25%, 100% 100%, 0% 100%); } }
+  @keyframes iRgbC  { 0% { opacity: .95; transform: translate(18px, -3px); clip-path: polygon(0% 46.25%, 0% 46.25%, -12% 100%, -12% 100%); } 65% { opacity: .7; clip-path: polygon(0% 46.25%, 112% 46.25%, 100% 100%, 0% 100%); } 100% { opacity: 0; transform: none; clip-path: polygon(0% 46.25%, 112% 46.25%, 100% 100%, 0% 100%); } }
+  @keyframes iStamp { from { opacity: 0; transform: scale(2.4) rotate(-10deg); } to { opacity: 1; transform: none; } }
+  @keyframes iDust  { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.4); } }
+  @keyframes iShine { 0% { opacity: 0; transform: translateX(-120%) skewX(-18deg); } 12% { opacity: 1; } 88% { opacity: 1; } 100% { opacity: 0; transform: translateX(420%) skewX(-18deg); } }
+  @keyframes iShineLoop { 0% { opacity: 0; transform: translateX(-120%) skewX(-18deg); } 3%, 19% { opacity: 1; } 22%, 100% { opacity: 0; transform: translateX(420%) skewX(-18deg); } }
+  @keyframes iFlash { 0%, 54.5% { opacity: 0; } 55.6% { opacity: .5; } 61% { opacity: 0; } 76.5% { opacity: 0; } 77.3% { opacity: .28; } 82%, 100% { opacity: 0; } }
   @keyframes iShake {
-    0%, 30% { transform: translate(0, 0); }
-    31.5% { transform: translate(-11px, 6px); } 34% { transform: translate(9px, -7px); } 37% { transform: translate(-6px, 4px); }
-    40.5% { transform: translate(4px, -3px); } 44% { transform: translate(-2px, 1px); } 47%, 58% { transform: translate(0, 0); }
-    59.5% { transform: translate(5px, -3px); } 62.5% { transform: translate(-4px, 3px); } 66% { transform: translate(2px, -1px); } 69%, 100% { transform: translate(0, 0); }
+    0%, 54.9% { transform: translate(0, 0); }
+    55.6% { transform: translate(-10px, 6px); } 57.8% { transform: translate(9px, -6px); } 60% { transform: translate(-6px, 4px); }
+    62.5% { transform: translate(4px, -2px); } 65% { transform: translate(-2px, 1px); } 67.5%, 76.6% { transform: translate(0, 0); }
+    77.4% { transform: translate(6px, -4px); } 79.5% { transform: translate(-5px, 3px); } 81.8% { transform: translate(3px, -2px); } 84%, 100% { transform: translate(0, 0); }
   }
   @keyframes iEmber { 0% { opacity: 0; transform: translate(0, 0); } 14% { opacity: .95; } 100% { opacity: 0; transform: translate(var(--dx), -62vh); } }
-  @keyframes iHint  { from { opacity: 0; } to { opacity: 1; } }
+  .app-bg #intro * { animation-play-state: paused !important; }
   /* the white flash and the red slash that punch in when you tap "Click here" */
   #flash { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 70; background: #fff; opacity: 0; pointer-events: none; }
   #swipe {
@@ -2720,9 +2815,12 @@ const CONFIG = {
 <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol>
 <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
 <symbol id="i-film" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></symbol>
+<symbol id="i-fingerprint" viewBox="0 0 24 24"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></symbol>
+<symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></symbol>
 <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/></symbol>
 <symbol id="i-gamepad-2" viewBox="0 0 24 24"><line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></symbol>
 <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></symbol>
 <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></symbol>
 <symbol id="i-heart" viewBox="0 0 24 24"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></symbol>
 <symbol id="i-house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
@@ -2736,6 +2834,7 @@ const CONFIG = {
 <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
 <symbol id="i-pause" viewBox="0 0 24 24"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></symbol>
 <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol>
 <symbol id="i-play" viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></symbol>
 <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
 <symbol id="i-repeat-1" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/><path d="M11 10h1v4"/></symbol>
@@ -2776,21 +2875,34 @@ const CONFIG = {
 <symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
 </svg>
 
-  <!-- 0. OPENING INTRO (the logo is built from three layers; tap anywhere to skip) -->
+  <!-- 0. OPENING INTRO: one cinematic scene that ends on the "tap to enter" ring (a tap at any time goes straight in).
+       The logo is the three layers of the icon art: the scene, the name (its crown and its letters move on their own), the tag -->
   <div id="intro" aria-hidden="true">
+    <div class="i-back" id="iBack"></div>
+    <div class="i-rays"></div>
+    <div class="i-fog a"></div>
+    <div class="i-fog b"></div>
     <div class="i-art">
       <div class="i-zoom">
         <img class="i-scene" id="i-scene" alt="" draggable="false">
         <div class="i-glow"></div>
+        <img class="i-crown" id="iCrown" alt="" draggable="false">
+        <img class="i-name i-rgb r" id="iNameR" alt="" draggable="false">
+        <img class="i-name i-rgb c" id="iNameC" alt="" draggable="false">
         <img class="i-name" id="i-name" alt="" draggable="false">
+        <div class="i-shine" id="iShine"><i></i></div>
         <img class="i-tag" id="i-tag" alt="" draggable="false">
+        <div class="i-dust" id="iDust"></div>
       </div>
     </div>
-    <div class="i-slash a"></div>
-    <div class="i-slash b"></div>
     <div class="i-embers" id="iEmbers"></div>
     <div class="i-vig"></div>
+    <div class="i-bars"><i class="t"></i><i class="b"></i><b class="i-line"></b></div>
     <div class="i-flash"></div>
+    <div class="i-cta">
+      <div class="i-ring"><i class="i-pulse"></i><i class="i-pulse b"></i><span class="i-orbit"><i></i></span><svg class="ic"><use href="#i-fingerprint"/></svg></div>
+      <p class="i-say" id="iSay"></p>
+    </div>
     <p class="i-hint">tap to skip</p>
   </div>
 
@@ -2937,12 +3049,18 @@ const CONFIG = {
         </div>
         <!-- your posts: the + uploads a photo or a video from the phone (kept inside the app); tap one to see it -->
         <div class="pp-head" id="ppHead"><b>Posts<span class="pp-cnt js-posts">0</span></b><button class="pp-add rip" data-act="new-post"><svg class="ic"><use href="#i-plus"/></svg>New post</button></div>
+        <div class="pp-tabs" id="ppTabs" role="tablist" aria-label="Your posts">
+          <button class="pp-tab on" data-pt="all" role="tab" aria-selected="true" aria-label="All posts"><svg class="ic"><use href="#i-grid"/></svg></button>
+          <button class="pp-tab" data-pt="reels" role="tab" aria-selected="false" aria-label="Reels: your videos"><svg class="ic"><use href="#i-film"/></svg></button>
+          <button class="pp-tab" data-pt="saved" role="tab" aria-selected="false" aria-label="Saved"><svg class="ic"><use href="#i-bookmark"/></svg></button>
+          <i class="pp-tabhl"></i>
+        </div>
         <div class="pp-grid" id="ppGrid"></div>
         <div class="pp-empty" id="ppEmpty">
           <svg class="ic"><use href="#i-camera"/></svg><b>No posts yet</b><span>Share your first photo or video</span>
           <button class="pp-first rip" data-act="new-post">Upload a post</button>
         </div>
-        <input type="file" id="ppFile" accept="image/*,video/*" hidden>
+        <input type="file" id="ppFile" accept="image/*,video/*" multiple hidden>
       </section>
 
       <!-- ===================== 4. SOCIAL LINKS ===================== -->
@@ -3489,6 +3607,8 @@ const CONFIG = {
         else if (what === "fbswoosh") fbSwish(t, 0.3, 0.13, 480, 3000);                                                                        // the panels slide in
         else if (what === "boton") { tone("square", 440, 880, 0.12, 0.045, t, 0.16); tone("square", 660, 1320, 0.1, 0.04, t + 0.12, 0.18); tone("sine", 1760, 2637, 0.25, 0.06, t + 0.24, 0.45); }   // the autopilot bot wakes up: beep-boop, up
         else if (what === "botoff") { tone("square", 880, 440, 0.12, 0.04, t, 0.16); tone("square", 660, 330, 0.14, 0.035, t + 0.12, 0.22); }   // it rests: down
+        else if (what === "beat") { tone("sine", 72, 40, 0.12, 0.5, t, 0.24); tone("sine", 66, 38, 0.12, 0.36, t + 0.26, 0.24); }   // the opening: a heartbeat
+        else if (what === "shing") { tone("sine", 2637, 3520, 0.08, 0.05, t, 0.55); tone("triangle", 1318.5, 1760, 0.1, 0.035, t + 0.03, 0.42); }   // the crown lands: a bright glint
         else if (what === "noti") { tone("sine", 1568, 1568, 0.01, 0.06, t, 0.12); tone("sine", 2093, 2093, 0.01, 0.05, t + 0.08, 0.22); }   // a notification: a soft double blip
         else if (what === "bottap") tone("sine", 1900, 1400, 0.04, 0.035, t, 0.06);   // its finger taps: a tiny click
       }
@@ -3499,12 +3619,12 @@ const CONFIG = {
   /* ---------- 0. opening intro ---------- */
   var intro = { el: $("intro"), over: false, timers: [], resolve: null };
   intro.done = new Promise(function (r) { intro.resolve = r; });
-  function introEnd(fast) {
+  function introEnd(fast) {                       // the intro leaves: the logo flies at you while everything fades into the page
     if (intro.over) return;
     intro.over = true;
     intro.timers.forEach(clearTimeout);
     var el = intro.el;
-    if (el) { el.classList.add("out"); if (fast) el.classList.add("fast"); setTimeout(function () { el.remove(); }, fast ? 350 : 600); }
+    if (el) { el.classList.add("out"); setTimeout(function () { el.remove(); }, fast && !el.classList.contains("play") ? 350 : 650); }
     intro.resolve();
   }
   function introStart() {
@@ -3523,28 +3643,47 @@ const CONFIG = {
   }
   function introPlay() {
     if (intro.over) return;
-    intro.el.classList.add("play");
-    var box = $("iEmbers"), n = isLite() ? 9 : 14;
-    for (var i = 0; i < n; i++) {
-      var e = document.createElement("i");
-      e.style.cssText = "--x:" + (8 + Math.random() * 84).toFixed(1) + "%;--s:" + (2 + Math.random() * 3).toFixed(1) + "px;--dx:" + ((Math.random() - 0.5) * 90).toFixed(0) +
-                        "px;--d:" + (1.2 + Math.random() * 1.1).toFixed(2) + "s;--dl:" + (0.7 + Math.random() * 1.2).toFixed(2) + "s";
+    var imgs = C.introImages, lite = isLite(), i, e;
+    $("iBack").style.backgroundImage = "url(" + imgs.scene + ")";
+    ["iCrown", "iNameR", "iNameC"].forEach(function (id) { $(id).src = imgs.name; });   // (the crown, and the two coloured ghosts of the letters)
+    if (location.protocol === "file:") $("iShine").style.display = "none";   // (a page opened as a file can't use a picture as a mask: no shine there)
+    else $("iShine").style.setProperty("--m", "url(" + imgs.name + ")");
+    var box = $("iEmbers"), n = lite ? 10 : 18;
+    for (i = 0; i < n; i++) {                       // embers rising, for as long as the intro is on
+      e = document.createElement("i");
+      e.style.cssText = "--x:" + (6 + Math.random() * 88).toFixed(1) + "%;--s:" + (2 + Math.random() * 3).toFixed(1) + "px;--dx:" + ((Math.random() - 0.5) * 90).toFixed(0) +
+                        "px;--d:" + (2 + Math.random() * 2.2).toFixed(2) + "s;--dl:" + (0.6 + Math.random() * 2.6).toFixed(2) + "s";
       box.appendChild(e);
     }
-    var at = function (ms, fn) { intro.timers.push(setTimeout(fn, ms)); };   // sounds line up with the animation in the CSS
-    at(250,  function () { sfx.play("whoosh"); });
-    at(780,  function () { sfx.play("hit"); });
-    at(980,  function () { sfx.play("whoosh2"); });
-    at(1500, function () { sfx.play("hit2"); });
-    at(2650, function () { introEnd(false); });
+    var dust = $("iDust");
+    for (i = 0; i < (lite ? 10 : 16); i++) {        // the dust when BADASS stamps down
+      var an = Math.PI * (1.05 + Math.random() * .9) * (Math.random() < .5 ? 1 : -1) / 2 + (Math.random() < .5 ? 0 : Math.PI), d = 30 + Math.random() * 70;
+      e = document.createElement("i");
+      e.style.cssText = "--s:" + (3 + Math.random() * 4).toFixed(1) + "px;--dx:" + (Math.cos(an) * d * 1.6).toFixed(0) + "px;--dy:" + (Math.sin(an) * d * .7).toFixed(0) + "px";
+      dust.appendChild(e);
+    }
+    intro.el.classList.add("play");
+    var at = function (ms, fn) { intro.timers.push(setTimeout(fn, ms)); };   // the sounds line up with the animation in the CSS
+    at(100,  function () { sfx.play("beat"); });
+    at(420,  function () { sfx.play("whoosh"); });
+    at(1000, function () { sfx.play("shing"); });
+    at(1420, function () { sfx.play("hit"); });
+    at(1940, function () { sfx.play("hit2"); });
+    at(2180, function () { sfx.play("whoosh2"); });
+    at(2850, introReady);
+  }
+  function introReady() {                         // the logo rises, the fingerprint ring comes; the words type themselves; it waits for your tap
+    if (intro.over) return;
+    intro.el.classList.add("ready");
+    intro.resolve();
   }
   if (intro.el) intro.el.addEventListener("click", function () { introEnd(true); enter(); });   // a tap skips the intro and goes straight in
   introStart();
 
   /* ---------- 1. enter screen typing (starts when the intro is over) ---------- */
-  var enterEl = $("enter"), enterText = $("enterText");
+  var enterEl = $("enter"), enterText = $("enterText"), iSay = $("iSay");   // (the words show under the intro's ring, or on the plain enter screen without the intro)
   function typeEnter(i) {
-    enterText.textContent = C.enterText.slice(0, i);
+    enterText.textContent = iSay.textContent = C.enterText.slice(0, i);
     if (i < C.enterText.length && !entered) setTimeout(function () { typeEnter(i + 1); }, 95);
   }
   intro.done.then(function () { typeEnter(0); });
@@ -7839,16 +7978,17 @@ const CONFIG = {
 
   /* =====================================================================
      POSTS  (on Profile: the + button uploads a photo or a video from the phone, with a filter and a caption)
-     Kept on the phone inside the app (IndexedDB: photos made smaller with the filter baked in, videos as they are),
-     shown in a grid under the profile (newest first, with their likes); tap one for the feed: big, like Instagram,
-     double-tap to like. The likes come from the like bots (see LIKE & FOLLOW BOTS below).
+     Up to 10 photos / videos in one post (swipe through them). Kept on the phone inside the app (IndexedDB: photos made
+     smaller with the filter baked in, videos as they are), shown in a grid under the profile (pinned ones first, then
+     newest; tabs: all · reels · saved); tap one for the feed: big, like Instagram, double-tap to like. The ⋮ menu pins
+     it, edits its caption, hides its like count or deletes it. The likes come from the like bots (LIKE & FOLLOW BOTS).
      ===================================================================== */
   var PP_FX = [["Normal", ""], ["Clarendon", "contrast(1.2) saturate(1.35)"], ["Gingham", "brightness(1.05) hue-rotate(-10deg) contrast(.92) saturate(.9)"],
                ["Moon", "grayscale(1) contrast(1.1) brightness(1.1)"], ["Lark", "contrast(.92) brightness(1.08) saturate(1.15)"],
                ["Reyes", "sepia(.22) brightness(1.1) contrast(.85) saturate(.75)"], ["Juno", "saturate(1.4) contrast(1.15) sepia(.08)"],
                ["Slumber", "saturate(.66) brightness(1.05) sepia(.18)"], ["Crema", "sepia(.35) contrast(1.1) saturate(1.1)"]];
   var PP_VT = (document.querySelector(".setprof .vtick") || {}).outerHTML || "";   // the blue verified tick (the Settings card has the original)
-  var pp = { db: null, list: [], urls: {}, file: $("ppFile"), grid: $("ppGrid"), empty: $("ppEmpty"), busy: false, prev: "", loaded: false };
+  var pp = { db: null, list: [], urls: {}, file: $("ppFile"), grid: $("ppGrid"), empty: $("ppEmpty"), busy: false, prevs: [], loaded: false, tab: "all" };
 
   function ppDb(cb) {                               // the posts' own little database (opened once)
     if (pp.db || !window.indexedDB) { cb(pp.db); return; }
@@ -7872,96 +8012,140 @@ const CONFIG = {
   function ppSave(p) { ppTx("readwrite", function (st) { return st.put(p); }); }
   function ppLoad() {
     ppTx("readonly", function (st) { return st.getAll(); }, function (ok, all) {
-      pp.list = ok && all ? all.sort(function (a, b) { return b.t - a.t; }) : []; pp.loaded = true;
+      pp.list = ok && all ? all : []; ppSort(); pp.loaded = true;
       pp.list.forEach(function (p) { if (sbPrep(p)) ppSave(p); p.likes = sbLikes(p); p.cms = cmBots(p); });   // (posts from before the bots get their numbers once)
       ppRender(); ppCount();
     });
   }
-  function ppUrl(p, k) { var u = pp.urls[p.id] || (pp.urls[p.id] = {}); return u[k] || (u[k] = URL.createObjectURL(p[k])); }
+  function ppSort() { pp.list.sort(function (a, b) { return (b.pin || 0) - (a.pin || 0) || b.t - a.t; }); }   // pinned first (newest pin first), then newest
+  function ppItems(p) { return p.media && p.media.length ? p.media : [{ type: p.type, full: p.full, thumb: p.thumb, fx: p.fx || 0 }]; }   // a post's photos / videos
+  function ppUrl(p, k, i) { var u = pp.urls[p.id] || (pp.urls[p.id] = {}), key = k + (i || 0); return u[key] || (u[key] = URL.createObjectURL(i ? ppItems(p)[i][k] : p[k])); }
+  function ppViews(p) { var r = sbR(p.seed + 5); return Math.floor((p.likes || 0) * (6 + r() * 6)); }   // a video's views (always more than its likes)
+  function ppShown() {                              // the grid's tab: all · reels (videos) · saved
+    return pp.list.filter(function (p) { return pp.tab === "reels" ? p.type === "video" : pp.tab === "saved" ? !!p.sv : true; });
+  }
   function ppCount() { qa(".js-posts").forEach(function (e) { e.textContent = fmtNum(pp.list.length); }); }
-  function ppRender(fresh) {                        // the grid: three across, square, the likes on each, a play mark on videos
+  function ppRender(fresh) {                        // the grid: three across, square; likes (views on videos), a mark for videos, several photos, pinned
+    var shown = ppShown();
     pp.grid.innerHTML = "";
-    pp.list.forEach(function (p, i) {
-      var b = document.createElement("button");
-      b.className = "pp-cell rip" + (fresh && i === 0 ? " fresh" : "");
+    shown.forEach(function (p) {
+      var b = document.createElement("button"), many = ppItems(p).length > 1, vid = p.type === "video";
+      b.className = "pp-cell rip" + (fresh && p.id === fresh ? " fresh" : "");
       b.setAttribute("data-id", p.id);
-      b.setAttribute("aria-label", (p.type === "video" ? "Video" : "Photo") + (p.caption ? ": " + p.caption : ""));
-      b.innerHTML = '<img alt="" decoding="async" src="' + ppUrl(p, "thumb") + '">' + (p.type === "video" ? ic("play", "pp-vid") : "") +
-                    '<span class="pp-lk">' + ic("heart") + "<i></i></span>";
+      b.setAttribute("aria-label", (vid ? "Video" : many ? ppItems(p).length + " photos" : "Photo") + (p.caption ? ": " + p.caption : ""));
+      b.innerHTML = '<img alt="" decoding="async" src="' + ppUrl(p, "thumb") + '">' +
+                    (p.pin ? ic("pin", "pp-mark fill") : many ? ic("copy", "pp-mark") : vid ? ic("play", "pp-mark fill") : "") +
+                    '<span class="pp-lk">' + ic(vid ? "play" : "heart") + "<i></i></span>";
       b.addEventListener("click", function () { pfOpen(p.id); });
       pp.grid.appendChild(b);
     });
+    if (!shown.length && pp.list.length) pp.grid.innerHTML = '<p class="pp-none">' + ic(pp.tab === "reels" ? "film" : "bookmark") + (pp.tab === "reels" ? "No reels yet: post a video" : "Nothing saved yet: tap the bookmark on a post") + "</p>";
     pp.empty.style.display = pp.list.length ? "none" : "";
+    $("ppTabs").style.display = pp.list.length ? "" : "none";
     ppLikesUI();
   }
-  function ppLikesUI() {                            // the likes on the grid (short: 1.2M)
-    qa(".pp-cell", pp.grid).forEach(function (b, i) {
-      var p = pp.list[i], t = p && p.likes > 0 ? fmtShort(p.likes) : "", e = b.querySelector(".pp-lk i");
+  function ppLikesUI() {                            // the numbers on the grid (short: 1.2M): likes, or views on videos; none on a post with its likes hidden
+    qa(".pp-cell", pp.grid).forEach(function (b) {
+      var p = ppFind(b.getAttribute("data-id")), vid = p && p.type === "video", n = !p ? 0 : vid ? ppViews(p) : p.hl ? 0 : p.likes;
+      var t = n > 0 ? fmtShort(n) : "", e = b.querySelector(".pp-lk i");
       if (e && e.textContent !== t) { e.textContent = t; b.classList.toggle("liked", !!t); }
     });
   }
+  qa(".pp-tab").forEach(function (b, i) {           // the tabs over the grid
+    b.addEventListener("click", function () {
+      pp.tab = b.getAttribute("data-pt"); ppRender();
+      qa(".pp-tab").forEach(function (o) { o.classList.toggle("on", o === b); o.setAttribute("aria-selected", o === b); });
+      $("ppTabs").style.setProperty("--i", i);
+    });
+  });
   function ppShow() {                               // Posts on the profile: down to the grid
     var h = $("ppHead"); if (h.scrollIntoView) h.scrollIntoView({ block: "start", behavior: reduced ? "auto" : "smooth" });
   }
 
   /* ---------- a new post: choose → filter + caption → Share ---------- */
   function ppPick() { if (pp.busy) return; pp.file.value = ""; pp.file.click(); }
-  pp.file.addEventListener("change", function () {
-    var f = pp.file.files && pp.file.files[0]; if (!f) return;
-    var video = /^video\//.test(f.type) || (!f.type && /\.(mp4|webm|mov|3gp|mkv)$/i.test(f.name));
-    if (!video && !/^image\//.test(f.type) && !/\.(jpe?g|png|webp|gif|avif|bmp)$/i.test(f.name)) { toast("Can't post that", "Choose a photo or a video", { icon: "x" }); return; }
-    if (video && f.size > 250 * 1048576) { toast("Too big", "Videos up to 250 MB", { icon: "x" }); return; }
-    ppCompose(f, video);
+  pp.file.addEventListener("change", function () { // up to 10 at once (they become one post you swipe through)
+    var fs = Array.prototype.slice.call(pp.file.files || []), items = [], bad = 0;
+    fs.forEach(function (f) {
+      var video = /^video\//.test(f.type) || (!f.type && /\.(mp4|webm|mov|3gp|mkv)$/i.test(f.name));
+      if ((!video && !/^image\//.test(f.type) && !/\.(jpe?g|png|webp|gif|avif|bmp)$/i.test(f.name)) || (video && f.size > 250 * 1048576)) { bad++; return; }
+      if (items.length < 10) items.push({ f: f, video: video });
+    });
+    if (!items.length) { if (fs.length) toast("Can't post that", "Choose photos or videos (videos up to 250 MB)", { icon: "x" }); return; }
+    if (bad) toast("Some were left out", "Only photos and videos (videos up to 250 MB)", { icon: "x" });
+    else if (fs.length > 10) toast("Up to 10", "The first 10 are in your post", { icon: "copy" });
+    ppCompose(items);
   });
-  function ppCompose(f, video) {
-    if (pp.prev) URL.revokeObjectURL(pp.prev);
-    var url = pp.prev = URL.createObjectURL(f), fx = 0;
+  function ppCompose(items) {
+    pp.prevs.forEach(function (u) { URL.revokeObjectURL(u); });
+    var urls = pp.prevs = items.map(function (it) { return URL.createObjectURL(it.f); }), fx = 0, n = items.length, first = items[0];
+    var slides = items.map(function (it, i) { return '<div class="pp-slide">' + (it.video ? '<video src="' + urls[i] + '" muted loop autoplay playsinline></video>' : '<img alt="" src="' + urls[i] + '">') + "</div>"; }).join("");
     var tiles = PP_FX.map(function (x, i) {
-      return '<button class="pp-fxb' + (i ? "" : " on") + '" data-fx="' + i + '"><span>' + (video ? "" : '<img alt="" src="' + url + '" style="filter:' + (x[1] || "none") + '">') + "</span><i>" + x[0] + "</i></button>";
+      return '<button class="pp-fxb' + (i ? "" : " on") + '" data-fx="' + i + '"><span>' + (first.video ? "" : '<img alt="" src="' + urls[0] + '" style="filter:' + (x[1] || "none") + '">') + "</span><i>" + x[0] + "</i></button>";
     }).join("");
     openSheet("New post",
-      '<div class="pp-prev">' + (video ? '<video src="' + url + '" muted loop autoplay playsinline></video>' : '<img alt="" src="' + url + '">') + "</div>" +
+      '<div class="pp-prev' + (n > 1 ? " multi" : "") + '"><div class="pp-track">' + slides + "</div>" + (n > 1 ? '<span class="pp-pc">1/' + n + "</span>" : "") + "</div>" +
+      (n > 1 ? '<div class="pp-dots">' + items.map(function (x, i) { return "<i" + (i ? "" : ' class="on"') + "></i>"; }).join("") + "</div>" : "") +
       '<div class="pp-fx" role="listbox" aria-label="Filters">' + tiles + "</div>" +
       '<div class="pp-capw"><textarea class="pp-cap" maxlength="2200" rows="2" placeholder="Write a caption…" aria-label="Caption"></textarea><span class="pp-n">0/2200</span></div>' +
       '<button class="pp-share rip">' + ic("send") + "<span>Share</span></button>",
       function (body) {
-        var media = body.querySelector(".pp-prev img, .pp-prev video"), btn = body.querySelector(".pp-share"), cap = body.querySelector(".pp-cap");
+        var media = qa(".pp-slide img, .pp-slide video", body), btn = body.querySelector(".pp-share"), cap = body.querySelector(".pp-cap"), track = body.querySelector(".pp-track");
         qa(".pp-fxb", body).forEach(function (b) {
           b.addEventListener("click", function () {
-            fx = +b.getAttribute("data-fx"); media.style.filter = PP_FX[fx][1] || "";
+            fx = +b.getAttribute("data-fx"); media.forEach(function (m) { m.style.filter = PP_FX[fx][1] || ""; });
             qa(".pp-fxb", body).forEach(function (o) { o.classList.toggle("on", o === b); });
           });
         });
+        if (n > 1) track.addEventListener("scroll", function () { ppSlideUI(track, body.querySelector(".pp-pc"), qa(".pp-dots i", body), n); }, { passive: true });
         cap.addEventListener("input", function () { body.querySelector(".pp-n").textContent = cap.value.length + "/2200"; });
-        btn.addEventListener("click", function () { ppShare(f, video, cap.value.trim(), fx, btn); });
-        if (video) ppVideoThumb(url, "", function (b) {    // (a video: the filter tiles show a frame of it)
+        btn.addEventListener("click", function () { ppShare(items, cap.value.trim(), fx, btn); });
+        if (first.video) ppVideoThumb(urls[0], "", function (b) {    // (a video first: the filter tiles show a frame of it)
           if (!b) return; var u = URL.createObjectURL(b);
           qa(".pp-fxb span", body).forEach(function (s, i) { s.innerHTML = '<img alt="" src="' + u + '" style="filter:' + (PP_FX[i][1] || "none") + '">'; });
         });
       });
   }
-  function ppShare(f, video, caption, fx, btn) {
+  function ppSlideUI(track, count, dots, n) {       // which photo of several is showing: "2/5" and the dots
+    var i = Math.max(0, Math.min(n - 1, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
+    if (count) count.textContent = (i + 1) + "/" + n;
+    dots.forEach(function (d, k) { d.classList.toggle("on", k === i); });
+    return i;
+  }
+  function ppShare(items, caption, fx, btn) {
     if (pp.busy) return;
     pp.busy = true; btn.disabled = true; btn.classList.add("busy"); btn.lastChild.textContent = "Posting…";
     var fail = function (why) { pp.busy = false; btn.disabled = false; btn.classList.remove("busy"); btn.lastChild.textContent = "Share"; toast("Couldn't post", why, { icon: "x" }); };
-    var css = PP_FX[fx][1];
-    var save = function (full, thumb) {
-      if (!full || !thumb) { fail(video ? "This video can't be read" : "This photo can't be read"); return; }
-      var p = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), t: Date.now(), type: video ? "video" : "image", full: full, thumb: thumb,
-                caption: caption, fx: video ? fx : 0, likes: 0, me: false, sv: false };
+    var css = PP_FX[fx][1], out = [], i = 0, n = items.length;
+    var next = function () {                        // one at a time (photos made smaller with the filter, a frame of each video for the grid)
+      if (i >= n) { save(); return; }
+      var it = items[i], url = pp.prevs[i];
+      var done = function (full, thumb) {
+        if (full && thumb) out.push({ type: it.video ? "video" : "image", full: full, thumb: thumb, fx: it.video ? fx : 0 });
+        i++; if (n > 1) btn.lastChild.textContent = "Posting… " + i + "/" + n;
+        next();
+      };
+      if (it.video) ppVideoThumb(url, css, function (thumb) { done(it.f, thumb || ppPlainThumb()); });
+      else ppShrink(url, 1600, .9, false, css, function (full) { if (!full) { done(null); return; } ppShrink(url, 420, .84, true, css, function (thumb) { done(full, thumb); }); });
+    };
+    var save = function () {
+      if (!out.length) { fail(n > 1 ? "These can't be read" : items[0].video ? "This video can't be read" : "This photo can't be read"); return; }
+      var m = out[0], p = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), t: Date.now(), type: m.type, full: m.full, thumb: m.thumb,
+                            caption: caption, fx: m.fx, likes: 0, me: false, sv: false };
+      if (out.length > 1) p.media = out;
       sbPrep(p);
       ppTx("readwrite", function (st) { return st.put(p); }, function (ok) {
         if (!ok) { fail("There isn't room for it on the phone"); return; }
-        pp.busy = false; pp.list.unshift(p); ppRender(true); ppCount();
+        pp.busy = false; pp.list.push(p); ppSort(); pp.tab = "all"; ppTabsUI(); ppRender(p.id); ppCount();
         closeSheet(); sfx.play("chime", true);
-        toast("Posted!", "Your post is live. The likes are coming…", { icon: "check", hl: "The likes are coming…" });
+        toast("Posted!", (out.length > 1 ? out.length + " photos are live. " : "Your post is live. ") + "The likes are coming…", { icon: "check", hl: "The likes are coming…" });
         setTimeout(ppShow, reduced ? 0 : 450);
         sbPosted(p);
       });
     };
-    if (video) ppVideoThumb(pp.prev, css, function (thumb) { save(f, thumb || ppPlainThumb()); });
-    else ppShrink(pp.prev, 1600, .9, false, css, function (full) { if (!full) { save(null); return; } ppShrink(pp.prev, 420, .84, true, css, function (thumb) { save(full, thumb); }); });
+    next();
   }
+  function ppTabsUI() { qa(".pp-tab").forEach(function (o, i) { var on = o.getAttribute("data-pt") === pp.tab; o.classList.toggle("on", on); o.setAttribute("aria-selected", on); if (on) $("ppTabs").style.setProperty("--i", i); }); }
   function ppShrink(src, max, q, square, css, cb) { // the photo as a JPEG at most max pixels, the filter baked in (square: its middle, for the grid)
     var im = new Image();
     im.onload = function () {
@@ -8005,11 +8189,11 @@ const CONFIG = {
   function ppDelete(p) {
     ppTx("readwrite", function (st) { return st.delete(p.id); }, function (ok) {
       if (!ok) { toast("Couldn't delete it", "Try again", { icon: "x" }); return; }
-      pp.list = pp.list.filter(function (q) { return q.id !== p.id; }); ppRender(); ppCount();
+      pp.list = pp.list.filter(function (q) { return q.id !== p.id; }); ppRender(); ppCount(); sbNumbers(sbFollowers());
       var card = pf.list.querySelector('[data-id="' + p.id + '"]');
       if (card) { card.classList.add("gone"); setTimeout(function () { card.remove(); if (!pp.list.length) pfClose(); }, reduced ? 0 : 380); }
       toast("Post deleted", "It's gone from your profile", { icon: "trash-2" });
-      setTimeout(function () { var u = pp.urls[p.id]; if (u) { if (u.thumb) URL.revokeObjectURL(u.thumb); if (u.full) URL.revokeObjectURL(u.full); delete pp.urls[p.id]; } }, 900);
+      setTimeout(function () { var u = pp.urls[p.id]; if (u) { Object.keys(u).forEach(function (k) { URL.revokeObjectURL(u[k]); }); delete pp.urls[p.id]; } }, 900);
     });
   }
 
@@ -8017,14 +8201,14 @@ const CONFIG = {
   var pf = { el: $("pfeed"), list: $("pfList"), on: false, io: null, tapT: 0, tapId: "" };
   function pfOpen(id) {
     pf.list.innerHTML = "";
-    pp.list.forEach(function (p) { pf.list.appendChild(pfCard(p)); });
+    ppShown().forEach(function (p) { pf.list.appendChild(pfCard(p)); });
     pf.on = true; pf.el.classList.add("open"); pf.el.setAttribute("aria-hidden", "false");
     var c = pf.list.querySelector('[data-id="' + id + '"]'); pf.list.scrollTop = c ? c.offsetTop : 0;
     if (window.IntersectionObserver) {               // videos play while you look at them (muted; tap for sound)
       pf.io = new IntersectionObserver(function (es) {
         es.forEach(function (e) { var v = e.target; if (e.isIntersecting && e.intersectionRatio > .6) swallow(v.play()); else v.pause(); });
       }, { root: pf.list, threshold: [0, .6, 1] });
-      qa("video", pf.list).forEach(function (v) { pf.io.observe(v); });
+      qa("video", pf.list).forEach(function (v) { pf.io.observe(v); });   // (in a post of several, only the one you have swiped to)
     }
     pfLikesUI(true);
   }
@@ -8046,6 +8230,7 @@ const CONFIG = {
   function pfLikesHtml(p) {
     var n = p.likes || 0;
     if (!n) return "Be the first to like this";
+    if (p.hl) return "Liked by <b>" + esc(p.me ? "you" : sbName(p.seed)) + "</b> and <b>others</b>";   // (its like count is hidden)
     if (n === 1 && p.me) return "Liked by <b>you</b>";
     return "Liked by <b>" + esc(p.me ? "you" : sbName(p.seed)) + "</b> and <b>" + fmtNum(n - 1) + (n - 1 === 1 ? " other" : " others") + "</b>";
   }
@@ -8058,7 +8243,8 @@ const CONFIG = {
       var set = function (sel, t, html) { var e = a.querySelector(sel); if (e && (html ? e.innerHTML : e.textContent) !== t) { if (html) e.innerHTML = t; else e.textContent = t; } };
       var n = cmCount(p, T), nb = cmBots(p, T);
       set(".fd-likes", pfLikesHtml(p), true);
-      set(".fd-like i", p.likes ? fmtShort(p.likes) : "");
+      set(".fd-like i", p.likes && !p.hl ? fmtShort(p.likes) : "");
+      if (p.type === "video") set(".fd-views", fmtNum(ppViews(p)) + " views");
       set(".fd-cmt i", n ? fmtShort(n) : "");
       set(".fd-all", n ? (n === 1 ? "View 1 comment" : "View all " + fmtNum(n) + " comments") : "Add a comment…");
       if (a.getAttribute("data-cn") !== String(nb)) {
@@ -8071,31 +8257,42 @@ const CONFIG = {
   }
   function ppFind(id) { for (var i = 0; i < pp.list.length; i++) if (pp.list[i].id === id) return pp.list[i]; return null; }
   function pfCard(p) {
-    var a = document.createElement("article"), vid = p.type === "video", css = vid && p.fx ? PP_FX[p.fx][1] : "";
+    var a = document.createElement("article"), items = ppItems(p), n = items.length, anyVid = items.some(function (m) { return m.type === "video"; });
+    var el = function (m, i) {
+      return m.type === "video" ? '<video src="' + ppUrl(p, "full", i) + '" muted loop playsinline preload="metadata"' + (m.fx ? ' style="filter:' + PP_FX[m.fx][1] + '"' : "") + "></video>"
+                                : '<img alt="" decoding="async" src="' + ppUrl(p, "full", i) + '">';
+    };
     a.className = "fd-post"; a.setAttribute("data-id", p.id);
     a.innerHTML =
-      '<header class="fd-head"><span class="fd-av"><img alt="" src="' + esc(C.avatarImage) + '"></span><span class="fd-who"><b>' + esc(C.handle) + "</b>" + PP_VT + "</span>" +
+      '<header class="fd-head"><span class="fd-av"><img alt="" src="' + esc(C.avatarImage) + '"></span><span class="fd-who"><b>' + esc(C.handle) + "</b>" + PP_VT +
+        (p.pin ? '<small class="fd-pin">' + ic("pin") + "Pinned</small>" : "") + "</span>" +
         '<button class="fd-more rip" aria-label="More options">' + ic("ellipsis-vertical") + "</button></header>" +
-      '<div class="fd-media">' + (vid ? '<video src="' + ppUrl(p, "full") + '" muted loop playsinline preload="metadata"' + (css ? ' style="filter:' + css + '"' : "") + "></video>" + '<span class="fd-snd">' + ic("volume-x") + "</span>"
-                                       : '<img alt="" decoding="async" src="' + ppUrl(p, "full") + '">') + '<span class="fd-burst">' + ic("heart") + "</span></div>" +
+      '<div class="fd-media' + (n > 1 ? " fd-car" : "") + '">' +
+        (n > 1 ? '<div class="fd-track">' + items.map(function (m, i) { return '<div class="fd-slide">' + el(m, i) + "</div>"; }).join("") + '</div><span class="fd-pc">1/' + n + "</span>" : el(items[0], 0)) +
+        (anyVid ? '<span class="fd-snd">' + ic("volume-x") + "</span>" : "") + '<span class="fd-burst">' + ic("heart") + "</span></div>" +
+      (n > 1 ? '<div class="fd-dots">' + items.map(function (m, i) { return "<i" + (i ? "" : ' class="on"') + "></i>"; }).join("") + "</div>" : "") +
       '<div class="fd-acts"><button class="fd-like' + (p.me ? " on" : "") + '" aria-label="Like" aria-pressed="' + !!p.me + '">' + ic("heart") + "<i></i></button>" +
         '<button class="fd-cmt" aria-label="Comments">' + ic("message-circle") + '<i></i></button><button class="fd-shr" aria-label="Share">' + ic("send") + "</button>" +
         '<span class="sp"></span><button class="fd-save' + (p.sv ? " on" : "") + '" aria-label="Save" aria-pressed="' + !!p.sv + '">' + ic("bookmark") + "</button></div>" +
+      (p.type === "video" ? '<p class="fd-views"></p>' : "") +
       '<p class="fd-likes">' + pfLikesHtml(p) + "</p>" +
       (p.caption ? '<p class="fd-cap"><b>' + esc(C.handle) + "</b>" + esc(p.caption) + "</p>" : "") +
       '<button class="fd-all"></button><div class="fd-pv"></div>' +
-      '<time class="fd-time">' + esc(pfWhen(p.t)) + "</time>";
-    var like = a.querySelector(".fd-like"), media = a.querySelector(".fd-media"), v = a.querySelector("video");
+      '<time class="fd-time">' + esc(pfWhen(p.t)) + (p.ed ? " · Edited" : "") + "</time>";
+    var like = a.querySelector(".fd-like"), media = a.querySelector(".fd-media"), track = a.querySelector(".fd-track"), at = 0;
+    if (track) track.addEventListener("scroll", function () { at = ppSlideUI(track, a.querySelector(".fd-pc"), qa(".fd-dots i", a), n); }, { passive: true });
     like.addEventListener("click", function () { pfLike(p, a, !p.me); });
     media.addEventListener("click", function () {   // double-tap: like (with the big heart); one tap on a video: sound on / off
       var now = Date.now();
       if (pf.tapId === p.id && now - pf.tapT < 320) { pf.tapT = 0; pfLike(p, a, true, true); return; }
       pf.tapId = p.id; pf.tapT = now;
+      var v = track ? (track.children[at] || {}).querySelector && track.children[at].querySelector("video") : a.querySelector("video");
       if (v) setTimeout(function () { if (pf.tapT === now) { v.muted = !v.muted; a.querySelector(".fd-snd").innerHTML = ic(v.muted ? "volume-x" : "volume-2"); if (!v.muted) swallow(v.play()); } }, 330);
     });
     a.querySelector(".fd-save").addEventListener("click", function () {
       p.sv = !p.sv; ppSave(p); this.classList.toggle("on", p.sv); this.setAttribute("aria-pressed", p.sv);
-      toast(p.sv ? "Saved" : "Removed from saved", p.sv ? "It's in your saved posts" : "", { icon: "check" });
+      toast(p.sv ? "Saved" : "Removed from saved", p.sv ? "It's in your Saved tab on the profile" : "", { icon: "bookmark" });
+      if (pp.tab === "saved") ppRender();
     });
     a.querySelector(".fd-cmt").addEventListener("click", function () { cmOpen(p); });
     a.querySelector(".fd-all").addEventListener("click", function () { cmOpen(p, !cmCount(p)); });
@@ -8103,11 +8300,49 @@ const CONFIG = {
     a.querySelector(".fd-shr").addEventListener("click", function () { toast("Share", "Coming soon…", { icon: "send", hl: "Coming soon…" }); });
     a.querySelector(".fd-more").addEventListener("click", function () {
       var b = this;
-      openMenu(b, [{ icon: "trash-2", label: "Delete post", cls: "danger", run: function () {
-        setTimeout(function () { openMenu(b, [{ icon: "trash-2", label: "Yes, delete it", cls: "danger", run: function () { ppDelete(p); } }, { icon: "x", label: "Keep it", run: function () {} }]); }, 60);
-      } }]);
+      openMenu(b, [
+        { icon: "pin", label: p.pin ? "Unpin from profile" : "Pin to your profile", run: function () { pfPin(p, a); } },
+        { icon: "pencil", label: "Edit caption", run: function () { pfEdit(p, a); } },
+        { icon: p.hl ? "eye" : "eye-off", label: p.hl ? "Show like count" : "Hide like count", run: function () { pfHide(p, a); } },
+        { icon: "trash-2", label: "Delete post", cls: "danger", run: function () {
+          setTimeout(function () { openMenu(b, [{ icon: "trash-2", label: "Yes, delete it", cls: "danger", run: function () { ppDelete(p); } }, { icon: "x", label: "Keep it", run: function () {} }]); }, 60);
+        } }]);
     });
     return a;
+  }
+  function pfRedo(p, a) {                          // a post changed (pinned, caption): its card again, in the same place
+    var b = pfCard(p); a.replaceWith(b);
+    if (pf.io) qa("video", b).forEach(function (v) { pf.io.observe(v); });
+    pfLikesUI(true);
+  }
+  function pfPin(p, a) {                            // pinned posts come first on the profile (three at most)
+    if (p.pin) p.pin = 0;
+    else {
+      var pins = pp.list.filter(function (q) { return q.pin; }).sort(function (x, y) { return x.pin - y.pin; });
+      if (pins.length >= 3) { pins[0].pin = 0; ppSave(pins[0]); }
+      p.pin = Date.now();
+    }
+    ppSave(p); ppSort(); ppRender(); pfRedo(p, a);
+    toast(p.pin ? "Pinned" : "Unpinned", p.pin ? "It's first on your profile now" : "Back in its place", { icon: "pin" });
+  }
+  function pfEdit(p, a) {
+    openSheet("Edit caption",
+      '<div class="pp-capw"><textarea class="pp-cap" maxlength="2200" rows="4" aria-label="Caption"></textarea><span class="pp-n"></span></div><button class="pp-share rip">' + ic("check") + "<span>Save</span></button>",
+      function (body) {
+        var cap = body.querySelector(".pp-cap"), cnt = body.querySelector(".pp-n");
+        cap.value = p.caption || ""; cnt.textContent = cap.value.length + "/2200";
+        cap.addEventListener("input", function () { cnt.textContent = cap.value.length + "/2200"; });
+        setTimeout(function () { cap.focus(); }, 350);
+        body.querySelector(".pp-share").addEventListener("click", function () {
+          var v = cap.value.trim(); if (v === (p.caption || "")) { closeSheet(); return; }
+          p.caption = v; p.ed = 1; ppSave(p); closeSheet(); pfRedo(p, a); ppRender();
+          toast("Caption updated", "", { icon: "pencil" });
+        });
+      });
+  }
+  function pfHide(p, a) {
+    p.hl = !p.hl; ppSave(p); pfLikesUI(true); ppLikesUI();
+    toast(p.hl ? "Like count hidden" : "Like count shown", p.hl ? "Only you know how many" : "", { icon: p.hl ? "eye-off" : "eye" });
   }
   function pfLike(p, a, on, burst) {
     if (burst && !reduced) { var h = a.querySelector(".fd-burst"); h.classList.remove("go"); void h.offsetWidth; h.classList.add("go"); }

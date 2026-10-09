@@ -82,6 +82,10 @@ class MainActivity : ComponentActivity() {
         fileCallback?.onReceiveValue(uri?.let { arrayOf(it) })
         fileCallback = null
     }
+    private val pickMany = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(10)) { uris ->
+        fileCallback?.onReceiveValue(if (uris.isEmpty()) null else uris.toTypedArray())
+        fileCallback = null
+    }
 
     /** https://appassets.androidplatform.net/assets/... -> the files in the app's assets folder. */
     private val assetLoader by lazy {
@@ -215,6 +219,7 @@ class MainActivity : ComponentActivity() {
                 override fun getDefaultVideoPoster(): Bitmap = createBitmap(1, 1)
 
                 // a file input on the page (Profile → New post): the phone's photo picker, photos and videos, no permission needed
+                // (an input that takes several: up to 10 at once)
                 override fun onShowFileChooser(
                     view: WebView?, callback: ValueCallback<Array<Uri>>?, params: FileChooserParams?,
                 ): Boolean {
@@ -228,7 +233,8 @@ class MainActivity : ComponentActivity() {
                         else -> ActivityResultContracts.PickVisualMedia.ImageAndVideo
                     }
                     return try {
-                        pickMedia.launch(PickVisualMediaRequest(type))
+                        val request = PickVisualMediaRequest(type)
+                        if (params?.mode == FileChooserParams.MODE_OPEN_MULTIPLE) pickMany.launch(request) else pickMedia.launch(request)
                         true
                     } catch (e: ActivityNotFoundException) {
                         fileCallback = null
