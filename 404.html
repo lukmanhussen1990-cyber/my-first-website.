@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Page not Found NOP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111111;
+      --fill: #18171a;
+      --fill-deep: #141316;
+      --line: #8b8991;
+      --line-dim: #45444a;
+      --bulb-off: #45444a;
+      --bulb-on: #ffffff;
+      --dot-spin: #a2a1a8;
+      --dot-on: #ffffff;
+      --text: #fafafa;
+      --muted: #8a8a8f;
+      --accent: #145ee6;
+      --accent-hover: #2b70f2;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 24px 16px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .machine {
+      display: block;
+      padding: 0;
+      border: 0;
+      border-radius: 16px;
+      background: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .machine:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 6px;
+    }
+
+    .machine svg {
+      display: block;
+      width: min(350px, 78vw);
+      height: auto;
+      overflow: visible;
+    }
+
+    h1 {
+      margin: 32px 0 12px;
+      font-family: Manrope, Inter, system-ui, sans-serif;
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      max-width: 21em;
+      margin: 0 0 24px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background-color 0.15s;
+    }
+
+    .btn:hover { background: var(--accent-hover); }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--accent-hover);
+      outline-offset: 3px;
+    }
+
+    /* Slot machine drawing */
+    .solid, .face {
+      fill: var(--fill);
+      stroke: var(--line);
+      stroke-width: 1.25;
+      stroke-linejoin: round;
+    }
+
+    .deep {
+      fill: var(--fill-deep);
+      stroke: var(--line-dim);
+      stroke-width: 1.25;
+    }
+
+    .trim {
+      fill: none;
+      stroke: var(--line-dim);
+      stroke-width: 1.25;
+    }
+
+    .bulb { fill: var(--bulb-off); }
+    .bulb.on { fill: var(--bulb-on); filter: url(#glow); }
+
+    .reel circle { fill: var(--dot-spin); transition: fill 0.35s; }
+    .reel line { stroke: var(--line-dim); stroke-width: 1.25; }
+    .reel.lit { filter: url(#glow); }
+    .reel.lit circle { fill: var(--dot-on); }
+    .window { transition: stroke 0.35s; }
+    .window.lit { stroke: #e6e5ea; }
+
+    .arm-outline { stroke: var(--line); stroke-width: 5.5; stroke-linecap: round; }
+    .arm-core { stroke: var(--fill); stroke-width: 3; stroke-linecap: round; }
+
+    .coin { transition: opacity 0.35s; }
+    .coin.gone { opacity: 0; }
+  </style>
+</head>
+<body>
+  <main>
+    <button class="machine" type="button" aria-label="Pull the lever">
+      <svg id="slot" role="img" aria-label="Slot machine with reels showing N O P" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="1.6" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+      </svg>
+    </button>
+
+    <h1>Page not Found NOP</h1>
+    <p>Imran has denied you so you can&rsquo;t access this page</p>
+    <a class="btn" href="/">Back to the catalogue</a>
+  </main>
+
+  <script>
+  (() => {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.getElementById('slot');
+    const button = document.querySelector('.machine');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Letters the reels land on, left to right.
+    const TARGET = ['N', 'O', 'P'];
+
+    // 5x7 dot-matrix alphabet, one string per row.
+    const FONT = {
+      A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
+      B: ['11110', '10001', '10001', '11110', '10001', '10001', '11110'],
+      C: ['01110', '10001', '10000', '10000', '10000', '10001', '01110'],
+      D: ['11100', '10010', '10001', '10001', '10001', '10010', '11100'],
+      E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
+      F: ['11111', '10000', '10000', '11110', '10000', '10000', '10000'],
+      G: ['01110', '10001', '10000', '10111', '10001', '10001', '01111'],
+      H: ['10001', '10001', '10001', '11111', '10001', '10001', '10001'],
+      I: ['01110', '00100', '00100', '00100', '00100', '00100', '01110'],
+      J: ['00111', '00010', '00010', '00010', '00010', '10010', '01100'],
+      K: ['10001', '10010', '10100', '11000', '10100', '10010', '10001'],
+      L: ['10000', '10000', '10000', '10000', '10000', '10000', '11111'],
+      M: ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
+      N: ['10001', '10001', '11001', '10101', '10011', '10001', '10001'],
+      O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
+      P: ['11110', '10001', '10001', '11110', '10000', '10000', '10000'],
+      Q: ['01110', '10001', '10001', '10001', '10101', '10010', '01101'],
+      R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001'],
+      S: ['01111', '10000', '10000', '01110', '00001', '00001', '11110'],
+      T: ['11111', '00100', '00100', '00100', '00100', '00100', '00100'],
+      U: ['10001', '10001', '10001', '10001', '10001', '10001', '01110'],
+      V: ['10001', '10001', '10001', '10001', '10001', '01010', '00100'],
+      W: ['10001', '10001', '10001', '10101', '10101', '10101', '01010'],
+      X: ['10001', '10001', '01010', '00100', '01010', '10001', '10001'],
+      Y: ['10001', '10001', '10001', '01010', '00100', '00100', '00100'],
+      Z: ['11111', '00001', '00010', '00100', '01000', '10000', '11111']
+    };
+    const LETTERS = Object.keys(FONT);
+
+    // ---------------------------------------------------------------
+    // Axonometric projection: x runs along the front, y into depth, z up.
+    // Both ground axes recede at 25 degrees, a little flatter than isometric.
+    // ---------------------------------------------------------------
+    const ANGLE = 25 * Math.PI / 180;
+    const C = Math.cos(ANGLE);
+    const S = Math.sin(ANGLE);
+    const P = (x, y, z) => [(x + y) * C, (x - y) * S - z];
+
+    const bounds = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+    function track(pts, pad = 0) {
+      for (const [x, y] of pts) {
+        bounds.x0 = Math.min(bounds.x0, x - pad);
+        bounds.y0 = Math.min(bounds.y0, y - pad);
+        bounds.x1 = Math.max(bounds.x1, x + pad);
+        bounds.y1 = Math.max(bounds.y1, y + pad);
+      }
+    }
+
+    function el(tag, attrs, parent = svg) {
+      const node = document.createElementNS(NS, tag);
+      for (const key in attrs) node.setAttribute(key, attrs[key]);
+      parent.appendChild(node);
+      return node;
+    }
+
+    const toPath = (pts) =>
+      'M' + pts.map(([x, y]) => x.toFixed(2) + ' ' + y.toFixed(2)).join('L') + 'Z';
+
+    // Points along a circular arc in any 2D plane (angles in degrees).
+    function arc(ca, cb, r, from, to, steps) {
+      const pts = [];
+      for (let i = 0; i <= steps; i++) {
+        const t = (from + (to - from) * i / steps) * Math.PI / 180;
+        pts.push([ca + r * Math.cos(t), cb + r * Math.sin(t)]);
+      }
+      return pts;
+    }
+
+    // Points around a rounded rectangle in any 2D plane.
+    function roundRect(a0, b0, a1, b1, r) {
+      return [
+        ...arc(a1 - r, b0 + r, r, -90, 0, 6),
+        ...arc(a1 - r, b1 - r, r, 0, 90, 6),
+        ...arc(a0 + r, b1 - r, r, 90, 180, 6),
+        ...arc(a0 + r, b0 + r, r, 180, 270, 6)
+      ];
+    }
+
+    // Convex hull (monotone chain) — the silhouette of a convex solid.
+    function hull(points) {
+      const pts = points.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+      const lower = [];
+      const upper = [];
+      for (const p of pts) {
+        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+        lower.push(p);
+      }
+      for (const p of pts.reverse()) {
+        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+        upper.push(p);
+      }
+      return lower.slice(0, -1).concat(upper.slice(0, -1));
+    }
+
+    // A convex solid given its back and front outlines (projected points).
+    // Draws the silhouette plus the visible front face.
+    function prism(back, front, cls = 'solid', parent = svg) {
+      el('path', { class: cls, d: toPath(hull(back.concat(front))) }, parent);
+      el('path', { class: cls, d: toPath(front) }, parent);
+      track(back);
+      track(front);
+    }
+
+    // Box with rounded corners in plan view.
+    function slab(b, parent) {
+      const plan = roundRect(b.x0, b.y0, b.x1, b.y1, b.r);
+      prism(
+        plan.map(([x, y]) => P(x, y, b.z0)),
+        plan.map(([x, y]) => P(x, y, b.z1)),
+        'solid',
+        parent
+      );
+    }
+
+    // Flat shape drawn on a front-facing plane (x/z coordinates at depth y).
+    const onFront = (pts, y = 0) => pts.map(([x, z]) => P(x, y, z));
+
+    // ---------------------------------------------------------------
+    // Machine geometry
+    // ---------------------------------------------------------------
+    const CABINET = { x0: 0, x1: 190, y0: 0, y1: 96, z0: 0, z1: 236, r: 14 };
+    const PLINTH = { x0: -20, x1: 210, y0: -44, y1: 114, z0: -15, z1: 0, r: 16 };
+    const CAP = { x0: -7, x1: 197, y0: -7, y1: 103, z0: 236, z1: 252, r: 10 };
+    const DOME = { xc: 95, zb: 252, r: 84, y0: 4, y1: 80 };
+    const PANEL = { x0: 10, x1: 180, z0: 102, z1: 202, r: 12 };
+    const SLOT = { x0: 62, x1: 122, z0: 54, z1: 64, r: 5 };
+    const TRAY = { x0: 6, x1: 150, y0: -16, y1: 0, z0: 20, z1: 32, r: 5 };
+    const HUB = { x0: 190, x1: 202, y: 64, z: 128, r: 15 };
+    const LEVER = { length: 90, rest: -0.36, pulled: 1.6, knob: 8 };
+    const REEL = { xs: [17, 72, 127], w: 46, z0: 113, z1: 191, pitchX: 6.5, pitchZ: 8, dot: 2 };
+    const GLYPH = REEL.z1 - REEL.z0; // distance between letters on the reel strip
+    const REEL_MID = (REEL.z0 + REEL.z1) / 2;
+
+    slab(PLINTH);
+    slab(CABINET);
+
+    // Reel panel with its border of bulbs
+    el('path', { class: 'trim', d: toPath(onFront(roundRect(PANEL.x0, PANEL.z0, PANEL.x1, PANEL.z1, PANEL.r))) });
+    const panelBulbs = [];
+    const panelXs = Array.from({ length: 11 }, (_, i) => 20 + i * 15);
+    for (const x of panelXs) panelBulbs.push([x, (REEL.z1 + PANEL.z1) / 2]);
+    for (const x of panelXs.slice().reverse()) panelBulbs.push([x, (REEL.z0 + PANEL.z0) / 2]);
+    const panelBulbEls = panelBulbs.map(([x, z]) => {
+      const [cx, cy] = P(x, 0, z);
+      return el('circle', { class: 'bulb', cx, cy, r: 1.8 });
+    });
+
+    // Reel windows; each reel keeps a pool of dots that get repositioned per frame
+    const reels = TARGET.map((letter, i) => {
+      const x0 = REEL.xs[i];
+      const pane = el('path', { class: 'face window lit', d: toPath(onFront(roundRect(x0, REEL.z0, x0 + REEL.w, REEL.z1, 8))) });
+      const g = el('g', { class: 'reel lit' });
+      const dots = Array.from({ length: 70 }, () => el('circle', { r: REEL.dot }, g));
+      const seams = [0, 1].map(() => el('line', {}, g));
+      return { x0, g, pane, dots, seams, strip: [letter], s: 0, n: 0, landed: true };
+    });
+
+    // Coin slot and payout tray
+    el('path', { class: 'deep', d: toPath(onFront(roundRect(SLOT.x0, SLOT.z0, SLOT.x1, SLOT.z1, SLOT.r))) });
+    slab(TRAY);
+    const coinLayer = el('g', {});
+
+    // Top cap and dome
+    slab(CAP);
+    const domeArc = arc(DOME.xc, DOME.zb, DOME.r, 0, 180, 48);
+    prism(onFront(domeArc, DOME.y1), onFront(domeArc, DOME.y0), 'face');
+    el('path', { class: 'deep', d: toPath(onFront(arc(DOME.xc, DOME.zb + 4, DOME.r - 20, 0, 180, 40), DOME.y0)) });
+
+    const star = [];
+    for (let i = 0; i < 10; i++) {
+      const t = (90 + i * 36) * Math.PI / 180;
+      const r = i % 2 ? 5.8 : 14;
+      star.push([DOME.xc + r * Math.cos(t), DOME.zb + 32 + r * Math.sin(t)]);
+    }
+    el('path', { class: 'face', d: toPath(onFront(star, DOME.y0)) });
+
+    const domeBulbEls = arc(DOME.xc, DOME.zb, DOME.r - 10, 166, 14, 14).map(([x, z]) => {
+      const [cx, cy] = P(x, DOME.y0, z);
+      return el('circle', { class: 'bulb', cx, cy, r: 1.9 });
+    });
+
+    // Lever: hub on the right-hand side, arm swings forward when pulled
+    const hubRing = arc(HUB.y, HUB.z, HUB.r, 0, 360, 40);
+    prism(
+      hubRing.map(([y, z]) => P(HUB.x0, y, z)),
+      hubRing.map(([y, z]) => P(HUB.x1, y, z))
+    );
+    const pivot = P(HUB.x1 - 2, HUB.y, HUB.z);
+    el('path', {
+      class: 'trim',
+      d: toPath(arc(HUB.y, HUB.z, HUB.r * 0.4, 0, 360, 24).map(([y, z]) => P(HUB.x1, y, z)))
+    });
+    const armOutline = el('line', { class: 'arm-outline', x1: pivot[0], y1: pivot[1] });
+    const armCore = el('line', { class: 'arm-core', x1: pivot[0], y1: pivot[1] });
+    const knob = el('circle', { class: 'face', r: LEVER.knob });
+
+    const knobAt = (angle) => P(
+      HUB.x1 - 2,
+      HUB.y - LEVER.length * Math.sin(angle),
+      HUB.z + LEVER.length * Math.cos(angle)
+    );
+    for (const a of [LEVER.rest, LEVER.pulled, -0.7]) track([knobAt(a)], LEVER.knob + 2);
+
+    const pad = 6;
+    svg.setAttribute('viewBox', [
+      bounds.x0 - pad, bounds.y0 - pad,
+      bounds.x1 - bounds.x0 + pad * 2, bounds.y1 - bounds.y0 + pad * 2
+    ].map((v) => v.toFixed(1)).join(' '));
+
+    // ---------------------------------------------------------------
+    // Animation
+    // ---------------------------------------------------------------
+    const SPEED = 1500;                  // reel speed at full spin, units/s
+    const SPIN_UP = 0.18;                // seconds to reach full speed
+    const SETTLE = 4.7 * GLYPH / SPEED;  // final ease-out-back, matched to full speed
+    const PULL_DOWN = 0.22;
+    const PULL_HOLD = 0.1;
+
+    const state = {
+      pullAt: -Infinity,
+      spinning: false,
+      celebrateUntil: 0,
+      nextAutoPull: reduceMotion ? Infinity : performance.now() / 1000 + 1.2,
+      coins: []
+    };
+
+    const randomLetter = (avoid) => {
+      let letter;
+      do letter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+      while (letter === avoid);
+      return letter;
+    };
+
+    function easeOutBack(p) {
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+    }
+
+    function leverAngle(t) {
+      const { rest, pulled } = LEVER;
+      if (t < 0) return rest;
+      if (t < PULL_DOWN) return rest + (pulled - rest) * (t / PULL_DOWN) ** 2;
+      if (t < PULL_DOWN + PULL_HOLD) return pulled;
+      const u = t - PULL_DOWN - PULL_HOLD;
+      if (u > 2) return rest;
+      return rest + (pulled - rest) * Math.exp(-5 * u) * Math.cos(11 * u);
+    }
+
+    function reelPosition(reel, t) {
+      if (t <= 0) return 0;
+      if (t < SPIN_UP) return SPEED * t * t / (2 * SPIN_UP);
+      let s = SPEED * SPIN_UP / 2;
+      t -= SPIN_UP;
+      if (t < reel.cruise) return s + SPEED * t;
+      s += SPEED * reel.cruise;
+      t -= reel.cruise;
+      if (t < SETTLE) return s + GLYPH * easeOutBack(t / SETTLE);
+      return reel.n * GLYPH;
+    }
+
+    function pull(now) {
+      if (state.spinning) return;
+      state.spinning = true;
+      state.pullAt = now;
+      state.celebrateUntil = 0;
+
+      reels.forEach((reel, i) => {
+        // Strip of letters: current letter, a run of random ones, then the target.
+        const n = 18 + i * 6;
+        const strip = [TARGET[i]];
+        for (let k = 1; k < n; k++) strip.push(randomLetter(strip[k - 1]));
+        strip.push(TARGET[i], randomLetter(TARGET[i]), randomLetter());
+        Object.assign(reel, {
+          strip,
+          n,
+          s: 0,
+          landed: false,
+          cruise: ((n - 1) * GLYPH - SPEED * SPIN_UP / 2) / SPEED
+        });
+        reel.g.classList.remove('lit');
+        reel.pane.classList.remove('lit');
+      });
+
+      for (const coin of state.coins) {
+        coin.g.classList.add('gone');
+        setTimeout(() => coin.g.remove(), 400);
+      }
+      state.coins = [];
+    }
+
+    function renderReel(reel) {
+      const k0 = Math.floor(reel.s / GLYPH);
+      let used = 0;
+      let seams = 0;
+      for (const k of [k0, k0 + 1]) {
+        const letter = reel.strip[k];
+        const centre = REEL_MID + (k * GLYPH - reel.s);
+        const seam = centre - GLYPH / 2;
+        if (seam > REEL.z0 + 2 && seam < REEL.z1 - 2) {
+          const [ax, ay] = P(reel.x0 + 4, 0, seam);
+          const [bx, by] = P(reel.x0 + REEL.w - 4, 0, seam);
+          const line = reel.seams[seams++];
+          line.setAttribute('x1', ax);
+          line.setAttribute('y1', ay);
+          line.setAttribute('x2', bx);
+          line.setAttribute('y2', by);
+          line.style.display = '';
+        }
+        if (!letter) continue;
+        FONT[letter].forEach((row, j) => {
+          const z = centre + (3 - j) * REEL.pitchZ;
+          if (z < REEL.z0 + 4 || z > REEL.z1 - 4) return;
+          // Dots fade toward the window edges while the reel is turning.
+          const edge = (z - REEL_MID) / (GLYPH / 2);
+          const opacity = reel.landed ? 1 : 1 - 0.7 * edge * edge;
+          for (let c = 0; c < 5; c++) {
+            if (row[c] !== '1') continue;
+            const [cx, cy] = P(reel.x0 + (REEL.w - 4 * REEL.pitchX) / 2 + c * REEL.pitchX, 0, z);
+            const dot = reel.dots[used++];
+            dot.setAttribute('cx', cx.toFixed(2));
+            dot.setAttribute('cy', cy.toFixed(2));
+            dot.setAttribute('opacity', opacity.toFixed(2));
+            dot.style.display = '';
+          }
+        });
+      }
+      for (let i = used; i < reel.dots.length; i++) reel.dots[i].style.display = 'none';
+      for (let i = seams; i < reel.seams.length; i++) reel.seams[i].style.display = 'none';
+    }
+
+    // Coins pop out of the slot and drop onto the base (one lands in the tray).
+    const COIN_DROPS = [
+      [34, -26, 0], [52, -34, 0], [76, -28, 0], [96, -36, 0], [118, -9, TRAY.z1]
+    ];
+    const coinPlan = arc(0, 0, 8, 0, 360, 32);
+    const coinShape = { back: coinPlan.map(([x, y]) => P(x, y, 0)), front: coinPlan.map(([x, y]) => P(x, y, 2.4)) };
+
+    function payout(now) {
+      COIN_DROPS.forEach((to, i) => {
+        const g = el('g', { class: 'coin' }, coinLayer);
+        el('path', { class: 'solid', d: toPath(hull(coinShape.back.concat(coinShape.front))) }, g);
+        el('path', { class: 'solid', d: toPath(coinShape.front) }, g);
+        const from = [SLOT.x0 + 8 + i * 10, -3, (SLOT.z0 + SLOT.z1) / 2];
+        const vz = 60;
+        const gravity = 900;
+        const duration = (vz + Math.sqrt(vz * vz + 2 * gravity * (from[2] - to[2]))) / gravity;
+        state.coins.push({ g, from, to, vz, gravity, duration, start: now + i * 0.09 });
+      });
+    }
+
+    function renderCoin(coin, now) {
+      const t = now - coin.start;
+      let x = coin.from[0], y = coin.from[1], z = coin.from[2];
+      coin.g.style.display = t < 0 ? 'none' : '';
+      if (t < 0) return;
+      if (t < coin.duration) {
+        const p = t / coin.duration;
+        x += (coin.to[0] - x) * p;
+        y += (coin.to[1] - y) * p;
+        z += coin.vz * t - coin.gravity * t * t / 2;
+      } else {
+        // small hop after landing
+        const h = t - coin.duration;
+        [x, y, z] = coin.to;
+        if (h < 0.14) z += 5 * Math.sin(Math.PI * h / 0.14);
+      }
+      const [sx, sy] = P(x, y, z);
+      coin.g.setAttribute('transform', `translate(${sx.toFixed(2)} ${sy.toFixed(2)})`);
+    }
+
+    function setBulb(bulb, on) {
+      if (bulb.on !== on) {
+        bulb.on = on;
+        bulb.classList.toggle('on', on);
+      }
+    }
+
+    function renderBulbs(now) {
+      if (now < state.celebrateUntil) {
+        const on = Math.floor(now / 0.14) % 2 === 0;
+        panelBulbEls.forEach((b) => setBulb(b, on));
+        domeBulbEls.forEach((b) => setBulb(b, on));
+        return;
+      }
+      const step = reduceMotion ? 0 : Math.floor(now / (state.spinning ? 0.06 : 0.16));
+      panelBulbEls.forEach((b, i) => setBulb(b, ((i - step) % 3 + 3) % 3 === 0));
+      domeBulbEls.forEach((b, i) => setBulb(b, ((i - step) % 4 + 4) % 4 === 0));
+    }
+
+    function frame(ms) {
+      const now = ms / 1000;
+      if (now >= state.nextAutoPull) pull(now);
+
+      const sinceLever = now - state.pullAt;
+      const tip = knobAt(leverAngle(sinceLever));
+      for (const line of [armOutline, armCore]) {
+        line.setAttribute('x2', tip[0].toFixed(2));
+        line.setAttribute('y2', tip[1].toFixed(2));
+      }
+      knob.setAttribute('cx', tip[0].toFixed(2));
+      knob.setAttribute('cy', tip[1].toFixed(2));
+
+      if (state.spinning) {
+        const sinceSpin = sinceLever - PULL_DOWN;
+        reels.forEach((reel) => {
+          if (reel.landed) return;
+          reel.s = reelPosition(reel, sinceSpin);
+          if (reel.s >= reel.n * GLYPH && sinceSpin > 0) {
+            reel.s = reel.n * GLYPH;
+            reel.landed = true;
+            reel.g.classList.add('lit');
+            reel.pane.classList.add('lit');
+          }
+          renderReel(reel);
+        });
+        if (reels.every((reel) => reel.landed)) {
+          state.spinning = false;
+          state.celebrateUntil = now + 1.1;
+          state.nextAutoPull = reduceMotion ? Infinity : now + 3.6;
+          payout(now);
+        }
+      }
+
+      state.coins.forEach((coin) => renderCoin(coin, now));
+      renderBulbs(now);
+      requestAnimationFrame(frame);
+    }
+
+    // Initial state: reels resting on the target letters.
+    reels.forEach((reel) => {
+      reel.strip = [reel.strip[0]];
+      renderReel(reel);
+    });
+
+    button.addEventListener('click', () => pull(performance.now() / 1000));
+    requestAnimationFrame(frame);
+  })();
+  </script>
+</body>
+</html>
