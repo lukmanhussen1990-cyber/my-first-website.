@@ -4918,6 +4918,9 @@ const CONFIG = {
     b: ["", "", "", "", "", "", "", "", ""], turn: "X", over: false, busy: false, lock: false, timer: 0, inT: 0, seq: 0,
     mode: store.get("ttt:mode", "ai") === "pvp" ? "pvp" : "ai", shown: [0, 0, 0], opened: false
   };
+  // other parts of the game (stats, effects) listen to these: gmOn.end.push(function (d) { ... })
+  var gmOn = { open: [], leave: [], place: [], turn: [], end: [], reset: [], mode: [] };
+  function gmEmit(n, d) { (gmOn[n] || []).forEach(function (f) { try { f(d || {}); } catch (e) { setTimeout(function () { throw e; }); } }); }
   function gmScores(m) {                                    // [X wins, O wins, draws] for a mode ("ai": You, AI, Draws)
     var s = String(store.get("ttt:" + m, "")).split(",");
     return [0, 1, 2].map(function (k) { var n = parseInt(s[k], 10); return n > 0 ? n : 0; });
@@ -4975,7 +4978,7 @@ const CONFIG = {
     gm.msg.classList.remove("gm-pop"); void gm.msg.offsetWidth; gm.msg.classList.add("gm-pop");
   }
   function gmTurnSay() {
-    gmTurnUI(); gmIdle(true);
+    gmTurnUI(); gmIdle(true); gmEmit("turn", { turn: gm.turn, ai: false });
     if (gm.mode === "ai") gmSay("Your turn");
     else gmSay(gm.turn + "'s turn", { icon: GM_ICON[gm.turn], cls: gm.turn === "X" ? "mx" : "mo" });
   }
@@ -4993,6 +4996,7 @@ const CONFIG = {
     mk.setAttribute("data-n", n); mk.style.setProperty("--fl", (-Math.random() * 3.4).toFixed(2) + "s");
     mk.innerHTML = X ? '<i class="s1x"></i><i class="s2x"></i>' : '<i class="s1o"></i>';
     sfx.play(X ? "zap" : "whoom", true);
+    gmEmit("place", { i: i, p: p, cell: c });
     if (reduced) return;
     var mine = function () { return mk.getAttribute("data-n") === String(n); };
     setTimeout(function () { if (mine()) gmSpark(c, X); }, X ? 430 : 330);
@@ -5020,7 +5024,7 @@ const CONFIG = {
     if (gm.mode === "ai") gmAi(); else gmTurnSay();
   }
   function gmAi() {                                         // the AI thinks for about 0.6 s, then plays O
-    gm.busy = true; gmTurnUI(); gmIdle(false); gmSay("AI is thinking", { dots: true });
+    gm.busy = true; gmTurnUI(); gmIdle(false); gmSay("AI is thinking", { dots: true }); gmEmit("turn", { turn: "O", ai: true });
     gm.grid.classList.add("think");                         // the AI "scans" the empty cells while it thinks
     clearTimeout(gm.timer);
     gm.timer = setTimeout(function () {
@@ -5028,7 +5032,7 @@ const CONFIG = {
       if (gm.over || gm.turn !== "O") return;
       gmPlace(gmAiMove(), "O");
       if (gmEnd()) return;
-      gm.turn = "X"; gmSay("Your turn");
+      gm.turn = "X"; gmTurnSay();
     }, 600);
   }
   function gmEnd() {                                        // win or draw? save the score and show it
@@ -5050,6 +5054,7 @@ const CONFIG = {
     }
     gmEndSay();
     setTimeout(function () { gmShowScores(true); }, reduced ? 0 : w.p ? 650 : 950);   // a draw: the cells flash grey first, then the number bumps
+    gmEmit("end", { p: w.p, line: w.line || null, mode: gm.mode, lost: !!(w.p && gm.mode === "ai" && w.p === "O"), scores: s, board: gm.b.slice() });
     return true;
   }
   function gmBeam(L) {                                      // the red beam slides through the winning line
@@ -5077,6 +5082,7 @@ const CONFIG = {
         c.classList.remove("x", "o", "win", "tap"); c.setAttribute("aria-label", gmCellName(i) + ", empty");
         var mk = c.querySelector(".gm-mk"); mk.className = "gm-mk"; mk.innerHTML = ""; mk.removeAttribute("data-n");
       });
+      gmEmit("reset");
       gmTurnSay();
       if (now !== true) gmCellsIn(0);
     };
@@ -5103,6 +5109,7 @@ const CONFIG = {
     gm.mode = m; store.set("ttt:mode", m);
     qa("#s-game .gm-mode").forEach(function (b) { var on = b.dataset.mode === m; b.classList.toggle("on", on); b.setAttribute("aria-checked", on); });
     $("gmLx").textContent = m === "ai" ? "You" : "Player X"; $("gmLo").textContent = m === "ai" ? "AI" : "Player O";
+    gmEmit("mode", { mode: m });
   }
   function gmStats() {                                      // wins, losses, draws and the win rate
     var a = gmScores("ai"), p = gmScores("pvp"), n = a[0] + a[1] + a[2], np = p[0] + p[1] + p[2], rate = n ? Math.round(a[0] / n * 100) : 0, C2 = 2 * Math.PI * 42;
@@ -5146,8 +5153,9 @@ const CONFIG = {
     if (gm.over) gmEndSay();
     else if (gm.mode === "ai" && gm.turn === "O") gmAi();   // the AI was thinking when the screen closed
     else gmTurnSay();
+    gmEmit("open");
   }
-  function gmLeave() { clearTimeout(gm.timer); gm.timer = 0; gm.busy = false; gm.grid.classList.remove("think"); gmIdle(false); }
+  function gmLeave() { clearTimeout(gm.timer); gm.timer = 0; gm.busy = false; gm.grid.classList.remove("think"); gmIdle(false); gmEmit("leave"); }
 
   gm.cells.forEach(function (c, i) {
     c.addEventListener("click", function () { gmTap(i); });
@@ -5166,7 +5174,7 @@ const CONFIG = {
     var b = $("gmReset"); b.classList.remove("spin"); void b.offsetWidth; b.classList.add("spin");
     sfx.play("whoosh2", true); gmReset();
   });
-  $("gmStatsBtn").addEventListener("click", gmStats);
+  $("gmStatsBtn").addEventListener("click", function () { (gm.statsSheet || gmStats)(); });   // a richer stats page can take over (gm.statsSheet)
 
   /* ---------- the game's background: red smoke on both sides, red light streaks, rising sparks (one canvas) ---------- */
   var gfx = { cv: $("gmFx"), g: null, W: 0, H: 0, k: 1, run: false, last: 0, smoke: [], streaks: [], sparks: [], spr: null };
