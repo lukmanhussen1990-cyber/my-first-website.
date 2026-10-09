@@ -16,10 +16,11 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "1.9.7",                       // shown in Settings → About
+  version: "1.9.8",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
+  settingsVideo: "assets/avatar-settings.mp4",  // the Settings card's picture: this clip plays on a loop ("" = the picture above)
   avatarMedia: [                        // the profile picture on Home / Profile: these show one by one, each fading in over the last
     "assets/avatar.mp4",                //   (a picture stays avatarImageSeconds, a clip plays to its end; then it starts again)
     "assets/avatar.jpg",
@@ -547,7 +548,9 @@ const CONFIG = {
   .setprof { display: flex; align-items: center; gap: 15px; width: 100%; padding: 14px 16px; margin-bottom: 14px; border-radius: 24px; }
   .setprof .ring { top: -3px; right: -3px; bottom: -3px; left: -3px; animation: none; box-shadow: 0 0 14px var(--glow); }
   .setprof .ring::after { top: 2px; right: 2px; bottom: 2px; left: 2px; }
-  .setprof img.sav { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .setprof .sav { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .setprof video.sav { opacity: 0; transition: opacity .45s ease; pointer-events: none; }      /* the looping clip fades in over the picture once it plays */
+  .setprof video.sav.ok { opacity: 1; }
   .setprof .chev { width: 19px; height: 19px; color: var(--text); }
   .grp { margin-bottom: 14px; }
   .ctl { display: flex; align-items: center; gap: 14px; padding: 10px 14px; }
@@ -597,7 +600,7 @@ const CONFIG = {
   .noframe2 .setprof .avatar > .ring { display: block; }
   .noframe2 .wf2 { display: none; }
   .noframe2 .setprof .avatar { margin: 6px 6px 6px 8px; }
-  .setprof img.sav { z-index: 3; top: -1px; left: -1px; width: calc(100% + 2px); height: calc(100% + 2px); }    /* tucked 1 px under the ring */
+  .setprof .sav { z-index: 3; top: -1px; left: -1px; width: calc(100% + 2px); height: calc(100% + 2px); }    /* tucked 1 px under the ring */
   .wf2 { position: absolute; left: calc(var(--sz) / 2 - 626.88 * var(--fx)); top: calc(var(--sz) / 2 - 704.49 * var(--fy));
          width: calc(1254 * var(--fx)); height: calc(1254 * var(--fy)); pointer-events: none; }
   .wf2 > *, .wf2-shine, .wf2-shine-in { position: absolute; pointer-events: none; }
@@ -2307,6 +2310,7 @@ const CONFIG = {
           <span class="avatar" id="avSet">
             <span class="ring"></span>
             <img class="sav" alt="" decoding="async">
+            <video class="sav" muted loop playsinline preload="auto" aria-hidden="true"></video>
             <!-- wings + crown frame: ONE picture (assets/frame2.png) cut into layers with clip-path -->
             <span class="wf2" aria-hidden="true">
               <span class="wf2-halo"></span>
@@ -3396,7 +3400,7 @@ const CONFIG = {
     var host = curScreen === "profile" ? $("avProfile") : $("avHome");
     if (avStack.parentNode !== host) { var was = !avVid.paused; host.appendChild(avStack); if (was) swallow(avVid.play()); }
     avatarVisible = (curScreen === "home" || curScreen === "profile") && !playerOpen && !termOpen;
-    avatarWatch(); wfUpdate(); ptUpdate(); gfxUpdate();
+    avatarWatch(); wfUpdate(); ptUpdate(); gfxUpdate(); setVidUpdate();
   }
   function afterShow(id) {
     updateChrome();
@@ -4412,7 +4416,7 @@ const CONFIG = {
     paused = true; root.classList.add("app-bg");                       // CSS animations stand still while the app is in the background
     resumeList = [audio, bg, avVid].filter(function (m) { return !m.paused; });
     resumeList.forEach(function (m) { m.pause(); });
-    wfUpdate(); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate();
+    wfUpdate(); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); setVidUpdate();
   };
   window.appResumed = function () {
     if (!paused) return;
@@ -4421,7 +4425,7 @@ const CONFIG = {
     resumeList.forEach(function (m) { swallow(m.play()); });
     resumeList = [];
     if (nativeVol) { vol = readNative(); applyVolume(); }    // the phone's volume may have changed meanwhile
-    wfUpdate(); wfBeat(true); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate();
+    wfUpdate(); wfBeat(true); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); setVidUpdate();
   };
   window.appBack = handleBack;
 
@@ -4562,6 +4566,15 @@ const CONFIG = {
   /* ---------- the Settings card: its picture, and the gold sparkles that twinkle around its frame ---------- */
   var WF2_SPARKS = [[0.8804,0.6627],[0.3325,0.8652],[0.9378,0.437],[0.5303,0.1483],[0.429,0.8971],[0.6069,0.1475],[0.0271,0.2033],[0.508,0.9067],[0.2129,0.2903],[0.8142,0.2313],[0.0821,0.5646],[0.7974,0.2568],[0.2089,0.2687],[0.0463,0.1212],[0.0861,0.1427],[0.3884,0.1443],[0.996,0.3214],[0.0191,0.2935],[0.8142,0.248],[0.0478,0.4258],[0.0957,0.6292],[0.193,0.2679],[0.6523,0.2368],[0.8349,0.2089],[0.9298,0.1451],[0.3828,0.1754],[0.0718,0.4968],[0.799,0.74],[0.6499,0.87],[0.3708,0.1834],[0.953,0.2177],[0.9051,0.6124],[0.5973,0.1427],[0.1858,0.7169],[0.0199,0.3668],[0.2751,0.8525],[0.0534,0.0909],[0.756,0.3325],[0.1627,0.6898],[0.0311,0.2943]];      // spots on / around the wings, crown and swirls (0..1 of frame2.png)
   qa(".setprof img.sav").forEach(function (e) { e.src = C.avatarImage; });
+  var setVid = qa(".setprof video.sav")[0];                  // the Settings card's clip: loops while Settings is open (the picture shows until it plays)
+  if (setVid && C.settingsVideo) { setVid.muted = true; setVid.src = C.settingsVideo; setVid.addEventListener("playing", function () { setVid.classList.add("ok"); }); }
+  else if (setVid) { setVid.remove(); setVid = null; }
+  function setVidUpdate() {
+    if (!setVid) return;
+    if (entered && curScreen === "settings" && !playerOpen && !termOpen && !paused && !document.hidden) { if (setVid.paused) swallow(setVid.play()); }
+    else if (!setVid.paused) setVid.pause();
+  }
+  document.addEventListener("visibilitychange", setVidUpdate);
   var wf2Placed = false;
   function wf2Spots() {
     var f = document.querySelector(".wf2"); if (wf2Placed || !f || !f.offsetWidth) return;
