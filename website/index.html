@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "1.9.9",                       // shown in Settings → About
+  version: "2.0",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -2261,6 +2261,37 @@ const CONFIG = {
   /* lighter settings: no embers ("Floating particles" off), and on the lightest effects no rays or lightning either */
   .nofx .gmf-cv, .ultra .gmf-cv, .ultra .gmf-rays, .ultra .gmf-forge { display: none; }
 
+  /* =====================================================================
+     GAME: FLAPPY BIRD  (the pixel art is drawn by the code on one small canvas; CSS only scales it up with square pixels)
+     ===================================================================== */
+  /* the second Games card on Social: sky-blue glass, the Flappy Bird icon in the tile */
+  .fb-card { text-align: left; overflow: hidden; border-color: rgba(74, 206, 255, .5);
+    background: radial-gradient(90% 150% at 0% 50%, rgba(20, 180, 250, .26), rgba(20, 180, 250, 0) 70%), linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, 0) 45%), var(--glass);
+    box-shadow: 0 0 18px rgba(30, 190, 255, .2), inset 0 1px 0 rgba(255, 255, 255, .1), 0 8px 24px rgba(0, 0, 0, .32); }
+  .fb-card::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 38%; pointer-events: none;
+    background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(220, 246, 255, .13) 50%, rgba(255, 255, 255, 0));
+    transform: translateX(-130%) skewX(-18deg); animation: fbCardShine 5s ease-in-out 3.7s infinite; }
+  @keyframes fbCardShine { 0%, 62% { transform: translateX(-130%) skewX(-18deg); } 100% { transform: translateX(330%) skewX(-18deg); } }
+  .fb-card .stxt i { color: rgba(196, 236, 255, .74); }
+  .fb-tile { border-radius: 15px; background: none; box-shadow: none; filter: drop-shadow(0 0 9px rgba(20, 190, 255, .45)); }
+  .fb-tile img { display: block; width: 58px; height: 58px; animation: fbIcon 2.6s ease-in-out infinite; }
+  @keyframes fbIcon { 0%, 56%, 100% { transform: none; } 14% { transform: translateY(-3px) rotate(-4deg); } 30% { transform: translateY(1px) rotate(2deg); } 42% { transform: translateY(-1px); } }
+  .app-bg .fb-card *, .app-bg .fb-card::after { animation-play-state: paused !important; }
+
+  /* the screen: the canvas fills it (288 canvas pixels wide; a taller phone gets more sky). --fbpx = CSS pixels per canvas pixel (set by the code) */
+  #s-flappy { --fbpx: 1.365; padding: 0; overflow: hidden; background: #0bc0fd; touch-action: none; -webkit-user-select: none; user-select: none; }
+  #app.fb-on #tabs { opacity: 0; visibility: hidden; transform: translateY(26px); pointer-events: none; transition: opacity .2s ease, transform .3s ease, visibility 0s linear .3s; }
+  .fb-cv { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; image-rendering: crisp-edges; image-rendering: pixelated; }
+
+  /* pixel buttons: their pictures come from the code (crisp, the same pixel size as the game); placed by the code, except the corner one */
+  .fb-pix { position: absolute; z-index: 2; padding: 0; border-radius: 0; background: center / 100% 100% no-repeat; image-rendering: crisp-edges; image-rendering: pixelated; }
+  .fb-pix:not(.fb-on) { visibility: hidden; pointer-events: none; }
+  .fb-pix:active { transform: translateY(calc(var(--fbpx) * 3px)); }
+  .fb-pix:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .fb-hud { left: calc(var(--fbpx) * 11px); top: calc(var(--fbpx) * 14px + env(safe-area-inset-top, 0px)); width: calc(var(--fbpx) * 36px); height: calc(var(--fbpx) * 36px); }
+  @media (min-width: 600px) and (min-height: 600px) { .fb-hud { top: calc(44px + var(--fbpx) * 3px); left: calc(var(--fbpx) * 14px); } }
+  @media (prefers-reduced-motion: reduce) { .fb-card *, .fb-card::after { animation: none !important; } }
+
   /* ---------- 0. opening intro (everything here only moves with transform / opacity, so it stays smooth) ---------- */
   #intro { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; background: #000; overflow: hidden; cursor: pointer;
            animation: iFailsafe .01s linear 7s forwards; }          /* if the script ever fails, the intro hides itself after 7 s */
@@ -2589,6 +2620,11 @@ const CONFIG = {
           <span class="stxt"><b>Tic Tac Toe</b><i>Beat the AI or play a friend</i></span>
           <svg class="ic chev"><use href="#i-chevron-right"/></svg>
         </button>
+        <button class="glass srow fb-card rip" data-go="flappy" aria-label="Play Flappy Bird">
+          <span class="stile fb-tile" aria-hidden="true"><img src="assets/flappy-icon.webp" alt="" width="58" height="58" decoding="async"></span>
+          <span class="stxt"><b>Flappy Bird</b><i id="fbCardSub">Tap to fly</i></span>
+          <svg class="ic chev"><use href="#i-chevron-right"/></svg>
+        </button>
         <div class="glass quote mono"><p class="js-q-social"></p><svg class="ic crown"><use href="#i-crown"/></svg></div>
       </section>
 
@@ -2813,6 +2849,18 @@ const CONFIG = {
             <div class="gm-sc sc-d"><svg class="ic"><use href="#i-handshake"/></svg><b id="gmNd">0</b><span>Draws</span></div>
           </div>
         </div>
+      </section>
+
+      <!-- ===================== 9. GAME: FLAPPY BIRD (opens from the Games card on Social; all pixel art is drawn by the code) ===================== -->
+      <section class="screen" id="s-flappy" aria-label="Flappy Bird">
+        <canvas class="fb-cv" id="fbCv" width="288" height="512" role="img" aria-label="Flappy Bird. Tap, click or press Space to flap."></canvas>
+        <!-- pixel buttons (their pictures are drawn by the code): back / pause top left · Resume + Exit while paused · Play after a run -->
+        <button class="fb-pix fb-hud" id="fbBack" data-act="back" aria-label="Back"></button>
+        <button class="fb-pix fb-hud" id="fbPause" aria-label="Pause"></button>
+        <button class="fb-pix" id="fbResume" aria-label="Resume"></button>
+        <button class="fb-pix" id="fbExit" data-act="back" aria-label="Exit the game"></button>
+        <button class="fb-pix" id="fbAgain" aria-label="Play again"></button>
+        <p class="sr" id="fbLive" role="status" aria-live="polite"></p>
       </section>
     </main>
 
@@ -3048,6 +3096,13 @@ const CONFIG = {
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + len * 0.8); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
       n.connect(f); f.connect(g); g.connect(master); n.start(t); n.stop(t + len + 0.02);
     }
+    function fbSwish(t, len, peak, f0, f1) {                        // Flappy Bird: a short puff of noise through a sliding band (wing, swoosh, fall)
+      var n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+      n.buffer = noise; n.loop = true; f.type = "bandpass"; f.Q.value = 1.6;
+      f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + len);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + len * 0.3); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      n.connect(f); f.connect(g); g.connect(master); n.start(t, Math.random() * 0.8); n.stop(t + len + 0.02);
+    }
     return {
       unlock: function () { if (make(true) && ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} } },   // call inside a tap
       play: function (what, gesture) {
@@ -3066,6 +3121,11 @@ const CONFIG = {
         else if (what === "lose") tone("triangle", 392, 262, 0.35, 0.2, t, 0.55);
         else if (what === "hint") { tone("sine", 1318.5, 1318.5, 0.01, 0.07, t, 0.55); tone("sine", 1975.5, 1975.5, 0.01, 0.05, t + 0.13, 0.7); }   // the game's Hint: a soft "ding" (two gentle notes)
         else if (what === "undo") { tone("sine", 640, 300, 0.2, 0.08, t, 0.26); crack(t, 0.03, 0.14, 2600, 500); }                                  // the game's Undo: a soft pull back
+        else if (what === "fbwing") { fbSwish(t, 0.085, 0.2, 650, 2300); tone("triangle", 260, 520, 0.06, 0.025, t, 0.08); }                      // Flappy Bird: one flap
+        else if (what === "fbpoint") { tone("triangle", 1046.5, 1046.5, 0.01, 0.1, t, 0.1); tone("triangle", 1568, 1568, 0.01, 0.1, t + 0.075, 0.24); }   // a point: a two-note ding
+        else if (what === "fbhit") { tone("sine", 170, 52, 0.12, 0.34, t, 0.2); crack(t, 0.2, 0.07, 3400, 380); }                               // the crash: a short thud
+        else if (what === "fbdie") { tone("triangle", 820, 170, 0.5, 0.06, t, 0.55); fbSwish(t, 0.5, 0.12, 2800, 380); }                         // falling: a swoosh that drops
+        else if (what === "fbswoosh") fbSwish(t, 0.3, 0.13, 480, 3000);                                                                        // the panels slide in
       }
     };
   })();
@@ -3767,7 +3827,7 @@ const CONFIG = {
   /* =====================================================================
      SCREENS + NAVIGATION  (slide / fade between screens)
      ===================================================================== */
-  var SCREENS = ["home", "profile", "social", "stats", "themes", "settings", "game"], TABS = ["home", "music", "social", "settings"];
+  var SCREENS = ["home", "profile", "social", "stats", "themes", "settings", "game", "flappy"], TABS = ["home", "music", "social", "settings"];
   var el = {}; SCREENS.forEach(function (n) { el[n] = $("s-" + n); });
   var stack = ["home"], curScreen = "home", leaving = null, leaveTimer = 0, playerOpen = false, termOpen = false;
   var saved = {};
@@ -3781,10 +3841,11 @@ const CONFIG = {
     saved[from] = b.scrollTop;
     a.style.display = to === "home" ? "flex" : "block"; a.scrollTop = dir < 0 ? (saved[to] || 0) : 0;
     curScreen = to;
-    if (!reduced && a.animate && (to === "game" || from === "game")) {    // the game slides in from the right over the screen, and back out
+    var wideTo = to === "game" || to === "flappy", wideFrom = from === "game" || from === "flappy";   // (the games: Tic Tac Toe, Flappy Bird)
+    if (!reduced && a.animate && (wideTo || wideFrom)) {    // the game slides in from the right over the screen, and back out
       var ease = "cubic-bezier(.2,.8,.2,1)";
       cancelAnims(b);
-      if (to === "game") {
+      if (wideTo) {
         a.animate([{ transform: "translateX(100%)" }, { transform: "none" }], { duration: 470, easing: ease });
         b.animate([{ opacity: 1, transform: "none" }, { opacity: .35, transform: "translateX(-22%)" }], { duration: 470, easing: ease, fill: "forwards" });
       } else {
@@ -3805,16 +3866,16 @@ const CONFIG = {
     var rootTab = playerOpen ? "music" : stack[0];
     qa(".tab").forEach(function (t) { var on = t.dataset.tab === rootTab; t.classList.toggle("on", on); t.setAttribute("aria-selected", on); });
     $("tabhl").style.transform = "translateX(" + Math.max(0, TABS.indexOf(rootTab)) * 100 + "%)";
-    var game = curScreen === "game";
-    var miniShow = entered && curScreen !== "home" && !game && !playerOpen && !termOpen && songs.length > 0;
-    $("app").classList.toggle("game-on", game);
-    if (game && !bg.paused) { bg.pause(); bgHeld = true; }                                   // the game covers the background video: let it rest
-    else if (!game && !playerOpen && bgHeld) { bgHeld = false; if (!paused) swallow(bg.play()); }
+    var game = curScreen === "game", flappy = curScreen === "flappy";
+    var miniShow = entered && curScreen !== "home" && !game && !flappy && !playerOpen && !termOpen && songs.length > 0;
+    $("app").classList.toggle("game-on", game); $("app").classList.toggle("fb-on", flappy);
+    if ((game || flappy) && !bg.paused) { bg.pause(); bgHeld = true; }                       // a game covers the background video: let it rest
+    else if (!game && !flappy && !playerOpen && bgHeld) { bgHeld = false; if (!paused) swallow(bg.play()); }
     $("mini").classList.toggle("show", miniShow); $("app").classList.toggle("mini-on", miniShow); $("app").classList.toggle("pl-open", playerOpen); document.body.classList.toggle("sub", curScreen !== "home" || playerOpen);
     var host = curScreen === "profile" ? $("avProfile") : $("avHome");
     if (avStack.parentNode !== host) { var was = !avVid.paused; host.appendChild(avStack); if (was) swallow(avVid.play()); }
     avatarVisible = (curScreen === "home" || curScreen === "profile") && !playerOpen && !termOpen;
-    avatarWatch(); wfUpdate(); ptUpdate(); gfxUpdate(); setVidUpdate();
+    avatarWatch(); wfUpdate(); ptUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
   }
   function afterShow(id) {
     updateChrome();
@@ -3824,6 +3885,7 @@ const CONFIG = {
     if (id === "stats") drawChart();
     if (id === "themes") markThemes();
     if (id === "game") gmOpen(); else gmLeave();
+    if (id === "flappy") fbOpen(); else fbLeave();
     if (id === "social") { qa("#s-social .srow").forEach(function (r, i) { if (!reduced && r.animate) r.animate([{ opacity: 0, transform: "translateY(14px)" }, { opacity: 1, transform: "none" }], { duration: 420, delay: 60 * i, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" }); }); }
   }
   function goSub(id) { closeMenu(); closeSheet(); if (playerOpen) closePlayer(true); if (stack[stack.length - 1] === id) return; stack.push(id); showScreen(id, 1); }
@@ -4001,7 +4063,7 @@ const CONFIG = {
     requestAnimationFrame(function frame(t) {
       if (!fx.running) return;
       requestAnimationFrame(frame);
-      if (paused || document.hidden || isUltra() || !entered || playerOpen || pt.fxOff || curScreen === "game") { fx.last = 0; return; }   // (party mode: its own dots instead)
+      if (paused || document.hidden || isUltra() || !entered || playerOpen || pt.fxOff || curScreen === "game" || curScreen === "flappy") { fx.last = 0; return; }   // (party mode: its own dots instead)
       var dt = fx.last ? Math.min(.1, (t - fx.last) / 1000) : .033; fx.last = t;
       acc += dt; if (acc < (isLite() ? .04 : .032)) return; var step = acc; acc = 0;     // about 25 / 30 frames a second
       var g = fx.g; g.clearRect(0, 0, fx.W, fx.H);
@@ -4830,7 +4892,7 @@ const CONFIG = {
     paused = true; root.classList.add("app-bg");                       // CSS animations stand still while the app is in the background
     resumeList = [audio, bg, avVid].filter(function (m) { return !m.paused; });
     resumeList.forEach(function (m) { m.pause(); });
-    wfUpdate(); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); setVidUpdate();
+    wfUpdate(); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
   };
   window.appResumed = function () {
     if (!paused) return;
@@ -4839,7 +4901,7 @@ const CONFIG = {
     resumeList.forEach(function (m) { swallow(m.play()); });
     resumeList = [];
     if (nativeVol) { vol = readNative(); applyVolume(); }    // the phone's volume may have changed meanwhile
-    wfUpdate(); wfBeat(true); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); setVidUpdate();
+    wfUpdate(); wfBeat(true); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
   };
   window.appBack = handleBack;
 
@@ -6591,6 +6653,556 @@ const CONFIG = {
   // (capture: seen before the game handles the tap, so the tap that ends a round doesn't count)
   function gmfNext(e) { if (gm.el.classList.contains("gm-ended") && gmf.end.grp.length && !(e.currentTarget.dataset.mode && e.currentTarget.dataset.mode === gm.mode)) gmfClear(false); }
   [gm.board, $("gmReset")].concat(qa("#s-game .gm-mode")).forEach(function (e) { e.addEventListener("click", gmfNext, true); });
+
+  /* =====================================================================
+     GAME: FLAPPY BIRD  (the second card under Games on Social)
+     All of it is pixel art drawn by this code. The pieces (bird, pipes, ground, scenery, digits, panel, medals, buttons)
+     are drawn once into small canvases; a frame only copies them onto one small canvas, 288 pixels wide and as tall as
+     the screen's shape (a taller phone simply gets more sky), which the CSS scales up with crisp square pixels.
+     One art pixel = 3 × 3 canvas pixels (about 96 across the screen: chunky). The physics run at a fixed 60 steps a
+     second; the loop runs only while this screen is shown and the app is in front.
+     ===================================================================== */
+  var FB_W = 288, FB_GND = 84, FB_PW = 60, FB_LH = 30, FB_GAP = 138, FB_SPACE = 180, FB_SPEED = 2.5, FB_BX = 88, FB_R = 17;
+  var FB_GRAV = 0.33, FB_FLAP = -6.1, FB_VMAX = 7.4, FB_STEP = 1000 / 60, FB_FADE = 24, FB_WINGS = [0, 1, 2, 1];
+  var FB_INK = "#1d0e05", FB_ORANGE = { o: FB_INK, w: "#fffaf2", q: "#df5f02", O: "#e86c02", Q: "#d15805", W: "#fff", z: "rgba(30, 12, 2, .5)" };
+  var FB_SKY = ["#0bc0fd", "#0fc2fd", "#14c4fd", "#19c6fd", "#1fc8fd", "#25cbfc", "#2bcdfc", "#31cffc", "#37d1fc", "#3dd4fc", "#44d7fc", "#4adafc", "#50dcfc"];
+
+  /* ---------- the pieces cut out of your Flappy Bird picture (assets/flappy-sprites.webp, at this game's scale):
+     the sky, the clouds + city + bushes (mirrored so it repeats without a seam), the pipe (one row of the long part, the two lips),
+     the bird with its wing up / level / down, the pause button. Until it has loaded, the drawn pieces below stand in. ---------- */
+  var FB_SHEET = { sky: [0, 0, 1, 242], band: [3, 0, 204, 184], tube: [308, 0, 60, 1], lipT: [370, 0, 66, 30], lipB: [438, 0, 66, 30],
+                   bird0: [506, 0, 59, 41], bird1: [567, 0, 59, 41], bird2: [628, 0, 59, 41], pause: [689, 0, 36, 35] };
+  var fbSheet = null;
+  function fbLoadSheet() {
+    if (fbSheet) return;
+    fbSheet = new Image(); fbSheet.onload = fbUseSheet; fbSheet.src = "assets/flappy-sprites.webp";
+  }
+  function fbLabel(lip) {                           // the credit on each bottom pipe's rim: "MADE BY" over a bigger "IMRAN"
+    var c = fbCanvas(lip.width, lip.height), x = c.getContext("2d");
+    x.drawImage(lip, 0, 0);
+    var txt = function (str, k, col) { return fbArt(fbThin(str).map(function (r) { return r.replace(/#/g, "w"); }), { w: col }, k); };
+    var put = function (str, k, y) {
+      var w = txt(str, k, "#fff"), sh = txt(str, k, "rgba(8, 54, 8, .8)"), x0 = Math.round((c.width - w.width) / 2);
+      x.drawImage(sh, x0 + 1, y + 1); x.drawImage(w, x0, y);
+    };
+    put("MADE BY", 1, 4); put("IMRAN", 2, 12);
+    return c;
+  }
+  function fbCut(k) { var r = FB_SHEET[k], c = fbCanvas(r[2], r[3]); c.getContext("2d").drawImage(fbSheet, r[0], r[1], r[2], r[3], 0, 0, r[2], r[3]); return c; }
+  function fbUseSheet() {                            // the picture's pieces take over from the drawn ones
+    var S = fb.S; if (!S || !fbSheet || !fbSheet.naturalWidth || S.pic) return;
+    S.pic = true; S.skyCol = fbCut("sky"); S.band = fbCut("band"); S.tube = fbCut("tube"); S.lipT = fbCut("lipT"); S.lipB = fbLabel(fbCut("lipB"));
+    S.bird = [fbCut("bird0"), fbCut("bird1"), fbCut("bird2")];
+    var r = FB_SHEET.pause, sw = fbSheet.naturalWidth, sh = fbSheet.naturalHeight, ps = $("fbPause").style;   // (the button shows its piece of the sheet)
+    ps.backgroundImage = "url(assets/flappy-sprites.webp)"; ps.backgroundSize = (sw / r[2] * 100) + "% " + (sh / r[3] * 100) + "%";
+    ps.backgroundPosition = (r[0] / (sw - r[2]) * 100) + "% " + (sh > r[3] ? r[1] / (sh - r[3]) * 100 : 0) + "%";
+    if (fb.g) fbDraw(1);
+  }
+
+  /* ---------- the art (one character = one art pixel; "." = clear) ---------- */
+  var FB_BODY = [                                   // the bird without its wing: 19 × 14, looking right
+    ".......ooooo.......",
+    ".....oollllooooo...",
+    "....oyylllowwwwwo..",
+    "...oyyyyyyowwwwwo..",
+    "..oyyyyyyyowwwpwo..",
+    ".oyyyyyyyyowwwpwo..",
+    ".oyyyyyyyyowwwwwo..",
+    ".oyyyyyyyyoooooooo.",
+    ".oddddddddorrrrrrro",
+    ".oddddddddorrrrrrro",
+    "..odddddddoooooooo.",
+    "..ottdddddoRRRRRRo.",
+    "...oddddddooooooo..",
+    "....ooooooo........"];
+  var FB_WING = [                                   // [top row, picture]: wing up · level · down
+    [3, ["oo.......", "ofoo.....", "offfoo...", "offffffo.", "ogggffffo", ".ooooooo."]],
+    [5, [".oooooo..", "offffffo.", "offfffffo", "offfffffo", "oggfffffo", ".ooooooo."]],
+    [6, [".ooooooo.", "offfffffo", "offffffo.", "ogffoo...", "ogoo.....", "oo......."]]];
+  var FB_BIRD_PAL = { o: FB_INK, p: FB_INK, l: "#fbf57e", y: "#fde80a", d: "#f6a704", w: "#fff", r: "#fa441c", R: "#e2381a", f: "#fdfdcf", g: "#f3e39a", t: "#f5321a" };
+  var FB_DIG = [                                    // chunky digits (5 × 8, two-pixel strokes)
+    "#####|#####|##.##|##.##|##.##|##.##|#####|#####", "###|###|.##|.##|.##|.##|.##|.##",
+    "#####|#####|...##|#####|#####|##...|#####|#####", "#####|#####|...##|#####|#####|...##|#####|#####",
+    "##.##|##.##|##.##|#####|#####|...##|...##|...##", "#####|#####|##...|#####|#####|...##|#####|#####",
+    "#####|#####|##...|#####|#####|##.##|#####|#####", "#####|#####|...##|...##|...##|...##|...##|...##",
+    "#####|#####|##.##|#####|#####|##.##|#####|#####", "#####|#####|##.##|#####|#####|...##|#####|#####"];
+  var FB_BOLD = {                                   // the titles' letters, in the same chunky style (rows 8 + 9: below the line)
+    G: "######|######|##....|##.###|##..##|##..##|######|######", O: "#####|#####|##.##|##.##|##.##|##.##|#####|#####",
+    P: "####.|#####|##.##|#####|####.|##...|##...|##...", R: "####.|#####|##.##|#####|####.|##.##|##.##|##.##",
+    a: ".....|.....|####.|...##|#####|##.##|#####|.####", d: "...##|...##|#####|##.##|##.##|##.##|#####|#####",
+    e: ".....|.....|#####|##.##|#####|##...|#####|#####", m: "........|........|#######.|########|##.##.##|##.##.##|##.##.##|##.##.##",
+    r: "....|....|####|####|##..|##..|##..|##..", s: ".....|.....|#####|##...|#####|...##|#####|#####",
+    t: ".##.|.##.|####|.##.|.##.|.##.|.###|..##", u: ".....|.....|##.##|##.##|##.##|##.##|#####|#####",
+    v: ".....|.....|##.##|##.##|##.##|##.##|.###.|..#..", y: ".....|.....|##.##|##.##|##.##|##.##|#####|.####|...##|####.",
+    "!": "##|##|##|##|##|..|##|##", " ": "..|..|..|..|..|..|..|.." };
+  // a small thin font (labels, button words): width, then one base-32 digit per row (bits = pixels, left first)
+  var FB_FONT = { A: "5ehhvhhh", B: "5uhhuhhu", C: "5ehggghe", D: "5uhhhhhu", E: "5vgguggv", I: "37222227", L: "5ggggggv", M: "5hrllhhh",
+    N: "5hpljhhh", O: "5ehhhhhe", P: "5uhhuggg", R: "5uhhukih", S: "5fgge11u", T: "5v444444", U: "5hhhhhhe", W: "5hhhllla", X: "5hha4ahh", Y: "5hha4444", " ": "300000000" };
+
+  var fb = { el: $("s-flappy"), cv: $("fbCv"), g: null, S: null, W: 0, H: 0, G: 0, px: 1, hud: 20, run: false, raf: 0, last: 0, acc: 0, opened: false,
+             mode: "ready", t: 0, x: FB_BX, y: 0, py: 0, ry: 0, vy: 0, rot: 0, prot: 0, rv: 0, wing: 1, wt: 0, scroll: 0, ps: 0, pipes: [], parts: [], flaps: 0,
+             score: 0, best: 0, newBest: false, cnt: 0, overT: 0, doneT: -1, dieT: 0, medal: -1, spark: null, flash: 0, shake: 0, fade: 0 };
+
+  /* ---------- pixel helpers ---------- */
+  function fbCanvas(w, h) { var c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
+  function fbArt(rows, pal, k) {                   // rows of characters → a canvas, each art pixel k × k canvas pixels (3 by default)
+    k = k || 3;
+    var c = fbCanvas(rows[0].length * k, rows.length * k), x = c.getContext("2d");
+    rows.forEach(function (r, j) {
+      for (var i = 0, n; i < r.length; i += n) {
+        var ch = r.charAt(i); n = 1;
+        while (r.charAt(i + n) === ch) n++;
+        if (pal[ch]) { x.fillStyle = pal[ch]; x.fillRect(i * k, j * k, n * k, k); }
+      }
+    });
+    return c;
+  }
+  function fbStamp(rows, st, ox, oy) {               // lay a small picture over rows (its "." pixels stay see-through)
+    return rows.map(function (r, j) {
+      var s = st[j - oy]; if (!s) return r;
+      return r.split("").map(function (c, i) { var t = s.charAt(i - ox); return t && t !== "." ? t : c; }).join("");
+    });
+  }
+  function fbOutline(rows, ch) {                     // a one-pixel ring of ch round everything (the picture grows by a pixel on each side)
+    var w = rows[0].length + 2, at = function (i, j) { return (rows[j] || "").charAt(i) || "."; }, out = [];
+    for (var j = -1; j <= rows.length; j++) {
+      var s = "";
+      for (var i = -1; i < w - 1; i++) {
+        var c = at(i, j);
+        for (var d = 0; c === "." && d < 9; d++) if (d !== 4 && at(i + d % 3 - 1, j + Math.floor(d / 3) - 1) !== ".") c = ch;
+        s += c;
+      }
+      out.push(s);
+    }
+    return out;
+  }
+  function fbRand(s) { return function () { s = s * 16807 % 2147483647; return (s - 1) / 2147483646; }; }
+  function fbThin(str) {                            // thin-font text → rows of "#"
+    var gl = str.split("").map(function (ch) { return FB_FONT[ch] || FB_FONT[" "]; }), rows = [];
+    for (var r = 0; r < 7; r++) {
+      rows.push(gl.map(function (g) {
+        var w = parseInt(g.charAt(0), 32), bits = parseInt(g.charAt(r + 1), 32), s = "";
+        for (var c = 0; c < w; c++) s += (bits >> (w - 1 - c)) & 1 ? "#" : ".";
+        return s;
+      }).join("."));
+    }
+    return rows;
+  }
+  function fbJoin(list, gap) {                      // pictures (rows) side by side, top-aligned, padded to the tallest
+    var h = Math.max.apply(null, list.map(function (g) { return g.length; })), rows = [];
+    for (var j = 0; j < h; j++) rows.push(list.map(function (g) { return g[j] || new Array(g[0].length + 1).join("."); }).join(new Array(gap + 1).join(".")));
+    return rows;
+  }
+  function fbTitle(str, c) {                        // a big title: chunky letters with a light top edge, a dark ring, a white ring round the word
+    var rows = fbJoin(str.split("").map(function (ch) { return (FB_BOLD[ch] || FB_BOLD[" "]).split("|"); }), 1);
+    rows = rows.map(function (s, j) {
+      return s.replace(/#/g, function (m, i) { return j === 0 || rows[j - 1].charAt(i) !== "#" ? "a" : j < 5 ? "b" : "c"; });
+    });
+    return fbArt(fbOutline(fbOutline(rows, "o"), "w"), { a: c[0], b: c[1], c: c[2], w: "#fff", o: FB_INK });
+  }
+  function fbDisc(n, inner, ring, edge) {           // a round n × n disc: dark edge (optional), ring, inside
+    var rows = [], c = (n - 1) / 2;
+    for (var j = 0; j < n; j++) {
+      var s = "";
+      for (var i = 0; i < n; i++) { var d = Math.sqrt((i - c) * (i - c) + (j - c) * (j - c)); s += d > c + .2 ? "." : edge && d > c - .8 ? edge : d > c - (edge ? 2.2 : .8) ? ring : inner; }
+      rows.push(s);
+    }
+    return rows;
+  }
+  function fbButtonArt(w, h, icon) {                // the pixel button: dark edge, white inner edge, orange (darker at the bottom), a shadow, a white picture
+    var rows = [];
+    for (var j = 0; j <= h; j++) {
+      var s = "";
+      for (var i = 0; i <= w; i++) {
+        if (i === w || j === h) { s += i && j ? "z" : "."; continue; }
+        s += !i || !j || i === w - 1 || j === h - 1 ? "o" : i === 1 || j === 1 || i === w - 2 || j === h - 2 ? "w" : j === 2 ? "q" : j === h - 3 ? "Q" : "O";
+      }
+      rows.push(s);
+    }
+    rows = fbStamp(rows, icon.map(function (r) { return r.replace(/#/g, "W"); }), Math.floor((w - icon[0].length) / 2), Math.floor((h - icon.length) / 2));
+    return fbArt(rows, FB_ORANGE, 1).toDataURL();
+  }
+
+  /* ---------- build every picture once (first time the game opens) ---------- */
+  function fbBuild() {
+    var S = {}, i, j, k, R = fbRand(5);
+    S.bird = FB_WING.map(function (w) { return fbArt(fbStamp(FB_BODY, w[1], 0, w[0]), FB_BIRD_PAL); });
+
+    // pipes: lime, a light stripe on the left, dark on the right, black edge; the long part is one row stretched; the lip is wider
+    var pp = { o: "#000", L: "#86f335", H: "#e1fc86", P: "#91f33a", T: "#73df36", M: "#48c42e", D: "#1f9625", d: "#30b125", E: "#1b861e", l: "#cff86f" };
+    var lip = "oLLHHPPPMMMMMMMMDdEEo", lipRows = [new Array(22).join("o")];
+    for (i = 0; i < 7; i++) lipRows.push(lip);
+    lipRows.push(lip.replace(/[LHPM]/g, "l"), new Array(22).join("o"));
+    S.lipT = fbArt(lipRows, pp); S.lipB = fbLabel(fbArt(lipRows.slice().reverse(), pp)); S.tube = fbArt(["oLHHPPTMMMMMMMDdEEo"], pp);
+
+    // the far scenery: soft clouds, a light-blue city, a wavy band of bushes — seamless strips, one screen (96 art pixels) wide
+    var SW = 96, wd = function (x, cx) { var d = Math.abs(x - cx) % SW; return Math.min(d, SW - d); };
+    var strip = function (h, fill) { var a = []; for (var y = 0; y < h; y++) { a.push([]); for (var x = 0; x < SW; x++) a[y].push(fill(x, y)); } return a; };
+    var inBlobs = function (b, x, y) { for (var n = 0; n < b.length; n++) { var dx = wd(x, b[n][0]), dy = y - b[n][1]; if (dx * dx + dy * dy <= b[n][2] * b[n][2]) return true; } return false; };
+    var rim = function (a, ch) {                     // clear pixels touching the shape (left, right, up, down; round the seam too) become ch
+      return a.map(function (row, y) {
+        return row.map(function (c, x) { return c === "." && (row[(x + 1) % SW] !== "." || row[(x + SW - 1) % SW] !== "." || (a[y + 1] && a[y + 1][x] !== ".") || (a[y - 1] && a[y - 1][x] !== ".")) ? ch : c; });
+      });
+    };
+    var rowsOf = function (a) { return a.map(function (r) { return r.join(""); }); };
+    var cb = [[4, 18, 10], [13, 12, 8], [22, 17, 7], [33, 22, 7], [42, 18, 8], [51, 21, 8], [59, 24, 6], [68, 16, 9], [77, 9, 9], [86, 13, 8], [93, 17, 7]];
+    var ctop = []; for (i = 0; i < SW; i++) { ctop.push(44); for (k = 0; k < cb.length; k++) { var cdx = wd(i, cb[k][0]); if (cdx <= cb[k][2]) ctop[i] = Math.min(ctop[i], Math.round(cb[k][1] - Math.sqrt(cb[k][2] * cb[k][2] - cdx * cdx))); } }
+    var cloud = rim(strip(44, function (x, y) { return y >= ctop[x] ? "0123456".charAt(Math.min(6, Math.floor(y / 6))) : "."; }), "e");
+    S.cloud = fbArt(rowsOf(cloud), { e: "#a9f1f3", 0: "#e4fbe9", 1: "#d6faea", 2: "#cbf9ed", 3: "#bff9f0", 4: "#b1f8f3", 5: "#a4f6f6", 6: "#99f4f8" });
+    var city = strip(22, function () { return "."; }), x0 = 0;
+    while (x0 < SW) {
+      var bw = 4 + Math.floor(R() * 6), top = 22 - (5 + Math.floor(R() * 16));
+      for (i = 0; i < bw; i++) for (j = top; j < 22; j++) city[j][(x0 + i) % SW] = j === top || i === 0 ? "t" : i === bw - 2 && j > top + 1 ? "q" : "b";
+      x0 += bw + (R() < .3 ? 1 : 0);
+    }
+    S.city = fbArt(rowsOf(city), { b: "#44d1f5", t: "#5ddaf6", q: "#72e3f8" });
+    var bb = []; for (k = 0; k < 12; k++) bb.push([k * 8 + R() * 3, 5 + R() * 3, 4 + R() * 3]);
+    var bush = rim(strip(24, function (x, y) { return y >= 8 || inBlobs(bb, x, y) ? "m" : "."; }), "k");
+    bush = bush.map(function (row, y) {
+      return row.map(function (c, x) { return c !== "m" ? c : (y > 0 && bush[y - 1][x] === "k") || (y > 1 && bush[y - 2][x] === "k") ? "l" : y > 12 ? (y > 22 ? "N" : "n") : "m"; });
+    });
+    S.bush = fbArt(rowsOf(bush), { k: "#0bbea4", l: "#74ee6a", m: "#46e26a", n: "#0dcf85", N: "#0aa874" });
+
+    // words, numbers, the tap hint
+    S.ready = fbTitle("Get Ready!", ["#d8ff8f", "#7fe33b", "#45bf2a"]);
+    S.over = fbTitle("Game Over", ["#ffe08a", "#fb9c2a", "#e4621c"]);
+    S.paused = fbTitle("Paused", ["#ffffff", "#e9f9ff", "#a9e6f7"]);
+    S.dig = FB_DIG.map(function (d) { return fbArt(fbOutline(d.split("|").map(function (s) { return s.replace(/#/g, "w"); }), "o"), { w: "#fff", o: FB_INK }); });
+    S.hand = fbArt(["....oo......", "...owwo.....", "...owwo.....", "...owwo.....", "...owwooo...", "...owwowwoo.", ".ooowwowwowo", "owwowwowwowo",
+                    "owwwwwwwwwwo", "owwwwwwwwwwo", ".owwwwwwwwwo", ".owwwwwwwwo.", "..owwwwwwwo.", "..oggggggo..", "..oooooooo.."], { o: FB_INK, w: "#fff", g: "#bfe6f2" });
+    S.tap = fbArt(fbOutline(fbOutline(fbThin("TAP").map(function (s) { return s.replace(/#/g, "a"); }), "w"), "o"), { a: "#fa6a2c", w: "#fff", o: FB_INK });
+
+    // the score panel (76 × 47): MEDAL with its slot on the left, SCORE and BEST on the right
+    var PW = 76, PH = 47, panel = [];
+    for (j = 0; j < PH; j++) {
+      var s = "";
+      for (i = 0; i < PW; i++) {
+        var dx = Math.min(i, PW - 1 - i), dy = Math.min(j, PH - 1 - j);
+        s += !dx && !dy ? "." : !dx || !dy ? "o" : dx === 1 || dy === 1 ? "w" : j === PH - 3 ? "s" : "b";
+      }
+      panel.push(s);
+    }
+    var lab = function (t) { return fbThin(t).map(function (r) { return r.replace(/#/g, "t"); }); };
+    panel = fbStamp(panel, lab("MEDAL"), 5, 4);
+    panel = fbStamp(panel, lab("SCORE"), 72 - lab("SCORE")[0].length, 4);
+    panel = fbStamp(panel, lab("BEST"), 72 - lab("BEST")[0].length, 24);
+    panel = fbStamp(panel, fbDisc(18, "q", "Q"), 10, 15);
+    S.panel = fbArt(panel, { o: FB_INK, w: "#fffaf0", b: "#e0d38a", s: "#cbbd73", t: "#e86c02", q: "#d0c27a", Q: "#c2b26a" });
+
+    // medals: bronze 10, silver 20, gold 30, platinum 40 (a star in the middle), sparkles, NEW
+    var star = ["...#...", "..###..", "#######", ".#####.", "..###..", ".##.##.", ".#...#."];
+    S.medals = [["#a35a26", "#d4893f", "#eeb47b", "#f8d2a8"], ["#8693a0", "#c3ccd5", "#eef2f6", "#ffffff"],
+                ["#c98b12", "#f5c233", "#ffe9a0", "#fff7d6"], ["#7fb0bb", "#d9eef1", "#ffffff", "#ffffff"]].map(function (m) {
+      var rows = fbDisc(18, "f", "r", "o").map(function (r, y) { return r.replace(/f/g, function (c, x) { return x + y < 13 ? "h" : "f"; }); });
+      return fbArt(fbStamp(rows, star.map(function (r) { return r.replace(/#/g, "x"); }), 5, 5), { o: FB_INK, r: m[0], f: m[1], h: m[2], x: m[3] });
+    });
+    S.spark = [fbArt([".....", "..#..", ".###.", "..#..", "....."], { "#": "#fff" }), fbArt(["..#..", "..#..", "#####", "..#..", "..#.."], { "#": "#fff" })];
+    S.newb = fbArt([".oooooooooooooooooo.", "orrrrrrrrrrrrrrrrrro", "orrwrrwrwwwrwrrrwrro", "orrwwrwrwrrrwrrrwrro", "orrwrwwrwwrrwrwrwrro",
+                    "orrwrrwrwrrrwrwrwrro", "orrwrrwrwwwrrwrwrrro", "orrrrrrrrrrrrrrrrrro", ".oooooooooooooooooo."], { o: FB_INK, r: "#f0452c", w: "#fff" });
+
+    // the pixel buttons' pictures (kept by the buttons themselves)
+    var bars = ["##.##", "##.##", "##.##", "##.##", "##.##"], arrow = ["..#....", ".##....", "#######", ".##....", "..#...."];   // a clear back arrow
+    $("fbPause").style.backgroundImage = "url(" + fbButtonArt(11, 11, bars) + ")";
+    $("fbBack").style.backgroundImage = "url(" + fbButtonArt(11, 11, arrow) + ")";
+    $("fbResume").style.backgroundImage = "url(" + fbButtonArt(42, 13, fbThin("RESUME")) + ")";
+    $("fbExit").style.backgroundImage = "url(" + fbButtonArt(42, 13, fbThin("EXIT")) + ")";
+    $("fbAgain").style.backgroundImage = "url(" + fbButtonArt(42, 13, fbThin("PLAY")) + ")";
+    return S;
+  }
+  function fbGround(wa) {                           // the ground: a dark line, a bright green band with sliding stripes, sand (28 art rows)
+    var rows = [];
+    for (var j = 0; j < 30; j++) {
+      var s = "";
+      for (var i = 0; i < wa; i++) s += !j ? "o" : j === 1 ? "h" : j < 5 ? ((i + j) % 6 < 3 ? "a" : "b") : j === 5 ? "c" : j === 6 ? "e" : j === 7 ? "f" : "s";
+      rows.push(s);
+    }
+    return fbArt(rows, { o: "#000", h: "#e5f892", a: "#80ef39", b: "#4ab61d", c: "#1f6702", e: "#c67404", f: "#d8c77a", s: "#e0d38b" });
+  }
+  function fbSkyArt(H, G) {                         // the sky: strong cyan on top, lighter in steps toward the clouds (9 pixels extra round it, for the shake)
+    var c = fbCanvas(1, H + 18), x = c.getContext("2d");
+    for (var y = 0; y < H + 18; y += 3) { x.fillStyle = FB_SKY[Math.max(0, Math.min(12, Math.floor((y - 9 - (G - 340)) / 12)))]; x.fillRect(0, y, 1, 3); }
+    return c;
+  }
+
+  /* ---------- size: 288 wide (a wider screen: 512 tall and wider) ---------- */
+  function fbSize() {
+    var w = fb.el.clientWidth, h = fb.el.clientHeight; if (!w || !h || !fb.S) return false;
+    var W = FB_W, H = Math.round(FB_W * h / w);
+    if (H < 512) { H = 512; W = Math.max(FB_W, Math.round(512 * w / h)); }
+    fb.px = w / W; fb.el.style.setProperty("--fbpx", fb.px.toFixed(4));
+    fb.hud = Math.round($("fbPause").offsetTop / fb.px);
+    if (W === fb.W && H === fb.H && fb.g) { fbPlace(); return false; }
+    var dG = fb.G ? H - FB_GND - fb.G : 0;
+    fb.W = fb.cv.width = W; fb.H = fb.cv.height = H; fb.G = H - FB_GND;
+    fb.g = fb.cv.getContext("2d", { alpha: false }); fb.g.imageSmoothingEnabled = false;
+    if (!fb.S.ground || fb.S.ground.width < W + 54) fb.S.ground = fbGround(Math.ceil((W + 54) / 18) * 6);
+    fb.S.sky = fbSkyArt(H, fb.G);
+    if (dG) { fb.y += dG; fb.py += dG; fb.ry += dG; fb.pipes.forEach(function (p) { p.gy += dG; p.c += dG; }); }
+    fbPlace();
+    return true;
+  }
+  function fbPanelY() { return Math.round(fb.G * .3); }
+  function fbPlace() {                              // the middle buttons sit on the canvas layout (in % of the screen, so they follow its size)
+    var put = function (id, y) { var s = $(id).style; s.left = (fb.W / 2 - 64.5) / fb.W * 100 + "%"; s.top = y / fb.H * 100 + "%"; s.width = 129 / fb.W * 100 + "%"; s.height = 42 / fb.H * 100 + "%"; };
+    var ry = Math.round(fb.G * .38);
+    put("fbResume", ry); put("fbExit", ry + 57); put("fbAgain", fbPanelY() + 141 + 16);
+  }
+
+  /* ---------- the run ---------- */
+  function fbReset() {
+    fb.mode = "ready"; fb.t = 0; fb.pipes = []; fb.parts = []; fb.score = 0; fb.cnt = 0; fb.newBest = false; fb.overT = 0; fb.doneT = -1; fb.dieT = 0; fb.medal = -1; fb.spark = null;
+    fb.ry = Math.round(fb.G * .47); fb.y = fb.py = fb.ry; fb.vy = 0; fb.rot = fb.prot = 0; fb.rv = 0; fb.wing = 1; fb.wt = 0; fb.ps = fb.scroll;
+    fb.flash = 0; fb.shake = 0;
+    fbUI(); fbSay("Get ready! Tap to flap.");
+  }
+  function fbNewPipe(x, prev) {                     // the gap's middle: somewhere in the middle of the sky, not too far from the last one
+    var c = fb.G / 2 - 93 + Math.random() * 186;
+    if (prev !== undefined) c = Math.max(prev - 150, Math.min(prev + 150, c));
+    return { x: x, c: c, gy: Math.round(c - FB_GAP / 2), done: false };
+  }
+  function fbBegin() {
+    fb.mode = "play"; fb.t = 0; fb.score = 0;
+    fb.pipes = [fbNewPipe(Math.max(FB_BX + 330, fb.W + 40))];
+    fbFlap(); fbUI(); fbSay("");
+  }
+  function fbFlap() {
+    fb.vy = FB_FLAP; fb.rv = 0; fb.flaps++; sfx.play("fbwing", true);
+    for (var i = 0; i < 4; i++) fb.parts.push({ x: fb.x - 24 - i * 6, y: fb.y + 6 + i * 4 + Math.random() * 3, vy: .2 + Math.random() * .3, life: 12 + i * 3, c: (i + fb.flaps) % 2 });
+  }
+  function fbWingStep(n) { if (!n) { fb.wing = 1; fb.wt = 0; return; } if (++fb.wt >= n) { fb.wt = 0; fb.wing = (fb.wing + 1) % 4; } }
+  function fbHit(cx, cy, r, x, y, w, h) { var dx = cx - Math.max(x, Math.min(cx, x + w)), dy = cy - Math.max(y, Math.min(cy, y + h)); return dx * dx + dy * dy < r * r; }
+  function fbCollide() {
+    var a = fb.rot * Math.PI / 180;
+    if (fb.y + (a > 0 ? 21 * Math.cos(a) + 28 * Math.sin(a) : 21) - 4 >= fb.G) { fbCrash(true); return; }   // the ground (the beak may touch the grass)
+    var cx = fb.x + 3 * Math.cos(a), cy = fb.y + 3 * Math.sin(a), r = FB_R;   // a round body (the wing tip and the beak are let off)
+    for (var i = 0; i < fb.pipes.length; i++) {
+      var p = fb.pipes[i], top = p.gy, bot = p.gy + FB_GAP;
+      if (p.x - 3 > cx + r || p.x + FB_PW + 3 < cx - r) continue;
+      if (fbHit(cx, cy, r, p.x - 3, top - FB_LH, FB_PW + 6, FB_LH) || fbHit(cx, cy, r, p.x, top - 3000, FB_PW, 3000 - FB_LH) ||
+          fbHit(cx, cy, r, p.x - 3, bot, FB_PW + 6, FB_LH) || fbHit(cx, cy, r, p.x, bot + FB_LH, FB_PW, 3000)) { fbCrash(false); return; }
+    }
+  }
+  function fbCrash(ground) {
+    sfx.play("fbhit"); fbBuzz("lose");
+    fb.flash = 14; fb.shake = reduced ? 0 : 18;
+    store.set("fb:games", (parseInt(store.get("fb:games", "0"), 10) || 0) + 1);
+    fb.newBest = fb.score > fb.best;
+    if (fb.newBest) { fb.best = fb.score; store.set("fb:best", fb.best); }
+    fbCard();
+    if (ground) fbLand();
+    else { fb.mode = "dying"; fb.vy = Math.max(fb.vy, 0); fb.rv = 2; fb.dieT = 14; fbUI(); }
+  }
+  function fbLand() { fb.mode = "over"; fb.overT = 0; fb.doneT = -1; fb.cnt = 0; fb.wing = 1; fb.vy = 0; fbUI(); }
+  function fbMedalOf(n) { return n >= 40 ? 3 : n >= 30 ? 2 : n >= 20 ? 1 : n >= 10 ? 0 : -1; }
+  function fbBtnOn() { return fb.mode === "over" && fb.doneT >= 0 && fb.overT >= fb.doneT + 12; }
+  function fbRestart() { if (!fb.fade) { fb.fade = FB_FADE; sfx.play("fbswoosh", true); } }
+
+  function fbStep() {                               // one physics step (1/60 s)
+    fb.ps = fb.scroll; fb.py = fb.y; fb.prot = fb.rot;
+    fb.t++;
+    if (fb.flash) fb.flash--;
+    if (fb.shake) fb.shake--;
+    if (fb.fade && --fb.fade === FB_FADE / 2) fbReset();
+    var m = fb.mode, i, p;
+    for (i = fb.parts.length - 1; i >= 0; i--) { p = fb.parts[i]; p.x -= .8; p.y += p.vy; if (--p.life <= 0) fb.parts.splice(i, 1); }
+    if (m === "ready") {                            // the bird bobs, waiting for the first tap; the ground slides
+      fb.scroll += FB_SPEED;
+      fb.y = fb.ry + Math.sin(fb.t / 9) * 5; fb.rot = 0;
+      fbWingStep(6);
+    } else if (m === "play") {
+      fb.scroll += FB_SPEED;
+      fb.vy = Math.min(FB_VMAX, fb.vy + FB_GRAV); fb.y = Math.max(-60, fb.y + fb.vy);
+      if (fb.vy < 2) { fb.rot = Math.max(-25, fb.rot - 14); fb.rv = 0; }               // going up: nose up
+      else { fb.rv = Math.min(6, fb.rv + .4); fb.rot = Math.min(90, fb.rot + fb.rv); }   // falling: the nose drops, faster and faster
+      for (i = 0; i < fb.pipes.length; i++) {
+        p = fb.pipes[i]; p.x -= FB_SPEED;
+        if (!p.done && p.x + FB_PW / 2 <= fb.x) { p.done = true; fb.score++; sfx.play("fbpoint"); }
+      }
+      if (fb.pipes[0].x < -FB_PW - 12) fb.pipes.shift();
+      p = fb.pipes[fb.pipes.length - 1];
+      if (p.x + FB_SPACE < fb.W + 60) fb.pipes.push(fbNewPipe(p.x + FB_SPACE, p.c));
+      fbWingStep(fb.rot > 50 ? 0 : 4);
+      fbCollide();
+    } else if (m === "dying") {                     // hit a pipe: nose down, straight to the ground
+      fb.vy = Math.min(9, fb.vy + FB_GRAV * 1.3); fb.y += fb.vy;
+      fb.rv = Math.min(10, fb.rv + 1); fb.rot = Math.min(90, fb.rot + fb.rv);
+      if (fb.dieT && !--fb.dieT) sfx.play("fbdie");
+      if (fb.y >= fb.G - 24) { fb.y = fb.G - 24; fbLand(); }
+    } else if (m === "over") {
+      var T = ++fb.overT;
+      if (fb.rot < 90) fb.rot = Math.min(90, fb.rot + 12);
+      fb.y += (fb.G - 24 - fb.y) * .3;            // lies nose down in the grass
+      if (T === 30 || T === 60) sfx.play("fbswoosh");
+      if (T >= 90 && fb.doneT < 0) {                // the score counts up, then the medal and NEW
+        if (fb.cnt < fb.score && T % 2 === 0) fb.cnt = Math.min(fb.score, fb.cnt + Math.max(1, Math.round(fb.score / 25)));
+        if (fb.cnt >= fb.score) {
+          fb.doneT = T; fb.medal = fbMedalOf(fb.score);
+          if (fb.newBest) { fbBuzz("win"); sfx.play("fbpoint"); }
+          fbSay("Game over. Score " + fb.score + ". Best " + fb.best + (fb.newBest ? ", a new best!" : "."));
+        }
+      }
+      if (fb.doneT >= 0 && T === fb.doneT + 12) fbUI();   // the Play button shows up
+      if (fb.medal >= 0 && fb.doneT >= 0 && (!fb.spark || ++fb.spark.t >= 24)) {   // a sparkle twinkles somewhere on the medal
+        var an = Math.random() * 6.283, rr = Math.random() * 20;
+        fb.spark = { x: Math.round(Math.cos(an) * rr), y: Math.round(Math.sin(an) * rr), t: 0 };
+      }
+    }
+  }
+
+  /* ---------- drawing ---------- */
+  function fbTile(img, off, y) { var g = fb.g, w = img.width, x = -(Math.round(off) % w); if (x > -9) x -= w; for (; x < fb.W + 9; x += w) g.drawImage(img, x, y); }
+  function fbNum(n, x, y, right) {                  // a number from digit pictures, centred on x (or ending at x); gives back its left edge
+    var s = String(n), D = fb.S.dig, w = 3, i, d;
+    for (i = 0; i < s.length; i++) w += D[s.charCodeAt(i) - 48].width - 3;
+    x = right ? x - w : Math.round(x - w / 2);
+    var x0 = x;
+    for (i = 0; i < s.length; i++) { d = D[s.charCodeAt(i) - 48]; fb.g.drawImage(d, x, y); x += d.width - 3; }
+    return x0;
+  }
+  function fbDraw(a) {                              // a = how far we are between the last step and the next (smooth on 90 / 120 Hz screens)
+    var g = fb.g, S = fb.S; if (!g || !S) return;
+    var W = fb.W, H = fb.H, G = fb.G, m = fb.mode, i, p;
+    var lag = (fb.scroll - fb.ps) * (1 - a), sc = fb.scroll - lag, ox = 0, oy = 0;
+    if (fb.shake) { var q = Math.ceil(fb.shake / 6); ox = Math.round((Math.random() * 2 - 1) * q); oy = Math.round((Math.random() * 2 - 1) * q); }
+    g.setTransform(1, 0, 0, 1, ox, oy);
+    var still = isUltra();                          // slow devices: the far scenery stands still
+    if (S.pic) {                                    // the picture's sky down to the scenery, then its clouds, city and bushes (drifting slowly)
+      g.drawImage(S.skyCol, -9, -9, W + 18, G - S.band.height + 12);
+      fbTile(S.band, still ? 0 : sc * .12, G - S.band.height);
+    } else {
+      g.drawImage(S.sky, -9, -9, W + 18, S.sky.height);
+      fbTile(S.cloud, still ? 0 : sc * .1, G - 180);
+      fbTile(S.city, still ? 0 : sc * .25, G - 112);
+      fbTile(S.bush, still ? 0 : sc * .5, G - 72);
+    }
+    for (i = 0; i < fb.pipes.length; i++) {
+      p = fb.pipes[i];
+      var px = Math.round(p.x + lag), top = p.gy, bot = p.gy + FB_GAP;
+      if (px > W + 9 || px < -FB_PW - 12) continue;
+      g.drawImage(S.tube, px, -9, FB_PW, top - FB_LH + 9);
+      g.drawImage(S.lipT, px - 3, top - FB_LH);
+      g.drawImage(S.lipB, px - 3, bot);
+      g.drawImage(S.tube, px, bot + FB_LH, FB_PW, Math.max(0, G - bot - FB_LH));
+    }
+    g.drawImage(S.ground, -(Math.round(sc) % 18) - 18, G);
+    for (i = 0; i < fb.parts.length; i++) { p = fb.parts[i]; g.fillStyle = p.c ? "#8aecfe" : "#d4fafc"; g.fillRect(Math.round(p.x), Math.round(p.y), 3, 3); }
+    var by = fb.py + (fb.y - fb.py) * a, br = fb.prot + (fb.rot - fb.prot) * a;
+    g.save(); g.translate(Math.round(fb.x), Math.round(by));
+    if (Math.abs(br) > .5) { g.rotate(br * Math.PI / 180); g.imageSmoothingEnabled = true; }   // (tilted: smooth edges instead of jagged ones)
+    var bd = S.bird[FB_WINGS[fb.wing]]; g.drawImage(bd, -Math.round(bd.width / 2), -Math.round(bd.height / 2)); g.restore(); g.imageSmoothingEnabled = false;
+
+    if (m === "ready") {
+      g.drawImage(S.ready, Math.round(W / 2 - S.ready.width / 2), Math.round(G * .17));
+      var hx = Math.round(Math.max(W * .56, W / 2 + 17)), hy = fb.ry - 12;
+      g.drawImage(S.hand, hx, hy + (fb.t % 50 < 10 ? 3 : 0));
+      g.drawImage(S.tap, hx + S.hand.width + 6, hy + 3);
+    } else if (m === "play" || m === "paused" || m === "dying") {
+      fbNum(fb.score, W / 2, fb.hud + 8);
+    } else if (m === "over") fbDrawOver();
+    if (m === "paused") {
+      g.fillStyle = "rgba(4, 30, 46, .45)"; g.fillRect(-9, -9, W + 18, H + 18);
+      g.drawImage(S.paused, Math.round(W / 2 - S.paused.width / 2), Math.round(G * .17));
+    }
+    if (fb.flash) { g.globalAlpha = (reduced ? .45 : .9) * fb.flash / 14; g.fillStyle = "#fff"; g.fillRect(-9, -9, W + 18, H + 18); g.globalAlpha = 1; }
+    if (fb.fade) { g.globalAlpha = 1 - Math.abs(fb.fade - FB_FADE / 2) / (FB_FADE / 2); g.fillStyle = "#000"; g.fillRect(-9, -9, W + 18, H + 18); g.globalAlpha = 1; }
+  }
+  function fbDrawOver() {                           // GAME OVER drops in, the panel slides up, the score counts, medal + NEW (the Play button is a real button)
+    var g = fb.g, S = fb.S, T = fb.overT, W = fb.W, k;
+    if (T >= 30) {
+      k = Math.min(1, (T - 30) / 12);
+      g.globalAlpha = k; g.drawImage(S.over, Math.round(W / 2 - S.over.width / 2), Math.round(fb.G * .14 - (1 - k) * 18)); g.globalAlpha = 1;
+    }
+    if (T < 60) return;
+    k = Math.min(1, (T - 60) / 24); k = 1 - Math.pow(1 - k, 3);
+    var y0 = fbPanelY(), py = Math.round(fb.H + (y0 - fb.H) * k), px = Math.round(W / 2 - S.panel.width / 2);
+    g.drawImage(S.panel, px, py);
+    fbNum(fb.cnt, px + 216, py + 36, true);
+    var bx = fbNum(fb.best, px + 216, py + 99, true);
+    if (fb.doneT < 0) return;
+    if (fb.medal >= 0) {
+      g.drawImage(S.medals[fb.medal], px + 30, py + 45);
+      var sp = fb.spark;
+      if (sp) g.drawImage(S.spark[sp.t >= 8 && sp.t < 16 ? 1 : 0], px + 57 + sp.x - 7, py + 72 + sp.y - 7);
+    }
+    if (fb.newBest) g.drawImage(S.newb, bx - 66, py + 101);
+  }
+
+  /* ---------- the loop: runs only while the game is on screen and the app is in front ---------- */
+  function fbFrame(now) {
+    if (!fb.run) return;
+    fb.raf = requestAnimationFrame(fbFrame);
+    var ms = fb.last ? now - fb.last : FB_STEP; fb.last = now;
+    if (ms > 250) ms = FB_STEP;                     // back from a hitch: carry on, don't jump
+    fb.acc += ms;
+    for (var n = 0; fb.acc >= FB_STEP; n++) {
+      fb.acc -= FB_STEP;
+      if (n > 4) { fb.acc = 0; break; }
+      fbStep();
+    }
+    fbDraw(fb.acc / FB_STEP);
+  }
+  function fbWanted() { return entered && curScreen === "flappy" && !paused && !document.hidden && !playerOpen && !termOpen; }
+  function fbStart() { if (fb.run) return; fb.run = true; fb.last = 0; fb.acc = 0; fb.raf = requestAnimationFrame(fbFrame); }
+  function fbStop() { if (!fb.run) return; fb.run = false; cancelAnimationFrame(fb.raf); fb.raf = 0; }
+  function fbUpdate() {
+    if (!fb.S || !fb.opened) return;
+    var on = fbWanted();
+    if (!on && fb.mode === "play") fbHold();        // leaving / the app goes to the background: the run waits (Paused: Resume / Exit)
+    if (on && fb.mode !== "paused") fbStart(); else fbStop();
+  }
+  function fbHold() { if (fb.mode !== "play") return; fb.mode = "paused"; fbUI(); fbSay("Paused. Tap to continue."); fbDraw(1); fbStop(); }
+  function fbGo() { if (fb.mode !== "paused") return; fb.mode = "play"; fbUI(); fbSay(""); fbUpdate(); }
+  function fbOpen() {
+    if (!fb.S) fb.S = fbBuild();
+    fbLoadSheet(); fbUseSheet();
+    fbSize();
+    if (!fb.opened || fb.mode === "over" || fb.mode === "dying") { fb.fade = 0; fbReset(); }   // a finished run starts fresh
+    fb.opened = true;
+    fbUI(); fbDraw(1); fbUpdate();
+  }
+  function fbLeave() { if (fb.mode === "play") fbHold(); }
+  function fbUI() {                                 // which pixel buttons show: back (ready, over) · pause (play) · Resume + Exit (paused) · Play (after a run)
+    var m = fb.mode, on = function (id, v) { $(id).classList.toggle("fb-on", v); };
+    on("fbBack", m === "ready" || m === "over"); on("fbPause", m === "play"); on("fbResume", m === "paused"); on("fbExit", m === "paused"); on("fbAgain", fbBtnOn());
+  }
+  function fbSay(t) { $("fbLive").textContent = t; }
+  function fbBuzz(k) { try { if (window.AndroidHaptics) AndroidHaptics.buzz(k); } catch (e) {} }
+  function fbAction() {                             // a tap / click / Space
+    if (!fb.S || fb.fade) return;
+    var m = fb.mode;
+    if (m === "ready") fbBegin();
+    else if (m === "play") fbFlap();
+    else if (m === "paused") fbGo();
+    else if (fbBtnOn()) fbRestart();
+  }
+  function fbCard() { var e = $("fbCardSub"); if (e) e.textContent = fb.best > 0 ? "Best: " + fb.best : "Tap to fly"; }
+
+  fb.el.addEventListener("pointerdown", function (e) {
+    if (e.button > 0 || !fb.S || curScreen !== "flappy") return;
+    if (e.target.closest && e.target.closest(".fb-pix")) return;    // (the pixel buttons do their own thing)
+    if (e.cancelable) e.preventDefault();
+    if (fb.mode !== "over") fbAction();             // (after a run only the Play button starts again)
+  });
+  fb.el.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  $("fbPause").addEventListener("click", function () { fbHold(); });
+  $("fbResume").addEventListener("click", function () { fbGo(); });
+  $("fbAgain").addEventListener("click", function () { fbRestart(); });
+  document.addEventListener("keydown", function (e) {      // desktop: Space / Up / W / Enter flap (and start, go on, play again), P pauses
+    if (curScreen !== "flappy" || !entered || !fb.S || sheetOpen || menuOpen || playerOpen || termOpen || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+    var t = e.target, k = e.key;
+    if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+    if ((k === " " || k === "Enter") && t && t.tagName === "BUTTON") return;   // a focused button does its own thing
+    if (k === " " || k === "Spacebar" || k === "ArrowUp" || k === "w" || k === "W" || k === "Enter") { e.preventDefault(); if (!e.repeat) fbAction(); }
+    else if ((k === "p" || k === "P") && !e.repeat) { if (fb.mode === "play") fbHold(); else fbGo(); }
+  });
+  document.addEventListener("visibilitychange", fbUpdate);
+  window.addEventListener("resize", function () { if (curScreen === "flappy" && fb.S && fbSize() && !fb.run) fbDraw(1); });
+  window.fbState = function () {                  // (read-only, for the automatic tests)
+    return { mode: fb.mode, score: fb.score, best: fb.best, x: fb.x, y: fb.y, vy: fb.vy, G: fb.G, W: fb.W, H: fb.H, gap: FB_GAP, run: fb.run,
+             pipes: fb.pipes.map(function (p) { return { x: p.x, gy: p.gy }; }) };
+  };
+  fb.best = Math.max(0, parseInt(store.get("fb:best", "0"), 10) || 0);
+  fbCard();
 
   /* ---------- start up ---------- */
   var clockEl = $("clock");
