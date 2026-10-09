@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "1.9.8",                       // shown in Settings → About
+  version: "1.9.9",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -1629,6 +1629,7 @@ const CONFIG = {
   .gm-msg-t svg.ic { width: 16px; height: 16px; stroke-width: 3; }
   .gm-msg-t svg.ic.mx { color: #ff3a50; filter: drop-shadow(0 0 3px rgba(255, 40, 60, .9)); }
   .gm-msg-t svg.ic.mo { color: #fff; filter: drop-shadow(0 0 3px rgba(255, 255, 255, .7)); }
+  .gm-msg-t svg.ic.hl { color: #fff3ec; stroke-width: 2.5; filter: drop-shadow(0 0 4px rgba(255, 196, 170, .95)); }
   .gm-dots { display: inline-flex; gap: 3px; margin-left: -3px; padding-top: 4px; }
   .gm-dots i { width: 4px; height: 4px; border-radius: 50%; background: #fff; animation: gmDot 1s ease-in-out infinite; }
   .gm-dots i:nth-child(2) { animation-delay: .15s; } .gm-dots i:nth-child(3) { animation-delay: .3s; }
@@ -1707,26 +1708,26 @@ const CONFIG = {
 
   /* the marks: X = red lightning, O = white glowing ring (both from the picture) */
   .gm-mk { position: absolute; left: 3.4%; top: 3.4%; width: 93.2%; height: 93.2%; pointer-events: none; }
-  .gm-mk > i { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url("assets/game-marks.webp") 0 0 / 600% 100% no-repeat; }
+  .gm-mk > i, .gm-ghost > i { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url("assets/game-marks.webp") 0 0 / 600% 100% no-repeat; }
   .gm-mk.v1 > i { background-position: 20% 0; } .gm-mk.v2 > i { background-position: 40% 0; } .gm-mk.v3 > i { background-position: 60% 0; }
-  .gm-mk.v4 > i { background-position: 80% 0; } .gm-mk.v5 > i { background-position: 100% 0; }
-  .gm-mk > .s1x { clip-path: polygon(0 0, 50% 0, 50% 50%, 100% 50%, 100% 100%, 50% 100%, 50% 50%, 0 50%); }
-  .gm-mk > .s2x { clip-path: polygon(50% 0, 100% 0, 100% 50%, 50% 50%, 50% 100%, 0 100%, 0 50%, 50% 50%); }
+  .gm-mk.v4 > i { background-position: 80% 0; } .gm-mk.v5 > i { background-position: 100% 0; } .gm-ghost.o > i { background-position: 60% 0; }
+  .gm-mk > .s1x, .gm-ghost > .s1x { clip-path: polygon(0 0, 50% 0, 50% 50%, 100% 50%, 100% 100%, 50% 100%, 50% 50%, 0 50%); }
+  .gm-mk > .s2x, .gm-ghost > .s2x { clip-path: polygon(50% 0, 100% 0, 100% 50%, 50% 50%, 50% 100%, 0 100%, 0 50%, 50% 50%); }
   /* X: the lightning draws itself in two strokes, a bright spark running at the front of each */
-  .gm-mk.draw > .s1x { -webkit-mask: linear-gradient(135deg, #000 45%, transparent 55%) 0 0 / 300% 300% no-repeat; mask: linear-gradient(135deg, #000 45%, transparent 55%) 0 0 / 300% 300% no-repeat; animation: gmDrawA .24s cubic-bezier(.45, 0, .55, 1) both; }
-  .gm-mk.draw > .s2x { -webkit-mask: linear-gradient(225deg, #000 45%, transparent 55%) 0 0 / 300% 300% no-repeat; mask: linear-gradient(225deg, #000 45%, transparent 55%) 0 0 / 300% 300% no-repeat; animation: gmDrawB .24s cubic-bezier(.45, 0, .55, 1) .2s both; }
+  .gm-mk.draw > .s1x, .gm-ghost.draw > .s1x { -webkit-mask: linear-gradient(135deg, #000 45%, transparent 55%) 0 0 / 300% 300% no-repeat; mask: linear-gradient(135deg, #000 45%, transparent 55%) 0 0 / 300% 300% no-repeat; animation: gmDrawA .24s cubic-bezier(.45, 0, .55, 1) both; }
+  .gm-mk.draw > .s2x, .gm-ghost.draw > .s2x { -webkit-mask: linear-gradient(225deg, #000 45%, transparent 55%) 0 0 / 300% 300% no-repeat; mask: linear-gradient(225deg, #000 45%, transparent 55%) 0 0 / 300% 300% no-repeat; animation: gmDrawB .24s cubic-bezier(.45, 0, .55, 1) .2s both; }
   @keyframes gmDrawA { from { -webkit-mask-position: 85% 85%; mask-position: 85% 85%; } to { -webkit-mask-position: 15% 15%; mask-position: 15% 15%; } }
   @keyframes gmDrawB { from { -webkit-mask-position: 15% 85%; mask-position: 15% 85%; } to { -webkit-mask-position: 85% 15%; mask-position: 85% 15%; } }
-  .gm-mk.x.draw::before, .gm-mk.x.draw::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; }
-  .gm-mk.x.draw::before { background: radial-gradient(circle at 13% 13%, #fff 0, rgba(255, 150, 150, .95) 3%, rgba(255, 30, 50, .5) 6%, rgba(255, 0, 30, 0) 11%); animation: gmRunA .24s cubic-bezier(.45, 0, .55, 1); }
-  .gm-mk.x.draw::after { background: radial-gradient(circle at 87% 13%, #fff 0, rgba(255, 150, 150, .95) 3%, rgba(255, 30, 50, .5) 6%, rgba(255, 0, 30, 0) 11%); animation: gmRunB .24s cubic-bezier(.45, 0, .55, 1) .2s; }
+  .gm-mk.x.draw::before, .gm-mk.x.draw::after, .gm-ghost.x.draw::before, .gm-ghost.x.draw::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; }
+  .gm-mk.x.draw::before, .gm-ghost.x.draw::before { background: radial-gradient(circle at 13% 13%, #fff 0, rgba(255, 150, 150, .95) 3%, rgba(255, 30, 50, .5) 6%, rgba(255, 0, 30, 0) 11%); animation: gmRunA .24s cubic-bezier(.45, 0, .55, 1); }
+  .gm-mk.x.draw::after, .gm-ghost.x.draw::after { background: radial-gradient(circle at 87% 13%, #fff 0, rgba(255, 150, 150, .95) 3%, rgba(255, 30, 50, .5) 6%, rgba(255, 0, 30, 0) 11%); animation: gmRunB .24s cubic-bezier(.45, 0, .55, 1) .2s; }
   @keyframes gmRunA { from { transform: none; opacity: 1; } 85% { opacity: 1; } to { transform: translate(74%, 74%); opacity: 0; } }
   @keyframes gmRunB { from { transform: none; opacity: 1; } 85% { opacity: 1; } to { transform: translate(-74%, 74%); opacity: 0; } }
   /* O: the ring draws itself round, a spark at its front, then a flash of glow */
   @property --gmo { syntax: "<percentage>"; inherits: false; initial-value: 106%; }
-  .gm-mk.draw > .s1o { -webkit-mask: conic-gradient(#000 calc(var(--gmo) - 6%), transparent var(--gmo)); mask: conic-gradient(#000 calc(var(--gmo) - 6%), transparent var(--gmo)); animation: gmDrawO .5s cubic-bezier(.4, 0, .3, 1) both; }
+  .gm-mk.draw > .s1o, .gm-ghost.draw > .s1o { -webkit-mask: conic-gradient(#000 calc(var(--gmo) - 6%), transparent var(--gmo)); mask: conic-gradient(#000 calc(var(--gmo) - 6%), transparent var(--gmo)); animation: gmDrawO .5s cubic-bezier(.4, 0, .3, 1) both; }
   @keyframes gmDrawO { from { --gmo: 0%; } to { --gmo: 106%; } }
-  .gm-mk.o.draw::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0;
+  .gm-mk.o.draw::before, .gm-ghost.o.draw::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0;
     background: radial-gradient(circle at 50% 17%, #fff 0, rgba(255, 255, 255, .85) 3.5%, rgba(255, 255, 255, 0) 9%); animation: gmRunO .5s cubic-bezier(.4, 0, .3, 1); }
   @keyframes gmRunO { from { transform: rotate(-20deg); opacity: 1; } 80% { opacity: 1; } to { transform: rotate(380deg); opacity: 0; } }
   .gm-mk.o::after { content: ""; position: absolute; left: 17%; top: 17%; width: 66%; height: 66%; border-radius: 50%; pointer-events: none;
@@ -1799,8 +1800,9 @@ const CONFIG = {
   /* the screen opens: frame fades in, the spikes grow out one by one, the cells pop in from the centre */
   .gm-open .gm-top { animation: gmUp .5s cubic-bezier(.2, .8, .2, 1) .05s backwards; }
   .gm-open .gm-modes { animation: gmUp .5s cubic-bezier(.2, .8, .2, 1) .12s backwards; }
+  .gm-open .gm-diff { animation: gmUp .5s cubic-bezier(.2, .8, .2, 1) .2s backwards; }
   .gm-open .gm-msgrow { animation: gmUp .5s cubic-bezier(.2, .8, .2, 1) .95s backwards; }
-  .gm-open .gm-reset { animation: gmUp .5s cubic-bezier(.2, .8, .2, 1) .3s backwards; }
+  .gm-open .gm-acts { animation: gmUp .5s cubic-bezier(.2, .8, .2, 1) .3s backwards; }
   .gm-open .gm-score { animation: gmUp .5s cubic-bezier(.2, .8, .2, 1) .38s backwards; }
   @keyframes gmUp { from { opacity: 0; transform: translateY(14px); } }
   .gm-open .gm-body, .gm-open .gm-in { animation: gmFrameIn .55s ease-out .08s backwards; }
@@ -1859,12 +1861,405 @@ const CONFIG = {
   .gs-clear svg.ic { width: 18px; height: 18px; }
   .gs-clear.armed { color: #fff; background: rgba(200, 16, 36, .35); border-color: rgba(255, 70, 86, .9); box-shadow: 0 0 14px rgba(255, 30, 50, .45); }
 
+  /* the AI's level (only in Player vs AI): four segments in a dark glass track, a glowing red thumb slides to the chosen one */
+  .gm-diff { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; max-width: 372px; height: 36px; margin-top: 9px; padding: 3px; border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, 0) 60%), rgba(14, 4, 7, .8);
+    border: 1px solid rgba(255, 80, 94, .3); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), inset 0 2px 10px rgba(0, 0, 0, .55), 0 0 14px rgba(255, 20, 40, .1); }
+  .gm-diff.hide { display: none; }
+  .gm-diff-th { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 4); border-radius: 999px; overflow: hidden; pointer-events: none;
+    transform: translateX(calc(var(--k, 1) * 100%)); transition: transform .45s cubic-bezier(.3, 1.3, .45, 1);
+    background: radial-gradient(90% 140% at 50% 0%, rgba(255, 70, 90, .42), rgba(255, 44, 64, 0) 70%), linear-gradient(180deg, rgba(160, 12, 30, .86), rgba(62, 2, 12, .9));
+    border: 1px solid rgba(255, 78, 94, .95); box-shadow: 0 0 10px rgba(255, 24, 50, .65), 0 0 24px rgba(255, 0, 30, .22), inset 0 0 10px rgba(255, 70, 90, .4); }
+  .gm-diff-th::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 46%;
+    background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(255, 238, 232, .55) 50%, rgba(255, 255, 255, 0)); transform: translateX(-130%) skewX(-18deg); }
+  .gm-diff-th::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: inherit; box-shadow: inset 0 0 12px 2px rgba(255, 130, 140, .95); opacity: 0; }
+  .gm-diff-th.go::before { animation: gmThShine .7s .22s cubic-bezier(.45, 0, .3, 1) both; }
+  .gm-diff-th.go::after { animation: gmThGlow .8s ease-out; }
+  @keyframes gmThShine { to { transform: translateX(330%) skewX(-18deg); } }
+  @keyframes gmThGlow { 30% { opacity: 1; } }
+  .gm-dif { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; min-width: 0; border-radius: 999px; white-space: nowrap;
+    font-size: clamp(11.5px, 3.45vw, 13px); font-weight: 700; letter-spacing: .015em; color: rgba(214, 208, 220, .6);
+    transition: color .3s, text-shadow .3s, transform .16s cubic-bezier(.3, 1.4, .5, 1); }
+  .gm-dif.on { color: #fff; text-shadow: 0 0 8px rgba(255, 60, 80, .9); }
+  @media (hover: hover) { .gm-dif:not(.on):hover { color: rgba(255, 232, 236, .92); } }
+
+  /* Undo · Reset Game · Hint: two small round glass buttons beside the pill (dimmed when they can't be used); the badge counts the hints left */
+  .gm-acts { --ab: 54px; display: flex; align-items: center; gap: 10px; width: min(100%, calc(var(--bw, 340px) * .74 + var(--ab) * 2 + 20px)); margin-top: 10px; }
+  .gm-acts .gm-reset { flex: 1 1 auto; width: auto; min-width: 0; height: var(--ab); margin-top: 0; }
+  .gm-actw { position: relative; flex: none; }
+  .gm-act { display: grid; place-items: center; width: var(--ab); height: var(--ab); border-radius: 50%; color: #fff;
+    background: radial-gradient(80% 80% at 50% 0%, rgba(255, 50, 70, .24), rgba(255, 50, 70, 0) 70%), linear-gradient(180deg, rgba(100, 8, 20, .66), rgba(32, 2, 7, .84));
+    border: 1.5px solid rgba(255, 66, 80, .85); box-shadow: 0 0 12px rgba(255, 26, 48, .45), 0 0 26px rgba(255, 0, 30, .14), inset 0 0 14px rgba(255, 40, 60, .28);
+    transition: opacity .3s, color .3s, border-color .3s, box-shadow .3s, transform .16s cubic-bezier(.3, 1.4, .5, 1); }
+  .gm-act svg.ic { width: 23px; height: 23px; stroke-width: 2.4; }
+  .gm-act.off { opacity: .42; color: rgba(236, 226, 230, .85); border-color: rgba(255, 120, 130, .3); box-shadow: inset 0 0 10px rgba(255, 40, 60, .1); cursor: default; }
+  .gm-act.off:active { transform: none; }
+  .gm-act.off > .ripple { display: none; }
+  .gm-act.nope { animation: gmNope .34s ease-in-out; }
+  .gm-badge { position: absolute; top: -4px; right: -4px; z-index: 1; display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; pointer-events: none;
+    font-size: 11.5px; font-weight: 800; line-height: 1; color: #fff; font-variant-numeric: tabular-nums;
+    background: radial-gradient(circle at 35% 28%, #ff7482, #e3122e 55%, #8a0018); box-shadow: 0 0 0 2px #140307, 0 0 10px rgba(255, 30, 54, .85); transition: color .3s, background .3s, box-shadow .3s; }
+  .gm-badge.none { color: rgba(240, 228, 232, .62); background: #2b191d; box-shadow: 0 0 0 2px #140307; }
+  /* the Hint button: the bulb glows warm while hints are left; pressed, it lights up with short rays (the badge's number flips down, in the script) */
+  #gmHint svg.ic { position: relative; transition: color .3s, filter .3s; }
+  #gmHint:not(.off) svg.ic { color: #fff3d6; filter: drop-shadow(0 0 3px rgba(255, 214, 140, .95)) drop-shadow(0 0 8px rgba(255, 170, 70, .5)); }
+  #gmHint::before { content: ""; position: absolute; left: 50%; top: 43%; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%; pointer-events: none; opacity: 0;
+    background: radial-gradient(circle, rgba(255, 220, 150, .5), rgba(255, 180, 90, .14) 46%, rgba(255, 160, 60, 0) 70%); transition: opacity .4s; }
+  #gmHint:not(.off)::before { opacity: 1; animation: gmFil 2.6s ease-in-out infinite alternate; }
+  @keyframes gmFil { from { opacity: .4; } to { opacity: 1; } }
+  .gm-rays { position: absolute; left: 50%; top: 40%; width: 46px; height: 46px; margin: -23px 0 0 -23px; pointer-events: none; opacity: 0;   /* five thin rays over the bulb */
+    background: conic-gradient(from -3deg, #fff1c9 0deg 6deg, transparent 6deg 45deg, #fff1c9 45deg 51deg, transparent 51deg 90deg, #fff1c9 90deg 96deg, transparent 96deg 270deg,
+                #fff1c9 270deg 276deg, transparent 276deg 315deg, #fff1c9 315deg 321deg, transparent 321deg);
+    -webkit-mask: radial-gradient(circle, transparent 0 54%, #000 58%, rgba(0, 0, 0, .55) 70%, transparent 80%); mask: radial-gradient(circle, transparent 0 54%, #000 58%, rgba(0, 0, 0, .55) 70%, transparent 80%); }
+  #gmHint.lit .gm-rays { animation: gmRays .7s cubic-bezier(.2, .7, .3, 1); }
+  @keyframes gmRays { 0% { opacity: 0; transform: scale(.55) rotate(-15deg); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.12) rotate(0deg); } }
+  #gmHint.lit::before { animation: gmFilOn .7s ease-out; }
+  @keyframes gmFilOn { 0% { opacity: .6; transform: scale(.8); } 30% { opacity: 1; transform: scale(1.5); } 100% { opacity: 1; transform: scale(1); } }
+  #gmHint.lit svg.ic { animation: gmBulbOn .6s cubic-bezier(.3, 1.5, .5, 1); }
+  @keyframes gmBulbOn { 30% { transform: scale(1.2); } }
+
+  /* Hint on the board: the rest dims a little (a spotlight on the cell); the cell glows, beats twice and a ring pings out of it;
+     a ghost of your mark draws itself in it, then breathes */
+  .gm-grid.dim .gm-cell:not(.lit) { opacity: .4; }
+  .gm-cell.hinted { z-index: 1; border-color: #ff3a4e; box-shadow: 0 0 16px 4px rgba(255, 36, 58, .95), 0 0 38px 10px rgba(255, 0, 30, .42), inset 0 0 20px rgba(255, 60, 80, .6);
+    animation: gmHintBeat .8s ease-in-out 2; }
+  @keyframes gmHintBeat { 50% { transform: scale(1.045); } }
+  .gm-cell.hinted::before { opacity: 1; animation: gmHintPulse .8s ease-in-out infinite alternate; }
+  @keyframes gmHintPulse { from { opacity: .3; } to { opacity: 1; } }
+  .gm-cell.hinted .gm-plus { opacity: 0; animation: none; }
+  .gm-hint { position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; animation: gmFade .3s ease-out both; }
+  .gm-hint.bye { animation: gmHintOut .3s ease-in forwards; }
+  @keyframes gmHintOut { to { opacity: 0; transform: scale(.9); } }
+  .gm-hint::before { content: ""; position: absolute; left: 8%; top: 8%; width: 84%; height: 84%; border-radius: 13%; border: 2px solid rgba(255, 196, 202, .95);
+    box-shadow: 0 0 10px 2px rgba(255, 36, 58, .9), inset 0 0 10px 2px rgba(255, 36, 58, .6); animation: gmPing 1.1s cubic-bezier(.2, .7, .3, 1) infinite; }
+  @keyframes gmPing { from { transform: scale(.5); opacity: 1; } 65% { opacity: .8; } to { transform: scale(1.04); opacity: 0; } }
+  .gm-ghost { position: absolute; left: 3.4%; top: 3.4%; width: 93.2%; height: 93.2%; opacity: .36; animation: gmGhost 1.8s ease-in-out .75s infinite alternate; }
+  @keyframes gmGhost { to { opacity: .18; } }
+
+  /* why, on the board (above the cells): a dashed warning line runs from their two marks into the cell (Block), a gold line runs
+     through your three (Win), two faint lines show the two threats (a fork: yours, or theirs to stop); the marks that matter glow */
+  .gm-hl { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 3; pointer-events: none; transition: opacity .3s ease; }
+  .gm-hl.bye { opacity: 0; }
+  .gm-hl-ln { position: absolute; height: 14px; margin-top: -7px; border-radius: 14px; overflow: hidden; transform-origin: 0 50%; transform: rotate(var(--a));
+    animation: gmLnIn .5s cubic-bezier(.3, .8, .3, 1) var(--d, 0s) backwards; }
+  @keyframes gmLnIn { from { transform: rotate(var(--a)) scaleX(0); opacity: 0; } 30% { opacity: 1; } }
+  .gm-hl-ln > i { position: absolute; top: 50%; left: -18px; right: 0; height: 3px; margin-top: -1.5px; }
+  @keyframes gmDash { to { transform: translateX(18px); } }
+  .gm-hl-ln.warn { background: linear-gradient(180deg, rgba(255, 70, 40, 0), rgba(255, 70, 40, .42) 50%, rgba(255, 70, 40, 0)); }   /* (a soft band of light: no box-shadow, so no dark ends) */
+  .gm-hl-ln.warn > i { background: repeating-linear-gradient(90deg, #ff7a5c 0 10px, rgba(255, 122, 92, 0) 10px 18px); animation: gmDash .6s linear infinite; }
+  .gm-hl-ln.warn::after { content: ""; position: absolute; right: 5px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-top: 2.5px solid #ffb59a; border-right: 2.5px solid #ffb59a; transform: rotate(45deg); }
+  .gm-hl-ln.win { height: 18px; margin-top: -9px; border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255, 190, 80, 0), rgba(255, 196, 96, .4) 28%, #ffe7ae 44%, #fffaf0 50%, #ffe7ae 56%, rgba(255, 196, 96, .4) 72%, rgba(255, 190, 80, 0)); }
+  .gm-hl-ln.win > i { top: 0; bottom: 0; left: 0; width: 24%; height: auto; margin: 0; background: radial-gradient(closest-side, #fff, rgba(255, 244, 214, 0)); animation: gmLnRun 1.4s cubic-bezier(.45, 0, .55, 1) .5s infinite; }
+  @keyframes gmLnRun { from { transform: translateX(-110%); } to { transform: translateX(430%); } }
+  .gm-hl-ln.fork, .gm-hl-ln.stop { height: 12px; margin-top: -6px; opacity: .85; }
+  .gm-hl-ln.fork { background: linear-gradient(180deg, rgba(255, 226, 232, 0), rgba(255, 226, 232, .2) 50%, rgba(255, 226, 232, 0)); }
+  .gm-hl-ln.fork > i { height: 2px; margin-top: -1px; background: repeating-linear-gradient(90deg, rgba(255, 240, 242, .9) 0 9px, rgba(255, 240, 242, 0) 9px 18px); animation: gmDash 1.3s linear infinite; }
+  .gm-hl-ln.stop { background: linear-gradient(180deg, rgba(255, 100, 60, 0), rgba(255, 100, 60, .24) 50%, rgba(255, 100, 60, 0)); }
+  .gm-hl-ln.stop > i { height: 2px; margin-top: -1px; background: repeating-linear-gradient(90deg, rgba(255, 150, 112, .9) 0 9px, rgba(255, 150, 112, 0) 9px 18px); animation: gmDash 1.3s linear infinite; }
+  .gm-hl-mk { position: absolute; border-radius: 10%; animation: gmFade .3s ease-out backwards, gmMkGlow .75s ease-in-out .3s infinite alternate; }
+  .gm-hl-mk.warn { box-shadow: 0 0 0 1.5px rgba(255, 150, 100, .95), 0 0 16px 4px rgba(255, 80, 30, .75), inset 0 0 18px rgba(255, 90, 40, .5); }
+  .gm-hl-mk.gold { box-shadow: 0 0 0 1.5px rgba(255, 240, 200, .95), 0 0 18px 5px rgba(255, 196, 90, .7), inset 0 0 20px rgba(255, 214, 130, .45); }
+  @keyframes gmMkGlow { from { opacity: .5; } to { opacity: 1; } }
+  #gmGrid .gm-cell.warn .gm-mk, #gmGrid .gm-cell.gold .gm-mk { animation: gmMkBeat .75s ease-in-out infinite alternate; }
+  #gmGrid .gm-cell.gold .gm-mk { filter: sepia(.5) saturate(1.4) brightness(1.3); }
+  @keyframes gmMkBeat { to { transform: scale(1.07); } }
+
+  /* the bubble beside the cell: dark red glass, the reason in bold and why below it; its pointer aims at the cell */
+  .gm-tip { position: absolute; z-index: 4; left: 0; top: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 13px 8px; border-radius: 14px;
+    white-space: nowrap; text-align: center; pointer-events: none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 50%), linear-gradient(180deg, #2c070c, #160408);
+    border: 1px solid rgba(255, 86, 100, .9); box-shadow: 0 0 14px rgba(255, 30, 50, .5), 0 10px 24px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 0 14px rgba(255, 40, 60, .2);
+    animation: gmTipIn .42s cubic-bezier(.3, 1.45, .5, 1) both; transition: opacity .3s ease, transform .3s ease; }
+  @keyframes gmTipIn { from { opacity: 0; transform: scale(.6); } 40% { opacity: 1; } }
+  .gm-tip.bye { opacity: 0; transform: scale(.9); }
+  .gm-tip b { font-size: calc(13.5px * var(--tf, 1)); font-weight: 800; line-height: 1.2; letter-spacing: .01em; color: #fff; text-shadow: 0 0 10px rgba(255, 60, 80, .55); }
+  .gm-tip span { font-size: calc(11.5px * var(--tf, 1)); font-weight: 600; line-height: 1.2; color: rgba(255, 214, 220, .78); }
+  .gm-tip.narrow { white-space: normal; padding: 7px 9px 8px; }   /* (no room beside the cell: the second line wraps, in even halves) */
+  .gm-tip.narrow span { text-wrap: balance; }
+  .gm-tip.narrow b { white-space: nowrap; }
+  .gm-tip::before { content: ""; position: absolute; width: 10px; height: 10px; border: 1px solid rgba(255, 86, 100, .9); transform: rotate(45deg); }
+  .gm-tip.up::before { left: calc(var(--ax) - 6px); bottom: -6px; border-top: 0; border-left: 0; background: #160408; }
+  .gm-tip.down::before { left: calc(var(--ax) - 6px); top: -6px; border-bottom: 0; border-right: 0; background: #3a171c; }
+  .gm-tip.left::before { top: calc(var(--ay) - 6px); right: -6px; border-bottom: 0; border-left: 0; background: #22060b; }
+  .gm-tip.right::before { top: calc(var(--ay) - 6px); left: -6px; border-top: 0; border-right: 0; background: #22060b; }
+  /* you played the hinted cell: a small golden sparkle */
+  .gm-flash.gold { background: radial-gradient(circle, rgba(255, 252, 236, .95) 0, rgba(255, 214, 110, .6) 28%, rgba(255, 170, 40, 0) 66%); }
+  .burst.gold { background: radial-gradient(circle, #fff 0 25%, #ffd76a 45%, rgba(255, 190, 60, 0) 72%); }
+
+  /* keyboard focus (desktop): a bright ring, only when the keyboard moved it there (:focus-visible) */
+  #s-game button:focus-visible { outline: 2px solid rgba(255, 238, 240, .95); outline-offset: 3px; }
+  #s-game .gm-cell:focus-visible { z-index: 2; outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .5), 0 0 16px 4px rgba(255, 40, 60, .85), inset 0 0 18px rgba(255, 60, 80, .5); }
+  #s-game .gm-cell:not(.x):not(.o):focus-visible .gm-plus { animation: gmPlus 1.6s ease-in-out infinite; }
+
+  /* short screens (360 x 640): everything a little tighter, so the board stays big */
+  @media (max-height: 720px) {
+    .gm { padding-top: calc(6px + env(safe-area-inset-top, 0px)); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+    .gm-top { grid-template-columns: 44px 1fr 44px; }
+    .gm-btn { width: 44px; height: 44px; border-radius: 15px; }
+    .gm-modes { margin-top: 9px; }
+    .gm-mode { height: 40px; }
+    .gm-diff { height: 32px; margin-top: 7px; }
+    .gm-msgrow { height: 36px; margin-top: 5px; }
+    .gm-acts { --ab: 48px; margin-top: 8px; }
+    .gm-score { margin-top: 10px; padding: 8px 6px 7px; border-radius: 20px; }
+    .gm-sc svg.ic { width: 23px; height: 23px; margin-bottom: 1px; }
+    .gm-sc b { font-size: 25px; }
+    .gm-sc span { font-size: 13.5px; }
+  }
+
   @media (min-width: 600px) and (min-height: 600px) { #s-game .gm { padding-top: 48px; } }
+  .ultra .gm-diff-th::before { display: none; }
   .app-bg #s-game *, .app-bg #s-game *::before, .app-bg #s-game *::after, .app-bg .gm-card *, .app-bg .gm-card::after { animation-play-state: paused !important; }
   @media (prefers-reduced-motion: reduce) {
     #s-game *, #s-game *::before, #s-game *::after, .gm-card *, .gm-card::after { animation: none !important; }
     .gm-fx, .gm-sweep { display: none; }
+    #s-game .gm-diff-th { transition: none; }
   }
+
+  /* =====================================================================
+     GAME: PROGRESS + STATS  (the streak flame on the score card · the "Game stats" page in the bottom sheet)
+     ===================================================================== */
+  /* the streak flame: a small glowing pill at the top right of that column's icon (absolute, so the score card keeps its size) */
+  #s-game .gmx-fire { position: absolute; left: calc(50% + 7px); top: -11px; z-index: 2; display: flex; align-items: center; gap: 2px; height: 22px; padding: 0 8px 0 5px; border-radius: 999px; pointer-events: none;
+    background: radial-gradient(90% 120% at 25% 30%, rgba(255, 110, 40, .38), rgba(255, 60, 20, 0) 70%), linear-gradient(180deg, #3d080a, #140204);
+    box-shadow: 0 0 0 1px rgba(255, 112, 72, .95), 0 0 10px 1px rgba(255, 60, 20, .6), inset 0 0 6px rgba(255, 90, 40, .45);
+    animation: gmxFireIn .55s cubic-bezier(.3, 1.6, .5, 1) both; }
+  #s-game .gmx-fire em { font-style: normal; font-size: 12.5px; font-weight: 800; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 0 6px rgba(255, 120, 60, .9); }
+  #s-game .gmx-fl { position: relative; display: block; width: 14px; height: 15px; transform-origin: 50% 92%; animation: gmxFlick .8s ease-in-out infinite alternate; }
+  #s-game .gmx-fl svg.ic { position: absolute; left: 0; top: 0; width: 14px; height: 15px; margin: 0; color: #ff5418; stroke-width: 1.2; filter: drop-shadow(0 0 3px rgba(255, 90, 20, .95)); animation: none; }
+  #s-game .gmx-fl svg.ic.core { fill: url(#g-gold); stroke: none; filter: none; transform: scale(.52); transform-origin: 50% 86%; }
+  #s-game .gmx-fire.up { animation: gmxFireUp .5s cubic-bezier(.3, 1.6, .5, 1); }
+  #s-game .gmx-fire.out { animation: gmxFireOut .5s cubic-bezier(.4, 0, .7, .4) forwards; }
+  #s-game .gmx-fire.gone { animation: none; opacity: 0; transform: scale(.6); transition: opacity .25s, transform .25s; }
+  #s-game .gmx-pop { position: absolute; width: 0; height: 0; z-index: 3; pointer-events: none; }
+  @keyframes gmxFireIn { 0% { opacity: 0; transform: translateY(8px) scale(.2); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+  @keyframes gmxFireUp { 35% { transform: scale(1.32); } }
+  @keyframes gmxFireOut { 0% { opacity: 1; transform: none; } 30% { opacity: 1; transform: scale(1.3); } 100% { opacity: 0; transform: translateY(-14px) scale(.4); } }
+  @keyframes gmxFlick { 0% { transform: rotate(-4deg) scale(1, .96); } 50% { transform: rotate(1deg) scale(.94, 1.08); } 100% { transform: rotate(4deg) scale(1.04, 1); } }
+  .ultra #s-game .gmx-fl { animation: none; } .ultra #s-game .gmx-fl svg.ic { filter: none; }
+  .nofx #s-game .gmx-pop { display: none; }                 /* "Floating particles" off: the flame goes without sparks */
+
+  /* the sheet turns black-red glass while it shows the game stats (the script adds .gmx-sheet) */
+  #sheet.gmx-sheet { border-color: rgba(255, 74, 90, .55);
+    background: radial-gradient(90% 30% at 50% 0%, rgba(200, 10, 34, .3), rgba(200, 10, 34, 0) 72%), linear-gradient(180deg, #1b0408, #0c0204 40%, #070102);
+    box-shadow: 0 -8px 40px rgba(255, 0, 30, .2), 0 -10px 40px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 160, 170, .12); }
+  #sheet.gmx-sheet::before { content: ""; position: absolute; left: 36px; right: 36px; top: -1px; height: 1.5px; border-radius: 2px; pointer-events: none;
+    background: linear-gradient(90deg, rgba(255, 40, 60, 0), #ff3a50 22%, #ffd5da 50%, #ff3a50 78%, rgba(255, 40, 60, 0)); box-shadow: 0 0 10px 1px rgba(255, 30, 50, .75); }
+  #sheet.gmx-sheet .grab { background: rgba(255, 92, 106, .62); box-shadow: 0 0 8px rgba(255, 40, 60, .65); }
+  #sheet.gmx-sheet .sheet-h h3 { font-weight: 800; letter-spacing: .01em; text-shadow: 0 0 16px rgba(255, 40, 60, .5); }
+  #sheet.gmx-sheet #sheetX { color: #fff; border: 1.5px solid rgba(255, 72, 88, .55);
+    background: radial-gradient(80% 80% at 30% 20%, rgba(255, 60, 80, .16), rgba(255, 60, 80, 0) 70%), linear-gradient(160deg, rgba(64, 10, 18, .6), rgba(14, 2, 5, .86));
+    box-shadow: 0 0 12px rgba(255, 24, 48, .3), inset 0 0 10px rgba(255, 40, 60, .16); }
+
+  .gmx { padding: 4px 0 6px; }
+  /* top card: the win-rate ring vs the AI and the key numbers */
+  .gmx-hero { position: relative; display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 16px; padding: 14px 16px 14px 14px; border-radius: 24px; overflow: hidden;
+    background: radial-gradient(60% 95% at 16% 50%, rgba(200, 10, 34, .32), rgba(200, 10, 34, 0) 72%), linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, 0) 45%), rgba(20, 4, 8, .85);
+    border: 1px solid rgba(255, 74, 90, .48); box-shadow: 0 0 18px rgba(255, 20, 44, .2), inset 0 1px 0 rgba(255, 255, 255, .08), inset 0 0 22px rgba(255, 30, 50, .1); }
+  .gmx-hero::after { content: ""; position: absolute; top: -20%; bottom: -20%; left: 0; width: 38%; pointer-events: none;
+    background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(255, 228, 232, .12) 50%, rgba(255, 255, 255, 0)); transform: translateX(-160%) skewX(-18deg); animation: gmxSheen 1.4s .4s cubic-bezier(.45, 0, .3, 1) both; }
+  @keyframes gmxSheen { to { transform: translateX(380%) skewX(-18deg); } }
+  .gmx-ring { position: relative; width: 120px; height: 120px; }
+  .gmx-ring svg { display: block; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); }
+  .gmx-ring circle { fill: none; }
+  .gmx-ring .tk { stroke: rgba(255, 90, 104, .32); stroke-width: 3; stroke-dasharray: 1.1 4.463; }
+  .gmx-ring .t { stroke: rgba(255, 255, 255, .07); stroke-width: 10; }
+  .gmx-ring .v { stroke: #ff2440; stroke-width: 10; stroke-linecap: round; filter: drop-shadow(0 0 5px rgba(255, 30, 60, .85)); }
+  .gmx-ring .c { stroke: rgba(255, 228, 232, .92); stroke-width: 2.4; stroke-linecap: round; }
+  .gmx-rt { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .gmx-rt b { font-size: 29px; font-weight: 800; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 0 14px rgba(255, 40, 60, .6); }
+  .gmx-rt span { margin-top: 4px; font-size: 12.5px; font-weight: 700; color: rgba(255, 236, 238, .86); }
+  .gmx-rt small { margin-top: 1px; font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(255, 130, 142, .75); }
+  .gmx-keys { display: flex; flex-direction: column; min-width: 0; }
+  .gmx-k { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 7px 0; }
+  .gmx-k + .gmx-k { border-top: 1px solid rgba(255, 255, 255, .07); }
+  .gmx-k svg.ic { width: 18px; height: 18px; stroke-width: 2.2; color: rgba(255, 112, 126, .92); }
+  .gmx-k svg.ic.hot { color: #ff6a26; filter: drop-shadow(0 0 4px rgba(255, 90, 30, .9)); transform-origin: 50% 90%; animation: gmxFlick .8s ease-in-out infinite alternate; }
+  .gmx-k span { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: rgba(236, 226, 230, .74); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gmx-k b { font-size: 18px; font-weight: 800; line-height: 1.1; color: #fff; font-variant-numeric: tabular-nums; }
+  .gmx-k-n b { font-size: 22px; text-shadow: 0 0 12px rgba(255, 40, 60, .45); }
+
+  /* section titles: a red bar, the words, a fading line, a small count */
+  .gmx-h { display: flex; align-items: center; gap: 9px; margin: 22px 2px 10px; font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: #ffe1e5; white-space: nowrap; }
+  .gmx-h::before { content: ""; flex: none; width: 3px; height: 13px; border-radius: 2px; background: #ff2e46; box-shadow: 0 0 8px rgba(255, 30, 60, .9); }
+  .gmx-h::after { content: ""; order: 1; flex: 1; min-width: 12px; height: 1px; background: linear-gradient(90deg, rgba(255, 70, 90, .45), rgba(255, 70, 90, 0)); }
+  .gmx-h em { order: 2; font-style: normal; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: none; color: rgba(255, 190, 198, .62); }
+
+  /* Wins / Losses / Draws (the same look as the score card) */
+  .gmx-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+  .gmx-t { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; padding: 12px 4px 10px; border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, 0) 50%), rgba(18, 4, 7, .8); border: 1px solid rgba(255, 84, 96, .24); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06); }
+  .gmx-t svg.ic { width: 22px; height: 22px; stroke-width: 3; margin-bottom: 3px; }
+  .gmx-t b { font-size: 23px; font-weight: 800; line-height: 1.1; color: #fff; font-variant-numeric: tabular-nums; }
+  .gmx-t span { font-size: 12.5px; font-weight: 600; color: rgba(222, 214, 224, .7); white-space: nowrap; }
+  .gmx-t.gmx-x { border-color: rgba(255, 60, 80, .5); box-shadow: 0 0 12px rgba(255, 20, 44, .16), inset 0 0 14px rgba(255, 30, 50, .14); }
+  .gmx-t.gmx-x svg.ic { color: #ff2e46; filter: drop-shadow(0 0 5px rgba(255, 30, 60, .8)); }
+  .gmx-t.gmx-x b { color: #ff3248; text-shadow: 0 0 12px rgba(255, 30, 60, .5); }
+  .gmx-t.gmx-o svg.ic { color: #fff; stroke-width: 2.7; filter: drop-shadow(0 0 4px rgba(255, 255, 255, .6)); }
+  .gmx-t.gmx-d svg.ic { color: #e8e4ec; stroke-width: 1.9; }
+  .gmx .gmx-sub { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; font-size: 13px; font-weight: 700; line-height: 1.3; color: #ffd8dc; }
+  .gmx-sub svg.ic { width: 16px; height: 16px; color: #ff6a26; stroke-width: 1.2; filter: drop-shadow(0 0 4px rgba(255, 90, 30, .9)); }
+
+  /* one row per difficulty: name, level pips, W · L · D, a win-rate bar that grows */
+  .gmx-lvs { display: flex; flex-direction: column; gap: 8px; }
+  .gmx-lv { padding: 11px 13px 12px; border-radius: 16px; background: rgba(18, 4, 7, .78); border: 1px solid rgba(255, 84, 96, .2); }
+  .gmx-lv.cur { border-color: rgba(255, 66, 82, .75); box-shadow: 0 0 12px rgba(255, 24, 48, .25), inset 0 0 12px rgba(255, 40, 60, .12); }
+  .gmx-lv1 { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .gmx-lv1 b { font-size: 15px; font-weight: 800; color: #fff; }
+  .gmx-lv1 em { font-style: normal; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #fff; background: rgba(255, 40, 60, .3); box-shadow: 0 0 0 1px rgba(255, 70, 90, .8); }
+  .gmx-lv1 span { margin-left: auto; font-size: 13px; font-weight: 600; color: rgba(236, 226, 230, .72); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .gmx-lv1 strong { color: #ff4256; font-weight: 800; }
+  .gmx-pips { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+  .gmx-pips i { width: 3px; border-radius: 1px; background: rgba(255, 255, 255, .16); }
+  .gmx-pips i:nth-child(1) { height: 5px; } .gmx-pips i:nth-child(2) { height: 7.5px; } .gmx-pips i:nth-child(3) { height: 10px; } .gmx-pips i:nth-child(4) { height: 12px; }
+  .gmx-pips.p1 i:nth-child(-n+1), .gmx-pips.p2 i:nth-child(-n+2), .gmx-pips.p3 i:nth-child(-n+3), .gmx-pips.p4 i { background: #ff3a50; box-shadow: 0 0 4px rgba(255, 40, 60, .8); }
+  .gmx-lv2 { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
+  .gmx-lv2 b { flex: none; min-width: 44px; text-align: right; font-size: 13.5px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+  .gmx-bar { position: relative; flex: 1; height: 7px; border-radius: 7px; overflow: hidden; background: rgba(255, 255, 255, .08); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .5); }
+  .gmx-bar > i, .gmx-ap > i { position: absolute; top: 0; left: 0; bottom: 0; width: 100%; border-radius: inherit; transform: scaleX(0); transform-origin: 0 50%;
+    background: linear-gradient(90deg, #8a0016, #ff2e46 72%, #ffb3bc); transition: transform .9s cubic-bezier(.2, .8, .2, 1) calc(.15s + var(--i, 0) * .08s); }
+  .gmx.go .gmx-bar > i, .gmx.go .gmx-ap > i { transform: scaleX(var(--r, 0)); }
+  .gmx-lv.none .gmx-lv1 b, .gmx-lv.none .gmx-lv2 b { color: rgba(255, 255, 255, .5); }
+
+  /* the last 12 games: W red, L white, D grey; Player vs Player rounds outlined (X / O / D) */
+  .gmx-chips { display: grid; grid-template-columns: repeat(12, 1fr); gap: 5px; padding: 12px 11px; border-radius: 18px; background: rgba(18, 4, 7, .78); border: 1px solid rgba(255, 84, 96, .2); }
+  .gmx-c { position: relative; display: grid; place-items: center; width: 100%; max-width: 28px; aspect-ratio: 1 / 1; justify-self: center; border-radius: 30%;
+    font-size: 11.5px; font-weight: 800; font-style: normal; line-height: 1; animation: gmxChip .45s cubic-bezier(.3, 1.6, .5, 1) calc(.3s + var(--i) * 35ms) backwards; }
+  .gmx-c.w { color: #fff; background: linear-gradient(180deg, #ff4a5e, #c4001e); box-shadow: 0 0 8px rgba(255, 30, 60, .7), inset 0 1px 0 rgba(255, 255, 255, .35); }
+  .gmx-c.l { color: #3a0810; background: linear-gradient(180deg, #fff, #d9d4dc); box-shadow: 0 0 7px rgba(255, 255, 255, .4); }
+  .gmx-c.d { color: #fff; background: linear-gradient(180deg, #7a7480, #4a454f); }
+  .gmx-c.px, .gmx-c.po, .gmx-c.pd { background: rgba(10, 2, 4, .6); box-shadow: inset 0 0 0 1.5px currentColor; }
+  .gmx-c.px { color: #ff3248; box-shadow: inset 0 0 0 1.5px currentColor, 0 0 7px rgba(255, 30, 60, .45); } .gmx-c.po { color: #fff; } .gmx-c.pd { color: #a7a1ad; }
+  .gmx-c svg.ic { width: 62%; height: 62%; stroke-width: 3.4; }
+  .gmx-c.e { border: 1px dashed rgba(255, 255, 255, .14); animation: none; }
+  .gmx-c.new::after { content: ""; position: absolute; top: -3px; right: -3px; bottom: -3px; left: -3px; border-radius: 34%; pointer-events: none;
+    box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .9), 0 0 9px rgba(255, 60, 80, .9); animation: gmxBlink 1.1s ease-in-out infinite alternate; }
+  @keyframes gmxChip { from { opacity: 0; transform: scale(.3); } }
+  @keyframes gmxBlink { from { opacity: .25; } }
+
+  /* achievements: unlocked ones glow (the popup's medallion, gold icon), locked ones are dim with their progress */
+  .gmx-ach { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .gmx-a { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 12px 12px 11px; border-radius: 18px; overflow: hidden; background: rgba(16, 4, 7, .72); border: 1px solid rgba(255, 255, 255, .09); }
+  .gmx-am { display: grid; place-items: center; width: 38px; height: 38px; margin-bottom: 9px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 38%, #2a1a1d, #120a0c 75%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
+  .gmx-am svg.ic { width: 19px; height: 19px; stroke-width: 2; color: rgba(214, 206, 214, .5); }
+  .gmx-a svg.gmx-st { position: absolute; top: 12px; right: 12px; width: 15px; height: 15px; stroke-width: 2.4; color: rgba(214, 206, 214, .32); }
+  .gmx-a b { font-size: 14px; font-weight: 800; line-height: 1.2; color: rgba(255, 255, 255, .62); }
+  .gmx-a > span { margin-top: 2px; font-size: 12px; font-weight: 500; line-height: 1.3; color: rgba(222, 214, 224, .5); }
+  .gmx-a small { margin-top: auto; padding-top: 7px; font-size: 11.5px; font-weight: 700; color: rgba(222, 214, 224, .55); font-variant-numeric: tabular-nums; }
+  .gmx-ap { position: relative; display: block; height: 4px; margin-top: 9px; border-radius: 4px; overflow: hidden; background: rgba(255, 255, 255, .08); }
+  .gmx-ap + small { padding-top: 5px; margin-top: 0; }
+  .gmx-a.on { border-color: rgba(255, 70, 88, .6);
+    background: radial-gradient(90% 70% at 0% 0%, rgba(210, 14, 38, .3), rgba(210, 14, 38, 0) 70%), linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, 0) 50%), rgba(22, 4, 8, .86);
+    box-shadow: 0 0 14px rgba(255, 20, 44, .2), inset 0 0 14px rgba(255, 40, 60, .12); }
+  .gmx-a.on .gmx-am { background: radial-gradient(circle at 50% 40%, #8a0d0b, #420407 55%, #170104 85%); box-shadow: 0 0 0 1.5px #ff3a26, 0 0 12px 2px rgba(255, 50, 20, .6), inset 0 0 10px rgba(255, 70, 40, .6); }
+  .gmx-a.on .gmx-am svg.ic { color: #ffd24f; stroke: url(#g-gold); stroke-width: 2.2; filter: drop-shadow(0 0 3px rgba(255, 170, 60, .75)); }
+  .gmx-a.on svg.gmx-st { color: #ff4a5e; stroke-width: 3; filter: drop-shadow(0 0 3px rgba(255, 40, 60, .8)); }
+  .gmx-a.on b { color: #fff; } .gmx-a.on > span { color: rgba(236, 226, 230, .74); } .gmx-a.on small { color: #ff8a96; }
+  .gmx-a.on::after { content: ""; position: absolute; top: -10%; bottom: -10%; left: 0; width: 45%; pointer-events: none;
+    background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(255, 226, 230, .14) 50%, rgba(255, 255, 255, 0)); transform: translateX(-160%) skewX(-18deg);
+    animation: gmxSheen 1.2s calc(.6s + var(--i) * .1s) cubic-bezier(.45, 0, .3, 1) both; }
+
+  /* Reset scores (tap twice) */
+  .gmx-clear { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; height: 48px; margin-top: 24px; border-radius: 999px; font-size: 15px; font-weight: 700; color: rgba(255, 222, 226, .9);
+    background: linear-gradient(180deg, rgba(112, 8, 20, .32), rgba(40, 2, 8, .5)); border: 1.5px solid rgba(255, 70, 86, .5); box-shadow: inset 0 0 12px rgba(255, 40, 60, .12);
+    transition: background .25s, border-color .25s, color .25s, box-shadow .25s; }
+  .gmx-clear svg.ic { width: 19px; height: 19px; stroke-width: 2.4; }
+  .gmx-clear.armed { color: #fff; border-color: #ff4a5e; background: radial-gradient(80% 140% at 50% 0%, rgba(255, 60, 80, .3), rgba(255, 60, 80, 0) 70%), linear-gradient(180deg, rgba(170, 10, 30, .72), rgba(70, 2, 12, .82));
+    box-shadow: 0 0 16px rgba(255, 30, 50, .55), inset 0 0 14px rgba(255, 60, 80, .35); }
+  .gmx .gmx-note { margin-top: 9px; text-align: center; font-size: 12px; line-height: 1.4; color: rgba(222, 214, 224, .45); }
+
+  @media (max-width: 380px) {                               /* small phones: a smaller ring leaves the numbers room */
+    .gmx-hero { grid-template-columns: 106px 1fr; gap: 12px; padding: 13px 14px 13px 12px; }
+    .gmx-ring { width: 106px; height: 106px; } .gmx-rt b { font-size: 26px; } .gmx-k { gap: 8px; } .gmx-k-n b { font-size: 20px; }
+  }
+  @media (max-width: 339px) { .gmx-hero { grid-template-columns: 1fr; justify-items: center; } .gmx-keys { width: 100%; } }
+  .ultra .gmx *, .ultra .gmx *::before, .ultra .gmx *::after { animation-iteration-count: 1 !important; }
+  .ultra .gmx-ring .v, .ultra .gmx-k svg.ic.hot { filter: none; }
+  .app-bg #sheet .gmx *, .app-bg #sheet .gmx *::before, .app-bg #sheet .gmx *::after { animation-play-state: paused !important; }
+  @media (prefers-reduced-motion: reduce) {
+    .gmx *, .gmx *::before, .gmx *::after { animation: none !important; transition: none !important; }
+  }
+
+  /* =====================================================================
+     GAME: EFFECTS  (made by the script 07g: a layer behind the board, a layer in front of everything, a layer over the dark board,
+     a glow in each gem; nothing here takes a tap)
+     ===================================================================== */
+  .gmf-back, .gmf-front, .gmf-grp { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  .gmf-back, .gmf-front { overflow: hidden; }
+  .gmf-back { z-index: 0; }                                  /* over the smoke canvas, under the board */
+  .gmf-front { z-index: 3; }
+  #s-game .gm-board { will-change: transform; }              /* the board tilts in 3D without being redrawn */
+  .gmf-in { position: absolute; left: 11.786%; top: 12.099%; width: 76.31%; height: 77.284%; z-index: 2; border-radius: 2.6% / 2.7%; overflow: hidden; pointer-events: none; }
+  .gmf-forge, .gmf-cv { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+
+  /* a mark lands: a soft ring runs out over the board; the gems flash red (X) or white (O) */
+  .gmf-ring { position: absolute; border-radius: 50%; opacity: 0;
+    box-shadow: 0 0 0 1.5px rgba(255, 112, 122, .72), 0 0 14px 3px rgba(255, 30, 50, .5), inset 0 0 16px 3px rgba(255, 30, 50, .32); }
+  .gmf-ring.o { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .66), 0 0 14px 3px rgba(255, 255, 255, .26), inset 0 0 16px 3px rgba(255, 255, 255, .16); }
+  .gmf-gf { position: absolute; left: calc(var(--gs) * -.95); top: calc(var(--gs) * -.95); width: calc(var(--gs) * 1.9); height: calc(var(--gs) * 1.9); border-radius: 50%; opacity: 0; pointer-events: none;
+    background: radial-gradient(circle, #fff 0, rgba(255, 130, 140, .9) 14%, rgba(255, 30, 50, .45) 34%, rgba(255, 0, 30, 0) 64%); }
+  .gmf-gf.o { background: radial-gradient(circle, #fff 0, rgba(255, 255, 255, .85) 16%, rgba(225, 228, 255, .32) 36%, rgba(255, 255, 255, 0) 64%); }
+
+  /* whose turn: a soft light sweeps across the board (X from the left in red, O from the right in white) */
+  .gmf-sw { position: absolute; left: 0; top: -12%; width: 70%; height: 124%; opacity: 0;
+    background: linear-gradient(90deg, rgba(255, 40, 60, 0), rgba(255, 46, 66, .07) 28%, rgba(255, 100, 112, .2) 50%, rgba(255, 46, 66, .07) 72%, rgba(255, 40, 60, 0)); }
+  .gmf-sw.o { background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .05) 28%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .05) 72%, rgba(255, 255, 255, 0)); }
+
+  /* a draw: a silver shine crosses the board and the frame's metal */
+  .gmf-sil { position: absolute; left: 0; top: -20%; width: 46%; height: 140%; opacity: 0;
+    background: linear-gradient(90deg, rgba(225, 225, 236, 0), rgba(225, 225, 236, .1) 30%, rgba(246, 246, 252, .42) 50%, rgba(225, 225, 236, .1) 70%, rgba(225, 225, 236, 0)); }
+  .gmf-silf { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none;
+    background: linear-gradient(105deg, rgba(255, 255, 255, 0) 42%, rgba(234, 234, 246, .95) 50%, rgba(255, 255, 255, 0) 58%) 100% 0 / 300% 100% no-repeat;
+    -webkit-mask: url("assets/game-frame.png") 0 0 / 100% 100% no-repeat; mask: url("assets/game-frame.png") 0 0 / 100% 100% no-repeat; }
+
+  /* a win: light rays turn behind the board (red with thin gold ones; white for O) */
+  .gmf-rays { position: absolute; border-radius: 50%; opacity: 0;
+    background: repeating-conic-gradient(rgba(255, 46, 60, 0) 0deg, rgba(255, 60, 72, .34) 4.5deg, rgba(255, 46, 60, 0) 9deg, rgba(255, 46, 60, 0) 22.5deg);
+    -webkit-mask: radial-gradient(closest-side, #000 30%, rgba(0, 0, 0, .5) 62%, transparent); mask: radial-gradient(closest-side, #000 30%, rgba(0, 0, 0, .5) 62%, transparent); }
+  .gmf-rays::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%;
+    background: repeating-conic-gradient(from 11.25deg, rgba(255, 196, 90, 0) 0deg, rgba(255, 214, 120, .28) 1.6deg, rgba(255, 196, 90, 0) 3.2deg, rgba(255, 196, 90, 0) 22.5deg); }
+  .gmf-rays.o { background: repeating-conic-gradient(rgba(255, 255, 255, 0) 0deg, rgba(255, 255, 255, .22) 4.5deg, rgba(255, 255, 255, 0) 9deg, rgba(255, 255, 255, 0) 22.5deg); }
+  .gmf-rays.o::after { background: repeating-conic-gradient(from 11.25deg, rgba(255, 60, 80, 0) 0deg, rgba(255, 70, 90, .3) 1.6deg, rgba(255, 60, 80, 0) 3.2deg, rgba(255, 60, 80, 0) 22.5deg); }
+  /* the slam: a ring of light and a flash where the title lands */
+  .gmf-shock { position: absolute; border-radius: 50%; opacity: 0;
+    box-shadow: 0 0 0 2px rgba(255, 226, 226, .9), 0 0 18px 5px rgba(255, 40, 60, .75), inset 0 0 18px 5px rgba(255, 40, 60, .5); }
+  .gmf-shock.o { box-shadow: 0 0 0 2px rgba(255, 255, 255, .9), 0 0 18px 5px rgba(255, 255, 255, .45), inset 0 0 18px 5px rgba(255, 255, 255, .3); }
+  .gmf-boom { position: absolute; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(255, 255, 255, .95), rgba(255, 120, 120, .5) 38%, rgba(255, 30, 50, 0)); }
+  .gmf-boom.o { background: radial-gradient(closest-side, rgba(255, 255, 255, .95), rgba(235, 235, 255, .45) 38%, rgba(255, 255, 255, 0)); }
+  /* a defeat: the screen's edges pulse red like a heartbeat */
+  .gmf-vig { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0;
+    background: radial-gradient(130% 95% at 50% 50%, rgba(110, 0, 12, 0) 50%, rgba(150, 0, 18, .42) 76%, rgba(205, 0, 28, .8) 100%);
+    box-shadow: inset 0 0 70px 18px rgba(255, 8, 36, .42); }
+
+  /* the title: a big word on a dark band across the middle of the board (the script sets its place and size) */
+  .gmf-ttl { position: absolute; display: flex; align-items: center; justify-content: center; font-family: "Hero Name", "Montserrat", var(--text-font), sans-serif; }
+  .gmf-band { position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(90deg, rgba(8, 0, 2, 0), rgba(8, 0, 2, .74) 18%, rgba(8, 0, 2, .74) 82%, rgba(8, 0, 2, 0)); }
+  .gmf-ln { position: absolute; left: 5%; width: 90%; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, rgba(255, 40, 60, 0), rgba(255, 64, 82, .9) 24%, #fff 50%, rgba(255, 64, 82, .9) 76%, rgba(255, 40, 60, 0));
+    box-shadow: 0 0 10px 1px rgba(255, 30, 50, .8); }
+  .gmf-ln.t { top: 0; } .gmf-ln.b { bottom: 0; }
+  .gmf-w { position: relative; display: block; margin-right: -.08em; font-size: 1em; font-style: italic; font-weight: 800; line-height: 1; letter-spacing: .08em; white-space: nowrap; }
+  .gmf-w::before, .gmf-w > span { display: block; padding: .08em .14em; }
+  .gmf-w::before { content: attr(data-t); position: absolute; top: 0; left: 0; color: transparent;   /* a red rim and glow behind the letters */
+    -webkit-text-stroke: .1em rgba(255, 36, 56, .95); text-shadow: 0 0 .22em rgba(255, 30, 50, .95), 0 0 .6em rgba(255, 0, 40, .55); }
+  .gmf-w > span { position: relative; color: transparent; -webkit-background-clip: text; background-clip: text;
+    background-image: linear-gradient(180deg, #fff 22%, #ffe6b8 52%, #ffbc55 78%, #ff8a2c); }      /* VICTORY: white into gold */
+  .gmf-ttl.wx .gmf-w > span { background-image: linear-gradient(180deg, #fff 22%, #ffd0d5 50%, #ff6274 78%, #ff2e46); }
+  .gmf-ttl.wo .gmf-w > span { background-image: linear-gradient(180deg, #fff 25%, #eeeef6 52%, #b9b9cc 80%, #8e8ea4); }
+  .gmf-ttl.wo .gmf-w::before { -webkit-text-stroke-color: rgba(36, 8, 14, .92); text-shadow: 0 0 .22em rgba(255, 255, 255, .8), 0 0 .6em rgba(255, 70, 90, .45); }
+  .gmf-ttl.wo .gmf-ln, .gmf-ttl.draw .gmf-ln { background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(236, 236, 246, .85) 24%, #fff 50%, rgba(236, 236, 246, .85) 76%, rgba(255, 255, 255, 0)); box-shadow: 0 0 10px 1px rgba(255, 255, 255, .5); }
+  .gmf-ttl.lose .gmf-w > span { background-image: linear-gradient(180deg, #ff9aa4 10%, #ff3b52 42%, #b3001d 72%, #5e000e); }
+  .gmf-ttl.lose .gmf-w::before { -webkit-text-stroke-color: rgba(20, 0, 4, .95); text-shadow: 0 0 .2em rgba(255, 20, 40, .9), 0 0 .7em rgba(200, 0, 24, .7); }
+  .gmf-ttl.lose .gmf-band { background: linear-gradient(90deg, rgba(4, 0, 1, 0), rgba(4, 0, 1, .8) 18%, rgba(4, 0, 1, .8) 82%, rgba(4, 0, 1, 0)); }
+  .gmf-ttl.lose .gmf-ln { background: linear-gradient(90deg, rgba(180, 0, 20, 0), rgba(220, 10, 34, .95) 30%, #ff5a6a 50%, rgba(220, 10, 34, .95) 70%, rgba(180, 0, 20, 0)); }
+  .gmf-ttl.draw .gmf-w > span { background-image: linear-gradient(100deg, #a9a9bb 0%, #e9e9f2 30%, #fff 42%, #d4d4e0 54%, #9a9aae 78%, #cfcfdc 100%); background-size: 260% 100%; background-position: 100% 0; }
+  .gmf-ttl.draw .gmf-w::before { -webkit-text-stroke-color: rgba(30, 26, 34, .92); text-shadow: 0 0 .2em rgba(255, 255, 255, .55), 0 0 .6em rgba(200, 200, 230, .35); }
+
+  /* lighter settings: no embers ("Floating particles" off), and on the lightest effects no rays or lightning either */
+  .nofx .gmf-cv, .ultra .gmf-cv, .ultra .gmf-rays, .ultra .gmf-forge { display: none; }
 
   /* ---------- 0. opening intro (everything here only moves with transform / opacity, so it stays smooth) ---------- */
   #intro { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; background: #000; overflow: hidden; cursor: pointer;
@@ -2019,6 +2414,10 @@ const CONFIG = {
 <symbol id="i-users-fill" viewBox="0 0 24 24"><circle cx="9" cy="7.6" r="4.1"/><path d="M1.6 20.8c0-4 3.3-7 7.4-7s7.4 3 7.4 7c0 .5-.4.8-.8.8H2.4c-.5 0-.8-.3-.8-.8z"/><path d="M15.3 3.9a3.9 3.9 0 0 1 0 7.5 5.6 5.6 0 0 0 0-7.5z"/><path d="M16.9 13.9c3.2.5 5.5 3.1 5.5 6.6 0 .6-.4 1-.9 1h-3.6c.1-.3.1-.5.1-.8 0-2.7-.4-4.9-1.1-6.8z"/></symbol>
 <symbol id="i-ring" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.6"/></symbol>
 <symbol id="i-crown2" viewBox="0 0 24 24"><path d="M4.2 8.6 8.3 13l3.7-6.3 3.7 6.3 4.1-4.4-1.5 9.6H5.7z"/><circle cx="3.6" cy="7.4" r="1.3"/><circle cx="12" cy="5" r="1.3"/><circle cx="20.4" cy="7.4" r="1.3"/><path d="M6 20.6h12"/></symbol>
+<symbol id="i-undo-2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
+<symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol>
+<symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></symbol>
+<symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
 </svg>
 
   <!-- 0. OPENING INTRO (the logo is built from three layers; tap anywhere to skip) -->
@@ -2368,6 +2767,14 @@ const CONFIG = {
             <button class="gm-mode rip on" data-mode="ai" role="radio" aria-checked="true"><svg class="ic fill"><use href="#i-user-fill"/></svg><span>Player vs AI</span></button>
             <button class="gm-mode rip" data-mode="pvp" role="radio" aria-checked="false"><svg class="ic fill"><use href="#i-users-fill"/></svg><span>Player vs Player</span></button>
           </div>
+          <!-- the AI's level (only in Player vs AI): the glowing thumb slides to the chosen one -->
+          <div class="gm-diff" id="gmDiff" role="radiogroup" aria-label="AI level">
+            <i class="gm-diff-th" aria-hidden="true"></i>
+            <button class="gm-dif rip" data-diff="easy" role="radio" aria-checked="false">Easy</button>
+            <button class="gm-dif rip on" data-diff="normal" role="radio" aria-checked="true">Normal</button>
+            <button class="gm-dif rip" data-diff="hard" role="radio" aria-checked="false">Hard</button>
+            <button class="gm-dif rip" data-diff="unbeatable" role="radio" aria-checked="false">Unbeatable</button>
+          </div>
           <div class="gm-msgrow"><div class="gm-msg" id="gmMsg" role="status" aria-live="polite"><i class="gm-msg-glow"></i><i class="gm-msg-body"></i><span class="gm-msg-t" id="gmMsgT">Your turn</span></div></div>
           <div class="gm-board" id="gmBoard">
             <i class="gm-halo"></i>
@@ -2391,7 +2798,12 @@ const CONFIG = {
             </div>
           </div>
           <i class="gm-gap"></i>
-          <button class="gm-reset rip" id="gmReset"><svg class="ic"><use href="#i-refresh"/></svg><span>Reset Game</span></button>
+          <!-- Undo · Reset Game · Hint (the badge counts the hints left this round) -->
+          <div class="gm-acts">
+            <span class="gm-actw"><button class="gm-act rip off" id="gmUndo" aria-label="Undo the last move" aria-disabled="true" aria-keyshortcuts="U"><svg class="ic"><use href="#i-undo-2"/></svg></button></span>
+            <button class="gm-reset rip" id="gmReset"><svg class="ic"><use href="#i-refresh"/></svg><span>Reset Game</span></button>
+            <span class="gm-actw"><button class="gm-act rip" id="gmHint" aria-label="Hint (3 left)" aria-keyshortcuts="H"><i class="gm-rays" aria-hidden="true"></i><svg class="ic"><use href="#i-lightbulb"/></svg></button><b class="gm-badge" id="gmHintN" aria-hidden="true">3</b></span>
+          </div>
           <i class="gm-gap"></i>
           <div class="gm-score">
             <div class="gm-sc sc-x"><svg class="ic"><use href="#i-x"/></svg><b id="gmNx">0</b><span id="gmLx">You</span></div>
@@ -2652,6 +3064,8 @@ const CONFIG = {
         else if (what === "draw") { tone("triangle", 523, 523, 0.01, 0.12, t, 0.28); tone("triangle", 392, 392, 0.01, 0.12, t + 0.16, 0.4); }
         else if (what === "chime") { tone("sine", 880, 880, 0.01, 0.2, t, 0.5); tone("sine", 1318.5, 1318.5, 0.01, 0.15, t + 0.1, 0.6); tone("sine", 1760, 1760, 0.01, 0.1, t + 0.2, 0.7); }
         else if (what === "lose") tone("triangle", 392, 262, 0.35, 0.2, t, 0.55);
+        else if (what === "hint") { tone("sine", 1318.5, 1318.5, 0.01, 0.07, t, 0.55); tone("sine", 1975.5, 1975.5, 0.01, 0.05, t + 0.13, 0.7); }   // the game's Hint: a soft "ding" (two gentle notes)
+        else if (what === "undo") { tone("sine", 640, 300, 0.2, 0.08, t, 0.26); crack(t, 0.03, 0.14, 2600, 500); }                                  // the game's Undo: a soft pull back
       }
     };
   })();
@@ -4908,48 +5322,130 @@ const CONFIG = {
   $("menuback").addEventListener("click", closeEq);
 
   /* =====================================================================
-     GAME: TIC TAC TOE  (Player vs an unbeatable AI, or two players on one phone; scores are saved)
+     GAME: TIC TAC TOE  (Player vs the AI at four levels, or two players on one phone; scores are saved)
      ===================================================================== */
+  /* ai:begin  (the rules and the AI: plain functions on a board array, so a test can run them on their own) */
   var GM_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+  var GM_PREF = [4, 0, 2, 6, 8, 1, 3, 5, 7];                // equally good moves: the centre first, then the corners, then the edges
+  var gmMemo = Object.create(null);                         // every position is worked out only once
+  function gmWinner(b) {
+    for (var i = 0; i < 8; i++) { var L = GM_LINES[i]; if (b[L[0]] && b[L[0]] === b[L[1]] && b[L[1]] === b[L[2]]) return { p: b[L[0]], line: L }; }
+    return b.indexOf("") < 0 ? { p: "" } : null;
+  }
+  function gmFree(b) { var r = []; for (var i = 0; i < 9; i++) if (!b[i]) r.push(i); return r; }
+  function gmOther(p) { return p === "X" ? "O" : "X"; }
+  function gmPick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function gmMinimax(b, p) {                                // O's view, p to play: + O wins, - X wins, 0 draw (a sooner result counts more)
+    var key = b.join(",") + p;
+    if (gmMemo[key] !== undefined) return gmMemo[key];
+    var w = gmWinner(b), best, i, s;
+    if (w) best = w.p ? (w.p === "O" ? 1 : -1) * (1 + gmFree(b).length) : 0;
+    else {
+      best = p === "O" ? -99 : 99;
+      for (i = 0; i < 9; i++) {
+        if (b[i]) continue;
+        b[i] = p; s = gmMinimax(b, gmOther(p)); b[i] = "";
+        if (p === "O" ? s > best : s < best) best = s;
+      }
+    }
+    gmMemo[key] = best;
+    return best;
+  }
+  function gmRank(b, p) {                                   // every free cell with how good it is for p, best first
+    return GM_PREF.filter(function (i) { return !b[i]; }).map(function (i, k) {
+      b[i] = p; var s = gmMinimax(b, gmOther(p)); b[i] = "";
+      return { i: i, s: p === "O" ? s : -s, k: k };
+    }).sort(function (m, n) { return n.s - m.s || m.k - n.k; });
+  }
+  function gmBest(b, p, any) {                              // p's best move (any: one of the equally good ones at random, so games differ)
+    var r = gmRank(b, p); if (!r.length) return -1;
+    var top = r.filter(function (m) { return m.s === r[0].s; });
+    return (any ? gmPick(top) : top[0]).i;
+  }
+  function gmWinsAt(b, p) {                                 // the cells where p would complete a line now
+    return gmFree(b).filter(function (i) { b[i] = p; var w = gmWinner(b); b[i] = ""; return !!w && w.p === p; });
+  }
+  function gmAiMove(b, d) {                                 // O's move on board b at level d ("easy" | "normal" | "hard" | "unbeatable")
+    b = b.slice();
+    var win = gmWinsAt(b, "O"), block = gmWinsAt(b, "X"), r, weak, best = -99, at = -1;
+    if (d === "unbeatable") return gmBest(b, "O", true);    // perfect play: it never loses
+    if (d === "easy") {                                     // takes a win or blocks only sometimes, otherwise plays anywhere
+      if (win.length && Math.random() < .5) return gmPick(win);
+      if (block.length && Math.random() < .35) return gmPick(block);
+      return gmPick(gmFree(b));
+    }
+    if (win.length) return gmPick(win);                     // Normal and Hard never miss a win or a block
+    if (block.length) return gmPick(block);
+    if (d === "hard") {                                     // perfect play, but about 1 move in 8 a small slip (the best of the weaker moves)
+      r = gmRank(b, "O"); weak = r.filter(function (m) { return m.s < r[0].s; });
+      if (weak.length && Math.random() < 1 / 8) return gmPick(weak.filter(function (m) { return m.s === weak[0].s; })).i;
+      return gmPick(r.filter(function (m) { return m.s === r[0].s; })).i;
+    }
+    gmFree(b).forEach(function (i) {                        // Normal: no look-ahead, so a fork beats it: the centre, the corners, lines it can still win
+      var s = (i === 4 ? 3 : i % 2 ? 1 : 2) + Math.random() * 1.5;
+      GM_LINES.forEach(function (L) {
+        if (L.indexOf(i) < 0 || b[L[0]] === "X" || b[L[1]] === "X" || b[L[2]] === "X") return;
+        s += b[L[0]] === "O" || b[L[1]] === "O" || b[L[2]] === "O" ? 2 : .5;   // an open line (one that makes two in a row counts more)
+      });
+      if (s > best) { best = s; at = i; }
+    });
+    return at;
+  }
+  function gmForks(b, p) {                                  // the cells where p would make two threats at once (a fork)
+    return gmFree(b).filter(function (i) { b[i] = p; var n = gmWinsAt(b, p).length; b[i] = ""; return n > 1; });
+  }
+  function gmLinesAt(b, i, p, n) {                          // the lines through cell i with n of p's marks and none of the other player's
+    return GM_LINES.filter(function (L) {
+      if (L.indexOf(i) < 0) return false;
+      for (var j = 0, k = 0; j < 3; j++) { if (L[j] === i) continue; if (b[L[j]] === p) k++; else if (b[L[j]]) return false; }
+      return k === n;
+    });
+  }
+  var GM_WHY = {                                            // a hint's reason: the short one (the message, the bubble) and one line on why (# = the other player)
+    win: ["Win here!", "Three in a row"], block: ["Block # here!", "# has two in a row"], fork: ["Make a fork!", "Two ways to win at once"],
+    stop: ["Stop their fork", "They could make two threats"], center: ["Take the center", "It touches 4 lines"],
+    corner: ["Take a corner", "Corners make forks"], side: ["Take a side", "Keeps it a draw"]
+  };
+  function gmHintFor(b, p) {                                // the best cell for p, why, and what shows it: lines and marks on the board
+    b = b.slice();
+    var q = gmOther(p), r = gmRank(b, p), win = gmWinsAt(b, p), block, fork, theirs, i, f, h;
+    var top = function (cells) { for (var k = 0; k < r.length; k++) if (cells.indexOf(r[k].i) > -1) return r[k].i; return cells[0]; };
+    if (!r.length) return null;
+    if (win.length) { i = top(win); h = { kind: "win", lines: gmLinesAt(b, i, p, 2).slice(0, 1) }; }                     // your line of three
+    else if ((block = gmWinsAt(b, q)).length) { i = top(block); h = { kind: "block", lines: gmLinesAt(b, i, q, 2).slice(0, 1) }; }   // their two in a row
+    else if ((fork = gmForks(b, p)).length) { i = top(fork); h = { kind: "fork", lines: gmLinesAt(b, i, p, 1).slice(0, 2) }; }      // your two new threats
+    else if ((theirs = gmForks(b, q)).length) {             // the best move stops it: their fork cell, or a threat they must answer
+      i = r[0].i; f = theirs.filter(function (k) { return k === i || gmLinesAt(b, k, q, 1).some(function (L) { return L.indexOf(i) > -1; }); })[0];   // (one whose lines your move cuts)
+      if (f === undefined) f = top(theirs);
+      h = { kind: "stop", at: f, lines: gmLinesAt(b, f, q, 1).slice(0, 2) };
+    }
+    else { i = r[0].i; h = { kind: i === 4 ? "center" : i % 2 ? "side" : "corner", lines: [] }; }
+    h.i = i; h.p = p;
+    h.marks = h.kind === "win" || h.kind === "block" ? h.lines[0].filter(function (k) { return k !== i; }) : [];
+    h.why = GM_WHY[h.kind][0].replace("#", q); h.sub = GM_WHY[h.kind][1].replace("#", q);
+    return h;
+  }
+  /* ai:end */
+
   var GM_ICON = { X: "x", O: "ring" };
+  var GM_DIFFS = ["easy", "normal", "hard", "unbeatable"], GM_DIFF_NAME = { easy: "Easy", normal: "Normal", hard: "Hard", unbeatable: "Unbeatable" };
+  var GM_HINTS = 3;                                         // hints per round
   var gm = {
     el: $("s-game"), wrap: qa("#s-game .gm")[0], board: $("gmBoard"), grid: $("gmGrid"), cells: qa("#gmGrid .gm-cell"),
-    msg: $("gmMsg"), msgT: $("gmMsgT"), beam: $("gmBeam"),
+    msg: $("gmMsg"), msgT: $("gmMsgT"), beam: $("gmBeam"), diffEl: $("gmDiff"), undoB: $("gmUndo"), hintB: $("gmHint"), hintN: $("gmHintN"),
     b: ["", "", "", "", "", "", "", "", ""], turn: "X", over: false, busy: false, lock: false, timer: 0, inT: 0, seq: 0,
-    mode: store.get("ttt:mode", "ai") === "pvp" ? "pvp" : "ai", shown: [0, 0, 0], opened: false
+    mode: store.get("ttt:mode", "ai") === "pvp" ? "pvp" : "ai", shown: [0, 0, 0], opened: false,
+    diff: GM_DIFFS.indexOf(store.get("ttt:diff", "")) > -1 ? store.get("ttt:diff", "") : "normal",   // the AI's level (new players: Normal)
+    hist: [], first: "X", round: 0, hints: GM_HINTS, undos: 0, line: null, hintI: -1, hintT: 0, hintNow: null, hintCell: -1, badgeN: String(GM_HINTS), sayT: 0, kf: 4
   };
   // other parts of the game (stats, effects) listen to these: gmOn.end.push(function (d) { ... })
-  var gmOn = { open: [], leave: [], place: [], turn: [], end: [], reset: [], mode: [] };
+  var gmOn = { open: [], leave: [], place: [], turn: [], end: [], reset: [], mode: [], diff: [], undo: [], hint: [] };
   function gmEmit(n, d) { (gmOn[n] || []).forEach(function (f) { try { f(d || {}); } catch (e) { setTimeout(function () { throw e; }); } }); }
   function gmScores(m) {                                    // [X wins, O wins, draws] for a mode ("ai": You, AI, Draws)
     var s = String(store.get("ttt:" + m, "")).split(",");
     return [0, 1, 2].map(function (k) { var n = parseInt(s[k], 10); return n > 0 ? n : 0; });
   }
   function gmCellName(i) { return "Row " + (Math.floor(i / 3) + 1) + ", column " + (i % 3 + 1); }
-  function gmWinner(b) {
-    for (var i = 0; i < 8; i++) { var L = GM_LINES[i]; if (b[L[0]] && b[L[0]] === b[L[1]] && b[L[1]] === b[L[2]]) return { p: b[L[0]], line: L }; }
-    return b.indexOf("") < 0 ? { p: "" } : null;
-  }
-  function gmMinimax(b, p, depth) {                         // O's view: + O wins, - X wins, 0 draw (a sooner result counts more)
-    var w = gmWinner(b);
-    if (w) return w.p === "O" ? 10 - depth : w.p === "X" ? depth - 10 : 0;
-    var best = p === "O" ? -99 : 99;
-    for (var i = 0; i < 9; i++) {
-      if (b[i]) continue;
-      b[i] = p; var s = gmMinimax(b, p === "O" ? "X" : "O", depth + 1); b[i] = "";
-      if (p === "O" ? s > best : s < best) best = s;
-    }
-    return best;
-  }
-  function gmAiMove() {                                     // the best move for O (one of the best, picked at random, so games differ)
-    var best = -99, moves = [], b = gm.b.slice();
-    for (var i = 0; i < 9; i++) {
-      if (b[i]) continue;
-      b[i] = "O"; var s = gmMinimax(b, "X", 1); b[i] = "";
-      if (s > best) { best = s; moves = [i]; } else if (s === best) moves.push(i);
-    }
-    return moves[Math.floor(Math.random() * moves.length)];
-  }
 
   function gmBuzz(k) {                                      // a short buzz (the app asks the phone; a browser vibrates only right after a tap)
     try {
@@ -4965,7 +5461,7 @@ const CONFIG = {
     clearTimeout(gm.idleT); gm.grid.classList.remove("idle");
     if (on && !reduced) gm.idleT = setTimeout(function () { if (!gm.over && !gm.busy && curScreen === "game") gm.grid.classList.add("idle"); }, 5000);
   }
-  function gmNope(c) {                                      // a cell you can't play: it shakes its head
+  function gmNope(c) {                                      // a cell (or button) you can't use right now: it shakes its head
     if (reduced) return;
     c.classList.remove("nope"); void c.offsetWidth; c.classList.add("nope"); gmBuzz("soft");
     clearTimeout(c._nope); c._nope = setTimeout(function () { c.classList.remove("nope"); }, 380);
@@ -4974,13 +5470,19 @@ const CONFIG = {
   // the small glowing message over the board
   function gmSay(text, o) {
     o = o || {};
-    gm.msgT.innerHTML = (o.icon ? ic(o.icon, o.cls) : "") + "<span>" + esc(text) + "</span>" + (o.dots ? '<span class="gm-dots" aria-hidden="true"><i></i><i></i><i></i></span>' : "");
+    clearTimeout(gm.sayT); gm.sayT = 0;
+    gm.msgT.innerHTML = (o.icon ? ic(o.icon, o.cls) : "") + "<span>" + esc(text) + "</span>" + (o.sr ? '<span class="sr">: ' + esc(o.sr) + "</span>" : "") +   // (o.sr: more words, for screen readers only)
+                        (o.dots ? '<span class="gm-dots" aria-hidden="true"><i></i><i></i><i></i></span>' : "");
     gm.msg.classList.remove("gm-pop"); void gm.msg.offsetWidth; gm.msg.classList.add("gm-pop");
   }
-  function gmTurnSay() {
-    gmTurnUI(); gmIdle(true); gmEmit("turn", { turn: gm.turn, ai: false });
+  function gmTurnMsg() {                                    // "Your turn" (vs the AI) · "X starts", then "O's turn", ... (two players)
     if (gm.mode === "ai") gmSay("Your turn");
-    else gmSay(gm.turn + "'s turn", { icon: GM_ICON[gm.turn], cls: gm.turn === "X" ? "mx" : "mo" });
+    else gmSay(gm.turn + (gm.hist.length ? "'s turn" : " starts"), { icon: GM_ICON[gm.turn], cls: gm.turn === "X" ? "mx" : "mo" });
+  }
+  function gmTurnSay(later) {                               // later: the message on show stays a moment longer, then the turn is said
+    gmTurnUI(); gmIdle(true); gmActsUI(); gmEmit("turn", { turn: gm.turn, ai: false });
+    if (!later) { gmTurnMsg(); return; }
+    clearTimeout(gm.sayT); gm.sayT = setTimeout(gmTurnMsg, 1100);
   }
   function gmEndSay() {
     var w = gmWinner(gm.b); if (!w) return;
@@ -4990,8 +5492,10 @@ const CONFIG = {
   // put an X or O in a cell: X = the lightning draws itself in two strokes then sparks burst; O = the ring draws round with a flash
   function gmPlace(i, p) {
     var c = gm.cells[i], mk = c.querySelector(".gm-mk"), X = p === "X", n = ++gm.seq;
-    gm.b[i] = p;
-    c.classList.add(X ? "x" : "o"); c.setAttribute("aria-label", gmCellName(i) + ", " + p);
+    gmHintOff(); gm.hintCell = -1;
+    if (mk._out) { mk._out.cancel(); mk._out = null; }      // (a mark taken back a moment ago was still fading out here)
+    gm.b[i] = p; gm.hist.push({ i: i, p: p });
+    c.classList.remove("x", "o"); c.classList.add(X ? "x" : "o"); c.setAttribute("aria-label", gmCellName(i) + ", " + p);
     mk.className = "gm-mk " + (X ? "x v" + Math.floor(Math.random() * 3) : "o v" + (3 + Math.floor(Math.random() * 3))) + (reduced ? "" : " draw");
     mk.setAttribute("data-n", n); mk.style.setProperty("--fl", (-Math.random() * 3.4).toFixed(2) + "s");
     mk.innerHTML = X ? '<i class="s1x"></i><i class="s2x"></i>' : '<i class="s1o"></i>';
@@ -5002,42 +5506,63 @@ const CONFIG = {
     setTimeout(function () { if (mine()) gmSpark(c, X); }, X ? 430 : 330);
     setTimeout(function () { if (mine()) mk.classList.remove("draw"); }, X ? 700 : 1100);
   }
-  function gmSpark(c, X, big) {
-    if (!visible(c) || isUltra()) return;
+  function gmFlashAt(c, X, cls) {                           // a round flash at a cell's centre (red, white for O, or cls); it goes again after a second
     var a = document.createElement("i"), f = document.createElement("i"), w = c.offsetWidth;
     a.className = "gm-anchor"; a.style.left = (c.offsetLeft + w / 2) + "px"; a.style.top = (c.offsetTop + c.offsetHeight / 2) + "px";
-    f.className = "gm-flash" + (X ? "" : " o"); f.style.cssText = "width:" + w + "px;height:" + w + "px;left:" + (-w / 2) + "px;top:" + (-w / 2) + "px";
+    f.className = "gm-flash" + (cls ? " " + cls : X ? "" : " o"); f.style.cssText = "width:" + w + "px;height:" + w + "px;left:" + (-w / 2) + "px;top:" + (-w / 2) + "px";
     a.appendChild(f); gm.grid.appendChild(a);
-    if (f.animate) f.animate([{ transform: "scale(.25)", opacity: 1 }, { transform: "scale(1.25)", opacity: 0 }], { duration: 460, easing: "cubic-bezier(.2,.7,.3,1)" });
-    if (X || big) burst(a, big ? 18 : 14, w * (big ? .3 : .2), w * (big ? .72 : .5), X ? "" : "white");
-    setTimeout(function () { a.remove(); }, 950);
+    setTimeout(function () { a.remove(); }, 1000);
+    return { a: a, f: f, w: w };
+  }
+  function gmSpark(c, X, big) {
+    if (!visible(c) || isUltra()) return;
+    var q = gmFlashAt(c, X), w = q.w;
+    if (q.f.animate) q.f.animate([{ transform: "scale(.25)", opacity: 1 }, { transform: "scale(1.25)", opacity: 0 }], { duration: 460, easing: "cubic-bezier(.2,.7,.3,1)" });
+    if (X || big) burst(q.a, big ? 18 : 14, w * (big ? .3 : .2), w * (big ? .72 : .5), X ? "" : "white");
+  }
+  function gmUnplace(i, k) {                                // a mark is taken back: it swells, then spins down into a small flash that pulls in
+    var c = gm.cells[i], mk = c.querySelector(".gm-mk"), X = gm.b[i] === "X", d = k * 110;
+    gm.b[i] = ""; c.classList.remove("x", "o", "win", "tap"); c.setAttribute("aria-label", gmCellName(i) + ", empty");
+    mk.removeAttribute("data-n");                           // (its sparks and its drawing stop here)
+    var clear = function () { if (mk._out) mk._out.cancel(); mk._out = null; mk.className = "gm-mk"; mk.innerHTML = ""; };
+    if (reduced || !mk.animate) { clear(); return; }
+    mk._out = mk.animate([{ transform: "none", opacity: 1 }, { transform: "scale(1.1)", opacity: 1, offset: .3 }, { transform: "scale(.15) rotate(" + (X ? -50 : 50) + "deg)", opacity: 0 }],
+                         { duration: 380, delay: d, easing: "cubic-bezier(.5,0,.75,0)", fill: "both" });
+    mk._out.onfinish = clear;
+    setTimeout(function () {
+      if (!visible(c) || isUltra()) return;
+      var q = gmFlashAt(c, X);
+      if (q.f.animate) q.f.animate([{ transform: "scale(1)", opacity: 0 }, { transform: "scale(.5)", opacity: .7, offset: .5 }, { transform: "scale(.1)", opacity: 0 }], { duration: 360, easing: "ease-in" });
+    }, d + 150);
   }
 
   function gmTap(i) {
     if (gm.lock) return;
     if (gm.over) { gmReset(); return; }                     // the round is over: a tap starts the next one
     if (gm.busy || gm.b[i] || (gm.mode === "ai" && gm.turn !== "X")) { gmNope(gm.cells[i]); return; }
+    var good = i === gm.hintCell;                           // (the cell the hint showed)
     gmIdle(false); sfx.play("tick", true); gmBuzz("tap");
     gmPlace(i, gm.turn);
+    if (good) gmGood(gm.cells[i]);
     if (gmEnd()) return;
-    gm.turn = gm.turn === "X" ? "O" : "X";
+    gm.turn = gmOther(gm.turn);
     if (gm.mode === "ai") gmAi(); else gmTurnSay();
   }
   function gmAi() {                                         // the AI thinks for about 0.6 s, then plays O
-    gm.busy = true; gmTurnUI(); gmIdle(false); gmSay("AI is thinking", { dots: true }); gmEmit("turn", { turn: "O", ai: true });
+    gm.busy = true; gmTurnUI(); gmIdle(false); gmActsUI(); gmSay("AI is thinking", { dots: true }); gmEmit("turn", { turn: "O", ai: true });
     gm.grid.classList.add("think");                         // the AI "scans" the empty cells while it thinks
     clearTimeout(gm.timer);
     gm.timer = setTimeout(function () {
       gm.timer = 0; gm.busy = false; gm.grid.classList.remove("think");
       if (gm.over || gm.turn !== "O") return;
-      gmPlace(gmAiMove(), "O");
+      gmPlace(gmAiMove(gm.b, gm.diff), "O");
       if (gmEnd()) return;
       gm.turn = "X"; gmTurnSay();
     }, 600);
   }
   function gmEnd() {                                        // win or draw? save the score and show it
     var w = gmWinner(gm.b); if (!w) return false;
-    gm.over = true; gm.busy = false; gm.el.classList.add("gm-ended"); gmTurnUI(); gmIdle(false);
+    gm.over = true; gm.busy = false; gm.line = w.line || null; gm.el.classList.add("gm-ended"); gmTurnUI(); gmIdle(false); gmActsUI();
     var s = gmScores(gm.mode); s[w.p === "X" ? 0 : w.p === "O" ? 1 : 2]++; store.set("ttt:" + gm.mode, s.join(","));
     if (w.p) {
       w.line.forEach(function (i) { gm.cells[i].classList.add("win"); });
@@ -5054,16 +5579,20 @@ const CONFIG = {
     }
     gmEndSay();
     setTimeout(function () { gmShowScores(true); }, reduced ? 0 : w.p ? 650 : 950);   // a draw: the cells flash grey first, then the number bumps
-    gmEmit("end", { p: w.p, line: w.line || null, mode: gm.mode, lost: !!(w.p && gm.mode === "ai" && w.p === "O"), scores: s, board: gm.b.slice() });
+    gmEmit("end", { p: w.p, line: w.line || null, mode: gm.mode, lost: !!(w.p && gm.mode === "ai" && w.p === "O"), scores: s, board: gm.b.slice(),
+                    diff: gm.diff, first: gm.first, round: gm.round, moves: gm.hist.length, hints: GM_HINTS - gm.hints, undos: gm.undos });
     return true;
   }
-  function gmBeam(L) {                                      // the red beam slides through the winning line
+  function gmBeamAt(L) {                                    // put the beam on a line (in the grid's pixels)
     var a = gm.cells[L[0]], b = gm.cells[L[2]];
     var x0 = a.offsetLeft + a.offsetWidth / 2, y0 = a.offsetTop + a.offsetHeight / 2, x1 = b.offsetLeft + b.offsetWidth / 2, y1 = b.offsetTop + b.offsetHeight / 2;
     var dx = x1 - x0, dy = y1 - y0, len = Math.sqrt(dx * dx + dy * dy) || 1, ext = a.offsetWidth * .38, bm = gm.beam;
     bm.style.left = (x0 - dx / len * ext).toFixed(1) + "px"; bm.style.top = (y0 - dy / len * ext).toFixed(1) + "px"; bm.style.width = (len + ext * 2).toFixed(1) + "px";
     bm.style.setProperty("--a", (Math.atan2(dy, dx) * 180 / Math.PI).toFixed(2) + "deg");
-    bm.classList.remove("on"); void bm.offsetWidth; bm.classList.add("on");
+  }
+  function gmBeam(L) {                                      // the red beam slides through the winning line
+    gmBeamAt(L);
+    var bm = gm.beam; bm.classList.remove("on"); void bm.offsetWidth; bm.classList.add("on");
   }
   function gmCellsIn(delay) {                               // the cells pop in from the centre, in a wave
     var g = gm.grid;
@@ -5072,22 +5601,26 @@ const CONFIG = {
     g.classList.add("in");
     clearTimeout(gm.inT); gm.inT = setTimeout(function () { g.classList.remove("in"); }, (delay || 0) * 1000 + 800);
   }
-  function gmReset(now) {                                   // cells shrink and fade, the board clears, then they pop back in
-    clearTimeout(gm.timer); gm.timer = 0; gm.busy = false;
+  function gmReset(now, say) {                              // cells shrink and fade, the board clears, then they pop back in (say: a message to show meanwhile)
+    if (gm.lock) return;                                    // a reset is already on its way
+    clearTimeout(gm.timer); gm.timer = 0; gm.busy = false; gmHintOff();
     var go = function () {
-      gm.lock = false; gm.over = false; gm.turn = "X";
-      gm.b = ["", "", "", "", "", "", "", "", ""];
+      gm.lock = false; gm.over = false; gm.line = null; gm.round++;
+      gm.first = gm.mode === "pvp" && gm.round % 2 === 0 ? "O" : "X"; gm.turn = gm.first;   // two players take turns to start: X in round 1, O in round 2, ...
+      gm.b = ["", "", "", "", "", "", "", "", ""]; gm.hist = []; gm.hints = GM_HINTS; gm.undos = 0; gm.hintCell = -1;
       gm.el.classList.remove("gm-ended"); gm.grid.classList.remove("over", "drawn", "out", "think"); gm.beam.classList.remove("on"); gm.board.classList.remove("flash", "shake");
       gm.cells.forEach(function (c, i) {
         c.classList.remove("x", "o", "win", "tap"); c.setAttribute("aria-label", gmCellName(i) + ", empty");
-        var mk = c.querySelector(".gm-mk"); mk.className = "gm-mk"; mk.innerHTML = ""; mk.removeAttribute("data-n");
+        var mk = c.querySelector(".gm-mk"); if (mk._out) { mk._out.cancel(); mk._out = null; }
+        mk.className = "gm-mk"; mk.innerHTML = ""; mk.removeAttribute("data-n");
       });
-      gmEmit("reset");
-      gmTurnSay();
+      gmEmit("reset", { mode: gm.mode, first: gm.first, round: gm.round, diff: gm.diff });
+      gmTurnSay(!!say);
       if (now !== true) gmCellsIn(0);
     };
+    if (say) gmSay(say.text, say);
     if (now === true || reduced) { go(); return; }
-    gm.lock = true;
+    gm.lock = true; gmActsUI();
     gm.grid.classList.remove("in"); gm.grid.classList.add("out");
     setTimeout(go, 430);
   }
@@ -5105,12 +5638,188 @@ const CONFIG = {
       e.classList.remove("bump"); void e.offsetWidth; e.classList.add("bump");
     });
   }
-  function gmSetMode(m) {
-    gm.mode = m; store.set("ttt:mode", m);
+  function gmFlip(change) {                                 // the column changes (the level row comes or goes): the rest glides to its new place
+    var kids = Array.prototype.filter.call(gm.wrap.children, function (e) { return !e.classList.contains("gm-gap"); });
+    var y0 = kids.map(function (e) { return e.offsetParent ? e.getBoundingClientRect().top : null; });
+    change();
+    kids.forEach(function (e, k) {
+      if (!e.offsetParent || !e.animate) return;
+      if (y0[k] === null) { e.animate([{ opacity: 0, transform: "translateY(-8px) scale(.94)" }, { opacity: 1, transform: "none" }], { duration: 380, delay: 80, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" }); return; }
+      var dy = y0[k] - e.getBoundingClientRect().top;
+      if (Math.abs(dy) > .5) e.animate([{ transform: "translateY(" + dy.toFixed(1) + "px)" }, { transform: "none" }], { duration: 420, easing: "cubic-bezier(.2,.8,.2,1)" });
+    });
+  }
+  function gmDiffShow(on, anim) {                           // the level row is there only in Player vs AI (it fades out / drops in, the rest glides)
+    var e = gm.diffEl; if (e.classList.contains("hide") === !on) return;
+    if (!anim || reduced || !e.animate || curScreen !== "game") { e.classList.toggle("hide", !on); return; }
+    if (on) { gmFlip(function () { e.classList.remove("hide"); }); return; }
+    var a = e.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.94)" }], { duration: 170, easing: "ease-in", fill: "forwards" });
+    a.onfinish = function () { if (gm.mode !== "ai") gmFlip(function () { e.classList.add("hide"); }); a.cancel(); };
+  }
+  function gmSetMode(m, anim) {
+    gm.mode = m; gm.round = 0; store.set("ttt:mode", m);
     qa("#s-game .gm-mode").forEach(function (b) { var on = b.dataset.mode === m; b.classList.toggle("on", on); b.setAttribute("aria-checked", on); });
     $("gmLx").textContent = m === "ai" ? "You" : "Player X"; $("gmLo").textContent = m === "ai" ? "AI" : "Player O";
+    gmDiffShow(m === "ai", anim);
     gmEmit("mode", { mode: m });
   }
+  function gmSetDiff(d, quiet) {                            // the AI's level: the glowing thumb slides to it
+    gm.diff = d;
+    qa("#gmDiff .gm-dif").forEach(function (b) { var on = b.dataset.diff === d; b.classList.toggle("on", on); b.setAttribute("aria-checked", on); });
+    gm.diffEl.style.setProperty("--k", GM_DIFFS.indexOf(d));
+    if (quiet) return;
+    store.set("ttt:diff", d);
+    var th = gm.diffEl.querySelector(".gm-diff-th"); th.classList.remove("go"); void th.offsetWidth; th.classList.add("go");
+    gmEmit("diff", { diff: d });
+  }
+
+  /* ---------- Undo and Hint (the two round buttons beside Reset Game) ---------- */
+  function gmCanUndo() { return !gm.over && !gm.lock && gm.hist.length > 0; }
+  function gmCanHint() { return !gm.over && !gm.lock && !gm.busy && gm.hints > 0 && gm.b.indexOf("") > -1 && (gm.mode === "pvp" || gm.turn === "X"); }
+  function gmActsUI() {                                     // they light up only when they can be used; the badge counts the hints left
+    var u = gmCanUndo(), h = gmCanHint(), n = String(gm.hints);
+    gm.undoB.classList.toggle("off", !u); gm.undoB.setAttribute("aria-disabled", !u);
+    gm.hintB.classList.toggle("off", !h); gm.hintB.setAttribute("aria-disabled", !h); gm.hintB.setAttribute("aria-label", "Hint (" + n + " left)");
+    gm.hintN.classList.toggle("none", !gm.hints);
+    if (gm.badgeN !== n) { gm.badgeN = n; gmFlipBadge(); }
+  }
+  function gmFlipBadge() {                                  // the badge's number flips down to the new one
+    var e = gm.hintN;
+    if (reduced || !e.animate) { e.textContent = gm.badgeN; return; }
+    if (e._flip) e._flip.cancel();
+    e._flip = e.animate([{ transform: "perspective(50px) rotateX(0deg)" }, { transform: "perspective(50px) rotateX(-90deg)" }], { duration: 130, easing: "ease-in" });
+    e._flip.onfinish = function () {
+      e.textContent = gm.badgeN;
+      e._flip = e.animate([{ transform: "perspective(50px) rotateX(90deg)" }, { transform: "perspective(50px) rotateX(0deg)" }], { duration: 220, easing: "cubic-bezier(.3,1.5,.5,1)" });
+    };
+  }
+  function gmUndo() {                                       // take back the last move (vs the AI: your move and its reply)
+    if (!gmCanUndo()) { gmNope(gm.undoB); return; }
+    clearTimeout(gm.timer); gm.timer = 0; gm.busy = false; gm.grid.classList.remove("think"); gmHintOff(); gmIdle(false);
+    var took = [], m; gm.hintCell = -1;
+    do { m = gm.hist.pop(); took.push(m); gmUnplace(m.i, took.length - 1); } while (gm.mode === "ai" && m.p !== "X" && gm.hist.length);
+    gm.turn = m.p; gm.undos++;
+    sfx.play("undo", true); gmBuzz("soft");
+    gmEmit("undo", { moves: took, turn: gm.turn, mode: gm.mode, board: gm.b.slice() });
+    gmTurnSay();
+  }
+
+  /* ---------- Hint: the best cell for whoever plays now, and why: shown on the board (spotlight, lines, glows),
+     in a small glass bubble beside the cell and in the message; it stays 3 s or until you tap ---------- */
+  function gmHint() {
+    if (gm.lock) return;
+    if (gm.hintNow) { gmHintOn(gm.hintNow); gmBulb(); sfx.play("hint", true); return; }   // pressed again while it shows: it shows again (no hint is used)
+    if (gm.over || gm.busy || (gm.mode === "ai" && gm.turn !== "X")) { gmNope(gm.hintB); gmSayBack("Hints work on your turn"); return; }
+    if (!gm.hints) { gmNope(gm.hintB); gmSayBack("No hints left this round"); return; }
+    var h = gmHintFor(gm.b, gm.turn); if (!h) return;
+    gm.hints--; gmActsUI(); gmIdle(true);
+    gmHintOn(h); gmBulb();
+    gmSay(h.why, { icon: "lightbulb", cls: "hl", sr: h.sub });
+    sfx.play("hint", true); gmBuzz("soft");
+    gmEmit("hint", { i: h.i, p: h.p, why: h.why, kind: h.kind, left: gm.hints });
+  }
+  function gmBulb() {                                       // the bulb lights up with short rays
+    if (reduced) return;
+    var b = gm.hintB; b.classList.remove("lit"); void b.offsetWidth; b.classList.add("lit");
+    clearTimeout(b._lit); b._lit = setTimeout(function () { b.classList.remove("lit"); }, 750);
+  }
+  function gmSayBack(text) {                                // a short note, then the message says again what it said
+    gmSay(text, { icon: "lightbulb", cls: "hl" });
+    gm.sayT = setTimeout(function () { if (gm.over) gmEndSay(); else if (gm.busy) gmSay("AI is thinking", { dots: true }); else gmTurnMsg(); }, 1700);
+  }
+  function gmCellBox(i) { var c = gm.cells[i]; return { x: c.offsetLeft, y: c.offsetTop, w: c.offsetWidth, h: c.offsetHeight }; }   // a cell in the grid's pixels
+  function gmHlLine(box, a, b, kind, e0, e1, delay) {       // a line from cell a's centre to cell b's (e0 / e1: cells longer, or shorter, at each end)
+    var A = gmCellBox(a), B = gmCellBox(b), x0 = A.x + A.w / 2, y0 = A.y + A.h / 2, dx = B.x + B.w / 2 - x0, dy = B.y + B.h / 2 - y0;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / len, uy = dy / len, l = document.createElement("i");
+    e0 *= A.w; e1 *= A.w;
+    l.className = "gm-hl-ln " + kind; l.innerHTML = "<i></i>";
+    l.style.cssText = "left:" + (x0 - ux * e0).toFixed(1) + "px;top:" + (y0 - uy * e0).toFixed(1) + "px;width:" + (len + e0 + e1).toFixed(1) + "px;--a:" +
+                      (Math.atan2(dy, dx) * 180 / Math.PI).toFixed(2) + "deg;--d:" + (delay || 0) + "s";
+    box.appendChild(l);
+  }
+  function gmHlMark(box, i, kind) {                         // a glow round a mark: a warning (theirs) or gold (yours); the mark beats
+    var A = gmCellBox(i), m = document.createElement("i");
+    m.className = "gm-hl-mk " + kind; m.style.cssText = "left:" + A.x + "px;top:" + A.y + "px;width:" + A.w + "px;height:" + A.h + "px";
+    box.appendChild(m); gm.cells[i].classList.add(kind);
+  }
+  function gmTipAt(t, i, keep) {                            // the bubble goes beside cell i, inside the board, off the cells that explain the hint
+    var gx = gm.grid.offsetLeft, gy = gm.grid.offsetTop, W = gm.board.offsetWidth, H = gm.board.offsetHeight, gap = 11, pad = 4;
+    var cell = function (k) { var B = gmCellBox(k); B.x += gx; B.y += gy; return B; }, C = cell(i), cx = C.x + C.w / 2, cy = C.y + C.h / 2;
+    var place = function () {                               // the best side for the bubble's size now: it may cover other marks a little, never the cell
+      var w = t.offsetWidth, h = t.offsetHeight, best = null;    // or the explaining cells unless it must, and never leaves the board
+      var cost = function (x, y) {
+        var s = (Math.max(0, pad - x) + Math.max(0, x + w + pad - W) + Math.max(0, pad - y) + Math.max(0, y + h + pad - H)) * 1e6;
+        gm.cells.forEach(function (c, k) {
+          var B = cell(k), o = Math.max(0, Math.min(x + w, B.x + B.w) - Math.max(x, B.x)) * Math.max(0, Math.min(y + h, B.y + B.h) - Math.max(y, B.y));
+          s += o * (k === i ? 40 : keep.indexOf(k) > -1 ? 20 : gm.b[k] ? 1 : 0);
+        });
+        return s;
+      };
+      var fx = function (x) { return Math.max(pad, Math.min(W - w - pad, x)); }, fy = function (y) { return Math.max(pad, Math.min(H - h - pad, y)); };
+      [["up", fx(cx - w / 2), C.y - gap - h], ["down", fx(cx - w / 2), C.y + C.h + gap], ["right", C.x + C.w + gap, fy(cy - h / 2)], ["left", C.x - gap - w, fy(cy - h / 2)]].forEach(function (o) {
+        var s = cost(o[1], o[2]); if (!best || s < best.s - .5) best = { side: o[0], x: o[1], y: o[2], s: s, w: w, h: h };
+      });
+      return best;
+    };
+    var best = place(), room = Math.floor(Math.max(C.x - gap - pad, W - pad - C.x - C.w - gap)), b2;
+    if (best.s >= 20 && room >= 84 && room < best.w) {      // no clean spot: try it smaller beside the cell (smaller text, then two short lines)
+      t.style.setProperty("--tf", Math.max(.82, room / best.w).toFixed(3));
+      if (t.offsetWidth > room) { t.classList.add("narrow"); t.style.maxWidth = room + "px"; }
+      b2 = place();
+      if (b2.s < best.s) best = b2; else { t.classList.remove("narrow"); t.style.maxWidth = ""; t.style.removeProperty("--tf"); }
+    }
+    var ax = Math.max(14, Math.min(best.w - 14, cx - best.x)), ay = Math.max(12, Math.min(best.h - 12, cy - best.y));   // the pointer aims at the cell's centre
+    t.classList.add(best.side); t.style.left = best.x.toFixed(1) + "px"; t.style.top = best.y.toFixed(1) + "px";
+    t.style.setProperty("--ax", ax.toFixed(1) + "px"); t.style.setProperty("--ay", ay.toFixed(1) + "px");
+    t.style.transformOrigin = best.side === "up" ? ax + "px 100%" : best.side === "down" ? ax + "px 0" : best.side === "left" ? "100% " + ay + "px" : "0 " + ay + "px";
+  }
+  function gmHintOn(h) {                                    // show a hint (h from gmHintFor)
+    gmHintOff();
+    var i = h.i, c = gm.cells[i], X = h.p === "X", box = document.createElement("div"), g = document.createElement("i"), t = document.createElement("div"), keep = [];
+    gm.hintI = i; gm.hintNow = h; gm.hintCell = i;
+    if (!isUltra()) {                                       // the rest of the board dims; lines and glows show why
+      box.className = "gm-hl";
+      h.lines.forEach(function (L, k) {
+        keep = keep.concat(L);
+        if (h.kind !== "block") gmHlLine(box, L[0], L[2], h.kind === "win" ? "win" : h.kind === "fork" ? "fork" : "stop", .3, .3, .12 + k * .14);
+        else if (L[1] === i) { gmHlLine(box, L[0], i, "warn", .3, -.26, .1); gmHlLine(box, L[2], i, "warn", .3, -.26, .1); }   // their two marks: a dashed warning line runs into the cell
+        else gmHlLine(box, L[0] === i ? L[2] : L[0], i, "warn", .3, -.26, .1);
+      });
+      h.marks.forEach(function (k) { gmHlMark(box, k, h.kind === "win" ? "gold" : "warn"); });
+      gm.grid.appendChild(box);
+      keep.forEach(function (k) { gm.cells[k].classList.add("lit"); });
+      gm.grid.classList.add("dim");
+    }
+    g.className = "gm-hint " + (X ? "x" : "o");             // the cell glows and beats, a ring pings out of it, a ghost of your mark draws itself in it
+    g.innerHTML = '<i class="gm-ghost ' + (X ? "x" : "o") + (reduced ? "" : " draw") + '">' + (X ? '<i class="s1x"></i><i class="s2x"></i>' : '<i class="s1o"></i>') + "</i>";
+    c.appendChild(g); c.classList.add("hinted", "lit");
+    t.className = "gm-tip";                                 // the bubble: the reason and why
+    t.innerHTML = "<b>" + esc(h.why) + "</b><span>" + esc(h.sub) + "</span>";
+    gm.board.appendChild(t); gmTipAt(t, i, keep.filter(function (k) { return k !== i; }));
+    gm.hintT = setTimeout(function () { gmHintOff(true); }, 3000);
+  }
+  function gmHintOff(soft, quiet) {                         // the hint goes: at once, or (soft) it fades out and the message says whose turn it is (unless quiet)
+    clearTimeout(gm.hintT); gm.hintT = 0;
+    if (gm.hintI < 0) return;
+    var els = qa("#gmGrid .gm-hl, #gmGrid .gm-hint, #gmBoard .gm-tip");
+    gm.hintI = -1; gm.hintNow = null; gm.grid.classList.remove("dim");
+    gm.cells.forEach(function (c) { c.classList.remove("hinted", "lit", "warn", "gold"); });
+    if (soft && !reduced) { els.forEach(function (e) { e.classList.add("bye"); }); setTimeout(function () { els.forEach(function (e) { e.remove(); }); }, 340); }
+    else els.forEach(function (e) { e.remove(); });
+    if (soft && !quiet) gmTurnMsg();
+  }
+  function gmGood(c) {                                      // you played the hinted cell: a small golden "good move" sparkle
+    if (reduced || !visible(c) || isUltra()) return;
+    var q = gmFlashAt(c, true, "gold");
+    if (q.f.animate) q.f.animate([{ transform: "scale(.3)", opacity: 1 }, { transform: "scale(1.15)", opacity: 0 }], { duration: 560, easing: "cubic-bezier(.2,.7,.3,1)" });
+    burst(q.a, 12, q.w * .2, q.w * .58, "gold");
+  }
+  document.addEventListener("pointerdown", function (e) {   // a tap anywhere sends the hint away (it fades out; a tap on a cell still plays there)
+    if (gm.hintI < 0 || !e.target.closest || e.target.closest("#gmHint")) return;
+    var c = e.target.closest("#gmGrid .gm-cell");
+    gmHintOff(true, !!c && !gm.b[c.dataset.i]);             // (a move is coming: the message will change anyway)
+  }, true);
+
   function gmStats() {                                      // wins, losses, draws and the win rate
     var a = gmScores("ai"), p = gmScores("pvp"), n = a[0] + a[1] + a[2], np = p[0] + p[1] + p[2], rate = n ? Math.round(a[0] / n * 100) : 0, C2 = 2 * Math.PI * 42;
     var games = function (k) { return k + (k === 1 ? " game" : " games"); };
@@ -5139,7 +5848,8 @@ const CONFIG = {
     var cs = getComputedStyle(gm.wrap), used = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + 4;
     Array.prototype.forEach.call(gm.wrap.children, function (e) {
       if (e.classList.contains("gm-gap")) return;
-      var c = getComputedStyle(e); used += parseFloat(c.marginTop) + parseFloat(c.marginBottom) + (e === gm.board ? 0 : e.offsetHeight);
+      var c = getComputedStyle(e), h = e === gm.board ? 0 : e === gm.diffEl ? parseFloat(c.height) || 0 : e.offsetHeight;   // (the level row's room is kept in both modes, so the board keeps its size)
+      used += parseFloat(c.marginTop) + parseFloat(c.marginBottom) + h;
     });
     var bw = Math.max(250, Math.min(W - 4, (H - used) / .96429, 600));
     s.style.setProperty("--bw", bw.toFixed(1) + "px");
@@ -5153,12 +5863,15 @@ const CONFIG = {
     if (gm.over) gmEndSay();
     else if (gm.mode === "ai" && gm.turn === "O") gmAi();   // the AI was thinking when the screen closed
     else gmTurnSay();
+    gmActsUI();
     gmEmit("open");
   }
-  function gmLeave() { clearTimeout(gm.timer); gm.timer = 0; gm.busy = false; gm.grid.classList.remove("think"); gmIdle(false); gmEmit("leave"); }
+  function gmLeave() { clearTimeout(gm.timer); gm.timer = 0; gm.busy = false; clearTimeout(gm.sayT); gm.grid.classList.remove("think"); gmIdle(false); gmHintOff(); gmEmit("leave"); }
 
   gm.cells.forEach(function (c, i) {
+    c.tabIndex = i === gm.kf ? 0 : -1;                      // the keyboard: one cell is in the Tab order, the arrows move round the board
     c.addEventListener("click", function () { gmTap(i); });
+    c.addEventListener("focus", function () { gm.kf = i; gm.cells.forEach(function (o, k) { o.tabIndex = k === i ? 0 : -1; }); });
     c.addEventListener("pointerdown", function () {         // the "+" pulses where you touch
       if (gm.b[i]) return;
       c.classList.add("tap"); clearTimeout(c._tap); c._tap = setTimeout(function () { c.classList.remove("tap"); }, 1600);
@@ -5167,14 +5880,42 @@ const CONFIG = {
   qa("#s-game .gm-mode").forEach(function (b) {
     b.addEventListener("click", function () {
       if (b.dataset.mode === gm.mode || gm.lock) return;
-      gmSetMode(b.dataset.mode); gm.shown = [0, 0, 0]; gmShowScores(true); gmReset();
+      gmSetMode(b.dataset.mode, true); gm.shown = [0, 0, 0]; gmShowScores(true); gmReset();
+    });
+  });
+  qa("#gmDiff .gm-dif").forEach(function (b) {
+    b.addEventListener("click", function () {                // a new level starts a new round
+      var d = b.dataset.diff;
+      if (d === gm.diff || gm.lock || gm.mode !== "ai") return;
+      gmSetDiff(d); sfx.play("whoosh2", true); gmBuzz("tap");
+      gmReset(false, { text: GM_DIFF_NAME[d] + " mode", icon: "bot" });
     });
   });
   $("gmReset").addEventListener("click", function () {
     var b = $("gmReset"); b.classList.remove("spin"); void b.offsetWidth; b.classList.add("spin");
     sfx.play("whoosh2", true); gmReset();
   });
+  gm.undoB.addEventListener("click", gmUndo);
+  gm.hintB.addEventListener("click", gmHint);
   $("gmStatsBtn").addEventListener("click", function () { (gm.statsSheet || gmStats)(); });   // a richer stats page can take over (gm.statsSheet)
+  gmSetDiff(gm.diff, true); gm.diffEl.classList.toggle("hide", gm.mode !== "ai");
+  function gmFocus(i) { gm.cells[i].focus({ preventScroll: true }); }
+  document.addEventListener("keydown", function (e) {      // desktop: keys 1-9 play a cell, the arrows move round the board (Enter / Space play), U undo, H hint
+    if (curScreen !== "game" || !entered || sheetOpen || menuOpen || playerOpen || termOpen || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+    var t = e.target, k = e.key, at = gm.cells.indexOf(t), d;
+    if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+    if (/^[1-9]$/.test(k)) {
+      if (e.repeat) return;
+      var i = /^Numpad/.test(e.code || "") ? [6, 7, 8, 3, 4, 5, 0, 1, 2][k - 1] : k - 1;   // the number pad is laid out like the board (7 8 9 on top)
+      e.preventDefault(); gmFocus(i); gmTap(i); return;
+    }
+    if (k === "u" || k === "U" || k === "h" || k === "H") { if (!e.repeat) (k.toLowerCase() === "u" ? gmUndo : gmHint)(); return; }
+    d = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] }[k];
+    if (!d) return;
+    e.preventDefault();
+    if (at < 0) { gmFocus(gm.kf); return; }                 // the first press lands on the board
+    gmFocus((Math.floor(at / 3) + d[0] + 3) % 3 * 3 + (at % 3 + d[1] + 3) % 3);
+  });
 
   /* ---------- the game's background: red smoke on both sides, red light streaks, rising sparks (one canvas) ---------- */
   var gfx = { cv: $("gmFx"), g: null, W: 0, H: 0, k: 1, run: false, last: 0, smoke: [], streaks: [], sparks: [], spr: null };
@@ -5271,8 +6012,585 @@ const CONFIG = {
     });
   }
   function gfxStop() { if (!gfx.run) return; gfx.run = false; if (gfx.g) { gfx.g.setTransform(1, 0, 0, 1, 0, 0); gfx.g.clearRect(0, 0, gfx.W, gfx.H); } }
-  window.addEventListener("resize", function () { if (curScreen !== "game") return; gmFit(); if (gfx.run) gfxSize(); });
+  window.addEventListener("resize", function () { if (curScreen !== "game") return; gmFit(); if (gm.over && gm.line) gmBeamAt(gm.line); if (gfx.run) gfxSize(); });   // (the beam follows the board when it changes size)
   document.addEventListener("visibilitychange", gfxUpdate);
+
+  /* =====================================================================
+     GAME: PROGRESS + STATS  (the Game stats page, win streaks, achievements, the streak flame on the score card)
+     Kept in store "ttt:meta" (JSON); the score card's own totals stay in "ttt:ai" / "ttt:pvp".
+     ===================================================================== */
+  var GMX_LV = ["easy", "normal", "hard", "unbeatable"];
+  var GMX_LVN = { easy: "Easy", normal: "Normal", hard: "Hard", unbeatable: "Unbeatable" };
+  var GMX_MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  // the achievements: "how" is on the stats page, "did" in the popup; at(s) = how far you are (s comes from gmxCalc)
+  var GMX_ACH = [
+    { id: "first", icon: "trophy", name: "First Blood", how: "Beat the AI for the first time", did: "you beat the AI", goal: 1, at: function (s) { return s.ai[0]; } },
+    { id: "hat", icon: "flame", name: "Hat Trick", how: "Win 3 in a row against the AI", did: "3 wins in a row", goal: 3, at: function (s) { return s.m.wb; } },
+    { id: "master", icon: "award", name: "Tac Master", how: "Win 10 games against the AI", did: "10 wins against the AI", goal: 10, at: function (s) { return s.ai[0]; } },
+    { id: "hard", icon: "crown", name: "Hard Carry", how: "Beat the AI on Hard", did: "you beat Hard mode", goal: 1, at: function (s) { return s.lv.hard[0] + s.lv.unbeatable[0]; } },
+    { id: "wall", icon: "shield-check", name: "Iron Wall", how: "Draw against Unbeatable", did: "Unbeatable couldn't beat you", goal: 1, at: function (s) { return s.lv.unbeatable[2]; } },
+    { id: "untouch", icon: "star", name: "Untouchable", how: "5 games in a row without losing to the AI", did: "5 games without a loss", goal: 5, at: function (s) { return s.m.ub; } },
+    { id: "speed", icon: "zap", name: "Speed Demon", how: "Win in just 3 moves", did: "a win in 3 moves", goal: 1, at: function (s) { return s.m.fw && s.m.fw <= 3 ? 1 : 0; } },
+    { id: "peace", icon: "handshake", name: "Peacemaker", how: "Draw 10 games", did: "10 draws", goal: 10, at: function (s) { return s.ai[2] + s.pv[2]; } },
+    { id: "grind", icon: "gamepad-2", name: "Grinder", how: "Play 25 games", did: "25 games played", goal: 25, at: function (s) { return s.n; } },
+    { id: "week", icon: "calendar", name: "Week Warrior", how: "Play on 7 different days", did: "7 days of Tic Tac Toe", goal: 7, at: function (s) { return s.m.dn; } },
+    { id: "ring", icon: "ring", name: "Ring Leader", how: "Win as O in Player vs Player", did: "O took the round", goal: 1, at: function (s) { return s.pv[1]; } },
+    { id: "couch", icon: "users", name: "Couch Rivals", how: "Play 10 Player vs Player games", did: "10 games with a friend", goal: 10, at: function (s) { return s.np; } }
+  ];
+  var gmx = { m: null, q: [], qT: 0, wait: 0, fT: 0, oT: 0 };
+
+  function gmxNum(v) { v = parseInt(v, 10); return v > 0 ? v : 0; }
+  function gmxDay() { var t = new Date(); return t.getFullYear() + "-" + (t.getMonth() + 1) + "-" + t.getDate(); }
+  function gmxLoad() {                                      // the saved progress (read once, then kept in memory: works even if storage is blocked)
+    if (gmx.m) return gmx.m;
+    var j = null;
+    try { j = JSON.parse(store.get("ttt:meta", "") || "null"); } catch (e) { j = null; }
+    if (!j || typeof j !== "object") j = {};
+    var m = { d: {}, ws: gmxNum(j.ws), wb: gmxNum(j.wb), us: gmxNum(j.us), ub: gmxNum(j.ub),   // win streak + best, unbeaten streak + best (vs the AI)
+              xs: j.xs === "X" || j.xs === "O" ? j.xs : "", xn: gmxNum(j.xn),                   // Player vs Player: who won the last rounds in a row, how many
+              h: String(j.h || "").replace(/[^WLDxod]/g, "").slice(-12),                        // the last results, newest last (W L D vs the AI, x o d PvP)
+              dn: gmxNum(j.dn), dl: String(j.dl || ""), fw: gmxNum(j.fw), a: {} };              // days played, the last one, the fewest moves in a win, achievements
+    GMX_LV.forEach(function (k) { var r = (j.d && j.d[k]) || []; m.d[k] = [gmxNum(r[0]), gmxNum(r[1]), gmxNum(r[2])]; });
+    if (j.a && typeof j.a === "object") Object.keys(j.a).forEach(function (k) { m.a[k] = gmxNum(j.a[k]) || 1; });
+    if (!m.xs) m.xn = 0;
+    gmx.m = m; return m;
+  }
+  function gmxSave() { store.set("ttt:meta", JSON.stringify(gmx.m)); }
+  function gmxLevel(d) { var k = (d && d.diff) || gm.diff; return GMX_LV.indexOf(k) > -1 ? k : "unbeatable"; }
+  function gmxCalc() {                                      // everything the stats page and the achievements need
+    var m = gmxLoad(), ai = gmScores("ai"), pv = gmScores("pvp"), lv = {}, sum = [0, 0, 0], i;
+    GMX_LV.forEach(function (k) { lv[k] = m.d[k].slice(); for (var j = 0; j < 3; j++) sum[j] += lv[k][j]; });
+    for (i = 0; i < 3; i++) lv.unbeatable[i] += Math.max(0, ai[i] - sum[i]);   // games from before the levels: the AI could not be beaten then
+    var na = ai[0] + ai[1] + ai[2], np = pv[0] + pv[1] + pv[2];
+    return { m: m, ai: ai, pv: pv, lv: lv, na: na, np: np, n: na + np, rate: na ? Math.round(ai[0] / na * 100) : 0 };
+  }
+
+  // a round is over: count it once (an undo can only happen before the end, so it never changes these numbers)
+  gmOn.end.push(function (d) {
+    var m = gmxLoad(), p = d.p === "X" || d.p === "O" ? d.p : "", won = false, day = gmxDay();
+    if (d.mode === "pvp") {
+      if (p) { m.xn = m.xs === p ? m.xn + 1 : 1; m.xs = p; } else { m.xs = ""; m.xn = 0; }
+      m.h += p ? p.toLowerCase() : "d"; won = !!p;
+    } else {
+      var r = p === "X" ? 0 : p === "O" ? 1 : 2;              // 0 you won, 1 the AI won, 2 a draw
+      m.d[gmxLevel(d)][r]++;
+      m.ws = r ? 0 : m.ws + 1; m.us = r === 1 ? 0 : m.us + 1;
+      m.wb = Math.max(m.wb, m.ws); m.ub = Math.max(m.ub, m.us);
+      m.h += "WLD".charAt(r); won = r === 0;
+    }
+    if (won && d.board) {                                   // how many marks the winner needed
+      var mv = d.board.filter(function (c) { return c === p; }).length;
+      if (mv && (!m.fw || mv < m.fw)) m.fw = mv;
+    }
+    m.h = m.h.slice(-12);
+    if (m.dl !== day) { m.dl = day; m.dn++; }
+    gmxSave();
+    gmxCheck(reduced ? 600 : 1500);                         // new achievements pop up after the round's own show
+    clearTimeout(gmx.fT); gmx.fT = setTimeout(function () { gmxFlame(false); }, reduced ? 0 : p ? 700 : 1000);   // together with the score's bump
+  });
+  gmOn.mode.push(function () { clearTimeout(gmx.fT); gmx.fT = setTimeout(function () { gmxFlame(true); }, 0); });   // (on the first open "open" comes right after and waits longer)
+  gmOn.open.push(function () {
+    clearTimeout(gmx.fT); gmx.fT = setTimeout(function () { gmxFlame(true); }, reduced ? 0 : 900);           // after the score card slid in
+    clearTimeout(gmx.oT); gmx.oT = setTimeout(function () { if (curScreen === "game") gmxCheck(0); }, reduced ? 0 : 1300);   // older games can be enough for one
+  });
+
+  /* ---------- achievements: unlock what is reached, one glowing popup at a time ---------- */
+  function gmxCheck(wait) {
+    var s = gmxCalc(), fresh = GMX_ACH.filter(function (a) { return !s.m.a[a.id] && a.at(s) >= a.goal; });
+    if (!fresh.length) return;
+    fresh.forEach(function (a) { s.m.a[a.id] = Date.now(); gmx.q.push(a); });
+    gmxSave();
+    if (!gmx.qT) gmx.qT = setTimeout(gmxNext, wait || 0);
+  }
+  function gmxNext() {
+    gmx.qT = 0;
+    if (!gmx.q.length) return;
+    var other = qa("#toast .pop").some(function (e) { return !e.classList.contains("out"); });
+    if (paused || document.hidden || (other && gmx.wait < 10)) {                       // the app is away, or another popup is still up: wait for it
+      gmx.wait++; gmx.qT = setTimeout(gmxNext, paused || document.hidden ? 1200 : 600); return;
+    }
+    var a = gmx.q.shift(); gmx.wait = 0;
+    var k = a.more ? a.more.length : 0;                    // (a summary: "A, B and 2 more" fits the popup's two lines)
+    if (k) toast("Achievements unlocked!", k > 3 ? a.more.slice(0, 2).join(", ") + " and " + (k - 2) + "\u00a0more" : a.more.slice(0, -1).join(", ") + " and " + a.more[k - 1], { crown: true, hl: a.more[0] });
+    else toast("Achievement unlocked!", a.name + "\u2002·\u2002" + a.did, { crown: true, hl: a.name });   // (wide spaces: the gold name pops bigger for a moment)
+    if (gmx.q.length > 2) gmx.q = [{ more: gmx.q.map(function (x) { return x.name; }) }];   // a long list (older games): the rest in one popup
+    gmx.qT = setTimeout(gmxNext, 3700);                     // (a popup stays 3 s, then slides away)
+  }
+
+  /* ---------- the streak flame on the score card (You vs the AI, or Player X / Player O): 2 wins in a row or more ---------- */
+  function gmxFlame(quiet) {
+    var m = gmxLoad(), col = "", n = 0;
+    if (gm.mode === "pvp") { if (m.xn > 1) { col = m.xs === "X" ? "x" : "o"; n = m.xn; } }
+    else if (m.ws > 1) { col = "x"; n = m.ws; }
+    ["x", "o"].forEach(function (c) {
+      var sc = qa("#s-game .gm-sc.sc-" + c)[0]; if (!sc) return;
+      var f = sc.querySelector(".gmx-fire:not(.out)");
+      if (c !== col) { if (f) gmxBlow(f, quiet); return; }
+      var t = f && f.querySelector("em");
+      if (!f) {
+        f = document.createElement("i"); f.className = "gmx-fire";
+        f.innerHTML = '<i class="gmx-fl">' + ic("flame", "fill") + ic("flame", "fill core") + '</i><em></em><span class="sr"> wins in a row</span>';
+        sc.appendChild(f); t = f.querySelector("em");
+      } else if (t.textContent !== String(n) && !reduced) { f.classList.remove("up"); void f.offsetWidth; f.classList.add("up"); }
+      t.textContent = n;
+    });
+  }
+  function gmxBlow(f, quiet) {                              // the streak is over: the flame bursts into sparks and is gone
+    if (reduced) { f.remove(); return; }
+    if (quiet) { f.classList.add("out", "gone"); setTimeout(function () { f.remove(); }, 300); return; }
+    var a = document.createElement("i");
+    a.className = "gmx-pop"; a.style.left = (f.offsetLeft + f.offsetWidth / 2) + "px"; a.style.top = (f.offsetTop + f.offsetHeight / 2) + "px";
+    f.parentNode.appendChild(a); f.classList.add("out");
+    if (!isUltra()) burst(a, 12, 10, 30, "orange");
+    setTimeout(function () { f.remove(); a.remove(); }, 900);
+  }
+
+  /* ---------- the Game stats page (the stats button) ---------- */
+  function gmxStats() {
+    gmxCheck(500);                                          // (older games can already be enough for an achievement)
+    var s = gmxCalc(), m = s.m, CR = 2 * Math.PI * 52, cur = typeof gm.diff === "string" ? gm.diff : "", got = 0;
+    var games = function (k) { return k + (k === 1 ? " game" : " games"); };
+    var tile = function (k, icon, v, label) { return '<div class="gmx-t gmx-' + k + '">' + ic(icon) + "<b>" + v + "</b><span>" + label + "</span></div>"; };
+    var key = function (k, icon, label, v, hot) { return '<div class="gmx-k gmx-k-' + k + '">' + ic(icon, hot ? "hot" : "") + "<span>" + label + "</span><b>" + v + "</b></div>"; };
+    // one row per level (only Unbeatable while the game has no levels): W / L / D and a win-rate bar
+    var lvs = cur || GMX_LV.some(function (k) { return k !== "unbeatable" && m.d[k][0] + m.d[k][1] + m.d[k][2] > 0; }) ? GMX_LV : ["unbeatable"];
+    var rows = lvs.map(function (k, i) {
+      var r = s.lv[k], n = r[0] + r[1] + r[2], pc = n ? Math.round(r[0] / n * 100) : 0;
+      return '<div class="gmx-lv' + (n ? "" : " none") + (k === cur ? " cur" : "") + '" style="--i:' + i + '"><div class="gmx-lv1"><b>' + GMX_LVN[k] + "</b>" +
+        '<i class="gmx-pips p' + (GMX_LV.indexOf(k) + 1) + '"><i></i><i></i><i></i><i></i></i>' + (k === cur ? "<em>Now</em>" : "") +
+        "<span>" + (n ? "<strong>" + r[0] + "</strong> W · " + r[1] + " L · " + r[2] + " D" : "No games yet") + "</span></div>" +
+        '<div class="gmx-lv2"><i class="gmx-bar"><i style="--r:' + (pc / 100).toFixed(2) + '"></i></i><b>' + (n ? pc + "%" : "–") + "</b></div></div>";
+    }).join("");
+    // the last 12 results, newest first
+    var CH = { W: ["w", "W", "Win"], L: ["l", "L", "Loss"], D: ["d", "D", "Draw"], x: ["px", ic("x"), "X won"], o: ["po", ic("ring"), "O won"], d: ["pd", "D", "Draw"] };
+    var hist = m.h.split("").reverse(), chips = "", said = [];
+    for (var i = 0; i < 12; i++) {
+      var c = CH[hist[i]];
+      chips += c ? '<i class="gmx-c ' + c[0] + (i ? "" : " new") + '" style="--i:' + i + '">' + c[1] + "</i>" : '<i class="gmx-c e" style="--i:' + i + '"></i>';
+      if (c) said.push(c[2] + (/[xod]/.test(hist[i]) ? " (PvP)" : ""));
+    }
+    var ach = GMX_ACH.map(function (a, i) {
+      var v = Math.min(a.goal, a.at(s)), on = !!m.a[a.id], t = m.a[a.id], dt = t > 1e12 ? new Date(t) : null;
+      if (on) got++;
+      var foot = on ? "<small>" + (dt ? "Unlocked " + dt.getDate() + " " + GMX_MON[dt.getMonth()] : "Unlocked") + "</small>" :
+                 a.goal > 1 ? '<i class="gmx-ap"><i style="--r:' + (v / a.goal).toFixed(3) + '"></i></i><small>' + v + "/" + a.goal + "</small>" :
+                 "<small>" + (a.id === "speed" && m.fw ? "Best: " + m.fw + " moves" : "Locked") + "</small>";
+      return '<div class="gmx-a' + (on ? " on" : "") + '" style="--i:' + i + '"><i class="gmx-am">' + ic(a.icon) + "</i>" + ic(on ? "check" : "lock", "gmx-st") +
+        "<b>" + a.name + "</b><span>" + a.how + "</span>" + foot + "</div>";
+    }).join("");
+    var pvStreak = m.xn > 1 ? '<p class="gmx-sub">' + ic("flame", "fill") + "<span>Player " + m.xs + " has won " + m.xn + " games in a row</span></p>" : "";
+    var html = '<div class="gmx">' +
+      '<div class="gmx-hero"><div class="gmx-ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="tk" cx="60" cy="60" r="42.5"/><circle class="t" cx="60" cy="60" r="52"/>' +
+      '<circle class="v" cx="60" cy="60" r="52"/><circle class="c" cx="60" cy="60" r="52"/></svg>' +
+      '<div class="gmx-rt"><b class="gs-rate">' + (reduced ? s.rate : 0) + "%</b><span>Win rate</span><small>vs AI</small></div></div>" +
+      '<div class="gmx-keys">' + key("n", "gamepad-2", "Total games", fmtK(s.n)) + key("ws", "flame", "Win streak", m.ws, m.ws > 1) + key("wb", "trophy", "Best streak", m.wb) + key("us", "shield-check", "Unbeaten", m.us) + "</div></div>" +
+      '<h4 class="gmx-h">Player vs AI<em>' + games(s.na) + "</em></h4>" +
+      '<div class="gmx-tiles">' + tile("x", "x", s.ai[0], "Wins") + tile("o", "ring", s.ai[1], "Losses") + tile("d", "handshake", s.ai[2], "Draws") + "</div>" +
+      '<h4 class="gmx-h">' + (lvs.length > 1 ? "By difficulty" : "Difficulty") + '</h4><div class="gmx-lvs">' + rows + "</div>" +
+      '<h4 class="gmx-h">Last 12 games<em>newest first</em></h4>' +
+      '<div class="gmx-chips" role="img" aria-label="' + esc(said.length ? "Newest first: " + said.join(", ") : "No games yet") + '">' + chips + "</div>" +
+      '<h4 class="gmx-h">Player vs Player<em>' + games(s.np) + "</em></h4>" +
+      '<div class="gmx-tiles">' + tile("x", "x", s.pv[0], "X wins") + tile("o", "ring", s.pv[1], "O wins") + tile("d", "handshake", s.pv[2], "Draws") + "</div>" + pvStreak +
+      '<h4 class="gmx-h">Achievements<em>' + got + " / " + GMX_ACH.length + '</em></h4><div class="gmx-ach">' + ach + "</div>" +
+      '<button class="gmx-clear rip">' + ic("refresh") + "<span>Reset scores</span></button>" +
+      '<p class="gmx-note">Clears every score, streak and achievement.</p></div>';
+
+    openSheet("Game stats", html, function (body) {
+      $("sheet").classList.add("gmx-sheet");                // the sheet turns black-red glass (back to normal for any other page)
+      var box = body.querySelector(".gmx"), arcs = qa(".gmx-ring .v, .gmx-ring .c", body), rt = body.querySelector(".gs-rate");
+      var clr = body.querySelector(".gmx-clear"), lab = clr.querySelector("span"), armed = 0;
+      clr.addEventListener("click", function () {           // tap twice: the first tap only asks
+        if (!armed) {
+          armed = setTimeout(function () { armed = 0; clr.classList.remove("armed"); lab.textContent = "Reset scores"; }, 3000);
+          clr.classList.add("armed"); lab.textContent = "Tap again to reset"; return;
+        }
+        clearTimeout(armed); gmxReset();
+      });
+      arcs.forEach(function (a) { a.style.strokeDasharray = CR.toFixed(1); a.style.strokeDashoffset = CR.toFixed(1); if (!s.rate) a.style.opacity = "0"; });
+      var off = (CR * (1 - s.rate / 100)).toFixed(1);
+      if (reduced) { arcs.forEach(function (a) { a.style.strokeDashoffset = off; }); box.classList.add("go"); return; }
+      setTimeout(function () {                              // the ring fills, the bars grow, the number counts up
+        arcs.forEach(function (a) { a.style.transition = "stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1)"; a.style.strokeDashoffset = off; });
+        box.classList.add("go");
+        var t0 = 0;
+        requestAnimationFrame(function step(t) {
+          if (!t0) t0 = t; var q = Math.min(1, (t - t0) / 1000);
+          rt.textContent = Math.round(s.rate * (1 - Math.pow(1 - q, 3))) + "%";
+          if (q < 1) requestAnimationFrame(step);
+        });
+      }, 140);
+    });
+  }
+  function gmxReset() {                                     // "Reset scores": every score, streak and achievement goes back to 0
+    store.set("ttt:ai", "0,0,0"); store.set("ttt:pvp", "0,0,0");
+    try { localStorage.removeItem("bio:ttt:meta"); } catch (e) {}
+    gmx.m = null; gmx.q = []; clearTimeout(gmx.qT); gmx.qT = 0;
+    gmShowScores(true); gmxFlame(true); gmxStats();
+    toast("Scores reset", "Every game starts from 0 again.", { icon: "refresh" });
+  }
+  gm.statsSheet = gmxStats;
+  if (window.MutationObserver) {                            // another page in the sheet: the plain sheet look again
+    new MutationObserver(function () { if (!$("sheetBody").querySelector(".gmx")) $("sheet").classList.remove("gmx-sheet"); }).observe($("sheetBody"), { childList: true });
+  }
+
+  /* =====================================================================
+     GAME: EFFECTS  (they only listen to the game's events: a title slams onto the board at the end of a round, a ripple runs out
+     from every mark, the board tilts where you press, lightning forges the frame as the screen opens, a soft light sweeps in for each turn)
+     ===================================================================== */
+  var gmf = { back: null, front: null, inn: null, gems: [], cv: null, spr: null, edge: null, openAt: -1e9, end: { grp: [], els: [], an: [], t: [] } };
+  function gmfLvl() { return reduced ? 0 : isUltra() ? 1 : 2; }   // 0: titles only (a plain fade) · 1: lightest (titles, the red vignette) · 2: everything
+  function gmfLive() { return curScreen === "game" && !paused && !document.hidden; }
+  function gmfMk(cls, host, tag, before) { var e = document.createElement(tag || "i"); e.className = cls; if (host) host.insertBefore(e, before || null); return e; }
+  function gmfAn(e, kf, o) { return e && e.animate ? e.animate(kf, o) : null; }          // a Web Animation (none on very old browsers)
+  function gmfGone(e, a) { if (a) a.onfinish = function () { e.remove(); }; else e.remove(); }
+  function gmfAt(host, cls, x, y, w, h) {                   // an element centred on x, y
+    var e = gmfMk(cls, host);
+    e.style.cssText = "left:" + (x - w / 2).toFixed(1) + "px;top:" + (y - h / 2).toFixed(1) + "px;width:" + w.toFixed(1) + "px;height:" + h.toFixed(1) + "px";
+    return e;
+  }
+  function gmfInit() {                                      // the layers (made once): behind the board, in front of everything, over the dark board, a glow in each gem
+    if (gmf.back) return;
+    gmf.back = gmfMk("gmf-back", gm.el, "div", gm.wrap);
+    gmf.front = gmfMk("gmf-front", gm.el, "div");
+    gmf.inn = gmfMk("gmf-in", gm.board, "div");
+    [gmf.back, gmf.front, gmf.inn].forEach(function (e) { e.setAttribute("aria-hidden", "true"); });
+    gmf.gems = qa(".gm-gem", gm.board).map(function (g) { return gmfMk("gmf-gf", g, "b"); });
+  }
+  function gmfBox() {                                       // the board's place on the game screen (layout px: tilts and shakes don't count)
+    var b = gm.board;
+    return { x: gm.wrap.offsetLeft + b.offsetLeft, y: gm.wrap.offsetTop + b.offsetTop, w: b.offsetWidth, h: b.offsetHeight };
+  }
+
+  /* the one extra canvas: made when an effect needs it (lightning, embers), removed as soon as it is over */
+  function gmfCanvas(host, cls, before) {
+    gmfCanvasOff();
+    var cv = gmfMk(cls, host, "canvas", before), g = cv.getContext && cv.getContext("2d");
+    if (!g) { cv.remove(); return null; }
+    cv.setAttribute("aria-hidden", "true"); gmf.cv = cv;
+    return { cv: cv, g: g };
+  }
+  function gmfCanvasOff() { if (gmf.cv) { gmf.cv.remove(); gmf.cv = null; } }
+  function gmfSpr() {                                       // soft glowing dots (red, gold, white), drawn once
+    if (gmf.spr) return gmf.spr;
+    var glow = function (rgb) {
+      var c = document.createElement("canvas"); c.width = c.height = 32;
+      var x = c.getContext("2d"), gr = x.createRadialGradient(16, 16, 0, 16, 16, 16);
+      gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(.22, "rgba(" + rgb + ",.9)"); gr.addColorStop(.55, "rgba(" + rgb + ",.25)"); gr.addColorStop(1, "rgba(" + rgb + ",0)");
+      x.fillStyle = gr; x.fillRect(0, 0, 32, 32);
+      return c;
+    };
+    gmf.spr = { r: glow("255,40,60"), y: glow("255,186,64"), w: glow("226,230,255") };
+    return gmf.spr;
+  }
+
+  /* a mark lands: a soft ring runs out across the board, the other cells nudge away and settle (nearest first), the gems flash red (X) or white (O) */
+  function gmfPlace(d) {
+    if (gmfLvl() < 2 || curScreen !== "game" || !d.cell) return;
+    gmfInit();
+    var X = d.p === "X", c = d.cell, inn = gmf.inn, cw = c.offsetWidth;
+    var cx = gm.grid.offsetLeft + c.offsetLeft + cw / 2, cy = gm.grid.offsetTop + c.offsetTop + c.offsetHeight / 2;   // the cell's centre on the board
+    var D = inn.offsetWidth * (isLite() ? 1.7 : 2), ring = gmfAt(inn, "gmf-ring" + (X ? "" : " o"), cx - inn.offsetLeft, cy - inn.offsetTop, D, D);
+    gmfGone(ring, gmfAn(ring, [{ transform: "scale(.04)", opacity: 0 }, { opacity: 1, offset: .08 }, { opacity: .5, offset: .45 }, { transform: "scale(1)", opacity: 0 }],
+                        { duration: 780, easing: "cubic-bezier(.2,.6,.35,1)" }));
+    var r0 = Math.floor(d.i / 3), c0 = d.i % 3;
+    gm.cells.forEach(function (e, j) {
+      var dx = j % 3 - c0, dy = Math.floor(j / 3) - r0, dd = Math.sqrt(dx * dx + dy * dy);
+      if (!dd) { gmfAn(e, [{ scale: "1" }, { scale: ".95", offset: .3 }, { scale: "1.025", offset: .65 }, { scale: "1" }], { duration: 360, easing: "ease-out" }); return; }
+      var m = cw * .06 / Math.pow(dd, .7), ux = dx / dd * m, uy = dy / dd * m;    // (translate and scale add to the cells' own animations)
+      gmfAn(e, [{ translate: "0 0" }, { translate: ux.toFixed(2) + "px " + uy.toFixed(2) + "px", offset: .32 }, { translate: (-ux * .3).toFixed(2) + "px " + (-uy * .3).toFixed(2) + "px", offset: .68 }, { translate: "0 0" }],
+            { duration: 520, delay: Math.round(dd * 60), easing: "cubic-bezier(.3,.6,.4,1)" });
+    });
+    gmf.gems.forEach(function (gf) {                        // each gem flashes when the ring reaches it
+      var g = gf.parentNode, dist = Math.sqrt(Math.pow(g.offsetLeft - cx, 2) + Math.pow(g.offsetTop - cy, 2));
+      gf.className = "gmf-gf" + (X ? "" : " o");
+      gmfAn(gf, [{ opacity: 0, transform: "scale(.5)" }, { opacity: 1, transform: "scale(1.25)", offset: .22 }, { opacity: 0, transform: "scale(.85)" }],
+            { duration: 620, delay: Math.round(560 * Math.pow(Math.min(1, dist / (D / 2)), 1.6)), easing: "ease-out" });
+    });
+  }
+
+  /* each turn: a soft light sweeps across the board from the side of whoever plays next (X from the left in red, O from the right in white) */
+  function gmfTurn(d) {
+    if (gmfLvl() < 2) return;
+    var X = d.turn === "X";
+    setTimeout(function () {
+      if (curScreen !== "game" || gm.over || !gmf.inn || performance.now() - gmf.openAt < 1300) return;   // (not while the screen is still opening)
+      var s = gmfMk("gmf-sw" + (X ? "" : " o"), gmf.inn), A = "translateX(-100%) skewX(-12deg)", B = "translateX(143%) skewX(-12deg)";
+      gmfGone(s, gmfAn(s, [{ transform: X ? A : B, opacity: 0 }, { opacity: 1, offset: .3 }, { opacity: 1, offset: .62 }, { transform: X ? B : A, opacity: 0 }],
+                       { duration: 1050, easing: "cubic-bezier(.45,.05,.3,1)" }));
+    }, 200);
+  }
+
+  /* the end of a round (about 2 s): VICTORY / X WINS / O WINS slams onto the board (a ring of light, embers falling, the spikes flare,
+     light rays turn behind the board), DEFEAT beats like a heart in a red vignette, DRAW gets a silver shine; all of it fades by itself */
+  var GMF_WORD = { win: "Victory", wx: "X wins", wo: "O wins", lose: "Defeat", draw: "Draw" };
+  function gmfLater(ms, f) { gmf.end.t.push(setTimeout(f, ms)); }
+  function gmfClear(now) {                                  // the end-of-round effects go: at once (leaving, the next end) or with a quick fade (a new round)
+    var E = gmf.end;
+    E.t.forEach(clearTimeout); E.t = [];
+    if (now) E.an.forEach(function (a) { if (a) a.cancel(); });
+    E.an = [];
+    E.els.concat(E.grp).forEach(function (e) {
+      gmfGone(e, !now && e.isConnected && gmfAn(e, [{ opacity: getComputedStyle(e).opacity }, { opacity: 0 }], { duration: 240, easing: "ease-out", fill: "forwards" }));
+    });
+    E.els = []; E.grp = [];
+  }
+  function gmfRoundEnd(d) {
+    gmfClear(true);
+    if (curScreen !== "game") return;
+    gmfInit();
+    var L = gmfLvl(), kind = !d.p ? "draw" : d.lost ? "lose" : d.mode === "ai" ? "win" : d.p === "X" ? "wx" : "wo";
+    var B = gmfBox(), F = gmfMk("gmf-grp", gmf.front, "div"), K = gmfMk("gmf-grp", gmf.back, "div"), T = gmfTitle(F, kind, B);
+    gmf.end.grp = [F, K];
+    if (!L) gmfAn(T, [{ opacity: 0 }, { opacity: 1, offset: .12 }, { opacity: 1, offset: .8 }, { opacity: 0 }], { duration: 2200, fill: "forwards" });   // reduced motion: a plain fade
+    else if (kind === "lose") gmfDefeat(F, T);
+    else if (kind === "draw") gmfDraw(T, L);
+    else gmfWin(F, K, T, B, kind, L);
+    gmfLater(3300, function () { gmfClear(true); });
+  }
+  function gmfTitle(host, kind, B) {                        // the big word on a dark band across the middle of the board
+    var fs = Math.round(B.w * .125), h = Math.round(fs * 2.2), w = GMF_WORD[kind].toUpperCase(), t = gmfMk("gmf-ttl " + kind, host, "div");
+    t.style.cssText = "left:" + B.x + "px;top:" + Math.round(B.y + B.h / 2 - h / 2) + "px;width:" + B.w + "px;height:" + h + "px;font-size:" + fs + "px";
+    t.innerHTML = '<i class="gmf-band"></i><i class="gmf-ln t"></i><i class="gmf-ln b"></i><b class="gmf-w" data-t="' + esc(w) + '"><span>' + esc(w) + "</span></b>";
+    return t;
+  }
+  function gmfBand(T, at) {                                 // the band opens and its two lines shoot out from the middle
+    gmfAn(T.querySelector(".gmf-band"), [{ transform: "scaleY(0)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 260, delay: at, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
+    qa(".gmf-ln", T).forEach(function (l) {
+      gmfAn(l, [{ transform: "scaleX(0)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 420, delay: at + 30, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
+    });
+  }
+  function gmfOut(T, at) { gmfAn(T, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(1.06)" }], { duration: 420, delay: at, easing: "ease-in", fill: "forwards" }); }
+  function gmfWin(F, K, T, B, kind, L) {
+    var t0 = 380, hit = t0 + 240, o = kind === "wo" ? " o" : "", cx = B.x + B.w / 2, cy = B.y + B.h / 2;
+    gmfAn(T.querySelector(".gmf-w"), [{ transform: "scale(2.6)", opacity: 0, easing: "cubic-bezier(.6,0,.9,.45)" }, { transform: "scale(.92)", opacity: 1, offset: .57, easing: "cubic-bezier(.25,.6,.4,1)" },
+                                      { transform: "scale(1.035)", offset: .8 }, { transform: "none" }], { duration: 420, delay: t0, fill: "backwards" });
+    gmfBand(T, hit - 50); gmfOut(T, 1950);
+    gmfLater(hit, function () { sfx.play("hit2", true); });
+    if (L < 2) return;
+    var sh = gmfAt(F, "gmf-shock" + o, cx, cy, B.w * .96, B.w * .46), bm = gmfAt(F, "gmf-boom" + o, cx, cy, B.w * 1.1, B.w * .56), rays = gmfAt(K, "gmf-rays" + o, cx, cy, B.w * 1.9, B.w * 1.9);
+    F.insertBefore(sh, T); F.insertBefore(bm, T);           // (behind the word)
+    gmfAn(sh, [{ transform: "scale(.4)", opacity: 0 }, { opacity: 1, offset: .1 }, { transform: "scale(1.95)", opacity: 0 }], { duration: 720, delay: hit, easing: "cubic-bezier(.15,.7,.3,1)" });
+    gmfAn(bm, [{ transform: "scale(.3)", opacity: 0 }, { opacity: .95, offset: .18 }, { transform: "scale(1.45)", opacity: 0 }], { duration: 520, delay: hit - 30, easing: "ease-out" });
+    gmfAn(rays, [{ opacity: 0, transform: "rotate(-12deg) scale(.82)" }, { opacity: 1, transform: "rotate(4deg) scale(1)", offset: .2 }, { opacity: .75, transform: "rotate(22deg) scale(1.04)", offset: .7 },
+                 { opacity: 0, transform: "rotate(32deg) scale(1.08)" }], { duration: 2300, delay: hit - 60, easing: "cubic-bezier(.25,.6,.45,1)" });
+    // the board takes the hit (it dips and settles), the spikes flare out and spring back
+    gmf.end.an.push(gmfAn(gm.board, [{ translate: "0 0", scale: "1" }, { translate: "0 5px", scale: ".985", offset: .22 }, { translate: "0 -2px", scale: "1.006", offset: .58 }, { translate: "0 0", scale: "1" }],
+                          { duration: 400, delay: hit, easing: "ease-out" }));
+    qa(".gm-pc", gm.board).forEach(function (p, i) {
+      var v = p.classList.contains("p-t") || p.classList.contains("p-b"), s = function (n) { return v ? "1 " + n : n + " 1"; };
+      gmf.end.an.push(gmfAn(p, [{ scale: "1", easing: "cubic-bezier(.2,.8,.3,1)" }, { scale: s(1.3), offset: .26, easing: "ease-in-out" }, { scale: s(.96), offset: .62, easing: "ease-in-out" }, { scale: "1" }],
+                            { duration: 860, delay: hit + i * 22 }));
+    });
+    gmfLater(hit - 40, function () { gmfShower(F, kind); });
+  }
+  function gmfDefeat(F, T) {
+    var v = gmfMk("gmf-vig", F, "i", F.firstChild), w = T.querySelector(".gmf-w"), D = 2400, at = function (ms) { return ms / D; };
+    // two heartbeats (lub-dub): the vignette and the word pulse together
+    gmfAn(v, [{ opacity: 0 }, { opacity: .85, offset: at(110) }, { opacity: .3, offset: at(380) }, { opacity: .95, offset: at(560) }, { opacity: .45, offset: at(660) }, { opacity: .72, offset: at(760) },
+              { opacity: .2, offset: at(1100) }, { opacity: .9, offset: at(1400) }, { opacity: .4, offset: at(1500) }, { opacity: .64, offset: at(1600) }, { opacity: 0 }], { duration: D });
+    gmfAn(w, [{ transform: "translateY(-.5em) scale(1.15)", opacity: 0 }, { transform: "translateY(.04em)", opacity: 1, offset: .7 }, { transform: "none" }],
+          { duration: 420, delay: 140, easing: "cubic-bezier(.3,.7,.3,1)", fill: "backwards" });
+    gmfAn(w, [{ scale: "1" }, { scale: "1", offset: at(500) }, { scale: "1.09", offset: at(560) }, { scale: "1", offset: at(660) }, { scale: "1.05", offset: at(760) }, { scale: "1", offset: at(880) },
+              { scale: "1", offset: at(1340) }, { scale: "1.08", offset: at(1400) }, { scale: "1", offset: at(1500) }, { scale: "1.045", offset: at(1600) }, { scale: "1", offset: at(1720) }, { scale: "1" }], { duration: D });
+    gmfBand(T, 140); gmfOut(T, 1980);
+  }
+  function gmfDraw(T, L) {
+    var w = T.querySelector(".gmf-w");
+    gmfAn(w, [{ transform: "scale(1.2)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 480, delay: 200, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
+    gmfAn(w.querySelector("span"), [{ backgroundPosition: "100% 0" }, { backgroundPosition: "0% 0" }], { duration: 1300, delay: 380, easing: "cubic-bezier(.45,0,.3,1)", fill: "both" });
+    gmfBand(T, 200); gmfOut(T, 1900);
+    if (L < 2) return;
+    var s = gmfMk("gmf-sil", gmf.inn), f = gmfMk("gmf-silf", gm.board, "i", gm.grid), o = { duration: 1150, delay: 300, easing: "cubic-bezier(.45,.05,.3,1)" };
+    gmf.end.els.push(s, f);
+    gmfAn(s, [{ transform: "translateX(-110%) skewX(-18deg)", opacity: 0 }, { opacity: 1, offset: .15 }, { opacity: 1, offset: .8 }, { transform: "translateX(230%) skewX(-18deg)", opacity: 0 }], o);
+    gmfAn(f, [{ backgroundPosition: "100% 0", opacity: 0 }, { opacity: 1, offset: .15 }, { opacity: 1, offset: .85 }, { backgroundPosition: "0% 0", opacity: 0 }], o);
+  }
+  function gmfShower(host, kind) {                          // embers and confetti fall from the top (red, gold and white) on a canvas made just for it
+    if (!fx.on || gmfLvl() < 2 || !gmfLive() || !host.isConnected) return;
+    var c = gmfCanvas(host, "gmf-cv", host.querySelector(".gmf-ttl")); if (!c) return;
+    var cv = c.cv, g = c.g, W = host.clientWidth, H = host.clientHeight, k = isLite() ? 1 : Math.min(window.devicePixelRatio || 1, 1.5), S = gmfSpr();
+    cv.width = Math.max(1, Math.round(W * k)); cv.height = Math.max(1, Math.round(H * k));
+    var pal = kind === "wo" ? ["#ffffff", "#f1f1f8", "#ffd45a", "#ff3a50"] : kind === "wx" ? ["#ff2e46", "#ff5566", "#ffd45a", "#ffffff"] : ["#ffd45a", "#ffbf3a", "#ff2e46", "#ffffff"];
+    var hot = kind === "wo" ? [S.w, S.w, S.y] : [S.r, S.y, S.y], P = [], n = isLite() ? 60 : 96, i, p;
+    var pick = function (a) { return a[Math.floor(Math.random() * a.length)]; };
+    for (i = 0; i < n; i++) {
+      var em = i % 3 === 0, top = Math.random() < .7;   // a third are glowing embers; most start above the screen, the rest already falling in its top third
+      P.push({ em: em, d: Math.random() * .5, x: W * (.03 + Math.random() * .94), y: top ? -14 - Math.random() * 40 : Math.random() * H * .3, vx: (Math.random() - .5) * 110, vy: 80 + Math.random() * 240,
+               s: em ? 9 + Math.random() * 11 : 5 + Math.random() * 4, a: Math.random() * 6.28, va: (Math.random() - .5) * 10, f: Math.random() * 6.28, vf: 6 + Math.random() * 9,
+               sw: 14 + Math.random() * 26, life: 1.35 + Math.random() * .85, al: 0, c: em ? pick(hot) : pick(pal) });
+    }
+    var t0 = 0, last = 0;
+    requestAnimationFrame(function frame(t) {
+      if (!cv.isConnected) { if (gmf.cv === cv) gmf.cv = null; return; }
+      if (!gmfLive()) { gmfCanvasOff(); return; }
+      if (!t0) t0 = last = t;
+      var dt = Math.min(.05, (t - last) / 1000), T = (t - t0) / 1000, live = 0; last = t;
+      g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = "source-over"; g.clearRect(0, 0, cv.width, cv.height);
+      for (i = 0; i < n; i++) {                             // move: gravity, air, a sway; fade in, fade out at the end of a life
+        p = P[i]; if (p.dead) continue;
+        live++; var age = T - p.d; if (age < 0) continue;
+        p.vy += 400 * dt; p.vy -= p.vy * (p.em ? .7 : 2.1) * dt; p.vx -= p.vx * 1.3 * dt; p.f += p.vf * dt; p.a += p.va * dt;
+        p.x += (p.vx + Math.sin(p.f * .5) * p.sw) * dt; p.y += p.vy * dt;
+        p.al = Math.min(1, age / .12, (p.life - age) / .45);
+        if (p.al <= 0 || p.y > H + 30) { p.dead = true; live--; }
+      }
+      for (i = 0; i < n; i++) {                             // confetti: little cards that tumble (darker when edge-on)
+        p = P[i]; if (p.em || p.dead || T < p.d) continue;
+        var fl = Math.cos(p.f), ca = Math.cos(p.a), sa = Math.sin(p.a);
+        g.setTransform(k * ca, k * sa, -k * sa * fl, k * ca * fl, k * p.x, k * p.y);
+        g.globalAlpha = p.al * (.45 + .55 * Math.abs(fl)); g.fillStyle = p.c; g.fillRect(-p.s / 2, -p.s * .3, p.s, p.s * .6);
+      }
+      g.setTransform(k, 0, 0, k, 0, 0); g.globalCompositeOperation = "lighter";
+      for (i = 0; i < n; i++) {                             // embers: glowing dots that flicker
+        p = P[i]; if (!p.em || p.dead || T < p.d) continue;
+        g.globalAlpha = p.al * (.7 + .3 * Math.sin(p.f * 2.3)); g.drawImage(p.c, p.x - p.s / 2, p.y - p.s / 2, p.s, p.s);
+      }
+      if (live > 0) requestAnimationFrame(frame); else gmfCanvasOff();
+    });
+  }
+
+  /* the board tilts toward where you press and springs back; a phone with a gyroscope tilts it a little as it turns
+     (only where that needs no permission prompt); one small loop, running only while the board moves */
+  var GMF_TILT = 4.2, GMF_GYRO = 2.4;
+  var gmfT = { x: 0, y: 0, vx: 0, vy: 0, px: 0, py: 0, ox: 0, oy: 0, held: false, run: false, last: 0, per: 900, b0: null, g0: 0, ot: 0, son: false };
+  var gmfGyro = !!window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission !== "function";
+  function gmfTiltGo() { if (gmfT.run || !gmfLive() || gmfLvl() < 2) return; gmfT.run = true; gmfT.last = 0; requestAnimationFrame(gmfTiltFrame); }
+  function gmfTiltFrame(t) {
+    var T = gmfT;
+    if (!T.run) return;
+    if (!gmfLive()) { gmfTiltOff(); return; }
+    var dt = T.last ? Math.min(.032, (t - T.last) / 1000) : .016, tx = T.px + T.ox, ty = T.py + T.oy, m = Math.sqrt(tx * tx + ty * ty), K = T.held ? 300 : 150, C = T.held ? 28 : 12;
+    T.last = t;
+    if (m > 5) { tx *= 5 / m; ty *= 5 / m; }                // never more than 5 degrees
+    T.vx += (K * (tx - T.x) - C * T.vx) * dt; T.x += T.vx * dt;   // a spring: firm while pressed, a little wobble when let go
+    T.vy += (K * (ty - T.y) - C * T.vy) * dt; T.y += T.vy * dt;
+    if (Math.abs(tx - T.x) + Math.abs(ty - T.y) < .015 && Math.abs(T.vx) + Math.abs(T.vy) < .03) { T.x = tx; T.y = ty; T.vx = T.vy = 0; T.run = false; }
+    gm.board.style.transform = Math.abs(T.x) + Math.abs(T.y) < .01 ? "" : "perspective(" + T.per + "px) rotateX(" + T.x.toFixed(2) + "deg) rotateY(" + T.y.toFixed(2) + "deg)";
+    if (T.run) requestAnimationFrame(gmfTiltFrame);
+  }
+  function gmfTiltOff() { var T = gmfT; T.run = T.held = false; T.x = T.y = T.vx = T.vy = T.px = T.py = T.ox = T.oy = 0; gm.board.style.transform = ""; }
+  function gmfPress(e) {
+    if (gmfLvl() < 2 || !gmfLive() || (e.pointerType === "mouse" && e.button)) return;
+    var r = gm.board.getBoundingClientRect(); if (!r.width || !r.height) return;
+    var dx = (e.clientX - r.left) / r.width * 2 - 1, dy = (e.clientY - r.top) / r.height * 2 - 1, m = Math.sqrt(dx * dx + dy * dy);
+    if (m > 1) { dx /= m; dy /= m; }
+    gmfT.px = -dy * GMF_TILT; gmfT.py = dx * GMF_TILT; gmfT.held = true; gmfT.per = Math.round(gm.board.offsetWidth * 2.6);
+    gmfTiltGo();
+  }
+  function gmfLift() { if (!gmfT.held) return; gmfT.held = false; gmfT.px = gmfT.py = 0; gmfTiltGo(); }
+  function gmfOrient(e) {
+    if (e.beta == null || e.gamma == null || !gmfLive() || gmfLvl() < 2) return;
+    var T = gmfT, now = performance.now();
+    if (T.b0 === null) { T.b0 = e.beta; T.g0 = e.gamma; T.ot = now; return; }
+    var f = 1 - Math.exp(-Math.min(1, (now - T.ot) / 1000) / 2.5); T.ot = now;
+    T.b0 += (e.beta - T.b0) * f; T.g0 += (e.gamma - T.g0) * f;                 // the resting pose follows slowly: a phone held still settles back to flat
+    var ox = Math.max(-1, Math.min(1, (e.beta - T.b0) / 20)) * GMF_GYRO, oy = -Math.max(-1, Math.min(1, (e.gamma - T.g0) / 20)) * GMF_GYRO;
+    if (Math.abs(ox - T.ox) + Math.abs(oy - T.oy) > .06) { T.ox = ox; T.oy = oy; T.per = Math.round(gm.board.offsetWidth * 2.6); gmfTiltGo(); }
+  }
+  function gmfSensors(on) {                                 // listen to the gyroscope only while the game is on screen
+    if (!gmfGyro || on === gmfT.son) return;
+    gmfT.son = on; gmfT.b0 = null;
+    if (on) window.addEventListener("deviceorientation", gmfOrient); else window.removeEventListener("deviceorientation", gmfOrient);
+  }
+  gm.board.addEventListener("pointerdown", gmfPress, { passive: true });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(function (n) { gm.board.addEventListener(n, gmfLift, { passive: true }); });
+  document.addEventListener("visibilitychange", function () { gmfSensors(curScreen === "game" && !document.hidden); if (document.hidden) gmfTiltOff(); });
+
+  /* the screen opens: a crack of lightning runs round the frame's edge (clockwise from the top gem, just ahead of the spikes as they grow out),
+     the edge behind it glows white-hot and cools to red; when it is back at the top the whole frame flashes and the gems light up */
+  function gmfEdge() {                                      // points evenly spaced round the frame's glowing edge, clockwise from the top gem (in the frame picture's px, 840 x 810)
+    if (gmf.edge) return gmf.edge;
+    var L = 88.5, T = 87.5, R = 751.5, B = 736.5, r = 40, q = Math.PI / 2, n = 384, i, k = 0, acc = 0;
+    var seg = [["l", 420, T, R - r, T], ["a", R - r, T + r, -q], ["l", R, T + r, R, B - r], ["a", R - r, B - r, 0], ["l", R - r, B, L + r, B], ["a", L + r, B - r, q],
+               ["l", L, B - r, L, T + r], ["a", L + r, T + r, 2 * q], ["l", L + r, T, 420, T]];
+    var len = seg.map(function (s) { return s[0] === "l" ? Math.sqrt(Math.pow(s[3] - s[1], 2) + Math.pow(s[4] - s[2], 2)) : r * q; });
+    var tot = len.reduce(function (a, b) { return a + b; }, 0), E = { n: n, x: new Float32Array(n + 1), y: new Float32Array(n + 1), nx: new Float32Array(n + 1), ny: new Float32Array(n + 1) };
+    for (i = 0; i <= n; i++) {
+      var d = i / n * tot;
+      while (k < seg.length - 1 && d > acc + len[k]) { acc += len[k]; k++; }
+      var s = seg[k], u = Math.min(1, (d - acc) / len[k]);
+      if (s[0] === "l") { var dx = s[3] - s[1], dy = s[4] - s[2], m = Math.sqrt(dx * dx + dy * dy); E.x[i] = s[1] + dx * u; E.y[i] = s[2] + dy * u; E.nx[i] = dy / m; E.ny[i] = -dx / m; }
+      else { var a = s[3] + q * u; E.x[i] = s[1] + r * Math.cos(a); E.y[i] = s[2] + r * Math.sin(a); E.nx[i] = Math.cos(a); E.ny[i] = Math.sin(a); }
+    }
+    gmf.edge = E;
+    return E;
+  }
+  function gmfForge() {
+    var b = gm.board, bw = b.offsetWidth, bh = b.offsetHeight; if (!bw || !bh) return;
+    var c = gmfCanvas(b, "gmf-forge", gm.grid); if (!c) return;
+    var cv = c.cv, g = c.g, k = Math.min(window.devicePixelRatio || 1, isLite() ? 1.5 : 2), E = gmfEdge(), S = gmfSpr(), n = E.n;
+    cv.width = Math.round(bw * k); cv.height = Math.round(bh * k);
+    var sx = cv.width / 840, sy = cv.height / 810, A = 90, B0 = 170, B1 = 950, Z = 1520, per = (B1 - B0) / n;   // ms after opening: a spark on the top gem · the crack runs round · the flash has faded
+    var GEMS = [[418, 70], [781, 409], [418, 751], [53.5, 409.5]];
+    gmfAn(cv, [{ transform: "scale(.94)" }, { transform: "none" }], { duration: 550, delay: 80, easing: "ease-out", fill: "backwards" });   // it grows in with the frame
+    var X = function (a) { var i = Math.min(n - 1, Math.floor(a)); return E.x[i] + (E.x[i + 1] - E.x[i]) * (a - i); };
+    var Y = function (a) { var i = Math.min(n - 1, Math.floor(a)); return E.y[i] + (E.y[i + 1] - E.y[i]) * (a - i); };
+    var path = function (a0, a1) { g.beginPath(); g.moveTo(X(a0), Y(a0)); for (var i = Math.floor(a0) + 1; i < a1; i++) g.lineTo(E.x[i], E.y[i]); g.lineTo(X(a1), Y(a1)); };
+    var burn = function (h, w) {                            // red glow, pink body, white-hot core
+      g.strokeStyle = "rgba(255,28,48," + (.3 * h).toFixed(3) + ")"; g.lineWidth = 24 * w; g.stroke();
+      g.strokeStyle = "rgba(255,105,105," + (.55 * h).toFixed(3) + ")"; g.lineWidth = 10 * w; g.stroke();
+      g.strokeStyle = "rgba(255,246,238," + Math.min(1, h * 1.1).toFixed(3) + ")"; g.lineWidth = 4 * w; g.stroke();
+    };
+    var dot = function (spr, x, y, r, al) { if (al <= .01) return; g.globalAlpha = Math.min(1, al); g.drawImage(spr, x - r / 2, y - r / 2, r, r); g.globalAlpha = 1; };
+    var bolt = function (x, y, dx, dy, len, parts, jit) {   // a jagged line (the lightning itself, or a small fork off the frame)
+      g.beginPath(); g.moveTo(x, y);
+      for (var q = 1; q <= parts; q++) { var f = q / parts, j = q < parts ? (Math.random() - .5) * jit : 0; g.lineTo(x + dx * len * f - dy * j, y + dy * len * f + dx * j); }
+      g.strokeStyle = "rgba(255,70,90,.5)"; g.lineWidth = 8; g.stroke(); g.strokeStyle = "rgba(255,244,244,.92)"; g.lineWidth = 2.2; g.stroke();
+    };
+    requestAnimationFrame(function frame(now) {
+      if (!cv.isConnected) { if (gmf.cv === cv) gmf.cv = null; return; }
+      if (!gmfLive()) { gmfCanvasOff(); return; }
+      var t = now - gmf.openAt, i, j;
+      g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.clearRect(0, 0, cv.width, cv.height);
+      g.setTransform(sx, 0, 0, sy, 0, 0); g.globalCompositeOperation = "lighter"; g.lineJoin = "round";
+      if (t > A && t < B0 + 260) {                          // a spark lights on the top gem
+        var ig = Math.min(1, (t - A) / (B0 - A)), fa = t < B0 ? ig : 1 - (t - B0) / 260;
+        dot(S.r, 420, 87.5, 70 + 120 * ig, fa); dot(S.w, 420, 87.5, 24 + 50 * ig, fa);
+      }
+      if (t > B0 && t < B1) {
+        var s = (t - B0) / per;                             // the head, in points round the edge
+        g.lineCap = "butt";
+        for (j = Math.floor(s / 12) * 12; j >= 0; j -= 12) {   // the edge behind it, hottest near the head
+          var a1 = Math.min(j + 12, s), heat = Math.exp(-(t - B0 - (j + a1) / 2 * per) / 210);
+          if (heat < .04) break;
+          if (a1 - j > .01) { path(j, a1); burn(heat, 1); }
+        }
+        g.lineCap = "round"; g.beginPath();                  // the crack itself: a jagged white line that flickers every frame
+        for (i = 0; i <= 9; i++) {
+          var a = Math.max(0, s - i * 1.7), ii = Math.min(n, Math.round(a)), jj = i ? (Math.random() - .5) * 24 * (1 - i / 12) : 0;
+          if (i) g.lineTo(X(a) + E.nx[ii] * jj, Y(a) + E.ny[ii] * jj); else g.moveTo(X(a), Y(a));
+        }
+        g.strokeStyle = "rgba(255,60,80,.55)"; g.lineWidth = 12; g.stroke(); g.strokeStyle = "rgba(255,255,255,.95)"; g.lineWidth = 3.4; g.stroke();
+        if (Math.random() < .55) {                          // now and then a small fork jumps off the frame
+          var fi = Math.min(n, Math.round(Math.max(0, s - Math.random() * 5))), side = Math.random() < .75 ? 1 : -1, an = (Math.random() - .5) * 1.2;
+          var nx = E.nx[fi] * side, ny = E.ny[fi] * side, ca = Math.cos(an), sa = Math.sin(an);
+          bolt(E.x[fi], E.y[fi], nx * ca - ny * sa, nx * sa + ny * ca, 16 + Math.random() * 26, 3, 12);
+        }
+        dot(S.r, X(s), Y(s), 96, 1); dot(S.w, X(s), Y(s), 36, 1);
+      }
+      if (t >= B1) {                                        // round: the whole frame flashes white-hot and cools, the gems light up
+        var f = Math.max(0, 1 - (t - B1) / (Z - B1)); f *= f;
+        g.lineCap = "butt"; path(0, n); burn(f, 1.15);
+        for (i = 0; i < 4; i++) { dot(S.r, GEMS[i][0], GEMS[i][1], 150 + 80 * (1 - f), f); dot(S.w, GEMS[i][0], GEMS[i][1], 56, f); }
+      }
+      if (t < Z) requestAnimationFrame(frame); else gmfCanvasOff();
+    });
+  }
+
+  /* hook into the game */
+  gmOn.open.push(function () {
+    gmfInit(); gmf.openAt = performance.now(); gmfSensors(true);
+    if (gmfLvl() > 1 && gm.el.classList.contains("gm-open")) gmfForge();
+  });
+  gmOn.leave.push(function () { if (!gmf.back) return; gmfClear(true); gmfCanvasOff(); gmfTiltOff(); gmfSensors(false); });
+  gmOn.place.push(gmfPlace);
+  gmOn.turn.push(gmfTurn);
+  gmOn.end.push(gmfRoundEnd);
+  gmOn.reset.push(function () { gmfClear(false); });
+  // a tap that starts the next round (on the board, Reset, the other mode) fades the title at once, not when the new round comes in
+  // (capture: seen before the game handles the tap, so the tap that ends a round doesn't count)
+  function gmfNext(e) { if (gm.el.classList.contains("gm-ended") && gmf.end.grp.length && !(e.currentTarget.dataset.mode && e.currentTarget.dataset.mode === gm.mode)) gmfClear(false); }
+  [gm.board, $("gmReset")].concat(qa("#s-game .gm-mode")).forEach(function (e) { e.addEventListener("click", gmfNext, true); });
 
   /* ---------- start up ---------- */
   var clockEl = $("clock");
