@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "2.7",                       // shown in Settings → About
+  version: "2.8",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -44,7 +44,7 @@ const CONFIG = {
   badge: { image: "assets/claude-logo.png", title: "Built with Claude", text: "This app was designed and coded with Claude." },
 
   // ---------- music ----------
-  // songs are .m4a (AAC 128 kbps: the same sound in about two thirds of the space of a 192 kbps .mp3, so more songs fit in the app); .mp3 works too
+  // songs are .m4a (AAC, 96 kbps: small enough that all of them fit in the app) or .mp3 · not .ogg (Opus): that does not play on every phone
   // cover: "" = use the profile picture as the cover art · artist: "" = "Unknown Artist"
   // bpm + beat: the song's tempo and the second its first beat falls on, so the frame's glow pulses on the beat
   // party: true = "party mode" while that song plays (disco ball, laser beams, light dots, neon cards, a waveform on the music card)
@@ -55,14 +55,14 @@ const CONFIG = {
   // shake: [[from, to], ...] = moments (seconds into the file) when the whole app shakes on every beat (the first beat hardest)
   //             (leave them out for a new song: the glow then pulses at a steady pace while it plays)
   songs: [
-    { title: "Jingle Bells",            artist: "",            file: "assets/jingle-bells.ogg",            cover: "", bpm: 132.00, beat: 0.410 },
-    { title: "Forever Young",           artist: "Alphaville",  file: "assets/forever-young.ogg",           cover: "", bpm: 136.84, beat: 0.400 },
-    { title: "Never Gonna Give You Up", artist: "Rick Astley", file: "assets/never-gonna-give-you-up.ogg", cover: "", bpm: 113.63, beat: 0.255 },
-    { title: "MONTAGEM PERIGOSA (Super Slowed)", artist: "KVRXD", file: "assets/montagem-perigosa.ogg",    cover: "", bpm: 95.24, beat: 0.595 },
-    { title: "Dracula",                 artist: "Tame Impala", file: "assets/dracula.ogg",                 cover: "", bpm: 114.99, beat: 0.040, party: true },
-    { title: "Espresso",                artist: "Sabrina Carpenter", file: "assets/espresso.ogg",          cover: "", bpm: 104.00, beat: 0.100,
+    { title: "Jingle Bells",            artist: "",            file: "assets/jingle-bells.m4a",            cover: "", bpm: 132.00, beat: 0.410 },
+    { title: "Forever Young",           artist: "Alphaville",  file: "assets/forever-young.m4a",           cover: "", bpm: 136.84, beat: 0.400 },
+    { title: "Never Gonna Give You Up", artist: "Rick Astley", file: "assets/never-gonna-give-you-up.m4a", cover: "", bpm: 113.63, beat: 0.255 },
+    { title: "MONTAGEM PERIGOSA (Super Slowed)", artist: "KVRXD", file: "assets/montagem-perigosa.m4a",    cover: "", bpm: 95.24, beat: 0.595 },
+    { title: "Dracula",                 artist: "Tame Impala", file: "assets/dracula.m4a",                 cover: "", bpm: 114.99, beat: 0.040, party: true },
+    { title: "Espresso",                artist: "Sabrina Carpenter", file: "assets/espresso.m4a",          cover: "", bpm: 104.00, beat: 0.100,
       lyrics: { lrclib: 36945061, offset: 14.0 } },                   // (this file is the music video: the song starts 14 s in)
-    { title: "Hymn For The Weekend",    artist: "Coldplay",    file: "assets/hymn-for-the-weekend.ogg",    cover: "", bpm: 90.00, beat: 0.185,
+    { title: "Hymn For The Weekend",    artist: "Coldplay",    file: "assets/hymn-for-the-weekend.m4a",    cover: "", bpm: 90.00, beat: 0.185,
       lyrics: { lrclib: 37516438, offset: 0 },
       shake: [[10.40, 14.15], [21.55, 25.07], [84.02, 87.27], [95.20, 97.97], [159.14, 161.93]] },   // "drink from me, drink from me" · "put your wings on me, wings on me"
   ],
@@ -3893,7 +3893,8 @@ const CONFIG = {
   var artistOf = function (s) { return s.artist || "Unknown Artist"; };
   var coverOf = function (s) { return s.cover || C.avatarImage; };
   var visible = function (el) { return !!(el && el.offsetParent !== null); };
-  function play() { swallow(audio.play()); }
+  function play() { if (audio.error && failures >= songs.length) cantPlay(); swallow(audio.play()); }
+  function cantPlay() { toast("The songs can't play", "This phone could not open the song files.", { icon: "music" }); }   // (never silent about it)
 
   function renderSong() {
     var s = songs[idx]; if (!s) return;
@@ -3928,6 +3929,7 @@ const CONFIG = {
   onAudio("ended", function () { if (!audio.loop) nextSong(); });
   onAudio("error", function () {                      // missing/broken file → try the next song
     if (songs.length > 1 && ++failures < songs.length) setTimeout(function () { load(idx + 1, entered, 1); }, 400);
+    else if (entered) cantPlay();
   });
   seeks.forEach(function (s) {
     s.addEventListener("input", function () {          // dragging: preview the time on every progress bar
