@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "2.4",                       // shown in Settings → About
+  version: "2.5",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -2486,7 +2486,9 @@ const CONFIG = {
   .fd-snd { position: absolute; right: 10px; bottom: 10px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: rgba(0, 0, 0, .6); pointer-events: none; }
   .fd-snd svg.ic { width: 16px; height: 16px; }
   .fd-acts { display: flex; align-items: center; gap: 2px; padding: 6px 6px 0; }
-  .fd-acts button { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
+  .fd-acts button { min-width: 44px; height: 44px; padding: 0 8px; border-radius: 22px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .fd-acts button i { font-style: normal; font-size: 14px; font-weight: 600; }
+  .fd-acts button i:empty { display: none; }
   .fd-acts svg.ic { width: 26px; height: 26px; }
   .fd-acts .sp { flex: 1; }
   .fd-like.on svg.ic { fill: #ff3040; stroke: #ff3040; }
@@ -2497,6 +2499,10 @@ const CONFIG = {
   .fd-likes b { font-weight: 700; }
   .fd-cap { padding: 5px 14px 0; font-size: 14.5px; line-height: 1.45; overflow-wrap: anywhere; }
   .fd-cap b { margin-right: 6px; font-weight: 700; }
+  .fd-all { display: block; padding: 6px 14px 0; font-size: 14px; color: var(--text3); text-align: left; }
+  .fd-pv { padding: 1px 14px 0; cursor: pointer; }
+  .fd-pv p { margin-top: 2px; font-size: 14px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fd-pv b { margin-right: 6px; font-weight: 700; }
   .fd-time { display: block; padding: 6px 14px 0; font-size: 12px; color: var(--text3); }
   @media (prefers-reduced-motion: reduce) { #pfeed, #pfeed.open { transition: none; } }
 
@@ -2550,6 +2556,60 @@ const CONFIG = {
   .nt-none { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 30px 10px; text-align: center; color: var(--text2); }
   .nt-none svg.ic { width: 38px; height: 38px; }
   .nt-none b { color: var(--text); font-size: 16px; }
+
+  /* =====================================================================
+     COMMENTS  (a sheet: the caption on top, the comments with their hearts, the box to write in pinned at the bottom)
+     ===================================================================== */
+  .sheet-b p.cm-count { margin: -2px 0 6px; font-size: 13.5px; color: var(--text2); }
+  .cm-count b { color: var(--text); }
+  .cm-list { display: flex; flex-direction: column; }
+  .cm-row { display: flex; align-items: flex-start; gap: 11px; padding: 9px 0; border-radius: 12px; }
+  .cm-row.cm-sub { padding-left: 48px; }
+  .cm-row.fresh { animation: cmIn .55s cubic-bezier(.2, 1, .3, 1); }
+  @keyframes cmIn { 0% { opacity: 0; transform: translateY(-8px); background: rgba(var(--accent-rgb), .14); } 100% { opacity: 1; transform: none; background: rgba(var(--accent-rgb), 0); } }
+  .cm-row .nt-av { width: 36px; height: 36px; font-size: 15px; }
+  .cm-sub .nt-av, .cm-sub .cm-av { width: 28px; height: 28px; font-size: 12px; }
+  .cm-row .nt-av .nt-lock { width: 15px; height: 15px; }
+  .cm-av { flex: none; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; }
+  .cm-av img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .cm-b { flex: 1; min-width: 0; }
+  .sheet-b .cm-b p { color: var(--text); font-size: 14px; line-height: 1.35; }
+  .cm-n { display: flex; align-items: center; gap: 5px; }
+  .cm-n b { font-size: 13.5px; font-weight: 700; }
+  .cm-n .vtick { width: 14px; height: 14px; margin: 0; }
+  .sheet-b .cm-n time { margin-left: 3px; font-size: 12.5px; color: var(--text3); }
+  .sheet-b p.cm-t { margin-top: 1px; overflow-wrap: anywhere; }
+  .cm-a { display: flex; gap: 16px; margin-top: 4px; }
+  .cm-a button { padding: 0; font-size: 12.5px; font-weight: 600; color: var(--text3); }
+  .cm-lk { flex: none; width: 34px; padding-top: 4px; display: flex; flex-direction: column; align-items: center; gap: 1px; color: var(--text3); }
+  .cm-lk svg.ic { width: 15px; height: 15px; }
+  .cm-lk i { min-height: 13px; font-size: 11px; font-style: normal; }
+  .cm-lk.on { color: #ff3040; }
+  .cm-lk.on svg.ic { fill: #ff3040; stroke: #ff3040; }
+  .cm-lk.pop svg.ic { animation: pfPop .45s cubic-bezier(.3, 1.6, .5, 1); }
+  .cm-hr { height: 1px; margin: 4px 0; border: 0; background: rgba(255, 255, 255, .1); }
+  .sheet-b p.cm-older { padding: 10px 0 4px; text-align: center; font-size: 13px; color: var(--text3); }
+  .cm-none { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 26px 10px; text-align: center; color: var(--text2); }
+  .cm-none svg.ic { width: 36px; height: 36px; }
+  .cm-none b { font-size: 16px; color: var(--text); }
+  /* the box to write in: quick emoji, "Replying to …", your picture, the field, Post */
+  .cm-bar { flex: none; padding: 8px 14px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgba(255, 255, 255, .08); background: rgba(var(--surface-rgb), .98); }
+  .cm-emo { display: flex; justify-content: space-between; padding: 0 4px 8px; }
+  .cm-e { padding: 2px 4px; font-size: 23px; line-height: 1; transition: transform .15s; }
+  .cm-e:active { transform: scale(1.3); }
+  .cm-to { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 8px; font-size: 13px; color: var(--text2); }
+  .cm-to[hidden] { display: none; }
+  .cm-to b { color: var(--text); }
+  .cm-to svg.ic { width: 16px; height: 16px; }
+  .cm-in { display: flex; align-items: center; gap: 10px; }
+  .cm-field { flex: 1; min-width: 0; height: 42px; padding: 0 16px; border-radius: 21px; border: 1px solid var(--edge); background: rgba(255, 255, 255, .06); color: inherit; font: inherit; font-size: 15px; outline: none; }
+  .cm-field:focus { border-color: rgba(var(--accent-rgb), .7); }
+  .cm-post { padding: 0 4px; font-size: 15px; font-weight: 700; color: #4cb5ff; }
+  .cm-post:disabled { opacity: .4; }
+  .cm-newp { position: sticky; top: 0; z-index: 2; display: block; margin: 0 auto 6px; padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; color: #fff;
+    background: linear-gradient(90deg, var(--accent), var(--accent2)); box-shadow: 0 6px 18px rgba(0, 0, 0, .4); animation: cmPill .4s cubic-bezier(.2, 1.3, .4, 1); }
+  .cm-newp[hidden] { display: none; }
+  @keyframes cmPill { 0% { opacity: 0; transform: translateY(-8px) scale(.9); } 100% { opacity: 1; transform: none; } }
 
   /* ---------- 0. opening intro (everything here only moves with transform / opacity, so it stays smooth) ---------- */
   #intro { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; background: #000; overflow: hidden; cursor: pointer;
@@ -3145,8 +3205,8 @@ const CONFIG = {
 
     <!-- your posts, big (the feed): opens from the grid on Profile -->
     <section id="pfeed" aria-label="Posts" aria-hidden="true">
-      <div class="pf-bar"><button class="ibtn rip" id="pfBack" aria-label="Back"><svg class="ic"><use href="#i-arrow-left"/></svg></button><div class="pf-ttl"><small class="js-handle"></small><b>Posts</b></div></div>
-      <div class="pf-list" id="pfList"></div>
+      <div class="fd-bar"><button class="ibtn rip" id="pfBack" aria-label="Back"><svg class="ic"><use href="#i-arrow-left"/></svg></button><div class="fd-ttl"><small class="js-handle"></small><b>Posts</b></div></div>
+      <div class="fd-list" id="pfList"></div>
     </section>
 
     <!-- ===================== 3. FULL-SCREEN MUSIC PLAYER ("Now Playing") ===================== -->
@@ -4035,6 +4095,7 @@ const CONFIG = {
   function openSheet(title, html, onOpen) {
     closeMenu();
     var w = $("sheetwrap");
+    qa("#sheet > .cm-bar").forEach(function (b) { b.remove(); });   // (a comment box left from the last sheet)
     $("sheetTitle").textContent = title; $("sheetBody").innerHTML = html; $("sheetBody").scrollTop = 0;
     w.style.display = "block"; void w.offsetWidth; w.classList.add("open"); sheetOpen = true;
     if (onOpen) onOpen($("sheetBody"));
@@ -7812,7 +7873,7 @@ const CONFIG = {
   function ppLoad() {
     ppTx("readonly", function (st) { return st.getAll(); }, function (ok, all) {
       pp.list = ok && all ? all.sort(function (a, b) { return b.t - a.t; }) : []; pp.loaded = true;
-      pp.list.forEach(function (p) { if (sbPrep(p)) ppSave(p); p.likes = sbLikes(p); });   // (posts from before the bots get their numbers once)
+      pp.list.forEach(function (p) { if (sbPrep(p)) ppSave(p); p.likes = sbLikes(p); p.cms = cmBots(p); });   // (posts from before the bots get their numbers once)
       ppRender(); ppCount();
     });
   }
@@ -7988,12 +8049,24 @@ const CONFIG = {
     if (n === 1 && p.me) return "Liked by <b>you</b>";
     return "Liked by <b>" + esc(p.me ? "you" : sbName(p.seed)) + "</b> and <b>" + fmtNum(n - 1) + (n - 1 === 1 ? " other" : " others") + "</b>";
   }
-  function pfLikesUI(all) {                         // the likes under each post (live while the bots work)
+  function pfLikesUI(all) {                         // the numbers under each post: likes, comments, the two newest comments (live while the bots work)
     if (!pf.on) return;
+    var T = sbClock();
     qa(".fd-post", pf.list).forEach(function (a) {
-      var p = ppFind(a.getAttribute("data-id")), e = a.querySelector(".fd-likes"); if (!p || !e) return;
+      var p = ppFind(a.getAttribute("data-id")); if (!p) return;
       if (!all) { var r = a.getBoundingClientRect(); if (r.bottom < 0 || r.top > window.innerHeight) return; }
-      var h = pfLikesHtml(p); if (e.innerHTML !== h) e.innerHTML = h;
+      var set = function (sel, t, html) { var e = a.querySelector(sel); if (e && (html ? e.innerHTML : e.textContent) !== t) { if (html) e.innerHTML = t; else e.textContent = t; } };
+      var n = cmCount(p, T), nb = cmBots(p, T);
+      set(".fd-likes", pfLikesHtml(p), true);
+      set(".fd-like i", p.likes ? fmtShort(p.likes) : "");
+      set(".fd-cmt i", n ? fmtShort(n) : "");
+      set(".fd-all", n ? (n === 1 ? "View 1 comment" : "View all " + fmtNum(n) + " comments") : "Add a comment…");
+      if (a.getAttribute("data-cn") !== String(nb)) {
+        a.setAttribute("data-cn", nb);
+        var pv = "";
+        for (var i = nb - 1; i >= Math.max(0, nb - 2); i--) { var b = cmBot(p, i, T); pv += "<p><b>" + esc(sbName(b.s)) + "</b>" + esc(b.x) + "</p>"; }
+        a.querySelector(".fd-pv").innerHTML = pv;
+      }
     });
   }
   function ppFind(id) { for (var i = 0; i < pp.list.length; i++) if (pp.list[i].id === id) return pp.list[i]; return null; }
@@ -8005,11 +8078,12 @@ const CONFIG = {
         '<button class="fd-more rip" aria-label="More options">' + ic("ellipsis-vertical") + "</button></header>" +
       '<div class="fd-media">' + (vid ? '<video src="' + ppUrl(p, "full") + '" muted loop playsinline preload="metadata"' + (css ? ' style="filter:' + css + '"' : "") + "></video>" + '<span class="fd-snd">' + ic("volume-x") + "</span>"
                                        : '<img alt="" decoding="async" src="' + ppUrl(p, "full") + '">') + '<span class="fd-burst">' + ic("heart") + "</span></div>" +
-      '<div class="fd-acts"><button class="fd-like' + (p.me ? " on" : "") + '" aria-label="Like" aria-pressed="' + !!p.me + '">' + ic("heart") + "</button>" +
-        '<button class="fd-cmt" aria-label="Comments">' + ic("message-circle") + '</button><button class="fd-shr" aria-label="Share">' + ic("send") + "</button>" +
+      '<div class="fd-acts"><button class="fd-like' + (p.me ? " on" : "") + '" aria-label="Like" aria-pressed="' + !!p.me + '">' + ic("heart") + "<i></i></button>" +
+        '<button class="fd-cmt" aria-label="Comments">' + ic("message-circle") + '<i></i></button><button class="fd-shr" aria-label="Share">' + ic("send") + "</button>" +
         '<span class="sp"></span><button class="fd-save' + (p.sv ? " on" : "") + '" aria-label="Save" aria-pressed="' + !!p.sv + '">' + ic("bookmark") + "</button></div>" +
       '<p class="fd-likes">' + pfLikesHtml(p) + "</p>" +
       (p.caption ? '<p class="fd-cap"><b>' + esc(C.handle) + "</b>" + esc(p.caption) + "</p>" : "") +
+      '<button class="fd-all"></button><div class="fd-pv"></div>' +
       '<time class="fd-time">' + esc(pfWhen(p.t)) + "</time>";
     var like = a.querySelector(".fd-like"), media = a.querySelector(".fd-media"), v = a.querySelector("video");
     like.addEventListener("click", function () { pfLike(p, a, !p.me); });
@@ -8023,7 +8097,9 @@ const CONFIG = {
       p.sv = !p.sv; ppSave(p); this.classList.toggle("on", p.sv); this.setAttribute("aria-pressed", p.sv);
       toast(p.sv ? "Saved" : "Removed from saved", p.sv ? "It's in your saved posts" : "", { icon: "check" });
     });
-    a.querySelector(".fd-cmt").addEventListener("click", function () { toast("Comments", "Coming soon…", { icon: "message-circle", hl: "Coming soon…" }); });
+    a.querySelector(".fd-cmt").addEventListener("click", function () { cmOpen(p); });
+    a.querySelector(".fd-all").addEventListener("click", function () { cmOpen(p, !cmCount(p)); });
+    a.querySelector(".fd-pv").addEventListener("click", function () { cmOpen(p); });
     a.querySelector(".fd-shr").addEventListener("click", function () { toast("Share", "Coming soon…", { icon: "send", hl: "Coming soon…" }); });
     a.querySelector(".fd-more").addEventListener("click", function () {
       var b = this;
@@ -8040,7 +8116,7 @@ const CONFIG = {
     var b = a.querySelector(".fd-like"); b.classList.toggle("on", on); b.setAttribute("aria-pressed", on);
     if (on && !reduced) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
     if (on) { sfx.play("tick", true); gmBuzz("tap"); }
-    a.querySelector(".fd-likes").innerHTML = pfLikesHtml(p); ppLikesUI();
+    pfLikesUI(true); ppLikesUI();
   }
   $("pfBack").addEventListener("click", pfClose);
   (function () {                                    // the blue tick next to your name on the profile too
@@ -8051,8 +8127,9 @@ const CONFIG = {
   /* =====================================================================
      LIKE & FOLLOW BOTS + NOTIFICATIONS
      Your private bot accounts like your posts and follow you, celebrity style: every post heads for somewhere
-     between 300 thousand and 3 million likes (fast in the first minutes, then slower over hours), followers grow all
-     the time and jump after each post. It all follows from the clock, so it carries on while the app is closed
+     between 300 thousand and 3 million likes, but like a real post it slows down: a rush in the first minutes, most
+     of the rest in the first hour or two, then only a trickle for a day or two, and it stops near its top.
+     Followers grow quickly at first and after each post, then slowly (never forever at the same speed). It all follows from the clock, so it carries on while the app is closed
      ("While you were away"). A pop-up every few seconds says who liked or followed ("… and 12,345 others"); the
      heart button keeps them all, with Follow back. Settings → Notifications turns the bots or the pop-ups off.
      ===================================================================== */
@@ -8061,31 +8138,35 @@ const CONFIG = {
   var SB_B = ["aryan", "zayn", "mia", "leo", "nova", "ali", "sara", "omar", "luna", "kai", "yusuf", "ayaan", "noor", "rayan", "inaya", "hamza", "zara",
               "ibrahim", "aisha", "adam", "rehan", "sana", "farhan", "liya", "danish", "maya", "kabir", "elena", "rio", "amir", "zoya", "arman", "hana", "samir"];
   var SB_C = ["", "", "_07", ".x", "_", "__", "xo", "_99", ".vibes", "_23", ".exe", "_o", "1", ".editz", "_fc", ".world", "_10", ".fx", "._", "_7", "x"];
-  var SB_RATE = 450 / 3600000;                      // new followers per ms without posts (about 450 an hour)
+  var SB_RATE = 450 / 3600000, SB_FADE = 72 * 3600000, SB_SLOW = 15 / 3600000;   // followers without posts: 450 an hour at first, fading over days to 15 an hour
   var sb = { on: store.get("bots", "1") === "1", pop: store.get("botpop", "1") === "1", t0: +store.get("bots:t0", "0"), pz: +store.get("bots:pz", "0"), off: +store.get("bots:off", "0"),
-             notes: [], fol: -1, pl: 0, pf: 0, pp: null, flip: false, next: 0, k: 0, away: false, banT: 0, follow: [] };
+             notes: [], fol: -1, pl: 0, pf: 0, pc: 0, pp: null, cp: null, rot: 0, next: 0, k: 0, away: false, banT: 0, follow: [] };
   if (!sb.t0) { sb.t0 = Date.now(); store.set("bots:t0", sb.t0); }
   try { sb.notes = JSON.parse(store.get("notes", "[]")) || []; } catch (e) { sb.notes = []; }
   try { sb.follow = JSON.parse(store.get("follow", "[]")) || []; } catch (e) { sb.follow = []; }
 
   function sbClock() { var n = Date.now(); return n - sb.pz - (sb.off ? n - sb.off : 0); }   // the bots' own clock (it stands still while they are off)
-  function sbPrep(p) {                              // a post's numbers (once): where its likes head for, how fast, the followers it brings
-    if (p.L) return false;
-    var r = fbRand(Math.floor(Math.random() * 2147483640) + 1);
-    p.seed = Math.floor(r() * 2147483640) + 1;
-    p.L = Math.round(300000 * Math.pow(10, r()));   // 300K … 3M
-    p.k1 = (3 + r() * 3) * 60000; p.k2 = (3 + r() * 5) * 3600000;   // the first rush (minutes) and the long tail (hours)
-    p.fb = Math.round(p.L * (.01 + r() * .02));     // followers it brings
-    p.bt = sbClock() - Math.max(0, Date.now() - (p.t || Date.now()));   // (posted before the bots: as if they had been there)
-    return true;
+  function sbPrep(p) {                              // a post's numbers (once): where its likes head for, how fast they come, the followers it brings
+    var ch = false;
+    if (!p.L) {
+      var r = fbRand(Math.floor(Math.random() * 2147483640) + 1);
+      p.seed = Math.floor(r() * 2147483640) + 1;
+      p.L = Math.round(300000 * Math.pow(10, r()));   // 300K … 3M
+      p.fb = Math.round(p.L * (.01 + r() * .02));     // followers it brings
+      p.bt = sbClock() - Math.max(0, Date.now() - (p.t || Date.now()));   // (posted before the bots: as if they had been there)
+      ch = true;
+    }
+    if (!p.k3) {                                    // the pace: a rush (minutes), most of the rest in the first hour or two, then a trickle (a day or two)
+      var q = sbR(p.seed + 99);
+      p.k1 = (2 + q() * 2) * 60000; p.k2 = (40 + q() * 50) * 60000; p.k3 = (10 + q() * 10) * 3600000; ch = true;
+    }
+    return ch;
   }
-  function sbLikes(p, T) {
-    var a = Math.max(0, (T || sbClock()) - (p.bt || 0)), n = p.L ? Math.floor(p.L * (.2 * (1 - Math.exp(-a / p.k1)) + .8 * (1 - Math.exp(-a / p.k2)))) : 0;
-    return n + (p.me ? 1 : 0);
-  }
+  function sbCurve(p, a) { return .25 * (1 - Math.exp(-a / p.k1)) + .6 * (1 - Math.exp(-a / p.k2)) + .15 * (1 - Math.exp(-a / p.k3)); }   // 0 → 1: how far a post is
+  function sbLikes(p, T) { return (p.L && p.k3 ? Math.floor(p.L * sbCurve(p, Math.max(0, (T || sbClock()) - (p.bt || 0)))) : 0) + (p.me ? 1 : 0); }
   function sbFollowers(T) {
     T = T || sbClock();
-    var n = C.stats.followers + SB_RATE * Math.max(0, T - sb.t0);
+    var age = Math.max(0, T - sb.t0), n = C.stats.followers + SB_RATE * SB_FADE * (1 - Math.exp(-age / SB_FADE)) + SB_SLOW * age;
     pp.list.forEach(function (p) { if (p.fb) n += p.fb * (1 - Math.exp(-Math.max(0, T - p.bt) / p.k2)); });
     return Math.floor(n);
   }
@@ -8110,12 +8191,15 @@ const CONFIG = {
       if (e.textContent !== t) { e.textContent = t; if (bump && t && !reduced) { e.classList.remove("bump"); void e.offsetWidth; e.classList.add("bump"); } }
     });
   }
-  function sbNote(k, n, p) {                        // k: "like" | "fol" ; n: how many (the name + n - 1 others)
-    var note = { i: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), k: k, s: Math.floor(Math.random() * 2147483000) + 1, n: Math.max(1, Math.round(n)), p: p ? p.id : "", t: Date.now(), r: 0 };
+  function sbNote(k, n, p, s, x) {                  // k: "like" | "fol" | "cmt" | "rep"; n: how many (the name + n - 1 others); s: who; x: what they wrote
+    var note = { i: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), k: k, s: s || Math.floor(Math.random() * 2147483000) + 1, n: Math.max(1, Math.round(n)), p: p ? p.id : "", t: Date.now(), r: 0 };
+    if (x) note.x = x;
     sb.notes.unshift(note); sb.notes = sb.notes.slice(0, 60); sbSaveNotes(); sbBadge(true);
     return note;
   }
-  function sbText(x, short) {                       // "lunar.mia and 12,345 others liked your post."
+  function sbText(x, short) {                       // "lunar.mia and 12,345 others liked your post." / "lunar.mia commented: yeah 🔥"
+    if (x.k === "cmt") return "<b>" + esc(sbName(x.s)) + "</b> commented: " + esc(x.x || "");
+    if (x.k === "rep") return "<b>" + esc(sbName(x.s)) + "</b> replied to your comment: " + esc(x.x || "");
     var who = "<b>" + esc(sbName(x.s)) + "</b>" + (x.n > 1 ? " and <b>" + (short ? fmtShort(x.n - 1) : fmtNum(x.n - 1)) + (x.n === 2 ? " other" : " others") + "</b>" : "");
     return who + (x.k === "like" ? " liked your post." : " started following you.");
   }
@@ -8145,24 +8229,30 @@ const CONFIG = {
   /* ---------- every second (while the app is open): the numbers move, now and then a pop-up ---------- */
   function sbTick() {
     if (!entered || paused || document.hidden || !pp.loaded) return;
-    var T = sbClock(), dL = 0, top = null, topD = 0, total = 0;
-    pp.list.forEach(function (p) { var n = sbLikes(p, T), d = n - (p.likes || 0); p.likes = n; total += n; if (d > 0) { dL += d; if (d >= topD) { topD = d; top = p; } } });
+    var T = sbClock(), dL = 0, dC = 0, top = null, topD = 0, total = 0, tc = 0;
+    pp.list.forEach(function (p) {
+      var n = sbLikes(p, T), d = n - (p.likes || 0); p.likes = n; total += n; if (d > 0) { dL += d; if (d >= topD) { topD = d; top = p; } }
+      var c = cmBots(p, T), e = c - (p.cms == null ? c : p.cms); p.cms = c; tc += c; if (e > 0) { dC += e; sb.cp = p; }
+    });
     var fol = sbFollowers(T);
     if (sb.fol < 0) sb.fol = fol;
     var dF = fol - sb.fol; sb.fol = fol;
-    if (!sb.away) { sb.away = true; sbAway(total, fol); }
-    sb.pl += dL; sb.pf += Math.max(0, dF); if (top) sb.pp = top;
-    sbNumbers(fol);
-    if (Date.now() >= sb.next) {
-      var k = sb.pl > 0 && sb.pf > 0 ? ((sb.flip = !sb.flip) ? "like" : "fol") : sb.pl > 0 ? "like" : sb.pf > 0 ? "fol" : "";
-      if (k) {
-        var x = sbNote(k, k === "like" ? sb.pl : sb.pf, k === "like" ? sb.pp : null);
-        if (k === "like") sb.pl = 0; else sb.pf = 0;
-        sbBanner(sbText(x, true), sbAv(x.s), k === "like" && sb.pp ? ppUrl(sb.pp, "thumb") : "");
-      }
-      sb.next = Date.now() + 7000 + Math.random() * 8000;
+    if (!sb.away) { sb.away = true; sbAway(total, fol, tc); }
+    sb.pl += dL; sb.pf += Math.max(0, dF); sb.pc += dC; if (top) sb.pp = top;
+    sbNumbers(fol); cmLive(T);
+    cmDue(T).forEach(function (r) {                 // a bot answered one of your comments: say so straight away
+      var y = sbNote("rep", 1, r.p, r.a.s, r.a.x); sbBanner(sbText(y, true), sbAv(y.s), ppUrl(r.p, "thumb"));
+    });
+    if (Date.now() >= sb.next) {                    // likes, follows and comments take turns
+      var ks = []; if (sb.pl > 0) ks.push("like"); if (sb.pf > 0) ks.push("fol"); if (sb.pc > 0 && sb.cp) ks.push("cmt");
+      var k = ks.length ? ks[sb.rot++ % ks.length] : "", x = null;
+      if (k === "like") { x = sbNote("like", sb.pl, sb.pp); sb.pl = 0; }
+      else if (k === "fol") { x = sbNote("fol", sb.pf, null); sb.pf = 0; }
+      else if (k === "cmt") { var b = cmBot(sb.cp, Math.max(0, sb.cp.cms - 1), T); x = sbNote("cmt", 1, sb.cp, b.s, b.x); sb.pc = 0; }
+      if (x) sbBanner(sbText(x, true), sbAv(x.s), x.p && ppFind(x.p) ? ppUrl(ppFind(x.p), "thumb") : "");
+      sb.next = Date.now() + 6000 + Math.random() * 7000;
     }
-    if (++sb.k % 10 === 0) store.set("bots:seen", JSON.stringify({ t: Date.now(), l: total, f: fol }));
+    if (++sb.k % 10 === 0) store.set("bots:seen", JSON.stringify({ t: Date.now(), l: total, f: fol, c: tc }));
   }
   function sbNumbers(fol) {                         // followers / following on the profile and Stats, likes on the grid and in the feed
     var t = fmtShort(fol);
@@ -8171,16 +8261,16 @@ const CONFIG = {
     if (curScreen === "profile") ppLikesUI();
     pfLikesUI();
   }
-  function sbAway(total, fol) {                     // back after a while: what the bots did meanwhile
+  function sbAway(total, fol, tc) {                 // back after a while: what the bots did meanwhile
     var s = null; try { s = JSON.parse(store.get("bots:seen", "null")); } catch (e) {}
-    store.set("bots:seen", JSON.stringify({ t: Date.now(), l: total, f: fol }));
+    store.set("bots:seen", JSON.stringify({ t: Date.now(), l: total, f: fol, c: tc }));
     if (!s || Date.now() - s.t < 60000 || !sb.on) return;
-    var dL = Math.max(0, total - s.l), dF = Math.max(0, fol - s.f); if (!dL && !dF) return;
+    var dL = Math.max(0, total - s.l), dF = Math.max(0, fol - s.f), dC = s.c == null ? 0 : Math.max(0, tc - s.c); if (!dL && !dF) return;
     if (dF) sbNote("fol", dF, null);
     if (dL && pp.list.length) sbNote("like", dL, pp.list[0]);
     sb.next = Date.now() + 9000;
     setTimeout(function () {
-      sbBanner("<b>While you were away</b><br>" + (dL ? "+" + fmtShort(dL) + " likes" : "") + (dL && dF ? " · " : "") + (dF ? "+" + fmtShort(dF) + " followers" : ""),
+      sbBanner("<b>While you were away</b><br>" + [dL ? "+" + fmtShort(dL) + " likes" : "", dC ? "+" + fmtShort(dC) + " comments" : "", dF ? "+" + fmtShort(dF) + " followers" : ""].filter(Boolean).join(" · "),
                '<span class="nt-av nt-me" style="--h:330">' + ic("heart") + "</span>", dL && pp.list.length ? ppUrl(pp.list[0], "thumb") : "");
     }, 2600);
   }
@@ -8197,7 +8287,7 @@ const CONFIG = {
     var row = function (x) {
       var p = x.p ? ppFind(x.p) : null, name = sbName(x.s), on = sb.follow.indexOf(name) > -1;
       return '<div class="nt-row" data-i="' + x.i + '">' + sbAv(x.s) + "<p>" + sbText(x) + " <time>" + sbAgo(x.t) + "</time></p>" +
-             (x.k === "like" ? (p ? '<img class="nt-th" alt="" src="' + ppUrl(p, "thumb") + '">' : "")
+             (x.k !== "fol" ? (p ? '<img class="nt-th" alt="" src="' + ppUrl(p, "thumb") + '">' : "")
                              : '<button class="nt-fb' + (on ? " on" : "") + '" data-n="' + esc(name) + '">' + (on ? "Following" : "Follow back") + "</button>") + "</div>";
     };
     var html = '<div class="nt-sum"><span>' + ic("heart") + "<b>" + fmtShort(total) + "</b>likes</span><span>" + ic("users") + "<b>" + fmtShort(sbFollowers()) + "</b>followers</span>" +
@@ -8220,6 +8310,7 @@ const CONFIG = {
       qa(".nt-row", body).forEach(function (r) {    // a like: open that post
         var x = null; sb.notes.forEach(function (n) { if (n.i === r.getAttribute("data-i")) x = n; });
         if (x && x.k === "like" && x.p && ppFind(x.p)) r.addEventListener("click", function () { closeSheet(); if (curScreen !== "profile") goSub("profile"); setTimeout(function () { pfOpen(x.p); }, 380); });
+        if (x && (x.k === "cmt" || x.k === "rep") && x.p && ppFind(x.p)) r.addEventListener("click", function () { cmOpen(ppFind(x.p)); });   // a comment: its post's comments
       });
     });
   }
@@ -8236,6 +8327,178 @@ const CONFIG = {
   }
   sbBadge();
   setInterval(sbTick, 1000);
+
+  /* =====================================================================
+     COMMENTS  (a post's comments: the bots write them while the likes come in, short and real: "yeah 🔥", "W",
+     "goat 🐐", "bhai 🔥🔥"… and the bots like them too; you can like them, reply, and write your own; a bot may
+     answer you). Opens from the feed (the speech bubble, "View all … comments") and from a comment notification.
+     Every bot comment follows from the post's own numbers and the clock, so it is the same each time you look.
+     ===================================================================== */
+  var CM_TXT = ["yeah 🔥", "yeahhh", "yea this hard", "W", "W post", "🔥🔥🔥", "🔥", "😍😍", "❤️", "💯", "goat 🐐", "the goat", "king 👑", "sheesh", "sheeesh 🥶",
+    "fire bro", "this is fire", "looking clean", "clean af", "drip 💧", "no way 😭", "nah this is crazy", "insane", "insane edit", "legend", "real one",
+    "we love to see it", "certified banger", "the vibes 😍", "let's gooo", "lets goooo 🔥", "ate fr", "ate and left no crumbs", "main character energy",
+    "the glow up 🔥", "ok but why is this so good", "absolutely fire", "elite", "teach me 🙏", "omg 😭🔥", "yesss", "so proud of you bro", "best on the app",
+    "underrated", "fr fr", "say less 🔥", "first 🥇", "early gang", "who's here at 3am", "this goes hard", "hard 🔥", "too hard", "w pic", "w edit", "w drip",
+    "cold 🥶", "ice cold", "unreal", "masterpiece", "big W", "pure class", "smooth 😮‍💨", "the energy 🙌", "vibes on point", "different breed", "built different",
+    "on another level", "can't stop looking at this", "need this energy today", "made my day", "love this ❤️", "love it", "so good", "amazing 😍", "beautiful",
+    "stunning", "wow", "wowww", "crazy 😳", "bro really did that", "how is this so good", "this is art", "frame this", "wallpaper material", "screenshot taken 📸",
+    "saved 🔖", "posted at the perfect time", "the algorithm brought me here", "who else is watching this again", "goosebumps", "chills fr", "aura +1000",
+    "aura 🔥", "the aura", "you dropped this 👑", "king of the app", "icon", "iconic", "legendary", "peak", "peak content", "this is peak",
+    "nobody does it like you", "always delivering", "consistent 💯", "keep going bro", "proud of you", "huge", "massive 🔥", "deserves more likes",
+    "how is this not viral", "viral soon", "this needs to blow up", "notification gang 🔔", "came here so fast", "first time early 😭", "🙌🙌", "👏👏", "😮",
+    "😂😂 love it", "lol this is so good", "haha yes", "yeah yeah 🔥", "yup", "facts", "agreed 💯", "real", "so real", "this >>>", "obsessed", "ok slay",
+    "slay 💅", "served", "mood", "the lighting 😍", "colours are so good", "that filter 🔥", "editing skills 📈", "how do you edit like this", "tutorial pls",
+    "drop the preset", "song name?", "where is this 😍", "take me there", "dream", "goals", "life goals", "jealous fr", "inspo", "inspiration 🙏", "motivation",
+    "blessed 🙏", "good vibes only", "peace ✌️", "love from india ❤️", "love from brazil 🇧🇷", "love from uk 🇬🇧", "love from usa 🇺🇸", "love from pakistan 🇵🇰",
+    "love from bangladesh 🇧🇩", "love from indonesia 🇮🇩", "greetings from germany 🇩🇪", "salam bro ❤️", "mashallah 😍", "masha allah 🔥", "bhai 🔥🔥",
+    "bhai kya baat hai", "op bhai", "ekdum mast", "kamaal 🔥"];
+  var CM_RE = ["facts 💯", "fr fr", "real", "😂😂", "say it louder", "W reply", "100%", "agreed 🔥", "big facts", "no cap", "respect 🙏", "lol yeah", "yeah fr",
+    "true 💯", "exactly", "haha yes", "love you bro ❤️", "a reply 😭😭", "legend replied", "W creator", "🙌", "omg hi 😭", "can't believe you replied"];
+  var CM_EMO = ["❤️", "🙌", "🔥", "👏", "😢", "😍", "😮", "😂"];
+  var CM_SHOW = 40;                                 // how many of the newest bot comments the list shows
+  var cm = { p: null, body: null, bar: null, shown: 0, to: null };
+
+  function cmTotal(p) { var r = sbR(p.seed + 11); return Math.max(40, Math.round(p.L / (160 + r() * 260))); }   // where its comments head for
+  function cmCurve(p, a) { return p.k3 ? sbCurve(p, a) : 0; }   // (the comments come at the same pace as the likes)
+  function cmBots(p, T) { return p.L ? Math.floor(cmTotal(p) * cmCurve(p, Math.max(0, (T || sbClock()) - p.bt))) : 0; }
+  function cmMy(p) { return p.mc || (p.mc = []); }
+  function cmReply(c) {                             // a bot's answer to one of your comments (or none): who, what, when
+    var r = sbR(parseInt(c.id.slice(-6), 36) + 77); if (r() > .65) return null;
+    return { s: Math.floor(r() * 2147483000) + 1, x: CM_RE[Math.floor(r() * CM_RE.length)], bt: c.bt + 8000 + r() * 50000 };
+  }
+  function cmCount(p, T) {                          // all of them: the bots', yours, the answers you got
+    T = T || sbClock(); var n = cmBots(p, T);
+    cmMy(p).forEach(function (c) { var a = cmReply(c); n += 1 + (a && a.bt <= T ? 1 : 0); });
+    return n;
+  }
+  function cmAt(p, i) {                             // when bot comment i came (the clock where the curve reaches it)
+    var f = (i + 1) / cmTotal(p), lo = 0, hi = p.k3 * 12;
+    for (var n = 0; n < 34; n++) { var m = (lo + hi) / 2; if (cmCurve(p, m) < f) lo = m; else hi = m; }
+    return p.bt + hi;
+  }
+  function cmBot(p, i, T) {                         // bot comment i: who, what, when, its likes (the first ones get the most)
+    var r = sbR(p.seed * 31 + i * 7919 + 5), s = Math.floor(r() * 2147483000) + 1, x = CM_TXT[Math.floor(r() * CM_TXT.length)];
+    if (r() < .16) x += " " + CM_EMO[Math.floor(r() * CM_EMO.length)];
+    var bt = cmAt(p, i), pop = Math.pow(r(), 4) * Math.max(.05, 1 - i / cmTotal(p));
+    var likes = Math.floor(pop * p.L / 140 * (1 - Math.exp(-Math.max(0, (T || sbClock()) - bt) / 5400000)));
+    return { s: s, x: x, bt: bt, likes: likes + (p.cl && p.cl[i] ? 1 : 0), i: i };
+  }
+  function cmMyLikes(p, c, T) { var r = sbR(parseInt(c.id.slice(-6), 36) + 3); return Math.floor((.3 + r() * .7) * p.L / 2500 * (1 - Math.exp(-Math.max(0, (T || sbClock()) - c.bt) / 3600000))); }
+  function cmWall(bt) { return Date.now() - (sbClock() - bt); }   // a bot-clock time on the real clock (for "2m")
+
+  /* ---------- the list ---------- */
+  function cmRow(o) {                               // one comment: picture, name + when, text, Reply (Delete on yours), its heart and likes
+    return '<div class="cm-row' + (o.sub ? " cm-sub" : "") + (o.fresh ? " fresh" : "") + '"' + (o.i != null ? ' data-i="' + o.i + '"' : "") + (o.id ? ' data-id="' + o.id + '"' : "") + ">" +
+      (o.me ? '<span class="cm-av"><img alt="" src="' + esc(C.avatarImage) + '"></span>' : sbAv(o.s)) +
+      '<div class="cm-b"><p class="cm-n"><b>' + esc(o.me ? C.handle : sbName(o.s)) + "</b>" + (o.me ? PP_VT : "") + "<time>" + sbAgo(cmWall(o.bt)) + "</time></p>" +
+      '<p class="cm-t">' + esc(o.x) + "</p>" +
+      (o.cap ? "" : '<p class="cm-a"><button class="cm-rep">Reply</button>' + (o.me ? '<button class="cm-del">Delete</button>' : "") + "</p>") + "</div>" +
+      (o.cap ? "" : '<button class="cm-lk' + (o.on ? " on" : "") + '" aria-label="Like this comment">' + ic("heart") + "<i>" + (o.likes ? fmtShort(o.likes) : "") + "</i></button>") + "</div>";
+  }
+  function cmMine(p, T, c, fresh) {                 // one of yours (+ the bot's answer once it has come)
+    var a = cmReply(c), h = cmRow({ me: true, id: c.id, x: c.x, bt: c.bt, likes: cmMyLikes(p, c, T), sub: c.to != null, fresh: fresh });
+    if (a && a.bt <= T) h += cmRow({ s: a.s, x: "@" + C.handle + " " + a.x, bt: a.bt, likes: 0, sub: true });
+    return h;
+  }
+  function cmOpen(p, focus) {
+    var T = sbClock(), n = cmBots(p, T), mine = cmMy(p), rows = "", i;
+    var under = {}; mine.forEach(function (c) { if (c.to != null) (under[c.to] = under[c.to] || []).push(c); });
+    if (p.caption) rows += cmRow({ me: true, cap: true, x: p.caption, bt: cmBt(p) }) + '<hr class="cm-hr">';
+    mine.slice().reverse().forEach(function (c) { if (c.to == null || c.to < n - CM_SHOW) rows += cmMine(p, T, c); });
+    for (i = n - 1; i >= Math.max(0, n - CM_SHOW); i--) {
+      var b = cmBot(p, i, T);
+      rows += cmRow({ s: b.s, x: b.x, bt: b.bt, likes: b.likes, i: i, on: !!(p.cl && p.cl[i]) });
+      (under[i] || []).forEach(function (c) { rows += cmMine(p, T, c); });
+    }
+    var more = n > CM_SHOW ? '<p class="cm-older">' + fmtNum(n - CM_SHOW) + " older comments</p>" : "";
+    var none = !n && !mine.length ? '<div class="cm-none">' + ic("message-circle") + "<b>No comments yet</b><span>Start the conversation.</span></div>" : "";
+    openSheet("Comments",
+      '<button class="cm-newp" hidden></button><p class="cm-count"><b>' + fmtNum(cmCount(p, T)) + "</b> comments</p>" + none + '<div class="cm-list">' + rows + "</div>" + more +
+      '<div class="cm-bar"><div class="cm-emo">' + CM_EMO.map(function (e) { return '<button class="cm-e">' + e + "</button>"; }).join("") + "</div>" +
+      '<div class="cm-to" hidden><span>Replying to <b></b></span><button class="cm-tox" aria-label="Cancel the reply">' + ic("x") + "</button></div>" +
+      '<div class="cm-in"><span class="cm-av"><img alt="" src="' + esc(C.avatarImage) + '"></span><input class="cm-field" maxlength="300" enterkeyhint="send" placeholder="Add a comment for ' + esc(C.handle) + '…" aria-label="Add a comment">' +
+      '<button class="cm-post" disabled>Post</button></div></div>',
+      function (body) {
+        var bar = body.querySelector(".cm-bar"); $("sheet").appendChild(bar);   // (the box to write in stays at the bottom, the list scrolls above it)
+        cm.p = p; cm.body = body; cm.bar = bar; cm.shown = n; cm.to = null;
+        var field = bar.querySelector(".cm-field"), post = bar.querySelector(".cm-post");
+        var sync = function () { post.disabled = !field.value.trim(); };
+        field.addEventListener("input", sync);
+        field.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); cmSend(); } });
+        post.addEventListener("click", cmSend);
+        qa(".cm-e", bar).forEach(function (b) { b.addEventListener("click", function () { field.value += b.textContent; sync(); field.focus(); }); });
+        bar.querySelector(".cm-tox").addEventListener("click", function () { cmReplyTo(null); });
+        body.querySelector(".cm-list").addEventListener("click", cmClick);
+        body.querySelector(".cm-newp").addEventListener("click", cmShowNew);
+        if (focus) setTimeout(function () { field.focus(); }, 350);
+      });
+  }
+  function cmBt(p) { return p.bt; }
+  function cmOn() { return sheetOpen && cm.body && cm.body.parentNode && $("sheetTitle").textContent === "Comments" && cm.body === $("sheetBody") && !!cm.body.querySelector(".cm-list"); }
+  function cmClick(e) {                             // the hearts, Reply, Delete in the list
+    var t = e.target.closest("button"), row = t && t.closest(".cm-row"), p = cm.p; if (!row || !p) return;
+    var i = row.getAttribute("data-i"), id = row.getAttribute("data-id");
+    if (t.classList.contains("cm-lk")) {
+      if (i == null) { if (!reduced) { t.classList.remove("pop"); void t.offsetWidth; t.classList.add("pop"); } return; }   // (your own: just the bounce)
+      p.cl = p.cl || {}; var on = !p.cl[i]; if (on) p.cl[i] = 1; else delete p.cl[i]; ppSave(p);
+      t.classList.toggle("on", on); var b = cmBot(p, +i); t.querySelector("i").textContent = b.likes ? fmtShort(b.likes) : "";
+      if (on && !reduced) { t.classList.remove("pop"); void t.offsetWidth; t.classList.add("pop"); }
+      if (on) { sfx.play("tick", true); gmBuzz("tap"); }
+    } else if (t.classList.contains("cm-rep")) {
+      cmReplyTo(i != null ? { i: +i, name: sbName(cmBot(p, +i).s) } : null, row);
+    } else if (t.classList.contains("cm-del") && id) {
+      p.mc = cmMy(p).filter(function (c) { return c.id !== id; }); ppSave(p);
+      var next = row.nextElementSibling;
+      if (next && next.classList.contains("cm-sub") && !next.getAttribute("data-id") && !next.getAttribute("data-i")) next.remove();   // (and the bot's answer to it)
+      row.remove(); cmCountUI(); pfLikesUI(true);
+      toast("Comment deleted", "", { icon: "trash-2" });
+    }
+  }
+  function cmReplyTo(to, row) {
+    cm.to = to;
+    var bar = cm.bar.querySelector(".cm-to"), field = cm.bar.querySelector(".cm-field");
+    bar.hidden = !to; if (to) { bar.querySelector("b").textContent = to.name; field.value = "@" + to.name + " "; field.focus(); field.dispatchEvent(new Event("input")); }
+  }
+  function cmSend() {
+    var p = cm.p, field = cm.bar.querySelector(".cm-field"), x = field.value.trim().slice(0, 300); if (!p || !x) return;
+    var c = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: Date.now(), bt: sbClock(), x: x, to: cm.to ? cm.to.i : null };
+    cmMy(p).push(c); ppSave(p);
+    var html = cmMine(p, sbClock(), c, true), list = cm.body.querySelector(".cm-list"), anchor = c.to != null ? list.querySelector('.cm-row[data-i="' + c.to + '"]') : null;
+    if (anchor) { var a = anchor; while (a.nextElementSibling && a.nextElementSibling.classList.contains("cm-sub")) a = a.nextElementSibling; a.insertAdjacentHTML("afterend", html); }
+    else { var hr = list.querySelector(".cm-hr"); if (hr) hr.insertAdjacentHTML("afterend", html); else list.insertAdjacentHTML("afterbegin", html); }
+    var none = cm.body.querySelector(".cm-none"); if (none) none.remove();
+    field.value = ""; cm.bar.querySelector(".cm-post").disabled = true; cmReplyTo(null); field.blur();
+    sfx.play("tick", true); gmBuzz("tap"); cmCountUI(); pfLikesUI(true);
+  }
+  function cmCountUI() { if (cmOn()) cm.body.querySelector(".cm-count b").textContent = fmtNum(cmCount(cm.p)); }
+  function cmLive(T) {                              // the list is open: new bot comments wait behind a pill at the top ("↑ 12 new comments"), so nothing jumps under your finger
+    if (!cmOn()) return;
+    var p = cm.p, n = cmBots(p, T), list = cm.body.querySelector(".cm-list"), pill = cm.body.querySelector(".cm-newp");
+    if (n > cm.shown) { var k = n - cm.shown; pill.hidden = false; pill.textContent = "↑ " + fmtNum(k) + (k === 1 ? " new comment" : " new comments"); }
+    qa(".cm-row[data-id]", list).forEach(function (r) {   // your comments: a bot's answer arrives
+      var c = null; cmMy(p).forEach(function (q) { if (q.id === r.getAttribute("data-id")) c = q; });
+      var a = c && cmReply(c), next = r.nextElementSibling;
+      if (a && a.bt <= T && !(next && next.classList.contains("cm-sub") && !next.getAttribute("data-i") && !next.getAttribute("data-id")))
+        r.insertAdjacentHTML("afterend", cmRow({ s: a.s, x: "@" + C.handle + " " + a.x, bt: a.bt, likes: 0, sub: true, fresh: true }));
+    });
+    cmCountUI();
+  }
+  function cmShowNew() {                           // the pill: the new ones go on top, newest first
+    var p = cm.p, T = sbClock(), n = cmBots(p, T), list = cm.body.querySelector(".cm-list"), at = list.querySelector(".cm-hr"), h = "";
+    for (var i = n - 1; i >= Math.max(cm.shown, n - CM_SHOW); i--) { var b = cmBot(p, i, T); h += cmRow({ s: b.s, x: b.x, bt: b.bt, likes: b.likes, i: i, on: !!(p.cl && p.cl[i]), fresh: true }); }
+    if (at) at.insertAdjacentHTML("afterend", h); else list.insertAdjacentHTML("afterbegin", h);
+    cm.shown = n; cm.body.querySelector(".cm-newp").hidden = true;
+    var rows = qa(".cm-row[data-i]", list); for (var k = CM_SHOW + 10; k < rows.length; k++) rows[k].remove();   // (the list stays short)
+    cm.body.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+  }
+  function cmDue(T) {                               // answers to your comments that have just come: a notification each (once)
+    var out = [];
+    pp.list.forEach(function (p) {
+      cmMy(p).forEach(function (c) { var a = cmReply(c); if (a && a.bt <= T && !c.rn) { c.rn = 1; out.push({ p: p, a: a }); } });
+      if (out.length && out[out.length - 1].p === p) ppSave(p);
+    });
+    return out;
+  }
 
   /* ---------- start up ---------- */
   var clockEl = $("clock");
