@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "2.3",                       // shown in Settings → About
+  version: "2.4",                       // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -2433,6 +2433,124 @@ const CONFIG = {
   .pp-del svg.ic { width: 18px; height: 18px; }
   .pp-del.sure { color: #fff; background: rgba(255, 60, 60, .28); }
 
+  /* the grid's tiles: the likes at the bottom (a soft shade under them), pressed: a little smaller */
+  .pp-cell { transition: transform .15s; }
+  .pp-cell:active { transform: scale(.96); }
+  .pp-cell.liked::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 45%; background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, .55)); pointer-events: none; }
+  .pp-lk { position: absolute; left: 7px; bottom: 6px; z-index: 1; display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+  .pp-cell:not(.liked) .pp-lk { display: none; }
+  .pp-lk svg.ic { width: 13px; height: 13px; fill: #fff; stroke: #fff; }
+  .pp-cnt { margin-left: 6px; padding: 2px 9px; border-radius: 999px; font-size: 13px; vertical-align: 2px; background: rgba(255, 255, 255, .1); color: var(--text2); }
+  /* the new post's filters: little pictures in a row (the chosen one has a coloured edge) */
+  .pp-fx { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; margin: 0 -20px; padding: 12px 20px 2px; }
+  .pp-fx::-webkit-scrollbar { display: none; }
+  .pp-fxb { flex: none; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0; font-size: 11.5px; color: var(--text2); }
+  .pp-fxb span { display: block; width: 62px; height: 62px; border-radius: 14px; overflow: hidden; border: 2px solid transparent; background: #15151c; transition: border-color .2s, transform .2s; }
+  .pp-fxb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .pp-fxb i { font-style: normal; }
+  .pp-fxb.on { color: var(--text); font-weight: 700; }
+  .pp-fxb.on span { border-color: var(--accent); transform: scale(1.04); box-shadow: 0 0 12px rgba(var(--accent-rgb), .45); }
+  .pp-prev img, .pp-prev video { transition: filter .25s; }
+  .pp-capw { position: relative; }
+  .pp-capw .pp-cap { padding-bottom: 22px; }
+  .pp-n { position: absolute; right: 12px; bottom: 7px; font-size: 11px; color: var(--text3); pointer-events: none; }
+  .pp-share.busy span::after { content: ""; display: inline-block; width: 13px; height: 13px; margin-left: 9px; vertical-align: -2px; border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, .35); border-top-color: #fff; animation: ppSpin .7s linear infinite; }
+  @keyframes ppSpin { to { transform: rotate(1turn); } }
+  .mi.danger b, .mi.danger svg.ic { color: #ff6b6b; }
+
+  /* the feed: your posts big, one under another (like Instagram) */
+  #pfeed { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 40; display: flex; flex-direction: column; background: #050507;
+    transform: translateY(100%); visibility: hidden; transition: transform .42s cubic-bezier(.2, .9, .25, 1), visibility 0s linear .42s; }
+  #pfeed.open { transform: none; visibility: visible; transition: transform .42s cubic-bezier(.2, .9, .25, 1); }
+  .fd-bar { flex: none; display: flex; align-items: center; gap: 12px; padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px; border-bottom: 1px solid rgba(255, 255, 255, .08); }
+  .fd-ttl { display: flex; flex-direction: column; line-height: 1.15; }
+  .fd-ttl small { font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); }
+  .fd-ttl b { font-size: 17px; }
+  .fd-list { flex: 1; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px)); }
+  .fd-list::-webkit-scrollbar { display: none; }
+  .fd-post { padding: 12px 0 20px; transition: opacity .35s, transform .35s; }
+  .fd-post.gone { opacity: 0; transform: scale(.92); }
+  .fd-head { display: flex; align-items: center; gap: 10px; padding: 0 8px 10px 12px; }
+  .fd-av { flex: none; width: 38px; height: 38px; padding: 2px; border-radius: 50%; background: conic-gradient(#feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5, #feda75); }
+  .fd-av img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid #050507; }
+  .fd-who { flex: 1; display: flex; align-items: center; gap: 5px; font-size: 15px; }
+  .fd-who .vtick { width: 16px; height: 16px; margin: 0; }
+  .fd-more { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; }
+  .fd-media { position: relative; background: #000; }
+  .fd-media img, .fd-media video { display: block; width: 100%; max-height: 78vh; object-fit: contain; }
+  .fd-burst { position: absolute; left: 50%; top: 50%; width: 112px; height: 112px; margin: -56px 0 0 -56px; opacity: 0; pointer-events: none; }
+  .fd-burst svg.ic { width: 100%; height: 100%; fill: #fff; stroke: none; filter: drop-shadow(0 6px 22px rgba(0, 0, 0, .45)); }
+  .fd-burst.go { animation: pfBurst .95s cubic-bezier(.2, 1.3, .4, 1); }
+  @keyframes pfBurst { 0% { opacity: 0; transform: scale(.2); } 15% { opacity: 1; transform: scale(1.18); } 30% { transform: scale(.94); } 45%, 78% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: translateY(-34px) scale(.6); } }
+  .fd-snd { position: absolute; right: 10px; bottom: 10px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: rgba(0, 0, 0, .6); pointer-events: none; }
+  .fd-snd svg.ic { width: 16px; height: 16px; }
+  .fd-acts { display: flex; align-items: center; gap: 2px; padding: 6px 6px 0; }
+  .fd-acts button { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
+  .fd-acts svg.ic { width: 26px; height: 26px; }
+  .fd-acts .sp { flex: 1; }
+  .fd-like.on svg.ic { fill: #ff3040; stroke: #ff3040; }
+  .fd-like.pop svg.ic { animation: pfPop .45s cubic-bezier(.3, 1.6, .5, 1); }
+  @keyframes pfPop { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+  .fd-save.on svg.ic { fill: currentColor; }
+  .fd-likes { padding: 2px 14px 0; font-size: 14.5px; }
+  .fd-likes b { font-weight: 700; }
+  .fd-cap { padding: 5px 14px 0; font-size: 14.5px; line-height: 1.45; overflow-wrap: anywhere; }
+  .fd-cap b { margin-right: 6px; font-weight: 700; }
+  .fd-time { display: block; padding: 6px 14px 0; font-size: 12px; color: var(--text3); }
+  @media (prefers-reduced-motion: reduce) { #pfeed, #pfeed.open { transition: none; } }
+
+  /* =====================================================================
+     NOTIFICATIONS  (the heart buttons and their red number, the pop-up at the top, the list)
+     ===================================================================== */
+  .nt-btn { position: absolute; z-index: 6; top: calc(17px + env(safe-area-inset-top, 0px)); left: 14px; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
+    background: rgba(var(--surface-rgb), .9); border: 1px solid var(--edge); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
+  .nt-btn svg.ic { width: 22px; height: 22px; }
+  .nt-btn:active { transform: scale(.92); }
+  .nt-ib { position: relative; }
+  .nt-badge { position: absolute; top: -4px; right: -4px; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 10px; background: #ff3040; color: #fff;
+    font-size: 11px; font-weight: 800; font-style: normal; line-height: 19px; text-align: center; box-shadow: 0 0 0 2px rgba(var(--surface-rgb), 1); pointer-events: none; }
+  .nt-badge:empty { display: none; }
+  .nt-badge.bump { animation: ntBump .5s cubic-bezier(.3, 1.6, .5, 1); }
+  @keyframes ntBump { 0% { transform: scale(.4); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+
+  /* a bot's picture: its first letter on a colour of its own; a lock = a private account */
+  .nt-av { position: relative; flex: none; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 17px; font-weight: 800; text-transform: uppercase;
+    background: linear-gradient(135deg, hsl(var(--h), 80%, 60%), hsl(calc(var(--h) + 50), 75%, 40%)); }
+  .nt-av .nt-lock { position: absolute; right: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: #111; border: 1px solid rgba(255, 255, 255, .2); }
+  .nt-av .nt-lock svg.ic { width: 10px; height: 10px; }
+  .nt-av.nt-me { background: linear-gradient(135deg, #ff5f8f, #d62976); }
+  .nt-av.nt-me svg.ic { width: 20px; height: 20px; fill: #fff; stroke: #fff; }
+
+  /* the pop-up: slides down from the top, goes after a few seconds (tap it for the list) */
+  #ntBan { position: fixed; z-index: 119; top: calc(10px + env(safe-area-inset-top, 0px)); left: 50%; width: min(92vw, 400px); margin-left: calc(min(92vw, 400px) / -2);
+    display: flex; align-items: center; gap: 11px; padding: 9px 10px 9px 9px; border-radius: 20px; background: rgba(18, 18, 24, .95); border: 1px solid rgba(255, 255, 255, .12);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, .5); color: #fff; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transform: translateY(calc(-100% - 30px)); opacity: 0; visibility: hidden; transition: transform .45s cubic-bezier(.2, 1.2, .3, 1), opacity .3s, visibility 0s linear .45s; }
+  #ntBan.show { transform: none; opacity: 1; visibility: visible; transition: transform .45s cubic-bezier(.2, 1.2, .3, 1), opacity .3s; }
+  #ntBan p { flex: 1; min-width: 0; font-size: 14px; line-height: 1.3; }
+  #ntBan p b { font-weight: 700; }
+  .nt-th { flex: none; width: 42px; height: 42px; border-radius: 9px; object-fit: cover; }
+  #ntBan .nt-th:not([src]) { display: none; }
+  @media (min-width: 600px) and (min-height: 600px) { .nt-btn { top: 57px; } #ntBan { top: 62px; width: 380px; margin-left: -190px; } }
+
+  /* the list */
+  .nt-sum { display: flex; gap: 8px; margin: 2px 0 6px; }
+  .nt-sum span { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 11px 6px; border-radius: 16px; font-size: 12px; color: var(--text2);
+    background: rgba(255, 255, 255, .06); border: 1px solid var(--edge); }
+  .nt-sum svg.ic { width: 18px; height: 18px; color: #ff5f8f; }
+  .nt-sum b { font-size: 19px; color: var(--text); }
+  .nt-h { margin: 16px 0 4px; font-size: 15px; font-weight: 700; }
+  .nt-row { display: flex; align-items: center; gap: 11px; padding: 8px 0; }
+  .nt-row p { flex: 1; min-width: 0; font-size: 14px; line-height: 1.35; color: var(--text); overflow-wrap: anywhere; }
+  .sheet-b .nt-row p { color: var(--text); font-size: 14px; line-height: 1.35; }
+  .nt-row time { color: var(--text3); }
+  .nt-fb { flex: none; padding: 7px 13px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: #fff; background: #0095f6; transition: background .2s; }
+  .nt-fb.on { background: rgba(255, 255, 255, .14); }
+  .nt-none { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 30px 10px; text-align: center; color: var(--text2); }
+  .nt-none svg.ic { width: 38px; height: 38px; }
+  .nt-none b { color: var(--text); font-size: 16px; }
+
   /* ---------- 0. opening intro (everything here only moves with transform / opacity, so it stays smooth) ---------- */
   #intro { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; background: #000; overflow: hidden; cursor: pointer;
            animation: iFailsafe .01s linear 7s forwards; }          /* if the script ever fails, the intro hides itself after 7 s */
@@ -2527,6 +2645,7 @@ const CONFIG = {
 <symbol id="i-award" viewBox="0 0 24 24"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></symbol>
 <symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></symbol>
 <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></symbol>
 <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></symbol>
 <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
 <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
@@ -2551,6 +2670,7 @@ const CONFIG = {
 <symbol id="i-list-music" viewBox="0 0 24 24"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M11 19H3"/><path d="M21 16V5"/><circle cx="18" cy="16" r="3"/></symbol>
 <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
 <symbol id="i-log-out" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></symbol>
+<symbol id="i-message-circle" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
 <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></symbol>
 <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
 <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
@@ -2648,6 +2768,7 @@ const CONFIG = {
       <!-- ===================== 1. HOME ===================== -->
       <section class="screen" id="s-home" aria-label="Home">
         <!-- the autopilot bot: tap it and the app drives itself (any touch gives you the controls back) -->
+        <button class="nt-btn" data-act="notes" aria-label="Notifications"><svg class="ic"><use href="#i-heart"/></svg><i class="nt-badge js-ntbadge"></i></button>
         <button class="ap-btn" id="apBtn" data-act="bot" aria-label="Autopilot bot: the app drives itself" aria-pressed="false"><span class="ap-ring"></span><svg class="ap-face" viewBox="0 0 48 48" aria-hidden="true"><g class="apf-ant"><path d="M24 12V7"/><circle class="apf-tip" cx="24" cy="5" r="3"/></g><rect class="apf-ear" x="3.5" y="21" width="5" height="11" rx="2.5"/><rect class="apf-ear" x="39.5" y="21" width="5" height="11" rx="2.5"/><rect class="apf-head" x="8" y="12" width="32" height="29" rx="10"/><rect class="apf-visor" x="12.5" y="18" width="23" height="12.5" rx="6.25"/><g class="apf-look"><g class="apf-eyes"><rect x="17" y="21" width="4.5" height="6.5" rx="2.25"/><rect x="26.5" y="21" width="4.5" height="6.5" rx="2.25"/></g></g><rect class="apf-scan" x="14" y="19.5" width="2.2" height="9.5" rx="1.1"/><path class="apf-mouth" d="M19.5 35h9"/></svg></button>
         <button class="pill rip" data-act="open-player" aria-label="Open the music player">
           <svg class="ic"><use href="#i-audio-lines"/></svg><span class="sep">·</span><span class="pt js-title"></span>
@@ -2729,6 +2850,7 @@ const CONFIG = {
         <div class="bar">
           <button class="ibtn rip" data-act="back" aria-label="Back"><svg class="ic"><use href="#i-arrow-left"/></svg></button>
           <span class="sp"></span>
+          <button class="ibtn nt-ib" data-act="notes" aria-label="Notifications"><svg class="ic"><use href="#i-heart"/></svg><i class="nt-badge js-ntbadge"></i></button>
           <button class="ibtn rip pp-new" data-act="new-post" aria-label="New post: upload a photo or a video"><svg class="ic"><use href="#i-square-plus"/></svg></button>
           <button class="ibtn rip" data-act="pmenu" aria-label="More options"><svg class="ic"><use href="#i-ellipsis-vertical"/></svg></button>
         </div>
@@ -2754,7 +2876,7 @@ const CONFIG = {
           <button class="row rip" data-sheet="activity"><svg class="ic lead"><use href="#i-audio-lines"/></svg><b>Activity</b><svg class="ic chev"><use href="#i-chevron-right"/></svg></button>
         </div>
         <!-- your posts: the + uploads a photo or a video from the phone (kept inside the app); tap one to see it -->
-        <div class="pp-head" id="ppHead"><b>Posts</b><button class="pp-add rip" data-act="new-post"><svg class="ic"><use href="#i-plus"/></svg>New post</button></div>
+        <div class="pp-head" id="ppHead"><b>Posts<span class="pp-cnt js-posts">0</span></b><button class="pp-add rip" data-act="new-post"><svg class="ic"><use href="#i-plus"/></svg>New post</button></div>
         <div class="pp-grid" id="ppGrid"></div>
         <div class="pp-empty" id="ppEmpty">
           <svg class="ic"><use href="#i-camera"/></svg><b>No posts yet</b><span>Share your first photo or video</span>
@@ -3021,6 +3143,12 @@ const CONFIG = {
       </section>
     </main>
 
+    <!-- your posts, big (the feed): opens from the grid on Profile -->
+    <section id="pfeed" aria-label="Posts" aria-hidden="true">
+      <div class="pf-bar"><button class="ibtn rip" id="pfBack" aria-label="Back"><svg class="ic"><use href="#i-arrow-left"/></svg></button><div class="pf-ttl"><small class="js-handle"></small><b>Posts</b></div></div>
+      <div class="pf-list" id="pfList"></div>
+    </section>
+
     <!-- ===================== 3. FULL-SCREEN MUSIC PLAYER ("Now Playing") ===================== -->
     <section id="player" aria-label="Now playing" aria-hidden="true">
       <div class="fp-bg" aria-hidden="true"><i class="s1"></i><i class="s2"></i><i class="s3"></i></div>
@@ -3144,6 +3272,8 @@ const CONFIG = {
     <span class="ap-stop" aria-hidden="true"><svg class="ic"><use href="#i-x"/></svg></span>
   </div>
   <!-- the Autopilot is under construction: a tap on it plays this clip (Imran says NOP), which fades away into a message; tap to skip -->
+  <!-- a notification: who liked your post or followed you (tap it for the list) -->
+  <div id="ntBan" role="status" aria-live="polite"><span class="nt-av" id="ntBanAv"></span><p id="ntBanTxt"></p><img class="nt-th" id="ntBanTh" alt=""></div>
   <div id="apNop" role="button" aria-label="Autopilot is under construction. Tap to close">
     <video id="apNopVid" muted playsinline preload="none" disablepictureinpicture disableremoteplayback aria-hidden="true"></video>
   </div>
@@ -3299,6 +3429,7 @@ const CONFIG = {
         else if (what === "fbswoosh") fbSwish(t, 0.3, 0.13, 480, 3000);                                                                        // the panels slide in
         else if (what === "boton") { tone("square", 440, 880, 0.12, 0.045, t, 0.16); tone("square", 660, 1320, 0.1, 0.04, t + 0.12, 0.18); tone("sine", 1760, 2637, 0.25, 0.06, t + 0.24, 0.45); }   // the autopilot bot wakes up: beep-boop, up
         else if (what === "botoff") { tone("square", 880, 440, 0.12, 0.04, t, 0.16); tone("square", 660, 330, 0.14, 0.035, t + 0.12, 0.22); }   // it rests: down
+        else if (what === "noti") { tone("sine", 1568, 1568, 0.01, 0.06, t, 0.12); tone("sine", 2093, 2093, 0.01, 0.05, t + 0.08, 0.22); }   // a notification: a soft double blip
         else if (what === "bottap") tone("sine", 1900, 1400, 0.04, 0.035, t, 0.06);   // its finger taps: a tiny click
       }
     };
@@ -3958,7 +4089,7 @@ const CONFIG = {
     account: function () {
       return ["Account", '<div class="facts">' + fact("user", "Name", C.name) + fact("globe", "Username", "@" + C.handle) + fact("calendar", "Member since", C.joined) + fact("award", "Plan", "Free") + '</div><div class="btns"><button class="btn main rip" data-act="edit">Edit bio</button></div>'];
     },
-    notifications: function () { return ["Notifications", sw("alerts", "Now playing alerts", "A small message when the song changes", "1") + sw("sfx", "Sound effects", "The boom and whoosh when the page opens", "1")]; },
+    notifications: function () { return ["Notifications", sw("alerts", "Now playing alerts", "A small message when the song changes", "1") + sw("sfx", "Sound effects", "The boom and whoosh when the page opens", "1") + sw("bots", "Like & follow bots", "Your private bot accounts like your posts and follow you", "1") + sw("botpop", "Pop-up notifications", "A message at the top when someone likes or follows you", "1")]; },
     privacy: function () {
       return ["Privacy & Security", sw("showviews", "Show view counter", "The number on the Home screen", "1") + sw("showstatus", "Show online status", "Otherwise it shows “Hidden”", "1") +
               '<div class="btns"><button class="btn rip" data-act="reset">Reset saved data</button></div>'];
@@ -4055,7 +4186,7 @@ const CONFIG = {
     updateChrome();
     if (id === "home") { fitHome(); if (entered) heroPlay(false); }
     if (id === "settings") wf2Spots();
-    if (id === "profile") { typeOnce($("pfBio"), store.get("pbio", C.profileBio), 30); countStat(".js-followers", C.stats.followers, fmtShort); countStat(".js-following", C.stats.following); countStat(".js-posts", pp.list.length); }
+    if (id === "profile") { typeOnce($("pfBio"), store.get("pbio", C.profileBio), 30); countStat(".js-followers", sbFollowers(), fmtShort); countStat(".js-following", sbFollowing()); countStat(".js-posts", pp.list.length); }
     if (id === "stats") drawChart();
     if (id === "themes") markThemes();
     if (id === "game") gmOpen(); else gmLeave();
@@ -4095,6 +4226,7 @@ const CONFIG = {
     if (eqOpen) { closeEq(); return true; }
     if (menuOpen) { closeMenu(); return true; }
     if (sheetOpen) { closeSheet(); return true; }
+    if (pf.on) { pfClose(); return true; }
     if (playerOpen) { closePlayer(); return true; }
     if (stack.length > 1) { back(); return true; }
     if (stack[0] !== "home") { setTab("home"); return true; }
@@ -4104,7 +4236,8 @@ const CONFIG = {
     f = f || fmtNum;
     qa(sel).forEach(function (e) {
       if (reduced) { e.textContent = f(n); return; }
-      var t0 = 0; requestAnimationFrame(function step(t) { if (!t0) t0 = t; var p = Math.min(1, (t - t0) / 700); e.textContent = f(Math.round(n * (1 - Math.pow(1 - p, 3)))); if (p < 1) requestAnimationFrame(step); });
+      e._counting = true;                                  // (the like & follow bots leave it alone while it counts up)
+      var t0 = 0; requestAnimationFrame(function step(t) { if (!t0) t0 = t; var p = Math.min(1, (t - t0) / 700); e.textContent = f(Math.round(n * (1 - Math.pow(1 - p, 3)))); if (p < 1) requestAnimationFrame(step); else e._counting = false; });
     });
   }
 
@@ -4213,6 +4346,7 @@ const CONFIG = {
     store.set(key, on ? "1" : "0");
     if (key === "showviews" || key === "showstatus") applyFlags();
     if (key === "sfx" && on) sfx.play("whoosh2", true);
+    if (key === "bots" || key === "botpop") sbFlag(key, on);
   }
 
   /* =====================================================================
@@ -4359,6 +4493,7 @@ const CONFIG = {
       case "back": handleBack(); break;
       case "bot": apToggle(); break;
       case "new-post": ppPick(); break;
+      case "notes": sbCenter(); break;
       case "posts": ppShow(); break;
       case "close-sheet": closeSheet(); break;
       case "edit": editBio(); break;
@@ -7642,12 +7777,17 @@ const CONFIG = {
   ap.sw.addEventListener("click", apToggle);
 
   /* =====================================================================
-     POSTS  (on Profile: the + button uploads a photo or a video from the phone, with a caption)
-     Kept on the phone inside the app (IndexedDB: photos made smaller, videos as they are), shown in a grid under the
-     profile, newest first; tap one to see it (or delete it). Posts on the profile = how many there are.
-     Every post has likes: 0 for now ("No likes yet"); the like bots can raise it later.
+     POSTS  (on Profile: the + button uploads a photo or a video from the phone, with a filter and a caption)
+     Kept on the phone inside the app (IndexedDB: photos made smaller with the filter baked in, videos as they are),
+     shown in a grid under the profile (newest first, with their likes); tap one for the feed: big, like Instagram,
+     double-tap to like. The likes come from the like bots (see LIKE & FOLLOW BOTS below).
      ===================================================================== */
-  var pp = { db: null, list: [], urls: {}, file: $("ppFile"), grid: $("ppGrid"), empty: $("ppEmpty"), busy: false, prev: "" };
+  var PP_FX = [["Normal", ""], ["Clarendon", "contrast(1.2) saturate(1.35)"], ["Gingham", "brightness(1.05) hue-rotate(-10deg) contrast(.92) saturate(.9)"],
+               ["Moon", "grayscale(1) contrast(1.1) brightness(1.1)"], ["Lark", "contrast(.92) brightness(1.08) saturate(1.15)"],
+               ["Reyes", "sepia(.22) brightness(1.1) contrast(.85) saturate(.75)"], ["Juno", "saturate(1.4) contrast(1.15) sepia(.08)"],
+               ["Slumber", "saturate(.66) brightness(1.05) sepia(.18)"], ["Crema", "sepia(.35) contrast(1.1) saturate(1.1)"]];
+  var PP_VT = (document.querySelector(".setprof .vtick") || {}).outerHTML || "";   // the blue verified tick (the Settings card has the original)
+  var pp = { db: null, list: [], urls: {}, file: $("ppFile"), grid: $("ppGrid"), empty: $("ppEmpty"), busy: false, prev: "", loaded: false };
 
   function ppDb(cb) {                               // the posts' own little database (opened once)
     if (pp.db || !window.indexedDB) { cb(pp.db); return; }
@@ -7668,31 +7808,42 @@ const CONFIG = {
       } catch (e) { if (done) done(false); }
     });
   }
+  function ppSave(p) { ppTx("readwrite", function (st) { return st.put(p); }); }
   function ppLoad() {
     ppTx("readonly", function (st) { return st.getAll(); }, function (ok, all) {
-      pp.list = ok && all ? all.sort(function (a, b) { return b.t - a.t; }) : [];
+      pp.list = ok && all ? all.sort(function (a, b) { return b.t - a.t; }) : []; pp.loaded = true;
+      pp.list.forEach(function (p) { if (sbPrep(p)) ppSave(p); p.likes = sbLikes(p); });   // (posts from before the bots get their numbers once)
       ppRender(); ppCount();
     });
   }
   function ppUrl(p, k) { var u = pp.urls[p.id] || (pp.urls[p.id] = {}); return u[k] || (u[k] = URL.createObjectURL(p[k])); }
   function ppCount() { qa(".js-posts").forEach(function (e) { e.textContent = fmtNum(pp.list.length); }); }
-  function ppRender(fresh) {                        // the grid: three across, square, a play mark on videos
+  function ppRender(fresh) {                        // the grid: three across, square, the likes on each, a play mark on videos
     pp.grid.innerHTML = "";
     pp.list.forEach(function (p, i) {
       var b = document.createElement("button");
       b.className = "pp-cell rip" + (fresh && i === 0 ? " fresh" : "");
+      b.setAttribute("data-id", p.id);
       b.setAttribute("aria-label", (p.type === "video" ? "Video" : "Photo") + (p.caption ? ": " + p.caption : ""));
-      b.innerHTML = '<img alt="" decoding="async" src="' + ppUrl(p, "thumb") + '">' + (p.type === "video" ? ic("play", "pp-vid") : "");
-      b.addEventListener("click", function () { ppView(p); });
+      b.innerHTML = '<img alt="" decoding="async" src="' + ppUrl(p, "thumb") + '">' + (p.type === "video" ? ic("play", "pp-vid") : "") +
+                    '<span class="pp-lk">' + ic("heart") + "<i></i></span>";
+      b.addEventListener("click", function () { pfOpen(p.id); });
       pp.grid.appendChild(b);
     });
     pp.empty.style.display = pp.list.length ? "none" : "";
+    ppLikesUI();
+  }
+  function ppLikesUI() {                            // the likes on the grid (short: 1.2M)
+    qa(".pp-cell", pp.grid).forEach(function (b, i) {
+      var p = pp.list[i], t = p && p.likes > 0 ? fmtShort(p.likes) : "", e = b.querySelector(".pp-lk i");
+      if (e && e.textContent !== t) { e.textContent = t; b.classList.toggle("liked", !!t); }
+    });
   }
   function ppShow() {                               // Posts on the profile: down to the grid
     var h = $("ppHead"); if (h.scrollIntoView) h.scrollIntoView({ block: "start", behavior: reduced ? "auto" : "smooth" });
   }
 
-  /* ---------- a new post: choose → caption → Share ---------- */
+  /* ---------- a new post: choose → filter + caption → Share ---------- */
   function ppPick() { if (pp.busy) return; pp.file.value = ""; pp.file.click(); }
   pp.file.addEventListener("change", function () {
     var f = pp.file.files && pp.file.files[0]; if (!f) return;
@@ -7703,35 +7854,54 @@ const CONFIG = {
   });
   function ppCompose(f, video) {
     if (pp.prev) URL.revokeObjectURL(pp.prev);
-    var url = pp.prev = URL.createObjectURL(f);
+    var url = pp.prev = URL.createObjectURL(f), fx = 0;
+    var tiles = PP_FX.map(function (x, i) {
+      return '<button class="pp-fxb' + (i ? "" : " on") + '" data-fx="' + i + '"><span>' + (video ? "" : '<img alt="" src="' + url + '" style="filter:' + (x[1] || "none") + '">') + "</span><i>" + x[0] + "</i></button>";
+    }).join("");
     openSheet("New post",
       '<div class="pp-prev">' + (video ? '<video src="' + url + '" muted loop autoplay playsinline></video>' : '<img alt="" src="' + url + '">') + "</div>" +
-      '<textarea class="pp-cap" maxlength="2200" rows="2" placeholder="Write a caption…" aria-label="Caption"></textarea>' +
+      '<div class="pp-fx" role="listbox" aria-label="Filters">' + tiles + "</div>" +
+      '<div class="pp-capw"><textarea class="pp-cap" maxlength="2200" rows="2" placeholder="Write a caption…" aria-label="Caption"></textarea><span class="pp-n">0/2200</span></div>' +
       '<button class="pp-share rip">' + ic("send") + "<span>Share</span></button>",
       function (body) {
-        var btn = body.querySelector(".pp-share");
-        btn.addEventListener("click", function () { ppShare(f, video, body.querySelector(".pp-cap").value.trim(), btn); });
+        var media = body.querySelector(".pp-prev img, .pp-prev video"), btn = body.querySelector(".pp-share"), cap = body.querySelector(".pp-cap");
+        qa(".pp-fxb", body).forEach(function (b) {
+          b.addEventListener("click", function () {
+            fx = +b.getAttribute("data-fx"); media.style.filter = PP_FX[fx][1] || "";
+            qa(".pp-fxb", body).forEach(function (o) { o.classList.toggle("on", o === b); });
+          });
+        });
+        cap.addEventListener("input", function () { body.querySelector(".pp-n").textContent = cap.value.length + "/2200"; });
+        btn.addEventListener("click", function () { ppShare(f, video, cap.value.trim(), fx, btn); });
+        if (video) ppVideoThumb(url, "", function (b) {    // (a video: the filter tiles show a frame of it)
+          if (!b) return; var u = URL.createObjectURL(b);
+          qa(".pp-fxb span", body).forEach(function (s, i) { s.innerHTML = '<img alt="" src="' + u + '" style="filter:' + (PP_FX[i][1] || "none") + '">'; });
+        });
       });
   }
-  function ppShare(f, video, caption, btn) {
+  function ppShare(f, video, caption, fx, btn) {
     if (pp.busy) return;
     pp.busy = true; btn.disabled = true; btn.classList.add("busy"); btn.lastChild.textContent = "Posting…";
     var fail = function (why) { pp.busy = false; btn.disabled = false; btn.classList.remove("busy"); btn.lastChild.textContent = "Share"; toast("Couldn't post", why, { icon: "x" }); };
+    var css = PP_FX[fx][1];
     var save = function (full, thumb) {
       if (!full || !thumb) { fail(video ? "This video can't be read" : "This photo can't be read"); return; }
-      var p = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), t: Date.now(), type: video ? "video" : "image", full: full, thumb: thumb, caption: caption, likes: 0 };
+      var p = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), t: Date.now(), type: video ? "video" : "image", full: full, thumb: thumb,
+                caption: caption, fx: video ? fx : 0, likes: 0, me: false, sv: false };
+      sbPrep(p);
       ppTx("readwrite", function (st) { return st.put(p); }, function (ok) {
         if (!ok) { fail("There isn't room for it on the phone"); return; }
         pp.busy = false; pp.list.unshift(p); ppRender(true); ppCount();
         closeSheet(); sfx.play("chime", true);
-        toast("Posted!", "Your post is up. No likes yet…", { icon: "check", hl: "No likes yet…" });
+        toast("Posted!", "Your post is live. The likes are coming…", { icon: "check", hl: "The likes are coming…" });
         setTimeout(ppShow, reduced ? 0 : 450);
+        sbPosted(p);
       });
     };
-    if (video) ppVideoThumb(pp.prev, function (thumb) { save(f, thumb || ppPlainThumb()); });
-    else ppShrink(pp.prev, 1600, .88, false, function (full) { if (!full) { save(null); return; } ppShrink(pp.prev, 420, .82, true, function (thumb) { save(full, thumb); }); });
+    if (video) ppVideoThumb(pp.prev, css, function (thumb) { save(f, thumb || ppPlainThumb()); });
+    else ppShrink(pp.prev, 1600, .9, false, css, function (full) { if (!full) { save(null); return; } ppShrink(pp.prev, 420, .84, true, css, function (thumb) { save(full, thumb); }); });
   }
-  function ppShrink(src, max, q, square, cb) {      // the photo as a JPEG at most max pixels (square: its middle square, for the grid)
+  function ppShrink(src, max, q, square, css, cb) { // the photo as a JPEG at most max pixels, the filter baked in (square: its middle, for the grid)
     var im = new Image();
     im.onload = function () {
       var w = im.naturalWidth, h = im.naturalHeight, sx = 0, sy = 0, sw = w, sh = h;
@@ -7740,13 +7910,14 @@ const CONFIG = {
       var k = Math.min(1, max / Math.max(sw, sh)), c = document.createElement("canvas"), g;
       c.width = Math.max(1, Math.round(sw * k)); c.height = Math.max(1, Math.round(sh * k)); g = c.getContext("2d");
       g.fillStyle = "#000"; g.fillRect(0, 0, c.width, c.height); g.imageSmoothingQuality = "high";
+      if (css) g.filter = css;
       g.drawImage(im, sx, sy, sw, sh, 0, 0, c.width, c.height);
       if (c.toBlob) c.toBlob(function (b) { cb(b); }, "image/jpeg", q); else cb(null);
     };
     im.onerror = function () { cb(null); };
     im.src = src;
   }
-  function ppVideoThumb(src, cb) {                  // a frame from the video (half a second in), square, for the grid
+  function ppVideoThumb(src, css, cb) {             // a frame from the video (half a second in), square, for the grid
     var v = document.createElement("video"), done = false;
     var end = function (b) { if (done) return; done = true; clearTimeout(t); v.removeAttribute("src"); try { v.load(); } catch (e) {} cb(b); };
     var t = setTimeout(function () { end(null); }, 8000);
@@ -7754,9 +7925,10 @@ const CONFIG = {
     v.onloadeddata = function () { try { v.currentTime = Math.min(.5, (v.duration || 1) / 2); } catch (e) { end(null); } };
     v.onseeked = function () {
       var w = v.videoWidth, h = v.videoHeight; if (!w || !h) { end(null); return; }
-      var m = Math.min(w, h), k = Math.min(1, 420 / m), c = document.createElement("canvas");
+      var m = Math.min(w, h), k = Math.min(1, 420 / m), c = document.createElement("canvas"), g = c.getContext("2d");
       c.width = c.height = Math.max(1, Math.round(m * k));
-      try { c.getContext("2d").drawImage(v, (w - m) / 2, (h - m) / 2, m, m, 0, 0, c.width, c.height); c.toBlob(function (b) { end(b); }, "image/jpeg", .82); } catch (e) { end(null); }
+      if (css) g.filter = css;
+      try { g.drawImage(v, (w - m) / 2, (h - m) / 2, m, m, 0, 0, c.width, c.height); c.toBlob(function (b) { end(b); }, "image/jpeg", .84); } catch (e) { end(null); }
     };
     v.onerror = function () { end(null); };
     v.src = src;
@@ -7769,29 +7941,301 @@ const CONFIG = {
     for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
     return new Blob([a], { type: "image/png" });
   }
-
-  /* ---------- one post: the photo / video, likes, when, the caption, delete ---------- */
-  function ppView(p) {
-    openSheet("Post",
-      '<div class="pp-view">' + (p.type === "video" ? '<video src="' + ppUrl(p, "full") + '" muted loop autoplay playsinline controls></video>' : '<img alt="" src="' + ppUrl(p, "full") + '">') + "</div>" +
-      '<div class="pp-meta"><span class="pp-likes">' + ic("heart") + (p.likes > 0 ? fmtNum(p.likes) + (p.likes === 1 ? " like" : " likes") : "No likes yet") + '</span><span>' + esc(ago(p.t)) + "</span></div>" +
-      (p.caption ? '<p class="pp-text"><b>' + esc(C.handle) + "</b> " + esc(p.caption) + "</p>" : "") +
-      '<button class="pp-del rip">' + ic("trash-2") + "<span>Delete post</span></button>",
-      function (body) {
-        var btn = body.querySelector(".pp-del");
-        btn.addEventListener("click", function () { ppDelete(p, btn); });
-      });
-  }
-  function ppDelete(p, btn) {                       // two taps: "Delete post", then "Tap again to delete"
-    if (!btn.classList.contains("sure")) { btn.classList.add("sure"); btn.lastChild.textContent = "Tap again to delete"; return; }
+  function ppDelete(p) {
     ppTx("readwrite", function (st) { return st.delete(p.id); }, function (ok) {
       if (!ok) { toast("Couldn't delete it", "Try again", { icon: "x" }); return; }
       pp.list = pp.list.filter(function (q) { return q.id !== p.id; }); ppRender(); ppCount();
-      closeSheet(); toast("Post deleted", "It's gone from your profile", { icon: "trash-2" });
-      setTimeout(function () { var u = pp.urls[p.id]; if (u) { if (u.thumb) URL.revokeObjectURL(u.thumb); if (u.full) URL.revokeObjectURL(u.full); delete pp.urls[p.id]; } }, 800);
+      var card = pf.list.querySelector('[data-id="' + p.id + '"]');
+      if (card) { card.classList.add("gone"); setTimeout(function () { card.remove(); if (!pp.list.length) pfClose(); }, reduced ? 0 : 380); }
+      toast("Post deleted", "It's gone from your profile", { icon: "trash-2" });
+      setTimeout(function () { var u = pp.urls[p.id]; if (u) { if (u.thumb) URL.revokeObjectURL(u.thumb); if (u.full) URL.revokeObjectURL(u.full); delete pp.urls[p.id]; } }, 900);
     });
   }
+
+  /* ---------- the feed: your posts big, one under another (opens at the one you tapped) ---------- */
+  var pf = { el: $("pfeed"), list: $("pfList"), on: false, io: null, tapT: 0, tapId: "" };
+  function pfOpen(id) {
+    pf.list.innerHTML = "";
+    pp.list.forEach(function (p) { pf.list.appendChild(pfCard(p)); });
+    pf.on = true; pf.el.classList.add("open"); pf.el.setAttribute("aria-hidden", "false");
+    var c = pf.list.querySelector('[data-id="' + id + '"]'); pf.list.scrollTop = c ? c.offsetTop : 0;
+    if (window.IntersectionObserver) {               // videos play while you look at them (muted; tap for sound)
+      pf.io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { var v = e.target; if (e.isIntersecting && e.intersectionRatio > .6) swallow(v.play()); else v.pause(); });
+      }, { root: pf.list, threshold: [0, .6, 1] });
+      qa("video", pf.list).forEach(function (v) { pf.io.observe(v); });
+    }
+    pfLikesUI(true);
+  }
+  function pfClose() {
+    if (!pf.on) return;
+    pf.on = false; pf.el.classList.remove("open"); pf.el.setAttribute("aria-hidden", "true");
+    if (pf.io) { pf.io.disconnect(); pf.io = null; }
+    qa("video", pf.list).forEach(function (v) { v.pause(); });
+    setTimeout(function () { if (!pf.on) pf.list.innerHTML = ""; }, 450);
+  }
+  function pfWhen(t) {                              // "2 hours ago", like Instagram (the date after a week)
+    var s = Math.max(0, (Date.now() - t) / 1000), n;
+    if (s < 60) return "Just now";
+    if (s < 3600) { n = Math.floor(s / 60); return n + (n === 1 ? " minute ago" : " minutes ago"); }
+    if (s < 86400) { n = Math.floor(s / 3600); return n + (n === 1 ? " hour ago" : " hours ago"); }
+    if (s < 604800) { n = Math.floor(s / 86400); return n + (n === 1 ? " day ago" : " days ago"); }
+    return new Date(t).toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  }
+  function pfLikesHtml(p) {
+    var n = p.likes || 0;
+    if (!n) return "Be the first to like this";
+    if (n === 1 && p.me) return "Liked by <b>you</b>";
+    return "Liked by <b>" + esc(p.me ? "you" : sbName(p.seed)) + "</b> and <b>" + fmtNum(n - 1) + (n - 1 === 1 ? " other" : " others") + "</b>";
+  }
+  function pfLikesUI(all) {                         // the likes under each post (live while the bots work)
+    if (!pf.on) return;
+    qa(".fd-post", pf.list).forEach(function (a) {
+      var p = ppFind(a.getAttribute("data-id")), e = a.querySelector(".fd-likes"); if (!p || !e) return;
+      if (!all) { var r = a.getBoundingClientRect(); if (r.bottom < 0 || r.top > window.innerHeight) return; }
+      var h = pfLikesHtml(p); if (e.innerHTML !== h) e.innerHTML = h;
+    });
+  }
+  function ppFind(id) { for (var i = 0; i < pp.list.length; i++) if (pp.list[i].id === id) return pp.list[i]; return null; }
+  function pfCard(p) {
+    var a = document.createElement("article"), vid = p.type === "video", css = vid && p.fx ? PP_FX[p.fx][1] : "";
+    a.className = "fd-post"; a.setAttribute("data-id", p.id);
+    a.innerHTML =
+      '<header class="fd-head"><span class="fd-av"><img alt="" src="' + esc(C.avatarImage) + '"></span><span class="fd-who"><b>' + esc(C.handle) + "</b>" + PP_VT + "</span>" +
+        '<button class="fd-more rip" aria-label="More options">' + ic("ellipsis-vertical") + "</button></header>" +
+      '<div class="fd-media">' + (vid ? '<video src="' + ppUrl(p, "full") + '" muted loop playsinline preload="metadata"' + (css ? ' style="filter:' + css + '"' : "") + "></video>" + '<span class="fd-snd">' + ic("volume-x") + "</span>"
+                                       : '<img alt="" decoding="async" src="' + ppUrl(p, "full") + '">') + '<span class="fd-burst">' + ic("heart") + "</span></div>" +
+      '<div class="fd-acts"><button class="fd-like' + (p.me ? " on" : "") + '" aria-label="Like" aria-pressed="' + !!p.me + '">' + ic("heart") + "</button>" +
+        '<button class="fd-cmt" aria-label="Comments">' + ic("message-circle") + '</button><button class="fd-shr" aria-label="Share">' + ic("send") + "</button>" +
+        '<span class="sp"></span><button class="fd-save' + (p.sv ? " on" : "") + '" aria-label="Save" aria-pressed="' + !!p.sv + '">' + ic("bookmark") + "</button></div>" +
+      '<p class="fd-likes">' + pfLikesHtml(p) + "</p>" +
+      (p.caption ? '<p class="fd-cap"><b>' + esc(C.handle) + "</b>" + esc(p.caption) + "</p>" : "") +
+      '<time class="fd-time">' + esc(pfWhen(p.t)) + "</time>";
+    var like = a.querySelector(".fd-like"), media = a.querySelector(".fd-media"), v = a.querySelector("video");
+    like.addEventListener("click", function () { pfLike(p, a, !p.me); });
+    media.addEventListener("click", function () {   // double-tap: like (with the big heart); one tap on a video: sound on / off
+      var now = Date.now();
+      if (pf.tapId === p.id && now - pf.tapT < 320) { pf.tapT = 0; pfLike(p, a, true, true); return; }
+      pf.tapId = p.id; pf.tapT = now;
+      if (v) setTimeout(function () { if (pf.tapT === now) { v.muted = !v.muted; a.querySelector(".fd-snd").innerHTML = ic(v.muted ? "volume-x" : "volume-2"); if (!v.muted) swallow(v.play()); } }, 330);
+    });
+    a.querySelector(".fd-save").addEventListener("click", function () {
+      p.sv = !p.sv; ppSave(p); this.classList.toggle("on", p.sv); this.setAttribute("aria-pressed", p.sv);
+      toast(p.sv ? "Saved" : "Removed from saved", p.sv ? "It's in your saved posts" : "", { icon: "check" });
+    });
+    a.querySelector(".fd-cmt").addEventListener("click", function () { toast("Comments", "Coming soon…", { icon: "message-circle", hl: "Coming soon…" }); });
+    a.querySelector(".fd-shr").addEventListener("click", function () { toast("Share", "Coming soon…", { icon: "send", hl: "Coming soon…" }); });
+    a.querySelector(".fd-more").addEventListener("click", function () {
+      var b = this;
+      openMenu(b, [{ icon: "trash-2", label: "Delete post", cls: "danger", run: function () {
+        setTimeout(function () { openMenu(b, [{ icon: "trash-2", label: "Yes, delete it", cls: "danger", run: function () { ppDelete(p); } }, { icon: "x", label: "Keep it", run: function () {} }]); }, 60);
+      } }]);
+    });
+    return a;
+  }
+  function pfLike(p, a, on, burst) {
+    if (burst && !reduced) { var h = a.querySelector(".fd-burst"); h.classList.remove("go"); void h.offsetWidth; h.classList.add("go"); }
+    if (!!p.me === on) return;
+    p.me = on; ppSave(p); p.likes = sbLikes(p);
+    var b = a.querySelector(".fd-like"); b.classList.toggle("on", on); b.setAttribute("aria-pressed", on);
+    if (on && !reduced) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
+    if (on) { sfx.play("tick", true); gmBuzz("tap"); }
+    a.querySelector(".fd-likes").innerHTML = pfLikesHtml(p); ppLikesUI();
+  }
+  $("pfBack").addEventListener("click", pfClose);
+  (function () {                                    // the blue tick next to your name on the profile too
+    var n = document.querySelector("#s-profile .pf-name .crown"); if (n && PP_VT) n.insertAdjacentHTML("beforebegin", PP_VT);
+  })();
   ppLoad();
+
+  /* =====================================================================
+     LIKE & FOLLOW BOTS + NOTIFICATIONS
+     Your private bot accounts like your posts and follow you, celebrity style: every post heads for somewhere
+     between 300 thousand and 3 million likes (fast in the first minutes, then slower over hours), followers grow all
+     the time and jump after each post. It all follows from the clock, so it carries on while the app is closed
+     ("While you were away"). A pop-up every few seconds says who liked or followed ("… and 12,345 others"); the
+     heart button keeps them all, with Follow back. Settings → Notifications turns the bots or the pop-ups off.
+     ===================================================================== */
+  var SB_A = ["itz", "the", "real", "its", "lil", "dark", "neon", "lunar", "pixel", "ghost", "royal", "urban", "sky", "frost", "blaze", "velvet",
+              "cosmic", "silent", "wild", "golden", "midnight", "crimson", "savage", "soft", "night", "storm", "mystic", "rogue"];
+  var SB_B = ["aryan", "zayn", "mia", "leo", "nova", "ali", "sara", "omar", "luna", "kai", "yusuf", "ayaan", "noor", "rayan", "inaya", "hamza", "zara",
+              "ibrahim", "aisha", "adam", "rehan", "sana", "farhan", "liya", "danish", "maya", "kabir", "elena", "rio", "amir", "zoya", "arman", "hana", "samir"];
+  var SB_C = ["", "", "_07", ".x", "_", "__", "xo", "_99", ".vibes", "_23", ".exe", "_o", "1", ".editz", "_fc", ".world", "_10", ".fx", "._", "_7", "x"];
+  var SB_RATE = 450 / 3600000;                      // new followers per ms without posts (about 450 an hour)
+  var sb = { on: store.get("bots", "1") === "1", pop: store.get("botpop", "1") === "1", t0: +store.get("bots:t0", "0"), pz: +store.get("bots:pz", "0"), off: +store.get("bots:off", "0"),
+             notes: [], fol: -1, pl: 0, pf: 0, pp: null, flip: false, next: 0, k: 0, away: false, banT: 0, follow: [] };
+  if (!sb.t0) { sb.t0 = Date.now(); store.set("bots:t0", sb.t0); }
+  try { sb.notes = JSON.parse(store.get("notes", "[]")) || []; } catch (e) { sb.notes = []; }
+  try { sb.follow = JSON.parse(store.get("follow", "[]")) || []; } catch (e) { sb.follow = []; }
+
+  function sbClock() { var n = Date.now(); return n - sb.pz - (sb.off ? n - sb.off : 0); }   // the bots' own clock (it stands still while they are off)
+  function sbPrep(p) {                              // a post's numbers (once): where its likes head for, how fast, the followers it brings
+    if (p.L) return false;
+    var r = fbRand(Math.floor(Math.random() * 2147483640) + 1);
+    p.seed = Math.floor(r() * 2147483640) + 1;
+    p.L = Math.round(300000 * Math.pow(10, r()));   // 300K … 3M
+    p.k1 = (3 + r() * 3) * 60000; p.k2 = (3 + r() * 5) * 3600000;   // the first rush (minutes) and the long tail (hours)
+    p.fb = Math.round(p.L * (.01 + r() * .02));     // followers it brings
+    p.bt = sbClock() - Math.max(0, Date.now() - (p.t || Date.now()));   // (posted before the bots: as if they had been there)
+    return true;
+  }
+  function sbLikes(p, T) {
+    var a = Math.max(0, (T || sbClock()) - (p.bt || 0)), n = p.L ? Math.floor(p.L * (.2 * (1 - Math.exp(-a / p.k1)) + .8 * (1 - Math.exp(-a / p.k2)))) : 0;
+    return n + (p.me ? 1 : 0);
+  }
+  function sbFollowers(T) {
+    T = T || sbClock();
+    var n = C.stats.followers + SB_RATE * Math.max(0, T - sb.t0);
+    pp.list.forEach(function (p) { if (p.fb) n += p.fb * (1 - Math.exp(-Math.max(0, T - p.bt) / p.k2)); });
+    return Math.floor(n);
+  }
+  function sbFollowing() { return C.stats.following + sb.follow.length; }
+
+  /* ---------- the bot accounts: a made-up name from a number (the same number, the same name), a coloured letter, mostly private ---------- */
+  function sbR(n) { return fbRand((Math.abs(Math.floor(n)) % 2147483640) + 1); }
+  function sbName(n) {
+    var r = sbR(n), a = SB_A[Math.floor(r() * SB_A.length)], b = SB_B[Math.floor(r() * SB_B.length)], c = SB_C[Math.floor(r() * SB_C.length)], s = Math.floor(r() * 4);
+    return s === 0 ? a + "." + b + c : s === 1 ? b + c + (c ? "" : "_" + Math.floor(r() * 99)) : s === 2 ? b + "." + a : a + "_" + b + c;
+  }
+  function sbAv(n) {
+    var r = sbR(n * 7 + 3), name = sbName(n), priv = r() < .7, h = Math.floor(r() * 360), ch = name.replace(/[^a-z]/g, "").charAt(0) || "x";
+    return '<span class="nt-av" style="--h:' + h + '">' + ch + (priv ? '<i class="nt-lock">' + ic("lock") + "</i>" : "") + "</span>";
+  }
+
+  /* ---------- notifications: kept (the newest 60), the red number on the heart buttons ---------- */
+  function sbSaveNotes() { store.set("notes", JSON.stringify(sb.notes.slice(0, 60))); }
+  function sbBadge(bump) {
+    var n = sb.notes.filter(function (x) { return !x.r; }).length, t = n ? (n > 99 ? "99+" : String(n)) : "";
+    qa(".js-ntbadge").forEach(function (e) {
+      if (e.textContent !== t) { e.textContent = t; if (bump && t && !reduced) { e.classList.remove("bump"); void e.offsetWidth; e.classList.add("bump"); } }
+    });
+  }
+  function sbNote(k, n, p) {                        // k: "like" | "fol" ; n: how many (the name + n - 1 others)
+    var note = { i: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), k: k, s: Math.floor(Math.random() * 2147483000) + 1, n: Math.max(1, Math.round(n)), p: p ? p.id : "", t: Date.now(), r: 0 };
+    sb.notes.unshift(note); sb.notes = sb.notes.slice(0, 60); sbSaveNotes(); sbBadge(true);
+    return note;
+  }
+  function sbText(x, short) {                       // "lunar.mia and 12,345 others liked your post."
+    var who = "<b>" + esc(sbName(x.s)) + "</b>" + (x.n > 1 ? " and <b>" + (short ? fmtShort(x.n - 1) : fmtNum(x.n - 1)) + (x.n === 2 ? " other" : " others") + "</b>" : "");
+    return who + (x.k === "like" ? " liked your post." : " started following you.");
+  }
+  function sbAgo(t) {
+    var s = Math.max(0, (Date.now() - t) / 1000);
+    return s < 60 ? "now" : s < 3600 ? Math.floor(s / 60) + "m" : s < 86400 ? Math.floor(s / 3600) + "h" : s < 604800 ? Math.floor(s / 86400) + "d" : Math.floor(s / 604800) + "w";
+  }
+
+  /* ---------- the pop-up at the top ---------- */
+  var ntBan = $("ntBan");
+  function sbQuiet() {                              // not now: a game, a clip, the charger, a message on show, the list itself
+    return !sb.pop || !entered || paused || document.hidden || curScreen === "game" || curScreen === "flappy" || apNop.on || ap.on || !!toastEl ||
+           (chg && chg.on && chg.el.classList.contains("show")) || (sheetOpen && $("sheetTitle").textContent === "Notifications");
+  }
+  function sbBanner(html, av, thumb) {
+    if (sbQuiet()) return false;
+    $("ntBanAv").outerHTML = av.replace('class="nt-av"', 'class="nt-av" id="ntBanAv"');
+    $("ntBanTxt").innerHTML = html;
+    var th = $("ntBanTh"); if (thumb) th.src = thumb; else th.removeAttribute("src");
+    ntBan.classList.remove("show"); void ntBan.offsetWidth; ntBan.classList.add("show");
+    sfx.play("noti", true); gmBuzz("soft");
+    clearTimeout(sb.banT); sb.banT = setTimeout(function () { ntBan.classList.remove("show"); }, 3800);
+    return true;
+  }
+  ntBan.addEventListener("click", function () { ntBan.classList.remove("show"); sbCenter(); });
+
+  /* ---------- every second (while the app is open): the numbers move, now and then a pop-up ---------- */
+  function sbTick() {
+    if (!entered || paused || document.hidden || !pp.loaded) return;
+    var T = sbClock(), dL = 0, top = null, topD = 0, total = 0;
+    pp.list.forEach(function (p) { var n = sbLikes(p, T), d = n - (p.likes || 0); p.likes = n; total += n; if (d > 0) { dL += d; if (d >= topD) { topD = d; top = p; } } });
+    var fol = sbFollowers(T);
+    if (sb.fol < 0) sb.fol = fol;
+    var dF = fol - sb.fol; sb.fol = fol;
+    if (!sb.away) { sb.away = true; sbAway(total, fol); }
+    sb.pl += dL; sb.pf += Math.max(0, dF); if (top) sb.pp = top;
+    sbNumbers(fol);
+    if (Date.now() >= sb.next) {
+      var k = sb.pl > 0 && sb.pf > 0 ? ((sb.flip = !sb.flip) ? "like" : "fol") : sb.pl > 0 ? "like" : sb.pf > 0 ? "fol" : "";
+      if (k) {
+        var x = sbNote(k, k === "like" ? sb.pl : sb.pf, k === "like" ? sb.pp : null);
+        if (k === "like") sb.pl = 0; else sb.pf = 0;
+        sbBanner(sbText(x, true), sbAv(x.s), k === "like" && sb.pp ? ppUrl(sb.pp, "thumb") : "");
+      }
+      sb.next = Date.now() + 7000 + Math.random() * 8000;
+    }
+    if (++sb.k % 10 === 0) store.set("bots:seen", JSON.stringify({ t: Date.now(), l: total, f: fol }));
+  }
+  function sbNumbers(fol) {                         // followers / following on the profile and Stats, likes on the grid and in the feed
+    var t = fmtShort(fol);
+    qa(".js-followers").forEach(function (e) { if (e.textContent !== t && !e._counting) e.textContent = t; });
+    var g = fmtNum(sbFollowing()); qa(".js-following").forEach(function (e) { if (e.textContent !== g) e.textContent = g; });
+    if (curScreen === "profile") ppLikesUI();
+    pfLikesUI();
+  }
+  function sbAway(total, fol) {                     // back after a while: what the bots did meanwhile
+    var s = null; try { s = JSON.parse(store.get("bots:seen", "null")); } catch (e) {}
+    store.set("bots:seen", JSON.stringify({ t: Date.now(), l: total, f: fol }));
+    if (!s || Date.now() - s.t < 60000 || !sb.on) return;
+    var dL = Math.max(0, total - s.l), dF = Math.max(0, fol - s.f); if (!dL && !dF) return;
+    if (dF) sbNote("fol", dF, null);
+    if (dL && pp.list.length) sbNote("like", dL, pp.list[0]);
+    sb.next = Date.now() + 9000;
+    setTimeout(function () {
+      sbBanner("<b>While you were away</b><br>" + (dL ? "+" + fmtShort(dL) + " likes" : "") + (dL && dF ? " · " : "") + (dF ? "+" + fmtShort(dF) + " followers" : ""),
+               '<span class="nt-av nt-me" style="--h:330">' + ic("heart") + "</span>", dL && pp.list.length ? ppUrl(pp.list[0], "thumb") : "");
+    }, 2600);
+  }
+  function sbPosted(p) {                            // a new post: the first likes come quickly
+    sb.next = Math.min(sb.next, Date.now() + 4500);
+  }
+
+  /* ---------- the list (the heart buttons): new and earlier, Follow back ---------- */
+  function sbCenter() {
+    closeMenu();
+    var fresh = sb.notes.filter(function (x) { return !x.r; }), old = sb.notes.filter(function (x) { return x.r; }), total = 0;
+    pp.list.forEach(function (p) { total += p.likes || 0; });
+    sb.notes.forEach(function (x) { x.r = 1; }); sbSaveNotes(); sbBadge();
+    var row = function (x) {
+      var p = x.p ? ppFind(x.p) : null, name = sbName(x.s), on = sb.follow.indexOf(name) > -1;
+      return '<div class="nt-row" data-i="' + x.i + '">' + sbAv(x.s) + "<p>" + sbText(x) + " <time>" + sbAgo(x.t) + "</time></p>" +
+             (x.k === "like" ? (p ? '<img class="nt-th" alt="" src="' + ppUrl(p, "thumb") + '">' : "")
+                             : '<button class="nt-fb' + (on ? " on" : "") + '" data-n="' + esc(name) + '">' + (on ? "Following" : "Follow back") + "</button>") + "</div>";
+    };
+    var html = '<div class="nt-sum"><span>' + ic("heart") + "<b>" + fmtShort(total) + "</b>likes</span><span>" + ic("users") + "<b>" + fmtShort(sbFollowers()) + "</b>followers</span>" +
+               "<span>" + ic("user") + '<b class="js-nt-fg">' + fmtNum(sbFollowing()) + "</b>following</span></div>";
+    if (!sb.notes.length) html += '<div class="nt-none">' + ic("heart") + "<b>No notifications yet</b><span>" + (sb.on ? "Likes and follows will show up here" : "The bots are off (Settings → Notifications)") + "</span></div>";
+    if (fresh.length) html += '<h4 class="nt-h">New</h4>' + fresh.map(row).join("");
+    if (old.length) html += '<h4 class="nt-h">Earlier</h4>' + old.map(row).join("");
+    openSheet("Notifications", html, function (body) {
+      qa(".nt-fb", body).forEach(function (b) {
+        b.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var n = b.getAttribute("data-n"), at = sb.follow.indexOf(n);
+          if (at > -1) sb.follow.splice(at, 1); else sb.follow.unshift(n);
+          sb.follow = sb.follow.slice(0, 500); store.set("follow", JSON.stringify(sb.follow));
+          qa('.nt-fb[data-n="' + n + '"]', body).forEach(function (o) { o.classList.toggle("on", at < 0); o.textContent = at < 0 ? "Following" : "Follow back"; });
+          body.querySelector(".js-nt-fg").textContent = fmtNum(sbFollowing()); sbNumbers(sb.fol < 0 ? sbFollowers() : sb.fol);
+          if (at < 0) { sfx.play("tick", true); gmBuzz("tap"); }
+        });
+      });
+      qa(".nt-row", body).forEach(function (r) {    // a like: open that post
+        var x = null; sb.notes.forEach(function (n) { if (n.i === r.getAttribute("data-i")) x = n; });
+        if (x && x.k === "like" && x.p && ppFind(x.p)) r.addEventListener("click", function () { closeSheet(); if (curScreen !== "profile") goSub("profile"); setTimeout(function () { pfOpen(x.p); }, 380); });
+      });
+    });
+  }
+
+  /* ---------- Settings → Notifications: the bots and the pop-ups on / off ---------- */
+  function sbFlag(key, on) {
+    if (key === "botpop") { sb.pop = on; return; }
+    if (on === sb.on) return;
+    sb.on = on;
+    if (on) { if (sb.off) { sb.pz += Date.now() - sb.off; store.set("bots:pz", sb.pz); } sb.off = 0; }
+    else sb.off = Date.now();
+    store.set("bots:off", sb.off);
+    toast(on ? "Bots on" : "Bots off", on ? "Your likes and followers grow again" : "Likes and followers stay as they are", { icon: on ? "check" : "x" });
+  }
+  sbBadge();
+  setInterval(sbTick, 1000);
 
   /* ---------- start up ---------- */
   var clockEl = $("clock");
@@ -7802,8 +8246,8 @@ const CONFIG = {
   qa(".js-handle").forEach(function (e) { e.textContent = C.handle; });
   qa(".js-q-social").forEach(function (e) { e.textContent = "“" + C.quotes.social + "”"; });
   qa(".js-q-stats").forEach(function (e) { e.textContent = "“" + C.quotes.stats + "”"; });
-  qa(".js-followers").forEach(function (e) { e.textContent = fmtShort(C.stats.followers); });
-  qa(".js-following").forEach(function (e) { e.textContent = fmtNum(C.stats.following); });
+  qa(".js-followers").forEach(function (e) { e.textContent = fmtShort(sbFollowers()); });
+  qa(".js-following").forEach(function (e) { e.textContent = fmtNum(sbFollowing()); });
   qa(".js-posts").forEach(function (e) { e.textContent = fmtNum(pp.list.length); });
   $("pfBio").textContent = "";
   setToggle(".js-shuffle", shuffleOn); setToggle(".js-repeat", repeatOn);
