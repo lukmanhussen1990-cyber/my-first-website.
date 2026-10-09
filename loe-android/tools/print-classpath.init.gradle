@@ -1,0 +1,15 @@
+allprojects {
+    if (path == ':app') {
+        afterEvaluate {
+            tasks.register('printReleaseClasspath') {
+                doLast {
+                    def cfg = configurations.getByName('releaseRuntimeClasspath')
+                    def view = cfg.incoming.artifactView {
+                        attributes { attribute(Attribute.of('artifactType', String), 'android-classes-jar') }
+                    }
+                    view.files.each { println "CP:" + it.absolutePath }
+                }
+            }
+        }
+    }
+}
