@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "2.9.2",                     // shown in Settings → About
+  version: "2.9.3",                     // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -2763,6 +2763,7 @@ const CONFIG = {
   #sadv { position: fixed; top: 0; bottom: 0; left: 50%; z-index: 1; width: min(100vw, 440px); margin-left: calc(min(100vw, 440px) / -2);
           pointer-events: none; overflow: hidden; display: none; opacity: 0; transition: opacity 1.2s ease; }
   .sadv-wave #sadv { display: block; }
+  #player > #sadv { position: absolute; z-index: 0; top: 0; right: 0; bottom: 0; left: 0; width: auto; margin: 0; border-radius: 0; }   /* inside the full player: behind its controls */
   .sadv #sadv { opacity: 1; }
   .sadv.sadv-dim #sadv { opacity: .55; }
   #sadv > * { position: absolute; }
@@ -2815,7 +2816,7 @@ const CONFIG = {
   .sadv-wave .who .hello { display: none; }
   .sadv-wave .who .vibe { display: inline-flex; animation: svPill .6s cubic-bezier(.2, 1.3, .4, 1) both; }
   @keyframes svPill { from { opacity: 0; transform: translateY(6px) scale(.9); } to { opacity: 1; transform: none; } }
-  .sv-beat .who .vibe .hb, .sv-beat .mlyr .hbk { animation: svHb var(--hb, .95s) linear infinite; }
+  .sv-beat .who .vibe .hb, .sv-beat .mlyr .hbk, .sv-beat #s-home .hero .who .vibe .hb { animation: svHb var(--hb, .95s) linear infinite !important; }   /* (it beats even when Home's other motion rests) */
   @keyframes svHb { 0% { transform: scale(1.22); } 13% { transform: scale(1); } 22% { transform: scale(1.14); } 42%, 100% { transform: scale(1); } }
   /* the lyrics line: a broken heart instead of the note */
   .mlyr .hbk { display: none; flex: none; width: 12px; height: 12px; }
@@ -2861,11 +2862,11 @@ const CONFIG = {
   .svi-go #sviFlash { display: block; animation: sviFlash 2.4s ease-out both; }
   @keyframes sviFlash { 0%, 49% { opacity: 0; } 51% { opacity: 1; } 66%, 100% { opacity: 0; } }
 
-  .sadv-calm .sv-rain, .sadv-calm #svfx, .sadv-calm .sv-flash, .nofx .sv-rain, .nofx #svfx, .nofx .sv-flash, .ultra .sv-rain, .ultra #svfx, .ultra .sv-flash, .ultra .sv-mist { display: none; }
-  .ultra .sv-pulse, .ultra .who .vibe .hb, .ultra .mlyr .hbk { animation: none !important; }
+  /* it always moves (the song asks for it, even in battery saver or with the lightest effects): only "Calm" stops it; weak phones get less */
+  .sadv-calm .sv-rain, .sadv-calm #svfx, .sadv-calm .sv-flash { display: none; }
+  .ultra .sv-rain .sv-r2, .ultra .sv-mist { display: none; }
   .app-bg #sadv *, .app-bg .who .vibe, .app-bg .who .vibe .hb, .app-bg .mlyr .hbk { animation-play-state: paused !important; }
   @media (min-width: 600px) and (min-height: 600px) { #sadv { top: 14px; bottom: 14px; width: 412px; margin-left: -206px; border-radius: 46px; } }
-  @media (prefers-reduced-motion: reduce) { .sv-rain, #svfx, .sv-flash, #svIntro, #sviFlash { display: none !important; } .sv-mist, .sv-pulse, .sadv-wave .who .vibe, .who .vibe .hb, .mlyr .hbk { animation: none !important; } }
 
   /* ---------- 0. opening intro: one cinematic scene (everything moves with transform / opacity / clip-path, so it stays smooth)
      timeline (s): 0.1 a red line · 0.42 the black bars open on the scene · 0.82 the crown drops (glint) · 1.02 IMRAN wipes in,
@@ -3953,7 +3954,9 @@ const CONFIG = {
   /* ---------- 1. enter screen typing (starts when the intro is over) ---------- */
   var enterEl = $("enter"), enterText = $("enterText"), iSay = $("iSay");   // (the words show under the intro's ring, or on the plain enter screen without the intro)
   function typeEnter(i) {
-    enterText.textContent = iSay.textContent = C.enterText.slice(0, i);
+    var t = C.enterText.slice(0, i);
+    if (enterText) enterText.textContent = t;
+    if (iSay) iSay.textContent = t;                         // (no intro, e.g. the phone asks for less motion: only the plain enter screen)
     if (i < C.enterText.length && !entered) setTimeout(function () { typeEnter(i + 1); }, 95);
   }
   intro.done.then(function () { typeEnter(0); });
@@ -9353,17 +9356,35 @@ const CONFIG = {
   }
   function svLightning() { var f = qa("#sadv .sv-flash")[0]; if (f) { f.classList.remove("go"); void f.offsetWidth; f.classList.add("go"); } }
 
-  function svWanted() { return sv.wave && !sv.off && fx.on && entered && !paused && !document.hidden && !playerOpen && !termOpen && !isUltra() && !reduced && curScreen !== "game" && curScreen !== "flappy"; }
-  function svUpdate() { if (!sv || !sv.cv) return; if (svWanted()) { if (!sv.run) svRun(); } else if (sv.run) svRest(); }
+  // it always moves (the song asks for it): on a phone in battery saver, one that asked for less motion, or one switched to the lightest
+  // effects it just runs lighter. Only "Calm" in the pill's menu stops it.
+  function svLight() { return isLite() || isUltra() || reduced; }
+  function svWanted() { return sv.wave && !sv.off && entered && !paused && !document.hidden && !termOpen && curScreen !== "game" && curScreen !== "flappy"; }
+  // the full player covers the background, so while it is open the whole sad vibe (red wash, mist, rain, hearts) moves into it, behind its controls
+  var svHome = null;
+  function svPlace() {
+    var el = $("sadv"), pl = $("player"); if (!el || !pl) return false;
+    var inPlayer = el.parentNode === pl, want = sv.wave && playerOpen;
+    if (want === inPlayer) return false;
+    if (want) { if (!svHome) svHome = { p: el.parentNode, n: el.nextSibling }; var fb = pl.querySelector(".fp-bg"); pl.insertBefore(el, fb ? fb.nextSibling : pl.firstChild); }
+    else if (svHome) svHome.p.insertBefore(el, svHome.n);
+    return true;
+  }
+  function svUpdate() {
+    if (!sv || !sv.cv) return;
+    if (svPlace() && sv.run) svRest();                     // (moved: the canvas starts again at its new size)
+    if (svWanted()) { if (!sv.run) svRun(); } else if (sv.run) svRest();
+  }
   function svRun() {                                 // the canvas starts
     var w = sv.cv.offsetWidth, h = sv.cv.offsetHeight; if (!w || !h) return;
-    sv.k = Math.min(window.devicePixelRatio || 1, isLite() ? 1 : 1.5); sv.W = w; sv.H = h;
+    var light = svLight(), tiny = isUltra();
+    sv.k = Math.min(window.devicePixelRatio || 1, light ? 1 : 1.5); sv.W = w; sv.H = h;
     sv.cv.width = Math.round(w * sv.k); sv.cv.height = Math.round(h * sv.k); sv.g = sv.cv.getContext("2d");
     if (!sv.half) { sv.half = [svHalf(-1, 160), svHalf(1, 160)]; sv.spr = svWhole(.8); sv.soft = svWhole(3.5); sv.bokeh = svWhole(7); sv.drop = svDropSprite(); }
-    var n = isLite() ? 10 : 18, i; sv.hearts = [];
+    var n = tiny ? 9 : light ? 12 : 18, i; sv.hearts = [];
     for (i = 0; i < n; i++) sv.hearts.push(svHeart({}, true));
-    for (i = 0; i < (isLite() ? 1 : 2); i++) sv.hearts.unshift(svHeart({}, true, true));     // (drawn first: the big blurred ones sit behind the rest)
-    sv.drops = []; for (i = 0; i < (isLite() ? 5 : 9); i++) sv.drops.push(svDrop({}, true));
+    for (i = 0; i < (tiny ? 0 : light ? 1 : 2); i++) sv.hearts.unshift(svHeart({}, true, true));     // (drawn first: the big blurred ones sit behind the rest)
+    sv.drops = []; for (i = 0; i < (tiny ? 3 : light ? 5 : 9); i++) sv.drops.push(svDrop({}, true));
     sv.bits = []; sv.run = true; sv.last = 0; sv.acc = 0;
     requestAnimationFrame(svFrame);
   }
@@ -9372,7 +9393,7 @@ const CONFIG = {
     if (!sv.run) return;
     requestAnimationFrame(svFrame);
     var dt = sv.last ? Math.min(.1, (t - sv.last) / 1000) : .033; sv.last = t;
-    sv.acc += dt; if (sv.acc < (isLite() ? .04 : .032)) return;              // about 25 / 30 frames a second
+    sv.acc += dt; if (sv.acc < (svLight() ? .04 : .032)) return;            // about 25 / 30 frames a second
     var step = sv.acc, g = sv.g, playing = !audio.paused, slow = playing ? 1 : .3, bt = svBeatNow(), i, j, h, s, a, e; sv.acc = 0;
     if (playing && (sv.brk -= step) <= 0) { svBreakOne(); sv.brk = 3.2 + Math.random() * 3.4; }
     if (playing && (sv.ltn -= step) <= 0) { svLightning(); sv.ltn = 13 + Math.random() * 12; }
@@ -9434,7 +9455,7 @@ const CONFIG = {
   }
 
   function svBeat(force) {                           // the heartbeat (every two beats) lines up with the song every few seconds
-    var on = !!(sv && sv.on) && !audio.paused && !reduced, b = beatOf(), P = b.p * 2, v = P.toFixed(4) + "s";
+    var on = !!(sv && sv.on) && !audio.paused, b = beatOf(), P = b.p * 2, v = P.toFixed(4) + "s";
     if (v !== sv.beatVar) { sv.beatVar = v; root.style.setProperty("--hb", v); }
     if (root.classList.contains("sv-beat") !== on) root.classList.toggle("sv-beat", on);
     if (!on) return;
@@ -9451,7 +9472,7 @@ const CONFIG = {
     });
   }
   function svIntro() {                               // the song starts: the big heart beats twice, trembles, cracks and breaks apart
-    if (!$("svIntro") || reduced || sv.off || !fx.on || isUltra() || !entered || paused || document.hidden) return;
+    if (!$("svIntro") || sv.off || !entered || paused || document.hidden) return;
     svIntroArt();
     root.classList.remove("svi-go"); void $("svIntro").offsetWidth; root.classList.add("svi-go");
     clearTimeout(sv.introT); sv.introT = setTimeout(function () { root.classList.remove("svi-go"); }, 2500);
@@ -9466,7 +9487,7 @@ const CONFIG = {
     sv.ltn = 7 + Math.random() * 5; sv.brk = 2.4;
     clearTimeout(sv.fxT); sv.fxT = setTimeout(function () { if (sv.on) { sv.fxOff = true; if (fx.g) fx.g.clearRect(0, 0, fx.W, fx.H); } }, 1100);   // the background's dots rest
     requestAnimationFrame(function () { requestAnimationFrame(function () { if (sv.on) root.classList.add("sadv"); }); });
-    logEvent("Sad vibe: " + (s.title || s.file));
+    logEvent("Sad vibe: " + (s.title || s.file) + (svLight() ? " (lighter: " + [isUltra() ? "lightest effects" : isLite() ? "light effects" : "", reduced ? "phone asks for less motion" : ""].filter(Boolean).join(", ") + ")" : ""));
   }
   function svStop() {                                // another song: it fades out, then everything is back to normal
     if (!sv.on) return;

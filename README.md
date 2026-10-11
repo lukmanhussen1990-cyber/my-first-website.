@@ -165,8 +165,10 @@ you change the song:
   a beating broken heart sits in front of the lyrics, and your status shows **Do Not Disturb** (only shown: your own status
   comes back after the song, and picking one yourself ends it)
 
-Paused: dimmer, the rain stops. The hearts, drops and shards are one canvas, everything else is CSS; it all rests while the app is
-in the background. With "Floating particles" off (or Calm) you get just the red sky and the pill.
+It always moves, also in battery saver (which tells apps to cut animations), with "Floating particles" off and on phones the app
+switched to its lightest effects: those just get fewer hearts and drops. Only **Calm** stops it. In the full player it shows behind
+the controls too. Paused: dimmer, the rain stops. The hearts, drops and shards are one canvas, everything else is CSS; it all rests
+while the app is in the background.
 Any song can have it: add `sad: true` to that song in the CONFIG.
 
 ## The Now Playing player
