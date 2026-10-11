@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WePlay AI Overlay</title>
+<style>
+  :root{
+    --neon:#a855f7; --neon2:#c084fc; --neon3:#7c3aed; --cyan:#22d3ee;
+    --glass:rgba(14,8,28,.84); --line:rgba(192,132,252,.35);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#0b0614}
+  body{font-family:"Roboto","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+
+  /* ---------- device (only in framed mode) ---------- */
+  body.framed{display:flex;align-items:center;justify-content:center;width:560px;height:1060px;
+    background:radial-gradient(circle at 30% 20%,#2a1650 0,#0b0614 60%)}
+  body.framed .device{padding:12px;border-radius:54px;background:linear-gradient(145deg,#2b2b33,#0d0d10);
+    box-shadow:0 0 0 2px #3a3a44,0 40px 80px rgba(0,0,0,.6),0 0 120px rgba(168,85,247,.25)}
+  body.framed .screen{border-radius:44px}
+
+  .screen{position:relative;width:412px;height:915px;overflow:hidden;background:#f6efe2}
+
+  /* ---------- Android status bar ---------- */
+  .status{position:absolute;inset:0 0 auto 0;height:32px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px;font-size:13px;font-weight:500;color:#fff;z-index:5;background:#ff7a3c}
+  .status .cam{position:absolute;left:50%;top:9px;width:13px;height:13px;margin-left:-6px;border-radius:50%;background:#111;box-shadow:0 0 0 2px rgba(0,0,0,.25)}
+  .status .icons{display:flex;gap:6px;align-items:center}
+  .status svg{fill:#fff}
+  .status .ov{width:14px;height:14px;border-radius:4px;background:linear-gradient(135deg,#a855f7,#6d28d9);display:grid;place-items:center;font-size:8px}
+
+  /* ---------- Game UI (generic draw & guess) ---------- */
+  .game{position:absolute;inset:32px 0 48px 0;display:flex;flex-direction:column}
+  .gtop{height:58px;background:linear-gradient(#ff7a3c,#ff9a4f);display:flex;align-items:center;padding:0 12px;gap:10px;color:#fff}
+  .gtop .back{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.25);display:grid;place-items:center;font-weight:700}
+  .gtop .round{font-size:12px;opacity:.95;line-height:1.2}
+  .gtop .round b{font-size:15px;display:block}
+  .gtop .hint{flex:1;text-align:center;font-size:20px;font-weight:800;letter-spacing:3px;text-shadow:0 2px 0 rgba(0,0,0,.15)}
+  .gtop .timer{width:40px;height:40px;border-radius:50%;background:#fff;color:#ff6a2b;font-weight:800;display:grid;place-items:center;font-size:15px;
+    box-shadow:inset 0 0 0 4px #ffd2b8}
+  .gbody{flex:1;display:flex;gap:8px;padding:8px}
+  .players{width:62px;display:flex;flex-direction:column;gap:7px}
+  .pl{background:#fff;border-radius:12px;padding:5px 0;display:flex;flex-direction:column;align-items:center;font-size:9px;color:#6b5a4a;box-shadow:0 2px 0 #eadcc6}
+  .pl .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:18px;margin-bottom:2px}
+  .pl .sc{font-weight:700;color:#ff7a3c}
+  .pl.draw{outline:2px solid #ff7a3c}
+  .pl.draw .tag{position:absolute;margin-top:-6px;margin-left:28px;font-size:10px}
+  .canvaswrap{flex:1;display:flex;flex-direction:column;gap:8px}
+  .canvas{flex:1;background:#fff;border-radius:16px;box-shadow:0 3px 0 #eadcc6;position:relative;overflow:hidden}
+  .canvas .who{position:absolute;left:10px;top:8px;font-size:11px;color:#9a8a78}
+  .tools{height:44px;background:#fff;border-radius:14px;display:flex;align-items:center;justify-content:space-around;padding:0 6px;box-shadow:0 3px 0 #eadcc6}
+  .tools .c{width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(0,0,0,.08)}
+  .tools .c.sel{outline:2px solid #ff7a3c;outline-offset:2px}
+  .chat{height:150px;background:#fff;margin:0 8px 8px;border-radius:16px;padding:10px 12px;font-size:12px;color:#5a4a3c;display:flex;flex-direction:column;gap:6px;box-shadow:0 3px 0 #eadcc6}
+  .chat .m b{color:#ff7a3c;font-weight:600}
+  .chat .m.ok{color:#16a34a}
+  .chat .in{margin-top:auto;display:flex;gap:6px}
+  .chat .in div:first-child{flex:1;height:32px;border-radius:16px;background:#f3ece0;color:#b3a594;padding:0 12px;display:flex;align-items:center}
+  .chat .in .send{width:60px;height:32px;border-radius:16px;background:#ff7a3c;color:#fff;font-weight:700;display:grid;place-items:center}
+
+  /* ---------- Android nav bar ---------- */
+  .nav{position:absolute;inset:auto 0 0 0;height:48px;background:#1a1a1a;display:flex;align-items:center;justify-content:center}
+  .nav i{width:110px;height:5px;border-radius:3px;background:#e8e8e8}
+
+  /* ---------- Floating overlay ---------- */
+  .ghost{position:absolute;left:96px;top:478px;width:146px;height:140px;border-radius:18px;border:1.5px dashed rgba(168,85,247,.55);
+    background:rgba(168,85,247,.06);z-index:8}
+  .dragpath{position:absolute;left:0;top:0;z-index:8;pointer-events:none}
+
+  .overlay{position:absolute;left:256px;top:150px;width:146px;z-index:10;border-radius:18px;padding:8px 8px 9px;
+    background:var(--glass);
+    backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);
+    border:1px solid var(--line);
+    box-shadow:0 0 0 1px rgba(168,85,247,.25),0 0 18px rgba(168,85,247,.55),0 0 42px rgba(124,58,237,.35),0 14px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.12);
+    color:#efe6ff}
+  .overlay::before{content:"";position:absolute;inset:-1px;border-radius:18px;padding:1px;pointer-events:none;
+    background:linear-gradient(140deg,#e9d5ff,#a855f7 35%,transparent 60%,#22d3ee 100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.9}
+  .grip{width:26px;height:3px;border-radius:2px;background:rgba(233,213,255,.45);margin:0 auto 6px}
+  .hdr{display:flex;align-items:center;gap:5px}
+  .logo{width:20px;height:20px;border-radius:7px;display:grid;place-items:center;font-size:12px;
+    background:linear-gradient(135deg,#a855f7,#6d28d9);box-shadow:0 0 10px rgba(168,85,247,.8)}
+  .ttl{flex:1;line-height:1.05}
+  .ttl b{font-size:10px;white-space:nowrap;font-weight:700;letter-spacing:.2px;display:block}
+  .live{font-size:8px;color:#4ade80;font-weight:600;display:flex;align-items:center;gap:3px}
+  .live i{width:5px;height:5px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80}
+  .wbtn{width:16px;height:16px;border-radius:5px;display:grid;place-items:center;background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.12);font-size:10px;line-height:1;color:#e9d5ff}
+  .wbtn.x{color:#fca5a5}
+  .sep{height:1px;background:linear-gradient(90deg,transparent,rgba(192,132,252,.5),transparent);margin:7px 0}
+
+  .scan{display:flex;align-items:center;gap:5px;font-size:8px;color:#c4b5fd;margin-bottom:5px}
+  .wave{display:flex;gap:1.5px;align-items:flex-end;height:9px}
+  .wave span{width:2px;border-radius:1px;background:linear-gradient(#e9d5ff,#a855f7);box-shadow:0 0 4px #a855f7}
+  .det-l{font-size:8px;color:#a998c9;text-transform:uppercase;letter-spacing:.6px}
+  .det{display:flex;align-items:center;gap:5px;margin-top:3px;padding:5px 6px;border-radius:9px;
+    background:linear-gradient(90deg,rgba(168,85,247,.28),rgba(168,85,247,.06));border:1px solid rgba(192,132,252,.3)}
+  .det .e{font-size:15px}
+  .det b{font-size:10.5px}
+  .det small{display:block;font-size:7.5px;color:#c4b5fd}
+  .wc{margin-top:5px;font-size:8.5px;color:#67e8f9;display:flex;align-items:center;gap:4px}
+  .wc .blanks{font-family:monospace;letter-spacing:1px;color:#a5f3fc;font-size:8px}
+
+  .gl{margin-top:7px;font-size:8px;color:#a998c9;text-transform:uppercase;letter-spacing:.6px;display:flex;justify-content:space-between}
+  .g{margin-top:5px}
+  .g .row{display:flex;justify-content:space-between;font-size:9.5px}
+  .g .row span:first-child{display:flex;gap:4px}
+  .g .n{color:#a998c9;font-weight:700}
+  .g .p{font-weight:700;color:#e9d5ff}
+  .bar{height:4px;border-radius:2px;background:rgba(255,255,255,.08);margin-top:3px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#7c3aed,#c084fc);box-shadow:0 0 6px rgba(192,132,252,.9)}
+  .g.top .row{color:#fff}
+  .g.top .p{color:#f0abfc;text-shadow:0 0 6px rgba(240,171,252,.8)}
+  .g.top .bar i{background:linear-gradient(90deg,#a855f7,#f0abfc)}
+
+  .btns{display:flex;flex-direction:column;gap:5px;margin-top:9px}
+  .btn{height:24px;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:9.5px;font-weight:700;letter-spacing:.2px}
+  .btn.pri{background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;box-shadow:0 0 12px rgba(168,85,247,.7),inset 0 1px 0 rgba(255,255,255,.3)}
+  .btn.sec{background:rgba(255,255,255,.06);border:1px solid rgba(192,132,252,.4);color:#e9d5ff}
+
+  /* minimized bubble + drag hint */
+  .bubble{position:absolute;right:-2px;top:640px;width:46px;height:46px;border-radius:23px 0 0 23px;z-index:9;
+    background:var(--glass);border:1px solid var(--line);border-right:none;display:grid;place-items:center;font-size:20px;
+    box-shadow:0 0 14px rgba(168,85,247,.6),0 6px 14px rgba(0,0,0,.35);backdrop-filter:blur(10px)}
+  .hand{position:absolute;left:242px;top:146px;z-index:11;font-size:26px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.4))}
+  .toast{position:absolute;left:50%;transform:translateX(-50%);bottom:300px;z-index:12;background:rgba(20,12,36,.85);color:#e9d5ff;
+    font-size:11px;padding:7px 14px;border-radius:16px;border:1px solid rgba(192,132,252,.35);white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="device"><div class="screen">
+
+  <div class="status">
+    <span>9:41</span><span class="cam"></span>
+    <span class="icons">
+      <span class="ov">🤖</span>
+      <svg width="15" height="11" viewBox="0 0 15 11"><path d="M7.5 11 0 3.2A10.6 10.6 0 0 1 15 3.2Z"/></svg>
+      <svg width="14" height="11" viewBox="0 0 14 11"><rect x="0" y="8" width="2.5" height="3"/><rect x="3.8" y="5.5" width="2.5" height="5.5"/><rect x="7.6" y="3" width="2.5" height="8"/><rect x="11.4" y="0" width="2.5" height="11"/></svg>
+      <svg width="22" height="11" viewBox="0 0 22 11"><rect x=".5" y=".5" width="19" height="10" rx="2.5" fill="none" stroke="#fff"/><rect x="2" y="2" width="13" height="7" rx="1.2"/><rect x="20.3" y="3.5" width="1.5" height="4" rx=".7"/></svg>
+      <span>78%</span>
+    </span>
+  </div>
+
+  <!-- background: a draw & guess game -->
+  <div class="game">
+    <div class="gtop">
+      <div class="back">‹</div>
+      <div class="round">Round<b>3/6</b></div>
+      <div class="hint">_ _ _&nbsp;&nbsp;_ _ _ _ _</div>
+      <div class="timer">48</div>
+    </div>
+    <div class="gbody">
+      <div class="players">
+        <div class="pl draw"><div class="av" style="background:#ffe1cc">🦊</div>Mia<span class="sc">120</span></div>
+        <div class="pl"><div class="av" style="background:#dbeafe">🐼</div>You<span class="sc">95</span></div>
+        <div class="pl"><div class="av" style="background:#dcfce7">🐸</div>Leo<span class="sc">80</span></div>
+        <div class="pl"><div class="av" style="background:#fce7f3">🐰</div>Ana<span class="sc">60</span></div>
+        <div class="pl"><div class="av" style="background:#fef9c3">🐥</div>Tom<span class="sc">40</span></div>
+        <div class="pl"><div class="av" style="background:#ede9fe">🐙</div>Kai<span class="sc">25</span></div>
+      </div>
+      <div class="canvaswrap">
+        <div class="canvas">
+          <span class="who">✏️ Mia is drawing…</span>
+          <!-- hand-drawn cat house -->
+          <svg viewBox="0 0 320 420" width="100%" height="100%" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M52 238 L160 132 L270 236" stroke="#c2410c" stroke-width="7"/>
+            <path d="M78 214 L80 352 L244 350 L242 214" stroke="#7c4a24" stroke-width="5"/>
+            <path d="M60 352 L262 350" stroke="#7c4a24" stroke-width="5"/>
+            <path d="M128 350 C126 300 132 274 160 272 C190 272 196 300 194 350" stroke="#7c4a24" stroke-width="5"/>
+            <path d="M128 350 C126 300 132 274 160 272 C190 272 196 300 194 350 Z" fill="#3b2412" opacity=".18" stroke="none"/>
+            <!-- cat -->
+            <ellipse cx="160" cy="324" rx="24" ry="20" fill="#222" stroke="#111" stroke-width="3"/>
+            <path d="M140 314 L136 290 L152 304 M180 314 L184 290 L168 304" stroke="#111" stroke-width="4" fill="#222"/>
+            <circle cx="151" cy="320" r="4" fill="#facc15" stroke="none"/><circle cx="169" cy="320" r="4" fill="#facc15" stroke="none"/>
+            <path d="M156 331 L160 334 L164 331" stroke="#f9a8d4" stroke-width="2"/>
+            <path d="M138 330 L118 326 M138 334 L118 336 M182 330 L202 326 M182 334 L202 336" stroke="#555" stroke-width="1.6"/>
+            <path d="M184 340 C214 344 214 316 228 318" stroke="#111" stroke-width="5"/>
+            <!-- name sign & heart -->
+            <rect x="130" y="186" width="60" height="26" rx="6" stroke="#c2410c" stroke-width="3"/>
+            <path d="M146 199 h28" stroke="#c2410c" stroke-width="3"/>
+            <path d="M232 140 c-6-10 -20-4 -14 6 l14 12 l14-12 c6-10 -8-16 -14-6Z" stroke="#ef4444" stroke-width="3"/>
+            <path d="M60 380 C110 372 210 384 262 376" stroke="#65a30d" stroke-width="4"/>
+          </svg>
+        </div>
+        <div class="tools">
+          <span class="c sel" style="background:#111"></span><span class="c" style="background:#ef4444"></span>
+          <span class="c" style="background:#f97316"></span><span class="c" style="background:#facc15"></span>
+          <span class="c" style="background:#22c55e"></span><span class="c" style="background:#3b82f6"></span>
+          <span class="c" style="background:#7c4a24"></span><span style="font-size:16px">🧽</span>
+        </div>
+      </div>
+    </div>
+    <div class="chat">
+      <div class="m"><b>Leo:</b> dog house?</div>
+      <div class="m"><b>Ana:</b> kitten</div>
+      <div class="m ok">✔ Tom is close!</div>
+      <div class="in"><div>Type your guess…</div><div class="send">Send</div></div>
+    </div>
+  </div>
+
+  <!-- drag affordance: previous position ghost + path -->
+  <div class="ghost"></div>
+  <svg class="dragpath" width="412" height="915">
+    <defs><marker id="ah" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10z" fill="#a855f7"/></marker></defs>
+    <path d="M170 478 C 190 410, 215 330, 250 224" stroke="#a855f7" stroke-width="2" stroke-dasharray="5 5" fill="none" marker-end="url(#ah)" opacity=".85"/>
+  </svg>
+
+  <!-- floating AI overlay -->
+  <div class="overlay">
+    <div class="grip"></div>
+    <div class="hdr">
+      <div class="logo">🤖</div>
+      <div class="ttl"><b>WePlay AI</b><span class="live"><i></i>Live</span></div>
+      <div class="wbtn">–</div>
+      <div class="wbtn x">✕</div>
+    </div>
+    <div class="sep"></div>
+
+    <div class="scan">
+      <div class="wave">
+        <span style="height:4px"></span><span style="height:8px"></span><span style="height:5px"></span><span style="height:9px"></span><span style="height:3px"></span><span style="height:7px"></span>
+      </div>
+      Analyzing canvas…
+    </div>
+    <div class="det-l">Drawing detected</div>
+    <div class="det"><span class="e">🐱</span><div><b>Cat</b><small>Animal</small></div></div>
+    <div class="wc">🔤 2 words • 8 letters</div>
+    <div class="wc"><span class="blanks">_ _ _ &nbsp;_ _ _ _ _</span></div>
+
+    <div class="gl"><span>AI Guesses</span><span>conf.</span></div>
+    <div class="g top">
+      <div class="row"><span><span class="n">1</span>Cat House</span><span class="p">92%</span></div>
+      <div class="bar"><i style="width:92%"></i></div>
+    </div>
+    <div class="g">
+      <div class="row"><span><span class="n">2</span>Black Cat</span><span class="p">84%</span></div>
+      <div class="bar"><i style="width:84%"></i></div>
+    </div>
+    <div class="g">
+      <div class="row"><span><span class="n">3</span>Cute Cat</span><span class="p">70%</span></div>
+      <div class="bar"><i style="width:70%"></i></div>
+    </div>
+
+    <div class="btns">
+      <div class="btn pri">➤ Next Guess</div>
+      <div class="btn sec">❚❚ Pause</div>
+    </div>
+  </div>
+
+  <div class="hand">👆</div>
+  <div class="toast">✥ Drag to move anywhere • – to minimize</div>
+
+  <div class="nav"><i></i></div>
+</div></div>
+<script>
+  if (new URLSearchParams(location.search).has('frame')) document.body.classList.add('framed');
+</script>
+</body>
+</html>
