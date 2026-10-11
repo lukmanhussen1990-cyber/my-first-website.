@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "2.9.3",                     // shown in Settings → About
+  version: "2.9.4",                     // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -42,6 +42,7 @@ const CONFIG = {
   frameTint:   "gold",                  // "gold" = the Home frame glows warm orange-gold (to match the logo and the name) · "" = red
   profileFrame: "assets/frame-crown.webp",      // the gold crown, stars, orbits + clouds frame round the picture on Profile ("" = the plain ring)
   profileGlow:  "assets/frame-crown-glow.webp", // its soft gold glow (it breathes, and pulses on the beat while music plays)
+  peek:        "assets/peek.webp",       // the hooded guy who sneaks up behind the Home frame now and then (40 frames of him glancing round, cut out of a video) · "" = never
   // the logo tile next to the Home frame (tap it: the logo spins, sparks fly and this popup shows) · image: "" = no tile
   badge: { image: "assets/claude-logo.png", title: "Built with Claude", text: "This app was designed and coded with Claude." },
 
@@ -1199,11 +1200,11 @@ const CONFIG = {
   @keyframes flapL { 0%, 100% { transform: rotate(-2deg) scale(1.06); } 50% { transform: rotate(4deg) scale(1.06); } }     /* 6 degrees up and down, mirrored */
   @keyframes flapR { 0%, 100% { transform: rotate(2deg) scale(1.06); } 50% { transform: rotate(-4deg) scale(1.06); } }
 
-  /* the ring, the swirls and the loose feathers under it (still) */
+  /* the ring, the swirls and the loose feathers under it (still); under the crown it also draws the crown's bottom edge, so no gap opens when the crown floats up */
   .wf-ring {
     z-index: 4; left: calc(0 * var(--fs)); top: calc(364 * var(--fs)); width: calc(1536 * var(--fs)); height: calc(660 * var(--fs));
     background-position: calc(0 * var(--fs)) calc(-364 * var(--fs));
-    clip-path: polygon(71.34% 40.21%, 70.99% 34.31%, 70.34% 28.54%, 69.41% 23.00%, 68.20% 17.74%, 66.74% 12.85%, 65.04% 8.40%, 63.12% 4.44%, 61.74% 2.10%, 60.32% 0.08%, 59.93% 4.24%, 39.39% 4.24%, 39.00% 0.08%, 36.88% 3.24%, 35.54% 5.70%, 33.69% 9.83%, 32.58% 12.85%, 31.58% 16.07%, 30.69% 19.45%, 29.91% 23.00%, 28.98% 28.54%, 28.33% 34.31%, 28.07% 38.23%, 27.93% 42.20%, 27.98% 48.15%, 28.18% 52.10%, 28.73% 57.92%, 29.26% 61.70%, 30.06% 66.06%, 0.00% 66.06%, 0.00% 100.00%, 100.00% 100.00%, 100.00% 66.06%, 69.26% 66.06%, 70.34% 59.82%, 70.99% 54.05%, 71.34% 48.15%, 71.41% 44.18%);
+    clip-path: polygon(71.34% 40.21%, 70.99% 34.31%, 70.34% 28.54%, 69.41% 23.00%, 68.20% 17.74%, 66.74% 12.85%, 65.04% 8.40%, 63.12% 4.44%, 61.74% 2.10%, 60.32% 0.08%, 59.93% 2.12%, 39.39% 2.12%, 39.00% 0.08%, 36.88% 3.24%, 35.54% 5.70%, 33.69% 9.83%, 32.58% 12.85%, 31.58% 16.07%, 30.69% 19.45%, 29.91% 23.00%, 28.98% 28.54%, 28.33% 34.31%, 28.07% 38.23%, 27.93% 42.20%, 27.98% 48.15%, 28.18% 52.10%, 28.73% 57.92%, 29.26% 61.70%, 30.06% 66.06%, 0.00% 66.06%, 0.00% 100.00%, 100.00% 100.00%, 100.00% 66.06%, 69.26% 66.06%, 70.34% 59.82%, 70.99% 54.05%, 71.34% 48.15%, 71.41% 44.18%);
   }
 
 
@@ -2868,6 +2869,31 @@ const CONFIG = {
   .app-bg #sadv *, .app-bg .who .vibe, .app-bg .who .vibe .hb, .app-bg .mlyr .hbk { animation-play-state: paused !important; }
   @media (min-width: 600px) and (min-height: 600px) { #sadv { top: 14px; bottom: 14px; width: 412px; margin-left: -206px; border-radius: 46px; } }
 
+  /* =====================================================================
+     THE HOODED GUY BEHIND THE HOME FRAME (assets/peek.webp: 40 frames of him glancing round, cut out of a video, 8 a row).
+     He stands behind the wings, the ring and the crown, so they hide his body; this box shows him only outside the ring
+     (a round hole the size of the ring's solid gold edge) and above its middle, so when he ducks he really goes behind it.
+     Sizes are frame pixels x --fs like the frame itself (the ring's centre is 762.8 / 655.6), so he fits every screen.
+     He is 540 wide; standing up, his eyes are just over the crown's points and the crown hides his mask and hand.
+     ===================================================================== */
+  .pk {
+    z-index: 1; left: calc(-400 * var(--fs)); top: calc(-700 * var(--fs)); width: calc(2336 * var(--fs)); height: calc(1355.6 * var(--fs));
+    overflow: hidden; visibility: hidden;
+    -webkit-mask-image: radial-gradient(circle at calc(1162.8 * var(--fs)) calc(1355.6 * var(--fs)), transparent calc(314 * var(--fs)), #000 calc(317 * var(--fs)));
+    mask-image: radial-gradient(circle at calc(1162.8 * var(--fs)) calc(1355.6 * var(--fs)), transparent calc(314 * var(--fs)), #000 calc(317 * var(--fs)));
+  }
+  .pk.on { visibility: visible; }
+  .pk-mv {
+    position: absolute; left: calc(857.3 * var(--fs)); top: calc(575 * var(--fs)); width: calc(540 * var(--fs)); height: calc(609.5 * var(--fs));
+    transform: translate(0, 112%); transform-origin: 56.6% 74%;          /* parked: down behind the ring · he leans from his neck */
+  }
+  .pk.on .pk-mv { will-change: transform; }
+  .pk-cv { display: block; width: 100%; height: 100%; }
+  .nopeek .pk { display: none; }
+
+  /* he hides behind the song pill too, never in front of it */
+  #s-home > .pill { z-index: 2; }
+
   /* ---------- 0. opening intro: one cinematic scene (everything moves with transform / opacity / clip-path, so it stays smooth)
      timeline (s): 0.1 a red line · 0.42 the black bars open on the scene · 0.82 the crown drops (glint) · 1.02 IMRAN wipes in,
      red / cyan ghosts closing in · 1.42 impact · 1.62 BADASS stamps down (dust) · 1.94 impact · 2.15 a shine runs over the
@@ -3209,6 +3235,8 @@ const CONFIG = {
             <div class="ring"></div>
             <!-- wings + crown frame: ONE picture (assets/frame.webp) cut into layers with clip-path -->
             <div class="wf" aria-hidden="true">
+              <!-- the hooded guy: he sneaks up behind the crown, glances round, ducks back down (behind the wings, the ring and the crown) -->
+              <div class="pk" id="pk"><div class="pk-mv" id="pkMv"><canvas class="pk-cv" id="pkcv" width="264" height="298"></canvas></div></div>
               <div class="wf-halo"></div>
               <div class="wf-lay wf-wl"></div>
               <div class="wf-lay wf-wr"></div>
@@ -3497,6 +3525,7 @@ const CONFIG = {
           <div class="ctl"><svg class="ic lead"><use href="#i-eye"/></svg><div class="grow"><input type="range" class="js-bright" min="0" max="100" aria-label="Background brightness"></div><span class="num js-brnum">30</span></div>
           <div class="ctl"><svg class="ic lead"><use href="#i-sparkles"/></svg><div class="grow"><b>Soft blur</b><small>Prettier glass, but can lag on some phones</small></div><button class="sw" id="swBlur" role="switch" aria-checked="false" aria-label="Soft blur"></button></div>
           <div class="ctl"><svg class="ic lead"><use href="#i-sparkles"/></svg><div class="grow"><b>Floating particles</b></div><button class="sw" id="swFx" role="switch" aria-checked="true" aria-label="Floating particles"></button></div>
+          <div class="ctl"><svg class="ic lead"><use href="#i-eye"/></svg><div class="grow"><b>Sneaky hooded guy</b><small>Now and then he peeks over your frame on Home</small></div><button class="sw" id="swPeek" role="switch" aria-checked="true" aria-label="Sneaky hooded guy"></button></div>
           <div class="ctl"><svg class="ic lead"><use href="#i-bot"/></svg><div class="grow"><b>Autopilot bot</b><small>The app drives itself: music, screens, both games. Touch to take over</small></div><button class="sw" id="swBot" role="switch" aria-checked="false" aria-label="Autopilot bot"></button></div>
         </div>
 
@@ -4656,7 +4685,7 @@ const CONFIG = {
     var host = curScreen === "profile" ? $("avProfile") : $("avHome");
     if (avStack.parentNode !== host) { var was = !avVid.paused; host.appendChild(avStack); if (was) swallow(avVid.play()); }
     avatarVisible = (curScreen === "home" || curScreen === "profile") && !playerOpen && !termOpen;
-    avatarWatch(); wfUpdate(); crfUpdate(); svUpdate(); crfBeat(true); ptUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
+    avatarWatch(); wfUpdate(); crfUpdate(); svUpdate(); pkUpdate(); crfBeat(true); ptUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
   }
   function afterShow(id) {
     updateChrome();
@@ -4875,6 +4904,7 @@ const CONFIG = {
     taps = taps.filter(function (t) { return now - t < 3000; }); taps.push(now);
     a.classList.remove("pulse"); void a.offsetWidth; a.classList.add("pulse");
     if (a === crf.el) crfTap();                                     // the crown frame on Profile flashes
+    if (a.id === "avHome") pkTap();                                 // the hooded guy behind the Home frame ducks
     if (taps.length >= 7) { taps = []; openTerm(); }
   }
   function matrix(on) {
@@ -5661,7 +5691,7 @@ const CONFIG = {
   function degrade(avg) {
     if (blurIsOn()) { setBlur(false); toast("Soft blur turned off", "To keep things smooth.", { icon: "sparkles" }); }
     else if (!isLite()) { root.classList.add("lite"); setSwitch($("swBlur"), false); }
-    else { root.classList.add("ultra"); fxStop(); wfUpdate(); crfUpdate(); svUpdate(); }
+    else { root.classList.add("ultra"); fxStop(); wfUpdate(); crfUpdate(); svUpdate(); pkUpdate(); }
     if (window.console) console.info("[page] slow device (" + avg.toFixed(1) + " ms per frame): " + (isUltra() ? "ultra-light" : "light") + " effects");
   }
   function govStart() {
@@ -5683,7 +5713,7 @@ const CONFIG = {
     paused = true; root.classList.add("app-bg");                       // CSS animations stand still while the app is in the background
     resumeList = [audio, bg, avVid].filter(function (m) { return !m.paused; });
     resumeList.forEach(function (m) { m.pause(); });
-    wfUpdate(); crfUpdate(); svUpdate(); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
+    wfUpdate(); crfUpdate(); svUpdate(); pkUpdate(); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
   };
   window.appResumed = function () {
     if (!paused) return;
@@ -5692,7 +5722,7 @@ const CONFIG = {
     resumeList.forEach(function (m) { swallow(m.play()); });
     resumeList = [];
     if (nativeVol) { vol = readNative(); applyVolume(); }    // the phone's volume may have changed meanwhile
-    wfUpdate(); crfUpdate(); svUpdate(); wfBeat(true); crfBeat(true); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
+    wfUpdate(); crfUpdate(); svUpdate(); pkUpdate(); wfBeat(true); crfBeat(true); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
   };
   window.appBack = handleBack;
 
@@ -5780,7 +5810,7 @@ const CONFIG = {
     g.globalAlpha = 1;
   }
   window.addEventListener("resize", function () { if (wf.run) { wfStop(); wfStart(); } });
-  document.addEventListener("visibilitychange", function () { wfUpdate(); crfUpdate(); svUpdate(); pvUpdate(); ptUpdate(); chgUpdate(); });
+  document.addEventListener("visibilitychange", function () { wfUpdate(); crfUpdate(); svUpdate(); pkUpdate(); pvUpdate(); ptUpdate(); chgUpdate(); });
 
   // the glow pulses on the beat while music plays (each song's tempo + first beat are in CONFIG), slowly when paused
   var wfBeatAt = 0, wfBeatVar = "";
@@ -9520,6 +9550,116 @@ const CONFIG = {
     ]);
   });
 
+  /* =====================================================================
+     THE HOODED GUY BEHIND THE HOME FRAME: now and then he sneaks up behind the crown (the top of his hood first, then his eyes),
+     glances round and leans (assets/peek.webp: 40 frames of the video, cut out), and when his eyes turn to you he ducks back down.
+     Tap the picture while he is up and he ducks fast. He moves on every phone (battery saver too); Settings → "Sneaky hooded guy" turns him off.
+     ===================================================================== */
+  var PK = { n: 40, cols: 8, w: 264, h: 298 };              // the sprite sheet: 40 frames, 8 a row, each 264 x 298 (frame 0: a side-eye · 39: looking at you)
+  var pk = { el: $("pk"), mv: $("pkMv"), cv: $("pkcv"), g: null, img: null, bad: false, run: false, up: false, off: store.get("peek", "1") === "0",
+             tm: 0, anim: null, raf: 0, t0: 0, fa: 0, fb: 1, f0: 0, f1: 39, fr: -1, drawn: 0, n: 0 };
+  function pkWanted() { return !!C.peek && !pk.off && !pk.bad && entered && curScreen === "home" && !playerOpen && !termOpen && !paused && !document.hidden; }
+  function pkUpdate() { if (!pk || !pk.cv || !pk.mv) return; if (pkWanted()) { if (!pk.run) pkStart(); } else if (pk.run) pkStop(); }
+  function pkStart() {
+    pk.run = true; pk.g = pk.g || pk.cv.getContext("2d");
+    if (!pk.img) {
+      pk.img = new Image(); pk.img.decoding = "async";
+      pk.img.onerror = function () { pk.bad = true; pkUpdate(); };
+      pk.img.src = C.peek;
+    }
+    pkLater(pk.n ? 4 + Math.random() * 6 : 2.4 + Math.random() * 1.6);   // the first time soon after Home shows
+  }
+  function pkStop() { pk.run = false; clearTimeout(pk.tm); pkPark(); }   // he never stays up while you are away; he sneaks up again when you come back
+  function pkLater(s) { clearTimeout(pk.tm); pk.tm = setTimeout(pkPeek, s * 1000); }
+  function pkPark() {
+    if (pk.anim) { pk.anim.onfinish = null; pk.anim.cancel(); pk.anim = null; }
+    pk.up = false; pk.el.classList.remove("on"); cancelAnimationFrame(pk.raf); pk.raf = 0;
+  }
+
+  // one move: a list of [second, x %, y %, turn °, easing to the next]; y 112 % = down behind the ring, 0 = his eyes just over the crown
+  function pkMoves() {
+    var r = Math.random(), s = Math.random() < .5 ? -1 : 1, x0 = s * (2 + Math.random() * 4), lean = 3.5 + Math.random() * 2.5;
+    if (r < .2) return {                                              // a quick pop up: up, a look, gone
+      k: [[0, x0, 112, 0, "cubic-bezier(.2,.9,.3,1.15)"], [.42, x0, 0, 0, "ease-in-out"], [1.4, x0 - s * 3, 0, -s * lean, "ease-in-out"],
+          [2.5, x0 + s * 2, -1, s * 2, "ease-in-out"], [3.3, x0, 0, 0, "linear"], [3.45, x0, -3, 0, "cubic-bezier(.5,0,.9,.6)"], [3.8, x0, 112, 0, "linear"]],
+      f: [.42, 3.3], fa: 22, fb: 39 };
+    var k = [[0, x0, 112, 0, "cubic-bezier(.3,.6,.4,1)"],              // sneaks up slowly: only the top of his hood shows over the crown ...
+             [1.3, x0, 36, s * 2, "ease-in-out"], [1.75, x0 + s * 1.5, 38, s * 3, "ease-in-out"], [2.3, x0 + s * 1.5, 35, s * 1, "cubic-bezier(.35,0,.25,1)"],
+             [3.1, x0, -2, 0, "ease-out"], [3.35, x0, 0, 0, "ease-in-out"],           // ... checks, then rises till his eyes clear it
+             [4.5, x0 - s * 5, 0, -s * lean, "ease-in-out"], [5.2, x0 - s * 5, .5, -s * lean, "ease-in-out"],   // leans one way and looks
+             [6.3, x0 + s * 4, -.5, s * (lean - 1), "ease-in-out"], [7.0, x0 + s * 4, 0, s * (lean - 1), "ease-in-out"],   // then the other
+             [7.8, x0, 0, 0, "linear"], [8.0, x0, -3, 0, "cubic-bezier(.5,0,.9,.6)"],   // his eyes meet yours: a start ...
+             [8.36, x0, 112, 0, "linear"]];                                              // ... and he ducks
+    var m = { k: k, f: [2.6, 7.8], fa: 0, fb: 39 };
+    if (r > .78) {                                                    // a double take: half down, then up for one more look, then gone
+      k.splice(k.length - 1, 1, [8.3, x0, 62, 0, "cubic-bezier(.2,.8,.3,1.1)"], [8.75, x0, 0, 0, "ease-in-out"], [9.7, x0 + s * 2, 0, s * 2, "linear"],
+               [9.85, x0 + s * 2, -2, s * 2, "cubic-bezier(.5,0,.9,.6)"], [10.2, x0, 112, 0, "linear"]);
+    }
+    return m;
+  }
+  function pkPeek() {
+    if (!pk.run) return;
+    var im = pk.img;
+    if (!im || !im.complete || !im.naturalWidth) { pkLater(1.5); return; }      // the picture is still loading
+    var m = pkMoves(), k = m.k, T = k[k.length - 1][0];
+    var frames = k.map(function (p, i) {
+      return { offset: p[0] / T, easing: p[4], transform: "translate(" + p[1] + "%, " + p[2] + "%) rotate(" + p[3] + "deg)" };
+    });
+    pkPark(); pk.n++;
+    pk.f0 = m.f[0]; pk.f1 = m.f[1]; pk.fa = m.fa; pk.fb = m.fb; pk.fr = -1; pk.drawn = 0;
+    pkDraw(pk.fa); pk.el.classList.add("on"); pk.up = true;
+    pk.anim = pk.mv.animate(frames, { duration: T * 1000, fill: "forwards" });
+    pk.anim.onfinish = pkDown;
+    pk.t0 = performance.now(); pk.raf = requestAnimationFrame(pkFrame);
+  }
+  function pkDown() { pkPark(); if (pk.run) pkLater(9 + Math.random() * 9); }    // the next time in 9-18 s
+
+  // his glance plays while he is up: a side-eye that slowly turns to you (8 frames a second; a slow phone draws fewer)
+  function pkFrame(now) {
+    if (!pk.up) return;
+    pk.raf = requestAnimationFrame(pkFrame);
+    var t = (now - pk.t0) / 1000, u = Math.max(0, Math.min(1, (t - pk.f0) / (pk.f1 - pk.f0)));
+    var f = Math.round(pk.fa + (pk.fb - pk.fa) * u);
+    if (f === pk.fr || (isUltra() && now - pk.drawn < 160)) return;
+    pk.drawn = now; pkDraw(f);
+  }
+  function pkDraw(f) {
+    var g = pk.g, w = PK.w, h = PK.h;
+    pk.fr = f;
+    g.globalCompositeOperation = "source-over"; g.clearRect(0, 0, w, h);
+    g.drawImage(pk.img, (f % PK.cols) * w, Math.floor(f / PK.cols) * h, w, h, 0, 0, w, h);
+    // the fire of the ring and the gold of the crown light him from below
+    g.globalCompositeOperation = "source-atop";
+    var gr = g.createLinearGradient(0, h * .72, 0, h * .5);
+    gr.addColorStop(0, "rgba(255,140,50,.2)"); gr.addColorStop(1, "rgba(255,160,70,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.globalCompositeOperation = "source-over";
+  }
+
+  // a tap on the picture while he is up: he's been seen, he ducks fast (and stays down a while)
+  function pkTap() {
+    if (!pk || !pk.up || !pk.anim) return;
+    var from = getComputedStyle(pk.mv).transform;
+    pk.anim.onfinish = null; pk.anim.cancel();
+    pk.anim = pk.mv.animate([{ transform: from === "none" ? "translate(0, 0)" : from, easing: "cubic-bezier(.55,0,1,.6)" }, { transform: "translate(0, 112%)" }],
+                            { duration: 260, fill: "forwards" });
+    pk.anim.onfinish = function () { pkPark(); if (pk.run) pkLater(12 + Math.random() * 8); };
+  }
+
+  function pkSetOff(off) {
+    pk.off = off; store.set("peek", off ? "0" : "1"); setSwitch($("swPeek"), !off);
+    pkUpdate();
+  }
+  (function () {
+    var sw = $("swPeek");
+    if (!C.peek) { root.classList.add("nopeek"); var row = sw && sw.closest(".ctl"); if (row) row.style.display = "none"; return; }
+    setSwitch(sw, !pk.off);
+    sw.addEventListener("click", function () {
+      var on = sw.getAttribute("aria-checked") !== "true"; pkSetOff(!on);
+      toast(on ? "Sneaky guy is back" : "Sneaky guy is gone", on ? "He peeks over your frame on Home now and then." : "Your frame on Home stays just yours.", { icon: "eye" });
+    });
+  })();
+
   /* ---------- start up ---------- */
   var clockEl = $("clock");
   function tickClock() { var d = new Date(); clockEl.textContent = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
@@ -9541,7 +9681,7 @@ const CONFIG = {
     fx.on = swf.getAttribute("aria-checked") !== "true"; setSwitch(swf, fx.on); store.set("fx", fx.on ? "1" : "0");
     root.classList.toggle("nofx", !fx.on);                 // the gold sparkles go too (popup, Settings frame, Home frame)
     if (fx.on) fxStart(); else fxStop();
-    wfUpdate(); crfUpdate(); svUpdate(); gfxUpdate();
+    wfUpdate(); crfUpdate(); svUpdate(); pkUpdate(); gfxUpdate();
   });
   applyTheme(root.getAttribute("data-theme"), true);
   applyStatus(); applyFlags();
