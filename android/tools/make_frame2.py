@@ -1,9 +1,9 @@
-"""Make website/assets/frame2.png (the wings + crown frame on the Settings card) from its artwork: removes the grey / white
+"""Make website/assets/frame2.webp (the wings + crown frame on the Settings card) from its artwork: removes the grey / white
 checker pattern and the white haze that were saved into the picture, keeps the wings, crown, ring, swirls and their soft glow,
 and cuts out the middle where the profile picture goes.
 
     pip install numpy scipy pillow
-    python3 android/tools/make_frame2.py  frame2-artwork.png  website/assets/frame2.png  /tmp/preview
+    python3 android/tools/make_frame2.py  frame2-artwork.png  website/assets/frame2.webp  /tmp/preview
 
 How: the checker is neutral (grey ~175 / white ~250, drawn by an AI so its grid wobbles) and the artwork is red, gold or dark.
 For every pixel the script finds the smallest alpha that explains it as  art x a + neutral background x (1 - a)  for ANY
@@ -81,7 +81,10 @@ F = np.clip(F, 0, 255)
 
 rgba = np.dstack([F, alpha * 255]).round().clip(0, 255).astype(np.uint8)
 rgba[alpha < 0.004] = 0
-Image.fromarray(rgba, "RGBA").save(out, optimize=True)
+if out.lower().endswith(".webp"):                                   # the app uses WebP: the same picture in a fifth of the space
+    Image.fromarray(rgba, "RGBA").save(out, "WEBP", quality=90, alpha_quality=100, method=6)
+else:
+    Image.fromarray(rgba, "RGBA").save(out, optimize=True)
 
 info = {"size": [W, H], "ellipse": {"cx": ECX, "cy": ECY, "ax": EAX, "ay": EAY}}
 ys, xs = np.nonzero(alpha > 0.03)

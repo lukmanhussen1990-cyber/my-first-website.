@@ -12,8 +12,8 @@ website/                ← the website
     avatar.mp4, avatar-crown.mp4, avatar-*.jpg   ← the profile pictures and clips that show one by one on Home / Profile
     background.mp4      ← background video
     *.m4a               ← songs for the music player (AAC, 96 kbps)
-    frame.png           ← the wings + crown frame around the picture on Home (transparent)
-    frame2.png          ← the wings + crown frame on the Settings card; its crown is also in the popup messages (transparent)
+    frame.webp           ← the wings + crown frame around the picture on Home (transparent)
+    frame2.webp          ← the wings + crown frame on the Settings card; its crown is also in the popup messages (transparent)
     frame-crown.webp    ← the gold crown, stars, orbits + clouds frame round the picture on Profile (+ frame-crown-glow.webp, its glow)
     theme-glass.jpg, theme-noir.jpg   ← preview pictures on the Themes screen
     intro/              ← the three picture layers of the opening intro (logo)
@@ -22,8 +22,8 @@ android/                ← Android Studio project (Kotlin, full-screen WebView)
   tools/make_icons.sh   ← turns a picture into every icon size the app needs
   tools/make_intro_layers.sh ← cuts the icon artwork into the intro's picture layers
   tools/update_offline_fonts.py ← bundles the Google Fonts into the app (offline use)
-  tools/make_frame.py   ← turns the frame artwork into assets/frame.png (background removed)
-  tools/make_frame2.py  ← turns the second frame artwork into assets/frame2.png (checker pattern removed)
+  tools/make_frame.py   ← turns the frame artwork into assets/frame.webp (background removed)
+  tools/make_frame2.py  ← turns the second frame artwork into assets/frame2.webp (checker pattern removed)
   tools/make_frame_crown.py ← turns the crown frame artwork into assets/frame-crown.webp + its glow (checker pattern removed)
   tools/find_beats.py   ← finds a song's tempo + first beat (for the glow that pulses on the beat)
 .github/workflows/      ← GitHub builds the APK for you
@@ -58,8 +58,8 @@ Open `website/index.html` and edit the `CONFIG` block at the very top:
 | `name`, `handle` | your name (typed on Home, page title, **app name**) and `@handle` |
 | `avatarImage`, `background` | your main picture (Settings card, song covers) and the background video (files in `website/assets`) |
 | `avatarMedia` | the profile pictures and clips on Home / Profile, in order: they show one by one, each fading in over the last |
-| `frame` | the wings + crown frame on Home (`"assets/frame.png"`); `""` = no frame, a plain glowing ring instead |
-| `frame2` | the wings + crown frame on the Settings card (`"assets/frame2.png"`), its crown is also in the popups; `""` = a plain ring |
+| `frame` | the wings + crown frame on Home (`"assets/frame.webp"`); `""` = no frame, a plain glowing ring instead |
+| `frame2` | the wings + crown frame on the Settings card (`"assets/frame2.webp"`), its crown is also in the popups; `""` = a plain ring |
 | `songs` | the playlist: `title`, `artist` (`""` = "Unknown Artist"), `file`, `cover` (`""` = use the profile picture), `bpm` + `beat` (the song's tempo and first beat, so the frame glows on the beat; leave them out and it pulses at a steady pace) |
 | `nameFont`, `textFont`, `quoteFont` | any font name from [fonts.google.com](https://fonts.google.com) |
 | `status`, `bio`, `profileBio`, `quotes`, `enterText` | the texts |
@@ -81,7 +81,7 @@ To put it online, upload the `website` folder (with `assets`) to any static host
 
 ## The wings + crown frame (Home)
 
-`assets/frame.png` is your frame artwork with its background removed. The page uses that ONE picture several times,
+`assets/frame.webp` is your frame artwork with its background removed. The page uses that ONE picture several times,
 each copy cut out with `clip-path`: the **left wing**, the **right wing**, the **ring** (with the swirls under it) and the **crown**.
 Your picture / clip sits exactly inside the ring's empty circle, the wings go behind your name, the text stays on top.
 
@@ -92,7 +92,7 @@ Your picture / clip sits exactly inside the ring's empty circle, the wings go be
 * gold sparkles twinkle around the wings and small feathers drift down and fade (one small canvas; off with "Floating particles")
 * everything stops while the app is in the background, on very slow phones, and for people who turned animations off
 
-To use a different frame picture: `python3 android/tools/make_frame.py your-art.png website/assets/frame.png /tmp/preview`
+To use a different frame picture: `python3 android/tools/make_frame.py your-art.png website/assets/frame.webp /tmp/preview`
 (the circle position inside the picture is measured for the current art; a new one needs its own numbers).
 For a new song: `python3 android/tools/find_beats.py website/assets/new-song.mp3` and copy `bpm` and `beat` into its line in `CONFIG.songs`.
 
@@ -106,11 +106,11 @@ a round medallion on the left with a spinning red-gold ring and light orbiting r
 * the title's letters fade in one by one, then the important word lights up
   (your status in its own colour: **Online** green, **Idle** yellow, **Do Not Disturb** red)
 * it hides by itself after 3 s; the ✕ closes it early (it spins when you press it)
-* the status popup shows the crown from `frame2.png`; the other messages show a matching gold icon
+* the status popup shows the crown from `frame2.webp`; the other messages show a matching gold icon
 
 ## The Settings card (second wings + crown frame)
 
-`assets/frame2.png` is used like the Home frame: one picture, cut with `clip-path` into the left wing, the right wing,
+`assets/frame2.webp` is used like the Home frame: one picture, cut with `clip-path` into the left wing, the right wing,
 the ring and the crown. Your picture sits exactly inside its empty circle. The wings flap (6°, 3 s), the crown floats with a shine
 every 4 s, the ring's red-gold glow pulses, a thin line of light runs round the ring and gold sparkles twinkle around it.
 Tap the card: it grows a little with a flash of light, then your profile opens.

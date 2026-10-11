@@ -1,9 +1,9 @@
-"""Make website/assets/frame.png from the wings + crown artwork: removes the picture's red / black background
+"""Make website/assets/frame.webp from the wings + crown artwork: removes the picture's red / black background
 (keeps the wings, crown, ring, swirls, feathers and sparkles with a soft glow, no box) and cuts out the circle
 where the profile clip goes.
 
     pip install numpy scipy pillow
-    python3 android/tools/make_frame.py  frame-artwork.png  website/assets/frame.png  /tmp/preview
+    python3 android/tools/make_frame.py  frame-artwork.png  website/assets/frame.webp  /tmp/preview
 
 The circle position (CX, CY, R_IN below) was measured on the current artwork (1536 x 1024).
 A different artwork needs its own numbers; the page reads them from the same values in its CSS (762.8 / 655.6 / 254).
@@ -81,7 +81,10 @@ out_a = out_a * hole * border
 out_a[out_a < 0.012] = 0
 
 rgba = np.dstack([np.clip(out_rgb, 0, 255), np.clip(out_a * 255, 0, 255)]).astype(np.uint8)
-Image.fromarray(rgba, "RGBA").save(out, optimize=True)
+if out.lower().endswith(".webp"):                                   # the app uses WebP: the same picture in a fifth of the space
+    Image.fromarray(rgba, "RGBA").save(out, "WEBP", quality=90, alpha_quality=100, method=6)
+else:
+    Image.fromarray(rgba, "RGBA").save(out, optimize=True)
 
 # ---------- previews ----------
 def over(bg_rgb):
