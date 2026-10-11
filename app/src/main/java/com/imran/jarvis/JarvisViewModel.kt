@@ -20,6 +20,7 @@ import com.imran.jarvis.data.Phase
 import com.imran.jarvis.data.Role
 import com.imran.jarvis.data.VoiceGender
 import com.imran.jarvis.i18n.Phrases
+import com.imran.jarvis.service.AlwaysOnService
 import com.imran.jarvis.voice.SpeechError
 import com.imran.jarvis.voice.SpeechListener
 import com.imran.jarvis.voice.SpeechRecognizerManager
@@ -105,6 +106,20 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application),
     /** An action that is waiting for the user to grant an Android permission. */
     private var pendingAfterPermission: JarvisReply? = null
 
+    /** True while JARVIS is on screen. Listening again after an answer only happens then. */
+    private var inForeground = false
+
+    /** Set when JARVIS answered normally, so (in always-on mode) it may listen again afterwards. */
+    private var followUpAllowed = false
+
+    /** The current listening session started by itself after an answer: silence just ends it quietly. */
+    private var followUpSession = false
+
+    init {
+        // Always-on was switched on earlier: make sure the background part is running.
+        if (settings.value.alwaysOn) AlwaysOnService.start(app)
+    }
+
     private fun phrases(): Phrases = Phrases.forLanguage(settings.value.language)
 
     // ---------------------------------------------------------------------------------------------
@@ -119,11 +134,13 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application),
         }
     }
 
-    fun startListening() {
+    fun startListening(followUp: Boolean = false) {
         aiJob?.cancel()
         tts.stop()
         pendingLaunch = null
         pendingAfterPermission = null
+        followUpAllowed = false
+        followUpSession = followUp
 
         val phrases = phrases()
         if (!stt.isAvailable()) return showProblem(phrases.sttUnavailable)
@@ -146,6 +163,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application),
 
     override fun onFinalText(text: String) {
         _level.value = 0f
+        followUpSession = false
         addMessage(Role.USER, text)
         _state.update { it.copy(phase = Phase.Thinking, partialText = "") }
         aiJob = viewModelScope.launch { askAi() }
@@ -154,6 +172,10 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application),
     override fun onError(error: SpeechError) {
         _level.value = 0f
         _state.update { it.copy(phase = Phase.Idle, partialText = "") }
+        val wasFollowUp = followUpSession
+        followUpSession = false
+        // Nobody spoke after JARVIS answered: just stop listening, no "I didn't hear you" message.
+        if (wasFollowUp && (error == SpeechError.NO_SPEECH || error == SpeechError.NO_MATCH)) return
         val p = phrases()
         when (error) {
             SpeechError.NO_SPEECH -> showProblem(p.heardNothing, aloud = false)
@@ -224,12 +246,12 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application),
             is ActionOutcome.Launch -> deliver(outcome.spoken ?: aiSentence, reply.toHistoryJson(), outcome)
 
             is ActionOutcome.Problem -> {
+                // A permission pop-up or a Settings hint is coming: do not start listening over it.
+                val asksUser = outcome.permissions.isNotEmpty() || outcome.needsNotificationAccess
+                if (outcome.permissions.isNotEmpty()) pendingAfterPermission = reply
                 // What the user heard is what the AI should remember (not an action that never happened).
-                deliver(outcome.spoken, JarvisReply(outcome.spoken).toHistoryJson())
-                if (outcome.permissions.isNotEmpty()) {
-                    pendingAfterPermission = reply
-                    events.trySend(UiEvent.RequestPermissions(outcome.permissions))
-                }
+                deliver(outcome.spoken, JarvisReply(outcome.spoken).toHistoryJson(), listenAfter = !asksUser)
+                if (outcome.permissions.isNotEmpty()) events.trySend(UiEvent.RequestPermissions(outcome.permissions))
                 if (outcome.needsNotificationAccess) events.trySend(UiEvent.NeedNotificationAccess)
             }
         }
@@ -250,9 +272,16 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application),
         }
     }
 
-    private fun deliver(text: String, historyJson: String, launch: ActionOutcome.Launch? = null) {
+    /** Shows and speaks JARVIS's answer. [listenAfter]: in always-on mode, listen again once it is spoken. */
+    private fun deliver(
+        text: String,
+        historyJson: String,
+        launch: ActionOutcome.Launch? = null,
+        listenAfter: Boolean = launch == null, // another app is about to open: no listening after that
+    ) {
         addMessage(Role.ASSISTANT, text, historyJson)
         pendingLaunch = launch
+        followUpAllowed = listenAfter
         speak(text)
     }
 
@@ -265,15 +294,24 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application),
 
     private fun finishSpeaking() {
         _state.update { it.copy(phase = Phase.Idle) }
-        val launch = pendingLaunch ?: return
-        pendingLaunch = null
-        if (!container.actions.start(launch.intent, launch.fallback)) {
-            addMessage(Role.ASSISTANT, phrases().cantOpen, isError = true)
+        val launch = pendingLaunch
+        if (launch != null) {
+            pendingLaunch = null
+            if (!container.actions.start(launch.intent, launch.fallback)) {
+                addMessage(Role.ASSISTANT, phrases().cantOpen, isError = true)
+            }
+            return
+        }
+        // Always-on: keep the conversation going without another tap. Silence ends it quietly.
+        if (followUpAllowed && settings.value.alwaysOn && inForeground) {
+            followUpAllowed = false
+            startListening(followUp = true)
         }
     }
 
     /** An explanation bubble for something that went wrong. It is shown (and maybe spoken) but not sent to the AI. */
     private fun showProblem(text: String, aloud: Boolean = true, detail: String = "") {
+        followUpAllowed = false // never loop on an error
         val shown = if (detail.isBlank()) text else "$text\n($detail)"
         addMessage(Role.ASSISTANT, shown, historyText = text, isError = true)
         if (aloud) speak(text) else _state.update { it.copy(phase = Phase.Idle) }
@@ -307,8 +345,21 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application),
         tts.stop()
         pendingLaunch = null
         pendingAfterPermission = null
+        followUpAllowed = false
+        followUpSession = false
         _level.value = 0f
         _state.update { it.copy(phase = Phase.Idle, partialText = "") }
+    }
+
+    /** JARVIS is on screen again. */
+    fun onAppForeground() {
+        inForeground = true
+    }
+
+    /** JARVIS left the screen: stop listening and talking (the always-on notification stays). */
+    fun onAppBackground() {
+        inForeground = false
+        stopEverything()
     }
 
     fun clearConversation() {
@@ -336,6 +387,16 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application),
     fun setNotificationsEnabled(value: Boolean) =
         container.settings.setNotificationsEnabled(value).also { refreshPermissions() }
     fun setOpenAppsEnabled(value: Boolean) = container.settings.setOpenAppsEnabled(value)
+
+    /** Switches always-on mode on or off (the background notification and listening after each answer). */
+    fun setAlwaysOn(value: Boolean) {
+        container.settings.setAlwaysOn(value)
+        if (value) {
+            if (!AlwaysOnService.start(app)) events.trySend(UiEvent.Message("Android did not allow JARVIS to stay on. Please try again."))
+        } else {
+            AlwaysOnService.stop(app)
+        }
+    }
 
     fun setLanguage(value: AppLanguage) {
         container.settings.setLanguage(value)

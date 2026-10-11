@@ -34,6 +34,19 @@ To start a build by hand: **Actions** > **Build JARVIS APK** > **Run workflow**.
    - "Torch on karo" - "Kal subah 6 baje ka alarm lagao" - "10 minute ka timer" - "Battery kitni hai?"
    - "Mere notifications padho"
 
+## Always on
+
+Settings > **Always On** keeps JARVIS ready all the time:
+
+- A quiet **"JARVIS is on - Tap to talk"** notification stays in your notification shade. Tap **Talk** from anywhere.
+- Add the **JARVIS tile** to Quick Settings (swipe down twice, tap the pencil, drag JARVIS in) for one-tap talking.
+- After each answer JARVIS **keeps listening** for your next sentence; just stay quiet to stop.
+- It comes back by itself after the phone restarts.
+- If your phone still closes it (common on Xiaomi, Oppo, Vivo, Samsung), tap the hint in the card and set JARVIS to
+  *Unrestricted* / *Don't optimize* battery use.
+
+JARVIS never records in the background: the microphone is only used while JARVIS is on screen.
+
 ## Notes
 
 - **Speech recognition and the AI need internet.** Hindi/English voices come from Google's speech services on your phone.

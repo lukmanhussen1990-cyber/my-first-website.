@@ -1,6 +1,7 @@
 package com.imran.jarvis.ui
 
 import android.Manifest
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.tween
@@ -47,9 +48,12 @@ private object Routes {
     const val SETTINGS = "settings"
 }
 
-/** The whole app: three screens, the Android permission pop-ups, and the messages at the bottom. */
+/**
+ * The whole app: three screens, the Android permission pop-ups, and the messages at the bottom.
+ * [listenRequest] goes up each time the always-on notification or the Quick Settings tile asks JARVIS to listen.
+ */
 @Composable
-fun JarvisApp(vm: JarvisViewModel = viewModel()) {
+fun JarvisApp(listenRequest: Int = 0, vm: JarvisViewModel = viewModel()) {
     val context = LocalContext.current
     val nav = rememberNavController()
     val snackbar = remember { SnackbarHostState() }
@@ -82,6 +86,14 @@ fun JarvisApp(vm: JarvisViewModel = viewModel()) {
         if (!granted) vm.showAppInfoHint("Phone and Contacts permission is off")
     }
 
+    // ----- The "Always on" switch: Android 13+ needs permission to show the JARVIS notification -----
+    val alwaysOnNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        vm.setAlwaysOn(true)
+        if (!granted) {
+            vm.showAppInfoHint("Notifications are off, so the JARVIS notification is hidden. The Quick Settings tile still works.")
+        }
+    }
+
     // ----- One-time messages from the ViewModel -----
     LaunchedEffect(vm) {
         vm.uiEvents.collect { event ->
@@ -104,8 +116,19 @@ fun JarvisApp(vm: JarvisViewModel = viewModel()) {
     }
 
     // Stop listening/speaking when the app leaves the screen; re-check permissions when it comes back.
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.stopEverything() }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { vm.onAppForeground() }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.onAppBackground() }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshPermissions() }
+
+    // The always-on notification or the Quick Settings tile asked JARVIS to listen.
+    LaunchedEffect(listenRequest) {
+        if (listenRequest > 0) {
+            withMic {
+                nav.navigate(Routes.CONVERSATION) { launchSingleTop = true }
+                vm.startListening()
+            }
+        }
+    }
 
     JarvisTheme {
         Box(Modifier.fillMaxSize()) {
@@ -142,6 +165,16 @@ fun JarvisApp(vm: JarvisViewModel = viewModel()) {
                     SettingsScreen(
                         vm = vm,
                         onBack = { nav.popBackStack() },
+                        onAlwaysOnToggle = { wanted ->
+                            val askNotifications = Build.VERSION.SDK_INT >= 33 &&
+                                !Permissions.has(context, Manifest.permission.POST_NOTIFICATIONS)
+                            when {
+                                !wanted -> vm.setAlwaysOn(false)
+                                askNotifications -> alwaysOnNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                else -> vm.setAlwaysOn(true)
+                            }
+                        },
+                        onOpenBatterySettings = { SystemSettings.openBatterySettings(context) },
                         onCallsToggle = { wanted ->
                             when {
                                 !wanted -> vm.setCallsEnabled(false)

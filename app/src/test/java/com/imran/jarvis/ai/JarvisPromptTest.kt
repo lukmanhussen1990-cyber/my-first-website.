@@ -62,6 +62,12 @@ class JarvisPromptTest {
     }
 
     @Test
+    fun `always on is off until the user switches it on`() {
+        assertFalse(AppSettings().alwaysOn)
+        assertTrue(AppSettings().copy(alwaysOn = true).alwaysOn)
+    }
+
+    @Test
     fun `every provider has presets and the first one is the default`() {
         AiProvider.entries.forEach {
             assertEquals(AiModels.defaultFor(it), AiModels.presetsFor(it).first().id)

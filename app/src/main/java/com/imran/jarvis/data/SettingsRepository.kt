@@ -28,6 +28,7 @@ class SettingsRepository(context: Context) {
         callsEnabled = prefs.getBoolean(KEY_CALLS, true),
         notificationsEnabled = prefs.getBoolean(KEY_NOTIFICATIONS, true),
         openAppsEnabled = prefs.getBoolean(KEY_OPEN_APPS, true),
+        alwaysOn = prefs.getBoolean(KEY_ALWAYS_ON, false),
     )
 
     fun setProvider(value: AiProvider) = update({ putString(KEY_PROVIDER, value.name) }) { copy(provider = value) }
@@ -37,6 +38,7 @@ class SettingsRepository(context: Context) {
     fun setNotificationsEnabled(value: Boolean) =
         update({ putBoolean(KEY_NOTIFICATIONS, value) }) { copy(notificationsEnabled = value) }
     fun setOpenAppsEnabled(value: Boolean) = update({ putBoolean(KEY_OPEN_APPS, value) }) { copy(openAppsEnabled = value) }
+    fun setAlwaysOn(value: Boolean) = update({ putBoolean(KEY_ALWAYS_ON, value) }) { copy(alwaysOn = value) }
 
     /** Saves the model name for [provider]. A blank value goes back to the built-in default. */
     fun setModel(provider: AiProvider, model: String) {
@@ -67,5 +69,6 @@ class SettingsRepository(context: Context) {
         const val KEY_CALLS = "calls_enabled"
         const val KEY_NOTIFICATIONS = "notifications_enabled"
         const val KEY_OPEN_APPS = "open_apps_enabled"
+        const val KEY_ALWAYS_ON = "always_on"
     }
 }

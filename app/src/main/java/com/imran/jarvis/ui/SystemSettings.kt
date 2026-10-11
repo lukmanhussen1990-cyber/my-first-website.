@@ -31,6 +31,15 @@ object SystemSettings {
         startFirstThatWorks(context, intent)
     }
 
+    /**
+     * The list where the user can let JARVIS keep running in the background ("Don't optimize" /
+     * "Unrestricted"). Some phone brands stop background apps aggressively otherwise.
+     */
+    fun openBatterySettings(context: Context) {
+        val appInfo = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+        startFirstThatWorks(context, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS), appInfo)
+    }
+
     private fun startFirstThatWorks(context: Context, vararg intents: Intent) {
         for (intent in intents) {
             try {

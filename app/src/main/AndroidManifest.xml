@@ -15,6 +15,12 @@
     <!-- Set alarms and timers in the Clock app -->
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
 
+    <!-- "Always on": stay ready in the background with a notification, and come back after a restart -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <!-- These features are nice to have, so the app still installs on phones without them -->
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
@@ -53,6 +59,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -60,6 +67,38 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- "Always on": keeps JARVIS ready with a "Tap to talk" notification. It never records in the background. -->
+        <service
+            android:name=".service.AlwaysOnService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps the voice assistant ready so the user can start talking from its notification." />
+        </service>
+
+        <!-- The JARVIS button in Quick Settings -->
+        <service
+            android:name=".service.JarvisTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_stat_jarvis"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- Switches "Always on" back on after a restart or an app update -->
+        <receiver
+            android:name=".service.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Lets JARVIS read your notifications when you ask (needs "Notification access" in Settings) -->
         <service

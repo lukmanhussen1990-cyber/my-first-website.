@@ -31,6 +31,8 @@ import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
@@ -89,6 +91,8 @@ fun SettingsScreen(
     onCallsToggle: (Boolean) -> Unit,
     onNotificationsToggle: (Boolean) -> Unit,
     onOpenNotificationAccess: () -> Unit,
+    onAlwaysOnToggle: (Boolean) -> Unit,
+    onOpenBatterySettings: () -> Unit,
 ) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val permissions by vm.permissions.collectAsStateWithLifecycle()
@@ -105,6 +109,8 @@ fun SettingsScreen(
         onNotificationsToggle = onNotificationsToggle,
         onOpenAppsToggle = vm::setOpenAppsEnabled,
         onOpenNotificationAccess = onOpenNotificationAccess,
+        onAlwaysOnToggle = onAlwaysOnToggle,
+        onOpenBatterySettings = onOpenBatterySettings,
         onMessage = vm::showMessage,
         onBack = onBack,
     )
@@ -125,6 +131,8 @@ fun SettingsContent(
     onNotificationsToggle: (Boolean) -> Unit,
     onOpenAppsToggle: (Boolean) -> Unit,
     onOpenNotificationAccess: () -> Unit,
+    onAlwaysOnToggle: (Boolean) -> Unit,
+    onOpenBatterySettings: () -> Unit,
     onMessage: (String) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -217,6 +225,41 @@ fun SettingsContent(
                         checked = permissions.openApps,
                         onChange = onOpenAppsToggle,
                     )
+                }
+
+                SettingsCard(Icons.Filled.PowerSettingsNew, "Always On") {
+                    PermissionRow(
+                        icon = Icons.Filled.RecordVoiceOver,
+                        title = "Always on",
+                        subtitle = "Keep JARVIS ready all the time",
+                        checked = settings.alwaysOn,
+                        onChange = onAlwaysOnToggle,
+                    )
+                    Text(
+                        if (settings.alwaysOn) {
+                            "JARVIS stays in your notifications: tap \"Talk\" from anywhere. You can also add the JARVIS " +
+                                "tile to Quick Settings (swipe down, tap the pencil). After each answer JARVIS keeps " +
+                                "listening; just stay quiet to stop."
+                        } else {
+                            "Turn on to talk to JARVIS from the notification or Quick Settings, and to keep the " +
+                                "conversation going without tapping the mic each time."
+                        },
+                        color = JarvisColors.TextHint,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        modifier = Modifier.padding(start = 48.dp, end = 4.dp),
+                    )
+                    if (settings.alwaysOn) {
+                        Text(
+                            "Phone closes JARVIS by itself? Tap here and allow it to run in the background.",
+                            color = JarvisColors.Cyan,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp,
+                            modifier = Modifier
+                                .clickable(onClick = onOpenBatterySettings)
+                                .padding(start = 48.dp, top = 8.dp, bottom = 4.dp, end = 4.dp),
+                        )
+                    }
                 }
 
                 SettingsCard(Icons.Filled.Palette, "Appearance") {

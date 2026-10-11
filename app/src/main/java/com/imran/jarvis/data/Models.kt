@@ -30,6 +30,8 @@ data class AppSettings(
     val callsEnabled: Boolean = true,
     val notificationsEnabled: Boolean = true,
     val openAppsEnabled: Boolean = true,
+    /** Keep JARVIS running in the background (notification + Quick Settings tile) and listen again after each answer. */
+    val alwaysOn: Boolean = false,
 ) {
     fun modelFor(provider: AiProvider): String =
         customModels[provider]?.trim()?.takeIf { it.isNotEmpty() } ?: AiModels.defaultFor(provider)
