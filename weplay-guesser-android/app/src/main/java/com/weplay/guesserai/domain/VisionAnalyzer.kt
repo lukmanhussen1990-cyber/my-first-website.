@@ -3,10 +3,17 @@ package com.weplay.guesserai.domain
 /** Port to whatever vision model reads the game screen. */
 interface VisionAnalyzer {
     /**
+     * Streams the model's answer. [onPartial] is called (on a background thread) every time
+     * another complete guess has arrived, so the overlay can update before the reply finishes.
+     *
      * @param jpeg screenshot of the game, already scaled down
-     * @param knownAnswers answers confirmed in past rounds that fit the last seen hint
      */
-    suspend fun analyze(jpeg: ByteArray, knownAnswers: List<String>, settings: AppSettings): FrameAnalysis
+    suspend fun analyze(
+        jpeg: ByteArray,
+        hints: PromptHints,
+        settings: AppSettings,
+        onPartial: (PartialAnalysis) -> Unit = {},
+    ): FrameAnalysis
 
     /** Cheap request that only proves the key, endpoint and model work. */
     suspend fun testConnection(settings: AppSettings): Result<String>

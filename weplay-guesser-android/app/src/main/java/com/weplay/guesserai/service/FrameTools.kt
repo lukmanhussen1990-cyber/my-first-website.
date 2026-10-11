@@ -31,7 +31,7 @@ object FrameTools {
         }
     }
 
-    fun toJpeg(frame: Bitmap, maxSide: Int = 1024, quality: Int = 80): ByteArray {
+    fun toJpeg(frame: Bitmap, maxSide: Int = 896, quality: Int = 75): ByteArray {
         val s = (maxSide.toFloat() / max(frame.width, frame.height)).coerceAtMost(1f)
         val scaled = if (s < 1f) Bitmap.createScaledBitmap(frame, (frame.width * s).roundToInt(), (frame.height * s).roundToInt(), true) else frame
         val out = ByteArrayOutputStream()
@@ -41,7 +41,7 @@ object FrameTools {
     }
 
     /** Thumbnail of the drawing canvas; [box] is [l, t, r, b] in 0..1, defaults to the middle of the screen. */
-    fun thumbnail(frame: Bitmap, box: List<Float>?, width: Int = 360): Bitmap {
+    fun thumbnail(frame: Bitmap, box: List<Float>?, width: Int = 280): Bitmap {
         val b = box ?: listOf(0.05f, 0.15f, 0.95f, 0.6f)
         val l = (b[0] * frame.width).roundToInt().coerceIn(0, frame.width - 2)
         val t = (b[1] * frame.height).roundToInt().coerceIn(0, frame.height - 2)

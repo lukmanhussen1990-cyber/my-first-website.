@@ -46,4 +46,20 @@ class AnalysisParserTest {
     fun `no json throws`() {
         AnalysisParser.parse("I cannot tell what this is.")
     }
+
+    @Test fun `partial reply yields hint and only the complete guesses`() {
+        val p = AnalysisParser.parsePartial(
+            """{"is_drawing_game":true,"canvas_empty":false,"hint":{"word_count":2,"letter_count":8,"word_lengths":[4,4]},""" +
+                """"guesses":[{"answer":"Free Fire","confidence":91,"reason":"gun, flames"},{"answer":"Coca Co"""
+        )
+        assertEquals(HintPattern(2, 8, listOf(4, 4)), p.hint)
+        assertEquals(listOf("Free Fire"), p.guesses.map { it.answer })
+        assertEquals(true, p.isDrawingGame)
+    }
+
+    @Test fun `partial reply before the hint closes has no hint`() {
+        val p = AnalysisParser.parsePartial("""{"is_drawing_game":true,"canvas_empty":false,"hint":{"word_count":2,"letter""")
+        assertNull(p.hint)
+        assertTrue(p.guesses.isEmpty())
+    }
 }

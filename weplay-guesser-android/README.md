@@ -4,7 +4,7 @@ A floating AI overlay for WePlay "Guess My Drawing". It captures the screen, sen
 vision model, and shows ranked guesses in a draggable window above the game.
 
 ## Install
-1. Copy `release/WePlayDrawingGuesserAI-1.0.0.apk` to your phone (Android 10+) and open it.
+1. Copy `release/WePlayDrawingGuesserAI-1.1.0.apk` to your phone (Android 10+) and open it.
    Allow "Install unknown apps" for your file manager or browser when asked.
 2. Open the app, paste your Anthropic API key (console.anthropic.com), and tap **Test connection**.
 3. Allow **Display over other apps**. Notifications and Usage access are optional; Usage access lets the AI sleep when WePlay is closed.
@@ -14,7 +14,12 @@ vision model, and shows ranked guesses in a draggable window above the game.
 - Drag it anywhere. **–** minimizes it to a bubble and **✕** stops the assistant.
 - Tap a guess to copy it, then paste it in the game chat. **Next Guess** drops the top answer and copies the next one.
 - Hold a guess when it was correct. The drawing and answer are saved, and that answer ranks higher in later rounds.
-- **Settings** has model (Opus 5.5 / Sonnet 5.5 / Haiku 5.5 / custom), capture speed (1/2/5 s), API base URL, and the game package.
+- **Settings** has the model (Haiku 5.5 by default, then Sonnet 5.5, Opus 5.5, or a custom ID), fast mode, capture speed (1/2/5 s), your own word list, compact/normal window, API base URL, and the game package.
+
+## What's new in 1.1.0
+- **Faster:** Claude Haiku 5.5 is the default, with thinking off. Replies stream, so the first guess appears as soon as it is written. Up to two frames are analysed at once, and captures run on a fixed beat. If your key can't use Haiku, the app switches to Opus 5.5 by itself.
+- **Word list:** common answers grouped by hint shape (1 letter → A; 2 letters → TV, GO, AC, CD, DJ; 2 words • 8 letters → Free Fire; …). The AI is told which ones fit the hint, and they fill the list when the AI runs short. Add your own words under Settings → Word list (`Free Fire|90` ranks a word higher).
+- **Compact window:** about a quarter of the screen. Tap a guess to copy it (a ✓ marks it); Next / Refresh / Pause sit on one row.
 
 ## Build
 ```

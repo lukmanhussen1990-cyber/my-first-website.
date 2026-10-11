@@ -8,11 +8,12 @@ import kotlin.math.roundToInt
  * Turns the raw model guesses into the list the overlay shows:
  *  1. normalise + de-duplicate,
  *  2. drop answers the user already rejected this round ("Next Guess"),
- *  3. keep only answers that fit the game's word/letter hint (falls back to all
- *     answers, flagged, when nothing fits — so the overlay is never empty),
+ *  3. keep only answers that fit the game's word/letter hint,
  *  4. smooth confidence across frames of the same drawing,
- *  5. adjust with what the learning database knows,
- *  6. sort, highest confidence first.
+ *  5. adjust with the learning database and the word list,
+ *  6. top up with word-list / learned answers that fit the hint when the model runs short,
+ *  7. sort, highest confidence first.
+ * When nothing fits the hint at all, the unfiltered model answers are shown, flagged.
  */
 class GuessEngine {
 
@@ -22,6 +23,9 @@ class GuessEngine {
         rejected: Set<String>,
         history: Map<String, AnswerStats>,
         previous: Map<String, Int> = emptyMap(),
+        wordBank: WordBank = WordBank.EMPTY,
+        knownAnswers: List<String> = emptyList(),
+        maxResults: Int = 10,
     ): RankResult {
         val merged = LinkedHashMap<String, Guess>()
         for (g in guesses) {
@@ -35,30 +39,79 @@ class GuessEngine {
             }
         }
 
+        val hintKnown = hint != null && hint.isKnown
         val all = merged.map { (key, g) ->
             val stats = history[key]
             val smoothed = previous[key]?.let { (0.6 * g.confidence + 0.4 * it).roundToInt() } ?: g.confidence
+            val listBonus = if (wordBank.contains(g.answer)) WORD_LIST_BONUS else 0
             RankedGuess(
                 answer = g.answer,
-                confidence = (smoothed + learningBoost(stats)).coerceIn(1, 99),
+                confidence = (smoothed + learningBoost(stats) + listBonus).coerceIn(1, 99),
                 reason = g.reason,
-                matchesHint = hint == null || !hint.isKnown || matches(g.answer, hint),
+                matchesHint = !hintKnown || matches(g.answer, hint!!),
                 learned = stats != null && stats.correct > 0,
             )
         }
 
-        val matching = all.filter { it.matchesHint }
-        val hintKnown = hint != null && hint.isKnown
-        val chosen = if (!hintKnown || matching.isNotEmpty()) matching else all
+        val matching = all.filter { it.matchesHint }.toMutableList()
+        if (hintKnown) addFillers(matching, hint!!, rejected, history, wordBank, knownAnswers, maxResults)
+
+        val mismatch = hintKnown && matching.isEmpty() && all.isNotEmpty()
+        val chosen = if (mismatch) all else matching
         val sorted = chosen.sortedWith(
             compareByDescending<RankedGuess> { it.confidence }.thenByDescending { it.learned }
         )
-        return RankResult(sorted, hintMismatch = hintKnown && matching.isEmpty() && all.isNotEmpty())
+        return RankResult(sorted.take(maxResults), hintMismatch = mismatch)
+    }
+
+    /** Word-list and previously confirmed answers that fit the hint, below the model's own picks. */
+    private fun addFillers(
+        list: MutableList<RankedGuess>,
+        hint: HintPattern,
+        rejected: Set<String>,
+        history: Map<String, AnswerStats>,
+        wordBank: WordBank,
+        knownAnswers: List<String>,
+        maxResults: Int,
+    ) {
+        val present = list.mapTo(HashSet()) { normalize(it.answer) }
+        fun add(answer: String, confidence: Int, source: GuessSource) {
+            val key = normalize(answer)
+            if (key in present || key in rejected || !matches(answer, hint)) return
+            present += key
+            val stats = history[key]
+            list += RankedGuess(
+                answer = cleanAnswer(answer),
+                confidence = (confidence + learningBoost(stats)).coerceIn(1, 99),
+                reason = if (source == GuessSource.LEARNED) "confirmed in an earlier round" else "common answer for this hint",
+                matchesHint = true,
+                learned = stats != null && stats.correct > 0,
+                source = source,
+            )
+        }
+
+        for (k in knownAnswers) if (list.size < maxResults) add(k, LEARNED_FILLER, GuessSource.LEARNED)
+
+        val candidates = wordBank.candidates(hint)
+        // A hint shape with a single known answer (1 letter → "A") is almost certainly that answer.
+        if (candidates.size == 1) {
+            add(candidates[0].answer, max(candidates[0].weight, SOLE_CANDIDATE_MIN), GuessSource.WORD_LIST)
+            return
+        }
+        for (c in candidates) {
+            if (list.size >= maxResults) break
+            add(c.answer, min(WORD_LIST_FILLER_MAX, c.weight / 2), GuessSource.WORD_LIST)
+        }
     }
 
     data class RankResult(val guesses: List<RankedGuess>, val hintMismatch: Boolean)
 
     companion object {
+        private const val WORD_LIST_BONUS = 4
+        private const val WORD_LIST_FILLER_MAX = 40
+        private const val LEARNED_FILLER = 30
+        private const val SOLE_CANDIDATE_MIN = 80
+
         /** Lower-case, letters/digits/spaces only, single spaces. Used as the identity of an answer. */
         fun normalize(answer: String): String =
             answer.lowercase()
@@ -71,7 +124,7 @@ class GuessEngine {
         fun cleanAnswer(answer: String): String =
             answer.trim { !it.isLetterOrDigit() }.replace(Regex("\\s+"), " ")
                 .split(' ').filter { it.isNotEmpty() }
-                .joinToString(" ") { w -> w.replaceFirstChar { c -> c.titlecase() } }
+                .joinToString(" ") { w -> if (w.length <= 3 && w.all { it.isUpperCase() }) w else w.replaceFirstChar { c -> c.titlecase() } }
 
         fun wordLengths(answer: String): List<Int> =
             answer.split(Regex("[\\s\\-]+")).map { w -> w.count { it.isLetter() } }.filter { it > 0 }

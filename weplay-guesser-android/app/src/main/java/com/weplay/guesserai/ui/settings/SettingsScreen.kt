@@ -56,6 +56,7 @@ class SettingsViewModel(private val app: WePlayGuesserApp) : AndroidViewModel(ap
     private val _test = MutableStateFlow<Pair<Boolean, String>?>(null)
     val test = _test.asStateFlow()
     val wePlayApps: List<Pair<String, String>> by lazy { GameAppMonitor.findWePlayApps(app) }
+    val builtInWordCount: Int by lazy { c.wordBank.get("").size }
 
     fun update(f: (AppSettings) -> AppSettings) { c.settings.update(f); _test.value = null }
 
@@ -126,9 +127,39 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
                 )
             }
             Text(
-                "Opus is the most accurate; Sonnet and Haiku answer faster and cost less per frame.",
+                "Haiku answers fastest and costs the least. If your key has no Haiku access the app switches to Opus automatically.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp,
             )
+            SwitchRow(
+                "Fast mode",
+                "Answer without extended thinking (Haiku and Sonnet). Much quicker guesses.",
+                s.fastMode,
+            ) { v -> vm.update { it.copy(fastMode = v) } }
+        }
+
+        SectionTitle("Word list")
+        GlassCard {
+            Text(
+                "The AI is told which common answers fit the hint (1 letter → A, 2 letters → TV, GO, AC, CD, DJ, " +
+                    "2 words • 8 letters → Free Fire …) and they fill the list when it runs short. " +
+                    "Add your own words below, one per line; add |90 to rank one higher (e.g. Free Fire|90).",
+                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp,
+            )
+            Text("${vm.builtInWordCount} built-in words", color = MaterialTheme.colorScheme.tertiary, fontSize = 12.sp)
+            OutlinedTextField(
+                value = s.customWords, onValueChange = { v -> vm.update { it.copy(customWords = v) } },
+                label = { Text("My words") }, placeholder = { Text("Free Fire\nTV\nMobile Legends") },
+                minLines = 3, maxLines = 8, modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        SectionTitle("Overlay")
+        GlassCard {
+            SwitchRow(
+                "Compact window",
+                "Small window without the drawing preview, so the game chat stays free for pasting.",
+                s.compactOverlay,
+            ) { v -> vm.update { it.copy(compactOverlay = v) } }
         }
 
         SectionTitle("Capture speed")

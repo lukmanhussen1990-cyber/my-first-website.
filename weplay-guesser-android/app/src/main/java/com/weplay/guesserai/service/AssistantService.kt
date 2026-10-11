@@ -81,18 +81,27 @@ class AssistantService : LifecycleService() {
             analyzer = container.visionAnalyzer,
             history = container.history,
             settingsRepo = container.settings,
+            wordBanks = container.wordBank,
             gameMonitor = GameAppMonitor(this),
             isScreenOn = { power.isInteractive },
             overlayRect = { window.bounds() },
         )
 
-        val density = resources.displayMetrics.density
-        // ~30% of the screen width, but never so narrow that the guesses become unreadable.
-        val panelWidth = (sw / density * 0.32f).coerceIn(140f, 220f).dp
+        val screenDp = sw / resources.displayMetrics.density
+        // Compact: about a quarter of the screen, so the chat box stays free for pasting.
+        val compactWidth = (screenDp * 0.27f).coerceIn(112f, 150f).dp
+        val normalWidth = (screenDp * 0.32f).coerceIn(140f, 220f).dp
 
         window.show {
             val state by s.state.collectAsState()
-            OverlayRoot(state, minimized.value, panelWidth, actionsFor(s, window))
+            val settings by container.settings.settings.collectAsState()
+            OverlayRoot(
+                state = state,
+                minimized = minimized.value,
+                compact = settings.compactOverlay,
+                width = if (settings.compactOverlay) compactWidth else normalWidth,
+                actions = actionsFor(s, window),
+            )
         }
 
         lifecycleScope.launch {
@@ -112,16 +121,16 @@ class AssistantService : LifecycleService() {
         override fun onMinimize() { minimized.value = true; window.snapToEdge = true; window.settle() }
         override fun onExpand() { minimized.value = false; window.snapToEdge = false; window.settle() }
         override fun onClose() { stopSelf() }
-        override fun onNextGuess() { s.nextGuess()?.let { copy(it, toast = false) } }
+        override fun onNextGuess() { s.nextGuess()?.let { copy(it) } }
         override fun onRefresh() = s.refresh()
         override fun onTogglePause() = s.togglePause()
-        override fun onCopy(guess: RankedGuess) = copy(guess.answer, toast = true)
+        override fun onCopy(guess: RankedGuess) { copy(guess.answer); s.markCopied(guess.answer) }
         override fun onMarkCorrect(guess: RankedGuess) = s.markCorrect(guess)
     }
 
-    private fun copy(text: String, toast: Boolean) {
+    /** No toast: it would cover the chat box the answer is pasted into. The overlay shows a ✓ instead. */
+    private fun copy(text: String) {
         getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("guess", text))
-        if (toast) Toast.makeText(this, "Copied \"$text\" — paste it in the game chat", Toast.LENGTH_SHORT).show()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

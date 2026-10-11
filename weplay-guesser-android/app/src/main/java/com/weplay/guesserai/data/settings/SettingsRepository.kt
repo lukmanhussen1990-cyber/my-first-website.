@@ -23,7 +23,7 @@ class SettingsRepository(context: Context) {
 
     private fun load(): AppSettings {
         val d = AppSettings()
-        return AppSettings(
+        val loaded = AppSettings(
             apiKey = prefs.getString(K_KEY, null)?.let(KeyCipher::decrypt).orEmpty(),
             baseUrl = prefs.getString(K_URL, d.baseUrl) ?: d.baseUrl,
             model = enumOr(prefs.getString(K_MODEL, null), d.model),
@@ -32,7 +32,20 @@ class SettingsRepository(context: Context) {
             gamePackage = prefs.getString(K_PKG, "").orEmpty(),
             autoPauseWhenGameClosed = prefs.getBoolean(K_AUTOPAUSE, d.autoPauseWhenGameClosed),
             saveScreenshots = prefs.getBoolean(K_SHOTS, d.saveScreenshots),
+            fastMode = prefs.getBoolean(K_FAST, d.fastMode),
+            customWords = prefs.getString(K_WORDS, "").orEmpty(),
+            compactOverlay = prefs.getBoolean(K_COMPACT, d.compactOverlay),
         )
+        // v1 defaulted to Opus with 2 s captures; v2 switches existing installs to the fast setup.
+        if (prefs.getInt(K_VERSION, 1) < 2) {
+            val migrated = loaded.copy(
+                model = if (loaded.model == AiModel.OPUS) AiModel.HAIKU else loaded.model,
+                captureSpeed = if (loaded.captureSpeed == CaptureSpeed.NORMAL) CaptureSpeed.FAST else loaded.captureSpeed,
+            )
+            save(migrated)
+            return migrated
+        }
+        return loaded
     }
 
     private fun save(s: AppSettings) {
@@ -45,6 +58,10 @@ class SettingsRepository(context: Context) {
             .putString(K_PKG, s.gamePackage)
             .putBoolean(K_AUTOPAUSE, s.autoPauseWhenGameClosed)
             .putBoolean(K_SHOTS, s.saveScreenshots)
+            .putBoolean(K_FAST, s.fastMode)
+            .putString(K_WORDS, s.customWords)
+            .putBoolean(K_COMPACT, s.compactOverlay)
+            .putInt(K_VERSION, VERSION)
             .apply()
     }
 
@@ -60,5 +77,10 @@ class SettingsRepository(context: Context) {
         const val K_PKG = "game_package"
         const val K_AUTOPAUSE = "auto_pause"
         const val K_SHOTS = "save_screenshots"
+        const val K_FAST = "fast_mode"
+        const val K_WORDS = "custom_words"
+        const val K_COMPACT = "compact_overlay"
+        const val K_VERSION = "settings_version"
+        const val VERSION = 2
     }
 }

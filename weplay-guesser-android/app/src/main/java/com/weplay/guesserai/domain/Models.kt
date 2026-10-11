@@ -41,7 +41,30 @@ data class FrameAnalysis(
     /** Normalised canvas rectangle [left, top, right, bottom] in 0..1, if the model found it. */
     val canvasBox: List<Float>?,
     val guesses: List<Guess>,
+    /** Model that actually answered (differs from the setting after a Haiku → Opus fallback). */
+    val modelUsed: String = "",
 )
+
+/** What the model has streamed so far for one frame. */
+data class PartialAnalysis(
+    val hint: HintPattern?,
+    val guesses: List<Guess>,
+    val isDrawingGame: Boolean?,
+    val canvasEmpty: Boolean?,
+)
+
+/** Extra context sent with a frame so the model picks from likely answers. */
+data class PromptHints(
+    /** Hint seen on the previous frame of this round (the model re-reads it from the image). */
+    val lastHint: HintPattern? = null,
+    /** Answers confirmed in earlier rounds that fit [lastHint]. */
+    val knownAnswers: List<String> = emptyList(),
+    /** Word-list answers that fit [lastHint]. */
+    val wordListCandidates: List<String> = emptyList(),
+)
+
+/** Where a guess shown in the overlay came from. */
+enum class GuessSource { AI, WORD_LIST, LEARNED }
 
 /** A guess after filtering and ranking by [GuessEngine]. */
 data class RankedGuess(
@@ -50,6 +73,7 @@ data class RankedGuess(
     val reason: String,
     val matchesHint: Boolean,
     val learned: Boolean,
+    val source: GuessSource = GuessSource.AI,
 )
 
 enum class CaptureSpeed(val seconds: Int, val label: String) {
@@ -59,18 +83,24 @@ enum class CaptureSpeed(val seconds: Int, val label: String) {
 }
 
 enum class AiModel(val id: String, val label: String, val note: String) {
-    OPUS("claude-opus-5-5", "Claude Opus 5.5", "Most accurate (default)"),
-    SONNET("claude-sonnet-5-5", "Claude Sonnet 5.5", "Faster, lower cost"),
-    HAIKU("claude-haiku-5-5", "Claude Haiku 5.5", "Fastest, cheapest"),
+    HAIKU("claude-haiku-5-5", "Claude Haiku 5.5", "Fastest, cheapest (default)"),
+    SONNET("claude-sonnet-5-5", "Claude Sonnet 5.5", "Balanced"),
+    OPUS("claude-opus-5-5", "Claude Opus 5.5", "Most accurate, slowest"),
     CUSTOM("", "Custom model ID", "For Anthropic-compatible endpoints"),
 }
 
 data class AppSettings(
     val apiKey: String = "",
     val baseUrl: String = DEFAULT_BASE_URL,
-    val model: AiModel = AiModel.OPUS,
+    val model: AiModel = AiModel.HAIKU,
     val customModelId: String = "",
-    val captureSpeed: CaptureSpeed = CaptureSpeed.NORMAL,
+    val captureSpeed: CaptureSpeed = CaptureSpeed.FAST,
+    /** Answer without extended thinking (Haiku / Sonnet only): much lower latency. */
+    val fastMode: Boolean = true,
+    /** User's own words, one per line, added to the built-in word list. */
+    val customWords: String = "",
+    /** Small overlay (no preview image, one button row) so it covers less of the game. */
+    val compactOverlay: Boolean = true,
     val gamePackage: String = "",
     val autoPauseWhenGameClosed: Boolean = true,
     val saveScreenshots: Boolean = true,

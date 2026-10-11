@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
+import com.weplay.guesserai.domain.GuessSource
 import com.weplay.guesserai.domain.RankedGuess
 import com.weplay.guesserai.service.AiStatus
 import com.weplay.guesserai.service.OverlayUiState
@@ -79,8 +80,65 @@ interface OverlayActions {
 }
 
 @Composable
-fun OverlayRoot(state: OverlayUiState, minimized: Boolean, width: Dp, actions: OverlayActions) {
-    if (minimized) Bubble(state, actions) else Panel(state, width, actions)
+fun OverlayRoot(state: OverlayUiState, minimized: Boolean, compact: Boolean, width: Dp, actions: OverlayActions) {
+    when {
+        minimized -> Bubble(state, actions)
+        compact -> CompactPanel(state, width, actions)
+        else -> Panel(state, width, actions)
+    }
+}
+
+/**
+ * Small panel: header, one status line, the hint, the top guesses as big tap-to-copy rows, and
+ * one row of buttons. No preview image, so it covers as little of the game as possible.
+ */
+@Composable
+private fun CompactPanel(state: OverlayUiState, width: Dp, actions: OverlayActions) {
+    val shape = RoundedCornerShape(14.dp)
+    Box(Modifier.padding(8.dp)) {
+        Column(
+            Modifier
+                .width(width)
+                .shadow(12.dp, shape, ambientColor = Neon, spotColor = Neon)
+                .clip(shape)
+                .background(Glass)
+                .border(1.dp, Brush.linearGradient(listOf(Lilac, Neon, Color.Transparent, Cyan)), shape)
+                .padding(horizontal = 7.dp, vertical = 6.dp)
+                .animateContentSize(),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusDot(state.status, size = 6.dp)
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    "WePlay AI", color = Color.White, fontSize = 9.5.sp, fontWeight = FontWeight.Bold,
+                    maxLines = 1, modifier = Modifier.weight(1f),
+                )
+                WindowButton("–", Lilac, size = 17.dp) { actions.onMinimize() }
+                Spacer(Modifier.width(3.dp))
+                WindowButton("✕", Color(0xFFFCA5A5), size = 17.dp) { actions.onClose() }
+            }
+            Row(Modifier.padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                Waveform(active = state.status == AiStatus.ANALYZING)
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    state.message, color = if (state.status == AiStatus.ERROR) ErrRed else Color(0xFFC4B5FD),
+                    fontSize = 7.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
+            state.hint?.let {
+                Text(it.label(), color = Cyan, fontSize = 8.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 2.dp))
+            }
+            if (state.hintMismatch) Text("⚠ nothing fits hint", color = Amber, fontSize = 7.sp)
+            Spacer(Modifier.height(3.dp))
+            GuessList(state, actions, compact = true)
+            Spacer(Modifier.height(5.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                NeonButton("➤ Next", primary = true, enabled = state.guesses.size > 1, height = 24.dp, modifier = Modifier.weight(1f)) { actions.onNextGuess() }
+                NeonButton("↻", primary = false, height = 24.dp, modifier = Modifier.width(24.dp)) { actions.onRefresh() }
+                NeonButton(if (state.isPaused) "▶" else "❚❚", primary = false, height = 24.dp, modifier = Modifier.width(24.dp)) { actions.onTogglePause() }
+            }
+        }
+    }
 }
 
 @Composable
@@ -179,9 +237,9 @@ private fun Header(state: OverlayUiState, actions: OverlayActions) {
 }
 
 @Composable
-private fun WindowButton(label: String, color: Color, onClick: () -> Unit) {
+private fun WindowButton(label: String, color: Color, size: Dp = 20.dp, onClick: () -> Unit) {
     Box(
-        Modifier.size(20.dp)
+        Modifier.size(size)
             .clip(RoundedCornerShape(6.dp))
             .background(Color.White.copy(alpha = 0.08f))
             .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
@@ -315,7 +373,6 @@ private fun Detected(state: OverlayUiState) {
 
 @Composable
 private fun GuessesSection(state: OverlayUiState, actions: OverlayActions) {
-    var expanded by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text("AI GUESSES", color = Muted, fontSize = 7.5.sp, letterSpacing = 0.6.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.weight(1f))
@@ -328,53 +385,79 @@ private fun GuessesSection(state: OverlayUiState, actions: OverlayActions) {
         Text("⚠ No guess fits the hint yet", color = Amber, fontSize = 7.5.sp)
     }
     Spacer(Modifier.height(4.dp))
+    GuessList(state, actions, compact = false)
+}
 
+@Composable
+private fun GuessList(state: OverlayUiState, actions: OverlayActions, compact: Boolean) {
+    var expanded by remember { mutableStateOf(false) }
     if (state.guesses.isEmpty()) {
         Text(
             if (state.status == AiStatus.ANALYZING) "Thinking…" else "No guesses yet",
-            color = Muted, fontSize = 8.5.sp, modifier = Modifier.padding(vertical = 6.dp),
+            color = Muted, fontSize = 8.5.sp, modifier = Modifier.padding(vertical = 4.dp),
         )
         return
     }
     val shown = if (expanded) state.guesses else state.guesses.take(3)
-    shown.forEachIndexed { i, g -> GuessRow(i + 1, g, top = i == 0, actions) }
+    shown.forEachIndexed { i, g ->
+        GuessRow(i + 1, g, top = i == 0, copied = state.copied == g.answer, compact = compact, actions = actions)
+    }
     if (state.guesses.size > 3) {
         Text(
             if (expanded) "Show less ▴" else "+${state.guesses.size - 3} more ▾",
             color = Color(0xFFC4B5FD), fontSize = 8.sp,
-            modifier = Modifier.clickable { expanded = !expanded }.padding(top = 3.dp),
+            modifier = Modifier.clickable { expanded = !expanded }.padding(top = 3.dp, bottom = 1.dp),
         )
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun GuessRow(rank: Int, g: RankedGuess, top: Boolean, actions: OverlayActions) {
-    val fill by animateFloatAsState(g.confidence / 100f, tween(500), label = "bar")
+private fun GuessRow(rank: Int, g: RankedGuess, top: Boolean, copied: Boolean, compact: Boolean, actions: OverlayActions) {
+    val fill by animateFloatAsState(g.confidence / 100f, tween(400), label = "bar")
+    val fromList = g.source != GuessSource.AI
     Column(
-        Modifier.fillMaxWidth().padding(vertical = 2.5.dp)
+        Modifier.fillMaxWidth().padding(vertical = if (compact) 1.5.dp else 2.5.dp)
             .clip(RoundedCornerShape(6.dp))
-            .background(if (top) Neon.copy(alpha = 0.12f) else Color.Transparent)
+            .background(
+                when {
+                    copied -> LiveGreen.copy(alpha = 0.16f)
+                    top -> Neon.copy(alpha = 0.14f)
+                    else -> Color.White.copy(alpha = 0.03f)
+                }
+            )
             .combinedClickable(onClick = { actions.onCopy(g) }, onLongClick = { actions.onMarkCorrect(g) })
-            .padding(horizontal = 3.dp, vertical = 2.dp),
+            .padding(horizontal = 4.dp, vertical = if (compact) 3.dp else 2.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("$rank", color = Muted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.width(4.dp))
+            if (!compact) {
+                Text("$rank", color = Muted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(4.dp))
+            }
             Text(
-                g.answer + if (g.learned) " ★" else "",
-                color = if (top) Color.White else Lilac, fontSize = if (top) 10.5.sp else 9.5.sp,
+                g.answer + when {
+                    g.learned -> " ★"
+                    fromList && !compact -> " 📖"
+                    else -> ""
+                },
+                color = when {
+                    top -> Color.White
+                    fromList -> Lilac.copy(alpha = 0.75f)
+                    else -> Lilac
+                },
+                fontSize = if (top) 10.sp else 9.5.sp,
                 fontWeight = if (top) FontWeight.Bold else FontWeight.Medium,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
             )
             Text(
-                "${g.confidence}%", color = if (top) NeonPink else Lilac,
-                fontSize = 9.5.sp, fontWeight = FontWeight.Bold,
+                if (copied) "✓" else "${g.confidence}%",
+                color = if (copied) LiveGreen else if (top) NeonPink else Lilac,
+                fontSize = 9.sp, fontWeight = FontWeight.Bold,
             )
         }
-        Box(Modifier.padding(top = 3.dp).fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = 0.08f))) {
+        Box(Modifier.padding(top = 2.dp).fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = 0.08f))) {
             Box(
-                Modifier.fillMaxWidth(fill).height(4.dp).clip(RoundedCornerShape(2.dp))
+                Modifier.fillMaxWidth(fill).height(3.dp).clip(RoundedCornerShape(2.dp))
                     .background(Brush.horizontalGradient(if (top) listOf(Neon, NeonPink) else listOf(NeonDeep, Color(0xFFC084FC))))
             )
         }
@@ -392,9 +475,12 @@ private fun Buttons(state: OverlayUiState, actions: OverlayActions) {
 }
 
 @Composable
-private fun NeonButton(label: String, primary: Boolean, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(9.dp)
-    var m = modifier.height(26.dp)
+private fun NeonButton(
+    label: String, primary: Boolean, modifier: Modifier = Modifier, enabled: Boolean = true,
+    height: Dp = 26.dp, onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(8.dp)
+    var m = modifier.height(height)
     m = if (primary) m.shadow(10.dp, shape, ambientColor = Neon, spotColor = Neon).clip(shape)
         .background(Brush.linearGradient(listOf(Neon, NeonDeep)))
     else m.clip(shape).background(Color.White.copy(alpha = 0.06f)).border(1.dp, Color(0x66C084FC), shape)

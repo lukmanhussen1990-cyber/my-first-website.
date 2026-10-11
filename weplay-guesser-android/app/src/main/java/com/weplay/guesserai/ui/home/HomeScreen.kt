@@ -119,7 +119,7 @@ fun HomeScreen(
         GlassCard {
             Text(if (running) "The AI overlay is running" else "Ready to play", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text(
-                if (running) "Switch to WePlay — the floating window shows live guesses. Drag it anywhere; tap a guess to copy it."
+                if (running) "Switch to WePlay — the floating window shows live guesses. Drag it anywhere; tap a guess to copy it, then paste it in the chat."
                 else "Press Start AI, allow screen sharing, and the floating assistant appears on top of WePlay.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp,
             )
