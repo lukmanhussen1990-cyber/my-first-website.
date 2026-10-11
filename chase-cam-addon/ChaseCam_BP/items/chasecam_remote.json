@@ -1,0 +1,20 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "chasecam:remote",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "chasecam_remote"
+      },
+      "minecraft:display_name": {
+        "value": "Chase Cam Remote"
+      },
+      "minecraft:max_stack_size": 1
+    }
+  }
+}

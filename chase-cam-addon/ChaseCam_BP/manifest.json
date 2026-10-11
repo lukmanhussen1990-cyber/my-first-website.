@@ -1,0 +1,38 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Chase Cam",
+    "description": "SA2-style chase camera: a smooth third-person camera that follows you from behind. Works on mobile, no experiments needed.",
+    "uuid": "0bcedeae-2f16-46b4-b18c-25e385d82120",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 20, 80]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "1b1c5dff-cdbf-4a0f-bc37-fa996d0dc5fd",
+      "version": [1, 0, 0]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "758afde9-1088-41bc-aa95-bbd0e4b64a47",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.10.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.1.0"
+    },
+    {
+      "uuid": "626e3038-03a2-4f0e-a8a6-4d97d5aea1fe",
+      "version": [1, 0, 0]
+    }
+  ]
+}

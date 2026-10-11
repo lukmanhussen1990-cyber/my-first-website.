@@ -1,0 +1,23 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Chase Cam Resources",
+    "description": "Textures and names for the Chase Cam add-on.",
+    "uuid": "626e3038-03a2-4f0e-a8a6-4d97d5aea1fe",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 20, 80]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "ee4974c9-02a7-4dee-8f11-a8f904d63269",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "0bcedeae-2f16-46b4-b18c-25e385d82120",
+      "version": [1, 0, 0]
+    }
+  ]
+}
