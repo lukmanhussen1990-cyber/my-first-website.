@@ -40,10 +40,24 @@ data class FrameAnalysis(
     val hint: HintPattern?,
     /** Normalised canvas rectangle [left, top, right, bottom] in 0..1, if the model found it. */
     val canvasBox: List<Float>?,
+    /** Normalised rectangle of the word hint in the top bar, if the model found it. */
+    val hintBox: List<Float>? = null,
     val guesses: List<Guess>,
     /** Model that actually answered (differs from the setting after a Haiku → Opus fallback). */
     val modelUsed: String = "",
 )
+
+/**
+ * What is sent for one frame: the whole screen while the layout is unknown, afterwards two
+ * close-ups — the hint in the top bar and the canvas — which read better and upload faster.
+ */
+class FrameImages(
+    val full: ByteArray? = null,
+    val hintBar: ByteArray? = null,
+    val canvas: ByteArray? = null,
+) {
+    val isCropped: Boolean get() = full == null
+}
 
 /** What the model has streamed so far for one frame. */
 data class PartialAnalysis(

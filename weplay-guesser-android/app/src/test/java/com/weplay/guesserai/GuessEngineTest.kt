@@ -18,7 +18,8 @@ class GuessEngineTest {
             Guess("Red Car", 90), Guess("Fire Truck", 80), Guess("Blue Whale", 85), Guess("Cat House", 88), Guess("Ambulance", 70),
         )
         val r = engine.rank(guesses, HintPattern(2, 9), emptySet(), emptyMap())
-        assertEquals(listOf("Blue Whale", "Fire Truck"), r.guesses.map { it.answer })
+        // "Cat House" (8 letters) is reshaped to "Cat Houses" (9) but ranks below the exact matches.
+        assertEquals(listOf("Blue Whale", "Fire Truck", "Cat Houses"), r.guesses.map { it.answer })
         assertFalse(r.hintMismatch)
     }
 
@@ -77,9 +78,46 @@ class GuessEngineTest {
 
     @Test fun `frame change detector ignores tiny noise`() {
         val d = FrameChangeDetector()
-        val a = IntArray(576) { 100 }
+        val a = IntArray(1600) { 230 }
         assertTrue(d.hasChanged(a)); d.accept(a)
-        assertFalse(d.hasChanged(IntArray(576) { if (it == 3) 110 else 100 }))
-        assertTrue(d.hasChanged(IntArray(576) { if (it < 100) 20 else 100 }))
+        assertFalse(d.hasChanged(IntArray(1600) { if (it == 3) 240 else 230 }))
+        assertTrue(d.hasChanged(IntArray(1600) { if (it < 100) 20 else 230 }))
     }
+
+    @Test fun `a thin new stroke on the canvas counts as a change`() {
+        val d = FrameChangeDetector()
+        val white = IntArray(1600) { 240 }
+        d.accept(white)
+        // Three cells darkened by a stroke: the whole-image average moves only ~0.3.
+        assertTrue(d.hasChanged(IntArray(1600) { if (it in 500..502) 150 else 240 }))
+    }
+
+    @Test fun `singular answer is turned plural to fit the hint`() {
+        val r = engine.rank(listOf(Guess("Snail", 90), Guess("Slow Snail", 60)), HintPattern(1, 6), emptySet(), emptyMap())
+        assertEquals("Snails", r.guesses.first().answer)
+        assertFalse(r.hintMismatch)
+    }
+
+    @Test fun `a 1-letter first word becomes A`() {
+        val r = engine.rank(listOf(Guess("Bike", 88), Guess("Bicycle", 70)), HintPattern(2, 5), emptySet(), emptyMap())
+        assertEquals("A Bike", r.guesses.first().answer)
+    }
+
+    @Test fun `variants cover plural, article and joined forms`() {
+        val v = GuessEngine.variantsOf("Fire Fly")
+        assertTrue("Firefly" in v)
+        assertTrue("Fire Flies" in v)
+        assertTrue("A Fire Fly" in v)
+        assertTrue("Box" in GuessEngine.variantsOf("Boxes"))
+        assertTrue("Cherry" in GuessEngine.variantsOf("Cherries"))
+        assertTrue("Apple" in GuessEngine.variantsOf("An Apple"))
+        assertTrue("An Egg" in GuessEngine.variantsOf("Egg"))
+    }
+
+    @Test fun `a real AI match is not replaced by a variant`() {
+        val r = engine.rank(listOf(Guess("Snails", 50), Guess("Snail", 90)), HintPattern(1, 6), emptySet(), emptyMap())
+        assertEquals(listOf("Snails"), r.guesses.map { it.answer })
+        assertEquals(80, r.guesses.single().confidence) // the stronger "Snail" reading, minus the reshape penalty
+    }
+
 }

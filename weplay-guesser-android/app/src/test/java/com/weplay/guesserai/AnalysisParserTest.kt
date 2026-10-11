@@ -12,12 +12,13 @@ class AnalysisParserTest {
     @Test fun `parses full shape`() {
         val a = AnalysisParser.parse(
             """{"is_drawing_game":true,"canvas_empty":false,"detected_object":"Fire truck","category":"Vehicle","emoji":"🚒",
-               "hint":{"word_count":2,"letter_count":9,"word_lengths":[4,5]},"canvas_box":[0.05,0.2,0.95,0.6],
+               "hint":{"word_count":2,"letter_count":9,"word_lengths":[4,5]},"canvas_box":[0.05,0.2,0.95,0.6],"hint_box":[0.3,0.05,0.7,0.1],
                "guesses":[{"answer":"Red Vehicle","confidence":82,"reason":"red"},{"answer":"Fire Truck","confidence":95,"reason":"ladder"}]}"""
         )
         assertEquals(HintPattern(2, 9, listOf(4, 5)), a.hint)
         assertEquals("Fire Truck", a.guesses.first().answer)
         assertEquals(4, a.canvasBox!!.size)
+        assertEquals(0.05f, a.hintBox!![1], 0.0001f)
         assertEquals("🚒", a.emoji)
     }
 

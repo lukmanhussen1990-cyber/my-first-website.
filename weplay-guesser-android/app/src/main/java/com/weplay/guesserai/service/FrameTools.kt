@@ -9,7 +9,7 @@ import java.io.ByteArrayOutputStream
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-/** Bitmap helpers for the capture pipeline. */
+/** Bitmap helpers for the capture pipeline. Boxes are [left, top, right, bottom] fractions of the frame. */
 object FrameTools {
     private val maskPaint = Paint().apply { color = Color.rgb(40, 40, 46) }
 
@@ -19,36 +19,52 @@ object FrameTools {
         Canvas(frame).drawRect(rect, maskPaint)
     }
 
-    /** 24×24 grayscale fingerprint for change detection. */
-    fun fingerprint(frame: Bitmap): IntArray {
-        val small = Bitmap.createScaledBitmap(frame, 24, 24, true)
-        val px = IntArray(24 * 24)
-        small.getPixels(px, 0, 24, 0, 0, 24, 24)
-        if (small !== frame) small.recycle()
+    fun rectOf(frame: Bitmap, box: List<Float>, pad: Float = 0f): Rect {
+        val l = ((box[0] - pad) * frame.width).roundToInt().coerceIn(0, frame.width - 2)
+        val t = ((box[1] - pad) * frame.height).roundToInt().coerceIn(0, frame.height - 2)
+        val r = ((box[2] + pad) * frame.width).roundToInt().coerceIn(l + 1, frame.width)
+        val b = ((box[3] + pad) * frame.height).roundToInt().coerceIn(t + 1, frame.height)
+        return Rect(l, t, r, b)
+    }
+
+    private fun crop(frame: Bitmap, box: List<Float>?, pad: Float = 0f): Bitmap {
+        if (box == null) return frame
+        val r = rectOf(frame, box, pad)
+        return Bitmap.createBitmap(frame, r.left, r.top, r.width(), r.height())
+    }
+
+    /** Grayscale grid (cols × rows) of a region, for change detection. */
+    fun fingerprint(frame: Bitmap, box: List<Float>? = null, cols: Int = 32, rows: Int = 32): IntArray {
+        val region = crop(frame, box)
+        val small = Bitmap.createScaledBitmap(region, cols, rows, true)
+        val px = IntArray(cols * rows)
+        small.getPixels(px, 0, cols, 0, 0, cols, rows)
+        if (small !== region) small.recycle()
+        if (region !== frame) region.recycle()
         return IntArray(px.size) { i ->
             val c = px[i]
             (Color.red(c) * 299 + Color.green(c) * 587 + Color.blue(c) * 114) / 1000
         }
     }
 
-    fun toJpeg(frame: Bitmap, maxSide: Int = 896, quality: Int = 75): ByteArray {
-        val s = (maxSide.toFloat() / max(frame.width, frame.height)).coerceAtMost(1f)
-        val scaled = if (s < 1f) Bitmap.createScaledBitmap(frame, (frame.width * s).roundToInt(), (frame.height * s).roundToInt(), true) else frame
+    /** JPEG of a region (or the whole frame), scaled down so its longest side is at most [maxSide]. */
+    fun toJpeg(frame: Bitmap, box: List<Float>? = null, pad: Float = 0f, maxSide: Int = 896, quality: Int = 75): ByteArray {
+        val region = crop(frame, box, pad)
+        val s = (maxSide.toFloat() / max(region.width, region.height)).coerceAtMost(1f)
+        val scaled = if (s < 1f) {
+            Bitmap.createScaledBitmap(region, (region.width * s).roundToInt().coerceAtLeast(1), (region.height * s).roundToInt().coerceAtLeast(1), true)
+        } else region
         val out = ByteArrayOutputStream()
         scaled.compress(Bitmap.CompressFormat.JPEG, quality, out)
-        if (scaled !== frame) scaled.recycle()
+        if (scaled !== region) scaled.recycle()
+        if (region !== frame) region.recycle()
         return out.toByteArray()
     }
 
-    /** Thumbnail of the drawing canvas; [box] is [l, t, r, b] in 0..1, defaults to the middle of the screen. */
+    /** Thumbnail of the drawing canvas; [box] defaults to the middle of the screen. */
     fun thumbnail(frame: Bitmap, box: List<Float>?, width: Int = 280): Bitmap {
-        val b = box ?: listOf(0.05f, 0.15f, 0.95f, 0.6f)
-        val l = (b[0] * frame.width).roundToInt().coerceIn(0, frame.width - 2)
-        val t = (b[1] * frame.height).roundToInt().coerceIn(0, frame.height - 2)
-        val r = (b[2] * frame.width).roundToInt().coerceIn(l + 1, frame.width)
-        val btm = (b[3] * frame.height).roundToInt().coerceIn(t + 1, frame.height)
-        val crop = Bitmap.createBitmap(frame, l, t, r - l, btm - t)
+        val crop = crop(frame, box ?: listOf(0.05f, 0.15f, 0.95f, 0.6f))
         val h = (width.toFloat() * crop.height / crop.width).roundToInt().coerceAtLeast(1)
-        return Bitmap.createScaledBitmap(crop, width, h, true).also { if (it !== crop) crop.recycle() }
+        return Bitmap.createScaledBitmap(crop, width, h, true).also { if (it !== crop && crop !== frame) crop.recycle() }
     }
 }

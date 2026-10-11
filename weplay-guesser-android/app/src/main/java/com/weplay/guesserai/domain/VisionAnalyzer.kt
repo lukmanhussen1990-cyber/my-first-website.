@@ -6,10 +6,10 @@ interface VisionAnalyzer {
      * Streams the model's answer. [onPartial] is called (on a background thread) every time
      * another complete guess has arrived, so the overlay can update before the reply finishes.
      *
-     * @param jpeg screenshot of the game, already scaled down
+     * @param images full screenshot, or hint-bar + canvas close-ups
      */
     suspend fun analyze(
-        jpeg: ByteArray,
+        images: FrameImages,
         hints: PromptHints,
         settings: AppSettings,
         onPartial: (PartialAnalysis) -> Unit = {},

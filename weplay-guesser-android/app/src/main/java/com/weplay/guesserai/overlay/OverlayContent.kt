@@ -77,6 +77,8 @@ interface OverlayActions {
     fun onTogglePause()
     fun onCopy(guess: RankedGuess)
     fun onMarkCorrect(guess: RankedGuess)
+    fun onAdjustHint(dWords: Int, dLetters: Int)
+    fun onAutoHint()
 }
 
 @Composable
@@ -125,9 +127,7 @@ private fun CompactPanel(state: OverlayUiState, width: Dp, actions: OverlayActio
                     fontSize = 7.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
-            state.hint?.let {
-                Text(it.label(), color = Cyan, fontSize = 8.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 2.dp))
-            }
+            HintLine(state, actions, compact = true)
             if (state.hintMismatch) Text("⚠ nothing fits hint", color = Amber, fontSize = 7.sp)
             Spacer(Modifier.height(3.dp))
             GuessList(state, actions, compact = true)
@@ -377,15 +377,60 @@ private fun GuessesSection(state: OverlayUiState, actions: OverlayActions) {
         Text("AI GUESSES", color = Muted, fontSize = 7.5.sp, letterSpacing = 0.6.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.weight(1f))
     }
-    state.hint?.let { hint ->
-        Text("(${hint.label()})", color = Cyan, fontSize = 8.5.sp, fontWeight = FontWeight.Medium)
-        hint.blanks()?.let { Text(it, color = Color(0xFFA5F3FC), fontSize = 7.sp, fontFamily = FontFamily.Monospace, maxLines = 1) }
-    }
+    HintLine(state, actions, compact = false)
+    state.hint?.blanks()?.let { Text(it, color = Color(0xFFA5F3FC), fontSize = 7.sp, fontFamily = FontFamily.Monospace, maxLines = 1) }
     if (state.hintMismatch) {
         Text("⚠ No guess fits the hint yet", color = Amber, fontSize = 7.5.sp)
     }
     Spacer(Modifier.height(4.dp))
     GuessList(state, actions, compact = false)
+}
+
+/**
+ * The hint ("2 words • 9 letters"). Tap it to fix a misread with +/- buttons; a hand-set hint
+ * shows 🔒 and stays until the round ends or "Auto" is tapped.
+ */
+@Composable
+private fun HintLine(state: OverlayUiState, actions: OverlayActions, compact: Boolean) {
+    var editing by remember { mutableStateOf(false) }
+    val hint = state.hint
+    Row(
+        Modifier.padding(top = 2.dp).clip(RoundedCornerShape(5.dp)).clickable { editing = !editing }
+            .padding(horizontal = 2.dp, vertical = 1.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            (if (state.hintManual) "🔒 " else "") + (hint?.label() ?: "Hint: tap to set"),
+            color = if (hint == null) Muted else Cyan,
+            fontSize = if (compact) 8.sp else 8.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+        )
+        Text(if (editing) " ▴" else " ✎", color = Muted, fontSize = 7.sp)
+    }
+    if (editing) {
+        Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+            Stepper("W", hint?.wordCount ?: 1, onMinus = { actions.onAdjustHint(-1, 0) }, onPlus = { actions.onAdjustHint(1, 0) })
+            Spacer(Modifier.width(4.dp))
+            Stepper("L", hint?.letterCount ?: 4, onMinus = { actions.onAdjustHint(0, -1) }, onPlus = { actions.onAdjustHint(0, 1) })
+        }
+        if (state.hintManual) {
+            Text(
+                "↺ Auto (read from game)", color = Color(0xFFC4B5FD), fontSize = 7.5.sp,
+                modifier = Modifier.padding(top = 2.dp).clip(RoundedCornerShape(5.dp))
+                    .clickable { actions.onAutoHint(); editing = false }.padding(2.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun Stepper(label: String, value: Int, onMinus: () -> Unit, onPlus: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(label, color = Muted, fontSize = 7.5.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.width(2.dp))
+        WindowButton("−", Lilac, size = 16.dp, onClick = onMinus)
+        Text("$value", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 3.dp))
+        WindowButton("+", Lilac, size = 16.dp, onClick = onPlus)
+    }
 }
 
 @Composable

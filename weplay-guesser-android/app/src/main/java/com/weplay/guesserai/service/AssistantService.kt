@@ -126,6 +126,8 @@ class AssistantService : LifecycleService() {
         override fun onTogglePause() = s.togglePause()
         override fun onCopy(guess: RankedGuess) { copy(guess.answer); s.markCopied(guess.answer) }
         override fun onMarkCorrect(guess: RankedGuess) = s.markCorrect(guess)
+        override fun onAdjustHint(dWords: Int, dLetters: Int) = s.adjustHint(dWords, dLetters)
+        override fun onAutoHint() = s.clearManualHint()
     }
 
     /** No toast: it would cover the chat box the answer is pasted into. The overlay shows a ✓ instead. */
@@ -138,6 +140,7 @@ class AssistantService : LifecycleService() {
         val window = overlay ?: return
         val (sw, sh) = window.screenSize()
         capturer?.resize(sw, sh, resources.displayMetrics.densityDpi)
+        session?.onScreenChanged()
         window.settle()
     }
 

@@ -20,6 +20,7 @@ import com.anthropic.models.beta.messages.MessageCreateParams
 import com.weplay.guesserai.domain.AiModel
 import com.weplay.guesserai.domain.AppSettings
 import com.weplay.guesserai.domain.FrameAnalysis
+import com.weplay.guesserai.domain.FrameImages
 import com.weplay.guesserai.domain.PartialAnalysis
 import com.weplay.guesserai.domain.PromptHints
 import com.weplay.guesserai.domain.VisionAnalyzer
@@ -66,19 +67,19 @@ class ClaudeVisionClient : VisionAnalyzer {
         else settings
 
     override suspend fun analyze(
-        jpeg: ByteArray,
+        images: FrameImages,
         hints: PromptHints,
         settings: AppSettings,
         onPartial: (PartialAnalysis) -> Unit,
     ): FrameAnalysis = withContext(Dispatchers.IO) {
         val s = effective(settings)
         try {
-            stream(buildParams(jpeg, hints, s), s, onPartial)
+            stream(buildParams(images, hints, s), s, onPartial)
         } catch (e: VisionException.ModelNotFound) {
             if (s.model != AiModel.HAIKU) throw e
             haikuUnavailableForKey = s.apiKey
             val opus = s.copy(model = AiModel.OPUS)
-            stream(buildParams(jpeg, hints, opus), opus, onPartial)
+            stream(buildParams(images, hints, opus), opus, onPartial)
         }
     }
 
@@ -144,22 +145,34 @@ class ClaudeVisionClient : VisionAnalyzer {
         return AnalysisParser.parse(text.toString(), settings.modelId)
     }
 
-    internal fun buildParams(jpeg: ByteArray, hints: PromptHints, settings: AppSettings): MessageCreateParams {
-        val image = BetaImageBlockParam.builder()
-            .source(
-                BetaBase64ImageSource.builder()
-                    .mediaType(BetaBase64ImageSource.MediaType.IMAGE_JPEG)
-                    .data(Base64.getEncoder().encodeToString(jpeg))
-                    .build()
+    internal fun buildParams(images: FrameImages, hints: PromptHints, settings: AppSettings): MessageCreateParams {
+        fun image(jpeg: ByteArray) = BetaContentBlockParam.ofImage(
+            BetaImageBlockParam.builder()
+                .source(
+                    BetaBase64ImageSource.builder()
+                        .mediaType(BetaBase64ImageSource.MediaType.IMAGE_JPEG)
+                        .data(Base64.getEncoder().encodeToString(jpeg))
+                        .build()
+                )
+                .build()
+        )
+        fun text(t: String) = BetaContentBlockParam.ofText(BetaTextBlockParam.builder().text(t).build())
+
+        val content = if (images.full != null) {
+            listOf(image(images.full), text(SolverPrompt.userText(hints, cropped = false)))
+        } else {
+            listOf(
+                text(SolverPrompt.HINT_BAR_LABEL), image(requireNotNull(images.hintBar)),
+                text(SolverPrompt.CANVAS_LABEL), image(requireNotNull(images.canvas)),
+                text(SolverPrompt.userText(hints, cropped = true)),
             )
-            .build()
-        val text = BetaTextBlockParam.builder().text(SolverPrompt.userText(hints)).build()
+        }
 
         val builder = MessageCreateParams.builder()
             .model(settings.modelId)
             .maxTokens(if (thinkingOff(settings)) 1500L else 4096L)
             .system(SolverPrompt.SYSTEM)
-            .addUserMessageOfBetaContentBlockParams(listOf(BetaContentBlockParam.ofImage(image), BetaContentBlockParam.ofText(text)))
+            .addUserMessageOfBetaContentBlockParams(content)
 
         if (isOfficial(settings)) {
             val schema = BetaJsonOutputFormat.Schema.builder()

@@ -61,7 +61,7 @@ class ScreenCapturer(
     }
 
     private fun captureSize(screenW: Int, screenH: Int): Pair<Int, Int> {
-        // ~1280px on the long side is plenty for the model and keeps memory and battery low.
+        // ~1600px on the long side keeps the hint sharp for the model and keeps memory and battery low.
         scale = (MAX_SIDE.toFloat() / max(screenW, screenH)).coerceAtMost(1f)
         return (screenW * scale).roundToInt() to (screenH * scale).roundToInt()
     }
@@ -93,6 +93,6 @@ class ScreenCapturer(
     }
 
     private companion object {
-        const val MAX_SIDE = 1280
+        const val MAX_SIDE = 1600
     }
 }

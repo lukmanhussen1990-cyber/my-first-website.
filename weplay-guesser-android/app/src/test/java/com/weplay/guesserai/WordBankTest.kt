@@ -68,4 +68,20 @@ class WordBankTest {
         assertEquals("TV", GuessEngine.cleanAnswer("TV"))
         assertEquals("Free Fire", GuessEngine.cleanAnswer("free fire"))
     }
+
+    @Test fun `2 words 5 letters suggests A Bike first`() {
+        val r = engine.rank(emptyList(), HintPattern(2, 5), emptySet(), emptyMap(), wordBank = bank)
+        assertEquals("A Bike", r.guesses.first().answer)
+        assertTrue(r.guesses.all { it.answer.startsWith("A ") || GuessEngine.wordLengths(it.answer).first() != 1 })
+    }
+
+    @Test fun `A-prefix fillers come from the word list when lengths are unknown`() {
+        val r = engine.rank(emptyList(), HintPattern(2, 6), emptySet(), emptyMap(), wordBank = bank)
+        assertTrue(r.guesses.any { it.answer == "A House" })
+    }
+
+    @Test fun `no A-prefix when the first word is known to be longer`() {
+        val r = engine.rank(emptyList(), HintPattern(2, 5, listOf(2, 3)), emptySet(), emptyMap(), wordBank = bank)
+        assertFalse(r.guesses.any { it.answer.startsWith("A ") })
+    }
 }

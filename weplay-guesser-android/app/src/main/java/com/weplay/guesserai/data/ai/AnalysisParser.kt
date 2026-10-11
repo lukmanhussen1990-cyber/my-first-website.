@@ -22,8 +22,8 @@ object AnalysisParser {
             throw VisionException.BadResponse("AI reply was not valid JSON", it)
         }
         val guesses = root.path("guesses").mapNotNull(::guessOf)
-        val box = root.path("canvas_box").map { it.asDouble(-1.0).toFloat() }
-            .takeIf { b -> b.size == 4 && b.all { it in 0f..1f } && b[2] - b[0] > 0.1f && b[3] - b[1] > 0.1f }
+        val box = boxOf(root.path("canvas_box"), minHeight = 0.1f)
+        val hintBox = boxOf(root.path("hint_box"), minHeight = 0.01f)
 
         return FrameAnalysis(
             isDrawingGame = root.path("is_drawing_game").asBoolean(true),
@@ -33,6 +33,7 @@ object AnalysisParser {
             emoji = root.path("emoji").asText("").take(8),
             hint = hintOf(root.path("hint")),
             canvasBox = box,
+            hintBox = hintBox,
             guesses = guesses.sortedByDescending { it.confidence },
             modelUsed = modelUsed,
         )
@@ -61,6 +62,10 @@ object AnalysisParser {
             canvasEmpty = boolAfterKey(text, "canvas_empty"),
         )
     }
+
+    private fun boxOf(node: JsonNode, minHeight: Float): List<Float>? =
+        node.map { it.asDouble(-1.0).toFloat() }
+            .takeIf { b -> b.size == 4 && b.all { it in 0f..1f } && b[2] - b[0] > 0.1f && b[3] - b[1] > minHeight }
 
     private fun guessOf(g: JsonNode): Guess? {
         val answer = g.path("answer").asText("").trim()
