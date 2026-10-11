@@ -150,6 +150,25 @@ The light dots and spots are drawn on one canvas, everything else is CSS, and it
 or the full player covers it. With "Floating particles" off you get only the neon edges and the waveform.
 Any song can have it: add `party: true` to that song in the CONFIG.
 
+## Камин sad vibe
+
+When **Камин** (EMIN feat. JONY) starts playing, a big glossy broken heart beats twice in the middle of the screen (a ring of
+light on each beat), trembles, a glowing crack runs down it and it breaks apart (shards fly, the screen flashes red). Then, until
+you change the song:
+
+* the picture behind turns red, with a dark red vignette and red mist drifting low down
+* rain falls, drops of rain sit on the glass and slide down, and now and then lightning lights up the sky
+* glossy broken hearts float up (small soft ones far away, a few big blurred ones close by), swelling a little on the beat;
+  every few seconds one cracks and breaks in two, the halves falling and shards flying
+* the screen's red edges swell like a heartbeat (lub-dub, every two beats)
+* "Sad Vibe 💔" shows under your name instead of the hello line (tap it: **Sad vibe** = everything, **Calm** = just the red sky),
+  a beating broken heart sits in front of the lyrics, and your status shows **Do Not Disturb** (only shown: your own status
+  comes back after the song, and picking one yourself ends it)
+
+Paused: dimmer, the rain stops. The hearts, drops and shards are one canvas, everything else is CSS; it all rests while the app is
+in the background. With "Floating particles" off (or Calm) you get just the red sky and the pill.
+Any song can have it: add `sad: true` to that song in the CONFIG.
+
 ## The Now Playing player
 
 * **Opens** sliding up with a fade (the side panel slides in from the left), **closes** sliding down.

@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "2.9.1",                     // shown in Settings → About
+  version: "2.9.2",                     // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -50,6 +50,7 @@ const CONFIG = {
   // cover: "" = use the profile picture as the cover art · artist: "" = "Unknown Artist"
   // bpm + beat: the song's tempo and the second its first beat falls on, so the frame's glow pulses on the beat
   // party: true = "party mode" while that song plays (disco ball, laser beams, light dots, neon cards, a waveform on the music card)
+  // sad: true = "sad vibe" while that song plays (the sky turns red, rain, broken hearts floating up, "Sad Vibe 💔" under your name, Do Not Disturb)
   // lyrics: { lrclib: id, offset: seconds } = the song's current line under the artist on the music card (♫ + the line, in pink).
   //         The synced lyrics come from lrclib.net (id = the song's number there) the first time, then stay saved in the app (offline too);
   //         offset = how many seconds later the singing starts in this file than in the album version (a music video with an intro, say).
@@ -67,7 +68,7 @@ const CONFIG = {
     { title: "Hymn For The Weekend",    artist: "Coldplay",    file: "assets/hymn-for-the-weekend.m4a",    cover: "", bpm: 90.00, beat: 0.185,
       lyrics: { lrclib: 37516438, offset: 0 },
       shake: [[10.40, 14.15], [21.55, 25.07], [84.02, 87.27], [95.20, 97.97], [159.14, 161.93]] },   // "drink from me, drink from me" · "put your wings on me, wings on me"
-    { title: "Камин",                   artist: "EMIN feat. JONY", file: "assets/kamin.m4a",                cover: "", bpm: 126.00, beat: 0.395,
+    { title: "Камин",                   artist: "EMIN feat. JONY", file: "assets/kamin.m4a",                cover: "", bpm: 126.00, beat: 0.395, sad: true,
       lyrics: { lrclib: 26007642, offset: 0.2 } },                    // (the lines show a moment before they are sung)
   ],
   randomFirstSong: false,               // true = start with a random song each visit
@@ -2749,6 +2750,123 @@ const CONFIG = {
   .app-bg .pc *, .app-bg .pc-aura { animation-play-state: paused !important; }
   @media (prefers-reduced-motion: reduce) { .pc *, .pc-aura { animation: none !important; } .pc-fx, .pc-spin, .pc-shine { display: none; } .pc-glow { opacity: .4; } }
 
+  /* =====================================================================
+     SAD VIBE: a song with sad: true (Камин) turns it on when it starts playing; another song turns it off.
+     The picture behind turns red (a filter on the background video, a red wash and a dark red vignette), red mist drifts low down,
+     rain falls (two layers of streaks sliding down: no script), the screen's red edges swell like a heartbeat on the beat, a soft flash
+     of lightning now and then, broken hearts float up (some blurred and close, some far), and every few seconds one cracks and breaks in
+     two, shards flying; drops of rain slide down the glass (all one canvas). When the song starts, a big broken heart beats twice in the
+     middle and breaks apart. "Sad Vibe 💔" shows under the name, a broken heart beats in front of the lyrics, and the status reads
+     Do Not Disturb. Paused: dimmer and the rain stops.
+     "Floating particles" off, or "Calm" in the pill's menu: just the red picture and the pill.
+     ===================================================================== */
+  #sadv { position: fixed; top: 0; bottom: 0; left: 50%; z-index: 1; width: min(100vw, 440px); margin-left: calc(min(100vw, 440px) / -2);
+          pointer-events: none; overflow: hidden; display: none; opacity: 0; transition: opacity 1.2s ease; }
+  .sadv-wave #sadv { display: block; }
+  .sadv #sadv { opacity: 1; }
+  .sadv.sadv-dim #sadv { opacity: .55; }
+  #sadv > * { position: absolute; }
+  .sv-wash { top: 0; right: 0; bottom: 0; left: 0;
+    background: radial-gradient(ellipse 120% 38% at 50% 0%, rgba(255, 90, 60, .2), rgba(255, 90, 60, 0) 72%),
+                radial-gradient(ellipse 90% 72% at 50% 46%, rgba(40, 0, 6, 0) 48%, rgba(40, 0, 6, .7) 100%),
+                linear-gradient(180deg, rgba(160, 20, 30, .12) 0, rgba(135, 12, 28, .1) 45%, rgba(100, 6, 20, .2) 75%, rgba(32, 0, 6, .56) 100%); }
+
+  /* low red mist, drifting slowly from side to side */
+  .sv-mist { left: -30%; right: -30%; bottom: -4%; height: 44%; opacity: .8;
+    background: radial-gradient(ellipse 30% 40% at 20% 70%, rgba(150, 20, 34, .55), rgba(150, 20, 34, 0) 70%),
+                radial-gradient(ellipse 34% 46% at 55% 80%, rgba(120, 10, 26, .6), rgba(120, 10, 26, 0) 70%),
+                radial-gradient(ellipse 28% 38% at 85% 72%, rgba(160, 24, 40, .5), rgba(160, 24, 40, 0) 70%);
+    animation: svMist 26s ease-in-out infinite alternate; }
+  @keyframes svMist { from { transform: translateX(-8%); } to { transform: translateX(8%); } }
+  /* a heartbeat: the red edges of the screen swell twice (lub-dub) every two beats while the song plays */
+  .sv-pulse { top: 0; right: 0; bottom: 0; left: 0; opacity: .12;
+    background: radial-gradient(ellipse 82% 66% at 50% 48%, rgba(255, 30, 60, 0) 55%, rgba(255, 30, 60, .3) 82%, rgba(255, 46, 74, .55) 100%); }
+  .sv-beat .sv-pulse { animation: svPulse var(--hb, .95s) linear infinite; }
+  @keyframes svPulse { 0% { opacity: .78; } 13% { opacity: .3; } 22% { opacity: .62; } 42% { opacity: .16; } 100% { opacity: .1; } }
+  /* lightning, now and then: the sky lights up pale red, twice */
+  .sv-flash { top: 0; right: 0; bottom: 0; left: 0; opacity: 0;
+    background: radial-gradient(ellipse 110% 52% at 62% 0%, rgba(255, 232, 236, .5), rgba(255, 120, 130, .16) 45%, rgba(255, 80, 100, 0) 75%); }
+  .sv-flash.go { animation: svFlash 1.2s ease-out; }
+  @keyframes svFlash { 0% { opacity: 0; } 6% { opacity: .7; } 13% { opacity: .15; } 20% { opacity: .55; } 45% { opacity: .08; } 100% { opacity: 0; } }
+
+  /* rain: one picture of streaks, repeated, sliding down one tile at a time (a near layer and a fainter far one), a little slanted */
+  .sv-rain { top: -14%; right: -26%; bottom: -14%; left: -26%; transform: rotate(9deg); }
+  .sv-rain i { position: absolute; left: 0; right: 0; bottom: 0; top: -320px; background-image: var(--sv-rain); background-size: 180px 320px; animation: svRain .46s linear infinite; }
+  .sv-rain .sv-r2 { top: -200px; background-size: 112px 200px; opacity: .5; animation: svRain2 .64s linear infinite; }
+  @keyframes svRain { to { transform: translateY(320px); } }
+  @keyframes svRain2 { to { transform: translateY(200px); } }
+  .sadv-dim .sv-rain i { animation-play-state: paused; }
+  #svfx { top: 0; left: 0; width: 100%; height: 100%; }
+
+  /* the picture behind turns red (a little brighter too, so the red light shows through the dark sheet) */
+  #bg { transition: filter 1.2s ease; }
+  .sadv #bg { filter: sepia(.9) saturate(3.4) hue-rotate(-34deg) brightness(1.18) contrast(1.25); }
+  #dim { transition: opacity 1.2s ease; }
+  .sadv #dim { opacity: calc(var(--dim) * .85); }
+  /* the background's own floating dots rest while the hearts are out */
+  .sadv #fx { opacity: 0; visibility: hidden; transition: opacity 1s ease, visibility 0s linear 1s; }
+
+  /* "Sad Vibe 💔 ⌄" under the name on Home, in place of the hello line (tap: sad vibe / calm) */
+  .who .vibe { display: none; align-items: center; gap: .42em; margin-top: .22em; padding: .3em .62em .3em .78em; border: 0; border-radius: 999px;
+               background: rgba(14, 4, 8, .66); box-shadow: inset 0 0 0 1px rgba(255, 120, 130, .14), 0 4px 14px rgba(0, 0, 0, .35);
+               color: #fff; font: 600 clamp(12.5px, 3.95vw, 17px)/1.2 var(--text-font), system-ui, sans-serif; white-space: nowrap; cursor: pointer; }
+  .who .vibe .hb { width: 1.05em; height: 1.05em; flex: none; filter: drop-shadow(0 0 4px rgba(255, 50, 80, .7)); }
+  .who .vibe .ic { width: .95em; height: .95em; flex: none; opacity: .75; }
+  .sadv-wave .who .hello { display: none; }
+  .sadv-wave .who .vibe { display: inline-flex; animation: svPill .6s cubic-bezier(.2, 1.3, .4, 1) both; }
+  @keyframes svPill { from { opacity: 0; transform: translateY(6px) scale(.9); } to { opacity: 1; transform: none; } }
+  .sv-beat .who .vibe .hb, .sv-beat .mlyr .hbk { animation: svHb var(--hb, .95s) linear infinite; }
+  @keyframes svHb { 0% { transform: scale(1.22); } 13% { transform: scale(1); } 22% { transform: scale(1.14); } 42%, 100% { transform: scale(1); } }
+  /* the lyrics line: a broken heart instead of the note */
+  .mlyr .hbk { display: none; flex: none; width: 12px; height: 12px; }
+  .sadv-wave .mlyr .hbk { display: block; filter: drop-shadow(0 0 3px rgba(255, 50, 80, .8)); }
+  .sadv-wave .mlyr .ic { display: none; }
+
+  /* when the song starts (2.4 s, over everything): a big glossy broken heart pops in, beats twice (a ring of light each time), trembles,
+     a glowing crack runs down it, then it breaks apart: the halves tip and fall, shards fly, a bigger ring, and the screen flashes red */
+  #svIntro { position: fixed; z-index: 3; left: 50%; top: 40%; width: min(52vw, 236px); height: min(52vw, 236px); pointer-events: none; display: none;
+             margin: calc(min(52vw, 236px) / -2) 0 0 calc(min(52vw, 236px) / -2); }
+  .svi-go #svIntro { display: block; animation: sviIn 2.4s ease both; }
+  #svIntro > * { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  #svIntro svg { overflow: visible; filter: drop-shadow(0 0 5px rgba(255, 214, 222, .95)); }
+  .svi-h { background: center / 100% 100% no-repeat; transform-origin: 50% 85.2%; filter: drop-shadow(0 10px 22px rgba(110, 0, 20, .6)); }
+  .svi-l { background-image: var(--svi-l); transform: translateX(-2%) rotate(-2.8deg); }
+  .svi-r { background-image: var(--svi-r); transform: translateX(2%) rotate(2.8deg); }
+  .svi-go .svi-l { animation: sviL 2.4s cubic-bezier(.55, 0, .75, .3) both; }
+  .svi-go .svi-r { animation: sviR 2.4s cubic-bezier(.55, 0, .75, .3) both; }
+  @keyframes sviIn { 0% { opacity: 0; transform: scale(.35); } 12% { opacity: 1; transform: scale(1.07); } 15.5% { transform: scale(.98); }
+                     19% { transform: scale(1.13); } 23% { transform: scale(.99); } 27% { transform: scale(1.08); } 32% { transform: scale(1); }
+                     37% { transform: rotate(-1.6deg); } 40% { transform: rotate(1.6deg); } 43% { transform: rotate(-1.1deg); } 46% { transform: rotate(.9deg); }
+                     49%, 100% { opacity: 1; transform: none; } }
+  @keyframes sviL { 0%, 50% { transform: translateX(-2%) rotate(-2.8deg); opacity: 1; } 100% { transform: translate(-26%, 44%) rotate(-44deg); opacity: 0; } }
+  @keyframes sviR { 0%, 50% { transform: translateX(2%) rotate(2.8deg); opacity: 1; } 100% { transform: translate(26%, 48%) rotate(40deg); opacity: 0; } }
+  .svi-ring { border-radius: 50%; border: 3px solid rgba(255, 110, 130, .9); box-shadow: 0 0 18px rgba(255, 60, 90, .8), inset 0 0 12px rgba(255, 60, 90, .6); opacity: 0; transform: scale(.5); }
+  .svi-go .svi-ring { animation: sviRing 2.4s ease-out both; }
+  .svi-go .svi-r2 { animation-name: sviRing2; }
+  .svi-go .svi-r3 { animation-name: sviRing3; border-color: rgba(255, 222, 228, .95); }
+  @keyframes sviRing { 0%, 18% { opacity: 0; transform: scale(.55); } 19% { opacity: .95; } 34%, 100% { opacity: 0; transform: scale(1.7); } }
+  @keyframes sviRing2 { 0%, 26% { opacity: 0; transform: scale(.55); } 27% { opacity: .8; } 41%, 100% { opacity: 0; transform: scale(1.55); } }
+  @keyframes sviRing3 { 0%, 49% { opacity: 0; transform: scale(.6); } 50% { opacity: 1; } 70%, 100% { opacity: 0; transform: scale(2.4); } }
+  .svi-crack { stroke-dasharray: 100; stroke-dashoffset: 100; opacity: 0; }
+  .svi-go .svi-crack { animation: sviCrack 2.4s ease both; }
+  .svi-tw { stroke-dasharray: 30; stroke-dashoffset: 30; }
+  .svi-go .svi-tw { animation-name: sviTw; }
+  @keyframes sviCrack { 0%, 36% { stroke-dashoffset: 100; opacity: 0; } 37% { opacity: 1; } 47% { stroke-dashoffset: 0; opacity: 1; } 50% { opacity: 1; } 58%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+  @keyframes sviTw { 0%, 42% { stroke-dashoffset: 30; opacity: 0; } 43% { opacity: 1; } 49% { stroke-dashoffset: 0; opacity: 1; } 57%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+  .svi-s { opacity: 0; transform-box: view-box; transform-origin: 64px 64px; }
+  .svi-go .svi-s { animation: sviShard 2.4s cubic-bezier(.2, .6, .4, 1) both; }
+  @keyframes sviShard { 0%, 49% { opacity: 0; transform: none; } 52% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rt)); } }
+  #sviFlash { position: fixed; z-index: 3; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; display: none; opacity: 0;
+             background: radial-gradient(ellipse 70% 50% at 50% 40%, rgba(255, 210, 216, .5), rgba(255, 50, 80, .28) 45%, rgba(120, 0, 20, .24) 100%); }
+  .svi-go #sviFlash { display: block; animation: sviFlash 2.4s ease-out both; }
+  @keyframes sviFlash { 0%, 49% { opacity: 0; } 51% { opacity: 1; } 66%, 100% { opacity: 0; } }
+
+  .sadv-calm .sv-rain, .sadv-calm #svfx, .sadv-calm .sv-flash, .nofx .sv-rain, .nofx #svfx, .nofx .sv-flash, .ultra .sv-rain, .ultra #svfx, .ultra .sv-flash, .ultra .sv-mist { display: none; }
+  .ultra .sv-pulse, .ultra .who .vibe .hb, .ultra .mlyr .hbk { animation: none !important; }
+  .app-bg #sadv *, .app-bg .who .vibe, .app-bg .who .vibe .hb, .app-bg .mlyr .hbk { animation-play-state: paused !important; }
+  @media (min-width: 600px) and (min-height: 600px) { #sadv { top: 14px; bottom: 14px; width: 412px; margin-left: -206px; border-radius: 46px; } }
+  @media (prefers-reduced-motion: reduce) { .sv-rain, #svfx, .sv-flash, #svIntro, #sviFlash { display: none !important; } .sv-mist, .sv-pulse, .sadv-wave .who .vibe, .who .vibe .hb, .mlyr .hbk { animation: none !important; } }
+
   /* ---------- 0. opening intro: one cinematic scene (everything moves with transform / opacity / clip-path, so it stays smooth)
      timeline (s): 0.1 a red line · 0.42 the black bars open on the scene · 0.82 the crown drops (glint) · 1.02 IMRAN wipes in,
      red / cyan ghosts closing in · 1.42 impact · 1.62 BADASS stamps down (dust) · 1.94 impact · 2.15 a shine runs over the
@@ -3035,6 +3153,35 @@ const CONFIG = {
     <canvas id="ptfx"></canvas>
     <div class="pt-ball"><div class="pt-ball-glow"></div><div class="pt-ball-in"><div class="pt-ball-tex"></div><div class="pt-ball-shine"></div></div></div>
   </div>
+  <!-- sad vibe (a song with sad: true, Камин): a red wash · rain (two layers of streaks) · broken hearts floating up (one canvas) -->
+  <div id="sadv" aria-hidden="true">
+    <div class="sv-wash"></div>
+    <div class="sv-mist"></div>
+    <div class="sv-rain"><i class="sv-r1"></i><i class="sv-r2"></i></div>
+    <canvas id="svfx"></canvas>
+    <div class="sv-pulse"></div>
+    <div class="sv-flash"></div>
+  </div>
+  <!-- … and when that song starts: a big glossy broken heart beats twice (a ring of light each time), trembles, a glowing crack runs down it
+       and it breaks apart, shards flying, with a red flash (the two halves are drawn by the script, the same way as the floating hearts) -->
+  <div id="sviFlash" aria-hidden="true"></div>
+  <div id="svIntro" aria-hidden="true">
+    <i class="svi-ring"></i><i class="svi-ring svi-r2"></i><i class="svi-ring svi-r3"></i>
+    <i class="svi-h svi-l"></i><i class="svi-h svi-r"></i>
+    <svg viewBox="0 0 128 128">
+      <polyline class="svi-crack" points="64,33 57,47 69,59 58,72 68,84 60,97 64,110" fill="none" stroke="#fff6f7" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+      <polyline class="svi-crack svi-tw" points="57,47 49,51 45,50" fill="none" stroke="#ffe3e7" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+      <polyline class="svi-crack svi-tw" points="69,59 76,62 80,61" fill="none" stroke="#ffe3e7" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+      <path class="svi-s" d="M61 44l7 1-4 6z" fill="#ff8494" style="--dx:-52px;--dy:-34px;--rt:-170deg"/>
+      <path class="svi-s" d="M66 57l6 3-6 4z" fill="#f53d58" style="--dx:56px;--dy:-22px;--rt:150deg"/>
+      <path class="svi-s" d="M59 69l5-2 1 6z" fill="#ffb3bd" style="--dx:-60px;--dy:12px;--rt:-120deg"/>
+      <path class="svi-s" d="M67 80l5 2-5 4z" fill="#cc163c" style="--dx:50px;--dy:34px;--rt:200deg"/>
+      <path class="svi-s" d="M60 90l5 1-2 5z" fill="#ff6b80" style="--dx:-34px;--dy:58px;--rt:-210deg"/>
+      <path class="svi-s" d="M64 100l4 2-4 3z" fill="#ffd0d5" style="--dx:28px;--dy:64px;--rt:120deg"/>
+      <path class="svi-s" d="M63 36l4 1-2 4z" fill="#ff8494" style="--dx:8px;--dy:-58px;--rt:90deg"/>
+      <path class="svi-s" d="M58 62l3 1-2 3z" fill="#e8304d" style="--dx:-70px;--dy:-6px;--rt:-240deg"/>
+    </svg>
+  </div>
 
   <div id="app">
     <div id="statusbar" aria-hidden="true">
@@ -3093,6 +3240,7 @@ const CONFIG = {
               <span class="dot js-stdot"></span><span class="js-sttext js-stcolor">Online</span><svg class="ic chev"><use href="#i-chevron-right"/></svg>
             </button>
             <p class="hello"><span id="helloText"></span><span class="c">|</span></p>
+            <button class="vibe rip" id="svPill" aria-label="Sad vibe: rain and broken hearts. Tap to change">Sad Vibe<svg class="hb" viewBox="0 0 24 24" aria-hidden="true"><path fill="#ff3d5f" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.6 4.6 6.2 4.1c2.2-.3 4.2.8 5.8 2.8 1.6-2 3.6-3.1 5.8-2.8 3.6.5 5.3 4.3 3.8 7.7C19.5 16.4 12 21 12 21Z"/><path d="M12 7.3 10.5 10.4 13 12.7 10.9 15.4 12.9 17.6 11.9 21.2" fill="none" stroke="#16060a" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg><svg class="ic"><use href="#i-chevron-down"/></svg></button>
           </div>
         </div>
 
@@ -3111,7 +3259,7 @@ const CONFIG = {
             <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
             <svg class="ic chev"><use href="#i-chevron-right"/></svg>
           </div>
-          <div class="mlyr" id="mlyr"><svg class="ic" aria-hidden="true"><use href="#i-music"/></svg><span class="mlyr-t js-lyr"></span></div>
+          <div class="mlyr" id="mlyr"><svg class="ic" aria-hidden="true"><use href="#i-music"/></svg><svg class="hbk" viewBox="0 0 24 24" aria-hidden="true"><path fill="#ff4d6a" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.6 4.6 6.2 4.1c2.2-.3 4.2.8 5.8 2.8 1.6-2 3.6-3.1 5.8-2.8 3.6.5 5.3 4.3 3.8 7.7C19.5 16.4 12 21 12 21Z"/><path d="M12 7.3 10.5 10.4 13 12.7 10.9 15.4 12.9 17.6 11.9 21.2" fill="none" stroke="#1a070c" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="mlyr-t js-lyr"></span></div>
           <div class="seekrow">
             <input type="range" class="js-seek" min="0" max="1000" step="1" value="0" aria-label="Song position">
             <div class="times"><span class="js-cur">0:00</span><span class="js-dur">0:00</span></div>
@@ -3938,7 +4086,7 @@ const CONFIG = {
   var status = store.get("status", C.status);
   if (!STATUS[status]) status = "online";
   function applyStatus() {
-    var st = STATUS[status], shown = store.get("showstatus", "1") === "1";
+    var st = STATUS[svStatusKey()], shown = store.get("showstatus", "1") === "1";       // (a sad song shows Do Not Disturb while it plays)
     qa(".js-sttext").forEach(function (e) { e.textContent = shown ? st.label : "Hidden"; });
     qa(".js-stdot").forEach(function (e) { var c = shown ? st.color : "var(--text3)"; e.style.background = c; e.style.color = c; });
     qa(".js-stcolor").forEach(function (e) { e.style.color = shown ? st.color : "var(--text2)"; });
@@ -3947,7 +4095,7 @@ const CONFIG = {
     });
   }
   function setStatus(k) {
-    status = k; store.set("status", k); applyStatus(); fitHome();
+    status = k; store.set("status", k); if (sv) sv.dnd = false; applyStatus(); fitHome();
     logEvent("Status: " + STATUS[k].label);
     toast("Status updated!", "You are now " + STATUS[k].label + ".", { crown: true, hl: STATUS[k].label + ".", hlColor: STATUS[k].color });
   }
@@ -4021,6 +4169,7 @@ const CONFIG = {
     qa(".js-like").forEach(function (e) { e.classList.toggle("liked", !!likes[s.file]); e.setAttribute("aria-pressed", likes[s.file] ? "true" : "false"); });
     if (typeof pvSong === "function") pvSong(s);
     partySongChanged(s);                                   // another song: party mode (if on) fades out
+    sadSongChanged(s);                                     // … and so does the sad vibe
     lyrSong(s);                                            // its lyrics line (if it has lyrics)
   }
   function setPlayingUI(p) {
@@ -4504,7 +4653,7 @@ const CONFIG = {
     var host = curScreen === "profile" ? $("avProfile") : $("avHome");
     if (avStack.parentNode !== host) { var was = !avVid.paused; host.appendChild(avStack); if (was) swallow(avVid.play()); }
     avatarVisible = (curScreen === "home" || curScreen === "profile") && !playerOpen && !termOpen;
-    avatarWatch(); wfUpdate(); crfUpdate(); crfBeat(true); ptUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
+    avatarWatch(); wfUpdate(); crfUpdate(); svUpdate(); crfBeat(true); ptUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
   }
   function afterShow(id) {
     updateChrome();
@@ -4697,7 +4846,7 @@ const CONFIG = {
     requestAnimationFrame(function frame(t) {
       if (!fx.running) return;
       requestAnimationFrame(frame);
-      if (paused || document.hidden || isUltra() || !entered || playerOpen || pt.fxOff || curScreen === "game" || curScreen === "flappy") { fx.last = 0; return; }   // (party mode: its own dots instead)
+      if (paused || document.hidden || isUltra() || !entered || playerOpen || pt.fxOff || (sv && sv.fxOff) || curScreen === "game" || curScreen === "flappy") { fx.last = 0; return; }   // (party mode: its own dots instead)
       var dt = fx.last ? Math.min(.1, (t - fx.last) / 1000) : .033; fx.last = t;
       acc += dt; if (acc < (isLite() ? .04 : .032)) return; var step = acc; acc = 0;     // about 25 / 30 frames a second
       var g = fx.g; g.clearRect(0, 0, fx.W, fx.H);
@@ -5509,7 +5658,7 @@ const CONFIG = {
   function degrade(avg) {
     if (blurIsOn()) { setBlur(false); toast("Soft blur turned off", "To keep things smooth.", { icon: "sparkles" }); }
     else if (!isLite()) { root.classList.add("lite"); setSwitch($("swBlur"), false); }
-    else { root.classList.add("ultra"); fxStop(); wfUpdate(); crfUpdate(); }
+    else { root.classList.add("ultra"); fxStop(); wfUpdate(); crfUpdate(); svUpdate(); }
     if (window.console) console.info("[page] slow device (" + avg.toFixed(1) + " ms per frame): " + (isUltra() ? "ultra-light" : "light") + " effects");
   }
   function govStart() {
@@ -5531,7 +5680,7 @@ const CONFIG = {
     paused = true; root.classList.add("app-bg");                       // CSS animations stand still while the app is in the background
     resumeList = [audio, bg, avVid].filter(function (m) { return !m.paused; });
     resumeList.forEach(function (m) { m.pause(); });
-    wfUpdate(); crfUpdate(); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
+    wfUpdate(); crfUpdate(); svUpdate(); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
   };
   window.appResumed = function () {
     if (!paused) return;
@@ -5540,7 +5689,7 @@ const CONFIG = {
     resumeList.forEach(function (m) { swallow(m.play()); });
     resumeList = [];
     if (nativeVol) { vol = readNative(); applyVolume(); }    // the phone's volume may have changed meanwhile
-    wfUpdate(); crfUpdate(); wfBeat(true); crfBeat(true); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
+    wfUpdate(); crfUpdate(); svUpdate(); wfBeat(true); crfBeat(true); pvUpdate(); ptUpdate(); chgUpdate(); gfxUpdate(); fbUpdate(); setVidUpdate();
   };
   window.appBack = handleBack;
 
@@ -5628,7 +5777,7 @@ const CONFIG = {
     g.globalAlpha = 1;
   }
   window.addEventListener("resize", function () { if (wf.run) { wfStop(); wfStart(); } });
-  document.addEventListener("visibilitychange", function () { wfUpdate(); crfUpdate(); pvUpdate(); ptUpdate(); chgUpdate(); });
+  document.addEventListener("visibilitychange", function () { wfUpdate(); crfUpdate(); svUpdate(); pvUpdate(); ptUpdate(); chgUpdate(); });
 
   // the glow pulses on the beat while music plays (each song's tempo + first beat are in CONFIG), slowly when paused
   var wfBeatAt = 0, wfBeatVar = "";
@@ -9067,6 +9216,289 @@ const CONFIG = {
   onAudio("timeupdate", function () { crfBeat(false); });
   window.addEventListener("resize", function () { if (crf.run) { crfStop(); crfStart(); } });
 
+  /* =====================================================================
+     SAD VIBE (see the CSS): a song with sad: true turns it on when it starts playing; another song turns it off.
+     Here: the rain picture (drawn once) and one canvas for the rest: broken hearts float up (far ones small and soft, a few big blurred ones
+     close by), sway and turn, swell a little on the beat; every few seconds one cracks (a white flash along the crack), breaks in two and
+     the halves fall while shards fly; drops of rain sit on the glass, then slide down leaving a trail. Also: lightning now and then, the
+     heartbeat on the beat (CSS, lined up with the song here), the big heart that breaks when the song starts, the "Sad Vibe" pill and its
+     menu, and Do Not Disturb while it lasts (only shown: the status you picked is kept, and picking one yourself ends it).
+     ===================================================================== */
+  var SV_CRACK = [[50, 19], [43, 33], [55, 45], [44, 58], [54, 70], [46, 83], [50, 96]];   // the crack, top to bottom (the heart is 100 x 100)
+  var sv = { on: false, wave: false, song: null, dnd: false, fxOff: false, offT: 0, fxT: 0, cv: $("svfx"), g: null, run: false, last: 0, acc: 0,
+             W: 0, H: 0, k: 1, half: null, spr: null, soft: null, bokeh: null, drop: null, hearts: [], drops: [], bits: [], brk: 2.5, ltn: 9,
+             rain: false, beatVar: "", beatAt: 0, introT: 0, off: store.get("sadfx", "1") === "0" };
+  if (sv.off) root.classList.add("sadv-calm");
+
+  function svSong() { var s = songs[idx]; return s && s.sad ? s : null; }
+  function svStatusKey() { return sv && sv.on && sv.dnd ? "dnd" : status; }      // what the status shows (Do Not Disturb while the vibe lasts)
+  function svHeartPath(x, more) {                    // the heart's outline in a 100 x 100 box (more = add it to the path being drawn)
+    if (!more) x.beginPath();
+    x.moveTo(50, 96);
+    x.bezierCurveTo(22, 76, 2, 58, 3, 36); x.bezierCurveTo(4, 15, 19, 4, 34, 5); x.bezierCurveTo(43, 6, 48, 11, 50, 19);
+    x.bezierCurveTo(52, 11, 57, 6, 66, 5); x.bezierCurveTo(81, 4, 96, 15, 97, 36); x.bezierCurveTo(98, 58, 78, 76, 50, 96); x.closePath();
+  }
+  function svCrackPath(x, dx) { x.beginPath(); SV_CRACK.forEach(function (p, i) { if (i) x.lineTo(p[0] + dx, p[1]); else x.moveTo(p[0] + dx, p[1]); }); }
+  function svHalf(side, N) {                         // one half of a glossy broken heart (side -1 = left, 1 = right) on an N x N canvas, lit from the top left
+    var c = document.createElement("canvas"); c.width = c.height = N;
+    var x = c.getContext("2d"), u = N / 128, far = side < 0 ? -40 : 140, hx = side < 0 ? 26 : 67;
+    x.translate(14 * u, 14 * u); x.scale(u, u);
+    x.beginPath(); x.moveTo(far, -40); x.lineTo(50, -40); SV_CRACK.forEach(function (p) { x.lineTo(p[0], p[1]); }); x.lineTo(50, 140); x.lineTo(far, 140); x.closePath(); x.clip();   // only this side of the crack
+    // the body: deep glossy red, lighter where the light falls, with a red glow round it
+    svHeartPath(x);
+    var gr = x.createRadialGradient(32, 26, 3, 46, 46, 72);
+    gr.addColorStop(0, "#ff8494"); gr.addColorStop(.32, "#f53d58"); gr.addColorStop(.68, "#cc163c"); gr.addColorStop(1, "#7e0420");
+    x.shadowColor = "rgba(255,38,70,.85)"; x.shadowBlur = 18 * u; x.fillStyle = gr; x.fill();
+    x.shadowColor = "rgba(0,0,0,0)"; x.shadowBlur = 0;
+    x.save(); svHeartPath(x); x.clip();
+    // shade along the far edges, so it looks round (a frame round the heart, only its shadow falls inside)
+    x.beginPath(); x.rect(-60, -60, 220, 220); svHeartPath(x, true);
+    x.shadowColor = "rgba(60,0,14,.8)"; x.shadowBlur = 15 * u; x.shadowOffsetX = -2.5 * u; x.shadowOffsetY = -3.5 * u;
+    x.fillStyle = "#000"; x.fill("evenodd");
+    x.shadowColor = "rgba(0,0,0,0)"; x.shadowBlur = 0; x.shadowOffsetX = x.shadowOffsetY = 0;
+    // light bouncing back along the lower edge
+    var rim = x.createLinearGradient(22, 22, 78, 96); rim.addColorStop(0, "rgba(255,170,185,0)"); rim.addColorStop(.62, "rgba(255,170,185,0)"); rim.addColorStop(1, "rgba(255,180,195,.6)");
+    x.lineWidth = 3.2; x.strokeStyle = rim; svHeartPath(x); x.stroke();
+    // the gloss on the top of the lobe, and a sharp little glint
+    x.save(); x.translate(hx, 23); x.rotate(-.5); x.scale(1, .56);
+    var gl = x.createRadialGradient(0, 0, 0, 0, 0, 21); gl.addColorStop(0, "rgba(255,255,255,.8)"); gl.addColorStop(.45, "rgba(255,232,238,.34)"); gl.addColorStop(1, "rgba(255,232,238,0)");
+    x.fillStyle = gl; x.beginPath(); x.arc(0, 0, 21, 0, 6.2832); x.fill(); x.restore();
+    x.fillStyle = "rgba(255,255,255,.95)"; x.beginPath(); x.ellipse(hx - 5, 17, 4.2, 2.3, -.55, 0, 6.2832); x.fill();
+    x.fillStyle = "rgba(255,255,255,.55)"; x.beginPath(); x.arc(hx + 6, 14.5, 1.3, 0, 6.2832); x.fill();
+    // the broken edge: dark where it cracked, a thin light line just inside it, small cracks running off it
+    x.lineJoin = "round"; x.lineCap = "round";
+    x.strokeStyle = "rgba(64,0,14,.9)"; x.lineWidth = 4.6; svCrackPath(x, 0); x.stroke();
+    x.strokeStyle = "rgba(255,178,190,.6)"; x.lineWidth = 1.1; svCrackPath(x, side * 3.4); x.stroke();
+    x.strokeStyle = "rgba(78,0,18,.62)"; x.lineWidth = 1.2;
+    (side < 0 ? [[43, 33, 35, 37, 31, 36], [44, 58, 37, 61], [46, 83, 41, 85]] : [[55, 45, 62, 48, 66, 47], [54, 70, 61, 74]]).forEach(function (t) {
+      x.beginPath(); x.moveTo(t[0], t[1]); for (var i = 2; i < t.length; i += 2) x.lineTo(t[i], t[i + 1]); x.stroke();
+    });
+    x.restore();
+    return c;
+  }
+  function svWhole(blur) {                           // the two halves side by side with a thin gap: a broken heart (blurred: far away, or very close)
+    var c = document.createElement("canvas"); c.width = c.height = 160;
+    var x = c.getContext("2d");
+    if ("filter" in x) x.filter = "blur(" + blur + "px)";
+    [-1, 1].forEach(function (d, i) { x.save(); x.translate(80 + d * 3.2, 136.25); x.rotate(d * .05); x.translate(-80, -136.25); x.drawImage(sv.half[i], 0, 0); x.restore(); });
+    return c;
+  }
+  function svIntroArt() {                            // the big heart's two halves, drawn once (the same way, much bigger)
+    var el = $("svIntro"); if (!el || el.getAttribute("data-art")) return;
+    try {
+      el.style.setProperty("--svi-l", "url(" + svHalf(-1, 448).toDataURL("image/png") + ")");
+      el.style.setProperty("--svi-r", "url(" + svHalf(1, 448).toDataURL("image/png") + ")");
+      el.setAttribute("data-art", "1");
+    } catch (e) {}
+  }
+  function svDropSprite() {                          // a drop of rain on the glass: a dark rim, a lighter middle (it bends the light), a bright glint
+    var c = document.createElement("canvas"); c.width = c.height = 32;
+    var x = c.getContext("2d"), gr = x.createRadialGradient(13, 12, 1, 16, 16, 15);
+    gr.addColorStop(0, "rgba(255,240,242,.62)"); gr.addColorStop(.5, "rgba(255,180,188,.26)"); gr.addColorStop(.82, "rgba(46,0,8,.6)"); gr.addColorStop(1, "rgba(46,0,8,0)");
+    x.fillStyle = gr; x.beginPath(); x.arc(16, 16, 15, 0, 6.2832); x.fill();
+    x.fillStyle = "rgba(255,252,252,.95)"; x.beginPath(); x.ellipse(11, 10, 3.6, 2.4, -.6, 0, 6.2832); x.fill();
+    x.fillStyle = "rgba(255,230,234,.5)"; x.beginPath(); x.arc(20.5, 22, 1.6, 0, 6.2832); x.fill();
+    return c;
+  }
+  function svRainPicture() {                         // streaks of rain, drawn once (twice the size the CSS shows, so they stay sharp); top and bottom join up
+    if (sv.rain) return; sv.rain = true;
+    var c = document.createElement("canvas"), W = 360, H = 640, x = c.getContext("2d"), seed = 11;
+    var rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    c.width = W; c.height = H; x.lineCap = "round";
+    for (var i = 0; i < 34; i++) {
+      var px = 4 + rnd() * (W - 8), py = rnd() * H, len = 30 + rnd() * 74, al = .1 + rnd() * .3;
+      x.lineWidth = 1 + rnd() * 1.6;
+      for (var o = -H; o <= H; o += H) {
+        var y0 = py + o, gr = x.createLinearGradient(0, y0, 0, y0 + len);
+        gr.addColorStop(0, "rgba(255,226,232,0)"); gr.addColorStop(.7, "rgba(255,226,232," + al + ")"); gr.addColorStop(1, "rgba(255,226,232,0)");
+        x.strokeStyle = gr; x.beginPath(); x.moveTo(px, y0); x.lineTo(px, y0 + len); x.stroke();
+      }
+    }
+    try { $("sadv").style.setProperty("--sv-rain", "url(" + c.toDataURL("image/png") + ")"); } catch (e) {}
+  }
+
+  function svHeart(h, first, bokeh) {                // a heart starts low down (or anywhere, the first time) and floats up
+    h.bk = !!bokeh;
+    h.d = bokeh ? 1.3 : Math.random() < .6 ? .62 + Math.random() * .38 : .18 + Math.random() * .36;   // 1 = near (big, sharp, quicker) · 0 = far · 1.3 = right in front (big, blurred)
+    h.s = bokeh ? 90 + Math.random() * 40 : 18 + 36 * h.d;
+    h.x = 12 + Math.random() * (sv.W - 24); h.y0 = first ? sv.H * (.08 + Math.random() * .9) : sv.H + h.s * .7;
+    h.vy = bokeh ? -(16 + Math.random() * 10) : -(12 + 26 * h.d); h.amp = 7 + Math.random() * 16; h.f = .5 + Math.random() * .6; h.p = Math.random() * 6.28;
+    h.r = (Math.random() - .5) * .6; h.vr = (Math.random() - .5) * .22;
+    h.a = bokeh ? .24 + Math.random() * .12 : (.42 + .5 * h.d) * (.85 + Math.random() * .15);
+    h.t = first ? 1 : 0; h.br = 0;
+    return h;
+  }
+  function svBreakOne() {                            // a near heart in the middle of the screen cracks and breaks in two; shards fly
+    var pick = null;
+    sv.hearts.forEach(function (h) { var y = h.y0 + h.vy * h.t; if (!h.br && !h.bk && h.d > .6 && y > sv.H * .14 && y < sv.H * .78 && (!pick || Math.random() < .5)) pick = h; });
+    if (!pick) return;
+    pick.bx = pick.x + Math.sin(pick.p + pick.t * pick.f) * pick.amp; pick.by = pick.y0 + pick.vy * pick.t; pick.br = .0001;
+    pick.rot0 = pick.r + Math.sin(pick.p * 2 + pick.t * .7) * .14 + pick.vr * pick.t * .2;
+    for (var i = 0; i < 9; i++) {
+      var c = SV_CRACK[1 + Math.floor(Math.random() * 5)], sc = pick.s / 100, an = Math.random() * 6.2832, sp = 40 + Math.random() * 90;
+      sv.bits.push({ x: pick.bx + (c[0] - 50) * sc, y: pick.by + (c[1] - 50) * sc, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp - 40, r: Math.random() * 6.28,
+                     vr: (Math.random() - .5) * 12, s: (2 + Math.random() * 3.2) * Math.max(.7, sc * 1.6), t: 0, T: .8 + Math.random() * .5,
+                     c: ["#ff8d95", "#f2505f", "#d72a44", "#ffc2c7"][Math.floor(Math.random() * 4)] });
+    }
+  }
+  function svDrop(d, first) {                        // a drop on the glass: it waits, then slides a little way down, and again
+    d.x = 8 + Math.random() * (sv.W - 16); d.y = first ? Math.random() * sv.H * .9 : -12 - Math.random() * 40;
+    d.r = 3.2 + Math.random() * 4; d.v = 0; d.wait = first ? Math.random() * 3 : .2 + Math.random() * 1.5; d.go = 0; d.ly = d.y; d.trail = [];
+    return d;
+  }
+  function svBeatNow() {                             // 1 right on a beat, fading fast; 0 while the music is paused
+    if (audio.paused) return 0;
+    var b = beatOf(), ph = ((audio.currentTime - b.o) % b.p + b.p) % b.p;
+    return Math.exp(-ph / .12);
+  }
+  function svLightning() { var f = qa("#sadv .sv-flash")[0]; if (f) { f.classList.remove("go"); void f.offsetWidth; f.classList.add("go"); } }
+
+  function svWanted() { return sv.wave && !sv.off && fx.on && entered && !paused && !document.hidden && !playerOpen && !termOpen && !isUltra() && !reduced && curScreen !== "game" && curScreen !== "flappy"; }
+  function svUpdate() { if (!sv || !sv.cv) return; if (svWanted()) { if (!sv.run) svRun(); } else if (sv.run) svRest(); }
+  function svRun() {                                 // the canvas starts
+    var w = sv.cv.offsetWidth, h = sv.cv.offsetHeight; if (!w || !h) return;
+    sv.k = Math.min(window.devicePixelRatio || 1, isLite() ? 1 : 1.5); sv.W = w; sv.H = h;
+    sv.cv.width = Math.round(w * sv.k); sv.cv.height = Math.round(h * sv.k); sv.g = sv.cv.getContext("2d");
+    if (!sv.half) { sv.half = [svHalf(-1, 160), svHalf(1, 160)]; sv.spr = svWhole(.8); sv.soft = svWhole(3.5); sv.bokeh = svWhole(7); sv.drop = svDropSprite(); }
+    var n = isLite() ? 10 : 18, i; sv.hearts = [];
+    for (i = 0; i < n; i++) sv.hearts.push(svHeart({}, true));
+    for (i = 0; i < (isLite() ? 1 : 2); i++) sv.hearts.unshift(svHeart({}, true, true));     // (drawn first: the big blurred ones sit behind the rest)
+    sv.drops = []; for (i = 0; i < (isLite() ? 5 : 9); i++) sv.drops.push(svDrop({}, true));
+    sv.bits = []; sv.run = true; sv.last = 0; sv.acc = 0;
+    requestAnimationFrame(svFrame);
+  }
+  function svRest() { sv.run = false; sv.bits = []; if (sv.g) { sv.g.setTransform(1, 0, 0, 1, 0, 0); sv.g.clearRect(0, 0, sv.cv.width, sv.cv.height); } }
+  function svFrame(t) {
+    if (!sv.run) return;
+    requestAnimationFrame(svFrame);
+    var dt = sv.last ? Math.min(.1, (t - sv.last) / 1000) : .033; sv.last = t;
+    sv.acc += dt; if (sv.acc < (isLite() ? .04 : .032)) return;              // about 25 / 30 frames a second
+    var step = sv.acc, g = sv.g, playing = !audio.paused, slow = playing ? 1 : .3, bt = svBeatNow(), i, j, h, s, a, e; sv.acc = 0;
+    if (playing && (sv.brk -= step) <= 0) { svBreakOne(); sv.brk = 3.2 + Math.random() * 3.4; }
+    if (playing && (sv.ltn -= step) <= 0) { svLightning(); sv.ltn = 13 + Math.random() * 12; }
+    g.setTransform(sv.k, 0, 0, sv.k, 0, 0); g.clearRect(0, 0, sv.W, sv.H);
+    for (i = 0; i < sv.hearts.length; i++) {
+      h = sv.hearts[i];
+      if (h.br) {                                                               // breaking: a white flash along the crack, then the halves tip apart and fall
+        h.br += step; e = h.br / 1.5;
+        if (e >= 1) { svHeart(h, false); continue; }
+        var dx = 14 * h.br + 34 * h.br * h.br, dy = -8 * h.br + 150 * h.br * h.br, rot = 1.15 * h.br, sz = h.s * 1.28;
+        g.globalAlpha = h.a * (1 - e * e);
+        for (j = 0; j < 2; j++) {
+          var d = j ? 1 : -1;
+          g.save(); g.translate(h.bx + d * dx, h.by + dy + sz * .35); g.rotate(h.rot0 + d * rot); g.drawImage(sv.half[j], -sz / 2, -sz * .85, sz, sz); g.restore();
+        }
+        if (h.br < .22) {
+          var sc = h.s / 100;
+          g.save(); g.globalAlpha = 1 - h.br / .22; g.translate(h.bx, h.by); g.rotate(h.rot0);
+          g.strokeStyle = "#fff4f5"; g.lineWidth = Math.max(1.2, 2.2 * sc); g.lineJoin = "round"; g.shadowColor = "rgba(255,120,140,.95)"; g.shadowBlur = 8;
+          g.beginPath(); SV_CRACK.forEach(function (p, q) { var px = (p[0] - 50) * sc, py = (p[1] - 50) * sc; if (q) g.lineTo(px, py); else g.moveTo(px, py); }); g.stroke();
+          g.restore();
+        }
+        continue;
+      }
+      h.t += step * slow;
+      var y = h.y0 + h.vy * h.t;
+      if (y < -h.s) { svHeart(h, false, h.bk); continue; }
+      a = h.a * Math.min(1, h.t / 1.2) * Math.min(1, (y + h.s) / (sv.H * .16));   // fade in low down, fade out near the top
+      if (a <= .01) continue;
+      s = h.s * 1.28 * (1 + .07 * bt * Math.min(1, h.d));
+      g.globalAlpha = a;
+      g.save(); g.translate(h.x + Math.sin(h.p + h.t * h.f) * h.amp, y); g.rotate(h.r + Math.sin(h.p * 2 + h.t * .7) * .14 + h.vr * h.t * .2);
+      g.drawImage(h.bk ? sv.bokeh : h.d < .55 ? sv.soft : sv.spr, -s / 2, -s / 2, s, s);
+      g.restore();
+    }
+    for (i = sv.bits.length - 1; i >= 0; i--) {                                 // shards of a broken heart: they fly, spin and fall
+      var b = sv.bits[i]; b.t += step;
+      if (b.t >= b.T) { sv.bits.splice(i, 1); continue; }
+      b.vy += 260 * step; b.x += b.vx * step; b.y += b.vy * step; b.r += b.vr * step;
+      g.globalAlpha = 1 - b.t / b.T; g.fillStyle = b.c;
+      g.save(); g.translate(b.x, b.y); g.rotate(b.r); g.beginPath(); g.moveTo(0, -b.s); g.lineTo(b.s * .8, b.s * .7); g.lineTo(-b.s * .7, b.s * .5); g.closePath(); g.fill(); g.restore();
+    }
+    for (i = 0; i < sv.drops.length; i++) {                                     // drops on the glass: wait, slide, leave a trail of tiny drops
+      var dr = sv.drops[i];
+      if (dr.wait > 0) dr.wait -= step * slow;
+      else { dr.v = Math.min(150, dr.v + 420 * step); dr.y += dr.v * step * slow; dr.go += dr.v * step * slow;
+             if (dr.go > 26 + Math.random() * 60) { dr.go = 0; dr.v = 0; dr.wait = .4 + Math.random() * 2.2; } }
+      if (dr.y - dr.ly > 10) { dr.trail.push({ x: dr.x + (Math.random() - .5) * 1.5, y: dr.ly, r: dr.r * (.28 + Math.random() * .16), t: 0 }); dr.ly = dr.y; }
+      if (dr.y > sv.H + 12) { svDrop(dr, false); continue; }
+      for (j = dr.trail.length - 1; j >= 0; j--) {
+        var tr = dr.trail[j]; tr.t += step;
+        if (tr.t > 2.6) { dr.trail.splice(j, 1); continue; }
+        g.globalAlpha = .8 * (1 - tr.t / 2.6); g.drawImage(sv.drop, tr.x - tr.r, tr.y - tr.r, tr.r * 2, tr.r * 2);
+      }
+      var st = 1 + Math.min(.5, dr.v / 300);                                   // a sliding drop stretches a little
+      g.globalAlpha = .9; g.drawImage(sv.drop, dr.x - dr.r, dr.y - dr.r * st, dr.r * 2, dr.r * 2 * st);
+    }
+    g.globalAlpha = 1;
+  }
+
+  function svBeat(force) {                           // the heartbeat (every two beats) lines up with the song every few seconds
+    var on = !!(sv && sv.on) && !audio.paused && !reduced, b = beatOf(), P = b.p * 2, v = P.toFixed(4) + "s";
+    if (v !== sv.beatVar) { sv.beatVar = v; root.style.setProperty("--hb", v); }
+    if (root.classList.contains("sv-beat") !== on) root.classList.toggle("sv-beat", on);
+    if (!on) return;
+    var now = Date.now(); if (!force && now - sv.beatAt < 5000) return; sv.beatAt = now;
+    requestAnimationFrame(function () {
+      qa("#sadv .sv-pulse, #svPill .hb, #mlyr .hbk").forEach(function (el) {
+        if (!el.getAnimations) return;
+        el.getAnimations().forEach(function (an) {
+          if (an.animationName !== "svPulse" && an.animationName !== "svHb") return;
+          var ph = ((audio.currentTime - b.o) % P + P) % P;
+          try { an.currentTime = ph * 1000; } catch (x) {}
+        });
+      });
+    });
+  }
+  function svIntro() {                               // the song starts: the big heart beats twice, trembles, cracks and breaks apart
+    if (!$("svIntro") || reduced || sv.off || !fx.on || isUltra() || !entered || paused || document.hidden) return;
+    svIntroArt();
+    root.classList.remove("svi-go"); void $("svIntro").offsetWidth; root.classList.add("svi-go");
+    clearTimeout(sv.introT); sv.introT = setTimeout(function () { root.classList.remove("svi-go"); }, 2500);
+  }
+
+
+  function svStart(s) {                              // the song starts: everything fades in
+    sv.on = true; sv.song = s; sv.dnd = true; clearTimeout(sv.offT);
+    svRainPicture();
+    if (!sv.wave) { sv.wave = true; root.classList.add("sadv-wave"); }
+    applyStatus(); fitHome(); svUpdate(); svPaused(); svBeat(true); svIntro();
+    sv.ltn = 7 + Math.random() * 5; sv.brk = 2.4;
+    clearTimeout(sv.fxT); sv.fxT = setTimeout(function () { if (sv.on) { sv.fxOff = true; if (fx.g) fx.g.clearRect(0, 0, fx.W, fx.H); } }, 1100);   // the background's dots rest
+    requestAnimationFrame(function () { requestAnimationFrame(function () { if (sv.on) root.classList.add("sadv"); }); });
+    logEvent("Sad vibe: " + (s.title || s.file));
+  }
+  function svStop() {                                // another song: it fades out, then everything is back to normal
+    if (!sv.on) return;
+    sv.on = false; sv.dnd = false; root.classList.remove("sadv", "sadv-dim");
+    clearTimeout(sv.fxT); sv.fxOff = false;
+    applyStatus(); svBeat(true);
+    clearTimeout(sv.offT);
+    sv.offT = setTimeout(function () { if (sv.on) return; sv.wave = false; root.classList.remove("sadv-wave"); svUpdate(); fitHome(); }, 1250);
+  }
+  function svPaused() { if (sv && sv.on) root.classList.toggle("sadv-dim", audio.paused); }
+  function sadSongChanged(s) { if (sv && sv.on && s !== sv.song) svStop(); }
+  onAudio("playing", function () { var s = svSong(); if (s && !sv.on) svStart(s); svPaused(); });
+  onAudio("pause", svPaused);
+  ["play", "pause", "seeked", "loadedmetadata"].forEach(function (ev) { onAudio(ev, function () { svBeat(true); }); });
+  onAudio("timeupdate", function () { svBeat(false); });
+  window.addEventListener("resize", function () { if (sv.run) { svRest(); svRun(); } });
+
+  // the pill: sad vibe (rain + broken hearts) or calm (only the red picture)
+  var svPillEl = $("svPill");
+  function svSetOff(off) {
+    sv.off = off; store.set("sadfx", off ? "0" : "1"); root.classList.toggle("sadv-calm", off); svUpdate();
+    var t = (sv.song || svSong() || {}).title;
+    toast(off ? "Calm" : "Sad vibe", off ? "No rain, no hearts: just the red sky." : "Rain and broken hearts" + (t ? " while " + t + " plays." : "."), { icon: off ? "moon" : "heart" });
+    if (!off) svIntro();
+  }
+  if (svPillEl) svPillEl.addEventListener("click", function () {
+    openMenu(svPillEl, [
+      { icon: "heart", label: "Sad vibe: rain + broken hearts", check: !sv.off, run: function () { svSetOff(false); } },
+      { icon: "moon", label: "Calm: just the red sky", check: sv.off, run: function () { svSetOff(true); } }
+    ]);
+  });
+
   /* ---------- start up ---------- */
   var clockEl = $("clock");
   function tickClock() { var d = new Date(); clockEl.textContent = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
@@ -9088,7 +9520,7 @@ const CONFIG = {
     fx.on = swf.getAttribute("aria-checked") !== "true"; setSwitch(swf, fx.on); store.set("fx", fx.on ? "1" : "0");
     root.classList.toggle("nofx", !fx.on);                 // the gold sparkles go too (popup, Settings frame, Home frame)
     if (fx.on) fxStart(); else fxStop();
-    wfUpdate(); crfUpdate(); gfxUpdate();
+    wfUpdate(); crfUpdate(); svUpdate(); gfxUpdate();
   });
   applyTheme(root.getAttribute("data-theme"), true);
   applyStatus(); applyFlags();
