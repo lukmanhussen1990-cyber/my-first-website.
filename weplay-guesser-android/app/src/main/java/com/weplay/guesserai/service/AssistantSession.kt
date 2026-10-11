@@ -11,12 +11,13 @@ import com.weplay.guesserai.domain.AppSettings
 import com.weplay.guesserai.domain.FrameAnalysis
 import com.weplay.guesserai.domain.FrameChangeDetector
 import com.weplay.guesserai.domain.FrameImages
-import com.weplay.guesserai.domain.Guess
-import com.weplay.guesserai.domain.GuessEngine
 import com.weplay.guesserai.domain.HintPattern
+import com.weplay.guesserai.domain.LayoutLearner
 import com.weplay.guesserai.domain.PartialAnalysis
 import com.weplay.guesserai.domain.PromptHints
 import com.weplay.guesserai.domain.RankedGuess
+import com.weplay.guesserai.domain.RoundTracker
+import com.weplay.guesserai.domain.ScreenState
 import com.weplay.guesserai.domain.VisionAnalyzer
 import com.weplay.guesserai.domain.VisionException
 import kotlinx.coroutines.CancellationException
@@ -33,7 +34,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.max
-import kotlin.math.roundToInt
 
 enum class AiStatus { STARTING, ANALYZING, WATCHING, PAUSED, GAME_AWAY, ERROR }
 
@@ -53,6 +53,8 @@ data class OverlayUiState(
     val copied: String? = null,
     /** The hint was set by hand in the overlay and the AI's reading is ignored until the round ends. */
     val hintManual: Boolean = false,
+    /** The answer the game showed (we guessed it, or the round ended); pinned above the guesses. */
+    val answer: String? = null,
 ) {
     val isPaused: Boolean get() = status == AiStatus.PAUSED
 }
@@ -63,11 +65,10 @@ data class OverlayUiState(
  *  - up to [MAX_IN_FLIGHT] requests overlap; once a newer frame starts answering, older
  *    requests are cancelled and their results ignored,
  *  - replies stream in and each complete guess is shown immediately,
- *  - frames that did not change are never sent,
- *  - after one whole-screen look the layout is known and only close-ups of the hint and the
- *    canvas are sent (sharper hint, smaller upload),
- *  - a new hint reading must be seen twice before it replaces the current one, and the user can
- *    set the hint by hand.
+ *  - only changes on the canvas or in the hint trigger a request,
+ *  - close-ups of the hint and the canvas are sent, from the measured WePlay layout; a
+ *    whole-screen look now and then checks the layout and the game state.
+ * Round logic (hints, round ends, revealed answers, guess history) lives in [RoundTracker].
  * All state is touched on the main thread ([scope] is the service's lifecycle scope).
  */
 class AssistantSession(
@@ -85,7 +86,7 @@ class AssistantSession(
     private val _state = MutableStateFlow(OverlayUiState())
     val state: StateFlow<OverlayUiState> = _state.asStateFlow()
 
-    private val engine = GuessEngine()
+    private val tracker = RoundTracker()
     private val changes = FrameChangeDetector()
     private val wake = Channel<Unit>(Channel.CONFLATED)
 
@@ -100,24 +101,17 @@ class AssistantSession(
     private var backoffMs = 0L
     private var notGameStreak = 0
 
-    // Per-round memory, reset when the hint changes or the canvas is cleared.
-    private val rejected = mutableSetOf<String>()
-    private var smoothed = mapOf<String, Int>()
-    private var prevRaw = emptyList<Guess>()
-    private var aiHint: HintPattern? = null
-    private var manualHint: HintPattern? = null
-    private var pendingHint: HintPattern? = null
-    private var pendingVotes = 0
-    private var lastVotedSeq = 0L
-    private val roundHint: HintPattern? get() = manualHint ?: aiHint
-    private var knownForHint = emptyList<String>()
-
-    // Where the canvas and the hint are on screen, learned from a whole-screen look.
-    private var layout: Layout? = null
-    private var croppedSinceFull = 0
+    // Layout: measured WePlay layout, corrected only by repeated whole-screen looks.
+    private var learner: LayoutLearner? = null
+    private var aspect = 0f
+    private var croppedSinceFull = FULL_LOOK_EVERY // first request looks at the whole screen
     private var cropMisses = 0
-    private var lastJpeg: ByteArray? = null
+
+    // Learning
     private var stats = emptyMap<String, AnswerStats>()
+    private var knownForHint = emptyList<String>()
+    private var knownLoadedFor: HintPattern? = null
+    private var lastCanvasJpeg: ByteArray? = null
 
     fun start() {
         if (loopJob != null) return
@@ -143,12 +137,9 @@ class AssistantSession(
         }
     }
 
-    /** Re-analyse now with a whole-screen look, re-read the hint, and forget this round's rejections. */
+    /** Start this word over with a whole-screen look: re-read the hint, forget guesses and rejections. */
     fun refresh() {
-        resetRound()
-        aiHint = null
-        pendingHint = null
-        pendingVotes = 0
+        show(tracker.refresh(ctx()))
         croppedSinceFull = FULL_LOOK_EVERY
         forceNext = true
         _state.update { it.copy(message = "Refreshing…") }
@@ -157,53 +148,44 @@ class AssistantSession(
 
     /** "Next Guess": the top answer was wrong; drop it and promote the next one. Returns the new top answer. */
     fun nextGuess(): String? {
-        val current = _state.value.guesses.firstOrNull() ?: return null
-        rejected += GuessEngine.normalize(current.answer)
-        scope.launch { history.recordRejected(current.answer); refreshStats() }
-        val remaining = _state.value.guesses.drop(1)
-        val next = remaining.firstOrNull()?.answer
-        _state.update { it.copy(guesses = remaining, copied = next) }
+        val r = tracker.next(ctx()) ?: return null
+        scope.launch { history.recordRejected(r.rejected); refreshStats() }
+        show(r.view)
+        val next = r.view.guesses.firstOrNull()?.answer
+        _state.update { it.copy(copied = next) }
         return next
     }
 
     fun markCopied(answer: String) = _state.update { it.copy(copied = answer) }
 
-    /** +/- on the overlay's hint editor. Locks the hint for this round. */
-    fun adjustHint(dWords: Int, dLetters: Int) {
-        val base = roundHint ?: HintPattern(1, 4)
-        val words = (base.wordCount + dWords).coerceIn(1, 6)
-        val letters = (base.letterCount + dLetters).coerceIn(words, 40)
-        setManualHint(HintPattern(words, letters))
+    /** Long-press on a guess: it was the right answer — teach the learning database. */
+    fun markCorrect(guess: RankedGuess) {
+        val before = _state.value
+        val outcome = tracker.markCorrect(guess.answer, ctx())
+        outcome.learn?.let { learn(it, before.guesses, tracker.hint ?: before.hint, before.category) }
+        show(outcome.view)
+        _state.update { it.copy(toast = "Saved \"${guess.answer}\" — AI will remember it") }
     }
 
-    /** Back to the AI's reading of the hint. */
-    fun clearManualHint() = setManualHint(null)
-
-    private fun setManualHint(h: HintPattern?) {
-        manualHint = h
-        loadKnownAnswers()
-        rerankShown()
+    /** +/- on the overlay's hint editor. Locks the hint for this round. */
+    fun adjustHint(dWords: Int, dLetters: Int) {
+        show(tracker.adjustHint(dWords, dLetters, ctx()))
         forceNext = true
         wake.trySend(Unit)
     }
 
-    /** Screen rotated or resized: learn the layout again. */
-    fun onScreenChanged() {
-        layout = null
+    /** Back to the AI's reading of the hint. */
+    fun clearManualHint() {
+        show(tracker.clearManualHint(ctx()))
         forceNext = true
+        wake.trySend(Unit)
     }
 
-    /** Long-press on a guess: it was the right answer — teach the learning database. */
-    fun markCorrect(guess: RankedGuess) {
-        val s = _state.value
-        val jpeg = if (settingsRepo.current.saveScreenshots) lastJpeg else null
-        scope.launch {
-            history.recordCorrect(guess.answer, jpeg, s.guesses, s.hint, s.category)
-            refreshStats()
-            _state.update { it.copy(toast = "Saved \"${guess.answer}\" — AI will remember it") }
-        }
-        endRound()
-        changes.reset()
+    /** Screen rotated or resized: start again from the measured layout. */
+    fun onScreenChanged() {
+        aspect = 0f
+        croppedSinceFull = FULL_LOOK_EVERY
+        forceNext = true
     }
 
     fun consumeToast() = _state.update { it.copy(toast = null) }
@@ -216,7 +198,8 @@ class AssistantSession(
         while (scope.isActive) {
             val tickStart = System.currentTimeMillis()
             val settings = settingsRepo.current
-            val interval = settings.captureSpeed.seconds * 1000L
+            // Once the game showed the answer, just keep an eye out for the next word.
+            val interval = max(settings.captureSpeed.seconds * 1000L, if (tracker.solved) SOLVED_INTERVAL_MS else 0L)
 
             val skip = when {
                 paused -> 60_000L
@@ -241,14 +224,19 @@ class AssistantSession(
     }
 
     private suspend fun tick(frame: Bitmap, settings: AppSettings) {
-        val lay = layout
+        val frameAspect = frame.height.toFloat() / frame.width
+        if (learner == null || kotlin.math.abs(frameAspect - aspect) > 0.01f) {
+            aspect = frameAspect
+            learner = LayoutLearner(frameAspect)
+        }
+        val lay = learner?.layout
         val sendFull = lay == null || croppedSinceFull >= FULL_LOOK_EVERY
         val (fingerprint, changed) = withContext(Dispatchers.Default) {
             overlayRect()?.let { r ->
                 val s = capturer.scale
                 FrameTools.maskRect(frame, Rect((r.left * s).toInt(), (r.top * s).toInt(), (r.right * s).toInt(), (r.bottom * s).toInt()))
             }
-            // Watch only the canvas and the middle of the hint (not the chat or the timer) once we know where they are.
+            // Watch only the canvas and the hint text — not the chat, the timer or the players.
             val fp = if (lay == null) FrameTools.fingerprint(frame)
             else FrameTools.fingerprint(frame, lay.canvas, 40, 40) + FrameTools.fingerprint(frame, lay.hintCenter, 24, 4)
             fp to (forceNext || changes.hasChanged(fp))
@@ -256,8 +244,11 @@ class AssistantSession(
         if (!changed) {
             if (inFlight.isEmpty()) {
                 _state.update {
-                    if (it.status == AiStatus.ERROR) it
-                    else it.copy(status = AiStatus.WATCHING, message = "Watching for new strokes…")
+                    when {
+                        it.status == AiStatus.ERROR -> it
+                        it.answer != null && tracker.solved -> it.copy(status = AiStatus.WATCHING, message = "Solved — waiting for the next word")
+                        else -> it.copy(status = AiStatus.WATCHING, message = "Watching for new strokes…")
+                    }
                 }
             }
             return
@@ -285,11 +276,11 @@ class AssistantSession(
 
     private fun launchRequest(images: FrameImages, settings: AppSettings) {
         val seq = ++seqStarted
-        val bank = wordBanks.get(settings.customWords)
+        val hint = tracker.hint
         val hints = PromptHints(
-            lastHint = roundHint,
+            lastHint = hint,
             knownAnswers = knownForHint,
-            wordListCandidates = bank.candidates(roundHint, PROMPT_CANDIDATES).map { it.answer },
+            wordListCandidates = wordBanks.get(settings.customWords).candidates(hint, PROMPT_CANDIDATES).map { it.answer },
         )
         _state.update {
             if (it.status == AiStatus.PAUSED) it else it.copy(status = AiStatus.ANALYZING, message = "Analyzing drawing…")
@@ -327,27 +318,21 @@ class AssistantSession(
     }
 
     private fun onPartial(seq: Long, p: PartialAnalysis) {
-        if (paused || p.isDrawingGame == false || p.guesses.isEmpty() || !claim(seq)) return
-        if (p.canvasEmpty == true) return
-        p.hint?.let { voteHint(seq, it) }
-        // Keep last frame's guesses visible (slightly faded in confidence) until the new list catches up.
-        val seen = p.guesses.mapTo(HashSet()) { GuessEngine.normalize(it.answer) }
-        val carried = prevRaw.filter { GuessEngine.normalize(it.answer) !in seen }
-            .map { it.copy(confidence = (it.confidence * 0.85).roundToInt()) }
-        val ranked = rank(p.guesses + carried)
-        _state.update {
-            it.copy(guesses = ranked.guesses, hint = roundHint, hintManual = manualHint != null, hintMismatch = ranked.hintMismatch)
-        }
+        if (paused || seq < seqApplied) return
+        val view = tracker.partial(seq, p, ctx()) ?: return
+        claim(seq)
+        show(view)
     }
 
     private fun onFinal(seq: Long, a: FrameAnalysis, images: FrameImages, latency: Long) {
         if (!claim(seq)) return
         backoffMs = 0
+        val before = _state.value
 
-        if (!a.isDrawingGame) {
+        if (a.screenState == ScreenState.NOT_GAME) {
             notGameStreak++
-            // Close-ups that show no game mean the layout moved: look at the whole screen again.
-            if (images.isCropped && ++cropMisses >= 2) layout = null
+            // Close-ups that show no game: look at the whole screen next time.
+            if (images.isCropped && ++cropMisses >= 2) croppedSinceFull = FULL_LOOK_EVERY
             if (notGameStreak >= 3) backoffMs = 6_000 // nothing to solve: check far less often
             _state.update {
                 it.copy(
@@ -360,15 +345,21 @@ class AssistantSession(
         }
         notGameStreak = 0
         cropMisses = 0
-        if (!images.isCropped) a.canvasBox?.let { layout = Layout.from(it, a.hintBox) }
-        if (a.canvasEmpty) endRound()
-        else a.hint?.let { voteHint(seq, it) }
-        if (settingsRepo.current.saveScreenshots) lastJpeg = images.full ?: images.canvas
+        // Learn the layout only from a normal guessing screen (never from a popup).
+        if (!images.isCropped && a.screenState == ScreenState.GUESSING) learner?.onFullLook(a.canvasBox, a.hintBox)
+        if (a.screenState == ScreenState.GUESSING) lastCanvasJpeg = images.canvas ?: images.full
 
-        val ranked = rank(a.guesses)
-        smoothed = ranked.guesses.associate { GuessEngine.normalize(it.answer) to it.confidence }
-        prevRaw = a.guesses
+        val hintBefore = tracker.hint ?: before.hint
+        val outcome = tracker.final(seq, a, ctx())
+        // Save with what was on screen for this word, not the reset list of the next one.
+        outcome.learn?.let { learn(it, before.guesses, hintBefore, before.category) }
+        show(outcome.view)
 
+        val message = when {
+            outcome.view.answer != null && (outcome.roundOver || tracker.solved) -> "✓ Answer: ${outcome.view.answer}"
+            a.canvasEmpty -> "Canvas is empty — waiting"
+            else -> liveMessage(a.modelUsed, latency)
+        }
         _state.update {
             it.copy(
                 status = when {
@@ -376,92 +367,62 @@ class AssistantSession(
                     inFlight.keys.any { k -> k > seq } -> AiStatus.ANALYZING
                     else -> AiStatus.WATCHING
                 },
-                message = if (a.canvasEmpty) "Canvas is empty — waiting" else liveMessage(a.modelUsed, latency),
-                detectedObject = a.detectedObject,
-                category = a.category,
-                emoji = a.emoji,
-                hint = roundHint,
-                hintManual = manualHint != null,
-                guesses = if (a.canvasEmpty) emptyList() else ranked.guesses,
-                hintMismatch = ranked.hintMismatch,
+                message = message,
+                detectedObject = if (a.screenState == ScreenState.GUESSING) a.detectedObject else it.detectedObject,
+                category = if (a.screenState == ScreenState.GUESSING) a.category else it.category,
+                emoji = if (a.screenState == ScreenState.GUESSING) a.emoji else it.emoji,
                 lastLatencyMs = latency,
             )
         }
     }
 
-    private fun rank(guesses: List<Guess>) = engine.rank(
-        guesses = guesses,
-        hint = roundHint,
-        rejected = rejected,
-        history = stats,
-        previous = smoothed,
+    /** Push a tracker view to the overlay, and fetch learned answers when the hint changed. */
+    private fun show(view: RoundTracker.View) {
+        _state.update {
+            it.copy(
+                guesses = view.guesses,
+                hint = view.hint,
+                hintManual = view.hintManual,
+                hintMismatch = view.hintMismatch,
+                answer = view.answer,
+            )
+        }
+        if (view.hint != knownLoadedFor) loadKnownAnswers(view.hint)
+    }
+
+    private fun ctx() = RoundTracker.Context(
         wordBank = wordBanks.get(settingsRepo.current.customWords),
+        stats = stats,
         knownAnswers = knownForHint,
     )
+
+    /** Save an answer the game showed (or the user confirmed) with the last drawing. */
+    private fun learn(answer: String, guesses: List<RankedGuess>, hint: HintPattern?, category: String) {
+        val jpeg = if (settingsRepo.current.saveScreenshots) lastCanvasJpeg else null
+        scope.launch {
+            history.recordCorrect(answer, jpeg, guesses, hint, category)
+            refreshStats()
+        }
+    }
+
+    private fun loadKnownAnswers(hint: HintPattern?) {
+        knownLoadedFor = hint
+        knownForHint = emptyList()
+        if (hint == null) return
+        scope.launch {
+            val known = history.knownAnswers(hint)
+            if (knownLoadedFor == hint) {
+                knownForHint = known
+                if (known.isNotEmpty()) show(tracker.view(ctx()))
+            }
+        }
+    }
 
     private fun liveMessage(modelUsed: String, latency: Long): String {
         val name = AiModel.entries.firstOrNull { it.id == modelUsed }?.label?.removePrefix("Claude ")?.substringBefore(' ')
             ?: modelUsed.ifBlank { "AI" }
         val note = if (settingsRepo.current.model == AiModel.HAIKU && modelUsed == AiModel.OPUS.id) " (Haiku n/a)" else ""
         return "Live • $name$note • ${latency / 100 / 10.0}s"
-    }
-
-    /**
-     * One vote per response. The first reading of a round is taken as is; a different reading
-     * must come twice in a row before it replaces the current one (a new word), so a single
-     * misread does not wipe the list. A reading with the same totals only adds the word lengths.
-     */
-    private fun voteHint(seq: Long, h: HintPattern) {
-        if (seq <= lastVotedSeq) return
-        lastVotedSeq = seq
-        val current = aiHint
-        when {
-            current == null -> acceptHint(h, newWord = false)
-            h.wordCount == current.wordCount && h.letterCount == current.letterCount -> {
-                pendingHint = null; pendingVotes = 0
-                if (h.wordLengths.isNotEmpty() && h != current) aiHint = h
-            }
-            h == pendingHint -> if (++pendingVotes >= HINT_VOTES) acceptHint(h, newWord = true)
-            else -> { pendingHint = h; pendingVotes = 1 }
-        }
-    }
-
-    private fun acceptHint(h: HintPattern, newWord: Boolean) {
-        if (newWord) { resetRound(); manualHint = null }
-        aiHint = h
-        pendingHint = null
-        pendingVotes = 0
-        loadKnownAnswers()
-    }
-
-    private fun loadKnownAnswers() {
-        val h = roundHint
-        knownForHint = emptyList()
-        scope.launch { knownForHint = history.knownAnswers(h); rerankShown() }
-    }
-
-    /** Re-rank what is on screen after the hint or the learned answers changed. */
-    private fun rerankShown() {
-        val ranked = rank(prevRaw)
-        _state.update {
-            it.copy(guesses = ranked.guesses, hint = roundHint, hintManual = manualHint != null, hintMismatch = ranked.hintMismatch)
-        }
-    }
-
-    /** The word was found or the canvas was cleared: the next hint belongs to a new word. */
-    private fun endRound() {
-        resetRound()
-        aiHint = null
-        manualHint = null
-        pendingHint = null
-        pendingVotes = 0
-        knownForHint = emptyList()
-    }
-
-    private fun resetRound() {
-        rejected.clear()
-        smoothed = emptyMap()
-        prevRaw = emptyList()
     }
 
     private fun refreshStats() {
@@ -492,30 +453,12 @@ class AssistantSession(
         withTimeoutOrNull(ms) { wake.receive() }
     }
 
-    /** Where the canvas and the hint sit on screen, as [left, top, right, bottom] fractions. */
-    private data class Layout(val canvas: List<Float>, val hint: List<Float>) {
-        /** Middle of the hint bar: where the blanks are, without the timer and buttons. */
-        val hintCenter: List<Float> get() = listOf(0.3f, hint[1], 0.7f, hint[3])
-
-        companion object {
-            fun from(canvas: List<Float>, hintBox: List<Float>?): Layout {
-                val hint = if (hintBox != null) {
-                    listOf(minOf(hintBox[0], 0.15f), (hintBox[1] - 0.012f).coerceAtLeast(0f), maxOf(hintBox[2], 0.85f), (hintBox[3] + 0.012f).coerceAtMost(1f))
-                } else {
-                    // The hint sits in the bar right above the canvas.
-                    listOf(0.15f, (canvas[1] - 0.07f).coerceAtLeast(0f), 0.85f, (canvas[1] + 0.005f).coerceAtMost(1f))
-                }
-                return Layout(canvas, hint)
-            }
-        }
-    }
-
     private companion object {
         const val MAX_IN_FLIGHT = 2
         const val MIN_GAP_MS = 150L
         const val PROMPT_CANDIDATES = 40
-        const val HINT_VOTES = 2
-        /** Re-check the whole screen every so often in case the layout changed. */
-        const val FULL_LOOK_EVERY = 25
+        /** Whole-screen look every so often: checks the layout and spots popups the close-ups miss. */
+        const val FULL_LOOK_EVERY = 12
+        const val SOLVED_INTERVAL_MS = 2_500L
     }
 }

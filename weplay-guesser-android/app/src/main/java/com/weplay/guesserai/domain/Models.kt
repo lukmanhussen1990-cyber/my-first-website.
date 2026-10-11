@@ -16,18 +16,40 @@ data class HintPattern(
     val wordCount: Int,
     val letterCount: Int,
     val wordLengths: List<Int> = emptyList(),
+    /** Category clue the game shows next to the count: "A state" in "4 letters|A state". */
+    val clue: String = "",
 ) {
     val isKnown: Boolean get() = wordCount > 0 && letterCount > 0
+
+    fun sameShape(other: HintPattern): Boolean = wordCount == other.wordCount && letterCount == other.letterCount
+
+    /** Clues differ only when both are known and say different things. */
+    fun clueConflicts(other: HintPattern): Boolean =
+        clue.isNotBlank() && other.clue.isNotBlank() && normClue(clue) != normClue(other.clue)
 
     fun label(): String {
         val w = if (wordCount == 1) "1 word" else "$wordCount words"
         return "$w • $letterCount letters"
     }
 
+    private fun normClue(c: String) = c.lowercase().filter { it.isLetterOrDigit() }
+
     /** "_ _ _ _   _ _ _ _ _" style blanks for the overlay, when per-word lengths are known. */
     fun blanks(): String? =
         if (wordLengths.isEmpty()) null
         else wordLengths.joinToString("   ") { n -> List(n) { "_" }.joinToString(" ") }
+}
+
+/** What the game screen is showing. */
+enum class ScreenState {
+    /** A word is being drawn and guessed; the top bar shows the hint. */
+    GUESSING,
+    /** We already guessed it: the top bar shows the word itself instead of the hint. */
+    WORD_REVEALED,
+    /** The round-over popup ("Word: fear") or a "Round over! Answer: …" message. */
+    ROUND_OVER,
+    /** Not the drawing game (lobby, another app, a menu). */
+    NOT_GAME,
 }
 
 /** Everything one vision call tells us about the current frame. */
@@ -45,6 +67,9 @@ data class FrameAnalysis(
     val guesses: List<Guess>,
     /** Model that actually answered (differs from the setting after a Haiku → Opus fallback). */
     val modelUsed: String = "",
+    val screenState: ScreenState = if (isDrawingGame) ScreenState.GUESSING else ScreenState.NOT_GAME,
+    /** The answer the game itself shows (revealed word or round-over popup), "" when none. */
+    val revealedAnswer: String = "",
 )
 
 /**
@@ -65,6 +90,7 @@ data class PartialAnalysis(
     val guesses: List<Guess>,
     val isDrawingGame: Boolean?,
     val canvasEmpty: Boolean?,
+    val screenState: ScreenState? = null,
 )
 
 /** Extra context sent with a frame so the model picks from likely answers. */

@@ -77,6 +77,7 @@ class ClaudeVisionClientTest {
         assertEquals(java.util.Base64.getEncoder().encodeToString(jpeg), content[0]["source"]["data"].asText())
         assertTrue(content[1]["text"].asText().contains("Coca Cola"))
         assertTrue(b["system"].asText().contains("A 1-letter word is always \"A\""))
+        assertTrue(b["system"].asText().contains("4 letters|A state"))
         assertTrue(content[1]["text"].asText().contains("whole phone screen"))
         // Custom (mock) endpoint: no official-only fields.
         assertFalse(b.has("output_config")); assertFalse(b.has("thinking")); assertFalse(b.has("fallbacks"))
@@ -104,8 +105,11 @@ class ClaudeVisionClientTest {
         assertEquals("low", b["output_config"]["effort"].asText())
         assertEquals("json_schema", b["output_config"]["format"]["type"].asText())
         // Hint and guesses come first in the schema, so they stream first.
-        assertEquals(listOf("is_drawing_game", "canvas_empty", "hint", "guesses"),
-            b["output_config"]["format"]["schema"]["properties"].fieldNames().asSequence().take(4).toList())
+        val schema = b["output_config"]["format"]["schema"]
+        assertEquals(listOf("screen_state", "revealed_answer", "canvas_empty", "hint", "guesses"),
+            schema["properties"].fieldNames().asSequence().take(5).toList())
+        assertEquals(listOf("guessing", "word_revealed", "round_over", "not_game"), schema["properties"]["screen_state"]["enum"].map { it.asText() })
+        assertTrue(schema["properties"]["hint"]["required"].map { it.asText() }.contains("clue"))
         assertFalse(b.has("fallbacks"))
         assertEquals(1500, b["max_tokens"].asInt())
     }

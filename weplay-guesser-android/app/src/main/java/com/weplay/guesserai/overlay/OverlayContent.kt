@@ -130,6 +130,7 @@ private fun CompactPanel(state: OverlayUiState, width: Dp, actions: OverlayActio
             HintLine(state, actions, compact = true)
             if (state.hintMismatch) Text("⚠ nothing fits hint", color = Amber, fontSize = 7.sp)
             Spacer(Modifier.height(3.dp))
+            AnswerBanner(state, actions)
             GuessList(state, actions, compact = true)
             Spacer(Modifier.height(5.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -383,7 +384,32 @@ private fun GuessesSection(state: OverlayUiState, actions: OverlayActions) {
         Text("⚠ No guess fits the hint yet", color = Amber, fontSize = 7.5.sp)
     }
     Spacer(Modifier.height(4.dp))
+    AnswerBanner(state, actions)
     GuessList(state, actions, compact = false)
+}
+
+/** The answer the game itself showed (round over, or we guessed it). Tap to copy. */
+@Composable
+private fun AnswerBanner(state: OverlayUiState, actions: OverlayActions) {
+    val answer = state.answer ?: return
+    val asGuess = RankedGuess(answer, 100, "shown by the game", matchesHint = true, learned = true)
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = 3.dp)
+            .clip(RoundedCornerShape(7.dp))
+            .background(LiveGreen.copy(alpha = 0.2f))
+            .border(1.dp, LiveGreen.copy(alpha = 0.6f), RoundedCornerShape(7.dp))
+            .clickable { actions.onCopy(asGuess) }
+            .padding(horizontal = 5.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("✓", color = LiveGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.width(4.dp))
+        Column(Modifier.weight(1f)) {
+            Text("ANSWER", color = LiveGreen, fontSize = 6.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+            Text(answer, color = Color.White, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        if (state.copied == answer) Text("✓", color = LiveGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+    }
 }
 
 /**
@@ -405,6 +431,12 @@ private fun HintLine(state: OverlayUiState, actions: OverlayActions, compact: Bo
             fontSize = if (compact) 8.sp else 8.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
         )
         Text(if (editing) " ▴" else " ✎", color = Muted, fontSize = 7.sp)
+    }
+    hint?.clue?.takeIf { it.isNotBlank() }?.let { clue ->
+        Text(
+            "“$clue”", color = Color(0xFFA5F3FC), fontSize = if (compact) 7.5.sp else 8.sp,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 2.dp),
+        )
     }
     if (editing) {
         Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {

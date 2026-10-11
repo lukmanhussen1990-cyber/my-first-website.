@@ -20,51 +20,60 @@ object SolverPrompt {
         The game is WePlay "Guess My Drawing" on a phone. A player draws on the canvas; others type
         guesses in the chat.
 
-        Reading the word hint (most important — every answer must fit it):
-        - The hint is in the MIDDLE OF THE TOP BAR, above the canvas: one underscore or box per letter,
-          a wider gap between words. Letters may be revealed over time. Sometimes it is a number or a
-          "2 words • 12 letters" label.
-        - Count the blanks word by word and return word_lengths, e.g. "_ _ _ _   _ _ _ _ _" → [4, 5].
-        - Never take the hint from words written on the canvas, the chat, player names or the timer.
-        - If the top bar shows a real word instead of blanks (the round ended or you already guessed it),
-          that word is the answer: return it first with confidence 100.
+        1. Decide screen_state:
+        - "guessing": a word is being drawn; the top bar shows the hint.
+        - "word_revealed": the top bar shows a real word instead of the hint (e.g. "halwa") because we
+          already guessed it. Put that word in revealed_answer and return it as the first guess (100).
+        - "round_over": a popup says "Word: fear" / "N players got it", or the chat says
+          "Round over! Answer: fear". Put the answer in revealed_answer.
+        - "not_game": anything else (lobby, menus, another app).
+        revealed_answer is "" unless the game itself shows the answer.
 
-        How answers look in this game:
+        2. Read the hint (every answer must fit it):
+        - It is the text in the MIDDLE OF THE TOP BAR, e.g. "4 letters|A state": the letter count, then
+          after "|" a category clue. Multi-word answers may say so, e.g. "9 letters(2 words)|A vehicle", or
+          show blanks/underscores per letter with gaps between words; count them word by word.
+        - Put the clue ("A state") in hint.clue. Ignore the room ID line ("ID: IF5573806"), the timer and
+          the buttons. Never take the hint from words written on the canvas or in the chat.
+        - "N letters|clue" is never a revealed word.
+
+        3. Guess. How answers look in this game:
+        - The clue narrows the meaning: "A state" → a feeling or condition (fear, anger, sleep), "A food" → a dish.
         - A 1-letter word is always "A": 1 letter in total → "A"; "_ ____" (2 words, 5 letters) → "A Bike".
         - 2 letters: usually an abbreviation such as TV, GO, AC, CD, DJ, OK, PC, ID.
-        - 3 letters: often an abbreviation or brand (UFO, KFC, ATM, USB, BMW) or a short noun.
-        - Answers can be plural ("Snails", "Shoes") — match the letter count exactly.
-        - Game, app, brand and cartoon names are common: "Free Fire" (2 words, 8 letters), PUBG, Among Us,
-          Minecraft, TikTok, YouTube, Spider Man, Hello Kitty, Coca Cola.
-        - The drawer may write words on the canvas as clues ("slowest small animal" → Snail / Snails).
-          Answer with what the clue describes, shaped to fit the hint; do not just repeat the clue.
+        - Answers can be plural ("Snails") and can be Indian words ("Halwa", "Samosa", "Diwali").
+        - Game, app, brand and cartoon names are common: "Free Fire" (2 words, 8 letters), PUBG, Among Us.
+        - The drawer often writes clues on the canvas: partial spellings ("halw_" → Halwa), descriptions
+          ("slowest small animal" → Snails), or a Hindi/Hinglish word whose English meaning is the answer
+          ("DAR" / "डर" → Fear). Answer with what the clue means, shaped to fit the hint.
         When the user lists candidate answers for the hint, prefer one of them if it matches the drawing.
 
         Return JSON only, fields in this order:
         {
-          "is_drawing_game": true,
+          "screen_state": "guessing",
+          "revealed_answer": "",
           "canvas_empty": false,
-          "hint": {"word_count": 2, "letter_count": 9, "word_lengths": [4, 5]},
+          "hint": {"word_count": 1, "letter_count": 4, "word_lengths": [4], "clue": "A state"},
           "guesses": [
-            {"answer": "Fire Truck", "confidence": 95, "reason": "ladder, red body"}
+            {"answer": "Fear", "confidence": 90, "reason": "DAR = fear in Hindi"}
           ],
-          "detected_object": "Fire truck",
-          "category": "Vehicle",
-          "emoji": "🚒",
+          "detected_object": "Written word DAR",
+          "category": "Feeling",
+          "emoji": "😨",
           "canvas_box": [0.0, 0.10, 1.0, 0.49],
           "hint_box": [0.3, 0.05, 0.7, 0.10]
         }
 
         - Best guess first. "confidence" is an integer 0-100. "reason" is at most 4 words.
         - Use 0 for hint numbers and [] for word_lengths you cannot read.
-        - If this is not the drawing game, set is_drawing_game to false and return an empty guesses list.
+        - For "not_game", return an empty guesses list.
     """.trimIndent()
 
     /** Instruction for a whole-screen image: also locate the canvas and the hint so later frames can be cropped. */
     const val FULL_SCREEN = "The image is the whole phone screen. Also return canvas_box (the drawing area) and " +
         "hint_box (the word hint in the top bar) as [left, top, right, bottom] fractions of the image."
 
-    const val HINT_BAR_LABEL = "Image 1 — the game's top bar, zoomed. The word hint (blanks) is in the middle; ignore the timer and buttons."
+    const val HINT_BAR_LABEL = "Image 1 — the game's top bar, zoomed: the hint (\"4 letters|A state\") or, once guessed, the word itself. Ignore the room ID line."
     const val CANVAS_LABEL = "Image 2 — the drawing canvas."
     const val CROPPED = "Read the hint from image 1 and the drawing from image 2. Return [] for canvas_box and hint_box."
 
@@ -73,7 +82,9 @@ object SolverPrompt {
         append(" Return 10 guesses, best first.")
         val hint = hints.lastHint
         if (hint != null && (hints.wordListCandidates.isNotEmpty() || hints.knownAnswers.isNotEmpty())) {
-            append("\n\nThe hint so far reads ${hint.label()}.")
+            append("\n\nThe hint so far reads ${hint.label()}")
+            if (hint.clue.isNotBlank()) append(" (clue: ${hint.clue})")
+            append(".")
             if (hints.knownAnswers.isNotEmpty()) {
                 append(" Answers confirmed in earlier rounds with this hint: ")
                 append(hints.knownAnswers.joinToString(", "))
@@ -88,25 +99,29 @@ object SolverPrompt {
         }
     }
 
-    /** JSON schema for structured outputs (official Anthropic endpoint only). Hint and guesses first so they stream first. */
+    val SCREEN_STATES = listOf("guessing", "word_revealed", "round_over", "not_game")
+
+    /** JSON schema for structured outputs (official Anthropic endpoint only). State, hint and guesses first so they stream first. */
     val SCHEMA: Map<String, Any> = mapOf(
         "type" to "object",
         "additionalProperties" to false,
         "required" to listOf(
-            "is_drawing_game", "canvas_empty", "hint", "guesses", "detected_object", "category", "emoji",
+            "screen_state", "revealed_answer", "canvas_empty", "hint", "guesses", "detected_object", "category", "emoji",
             "canvas_box", "hint_box",
         ),
         "properties" to linkedMapOf(
-            "is_drawing_game" to mapOf("type" to "boolean"),
+            "screen_state" to mapOf("type" to "string", "enum" to SCREEN_STATES),
+            "revealed_answer" to mapOf("type" to "string"),
             "canvas_empty" to mapOf("type" to "boolean"),
             "hint" to mapOf(
                 "type" to "object",
                 "additionalProperties" to false,
-                "required" to listOf("word_count", "letter_count", "word_lengths"),
+                "required" to listOf("word_count", "letter_count", "word_lengths", "clue"),
                 "properties" to linkedMapOf(
                     "word_count" to mapOf("type" to "integer"),
                     "letter_count" to mapOf("type" to "integer"),
                     "word_lengths" to mapOf("type" to "array", "items" to mapOf("type" to "integer")),
+                    "clue" to mapOf("type" to "string"),
                 ),
             ),
             "guesses" to mapOf(

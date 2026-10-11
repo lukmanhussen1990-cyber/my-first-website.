@@ -6,6 +6,7 @@ import com.weplay.guesserai.domain.FrameAnalysis
 import com.weplay.guesserai.domain.Guess
 import com.weplay.guesserai.domain.HintPattern
 import com.weplay.guesserai.domain.PartialAnalysis
+import com.weplay.guesserai.domain.ScreenState
 import com.weplay.guesserai.domain.VisionException
 
 /**
@@ -25,8 +26,12 @@ object AnalysisParser {
         val box = boxOf(root.path("canvas_box"), minHeight = 0.1f)
         val hintBox = boxOf(root.path("hint_box"), minHeight = 0.01f)
 
+        val state = screenStateOf(root.path("screen_state").asText(""))
+            ?: if (root.path("is_drawing_game").asBoolean(true)) ScreenState.GUESSING else ScreenState.NOT_GAME
         return FrameAnalysis(
-            isDrawingGame = root.path("is_drawing_game").asBoolean(true),
+            isDrawingGame = state != ScreenState.NOT_GAME,
+            screenState = state,
+            revealedAnswer = root.path("revealed_answer").asText("").trim(),
             canvasEmpty = root.path("canvas_empty").asBoolean(false),
             detectedObject = root.path("detected_object").asText(guesses.firstOrNull()?.answer.orEmpty()),
             category = root.path("category").asText(""),
@@ -55,12 +60,22 @@ object AnalysisParser {
                 i = end
             }
         }
+        val state = Regex("\"screen_state\"\\s*:\\s*\"([a-z_]+)\"").find(text)?.groupValues?.get(1)?.let(::screenStateOf)
         return PartialAnalysis(
             hint = hint,
             guesses = guesses,
-            isDrawingGame = boolAfterKey(text, "is_drawing_game"),
+            isDrawingGame = state?.let { it != ScreenState.NOT_GAME } ?: boolAfterKey(text, "is_drawing_game"),
             canvasEmpty = boolAfterKey(text, "canvas_empty"),
+            screenState = state,
         )
+    }
+
+    private fun screenStateOf(value: String): ScreenState? = when (value.lowercase()) {
+        "guessing" -> ScreenState.GUESSING
+        "word_revealed" -> ScreenState.WORD_REVEALED
+        "round_over" -> ScreenState.ROUND_OVER
+        "not_game" -> ScreenState.NOT_GAME
+        else -> null
     }
 
     private fun boxOf(node: JsonNode, minHeight: Float): List<Float>? =
@@ -77,7 +92,8 @@ object AnalysisParser {
         val lengths = node.path("word_lengths").mapNotNull { n -> n.asInt(0).takeIf { it > 0 } }
         val words = node.path("word_count").asInt(0).takeIf { it > 0 } ?: lengths.size
         val letters = node.path("letter_count").asInt(0).takeIf { it > 0 } ?: lengths.sum()
-        return HintPattern(words, letters, if (lengths.size == words && lengths.sum() == letters) lengths else emptyList())
+        val clue = node.path("clue").asText("").trim().take(40)
+        return HintPattern(words, letters, if (lengths.size == words && lengths.sum() == letters) lengths else emptyList(), clue)
             .takeIf { it.isKnown }
     }
 

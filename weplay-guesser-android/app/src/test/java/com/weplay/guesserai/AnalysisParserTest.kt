@@ -63,4 +63,26 @@ class AnalysisParserTest {
         assertNull(p.hint)
         assertTrue(p.guesses.isEmpty())
     }
+
+    @Test fun `reads game state, revealed answer and the hint clue`() {
+        val a = AnalysisParser.parse(
+            """{"screen_state":"round_over","revealed_answer":"fear","canvas_empty":false,""" +
+                """"hint":{"word_count":1,"letter_count":4,"word_lengths":[4],"clue":"A state"},"guesses":[]}"""
+        )
+        assertEquals(com.weplay.guesserai.domain.ScreenState.ROUND_OVER, a.screenState)
+        assertEquals("fear", a.revealedAnswer)
+        assertEquals("A state", a.hint!!.clue)
+        assertTrue(a.isDrawingGame)
+    }
+
+    @Test fun `legacy is_drawing_game false maps to not_game`() {
+        val a = AnalysisParser.parse("""{"is_drawing_game":false,"guesses":[]}""")
+        assertEquals(com.weplay.guesserai.domain.ScreenState.NOT_GAME, a.screenState)
+    }
+
+    @Test fun `partial reply carries the screen state first`() {
+        val p = AnalysisParser.parsePartial("""{"screen_state":"word_revealed","revealed_answer":"hal""")
+        assertEquals(com.weplay.guesserai.domain.ScreenState.WORD_REVEALED, p.screenState)
+        assertTrue(p.guesses.isEmpty())
+    }
 }
