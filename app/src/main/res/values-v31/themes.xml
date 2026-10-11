@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ shows a system splash screen with the app icon; keep it dark like the app. -->
+    <style name="Theme.Jarvis" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/jarvis_background</item>
+        <item name="android:colorBackground">@color/jarvis_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowSplashScreenBackground">@color/jarvis_background</item>
+    </style>
+</resources>

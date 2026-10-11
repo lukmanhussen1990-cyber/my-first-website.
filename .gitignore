@@ -1,0 +1,22 @@
+# Gradle / Android build output
+.gradle/
+build/
+/captures
+.externalNativeBuild/
+.cxx/
+.kotlin/
+*.apk
+*.aab
+
+# Local machine settings (never commit these)
+local.properties
+.idea/
+*.iml
+.DS_Store
+
+# Signing keys must never be committed
+*.jks
+*.keystore
+
+# Keep the Gradle wrapper jar
+!gradle/wrapper/gradle-wrapper.jar

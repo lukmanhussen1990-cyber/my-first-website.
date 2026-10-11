@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The glowing JARVIS orb, kept inside the central 66dp "safe zone" of the adaptive icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Soft glow -->
+    <path android:pathData="M54,54m-34,0a34,34 0,1 1,68 0a34,34 0,1 1,-68 0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="54"
+                android:centerY="54"
+                android:gradientRadius="34">
+                <item android:offset="0.55" android:color="#552FD0FF" />
+                <item android:offset="1" android:color="#002FD0FF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Thin ring -->
+    <path
+        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0"
+        android:strokeWidth="1.2"
+        android:strokeColor="#992FD0FF" />
+
+    <!-- Bright arcs on the ring -->
+    <path
+        android:pathData="M54,24A30,30 0,0 1,80,39"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:strokeColor="#FF7DE9FF" />
+    <path
+        android:pathData="M30,69A30,30 0,0 1,28,48"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:strokeColor="#FF7DE9FF" />
+
+    <!-- The ball -->
+    <path android:pathData="M54,54m-21,0a21,21 0,1 1,42 0a21,21 0,1 1,-42 0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="49"
+                android:centerY="48"
+                android:gradientRadius="26">
+                <item android:offset="0" android:color="#FF9AF0FF" />
+                <item android:offset="0.40" android:color="#FF1B93FF" />
+                <item android:offset="0.80" android:color="#FF0B45C4" />
+                <item android:offset="1" android:color="#FF05174F" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Rim light and highlight -->
+    <path
+        android:pathData="M54,54m-21,0a21,21 0,1 1,42 0a21,21 0,1 1,-42 0"
+        android:strokeWidth="1.1"
+        android:strokeColor="#CC7DE9FF" />
+    <path
+        android:fillColor="#55FFFFFF"
+        android:pathData="M46,44m-5,0a5,3.4 -35,1 1,10 0a5,3.4 -35,1 1,-10 0" />
+</vector>

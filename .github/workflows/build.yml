@@ -1,0 +1,51 @@
+name: Build JARVIS APK
+
+# Builds a debug APK on GitHub's computers, so you do not need a computer of your own.
+# It runs by itself every time code is pushed, and you can also start it by hand:
+# Actions tab > "Build JARVIS APK" > Run workflow.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-debug-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      # Android Studio is not needed. The runner already has the Android SDK; this makes sure the
+      # exact parts this app uses are there (it does nothing if they are already installed).
+      - name: Make sure the Android SDK parts are installed
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-37.0" "build-tools;36.0.0" "build-tools;37.0.0" \
+            || echo "sdkmanager did not finish; Gradle will download what it needs"
+
+      - name: Build the debug APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Upload the APK (download it from the "Artifacts" section of this run)
+        uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
