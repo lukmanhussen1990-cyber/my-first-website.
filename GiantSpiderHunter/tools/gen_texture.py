@@ -703,7 +703,7 @@ def p_head_top(w, h, rng):
 EYES = [                                                 # head_front (27 x 24)
     (3, 7, 2, 2, "mid"), (22, 7, 2, 2, "mid"),          # anterior laterals
 ]
-AME_SOCKETS = [(7, 4, 6, 6), (14, 4, 6, 6)]             # dark rings around the lens cubes
+AME_SOCKETS = [(8, 6, 5, 5), (14, 6, 5, 5)]             # dark rings around the 7x7 lens cubes (x +-3..+-10, y 216..223)
 EYES_MOUND = [                                           # mound_front (17 x 6)
     (5, 2, 2, 2, "mid"), (10, 2, 2, 2, "mid"),          # posterior medians
     (1, 3, 2, 2, "mid"), (14, 3, 2, 2, "mid"),          # posterior laterals

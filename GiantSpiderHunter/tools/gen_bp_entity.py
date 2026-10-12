@@ -31,21 +31,22 @@ ENTITY_ID = "horror:giant_spider"
 LOOT_TABLE = "loot_tables/entities/giant_spider.json"
 
 # --------------------------------------------------------------------------- tunables
-# Base walking attribute. Ground speed in blocks/s is roughly proportional to
-# movement * speed_multiplier (measured on BDS 1.21.0.26, see docs/ENTITY.md).
+# Base walking attribute. Measured on BDS 1.21.0.26 (tools/bds_test/scenarios/speed_calib.py):
+# ground speed is NOT linear: v = movement * speed_multiplier gives about 43 * v^2 blocks/s
+# (v 0.31 -> 4.0, 0.37 -> 6.0, 0.48 -> 9.8, 1.02 -> 44.9 blocks/s).
 MOVEMENT = 0.3
 # Health buffer (DESIGN §7): real HP = health - 500; at <= 500 the entity enters "dying"
 # instead of dying through vanilla. The script sets current health = 500 + config.health.
 HEALTH_MAX = 1000
 HEALTH_DYING_THRESHOLD = 500
 # Chase speed (state_hunting): melee_box_attack speed multiplier on top of MOVEMENT.
-# Tuned so the giant chases at ~10 blocks/s on flat ground (measured, see ENTITY.md).
-HUNT_SPEED_MULTIPLIER = 3.4
+# 0.3 * 1.55 = 0.465 -> ~9.3 blocks/s: faster than a sprinting player (5.6) or sprint-jumping (~7).
+HUNT_SPEED_MULTIPLIER = 1.55
 STALK_STROLL_SPEED = 0.6
 IDLE_STROLL_SPEED = 0.5
-COOLDOWN_STROLL_SPEED = 1.2
-COOLDOWN_FLEE_WALK = 1.2
-COOLDOWN_FLEE_SPRINT = 1.5
+COOLDOWN_STROLL_SPEED = 1.0
+COOLDOWN_FLEE_WALK = 1.1
+COOLDOWN_FLEE_SPRINT = 1.3
 TARGET_RADIUS = 72
 FOLLOW_RANGE = 96
 GROWTH_TIMEOUT_S = 25
