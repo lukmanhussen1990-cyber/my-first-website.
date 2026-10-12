@@ -84,8 +84,11 @@ class SessionJourneyTest {
         private val ink = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; strokeWidth = 6f }
         private val popupText = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; textSize = 30f }
         override val scale = 1f
+        /** The mirror has not delivered a frame yet. */
+        var noFrameYet = false
 
-        override fun capture(): Frame {
+        override fun capture(): Frame? {
+            if (noFrameYet) return null
             val c = Canvas(bitmap)
             c.drawColor(Color.WHITE)
             val barTop = layout.hint[1] * h
@@ -539,6 +542,32 @@ class SessionJourneyTest {
         assertEquals(listOf("Utah"), session.state.value.guesses.map { it.answer })
         play(3_000)
         assertEquals(listOf("Utah", "Ohio"), session.state.value.guesses.map { it.answer })
+    }
+
+    @Test fun `stopping while a request runs drops its answer quietly`() = game {
+        ai.latency = 3_000
+        play(1_000) // a request is on its way
+        val states = mutableListOf<OverlayUiState>()
+        test.backgroundScope.launch { session.state.collect { states += it } }
+        test.runCurrent()
+        session.stop()
+        val afterStop = states.size
+        play(10_000)
+        // Only the cancelled request's own clean-up (the status dot) may follow; its answer is never shown.
+        assertTrue(states.drop(afterStop).all { it.guesses.isEmpty() && it.answer == null })
+        assertTrue(session.state.value.guesses.isEmpty())
+        assertEquals(1, ai.calls.size)
+    }
+
+    @Test fun `no frame from the mirror yet just waits, then starts`() = game {
+        screen.noFrameYet = true
+        play(5_000)
+        assertEquals(0, ai.calls.size)
+        assertTrue(session.state.value.status != AiStatus.ERROR)
+        screen.noFrameYet = false
+        play(3_000)
+        assertEquals(1, ai.calls.size)
+        assertEquals("Utah", session.state.value.guesses.first().answer)
     }
 
     @Test fun `the copied mark does not carry over to the next word`() = game {
