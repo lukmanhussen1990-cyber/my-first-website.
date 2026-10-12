@@ -23,6 +23,14 @@ data class HintPattern(
 
     fun sameShape(other: HintPattern): Boolean = wordCount == other.wordCount && letterCount == other.letterCount
 
+    /**
+     * The same word read with the start of the hint scrolled out of view: "ds 9 letters|Organ"
+     * loses "2 words" and reads as one word. Letters and clue still agree; the word count does not.
+     */
+    fun cutOffReadingOf(other: HintPattern): Boolean =
+        letterCount == other.letterCount && wordCount != other.wordCount &&
+            clue.isNotBlank() && other.clue.isNotBlank() && !clueConflicts(other)
+
     /** Clues differ only when both are known and say different things. */
     fun clueConflicts(other: HintPattern): Boolean =
         clue.isNotBlank() && other.clue.isNotBlank() && normClue(clue) != normClue(other.clue)

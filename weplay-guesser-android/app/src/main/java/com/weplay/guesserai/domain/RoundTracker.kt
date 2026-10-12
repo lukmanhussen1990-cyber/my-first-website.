@@ -172,6 +172,7 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
      * be seen twice in a row before it counts as a new word, so one misread cannot wipe the list.
      * Once solved, the top bar shows the word itself; only a different hint with a clue
      * ("5 letters|A food") means the next word has started (the round-over popup also ends it).
+     * A long hint scrolls, and a reading with its start cut off is the same word, not a new one.
      */
     private fun considerHint(seq: Long, h: HintPattern) {
         if (seq <= lastVotedSeq) return
@@ -179,7 +180,8 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
         val current = aiHint
         when {
             solved -> {
-                val sameWord = current != null && h.sameShape(current) && !h.clueConflicts(current)
+                val sameWord = current != null &&
+                    (h.sameShape(current) && !h.clueConflicts(current) || h.cutOffReadingOf(current))
                 if (h.clue.isNotBlank() && !sameWord) startNewRound(h)
             }
             current == null -> startNewRound(h)
@@ -189,6 +191,11 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
                     wordLengths = h.wordLengths.ifEmpty { current.wordLengths },
                     clue = h.clue.ifBlank { current.clue },
                 )
+            }
+            // A cut-off reading only ever loses words, so the higher word count is the real one.
+            h.cutOffReadingOf(current) -> {
+                clearPending()
+                if (h.wordCount > current.wordCount) aiHint = h
             }
             else -> vote(h)
         }

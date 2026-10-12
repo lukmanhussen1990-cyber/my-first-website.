@@ -136,6 +136,41 @@ class RoundTrackerTest {
         assertFalse("Fear" in switched.answers())
     }
 
+    private val organ = HintPattern(2, 9, clue = "Organ")
+    /** "ds 9 letters|Organ": the start of the hint scrolled out of view, so it reads as one word. */
+    private val organCut = HintPattern(1, 9, clue = "Organ")
+
+    @Test fun `a hint cut off by scrolling does not start a new word`() {
+        val t = RoundTracker()
+        t.feed(frame(organ, "Heart Beat" to 80, "Lungs" to 30))
+        val wrong = t.next(ctx)!!.rejected // the user tried Heart Beat: wrong this time
+        val roundId = t.roundId
+        t.feed(frame(organCut, "Heartbeat" to 70))
+        val o = t.feed(frame(organCut, "Heartbeat" to 72))
+        assertEquals(roundId, t.roundId)
+        assertEquals(organ, o.view.hint)
+        assertEquals(listOf(wrong), t.rejectedAnswers)
+    }
+
+    @Test fun `the full hint read after a cut-off one keeps the word and its guesses`() {
+        val t = RoundTracker()
+        t.feed(frame(organCut, "Intestine" to 60))
+        val roundId = t.roundId
+        t.feed(frame(organ, "Heart Beat" to 80))
+        val o = t.feed(frame(organ, "Heart Beat" to 85))
+        assertEquals(roundId, t.roundId)
+        assertEquals(organ, o.view.hint)
+        assertTrue("Intestine" in o.answers())
+    }
+
+    @Test fun `a solved word stays solved when its hint is read cut off`() {
+        val t = RoundTracker()
+        t.feed(frame(organ, "Heart Beat" to 90))
+        t.feed(frame(organ, state = ScreenState.WORD_REVEALED, revealed = "heart beat"))
+        t.feed(frame(organCut, "Heart Beat" to 90))
+        assertTrue(t.solved)
+    }
+
     @Test fun `a new clue with the same length is a new word after two readings`() {
         val t = RoundTracker()
         t.feed(frame(fourState, "Fear" to 70))
