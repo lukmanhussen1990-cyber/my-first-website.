@@ -137,6 +137,28 @@ class OverlayWindowTest {
         }
     }
 
+    @Test fun `a stray position reading never moves the window away`() {
+        // Whatever the phone reports (here always the screen corner), taps leave the window put.
+        val w = OverlayWindow(ctx) { _, out -> out[0] = 0; out[1] = 0 }
+        try {
+            w.keepOffDrawing = false
+            w.show { Box(Modifier.size(120.dp, 40.dp).clickable { taps++ }) }
+            idle()
+            val (x0, y0) = params().x to params().y
+            repeat(5) {
+                val down = SystemClock.uptimeMillis()
+                touch(MotionEvent.ACTION_DOWN, params().x + 30f, params().y + 20f, down)
+                touch(MotionEvent.ACTION_UP, params().x + 30f, params().y + 20f, down)
+                idle()
+            }
+            assertEquals(5, taps)
+            assertEquals(x0 to y0, params().x to params().y)
+            assertEquals(y0, w.bounds()!!.top)
+        } finally {
+            w.hide()
+        }
+    }
+
     @Test fun `a window dropped past the edge glides back on screen`() {
         show()
         val (x0, y0) = params().x to params().y

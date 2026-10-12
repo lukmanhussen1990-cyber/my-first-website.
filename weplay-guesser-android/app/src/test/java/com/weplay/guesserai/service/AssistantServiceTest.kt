@@ -63,6 +63,16 @@ class AssistantServiceTest {
         assertFalse(screenInUse(power, keyguard))
     }
 
+    @Test fun `when Android ends the screen sharing, the user is told instead of the window just vanishing`() {
+        val controller = Robolectric.buildService(AssistantService::class.java).create()
+        controller.get().onSharingEnded()
+        ShadowLooper.idleMainLooper()
+        assertEquals(AssistantService.SHARING_ENDED, ShadowToast.getTextOfLatestToast())
+        assertTrue(shadowOf(controller.get()).isStoppedBySelf)
+        controller.destroy()
+        assertFalse(app.container.assistantRunning.value)
+    }
+
     @Test fun `a cancelled screen-sharing prompt just stops`() {
         val controller = Robolectric.buildService(AssistantService::class.java, startIntent(Activity.RESULT_CANCELED)).create()
         controller.startCommand(0, 1)

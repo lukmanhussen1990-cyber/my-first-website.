@@ -84,7 +84,7 @@ class AssistantService : LifecycleService() {
         val projection = mpm.getMediaProjection(code, data) ?: error("permission was not granted")
 
         // Kept in fields right away, so onDestroy releases them even if starting fails halfway.
-        val cap = ScreenCapturer(projection) { lifecycleScope.launch { stopSelf() } }.also { capturer = it }
+        val cap = ScreenCapturer(projection) { lifecycleScope.launch { onSharingEnded() } }.also { capturer = it }
         val window = OverlayWindow(this).also { overlay = it }
         val (sw, sh) = window.screenSize()
         cap.start(sw, sh, resources.displayMetrics.densityDpi)
@@ -155,6 +155,15 @@ class AssistantService : LifecycleService() {
         s.start()
     }
 
+    /**
+     * Android ended the screen sharing (from its status bar or notification, or because another
+     * app started sharing). Our own Stop never lands here. Say so instead of just vanishing.
+     */
+    internal fun onSharingEnded() {
+        Toast.makeText(this, SHARING_ENDED, Toast.LENGTH_LONG).show()
+        stopSelf()
+    }
+
     private fun actionsFor(s: AssistantSession, window: OverlayWindow) = object : OverlayActions {
         override fun onMinimize() { collapsed.value = true; window.settle() }
         override fun onExpand() { collapsed.value = false; window.settle() }
@@ -216,6 +225,7 @@ class AssistantService : LifecycleService() {
 
     companion object {
         private const val CHANNEL = "overlay"
+        internal const val SHARING_ENDED = "Screen sharing ended, so WePlay AI stopped. Open the app and tap Start AI to continue."
         private const val NOTIF_ID = 42
         const val ACTION_START = "com.weplay.guesserai.START"
         const val ACTION_STOP = "com.weplay.guesserai.STOP"

@@ -68,6 +68,18 @@ class ClaudeVisionClientTest {
         quietTotal = Duration.ofSeconds(3), thinkingTotal = Duration.ofSeconds(3),
     )
 
+    /**
+     * A client that has made one call already, so a timing measures the stall itself and not the
+     * first call's setup (class loading, JSON), which takes seconds on a busy machine.
+     */
+    private suspend fun warmClient(): ClaudeVisionClient {
+        val client = ClaudeVisionClient(quick)
+        server.enqueue(sse("claude-haiku-5-5", reply))
+        client.analyze(FrameImages(full = byteArrayOf(1, 2, 3)), PromptHints(), settings())
+        server.takeRequest(1, TimeUnit.SECONDS) // the warm-up
+        return client
+    }
+
     private suspend fun failureOf(client: ClaudeVisionClient): Pair<Throwable?, Long> {
         val started = System.nanoTime()
         val e = runCatching { client.analyze(FrameImages(full = byteArrayOf(1, 2, 3)), PromptHints(), settings()) }.exceptionOrNull()
@@ -75,18 +87,20 @@ class ClaudeVisionClientTest {
     }
 
     @Test fun `a server that never answers is given up after the read timeout, not retried`() = runTest {
+        val client = warmClient()
         repeat(2) { server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE)) }
-        val (e, ms) = failureOf(ClaudeVisionClient(quick))
+        val (e, ms) = failureOf(client)
         assertTrue("got $e", e is VisionException.Network)
-        assertEquals(1, server.requestCount)
+        assertEquals("the warm-up and one try, no retry", 2, server.requestCount)
         assertTrue("took $ms ms", ms < 2_500)
     }
 
     @Test fun `a reply that stalls mid-stream is given up after the read timeout`() = runTest {
         // The stream opens (200, event-stream headers), then the connection goes quiet.
+        val client = warmClient()
         server.enqueue(sse("claude-haiku-5-5", reply).setBodyDelay(1_500, TimeUnit.MILLISECONDS))
         server.enqueue(sse("claude-haiku-5-5", reply))
-        val (e, ms) = failureOf(ClaudeVisionClient(quick))
+        val (e, ms) = failureOf(client)
         assertTrue("got $e", e is VisionException.Network)
         assertTrue("took $ms ms", ms < 1_400)
         assertTrue(server.takeRequest(1, TimeUnit.SECONDS) != null)

@@ -28,6 +28,7 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.weplay.guesserai.domain.OverlayPlacement
 import kotlin.math.abs
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
@@ -58,7 +59,8 @@ class OverlayWindow(
         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
         PixelFormat.TRANSLUCENT,
     ).apply {
-        gravity = Gravity.TOP or Gravity.START
+        // LEFT, not START: x always counts from the left edge, also in right-to-left languages.
+        gravity = Gravity.TOP or Gravity.LEFT
         windowAnimations = android.R.style.Animation_Toast
     }
 
@@ -130,11 +132,14 @@ class OverlayWindow(
         root.addOnLayoutChangeListener { _, l, t, r, b, oldL, oldT, oldR, oldB ->
             if (r - l != oldR - oldL || b - t != oldB - oldT) settle()
         }
-        // Right after the window was laid out where params say, so the two agree.
+        // Right after the window was laid out where params say, so the two agree. Only an offset
+        // the size of a system bar is believed: a stray reading must never push the window away.
         root.viewTreeObserver.addOnPreDrawListener {
             locate(root, onScreen)
-            originX = onScreen[0] - params.x
-            originY = onScreen[1] - params.y
+            val dm = context.resources.displayMetrics
+            val maxBar = min(dm.widthPixels, dm.heightPixels) / 4
+            originX = (onScreen[0] - params.x).takeIf { it in 0..maxBar } ?: 0
+            originY = (onScreen[1] - params.y).takeIf { it in 0..maxBar } ?: 0
             true
         }
     }

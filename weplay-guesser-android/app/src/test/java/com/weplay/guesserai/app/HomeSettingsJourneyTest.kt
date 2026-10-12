@@ -1,6 +1,16 @@
 package com.weplay.guesserai.app
 
 import android.content.ComponentName
+import org.robolectric.shadows.ShadowActivityManager
+import android.app.ApplicationExitInfo
+import android.app.ActivityManager
+import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
+import androidx.compose.ui.test.onAllNodesWithText
+import com.weplay.guesserai.CrashLog
+import androidx.core.content.IntentCompat
+import android.media.projection.MediaProjectionConfig
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
@@ -44,6 +54,11 @@ import org.robolectric.shadows.ShadowSettings
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34], qualifiers = "w393dp-h852dp-xxhdpi")
 class HomeSettingsJourneyTest {
+    private companion object {
+        /** MediaProjectionManager.EXTRA_MEDIA_PROJECTION_CONFIG (hidden). */
+        const val PROJECTION_CONFIG = "android.media.projection.extra.EXTRA_MEDIA_PROJECTION_CONFIG"
+    }
+
     @get:Rule val compose = createEmptyComposeRule()
     private val app: WePlayGuesserApp = ApplicationProvider.getApplicationContext()
     private lateinit var scenario: ActivityScenario<MainActivity>
@@ -83,12 +98,81 @@ class HomeSettingsJourneyTest {
             val shadow = shadowOf(activity)
             val consent = shadow.nextStartedActivityForResult
             assertNotNull("no screen-sharing prompt", consent)
+            // The entire screen only: Android ends a one-app share when that app's screen closes,
+            // which made the floating window vanish in the middle of WePlay.
+            assertEquals(
+                MediaProjectionConfig.createConfigForDefaultDisplay(),
+                IntentCompat.getParcelableExtra(consent.intent, PROJECTION_CONFIG, MediaProjectionConfig::class.java),
+            )
             shadow.receiveResult(consent.intent, Activity.RESULT_OK, Intent("granted"))
             val service = shadowOf(app).nextStartedService
             assertEquals(AssistantService.ACTION_START, service.action)
             assertEquals(Activity.RESULT_OK, service.getIntExtra(AssistantService.EXTRA_RESULT_CODE, 0))
             assertEquals("com.wejoy.weplay", shadow.nextStartedActivity?.`package`)
         }
+    }
+
+    @Test fun `after a crash, home says so and the details can be copied, then dismissed`() {
+        scenario.close()
+        val boom = IllegalStateException("broken with key sk-ant-api03-secret_KEY-123")
+        var passedOn: Throwable? = null
+        val before = Thread.getDefaultUncaughtExceptionHandler()
+        try {
+            Thread.setDefaultUncaughtExceptionHandler { _, e -> passedOn = e }
+            CrashLog.install(app)
+            Thread.getDefaultUncaughtExceptionHandler()!!.uncaughtException(Thread.currentThread(), boom)
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(before)
+        }
+        assertEquals("the crash still goes on to Android", boom, passedOn)
+
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("WePlay AI stopped unexpectedly last time").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Copy details").performClick()
+        val copied = app.getSystemService(ClipboardManager::class.java).primaryClip!!.getItemAt(0).text.toString()
+        assertTrue(copied, copied.contains("IllegalStateException") && copied.contains("WePlay AI 1."))
+        assertFalse("never the key: $copied", copied.contains("secret_KEY"))
+        compose.onNodeWithText("Dismiss").performClick()
+        compose.onNodeWithText("WePlay AI stopped unexpectedly last time").assertDoesNotExist()
+        compose.waitUntil(5_000) { CrashLog.read(app) == null }
+    }
+
+    private fun closedByAndroid(importance: Int) {
+        scenario.close()
+        shadowOf(app.getSystemService(ActivityManager::class.java)).addApplicationExitInfo(
+            ShadowActivityManager.ApplicationExitInfoBuilder.newBuilder()
+                .setReason(ApplicationExitInfo.REASON_LOW_MEMORY)
+                .setImportance(importance)
+                .setTimestamp(System.currentTimeMillis())
+                .build()
+        )
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+        compose.waitForIdle()
+    }
+
+    @Test fun `when Android closed the app during a game, home says why, once`() {
+        closedByAndroid(ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE)
+        val title = "Android closed WePlay AI during your last game"
+        compose.waitUntil(5_000) { compose.onAllNodesWithText(title).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("to free memory", substring = true).assertExists()
+        compose.onNodeWithText("App settings").assertExists()
+        compose.onNodeWithText("Dismiss").performClick()
+        compose.onNodeWithText(title).assertDoesNotExist()
+
+        scenario.close()
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+        compose.onNodeWithText("Ready to play").assertExists()
+        Thread.sleep(300) // the check runs in the background
+        compose.waitForIdle()
+        compose.onNodeWithText(title).assertDoesNotExist()
+    }
+
+    @Test fun `a close after the AI was stopped is not reported`() {
+        closedByAndroid(ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED)
+        compose.onNodeWithText("Ready to play").assertExists()
+        Thread.sleep(300)
+        compose.waitForIdle()
+        compose.onNodeWithText("Android closed WePlay AI during your last game").assertDoesNotExist()
     }
 
     @Test fun `start AI without the overlay permission opens the permissions screen`() {

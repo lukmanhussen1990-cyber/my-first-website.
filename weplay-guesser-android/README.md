@@ -4,8 +4,8 @@ A floating AI overlay for WePlay "Guess My Drawing". It captures the screen, sen
 vision model, and shows ranked guesses in a draggable window above the game.
 
 ## Install
-1. Copy `release/WePlayDrawingGuesserAI-1.7.0.apk` to your phone (Android 10+) and open it.
-   Allow "Install unknown apps" for your file manager or browser when asked. It installs over 1.6.0 and keeps your key, settings and history.
+1. Copy `release/WePlayDrawingGuesserAI-1.7.1.apk` to your phone (Android 10+) and open it.
+   Allow "Install unknown apps" for your file manager or browser when asked. It installs over 1.6.0 or 1.7.0 and keeps your key, settings and history.
 2. Open the app, paste your Anthropic API key (console.anthropic.com), and tap **Test connection**.
 3. Allow **Display over other apps**. Notifications and Usage access are optional; Usage access lets the AI sleep when WePlay is closed.
 4. Tap **Start AI** and accept the screen-sharing prompt. WePlay opens with the overlay on top.
@@ -15,6 +15,11 @@ vision model, and shows ranked guesses in a draggable window above the game.
 - Tap a guess to copy it, then paste it in the game chat. **Next Guess** drops the top answer and copies the next one.
 - Hold a guess when it was correct. The drawing and answer are saved, and that answer ranks higher in later rounds.
 - **Settings** has the model (Haiku 5.5 by default, then Sonnet 5.5, Opus 5.5, or a custom ID), fast mode, accuracy boost, capture speed (1/2/5 s), your own word list, window size (Mini / Compact / Large), API base URL, and the game package.
+
+## What's new in 1.7.1
+- **The floating window no longer vanishes without a word.** Start AI now always shares the entire screen (Android 14+ could offer "one app", and Android ends a one-app share when that app's screen closes). If Android ends the screen sharing, the app says so and how to restart. A stray position reading from the phone can no longer move the window away.
+- **If the app ever crashes**, Home says so next time and **Copy details** puts the report on the clipboard to send to the developer. It stays on the phone and never contains your API key.
+- **If Android closes the app during a game** (to free memory, or the phone's battery saver), Home says so once (Android 11+) and opens the app's settings so you can lift its battery limits.
 
 ## What's new in 1.7.0
 A quality pass: fixes, less wasted work, and tests that play the app end to end. Answers still come only from the AI.

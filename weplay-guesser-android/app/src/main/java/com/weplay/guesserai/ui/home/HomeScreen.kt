@@ -1,8 +1,16 @@
 package com.weplay.guesserai.ui.home
 
 import android.app.Activity
+import android.app.ActivityManager
+import android.app.ApplicationExitInfo
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.media.projection.MediaProjectionConfig
 import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -43,6 +51,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.weplay.guesserai.CrashLog
 import com.weplay.guesserai.WePlayGuesserApp
 import com.weplay.guesserai.service.AssistantService
 import com.weplay.guesserai.service.GameAppMonitor
@@ -54,6 +63,8 @@ import com.weplay.guesserai.ui.theme.Bad
 import com.weplay.guesserai.ui.theme.Ok
 import com.weplay.guesserai.ui.theme.Warn
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -81,9 +92,64 @@ class HomeViewModel(private val app: WePlayGuesserApp) : AndroidViewModel(app) {
         }
     }
 
+    private val _lastCrash = MutableStateFlow<String?>(null)
+    /** Details of the last crash, if the app crashed since they were dismissed. */
+    val lastCrash = _lastCrash.asStateFlow()
+
+    private val notices = app.getSharedPreferences("notices", Context.MODE_PRIVATE)
+    private var closedAt = 0L
+    private val _closedReason = MutableStateFlow<String?>(null)
+    /** Why Android closed the app while the floating window was up, if it did since last shown (Android 11+). */
+    val closedReason = _closedReason.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            _lastCrash.value = withContext(Dispatchers.IO) { CrashLog.read(app) }
+            _closedReason.value = withContext(Dispatchers.IO) { closedByAndroid() }
+        }
+    }
+
+    fun dismissCrash() {
+        _lastCrash.value = null
+        viewModelScope.launch(Dispatchers.IO) { CrashLog.clear(app) }
+    }
+
+    fun dismissClosed() {
+        _closedReason.value = null
+        notices.edit().putLong(K_CLOSED_SEEN, closedAt).apply()
+    }
+
+    /**
+     * Android (or the phone maker's battery saver) can close the app in the middle of a game, and
+     * then the floating window just vanishes. Android 11+ keeps the reason; say it once.
+     */
+    private fun closedByAndroid(): String? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null
+        val exit = runCatching {
+            app.getSystemService(ActivityManager::class.java).getHistoricalProcessExitReasons(app.packageName, 0, 1).firstOrNull()
+        }.getOrNull() ?: return null
+        // Only while the floating window was up (not after the AI was stopped), and only once.
+        if (exit.importance > ActivityManager.RunningAppProcessInfo.IMPORTANCE_PERCEPTIBLE) return null
+        if (exit.timestamp <= notices.getLong(K_CLOSED_SEEN, 0L)) return null
+        closedAt = exit.timestamp
+        return when (exit.reason) {
+            ApplicationExitInfo.REASON_LOW_MEMORY -> "to free memory for other apps"
+            ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE -> "to save battery"
+            ApplicationExitInfo.REASON_ANR -> "because it stopped responding"
+            ApplicationExitInfo.REASON_SIGNALED, ApplicationExitInfo.REASON_OTHER ->
+                "(usually the phone's battery saver or app cleaner)"
+            ApplicationExitInfo.REASON_CRASH_NATIVE, ApplicationExitInfo.REASON_DEPENDENCY_DIED,
+            ApplicationExitInfo.REASON_INITIALIZATION_FAILURE -> "after an error inside Android"
+            // A crash has its own notice; the rest were asked for (Stop, force stop, an update).
+            else -> null
+        }
+    }
+
     fun gameLaunchIntent(): Intent? =
         c.settings.current.gamePackage.takeIf { it.isNotBlank() }?.let { app.packageManager.getLaunchIntentForPackage(it) }
 }
+
+private const val K_CLOSED_SEEN = "closed_seen"
 
 @Composable
 fun HomeScreen(
@@ -98,6 +164,8 @@ fun HomeScreen(
     val settings by vm.settings.collectAsState()
     val keySaved by vm.keySaved.collectAsState()
     val learned by vm.learnedCount.collectAsState()
+    val lastCrash by vm.lastCrash.collectAsState()
+    val closedReason by vm.closedReason.collectAsState()
     LifecycleResumeEffect(Unit) { vm.detectGame(); onPauseOrDispose { } }
 
     val projectionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -116,7 +184,17 @@ fun HomeScreen(
             else -> {
                 val mpm = ctx.getSystemService(MediaProjectionManager::class.java)
                 // A phone without screen sharing (or with it blocked by a work policy) has no prompt to show.
-                runCatching { projectionLauncher.launch(mpm.createScreenCaptureIntent()) }.onFailure {
+                runCatching {
+                    // The entire screen, never "one app": the AI reads WePlay by screen position, and
+                    // Android ends a one-app share when that app's screen closes, which made the
+                    // floating window vanish.
+                    val prompt = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        mpm.createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay())
+                    } else {
+                        mpm.createScreenCaptureIntent()
+                    }
+                    projectionLauncher.launch(prompt)
+                }.onFailure {
                     Toast.makeText(ctx, "This phone does not allow screen sharing, which the AI needs to see the drawing.", Toast.LENGTH_LONG).show()
                 }
             }
@@ -135,6 +213,47 @@ fun HomeScreen(
                 Text("Drawing Guesser assistant", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
             }
             if (running) StatusPill("Live", Ok) else StatusPill("Off", Warn)
+        }
+
+        lastCrash?.let { details ->
+            GlassCard {
+                Text("WePlay AI stopped unexpectedly last time", fontWeight = FontWeight.SemiBold, color = Bad)
+                Text(
+                    "Sorry about that. Copy the details and send them to the developer so it can be fixed.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(onClick = {
+                        ctx.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("WePlay AI crash", details))
+                        Toast.makeText(ctx, "Details copied", Toast.LENGTH_SHORT).show()
+                    }, modifier = Modifier.weight(1f)) { Text("Copy details") }
+                    OutlinedButton(onClick = vm::dismissCrash, modifier = Modifier.weight(1f)) { Text("Dismiss") }
+                }
+            }
+        }
+
+        closedReason?.let { reason ->
+            GlassCard {
+                Text("Android closed WePlay AI during your last game", fontWeight = FontWeight.SemiBold, color = Warn)
+                Text(
+                    "It was closed $reason, so the floating window disappeared. To keep it running, allow WePlay AI " +
+                        "to run in the background without battery limits in its app settings (Battery → Unrestricted).",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(onClick = {
+                        runCatching {
+                            ctx.startActivity(
+                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", ctx.packageName, null))
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            )
+                        }.onFailure {
+                            Toast.makeText(ctx, "Open Android Settings → Apps → WePlay AI → Battery", Toast.LENGTH_LONG).show()
+                        }
+                    }, modifier = Modifier.weight(1f)) { Text("App settings") }
+                    OutlinedButton(onClick = vm::dismissClosed, modifier = Modifier.weight(1f)) { Text("Dismiss") }
+                }
+            }
         }
 
         GlassCard {
