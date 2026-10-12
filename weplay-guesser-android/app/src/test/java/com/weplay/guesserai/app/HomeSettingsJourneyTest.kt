@@ -13,6 +13,7 @@ import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -69,6 +70,7 @@ class HomeSettingsJourneyTest {
 
     @Test fun `home finds the installed WePlay app in the background`() {
         compose.onNodeWithText("Ready to play").assertExists()
+        compose.onNodeWithContentDescription("Start AI").assertExists() // read without the ▶ symbol
         compose.waitUntil(5_000) { app.container.settings.current.gamePackage.isNotEmpty() }
         assertEquals("com.wejoy.weplay", app.container.settings.current.gamePackage)
         compose.onNodeWithText("com.wejoy.weplay").performScrollTo().assertExists()
@@ -144,7 +146,7 @@ class HomeSettingsJourneyTest {
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("built-in words", substring = true)).fetchSemanticsNodes().isNotEmpty() }
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("WePlay", substring = false)).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("WePlay was not found on this phone. Enter its package name if it is installed.").assertDoesNotExist()
-        compose.onNodeWithText("‹ Back").performClick()
+        compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithText("Ready to play").assertExists()
     }
 }

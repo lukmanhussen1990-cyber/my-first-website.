@@ -25,6 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -118,7 +120,10 @@ fun SetupScreen(onDone: () -> Unit, vm: SetupViewModel = viewModel(factory = App
                 trailingIcon = { TextButton(onClick = { showKey = !showKey }) { Text(if (showKey) "Hide" else "Show") } },
                 modifier = Modifier.fillMaxWidth(),
             )
-            TextButton(onClick = { advanced = !advanced }) { Text(if (advanced) "Hide advanced ▴" else "Advanced: custom endpoint ▾") }
+            TextButton(
+                onClick = { advanced = !advanced },
+                modifier = Modifier.semantics { contentDescription = if (advanced) "Hide advanced" else "Advanced: custom endpoint" },
+            ) { Text(if (advanced) "Hide advanced ▴" else "Advanced: custom endpoint ▾") }
             if (advanced) {
                 val urlOk = s.baseUrl.isBlank() || ClaudeVisionClient.isHttpUrl(s.baseUrl.trimEnd('/'))
                 OutlinedTextField(

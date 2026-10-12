@@ -33,6 +33,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -146,7 +148,7 @@ fun HomeScreen(
                 Button(
                     onClick = ::startAi,
                     shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth().height(58.dp),
+                    modifier = Modifier.fillMaxWidth().height(58.dp).semantics { contentDescription = "Start AI" },
                 ) { Text("▶  Start AI", fontSize = 18.sp, fontWeight = FontWeight.Bold) }
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
