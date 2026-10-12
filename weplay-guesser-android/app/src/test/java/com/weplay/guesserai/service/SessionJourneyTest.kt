@@ -570,6 +570,41 @@ class SessionJourneyTest {
         assertEquals("Utah", session.state.value.guesses.first().answer)
     }
 
+    @Test fun `half an hour of play - every word learned once, nothing piles up`() = game {
+        val words = listOf("Utah" to "A state", "Halwa" to "A food", "Snail" to "An animal", "Lamp" to "A thing", "Heart Beat" to "Organ")
+        var round = 0
+        fun word() = words[round % words.size]
+        fun hintOf(w: String, clue: String) = HintPattern(w.split(' ').size, w.count { it.isLetter() }, clue = "$clue $round")
+        ai.script = { s ->
+            val (w, clue) = word()
+            FrameAnalysis(
+                isDrawingGame = true, canvasEmpty = s.strokes == 0 && s.popup == null, detectedObject = "", category = "", emoji = "",
+                hint = if (s.popup == null) hintOf(w, clue) else null, canvasBox = s.layout.canvas, hintBox = s.layout.hint,
+                guesses = if (s.popup == null && s.strokes > 0) listOf(Guess(w, 70), Guess("Other $round", 30)) else emptyList(),
+                screenState = if (s.popup != null) ScreenState.ROUND_OVER else ScreenState.GUESSING,
+                revealedAnswer = s.popup?.removePrefix("Word: ") ?: "",
+            )
+        }
+        val started = System.nanoTime()
+        val rounds = 22 // ~30 minutes at 80 s each
+        repeat(rounds) {
+            screen.hint = "${word().second} $round"
+            screen.strokes = 0
+            screen.popup = null
+            repeat(30) { screen.strokes++; play(2_000) } // a minute of drawing
+            assertEquals("round $round shows its own word", word().first, session.state.value.guesses.firstOrNull()?.answer)
+            screen.popup = "Word: ${word().first.lowercase()}"
+            play(20_000) // the round-over popup
+            round++
+        }
+        val learned = db.drawingDao().observeAll().first()
+        println("SESSION soak: $rounds rounds, ${ai.calls.size} requests (${ai.calls.size / rounds} per round), ${learned.size} learned, ${(System.nanoTime() - started) / 1_000_000} ms real time")
+        assertEquals(rounds, learned.size)
+        assertEquals(words.map { it.first }.let { w -> List(rounds) { w[it % w.size] } }.sorted(), learned.map { it.correctAnswer }.sorted())
+        assertTrue("requests per round stay bounded", ai.calls.size <= rounds * 40)
+        assertTrue(ai.maxRunning <= 2)
+    }
+
     @Test fun `the copied mark does not carry over to the next word`() = game {
         play(2_000)
         session.markCopied("Utah")
