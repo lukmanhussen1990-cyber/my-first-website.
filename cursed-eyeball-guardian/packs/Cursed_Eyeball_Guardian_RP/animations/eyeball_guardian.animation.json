@@ -1,0 +1,384 @@
+{
+ "format_version": "1.8.0",
+ "animations": {
+  "animation.ceg.eyeball_guardian.float": {
+   "loop": true,
+   "bones": {
+    "root": {
+     "position": [
+      "math.sin(variable.t * 47.0) * 0.5",
+      "math.sin(variable.t * 90.0) * 1.2",
+      "math.cos(variable.t * 61.0) * 0.4"
+     ],
+     "rotation": [
+      "math.sin(variable.t * 65.0 + 40.0) * 3.0",
+      "math.sin(variable.t * 38.0) * 4.0",
+      "math.sin(variable.t * 52.0) * 5.0"
+     ]
+    }
+   }
+  },
+  "animation.ceg.eyeball_guardian.look": {
+   "loop": true,
+   "bones": {
+    "eye": {
+     "rotation": [
+      "query.target_x_rotation",
+      "query.target_y_rotation",
+      0.0
+     ]
+    }
+   }
+  },
+  "animation.ceg.eyeball_guardian.spikes": {
+   "loop": true,
+   "bones": {
+    "spike_00_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 0.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 0.0) * 3.6"
+     ]
+    },
+    "spike_01_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 47.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 141.0) * 3.6"
+     ]
+    },
+    "spike_02_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 94.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 282.0) * 3.6"
+     ]
+    },
+    "spike_03_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 141.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 63.0) * 3.6"
+     ]
+    },
+    "spike_04_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 188.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 204.0) * 3.6"
+     ]
+    },
+    "spike_05_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 235.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 345.0) * 3.6"
+     ]
+    },
+    "spike_06_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 282.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 126.0) * 3.6"
+     ]
+    },
+    "spike_07_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 329.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 267.0) * 3.6"
+     ]
+    },
+    "spike_08_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 16.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 48.0) * 3.6"
+     ]
+    },
+    "spike_09_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 63.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 189.0) * 3.6"
+     ]
+    },
+    "spike_10_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 110.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 330.0) * 3.6"
+     ]
+    },
+    "spike_11_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 157.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 111.0) * 3.6"
+     ]
+    },
+    "spike_12_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 204.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 252.0) * 3.6"
+     ]
+    },
+    "spike_13_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 251.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 33.0) * 3.6"
+     ]
+    },
+    "spike_14_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 298.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 174.0) * 3.6"
+     ]
+    },
+    "spike_x00_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 345.0) * (4.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 315.0) * 2.4"
+     ]
+    },
+    "spike_x01_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 32.0) * (4.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 96.0) * 2.4"
+     ]
+    },
+    "spike_x02_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 79.0) * (4.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 237.0) * 2.4"
+     ]
+    },
+    "spike_x03_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 126.0) * (4.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 18.0) * 2.4"
+     ]
+    },
+    "spike_x04_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 173.0) * (4.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 159.0) * 2.4"
+     ]
+    },
+    "spike_x05_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 220.0) * (4.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 300.0) * 2.4"
+     ]
+    },
+    "spike_x06_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 267.0) * (4.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 81.0) * 2.4"
+     ]
+    },
+    "spike_x07_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 314.0) * (4.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 222.0) * 2.4"
+     ]
+    }
+   }
+  },
+  "animation.ceg.eyeball_guardian.spin": {
+   "loop": true,
+   "bones": {
+    "spikes": {
+     "rotation": [
+      0.0,
+      0.0,
+      "variable.spin"
+     ]
+    },
+    "spikes_extra": {
+     "rotation": [
+      0.0,
+      0.0,
+      "-variable.spin * 1.5"
+     ]
+    }
+   }
+  },
+  "animation.ceg.eyeball_guardian.iris": {
+   "loop": true,
+   "bones": {
+    "iris": {
+     "scale": [
+      "1.0 + math.sin(variable.t * 200.0) * 0.03 + variable.rage_blend * 0.06",
+      "1.0 + math.sin(variable.t * 200.0) * 0.03 + variable.rage_blend * 0.06",
+      1.0
+     ]
+    },
+    "pupil": {
+     "scale": [
+      "math.lerp(0.92 + math.sin(variable.t * 70.0) * 0.12, 0.32, variable.rage_blend)",
+      "math.lerp(0.92 + math.sin(variable.t * 70.0) * 0.12, 1.3, variable.rage_blend)",
+      1.0
+     ]
+    }
+   }
+  },
+  "animation.ceg.eyeball_guardian.summon": {
+   "animation_length": 0.8,
+   "bones": {
+    "root": {
+     "scale": {
+      "0.0": [
+       0.05,
+       0.05,
+       0.05
+      ],
+      "0.45": [
+       1.18,
+       1.18,
+       1.18
+      ],
+      "0.65": [
+       0.94,
+       0.94,
+       0.94
+      ],
+      "0.8": [
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     "rotation": {
+      "0.0": [
+       0.0,
+       -540.0,
+       0.0
+      ],
+      "0.6": [
+       0.0,
+       0.0,
+       0.0
+      ]
+     }
+    },
+    "spikes": {
+     "scale": {
+      "0.0": [
+       0.2,
+       0.2,
+       0.2
+      ],
+      "0.35": [
+       0.2,
+       0.2,
+       0.2
+      ],
+      "0.7": [
+       1.1,
+       1.1,
+       1.1
+      ],
+      "0.8": [
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    }
+   }
+  },
+  "animation.ceg.eyeball_guardian.attack": {
+   "animation_length": 0.4,
+   "bones": {
+    "eye": {
+     "position": {
+      "0.0": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "0.06": [
+       0.0,
+       0.0,
+       2.0
+      ],
+      "0.4": [
+       0.0,
+       0.0,
+       0.0
+      ]
+     }
+    },
+    "iris": {
+     "scale": {
+      "0.0": [
+       1.0,
+       1.0,
+       1.0
+      ],
+      "0.06": [
+       1.3,
+       1.3,
+       1.0
+      ],
+      "0.4": [
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    },
+    "pupil": {
+     "scale": {
+      "0.0": [
+       1.0,
+       1.0,
+       1.0
+      ],
+      "0.06": [
+       0.45,
+       0.45,
+       1.0
+      ],
+      "0.4": [
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    },
+    "spikes": {
+     "scale": {
+      "0.0": [
+       1.0,
+       1.0,
+       1.0
+      ],
+      "0.08": [
+       1.15,
+       1.15,
+       1.15
+      ],
+      "0.4": [
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    }
+   }
+  }
+ }
+}

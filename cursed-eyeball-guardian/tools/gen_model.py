@@ -734,6 +734,33 @@ def build():
 # painting
 
 
+def fill_invalid(arr, valid):
+    """Copy the nearest valid texel into invalid ones (iterative 4-neighbour dilation)."""
+    arr = arr.copy()
+    ok = valid.copy()
+    while not ok.all():
+        grown = ok.copy()
+        for dy, dx in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+            src_ok = np.roll(np.roll(ok, dy, 0), dx, 1)
+            src = np.roll(np.roll(arr, dy, 0), dx, 1)
+            # do not wrap around the region edges
+            if dy == 1:
+                src_ok[0, :] = False
+            if dy == -1:
+                src_ok[-1, :] = False
+            if dx == 1:
+                src_ok[:, 0] = False
+            if dx == -1:
+                src_ok[:, -1] = False
+            take = ~grown & src_ok
+            arr[take] = src[take]
+            grown |= take
+        if (grown == ok).all():
+            break
+        ok = grown
+    return arr
+
+
 def paint(regions, skin):
     base = np.zeros((TEX, TEX, 4), np.float32)
     glow = np.zeros((TEX, TEX, 4), np.float32)
@@ -748,9 +775,7 @@ def paint(regions, skin):
         b, g, r, valid = rg.painter(lx, ly, tx, ty, skin)
         # texels outside the visible surface: copy nearest valid (bleed guard)
         if not valid.all() and valid.any():
-            from scipy.ndimage import distance_transform_edt  # optional dependency
-            _, (iy, ix) = distance_transform_edt(~valid, return_indices=True)
-            b, g, r = b[iy, ix], g[iy, ix], r[iy, ix]
+            b, g, r = (fill_invalid(a, valid) for a in (b, g, r))
         base[y0:y0 + h, x0:x0 + w] = b
         glow[y0:y0 + h, x0:x0 + w] = g
         rage[y0:y0 + h, x0:x0 + w] = r
