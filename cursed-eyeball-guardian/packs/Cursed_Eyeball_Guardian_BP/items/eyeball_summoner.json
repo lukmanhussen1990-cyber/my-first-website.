@@ -1,0 +1,24 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "ceg:eyeball_summoner",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "ceg_eyeball_summoner"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "item.ceg:eyeball_summoner.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:glint": true,
+      "minecraft:interact_button": "Summon Eye"
+    }
+  }
+}

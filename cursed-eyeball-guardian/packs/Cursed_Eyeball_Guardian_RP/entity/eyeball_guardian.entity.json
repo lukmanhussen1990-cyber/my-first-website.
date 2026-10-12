@@ -1,0 +1,82 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ceg:eyeball_guardian",
+      "materials": {
+        "default": "entity_alphatest",
+        "glow": "warden_bioluminescent_layer"
+      },
+      "textures": {
+        "crimson": "textures/entity/ceg/eyeball_guardian_crimson",
+        "void": "textures/entity/ceg/eyeball_guardian_void",
+        "frost": "textures/entity/ceg/eyeball_guardian_frost",
+        "toxic": "textures/entity/ceg/eyeball_guardian_toxic",
+        "crimson_glow": "textures/entity/ceg/eyeball_guardian_crimson_glow",
+        "void_glow": "textures/entity/ceg/eyeball_guardian_void_glow",
+        "frost_glow": "textures/entity/ceg/eyeball_guardian_frost_glow",
+        "toxic_glow": "textures/entity/ceg/eyeball_guardian_toxic_glow",
+        "crimson_rage": "textures/entity/ceg/eyeball_guardian_crimson_rage",
+        "void_rage": "textures/entity/ceg/eyeball_guardian_void_rage",
+        "frost_rage": "textures/entity/ceg/eyeball_guardian_frost_rage",
+        "toxic_rage": "textures/entity/ceg/eyeball_guardian_toxic_rage"
+      },
+      "geometry": {
+        "default": "geometry.ceg.eyeball_guardian"
+      },
+      "scripts": {
+        "initialize": [
+          "variable.t = 0.0;",
+          "variable.spin = 0.0;",
+          "variable.rage_blend = 0.0;",
+          "variable.glow_alpha = 0.9;",
+          "variable.last_skin = -1.0;",
+          "variable.skin_changed = 0.0;"
+        ],
+        "pre_animation": [
+          "variable.rage = query.property('ceg:rage');",
+          "variable.rage_blend = math.clamp(variable.rage_blend + (variable.rage ? 2.5 : -1.5) * query.delta_time, 0.0, 1.0);",
+          "variable.t = math.mod(variable.t + query.delta_time * (1.0 + 0.9 * variable.rage_blend), 3600.0);",
+          "variable.spin = math.mod(variable.spin + query.delta_time * (24.0 + 216.0 * variable.rage_blend), 360.0);",
+          "variable.glow_alpha = math.clamp(0.84 + 0.12 * math.sin(variable.t * 160.0) + 0.16 * variable.rage_blend, 0.0, 1.0);",
+          "variable.skin_changed = (query.property('ceg:skin') != variable.last_skin) ? 1.0 : 0.0;",
+          "variable.last_skin = query.property('ceg:skin');"
+        ],
+        "scale": "0.85 + 0.05 * query.property('ceg:level')",
+        "animate": [
+          "float",
+          "look",
+          "spikes",
+          "spin",
+          "iris",
+          {
+            "summon": "query.life_time < 0.8"
+          },
+          "fx"
+        ]
+      },
+      "animations": {
+        "float": "animation.ceg.eyeball_guardian.float",
+        "look": "animation.ceg.eyeball_guardian.look",
+        "spikes": "animation.ceg.eyeball_guardian.spikes",
+        "spin": "animation.ceg.eyeball_guardian.spin",
+        "iris": "animation.ceg.eyeball_guardian.iris",
+        "summon": "animation.ceg.eyeball_guardian.summon",
+        "attack": "animation.ceg.eyeball_guardian.attack",
+        "fx": "controller.animation.ceg.eyeball_guardian.fx"
+      },
+      "particle_effects": {
+        "aura": "ceg:aura",
+        "rage_aura": "ceg:rage_aura"
+      },
+      "render_controllers": [
+        "controller.render.ceg.eyeball_guardian",
+        "controller.render.ceg.eyeball_guardian_glow"
+      ],
+      "spawn_egg": {
+        "base_color": "#E8E2DC",
+        "overlay_color": "#B3000C"
+      }
+    }
+  }
+}

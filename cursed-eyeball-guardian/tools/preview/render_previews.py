@@ -8,6 +8,7 @@ Outputs:
   docs/preview/eyeball_hero.png       large 3/4 night render (crimson)
   docs/preview/eyeball_rage.png       large 3/4 night render (crimson, rage, lvl 5)
   docs/preview/eyeball_levels.png     level 1..5 (scale + extra spikes at >= 3)
+  docs/preview/eyeball_animations.png summon / attack / idle / rage frames
   docs/preview/eyeball_textures.png   the 12 entity textures, enlarged
   packs/*/pack_icon.png               256x256 icons
 
@@ -86,7 +87,7 @@ def skins_sheet(geo):
             img = render_eye(geo, skin, rage, cam, T, level=3, bg=night_bg(T, T, ri * 10 + vi))
             label(img, "%s%s | %s | lvl 3" % (skin, " RAGE" if rage else "", vn))
             sheet.paste(img.convert("RGB"), (vi * T, ri * T))
-    sheet.save(os.path.join(OUT, "eyeball_skins.png"))
+    sheet.save(os.path.join(OUT, "eyeball_skins.png"), optimize=True)
 
 
 def hero(geo, name, skin, rage, level, yaw=-35, pitch=12):
@@ -98,7 +99,7 @@ def hero(geo, name, skin, rage, level, yaw=-35, pitch=12):
         img = render_eye(geo, skin, rage, cam, S, level=level, light=lt, bg=night_bg(S, S, 3), ss=2)
         label(img, "%s%s | level %d | %s (approx. in-game)" % (skin, " RAGE" if rage else "", level, what))
         out.paste(img.convert("RGB"), (i * S, 0))
-    out.save(os.path.join(OUT, name))
+    out.save(os.path.join(OUT, name), optimize=True)
 
 
 def levels_sheet(geo):
@@ -109,7 +110,44 @@ def levels_sheet(geo):
         img = render_eye(geo, "crimson", False, cam, T, level=lv, bg=night_bg(T, T, lv))
         label(img, "level %d (scale %.2f)" % (lv, 0.85 + 0.05 * lv))
         sheet.paste(img.convert("RGB"), ((lv - 1) * T, 0))
-    sheet.save(os.path.join(OUT, "eyeball_levels.png"))
+    sheet.save(os.path.join(OUT, "eyeball_levels.png"), optimize=True)
+
+
+def anim_strip(geo):
+    """Frames of the summon / attack / idle / rage animations (posed with the
+    real animation JSON through the preview Molang evaluator)."""
+    T = 160
+    rows = [
+        ("summon", ["animation.ceg.eyeball_guardian.summon"], [0.0, 0.15, 0.3, 0.45, 0.6, 0.8], False),
+        ("attack", ["animation.ceg.eyeball_guardian.attack"], [0.0, 0.03, 0.06, 0.15, 0.25, 0.4], False),
+        ("idle loop", [], [0.0, 0.4, 0.8, 1.2, 1.6, 2.0], False),
+        ("rage loop", [], [0.0, 0.25, 0.5, 0.75, 1.0, 1.25], True),
+    ]
+    loops = ["animation.ceg.eyeball_guardian.float", "animation.ceg.eyeball_guardian.spikes",
+             "animation.ceg.eyeball_guardian.spin", "animation.ceg.eyeball_guardian.iris"]
+    sheet = Image.new("RGB", (T * 6, T * len(rows)))
+    for ri, (name, extra, times, rage) in enumerate(rows):
+        for ci, tt in enumerate(times):
+            speed = 1.9 if rage else 1.0
+            ctx = {"variable.t": 3.0 + tt * speed, "variable.spin": (24.0 + 216.0 * rage) * (3.0 + tt),
+                   "variable.rage_blend": 1.0 if rage else 0.0, "query.life_time": 3.0 + tt,
+                   "__props__": {"ceg:rage": 1.0 if rage else 0.0, "ceg:level": 3}}
+            pose = br.pose_from_animations(ANIM, loops, 3.0 + tt, ctx)
+            if extra:
+                p2 = br.pose_from_animations(ANIM, extra, tt, ctx, anim_times={extra[0]: tt})
+                for bone, v in p2.items():
+                    q = pose.setdefault(bone, {"rot": [0, 0, 0], "pos": [0, 0, 0], "scale": [1, 1, 1]})
+                    q["rot"] = list(np.add(q["rot"], v["rot"]))
+                    q["pos"] = list(np.add(q["pos"], v["pos"]))
+                    q["scale"] = list(np.multiply(q["scale"], v["scale"]))
+            cam = br.Camera(target=(0, 8, 0), yaw=-30, pitch=10, dist=300, ortho_scale=40)
+            base = br.load_texture(os.path.join(TEXD, "eyeball_guardian_crimson.png"))
+            glow = br.load_texture(os.path.join(TEXD, "eyeball_guardian_crimson_%s.png" % ("rage" if rage else "glow")))
+            img = br.render(geo, base, cam, T, T, ss=2, pose=pose, glow=glow, glow_alpha=0.9, light=0.8,
+                            background=night_bg(T, T, ci), root_scale=1.0)
+            label(img, "%s t=%.2fs" % (name, tt))
+            sheet.paste(img.convert("RGB"), (ci * T, ri * T))
+    sheet.save(os.path.join(OUT, "eyeball_animations.png"), optimize=True)
 
 
 def texture_sheet():
@@ -127,7 +165,7 @@ def texture_sheet():
             x, y = 10 + ci * (T + 10), ri * (T + 20) + 18
             sheet.paste(tile, (x, y))
             d.text((x, y - 14), "eyeball_guardian_%s%s.png" % (skin, suf), fill=(230, 230, 230))
-    sheet.save(os.path.join(OUT, "eyeball_textures.png"))
+    sheet.save(os.path.join(OUT, "eyeball_textures.png"), optimize=True)
 
 
 def icon(geo, path, rage):
@@ -139,8 +177,8 @@ def icon(geo, path, rage):
     outer = np.array([0.05, 0.0, 0.01])
     t = np.clip(r, 0, 1)[..., None] ** 0.8
     bg = inner * (1 - t) + outer * t
-    cam = br.Camera(target=(0, 8, 0), yaw=-32, pitch=14, dist=95, fov=24)
-    eye = render_eye(geo, "crimson", rage, cam, S, level=5, light=0.8, bg=None, ss=4, t=0.6)
+    cam = br.Camera(target=(0, 8, -1), yaw=-22, pitch=9, dist=104, fov=24)
+    eye = render_eye(geo, "crimson", rage, cam, S, level=5, light=1.0, bg=None, ss=4, t=0.6)
     eye_np = np.asarray(eye, dtype=np.float32) / 255.0
     a = eye_np[..., 3:4]
     # glow halo from the bright pixels of the render (icon art only)
@@ -165,6 +203,7 @@ def main():
     hero(geo, "eyeball_hero.png", "crimson", False, 3)
     hero(geo, "eyeball_rage.png", "crimson", True, 5, yaw=30)
     levels_sheet(geo)
+    anim_strip(geo)
     texture_sheet()
     os.makedirs(RP, exist_ok=True)
     os.makedirs(BP, exist_ok=True)

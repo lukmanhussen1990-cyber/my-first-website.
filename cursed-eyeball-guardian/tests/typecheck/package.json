@@ -1,0 +1,17 @@
+{
+  "name": "ceg-typecheck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Type-checks the Cursed Eyeball Guardian behavior-pack scripts against the exact Script API versions the pack depends on (@minecraft/server 1.10.0, @minecraft/server-ui 1.1.0).",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@minecraft/server": "1.10.0",
+    "@minecraft/server-ui": "1.1.0",
+    "typescript": "5.9.3"
+  },
+  "overrides": {
+    "@minecraft/server": "1.10.0"
+  }
+}

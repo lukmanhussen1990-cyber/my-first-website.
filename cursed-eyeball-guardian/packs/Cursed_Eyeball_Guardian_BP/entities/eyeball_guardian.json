@@ -1,0 +1,272 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ceg:eyeball_guardian",
+      "spawn_category": "creature",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false,
+      "properties": {
+        "ceg:rage": {
+          "type": "bool",
+          "default": false,
+          "client_sync": true
+        },
+        "ceg:skin": {
+          "type": "int",
+          "range": [0, 3],
+          "default": 0,
+          "client_sync": true
+        },
+        "ceg:level": {
+          "type": "int",
+          "range": [1, 5],
+          "default": 1,
+          "client_sync": true
+        },
+        "ceg:mode": {
+          "type": "int",
+          "range": [0, 4],
+          "default": 0,
+          "client_sync": true
+        }
+      }
+    },
+    "component_groups": {
+      "ceg:lvl_1": {
+        "minecraft:health": {
+          "value": 40,
+          "max": 40
+        }
+      },
+      "ceg:lvl_2": {
+        "minecraft:health": {
+          "value": 55,
+          "max": 55
+        }
+      },
+      "ceg:lvl_3": {
+        "minecraft:health": {
+          "value": 70,
+          "max": 70
+        }
+      },
+      "ceg:lvl_4": {
+        "minecraft:health": {
+          "value": 85,
+          "max": 85
+        }
+      },
+      "ceg:lvl_5": {
+        "minecraft:health": {
+          "value": 100,
+          "max": 100
+        }
+      },
+      "ceg:despawn": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": ["ceg_guardian", "eyeball", "mob"]
+      },
+      "minecraft:collision_box": {
+        "width": 0.9,
+        "height": 1.0
+      },
+      "minecraft:physics": {
+        "has_gravity": false,
+        "has_collision": true
+      },
+      "minecraft:movement": {
+        "value": 0.3
+      },
+      "minecraft:flying_speed": {
+        "value": 0.3
+      },
+      "minecraft:can_fly": {},
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:persistent": {},
+      "minecraft:fire_immune": {},
+      "minecraft:nameable": {
+        "always_show": false,
+        "allow_name_tag_renaming": true
+      },
+      "minecraft:breathable": {
+        "breathes_air": true,
+        "breathes_water": true,
+        "suffocate_time": 0,
+        "total_supply": 15,
+        "generates_bubbles": false
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "on_damage": {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "player"
+              }
+            },
+            "deals_damage": false
+          },
+          {
+            "on_damage": {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "ceg_guardian"
+              }
+            },
+            "deals_damage": false
+          },
+          {
+            "cause": "fall",
+            "deals_damage": false
+          },
+          {
+            "cause": "suffocation",
+            "deals_damage": false
+          },
+          {
+            "cause": "drowning",
+            "deals_damage": false
+          },
+          {
+            "cause": "fire",
+            "deals_damage": false
+          },
+          {
+            "cause": "fire_tick",
+            "deals_damage": false
+          },
+          {
+            "cause": "lava",
+            "deals_damage": false
+          },
+          {
+            "cause": "magma",
+            "deals_damage": false
+          },
+          {
+            "cause": "fly_into_wall",
+            "deals_damage": false
+          },
+          {
+            "cause": "freezing",
+            "deals_damage": false
+          },
+          {
+            "cause": "contact",
+            "deals_damage": false
+          },
+          {
+            "cause": "entity_explosion",
+            "deals_damage": true,
+            "damage_multiplier": 0.5
+          },
+          {
+            "cause": "block_explosion",
+            "deals_damage": true,
+            "damage_multiplier": 0.5
+          }
+        ]
+      },
+      "minecraft:ambient_sound_interval": {
+        "value": 7.0,
+        "range": 10.0,
+        "event_name": "ambient"
+      },
+      "minecraft:loot": {
+        "table": "loot_tables/entities/eyeball_guardian.json"
+      },
+      "minecraft:conditional_bandwidth_optimization": {}
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": {
+          "component_groups": ["ceg:lvl_1"]
+        }
+      },
+      "ceg:set_level_1": {
+        "remove": {
+          "component_groups": ["ceg:lvl_2", "ceg:lvl_3", "ceg:lvl_4", "ceg:lvl_5"]
+        },
+        "add": {
+          "component_groups": ["ceg:lvl_1"]
+        },
+        "set_property": {
+          "ceg:level": 1
+        }
+      },
+      "ceg:set_level_2": {
+        "remove": {
+          "component_groups": ["ceg:lvl_1", "ceg:lvl_3", "ceg:lvl_4", "ceg:lvl_5"]
+        },
+        "add": {
+          "component_groups": ["ceg:lvl_2"]
+        },
+        "set_property": {
+          "ceg:level": 2
+        }
+      },
+      "ceg:set_level_3": {
+        "remove": {
+          "component_groups": ["ceg:lvl_1", "ceg:lvl_2", "ceg:lvl_4", "ceg:lvl_5"]
+        },
+        "add": {
+          "component_groups": ["ceg:lvl_3"]
+        },
+        "set_property": {
+          "ceg:level": 3
+        }
+      },
+      "ceg:set_level_4": {
+        "remove": {
+          "component_groups": ["ceg:lvl_1", "ceg:lvl_2", "ceg:lvl_3", "ceg:lvl_5"]
+        },
+        "add": {
+          "component_groups": ["ceg:lvl_4"]
+        },
+        "set_property": {
+          "ceg:level": 4
+        }
+      },
+      "ceg:set_level_5": {
+        "remove": {
+          "component_groups": ["ceg:lvl_1", "ceg:lvl_2", "ceg:lvl_3", "ceg:lvl_4"]
+        },
+        "add": {
+          "component_groups": ["ceg:lvl_5"]
+        },
+        "set_property": {
+          "ceg:level": 5
+        }
+      },
+      "ceg:despawn": {
+        "add": {
+          "component_groups": ["ceg:despawn"]
+        }
+      },
+      "ceg:rage_on": {
+        "set_property": {
+          "ceg:rage": true
+        }
+      },
+      "ceg:rage_off": {
+        "set_property": {
+          "ceg:rage": false
+        }
+      }
+    }
+  }
+}

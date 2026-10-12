@@ -1,0 +1,59 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.ceg.eyeball_guardian.fx": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "particle_effects": [
+            {
+              "effect": "aura",
+              "locator": "center",
+              "pre_effect_script": "variable.skin = query.property('ceg:skin');"
+            }
+          ],
+          "transitions": [
+            {
+              "rage": "query.property('ceg:rage')"
+            },
+            {
+              "refresh": "variable.skin_changed"
+            }
+          ]
+        },
+        "rage": {
+          "particle_effects": [
+            {
+              "effect": "aura",
+              "locator": "center",
+              "pre_effect_script": "variable.skin = query.property('ceg:skin');"
+            },
+            {
+              "effect": "rage_aura",
+              "locator": "center",
+              "pre_effect_script": "variable.skin = query.property('ceg:skin');"
+            }
+          ],
+          "transitions": [
+            {
+              "default": "!query.property('ceg:rage')"
+            },
+            {
+              "refresh": "variable.skin_changed"
+            }
+          ]
+        },
+        "refresh": {
+          "transitions": [
+            {
+              "rage": "query.property('ceg:rage')"
+            },
+            {
+              "default": "!query.property('ceg:rage')"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

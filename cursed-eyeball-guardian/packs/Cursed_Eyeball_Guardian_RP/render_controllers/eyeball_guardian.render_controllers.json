@@ -1,0 +1,74 @@
+{
+  "format_version": "1.8.0",
+  "render_controllers": {
+    "controller.render.ceg.eyeball_guardian": {
+      "arrays": {
+        "textures": {
+          "Array.skins": [
+            "Texture.crimson",
+            "Texture.void",
+            "Texture.frost",
+            "Texture.toxic"
+          ]
+        }
+      },
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Array.skins[query.property('ceg:skin')]"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "spikes_extra": "query.property('ceg:level') >= 3"
+        }
+      ]
+    },
+    "controller.render.ceg.eyeball_guardian_glow": {
+      "arrays": {
+        "textures": {
+          "Array.glow": [
+            "Texture.crimson_glow",
+            "Texture.void_glow",
+            "Texture.frost_glow",
+            "Texture.toxic_glow",
+            "Texture.crimson_rage",
+            "Texture.void_rage",
+            "Texture.frost_rage",
+            "Texture.toxic_rage"
+          ]
+        }
+      },
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.glow"
+        }
+      ],
+      "textures": [
+        "Array.glow[query.property('ceg:skin') + query.property('ceg:rage') * 4]"
+      ],
+      "part_visibility": [
+        {
+          "*": true
+        },
+        {
+          "spikes_extra": "query.property('ceg:level') >= 3"
+        }
+      ],
+      "ignore_lighting": true,
+      "color": {
+        "r": 1.0,
+        "g": 1.0,
+        "b": 1.0,
+        "a": "variable.glow_alpha"
+      }
+    }
+  }
+}

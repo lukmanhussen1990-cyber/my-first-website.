@@ -1,0 +1,32 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "ceg:eyeball_controller"
+    },
+    "tags": ["crafting_table"],
+    "pattern": [
+      " RE",
+      " SR",
+      "S  "
+    ],
+    "key": {
+      "R": {
+        "item": "minecraft:redstone"
+      },
+      "E": {
+        "item": "minecraft:spider_eye"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": {
+      "context": "AlwaysUnlocked"
+    },
+    "result": {
+      "item": "ceg:eyeball_controller",
+      "count": 1
+    }
+  }
+}

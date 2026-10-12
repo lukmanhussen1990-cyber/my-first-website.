@@ -1,0 +1,24 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "ceg:eyeball_controller",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "ceg_eyeball_controller"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "item.ceg:eyeball_controller.name"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:interact_button": "Abilities"
+    }
+  }
+}

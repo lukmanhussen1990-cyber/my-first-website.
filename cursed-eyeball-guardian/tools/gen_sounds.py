@@ -13,10 +13,13 @@ Outputs (resource pack):
     sounds.json                      entity_sounds for ceg:eyeball_guardian (ambient/hurt/death)
 
 Everything is procedural (numpy only, no samples) with a fixed random seed per sound, so the
-output is deterministic.  ffmpeg runs with +bitexact so the Ogg container (stream serial
-numbers, encoder tag) is reproducible too.  After encoding, every file is decoded again and
-its peak is checked; if lossy-coding overshoot pushes it above the ceiling the master is
-turned down and re-encoded (no clipping).
+output is deterministic.  The 16-bit WAV masters go to a temporary folder (deleted afterwards)
+unless --wav-dir is given; ffmpeg runs with +bitexact so the Ogg container (stream serial
+numbers, encoder tag) is reproducible too.  Mastering per sound: 45 Hz high-pass, optional
+low shelf (less sub, more phone-speaker mid-range), optional look-ahead peak limiter,
+click-free fades, peak-normalise to -1 dBFS.  After encoding, every file is decoded again and
+its peak is checked; if lossy-coding overshoot pushes it above -0.3 dBFS the master is turned
+down and re-encoded (no clipping).
 
 Requirements: python3, numpy, ffmpeg (with libvorbis) on PATH.
 
@@ -43,6 +46,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -363,11 +367,11 @@ def splat(dur: float, rng: np.random.Generator, cut: float = 700.0, tau: float =
 
 def thump(f0: float, f1: float, dur: float, rng: np.random.Generator, tau: float = 0.11,
           body: float = 0.4, knock: float = 0.35) -> np.ndarray:
-    """Heartbeat / boom thump: fast pitch-drop sine, saturated (odd harmonics) plus a short
+    """Heartbeat / boom thump: fast pitch-drop sine, asymmetrically saturated (harmonics) plus a short
     mid-range knock so it still reads on a phone speaker."""
     t = timeline(dur)
     freq = f1 + (f0 - f1) * np.exp(-t / 0.045)
-    s = np.tanh(3.2 * np.sin(phase_of(freq)) * env_ar(dur, 0.004, tau))
+    s = np.tanh(3.2 * np.sin(phase_of(freq)) * env_ar(dur, 0.004, tau) + 0.6) - np.tanh(0.6)
     b = np.sin(phase_of(freq * 2.03)) * env_ar(dur, 0.003, tau * 0.45) * body
     thud = lowpass(noise(dur, rng), 320.0, 2) * env_ar(dur, 0.002, 0.035)
     kn = bandpass(noise(dur, rng), 260.0, 1500.0) * env_ar(dur, 0.0015, 0.022)
@@ -545,7 +549,7 @@ def snd_ambient_1(rng):
     bed = lowpass(drone_src(dur, rng, 82.4), 600.0, 3)
     out = peak_norm(out) + 0.13 * peak_norm(bed) * pts(dur, [(0, 0), (0.8, 1), (2.6, 1), (dur, 0)])
     out = reverb(out, rng, rt60=1.8, mix=0.5)
-    return finish(out, fade_in=0.15, fade_out=0.45)
+    return finish(out, fade_in=0.15, fade_out=0.45, limit_db=3.0)
 
 
 def snd_ambient_2(rng):
@@ -554,8 +558,8 @@ def snd_ambient_2(rng):
     out = np.zeros(n_of(dur))
     for t0, a, f0, f1 in ((0.10, 1.0, 92.0, 46.0), (0.38, 0.72, 112.0, 56.0),
                           (1.40, 0.95, 90.0, 45.0), (1.68, 0.68, 108.0, 54.0)):
-        place(out, t0, thump(f0, f1, 0.45, rng), a)
-        place(out, t0 + 0.004, squelch(0.22, rng, 260.0, 1100.0, 0.2), 0.42 * a)
+        place(out, t0, thump(f0, f1, 0.45, rng, knock=0.7), a)
+        place(out, t0 + 0.004, squelch(0.22, rng, 260.0, 1100.0, 0.2), 0.6 * a)
         for _ in range(int(rng.integers(1, 3))):
             f = rng.uniform(260.0, 450.0)
             place(out, t0 + rng.uniform(0.03, 0.2), bubble(f, f * rng.uniform(2.2, 3.4), 0.04), 0.22 * a)
@@ -563,14 +567,14 @@ def snd_ambient_2(rng):
     bed = lowpass(drone_src(dur, rng, 73.4), 450.0, 3)
     out += 0.06 * peak_norm(bed) * pts(dur, [(0, 0), (0.6, 1), (2.2, 1), (dur, 0)])
     out = reverb(out, rng, rt60=1.1, mix=0.22)
-    return finish(out, fade_in=0.008, fade_out=0.25)
+    return finish(out, fade_in=0.008, fade_out=0.25, shelf_db=-10.0, limit_db=3.0)
 
 
 def snd_ambient_3(rng):
     """Low detuned drone with slow beating, a breathing resonant filter and a distant whine."""
     dur = 3.6
     t = timeline(dur)
-    d = drone_src(dur, rng, 98.0)
+    d = drone_src(dur, rng, 98.0, sub=0.15)
     d = sweep_lp(d, [(0, 260), (1.1, 1300), (1.9, 650), (2.6, 1050), (dur, 300)],
                  order=3, res=0.9, res_w=0.18, nfft=2048, hop=512)
     d = peak_norm(d) * pts(dur, [(0, 0), (0.6, 1.0), (2.8, 0.9), (dur, 0)])
@@ -581,7 +585,7 @@ def snd_ambient_3(rng):
     place(out, 1.45, squelch(0.25, rng, 300.0, 900.0, 0.2), 0.12)
     place(out, 2.65, squelch(0.2, rng, 350.0, 1100.0, 0.2), 0.09)
     out = reverb(out, rng, rt60=2.2, mix=0.35)
-    return finish(out, fade_in=0.05, fade_out=0.5)
+    return finish(out, fade_in=0.05, fade_out=0.5, shelf_db=-5.0)
 
 
 def _hurt(rng, dur, f0_pts, vowel_pts, fscale, sq_lo, sq_hi, end):
@@ -596,7 +600,7 @@ def _hurt(rng, dur, f0_pts, vowel_pts, fscale, sq_lo, sq_hi, end):
         f = rng.uniform(280.0, 520.0)
         place(out, rng.uniform(0.01, 0.25), bubble(f, f * rng.uniform(2.4, 3.6), 0.035), 0.2)
     out = reverb(out, rng, rt60=0.6, mix=0.15)
-    return finish(out, fade_in=0.002, fade_out=0.06)
+    return finish(out, fade_in=0.002, fade_out=0.06, limit_db=2.0)
 
 
 def snd_hurt_1(rng):
@@ -637,7 +641,7 @@ def snd_death(rng):
     rumble *= pts(dur, [(0, 0), (0.85, 0), (1.08, 1.0), (1.35, 0.6), (dur, 0)])
     out += 0.65 * rumble
     out = reverb(out, rng, rt60=1.5, mix=0.3)
-    return finish(out, fade_in=0.003, fade_out=0.25)
+    return finish(out, fade_in=0.003, fade_out=0.25, shelf_db=-2.0, limit_db=3.0)
 
 
 def snd_summon(rng):
@@ -656,7 +660,8 @@ def snd_summon(rng):
                                          (hit + 0.06, 0.0), (dur, 0.0)])
     # reverse swell (reversed reverberant crash, ending exactly on the hit)
     crash = bandpass(noise(0.9, rng), 600.0, 9000.0) * env_ar(0.9, 0.001, 0.25)
-    rev = peak_norm(reverb(crash, rng, rt60=1.3, mix=1.0, wet_only=True)[::-1])
+    rev = reverb(crash, rng, rt60=1.3, wet_only=True, keep_len=False)[::-1]
+    rev = peak_norm(rev * np.linspace(0.0, 1.0, len(rev)) ** 1.5)
     swell = np.zeros(n)
     place(swell, hit - len(rev) / SR, rev, 1.0)
     # whoosh
@@ -664,15 +669,17 @@ def snd_summon(rng):
     wh = peak_norm(wh) * pts(dur, [(0, 0), (0.4, 0), (1.45, 1.0), (hit, 0.3), (hit + 0.1, 0), (dur, 0)])
     # boom + crack + rumble tail
     boom = np.zeros(n)
-    place(boom, hit, thump(95.0, 32.0, 0.95, rng, tau=0.32, body=0.5), 1.0)
+    place(boom, hit, thump(100.0, 40.0, 0.95, rng, tau=0.3, body=0.5, knock=0.5), 0.75)
+    mid = peak_norm(bandpass(noise(0.6, rng), 200.0, 2200.0) * env_ar(0.6, 0.002, 0.14))
+    place(boom, hit, drive(mid, 2.0), 0.45)
     place(boom, hit, peak_norm(bandpass(noise(0.05, rng), 900.0, 7000.0) * env_ar(0.05, 0.0005, 0.008)), 0.6)
     place(boom, hit, peak_norm(lowpass(noise(0.9, rng), 260.0, 2) * env_ar(0.9, 0.005, 0.32)), 0.55)
     sting = bell(440.0, 0.95, [(1.0, 1.0, 0.45), (1.414, 0.6, 0.35), (2.1, 0.45, 0.25),
                                 (2.76, 0.35, 0.2), (4.07, 0.2, 0.12)], attack=0.004, detune=0.004)
-    place(boom, hit + 0.01, peak_norm(sting), 0.35)
+    place(boom, hit + 0.01, peak_norm(sting), 0.5)
     out = 0.55 * chord + 0.45 * swell + 0.35 * wh + 0.9 * boom
     out = reverb(out, rng, rt60=1.8, mix=0.3)
-    return finish(out, fade_in=0.01, fade_out=0.3)
+    return finish(out, fade_in=0.01, fade_out=0.3, shelf_db=-6.0, limit_db=4.0)
 
 
 def _laser(rng, dur, c0, c1, ct, z0, z1, buzz):
@@ -707,7 +714,7 @@ def _laser(rng, dur, c0, c1, ct, z0, z1, buzz):
     place(out, ct + 0.02, fizz, 0.3)
     place(out, ct + 0.02, crk, 0.3)
     out = reverb(out, rng, rt60=0.8, mix=0.15)
-    return finish(out, fade_in=0.004, fade_out=0.08)
+    return finish(out, fade_in=0.004, fade_out=0.08, limit_db=6.0)
 
 
 def snd_laser_1(rng):
@@ -727,13 +734,15 @@ def snd_impact(rng):
     body = peak_norm(body) * env_ar(dur, 0.002, 0.22)
     out += 0.75 * body
     place(out, 0.0, peak_norm(bandpass(noise(0.02, rng), 800.0, 10000.0) * env_ar(0.02, 0.0003, 0.004)), 0.8)
-    place(out, 0.0, thump(78.0, 30.0, 0.7, rng, tau=0.2, body=0.5), 0.75)
+    place(out, 0.0, thump(90.0, 42.0, 0.7, rng, tau=0.18, body=0.5, knock=0.5), 0.5)
+    mid = peak_norm(bandpass(noise(0.5, rng), 250.0, 2500.0) * env_ar(0.5, 0.001, 0.1))
+    place(out, 0.0, drive(mid, 2.5), 0.45)
     crk = crackle(0.95, rng, 260.0 * np.exp(-timeline(0.95) / 0.25), 1000.0, 7000.0)
     place(out, 0.04, peak_norm(crk), 0.35)
     zing = np.sin(phase_of(1500.0 * (380.0 / 1500.0) ** np.clip(timeline(0.3) / 0.22, 0, 1)))
     place(out, 0.0, zing * env_ar(0.3, 0.002, 0.07), 0.25)
     out = reverb(out, rng, rt60=1.4, mix=0.28)
-    return finish(out, fade_in=0.001, fade_out=0.2)
+    return finish(out, fade_in=0.001, fade_out=0.2, shelf_db=-8.0, limit_db=7.0)
 
 
 def snd_rage(rng):
@@ -759,7 +768,7 @@ def snd_rage(rng):
     out = 0.8 * roar * e_roar + 0.42 * scr * e_scr + 0.16 * breath * e_roar
     out = lowpass(out, 7500.0, 2)
     out = reverb(out, rng, rt60=1.3, mix=0.25)
-    return finish(out, fade_in=0.004, fade_out=0.08)
+    return finish(out, fade_in=0.004, fade_out=0.08, limit_db=2.0)
 
 
 def snd_teleport(rng):
@@ -781,7 +790,7 @@ def snd_teleport(rng):
     out = flanger(out, 1.6 + 1.3 * np.sin(TAU * 2.2 * t), 0.75)
     out = flanger(out, 4.0 + 3.0 * np.sin(TAU * 1.3 * t + 1.0), 0.5)
     out = reverb(out, rng, rt60=1.0, mix=0.25)
-    return finish(out, fade_in=0.003, fade_out=0.1)
+    return finish(out, fade_in=0.003, fade_out=0.1, limit_db=3.0)
 
 
 def snd_shield(rng):
@@ -802,14 +811,14 @@ def snd_shield(rng):
     out = 0.8 * hum + 0.12 * peak_norm(sh)
     out += 0.08 * peak_norm(crackle(dur, rng, 30.0, 2000.0, 9000.0))
     out = reverb(out, rng, rt60=1.0, mix=0.25)
-    return finish(out, fade_in=0.004, fade_out=0.15)
+    return finish(out, fade_in=0.004, fade_out=0.15, shelf_db=-4.0, limit_db=3.0)
 
 
 def snd_shield_hit(rng):
     """Bright metallic ping + energy crackle."""
     dur = 0.5
-    ping = bell(1480.0, dur, [(1.0, 1.0, 0.16), (2.32, 0.6, 0.09), (4.25, 0.45, 0.06),
-                              (6.63, 0.3, 0.04), (9.38, 0.18, 0.028)], attack=0.001, detune=0.003)
+    ping = bell(1480.0, dur, [(1.0, 1.0, 0.2), (2.32, 0.6, 0.11), (4.25, 0.45, 0.07),
+                              (6.63, 0.3, 0.045), (9.38, 0.18, 0.03)], attack=0.001, detune=0.003)
     out = 0.7 * peak_norm(ping)
     crk = crackle(0.3, rng, 420.0 * np.exp(-timeline(0.3) / 0.06), 2500.0, 9000.0)
     place(out, 0.0, peak_norm(crk), 0.45)
@@ -818,7 +827,7 @@ def snd_shield_hit(rng):
     zap = np.sin(phase_of(3000.0 * (1200.0 / 3000.0) ** (timeline(0.05) / 0.05))) * env_ar(0.05, 0.0005, 0.015)
     place(out, 0.0, zap, 0.3)
     out = reverb(out, rng, rt60=0.7, mix=0.2)
-    return finish(out, fade_in=0.0005, fade_out=0.08)
+    return finish(out, fade_in=0.0005, fade_out=0.08, limit_db=6.0)
 
 
 def snd_heal(rng):
@@ -837,7 +846,7 @@ def snd_heal(rng):
     air = peak_norm(bandpass(noise(dur, rng), 5000.0, 10000.0)) * pts(dur, [(0, 0), (0.3, 1.0), (dur, 0)])
     out += 0.03 * air
     out = reverb(out, rng, rt60=1.6, mix=0.38)
-    return finish(out, fade_in=0.002, fade_out=0.2)
+    return finish(out, fade_in=0.002, fade_out=0.2, limit_db=2.0)
 
 
 def snd_destroy(rng):
@@ -851,7 +860,7 @@ def snd_destroy(rng):
     crunch = np.round(crunch * 12.0) / 12.0                           # ~5-bit crush
     crunch = lowpass(crunch, 6500.0, 2)
     out += 0.45 * blast + 0.45 * peak_norm(crunch)
-    place(out, 0.0, thump(85.0, 38.0, 0.5, rng, tau=0.12, body=0.6), 0.7)
+    place(out, 0.0, thump(95.0, 45.0, 0.5, rng, tau=0.12, body=0.6, knock=0.6), 0.4)
     grains = np.zeros(n_of(dur))
     tg = 0.0
     while tg < 0.85:
@@ -863,7 +872,7 @@ def snd_destroy(rng):
         tg += rng.exponential(0.012 + tg * 0.06)
     out += 0.35 * peak_norm(grains)
     out = reverb(out, rng, rt60=0.9, mix=0.2)
-    return finish(out, fade_in=0.001, fade_out=0.12)
+    return finish(out, fade_in=0.001, fade_out=0.12, shelf_db=-9.0, limit_db=7.0)
 
 
 def snd_levelup(rng):
@@ -892,7 +901,7 @@ def snd_levelup(rng):
     sh = sweep_bp(noise(dur, rng), [(0, 1500), (tc, 7000), (dur, 9000)], 0.4)
     out += 0.07 * peak_norm(sh) * pts(dur, [(0, 0), (tc, 1.0), (dur, 0)])
     out = reverb(out, rng, rt60=1.6, mix=0.3)
-    return finish(out, fade_in=0.002, fade_out=0.25)
+    return finish(out, fade_in=0.002, fade_out=0.25, shelf_db=-3.0, limit_db=3.0)
 
 
 def snd_mode(rng):
@@ -905,7 +914,7 @@ def snd_mode(rng):
         tone = np.sin(TAU * f * tt) + 0.25 * np.sin(TAU * 3 * f * tt) + 0.5 * np.sin(TAU * f * 1.006 * tt)
         place(out, t0, tone * env_ar(d, 0.002, 0.03), 1.0)
     out = reverb(out, rng, rt60=0.45, mix=0.15)
-    return finish(out, fade_in=0.001, fade_out=0.03)
+    return finish(out, fade_in=0.001, fade_out=0.03, limit_db=1.5)
 
 
 def snd_menu(rng):
@@ -915,7 +924,7 @@ def snd_menu(rng):
                            (1.5, 0.3, 0.18), (2.0, 0.35, 0.12), (2.52, 0.15, 0.08), (2.66, 0.12, 0.07)],
              attack=0.004, detune=0.003)
     out = reverb(peak_norm(b), rng, rt60=0.8, mix=0.25)
-    return finish(out, fade_in=0.001, fade_out=0.08)
+    return finish(out, fade_in=0.001, fade_out=0.08, limit_db=1.5)
 
 
 SOUNDS = {
@@ -930,31 +939,40 @@ SOUNDS = {
 # =============================================================================================
 # sound_definitions.json / sounds.json
 # =============================================================================================
-# id suffix -> (category, min_distance, max_distance, volume, [(file, pitch), ...])
+# id suffix -> (category, min_distance, max_distance, [(file, volume, pitch), ...])
+# Per-file volumes level-match the masters (approx. K-weighted 100 ms momentary loudness) to a
+# loudness hierarchy: ambience quiet (it repeats every 7-17 s next to the player), frequent
+# combat sounds (laser) moderate, big one-shots (death, rage, summon, level-up) loudest, UI soft.
+# Repeated sounds get a few fixed pitch variants so back-to-back plays do not sound identical.
 DEFINITIONS = {
-    "ambient": ("neutral", 2.0, 16.0, 0.55, [("ambient_1", None), ("ambient_2", None), ("ambient_3", None)]),
-    "hurt": ("neutral", 2.0, 24.0, 0.9, [("hurt_1", None), ("hurt_2", None)]),
-    "death": ("neutral", 2.0, 32.0, 1.0, [("death", None)]),
-    "summon": ("neutral", 2.0, 32.0, 1.0, [("summon", None)]),
-    "laser": ("neutral", 2.0, 32.0, 0.75, [("laser_1", 0.96), ("laser_1", 1.04), ("laser_2", 0.96), ("laser_2", 1.04)]),
-    "impact": ("neutral", 2.0, 40.0, 0.9, [("impact", 0.92), ("impact", 1.0), ("impact", 1.08)]),
-    "rage": ("neutral", 2.0, 40.0, 1.0, [("rage", None)]),
-    "teleport": ("neutral", 2.0, 24.0, 0.8, [("teleport", 0.95), ("teleport", 1.05)]),
-    "shield": ("neutral", 2.0, 20.0, 0.75, [("shield", None)]),
-    "shield_hit": ("neutral", 2.0, 24.0, 0.7, [("shield_hit", 0.92), ("shield_hit", 1.0), ("shield_hit", 1.1)]),
-    "heal": ("neutral", 2.0, 16.0, 0.75, [("heal", None)]),
-    "destroy": ("neutral", 2.0, 40.0, 0.85, [("destroy", 0.9), ("destroy", 1.0), ("destroy", 1.1)]),
-    "levelup": ("neutral", 2.0, 24.0, 0.9, [("levelup", None)]),
-    "mode": ("ui", 1.0, 16.0, 0.6, [("mode", None)]),
-    "menu": ("ui", 1.0, 16.0, 0.6, [("menu", None)]),
+    "ambient": ("neutral", 2.0, 16.0, [("ambient_1", 0.4, None), ("ambient_2", 0.6, None),
+                                       ("ambient_3", 0.45, None)]),
+    "hurt": ("neutral", 2.0, 24.0, [("hurt_1", 0.85, None), ("hurt_2", 0.7, None)]),
+    "death": ("neutral", 2.0, 32.0, [("death", 0.9, None)]),
+    "summon": ("neutral", 2.0, 32.0, [("summon", 1.0, None)]),
+    "laser": ("neutral", 2.0, 32.0, [("laser_1", 0.85, 0.96), ("laser_1", 0.85, 1.04),
+                                     ("laser_2", 0.7, 0.96), ("laser_2", 0.7, 1.04)]),
+    "impact": ("neutral", 2.0, 40.0, [("impact", 1.0, 0.92), ("impact", 1.0, 1.0),
+                                      ("impact", 1.0, 1.08)]),
+    "rage": ("neutral", 2.0, 40.0, [("rage", 1.0, None)]),
+    "teleport": ("neutral", 2.0, 24.0, [("teleport", 0.8, 0.95), ("teleport", 0.8, 1.05)]),
+    "shield": ("neutral", 2.0, 20.0, [("shield", 0.9, None)]),
+    "shield_hit": ("neutral", 2.0, 24.0, [("shield_hit", 1.0, 0.92), ("shield_hit", 1.0, 1.0),
+                                          ("shield_hit", 1.0, 1.1)]),
+    "heal": ("neutral", 2.0, 16.0, [("heal", 0.7, None)]),
+    "destroy": ("neutral", 2.0, 40.0, [("destroy", 1.0, 0.9), ("destroy", 1.0, 1.0),
+                                       ("destroy", 1.0, 1.1)]),
+    "levelup": ("neutral", 2.0, 24.0, [("levelup", 1.0, None)]),
+    "mode": ("ui", 1.0, 16.0, [("mode", 0.5, None)]),
+    "menu": ("ui", 1.0, 16.0, [("menu", 0.7, None)]),
 }
 
 
 def build_sound_definitions() -> dict:
     defs = {}
-    for key, (cat, dmin, dmax, vol, files) in DEFINITIONS.items():
+    for key, (cat, dmin, dmax, files) in DEFINITIONS.items():
         sounds = []
-        for name, pitch in files:
+        for name, vol, pitch in files:
             e = {"name": f"sounds/ceg/{name}", "volume": vol, "load_on_low_memory": True}
             if pitch is not None:
                 e["pitch"] = pitch
@@ -1009,6 +1027,14 @@ def decode(ogg: Path) -> np.ndarray:
            "-f", "f32le", "-ac", "1", "-ar", str(SR), "-"]
     raw = subprocess.run(cmd, check=True, capture_output=True).stdout
     return np.frombuffer(raw, dtype="<f4").astype(np.float64)
+
+
+def dump_json(obj) -> str:
+    """Strict JSON, 2-space indent, short numeric arrays kept on one line."""
+    text = json.dumps(obj, indent=2)
+    text = re.sub(r"\[\s+([-0-9.eE,\s]+?)\s+\]",
+                  lambda m: "[" + ", ".join(v.strip() for v in m.group(1).split(",")) + "]", text)
+    return text + "\n"
 
 
 def db(v: float) -> float:
@@ -1081,8 +1107,8 @@ def main(argv=None) -> int:
     if missing:
         print(f"error: missing sound files: {missing}", file=sys.stderr)
         return 1
-    SOUND_DEFS.write_text(json.dumps(defs, indent=2) + "\n", encoding="utf-8")
-    SOUNDS_JSON.write_text(json.dumps(build_sounds_json(), indent=2) + "\n", encoding="utf-8")
+    SOUND_DEFS.write_text(dump_json(defs), encoding="utf-8")
+    SOUNDS_JSON.write_text(dump_json(build_sounds_json()), encoding="utf-8")
     print(f"wrote {SOUND_DEFS.relative_to(ROOT)} and {SOUNDS_JSON.relative_to(ROOT)}")
     return 0
 

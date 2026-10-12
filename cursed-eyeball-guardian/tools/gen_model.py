@@ -19,6 +19,19 @@ Conventions (see tools/preview/bedrock_render.py, validated on vanilla models):
       north u+X v-Y | south u-X v-Y | east(-X face) u-Z v-Y | west(+X) u+Z v-Y
       up u+X v-Z    | down u+X v+Z
   * UV space 64x64, PNGs 128x128 (2 texels per UV unit).
+
+Model (92 cubes, budget 110):
+  * sclera: voxel sphere, diameter 14, built from z-layers of 1-px voxel discs
+    (18 boxes).  The 9-box 14x8x8 / 12x12x8 / 12x10x10 set reads as a rounded
+    cube (its corners reach r = 8.7-9.4 vs 7 on the axes), the layered discs
+    keep every corner within ~0.4 px of the sphere.  Front cap radius 5 carries
+    the iris; the back cap is radius 4 (rounder back).
+  * iris: 9 px rounded disc (3 boxes) 0.5 px proud of the front cap, pupil 4x4
+    0.25 px in front of it; 12 ring spikes + 5 back spikes + 1 pole spike
+    (3 boxes each: obsidian base 3x3, shaft 2x2, glowing cap), 8 smaller
+    level>=3 spikes under spikes_extra (2 boxes each).
+  * sclera texels are painted from a 3D field (direction from the eye centre),
+    so veins/cracks/shading continue across faces of every direction.
 """
 import json
 import math
@@ -97,8 +110,8 @@ class Atlas:
 
     def alloc(self, w, h):
         tw, th = int(math.ceil(w * TS)), int(math.ceil(h * TS))
-        for y in range(0, TEX - th + 1):
-            for x in range(0, TEX - tw + 1):
+        for y in range(1, TEX - th):          # keep 1 texel off the texture border
+            for x in range(1, TEX - tw):
                 if not self.occ[max(0, y - 1):y + th + 1, max(0, x - 1):x + tw + 1].any():
                     self.occ[y:y + th, x:x + tw] = True
                     return (x / TS, y / TS)
@@ -309,7 +322,7 @@ def sclera_layers(points, tx, ty, skin, face_normal=(0, 0, -1)):
     glow = np.zeros((n, 4), dtype=np.float32)
     rage = np.zeros((n, 4), dtype=np.float32)
     # rage: whole sclera faintly inflamed near the iris
-    inflame = np.clip((95 - phi) / 50, 0, 1) * 0.28
+    inflame = np.clip((95 - phi) / 50, 0, 1) * 0.2
     rage[:, :3] = mix(P, H, 0.15)
     rage[:, 3] = inflame
 
@@ -436,29 +449,29 @@ def iris_colors(x, y, tx, ty, skin, rage_mode=False):
     th = np.degrees(np.arctan2(y, x))
     noise = hash01(tx, ty, 21)
     sector = np.floor((th + 360) / 22.5 + noise * 0.6).astype(int) % 2
-    hot_r = 2.3 if rage_mode else 1.5
+    hot_r = 1.8 if rage_mode else 1.5
+    if rage_mode:  # brighter, more saturated: the dark bands lift towards primary
+        D = mix(D, P, 0.45)
     c = np.zeros(r.shape + (3,), dtype=np.float32)
     bands = [
         (hot_r, mix(H, col(1, 1, 1), 0.15) if rage_mode else H),
         (hot_r + 0.7, mix(H, P, 0.5)),
-        (3.6, P),
-        (4.0, mix(P, D, 0.5)),
-        (4.4, D),
-        (99, mix(D, col(0.05, 0.0, 0.01), 0.5)),
+        (3.5, P),
+        (3.85, mix(P, D, 0.35)),
+        (4.2, mix(P, D, 0.75)),
+        (99, mix(D, col(0.04, 0.0, 0.01), 0.6)),
     ]
     lo = -1
     for hi, colour in bands:
         m = (r > lo) & (r <= hi)
         c[m] = colour
         lo = hi
-    stria = (r > hot_r + 0.5) & (r < 3.95)
-    c[stria & (sector == 1)] *= 0.84
+    stria = (r > hot_r + 0.5) & (r < 3.9)
+    c[stria & (sector == 1)] *= 0.86
     hi = stria & (sector == 0) & (noise > 0.72)
     c[hi] = mix(c[hi], H, 0.3)
-    ring = (np.abs(r - 3.0) < 0.25) & (noise > 0.35)
-    c[ring] = mix(c[ring], D, 0.35)
     if rage_mode:
-        c = np.clip(mix(c, H, 0.18) * 1.12, 0, 1)
+        c = np.clip(c * 1.25, 0, 1)
     return c
 
 
@@ -557,9 +570,9 @@ def spike_side_painter(kind_len, salt, crack_rows):
         glow = np.zeros(shp + (4,), np.float32)
         rage = np.zeros(shp + (4,), np.float32)
         n = hash01(tx, 7 * salt, 5)               # per-column crack choice
-        n2 = hash01(tx, ty, salt + 1)
-        # glowing red cracks running along the spike, denser near the tip
-        crack = (n > 0.55) & (ly < crack_rows) & (n2 > 0.25)
+        n2 = hash01(tx // 1, ty // 2, salt + 1)    # 2-texel dashes
+        # thin glowing red cracks running along the spike, denser near the tip
+        crack = (n > 0.62) & (ly < crack_rows) & (n2 > 0.35 + 0.25 * (ly / max(crack_rows, 0.1)))
         c[crack] = mix(D, P, 0.75)
         glow[crack, :3] = P
         glow[crack, 3] = 0.85
@@ -592,7 +605,7 @@ def spike_cap_painter(top):
         one = np.ones(shp + (1,), np.float32)
         b = np.concatenate([c, one], -1)
         g = np.concatenate([np.clip(c * 1.05, 0, 1), one], -1)
-        r = np.concatenate([np.clip(mix(c, H, 0.12) * 1.15, 0, 1), one], -1)
+        r = np.concatenate([np.clip(c * 1.2, 0, 1), one], -1)
         return b, g, r, np.ones(shp, dtype=bool)
     return painter
 
@@ -621,14 +634,14 @@ def build():
     # sclera: six 14x14 projections
     sc = {}
     for i, dname in enumerate(("north", "south", "east", "west")):
-        sc[dname] = region("sclera_" + dname, 14, 14, make_sclera_painter(dname), at=(i * 14.5, 0))
-    sc["up"] = region("sclera_up", 14, 14, make_sclera_painter("up"), at=(0, 14.5))
-    sc["down"] = region("sclera_down", 14, 14, make_sclera_painter("down"), at=(14.5, 14.5))
-    iris_uv = region("iris_front", 10, 10, iris_front_painter, at=(29, 14.5))
-    iris_h_uv = region("iris_rim_h", 10, 1, lambda *a: iris_side_painter(*a, along_u=False), at=(29, 25))
-    iris_v_uv = region("iris_rim_v", 1, 10, lambda *a: iris_side_painter(*a, along_u=True), at=(39.5, 14.5))
-    pupil_uv = region("pupil_front", 4, 4, pupil_front_painter, at=(42.5, 14.5))
-    pupil_side_uv = region("pupil_side", 1, 1, solid_painter((0.03, 0.01, 0.02)), at=(42.5, 19))
+        sc[dname] = region("sclera_" + dname, 14, 14, make_sclera_painter(dname), at=(0.5 + i * 14.5, 0.5))
+    sc["up"] = region("sclera_up", 14, 14, make_sclera_painter("up"), at=(0.5, 15))
+    sc["down"] = region("sclera_down", 14, 14, make_sclera_painter("down"), at=(15, 15))
+    iris_uv = region("iris_front", 10, 10, iris_front_painter, at=(29.5, 15))
+    iris_h_uv = region("iris_rim_h", 10, 1, lambda *a: iris_side_painter(*a, along_u=False), at=(29.5, 25.5))
+    iris_v_uv = region("iris_rim_v", 1, 10, lambda *a: iris_side_painter(*a, along_u=True), at=(40, 15))
+    pupil_uv = region("pupil_front", 4, 4, pupil_front_painter, at=(43, 15))
+    pupil_side_uv = region("pupil_side", 1, 1, solid_painter((0.03, 0.01, 0.02)), at=(43, 19.5))
 
     piece_regions = {}
 
@@ -826,6 +839,15 @@ def paint(regions, skin):
         for dy, dx in ((0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)):
             sh = np.roll(np.roll(src, dy, 0), dx, 1)
             shw = np.roll(np.roll(written, dy, 0), dx, 1)
+            # no wrap-around at the texture border
+            if dy == 1:
+                shw[0, :] = False
+            if dy == -1:
+                shw[-1, :] = False
+            if dx == 1:
+                shw[:, 0] = False
+            if dx == -1:
+                shw[:, -1] = False
             fill = ~written & shw
             img[fill] = sh[fill]
         # glow layers: colour of fully transparent texels doesn't matter, keep 0
@@ -944,12 +966,31 @@ def animations(spike_names, extra_names):
     }
 
 
+def verify(geo, regions):
+    """Every face must sample inside one painted region; stay within budget."""
+    n = 0
+    for bone in geo["minecraft:geometry"][0]["bones"]:
+        for c in bone.get("cubes", []):
+            for face, fv in c["uv"].items():
+                u, v = fv["uv"]
+                su, sv = fv["uv_size"]
+                u0, u1 = sorted((u, u + su))
+                v0, v1 = sorted((v, v + sv))
+                ok = any(r.u - 1e-6 <= u0 and u1 <= r.u + r.w + 1e-6 and r.v - 1e-6 <= v0 and v1 <= r.v + r.h + 1e-6
+                         for r in regions)
+                assert ok, ("face UV outside every painted region", bone["name"], face, fv)
+                n += 1
+    assert count_cubes(geo) <= 110, count_cubes(geo)
+    return n
+
+
 def count_cubes(geo):
     return sum(len(b.get("cubes", [])) for b in geo["minecraft:geometry"][0]["bones"])
 
 
 def main():
     geo, regions, spike_names, extra_names = build()
+    nfaces = verify(geo, regions)
     os.makedirs(os.path.dirname(GEO_PATH), exist_ok=True)
     os.makedirs(TEX_DIR, exist_ok=True)
     os.makedirs(os.path.dirname(ANIM_PATH), exist_ok=True)
@@ -964,7 +1005,8 @@ def main():
     with open(ANIM_PATH, "w") as fh:
         json.dump(animations(spike_names, extra_names), fh, indent=1)
         fh.write("\n")
-    print("geometry: %d bones, %d cubes -> %s" % (len(geo["minecraft:geometry"][0]["bones"]), count_cubes(geo), GEO_PATH))
+    print("geometry: %d bones, %d cubes, %d faces (UVs verified) -> %s" % (
+        len(geo["minecraft:geometry"][0]["bones"]), count_cubes(geo), nfaces, GEO_PATH))
     print("textures: %d PNGs -> %s" % (len(SKINS) * 3, TEX_DIR))
     print("animations ->", ANIM_PATH)
 
