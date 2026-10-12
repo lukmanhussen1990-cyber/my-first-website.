@@ -31,6 +31,7 @@ import com.weplay.guesserai.overlay.OverlayRoot
 import com.weplay.guesserai.overlay.OverlayWindow
 import com.weplay.guesserai.ui.MainActivity
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /**
  * Foreground service (type mediaProjection) that owns the screen capture, the analysis loop and
@@ -69,9 +70,10 @@ class AssistantService : LifecycleService() {
         val mpm = getSystemService(MediaProjectionManager::class.java)
         val projection = mpm.getMediaProjection(code, data) ?: error("permission was not granted")
 
-        val window = OverlayWindow(this)
+        // Kept in fields right away, so onDestroy releases them even if starting fails halfway.
+        val cap = ScreenCapturer(projection) { lifecycleScope.launch { stopSelf() } }.also { capturer = it }
+        val window = OverlayWindow(this).also { overlay = it }
         val (sw, sh) = window.screenSize()
-        val cap = ScreenCapturer(projection) { lifecycleScope.launch { stopSelf() } }
         cap.start(sw, sh, resources.displayMetrics.densityDpi)
 
         val power = getSystemService(PowerManager::class.java)
@@ -85,7 +87,16 @@ class AssistantService : LifecycleService() {
             gameMonitor = GameAppMonitor(this),
             isScreenOn = { power.isInteractive },
             overlayRect = { window.bounds() },
-        )
+        ).also { session = it }
+
+        // Every stroke under the window is masked out of the captures, so it keeps off the canvas.
+        window.avoidBand = {
+            val (w, h) = window.screenSize()
+            s.canvasBand(h.toFloat() / w)?.let { (top, bottom) -> (top * h).roundToInt() to (bottom * h).roundToInt() }
+        }
+        lifecycleScope.launch {
+            container.settings.settings.collect { window.keepOffDrawing = it.keepOffDrawing }
+        }
 
         val screenDp = sw / resources.displayMetrics.density
         // Compact: about a quarter of the screen, so the chat box stays free for pasting.
@@ -110,9 +121,6 @@ class AssistantService : LifecycleService() {
             }
         }
 
-        capturer = cap
-        session = s
-        overlay = window
         container.assistantRunning.value = true
         s.start()
     }
@@ -145,6 +153,7 @@ class AssistantService : LifecycleService() {
     }
 
     override fun onDestroy() {
+        // Stop the loop and its requests first: nothing may read a frame once the capturer is released.
         session?.stop()
         overlay?.hide()
         capturer?.release()

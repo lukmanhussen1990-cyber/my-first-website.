@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
+import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.os.Handler
@@ -17,6 +18,9 @@ import kotlin.math.roundToInt
  * on demand. Frames are only pulled when the analysis loop asks, so nothing is decoded between
  * captures. Android 14+ allows one virtual display per projection token, so rotation is handled
  * by resizing it rather than recreating it.
+ *
+ * [capture] runs on a background thread while [resize] and [release] come from the main thread,
+ * so all three hold this object's lock: the reader is never closed under a capture in progress.
  */
 class ScreenCapturer(
     private val projection: MediaProjection,
@@ -27,6 +31,8 @@ class ScreenCapturer(
     private var reader: ImageReader? = null
     private var display: VirtualDisplay? = null
     private var lastFrame: Bitmap? = null
+    /** Set by [release]; afterwards nothing touches the reader or the frames again. */
+    private var released = false
 
     /** Capture size divided by real screen size; used to map overlay coordinates. */
     @Volatile var scale: Float = 1f
@@ -49,7 +55,9 @@ class ScreenCapturer(
     }
 
     @SuppressLint("WrongConstant")
+    @Synchronized
     fun resize(screenW: Int, screenH: Int, densityDpi: Int) {
+        if (released) return
         val d = display ?: return
         val (w, h) = captureSize(screenW, screenH)
         val old = reader
@@ -57,7 +65,8 @@ class ScreenCapturer(
         d.resize(w, h, densityDpi)
         d.surface = reader!!.surface
         old?.close()
-        synchronized(this) { lastFrame = null }
+        lastFrame?.recycle()
+        lastFrame = null
     }
 
     private fun captureSize(screenW: Int, screenH: Int): Pair<Int, Int> {
@@ -66,30 +75,46 @@ class ScreenCapturer(
         return (screenW * scale).roundToInt() to (screenH * scale).roundToInt()
     }
 
-    /** Latest screen contents, or the previous frame if nothing on screen changed since. */
+    /**
+     * Latest screen contents, or the previous frame if nothing on screen changed since. Always a
+     * copy the caller owns (and recycles); null before the first frame and after [release].
+     */
     @Synchronized
     fun capture(): Bitmap? {
-        val image = runCatching { reader?.acquireLatestImage() }.getOrNull() ?: return lastFrame?.copy(Bitmap.Config.ARGB_8888, true)
-        image.use { img ->
-            val plane = img.planes[0]
-            val pixelStride = plane.pixelStride
-            val rowPadding = plane.rowStride - pixelStride * img.width
-            val padded = Bitmap.createBitmap(img.width + rowPadding / pixelStride, img.height, Bitmap.Config.ARGB_8888)
-            padded.copyPixelsFromBuffer(plane.buffer)
-            val frame = if (rowPadding == 0) padded else Bitmap.createBitmap(padded, 0, 0, img.width, img.height).also { padded.recycle() }
-            lastFrame?.recycle()
-            lastFrame = frame
+        if (released) return null
+        val image = runCatching { reader?.acquireLatestImage() }.getOrNull()
+        if (image != null) {
+            runCatching { image.use { toBitmap(it) } }.getOrNull()?.let { frame ->
+                lastFrame?.recycle()
+                lastFrame = frame
+            }
         }
-        return lastFrame?.copy(Bitmap.Config.ARGB_8888, true)
+        val last = lastFrame?.takeUnless { it.isRecycled } ?: return null
+        return runCatching { last.copy(Bitmap.Config.ARGB_8888, true) }.getOrNull()
+    }
+
+    private fun toBitmap(img: Image): Bitmap {
+        val plane = img.planes[0]
+        val pixelStride = plane.pixelStride
+        val rowPadding = plane.rowStride - pixelStride * img.width
+        val padded = Bitmap.createBitmap(img.width + rowPadding / pixelStride, img.height, Bitmap.Config.ARGB_8888)
+        padded.copyPixelsFromBuffer(plane.buffer)
+        if (rowPadding == 0) return padded
+        return Bitmap.createBitmap(padded, 0, 0, img.width, img.height).also { padded.recycle() }
     }
 
     fun release() {
-        runCatching { display?.release() }
-        runCatching { reader?.close() }
+        synchronized(this) {
+            if (released) return
+            released = true
+            runCatching { display?.release() }
+            runCatching { reader?.close() }
+            lastFrame?.recycle()
+            lastFrame = null
+        }
         runCatching { projection.unregisterCallback(callback) }
         runCatching { projection.stop() }
         thread.quitSafely()
-        synchronized(this) { lastFrame?.recycle(); lastFrame = null }
     }
 
     private companion object {
