@@ -1,0 +1,10 @@
+{
+  "name": "giant_attack_bite",
+  "duration": 1.6,
+  "fps": 10,
+  "warmup": 1.0,
+  "props": {"horror:state": "hunting", "horror:giant": true, "horror:attack_id": 0, "horror:attack_kind": 2, "horror:small_scale": 0.03, "horror:giant_scale": 1.4, "horror:grow_time": 4.0, "horror:foot_0": 0, "horror:foot_1": 0, "horror:foot_2": 0, "horror:foot_3": 0, "horror:foot_4": 0, "horror:foot_5": 0, "horror:foot_6": 0, "horror:foot_7": 0},
+  "props_timeline": {"0.2": {"horror:attack_id": 1}},
+  "motion": {"speed": 0, "distance_model": "meters"},
+  "environment": {"trees": true, "tree_count": 40, "tree_radius": 50}
+}

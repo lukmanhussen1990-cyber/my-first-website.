@@ -79,3 +79,83 @@ Append-only. Each entry: role, what changed, evidence (image paths), open issues
   * Animator: the run abdomen pitch (M3). The front-pair tibia is still at −42°, while
     the thumbnail shows a near-horizontal "Π" lintel. If wanted, that is a pose choice
     (no geometry change needed).
+
+## Texture painter: T1–T5 done (2026-10-12)
+
+* **Rewrote `tools/gen_texture.py`** with new painters and palette. The infrastructure is
+  kept: REGIONS, `layout()`, `build()`, `eye_texels()`, the region names and the `_f`
+  mirroring. The old duplicate painter definitions are gone.
+* **T1 palette:** exactly the plan's hex values, with one addition, a dim lateral eye
+  `EYE_LAT` #710101. Measured region medians:
+  * fem_side #785d4b, tib_side #755b4a, met_side #7b614f: R−G 26, G−B 17–18 (the old
+    texture had G−B ≈ 5);
+  * carapace #5a4435, abdomen #554032, undersides #8a6d56.
+* **T2: one `p_beam()` for every long leg face**, with the distal end at high U.
+  * `grain()`: smooth row tone, plus 3–4 stripes (1–3 texels, each fading along U, with
+    an occasional 1-row step), plus 1–3 dark hairlines.
+  * Low-frequency weathering mottle, and per-row fibre dashes at about ±4 %. These read
+    as wood fibre up close and vanish at distance. There is no per-texel speckle.
+  * At most 3 streaks; the slow U drift is ±4 %.
+  * Light: top quarter ×1.06 and bottom quarter ×0.92. `*_under` ×1.18 for the wood but
+    only ×1.06 for the bands, so the bands do not turn peach. The femur ramps 0.85→1
+    over the first 15 % of U.
+  * Edges: 70 % toward EDGE.
+* **T2 tan bands** at the plan's U fractions (fem, tib, met; none on the tarsus or claw).
+  Each is TAN with the grain kept at 30 %, with 1-texel TAN_EDGE borders and base ×0.9
+  out to the beam end.
+  * End faces: flat, with a lighter centre.
+  * Knee and ankle blocks: KNEE grain, EDGE outline and a 2-texel tan band at 25 %.
+  * Caps: flat #6a503e with an EDGE border.
+  * Coxa: AO toward the body and a TAN_EDGE rim.
+* **T3:**
+  * Leg regions exactly as in the table.
+  * Body regions enlarged from ~3.2 to ~2.6 px/texel, the same texel size as the legs.
+    Head front and mound front stay at 2.3. The atlas is now 55 % used.
+  * Found and documented (MODEL.md §5): on up faces, HIGH V = front. The carapace and
+    abdomen painters flip with `front_high_v()`.
+* **T4 body:**
+  * Carapace: dome light, median groove, a straight cervical V, and radial grooves at
+    6 % aimed at the 4 coxae per side (from HIP_Z).
+  * Abdomen: dorsal plate with 4 forward-pointing chevrons at 8 % and a heart mark at
+    the front; walls with a ×1.05→×0.9 gradient.
+  * Undersides: plain UNDER.
+  * The chelicerae were lifted to CHIT_M, and the spinneret holes softened.
+* **T5 eyes:**
+  * AME lenses: the whole face glows, with one highlight texel.
+  * PME: 2×2 with a highlight. ALE and PLE: 2×2 in the dimmer `EYE_LAT`, no highlight.
+  * Sockets: tight CHIT_D.
+  * The cluster now reads as two bright median pairs instead of a grid of 8 red squares.
+    There are still 40 glowing texels, and `eye_texels()` is unchanged in form.
+* **gen_geometry.py: no change** (no region renames, no cube changes).
+* **Checks:**
+  * gen_texture: alpha {3: 40, 255: rest}. gen_geometry "-> OK" (px/texel 1.15–4.78).
+  * gen_client_anim ran; validate.py 0 errors (only the 2 old pack_icon warnings).
+  * standing `--report`: all `foot_tip` y = 0.
+* **Iterations** (`/tmp/claude-0/work/team/painter/`):
+  * it1: palette and beam painter; found the up-face V flip.
+  * it2: no-shadow colour check.
+  * it3: under-band fix, head and chelicera lift.
+  * it4: eye kinds.
+  * it5: fibre and hairlines, after matching close-up crops against
+    `ref_thumb_detail.png`. The luminance std was already equal (23.6 vs 23.5); only the
+    fine frequency was missing.
+  * it6: far-shot check.
+  * it7: carapace grooves, run sheet, small form, knee close-up.
+* **Evidence** (`/tmp/claude-0/work/team/painter/`):
+  * `final_before_after_ref.png`: columns old | new | reference; rows low_front, front,
+    close-up.
+  * `it6_vsref.png`: render vs reference, low_front / front / side.
+  * `it7_knee_cmp.png`: reference knee vs ours.
+  * `it5_grain_cmp.png`, `it7_run.png` (hunting_run), `it7_small.png` (stalker 0.03),
+    `final_sheet.png` (6 cameras).
+* **Viewer caveat (for whoever judges colour):** the viewer's sun comes from +Z, behind
+  the spider, and the legs cast shadows on the body. The head front therefore renders
+  ~40 % of its texture value (#251c16), while Bedrock gives N/S faces ~80 % and entities
+  do not self-shadow. Judge body colour with `--no-shadows`, or on the back, side and top
+  cameras.
+* **Open:**
+  * All 8 legs share one set of leg regions. Leg variants would fit in the free 45 % of
+    the atlas, but need a geometry face-mapping change; I judged it low value because
+    the bands sit at the same fractions anyway.
+  * The eye glow colours follow DESIGN (#a60202 / #ff0e0e). Only their arrangement was
+    changed.

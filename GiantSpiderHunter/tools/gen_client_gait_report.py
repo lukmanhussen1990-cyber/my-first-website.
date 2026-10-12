@@ -505,7 +505,10 @@ def draw_sheet(res, path, n=12, title="", t0=None, t1=None, view="side"):
 
 
 # --------------------------------------------------------------------------- main
-def ramp(v, t_up=0.5, t_hold=4.5, t_down=0.3):
+HOLD = 7.0   # s at constant speed: a slow giant step (1.5-3 b/s) takes 2-3 s by design
+
+
+def ramp(v, t_up=0.5, t_hold=HOLD, t_down=0.3):
     def fn(t):
         if t < 0.2:
             return 0.0
@@ -538,7 +541,7 @@ def main():
         ok = ok and cond
 
     # ---- giant: walk and run at several speeds, two frame rates, two q.position models
-    STOP = 0.2 + 0.5 + 4.5 + 0.3
+    STOP = 0.2 + 0.5 + HOLD + 0.3
     DECEL = STOP - 0.3   # the ramp-down starts here; "steady" stances end before it (the
                          # deceleration is covered by the "incl. accel/decel" figure)
     for state, speeds in (("hunting", (1.5, 3.0, 6.0, 9.0, 11.0, 14.0)), ("cooldown", (2.0,))):
@@ -595,9 +598,27 @@ def main():
     res = run_scenario("curve", base_props(True, "hunting"), ramp(6.0),
                        yaw_rate_fn=lambda t: 30.0 * ramp(6.0)(t) / 6.0, duration=STOP + 2, files=files)
     mt = analyse(res, steady=(1.6, DECEL - 0.05), stop_at=STOP)
-    check(not mt["nan"] and mt["knee_ok"] and mt["max_h_err"] < 0.15 and mt["stop_h_err"] < 0.15,
+    check(not mt["nan"] and mt["knee_ok"] and mt["max_h_err"] < 0.15 and mt["stop_h_err"] < 0.15
+          and mt["max_slip"] < 0.4,
           f"curve 6 b/s turning 30 deg/s: planted |dy| {mt['max_h_err']:.3f} slip {mt['max_slip']:.3f} b "
-          f"(turning slip is expected; feet are re-placed every step)")
+          f"(planted feet counter-rotate with the body yaw)")
+    # ---- the in-game default size (giant_scale 1.4) and the planned small form (0.03)
+    for v in (2.5, 9.0):
+        res = run_scenario(f"giant 1.4 {v}", base_props(True, "hunting", gscale=1.4), ramp(v),
+                           duration=STOP + 2.0, fps=30, qpos_interp=False, files=files)
+        mt = analyse(res, scale_ref=1.4, steady=(1.6, DECEL - 0.05), stop_at=STOP)
+        check(not mt["nan"] and mt["knee_ok"] and mt["max_h_err"] < 0.15 and mt["max_slip"] < 0.25
+              and mt["stances"] > 0 and mt["stop_h_err"] < 0.15,
+              f"giant scale 1.4 {v:4.1f} b/s 30fps qpos=tick: stances={mt['stances']} slip "
+              f"{mt['max_slip'] * 1.4:.3f} b (incl. accel/decel {mt['max_slip_all'] * 1.4:.3f}) "
+              f"lift {mt['min_lift'] * 1.4:.2f} b knee_ok={mt['knee_ok']}")
+    res = run_scenario("small 0.03", base_props(False, "stalking", sscale=0.03), ramp(1.0),
+                       duration=STOP + 2.0, fps=60, files=files)
+    mt = analyse(res, scale_ref=0.03, steady=(1.6, DECEL - 0.05), stop_at=STOP)
+    check(not mt["nan"] and mt["knee_ok"] and mt["max_h_err"] < 0.15 and mt["max_slip"] < 0.25
+          and mt["stop_h_err"] < 0.15,
+          f"small (small_scale 0.03) stalking 1.0 b/s: stances={mt['stances']} slip {mt['max_slip'] * 0.03:.4f} b "
+          f"(= {mt['max_slip']:.3f} giant-equivalent) lift {mt['min_lift'] * 0.03:.3f} b")
     # ---- terrain: hillside (left feet +3 blocks, right feet -4 blocks) and a step
     props = base_props(True, "hunting")
     terr = {"l1": 3.0, "l2": 2.5, "l3": 2.0, "l4": 1.5, "r1": -4.0, "r2": -3.5, "r3": -3.0, "r4": -4.5}

@@ -146,6 +146,8 @@ Cube list (sizes before → after ×1.15):
 
 The eye layout lives in `gen_texture.py`:
 
+* eye kinds: `"mid"` medians glow #a60202 with one #ff0e0e highlight texel; `"lat"` laterals
+  glow a dimmer #710101 with no highlight;
 * `EYES`: the ALE on `head_front`;
 * `AME_SOCKETS`: dark rings behind the lens cubes, at texels (8, 6, 5, 5) and
   (14, 6, 5, 5) of the 27 × 24 `head_front`;
@@ -172,6 +174,15 @@ contract.
     `chel_end`, `fang_*`, `fangtip_*`;
   * abdomen: `petiole`, `abd_*`, `abd1_*`, `abd3_side`, `belly_*`, `keel_*`, `abd_plate*`,
     `spin_side`, `spin_end`, `spin_top`.
+* **Density.** Body regions are sized for about 2.6 px per texel, the same texel size as
+  the legs. `head_front` and `mound_front` stay at 2.3 so the eyes are crisp. All 85
+  regions use about 55 % of the 256 × 256 atlas.
+* **Up/down face orientation** (viewer `geometry.mjs` and the Blockbench Bedrock codec):
+  * on an **up** face, HIGH V is the front (−Z);
+  * on a **down** face, low V is the front.
+
+  Directional up-face patterns (the carapace V and grooves, the abdomen chevrons and
+  heart mark) are painted front-at-low-V and flipped with `front_high_v()`.
 
 ## 6. Verification
 

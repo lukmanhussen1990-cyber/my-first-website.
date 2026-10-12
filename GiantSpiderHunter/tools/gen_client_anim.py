@@ -54,6 +54,8 @@ LIFT_SHAPE = 0.7                            # lift = sin(180 w)^0.7: high, flat-
 TUCK = 22.0                                 # metatarsus swings this much inward at mid-swing
 DEATH_TILT = 32.0                           # metatarsus splays outward by this much when dead
 SPD_KP, SPD_KV = 6.0, 12.0                  # distance tracker (PLL): lag 1/KP s, smooth speed
+TURN_STEP = 30.0                            # deg turned per step when turning in place
+TURN_MAX = 35.0                             # max counter-rotation of a planted foot (deg)
 PAIR_PHASE = [0.0, 0.02, 0.04, 0.06]        # small metachronal offsets (<= 0.06)
 GROUP_A = {"l1", "r2", "l3", "r4"}          # phase 0; group B {r1, l2, r3, l4} phase 0.5
 TERRAIN_CLAMP_PX = 220.0
@@ -120,11 +122,12 @@ def pre_animation():
         "v.grow_flex = math.sin(v.size_blend * 180);"
         "v.seen_attack = v.age < 0.3 ? q.property('horror:attack_id') : (v.seen_attack ?? q.property('horror:attack_id'));"
     )
-    # 2. motion: slip-free distance (from the entity position), turning, gait phase -------
+    # 2. motion: distance walked, turning, gait clock ---------------------------------------
     # q.position may update only on the 20 Hz server tick while frames run at 24-60 fps, so the
     # distance moved is fed through a tracking filter (v.dpend = distance not yet walked,
-    # v.spd = smooth speed estimate, lag 1/KP s). Every metre consumed advances the gait by
-    # exactly the distance the planted feet travel, so they do not slip.
+    # v.spd = smooth speed estimate, lag 1/KP s). v.tr = px walked this frame: the planted feet
+    # move back by exactly this much (they stay put in the world). Turning advances the gait
+    # clock too (TURN_STEP degrees per step) and the planted feet counter-rotate (leg_script).
     s.append(
         "t.x = q.position(0);"
         "t.z = q.position(2);"
@@ -134,26 +137,33 @@ def pre_animation():
         "v.pz = t.z;"
         "t.dd = math.sqrt(t.dx * t.dx + t.dz * t.dz);"
         "t.yaw = q.body_y_rotation;"
-        "t.turn = math.min(math.abs(math.min_angle(t.yaw - (v.pyaw ?? t.yaw))), 120 * v.dt);"
+        "t.dy = math.min_angle(t.yaw - (v.pyaw ?? t.yaw));"
         "v.pyaw = t.yaw;"
-        "v.dpend = (v.dpend ?? 0) + (t.dd < 6 ? t.dd : 0) + t.turn * 1.5708 * v.wpp;"
+        "t.ady = math.min(math.abs(t.dy), 120 * v.dt);"
+        "v.dpend = (v.dpend ?? 0) + (t.dd < 6 ? t.dd : 0);"
         f"v.spd = math.lerp(v.spd ?? 0, v.dpend * {f(SPD_KP)}, math.min(1, v.dt * {f(SPD_KV)}));"
         "t.use = math.min(v.dpend, math.max(v.spd, 0) * v.dt);"
         "v.dpend = v.dpend - t.use;"
-        "t.mt = math.clamp((v.spd - 0.03) / (0.1 + 0.5 * v.scale), 0, 1);"
+        "v.tr = t.use / v.wpp;"
+        # turning expressed as a walking speed (arc at 90 px) for the step size / lift
+        "v.tspd = math.lerp(v.tspd ?? 0, (v.dt > 0 ? t.ady / v.dt : 0) * 1.5708 * v.wpp, math.min(1, v.dt * 6));"
+        "t.ms = v.spd + v.tspd;"
+        "t.mt = math.clamp((t.ms - 0.03) / (0.1 + 0.5 * v.scale), 0, 1);"
         "v.move = math.lerp(v.move ?? 0, t.mt, math.min(1, v.dt * 5));"
         "t.rt = v.hunting * math.clamp((v.spd - 3) / 2.5, 0, 1);"
         "v.run = math.lerp(v.run ?? 0, t.rt, math.min(1, v.dt * 1.5));"
-        # speed-dependent stride; frozen while standing so a stopped gait stays exactly still
-        f"t.so = v.stride ?? {f(STRIDE_MIN)};"
-        f"t.st = math.clamp({f(STRIDE_K)} * math.pow(math.max(v.spd, 0) / ({f(STRIDE_V0)} * math.sqrt(v.scale)), 0.6),"
+        # speed-dependent stride (frozen while standing)
+        f"t.st = math.clamp({f(STRIDE_K)} * math.pow(math.max(t.ms, 0) / ({f(STRIDE_V0)} * math.sqrt(v.scale)), 0.6),"
         f" {f(STRIDE_MIN)}, {f(STRIDE_MAX)});"
-        "v.stride = v.move > 0.05 ? math.lerp(t.so, t.st, math.min(1, v.dt * 2)) : t.so;"
+        f"v.stride = v.move > 0.05 ? math.lerp(v.stride ?? {f(STRIDE_MIN)}, t.st, math.min(1, v.dt * 2)) : (v.stride ?? {f(STRIDE_MIN)});"
         f"v.lift = math.clamp({f(LIFT_BASE)} + {f(LIFT_PER_STRIDE)} * v.stride, {f(LIFT_MIN)}, {f(LIFT_MAX)}) * v.move;"
-        "t.pa = math.mod(v.gait ?? 0.25, 1);"
-        "t.sa = t.pa < 0.5 ? t.pa * 2 : t.pa * 2 - 1;"
-        # (0.5 - t.sa) * (1 - so / stride) keeps the planted feet in place when the stride changes
-        "v.gait = math.mod(t.pa + (0.5 - t.sa) * (1 - t.so / v.stride) * 0.5 + math.min(t.use / (2 * v.stride * v.wpp), 0.2) + 1, 1);"
+        # gait clock: one stance (half cycle) per stride walked or per TURN_STEP turned
+        f"t.dph = math.min(v.tr / (2 * v.stride) + t.ady / {f(2 * TURN_STEP)}, 0.2);"
+        "v.gp = v.gait ?? 0.25;"
+        "v.gait = math.mod(v.gp + t.dph, 1);"
+        # expected yaw change per stance (the swing lands rotated by half of it)
+        "v.yps = t.dph > 0.00001 ? math.lerp(v.yps ?? 0, math.clamp(t.dy * 0.5 / t.dph, "
+        f"-{f(TURN_MAX)}, {f(TURN_MAX)}), math.min(1, v.dt * 4)) : (v.yps ?? 0);"
         "v.half = math.mod(v.gait + %s, 1) < 0.5 ? 0 : 1;" % f(1 - STEP_DELAY)
     )
     # 3. posture weights, terrain smoothing, body height ---------------------------------
@@ -203,15 +213,30 @@ def leg_script(side, n):
         o, per, amp = FIDGET[nm]
         fid = (f" + v.fid * (math.mod(q.life_time + {f(o)}, {f(per)}) < {f(FIDGET_LEN)})"
                f" * math.sin(math.mod(q.life_time + {f(o)}, {f(per)}) * {f(180 / FIDGET_LEN)}) * {f(amp)}")
+    hz = c["hip"][2]
+    rot = "" if side == "l" else "-"     # mirrored side: the counter-rotation flips sign
     return (
+        f"t.p0 = math.mod(v.gp + {f(c['phase'])}, 1);"
         f"t.p = math.mod(v.gait + {f(c['phase'])}, 1);"
+        "t.td = t.p < 0.5 && t.p0 >= 0.5;"                       # touchdown this frame
+        "t.lo = t.p >= 0.5 && t.p0 < 0.5;"                       # lift-off this frame
+        # v.fs_*: stance = foot offset along the body axis (planted: moves back by v.tr);
+        #         swing  = where the foot lifted off. v.ya_*: stance = body yaw it is planted
+        #         against; swing = its counter-rotation at lift-off.
+        f"v.fs_{nm} = t.td ? v.stride * 0.5 : ((t.p < 0.5 || t.lo) ? (v.fs_{nm} ?? 0) - v.tr : (v.fs_{nm} ?? 0));"
+        f"v.ya_{nm} = t.td ? v.pyaw + v.yps * 0.5 : (t.lo ? math.clamp(math.min_angle(v.pyaw - (v.ya_{nm} ?? v.pyaw)),"
+        f" -{f(TURN_MAX)}, {f(TURN_MAX)}) : (v.ya_{nm} ?? (t.p < 0.5 ? v.pyaw : 0)));"
         "t.w = math.max(t.p * 2 - 1, 0);"
         "t.sw = math.sin(t.w * 180);"
-        f"t.f = v.stride * (t.p < 0.5 ? 0.5 - t.p * 2 : math.hermite_blend(math.min(t.w * {f(SWING_REACH)}, 1)) - 0.5);"
+        f"t.xw = math.hermite_blend(math.min(t.w * {f(SWING_REACH)}, 1));"
+        f"t.f = t.p < 0.5 ? v.fs_{nm} : math.lerp(v.fs_{nm}, v.stride * 0.5, t.xw);"
+        f"t.dl = {rot}(t.p < 0.5 ? math.clamp(math.min_angle(v.pyaw - v.ya_{nm}), -{f(TURN_MAX)}, {f(TURN_MAX)})"
+        f" : math.lerp(v.ya_{nm}, -v.yps * 0.5, t.xw));"
         f"t.tl = {f(FOOT_TILT)} + {f(DEATH_TILT)} * v.dead_e - {f(TUCK)} * t.sw * v.move;"
-        f"t.dx = {f(c['dx'])} * v.reach;"
-        f"t.dz = {f(c['dzn'])} - t.f;"
-        f"t.au = math.sqrt(t.dx * t.dx + t.dz * t.dz) - {f(L3)} * math.sin(t.tl);"
+        f"t.z0 = {f(hz + c['dzn'])} - t.f;"
+        f"t.ex = ({f(HIP_X)} + {f(c['dx'])} * v.reach) * math.cos(t.dl) - t.z0 * math.sin(t.dl) - {f(HIP_X)};"
+        f"t.ez = ({f(HIP_X)} + {f(c['dx'])} * v.reach) * math.sin(t.dl) + t.z0 * math.cos(t.dl) - {f(hz)};"
+        f"t.au = math.sqrt(t.ex * t.ex + t.ez * t.ez) - {f(L3)} * math.sin(t.tl);"
         f"t.av = math.clamp(v.fh_{nm} / v.wpp, -{f(TERRAIN_CLAMP_PX)}, {f(TERRAIN_CLAMP_PX)}) * v.tw"
         f" + v.lift * math.pow(t.sw, {f(LIFT_SHAPE)})"
         f" + v.gtrem * math.max(0, math.sin(q.life_time * 260 + {f(c['tremble'])})){fid}"
@@ -220,7 +245,7 @@ def leg_script(side, n):
         f"t.a = math.atan2(t.av, t.au) + math.acos(math.clamp((t.d * t.d - {f(c['L2'] ** 2 - L1 * L1, 2)})"
         f" / ({f(2 * L1)} * t.d), -1, 1));"
         f"t.t = math.atan2(t.av - {f(L1)} * math.sin(t.a), t.au - {f(L1)} * math.cos(t.a));"
-        f"v.hip_{nm} = {sgn}math.atan2(-t.dz, t.dx);"
+        f"v.hip_{nm} = {sgn}math.atan2(-t.ez, t.ex);"
         f"v.fem_{nm} = {'-' if side == 'l' else ''}t.a;"
         f"v.tib_{nm} = {'t.a - t.t' if side == 'l' else 't.t - t.a'};"
         f"v.ft_{nm} = {'t.t + 90 - t.tl' if side == 'l' else '-t.t - 90 + t.tl'};"

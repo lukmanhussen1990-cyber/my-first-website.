@@ -288,7 +288,7 @@ def _stripe(tone, rng, w, h, hgt, val, steps, fade=(0.7, 0.3)):
         tone[rows, :] += val * inten[None, :]
 
 
-def grain(w, h, rng, stripes=None, steps=True, hairlines=None, weather=0.5):
+def grain(w, h, rng, stripes=None, steps=True, hairlines=None, weather=0.5, fibre=0.3):
     """Lengthwise wood grain as a tone field (h, w), about [-1.5, 1.2]; the length axis is U.
 
     * a gentle row-to-row tone from smooth 1-D noise across the rows;
@@ -296,8 +296,9 @@ def grain(w, h, rng, stripes=None, steps=True, hairlines=None, weather=0.5):
       along U (period >= 18 texels) and possibly stepping one row once, like a real grain
       line drifting across a board;
     * 1-3 fine 1-texel dark hairlines (the crisp lengthwise lines of stripped wood);
-    * broad weathering: a low-frequency 2-D mottle (period ~11 texels along U).
-    No per-texel noise anywhere."""
+    * broad weathering: a low-frequency 2-D mottle (period ~11 texels along U);
+    * fine fibre: per-row short-period noise along U (elongated dashes, never single dots).
+    No per-texel speckle."""
     base = (smooth1d(rng, h, max(2.0, h / 3.0)) - 0.5) * 0.5
     tone = np.repeat(base[:, None], w, axis=1)
     if h < 3:
@@ -315,10 +316,15 @@ def grain(w, h, rng, stripes=None, steps=True, hairlines=None, weather=0.5):
         sign = -sign
     nh = hairlines if hairlines is not None else (int(rng.integers(2, 4)) if h >= 10 else 1)
     for _ in range(nh):
-        _stripe(tone, rng, w, h, 1, -(0.55 + 0.3 * rng.random()), steps, fade=(0.45, 0.55))
+        _stripe(tone, rng, w, h, 1, -(0.7 + 0.4 * rng.random()), steps, fade=(0.45, 0.55))
     if weather and w >= 8:
         mot = (smooth1d(rng, w, 11.0)[None, :] - 0.5) * (smooth1d(rng, h, max(2.0, h / 2.0))[:, None] + 0.5)
         tone += weather * mot
+    if fibre and w >= 8:
+        # wood fibre: every row gets its own short-period noise along U -> elongated 3-5 texel
+        # dashes at about +-4 %, which read as grain (not speckle) and vanish at distance
+        for r in range(h):
+            tone[r] += fibre * (smooth1d(rng, w, 2.0 + 2.0 * rng.random()) - 0.5) * 2
     return tone
 
 
@@ -552,16 +558,25 @@ def p_carapace(w, h, rng):
     """Carapace top (U = width X, V = length Z; painted front-at-low-V, then flipped because
     an up face shows its HIGH V at the front): chitin with a dome light,
     a median groove from the eye region to the fovea, two straight cervical seams forming
-    a V forward of the fovea, and faint radial grooves (6 %) toward the leg bases."""
+    a V forward of the fovea, and faint radial grooves (6 %) toward the coxae."""
     img = chitin_noise(w, h, rng, CHIT_M, CHIT_D, CHIT_L, amount=0.3)
     yy, xx = np.mgrid[0:h, 0:w]
     cx = (w - 1) / 2
     fy = h * 0.55                                   # fovea a little behind the centre
     rr = np.hypot((xx - cx) / (w / 2), (yy - fy) / (h / 2))
     img *= (1.07 - 0.12 * np.clip(rr, 0, 1.2) ** 2)[..., None]       # dome light
-    ang = np.arctan2(yy - fy, xx - cx)
-    radial = (np.cos(ang * 8) > 0.93) & (rr > 0.18) & (rr < 0.9)      # 8 radial grooves
-    img[radial] *= 0.94
+    # radial grooves from the fovea toward the four coxae per side (hip z -34/-16/2/20 at
+    # x +-34 -> about 45, 25, -3 and -30 deg from the lateral axis, + = forward), 6 % darker
+    for a_deg in (45.0, 25.0, -3.0, -30.0):
+        a = np.radians(a_deg)
+        for side in (-1, 1):
+            done = set()
+            for s_ in np.linspace(0.22, 0.85, 40):
+                x = int(round(cx + side * np.cos(a) * s_ * (w / 2)))
+                y = int(round(fy - np.sin(a) * s_ * (h / 2)))
+                if (x, y) not in done and 1 <= x < w - 1 and 1 <= y < h - 1:
+                    img[y, x] *= 0.94
+                    done.add((x, y))
     c0, c1 = int(np.floor(cx)), int(np.ceil(cx))
     img[2:int(fy), c0:c1 + 1] = mix(img[2:int(fy), c0:c1 + 1], CHIT_D, 0.55)   # median groove
     # cervical seams: straight lines from the fovea forward-outward (a V opening forward)
@@ -644,30 +659,39 @@ def p_head_top(w, h, rng):
 #  * the anterior laterals (ALE) are 2x2 on the head front beside the AME sockets;
 #  * the posterior row (PME + PLE) is 2x2 each on the front of the raised eye mound.
 # Each list: (x, y, w, h, kind) in texels of its region. Keep eye_texels() in sync.
+# kind "mid": median eyes, EYE with one EYE_HI highlight texel (the bright pairs);
+# kind "lat": lateral eyes, a dimmer glowing red without highlight, so the cluster reads as
+# two bright median pairs flanked by small dim laterals instead of a grid of red squares.
 EYES = [                                                 # head_front (27 x 24)
-    (3, 7, 2, 2, "mid"), (22, 7, 2, 2, "mid"),          # anterior laterals
+    (3, 7, 2, 2, "lat"), (22, 7, 2, 2, "lat"),          # anterior laterals
 ]
 AME_SOCKETS = [(8, 6, 5, 5), (14, 6, 5, 5)]             # dark rings around the 7x7 lens cubes (x +-3..+-10, y 216..223)
 EYES_MOUND = [                                           # mound_front (17 x 6)
     (5, 2, 2, 2, "mid"), (10, 2, 2, 2, "mid"),          # posterior medians
-    (1, 3, 2, 2, "mid"), (14, 3, 2, 2, "mid"),          # posterior laterals
+    (1, 3, 2, 2, "lat"), (14, 3, 2, 2, "lat"),          # posterior laterals
 ]
+EYE_LAT = EYE * 0.68                                     # dim lateral eye (#710101)
 EYE_REGIONS = {"head_front": EYES, "mound_front": EYES_MOUND,
                "eye_bump": [(0, 0, 4, 4, "lens")]}
 
 
 def paint_eyes(img, alpha, eyes):
-    """2x2 eyes in a tight CHIT_D socket: base EYE, one highlight texel, a darker lower-right
-    texel for roundness. Eye texels get alpha 3 (glow); everything else stays 255."""
+    """2x2 eyes in a tight CHIT_D socket. Median eyes: EYE, one highlight texel, a darker
+    lower-right texel for roundness; lateral eyes: dimmer EYE_LAT. Eye texels get alpha 3
+    (glow); everything else stays 255."""
     h, w, _ = img.shape
     for x, y, ew, eh, _k in eyes:
         y0, y1 = max(0, y - 1), min(h, y + eh + 1)
         x0, x1 = max(0, x - 1), min(w, x + ew + 1)
         img[y0:y1, x0:x1] = mix(img[y0:y1, x0:x1], CHIT_D * 0.7, 0.8)
-    for x, y, ew, eh, _k in eyes:
-        img[y:y + eh, x:x + ew] = EYE
-        img[y + eh - 1, x + ew - 1] = EYE * 0.82
-        img[y, x] = EYE_HI
+    for x, y, ew, eh, kind in eyes:
+        if kind == "lat":
+            img[y:y + eh, x:x + ew] = EYE_LAT
+            img[y + eh - 1, x + ew - 1] = EYE_LAT * 0.8
+        else:
+            img[y:y + eh, x:x + ew] = EYE
+            img[y + eh - 1, x + ew - 1] = EYE * 0.82
+            img[y, x] = EYE_HI
         alpha[y:y + eh, x:x + ew] = EYE_ALPHA
 
 
@@ -850,8 +874,8 @@ def p_spin(w, h, rng, vertical=False):
 
 
 def p_spin_end(w, h, rng):
-    img = flat(w, h, ABD_D * 0.8)
-    img[1:-1, 1:-1] = SOCKET * 1.5
+    img = flat(w, h, ABD_D * 0.85)
+    img[1:-1, 1:-1] = ABD_D * 0.7
     return img
 
 

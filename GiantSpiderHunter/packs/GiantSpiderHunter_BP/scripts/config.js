@@ -52,13 +52,13 @@ const SCHEMA = {
   shakeSeconds: [3.0, 'num', 0.1, 20, 'Camera shake duration in seconds.'],
 
   // ---------------------------------------------------------------- strikes
-  strikeDamage: [9, 'num', 0, 200, 'Damage of a leg strike (ground stab or high reach) before the difficulty multiplier.'],
-  biteDamage: [12, 'num', 0, 200, 'Damage of a point-blank bite before the difficulty multiplier.'],
+  strikeDamage: [6, 'num', 0, 200, 'Damage of a leg strike (ground stab or high reach) before the difficulty multiplier.'],
+  biteDamage: [8, 'num', 0, 200, 'Damage of a point-blank bite before the difficulty multiplier.'],
   damageMultEasy: [0.6, 'num', 0, 10, 'Damage multiplier when horror:difficulty = 1 (easy).'],
   damageMultNormal: [1.0, 'num', 0, 10, 'Damage multiplier when horror:difficulty = 2 (normal).'],
   damageMultHard: [1.5, 'num', 0, 10, 'Damage multiplier when horror:difficulty = 3 (hard).'],
   strikeWindupSeconds: [0.35, 'num', 0, 3, 'Seconds between strike start (animation) and the damage check.'],
-  attackCooldownSeconds: [1.6, 'num', 0.1, 30, 'Seconds between strikes.'],
+  attackCooldownSeconds: [1.8, 'num', 0.1, 30, 'Seconds between strikes.'],
   reachTolerance: [1.15, 'num', 1, 3, 'Reach multiplier used for the re-check at impact time.'],
   bodyCenterHeight: [13, 'num', 0, 40, 'Body centre height above the feet in blocks at giant scale 1.'],
   groundReachRadius: [7, 'num', 0, 40, 'Ground strike: horizontal reach all around (x giant scale).'],

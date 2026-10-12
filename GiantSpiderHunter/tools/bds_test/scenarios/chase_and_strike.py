@@ -27,7 +27,7 @@ def run(h):
         if pl and sp:
             samples.append((h.now(), pl["loc"], sp[0]["loc"], pl["hp"], state(sp[0])))
     p.stop()
-    far = [s for s in samples if hdist(s[1], s[2]) > 10]
+    far = [s for s in samples if hdist(s[1], s[2]) > 10 and s[4] == "hunting"]
     if len(far) >= 4:
         (ta, _, sa, _, _), (tb, _, sb, _, _) = far[0], far[-1]
         speed = hdist(sa, sb) / max(0.1, tb - ta)
