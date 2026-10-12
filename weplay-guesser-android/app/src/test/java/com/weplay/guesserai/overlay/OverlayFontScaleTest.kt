@@ -75,6 +75,12 @@ class OverlayFontScaleTest {
         assertFalse(compose.onNodeWithText("Pulse Rate").cutOff())
     }
 
+    @Test fun `narrowest large panel keeps every button label whole at 200 percent font`() {
+        show(OverlaySize.LARGE, 140, "large")
+        for (label in listOf("➤ Next Guess", "↻ Refresh", "❚❚ Pause AI")) assertFalse(label, compose.onNodeWithText(label).cutOff())
+        assertFalse(compose.onNodeWithText("Heart Beat").cutOff())
+    }
+
     @Test fun `narrowest compact panel shows whole answers and the Next label at 200 percent font`() {
         show(OverlaySize.COMPACT, 112, "compact")
         assertFalse(compose.onNodeWithText("Heart Beat").cutOff())
