@@ -62,6 +62,8 @@ data class OverlayUiState(
     val hintManual: Boolean = false,
     /** The answer the game showed (we guessed it, or the round ended); pinned above the guesses. */
     val answer: String? = null,
+    /** Why the AI stopped and what to fix (bad key, unknown model); null while it runs or was paused by hand. */
+    val problem: String? = null,
 ) {
     val isPaused: Boolean get() = status == AiStatus.PAUSED
 }
@@ -174,7 +176,7 @@ class AssistantSession(
             _state.update { it.copy(status = AiStatus.PAUSED, message = "AI paused") }
         } else {
             forceNext = true
-            _state.update { it.copy(status = AiStatus.WATCHING, message = "Resuming…") }
+            _state.update { it.copy(status = AiStatus.WATCHING, message = "Resuming…", problem = null) }
             wake.trySend(Unit)
         }
     }
@@ -661,7 +663,7 @@ class AssistantSession(
         }
         forceNext = true
         if (pause) { paused = true; cancelInFlight() }
-        _state.update { it.copy(status = if (pause) AiStatus.PAUSED else AiStatus.ERROR, message = msg) }
+        _state.update { it.copy(status = if (pause) AiStatus.PAUSED else AiStatus.ERROR, message = msg, problem = if (pause) msg else it.problem) }
     }
 
     /** Sleeps up to [ms], waking early on refresh / resume. */

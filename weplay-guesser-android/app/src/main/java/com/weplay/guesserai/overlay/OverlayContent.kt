@@ -36,6 +36,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -135,6 +139,15 @@ private fun MiniBar(state: OverlayUiState, width: Dp, actions: OverlayActions) {
         ) {
             val answer = state.answer
             val guesses = state.guesses.take(if (answer != null) MINI_CHIPS - 1 else MINI_CHIPS)
+            val problem = state.problem
+            if (problem != null) {
+                // The answers are stale until this is fixed; say why, and tap to try again.
+                Text(
+                    "⚠ $problem", color = Amber, fontSize = 9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.clickable(onClickLabel = "Try again") { actions.onTogglePause() },
+                )
+                return@Row
+            }
             if (answer == null && guesses.isEmpty()) {
                 Text(
                     state.message, color = if (state.status == AiStatus.ERROR) ErrRed else Soft,
@@ -158,9 +171,9 @@ private fun MiniBar(state: OverlayUiState, width: Dp, actions: OverlayActions) {
             }
         }
         Spacer(Modifier.width(4.dp))
-        WindowButton("»", Lilac, size = 22.dp, enabled = state.guesses.size > 1) { actions.onNextGuess() }
+        WindowButton("»", "Next answer", Lilac, size = 22.dp, enabled = state.guesses.size > 1) { actions.onNextGuess() }
         Spacer(Modifier.width(3.dp))
-        WindowButton("⌄", Lilac, size = 22.dp) { actions.onExpand() }
+        WindowButton("⌄", "Open the panel", Lilac, size = 22.dp) { actions.onExpand() }
     }
 }
 
@@ -184,6 +197,8 @@ private fun MiniChip(
                 }
             )
             .combinedClickable(
+                onClickLabel = "Copy",
+                onLongClickLabel = if (gameAnswer) null else "Mark as the right answer",
                 onClick = { actions.onCopy(g) },
                 onLongClick = if (gameAnswer) null else ({ actions.onMarkCorrect(g) }),
             )
@@ -253,9 +268,9 @@ private fun CompactPanel(state: OverlayUiState, width: Dp, actions: OverlayActio
                     "WePlay AI", color = Color.White, fontSize = 9.5.sp, fontWeight = FontWeight.Bold,
                     maxLines = 1, modifier = Modifier.weight(1f),
                 )
-                WindowButton("–", Lilac, size = 17.dp) { actions.onMinimize() }
+                WindowButton("–", "Minimize", Lilac, size = 17.dp) { actions.onMinimize() }
                 Spacer(Modifier.width(3.dp))
-                WindowButton("✕", Color(0xFFFCA5A5), size = 17.dp) { actions.onClose() }
+                WindowButton("✕", "Close", Color(0xFFFCA5A5), size = 17.dp) { actions.onClose() }
             }
             Spacer(Modifier.height(3.dp))
             StatusLine(state, busy, compact = true)
@@ -266,8 +281,11 @@ private fun CompactPanel(state: OverlayUiState, width: Dp, actions: OverlayActio
             Spacer(Modifier.height(2.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 NeonButton("➤ Next", primary = true, enabled = state.guesses.size > 1, height = 24.dp, modifier = Modifier.weight(1f)) { actions.onNextGuess() }
-                NeonButton("↻", primary = false, height = 24.dp, modifier = Modifier.width(24.dp)) { actions.onRefresh() }
-                NeonButton(if (state.isPaused) "▶" else "❚❚", primary = false, height = 24.dp, modifier = Modifier.width(24.dp)) { actions.onTogglePause() }
+                NeonButton("↻", primary = false, height = 24.dp, description = "Refresh", modifier = Modifier.width(24.dp)) { actions.onRefresh() }
+                NeonButton(
+                    if (state.isPaused) "▶" else "❚❚", primary = false, height = 24.dp,
+                    description = if (state.isPaused) "Resume AI" else "Pause AI", modifier = Modifier.width(24.dp),
+                ) { actions.onTogglePause() }
             }
         }
     }
@@ -332,30 +350,32 @@ private fun Header(state: OverlayUiState, busy: Boolean, actions: OverlayActions
                 Text(statusLabel(state.status), color = statusColor(state.status), fontSize = 8.sp, fontWeight = FontWeight.SemiBold)
             }
         }
-        WindowButton("–", Lilac) { actions.onMinimize() }
+        WindowButton("–", "Minimize", Lilac) { actions.onMinimize() }
         Spacer(Modifier.width(4.dp))
-        WindowButton("✕", Color(0xFFFCA5A5)) { actions.onClose() }
+        WindowButton("✕", "Close", Color(0xFFFCA5A5)) { actions.onClose() }
     }
 }
 
+/** A small symbol button; [description] is what a screen reader says instead of the symbol. */
 @Composable
-private fun WindowButton(label: String, color: Color, size: Dp = 20.dp, enabled: Boolean = true, onClick: () -> Unit) {
+private fun WindowButton(label: String, description: String, color: Color, size: Dp = 20.dp, enabled: Boolean = true, onClick: () -> Unit) {
     Box(
         Modifier.size(size)
             .alpha(if (enabled) 1f else 0.4f)
             .clip(RoundedCornerShape(6.dp))
             .background(Color.White.copy(alpha = 0.08f))
             .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
-            .clickable(enabled = enabled, onClick = onClick),
+            .semantics { contentDescription = description }
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
-    ) { Text(label, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+    ) { Text(label, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clearAndSetSemantics {}) }
 }
 
 /** Status as a plain dot: green live, purple while the AI looks at a frame, amber paused, red error. No animation. */
 @Composable
 private fun StatusDot(status: AiStatus, busy: Boolean, modifier: Modifier = Modifier, size: Dp) {
     val c = if (busy && status != AiStatus.PAUSED && status != AiStatus.ERROR) Neon else statusColor(status)
-    Box(modifier.size(size).clip(CircleShape).background(c))
+    Box(modifier.size(size).clip(CircleShape).background(c).semantics { contentDescription = "AI ${statusLabel(status)}" })
 }
 
 private fun statusLabel(s: AiStatus) = when (s) {
@@ -470,7 +490,7 @@ private fun AnswerBanner(state: OverlayUiState, actions: OverlayActions) {
             .clip(RoundedCornerShape(7.dp))
             .background(LiveGreen.copy(alpha = 0.2f))
             .border(1.dp, LiveGreen.copy(alpha = 0.6f), RoundedCornerShape(7.dp))
-            .clickable { actions.onCopy(asGuess) }
+            .clickable(onClickLabel = "Copy") { actions.onCopy(asGuess) }
             .padding(horizontal = 5.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -497,7 +517,7 @@ private fun HintLine(state: OverlayUiState, actions: OverlayActions, compact: Bo
     val fontSize = if (compact) 8.sp else 8.5.sp
     Row(
         Modifier.padding(top = 2.dp).height(lineHeight(fontSize) + 2.dp)
-            .clip(RoundedCornerShape(5.dp)).clickable { editing = !editing }
+            .clip(RoundedCornerShape(5.dp)).clickable(onClickLabel = if (editing) "Close the hint editor" else "Correct the hint") { editing = !editing }
             .padding(horizontal = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -521,9 +541,9 @@ private fun HintLine(state: OverlayUiState, actions: OverlayActions, compact: Bo
     }
     if (editing) {
         Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-            Stepper("W", hint?.wordCount ?: 1, onMinus = { actions.onAdjustHint(-1, 0) }, onPlus = { actions.onAdjustHint(1, 0) })
+            Stepper("W", "word", hint?.wordCount ?: 1, onMinus = { actions.onAdjustHint(-1, 0) }, onPlus = { actions.onAdjustHint(1, 0) })
             Spacer(Modifier.width(4.dp))
-            Stepper("L", hint?.letterCount ?: 4, onMinus = { actions.onAdjustHint(0, -1) }, onPlus = { actions.onAdjustHint(0, 1) })
+            Stepper("L", "letter", hint?.letterCount ?: 4, onMinus = { actions.onAdjustHint(0, -1) }, onPlus = { actions.onAdjustHint(0, 1) })
         }
         if (state.hintManual) {
             Text(
@@ -549,13 +569,16 @@ private fun ReservedLine(text: String?, fontSize: TextUnit, color: Color, mono: 
 }
 
 @Composable
-private fun Stepper(label: String, value: Int, onMinus: () -> Unit, onPlus: () -> Unit) {
+private fun Stepper(label: String, unit: String, value: Int, onMinus: () -> Unit, onPlus: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(label, color = Muted, fontSize = 7.5.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.width(2.dp))
-        WindowButton("−", Lilac, size = 16.dp, onClick = onMinus)
-        Text("$value", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 3.dp))
-        WindowButton("+", Lilac, size = 16.dp, onClick = onPlus)
+        WindowButton("−", "One $unit fewer", Lilac, size = 16.dp, onClick = onMinus)
+        Text(
+            "$value", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 3.dp).semantics { contentDescription = "$value ${unit}s" },
+        )
+        WindowButton("+", "One $unit more", Lilac, size = 16.dp, onClick = onPlus)
     }
 }
 
@@ -611,7 +634,10 @@ private fun GuessRow(
                     else -> Color.White.copy(alpha = 0.03f)
                 }
             )
-            .combinedClickable(onClick = { actions.onCopy(g) }, onLongClick = { actions.onMarkCorrect(g) })
+            .combinedClickable(
+                onClickLabel = "Copy", onLongClickLabel = "Mark as the right answer",
+                onClick = { actions.onCopy(g) }, onLongClick = { actions.onMarkCorrect(g) },
+            )
             .padding(horizontal = 4.dp),
         verticalArrangement = Arrangement.Center,
     ) {
@@ -660,17 +686,22 @@ private fun Buttons(state: OverlayUiState, actions: OverlayActions) {
 @Composable
 private fun NeonButton(
     label: String, primary: Boolean, modifier: Modifier = Modifier, enabled: Boolean = true,
-    height: Dp = 26.dp, onClick: () -> Unit,
+    height: Dp = 26.dp, description: String? = null, onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(8.dp)
     var m = modifier.height(height)
     m = if (primary) m.shadow(10.dp, shape, ambientColor = Neon, spotColor = Neon).clip(shape)
         .background(Brush.linearGradient(listOf(Neon, NeonDeep)))
     else m.clip(shape).background(Color.White.copy(alpha = 0.06f)).border(1.dp, Color(0x66C084FC), shape)
+    // Symbol-only buttons are read out by their [description].
+    if (description != null) m = m.semantics { contentDescription = description }
     Box(
-        m.alpha(if (enabled) 1f else 0.45f).clickable(enabled = enabled, onClick = onClick),
+        m.alpha(if (enabled) 1f else 0.45f).clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, color = if (primary) Color.White else Lilac, fontSize = if (primary) 10.sp else 8.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(
+            label, color = if (primary) Color.White else Lilac, fontSize = if (primary) 10.sp else 8.5.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+            modifier = if (description != null) Modifier.clearAndSetSemantics {} else Modifier,
+        )
     }
 }
