@@ -27,6 +27,7 @@ import com.weplay.guesserai.data.settings.SecretCipher
 import com.weplay.guesserai.data.settings.SettingsRepository
 import com.weplay.guesserai.domain.AiModel
 import com.weplay.guesserai.domain.AppSettings
+import com.weplay.guesserai.domain.CaptureSpeed
 import com.weplay.guesserai.domain.FrameAnalysis
 import com.weplay.guesserai.domain.FrameImages
 import com.weplay.guesserai.domain.Guess
@@ -138,6 +139,8 @@ class SessionJourneyTest {
         class Call(val at: Long, val images: FrameImages, val hints: PromptHints, val model: AiModel = AiModel.HAIKU)
         val calls = mutableListOf<Call>()
         var latency = 1_200L
+        /** When set, each call picks its own latency. */
+        var latencyOf: (() -> Long)? = null
         var failNext: Throwable? = null
         /** Every call fails with this while it is set. */
         var failAll: Throwable? = null
@@ -161,14 +164,15 @@ class SessionJourneyTest {
             running++
             maxRunning = maxOf(maxRunning, running)
             try {
+                val wait = latencyOf?.invoke() ?: latency
                 if (streamPartials) {
                     reply.guesses.forEachIndexed { i, _ ->
-                        delay(latency / (reply.guesses.size + 1))
+                        delay(wait / (reply.guesses.size + 1))
                         onPartial(PartialAnalysis(reply.hint, reply.guesses.take(i + 1), true, false, reply.screenState))
                     }
-                    delay(latency / (reply.guesses.size + 1))
+                    delay(wait / (reply.guesses.size + 1))
                 } else {
-                    delay(latency)
+                    delay(wait)
                 }
             } finally {
                 running--
@@ -252,9 +256,13 @@ class SessionJourneyTest {
         val g = Game(this)
         g.screen.strokes = 1
         g.session.start()
-        g.body()
-        g.session.stop()
-        g.scope.cancel()
+        try {
+            g.body()
+        } finally {
+            // Also after a failed check: a running capture loop would keep runTest advancing time forever.
+            g.session.stop()
+            g.scope.cancel()
+        }
         assertTrue("uncaught exceptions (each would crash the app): ${g.crashes}", g.crashes.isEmpty())
     }
 
@@ -653,6 +661,80 @@ class SessionJourneyTest {
         play(3_000)
         assertTrue("still answering after the failed saves", session.state.value.guesses.isNotEmpty())
         assertTrue(session.state.value.status != AiStatus.ERROR)
+    }
+
+    /** Random play: [seconds] of events from [seed]; checks the rules every second and recovery at the end. */
+    private fun Game.chaos(seed: Int, seconds: Int) {
+        val rnd = kotlin.random.Random(seed)
+        settings.update { it.copy(accuracyBoost = true) }
+        ai.streamPartials = true
+        ai.latencyOf = { rnd.nextLong(200, 4_000) }
+        val failures = listOf<() -> Throwable>(
+            { VisionException.Network() }, { VisionException.RateLimited() }, { VisionException.Server(529, "Overloaded") },
+            { VisionException.Refused("refusal") }, { VisionException.BadResponse("AI reply was empty") }, { IllegalStateException("odd") },
+        )
+        var pausedByMe = false
+        var callsWhenPaused = 0
+        var problemSeen = 0
+        repeat(seconds) { sec ->
+            val r = rnd.nextInt(100)
+            when {
+                r < 30 -> screen.strokes++
+                r < 34 -> { screen.hint = "${rnd.nextInt(2, 9)} letters|Clue $sec"; screen.strokes = 0; screen.scroll = 0 }
+                r < 37 -> screen.popup = if (screen.popup == null) "Word: utah" else null
+                r < 42 -> screen.scroll += 60
+                r < 48 -> ai.failNext = failures[rnd.nextInt(failures.size)]()
+                r < 49 -> ai.failNext = VisionException.InvalidKey()
+                r < 50 -> screen.failNextCapture = IllegalStateException("Surface was released")
+                r < 53 -> { session.togglePause() }
+                r < 55 -> session.refresh()
+                r < 60 -> session.nextGuess()
+                r < 62 -> session.state.value.guesses.firstOrNull()?.let { session.markCorrect(it) }
+                r < 65 -> session.adjustHint(rnd.nextInt(-1, 2), rnd.nextInt(-2, 3))
+                r < 66 -> session.clearManualHint()
+                r < 68 -> settings.update { it.copy(captureSpeed = CaptureSpeed.entries[rnd.nextInt(3)], fastMode = rnd.nextBoolean()) }
+                r < 70 -> settings.update { it.copy(apiKey = "sk-ant-${rnd.nextInt(1000)}") }
+                else -> Unit
+            }
+            val wasPaused = session.state.value.status == AiStatus.PAUSED
+            if (wasPaused && !pausedByMe) { pausedByMe = true; callsWhenPaused = ai.calls.size }
+            if (!wasPaused) pausedByMe = false
+            if (session.state.value.problem != null) problemSeen++
+            play(1_000)
+            val nowPaused = session.state.value.status == AiStatus.PAUSED
+            if (wasPaused && nowPaused) assertEquals("seed $seed: no request starts while paused (second $sec)", callsWhenPaused, ai.calls.size)
+            assertTrue("never more than 2 fast + 1 boost requests in flight", ai.maxRunning <= 3)
+        }
+        // Back to a calm game: the assistant must recover and answer again. The fake model only knows
+        // two answers and the user may have rejected both for this word, so let the word end first.
+        ai.failNext = null
+        ai.latencyOf = null
+        screen.popup = null
+        if (session.state.value.status == AiStatus.PAUSED) session.togglePause()
+        screen.strokes++
+        play(70_000) // any backoff runs out
+        screen.popup = "Word: utah"
+        play(5_000)
+        screen.popup = null
+        screen.strokes++
+        play(5_000)
+        println("SESSION chaos: ${ai.calls.size} requests in 15 min, problem shown on $problemSeen seconds, final status ${session.state.value.status}")
+        val end = session.state.value
+        val lastCall = ai.calls.lastOrNull()
+        assertTrue(
+            "seed $seed: answering again after the chaos — status=${end.status} msg='${end.message}' problem=${end.problem} " +
+                "hint=${end.hint} manual=${end.hintManual} answer=${end.answer} lastCallAt=${lastCall?.at} now=${test.testScheduler.currentTime} rejected=${lastCall?.hints?.rejected}",
+            end.guesses.isNotEmpty() || end.answer != null,
+        )
+        assertTrue(session.state.value.status != AiStatus.PAUSED && session.state.value.status != AiStatus.ERROR)
+    }
+
+    @Test fun `chaos - fifteen minutes of random play, failures and taps`() = game { chaos(seed = 2026, seconds = 900) }
+
+    @Test fun `chaos - many seeds`() {
+        val failed = mutableListOf<String>()
+        for (seed in 1..12) runCatching { game { chaos(seed, seconds = 300) } } // 40 seeds were run once in the QA pass.onFailure { failed += "seed $seed: ${it.message?.substringAfter("chaos — ")?.take(700)}" }
+        assertTrue(failed.joinToString("\n"), failed.isEmpty())
     }
 
     @Test fun `the copied mark does not carry over to the next word`() = game {
