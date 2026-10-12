@@ -76,6 +76,9 @@ class SessionJourneyTest {
         var strokes = 0
         /** Round-over popup text over the canvas, e.g. "Word: utah". */
         var popup: String? = null
+        /** Our own floating window as it appears in the capture, and what it shows (changes every update). */
+        var overlay: android.graphics.Rect? = null
+        var overlayText = ""
         private val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; textSize = 28f }
         private val ink = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; strokeWidth = 6f }
@@ -103,6 +106,10 @@ class SessionJourneyTest {
                 val x = 40f + (k * 53) % 120
                 c.drawLine(x, y, x + 260f + (k * 29) % 120, y + 30f, ink)
             }
+            overlay?.let { r ->
+                c.drawRect(r, Paint().apply { color = Color.rgb(20, 14, 34) })
+                c.drawText(overlayText, r.left + 8f, r.centerY().toFloat(), text)
+            }
             popup?.let {
                 c.drawRect(60f, 250f, 514f, 420f, Paint().apply { color = Color.rgb(250, 250, 250) })
                 c.drawRect(60f, 250f, 514f, 420f, Paint().apply { color = Color.GRAY; style = Paint.Style.STROKE; strokeWidth = 3f })
@@ -118,6 +125,9 @@ class SessionJourneyTest {
         val calls = mutableListOf<Call>()
         var latency = 1_200L
         var failNext: Throwable? = null
+        /** Every call fails with this while it is set. */
+        var failAll: Throwable? = null
+        var notGame = false
         var guesses = listOf(Guess("Utah", 80), Guess("Ohio", 40))
         val hint = HintPattern(1, 4, clue = "A state")
         /** When set, answers come from here instead (a scripted game). */
@@ -129,7 +139,7 @@ class SessionJourneyTest {
             calls += Call(scope.testScheduler.currentTime, images, hints, settings.model)
             // The answer is about the frame that was sent, whatever the screen shows by the time it arrives.
             val reply = script?.invoke(screen) ?: replyFor(settings)
-            val fail = failNext.also { failNext = null }
+            val fail = failNext.also { failNext = null } ?: failAll
             running++
             maxRunning = maxOf(maxRunning, running)
             try {
@@ -143,6 +153,10 @@ class SessionJourneyTest {
 
         private fun replyFor(settings: AppSettings): FrameAnalysis {
             val popup = screen.popup
+            if (notGame) return FrameAnalysis(
+                isDrawingGame = false, canvasEmpty = true, detectedObject = "", category = "", emoji = "",
+                hint = null, canvasBox = null, guesses = emptyList(), screenState = ScreenState.NOT_GAME,
+            )
             return FrameAnalysis(
                 isDrawingGame = true, canvasEmpty = screen.strokes == 0 && popup == null,
                 detectedObject = "map", category = "Place", emoji = "🗺",
@@ -178,7 +192,7 @@ class SessionJourneyTest {
             wordBanks = WordBankRepository(ctx),
             gameMonitor = GameAppMonitor(ctx),
             isScreenOn = { true },
-            overlayRect = { null },
+            overlayRect = { screen.overlay },
             work = StandardTestDispatcher(test.testScheduler),
             clock = { test.testScheduler.currentTime },
         )
@@ -412,6 +426,49 @@ class SessionJourneyTest {
         play(4_000)
         assertTrue("woke up", ai.calls.size > before)
         assertTrue(session.state.value.status != AiStatus.GAME_AWAY)
+    }
+
+    @Test fun `our own window changing over the drawing is never sent as a change`() = game {
+        screen.overlay = android.graphics.Rect(300, 380, 560, 420) // dropped on the canvas
+        play(3_000)
+        val before = ai.calls.size
+        repeat(20) { i -> screen.overlayText = "Guess $i ${i * 7}%"; play(1_000) }
+        assertEquals(before, ai.calls.size)
+        // ...and the model never sees it: the area is painted over in what is sent.
+        screen.strokes = 2
+        play(2_000)
+        assertEquals(before + 1, ai.calls.size)
+    }
+
+    @Test fun `rate limits slow the requests down and recovery resets the pace`() = game {
+        ai.failAll = VisionException.RateLimited()
+        repeat(40) { screen.strokes++; play(1_000) }
+        val limited = ai.calls.map { it.at / 1000 }
+        val gaps = limited.zipWithNext { a, b -> b - a }
+        println("SESSION rate limited: ${limited.size} requests in 40 s, gaps $gaps")
+        assertTrue("gaps should grow: $gaps", gaps.last() > gaps.first() && gaps.last() >= 8)
+        assertEquals(AiStatus.ERROR, session.state.value.status)
+        ai.failAll = null
+        play(70_000) // the next try succeeds
+        val n = ai.calls.size
+        repeat(5) { screen.strokes++; play(1_000) }
+        assertTrue("back to one request per change: ${ai.calls.size - n}", ai.calls.size - n >= 4)
+    }
+
+    @Test fun `with no game on screen it checks far less often`() = game {
+        ai.notGame = true
+        repeat(30) { screen.strokes++; play(1_000) }
+        println("SESSION not game: ${ai.calls.size} requests in 30 s at ${ai.calls.map { it.at / 1000 }}")
+        assertEquals("No drawing game on screen", session.state.value.message)
+        assertTrue("checked ${ai.calls.size} times", ai.calls.size <= 8)
+    }
+
+    @Test fun `turning the phone re-measures the screen with a whole-screen look`() = game {
+        play(30_000)
+        assertTrue(ai.calls.last().images.isCropped || ai.calls.size == 1)
+        session.onScreenChanged()
+        play(2_000)
+        assertTrue("next look after turning is the whole screen", !ai.calls.last().images.isCropped)
     }
 
     @Test fun `the copied mark does not carry over to the next word`() = game {

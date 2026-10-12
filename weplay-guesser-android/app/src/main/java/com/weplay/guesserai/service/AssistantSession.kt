@@ -481,7 +481,6 @@ class AssistantSession(
 
     private fun onFinal(req: Request, a: FrameAnalysis, images: FrameImages, latency: Long) {
         if (!isCurrent(req) || !claim(req.seq)) return
-        backoffMs = 0
         fastModelUsed = a.modelUsed
         val before = _state.value
 
@@ -489,7 +488,7 @@ class AssistantSession(
             notGameStreak++
             // Close-ups that show no game: look at the whole screen next time.
             if (images.isCropped && ++cropMisses >= 2) croppedSinceFull = FULL_LOOK_EVERY
-            if (notGameStreak >= 3) backoffMs = 6_000 // nothing to solve: check far less often
+            backoffMs = if (notGameStreak >= 3) 6_000 else 0 // nothing to solve: check far less often
             _state.update {
                 it.copy(
                     status = if (paused) AiStatus.PAUSED else AiStatus.WATCHING,
@@ -501,6 +500,11 @@ class AssistantSession(
         }
         notGameStreak = 0
         cropMisses = 0
+        if (backoffMs > 0) {
+            // The game and the API answer again: back to the normal pace now, not after the long wait already begun.
+            backoffMs = 0
+            wake.trySend(Unit)
+        }
         // Learn the layout only from a normal guessing screen (never from a popup).
         if (!images.isCropped && a.screenState == ScreenState.GUESSING) learner?.onFullLook(a.canvasBox, a.hintBox)
         val hintBefore = tracker.hint ?: before.hint
@@ -684,14 +688,20 @@ class AssistantSession(
     }
 
     private fun handleError(e: Throwable, isNewest: Boolean) {
-        if (!isNewest) return // a newer request is already on its way
+        // Slow down whichever request failed: two requests overlap, so the one that hits a rate
+        // limit is rarely the newest, and skipping it kept the pace at one request a second.
+        when (e) {
+            is VisionException.InvalidKey, is VisionException.ModelNotFound, is VisionException.BadConfig -> Unit
+            is VisionException.RateLimited -> backoffMs = (backoffMs * 2).coerceIn(4_000, 60_000)
+            else -> backoffMs = (backoffMs + 1_000).coerceAtMost(10_000)
+        }
+        if (!isNewest) return // a newer request is already on its way; it shows its own result
         val (msg, pause) = when (e) {
             is VisionException.InvalidKey -> "Invalid API key — check Settings" to true
             is VisionException.ModelNotFound -> "Model not found — check Settings" to true
             is VisionException.BadConfig -> e.message!! to true
-            is VisionException.RateLimited -> { backoffMs = (backoffMs * 2).coerceIn(4_000, 60_000); e.message!! to false }
-            is VisionException -> { backoffMs = (backoffMs + 1_000).coerceAtMost(10_000); (e.message ?: "AI error") to false }
-            else -> { backoffMs = (backoffMs + 1_000).coerceAtMost(10_000); "Error: ${e.message ?: e.javaClass.simpleName}" to false }
+            is VisionException -> (e.message ?: "AI error") to false
+            else -> "Error: ${e.message ?: e.javaClass.simpleName}" to false
         }
         forceNext = true
         if (pause) { paused = true; cancelInFlight(); problemConnection = connectionOf(settingsRepo.current) }
