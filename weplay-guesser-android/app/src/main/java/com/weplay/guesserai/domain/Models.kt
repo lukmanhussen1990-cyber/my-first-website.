@@ -101,6 +101,8 @@ data class PromptHints(
     val knownAnswers: List<String> = emptyList(),
     /** Word-list answers that fit [lastHint]. */
     val wordListCandidates: List<String> = emptyList(),
+    /** Answers the user already tried this round ("Next Guess") — they are wrong. */
+    val rejected: List<String> = emptyList(),
 )
 
 /** Where a guess shown in the overlay came from. */
@@ -141,6 +143,10 @@ data class AppSettings(
     val customWords: String = "",
     /** Small overlay (no preview image, one button row) so it covers less of the game. */
     val compactOverlay: Boolean = true,
+    /** With Haiku: also ask Claude Sonnet 5.5 every few seconds and trust its answer more. */
+    val accuracyBoost: Boolean = true,
+    /** Move the floating window off the canvas when it is dropped on it, so every stroke is visible to the AI. */
+    val keepOffDrawing: Boolean = true,
     val gamePackage: String = "",
     val autoPauseWhenGameClosed: Boolean = true,
     val saveScreenshots: Boolean = true,

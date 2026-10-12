@@ -40,6 +40,7 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
 
     private val board = RoundBoard()
     private val rejected = mutableSetOf<String>()
+    private val rejectedNames = mutableListOf<String>()
     private var aiHint: HintPattern? = null
     private var manualHint: HintPattern? = null
     private var pendingHint: HintPattern? = null
@@ -55,16 +56,37 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
     /** Hint in use: the user's, else the model's reading. */
     val hint: HintPattern? get() = manualHint ?: aiHint
 
-    /** A streamed, unfinished answer. Returns null when it should not change the overlay. */
+    /**
+     * Changes whenever a word ends or starts. A request launched under an older id belongs to a
+     * previous word and its result must be thrown away.
+     */
+    var roundId: Int = 0
+        private set
+
+    /** Answers the user already tried this word, as shown (sent to the model as known-wrong). */
+    val rejectedAnswers: List<String> get() = rejectedNames.toList()
+
+    /** Order last shown, so near-equal guesses do not swap places every second. */
+    private var lastOrder: List<String> = emptyList()
+
+    /**
+     * A streamed, unfinished answer. Only used to fill an empty board quickly (first guesses of a
+     * word); once guesses are on screen the list changes once per complete answer, not mid-stream.
+     * Returns null when it should not change the overlay.
+     */
     fun partial(seq: Long, p: PartialAnalysis, ctx: Context): View? {
         if (p.screenState != null && p.screenState != ScreenState.GUESSING) return null
         if (p.isDrawingGame == false || p.canvasEmpty == true || p.guesses.isEmpty()) return null
+        if (!board.isEmpty && p.hint.let { it == null || hint == null || it.sameShape(hint!!) }) return null
         p.hint?.let { considerHint(seq, it) }
         return view(ctx, board.preview(p.guesses))
     }
 
-    /** A complete answer for frame [seq] (frames are applied in order by the caller). */
-    fun final(seq: Long, a: FrameAnalysis, ctx: Context): Outcome {
+    /**
+     * A complete answer for frame [seq] (frames are applied in order by the caller). [deep] marks
+     * the slower, stronger model's answer, which counts for more on the board.
+     */
+    fun final(seq: Long, a: FrameAnalysis, ctx: Context, deep: Boolean = false): Outcome {
         when (a.screenState) {
             ScreenState.NOT_GAME -> return Outcome(view(ctx))
             ScreenState.ROUND_OVER -> {
@@ -89,7 +111,7 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
             ScreenState.GUESSING -> Unit
         }
         a.hint?.let { considerHint(seq, it) }
-        if (a.canvasEmpty) board.clear() else board.commit(a.guesses)
+        if (a.canvasEmpty) board.clear() else board.commit(a.guesses, deep)
         return Outcome(view(ctx))
     }
 
@@ -97,6 +119,7 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
     fun next(ctx: Context): NextResult? {
         val top = view(ctx).guesses.firstOrNull() ?: return null
         rejected += GuessEngine.normalize(top.answer)
+        rejectedNames += top.answer
         return NextResult(top.answer, view(ctx))
     }
 
@@ -127,6 +150,7 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
 
     /** Start this word over: forget guesses, rejections and the hint reading (a hand-set hint stays). */
     fun refresh(ctx: Context): View {
+        roundId++
         resetGuesses()
         aiHint = null
         clearPending()
@@ -140,7 +164,9 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
 
     private fun view(ctx: Context, raw: List<Guess>): View {
         val ranked = engine.rank(raw, hint, rejected, ctx.stats, emptyMap(), ctx.wordBank, ctx.knownAnswers)
-        return View(ranked.guesses, hint, manualHint != null, ranked.hintMismatch, answer)
+        val ordered = stableOrder(ranked.guesses, lastOrder)
+        lastOrder = ordered.map { GuessEngine.normalize(it.answer) }
+        return View(ordered, hint, manualHint != null, ranked.hintMismatch, answer)
     }
 
     /**
@@ -181,6 +207,7 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
     }
 
     private fun startNewRound(h: HintPattern) {
+        roundId++
         resetGuesses()
         aiHint = h
         manualHint = null
@@ -192,6 +219,7 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
 
     /** The word is over; keep [learnedKey] so popup frames that follow are not saved twice. */
     private fun endRound() {
+        roundId++
         resetGuesses()
         aiHint = null
         manualHint = null
@@ -202,6 +230,8 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
     private fun resetGuesses() {
         board.clear()
         rejected.clear()
+        rejectedNames.clear()
+        lastOrder = emptyList()
     }
 
     private fun clearPending() {
@@ -225,7 +255,26 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
         return r
     }
 
-    private companion object {
-        const val HINT_VOTES = 2
+    companion object {
+        private const val HINT_VOTES = 2
+        /** Extra sort weight for the guesses that were 1st, 2nd, 3rd last time (display order only). */
+        private val STICKY = intArrayOf(7, 5, 3)
+
+        /**
+         * Sort by confidence, but a guess already near the top keeps its place unless another one is
+         * clearly ahead — the list stops shuffling when two scores are within a few points.
+         */
+        fun stableOrder(guesses: List<RankedGuess>, previous: List<String>): List<RankedGuess> {
+            if (previous.isEmpty()) return guesses
+            fun weight(g: RankedGuess): Int {
+                val i = previous.indexOf(GuessEngine.normalize(g.answer))
+                return g.confidence + when {
+                    i < 0 -> 0
+                    i < STICKY.size -> STICKY[i]
+                    else -> 1
+                }
+            }
+            return guesses.sortedWith(compareByDescending<RankedGuess> { weight(it) }.thenByDescending { it.confidence })
+        }
     }
 }

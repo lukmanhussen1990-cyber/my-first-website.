@@ -106,18 +106,31 @@ class GuessEngine {
             add(candidates[0].answer, max(candidates[0].weight, SOLE_CANDIDATE_MIN), GuessSource.WORD_LIST)
             return
         }
-        for (c in candidates) {
-            if (list.size >= maxResults) break
-            add(c.answer, min(WORD_LIST_FILLER_MAX, c.weight / 2), GuessSource.WORD_LIST)
+        // Only distinctive shapes (2 letters, "2 words • 8 letters" …) are worth suggesting from the list.
+        // For a common shape like "4 letters" the list is just random words that drown the real guesses.
+        if (candidates.size <= MAX_FILLER_CANDIDATES) {
+            for (c in candidates) {
+                if (list.size >= maxResults) break
+                add(c.answer, min(WORD_LIST_FILLER_MAX, c.weight / 2), GuessSource.WORD_LIST)
+            }
         }
         // A 1-letter word in the hint is "A": "_ ____" (2 words • 5 letters) → A Bike, A Kite …
         if (startsWithA(hint)) {
             val rest = HintPattern(hint.wordCount - 1, hint.letterCount - 1, hint.wordLengths.drop(1))
-            for (c in wordBank.candidates(rest)) {
-                if (list.size >= maxResults) break
-                add("A " + c.answer, min(ARTICLE_FILLER_MAX, c.weight / 3), GuessSource.WORD_LIST)
+            val restCandidates = wordBank.candidates(rest)
+            if (restCandidates.size <= MAX_FILLER_CANDIDATES) {
+                for (c in restCandidates) {
+                    if (list.size >= maxResults) break
+                    add("A " + c.answer, min(ARTICLE_FILLER_MAX, c.weight / 3), GuessSource.WORD_LIST)
+                }
             }
         }
+    }
+
+    /** Word-list answers worth showing the model for this hint: only when the shape is distinctive. */
+    fun promptCandidates(hint: HintPattern?, wordBank: WordBank): List<String> {
+        val c = wordBank.candidates(hint)
+        return if (c.size in 1..MAX_PROMPT_CANDIDATES) c.map { it.answer } else emptyList()
     }
 
     data class RankResult(val guesses: List<RankedGuess>, val hintMismatch: Boolean)
@@ -129,6 +142,8 @@ class GuessEngine {
         private const val LEARNED_FILLER = 30
         private const val SOLE_CANDIDATE_MIN = 80
         private const val VARIANT_PENALTY = 10
+        private const val MAX_FILLER_CANDIDATES = 12
+        private const val MAX_PROMPT_CANDIDATES = 15
         private val ARTICLES = setOf("a", "an", "the")
 
         /** Lower-case, letters/digits/spaces only, single spaces. Used as the identity of an answer. */

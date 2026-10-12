@@ -63,6 +63,12 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
     /** Edge-snapping is only used for the minimised bubble. */
     var snapToEdge = false
 
+    /** Vertical band of the drawing canvas in screen pixels (top, bottom), or null if unknown. */
+    var avoidBand: (() -> Pair<Int, Int>?)? = null
+
+    /** When true, the panel is moved off [avoidBand] after a drag so it does not hide the drawing. */
+    var keepOffDrawing: Boolean = true
+
     init {
         savedStateController.performRestore(null)
         lifecycleRegistry.currentState = Lifecycle.State.CREATED

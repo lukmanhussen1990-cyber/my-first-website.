@@ -22,13 +22,16 @@ class RoundBoard(
 
     val isEmpty: Boolean get() = entries.isEmpty()
 
-    /** Blend a final answer from the model into the board; returns the board, best first. */
-    fun commit(guesses: List<Guess>): List<Guess> {
-        val fresh = blend(guesses)
+    /**
+     * Blend a final answer from the model into the board; returns the board, best first.
+     * A [deep] answer (the slower, stronger model) counts for more and fades the others less.
+     */
+    fun commit(guesses: List<Guess>, deep: Boolean = false): List<Guess> {
+        val fresh = blend(guesses, if (deep) DEEP_KEEP else keep)
         for (key in entries.keys.toList()) {
             if (key in fresh) continue
             val e = entries.getValue(key)
-            val faded = e.score * decay
+            val faded = e.score * (if (deep) DEEP_DECAY else decay)
             if (faded < dropBelow) entries.remove(key) else entries[key] = e.copy(score = faded)
         }
         entries.putAll(fresh)
@@ -42,7 +45,7 @@ class RoundBoard(
     fun preview(partial: List<Guess>): List<Guess> {
         val view = LinkedHashMap<String, Entry>()
         entries.forEach { (k, e) -> view[k] = e.copy(score = e.score * PREVIEW_FADE) }
-        view.putAll(blend(partial))
+        view.putAll(blend(partial, keep))
         return snapshot(view)
     }
 
@@ -51,7 +54,7 @@ class RoundBoard(
 
     fun clear() = entries.clear()
 
-    private fun blend(guesses: List<Guess>): Map<String, Entry> {
+    private fun blend(guesses: List<Guess>, keep: Double): Map<String, Entry> {
         val out = LinkedHashMap<String, Entry>()
         for (g in guesses) {
             val key = GuessEngine.normalize(g.answer)
@@ -69,5 +72,7 @@ class RoundBoard(
 
     private companion object {
         const val PREVIEW_FADE = 0.9
+        const val DEEP_KEEP = 0.3
+        const val DEEP_DECAY = 0.9
     }
 }

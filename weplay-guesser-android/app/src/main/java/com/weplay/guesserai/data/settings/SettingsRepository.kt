@@ -35,6 +35,8 @@ class SettingsRepository(context: Context) {
             fastMode = prefs.getBoolean(K_FAST, d.fastMode),
             customWords = prefs.getString(K_WORDS, "").orEmpty(),
             compactOverlay = prefs.getBoolean(K_COMPACT, d.compactOverlay),
+            accuracyBoost = prefs.getBoolean(K_BOOST, d.accuracyBoost),
+            keepOffDrawing = prefs.getBoolean(K_KEEP_OFF, d.keepOffDrawing),
         )
         // v1 defaulted to Opus with 2 s captures; v2 switches existing installs to the fast setup.
         if (prefs.getInt(K_VERSION, 1) < 2) {
@@ -61,6 +63,8 @@ class SettingsRepository(context: Context) {
             .putBoolean(K_FAST, s.fastMode)
             .putString(K_WORDS, s.customWords)
             .putBoolean(K_COMPACT, s.compactOverlay)
+            .putBoolean(K_BOOST, s.accuracyBoost)
+            .putBoolean(K_KEEP_OFF, s.keepOffDrawing)
             .putInt(K_VERSION, VERSION)
             .apply()
     }
@@ -80,6 +84,8 @@ class SettingsRepository(context: Context) {
         const val K_FAST = "fast_mode"
         const val K_WORDS = "custom_words"
         const val K_COMPACT = "compact_overlay"
+        const val K_BOOST = "accuracy_boost"
+        const val K_KEEP_OFF = "keep_off_drawing"
         const val K_VERSION = "settings_version"
         const val VERSION = 2
     }
