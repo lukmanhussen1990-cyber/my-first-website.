@@ -25,6 +25,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.weplay.guesserai.domain.OverlayPlacement
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -33,8 +34,8 @@ import kotlin.math.roundToInt
  *
  * Dragging is handled on the View level with raw screen coordinates: a touch that moves past
  * the touch slop is intercepted and moves the whole window, while taps fall through to the
- * Compose buttons inside. On release the window glides back inside the screen; when minimised
- * it snaps to the nearest edge like a chat head.
+ * Compose buttons inside. On release the window glides back inside the screen and, with
+ * [keepOffDrawing], off the canvas; when minimised it snaps to the nearest edge like a chat head.
  */
 class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRegistryOwner {
 
@@ -59,6 +60,11 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
     private val root = DragFrame(context)
     private var attached = false
     private var animator: ValueAnimator? = null
+    private val margin get() = (8 * context.resources.displayMetrics.density).roundToInt()
+
+    /** The panel has been put below the canvas once, or the user moved it; either way it is not placed again. */
+    private var placed = false
+    private var canvasChecks = 0
 
     /** Edge-snapping is only used for the minimised bubble. */
     var snapToEdge = false
@@ -66,12 +72,49 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
     /** Vertical band of the drawing canvas in screen pixels (top, bottom), or null if unknown. */
     var avoidBand: (() -> Pair<Int, Int>?)? = null
 
-    /** When true, the panel is moved off [avoidBand] after a drag so it does not hide the drawing. */
+    /**
+     * When true, the panel starts just below [avoidBand] and is moved off it after a drag, a resize
+     * or [settle], so it does not hide the drawing. Turning it on moves the panel right away.
+     */
     var keepOffDrawing: Boolean = true
+        set(value) {
+            val turnedOn = value && !field
+            field = value
+            if (turnedOn) settle()
+        }
+
+    private val settleNow = Runnable { animateInside(bounce = false) }
+
+    /**
+     * Starts the panel on the right, just below the canvas. The canvas may only be measured after
+     * the first frames are captured, so this looks again for a few seconds before giving up.
+     */
+    private val placeBelowCanvas = object : Runnable {
+        override fun run() {
+            if (!attached || placed || !keepOffDrawing || snapToEdge) return
+            val band = avoidBand?.invoke()
+            if (band == null || root.width == 0) {
+                if (++canvasChecks < CANVAS_CHECKS) root.postDelayed(this, CANVAS_CHECK_MS)
+                return
+            }
+            placed = true
+            val (sw, _) = screenSize()
+            val (x, y) = restingPlace(sw - root.width - margin, band.second + margin)
+            // Right after show() the window is still fading in, so jump there; once it has been seen, glide.
+            if (canvasChecks == 0) {
+                animator?.cancel()
+                moveTo(x, y)
+            } else glide(params.x, params.y, x, y, bounce = false)
+        }
+    }
 
     init {
         savedStateController.performRestore(null)
         lifecycleRegistry.currentState = Lifecycle.State.CREATED
+        // A panel that grows (hint editor, "+N more", answer banner) must not run off screen or onto the canvas.
+        root.addOnLayoutChangeListener { _, l, t, r, b, oldL, oldT, oldR, oldB ->
+            if (r - l != oldR - oldL || b - t != oldB - oldT) settle()
+        }
     }
 
     fun show(content: @Composable () -> Unit) {
@@ -90,11 +133,15 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
         wm.addView(root, params)
         attached = true
         lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+        // Runs after the first layout pass, when the panel's width is known.
+        root.post(placeBelowCanvas)
     }
 
     fun hide() {
         if (!attached) return
         animator?.cancel()
+        root.removeCallbacks(placeBelowCanvas)
+        root.removeCallbacks(settleNow)
         lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
         runCatching { wm.removeViewImmediate(root) }
         attached = false
@@ -104,8 +151,14 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
     fun bounds(): Rect? = if (!attached || root.width == 0) null
     else Rect(params.x, params.y, params.x + root.width, params.y + root.height)
 
-    /** Keep the panel fully on screen after its size changes (e.g. expanding from the bubble). */
-    fun settle() = root.post { animateInside(bounce = false) }
+    /**
+     * Keep the panel fully on screen (and off the canvas, with [keepOffDrawing]) after its size or
+     * the screen changes. Calls within one frame are merged into one.
+     */
+    fun settle() {
+        root.removeCallbacks(settleNow)
+        root.post(settleNow)
+    }
 
     fun screenSize(): Pair<Int, Int> {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -124,20 +177,34 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
         if (attached) runCatching { wm.updateViewLayout(root, params) }
     }
 
-    private fun animateInside(bounce: Boolean) {
-        if (!attached) return
+    /**
+     * Where a window dropped at ([x], [y]) should rest: on screen, at an edge when minimised, and
+     * below or above the canvas with [keepOffDrawing].
+     */
+    private fun restingPlace(x: Int = params.x, y: Int = params.y): Pair<Int, Int> {
         val (sw, sh) = screenSize()
-        val margin = (8 * context.resources.displayMetrics.density).roundToInt()
-        val maxX = (sw - root.width - margin).coerceAtLeast(margin)
-        val maxY = (sh - root.height - margin).coerceAtLeast(margin)
-        val targetX = if (snapToEdge) {
-            if (params.x + root.width / 2 < sw / 2) 0 else sw - root.width
-        } else params.x.coerceIn(margin, maxX)
-        val targetY = params.y.coerceIn(margin, maxY)
-        if (targetX == params.x && targetY == params.y) return
+        val w = root.width
+        val h = root.height
+        val maxX = (sw - w - margin).coerceAtLeast(margin)
+        val maxY = (sh - h - margin).coerceAtLeast(margin)
+        val insideY = y.coerceIn(margin, maxY)
+        // The bubble is small enough to sit anywhere, canvas included.
+        if (snapToEdge) return (if (x + w / 2 < sw / 2) 0 else sw - w) to insideY
+        val band = if (keepOffDrawing) avoidBand?.invoke() else null
+        val restY = if (band == null) insideY
+        else OverlayPlacement.yOutside(insideY, h, band.first, band.second, sh, margin)
+        return x.coerceIn(margin, maxX) to restY
+    }
 
-        val startX = params.x
-        val startY = params.y
+    private fun animateInside(bounce: Boolean) {
+        // Never pull the window out from under the user's finger.
+        if (!attached || root.width == 0 || root.dragging) return
+        val (targetX, targetY) = restingPlace()
+        if (targetX == params.x && targetY == params.y) return
+        glide(params.x, params.y, targetX, targetY, bounce)
+    }
+
+    private fun glide(startX: Int, startY: Int, targetX: Int, targetY: Int, bounce: Boolean) {
         animator?.cancel()
         animator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 280
@@ -157,38 +224,53 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
         private var downRawY = 0f
         private var startX = 0
         private var startY = 0
-        private var dragging = false
+
+        /** A finger is moving the window (rather than tapping a button inside it). */
+        var dragging = false
+            private set
+
+        override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+            if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+                // Catch the window mid-glide; it settles again when the finger lifts.
+                animator?.cancel()
+                downRawX = ev.rawX; downRawY = ev.rawY
+                startX = params.x; startY = params.y
+                dragging = false
+            }
+            val handled = super.dispatchTouchEvent(ev)
+            if (ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL) {
+                val dropped = dragging
+                dragging = false
+                // Also after a tap: a glide it interrupted must still finish.
+                animateInside(bounce = dropped)
+            }
+            return handled
+        }
 
         override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
-            when (ev.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    animator?.cancel()
-                    downRawX = ev.rawX; downRawY = ev.rawY
-                    startX = params.x; startY = params.y
-                    dragging = false
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    if (!dragging && (abs(ev.rawX - downRawX) > slop || abs(ev.rawY - downRawY) > slop)) {
-                        dragging = true
-                    }
-                }
-            }
+            if (ev.actionMasked == MotionEvent.ACTION_MOVE && !dragging &&
+                (abs(ev.rawX - downRawX) > slop || abs(ev.rawY - downRawY) > slop)
+            ) startDrag()
             return dragging
         }
 
         override fun onTouchEvent(ev: MotionEvent): Boolean {
-            when (ev.actionMasked) {
-                MotionEvent.ACTION_DOWN -> return true
-                MotionEvent.ACTION_MOVE -> {
-                    dragging = true
-                    moveTo(startX + (ev.rawX - downRawX).roundToInt(), startY + (ev.rawY - downRawY).roundToInt())
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    if (dragging) animateInside(bounce = true)
-                    dragging = false
-                }
+            if (ev.actionMasked == MotionEvent.ACTION_MOVE) {
+                if (!dragging) startDrag()
+                moveTo(startX + (ev.rawX - downRawX).roundToInt(), startY + (ev.rawY - downRawY).roundToInt())
             }
             return true
         }
+
+        private fun startDrag() {
+            dragging = true
+            // The user chose a spot; do not move the panel below the canvas on its own any more.
+            placed = true
+        }
+    }
+
+    private companion object {
+        const val CANVAS_CHECKS = 12
+        const val CANVAS_CHECK_MS = 500L
     }
 }

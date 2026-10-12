@@ -20,9 +20,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,7 +30,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,10 +47,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
@@ -56,6 +60,7 @@ import com.weplay.guesserai.domain.GuessSource
 import com.weplay.guesserai.domain.RankedGuess
 import com.weplay.guesserai.service.AiStatus
 import com.weplay.guesserai.service.OverlayUiState
+import kotlinx.coroutines.delay
 
 private val Glass = Color(0xD60E081C)
 private val Neon = Color(0xFFA855F7)
@@ -67,6 +72,22 @@ private val Cyan = Color(0xFF67E8F9)
 private val LiveGreen = Color(0xFF4ADE80)
 private val Amber = Color(0xFFFBBF24)
 private val ErrRed = Color(0xFFF87171)
+private val Soft = Color(0xFFC4B5FD)
+private val ClueBlue = Color(0xFFA5F3FC)
+
+/** Guess rows always on show; more sit behind "+N more". */
+private const val SHOWN_GUESSES = 3
+
+/**
+ * Line height as a multiple of the font size. Generous enough for glyphs from taller fallback
+ * fonts (★ ✓ ⚠ 🔒), so a line keeps its height whatever it shows.
+ */
+private const val LINE_SPACING = 1.4f
+
+/** How long "busy" outlasts a request, to bridge the gap before the next one starts. */
+private const val BUSY_HOLD_MS = 1_500L
+
+private val GuessTextSize = 10.sp
 
 interface OverlayActions {
     fun onMinimize()
@@ -90,13 +111,34 @@ fun OverlayRoot(state: OverlayUiState, minimized: Boolean, compact: Boolean, wid
     }
 }
 
+/** Fixed height of one text line at [fontSize]; every changing line uses it, so the window never jumps. */
+@Composable
+private fun lineHeight(fontSize: TextUnit): Dp = with(LocalDensity.current) { (fontSize * LINE_SPACING).toDp() }
+
+/**
+ * True while a request runs. Between back-to-back requests the status is WATCHING for a moment;
+ * this holds through that gap, so the waveform and "Thinking…" do not flicker.
+ */
+@Composable
+private fun rememberBusy(status: AiStatus): Boolean {
+    var held by remember { mutableStateOf(false) }
+    LaunchedEffect(status) {
+        if (status == AiStatus.WATCHING && held) delay(BUSY_HOLD_MS)
+        held = status == AiStatus.ANALYZING
+    }
+    return held || status == AiStatus.ANALYZING
+}
+
 /**
  * Small panel: header, one status line, the hint, the top guesses as big tap-to-copy rows, and
  * one row of buttons. No preview image, so it covers as little of the game as possible.
+ * Every part has a fixed height: the window only grows when the hint editor or "+N more" is
+ * opened, or when the game's answer is pinned at the end of a round.
  */
 @Composable
 private fun CompactPanel(state: OverlayUiState, width: Dp, actions: OverlayActions) {
     val shape = RoundedCornerShape(14.dp)
+    val busy = rememberBusy(state.status)
     Box(Modifier.padding(8.dp)) {
         Column(
             Modifier
@@ -119,20 +161,13 @@ private fun CompactPanel(state: OverlayUiState, width: Dp, actions: OverlayActio
                 Spacer(Modifier.width(3.dp))
                 WindowButton("✕", Color(0xFFFCA5A5), size = 17.dp) { actions.onClose() }
             }
-            Row(Modifier.padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                Waveform(active = state.status == AiStatus.ANALYZING)
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    state.message, color = if (state.status == AiStatus.ERROR) ErrRed else Color(0xFFC4B5FD),
-                    fontSize = 7.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
-            }
+            Spacer(Modifier.height(3.dp))
+            StatusLine(state, busy, compact = true)
             HintLine(state, actions, compact = true)
-            if (state.hintMismatch) Text("⚠ nothing fits hint", color = Amber, fontSize = 7.sp)
             Spacer(Modifier.height(3.dp))
             AnswerBanner(state, actions)
-            GuessList(state, actions, compact = true)
-            Spacer(Modifier.height(5.dp))
+            GuessList(state, busy, actions, compact = true)
+            Spacer(Modifier.height(2.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 NeonButton("➤ Next", primary = true, enabled = state.guesses.size > 1, height = 24.dp, modifier = Modifier.weight(1f)) { actions.onNextGuess() }
                 NeonButton("↻", primary = false, height = 24.dp, modifier = Modifier.width(24.dp)) { actions.onRefresh() }
@@ -171,9 +206,11 @@ private fun Bubble(state: OverlayUiState, actions: OverlayActions) {
     }
 }
 
+/** Full panel with the drawing preview. Like the compact one, its parts keep a fixed height. */
 @Composable
 private fun Panel(state: OverlayUiState, width: Dp, actions: OverlayActions) {
     val shape = RoundedCornerShape(18.dp)
+    val busy = rememberBusy(state.status)
     Box(Modifier.padding(10.dp)) {
         Column(
             Modifier
@@ -192,16 +229,14 @@ private fun Panel(state: OverlayUiState, width: Dp, actions: OverlayActions) {
             Spacer(Modifier.height(6.dp))
             Header(state, actions)
             NeonDivider()
-            Thumbnail(state)
+            Thumbnail(state, busy)
             Spacer(Modifier.height(6.dp))
-            StatusLine(state)
-            if (state.detectedObject.isNotBlank()) {
-                Spacer(Modifier.height(5.dp))
-                Detected(state)
-            }
+            StatusLine(state, busy, compact = false)
+            Spacer(Modifier.height(5.dp))
+            Detected(state)
             Spacer(Modifier.height(7.dp))
-            GuessesSection(state, actions)
-            Spacer(Modifier.height(8.dp))
+            GuessesSection(state, busy, actions)
+            Spacer(Modifier.height(4.dp))
             Buttons(state, actions)
             Text(
                 "Tap = copy • Hold = ✓ correct",
@@ -287,13 +322,14 @@ private fun NeonDivider() {
     )
 }
 
+/** Drawing preview at a fixed height, cropped to fit, so the first frame does not resize the panel. */
 @Composable
-private fun Thumbnail(state: OverlayUiState) {
+private fun Thumbnail(state: OverlayUiState, busy: Boolean) {
     val shape = RoundedCornerShape(10.dp)
     val scan = rememberInfiniteTransition(label = "scan")
     val y by scan.animateFloat(0f, 1f, infiniteRepeatable(tween(1400, easing = LinearEasing), RepeatMode.Reverse), label = "y")
     Box(
-        Modifier.fillMaxWidth().heightIn(min = 54.dp, max = 92.dp)
+        Modifier.fillMaxWidth().height(88.dp)
             .clip(shape)
             .background(Color.White.copy(alpha = 0.05f))
             .border(1.dp, Neon.copy(alpha = 0.35f), shape),
@@ -301,11 +337,11 @@ private fun Thumbnail(state: OverlayUiState) {
     ) {
         val bmp = state.thumbnail
         if (bmp != null && !bmp.isRecycled) {
-            Image(bmp.asImageBitmap(), "Drawing preview", Modifier.fillMaxWidth(), contentScale = ContentScale.Crop)
+            Image(bmp.asImageBitmap(), "Drawing preview", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         } else {
-            Text("Waiting for drawing…", color = Muted, fontSize = 8.sp, modifier = Modifier.padding(vertical = 20.dp))
+            Text("Waiting for drawing…", color = Muted, fontSize = 8.sp)
         }
-        if (state.status == AiStatus.ANALYZING) {
+        if (busy) {
             Box(
                 Modifier.matchParentSize().drawBehind {
                     val yy = size.height * y
@@ -327,14 +363,20 @@ private fun Thumbnail(state: OverlayUiState) {
     }
 }
 
+/** The status message: one line in the compact panel, two in the full one, never more or fewer. */
 @Composable
-private fun StatusLine(state: OverlayUiState) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Waveform(active = state.status == AiStatus.ANALYZING)
-        Spacer(Modifier.width(5.dp))
+private fun StatusLine(state: OverlayUiState, busy: Boolean, compact: Boolean) {
+    val fontSize = if (compact) 7.5.sp else 8.5.sp
+    val lines = if (compact) 1 else 2
+    Row(
+        Modifier.fillMaxWidth().height(maxOf(lineHeight(fontSize) * lines, 10.dp)),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Waveform(active = busy)
+        Spacer(Modifier.width(if (compact) 4.dp else 5.dp))
         Text(
-            state.message, color = if (state.status == AiStatus.ERROR) ErrRed else Color(0xFFC4B5FD),
-            fontSize = 8.5.sp, maxLines = 2, overflow = TextOverflow.Ellipsis,
+            state.message, color = if (state.status == AiStatus.ERROR) ErrRed else Soft,
+            fontSize = fontSize, maxLines = lines, overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -354,38 +396,41 @@ private fun Waveform(active: Boolean) {
     }
 }
 
+/** What the AI sees in the drawing. Always shown (with a placeholder), so it never pops in. */
 @Composable
 private fun Detected(state: OverlayUiState) {
+    val seen = state.detectedObject.isNotBlank()
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(9.dp))
+        Modifier.fillMaxWidth().height(lineHeight(10.sp) + lineHeight(7.5.sp) + 6.dp)
+            .clip(RoundedCornerShape(9.dp))
             .background(Brush.horizontalGradient(listOf(Neon.copy(alpha = 0.28f), Neon.copy(alpha = 0.05f))))
             .border(1.dp, Color(0x4DC084FC), RoundedCornerShape(9.dp))
-            .padding(horizontal = 6.dp, vertical = 4.dp),
+            .padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(state.emoji.ifBlank { "🎨" }, fontSize = 14.sp)
+        Text(state.emoji.takeIf { seen && it.isNotBlank() } ?: "🎨", fontSize = 14.sp, maxLines = 1)
         Spacer(Modifier.width(5.dp))
         Column {
-            Text(state.detectedObject, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (state.category.isNotBlank()) Text(state.category, color = Color(0xFFC4B5FD), fontSize = 7.5.sp, maxLines = 1)
+            Text(
+                if (seen) state.detectedObject else "Nothing seen yet",
+                color = if (seen) Color.White else Muted, fontSize = 10.sp,
+                fontWeight = if (seen) FontWeight.Bold else FontWeight.Normal,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            if (seen && state.category.isNotBlank()) {
+                Text(state.category, color = Soft, fontSize = 7.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
 }
 
 @Composable
-private fun GuessesSection(state: OverlayUiState, actions: OverlayActions) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("AI GUESSES", color = Muted, fontSize = 7.5.sp, letterSpacing = 0.6.sp, fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.weight(1f))
-    }
+private fun GuessesSection(state: OverlayUiState, busy: Boolean, actions: OverlayActions) {
+    Text("AI GUESSES", color = Muted, fontSize = 7.5.sp, letterSpacing = 0.6.sp, fontWeight = FontWeight.SemiBold)
     HintLine(state, actions, compact = false)
-    state.hint?.blanks()?.let { Text(it, color = Color(0xFFA5F3FC), fontSize = 7.sp, fontFamily = FontFamily.Monospace, maxLines = 1) }
-    if (state.hintMismatch) {
-        Text("⚠ No guess fits the hint yet", color = Amber, fontSize = 7.5.sp)
-    }
     Spacer(Modifier.height(4.dp))
     AnswerBanner(state, actions)
-    GuessList(state, actions, compact = false)
+    GuessList(state, busy, actions, compact = false)
 }
 
 /** The answer the game itself showed (round over, or we guessed it). Tap to copy. */
@@ -414,29 +459,38 @@ private fun AnswerBanner(state: OverlayUiState, actions: OverlayActions) {
 
 /**
  * The hint ("2 words • 9 letters"). Tap it to fix a misread with +/- buttons; a hand-set hint
- * shows 🔒 and stays until the round ends or "Auto" is tapped.
+ * shows 🔒 and stays until the round ends or "Auto" is tapped. An amber ⚠ in front means no
+ * guess fits it. Below it, lines that are always there (blank until known): the category clue
+ * and the word blanks — one line holding either in the compact panel.
  */
 @Composable
 private fun HintLine(state: OverlayUiState, actions: OverlayActions, compact: Boolean) {
     var editing by remember { mutableStateOf(false) }
     val hint = state.hint
+    val fontSize = if (compact) 8.sp else 8.5.sp
     Row(
-        Modifier.padding(top = 2.dp).clip(RoundedCornerShape(5.dp)).clickable { editing = !editing }
-            .padding(horizontal = 2.dp, vertical = 1.dp),
+        Modifier.padding(top = 2.dp).height(lineHeight(fontSize) + 2.dp)
+            .clip(RoundedCornerShape(5.dp)).clickable { editing = !editing }
+            .padding(horizontal = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (state.hintMismatch) Text("⚠ ", color = Amber, fontSize = fontSize, fontWeight = FontWeight.Bold, maxLines = 1)
         Text(
             (if (state.hintManual) "🔒 " else "") + (hint?.label() ?: "Hint: tap to set"),
             color = if (hint == null) Muted else Cyan,
-            fontSize = if (compact) 8.sp else 8.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+            fontSize = fontSize, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
         )
-        Text(if (editing) " ▴" else " ✎", color = Muted, fontSize = 7.sp)
+        Text(if (editing) " ▴" else " ✎", color = Muted, fontSize = 7.sp, maxLines = 1)
     }
-    hint?.clue?.takeIf { it.isNotBlank() }?.let { clue ->
-        Text(
-            "“$clue”", color = Color(0xFFA5F3FC), fontSize = if (compact) 7.5.sp else 8.sp,
-            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 2.dp),
-        )
+    val clue = hint?.clue?.takeIf { it.isNotBlank() }?.let { "“$it”" }
+    val blanks = hint?.blanks()
+    if (compact) {
+        // One size for both, so the line keeps its height when the clue replaces the blanks.
+        ReservedLine(clue ?: blanks, 7.5.sp, ClueBlue, mono = clue == null)
+    } else {
+        ReservedLine(clue, 8.sp, ClueBlue)
+        ReservedLine(blanks, 7.sp, ClueBlue, mono = true)
     }
     if (editing) {
         Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -446,9 +500,22 @@ private fun HintLine(state: OverlayUiState, actions: OverlayActions, compact: Bo
         }
         if (state.hintManual) {
             Text(
-                "↺ Auto (read from game)", color = Color(0xFFC4B5FD), fontSize = 7.5.sp,
+                "↺ Auto (read from game)", color = Soft, fontSize = 7.5.sp,
                 modifier = Modifier.padding(top = 2.dp).clip(RoundedCornerShape(5.dp))
                     .clickable { actions.onAutoHint(); editing = false }.padding(2.dp),
+            )
+        }
+    }
+}
+
+/** One line of [text] that keeps its height when there is nothing to show yet. */
+@Composable
+private fun ReservedLine(text: String?, fontSize: TextUnit, color: Color, mono: Boolean = false) {
+    Box(Modifier.fillMaxWidth().height(lineHeight(fontSize)).padding(start = 2.dp), contentAlignment = Alignment.CenterStart) {
+        if (!text.isNullOrBlank()) {
+            Text(
+                text, color = color, fontSize = fontSize, fontFamily = if (mono) FontFamily.Monospace else null,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -465,36 +532,51 @@ private fun Stepper(label: String, value: Int, onMinus: () -> Unit, onPlus: () -
     }
 }
 
+/**
+ * The guesses: always [SHOWN_GUESSES] rows (empty ones when there are fewer guesses) and one
+ * line for "+N more", so new or dropped guesses never change the window's height.
+ */
 @Composable
-private fun GuessList(state: OverlayUiState, actions: OverlayActions, compact: Boolean) {
+private fun GuessList(state: OverlayUiState, busy: Boolean, actions: OverlayActions, compact: Boolean) {
     var expanded by remember { mutableStateOf(false) }
-    if (state.guesses.isEmpty()) {
-        Text(
-            if (state.status == AiStatus.ANALYZING) "Thinking…" else "No guesses yet",
-            color = Muted, fontSize = 8.5.sp, modifier = Modifier.padding(vertical = 4.dp),
-        )
-        return
-    }
-    val shown = if (expanded) state.guesses else state.guesses.take(3)
+    val more = state.guesses.size - SHOWN_GUESSES
+    // Fold up once the list is short again, so the next long list does not open by itself.
+    LaunchedEffect(more > 0) { if (more <= 0) expanded = false }
+    val slot = lineHeight(GuessTextSize) + 14.dp
+    val shown = if (expanded) state.guesses else state.guesses.take(SHOWN_GUESSES)
     shown.forEachIndexed { i, g ->
-        GuessRow(i + 1, g, top = i == 0, copied = state.copied == g.answer, compact = compact, actions = actions)
+        // Keyed by answer, so a row's confidence bar follows its guess when the order changes.
+        key(g.answer) {
+            GuessRow(i + 1, g, top = i == 0, copied = state.copied == g.answer, compact = compact, height = slot, actions = actions)
+        }
     }
-    if (state.guesses.size > 3) {
-        Text(
-            if (expanded) "Show less ▴" else "+${state.guesses.size - 3} more ▾",
-            color = Color(0xFFC4B5FD), fontSize = 8.sp,
-            modifier = Modifier.clickable { expanded = !expanded }.padding(top = 3.dp, bottom = 1.dp),
-        )
+    repeat((SHOWN_GUESSES - shown.size).coerceAtLeast(0)) { i ->
+        Box(Modifier.fillMaxWidth().height(slot).padding(start = 4.dp), contentAlignment = Alignment.CenterStart) {
+            if (shown.isEmpty() && i == 0) {
+                Text(if (busy) "Thinking…" else "No guesses yet", color = Muted, fontSize = 8.5.sp, maxLines = 1)
+            }
+        }
+    }
+    Box(
+        Modifier.fillMaxWidth().height(lineHeight(8.sp) + 4.dp).clip(RoundedCornerShape(4.dp))
+            .then(if (more > 0) Modifier.clickable { expanded = !expanded } else Modifier)
+            .padding(horizontal = 2.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        if (more > 0) Text(if (expanded) "Show less ▴" else "+$more more ▾", color = Soft, fontSize = 8.sp, maxLines = 1)
     }
 }
 
+/** One guess at a fixed [height]; tap copies it (✓ replaces the percentage), long-press marks it correct. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun GuessRow(rank: Int, g: RankedGuess, top: Boolean, copied: Boolean, compact: Boolean, actions: OverlayActions) {
+private fun GuessRow(
+    rank: Int, g: RankedGuess, top: Boolean, copied: Boolean, compact: Boolean, height: Dp, actions: OverlayActions,
+) {
     val fill by animateFloatAsState(g.confidence / 100f, tween(400), label = "bar")
     val fromList = g.source != GuessSource.AI
     Column(
-        Modifier.fillMaxWidth().padding(vertical = if (compact) 1.5.dp else 2.5.dp)
+        Modifier.fillMaxWidth().height(height).padding(vertical = if (compact) 1.5.dp else 2.5.dp)
             .clip(RoundedCornerShape(6.dp))
             .background(
                 when {
@@ -504,9 +586,10 @@ private fun GuessRow(rank: Int, g: RankedGuess, top: Boolean, copied: Boolean, c
                 }
             )
             .combinedClickable(onClick = { actions.onCopy(g) }, onLongClick = { actions.onMarkCorrect(g) })
-            .padding(horizontal = 4.dp, vertical = if (compact) 3.dp else 2.dp),
+            .padding(horizontal = 4.dp),
+        verticalArrangement = Arrangement.Center,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.height(lineHeight(GuessTextSize)), verticalAlignment = Alignment.CenterVertically) {
             if (!compact) {
                 Text("$rank", color = Muted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.width(4.dp))
@@ -522,14 +605,14 @@ private fun GuessRow(rank: Int, g: RankedGuess, top: Boolean, copied: Boolean, c
                     fromList -> Lilac.copy(alpha = 0.75f)
                     else -> Lilac
                 },
-                fontSize = if (top) 10.sp else 9.5.sp,
+                fontSize = if (top) GuessTextSize else 9.5.sp,
                 fontWeight = if (top) FontWeight.Bold else FontWeight.Medium,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
             )
             Text(
                 if (copied) "✓" else "${g.confidence}%",
                 color = if (copied) LiveGreen else if (top) NeonPink else Lilac,
-                fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1,
             )
         }
         Box(Modifier.padding(top = 2.dp).fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = 0.08f))) {

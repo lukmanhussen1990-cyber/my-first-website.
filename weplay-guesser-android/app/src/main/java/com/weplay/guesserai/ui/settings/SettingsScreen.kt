@@ -135,6 +135,12 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
                 "Answer without extended thinking (Haiku and Sonnet). Much quicker guesses.",
                 s.fastMode,
             ) { v -> vm.update { it.copy(fastMode = v) } }
+            SwitchRow(
+                "Accuracy boost",
+                "Haiku answers instantly; Claude Sonnet 5.5 double-checks the drawing every few seconds. " +
+                    "More accurate, costs a little more.",
+                s.accuracyBoost,
+            ) { v -> vm.update { it.copy(accuracyBoost = v) } }
         }
 
         SectionTitle("Word list")
@@ -160,6 +166,11 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
                 "Small window without the drawing preview, so the game chat stays free for pasting.",
                 s.compactOverlay,
             ) { v -> vm.update { it.copy(compactOverlay = v) } }
+            SwitchRow(
+                "Keep window off the drawing",
+                "The AI cannot see strokes under the window, so it moves below the drawing when dropped on it.",
+                s.keepOffDrawing,
+            ) { v -> vm.update { it.copy(keepOffDrawing = v) } }
         }
 
         SectionTitle("Capture speed")
@@ -174,7 +185,7 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
                 }
             }
             Text(
-                "Time between captures. Unchanged frames are never sent, and only one request runs at a time.",
+                "Time between captures. Unchanged frames are never sent.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp,
             )
         }
