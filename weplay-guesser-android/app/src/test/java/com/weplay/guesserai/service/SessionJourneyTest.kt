@@ -733,7 +733,8 @@ class SessionJourneyTest {
 
     @Test fun `chaos - many seeds`() {
         val failed = mutableListOf<String>()
-        for (seed in 1..12) runCatching { game { chaos(seed, seconds = 300) } } // 40 seeds were run once in the QA pass.onFailure { failed += "seed $seed: ${it.message?.substringAfter("chaos — ")?.take(700)}" }
+        // 40 seeds were run once in the QA pass; 12 keep the suite quick.
+        for (seed in 1..12) runCatching { game { chaos(seed, seconds = 300) } }.onFailure { failed += "seed $seed: ${it.message?.substringAfter("chaos — ")?.take(700)}" }
         assertTrue(failed.joinToString("\n"), failed.isEmpty())
     }
 
