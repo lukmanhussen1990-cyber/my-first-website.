@@ -37,6 +37,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.weplay.guesserai.WePlayGuesserApp
+import com.weplay.guesserai.data.ai.ClaudeVisionClient
 import com.weplay.guesserai.domain.AiModel
 import com.weplay.guesserai.domain.AppSettings
 import com.weplay.guesserai.domain.CaptureSpeed
@@ -115,10 +116,13 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
+            val urlOk = s.baseUrl.isBlank() || ClaudeVisionClient.isHttpUrl(s.baseUrl.trim().trimEnd('/'))
             OutlinedTextField(
                 value = s.baseUrl, onValueChange = { v -> vm.update { it.copy(baseUrl = v.trim()) } },
-                label = { Text("API base URL") }, singleLine = true,
-                supportingText = { Text("Default: ${AppSettings.DEFAULT_BASE_URL}") },
+                label = { Text("API base URL") }, singleLine = true, isError = !urlOk,
+                supportingText = {
+                    Text(if (urlOk) "Default: ${AppSettings.DEFAULT_BASE_URL}" else "Enter a full address, like ${AppSettings.DEFAULT_BASE_URL}")
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedButton(onClick = vm::testConnection) { Text("Test connection") }
@@ -142,7 +146,9 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
             if (s.model == AiModel.CUSTOM) {
                 OutlinedTextField(
                     value = s.customModelId, onValueChange = { v -> vm.update { it.copy(customModelId = v.trim()) } },
-                    label = { Text("Model ID") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Model ID") }, singleLine = true, isError = s.customModelId.isBlank(),
+                    supportingText = if (s.customModelId.isBlank()) ({ Text("Enter the model ID, e.g. ${AiModel.SONNET.id}") }) else null,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
             Text(

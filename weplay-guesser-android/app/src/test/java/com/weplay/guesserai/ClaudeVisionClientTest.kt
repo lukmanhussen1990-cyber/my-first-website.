@@ -101,6 +101,21 @@ class ClaudeVisionClientTest {
         assertEquals(1, server.requestCount)
     }
 
+    @Test fun `settings that cannot work are reported without sending anything`() = runTest {
+        val noModel = settings(AiModel.CUSTOM).copy(customModelId = "")
+        val noScheme = settings().copy(baseUrl = "api.example.com")
+        for ((s, msg) in listOf(noModel to "Enter a model ID in Settings", noScheme to "Check the API base URL in Settings")) {
+            val e = runCatching { ClaudeVisionClient().analyze(FrameImages(full = byteArrayOf(1)), PromptHints(), s) }.exceptionOrNull()
+            assertTrue("got $e", e is VisionException.BadConfig)
+            assertEquals(msg, e!!.message)
+            assertEquals(msg, ClaudeVisionClient().testConnection(s).exceptionOrNull()?.message)
+        }
+        assertEquals(0, server.requestCount)
+        assertTrue(ClaudeVisionClient.isHttpUrl("https://api.anthropic.com"))
+        assertFalse(ClaudeVisionClient.isHttpUrl("https://"))
+        assertFalse(ClaudeVisionClient.isHttpUrl("ftp://example.com"))
+    }
+
     @Test fun `replies without thinking get the short limits`() {
         val c = ClaudeVisionClient()
         val fastHaiku = AppSettings(apiKey = "k", model = AiModel.HAIKU, fastMode = true)

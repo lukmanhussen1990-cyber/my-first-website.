@@ -678,6 +678,7 @@ class AssistantSession(
         val (msg, pause) = when (e) {
             is VisionException.InvalidKey -> "Invalid API key — check Settings" to true
             is VisionException.ModelNotFound -> "Model not found — check Settings" to true
+            is VisionException.BadConfig -> e.message!! to true
             is VisionException.RateLimited -> { backoffMs = (backoffMs * 2).coerceIn(4_000, 60_000); e.message!! to false }
             is VisionException -> { backoffMs = (backoffMs + 1_000).coerceAtMost(10_000); (e.message ?: "AI error") to false }
             else -> { backoffMs = (backoffMs + 1_000).coerceAtMost(10_000); "Error: ${e.message ?: e.javaClass.simpleName}" to false }

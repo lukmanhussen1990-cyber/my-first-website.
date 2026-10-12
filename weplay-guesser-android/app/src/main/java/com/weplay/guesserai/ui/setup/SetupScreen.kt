@@ -36,6 +36,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.weplay.guesserai.AppContainer
+import com.weplay.guesserai.data.ai.ClaudeVisionClient
 import com.weplay.guesserai.ui.AppViewModels
 import com.weplay.guesserai.ui.components.AppLogo
 import com.weplay.guesserai.ui.components.GlassCard
@@ -119,10 +120,11 @@ fun SetupScreen(onDone: () -> Unit, vm: SetupViewModel = viewModel(factory = App
             )
             TextButton(onClick = { advanced = !advanced }) { Text(if (advanced) "Hide advanced ▴" else "Advanced: custom endpoint ▾") }
             if (advanced) {
+                val urlOk = s.baseUrl.isBlank() || ClaudeVisionClient.isHttpUrl(s.baseUrl.trimEnd('/'))
                 OutlinedTextField(
                     value = s.baseUrl, onValueChange = vm::onBaseUrl, singleLine = true,
-                    label = { Text("API base URL") },
-                    supportingText = { Text("Any Anthropic-compatible Messages API") },
+                    label = { Text("API base URL") }, isError = !urlOk,
+                    supportingText = { Text(if (urlOk) "Any Anthropic-compatible Messages API" else "Enter a full address, like https://api.anthropic.com") },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

@@ -32,6 +32,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
+import java.net.URI
 import java.time.Duration
 import java.util.Base64
 import kotlin.coroutines.cancellation.CancellationException
@@ -104,6 +105,7 @@ class ClaudeVisionClient(private val timeouts: Timeouts = Timeouts()) : VisionAn
         settings: AppSettings,
         onPartial: (PartialAnalysis) -> Unit,
     ): FrameAnalysis = withContext(Dispatchers.IO) {
+        check(settings)
         val s = effective(settings)
         try {
             stream(buildParams(images, hints, s), s, onPartial)
@@ -117,6 +119,7 @@ class ClaudeVisionClient(private val timeouts: Timeouts = Timeouts()) : VisionAn
 
     override suspend fun testConnection(settings: AppSettings): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
+            check(settings)
             try {
                 "Connected to ${ping(effective(settings))}"
             } catch (e: VisionException.ModelNotFound) {
@@ -255,8 +258,27 @@ class ClaudeVisionClient(private val timeouts: Timeouts = Timeouts()) : VisionAn
         throw VisionException.Network(e)
     }
 
+    /** Settings that cannot work are reported before anything is sent. */
+    private fun check(settings: AppSettings) {
+        problemWith(settings)?.let { throw VisionException.BadConfig(it) }
+    }
+
     companion object {
         const val FALLBACK_BETA = "server-side-fallback-2026-07-01"
+
+        /** Why these settings cannot reach the model, in words for the user; null when they look usable. */
+        fun problemWith(settings: AppSettings): String? = when {
+            settings.modelId.isBlank() -> "Enter a model ID in Settings"
+            !isHttpUrl(settings.baseUrl.trim().trimEnd('/').ifEmpty { AppSettings.DEFAULT_BASE_URL }) ->
+                "Check the API base URL in Settings"
+            else -> null
+        }
+
+        /** A full http(s) address with a host, like https://api.anthropic.com. */
+        fun isHttpUrl(url: String): Boolean = runCatching {
+            val u = URI(url)
+            (u.scheme == "https" || u.scheme == "http") && !u.host.isNullOrBlank()
+        }.getOrDefault(false)
 
         fun isOfficial(settings: AppSettings): Boolean =
             settings.baseUrl.trim().trimEnd('/').let { it.isEmpty() || it == AppSettings.DEFAULT_BASE_URL }

@@ -28,4 +28,6 @@ sealed class VisionException(message: String, cause: Throwable? = null) : Except
     class Network(cause: Throwable? = null) : VisionException("Network error", cause)
     class BadResponse(detail: String, cause: Throwable? = null) : VisionException(detail, cause)
     class Server(code: Int, detail: String, cause: Throwable? = null) : VisionException("API error $code: $detail", cause)
+    /** A setting that cannot work (no model ID, an address that is not a URL); nothing was sent. */
+    class BadConfig(detail: String) : VisionException(detail)
 }

@@ -14,6 +14,9 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.weplay.guesserai.WePlayGuesserApp
@@ -100,6 +103,23 @@ class HomeSettingsJourneyTest {
         compose.onNode(hasText("Clear") and hasAnyAncestor(isDialog())).performClick()
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Nothing learned yet", substring = true)).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Utah").assertDoesNotExist()
+    }
+
+    @Test fun `settings explain a missing model ID and an address that is not a URL`() {
+        compose.onNodeWithText("Settings").performScrollTo().performClick()
+        compose.onNodeWithText("Custom model ID").performScrollTo().performClick()
+        compose.onNodeWithText("Enter the model ID, e.g. claude-sonnet-5-5").performScrollTo().assertExists()
+        compose.onNode(hasText("Model ID") and hasSetTextAction()).performTextInput("my-model")
+        compose.onNodeWithText("Enter the model ID, e.g. claude-sonnet-5-5").assertDoesNotExist()
+        assertEquals("my-model", app.container.settings.current.modelId)
+
+        val url = compose.onNode(hasText("API base URL") and hasSetTextAction())
+        url.performScrollTo().performTextClearance()
+        url.performTextInput("api.example.com")
+        compose.onNodeWithText("Enter a full address, like https://api.anthropic.com").assertExists()
+        url.performTextClearance()
+        url.performTextInput("https://proxy.example.com")
+        compose.onNodeWithText("Enter a full address, like https://api.anthropic.com").assertDoesNotExist()
     }
 
     @Test fun `settings lists the WePlay app and the word list once loaded`() {
