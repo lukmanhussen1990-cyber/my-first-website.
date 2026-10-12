@@ -109,11 +109,16 @@ class SessionJourneyTest {
         var failNext: Throwable? = null
         var guesses = listOf(Guess("Utah", 80), Guess("Ohio", 40))
         val hint = HintPattern(1, 4, clue = "A state")
+        /** When set, answers come from here instead (a scripted game). */
+        var script: ((Screen) -> FrameAnalysis)? = null
         private var running = 0
         var maxRunning = 0
 
         override suspend fun analyze(images: FrameImages, hints: PromptHints, settings: AppSettings, onPartial: (PartialAnalysis) -> Unit): FrameAnalysis {
             calls += Call(scope.testScheduler.currentTime, images, hints)
+            // The answer is about the frame that was sent, whatever the screen shows by the time it arrives.
+            val reply = script?.invoke(screen) ?: replyFor(settings)
+            val fail = failNext.also { failNext = null }
             running++
             maxRunning = maxOf(maxRunning, running)
             try {
@@ -121,7 +126,11 @@ class SessionJourneyTest {
             } finally {
                 running--
             }
-            failNext?.let { failNext = null; throw it }
+            fail?.let { throw it }
+            return reply
+        }
+
+        private fun replyFor(settings: AppSettings): FrameAnalysis {
             val popup = screen.popup
             return FrameAnalysis(
                 isDrawingGame = true, canvasEmpty = screen.strokes == 0 && popup == null,
@@ -278,6 +287,65 @@ class SessionJourneyTest {
         play(5_000)
         assertEquals(1, ai.calls.size)
         assertEquals(AiStatus.PAUSED, session.state.value.status)
+    }
+
+    @Test fun `a full game - guessed, revealed, round over, next word`() = game {
+        val state = HintPattern(1, 4, clue = "A state")
+        val food = HintPattern(1, 5, clue = "A food")
+        fun frame(state: ScreenState, hint: HintPattern?, vararg g: Pair<String, Int>, revealed: String = "", empty: Boolean = false) =
+            FrameAnalysis(
+                isDrawingGame = true, canvasEmpty = empty, detectedObject = "", category = "", emoji = "",
+                hint = hint, canvasBox = screen.layout.canvas, hintBox = screen.layout.hint,
+                guesses = g.map { Guess(it.first, it.second) }, screenState = state, revealedAnswer = revealed,
+            )
+        ai.script = { s ->
+            when {
+                s.popup != null -> frame(ScreenState.ROUND_OVER, null, revealed = "utah")
+                s.hint == "utah" -> frame(ScreenState.WORD_REVEALED, null, revealed = "utah")
+                s.hint.startsWith("5 letters") && s.strokes == 0 -> frame(ScreenState.GUESSING, food, empty = true)
+                s.hint.startsWith("5 letters") -> frame(ScreenState.GUESSING, food, "Halwa" to 70, "Kheer" to 30)
+                else -> frame(ScreenState.GUESSING, state, "Utah" to 80, "Ohio" to 40)
+            }
+        }
+        play(3_000)
+        assertEquals(listOf("Utah", "Ohio"), session.state.value.guesses.map { it.answer })
+        session.markCopied("Utah")
+
+        screen.hint = "utah" // we guessed it: the bar shows the word
+        play(3_000)
+        assertEquals("Utah", session.state.value.answer)
+        assertTrue(session.state.value.message.contains("Utah"))
+
+        screen.popup = "Word: utah"
+        play(3_000)
+        screen.popup = null
+        screen.hint = "5 letters|A food"
+        screen.strokes = 0
+        play(3_000)
+        assertEquals(food, session.state.value.hint)
+        assertEquals(null, session.state.value.answer)
+        assertTrue(session.state.value.guesses.isEmpty())
+
+        screen.strokes = 2
+        play(3_000)
+        val v = session.state.value
+        assertEquals(listOf("Halwa", "Kheer"), v.guesses.map { it.answer })
+        assertEquals(null, v.copied)
+        // The word was saved once, although both the bar and the popup showed it.
+        assertEquals(listOf("Utah"), db.drawingDao().observeAll().first().map { it.correctAnswer })
+    }
+
+    @Test fun `the copied mark does not carry over to the next word`() = game {
+        play(2_000)
+        session.markCopied("Utah")
+        assertEquals("Utah", session.state.value.copied)
+        screen.popup = "Word: utah"
+        play(3_000) // round over
+        screen.popup = null
+        screen.strokes = 2 // next word; the model happens to think of Utah again
+        play(3_000)
+        assertEquals("Utah", session.state.value.guesses.first().answer)
+        assertEquals(null, session.state.value.copied)
     }
 
     @Test fun `next guess drops the top answer and tells the model it was wrong`() = game {

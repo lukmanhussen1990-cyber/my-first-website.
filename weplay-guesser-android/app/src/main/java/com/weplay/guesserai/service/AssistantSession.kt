@@ -560,6 +560,8 @@ class AssistantSession(
         if (tracker.roundId != round) {
             deepChanges.reset()
             dropStaleRequests()
+            // A ✓ from the last word must not mark the same answer as already typed in the next one.
+            _state.update { it.copy(copied = null) }
         }
         if (tracker.solved && deep != null && deep !== req) cancelDeep()
         return result
