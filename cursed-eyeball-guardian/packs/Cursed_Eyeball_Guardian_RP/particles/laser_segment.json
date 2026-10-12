@@ -1,0 +1,58 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "ceg:laser_segment",
+      "basic_render_parameters": {
+        "material": "particles_add",
+        "texture": "textures/particle/ceg_particles"
+      }
+    },
+    "components": {
+      "minecraft:emitter_rate_instant": {
+        "num_particles": 2
+      },
+      "minecraft:emitter_lifetime_once": {},
+      "minecraft:emitter_shape_point": {
+        "offset": [
+          "math.random(-0.03, 0.03)",
+          "math.random(-0.03, 0.03)",
+          "math.random(-0.03, 0.03)"
+        ]
+      },
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": 0.25
+      },
+      "minecraft:particle_initialization": {
+        "per_render_expression": "variable.lt = variable.particle_age / variable.particle_lifetime; variable.ok = variable.color.r + variable.color.g + variable.color.b > 0.01; variable.pr = variable.ok ? variable.color.r : 1.0; variable.pg = variable.ok ? variable.color.g : 0.08; variable.pb = variable.ok ? variable.color.b : 0.08; variable.hr = variable.pr + (1 - variable.pr) * 0.72; variable.hg = variable.pg + (1 - variable.pg) * 0.72; variable.hb = variable.pb + (1 - variable.pb) * 0.72; variable.dr = variable.pr * 0.45; variable.dg = variable.pg * 0.45; variable.db = variable.pb * 0.45; variable.sz = (variable.particle_random_1 < 0.45 ? ((0.14 + variable.particle_random_2 * 0.04) * (1 - variable.lt * 0.5)) : (0.34 + variable.particle_random_2 * 0.08) * (1 - variable.lt * 0.4)); variable.cr = (variable.particle_random_1 < 0.45 ? (variable.hr) : variable.pr); variable.cg = (variable.particle_random_1 < 0.45 ? (variable.hg) : variable.pg); variable.cb = (variable.particle_random_1 < 0.45 ? (variable.hb) : variable.pb); variable.ca = (variable.particle_random_1 < 0.45 ? ((1 - math.pow(variable.lt, 3))) : 0.7 * (1 - math.pow(variable.lt, 2)));"
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "variable.sz",
+          "variable.sz"
+        ],
+        "facing_camera_mode": "lookat_xyz",
+        "uv": {
+          "texture_width": 64,
+          "texture_height": 64,
+          "uv": [
+            0,
+            0
+          ],
+          "uv_size": [
+            16,
+            16
+          ]
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": [
+          "variable.cr",
+          "variable.cg",
+          "variable.cb",
+          "variable.ca"
+        ]
+      }
+    }
+  }
+}

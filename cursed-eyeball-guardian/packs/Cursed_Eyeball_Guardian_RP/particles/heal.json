@@ -1,0 +1,77 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "ceg:heal",
+      "basic_render_parameters": {
+        "material": "particles_blend",
+        "texture": "textures/particle/ceg_particles"
+      }
+    },
+    "components": {
+      "minecraft:emitter_rate_instant": {
+        "num_particles": 14
+      },
+      "minecraft:emitter_lifetime_once": {},
+      "minecraft:emitter_shape_box": {
+        "offset": [
+          0,
+          0.9,
+          0
+        ],
+        "half_dimensions": [
+          0.45,
+          0.9,
+          0.45
+        ],
+        "direction": [
+          "math.random(-0.2, 0.2)",
+          1,
+          "math.random(-0.2, 0.2)"
+        ]
+      },
+      "minecraft:particle_initial_speed": "math.random(0.4, 0.9)",
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": "(variable.particle_random_1 < 0.55 ? (math.random(1.0, 1.4)) : (variable.particle_random_1 < 0.8 ? (math.random(0.6, 1.0)) : math.random(0.7, 1.1)))"
+      },
+      "minecraft:particle_motion_dynamic": {
+        "linear_acceleration": [
+          "math.sin(variable.particle_age * 360 + variable.particle_random_2 * 360) * 0.6",
+          0.8,
+          "math.cos(variable.particle_age * 360 + variable.particle_random_2 * 360) * 0.6"
+        ],
+        "linear_drag_coefficient": 1.2
+      },
+      "minecraft:particle_initialization": {
+        "per_render_expression": "variable.lt = variable.particle_age / variable.particle_lifetime; variable.ok = variable.color.r + variable.color.g + variable.color.b > 0.01; variable.pr = variable.ok ? variable.color.r : 1.0; variable.pg = variable.ok ? variable.color.g : 0.08; variable.pb = variable.ok ? variable.color.b : 0.08; variable.hr = variable.pr + (1 - variable.pr) * 0.72; variable.hg = variable.pg + (1 - variable.pg) * 0.72; variable.hb = variable.pb + (1 - variable.pb) * 0.72; variable.dr = variable.pr * 0.45; variable.dg = variable.pg * 0.45; variable.db = variable.pb * 0.45; variable.sz = (variable.particle_random_1 < 0.55 ? ((0.14 + variable.particle_random_2 * 0.05) * math.min(1, variable.lt * 6)) : (variable.particle_random_1 < 0.8 ? ((0.07 + variable.particle_random_2 * 0.04) * (1 - variable.lt * 0.5)) : (0.08 + variable.particle_random_2 * 0.04))); variable.cr = (variable.particle_random_1 < 0.55 ? ((variable.pr + (variable.hr - variable.pr) * 0.15)) : (variable.particle_random_1 < 0.8 ? (variable.hr) : (variable.pr + (variable.hr - variable.pr) * 0.5))); variable.cg = (variable.particle_random_1 < 0.55 ? ((variable.pg + (variable.hg - variable.pg) * 0.15)) : (variable.particle_random_1 < 0.8 ? (variable.hg) : (variable.pg + (variable.hg - variable.pg) * 0.5))); variable.cb = (variable.particle_random_1 < 0.55 ? ((variable.pb + (variable.hb - variable.pb) * 0.15)) : (variable.particle_random_1 < 0.8 ? (variable.hb) : (variable.pb + (variable.hb - variable.pb) * 0.5))); variable.ca = (variable.particle_random_1 < 0.55 ? (variable.lt < 0.7 ? 1 : (1 - variable.lt) / 0.3) : (variable.particle_random_1 < 0.8 ? (1 - variable.lt) : 1 - variable.lt));"
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "variable.sz",
+          "variable.sz"
+        ],
+        "facing_camera_mode": "lookat_xyz",
+        "uv": {
+          "texture_width": 64,
+          "texture_height": 64,
+          "uv": [
+            "(variable.particle_random_1 < 0.55 ? (48) : (variable.particle_random_1 < 0.8 ? (16) : 48))",
+            "(variable.particle_random_1 < 0.55 ? (0) : (variable.particle_random_1 < 0.8 ? (0) : 16))"
+          ],
+          "uv_size": [
+            16,
+            16
+          ]
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": [
+          "variable.cr",
+          "variable.cg",
+          "variable.cb",
+          "variable.ca"
+        ]
+      }
+    }
+  }
+}

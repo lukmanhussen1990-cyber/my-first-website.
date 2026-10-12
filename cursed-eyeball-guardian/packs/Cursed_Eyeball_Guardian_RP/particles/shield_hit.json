@@ -1,0 +1,76 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "ceg:shield_hit",
+      "basic_render_parameters": {
+        "material": "particles_add",
+        "texture": "textures/particle/ceg_particles"
+      }
+    },
+    "components": {
+      "minecraft:emitter_rate_instant": {
+        "num_particles": 22
+      },
+      "minecraft:emitter_lifetime_once": {},
+      "minecraft:emitter_shape_point": {
+        "offset": [
+          "variable.particle_random_1 < 0.25 ? 0 : 1.4 * math.sqrt(1 - math.pow(variable.particle_random_3 * 2 - 1, 2)) * math.cos(variable.particle_random_2 * 360)",
+          "variable.particle_random_1 < 0.25 ? 0 : 1.4 * (variable.particle_random_3 * 2 - 1)",
+          "variable.particle_random_1 < 0.25 ? 0 : 1.4 * math.sqrt(1 - math.pow(variable.particle_random_3 * 2 - 1, 2)) * math.sin(variable.particle_random_2 * 360)"
+        ],
+        "direction": [
+          "variable.particle_random_1 < 0.25 ? 0 : 1 * math.sqrt(1 - math.pow(variable.particle_random_3 * 2 - 1, 2)) * math.cos(variable.particle_random_2 * 360)",
+          "variable.particle_random_1 < 0.25 ? 1 : 1 * (variable.particle_random_3 * 2 - 1)",
+          "variable.particle_random_1 < 0.25 ? 0 : 1 * math.sqrt(1 - math.pow(variable.particle_random_3 * 2 - 1, 2)) * math.sin(variable.particle_random_2 * 360)"
+        ]
+      },
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": "(variable.particle_random_1 < 0.1 ? (0.25) : (variable.particle_random_1 < 0.25 ? (0.35) : math.random(0.3, 0.5)))"
+      },
+      "minecraft:particle_initial_speed": "(variable.particle_random_1 < 0.1 ? (0) : (variable.particle_random_1 < 0.25 ? (0) : math.random(1.5, 3.5)))",
+      "minecraft:particle_motion_dynamic": {
+        "linear_acceleration": [
+          0,
+          0,
+          0
+        ],
+        "linear_drag_coefficient": 3
+      },
+      "minecraft:particle_initial_spin": {
+        "rotation": "(variable.particle_random_1 < 0.1 ? (0) : (variable.particle_random_1 < 0.25 ? (0) : math.random(0, 360)))",
+        "rotation_rate": "(variable.particle_random_1 < 0.1 ? (0) : (variable.particle_random_1 < 0.25 ? (0) : math.random(-360, 360)))"
+      },
+      "minecraft:particle_initialization": {
+        "per_render_expression": "variable.lt = variable.particle_age / variable.particle_lifetime; variable.ok = variable.color.r + variable.color.g + variable.color.b > 0.01; variable.pr = variable.ok ? variable.color.r : 1.0; variable.pg = variable.ok ? variable.color.g : 0.08; variable.pb = variable.ok ? variable.color.b : 0.08; variable.hr = variable.pr + (1 - variable.pr) * 0.72; variable.hg = variable.pg + (1 - variable.pg) * 0.72; variable.hb = variable.pb + (1 - variable.pb) * 0.72; variable.dr = variable.pr * 0.45; variable.dg = variable.pg * 0.45; variable.db = variable.pb * 0.45; variable.sz = (variable.particle_random_1 < 0.1 ? ((0.6 + variable.particle_random_2 * 0.2) * (1 - variable.lt * 0.3)) : (variable.particle_random_1 < 0.25 ? (0.7 + variable.lt * 1.0) : (0.08 + variable.particle_random_2 * 0.05) * (1 - variable.lt * 0.6))); variable.cr = (variable.particle_random_1 < 0.1 ? (variable.hr) : (variable.particle_random_1 < 0.25 ? ((variable.hr + (variable.pr - variable.hr) * variable.lt)) : (variable.hr + (variable.pr - variable.hr) * variable.lt))); variable.cg = (variable.particle_random_1 < 0.1 ? (variable.hg) : (variable.particle_random_1 < 0.25 ? ((variable.hg + (variable.pg - variable.hg) * variable.lt)) : (variable.hg + (variable.pg - variable.hg) * variable.lt))); variable.cb = (variable.particle_random_1 < 0.1 ? (variable.hb) : (variable.particle_random_1 < 0.25 ? ((variable.hb + (variable.pb - variable.hb) * variable.lt)) : (variable.hb + (variable.pb - variable.hb) * variable.lt))); variable.ca = (variable.particle_random_1 < 0.1 ? (0.35 * math.pow(1 - variable.lt, 2)) : (variable.particle_random_1 < 0.25 ? (0.75 * (1 - variable.lt)) : (1 - math.pow(variable.lt, 2))));"
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "variable.sz",
+          "variable.sz"
+        ],
+        "facing_camera_mode": "lookat_xyz",
+        "uv": {
+          "texture_width": 64,
+          "texture_height": 64,
+          "uv": [
+            "(variable.particle_random_1 < 0.1 ? (0) : (variable.particle_random_1 < 0.25 ? (32) : 16))",
+            0
+          ],
+          "uv_size": [
+            16,
+            16
+          ]
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": [
+          "variable.cr",
+          "variable.cg",
+          "variable.cb",
+          "variable.ca"
+        ]
+      }
+    }
+  }
+}
