@@ -4,7 +4,7 @@ A floating AI overlay for WePlay "Guess My Drawing". It captures the screen, sen
 vision model, and shows ranked guesses in a draggable window above the game.
 
 ## Install
-1. Copy `release/WePlayDrawingGuesserAI-1.4.0.apk` to your phone (Android 10+) and open it.
+1. Copy `release/WePlayDrawingGuesserAI-1.5.0.apk` to your phone (Android 10+) and open it.
    Allow "Install unknown apps" for your file manager or browser when asked.
 2. Open the app, paste your Anthropic API key (console.anthropic.com), and tap **Test connection**.
 3. Allow **Display over other apps**. Notifications and Usage access are optional; Usage access lets the AI sleep when WePlay is closed.
@@ -16,11 +16,17 @@ vision model, and shows ranked guesses in a draggable window above the game.
 - Hold a guess when it was correct. The drawing and answer are saved, and that answer ranks higher in later rounds.
 - **Settings** has the model (Haiku 5.5 by default, then Sonnet 5.5, Opus 5.5, or a custom ID), fast mode, capture speed (1/2/5 s), your own word list, compact/normal window, API base URL, and the game package.
 
+## What's new in 1.5.0
+- **Only the AI's answers:** every guess in the window is exactly what Claude returned through your API key, with its own confidence. The app no longer adds word-list guesses or reshapes answers.
+- **Nothing hidden:** answers that fit the hint come first. Ones that don't fit are still shown after them, marked ⚠.
+- **The AI shapes answers to the hint itself:** "2 words 9 letters" → "Heart Beat", not "Heartbeat"; "Snails"; "A Bike". It also reads scrolling hints like "2 words 9 letters|Organ".
+- The word list and your confirmed answers are still sent to the AI as hints; the AI decides.
+
 ## What's new in 1.4.0
 - **Accuracy boost:** Haiku answers instantly, and Claude Sonnet 5.5 double-checks the drawing every few seconds; its answers count for more. Turn it off in Settings → Model. It costs a little more per round.
 - **Window stays off the drawing:** the AI can't see strokes under the floating window, so when you drop it on the canvas it slides just below. It starts there too. Turn this off in Settings → Overlay.
 - **Looks before guessing:** the AI first writes a short description of what's on the canvas, spreads its 10 guesses over different ideas, and is told which answers you already rejected.
-- **No junk suggestions:** word-list guesses only appear for distinctive hints (A, TV/GO/AC…, A Bike, Free Fire), not random words for "4 letters".
+- **No junk suggestions:** the word list is only mentioned to the AI for distinctive hints (A, TV/GO/AC…, A Bike, Free Fire), not as random words for "4 letters".
 - **Steady display:**
   - The list no longer reshuffles when two scores are close, or mid-answer.
   - The window keeps a fixed height.
