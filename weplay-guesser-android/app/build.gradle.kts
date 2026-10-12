@@ -53,6 +53,18 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all {
+                it.maxHeapSize = "2g"
+                // Robolectric downloads its Android framework jars; use the same Maven mirror as the build.
+                it.systemProperty("robolectric.dependency.repo.url", "https://maven-central.storage-download.googleapis.com/maven2")
+                // Screenshots are only written when asked for: ./gradlew :app:testDebugUnitTest -Pscreenshots
+                if (project.hasProperty("screenshots")) it.systemProperty("roborazzi.test.record", "true")
+            }
+        }
+    }
     packaging {
         resources {
             excludes += setOf(
@@ -93,4 +105,11 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    // App-level tests on the JVM: Android framework (Robolectric), Compose UI, screenshots (Roborazzi).
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.test:core-ktx:1.6.1")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.39.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.39.0")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

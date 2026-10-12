@@ -54,6 +54,7 @@ import kotlinx.coroutines.launch
 class SettingsViewModel(private val app: WePlayGuesserApp) : AndroidViewModel(app) {
     private val c = app.container
     val settings = c.settings.settings
+    val keySaved = c.settings.keySaved
     private val _test = MutableStateFlow<Pair<Boolean, String>?>(null)
     val test = _test.asStateFlow()
     val wePlayApps: List<Pair<String, String>> by lazy { GameAppMonitor.findWePlayApps(app) }
@@ -74,6 +75,7 @@ class SettingsViewModel(private val app: WePlayGuesserApp) : AndroidViewModel(ap
 fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory = AppViewModels.Factory)) {
     val s by vm.settings.collectAsState()
     val test by vm.test.collectAsState()
+    val keySaved by vm.keySaved.collectAsState()
     var keyDraft by remember { mutableStateOf(s.apiKey) }
     var showKey by remember { mutableStateOf(false) }
 
@@ -95,6 +97,9 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
                 visualTransformation = if (showKey) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = { TextButton(onClick = { showKey = !showKey }) { Text(if (showKey) "Hide" else "Show") } },
+                supportingText = if (keySaved) null else {
+                    { Text("This phone's secure storage failed, so the key is only kept until the app closes.", color = Bad) }
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(

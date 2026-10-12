@@ -8,8 +8,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class SettingsRepository(context: Context) {
+class SettingsRepository(context: Context, private val cipher: SecretCipher = KeyCipher) {
     private val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+
+    // The key as last written to prefs, so unrelated changes skip the Keystore.
+    private var storedKey = ""
+    private var storedCipherText: String? = null
+
+    private val _keySaved = MutableStateFlow(true)
+    /** False when the Keystore could not encrypt the key: it then lives in memory only. */
+    val keySaved: StateFlow<Boolean> = _keySaved.asStateFlow()
+
     private val _settings = MutableStateFlow(load())
     val settings: StateFlow<AppSettings> = _settings.asStateFlow()
 
@@ -23,8 +32,11 @@ class SettingsRepository(context: Context) {
 
     private fun load(): AppSettings {
         val d = AppSettings()
+        storedCipherText = prefs.getString(K_KEY, null)
+        storedKey = storedCipherText?.let(cipher::decrypt).orEmpty()
+        if (storedKey.isEmpty()) storedCipherText = null // unreadable after a keystore reset
         val loaded = AppSettings(
-            apiKey = prefs.getString(K_KEY, null)?.let(KeyCipher::decrypt).orEmpty(),
+            apiKey = storedKey,
             baseUrl = prefs.getString(K_URL, d.baseUrl) ?: d.baseUrl,
             model = enumOr(prefs.getString(K_MODEL, null), d.model),
             customModelId = prefs.getString(K_CUSTOM, "").orEmpty(),
@@ -50,9 +62,19 @@ class SettingsRepository(context: Context) {
         return loaded
     }
 
+    private fun encryptedKey(apiKey: String): String? {
+        val key = apiKey.trim()
+        if (key != storedKey || (key.isNotEmpty() && storedCipherText == null)) {
+            storedCipherText = if (key.isEmpty()) null else cipher.encrypt(key)
+            storedKey = key
+            _keySaved.value = key.isEmpty() || storedCipherText != null
+        }
+        return storedCipherText
+    }
+
     private fun save(s: AppSettings) {
         prefs.edit()
-            .putString(K_KEY, if (s.apiKey.isBlank()) null else KeyCipher.encrypt(s.apiKey.trim()))
+            .putString(K_KEY, encryptedKey(s.apiKey))
             .putString(K_URL, s.baseUrl.trim().ifEmpty { AppSettings.DEFAULT_BASE_URL })
             .putString(K_MODEL, s.model.name)
             .putString(K_CUSTOM, s.customModelId)

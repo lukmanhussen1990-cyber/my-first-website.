@@ -54,6 +54,7 @@ class HomeViewModel(private val app: WePlayGuesserApp) : AndroidViewModel(app) {
     private val c = app.container
     val running = c.assistantRunning
     val settings = c.settings.settings
+    val keySaved = c.settings.keySaved
     val learnedCount = c.history.count.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     fun canDrawOverlays() = Settings.canDrawOverlays(app)
@@ -79,6 +80,7 @@ fun HomeScreen(
     val ctx = LocalContext.current
     val running by vm.running.collectAsState()
     val settings by vm.settings.collectAsState()
+    val keySaved by vm.keySaved.collectAsState()
     val learned by vm.learnedCount.collectAsState()
     LifecycleResumeEffect(Unit) { vm.detectGame(); onPauseOrDispose { } }
 
@@ -147,7 +149,11 @@ fun HomeScreen(
 
         GlassCard {
             Text("Status", fontWeight = FontWeight.SemiBold)
-            InfoRow("API key", if (settings.hasApiKey) "Saved" else "Missing", if (settings.hasApiKey) Ok else Bad)
+            when {
+                !settings.hasApiKey -> InfoRow("API key", "Missing", Bad)
+                keySaved -> InfoRow("API key", "Saved", Ok)
+                else -> InfoRow("API key", "Until app closes", Warn)
+            }
             InfoRow("Overlay permission", if (vm.canDrawOverlays()) "Granted" else "Needed", if (vm.canDrawOverlays()) Ok else Warn)
             InfoRow("Model", settings.model.label.takeIf { settings.modelId == settings.model.id } ?: settings.modelId, MaterialTheme.colorScheme.secondary)
             InfoRow("Capture speed", "every ${settings.captureSpeed.label}", MaterialTheme.colorScheme.secondary)
