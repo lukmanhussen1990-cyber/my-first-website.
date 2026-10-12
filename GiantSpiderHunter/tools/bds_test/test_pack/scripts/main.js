@@ -632,6 +632,14 @@ const OPS = {
     e.remove();
     return {};
   },
+  // calibration only (test pack runs @minecraft/server beta): set an entity's movement attribute
+  setMovement: (r) => {
+    const e = resolveTarget(r.target);
+    const m = e.getComponent("minecraft:movement");
+    if (!m) throw new Error("no movement component");
+    m.setCurrentValue(num(r.value, "value"));
+    return { value: m.currentValue, max: safe(() => m.effectiveMax) };
+  },
   entityHurt: (r) => {
     const e = resolveTarget(r.target);
     const opts = { cause: r.cause || "entityAttack" };

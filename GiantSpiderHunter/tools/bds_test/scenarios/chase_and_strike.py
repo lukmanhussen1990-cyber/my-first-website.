@@ -7,9 +7,9 @@ DESCRIPTION = "pursuit speed, strikes only within reach, damage applied"
 
 def run(h):
     fast_config(h, autoSpawn=False, growthDurationSeconds=2, stalkTimeoutSeconds=600, lookSeconds=0.4)
-    y = platform(h, half=90)
-    p = h.spawn("Runner", x=0, y=y, z=-60)
-    h.summon(0.5, y, -40.5)
+    y = platform(h, half=60)
+    p = h.spawn("Runner", x=0, y=y, z=-30)
+    h.summon(0.5, y, -55.5)
     h.check(wait_state(h, "stalking", 15), "stalking")
     p.look_at_entity(target={"type": SPIDER}, mode="continuous")
     h.check(wait_state(h, "hunting", 15), "hunting")
@@ -27,8 +27,9 @@ def run(h):
         if pl and sp:
             samples.append((h.now(), pl["loc"], sp[0]["loc"], pl["hp"], state(sp[0])))
     p.stop()
-    if len(samples) >= 4:
-        (ta, _, sa, _, _), (tb, _, sb, _, _) = samples[1], samples[-1]
+    far = [s for s in samples if hdist(s[1], s[2]) > 10]
+    if len(far) >= 4:
+        (ta, _, sa, _, _), (tb, _, sb, _, _) = far[0], far[-1]
         speed = hdist(sa, sb) / max(0.1, tb - ta)
         h.note(f"giant chase speed {speed:.2f} blocks/s")
         h.check(speed >= 5.0, "giant pursues fast (>= 5 blocks/s)", speed=round(speed, 2))
