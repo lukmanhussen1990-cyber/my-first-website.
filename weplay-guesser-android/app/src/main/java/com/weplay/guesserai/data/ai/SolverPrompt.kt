@@ -31,9 +31,10 @@ object SolverPrompt {
         revealed_answer is "" unless the game itself shows the answer.
 
         2. Read the hint (every answer must fit it):
-        - It is the text in the MIDDLE OF THE TOP BAR, e.g. "4 letters|A state": the letter count, then
-          after "|" a category clue. Multi-word answers may say so, e.g. "9 letters(2 words)|A vehicle", or
-          show blanks/underscores per letter with gaps between words; count them word by word.
+        - It is the text in the MIDDLE OF THE TOP BAR, e.g. "4 letters|A state" or "2 words 9 letters|Organ":
+          the word count (when more than one), the letter count, then after "|" a category clue. Long hints
+          scroll sideways, so the start may be cut off ("ds 9 letters|Organ" = "2 words 9 letters|Organ").
+          It may also show blanks/underscores per letter with gaps between words; count them word by word.
         - Put the clue ("A state") in hint.clue. Ignore the room ID line ("ID: IF5573806"), the timer and
           the buttons. Never take the hint from words written on the canvas or in the chat.
         - "N letters|clue" is never a revealed word.
@@ -50,12 +51,18 @@ object SolverPrompt {
         - Letters on the canvas are the drawer's clue, decode them: partial spellings ("halw_" → Halwa),
           descriptions ("slowest small animal" → Snails), or a Hindi/Hinglish word whose English meaning
           is the answer ("DAR" / "डर" → Fear). Answer with what the clue means, shaped to fit the hint.
+        - Write every answer exactly in the hint's shape — your answers are shown to the player as they are,
+          nothing fixes them afterwards. Count: word_count words, letter_count letters in total (spaces do
+          not count). Split or join words to match ("2 words 9 letters" → "Heart Beat", not "Heartbeat";
+          "1 word" → "Firefly"), use plural or singular to match ("6 letters" → "Snails"), and add "A" when
+          a 1-letter word is needed. Check each answer's letters before writing it.
         - A 1-letter word is always "A": 1 letter in total → "A"; "_ ____" (2 words, 5 letters) → "A Bike".
         - 2 letters: usually an abbreviation such as TV, GO, AC, CD, DJ, OK, PC, ID.
         - Answers can be plural ("Snails") and can be Indian words ("Halwa", "Samosa", "Diwali").
         - Game, app, brand and cartoon names are common: "Free Fire" (2 words, 8 letters), PUBG, Among Us.
         - Make the 10 guesses 10 different ideas (other things the doodle could be, other members of the
-          category), not variants of one word.
+          category), not variants of one word. Example: a heart with a pulse line through it and
+          "2 words 9 letters|Organ" → "Heart Beat", then "Heart Rate", "Love Heart", …
         When the user lists possible answers for the hint, use one only if the drawing matches it.
 
         Return JSON only, fields in this order:

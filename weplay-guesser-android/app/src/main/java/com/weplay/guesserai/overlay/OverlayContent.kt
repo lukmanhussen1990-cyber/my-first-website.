@@ -56,7 +56,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
-import com.weplay.guesserai.domain.GuessSource
 import com.weplay.guesserai.domain.RankedGuess
 import com.weplay.guesserai.service.AiStatus
 import com.weplay.guesserai.service.OverlayUiState
@@ -574,7 +573,6 @@ private fun GuessRow(
     rank: Int, g: RankedGuess, top: Boolean, copied: Boolean, compact: Boolean, height: Dp, actions: OverlayActions,
 ) {
     val fill by animateFloatAsState(g.confidence / 100f, tween(400), label = "bar")
-    val fromList = g.source != GuessSource.AI
     Column(
         Modifier.fillMaxWidth().height(height).padding(vertical = if (compact) 1.5.dp else 2.5.dp)
             .clip(RoundedCornerShape(6.dp))
@@ -594,15 +592,12 @@ private fun GuessRow(
                 Text("$rank", color = Muted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.width(4.dp))
             }
+            // An AI answer that does not fit the hint is still shown (after the ones that fit), marked ⚠.
             Text(
-                g.answer + when {
-                    g.learned -> " ★"
-                    fromList && !compact -> " 📖"
-                    else -> ""
-                },
+                (if (g.matchesHint) "" else "⚠ ") + g.answer + if (g.learned) " ★" else "",
                 color = when {
+                    !g.matchesHint -> Lilac.copy(alpha = 0.6f)
                     top -> Color.White
-                    fromList -> Lilac.copy(alpha = 0.75f)
                     else -> Lilac
                 },
                 fontSize = if (top) GuessTextSize else 9.5.sp,

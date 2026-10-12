@@ -550,11 +550,7 @@ class AssistantSession(
         if (view.hint != knownLoadedFor) loadKnownAnswers(view.hint)
     }
 
-    private fun ctx() = RoundTracker.Context(
-        wordBank = wordBanks.get(settingsRepo.current.customWords),
-        stats = stats,
-        knownAnswers = knownForHint,
-    )
+    private fun ctx() = RoundTracker.Context(stats = stats)
 
     /** Save an answer the game showed (or the user confirmed) with the last drawing. */
     private fun learn(answer: String, guesses: List<RankedGuess>, hint: HintPattern?, category: String) {
@@ -570,11 +566,9 @@ class AssistantSession(
         knownForHint = emptyList()
         if (hint == null) return
         scope.launch {
+            // Only sent to the model with the next frame; never shown as guesses by themselves.
             val known = history.knownAnswers(hint)
-            if (knownLoadedFor == hint) {
-                knownForHint = known
-                if (known.isNotEmpty()) show(tracker.view(ctx()))
-            }
+            if (knownLoadedFor == hint) knownForHint = known
         }
     }
 

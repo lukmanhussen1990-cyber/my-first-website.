@@ -13,31 +13,28 @@ import org.junit.Test
 class GuessEngineTest {
     private val engine = GuessEngine()
 
-    @Test fun `keeps only answers matching 2 words and 9 letters, highest first`() {
+    @Test fun `answers that fit the hint come first, the others are still shown after them`() {
         val guesses = listOf(
             Guess("Red Car", 90), Guess("Fire Truck", 80), Guess("Blue Whale", 85), Guess("Cat House", 88), Guess("Ambulance", 70),
         )
         val r = engine.rank(guesses, HintPattern(2, 9), emptySet(), emptyMap())
-        // "Cat House" (8 letters) is reshaped to "Cat Houses" (9) but ranks below the exact matches.
-        assertEquals(listOf("Blue Whale", "Fire Truck", "Cat Houses"), r.guesses.map { it.answer })
+        assertEquals(listOf("Blue Whale", "Fire Truck", "Red Car", "Cat House", "Ambulance"), r.guesses.map { it.answer })
+        assertEquals(listOf(true, true, false, false, false), r.guesses.map { it.matchesHint })
         assertFalse(r.hintMismatch)
     }
 
-    @Test fun `spec example - 2 words 12 letters`() {
-        val guesses = listOf(Guess("Fire Truck", 95), Guess("Cat House", 80), Guess("Red Car", 60), Guess("Garbage Truck", 70), Guess("Monster Truck", 75))
-        val r = engine.rank(guesses, HintPattern(2, 12), emptySet(), emptyMap())
-        assertEquals(listOf("Monster Truck", "Garbage Truck"), r.guesses.map { it.answer })
+    @Test fun `nothing the AI said is replaced, reshaped or invented`() {
+        // Screenshot: "2 words 9 letters|Organ", heart with a pulse line. The AI's answers are shown as given.
+        val r = engine.rank(listOf(Guess("Heartbeat", 80), Guess("Heart", 60)), HintPattern(2, 9, clue = "Organ"), emptySet(), emptyMap())
+        assertEquals(listOf("Heartbeat", "Heart"), r.guesses.map { it.answer })
+        assertEquals(listOf(80, 60), r.guesses.map { it.confidence })
+        assertTrue(r.hintMismatch)
     }
 
     @Test fun `per-word lengths are enforced when known`() {
         val r = engine.rank(listOf(Guess("Fire Truck", 90), Guess("Black Cat", 95)), HintPattern(2, 9, listOf(4, 5)), emptySet(), emptyMap())
-        assertEquals(listOf("Fire Truck"), r.guesses.map { it.answer })
-    }
-
-    @Test fun `falls back to all answers when none match the hint`() {
-        val r = engine.rank(listOf(Guess("Dog", 80), Guess("Puppy", 60)), HintPattern(2, 12), emptySet(), emptyMap())
-        assertEquals(2, r.guesses.size)
-        assertTrue(r.hintMismatch)
+        assertEquals(listOf("Fire Truck", "Black Cat"), r.guesses.map { it.answer })
+        assertEquals(listOf(true, false), r.guesses.map { it.matchesHint })
     }
 
     @Test fun `rejected answers are removed and duplicates merged`() {
@@ -49,21 +46,17 @@ class GuessEngineTest {
         assertEquals(95, r.guesses.single().confidence)
     }
 
-    @Test fun `learning history boosts confirmed answers above close rivals`() {
-        val guesses = listOf(Guess("Black Cat", 84), Guess("Cat House", 80))
-        val r = engine.rank(guesses, null, emptySet(), mapOf("cat house" to AnswerStats(correct = 2, rejected = 0)))
-        assertEquals("Cat House", r.guesses.first().answer)
-        assertTrue(r.guesses.first().learned)
+    @Test fun `confidence is exactly the AI's, history only marks confirmed answers`() {
+        val r = engine.rank(listOf(Guess("Black Cat", 84), Guess("Cat House", 80)), null, emptySet(), mapOf("cat house" to AnswerStats(2, 0)))
+        assertEquals(listOf("Black Cat" to 84, "Cat House" to 80), r.guesses.map { it.answer to it.confidence })
+        assertTrue(r.guesses[1].learned)
+        assertFalse(r.guesses[0].learned)
     }
 
-    @Test fun `answers rejected often are pushed down`() {
-        assertTrue(GuessEngine.learningBoost(AnswerStats(0, 5)) < 0)
-        assertEquals(0, GuessEngine.learningBoost(null))
-    }
-
-    @Test fun `confidence is smoothed across frames`() {
-        val r = engine.rank(listOf(Guess("Cat", 40)), null, emptySet(), emptyMap(), previous = mapOf("cat" to 90))
-        assertEquals(60, r.guesses.single().confidence)
+    @Test fun `no hint means no filtering`() {
+        val r = engine.rank(listOf(Guess("Sun", 50), Guess("Moon", 70)), null, emptySet(), emptyMap())
+        assertEquals(listOf("Moon", "Sun"), r.guesses.map { it.answer })
+        assertTrue(r.guesses.all { it.matchesHint })
     }
 
     @Test fun `hyphenated answers count letters only`() {
@@ -91,35 +84,6 @@ class GuessEngineTest {
         // Three cells darkened by a stroke: the whole-image average moves only ~0.3.
         assertTrue(d.hasChanged(IntArray(1600) { if (it in 500..502) 150 else 240 }))
     }
-
-    @Test fun `singular answer is turned plural to fit the hint`() {
-        val r = engine.rank(listOf(Guess("Snail", 90), Guess("Slow Snail", 60)), HintPattern(1, 6), emptySet(), emptyMap())
-        assertEquals("Snails", r.guesses.first().answer)
-        assertFalse(r.hintMismatch)
-    }
-
-    @Test fun `a 1-letter first word becomes A`() {
-        val r = engine.rank(listOf(Guess("Bike", 88), Guess("Bicycle", 70)), HintPattern(2, 5), emptySet(), emptyMap())
-        assertEquals("A Bike", r.guesses.first().answer)
-    }
-
-    @Test fun `variants cover plural, article and joined forms`() {
-        val v = GuessEngine.variantsOf("Fire Fly")
-        assertTrue("Firefly" in v)
-        assertTrue("Fire Flies" in v)
-        assertTrue("A Fire Fly" in v)
-        assertTrue("Box" in GuessEngine.variantsOf("Boxes"))
-        assertTrue("Cherry" in GuessEngine.variantsOf("Cherries"))
-        assertTrue("Apple" in GuessEngine.variantsOf("An Apple"))
-        assertTrue("An Egg" in GuessEngine.variantsOf("Egg"))
-    }
-
-    @Test fun `a real AI match is not replaced by a variant`() {
-        val r = engine.rank(listOf(Guess("Snails", 50), Guess("Snail", 90)), HintPattern(1, 6), emptySet(), emptyMap())
-        assertEquals(listOf("Snails"), r.guesses.map { it.answer })
-        assertEquals(80, r.guesses.single().confidence) // the stronger "Snail" reading, minus the reshape penalty
-    }
-
 
     @Test fun `keeps the window off the drawing`() {
         val p = com.weplay.guesserai.domain.OverlayPlacement

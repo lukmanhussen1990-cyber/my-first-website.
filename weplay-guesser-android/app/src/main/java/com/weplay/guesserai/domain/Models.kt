@@ -107,9 +107,6 @@ data class PromptHints(
     val rejected: List<String> = emptyList(),
 )
 
-/** Where a guess shown in the overlay came from. */
-enum class GuessSource { AI, WORD_LIST, LEARNED }
-
 /** A guess after filtering and ranking by [GuessEngine]. */
 data class RankedGuess(
     val answer: String,
@@ -117,7 +114,6 @@ data class RankedGuess(
     val reason: String,
     val matchesHint: Boolean,
     val learned: Boolean,
-    val source: GuessSource = GuessSource.AI,
 )
 
 enum class CaptureSpeed(val seconds: Int, val label: String) {

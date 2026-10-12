@@ -11,11 +11,9 @@ package com.weplay.guesserai.domain
  */
 class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
 
-    /** Inputs owned by the session (word list, learning database). */
+    /** Inputs owned by the session: what the learning database knows (marks answers confirmed before with ★). */
     data class Context(
-        val wordBank: WordBank = WordBank.EMPTY,
         val stats: Map<String, AnswerStats> = emptyMap(),
-        val knownAnswers: List<String> = emptyList(),
     )
 
     /** What the overlay should show. */
@@ -163,7 +161,7 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
     fun view(ctx: Context): View = view(ctx, board.current())
 
     private fun view(ctx: Context, raw: List<Guess>): View {
-        val ranked = engine.rank(raw, hint, rejected, ctx.stats, emptyMap(), ctx.wordBank, ctx.knownAnswers)
+        val ranked = engine.rank(raw, hint, rejected, ctx.stats)
         val ordered = stableOrder(ranked.guesses, lastOrder)
         lastOrder = ordered.map { GuessEngine.normalize(it.answer) }
         return View(ordered, hint, manualHint != null, ranked.hintMismatch, answer)
@@ -270,7 +268,10 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
                 val i = previous.indexOf(GuessEngine.normalize(g.answer))
                 return g.confidence + if (i in STICKY.indices) STICKY[i] else 0
             }
-            return guesses.sortedWith(compareByDescending<RankedGuess> { weight(it) }.thenByDescending { it.confidence })
+            // Answers that fit the hint always stay above the ones that do not.
+            return guesses.sortedWith(
+                compareByDescending<RankedGuess> { it.matchesHint }.thenByDescending { weight(it) }.thenByDescending { it.confidence }
+            )
         }
     }
 }
