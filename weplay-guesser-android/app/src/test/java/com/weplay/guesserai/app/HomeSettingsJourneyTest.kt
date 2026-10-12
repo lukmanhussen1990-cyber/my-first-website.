@@ -9,6 +9,8 @@ import android.app.Activity
 import com.weplay.guesserai.service.AssistantService
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -20,6 +22,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.weplay.guesserai.WePlayGuesserApp
+import com.weplay.guesserai.domain.AiModel
 import com.weplay.guesserai.domain.HintPattern
 import com.weplay.guesserai.ui.MainActivity
 import kotlinx.coroutines.runBlocking
@@ -120,6 +123,20 @@ class HomeSettingsJourneyTest {
         url.performTextClearance()
         url.performTextInput("https://proxy.example.com")
         compose.onNodeWithText("Enter a full address, like https://api.anthropic.com").assertDoesNotExist()
+    }
+
+    @Test fun `settings switches and options are one control each, named by their label`() {
+        compose.onNodeWithText("Settings").performScrollTo().performClick()
+        val fast = app.container.settings.current.fastMode
+        // Tapping the title toggles it, and the toggle carries the title for screen readers.
+        compose.onNode(hasText("Fast mode") and isToggleable()).performScrollTo().assertExists()
+        compose.onNodeWithText("Fast mode").performClick()
+        assertEquals(!fast, app.container.settings.current.fastMode)
+        // Each option is one selectable row with its label, not a row plus a separate, nameless radio button.
+        val nameless = compose.onAllNodes(isSelectable() and !hasText("", substring = true)).fetchSemanticsNodes()
+        assertEquals("selectable controls without a label", 0, nameless.size)
+        compose.onNodeWithText("Claude Sonnet 5.5").performScrollTo().performClick()
+        assertEquals(AiModel.SONNET, app.container.settings.current.model)
     }
 
     @Test fun `settings lists the WePlay app and the word list once loaded`() {

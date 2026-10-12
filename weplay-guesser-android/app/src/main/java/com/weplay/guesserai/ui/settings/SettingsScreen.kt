@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
@@ -29,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -134,11 +136,12 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
         SectionTitle("Model (Claude Vision)")
         GlassCard {
             AiModel.entries.forEach { m ->
+                // The whole row is the option, read out once with its label.
                 Row(
-                    Modifier.fillMaxWidth().selectable(selected = s.model == m, onClick = { vm.update { it.copy(model = m) } }),
+                    Modifier.fillMaxWidth().selectable(selected = s.model == m, role = Role.RadioButton, onClick = { vm.update { it.copy(model = m) } }),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    RadioButton(selected = s.model == m, onClick = { vm.update { it.copy(model = m) } })
+                    RadioButton(selected = s.model == m, onClick = null)
                     Column {
                         Text(m.label, fontWeight = FontWeight.Medium)
                         Text(if (m.id.isNotEmpty()) "${m.id} • ${m.note}" else m.note, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
@@ -231,10 +234,10 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
             }
             wePlayApps.orEmpty().forEach { (pkg, label) ->
                 Row(
-                    Modifier.fillMaxWidth().selectable(selected = s.gamePackage == pkg, onClick = { vm.update { it.copy(gamePackage = pkg) } }),
+                    Modifier.fillMaxWidth().selectable(selected = s.gamePackage == pkg, role = Role.RadioButton, onClick = { vm.update { it.copy(gamePackage = pkg) } }),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    RadioButton(selected = s.gamePackage == pkg, onClick = { vm.update { it.copy(gamePackage = pkg) } })
+                    RadioButton(selected = s.gamePackage == pkg, onClick = null)
                     Column { Text(label); Text(pkg, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp) }
                 }
             }
@@ -265,11 +268,15 @@ private fun ChipRow(content: @Composable () -> Unit) {
 
 @Composable
 private fun SwitchRow(title: String, body: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    // The whole row toggles, so the title is a touch target too and screen readers say what is switched.
+    Row(
+        Modifier.fillMaxWidth().toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
             Text(title, fontWeight = FontWeight.Medium)
             Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         }
-        Switch(checked = checked, onCheckedChange = onChange)
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
