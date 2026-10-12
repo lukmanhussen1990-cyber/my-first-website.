@@ -130,6 +130,10 @@ class SessionJourneyTest {
         var notGame = false
         var guesses = listOf(Guess("Utah", 80), Guess("Ohio", 40))
         val hint = HintPattern(1, 4, clue = "A state")
+        /** Stream the guesses one by one before the full answer, like the real model. */
+        var streamPartials = false
+        /** The key cannot use the boost model. */
+        var boostFails: Throwable? = null
         /** When set, answers come from here instead (a scripted game). */
         var script: ((Screen) -> FrameAnalysis)? = null
         private var running = 0
@@ -143,11 +147,20 @@ class SessionJourneyTest {
             running++
             maxRunning = maxOf(maxRunning, running)
             try {
-                delay(latency)
+                if (streamPartials) {
+                    reply.guesses.forEachIndexed { i, _ ->
+                        delay(latency / (reply.guesses.size + 1))
+                        onPartial(PartialAnalysis(reply.hint, reply.guesses.take(i + 1), true, false, reply.screenState))
+                    }
+                    delay(latency / (reply.guesses.size + 1))
+                } else {
+                    delay(latency)
+                }
             } finally {
                 running--
             }
             fail?.let { throw it }
+            if (settings.model == AiModel.SONNET) boostFails?.let { throw it }
             return reply
         }
 
@@ -469,6 +482,63 @@ class SessionJourneyTest {
         session.onScreenChanged()
         play(2_000)
         assertTrue("next look after turning is the whole screen", !ai.calls.last().images.isCropped)
+    }
+
+    @Test fun `answers that arrive while paused are not shown, and resuming looks again at once`() = game {
+        ai.latency = 3_000
+        play(500) // a request is on its way
+        session.togglePause()
+        play(5_000)
+        assertEquals(AiStatus.PAUSED, session.state.value.status)
+        assertTrue("nothing shown while paused", session.state.value.guesses.isEmpty())
+        val calls = ai.calls.size
+        session.togglePause()
+        play(4_000)
+        assertEquals(calls + 1, ai.calls.size)
+        assertEquals("Utah", session.state.value.guesses.first().answer)
+    }
+
+    @Test fun `refresh starts the word over with a whole-screen look`() = game {
+        play(30_000)
+        session.refresh()
+        assertTrue(session.state.value.guesses.isEmpty())
+        play(2_000)
+        assertTrue(!ai.calls.last().images.isCropped)
+        assertEquals("Utah", session.state.value.guesses.first().answer)
+    }
+
+    @Test fun `a hint fixed by hand is sent to the model and kept until the next word`() = game {
+        play(3_000)
+        assertEquals(HintPattern(1, 4, clue = "A state"), session.state.value.hint)
+        session.adjustHint(1, 4) // the model misread it: 2 words, 8 letters
+        assertEquals(HintPattern(2, 8, clue = "A state"), session.state.value.hint)
+        assertTrue(session.state.value.hintManual)
+        play(2_000)
+        assertEquals(HintPattern(2, 8, clue = "A state"), ai.calls.last().hints.lastHint)
+        assertEquals("the model's reading does not undo it", HintPattern(2, 8, clue = "A state"), session.state.value.hint)
+        session.clearManualHint()
+        assertEquals(HintPattern(1, 4, clue = "A state"), session.state.value.hint)
+    }
+
+    @Test fun `a key without access to the boost model just carries on with the fast one`() = game {
+        settings.update { it.copy(accuracyBoost = true) }
+        ai.boostFails = VisionException.ModelNotFound("claude-sonnet-5-5")
+        repeat(20) { screen.strokes++; play(1_000) }
+        // The first look is cancelled when the first answer starts the word; the next one fails and the boost stops.
+        val boostLooks = ai.calls.filter { it.model == AiModel.SONNET }.map { it.at / 1000 }
+        assertTrue("boost kept trying: $boostLooks", boostLooks.size <= 2 && boostLooks.last() <= 6)
+        assertTrue(ai.calls.count { it.model == AiModel.HAIKU } >= 15)
+        assertTrue(session.state.value.status != AiStatus.ERROR && session.state.value.problem == null)
+        assertTrue(!session.state.value.message.contains("Sonnet"))
+    }
+
+    @Test fun `the first guesses show while the answer is still streaming`() = game {
+        ai.streamPartials = true
+        ai.latency = 3_000
+        play(1_400) // sent at 0.3 s; one guess has arrived, the answer is not finished
+        assertEquals(listOf("Utah"), session.state.value.guesses.map { it.answer })
+        play(3_000)
+        assertEquals(listOf("Utah", "Ohio"), session.state.value.guesses.map { it.answer })
     }
 
     @Test fun `the copied mark does not carry over to the next word`() = game {
