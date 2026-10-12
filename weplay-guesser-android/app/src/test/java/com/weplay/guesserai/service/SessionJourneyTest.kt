@@ -1,11 +1,15 @@
 package com.weplay.guesserai.service
 
+import android.app.AppOpsManager
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.os.Process
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.weplay.guesserai.data.HistoryRepository
@@ -13,6 +17,7 @@ import com.weplay.guesserai.data.WordBankRepository
 import com.weplay.guesserai.data.db.AppDatabase
 import com.weplay.guesserai.data.settings.SecretCipher
 import com.weplay.guesserai.data.settings.SettingsRepository
+import com.weplay.guesserai.domain.AiModel
 import com.weplay.guesserai.domain.AppSettings
 import com.weplay.guesserai.domain.FrameAnalysis
 import com.weplay.guesserai.domain.FrameImages
@@ -39,6 +44,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.util.concurrent.Executor
@@ -91,7 +97,12 @@ class SessionJourneyTest {
             c.restore()
             // Chat area under the canvas: the part of the screen that must never be saved.
             c.drawRect(0f, layout.canvas[3] * h, w.toFloat(), h.toFloat(), Paint().apply { color = Color.rgb(30, 30, 60) })
-            for (k in 0 until strokes) c.drawLine(80f, 220f + 40f * k, 480f, 250f + 40f * k, ink)
+            // Every stroke lands somewhere new inside the canvas (128..624 px).
+            for (k in 0 until strokes) {
+                val y = 150f + (k * 37) % 440
+                val x = 40f + (k * 53) % 120
+                c.drawLine(x, y, x + 260f + (k * 29) % 120, y + 30f, ink)
+            }
             popup?.let {
                 c.drawRect(60f, 250f, 514f, 420f, Paint().apply { color = Color.rgb(250, 250, 250) })
                 c.drawRect(60f, 250f, 514f, 420f, Paint().apply { color = Color.GRAY; style = Paint.Style.STROKE; strokeWidth = 3f })
@@ -103,7 +114,7 @@ class SessionJourneyTest {
 
     /** Stands in for the model: answers from what the screen shows, after [latency] ms. */
     private class FakeAi(private val screen: Screen, private val scope: TestScope) : VisionAnalyzer {
-        class Call(val at: Long, val images: FrameImages, val hints: PromptHints)
+        class Call(val at: Long, val images: FrameImages, val hints: PromptHints, val model: AiModel = AiModel.HAIKU)
         val calls = mutableListOf<Call>()
         var latency = 1_200L
         var failNext: Throwable? = null
@@ -115,7 +126,7 @@ class SessionJourneyTest {
         var maxRunning = 0
 
         override suspend fun analyze(images: FrameImages, hints: PromptHints, settings: AppSettings, onPartial: (PartialAnalysis) -> Unit): FrameAnalysis {
-            calls += Call(scope.testScheduler.currentTime, images, hints)
+            calls += Call(scope.testScheduler.currentTime, images, hints, settings.model)
             // The answer is about the frame that was sent, whatever the screen shows by the time it arrives.
             val reply = script?.invoke(screen) ?: replyFor(settings)
             val fail = failNext.also { failNext = null }
@@ -360,6 +371,47 @@ class SessionJourneyTest {
         assertNotNull(records["Utah"]?.imagePath)
         assertTrue("Snails was not saved: ${records.keys}", "Snails" in records)
         assertEquals(null, records["Snails"]?.imagePath)
+    }
+
+    @Test fun `accuracy boost looks every few seconds while the drawing grows, beside the fast lane`() = game {
+        settings.update { it.copy(accuracyBoost = true) }
+        ai.latency = 1_000
+        repeat(20) { screen.strokes++; play(1_000) }
+        val deep = ai.calls.filter { it.model == AiModel.SONNET }
+        val fast = ai.calls.filter { it.model == AiModel.HAIKU }
+        println("SESSION boost: ${fast.size} fast and ${deep.size} boost requests in 20 s at ${deep.map { it.at / 1000 }}")
+        assertTrue("fast lane kept going: ${fast.size}", fast.size >= 15)
+        assertTrue("boost looked ${deep.size} times", deep.size in 3..5)
+        deep.zipWithNext().forEach { (a, b) -> assertTrue("boost looks ${b.at - a.at} ms apart", b.at - a.at >= 5_000) }
+        assertTrue(session.state.value.message.contains("Sonnet"))
+    }
+
+    @Test fun `accuracy boost does not look again at a drawing that did not change`() = game {
+        settings.update { it.copy(accuracyBoost = true) }
+        play(30_000)
+        assertEquals(1, ai.calls.count { it.model == AiModel.SONNET })
+    }
+
+    @Test fun `sleeps while WePlay is not on screen and wakes when it comes back`() = game {
+        val weplay = "com.wejoy.weplay"
+        val ops = ctx.getSystemService(AppOpsManager::class.java)
+        shadowOf(ops).setMode(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), ctx.packageName, AppOpsManager.MODE_ALLOWED)
+        val usage = shadowOf(ctx.getSystemService(UsageStatsManager::class.java))
+        settings.update { it.copy(autoPauseWhenGameClosed = true, gamePackage = weplay) }
+        play(5_000) // WePlay is on screen
+        val before = ai.calls.size
+        assertTrue(before >= 1)
+
+        usage.addEvent("com.android.launcher", System.currentTimeMillis(), UsageEvents.Event.ACTIVITY_RESUMED)
+        screen.strokes = 4 // the screen changes (home screen), but it is not the game
+        play(20_000)
+        assertEquals("no requests while WePlay is away", before, ai.calls.size)
+        assertEquals(AiStatus.GAME_AWAY, session.state.value.status)
+
+        usage.addEvent(weplay, System.currentTimeMillis(), UsageEvents.Event.ACTIVITY_RESUMED)
+        play(4_000)
+        assertTrue("woke up", ai.calls.size > before)
+        assertTrue(session.state.value.status != AiStatus.GAME_AWAY)
     }
 
     @Test fun `the copied mark does not carry over to the next word`() = game {
