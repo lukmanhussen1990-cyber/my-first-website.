@@ -1,0 +1,265 @@
+{
+  "format_version": "1.20.20",
+  "sound_definitions": {
+    "ceg.guardian.ambient": {
+      "category": "neutral",
+      "min_distance": 2.0,
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/ambient_1",
+          "volume": 0.55,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/ceg/ambient_2",
+          "volume": 0.55,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/ceg/ambient_3",
+          "volume": 0.55,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "ceg.guardian.hurt": {
+      "category": "neutral",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/hurt_1",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/ceg/hurt_2",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "ceg.guardian.death": {
+      "category": "neutral",
+      "min_distance": 2.0,
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/death",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "ceg.guardian.summon": {
+      "category": "neutral",
+      "min_distance": 2.0,
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/summon",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "ceg.guardian.laser": {
+      "category": "neutral",
+      "min_distance": 2.0,
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/laser_1",
+          "volume": 0.75,
+          "load_on_low_memory": true,
+          "pitch": 0.96
+        },
+        {
+          "name": "sounds/ceg/laser_1",
+          "volume": 0.75,
+          "load_on_low_memory": true,
+          "pitch": 1.04
+        },
+        {
+          "name": "sounds/ceg/laser_2",
+          "volume": 0.75,
+          "load_on_low_memory": true,
+          "pitch": 0.96
+        },
+        {
+          "name": "sounds/ceg/laser_2",
+          "volume": 0.75,
+          "load_on_low_memory": true,
+          "pitch": 1.04
+        }
+      ]
+    },
+    "ceg.guardian.impact": {
+      "category": "neutral",
+      "min_distance": 2.0,
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/impact",
+          "volume": 0.9,
+          "load_on_low_memory": true,
+          "pitch": 0.92
+        },
+        {
+          "name": "sounds/ceg/impact",
+          "volume": 0.9,
+          "load_on_low_memory": true,
+          "pitch": 1.0
+        },
+        {
+          "name": "sounds/ceg/impact",
+          "volume": 0.9,
+          "load_on_low_memory": true,
+          "pitch": 1.08
+        }
+      ]
+    },
+    "ceg.guardian.rage": {
+      "category": "neutral",
+      "min_distance": 2.0,
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/rage",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "ceg.guardian.teleport": {
+      "category": "neutral",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/teleport",
+          "volume": 0.8,
+          "load_on_low_memory": true,
+          "pitch": 0.95
+        },
+        {
+          "name": "sounds/ceg/teleport",
+          "volume": 0.8,
+          "load_on_low_memory": true,
+          "pitch": 1.05
+        }
+      ]
+    },
+    "ceg.guardian.shield": {
+      "category": "neutral",
+      "min_distance": 2.0,
+      "max_distance": 20.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/shield",
+          "volume": 0.75,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "ceg.guardian.shield_hit": {
+      "category": "neutral",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/shield_hit",
+          "volume": 0.7,
+          "load_on_low_memory": true,
+          "pitch": 0.92
+        },
+        {
+          "name": "sounds/ceg/shield_hit",
+          "volume": 0.7,
+          "load_on_low_memory": true,
+          "pitch": 1.0
+        },
+        {
+          "name": "sounds/ceg/shield_hit",
+          "volume": 0.7,
+          "load_on_low_memory": true,
+          "pitch": 1.1
+        }
+      ]
+    },
+    "ceg.guardian.heal": {
+      "category": "neutral",
+      "min_distance": 2.0,
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/heal",
+          "volume": 0.75,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "ceg.guardian.destroy": {
+      "category": "neutral",
+      "min_distance": 2.0,
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/destroy",
+          "volume": 0.85,
+          "load_on_low_memory": true,
+          "pitch": 0.9
+        },
+        {
+          "name": "sounds/ceg/destroy",
+          "volume": 0.85,
+          "load_on_low_memory": true,
+          "pitch": 1.0
+        },
+        {
+          "name": "sounds/ceg/destroy",
+          "volume": 0.85,
+          "load_on_low_memory": true,
+          "pitch": 1.1
+        }
+      ]
+    },
+    "ceg.guardian.levelup": {
+      "category": "neutral",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/levelup",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "ceg.guardian.mode": {
+      "category": "ui",
+      "min_distance": 1.0,
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/mode",
+          "volume": 0.6,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "ceg.guardian.menu": {
+      "category": "ui",
+      "min_distance": 1.0,
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/ceg/menu",
+          "volume": 0.6,
+          "load_on_low_memory": true
+        }
+      ]
+    }
+  }
+}

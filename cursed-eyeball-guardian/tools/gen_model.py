@@ -109,14 +109,37 @@ class Atlas:
 # geometry definition
 
 
-SCLERA_BOXES = [  # (sx, sy, sz) centred on C -> voxel sphere, diameter 14
-    (14, 8, 8), (8, 14, 8), (8, 8, 14),
-    (12, 12, 8), (12, 8, 12), (8, 12, 12),
-    (12, 10, 10), (10, 12, 10), (10, 10, 12),
-]
-IRIS_FRONT = -7.5     # iris front plane (sclera front is -7)
-IRIS_BACK = -5.5
-IRIS_BOXES = [(-5, 5, 3), (-3, 3, 5), (-4, 4, 4)]  # (x0, x1, half-height)
+def disc_boxes(r, delta=0.3):
+    """Half-extents (hx, hy) of nested rectangles whose union is the 1-px
+    voxel disc of radius r (cells whose centre lies within r + delta)."""
+    rows = []
+    for j in range(int(math.ceil(r + 1))):
+        yc = j + 0.5
+        rem = (r + delta) ** 2 - yc * yc
+        if rem < 0.25:
+            break
+        hw = int(math.floor(math.sqrt(rem) - 0.5)) + 1  # cells with centre <= sqrt(rem)
+        rows.append(hw)
+    boxes = []
+    for j, hw in enumerate(rows):
+        if j + 1 < len(rows) and rows[j + 1] == hw:
+            continue
+        boxes.append((hw, j + 1))
+    return boxes
+
+
+# voxel sphere (diameter 14) built from z layers of pixel discs; the front cap
+# (radius 5) carries the iris, the back cap is a little smaller (rounder back)
+SCLERA_LAYERS = [(-7, -5, 5.0), (-5, -3, 6.0), (-3, 3, 7.0), (3, 5, 6.0), (5, 7, 4.0)]
+SCLERA_BOXES = []  # (x0, x1, y0, y1, z0, z1) relative to C
+for _z0, _z1, _r in SCLERA_LAYERS:
+    for _hx, _hy in disc_boxes(_r):
+        SCLERA_BOXES.append((-_hx, _hx, -_hy, _hy, _z0, _z1))
+
+IRIS_FRONT = -7.5     # iris front plane (sclera front cap is -7)
+IRIS_BACK = -6.5
+IRIS_BOXES = [(4.5, 2.5), (3.5, 3.5), (2.5, 4.5)]  # half extents -> 9 px rounded disc
+IRIS_R = 4.5
 PUPIL_HALF = 2.0
 PUPIL_FRONT, PUPIL_BACK = -7.75, -7.4
 
@@ -135,13 +158,13 @@ SPIKE_KINDS = {
 def spike_list():
     main = []
     for i in range(8):  # ring around the eye edge, alternating long/short
-        main.append((i * 45.0, -20.0 if i % 2 == 0 else -26.0, "long" if i % 2 == 0 else "short"))
+        main.append((i * 45.0, -12.0 if i % 2 == 0 else -30.0, "long" if i % 2 == 0 else "short"))
     for i in range(6):  # backward diagonal ring
-        main.append((30.0 + i * 60.0, -58.0, "back"))
+        main.append((30.0 + i * 60.0, -60.0, "back"))
     main.append((0.0, -90.0, "pole"))  # straight back (on the spin axis)
     extra = []
     for i in range(8):  # level >= 3: framing spikes between the ring spikes
-        extra.append((22.5 + i * 45.0, -8.0 if i % 2 == 0 else -38.0, "extra"))
+        extra.append((22.5 + i * 45.0, 14.0 if i % 2 == 0 else -40.0, "extra"))
     return main, extra
 
 
@@ -170,21 +193,26 @@ def sphere_dir(phi_deg, theta_deg):
 def grow_veins(rng, n, phi0, width0, steps, branch_p, theta_off=0.0, jitter=1.0):
     segs = []  # (p0, p1, half_width)
 
+    def width_at(phi, w):
+        # hair-thin at the iris, thickest around the equator, tapering at the end
+        grow_in = 0.5 + 0.5 * min(1.0, max(0.0, (phi - phi0) / 35.0))
+        taper = min(1.0, max(0.45, (150.0 - phi) / 30.0))
+        return max(0.27, w * grow_in * taper)
+
     def grow(phi, theta, w, nsteps, depth):
         prev = C + R_EYE * sphere_dir(phi, theta)
         dtheta = rng.normal(0, 5)
         for _ in range(int(nsteps)):
             phi += rng.uniform(3.0, 5.0)
-            dtheta = 0.6 * dtheta + rng.normal(0, 6) * jitter
+            dtheta = 0.7 * dtheta + rng.normal(0, 2.6) * jitter
             theta += dtheta
             if phi > 150:
                 break
             cur = C + R_EYE * sphere_dir(phi, theta)
-            segs.append((prev, cur, w))
+            segs.append((prev, cur, width_at(phi, w)))
             prev = cur
-            w = max(0.24, w * 0.95)
-            if depth < 2 and rng.random() < branch_p:
-                grow(phi, theta + rng.choice([-1, 1]) * rng.uniform(18, 40), w * 0.75,
+            if depth < 1 and rng.random() < branch_p:
+                grow(phi, theta + rng.choice([-1, 1]) * rng.uniform(18, 40), w * 0.7,
                      nsteps * rng.uniform(0.3, 0.6), depth + 1)
 
     for i in range(n):
@@ -237,14 +265,21 @@ def seg_distance(points, segs):
 
 
 RNG_VEINS = np.random.default_rng(20240626)
-VEINS = grow_veins(RNG_VEINS, 9, 46.0, 0.62, 24, 0.10)
-RAGE_VEINS = grow_veins(np.random.default_rng(777), 10, 48.0, 0.40, 18, 0.12, theta_off=17.0, jitter=1.2)
+VEINS = grow_veins(RNG_VEINS, 7, 36.0, 0.40, 24, 0.05)
+RAGE_VEINS = grow_veins(np.random.default_rng(777), 7, 37.0, 0.30, 18, 0.05, theta_off=25.0, jitter=1.2)
 CRACKS = grow_cracks(np.random.default_rng(4242), 5, (78, 118))
 BACK_CRACKS = grow_cracks(np.random.default_rng(99), 6, (128, 150))
 
 
-def sclera_layers(points, tx, ty, skin):
-    """points: (N,3) visible voxel surface points; tx,ty texel ints for noise."""
+FACE_NORMALS = {"north": (0, 0, -1), "south": (0, 0, 1), "east": (-1, 0, 0),
+                "west": (1, 0, 0), "up": (0, 1, 0), "down": (0, -1, 0)}
+
+
+def sclera_layers(points, tx, ty, skin, face_normal=(0, 0, -1)):
+    """points: (N,3) visible voxel surface points; tx,ty texel ints for noise.
+    face_normal: direction of the faces this region is painted for; texels
+    where the ideal sphere turns away from it get darker (pillow shading),
+    which makes the flat voxel faces read as a round ball."""
     _, P, D, H = skin
     P, D, H = col(*P), col(*D), col(*H)
     d = points - C
@@ -256,17 +291,19 @@ def sclera_layers(points, tx, ty, skin):
     bay = BAYER4[ty % 4, tx % 4]
 
     # --- sclera tone ramp (5-step pixel-art palette, pinkish shadows)
-    ramp = [col(0.97, 0.95, 0.92), col(0.92, 0.89, 0.85), col(0.85, 0.80, 0.77),
-            col(0.76, 0.69, 0.67), col(0.63, 0.54, 0.54)]
+    ramp = [col(0.99, 0.97, 0.95), col(0.94, 0.92, 0.89), col(0.87, 0.83, 0.81),
+            col(0.78, 0.71, 0.70), col(0.64, 0.55, 0.56)]
     shade = 0.25 + 0.55 * np.clip((phi - 40) / 100, 0, 1) - 0.12 * d[:, 1] + 0.18 * (noise - 0.5)
-    shade += 0.18 * np.clip((54 - phi) / 10, 0, 1)            # occlusion ring under the iris lip
+    shade += 0.18 * np.clip((40 - phi) / 6, 0, 1)             # occlusion ring under the iris lip
+    turn = 1.0 - np.clip(d @ np.asarray(face_normal, dtype=np.float64), 0, 1)
+    shade += 0.75 * turn                                       # pillow shading per face
     idx = np.clip(np.floor(shade * 4 + (bay - 0.5) * 0.9), 0, 4).astype(int)
     base = np.stack([ramp[i] for i in range(5)])[idx]
     # faint inflamed blush near the iris
-    blush = np.clip((70 - phi) / 25, 0, 1) * 0.22
+    blush = np.clip((60 - phi) / 25, 0, 1) * 0.10
     base = mix(base, mix(col(0.93, 0.62, 0.60), P, 0.25), blush)
     # pink speckles (capillaries)
-    speck = (noise2 > 0.93) & (phi < 120)
+    speck = (noise2 > 0.965) & (phi > 45) & (phi < 120)
     base[speck] = mix(base[speck], mix(col(0.9, 0.45, 0.45), P, 0.4), 0.55)
 
     glow = np.zeros((n, 4), dtype=np.float32)
@@ -280,15 +317,15 @@ def sclera_layers(points, tx, ty, skin):
     sp = C + R_EYE * d
     vd, vw = seg_distance(sp, VEINS)
     vein = vd < vw
-    core = vd < vw * 0.45
-    vcol = mix(D, P, 0.55)
-    vcol_core = mix(D, col(0.15, 0, 0.02), 0.25)
-    thin = vw < 0.45
-    base[vein] = np.where(thin[vein, None], mix(base[vein], mix(P, col(0.9, 0.4, 0.4), 0.35), 0.75), vcol)
+    core = (vd < vw * 0.4) & (vw > 0.42)
+    vcol = mix(D, P, 0.7)
+    vcol_core = mix(D, P, 0.25)
+    thin = vw < 0.31
+    base[vein] = np.where(thin[vein, None], mix(base[vein], mix(P, D, 0.2), 0.8), vcol)
     base[core & ~thin] = vcol_core
-    galpha = np.clip(0.25 + 0.6 * vw, 0.3, 0.85)
+    galpha = np.clip(0.2 + 0.6 * vw, 0.3, 0.6)
     glow[vein, :3] = mix(P, D, 0.25)
-    glow[vein, 3] = galpha[vein] * 0.8
+    glow[vein, 3] = galpha[vein]
     rage[vein, :3] = mix(P, H, 0.25)
     rage[vein, 3] = np.clip(galpha[vein] + 0.35, 0, 1)
 
@@ -332,13 +369,16 @@ def sclera_layers(points, tx, ty, skin):
 
 def sclera_surface(axis, sign, a, b):
     """Return the outermost coordinate along `axis` (sign +1/-1) for the voxel
-    union at the two in-plane coordinates (a, b) (relative to C), or nan."""
+    union at the two in-plane coordinates (a, b) (relative to C), or nan.
+    Exact for this shape: every column through it is solid out to its surface."""
     best = np.full(np.shape(a), np.nan)
     others = [i for i in range(3) if i != axis]
-    for s in SCLERA_BOXES:
-        half = np.array(s) / 2.0
-        inside = (np.abs(a) <= half[others[0]] + 1e-6) & (np.abs(b) <= half[others[1]] + 1e-6)
-        val = half[axis] * sign
+    for bx in SCLERA_BOXES:
+        lo = (bx[0], bx[2], bx[4])
+        hi = (bx[1], bx[3], bx[5])
+        inside = ((a >= lo[others[0]] - 1e-6) & (a <= hi[others[0]] + 1e-6)
+                  & (b >= lo[others[1]] - 1e-6) & (b <= hi[others[1]] + 1e-6))
+        val = hi[axis] if sign > 0 else lo[axis]
         cur = np.where(inside, val, np.nan)
         if sign > 0:
             best = np.where(np.isnan(best), cur, np.where(np.isnan(cur), best, np.maximum(best, cur)))
@@ -379,7 +419,7 @@ def make_sclera_painter(direction):
         valid = ~np.isnan(pts).any(-1)
         pts = np.where(valid[..., None], pts, 0.0) + C
         shape = lx.shape
-        b, g, r = sclera_layers(pts.reshape(-1, 3), tx.ravel(), ty.ravel(), skin)
+        b, g, r = sclera_layers(pts.reshape(-1, 3), tx.ravel(), ty.ravel(), skin, FACE_NORMALS[direction])
         b, g, r = (a.reshape(shape + (4,)) for a in (b, g, r))
         return b, g, r, valid
 
@@ -401,9 +441,9 @@ def iris_colors(x, y, tx, ty, skin, rage_mode=False):
     bands = [
         (hot_r, mix(H, col(1, 1, 1), 0.15) if rage_mode else H),
         (hot_r + 0.7, mix(H, P, 0.5)),
-        (3.9, P),
-        (4.4, mix(P, D, 0.5)),
-        (4.8, D),
+        (3.6, P),
+        (4.0, mix(P, D, 0.5)),
+        (4.4, D),
         (99, mix(D, col(0.05, 0.0, 0.01), 0.5)),
     ]
     lo = -1
@@ -411,11 +451,11 @@ def iris_colors(x, y, tx, ty, skin, rage_mode=False):
         m = (r > lo) & (r <= hi)
         c[m] = colour
         lo = hi
-    stria = (r > hot_r + 0.5) & (r < 4.3)
+    stria = (r > hot_r + 0.5) & (r < 3.95)
     c[stria & (sector == 1)] *= 0.84
     hi = stria & (sector == 0) & (noise > 0.72)
     c[hi] = mix(c[hi], H, 0.3)
-    ring = (np.abs(r - 3.3) < 0.25) & (noise > 0.35)
+    ring = (np.abs(r - 3.0) < 0.25) & (noise > 0.35)
     c[ring] = mix(c[ring], D, 0.35)
     if rage_mode:
         c = np.clip(mix(c, H, 0.18) * 1.12, 0, 1)
@@ -425,8 +465,8 @@ def iris_colors(x, y, tx, ty, skin, rage_mode=False):
 def iris_front_painter(lx, ly, tx, ty, skin):
     x, y = lx - 5, 5 - ly
     inside = np.zeros(x.shape, dtype=bool)
-    for x0, x1, hh in IRIS_BOXES:
-        inside |= (x >= x0) & (x <= x1) & (np.abs(y) <= hh)
+    for hx, hh in IRIS_BOXES:
+        inside |= (np.abs(x) <= hx) & (np.abs(y) <= hh)
     base = iris_colors(x, y, tx, ty, skin)
     rage = iris_colors(x, y, tx, ty, skin, rage_mode=True)
     one = np.ones(x.shape + (1,), dtype=np.float32)
@@ -440,7 +480,7 @@ def iris_side_painter(lx, ly, tx, ty, skin, along_u):
     """Iris rim faces: front edge (z=-7.5) glows, back is the dark limbus."""
     _, P, D, H = skin
     P, D = col(*P), col(*D)
-    depth = lx if along_u else ly  # 0 at front lip .. 2 at the back
+    depth = lx if along_u else ly  # 0 at front lip .. 1 at the back
     c = np.where((depth < 0.5)[..., None], mix(D, P, 0.35), mix(D, col(0.05, 0, 0.01), 0.5))
     one = np.ones(lx.shape + (1,), dtype=np.float32)
     b = np.concatenate([c, one], -1)
@@ -542,15 +582,15 @@ def spike_cap_painter(top):
         if top:
             cx = np.abs(lx - w / 2) < w / 4 + 0.01
             cy = np.abs(ly - w / 2) < w / 4 + 0.01
-            c = np.where((cx & cy)[..., None], H, np.where((cx | cy)[..., None], mix(P, H, 0.4), P))
+            c = np.where((cx & cy)[..., None], mix(P, H, 0.7), np.where((cx | cy)[..., None], mix(P, H, 0.3), P))
         else:
             # bright tip end (ly small) fading to blood red towards the shaft
-            c = np.where((ly < 0.5)[..., None], mix(P, H, 0.55), np.where((ly < 1.0)[..., None], P, mix(P, D, 0.45)))
-            c = np.where((lx < 0.5)[..., None], mix(c, H, 0.25), c)
+            c = np.where((ly < 0.5)[..., None], mix(P, H, 0.3), np.where((ly < 1.0)[..., None], P, mix(P, D, 0.35)))
+            c = np.where((lx < 0.5)[..., None], mix(c, H, 0.2), c)
         one = np.ones(shp + (1,), np.float32)
         b = np.concatenate([c, one], -1)
         g = np.concatenate([np.clip(c * 1.05, 0, 1), one], -1)
-        r = np.concatenate([np.clip(mix(c, H, 0.3) * 1.1, 0, 1), one], -1)
+        r = np.concatenate([np.clip(mix(c, H, 0.12) * 1.15, 0, 1), one], -1)
         return b, g, r, np.ones(shp, dtype=bool)
     return painter
 
@@ -583,8 +623,8 @@ def build():
     sc["up"] = region("sclera_up", 14, 14, make_sclera_painter("up"), at=(0, 14.5))
     sc["down"] = region("sclera_down", 14, 14, make_sclera_painter("down"), at=(14.5, 14.5))
     iris_uv = region("iris_front", 10, 10, iris_front_painter, at=(29, 14.5))
-    iris_h_uv = region("iris_rim_h", 10, 2, lambda *a: iris_side_painter(*a, along_u=False), at=(29, 25))
-    iris_v_uv = region("iris_rim_v", 2, 10, lambda *a: iris_side_painter(*a, along_u=True), at=(39.5, 14.5))
+    iris_h_uv = region("iris_rim_h", 10, 1, lambda *a: iris_side_painter(*a, along_u=False), at=(29, 25))
+    iris_v_uv = region("iris_rim_v", 1, 10, lambda *a: iris_side_painter(*a, along_u=True), at=(39.5, 14.5))
     pupil_uv = region("pupil_front", 4, 4, pupil_front_painter, at=(42.5, 14.5))
     pupil_side_uv = region("pupil_side", 1, 1, solid_painter((0.03, 0.01, 0.02)), at=(42.5, 19))
 
@@ -611,11 +651,11 @@ def build():
             c["inflate"] = inflate
         return c
 
-    def sclera_cube(sx, sy, sz):
-        x0, x1 = -sx / 2, sx / 2
-        y0, y1 = 8 - sy / 2, 8 + sy / 2
-        z0, z1 = -sz / 2, sz / 2
-        ly0, ly1 = y0 - 1, y1 - 1  # y relative to region top (y=15 -> 0)
+    def sclera_cube(bx):
+        x0, x1 = bx[0], bx[1]
+        y0, y1 = 8 + bx[2], 8 + bx[3]
+        z0, z1 = bx[4], bx[5]
+        sx, sy, sz = x1 - x0, y1 - y0, z1 - z0
         uvs = {
             "north": face_uv(sc["north"][0] + x0 + 7, sc["north"][1] + 15 - y1, sx, sy),
             "south": face_uv(sc["south"][0] + 7 - x1, sc["south"][1] + 15 - y1, sx, sy),
@@ -624,10 +664,10 @@ def build():
             "up": face_uv(sc["up"][0] + x0 + 7, sc["up"][1] + 7 - z1, sx, sz),
             "down": face_uv(sc["down"][0] + x0 + 7, sc["down"][1] + z0 + 7, sx, sz),
         }
-        del ly0, ly1
         return cube(x0, y0, z0, x1, y1, z1, uvs)
 
-    def iris_cube(x0, x1, hh):
+    def iris_cube(hx, hh):
+        x0, x1 = -hx, hx
         y0, y1 = 8 - hh, 8 + hh
         z0, z1 = IRIS_FRONT, IRIS_BACK
         w, h, d = x1 - x0, y1 - y0, z1 - z0
@@ -684,7 +724,7 @@ def build():
         {"name": "eye", "parent": "root", "pivot": [0, 8, 0],
          "locators": {"center": [0, 8, 0], "lens": [0, 8, -8.5]}},
         {"name": "sclera", "parent": "eye", "pivot": [0, 8, 0],
-         "cubes": [sclera_cube(*s) for s in SCLERA_BOXES]},
+         "cubes": [sclera_cube(b) for b in SCLERA_BOXES]},
         {"name": "iris", "parent": "eye", "pivot": [0, 8, IRIS_FRONT],
          "cubes": [iris_cube(*b) for b in IRIS_BOXES]},
         {"name": "pupil", "parent": "iris", "pivot": [0, 8, -7.6], "cubes": [pupil_cube()]},
