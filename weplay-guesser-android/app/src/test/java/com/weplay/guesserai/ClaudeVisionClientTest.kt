@@ -1,7 +1,9 @@
 package com.weplay.guesserai
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.weplay.guesserai.data.ai.ClaudeVisionClient
+import com.weplay.guesserai.data.ai.SolverPrompt
 import com.weplay.guesserai.domain.AiModel
 import com.weplay.guesserai.domain.AppSettings
 import com.weplay.guesserai.domain.FrameImages
@@ -43,7 +45,8 @@ class ClaudeVisionClientTest {
     }
 
     private val reply = listOf(
-        """{"is_drawing_game":true,"canvas_empty":false,"hint":{"word_count":2,"letter_count":8,"word_lengths":[4,4]},"guesses":[""",
+        """{"is_drawing_game":true,"canvas_empty":false,"hint":{"word_count":2,"letter_count":8,"word_lengths":[4,4]},""",
+        """"seen":"gun with flames","guesses":[""",
         """{"answer":"Free Fire","confidence":93,"reason":"gun and flames"},""",
         """{"answer":"Coca Cola","confidence":40,"reason":"red"}],""",
         """"detected_object":"Game logo","category":"Game","emoji":"🔥","canvas_box":[0.1,0.2,0.9,0.6]}""",
@@ -63,6 +66,7 @@ class ClaudeVisionClientTest {
         val result = ClaudeVisionClient().analyze(FrameImages(full = jpeg), hints, settings()) { partials += it }
 
         assertEquals(listOf("Free Fire", "Coca Cola"), result.guesses.map { it.answer })
+        assertEquals("gun with flames", result.seen)
         assertEquals("claude-haiku-5-5", result.modelUsed)
         // The first guess was available before the reply finished.
         assertTrue(partials.any { it.guesses.map { g -> g.answer } == listOf("Free Fire") })
@@ -75,7 +79,11 @@ class ClaudeVisionClientTest {
         val content = b["messages"][0]["content"]
         assertEquals("image", content[0]["type"].asText())
         assertEquals(java.util.Base64.getEncoder().encodeToString(jpeg), content[0]["source"]["data"].asText())
-        assertTrue(content[1]["text"].asText().contains("Coca Cola"))
+        val text = content[1]["text"].asText()
+        assertTrue(text.contains("confirmed in earlier rounds with this hint (use only if the drawing matches): Free Fire."))
+        // Free Fire is already listed as confirmed, so the word list adds only Coca Cola.
+        assertTrue(text.contains("Possible answers for this hint (use only if the drawing matches): Coca Cola."))
+        assertFalse(text.contains("Already tried"))
         assertTrue(b["system"].asText().contains("A 1-letter word is always \"A\""))
         assertTrue(b["system"].asText().contains("4 letters|A state"))
         assertTrue(content[1]["text"].asText().contains("whole phone screen"))
@@ -104,12 +112,13 @@ class ClaudeVisionClientTest {
         assertEquals("disabled", b["thinking"]["type"].asText())
         assertEquals("low", b["output_config"]["effort"].asText())
         assertEquals("json_schema", b["output_config"]["format"]["type"].asText())
-        // Hint and guesses come first in the schema, so they stream first.
+        // State, hint, a short look at the canvas and the guesses come first in the schema, so they stream first.
         val schema = b["output_config"]["format"]["schema"]
-        assertEquals(listOf("screen_state", "revealed_answer", "canvas_empty", "hint", "guesses"),
-            schema["properties"].fieldNames().asSequence().take(5).toList())
+        assertEquals(SCHEMA_ORDER, schema["properties"].fieldNames().asSequence().toList())
         assertEquals(listOf("guessing", "word_revealed", "round_over", "not_game"), schema["properties"]["screen_state"]["enum"].map { it.asText() })
         assertTrue(schema["properties"]["hint"]["required"].map { it.asText() }.contains("clue"))
+        assertEquals("string", schema["properties"]["seen"]["type"].asText())
+        assertStrictObjects(schema)
         assertFalse(b.has("fallbacks"))
         assertEquals(1500, b["max_tokens"].asInt())
     }
@@ -163,5 +172,57 @@ class ClaudeVisionClientTest {
         assertEquals(java.util.Base64.getEncoder().encodeToString(byteArrayOf(1, 2)), content[1]["source"]["data"].asText())
         assertEquals(java.util.Base64.getEncoder().encodeToString(byteArrayOf(3, 4)), content[3]["source"]["data"].asText())
         assertTrue(content[4]["text"].asText().contains("Return [] for canvas_box"))
+    }
+
+    @Test fun `answers rejected this round are named as wrong and never offered as candidates`() {
+        val hints = PromptHints(
+            HintPattern(1, 4, clue = "A state"),
+            knownAnswers = listOf("Fear"),
+            wordListCandidates = listOf("fear", "Rage", "Calm"),
+            rejected = listOf("Calm", "Sleep"),
+        )
+        val params = ClaudeVisionClient().buildParams(
+            FrameImages(hintBar = byteArrayOf(1), canvas = byteArrayOf(2)), hints, AppSettings(apiKey = "k"),
+        )
+        val text = body(params)["messages"][0]["content"][4]["text"].asText()
+        assertTrue(text.contains("Already tried and wrong this round: Calm, Sleep. Do not suggest them again."))
+        assertTrue(text.contains("(clue: A state)"))
+        assertTrue(text.contains("Possible answers for this hint (use only if the drawing matches): Rage."))
+    }
+
+    @Test fun `rejected answers are sent even without word-list candidates`() {
+        val text = SolverPrompt.userText(PromptHints(HintPattern(1, 4), wordListCandidates = listOf("Crab"), rejected = listOf("Crab")), cropped = true)
+        assertTrue(text.contains("Already tried and wrong this round: Crab."))
+        // Its only candidate was rejected, so there is nothing to suggest for the hint.
+        assertFalse(text.contains("Possible answers"))
+        assertFalse(text.contains("hint so far"))
+        assertFalse(SolverPrompt.userText(PromptHints(), cropped = true).contains("Already tried"))
+    }
+
+    @Test fun `the prompt asks for a short look at the canvas and shows the fields in schema order`() {
+        val system = SolverPrompt.SYSTEM
+        assertTrue(system.contains("in \"seen\", say in at most 12 words"))
+        val example = system.substringAfter("Return JSON only")
+        val positions = SCHEMA_ORDER.map { example.indexOf("\"$it\":") }
+        assertTrue("every field is in the example: $positions", positions.all { it >= 0 })
+        assertEquals(positions.sorted(), positions)
+        assertEquals(SCHEMA_ORDER, SolverPrompt.SCHEMA["required"])
+    }
+
+    /** Structured outputs need every object closed (additionalProperties false) with all its properties required. */
+    private fun assertStrictObjects(node: JsonNode, path: String = "schema") {
+        if (node["type"]?.asText() == "object") {
+            assertFalse("$path allows extra properties", node["additionalProperties"].asBoolean(true))
+            assertEquals("$path required", node["properties"].fieldNames().asSequence().toList(), node["required"].map { it.asText() })
+        }
+        node["properties"]?.fields()?.forEach { (name, child) -> assertStrictObjects(child, "$path.$name") }
+        node["items"]?.let { assertStrictObjects(it, "$path[]") }
+    }
+
+    private companion object {
+        val SCHEMA_ORDER = listOf(
+            "screen_state", "revealed_answer", "canvas_empty", "hint", "seen", "guesses", "detected_object", "category",
+            "emoji", "canvas_box", "hint_box",
+        )
     }
 }

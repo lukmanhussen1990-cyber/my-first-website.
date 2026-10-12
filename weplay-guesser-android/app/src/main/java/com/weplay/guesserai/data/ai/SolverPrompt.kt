@@ -1,5 +1,6 @@
 package com.weplay.guesserai.data.ai
 
+import com.weplay.guesserai.domain.GuessEngine
 import com.weplay.guesserai.domain.PromptHints
 
 /** The instruction sent with every frame, and the JSON shape we ask for. */
@@ -37,16 +38,25 @@ object SolverPrompt {
           the buttons. Never take the hint from words written on the canvas or in the chat.
         - "N letters|clue" is never a revealed word.
 
-        3. Guess. How answers look in this game:
-        - The clue narrows the meaning: "A state" → a feeling or condition (fear, anger, sleep), "A food" → a dish.
+        3. Look before you guess: in "seen", say in at most 12 words what is really on the canvas:
+          shapes, colours, key details and any written letters, e.g. "red truck outline with ladder" or
+          "text: halw_". Describe, do not guess. "" when nothing is drawn.
+
+        4. Guess. How answers look in this game:
+        - The clue is the strongest signal; every guess should belong to its category. "A state" → a
+          feeling or condition (fear, anger, sleep), "A food" → a dish.
+        - Sketches are rough and quick: pick what such a doodle most often means in drawing games
+          (circle with rays → Sun), not a rare look-alike.
+        - Letters on the canvas are the drawer's clue, decode them: partial spellings ("halw_" → Halwa),
+          descriptions ("slowest small animal" → Snails), or a Hindi/Hinglish word whose English meaning
+          is the answer ("DAR" / "डर" → Fear). Answer with what the clue means, shaped to fit the hint.
         - A 1-letter word is always "A": 1 letter in total → "A"; "_ ____" (2 words, 5 letters) → "A Bike".
         - 2 letters: usually an abbreviation such as TV, GO, AC, CD, DJ, OK, PC, ID.
         - Answers can be plural ("Snails") and can be Indian words ("Halwa", "Samosa", "Diwali").
         - Game, app, brand and cartoon names are common: "Free Fire" (2 words, 8 letters), PUBG, Among Us.
-        - The drawer often writes clues on the canvas: partial spellings ("halw_" → Halwa), descriptions
-          ("slowest small animal" → Snails), or a Hindi/Hinglish word whose English meaning is the answer
-          ("DAR" / "डर" → Fear). Answer with what the clue means, shaped to fit the hint.
-        When the user lists candidate answers for the hint, prefer one of them if it matches the drawing.
+        - Make the 10 guesses 10 different ideas (other things the doodle could be, other members of the
+          category), not variants of one word.
+        When the user lists possible answers for the hint, use one only if the drawing matches it.
 
         Return JSON only, fields in this order:
         {
@@ -54,6 +64,7 @@ object SolverPrompt {
           "revealed_answer": "",
           "canvas_empty": false,
           "hint": {"word_count": 1, "letter_count": 4, "word_lengths": [4], "clue": "A state"},
+          "seen": "text: DAR, scared face",
           "guesses": [
             {"answer": "Fear", "confidence": 90, "reason": "DAR = fear in Hindi"}
           ],
@@ -64,7 +75,9 @@ object SolverPrompt {
           "hint_box": [0.3, 0.05, 0.7, 0.10]
         }
 
-        - Best guess first. "confidence" is an integer 0-100. "reason" is at most 4 words.
+        - Best guess first. "confidence" (integer 0-100) is your real certainty: below 50 even for the top
+          guess while the drawing is unclear, 90+ only when it is unmistakable or spelled out.
+          "reason" is at most 4 words.
         - Use 0 for hint numbers and [] for word_lengths you cannot read.
         - For "not_game", return an empty guesses list.
     """.trimIndent()
@@ -77,37 +90,53 @@ object SolverPrompt {
     const val CANVAS_LABEL = "Image 2 — the drawing canvas."
     const val CROPPED = "Read the hint from image 1 and the drawing from image 2. Return [] for canvas_box and hint_box."
 
+    /**
+     * The per-frame instruction: which images these are, the answers worth considering for the hint
+     * seen so far, and the answers the user already rejected this round.
+     */
     fun userText(hints: PromptHints, cropped: Boolean): String = buildString {
         append(if (cropped) CROPPED else FULL_SCREEN)
         append(" Return 10 guesses, best first.")
+        // A rejected answer must not be offered again as a candidate, and a confirmed one needs no second mention.
+        val skip = hints.rejected.mapTo(HashSet()) { GuessEngine.normalize(it) }
+        val known = hints.knownAnswers.filter { skip.add(GuessEngine.normalize(it)) }
+        val possible = hints.wordListCandidates.filter { skip.add(GuessEngine.normalize(it)) }
         val hint = hints.lastHint
-        if (hint != null && (hints.wordListCandidates.isNotEmpty() || hints.knownAnswers.isNotEmpty())) {
+        if (hint != null && (known.isNotEmpty() || possible.isNotEmpty())) {
             append("\n\nThe hint so far reads ${hint.label()}")
             if (hint.clue.isNotBlank()) append(" (clue: ${hint.clue})")
-            append(".")
-            if (hints.knownAnswers.isNotEmpty()) {
-                append(" Answers confirmed in earlier rounds with this hint: ")
-                append(hints.knownAnswers.joinToString(", "))
+            append("; re-read it from the image in case it changed.")
+            if (known.isNotEmpty()) {
+                append(" Answers confirmed in earlier rounds with this hint (use only if the drawing matches): ")
+                append(known.joinToString(", "))
                 append(".")
             }
-            if (hints.wordListCandidates.isNotEmpty()) {
-                append(" Common answers with this hint: ")
-                append(hints.wordListCandidates.joinToString(", "))
+            if (possible.isNotEmpty()) {
+                append(" Possible answers for this hint (use only if the drawing matches): ")
+                append(possible.joinToString(", "))
                 append(".")
             }
-            append(" Use them only if the drawing fits; re-read the hint from the image in case it changed.")
+        }
+        if (hints.rejected.isNotEmpty()) {
+            append("\n\nAlready tried and wrong this round: ")
+            append(hints.rejected.joinToString(", "))
+            append(". Do not suggest them again.")
         }
     }
 
     val SCREEN_STATES = listOf("guessing", "word_revealed", "round_over", "not_game")
 
-    /** JSON schema for structured outputs (official Anthropic endpoint only). State, hint and guesses first so they stream first. */
+    /**
+     * JSON schema for structured outputs (official Anthropic endpoint only). State, hint and guesses
+     * come first so they stream first; the short "seen" description just before the guesses makes the
+     * model look at the strokes before naming them, which helps on rough sketches when thinking is off.
+     */
     val SCHEMA: Map<String, Any> = mapOf(
         "type" to "object",
         "additionalProperties" to false,
         "required" to listOf(
-            "screen_state", "revealed_answer", "canvas_empty", "hint", "guesses", "detected_object", "category", "emoji",
-            "canvas_box", "hint_box",
+            "screen_state", "revealed_answer", "canvas_empty", "hint", "seen", "guesses", "detected_object", "category",
+            "emoji", "canvas_box", "hint_box",
         ),
         "properties" to linkedMapOf(
             "screen_state" to mapOf("type" to "string", "enum" to SCREEN_STATES),
@@ -124,6 +153,7 @@ object SolverPrompt {
                     "clue" to mapOf("type" to "string"),
                 ),
             ),
+            "seen" to mapOf("type" to "string"),
             "guesses" to mapOf(
                 "type" to "array",
                 "items" to mapOf(

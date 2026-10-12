@@ -85,4 +85,36 @@ class AnalysisParserTest {
         assertEquals(com.weplay.guesserai.domain.ScreenState.WORD_REVEALED, p.screenState)
         assertTrue(p.guesses.isEmpty())
     }
+
+    @Test fun `reads what the model saw as one short line`() {
+        val a = AnalysisParser.parse(
+            """{"screen_state":"guessing","hint":{"word_count":1,"letter_count":5,"word_lengths":[5],"clue":"A food"},""" +
+                """"seen":"  text: halw_,\n orange bowl ","guesses":[{"answer":"Halwa","confidence":88,"reason":"spelled out"}]}"""
+        )
+        assertEquals("text: halw_, orange bowl", a.seen)
+        assertEquals("Halwa", a.guesses.single().answer)
+
+        val rambling = AnalysisParser.parse("""{"seen":"${"lines ".repeat(60)}","guesses":[]}""")
+        assertEquals(100, rambling.seen.length)
+    }
+
+    @Test fun `seen is optional for endpoints without the schema`() {
+        assertEquals("", AnalysisParser.parse("""{"guesses":[{"answer":"Dog","confidence":70,"reason":""}]}""").seen)
+        assertEquals("", AnalysisParser.parse("""{"seen":null,"guesses":[]}""").seen)
+    }
+
+    @Test fun `guesses still stream one by one after seen, whatever it contains`() {
+        val head = """{"screen_state":"guessing","revealed_answer":"","canvas_empty":false,""" +
+            """"hint":{"word_count":1,"letter_count":4,"word_lengths":[4],"clue":"A state"},"seen":"text: {DAR} [scared] face""""
+        // Still writing "seen": the hint is already usable, no guesses yet.
+        val early = AnalysisParser.parsePartial(head.dropLast(6))
+        assertEquals("A state", early.hint!!.clue)
+        assertTrue(early.guesses.isEmpty())
+
+        val p = AnalysisParser.parsePartial(
+            head + ""","guesses":[{"answer":"Fear","confidence":45,"reason":"DAR = fear"},{"answer":"Sca"""
+        )
+        assertEquals(HintPattern(1, 4, listOf(4), "A state"), p.hint)
+        assertEquals(listOf("Fear"), p.guesses.map { it.answer })
+    }
 }

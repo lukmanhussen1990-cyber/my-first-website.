@@ -16,6 +16,7 @@ import com.weplay.guesserai.domain.VisionException
  */
 object AnalysisParser {
     private val mapper = ObjectMapper()
+    private const val SEEN_MAX_CHARS = 100
 
     fun parse(text: String, modelUsed: String = ""): FrameAnalysis {
         val json = extractJsonObject(text) ?: throw VisionException.BadResponse("AI reply had no JSON")
@@ -32,6 +33,7 @@ object AnalysisParser {
             isDrawingGame = state != ScreenState.NOT_GAME,
             screenState = state,
             revealedAnswer = root.path("revealed_answer").asText("").trim(),
+            seen = seenOf(root.path("seen")),
             canvasEmpty = root.path("canvas_empty").asBoolean(false),
             detectedObject = root.path("detected_object").asText(guesses.firstOrNull()?.answer.orEmpty()),
             category = root.path("category").asText(""),
@@ -77,6 +79,10 @@ object AnalysisParser {
         "not_game" -> ScreenState.NOT_GAME
         else -> null
     }
+
+    /** One short line: endpoints without the schema may ignore the 12-word rule or break it over lines. */
+    private fun seenOf(node: JsonNode): String =
+        node.asText("").replace(Regex("\\s+"), " ").trim().take(SEEN_MAX_CHARS)
 
     private fun boxOf(node: JsonNode, minHeight: Float): List<Float>? =
         node.map { it.asDouble(-1.0).toFloat() }

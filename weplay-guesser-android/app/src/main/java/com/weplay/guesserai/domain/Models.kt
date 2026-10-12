@@ -70,6 +70,8 @@ data class FrameAnalysis(
     val screenState: ScreenState = if (isDrawingGame) ScreenState.GUESSING else ScreenState.NOT_GAME,
     /** The answer the game itself shows (revealed word or round-over popup), "" when none. */
     val revealedAnswer: String = "",
+    /** The model's few-word description of what is on the canvas ("text: halw_"), "" when not given. */
+    val seen: String = "",
 )
 
 /**
