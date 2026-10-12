@@ -28,8 +28,8 @@ android {
         applicationId = "com.imran.bio"
         minSdk = 24
         targetSdk = 36
-        versionCode = 35
-        versionName = "2.9.4"
+        versionCode = 36
+        versionName = "2.10"
         resValue("string", "app_name", androidString(appName))
     }
 
