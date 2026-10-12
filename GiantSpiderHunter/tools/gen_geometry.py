@@ -234,9 +234,10 @@ def fang_cubes(sign):
         # fang base folded inward under the chelicera (9 x 16 x 9)
         cube(cx - 4.5, cx + 4.5, py - 46, py - 30, pz - 13, pz - 4, fang,
              pivot=(cx, py - 32, pz - 8), rotation=(14, 0, 16 * sign)),
-        # hooked tip, bent further inward/back (6 x 14 x 6)
-        cube(cx - 3 - sign * 5, cx + 3 - sign * 5, py - 58, py - 44, pz - 10, pz - 4, tip,
-             pivot=(cx - sign * 5, py - 46, pz - 7), rotation=(26, 0, 38 * sign)),
+        # hooked tip, bent further inward/back (6 x 14 x 6); the two tips end ~2 px apart
+        # at the midline instead of crossing
+        cube(cx - 3 - sign * 2, cx + 3 - sign * 2, py - 58, py - 44, pz - 10, pz - 4, tip,
+             pivot=(cx - sign * 2, py - 46, pz - 7), rotation=(26, 0, 30 * sign)),
     ]
 
 
