@@ -1,6 +1,8 @@
 package com.weplay.guesserai.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -187,12 +189,12 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
         SectionTitle("Overlay")
         GlassCard {
             Text("Window size", fontWeight = FontWeight.Medium)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ChipRow {
                 OverlaySize.entries.forEach { size ->
                     FilterChip(
                         selected = s.overlaySize == size,
                         onClick = { vm.update { it.copy(overlaySize = size) } },
-                        label = { Text(size.label) },
+                        label = { Text(size.label, maxLines = 1, softWrap = false) },
                     )
                 }
             }
@@ -206,12 +208,12 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
 
         SectionTitle("Capture speed")
         GlassCard {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ChipRow {
                 CaptureSpeed.entries.forEach { sp ->
                     FilterChip(
                         selected = s.captureSpeed == sp,
                         onClick = { vm.update { it.copy(captureSpeed = sp) } },
-                        label = { Text(sp.label) },
+                        label = { Text(sp.label, maxLines = 1, softWrap = false) },
                     )
                 }
             }
@@ -252,6 +254,13 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
             ) { v -> vm.update { it.copy(saveScreenshots = v) } }
         }
     }
+}
+
+/** Chips that move to a second line on a narrow phone instead of squeezing their labels ("5 / second / s"). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ChipRow(content: @Composable () -> Unit) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { content() }
 }
 
 @Composable

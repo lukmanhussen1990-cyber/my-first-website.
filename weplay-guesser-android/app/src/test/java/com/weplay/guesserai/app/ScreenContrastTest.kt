@@ -63,6 +63,19 @@ class ScreenContrastTest {
         }
     }
 
+    @Test fun `settings chips keep their labels on one line on a 360 dp phone`() {
+        app.container.settings.update { it.copy(apiKey = "sk-ant-test") }
+        ActivityScenario.launch(MainActivity::class.java).use {
+            compose.onNodeWithText("Settings").performScrollTo().performClick()
+            for (label in listOf("Mini", "Compact", "Large", "1 second", "2 seconds", "5 seconds")) {
+                val layouts = mutableListOf<TextLayoutResult>()
+                compose.onNodeWithText(label).performScrollTo().fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+                val l = layouts.first()
+                assertTrue("\"$label\" wraps or is cut", l.lineCount == 1 && !l.isLineEllipsized(0) && l.multiParagraph.intrinsics.maxIntrinsicWidth - l.size.width <= 2f)
+            }
+        }
+    }
+
     @Test fun `setup headings are readable`() {
         ActivityScenario.launch(MainActivity::class.java).use {
             compose.onRoot().captureRoboImage("build/outputs/roborazzi/screen_setup.png")
