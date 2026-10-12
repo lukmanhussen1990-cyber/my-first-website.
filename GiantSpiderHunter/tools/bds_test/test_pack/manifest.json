@@ -1,0 +1,30 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "GSH Test Harness (TEST ONLY - never ship)",
+    "description": "Simulated players, scenario command channel and JSON probes for the Giant Spider Hunter BDS test harness. Needs the Beta APIs experiment.",
+    "uuid": "8aeffccf-95d5-4bf5-bec3-e9e1587df5f2",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "GameTest structure (written by bds.py at install time)",
+      "type": "data",
+      "uuid": "480e0992-e89f-44ff-b8a6-0de329b534f6",
+      "version": [1, 0, 0]
+    },
+    {
+      "description": "Harness driver",
+      "type": "script",
+      "language": "javascript",
+      "uuid": "bb4b3b26-2657-4da0-9d05-05fd8193bef0",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    { "module_name": "@minecraft/server", "version": "1.12.0-beta" },
+    { "module_name": "@minecraft/server-gametest", "version": "1.0.0-beta" }
+  ]
+}
