@@ -71,10 +71,12 @@ class HistoryRepository(
      * stay in the history and the learning stats, without it.
      */
     private suspend fun pruneImages() {
-        val old = dao.imagesBeyond(MAX_IMAGES)
-        if (old.isEmpty()) return
-        old.forEach { File(it.imagePath).delete() }
-        dao.forgetImages(old.map { it.id })
+        // In chunks: Android 10 and 11 allow at most 999 values in one statement, and a 1.6.0 user
+        // upgrading can have well over a thousand pictures to drop the first time.
+        dao.imagesBeyond(MAX_IMAGES).chunked(PRUNE_CHUNK).forEach { chunk ->
+            chunk.forEach { File(it.imagePath).delete() }
+            dao.forgetImages(chunk.map { it.id })
+        }
     }
 
     suspend fun recordRejected(answer: String) = withContext(io) { bump(answer, 0, 1) }
@@ -105,5 +107,6 @@ class HistoryRepository(
 
     companion object {
         const val MAX_IMAGES = 300
+        private const val PRUNE_CHUNK = 500
     }
 }

@@ -21,7 +21,7 @@ Main user journeys:
 
 ## Summary
 
-29 issues fixed (6 P1, 11 P2, 10 P3, 2 P4), each reproduced first and checked by a test that fails without the fix.
+30 issues fixed (6 P1, 12 P2, 10 P3, 2 P4), each reproduced first and checked by a test that fails without the fix.
 
 | Area | Before | After | How it was measured |
 |---|---|---|---|
@@ -31,7 +31,7 @@ Main user journeys:
 | Keystore calls in one Settings visit (key unchanged) | 25 | 0 | Counting cipher |
 | Heading contrast on app screens | 1.1 : 1 | ≥ 4.5 : 1 | Text colour on the layout |
 | Crashes found and fixed | — | 5 (broken keystore, missing settings screen, no screen sharing, failed capture beat, full storage) | Reproduced in Robolectric / session journeys |
-| Unit + JVM UI tests | 73 | 167 (journeys, overlay, session, chaos, monkey, fuzz, property) | `./gradlew :app:testDebugUnitTest` |
+| Unit + JVM UI tests | 73 | 168 (journeys, overlay, session, chaos, monkey, fuzz, property) | `./gradlew :app:testDebugUnitTest` |
 
 Not measurable here (no Android device or emulator in this environment, no API key): on-device frame times, real API latency, battery. Those effects are described as expected, not measured.
 
@@ -87,3 +87,4 @@ Priority: P1 crash / broken / data loss / security · P2 performance, lag, exces
 | — | robustness | Random play with failures and taps (chaos) | New chaos journey: each second a random event (strokes, new words, scrolling hints, popups, every model failure type incl. invalid key, failed captures, varied latency, pause/resume, Refresh, Next, hold, hint edits, settings and key changes). Run once over 41 seeds (15 + 40 × 5 virtual minutes): no uncaught exception, no request while paused, ≤ 2 fast + 1 boost in flight, and it always answers again afterwards. Six seeds first looked stuck: the user had rejected both answers the fake model knows, so an empty list was correct; the check now lets that word end first. A harness flaw found on the way (a failed check left the loop running, so `runTest` never finished) is fixed. | None needed in the app. | Kept: 1 × 15 min + 12 seeds × 5 min in the suite. |
 | — | robustness | Random use of the app screens (monkey) | New `MonkeyTest`: 6 seeds × 150 random taps, text entries (keys, URLs, word lists, emoji, 300-char text) and Back presses with Robolectric's strict activity checks (system screens a phone always has are installed): 900 actions, all 5 screens reached, no crash. | None needed. | Kept as a regression test. |
 | 29 | P3 | A custom endpoint on plain `http://` (a LAN proxy) can never work: the app targets SDK 35 without a network security config, so Android blocks cleartext; the user only saw "Network error", retried forever | Code path: OkHttp throws `UnknownServiceException("CLEARTEXT communication … not permitted")`, wrapped by the SDK and mapped to `Network`. | That failure becomes the blocking problem "Use an https:// address in Settings — Android blocks plain http" (auto-retries once the address changes, #12); Settings and Setup warn as soon as `http://` is typed. | `ClaudeVisionClientTest`: the cleartext failure maps to `BadConfig` with that text, a timeout still maps to `Network`; `HomeSettingsJourneyTest`: the warning appears for `http://192.168.1.20:8080` and not for https. |
+| 30 | P2 (data) | Flaw in this session's own fix #8: picture pruning removed old pictures with one `IN (...)` statement. Android 10 and 11 (SQLite 3.22 / 3.28) allow at most 999 values per statement, so a 1.6.0 user upgrading with 1,300+ saved pictures would hit "too many SQL variables" on every save and never be pruned | `HistoryRepositoryTest` with a DAO enforcing the old SQLite limit and 1,500 pictures left by 1.6.0: `SQLiteException: too many SQL variables`. (Robolectric's newer SQLite has no such limit, so the plain test had not caught it.) | Pruning works in chunks of 500. | Same test: 1,501 records kept, 300 pictures left, the rest deleted. |

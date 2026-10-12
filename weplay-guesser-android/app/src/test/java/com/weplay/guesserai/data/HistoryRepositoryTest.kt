@@ -1,9 +1,12 @@
 package com.weplay.guesserai.data
 
 import android.content.Context
+import android.database.sqlite.SQLiteException
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.weplay.guesserai.data.db.AppDatabase
+import com.weplay.guesserai.data.db.DrawingDao
+import com.weplay.guesserai.data.db.DrawingRecord
 import com.weplay.guesserai.domain.HintPattern
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -45,6 +48,29 @@ class HistoryRepositoryTest {
         val oldest = records.sortedBy { it.timestamp }.take(5)
         assertTrue(oldest.all { it.imagePath == null })
         assertEquals(1, repo.stats()["word 0"]?.correct)
+    }
+
+    /** Android 10 and 11 ship SQLite 3.22 / 3.28: at most 999 variables in one statement. */
+    private class OldSqliteDao(private val real: DrawingDao) : DrawingDao by real {
+        override suspend fun forgetImages(ids: List<Long>) {
+            if (ids.size > 999) throw SQLiteException("too many SQL variables (code 1 SQLITE_ERROR)")
+            real.forgetImages(ids)
+        }
+    }
+
+    @Test fun `upgrading with over a thousand saved pictures prunes them on Android 10 and 11 too`() = runTest {
+        val dao = OldSqliteDao(db.drawingDao())
+        // As 1.6.0 left it: a picture for every one of 1,500 rounds, never pruned.
+        repeat(1_500) { i ->
+            val file = File(drawings.apply { mkdirs() }, "drawing_old_$i.jpg").apply { writeBytes(ByteArray(8)) }
+            db.drawingDao().insert(DrawingRecord(timestamp = i.toLong(), imagePath = file.absolutePath, correctAnswer = "Word $i", aiGuessesJson = "[]", confidence = 0, wordCount = 2, letterCount = 5, category = ""))
+        }
+        val repo = HistoryRepository(ctx, dao, io = StandardTestDispatcher(testScheduler))
+        repo.recordCorrect("New", ByteArray(8), emptyList(), HintPattern(1, 3), "")
+        val records = db.drawingDao().observeAll().first()
+        assertEquals(1_501, records.size)
+        assertEquals(HistoryRepository.MAX_IMAGES, records.count { it.imagePath != null })
+        assertEquals(HistoryRepository.MAX_IMAGES, drawings.listFiles()!!.size)
     }
 
     @Test fun `clear removes every saved picture`() = runTest {
