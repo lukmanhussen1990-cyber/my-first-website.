@@ -31,9 +31,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -113,6 +117,9 @@ class AssistantSession(
     private var paused = false
     private var forceNext = true
     private var loopJob: Job? = null
+    private var settingsJob: Job? = null
+    /** Key, endpoint and model when a blocking error paused the AI; changing them tries again. */
+    private var problemConnection: String? = null
 
     // Requests
     private var seqStarted = 0L
@@ -161,13 +168,26 @@ class AssistantSession(
         if (loopJob != null) return
         refreshStats()
         loopJob = scope.launch { loop() }
+        // A fix in Settings (new key, endpoint or model) retries by itself, once typing has stopped.
+        settingsJob = scope.launch {
+            settingsRepo.settings.map(::connectionOf).distinctUntilChanged().collectLatest { connection ->
+                val stuckOn = problemConnection ?: return@collectLatest
+                if (connection == stuckOn) return@collectLatest
+                delay(SETTINGS_SETTLE_MS)
+                if (paused && problemConnection != null) togglePause()
+            }
+        }
     }
 
     fun stop() {
         loopJob?.cancel()
         loopJob = null
+        settingsJob?.cancel()
+        settingsJob = null
         cancelInFlight()
     }
+
+    private fun connectionOf(s: AppSettings) = listOf(s.apiKey.trim(), s.baseUrl.trim(), s.modelId).joinToString("|")
 
     fun togglePause() {
         paused = !paused
@@ -176,6 +196,7 @@ class AssistantSession(
             _state.update { it.copy(status = AiStatus.PAUSED, message = "AI paused") }
         } else {
             forceNext = true
+            problemConnection = null
             _state.update { it.copy(status = AiStatus.WATCHING, message = "Resuming…", problem = null) }
             wake.trySend(Unit)
         }
@@ -662,7 +683,7 @@ class AssistantSession(
             else -> { backoffMs = (backoffMs + 1_000).coerceAtMost(10_000); "Error: ${e.message ?: e.javaClass.simpleName}" to false }
         }
         forceNext = true
-        if (pause) { paused = true; cancelInFlight() }
+        if (pause) { paused = true; cancelInFlight(); problemConnection = connectionOf(settingsRepo.current) }
         _state.update { it.copy(status = if (pause) AiStatus.PAUSED else AiStatus.ERROR, message = msg, problem = if (pause) msg else it.problem) }
     }
 
@@ -677,6 +698,8 @@ class AssistantSession(
         /** Whole-screen look every so often: checks the layout and spots popups the close-ups miss. */
         const val FULL_LOOK_EVERY = 12
         const val SOLVED_INTERVAL_MS = 2_500L
+        /** A changed key or model is tried this long after the last keystroke, not with every letter. */
+        const val SETTINGS_SETTLE_MS = 1_500L
         /** Accuracy boost: shortest gap between two looks by the stronger model. */
         const val DEEP_MIN_INTERVAL_MS = 5_000L
         /** Accuracy boost: pause after a failed look (rate limit, network) before trying again. */

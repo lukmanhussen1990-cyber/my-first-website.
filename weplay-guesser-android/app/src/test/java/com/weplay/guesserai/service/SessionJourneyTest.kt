@@ -258,6 +258,28 @@ class SessionJourneyTest {
         assertEquals("Utah", session.state.value.guesses.first().answer)
     }
 
+    @Test fun `a new key from Settings retries on its own once typing stops`() = game {
+        ai.failNext = VisionException.InvalidKey()
+        play(1_500)
+        assertEquals(AiStatus.PAUSED, session.state.value.status)
+        var typed = ""
+        "sk-ant-new".forEach { ch -> typed += ch; settings.update { it.copy(apiKey = typed) }; play(200) }
+        assertEquals("no request with a half-typed key", 1, ai.calls.size)
+        play(2_500)
+        assertEquals(2, ai.calls.size)
+        assertEquals(null, session.state.value.problem)
+        assertEquals("Utah", session.state.value.guesses.first().answer)
+    }
+
+    @Test fun `other settings changes do not resume a paused assistant`() = game {
+        ai.failNext = VisionException.InvalidKey()
+        play(1_500)
+        settings.update { it.copy(fastMode = !it.fastMode) }
+        play(5_000)
+        assertEquals(1, ai.calls.size)
+        assertEquals(AiStatus.PAUSED, session.state.value.status)
+    }
+
     @Test fun `next guess drops the top answer and tells the model it was wrong`() = game {
         play(2_000)
         assertEquals("Ohio", session.nextGuess())
