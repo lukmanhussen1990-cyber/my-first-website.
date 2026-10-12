@@ -1,5 +1,13 @@
 package com.weplay.guesserai.service
 
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineExceptionHandler
+import com.weplay.guesserai.data.db.DrawingRecord
+import com.weplay.guesserai.data.db.DrawingDao
+import com.weplay.guesserai.data.db.AnswerStatEntity
+import android.database.sqlite.SQLiteFullException
 import android.app.AppOpsManager
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
@@ -86,8 +94,11 @@ class SessionJourneyTest {
         override val scale = 1f
         /** The mirror has not delivered a frame yet. */
         var noFrameYet = false
+        /** The next capture fails inside Android. */
+        var failNextCapture: RuntimeException? = null
 
         override fun capture(): Frame? {
+            failNextCapture?.let { failNextCapture = null; throw it }
             if (noFrameYet) return null
             val c = Canvas(bitmap)
             c.drawColor(Color.WHITE)
@@ -187,20 +198,35 @@ class SessionJourneyTest {
         override suspend fun testConnection(settings: AppSettings) = Result.success("ok")
     }
 
+    /** The real database, which can be made to fail like a phone whose storage is full. */
+    private class BreakableDao(private val real: DrawingDao) : DrawingDao by real {
+        var broken = false
+        private fun check() { if (broken) throw SQLiteFullException("database or disk is full") }
+        override suspend fun insert(record: DrawingRecord): Long { check(); return real.insert(record) }
+        override suspend fun allStats(): List<AnswerStatEntity> { check(); return real.allStats() }
+        override suspend fun stat(answer: String): AnswerStatEntity? { check(); return real.stat(answer) }
+        override suspend fun upsertStat(stat: AnswerStatEntity) { check(); real.upsertStat(stat) }
+        override suspend fun knownAnswers(words: Int, letters: Int, limit: Int): List<AnswerStatEntity> { check(); return real.knownAnswers(words, letters, limit) }
+    }
+
     private object PlainCipher : SecretCipher {
         override fun encrypt(plain: String) = plain.reversed()
         override fun decrypt(encoded: String) = encoded.reversed()
     }
 
     private inner class Game(val test: TestScope) {
+        /** Like the service's lifecycle scope, which has no handler: anything uncaught would crash the app. */
+        val crashes = mutableListOf<Throwable>()
+        val scope = CoroutineScope(StandardTestDispatcher(test.testScheduler) + SupervisorJob() + CoroutineExceptionHandler { _, e -> crashes += e })
+        val dao = BreakableDao(db.drawingDao())
         val screen = Screen()
         val ai = FakeAi(screen, test)
         val settings = SettingsRepository(ctx, PlainCipher).apply {
             update { AppSettings(apiKey = "sk-test", accuracyBoost = false, autoPauseWhenGameClosed = false) }
         }
-        val history = HistoryRepository(ctx, db.drawingDao(), io = StandardTestDispatcher(test.testScheduler))
+        val history = HistoryRepository(ctx, dao, io = StandardTestDispatcher(test.testScheduler))
         val session = AssistantSession(
-            scope = test.backgroundScope,
+            scope = scope,
             capturer = screen,
             analyzer = ai,
             history = history,
@@ -228,6 +254,8 @@ class SessionJourneyTest {
         g.session.start()
         g.body()
         g.session.stop()
+        g.scope.cancel()
+        assertTrue("uncaught exceptions (each would crash the app): ${g.crashes}", g.crashes.isEmpty())
     }
 
     @Test fun `a still drawing is sent once, each new stroke at once`() = game {
@@ -603,6 +631,28 @@ class SessionJourneyTest {
         assertEquals(words.map { it.first }.let { w -> List(rounds) { w[it % w.size] } }.sorted(), learned.map { it.correctAnswer }.sorted())
         assertTrue("requests per round stay bounded", ai.calls.size <= rounds * 40)
         assertTrue(ai.maxRunning <= 2)
+    }
+
+    @Test fun `a capture that fails inside Android does not stop the assistant`() = game {
+        play(3_000)
+        screen.failNextCapture = IllegalStateException("Surface was released")
+        screen.strokes = 2
+        play(5_000)
+        assertTrue("kept going after the failed capture", ai.calls.size >= 2)
+        assertEquals("Utah", session.state.value.guesses.first().answer)
+    }
+
+    @Test fun `when saving to history fails (storage full), the assistant carries on`() = game {
+        play(3_000)
+        dao.broken = true // every save and lookup now fails, like a phone whose storage is full
+        assertEquals("Ohio", session.nextGuess()) // records the rejected answer
+        screen.popup = "Word: utah" // round over: the answer is saved
+        play(3_000)
+        screen.popup = null
+        screen.strokes = 3
+        play(3_000)
+        assertTrue("still answering after the failed saves", session.state.value.guesses.isNotEmpty())
+        assertTrue(session.state.value.status != AiStatus.ERROR)
     }
 
     @Test fun `the copied mark does not carry over to the next word`() = game {

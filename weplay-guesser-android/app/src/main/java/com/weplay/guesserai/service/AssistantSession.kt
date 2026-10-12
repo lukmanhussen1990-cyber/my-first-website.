@@ -2,6 +2,7 @@ package com.weplay.guesserai.service
 
 import android.graphics.Bitmap
 import android.graphics.Rect
+import android.util.Log
 import com.weplay.guesserai.data.HistoryRepository
 import com.weplay.guesserai.data.WordBankRepository
 import com.weplay.guesserai.data.ai.ClaudeVisionClient
@@ -216,7 +217,7 @@ class AssistantSession(
     /** "Next Guess": the top answer was wrong; drop it and promote the next one. Returns the new top answer. */
     fun nextGuess(): String? {
         val r = track { tracker.next(ctx()) } ?: return null
-        scope.launch { history.recordRejected(r.rejected); refreshStats() }
+        withHistory { history.recordRejected(r.rejected); refreshStats() }
         show(r.view)
         val next = r.view.guesses.firstOrNull()?.answer
         _state.update { it.copy(copied = next) }
@@ -281,29 +282,29 @@ class AssistantSession(
             // Once the game showed the answer, just keep an eye out for the next word.
             val interval = max(settings.captureSpeed.seconds * 1000L, if (tracker.solved) SOLVED_INTERVAL_MS else 0L)
 
-            val skip = when {
-                paused -> 60_000L
-                !isScreenOn() -> 3_000L
-                // Asking Android which app is in front takes two system calls: not on the main thread, every second.
-                settings.autoPauseWhenGameClosed &&
-                    withContext(work) { gameMonitor.isGameInForeground(settings.gamePackage) } == false -> {
-                    _state.update { it.copy(status = AiStatus.GAME_AWAY, message = "WePlay not open — AI sleeping") }
-                    2_000L
+            // Android itself can fail anywhere in a beat (the capture, the app check); one bad beat
+            // is reported and retried like any error instead of ending the assistant.
+            try {
+                val skip = when {
+                    paused -> 60_000L
+                    !isScreenOn() -> 3_000L
+                    // Asking Android which app is in front takes two system calls: not on the main thread, every second.
+                    settings.autoPauseWhenGameClosed &&
+                        withContext(work) { gameMonitor.isGameInForeground(settings.gamePackage) } == false -> {
+                        _state.update { it.copy(status = AiStatus.GAME_AWAY, message = "WePlay not open — AI sleeping") }
+                        2_000L
+                    }
+                    else -> 0L
                 }
-                else -> 0L
-            }
-            if (skip > 0) { waitFor(skip); continue }
+                if (skip > 0) { waitFor(skip); continue }
 
-            // The frame lives in the capturer's reused buffer: it is fully processed before the next capture.
-            val frame = withContext(work) { capturer.capture() }
-            if (frame != null) {
-                try {
-                    tick(frame, settings)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Throwable) {
-                    handleError(e, isNewest = true)
-                }
+                // The frame lives in the capturer's reused buffer: it is fully processed before the next capture.
+                val frame = withContext(work) { capturer.capture() }
+                if (frame != null) tick(frame, settings)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                handleError(e, isNewest = true)
             }
 
             val elapsed = clock() - tickStart
@@ -605,11 +606,22 @@ class AssistantSession(
 
     private fun ctx() = RoundTracker.Context(stats = stats)
 
+    /** The learning history is a bonus: a full or broken storage must never stop (or crash) the assistant. */
+    private fun withHistory(block: suspend () -> Unit) = scope.launch {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "Learning history unavailable", e)
+        }
+    }
+
     /** Save an answer the game showed (or the user confirmed) with the last drawing. */
     private fun learn(answer: String, guesses: List<RankedGuess>, hint: HintPattern?, category: String, word: Int) {
         // The canvas only, and only this word's: drawing it ourselves leaves no drawing to keep.
         val jpeg = if (settingsRepo.current.saveScreenshots && lastCanvasRound == word) lastCanvasJpeg else null
-        scope.launch {
+        withHistory {
             history.recordCorrect(answer, jpeg, guesses, hint, category)
             refreshStats()
         }
@@ -619,7 +631,7 @@ class AssistantSession(
         knownLoadedFor = hint
         knownForHint = emptyList()
         if (hint == null) return
-        scope.launch {
+        withHistory {
             // Only sent to the model with the next frame; never shown as guesses by themselves.
             val known = history.knownAnswers(hint)
             if (knownLoadedFor == hint) knownForHint = known
@@ -672,7 +684,7 @@ class AssistantSession(
     }
 
     private fun refreshStats() {
-        scope.launch { stats = history.stats() }
+        withHistory { stats = history.stats() }
     }
 
     /** Stops the stronger model's look; it may look at the same canvas again later. */
@@ -716,6 +728,7 @@ class AssistantSession(
     }
 
     private companion object {
+        const val TAG = "AssistantSession"
         const val MAX_IN_FLIGHT = 2
         const val MIN_GAP_MS = 150L
         /** Whole-screen look every so often: checks the layout and spots popups the close-ups miss. */

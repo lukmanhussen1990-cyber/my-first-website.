@@ -50,7 +50,9 @@ import com.weplay.guesserai.ui.components.GlassCard
 import com.weplay.guesserai.ui.theme.CyanAccent
 import com.weplay.guesserai.ui.theme.NeonPink
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -59,12 +61,16 @@ import java.util.Date
 
 class HistoryViewModel(private val c: AppContainer) : ViewModel() {
     val records = c.history.records.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-    fun clear() = viewModelScope.launch { c.history.clear() }
+    private val _clearFailed = MutableStateFlow(false)
+    /** Clearing failed (storage full or broken); the screen says so instead of crashing. */
+    val clearFailed = _clearFailed.asStateFlow()
+    fun clear() = viewModelScope.launch { _clearFailed.value = runCatching { c.history.clear() }.isFailure }
 }
 
 @Composable
 fun HistoryScreen(onBack: () -> Unit, vm: HistoryViewModel = viewModel(factory = AppViewModels.Factory)) {
     val records by vm.records.collectAsState()
+    val clearFailed by vm.clearFailed.collectAsState()
     var confirm by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
@@ -72,6 +78,12 @@ fun HistoryScreen(onBack: () -> Unit, vm: HistoryViewModel = viewModel(factory =
             TextButton(onClick = onBack, modifier = Modifier.semantics { contentDescription = "Back" }) { Text("‹ Back") }
             Text("Learning history", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             if (records.isNotEmpty()) TextButton(onClick = { confirm = true }) { Text("Clear") }
+        }
+        if (clearFailed) {
+            Text(
+                "Could not clear the history: the phone's storage may be full.",
+                color = MaterialTheme.colorScheme.error, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 20.dp),
+            )
         }
         if (records.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
