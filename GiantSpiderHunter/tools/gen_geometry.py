@@ -38,21 +38,21 @@ BODY_PIVOT = (0, 208, 0)
 TORSO_PIVOT = (0, 208, 0)
 # The head, fangs and abdomen are designed at the original size and then scaled about
 # BODY_PIVOT by BODY_SCALE in build() (pivots, cube origins, cube pivots and sizes).
-BODY_SCALE = 1.15
-HEAD_PIVOT = (0, 212, -50)          # -> (0, 212.6, -57.5) after scaling
-FANG_L_PIVOT = (12, 182, -74)       # -> (13.8, 178.1, -85.1)
+BODY_SCALE = 1.4
+HEAD_PIVOT = (0, 212, -50)          # -> (0, 213.6, -70) after scaling
+FANG_L_PIVOT = (12, 182, -74)       # -> (16.8, 171.6, -103.6)
 FANG_R_PIVOT = (-12, 182, -74)
-ABDOMEN_PIVOT = (0, 214, 38)        # -> (0, 214.9, 43.7)
+ABDOMEN_PIVOT = (0, 214, 38)        # -> (0, 216.4, 53.2)
 
 # Legs: three visible segments. The femur bone carries coxa + femur + knee, the tibia bone
 # the tibia + the tibia/metatarsus joint, the foot bone the long metatarsus + tarsus + claw.
 # MUST be identical to the constants block of tools/gen_client_anim.py.
-HIP_X = 34
+HIP_X = 48
 HIP_Y = 206
 HIP_Z = [-34, -16, 2, 20]
 K = [1.08, 1.00, 0.96, 1.04]
-L1_BASE, L2_BASE, L3_BASE = 160.0, 220.0, 200.0
-NEUTRAL_R_BASE = 270.0
+L1_BASE, L2_BASE, L3_BASE = 250.0, 327.0, 45.0
+NEUTRAL_R_BASE = 256.0
 NEUTRAL_A = [52.0, 20.0, -16.0, -48.0]
 
 ABDOMEN_HANG = -14.0   # cube X rotation about the abdomen pivot (negative = rear end down)
@@ -282,18 +282,16 @@ def abdomen_cubes():
 
 
 # ---------------------------------------------------------------------------- legs
-# Cross-sections (px). Reference leg thickness femur : tibia : metatarsus = 1 : 0.68 : 0.53.
-COXA = 46                     # coxa collar where the leg leaves the body
-FEMUR_W = [38, 36, 36, 36]    # Z width per pair (pair 1 heavier)
-FEMUR_H = [40, 38, 38, 38]    # Y height per pair
-KNEE = 46                     # big overlapping knee block
-TIB = 26                      # tibia beam
-ANKLE_J = 32                  # tibia / metatarsus joint block
-MET = 20                      # metatarsus (the long near-vertical lower segment)
-TARSUS = 14
-CLAW = 9
-CLAW_HOOK = 14.0              # claw bent inward (deg, toward -Y in the bind pose)
-MET_END, TAR_END = 0.82, 0.95  # metatarsus / tarsus end as a fraction of L3
+# Cross-sections (px). Reference: a thick square upper leg rising steeply to a high knee and
+# ONE long, straight, much thinner lower leg (tibia + short tip) standing almost vertically.
+COXA = 52                     # coxa collar where the leg leaves the body
+FEMUR_W = [48, 44, 44, 44]    # Z width per pair (pair 1 heavier)
+FEMUR_H = [50, 46, 46, 46]    # Y height per pair
+KNEE = 54                     # big overlapping knee block
+TIB = 24                      # the long straight lower leg (~0.58 of the femur)
+TIP = 18                      # tapering tip segments of the lower leg
+TIP2 = 12
+CLAW = 8
 
 
 def limb_region(base, face, sign, mirrored=True):
@@ -335,37 +333,31 @@ def leg_bones(side, sign, n):
     kx = pts["knee"][0]
     ax = pts["ankle"][0]
     w2, h2 = FEMUR_W[n - 1] / 2, FEMUR_H[n - 1] / 2
-    c2, t2, m2, s2, k2 = COXA / 2, TIB / 2, MET / 2, TARSUS / 2, CLAW / 2
+    c2, t2, p2, q2, k2 = COXA / 2, TIB / 2, TIP / 2, TIP2 / 2, CLAW / 2
 
     femur = [
-        # coxa collar where the leg leaves the body (40 long, 46 thick)
-        limb(sign, -12, 28, hx, hy - c2, hy + c2, z - c2, z + c2,
+        # coxa collar where the leg leaves the body (46 long, 56 thick)
+        limb(sign, -14, 32, hx, hy - c2, hy + c2, z - c2, z + c2,
              "coxa_side", "coxa_side", "coxa_side", "coxa_end"),
-        # femur beam: from inside the coxa into the knee block (plain stripped-wood beam)
-        limb(sign, 20, L1 + 12, hx, hy - h2, hy + h2, z - w2, z + w2,
+        # femur beam: from inside the coxa into the knee block (thick stripped-wood beam)
+        limb(sign, 24, L1 + 10, hx, hy - h2, hy + h2, z - w2, z + w2,
              "fem_side", "fem_top", "fem_under", "fem_end"),
-        # big knee block (46 cube) centred on the knee
+        # big knee block (60 cube) centred on the knee
         block(sign, L1, KNEE / 2, hx, hy, z, "knee", "knee_cap"),
     ]
     tibia = [
-        # tibia beam (26 thick): starts inside the knee block, ends inside the joint block
-        limb(sign, -14, L2 + 10, kx, hy - t2, hy + t2, z - t2, z + t2,
+        # the long straight lower leg (30 thick): from inside the knee block to the tip joint
+        limb(sign, -16, L2 + 6, kx, hy - t2, hy + t2, z - t2, z + t2,
              "tib_side", "tib_side", "tib_under", "tib_end"),
-        # tibia / metatarsus joint block (32 cube)
-        block(sign, L2, ANKLE_J / 2, kx, hy, z, "ankle_side", "ankle_end"),
     ]
-    met_end, tar_end = MET_END * L3, TAR_END * L3
     foot = [
-        # metatarsus (20 thick), the long near-vertical lower segment
-        limb(sign, -6, met_end, ax, hy - m2, hy + m2, z - m2, z + m2,
-             "met_side", "met_side", "met_under", "met_end"),
-        # tarsus (14 thick)
-        limb(sign, met_end - 3, tar_end, ax, hy - s2, hy + s2, z - s2, z + s2,
+        # tip of the lower leg, continuing the same line and tapering to a point
+        limb(sign, -4, 0.55 * L3, ax, hy - p2, hy + p2, z - p2, z + p2,
              "tar_side", "tar_side", "tar_side", "tar_end"),
-        # claw (9 thick) hooked inward to the tip
-        limb(sign, tar_end - 2, L3, ax, hy - k2, hy + k2, z - k2, z + k2,
-             "claw_side", "claw_side", "claw_side", "claw_end",
-             pivot=(ax + sign * (tar_end - 2), hy, z), rotation=(0, 0, CLAW_HOOK * sign)),
+        limb(sign, 0.5 * L3, 0.85 * L3, ax, hy - q2, hy + q2, z - q2, z + q2,
+             "claw_side", "claw_side", "claw_side", "claw_end"),
+        limb(sign, 0.8 * L3, L3, ax, hy - k2, hy + k2, z - k2, z + k2,
+             "claw_side", "claw_side", "claw_side", "claw_end"),
     ]
     sfx = f"{side}{n}"
     return [
@@ -463,8 +455,8 @@ for _s in "lr":
 
 def expected_pivots():
     """Independent re-statement of the docs/MODEL.md pivot formulas."""
-    def bs(p):  # body scale 1.15 about (0, 208, 0), rounded to 0.05
-        return tuple(round((c + (x - c) * 1.15) * 20) / 20 for x, c in zip(p, (0, 208, 0)))
+    def bs(p):  # body scale 1.4 about (0, 208, 0), rounded to 0.05
+        return tuple(round((c + (x - c) * 1.4) * 20) / 20 for x, c in zip(p, (0, 208, 0)))
     e = {"root": (0, 0, 0), "body": (0, 208, 0), "torso": (0, 208, 0),
          "head": bs((0, 212, -50)), "fang_l": bs((12, 182, -74)), "fang_r": bs((-12, 182, -74)),
          "abdomen": bs((0, 214, 38))}
@@ -472,8 +464,8 @@ def expected_pivots():
     for s, sg in (("l", 1), ("r", -1)):
         for n in range(1, 5):
             k = [1.08, 1.00, 0.96, 1.04][n - 1]
-            L1, L2, L3 = 160 * k, 220 * k, 200 * k
-            hip = (sg * 34, 206, [-34, -16, 2, 20][n - 1])
+            L1, L2, L3 = 250 * k, 327 * k, 45 * k
+            hip = (sg * 48, 206, [-34, -16, 2, 20][n - 1])
             e[f"hip_{s}{n}"] = hip
             e[f"femur_{s}{n}"] = hip
             e[f"tibia_{s}{n}"] = (hip[0] + sg * L1, hip[1], hip[2])

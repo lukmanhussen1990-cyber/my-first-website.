@@ -29,14 +29,15 @@ NAME = "Giant Spider Hunter"
 
 # --------------------------------------------------------------------------- DESIGN.md §4
 # (docs/MODEL.md; must match tools/gen_geometry.py exactly)
-HIP_X = 34.0
+HIP_X = 48.0
 HIP_Y = 206.0
 HIP_Z = [-34.0, -16.0, 2.0, 20.0]          # pair 1..4, front -> back
 K = [1.08, 1.00, 0.96, 1.04]               # per-pair length factor
-L1_BASE, L2_BASE, L3_BASE = 160.0, 220.0, 200.0   # femur / tibia / metatarsus+tarsus+claw
-R_BASE = 270.0                              # neutral foot horizontal radius from hip
+L1_BASE, L2_BASE, L3_BASE = 250.0, 327.0, 45.0    # femur / long straight lower leg / tip
+R_BASE = 256.0                              # neutral foot horizontal radius from hip
 NEUTRAL_ANGLE = [52.0, 20.0, -16.0, -48.0]  # from the lateral axis toward forward
-FOOT_TILT = 8.0                             # metatarsus tilted outward from vertical
+FOOT_TILT = 10.0                            # tip tilted outward from vertical (= lower leg line)
+FEMUR_MAX = 86.0                            # femur never folds back over the body
 
 # --------------------------------------------------------------------------- DESIGN.md §8
 # Gait (docs/VISUAL_PLAN.md M3/M4, docs/ANIMATION.md). The stride follows the speed like a real
@@ -252,6 +253,7 @@ def leg_script(side, n):
         f"t.d = math.clamp(math.sqrt(t.au * t.au + t.av * t.av), {f(c['dmin'])}, {f(c['dmax'])});"
         f"t.a = math.atan2(t.av, t.au) + math.acos(math.clamp((t.d * t.d - {f(c['L2'] ** 2 - L1 * L1, 2)})"
         f" / ({f(2 * L1)} * t.d), -1, 1));"
+        f"t.a = math.min(t.a, {f(FEMUR_MAX)});"
         f"t.t = math.atan2(t.av - {f(L1)} * math.sin(t.a), t.au - {f(L1)} * math.cos(t.a));"
         f"v.hip_{nm} = {sgn}math.atan2(-t.ez, t.ex);"
         f"v.fem_{nm} = {'-' if side == 'l' else ''}t.a;"
