@@ -14,7 +14,17 @@ vision model, and shows ranked guesses in a draggable window above the game.
 - Drag it anywhere. In the panel, **–** folds it into the mini bar and **✕** stops the assistant.
 - Tap a guess to copy it, then paste it in the game chat. **Next Guess** drops the top answer and copies the next one.
 - Hold a guess when it was correct. The drawing and answer are saved, and that answer ranks higher in later rounds.
-- **Settings** has the model (Haiku 5.5 by default, then Sonnet 5.5, Opus 5.5, or a custom ID), fast mode, capture speed (1/2/5 s), your own word list, compact/normal window, API base URL, and the game package.
+- **Settings** has the model (Haiku 5.5 by default, then Sonnet 5.5, Opus 5.5, or a custom ID), fast mode, accuracy boost, capture speed (1/2/5 s), your own word list, window size (Mini / Compact / Large), API base URL, and the game package.
+
+## What's new in 1.7.0
+A quality pass: fixes, less wasted work, and tests that play the app end to end. Answers still come only from the AI.
+- **Fewer wasted requests:** a long hint that scrolls across the bar no longer counts as a change, so a drawing nobody touches is not re-sent every second (45–60 → 2 requests a minute). Rate limits now really slow the app down (40 → 5 requests in 40 s of 429s), and it picks up the normal pace as soon as the API answers again. A stalled connection is given up after 8–20 s instead of a minute, and a stale frame is never re-sent.
+- **Steadier rounds:** a scrolling hint read with its start cut off ("ds 9 letters|Organ") no longer starts a false new word that wiped your Next-Guess choices. The ✓ on a copied answer no longer carries into the next word.
+- **Clear problems:** a key or model that stops working is shown right in the mini bar ("⚠ Invalid API key — check Settings"); tap it to retry, or fix it in Settings and the AI resumes by itself. An address without https:// or an empty custom model ID is explained instead of failing every second.
+- **No crash on phones with a broken secure storage:** the key is then kept until the app closes, and Home and Settings say so.
+- **Smoother screens:** headings are readable again (they were black on the dark background), large system fonts no longer cut the overlay's answers, Settings chips and Home buttons fit narrow phones, and the app scan and word list load off the main thread.
+- **Privacy and storage:** the history keeps only the drawing (never a whole screenshot with the chat), never pairs a word with another word's drawing, and keeps pictures for the newest 300 rounds.
+- **Accessibility:** overlay buttons and Settings switches are named for screen readers; switch titles are tappable.
 
 ## What's new in 1.6.0
 - **Mini window (new default):** one slim row under the drawing with the AI's top 3 answers as chips. Tap a chip to copy it, hold it to mark it correct, **»** for the next answer, **⌄** to open the panel; **–** in the panel folds it back. The chat and the answer box stay free for typing. Change the size in Settings → Overlay → Window size (Mini / Compact / Large).
@@ -70,6 +80,8 @@ vision model, and shows ranked guesses in a draggable window above the game.
 ## Build
 ```
 ./gradlew :app:assembleRelease   # needs Android SDK 35; JDK 17+
-./gradlew :app:testDebugUnitTest
+./gradlew :app:testDebugUnitTest # JVM tests, including Robolectric journeys through the real app
+./gradlew :app:testDebugUnitTest -Pscreenshots   # also writes screen and overlay images to app/build/outputs/roborazzi/
 ```
+`ISSUE_LOG.md` lists what the 1.7.0 quality pass found and how each fix was checked.
 Release signing reads `keystore.properties` (git-ignored). Without that file, the release build is signed with the debug key.
