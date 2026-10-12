@@ -59,7 +59,7 @@ def pose_for(level, rage, t=0.35, spin=8.0):
     return br.pose_from_animations(ANIM, anims, t, ctx)
 
 
-def render_eye(geo, skin, rage, cam, size, level=1, light=0.55, bg=None, ss=3, t=0.35):
+def render_eye(geo, skin, rage, cam, size, level=1, light=0.7, bg=None, ss=3, t=0.35):
     base = br.load_texture(os.path.join(TEXD, "eyeball_guardian_%s.png" % skin))
     glow = br.load_texture(os.path.join(TEXD, "eyeball_guardian_%s_%s.png" % (skin, "rage" if rage else "glow")))
     hidden = [] if level >= 3 else ["spikes_extra"]

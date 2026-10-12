@@ -123,12 +123,12 @@ PUPIL_FRONT, PUPIL_BACK = -7.75, -7.4
 # spikes: (name, rz, tilt(x), kind)  kind -> piece lengths along +Y from C
 SPIKE_KINDS = {
     # base 3x3 from r0, shaft 2x2, cap 2x2 (inflated, glowing)
-    "long": dict(r0=4.5, base=4.0, shaft=3.0, cap=2.0),
-    "short": dict(r0=4.5, base=3.5, shaft=1.5, cap=1.5),
-    "back": dict(r0=4.5, base=4.0, shaft=2.5, cap=1.5),
-    "pole": dict(r0=4.5, base=4.0, shaft=3.0, cap=2.0),
+    "long": dict(r0=4.5, base=4.0, shaft=4.5, cap=1.5),
+    "short": dict(r0=4.5, base=3.5, shaft=2.5, cap=1.5),
+    "back": dict(r0=4.5, base=4.0, shaft=3.0, cap=1.5),
+    "pole": dict(r0=4.5, base=4.0, shaft=4.5, cap=1.5),
     # level >= 3 extras: base 2x2, cap 1x1
-    "extra": dict(r0=5.0, base=4.0, shaft=0.0, cap=2.0),
+    "extra": dict(r0=5.0, base=5.0, shaft=0.0, cap=1.5),
 }
 
 
@@ -182,7 +182,7 @@ def grow_veins(rng, n, phi0, width0, steps, branch_p, theta_off=0.0, jitter=1.0)
             cur = C + R_EYE * sphere_dir(phi, theta)
             segs.append((prev, cur, w))
             prev = cur
-            w = max(0.26, w * 0.93)
+            w = max(0.24, w * 0.95)
             if depth < 2 and rng.random() < branch_p:
                 grow(phi, theta + rng.choice([-1, 1]) * rng.uniform(18, 40), w * 0.75,
                      nsteps * rng.uniform(0.3, 0.6), depth + 1)
@@ -237,9 +237,9 @@ def seg_distance(points, segs):
 
 
 RNG_VEINS = np.random.default_rng(20240626)
-VEINS = grow_veins(RNG_VEINS, 11, 45.0, 0.95, 22, 0.22)
-RAGE_VEINS = grow_veins(np.random.default_rng(777), 13, 47.0, 0.55, 18, 0.30, theta_off=14.0, jitter=1.3)
-CRACKS = grow_cracks(np.random.default_rng(4242), 7, (78, 118))
+VEINS = grow_veins(RNG_VEINS, 9, 46.0, 0.62, 24, 0.10)
+RAGE_VEINS = grow_veins(np.random.default_rng(777), 10, 48.0, 0.40, 18, 0.12, theta_off=17.0, jitter=1.2)
+CRACKS = grow_cracks(np.random.default_rng(4242), 5, (78, 118))
 BACK_CRACKS = grow_cracks(np.random.default_rng(99), 6, (128, 150))
 
 
@@ -396,29 +396,27 @@ def iris_colors(x, y, tx, ty, skin, rage_mode=False):
     th = np.degrees(np.arctan2(y, x))
     noise = hash01(tx, ty, 21)
     sector = np.floor((th + 360) / 22.5 + noise * 0.6).astype(int) % 2
-    hot_r = 2.2 if rage_mode else 1.5
+    hot_r = 2.3 if rage_mode else 1.5
     c = np.zeros(r.shape + (3,), dtype=np.float32)
     bands = [
         (hot_r, mix(H, col(1, 1, 1), 0.15) if rage_mode else H),
-        (hot_r + 0.9, mix(H, P, 0.45)),
-        (3.4, P),
-        (4.1, mix(P, D, 0.45)),
-        (4.6, D),
-        (99, mix(D, col(0.05, 0.0, 0.01), 0.55)),
+        (hot_r + 0.7, mix(H, P, 0.5)),
+        (3.9, P),
+        (4.4, mix(P, D, 0.5)),
+        (4.8, D),
+        (99, mix(D, col(0.05, 0.0, 0.01), 0.5)),
     ]
     lo = -1
     for hi, colour in bands:
         m = (r > lo) & (r <= hi)
         c[m] = colour
         lo = hi
-    stria = (r > hot_r + 0.6) & (r < 4.4)
-    c[stria & (sector == 1)] *= 0.82
-    c[stria & (sector == 0) & (noise > 0.7)] = mix(c[stria & (sector == 0) & (noise > 0.7)], H, 0.35)
-    ring = (np.abs(r - 3.45) < 0.28)
-    c[ring] = mix(c[ring], D, 0.55)
-    # specular glint (upper-left as seen from the front; viewer-left is -X)
-    glint = (np.abs(x + 2.75) < 0.55) & (np.abs(y - 2.75) < 0.55)
-    c[glint] = mix(col(1, 1, 1), H, 0.25)
+    stria = (r > hot_r + 0.5) & (r < 4.3)
+    c[stria & (sector == 1)] *= 0.84
+    hi = stria & (sector == 0) & (noise > 0.72)
+    c[hi] = mix(c[hi], H, 0.3)
+    ring = (np.abs(r - 3.3) < 0.25) & (noise > 0.35)
+    c[ring] = mix(c[ring], D, 0.35)
     if rage_mode:
         c = np.clip(mix(c, H, 0.18) * 1.12, 0, 1)
     return c
@@ -463,8 +461,8 @@ def pupil_front_painter(lx, ly, tx, ty, skin):
     outside = r > 2.05
     ic = iris_colors(x, y, tx, ty, skin)
     c[outside] = ic[outside]
-    hl = (np.abs(x + 0.75) < 0.5) & (np.abs(y - 0.75) < 0.5)
-    c[hl] = col(0.55, 0.50, 0.52)
+    hl = (np.abs(x + 0.75) < 0.25) & (np.abs(y - 0.75) < 0.25)  # one texel
+    c[hl] = col(0.62, 0.58, 0.60)
     one = np.ones(x.shape + (1,), dtype=np.float32)
     b = np.concatenate([c, one], -1)
     ga = np.where(outside, 1.0, np.where(hl, 0.6, 0.0))[..., None].astype(np.float32)
@@ -598,9 +596,9 @@ def build():
         piece_regions[name] = (side, top)
 
     piece("base3", 3, 4, 0.0, 41)
-    piece("shaft_long", 2, 3, 2.0, 43)
-    piece("shaft_short", 2, 2.5, 2.0, 47)
-    piece("base2", 2, 4, 1.5, 53)
+    piece("shaft_long", 2, 4.5, 2.5, 43)
+    piece("shaft_short", 2, 3, 2.0, 47)
+    piece("base2", 2, 5, 2.0, 53)
     for cname, wdt, ln in (("cap2", 2, 2), ("cap1", 1, 2)):
         side = region(cname + "_side", wdt, ln, spike_cap_painter(False))
         top = region(cname + "_top", wdt, wdt, spike_cap_painter(True))
@@ -675,10 +673,10 @@ def build():
             return out
         out.append(spike_piece(r, r + k["base"], 1.5, *piece_regions["base3"]))
         r += k["base"]
-        sreg = piece_regions["shaft_long" if k["shaft"] > 2.5 else "shaft_short"]
+        sreg = piece_regions["shaft_long" if k["shaft"] > 3.0 else "shaft_short"]
         out.append(spike_piece(r, r + k["shaft"], 1.0, *sreg))
         r += k["shaft"]
-        out.append(spike_piece(r, r + k["cap"], 1.0, *piece_regions["cap2"], inflate=0.2))
+        out.append(spike_piece(r, r + k["cap"], 1.0, *piece_regions["cap2"], inflate=0.15))
         return out
 
     bones = [
