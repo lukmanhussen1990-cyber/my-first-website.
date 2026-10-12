@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +44,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -81,6 +83,9 @@ private const val BUSY_HOLD_MS = 1_500L
 
 private val GuessTextSize = 10.sp
 
+/** Largest system font scale the fixed-size window follows. */
+private const val MAX_FONT_SCALE = 1.15f
+
 interface OverlayActions {
     fun onMinimize()
     fun onExpand()
@@ -100,10 +105,16 @@ interface OverlayActions {
  */
 @Composable
 fun OverlayRoot(state: OverlayUiState, size: OverlaySize, width: Dp, actions: OverlayActions) {
-    when (size) {
-        OverlaySize.MINI -> MiniBar(state, width, actions)
-        OverlaySize.COMPACT -> CompactPanel(state, width, actions)
-        OverlaySize.LARGE -> Panel(state, width, actions)
+    // The window keeps a fixed, small size so the chat stays free; with a larger system font its
+    // answers would be cut to "He…". The app's own screens still follow the system font size.
+    val density = LocalDensity.current
+    val capped = Density(density.density, density.fontScale.coerceAtMost(MAX_FONT_SCALE))
+    CompositionLocalProvider(LocalDensity provides capped) {
+        when (size) {
+            OverlaySize.MINI -> MiniBar(state, width, actions)
+            OverlaySize.COMPACT -> CompactPanel(state, width, actions)
+            OverlaySize.LARGE -> Panel(state, width, actions)
+        }
     }
 }
 
