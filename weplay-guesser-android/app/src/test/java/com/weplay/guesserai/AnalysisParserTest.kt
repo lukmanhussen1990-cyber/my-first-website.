@@ -43,6 +43,23 @@ class AnalysisParserTest {
         assertNull(a.canvasBox)
     }
 
+    @Test fun `a hint no game could show is treated as unread`() {
+        // Garbled numbers (or a broken endpoint) must not reach the overlay, which draws one blank per letter.
+        for (hint in listOf(
+            """{"word_count":1,"letter_count":5000000,"word_lengths":[5000000]}""",
+            """{"word_count":400,"letter_count":900}""",
+            """{"word_lengths":[2147483647,2147483647]}""",
+        )) {
+            val a = AnalysisParser.parse("""{"hint":$hint,"guesses":[]}""")
+            assertNull(hint, a.hint)
+            assertNull(hint, AnalysisParser.parsePartial("""{"hint":$hint,"guesses":[""").hint)
+        }
+        // The longest real answers still read normally.
+        val long = AnalysisParser.parse("""{"hint":{"word_count":5,"letter_count":19,"word_lengths":[3,5,4,2,5]},"guesses":[]}""")
+        assertEquals(HintPattern(5, 19, listOf(3, 5, 4, 2, 5)), long.hint)
+        assertEquals("_ _ _   _ _ _ _ _   _ _ _ _   _ _   _ _ _ _ _", long.hint!!.blanks())
+    }
+
     @Test(expected = VisionException.BadResponse::class)
     fun `no json throws`() {
         AnalysisParser.parse("I cannot tell what this is.")

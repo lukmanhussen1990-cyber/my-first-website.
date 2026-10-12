@@ -17,6 +17,8 @@ import com.weplay.guesserai.domain.VisionException
 object AnalysisParser {
     private val mapper = ObjectMapper()
     private const val SEEN_MAX_CHARS = 100
+    private const val MAX_HINT_WORDS = 10
+    private const val MAX_HINT_LETTERS = 60
 
     fun parse(text: String, modelUsed: String = ""): FrameAnalysis {
         val json = extractJsonObject(text) ?: throw VisionException.BadResponse("AI reply had no JSON")
@@ -100,7 +102,8 @@ object AnalysisParser {
         val letters = node.path("letter_count").asInt(0).takeIf { it > 0 } ?: lengths.sum()
         val clue = node.path("clue").asText("").trim().take(40)
         return HintPattern(words, letters, if (lengths.size == words && lengths.sum() == letters) lengths else emptyList(), clue)
-            .takeIf { it.isKnown }
+            // No game hint is that long: such a reading is noise, and the overlay draws a blank per letter.
+            .takeIf { it.isKnown && it.wordCount <= MAX_HINT_WORDS && it.letterCount <= MAX_HINT_LETTERS }
     }
 
     private fun objectAfterKey(text: String, key: String): String? {

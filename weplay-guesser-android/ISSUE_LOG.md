@@ -21,7 +21,7 @@ Main user journeys:
 
 ## Summary
 
-31 issues fixed (6 P1, 13 P2, 10 P3, 2 P4), each reproduced first and checked by a test that fails without the fix.
+32 issues fixed (6 P1, 13 P2, 11 P3, 2 P4), each reproduced first and checked by a test that fails without the fix.
 
 | Area | Before | After | How it was measured |
 |---|---|---|---|
@@ -32,7 +32,7 @@ Main user journeys:
 | Keystore calls in one Settings visit (key unchanged) | 25 | 0 | Counting cipher |
 | Heading contrast on app screens | 1.1 : 1 | ≥ 4.5 : 1 | Text colour on the layout |
 | Crashes found and fixed | — | 5 (broken keystore, missing settings screen, no screen sharing, failed capture beat, full storage) | Reproduced in Robolectric / session journeys |
-| Unit + JVM UI tests | 73 | 169 (journeys, overlay, session, chaos, monkey, fuzz, property) | `./gradlew :app:testDebugUnitTest` |
+| Unit + JVM UI tests | 73 | 170 (journeys, overlay, session, chaos, monkey, fuzz, property) | `./gradlew :app:testDebugUnitTest` |
 
 Not measurable here (no Android device or emulator in this environment, no API key): on-device frame times, real API latency, battery. Those effects are described as expected, not measured.
 
@@ -90,3 +90,4 @@ Priority: P1 crash / broken / data loss / security · P2 performance, lag, exces
 | 29 | P3 | A custom endpoint on plain `http://` (a LAN proxy) can never work: the app targets SDK 35 without a network security config, so Android blocks cleartext; the user only saw "Network error", retried forever | Code path: OkHttp throws `UnknownServiceException("CLEARTEXT communication … not permitted")`, wrapped by the SDK and mapped to `Network`. | That failure becomes the blocking problem "Use an https:// address in Settings — Android blocks plain http" (auto-retries once the address changes, #12); Settings and Setup warn as soon as `http://` is typed. | `ClaudeVisionClientTest`: the cleartext failure maps to `BadConfig` with that text, a timeout still maps to `Network`; `HomeSettingsJourneyTest`: the warning appears for `http://192.168.1.20:8080` and not for https. |
 | 30 | P2 (data) | Flaw in this session's own fix #8: picture pruning removed old pictures with one `IN (...)` statement. Android 10 and 11 (SQLite 3.22 / 3.28) allow at most 999 values per statement, so a 1.6.0 user upgrading with 1,300+ saved pictures would hit "too many SQL variables" on every save and never be pruned | `HistoryRepositoryTest` with a DAO enforcing the old SQLite limit and 1,500 pictures left by 1.6.0: `SQLiteException: too many SQL variables`. (Robolectric's newer SQLite has no such limit, so the plain test had not caught it.) | Pruning works in chunks of 500. | Same test: 1,501 records kept, 300 pictures left, the rest deleted. |
 | 31 | P2 (network/cost) | After the word was solved (the bar shows the answer), every new stroke by the drawer was still sent to the AI every 2.5 s for the rest of the round, though nothing it answers can change: the answer is known and the next word shows in the hint bar | `SessionJourneyTest`: drawer keeps drawing for 40 s after the reveal → **16 requests**, all answering "word revealed" | The change detector now says whether the hint itself changed. Once solved, a hint change or a cleared canvas is still sent at once; strokes alone at most every 10 s (a safety net for a round end the hint does not show). | Same test: **4 requests** in those 40 s; the next word (new hint while the old drawing is still up) is sent on the next beat and its guesses shown. Full-game, chaos and soak journeys pass. |
+| 32 | P3 (robustness) | The AI's hint reading was not bounded: a garbled reply (or a broken custom endpoint) claiming e.g. a 5,000,000-letter hint went straight to the overlay, which draws one blank per letter on every redraw. Not seen from the real model; found by reading the parser. | New `AnalysisParserTest` case: the 5,000,000-letter hint came through unchanged. Building its blanks alone took ~200 ms and a 10-million-character string on the desktop CPU, before any text layout (expected to freeze the window over the game on a phone). | A hint over 10 words or 60 letters is treated as unread, like a zero hint. | Same test passes (also when streamed); a real 5-word, 19-letter answer still reads and draws normally. Parser fuzz test passes. |
