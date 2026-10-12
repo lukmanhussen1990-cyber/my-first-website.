@@ -99,7 +99,7 @@ def properties():
         "horror:state": {"type": "enum", "values": STATES, "default": "idle", "client_sync": True},
         "horror:giant": {"type": "bool", "default": False, "client_sync": True},
         "horror:small_scale": {"type": "float", "range": [0.02, 0.5], "default": 0.075, "client_sync": True},
-        "horror:giant_scale": {"type": "float", "range": [0.25, 3.0], "default": 1.0, "client_sync": True},
+        "horror:giant_scale": {"type": "float", "range": [0.25, 3.0], "default": 1.4, "client_sync": True},
         "horror:grow_time": {"type": "float", "range": [0.5, 20.0], "default": 4.0, "client_sync": True},
         "horror:attack_id": {"type": "int", "range": [0, 1000000], "default": 0, "client_sync": True},
         "horror:attack_kind": {"type": "int", "range": [0, 2], "default": 0, "client_sync": True},
@@ -208,7 +208,7 @@ def component_groups():
         "minecraft:custom_hit_test": {
             "hitboxes": [
                 {"pivot": [0, 1.5, 0], "width": 3.0, "height": 3.0},   # ground core (legs/feet area)
-                {"pivot": [0, 13, 0], "width": 6.0, "height": 5.0},    # body high above the canopy
+                {"pivot": [0, 18, 0], "width": 8.0, "height": 7.0},    # body high above the canopy (giant scale 1.4)
             ]
         },
     }

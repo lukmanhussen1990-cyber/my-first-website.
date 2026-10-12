@@ -18,14 +18,15 @@ const SCHEMA = {
 
   // ---------------------------------------------------------------- size / health
   smallScale: [0.075, 'num', 0.02, 0.5, 'Model scale of the small stalker form (horror:small_scale).'],
-  giantScale: [1.0, 'num', 0.25, 3.0, 'Model scale of the giant form (horror:giant_scale); also scales reach.'],
+  giantScale: [1.4, 'num', 0.25, 3.0, 'Model scale of the giant form (horror:giant_scale); also scales reach.'],
   growTime: [4.0, 'num', 0.5, 20.0, 'Client-side visual growth time in seconds (horror:grow_time).'],
   health: [300, 'num', 1, 500, 'Real hit points of a new spider (health buffer: entity health = 500 + this).'],
 
   // ---------------------------------------------------------------- idle / stalking
   idleRange: [64, 'num', 8, 128, 'An eligible player within this range wakes an idle spider into stalking.'],
-  stalkMinDistance: [14, 'num', 2, 64, 'Stalker relocates when it is closer than this to its focus (while unseen).'],
-  stalkMaxDistance: [44, 'num', 8, 96, 'Stalker relocates when it is farther than this from its focus (while unseen).'],
+  stalkMinDistance: [14, 'num', 2, 64, 'Stalker relocates when it is closer than this (horizontally) to its focus (while unseen).'],
+  stalkMaxDistance: [56, 'num', 8, 128, 'Stalker relocates when it is farther than this (horizontally) from its focus (while unseen).'],
+  relocateSettleSeconds: [10, 'num', 0, 600, 'A stalker does not relocate during its first seconds of stalking.'],
   relocateMinDistance: [20, 'num', 4, 64, 'Minimum distance of a hidden relocation spot from the focus player.'],
   relocateMaxDistance: [32, 'num', 6, 96, 'Maximum distance of a hidden relocation spot from the focus player.'],
   relocateIntervalMin: [15, 'num', 2, 600, 'Minimum seconds between routine relocations.'],

@@ -46,7 +46,7 @@ import {
 import { OVERWORLD, eligibleNear, eligiblePlayers, findPlayerById, isEligible } from './players.js';
 import { AUTO_TAG, DP_ENCOUNTER, DP_FOCUS, DP_HP_INIT, DP_LOOT_DONE } from './state.js';
 import { TerrainSampler } from './terrain.js';
-import { TPS, dist, randRange, stepYaw, yawTo } from './util.js';
+import { TPS, dist, hdist, randRange, stepYaw, yawTo } from './util.js';
 
 export const STATES = ['idle', 'stalking', 'growing', 'hunting', 'cooldown', 'dying'];
 const HEALTH_BUFFER = 500;
@@ -448,7 +448,7 @@ export class SpiderController {
       this.setFocus(focus);
     }
     const pl = focus.location;
-    const d = dist(loc, pl);
+    const d = hdist(loc, pl);
     this.face(focus, CONFIG.maxTurnDegreesPerTick * 2);
     const locked = now < this.lockUntil;
     const center = bodyCenter(loc, CONFIG.smallScale, CONFIG);
@@ -491,7 +491,8 @@ export class SpiderController {
     // relocation while unseen
     const tooClose = d < CONFIG.stalkMinDistance;
     const tooFar = d > CONFIG.stalkMaxDistance;
-    if ((tooClose || tooFar || now >= this.nextRelocate) && now >= this.nextRelocateTry) {
+    const settled = now - this.stalkStart >= CONFIG.relocateSettleSeconds * TPS;
+    if (settled && (tooClose || tooFar || now >= this.nextRelocate) && now >= this.nextRelocateTry) {
       this.nextRelocateTry = now + 2 * TPS;
       if (!this.seenByAnyPlayer(center)) {
         if (this.relocate(focus, now)) {
