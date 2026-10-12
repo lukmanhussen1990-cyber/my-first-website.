@@ -126,10 +126,19 @@ fun SetupScreen(onDone: () -> Unit, vm: SetupViewModel = viewModel(factory = App
             ) { Text(if (advanced) "Hide advanced ▴" else "Advanced: custom endpoint ▾") }
             if (advanced) {
                 val urlOk = s.baseUrl.isBlank() || ClaudeVisionClient.isHttpUrl(s.baseUrl.trimEnd('/'))
+                val plainHttp = s.baseUrl.startsWith("http://", ignoreCase = true)
                 OutlinedTextField(
                     value = s.baseUrl, onValueChange = vm::onBaseUrl, singleLine = true,
-                    label = { Text("API base URL") }, isError = !urlOk,
-                    supportingText = { Text(if (urlOk) "Any Anthropic-compatible Messages API" else "Enter a full address, like https://api.anthropic.com") },
+                    label = { Text("API base URL") }, isError = !urlOk || plainHttp,
+                    supportingText = {
+                        Text(
+                            when {
+                                !urlOk -> "Enter a full address, like https://api.anthropic.com"
+                                plainHttp -> "Android blocks plain http: use an https:// address"
+                                else -> "Any Anthropic-compatible Messages API"
+                            }
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

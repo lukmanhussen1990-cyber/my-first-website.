@@ -123,11 +123,18 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
                 modifier = Modifier.fillMaxWidth(),
             )
             val urlOk = s.baseUrl.isBlank() || ClaudeVisionClient.isHttpUrl(s.baseUrl.trim().trimEnd('/'))
+            val plainHttp = s.baseUrl.trim().startsWith("http://", ignoreCase = true)
             OutlinedTextField(
                 value = s.baseUrl, onValueChange = { v -> vm.update { it.copy(baseUrl = v.trim()) } },
-                label = { Text("API base URL") }, singleLine = true, isError = !urlOk,
+                label = { Text("API base URL") }, singleLine = true, isError = !urlOk || plainHttp,
                 supportingText = {
-                    Text(if (urlOk) "Default: ${AppSettings.DEFAULT_BASE_URL}" else "Enter a full address, like ${AppSettings.DEFAULT_BASE_URL}")
+                    Text(
+                        when {
+                            !urlOk -> "Enter a full address, like ${AppSettings.DEFAULT_BASE_URL}"
+                            plainHttp -> "Android blocks plain http: use an https:// address"
+                            else -> "Default: ${AppSettings.DEFAULT_BASE_URL}"
+                        }
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
             )

@@ -119,6 +119,14 @@ class ClaudeVisionClientTest {
         assertFalse(ClaudeVisionClient.isHttpUrl("https://api.anthropic .com"))
     }
 
+    @Test fun `a plain-http address that Android blocks is explained, other network failures are not`() {
+        val blocked = com.anthropic.errors.AnthropicIoException("Request failed", java.net.UnknownServiceException("CLEARTEXT communication to 10.0.0.2 not permitted by network security policy"))
+        val e = ClaudeVisionClient.ioFailure(blocked)
+        assertTrue(e is VisionException.BadConfig)
+        assertEquals(ClaudeVisionClient.CLEARTEXT_BLOCKED, e.message)
+        assertTrue(ClaudeVisionClient.ioFailure(com.anthropic.errors.AnthropicIoException("Request failed", java.net.SocketTimeoutException("timeout"))) is VisionException.Network)
+    }
+
     @Test fun `replies without thinking get the short limits`() {
         val c = ClaudeVisionClient()
         val fastHaiku = AppSettings(apiKey = "k", model = AiModel.HAIKU, fastMode = true)

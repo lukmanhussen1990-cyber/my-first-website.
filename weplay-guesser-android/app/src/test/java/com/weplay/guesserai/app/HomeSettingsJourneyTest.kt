@@ -123,8 +123,12 @@ class HomeSettingsJourneyTest {
         url.performTextInput("api.example.com")
         compose.onNodeWithText("Enter a full address, like https://api.anthropic.com").assertExists()
         url.performTextClearance()
+        url.performTextInput("http://192.168.1.20:8080")
+        compose.onNodeWithText("Android blocks plain http: use an https:// address").assertExists()
+        url.performTextClearance()
         url.performTextInput("https://proxy.example.com")
         compose.onNodeWithText("Enter a full address, like https://api.anthropic.com").assertDoesNotExist()
+        compose.onNodeWithText("Android blocks plain http: use an https:// address").assertDoesNotExist()
     }
 
     @Test fun `settings switches and options are one control each, named by their label`() {

@@ -33,6 +33,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import java.net.URI
+import java.net.UnknownServiceException
 import java.time.Duration
 import java.util.Base64
 import kotlin.coroutines.cancellation.CancellationException
@@ -255,7 +256,7 @@ class ClaudeVisionClient(private val timeouts: Timeouts = Timeouts()) : VisionAn
     } catch (e: AnthropicServiceException) {
         throw VisionException.Server(e.statusCode(), e.message ?: "unknown", e)
     } catch (e: AnthropicIoException) {
-        throw VisionException.Network(e)
+        throw ioFailure(e)
     }
 
     /** Settings that cannot work are reported before anything is sent. */
@@ -273,6 +274,13 @@ class ClaudeVisionClient(private val timeouts: Timeouts = Timeouts()) : VisionAn
                 "Check the API base URL in Settings"
             else -> null
         }
+
+        const val CLEARTEXT_BLOCKED = "Use an https:// address in Settings — Android blocks plain http"
+
+        /** Android refuses plain-http connections for this app; everything else is a network problem. */
+        internal fun ioFailure(e: Throwable): VisionException =
+            if (generateSequence(e) { it.cause }.any { it is UnknownServiceException }) VisionException.BadConfig(CLEARTEXT_BLOCKED)
+            else VisionException.Network(e)
 
         /** A full http(s) address with a host, like https://api.anthropic.com. */
         fun isHttpUrl(url: String): Boolean = runCatching {
