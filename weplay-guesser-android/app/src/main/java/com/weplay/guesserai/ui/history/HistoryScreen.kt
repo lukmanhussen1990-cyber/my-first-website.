@@ -42,6 +42,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.weplay.guesserai.AppContainer
 import com.weplay.guesserai.data.db.DrawingRecord
+import com.weplay.guesserai.domain.HintPattern
 import com.weplay.guesserai.ui.AppViewModels
 import com.weplay.guesserai.ui.components.GlassCard
 import com.weplay.guesserai.ui.theme.CyanAccent
@@ -109,7 +110,7 @@ private fun RecordCard(r: DrawingRecord) {
             Column(Modifier.weight(1f)) {
                 Text(r.correctAnswer, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                 Text(
-                    "${r.wordCount} words • ${r.letterCount} letters" + if (r.category.isNotBlank()) " • ${r.category}" else "",
+                    HintPattern(r.wordCount, r.letterCount).label() + if (r.category.isNotBlank()) " • ${r.category}" else "",
                     color = CyanAccent, fontSize = 12.sp,
                 )
                 Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(r.timestamp)),

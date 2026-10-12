@@ -63,6 +63,18 @@ class HistoryRepository(
             )
         )
         bump(answer, correct = 1, rejected = 0)
+        pruneImages()
+    }
+
+    /**
+     * Every round adds a drawing, so only the newest [MAX_IMAGES] keep their picture; older rounds
+     * stay in the history and the learning stats, without it.
+     */
+    private suspend fun pruneImages() {
+        val old = dao.imagesBeyond(MAX_IMAGES)
+        if (old.isEmpty()) return
+        old.forEach { File(it.imagePath).delete() }
+        dao.forgetImages(old.map { it.id })
     }
 
     suspend fun recordRejected(answer: String) = withContext(io) { bump(answer, 0, 1) }
@@ -86,7 +98,12 @@ class HistoryRepository(
 
     suspend fun clear() = withContext(io) {
         dao.allImagePaths().forEach { File(it).delete() }
+        imageDir.listFiles()?.forEach { it.delete() } // also any left by an interrupted save
         dao.clear()
         dao.clearStats()
+    }
+
+    companion object {
+        const val MAX_IMAGES = 300
     }
 }

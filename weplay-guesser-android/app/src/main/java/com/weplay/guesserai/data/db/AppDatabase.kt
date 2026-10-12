@@ -40,6 +40,9 @@ data class AnswerStatEntity(
     val lastSeen: Long,
 )
 
+/** A saved drawing's file. */
+data class ImageRef(val id: Long, val imagePath: String)
+
 @Dao
 interface DrawingDao {
     @Insert
@@ -53,6 +56,13 @@ interface DrawingDao {
 
     @Query("SELECT imagePath FROM drawings WHERE imagePath IS NOT NULL")
     suspend fun allImagePaths(): List<String>
+
+    /** Saved drawings older than the newest [keep]. */
+    @Query("SELECT id, imagePath FROM drawings WHERE imagePath IS NOT NULL ORDER BY timestamp DESC, id DESC LIMIT -1 OFFSET :keep")
+    suspend fun imagesBeyond(keep: Int): List<ImageRef>
+
+    @Query("UPDATE drawings SET imagePath = NULL WHERE id IN (:ids)")
+    suspend fun forgetImages(ids: List<Long>)
 
     @Query("DELETE FROM drawings")
     suspend fun clear()

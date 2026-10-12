@@ -5,7 +5,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -13,7 +15,9 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.weplay.guesserai.WePlayGuesserApp
+import com.weplay.guesserai.domain.HintPattern
 import com.weplay.guesserai.ui.MainActivity
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -59,6 +63,18 @@ class HomeSettingsJourneyTest {
         compose.waitUntil(5_000) { app.container.settings.current.gamePackage.isNotEmpty() }
         assertEquals("com.wejoy.weplay", app.container.settings.current.gamePackage)
         compose.onNodeWithText("com.wejoy.weplay").performScrollTo().assertExists()
+    }
+
+    @Test fun `history lists learned drawings and clears them after confirming`() {
+        runBlocking { app.container.history.recordCorrect("Utah", null, emptyList(), HintPattern(1, 4), "Place") }
+        compose.onNodeWithText("History").performScrollTo().performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Utah")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("1 word • 4 letters • Place").assertExists()
+        compose.onNodeWithText("Clear").performClick()
+        compose.onNodeWithText("Clear history?").assertExists()
+        compose.onNode(hasText("Clear") and hasAnyAncestor(isDialog())).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Nothing learned yet", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Utah").assertDoesNotExist()
     }
 
     @Test fun `settings lists the WePlay app and the word list once loaded`() {
