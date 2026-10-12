@@ -3,6 +3,8 @@ package com.weplay.guesserai.data.ai
 import com.anthropic.client.AnthropicClient
 import com.anthropic.client.okhttp.AnthropicOkHttpClient
 import com.anthropic.core.JsonValue
+import com.anthropic.core.RequestOptions
+import com.anthropic.core.Timeout
 import com.anthropic.errors.AnthropicIoException
 import com.anthropic.errors.AnthropicServiceException
 import com.anthropic.errors.NotFoundException
@@ -42,23 +44,53 @@ import kotlin.coroutines.cancellation.CancellationException
  * Speed settings (official endpoint only): effort `low`; in fast mode thinking is turned off
  * on Haiku 5.5 and Sonnet 5.5 (Opus 5.5 cannot turn it off). If the key has no access to
  * Haiku 5.5, the client switches to Opus 5.5 and remembers that for this key.
+ *
+ * Frame requests are never retried by the SDK and give up quickly on a stalled connection: the
+ * capture loop sends a newer frame on its next beat anyway, and a stuck request would hold one
+ * of its two request slots.
  */
-class ClaudeVisionClient : VisionAnalyzer {
+class ClaudeVisionClient(private val timeouts: Timeouts = Timeouts()) : VisionAnalyzer {
 
-    private var cached: Pair<String, AnthropicClient>? = null
+    /** Limits for one frame request; "quiet" replies have thinking turned off and start writing at once. */
+    data class Timeouts(
+        val connect: Duration = Duration.ofSeconds(10),
+        /** Longest silence while a reply streams. */
+        val quietRead: Duration = Duration.ofSeconds(8),
+        val thinkingRead: Duration = Duration.ofSeconds(20),
+        /** Whole reply. */
+        val quietTotal: Duration = Duration.ofSeconds(20),
+        val thinkingTotal: Duration = Duration.ofSeconds(30),
+    )
+
+    /** One HTTP client per key and endpoint; [frames] shares its connections without retries. */
+    private class Clients(val id: String, val base: AnthropicClient, val frames: AnthropicClient)
+
+    private var cached: Clients? = null
     @Volatile private var haikuUnavailableForKey: String? = null
 
-    private fun client(settings: AppSettings): AnthropicClient {
+    /** Both lanes and the connection test call this from IO threads at the same time. */
+    @Synchronized
+    private fun clients(settings: AppSettings): Clients {
         val id = settings.apiKey + "|" + settings.baseUrl
-        cached?.let { (cachedId, c) -> if (cachedId == id) return c }
-        val c = AnthropicOkHttpClient.builder()
+        cached?.let { if (it.id == id) return it }
+        val base = AnthropicOkHttpClient.builder()
             .apiKey(settings.apiKey.trim())
             .baseUrl(settings.baseUrl.trim().trimEnd('/').ifEmpty { AppSettings.DEFAULT_BASE_URL })
             .timeout(Duration.ofSeconds(30))
             .maxRetries(1)
             .build()
-        cached = id to c
-        return c
+        return Clients(id, base, base.withOptions { it.maxRetries(0) }).also { cached = it }
+    }
+
+    /** Per-request limits for a frame: short when the model answers without thinking. */
+    internal fun frameTimeout(settings: AppSettings): Timeout {
+        val quiet = thinkingOff(settings)
+        return Timeout.builder()
+            .connect(timeouts.connect)
+            .read(if (quiet) timeouts.quietRead else timeouts.thinkingRead)
+            .write(if (quiet) timeouts.quietTotal else timeouts.thinkingTotal)
+            .request(if (quiet) timeouts.quietTotal else timeouts.thinkingTotal)
+            .build()
     }
 
     /** The settings actually used: Haiku is swapped for Opus once we know the key cannot use it. */
@@ -101,7 +133,7 @@ class ClaudeVisionClient : VisionAnalyzer {
             .maxTokens(1024L)
             .addUserMessage("Reply with the single word: ready")
         applySpeedOptions(builder, settings)
-        return call { client(settings).beta().messages().create(builder.build()) }.model().asString()
+        return call { clients(settings).base.beta().messages().create(builder.build()) }.model().asString()
     }
 
     private suspend fun stream(params: MessageCreateParams, settings: AppSettings, onPartial: (PartialAnalysis) -> Unit): FrameAnalysis {
@@ -111,7 +143,8 @@ class ClaudeVisionClient : VisionAnalyzer {
         var refusalCategory = "refusal"
         try {
             call {
-                client(settings).beta().messages().createStreaming(params).use { response ->
+                val options = RequestOptions.builder().timeout(frameTimeout(settings)).build()
+                clients(settings).frames.beta().messages().createStreaming(params, options).use { response ->
                     // Closing the HTTP stream is what actually stops a cancelled request.
                     val onCancel = job.invokeOnCompletion { runCatching { response.close() } }
                     try {

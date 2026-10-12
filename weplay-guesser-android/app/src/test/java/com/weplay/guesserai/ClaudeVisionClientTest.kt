@@ -14,13 +14,16 @@ import com.weplay.guesserai.domain.VisionException
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.Duration
 import java.util.Collections
+import java.util.concurrent.TimeUnit
 
 /** Runs the real Anthropic SDK against a local mock server and checks the wire format both ways. */
 class ClaudeVisionClientTest {
@@ -57,6 +60,56 @@ class ClaudeVisionClientTest {
 
     private fun body(params: com.anthropic.models.beta.messages.MessageCreateParams) =
         mapper.readTree(mapper.writeValueAsString(params._body()))
+
+    /** Short limits so stall tests finish in well under a second each. */
+    private val quick = ClaudeVisionClient.Timeouts(
+        connect = Duration.ofSeconds(2),
+        quietRead = Duration.ofMillis(400), thinkingRead = Duration.ofMillis(400),
+        quietTotal = Duration.ofSeconds(3), thinkingTotal = Duration.ofSeconds(3),
+    )
+
+    private suspend fun failureOf(client: ClaudeVisionClient): Pair<Throwable?, Long> {
+        val started = System.nanoTime()
+        val e = runCatching { client.analyze(FrameImages(full = byteArrayOf(1, 2, 3)), PromptHints(), settings()) }.exceptionOrNull()
+        return e to (System.nanoTime() - started) / 1_000_000
+    }
+
+    @Test fun `a server that never answers is given up after the read timeout, not retried`() = runTest {
+        repeat(2) { server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE)) }
+        val (e, ms) = failureOf(ClaudeVisionClient(quick))
+        assertTrue("got $e", e is VisionException.Network)
+        assertEquals(1, server.requestCount)
+        assertTrue("took $ms ms", ms < 2_500)
+    }
+
+    @Test fun `a reply that stalls mid-stream is given up after the read timeout`() = runTest {
+        // The stream opens (200, event-stream headers), then the connection goes quiet.
+        server.enqueue(sse("claude-haiku-5-5", reply).setBodyDelay(1_500, TimeUnit.MILLISECONDS))
+        server.enqueue(sse("claude-haiku-5-5", reply))
+        val (e, ms) = failureOf(ClaudeVisionClient(quick))
+        assertTrue("got $e", e is VisionException.Network)
+        assertTrue("took $ms ms", ms < 1_400)
+        assertTrue(server.takeRequest(1, TimeUnit.SECONDS) != null)
+        assertEquals(null, server.takeRequest(300, TimeUnit.MILLISECONDS))
+    }
+
+    @Test fun `an overloaded server is not sent the same old frame again`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(529).setBody("""{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}"""))
+        server.enqueue(sse("claude-haiku-5-5", reply))
+        val (e, _) = failureOf(ClaudeVisionClient(quick))
+        assertTrue("got $e", e is VisionException.Server)
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test fun `replies without thinking get the short limits`() {
+        val c = ClaudeVisionClient()
+        val fastHaiku = AppSettings(apiKey = "k", model = AiModel.HAIKU, fastMode = true)
+        assertEquals(Duration.ofSeconds(8), c.frameTimeout(fastHaiku).read())
+        assertEquals(Duration.ofSeconds(20), c.frameTimeout(fastHaiku).request())
+        assertEquals(Duration.ofSeconds(20), c.frameTimeout(fastHaiku.copy(model = AiModel.OPUS)).read())
+        assertEquals(Duration.ofSeconds(20), c.frameTimeout(fastHaiku.copy(fastMode = false)).read())
+        assertEquals(Duration.ofSeconds(30), c.frameTimeout(fastHaiku.copy(baseUrl = "https://example.com")).request())
+    }
 
     @Test fun `streams guesses as they arrive and sends image, prompt and word-list candidates`() = runTest {
         server.enqueue(sse("claude-haiku-5-5", reply))
