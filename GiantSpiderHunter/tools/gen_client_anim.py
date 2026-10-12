@@ -39,12 +39,30 @@ NEUTRAL_ANGLE = [52.0, 20.0, -16.0, -48.0]  # from the lateral axis toward forwa
 FOOT_TILT = 8.0                             # metatarsus tilted outward from vertical
 
 # --------------------------------------------------------------------------- DESIGN.md §8
-STRIDE_WALK, STRIDE_RUN = 130.0, 180.0      # px, foot travel along the body axis per stance
-LIFT_WALK, LIFT_RUN = 55.0, 85.0            # px swing lift
+# Gait (docs/VISUAL_PLAN.md M3/M4, docs/ANIMATION.md). The stride follows the speed like a real
+# legged animal (Alexander's dynamic-similarity rule: cycle length / hip height = 2.3 * Fr^0.3,
+# Fr = v^2 / (g * hip height)), so the giant takes slow heavy steps when it walks (a step every
+# ~3 s at 1.5 b/s) and long ones when it runs (~1.8 s per step at 9 b/s, scale 1.4).
+STRIDE_K = 237.0                            # px; = 2.3 * HIP_Y / 2 (half cycle = one step)
+STRIDE_V0 = 11.2                            # b/s; = sqrt(9.8 * HIP_Y / 16) at scale 1
+STRIDE_MIN, STRIDE_MAX = 60.0, 200.0        # px, foot travel along the body axis per stance
+LIFT_BASE, LIFT_PER_STRIDE = 35.0, 0.35     # swing lift px = clamp(35 + 0.35 * stride, 55, 100)
+LIFT_MIN, LIFT_MAX = 55.0, 100.0            # (~half the body height at a run, like ref_giant_walk)
+SWING_REACH = 1.15                          # the foot reaches its landing point at 1/1.15 of the swing,
+                                            # then plants straight down
+LIFT_SHAPE = 0.7                            # lift = sin(180 w)^0.7: high, flat-topped arc
+TUCK = 22.0                                 # metatarsus swings this much inward at mid-swing
+DEATH_TILT = 32.0                           # metatarsus splays outward by this much when dead
+SPD_KP, SPD_KV = 6.0, 12.0                  # distance tracker (PLL): lag 1/KP s, smooth speed
 PAIR_PHASE = [0.0, 0.02, 0.04, 0.06]        # small metachronal offsets (<= 0.06)
 GROUP_A = {"l1", "r2", "l3", "r4"}          # phase 0; group B {r1, l2, r3, l4} phase 0.5
 TERRAIN_CLAMP_PX = 220.0
 STEP_DELAY = 0.03                           # step sound/dust slightly after the first touchdown
+# idle fidget: after FIDGET_DELAY s of standing still, three legs occasionally lift and replant
+# (solved in the IK, so the foot comes back down exactly where it was)
+FIDGET_DELAY = 3.0
+FIDGET = {"l2": (1.3, 6.1, 30.0), "r3": (4.2, 7.3, 24.0), "r1": (2.6, 8.9, 34.0)}  # offset, period, px
+FIDGET_LEN = 0.7
 
 LEGS = [(side, n) for side in ("l", "r") for n in (1, 2, 3, 4)]   # foot_0..7 order
 
@@ -67,11 +85,8 @@ def leg_constants(side, n):
         "k": k, "L1": L1, "L2": L2, "L3": L3,
         "dx": R * math.cos(a),             # outward (lateral) distance hip -> neutral foot
         "dzn": -R * math.sin(a),           # z offset hip -> neutral foot (forward = -Z)
-        "l3s": L3 * math.sin(math.radians(FOOT_TILT)),
-        "l3c": L3 * math.cos(math.radians(FOOT_TILT)),
         "dmin": abs(L1 - L2) + 1.0,
         "dmax": L1 + L2 - 1.0,
-        "theta3": -(90.0 - FOOT_TILT),     # absolute foot angle (FOOT_TILT off vertical)
         "phase": (0.0 if group_a else 0.5) + PAIR_PHASE[n - 1],
         "hip": ((HIP_X if side == "l" else -HIP_X), HIP_Y, HIP_Z[n - 1]),
         "group_a": group_a,
@@ -106,6 +121,10 @@ def pre_animation():
         "v.seen_attack = v.age < 0.3 ? q.property('horror:attack_id') : (v.seen_attack ?? q.property('horror:attack_id'));"
     )
     # 2. motion: slip-free distance (from the entity position), turning, gait phase -------
+    # q.position may update only on the 20 Hz server tick while frames run at 24-60 fps, so the
+    # distance moved is fed through a tracking filter (v.dpend = distance not yet walked,
+    # v.spd = smooth speed estimate, lag 1/KP s). Every metre consumed advances the gait by
+    # exactly the distance the planted feet travel, so they do not slip.
     s.append(
         "t.x = q.position(0);"
         "t.z = q.position(2);"
@@ -118,22 +137,24 @@ def pre_animation():
         "t.turn = math.min(math.abs(math.min_angle(t.yaw - (v.pyaw ?? t.yaw))), 120 * v.dt);"
         "v.pyaw = t.yaw;"
         "v.dpend = (v.dpend ?? 0) + (t.dd < 6 ? t.dd : 0) + t.turn * 1.5708 * v.wpp;"
-        "t.use = v.dpend * math.min(1, v.dt * 12);"
+        f"v.spd = math.lerp(v.spd ?? 0, v.dpend * {f(SPD_KP)}, math.min(1, v.dt * {f(SPD_KV)}));"
+        "t.use = math.min(v.dpend, math.max(v.spd, 0) * v.dt);"
         "v.dpend = v.dpend - t.use;"
-        "v.spd = v.dt > 0 ? t.use / v.dt : (v.spd ?? 0);"
         "t.mt = math.clamp((v.spd - 0.03) / (0.1 + 0.5 * v.scale), 0, 1);"
         "v.move = math.lerp(v.move ?? 0, t.mt, math.min(1, v.dt * 5));"
         "t.rt = v.hunting * math.clamp((v.spd - 3) / 2.5, 0, 1);"
         "v.run = math.lerp(v.run ?? 0, t.rt, math.min(1, v.dt * 1.5));"
-        "t.so = v.stride ?? %s;"
-        "v.stride = %s + %s * v.run;"
-        "v.lift = (%s + %s * v.run) * v.move;"
+        # speed-dependent stride; frozen while standing so a stopped gait stays exactly still
+        f"t.so = v.stride ?? {f(STRIDE_MIN)};"
+        f"t.st = math.clamp({f(STRIDE_K)} * math.pow(math.max(v.spd, 0) / ({f(STRIDE_V0)} * math.sqrt(v.scale)), 0.6),"
+        f" {f(STRIDE_MIN)}, {f(STRIDE_MAX)});"
+        "v.stride = v.move > 0.05 ? math.lerp(t.so, t.st, math.min(1, v.dt * 2)) : t.so;"
+        f"v.lift = math.clamp({f(LIFT_BASE)} + {f(LIFT_PER_STRIDE)} * v.stride, {f(LIFT_MIN)}, {f(LIFT_MAX)}) * v.move;"
         "t.pa = math.mod(v.gait ?? 0.25, 1);"
         "t.sa = t.pa < 0.5 ? t.pa * 2 : t.pa * 2 - 1;"
+        # (0.5 - t.sa) * (1 - so / stride) keeps the planted feet in place when the stride changes
         "v.gait = math.mod(t.pa + (0.5 - t.sa) * (1 - t.so / v.stride) * 0.5 + math.min(t.use / (2 * v.stride * v.wpp), 0.2) + 1, 1);"
-        "v.half = math.mod(v.gait + %s, 1) < 0.5 ? 0 : 1;"
-        % (f(STRIDE_WALK), f(STRIDE_WALK), f(STRIDE_RUN - STRIDE_WALK), f(LIFT_WALK),
-           f(LIFT_RUN - LIFT_WALK), f(1 - STEP_DELAY))
+        "v.half = math.mod(v.gait + %s, 1) < 0.5 ? 0 : 1;" % f(1 - STEP_DELAY)
     )
     # 3. posture weights, terrain smoothing, body height ---------------------------------
     fh = []
@@ -151,9 +172,14 @@ def pre_animation():
         "t.k = math.min(1, v.dt * 3);"
         + "".join(fh) +
         f"t.avg = ({avg}) / 8;"
-        "v.bob_px = (-math.cos(math.mod(v.gait, 0.5) * 720 - 36) * (3 + 4 * v.run) - 10 * v.run) * v.move"
+        # body: sinks just after each touchdown and rises through the stance (one bob per step),
+        # runs lower; stalking crouch; death drop; average terrain height
+        "v.bob_px = (-math.cos(math.mod(v.gait, 0.5) * 720 - 36) * (3 + 4 * v.run) - 14 * v.run) * v.move"
         " - 30 * v.stalk - 150 * v.dead_e + math.clamp(t.avg / v.wpp * 0.4, -64, 64) * v.tw;"
         f"v.hipy = {f(HIP_Y)} + v.bob_px;"
+        # idle fidget weight: only after standing still (not growing, not dying) for a while
+        "v.still = (v.move > 0.05 || v.grow_w > 0.05 || v.dying) ? 0 : (v.still ?? 0) + v.dt;"
+        f"v.fid = math.clamp(v.still - {f(FIDGET_DELAY)}, 0, 1);"
     )
     # 4. per-leg gait + 2-bone IK (one complex expression per leg) -----------------------
     for side, n in LEGS:
@@ -162,20 +188,34 @@ def pre_animation():
 
 
 def leg_script(side, n):
+    """Gait foot target + metatarsus angle + 2-bone IK (femur/tibia) for one leg.
+
+    Stance (p < 0.5): the foot moves linearly from +S/2 to -S/2 along the body axis (planted).
+    Swing: the foot reaches its landing point at 1/SWING_REACH of the swing and then plants
+    straight down; lift = H * sin(180 w)^LIFT_SHAPE (rises fast, carried high, decisive plant).
+    The metatarsus tilts FOOT_TILT outward when planted and tucks TUCK inward at mid-swing."""
     c = leg_constants(side, n)
     nm = leg_name(side, n)
-    L1 = c["L1"]
+    L1, L3 = c["L1"], c["L3"]
     sgn = "" if side == "l" else "-"
+    fid = ""
+    if nm in FIDGET:
+        o, per, amp = FIDGET[nm]
+        fid = (f" + v.fid * (math.mod(q.life_time + {f(o)}, {f(per)}) < {f(FIDGET_LEN)})"
+               f" * math.sin(math.mod(q.life_time + {f(o)}, {f(per)}) * {f(180 / FIDGET_LEN)}) * {f(amp)}")
     return (
         f"t.p = math.mod(v.gait + {f(c['phase'])}, 1);"
         "t.w = math.max(t.p * 2 - 1, 0);"
-        "t.f = v.stride * (t.p < 0.5 ? 0.5 - t.p * 2 : math.hermite_blend(t.w) - 0.5);"
+        "t.sw = math.sin(t.w * 180);"
+        f"t.f = v.stride * (t.p < 0.5 ? 0.5 - t.p * 2 : math.hermite_blend(math.min(t.w * {f(SWING_REACH)}, 1)) - 0.5);"
+        f"t.tl = {f(FOOT_TILT)} + {f(DEATH_TILT)} * v.dead_e - {f(TUCK)} * t.sw * v.move;"
         f"t.dx = {f(c['dx'])} * v.reach;"
         f"t.dz = {f(c['dzn'])} - t.f;"
-        f"t.au = math.sqrt(t.dx * t.dx + t.dz * t.dz) - {f(c['l3s'])};"
+        f"t.au = math.sqrt(t.dx * t.dx + t.dz * t.dz) - {f(L3)} * math.sin(t.tl);"
         f"t.av = math.clamp(v.fh_{nm} / v.wpp, -{f(TERRAIN_CLAMP_PX)}, {f(TERRAIN_CLAMP_PX)}) * v.tw"
-        f" + v.lift * math.sin(t.w * 180) + v.gtrem * math.max(0, math.sin(q.life_time * 260 + {f(c['tremble'])}))"
-        f" - v.hipy + {f(c['l3c'])};"
+        f" + v.lift * math.pow(t.sw, {f(LIFT_SHAPE)})"
+        f" + v.gtrem * math.max(0, math.sin(q.life_time * 260 + {f(c['tremble'])})){fid}"
+        f" - v.hipy + {f(L3)} * math.cos(t.tl);"
         f"t.d = math.clamp(math.sqrt(t.au * t.au + t.av * t.av), {f(c['dmin'])}, {f(c['dmax'])});"
         f"t.a = math.atan2(t.av, t.au) + math.acos(math.clamp((t.d * t.d - {f(c['L2'] ** 2 - L1 * L1, 2)})"
         f" / ({f(2 * L1)} * t.d), -1, 1));"
@@ -183,7 +223,7 @@ def leg_script(side, n):
         f"v.hip_{nm} = {sgn}math.atan2(-t.dz, t.dx);"
         f"v.fem_{nm} = {'-' if side == 'l' else ''}t.a;"
         f"v.tib_{nm} = {'t.a - t.t' if side == 'l' else 't.t - t.a'};"
-        f"v.ft_{nm} = {'t.t + ' + f(-c['theta3']) if side == 'l' else '-t.t - ' + f(-c['theta3'])};"
+        f"v.ft_{nm} = {'t.t + 90 - t.tl' if side == 'l' else '-t.t - 90 + t.tl'};"
     )
 
 
@@ -290,19 +330,15 @@ def animations():
         "fang_r": {"rotation": ["(math.mod(q.life_time, 3.7) < 0.45) * math.sin(q.life_time * 1600) * 6", 0,
                                 "-4 - (math.mod(q.life_time, 3.7) < 0.45) * math.sin(q.life_time * 1600) * 9"]},
     }
-    # occasional single-leg twitches (lift briefly then plant again)
-    tw = "(math.mod(q.life_time + {o}, {p}) < 0.6) * math.sin(math.mod(q.life_time + {o}, {p}) * 300) * {a}"
-    add_leg(bones, "l", 2, raise_=tw.format(o=1.3, p=6.1, a=7), fold=tw.format(o=1.3, p=6.1, a=-4))
-    add_leg(bones, "r", 3, raise_=tw.format(o=4.2, p=7.3, a=6), fold=tw.format(o=4.2, p=7.3, a=-3))
-    add_leg(bones, "r", 1, raise_=tw.format(o=2.6, p=8.9, a=9), fwd=tw.format(o=2.6, p=8.9, a=4))
+    # (the occasional leg fidget is solved in the IK so the foot replants where it was: FIDGET)
     A["animation.horror.giant_spider.idle"] = {"loop": True, "bones": bones}
 
     # stalk (weight v.stalk; the crouch itself is in pre_animation)
     bones = {
         "torso": {"rotation": [4, 0, 0]},
         "head": {"rotation": ["3 + math.sin(q.life_time * 40) * 3",
-                              "math.sin(q.life_time * 33) * 9",
-                              "math.sin(q.life_time * 33) * 2.5"]},
+                              "math.sin(q.life_time * 33) * 6 + math.sin(q.life_time * 108) * 2",
+                              "math.sin(q.life_time * 33) * 2"]},
         "abdomen": {"rotation": ["14 + (math.mod(q.life_time, 2.3) < 0.5) * math.sin(q.life_time * 1300) * 3",
                                  "math.sin(q.life_time * 27) * 3", 0]},
         "fang_l": {"rotation": [0, 0, "6 + math.sin(q.life_time * 90) * 3"]},
@@ -316,8 +352,8 @@ def animations():
         "bones": {
             "torso": {"rotation": ["math.sin(v.gait * 720 + 50) * 1.0", "math.sin(v.gait * 360) * 1.0",
                                    "math.sin(v.gait * 360 + 90) * 1.5"]},
-            "abdomen": {"rotation": ["math.sin(v.gait * 720 - 40) * 2", "math.sin(v.gait * 360 + 150) * 2.5",
-                                     "math.sin(v.gait * 360 + 60) * 1.5"]},
+            "abdomen": {"rotation": ["math.sin(v.gait * 720 - 40) * 1.5", "math.sin(v.gait * 360 + 150) * 1.5",
+                                     "math.sin(v.gait * 360 + 60) * 1.0"]},
             "head": {"rotation": ["math.sin(v.gait * 720 + 100) * 1.2", "math.sin(v.gait * 360 + 200) * 1.5", 0]},
         },
     }
@@ -325,9 +361,9 @@ def animations():
     A["animation.horror.giant_spider.run"] = {
         "loop": True,
         "bones": {
-            "torso": {"rotation": ["5 + math.sin(v.gait * 720 + 50) * 2", "math.sin(v.gait * 360) * 1.5",
+            "torso": {"rotation": ["4 + math.sin(v.gait * 720 + 50) * 2", "math.sin(v.gait * 360) * 1.5",
                                    "math.sin(v.gait * 360 + 90) * 2.5"]},
-            "abdomen": {"rotation": ["-6 + math.sin(v.gait * 720 - 70) * 5", "math.sin(v.gait * 360 + 150) * 3.5", 0]},
+            "abdomen": {"rotation": ["-3 + math.sin(v.gait * 720 - 70) * 2.5", "math.sin(v.gait * 360 + 150) * 2.5", 0]},
             "head": {"rotation": ["-6 + math.sin(v.gait * 720 + 120) * 2", 0, 0]},
             "fang_l": {"rotation": [0, 0, "-6 + math.sin(v.gait * 720) * 4"]},
             "fang_r": {"rotation": [0, 0, "6 - math.sin(v.gait * 720) * 4"]},
@@ -527,7 +563,7 @@ def client_entity():
                         "v.size_blend = q.property('horror:giant') ? 1 : 0;",
                         "v.seen_attack = q.property('horror:attack_id');",
                         "v.gait = 0.25;",
-                        "v.stride = %s;" % f(STRIDE_WALK),
+                        "v.stride = %s;" % f(STRIDE_MIN),
                         "v.move = 0;",
                         "v.run = 0;",
                     ],

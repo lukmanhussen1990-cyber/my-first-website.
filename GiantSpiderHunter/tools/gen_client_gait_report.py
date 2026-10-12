@@ -323,7 +323,8 @@ LEG_NAMES = [G.leg_name(s, n) for s, n in G.LEGS]
 
 
 def world_points(pts, render_pos, yaw_deg, wpp):
-    """Model px -> world blocks. Bedrock yaw: 0 faces +Z; model -Z is forward (DESIGN §3)."""
+    """Posed px (root scale included) -> world blocks (wpp = 1/16). Bedrock yaw: 0 faces +Z;
+    model -Z is forward (DESIGN §3)."""
     th = math.radians(yaw_deg)
     out = {}
     for k, p in pts.items():
@@ -363,7 +364,9 @@ def run_scenario(name, props, speed_fn, yaw_rate_fn=lambda t: 0.0, duration=8.0,
         qpos = render_pos if qpos_interp else pos
         pts = sp.frame(dt, qpos)
         wpp = sp.v["wpp"]
-        wp = world_points(pts, render_pos, render_yaw, wpp)
+        # pose() already applies the root bone's scale (v.scale), so model px -> blocks is 1/16
+        # (multiplying by wpp = scale/16 again shrank the small form a second time)
+        wp = world_points(pts, render_pos, render_yaw, 1.0 / 16.0)
         rec = {"t": t, "gait": sp.v["gait"], "move": sp.v["move"], "run": sp.v["run"],
                "scale": sp.v["scale"], "wpp": wpp, "spd": sp.v["spd"], "true_speed": speed_fn(t),
                "w": wp, "m": pts, "bob": sp.v["bob_px"], "half": sp.v["half"]}
@@ -536,14 +539,16 @@ def main():
 
     # ---- giant: walk and run at several speeds, two frame rates, two q.position models
     STOP = 0.2 + 0.5 + 4.5 + 0.3
+    DECEL = STOP - 0.3   # the ramp-down starts here; "steady" stances end before it (the
+                         # deceleration is covered by the "incl. accel/decel" figure)
     for state, speeds in (("hunting", (1.5, 3.0, 6.0, 9.0, 11.0, 14.0)), ("cooldown", (2.0,))):
         for v in speeds:
             for fps, interp in ((60, False), (30, True), (24, False)):
                 res = run_scenario(f"giant {state} {v} b/s", base_props(True, state), ramp(v),
                                    duration=STOP + 2.0, fps=fps, qpos_interp=interp, files=files)
-                mt = analyse(res, steady=(1.6, STOP - 0.05), stop_at=STOP)
+                mt = analyse(res, steady=(1.6, DECEL - 0.05), stop_at=STOP)
                 fr = res["frames"]
-                st = [r for r in fr if 1.6 <= r["t"] <= STOP - 0.05]
+                st = [r for r in fr if 1.6 <= r["t"] <= DECEL - 0.05]
                 runw = sum(r["run"] for r in st[-10:]) / 10
                 check(not mt["nan"] and mt["knee_ok"] and mt["max_h_err"] < 0.15 and mt["max_slip"] < 0.25
                       and mt["min_lift"] > 1.5 and mt["stop_h_err"] < 0.15 and mt["stop_foot_speed"] < 0.05
@@ -565,7 +570,7 @@ def main():
         res = run_scenario(f"small {state} {v}", base_props(False, state), ramp(v), duration=STOP + 2.0,
                            fps=60, files=files)
         ratio = 0.075
-        mt = analyse(res, scale_ref=ratio, steady=(1.6, STOP - 0.05), stop_at=STOP)
+        mt = analyse(res, scale_ref=ratio, steady=(1.6, DECEL - 0.05), stop_at=STOP)
         check(not mt["nan"] and mt["knee_ok"] and mt["max_h_err"] < 0.15 and mt["max_slip"] < 0.25
               and mt["min_lift"] > 1.5 and mt["stop_h_err"] < 0.15 and mt["stop_foot_speed"] < 0.05,
               f"small {state:8s} {v:4.1f} b/s: stances={mt['stances']} planted|dy|={mt['max_h_err'] * ratio:.4f} b "
@@ -586,9 +591,10 @@ def main():
           f"turn in place 90 deg/s: gait advanced on {g_adv} frames, max foot lift {lifted:.2f} b, "
           f"after stop max |dy| {settle:.3f} b")
     # ---- walking a curve (informational slip, must stay finite and feet near ground)
-    res = run_scenario("curve", base_props(True, "hunting"), ramp(6.0), yaw_rate_fn=lambda t: 30.0,
-                       duration=STOP + 2, files=files)
-    mt = analyse(res, steady=(1.6, STOP - 0.05), stop_at=STOP)
+    # (the turn stops together with the walk: a spider still turning in place keeps stepping)
+    res = run_scenario("curve", base_props(True, "hunting"), ramp(6.0),
+                       yaw_rate_fn=lambda t: 30.0 * ramp(6.0)(t) / 6.0, duration=STOP + 2, files=files)
+    mt = analyse(res, steady=(1.6, DECEL - 0.05), stop_at=STOP)
     check(not mt["nan"] and mt["knee_ok"] and mt["max_h_err"] < 0.15 and mt["stop_h_err"] < 0.15,
           f"curve 6 b/s turning 30 deg/s: planted |dy| {mt['max_h_err']:.3f} slip {mt['max_slip']:.3f} b "
           f"(turning slip is expected; feet are re-placed every step)")
@@ -598,7 +604,7 @@ def main():
     for i, nm in enumerate(LEG_NAMES):
         props[f"horror:foot_{i}"] = terr[nm]
     res = run_scenario("terrain", props, ramp(4.0), duration=STOP + 2, files=files)
-    mt = analyse(res, ground_fn=lambda nm: terr[nm], steady=(2.5, STOP - 0.05), stop_at=STOP)
+    mt = analyse(res, ground_fn=lambda nm: terr[nm], steady=(2.5, DECEL - 0.05), stop_at=STOP)
     check(not mt["nan"] and mt["knee_ok"] and mt["max_h_err"] < 0.15 and mt["max_slip"] < 0.25
           and mt["stop_h_err"] < 0.15,
           f"terrain (feet targets +3..-4.5 b) 4 b/s: planted |dy| {mt['max_h_err']:.3f} slip {mt['max_slip']:.3f} "
@@ -661,7 +667,7 @@ def main():
     res = run_scenario("death", base_props(True, "hunting"), lambda t: 0.0, duration=4.0, prop_fn=die, files=files)
     fr = res["frames"]
     fin = all(np.all(np.isfinite(r["w"][f"foot_tip_{nm}"])) for r in fr for nm in LEG_NAMES)
-    body_y = fr[-1]["m"]["pivot:hip_l1"][1] * fr[-1]["wpp"]
+    body_y = fr[-1]["m"]["pivot:hip_l1"][1] / 16.0
     check(fin and res["spider"].ctrls["death_controller"].state == "dead" and body_y < 6.0,
           f"death: controller 'dead', final hip height {body_y:.2f} b (sinks), pose finite")
     if args.sheet:

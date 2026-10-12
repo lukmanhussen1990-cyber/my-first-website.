@@ -77,6 +77,8 @@ const SCHEMA = {
   catchUpMultiplier: [1.2, 'num', 1, 3, 'Extra speed multiplier while the focus is beyond catchUpDistance.'],
   heartbeat: [true, 'bool', 0, 0, 'Play a heartbeat to the hunted player (faster when closer).'],
   huntTargetRange: [72, 'num', 8, 128, 'Range used to pick a focus when hunting starts without one.'],
+  stuckSeconds: [2, 'int', 1, 30, 'Seconds without progress (target away) before the giant steps over the obstacle.'],
+  stepOverDistance: [4, 'int', 2, 8, 'Maximum length of a step-over hop toward the target (blocks).'],
 
   // ---------------------------------------------------------------- escape
   contactRange: [24, 'num', 1, 128, 'Contact: always in contact within this distance.'],

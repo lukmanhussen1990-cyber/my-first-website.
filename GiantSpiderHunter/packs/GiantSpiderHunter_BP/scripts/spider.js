@@ -128,6 +128,9 @@ export class SpiderController {
     this.lastLos = true;
     this.removed = false;
     this.syncHoldUntil = 0;
+    this.stuckCheckTick = 0;
+    this.stuckPos = null;
+    this.stuckSecs = 0;
     this.attach(entity, now);
   }
 
@@ -620,10 +623,54 @@ export class SpiderController {
       }
     }
     this.applySpeed(now, d);
+    this.stepOverObstacles(now, loc, focus, d);
     this.terrain.update(e, now, s);
     if (CONFIG.heartbeat && now >= this.nextHeartbeat) {
       this.nextHeartbeat = now + Math.round(heartbeatInterval(d) * TPS);
       playPlayerSound(focus, SOUND.heartbeat, d < 24 ? 1 : 0.7, 1, focus.location);
+    }
+  }
+
+  /**
+   * The giant's body is ~18 blocks up and its legs span ~45 blocks, so trees and small cliffs
+   * should not stop it. Its physical collision box is player-sized for the path-finder; when it
+   * still makes no progress for `stuckSeconds` while its target is away, it "steps over" the
+   * obstacle: a short hop (<= stepOverDistance) toward the target onto open ground.
+   */
+  stepOverObstacles(now, loc, focus, d) {
+    if (now - this.stuckCheckTick < TPS) return;
+    this.stuckCheckTick = now;
+    const moved = this.stuckPos ? hdist(loc, this.stuckPos) : 99;
+    this.stuckPos = { x: loc.x, y: loc.y, z: loc.z };
+    if (moved >= 0.8 || d <= 6) {
+      this.stuckSecs = 0;
+      return;
+    }
+    this.stuckSecs++;
+    if (this.stuckSecs < CONFIG.stuckSeconds) return;
+    this.stuckSecs = 0;
+    const fl = focus.location;
+    const dx = fl.x - loc.x;
+    const dz = fl.z - loc.z;
+    const len = Math.sqrt(dx * dx + dz * dz) || 1;
+    const dim = this.entity.dimension;
+    for (let step = CONFIG.stepOverDistance; step >= 2; step--) {
+      const x = Math.floor(loc.x + (dx / len) * step);
+      const z = Math.floor(loc.z + (dz / len) * step);
+      const spot = surfaceSpot(dim, x, z, Math.floor(loc.y) + 6, Math.floor(loc.y) - 6, 2, { n: 24 });
+      if (!spot.ok) continue;
+      try {
+        const ok = this.entity.tryTeleport(
+          { x: x + 0.5, y: spot.groundY + 1, z: z + 0.5 },
+          { checkForBlocks: true, keepVelocity: false, facingLocation: fl }
+        );
+        if (ok) {
+          debug(`giant stepped over an obstacle (${step} blocks)`);
+          return;
+        }
+      } catch (e) {
+        // try a shorter step
+      }
     }
   }
 

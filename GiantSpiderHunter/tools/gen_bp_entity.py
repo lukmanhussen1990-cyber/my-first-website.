@@ -205,7 +205,9 @@ def component_groups():
         "minecraft:custom_hit_test": {"hitboxes": [{"pivot": [0, 0.45, 0], "width": 1.2, "height": 0.9}]},
     }
     g[FORM_GIANT] = {
-        "minecraft:collision_box": {"width": 1.4, "height": 2.9},
+        # Physically player-sized so the path-finder fits between and under forest canopies
+        # (a 2.9-tall box got stuck under leaves on BDS 1.21.0.26); the visual legs pass through trees.
+        "minecraft:collision_box": {"width": 1.0, "height": 1.9},
         "minecraft:custom_hit_test": {
             "hitboxes": [
                 {"pivot": [0, 1.5, 0], "width": 3.0, "height": 3.0},   # ground core (legs/feet area)
