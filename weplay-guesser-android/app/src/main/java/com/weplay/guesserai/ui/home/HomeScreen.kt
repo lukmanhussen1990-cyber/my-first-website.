@@ -7,6 +7,8 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
@@ -171,16 +174,24 @@ fun HomeScreen(
             InfoRow("Drawings learned", "$learned", MaterialTheme.colorScheme.tertiary)
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(onClick = onSettings, modifier = Modifier.weight(1f)) { Text("Settings") }
-            OutlinedButton(onClick = onHistory, modifier = Modifier.weight(1f)) { Text("History") }
-            OutlinedButton(onClick = onNeedPermissions, modifier = Modifier.weight(1f)) { Text("Permissions") }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            NavButton("Settings", onSettings)
+            NavButton("History", onHistory)
+            NavButton("Permissions", onNeedPermissions)
         }
 
         Text(
             "Tip: Hold a guess in the overlay when it was the right answer — the AI remembers it and ranks it higher in future rounds.",
             color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp,
         )
+    }
+}
+
+/** One of three equal buttons; tight padding and one line, so "Permissions" never breaks mid-word on a narrow phone. */
+@Composable
+private fun RowScope.NavButton(label: String, onClick: () -> Unit) {
+    OutlinedButton(onClick = onClick, contentPadding = PaddingValues(horizontal = 6.dp), modifier = Modifier.weight(1f)) {
+        Text(label, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
     }
 }
 

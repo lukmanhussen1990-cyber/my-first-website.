@@ -1,9 +1,11 @@
 package com.weplay.guesserai.ui.theme
 
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 
 val Neon = Color(0xFFA855F7)
@@ -41,5 +43,9 @@ private val Scheme = darkColorScheme(
 
 @Composable
 fun WePlayTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = Scheme, typography = Typography(), content = content)
+    MaterialTheme(colorScheme = Scheme, typography = Typography()) {
+        // The screens draw on plain backgrounds rather than Surfaces, so text without its own
+        // colour would fall back to black on this dark theme.
+        CompositionLocalProvider(LocalContentColor provides Scheme.onBackground, content = content)
+    }
 }
