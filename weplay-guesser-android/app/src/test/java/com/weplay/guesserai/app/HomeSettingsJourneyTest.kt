@@ -144,6 +144,8 @@ class HomeSettingsJourneyTest {
     @Test fun `settings lists the WePlay app and the word list once loaded`() {
         compose.onNodeWithText("Settings").performScrollTo().performClick()
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("built-in words", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        // The same number of distinct words the AI can be given (duplicates in the list count once).
+        compose.onNodeWithText("${app.container.wordBank.get("").size} built-in words").assertExists()
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("WePlay", substring = false)).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("WePlay was not found on this phone. Enter its package name if it is installed.").assertDoesNotExist()
         compose.onNodeWithContentDescription("Back").performClick()

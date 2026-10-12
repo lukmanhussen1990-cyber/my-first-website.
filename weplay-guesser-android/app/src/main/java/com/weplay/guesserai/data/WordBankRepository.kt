@@ -1,6 +1,7 @@
 package com.weplay.guesserai.data
 
 import android.content.Context
+import com.weplay.guesserai.domain.GuessEngine
 import com.weplay.guesserai.domain.WordBank
 
 /** Built-in word list (assets/wordbank.txt) plus the user's own words from Settings. */
@@ -10,8 +11,8 @@ class WordBankRepository(private val context: Context) {
             .getOrDefault(emptyList())
     }
 
-    /** Size of the built-in list; reads the asset on first use, so call it off the main thread. */
-    val builtInCount: Int get() = builtIn.size
+    /** Distinct words in the built-in list; reads the asset on first use, so call it off the main thread. */
+    val builtInCount: Int get() = builtIn.distinctBy { GuessEngine.normalize(it.answer) }.size
 
     @Volatile private var cached: Pair<String, WordBank>? = null
 
