@@ -15,6 +15,7 @@ import com.weplay.guesserai.domain.FrameImages
 import com.weplay.guesserai.domain.GuessEngine
 import com.weplay.guesserai.domain.HintPattern
 import com.weplay.guesserai.domain.LayoutLearner
+import com.weplay.guesserai.domain.OverlaySize
 import com.weplay.guesserai.domain.PartialAnalysis
 import com.weplay.guesserai.domain.PromptHints
 import com.weplay.guesserai.domain.RankedGuess
@@ -223,15 +224,16 @@ class AssistantSession(
     fun consumeToast() = _state.update { it.copy(toast = null) }
 
     /**
-     * Top and bottom of the drawing canvas as fractions of the screen height, so the floating
-     * window can stay off it: the measured layout, else WePlay's usual one for a screen of
-     * [screenAspect] (height / width). Null when unknown (landscape).
+     * The part of the screen the AI reads — from the top of the hint down to the bottom of the
+     * canvas — as fractions of the screen height, so the floating window can stay off it: the
+     * measured layout, else WePlay's usual one for a screen of [screenAspect] (height / width).
+     * Null when unknown (landscape).
      */
-    fun canvasBand(screenAspect: Float): Pair<Float, Float>? {
+    fun readBand(screenAspect: Float): Pair<Float, Float>? {
         // Right after a rotation the measured layout belongs to the old orientation.
         val measured = learner?.layout?.takeIf { abs(aspect - screenAspect) <= SAME_ASPECT }
-        val canvas = (measured ?: ScreenLayout.weplayDefault(screenAspect))?.canvas ?: return null
-        return canvas[1] to canvas[3]
+        val layout = measured ?: ScreenLayout.weplayDefault(screenAspect) ?: return null
+        return layout.hint[1] to layout.canvas[3]
     }
 
     // ---------------------------------------------------------------- loop
@@ -256,6 +258,7 @@ class AssistantSession(
             }
             if (skip > 0) { waitFor(skip); continue }
 
+            // The frame lives in the capturer's reused buffer: it is fully processed before the next capture.
             val frame = withContext(Dispatchers.Default) { capturer.capture() }
             if (frame != null) {
                 try {
@@ -264,9 +267,6 @@ class AssistantSession(
                     throw e
                 } catch (e: Throwable) {
                     handleError(e, isNewest = true)
-                } finally {
-                    // The background work on the frame is over: withContext waits for it even when cancelled.
-                    frame.recycle()
                 }
             }
 
@@ -275,7 +275,7 @@ class AssistantSession(
         }
     }
 
-    private suspend fun tick(frame: Bitmap, settings: AppSettings) {
+    private suspend fun tick(frame: Frame, settings: AppSettings) {
         val frameAspect = frame.height.toFloat() / frame.width
         if (learner == null || abs(frameAspect - aspect) > 0.01f) {
             aspect = frameAspect
@@ -314,7 +314,8 @@ class AssistantSession(
                     canvas = FrameTools.toJpeg(frame, lay.canvas, pad = 0.01f, maxSide = 768, quality = 75),
                 )
             }
-            imgs to (if (settings.compactOverlay) null else FrameTools.thumbnail(frame, lay?.canvas))
+            // Only the large panel shows the drawing preview.
+            imgs to (if (settings.overlaySize == OverlaySize.LARGE) FrameTools.thumbnail(frame, lay?.canvas) else null)
         }
         if (paused) return // resuming sends a fresh frame
         if (thumb != null) _state.update { it.copy(thumbnail = thumb) }

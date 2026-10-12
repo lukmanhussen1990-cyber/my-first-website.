@@ -122,6 +122,13 @@ enum class CaptureSpeed(val seconds: Int, val label: String) {
     SLOW(5, "5 seconds"),
 }
 
+/** Size of the floating window. */
+enum class OverlaySize(val label: String, val note: String) {
+    MINI("Mini", "One slim row of answers under the drawing"),
+    COMPACT("Compact", "Small panel with the hint and buttons"),
+    LARGE("Large", "Panel with a preview of the drawing"),
+}
+
 enum class AiModel(val id: String, val label: String, val note: String) {
     HAIKU("claude-haiku-5-5", "Claude Haiku 5.5", "Fastest, cheapest (default)"),
     SONNET("claude-sonnet-5-5", "Claude Sonnet 5.5", "Balanced"),
@@ -139,8 +146,8 @@ data class AppSettings(
     val fastMode: Boolean = true,
     /** User's own words, one per line, added to the built-in word list. */
     val customWords: String = "",
-    /** Small overlay (no preview image, one button row) so it covers less of the game. */
-    val compactOverlay: Boolean = true,
+    /** How much room the floating window takes; Mini is one slim row so typing stays easy. */
+    val overlaySize: OverlaySize = OverlaySize.MINI,
     /** With Haiku: also ask Claude Sonnet 5.5 every few seconds and trust its answer more. */
     val accuracyBoost: Boolean = true,
     /** Move the floating window off the canvas when it is dropped on it, so every stroke is visible to the AI. */

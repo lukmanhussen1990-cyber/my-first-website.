@@ -66,10 +66,10 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
     private var placed = false
     private var canvasChecks = 0
 
-    /** Edge-snapping is only used for the minimised bubble. */
-    var snapToEdge = false
-
-    /** Vertical band of the drawing canvas in screen pixels (top, bottom), or null if unknown. */
+    /**
+     * Vertical band the window must not cover, in screen pixels (top, bottom): the hint and the
+     * canvas the AI reads. Null if unknown.
+     */
     var avoidBand: (() -> Pair<Int, Int>?)? = null
 
     /**
@@ -91,7 +91,7 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
      */
     private val placeBelowCanvas = object : Runnable {
         override fun run() {
-            if (!attached || placed || !keepOffDrawing || snapToEdge) return
+            if (!attached || placed || !keepOffDrawing) return
             val band = avoidBand?.invoke()
             if (band == null || root.width == 0) {
                 if (++canvasChecks < CANVAS_CHECKS) root.postDelayed(this, CANVAS_CHECK_MS)
@@ -177,10 +177,7 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
         if (attached) runCatching { wm.updateViewLayout(root, params) }
     }
 
-    /**
-     * Where a window dropped at ([x], [y]) should rest: on screen, at an edge when minimised, and
-     * below or above the canvas with [keepOffDrawing].
-     */
+    /** Where a window dropped at ([x], [y]) should rest: on screen, and below or above the canvas with [keepOffDrawing]. */
     private fun restingPlace(x: Int = params.x, y: Int = params.y): Pair<Int, Int> {
         val (sw, sh) = screenSize()
         val w = root.width
@@ -188,8 +185,6 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
         val maxX = (sw - w - margin).coerceAtLeast(margin)
         val maxY = (sh - h - margin).coerceAtLeast(margin)
         val insideY = y.coerceIn(margin, maxY)
-        // The bubble is small enough to sit anywhere, canvas included.
-        if (snapToEdge) return (if (x + w / 2 < sw / 2) 0 else sw - w) to insideY
         val band = if (keepOffDrawing) avoidBand?.invoke() else null
         val restY = if (band == null) insideY
         else OverlayPlacement.yOutside(insideY, h, band.first, band.second, sh, margin)

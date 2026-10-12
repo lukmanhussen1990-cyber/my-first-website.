@@ -1,14 +1,5 @@
 package com.weplay.guesserai.overlay
 
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,26 +14,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -56,6 +44,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
+import com.weplay.guesserai.domain.OverlaySize
 import com.weplay.guesserai.domain.RankedGuess
 import com.weplay.guesserai.service.AiStatus
 import com.weplay.guesserai.service.OverlayUiState
@@ -101,12 +90,121 @@ interface OverlayActions {
     fun onAutoHint()
 }
 
+/**
+ * The floating window. Nothing in it animates on its own: it only redraws when the guesses or the
+ * status change, so it costs the game no frames while it waits.
+ */
 @Composable
-fun OverlayRoot(state: OverlayUiState, minimized: Boolean, compact: Boolean, width: Dp, actions: OverlayActions) {
-    when {
-        minimized -> Bubble(state, actions)
-        compact -> CompactPanel(state, width, actions)
-        else -> Panel(state, width, actions)
+fun OverlayRoot(state: OverlayUiState, size: OverlaySize, width: Dp, actions: OverlayActions) {
+    when (size) {
+        OverlaySize.MINI -> MiniBar(state, width, actions)
+        OverlaySize.COMPACT -> CompactPanel(state, width, actions)
+        OverlaySize.LARGE -> Panel(state, width, actions)
+    }
+}
+
+/** Answers shown as chips in the mini bar. */
+private const val MINI_CHIPS = 3
+
+/**
+ * Mini window: one slim row under the drawing with the AI's top answers as chips — tap to copy,
+ * hold to mark correct — plus "»" (next answer) and "⌄" (open the panel). Takes about as much room
+ * as the game's toolbar, so the chat and the answer box stay free for typing.
+ */
+@Composable
+private fun MiniBar(state: OverlayUiState, width: Dp, actions: OverlayActions) {
+    val shape = RoundedCornerShape(16.dp)
+    val busy = rememberBusy(state.status)
+    Row(
+        Modifier
+            .padding(2.dp)
+            .width(width)
+            .height(32.dp)
+            .clip(shape)
+            .background(Glass)
+            .border(1.dp, Neon.copy(alpha = 0.7f), shape)
+            .padding(horizontal = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        StatusDot(state.status, busy, size = 7.dp)
+        Spacer(Modifier.width(5.dp))
+        Row(
+            Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val answer = state.answer
+            val guesses = state.guesses.take(if (answer != null) MINI_CHIPS - 1 else MINI_CHIPS)
+            if (answer == null && guesses.isEmpty()) {
+                Text(
+                    state.message, color = if (state.status == AiStatus.ERROR) ErrRed else Soft,
+                    fontSize = 9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (answer != null) {
+                MiniChip(
+                    RankedGuess(answer, 100, "shown by the game", matchesHint = true, learned = true),
+                    label = "✓ $answer", top = false, gameAnswer = true, copied = state.copied == answer, actions = actions,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+            }
+            guesses.forEachIndexed { i, g ->
+                key(g.answer) {
+                    MiniChip(
+                        g, label = null, top = i == 0 && answer == null, gameAnswer = false, copied = state.copied == g.answer,
+                        actions = actions, modifier = Modifier.weight(1f, fill = false),
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.width(4.dp))
+        WindowButton("»", Lilac, size = 22.dp, enabled = state.guesses.size > 1) { actions.onNextGuess() }
+        Spacer(Modifier.width(3.dp))
+        WindowButton("⌄", Lilac, size = 22.dp) { actions.onExpand() }
+    }
+}
+
+/** One answer in the mini bar: tap copies it (it turns green with ✓), hold marks it correct. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun MiniChip(
+    g: RankedGuess, label: String?, top: Boolean, gameAnswer: Boolean, copied: Boolean, actions: OverlayActions,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(10.dp)
+    Row(
+        modifier
+            .height(24.dp)
+            .clip(shape)
+            .background(
+                when {
+                    copied || gameAnswer -> LiveGreen.copy(alpha = 0.22f)
+                    top -> Neon.copy(alpha = 0.35f)
+                    else -> Color.White.copy(alpha = 0.08f)
+                }
+            )
+            .combinedClickable(
+                onClick = { actions.onCopy(g) },
+                onLongClick = if (gameAnswer) null else ({ actions.onMarkCorrect(g) }),
+            )
+            .padding(horizontal = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label ?: ((if (g.matchesHint) "" else "⚠ ") + g.answer),
+            color = when {
+                gameAnswer -> LiveGreen
+                !g.matchesHint -> Lilac.copy(alpha = 0.6f)
+                top -> Color.White
+                else -> Lilac
+            },
+            fontSize = 10.5.sp, fontWeight = if (top || gameAnswer) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+        )
+        when {
+            copied -> Text(" ✓", color = LiveGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            top -> Text(" ${g.confidence}%", color = NeonPink, fontSize = 8.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        }
     }
 }
 
@@ -146,11 +244,10 @@ private fun CompactPanel(state: OverlayUiState, width: Dp, actions: OverlayActio
                 .clip(shape)
                 .background(Glass)
                 .border(1.dp, Brush.linearGradient(listOf(Lilac, Neon, Color.Transparent, Cyan)), shape)
-                .padding(horizontal = 7.dp, vertical = 6.dp)
-                .animateContentSize(),
+                .padding(horizontal = 7.dp, vertical = 6.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                StatusDot(state.status, size = 6.dp)
+                StatusDot(state.status, busy, size = 6.dp)
                 Spacer(Modifier.width(4.dp))
                 Text(
                     "WePlay AI", color = Color.White, fontSize = 9.5.sp, fontWeight = FontWeight.Bold,
@@ -176,35 +273,6 @@ private fun CompactPanel(state: OverlayUiState, width: Dp, actions: OverlayActio
     }
 }
 
-@Composable
-private fun Bubble(state: OverlayUiState, actions: OverlayActions) {
-    Box(Modifier.padding(6.dp)) {
-        Box(
-            Modifier
-                .size(54.dp)
-                .shadow(14.dp, CircleShape, ambientColor = Neon, spotColor = Neon)
-                .clip(CircleShape)
-                .background(Brush.linearGradient(listOf(Color(0xFF2A1250), Color(0xFF120A24))))
-                .border(1.5.dp, Brush.linearGradient(listOf(Lilac, Neon, Cyan)), CircleShape)
-                .clickable { actions.onExpand() },
-            contentAlignment = Alignment.Center,
-        ) { Text("🤖", fontSize = 24.sp) }
-        StatusDot(state.status, Modifier.align(Alignment.TopEnd).offset((-2).dp, 2.dp), size = 10.dp)
-        state.guesses.firstOrNull()?.let {
-            Text(
-                "${it.confidence}%",
-                color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset(y = 4.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(NeonDeep)
-                    .padding(horizontal = 4.dp, vertical = 1.dp),
-            )
-        }
-    }
-}
-
 /** Full panel with the drawing preview. Like the compact one, its parts keep a fixed height. */
 @Composable
 private fun Panel(state: OverlayUiState, width: Dp, actions: OverlayActions) {
@@ -218,15 +286,14 @@ private fun Panel(state: OverlayUiState, width: Dp, actions: OverlayActions) {
                 .clip(shape)
                 .background(Glass)
                 .border(1.dp, Brush.linearGradient(listOf(Lilac, Neon, Color.Transparent, Cyan)), shape)
-                .padding(horizontal = 9.dp, vertical = 8.dp)
-                .animateContentSize(),
+                .padding(horizontal = 9.dp, vertical = 8.dp),
         ) {
             Box(
                 Modifier.align(Alignment.CenterHorizontally).width(28.dp).height(3.dp)
                     .clip(RoundedCornerShape(2.dp)).background(Lilac.copy(alpha = 0.45f))
             )
             Spacer(Modifier.height(6.dp))
-            Header(state, actions)
+            Header(state, busy, actions)
             NeonDivider()
             Thumbnail(state, busy)
             Spacer(Modifier.height(6.dp))
@@ -247,7 +314,7 @@ private fun Panel(state: OverlayUiState, width: Dp, actions: OverlayActions) {
 }
 
 @Composable
-private fun Header(state: OverlayUiState, actions: OverlayActions) {
+private fun Header(state: OverlayUiState, busy: Boolean, actions: OverlayActions) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier.size(22.dp)
@@ -260,7 +327,7 @@ private fun Header(state: OverlayUiState, actions: OverlayActions) {
         Column(Modifier.weight(1f)) {
             Text("WePlay AI", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                StatusDot(state.status, size = 6.dp)
+                StatusDot(state.status, busy, size = 6.dp)
                 Spacer(Modifier.width(3.dp))
                 Text(statusLabel(state.status), color = statusColor(state.status), fontSize = 8.sp, fontWeight = FontWeight.SemiBold)
             }
@@ -272,31 +339,23 @@ private fun Header(state: OverlayUiState, actions: OverlayActions) {
 }
 
 @Composable
-private fun WindowButton(label: String, color: Color, size: Dp = 20.dp, onClick: () -> Unit) {
+private fun WindowButton(label: String, color: Color, size: Dp = 20.dp, enabled: Boolean = true, onClick: () -> Unit) {
     Box(
         Modifier.size(size)
+            .alpha(if (enabled) 1f else 0.4f)
             .clip(RoundedCornerShape(6.dp))
             .background(Color.White.copy(alpha = 0.08f))
             .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
-            .clickable(onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { Text(label, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold) }
 }
 
+/** Status as a plain dot: green live, purple while the AI looks at a frame, amber paused, red error. No animation. */
 @Composable
-private fun StatusDot(status: AiStatus, modifier: Modifier = Modifier, size: Dp) {
-    val pulse = rememberInfiniteTransition(label = "pulse")
-    val a by pulse.animateFloat(
-        0.35f, 1f, infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "a",
-    )
-    val c = statusColor(status)
-    Box(
-        modifier.size(size)
-            .alpha(if (status == AiStatus.WATCHING || status == AiStatus.ANALYZING) a else 1f)
-            .shadow(4.dp, CircleShape, ambientColor = c, spotColor = c)
-            .clip(CircleShape)
-            .background(c)
-    )
+private fun StatusDot(status: AiStatus, busy: Boolean, modifier: Modifier = Modifier, size: Dp) {
+    val c = if (busy && status != AiStatus.PAUSED && status != AiStatus.ERROR) Neon else statusColor(status)
+    Box(modifier.size(size).clip(CircleShape).background(c))
 }
 
 private fun statusLabel(s: AiStatus) = when (s) {
@@ -325,13 +384,11 @@ private fun NeonDivider() {
 @Composable
 private fun Thumbnail(state: OverlayUiState, busy: Boolean) {
     val shape = RoundedCornerShape(10.dp)
-    val scan = rememberInfiniteTransition(label = "scan")
-    val y by scan.animateFloat(0f, 1f, infiniteRepeatable(tween(1400, easing = LinearEasing), RepeatMode.Reverse), label = "y")
     Box(
         Modifier.fillMaxWidth().height(88.dp)
             .clip(shape)
             .background(Color.White.copy(alpha = 0.05f))
-            .border(1.dp, Neon.copy(alpha = 0.35f), shape),
+            .border(1.dp, Neon.copy(alpha = if (busy) 0.9f else 0.35f), shape),
         contentAlignment = Alignment.Center,
     ) {
         val bmp = state.thumbnail
@@ -339,19 +396,6 @@ private fun Thumbnail(state: OverlayUiState, busy: Boolean) {
             Image(bmp.asImageBitmap(), "Drawing preview", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         } else {
             Text("Waiting for drawing…", color = Muted, fontSize = 8.sp)
-        }
-        if (busy) {
-            Box(
-                Modifier.matchParentSize().drawBehind {
-                    val yy = size.height * y
-                    drawRect(
-                        Brush.verticalGradient(listOf(Color.Transparent, Neon.copy(alpha = 0.35f)), startY = yy - 18f, endY = yy),
-                        topLeft = Offset(0f, yy - 18f),
-                        size = androidx.compose.ui.geometry.Size(size.width, 18f),
-                    )
-                    drawLine(NeonPink, Offset(0f, yy), Offset(size.width, yy), strokeWidth = 2f)
-                }
-            )
         }
         Text(
             "LIVE",
@@ -371,27 +415,11 @@ private fun StatusLine(state: OverlayUiState, busy: Boolean, compact: Boolean) {
         Modifier.fillMaxWidth().height(maxOf(lineHeight(fontSize) * lines, 10.dp)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Waveform(active = busy)
-        Spacer(Modifier.width(if (compact) 4.dp else 5.dp))
+
         Text(
             state.message, color = if (state.status == AiStatus.ERROR) ErrRed else Soft,
             fontSize = fontSize, maxLines = lines, overflow = TextOverflow.Ellipsis,
         )
-    }
-}
-
-@Composable
-private fun Waveform(active: Boolean) {
-    val t = rememberInfiniteTransition(label = "wave")
-    val phase by t.animateFloat(0f, 1f, infiniteRepeatable(tween(700, easing = LinearEasing)), label = "p")
-    Row(Modifier.height(10.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(1.5.dp)) {
-        listOf(0.4f, 0.8f, 0.5f, 1f, 0.3f, 0.7f).forEachIndexed { i, base ->
-            val h = if (active) (0.25f + 0.75f * kotlin.math.abs(kotlin.math.sin((phase + i * 0.17f) * Math.PI)).toFloat()) else base * 0.6f
-            Box(
-                Modifier.width(2.dp).height((10 * h).dp).clip(RoundedCornerShape(1.dp))
-                    .background(Brush.verticalGradient(listOf(Lilac, Neon)))
-            )
-        }
     }
 }
 
@@ -572,7 +600,7 @@ private fun GuessList(state: OverlayUiState, busy: Boolean, actions: OverlayActi
 private fun GuessRow(
     rank: Int, g: RankedGuess, top: Boolean, copied: Boolean, compact: Boolean, height: Dp, actions: OverlayActions,
 ) {
-    val fill by animateFloatAsState(g.confidence / 100f, tween(400), label = "bar")
+    val fill = g.confidence / 100f
     Column(
         Modifier.fillMaxWidth().height(height).padding(vertical = if (compact) 1.5.dp else 2.5.dp)
             .clip(RoundedCornerShape(6.dp))

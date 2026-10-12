@@ -15,7 +15,7 @@ object SolverPrompt {
         - Guess the object.
         - Detect number of words.
         - Detect letter count.
-        - Return 10 possible answers.
+        - Return 6 possible answers.
         - Rank by confidence.
 
         The game is WePlay "Guess My Drawing" on a phone. A player draws on the canvas; others type
@@ -60,7 +60,7 @@ object SolverPrompt {
         - 2 letters: usually an abbreviation such as TV, GO, AC, CD, DJ, OK, PC, ID.
         - Answers can be plural ("Snails") and can be Indian words ("Halwa", "Samosa", "Diwali").
         - Game, app, brand and cartoon names are common: "Free Fire" (2 words, 8 letters), PUBG, Among Us.
-        - Make the 10 guesses 10 different ideas (other things the doodle could be, other members of the
+        - Make the 6 guesses 6 different ideas (other things the doodle could be, other members of the
           category), not variants of one word. Example: a heart with a pulse line through it and
           "2 words 9 letters|Organ" → "Heart Beat", then "Heart Rate", "Love Heart", …
         When the user lists possible answers for the hint, use one only if the drawing matches it.
@@ -84,7 +84,7 @@ object SolverPrompt {
 
         - Best guess first. "confidence" (integer 0-100) is your real certainty: below 50 even for the top
           guess while the drawing is unclear, 90+ only when it is unmistakable or spelled out.
-          "reason" is at most 4 words.
+          "reason" is at most 3 words. Keep every field short: the player is waiting for the answer.
         - Use 0 for hint numbers and [] for word_lengths you cannot read.
         - For "not_game", return an empty guesses list.
     """.trimIndent()
@@ -103,7 +103,7 @@ object SolverPrompt {
      */
     fun userText(hints: PromptHints, cropped: Boolean): String = buildString {
         append(if (cropped) CROPPED else FULL_SCREEN)
-        append(" Return 10 guesses, best first.")
+        append(" Return 6 guesses, best first.")
         // A rejected answer must not be offered again as a candidate, and a confirmed one needs no second mention.
         val skip = hints.rejected.mapTo(HashSet()) { GuessEngine.normalize(it) }
         val known = hints.knownAnswers.filter { skip.add(GuessEngine.normalize(it)) }

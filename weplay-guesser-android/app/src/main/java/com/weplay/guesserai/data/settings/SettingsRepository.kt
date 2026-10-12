@@ -34,7 +34,7 @@ class SettingsRepository(context: Context) {
             saveScreenshots = prefs.getBoolean(K_SHOTS, d.saveScreenshots),
             fastMode = prefs.getBoolean(K_FAST, d.fastMode),
             customWords = prefs.getString(K_WORDS, "").orEmpty(),
-            compactOverlay = prefs.getBoolean(K_COMPACT, d.compactOverlay),
+            overlaySize = enumOr(prefs.getString(K_SIZE, null), d.overlaySize),
             accuracyBoost = prefs.getBoolean(K_BOOST, d.accuracyBoost),
             keepOffDrawing = prefs.getBoolean(K_KEEP_OFF, d.keepOffDrawing),
         )
@@ -62,7 +62,7 @@ class SettingsRepository(context: Context) {
             .putBoolean(K_SHOTS, s.saveScreenshots)
             .putBoolean(K_FAST, s.fastMode)
             .putString(K_WORDS, s.customWords)
-            .putBoolean(K_COMPACT, s.compactOverlay)
+            .putString(K_SIZE, s.overlaySize.name)
             .putBoolean(K_BOOST, s.accuracyBoost)
             .putBoolean(K_KEEP_OFF, s.keepOffDrawing)
             .putInt(K_VERSION, VERSION)
@@ -83,7 +83,7 @@ class SettingsRepository(context: Context) {
         const val K_SHOTS = "save_screenshots"
         const val K_FAST = "fast_mode"
         const val K_WORDS = "custom_words"
-        const val K_COMPACT = "compact_overlay"
+        const val K_SIZE = "overlay_size"
         const val K_BOOST = "accuracy_boost"
         const val K_KEEP_OFF = "keep_off_drawing"
         const val K_VERSION = "settings_version"

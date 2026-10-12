@@ -40,6 +40,7 @@ import com.weplay.guesserai.WePlayGuesserApp
 import com.weplay.guesserai.domain.AiModel
 import com.weplay.guesserai.domain.AppSettings
 import com.weplay.guesserai.domain.CaptureSpeed
+import com.weplay.guesserai.domain.OverlaySize
 import com.weplay.guesserai.service.GameAppMonitor
 import com.weplay.guesserai.ui.AppViewModels
 import com.weplay.guesserai.ui.components.GlassCard
@@ -161,11 +162,17 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
 
         SectionTitle("Overlay")
         GlassCard {
-            SwitchRow(
-                "Compact window",
-                "Small window without the drawing preview, so the game chat stays free for pasting.",
-                s.compactOverlay,
-            ) { v -> vm.update { it.copy(compactOverlay = v) } }
+            Text("Window size", fontWeight = FontWeight.Medium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OverlaySize.entries.forEach { size ->
+                    FilterChip(
+                        selected = s.overlaySize == size,
+                        onClick = { vm.update { it.copy(overlaySize = size) } },
+                        label = { Text(size.label) },
+                    )
+                }
+            }
+            Text(s.overlaySize.note, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             SwitchRow(
                 "Keep window off the drawing",
                 "The AI cannot see strokes under the window, so it moves below the drawing when dropped on it.",

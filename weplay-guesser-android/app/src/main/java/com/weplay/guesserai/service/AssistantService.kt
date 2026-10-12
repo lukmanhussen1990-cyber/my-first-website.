@@ -25,6 +25,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.weplay.guesserai.R
 import com.weplay.guesserai.WePlayGuesserApp
+import com.weplay.guesserai.domain.OverlaySize
 import com.weplay.guesserai.domain.RankedGuess
 import com.weplay.guesserai.overlay.OverlayActions
 import com.weplay.guesserai.overlay.OverlayRoot
@@ -43,7 +44,10 @@ class AssistantService : LifecycleService() {
     private var capturer: ScreenCapturer? = null
     private var session: AssistantSession? = null
     private var overlay: OverlayWindow? = null
-    private val minimized = mutableStateOf(false)
+    /** Showing the mini bar (the default size, or the panel folded up with "–"). */
+    private val collapsed = mutableStateOf(true)
+    /** Window size last read from Settings. */
+    private var chosenSize: OverlaySize? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
@@ -89,28 +93,44 @@ class AssistantService : LifecycleService() {
             overlayRect = { window.bounds() },
         ).also { session = it }
 
-        // Every stroke under the window is masked out of the captures, so it keeps off the canvas.
+        // Everything under the window is masked out of the captures, so it keeps off the hint and the canvas.
         window.avoidBand = {
             val (w, h) = window.screenSize()
-            s.canvasBand(h.toFloat() / w)?.let { (top, bottom) -> (top * h).roundToInt() to (bottom * h).roundToInt() }
+            s.readBand(h.toFloat() / w)?.let { (top, bottom) -> (top * h).roundToInt() to (bottom * h).roundToInt() }
         }
         lifecycleScope.launch {
-            container.settings.settings.collect { window.keepOffDrawing = it.keepOffDrawing }
+            container.settings.settings.collect { st ->
+                window.keepOffDrawing = st.keepOffDrawing
+                // A new size from Settings applies right away; "–" / "⌄" switch between it and the mini bar.
+                if (st.overlaySize != chosenSize) {
+                    chosenSize = st.overlaySize
+                    collapsed.value = st.overlaySize == OverlaySize.MINI
+                }
+            }
         }
 
         val screenDp = sw / resources.displayMetrics.density
-        // Compact: about a quarter of the screen, so the chat box stays free for pasting.
+        // Mini: a slim row across the screen. Compact: about a quarter of it. Large: about a third.
+        val miniWidth = (screenDp - 16f).coerceAtMost(480f).dp
         val compactWidth = (screenDp * 0.27f).coerceIn(112f, 150f).dp
-        val normalWidth = (screenDp * 0.32f).coerceIn(140f, 220f).dp
+        val largeWidth = (screenDp * 0.32f).coerceIn(140f, 220f).dp
 
         window.show {
             val state by s.state.collectAsState()
             val settings by container.settings.settings.collectAsState()
+            val size = when {
+                collapsed.value -> OverlaySize.MINI
+                settings.overlaySize == OverlaySize.LARGE -> OverlaySize.LARGE
+                else -> OverlaySize.COMPACT
+            }
             OverlayRoot(
                 state = state,
-                minimized = minimized.value,
-                compact = settings.compactOverlay,
-                width = if (settings.compactOverlay) compactWidth else normalWidth,
+                size = size,
+                width = when (size) {
+                    OverlaySize.MINI -> miniWidth
+                    OverlaySize.COMPACT -> compactWidth
+                    OverlaySize.LARGE -> largeWidth
+                },
                 actions = actionsFor(s, window),
             )
         }
@@ -126,8 +146,8 @@ class AssistantService : LifecycleService() {
     }
 
     private fun actionsFor(s: AssistantSession, window: OverlayWindow) = object : OverlayActions {
-        override fun onMinimize() { minimized.value = true; window.snapToEdge = true; window.settle() }
-        override fun onExpand() { minimized.value = false; window.snapToEdge = false; window.settle() }
+        override fun onMinimize() { collapsed.value = true; window.settle() }
+        override fun onExpand() { collapsed.value = false; window.settle() }
         override fun onClose() { stopSelf() }
         override fun onNextGuess() { s.nextGuess()?.let { copy(it) } }
         override fun onRefresh() = s.refresh()

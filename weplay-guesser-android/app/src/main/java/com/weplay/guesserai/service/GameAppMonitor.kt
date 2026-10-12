@@ -11,6 +11,7 @@ import android.os.Process
 class GameAppMonitor(private val context: Context) {
     private val usm = context.getSystemService(UsageStatsManager::class.java)
     private var lastForeground: String? = null
+    private var lastQuery = 0L
 
     fun hasUsageAccess(): Boolean {
         val ops = context.getSystemService(AppOpsManager::class.java)
@@ -20,13 +21,16 @@ class GameAppMonitor(private val context: Context) {
     }
 
     /**
-     * Package of the app in the foreground, from usage events of the last minute; falls back to
-     * the last one seen. Null without usage access.
+     * Package of the app in the foreground, from the usage events since the last check (the first
+     * check looks back a minute); falls back to the last one seen. Null without usage access.
+     * Only new events are read each time, so calling this every second stays cheap.
      */
     fun foregroundPackage(): String? {
         if (!hasUsageAccess()) return null
         val now = System.currentTimeMillis()
-        val events = usm.queryEvents(now - 60_000, now)
+        val from = if (lastQuery == 0L) now - LOOK_BACK_MS else lastQuery - OVERLAP_MS
+        lastQuery = now
+        val events = usm.queryEvents(from, now)
         val e = UsageEvents.Event()
         while (events.hasNextEvent()) {
             events.getNextEvent(e)
@@ -44,6 +48,10 @@ class GameAppMonitor(private val context: Context) {
     }
 
     companion object {
+        private const val LOOK_BACK_MS = 60_000L
+        /** Events can be logged slightly late; read a little before the last check. */
+        private const val OVERLAP_MS = 2_000L
+
         /** Installed launcher apps whose label or package mentions WePlay. */
         fun findWePlayApps(context: Context): List<Pair<String, String>> {
             val pm = context.packageManager

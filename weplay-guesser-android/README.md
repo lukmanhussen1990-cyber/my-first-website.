@@ -4,17 +4,28 @@ A floating AI overlay for WePlay "Guess My Drawing". It captures the screen, sen
 vision model, and shows ranked guesses in a draggable window above the game.
 
 ## Install
-1. Copy `release/WePlayDrawingGuesserAI-1.5.0.apk` to your phone (Android 10+) and open it.
+1. Copy `release/WePlayDrawingGuesserAI-1.6.0.apk` to your phone (Android 10+) and open it.
    Allow "Install unknown apps" for your file manager or browser when asked.
 2. Open the app, paste your Anthropic API key (console.anthropic.com), and tap **Test connection**.
 3. Allow **Display over other apps**. Notifications and Usage access are optional; Usage access lets the AI sleep when WePlay is closed.
 4. Tap **Start AI** and accept the screen-sharing prompt. WePlay opens with the overlay on top.
 
 ## Using the overlay
-- Drag it anywhere. **–** minimizes it to a bubble and **✕** stops the assistant.
+- Drag it anywhere. In the panel, **–** folds it into the mini bar and **✕** stops the assistant.
 - Tap a guess to copy it, then paste it in the game chat. **Next Guess** drops the top answer and copies the next one.
 - Hold a guess when it was correct. The drawing and answer are saved, and that answer ranks higher in later rounds.
 - **Settings** has the model (Haiku 5.5 by default, then Sonnet 5.5, Opus 5.5, or a custom ID), fast mode, capture speed (1/2/5 s), your own word list, compact/normal window, API base URL, and the game package.
+
+## What's new in 1.6.0
+- **Mini window (new default):** one slim row under the drawing with the AI's top 3 answers as chips. Tap a chip to copy it, hold it to mark it correct, **»** for the next answer, **⌄** to open the panel; **–** in the panel folds it back. The chat and the answer box stay free for typing. Change the size in Settings → Overlay → Window size (Mini / Compact / Large).
+- **Much less lag:**
+  - The screen mirror only runs for the moment a frame is grabbed (about once a second) instead of redrawing the whole screen continuously. On phones that don't support this, it switches back automatically.
+  - Every frame goes into one reused buffer at 1280 px instead of new full-screen images.
+  - Change detection samples the canvas in place.
+  - The window has no endless animations.
+  - App switches are checked incrementally.
+- **Faster replies:** the AI returns 6 answers with very short reasons instead of 10.
+- Answers still come only from the AI.
 
 ## What's new in 1.5.0
 - **Only the AI's answers:** every guess in the window is exactly what Claude returned through your API key, with its own confidence. The app no longer adds word-list guesses or reshapes answers.
