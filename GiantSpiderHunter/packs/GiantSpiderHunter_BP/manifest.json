@@ -1,0 +1,36 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Giant Spider Hunter (Behavior)",
+    "description": "A spider stalks you from the trees. Once its eyes are on you, it grows into a giant and hunts you. v1.0.0",
+    "uuid": "f5896404-658c-4758-8de7-7f7971aebbac",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "Giant Spider Hunter entity data",
+      "type": "data",
+      "uuid": "f6c17588-e412-468f-8db9-44e35441d14e",
+      "version": [1, 0, 0]
+    },
+    {
+      "description": "Giant Spider Hunter hunting, stalking and spawning logic",
+      "type": "script",
+      "language": "javascript",
+      "uuid": "fde8790c-5955-43c3-bdc1-51a5fa5b11c0",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "945a1734-3277-466e-9bc2-43ea366d10df",
+      "version": [1, 0, 0]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.10.0"
+    }
+  ]
+}

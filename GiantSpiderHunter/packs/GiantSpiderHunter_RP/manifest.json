@@ -1,0 +1,24 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Giant Spider Hunter (Resources)",
+    "description": "Model, textures, animations and sounds for the Giant Spider Hunter. v1.0.0",
+    "uuid": "945a1734-3277-466e-9bc2-43ea366d10df",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "description": "Giant Spider Hunter resources",
+      "type": "resources",
+      "uuid": "7cfb5fa6-2493-4d3c-9449-c5f452d1cab1",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "f5896404-658c-4758-8de7-7f7971aebbac",
+      "version": [1, 0, 0]
+    }
+  ]
+}
