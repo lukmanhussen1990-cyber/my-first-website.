@@ -47,8 +47,11 @@ import com.weplay.guesserai.ui.components.StatusPill
 import com.weplay.guesserai.ui.theme.Bad
 import com.weplay.guesserai.ui.theme.Ok
 import com.weplay.guesserai.ui.theme.Warn
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HomeViewModel(private val app: WePlayGuesserApp) : AndroidViewModel(app) {
     private val c = app.container
@@ -59,10 +62,17 @@ class HomeViewModel(private val app: WePlayGuesserApp) : AndroidViewModel(app) {
 
     fun canDrawOverlays() = Settings.canDrawOverlays(app)
 
-    /** Remember the installed WePlay app the first time we see it. */
+    private var detecting = false
+
+    /** Remember the installed WePlay app the first time we see it. The scan runs off the main thread. */
     fun detectGame() {
-        if (c.settings.current.gamePackage.isNotBlank()) return
-        GameAppMonitor.findWePlayApps(app).firstOrNull()?.let { (pkg, _) -> c.settings.update { it.copy(gamePackage = pkg) } }
+        if (detecting || c.settings.current.gamePackage.isNotBlank()) return
+        detecting = true
+        viewModelScope.launch {
+            val found = withContext(Dispatchers.IO) { GameAppMonitor.findWePlayApps(app).firstOrNull() }
+            detecting = false
+            if (found != null && c.settings.current.gamePackage.isBlank()) c.settings.update { it.copy(gamePackage = found.first) }
+        }
     }
 
     fun gameLaunchIntent(): Intent? =

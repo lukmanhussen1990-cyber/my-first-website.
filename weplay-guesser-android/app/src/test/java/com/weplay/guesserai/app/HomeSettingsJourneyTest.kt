@@ -1,0 +1,72 @@
+package com.weplay.guesserai.app
+
+import android.content.ComponentName
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.test.core.app.ActivityScenario
+import androidx.test.core.app.ApplicationProvider
+import com.weplay.guesserai.WePlayGuesserApp
+import com.weplay.guesserai.ui.MainActivity
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import org.robolectric.shadows.ShadowSettings
+
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [34], qualifiers = "w393dp-h852dp-xxhdpi")
+class HomeSettingsJourneyTest {
+    @get:Rule val compose = createEmptyComposeRule()
+    private val app: WePlayGuesserApp = ApplicationProvider.getApplicationContext()
+    private lateinit var scenario: ActivityScenario<MainActivity>
+
+    private fun installWePlay(pkg: String = "com.wejoy.weplay") {
+        val pm = shadowOf(app.packageManager)
+        pm.installPackage(PackageInfo().apply {
+            packageName = pkg
+            applicationInfo = ApplicationInfo().apply { packageName = pkg; nonLocalizedLabel = "WePlay" }
+        })
+        val main = ComponentName(pkg, "$pkg.MainActivity")
+        pm.addActivityIfNotPresent(main)
+        pm.addIntentFilterForActivity(main, IntentFilter(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_LAUNCHER) })
+    }
+
+    @Before fun setUp() {
+        installWePlay()
+        ShadowSettings.setCanDrawOverlays(true)
+        app.container.settings.update { it.copy(apiKey = "sk-ant-test", gamePackage = "") }
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+    }
+
+    @After fun tearDown() = scenario.close()
+
+    @Test fun `home finds the installed WePlay app in the background`() {
+        compose.onNodeWithText("Ready to play").assertExists()
+        compose.waitUntil(5_000) { app.container.settings.current.gamePackage.isNotEmpty() }
+        assertEquals("com.wejoy.weplay", app.container.settings.current.gamePackage)
+        compose.onNodeWithText("com.wejoy.weplay").performScrollTo().assertExists()
+    }
+
+    @Test fun `settings lists the WePlay app and the word list once loaded`() {
+        compose.onNodeWithText("Settings").performScrollTo().performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("built-in words", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("WePlay", substring = false)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("WePlay was not found on this phone. Enter its package name if it is installed.").assertDoesNotExist()
+        compose.onNodeWithText("‹ Back").performClick()
+        compose.onNodeWithText("Ready to play").assertExists()
+    }
+}

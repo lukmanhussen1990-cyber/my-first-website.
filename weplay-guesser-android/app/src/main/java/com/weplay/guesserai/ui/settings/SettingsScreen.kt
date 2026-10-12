@@ -47,6 +47,7 @@ import com.weplay.guesserai.ui.components.GlassCard
 import com.weplay.guesserai.ui.components.SectionTitle
 import com.weplay.guesserai.ui.theme.Bad
 import com.weplay.guesserai.ui.theme.Ok
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -57,8 +58,18 @@ class SettingsViewModel(private val app: WePlayGuesserApp) : AndroidViewModel(ap
     val keySaved = c.settings.keySaved
     private val _test = MutableStateFlow<Pair<Boolean, String>?>(null)
     val test = _test.asStateFlow()
-    val wePlayApps: List<Pair<String, String>> by lazy { GameAppMonitor.findWePlayApps(app) }
-    val builtInWordCount: Int by lazy { c.wordBank.get("").size }
+    private val _wePlayApps = MutableStateFlow<List<Pair<String, String>>?>(null)
+    /** Installed WePlay apps; null while the scan runs (it loads every launcher app's label). */
+    val wePlayApps = _wePlayApps.asStateFlow()
+    private val _builtInWordCount = MutableStateFlow<Int?>(null)
+    val builtInWordCount = _builtInWordCount.asStateFlow()
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            _builtInWordCount.value = c.wordBank.builtInCount
+            _wePlayApps.value = GameAppMonitor.findWePlayApps(app)
+        }
+    }
 
     fun update(f: (AppSettings) -> AppSettings) { c.settings.update(f); _test.value = null }
 
@@ -76,6 +87,8 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
     val s by vm.settings.collectAsState()
     val test by vm.test.collectAsState()
     val keySaved by vm.keySaved.collectAsState()
+    val wePlayApps by vm.wePlayApps.collectAsState()
+    val builtInWordCount by vm.builtInWordCount.collectAsState()
     var keyDraft by remember { mutableStateOf(s.apiKey) }
     var showKey by remember { mutableStateOf(false) }
 
@@ -157,7 +170,7 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
                     "Add your own words below, one per line; add |90 to rank one higher (e.g. Free Fire|90).",
                 color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp,
             )
-            Text("${vm.builtInWordCount} built-in words", color = MaterialTheme.colorScheme.tertiary, fontSize = 12.sp)
+            builtInWordCount?.let { Text("$it built-in words", color = MaterialTheme.colorScheme.tertiary, fontSize = 12.sp) }
             OutlinedTextField(
                 value = s.customWords, onValueChange = { v -> vm.update { it.copy(customWords = v) } },
                 label = { Text("My words") }, placeholder = { Text("Free Fire\nTV\nMobile Legends") },
@@ -205,10 +218,10 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel(factory
         SectionTitle("Game & battery")
         GlassCard {
             Text("WePlay app", fontWeight = FontWeight.Medium)
-            if (vm.wePlayApps.isEmpty()) {
+            if (wePlayApps?.isEmpty() == true) {
                 Text("WePlay was not found on this phone. Enter its package name if it is installed.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
-            vm.wePlayApps.forEach { (pkg, label) ->
+            wePlayApps.orEmpty().forEach { (pkg, label) ->
                 Row(
                     Modifier.fillMaxWidth().selectable(selected = s.gamePackage == pkg, onClick = { vm.update { it.copy(gamePackage = pkg) } }),
                     verticalAlignment = Alignment.CenterVertically,

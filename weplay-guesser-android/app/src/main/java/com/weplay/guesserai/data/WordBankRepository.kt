@@ -10,6 +10,9 @@ class WordBankRepository(private val context: Context) {
             .getOrDefault(emptyList())
     }
 
+    /** Size of the built-in list; reads the asset on first use, so call it off the main thread. */
+    val builtInCount: Int get() = builtIn.size
+
     @Volatile private var cached: Pair<String, WordBank>? = null
 
     /** Rebuilt only when the custom word text changes. */
