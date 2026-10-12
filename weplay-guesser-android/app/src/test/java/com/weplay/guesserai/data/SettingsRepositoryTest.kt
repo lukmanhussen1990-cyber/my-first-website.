@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.weplay.guesserai.data.settings.SecretCipher
 import com.weplay.guesserai.data.settings.SettingsRepository
+import com.weplay.guesserai.domain.AiModel
 import com.weplay.guesserai.domain.CaptureSpeed
 import com.weplay.guesserai.domain.OverlaySize
 import org.junit.Assert.assertEquals
@@ -73,6 +74,28 @@ class SettingsRepositoryTest {
         assertFalse(prefs.all.values.any { it.toString().contains("sk-ant-secret") })
         settingsVisit(repo)
         assertEquals("sk-ant-secret", repo.current.apiKey)
+    }
+
+    @Test fun `an install from before version 2 moves to Haiku and 1 s captures once`() {
+        // As left by 1.0: no settings_version yet (the app under test has already written its own prefs).
+        prefs.edit().clear().putString("model", "OPUS").putString("capture_speed", "NORMAL").putBoolean("fast_mode", false).commit()
+        val repo = SettingsRepository(ctx, CountingCipher())
+        assertEquals(AiModel.HAIKU, repo.current.model)
+        assertEquals(CaptureSpeed.FAST, repo.current.captureSpeed)
+        assertEquals("other choices are kept", false, repo.current.fastMode)
+        // Choosing Opus again afterwards sticks.
+        repo.update { it.copy(model = AiModel.OPUS, captureSpeed = CaptureSpeed.NORMAL) }
+        val again = SettingsRepository(ctx, CountingCipher())
+        assertEquals(AiModel.OPUS, again.current.model)
+        assertEquals(CaptureSpeed.NORMAL, again.current.captureSpeed)
+    }
+
+    @Test fun `unknown stored values fall back to the defaults instead of crashing`() {
+        prefs.edit().putString("model", "CLAUDE_9").putString("capture_speed", "WARP").putString("overlay_size", "HUGE").putInt("settings_version", 2).commit()
+        val repo = SettingsRepository(ctx, CountingCipher())
+        assertEquals(AiModel.HAIKU, repo.current.model)
+        assertEquals(CaptureSpeed.FAST, repo.current.captureSpeed)
+        assertEquals(OverlaySize.MINI, repo.current.overlaySize)
     }
 
     @Test fun `unreadable stored key is dropped instead of kept forever`() {
