@@ -70,7 +70,8 @@ class MonkeyTest {
                     val action = rnd.nextInt(10)
                     try {
                         if (action == 0) {
-                            scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+                            if (rnd.nextBoolean()) scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+                            else scenario.recreate() // rotation or another configuration change
                         } else {
                             val fields = compose.onAllNodes(hasSetTextAction() and isEnabled()).fetchSemanticsNodes()
                             if (action < 3 && fields.isNotEmpty()) {
