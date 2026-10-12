@@ -54,6 +54,7 @@ LIFT_SHAPE = 0.7                            # lift = sin(180 w)^0.7: high, flat-
 TUCK = 22.0                                 # metatarsus swings this much inward at mid-swing
 DEATH_TILT = 32.0                           # metatarsus splays outward by this much when dead
 SPD_KP, SPD_KV = 6.0, 12.0                  # distance tracker (PLL): lag 1/KP s, smooth speed
+STOP_GAP = 0.065                            # s without any position change = stopped (> 1 tick)
 TURN_STEP = 30.0                            # deg turned per step when turning in place
 TURN_MAX = 35.0                             # max counter-rotation of a planted foot (deg)
 PAIR_PHASE = [0.0, 0.02, 0.04, 0.06]        # small metachronal offsets (<= 0.06)
@@ -144,6 +145,10 @@ def pre_animation():
         f"v.spd = math.lerp(v.spd ?? 0, v.dpend * {f(SPD_KP)}, math.min(1, v.dt * {f(SPD_KV)}));"
         "t.use = math.min(v.dpend, math.max(v.spd, 0) * v.dt);"
         "v.dpend = v.dpend - t.use;"
+        # stopped (no position change for more than a server tick): the distance still pending
+        # is dropped instead of walked, so the planted feet do not slide when the body halts
+        f"v.nz = t.dd > 0.00001 ? 0 : (v.nz ?? 0) + v.dt;"
+        f"v.dpend = v.nz > {f(STOP_GAP)} ? 0 : v.dpend;"
         "v.tr = t.use / v.wpp;"
         # turning expressed as a walking speed (arc at 90 px) for the step size / lift
         "v.tspd = math.lerp(v.tspd ?? 0, (v.dt > 0 ? t.ady / v.dt : 0) * 1.5708 * v.wpp, math.min(1, v.dt * 6));"
