@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
+import android.app.Activity
+import com.weplay.guesserai.service.AssistantService
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
@@ -20,6 +22,7 @@ import com.weplay.guesserai.ui.MainActivity
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -63,6 +66,28 @@ class HomeSettingsJourneyTest {
         compose.waitUntil(5_000) { app.container.settings.current.gamePackage.isNotEmpty() }
         assertEquals("com.wejoy.weplay", app.container.settings.current.gamePackage)
         compose.onNodeWithText("com.wejoy.weplay").performScrollTo().assertExists()
+    }
+
+    @Test fun `start AI asks for screen sharing, then starts the assistant and opens WePlay`() {
+        app.container.settings.update { it.copy(gamePackage = "com.wejoy.weplay") }
+        compose.onNodeWithText("▶  Start AI").performClick()
+        scenario.onActivity { activity ->
+            val shadow = shadowOf(activity)
+            val consent = shadow.nextStartedActivityForResult
+            assertNotNull("no screen-sharing prompt", consent)
+            shadow.receiveResult(consent.intent, Activity.RESULT_OK, Intent("granted"))
+            val service = shadowOf(app).nextStartedService
+            assertEquals(AssistantService.ACTION_START, service.action)
+            assertEquals(Activity.RESULT_OK, service.getIntExtra(AssistantService.EXTRA_RESULT_CODE, 0))
+            assertEquals("com.wejoy.weplay", shadow.nextStartedActivity?.`package`)
+        }
+    }
+
+    @Test fun `start AI without the overlay permission opens the permissions screen`() {
+        ShadowSettings.setCanDrawOverlays(false)
+        scenario.recreate()
+        compose.onNodeWithText("▶  Start AI").performClick()
+        compose.onNodeWithText("Display over other apps").assertExists()
     }
 
     @Test fun `history lists learned drawings and clears them after confirming`() {

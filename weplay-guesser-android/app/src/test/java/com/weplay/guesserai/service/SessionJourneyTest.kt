@@ -26,6 +26,7 @@ import com.weplay.guesserai.domain.VisionAnalyzer
 import com.weplay.guesserai.domain.VisionException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -195,6 +196,22 @@ class SessionJourneyTest {
         repeat(60) { screen.scroll += 60; play(1_000) }
         println("SESSION marquee: ${ai.calls.size} requests in 60 s")
         assertTrue("sent ${ai.calls.size} in a minute", ai.calls.size <= 3)
+    }
+
+    @Test fun `the overlay does not redraw while nothing changes`() = game {
+        val states = mutableListOf<OverlayUiState>()
+        test.backgroundScope.launch { session.state.collect { states += it } }
+        play(3_000) // first answer is on screen
+        val settled = states.size
+        screen.hint = "2 words 9 letters|Organ" // even with the hint scrolling
+        repeat(30) { screen.scroll += 60; play(1_000) }
+        val during = states.drop(settled)
+        println("SESSION overlay states: $settled to show the first answer, ${during.size} in the next 30 s")
+        // Only the one re-read of the hint when it started moving; nothing while it scrolls.
+        assertTrue("overlay changed ${during.size} times: ${during.map { it.status to it.message }}", during.size <= 4)
+        val last10s = states.size
+        repeat(10) { screen.scroll += 60; play(1_000) }
+        assertEquals(last10s, states.size)
     }
 
     @Test fun `never more than two requests in flight while the drawing grows`() = game {
