@@ -284,7 +284,9 @@ class AssistantSession(
             val skip = when {
                 paused -> 60_000L
                 !isScreenOn() -> 3_000L
-                settings.autoPauseWhenGameClosed && gameMonitor.isGameInForeground(settings.gamePackage) == false -> {
+                // Asking Android which app is in front takes two system calls: not on the main thread, every second.
+                settings.autoPauseWhenGameClosed &&
+                    withContext(work) { gameMonitor.isGameInForeground(settings.gamePackage) } == false -> {
                     _state.update { it.copy(status = AiStatus.GAME_AWAY, message = "WePlay not open — AI sleeping") }
                     2_000L
                 }
