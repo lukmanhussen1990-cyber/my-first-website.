@@ -106,31 +106,35 @@ class GuessEngine {
             add(candidates[0].answer, max(candidates[0].weight, SOLE_CANDIDATE_MIN), GuessSource.WORD_LIST)
             return
         }
-        // Only distinctive shapes (2 letters, "2 words • 8 letters" …) are worth suggesting from the list.
-        // For a common shape like "4 letters" the list is just random words that drown the real guesses.
-        if (candidates.size <= MAX_FILLER_CANDIDATES) {
-            for (c in candidates) {
-                if (list.size >= maxResults) break
-                add(c.answer, min(WORD_LIST_FILLER_MAX, c.weight / 2), GuessSource.WORD_LIST)
-            }
+        for (c in usefulCandidates(hint, candidates, MAX_FILLER_CANDIDATES)) {
+            if (list.size >= maxResults) break
+            add(c.answer, min(WORD_LIST_FILLER_MAX, c.weight / 2), GuessSource.WORD_LIST)
         }
         // A 1-letter word in the hint is "A": "_ ____" (2 words • 5 letters) → A Bike, A Kite …
         if (startsWithA(hint)) {
             val rest = HintPattern(hint.wordCount - 1, hint.letterCount - 1, hint.wordLengths.drop(1))
-            val restCandidates = wordBank.candidates(rest)
-            if (restCandidates.size <= MAX_FILLER_CANDIDATES) {
-                for (c in restCandidates) {
-                    if (list.size >= maxResults) break
-                    add("A " + c.answer, min(ARTICLE_FILLER_MAX, c.weight / 3), GuessSource.WORD_LIST)
-                }
+            for (c in usefulCandidates(rest, wordBank.candidates(rest), MAX_FILLER_CANDIDATES)) {
+                if (list.size >= maxResults) break
+                add("A " + c.answer, min(ARTICLE_FILLER_MAX, c.weight / 3), GuessSource.WORD_LIST)
             }
         }
     }
 
-    /** Word-list answers worth showing the model for this hint: only when the shape is distinctive. */
-    fun promptCandidates(hint: HintPattern?, wordBank: WordBank): List<String> {
-        val c = wordBank.candidates(hint)
-        return if (c.size in 1..MAX_PROMPT_CANDIDATES) c.map { it.answer } else emptyList()
+    /** Word-list answers worth showing the model for this hint (same rule as the fillers, a longer list). */
+    fun promptCandidates(hint: HintPattern?, wordBank: WordBank): List<String> =
+        if (hint == null || !hint.isKnown) emptyList()
+        else usefulCandidates(hint, wordBank.candidates(hint), MAX_PROMPT_CANDIDATES).map { it.answer }
+
+    /**
+     * Which word-list answers are worth suggesting for a hint shape: all of them when the shape has
+     * few answers; the most likely few for distinctive shapes (several words, or 3 letters or fewer —
+     * "A Bike", "Free Fire", TV/GO/AC); none for a common single word like "4 letters", where the
+     * list is just random words that would drown the real guesses.
+     */
+    private fun usefulCandidates(hint: HintPattern, candidates: List<WordBank.Entry>, max: Int): List<WordBank.Entry> = when {
+        candidates.size <= max -> candidates
+        hint.wordCount > 1 || hint.letterCount <= 3 -> candidates.take(if (max == MAX_PROMPT_CANDIDATES) max else DISTINCTIVE_TOP)
+        else -> emptyList()
     }
 
     data class RankResult(val guesses: List<RankedGuess>, val hintMismatch: Boolean)
@@ -144,6 +148,8 @@ class GuessEngine {
         private const val VARIANT_PENALTY = 10
         private const val MAX_FILLER_CANDIDATES = 12
         private const val MAX_PROMPT_CANDIDATES = 15
+        /** Fillers shown for a distinctive shape with many candidates (candidates are sorted by weight). */
+        private const val DISTINCTIVE_TOP = 3
         private val ARTICLES = setOf("a", "an", "the")
 
         /** Lower-case, letters/digits/spaces only, single spaces. Used as the identity of an answer. */

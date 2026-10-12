@@ -218,11 +218,54 @@ class RoundTrackerTest {
         assertEquals("Fear", v!!.guesses.first().answer)
     }
 
-    @Test fun `partial keeps the board visible while the new answer streams in`() {
+    @Test fun `partials only fill an empty board, so the list does not jump mid-answer`() {
         val t = RoundTracker()
         t.feed(frame(fiveFood, "Halwa" to 90, "Kheer" to 60))
-        val v = t.partial(++seq, PartialAnalysis(fiveFood, listOf(Guess("Kheer", 70)), true, false, ScreenState.GUESSING), ctx)!!
-        assertEquals(listOf("Halwa", "Kheer"), v.guesses.map { it.answer }.take(2))
+        assertNull(t.partial(++seq, PartialAnalysis(fiveFood, listOf(Guess("Kheer", 70)), true, false, ScreenState.GUESSING), ctx))
+        // A different hint shape may be a new word, so that partial still counts.
+        assertTrue(t.partial(++seq, PartialAnalysis(fourState, listOf(Guess("Fear", 70)), true, false, ScreenState.GUESSING), ctx) != null)
+    }
+
+    @Test fun `round id changes on a new word, round over and refresh, but not on a confirmed answer`() {
+        val t = RoundTracker()
+        t.feed(frame(fiveFood, "Halwa" to 90))
+        val r1 = t.roundId
+        t.markCorrect("Halwa", ctx)
+        assertEquals(r1, t.roundId)
+        t.feed(frame(fiveFood.copy(wordLengths = listOf(5)), "Halwa" to 90)) // refined reading, same word
+        assertEquals(r1, t.roundId)
+        t.feed(frame(fiveFood, state = ScreenState.ROUND_OVER, revealed = "halwa"))
+        val r2 = t.roundId
+        assertTrue(r2 > r1)
+        t.feed(frame(fourState, "Fear" to 60))
+        assertTrue(t.roundId > r2)
+        val r3 = t.roundId
+        t.refresh(ctx)
+        assertTrue(t.roundId > r3)
+    }
+
+    @Test fun `rejected answers are remembered per word and sent to the model`() {
+        val t = RoundTracker()
+        t.feed(frame(fourState, "Frog" to 80, "Fear" to 70))
+        t.next(ctx)
+        assertEquals(listOf("Frog"), t.rejectedAnswers)
+        t.feed(frame(fourState, state = ScreenState.ROUND_OVER, revealed = "fear"))
+        assertTrue(t.rejectedAnswers.isEmpty())
+    }
+
+    @Test fun `close scores keep their places, a clear leader moves up`() {
+        val prev = listOf("halwa", "kheer")
+        fun g(a: String, c: Int) = com.weplay.guesserai.domain.RankedGuess(a, c, "", true, false)
+        assertEquals("Halwa", RoundTracker.stableOrder(listOf(g("Kheer", 74), g("Halwa", 70)), prev).first().answer)
+        assertEquals("Kheer", RoundTracker.stableOrder(listOf(g("Kheer", 90), g("Halwa", 70)), prev).first().answer)
+    }
+
+    @Test fun `the slower model's answer counts for more`() {
+        val fast = RoundBoard(); val deep = RoundBoard()
+        fast.commit(listOf(Guess("Kite", 80))); deep.commit(listOf(Guess("Kite", 80)))
+        val f = fast.commit(listOf(Guess("Kite", 20))).first().confidence
+        val d = deep.commit(listOf(Guess("Kite", 20)), deep = true).first().confidence
+        assertTrue("deep $d should follow the new reading more than fast $f", d < f)
     }
 
     @Test fun `round board blends and fades`() {

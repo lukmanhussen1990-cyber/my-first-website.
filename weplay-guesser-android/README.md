@@ -4,7 +4,7 @@ A floating AI overlay for WePlay "Guess My Drawing". It captures the screen, sen
 vision model, and shows ranked guesses in a draggable window above the game.
 
 ## Install
-1. Copy `release/WePlayDrawingGuesserAI-1.3.0.apk` to your phone (Android 10+) and open it.
+1. Copy `release/WePlayDrawingGuesserAI-1.4.0.apk` to your phone (Android 10+) and open it.
    Allow "Install unknown apps" for your file manager or browser when asked.
 2. Open the app, paste your Anthropic API key (console.anthropic.com), and tap **Test connection**.
 3. Allow **Display over other apps**. Notifications and Usage access are optional; Usage access lets the AI sleep when WePlay is closed.
@@ -15,6 +15,18 @@ vision model, and shows ranked guesses in a draggable window above the game.
 - Tap a guess to copy it, then paste it in the game chat. **Next Guess** drops the top answer and copies the next one.
 - Hold a guess when it was correct. The drawing and answer are saved, and that answer ranks higher in later rounds.
 - **Settings** has the model (Haiku 5.5 by default, then Sonnet 5.5, Opus 5.5, or a custom ID), fast mode, capture speed (1/2/5 s), your own word list, compact/normal window, API base URL, and the game package.
+
+## What's new in 1.4.0
+- **Accuracy boost:** Haiku answers instantly, and Claude Sonnet 5.5 double-checks the drawing every few seconds; its answers count for more. Turn it off in Settings → Model. It costs a little more per round.
+- **Window stays off the drawing:** the AI can't see strokes under the floating window, so when you drop it on the canvas it slides just below. It starts there too. Turn this off in Settings → Overlay.
+- **Looks before guessing:** the AI first writes a short description of what's on the canvas, spreads its 10 guesses over different ideas, and is told which answers you already rejected.
+- **No junk suggestions:** word-list guesses only appear for distinctive hints (A, TV/GO/AC…, A Bike, Free Fire), not random words for "4 letters".
+- **Steady display:**
+  - The list no longer reshuffles when two scores are close, or mid-answer.
+  - The window keeps a fixed height.
+  - The status line no longer flickers.
+  - Answers about a previous word are thrown away.
+- **Crash fix** when stopping the assistant during a capture.
 
 ## What's new in 1.3.0
 - **Reads WePlay's real hint format:** `4 letters|A state` (letter count plus category clue). The clue is shown under the count in the window and given to the AI.

@@ -120,4 +120,15 @@ class GuessEngineTest {
         assertEquals(80, r.guesses.single().confidence) // the stronger "Snail" reading, minus the reshape penalty
     }
 
+
+    @Test fun `keeps the window off the drawing`() {
+        val p = com.weplay.guesserai.domain.OverlayPlacement
+        // Canvas 241..1174 px on a 2408 px screen; a 500 px window dropped on it moves just below.
+        assertEquals(1174 + 20, p.yOutside(600, 500, 241, 1174, 2408, 20))
+        // Barely touching the canvas edge: left alone.
+        assertEquals(1150, p.yOutside(1150, 500, 241, 1174, 2408, 20))
+        // No room below: goes above if possible, else stays.
+        assertEquals(241 - 100 - 20, p.yOutside(300, 100, 241, 2300, 2408, 20))
+        assertEquals(300, p.yOutside(300, 500, 100, 2300, 2408, 20))
+    }
 }

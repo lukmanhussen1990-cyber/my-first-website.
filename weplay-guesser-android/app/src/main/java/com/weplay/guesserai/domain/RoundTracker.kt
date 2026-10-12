@@ -258,7 +258,7 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
     companion object {
         private const val HINT_VOTES = 2
         /** Extra sort weight for the guesses that were 1st, 2nd, 3rd last time (display order only). */
-        private val STICKY = intArrayOf(7, 5, 3)
+        private val STICKY = intArrayOf(8, 3, 1)
 
         /**
          * Sort by confidence, but a guess already near the top keeps its place unless another one is
@@ -268,11 +268,7 @@ class RoundTracker(private val engine: GuessEngine = GuessEngine()) {
             if (previous.isEmpty()) return guesses
             fun weight(g: RankedGuess): Int {
                 val i = previous.indexOf(GuessEngine.normalize(g.answer))
-                return g.confidence + when {
-                    i < 0 -> 0
-                    i < STICKY.size -> STICKY[i]
-                    else -> 1
-                }
+                return g.confidence + if (i in STICKY.indices) STICKY[i] else 0
             }
             return guesses.sortedWith(compareByDescending<RankedGuess> { weight(it) }.thenByDescending { it.confidence })
         }
