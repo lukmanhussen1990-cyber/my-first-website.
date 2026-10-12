@@ -29,6 +29,9 @@ class FrameChangeDetector(
         return cells >= minCells || sum.toDouble() / prev.size >= meanThreshold
     }
 
+    /** True once a fingerprint was accepted, i.e. there is something to compare with. */
+    fun hasSeen(): Boolean = last != null
+
     fun accept(fingerprint: IntArray) {
         last = fingerprint
     }

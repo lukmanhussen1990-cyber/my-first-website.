@@ -10,6 +10,7 @@ import com.weplay.guesserai.domain.AiModel
 import com.weplay.guesserai.domain.AnswerStats
 import com.weplay.guesserai.domain.AppSettings
 import com.weplay.guesserai.domain.FrameAnalysis
+import com.weplay.guesserai.domain.ChangeGate
 import com.weplay.guesserai.domain.FrameChangeDetector
 import com.weplay.guesserai.domain.FrameImages
 import com.weplay.guesserai.domain.GuessEngine
@@ -70,7 +71,8 @@ data class OverlayUiState(
  *  - up to [MAX_IN_FLIGHT] requests overlap; once a newer frame starts answering, older
  *    requests are cancelled and their results ignored,
  *  - replies stream in, so the first guesses of a word show before the reply is complete,
- *  - only changes on the canvas or in the hint trigger a request,
+ *  - only changes on the canvas or in the hint trigger a request; a scrolling or sparkling
+ *    hint does not ([ChangeGate]),
  *  - close-ups of the hint and the canvas are sent, from the measured WePlay layout; a
  *    whole-screen look now and then checks the layout and the game state,
  *  - with the accuracy boost, a stronger model also looks at the same close-ups every few
@@ -97,7 +99,7 @@ class AssistantSession(
 
     private val engine = GuessEngine()
     private val tracker = RoundTracker(engine)
-    private val changes = FrameChangeDetector()
+    private val changes = ChangeGate()
     /** Canvas at the last accuracy-boost request: the stronger model only looks again once it changed. */
     private val deepChanges = FrameChangeDetector()
     private val wake = Channel<Unit>(Channel.CONFLATED)
@@ -295,15 +297,14 @@ class AssistantSession(
             else FrameTools.fingerprint(frame, lay.canvas, 40, 40) to FrameTools.fingerprint(frame, lay.hintCenter, 24, 4)
         }
         if (paused) return
-        val fingerprint = canvasFp + hintFp
-        if (!forceNext && !changes.hasChanged(fingerprint)) {
+        if (!changes.observe(canvasFp, hintFp) && !forceNext) {
             if (inFlight.isEmpty()) _state.update { idle(it) }
             return
         }
         // Too many requests already running: leave the frame "changed" so the next beat sends it.
         if (inFlight.size >= MAX_IN_FLIGHT) return
 
-        changes.accept(fingerprint)
+        changes.accept(canvasFp, hintFp)
         forceNext = false
         val (images, thumb) = withContext(Dispatchers.Default) {
             val imgs = if (sendFull) {
