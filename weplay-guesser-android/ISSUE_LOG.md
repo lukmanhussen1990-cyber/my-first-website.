@@ -19,6 +19,22 @@ Main user journeys:
 4. Settings: key, endpoint, model, speed, word list, window size, toggles, test connection.
 5. History: learned drawings, clear.
 
+## Summary
+
+28 issues fixed (6 P1, 11 P2, 9 P3, 2 P4), each reproduced first and checked by a test that fails without the fix.
+
+| Area | Before | After | How it was measured |
+|---|---|---|---|
+| Requests for a still drawing under a scrolling hint | 45–60 / min | 2 / min | Rendered marquee frames through the real fingerprint code |
+| Requests while every call is rate-limited (HTTP 429) | 40 in 40 s | 5 in 40 s | Session journey, virtual time |
+| A stalled connection holds a request slot | 60.5 s, 2 requests | 21.2 s, 1 request (8 s read limit for fast Haiku) | MockWebServer |
+| Keystore calls in one Settings visit (key unchanged) | 25 | 0 | Counting cipher |
+| Heading contrast on app screens | 1.1 : 1 | ≥ 4.5 : 1 | Text colour on the layout |
+| Crashes found and fixed | — | 5 (broken keystore, missing settings screen, no screen sharing, failed capture beat, full storage) | Reproduced in Robolectric / session journeys |
+| Unit + JVM UI tests | 73 | 166 (journeys, overlay, session, chaos, monkey, fuzz, property) | `./gradlew :app:testDebugUnitTest` |
+
+Not measurable here (no Android device or emulator in this environment, no API key): on-device frame times, real API latency, battery. Those effects are described as expected, not measured.
+
 ## Issues
 
 Priority: P1 crash / broken / data loss / security · P2 performance, lag, excess work, inconsistent state · P3 navigation, error/empty states, usability, accessibility · P4 small improvements.
