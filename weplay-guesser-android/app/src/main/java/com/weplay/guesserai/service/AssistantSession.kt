@@ -9,8 +9,8 @@ import com.weplay.guesserai.data.settings.SettingsRepository
 import com.weplay.guesserai.domain.AiModel
 import com.weplay.guesserai.domain.AnswerStats
 import com.weplay.guesserai.domain.AppSettings
-import com.weplay.guesserai.domain.FrameAnalysis
 import com.weplay.guesserai.domain.ChangeGate
+import com.weplay.guesserai.domain.FrameAnalysis
 import com.weplay.guesserai.domain.FrameChangeDetector
 import com.weplay.guesserai.domain.FrameImages
 import com.weplay.guesserai.domain.GuessEngine

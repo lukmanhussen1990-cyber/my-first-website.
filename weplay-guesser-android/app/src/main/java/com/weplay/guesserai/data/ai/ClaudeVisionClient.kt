@@ -277,7 +277,8 @@ class ClaudeVisionClient(private val timeouts: Timeouts = Timeouts()) : VisionAn
         /** A full http(s) address with a host, like https://api.anthropic.com. */
         fun isHttpUrl(url: String): Boolean = runCatching {
             val u = URI(url)
-            (u.scheme == "https" || u.scheme == "http") && !u.host.isNullOrBlank()
+            // URI leaves `host` empty for names like "my_proxy" that the HTTP client accepts.
+            (u.scheme == "https" || u.scheme == "http") && !(u.host ?: u.rawAuthority).isNullOrBlank()
         }.getOrDefault(false)
 
         fun isOfficial(settings: AppSettings): Boolean =

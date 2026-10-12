@@ -114,6 +114,9 @@ class ClaudeVisionClientTest {
         assertTrue(ClaudeVisionClient.isHttpUrl("https://api.anthropic.com"))
         assertFalse(ClaudeVisionClient.isHttpUrl("https://"))
         assertFalse(ClaudeVisionClient.isHttpUrl("ftp://example.com"))
+        assertTrue(ClaudeVisionClient.isHttpUrl("http://my_proxy:8080"))
+        assertTrue(ClaudeVisionClient.isHttpUrl("http://127.0.0.1:9000/anthropic"))
+        assertFalse(ClaudeVisionClient.isHttpUrl("https://api.anthropic .com"))
     }
 
     @Test fun `replies without thinking get the short limits`() {
