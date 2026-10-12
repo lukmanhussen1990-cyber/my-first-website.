@@ -733,7 +733,9 @@ DESIGN_MAX_DIST = {"step": 96, "step_small": 16, "roar": 128, "grow": 96, "attac
 # sounds.json entity events (engine-driven). No engine footsteps: "step" is set to "" (silent, as
 # vanilla does for minecart) - footsteps come from the client steps animation controller.
 ENTITY_EVENTS = {
-    "ambient": {"sound": "mob.giant_spider.ambient", "volume": 0.8, "pitch": [0.85, 1.1]},
+    # ambient chitter is played by the script only while stalking/idle (state aware), so the
+    # engine's random ambient sound is silenced like the engine footsteps.
+    "ambient": "",
     "hurt": {"sound": "mob.giant_spider.hurt", "volume": 1.0, "pitch": [0.85, 1.15]},
     "hurt.in.water": {"sound": "mob.giant_spider.hurt", "volume": 0.8, "pitch": [0.75, 0.95]},
     "death": {"sound": "mob.giant_spider.death", "volume": 1.0, "pitch": [0.92, 1.05]},
@@ -973,7 +975,7 @@ def verify(spec_dir=None):
         if d.get("max_distance") != DESIGN_MAX_DIST[name]:
             problems.append(f"{sid}: max_distance {d.get('max_distance')} != {DESIGN_MAX_DIST[name]}")
     ent = sj.get("entity_sounds", {}).get("entities", {}).get(ENTITY_ID, {})
-    for ev in ("ambient", "hurt", "death"):
+    for ev in ("hurt", "death"):
         e = ent.get("events", {}).get(ev)
         sid = e if isinstance(e, str) else (e or {}).get("sound")
         if sid not in defs:

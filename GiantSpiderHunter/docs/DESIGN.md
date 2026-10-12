@@ -206,7 +206,7 @@ triggers:
 | `horror:growth_timeout` | same as `horror:to_hunting` |
 | `horror:death_timeout`, `horror:peaceful_despawn`, `horror:despawn` | add `horror:despawn` |
 | `horror:set_difficulty_1/2/3` | set_property horror:difficulty |
-| `horror:spawn_giant` | test helper: same as to_hunting (usable as `/summon horror:giant_spider ~ ~ ~ horror:spawn_giant`) |
+| `horror:spawn_giant` | test helper: same as to_hunting (usable as `/summon horror:giant_spider ~ ~ ~ 0 0 horror:spawn_giant` — 1.21.0.26 rejects the old `<pos> <event>` form, the event must follow yRot/xRot) |
 
 ## 8. Client entity, animations, controllers
 

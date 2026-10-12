@@ -833,7 +833,8 @@ class Harness:
         return best
 
     def summon(self, x, y, z, event=None):
-        ev = f" {event}" if event else ""
+        # Bedrock 1.21.0.26 rejects "summon <type> <pos> <event>"; the event needs yRot xRot first.
+        ev = f" 0 0 {event}" if event else ""
         return self.call("cmd", command=f"summon {SPIDER} {x} {y} {z}{ev}", check=False)
 
     def scriptevent(self, ident, message="", player=None):
