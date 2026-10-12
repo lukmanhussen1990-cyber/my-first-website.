@@ -155,6 +155,8 @@ class AssistantSession(
     private var knownForHint = emptyList<String>()
     private var knownLoadedFor: HintPattern? = null
     private var lastCanvasJpeg: ByteArray? = null
+    /** Word ([RoundTracker.roundId]) that [lastCanvasJpeg] shows; another word's answer is saved without it. */
+    private var lastCanvasRound = -1
 
     /**
      * One model request. [round] is the word it answers for; once that word is over its results are
@@ -227,7 +229,7 @@ class AssistantSession(
     fun markCorrect(guess: RankedGuess) {
         val before = _state.value
         val outcome = track { tracker.markCorrect(guess.answer, ctx()) }
-        outcome.learn?.let { learn(it, before.guesses, tracker.hint ?: before.hint, before.category) }
+        outcome.learn?.let { learn(it, before.guesses, tracker.hint ?: before.hint, before.category, tracker.roundId) }
         show(outcome.view)
         _state.update { it.copy(toast = "Saved \"${guess.answer}\" — AI will remember it") }
     }
@@ -501,12 +503,16 @@ class AssistantSession(
         cropMisses = 0
         // Learn the layout only from a normal guessing screen (never from a popup).
         if (!images.isCropped && a.screenState == ScreenState.GUESSING) learner?.onFullLook(a.canvasBox, a.hintBox)
-        if (a.screenState == ScreenState.GUESSING) lastCanvasJpeg = req.drawing
-
         val hintBefore = tracker.hint ?: before.hint
+        val wordBefore = tracker.roundId
         val outcome = track(req) { tracker.final(req.seq, a, ctx()) }
+        // The drawing belongs to the word this frame showed (possibly one it just started).
+        if (a.screenState == ScreenState.GUESSING) {
+            lastCanvasJpeg = req.drawing
+            lastCanvasRound = tracker.roundId
+        }
         // Save with what was on screen for this word, not the reset list of the next one.
-        outcome.learn?.let { learn(it, before.guesses, hintBefore, before.category) }
+        outcome.learn?.let { learn(it, before.guesses, hintBefore, before.category, wordBefore) }
         show(outcome.view)
 
         fastNote = fastNoteFor(a.modelUsed, latency)
@@ -536,8 +542,9 @@ class AssistantSession(
         if (!isCurrent(req) || a.canvasEmpty || a.screenState == ScreenState.NOT_GAME) return
         val before = _state.value
         val hintBefore = tracker.hint ?: before.hint
+        val wordBefore = tracker.roundId
         val outcome = track(req) { tracker.final(req.seq, a, ctx(), deep = true) }
-        outcome.learn?.let { learn(it, before.guesses, hintBefore, before.category) }
+        outcome.learn?.let { learn(it, before.guesses, hintBefore, before.category, wordBefore) }
         show(outcome.view)
         if (!outcome.roundOver) deepAnsweredRound = tracker.roundId
         val answer = outcome.view.answer
@@ -593,8 +600,9 @@ class AssistantSession(
     private fun ctx() = RoundTracker.Context(stats = stats)
 
     /** Save an answer the game showed (or the user confirmed) with the last drawing. */
-    private fun learn(answer: String, guesses: List<RankedGuess>, hint: HintPattern?, category: String) {
-        val jpeg = if (settingsRepo.current.saveScreenshots) lastCanvasJpeg else null // the canvas only
+    private fun learn(answer: String, guesses: List<RankedGuess>, hint: HintPattern?, category: String, word: Int) {
+        // The canvas only, and only this word's: drawing it ourselves leaves no drawing to keep.
+        val jpeg = if (settingsRepo.current.saveScreenshots && lastCanvasRound == word) lastCanvasJpeg else null
         scope.launch {
             history.recordCorrect(answer, jpeg, guesses, hint, category)
             refreshStats()

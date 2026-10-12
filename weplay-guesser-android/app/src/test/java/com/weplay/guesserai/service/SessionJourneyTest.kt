@@ -335,6 +335,33 @@ class SessionJourneyTest {
         assertEquals(listOf("Utah"), db.drawingDao().observeAll().first().map { it.correctAnswer })
     }
 
+    @Test fun `a word saved without a drawing of its own never gets the previous word's drawing`() = game {
+        val state = HintPattern(1, 4, clue = "A state")
+        ai.script = { s ->
+            FrameAnalysis(
+                isDrawingGame = true, canvasEmpty = false, detectedObject = "", category = "", emoji = "",
+                hint = if (s.hint.contains("letters")) state else null, canvasBox = s.layout.canvas, hintBox = s.layout.hint,
+                guesses = if (s.popup == null && s.hint.contains("letters")) listOf(Guess("Utah", 80)) else emptyList(),
+                screenState = when {
+                    s.popup != null -> ScreenState.ROUND_OVER
+                    !s.hint.contains("letters") -> ScreenState.WORD_REVEALED // we are drawing: the bar shows our word
+                    else -> ScreenState.GUESSING
+                },
+                revealedAnswer = s.popup?.removePrefix("Word: ") ?: if (!s.hint.contains("letters")) s.hint else "",
+            )
+        }
+        play(3_000) // word 1 is being guessed; its drawing is captured
+        screen.popup = "Word: utah"
+        play(3_000)
+        screen.popup = null
+        screen.hint = "snails" // word 2: our turn to draw
+        play(3_000)
+        val records = db.drawingDao().observeAll().first().associateBy { it.correctAnswer }
+        assertNotNull(records["Utah"]?.imagePath)
+        assertTrue("Snails was not saved: ${records.keys}", "Snails" in records)
+        assertEquals(null, records["Snails"]?.imagePath)
+    }
+
     @Test fun `the copied mark does not carry over to the next word`() = game {
         play(2_000)
         session.markCopied("Utah")
