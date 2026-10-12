@@ -8,16 +8,17 @@ object OverlayPlacement {
 
     /**
      * New top edge for a window at [y] with height [h], moved out of the band [avoidTop]..[avoidBottom]
-     * (the canvas) when it covers a meaningful part of it. Prefers just below the canvas, then above;
-     * returns [y] unchanged if the window does not overlap much or cannot fit anywhere else.
+     * (the canvas) when it covers a meaningful part of it. Prefers just below the canvas, then above
+     * (not higher than [minY], e.g. under the status bar); returns [y] unchanged if the window does
+     * not overlap much or cannot fit anywhere else.
      */
-    fun yOutside(y: Int, h: Int, avoidTop: Int, avoidBottom: Int, screenH: Int, margin: Int): Int {
+    fun yOutside(y: Int, h: Int, avoidTop: Int, avoidBottom: Int, screenH: Int, margin: Int, minY: Int = margin): Int {
         val overlap = min(y + h, avoidBottom) - max(y, avoidTop)
         if (overlap <= h * MAX_OVERLAP) return y
         val below = avoidBottom + margin
         if (below + h <= screenH - margin) return below
         val above = avoidTop - h - margin
-        if (above >= margin) return above
+        if (above >= minY) return above
         return y
     }
 

@@ -98,6 +98,45 @@ class OverlayWindowTest {
         assertTrue("moved off the drawing: y=${params().y} h=${root().height}", !overlapsBand())
     }
 
+    @Test fun `with the status bar showing, the mask and the resting place follow where the window really is`() {
+        // As on the user's phone in WePlay: the status bar shows, and Android lays the window out
+        // below it, so the window sits that much lower on screen than its params say.
+        val statusBar = 100
+        val w = OverlayWindow(ctx) { v, out -> v.getLocationOnScreen(out); out[1] += statusBar }
+        try {
+            val band = 300 to 1_400 // hint top .. canvas bottom, in screen pixels
+            w.avoidBand = { band }
+            w.keepOffDrawing = true
+            w.show { Box(Modifier.size(120.dp, 40.dp)) }
+            idle()
+            fun top() = params().y + statusBar // where the window really is
+            assertEquals("the mask covers the window itself", top(), w.bounds()!!.top)
+            assertTrue("starts off the drawing: top=${top()}", top() >= band.second || top() + root().height <= band.first)
+
+            val screenH = wm.currentWindowMetrics.bounds.height()
+            val (x0, y0) = params().x to params().y
+            val down = SystemClock.uptimeMillis()
+            touch(MotionEvent.ACTION_DOWN, x0 + 10f, y0 + 10f, down)
+            touch(MotionEvent.ACTION_MOVE, x0 + 10f, y0 + 400f, down)
+            touch(MotionEvent.ACTION_MOVE, x0 + 10f, screenH + 500f, down) // flung past the bottom
+            touch(MotionEvent.ACTION_UP, x0 + 10f, screenH + 500f, down)
+            idle()
+            assertTrue("fully on screen: bottom=${top() + root().height} screen=$screenH", top() + root().height <= screenH)
+            assertEquals(top(), w.bounds()!!.top)
+
+            val down2 = SystemClock.uptimeMillis()
+            val (x1, y1) = params().x to params().y
+            touch(MotionEvent.ACTION_DOWN, x1 + 10f, y1 + 10f, down2)
+            touch(MotionEvent.ACTION_MOVE, x1 + 10f, y1 - 400f, down2)
+            touch(MotionEvent.ACTION_MOVE, x1 + 10f, -900f, down2) // flung past the top
+            touch(MotionEvent.ACTION_UP, x1 + 10f, -900f, down2)
+            idle()
+            assertTrue("stays below the status bar: top=${top()}", top() >= statusBar)
+        } finally {
+            w.hide()
+        }
+    }
+
     @Test fun `a window dropped past the edge glides back on screen`() {
         show()
         val (x0, y0) = params().x to params().y

@@ -22,8 +22,8 @@ android {
         applicationId = "com.weplay.guesserai"
         minSdk = 29
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.6.0"
+        versionCode = 8
+        versionName = "1.7.0"
     }
 
     signingConfigs {

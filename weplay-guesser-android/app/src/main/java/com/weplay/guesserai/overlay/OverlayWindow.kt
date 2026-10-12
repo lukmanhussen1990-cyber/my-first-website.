@@ -9,6 +9,7 @@ import android.os.Build
 import android.util.DisplayMetrics
 import android.view.Gravity
 import android.view.MotionEvent
+import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
@@ -37,7 +38,11 @@ import kotlin.math.roundToInt
  * Compose buttons inside. On release the window glides back inside the screen and, with
  * [keepOffDrawing], off the canvas; when minimised it snaps to the nearest edge like a chat head.
  */
-class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRegistryOwner {
+class OverlayWindow(
+    private val context: Context,
+    /** Reads the window's position on screen (tests stand in for the phone's status bar here). */
+    private val locate: (View, IntArray) -> Unit = { v, out -> v.getLocationOnScreen(out) },
+) : LifecycleOwner, SavedStateRegistryOwner {
 
     private val wm = context.getSystemService(WindowManager::class.java)
     private val lifecycleRegistry = LifecycleRegistry(this)
@@ -59,6 +64,16 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
 
     private val root = DragFrame(context)
     private var attached = false
+
+    /**
+     * Where the window's (0, 0) is on screen. Android lays overlay windows out inside the system
+     * bars: while the status bar shows (it does in WePlay), y = 0 is just below it, but the
+     * captures, the canvas band and the screen size count from the top of the screen. Measured
+     * after every layout; positions are worked out in screen pixels and converted with it.
+     */
+    private var originX = 0
+    private var originY = 0
+    private val onScreen = IntArray(2)
     private var animator: ValueAnimator? = null
     private val margin get() = (8 * context.resources.displayMetrics.density).roundToInt()
 
@@ -99,7 +114,7 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
             }
             placed = true
             val (sw, _) = screenSize()
-            val (x, y) = restingPlace(sw - root.width - margin, band.second + margin)
+            val (x, y) = restingPlace(sw - root.width - margin, band.second + margin) // screen pixels
             // Right after show() the window is still fading in, so jump there; once it has been seen, glide.
             if (canvasChecks == 0) {
                 animator?.cancel()
@@ -114,6 +129,13 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
         // A panel that grows (hint editor, "+N more", answer banner) must not run off screen or onto the canvas.
         root.addOnLayoutChangeListener { _, l, t, r, b, oldL, oldT, oldR, oldB ->
             if (r - l != oldR - oldL || b - t != oldB - oldT) settle()
+        }
+        // Right after the window was laid out where params say, so the two agree.
+        root.viewTreeObserver.addOnPreDrawListener {
+            locate(root, onScreen)
+            originX = onScreen[0] - params.x
+            originY = onScreen[1] - params.y
+            true
         }
     }
 
@@ -148,8 +170,12 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
     }
 
     /** Window bounds in screen pixels (used to mask the overlay out of screenshots). */
-    fun bounds(): Rect? = if (!attached || root.width == 0) null
-    else Rect(params.x, params.y, params.x + root.width, params.y + root.height)
+    fun bounds(): Rect? {
+        if (!attached || root.width == 0) return null
+        val left = params.x + originX
+        val top = params.y + originY
+        return Rect(left, top, left + root.width, top + root.height)
+    }
 
     /**
      * Keep the panel fully on screen (and off the canvas, with [keepOffDrawing]) after its size or
@@ -177,18 +203,23 @@ class OverlayWindow(private val context: Context) : LifecycleOwner, SavedStateRe
         if (attached) runCatching { wm.updateViewLayout(root, params) }
     }
 
-    /** Where a window dropped at ([x], [y]) should rest: on screen, and below or above the canvas with [keepOffDrawing]. */
-    private fun restingPlace(x: Int = params.x, y: Int = params.y): Pair<Int, Int> {
+    /**
+     * Where a window dropped at ([x], [y]) (screen pixels) should rest, as window params: on
+     * screen below the status bar, and below or above the canvas with [keepOffDrawing].
+     */
+    private fun restingPlace(x: Int = params.x + originX, y: Int = params.y + originY): Pair<Int, Int> {
         val (sw, sh) = screenSize()
         val w = root.width
         val h = root.height
-        val maxX = (sw - w - margin).coerceAtLeast(margin)
-        val maxY = (sh - h - margin).coerceAtLeast(margin)
-        val insideY = y.coerceIn(margin, maxY)
+        val minX = originX.coerceAtLeast(0) + margin
+        val minY = originY.coerceAtLeast(0) + margin
+        val maxX = (sw - w - margin).coerceAtLeast(minX)
+        val maxY = (sh - h - margin).coerceAtLeast(minY)
+        val insideY = y.coerceIn(minY, maxY)
         val band = if (keepOffDrawing) avoidBand?.invoke() else null
         val restY = if (band == null) insideY
-        else OverlayPlacement.yOutside(insideY, h, band.first, band.second, sh, margin)
-        return x.coerceIn(margin, maxX) to restY
+        else OverlayPlacement.yOutside(insideY, h, band.first, band.second, sh, margin, minY)
+        return x.coerceIn(minX, maxX) - originX to restY - originY
     }
 
     private fun animateInside(bounce: Boolean) {

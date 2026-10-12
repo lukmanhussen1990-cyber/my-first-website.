@@ -4,8 +4,8 @@ A floating AI overlay for WePlay "Guess My Drawing". It captures the screen, sen
 vision model, and shows ranked guesses in a draggable window above the game.
 
 ## Install
-1. Copy `release/WePlayDrawingGuesserAI-1.6.0.apk` to your phone (Android 10+) and open it.
-   Allow "Install unknown apps" for your file manager or browser when asked.
+1. Copy `release/WePlayDrawingGuesserAI-1.7.0.apk` to your phone (Android 10+) and open it.
+   Allow "Install unknown apps" for your file manager or browser when asked. It installs over 1.6.0 and keeps your key, settings and history.
 2. Open the app, paste your Anthropic API key (console.anthropic.com), and tap **Test connection**.
 3. Allow **Display over other apps**. Notifications and Usage access are optional; Usage access lets the AI sleep when WePlay is closed.
 4. Tap **Start AI** and accept the screen-sharing prompt. WePlay opens with the overlay on top.
@@ -18,12 +18,13 @@ vision model, and shows ranked guesses in a draggable window above the game.
 
 ## What's new in 1.7.0
 A quality pass: fixes, less wasted work, and tests that play the app end to end. Answers still come only from the AI.
-- **Fewer wasted requests:** a long hint that scrolls across the bar no longer counts as a change, so a drawing nobody touches is not re-sent every second (45–60 → 2 requests a minute). Rate limits now really slow the app down (40 → 5 requests in 40 s of 429s), and it picks up the normal pace as soon as the API answers again. A stalled connection is given up after 8–20 s instead of a minute, and a stale frame is never re-sent.
+- **Fewer wasted requests:** a long hint that scrolls across the bar no longer counts as a change, so a drawing nobody touches is not re-sent every second (45–60 → 2 requests a minute). Rate limits now really slow the app down (40 → 5 requests in 40 s of 429s), and it picks up the normal pace as soon as the API answers again. A stalled connection is given up after 8–20 s instead of a minute, and a stale frame is never re-sent. Once the word is guessed, the drawer's new strokes are only checked every 10 s (16 → 4 requests in 40 s); the next word is still picked up at once.
 - **Steadier rounds:** a scrolling hint read with its start cut off ("ds 9 letters|Organ") no longer starts a false new word that wiped your Next-Guess choices. The ✓ on a copied answer no longer carries into the next word.
 - **Clear problems:** a key or model that stops working is shown right in the mini bar ("⚠ Invalid API key — check Settings"); tap it to retry, or fix it in Settings and the AI resumes by itself. An address without https:// or an empty custom model ID is explained instead of failing every second.
 - **Fewer crashes:** no crash on phones whose secure storage fails (the key is then kept until the app closes, and Home and Settings say so), on phones without some Android settings screens (Permissions → Allow now falls back or says where to go), on phones without screen sharing, when the phone's storage is full (learning is skipped instead), or when a screen capture fails once.
 - **Smoother screens:** headings are readable again (they were black on the dark background), large system fonts no longer cut the overlay's answers, Settings chips and Home buttons fit narrow phones, and the app scan and word list load off the main thread.
-- **Privacy and storage:** the history keeps only the drawing (never a whole screenshot with the chat), never pairs a word with another word's drawing, and keeps pictures for the newest 300 rounds.
+- **Privacy and storage:** the history keeps only the drawing (never a whole screenshot with the chat), never pairs a word with another word's drawing, and keeps pictures for the newest 300 rounds. The lock screen (which can show message previews) is never captured.
+- **Window lines up with the screen:** on phones whose status bar shows, the patch that hides the floating window from the AI now covers the window itself instead of part of the drawing above it, and the window no longer rests partly off the bottom of the screen.
 - **Accessibility:** overlay buttons and Settings switches are named for screen readers; switch titles are tappable.
 
 ## What's new in 1.6.0
