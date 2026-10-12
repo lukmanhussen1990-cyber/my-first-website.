@@ -2,11 +2,13 @@ package com.weplay.guesserai.ui.permissions
 
 import android.Manifest
 import android.app.Application
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -90,7 +92,11 @@ fun PermissionsScreen(onContinue: () -> Unit, vm: PermissionsViewModel = viewMod
             body = "Required. Shows the floating AI window on top of the game.",
             granted = s.overlay, required = true, action = "Allow",
         ) {
-            ctx.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${ctx.packageName}")))
+            ctx.openSettings(
+                "Display over other apps",
+                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${ctx.packageName}")),
+                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION),
+            )
         }
 
         PermissionCard(
@@ -113,7 +119,7 @@ fun PermissionsScreen(onContinue: () -> Unit, vm: PermissionsViewModel = viewMod
             body = "Optional. Lets the AI sleep automatically when WePlay is not on screen, saving battery and API calls.",
             granted = s.usageAccess, required = false, action = "Allow",
         ) {
-            ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+            ctx.openSettings("Usage access", Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
         }
 
         Spacer(Modifier.height(4.dp))
@@ -121,6 +127,16 @@ fun PermissionsScreen(onContinue: () -> Unit, vm: PermissionsViewModel = viewMod
             Text(if (s.requiredGranted) "Continue" else "Allow overlay to continue", fontWeight = FontWeight.Bold)
         }
     }
+}
+
+/**
+ * Opens the first of [screens] this phone has; some phones (Android Go, some brands) leave these
+ * screens out. Falls back to the app's own page in Android settings, else says where to look.
+ */
+private fun Context.openSettings(what: String, vararg screens: Intent) {
+    val appPage = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+    val opened = (screens.toList() + appPage).any { runCatching { startActivity(it) }.isSuccess }
+    if (!opened) Toast.makeText(this, "Open Android Settings → Apps → WePlay AI → $what", Toast.LENGTH_LONG).show()
 }
 
 @Composable

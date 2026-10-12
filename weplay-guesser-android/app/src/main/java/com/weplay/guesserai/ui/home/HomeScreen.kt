@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -112,7 +113,10 @@ fun HomeScreen(
             !vm.canDrawOverlays() -> onNeedPermissions()
             else -> {
                 val mpm = ctx.getSystemService(MediaProjectionManager::class.java)
-                projectionLauncher.launch(mpm.createScreenCaptureIntent())
+                // A phone without screen sharing (or with it blocked by a work policy) has no prompt to show.
+                runCatching { projectionLauncher.launch(mpm.createScreenCaptureIntent()) }.onFailure {
+                    Toast.makeText(ctx, "This phone does not allow screen sharing, which the AI needs to see the drawing.", Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
