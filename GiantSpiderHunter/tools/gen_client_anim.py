@@ -28,14 +28,15 @@ ENTITY_ID = "horror:giant_spider"
 NAME = "Giant Spider Hunter"
 
 # --------------------------------------------------------------------------- DESIGN.md §4
-HIP_X = 30.0
+# (docs/MODEL.md; must match tools/gen_geometry.py exactly)
+HIP_X = 34.0
 HIP_Y = 206.0
-HIP_Z = [-30.0, -14.0, 2.0, 18.0]          # pair 1..4, front -> back
+HIP_Z = [-34.0, -16.0, 2.0, 20.0]          # pair 1..4, front -> back
 K = [1.08, 1.00, 0.96, 1.04]               # per-pair length factor
-L1_BASE, L2_BASE, L3_BASE = 240.0, 290.0, 50.0
-R_BASE = 215.0                              # neutral foot horizontal radius from hip
+L1_BASE, L2_BASE, L3_BASE = 160.0, 220.0, 200.0   # femur / tibia / metatarsus+tarsus+claw
+R_BASE = 270.0                              # neutral foot horizontal radius from hip
 NEUTRAL_ANGLE = [52.0, 20.0, -16.0, -48.0]  # from the lateral axis toward forward
-FOOT_TILT = 12.0                            # foot segment tilted outward from vertical
+FOOT_TILT = 8.0                             # metatarsus tilted outward from vertical
 
 # --------------------------------------------------------------------------- DESIGN.md §8
 STRIDE_WALK, STRIDE_RUN = 130.0, 180.0      # px, foot travel along the body axis per stance
@@ -70,7 +71,7 @@ def leg_constants(side, n):
         "l3c": L3 * math.cos(math.radians(FOOT_TILT)),
         "dmin": abs(L1 - L2) + 1.0,
         "dmax": L1 + L2 - 1.0,
-        "theta3": -(90.0 - FOOT_TILT),     # absolute foot angle (always 12 deg off vertical)
+        "theta3": -(90.0 - FOOT_TILT),     # absolute foot angle (FOOT_TILT off vertical)
         "phase": (0.0 if group_a else 0.5) + PAIR_PHASE[n - 1],
         "hip": ((HIP_X if side == "l" else -HIP_X), HIP_Y, HIP_Z[n - 1]),
         "group_a": group_a,

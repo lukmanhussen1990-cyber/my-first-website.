@@ -192,7 +192,7 @@ def head_cubes():
              box_faces("head_front", "head_side", "head_side", "head_side", "head_top", "head_under")),
         # raised eye mound / ocular tubercle (34 x 12 x 18), posterior eye row on its front
         cube(-17, 17, 234, 246, -76, -58,
-             box_faces("mound_front", "mound_side", "mound_side", "mound_side", "mound_top", "mound_top")),
+             box_faces("mound_front", "mound_top", "mound_side", "mound_side", "mound_top", "mound_top")),
     ]
     lens = box_faces("eye_bump", "bump_side", "bump_side", "bump_side", "bump_side", "bump_side")
     for sx in (1, -1):

@@ -97,77 +97,89 @@ EYE_HI = hexc("#ff0e0e")
 #   on north/up/down faces U grows toward +X, on south faces toward -X.
 # Limb regions: DISTAL end (toward the foot) at high U; `<name>_f` is the mirror image.
 REGIONS = [
-    # ---- legs (shared by all eight legs; sized for the k = 1.00 pair, ~3 px per texel)
-    ("fem_side", 84, 12, "fem_side", 11, True),      # femur N/S   (252 x 36 px)
-    ("fem_top", 84, 12, "fem_top", 12, True),        # femur up    (252 x 34)
-    ("fem_under", 84, 12, "fem_under", 13, True),    # femur down  (seen from below: lighter)
-    ("fem_end", 12, 12, "endcap", 14, False),        # femur ends  (34 x 36)
-    ("crest_top", 60, 8, "plank_top", 15, False),    # dorsal plank on the femur (182 x 24)
-    ("crest_side", 60, 4, "plank_side", 16, False),  # (182 x 10)
-    ("crest_end", 8, 4, "endcap", 17, False),
-    ("fkeel_under", 52, 8, "plank_under", 18, False),  # ventral plank under the femur (158 x 22)
-    ("fkeel_side", 52, 3, "plank_side", 19, False),    # (158 x 8)
-    ("fkeel_end", 8, 3, "endcap", 20, False),
-    ("knee", 16, 16, "knee", 21, False),             # knee block sides (46 cube)
-    ("knee_cap", 16, 16, "knee_cap", 22, False),     # knee block ends (lighter caps)
-    ("tib1_side", 46, 8, "tib_upper", 23, True),     # upper tibia (133 x 24)
-    ("tib1_end", 8, 8, "endcap", 24, False),
-    ("tib2_side", 50, 7, "tib_lower", 25, True),     # lower tibia (148 x 20)
-    ("tib2_end", 7, 7, "endcap", 26, False),
-    ("ankle_side", 7, 8, "joint", 27, False),        # ankle block (20 x 24)
-    ("ankle_end", 8, 8, "joint_cap", 28, False),
-    ("foot_side", 10, 5, "foot", 29, True),          # foot (30 x 14)
-    ("foot_end", 5, 5, "endcap", 30, False),
-    ("claw_side", 7, 3, "claw", 31, True),           # claw (20 x 9)
-    ("claw_end", 3, 3, "claw_end", 32, False),
-    # ---- cephalothorax (~2.7 px per texel)
-    ("tor_side", 32, 16, "plate_side", 40, False),   # main block E/W (90 x 46)
-    ("tor_end", 28, 16, "plate_side", 41, False),    # main block N/S (80 x 46)
+    # ---- legs (shared by all eight legs; sized for the k = 1.00 pair, ~2.4-2.8 px per texel)
+    # Names and sizes follow docs/VISUAL_PLAN.md T3 (the contract with gen_geometry.py).
+    # femur bone: coxa collar + femur beam + knee block
+    ("coxa_side", 16, 18, "coxa", 110, True),       # coxa collar N/S/U/D (40 x 46)
+    ("coxa_end", 18, 18, "joint_cap", 111, False),  # (46 x 46)
+    ("fem_side", 64, 15, "fem_side", 11, True),     # femur beam N/S (152 x 38)
+    ("fem_top", 64, 14, "fem_top", 12, True),       # femur beam up (152 x 36)
+    ("fem_under", 64, 14, "fem_under", 13, True),   # femur beam down (seen from below: lighter)
+    ("fem_end", 14, 15, "endcap", 14, False),       # (36 x 38)
+    ("knee", 18, 18, "knee", 21, False),            # knee block N/S/U/D (46 cube)
+    ("knee_cap", 18, 18, "knee_cap", 22, False),    # knee block E/W
+    # tibia bone: tibia beam + tibia/metatarsus joint block
+    ("tib_side", 96, 10, "tib_upper", 23, True),    # tibia N/S/U (244 x 26)
+    ("tib_under", 96, 10, "tib_upper", 24, True),   # tibia down
+    ("tib_end", 10, 10, "endcap", 25, False),
+    ("ankle_side", 13, 13, "joint", 27, False),     # joint block N/S/U/D (32 cube)
+    ("ankle_end", 13, 13, "joint_cap", 28, False),
+    # foot bone: metatarsus + tarsus + hooked claw
+    ("met_side", 70, 8, "tib_lower", 29, True),     # metatarsus N/S/U (170 x 20)
+    ("met_under", 70, 8, "tib_lower", 30, True),    # metatarsus down
+    ("met_end", 8, 8, "endcap", 31, False),
+    ("tar_side", 12, 6, "foot", 32, True),          # tarsus (29 x 14)
+    ("tar_end", 6, 6, "endcap", 33, False),
+    ("claw_side", 6, 4, "claw", 34, True),          # claw (12 x 9)
+    ("claw_end", 4, 4, "claw_end", 35, False),
+    # ---- cephalothorax (body x1.15; sizes in px are after scaling)
+    ("tor_side", 32, 16, "plate_side", 40, False),   # main block E/W (101 x 53)
+    ("tor_end", 28, 16, "plate_side", 41, False),    # main block N/S (92 x 53)
     ("tor_under", 30, 32, "under_plates", 42, False),  # main block / carapace underside
-    ("tor2_side", 25, 6, "plate_side", 43, False),   # lower taper E/W (70 x 16)
-    ("tor2_end", 20, 6, "plate_side", 44, False),    # lower taper N/S (56 x 16)
-    ("cara_top", 32, 28, "carapace", 45, False),     # carapace top (88 x 74)
-    ("cara_side", 27, 4, "rim", 46, False),          # carapace rim E/W (74 x 10)
-    ("cara_end", 32, 4, "rim", 47, False),           # carapace rim N/S (88 x 10)
-    ("ridge_top", 8, 20, "ridge", 48, False),        # dorsal ridge top (22 x 54)
+    ("tor2_side", 25, 6, "plate_side", 43, False),   # lower taper E/W (81 x 18)
+    ("tor2_end", 20, 6, "plate_side", 44, False),    # lower taper N/S (64 x 18)
+    ("cara_top", 32, 28, "carapace", 45, False),     # carapace top (104 x 85)
+    ("cara_side", 27, 4, "rim", 46, False),          # carapace rim E/W (85 x 11.5)
+    ("cara_end", 32, 4, "rim", 47, False),           # carapace rim N/S (104 x 11.5)
+    ("ridge_top", 8, 20, "ridge", 48, False),        # dorsal ridge top (25 x 62)
     ("ridge_side", 20, 3, "rim", 49, False),
     ("ridge_end", 8, 3, "rim", 50, False),
-    ("stern_down", 20, 25, "sternum", 51, False),    # plated underside (56 x 70)
-    ("stern_side", 18, 4, "rim", 52, False),         # sternum keel sides (50 x 12)
+    ("stern_down", 20, 25, "sternum", 51, False),    # plated underside (64 x 81)
+    ("stern_side", 18, 4, "rim", 52, False),         # sternum keel sides (60 x 14)
     ("stern_end", 12, 4, "rim", 53, False),
-    # ---- head (front 2 px per texel for the eyes)
-    ("head_front", 26, 21, "head_front", 60, False),  # (52 x 42) eight glowing eyes
-    ("head_side", 12, 16, "plate_side", 61, False),   # (30 x 42)
-    ("head_top", 20, 12, "head_top", 62, False),      # (52 x 30)
+    # ---- head (front ~2.3 px per texel so the eyes stay crisp)
+    ("head_front", 27, 24, "head_front", 60, False),  # (62 x 55) anterior lateral eyes + AME sockets
+    ("head_side", 12, 17, "plate_side", 61, False),   # (35 x 55)
+    ("head_top", 20, 12, "head_top", 62, False),      # (62 x 35)
     ("head_under", 20, 12, "sternum", 63, False),
-    ("jaw_front", 15, 6, "jaw", 64, False),           # chelicera base (38 x 14)
-    ("jaw_side", 8, 6, "jaw", 65, False),
-    ("jaw_under", 15, 8, "sternum", 66, False),
-    ("fang_side", 5, 12, "fang", 67, False),          # fang base (14 x 34)
+    ("mound_front", 17, 6, "mound_front", 114, False),  # eye mound front (39 x 14), 4 eyes
+    ("mound_side", 6, 4, "plate_side", 115, False),     # (21 x 14)
+    ("mound_top", 12, 6, "head_top", 116, False),       # (39 x 21)
+    ("eye_bump", 4, 4, "eye_bump", 117, False),         # anterior median eye lens (8 x 8)
+    ("bump_side", 4, 2, "bump_side", 118, False),       # (8 x 4.6)
+    ("palp_long", 13, 4, "palp", 119, False),           # pedipalp segment, long faces (44 x 11.5)
+    ("palp_vert", 4, 13, "palp_v", 120, False),         # pedipalp, long faces of the hanging segment
+    ("palp_end", 4, 4, "palp_end", 121, False),
+    ("chel_front", 7, 17, "chel_front", 122, False),    # chelicera (21 x 39 x 28)
+    ("chel_side", 9, 17, "chel_side", 123, False),
+    ("chel_end", 7, 9, "jaw", 124, False),
+    ("fang_side", 5, 12, "fang", 67, False),          # fang base (10 x 18)
     ("fang_end", 5, 5, "fang_end", 68, False),
-    ("fangtip_side", 4, 10, "fangtip", 69, False),    # fang tip (9 x 26)
+    ("fangtip_side", 4, 10, "fangtip", 69, False),    # fang tip (7 x 16)
     ("fangtip_end", 4, 4, "fangtip_end", 70, False),
-    # ---- abdomen (~2.8 px per texel)
+    # ---- abdomen (body x1.15; ~3.2 px per texel)
     ("petiole", 10, 8, "joint", 80, False),
-    ("abd_front", 24, 20, "abd_side", 81, False),     # front block N/S (66 x 56)
-    ("abd1_side", 9, 20, "abd_side", 82, False),      # front block E/W (24 x 56)
-    ("abd1_top", 26, 9, "abd_top_small", 83, False),  # front / rear block top (66..72 x 24..26)
+    ("abd_front", 24, 20, "abd_side", 81, False),     # front block N/S (76 x 64)
+    ("abd1_side", 9, 20, "abd_side", 82, False),      # front block E/W (28 x 64)
+    ("abd1_top", 26, 9, "abd_top_small", 83, False),  # front / rear block top
     ("abd1_under", 26, 9, "abd_under", 84, False),
-    ("abd_top", 36, 36, "abd_top", 85, False),        # main bulb top (100 x 104)
+    ("abd_top", 36, 36, "abd_top", 85, False),        # main bulb + rounding slab top (115 x 120)
     ("abd_under", 36, 36, "abd_under", 86, False),
-    ("abd_side", 36, 22, "abd_side", 87, False),      # main bulb E/W (104 x 62)
-    ("abd_end", 36, 22, "abd_side", 88, False),       # main bulb N/S (100 x 62)
-    ("belly_down", 29, 32, "abd_under", 89, False),   # belly underside (80 x 90)
-    ("belly_side", 32, 16, "abd_belly", 90, False),   # belly E/W (90 x 44)
-    ("belly_end", 29, 16, "abd_belly", 91, False),    # belly N/S (80 x 44)
-    ("keel_down", 17, 21, "abd_under", 92, False),    # keel underside (48 x 60)
-    ("keel_side", 21, 8, "abd_belly", 93, False),     # keel E/W (60 x 22)
-    ("keel_end", 17, 8, "abd_belly", 94, False),      # keel N/S (48 x 22)
-    ("abd_rear", 25, 24, "abd_side", 95, False),      # rear taper N/S (70 x 66)
-    ("abd3_side", 9, 24, "abd_side", 96, False),      # rear taper E/W (26 x 66)
-    ("spinner", 10, 8, "joint", 97, False),           # spinnerets
-    ("abd_plate", 24, 28, "abd_plate", 98, False),    # dorsal shield (66 x 76)
+    ("abd_side", 36, 22, "abd_side", 87, False),      # main bulb + slab E/W (120 x 71)
+    ("abd_end", 36, 22, "abd_side", 88, False),       # main bulb N/S (115 x 71)
+    ("belly_down", 29, 32, "abd_under", 89, False),   # belly underside (92 x 104)
+    ("belly_side", 32, 12, "abd_belly", 90, False),   # belly E/W (104 x 37)
+    ("belly_end", 29, 12, "abd_belly", 91, False),    # belly N/S (92 x 37)
+    ("keel_down", 17, 21, "abd_under", 92, False),    # keel underside (55 x 69)
+    ("keel_side", 21, 6, "abd_belly", 93, False),     # keel E/W (69 x 18)
+    ("keel_end", 17, 6, "abd_belly", 94, False),      # keel N/S (55 x 18)
+    ("abd_rear", 25, 24, "abd_side", 95, False),      # rear taper N/S (81 x 76)
+    ("abd3_side", 9, 24, "abd_side", 96, False),      # rear taper E/W (30 x 76)
+    ("abd_plate", 24, 28, "abd_plate", 98, False),    # dorsal shield (76 x 87)
     ("abd_plate_side", 26, 3, "rim", 99, False),
+    ("spin_side", 7, 4, "spin", 127, False),          # spinneret (10 x 14 x 23)
+    ("spin_end", 3, 4, "spin_end", 128, False),
+    ("spin_top", 3, 7, "spin_v", 129, False),
 ]
 
 
@@ -682,44 +694,391 @@ def p_head_top(w, h, rng):
     return img
 
 
-# Eye layout on the 26x21 head front region (x, y, w, h, kind). Upper half of the face,
-# 8 eyes: two large anterior medians, two anterior laterals, two posterior medians,
-# two posterior laterals (posterior row higher and wider, like a real spider).
-EYES = [
-    (9, 7, 3, 3, "big"), (14, 7, 3, 3, "big"),          # anterior median (largest)
-    (5, 9, 2, 2, "mid"), (19, 9, 2, 2, "mid"),          # anterior laterals
-    (8, 3, 2, 2, "mid"), (16, 3, 2, 2, "mid"),          # posterior medians
-    (3, 5, 2, 2, "mid"), (21, 5, 2, 2, "mid"),          # posterior laterals
+# Eyes are spread over three surfaces so the cluster is really three-dimensional:
+#  * the two anterior medians (AME, largest) are separate lens cubes ("eye_bump", whole front face
+#    glows) standing out of the head front;
+#  * the anterior laterals (ALE) are painted on the head front beside the AME sockets;
+#  * the posterior row (PME + PLE) is painted on the front of the raised eye mound.
+# Each list: (x, y, w, h, kind) in texels of its region.
+EYES = [                                                 # head_front (27 x 24)
+    (3, 7, 2, 2, "mid"), (22, 7, 2, 2, "mid"),          # anterior laterals
 ]
+AME_SOCKETS = [(7, 4, 6, 6), (14, 4, 6, 6)]             # dark rings around the lens cubes
+EYES_MOUND = [                                           # mound_front (17 x 6)
+    (5, 2, 2, 2, "mid"), (10, 2, 2, 2, "mid"),          # posterior medians
+    (1, 3, 2, 2, "mid"), (14, 3, 2, 2, "mid"),          # posterior laterals
+]
+EYE_REGIONS = {"head_front": EYES, "mound_front": EYES_MOUND,
+               "eye_bump": [(0, 0, 4, 4, "lens")]}
 
 
-def p_head_front(w, h, rng):
-    img = wood(w, h, rng, CHIT_D, CHIT_L, grain_lines=0.3, worn=0.01)
-    vgrad(img, 1.1, 0.88)
-    # brow ridge above the eyes and a darker face below
-    img[1, 2:-2] *= 1.12
-    img[13:, :] *= 0.9
-    specks(img, rng, 0.03)
-    bevel(img, rng, top=CHIT_BEVEL * 1.12, side=CHIT_BEVEL, low=CHIT_BEVEL * 0.9, corner=BEVEL_TOP)
-    alpha = np.full((h, w), 255, np.uint8)
-    # dark sockets with a faint lit rim above each eye
-    for x, y, ew, eh, _k in EYES:
+def paint_eyes(img, alpha, eyes):
+    h, w, _ = img.shape
+    for x, y, ew, eh, _k in eyes:                        # dark sockets, faint lit rim above
         img[max(1, y - 1):min(h - 1, y + eh + 1), max(1, x - 1):min(w - 1, x + ew + 1)] = SOCKET
         if y - 2 >= 1:
             img[y - 2, max(1, x - 1):min(w - 1, x + ew + 1)] *= 1.15
-    for x, y, ew, eh, kind in EYES:
+    for x, y, ew, eh, kind in eyes:
         img[y:y + eh, x:x + ew] = EYE
         img[y + eh - 1, x:x + ew] = EYE_DARK * 1.3          # lower half darker
         img[y, x] = EYE_HI                                   # glint
-        if kind == "big":
-            img[y + 1, x + 1] = EYE_HI * 0.85 + EYE * 0.15
-            img[y + eh - 1, x + ew - 1] = EYE_DARK
         alpha[y:y + eh, x:x + ew] = EYE_ALPHA
-    # chelicera seam + mouth plate along the lower part
-    img[h - 4, 4:w - 4] = img[h - 4, 4:w - 4] * 0.3 + SEAM * 0.7
-    img[h - 3, 4:w - 4] *= 1.1
-    img[h - 4:h - 1, w // 2] = SEAM
+
+
+def p_head_front(w, h, rng):
+    """Head (clypeus) front: brow plate, ALE eyes, dark AME sockets (lens cubes stand in
+    them), darker face below with a vertical median groove down to the chelicerae."""
+    img = wood(w, h, rng, CHIT_D, CHIT_L, grain_lines=0.3, worn=0.01)
+    vgrad(img, 1.1, 0.8)
+    img[1, 2:-2] *= 1.12                                   # brow ridge
+    img[2, 2:-2] *= 0.86
+    img[12:, :] *= 0.88
+    specks(img, rng, 0.03)
+    for x, y, ew, eh in AME_SOCKETS:
+        img[y:y + eh, x:x + ew] = SOCKET
+        img[y - 1, x:x + ew] *= 1.18
+    cx = w // 2
+    img[11:h - 1, cx] = img[11:h - 1, cx] * 0.4 + SEAM * 0.6   # median groove
+    img[11:h - 1, cx + 1] *= 1.08
+    for yy in (14, 18):                                    # transverse face wrinkles
+        img[yy, 3:w - 3] = img[yy, 3:w - 3] * 0.6 + SEAM * 0.4
+        img[yy + 1, 3:w - 3] *= 1.08
+    bevel(img, rng, top=CHIT_BEVEL * 1.12, side=CHIT_BEVEL, low=CHIT_BEVEL * 0.9, corner=BEVEL_TOP)
+    alpha = np.full((h, w), 255, np.uint8)
+    paint_eyes(img, alpha, EYES)
     return img, alpha
+
+
+def p_mound_front(w, h, rng):
+    img = wood(w, h, rng, CHIT_D, CHIT_L, grain_lines=0.2, worn=0.0)
+    vgrad(img, 1.12, 0.9)
+    bevel(img, rng, top=CHIT_BEVEL * 1.15, side=CHIT_BEVEL, low=CHIT_BEVEL * 0.9, corner=BEVEL_TOP,
+          inner=0.86)
+    alpha = np.full((h, w), 255, np.uint8)
+    paint_eyes(img, alpha, EYES_MOUND)
+    return img, alpha
+
+
+def p_eye_bump(w, h, rng):
+    """Whole lens glows (alpha 3): deep red with a bright glint and a dark lower rim."""
+    img = np.empty((h, w, 3))
+    img[:] = EYE
+    img[-1, :] = EYE_DARK * 1.2
+    img[:, -1] = img[:, -1] * 0.6 + EYE_DARK * 0.4
+    img[0, 0] = EYE_HI
+    img[1, 1] = EYE_HI * 0.85 + EYE * 0.15
+    img[0, 1] = EYE_HI * 0.6 + EYE * 0.4
+    return img, np.full((h, w), EYE_ALPHA, np.uint8)
+
+
+def p_bump_side(w, h, rng):
+    img = lerp(SOCKET, JOINT_D, rng.random((h, w)) * 0.5)
+    img[0, :] = JOINT_BEVEL * 0.8
+    return img
+
+
+def p_coxa(w, h, rng):
+    """Coxa collar where the leg leaves the body: dark joint chitin, a raised light rim at the
+    distal end (high U) and deep occlusion toward the body."""
+    img = wood(w, h, rng, JOINT_D, JOINT_M * 1.12, grain_lines=0.4, worn=0.02)
+    rows = [h // 2]
+    seams(img, rows, rng)
+    vgrad(img, 1.08, 0.9)
+    specks(img, rng, 0.03)
+    ao_end(img, 6, 0.45, at_high_u=False)
+    collar(img, w - 4, w - 1, rng, color=COLLAR, mix=0.55)
+    bevel(img, rng, top=JOINT_BEVEL * 1.18, side=JOINT_BEVEL * 1.1, low=JOINT_BEVEL,
+          corner=BEVEL_TOP, inner=0.82)
+    return img
+
+
+def p_spike(w, h, rng):
+    """Bristle spike: dark base (low U) fading to a lighter worn tip (high U)."""
+    t = np.linspace(0, 1, w)[None, :] * np.ones((h, 1))
+    img = lerp(BRISTLE, JOINT_BEVEL * 1.05, np.clip(t ** 1.6 + 0.08 * rng.random((h, w)), 0, 1))
+    img[-1, :] *= 0.8
+    return img
+
+
+def p_spike_end(w, h, rng):
+    return lerp(BRISTLE, JOINT_M, rng.random((h, w)) * 0.5)
+
+
+def p_palp(w, h, rng, vertical=False):
+    """Pedipalp segment: dark hairy chitin with a light joint ring at both ends."""
+    L, C = (h, w) if vertical else (w, h)
+    img = wood(L, C, rng, JOINT_D * 1.05, JOINT_M * 1.18, grain_lines=0.4, worn=0.02)
+    specks(img, rng, 0.06, inset=1)
+    img[:, 0] = img[:, 0] * 0.4 + COLLAR * 0.6
+    img[:, -1] = img[:, -1] * 0.4 + COLLAR * 0.6
+    img[0, :] = img[0, :] * 0.6 + JOINT_BEVEL * 0.4
+    if vertical:
+        img = img.transpose(1, 0, 2)
+    return img
+
+
+def p_palp_end(w, h, rng):
+    img = end_grain(w, h, rng, JOINT_M, CAP_D)
+    img[0, :] = JOINT_BEVEL
+    return img
+
+
+def p_chel(w, h, rng, front=True):
+    """Chelicera: big hanging basal segment, dark and bristly, lighter toward the top bevel,
+    vertical groove on the front, darker toward the fang end (bottom)."""
+    img = wood(w, h, rng, JOINT_D * 0.95, JOINT_M * 1.15, along_u=False, grain_lines=0.5, worn=0.02)
+    vgrad(img, 1.12, 0.8)
+    if front:
+        cx = w // 2
+        img[2:-2, cx] = img[2:-2, cx] * 0.45 + SEAM * 0.55
+        img[2:-2, cx + 1] *= 1.1
+    specks(img, rng, 0.09, inset=1)
+    bevel(img, rng, top=JOINT_BEVEL * 1.2, side=JOINT_BEVEL * 1.05, low=JOINT_BEVEL * 0.8,
+          corner=BEVEL_TOP, inner=0.84)
+    img[-2:, :] = img[-2:, :] * 0.5 + FANG_TIP * 0.35 + SOCKET * 0.15   # reddish fang groove
+    return img
+
+
+def p_band(w, h, rng, top=False):
+    """Abdomen segment ring: a raised plate rim, lighter (folium tone) upper edge."""
+    if top:
+        img = abd_base(w, h, rng)
+        img = img * 0.55 + FOLIUM * 0.45
+        img[-1, :] *= 0.75
+        img[0, :] = img[0, :] * 0.6 + BEVEL_TOP * 0.4
+        for x in range(2, w - 1, 5):
+            img[:, x] *= 0.82
+        return img
+    img = abd_base(w, h, rng)
+    v = np.linspace(0, 1, h)[:, None, None]
+    img = img * (1 - 0.35 * v) + UNDER_D * 0.35 * v
+    img[:, 0] = img[:, 0] * 0.5 + FOLIUM * 0.5
+    img[:, -1] *= 0.75
+    vgrad(img, 1.12, 0.92)
+    specks(img, rng, 0.04, inset=1)
+    return img
+
+
+def p_spin(w, h, rng, vertical=False):
+    img = lerp(JOINT_D, JOINT_M * 1.1, rng.random((h, w)) * 0.6)
+    if vertical:
+        for yy in range(1, h, 2):
+            img[yy, :] *= 0.8
+    else:
+        for xx in range(1, w, 2):
+            img[:, xx] *= 0.8
+    img[0, :] = JOINT_BEVEL
+    return img
+
+
+def p_spin_end(w, h, rng):
+    img = lerp(SOCKET, JOINT_M, rng.random((h, w)) * 0.5)
+    img[0, :] = JOINT_BEVEL * 0.9
+    return img
+
+
+def p_jaw(w, h, rng):
+    img = wood(w, h, rng, JOINT_D, JOINT_M, grain_lines=0.3, worn=0.0)
+    vgrad(img, 1.1, 0.85)
+    img[1:-1, w // 2] = img[1:-1, w // 2] * 0.5 + SEAM * 0.5
+    bevel(img, rng, top=JOINT_BEVEL * 1.15, side=JOINT_BEVEL, low=JOINT_BEVEL * 0.9,
+          inner=0.85 if h >= 5 else 0)
+    return img
+
+
+def p_fang(w, h, rng):
+    t = np.linspace(0, 1, h)[:, None] * np.ones((1, w))
+    img = lerp(FANG0, FANG_TIP * 0.85, np.clip(t * 0.7 + 0.12 * rng.random((h, w)), 0, 1))
+    img[:, 0] = lerp(JOINT_BEVEL, FANG_TIP, t[:, 0] * 0.6)
+    img[:, -1] *= 0.75
+    img[0, :] = JOINT_BEVEL
+    for yy in range(3, h - 2, 3):                        # ribbing
+        img[yy, 1:-1] *= 0.8
+    return img
+
+
+def p_fang_end(w, h, rng):
+    img = lerp(FANG0, JOINT_M, rng.random((h, w)))
+    bevel(img, rng, top=JOINT_BEVEL, side=JOINT_BEVEL, low=JOINT_BEVEL * 0.9, inner=0)
+    return img
+
+
+def p_fangtip(w, h, rng):
+    t = np.linspace(0, 1, h)[:, None] * np.ones((1, w))
+    img = lerp(FANG_TIP, SOCKET, np.clip(t * 0.95 + 0.1 * rng.random((h, w)), 0, 1))
+    img[:, 0] = img[:, 0] * 0.5 + hexc("#b0584a") * 0.5 * (1 - t[:, 0])[:, None]
+    return img
+
+
+def p_fangtip_end(w, h, rng):
+    return lerp(SOCKET, FANG_TIP * 0.7, rng.random((h, w)) * 0.6)
+
+
+def abd_base(w, h, rng, lighten=0.0):
+    t = (0.40 * rng.random((h, w))
+         + 0.35 * smooth1d(rng, w, 3.5)[None, :] * smooth1d(rng, h, 3.5)[:, None]
+         + 0.25 * smooth1d(rng, h, 6)[:, None])
+    img = lerp(ABD_D, ABD_L, np.clip(t * 1.1, 0, 1))
+    if lighten:
+        img = img * (1 - lighten) + UNDER_L * lighten
+    return img
+
+
+def p_abd_side(w, h, rng, belly=False):
+    # U = horizontal, V = downward. Segment plates (horizontal lines curving slightly),
+    # pale lateral dashes, top-lit gradient, lighter toward the belly.
+    img = abd_base(w, h, rng)
+    v = np.linspace(0, 1, h)[:, None, None]
+    lift = 0.25 + 0.55 * v if belly else 0.45 * v ** 2
+    img = img * (1 - lift) + UNDER_D * lift
+    step = 4 if belly else 5
+    for yy in range(step, h - 1, step):
+        bend = np.round(0.8 * np.sin(np.linspace(0, np.pi, w))).astype(int)
+        ys = np.clip(yy - bend, 1, h - 2)
+        xs = np.arange(w)
+        img[ys, xs] = img[ys, xs] * 0.35 + SEAM * 0.65
+        img[np.clip(ys + 1, 1, h - 2), xs] *= 1.12
+    # pale lateral dashes (folium edge) on the upper band
+    if not belly and h >= 12:
+        for x in range(3, w - 3, 6):
+            y = 3 + (x // 6) % 2
+            img[y, x:x + 3] = img[y, x:x + 3] * 0.4 + FOLIUM * 0.6
+    vgrad(img, 1.08, 0.9)
+    specks(img, rng, 0.035)
+    bevel(img, rng, top=CHIT_BEVEL * 1.08, side=CHIT_BEVEL, low=CHIT_BEVEL * 0.92, corner=BEVEL_TOP,
+          inner=0.85)
+    return img
+
+
+def p_abd_top(w, h, rng, small=False):
+    # U = width (X), V = length (Z). Folium: pale chevrons pointing forward + dark heart mark.
+    img = abd_base(w, h, rng)
+    cx = (w - 1) / 2
+    yy, xx = np.mgrid[0:h, 0:w]
+    dist = np.abs(xx - cx)
+    step = 4 if small else 6
+    for k in range(2, h + 4, step):
+        chev = (np.abs((yy - k) + dist * 0.55) < 0.75) & (dist > 1.2) & (dist < cx - 1.5)
+        img[chev] = img[chev] * 0.35 + FOLIUM * 0.65
+        below = (np.abs((yy - k - 1) + dist * 0.55) < 0.6) & (dist > 1.2) & (dist < cx - 1.5)
+        img[below & ~chev] *= 0.82
+    heart = (dist < 2.0) & (yy > 1) & (yy < h * (0.55 if not small else 0.9))
+    img[heart] = img[heart] * 0.5 + SEAM * 0.5
+    img[(np.abs(dist - 2.5) < 0.5) & heart.any()] *= 1.0
+    # dome shading: lighter crown, darker flanks
+    img *= (1.1 - 0.22 * (dist / max(cx, 1)) ** 2)[..., None]
+    specks(img, rng, 0.03)
+    bevel(img, rng, top=CHIT_BEVEL * 1.08, side=CHIT_BEVEL, low=CHIT_BEVEL, corner=BEVEL_TOP,
+          inner=0.85)
+    return img
+
+
+def p_abd_under(w, h, rng):
+    img = lerp(UNDER_D * 0.95, UNDER_L, 0.55 * rng.random((h, w)) + 0.45 * smooth1d(rng, w, 4)[None, :])
+    for yy in range(3, h - 1, 4):
+        img[yy, 1:-1] = img[yy, 1:-1] * 0.4 + SEAM * 0.6
+        img[yy + 1, 1:-1] *= 1.1
+    cx = w // 2
+    img[1:-1, cx - 1:cx + 1] *= 0.85                  # epigastric furrow / midline
+    specks(img, rng, 0.03)
+    bevel(img, rng, top=CHIT_BEVEL * 1.05, side=CHIT_BEVEL, low=CHIT_BEVEL, inner=0.86)
+    return img
+
+
+def p_abd_plate(w, h, rng):
+    img = p_abd_top(w, h, rng)
+    img[2, 2:-2] *= 1.12
+    img[2:-2, 2] *= 1.08
+    img[-3, 2:-2] *= 0.85
+    img[2:-2, -3] *= 0.88
+    bevel(img, rng, top=BEVEL_TOP, side=BEVEL, low=BEVEL_LOW, corner=BEVEL_HI, inner=0.8)
+    return img
+
+
+def p_eye_bump(w, h, rng):
+    """Whole lens glows (alpha 3): deep red with a bright glint and a dark lower rim."""
+    img = np.empty((h, w, 3))
+    img[:] = EYE
+    img[-1, :] = EYE_DARK * 1.2
+    img[:, -1] = img[:, -1] * 0.6 + EYE_DARK * 0.4
+    img[0, 0] = EYE_HI
+    img[1, 1] = EYE_HI * 0.85 + EYE * 0.15
+    img[0, 1] = EYE_HI * 0.6 + EYE * 0.4
+    return img, np.full((h, w), EYE_ALPHA, np.uint8)
+
+
+def p_bump_side(w, h, rng):
+    img = lerp(SOCKET, JOINT_D, rng.random((h, w)) * 0.5)
+    img[0, :] = JOINT_BEVEL * 0.8
+    return img
+
+
+def p_coxa(w, h, rng):
+    """Coxa collar where the leg leaves the body: dark joint chitin, a raised light rim at the
+    distal end (high U) and deep occlusion toward the body."""
+    img = wood(w, h, rng, JOINT_D, JOINT_M * 1.12, grain_lines=0.4, worn=0.02)
+    rows = [h // 2]
+    seams(img, rows, rng)
+    vgrad(img, 1.08, 0.9)
+    specks(img, rng, 0.03)
+    ao_end(img, 6, 0.45, at_high_u=False)
+    collar(img, w - 4, w - 1, rng, color=COLLAR, mix=0.55)
+    bevel(img, rng, top=JOINT_BEVEL * 1.18, side=JOINT_BEVEL * 1.1, low=JOINT_BEVEL,
+          corner=BEVEL_TOP, inner=0.82)
+    return img
+
+
+def p_palp(w, h, rng, vertical=False):
+    """Pedipalp segment: dark hairy chitin with a light joint ring at both ends."""
+    L, C = (h, w) if vertical else (w, h)
+    img = wood(L, C, rng, JOINT_D * 1.05, JOINT_M * 1.18, grain_lines=0.4, worn=0.02)
+    specks(img, rng, 0.06, inset=1)
+    img[:, 0] = img[:, 0] * 0.4 + COLLAR * 0.6
+    img[:, -1] = img[:, -1] * 0.4 + COLLAR * 0.6
+    img[0, :] = img[0, :] * 0.6 + JOINT_BEVEL * 0.4
+    if vertical:
+        img = img.transpose(1, 0, 2)
+    return img
+
+
+def p_palp_end(w, h, rng):
+    img = end_grain(w, h, rng, JOINT_M, CAP_D)
+    img[0, :] = JOINT_BEVEL
+    return img
+
+
+def p_chel(w, h, rng, front=True):
+    """Chelicera: big hanging basal segment, dark and bristly, lighter toward the top bevel,
+    vertical groove on the front, darker toward the fang end (bottom)."""
+    img = wood(w, h, rng, JOINT_D * 0.95, JOINT_M * 1.15, along_u=False, grain_lines=0.5, worn=0.02)
+    vgrad(img, 1.12, 0.8)
+    if front:
+        cx = w // 2
+        img[2:-2, cx] = img[2:-2, cx] * 0.45 + SEAM * 0.55
+        img[2:-2, cx + 1] *= 1.1
+    specks(img, rng, 0.09, inset=1)
+    bevel(img, rng, top=JOINT_BEVEL * 1.2, side=JOINT_BEVEL * 1.05, low=JOINT_BEVEL * 0.8,
+          corner=BEVEL_TOP, inner=0.84)
+    img[-2:, :] = img[-2:, :] * 0.5 + FANG_TIP * 0.35 + SOCKET * 0.15   # reddish fang groove
+    return img
+
+
+def p_spin(w, h, rng, vertical=False):
+    img = lerp(JOINT_D, JOINT_M * 1.1, rng.random((h, w)) * 0.6)
+    if vertical:
+        for yy in range(1, h, 2):
+            img[yy, :] *= 0.8
+    else:
+        for xx in range(1, w, 2):
+            img[:, xx] *= 0.8
+    img[0, :] = JOINT_BEVEL
+    return img
+
+
+def p_spin_end(w, h, rng):
+    img = lerp(SOCKET, JOINT_M, rng.random((h, w)) * 0.5)
+    img[0, :] = JOINT_BEVEL * 0.9
+    return img
 
 
 def p_jaw(w, h, rng):
@@ -876,6 +1235,18 @@ PAINTERS = {
     "abd_top_small": lambda w, h, r: p_abd_top(w, h, r, small=True),
     "abd_under": p_abd_under,
     "abd_plate": p_abd_plate,
+    "coxa": p_coxa,
+    "mound_front": p_mound_front,
+    "eye_bump": p_eye_bump,
+    "bump_side": p_bump_side,
+    "palp": p_palp,
+    "palp_v": lambda w, h, r: p_palp(w, h, r, vertical=True),
+    "palp_end": p_palp_end,
+    "chel_front": p_chel,
+    "chel_side": lambda w, h, r: p_chel(w, h, r, front=False),
+    "spin": p_spin,
+    "spin_v": lambda w, h, r: p_spin(w, h, r, vertical=True),
+    "spin_end": p_spin_end,
 }
 
 
@@ -933,12 +1304,13 @@ def build():
 
 def eye_texels(lay):
     """Atlas coordinates of every eye texel (for verification)."""
-    u, v, _w, _h = lay["head_front"]
     out = []
-    for x, y, ew, eh, _k in EYES:
-        for yy in range(y, y + eh):
-            for xx in range(x, x + ew):
-                out.append((u + xx, v + yy))
+    for region, eyes in EYE_REGIONS.items():
+        u, v, _w, _h = lay[region]
+        for x, y, ew, eh, _k in eyes:
+            for yy in range(y, y + eh):
+                for xx in range(x, x + ew):
+                    out.append((u + xx, v + yy))
     return out
 
 
