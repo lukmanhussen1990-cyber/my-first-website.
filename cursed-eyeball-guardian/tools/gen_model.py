@@ -157,14 +157,14 @@ SPIKE_KINDS = {
 
 def spike_list():
     main = []
-    for i in range(8):  # ring around the eye edge, alternating long/short
-        main.append((i * 45.0, -12.0 if i % 2 == 0 else -30.0, "long" if i % 2 == 0 else "short"))
-    for i in range(6):  # backward diagonal ring
-        main.append((30.0 + i * 60.0, -60.0, "back"))
+    for i in range(12):  # ring around the eye edge, alternating long/short
+        main.append((i * 30.0, -12.0 if i % 2 == 0 else -30.0, "long" if i % 2 == 0 else "short"))
+    for i in range(5):  # backward diagonal ring
+        main.append((36.0 + i * 72.0, -60.0, "back"))
     main.append((0.0, -90.0, "pole"))  # straight back (on the spin axis)
     extra = []
     for i in range(8):  # level >= 3: framing spikes between the ring spikes
-        extra.append((22.5 + i * 45.0, 14.0 if i % 2 == 0 else -40.0, "extra"))
+        extra.append((15.0 + i * 45.0, 16.0 if i % 2 == 0 else -42.0, "extra"))
     return main, extra
 
 
@@ -291,8 +291,8 @@ def sclera_layers(points, tx, ty, skin, face_normal=(0, 0, -1)):
     bay = BAYER4[ty % 4, tx % 4]
 
     # --- sclera tone ramp (5-step pixel-art palette, pinkish shadows)
-    ramp = [col(0.99, 0.97, 0.95), col(0.94, 0.92, 0.89), col(0.87, 0.83, 0.81),
-            col(0.78, 0.71, 0.70), col(0.64, 0.55, 0.56)]
+    ramp = [col(1.00, 0.97, 0.95), col(0.95, 0.91, 0.89), col(0.88, 0.82, 0.81),
+            col(0.79, 0.70, 0.70), col(0.65, 0.53, 0.55)]
     shade = 0.25 + 0.55 * np.clip((phi - 40) / 100, 0, 1) - 0.12 * d[:, 1] + 0.18 * (noise - 0.5)
     shade += 0.18 * np.clip((40 - phi) / 6, 0, 1)             # occlusion ring under the iris lip
     turn = 1.0 - np.clip(d @ np.asarray(face_normal, dtype=np.float64), 0, 1)
@@ -501,11 +501,13 @@ def pupil_front_painter(lx, ly, tx, ty, skin):
     outside = r > 2.05
     ic = iris_colors(x, y, tx, ty, skin)
     c[outside] = ic[outside]
-    hl = (np.abs(x + 0.75) < 0.25) & (np.abs(y - 0.75) < 0.25)  # one texel
-    c[hl] = col(0.62, 0.58, 0.60)
+    hl = (np.abs(x + 0.75) < 0.5) & (np.abs(y - 0.75) < 0.5)   # 2x2 texel highlight
+    c[hl] = col(0.86, 0.82, 0.82)
+    hl2 = (np.abs(x - 0.75) < 0.25) & (np.abs(y + 0.75) < 0.25)  # faint second glint
+    c[hl2] = col(0.30, 0.20, 0.22)
     one = np.ones(x.shape + (1,), dtype=np.float32)
     b = np.concatenate([c, one], -1)
-    ga = np.where(outside, 1.0, np.where(hl, 0.6, 0.0))[..., None].astype(np.float32)
+    ga = np.where(outside, 1.0, np.where(hl, 0.7, 0.0))[..., None].astype(np.float32)
     g = np.concatenate([c, ga], -1)
     rc = iris_colors(x, y, tx, ty, skin, rage_mode=True)
     rr = np.where(outside[..., None], rc, c)

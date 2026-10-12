@@ -138,60 +138,81 @@
       "math.cos(variable.t * 105.0 + 174.0) * 3.6"
      ]
     },
+    "spike_15_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 345.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 315.0) * 3.6"
+     ]
+    },
+    "spike_16_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 32.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 96.0) * 3.6"
+     ]
+    },
+    "spike_17_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 79.0) * (6.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 237.0) * 3.6"
+     ]
+    },
     "spike_x00_t": {
-     "rotation": [
-      "math.sin(variable.t * 140.0 + 345.0) * (4.0 + 5.0 * variable.rage_blend)",
-      0.0,
-      "math.cos(variable.t * 105.0 + 315.0) * 2.4"
-     ]
-    },
-    "spike_x01_t": {
-     "rotation": [
-      "math.sin(variable.t * 140.0 + 32.0) * (4.0 + 5.0 * variable.rage_blend)",
-      0.0,
-      "math.cos(variable.t * 105.0 + 96.0) * 2.4"
-     ]
-    },
-    "spike_x02_t": {
-     "rotation": [
-      "math.sin(variable.t * 140.0 + 79.0) * (4.0 + 5.0 * variable.rage_blend)",
-      0.0,
-      "math.cos(variable.t * 105.0 + 237.0) * 2.4"
-     ]
-    },
-    "spike_x03_t": {
      "rotation": [
       "math.sin(variable.t * 140.0 + 126.0) * (4.0 + 5.0 * variable.rage_blend)",
       0.0,
       "math.cos(variable.t * 105.0 + 18.0) * 2.4"
      ]
     },
-    "spike_x04_t": {
+    "spike_x01_t": {
      "rotation": [
       "math.sin(variable.t * 140.0 + 173.0) * (4.0 + 5.0 * variable.rage_blend)",
       0.0,
       "math.cos(variable.t * 105.0 + 159.0) * 2.4"
      ]
     },
-    "spike_x05_t": {
+    "spike_x02_t": {
      "rotation": [
       "math.sin(variable.t * 140.0 + 220.0) * (4.0 + 5.0 * variable.rage_blend)",
       0.0,
       "math.cos(variable.t * 105.0 + 300.0) * 2.4"
      ]
     },
-    "spike_x06_t": {
+    "spike_x03_t": {
      "rotation": [
       "math.sin(variable.t * 140.0 + 267.0) * (4.0 + 5.0 * variable.rage_blend)",
       0.0,
       "math.cos(variable.t * 105.0 + 81.0) * 2.4"
      ]
     },
-    "spike_x07_t": {
+    "spike_x04_t": {
      "rotation": [
       "math.sin(variable.t * 140.0 + 314.0) * (4.0 + 5.0 * variable.rage_blend)",
       0.0,
       "math.cos(variable.t * 105.0 + 222.0) * 2.4"
+     ]
+    },
+    "spike_x05_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 1.0) * (4.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 3.0) * 2.4"
+     ]
+    },
+    "spike_x06_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 48.0) * (4.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 144.0) * 2.4"
+     ]
+    },
+    "spike_x07_t": {
+     "rotation": [
+      "math.sin(variable.t * 140.0 + 95.0) * (4.0 + 5.0 * variable.rage_blend)",
+      0.0,
+      "math.cos(variable.t * 105.0 + 285.0) * 2.4"
      ]
     }
    }

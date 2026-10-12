@@ -90,11 +90,15 @@ def skins_sheet(geo):
 
 
 def hero(geo, name, skin, rage, level, yaw=-35, pitch=12):
-    S = 640
+    """Two panels: daylight (light 1.0) and dark night (light 0.35)."""
+    S = 512
     cam = br.Camera(target=(0, 8, 0), yaw=yaw, pitch=pitch, dist=110, fov=22)
-    img = render_eye(geo, skin, rage, cam, S, level=level, bg=night_bg(S, S, 3), ss=2)
-    label(img, "%s%s | level %d | approx. in-game night lighting" % (skin, " RAGE" if rage else "", level))
-    img.convert("RGB").save(os.path.join(OUT, name))
+    out = Image.new("RGB", (S * 2, S))
+    for i, (lt, what) in enumerate(((1.0, "daylight"), (0.35, "dark night"))):
+        img = render_eye(geo, skin, rage, cam, S, level=level, light=lt, bg=night_bg(S, S, 3), ss=2)
+        label(img, "%s%s | level %d | %s (approx. in-game)" % (skin, " RAGE" if rage else "", level, what))
+        out.paste(img.convert("RGB"), (i * S, 0))
+    out.save(os.path.join(OUT, name))
 
 
 def levels_sheet(geo):

@@ -362,14 +362,16 @@ def splat(dur: float, rng: np.random.Generator, cut: float = 700.0, tau: float =
 
 
 def thump(f0: float, f1: float, dur: float, rng: np.random.Generator, tau: float = 0.11,
-          body: float = 0.4) -> np.ndarray:
-    """Heartbeat / boom thump: fast pitch-drop sine, saturated so phones still hear it."""
+          body: float = 0.4, knock: float = 0.35) -> np.ndarray:
+    """Heartbeat / boom thump: fast pitch-drop sine, saturated (odd harmonics) plus a short
+    mid-range knock so it still reads on a phone speaker."""
     t = timeline(dur)
     freq = f1 + (f0 - f1) * np.exp(-t / 0.045)
-    s = np.tanh(2.4 * np.sin(phase_of(freq)) * env_ar(dur, 0.004, tau))
+    s = np.tanh(3.2 * np.sin(phase_of(freq)) * env_ar(dur, 0.004, tau))
     b = np.sin(phase_of(freq * 2.03)) * env_ar(dur, 0.003, tau * 0.45) * body
     thud = lowpass(noise(dur, rng), 320.0, 2) * env_ar(dur, 0.002, 0.035)
-    return s + b + 0.5 * peak_norm(thud)
+    kn = bandpass(noise(dur, rng), 260.0, 1500.0) * env_ar(dur, 0.0015, 0.022)
+    return s + b + 0.5 * peak_norm(thud) + knock * peak_norm(kn)
 
 
 VOWELS = {  # F1, F2, F3 (Hz)
@@ -415,7 +417,7 @@ def whisper(dur: float, rng: np.random.Generator, rate: float = 7.0,
             fscale: float = 1.0) -> np.ndarray:
     """Unintelligible whispering: aspirated noise through vowel formants + fricatives."""
     syl = []
-    t = rng.uniform(0.0, 0.06)
+    t = rng.uniform(0.04, 0.1)
     cons_names = ["s", "sh", "f", "h", "k", "-"]
     while t < dur - 0.18:
         cons = cons_names[rng.choice(len(cons_names), p=[0.22, 0.2, 0.1, 0.22, 0.1, 0.16])]
@@ -452,15 +454,17 @@ def whisper(dur: float, rng: np.random.Generator, rate: float = 7.0,
             fw = np.interp(tt, fct, fwid)[:, None]
             gain += 0.55 * fenv[:, None] * np.exp(-0.5 * (np.log2(np.maximum(f, 20.0) / fc) / fw) ** 2)
         return gain
-    return peak_norm(stft_filter(noise(dur, rng), g, nfft=1024, hop=256))
+    y = stft_filter(noise(dur, rng), g, nfft=1024, hop=256)
+    y *= pts(dur, [(0, 0), (0.03, 1), (dur - 0.05, 1), (dur, 0)])
+    return peak_norm(limit(y, 4.0))
 
 
-def drone_src(dur: float, rng: np.random.Generator, base: float) -> np.ndarray:
+def drone_src(dur: float, rng: np.random.Generator, base: float, sub: float = 0.5) -> np.ndarray:
     """Detuned saw cluster: unison pair (slow beating), flat fifth, tritone, minor ninth."""
     n = n_of(dur)
     out = np.zeros(n)
     for ratio, a in ((1.0, 1.0), (1.0068, 0.85), (1.4983, 0.42), (2 ** (6 / 12), 0.22),
-                     (2 * 2 ** (1 / 12), 0.15), (0.5, 0.5)):
+                     (2 * 2 ** (1 / 12), 0.15), (0.5, sub)):
         f = base * ratio * (1.0 + 0.0025 * wobble(n, 0.4, rng))
         out += a * saw(f, kmax=48)
     return peak_norm(out)
@@ -478,10 +482,45 @@ def bell(f0: float, dur: float, partials, attack: float = 0.002, detune: float =
     return out * env_ar(dur, attack, 1e9)
 
 
+def limit(x: np.ndarray, reduction_db: float, block: float = 0.0025,
+          release: float = 0.08) -> np.ndarray:
+    """Look-ahead block peak limiter: pulls peaks down by `reduction_db` so the body of the
+    sound comes up after normalisation (instant attack, smooth exponential release)."""
+    if reduction_db <= 0.0:
+        return x
+    n = len(x)
+    thr = float(np.max(np.abs(x))) * 10 ** (-reduction_db / 20.0)
+    bs = max(1, n_of(block))
+    nb = -(-n // bs)
+    padded = np.zeros(nb * bs)
+    padded[:n] = np.abs(x)
+    g = np.minimum(1.0, thr / np.maximum(padded.reshape(nb, bs).max(axis=1), 1e-12))
+    prev = np.concatenate([[1.0], g[:-1]])
+    nxt = np.concatenate([g[1:], [1.0]])
+    g = np.minimum(g, np.minimum(prev, nxt))       # neighbours: interpolation never overshoots
+    a = float(np.exp(-bs / (release * SR)))
+    sm = g.copy()
+    for i in range(1, nb):
+        sm[i] = min(g[i], sm[i - 1] * a + (1.0 - a) * g[i])
+    centres = (np.arange(nb) + 0.5) * bs
+    return x * np.interp(np.arange(n), centres, sm)
+
+
+def low_shelf(x: np.ndarray, gain_db: float, fc: float = 130.0) -> np.ndarray:
+    """Gentle low shelf (negative gain = less sub, so phone speakers get more mid-range)."""
+    if gain_db == 0.0:
+        return x
+    g = 10 ** (gain_db / 20.0)
+    return spectral(x, lambda f: g + (1.0 - g) * g_hp(f, fc, 2))
+
+
 def finish(x: np.ndarray, fade_in: float = 0.004, fade_out: float = 0.05,
-           hp: float = 30.0) -> np.ndarray:
-    """DC/sub high-pass, click-free raised-cosine fades, peak-normalise to PEAK_DBFS."""
+           hp: float = 45.0, shelf_db: float = 0.0, limit_db: float = 0.0) -> np.ndarray:
+    """Sub high-pass (+ optional low shelf), optional peak limiting, click-free raised-cosine
+    fades, peak-normalise to PEAK_DBFS."""
     x = highpass(x, hp, 2)
+    x = low_shelf(x, shelf_db)
+    x = limit(x, limit_db)
     n = len(x)
     fi, fo = max(n_of(fade_in), 1), max(n_of(fade_out), 1)
     x[:fi] *= 0.5 - 0.5 * np.cos(np.pi * np.arange(fi) / fi)
