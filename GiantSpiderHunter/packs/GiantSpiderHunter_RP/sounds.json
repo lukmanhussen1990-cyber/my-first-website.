@@ -1,0 +1,56 @@
+{
+  "entity_sounds": {
+    "entities": {
+      "horror:giant_spider": {
+        "volume": 1.0,
+        "pitch": [
+          0.95,
+          1.05
+        ],
+        "events": {
+          "ambient": {
+            "sound": "mob.giant_spider.ambient",
+            "volume": 0.8,
+            "pitch": [
+              0.85,
+              1.1
+            ]
+          },
+          "hurt": {
+            "sound": "mob.giant_spider.hurt",
+            "volume": 1.0,
+            "pitch": [
+              0.85,
+              1.15
+            ]
+          },
+          "hurt.in.water": {
+            "sound": "mob.giant_spider.hurt",
+            "volume": 0.8,
+            "pitch": [
+              0.75,
+              0.95
+            ]
+          },
+          "death": {
+            "sound": "mob.giant_spider.death",
+            "volume": 1.0,
+            "pitch": [
+              0.92,
+              1.05
+            ]
+          },
+          "death.in.water": {
+            "sound": "mob.giant_spider.death",
+            "volume": 0.8,
+            "pitch": [
+              0.8,
+              0.95
+            ]
+          },
+          "step": ""
+        }
+      }
+    }
+  }
+}

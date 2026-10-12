@@ -1,0 +1,99 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "horror:giant_spider",
+      "materials": {
+        "default": "spider",
+        "invisible": "spider_invisible"
+      },
+      "textures": {
+        "default": "textures/entity/giant_spider/giant_spider"
+      },
+      "geometry": {
+        "default": "geometry.horror.giant_spider"
+      },
+      "render_controllers": [
+        "controller.render.horror.giant_spider"
+      ],
+      "scripts": {
+        "initialize": [
+          "v.size_blend = q.property('horror:giant') ? 1 : 0;",
+          "v.seen_attack = q.property('horror:attack_id');",
+          "v.gait = 0.25;",
+          "v.stride = 110;",
+          "v.move = 0;",
+          "v.run = 0;"
+        ],
+        "pre_animation": [
+          "v.dt = math.clamp(q.delta_time, 0, 0.25);v.age = (v.age ?? 0) + v.dt;v.dying = q.property('horror:state') == 'dying' || !q.is_alive;v.hunting = q.property('horror:state') == 'hunting';t.target = q.property('horror:giant') ? 1 : 0;t.sb = v.size_blend ?? t.target;t.rate = v.dt / math.max(q.property('horror:grow_time'), 0.5);v.size_blend = v.age < 0.3 ? t.target : (t.target > t.sb ? math.min(t.target, t.sb + t.rate) : math.max(t.target, t.sb - t.rate));v.ease = math.hermite_blend(v.size_blend);v.scale = math.lerp(q.property('horror:small_scale'), q.property('horror:giant_scale'), v.ease);v.wpp = math.max(v.scale, 0.001) / 16;v.tw = math.clamp((v.size_blend - 0.5) * 4, 0, 1);v.grow_flex = math.sin(v.size_blend * 180);v.seen_attack = v.age < 0.3 ? q.property('horror:attack_id') : (v.seen_attack ?? q.property('horror:attack_id'));",
+          "t.x = q.position(0);t.z = q.position(2);t.dx = t.x - (v.px ?? t.x);t.dz = t.z - (v.pz ?? t.z);v.px = t.x;v.pz = t.z;t.dd = math.sqrt(t.dx * t.dx + t.dz * t.dz);t.yaw = q.body_y_rotation;t.turn = math.min(math.abs(math.min_angle(t.yaw - (v.pyaw ?? t.yaw))), 120 * v.dt);v.pyaw = t.yaw;v.dpend = (v.dpend ?? 0) + (t.dd < 6 ? t.dd : 0) + t.turn * 1.5708 * v.wpp;t.use = v.dpend * math.min(1, v.dt * 12);v.dpend = v.dpend - t.use;v.spd = v.dt > 0 ? t.use / v.dt : (v.spd ?? 0);t.mt = math.clamp((v.spd - 0.03) / (0.1 + 0.5 * v.scale), 0, 1);v.move = math.lerp(v.move ?? 0, t.mt, math.min(1, v.dt * 5));t.rt = v.hunting * math.clamp((v.spd - 3) / 2.5, 0, 1);v.run = math.lerp(v.run ?? 0, t.rt, math.min(1, v.dt * 1.5));t.so = v.stride ?? 110;v.stride = 110 + 40 * v.run;v.lift = (45 + 25 * v.run) * v.move;t.pa = math.mod(v.gait ?? 0.25, 1);t.sa = t.pa < 0.5 ? t.pa * 2 : t.pa * 2 - 1;v.gait = math.mod(t.pa + (0.5 - t.sa) * (1 - t.so / v.stride) * 0.5 + math.min(t.use / (2 * v.stride * v.wpp), 0.2) + 1, 1);v.half = math.mod(v.gait + 0.97, 1) < 0.5 ? 0 : 1;",
+          "v.stalk = math.lerp(v.stalk ?? 0, q.property('horror:state') == 'stalking', math.min(1, v.dt * 2));v.grow_w = math.lerp(v.grow_w ?? 0, q.property('horror:state') == 'growing', math.min(1, v.dt * 3));v.dead = v.dying ? math.min(1, (v.dead ?? 0) + v.dt / 1.6) : math.max(0, (v.dead ?? 0) - v.dt);v.dead_e = math.hermite_blend(v.dead);v.reach = (1 - 0.2 * v.dead_e) * (1 + 0.1 * v.grow_w * v.grow_flex);v.gtrem = 26 * v.grow_w * v.grow_flex;t.k = math.min(1, v.dt * 3);v.fh_l1 = math.lerp(v.fh_l1 ?? 0, q.property('horror:foot_0'), t.k);v.fh_l2 = math.lerp(v.fh_l2 ?? 0, q.property('horror:foot_1'), t.k);v.fh_l3 = math.lerp(v.fh_l3 ?? 0, q.property('horror:foot_2'), t.k);v.fh_l4 = math.lerp(v.fh_l4 ?? 0, q.property('horror:foot_3'), t.k);v.fh_r1 = math.lerp(v.fh_r1 ?? 0, q.property('horror:foot_4'), t.k);v.fh_r2 = math.lerp(v.fh_r2 ?? 0, q.property('horror:foot_5'), t.k);v.fh_r3 = math.lerp(v.fh_r3 ?? 0, q.property('horror:foot_6'), t.k);v.fh_r4 = math.lerp(v.fh_r4 ?? 0, q.property('horror:foot_7'), t.k);t.avg = (v.fh_l1 + v.fh_l2 + v.fh_l3 + v.fh_l4 + v.fh_r1 + v.fh_r2 + v.fh_r3 + v.fh_r4) / 8;v.bob_px = (-math.cos(math.mod(v.gait, 0.5) * 720 - 36) * (3 + 4 * v.run) - 10 * v.run) * v.move - 30 * v.stalk - 150 * v.dead_e + math.clamp(t.avg / v.wpp * 0.4, -64, 64) * v.tw;v.hipy = 206 + v.bob_px;",
+          "t.p = math.mod(v.gait + 0, 1);t.w = math.max(t.p * 2 - 1, 0);t.f = v.stride * (t.p < 0.5 ? 0.5 - t.p * 2 : math.hermite_blend(t.w) - 0.5);t.dx = 113.0354 * v.reach;t.dz = -144.6788 - t.f;t.au = math.sqrt(t.dx * t.dx + t.dz * t.dz) - 11.2272;t.av = math.clamp(v.fh_l1 / v.wpp, -220, 220) * v.tw + v.lift * math.sin(t.w * 180) + v.gtrem * math.max(0, math.sin(q.life_time * 260 + 0)) - v.hipy + 52.82;t.d = math.clamp(math.sqrt(t.au * t.au + t.av * t.av), 130.6, 452.6);t.a = math.atan2(t.av, t.au) + math.acos(math.clamp((t.d * t.d - 58786.56) / (324 * t.d), -1, 1));t.t = math.atan2(t.av - 162 * math.sin(t.a), t.au - 162 * math.cos(t.a));v.hip_l1 = math.atan2(-t.dz, t.dx);v.fem_l1 = -t.a;v.tib_l1 = t.a - t.t;v.ft_l1 = t.t + 78;",
+          "t.p = math.mod(v.gait + 0.52, 1);t.w = math.max(t.p * 2 - 1, 0);t.f = v.stride * (t.p < 0.5 ? 0.5 - t.p * 2 : math.hermite_blend(t.w) - 0.5);t.dx = 159.7477 * v.reach;t.dz = -58.1434 - t.f;t.au = math.sqrt(t.dx * t.dx + t.dz * t.dz) - 10.3956;t.av = math.clamp(v.fh_l2 / v.wpp, -220, 220) * v.tw + v.lift * math.sin(t.w * 180) + v.gtrem * math.max(0, math.sin(q.life_time * 260 + 90)) - v.hipy + 48.9074;t.d = math.clamp(math.sqrt(t.au * t.au + t.av * t.av), 121, 419);t.a = math.atan2(t.av, t.au) + math.acos(math.clamp((t.d * t.d - 50400) / (300 * t.d), -1, 1));t.t = math.atan2(t.av - 150 * math.sin(t.a), t.au - 150 * math.cos(t.a));v.hip_l2 = math.atan2(-t.dz, t.dx);v.fem_l2 = -t.a;v.tib_l2 = t.a - t.t;v.ft_l2 = t.t + 78;",
+          "t.p = math.mod(v.gait + 0.04, 1);t.w = math.max(t.p * 2 - 1, 0);t.f = v.stride * (t.p < 0.5 ? 0.5 - t.p * 2 : math.hermite_blend(t.w) - 0.5);t.dx = 156.8779 * v.reach;t.dz = 44.984 - t.f;t.au = math.sqrt(t.dx * t.dx + t.dz * t.dz) - 9.9798;t.av = math.clamp(v.fh_l3 / v.wpp, -220, 220) * v.tw + v.lift * math.sin(t.w * 180) + v.gtrem * math.max(0, math.sin(q.life_time * 260 + 180)) - v.hipy + 46.9511;t.d = math.clamp(math.sqrt(t.au * t.au + t.av * t.av), 116.2, 402.2);t.a = math.atan2(t.av, t.au) + math.acos(math.clamp((t.d * t.d - 46448.64) / (288 * t.d), -1, 1));t.t = math.atan2(t.av - 144 * math.sin(t.a), t.au - 144 * math.cos(t.a));v.hip_l3 = math.atan2(-t.dz, t.dx);v.fem_l3 = -t.a;v.tib_l3 = t.a - t.t;v.ft_l3 = t.t + 78;",
+          "t.p = math.mod(v.gait + 0.56, 1);t.w = math.max(t.p * 2 - 1, 0);t.f = v.stride * (t.p < 0.5 ? 0.5 - t.p * 2 : math.hermite_blend(t.w) - 0.5);t.dx = 118.3023 * v.reach;t.dz = 131.388 - t.f;t.au = math.sqrt(t.dx * t.dx + t.dz * t.dz) - 10.8114;t.av = math.clamp(v.fh_l4 / v.wpp, -220, 220) * v.tw + v.lift * math.sin(t.w * 180) + v.gtrem * math.max(0, math.sin(q.life_time * 260 + 270)) - v.hipy + 50.8637;t.d = math.clamp(math.sqrt(t.au * t.au + t.av * t.av), 125.8, 435.8);t.a = math.atan2(t.av, t.au) + math.acos(math.clamp((t.d * t.d - 54512.64) / (312 * t.d), -1, 1));t.t = math.atan2(t.av - 156 * math.sin(t.a), t.au - 156 * math.cos(t.a));v.hip_l4 = math.atan2(-t.dz, t.dx);v.fem_l4 = -t.a;v.tib_l4 = t.a - t.t;v.ft_l4 = t.t + 78;",
+          "t.p = math.mod(v.gait + 0.5, 1);t.w = math.max(t.p * 2 - 1, 0);t.f = v.stride * (t.p < 0.5 ? 0.5 - t.p * 2 : math.hermite_blend(t.w) - 0.5);t.dx = 113.0354 * v.reach;t.dz = -144.6788 - t.f;t.au = math.sqrt(t.dx * t.dx + t.dz * t.dz) - 11.2272;t.av = math.clamp(v.fh_r1 / v.wpp, -220, 220) * v.tw + v.lift * math.sin(t.w * 180) + v.gtrem * math.max(0, math.sin(q.life_time * 260 + 45)) - v.hipy + 52.82;t.d = math.clamp(math.sqrt(t.au * t.au + t.av * t.av), 130.6, 452.6);t.a = math.atan2(t.av, t.au) + math.acos(math.clamp((t.d * t.d - 58786.56) / (324 * t.d), -1, 1));t.t = math.atan2(t.av - 162 * math.sin(t.a), t.au - 162 * math.cos(t.a));v.hip_r1 = -math.atan2(-t.dz, t.dx);v.fem_r1 = t.a;v.tib_r1 = t.t - t.a;v.ft_r1 = -t.t - 78;",
+          "t.p = math.mod(v.gait + 0.02, 1);t.w = math.max(t.p * 2 - 1, 0);t.f = v.stride * (t.p < 0.5 ? 0.5 - t.p * 2 : math.hermite_blend(t.w) - 0.5);t.dx = 159.7477 * v.reach;t.dz = -58.1434 - t.f;t.au = math.sqrt(t.dx * t.dx + t.dz * t.dz) - 10.3956;t.av = math.clamp(v.fh_r2 / v.wpp, -220, 220) * v.tw + v.lift * math.sin(t.w * 180) + v.gtrem * math.max(0, math.sin(q.life_time * 260 + 135)) - v.hipy + 48.9074;t.d = math.clamp(math.sqrt(t.au * t.au + t.av * t.av), 121, 419);t.a = math.atan2(t.av, t.au) + math.acos(math.clamp((t.d * t.d - 50400) / (300 * t.d), -1, 1));t.t = math.atan2(t.av - 150 * math.sin(t.a), t.au - 150 * math.cos(t.a));v.hip_r2 = -math.atan2(-t.dz, t.dx);v.fem_r2 = t.a;v.tib_r2 = t.t - t.a;v.ft_r2 = -t.t - 78;",
+          "t.p = math.mod(v.gait + 0.54, 1);t.w = math.max(t.p * 2 - 1, 0);t.f = v.stride * (t.p < 0.5 ? 0.5 - t.p * 2 : math.hermite_blend(t.w) - 0.5);t.dx = 156.8779 * v.reach;t.dz = 44.984 - t.f;t.au = math.sqrt(t.dx * t.dx + t.dz * t.dz) - 9.9798;t.av = math.clamp(v.fh_r3 / v.wpp, -220, 220) * v.tw + v.lift * math.sin(t.w * 180) + v.gtrem * math.max(0, math.sin(q.life_time * 260 + 225)) - v.hipy + 46.9511;t.d = math.clamp(math.sqrt(t.au * t.au + t.av * t.av), 116.2, 402.2);t.a = math.atan2(t.av, t.au) + math.acos(math.clamp((t.d * t.d - 46448.64) / (288 * t.d), -1, 1));t.t = math.atan2(t.av - 144 * math.sin(t.a), t.au - 144 * math.cos(t.a));v.hip_r3 = -math.atan2(-t.dz, t.dx);v.fem_r3 = t.a;v.tib_r3 = t.t - t.a;v.ft_r3 = -t.t - 78;",
+          "t.p = math.mod(v.gait + 0.06, 1);t.w = math.max(t.p * 2 - 1, 0);t.f = v.stride * (t.p < 0.5 ? 0.5 - t.p * 2 : math.hermite_blend(t.w) - 0.5);t.dx = 118.3023 * v.reach;t.dz = 131.388 - t.f;t.au = math.sqrt(t.dx * t.dx + t.dz * t.dz) - 10.8114;t.av = math.clamp(v.fh_r4 / v.wpp, -220, 220) * v.tw + v.lift * math.sin(t.w * 180) + v.gtrem * math.max(0, math.sin(q.life_time * 260 + 315)) - v.hipy + 50.8637;t.d = math.clamp(math.sqrt(t.au * t.au + t.av * t.av), 125.8, 435.8);t.a = math.atan2(t.av, t.au) + math.acos(math.clamp((t.d * t.d - 54512.64) / (312 * t.d), -1, 1));t.t = math.atan2(t.av - 156 * math.sin(t.a), t.au - 156 * math.cos(t.a));v.hip_r4 = -math.atan2(-t.dz, t.dx);v.fem_r4 = t.a;v.tib_r4 = t.t - t.a;v.ft_r4 = -t.t - 78;"
+        ],
+        "animate": [
+          "size",
+          "legs",
+          {
+            "idle": "(1 - v.move) * (1 - v.dead_e)"
+          },
+          {
+            "walk": "v.move * (1 - v.run)"
+          },
+          {
+            "run": "v.move * v.run"
+          },
+          {
+            "stalk": "v.stalk * (1 - v.dead_e)"
+          },
+          {
+            "grow": "v.grow_w"
+          },
+          {
+            "look": "1 - v.dead_e"
+          },
+          "attack_controller",
+          "steps_controller",
+          "death_controller"
+        ],
+        "should_update_bones_and_effects_offscreen": "1.0",
+        "should_update_effects_offscreen": "1.0"
+      },
+      "animations": {
+        "size": "animation.horror.giant_spider.size",
+        "legs": "animation.horror.giant_spider.legs_ik",
+        "idle": "animation.horror.giant_spider.idle",
+        "stalk": "animation.horror.giant_spider.stalk",
+        "walk": "animation.horror.giant_spider.walk",
+        "run": "animation.horror.giant_spider.run",
+        "grow": "animation.horror.giant_spider.grow",
+        "attack_ground": "animation.horror.giant_spider.attack_ground",
+        "attack_high": "animation.horror.giant_spider.attack_high",
+        "bite": "animation.horror.giant_spider.bite",
+        "death": "animation.horror.giant_spider.death",
+        "look": "animation.horror.giant_spider.look_at_target",
+        "attack_controller": "controller.animation.horror.giant_spider.attack",
+        "steps_controller": "controller.animation.horror.giant_spider.steps",
+        "death_controller": "controller.animation.horror.giant_spider.death"
+      },
+      "sound_effects": {
+        "step_giant": "mob.giant_spider.step",
+        "step_small": "mob.giant_spider.step_small"
+      },
+      "particle_effects": {
+        "dust_plume": "minecraft:dust_plume"
+      },
+      "spawn_egg": {
+        "base_color": "#2a1f1a",
+        "overlay_color": "#8b1a10"
+      }
+    }
+  }
+}

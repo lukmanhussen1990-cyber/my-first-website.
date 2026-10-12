@@ -1,0 +1,211 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.horror.giant_spider.attack": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "transitions": [
+            {
+              "ground": "q.property('horror:attack_id') != v.seen_attack && !v.dying && q.property('horror:attack_kind') == 0"
+            },
+            {
+              "high": "q.property('horror:attack_id') != v.seen_attack && !v.dying && q.property('horror:attack_kind') == 1"
+            },
+            {
+              "bite": "q.property('horror:attack_id') != v.seen_attack && !v.dying && q.property('horror:attack_kind') == 2"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "ground": {
+          "animations": [
+            "attack_ground"
+          ],
+          "on_entry": [
+            "v.seen_attack = q.property('horror:attack_id');"
+          ],
+          "transitions": [
+            {
+              "default": "q.all_animations_finished || v.dying"
+            }
+          ],
+          "blend_transition": 0.15
+        },
+        "high": {
+          "animations": [
+            "attack_high"
+          ],
+          "on_entry": [
+            "v.seen_attack = q.property('horror:attack_id');"
+          ],
+          "transitions": [
+            {
+              "default": "q.all_animations_finished || v.dying"
+            }
+          ],
+          "blend_transition": 0.15
+        },
+        "bite": {
+          "animations": [
+            "bite"
+          ],
+          "on_entry": [
+            "v.seen_attack = q.property('horror:attack_id');"
+          ],
+          "transitions": [
+            {
+              "default": "q.all_animations_finished || v.dying"
+            }
+          ],
+          "blend_transition": 0.1
+        }
+      }
+    },
+    "controller.animation.horror.giant_spider.steps": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "transitions": [
+            {
+              "quiet_a": "v.half == 0"
+            },
+            {
+              "quiet_b": "v.half == 1"
+            }
+          ]
+        },
+        "quiet_a": {
+          "transitions": [
+            {
+              "plant_b_giant": "v.half == 1 && v.move > 0.3 && !v.dying && v.size_blend > 0.5"
+            },
+            {
+              "quiet_b": "v.half == 1"
+            }
+          ]
+        },
+        "quiet_b": {
+          "transitions": [
+            {
+              "plant_a_giant": "v.half == 0 && v.move > 0.3 && !v.dying && v.size_blend > 0.5"
+            },
+            {
+              "plant_a_small": "v.half == 0 && v.move > 0.3 && !v.dying"
+            },
+            {
+              "quiet_a": "v.half == 0"
+            }
+          ]
+        },
+        "plant_a_giant": {
+          "sound_effects": [
+            {
+              "effect": "step_giant"
+            }
+          ],
+          "particle_effects": [
+            {
+              "effect": "dust_plume",
+              "locator": "foot_tip_l1"
+            },
+            {
+              "effect": "dust_plume",
+              "locator": "foot_tip_l3"
+            },
+            {
+              "effect": "dust_plume",
+              "locator": "foot_tip_r2"
+            },
+            {
+              "effect": "dust_plume",
+              "locator": "foot_tip_r4"
+            }
+          ],
+          "transitions": [
+            {
+              "plant_b_giant": "v.half == 1 && v.move > 0.3 && !v.dying && v.size_blend > 0.5"
+            },
+            {
+              "quiet_b": "v.half == 1"
+            }
+          ]
+        },
+        "plant_b_giant": {
+          "sound_effects": [
+            {
+              "effect": "step_giant"
+            }
+          ],
+          "particle_effects": [
+            {
+              "effect": "dust_plume",
+              "locator": "foot_tip_l2"
+            },
+            {
+              "effect": "dust_plume",
+              "locator": "foot_tip_l4"
+            },
+            {
+              "effect": "dust_plume",
+              "locator": "foot_tip_r1"
+            },
+            {
+              "effect": "dust_plume",
+              "locator": "foot_tip_r3"
+            }
+          ],
+          "transitions": [
+            {
+              "plant_a_giant": "v.half == 0 && v.move > 0.3 && !v.dying && v.size_blend > 0.5"
+            },
+            {
+              "plant_a_small": "v.half == 0 && v.move > 0.3 && !v.dying"
+            },
+            {
+              "quiet_a": "v.half == 0"
+            }
+          ]
+        },
+        "plant_a_small": {
+          "sound_effects": [
+            {
+              "effect": "step_small"
+            }
+          ],
+          "transitions": [
+            {
+              "plant_b_giant": "v.half == 1 && v.move > 0.3 && !v.dying && v.size_blend > 0.5"
+            },
+            {
+              "quiet_b": "v.half == 1"
+            }
+          ]
+        }
+      }
+    },
+    "controller.animation.horror.giant_spider.death": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "transitions": [
+            {
+              "dead": "v.dying"
+            }
+          ]
+        },
+        "dead": {
+          "animations": [
+            "death"
+          ],
+          "blend_transition": 0.4,
+          "transitions": [
+            {
+              "default": "!v.dying"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

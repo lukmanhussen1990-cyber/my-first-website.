@@ -104,28 +104,34 @@ root            pivot [0,0,0]                      (uniform scale animation only
   │     └ foot_xn pivot at ankle     (about Z) + locator foot_tip_xn at tip
 ```
 
-Leg n = 1..4 front→back. Hip attach points: x = ±22, y = 206, z = [−26, −12, 2, 14].
-Per-pair length factor k = [1.08, 1.00, 0.96, 1.04]. Segment lengths (px):
-femur L1 = 150k, tibia L2 = 270k, foot L3 = 50k. Thickness: femur 22 (pair 1: 24), knee joint
-block ~26, tibia 14 tapering to 11, foot 9 → claw 6. Left legs extend toward +X, right legs
-mirror toward −X. Pivot of tibia = hip + (±L1,0,0); pivot of foot = hip + (±(L1+L2),0,0);
-locator `foot_tip_xn` at hip + (±(L1+L2+L3),0,0).
+Leg n = 1..4 front→back. **(v2 proportions — revised after comparing renders with the
+references: thicker legs, much wider arch, bigger body.)** Hip attach points: x = ±30, y = 206,
+z = [−30, −14, 2, 18]. Per-pair length factor k = [1.08, 1.00, 0.96, 1.04]. Segment lengths (px):
+femur L1 = 200k, tibia L2 = 290k, foot L3 = 50k. Thickness (px): femur 34 (pair 1: 36), chunky
+angular knee joint block ~44, tibia 20 tapering to 16, ankle block ~20, foot 12 → claw 8.
+Left legs extend toward +X, right legs mirror toward −X. Pivot of tibia = hip + (±L1,0,0); pivot
+of foot = hip + (±(L1+L2),0,0); locator `foot_tip_xn` at hip + (±(L1+L2+L3),0,0).
 
 Neutral foot placement (stance centre, on ground y=0): horizontal radius from hip
-R = 170k, angle from the lateral axis toward forward a = [52°, 20°, −16°, −48°].
-Left: (22 + R·cos a, 0, z_hip − R·sin a). Right: (−22 − R·cos a, 0, z_hip − R·sin a).
+R = 260k, angle from the lateral axis toward forward a = [52°, 20°, −16°, −48°].
+Left: (30 + R·cos a, 0, z_hip − R·sin a). Right: (−30 − R·cos a, 0, z_hip − R·sin a).
+Resulting rest pose (k=1): femur rises ~35° to knees ~20 blocks high and ~12 blocks out, tibia
+descends at ~−71°, feet span ~36 blocks — the wide "M" arch of the reference.
 
-Body: angular cephalothorax (~2.75 × 1.8 × 3.3 blocks) with a raised dorsal ridge and plated
-underside; head block at the front with 8 small eye texels (glowing, alpha 3) and two hanging
-fangs; large abdomen (~4 × 3.8 × 5.8 blocks) hanging down-back like the reference "inverted V".
-Silhouette target: `/tmp/claude-0/ref/ref_giant_walk.jpg`, `ref_giant_hero.png`,
-`ref_thumbnail.jpg`, `ref_air_chase.jpg` — thick angular upper limbs, much thinner long lower
-limbs, knees well above the body, body above tree canopy, feet spread ~24 blocks.
+Body (much bigger than v1): angular cephalothorax ≈ 64 w × 40 h × 76 l px with a raised dorsal
+ridge and plated underside; head block at the front with 8 small eye texels (glowing, alpha 3) and
+two hanging fangs; large abdomen ≈ 84 w × 76 h × 116 l px hanging down-back ~35°, so thorax +
+abdomen read as the big inverted-V wedge between the knees in the reference.
+Silhouette target: `/tmp/claude-0/ref/ref_thumbnail.jpg` (primary), `ref_giant_hero.png`,
+`ref_giant_walk.jpg`, `ref_air_chase.jpg` — thick plank-like angular upper limbs with clearly
+visible lighter bevel edges and end caps, big blocky knee joints, thinner long lower limbs, knees
+well above the body, body above tree canopy, feet spread ~36 blocks.
 
 ## 5. Texture (`gen_texture.py` → 128×128 PNG)
 
-Dark brown / charcoal (#2a221e–#3d2f27 base), lighter warm-brown bevel edges (#6b5240) on every
-limb segment like the reference "wooden" look, subtle grain/noise, darker joint caps, bristle
+Dark brown / charcoal wood (#33261f–#45342a base), clearly visible lighter warm-brown bevel edges
+(#7d5f48, 1–2 texels) and lighter end caps on every limb segment like the reference "wooden"
+plank look (see ref_thumbnail.jpg), subtle grain/noise, darker joint caps, bristle
 specks. Abdomen: charcoal with faint brown chevrons; underside slightly lighter. Eyes: deep red
 (#a60202/#ff0e0e) with **alpha = 3** so the vanilla `spider` material makes them glow; every other
 texel alpha 255 (no transparency). Per-face UV regions sized to keep ~2 world px per texel on the
@@ -218,14 +224,14 @@ Client entity `format_version "1.10.0"`, identifier `horror:giant_spider`, `scri
   giant_scale, ease)`. Initialize `v.size_blend` to the current target in `initialize` so a
   reload never replays growth. `v.wpp = v.scale / 16` (blocks per model px).
 * **Gait phase** (slip-free): `v.ddist = clamp(q.modified_distance_moved − v.last_dist, 0, 4)`;
-  add a turning term from `q.yaw_speed`; stride `S_px = lerp(110, 150, v.run)`;
+  add a turning term from `q.yaw_speed`; stride `S_px = lerp(130, 180, v.run)`;
   `v.gait += (v.ddist + turn) / (2·S_px·v.wpp)`; wrap with `math.mod`.
   `v.move` (0..1) smoothed from `q.ground_speed` (moving when > ~0.15·scale·16·0.1…; tune);
   `v.run` (0..1) = hunting state AND ground speed above ~4 blocks/s, smoothed.
 * **Tetrapod gait**: group A {l1, r2, l3, r4} phase offset 0, group B {r1, l2, r3, l4} offset
   0.5 (+ small per-pair offsets ≤ 0.06 for organic feel). Duty factor 0.5. Stance: foot moves
   linearly from +S/2 (forward) to −S/2 along the body axis (forward = −Z); swing: smoothstep
-  back to front with lift `H·sin(180·w)·v.move` (H = lerp(45, 70, v.run) px). Stationary ⇒ phase
+  back to front with lift `H·sin(180·w)·v.move` (H = lerp(55, 85, v.run) px). Stationary ⇒ phase
   stops ⇒ stepping stops; lifted legs lower via `v.move`.
 * **Terrain**: `v.fh_i` smoothed toward `q.property('horror:foot_i')` (blocks); foot target
   y_px = `v.fh_i / v.wpp` (clamped ±220 px) + lift. Ignore (0) while `v.size_blend < 0.5`.

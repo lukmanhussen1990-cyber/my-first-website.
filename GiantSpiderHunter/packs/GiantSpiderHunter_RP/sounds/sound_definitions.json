@@ -1,0 +1,210 @@
+{
+  "format_version": "1.20.20",
+  "sound_definitions": {
+    "mob.giant_spider.step": {
+      "category": "hostile",
+      "min_distance": 8.0,
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/giant_spider/step1",
+          "volume": 1.0,
+          "pitch": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/mob/giant_spider/step2",
+          "volume": 1.0,
+          "pitch": 0.95
+        },
+        {
+          "name": "sounds/mob/giant_spider/step3",
+          "volume": 0.95,
+          "pitch": 1.04
+        },
+        {
+          "name": "sounds/mob/giant_spider/step4",
+          "volume": 1.0,
+          "pitch": 0.92
+        }
+      ]
+    },
+    "mob.giant_spider.step_small": {
+      "category": "hostile",
+      "min_distance": 1.0,
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/giant_spider/step_small1",
+          "volume": 0.6,
+          "pitch": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/mob/giant_spider/step_small2",
+          "volume": 0.6,
+          "pitch": 1.08
+        },
+        {
+          "name": "sounds/mob/giant_spider/step_small3",
+          "volume": 0.55,
+          "pitch": 0.93
+        }
+      ]
+    },
+    "mob.giant_spider.roar": {
+      "category": "hostile",
+      "min_distance": 16.0,
+      "max_distance": 128.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/giant_spider/roar1",
+          "volume": 1.0,
+          "pitch": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/mob/giant_spider/roar2",
+          "volume": 1.0,
+          "pitch": 0.97
+        }
+      ]
+    },
+    "mob.giant_spider.grow": {
+      "category": "hostile",
+      "min_distance": 12.0,
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/giant_spider/grow1",
+          "volume": 1.0,
+          "pitch": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/mob/giant_spider/grow2",
+          "volume": 1.0,
+          "pitch": 0.96
+        }
+      ]
+    },
+    "mob.giant_spider.attack": {
+      "category": "hostile",
+      "min_distance": 6.0,
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/giant_spider/attack1",
+          "volume": 1.0,
+          "pitch": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/mob/giant_spider/attack2",
+          "volume": 1.0,
+          "pitch": 1.03
+        },
+        {
+          "name": "sounds/mob/giant_spider/attack3",
+          "volume": 1.0,
+          "pitch": 0.97
+        }
+      ]
+    },
+    "mob.giant_spider.bite": {
+      "category": "hostile",
+      "min_distance": 4.0,
+      "max_distance": 32.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/giant_spider/bite1",
+          "volume": 1.0,
+          "pitch": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/mob/giant_spider/bite2",
+          "volume": 1.0,
+          "pitch": 1.05
+        }
+      ]
+    },
+    "mob.giant_spider.hurt": {
+      "category": "hostile",
+      "min_distance": 4.0,
+      "max_distance": 48.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/giant_spider/hurt1",
+          "volume": 1.0,
+          "pitch": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/mob/giant_spider/hurt2",
+          "volume": 1.0,
+          "pitch": 1.0
+        },
+        {
+          "name": "sounds/mob/giant_spider/hurt3",
+          "volume": 1.0,
+          "pitch": 1.0
+        }
+      ]
+    },
+    "mob.giant_spider.death": {
+      "category": "hostile",
+      "min_distance": 12.0,
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/giant_spider/death1",
+          "volume": 1.0,
+          "pitch": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/mob/giant_spider/death2",
+          "volume": 1.0,
+          "pitch": 0.96
+        }
+      ]
+    },
+    "mob.giant_spider.ambient": {
+      "category": "hostile",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/giant_spider/ambient1",
+          "volume": 0.9,
+          "pitch": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/mob/giant_spider/ambient2",
+          "volume": 0.9,
+          "pitch": 1.0
+        },
+        {
+          "name": "sounds/mob/giant_spider/ambient3",
+          "volume": 0.9,
+          "pitch": 1.0
+        }
+      ]
+    },
+    "mob.giant_spider.heartbeat": {
+      "category": "hostile",
+      "min_distance": 2.0,
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/mob/giant_spider/heartbeat1",
+          "volume": 1.0,
+          "pitch": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    }
+  }
+}

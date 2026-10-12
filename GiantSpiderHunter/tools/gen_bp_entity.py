@@ -257,7 +257,7 @@ def component_groups():
             "must_reach": False,
             "reselect_targets": True,
             "within_radius": TARGET_RADIUS,
-            "scan_interval": 5,
+            "scan_interval": 10,
             "entity_types": [{"filters": player_filter(), "max_dist": TARGET_RADIUS}],
         },
         "minecraft:behavior.melee_box_attack": {

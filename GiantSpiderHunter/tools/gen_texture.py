@@ -75,11 +75,12 @@ EYE_HI = hexc("#ff0e0e")
 REGIONS = [
     # ---- legs (shared by all eight legs; sized for the k = 1.00 pair)
     ("fem_side", 72, 11, "beam", 11),        # femur long faces N/S  (~152 x 22 px)
-    ("fem_top", 72, 11, "beam_top", 12),     # femur long faces U/D
+    ("fem_top", 72, 11, "beam_top", 12),     # femur long face UP
+    ("fem_under", 72, 11, "beam_under", 28),  # femur long face DOWN (seen from below; lighter)
     ("fem_end", 11, 11, "endcap", 13),       # femur end faces E/W (22 x 22)
-    ("crest_top", 48, 7, "beam_top", 14),    # femur dorsal crest top (~105 x 14)
-    ("crest_side", 48, 3, "beam", 15),       # crest sides (~105 x 5)
-    ("crest_end", 7, 3, "endcap", 16),
+    ("crest_top", 48, 7, "beam_top", 14),    # femur dorsal crest top (~108 x 14)
+    ("crest_side", 48, 4, "beam", 15),       # crest sides (~108 x 7)
+    ("crest_end", 7, 4, "endcap", 16),
     ("knee", 13, 13, "joint", 17),           # knee joint block (26 cube)
     ("tib1_side", 64, 7, "beam_long", 18),   # upper tibia long faces (~137 x 14)
     ("tib1_end", 7, 7, "endcap", 19),
@@ -116,43 +117,82 @@ REGIONS = [
     ("fang_end", 4, 4, "fang_end", 58),
     ("fangtip_side", 3, 8, "fangtip", 59),     # fang tip (5 x 16)
     ("fangtip_end", 3, 3, "fangtip", 60),
-    # ---- abdomen (~2.4 px per texel)
+    # ---- abdomen (~2.3 px per texel)
     ("petiole", 6, 6, "joint", 70),
-    ("abd_front", 18, 16, "abd_side", 71),     # front block N (44 x 38)
-    ("abd1_side", 7, 16, "abd_side", 72),      # front block E/W (16 x 38)
-    ("abd1_top", 18, 7, "abd_side", 73),       # front/rear block top (44 x 16)
-    ("abd1_under", 18, 7, "abd_under", 74),
-    ("abd_top", 26, 21, "abd_top", 75),        # main block top (64 x 52)
-    ("abd_under", 26, 21, "abd_under", 76),
-    ("abd_side", 21, 25, "abd_side", 77),      # main block E/W (52 x 62)
-    ("abd_end", 26, 25, "abd_side", 78),       # main block N/S (64 x 62)
-    ("abd_rear", 19, 19, "abd_side", 79),      # rear block S (46 x 46)
-    ("abd3_side", 7, 19, "abd_side", 80),      # rear block E/W (16 x 46)
-    ("spinner", 8, 6, "joint", 81),            # spinnerets (20 x 16)
-    ("abd_plate", 16, 16, "abd_plate", 82),    # dorsal plate top (40 x 40)
-    ("abd_plate_side", 16, 2, "beam", 83),
+    ("abd_front", 15, 14, "abd_side", 71),     # front block N/S (36 x 32)
+    ("abd1_side", 6, 14, "abd_side", 72),      # front block E/W (14 x 32)
+    ("abd1_top", 17, 6, "abd_side", 73),       # front/rear block top (36..44 x 14..16)
+    ("abd1_under", 17, 6, "abd_under", 74),
+    ("abd_top", 28, 24, "abd_top", 75),        # main bulb top (64 x 56)
+    ("abd_under", 28, 24, "abd_under", 76),    # main bulb underside (rim around the belly)
+    ("abd_side", 24, 13, "abd_side", 77),      # main bulb E/W (56 x 30)
+    ("abd_end", 28, 13, "abd_side", 78),       # main bulb N/S (64 x 30)
+    ("belly_down", 22, 20, "abd_under", 79),   # belly underside rim (50 x 48)
+    ("belly_side", 20, 11, "abd_belly", 80),   # belly E/W (48 x 24)
+    ("belly_end", 22, 11, "abd_belly", 81),    # belly N/S (50 x 24)
+    ("keel_down", 12, 14, "abd_under", 87),    # keel underside (28 x 32)
+    ("keel_side", 14, 6, "abd_belly", 88),     # keel E/W (32 x 14)
+    ("keel_end", 12, 6, "abd_belly", 89),      # keel N/S (28 x 14)
+    ("abd_rear", 19, 18, "abd_side", 82),      # rear taper S (44 x 42)
+    ("abd3_side", 7, 18, "abd_side", 83),      # rear taper E/W (16 x 42)
+    ("spinner", 8, 6, "joint", 84),            # spinnerets (18 x 14)
+    ("abd_plate", 18, 18, "abd_plate", 85),    # dorsal plate top (40 x 40)
+    ("abd_plate_side", 18, 2, "beam", 86),
 ]
 
 
 def layout():
-    """Deterministic shelf packing of REGIONS into the 128x128 atlas.
+    """Deterministic skyline (bottom-left) packing of REGIONS into the 128x128 atlas.
 
     Every region gets a 1-texel gutter on all sides (shared with neighbours); gutters are
     later filled by edge dilation so sampling slightly outside a region never hits
     unpainted or transparent texels. Returns {name: (u, v, w, h)}.
     """
     order = sorted(REGIONS, key=lambda r: (-r[2], -r[1], r[0]))
+    # skyline: list of [x, y, width] segments covering the usable width [1, SIZE)
+    sky = [[1, 1, SIZE - 1]]
     placed = {}
-    x, y, shelf_h = 1, 1, 0
     for name, w, h, _style, _seed in order:
-        if x + w + 1 > SIZE:
-            x, y = 1, y + shelf_h + 1
-            shelf_h = 0
-        if y + h + 1 > SIZE:
+        cw, ch = w + 1, h + 1  # cell incl. right/bottom gutter
+        best = None
+        for i in range(len(sky)):
+            x = sky[i][0]
+            if x + cw > SIZE:
+                break
+            # height needed to place the cell starting at segment i
+            y, span, j = 0, 0, i
+            while span < cw:
+                y = max(y, sky[j][1])
+                span += sky[j][2]
+                j += 1
+            if y + ch > SIZE:
+                continue
+            if best is None or (y + ch, x) < (best[0] + ch, best[1]):
+                best = (y, x)
+        if best is None:
             raise RuntimeError(f"atlas overflow while placing {name}")
+        y, x = best
         placed[name] = (x, y, w, h)
-        x += w + 1
-        shelf_h = max(shelf_h, h)
+        # update skyline
+        new = []
+        for sx, sy, sw in sky:
+            ex = sx + sw
+            if ex <= x or sx >= x + cw:
+                new.append([sx, sy, sw])
+                continue
+            if sx < x:
+                new.append([sx, sy, x - sx])
+            if ex > x + cw:
+                new.append([x + cw, sy, ex - (x + cw)])
+        new.append([x, y + ch, cw])
+        new.sort()
+        merged = []
+        for seg in new:
+            if merged and merged[-1][1] == seg[1] and merged[-1][0] + merged[-1][2] == seg[0]:
+                merged[-1][2] += seg[2]
+            else:
+                merged.append(seg)
+        sky = merged
     return placed
 
 
@@ -236,11 +276,29 @@ def grain(w, h, rng, c0, c1, along_u=True, streak=0.035):
     return img
 
 
-def p_beam(w, h, rng, top=False, long=False):
+def plank_rows(h):
+    """Rows (inside the bevel) that carry a darker lengthwise plank seam."""
+    if h >= 10:
+        return [round(h / 3), round(2 * h / 3)]
+    if h >= 7:
+        return [h // 2]
+    return []
+
+
+def p_beam(w, h, rng, top=False, long=False, under=False):
     c0, c1 = (BASE0, BASE1)
     if top:  # upper faces catch a touch more warmth
         c0, c1 = BASE0 * 1.04, BASE1 * 1.04
+    if under:  # undersides: upper end of the base range (the giant is mostly seen from below)
+        c0, c1 = (BASE0 + BASE1) / 2, BASE1 * 1.06
     img = grain(w, h, rng, c0, c1, along_u=True)
+    # planks: each band between seams gets its own tone, seams are dark grooves
+    seams = plank_rows(h)
+    edges = [1] + seams + [h - 1]
+    for a, b in zip(edges[:-1], edges[1:]):
+        img[a:b] *= 0.9 + 0.2 * rng.random()
+    for r in seams:
+        img[r, :] = img[r, :] * 0.35 + SHADOW * 0.65
     specks(img, rng, 0.05 if long else 0.03)
     inner_shadow(img)
     ring(img, BEVEL, rng)
@@ -405,14 +463,15 @@ def p_fangtip(w, h, rng):
     return img
 
 
-def p_abd_side(w, h, rng):
+def p_abd_side(w, h, rng, belly=False):
     # U = horizontal, V = downward. Charcoal mottling, slightly lighter towards the belly.
-    v = np.linspace(0, 1, h)[:, None]
+    v = np.linspace(0, 1, h)[:, None, None]
     t = 0.45 * rng.random((h, w)) + 0.35 * smooth1d(rng, w, 3)[None, :] * smooth1d(rng, h, 3)[:, None]
     img = lerp(ABD0, ABD1, np.clip(t, 0, 1))
-    img = img * (1 - v[..., None] * 0) + (UNDER0 - ABD0)[None, None, :] * (v[..., None] ** 2) * 0.6
+    lift = 0.35 + 0.65 * v if belly else 0.6 * v ** 2
+    img = img + (UNDER0 - ABD0)[None, None, :] * lift
     # faint brown side bands
-    for yy in range(3, h - 2, 6):
+    for yy in range(3, h - 2, 6 if not belly else 4):
         img[yy, 1:-1] = img[yy, 1:-1] * 0.7 + CHEVRON * 0.3
     specks(img, rng, 0.03, light=ABD_BEVEL, dark=SPECK_DARK)
     inner_shadow(img, 0.9)
@@ -459,6 +518,7 @@ PAINTERS = {
     "beam": lambda w, h, r: p_beam(w, h, r),
     "beam_top": lambda w, h, r: p_beam(w, h, r, top=True),
     "beam_long": lambda w, h, r: p_beam(w, h, r, long=True),
+    "beam_under": lambda w, h, r: p_beam(w, h, r, under=True),
     "endcap": p_endcap,
     "joint": p_joint,
     "claw": p_claw,
@@ -473,6 +533,7 @@ PAINTERS = {
     "fang_end": p_fang_end,
     "fangtip": p_fangtip,
     "abd_side": p_abd_side,
+    "abd_belly": lambda w, h, r: p_abd_side(w, h, r, belly=True),
     "abd_top": p_abd_top,
     "abd_under": p_abd_under,
     "abd_plate": p_abd_plate,
@@ -496,17 +557,17 @@ def build():
             img = out
         rgb[v:v + h, u:u + w] = img
         painted[v:v + h, u:u + w] = True
-    # fill gutters / unused space by dilation from painted texels (opaque, alpha 255)
+    # gutters: 2 rings of edge dilation around every region, so sampling slightly outside a
+    # region (float precision) repeats its edge colour; remaining unused space -> opaque base.
     filled = painted.copy()
-    while not filled.all():
+    for _ in range(2):
         nf = filled.copy()
         acc = np.zeros_like(rgb)
         cnt = np.zeros((SIZE, SIZE))
         for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             src_f = np.roll(filled, (dy, dx), axis=(0, 1))
             src_c = np.roll(rgb, (dy, dx), axis=(0, 1))
-            # do not wrap around the borders
-            if dy == 1:
+            if dy == 1:  # no wrap-around at the atlas borders
                 src_f[0, :] = False
             if dy == -1:
                 src_f[-1, :] = False
@@ -521,6 +582,7 @@ def build():
         rgb[new] = acc[new] / cnt[new][:, None]
         nf[new] = True
         filled = nf
+    rgb[~filled] = BASE0
     alpha[~painted] = 255
     rgba = np.zeros((SIZE, SIZE, 4), np.uint8)
     rgba[..., :3] = np.clip(np.round(rgb), 0, 255).astype(np.uint8)
@@ -539,8 +601,20 @@ def eye_texels(lay):
     return out
 
 
+def check_layout(lay):
+    """Regions must lie inside the atlas and never overlap (gutters included)."""
+    occ = np.zeros((SIZE, SIZE), np.int32)
+    for name, (u, v, w, h) in lay.items():
+        if u < 1 or v < 1 or u + w > SIZE - 1 or v + h > SIZE - 1:
+            raise SystemExit(f"region {name} touches the atlas border")
+        occ[v:v + h, u:u + w] += 1
+    if occ.max() > 1:
+        raise SystemExit("overlapping atlas regions")
+
+
 def main():
     rgba, lay, painted = build()
+    check_layout(lay)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     Image.fromarray(rgba, "RGBA").save(OUT, optimize=True)
     a = rgba[..., 3]

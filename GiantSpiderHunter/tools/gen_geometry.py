@@ -118,9 +118,10 @@ def cube(x0, x1, y0, y1, z0, z1, faces, pivot=None, rotation=None):
     return c
 
 
-def limb_faces(side, top, end):
-    """X-aligned limb: long faces N/S use `side`, U/D use `top`, ends E/W use `end`."""
-    return {"north": side, "south": side, "up": top, "down": top, "east": end, "west": end}
+def limb_faces(side, top, end, under=None):
+    """X-aligned limb: long faces N/S use `side`, U/D use `top` (D: `under` if given),
+    ends E/W use `end`."""
+    return {"north": side, "south": side, "up": top, "down": under or top, "east": end, "west": end}
 
 
 def box_faces(n, s, e, w, u, d):
@@ -189,19 +190,25 @@ def abdomen_cubes():
     return [
         # petiole (waist) joining the cephalothorax (18 x 14 x 12)
         ac(-9, 9, 203, 217, 12, 24, pet),
-        # front block (44 x 38 x 16)
-        ac(-22, 22, 184, 222, 22, 38,
+        # front block (36 x 32 x 14)
+        ac(-18, 18, 190, 222, 22, 36,
            box_faces("abd_front", "abd_front", "abd1_side", "abd1_side", "abd1_top", "abd1_under")),
-        # main bulb (64 x 62 x 52)
-        ac(-32, 32, 166, 228, 36, 88,
+        # main bulb, upper widest tier (64 x 30 x 56)
+        ac(-32, 32, 196, 226, 34, 90,
            box_faces("abd_end", "abd_end", "abd_side", "abd_side", "abd_top", "abd_under")),
-        # rear taper (46 x 46 x 16)
-        ac(-23, 23, 174, 220, 86, 102,
+        # hanging belly, middle tier (50 x 24 x 48)
+        ac(-25, 25, 174, 198, 38, 86,
+           box_faces("belly_end", "belly_end", "belly_side", "belly_side", "belly_down", "belly_down")),
+        # ventral keel, lowest tier -> teardrop / inverted-V silhouette (28 x 14 x 32)
+        ac(-14, 14, 162, 176, 46, 78,
+           box_faces("keel_end", "keel_end", "keel_side", "keel_side", "keel_down", "keel_down")),
+        # rear taper (44 x 40 x 16)
+        ac(-22, 22, 182, 222, 88, 104,
            box_faces("abd_rear", "abd_rear", "abd3_side", "abd3_side", "abd1_top", "abd1_under")),
-        # spinnerets (20 x 16 x 10)
-        ac(-10, 10, 186, 202, 100, 110, spin),
+        # spinnerets (18 x 14 x 10)
+        ac(-9, 9, 188, 202, 102, 112, spin),
         # dorsal shield plate (40 x 4 x 40)
-        ac(-20, 20, 227, 231, 42, 82,
+        ac(-20, 20, 225, 229, 44, 84,
            box_faces("abd_plate_side", "abd_plate_side", "abd_plate_side", "abd_plate_side",
                      "abd_plate", "abd_plate")),
     ]
@@ -224,9 +231,9 @@ def leg_bones(side, sign, n):
     femur = [
         # main femur beam: starts 8 px inside the body, ends under the knee block
         cube(*xspan(sign, -8, L1 - 6, hx), hy - h, hy + h, z - h, z + h,
-             limb_faces("fem_side", "fem_top", "fem_end")),
+             limb_faces("fem_side", "fem_top", "fem_end", "fem_under")),
         # dorsal crest along the middle of the femur (angular stepped profile)
-        cube(*xspan(sign, 0.18 * L1, L1 - 20, hx), hy + h - 1, hy + h + 4, z - h + 4, z + h - 4,
+        cube(*xspan(sign, 0.16 * L1, L1 - 18, hx), hy + h - 1, hy + h + 6, z - h + 4, z + h - 4,
              limb_faces("crest_side", "crest_top", "crest_end")),
         # chunky knee joint block (28 x 26 x 26) centred on the knee
         cube(*xspan(sign, L1 - 14, L1 + 12, hx), hy - 13, hy + 13, z - 13, z + 13,
