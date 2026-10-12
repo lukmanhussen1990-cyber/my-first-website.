@@ -1,6 +1,7 @@
 package com.weplay.guesserai.service
 
 import android.app.Activity
+import android.app.KeyguardManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -33,6 +34,14 @@ import com.weplay.guesserai.overlay.OverlayWindow
 import com.weplay.guesserai.ui.MainActivity
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+
+/**
+ * True while the user is looking at the unlocked screen. With the lock screen up WePlay still
+ * counts as the app in front, but the screen shows the lock screen, and it can show message
+ * previews: it must never be captured and sent.
+ */
+internal fun screenInUse(power: PowerManager, keyguard: KeyguardManager?): Boolean =
+    power.isInteractive && keyguard?.isKeyguardLocked != true
 
 /**
  * Foreground service (type mediaProjection) that owns the screen capture, the analysis loop and
@@ -81,6 +90,7 @@ class AssistantService : LifecycleService() {
         cap.start(sw, sh, resources.displayMetrics.densityDpi)
 
         val power = getSystemService(PowerManager::class.java)
+        val keyguard = getSystemService(KeyguardManager::class.java)
         val s = AssistantSession(
             scope = lifecycleScope,
             capturer = cap,
@@ -89,7 +99,7 @@ class AssistantService : LifecycleService() {
             settingsRepo = container.settings,
             wordBanks = container.wordBank,
             gameMonitor = GameAppMonitor(this),
-            isScreenOn = { power.isInteractive },
+            isScreenOn = { screenInUse(power, keyguard) },
             overlayRect = { window.bounds() },
         ).also { session = it }
 

@@ -98,7 +98,10 @@ class SessionJourneyTest {
         /** The next capture fails inside Android. */
         var failNextCapture: RuntimeException? = null
 
+        var captures = 0
+
         override fun capture(): Frame? {
+            captures++
             failNextCapture?.let { failNextCapture = null; throw it }
             if (noFrameYet) return null
             val c = Canvas(bitmap)
@@ -225,6 +228,8 @@ class SessionJourneyTest {
         val dao = BreakableDao(db.drawingDao())
         val screen = Screen()
         val ai = FakeAi(screen, test)
+        /** Screen on and unlocked. */
+        var screenInUse = true
         val settings = SettingsRepository(ctx, PlainCipher).apply {
             update { AppSettings(apiKey = "sk-test", accuracyBoost = false, autoPauseWhenGameClosed = false) }
         }
@@ -237,7 +242,7 @@ class SessionJourneyTest {
             settingsRepo = settings,
             wordBanks = WordBankRepository(ctx),
             gameMonitor = GameAppMonitor(ctx),
-            isScreenOn = { true },
+            isScreenOn = { screenInUse },
             overlayRect = { screen.overlay },
             work = StandardTestDispatcher(test.testScheduler),
             clock = { test.testScheduler.currentTime },
@@ -504,13 +509,15 @@ class SessionJourneyTest {
         val before = ai.calls.size
         assertTrue(before >= 1)
 
-        usage.addEvent("com.android.launcher", System.currentTimeMillis(), UsageEvents.Event.ACTIVITY_RESUMED)
+        // Usage events carry real time and are read up to (not including) "now": log them a moment ago,
+        // as a phone has by the time the app asks, or a check in the same millisecond would miss them.
+        usage.addEvent("com.android.launcher", System.currentTimeMillis() - 1, UsageEvents.Event.ACTIVITY_RESUMED)
         screen.strokes = 4 // the screen changes (home screen), but it is not the game
         play(20_000)
         assertEquals("no requests while WePlay is away", before, ai.calls.size)
         assertEquals(AiStatus.GAME_AWAY, session.state.value.status)
 
-        usage.addEvent(weplay, System.currentTimeMillis(), UsageEvents.Event.ACTIVITY_RESUMED)
+        usage.addEvent(weplay, System.currentTimeMillis() - 1, UsageEvents.Event.ACTIVITY_RESUMED)
         play(4_000)
         assertTrue("woke up", ai.calls.size > before)
         assertTrue(session.state.value.status != AiStatus.GAME_AWAY)
@@ -541,6 +548,20 @@ class SessionJourneyTest {
         val n = ai.calls.size
         repeat(5) { screen.strokes++; play(1_000) }
         assertTrue("back to one request per change: ${ai.calls.size - n}", ai.calls.size - n >= 4)
+    }
+
+    @Test fun `nothing is captured while the screen is off or the lock screen is up`() = game {
+        play(3_000)
+        val captures = screen.captures
+        val calls = ai.calls.size
+        screenInUse = false
+        repeat(20) { screen.strokes++; play(1_000) }
+        assertEquals("captures while locked", captures, screen.captures)
+        assertEquals(calls, ai.calls.size)
+        screenInUse = true // unlocked: back within one check
+        play(3_500)
+        assertTrue(screen.captures > captures)
+        assertEquals(calls + 1, ai.calls.size)
     }
 
     @Test fun `with no game on screen it checks far less often`() = game {

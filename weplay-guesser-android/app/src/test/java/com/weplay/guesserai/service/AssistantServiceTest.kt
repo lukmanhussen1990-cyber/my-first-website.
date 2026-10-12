@@ -1,7 +1,9 @@
 package com.weplay.guesserai.service
 
 import android.app.Activity
+import android.app.KeyguardManager
 import android.content.Intent
+import android.os.PowerManager
 import android.view.WindowManager
 import androidx.test.core.app.ApplicationProvider
 import com.weplay.guesserai.WePlayGuesserApp
@@ -46,6 +48,19 @@ class AssistantServiceTest {
         controller.destroy()
         assertFalse(app.container.assistantRunning.value)
         assertEquals("no overlay window left behind", 0, overlays().size)
+    }
+
+    @Test fun `the lock screen does not count as the screen in use, so it is never captured`() {
+        val power = app.getSystemService(PowerManager::class.java)
+        val keyguard = app.getSystemService(KeyguardManager::class.java)
+        shadowOf(power).setIsInteractive(true)
+        shadowOf(keyguard).setKeyguardLocked(false)
+        assertTrue(screenInUse(power, keyguard))
+        // Woken up, lock screen showing: WePlay is still the app "in front", but the lock screen is what shows.
+        shadowOf(keyguard).setKeyguardLocked(true)
+        assertFalse(screenInUse(power, keyguard))
+        shadowOf(power).setIsInteractive(false)
+        assertFalse(screenInUse(power, keyguard))
     }
 
     @Test fun `a cancelled screen-sharing prompt just stops`() {

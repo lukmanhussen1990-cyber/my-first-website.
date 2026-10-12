@@ -98,6 +98,7 @@ class AssistantSession(
     private val settingsRepo: SettingsRepository,
     private val wordBanks: WordBankRepository,
     private val gameMonitor: GameAppMonitor,
+    /** The user is looking at the screen (on and unlocked); captures stop otherwise. */
     private val isScreenOn: () -> Boolean,
     /** Overlay bounds in real screen pixels, to mask it out of captures. */
     private val overlayRect: () -> Rect?,
@@ -289,8 +290,8 @@ class AssistantSession(
             try {
                 val skip = when {
                     paused -> 60_000L
-                    !isScreenOn() -> 3_000L
-                    // Asking Android which app is in front takes two system calls: not on the main thread, every second.
+                    // Asking Android about the screen and the app in front takes system calls: not on the main thread, every second.
+                    !withContext(work) { isScreenOn() } -> 3_000L
                     settings.autoPauseWhenGameClosed &&
                         withContext(work) { gameMonitor.isGameInForeground(settings.gamePackage) } == false -> {
                         _state.update { it.copy(status = AiStatus.GAME_AWAY, message = "WePlay not open — AI sleeping") }
