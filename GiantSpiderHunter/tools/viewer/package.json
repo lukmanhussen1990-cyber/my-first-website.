@@ -1,0 +1,21 @@
+{
+  "name": "gsh-bedrock-viewer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Headless Bedrock entity model/animation renderer for Giant Spider Hunter (Blockbench conventions, three.js in headless Chromium).",
+  "type": "module",
+  "bin": {
+    "gsh-render": "render.mjs"
+  },
+  "scripts": {
+    "render": "node render.mjs",
+    "check": "node check.mjs",
+    "test": "node test/run_tests.mjs",
+    "proof": "node proof.mjs"
+  },
+  "dependencies": {
+    "pngjs": "7.0.0",
+    "playwright-core": "1.56.1",
+    "three": "0.169.0"
+  }
+}

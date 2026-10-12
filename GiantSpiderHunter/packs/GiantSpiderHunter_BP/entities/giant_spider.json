@@ -1,0 +1,850 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "horror:giant_spider",
+      "spawn_category": "monster",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "properties": {
+        "horror:state": {
+          "type": "enum",
+          "values": [
+            "idle",
+            "stalking",
+            "growing",
+            "hunting",
+            "cooldown",
+            "dying"
+          ],
+          "default": "idle",
+          "client_sync": true
+        },
+        "horror:giant": {
+          "type": "bool",
+          "default": false,
+          "client_sync": true
+        },
+        "horror:small_scale": {
+          "type": "float",
+          "range": [
+            0.02,
+            0.5
+          ],
+          "default": 0.075,
+          "client_sync": true
+        },
+        "horror:giant_scale": {
+          "type": "float",
+          "range": [
+            0.25,
+            3.0
+          ],
+          "default": 1.0,
+          "client_sync": true
+        },
+        "horror:grow_time": {
+          "type": "float",
+          "range": [
+            0.5,
+            20.0
+          ],
+          "default": 4.0,
+          "client_sync": true
+        },
+        "horror:attack_id": {
+          "type": "int",
+          "range": [
+            0,
+            1000000
+          ],
+          "default": 0,
+          "client_sync": true
+        },
+        "horror:attack_kind": {
+          "type": "int",
+          "range": [
+            0,
+            2
+          ],
+          "default": 0,
+          "client_sync": true
+        },
+        "horror:foot_0": {
+          "type": "float",
+          "range": [
+            -24.0,
+            24.0
+          ],
+          "default": 0.0,
+          "client_sync": true
+        },
+        "horror:foot_1": {
+          "type": "float",
+          "range": [
+            -24.0,
+            24.0
+          ],
+          "default": 0.0,
+          "client_sync": true
+        },
+        "horror:foot_2": {
+          "type": "float",
+          "range": [
+            -24.0,
+            24.0
+          ],
+          "default": 0.0,
+          "client_sync": true
+        },
+        "horror:foot_3": {
+          "type": "float",
+          "range": [
+            -24.0,
+            24.0
+          ],
+          "default": 0.0,
+          "client_sync": true
+        },
+        "horror:foot_4": {
+          "type": "float",
+          "range": [
+            -24.0,
+            24.0
+          ],
+          "default": 0.0,
+          "client_sync": true
+        },
+        "horror:foot_5": {
+          "type": "float",
+          "range": [
+            -24.0,
+            24.0
+          ],
+          "default": 0.0,
+          "client_sync": true
+        },
+        "horror:foot_6": {
+          "type": "float",
+          "range": [
+            -24.0,
+            24.0
+          ],
+          "default": 0.0,
+          "client_sync": true
+        },
+        "horror:foot_7": {
+          "type": "float",
+          "range": [
+            -24.0,
+            24.0
+          ],
+          "default": 0.0,
+          "client_sync": true
+        },
+        "horror:difficulty": {
+          "type": "int",
+          "range": [
+            0,
+            3
+          ],
+          "default": 2,
+          "client_sync": false
+        }
+      }
+    },
+    "component_groups": {
+      "horror:form_small": {
+        "minecraft:collision_box": {
+          "width": 0.9,
+          "height": 0.7
+        },
+        "minecraft:custom_hit_test": {
+          "hitboxes": [
+            {
+              "pivot": [
+                0,
+                0.45,
+                0
+              ],
+              "width": 1.2,
+              "height": 0.9
+            }
+          ]
+        }
+      },
+      "horror:form_giant": {
+        "minecraft:collision_box": {
+          "width": 1.4,
+          "height": 2.9
+        },
+        "minecraft:custom_hit_test": {
+          "hitboxes": [
+            {
+              "pivot": [
+                0,
+                1.5,
+                0
+              ],
+              "width": 3.0,
+              "height": 3.0
+            },
+            {
+              "pivot": [
+                0,
+                13,
+                0
+              ],
+              "width": 6.0,
+              "height": 5.0
+            }
+          ]
+        }
+      },
+      "horror:state_idle": {
+        "minecraft:behavior.float": {
+          "priority": 0
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 6,
+          "speed_multiplier": 0.5,
+          "interval": 40,
+          "xz_dist": 10,
+          "y_dist": 7
+        },
+        "minecraft:behavior.look_at_player": {
+          "priority": 7,
+          "look_distance": 16,
+          "probability": 0.05
+        },
+        "minecraft:behavior.random_look_around": {
+          "priority": 8
+        },
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "fall",
+              "deals_damage": false
+            },
+            {
+              "cause": "suffocation",
+              "deals_damage": false
+            }
+          ]
+        }
+      },
+      "horror:state_stalking": {
+        "minecraft:behavior.float": {
+          "priority": 0
+        },
+        "minecraft:behavior.look_at_player": {
+          "priority": 5,
+          "look_distance": 64,
+          "probability": 0.8,
+          "look_time": [
+            8,
+            16
+          ]
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 6,
+          "speed_multiplier": 0.6,
+          "interval": 200,
+          "xz_dist": 6,
+          "y_dist": 4
+        },
+        "minecraft:behavior.random_look_around": {
+          "priority": 8
+        },
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "fall",
+              "deals_damage": false
+            },
+            {
+              "cause": "suffocation",
+              "deals_damage": false
+            }
+          ]
+        }
+      },
+      "horror:state_growing": {
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "all",
+              "deals_damage": false
+            }
+          ]
+        },
+        "minecraft:behavior.look_at_player": {
+          "priority": 5,
+          "look_distance": 64,
+          "probability": 1.0,
+          "look_time": [
+            4,
+            8
+          ]
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": 25,
+          "randomInterval": false,
+          "time_down_event": {
+            "event": "horror:growth_timeout",
+            "target": "self"
+          }
+        }
+      },
+      "horror:state_hunting": {
+        "minecraft:behavior.float": {
+          "priority": 0
+        },
+        "minecraft:behavior.hurt_by_target": {
+          "priority": 1,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "player"
+              }
+            }
+          ]
+        },
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 2,
+          "must_see": false,
+          "must_reach": false,
+          "reselect_targets": true,
+          "within_radius": 72,
+          "scan_interval": 5,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "player"
+              },
+              "max_dist": 72
+            }
+          ]
+        },
+        "minecraft:behavior.melee_box_attack": {
+          "priority": 3,
+          "track_target": true,
+          "require_complete_path": false,
+          "speed_multiplier": 3.4,
+          "melee_fov": 360
+        },
+        "minecraft:attack": {
+          "damage": 0
+        },
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "fall",
+              "deals_damage": false
+            },
+            {
+              "cause": "suffocation",
+              "deals_damage": false
+            }
+          ]
+        }
+      },
+      "horror:state_cooldown": {
+        "minecraft:behavior.float": {
+          "priority": 0
+        },
+        "minecraft:behavior.avoid_mob_type": {
+          "priority": 2,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "player"
+              },
+              "max_dist": 32,
+              "walk_speed_multiplier": 1.2,
+              "sprint_speed_multiplier": 1.5,
+              "sprint_distance": 12
+            }
+          ]
+        },
+        "minecraft:behavior.random_stroll": {
+          "priority": 4,
+          "speed_multiplier": 1.2,
+          "interval": 2,
+          "xz_dist": 16,
+          "y_dist": 7
+        },
+        "minecraft:behavior.random_look_around": {
+          "priority": 8
+        },
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "fall",
+              "deals_damage": false
+            },
+            {
+              "cause": "suffocation",
+              "deals_damage": false
+            }
+          ]
+        }
+      },
+      "horror:state_dying": {
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "all",
+              "deals_damage": false
+            }
+          ]
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": 8,
+          "randomInterval": false,
+          "time_down_event": {
+            "event": "horror:death_timeout",
+            "target": "self"
+          }
+        }
+      },
+      "horror:despawn": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "giant_spider",
+          "monster",
+          "arthropod",
+          "mob"
+        ]
+      },
+      "minecraft:health": {
+        "value": 1000,
+        "max": 1000
+      },
+      "minecraft:movement": {
+        "value": 0.3
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:jump.static": {},
+      "minecraft:navigation.walk": {
+        "can_path_over_water": true,
+        "avoid_damage_blocks": true,
+        "can_walk": true,
+        "can_jump": true,
+        "can_pass_doors": true
+      },
+      "minecraft:variable_max_auto_step": {
+        "base_value": 1.0625,
+        "jump_prevented_value": 0.5625
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:breathable": {
+        "breathes_air": true,
+        "breathes_water": true,
+        "suffocate_time": 0,
+        "total_supply": 15
+      },
+      "minecraft:nameable": {},
+      "minecraft:persistent": {},
+      "minecraft:follow_range": {
+        "value": 96,
+        "max": 96
+      },
+      "minecraft:conditional_bandwidth_optimization": {
+        "default_values": {
+          "max_optimized_distance": 80.0,
+          "max_dropped_ticks": 7,
+          "use_motion_prediction_hints": true
+        },
+        "conditional_values": [
+          {
+            "max_optimized_distance": 0.0,
+            "max_dropped_ticks": 0,
+            "use_motion_prediction_hints": true,
+            "conditional_values": [
+              {
+                "test": "is_moving",
+                "subject": "self",
+                "operator": "==",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "minecraft:is_hidden_when_invisible": {},
+      "minecraft:loot": {
+        "table": "loot_tables/entities/giant_spider.json"
+      },
+      "minecraft:experience_reward": {
+        "on_death": "query.last_hit_by_player ? 40 : 0"
+      },
+      "minecraft:environment_sensor": {
+        "triggers": [
+          {
+            "filters": {
+              "test": "is_difficulty",
+              "value": "peaceful"
+            },
+            "event": "horror:peaceful_despawn"
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "actor_health",
+                  "subject": "self",
+                  "operator": "<=",
+                  "value": 500
+                },
+                {
+                  "test": "enum_property",
+                  "subject": "self",
+                  "domain": "horror:state",
+                  "operator": "!=",
+                  "value": "dying"
+                }
+              ]
+            },
+            "event": "horror:start_dying"
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_difficulty",
+                  "value": "easy"
+                },
+                {
+                  "test": "int_property",
+                  "subject": "self",
+                  "domain": "horror:difficulty",
+                  "operator": "!=",
+                  "value": 1
+                }
+              ]
+            },
+            "event": "horror:set_difficulty_1"
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_difficulty",
+                  "value": "normal"
+                },
+                {
+                  "test": "int_property",
+                  "subject": "self",
+                  "domain": "horror:difficulty",
+                  "operator": "!=",
+                  "value": 2
+                }
+              ]
+            },
+            "event": "horror:set_difficulty_2"
+          },
+          {
+            "filters": {
+              "all_of": [
+                {
+                  "test": "is_difficulty",
+                  "value": "hard"
+                },
+                {
+                  "test": "int_property",
+                  "subject": "self",
+                  "domain": "horror:difficulty",
+                  "operator": "!=",
+                  "value": 3
+                }
+              ]
+            },
+            "event": "horror:set_difficulty_3"
+          }
+        ]
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "remove": {
+          "component_groups": [
+            "horror:state_idle",
+            "horror:state_stalking",
+            "horror:state_growing",
+            "horror:state_hunting",
+            "horror:state_cooldown",
+            "horror:state_dying",
+            "horror:form_giant"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "horror:state_stalking",
+            "horror:form_small"
+          ]
+        },
+        "set_property": {
+          "horror:state": "stalking",
+          "horror:giant": false
+        }
+      },
+      "horror:to_idle": {
+        "remove": {
+          "component_groups": [
+            "horror:state_idle",
+            "horror:state_stalking",
+            "horror:state_growing",
+            "horror:state_hunting",
+            "horror:state_cooldown",
+            "horror:state_dying",
+            "horror:form_giant"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "horror:state_idle",
+            "horror:form_small"
+          ]
+        },
+        "set_property": {
+          "horror:state": "idle",
+          "horror:giant": false
+        }
+      },
+      "horror:to_stalking": {
+        "remove": {
+          "component_groups": [
+            "horror:state_idle",
+            "horror:state_stalking",
+            "horror:state_growing",
+            "horror:state_hunting",
+            "horror:state_cooldown",
+            "horror:state_dying",
+            "horror:form_giant"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "horror:state_stalking",
+            "horror:form_small"
+          ]
+        },
+        "set_property": {
+          "horror:state": "stalking",
+          "horror:giant": false
+        }
+      },
+      "horror:to_growing": {
+        "remove": {
+          "component_groups": [
+            "horror:state_idle",
+            "horror:state_stalking",
+            "horror:state_growing",
+            "horror:state_hunting",
+            "horror:state_cooldown",
+            "horror:state_dying",
+            "horror:form_small"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "horror:state_growing",
+            "horror:form_giant"
+          ]
+        },
+        "set_property": {
+          "horror:state": "growing",
+          "horror:giant": true
+        }
+      },
+      "horror:to_hunting": {
+        "remove": {
+          "component_groups": [
+            "horror:state_idle",
+            "horror:state_stalking",
+            "horror:state_growing",
+            "horror:state_hunting",
+            "horror:state_cooldown",
+            "horror:state_dying",
+            "horror:form_small"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "horror:state_hunting",
+            "horror:form_giant"
+          ]
+        },
+        "set_property": {
+          "horror:state": "hunting",
+          "horror:giant": true
+        }
+      },
+      "horror:to_cooldown": {
+        "remove": {
+          "component_groups": [
+            "horror:state_idle",
+            "horror:state_stalking",
+            "horror:state_growing",
+            "horror:state_hunting",
+            "horror:state_cooldown",
+            "horror:state_dying",
+            "horror:form_giant"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "horror:state_cooldown",
+            "horror:form_small"
+          ]
+        },
+        "set_property": {
+          "horror:state": "cooldown",
+          "horror:giant": false
+        }
+      },
+      "horror:to_dying": {
+        "remove": {
+          "component_groups": [
+            "horror:state_idle",
+            "horror:state_stalking",
+            "horror:state_growing",
+            "horror:state_hunting",
+            "horror:state_cooldown",
+            "horror:state_dying"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "horror:state_dying"
+          ]
+        },
+        "set_property": {
+          "horror:state": "dying"
+        }
+      },
+      "horror:start_dying": {
+        "remove": {
+          "component_groups": [
+            "horror:state_idle",
+            "horror:state_stalking",
+            "horror:state_growing",
+            "horror:state_hunting",
+            "horror:state_cooldown",
+            "horror:state_dying"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "horror:state_dying"
+          ]
+        },
+        "set_property": {
+          "horror:state": "dying"
+        }
+      },
+      "horror:growth_timeout": {
+        "remove": {
+          "component_groups": [
+            "horror:state_idle",
+            "horror:state_stalking",
+            "horror:state_growing",
+            "horror:state_hunting",
+            "horror:state_cooldown",
+            "horror:state_dying",
+            "horror:form_small"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "horror:state_hunting",
+            "horror:form_giant"
+          ]
+        },
+        "set_property": {
+          "horror:state": "hunting",
+          "horror:giant": true
+        }
+      },
+      "horror:death_timeout": {
+        "add": {
+          "component_groups": [
+            "horror:despawn"
+          ]
+        }
+      },
+      "horror:peaceful_despawn": {
+        "add": {
+          "component_groups": [
+            "horror:despawn"
+          ]
+        }
+      },
+      "horror:despawn": {
+        "add": {
+          "component_groups": [
+            "horror:despawn"
+          ]
+        }
+      },
+      "horror:set_difficulty_1": {
+        "set_property": {
+          "horror:difficulty": 1
+        }
+      },
+      "horror:set_difficulty_2": {
+        "set_property": {
+          "horror:difficulty": 2
+        }
+      },
+      "horror:set_difficulty_3": {
+        "set_property": {
+          "horror:difficulty": 3
+        }
+      },
+      "horror:spawn_giant": {
+        "remove": {
+          "component_groups": [
+            "horror:state_idle",
+            "horror:state_stalking",
+            "horror:state_growing",
+            "horror:state_hunting",
+            "horror:state_cooldown",
+            "horror:state_dying",
+            "horror:form_small"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "horror:state_hunting",
+            "horror:form_giant"
+          ]
+        },
+        "set_property": {
+          "horror:state": "hunting",
+          "horror:giant": true
+        }
+      }
+    }
+  }
+}
