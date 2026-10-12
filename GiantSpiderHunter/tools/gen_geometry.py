@@ -35,19 +35,20 @@ IDENTIFIER = "geometry.horror.giant_spider"
 # ---------------------------------------------------------------------------- DESIGN constants
 BODY_PIVOT = (0, 208, 0)
 TORSO_PIVOT = (0, 208, 0)
-HEAD_PIVOT = (0, 212, -34)
-FANG_L_PIVOT = (8, 202, -48)
-FANG_R_PIVOT = (-8, 202, -48)
-ABDOMEN_PIVOT = (0, 214, 16)
-HIP_X = 22
+HEAD_PIVOT = (0, 212, -50)
+FANG_L_PIVOT = (12, 182, -74)
+FANG_R_PIVOT = (-12, 182, -74)
+ABDOMEN_PIVOT = (0, 214, 38)
+HIP_X = 30
 HIP_Y = 206
-HIP_Z = [-26, -12, 2, 14]
+HIP_Z = [-30, -14, 2, 18]
 K = [1.08, 1.00, 0.96, 1.04]
-L1_BASE, L2_BASE, L3_BASE = 150.0, 270.0, 50.0
-NEUTRAL_R_BASE = 170.0
+L1_BASE, L2_BASE, L3_BASE = 240.0, 290.0, 50.0
+NEUTRAL_R_BASE = 215.0
 NEUTRAL_A = [52.0, 20.0, -16.0, -48.0]
 
-ABDOMEN_HANG = -30.0  # cube X rotation about the abdomen pivot (negative = rear end down)
+ABDOMEN_HANG = -28.0
+VB_WIDTH, VB_HEIGHT, VB_OFFSET = 84, 62, [0, 29, 0]   # blocks; covers giant_scale 2.5  # cube X rotation about the abdomen pivot (negative = rear end down)
 
 LEG_SIDES = (("l", 1), ("r", -1))  # side suffix, X sign (+X = left)
 
@@ -137,28 +138,31 @@ def xspan(sign, a, b, base):
 # ---------------------------------------------------------------------------- body parts
 def torso_cubes():
     return [
-        # main cephalothorax block (42 x 20 x 52)
-        cube(-21, 21, 195, 215, -34, 18,
+        # main cephalothorax block (80 x 46 x 90)
+        cube(-40, 40, 186, 232, -50, 40,
              box_faces("tor_end", "tor_end", "tor_side", "tor_side", "cara_top", "tor_under")),
-        # carapace plate overhanging the sides (46 x 8 x 42)
-        cube(-23, 23, 211, 219, -30, 12,
+        # lower taper: the cephalothorax narrows downward -> V cross-section (56 x 16 x 70)
+        cube(-28, 28, 172, 188, -40, 30,
+             box_faces("tor2_end", "tor2_end", "tor2_side", "tor2_side", "tor_under", "stern_down")),
+        # carapace plate overhanging the sides (88 x 10 x 74)
+        cube(-44, 44, 228, 238, -42, 32,
              box_faces("cara_end", "cara_end", "cara_side", "cara_side", "cara_top", "tor_under")),
-        # raised dorsal ridge (14 x 4 x 32)
-        cube(-7, 7, 219, 223, -26, 6,
+        # raised dorsal ridge (22 x 9 x 54)
+        cube(-11, 11, 238, 247, -34, 20,
              box_faces("ridge_end", "ridge_end", "ridge_side", "ridge_side", "ridge_top", "ridge_top")),
-        # plated underside / sternum (30 x 4 x 34)
-        cube(-15, 15, 191, 195, -24, 10,
+        # ventral keel / sternum (32 x 12 x 50)
+        cube(-16, 16, 162, 174, -30, 20,
              box_faces("stern_end", "stern_end", "stern_side", "stern_side", "stern_down", "stern_down")),
     ]
 
 
 def head_cubes():
     return [
-        # head block (28 x 22 x 20); eyes on the north (front) face
-        cube(-14, 14, 197, 219, -52, -32,
+        # head block (52 x 42 x 30); eight glowing eyes on the north (front) face
+        cube(-26, 26, 190, 232, -80, -50,
              box_faces("head_front", "head_side", "head_side", "head_side", "head_top", "head_under")),
-        # chelicera base under the front of the head (22 x 8 x 12)
-        cube(-11, 11, 191, 199, -53, -41,
+        # chelicera base under the front of the head (38 x 14 x 20)
+        cube(-19, 19, 178, 192, -82, -62,
              box_faces("jaw_front", "jaw_front", "jaw_side", "jaw_side", "jaw_under", "jaw_under")),
     ]
 
@@ -170,11 +174,11 @@ def fang_cubes(sign):
     tip = {"north": "fangtip_side", "south": "fangtip_side", "east": "fangtip_side",
            "west": "fangtip_side", "up": "fangtip_end", "down": "fangtip_end"}
     return [
-        # fang base hanging from the chelicera (8 x 22 x 8)
-        cube(px - 4, px + 4, py - 20, py + 2, pz - 4, pz + 4, fang),
+        # fang base hanging from the chelicera (14 x 34 x 14)
+        cube(px - 7, px + 7, py - 32, py + 2, pz - 7, pz + 7, fang),
         # hooked tip: tilted back (+X rot) and inward (Z rot towards the centre line)
-        cube(px - 2.5, px + 2.5, py - 34, py - 18, pz - 2.5, pz + 2.5, tip,
-             pivot=(px, py - 19, pz), rotation=(20, 0, 15 * sign)),
+        cube(px - 4.5, px + 4.5, py - 54, py - 28, pz - 4.5, pz + 4.5, tip,
+             pivot=(px, py - 30, pz), rotation=(20, 0, 15 * sign)),
     ]
 
 
@@ -188,35 +192,66 @@ def abdomen_cubes():
     pet = {f: "petiole" for f in FACES}
     spin = {f: "spinner" for f in FACES}
     return [
-        # petiole (waist) joining the cephalothorax (18 x 14 x 12)
-        ac(-9, 9, 203, 217, 12, 24, pet),
-        # front block (36 x 32 x 14)
-        ac(-18, 18, 190, 222, 22, 36,
+        # petiole (waist) joining the cephalothorax (32 x 24 x 16)
+        ac(-16, 16, 198, 222, 34, 50, pet),
+        # front block (66 x 56 x 24)
+        ac(-33, 33, 180, 236, 46, 70,
            box_faces("abd_front", "abd_front", "abd1_side", "abd1_side", "abd1_top", "abd1_under")),
-        # main bulb, upper widest tier (64 x 30 x 56)
-        ac(-32, 32, 196, 226, 34, 90,
+        # main bulb, upper widest tier (100 x 62 x 104) -- body width ~1/5 of the leg span
+        ac(-50, 50, 186, 248, 66, 170,
            box_faces("abd_end", "abd_end", "abd_side", "abd_side", "abd_top", "abd_under")),
-        # hanging belly, middle tier (50 x 24 x 48)
-        ac(-25, 25, 174, 198, 38, 86,
+        # hanging belly, middle tier (80 x 44 x 90)
+        ac(-40, 40, 144, 188, 74, 164,
            box_faces("belly_end", "belly_end", "belly_side", "belly_side", "belly_down", "belly_down")),
-        # ventral keel, lowest tier -> teardrop / inverted-V silhouette (28 x 14 x 32)
-        ac(-14, 14, 162, 176, 46, 78,
+        # ventral keel, lowest tier -> teardrop / inverted-V silhouette (48 x 22 x 60)
+        ac(-24, 24, 124, 146, 90, 150,
            box_faces("keel_end", "keel_end", "keel_side", "keel_side", "keel_down", "keel_down")),
-        # rear taper (44 x 40 x 16)
-        ac(-22, 22, 182, 222, 88, 104,
+        # rear taper (70 x 66 x 26)
+        ac(-35, 35, 172, 238, 168, 194,
            box_faces("abd_rear", "abd_rear", "abd3_side", "abd3_side", "abd1_top", "abd1_under")),
-        # spinnerets (18 x 14 x 10)
-        ac(-9, 9, 188, 202, 102, 112, spin),
-        # dorsal shield plate (40 x 4 x 40)
-        ac(-20, 20, 225, 229, 44, 84,
+        # spinnerets (32 x 24 x 16)
+        ac(-16, 16, 180, 204, 192, 208, spin),
+        # dorsal shield plate (66 x 7 x 76)
+        ac(-33, 33, 247, 254, 80, 156,
            box_faces("abd_plate_side", "abd_plate_side", "abd_plate_side", "abd_plate_side",
                      "abd_plate", "abd_plate")),
     ]
 
 
 # ---------------------------------------------------------------------------- legs
-def femur_thickness(n):
-    return 24.0 if n == 1 else 22.0
+# Cross-sections (px). Femur: square-ish beam with a dorsal and a ventral plank stacked on
+# it (the "stacked timber" look of the reference), big angular knee block, tibia ~70 % of
+# the femur (24 -> 20), ankle block, foot 14 -> claw 9.
+FEMUR_W = [36, 34, 34, 34]     # Z width per pair
+FEMUR_H = [38, 36, 36, 36]     # Y height per pair
+KNEE = 46
+TIB1, TIB2 = 24, 20
+ANKLE = 24
+FOOT, CLAW = 14, 9
+
+
+def limb_region(base, face, sign, mirrored=True):
+    """Pick `base` or its mirror `base_f` so the region's high-U end is the DISTAL end.
+
+    U grows toward +X on north/up/down faces and toward -X on south faces (per-face UV
+    convention of the viewer/Blockbench); left legs extend toward +X (sign +1), right legs
+    toward -X (sign -1)."""
+    if not mirrored or face in ("east", "west"):
+        return base
+    distal_high = (sign > 0) if face in ("north", "up", "down") else (sign < 0)
+    return base if distal_high else base + "_f"
+
+
+def limb(sign, x0, x1, base_x, y0, y1, z0, z1, side, top, under, end, mirrored=True):
+    """X-aligned limb cube from a..b outward of base_x; long faces use mirrored regions."""
+    faces = {
+        "north": limb_region(side, "north", sign, mirrored),
+        "south": limb_region(side, "south", sign, mirrored),
+        "up": limb_region(top, "up", sign, mirrored),
+        "down": limb_region(under, "down", sign, mirrored),
+        "east": end, "west": end,
+    }
+    return cube(*xspan(sign, x0, x1, base_x), y0, y1, z0, z1, faces)
 
 
 def leg_bones(side, sign, n):
@@ -225,39 +260,46 @@ def leg_bones(side, sign, n):
     hx, hy, z = pts["hip"]
     kx = pts["knee"][0]
     ax = pts["ankle"][0]
-    tf = femur_thickness(n)
-    h = tf / 2
+    w2 = FEMUR_W[n - 1] / 2
+    h2 = FEMUR_H[n - 1] / 2
+    kh = KNEE / 2
 
     femur = [
-        # main femur beam: starts 8 px inside the body, ends under the knee block
-        cube(*xspan(sign, -8, L1 - 6, hx), hy - h, hy + h, z - h, z + h,
-             limb_faces("fem_side", "fem_top", "fem_end", "fem_under")),
-        # dorsal crest along the middle of the femur (angular stepped profile)
-        cube(*xspan(sign, 0.16 * L1, L1 - 18, hx), hy + h - 1, hy + h + 6, z - h + 4, z + h - 4,
-             limb_faces("crest_side", "crest_top", "crest_end")),
-        # chunky knee joint block (28 x 26 x 26) centred on the knee
-        cube(*xspan(sign, L1 - 14, L1 + 12, hx), hy - 13, hy + 13, z - 13, z + 13,
-             limb_faces("knee", "knee", "knee")),
+        # main femur beam: starts 12 px inside the body, ends inside the knee block
+        limb(sign, -12, L1 - 16, hx, hy - h2, hy + h2, z - w2, z + w2,
+             "fem_side", "fem_top", "fem_under", "fem_end"),
+        # dorsal plank stacked on top (24 wide, 10 high)
+        limb(sign, 0.10 * L1, L1 - 34, hx, hy + h2 - 1, hy + h2 + 10, z - 12, z + 12,
+             "crest_side", "crest_top", "crest_top", "crest_end", mirrored=False),
+        # ventral plank under the femur (22 wide, 8 deep) -- seen from below
+        limb(sign, 0.18 * L1, L1 - 40, hx, hy - h2 - 8, hy - h2 + 1, z - 11, z + 11,
+             "fkeel_side", "fkeel_under", "fkeel_under", "fkeel_end", mirrored=False),
+        # big angular knee block (46 cube) centred on the knee, lighter end caps
+        cube(*xspan(sign, L1 - kh, L1 + kh, hx), hy - kh, hy + kh, z - kh, z + kh,
+             {"north": "knee", "south": "knee", "up": "knee", "down": "knee",
+              "east": "knee_cap", "west": "knee_cap"}),
     ]
     split = 0.5 * L2
+    t1, t2 = TIB1 / 2, TIB2 / 2
     tibia = [
-        # upper tibia (14 thick)
-        cube(*xspan(sign, -2, split, kx), hy - 7, hy + 7, z - 7, z + 7,
-             limb_faces("tib1_side", "tib1_side", "tib1_end")),
-        # lower tibia (11 thick) down to the ankle
-        cube(*xspan(sign, split, L2 + 1, kx), hy - 5.5, hy + 5.5, z - 5.5, z + 5.5,
-             limb_faces("tib2_side", "tib2_side", "tib2_end")),
+        # upper tibia (24 thick), starts inside the knee block
+        limb(sign, 12, split, kx, hy - t1, hy + t1, z - t1, z + t1,
+             "tib1_side", "tib1_side", "tib1_side", "tib1_end"),
+        # lower tibia (20 thick) down into the ankle block
+        limb(sign, split - 1, L2 + 2, kx, hy - t2, hy + t2, z - t2, z + t2,
+             "tib2_side", "tib2_side", "tib2_side", "tib2_end"),
     ]
+    a2, f2, c2 = ANKLE / 2, FOOT / 2, CLAW / 2
     foot = [
-        # dark ankle joint (8 x 13 x 13)
-        cube(*xspan(sign, -4, 4, ax), hy - 6.5, hy + 6.5, z - 6.5, z + 6.5,
+        # dark ankle joint block (20 x 24 x 24)
+        cube(*xspan(sign, -10, 10, ax), hy - a2, hy + a2, z - a2, z + a2,
              limb_faces("ankle_side", "ankle_side", "ankle_end")),
-        # foot (9 thick)
-        cube(*xspan(sign, 0, 0.6 * L3, ax), hy - 4.5, hy + 4.5, z - 4.5, z + 4.5,
-             limb_faces("foot_side", "foot_side", "foot_end")),
-        # claw (6 thick) to the tip
-        cube(*xspan(sign, 0.6 * L3, L3, ax), hy - 3, hy + 3, z - 3, z + 3,
-             limb_faces("claw_side", "claw_side", "claw_end")),
+        # foot (14 thick)
+        limb(sign, 0, 0.6 * L3, ax, hy - f2, hy + f2, z - f2, z + f2,
+             "foot_side", "foot_side", "foot_side", "foot_end"),
+        # claw (9 thick) to the tip
+        limb(sign, 0.6 * L3, L3, ax, hy - c2, hy + c2, z - c2, z + c2,
+             "claw_side", "claw_side", "claw_side", "claw_end"),
     ]
     sfx = f"{side}{n}"
     return [
@@ -289,9 +331,9 @@ def build():
                 "identifier": IDENTIFIER,
                 "texture_width": gen_texture.SIZE,
                 "texture_height": gen_texture.SIZE,
-                "visible_bounds_width": 72,
-                "visible_bounds_height": 60,
-                "visible_bounds_offset": [0, 28, 0],
+                "visible_bounds_width": VB_WIDTH,
+                "visible_bounds_height": VB_HEIGHT,
+                "visible_bounds_offset": VB_OFFSET,
             },
             "bones": bones,
         }],
@@ -339,14 +381,14 @@ for _s in "lr":
 def expected_pivots():
     """Independent re-statement of the DESIGN.md section 4 pivot formulas."""
     e = {"root": (0, 0, 0), "body": (0, 208, 0), "torso": (0, 208, 0),
-         "head": (0, 212, -34), "fang_l": (8, 202, -48), "fang_r": (-8, 202, -48),
-         "abdomen": (0, 214, 16)}
+         "head": (0, 212, -50), "fang_l": (12, 182, -74), "fang_r": (-12, 182, -74),
+         "abdomen": (0, 214, 38)}
     loc = {}
     for s, sg in (("l", 1), ("r", -1)):
         for n in range(1, 5):
             k = [1.08, 1.00, 0.96, 1.04][n - 1]
-            L1, L2, L3 = 150 * k, 270 * k, 50 * k
-            hip = (sg * 22, 206, [-26, -12, 2, 14][n - 1])
+            L1, L2, L3 = 240 * k, 290 * k, 50 * k
+            hip = (sg * 30, 206, [-30, -14, 2, 18][n - 1])
             e[f"hip_{s}{n}"] = hip
             e[f"femur_{s}{n}"] = hip
             e[f"tibia_{s}{n}"] = (hip[0] + sg * L1, hip[1], hip[2])
@@ -370,10 +412,11 @@ def verify(path=OUT, tex_path=TEX, quiet=False):
     d = g["description"]
     if d.get("identifier") != IDENTIFIER:
         errs.append("identifier mismatch")
-    if (d.get("texture_width"), d.get("texture_height")) != (128, 128):
-        errs.append("texture size must be 128x128")
+    S = gen_texture.SIZE
+    if (d.get("texture_width"), d.get("texture_height")) != (S, S):
+        errs.append(f"texture size must be {S}x{S}")
     if (d.get("visible_bounds_width"), d.get("visible_bounds_height"),
-            d.get("visible_bounds_offset")) != (72, 60, [0, 28, 0]):
+            d.get("visible_bounds_offset")) != (84, 62, [0, 29, 0]):
         errs.append("visible bounds mismatch")
     bones = g["bones"]
     names = [b["name"] for b in bones]
@@ -410,7 +453,7 @@ def verify(path=OUT, tex_path=TEX, quiet=False):
     from PIL import Image
     import numpy as np
     img = np.array(Image.open(tex_path).convert("RGBA"))
-    if img.shape != (128, 128, 4):
+    if img.shape != (S, S, 4):
         errs.append(f"texture shape {img.shape}")
     rects = {(u, v, w, h): name for name, (u, v, w, h) in LAYOUT.items()}
     ncubes = 0
@@ -428,7 +471,7 @@ def verify(path=OUT, tex_path=TEX, quiet=False):
             for f, fv in uv.items():
                 u, v = fv["uv"]
                 w, h = fv["uv_size"]
-                if not (0 <= u and u + w <= 128 and 0 <= v and v + h <= 128 and w > 0 and h > 0):
+                if not (0 <= u and u + w <= S and 0 <= v and v + h <= S and w > 0 and h > 0):
                     errs.append(f"{b['name']}.{f}: uv rect {u},{v},{w},{h} outside atlas")
                     continue
                 if (u, v, w, h) not in rects:
@@ -439,11 +482,11 @@ def verify(path=OUT, tex_path=TEX, quiet=False):
                     errs.append(f"{b['name']}.{f}: samples transparent texels")
                 fu, fv_ = dims[f]
                 ratios.append((fu / w, fv_ / h, b["name"], f, rects[(u, v, w, h)]))
-    if ncubes > 90:
-        errs.append(f"{ncubes} cubes > 90")
-    # density sanity: no face absurdly stretched (> 3.5 px/texel) or squashed (< 1.0)
+    if ncubes > 100:
+        errs.append(f"{ncubes} cubes > 100 (phone budget)")
+    # density sanity: no face absurdly stretched (> 6 px/texel on the giant) or squashed (< 0.9)
     for ru, rv, bn, f, reg in ratios:
-        if not (0.9 <= ru <= 3.6 and 0.9 <= rv <= 3.6):
+        if not (0.9 <= ru <= 6.0 and 0.9 <= rv <= 6.0):
             errs.append(f"{bn}.{f} ({reg}) density {ru:.2f}x{rv:.2f} px/texel out of range")
     # eyes glow (alpha 3) and nothing else is translucent
     a = img[..., 3]

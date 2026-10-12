@@ -567,6 +567,36 @@ const OPS = {
     const l = d.findClosestBiome(from, r.biome, { boundingSize: { x: size, y: 64, z: size } });
     return { loc: l ? v3(l) : null };
   },
+  // Forest finder without findClosestBiome (which crashes BDS 1.21.0.26): counts surface leaves on a
+  // grid around (x, z) inside loaded chunks and returns the centre of the densest 24x24 window.
+  forestNear: (r) => {
+    const d = dim(r);
+    const cx = Math.floor(num(r.x, "x")), cz = Math.floor(num(r.z, "z"));
+    const R = Number(r.radius || 56), step = 4;
+    const cells = new Map();
+    let scanned = 0;
+    for (let x = cx - R; x <= cx + R; x += step) {
+      for (let z = cz - R; z <= cz + R; z += step) {
+        let top;
+        try {
+          top = d.getTopmostBlock({ x, z });
+        } catch (e) {
+          top = undefined;
+        }
+        if (!top) continue;
+        scanned++;
+        if (/leaves/.test(safe(() => top.typeId, ""))) {
+          const k = `${Math.floor(x / 24)},${Math.floor(z / 24)}`;
+          cells.set(k, (cells.get(k) || 0) + 1);
+        }
+      }
+    }
+    let best = null;
+    for (const [k, n] of cells) if (!best || n > best.n) best = { k, n };
+    if (!best) return { loc: null, scanned };
+    const [gx, gz] = best.k.split(",").map(Number);
+    return { loc: [gx * 24 + 12, 64, gz * 24 + 12], leaves: best.n, scanned };
+  },
   ground: (r) => {
     const d = dim(r);
     if (!chunkLoaded(d, num(r.x, "x"), num(r.z, "z"))) return { loaded: false, y: null };

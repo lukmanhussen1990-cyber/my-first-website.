@@ -41,6 +41,7 @@ RUNS_DIR = os.environ.get("GSH_RUNS_DIR", "/tmp/claude-0/work/harness/runs")
 CACHE_DIR = os.environ.get("GSH_CACHE_DIR", os.path.join(os.path.dirname(RUNS_DIR), "cache"))
 TEST_PACK = os.path.join(HERE, "test_pack")
 SCENARIO_DIR = os.path.join(HERE, "scenarios")
+sys.path.insert(0, SCENARIO_DIR)
 ADDON_BP = os.path.join(ROOT, "packs", "GiantSpiderHunter_BP")
 ADDON_RP = os.path.join(ROOT, "packs", "GiantSpiderHunter_RP")
 SHIM_SRC = os.path.join(HERE, "ipv6shim.c")
@@ -791,19 +792,45 @@ class Harness:
     def find_biome(self, biome="minecraft:forest", x=0, z=0, size=4096):
         return self.call("findBiome", timeout=60, biome=biome, x=x, y=64, z=z, size=size)["loc"]
 
-    def forest(self, x=0, z=0):
-        """(x, z) of the closest forest biome to x/z (any of forest/birch/dark/flower forest)."""
+    def forest(self, x=0, z=0, scout=True):
+        """(x, z) of a forested spot near x/z. findClosestBiome crashes BDS 1.21.0.26, so a temporary
+        creative 'Scout' player visits points on growing rings and the test pack counts surface
+        leaves around it (ticking chunks only)."""
+        import math as _m
+        name = "Scout"
+        points = [(x, z)]
+        for ring in (160, 320, 480):
+            for k in range(8):
+                a = k * _m.pi / 4
+                points.append((x + round(ring * _m.cos(a)), z + round(ring * _m.sin(a))))
         best = None
-        for b in ("minecraft:forest", "minecraft:birch_forest", "minecraft:roofed_forest", "minecraft:flower_forest"):
-            r = self.call("findBiome", timeout=60, check=False, biome=b, x=x, y=64, z=z, size=4096)
-            l = r.get("loc") if isinstance(r, dict) else None
-            if l:
-                d = (l[0] - x) ** 2 + (l[2] - z) ** 2
-                if best is None or d < best[0]:
-                    best = (d, l)
+        try:
+            if scout:
+                self.spawn(name, x=x, z=z, gm="creative", search=32)
+            for px, pz in points:
+                if scout:
+                    try:
+                        self.call("place", timeout=60, check=False, name=name, x=px, z=pz, search=16)
+                    except Exception:
+                        pass
+                    self.wait(3)
+                r = self.call("forestNear", timeout=60, check=False, x=px, z=pz, radius=56)
+                l = r.get("loc") if isinstance(r, dict) else None
+                if l and r.get("leaves", 0) >= 6:
+                    best = (l[0], l[2])
+                    break
+        finally:
+            if scout:
+                try:
+                    self.get(name).remove()
+                except Exception:
+                    pass
+                self.sims.pop(name, None)
         if not best:
-            raise HarnessError("no forest found near the origin; try another --seed")
-        return best[1][0], best[1][2]
+            self.note(f"no forest found near {x},{z}; using that spot")
+            return x, z
+        self.note(f"forest at {best}")
+        return best
 
     def summon(self, x, y, z, event=None):
         ev = f" {event}" if event else ""

@@ -28,18 +28,18 @@ ENTITY_ID = "horror:giant_spider"
 NAME = "Giant Spider Hunter"
 
 # --------------------------------------------------------------------------- DESIGN.md §4
-HIP_X = 22.0
+HIP_X = 30.0
 HIP_Y = 206.0
-HIP_Z = [-26.0, -12.0, 2.0, 14.0]          # pair 1..4, front -> back
+HIP_Z = [-30.0, -14.0, 2.0, 18.0]          # pair 1..4, front -> back
 K = [1.08, 1.00, 0.96, 1.04]               # per-pair length factor
-L1_BASE, L2_BASE, L3_BASE = 150.0, 270.0, 50.0
-R_BASE = 170.0                              # neutral foot horizontal radius from hip
+L1_BASE, L2_BASE, L3_BASE = 240.0, 290.0, 50.0
+R_BASE = 215.0                              # neutral foot horizontal radius from hip
 NEUTRAL_ANGLE = [52.0, 20.0, -16.0, -48.0]  # from the lateral axis toward forward
 FOOT_TILT = 12.0                            # foot segment tilted outward from vertical
 
 # --------------------------------------------------------------------------- DESIGN.md §8
-STRIDE_WALK, STRIDE_RUN = 110.0, 150.0      # px, foot travel along the body axis per stance
-LIFT_WALK, LIFT_RUN = 45.0, 70.0            # px swing lift
+STRIDE_WALK, STRIDE_RUN = 130.0, 180.0      # px, foot travel along the body axis per stance
+LIFT_WALK, LIFT_RUN = 55.0, 85.0            # px swing lift
 PAIR_PHASE = [0.0, 0.02, 0.04, 0.06]        # small metachronal offsets (<= 0.06)
 GROUP_A = {"l1", "r2", "l3", "r4"}          # phase 0; group B {r1, l2, r3, l4} phase 0.5
 TERRAIN_CLAMP_PX = 220.0
