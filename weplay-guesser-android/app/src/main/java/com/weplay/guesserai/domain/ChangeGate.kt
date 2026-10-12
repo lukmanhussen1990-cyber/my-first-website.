@@ -20,12 +20,17 @@ class ChangeGate {
     /** True while the hint area keeps changing from one capture to the next. */
     val hintAnimating: Boolean get() = hintMovingFor >= 2
 
+    /** From the last [observe]: the hint itself changed (not just scrolling) since the last [accept]. */
+    var hintChanged = false
+        private set
+
     /** Looks at one capture (call it once per capture); true when the canvas or the hint changed since the last [accept]. */
     fun observe(canvasFp: IntArray, hintFp: IntArray): Boolean {
         val moved = hintMotion.hasSeen() && hintMotion.hasChanged(hintFp)
         hintMotion.accept(hintFp)
         hintMovingFor = if (moved) hintMovingFor + 1 else 0
-        return canvas.hasChanged(canvasFp) || (!hintAnimating && hint.hasChanged(hintFp))
+        hintChanged = !hintAnimating && hint.hasChanged(hintFp)
+        return hintChanged || canvas.hasChanged(canvasFp)
     }
 
     /** The capture was sent: later ones are compared with it. */

@@ -117,6 +117,8 @@ class AssistantSession(
 
     private var paused = false
     private var forceNext = true
+    /** When the last frame went to the model. */
+    private var lastSentAt = 0L
     private var loopJob: Job? = null
     private var settingsJob: Job? = null
     /** Key, endpoint and model when a blocking error paused the AI; changing them tries again. */
@@ -332,7 +334,12 @@ class AssistantSession(
             else FrameTools.fingerprint(frame, lay.canvas, 40, 40) to FrameTools.fingerprint(frame, lay.hintCenter, 24, 4)
         }
         if (paused) return
-        if (!changes.observe(canvasFp, hintFp) && !forceNext) {
+        val changed = changes.observe(canvasFp, hintFp)
+        // Once the word is solved only the next one matters, and it shows in the hint bar (or as a
+        // cleared canvas). More strokes on the solved drawing are looked at now and then only.
+        val solvedStrokes = tracker.solved && !changes.hintChanged && !FrameTools.looksBlank(canvasFp) &&
+            clock() - lastSentAt < SOLVED_RECHECK_MS
+        if ((!changed || solvedStrokes) && !forceNext) {
             if (inFlight.isEmpty()) _state.update { idle(it) }
             return
         }
@@ -341,6 +348,7 @@ class AssistantSession(
 
         changes.accept(canvasFp, hintFp)
         forceNext = false
+        lastSentAt = clock()
         val (images, thumb, drawing) = withContext(work) {
             val imgs = if (sendFull) {
                 FrameImages(full = FrameTools.toJpeg(frame, maxSide = 896, quality = 75))
@@ -734,6 +742,8 @@ class AssistantSession(
         /** Whole-screen look every so often: checks the layout and spots popups the close-ups miss. */
         const val FULL_LOOK_EVERY = 12
         const val SOLVED_INTERVAL_MS = 2_500L
+        /** Once solved, new strokes alone are sent at most this often (the next word shows in the hint at once). */
+        const val SOLVED_RECHECK_MS = 10_000L
         /** A changed key or model is tried this long after the last keystroke, not with every letter. */
         const val SETTINGS_SETTLE_MS = 1_500L
         /** Accuracy boost: shortest gap between two looks by the stronger model. */

@@ -412,6 +412,42 @@ class SessionJourneyTest {
         assertEquals(listOf("Utah"), db.drawingDao().observeAll().first().map { it.correctAnswer })
     }
 
+    @Test fun `once the word is solved more strokes are rarely sent, and the next word is still seen at once`() = game {
+        val state = HintPattern(1, 4, clue = "A state")
+        val food = HintPattern(1, 5, clue = "A food")
+        fun frame(state: ScreenState, hint: HintPattern?, vararg g: Pair<String, Int>, revealed: String = "") =
+            FrameAnalysis(
+                isDrawingGame = true, canvasEmpty = false, detectedObject = "", category = "", emoji = "",
+                hint = hint, canvasBox = screen.layout.canvas, hintBox = screen.layout.hint,
+                guesses = g.map { Guess(it.first, it.second) }, screenState = state, revealedAnswer = revealed,
+            )
+        ai.script = { s ->
+            when {
+                s.hint == "utah" -> frame(ScreenState.WORD_REVEALED, null, revealed = "utah")
+                s.hint.startsWith("5 letters") -> frame(ScreenState.GUESSING, food, "Halwa" to 70, "Kheer" to 30)
+                else -> frame(ScreenState.GUESSING, state, "Utah" to 80, "Ohio" to 40)
+            }
+        }
+        play(3_000)
+        screen.hint = "utah" // we guessed it: the bar shows the word
+        play(3_000)
+        assertEquals("Utah", session.state.value.answer)
+
+        // The drawer carries on for 40 s. Before: a request every 2.5 s (16), none of them useful.
+        val before = ai.calls.size
+        repeat(40) { screen.strokes++; play(1_000) }
+        val sent = ai.calls.size - before
+        assertTrue("strokes on a solved word: $sent requests in 40 s", sent in 1..5)
+
+        // The next word shows in the bar while the old drawing is still up: seen on the next beat.
+        val switched = test.testScheduler.currentTime
+        screen.hint = "5 letters|A food"
+        play(3_000)
+        assertEquals(food, session.state.value.hint)
+        assertEquals(listOf("Halwa", "Kheer"), session.state.value.guesses.map { it.answer })
+        assertTrue(ai.calls.last().at - switched <= 2_500)
+    }
+
     @Test fun `a word saved without a drawing of its own never gets the previous word's drawing`() = game {
         val state = HintPattern(1, 4, clue = "A state")
         ai.script = { s ->
