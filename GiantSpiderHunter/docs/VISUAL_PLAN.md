@@ -1,3 +1,30 @@
+# >>> ORCHESTRATOR OVERRIDE — USER FEEDBACK 13:40 (HIGHEST PRIORITY, read before anything else) <<<
+
+The user says it STILL does not look like the reference. A same-camera comparison
+(`/tmp/claude-0/work/orch/matched_1340.png`: left = our render, right = ref_giant_hero.png /
+ref_giant_walk.jpg frame 1) shows four remaining differences. The critic must judge with SAME-ANGLE
+comparisons like this one (render commands below), and the fixer must fix these first:
+
+1. LEGS TOO WIDE AND FLAT. In the hero and walk references the femurs rise STEEPLY (≈60–70° above
+   horizontal) to knees high above the body, and the lower legs drop almost STRAIGHT DOWN
+   (≈75–85° below horizontal) with the feet fairly close under the body: foot span ≈ 2.1–2.3 × the
+   body (hip) height, not 2.8. Ours spread far out sideways, which makes the spider look low and squat.
+2. ONE STRAIGHT LOWER LEG. From knee to ground the reference lower leg reads as ONE long straight
+   beam (no visible second bend near the foot). Make the foot/metatarsus segment short or collinear
+   with the tibia (e.g. small FOOT_TILT, L3 short) so the knee→ground line is straight.
+3. THICKER UPPER LEGS. Femurs ≈ 1.4× thicker than now (chunky square beams ~48–52 px at scale 1.0),
+   big blocky knee pieces where the femur end overlaps the tibia top; tibias ≈ 65 % of femur.
+4. BODY: a big dark angular wedge forming the bottom of the "M" between the femur bases (bigger and
+   darker than now). EYES much subtler: small, dark red, few texels glowing — the reference does not
+   show a bright red eye cluster.
+Keep the warm stripped-wood leg texture (it is good); body may be darker charcoal-brown.
+
+Same-angle render commands (from the project root):
+  node tools/viewer/render.mjs --rp packs/GiantSpiderHunter_RP --entity horror:giant_spider --scenario tools/viewer/scenarios/standing.json --camera low_front --zoom 0.75 --fov 55 --frames 1 --width 900 --height 520 --out A.png      (compare with ref_giant_hero.png)
+  node tools/viewer/render.mjs --rp packs/GiantSpiderHunter_RP --entity horror:giant_spider --scenario tools/viewer/scenarios/hunting_run.json --camera side --zoom 0.9 --frames 1 --times 1.2 --width 900 --height 520 --out B.png      (compare with ref_giant_walk.jpg frame 1, crop 1000x416+0+0)
+
+---------------------------------------------------------------------------------------------
+
 # Giant Spider Hunter: visual plan (lead designer, v1)
 
 This is the team's single source of truth for the "look like the references" pass. Execute the

@@ -166,9 +166,12 @@ def pre_animation():
         f"t.dph = math.min(v.tr / (2 * v.stride) + t.ady / {f(2 * TURN_STEP)}, 0.2);"
         "v.gp = v.gait ?? 0.25;"
         "v.gait = math.mod(v.gp + t.dph, 1);"
-        # expected yaw change per stance (the swing lands rotated by half of it)
+        # expected yaw change (v.yps) and forward travel in px (v.fps) during one stance: the
+        # swing lands half of each ahead, so a planted foot straddles its neutral spot
         "v.yps = t.dph > 0.00001 ? math.lerp(v.yps ?? 0, math.clamp(t.dy * 0.5 / t.dph, "
         f"-{f(TURN_MAX)}, {f(TURN_MAX)}), math.min(1, v.dt * 4)) : (v.yps ?? 0);"
+        "v.fps = t.dph > 0.00001 ? math.lerp(v.fps ?? v.stride, math.clamp(v.tr * 0.5 / t.dph, 0, v.stride), "
+        "math.min(1, v.dt * 4)) : (v.fps ?? v.stride);"
         "v.half = math.mod(v.gait + %s, 1) < 0.5 ? 0 : 1;" % f(1 - STEP_DELAY)
     )
     # 3. posture weights, terrain smoothing, body height ---------------------------------
@@ -228,13 +231,13 @@ def leg_script(side, n):
         # v.fs_*: stance = foot offset along the body axis (planted: moves back by v.tr);
         #         swing  = where the foot lifted off. v.ya_*: stance = body yaw it is planted
         #         against; swing = its counter-rotation at lift-off.
-        f"v.fs_{nm} = t.td ? v.stride * 0.5 : ((t.p < 0.5 || t.lo) ? (v.fs_{nm} ?? 0) - v.tr : (v.fs_{nm} ?? 0));"
+        f"v.fs_{nm} = t.td ? v.fps * 0.5 : ((t.p < 0.5 || t.lo) ? (v.fs_{nm} ?? 0) - v.tr : (v.fs_{nm} ?? 0));"
         f"v.ya_{nm} = t.td ? v.pyaw + v.yps * 0.5 : (t.lo ? math.clamp(math.min_angle(v.pyaw - (v.ya_{nm} ?? v.pyaw)),"
         f" -{f(TURN_MAX)}, {f(TURN_MAX)}) : (v.ya_{nm} ?? (t.p < 0.5 ? v.pyaw : 0)));"
         "t.w = math.max(t.p * 2 - 1, 0);"
         "t.sw = math.sin(t.w * 180);"
         f"t.xw = math.hermite_blend(math.min(t.w * {f(SWING_REACH)}, 1));"
-        f"t.f = t.p < 0.5 ? v.fs_{nm} : math.lerp(v.fs_{nm}, v.stride * 0.5, t.xw);"
+        f"t.f = t.p < 0.5 ? v.fs_{nm} : math.lerp(v.fs_{nm}, v.fps * 0.5, t.xw);"
         f"t.dl = {rot}(t.p < 0.5 ? math.clamp(math.min_angle(v.pyaw - v.ya_{nm}), -{f(TURN_MAX)}, {f(TURN_MAX)})"
         f" : math.lerp(v.ya_{nm}, -v.yps * 0.5, t.xw));"
         f"t.tl = {f(FOOT_TILT)} + {f(DEATH_TILT)} * v.dead_e - {f(TUCK)} * t.sw * v.move;"
