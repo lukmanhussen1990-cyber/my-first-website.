@@ -15,6 +15,15 @@ import kotlin.math.roundToInt
  */
 class Frame(val bitmap: Bitmap, val width: Int, val height: Int)
 
+/** Where the session gets its screen captures from (the screen mirror; a fake in tests). */
+interface FrameSource {
+    /** The current screen, in a buffer the next call may overwrite; null before the first frame. */
+    fun capture(): Frame?
+
+    /** Capture size divided by real screen size; maps overlay coordinates into the frame. */
+    val scale: Float
+}
+
 /**
  * Bitmap helpers for the capture pipeline. Boxes are [left, top, right, bottom] fractions of the
  * frame. Work per capture is kept small: change detection samples the screen in place, and only

@@ -8,6 +8,7 @@ import com.weplay.guesserai.domain.AnswerStats
 import com.weplay.guesserai.domain.GuessEngine
 import com.weplay.guesserai.domain.HintPattern
 import com.weplay.guesserai.domain.RankedGuess
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -16,18 +17,22 @@ import org.json.JSONObject
 import java.io.File
 
 /** The learning system: stores confirmed rounds and per-answer statistics. */
-class HistoryRepository(context: Context, private val dao: DrawingDao) {
+class HistoryRepository(
+    context: Context,
+    private val dao: DrawingDao,
+    private val io: CoroutineDispatcher = Dispatchers.IO,
+) {
     private val imageDir = File(context.filesDir, "drawings").apply { mkdirs() }
 
     val records: Flow<List<DrawingRecord>> = dao.observeAll()
     val count: Flow<Int> = dao.observeCount()
 
-    suspend fun stats(): Map<String, AnswerStats> = withContext(Dispatchers.IO) {
+    suspend fun stats(): Map<String, AnswerStats> = withContext(io) {
         dao.allStats().associate { it.answer to AnswerStats(it.correct, it.rejected) }
     }
 
     /** Past correct answers with the same shape — fed to the model as likely candidates. */
-    suspend fun knownAnswers(hint: HintPattern?, limit: Int = 25): List<String> = withContext(Dispatchers.IO) {
+    suspend fun knownAnswers(hint: HintPattern?, limit: Int = 25): List<String> = withContext(io) {
         if (hint == null || !hint.isKnown) emptyList()
         else dao.knownAnswers(hint.wordCount, hint.letterCount, limit).map { it.display }
     }
@@ -38,7 +43,7 @@ class HistoryRepository(context: Context, private val dao: DrawingDao) {
         guesses: List<RankedGuess>,
         hint: HintPattern?,
         category: String,
-    ) = withContext(Dispatchers.IO) {
+    ) = withContext(io) {
         val now = System.currentTimeMillis()
         val path = jpeg?.let { bytes -> File(imageDir, "drawing_$now.jpg").also { it.writeBytes(bytes) }.absolutePath }
         val json = JSONArray().apply {
@@ -60,7 +65,7 @@ class HistoryRepository(context: Context, private val dao: DrawingDao) {
         bump(answer, correct = 1, rejected = 0)
     }
 
-    suspend fun recordRejected(answer: String) = withContext(Dispatchers.IO) { bump(answer, 0, 1) }
+    suspend fun recordRejected(answer: String) = withContext(io) { bump(answer, 0, 1) }
 
     private suspend fun bump(answer: String, correct: Int, rejected: Int) {
         val key = GuessEngine.normalize(answer)
@@ -79,7 +84,7 @@ class HistoryRepository(context: Context, private val dao: DrawingDao) {
         )
     }
 
-    suspend fun clear() = withContext(Dispatchers.IO) {
+    suspend fun clear() = withContext(io) {
         dao.allImagePaths().forEach { File(it).delete() }
         dao.clear()
         dao.clearStats()

@@ -31,7 +31,7 @@ import kotlin.math.roundToInt
 class ScreenCapturer(
     private val projection: MediaProjection,
     private val onStopped: () -> Unit,
-) {
+) : FrameSource {
     private val thread = HandlerThread("screen-capture").apply { start() }
     private val handler = Handler(thread.looper)
     private var reader: ImageReader? = null
@@ -51,7 +51,7 @@ class ScreenCapturer(
     private var misses = 0
 
     /** Capture size divided by real screen size; used to map overlay coordinates. */
-    @Volatile var scale: Float = 1f
+    @Volatile override var scale: Float = 1f
         private set
 
     private val callback = object : MediaProjection.Callback() {
@@ -103,7 +103,7 @@ class ScreenCapturer(
      * capturing again. Null before the first frame and after [release].
      */
     @Synchronized
-    fun capture(): Frame? {
+    override fun capture(): Frame? {
         if (released) return null
         val r = reader ?: return null
         val d = display ?: return null

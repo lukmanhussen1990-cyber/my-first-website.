@@ -26,6 +26,7 @@ import com.weplay.guesserai.domain.ScreenState
 import com.weplay.guesserai.domain.VisionAnalyzer
 import com.weplay.guesserai.domain.VisionException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -84,7 +85,7 @@ data class OverlayUiState(
  */
 class AssistantSession(
     private val scope: CoroutineScope,
-    private val capturer: ScreenCapturer,
+    private val capturer: FrameSource,
     private val analyzer: VisionAnalyzer,
     private val history: HistoryRepository,
     private val settingsRepo: SettingsRepository,
@@ -93,6 +94,9 @@ class AssistantSession(
     private val isScreenOn: () -> Boolean,
     /** Overlay bounds in real screen pixels, to mask it out of captures. */
     private val overlayRect: () -> Rect?,
+    /** Capturing, fingerprinting and encoding run here, off the main thread. */
+    private val work: CoroutineDispatcher = Dispatchers.Default,
+    private val clock: () -> Long = System::currentTimeMillis,
 ) {
     private val _state = MutableStateFlow(OverlayUiState())
     val state: StateFlow<OverlayUiState> = _state.asStateFlow()
@@ -143,8 +147,11 @@ class AssistantSession(
     private var knownLoadedFor: HintPattern? = null
     private var lastCanvasJpeg: ByteArray? = null
 
-    /** One model request. [round] is the word it answers for; once that word is over its results are dropped. */
-    private class Request(val seq: Long, var round: Int) {
+    /**
+     * One model request. [round] is the word it answers for; once that word is over its results are
+     * dropped. [drawing] is the canvas alone, kept for the learning history.
+     */
+    private class Request(val seq: Long, var round: Int, val drawing: ByteArray? = null) {
         var job: Job? = null
     }
 
@@ -244,7 +251,7 @@ class AssistantSession(
         _state.update { it.copy(status = AiStatus.WATCHING, message = "Waiting for the game…") }
         withTimeoutOrNull(300) { wake.receive() } // first frame from the projection
         while (scope.isActive) {
-            val tickStart = System.currentTimeMillis()
+            val tickStart = clock()
             val settings = settingsRepo.current
             // Once the game showed the answer, just keep an eye out for the next word.
             val interval = max(settings.captureSpeed.seconds * 1000L, if (tracker.solved) SOLVED_INTERVAL_MS else 0L)
@@ -261,7 +268,7 @@ class AssistantSession(
             if (skip > 0) { waitFor(skip); continue }
 
             // The frame lives in the capturer's reused buffer: it is fully processed before the next capture.
-            val frame = withContext(Dispatchers.Default) { capturer.capture() }
+            val frame = withContext(work) { capturer.capture() }
             if (frame != null) {
                 try {
                     tick(frame, settings)
@@ -272,7 +279,7 @@ class AssistantSession(
                 }
             }
 
-            val elapsed = System.currentTimeMillis() - tickStart
+            val elapsed = clock() - tickStart
             waitFor(max(MIN_GAP_MS, interval + backoffMs - elapsed))
         }
     }
@@ -290,7 +297,7 @@ class AssistantSession(
             val s = capturer.scale
             Rect((r.left * s).toInt(), (r.top * s).toInt(), (r.right * s).toInt(), (r.bottom * s).toInt())
         }
-        val (canvasFp, hintFp) = withContext(Dispatchers.Default) {
+        val (canvasFp, hintFp) = withContext(work) {
             FrameTools.maskRect(frame, mask, lay?.canvas)
             // Watch only the canvas and the hint text — not the chat, the timer or the players.
             if (lay == null) FrameTools.fingerprint(frame) to IntArray(0)
@@ -306,7 +313,7 @@ class AssistantSession(
 
         changes.accept(canvasFp, hintFp)
         forceNext = false
-        val (images, thumb) = withContext(Dispatchers.Default) {
+        val (images, thumb, drawing) = withContext(work) {
             val imgs = if (sendFull) {
                 FrameImages(full = FrameTools.toJpeg(frame, maxSide = 896, quality = 75))
             } else {
@@ -315,15 +322,21 @@ class AssistantSession(
                     canvas = FrameTools.toJpeg(frame, lay.canvas, pad = 0.01f, maxSide = 768, quality = 75),
                 )
             }
+            // The history keeps the drawing only: a whole-screen look also shows the chat and other players.
+            val drawing = when {
+                !settings.saveScreenshots || lay == null -> null
+                imgs.canvas != null -> imgs.canvas
+                else -> FrameTools.toJpeg(frame, lay.canvas, pad = 0.01f, maxSide = 768, quality = 75)
+            }
             // Only the large panel shows the drawing preview.
-            imgs to (if (settings.overlaySize == OverlaySize.LARGE) FrameTools.thumbnail(frame, lay?.canvas) else null)
+            Triple(imgs, if (settings.overlaySize == OverlaySize.LARGE) FrameTools.thumbnail(frame, lay?.canvas) else null, drawing)
         }
         if (paused) return // resuming sends a fresh frame
         if (thumb != null) _state.update { it.copy(thumbnail = thumb) }
         if (images.isCropped) croppedSinceFull++ else croppedSinceFull = 0
         // A blank canvas is left to the fast lane; the stronger model waits for the first strokes.
         val blankCanvas = lay != null && FrameTools.looksBlank(canvasFp)
-        launchRequest(images, settings, canvasFp.takeUnless { blankCanvas })
+        launchRequest(images, settings, canvasFp.takeUnless { blankCanvas }, drawing)
     }
 
     /** Status on an unchanged frame: the waveform stops; the text only changes when it had nothing to say. */
@@ -338,7 +351,7 @@ class AssistantSession(
      * Sends [images] to the fast model, and to the stronger one too when the accuracy boost is
      * due. [canvas] is the canvas fingerprint, null when only the fast model should look.
      */
-    private fun launchRequest(images: FrameImages, settings: AppSettings, canvas: IntArray?) {
+    private fun launchRequest(images: FrameImages, settings: AppSettings, canvas: IntArray?, drawing: ByteArray?) {
         val seq = ++seqStarted
         val hint = tracker.hint
         val hints = PromptHints(
@@ -355,16 +368,16 @@ class AssistantSession(
                 else -> it.copy(status = AiStatus.ANALYZING)
             }
         }
-        val req = Request(seq, tracker.roundId)
+        val req = Request(seq, tracker.roundId, drawing)
         inFlight[seq] = req
-        val started = System.currentTimeMillis()
+        val started = clock()
         req.job = scope.launch {
             try {
                 val analysis = analyzer.analyze(images, hints, settings) { partial ->
                     // Called on the network thread; hop to main so state changes stay ordered.
                     scope.launch { onPartial(req, partial) }
                 }
-                onFinal(req, analysis, images, System.currentTimeMillis() - started)
+                onFinal(req, analysis, images, clock() - started)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
@@ -385,7 +398,7 @@ class AssistantSession(
      * cancels the fast requests and they never cancel it; only the end of its word does.
      */
     private fun launchDeepIfDue(seq: Long, images: FrameImages, hints: PromptHints, settings: AppSettings, canvas: IntArray) {
-        val now = System.currentTimeMillis()
+        val now = clock()
         if (!boostOn(settings) || deep != null || tracker.solved || now < deepNotBefore) return
         if (!deepChanges.hasChanged(canvas)) return
         deepChanges.accept(canvas)
@@ -404,7 +417,7 @@ class AssistantSession(
                 if (e is VisionException.InvalidKey || e is VisionException.ModelNotFound) {
                     deepDisabled = true
                 } else {
-                    deepNotBefore = max(deepNotBefore, System.currentTimeMillis() + DEEP_RETRY_MS)
+                    deepNotBefore = max(deepNotBefore, clock() + DEEP_RETRY_MS)
                     deepChanges.reset() // it never saw this canvas
                 }
             } finally {
@@ -465,7 +478,7 @@ class AssistantSession(
         cropMisses = 0
         // Learn the layout only from a normal guessing screen (never from a popup).
         if (!images.isCropped && a.screenState == ScreenState.GUESSING) learner?.onFullLook(a.canvasBox, a.hintBox)
-        if (a.screenState == ScreenState.GUESSING) lastCanvasJpeg = images.canvas ?: images.full
+        if (a.screenState == ScreenState.GUESSING) lastCanvasJpeg = req.drawing
 
         val hintBefore = tracker.hint ?: before.hint
         val outcome = track(req) { tracker.final(req.seq, a, ctx()) }
@@ -556,7 +569,7 @@ class AssistantSession(
 
     /** Save an answer the game showed (or the user confirmed) with the last drawing. */
     private fun learn(answer: String, guesses: List<RankedGuess>, hint: HintPattern?, category: String) {
-        val jpeg = if (settingsRepo.current.saveScreenshots) lastCanvasJpeg else null
+        val jpeg = if (settingsRepo.current.saveScreenshots) lastCanvasJpeg else null // the canvas only
         scope.launch {
             history.recordCorrect(answer, jpeg, guesses, hint, category)
             refreshStats()
