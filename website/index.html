@@ -16,7 +16,7 @@
 const CONFIG = {
   name: "Imran",                        // your name (typed on the Home screen, page title, app name)
   handle: "imran",                      // shown as @imran
-  version: "2.10",                     // shown in Settings → About
+  version: "2.10.1",                     // shown in Settings → About
 
   // ---------- your files (inside the assets folder) ----------
   avatarImage: "assets/avatar.jpg",     // your main picture (Settings card, song covers, browser tab icon)
@@ -2877,14 +2877,14 @@ const CONFIG = {
      He is 540 wide; standing up, his eyes are just over the crown's points and the crown hides his mask and hand.
      ===================================================================== */
   .pk {
-    z-index: 1; left: calc(-400 * var(--fs)); top: calc(-700 * var(--fs)); width: calc(2336 * var(--fs)); height: calc(1355.6 * var(--fs));
+    z-index: 1; left: calc(300 * var(--fs)); top: calc(-180 * var(--fs)); width: calc(830 * var(--fs)); height: calc(835.6 * var(--fs));   /* just round him (a small box is cheap to draw) */
     overflow: hidden; visibility: hidden;
-    -webkit-mask-image: radial-gradient(circle at calc(1162.8 * var(--fs)) calc(1355.6 * var(--fs)), transparent calc(314 * var(--fs)), #000 calc(317 * var(--fs)));
-    mask-image: radial-gradient(circle at calc(1162.8 * var(--fs)) calc(1355.6 * var(--fs)), transparent calc(314 * var(--fs)), #000 calc(317 * var(--fs)));
+    -webkit-mask-image: radial-gradient(circle at calc(462.8 * var(--fs)) calc(835.6 * var(--fs)), transparent calc(314 * var(--fs)), #000 calc(317 * var(--fs)));
+    mask-image: radial-gradient(circle at calc(462.8 * var(--fs)) calc(835.6 * var(--fs)), transparent calc(314 * var(--fs)), #000 calc(317 * var(--fs)));
   }
   .pk.on { visibility: visible; }
   .pk-mv {
-    position: absolute; left: calc(857.3 * var(--fs)); top: calc(575 * var(--fs)); width: calc(540 * var(--fs)); height: calc(609.5 * var(--fs));
+    position: absolute; left: calc(157.3 * var(--fs)); top: calc(55 * var(--fs)); width: calc(540 * var(--fs)); height: calc(609.5 * var(--fs));
     transform: translate(0, 112%); transform-origin: 56.6% 74%;          /* parked: down behind the ring · he leans from his neck */
   }
   .pk.on .pk-mv { will-change: transform; }
@@ -2910,12 +2910,70 @@ const CONFIG = {
   @keyframes mcIcon { 0%, 60%, 100% { transform: none; } 18% { transform: translateY(-3px) rotate(5deg); } 34% { transform: translateY(1px) rotate(-3deg); } 46% { transform: rotate(1deg); } }
   .app-bg .mc-card *, .app-bg .mc-card::after { animation-play-state: paused !important; }
 
-  /* the screen: the night sky, the street standing on the bottom edge (it follows the boy a little), the canvas over it */
-  #s-money { padding: 0; overflow: hidden; background: linear-gradient(#010916, #021b35 62%); touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  /* the screen: the night sky, the street standing on the bottom edge (it follows the boy a little), the boy / notes / effects over it.
+     Smooth on slow phones: nothing here is repainted while you play; the pieces are only moved, turned and faded by the graphics chip */
+  #s-money { padding: 0; overflow: hidden; background: linear-gradient(#010814, #021b35 var(--mcsky, 36%)); touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
   #app.mc-on #tabs { opacity: 0; visibility: hidden; transform: translateY(26px); pointer-events: none; transition: opacity .2s ease, transform .3s ease, visibility 0s linear .3s; }
-  .mc-bg { position: absolute; left: 0; bottom: 0; width: 140%; height: 64%; pointer-events: none; background: url("assets/money-bg.webp") 0 0 / 100% 100% no-repeat;
-    -webkit-mask-image: linear-gradient(transparent, #000 13%); mask-image: linear-gradient(transparent, #000 13%); will-change: transform; }
-  .mc-cv { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; }
+  .mc-stars { position: absolute; top: 0; left: 0; right: 0; pointer-events: none; }
+  .mc-stars i { position: absolute; left: 0; top: 0; width: 1.6px; height: 1.6px; border-radius: 50%; animation: mcTw 3.4s ease-in-out infinite alternate; }
+  .mc-stars i + i { animation-delay: -1.7s; }
+  @keyframes mcTw { 0% { opacity: .2; } 100% { opacity: 1; } }
+  .mc-bg { position: absolute; left: 0; bottom: 0; width: 140%; height: 64%; pointer-events: none; background: url("assets/money-bg.webp") 0 0 / 100% 100% no-repeat; will-change: transform; }
+  .mc-fade { position: absolute; left: 0; right: 0; pointer-events: none; background: linear-gradient(#021b35, rgba(2, 27, 53, 0)); }   /* the street's top melts into the sky */
+  .mc-world { position: absolute; z-index: 1; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; pointer-events: none; contain: strict; }
+  .mc-boy { position: absolute; left: 0; top: 0; z-index: 2; will-change: transform; }
+  .mc-boyin { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+  .mc-boyin img { position: absolute; display: block; max-width: none; }
+  .mc-shadow { position: absolute; top: -9px; height: 16px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, .55), rgba(0, 0, 0, 0)); }
+  .mc-mag { position: absolute; width: 0; height: 0; display: none; }
+  .mc-boy.mag .mc-mag { display: block; }
+  .mc-mag b { position: absolute; left: -55px; top: -55px; width: 110px; height: 110px; border-radius: 50%; border: 3px solid rgba(143, 224, 255, .75); animation: mcMag 1.25s linear infinite; }
+  .mc-mag b + b { animation-delay: -.62s; }
+  @keyframes mcMag { 0% { transform: scale(.18); opacity: .9; } 100% { transform: scale(1); opacity: 0; } }
+  /* a falling note / bomb / power-up */
+  .mc-it { position: absolute; left: 0; top: 0; z-index: 3; will-change: transform, opacity; }
+  .mc-it img { position: relative; display: block; width: 100%; height: 100%; max-width: none; }
+  .mc-glow::before { content: ""; position: absolute; left: -60%; top: -60%; width: 220%; height: 220%; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 240, 170, .75), rgba(255, 200, 60, .28) 45%, rgba(255, 180, 40, 0)); animation: mcGlow .9s ease-in-out infinite alternate; }
+  @keyframes mcGlow { 0% { transform: scale(.88); } 100% { transform: scale(1.1); } }
+  .mc-pw-bomb::after { content: ""; position: absolute; left: 78%; top: 11.6%; width: 46%; height: 41%; background: var(--mcspark) center / contain no-repeat; animation: mcFuse .16s steps(2) infinite; }
+  @keyframes mcFuse { 0% { transform: translate(-50%, -50%) scale(.75) rotate(0); opacity: .8; } 100% { transform: translate(-50%, -50%) scale(1.15) rotate(35deg); opacity: 1; } }
+  /* effects (each plays once by itself, then the code removes it) */
+  .mc-sp { position: absolute; z-index: 4; width: var(--z); height: var(--z); margin: calc(var(--z) / -2) 0 0 calc(var(--z) / -2); background: var(--mcspark) center / contain no-repeat;
+    animation: mcSp var(--d) cubic-bezier(.2, .6, .4, 1) forwards; }
+  @keyframes mcSp { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 55% { transform: translate(calc(var(--dx) * .8), var(--dy)) scale(.9); opacity: 1; }
+                    100% { transform: translate(var(--dx), calc(var(--dy) * .5 + 34px)) scale(.4); opacity: 0; } }
+  .mc-ft { position: absolute; z-index: 5; font-style: normal; font-weight: 900; font-size: var(--fz); line-height: 1; color: var(--c); white-space: nowrap;
+    -webkit-text-stroke: 1.2px rgba(30, 10, 0, .9); text-shadow: 0 2px 0 rgba(40, 15, 0, .95), 0 0 8px rgba(0, 0, 0, .75); animation: mcFt .95s ease-out forwards; }
+  @keyframes mcFt { 0% { transform: translate(-50%, -50%) scale(.6); opacity: 1; } 15% { transform: translate(-50%, -60%) scale(1.12); } 65% { opacity: 1; }
+                    100% { transform: translate(-50%, calc(-50% - 44px)); opacity: 0; } }
+  .mc-boom { position: absolute; z-index: 4; width: 0; height: 0; }
+  .mc-boom::before, .mc-boom::after { content: ""; position: absolute; left: calc(var(--r) * -1); top: calc(var(--r) * -1); width: calc(var(--r) * 2); height: calc(var(--r) * 2); border-radius: 50%; }
+  .mc-boom::before { background: radial-gradient(closest-side, #fffadc, rgba(255, 170, 60, .8) 40%, rgba(255, 80, 20, 0)); animation: mcBoomF .35s ease-out forwards; }
+  .mc-boom::after { border: 4px solid #ffd28a; animation: mcBoomR .5s ease-out forwards; }
+  @keyframes mcBoomF { 0% { transform: scale(.3); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
+  @keyframes mcBoomR { 0% { transform: scale(.2); opacity: .85; } 100% { transform: scale(1.2); opacity: 0; } }
+  .mc-boom b { position: absolute; width: var(--z); height: var(--z); margin: calc(var(--z) / -2) 0 0 calc(var(--z) / -2); border-radius: 50%; animation: mcPart .85s cubic-bezier(.2, .7, .4, 1) forwards; }
+  @keyframes mcPart { 0% { transform: translate(0, 0) scale(.6); opacity: .95; } 100% { transform: translate(var(--dx), calc(var(--dy) + 40px)) scale(1.6); opacity: 0; } }
+  .mc-flash { position: absolute; z-index: 2; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, rgba(255, 0, 40, 0) 42%, rgba(255, 0, 40, .62)); }
+  .mc-flash.go { animation: mcHurt .55s ease-out; }
+  @keyframes mcHurt { 0% { opacity: 1; } 100% { opacity: 0; } }
+  .mc-banner { position: absolute; z-index: 2; left: 0; right: 0; top: 36%; text-align: center; pointer-events: none; font-style: italic; font-weight: 900; font-size: 40px; line-height: 1.2; color: var(--c, #ffd21f);
+    -webkit-text-stroke: 2px rgba(10, 5, 0, .85); text-shadow: 0 0 18px var(--c, #ffd21f), 0 3px 0 rgba(10, 5, 0, .9); opacity: 0; }
+  .mc-banner.mc-top { top: 17%; }
+  .mc-banner.go { animation: mcBanner 1.5s ease-out forwards; }
+  @keyframes mcBanner { 0% { opacity: 1; transform: translateY(-50%) scale(.4); } 20% { transform: translateY(-50%) scale(1.15); } 30% { transform: translateY(-50%) scale(1); } 75% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-50%); } }
+  /* the power-ups running, under the score: the picture and a bar that empties */
+  .mc-pows { position: absolute; z-index: 2; left: 14px; display: flex; gap: 8px; pointer-events: none; }
+  .mc-pw { position: relative; width: 44px; height: 44px; border-radius: 50%; background: rgba(3, 8, 19, .82); border: 2px solid rgba(178, 186, 204, .5); display: none; }
+  .mc-pw.on { display: block; }
+  .mc-pw img { position: absolute; left: 7px; top: 7px; width: 26px; height: 26px; }
+  .mc-pw i { position: absolute; left: 6px; right: 6px; bottom: -8px; height: 4px; border-radius: 2px; background: #8fe0ff; transform-origin: 0 50%; }
+  .mc-pw[data-k="x2"] i { background: #ffd21f; }
+  .mc-pw.go i { animation: mcBar var(--d, 8s) linear forwards; }
+  @keyframes mcBar { 0% { transform: scaleX(1); } 100% { transform: scaleX(0); } }
+  /* paused (or the app in the background): every effect waits too */
+  .mc-paused .mc-world *, .mc-paused .mc-world *::before, .mc-paused .mc-world *::after, .mc-paused .mc-banner, .mc-paused .mc-flash, .mc-paused .mc-pw i { animation-play-state: paused !important; }
 
   /* the HUD, like the picture: a dark rounded panel with a gold trophy, "Score" and the number in yellow; hearts; pause */
   .mc-hud { position: absolute; z-index: 2; top: calc(12px + env(safe-area-inset-top, 0px)); left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
@@ -3715,8 +3773,16 @@ const CONFIG = {
 
       <!-- ===================== 10. GAME: MONEY RAIN (opens from the Games card on Social): the boy catches the falling notes in his bag ===================== -->
       <section class="screen" id="s-money" aria-label="Money Rain">
+        <div class="mc-stars" id="mcStars" aria-hidden="true"><i></i><i></i></div>
         <div class="mc-bg" id="mcBg" aria-hidden="true"></div>
-        <canvas class="mc-cv" id="mcCv" role="img" aria-label="Money Rain. Slide, hold the arrows or use the arrow keys to move the boy and catch the notes."></canvas>
+        <div class="mc-fade" id="mcFade" aria-hidden="true"></div>
+        <!-- the boy, the notes and the effects: small pictures the graphics chip only moves (nothing is repainted while you play) -->
+        <div class="mc-world" id="mcWorld" role="img" aria-label="Money Rain. Slide, hold the arrows or use the arrow keys to move the boy and catch the notes.">
+          <div class="mc-boy" id="mcBoy"><i class="mc-shadow"></i><div class="mc-boyin" id="mcBoyIn"><img src="assets/money-boy.webp" alt="" draggable="false" decoding="async"><i class="mc-mag"><b></b><b></b></i></div></div>
+        </div>
+        <div class="mc-flash" id="mcFlash" aria-hidden="true"></div>
+        <div class="mc-banner" id="mcBanner" aria-hidden="true"></div>
+        <div class="mc-pows" id="mcPows" aria-hidden="true"><span class="mc-pw" data-k="magnet"><img alt=""><i></i></span><span class="mc-pw" data-k="x2"><img alt=""><i></i></span></div>
         <div class="mc-hud">
           <div class="mc-score"><img src="assets/money-trophy.webp" alt="" width="82" height="79"><span><small>Score</small><b id="mcScore">0</b></span><em id="mcMult" aria-hidden="true"></em></div>
           <div class="mc-hr">
@@ -9793,33 +9859,36 @@ const CONFIG = {
 
   /* =====================================================================
      GAME: MONEY RAIN  (the third card under Games on Social), made from your picture: Marine Drive at night (assets/money-bg.webp,
-     with the notes, the boy and the buttons taken out), the boy with the ₹ bag and three notes cut out of it (assets/money-sprites.webp).
+     with the notes, the boy and the buttons taken out), the boy with the ₹ bag (assets/money-boy.webp) and the notes (money-note-*.webp).
      Notes rain down, fluttering. Slide anywhere (or hold the arrows, or the arrow keys) to move the boy and catch them in his bag.
      A note that hits the road costs a heart (3 hearts). After a while bombs fall too: don't catch those. Now and then a magnet,
      double money or a heart falls to help. It gets faster every 30 s. The loop runs only while this screen is shown and the app is in front.
+     Smooth on slow phones: nothing is repainted while you play. The boy, every note and every effect is its own small picture that the
+     phone's graphics chip only moves, turns and fades (a frame just sets their positions); sparkles, texts, flashes and banners are
+     CSS animations that run by themselves.
      ===================================================================== */
-  var MC_SHEET = { boy: [0, 0, 299, 405], orange: [0, 409, 81, 166], green: [85, 409, 81, 164], pink: [170, 409, 87, 189] };
-  var MC_NOTES = [{ k: "orange", pts: 20, w: .5 }, { k: "green", pts: 50, w: .38 }, { k: "pink", pts: 200, w: .12 }];   // ₹200, ₹500, ₹2000 (the pink one is rare and falls faster)
+  var MC_NOTES = [{ k: "orange", src: "assets/money-note-200.webp", ar: 166 / 81, pts: 20, w: .5 },     // ₹200, ₹500, ₹2000
+                  { k: "green", src: "assets/money-note-500.webp", ar: 164 / 81, pts: 50, w: .38 },     // (the pink one is rare and falls faster)
+                  { k: "pink", src: "assets/money-note-2000.webp", ar: 189 / 87, pts: 200, w: .12 }];
   var MC_BOY = { w: 299, h: 405, foot: 398, mouth: [226, 96], box: [52, 46, 294, 184] };   // in the boy picture: where his shoes touch the road, the bag's mouth, the box that catches
-  var mc = { el: $("s-money"), cv: $("mcCv"), bg: $("mcBg"), hud: document.querySelector(".mc-hud"), g: null, img: null, heart: null, art: null, font: "",
-             opened: false, run: false, raf: 0, last: 0, mode: "ready", W: 0, H: 0, k: 1, s: .4, foot: 0, nh: 70, sw: 0, sh: 0, minX: 0, maxX: 0, hudB: 70,
-             x: 0, vx: 0, face: 1, fl: 1, btn: 0, keys: 0, drag: null, walk: 0, items: [], fx: [], txt: [], stars: [], banner: null,
+  var mc = { el: $("s-money"), bg: $("mcBg"), fade: $("mcFade"), stars: $("mcStars"), world: $("mcWorld"), boyEl: $("mcBoy"), boyIn: $("mcBoyIn"),
+             flash: $("mcFlash"), bannerEl: $("mcBanner"), hud: document.querySelector(".mc-hud"), src: null, font: "", pool: [], fxEls: [],
+             opened: false, run: false, raf: 0, last: 0, mode: "ready", W: 0, H: 0, s: .4, foot: 0, nh: 70, sw: 0, sh: 0, minX: 0, maxX: 0, hudB: 70,
+             x: 0, vx: 0, face: 1, fl: 1, btn: 0, keys: 0, drag: null, walk: 0, items: [],
              t: 0, clock: 0, spawnT: 0, powT: 0, level: 1, score: 0, shown: -1, best: 0, lives: 3, combo: 0, mult: 1, magnet: 0, dbl: 0,
-             shake: 0, hurt: 0, bump: 0, overT: 0, newBest: false, panX: 0, bgX: null, bgY: null, lastN: null, ringT: 0 };
+             shake: 0, bump: 0, overT: 0, newBest: false, panX: 0, bgT: "", boyT: "", boyInT: "", lastN: null, pw: {} };
   function mcR(a, b) { return a + Math.random() * (b - a); }
   function mcCanvas(w, h) { var c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
 
-  /* ---------- the drawn pieces (made once): a sparkle, a glow, the bomb, the magnet, the x2 coin ---------- */
+  /* ---------- the drawn pieces (made once, kept as pictures): a sparkle, the bomb, the magnet, the x2 coin ---------- */
   function mcArt() {
     var A = {}, c, x, gr;
-    c = A.spark = mcCanvas(48, 48); x = c.getContext("2d");
+    c = mcCanvas(48, 48); x = c.getContext("2d");
     gr = x.createRadialGradient(24, 24, 0, 24, 24, 24); gr.addColorStop(0, "rgba(255,252,230,1)"); gr.addColorStop(.18, "rgba(255,220,120,.85)"); gr.addColorStop(.55, "rgba(255,170,40,.2)"); gr.addColorStop(1, "rgba(255,150,30,0)");
     x.fillStyle = gr; x.fillRect(0, 0, 48, 48); x.fillStyle = "rgba(255,253,240,.95)";
     x.beginPath(); x.moveTo(24, 1); x.quadraticCurveTo(26, 22, 47, 24); x.quadraticCurveTo(26, 26, 24, 47); x.quadraticCurveTo(22, 26, 1, 24); x.quadraticCurveTo(22, 22, 24, 1); x.fill();
-    c = A.glow = mcCanvas(64, 64); x = c.getContext("2d");
-    gr = x.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, "rgba(255,240,170,.75)"); gr.addColorStop(.45, "rgba(255,200,60,.28)"); gr.addColorStop(1, "rgba(255,180,40,0)");
-    x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
-    c = A.bomb = mcCanvas(100, 112); x = c.getContext("2d");                    // a black bomb with a shine, a cap and a fuse (its spark is drawn live)
+    A.spark = c.toDataURL();
+    c = mcCanvas(100, 112); x = c.getContext("2d");                            // a black bomb with a shine, a cap and a fuse (its spark is a CSS flicker)
     x.strokeStyle = "#d8b27a"; x.lineWidth = 6; x.lineCap = "round"; x.beginPath(); x.moveTo(52, 30); x.quadraticCurveTo(58, 10, 78, 13); x.stroke();
     x.strokeStyle = "rgba(90,60,20,.6)"; x.lineWidth = 2; x.beginPath(); x.moveTo(54, 24); x.lineTo(58, 22); x.moveTo(60, 16); x.lineTo(64, 18); x.stroke();
     gr = x.createLinearGradient(38, 0, 62, 0); gr.addColorStop(0, "#2a2e38"); gr.addColorStop(.5, "#6b7384"); gr.addColorStop(1, "#22252d");
@@ -9828,7 +9897,8 @@ const CONFIG = {
     x.fillStyle = gr; x.beginPath(); x.arc(50, 70, 37, 0, 6.2832); x.fill();
     x.fillStyle = "rgba(255,255,255,.42)"; x.beginPath(); x.ellipse(35, 55, 10, 6, -.7, 0, 6.2832); x.fill();
     x.fillStyle = "rgba(255,255,255,.2)"; x.beginPath(); x.ellipse(70, 88, 6, 3, -.7, 0, 6.2832); x.fill();
-    c = A.magnet = mcCanvas(96, 96); x = c.getContext("2d");                   // a red horseshoe magnet with silver tips
+    A.bomb = c.toDataURL();
+    c = mcCanvas(96, 96); x = c.getContext("2d");                               // a red horseshoe magnet with silver tips
     x.lineCap = "butt"; x.lineWidth = 22;
     gr = x.createLinearGradient(14, 0, 82, 0); gr.addColorStop(0, "#b3121e"); gr.addColorStop(.35, "#ff4b4b"); gr.addColorStop(.6, "#e3202c"); gr.addColorStop(1, "#8e0d16");
     x.strokeStyle = gr; x.beginPath(); x.moveTo(25, 24); x.lineTo(25, 52); x.arc(48, 52, 23, Math.PI, 0, true); x.lineTo(71, 24); x.stroke();
@@ -9837,38 +9907,52 @@ const CONFIG = {
     gr = x.createLinearGradient(60, 0, 82, 0); gr.addColorStop(0, "#9aa3b2"); gr.addColorStop(.5, "#ffffff"); gr.addColorStop(1, "#8a93a3");
     x.fillStyle = gr; x.fillRect(60, 8, 22, 17);
     x.strokeStyle = "rgba(255,255,255,.35)"; x.lineWidth = 4; x.beginPath(); x.arc(48, 52, 29, Math.PI * .95, Math.PI * .6, true); x.stroke();
-    c = A.x2 = mcCanvas(96, 96); x = c.getContext("2d");                        // a gold coin with x2 on it
+    A.magnet = c.toDataURL();
+    c = mcCanvas(96, 96); x = c.getContext("2d");                               // a gold coin with x2 on it
     gr = x.createRadialGradient(36, 32, 4, 48, 48, 46); gr.addColorStop(0, "#fff6c4"); gr.addColorStop(.35, "#ffd54a"); gr.addColorStop(.8, "#e89a0a"); gr.addColorStop(1, "#a85f00");
     x.fillStyle = gr; x.beginPath(); x.arc(48, 48, 44, 0, 6.2832); x.fill();
     x.strokeStyle = "rgba(140,80,0,.75)"; x.lineWidth = 4; x.beginPath(); x.arc(48, 48, 35, 0, 6.2832); x.stroke();
-    x.fillStyle = "#7a3d00"; x.font = "900 34px " + mc.font; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("x2", 48, 51);
-    x.fillStyle = "#fff3c0"; x.fillText("x2", 47, 49);
-    x.fillStyle = "#b8650a"; x.fillText("x2", 48, 50);
+    x.font = "900 34px " + mc.font; x.textAlign = "center"; x.textBaseline = "middle";
+    x.fillStyle = "#7a3d00"; x.fillText("x2", 48, 51); x.fillStyle = "#fff3c0"; x.fillText("x2", 47, 49); x.fillStyle = "#b8650a"; x.fillText("x2", 48, 50);
+    A.x2 = c.toDataURL();
+    A.heart = "assets/money-heart.webp";
     return A;
   }
 
-  /* ---------- size: the canvas at the screen's sharpness, the street 2/3 of the screen tall, the boy about 30 % of its width ---------- */
+  /* ---------- size: the street 2/3 of the screen tall (standing on the bottom edge), the boy about 30 % of the width ---------- */
   function mcSize() {
     var w = mc.el.clientWidth, h = mc.el.clientHeight; if (!w || !h) return false;
-    var k = Math.round(Math.min(window.devicePixelRatio || 1, isUltra() ? 1.25 : isLite() ? 1.75 : 2.25) * 100) / 100;
-    var ch = w !== mc.W || h !== mc.H || k !== mc.k, ow = mc.W;
-    if (ch || !mc.g) { mc.cv.width = Math.round(w * k); mc.cv.height = Math.round(h * k); mc.g = mc.cv.getContext("2d"); }
-    mc.W = w; mc.H = h; mc.k = k;
+    var ch = w !== mc.W || h !== mc.H, ow = mc.W;
+    mc.W = w; mc.H = h;
     mc.sh = Math.max(h * .64, w * 1.2 * 1199 / 1312); mc.sw = mc.sh * 1312 / 1199;            // the street: always a bit wider than the screen, so it can follow the boy
     mc.bg.style.width = mc.sw.toFixed(1) + "px"; mc.bg.style.height = mc.sh.toFixed(1) + "px";
+    var fh = mc.sh * .14; mc.fade.style.height = fh.toFixed(1) + "px"; mc.fade.style.bottom = (mc.sh - fh).toFixed(1) + "px";   // its top melts into the sky
+    mc.el.style.setProperty("--mcsky", (h - mc.sh).toFixed(0) + "px");
+    mc.stars.style.height = Math.max(40, h - mc.sh * .82).toFixed(0) + "px";
     mc.s = Math.max(100, Math.min(150, w * .3)) / MC_BOY.w;
     var a = $("mcLeft"); mc.foot = a.offsetTop + a.offsetHeight - 4;                           // his shoes on the road, level with the bottom of the arrows (like the picture)
     mc.hudB = mc.hud.offsetTop + mc.hud.offsetHeight;
     mc.nh = Math.max(56, Math.min(88, h * .084));                                               // a note's height on the screen
     mc.minX = w * .1; mc.maxX = w * .9;
     mc.x = ow ? mc.x * w / ow : w / 2; mc.x = Math.max(mc.minX, Math.min(mc.maxX, mc.x));
-    if (ch) mcStars();
+    var s = mc.s, img = mc.boyIn.firstElementChild, mag = mc.boyIn.lastElementChild;      // the boy's picture hangs from the point between his shoes
+    img.style.width = (MC_BOY.w * s).toFixed(1) + "px"; img.style.height = (MC_BOY.h * s).toFixed(1) + "px";
+    img.style.left = (-MC_BOY.w * s / 2).toFixed(1) + "px"; img.style.top = (-MC_BOY.foot * s).toFixed(1) + "px";
+    mag.style.left = ((MC_BOY.mouth[0] - MC_BOY.w / 2) * s).toFixed(1) + "px"; mag.style.top = (-(MC_BOY.foot - MC_BOY.mouth[1]) * s).toFixed(1) + "px";
+    var shd = mc.boyEl.firstElementChild; shd.style.width = (MC_BOY.w * s * .9).toFixed(1) + "px"; shd.style.left = (-MC_BOY.w * s * .45).toFixed(1) + "px";
+    $("mcPows").style.top = (mc.hudB + 10) + "px";
+    if (ch || !mc.starsOn) mcStars();
+    mc.bgT = mc.boyT = mc.boyInT = "";
     return ch;
   }
-  function mcStars() {                                         // a few stars twinkle in the sky above the street
-    mc.stars = [];
-    var top = mc.H - mc.sh * .8;
-    for (var i = 0; i < 34; i++) mc.stars.push({ x: Math.random() * mc.W, y: Math.random() * Math.max(40, top), r: mcR(.5, 1.5), p: Math.random() * 6.28, f: mcR(.8, 2.4) });
+  function mcStars() {                                         // a few stars in the sky above the street (two layers that twinkle in turn)
+    var hh = parseFloat(mc.stars.style.height) || 200, ls = mc.stars.children;
+    for (var j = 0; j < ls.length; j++) {
+      var sh = [];
+      for (var i = 0; i < 17; i++) sh.push(Math.round(Math.random() * mc.W) + "px " + Math.round(Math.random() * hh) + "px 0 " + (Math.random() < .3 ? ".6px" : "0") + " rgba(223,232,255," + mcR(.5, 1).toFixed(2) + ")");
+      ls[j].style.boxShadow = sh.join(",");
+    }
+    mc.starsOn = true;
   }
 
   /* ---------- the boy ---------- */
@@ -9901,8 +9985,23 @@ const CONFIG = {
     mc.walk += dt * Math.min(1, Math.abs(mc.vx) / maxV) * 15;
   }
 
-  /* ---------- things that fall ---------- */
+  /* ---------- things that fall (each one a small picture, from a pool so nothing is made while you play) ---------- */
   function mcDiff() { return Math.min(1, mc.t / 170); }       // 0 → 1 over almost three minutes
+  function mcElem(it) {
+    var e = mc.pool.pop();
+    if (!e) { e = document.createElement("i"); e.appendChild(new Image()); e.firstChild.alt = ""; e.firstChild.draggable = false; mc.world.appendChild(e); }
+    var w, h, src;
+    if (it.kind === "note") { h = it.size; w = h / it.n.ar; src = it.n.src; }
+    else if (it.kind === "bomb") { h = it.size * 1.25; w = h * 100 / 112; src = mc.src.bomb; }
+    else if (it.kind === "heart") { w = it.size * 1.05; h = w * 40 / 45; src = mc.src.heart; }
+    else { h = w = it.size; src = mc.src[it.kind]; }
+    e.className = "mc-it" + (it.kind === "note" ? "" : " mc-pw-" + it.kind + (it.kind === "bomb" ? "" : " mc-glow"));
+    if (e.firstChild.getAttribute("src") !== src) e.firstChild.src = src;
+    e.style.width = w.toFixed(1) + "px"; e.style.height = h.toFixed(1) + "px"; e.style.margin = (-h / 2).toFixed(1) + "px 0 0 " + (-w / 2).toFixed(1) + "px";
+    e.style.opacity = ""; e.style.zIndex = "3"; e.style.display = ""; e._t = ""; e._o = 1;
+    return e;
+  }
+  function mcFree(it) { if (it.el) { it.el.style.display = "none"; mc.pool.push(it.el); it.el = null; } }
   function mcNew(kind, x, fall, extra) {
     var size = kind === "note" ? mc.nh : mc.nh * .72, it = {
       kind: kind, x0: x, x: x, y: -size * .8, vy: (mc.H + size) / fall, t: 0, st: 0, size: size, land: mc.foot - mcR(4, 18),
@@ -9910,6 +10009,7 @@ const CONFIG = {
       flip: Math.random() < .35, fa: mcR(.15, .55), ff: mcR(1.6, 3.4), fp: Math.random() * 6.28, fx: 1, rot: 0, a: 1 };
     if (kind !== "note") { it.sa *= .5; it.ra *= .4; it.vr = 0; it.flip = false; it.fa = 0; }
     for (var k in extra) it[k] = extra[k];
+    it.el = mcElem(it);
     mc.items.push(it);
     return it;
   }
@@ -9958,54 +10058,73 @@ const CONFIG = {
       if (mult > mc.mult) { mcBanner("COMBO x" + mult + "!", "#ffd21f"); sfx.play("mlevel"); }
       mc.mult = mult; mc.score += pts;
       mcText("+" + pts, m.x, m.y - 14, mc.dbl > 0 ? "#ffb21f" : "#ffe14a", pts >= 200 ? 30 : 24);
-      mcSparks(m.x, m.y, it.k === "pink" ? 14 : 8);
+      mcSparks(m.x, m.y, it.k === "pink" ? 12 : 7);
       sfx.play(it.k === "pink" ? "mbig" : "mcoin"); mcBuzz("soft");
-    } else if (it.kind === "magnet") { mc.magnet = 8; mcText("MAGNET!", m.x, m.y - 20, "#7fd8ff", 24); mcSparks(m.x, m.y, 12); sfx.play("mpower"); mcBuzz("win"); }
-    else if (it.kind === "x2") { mc.dbl = 10; mcText("DOUBLE MONEY!", m.x, m.y - 20, "#ffd21f", 24); mcSparks(m.x, m.y, 14); sfx.play("mpower"); mcBuzz("win"); }
+    } else if (it.kind === "magnet") { mc.magnet = 8; mcPow("magnet", 8); mcText("MAGNET!", m.x, m.y - 20, "#7fd8ff", 24); mcSparks(m.x, m.y, 10); sfx.play("mpower"); mcBuzz("win"); }
+    else if (it.kind === "x2") { mc.dbl = 10; mcPow("x2", 10); mcText("DOUBLE MONEY!", m.x, m.y - 20, "#ffd21f", 24); mcSparks(m.x, m.y, 12); sfx.play("mpower"); mcBuzz("win"); }
     else if (it.kind === "heart") {
       if (mc.lives < 3) { mc.lives++; mcHearts(mc.lives - 1, "got"); mcText("+1 ♥", m.x, m.y - 20, "#ff6b81", 26); }
       else { mc.score += 100; mcText("+100", m.x, m.y - 20, "#ffe14a", 26); }
-      mcSparks(m.x, m.y, 10); sfx.play("mheart"); mcBuzz("win");
+      mcSparks(m.x, m.y, 9); sfx.play("mheart"); mcBuzz("win");
     }
     mcMultUI();
   }
-  function mcHurt(x, y) {                                      // a heart goes
+  function mcHurt() {                                          // a heart goes
     mc.combo = 0; mc.mult = 1; mcMultUI();
     mc.lives = Math.max(0, mc.lives - 1); mcHearts(mc.lives, "lost");
-    mc.hurt = .55; mc.shake = Math.max(mc.shake, .3); mcBuzz("lose");
+    mcGo1(mc.flash); mc.shake = Math.max(mc.shake, .3); mcBuzz("lose");
     if (mc.lives <= 0) mcOver();
   }
   function mcMiss(it) {
     if (mc.mode !== "play" || it.demo) return;
     mcText("MISSED!", it.x, it.land - 30, "#ff5a6e", 20);
-    sfx.play("mmiss"); mcHurt(it.x, it.land);
+    sfx.play("mmiss"); mcHurt();
   }
   function mcBoom(it) {
     it.st = 3;
     mcExplode(it.x, it.y, 1);
     mc.shake = .6; sfx.play("mboom");
     mcText("BOOM!", it.x, it.y - 30, "#ff8a3d", 30);
-    mcHurt(it.x, it.y);
+    mcHurt();
   }
 
-  /* ---------- effects: sparkles, explosions, floating text, banners ---------- */
+  /* ---------- effects: small elements with CSS animations that play by themselves, cleared when done ---------- */
+  function mcFx(cls, x, y, life, html, style) {
+    var e = document.createElement("i"); e.className = cls;
+    e.style.left = x.toFixed(1) + "px"; e.style.top = y.toFixed(1) + "px";
+    if (style) for (var k in style) e.style.setProperty(k, style[k]);
+    if (html) e.innerHTML = html;
+    mc.world.appendChild(e); mc.fxEls.push({ e: e, end: mc.clock + life });
+    return e;
+  }
   function mcSparks(x, y, n) {
     if (isUltra()) n = Math.ceil(n / 2);
     for (var i = 0; i < n; i++) {
-      var a = mcR(-Math.PI * .95, -Math.PI * .05), v = mcR(90, 260);
-      mc.fx.push({ k: "s", x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, T: mcR(.45, .8), r: mcR(10, 22) });
+      var a = mcR(-Math.PI * .95, -Math.PI * .05), v = mcR(50, 120), d = mcR(.45, .8);
+      mcFx("mc-sp", x, y, d, "", { "--dx": (Math.cos(a) * v).toFixed(0) + "px", "--dy": (Math.sin(a) * v).toFixed(0) + "px", "--z": mcR(10, 22).toFixed(0) + "px", "--d": d.toFixed(2) + "s" });
     }
   }
   function mcExplode(x, y, big) {
-    mc.fx.push({ k: "f", x: x, y: y, t: 0, T: .35, r: 90 * big });                          // the flash
-    mc.fx.push({ k: "o", x: x, y: y, t: 0, T: .5, r: 110 * big });                          // the ring
-    for (var i = 0; i < (isUltra() ? 9 : 18); i++) {
-      var a = Math.random() * 6.28, v = mcR(60, 300) * big;
-      mc.fx.push({ k: "p", x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, t: 0, T: mcR(.4, .9), r: mcR(6, 16) * big, c: Math.random() < .5 ? "255,170,60" : Math.random() < .5 ? "255,90,40" : "90,90,100" });
+    var parts = "", n = isUltra() ? 6 : 12;
+    for (var i = 0; i < n; i++) {
+      var a = Math.random() * 6.28, v = mcR(40, 150) * big, c = Math.random() < .45 ? "#ffb04a" : Math.random() < .5 ? "#ff5a28" : "#5d5d68";
+      parts += '<b style="--dx:' + (Math.cos(a) * v).toFixed(0) + "px;--dy:" + (Math.sin(a) * v - 30 * big).toFixed(0) + "px;--z:" + (mcR(8, 20) * big).toFixed(0) + "px;background:" + c + '"></b>';
     }
+    mcFx("mc-boom", x, y, .95, parts, { "--r": (110 * big).toFixed(0) + "px" });
   }
-  function mcText(s, x, y, col, size) { mc.txt.push({ s: s, x: Math.max(40, Math.min(mc.W - 40, x)), y: y, c: col, z: size, t: 0, T: .95 }); }
-  function mcBanner(s, col) { mc.banner = { s: s, c: col, t: 0, T: 1.5 }; }
+  function mcText(s, x, y, col, size) {
+    var e = mcFx("mc-ft", Math.max(40, Math.min(mc.W - 40, x)), y, .95, "", { "--c": col, "--fz": size + "px" });
+    e.textContent = s;
+  }
+  function mcGo1(e) { e.classList.remove("go"); void e.offsetWidth; e.classList.add("go"); }   // restart a one-shot CSS animation
+  function mcBanner(s, col) { var e = mc.bannerEl; e.textContent = s; e.style.setProperty("--c", col); e.classList.toggle("mc-top", mc.mode === "over"); mcGo1(e); }
+  function mcPow(k, secs) {                                   // the running power-up under the score: its picture and a ring that empties
+    var e = mc.pw[k]; if (!e) return;
+    e.style.setProperty("--d", secs + "s"); e.classList.add("on"); mcGo1(e);
+  }
+  function mcFxClear(all) {
+    for (var i = mc.fxEls.length - 1; i >= 0; i--) if (all || mc.clock >= mc.fxEls[i].end) { mc.fxEls[i].e.remove(); mc.fxEls.splice(i, 1); }
+  }
 
   /* ---------- the HUD ---------- */
   function mcHearts(i, cls) {
@@ -10015,8 +10134,8 @@ const CONFIG = {
     $("mcLives").setAttribute("aria-label", mc.lives + (mc.lives === 1 ? " life" : " lives"));
   }
   function mcScoreUI() {
-    var v = Math.round(mc.shown), e = $("mcScore");
-    if (e.textContent !== fmtNum(v)) { e.textContent = fmtNum(v); }
+    var v = fmtNum(Math.round(Math.max(0, mc.shown))), e = $("mcScore");
+    if (e.textContent !== v) e.textContent = v;
   }
   function mcMultUI() { var e = $("mcMult"); e.textContent = "x" + mc.mult; e.classList.toggle("on", mc.mult > 1); }
 
@@ -10032,177 +10151,87 @@ const CONFIG = {
       if (mc.spawnT <= 0) { mcSpawn(); mc.spawnT = (1.15 - .72 * mcDiff()) * mcR(.8, 1.2); }
       mc.powT -= dt;
       if (mc.powT <= 0) { mcSpawnPower(); mc.powT = mcR(16, 26); }
-      if (mc.magnet > 0) mc.magnet = Math.max(0, mc.magnet - dt);
-      if (mc.dbl > 0) { mc.dbl = Math.max(0, mc.dbl - dt); }
-      mc.el.classList.toggle("mc-dbl", mc.dbl > 0);
+      if (mc.magnet > 0) { mc.magnet = Math.max(0, mc.magnet - dt); if (!mc.magnet) mc.pw.magnet.classList.remove("on"); }
+      if (mc.dbl > 0) { mc.dbl = Math.max(0, mc.dbl - dt); if (!mc.dbl) mc.pw.x2.classList.remove("on"); }
       mcMove(dt);
     } else {
       if (mc.mode === "ready" || mc.mode === "over") {         // behind the panel: a gentle money rain
         mc.spawnT -= dt;
-        if (mc.spawnT <= 0) { var n = mcPickNote(); mcNew("note", mcR(mc.W * .06, mc.W * .94), mcR(4.5, 6), { n: n, k: n.k, pts: n.pts, demo: true }); mc.spawnT = mcR(.35, .7); }
+        if (mc.spawnT <= 0) { var n = mcPickNote(); mcNew("note", mcR(mc.W * .06, mc.W * .94), mcR(4.5, 6), { n: n, k: n.k, pts: n.pts, demo: true }); mc.spawnT = mcR(.45, .8); }
       }
       mc.vx *= Math.max(0, 1 - dt * 10); mc.fl += (mc.face - mc.fl) * Math.min(1, dt * 16);
     }
+    var mag = playing && mc.magnet > 0;
+    if (mag !== mc.boyEl.classList.contains("mag")) mc.boyEl.classList.toggle("mag", mag);
+    if ((mc.dbl > 0) !== mc.el.classList.contains("mc-dbl")) mc.el.classList.toggle("mc-dbl", mc.dbl > 0);
     var box = playing ? mcBox() : null, mo = mcMouth();
     for (i = mc.items.length - 1; i >= 0; i--) {
       it = mc.items[i]; it.t += dt;
       if (it.st === 0) {                                       // falling, fluttering
-        if (playing && mc.magnet > 0 && it.kind === "note" && !it.demo && it.y > mc.H * .18) it.x0 += (mo.x - it.x0) * Math.min(1, dt * 2.4);
+        if (mag && it.kind === "note" && !it.demo && it.y > mc.H * .18) it.x0 += (mo.x - it.x0) * Math.min(1, dt * 2.4);
         it.y += it.vy * dt;
         it.x = it.x0 + Math.sin(it.ph + it.t * it.sf) * it.sa;
         it.rot = it.r0 + Math.sin(it.ph + it.t * it.sf + 1.2) * it.ra + it.vr * it.t;
         var c = Math.cos(it.fp + it.t * it.ff);
-        it.fx = it.flip ? (Math.abs(c) < .07 ? (c < 0 ? -.07 : .07) : c) : 1 - it.fa * (1 - c) / 2;
+        it.fx = it.flip ? (Math.abs(c) < .2 ? (c < 0 ? -.2 : .2) : c) : 1 - it.fa * (1 - c) / 2;   // (never quite edge-on: no thin line)
         if (box && !it.demo) {
           var hw = it.size * .32, hh = it.size * .32;
-          if (it.x + hw > box.x0 && it.x - hw < box.x1 && it.y + hh > box.y0 && it.y - hh < box.y1) { mcCatch(it); if (it.st === 3) mc.items.splice(i, 1); continue; }
+          if (it.x + hw > box.x0 && it.x - hw < box.x1 && it.y + hh > box.y0 && it.y - hh < box.y1) { mcCatch(it); if (it.st === 3) { mcFree(it); mc.items.splice(i, 1); } continue; }
         }
         if (it.y >= it.land) {                                 // it hits the road
-          if (it.kind === "note") { it.st = 2; it.y = it.land; it.lt = 0; mcMiss(it); }
-          else if (it.kind === "bomb") { mcExplode(it.x, it.land, .55); if (!it.demo && mc.mode === "play") sfx.play("mpuff"); mc.items.splice(i, 1); }
-          else { it.st = 2; it.y = it.land; it.lt = 0; }
+          if (it.kind === "bomb") { mcExplode(it.x, it.land, .55); if (!it.demo && mc.mode === "play") sfx.play("mpuff"); mcFree(it); mc.items.splice(i, 1); continue; }
+          it.st = 2; it.y = it.land; it.lt = 0;
+          if (it.kind === "note") mcMiss(it);
         }
       } else if (it.st === 1) {                                // caught: it goes into the bag
         it.ct += dt;
-        if (it.ct >= .2) { mc.items.splice(i, 1); continue; }
+        if (it.ct >= .2) { mcFree(it); mc.items.splice(i, 1); continue; }
       } else if (it.st === 2) {                                // lying on the road, fading
         it.lt += dt;
-        if (it.lt > 1.3) mc.items.splice(i, 1);
-      } else mc.items.splice(i, 1);
+        if (it.lt > 1.3) { mcFree(it); mc.items.splice(i, 1); }
+      } else { mcFree(it); mc.items.splice(i, 1); }
     }
-    for (i = mc.fx.length - 1; i >= 0; i--) {
-      var f = mc.fx[i]; f.t += dt;
-      if (f.t >= f.T) { mc.fx.splice(i, 1); continue; }
-      if (f.k === "s" || f.k === "p") { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += (f.k === "s" ? 420 : 160) * dt; f.vx *= 1 - dt * 1.5; }
-    }
-    for (i = mc.txt.length - 1; i >= 0; i--) { var t = mc.txt[i]; t.t += dt; t.y -= 46 * dt; if (t.t >= t.T) mc.txt.splice(i, 1); }
-    if (mc.banner) { mc.banner.t += dt; if (mc.banner.t >= mc.banner.T) mc.banner = null; }
-    mc.shake = Math.max(0, mc.shake - dt); mc.hurt = Math.max(0, mc.hurt - dt); mc.bump = Math.max(0, mc.bump - dt * 5);
+    mcFxClear(false);
+    mc.shake = Math.max(0, mc.shake - dt); mc.bump = Math.max(0, mc.bump - dt * 5);
     if (mc.shown !== mc.score) {                               // the score counts up
       mc.shown = mc.shown < 0 || mc.shown > mc.score ? mc.score : Math.min(mc.score, mc.shown + Math.max(1, (mc.score - mc.shown) * dt * 9));
       mcScoreUI();
-      if (mc.shown === mc.score) { var e = $("mcScore"); e.classList.remove("mc-pop"); void e.offsetWidth; e.classList.add("mc-pop"); }
+      if (mc.shown === mc.score) mcGo1($("mcScore"));
     }
-    // the street follows the boy a little (and shakes with a bomb)
-    var p = (mc.x - mc.minX) / Math.max(1, mc.maxX - mc.minX), target = -(mc.sw - mc.W) * p;
+    var p = (mc.x - mc.minX) / Math.max(1, mc.maxX - mc.minX), target = -(mc.sw - mc.W) * p;   // the street follows the boy a little
     mc.panX += (target - mc.panX) * Math.min(1, dt * 3);
-    if (mc.mode === "over") { mc.overT += dt; if (mc.overT >= 1 && !mc.el.querySelector(".mc-panel.on")) mcPanel("over"); }
+    if (mc.mode === "over") { mc.overT += dt; if (mc.overT >= 1 && !$("mcPanel").classList.contains("on")) mcPanel("over"); }
   }
 
-  /* ---------- drawing ---------- */
-  function mcDrawNote(g, it, x, y, sc, a, flat) {
-    var r = MC_SHEET[it.k], h = it.size * sc, w = h * r[2] / r[3];
-    g.save(); g.globalAlpha = a; g.translate(x, y); g.rotate(it.rot);
-    g.scale(it.fx, flat ? .42 : 1);
-    g.drawImage(mc.img, r[0], r[1], r[2], r[3], -w / 2, -h / 2, w, h);
-    g.restore();
-  }
-  function mcDrawThing(g, it, x, y, sc, a) {                   // a bomb or a power-up (they glow so you can tell them apart)
-    var A = mc.art, z = it.size * sc, pic = it.kind === "bomb" ? A.bomb : it.kind === "magnet" ? A.magnet : it.kind === "x2" ? A.x2 : mc.heart;
-    g.save(); g.globalAlpha = a; g.translate(x, y); g.rotate(it.rot * .4);
-    if (it.kind !== "bomb") { var gz = z * (2.1 + .2 * Math.sin(mc.clock * 6)); g.drawImage(A.glow, -gz / 2, -gz / 2, gz, gz); }
-    if (pic && (pic.width || pic.naturalWidth)) {
-      var pw = pic.naturalWidth || pic.width, ph = pic.naturalHeight || pic.height, h = z * (it.kind === "bomb" ? 1.25 : 1), w = h * pw / ph;
-      g.drawImage(pic, -w / 2, -h / 2, w, h);
-      if (it.kind === "bomb") {                                // the fuse fizzes
-        var fx = (78 / 100 - .5) * w, fy = (13 / 112 - .5) * h, sz = z * (.42 + .18 * Math.random());
-        g.globalAlpha = a * (.75 + .25 * Math.random()); g.drawImage(A.spark, fx - sz / 2, fy - sz / 2, sz, sz);
-      }
-    }
-    g.restore();
-  }
-  function mcDrawBoy(g) {
-    var s = mc.s, img = mc.img, r = MC_SHEET.boy, maxV = mc.W * 1.25, sp = Math.min(1, Math.abs(mc.vx) / maxV);
-    var bob = -Math.abs(Math.sin(mc.walk)) * 3.2 * sp, tilt = (mc.vx / maxV) * .07 + Math.sin(mc.walk) * .035 * sp;
-    if (mc.mode === "over") tilt += .05;
-    var b = Math.sin(Math.min(1, mc.bump) * Math.PI), bw = MC_BOY.w * s;
-    var sh = g.createRadialGradient(mc.x, mc.foot - 2, 2, mc.x, mc.foot - 2, bw * .45);  // his shadow on the wet road
-    sh.addColorStop(0, "rgba(0,0,0,.5)"); sh.addColorStop(1, "rgba(0,0,0,0)");
-    g.save(); g.translate(mc.x, mc.foot - 2); g.scale(1, .16); g.translate(-mc.x, -(mc.foot - 2));
-    g.fillStyle = sh; g.beginPath(); g.arc(mc.x, mc.foot - 2, bw * .45, 0, 6.2832); g.fill(); g.restore();
-    g.save(); g.translate(mc.x, mc.foot + bob); g.rotate(tilt);
-    g.scale(mc.fl * (1 + .045 * b), 1 - .035 * b);
-    g.drawImage(img, r[0], r[1], r[2], r[3], -MC_BOY.w * s / 2, -MC_BOY.foot * s, MC_BOY.w * s, MC_BOY.h * s);
-    g.restore();
-  }
-  function mcDraw() {
-    var g = mc.g, W = mc.W, H = mc.H, k = mc.k, i, it, sx = 0, sy = 0;
-    if (!g) return;
+  /* ---------- a frame: only positions (moving pictures costs the graphics chip almost nothing; nothing is repainted) ---------- */
+  function mcRender() {
+    var i, it, sx = 0, sy = 0;
     if (mc.shake > 0 && !reduced) { var m = Math.min(1, mc.shake) * 10; sx = (Math.random() - .5) * m; sy = (Math.random() - .5) * m; }
-    var px = Math.round((mc.panX + sx) * 10) / 10, py = Math.round(sy * 10) / 10;
-    if (px !== mc.bgX || py !== mc.bgY) { mc.bg.style.transform = "translate3d(" + px + "px," + py + "px,0)"; mc.bgX = px; mc.bgY = py; }
-    g.setTransform(k, 0, 0, k, sx * k, sy * k);
-    g.clearRect(-20, -20, W + 40, H + 40);
-    for (i = 0; i < mc.stars.length; i++) {                    // stars
-      var st = mc.stars[i], tw = .35 + .65 * Math.abs(Math.sin(st.p + mc.clock * st.f));
-      g.globalAlpha = tw; g.fillStyle = "#dfe8ff"; g.fillRect(st.x + mc.panX * .08, st.y, st.r, st.r);
-    }
-    g.globalAlpha = 1;
-    if (!mc.img || !mc.img.naturalWidth) return;
-    for (i = 0; i < mc.items.length; i++) {                    // notes lying on the road (behind him)
-      it = mc.items[i]; if (it.st !== 2) continue;
-      var la = Math.max(0, 1 - Math.max(0, it.lt - .5) / .8);
-      if (it.kind === "note") mcDrawNote(g, it, it.x, it.y, 1, la, true); else mcDrawThing(g, it, it.x, it.y, 1, la);
-    }
-    if (mc.magnet > 0 && mc.mode === "play") {                 // the magnet's pull: rings round the bag
-      var mo = mcMouth(), ph = (mc.clock * 1.6) % 1;
-      for (var q = 0; q < 2; q++) {
-        var u = (ph + q * .5) % 1; g.globalAlpha = (1 - u) * .45 * Math.min(1, mc.magnet);
-        g.strokeStyle = "#8fe0ff"; g.lineWidth = 3; g.beginPath(); g.arc(mo.x, mo.y, 20 + u * 90, 0, 6.2832); g.stroke();
-      }
-      g.globalAlpha = 1;
-    }
-    mcDrawBoy(g);
-    for (i = 0; i < mc.items.length; i++) {                    // falling (in front of him) and the ones going into the bag
-      it = mc.items[i];
-      if (it.st === 0) { if (it.kind === "note") mcDrawNote(g, it, it.x, it.y, 1, 1); else mcDrawThing(g, it, it.x, it.y, 1, 1); }
-      else if (it.st === 1) {
-        var e = Math.min(1, it.ct / .2), ee = e * e, m2 = mcMouth();
-        var x = it.cx + (m2.x - it.cx) * ee, y = it.cy + (m2.y - it.cy) * ee;
-        if (it.kind === "note") mcDrawNote(g, it, x, y, 1 - .72 * ee, 1 - .7 * ee); else mcDrawThing(g, it, x, y, 1 - .6 * ee, 1 - .7 * ee);
-      }
-    }
-    for (i = 0; i < mc.fx.length; i++) {                       // sparkles, fire, smoke, flashes, rings
-      var f = mc.fx[i], u2 = f.t / f.T;
-      if (f.k === "s") { var z = f.r * (1 - u2 * .6); g.globalAlpha = 1 - u2; g.drawImage(mc.art.spark, f.x - z / 2, f.y - z / 2, z, z); }
-      else if (f.k === "p") { g.globalAlpha = (1 - u2) * .9; g.fillStyle = "rgb(" + f.c + ")"; g.beginPath(); g.arc(f.x, f.y, f.r * (1 + u2), 0, 6.2832); g.fill(); }
-      else if (f.k === "f") { var fr = g.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r); fr.addColorStop(0, "rgba(255,250,220," + (1 - u2) + ")"); fr.addColorStop(.4, "rgba(255,170,60," + (.8 * (1 - u2)) + ")"); fr.addColorStop(1, "rgba(255,80,20,0)"); g.globalAlpha = 1; g.fillStyle = fr; g.fillRect(f.x - f.r, f.y - f.r, f.r * 2, f.r * 2); }
-      else if (f.k === "o") { g.globalAlpha = (1 - u2) * .8; g.strokeStyle = "#ffd28a"; g.lineWidth = 4 * (1 - u2) + 1; g.beginPath(); g.arc(f.x, f.y, f.r * (.2 + u2), 0, 6.2832); g.stroke(); }
-    }
-    g.globalAlpha = 1;
-    g.textAlign = "center"; g.textBaseline = "middle"; g.lineJoin = "round";
-    for (i = 0; i < mc.txt.length; i++) {                      // +50, MISSED!, BOOM! …
-      var t = mc.txt[i], v = t.t / t.T, sc2 = v < .15 ? .6 + v / .15 * .5 : 1.1 - Math.min(.1, (v - .15));
-      g.globalAlpha = v > .65 ? (1 - v) / .35 : 1;
-      g.font = "900 " + Math.round(t.z * sc2) + "px " + mc.font;
-      g.lineWidth = 5; g.strokeStyle = "rgba(20,8,0,.85)"; g.strokeText(t.s, t.x, t.y); g.fillStyle = t.c; g.fillText(t.s, t.x, t.y);
-    }
-    if (mc.banner) {                                           // LEVEL 2 · COMBO x2!
-      var bn = mc.banner, bv = bn.t / bn.T, bs = bv < .2 ? .4 + bv / .2 * .75 : bv < .3 ? 1.15 - (bv - .2) * 1.5 : 1;
-      g.globalAlpha = bv > .75 ? (1 - bv) / .25 : 1;
-      g.font = "italic 900 " + Math.round(40 * bs) + "px " + mc.font;
-      var by = mc.mode === "over" ? H * .17 : H * .36;                // (over the game-over panel, not behind it)
-      g.lineWidth = 8; g.strokeStyle = "rgba(10,5,0,.85)"; g.strokeText(bn.s, W / 2, by);
-      g.shadowColor = bn.c; g.shadowBlur = 18; g.fillStyle = bn.c; g.fillText(bn.s, W / 2, by); g.shadowBlur = 0;
-    }
-    g.globalAlpha = 1;
-    if (mc.mode === "play") {                                  // the power-ups running: an icon and how long is left
-      var yy = mc.hudB + 30, xx = 34;
-      [["magnet", mc.magnet, 8], ["x2", mc.dbl, 10]].forEach(function (pw) {
-        if (pw[1] <= 0) return;
-        g.globalAlpha = pw[1] < 2 ? .5 + .5 * Math.abs(Math.sin(mc.clock * 8)) : 1;
-        g.fillStyle = "rgba(3,8,19,.8)"; g.beginPath(); g.arc(xx, yy, 21, 0, 6.2832); g.fill();
-        g.strokeStyle = "rgba(255,255,255,.2)"; g.lineWidth = 4; g.beginPath(); g.arc(xx, yy, 19, 0, 6.2832); g.stroke();
-        g.strokeStyle = pw[0] === "x2" ? "#ffd21f" : "#8fe0ff"; g.beginPath(); g.arc(xx, yy, 19, -Math.PI / 2, -Math.PI / 2 + 6.2832 * pw[1] / pw[2]); g.stroke();
-        g.drawImage(mc.art[pw[0]], xx - 13, yy - 13, 26, 26);
-        xx += 50;
-      });
-      g.globalAlpha = 1;
-    }
-    if (mc.hurt > 0) {                                         // red at the edges when you lose a heart
-      var hv = Math.min(1, mc.hurt / .55), hr = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .3, W / 2, H / 2, Math.max(W, H) * .75);
-      hr.addColorStop(0, "rgba(255,0,40,0)"); hr.addColorStop(1, "rgba(255,0,40," + (.55 * hv) + ")");
-      g.fillStyle = hr; g.fillRect(0, 0, W, H);
+    var t = "translate3d(" + (mc.panX + sx).toFixed(1) + "px," + sy.toFixed(1) + "px,0)";
+    if (t !== mc.bgT) { mc.bg.style.transform = t; mc.bgT = t; }
+    var w = mc.world.style; t = sx || sy ? "translate3d(" + sx.toFixed(1) + "px," + sy.toFixed(1) + "px,0)" : "";
+    if (t !== mc.wT) { w.transform = t; mc.wT = t; }
+    var maxV = mc.W * 1.25, sp = Math.min(1, Math.abs(mc.vx) / maxV);
+    var bob = -Math.abs(Math.sin(mc.walk)) * 3.2 * sp, tilt = (mc.vx / maxV) * .07 + Math.sin(mc.walk) * .035 * sp + (mc.mode === "over" ? .05 : 0);
+    var b = Math.sin(Math.min(1, mc.bump) * Math.PI);
+    t = "translate3d(" + mc.x.toFixed(1) + "px," + (mc.foot + bob).toFixed(1) + "px,0)";
+    if (t !== mc.boyT) { mc.boyEl.style.transform = t; mc.boyT = t; }
+    t = "rotate(" + tilt.toFixed(3) + "rad) scale(" + (mc.fl * (1 + .045 * b)).toFixed(3) + "," + (1 - .035 * b).toFixed(3) + ")";
+    if (t !== mc.boyInT) { mc.boyIn.style.transform = t; mc.boyInT = t; }
+    var m2 = mcMouth();
+    for (i = 0; i < mc.items.length; i++) {
+      it = mc.items[i]; var e = it.el; if (!e) continue;
+      var x = it.x, y = it.y, sc = 1, op = 1, flat = 1, z = "3";
+      if (it.st === 1) {                                       // flying into the bag: smaller and fading
+        var u = Math.min(1, it.ct / .2), ee = u * u;
+        x = it.cx + (m2.x - it.cx) * ee; y = it.cy + (m2.y - it.cy) * ee; sc = 1 - .72 * ee; op = 1 - .7 * ee;
+      } else if (it.st === 2) { flat = it.kind === "note" ? .42 : 1; op = Math.max(0, 1 - Math.max(0, it.lt - .5) / .8); z = "1"; }
+      var rot = it.kind === "note" ? it.rot : it.rot * .4;
+      t = "translate3d(" + x.toFixed(1) + "px," + y.toFixed(1) + "px,0) rotate(" + rot.toFixed(3) + "rad) scale(" + (it.fx * sc).toFixed(3) + "," + (flat * sc).toFixed(3) + ")";
+      if (t !== e._t) { e.style.transform = t; e._t = t; }
+      op = Math.round(op * 50) / 50;
+      if (op !== e._o) { e.style.opacity = op; e._o = op; }
+      if (e.style.zIndex !== z) e.style.zIndex = z;
     }
   }
 
@@ -10212,28 +10241,31 @@ const CONFIG = {
     mc.raf = requestAnimationFrame(mcFrame);
     var dt = mc.last ? (now - mc.last) / 1000 : 1 / 60; mc.last = now;
     if (dt > .1) dt = 1 / 60;                                  // back from a hitch: carry on, don't jump
-    mcStep(dt); mcDraw();
+    mcStep(dt); mcRender();
   }
   function mcWanted() { return entered && curScreen === "money" && !paused && !document.hidden && !playerOpen && !termOpen; }
-  function mcStart() { if (mc.run) return; mc.run = true; mc.last = 0; mc.raf = requestAnimationFrame(mcFrame); }
-  function mcStop() { if (!mc.run) return; mc.run = false; cancelAnimationFrame(mc.raf); mc.raf = 0; }
+  function mcStart() { if (mc.run) return; mc.run = true; mc.last = 0; mc.el.classList.remove("mc-paused"); mc.raf = requestAnimationFrame(mcFrame); }
+  function mcStop() { if (!mc.run) return; mc.run = false; cancelAnimationFrame(mc.raf); mc.raf = 0; mc.el.classList.add("mc-paused"); }
   function mcUpdate() {
     if (!mc.opened) return;
     var on = mcWanted();
     if (!on && mc.mode === "play") mcHold();
     if (on && mc.mode !== "paused") mcStart(); else mcStop();
   }
-  function mcReset() {
-    mc.items = []; mc.fx = []; mc.txt = []; mc.banner = null; mc.t = 0; mc.level = 1; mc.score = 0; mc.shown = -1; mc.lives = 3; mc.combo = 0; mc.mult = 1;
-    mc.magnet = 0; mc.dbl = 0; mc.shake = 0; mc.hurt = 0; mc.bump = 0; mc.overT = 0; mc.newBest = false; mc.lastN = null; mc.vx = 0; mc.btn = 0; mc.keys = 0; mc.drag = null;
+  function mcReset(keepDemo) {
+    var keep = [];
+    mc.items.forEach(function (it) { if (keepDemo && it.demo && it.st === 0) keep.push(it); else mcFree(it); });
+    mc.items = keep; mcFxClear(true);
+    mc.t = 0; mc.level = 1; mc.score = 0; mc.shown = -1; mc.lives = 3; mc.combo = 0; mc.mult = 1;
+    mc.magnet = 0; mc.dbl = 0; mc.shake = 0; mc.bump = 0; mc.overT = 0; mc.newBest = false; mc.lastN = null; mc.vx = 0; mc.btn = 0; mc.keys = 0; mc.drag = null;
     mc.x = mc.W / 2 || 0; mc.face = 1; mc.fl = 1; mc.spawnT = .3;
-    mc.el.classList.remove("mc-dbl"); mcHearts(-1); mcMultUI(); mcScoreUI();
+    mc.pw.magnet.classList.remove("on"); mc.pw.x2.classList.remove("on"); mc.el.classList.remove("mc-dbl"); mc.boyEl.classList.remove("mag");
+    mcHearts(-1); mcMultUI(); mcScoreUI();
   }
-  function mcReady() { mcReset(); mc.mode = "ready"; mcPanel("ready"); }
+  function mcReady() { mcReset(false); mc.mode = "ready"; mcPanel("ready"); }
   function mcBegin() {                                         // Play
     if (mc.mode === "play") return;
-    var keep = mc.items.filter(function (it) { return it.demo && it.st === 0; });
-    mcReset(); mc.items = keep;                                // the rain behind the panel keeps falling (it doesn't count)
+    mcReset(true);                                             // the rain behind the panel keeps falling (it doesn't count)
     mc.mode = "play"; mc.spawnT = .7; mc.powT = mcR(18, 24);
     mcPanel(null); sfx.play("mstart", true); mcSay("Go! Catch the notes.");
     mcUpdate();
@@ -10241,7 +10273,7 @@ const CONFIG = {
   function mcHold() {                                          // pause (the button, P, leaving the screen, the app going to the background)
     if (mc.mode !== "play") return;
     mc.mode = "paused"; mc.btn = 0; mc.keys = 0; mc.drag = null; mcArrowsOff();
-    mcPanel("paused"); mcSay("Paused."); mcDraw(); mcStop();
+    mcPanel("paused"); mcSay("Paused."); mcStop();
   }
   function mcGo() { if (mc.mode !== "paused") return; mc.mode = "play"; mcPanel(null); mcSay(""); mcUpdate(); }
   function mcOver() {
@@ -10251,7 +10283,7 @@ const CONFIG = {
     if (mc.newBest) { mc.best = mc.score; store.set("mc:best", mc.best); }
     store.set("mc:games", (parseInt(store.get("mc:games", "0"), 10) || 0) + 1);
     sfx.play("mover");
-    if (mc.newBest && mc.score > 0) setTimeout(function () { if (mc.mode === "over") { mcBanner("NEW BEST!", "#ffd21f"); sfx.play("mlevel"); mcBuzz("win"); for (var i = 0; i < 26; i++) { var n = mcPickNote(); mcNew("note", mcR(mc.W * .05, mc.W * .95), mcR(1.6, 2.6), { n: n, k: n.k, pts: n.pts, demo: true, y: -mcR(20, 300) }); } } }, 450);
+    if (mc.newBest && mc.score > 0) setTimeout(function () { if (mc.mode === "over") { mcBanner("NEW BEST!", "#ffd21f"); sfx.play("mlevel"); mcBuzz("win"); for (var i = 0; i < 22; i++) { var n = mcPickNote(); mcNew("note", mcR(mc.W * .05, mc.W * .95), mcR(1.6, 2.6), { n: n, k: n.k, pts: n.pts, demo: true, y: -mcR(20, 300) }); } } }, 450);
     mcCard(); mcSay("Game over. Score " + mc.score + ".");
   }
   function mcPanel(m) {                                        // the panel: how to play · paused · game over (null = hidden)
@@ -10278,16 +10310,16 @@ const CONFIG = {
     p.classList.add("on");
   }
   function mcOpen() {
-    if (!mc.img) {
+    if (!mc.src) {
       mc.font = getComputedStyle(document.body).fontFamily || "sans-serif";
-      mc.img = new Image(); mc.img.decoding = "async"; mc.img.src = "assets/money-sprites.webp";
-      mc.heart = new Image(); mc.heart.decoding = "async"; mc.heart.src = "assets/money-heart.webp";
-      mc.art = mcArt();
+      mc.src = mcArt();
+      mc.el.style.setProperty("--mcspark", "url(" + mc.src.spark + ")");
+      qa("#mcPows .mc-pw").forEach(function (e) { mc.pw[e.dataset.k] = e; e.firstElementChild.src = mc.src[e.dataset.k]; });
     }
     mcSize();
     if (!mc.opened || mc.mode === "over") mcReady();          // a finished run starts fresh
     mc.opened = true;
-    mcDraw(); mcUpdate();
+    mcRender(); mcUpdate();
   }
   function mcLeave() { if (mc.mode === "play") mcHold(); }
   function mcSay(t) { $("mcLive").textContent = t; }
@@ -10335,11 +10367,12 @@ const CONFIG = {
   });
   document.addEventListener("keyup", function (e) { if (mcKeys[e.key] && mc.keys === mcKeys[e.key]) mc.keys = 0; });
   document.addEventListener("visibilitychange", mcUpdate);
-  window.addEventListener("resize", function () { if (curScreen === "money" && mc.opened && mcSize() && !mc.run) mcDraw(); });
+  window.addEventListener("resize", function () { if (curScreen === "money" && mc.opened && mcSize() && !mc.run) mcRender(); });
   window.mcState = function () {                               // (read-only, for the automatic tests)
     var b = mc.opened ? mcBox() : null;
     return { mode: mc.mode, score: mc.score, best: mc.best, lives: mc.lives, x: mc.x, W: mc.W, H: mc.H, foot: mc.foot, run: mc.run, t: mc.t, combo: mc.combo,
-             magnet: mc.magnet, dbl: mc.dbl, box: b, items: mc.items.filter(function (i) { return i.st === 0 && !i.demo; }).map(function (i) { return { kind: i.kind, x: i.x, y: i.y, vy: i.vy }; }) };
+             magnet: mc.magnet, dbl: mc.dbl, box: b, els: mc.world.children.length, pool: mc.pool.length,
+             items: mc.items.filter(function (i) { return i.st === 0 && !i.demo; }).map(function (i) { return { kind: i.kind, x: i.x, y: i.y, vy: i.vy }; }) };
   };
   mc.best = Math.max(0, parseInt(store.get("mc:best", "0"), 10) || 0);
   mcCard();
