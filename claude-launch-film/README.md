@@ -8,10 +8,10 @@ are the reference itself.
 `namechange_vs_reference.mp4` stacks the reference (top) over the new version (bottom)
 for a shot-by-shot comparison.
 
-## Redrawn version (work in progress)
+## Redrawn version
 
-`claude_launch_film_redraw_v3.mp4` (48.43 s, 1,453 frames) is the current cut of the
-redrawn film:
+`claude_launch_film_redraw_v4.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
+scene is now rebuilt:
 
 - **Opening:** the four-point sparkle is replaced by the orange Claude starburst, and the
   clouds open through a growing, turning triangle instead of the scalloped circle.
@@ -32,14 +32,14 @@ redrawn film:
 | 1–60 | opening, Claude starburst, triangle reveal | redrawn |
 | 61–250 | cloud chat | redrawn (Claude composer) |
 | 251–350 | "right one" → "Meet Claude" | redrawn |
-| 351–448 | dashboard window | name-change frames for now |
-| 449–525 | "Build to move beyond generic healthcare search" | redrawn |
+| 351–448 | dashboard window | redrawn UI over the real background and glass; livelier per-letter headline (drop-in, light sweep, flowing gradient, glow, staggered exit); 445–448 flash kept from the name-change frames |
+| 449–525 | "Build to move beyond generic healthcare search" | redrawn; "healthcare" ripples in letter by letter, "search" types itself out with a caret and a small magnifying glass that pings |
 | 526–605 | typing the symptom | redrawn (Claude composer) |
 | 606–718 | anatomy viewer | redrawn UI (Claude sidebar, buttons, Done, pointer) over the tracked window; anatomy model kept |
 | 719–862 | processing lines | redrawn |
 | 863–972 | Claude's reply | redrawn Claude chat (user bubble, serif reply streaming with the starburst, composer) over the tracked, scrolling window |
 | 973–1090 | doctor cards, "right one" | redrawn |
-| 1091–1167 | profile and analytics | name-change frames for now |
+| 1091–1167 | profile and analytics | "Right outcome" redrawn; the fast, blurred profile scroll stays the original footage with the Claude sidebar label |
 | 1168–1348 | closing lines, Claude wordmark | redrawn |
 | 1349–1453 | end credit | new |
 
@@ -49,6 +49,7 @@ The redraw sources are in `redraw/`:
 - `shared/`: title-line animator, Claude composer, glass and icon components, and the
   Noto Sans logo font and Source Serif 4 for Claude's replies (both OFL). Inter (OFL) is used
   from the system.
+- `s04_plates.py`, `s11_plates.py`: clean plates for the dashboard and profile scenes.
 - `s07_*.py`, `s09_*.py`: window tracking (SIFT homographies on the window frame, scroll by
   phase correlation), plate cleaning and compositing of the flat UI layer.
 - `render.py`: renders a scene with headless Chromium.

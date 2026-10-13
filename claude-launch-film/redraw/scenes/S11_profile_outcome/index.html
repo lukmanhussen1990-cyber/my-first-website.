@@ -1,0 +1,50 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S11 profile outcome</title>
+<link rel="stylesheet" href="../../shared/base.css">
+<script src="../../shared/lib.js"></script>
+<script src="../../shared/components.js"></script>
+<script src="../../shared/titles.js"></script>
+</head><body>
+<div id="stage"><img class="plate" id="bg"></div>
+<script>
+// S11 (f1091-1167): the profile -> analytics window (reference footage with the Claude sidebar
+// label, title removed) under a redrawn "Right outcome": "Right" drops in from above, "outcome"
+// follows with a blur, the line settles, then eases back with the camera. Measured on the reference.
+const stage = document.getElementById('stage');
+const L = new TitleLine(stage, {
+  text: 'Right outcome', font: "'Inter Display'", size: 124, tracking: -0.02, weight: 700,
+  fitWidth: { unit: 'all', width: 754, by: 'tracking' }, cx: 951, baseline: 400, layout: 'full',
+  S: [[1128, 0.82], [1131, 0.85], [1134, 0.875], [1137, 0.93], [1139, 0.96], [1141, 0.986], [1145, 1.0], [1150, 1.0], [1155, 0.988], [1158, 0.985], [1160, 0.963], [1163, 0.93], [1165, 0.9], [1167, 0.863]],
+  Y: [[1150, 0], [1155, 1], [1160, 3], [1163, 6], [1167, 13]],
+  units: [
+    { in: 1127, dur: 6, opacityAt: [[1127, 0], [1129, 0.45], [1132, 0.9], [1134, 1]], blurAt: [[1127, 9], [1130, 6], [1133, 2.5], [1135, 0.8], [1137, 0]],
+      riseAt: [[1127, -190], [1129, -140], [1131, -110], [1134, -80], [1137, -38], [1139, -22], [1141, -12], [1143, -4], [1145, 0]], colorAt: [[1127, [130, 37, 235]]] },
+    { in: 1135.5, dur: 5, opacityAt: [[1135.5, 0], [1137, 0.55], [1139, 0.9], [1140, 1]], blurAt: [[1135.5, 9], [1137, 6], [1139, 3], [1141, 1], [1143, 0]],
+      riseAt: [[1135.5, -110], [1137, -78], [1139, -44], [1141, -19], [1143, -6], [1145, 0]], colorAt: [[1135, [150, 110, 200]]] },
+  ],
+});
+// one violet -> lavender-grey gradient across the whole line (as on the reference)
+const C0 = [128, 34, 236], C1 = [160, 152, 182];
+let graded = false;
+function gradeLine() {
+  const xs = L.spans.map(s => [s.offsetLeft, s.offsetLeft + s.getBoundingClientRect().width]);
+  const x0 = xs[0][0], x1 = xs[xs.length - 1][1];
+  L.spans.forEach((s, i) => {
+    if (L.isSpace[i]) return;
+    const u0 = (xs[i][0] - x0) / (x1 - x0), u1 = (xs[i][1] - x0) / (x1 - x0);
+    s.style.backgroundImage = `linear-gradient(90deg, ${rgba(mixc(C0, C1, u0))}, ${rgba(mixc(C0, C1, u1))})`;
+    s.style.webkitBackgroundClip = 'text'; s.style.backgroundClip = 'text';
+  });
+  graded = true;
+}
+window.renderFrame = async (f) => {
+  await setImg(document.getElementById('bg'), `../../plates/S11_profile_outcome/bg_${String(f).padStart(4, '0')}.jpg`);
+  L.el.style.display = f >= 1127 ? 'block' : 'none';
+  if (f < 1127) return;
+  L.render(f);
+  if (!graded) gradeLine();
+  L.spans.forEach((s, i) => { if (!L.isSpace[i]) s.style.color = 'transparent'; });
+};
+window.sceneReady = document.fonts.load("700 124px 'Inter Display'");
+</script>
+</body></html>

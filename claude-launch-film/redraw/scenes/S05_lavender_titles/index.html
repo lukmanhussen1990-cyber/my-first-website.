@@ -27,23 +27,72 @@ const line1 = new TitleLine(stage, {
   ],
 });
 const V2 = [117, 101, 241];
+// "healthcare search" (client request: a different, livelier animation plus a small search motif).
+// The letters of "healthcare" ripple up one after another and darken to ink; "search" types itself
+// out in violet behind a caret while a small magnifying glass follows the typing, then pings twice.
+const SEARCH_T0 = 502, TYPE_DT = 1.3;
+const HC = Array.from('healthcare').map((_, k) => {
+  const t0 = 495 + k * 0.55;
+  return { in: t0, dur: 6, rise: 30, blur0: 6, opacityAt: [[t0, 0], [t0 + 2.5, 1]],
+    colorAt: [[t0, V2], [t0 + 8, [108, 94, 222]], [t0 + 13, [70, 63, 138]], [518, [31, 31, 62]], [522, [15, 15, 41]]] };
+});
+const SE = Array.from('search').map((_, k) => {
+  const t0 = SEARCH_T0 + k * TYPE_DT;
+  return { in: t0, dur: 3, opacityAt: [[t0, 0], [t0 + 0.5, 1]], riseAt: [[t0, 7], [t0 + 3, 0]],
+    colorAt: [[t0, [126, 104, 252]], [512, [112, 92, 246]], [520, [86, 66, 220]]] };
+});
 const line2 = new TitleLine(stage, {
-  text: 'healthcare search', font: "'Inter Display'", size: 84.5, tracking: -0.02, weight: 400,
+  text: 'healthcare search', unit: 'letter', font: "'Inter Display'", size: 84.5, tracking: -0.02, weight: 400,
   cx: 955.5, baseline: 574, layout: 'full',
   S: [[495, 1.12], [507, 1.12], [508, 1.117], [512, 1.085], [516, 1.05], [520, 1.0], [522, 0.964], [524, 0.919], [525, 0.893]],
-  blur: [[495, 2.5], [498, 1.5], [502, 1.0], [507, 0.6], [512, 0.3], [516, 0]],
   opacity: [[494, 0], [495, 1]],
-  units: [
-    { in: 495, dur: 4, opacityAt: [[495, 0], [498, 1]], colorAt: [[495, V2], [503, [108, 94, 222]], [508, [70, 63, 138]], [513, [31, 31, 62]], [520, [15, 15, 41]]], blurAt: [[495, 5], [498, 1.5], [501, 0]] },
-    { in: 502, dur: 5, opacityAt: [[502, 0], [505, 1]], colorAt: [[502, V2], [506, [104, 90, 207]], [510, [60, 55, 115]], [514, [31, 31, 62]], [520, [15, 15, 41]]], blurAt: [[502, 8], [505, 4], [508, 0]] },
-  ],
+  units: [...HC, ...SE],
 });
+// caret + magnifier live inside the line so they share its zoom
+const caret = document.createElement('div');
+Object.assign(caret.style, { position: 'absolute', width: '4px', height: '78px', borderRadius: '2px', background: 'rgb(118,96,250)' });
+line2.el.appendChild(caret);
+const lens = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+lens.setAttribute('width', 120); lens.setAttribute('height', 120); lens.setAttribute('viewBox', '-60 -60 120 120');
+lens.style.position = 'absolute'; lens.style.overflow = 'visible';
+lens.innerHTML = `<circle class="r1" r="14" fill="none" stroke="rgb(118,96,250)" stroke-width="2.5"/><circle class="r2" r="14" fill="none" stroke="rgb(118,96,250)" stroke-width="2.5"/>
+  <g class="g"><circle r="13" fill="rgba(255,255,255,0.35)" stroke="rgb(108,86,244)" stroke-width="4.2"/>
+  <path d="M9.6 9.6 L21 21" stroke="rgb(108,86,244)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M-6 -4 A7 7 0 0 1 -1 -8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></g>`;
+line2.el.appendChild(lens);
+const SI = Array.from('healthcare search').map((c, i) => i).filter(i => i >= 11);   // span indices of "search"
+let lensX = null;
+function searchFX(f) {
+  const L = line2, base = L.o.baseline;
+  const typed = SI.filter((i, k) => f >= SEARCH_T0 + k * TYPE_DT);
+  const lastI = typed.length ? typed[typed.length - 1] : SI[0] - 1;
+  const sp = L.spans[lastI];
+  const cx = parseFloat(sp.style.left) + L.w[lastI] + 5;
+  // caret: solid while typing, one blink, then gone
+  const blink = f < 510.5 || (f >= 512 && f < 514);
+  caret.style.display = (f >= SEARCH_T0 - 1 && f < 514 && blink) ? 'block' : 'none';
+  caret.style.left = cx + 'px'; caret.style.top = (base - 66) + 'px';
+  // magnifier trails the caret above the word, then settles over the end of "search" and pings
+  const target = cx + 26;
+  lensX = (lensX === null || f < SEARCH_T0) ? target : lensX + (target - lensX) * 0.55;
+  const op = kf(f, [[SEARCH_T0 - 1, 0], [SEARCH_T0 + 1, 1], [516, 1], [519, 0]]);
+  const rot = kf(f, [[509, 0], [510.5, -16], [512, 10], [513.5, -4], [515, 0]]);
+  const bob = kf(f, [[509, 0], [510.5, -6], [512, 2], [513.5, 0]]);
+  lens.style.left = (lensX - 60) + 'px'; lens.style.top = (base - 96 - 60 + bob) + 'px';
+  lens.style.opacity = op; lens.style.display = op > 0.002 ? 'block' : 'none';
+  lens.querySelector('.g').setAttribute('transform', `rotate(${rot})`);
+  [[510, '.r1'], [512.5, '.r2']].forEach(([t0, c]) => {
+    const u = clamp((f - t0) / 6), r = lens.querySelector(c);
+    r.setAttribute('r', (14 + 34 * ease.outCubic(u)).toFixed(2));
+    r.setAttribute('stroke-opacity', (f < t0 ? 0 : 0.7 * (1 - u)).toFixed(3));
+  });
+}
 window.renderFrame = async (f) => {
   await setImg(document.getElementById('bg'), `../../plates/S05_lavender_titles/bg_${String(f).padStart(4, '0')}.jpg`);
   line1.el.style.display = f <= 496 ? 'block' : 'none';
   line2.el.style.display = f >= 495 ? 'block' : 'none';
   if (f <= 496) line1.render(f);
-  if (f >= 495) line2.render(f);
+  if (f >= 495) { line2.render(f); searchFX(f); }
 };
 window.sceneReady = document.fonts.ready;
 </script>

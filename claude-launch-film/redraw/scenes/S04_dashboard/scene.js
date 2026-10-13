@@ -300,18 +300,16 @@ function drawFlash(f) {
 }
 
 // ---------------------------------------------------------------- frame
+const PLATE = new Image();
 window.renderFrame = async (f) => {
   const H = Hf(f);
   // background
-  const p = bgParams(f);
-  drawField($('bgOut').getContext('2d'), p.out);
-  const ci = $('bgIn').getContext('2d');
-  ci.clearRect(0, 0, 1920, 1080);
-  ci.save();
-  const poly = winOutline(H, 0.5);
-  ci.beginPath(); poly.forEach(([x, y], i) => i ? ci.lineTo(x, y) : ci.moveTo(x, y)); ci.closePath(); ci.clip();
-  drawField(ci, p.in);
-  ci.restore();
+  // reference background, window glass and border with the original UI removed (rd/plates/S04)
+  await setImg(PLATE, `../../plates/S04_dashboard/bg_${String(f).padStart(4, '0')}.jpg`);
+  const bo = $('bgOut').getContext('2d'); bo.drawImage(PLATE, 0, 0, 1920, 1080);
+  $('bgIn').style.display = 'none';
+  // the redrawn border is only needed where the headline crossed the original border
+  G.frame.style.display = (f >= 392 && f <= 404) ? '' : 'none';
 
   // window transform + reveal animation
   $('win').style.transform = homographyCSS([[H[0], H[1], H[2]], [H[3], H[4], H[5]], [H[6], H[7], H[8]]]);
@@ -351,6 +349,7 @@ window.renderFrame = async (f) => {
       g.style.filter = gain > 1.001 ? `brightness(${gain.toFixed(3)})` : '';
       g.style.display = op <= 0.001 ? 'none' : '';
     });
+    animateHead(f);
     // the headline sits behind the window: cut out the window area
     const poly2 = winOutline(H, 1.5);
     const path = 'M0 0H1920V1080H0Z M' + poly2.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join('L') + 'Z';
@@ -361,8 +360,6 @@ window.renderFrame = async (f) => {
     $('headAll').setAttribute('filter', hb > 0.05 ? 'url(#hbAll)' : '');
   }
 
-  drawFlash(f);
-  drawS05(f);
 };
 
 // ---------------------------------------------------------------- S05 opening look (lavender field + "Build"), f446-448
@@ -383,6 +380,82 @@ function drawS05(f) {
   t.setAttribute('filter', p.build.blur > 0.05 ? 'url(#bb)' : '');
 }
 
+// ---------------------------------------------------------------- livelier headline (client request)
+// Each letter drops in with a small overshoot and a blur-to-sharp, a light sweeps across the line,
+// the violet gradient flows along it, a soft glow pulses, and on the way out the letters drift up
+// one after another. Word start times follow the reference so the beat is unchanged.
+const WORD_T0 = [349.5, 354.5, 359, 363.5];
+const LET = [];   // {g, blurNode, word, k, n}
+function buildHeadLetters() {
+  const svg = $('head'), defs = svg.querySelector('defs');
+  defs.insertAdjacentHTML('beforeend', `
+    <linearGradient id="shimG" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="380" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.5" stop-color="#fff" stop-opacity="1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <mask id="shimM" maskUnits="userSpaceOnUse" x="-500" y="-500" width="3400" height="2000">
+      <rect id="shimR" x="0" y="-500" width="380" height="2000" fill="url(#shimG)"/></mask>
+    <filter id="hglow" x="-15%" y="-80%" width="130%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="12" result="b"/>
+      <feFlood id="hglowC" flood-color="rgb(150,120,255)" flood-opacity="0.0"/>
+      <feComposite in2="b" operator="in" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`);
+  const shim = document.createElementNS(NS, 'g'); shim.setAttribute('id', 'headShim'); shim.setAttribute('mask', 'url(#shimM)');
+  for (let i = 0; i < 4; i++) {
+    const wg = $('hw' + i), t = wg.querySelector('text'), str = t.textContent;
+    const xs = Array.from(str).map((_, k) => t.getStartPositionOfChar(k).x);
+    const attrs = ['font-family', 'font-weight', 'font-size', 'fill'].map(a => [a, t.getAttribute(a)]);
+    t.style.display = 'none';
+    Array.from(str).forEach((ch, k) => {
+      if (ch === ' ') return;
+      const fid = `hl_${i}_${k}`;
+      defs.insertAdjacentHTML('beforeend', `<filter id="${fid}" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="0"/></filter>`);
+      const g = document.createElementNS(NS, 'g');
+      const tt = el('text', { x: xs[k].toFixed(2), y: 360 }, g, ch); attrs.forEach(([a, v]) => tt.setAttribute(a, v));
+      wg.appendChild(g);
+      const sh = el('text', { x: xs[k].toFixed(2), y: 360, fill: 'rgb(255,250,255)' }, shim, ch); ['font-family', 'font-weight', 'font-size'].forEach(a => sh.setAttribute(a, t.getAttribute(a)));
+      LET.push({ g, sh, blurNode: defs.querySelector('#' + fid).firstElementChild, fid, word: i, k, cx: xs[k] + 25 });
+    });
+  }
+  $('headG').appendChild(shim);
+}
+const easeBack = (t) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
+function animateHead(f) {
+  if (!LET.length) return;
+  for (let i = 0; i < 4; i++) { const wg = $('hw' + i); wg.setAttribute('transform', ''); wg.setAttribute('filter', ''); wg.setAttribute('opacity', 1); wg.style.display = ''; wg.style.filter = ''; }
+  const nAll = LET.length;
+  LET.forEach((L, j) => {
+    const t0 = WORD_T0[L.word] + L.k * 0.7;
+    const u = clamp((f - t0) / 8);
+    const y = -46 * (1 - easeBack(u));                         // drops in from above with a small bounce
+    const sc = 1 + 0.28 * (1 - ease.outCubic(u));
+    const rot = -10 * (1 - ease.outCubic(u));
+    const op = clamp((f - t0) / 3);
+    let bl = 7 * (1 - ease.outCubic(clamp((f - t0) / 6)));
+    // exit: letters float up one after another as the camera pulls back
+    const e = clamp((f - 393 - j * 0.12) / 9);
+    const ey = -60 * ease.inCubic(e), eo = 1 - ease.inQuad(e); bl += 6 * ease.inQuad(e);
+    const ox = L.cx, oy = 330;
+    L.g.setAttribute('transform', `translate(0 ${(y + ey).toFixed(2)}) rotate(${rot.toFixed(2)} ${ox} ${oy}) translate(${ox} ${oy}) scale(${sc.toFixed(4)}) translate(${-ox} ${-oy})`);
+    L.g.setAttribute('opacity', (op * eo).toFixed(3));
+    L.g.style.display = op * eo <= 0.002 ? 'none' : '';
+    L.blurNode.setAttribute('stdDeviation', bl.toFixed(2));
+    L.g.setAttribute('filter', bl > 0.05 ? `url(#${L.fid})` : '');
+    L.sh.setAttribute('transform', L.g.getAttribute('transform')); L.sh.setAttribute('opacity', (op * eo).toFixed(3));
+  });
+  // light sweep across the line (two passes)
+  const sweep = (a, b) => (f >= a && f <= b) ? 150 + (f - a) / (b - a) * 1750 : null;
+  const sx = sweep(373, 386) ?? sweep(387.5, 397);
+  $('shimR').setAttribute('x', sx === null ? -2000 : (sx - 190).toFixed(1));
+  $('shimG').setAttribute('x1', sx === null ? -2000 : (sx - 190).toFixed(1)); $('shimG').setAttribute('x2', sx === null ? -1620 : (sx + 190).toFixed(1));
+  $('headShim').setAttribute('opacity', f >= 387.5 ? 0.7 : 1);
+  // flowing gradient: violet slides along the words and back
+  const gu = Math.sin(Math.PI * clamp((f - 366) / 30));
+  const g = $('headGrad'); g.setAttribute('x1', (290 - 520 * gu).toFixed(1)); g.setAttribute('x2', (1637 - 520 * gu).toFixed(1));
+  // soft violet glow that swells after the reveal
+  const glow = kf(f, [[366, 0], [372, 0.55], [378, 0.75], [384, 0.5], [390, 0.7], [396, 0.35], [404, 0]]);
+  $('hglowC').setAttribute('flood-opacity', glow.toFixed(3));
+  $('headG').setAttribute('filter', glow > 0.01 ? 'url(#hglow)' : '');
+}
+
 window.sceneReady = (async () => {
   const [H, head, bg] = await Promise.all([loadJSON('win_H.json'), loadJSON('head_xform.json'), loadJSON('bg_params.json')]);
   DATA.H = H; DATA.head = head; DATA.bg = bg;
@@ -390,6 +463,7 @@ window.sceneReady = (async () => {
   try { DATA.s05 = await loadJSON('s05.json'); } catch (e) { DATA.s05 = null; }
   buildUI();
   await document.fonts.ready;
+  buildHeadLetters();
   const imgs = Array.from(document.querySelectorAll('image'));
   await Promise.all(imgs.map((im) => new Promise((res) => {
     const i = new Image(); i.onload = res; i.onerror = res; i.src = new URL(im.getAttribute('href'), location.href).href;
