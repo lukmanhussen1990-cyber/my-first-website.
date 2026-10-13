@@ -1,0 +1,225 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Claude – motion promo</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #000; overflow: hidden; }
+  body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #F0EEE6; }
+  .scene { position: absolute; inset: 0; overflow: hidden; display: none; }
+  .abs { position: absolute; }
+  canvas { display: block; }
+
+  /* ---------- S1: imagine ---------- */
+  #s1 { background: #E9B9C0; }
+  #s1bg { position: absolute; inset: 0; }
+  .sil { position: absolute; left: 0; top: 0; width: 980px; height: 1176px; filter: blur(38px); will-change: transform; }
+  .sil svg { width: 100%; height: 100%; }
+  #s1stripes { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255,255,255,0.075) 0 2px, transparent 2px 7px); mix-blend-mode: screen; }
+  .scan { position: absolute; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.75); box-shadow: 0 0 6px rgba(255,255,255,0.35); }
+  #s1text { position: absolute; left: 0; right: 0; top: 0; height: 1080px; display: flex; align-items: center; justify-content: center; font-weight: 300; font-size: 66px; letter-spacing: -0.012em; white-space: pre; }
+  #s1text span { display: inline-block; }
+
+  #wipe { position: absolute; inset: 0; z-index: 5; display: none; }
+
+  /* ---------- S2: brackets ---------- */
+  #s2 { background: #F0EEE6; z-index: 6; }
+  #s2.over { background: transparent; }
+  .s2t { position: absolute; top: 0; height: 1080px; display: flex; align-items: center; font-weight: 400; font-size: 64px; letter-spacing: -0.015em; color: #141413; white-space: pre; line-height: 1; }
+  .s2t span { display: inline-block; }
+  .handle { position: absolute; width: 17px; height: 17px; background: #141413; margin: -8.5px 0 0 -8.5px; }
+  .arrow { position: absolute; top: 540px; width: 130px; height: 70px; margin-top: -35px; }
+  #thumbclip { position: absolute; top: 540px; height: 150px; margin-top: -75px; overflow: hidden; }
+  .thumb { position: absolute; top: 75px; width: 60px; height: 60px; object-fit: cover; object-position: top; border-radius: 3px; box-shadow: 0 0 0 1px rgba(20,20,19,0.08), 0 4px 10px rgba(20,20,19,0.10); }
+
+  /* ---------- S3: room ---------- */
+  #s3 { background: #ddd; }
+  #gl { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+  .grade { position: absolute; inset: 0; pointer-events: none; }
+  #g1 { mix-blend-mode: color; background: linear-gradient(180deg, #F06BD0 0%, #B48CF5 45%, #F7A3C2 100%); }
+  #g2 { mix-blend-mode: color; background: linear-gradient(180deg, #FF4E2A 0%, #FF9A3D 45%, #FFD877 100%); }
+  #g3 { mix-blend-mode: screen; background: #ffffff; }
+  #g4 { background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(30,20,10,0.22) 100%); }
+
+  /* ---------- S4: sky ---------- */
+  #s4 { background: #5EC4F1; }
+  #sky { position: absolute; inset: 0; width: 1920px; height: 1080px; image-rendering: pixelated; }
+  #inputWrap { position: absolute; left: 960px; top: 540px; }
+  #input { position: absolute; left: -450px; top: -42px; width: 900px; height: 84px; border-radius: 42px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.66), rgba(255,255,255,0.46));
+    backdrop-filter: blur(10px) saturate(1.15); -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.9);
+    box-shadow: 0 18px 50px rgba(20,90,140,0.22), inset 0 1px 0 rgba(255,255,255,0.9); overflow: hidden; }
+  #inputText { position: absolute; left: 36px; top: 0; height: 80px; display: flex; align-items: center; font-size: 29px; color: #141413; white-space: pre; letter-spacing: -0.005em; }
+  #inputPh { position: absolute; left: 36px; top: 0; height: 80px; display: flex; align-items: center; font-size: 29px; color: #6E8796; white-space: pre; }
+  #caret { position: absolute; top: 22px; width: 2.5px; height: 36px; background: #141413; }
+  #sendBtn { position: absolute; right: 14px; top: 13px; width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center; }
+  #pointer { position: absolute; left: 0; top: 0; width: 34px; height: 46px; z-index: 3; }
+  #close { position: absolute; inset: 0; display: none; overflow: hidden; }
+  #closebg { position: absolute; inset: 0; width: 1920px; height: 1080px; image-rendering: pixelated; }
+  #band { position: absolute; left: -40px; right: -40px; top: 196px; height: 690px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.42), rgba(255,255,255,0.3));
+    backdrop-filter: blur(26px); -webkit-backdrop-filter: blur(26px);
+    border-top: 22px solid rgba(255,255,255,0.88); border-bottom: 22px solid rgba(255,255,255,0.88); }
+  #bigText { position: absolute; top: 0; height: 1080px; display: flex; align-items: center; font-size: 240px; letter-spacing: -0.02em; color: #141413; white-space: pre; }
+  #bigCaret { position: absolute; top: 382px; width: 9px; height: 300px; background: #141413; }
+
+  /* ---------- S5: steps ---------- */
+  #s5 { background: #F0EEE6; }
+  #s5g { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  #s5title { position: absolute; left: 0; top: 0; font-size: 70px; font-weight: 400; letter-spacing: -0.02em; white-space: pre; color: #141413; }
+  #s5rule { position: absolute; left: 40px; top: 108px; width: 2.5px; background: #9E9B93; }
+  .step { position: absolute; left: 102px; display: flex; align-items: flex-start; gap: 22px; font-size: 50px; letter-spacing: -0.015em; white-space: pre; }
+  .step .ic { width: 50px; height: 50px; margin-top: 6px; flex: none; }
+  .step .lab { color: #141413; }
+  .step .sub { color: #A6A39B; }
+  #s5work { position: absolute; left: 0; font-size: 50px; letter-spacing: -0.01em; display: flex; align-items: center; gap: 18px; }
+  #s5work .txt { background: linear-gradient(90deg, #8D8A82 0%, #8D8A82 35%, #E6E3DC 50%, #8D8A82 65%, #8D8A82 100%); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* ---------- S6: dots ---------- */
+  #s6 { background: #F0EEE6; }
+  #dots { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+  #s6img { position: absolute; left: 0; top: 0; transform-origin: 0 0; box-shadow: 0 30px 60px rgba(40,30,20,0.12); }
+
+  /* ---------- S7: cards ---------- */
+  #s7 { background: transparent; }
+  #s7inner { position: absolute; inset: 0; }
+  #deck { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; perspective: 2400px; perspective-origin: 960px 540px; }
+  .c3 { position: absolute; left: 0; top: 0; width: 540px; height: 720px; transform-style: preserve-3d; backface-visibility: hidden; }
+  .c3 img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: top; border-radius: 6px; box-shadow: 0 2px 0 rgba(0,0,0,0.02), 0 24px 50px rgba(40,30,20,0.13); }
+  .word { position: absolute; font-size: 78px; font-weight: 500; letter-spacing: -0.025em; color: #141413; white-space: pre; }
+
+  /* ---------- S8 / S9: gradient, tagline, card ---------- */
+  #s8 { background: #ECE8E2; }
+  #grad { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+  #tag { position: absolute; left: 0; right: 0; top: 0; height: 1080px; display: flex; align-items: center; justify-content: center; font-size: 58px; font-weight: 300; letter-spacing: -0.01em; color: #fff; white-space: pre; text-shadow: 0 1px 2px rgba(110,30,70,0.18), 0 2px 26px rgba(120,30,80,0.22); }
+  #tag span { display: inline-block; }
+  .h8 { position: absolute; width: 14px; height: 14px; background: #141413; margin: -7px 0 0 -7px; }
+  #pcardWrap { position: absolute; left: 960px; top: 540px; perspective: 1600px; }
+  #pcard { position: absolute; left: -380px; top: -250px; width: 760px; transform-origin: 50% 50%; }
+  #pimgClip { position: relative; width: 760px; height: 300px; overflow: hidden; background: #fff; }
+  #pimg { position: absolute; left: 0; top: 0; width: 760px; height: 300px; object-fit: cover; object-position: 50% 45%; }
+  #ptext { background: #fff; padding: 22px 26px 26px; height: 210px; font-size: 21px; line-height: 1.5; color: #1E1D1B; overflow: hidden; position: relative; }
+  #ptext .ln { display: block; white-space: nowrap; }
+  #pbar { position: absolute; left: -380px; width: 760px; height: 46px; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; font-size: 20px; color: #1E1D1B; }
+  .fdot { position: absolute; width: 24px; height: 24px; border-radius: 50%; margin: -12px 0 0 -12px; }
+
+  /* ---------- S10: end card ---------- */
+  #s10 { background: radial-gradient(ellipse 60% 55% at 50% 52%, #F7E3D6 0%, #F3E9E0 45%, #F0EEE6 100%); }
+  #endLogo { position: absolute; left: 0; right: 0; top: 0; height: 1080px; display: flex; align-items: center; justify-content: center; gap: 34px; }
+  #endSpark { width: 150px; height: 150px; }
+  #endWord { font-family: 'Newsreader', serif; font-size: 180px; font-weight: 400; letter-spacing: -0.035em; color: #141413; white-space: pre; line-height: 1; }
+  #endWord span { display: inline-block; }
+  #endSub { position: absolute; left: 0; right: 0; top: 700px; text-align: center; font-size: 34px; color: #77746C; letter-spacing: 0.01em; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- S1 -->
+  <div class="scene" id="s1">
+    <div id="s1bg"></div>
+    <div class="sil" id="sil1"></div>
+    <div class="sil" id="sil2"></div>
+    <div id="s1stripes"></div>
+    <div id="s1lines"></div>
+    <div id="s1text"></div>
+  </div>
+
+  <canvas id="wipe" width="1920" height="1080"></canvas>
+
+  <!-- S2 -->
+  <div class="scene" id="s2">
+    <div id="s2words"></div>
+    <div id="thumbclip"></div>
+    <svg class="arrow" id="arrL" viewBox="0 0 130 70"><path d="M126 35H6M34 6 5 35l29 29" fill="none" stroke="#E5CDB6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="arrow" id="arrR" viewBox="0 0 130 70"><path d="M4 35h120M96 6l29 29-29 29" fill="none" stroke="#E5CDB6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="handle" id="hd0"></div><div class="handle" id="hd1"></div><div class="handle" id="hd2"></div><div class="handle" id="hd3"></div>
+  </div>
+
+  <!-- S3 -->
+  <div class="scene" id="s3">
+    <canvas id="gl" width="1920" height="1080"></canvas>
+    <div class="grade" id="g1"></div>
+    <div class="grade" id="g2"></div>
+    <div class="grade" id="g3"></div>
+    <div class="grade" id="g4"></div>
+  </div>
+
+  <!-- S4 -->
+  <div class="scene" id="s4">
+    <canvas id="sky" width="480" height="270"></canvas>
+    <div id="inputWrap">
+      <div id="input">
+        <div id="inputPh">How can I help you today?</div>
+        <div id="inputText"></div>
+        <div id="caret"></div>
+        <div id="sendBtn"></div>
+      </div>
+      <svg id="pointer" viewBox="0 0 34 46"><path d="M3 2v35l9-8.5 6.2 14 6.3-2.8-6.1-13.6H31z" fill="#fff" stroke="#141413" stroke-width="2.6" stroke-linejoin="round"/></svg>
+    </div>
+    <div id="close">
+      <canvas id="closebg" width="480" height="270"></canvas>
+      <div id="band"></div>
+      <div id="bigText"></div>
+      <div id="bigCaret"></div>
+    </div>
+  </div>
+
+  <!-- S5 -->
+  <div class="scene" id="s5">
+    <div id="s5g">
+      <div id="s5title"></div>
+      <div id="s5rule"></div>
+      <div id="s5steps"></div>
+      <div id="s5work"><span id="s5spin" style="width:46px;height:46px;display:inline-block"></span><span class="txt">Brewing…</span></div>
+    </div>
+  </div>
+
+  <!-- S6 -->
+  <div class="scene" id="s6">
+    <canvas id="dots" width="1920" height="1080"></canvas>
+    <img id="s6img" src="../assets/landing.png">
+  </div>
+
+  <!-- S7 -->
+  <div class="scene" id="s7">
+    <div id="s7inner">
+      <div id="deck"></div>
+      <div class="word" id="wThink">think</div>
+      <div class="word" id="wDeeper">deeper</div>
+      <div class="word" id="wBuild">build</div>
+      <div class="word" id="wFaster">faster</div>
+    </div>
+  </div>
+
+  <!-- S8 + S9 -->
+  <div class="scene" id="s8">
+    <canvas id="grad" width="480" height="270"></canvas>
+    <div id="tag"></div>
+    <div id="pcardWrap">
+      <div id="pcard">
+        <div id="pimgClip"><img id="pimg" src="../assets/herowide.png"></div>
+        <div id="ptext"></div>
+      </div>
+      <div id="pbar"><span>Claude</span><span>Extended thinking</span><span>Artifact</span></div>
+    </div>
+    <div class="fdot" id="fdot1" style="background:#F2C14E"></div>
+    <div class="fdot" id="fdot2" style="background:#3B9BF0"></div>
+    <div class="h8" id="h80"></div><div class="h8" id="h81"></div><div class="h8" id="h82"></div><div class="h8" id="h83"></div>
+  </div>
+
+  <!-- S10 -->
+  <div class="scene" id="s10">
+    <div id="endLogo"><div id="endSpark"></div><div id="endWord"></div></div>
+    <div id="endSub">claude.ai</div>
+  </div>
+</div>
+
+<script src="shapes.js"></script>
+<script type="module" src="main.js"></script>
+</body>
+</html>

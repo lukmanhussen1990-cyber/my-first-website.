@@ -1,0 +1,782 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Claude promo – artifact cards</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --espresso: #2B1D16; --espresso2: #4A3427; --oat: #F3EBDD; --cream: #FBF6EE; --paper: #FFFDF8;
+    --ember: #E0703A; --ember-d: #C85B28; --caramel: #C98B5A; --sage: #8A9A7B; --ink: #141413;
+    --claude: #D97757; --ivory: #F5F4EF; --muted: #87867F; --line: #E6E2D8;
+  }
+  html, body { background: transparent; }
+  body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; color: var(--ink); }
+  .card { position: relative; overflow: hidden; display: none; }
+  .card.show { display: block; }
+  .serif { font-family: 'Newsreader', serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  svg { display: block; }
+
+  /* ---------------- Landing page (1200x1600) ---------------- */
+  #landing { width: 1200px; height: 1600px; background: var(--cream); color: var(--espresso); }
+  #landing nav { height: 104px; display: flex; align-items: center; padding: 0 64px; gap: 44px; }
+  .logo { display: flex; align-items: center; gap: 12px; font-family: 'Newsreader', serif; font-size: 32px; font-weight: 500; letter-spacing: -0.01em; }
+  #landing nav .links { display: flex; gap: 36px; margin-left: auto; font-size: 18px; color: var(--espresso2); font-weight: 450; }
+  .pill { border-radius: 999px; padding: 14px 26px; font-weight: 550; font-size: 18px; display: inline-flex; align-items: center; gap: 10px; }
+  .pill.dark { background: var(--espresso); color: var(--cream); }
+  .pill.ember { background: var(--ember); color: #fff; }
+  .pill.outline { border: 2px solid var(--espresso); color: var(--espresso); }
+  #landing .hero { margin: 0 28px; height: 760px; background: var(--oat); border-radius: 36px; display: grid; grid-template-columns: 1.08fr 1fr; padding: 72px 44px 60px 64px; position: relative; overflow: hidden; }
+  .eyebrow { font-size: 15px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--caramel); font-weight: 650; }
+  #landing h1 { font-family: 'Newsreader', serif; font-weight: 400; font-size: 104px; line-height: 0.95; letter-spacing: -0.03em; margin: 26px 0 30px; }
+  #landing h1 em { font-style: italic; color: var(--ember); }
+  #landing .lede { font-size: 22px; line-height: 1.5; color: var(--espresso2); max-width: 520px; }
+  #landing .ctas { display: flex; gap: 16px; margin-top: 40px; }
+  #landing .ctas .pill { font-size: 19px; padding: 18px 30px; }
+  .rating { display: flex; align-items: center; gap: 12px; margin-top: 46px; font-size: 16px; color: var(--espresso2); }
+  .avatars { display: flex; }
+  .avatars span { width: 38px; height: 38px; border-radius: 50%; border: 3px solid var(--oat); margin-left: -10px; }
+  .avatars span:first-child { margin-left: 0; }
+  .hero-art { position: relative; }
+  .hero-art .sun { position: absolute; width: 470px; height: 470px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #F0925F, var(--ember) 55%, #D2602C); left: 22px; top: 60px; }
+  .hero-art .cup { position: absolute; left: -10px; top: 170px; width: 520px; }
+  .badge { position: absolute; background: var(--paper); border-radius: 18px; padding: 14px 18px; box-shadow: 0 14px 30px rgba(43,29,22,0.12); font-size: 15px; display: flex; gap: 10px; align-items: center; }
+  .badge b { display: block; font-size: 16px; color: var(--espresso); }
+  .badge small { color: var(--muted); font-size: 13px; }
+  .badge i { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; font-style: normal; }
+  #landing .menu { padding: 70px 64px 0; }
+  #landing .menu-head { display: flex; align-items: baseline; justify-content: space-between; }
+  #landing .menu h2 { font-family: 'Newsreader', serif; font-weight: 400; font-size: 58px; letter-spacing: -0.02em; }
+  #landing .menu-head a { font-size: 18px; color: var(--ember-d); font-weight: 600; }
+  #landing .products { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 34px; }
+  .product { background: var(--paper); border-radius: 26px; overflow: hidden; border: 1px solid #EFE6D7; }
+  .product .art { height: 230px; display: grid; place-items: center; }
+  .product .art svg { width: 210px; }
+  .product .meta { padding: 20px 22px 24px; }
+  .product .row { display: flex; justify-content: space-between; align-items: baseline; }
+  .product h3 { font-family: 'Newsreader', serif; font-weight: 500; font-size: 28px; letter-spacing: -0.01em; }
+  .product .price { font-weight: 650; font-size: 19px; }
+  .product p { color: var(--muted); font-size: 15px; margin-top: 6px; }
+
+  #landing .visit { margin: 56px 28px 0; height: 200px; border-radius: 32px; background: var(--espresso); color: var(--cream); display: flex; align-items: center; justify-content: space-between; padding: 0 56px; }
+  #landing .visit h2 { font-family: 'Newsreader', serif; font-weight: 400; font-size: 52px; letter-spacing: -0.02em; }
+  #landing .visit p { font-size: 19px; color: #CDBFAF; margin-top: 6px; }
+  /* ---------------- Wide hero (1440x560) ---------------- */
+  #herowide { width: 1440px; height: 560px; background: var(--oat); color: var(--espresso); }
+  #herowide .copy { position: absolute; left: 90px; top: 92px; width: 720px; }
+  #herowide h1 { font-family: 'Newsreader', serif; font-weight: 400; font-size: 104px; line-height: 0.95; letter-spacing: -0.03em; margin: 22px 0 26px; }
+  #herowide h1 em { font-style: italic; color: var(--ember); }
+  #herowide .lede { font-size: 22px; line-height: 1.5; color: var(--espresso2); max-width: 560px; }
+  #herowide .sun { position: absolute; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #F0925F, var(--ember) 55%, #D2602C); right: 120px; top: 40px; }
+  #herowide .cup { position: absolute; right: 70px; top: 120px; width: 600px; }
+  #herowide .nav { position: absolute; left: 90px; right: 90px; top: 30px; display: flex; align-items: center; }
+  #herowide .nav .links { margin-left: auto; display: flex; gap: 34px; font-size: 17px; color: var(--espresso2); }
+
+  /* ---------------- Mobile app (450x600) ---------------- */
+  #app { width: 450px; height: 600px; background: var(--cream); color: var(--espresso); padding: 0 22px; }
+  .status { height: 40px; display: flex; align-items: center; justify-content: space-between; font-weight: 650; font-size: 15px; padding: 0 6px; }
+  .status .icons { display: flex; gap: 6px; align-items: center; }
+  .app-head { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+  .app-head small { color: var(--muted); font-size: 14px; }
+  .app-head h2 { font-family: 'Newsreader', serif; font-weight: 500; font-size: 30px; letter-spacing: -0.02em; line-height: 1.05; }
+  .app-head .av { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #F0B48A, var(--ember)); display: grid; place-items: center; color: #fff; font-weight: 700; }
+  .search { margin-top: 16px; height: 46px; border-radius: 14px; background: var(--paper); border: 1px solid #EEE5D6; display: flex; align-items: center; gap: 10px; padding: 0 14px; color: #A8A094; font-size: 15px; }
+  .chips { display: flex; gap: 8px; margin-top: 14px; }
+  .chip { padding: 8px 14px; border-radius: 999px; font-size: 13.5px; font-weight: 550; background: var(--paper); border: 1px solid #EEE5D6; }
+  .chip.on { background: var(--espresso); color: var(--cream); border-color: var(--espresso); }
+  .sec { display: flex; justify-content: space-between; align-items: baseline; margin-top: 18px; }
+  .sec h4 { font-size: 18px; font-weight: 650; }
+  .sec a { font-size: 13px; color: var(--ember-d); font-weight: 600; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .tile { border-radius: 20px; padding: 10px 12px 12px; position: relative; height: 158px; }
+  .tile svg { width: 112px; margin: -4px auto 0; }
+  .tile b { font-size: 14.5px; display: block; margin-top: 2px; }
+  .tile span { font-size: 13px; color: var(--espresso2); }
+  .tile .add { position: absolute; right: 10px; bottom: 10px; width: 30px; height: 30px; border-radius: 50%; background: var(--espresso); color: #fff; display: grid; place-items: center; font-size: 20px; line-height: 1; }
+  .orderbar { position: absolute; left: 22px; right: 22px; bottom: 18px; height: 58px; border-radius: 18px; background: var(--espresso); color: var(--cream); display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 15px; }
+  .orderbar b { font-weight: 650; }
+  .orderbar .go { background: var(--ember); color: #fff; padding: 9px 14px; border-radius: 12px; font-weight: 650; font-size: 14px; }
+
+  /* ---------------- Dashboard (1200x1600) ---------------- */
+  #dashboard { width: 1200px; height: 1600px; background: #F6F4EE; padding: 44px 48px; color: var(--ink); }
+  .dash-top { display: flex; align-items: center; gap: 16px; }
+  .dash-top h1 { font-size: 34px; font-weight: 650; letter-spacing: -0.02em; }
+  .dash-top .sub { color: var(--muted); font-size: 17px; margin-left: 4px; }
+  .dash-top .range { margin-left: auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 18px; font-size: 16px; font-weight: 550; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 30px; }
+  .panel { background: #fff; border: 1px solid #ECE8DE; border-radius: 22px; padding: 24px 26px; }
+  .kpi small { color: var(--muted); font-size: 15px; font-weight: 500; }
+  .kpi .v { font-size: 38px; font-weight: 650; letter-spacing: -0.02em; margin-top: 8px; }
+  .kpi .d { display: inline-block; margin-top: 10px; font-size: 14px; font-weight: 650; color: #2F7D4F; background: #E4F2E8; padding: 4px 10px; border-radius: 999px; }
+  .panel h3 { font-size: 20px; font-weight: 650; display: flex; justify-content: space-between; align-items: center; }
+  .panel h3 span { font-size: 14px; color: var(--muted); font-weight: 500; }
+  .grid2 { display: grid; grid-template-columns: 1.25fr 1fr; gap: 20px; margin-top: 20px; }
+  .legend { display: flex; flex-direction: column; gap: 14px; justify-content: center; font-size: 16px; }
+  .legend div { display: flex; align-items: center; gap: 10px; }
+  .legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+  .legend b { margin-left: auto; font-weight: 650; }
+  table.top { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 16px; }
+  table.top td, table.top th { padding: 13px 6px; border-bottom: 1px solid #F0ECE3; text-align: left; }
+  table.top th { color: var(--muted); font-weight: 550; font-size: 14px; }
+  table.top td.num { font-variant-numeric: tabular-nums; }
+  .bar { height: 10px; border-radius: 6px; background: #F2E3D8; position: relative; overflow: hidden; width: 180px; }
+  .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: var(--ember); }
+
+  /* ---------------- Code editor (750x1000) ---------------- */
+  #code { width: 750px; height: 1000px; background: #1C1B1A; color: #E8E3DA; }
+  .chrome { height: 46px; background: #262422; display: flex; align-items: center; padding: 0 16px; gap: 8px; border-bottom: 1px solid #33302D; }
+  .chrome i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .chrome .title { margin-left: 14px; font-size: 13px; color: #A39D94; font-family: 'Inter'; }
+  .tabs { display: flex; height: 40px; background: #211F1D; border-bottom: 1px solid #33302D; font-size: 13px; font-family: 'Inter'; }
+  .tabs div { padding: 0 18px; display: flex; align-items: center; gap: 8px; color: #8F887E; border-right: 1px solid #2E2B28; }
+  .tabs div.on { background: #1C1B1A; color: #F1ECE4; box-shadow: inset 0 2px 0 var(--claude); }
+  .codebody { display: flex; padding-top: 18px; font-family: 'JetBrains Mono', monospace; font-size: 16px; line-height: 25.6px; }
+  .gutter { width: 58px; text-align: right; padding-right: 18px; color: #5A554F; flex: none; }
+  .lines { white-space: pre; }
+  .c-com { color: #7D766C; font-style: italic; }
+  .c-tag { color: #E8956A; }
+  .c-att { color: #C9A6E8; }
+  .c-str { color: #A9C98A; }
+  .c-sel { color: #E8C07A; }
+  .c-prop { color: #8FC1E3; }
+  .c-num { color: #F09A85; }
+  .c-pun { color: #8F887E; }
+  .hl { background: rgba(217,119,87,0.13); display: inline-block; width: 100%; }
+  .statusbar { position: absolute; left: 0; right: 0; bottom: 0; height: 30px; background: #262422; display: flex; align-items: center; gap: 18px; padding: 0 16px; font-size: 12px; color: #A39D94; border-top: 1px solid #33302D; }
+  .statusbar .claude-chip { margin-left: auto; color: var(--claude); display: flex; gap: 6px; align-items: center; }
+
+  /* ---------------- Terminal (750x1000) ---------------- */
+  #terminal { width: 750px; height: 1000px; background: #191817; color: #E9E4DB; }
+  .term { padding: 24px 28px; font-family: 'JetBrains Mono', monospace; font-size: 16.5px; line-height: 1.66; }
+  .welcome { border: 1.5px solid var(--claude); border-radius: 10px; padding: 14px 18px; margin-bottom: 22px; }
+  .welcome .t { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .dim { color: #8C857B; }
+  .or { color: var(--claude); }
+  .gr { color: #8CCB8F; }
+  .rd { color: #E88A80; }
+  .prompt { background: #262422; border-radius: 8px; padding: 10px 14px; margin: 6px 0 18px; }
+  .diff { margin: 4px 0 8px 22px; border-radius: 6px; overflow: hidden; }
+  .diff div { padding: 0 10px; white-space: pre; }
+  .diff .add { background: rgba(108,180,110,0.16); }
+  .diff .del { background: rgba(232,120,110,0.14); }
+  .bullet { display: flex; gap: 10px; }
+  .bullet .dot { color: var(--claude); flex: none; }
+  .spin { display: flex; align-items: center; gap: 10px; margin-top: 18px; color: var(--claude); }
+  .inputbox { position: absolute; left: 26px; right: 26px; bottom: 54px; border: 1.5px solid #4A4540; border-radius: 10px; padding: 12px 16px; font-family: 'JetBrains Mono'; font-size: 15.5px; color: #8C857B; }
+  .hint { position: absolute; left: 30px; bottom: 22px; font-family: 'JetBrains Mono'; font-size: 13px; color: #6E685F; }
+
+  /* ---------------- Document (750x1000) ---------------- */
+  #doc { width: 750px; height: 1000px; background: #ECE9E1; padding: 34px 40px 0; }
+  .paper { background: #fff; height: 100%; border-radius: 14px 14px 0 0; box-shadow: 0 10px 40px rgba(20,20,19,0.08); padding: 50px 60px; color: #23211E; }
+  .paper .meta { font-size: 14px; color: var(--muted); display: flex; gap: 10px; align-items: center; }
+  .paper .meta .tag { background: #F6E7DE; color: var(--ember-d); padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 12.5px; }
+  .paper h1 { font-family: 'Newsreader', serif; font-weight: 450; font-size: 50px; letter-spacing: -0.02em; line-height: 1.02; margin: 18px 0 10px; }
+  .paper .by { font-size: 14px; color: var(--muted); padding-bottom: 22px; border-bottom: 1px solid #EEEBE4; }
+  .paper h2 { font-family: 'Newsreader', serif; font-weight: 500; font-size: 26px; margin: 26px 0 10px; letter-spacing: -0.01em; }
+  .paper p { font-size: 16px; line-height: 1.65; color: #3D3A35; }
+  .paper ul { margin: 8px 0 0 0; list-style: none; }
+  .paper li { font-size: 16px; line-height: 1.6; color: #3D3A35; padding-left: 24px; position: relative; margin-bottom: 6px; }
+  .paper li::before { content: ''; position: absolute; left: 4px; top: 10px; width: 8px; height: 8px; border-radius: 2px; background: var(--ember); transform: rotate(45deg); }
+  .quote { margin: 24px 0 0; border-left: 4px solid var(--ember); padding: 6px 0 6px 22px; font-family: 'Newsreader', serif; font-style: italic; font-size: 25px; line-height: 1.35; color: #2B2824; }
+
+  /* ---------------- Poster (600x800) ---------------- */
+  #poster { width: 600px; height: 800px; background: var(--ember); color: var(--cream); }
+  #poster .rays { position: absolute; left: 50%; top: 520px; width: 1400px; height: 1400px; transform: translate(-50%,-50%); background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0.09) 0deg 7deg, transparent 7deg 15deg); border-radius: 50%; }
+  #poster .top { position: absolute; left: 44px; right: 44px; top: 40px; display: flex; justify-content: space-between; font-size: 14px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 650; }
+  #poster h1 { position: absolute; left: 40px; right: 40px; top: 96px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 92px; line-height: 0.9; letter-spacing: -0.035em; }
+  #poster h1 em { font-style: italic; }
+  #poster .glass { position: absolute; left: 50%; top: 360px; width: 330px; transform: translateX(-50%); }
+  #poster .stamp { position: absolute; right: 40px; top: 400px; width: 128px; height: 128px; border-radius: 50%; background: var(--cream); color: var(--ember-d); display: grid; place-items: center; text-align: center; font-weight: 700; font-size: 15px; line-height: 1.15; transform: rotate(12deg); letter-spacing: 0.04em; }
+  #poster .stamp b { font-family: 'Newsreader', serif; font-size: 34px; display: block; font-weight: 500; letter-spacing: -0.02em; }
+  #poster .foot { position: absolute; left: 40px; right: 40px; bottom: 36px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 15px; font-weight: 550; }
+
+  /* ---------------- Chat (600x800) ---------------- */
+  #chat { width: 600px; height: 800px; background: var(--ivory); color: #2A2925; }
+  .chat-top { height: 58px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 550; color: #3D3B36; border-bottom: 1px solid #ECEAE2; }
+  .chat-body { padding: 26px 30px; }
+  .umsg { margin-left: auto; width: fit-content; max-width: 78%; background: #EAE7DD; border-radius: 18px; padding: 13px 18px; font-size: 16px; line-height: 1.5; display: flex; gap: 10px; align-items: flex-start; }
+  .umsg .ua { width: 26px; height: 26px; border-radius: 50%; background: #3D3B36; color: #fff; font-size: 12px; display: grid; place-items: center; flex: none; font-weight: 650; }
+  .amsg { margin-top: 26px; font-family: 'Newsreader', serif; font-size: 19px; line-height: 1.55; color: #2A2925; }
+  .amsg .spk { width: 30px; margin-bottom: 12px; }
+  .amsg ol { margin: 10px 0 0 0; padding-left: 0; list-style: none; counter-reset: n; }
+  .amsg li { counter-increment: n; margin-bottom: 10px; padding-left: 30px; position: relative; }
+  .amsg li::before { content: counter(n) '.'; position: absolute; left: 0; color: #8C857B; }
+  .amsg b { font-weight: 650; }
+  .chat-input { position: absolute; left: 24px; right: 24px; bottom: 24px; background: #fff; border: 1px solid #E3E0D6; border-radius: 20px; padding: 16px 18px 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.05); }
+  .chat-input .ph { color: #9A968C; font-size: 16px; }
+  .chat-input .row { display: flex; align-items: center; margin-top: 18px; gap: 10px; color: #8C887F; font-size: 14px; }
+  .send { margin-left: auto; width: 34px; height: 34px; border-radius: 10px; background: var(--claude); display: grid; place-items: center; }
+
+  /* ---------------- Brand sheet (750x1000) ---------------- */
+  #brand { width: 750px; height: 1000px; background: var(--cream); color: var(--espresso); padding: 48px; }
+  #brand .hd { display: flex; justify-content: space-between; font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--caramel); font-weight: 650; }
+  #brand .mark { margin-top: 40px; height: 300px; border-radius: 28px; background: var(--espresso); display: flex; align-items: center; justify-content: center; gap: 22px; color: var(--cream); }
+  #brand .mark span { font-family: 'Newsreader', serif; font-size: 76px; letter-spacing: -0.03em; }
+  #brand .mark span em { color: var(--ember); font-style: italic; }
+  #brand h3 { margin-top: 36px; font-size: 14px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-weight: 650; }
+  .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 14px; }
+  .sw { border-radius: 18px; height: 150px; padding: 14px; display: flex; flex-direction: column; justify-content: flex-end; font-size: 14px; }
+  .sw b { font-size: 17px; font-weight: 650; }
+  .typespec { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  .typespec div { background: var(--paper); border: 1px solid #EFE6D7; border-radius: 18px; padding: 18px 22px; }
+  .typespec .aa { font-size: 76px; line-height: 1; letter-spacing: -0.03em; }
+  .typespec small { display: block; color: var(--muted); font-size: 14px; margin-top: 8px; }
+
+  /* ---------------- Spreadsheet (900x1200) ---------------- */
+  #data { width: 900px; height: 1200px; background: #fff; color: #1F1E1C; }
+  .xl-top { height: 64px; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #E7E4DC; background: #FAF9F6; }
+  .xl-top .ic { width: 30px; height: 30px; border-radius: 7px; background: #2F7D4F; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 15px; }
+  .xl-top b { font-size: 17px; font-weight: 600; }
+  .xl-top span { color: var(--muted); font-size: 14px; }
+  .fx { height: 42px; display: flex; align-items: center; border-bottom: 1px solid #E7E4DC; font-size: 14px; }
+  .fx .ref { width: 80px; text-align: center; border-right: 1px solid #E7E4DC; height: 100%; display: grid; place-items: center; color: #555; }
+  .fx .f { padding-left: 14px; font-family: 'JetBrains Mono'; color: #444; font-size: 13.5px; }
+  table.xl { border-collapse: collapse; width: 100%; font-size: 15px; }
+  table.xl td, table.xl th { border: 1px solid #ECEAE3; height: 40px; padding: 0 12px; white-space: nowrap; }
+  table.xl th { background: #F6F5F1; color: #6F6B63; font-weight: 500; font-size: 13px; height: 32px; text-align: center; }
+  table.xl td.rn { background: #F6F5F1; color: #8A867E; text-align: center; width: 44px; font-size: 13px; padding: 0; }
+  table.xl tr.head td { font-weight: 650; background: #FBF3EC; }
+  table.xl td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .pos { color: #2F7D4F; font-weight: 600; }
+  .neg { color: #C2453B; font-weight: 600; }
+  .heat1 { background: #F9E2D4; } .heat2 { background: #F4CDB4; } .heat3 { background: #EEB28E; }
+  .chartbox { margin: 26px 24px 0; border: 1px solid #ECEAE3; border-radius: 16px; padding: 22px 24px; }
+  .chartbox h4 { font-size: 18px; font-weight: 650; }
+  .chartbox small { color: var(--muted); }
+
+
+  /* ---------------- Printed menu (600x800) ---------------- */
+  #menu { width: 600px; height: 800px; background: #F7F1E6; color: var(--espresso); padding: 26px; }
+  #menu .frame { border: 1.5px solid #CDB89C; height: 100%; padding: 34px 38px; position: relative; }
+  #menu .frame::after { content: ''; position: absolute; inset: 6px; border: 1px solid #E2D3BE; pointer-events: none; }
+  #menu .mh { text-align: center; }
+  #menu .mh .logo { justify-content: center; font-size: 26px; }
+  #menu h1 { font-family: 'Newsreader', serif; font-weight: 400; font-style: italic; font-size: 64px; text-align: center; letter-spacing: -0.02em; margin-top: 6px; line-height: 1; }
+  #menu .sub { text-align: center; font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--caramel); margin-top: 10px; font-weight: 650; }
+  #menu h2 { font-size: 12.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ember-d); margin: 26px 0 10px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+  #menu h2::after { content: ''; flex: 1; height: 1px; background: #DCCAB2; }
+  #menu .it { display: flex; align-items: baseline; gap: 8px; font-family: 'Newsreader', serif; font-size: 21px; margin: 7px 0; }
+  #menu .it i { flex: 1; border-bottom: 1.5px dotted #C9B396; transform: translateY(-5px); }
+  #menu .it b { font-family: 'Inter'; font-size: 15px; font-weight: 600; }
+  #menu .it small { display: block; font-family: 'Inter'; font-size: 12px; color: var(--muted); margin-top: -2px; }
+
+  /* ---------------- Email (600x800) ---------------- */
+  #email { width: 600px; height: 800px; background: #EDE9E1; padding: 22px 30px 0; }
+  #email .client { font-size: 12px; color: #8A867E; display: flex; justify-content: space-between; margin-bottom: 10px; }
+  #email .mail { background: #fff; border-radius: 14px 14px 0 0; height: 100%; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.06); }
+  #email .top { height: 60px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #F0EBE2; }
+  #email .heroimg { height: 270px; background: var(--ember); position: relative; overflow: hidden; }
+  #email .heroimg .rays { position: absolute; left: 50%; top: 100%; width: 900px; height: 900px; transform: translate(-50%,-50%); background: repeating-conic-gradient(rgba(255,255,255,0.1) 0 6deg, transparent 6deg 14deg); border-radius: 50%; }
+  #email .heroimg .g { position: absolute; left: 50%; bottom: -18px; transform: translateX(-50%); width: 170px; }
+  #email .body { padding: 26px 34px; }
+  #email h1 { font-family: 'Newsreader', serif; font-weight: 400; font-size: 38px; letter-spacing: -0.02em; line-height: 1.05; color: var(--espresso); }
+  #email p { font-size: 15px; line-height: 1.6; color: #5A4A40; margin-top: 12px; }
+  #email .btn { display: inline-block; margin-top: 20px; background: var(--espresso); color: var(--cream); padding: 13px 22px; border-radius: 999px; font-weight: 600; font-size: 15px; }
+  #email .ps { margin-top: 22px; padding-top: 16px; border-top: 1px solid #F0EBE2; font-size: 12.5px; color: #9A928A; }
+
+  /* ---------------- Research brief (750x1000) ---------------- */
+  #research { width: 750px; height: 1000px; background: var(--ivory); padding: 40px 46px; color: #24221F; }
+  #research .rtag { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #E6E2D8; border-radius: 999px; padding: 6px 14px 6px 10px; font-size: 13px; color: #5A5750; font-weight: 550; }
+  #research h1 { font-family: 'Newsreader', serif; font-weight: 450; font-size: 54px; letter-spacing: -0.02em; line-height: 1.05; margin: 18px 0 8px; }
+  #research .meta { font-size: 14px; color: var(--muted); }
+  #research .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 26px 0 8px; }
+  #research .stat { background: #fff; border: 1px solid #E8E4DA; border-radius: 16px; padding: 18px; }
+  #research .stat b { font-family: 'Newsreader', serif; font-weight: 450; font-size: 52px; letter-spacing: -0.02em; color: var(--claude); display: block; line-height: 1; }
+  #research .stat span { font-size: 15px; color: #5A5750; line-height: 1.4; display: block; margin-top: 8px; }
+  #research h2 { font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 24px 0 10px; font-weight: 650; }
+  #research .find { display: flex; gap: 14px; margin-bottom: 16px; font-size: 18.5px; line-height: 1.55; }
+  #research .find .n { flex: none; width: 28px; height: 28px; border-radius: 8px; background: #F3E2D9; color: var(--ember-d); display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+  #research sup { font-size: 11px; background: #ECE8DE; color: #6B6860; border-radius: 5px; padding: 1px 5px; margin-left: 3px; font-weight: 600; }
+  #research .src { display: flex; gap: 8px; flex-wrap: wrap; }
+  #research .src span { background: #fff; border: 1px solid #E6E2D8; border-radius: 10px; padding: 9px 14px; font-size: 15px; color: #5A5750; }
+
+  /* ---------------- Slides (600x800) ---------------- */
+  #slides { width: 600px; height: 800px; background: #2A2724; padding: 30px; }
+  #slides .sl { background: #FBF6EE; border-radius: 10px; height: 300px; position: relative; overflow: hidden; margin-bottom: 22px; }
+  #slides .sl.dark { background: var(--espresso); color: var(--cream); }
+  #slides .num { position: absolute; left: -2px; top: -2px; font-size: 12px; color: #8C857B; }
+  #slides .lbl { color: #A39D94; font-size: 12px; margin: -14px 0 6px 2px; height: 14px; }
+  #slides .s1 { padding: 34px 36px; }
+  #slides .s1 small { font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--caramel); font-weight: 700; }
+  #slides .s1 h1 { font-family: 'Newsreader', serif; font-weight: 400; font-size: 48px; max-width: 380px; line-height: 0.95; letter-spacing: -0.03em; margin-top: 14px; }
+  #slides .s1 h1 em { color: var(--ember); }
+  #slides .s1 .sun { position: absolute; right: -60px; bottom: -80px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #F0925F, var(--ember) 60%); }
+  #slides .s2 { padding: 28px 32px; }
+  #slides .s2 h3 { font-family: 'Newsreader', serif; font-weight: 400; font-size: 30px; letter-spacing: -0.01em; }
+  #slides .s2 .big { font-family: 'Newsreader', serif; font-size: 76px; color: var(--ember); line-height: 1; margin-top: 14px; letter-spacing: -0.03em; }
+  #slides .s2 .cap { font-size: 14px; color: #CDBFAF; margin-top: 6px; }
+  #slides .bars { position: absolute; right: 30px; bottom: 30px; display: flex; gap: 12px; align-items: flex-end; height: 190px; }
+  #slides .bars i { width: 34px; border-radius: 8px 8px 3px 3px; background: #6B4A38; display: block; }
+  #slides .bars i.hi { background: var(--ember); }
+  #slides .thumbs { display: flex; gap: 12px; }
+  #slides .thumbs div { flex: 1; height: 72px; border-radius: 8px; background: #3A3632; border: 1.5px solid #4A4540; }
+  #slides .thumbs div.on { border-color: var(--claude); }
+
+  /* ---------------- Claude-style screen (1600x1000) ---------------- */
+  #screen { width: 1600px; height: 1000px; background: #F5F4EF; color: #2A2925; }
+  .side { position: absolute; left: 0; top: 0; bottom: 0; width: 76px; border-right: 1px solid #E8E6DD; display: flex; flex-direction: column; align-items: center; padding-top: 26px; gap: 26px; }
+  .side .sq { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: #6B6860; }
+  .side .sq.new { background: var(--claude); color: #fff; }
+  .side .me { margin-top: auto; margin-bottom: 26px; width: 40px; height: 40px; border-radius: 50%; background: #3D3B36; color: #fff; display: grid; place-items: center; font-weight: 650; font-size: 16px; }
+  .scr-main { position: absolute; left: 76px; right: 0; top: 0; bottom: 0; }
+  .greet { position: absolute; left: 0; right: 0; top: 300px; display: flex; justify-content: center; align-items: center; gap: 20px; font-family: 'Newsreader', serif; font-size: 66px; font-weight: 400; letter-spacing: -0.02em; color: #2A2925; }
+  .greet svg { width: 58px; }
+  .bigin { position: absolute; left: 50%; transform: translateX(-50%); top: 440px; width: 900px; height: 168px; background: #fff; border-radius: 28px; border: 1.5px solid #E3E0D6; box-shadow: 0 10px 36px rgba(60,50,40,0.07); padding: 30px 32px; }
+  .bigin .ph { font-size: 26px; color: #9A968C; }
+  .bigin .row { position: absolute; left: 28px; right: 26px; bottom: 22px; display: flex; align-items: center; gap: 14px; color: #8C887F; font-size: 19px; }
+  .bigin .row .sel { margin-left: auto; margin-right: 8px; font-size: 19px; color: #6B6860; }
+  .bigin .send { width: 52px; height: 52px; border-radius: 14px; margin-left: 0; }
+  .ibtn { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid #E3E0D6; display: grid; place-items: center; color: #6B6860; }
+  .quick { position: absolute; left: 50%; transform: translateX(-50%); top: 640px; display: flex; gap: 14px; }
+  .quick div { border: 1.5px solid #E3E0D6; border-radius: 14px; padding: 12px 20px; font-size: 20px; color: #4A4842; display: flex; gap: 10px; align-items: center; background: #F9F8F4; }
+</style>
+</head>
+<body>
+
+<!-- ===================== LANDING ===================== -->
+<div class="card" id="landing">
+  <nav>
+    <div class="logo"><span data-svg="flame" data-size="34"></span>Ember &amp; Oat</div>
+    <div class="links"><span>Menu</span><span>Our story</span><span>Visit</span><span>Gift cards</span></div>
+    <span class="pill dark">Order online</span>
+  </nav>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Small-batch roastery · Est. 2019</div>
+      <h1>Slow mornings, <em>bright</em> coffee.</h1>
+      <p class="lede">Ethically sourced beans, roasted in small batches every Tuesday and poured with care, one cup at a time.</p>
+      <div class="ctas"><span class="pill ember">Order ahead &nbsp;→</span><span class="pill outline">See the menu</span></div>
+    </div>
+    <div class="hero-art">
+      <div class="sun"></div>
+      <div class="cup" data-svg="cup"></div>
+      <div class="badge" style="left:-30px; top:110px"><i style="background:#F6E2D3">☕</i><div><b>Fresh roast</b><small>Every Tuesday</small></div></div>
+      <div class="badge" style="right:-6px; top:520px"><i style="background:#E7ECDF">🌾</i><div><b>Oat milk</b><small>No extra charge</small></div></div>
+    </div>
+  </section>
+  <section class="menu">
+    <div class="menu-head"><h2>This week’s pours</h2><a>Full menu →</a></div>
+    <div class="products">
+      <div class="product"><div class="art" style="background:#F3E3D3"><div data-svg="cup" data-size="210"></div></div><div class="meta"><div class="row"><h3>Oat Latte</h3><span class="price">$5.50</span></div><p>Velvety oat milk, double shot</p></div></div>
+      <div class="product"><div class="art" style="background:#E6EADF"><div data-svg="glass" data-size="140"></div></div><div class="meta"><div class="row"><h3>Ember Cold Brew</h3><span class="price">$4.75</span></div><p>Steeped 18 hours, brown sugar</p></div></div>
+      <div class="product"><div class="art" style="background:#F2DCC9"><div data-svg="cortado" data-size="170"></div></div><div class="meta"><div class="row"><h3>Honey Cortado</h3><span class="price">$5.00</span></div><p>Local wildflower honey</p></div></div>
+    </div>
+  </section>
+  <section class="visit">
+    <div><h2>Visit the roastery</h2><p>214 Alder Street · Open daily 7am – 4pm</p></div>
+    <span class="pill ember" style="font-size:19px; padding:18px 30px">Get directions &nbsp;→</span>
+  </section>
+</div>
+
+<!-- ===================== WIDE HERO ===================== -->
+<div class="card" id="herowide">
+  <div class="nav"><div class="logo"><span data-svg="flame" data-size="30"></span>Ember &amp; Oat</div></div>
+  <div class="copy">
+    <div class="eyebrow" style="margin-top:60px">Small-batch roastery</div>
+    <h1>Slow mornings, <em>bright</em> coffee.</h1>
+    <p class="lede">Ethically sourced beans, roasted every Tuesday and poured with care.</p>
+  </div>
+  <div class="sun"></div>
+  <div class="cup" data-svg="cup"></div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div class="card" id="app">
+  <div class="status"><span>9:41</span><span class="icons">
+    <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="#2B1D16"/><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="#2B1D16"/><rect x="10" y="3" width="3" height="9" rx="1" fill="#2B1D16"/><rect x="15" y="0" width="3" height="12" rx="1" fill="#2B1D16"/></svg>
+    <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0L8 11.5Z M3.4 6.8a6.6 6.6 0 0 1 9.2 0l-1.4 1.4a4.6 4.6 0 0 0-6.4 0L3.4 6.8Z M1 4.4a10 10 0 0 1 14 0l-1.4 1.4a8 8 0 0 0-11.2 0L1 4.4Z" fill="#2B1D16"/></svg>
+    <svg width="26" height="12" viewBox="0 0 26 12"><rect x="0.5" y="0.5" width="22" height="11" rx="3" fill="none" stroke="#2B1D16" opacity="0.4"/><rect x="2" y="2" width="17" height="8" rx="2" fill="#2B1D16"/><rect x="23.5" y="4" width="2" height="4" rx="1" fill="#2B1D16" opacity="0.4"/></svg>
+  </span></div>
+  <div class="app-head"><div><small>Good morning,</small><h2>Sam ☀️</h2></div><div class="av">S</div></div>
+  <div class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A8A094" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search drinks, pastries…</div>
+  <div class="chips"><span class="chip on">Espresso</span><span class="chip">Cold brew</span><span class="chip">Tea</span><span class="chip">Bakery</span></div>
+  <div class="sec"><h4>Popular now</h4><a>See all</a></div>
+  <div class="tiles">
+    <div class="tile" style="background:#F3E3D3"><div data-svg="cup" data-size="112"></div><b>Oat Latte</b><span>$5.50</span><div class="add">+</div></div>
+    <div class="tile" style="background:#E6EADF"><div data-svg="glass" data-size="74" style="display:block; margin:0 auto"></div><b>Ember Cold Brew</b><span>$4.75</span><div class="add">+</div></div>
+  </div>
+  <div class="tiles" style="margin-top:12px">
+    <div class="tile" style="background:#F2DCC9; height:96px; display:flex; align-items:center; gap:10px"><div data-svg="cortado" data-size="70"></div><div><b>Honey Cortado</b><span>$5.00</span></div></div>
+    <div class="tile" style="background:#F6E9C9; height:96px; display:flex; align-items:center; gap:10px"><div data-svg="croissant" data-size="74"></div><div><b>Croissant</b><span>$3.75</span></div></div>
+  </div>
+  <div class="orderbar"><span><b>2 items</b> · $10.25</span><span class="go">Checkout →</span></div>
+</div>
+
+<!-- ===================== DASHBOARD ===================== -->
+<div class="card" id="dashboard">
+  <div class="dash-top"><span data-svg="flame" data-size="36"></span><h1>Sales overview</h1><span class="sub">Ember &amp; Oat · all locations</span><span class="range">Sep 1 – Sep 30 ⌄</span></div>
+  <div class="kpis">
+    <div class="panel kpi"><small>Revenue</small><div class="v">$48,290</div><span class="d">▲ 12.4%</span></div>
+    <div class="panel kpi"><small>Orders</small><div class="v">3,912</div><span class="d">▲ 8.1%</span></div>
+    <div class="panel kpi"><small>Avg. ticket</small><div class="v">$12.34</div><span class="d">▲ 3.9%</span></div>
+    <div class="panel kpi"><small>Repeat guests</small><div class="v">64%</div><span class="d">▲ 5.2%</span></div>
+  </div>
+  <div class="panel" style="margin-top:20px; height:470px">
+    <h3>Revenue by day <span>Daily · USD</span></h3>
+    <div id="linechart" style="margin-top:10px"></div>
+  </div>
+  <div class="grid2">
+    <div class="panel" style="height:360px"><h3>Sales by hour <span>Avg. weekday</span></h3><div id="barchart" style="margin-top:14px"></div></div>
+    <div class="panel" style="height:360px"><h3>Channel mix <span>Orders</span></h3>
+      <div style="display:flex; gap:26px; margin-top:22px; align-items:center"><div id="donut"></div>
+        <div class="legend"><div><i style="background:#E0703A"></i>In-store<b>58%</b></div><div><i style="background:#2B1D16"></i>App<b>31%</b></div><div><i style="background:#D9C3A5"></i>Delivery<b>11%</b></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:20px">
+    <h3>Top items <span>This month</span></h3>
+    <table class="top">
+      <tr><th>Item</th><th>Units</th><th>Revenue</th><th>Share</th></tr>
+      <tr><td>Oat Latte</td><td class="num">1,204</td><td class="num">$6,622</td><td><div class="bar"><i style="width:92%"></i></div></td></tr>
+      <tr><td>Ember Cold Brew</td><td class="num">986</td><td class="num">$4,684</td><td><div class="bar"><i style="width:74%"></i></div></td></tr>
+      <tr><td>Honey Cortado</td><td class="num">742</td><td class="num">$3,710</td><td><div class="bar"><i style="width:58%"></i></div></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===================== CODE ===================== -->
+<div class="card" id="code">
+  <div class="chrome"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i><span class="title">ember-and-oat — index.html</span></div>
+  <div class="tabs"><div class="on">index.html</div><div>styles.css</div><div>order.js</div></div>
+  <div class="codebody">
+    <div class="gutter" id="gutter"></div>
+    <div class="lines" id="codelines"></div>
+  </div>
+  <div class="statusbar"><span>main ✓</span><span>HTML</span><span>UTF-8</span><span class="claude-chip"><span data-svg="spark" data-size="14" data-color="#D97757"></span>Claude · editing</span></div>
+</div>
+
+<!-- ===================== TERMINAL ===================== -->
+<div class="card" id="terminal">
+  <div class="chrome"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i><span class="title">claude — ~/ember-and-oat</span></div>
+  <div class="term">
+    <div class="welcome">
+      <div class="t"><span data-svg="spark" data-size="18" data-color="#D97757"></span>Welcome to Claude Code</div>
+      <div class="dim" style="margin-top:6px">/help for help · /status for your current setup</div>
+      <div class="dim">cwd: ~/ember-and-oat</div>
+    </div>
+    <div class="prompt"><span class="dim">&gt;</span> Add online ordering with a cart and checkout</div>
+    <div class="bullet"><span class="dot">●</span><span>I'll add a cart, a checkout flow, and wire it to the orders API.</span></div>
+    <div class="bullet" style="margin-top:12px"><span class="dot">●</span><span><b>Update Todos</b></span></div>
+    <div style="margin-left:22px"><span class="dim">⎿</span> <span class="gr">☒</span> <s class="dim">Add cart state and line items</s></div>
+    <div style="margin-left:46px"><span class="gr">☒</span> <s class="dim">Build checkout page</s></div>
+    <div style="margin-left:46px"><span class="or">☐</span> <b>Wire up orders API</b></div>
+    <div style="margin-left:46px"><span class="dim">☐ Run tests &amp; fix failures</span></div>
+    <div class="bullet" style="margin-top:12px"><span class="dot">●</span><span><b>Update</b>(src/components/Cart.tsx)</span></div>
+    <div class="dim" style="margin-left:22px">⎿ Updated with <b style="color:#E9E4DB">42</b> additions and <b style="color:#E9E4DB">3</b> removals</div>
+    <div class="diff">
+      <div class="del"><span class="rd">-</span>  const total = 0;</div>
+      <div class="add"><span class="gr">+</span>  const total = items.reduce(</div>
+      <div class="add"><span class="gr">+</span>    (sum, i) =&gt; sum + i.price * i.qty, 0);</div>
+      <div class="add"><span class="gr">+</span>  return &lt;CartSummary total={total} /&gt;;</div>
+    </div>
+    <div class="bullet" style="margin-top:10px"><span class="dot">●</span><span><b>Write</b>(src/pages/checkout.tsx)</span></div>
+    <div class="dim" style="margin-left:22px">⎿ Wrote 118 lines</div>
+    <div class="bullet" style="margin-top:10px"><span class="dot">●</span><span><b>Bash</b>(npm test)</span></div>
+    <div style="margin-left:22px"><span class="dim">⎿</span> <span class="gr">✓ 48 passed</span> <span class="dim">· 0 failed · 2.1s</span></div>
+    <div class="bullet" style="margin-top:12px"><span class="dot">●</span><span>Done! Guests can now add drinks to a cart and check out with Apple Pay or card.</span></div>
+    <div class="spin"><span data-svg="spark" data-size="16" data-color="#D97757"></span>Brewing… <span class="dim">(14s · esc to interrupt)</span></div>
+  </div>
+  <div class="inputbox">&gt; <span style="color:#E9E4DB">|</span></div>
+  <div class="hint">? for shortcuts</div>
+</div>
+
+<!-- ===================== DOC ===================== -->
+<div class="card" id="doc">
+  <div class="paper">
+    <div class="meta"><span class="tag">Brand</span><span>Draft 3 · 4 min read</span></div>
+    <h1>Ember &amp; Oat: our brand story</h1>
+    <div class="by">Prepared with Claude · Updated today</div>
+    <h2>Who we are</h2>
+    <p>We’re a neighborhood roastery for people who like their mornings slow and their coffee bright. Every bean is traceable, every cup is made by someone who knows your name.</p>
+    <h2>Voice &amp; tone</h2>
+    <ul>
+      <li>Warm, never fussy — talk like a regular, not a sommelier.</li>
+      <li>Specific over clever: origin, roast day, tasting notes.</li>
+      <li>Invite people in; don’t tell them what to like.</li>
+    </ul>
+    <div class="quote">“Good coffee is a small ritual. We just make it a little easier to keep.”</div>
+    <h2>Who we’re for</h2>
+    <p>Early risers, remote workers, and weekend regulars who want a third place that feels like home — and coffee worth slowing down for.</p>
+  </div>
+</div>
+
+<!-- ===================== POSTER ===================== -->
+<div class="card" id="poster">
+  <div class="rays"></div>
+  <div class="top"><span>Ember &amp; Oat</span><span>Summer ’26</span></div>
+  <h1>Now <em>pouring:</em> cold brew season.</h1>
+  <div class="glass" data-svg="glass" data-size="330"></div>
+  <div class="stamp"><div><b>18h</b>steeped<br>slow</div></div>
+  <div class="foot"><span>214 Alder Street<br>Open daily 7–4</span><span style="display:flex;align-items:center;gap:8px"><span data-svg="flame" data-size="28" data-color="#FBF6EE"></span></span></div>
+</div>
+
+<!-- ===================== CHAT ===================== -->
+<div class="card" id="chat">
+  <div class="chat-top">Seasonal drink names ⌄</div>
+  <div class="chat-body">
+    <div class="umsg"><span class="ua">S</span><span>Can you help me name our new fall drink? Maple, oat milk, a hint of smoke.</span></div>
+    <div class="amsg">
+      <div class="spk" data-svg="spark" data-size="30" data-color="#D97757"></div>
+      Love that flavor profile. A few names that fit Ember &amp; Oat’s warm, cozy voice:
+      <ol>
+        <li><b>Hearthside Latte</b> — maple, oat milk, a whisper of smoke</li>
+        <li><b>Slow Ember</b> — leans into your name, feels like a fireplace</li>
+        <li><b>First Frost</b> — crisp and seasonal, great for signage</li>
+      </ol>
+      Want me to draft menu descriptions and a launch post too?
+    </div>
+  </div>
+  <div class="chat-input"><div class="ph">Reply to Claude…</div><div class="row"><span>＋</span><span>⚙</span><span style="margin-left:auto; font-size:13.5px">Claude</span><span class="send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span></div></div>
+</div>
+
+<!-- ===================== BRAND ===================== -->
+<div class="card" id="brand">
+  <div class="hd"><span>Brand identity</span><span>v1.2</span></div>
+  <div class="mark"><span data-svg="flame" data-size="84" data-color="#E0703A"></span><span>Ember <em>&amp;</em> Oat</span></div>
+  <h3>Color</h3>
+  <div class="swatches">
+    <div class="sw" style="background:#2B1D16; color:#FBF6EE"><b>Espresso</b>#2B1D16</div>
+    <div class="sw" style="background:#E0703A; color:#fff"><b>Ember</b>#E0703A</div>
+    <div class="sw" style="background:#F3EBDD; border:1px solid #E8DCC8"><b>Oat</b>#F3EBDD</div>
+    <div class="sw" style="background:#8A9A7B; color:#fff"><b>Sage</b>#8A9A7B</div>
+  </div>
+  <h3>Type</h3>
+  <div class="typespec">
+    <div><div class="aa serif">Aa</div><small>Newsreader — headlines</small></div>
+    <div><div class="aa" style="font-weight:500">Aa</div><small>Inter — interface &amp; body</small></div>
+  </div>
+</div>
+
+<!-- ===================== DATA ===================== -->
+<div class="card" id="data">
+  <div class="xl-top"><span class="ic">X</span><b>Q3 menu performance.xlsx</b><span>· analyzed by Claude</span></div>
+  <div class="fx"><div class="ref">E4</div><div class="f">=D4/C4-1</div></div>
+  <table class="xl">
+    <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th></tr>
+    <tr class="head"><td class="rn">1</td><td>Item</td><td class="n">Units</td><td class="n">Q2 revenue</td><td class="n">Q3 revenue</td><td class="n">Growth</td></tr>
+    <tr><td class="rn">2</td><td>Oat Latte</td><td class="n">3,604</td><td class="n">$17,410</td><td class="n heat3">$19,822</td><td class="n pos">+13.9%</td></tr>
+    <tr><td class="rn">3</td><td>Ember Cold Brew</td><td class="n">2,951</td><td class="n">$11,980</td><td class="n heat3">$14,017</td><td class="n pos">+17.0%</td></tr>
+    <tr><td class="rn">4</td><td>Honey Cortado</td><td class="n">2,214</td><td class="n">$10,250</td><td class="n heat2">$11,070</td><td class="n pos">+8.0%</td></tr>
+    <tr><td class="rn">5</td><td>Almond Croissant</td><td class="n">1,966</td><td class="n">$7,410</td><td class="n heat2">$7,864</td><td class="n pos">+6.1%</td></tr>
+    <tr><td class="rn">6</td><td>Chai Latte</td><td class="n">1,288</td><td class="n">$6,512</td><td class="n heat1">$6,118</td><td class="n neg">−6.1%</td></tr>
+    <tr><td class="rn">7</td><td>Drip Coffee</td><td class="n">1,160</td><td class="n">$4,402</td><td class="n heat1">$4,060</td><td class="n neg">−7.8%</td></tr>
+    <tr><td class="rn">8</td><td>Matcha</td><td class="n">904</td><td class="n">$4,980</td><td class="n heat1">$5,107</td><td class="n pos">+2.6%</td></tr>
+    <tr class="head"><td class="rn">9</td><td>Total</td><td class="n">14,087</td><td class="n">$62,944</td><td class="n">$68,058</td><td class="n pos">+8.1%</td></tr>
+  </table>
+  <div class="chartbox"><h4>Growth by item <small>· Q3 vs Q2</small></h4><div id="hbars" style="margin-top:16px"></div></div>
+</div>
+
+
+<!-- ===================== MENU ===================== -->
+<div class="card" id="menu">
+  <div class="frame">
+    <div class="mh"><div class="logo"><span data-svg="flame" data-size="26"></span>Ember &amp; Oat</div></div>
+    <h1>Menu</h1>
+    <div class="sub">Roasted Tuesdays · Poured daily</div>
+    <h2>Espresso</h2>
+    <div class="it">Oat Latte<i></i><b>5.50</b></div>
+    <div class="it">Honey Cortado<i></i><b>5.00</b></div>
+    <div class="it">Ember Mocha<i></i><b>5.75</b></div>
+    <h2>Slow bar</h2>
+    <div class="it">Ember Cold Brew<i></i><b>4.75</b></div>
+    <div class="it">Single-origin pour over<i></i><b>6.00</b></div>
+    <h2>Bakery</h2>
+    <div class="it">Almond croissant<i></i><b>3.75</b></div>
+    <div class="it">Cardamom bun<i></i><b>4.25</b></div>
+    <div style="position:absolute; left:38px; right:38px; bottom:34px; text-align:center; font-size:12.5px; color:#9A8F80; line-height:1.6">Oat milk at no extra charge · Ask us about this week’s single origin<br><span style="font-family:'Newsreader',serif; font-style:italic; font-size:17px; color:#C85B28">Slow mornings, bright coffee.</span></div>
+  </div>
+</div>
+
+<!-- ===================== EMAIL ===================== -->
+<div class="card" id="email">
+  <div class="client"><span>From: Ember &amp; Oat</span><span>Subject: Cold brew season ☀</span></div>
+  <div class="mail">
+    <div class="top"><div class="logo" style="font-size:24px"><span data-svg="flame" data-size="24"></span>Ember &amp; Oat</div></div>
+    <div class="heroimg"><div class="rays"></div><div class="g" data-svg="glass"></div></div>
+    <div class="body">
+      <h1>Cold brew season is officially here.</h1>
+      <p>Steeped for 18 hours with a touch of brown sugar, our Ember Cold Brew is back — and app orders skip the line all summer.</p>
+      <span class="btn">Order ahead →</span>
+      <div class="ps">You’re receiving this because you’re a regular. Unsubscribe anytime.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== RESEARCH ===================== -->
+<div class="card" id="research">
+  <span class="rtag"><span data-svg="spark" data-size="16" data-color="#D97757"></span>Research · 24 sources</span>
+  <h1>Specialty coffee trends, 2026</h1>
+  <div class="meta">Summary prepared for Ember &amp; Oat</div>
+  <div class="stats">
+    <div class="stat"><b>62%</b><span>of guests order ahead at least weekly</span></div>
+    <div class="stat"><b>3.1×</b><span>growth in cold brew since 2021</span></div>
+    <div class="stat"><b>48%</b><span>choose oat over dairy milk</span></div>
+  </div>
+  <h2>Key findings</h2>
+  <div class="find"><span class="n">1</span><span>Order-ahead and loyalty apps now drive the majority of weekday morning visits.<sup>1</sup><sup>4</sup></span></div>
+  <div class="find"><span class="n">2</span><span>Cold coffee is a year-round habit, not just a summer menu item.<sup>2</sup></span></div>
+  <div class="find"><span class="n">3</span><span>Guests reward traceable sourcing and roast-date transparency.<sup>3</sup><sup>7</sup></span></div>
+  <div class="find"><span class="n">4</span><span>Neighborhood shops win on warmth: staff who remember names and regulars’ usuals.<sup>5</sup></span></div>
+  <h2>Sources</h2>
+  <div class="src"><span>NCA Trends</span><span>SCA Report</span><span>Roast Mag</span><span>+21 more</span></div>
+</div>
+
+<!-- ===================== SLIDES ===================== -->
+<div class="card" id="slides">
+  <div class="lbl">1 · Title</div>
+  <div class="sl s1"><small>Launch plan · Q4</small><h1>Bringing <em>Ember</em> to a second neighborhood.</h1><div class="sun"></div></div>
+  <div class="lbl">2 · Why now</div>
+  <div class="sl dark s2"><h3>Foot traffic, year over year</h3><div class="big">+38%</div><div class="cap">Weekday mornings, Jan – Sep</div>
+    <div class="bars"><i style="height:70px"></i><i style="height:92px"></i><i style="height:110px"></i><i style="height:128px"></i><i class="hi" style="height:176px"></i></div></div>
+  <div class="thumbs"><div></div><div class="on"></div><div></div><div></div></div>
+</div>
+
+<!-- ===================== CLAUDE SCREEN (monitor texture) ===================== -->
+<div class="card" id="screen">
+  <div class="side">
+    <div class="sq" data-svg="spark" data-size="30" data-color="#D97757"></div>
+    <div class="sq new"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+    <div class="sq"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+    <div class="sq"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+    <div class="sq"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+    <div class="me">S</div>
+  </div>
+  <div class="scr-main">
+    <div class="greet"><span data-svg="spark" data-size="58" data-color="#D97757"></span>Good morning, Sam</div>
+    <div class="bigin">
+      <div class="ph">How can I help you today?</div>
+      <div class="row">
+        <span class="ibtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+        <span class="ibtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></span>
+        <span class="sel">Claude ⌄</span>
+        <span class="send"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span>
+      </div>
+    </div>
+    <div class="quick">
+      <div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>Write</div>
+      <div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2zM22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/></svg>Learn</div>
+      <div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>Code</div>
+      <div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg>Analyze</div>
+    </div>
+  </div>
+</div>
+
+<script src="shapes.js"></script>
+<script>
+  // ---------- inject shared SVG illustrations ----------
+  document.querySelectorAll('[data-svg]').forEach((el) => {
+    const kind = el.dataset.svg;
+    const size = el.dataset.size ? +el.dataset.size : null;
+    el.innerHTML = SHAPES[kind](el.dataset.color);
+    const svg = el.querySelector('svg');
+    if (size) { svg.style.width = size + 'px'; svg.style.height = 'auto'; el.style.display = 'inline-block'; }
+    else { svg.style.width = '100%'; svg.style.height = 'auto'; }
+  });
+
+  // ---------- code editor content ----------
+  const code = [
+    '<span class="c-com">&lt;!-- Ember &amp; Oat · landing page --&gt;</span>',
+    '<span class="c-tag">&lt;section</span> <span class="c-att">class</span>=<span class="c-str">"hero"</span><span class="c-tag">&gt;</span>',
+    '  <span class="c-tag">&lt;div</span> <span class="c-att">class</span>=<span class="c-str">"hero__copy"</span><span class="c-tag">&gt;</span>',
+    '    <span class="c-tag">&lt;p</span> <span class="c-att">class</span>=<span class="c-str">"eyebrow"</span><span class="c-tag">&gt;</span>Small-batch roastery<span class="c-tag">&lt;/p&gt;</span>',
+    '    <span class="c-tag">&lt;h1&gt;</span>Slow mornings, <span class="c-tag">&lt;em&gt;</span>bright<span class="c-tag">&lt;/em&gt;</span> coffee.<span class="c-tag">&lt;/h1&gt;</span>',
+    '    <span class="c-tag">&lt;p</span> <span class="c-att">class</span>=<span class="c-str">"lede"</span><span class="c-tag">&gt;</span>',
+    '      Roasted every Tuesday, poured with care.',
+    '    <span class="c-tag">&lt;/p&gt;</span>',
+    '<span class="hl">    <span class="c-tag">&lt;a</span> <span class="c-att">class</span>=<span class="c-str">"btn btn--ember"</span> <span class="c-att">href</span>=<span class="c-str">"/order"</span><span class="c-tag">&gt;</span></span>',
+    '<span class="hl">      Order ahead →</span>',
+    '<span class="hl">    <span class="c-tag">&lt;/a&gt;</span></span>',
+    '  <span class="c-tag">&lt;/div&gt;</span>',
+    '  <span class="c-tag">&lt;img</span> <span class="c-att">src</span>=<span class="c-str">"latte.svg"</span> <span class="c-att">alt</span>=<span class="c-str">"Oat latte"</span> <span class="c-tag">/&gt;</span>',
+    '<span class="c-tag">&lt;/section&gt;</span>',
+    '',
+    '<span class="c-tag">&lt;style&gt;</span>',
+    '  <span class="c-sel">.hero</span> <span class="c-pun">{</span>',
+    '    <span class="c-prop">display</span>: grid;',
+    '    <span class="c-prop">grid-template-columns</span>: <span class="c-num">1.1fr 1fr</span>;',
+    '    <span class="c-prop">gap</span>: clamp(<span class="c-num">2rem</span>, <span class="c-num">5vw</span>, <span class="c-num">5rem</span>);',
+    '    <span class="c-prop">padding-block</span>: <span class="c-num">6rem</span>;',
+    '    <span class="c-prop">background</span>: var(--oat);',
+    '  <span class="c-pun">}</span>',
+    '  <span class="c-sel">h1</span> <span class="c-pun">{</span>',
+    '    <span class="c-prop">font</span>: <span class="c-num">400</span> clamp(<span class="c-num">3rem</span>, <span class="c-num">7vw</span>, <span class="c-num">6rem</span>) Newsreader;',
+    '    <span class="c-prop">letter-spacing</span>: <span class="c-num">-0.02em</span>;',
+    '  <span class="c-pun">}</span>',
+    '  <span class="c-sel">.btn--ember</span> <span class="c-pun">{</span>',
+    '    <span class="c-prop">background</span>: var(--ember);',
+    '    <span class="c-prop">border-radius</span>: <span class="c-num">999px</span>;',
+    '    <span class="c-prop">transition</span>: transform <span class="c-num">.2s</span> ease;',
+    '  <span class="c-pun">}</span>',
+    '  <span class="c-sel">.btn--ember:hover</span> <span class="c-pun">{</span> <span class="c-prop">transform</span>: translateY(<span class="c-num">-2px</span>); <span class="c-pun">}</span>',
+    '<span class="c-tag">&lt;/style&gt;</span>',
+  ];
+  document.getElementById('codelines').innerHTML = code.join('\n');
+  document.getElementById('gutter').innerHTML = code.map((_, i) => i + 1).join('<br>');
+
+  // ---------- charts ----------
+  function lineChart() {
+    const W = 1040, H = 360, pad = 36;
+    const vals = [1180,1320,1260,1410,1580,1720,1490,1350,1460,1530,1610,1790,1880,1650,1520,1600,1720,1810,1930,2010,2140,1880,1760,1850,1990,2080,2210,2050,1960,2190];
+    const max = 2400, n = vals.length;
+    const pts = vals.map((v, i) => [pad + i * (W - pad * 2) / (n - 1), H - 30 - (v / max) * (H - 60)]);
+    let d = `M${pts[0][0]},${pts[0][1]}`;
+    for (let i = 1; i < n; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; const cx = (x0 + x1) / 2; d += ` C${cx},${y0} ${cx},${y1} ${x1},${y1}`; }
+    const area = d + ` L${pts[n - 1][0]},${H - 30} L${pts[0][0]},${H - 30} Z`;
+    let grid = '';
+    for (let g = 0; g <= 4; g++) { const y = H - 30 - g * (H - 60) / 4; grid += `<line x1="${pad}" x2="${W - pad}" y1="${y}" y2="${y}" stroke="#F0ECE3" stroke-width="1.5"/><text x="0" y="${y + 5}" font-size="13" fill="#A29E95">$${g * 600}</text>`; }
+    let xl = '';
+    [1, 8, 15, 22, 29].forEach((dd) => { xl += `<text x="${pts[dd - 1][0] - 14}" y="${H - 4}" font-size="13" fill="#A29E95">Sep ${dd}</text>`; });
+    const hp = pts[20];
+    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Inter">
+      <defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E0703A" stop-opacity="0.28"/><stop offset="1" stop-color="#E0703A" stop-opacity="0"/></linearGradient></defs>
+      ${grid}${xl}<path d="${area}" fill="url(#ga)"/><path d="${d}" fill="none" stroke="#E0703A" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="${hp[0]}" x2="${hp[0]}" y1="${hp[1]}" y2="${H - 30}" stroke="#2B1D16" stroke-dasharray="4 5" opacity="0.4"/>
+      <circle cx="${hp[0]}" cy="${hp[1]}" r="8" fill="#fff" stroke="#E0703A" stroke-width="4"/>
+      <g transform="translate(${hp[0] - 70},${hp[1] - 78})"><rect width="140" height="56" rx="12" fill="#2B1D16"/><text x="16" y="23" font-size="13" fill="#CDBFAF">Sep 21</text><text x="16" y="44" font-size="18" font-weight="700" fill="#fff">$2,140</text></g>
+    </svg>`;
+  }
+  function barChart() {
+    const W = 560, H = 270, hours = ['7a', '8a', '9a', '10a', '11a', '12p', '1p', '2p', '3p', '4p'];
+    const v = [62, 95, 88, 64, 52, 70, 58, 46, 40, 28];
+    const bw = 34, gap = (W - 20 - bw * v.length) / (v.length - 1);
+    let s = '';
+    v.forEach((x, i) => { const h = x / 100 * (H - 40); const X = 10 + i * (bw + gap); s += `<rect x="${X}" y="${H - 26 - h}" width="${bw}" height="${h}" rx="8" fill="${i === 1 ? '#E0703A' : '#F0D9C8'}"/><text x="${X + bw / 2}" y="${H - 6}" text-anchor="middle" font-size="13" fill="#A29E95">${hours[i]}</text>`; });
+    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Inter">${s}</svg>`;
+  }
+  function donut() {
+    const R = 92, r = 58, cx = 110, cy = 110; const parts = [[0.58, '#E0703A'], [0.31, '#2B1D16'], [0.11, '#D9C3A5']];
+    let a0 = -Math.PI / 2, s = '';
+    parts.forEach(([p, c]) => {
+      const a1 = a0 + p * Math.PI * 2 - 0.03; const large = p > 0.5 ? 1 : 0;
+      const P = (a, rad) => `${cx + rad * Math.cos(a)},${cy + rad * Math.sin(a)}`;
+      s += `<path d="M${P(a0, R)} A${R},${R} 0 ${large} 1 ${P(a1, R)} L${P(a1, r)} A${r},${r} 0 ${large} 0 ${P(a0, r)} Z" fill="${c}"/>`;
+      a0 = a1 + 0.03;
+    });
+    return `<svg width="220" height="220" viewBox="0 0 220 220" font-family="Inter">${s}<text x="110" y="106" text-anchor="middle" font-size="30" font-weight="700" fill="#141413">3,912</text><text x="110" y="130" text-anchor="middle" font-size="14" fill="#8A867E">orders</text></svg>`;
+  }
+  function hbars() {
+    const items = [['Ember Cold Brew', 17.0], ['Oat Latte', 13.9], ['Honey Cortado', 8.0], ['Almond Croissant', 6.1], ['Matcha', 2.6], ['Chai Latte', -6.1], ['Drip Coffee', -7.8]];
+    const W = 820, rowH = 40, zero = 420, scale = 20;
+    let s = `<line x1="${zero}" x2="${zero}" y1="0" y2="${items.length * rowH}" stroke="#D8D4CA" stroke-width="1.5"/>`;
+    items.forEach(([name, v], i) => {
+      const y = i * rowH + 8; const w = Math.abs(v) * scale; const x = v >= 0 ? zero : zero - w;
+      s += `<text x="${zero - (v >= 0 ? 14 : w + 14)}" y="${y + 18}" text-anchor="end" font-size="15" fill="#3D3A35">${name}</text>`;
+      s += `<rect x="${x}" y="${y}" width="${w}" height="24" rx="7" fill="${v >= 0 ? '#E0703A' : '#B9B3A8'}"/>`;
+      s += `<text x="${v >= 0 ? x + w + 10 : x + w + 10}" y="${y + 18}" font-size="14" font-weight="650" fill="${v >= 0 ? '#2F7D4F' : '#C2453B'}">${v > 0 ? '+' : ''}${v.toFixed(1)}%</text>`;
+    });
+    return `<svg width="${W}" height="${items.length * rowH}" viewBox="0 0 ${W} ${items.length * rowH}" font-family="Inter">${s}</svg>`;
+  }
+  document.getElementById('linechart').innerHTML = lineChart();
+  document.getElementById('barchart').innerHTML = barChart();
+  document.getElementById('donut').innerHTML = donut();
+  document.getElementById('hbars').innerHTML = hbars();
+
+  // ---------- show a single card when ?only=<id> ----------
+  const only = new URLSearchParams(location.search).get('only');
+  document.querySelectorAll('.card').forEach((c) => { if (!only || c.id === only) c.classList.add('show'); });
+  window.assetsReady = document.fonts.ready.then(() => true);
+</script>
+</body>
+</html>
