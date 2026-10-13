@@ -292,6 +292,7 @@ function chipRow(size, gap, base, centerX = W / 2) {
 }
 
 function initLayout() {
+  initBackground();
   // Cold-open sentence, centred including the cursor.
   const S0 = 132;
   setFont(600, 100);
@@ -451,14 +452,30 @@ function initCorpus() {
 /* ----------------------------------------------------------------------------
    Background, chrome, captions
 ---------------------------------------------------------------------------- */
+let BG = null;
+function initBackground() {
+  BG = document.createElement('canvas');
+  BG.width = W; BG.height = H;
+  const g = BG.getContext('2d');
+  const img = g.createImageData(W, H);
+  const d = img.data;
+  const R = rng(99);
+  const ink = [12, 12, 13], warm = [255, 250, 240];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const glow = 0.035 * Math.max(0, 1 - Math.hypot(x - W / 2, y - H * 0.46) / (W * 0.7));
+      const vig = 0.55 * clamp((Math.hypot(x - W / 2, y - H / 2) - H * 0.45) / (W * 0.72 - H * 0.45));
+      const n = R() - R();
+      const i = (y * W + x) * 4;
+      for (let k = 0; k < 3; k++) d[i + k] = Math.round((ink[k] + glow * (warm[k] - ink[k])) * (1 - vig) + n);
+      d[i + 3] = 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+}
+
 function drawBackground(t, grid = null) {
-  ctx.fillStyle = COL.ink;
-  ctx.fillRect(0, 0, W, H);
-  const g = ctx.createRadialGradient(W / 2, H * 0.46, 0, W / 2, H * 0.46, W * 0.7);
-  g.addColorStop(0, 'rgba(255,250,240,0.035)');
-  g.addColorStop(1, 'rgba(255,250,240,0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(BG, 0, 0);
   if (grid && grid.a > 0.002) {
     const step = 48 * grid.z;
     if (step > 6) {
@@ -478,14 +495,6 @@ function gridState(t) {
     z = cam.z; ox = -cam.x * cam.z + W / 2; oy = -cam.y * cam.z + H / 2;
   }
   return { a: on, ox, oy, z };
-}
-
-function drawVignette() {
-  const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, W * 0.72);
-  g.addColorStop(0, 'rgba(0,0,0,0)');
-  g.addColorStop(1, 'rgba(0,0,0,0.55)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, H);
 }
 
 // Scrims keep captions and chrome legible over busy scenes.
@@ -1269,6 +1278,7 @@ function wipeOrigin(t) {
    Scene: chapter 4 — the distribution, the pick, generation
 ---------------------------------------------------------------------------- */
 const CHART = { labelX: 760, barX: 790, maxBar: 760, y0: 352, pitch: 62, barH: 30 };
+const BLUE_FLY = 42.1; // the chosen token leaves the chart and flies into the sentence
 
 function drawChart(t) {
   if (t < 38.0 || t >= 43.2) return;
@@ -1291,7 +1301,7 @@ function drawChart(t) {
     const a = smooth(clamp(g * 2)) * dimA * (1 - fall);
     const yy = y + fall * 40;
     // label
-    if (!top || pick < 0.02) {
+    if (!top || t < BLUE_FLY) {
       setFont(600, 40, DISPLAY);
       const lw = tw(d.w);
       fillText(d.w, CHART.labelX, yy + 14, rgba(top ? COL.paper : COL.paper, a), 'right');
@@ -1361,8 +1371,8 @@ function drawParagraph(t, cam = null) {
     }
     if (idx === 3) {
       // " blue": flies in from the chart
-      const fly = prog(t, 42.45, M.land);
-      if (fly <= 0) return;
+      const fly = prog(t, BLUE_FLY, M.land);
+      if (t < BLUE_FLY) return;
       const e = ease.inOutCubic(fly);
       const fromX = CHART.labelX - wordWidth('blue') * 40, fromY = CHART.y0 + 14;
       const size = lerp(40, P.S, e);
@@ -1557,9 +1567,8 @@ function drawEndCardContent(t) {
 /* ----------------------------------------------------------------------------
    Frame
 ---------------------------------------------------------------------------- */
-// Vignette, scrims, chapter title, captions and frame chrome sit above the scene.
+// Scrims, chapter title, captions and frame chrome sit above the scene.
 function drawOverlays(t) {
-  drawVignette();
   drawScrims(smooth(prog(t, 6.0, 7.0)) * (1 - smooth(prog(t, 53.4, 54.0))));
   drawChapterTitle(t);
   drawCaptions(t);
