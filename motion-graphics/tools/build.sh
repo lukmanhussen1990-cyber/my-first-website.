@@ -19,7 +19,7 @@ echo "== picture"
 node tools/render.mjs frames "$WORK/frames" "$FPS" "${WORKERS:-4}"
 
 echo "== loudness"
-# Gain to -14 LUFS integrated, then a limiter keeps peaks low enough that the AAC encode stays under -1 dBTP.
+# Gain to -14 LUFS integrated, then a 4x-oversampled limiter keeps the AAC encode under -1 dBTP.
 GAIN=$(ffmpeg -hide_banner -nostats -i "$WORK/mix.wav" -af loudnorm=I=-14:TP=-1:print_format=json -f null - 2>&1 |
   python3 -c 'import sys,json; s=sys.stdin.read(); j=json.loads(s[s.rindex("{"):s.rindex("}")+1]); print(round(-14.0-float(j["input_i"]),2))')
 echo "gain ${GAIN} dB"
@@ -30,7 +30,7 @@ echo "== encode"
 # the dither pattern is static from frame to frame.
 ffmpeg -hide_banner -loglevel warning -nostats -y \
   -thread_queue_size 64 -framerate "$FPS" -i "$WORK/frames/f%05d.png" -i "$WORK/mix.wav" \
-  -filter_complex "[0:v]scale=out_color_matrix=bt709:out_range=tv:flags=accurate_rnd+full_chroma_int,format=yuv420p[v];[1:a]volume=${GAIN}dB,alimiter=limit=0.79:attack=4:release=60:level=disabled[a]" \
+  -filter_complex "[0:v]scale=out_color_matrix=bt709:out_range=tv:flags=accurate_rnd+full_chroma_int,format=yuv420p[v];[1:a]volume=${GAIN}dB,aresample=192000,alimiter=limit=0.79:attack=4:release=60:level=disabled,aresample=48000[a]" \
   -map "[v]" -map "[a]" \
   -c:v libx264 -preset slow -crf "${CRF:-16}" -profile:v high -level 4.2 \
   -x264-params aq-mode=3:aq-strength=1.0:deadzone-inter=6:deadzone-intra=6:psy-rd=1.0,0.15:keyint=600:min-keyint=60 \
