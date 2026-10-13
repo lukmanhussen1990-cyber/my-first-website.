@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>S04 Dashboard</title>
+<link rel="stylesheet" href="../../shared/base.css">
+<style>
+  body { background: #04030c; }
+  #stage { background: #04030c; }
+  canvas.bg { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  #head { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible; }
+  #winWrap { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  #win { position: absolute; left: 0; top: 0; width: 1920px; height: 1400px; transform-origin: 0 0; }
+  #ui { position: absolute; left: 0; top: 0; }
+  #logoBox { position: absolute; left: 0; top: 0; }
+  .ui-text { font-family: 'Inter Display', 'Inter', sans-serif; }
+  #flash { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; }
+  #s05 { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; opacity: 0; }
+  #s05bg { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  #build { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="bgOut" class="bg" width="1920" height="1080"></canvas>
+  <canvas id="bgIn" class="bg" width="1920" height="1080"></canvas>
+
+  <!-- headline -->
+  <svg id="head" width="1920" height="1080" viewBox="0 0 1920 1080">
+    <defs>
+      <linearGradient id="headGrad" gradientUnits="userSpaceOnUse" x1="290" y1="0" x2="1637" y2="0">
+        <stop offset="0" stop-color="rgb(234,216,255)"/>
+        <stop offset="0.2" stop-color="rgb(225,208,251)"/>
+        <stop offset="0.35" stop-color="rgb(203,184,236)"/>
+        <stop offset="0.5" stop-color="rgb(176,150,218)"/>
+        <stop offset="0.65" stop-color="rgb(150,122,196)"/>
+        <stop offset="0.8" stop-color="rgb(124,96,172)"/>
+        <stop offset="1" stop-color="rgb(93,64,144)"/>
+      </linearGradient>
+      <filter id="hb0" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="0"/></filter>
+      <filter id="hb1" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="0"/></filter>
+      <filter id="hb2" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="0"/></filter>
+      <filter id="hb3" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="0"/></filter>
+      <filter id="hbAll" x="-10%" y="-60%" width="120%" height="220%"><feGaussianBlur stdDeviation="0"/></filter>
+    </defs>
+    <g id="headAll">
+      <g id="headG">
+        <g id="hw0"><text x="290" y="360" font-family="Inter Display" font-weight="500" font-size="92" fill="url(#headGrad)">An</text></g>
+        <g id="hw1"><text x="426" y="360" font-family="Inter Display" font-weight="500" font-size="92" fill="url(#headGrad)">AI-powered</text></g>
+        <g id="hw2"><text x="933" y="360" font-family="Inter Display" font-weight="500" font-size="92" fill="url(#headGrad)">health</text></g>
+        <g id="hw3"><text x="1213" y="360" font-family="Inter Display" font-weight="500" font-size="92" fill="url(#headGrad)">navigation</text></g>
+      </g>
+    </g>
+  </svg>
+
+  <div id="winWrap">
+    <div id="win">
+      <svg id="ui" width="1920" height="1400" viewBox="0 0 1920 1400" class="ui-text"></svg>
+      <div id="logoBox"></div>
+    </div>
+  </div>
+
+  <div id="s05">
+    <canvas id="s05bg" width="1920" height="1080"></canvas>
+    <svg id="build" width="1920" height="1080"><defs>
+      <filter id="bb" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="0"/></filter></defs>
+      <text id="buildT" x="0" y="0" font-family="Inter Display" font-weight="400" font-size="86" fill="rgb(112,98,236)">Build</text>
+    </svg>
+  </div>
+  <canvas id="flash" width="1920" height="1080"></canvas>
+</div>
+
+<svg width="0" height="0" style="position:absolute">
+  <filter id="mb" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB"><feGaussianBlur id="mbG" stdDeviation="0 0"/></filter>
+  <filter id="mbIn" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB"><feGaussianBlur id="mbInG" stdDeviation="0 0"/></filter>
+</svg>
+
+<script src="../../shared/lib.js"></script>
+<script src="../../shared/components.js"></script>
+<script src="scene.js"></script>
+</body>
+</html>

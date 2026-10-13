@@ -1,0 +1,60 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S03 dark titles</title>
+<link rel="stylesheet" href="../../shared/base.css">
+<script src="../../shared/lib.js"></script>
+<script src="../../shared/components.js"></script>
+<script src="../../shared/titles.js"></script>
+</head><body>
+<div id="stage"><img class="plate" id="bg"></div>
+<script>
+// S03 (f251-305; f306-350 come from the wordmark pass): reference dark background (text removed).
+// 'right one' zooms in from white to a glowing violet-blue gradient, its letters vanish from the
+// right while the letters of 'Meet' rise in one by one; 'Meet' then settles and eases back.
+const stage = document.getElementById('stage');
+const WH = [242, 242, 252], VIO = [146, 128, 246], BLU = [112, 162, 252];
+const ro = 'right one';
+// per-letter colour ramp along the word pair (violet 'right' -> blue 'one') reached by ~f264
+const roUnits = Array.from(ro.replace(' ', '')).map((ch, k, arr) => {
+  const u = k / (arr.length - 1);
+  const target = mixc(VIO, BLU, Math.min(1, Math.max(0, (u - 0.35) / 0.4)));
+  const exitAt = 281 + (arr.length - 1 - k) * 0.75;   // letters disappear from the right
+  const isRight = k < 5;
+  return {
+    in: 240, dur: 1,
+    colorAt: [[251, WH], [256, WH], [261, mixc(WH, target, 0.55)], [265, target]],
+    blurAt: isRight ? [[251, 7], [254, 5], [257, 2.5], [260, 1], [262, 0]] : [[251, 0.5], [253, 0]],
+    opacityAt: [[exitAt - 1.2, 1], [exitAt, 0]],
+  };
+});
+const RO = new TitleLine(stage, {
+  text: ro, unit: 'letter', font: "'Inter Display'", size: 135, tracking: -0.02, weight: 600,
+  fitWidth: { unit: 'all', width: 482, by: 'tracking' }, cx: 960, baseline: 586.5, layout: 'full',
+  S: [[251, 0.695], [252, 0.739], [253, 0.772], [254, 0.801], [255, 0.828], [256, 0.849], [257, 0.867], [258, 0.88], [259, 0.893], [260, 0.909], [261, 0.921], [262, 0.934], [263, 0.946], [264, 0.954], [265, 0.963], [266, 0.971], [267, 0.979], [268, 0.983], [269, 0.992], [270, 0.996], [272, 1.0], [275, 0.996], [277, 0.988], [279, 0.968], [280, 0.954], [284, 0.93], [288, 0.91]],
+  units: roUnits,
+});
+// soft bloom like the reference glow
+RO.el.style.textShadow = '0 0 26px rgba(105,125,255,0.8), 0 0 8px rgba(120,140,255,0.35)';
+
+const MEET = new TitleLine(stage, {
+  text: 'Meet', unit: 'letter', font: "'Inter Display'", size: 104.5, tracking: -0.02, weight: 600,
+  fitWidth: { unit: 'all', width: 211, by: 'tracking' }, cx: 959.5, baseline: 571, layout: 'full',
+  S: [[283, 1.0], [296, 1.0], [300, 0.975], [305, 0.907]],
+  units: [
+    { in: 282.5, dur: 6, rise: 34, blur0: 6, from: [200, 200, 220], to: WH , opacityAt: [[282.5, 0], [284.0, 1]]},
+    { in: 285.5, dur: 6, rise: 30, blur0: 6, from: [200, 200, 220], to: WH , opacityAt: [[285.5, 0], [287.0, 1]]},
+    { in: 288.5, dur: 6, rise: 30, blur0: 6, from: [200, 200, 220], to: WH , opacityAt: [[288.5, 0], [290.0, 1]]},
+    { in: 290.5, dur: 6, rise: 32, blur0: 6, from: [200, 200, 220], to: WH , opacityAt: [[290.5, 0], [292.0, 1]]},
+  ],
+});
+MEET.el.style.textShadow = '0 0 16px rgba(200,200,255,0.35)';
+
+window.renderFrame = async (f) => {
+  await setImg(document.getElementById('bg'), `../../plates/S03_dark_titles/bg_${String(f).padStart(4, '0')}.jpg`);
+  RO.el.style.display = f <= 288 ? 'block' : 'none';
+  MEET.el.style.display = f >= 282 ? 'block' : 'none';
+  if (f <= 288) RO.render(f);
+  if (f >= 282) MEET.render(f);
+};
+window.sceneReady = document.fonts.ready;
+</script>
+</body></html>

@@ -1,0 +1,68 @@
+/* Shared design system for the redrawn Claude launch film (1920x1080 @ 30 fps). */
+@font-face {
+  font-family: 'Claude Logo';
+  src: url('fonts/NotoSans-VF.ttf') format('truetype');
+  font-weight: 100 900;
+  font-stretch: 62.5% 100%;
+}
+
+:root {
+  --navy-black: #04030f;
+  --navy: #0a0a2a;
+  --indigo: #3b2fb8;
+  --violet: #8b7cf6;
+  --violet-deep: #6d4ef0;
+  --lavender: #c9c2fb;
+  --lavender-pale: #ece9ff;
+  --blue-glow: #6e8cff;
+  --wordmark-violet: rgb(128, 136, 232);
+  --wordmark-blue: rgb(111, 146, 223);
+  --ui-font: 'Inter', 'Inter Display', system-ui, sans-serif;
+  --display-font: 'Inter Display', 'Inter', system-ui, sans-serif;
+}
+
+html, body {
+  margin: 0; padding: 0;
+  width: 1920px; height: 1080px;
+  overflow: hidden;
+  background: #000;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; }
+.abs { position: absolute; }
+.fill { position: absolute; inset: 0; }
+.center-x { left: 0; right: 0; text-align: center; }
+.plate { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+
+/* Frosted glass surface: thin translucent outline, soft blur of whatever is behind it. */
+.glass {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(22px) saturate(1.15);
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  box-shadow: 0 10px 40px rgba(10, 8, 40, 0.18);
+}
+.glass.dark {
+  background: rgba(40, 36, 110, 0.28);
+  border: 1.5px solid rgba(200, 195, 255, 0.35);
+}
+
+/* Shared chat input pill (built by components.js -> chatPill()). Sizes are in px at scale 1. */
+.pill { position: absolute; border-radius: 999px; display: flex; align-items: center; box-sizing: border-box; }
+.pill .pill-plus { flex: none; display: flex; align-items: center; justify-content: center; }
+.pill .pill-text { flex: 1; white-space: nowrap; overflow: hidden; font-family: var(--ui-font); font-weight: 400; color: #fff; }
+.pill .pill-mic { flex: none; display: flex; align-items: center; justify-content: center; }
+.pill .pill-send { flex: none; border-radius: 50%; background: #000; display: flex; align-items: center; justify-content: center; }
+.pill .caret { display: inline-block; width: 2px; background: #fff; vertical-align: middle; }
+
+/* Claude logo: Noto Sans body (wght 660) with an enlarged initial capital (1.34x, wght 600),
+   the same construction as the reference brand logo. */
+.logo { font-family: 'Claude Logo'; font-weight: 660; font-stretch: 100%; white-space: nowrap; letter-spacing: 0; line-height: 1; }
+.logo .cap { font-size: 1.34em; font-weight: 600; }
+.logo.gradient-fill .ch { background: linear-gradient(90deg, var(--wordmark-violet), var(--wordmark-blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ch { display: inline-block; }
+
+.word { display: inline-block; white-space: pre; will-change: filter, opacity, transform; }

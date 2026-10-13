@@ -8,8 +8,37 @@ are the reference itself.
 `namechange_vs_reference.mp4` stacks the reference (top) over the new version (bottom)
 for a shot-by-shot comparison.
 
-A fully redrawn version (new graphics, reference footage only for the real-world shots)
-is being built separately.
+## Redrawn version (work in progress)
+
+`claude_launch_film_redraw_v1.mp4` (48.43 s, 1,453 frames) is the first full cut of the
+redrawn film:
+
+- **Opening:** the four-point sparkle is replaced by the orange Claude starburst.
+- **Redrawn scenes:** titles, chat pill, doctor cards and the "Claude" wordmarks are
+  rebuilt as animated HTML/CSS. Real-world footage and backgrounds come from the
+  reference, with the original text removed.
+- **End credit:** "Built by Imran using Opus 5.5" plays at the end, over a ring-out of
+  the music.
+
+| Frames | Scene | Status |
+|---|---|---|
+| 1–60 | opening, Claude starburst | redrawn |
+| 61–250 | cloud chat | redrawn |
+| 251–350 | "right one" → "Meet Claude" | redrawn |
+| 351–448 | dashboard window | name-change frames for now |
+| 449–525 | "Build to move beyond generic healthcare search" | redrawn |
+| 526–972 | typing, anatomy viewer, processing, reply | 719–862 redrawn, rest name-change frames for now |
+| 973–1090 | doctor cards, "right one" | redrawn |
+| 1091–1167 | profile and analytics | name-change frames for now |
+| 1168–1348 | closing lines, Claude wordmark | redrawn |
+| 1349–1453 | end credit | new |
+
+The redraw sources are in `redraw/`:
+
+- `scenes/*/index.html`: one page per scene that draws any frame with `renderFrame(f)`.
+- `shared/`: title-line animator, glass/pill/icon components, Inter/Noto fonts (OFL).
+- `render.py`: renders a scene with headless Chromium.
+- `assemble_final.py`: joins the scenes into one frame sequence.
 
 ## What changed
 

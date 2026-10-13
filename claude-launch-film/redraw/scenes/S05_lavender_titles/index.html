@@ -1,0 +1,50 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S05 lavender titles</title>
+<link rel="stylesheet" href="../../shared/base.css">
+<script src="../../shared/lib.js"></script>
+<script src="../../shared/components.js"></script>
+<script src="../../shared/titles.js"></script>
+</head><body>
+<div id="stage"><img class="plate" id="bg"></div>
+<script>
+// S05 (f449-525): lavender light field (reference background, text removed) with two redrawn,
+// re-typeset title lines. Timings, zoom, colours and blur pulses measured on the reference.
+const stage = document.getElementById('stage');
+const V = [114, 99, 238], D = [10, 10, 28];
+const line1 = new TitleLine(stage, {
+  text: 'Build to move beyond generic', font: "'Inter'", size: 74, tracking: -0.02, weight: 400,
+  cx: 952, baseline: 560, layout: 'progressive', presenceDur: 7,
+  S: [[449, 1.19], [453, 1.16], [457, 1.065], [463, 1.01], [470, 1.0], [490, 0.995], [496, 0.975]],
+  X: [[449, -16], [455, 0], [470, 8], [490, 0]],
+  blur: [[449, 1.5], [452, 0], [459, 0], [460, 3.0], [461, 2.6], [462, 2.2], [463, 1.3], [464, 0], [473, 0], [475, 1.8], [477, 2.2], [478, 1.0], [479, 0], [491, 0], [495, 3], [496, 5]],
+  opacity: [[449, 1], [490, 1], [493, 0.85], [494, 0.65], [495, 0.35], [496, 0]],
+  units: [
+    { in: 447.5, dur: 5.5, from: V, to: D, blur0: 4 },
+    { in: 454, dur: 6, from: V, to: D, blur0: 6, presenceDur: 4 },
+    { in: 459, dur: 6, from: V, to: D, blur0: 6, presenceDur: 4 },
+    { in: 464, dur: 4, opacityAt: [[464, 0], [467, 1]], colorAt: [[464, V], [469, [92, 80, 192]], [475, D]], blurAt: [[464, 6], [467, 1], [468, 0]], weight: 400, weightTo: 640, weightAt: 468, weightDur: 4, presenceDur: 4 },
+    { in: 478, dur: 3, opacityAt: [[478, 0], [481, 1]], colorAt: [[478, V], [482, V], [488, D]], blurAt: [[478, 5], [481, 1], [483, 0]], presenceDur: 4 },
+  ],
+});
+const V2 = [117, 101, 241];
+const line2 = new TitleLine(stage, {
+  text: 'healthcare search', font: "'Inter Display'", size: 84.5, tracking: -0.02, weight: 400,
+  cx: 955.5, baseline: 574, layout: 'full',
+  S: [[495, 1.12], [507, 1.12], [508, 1.117], [512, 1.085], [516, 1.05], [520, 1.0], [522, 0.964], [524, 0.919], [525, 0.893]],
+  blur: [[495, 2.5], [498, 1.5], [502, 1.0], [507, 0.6], [512, 0.3], [516, 0]],
+  opacity: [[494, 0], [495, 1]],
+  units: [
+    { in: 495, dur: 4, opacityAt: [[495, 0], [498, 1]], colorAt: [[495, V2], [503, [108, 94, 222]], [508, [70, 63, 138]], [513, [31, 31, 62]], [520, [15, 15, 41]]], blurAt: [[495, 5], [498, 1.5], [501, 0]] },
+    { in: 502, dur: 5, opacityAt: [[502, 0], [505, 1]], colorAt: [[502, V2], [506, [104, 90, 207]], [510, [60, 55, 115]], [514, [31, 31, 62]], [520, [15, 15, 41]]], blurAt: [[502, 8], [505, 4], [508, 0]] },
+  ],
+});
+window.renderFrame = async (f) => {
+  await setImg(document.getElementById('bg'), `../../plates/S05_lavender_titles/bg_${String(f).padStart(4, '0')}.jpg`);
+  line1.el.style.display = f <= 496 ? 'block' : 'none';
+  line2.el.style.display = f >= 495 ? 'block' : 'none';
+  if (f <= 496) line1.render(f);
+  if (f >= 495) line2.render(f);
+};
+window.sceneReady = document.fonts.ready;
+</script>
+</body></html>

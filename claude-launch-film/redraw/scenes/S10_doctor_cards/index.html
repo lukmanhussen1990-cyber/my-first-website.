@@ -1,0 +1,432 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<title>S10 doctor cards</title>
+<link rel="stylesheet" href="../../shared/base.css">
+<script src="../../shared/lib.js"></script>
+<script src="../../shared/components.js"></script>
+<style>
+  body { background: #fff; }
+  #stage { background: #fdfcff; }
+  canvas.bg { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  #win { position: absolute; overflow: hidden; }
+  #content { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  #zoomA { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  .t-line { position: absolute; white-space: pre; font-family: 'Inter Display'; font-weight: 600; line-height: 1; letter-spacing: -0.5px; }
+  .t-line span { display: inline-block; white-space: pre; }
+  .card { position: absolute; left: 0; top: 0; width: 336px; height: 410px; transform-origin: 0 0; }
+  .card .frame { position: absolute; inset: 0; border-radius: 21px; }
+  .card .panel { position: absolute; left: 8px; top: 8px; width: 320px; height: 394px; border-radius: 13px; overflow: hidden; }
+  .card .bar { position: absolute; border-radius: 99px; }
+  .card .photo { position: absolute; left: 0; top: 0; width: 320px; height: 394px; }
+  .card .veil { position: absolute; inset: 0; }
+  .card .sheen { position: absolute; inset: 0; mix-blend-mode: multiply; }
+  .card .txt { position: absolute; white-space: pre; font-family: 'Inter Display'; line-height: 1; }
+  .card .pillbg { position: absolute; border-radius: 99px; }
+  #rightOne { position: absolute; white-space: pre; font-family: 'Inter Display'; line-height: 1; }
+  #cwrap { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  #rim { position: absolute; }
+</style>
+</head><body>
+<div id="stage">
+  <canvas id="outerBg" class="bg" width="480" height="270"></canvas>
+  <div id="rim"></div>
+  <div id="win">
+    <canvas id="innerBg" class="bg" width="480" height="270"></canvas>
+    <div id="cwrap">
+      <div id="content">
+        <div id="zoomA">
+          <div id="cards"></div>
+        </div>
+        <div id="rightOne">right one</div>
+      </div>
+    </div>
+    <div id="mist" style="position:absolute;left:0;top:0;width:1920px;height:1080px;background:rgb(253,253,255);display:none"></div>
+  </div>
+  <svg width="0" height="0" style="position:absolute">
+    <defs id="fdefs"></defs>
+  </svg>
+</div>
+<script>
+// ---------------------------------------------------------------- constants
+const EXP_LABEL = 'Experience';   // reference spells it 'Expreince'
+const PLATES = '../../plates/S10_doctor_cards/';
+const VIO = [147, 138, 250], WHT = [254, 253, 255];
+const INTER_ASC = 0.8637;            // baseline offset (line-height 1) for Inter / Inter Display
+
+// card rest layout (content coords at f 1000-1049)
+const CARD_TOP = 373;
+const CARD_LEFT = [423.8, 791.2, 1167.6];
+// phase-A settle (cards arrive slightly enlarged and ease to rest); measured from card edges
+const ZA_ANCHOR = [972, 574];
+const zoomA = f => 1 + 0.0645 * Math.exp(-0.1687 * (f - 973));
+// centre card zoom: tracked similarity of the card-2 photo (card-local (165.8,139.5) -> (cx,cy))
+let TRACK = null;
+const OUT_ANCHOR = [959, 530];
+
+// ---------------------------------------------------------------- helpers
+const $ = id => document.getElementById(id);
+function el(tag, cls, parent, css) { const e = document.createElement(tag); if (cls) e.className = cls; if (css) Object.assign(e.style, css); if (parent) parent.appendChild(e); return e; }
+function placeText(e, x, baseline, fs) { e.style.left = x + 'px'; e.style.top = (baseline - INTER_ASC * fs) + 'px'; e.style.fontSize = fs + 'px'; }
+const smooth = t => t * t * (3 - 2 * t);
+
+// horizontal-blur SVG filters, one per animated glyph
+const fdefs = $('fdefs');
+let filterCount = 0;
+function makeHBlur() {
+  const id = 'hb' + (filterCount++);
+  fdefs.insertAdjacentHTML('beforeend', `<filter id="${id}" x="-60%" y="-30%" width="220%" height="160%"><feGaussianBlur stdDeviation="0 0"/></filter>`);
+  return { id, node: fdefs.lastElementChild.firstElementChild };
+}
+function setHBlur(span, fb, sx, sy = 0) {
+  if (sx < 0.05 && sy < 0.05) { span.style.filter = 'none'; return; }
+  fb.node.setAttribute('stdDeviation', `${sx.toFixed(2)} ${sy.toFixed(2)}`);
+  span.style.filter = `url(#${fb.id})`;
+}
+
+// ---------------------------------------------------------------- background glow fields
+let BG = null;   // per-frame params {f: [v0, (x,y,lsx,lsy,th,a) * (KV + KW)]}
+let KV = 3, KW = 2;
+const sig = z => 1 / (1 + Math.exp(-Math.max(-30, Math.min(30, z))));
+function drawField(canvas, P, kv = KV, kw = KW) {
+  const ctx = canvas.getContext('2d');
+  const k = canvas.width / 1920;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = rgba(WHT); ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = rgba(VIO, sig(P[0])); ctx.fillRect(0, 0, canvas.width, canvas.height);
+  let i = 1;
+  for (let b = 0; b < kv + kw; b++) {
+    const [x, y, lsx, lsy, th, la] = P.slice(i, i + 6); i += 6;
+    const col = b < kv ? VIO : WHT, a = sig(la);
+    const sx = Math.exp(Math.min(8.5, Math.max(3.5, lsx))), sy = Math.exp(Math.min(8.5, Math.max(3.5, lsy)));
+    ctx.save();
+    ctx.setTransform(k, 0, 0, k, 0, 0);
+    ctx.translate(x, y); ctx.rotate(th); ctx.scale(sx, sy);
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 3.2);
+    const N = 32;
+    for (let j = 0; j <= N; j++) { const t = j / N, d = 3.2 * t; g.addColorStop(t, rgba(col, j === N ? 0 : a * Math.exp(-0.5 * d * d))); }
+    ctx.fillStyle = g; ctx.fillRect(-3.2, -3.2, 6.4, 6.4);
+    ctx.restore();
+  }
+}
+function bgParams(f) {
+  const keys = Object.keys(BG).map(Number).sort((a, b) => a - b);
+  if (BG[f]) return BG[f];
+  if (f < keys[0]) return BG[keys[0]];
+  return BG[keys[keys.length - 1]];
+}
+
+// ---------------------------------------------------------------- title line
+const TITLE_X = 449.5, TITLE_BASE = 334.5, TITLE_FS = 46.5;
+// fill colours measured from the settled text cores: violet at the start, slate at the end
+const TITLE_STOPS = [[0, [122, 108, 232]], [0.5, [96, 88, 170]], [1, [80, 75, 130]]];
+const TITLE_STOPS_B = [[0, [122, 109, 226]], [0.2, [100, 87, 198]], [0.38, [84, 72, 172]], [0.56, [69, 62, 140]], [0.74, [58, 54, 104]], [0.92, [49, 47, 84]], [1, [48, 46, 80]]];
+const TITLE_DARK = [70, 66, 112];   // freshly revealed glyphs are darker / greyer, then settle
+function titleColour(u, stops = TITLE_STOPS) {
+  for (let i = 1; i < stops.length; i++) if (u <= stops[i][0]) {
+    const [u0, c0] = stops[i - 1], [u1, c1] = stops[i];
+    return mixc(c0, c1, (u - u0) / (u1 - u0));
+  }
+  return stops[stops.length - 1][1];
+}
+const titles = {};
+function buildTitle(key, text, dxRest = 0) {
+  const wrap = el('div', 't-line', $('zoomA'));
+  placeText(wrap, TITLE_X + dxRest, TITLE_BASE, TITLE_FS);
+  const spans = [];
+  for (const ch of text) { const s = el('span', null, wrap); s.textContent = ch; s.fb = makeHBlur(); spans.push(s); }
+  titles[key] = { wrap, spans };
+}
+function layoutTitleColours() {
+  for (const k in titles) {
+    const { wrap, spans } = titles[k];
+    const W = wrap.getBoundingClientRect().width;
+    spans.forEach(s => { s.cx = s.offsetLeft + s.offsetWidth / 2; s.u = s.cx / W; s.col = titleColour(s.u, k === 'filter' ? TITLE_STOPS_B : TITLE_STOPS); });
+  }
+}
+// measured per-frame slide offset (px, rest coords) and reveal front (px from text start)
+const TITLE_A = { slide: [[972, 160], [973, 119], [974, 75], [975, 52.6], [976, 37.9], [977, 26.7], [978, 17], [979, 10.8], [980, 5.9], [981, 2.3], [982, 0]],
+                  front: [[972, -40], [973, 36], [974, 86], [975, 172], [976, 259], [977, 324], [978, 350], [979, 372], [980, 392], [981, 420], [982, 470], [992, 760]] };
+const TITLE_B = { slide: [[1005, 90], [1006, 53], [1007, 26], [1008, 11], [1009, 4], [1010, 0]],
+                  front: [[1005, 60], [1006, 159], [1007, 194], [1008, 272], [1009, 372], [1010, 414], [1011, 437], [1012, 452], [1013, 475], [1014, 520], [1024, 820]] };
+function titleIn(T, f, tab, { soft = 46, blur0 = 7 } = {}) {
+  const slide = kf(f, tab.slide), v = Math.abs(kf(f + 0.5, tab.slide) - kf(f - 0.5, tab.slide));
+  const front = kf(f, tab.front);
+  T.wrap.style.transform = `translateX(${slide.toFixed(2)}px)`;
+  T.spans.forEach(s => {
+    const p = clamp((front - s.cx) / soft + 0.5);
+    const e = ease.inOutQuad(p);
+    s.style.opacity = e.toFixed(3);
+    setHBlur(s, s.fb, blur0 * (1 - e) + 0.22 * v, 0.5 * (1 - e));
+    // time since this glyph was half revealed -> colour settles from dark slate to its gradient colour
+    const settle = clamp((front - s.cx - soft * 0.5) / 120);
+    s.style.color = rgba(mixc(TITLE_DARK, s.col, ease.inOutQuad(settle)));
+  });
+}
+function titleOut(T, f, t0, dur = 2.4, stagger = 0.9) {
+  const n = T.spans.length;
+  T.spans.forEach((s, i) => {
+    const p = clamp((f - t0 - stagger * i / n) / dur);
+    setHBlur(s, s.fb, 9 * p, 2.5 * p);
+    s.style.opacity = (1 - ease.inQuad(p)).toFixed(3);
+  });
+}
+function titleHide(T) { T.wrap.style.display = 'none'; }
+function titleShow(T) { T.wrap.style.display = 'block'; }
+
+// ---------------------------------------------------------------- cards
+const DOCS = [
+  { photo: 'portrait_c1.png', name: 'Dr Maahi', nameFs: 25, nameX: 35, nameBase: 293, badgeX: 144, badgeY: 275, badgeS: 19,
+    spec: 'Neurologist', specX: 50.5, specBase: 322, years: '15 years', yearsX: 237, yearsBase: 287.5, yearsFs: 18, exp: EXP_LABEL, expX: 238, expBase: 311,
+    loc: 'Noida, Uttar Pradesh...', ratingX: 282, rating: '4.7', specPill: [40, 305, 98, 22], expPill: [226, 297, 78, 21] },
+  { photo: 'portrait_c2.png', name: 'Dr Abhishek Shukla', nameFs: 21, nameX: 31, nameBase: 298.5, badgeX: 216, badgeY: 279, badgeS: 18,
+    spec: 'Orthopedic', specX: 49, specBase: 322, years: '10 years', yearsX: 235, yearsBase: 324.6, yearsFs: 18.3, exp: EXP_LABEL, expX: 237, expBase: 346,
+    loc: 'Delhi, India...', ratingX: 279.5, rating: '4.8', specPill: [38, 306, 87, 22], expPill: [226, 332, 76, 21] },
+  { photo: 'portrait_c3.png', name: 'Dr. Sakshi Sachdeva', nameFs: 21, nameX: 29.5, nameBase: 298.5, badgeX: 224, badgeY: 279, badgeS: 18,
+    spec: 'Dentist', specX: 61, specBase: 322, years: '9 years', yearsX: 231.5, yearsBase: 322, yearsFs: 18.3, exp: EXP_LABEL, expX: 235, expBase: 344,
+    loc: 'Delhi, India...', ratingX: 277.5, rating: '4.7', specPill: [50, 306, 63, 22], expPill: [224, 330, 76, 21] },
+];
+const BAR_COL = [197, 199, 205], BADGE_COL = [188, 189, 198];
+const BARS = [ // card-local, relative to card outer
+  { x: 242, y: 31, w: 70, h: 17, badge: true },
+  { x: 235.5, y: 281, w: 68, h: 9 },
+  { x: 25, y: 296, w: 160, h: 12 },
+  { x: 24.5, y: 326, w: 36, h: 9 },
+  { x: 24.5, y: 350, w: 144, h: 12 },
+];
+const VERIFIED_SVG = (s) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M12 1.6l2.3 1.7 2.8-.3 1.1 2.6 2.6 1.1-.3 2.8 1.7 2.3-1.7 2.3.3 2.8-2.6 1.1-1.1 2.6-2.8-.3L12 22.4l-2.3-1.7-2.8.3-1.1-2.6-2.6-1.1.3-2.8L1.6 12l1.7-2.3-.3-2.8 2.6-1.1L6.7 3.2l2.8.3z" fill="#64b6f2"/><path d="M7.6 12.3l3 2.9 5.6-5.8" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const PIN_SVG = `<svg width="24" height="30" viewBox="0 0 24 30"><path d="M12 1.2C6.2 1.2 1.6 5.7 1.6 11.4c0 7.4 8.3 15.1 9.6 16.6.4.4 1.2.4 1.6 0 1.3-1.5 9.6-9.2 9.6-16.6C22.4 5.7 17.8 1.2 12 1.2z" fill="#e5475e"/><circle cx="12" cy="11.2" r="4.3" fill="#fff"/></svg>`;
+const STAR_SVG = `<svg width="15" height="15" viewBox="0 0 24 24"><path d="m12 1.8 3 6.4 7 .8-5.2 4.8 1.4 7L12 17.4l-6.2 3.4 1.4-7L2 9l7-.8z" fill="#f4dc12" stroke="#f4dc12" stroke-width="1" stroke-linejoin="round"/></svg>`;
+
+const cards = [];
+function buildCard(i) {
+  const d = DOCS[i];
+  const c = el('div', 'card', $('cards'));
+  const frame = el('div', 'frame', c);
+  const panel = el('div', 'panel', c);
+  panel.style.background = 'linear-gradient(180deg, rgb(244,245,250) 0px, rgb(244,245,250) 205px, rgb(246,247,252) 225px, rgb(246,247,252) 282px, rgb(247,248,252) 296px, rgb(247,248,252) 352px, rgb(248,249,252) 364px)';
+  const photo = el('img', 'photo', panel); photo.src = PLATES + d.photo;
+  const veil = el('div', 'veil', panel);        // readability gradient at the bottom (inverse of the one removed from the plates)
+  veil.style.background = 'linear-gradient(180deg, rgba(255,255,255,0) 0px, rgba(255,255,255,0) 252px, rgba(255,255,255,0.075) 287px, rgba(255,255,255,0.15) 323px, rgba(255,255,255,0.225) 358px, rgba(255,255,255,0.3) 394px)';
+  const skel = el('div', 'veil', c);             // skeleton bars, card-local
+  const bars = BARS.map(b => el('div', 'bar', skel, { left: b.x + 'px', top: b.y + 'px', width: b.w + 'px', height: b.h + 'px', background: rgba(b.badge ? BADGE_COL : BAR_COL) }));
+  const sheens = [0, 1, 2].map(() => el('div', 'sheen', c, { left: '0px', top: '0px', width: '336px', height: '410px', right: 'auto', bottom: 'auto', borderRadius: '21px' }));
+  const glow = el('div', 'veil', c, { left: '8px', top: '8px', width: '320px', height: '394px', right: 'auto', bottom: 'auto', borderRadius: '13px' });
+  // content
+  const cont = el('div', 'veil', c);
+  const specPill = el('div', 'pillbg', cont, { left: d.specPill[0] + 'px', top: d.specPill[1] + 'px', width: d.specPill[2] + 'px', height: d.specPill[3] + 'px', background: 'rgba(240,237,255,0.32)' });
+  const expPill = el('div', 'pillbg', cont, { left: d.expPill[0] + 'px', top: d.expPill[1] + 'px', width: d.expPill[2] + 'px', height: d.expPill[3] + 'px', background: 'rgba(240,237,255,0.32)' });
+  const name = el('div', 'txt', cont, { fontWeight: 600, color: 'rgb(40,40,46)', letterSpacing: '-0.2px' }); name.textContent = d.name; placeText(name, d.nameX, d.nameBase, d.nameFs);
+  const badge = el('div', 'txt', cont, { left: d.badgeX + 'px', top: d.badgeY + 'px' }); badge.innerHTML = VERIFIED_SVG(d.badgeS);
+  const spec = el('div', 'txt', cont, { fontWeight: 400, color: 'rgb(150,136,246)' }); spec.textContent = d.spec; placeText(spec, d.specX, d.specBase, 13);
+  const years = el('div', 'txt', cont, { fontWeight: 400, color: 'rgb(52,52,58)' }); years.textContent = d.years; placeText(years, d.yearsX, d.yearsBase, d.yearsFs);
+  const exp = el('div', 'txt', cont, { fontWeight: 400, color: 'rgb(166,152,246)', letterSpacing: '-0.25px' }); exp.textContent = d.exp; placeText(exp, d.expX, d.expBase, 12.2);
+  const pin = el('div', 'txt', cont, { left: '31px', top: '351px' }); pin.innerHTML = PIN_SVG;
+  const loc = el('div', 'txt', cont, { fontWeight: 400, color: 'rgb(70,70,78)' }); loc.textContent = d.loc; placeText(loc, d.loc.startsWith('Noida') ? 69 : 65.5, 370, 14.5);
+  const rbox = el('div', 'veil', c);
+  const rpill = el('div', 'pillbg', rbox, { left: '247px', top: '29px', width: '64px', height: '21px', background: 'rgba(234,234,241,0.9)', boxShadow: '0 0 0 1.2px rgba(255,255,255,0.85)' });
+  const star = el('div', 'txt', rbox, { left: '256.5px', top: '32px' }); star.innerHTML = STAR_SVG;
+  const rating = el('div', 'txt', rbox, { fontWeight: 600, color: 'rgb(56,56,62)' }); rating.textContent = d.rating; placeText(rating, d.ratingX - 1, 46, 13);
+  cards.push({ c, frame, panel, photo, veil, skel, bars, sheens, glow, cont, rbox });
+}
+
+// photo reveal: soft diagonal wipe from the bottom-left corner to the top-right corner.
+// s = 0.0143 x - 0.0105 (y - 330) in card-local px; the front position (measured from the reference) eases out.
+const PHOTO_FRONT = [[1037.5, 0.4], [1038, 1.0], [1039, 1.6], [1040, 2.6], [1041, 3.6], [1042, 4.4], [1043, 5.2], [1044, 5.65], [1045, 6.0], [1046, 6.6], [1047, 7.2], [1048, 7.5], [1049, 7.65], [1050, 7.9], [1051, 8.5], [1052, 9.6]];
+const PH_ANG = 53.7, PH_LEN = 491, PH_K = 0.01774, PH_S0 = -0.64;
+function photoMask(front, soft = 1.6) {
+  const pc = s => ((s - PH_S0) / PH_K / PH_LEN * 100).toFixed(2) + '%';
+  return `linear-gradient(${PH_ANG}deg, #000 ${pc(front - soft / 2)}, rgba(0,0,0,0) ${pc(front + soft / 2)})`;
+}
+// skeleton -> content: a soft left-to-right wipe across the card (card-local x of the front)
+// front = x reached on the name row (y 290); the wipe is slanted so lower rows lead (x advances 1.2 px per px of y)
+const CONTENT_FRONT = [[1035.5, -140], [1036.5, -60], [1037, -10], [1038, 50], [1039, 112], [1040, 208], [1041, 290], [1042, 380], [1043, 460], [1044, 560]];
+const CW_ANG = 39.8, CW_SIN = 0.64, CW_COS = 0.768;
+function hWipe(front, soft, show = true) {
+  const pos = x => CW_SIN * x - CW_COS * (290 - 205) + (CW_SIN * 336 + CW_COS * 410) / 2 - CW_SIN * 168;
+  const a = (pos(front - soft)).toFixed(1), b = pos(front).toFixed(1);
+  return show ? `linear-gradient(${CW_ANG}deg, #000 ${a}px, rgba(0,0,0,0) ${b}px)` : `linear-gradient(${CW_ANG}deg, rgba(0,0,0,0) ${a}px, #000 ${b}px)`;
+}
+// shimmer passes (three, 30 frames apart; the third is cut short by the content reveal)
+const SHEEN_T0 = [978.5, 1008.5, 1038.5], SHEEN_SPEED = 0.06;    // band centre along the BL->TR diagonal (0..1) per frame
+function sheenCSS(c, amp) {
+  // multiply tint, peak (214,230,255); gaussian-ish profile, sigma ~0.13 of the diagonal
+  const stops = [];
+  for (let k = -3; k <= 3; k += 0.5) {
+    const a = amp * Math.exp(-0.5 * k * k);
+    const col = mixc([255, 255, 255], [214, 230, 255], a);
+    stops.push(`${rgba(col)} ${((c + k * 0.18) * 100).toFixed(2)}%`);
+  }
+  return `linear-gradient(39deg, ${stops.join(', ')})`;
+}
+
+// ---------------------------------------------------------------- right one
+// geometry measured at f1068: 'r' ink starts x 652, x-height top 208, baseline 303, 'o' 1006-1087, 'n' 1098-1171.
+// The reference face is narrower than Inter Display, so the word is set at 177px and condensed to 0.9.
+const R1 = $('rightOne');
+const R1_X = 643.3, R1_BASE = 303, R1_FS = 177;
+R1.style.background = 'linear-gradient(90deg, rgb(148,44,248) 0%, rgb(160,70,248) 28%, rgb(176,104,248) 50%, rgb(186,128,251) 64%, rgb(194,150,254) 78%, rgb(208,178,254) 92%, rgb(214,188,255) 100%)';
+R1.style.webkitBackgroundClip = 'text'; R1.style.backgroundClip = 'text'; R1.style.color = 'transparent';
+R1.style.fontWeight = 600; R1.style.letterSpacing = '-2.28px';
+R1.style.transformOrigin = '0 0';
+placeText(R1, R1_X, R1_BASE, R1_FS);
+
+// ---------------------------------------------------------------- per-frame state
+function trackAt(f) {
+  if (f <= 1049) return { s: 1, cx: 957, cy: 512.5 };
+  if (f <= 1067) { const t = TRACK[f]; return { s: t.s, cx: t.cx, cy: t.cy }; }
+  return { s: 1.2841, cx: 956.2, cy: 491.4 };
+}
+// outro: the whole composition becomes a rounded glass window that shrinks toward the next scene.
+// Window size (fraction of the frame) measured from its edges; centred at (959, 545).
+const WIN_K = { 1075: 0.998, 1076: 0.9948, 1077: 0.9896, 1078: 0.9833, 1079: 0.976, 1080: 0.9677, 1081: 0.9589, 1082: 0.9479,
+                1083: 0.9365, 1084: 0.9234, 1085: 0.9073, 1086: 0.8901, 1087: 0.869, 1088: 0.8495, 1089: 0.824, 1090: 0.793 };
+const winK = f => f < 1075 ? 1.012 : (WIN_K[f] || 0.793);
+// content scale inside the window (from the tracked card scale; extrapolated with the window for the last frames)
+function outroScale(f) {
+  if (f < 1068) return 1;
+  if (f <= 1088) return TRACK[f].s / 1.2841;
+  return WIN_K[f] / 1.0105;
+}
+// white mist band rising through the window (screen y of the 50% points and ramp widths)
+const MIST_TOP = [[1083, 1000], [1084, 770], [1085, 615], [1086, 525], [1087, 450], [1088, 370], [1089, 300], [1090, 250]];
+const MIST_BOT = [[1087, 1500], [1088, 1050], [1089, 830], [1090, 710]];
+const MIST_SOFT = [[1083, 420], [1086, 360], [1088, 300], [1090, 280]];
+function mistMask(f) {
+  const t = kf(f, MIST_TOP), b = kf(f, MIST_BOT), w = kf(f, MIST_SOFT) / 2;
+  // alpha of the CONTENT (1 - mist)
+  return `linear-gradient(180deg, #000 ${(t - w).toFixed(0)}px, rgba(0,0,0,0) ${(t + w).toFixed(0)}px, rgba(0,0,0,0) ${(b - w).toFixed(0)}px, #000 ${(b + w).toFixed(0)}px)`;
+}
+let BG_OUT = null, BG_IN2 = null;
+
+window.renderFrame = async (f) => {
+  // ---- window (outro)
+  const g = outroScale(f);
+  const wk = winK(f);
+  const win = $('win'), rim = $('rim');
+  const W = 1920 * wk, H = 1080 * wk, L = 959 - 960 * wk, T = 545 - 540 * wk;
+  const boxed = wk < 1;
+  if (boxed) {
+    Object.assign(win.style, { left: L + 'px', top: T + 'px', width: W + 'px', height: H + 'px', borderRadius: (56 * wk) + 'px' });
+    const RW = 32;
+    Object.assign(rim.style, { display: 'block', left: (L - RW) + 'px', top: (T - RW) + 'px', width: (W + 2 * RW) + 'px', height: (H + 2 * RW) + 'px', borderRadius: (56 * wk + RW) + 'px',
+      background: 'linear-gradient(128deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.12) 38%, rgba(96,96,150,0.10) 58%, rgba(96,96,150,0.22) 100%)',
+      boxShadow: '0 0 1.5px 0.5px rgba(255,255,255,0.18)' });
+  } else {
+    Object.assign(win.style, { left: '0px', top: '0px', width: '1920px', height: '1080px', borderRadius: '0px' });
+    rim.style.display = 'none';
+  }
+  const ox = boxed ? -L : 0, oy = boxed ? -T : 0;
+  ['innerBg', 'cwrap', 'mist'].forEach(id => { $(id).style.left = ox + 'px'; $(id).style.top = oy + 'px'; });
+  $('content').style.transform = g === 1 ? 'none' : `translate(${OUT_ANCHOR[0]}px,${OUT_ANCHOR[1]}px) scale(${g}) translate(${-OUT_ANCHOR[0]}px,${-OUT_ANCHOR[1]}px)`;
+  $('cwrap').style.webkitMaskImage = $('cwrap').style.maskImage = f >= 1083 ? mistMask(f) : 'none';
+  // the mist itself is bright white (the reference window interior washes out to white bottom-up)
+  const mist = $('mist');
+  if (f >= 1083) {
+    const t = kf(f, MIST_TOP), b = kf(f, MIST_BOT), w = kf(f, MIST_SOFT) / 2, a = kf(f, [[1083, 0.85], [1086, 0.97]]);
+    const m = `linear-gradient(180deg, rgba(0,0,0,0) ${(t - w).toFixed(0)}px, rgba(0,0,0,${a}) ${(t + w).toFixed(0)}px, rgba(0,0,0,${a}) ${(b - w).toFixed(0)}px, rgba(0,0,0,0) ${(b + w).toFixed(0)}px)`;
+    mist.style.display = 'block'; mist.style.webkitMaskImage = mist.style.maskImage = m;
+  } else mist.style.display = 'none';
+  // motion softening as the window collapses quickly
+  const mb = kf(f, [[1087, 0], [1088, 0.8], [1089, 1.8], [1090, 3.2]]);
+  win.style.filter = rim.style.filter = mb > 0.05 ? `blur(${mb.toFixed(2)}px)` : 'none';
+  // background fields: inside the window and (when boxed) outside it
+  const Pin = (f >= 1075 && BG_IN2 && BG_IN2[f]) ? BG_IN2[f] : bgParams(f);
+  drawField($('innerBg'), Pin);
+  $('outerBg').style.display = boxed ? 'block' : 'none';
+  if (boxed) drawField($('outerBg'), (BG_OUT && BG_OUT[f]) ? BG_OUT[f] : Pin);
+
+  // ---- phase A settle zoom (cards + title)
+  const za = zoomA(f);
+  $('zoomA').style.transform = `translate(${ZA_ANCHOR[0]}px,${ZA_ANCHOR[1]}px) scale(${za}) translate(${-ZA_ANCHOR[0]}px,${-ZA_ANCHOR[1]}px)`;
+
+  // ---- title beats
+  const TA = titles.find, TB = titles.filter;
+  if (f < 1003) { titleShow(TA); titleHide(TB); titleIn(TA, f, TITLE_A); }
+  else if (f < 1006) { titleShow(TA); titleHide(TB); titleIn(TA, f, TITLE_A); titleOut(TA, f, 1003.2); }
+  else { titleHide(TA); titleShow(TB); titleIn(TB, f, TITLE_B); }
+  if (f >= 1050) {   // title fades out while the centre card comes forward
+    const op = kf(f, [[1050.3, 1], [1051, 0.75], [1052, 0.45], [1053, 0.18], [1054, 0.03], [1054.5, 0]]);
+    const bl = kf(f, [[1050.3, 0], [1054, 3]]);
+    TB.wrap.style.opacity = op.toFixed(3);
+    TB.wrap.style.filter = bl > 0.05 ? `blur(${bl.toFixed(2)}px)` : 'none';
+  } else { TB.wrap.style.opacity = 1; TB.wrap.style.filter = 'none'; }
+
+  // ---- cards
+  const tr = trackAt(f);
+  const cfront = kf(f, CONTENT_FRONT);
+  const pfront = kf(f, PHOTO_FRONT);
+  // skeleton bar pulse after the 2nd shimmer, skeleton badge -> rating pill
+  // skeleton 'breathing' pulse (measured: full at f995 and f1039, lowest at f973 and f1017)
+  const barPulse = 0.675 + 0.325 * Math.cos(2 * Math.PI * (f - 995) / 44);
+  for (let i = 0; i < 3; i++) {
+    const C = cards[i];
+    let x = CARD_LEFT[i], y = CARD_TOP, s = 1;
+    if (i === 1) { s = tr.s; x = tr.cx - s * 165.8; y = tr.cy - s * 139.5; }
+    C.c.style.transform = `translate(${x}px,${y}px) scale(${s})`;
+    C.c.style.zIndex = i === 1 ? 2 : 1;
+    // frame (glass rim) + panel
+    C.frame.style.background = 'linear-gradient(180deg, rgba(244,245,251,0.94) 0%, rgba(245,246,252,0.95) 55%, rgba(248,249,253,0.96) 100%)';
+    C.frame.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.55) inset, 0 6px 20px rgba(90,70,200,0.08)';
+    // skeleton bars
+    C.skel.style.webkitMaskImage = C.skel.style.maskImage = f >= 1035 ? hWipe(cfront + 40, 70, false) : 'none';
+    C.bars.forEach((b, j) => {
+      if (BARS[j].badge) b.style.opacity = (barPulse * (1 - smooth(clamp((f - 1043.8) / 2.6)))).toFixed(3);
+      else b.style.opacity = barPulse.toFixed(3);
+    });
+    // shimmer passes
+    SHEEN_T0.forEach((t0, k) => {
+      const cpos = (f - t0) * SHEEN_SPEED;
+      const el = C.sheens[k];
+      if (cpos < -0.6 || cpos > 1.6 || (k === 2 && f > 1041)) { el.style.display = 'none'; return; }
+      const amp = (k === 2 ? 1 - smooth(clamp((f - 1036.5) / 3)) : 1);
+      el.style.display = 'block';
+      el.style.background = sheenCSS(cpos, amp);
+    });
+    // faint white glow left behind at the bottom-left after a shimmer pass
+    C.glow.style.background = 'none';
+    // photo + content
+    C.photo.style.display = f >= 1037 ? 'block' : 'none';
+    C.photo.style.webkitMaskImage = C.photo.style.maskImage = photoMask(pfront);
+    C.veil.style.opacity = f >= 1037 ? 1 : 0;
+    C.cont.style.display = f >= 1035.5 ? 'block' : 'none';
+    C.cont.style.webkitMaskImage = C.cont.style.maskImage = hWipe(cfront, 85, true);
+    const ratA = smooth(clamp((f - 1045.2) / 2.4));
+    C.rbox.style.opacity = ratA.toFixed(3);
+    C.rbox.style.display = ratA > 0 ? 'block' : 'none';
+    // side cards fade + blur while the centre card comes forward
+    if (i !== 1) {
+      const op = kf(f, [[1050.3, 1], [1051, 0.88], [1052, 0.66], [1053, 0.42], [1054, 0.24], [1055, 0.12], [1056, 0.05], [1057.5, 0]]);
+      const bl = kf(f, [[1050.3, 0], [1051, 0.6], [1052, 1.2], [1053, 1.9], [1054, 2.7], [1055, 3.4], [1056, 4.2], [1058, 6]]);
+      C.c.style.opacity = op.toFixed(3);
+      C.c.style.filter = bl > 0.05 ? `blur(${bl.toFixed(2)}px)` : 'none';
+      C.c.style.display = op <= 0 ? 'none' : 'block';
+    } else {
+      const bl = kf(f, [[1050, 0], [1051, 0.6], [1052.5, 1.0], [1055, 0.9], [1058, 0.5], [1061, 0], [1080, 0], [1083, 0.7], [1086, 0.8], [1087, 1.4], [1088, 2.6], [1090, 4]]);
+      C.c.style.filter = bl > 0.05 ? `blur(${bl.toFixed(2)}px)` : 'none';
+    }
+  }
+  // ---- right one: soft fade-in with a defocus pull and a quick left-to-right reveal
+  const r1a = kf(f, [[1056, 0], [1058, 0.08], [1060, 0.2], [1062, 0.36], [1064, 0.68], [1066, 1]]);
+  const r1b = kf(f, [[1056, 12], [1058, 9.5], [1060, 7], [1062, 4.5], [1064, 2], [1066, 0]]);
+  const r1w = kf(f, [[1056, 0], [1062, 520], [1066, 820], [1068, 1000]]);
+  R1.style.display = r1a > 0 ? 'block' : 'none';
+  R1.style.opacity = r1a.toFixed(3);
+  R1.style.filter = r1b > 0.05 ? `blur(${r1b.toFixed(2)}px)` : 'none';
+  R1.style.transform = 'scaleX(0.9)';
+  R1.style.webkitMaskImage = R1.style.maskImage = r1w < 1000 ? `linear-gradient(90deg, #000 ${(r1w - 300).toFixed(0)}px, rgba(0,0,0,0.3) ${(r1w + 120).toFixed(0)}px)` : 'none';
+};
+
+window.sceneReady = (async () => {
+  { const j = await loadJSON('bg_inner.json'); if (j.params) { BG = j.params; KV = j.kv; KW = j.kw; } else BG = j; }
+  TRACK = await loadJSON('track_card2.json');
+  try { const o = await loadJSON('bg_outro.json'); BG_IN2 = o.inner; BG_OUT = o.outer; } catch (e) {}
+  buildTitle('find', 'Finding specialist...');
+  buildTitle('filter', 'Filtering by expertise...', 3.5);
+  for (let i = 0; i < 3; i++) buildCard(i);
+  await document.fonts.ready;
+  await Promise.all(Array.from(document.images).map(im => im.decode().catch(() => {})));
+  layoutTitleColours();
+})();
+</script>
+</body></html>

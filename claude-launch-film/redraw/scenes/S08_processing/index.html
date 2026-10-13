@@ -1,0 +1,110 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S08 processing</title>
+<link rel="stylesheet" href="../../shared/base.css">
+<script src="../../shared/lib.js"></script>
+<script src="../../shared/components.js"></script>
+<style>
+  .row { position: absolute; left: 0; width: 1920px; text-align: center; white-space: pre; font-family: 'Inter'; font-weight: 500; letter-spacing: -0.02em; line-height: 1; }
+  .row span { display: inline-block; }
+</style>
+</head><body>
+<div id="stage"><img class="plate" id="bg"></div>
+<script>
+// S08 (f719-862): reference purple-to-black gradient (text removed) with two redrawn processing
+// lines. Letters of line 1 pop in in a scattered order, then a white highlight sweeps across the
+// lavender-to-violet text every ~20 frames; line 1 shrinks out, line 2 zooms in, then pans right.
+const stage = document.getElementById('stage');
+const SWEEPS = [739.5, 760, 780.5, 800.5, 820.5, 840.5, 860];   // frame the highlight sits at u = 0.04
+const SWEEP_DUR = 12.5;
+function sweepU(f) {             // highlight centre in line coordinates (u), or null
+  for (const t0 of SWEEPS) { const u = 0.04 + (f - t0) / SWEEP_DUR; if (u > -0.25 && u < 1.25) return u; }
+  return null;
+}
+// tiny deterministic PRNG for the scattered letter order
+function rng(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+
+function makeLine(o) {
+  const box = document.createElement('div');
+  Object.assign(box.style, { position: 'absolute', left: '0px', top: '0px', width: '1920px', height: '1080px', transformOrigin: `${o.cx}px ${o.baseline}px` });
+  stage.appendChild(box);
+  const mk = (cls) => {
+    const r = document.createElement('div'); r.className = 'row';
+    r.style.fontSize = o.size + 'px'; r.style.left = (o.cx - 960) + 'px';
+    Array.from(o.text).forEach(ch => { const s = document.createElement('span'); s.textContent = ch; r.appendChild(s); });
+    box.appendChild(r); return r;
+  };
+  const base = mk(), hi = mk();
+  hi.style.color = 'rgb(240,238,255)';
+  return { o, box, base, hi, letters: Array.from(base.children), hl: Array.from(hi.children) };
+}
+const L1 = makeLine({ text: 'Analyzing the affected area...', size: 66.6, cx: 960, baseline: 559.5,
+  left: [176, 166, 251], right: [122, 106, 248],
+  S: [[719, 1.07], [725, 1.05], [731, 1.034], [737, 1.008], [740, 1.0], [779, 1.0], [782, 0.976], [785, 0.937], [787, 0.9]],
+  X: [[719, 0]], blur: [[719, 0]], opacity: [[719, 1]],
+  reveal: [719, 733] });
+const L2 = makeLine({ text: 'Mapping anatomical connections...', size: 66.6, fitWidth: 1061, cx: 972, baseline: 563,
+  left: [188, 179, 251], right: [126, 110, 247],
+  S: [[786, 0.88], [788, 0.903], [791, 0.933], [794, 0.975], [797, 1.003], [800, 1.0]],
+  X: [[845, 0], [848, 3], [851, 8], [854, 15], [857, 25], [860, 41], [862, 55]],
+  blur: [[788, 0]], opacity: [[788, 1]] });
+
+let laid = false;
+function layout() {
+  for (const L of [L1, L2]) {
+    if (L.o.fitWidth) {
+      const w = L.base.querySelector('span:last-child').getBoundingClientRect().right - L.base.querySelector('span').getBoundingClientRect().left;
+      L.o.size *= L.o.fitWidth / w;
+      L.base.style.fontSize = L.hi.style.fontSize = L.o.size + 'px';
+    }
+    // vertical: put the baseline at o.baseline
+    const c = document.createElement('canvas').getContext('2d');
+    c.font = `500 ${L.o.size}px Inter`;
+    const asc = c.measureText('H').fontBoundingBoxAscent;
+    L.base.style.top = L.hi.style.top = (L.o.baseline - asc) + 'px';
+    const rs = L.letters.map(s => s.getBoundingClientRect());
+    L.x0 = rs[0].left; L.x1 = rs[rs.length - 1].right;
+    L.u = rs.map(r => ((r.left + r.right) / 2 - L.x0) / (L.x1 - L.x0));
+    L.letters.forEach((s, i) => s.style.color = rgba(mixc(L.o.left, L.o.right, L.u[i])));
+    // scattered reveal order
+    if (L.o.reveal) {
+      const R = rng(7); const [a, b] = L.o.reveal;
+      L.appear = L.letters.map((s, i) => a + (b - a - 3) * Math.pow(R(), 0.85));
+    }
+  }
+  laid = true;
+}
+
+function renderLine(L, f) {
+  const o = L.o;
+  L.box.style.transform = `translate(${kf(f, o.X)}px, 0px) scale(${kf(f, o.S)})`;
+  const b = kf(f, o.blur);
+  L.box.style.filter = b > 0.05 ? `blur(${b}px)` : 'none';
+  L.box.style.opacity = kf(f, o.opacity);
+  // letter reveal
+  L.letters.forEach((s, i) => {
+    let p = 1;
+    if (L.appear) p = ease.outCubic(invlerp(L.appear[i], L.appear[i] + 3, f));
+    s.style.opacity = p; L.hl[i].style.opacity = p;
+    const lb = 6 * (1 - p);
+    s.style.filter = lb > 0.05 ? `blur(${lb}px)` : 'none';
+  });
+  // highlight sweep: soft white band masked onto the highlight copy of the text
+  const u = sweepU(f);
+  if (u === null) { L.hi.style.visibility = 'hidden'; return; }
+  L.hi.style.visibility = 'visible';
+  const P = L.x0 + u * (L.x1 - L.x0), W = 0.13 * (L.x1 - L.x0);
+  const m = `linear-gradient(90deg, rgba(0,0,0,0) ${P - W}px, rgba(0,0,0,0.95) ${P}px, rgba(0,0,0,0) ${P + W}px)`;
+  L.hi.style.webkitMaskImage = m; L.hi.style.maskImage = m;
+}
+
+window.renderFrame = async (f) => {
+  if (!laid) layout();
+  await setImg(document.getElementById('bg'), `../../plates/S08_processing/bg_${String(f).padStart(4, '0')}.jpg`);
+  L1.box.style.display = f <= 787 ? 'block' : 'none';
+  L2.box.style.display = f >= 788 ? 'block' : 'none';
+  if (f <= 787) renderLine(L1, f);
+  if (f >= 788) renderLine(L2, f);
+};
+window.sceneReady = document.fonts.ready;
+</script>
+</body></html>

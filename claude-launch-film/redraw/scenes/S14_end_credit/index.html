@@ -1,0 +1,61 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S14 end credit</title>
+<link rel="stylesheet" href="../../shared/base.css">
+<script src="../../shared/lib.js"></script>
+<script src="../../shared/components.js"></script>
+<script src="../../shared/titles.js"></script>
+<style> body, #stage { background: #000; } </style>
+</head><body>
+<div id="stage">
+  <img class="plate" id="wm" src="../../plates/S14_end_credit/wordmark_1348.png">
+  <svg id="logo" width="1920" height="1080" style="position:absolute;left:0;top:0"><path id="burst"/></svg>
+</div>
+<script>
+// S14 (f1349-1453, appended after the reference ends): the final 'Claude' wordmark rises and eases
+// back, the orange starburst from the opening returns above it, and the credit line
+// 'Built by Imran using Opus 5.5' arrives word by word in the film's title style, then all fades out.
+const stage = document.getElementById('stage');
+const W = [238, 238, 250], G = [150, 150, 172], VIO = [146, 128, 246], BLU = [112, 162, 252];
+const BURST_PATH = "M -0.4729 -0.8811 L -0.5288 -0.8054 L -0.5252 -0.7658 L -0.5089 -0.7045 L -0.4477 -0.6054 L -0.3432 -0.4253 L -0.2459 -0.2469 L -0.2297 -0.2217 L -0.2315 -0.2163 L -0.2441 -0.2073 L -0.2783 -0.2361 L -0.4423 -0.3550 L -0.6819 -0.5388 L -0.7143 -0.5442 L -0.7630 -0.5460 L -0.8134 -0.4919 L -0.8008 -0.4145 L -0.7702 -0.3766 L -0.7252 -0.3478 L -0.6153 -0.2667 L -0.2387 -0.0163 L -0.2189 0.0017 L -0.2225 0.0126 L -0.2585 0.0144 L -0.4315 -0.0055 L -0.5756 -0.0127 L -0.6783 -0.0217 L -0.8621 -0.0325 L -0.9143 -0.0379 L -0.9504 -0.0127 L -0.9540 0.0126 L -0.9125 0.0666 L -0.8729 0.0756 L -0.5071 0.0936 L -0.3090 0.0972 L -0.2297 0.1026 L -0.2225 0.1135 L -0.2279 0.1279 L -0.2387 0.1369 L -0.5918 0.3333 L -0.7360 0.4324 L -0.7558 0.4522 L -0.7612 0.5098 L -0.7252 0.5441 L -0.6369 0.5333 L -0.1486 0.2162 L -0.1450 0.2180 L -0.1432 0.2288 L -0.2207 0.3189 L -0.3252 0.4576 L -0.5053 0.6846 L -0.5414 0.7369 L -0.5450 0.7873 L -0.4891 0.8143 L -0.4585 0.8017 L -0.3270 0.6612 L -0.0513 0.2846 L -0.0405 0.2810 L -0.0369 0.2882 L -0.0513 0.3405 L -0.0711 0.4810 L -0.1270 0.7549 L -0.1504 0.8612 L -0.1270 0.9152 L -0.0801 0.9513 L -0.0261 0.9315 L -0.0009 0.9026 L 0.0514 0.3441 L 0.0604 0.3387 L 0.0658 0.3405 L 0.1523 0.4900 L 0.2334 0.6143 L 0.3649 0.8017 L 0.4190 0.8107 L 0.4604 0.7963 L 0.4640 0.7927 L 0.4748 0.7711 L 0.4676 0.6918 L 0.4640 0.6810 L 0.2532 0.3675 L 0.2532 0.3513 L 0.2640 0.3513 L 0.4784 0.5351 L 0.6478 0.6612 L 0.6712 0.6630 L 0.6946 0.6306 L 0.6856 0.5855 L 0.4946 0.4071 L 0.3451 0.2738 L 0.2550 0.1855 L 0.2568 0.1747 L 0.2694 0.1747 L 0.3703 0.2017 L 0.7883 0.3008 L 0.8838 0.2522 L 0.8892 0.2216 L 0.8856 0.2108 L 0.8532 0.1675 L 0.7919 0.1279 L 0.5811 0.1117 L 0.3991 0.1099 L 0.2658 0.0972 L 0.2622 0.0918 L 0.2712 0.0864 L 0.5289 0.0252 L 0.7379 -0.0163 L 0.8532 -0.0451 L 0.8604 -0.0505 L 0.8838 -0.1082 L 0.8766 -0.1370 L 0.8135 -0.1676 L 0.5523 -0.1226 L 0.3397 -0.0757 L 0.3199 -0.0739 L 0.3126 -0.0829 L 0.3775 -0.1946 L 0.4838 -0.3370 L 0.6207 -0.5117 L 0.6460 -0.6000 L 0.5901 -0.6829 L 0.5090 -0.6847 L 0.4712 -0.6559 L 0.3955 -0.5766 L 0.3415 -0.5154 L 0.2190 -0.3622 L 0.1469 -0.2649 L 0.1235 -0.2415 L 0.1091 -0.2415 L 0.1072 -0.2487 L 0.1775 -0.6090 L 0.2045 -0.7928 L 0.1667 -0.8451 L 0.1253 -0.8649 L 0.0712 -0.8307 L 0.0658 -0.8253 L 0.0388 -0.7604 L 0.0154 -0.4901 L -0.0045 -0.3280 L -0.0135 -0.1892 L -0.0243 -0.1874 L -0.0333 -0.2037 L -0.0531 -0.2739 L -0.2117 -0.5820 L -0.3306 -0.8523 L -0.3666 -0.8829 L -0.4423 -0.8919 Z";
+const WM_C = [962, 516];                       // wordmark centre in f1348
+const WM_Y = [[1354, 0], [1376, -40]], WM_S = [[1354, 1], [1376, 0.84]];
+const LOGO = { cx: 962, cy: 352, r: 46 };
+const credit = new TitleLine(stage, {
+  text: 'Built by Imran using Opus 5.5', font: "'Inter'", size: 46, tracking: -0.015, weight: 400,
+  cx: 960, baseline: 640, layout: 'full',
+  S: [[1366, 1.06], [1380, 1.0], [1430, 0.985]],
+  opacity: [[1428, 1], [1450, 0]],
+  units: [
+    { in: 1366, dur: 6, from: G, to: W, blur0: 5, rise: 14 },
+    { in: 1370, dur: 6, from: G, to: W, blur0: 5, rise: 14 },
+    { in: 1374, dur: 7, from: [140, 125, 255], to: W, weight: 600, blur0: 5, rise: 14 },
+    { in: 1382, dur: 6, from: G, to: [170, 170, 195], blur0: 5, rise: 14 },
+    { in: 1387, dur: 1, opacityAt: [[1386.5, 0], [1387, 1]], colorAt: [[1387, VIO]], weight: 600,
+      typeAt: [[1387, 0.1], [1389, 0.45], [1391, 0.8], [1393, 1]] },
+    { in: 1392, dur: 1, opacityAt: [[1391.5, 0], [1392, 1]], colorAt: [[1392, BLU]], weight: 600,
+      typeAt: [[1392, 0.15], [1394, 0.6], [1396, 1]] },
+  ],
+});
+credit.el.style.textShadow = '0 0 18px rgba(120,130,255,0.35)';
+const FADE = [[1428, 1], [1450, 0]];
+window.renderFrame = async (f) => {
+  const fade = kf(f, FADE);
+  const wm = document.getElementById('wm');
+  wm.style.transformOrigin = `${WM_C[0]}px ${WM_C[1]}px`;
+  wm.style.transform = `translate(0px, ${kf(f, WM_Y)}px) scale(${kf(f, WM_S)})`;
+  wm.style.opacity = fade;
+  // starburst: grows and spins in, keeps turning slowly
+  const p = ease.outCubic(invlerp(1360, 1378, f));
+  const rot = -120 * (1 - p) + 0.6 * (f - 1360);
+  const b = document.getElementById('burst');
+  b.setAttribute('d', p > 0.002 ? BURST_PATH : '');
+  b.setAttribute('transform', `translate(${LOGO.cx} ${LOGO.cy + kf(f, WM_Y) * 0}) rotate(${rot}) scale(${LOGO.r * p})`);
+  b.setAttribute('fill', 'rgb(217,119,87)');
+  b.setAttribute('fill-opacity', Math.min(1, p * 1.4) * fade);
+  credit.render(f);
+  const blur = (1 - fade) * 6;
+  stage.style.filter = blur > 0.05 ? `blur(${blur}px)` : 'none';
+};
+window.sceneReady = document.fonts.ready;
+</script>
+</body></html>
