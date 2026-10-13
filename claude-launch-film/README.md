@@ -10,11 +10,14 @@ for a shot-by-shot comparison.
 
 ## Redrawn version (work in progress)
 
-`claude_launch_film_redraw_v2.mp4` (48.43 s, 1,453 frames) is the current cut of the
+`claude_launch_film_redraw_v3.mp4` (48.43 s, 1,453 frames) is the current cut of the
 redrawn film:
 
 - **Opening:** the four-point sparkle is replaced by the orange Claude starburst, and the
   clouds open through a growing, turning triangle instead of the scalloped circle.
+- **Claude UI:** the app window uses a Claude-style sidebar (coral New chat button, chats, projects,
+  artifacts, code, starred, initials avatar). Claude's reply is set in a serif font and streams
+  in word by word, with the starburst under the newest text.
 - **Chat UI:** every chat box is a Claude-style composer: a rounded box with "+" and tools
   buttons, an "Opus 5.5" model picker and the coral send button with an up-arrow. It
   replaces the pill with a mic and a black send disc.
@@ -32,7 +35,9 @@ redrawn film:
 | 351–448 | dashboard window | name-change frames for now |
 | 449–525 | "Build to move beyond generic healthcare search" | redrawn |
 | 526–605 | typing the symptom | redrawn (Claude composer) |
-| 606–972 | anatomy viewer, processing, reply | 719–862 redrawn, rest name-change frames for now |
+| 606–718 | anatomy viewer | redrawn UI (Claude sidebar, buttons, Done, pointer) over the tracked window; anatomy model kept |
+| 719–862 | processing lines | redrawn |
+| 863–972 | Claude's reply | redrawn Claude chat (user bubble, serif reply streaming with the starburst, composer) over the tracked, scrolling window |
 | 973–1090 | doctor cards, "right one" | redrawn |
 | 1091–1167 | profile and analytics | name-change frames for now |
 | 1168–1348 | closing lines, Claude wordmark | redrawn |
@@ -42,7 +47,10 @@ The redraw sources are in `redraw/`:
 
 - `scenes/*/index.html`: one page per scene that draws any frame with `renderFrame(f)`.
 - `shared/`: title-line animator, Claude composer, glass and icon components, and the
-  Noto Sans logo font (OFL). Inter (OFL) is used from the system.
+  Noto Sans logo font and Source Serif 4 for Claude's replies (both OFL). Inter (OFL) is used
+  from the system.
+- `s07_*.py`, `s09_*.py`: window tracking (SIFT homographies on the window frame, scroll by
+  phase correlation), plate cleaning and compositing of the flat UI layer.
 - `render.py`: renders a scene with headless Chromium.
 - `assemble_final.py`: joins the scenes into one frame sequence.
 

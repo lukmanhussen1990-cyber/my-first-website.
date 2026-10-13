@@ -1,0 +1,57 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S07 flat window UI</title>
+<link rel="stylesheet" href="../../shared/base.css">
+<script src="../../shared/lib.js"></script>
+<script src="../../shared/components.js"></script>
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; }
+  #root { position: absolute; left: 0; top: 0; width: 1500px; height: 1000px; transform-origin: 0 0; }
+  .ic { position: absolute; display: flex; align-items: center; justify-content: center; }
+  .zb { position: absolute; width: 80px; height: 80px; border-radius: 18px; box-sizing: border-box; background: rgba(255,255,255,0.13);
+        border: 1.5px solid rgba(255,255,255,0.20); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(10,6,40,0.18); }
+  #done { position: absolute; left: 1408px; top: 882px; width: 190px; height: 72px; border-radius: 15px; background: #F5F4EF;
+          display: flex; align-items: center; justify-content: center; font-family: 'Inter'; font-weight: 600; font-size: 33px; color: #1F1E1D;
+          letter-spacing: -0.01em; box-shadow: 0 6px 18px rgba(10,6,40,0.28); transform-origin: 50% 50%; }
+  #cursor { position: absolute; width: 40px; height: 46px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35)); }
+</style>
+</head><body>
+<div id="root">
+  <div id="side"></div>
+  <div class="zb" style="left:1508.5px;top:188.5px"></div>
+  <div class="zb" style="left:1508.5px;top:293px"></div>
+  <div id="done">Done</div>
+  <svg id="cursor" viewBox="0 0 40 46"><path d="M3 3 L35 26 Q37 28 34.5 28.6 L20 30.5 L11.5 42.5 Q10 44.5 9.2 42 Z" fill="#fff" stroke="#24221F" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke"/></svg>
+</div>
+<script>
+// S07 window UI in canonical coordinates (frame-665 pixels), rendered at K x as a transparent layer:
+// Claude-style sidebar, zoom buttons, a Claude-style "Done" button and (where the original pointer
+// is covered by the new button) the pointer.
+const K = 2, OX = 260, OY = 60;
+document.getElementById('root').style.transform = `scale(${K}) translate(${-OX}px, ${-OY}px)`;
+const Q = 1.347 * 1.22, X = 353;    // sidebar scale relative to the S09 sidebar
+const side = document.getElementById('side');
+function put(html, x, y, w, h) { const d = document.createElement('div'); d.className = 'ic'; Object.assign(d.style, { left: (x - w / 2) + 'px', top: (y - h / 2) + 'px', width: w + 'px', height: h + 'px' }); d.innerHTML = html; side.appendChild(d); }
+const IC = (p, s, c = 'rgba(250,249,245,0.95)', sw = 1.9) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+put(IC('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/>', 24 * Q), X, 178, 46, 46);
+put(`<div style="width:${30 * Q}px;height:${30 * Q}px;border-radius:50%;background:#D97757;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(217,119,87,0.45)">${IC('<path d="M12 5v14"/><path d="M5 12h14"/>', 18 * Q, '#fff', 2.4)}</div>`, X, 265, 46, 46);
+put(`<div style="width:${42 * Q}px;height:${42 * Q}px;border-radius:${10 * Q}px;background:rgba(255,255,255,0.13);display:flex;align-items:center;justify-content:center">${IC('<path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.2A8.5 8.5 0 1 1 21 12Z"/>', 21 * Q)}</div>`, X, 408, 60, 60);
+put(IC('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>', 21 * Q), X, 528, 40, 40);
+put(IC('<path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/>', 20 * Q), X, 616, 40, 40);
+put(IC('<path d="m8 8-4 4 4 4"/><path d="m16 8 4 4-4 4"/><path d="m14 5-4 14"/>', 20 * Q), X, 668, 40, 40);
+put(IC('<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z"/>', 20 * Q), X, 783, 40, 40);
+put(`<div style="width:${46 * Q}px;height:${46 * Q}px;border-radius:50%;background:#2B2A27;border:2px solid rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-family:'Inter';font-weight:600;font-size:${16 * Q}px;color:#F5F4EF;letter-spacing:0.02em">AB</div>`, X - 3, 900, 66, 66);
+document.querySelectorAll('.zb')[0].innerHTML = IC('<path d="M12 5v14"/><path d="M5 12h14"/>', 40, '#fff', 2.2);
+document.querySelectorAll('.zb')[1].innerHTML = IC('<path d="M5 12h14"/>', 40, '#fff', 2.2);
+// pointer (canonical top-left of the arrow) where it crosses the new button, measured on the reference
+const CUR = {"685": [1372, 887, 1.0], "686": [1424, 907, 1.0], "687": [1454, 932, 1.0], "688": [1473, 926, 1.0], "689": [1485, 935, 1.0], "690": [1494, 935, 1.0], "691": [1500, 937, 1.0], "692": [1503, 938, 1.0], "693": [1505, 939, 1.0], "694": [1505, 939, 1.0], "695": [1505, 940, 1.0], "696": [1506, 941, 1.0], "697": [1506, 941, 0.93], "698": [1506, 941, 0.86], "699": [1506, 941, 0.86], "700": [1506, 941, 0.86], "701": [1506, 941, 0.86], "702": [1506, 941, 0.93], "703": [1505, 940, 1.0], "704": [1505, 939, 1.0], "705": [1504, 940, 1.0], "706": [1503, 942, 1.0], "707": [1501, 945, 1.0], "708": [1497, 950, 1.0], "709": [1492, 958, 1.0], "710": [1484, 970, 1.0], "711": [1472, 988, 1.0]};
+window.renderFlat = async (f) => {
+  const c = CUR[f], cur = document.getElementById('cursor');
+  if (c) { cur.style.display = 'block'; cur.style.left = (c[0] - 2) + 'px'; cur.style.top = (c[1] - 2) + 'px'; cur.style.transform = `scale(${c[2]})`; cur.style.transformOrigin = '3px 3px'; }
+  else cur.style.display = 'none';
+  // the button dips as it is clicked
+  const press = kf(f, [[696, 1], [698, 0.92], [701, 0.92], [703, 1]]);
+  document.getElementById('done').style.transform = `scale(${press})`;
+};
+window.sceneReady = Promise.all([document.fonts.load("600 33px 'Inter'"), document.fonts.load("600 21px 'Inter'")]);
+</script>
+</body></html>

@@ -74,3 +74,9 @@ html, body {
 .cc .cc-btn { position: absolute; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
 .cc .cc-model { position: absolute; display: flex; align-items: center; white-space: nowrap; font-weight: 500; letter-spacing: -0.01em; }
 .cc .cc-send { position: absolute; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(217,119,87,0.35); }
+
+/* Serif used for Claude's replies in the chat scenes (Source Serif 4, SIL OFL). */
+@font-face { font-family: 'Claude Serif'; src: url('fonts/SourceSerif4-400.woff2') format('woff2'); font-weight: 400; }
+@font-face { font-family: 'Claude Serif'; src: url('fonts/SourceSerif4-500.woff2') format('woff2'); font-weight: 500; }
+@font-face { font-family: 'Claude Serif'; src: url('fonts/SourceSerif4-600.woff2') format('woff2'); font-weight: 600; }
+#reply .li::before { opacity: var(--bo, 1); }

@@ -1,0 +1,142 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S09 flat window UI</title>
+<link rel="stylesheet" href="../../shared/base.css">
+<script src="../../shared/lib.js"></script>
+<script src="../../shared/components.js"></script>
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; }
+  /* canonical window coordinates (frame-880 pixels) rendered at K x into a flat RGBA layer */
+  #root { position: absolute; left: 0; top: 0; width: 1100px; height: 720px; transform-origin: 0 0; }
+  .ic { position: absolute; display: flex; align-items: center; justify-content: center; }
+  #clip { position: absolute; left: 549px; top: 214px; width: 482px; height: 526px; overflow: hidden;
+          -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0) 0px, #000 18px, #000 calc(100% - 10px), rgba(0,0,0,0) 100%); }
+  #content { position: absolute; left: 0; top: 0; width: 482px; }
+  #bubble { position: absolute; right: 13px; top: 75px; padding: 8px 13px 8.5px; border-radius: 11px; background: rgba(14,11,34,0.46);
+            border: 0.75px solid rgba(255,255,255,0.10); font-family: 'Inter'; font-size: 12.6px; line-height: 16px; color: rgba(250,249,245,0.96); white-space: nowrap; }
+  #reply { position: absolute; left: 7px; top: 129px; width: 462px; font-family: 'Claude Serif'; font-size: 13.3px; line-height: 21.6px;
+           color: rgba(250,249,245,0.94); letter-spacing: -0.005em; }
+  #reply .blk { margin: 0; }
+  #reply .h { margin-top: 17px; font-weight: 600; }
+  #reply .li { padding-left: 17px; position: relative; }
+  #reply .li::before { content: '•'; position: absolute; left: 4px; }
+  #reply b { font-weight: 600; }
+  #reply .w { transition: none; }
+  #spark { position: absolute; width: 18px; height: 18px; }
+</style>
+</head><body>
+<div id="root">
+  <div id="side"></div>
+  <div id="clip"><div id="content"><div id="bubble">Persistent sharp pain in lower back.</div><div id="reply"></div>
+    <svg id="spark" viewBox="-1 -1 2 2"><path d="M -0.4729 -0.8811 L -0.5288 -0.8054 L -0.5252 -0.7658 L -0.5089 -0.7045 L -0.4477 -0.6054 L -0.3432 -0.4253 L -0.2459 -0.2469 L -0.2297 -0.2217 L -0.2315 -0.2163 L -0.2441 -0.2073 L -0.2783 -0.2361 L -0.4423 -0.3550 L -0.6819 -0.5388 L -0.7143 -0.5442 L -0.7630 -0.5460 L -0.8134 -0.4919 L -0.8008 -0.4145 L -0.7702 -0.3766 L -0.7252 -0.3478 L -0.6153 -0.2667 L -0.2387 -0.0163 L -0.2189 0.0017 L -0.2225 0.0126 L -0.2585 0.0144 L -0.4315 -0.0055 L -0.5756 -0.0127 L -0.6783 -0.0217 L -0.8621 -0.0325 L -0.9143 -0.0379 L -0.9504 -0.0127 L -0.9540 0.0126 L -0.9125 0.0666 L -0.8729 0.0756 L -0.5071 0.0936 L -0.3090 0.0972 L -0.2297 0.1026 L -0.2225 0.1135 L -0.2279 0.1279 L -0.2387 0.1369 L -0.5918 0.3333 L -0.7360 0.4324 L -0.7558 0.4522 L -0.7612 0.5098 L -0.7252 0.5441 L -0.6369 0.5333 L -0.1486 0.2162 L -0.1450 0.2180 L -0.1432 0.2288 L -0.2207 0.3189 L -0.3252 0.4576 L -0.5053 0.6846 L -0.5414 0.7369 L -0.5450 0.7873 L -0.4891 0.8143 L -0.4585 0.8017 L -0.3270 0.6612 L -0.0513 0.2846 L -0.0405 0.2810 L -0.0369 0.2882 L -0.0513 0.3405 L -0.0711 0.4810 L -0.1270 0.7549 L -0.1504 0.8612 L -0.1270 0.9152 L -0.0801 0.9513 L -0.0261 0.9315 L -0.0009 0.9026 L 0.0514 0.3441 L 0.0604 0.3387 L 0.0658 0.3405 L 0.1523 0.4900 L 0.2334 0.6143 L 0.3649 0.8017 L 0.4190 0.8107 L 0.4604 0.7963 L 0.4640 0.7927 L 0.4748 0.7711 L 0.4676 0.6918 L 0.4640 0.6810 L 0.2532 0.3675 L 0.2532 0.3513 L 0.2640 0.3513 L 0.4784 0.5351 L 0.6478 0.6612 L 0.6712 0.6630 L 0.6946 0.6306 L 0.6856 0.5855 L 0.4946 0.4071 L 0.3451 0.2738 L 0.2550 0.1855 L 0.2568 0.1747 L 0.2694 0.1747 L 0.3703 0.2017 L 0.7883 0.3008 L 0.8838 0.2522 L 0.8892 0.2216 L 0.8856 0.2108 L 0.8532 0.1675 L 0.7919 0.1279 L 0.5811 0.1117 L 0.3991 0.1099 L 0.2658 0.0972 L 0.2622 0.0918 L 0.2712 0.0864 L 0.5289 0.0252 L 0.7379 -0.0163 L 0.8532 -0.0451 L 0.8604 -0.0505 L 0.8838 -0.1082 L 0.8766 -0.1370 L 0.8135 -0.1676 L 0.5523 -0.1226 L 0.3397 -0.0757 L 0.3199 -0.0739 L 0.3126 -0.0829 L 0.3775 -0.1946 L 0.4838 -0.3370 L 0.6207 -0.5117 L 0.6460 -0.6000 L 0.5901 -0.6829 L 0.5090 -0.6847 L 0.4712 -0.6559 L 0.3955 -0.5766 L 0.3415 -0.5154 L 0.2190 -0.3622 L 0.1469 -0.2649 L 0.1235 -0.2415 L 0.1091 -0.2415 L 0.1072 -0.2487 L 0.1775 -0.6090 L 0.2045 -0.7928 L 0.1667 -0.8451 L 0.1253 -0.8649 L 0.0712 -0.8307 L 0.0658 -0.8253 L 0.0388 -0.7604 L 0.0154 -0.4901 L -0.0045 -0.3280 L -0.0135 -0.1892 L -0.0243 -0.1874 L -0.0333 -0.2037 L -0.0531 -0.2739 L -0.2117 -0.5820 L -0.3306 -0.8523 L -0.3666 -0.8829 L -0.4423 -0.8919 Z" fill="#D97757"/></svg></div></div>
+  <div id="compwrap"></div>
+</div>
+<script>
+const K = 3, OX = 440, OY = 195;
+document.getElementById('root').style.transform = `scale(${K}) translate(${-OX}px, ${-OY}px)`;
+// ---- Claude-style sidebar on the reference glass strip (same rows as the reference icons)
+const SIDE_X = 506;
+const side = document.getElementById('side');
+function put(html, x, y, w, h) { const d = document.createElement('div'); d.className = 'ic'; Object.assign(d.style, { left: (x - w / 2) + 'px', top: (y - h / 2) + 'px', width: w + 'px', height: h + 'px' }); d.innerHTML = html; side.appendChild(d); return d; }
+const IC = (p, s = 22, c = 'rgba(250,249,245,0.92)', sw = 1.7) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+put(IC('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/>', 24), SIDE_X, 270, 34, 34);                    // sidebar toggle
+put(`<div style="width:30px;height:30px;border-radius:50%;background:#D97757;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(217,119,87,0.45)">${IC('<path d="M12 5v14"/><path d="M5 12h14"/>', 18, '#fff', 2.4)}</div>`, SIDE_X, 335, 34, 34);   // new chat
+put(`<div style="width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,0.13);display:flex;align-items:center;justify-content:center">${IC('<path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.2A8.5 8.5 0 1 1 21 12Z"/>', 21)}</div>`, SIDE_X, 440, 44, 44);   // chats (active)
+put(IC('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>', 21), SIDE_X, 530, 30, 30);   // projects
+put(IC('<path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/>', 20), SIDE_X, 594, 30, 30);                              // artifacts
+put(IC('<path d="m8 8-4 4 4 4"/><path d="m16 8 4 4-4 4"/><path d="m14 5-4 14"/>', 20), SIDE_X, 634, 30, 30);                  // code
+put(IC('<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z"/>', 20), SIDE_X, 718, 30, 30);       // starred
+put(`<div style="width:46px;height:46px;border-radius:50%;background:#2B2A27;border:1.5px solid rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-family:'Inter';font-weight:600;font-size:16px;color:#F5F4EF;letter-spacing:0.02em">AB</div>`, 503.5, 806, 50, 50);
+// ---- composer (Claude style) in place of the reference input
+const comp = claudeComposer({ width: 456, height: 80, fontSize: 14, font: "'Inter'", border: 'rgba(255,255,255,0.30)', blur: 0,
+  btnBorder: 'rgba(255,255,255,0.28)', muted: 'rgba(255,255,255,0.72)',
+  surface: 'linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06))' });
+Object.assign(comp.style, { left: '561px', top: '744px', boxShadow: '0 6px 18px rgba(10,6,40,0.20)' });
+const ph = document.createElement('span'); ph.textContent = 'Reply to Claude…'; ph.style.color = 'rgba(255,255,255,0.55)';
+comp.parts.text.insertBefore(ph, comp.parts.t);
+document.getElementById('compwrap').appendChild(comp);
+// ---- Claude's reply (same content as the reference), streamed word by word
+const R = [
+  ['p', [['Persistent ', 0], ['sharp lower-back (lumbar) pain', 1], [' usually comes from a strained muscle/ligament, an irritated disc, or a “pinched” nerve — and since you said ', 0], ['persistent + sharp', 1], [', it’s worth being a bit careful.', 0]]],
+  ['h', [['What you can do now (next 48–72 hours)', 0]]],
+  ['li', [['Keep moving gently:', 1], [' short walks around the house; avoid long bed rest.', 0]]],
+  ['li', [['Heat:', 1], [' warm compress 15–20 min, 2–3 times a day (helps spasm and stiffness).', 0]]],
+  ['li', [['Avoid:', 1], [' heavy lifting, bending + twisting together, sudden jerks, long sitting.', 0]]],
+  ['li', [['Support:', 1], [' when sitting, roll a small towel behind your lower back; stand up every 30–45 min.', 0]]],
+  ['li', [['Sleep:', 1], [' side-lying with a pillow between your knees, or on your back with a pillow under your knees.', 0]]],
+  ['li', [['Gentle stretches only if tolerable:', 1], [' knee-to-chest (one leg at a time), child’s pose; stop if pain shoots down.', 0]]],
+  ['h', [['Desi comfort', 0]]],
+  ['li', [['Ajwain potli warm compress', 1], [' (warm ajwain in a cloth) on the lower back for 10–15 min.', 0]]],
+  ['li', [['Haldi doodh', 1], [' at night if it suits you (and no allergy or acid-reflux flare).', 0]]],
+  ['h', [['Watch-outs (get checked urgently)', 0]]],
+  ['p', [['If any of these happen, don’t wait:', 1], [' leg weakness, numbness in the groin/saddle area, loss of urine or stool control, fever with back pain, pain after a fall or accident, or severe unrelenting pain.', 0]]],
+  ['h', [['Who to see', 0]]],
+  ['p', [['Given it’s ', 0], ['persistent sharp lumbar pain', 1], [', an ', 0], ['orthopedics', 1], [' doctor (or a spine specialist) is a good fit.', 0]]],
+];
+const reply = document.getElementById('reply');
+const words = [];   // {el, c0}: span + cumulative char index of its first char
+let cum = 0;
+R.forEach(([t, runs]) => {
+  const b = document.createElement('div'); b.className = 'blk ' + (t === 'h' ? 'h' : t === 'li' ? 'li' : 'p');
+  const prev = R[reply.children.length - 1];
+  if (t === 'p' && reply.children.length > 0 && prev && prev[0] !== 'h') b.style.marginTop = '17px';
+  if (t === 'li') b.style.marginTop = '0px';
+  runs.forEach(([txt, bold]) => {
+    const host = bold ? document.createElement('b') : b;
+    if (bold) b.appendChild(host);
+    txt.split(/(\s+)/).forEach(tok => {
+      if (!tok) return;
+      if (/^\s+$/.test(tok)) { host.appendChild(document.createTextNode(tok)); cum += tok.length; return; }
+      const s = document.createElement('span'); s.className = 'w'; s.textContent = tok; host.appendChild(s);
+      words.push({ el: s, c0: cum, li: t === 'li' ? b : null }); cum += tok.length;
+    });
+  });
+  reply.appendChild(b);
+});
+const TOTAL = cum;
+// reference streaming: [frame a line completes, fraction of the reply text completed]
+const LINES = [[908, 0], [911, 72], [914, 150], [917, 201], [921, 239], [923, 309], [925, 378], [927, 456], [929, 531], [933, 547], [937, 624], [940, 636], [941, 715], [942, 746], [943.5, 758], [944, 832], [945, 842], [946.5, 914], [948, 947], [949, 1019], [951, 1096], [953, 1138], [957, 1148], [959, 1223], [961, 1249]];
+const REF_TOTAL = 1249;
+const SCROLL = {"920": 0.0, "921": 0.12, "922": 0.19, "923": 0.32, "924": 0.19, "925": 0.25, "926": 0.11, "927": 0.11, "928": 0.09, "929": 0.05, "930": -0.3, "931": -0.65, "932": -1.29, "933": -2.6, "934": -4.1, "935": -5.91, "936": -8.54, "937": -11.72, "938": -15.64, "939": -20.11, "940": -25.76, "941": -32.95, "942": -42.08, "943": -53.58, "944": -68.23, "945": -87.46, "946": -113.77, "947": -146.13, "948": -178.62, "949": -204.48, "950": -223.98, "951": -238.81, "952": -250.37, "953": -259.22, "954": -266.48, "955": -272.33, "956": -277.11, "957": -280.88, "958": -284.03, "959": -286.59, "960": -288.6, "961": -290.39, "962": -291.77, "963": -292.56, "964": -293.06, "965": -293.29, "966": -293.21, "967": -293.22, "968": -293.26, "969": -293.23, "970": -293.27, "971": -293.26, "972": -293.18};
+window.renderFlat = async (f) => {
+  const n = kf(f, LINES) / REF_TOTAL * TOTAL;
+  let lastVisible = null;
+  words.forEach(w => {
+    // a word fades in over ~3 frames from lavender to white once the stream passes it
+    if (w.t0 === undefined) {          // frame at which the stream reaches this word
+      const c = w.c0 / TOTAL * REF_TOTAL; let k = 1;
+      while (k < LINES.length - 1 && LINES[k][1] < c) k++;
+      const [fa, ca] = LINES[k - 1], [fb, cb] = LINES[k];
+      w.t0 = fa + (fb - fa) * clamp((c - ca) / Math.max(1e-6, cb - ca));
+    }
+    const a = clamp((f - w.t0) / 3);
+    w.el.style.opacity = a.toFixed(3);
+    w.el.style.color = a >= 1 ? '' : rgba(mixc([196, 186, 255], [250, 249, 245], a));
+    if (a > 0) lastVisible = w;
+    if (w.li) w.li.classList.toggle('on', true);
+  });
+  // bullets appear with their first word
+  document.querySelectorAll('#reply .li').forEach(li => { const first = li.querySelector('.w'); li.style.setProperty('--bo', first ? first.style.opacity : 1); });
+  // the reference scroll curve, rescaled so the end of this (re-typeset) reply plus Claude's mark
+  // settles just above the composer
+  if (window.SC_K === undefined) {
+    const cTop = document.getElementById('content').getBoundingClientRect().top;
+    const bottom = (reply.getBoundingClientRect().bottom - cTop) / K + 8 + 18 + 10;   // + mark + gap
+    window.SC_K = Math.max(0, bottom - 526) / 293.3;
+  }
+  const sc = (SCROLL[f] !== undefined ? SCROLL[f] : 0) * window.SC_K;
+  document.getElementById('content').style.transform = `translateY(${sc}px)`;
+  // Claude's starburst sits under the newest text (spinning while it streams)
+  const sp = document.getElementById('spark');
+  if (n > 0.5) {
+    const rr = lastVisible ? lastVisible.el.getBoundingClientRect() : null;
+    const cr = document.getElementById('content').getBoundingClientRect();
+    const ry = document.getElementById('reply').getBoundingClientRect();
+    const y = rr ? (rr.bottom - cr.top) / K + 8 : 0;
+    sp.style.display = 'block'; sp.style.left = '9px'; sp.style.top = y + 'px';
+    const streaming = n < TOTAL - 0.5;
+    sp.style.transform = `rotate(${(streaming ? f * 14 : 961 * 14 + (f - 961) * 2)}deg)`;
+  } else sp.style.display = 'none';
+};
+window.sceneReady = Promise.all([document.fonts.load("400 14px 'Claude Serif'"), document.fonts.load("600 14px 'Claude Serif'"), document.fonts.load("400 14px 'Inter'"), document.fonts.load("600 16px 'Inter'")]);
+</script>
+</body></html>
