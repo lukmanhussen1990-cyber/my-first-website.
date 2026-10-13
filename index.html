@@ -1,0 +1,1592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Living Brain</title>
+<meta name="description" content="An interactive 3D brain: simulated neurons fire across a procedurally grown cortex.">
+<meta name="theme-color" content="#03050c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+  :root {
+    /* Layout: a full-bleed WebGL specimen with a lab-notebook HUD floating over it —
+       title top-left, controls top-right, region atlas and firing readout docked bottom-left. */
+    --void: #03050c;          /* page + scene background */
+    --void-glow: #0b1433;     /* backdrop glow behind the brain */
+    --ink: #e8ecfb;
+    --muted: #949ec2;
+    --line: rgba(146, 166, 230, 0.2);
+    --glass: rgba(7, 11, 26, 0.64);
+    --cortex: #4256c4;        /* gyrus crowns */
+    --cortex-deep: #050820;   /* sulcus floors */
+    --rim: #7f9dff;           /* grazing light on the cortex */
+    --signal: #7dffc0;        /* calcium-imaging green: a neuron firing */
+    --wave: #ffb45e;          /* amber: a thought rippling across the cortex */
+    --frontal: #ff9a52;
+    --parietal: #ffd257;
+    --temporal: #ff6f9c;
+    --occipital: #a78bff;
+    --cerebellum: #4fe3c1;
+    --brainstem: #62b6ff;
+    --display: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --gutter: clamp(16px, 3vw, 40px);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: var(--void);
+    color: var(--ink);
+    font: 400 15px/1.5 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #scene {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+    touch-action: none;
+  }
+  #scene.is-dragging { cursor: grabbing; }
+  #scene.is-over-brain { cursor: pointer; }
+
+  /* ---------- HUD ---------- */
+  .hud {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "head tools"
+      ".    ."
+      "dock .";
+    gap: 20px 32px;
+    padding-inline: max(var(--gutter), env(safe-area-inset-left, 0px)) max(var(--gutter), env(safe-area-inset-right, 0px));
+    padding-block: calc(var(--gutter) + env(safe-area-inset-top, 0px)) calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
+    pointer-events: none;
+  }
+
+  .masthead { grid-area: head; max-width: 31rem; }
+  .eyebrow {
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font: 500 0.68rem/1.2 var(--mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .eyebrow::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--signal);
+    box-shadow: 0 0 10px var(--signal);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { opacity: 0.25; } }
+
+  h1 {
+    margin: 0;
+    font: italic 500 clamp(2.75rem, 6.4vw, 4.9rem)/0.9 var(--display);
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  .lede {
+    margin: 16px 0 0;
+    max-width: 36ch;
+    color: var(--muted);
+    font-size: 0.95rem;
+    text-wrap: pretty;
+  }
+
+  .tools {
+    grid-area: tools;
+    align-self: start;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-content: flex-start;
+    gap: 8px;
+    pointer-events: auto;
+  }
+  .tool, .region {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font: 500 0.7rem/1 var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--glass);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+  }
+  .tool { padding: 11px 13px; }
+  .tool:hover { color: var(--ink); border-color: color-mix(in srgb, var(--ink) 40%, transparent); }
+  .tool[aria-pressed="true"] { color: var(--signal); border-color: color-mix(in srgb, var(--signal) 70%, transparent); }
+  .tool-spark { color: var(--wave); border-color: color-mix(in srgb, var(--wave) 55%, transparent); }
+  .tool-spark:hover { color: var(--wave); border-color: var(--wave); background: color-mix(in srgb, var(--wave) 12%, var(--glass)); }
+  .tool svg { width: 12px; height: 12px; flex: none; }
+  .tool .short { display: none; }
+
+  .dock {
+    grid-area: dock;
+    align-self: end;
+    width: min(100%, 23rem);
+    display: grid;
+    gap: 10px;
+    pointer-events: auto;
+  }
+  .atlas { display: grid; gap: 10px; }
+  .panel {
+    background: var(--glass);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  .card { --c: var(--signal); padding: 15px 18px 17px; }
+  .card-latin {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font: 400 0.68rem/1.3 var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .card-latin::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 12px var(--c);
+    transition: background-color 0.3s, box-shadow 0.3s;
+  }
+  .card-name { margin: 8px 0 6px; font: italic 500 1.85rem/1 var(--display); }
+  .card-text { margin: 0; min-height: 4.5em; color: var(--muted); font-size: 0.88rem; line-height: 1.5; }
+
+  .regions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .region { --c: var(--ink); width: 100%; padding: 10px 12px; text-align: left; }
+  .region::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--c);
+  }
+  .region:hover, .region.is-active {
+    color: var(--ink);
+    border-color: color-mix(in srgb, var(--c) 65%, transparent);
+    background: color-mix(in srgb, var(--c) 14%, var(--glass));
+  }
+  .region[aria-pressed="true"] { color: var(--ink); border-color: var(--c); }
+
+  .readout {
+    display: grid;
+    grid-template-columns: 5.75rem minmax(0, 1fr);
+    align-items: center;
+    gap: 16px;
+    padding: 11px 16px;
+  }
+  .readout canvas { display: block; width: 100%; height: 34px; }
+  .stats { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .stats div { display: grid; gap: 5px; min-width: 0; }
+  .stats dt {
+    font: 400 0.66rem/1.2 var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .stats dd { margin: 0; font: 500 0.86rem/1.1 var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+  .stats .live { color: var(--signal); }
+
+  :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+  .loader {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    padding-inline: var(--gutter);
+    pointer-events: none;
+    text-align: center;
+    font: 500 0.72rem/1.6 var(--mono);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    transition: opacity 0.8s;
+  }
+  .loader.is-done { opacity: 0; }
+  /* when the 3D engine can't run, explain why and hide the controls that need it */
+  .engine-failed .loader {
+    font: 400 1rem/1.55 var(--sans);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink);
+  }
+  .engine-failed .loader > span { max-width: 34ch; }
+  .engine-failed .tools, .engine-failed .dock { display: none; }
+  .engine-failed .eyebrow::before { animation: none; background: var(--muted); box-shadow: none; }
+
+  /* stacked layout: phones, portrait tablets and tall windows (keep in sync with STACKED in the script) */
+  @media (max-width: 680px), (max-aspect-ratio: 4/5) {
+    .hud {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      grid-template-areas: "head" "tools" "." "dock";
+      gap: 12px;
+    }
+    h1 { font-size: 2.7rem; }
+    .lede { margin-top: 10px; font-size: 0.86rem; }
+    .tools { justify-content: flex-start; }
+    .tool { padding: 10px 11px; }
+    .tool .long { display: none; }
+    .tool .short { display: inline; }
+    .dock { width: 100%; }
+    .card { padding: 12px 14px 13px; }
+    .card-name { font-size: 1.55rem; margin: 6px 0 4px; }
+    .card-text { min-height: 3em; font-size: 0.82rem; }
+    .regions {
+      display: flex;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .regions::-webkit-scrollbar { display: none; }
+    .regions li { flex: none; }
+    .readout { grid-template-columns: 5rem minmax(0, 1fr); gap: 12px; padding: 9px 14px; }
+    .readout canvas { height: 28px; }
+  }
+  @media (max-height: 640px) and (min-width: 681px) {
+    .lede { display: none; }
+  }
+  @media (max-height: 520px) and (min-width: 681px) {
+    h1 { font-size: clamp(2.2rem, 11vh, 3.2rem); }
+    .card-text, .readout { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .eyebrow::before { animation: none; }
+  }
+</style>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+    }
+  }
+</script>
+</head>
+<body>
+<canvas id="scene" role="img" aria-label="Interactive 3D brain. Drag to rotate, scroll or pinch to zoom, click to spark a thought."></canvas>
+
+<div class="hud">
+  <header class="masthead">
+    <p class="eyebrow">Live neural simulation</p>
+    <h1>The Living Brain</h1>
+    <p class="lede" id="lede">Every fold is grown from noise, and every flash is a simulated neuron firing. Drag to turn the brain, scroll to zoom, and click it to spark a thought.</p>
+  </header>
+
+  <div class="tools" role="toolbar" aria-label="Animation controls">
+    <button type="button" class="tool" id="pause" aria-pressed="false">
+      <svg viewBox="0 0 12 12" aria-hidden="true"><path fill="currentColor" d="M2 1h3v10H2zM7 1h3v10H7z"/></svg>
+      <span>Pause</span>
+    </button>
+    <button type="button" class="tool" id="tint" aria-pressed="false">
+      <svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path fill="currentColor" d="M6 1.5a4.5 4.5 0 0 1 0 9z"/></svg>
+      <span class="long">Color regions</span><span class="short">Regions</span>
+    </button>
+    <button type="button" class="tool tool-spark" id="spark">
+      <svg viewBox="0 0 12 12" aria-hidden="true"><path fill="currentColor" d="M7 0 2 7h3.5L4.5 12 10 4.6H6.4z"/></svg>
+      <span class="long">Spark a thought</span><span class="short">Spark</span>
+    </button>
+  </div>
+
+  <div class="dock">
+    <section class="atlas" aria-label="Brain regions">
+      <div class="card panel" id="card" aria-live="polite">
+        <p class="card-latin" id="card-latin">Encephalon</p>
+        <h2 class="card-name" id="card-name">Whole brain</h2>
+        <p class="card-text" id="card-text">Hover the brain or pick a region below to see what each part does.</p>
+      </div>
+      <ul class="regions">
+        <li><button type="button" class="region" data-region="0" aria-pressed="false" style="--c: var(--frontal)">Frontal</button></li>
+        <li><button type="button" class="region" data-region="1" aria-pressed="false" style="--c: var(--parietal)">Parietal</button></li>
+        <li><button type="button" class="region" data-region="3" aria-pressed="false" style="--c: var(--temporal)">Temporal</button></li>
+        <li><button type="button" class="region" data-region="2" aria-pressed="false" style="--c: var(--occipital)">Occipital</button></li>
+        <li><button type="button" class="region" data-region="4" aria-pressed="false" style="--c: var(--cerebellum)">Cerebellum</button></li>
+        <li><button type="button" class="region" data-region="5" aria-pressed="false" style="--c: var(--brainstem)">Brainstem</button></li>
+      </ul>
+    </section>
+    <aside class="readout panel" aria-label="Network activity">
+      <canvas id="trace" aria-hidden="true"></canvas>
+      <dl class="stats">
+        <div><dt>Firing</dt><dd class="live"><span id="rate">0</span> Hz</dd></div>
+        <div><dt>Neurons</dt><dd id="neurons">–</dd></div>
+        <div><dt>Synapses</dt><dd id="synapses">–</dd></div>
+      </dl>
+    </aside>
+  </div>
+</div>
+
+<div class="loader" id="loader" role="status">Growing the cortex…</div>
+<noscript>
+  <style>#loader, .tools, .dock { display: none; } .eyebrow::before { animation: none; }</style>
+  <p class="loader">This animation needs JavaScript turned on.</p>
+</noscript>
+<script>
+  // If three.js never arrives (offline, blocked CDN), say so instead of waiting forever.
+  setTimeout(() => {
+    const loader = document.getElementById('loader');
+    if (loader.textContent !== 'Growing the cortex…') return;
+    document.documentElement.classList.add('engine-failed');
+    const message = document.createElement('span');
+    message.textContent = 'The 3D engine didn’t load. Check your internet connection, then refresh the page.';
+    loader.replaceChildren(message);
+  }, 15000);
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
+
+// ===========================================================================
+// Setup & helpers
+// ===========================================================================
+const $ = (selector) => document.querySelector(selector);
+const rootStyle = getComputedStyle(document.documentElement);
+const token = (name) => rootStyle.getPropertyValue(name).trim();
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const lowPower = matchMedia('(max-width: 760px)').matches || (navigator.hardwareConcurrency || 8) <= 4;
+const STACKED = matchMedia('(max-width: 680px), (max-aspect-ratio: 4/5)');
+
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smoothstep = (a, b, x) => {
+  const t = clamp((x - a) / (b - a), 0, 1);
+  return t * t * (3 - 2 * t);
+};
+
+// Seeded random numbers, so the same brain grows on every visit.
+function mulberry32(seed) {
+  return () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rand = mulberry32(86e9); // ~86 billion neurons in a human brain
+const simplex = new SimplexNoise({ random: rand });
+const noise = (x, y, z) => simplex.noise3d(x, y, z);
+
+// ===========================================================================
+// Regions
+// ===========================================================================
+const FRONTAL = 0, PARIETAL = 1, OCCIPITAL = 2, TEMPORAL = 3, CEREBELLUM = 4, BRAINSTEM = 5;
+// Cerebrum vertices carry a part code instead of a region; the cortex shader works out
+// frontal / parietal / occipital / temporal per pixel so lobe borders stay crisp.
+const HEMISPHERE_PART = 10, TEMPORAL_PART = 11;
+const REGIONS = [
+  { name: 'Frontal lobe', latin: 'Lobus frontalis', color: token('--frontal'),
+    text: 'Plans, decides and starts movement. The motor cortex runs along its back edge, and Broca’s area helps you form speech.' },
+  { name: 'Parietal lobe', latin: 'Lobus parietalis', color: token('--parietal'),
+    text: 'Reads touch, temperature and pain, and keeps a running map of where your body is in space.' },
+  { name: 'Occipital lobe', latin: 'Lobus occipitalis', color: token('--occipital'),
+    text: 'Home of the visual cortex. It turns signals from the eyes into edges, color and motion.' },
+  { name: 'Temporal lobe', latin: 'Lobus temporalis', color: token('--temporal'),
+    text: 'Handles hearing and understanding language, and with the hippocampus tucked inside, forms new memories.' },
+  { name: 'Cerebellum', latin: 'Cerebellum', color: token('--cerebellum'),
+    text: 'Fine-tunes balance, posture and the timing of every movement. It holds about 80% of the brain’s neurons.' },
+  { name: 'Brainstem', latin: 'Truncus encephali', color: token('--brainstem'),
+    text: 'Runs breathing, heart rate and sleep, and relays every signal traveling between the brain and the body.' },
+];
+const touch = matchMedia('(hover: none)').matches;
+const WHOLE_BRAIN = {
+  name: 'Whole brain', latin: 'Encephalon', color: token('--signal'),
+  text: `${touch ? 'Tap' : 'Hover'} the brain or pick a region below to see what each part does.`,
+};
+if (touch) {
+  $('#lede').textContent = 'Every fold is grown from noise, and every flash is a simulated neuron firing. Drag to turn the brain, pinch to zoom, and tap it to spark a thought.';
+}
+
+// ===========================================================================
+// Procedural anatomy
+// Brain-local axes: +x = right, +y = up, +z = front. Every part starts as a
+// unit icosphere, is bent into its base shape, then folded with noise.
+// ===========================================================================
+// Unit icospheres, subdivided once per detail level and shared: each part copies the
+// positions (they get bent) but reuses the triangle index.
+const unitSpheres = new Map();
+function icosphere(level) {
+  if (!unitSpheres.has(level)) unitSpheres.set(level, subdivide(level));
+  const sphere = unitSpheres.get(level);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(sphere.positions.slice(), 3));
+  geo.setIndex(sphere.index);
+  return geo;
+}
+
+function subdivide(level) {
+  const t = (1 + Math.sqrt(5)) / 2;
+  const verts = [-1, t, 0, 1, t, 0, -1, -t, 0, 1, -t, 0, 0, -1, t, 0, 1, t, 0, -1, -t, 0, 1, -t, t, 0, -1, t, 0, 1, -t, 0, -1, -t, 0, 1];
+  for (let i = 0; i < verts.length; i += 3) {
+    const l = Math.hypot(verts[i], verts[i + 1], verts[i + 2]);
+    verts[i] /= l; verts[i + 1] /= l; verts[i + 2] /= l;
+  }
+  let faces = Uint32Array.from([0, 11, 5, 0, 5, 1, 0, 1, 7, 0, 7, 10, 0, 10, 11, 1, 5, 9, 5, 11, 4, 11, 10, 2, 10, 7, 6, 7, 1, 8,
+    3, 9, 4, 3, 4, 2, 3, 2, 6, 3, 6, 8, 3, 8, 9, 4, 9, 5, 2, 4, 11, 6, 2, 10, 8, 6, 7, 9, 8, 1]);
+  for (let l = 0; l < level; l++) {
+    // split every triangle into four, reusing the midpoint of each shared edge
+    const cache = new Map();
+    const next = new Uint32Array(faces.length * 4);
+    const mid = (a, b) => {
+      const key = a < b ? a * 4194304 + b : b * 4194304 + a;
+      let m = cache.get(key);
+      if (m === undefined) {
+        const x = verts[a * 3] + verts[b * 3], y = verts[a * 3 + 1] + verts[b * 3 + 1], z = verts[a * 3 + 2] + verts[b * 3 + 2];
+        const len = Math.hypot(x, y, z);
+        m = verts.length / 3;
+        verts.push(x / len, y / len, z / len);
+        cache.set(key, m);
+      }
+      return m;
+    };
+    for (let f = 0, o = 0; f < faces.length; f += 3, o += 12) {
+      const a = faces[f], b = faces[f + 1], c = faces[f + 2];
+      const ab = mid(a, b), bc = mid(b, c), ca = mid(c, a);
+      next[o] = a; next[o + 1] = ab; next[o + 2] = ca;
+      next[o + 3] = b; next[o + 4] = bc; next[o + 5] = ab;
+      next[o + 6] = c; next[o + 7] = ca; next[o + 8] = bc;
+      next[o + 9] = ab; next[o + 10] = bc; next[o + 11] = ca;
+    }
+    faces = next;
+  }
+  return { positions: new Float32Array(verts), index: new THREE.BufferAttribute(faces, 1) };
+}
+
+// shape(v) moves a unit-sphere point to the part's base surface.
+// sculpt(p, n, out) returns a displacement along the normal (out.h), how close
+// the point is to a gyrus crown (out.fold, 0 = deep sulcus), how hidden it is
+// from the light (out.ao, 1 = fully occluded) and which region it belongs to.
+function buildPart(level, shape, sculpt) {
+  const geo = icosphere(level);
+  const pos = geo.attributes.position.array;
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.length; i += 3) {
+    v.set(pos[i], pos[i + 1], pos[i + 2]);
+    shape(v);
+    pos[i] = v.x; pos[i + 1] = v.y; pos[i + 2] = v.z;
+  }
+  geo.computeVertexNormals();
+  if (!sculpt) return geo;
+
+  const nrm = geo.attributes.normal.array;
+  const smooth = nrm.slice(); // normals of the unfolded surface light the silhouette
+  const count = pos.length / 3;
+  const fold = new Float32Array(count);
+  const shade = new Float32Array(count);
+  const region = new Float32Array(count);
+  const p = new THREE.Vector3(), n = new THREE.Vector3();
+  const out = { h: 0, fold: 0, ao: 0, region: 0 };
+  for (let i = 0; i < count; i++) {
+    const k = i * 3;
+    p.set(pos[k], pos[k + 1], pos[k + 2]);
+    n.set(nrm[k], nrm[k + 1], nrm[k + 2]);
+    out.ao = 0;
+    sculpt(p, n, out);
+    pos[k] += n.x * out.h; pos[k + 1] += n.y * out.h; pos[k + 2] += n.z * out.h;
+    fold[i] = out.fold;
+    shade[i] = clamp(out.ao, 0, 1);
+    region[i] = out.region;
+  }
+  geo.setAttribute('aSmooth', new THREE.BufferAttribute(smooth, 3));
+  geo.setAttribute('aFold', new THREE.BufferAttribute(fold, 1));
+  geo.setAttribute('aShade', new THREE.BufferAttribute(shade, 1));
+  geo.setAttribute('aRegion', new THREE.BufferAttribute(region, 1));
+  geo.computeVertexNormals();
+  geo.computeBoundingSphere();
+  return geo;
+}
+
+const HEMI_X = 0.218;                          // each hemisphere's center, measured from the midline
+const TEMPORAL_C = { x: 0.545, y: -0.27, z: 0 };
+const CEREBELLUM_C = { y: -0.54, z: -0.6 };
+
+// The central sulcus divides frontal from parietal; this line (seen from the side) traces it.
+// Both boundary lines are mirrored in the cortex shader.
+const centralSulcusZ = (y) => 0.19 - 0.34 * Math.max(y + 0.02, 0) + 0.022 * Math.sin(y * 13 + 1.3);
+const occipitalZ = (y) => -0.57 - 0.18 * (y - 0.1);
+const hemisphereRegion = (p) => (p.z > centralSulcusZ(p.y) ? FRONTAL : p.z < occipitalZ(p.y) ? OCCIPITAL : PARIETAL);
+const temporalRegion = (p) => (p.z < occipitalZ(p.y) ? OCCIPITAL : TEMPORAL);
+const temporalBend = (z) => 0.12 * smoothstep(-0.05, -0.6, z) - 0.05 * smoothstep(0.1, 0.5, z);
+
+function hemisphereShape(side) {
+  return (v) => {
+    const dx = v.x * side, dy = v.y, dz = v.z;
+    const z = dz >= 0 ? dz * 0.97 : dz * 1.04;
+    // flat medial wall facing the other hemisphere, rounded outer side
+    let x = dx >= 0 ? dx * 0.6 : -0.2 * Math.tanh((-dx * 0.6) / 0.2);
+    let y = dy >= 0 ? dy * 0.7 : -0.34 * Math.tanh((-dy * 0.52) / 0.34);
+    // widest across the parietal lobes, narrower at the frontal and occipital poles
+    if (x > 0) x *= 1 - 0.13 * smoothstep(-0.1, 1.0, z) - 0.3 * smoothstep(-0.3, -1.05, z);
+    // the crown peaks just behind the middle; the occipital pole tapers and dips
+    if (y > 0) y *= 1 - 0.1 * smoothstep(0.2, 1.0, z) - 0.26 * smoothstep(-0.35, -1.05, z);
+    else y *= 1 - 0.45 * smoothstep(0.25, 0.95, z) - 0.3 * smoothstep(-0.45, -1.0, z);
+    v.set((x + HEMI_X) * side, y + 0.02 - 0.05 * smoothstep(-0.6, -1.05, z), z);
+  };
+}
+
+function temporalShape(side) {
+  return (v) => {
+    const dx = v.x * side, dy = v.y, dz = v.z;
+    const z = dz >= 0 ? dz * 0.5 : dz * 0.62;
+    const taper = 1 - 0.38 * smoothstep(0, 0.5, z);   // narrows to the temporal pole
+    const x = dx * 0.25 * taper - 0.07 * smoothstep(0.15, 0.5, z);
+    const y = dy * (dy > 0 ? 0.21 : 0.2) * taper + temporalBend(z);
+    v.set((x + TEMPORAL_C.x) * side, y + TEMPORAL_C.y, z + TEMPORAL_C.z);
+  };
+}
+
+function cerebellumShape(v) {
+  // two hemispheres either side of the vermis, flat on top where the occipital lobes rest
+  const lobes = 1 - 0.17 * Math.exp(-((v.x / 0.24) ** 2));
+  v.set(v.x * 0.52, v.y * (v.y > 0 ? 0.19 : 0.26) * lobes + CEREBELLUM_C.y, v.z * 0.35 * lobes + CEREBELLUM_C.z);
+}
+
+function brainstemShape(v) {
+  const u = (v.y + 1) / 2;                              // 0 at the medulla, 1 at the midbrain
+  const rho = Math.hypot(v.x, v.z);
+  const k = rho > 1e-6 ? Math.pow(rho, 0.3) / rho : 0;  // blunt, capsule-like ends
+  const r = 0.1 + 0.035 * u + 0.055 * Math.exp(-(((u - 0.62) / 0.15) ** 2));
+  const front = v.z > 0 ? 1.12 + 0.3 * Math.exp(-(((u - 0.62) / 0.14) ** 2)) : 0.9; // the pons bulges forward
+  v.set(v.x * k * r, -1.12 + u * 0.9, v.z * k * r * front - 0.34 + u * 0.24);
+}
+
+// Gyri: ridged, domain-warped noise. |noise| is near zero along thin lines,
+// which become the sulci; the rounded plateaus between them are the gyri.
+function gyri(p, stretchZ) {
+  const wf = 1.7, wa = 0.15;
+  const x = p.x + wa * noise(p.x * wf + 17.1, p.y * wf, p.z * wf);
+  const y = p.y + wa * noise(p.x * wf, p.y * wf + 31.7, p.z * wf);
+  const z = p.z + wa * noise(p.x * wf, p.y * wf, p.z * wf + 47.3);
+  const f = 4.3;
+  const n1 = noise(x * f, y * f, z * f * stretchZ);
+  const n2 = noise(x * f * 2.2 + 5.3, y * f * 2.2 - 2.1, z * f * 2.2 + 8.7);
+  return Math.pow(Math.abs(n1), 0.5) * 0.85 + Math.pow(Math.abs(n2), 0.6) * 0.15;
+}
+
+function sculptHemisphere(side) {
+  return (p, n, out) => {
+    // frontal gyri run front to back
+    let g = gyri(p, lerp(1, 0.62, smoothstep(0.15, 0.6, p.z)));
+    // the pre- and post-central gyri run parallel to the central sulcus
+    const d = (p.z - centralSulcusZ(p.y)) * 0.947;
+    const along = smoothstep(-0.08, 0.06, p.y);
+    const band = Math.exp(-((d / 0.17) ** 2)) * along;
+    const parallel = Math.pow(Math.abs(Math.sin((d / 0.105) * Math.PI)), 0.5);
+    g = lerp(g, parallel, band * 0.9);
+    const groove = Math.exp(-((d / 0.02) ** 2)) * along;
+    const medial = smoothstep(0.3, 0.85, -n.x * side);
+    out.h = 0.056 * (1 - 0.7 * medial) * (g - 0.55) - 0.035 * groove;
+    out.fold = g * (1 - 0.85 * groove);
+    // the walls of the midline fissure and the overhang above the temporal lobe sit in shadow
+    const overhang = smoothstep(-0.05, -0.6, n.y) * smoothstep(0.35, 0.6, p.x * side) * smoothstep(-0.3, -0.1, p.y);
+    out.ao = medial * 0.95 + overhang * 0.6 + smoothstep(-0.45, -0.9, n.y) * 0.5;
+    out.region = HEMISPHERE_PART;
+  };
+}
+
+function sculptTemporal(p, n, out) {
+  const g = gyri(p, 0.5); // temporal gyri run lengthwise too
+  out.h = 0.05 * (g - 0.55);
+  out.fold = g;
+  out.ao = smoothstep(0.05, 0.6, n.y) * 0.8; // the floor of the lateral fissure
+  out.region = TEMPORAL_PART;
+}
+
+// Folia: thin leaves stacked like pages, bending with the cerebellum's curve,
+// cut by the deeper horizontal fissure and a groove down the vermis.
+function sculptCerebellum(p, n, out) {
+  const ly = p.y - CEREBELLUM_C.y, lz = p.z - CEREBELLUM_C.z;
+  const bent = ly + 0.3 * lz * lz + 0.1 * p.x * p.x + 0.012 * noise(p.x * 3.1 + 3.1, p.y * 3.1, p.z * 3.1);
+  const g = Math.pow(Math.abs(Math.sin((bent / 0.03) * Math.PI)), 0.6);
+  const fissure = Math.exp(-(((bent + 0.035) / 0.014) ** 2));
+  const vermis = Math.exp(-((p.x / 0.05) ** 2)) * smoothstep(0.05, -0.25, lz);
+  out.h = 0.012 * (g - 0.5) - 0.022 * fissure - 0.035 * vermis;
+  out.fold = 0.2 + 0.7 * g * (1 - fissure) * (1 - 0.7 * vermis);
+  out.ao = smoothstep(0.25, 0.85, n.y) * 0.75 + smoothstep(0.35, 0.9, n.z) * 0.6 + vermis * 0.4;
+  out.region = CEREBELLUM;
+}
+
+function sculptBrainstem(p, n, out) {
+  const s = noise(p.x * 7, p.y * 1.2, p.z * 7);
+  out.h = 0.006 * s;
+  out.fold = 0.7 + 0.2 * s;
+  out.ao = smoothstep(-0.55, -0.3, p.y) * 0.8; // where it disappears into the cerebrum
+  out.region = BRAINSTEM;
+}
+
+function classify(part, p) {
+  if (part === 'hemi') return hemisphereRegion(p);
+  if (part === 'temporal') return temporalRegion(p);
+  return part === 'cerebellum' ? CEREBELLUM : BRAINSTEM;
+}
+
+function insideTemporal(p, side) {
+  const z = p.z - TEMPORAL_C.z;
+  const lx = (p.x * side - TEMPORAL_C.x) / 0.28;
+  const ly = (p.y - TEMPORAL_C.y - temporalBend(z)) / 0.25;
+  const lz = z / 0.62;
+  return lx * lx + ly * ly + lz * lz < 1;
+}
+function insideCerebellum(p) {
+  const lx = p.x / 0.55, ly = (p.y - CEREBELLUM_C.y) / 0.28, lz = (p.z - CEREBELLUM_C.z) / 0.37;
+  return lx * lx + ly * ly + lz * lz < 1;
+}
+
+// Which vertices make good homes for a neuron: on a gyrus crown and in view.
+function visibleSite(part, side, p, n, fold) {
+  if (fold < 0.5) return false;
+  if (part === 'hemi') return n.x * side > -0.4 && n.y > -0.55 && !insideTemporal(p, side);
+  if (part === 'temporal') return n.y < 0.35 && n.x * side > -0.15;
+  if (part === 'cerebellum') return n.z < 0.35 && n.y < 0.75;
+  return p.y < -0.4 && !insideCerebellum(p);
+}
+
+// ===========================================================================
+// Neural network: neurons sit on the cortex, synapses link near neighbors.
+// A neuron that fires sends pulses down its synapses; when a pulse arrives
+// the next neuron may fire in turn, unless it is still refractory.
+// ===========================================================================
+function wireNetwork(parts) {
+  const MIN = 0.068, LINK = 0.135, LINKS_PER_NEURON = 3;
+  // a hash grid of MIN-sized cells keeps neighbor searches local
+  const grid = new Map();
+  const cell = (v) => Math.floor(v / MIN);
+  const cellKey = (ix, iy, iz) => ((ix + 64) * 128 + (iy + 64)) * 128 + (iz + 64);
+  const pos = [], region = [], group = [];
+  const p = new THREE.Vector3(), n = new THREE.Vector3();
+
+  for (const part of parts) {
+    const P = part.geo.attributes.position.array;
+    const N = part.geo.attributes.normal.array;
+    const F = part.geo.attributes.aFold.array;
+    // Subdivision keeps earlier vertices first, so the first 40,962 of any finer sphere
+    // are an evenly spread level-6 sphere: plenty of candidates for neurons MIN apart.
+    const order = new Uint32Array(Math.min(P.length / 3, 40962));
+    for (let i = 0; i < order.length; i++) order[i] = i;
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      const t = order[i]; order[i] = order[j]; order[j] = t;
+    }
+    let misses = 0; // once the part is full, candidates only ever collide; stop looking
+    for (const i of order) {
+      if (misses > 2500) break;
+      p.fromArray(P, i * 3);
+      n.fromArray(N, i * 3);
+      if (!visibleSite(part.key, part.side, p, n, F[i])) continue;
+      const home = classify(part.key, p);
+      p.addScaledVector(n, 0.014);
+      const cx = cell(p.x), cy = cell(p.y), cz = cell(p.z);
+      let free = true; // keep neurons at least MIN apart
+      for (let a = -1; a <= 1 && free; a++) for (let b = -1; b <= 1 && free; b++) for (let c = -1; c <= 1 && free; c++) {
+        const bucket = grid.get(cellKey(cx + a, cy + b, cz + c));
+        if (!bucket) continue;
+        for (const j of bucket) {
+          const dx = pos[j * 3] - p.x, dy = pos[j * 3 + 1] - p.y, dz = pos[j * 3 + 2] - p.z;
+          if (dx * dx + dy * dy + dz * dz < MIN * MIN) { free = false; break; }
+        }
+      }
+      if (!free) { misses++; continue; }
+      misses = 0;
+      const id = pos.length / 3;
+      pos.push(p.x, p.y, p.z);
+      region.push(home);
+      group.push(part.group);
+      const key = cellKey(cx, cy, cz);
+      if (!grid.has(key)) grid.set(key, []);
+      grid.get(key).push(id);
+    }
+  }
+
+  const count = pos.length / 3;
+  const edgeA = [], edgeB = [];
+  const seen = new Set();
+  for (let i = 0; i < count; i++) {
+    const x = pos[i * 3], y = pos[i * 3 + 1], z = pos[i * 3 + 2];
+    const cx = cell(x), cy = cell(y), cz = cell(z);
+    const near = []; // synapses only join neurons on the same hemisphere or part
+    for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) for (let c = -2; c <= 2; c++) {
+      const bucket = grid.get(cellKey(cx + a, cy + b, cz + c));
+      if (!bucket) continue;
+      for (const j of bucket) {
+        if (j === i || group[j] !== group[i]) continue;
+        const dx = pos[j * 3] - x, dy = pos[j * 3 + 1] - y, dz = pos[j * 3 + 2] - z;
+        const d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 < LINK * LINK) near.push(d2, j);
+      }
+    }
+    const ranked = [];
+    for (let k = 0; k < near.length; k += 2) ranked.push([near[k], near[k + 1]]);
+    ranked.sort((u, w) => u[0] - w[0]);
+    for (let k = 0; k < Math.min(LINKS_PER_NEURON, ranked.length); k++) {
+      const j = ranked[k][1];
+      const key = i < j ? i * count + j : j * count + i;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      edgeA.push(i);
+      edgeB.push(j);
+    }
+  }
+  return { pos: new Float32Array(pos), region: Int8Array.from(region), edgeA: Int32Array.from(edgeA), edgeB: Int32Array.from(edgeB) };
+}
+
+function createNetwork(wiring, uniforms) {
+  const { pos, region, edgeA, edgeB } = wiring;
+  const N = pos.length / 3, E = edgeA.length;
+  const MAX_PULSES = 1400, REFRACTORY = 0.9;
+
+  const adjacency = Array.from({ length: N }, () => []);
+  const edgeLength = new Float32Array(E);
+  for (let e = 0; e < E; e++) {
+    adjacency[edgeA[e]].push(e);
+    adjacency[edgeB[e]].push(e);
+    const a = edgeA[e] * 3, b = edgeB[e] * 3;
+    edgeLength[e] = Math.hypot(pos[a] - pos[b], pos[a + 1] - pos[b + 1], pos[a + 2] - pos[b + 2]);
+  }
+  const byRegion = REGIONS.map(() => []);
+  for (let i = 0; i < N; i++) byRegion[region[i]].push(i);
+
+  // GPU buffers
+  const flash = new Float32Array(N);
+  const seeds = new Float32Array(N).map(() => Math.random());
+  const nodeGeo = new THREE.BufferGeometry();
+  nodeGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  nodeGeo.setAttribute('aFlash', new THREE.BufferAttribute(flash, 1).setUsage(THREE.DynamicDrawUsage));
+  nodeGeo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1));
+
+  const linePos = new Float32Array(E * 6);
+  const glow = new Float32Array(E * 2);
+  for (let e = 0; e < E; e++) {
+    linePos.set(pos.subarray(edgeA[e] * 3, edgeA[e] * 3 + 3), e * 6);
+    linePos.set(pos.subarray(edgeB[e] * 3, edgeB[e] * 3 + 3), e * 6 + 3);
+  }
+  const lineGeo = new THREE.BufferGeometry();
+  lineGeo.setAttribute('position', new THREE.BufferAttribute(linePos, 3));
+  lineGeo.setAttribute('aGlow', new THREE.BufferAttribute(glow, 1).setUsage(THREE.DynamicDrawUsage));
+
+  const pulsePos = new Float32Array(MAX_PULSES * 3);
+  const pulseGeo = new THREE.BufferGeometry();
+  pulseGeo.setAttribute('position', new THREE.BufferAttribute(pulsePos, 3).setUsage(THREE.DynamicDrawUsage));
+  pulseGeo.setDrawRange(0, 0);
+
+  const additive = { transparent: true, depthWrite: false, blending: THREE.AdditiveBlending };
+  const nodes = new THREE.Points(nodeGeo, new THREE.ShaderMaterial({
+    ...additive,
+    uniforms,
+    vertexShader: /* glsl */ `
+      attribute float aFlash;
+      attribute float aSeed;
+      uniform float uTime;
+      uniform float uScale;
+      uniform float uFade;
+      varying float vFlash;
+      varying float vAlpha;
+      void main() {
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        float twinkle = 0.55 + 0.45 * sin(uTime * (0.7 + aSeed * 1.6) + aSeed * 31.0);
+        vFlash = aFlash;
+        vAlpha = (0.18 * twinkle + 1.0 * aFlash) * uFade;
+        gl_PointSize = (0.022 + 0.04 * aFlash) * uScale / -mv.z;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uDim;
+      uniform vec3 uHot;
+      varying float vFlash;
+      varying float vAlpha;
+      void main() {
+        float a = smoothstep(0.5, 0.05, length(gl_PointCoord - 0.5));
+        vec3 col = mix(uDim, uHot, clamp(vFlash * 1.5, 0.0, 1.0));
+        gl_FragColor = vec4(col * a * a * vAlpha, 1.0);
+      }`,
+  }));
+  const synapses = new THREE.LineSegments(lineGeo, new THREE.ShaderMaterial({
+    ...additive,
+    uniforms,
+    vertexShader: /* glsl */ `
+      attribute float aGlow;
+      varying float vGlow;
+      void main() {
+        vGlow = aGlow;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uDim;
+      uniform vec3 uHot;
+      uniform float uFade;
+      varying float vGlow;
+      void main() {
+        gl_FragColor = vec4((uDim * 0.035 + uHot * vGlow * 0.8) * uFade, 1.0);
+      }`,
+  }));
+  const pulses = new THREE.Points(pulseGeo, new THREE.ShaderMaterial({
+    ...additive,
+    uniforms,
+    vertexShader: /* glsl */ `
+      uniform float uScale;
+      void main() {
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = 0.042 * uScale / -mv.z;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uHot;
+      uniform float uFade;
+      void main() {
+        float a = smoothstep(0.5, 0.0, length(gl_PointCoord - 0.5));
+        gl_FragColor = vec4(uHot * a * a * 1.7 * uFade, 1.0);
+      }`,
+  }));
+  const group = new THREE.Group();
+  group.add(synapses, nodes, pulses);
+
+  // simulation state
+  const lastFire = new Float32Array(N).fill(-10);
+  const pEdge = new Int32Array(MAX_PULSES), pFrom = new Int32Array(MAX_PULSES);
+  const pT = new Float32Array(MAX_PULSES), pRate = new Float32Array(MAX_PULSES), pEnergy = new Float32Array(MAX_PULSES);
+  const arrivals = [];
+  let pulseCount = 0, spikes = 0, now = 0, nextSpontaneous = 0;
+
+  const other = (e, node) => (edgeA[e] === node ? edgeB[e] : edgeA[e]);
+
+  function fire(node, energy, viaEdge) {
+    if (now - lastFire[node] < REFRACTORY) return;
+    lastFire[node] = now;
+    flash[node] = 1;
+    spikes++;
+    if (energy <= 0) return;
+    const branch = Math.min(0.93, 0.36 + energy * 0.048);
+    for (const e of adjacency[node]) {
+      if (e === viaEdge || pulseCount >= MAX_PULSES || Math.random() > branch) continue;
+      const i = pulseCount++;
+      pEdge[i] = e;
+      pFrom[i] = node;
+      pT[i] = 0;
+      pEnergy[i] = energy - 1;
+      pRate[i] = (0.5 + Math.random() * 0.35) / edgeLength[e];
+    }
+  }
+
+  function randomNeuron(focus) {
+    const list = focus >= 0 && byRegion[focus].length && Math.random() < 0.7 ? byRegion[focus] : null;
+    return list ? list[Math.floor(Math.random() * list.length)] : Math.floor(Math.random() * N);
+  }
+
+  return {
+    group, count: N, synapseCount: E,
+    get spikes() { return spikes; },
+    position: (i, target) => target.fromArray(pos, i * 3),
+    randomNeuron,
+    nearest(point, onlyRegion = -1) {
+      let best = 0, bestD = Infinity;
+      for (let i = 0; i < N; i++) {
+        if (onlyRegion >= 0 && region[i] !== onlyRegion) continue;
+        const dx = pos[i * 3] - point.x, dy = pos[i * 3 + 1] - point.y, dz = pos[i * 3 + 2] - point.z;
+        const d = dx * dx + dy * dy + dz * dz;
+        if (d < bestD) { bestD = d; best = i; }
+      }
+      return best;
+    },
+    ignite(node, energy) {
+      lastFire[node] = -10;
+      fire(node, energy, -1);
+    },
+    update(dt, time, { rate, focus }) {
+      now = time;
+      const fadeNode = Math.exp(-dt * 3.2), fadeLine = Math.exp(-dt * 2.6);
+      for (let i = 0; i < N; i++) flash[i] *= fadeNode;
+      for (let i = 0; i < glow.length; i++) glow[i] *= fadeLine;
+
+      // advance pulses; collect the ones that reached their target neuron
+      let w = 0;
+      arrivals.length = 0;
+      for (let r = 0; r < pulseCount; r++) {
+        const t = pT[r] + pRate[r] * dt;
+        const e = pEdge[r];
+        glow[e * 2] = glow[e * 2 + 1] = Math.max(glow[e * 2], 0.85);
+        if (t >= 1) { arrivals.push(e, pFrom[r], pEnergy[r]); continue; }
+        pEdge[w] = e; pFrom[w] = pFrom[r]; pRate[w] = pRate[r]; pEnergy[w] = pEnergy[r]; pT[w] = t;
+        w++;
+      }
+      pulseCount = w;
+      for (let k = 0; k < arrivals.length; k += 3) fire(other(arrivals[k], arrivals[k + 1]), arrivals[k + 2], arrivals[k]);
+
+      // spontaneous background firing (a Poisson process)
+      nextSpontaneous -= dt;
+      while (nextSpontaneous <= 0) {
+        nextSpontaneous += -Math.log(1 - Math.random()) / rate;
+        fire(randomNeuron(focus), 2 + Math.random() * 4, -1);
+      }
+
+      for (let i = 0; i < pulseCount; i++) {
+        const a = pFrom[i] * 3, b = other(pEdge[i], pFrom[i]) * 3, t = pT[i];
+        pulsePos[i * 3] = pos[a] + (pos[b] - pos[a]) * t;
+        pulsePos[i * 3 + 1] = pos[a + 1] + (pos[b + 1] - pos[a + 1]) * t;
+        pulsePos[i * 3 + 2] = pos[a + 2] + (pos[b + 2] - pos[a + 2]) * t;
+      }
+      pulseGeo.setDrawRange(0, pulseCount);
+      pulseGeo.attributes.position.needsUpdate = true;
+      nodeGeo.attributes.aFlash.needsUpdate = true;
+      lineGeo.attributes.aGlow.needsUpdate = true;
+    },
+  };
+}
+
+// ===========================================================================
+// Main
+// ===========================================================================
+const loader = $('#loader');
+function showFailure(message) {
+  document.documentElement.classList.add('engine-failed');
+  loader.replaceChildren(Object.assign(document.createElement('span'), { textContent: message }));
+}
+const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+
+async function main() {
+  const canvas = $('#scene');
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  } catch (err) {
+    showFailure('This animation needs WebGL, which this browser has turned off or doesn’t support. Try a current version of Chrome, Firefox, Safari or Edge.');
+    throw err;
+  }
+  const maxPixelRatio = lowPower ? 1.5 : 2;
+  let pixelRatio = Math.min(devicePixelRatio || 1, maxPixelRatio);
+  renderer.setPixelRatio(pixelRatio);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.1, 60);
+  camera.position.set(3.1, 0.95, 2.6);
+
+  const controls = new OrbitControls(camera, canvas);
+  controls.target.set(0, -0.17, 0);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.07;
+  controls.enablePan = false;
+  controls.rotateSpeed = 0.7;
+  controls.zoomSpeed = 0.8;
+  controls.minPolarAngle = Math.PI * 0.12;
+  controls.maxPolarAngle = Math.PI * 0.66;
+  controls.autoRotate = !reducedMotion;
+  controls.autoRotateSpeed = 1.4; // about 43 seconds per turn
+
+  // MSAA where pixels are big; dense screens are smooth enough without it and save a lot of memory
+  const samples = pixelRatio >= 2 ? 0 : pixelRatio > 1 ? 2 : 4;
+  const renderTarget = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples });
+  const composer = new EffectComposer(renderer, renderTarget);
+  composer.addPass(new RenderPass(scene, camera));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.75, 0.45, 0.22);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+  // a whisper of noise hides banding in the dark gradients
+  composer.addPass(new ShaderPass({
+    uniforms: { tDiffuse: { value: null } },
+    vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: /* glsl */ `
+      uniform sampler2D tDiffuse;
+      varying vec2 vUv;
+      void main() {
+        vec4 c = texture2D(tDiffuse, vUv);
+        float n1 = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+        float n2 = fract(sin(dot(gl_FragCoord.xy, vec2(39.3468, 11.1352))) * 24634.6345);
+        gl_FragColor = vec4(c.rgb + (n1 + n2 - 1.0) / 255.0, c.a);
+      }`,
+  }));
+
+  // ---------- shared uniforms ----------
+  const color = (name) => new THREE.Color(token(name));
+  const shared = {
+    uTime: { value: 0 },
+    uScale: { value: 1 },
+    uFade: { value: reducedMotion ? 1 : 0 },
+    uDim: { value: color('--rim') },
+    uHot: { value: color('--signal') },
+  };
+  const ripples = Array.from({ length: 4 }, () => new THREE.Vector4(0, 0, 0, -100));
+  const cortexUniforms = {
+    uTime: shared.uTime,
+    uReveal: { value: reducedMotion ? 1 : 0 },
+    uRipples: { value: ripples },
+    uDeep: { value: color('--cortex-deep') },
+    uBase: { value: color('--cortex') },
+    uRim: { value: color('--rim') },
+    uWave: { value: color('--wave') },
+    uRegionColors: { value: REGIONS.map((r) => new THREE.Color(r.color)) },
+    uTint: { value: 0 },
+    uActive: { value: -1 },
+    uActiveAmt: { value: 0 },
+  };
+
+  // ---------- backdrop ----------
+  const backdrop = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+    depthTest: false,
+    depthWrite: false,
+    uniforms: { uInner: { value: color('--void-glow') }, uOuter: { value: color('--void') }, uCenter: { value: new THREE.Vector2(0.5, 0.5) }, uAspect: { value: 1 } },
+    vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uInner;
+      uniform vec3 uOuter;
+      uniform vec2 uCenter;
+      uniform float uAspect;
+      varying vec2 vUv;
+      void main() {
+        vec2 d = vUv - uCenter;
+        d.x *= uAspect;
+        gl_FragColor = vec4(mix(uInner, uOuter, smoothstep(0.0, 0.8, length(d))), 1.0);
+      }`,
+  }));
+  backdrop.frustumCulled = false;
+  backdrop.renderOrder = -1;
+  scene.add(backdrop);
+
+  // ---------- floating dust for depth ----------
+  const DUST = lowPower ? 260 : 420;
+  const dustPos = new Float32Array(DUST * 3);
+  const dustSeed = new Float32Array(DUST);
+  for (let i = 0; i < DUST; i++) {
+    const r = 1.7 + Math.random() * 4.5;
+    const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2;
+    const s = Math.sqrt(1 - u * u);
+    dustPos.set([r * s * Math.cos(a), r * u * 0.7 - 0.2, r * s * Math.sin(a)], i * 3);
+    dustSeed[i] = Math.random();
+  }
+  const dustGeo = new THREE.BufferGeometry();
+  dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+  dustGeo.setAttribute('aSeed', new THREE.BufferAttribute(dustSeed, 1));
+  const dust = new THREE.Points(dustGeo, new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: { uTime: shared.uTime, uScale: shared.uScale, uColor: { value: color('--rim') } },
+    vertexShader: /* glsl */ `
+      attribute float aSeed;
+      uniform float uTime;
+      uniform float uScale;
+      varying float vAlpha;
+      void main() {
+        vec3 p = position;
+        p.y += sin(uTime * 0.21 + aSeed * 20.0) * 0.09;
+        p.x += cos(uTime * 0.17 + aSeed * 13.0) * 0.07;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        vAlpha = 0.18 + 0.4 * aSeed;
+        gl_PointSize = min((0.012 + 0.022 * aSeed) * uScale / -mv.z, 6.0);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uColor;
+      varying float vAlpha;
+      void main() {
+        float a = smoothstep(0.5, 0.0, length(gl_PointCoord - 0.5));
+        gl_FragColor = vec4(uColor * a * vAlpha, 1.0);
+      }`,
+  }));
+  scene.add(dust);
+
+  // ---------- grow the brain ----------
+  const brain = new THREE.Group();
+  scene.add(brain);
+  const cortexMaterial = new THREE.ShaderMaterial({
+    uniforms: cortexUniforms,
+    vertexShader: /* glsl */ `
+      attribute vec3 aSmooth;
+      attribute float aFold;
+      attribute float aShade;
+      attribute float aRegion;
+      varying vec3 vNormalV;
+      varying vec3 vSmoothV;
+      varying vec3 vViewPos;
+      varying vec3 vLocal;
+      varying float vFold;
+      varying float vShade;
+      varying float vRegion;
+      void main() {
+        vLocal = position;
+        vFold = aFold;
+        vShade = aShade;
+        vRegion = aRegion;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vViewPos = mv.xyz;
+        vNormalV = normalize(normalMatrix * normal);
+        vSmoothV = normalize(normalMatrix * aSmooth);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform float uTime;
+      uniform float uReveal;
+      uniform vec4 uRipples[4];
+      uniform vec3 uDeep;
+      uniform vec3 uBase;
+      uniform vec3 uRim;
+      uniform vec3 uWave;
+      uniform vec3 uRegionColors[6];
+      uniform float uTint;
+      uniform float uActive;
+      uniform float uActiveAmt;
+      varying vec3 vNormalV;
+      varying vec3 vSmoothV;
+      varying vec3 vViewPos;
+      varying vec3 vLocal;
+      varying float vFold;
+      varying float vShade;
+      varying float vRegion;
+
+      // mirrors centralSulcusZ() and occipitalZ() in the script
+      float centralSulcusZ(float y) { return 0.19 - 0.34 * max(y + 0.02, 0.0) + 0.022 * sin(y * 13.0 + 1.3); }
+      float occipitalZ(float y) { return -0.57 - 0.18 * (y - 0.1); }
+
+      void main() {
+        // intro: the cortex is printed from the bottom up behind a scan line
+        float scan = mix(-1.4, 1.0, uReveal);
+        float h = vLocal.y + 0.04 * sin(vLocal.x * 11.0 + vLocal.z * 7.0);
+        if (h > scan) discard;
+        float below = scan - h;
+        float scanGlow = (0.9 * exp(-below / 0.02) + 0.08 * exp(-below / 0.15)) * (1.0 - smoothstep(0.97, 1.0, uReveal));
+
+        vec3 N = normalize(vNormalV);
+        vec3 S = normalize(vSmoothV);
+        vec3 V = normalize(-vViewPos);
+        vec3 L = normalize(vec3(-0.42, 0.74, 0.52));         // key light, fixed to the camera
+        float ndl = dot(N, L);
+        float light = 0.62 * max(ndl, 0.0) + 0.38 * (0.5 + 0.5 * ndl);
+        float crown = smoothstep(0.1, 0.75, vFold);          // 0 deep in a sulcus, 1 on a gyrus
+        float exposed = 1.0 - vShade;                          // 0 where the surface is tucked away
+        float rim = pow(1.0 - clamp(dot(S, V), 0.0, 1.0), 2.6) * exposed;
+        float sheen = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 3.0) * exposed;
+
+        // region id, smooth across lobe borders: 0 frontal, 1 parietal, 2 occipital, 3 temporal, ...
+        float d1 = vLocal.z - centralSulcusZ(vLocal.y);
+        float d2 = vLocal.z - occipitalZ(vLocal.y);
+        float frontal = smoothstep(-1.0, 1.0, d1 / max(fwidth(d1), 1e-5));
+        float occipital = 1.0 - smoothstep(-1.0, 1.0, d2 / max(fwidth(d2), 1e-5));
+        float region = vRegion < 9.5 ? vRegion : vRegion < 10.5 ? (1.0 - frontal) * (1.0 + occipital) : 3.0 - occipital;
+
+        vec3 regionCol = vec3(0.0);
+        for (int i = 0; i < 6; i++) {
+          regionCol += uRegionColors[i] * clamp(1.0 - abs(region - float(i)), 0.0, 1.0);
+        }
+        float isChosen = 1.0 - smoothstep(0.3, 0.7, abs(region - uActive));
+        float chosen = isChosen * uActiveAmt;
+        float paint = max(uTint, chosen * 0.85);              // how much atlas color replaces the blue
+
+        vec3 albedo = mix(mix(uDeep, uBase, crown), regionCol * mix(0.04, 0.3, crown), paint);
+        vec3 col = albedo * (0.14 + light) * mix(0.32, 1.0, crown) * mix(0.22, 1.0, exposed);
+        col += mix(uRim, vec3(1.0), 0.25) * pow(max(dot(N, normalize(L + V)), 0.0), 40.0) * 0.32 * crown * exposed;
+        col += mix(uRim, regionCol, paint) * (rim * 0.8 + sheen * 0.2 * crown) * (1.0 - 0.3 * paint);
+        col += regionCol * chosen * (0.06 + 0.03 * sin(uTime * 3.0)) * crown * exposed;
+        col *= 1.0 - 0.4 * uActiveAmt * (1.0 - isChosen);     // other regions step back
+
+        // thought ripples spreading across the cortex
+        float wave = 0.0;
+        for (int i = 0; i < 4; i++) {
+          float age = uTime - uRipples[i].w;
+          if (age > 0.0 && age < 3.0) {
+            float d = distance(vLocal, uRipples[i].xyz);
+            wave += exp(-pow((d - age * 0.85) / 0.045, 2.0)) * (1.0 - age / 3.0);
+          }
+        }
+        col += uWave * wave * (0.06 + 0.38 * crown) * exposed;
+        col += mix(uRim, vec3(1.0), 0.45) * scanGlow;
+        gl_FragColor = vec4(col, 1.0);
+      }`,
+  });
+
+  const step = async (label) => { loader.textContent = label; await nextFrame(); };
+  const proxyMaterial = new THREE.MeshBasicMaterial();
+  const proxies = [];
+  const parts = [];
+  const specs = [
+    { key: 'hemi', side: 1, group: 1, level: 7, shape: hemisphereShape(1), sculpt: sculptHemisphere(1), proxy: 4, label: 'Folding the right hemisphere…' },
+    { key: 'hemi', side: -1, group: 2, level: 7, shape: hemisphereShape(-1), sculpt: sculptHemisphere(-1), proxy: 4, label: 'Folding the left hemisphere…' },
+    { key: 'temporal', side: 1, group: 1, level: 6, shape: temporalShape(1), sculpt: sculptTemporal, proxy: 3, label: 'Shaping the temporal lobes…' },
+    { key: 'temporal', side: -1, group: 2, level: 6, shape: temporalShape(-1), sculpt: sculptTemporal, proxy: 3 },
+    { key: 'cerebellum', side: 0, group: 3, level: 6, shape: cerebellumShape, sculpt: sculptCerebellum, proxy: 3, label: 'Growing the cerebellum…' },
+    { key: 'stem', side: 0, group: 4, level: 5, shape: brainstemShape, sculpt: sculptBrainstem, proxy: 3 },
+  ];
+  for (const spec of specs) {
+    if (spec.label) await step(spec.label);
+    const geo = buildPart(spec.level, spec.shape, spec.sculpt);
+    brain.add(new THREE.Mesh(geo, cortexMaterial));
+    parts.push({ ...spec, geo });
+    const proxy = new THREE.Mesh(buildPart(spec.proxy, spec.shape, null), proxyMaterial);
+    proxy.visible = false;
+    proxy.userData.part = spec.key;
+    brain.add(proxy);
+    proxies.push(proxy);
+  }
+
+  await step('Wiring neurons…');
+  const network = createNetwork(wireNetwork(parts), shared);
+  brain.add(network.group);
+  $('#neurons').textContent = network.count.toLocaleString('en-US');
+  $('#synapses').textContent = network.synapseCount.toLocaleString('en-US');
+
+  // ---------- sizing ----------
+  // Fit the brain into the part of the screen the HUD leaves free:
+  // right of the docked atlas on wide screens, between the controls and the dock on phones.
+  const BRAIN_SIZE = 2.25; // brain-local units the free area must hold, with a margin
+  let fitDistance = camera.position.distanceTo(controls.target);
+  let dirty = true; // a frame needs drawing even while paused
+  function freeArea(w, h) {
+    const dock = $('.dock').getBoundingClientRect();
+    const tools = $('.tools').getBoundingClientRect();
+    if (!STACKED.matches) {
+      const gap = Math.max(16, w * 0.018);
+      return { x0: dock.right + gap, x1: w - gap, y0: tools.bottom + 8, y1: h - gap };
+    }
+    return { x0: 8, x1: w - 8, y0: tools.bottom + 6, y1: dock.top - 6 };
+  }
+  function resize() {
+    const w = innerWidth, h = innerHeight;
+    renderer.setSize(w, h, false);
+    composer.setPixelRatio(pixelRatio);
+    composer.setSize(w, h);
+    camera.aspect = w / h;
+    const area = freeArea(w, h);
+    const pxPerUnit = Math.max(40, Math.min(area.x1 - area.x0, area.y1 - area.y0) / BRAIN_SIZE);
+    const cx = (area.x0 + area.x1) / 2, cy = (area.y0 + area.y1) / 2;
+    camera.setViewOffset(w, h, w / 2 - cx, h / 2 - cy, w, h);
+    const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const next = h / pxPerUnit / (2 * tanHalf);
+    const offset = camera.position.clone().sub(controls.target);
+    offset.setLength(offset.length() * (next / fitDistance));
+    camera.position.copy(controls.target).add(offset);
+    fitDistance = next;
+    controls.minDistance = next * 0.55;
+    controls.maxDistance = next * 1.8;
+    camera.updateProjectionMatrix();
+    shared.uScale.value = (h * pixelRatio) / (2 * tanHalf);
+    backdrop.material.uniforms.uAspect.value = camera.aspect;
+    backdrop.material.uniforms.uCenter.value.set(cx / w, 1 - cy / h);
+  }
+  resize();
+  addEventListener('resize', () => { resize(); dirty = true; });
+  document.fonts?.ready.then(() => { resize(); dirty = true; });
+
+  // ---------- intro: start a little further out and glide in while the cortex prints ----------
+  let introDolly = !reducedMotion;
+  const introStart = performance.now();
+  if (introDolly) {
+    const offset = camera.position.clone().sub(controls.target).multiplyScalar(1.22);
+    camera.position.copy(controls.target).add(offset);
+  }
+
+  // ---------- interface ----------
+  const ui = {
+    card: $('#card'), latin: $('#card-latin'), name: $('#card-name'), text: $('#card-text'),
+    regions: [...document.querySelectorAll('.region')],
+    pause: $('#pause'), tint: $('#tint'), spark: $('#spark'), rate: $('#rate'),
+  };
+  let paused = false, tintOn = false;
+  // what the card shows: the list item under the mouse, then the brain under the mouse,
+  // then a keyboard-focused list item, then whatever was picked last
+  let listRegion = -1, hoverRegion = -1, focusRegion = -1, pinnedRegion = -1, shownRegion = -1;
+  const activeRegion = () => [listRegion, hoverRegion, focusRegion, pinnedRegion].find((r) => r >= 0) ?? -1;
+
+  function refreshRegionUI() {
+    const r = activeRegion();
+    const info = r >= 0 ? REGIONS[r] : WHOLE_BRAIN;
+    ui.card.style.setProperty('--c', info.color);
+    ui.latin.textContent = info.latin;
+    ui.name.textContent = info.name;
+    ui.text.textContent = info.text;
+    for (const button of ui.regions) {
+      const id = Number(button.dataset.region);
+      button.classList.toggle('is-active', id === r);
+      button.setAttribute('aria-pressed', String(id === pinnedRegion));
+    }
+  }
+  for (const button of ui.regions) {
+    const id = Number(button.dataset.region);
+    button.addEventListener('pointerenter', (event) => {
+      if (event.pointerType === 'mouse') { listRegion = id; refreshRegionUI(); }
+    });
+    button.addEventListener('pointerleave', () => {
+      if (listRegion === id) { listRegion = -1; refreshRegionUI(); }
+    });
+    button.addEventListener('focus', () => {
+      if (button.matches(':focus-visible')) { focusRegion = id; refreshRegionUI(); }
+    });
+    button.addEventListener('blur', () => {
+      if (focusRegion === id) { focusRegion = -1; refreshRegionUI(); }
+    });
+    button.addEventListener('click', () => { pinnedRegion = pinnedRegion === id ? -1 : id; refreshRegionUI(); });
+  }
+
+  function setPaused(value) {
+    paused = value;
+    ui.pause.setAttribute('aria-pressed', String(paused));
+    ui.pause.querySelector('span').textContent = paused ? 'Play' : 'Pause';
+    ui.pause.querySelector('path').setAttribute('d', paused ? 'M2.5 1 11 6 2.5 11z' : 'M2 1h3v10H2zM7 1h3v10H7z');
+    controls.autoRotate = !paused && !reducedMotion;
+  }
+  ui.pause.addEventListener('click', () => setPaused(!paused));
+  ui.tint.addEventListener('click', () => {
+    tintOn = !tintOn;
+    ui.tint.setAttribute('aria-pressed', String(tintOn));
+  });
+
+  let simTime = 0, nextRipple = 0, rippleSlot = 0;
+  const tmp = new THREE.Vector3();
+  function addRipple(point) {
+    ripples[rippleSlot].set(point.x, point.y, point.z, simTime);
+    rippleSlot = (rippleSlot + 1) % ripples.length;
+  }
+  function spark(point) {
+    addRipple(point);
+    network.ignite(network.nearest(point), 9);
+  }
+  ui.spark.addEventListener('click', () => {
+    if (paused) setPaused(false);
+    const focus = activeRegion();
+    network.position(network.randomNeuron(focus >= 0 ? focus : Math.floor(Math.random() * 4)), tmp);
+    spark(tmp);
+  });
+
+  // ---------- picking ----------
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  let pointerMoved = false, pointerInside = false, dragging = false, downAt = null;
+  function setPointer(event) {
+    const rect = canvas.getBoundingClientRect();
+    pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+  }
+  function pick() {
+    raycaster.setFromCamera(pointer, camera);
+    const hit = raycaster.intersectObjects(proxies, false)[0];
+    if (!hit) return null;
+    const local = brain.worldToLocal(hit.point.clone());
+    return { point: local, region: classify(hit.object.userData.part, local) };
+  }
+  canvas.addEventListener('pointermove', (event) => {
+    setPointer(event);
+    pointerInside = event.pointerType === 'mouse';
+    pointerMoved = true;
+  });
+  canvas.addEventListener('pointerleave', () => {
+    pointerInside = false;
+    if (hoverRegion !== -1) { hoverRegion = -1; refreshRegionUI(); }
+    canvas.classList.remove('is-over-brain');
+  });
+  canvas.addEventListener('pointerdown', (event) => {
+    downAt = { x: event.clientX, y: event.clientY, t: performance.now() };
+  });
+  canvas.addEventListener('pointerup', (event) => {
+    if (!downAt) return;
+    const moved = Math.hypot(event.clientX - downAt.x, event.clientY - downAt.y);
+    const quick = performance.now() - downAt.t < 450;
+    downAt = null;
+    if (moved > 6 || !quick) return;
+    setPointer(event);
+    const hit = pick();
+    if (hit) {
+      if (paused) setPaused(false);
+      spark(hit.point);
+      if (event.pointerType !== 'mouse') pinnedRegion = hit.region;
+    } else {
+      pinnedRegion = -1;
+    }
+    refreshRegionUI();
+  });
+  let resumeTimer = 0;
+  controls.addEventListener('change', () => { dirty = true; });
+  controls.addEventListener('start', () => {
+    dragging = true;
+    canvas.classList.add('is-dragging');
+    controls.autoRotate = false;
+    clearTimeout(resumeTimer);
+    introDolly = false;
+  });
+  controls.addEventListener('end', () => {
+    dragging = false;
+    canvas.classList.remove('is-dragging');
+    resumeTimer = setTimeout(() => { controls.autoRotate = !paused && !reducedMotion; }, 2500);
+  });
+
+  // ---------- activity trace ----------
+  const trace = $('#trace');
+  const traceCtx = trace.getContext('2d');
+  const traceData = new Float32Array(120);
+  let traceHead = 0, traceClock = 0, lastSpikes = 0, rateSmooth = 0;
+  const signal = token('--signal'), line = token('--line');
+  function drawTrace() {
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const w = Math.round(trace.clientWidth * dpr), h = Math.round(trace.clientHeight * dpr);
+    if (!w || !h) return;
+    if (trace.width !== w || trace.height !== h) { trace.width = w; trace.height = h; }
+    let peak = 40;
+    for (const v of traceData) peak = Math.max(peak, v);
+    traceCtx.clearRect(0, 0, w, h);
+    traceCtx.fillStyle = line;
+    traceCtx.fillRect(0, h - dpr, w, dpr);
+    traceCtx.beginPath();
+    for (let i = 0; i < traceData.length; i++) {
+      const v = traceData[(traceHead + i) % traceData.length];
+      const x = (i / (traceData.length - 1)) * w;
+      const y = h - dpr - (v / peak) * (h - 3 * dpr);
+      if (i) traceCtx.lineTo(x, y); else traceCtx.moveTo(x, y);
+    }
+    traceCtx.strokeStyle = signal;
+    traceCtx.lineWidth = 1.25 * dpr;
+    traceCtx.lineJoin = 'round';
+    traceCtx.stroke();
+  }
+
+  // ---------- adaptive quality ----------
+  let slowFrames = 0, sampledFrames = 0;
+  function adaptQuality(dt) {
+    if (performance.now() - introStart < 4000 || pixelRatio <= 1) return;
+    sampledFrames++;
+    if (dt > 1 / 40) slowFrames++;
+    if (sampledFrames >= 120) {
+      if (slowFrames > 60) {
+        pixelRatio = Math.max(1, pixelRatio - 0.5);
+        renderer.setPixelRatio(pixelRatio);
+        resize();
+      }
+      slowFrames = sampledFrames = 0;
+    }
+  }
+
+  // ---------- loop ----------
+  refreshRegionUI();
+  loader.classList.add('is-done');
+  const clock = new THREE.Clock();
+
+  function frame() {
+    requestAnimationFrame(frame);
+    const dt = Math.min(clock.getDelta(), 1 / 20);
+    if (!paused) simTime += dt;
+    adaptQuality(dt);
+
+    // intro: print the cortex, then let the neurons fade in
+    const introT = (performance.now() - introStart) / 1000;
+    if (!reducedMotion) {
+      cortexUniforms.uReveal.value = smoothstep(0.1, 2.9, introT);
+      shared.uFade.value = smoothstep(2.2, 3.6, introT);
+    }
+    if (introDolly) {
+      const k = 1 + 0.22 * (1 - smoothstep(0, 3.2, introT));
+      const offset = camera.position.clone().sub(controls.target).setLength(fitDistance * k);
+      camera.position.copy(controls.target).add(offset);
+      if (introT > 3.2) introDolly = false;
+    }
+    controls.update(dt);
+
+    // hover
+    if (pointerMoved && pointerInside && !dragging) {
+      pointerMoved = false;
+      const hit = pick();
+      const region = hit ? hit.region : -1;
+      canvas.classList.toggle('is-over-brain', !!hit);
+      if (region !== hoverRegion) { hoverRegion = region; refreshRegionUI(); }
+    }
+
+    // region highlight and tint fade
+    const want = activeRegion();
+    if (want !== shownRegion) {
+      cortexUniforms.uActiveAmt.value = Math.max(0, cortexUniforms.uActiveAmt.value - dt * 7);
+      if (cortexUniforms.uActiveAmt.value === 0) { shownRegion = want; cortexUniforms.uActive.value = want; }
+    } else if (want >= 0) {
+      cortexUniforms.uActiveAmt.value = Math.min(1, cortexUniforms.uActiveAmt.value + dt * 4);
+    }
+    cortexUniforms.uTint.value += ((tintOn ? 1 : 0) - cortexUniforms.uTint.value) * Math.min(1, dt * 5);
+
+    if (!paused) {
+      const focus = activeRegion();
+      network.update(dt, simTime, { rate: (focus >= 0 ? 9 : 5) * (reducedMotion ? 0.35 : 1), focus });
+      if (!reducedMotion && simTime > nextRipple) {
+        nextRipple = simTime + 5 + Math.random() * 4;
+        if (simTime > 3) {
+          network.position(network.randomNeuron(focus >= 0 ? focus : Math.floor(Math.random() * 4)), tmp);
+          addRipple(tmp);
+        }
+      }
+      brain.position.y = reducedMotion ? 0 : Math.sin(simTime * 0.55) * 0.025;
+    }
+    shared.uTime.value = simTime;
+
+    // readout
+    traceClock += dt;
+    if (traceClock >= 0.05) {
+      const spikes = network.spikes;
+      const rate = (spikes - lastSpikes) / traceClock;
+      lastSpikes = spikes;
+      traceClock = 0;
+      if (!paused) {
+        rateSmooth += (rate - rateSmooth) * 0.08;
+        traceData[traceHead] = rate;
+        traceHead = (traceHead + 1) % traceData.length;
+        drawTrace();
+        ui.rate.textContent = Math.round(rateSmooth);
+      }
+    }
+
+    // while paused, only draw when the view or a highlight actually changes
+    const settling = Math.abs((tintOn ? 1 : 0) - cortexUniforms.uTint.value) > 0.002
+      || want !== shownRegion || (want >= 0 && cortexUniforms.uActiveAmt.value < 1);
+    if (!paused || dirty || settling || introT < 4) composer.render();
+    dirty = false;
+  }
+  frame();
+}
+
+main().catch((err) => console.error(err));
+</script>
+</body>
+</html>
