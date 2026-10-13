@@ -380,7 +380,7 @@ function drawS05(f) {
   const t = $('buildT');
   t.setAttribute('x', p.build.x); t.setAttribute('y', p.build.y); t.setAttribute('font-size', p.build.size);
   t.setAttribute('fill', p.build.fill);
-  t.setAttribute('opacity', p.build.op);
+  t.setAttribute('opacity', location.search.includes('nobuild') ? 0 : p.build.op);   // S05 draws its own title over these
   $('bb').firstElementChild.setAttribute('stdDeviation', p.build.blur);
   t.setAttribute('filter', p.build.blur > 0.05 ? 'url(#bb)' : '');
 }

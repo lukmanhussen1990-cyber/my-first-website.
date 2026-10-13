@@ -4,36 +4,59 @@
 <script src="../../shared/lib.js"></script>
 <script src="../../shared/components.js"></script>
 <script src="../../shared/titles.js"></script>
+<script src="../../shared/hud.js"></script>
 </head><body>
 <div id="stage"><img class="plate" id="bg"></div>
 <script>
 // S03 (f251-305; f306-350 come from the wordmark pass): reference dark background (text removed).
-// 'right one' zooms in from white to a glowing violet-blue gradient, its letters vanish from the
-// right while the letters of 'Meet' rise in one by one; 'Meet' then settles and eases back.
+// 'right one' (redesigned, futuristic): the letters decode out of flickering machine glyphs with a red/cyan
+// RGB split, locking left to right behind a light beam; HUD corner brackets fly in and lock onto the words,
+// a thin HUD rule draws under them and "MATCH FOUND" types in. The letters then de-res from the right while
+// the letters of 'Meet' rise in one by one; 'Meet' settles and eases back.
 const stage = document.getElementById('stage');
 const WH = [242, 242, 252], VIO = [146, 128, 246], BLU = [112, 162, 252];
-const ro = 'right one';
-// per-letter colour ramp along the word pair (violet 'right' -> blue 'one') reached by ~f264
-const roUnits = Array.from(ro.replace(' ', '')).map((ch, k, arr) => {
-  const u = k / (arr.length - 1);
-  const target = mixc(VIO, BLU, Math.min(1, Math.max(0, (u - 0.35) / 0.4)));
-  const exitAt = 281 + (arr.length - 1 - k) * 0.75;   // letters disappear from the right
-  const isRight = k < 5;
-  return {
-    in: 240, dur: 1,
-    colorAt: [[251, WH], [256, WH], [261, mixc(WH, target, 0.55)], [265, target]],
-    blurAt: isRight ? [[251, 7], [254, 5], [257, 2.5], [260, 1], [262, 0]] : [[251, 0.5], [253, 0]],
-    opacityAt: [[exitAt - 1.2, 1], [exitAt, 0]],
-  };
-});
-const RO = new TitleLine(stage, {
-  text: ro, unit: 'letter', font: "'Inter Display'", size: 135, tracking: -0.02, weight: 600,
-  fitWidth: { unit: 'all', width: 482, by: 'tracking' }, cx: 960, baseline: 586.5, layout: 'full',
-  S: [[251, 0.695], [252, 0.739], [253, 0.772], [254, 0.801], [255, 0.828], [256, 0.849], [257, 0.867], [258, 0.88], [259, 0.893], [260, 0.909], [261, 0.921], [262, 0.934], [263, 0.946], [264, 0.954], [265, 0.963], [266, 0.971], [267, 0.979], [268, 0.983], [269, 0.992], [270, 0.996], [272, 1.0], [275, 0.996], [277, 0.988], [279, 0.968], [280, 0.954], [284, 0.93], [288, 0.91]],
-  units: roUnits,
-});
-// soft bloom like the reference glow
-RO.el.style.textShadow = '0 0 26px rgba(105,125,255,0.8), 0 0 8px rgba(120,140,255,0.35)';
+const RO_S = [[251, 0.695], [252, 0.739], [253, 0.772], [254, 0.801], [255, 0.828], [256, 0.849], [257, 0.867], [258, 0.88], [259, 0.893], [260, 0.909], [261, 0.921], [262, 0.934], [263, 0.946], [264, 0.954], [265, 0.963], [266, 0.971], [267, 0.979], [268, 0.983], [269, 0.992], [270, 0.996], [272, 1.0], [275, 0.996], [277, 0.988], [279, 0.968], [280, 0.954], [284, 0.93], [288, 0.91]];
+const roTarget = k => mixc(VIO, BLU, Math.min(1, Math.max(0, (k / 7 - 0.35) / 0.4)));
+// tracking that sets the word 482 px wide (as measured on the reference)
+const RO_SPACING = (() => { const c = document.createElement('canvas').getContext('2d'); c.font = "600 135px 'Inter Display'";
+  return (482 - c.measureText('right one').width) / 8; })();
+let RO = null, RB = null, RULE = null, LABEL = null;
+function buildRO() {
+  RO = new DecodeTitle(stage, {
+    text: 'right one', font: "'Inter Display'", weight: 600, size: 135, spacing: RO_SPACING, cx: 960, base: 586.5,
+    on: k => 250.6 + k * 0.12, lock: k => 252.5 + k * 0.85, off: k => 281 + (7 - k) * 0.75,
+    fill: (k, f, u) => { const c = mixc(WH, roTarget(k), ease.inOutCubic(clamp((f - 252.5 - k * 0.85) / 8))); return { css: `linear-gradient(${rgba(c)}, ${rgba(c)})` }; },
+    scr: { font: "'DejaVu Sans Mono'", weight: 700, color: 'rgb(160,222,255)', scale: 0.8, filter: 'drop-shadow(0 0 8px rgba(110,190,255,0.9))' },
+    chroma: { amp: 7, alpha: 0.75, blend: 'screen', cols: ['rgb(255,40,96)', 'rgb(40,206,255)'] },
+    beam: { t0: 251.8, t1: 259.6, color: 'rgb(150,205,255)', glow: 'rgba(110,150,255,0.55)', wash: null },
+    glow: 'drop-shadow(0 0 22px rgba(105,125,255,0.75)) drop-shadow(0 0 6px rgba(120,140,255,0.35))', pop: 0.09,
+  });
+  RB = new Brackets(RO.root, { color: 'rgba(205,218,255,0.95)', glow: 'rgba(120,150,255,0.9)', arm: 30, stroke: 3.5 });
+  RULE = document.createElement('div'); RULE.style.cssText = 'position:absolute;height:1.5px;z-index:3;pointer-events:none;' +
+    'background:linear-gradient(90deg, rgba(150,180,255,0), rgba(170,195,255,0.9) 18%, rgba(170,195,255,0.9) 82%, rgba(150,180,255,0));' +
+    'box-shadow:0 0 10px rgba(120,150,255,0.7)';
+  RO.root.appendChild(RULE);
+  LABEL = document.createElement('div'); LABEL.style.cssText = "position:absolute;z-index:3;white-space:pre;font-family:'DejaVu Sans Mono';font-weight:700;" +
+    'font-size:19px;letter-spacing:0.34em;color:rgb(178,198,255);text-shadow:0 0 10px rgba(110,140,255,0.9);transform:translateX(-50%)';
+  RO.root.appendChild(LABEL);
+}
+function renderRO(f) {
+  if (!RO) buildRO();
+  RO.render(f, { scale: kf(f, RO_S) });
+  const bx = RO.box(30), out = clamp((f - 279) / 3);
+  RB.render(bx, { t: clamp((f - 254.5) / 5.5), spread: 80, op: clamp((f - 254.5) / 2) * (1 - out),
+                  flash: Math.exp(-Math.pow((f - 260.6) / 1.4, 2)) + 0.5 * Math.exp(-Math.pow((f - 263.5) / 1.2, 2)) });
+  // HUD rule under the word, drawn out from the centre
+  const rw = (RO.width + 120) * ease.outCubic(clamp((f - 259) / 5)), ry = 586.5 + 0.24 * 135 + 22;
+  RULE.style.left = (960 - rw / 2).toFixed(1) + 'px'; RULE.style.width = rw.toFixed(1) + 'px'; RULE.style.top = ry.toFixed(1) + 'px';
+  RULE.style.opacity = (1 - out).toFixed(3); RULE.style.display = rw > 1 ? 'block' : 'none';
+  // readout types in under the rule, with a block cursor
+  const msg = '◆ MATCH FOUND', n = Math.floor(clamp((f - 260.5) / 4.5) * msg.length);
+  const cur = f >= 260.5 && f < 270 && (Math.floor(f / 2) % 2 === 0 || n < msg.length) ? '█' : ' ';
+  LABEL.textContent = msg.slice(0, n) + (f >= 260.5 ? cur : '');
+  LABEL.style.left = '960px'; LABEL.style.top = (ry + 16).toFixed(1) + 'px';
+  LABEL.style.opacity = (f >= 260.5 ? 1 - out : 0).toFixed(3);
+}
 
 const MEET = new TitleLine(stage, {
   text: 'Meet', unit: 'letter', font: "'Inter Display'", size: 104.5, tracking: -0.02, weight: 600,
@@ -50,9 +73,9 @@ MEET.el.style.textShadow = '0 0 16px rgba(200,200,255,0.35)';
 
 window.renderFrame = async (f) => {
   await setImg(document.getElementById('bg'), `../../plates/S03_dark_titles/bg_${String(f).padStart(4, '0')}.jpg`);
-  RO.el.style.display = f <= 288 ? 'block' : 'none';
+  if (RO) RO.root.style.display = f <= 288 ? 'block' : 'none';
   MEET.el.style.display = f >= 282 ? 'block' : 'none';
-  if (f <= 288) RO.render(f);
+  if (f <= 288) renderRO(f);
   if (f >= 282) MEET.render(f);
 };
 window.sceneReady = document.fonts.ready;

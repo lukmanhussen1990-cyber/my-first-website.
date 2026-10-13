@@ -3,6 +3,7 @@
 <title>S10 doctor cards</title>
 <link rel="stylesheet" href="../../shared/base.css">
 <script src="../../shared/lib.js"></script>
+<script src="../../shared/hud.js"></script>
 <script src="../../shared/components.js"></script>
 <style>
   body { background: #fff; }
@@ -179,7 +180,7 @@ const DOCS = [
   { photo: 'portrait_c1.png', name: 'Dr Maahi', nameFs: 25, nameX: 35, nameBase: 293, badgeX: 144, badgeY: 275, badgeS: 19,
     spec: 'Neurologist', specX: 50.5, specBase: 322, years: '15 years', yearsX: 237, yearsBase: 287.5, yearsFs: 18, exp: EXP_LABEL, expX: 238, expBase: 311,
     loc: 'Noida, Uttar Pradesh...', ratingX: 282, rating: '4.7', specPill: [40, 305, 98, 22], expPill: [226, 297, 78, 21] },
-  { photo: 'portrait_c2.png', name: 'Dr Abhishek Shukla', nameFs: 21, nameX: 31, nameBase: 298.5, badgeX: 216, badgeY: 279, badgeS: 18,
+  { photo: 'portrait_imran.png', name: 'Dr. Imran Hussain', nameFs: 21, nameX: 31, nameBase: 298.5, badgeX: 216, badgeY: 279, badgeS: 18,
     spec: 'Orthopedic', specX: 49, specBase: 322, years: '10 years', yearsX: 235, yearsBase: 324.6, yearsFs: 18.3, exp: EXP_LABEL, expX: 237, expBase: 346,
     loc: 'Delhi, India...', ratingX: 279.5, rating: '4.8', specPill: [38, 306, 87, 22], expPill: [226, 332, 76, 21] },
   { photo: 'portrait_c3.png', name: 'Dr. Sakshi Sachdeva', nameFs: 21, nameX: 29.5, nameBase: 298.5, badgeX: 224, badgeY: 279, badgeS: 18,
@@ -227,7 +228,7 @@ function buildCard(i) {
   const rpill = el('div', 'pillbg', rbox, { left: '247px', top: '29px', width: '64px', height: '21px', background: 'rgba(234,234,241,0.9)', boxShadow: '0 0 0 1.2px rgba(255,255,255,0.85)' });
   const star = el('div', 'txt', rbox, { left: '256.5px', top: '32px' }); star.innerHTML = STAR_SVG;
   const rating = el('div', 'txt', rbox, { fontWeight: 600, color: 'rgb(56,56,62)' }); rating.textContent = d.rating; placeText(rating, d.ratingX - 1, 46, 13);
-  cards.push({ c, frame, panel, photo, veil, skel, bars, sheens, glow, cont, rbox });
+  cards.push({ c, frame, panel, photo, veil, skel, bars, sheens, glow, cont, rbox, name, badge, d });
 }
 
 // photo reveal: soft diagonal wipe from the bottom-left corner to the top-right corner.
@@ -270,6 +271,31 @@ R1.style.webkitBackgroundClip = 'text'; R1.style.backgroundClip = 'text'; R1.sty
 R1.style.fontWeight = 600; R1.style.letterSpacing = '-2.28px';
 R1.style.transformOrigin = '0 0';
 placeText(R1, R1_X, R1_BASE, R1_FS);
+const R1_GRAD = 'linear-gradient(90deg, rgb(148,44,248) 0%, rgb(160,70,248) 28%, rgb(176,104,248) 50%, rgb(186,128,251) 64%, rgb(194,150,254) 78%, rgb(208,178,254) 92%, rgb(214,188,255) 100%)';
+let R1D = null;
+function buildR1D() {
+  R1D = new DecodeTitle(R1.parentNode, {
+    text: 'right one', font: "'Inter Display'", weight: 600, size: R1_FS, spacing: -2.28, scaleX: 0.9, x: R1_X, base: R1_BASE,
+    on: k => 1055.6 + k * 0.22, lock: k => 1058 + k * 0.8,
+    fill: (k) => ({ css: R1_GRAD, size: `${R1D.width.toFixed(1)}px 100%`, pos: `${(-R1D.chars[k].x).toFixed(1)}px 0` }),
+    scr: { font: "'DejaVu Sans Mono'", weight: 700, color: 'rgb(140,84,250)', scale: 0.72, filter: 'drop-shadow(0 0 7px rgba(150,100,255,0.75))' },
+    chroma: { amp: 6, alpha: 0.5, blend: 'normal', cols: ['rgb(255,86,150)', 'rgb(56,190,255)'] },
+    beam: { t0: 1057.4, t1: 1064.6, color: 'rgb(196,166,255)', glow: 'rgba(150,104,255,0.5)', wash: null },
+    glow: 'drop-shadow(0 8px 20px rgba(110,50,230,0.22))', pop: 0.07, flash: 0.7,
+  });
+  // targeting HUD on the centre card (card-local coordinates, so it follows the card's zoom, blur and the mist)
+  const c = cards[1];
+  const br = new Brackets(c.c, { color: 'rgb(118,86,255)', glow: 'rgba(130,90,255,0.75)', arm: 38, stroke: 4.5 });
+  const scan = el('div', 'veil', c.panel, { left: '0px', right: '0px', top: '0px', bottom: 'auto', height: '74px', pointerEvents: 'none',
+    background: 'linear-gradient(180deg, rgba(150,110,255,0) 0%, rgba(150,110,255,0.16) 82%, rgba(255,255,255,0.95) 95%, rgba(150,110,255,0) 100%)' });
+  scan.style.boxShadow = '0 10px 22px -8px rgba(140,96,255,0.55)';
+  const chip = el('div', 'veil', c.c, { left: '22px', top: '27px', right: 'auto', bottom: 'auto', height: '29px', padding: '0 13px 0 9px', borderRadius: '99px',
+    display: 'flex', alignItems: 'center', gap: '5px', transformOrigin: '18% 50%', whiteSpace: 'nowrap',
+    background: 'linear-gradient(90deg, #7B61FF, #A86BEA 55%, #D97757)', boxShadow: '0 6px 16px -4px rgba(110,70,230,0.55), inset 0 1px 0 rgba(255,255,255,0.35)',
+    fontFamily: "'Inter'", fontWeight: 600, fontSize: '15px', color: '#fff', letterSpacing: '0.1px' });
+  chip.innerHTML = '<svg width="15" height="15" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="rgba(255,255,255,0.28)"/><path d="M4.4 8.3l2.3 2.3 4.9-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Best match';
+  c.hud = { br, scan, chip };
+}
 
 // ---------------------------------------------------------------- per-frame state
 function trackAt(f) {
@@ -301,7 +327,13 @@ let BG_OUT = null, BG_IN2 = null;
 
 const MASK_MODE = location.search.includes('mask');
 if (MASK_MODE) { document.documentElement.style.background = 'transparent'; document.body.style.background = 'transparent'; $('stage').style.background = 'transparent'; }
+let badgesPlaced = false;
+function placeBadges() {   // the verified badge follows the end of each doctor's name
+  cards.forEach(C => { C.badge.style.left = (C.d.nameX + C.name.offsetWidth + 5).toFixed(1) + 'px'; });
+  badgesPlaced = true;
+}
 window.renderFrame = async (f) => {
+  if (!badgesPlaced) placeBadges();
   // ---- window (outro)
   const g = outroScale(f);
   const wk = winK(f);
@@ -413,15 +445,31 @@ window.renderFrame = async (f) => {
       C.c.style.filter = bl > 0.05 ? `blur(${bl.toFixed(2)}px)` : 'none';
     }
   }
-  // ---- right one: soft fade-in with a defocus pull and a quick left-to-right reveal
-  const r1a = kf(f, [[1056, 0], [1058, 0.08], [1060, 0.2], [1062, 0.36], [1064, 0.68], [1066, 1]]);
-  const r1b = kf(f, [[1056, 12], [1058, 9.5], [1060, 7], [1062, 4.5], [1064, 2], [1066, 0]]);
-  const r1w = kf(f, [[1056, 0], [1062, 520], [1066, 820], [1068, 1000]]);
-  R1.style.display = r1a > 0 ? 'block' : 'none';
-  R1.style.opacity = r1a.toFixed(3);
-  R1.style.filter = r1b > 0.05 ? `blur(${r1b.toFixed(2)}px)` : 'none';
-  R1.style.transform = 'scaleX(0.9)';
-  R1.style.webkitMaskImage = R1.style.maskImage = r1w < 1000 ? `linear-gradient(90deg, #000 ${(r1w - 300).toFixed(0)}px, rgba(0,0,0,0.3) ${(r1w + 120).toFixed(0)}px)` : 'none';
+  // ---- right one (redesigned, futuristic): the word decodes out of flickering machine glyphs behind a light
+  // beam while targeting brackets fly in and lock onto Dr. Imran Hussain's card, a scan line passes over the
+  // card and a "Best match" chip pops onto the photo.
+  R1.style.display = 'none';
+  if (!R1D) buildR1D();
+  R1D.root.style.display = f >= 1055.5 ? 'block' : 'none';
+  if (f >= 1055.5) {
+    R1D.render(f);
+    R1D.root.style.opacity = clamp((f - 1055.5) / 1.5).toFixed(3);
+    const rb = kf(f, [[1055.5, 5], [1058, 2], [1060.5, 0]]);
+    R1D.root.style.filter = rb > 0.05 ? `blur(${rb.toFixed(2)}px)` : 'none';
+  }
+  const HC = cards[1].hud;
+  const bOp = clamp((f - 1056.5) / 2);
+  HC.br.render({ x0: -16, y0: -16, x1: 352, y1: 426 }, { t: clamp((f - 1056.5) / 6), spread: 150, op: bOp,
+    flash: Math.exp(-Math.pow((f - 1062.8) / 1.3, 2)) + 0.6 * Math.exp(-Math.pow((f - 1065.6) / 1.1, 2)),
+    color: f >= 1062.2 && f < 1064.8 ? 'rgb(229,132,98)' : 'rgb(118,86,255)' });
+  const sp = clamp((f - 1058.5) / 6);
+  HC.scan.style.display = f >= 1058.3 && f <= 1065.2 ? 'block' : 'none';
+  HC.scan.style.top = (-70 + 470 * ease.inOutCubic(sp)).toFixed(1) + 'px';
+  HC.scan.style.opacity = Math.min(clamp((f - 1058.3) / 1), 1 - clamp((f - 1064.5) / 0.7)).toFixed(3);
+  const cp = clamp((f - 1063.6) / 3.2);
+  HC.chip.style.display = cp > 0 ? 'flex' : 'none';
+  HC.chip.style.opacity = clamp(cp * 2.5).toFixed(3);
+  HC.chip.style.transform = `scale(${(0.35 + 0.65 * hudBackOut(cp, 2.4)).toFixed(4)})`;
 };
 
 window.sceneReady = (async () => {

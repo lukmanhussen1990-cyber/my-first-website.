@@ -7,25 +7,199 @@
 </head><body>
 <div id="stage"><img class="plate" id="bg"></div>
 <script>
-// S05 (f449-525): lavender light field (reference background, text removed) with two redrawn,
+// S05 (f446-525): lavender light field (reference background, text removed) with two redrawn,
 // re-typeset title lines. Timings, zoom, colours and blur pulses measured on the reference.
 const stage = document.getElementById('stage');
 const V = [114, 99, 238], D = [10, 10, 28];
-const line1 = new TitleLine(stage, {
-  text: 'Build to move beyond generic', font: "'Inter'", size: 74, tracking: -0.02, weight: 400,
-  cx: 952, baseline: 560, layout: 'progressive', presenceDur: 7,
-  S: [[449, 1.19], [453, 1.16], [457, 1.065], [463, 1.01], [470, 1.0], [490, 0.995], [496, 0.975]],
-  X: [[449, -16], [455, 0], [470, 8], [490, 0]],
-  blur: [[449, 1.5], [452, 0], [459, 0], [460, 3.0], [461, 2.6], [462, 2.2], [463, 1.3], [464, 0], [473, 0], [475, 1.8], [477, 2.2], [478, 1.0], [479, 0], [491, 0], [495, 3], [496, 5]],
-  opacity: [[449, 1], [490, 1], [493, 0.85], [494, 0.65], [495, 0.35], [496, 0]],
-  units: [
-    { in: 444, dur: 4, opacityAt: [[448, 1]], colorAt: [[449, [118, 100, 238]], [450, [112, 96, 228]], [452, [80, 72, 160]], [455, [40, 38, 90]], [458, D]], blurAt: [[449, 1.2], [451, 0.4], [452, 0]] },   // continues the violet 'Build' of the flash frames
-    { in: 454, dur: 6, from: V, to: D, blur0: 6, presenceDur: 4 },
-    { in: 459, dur: 6, from: V, to: D, blur0: 6, presenceDur: 4 },
-    { in: 464, dur: 4, opacityAt: [[464, 0], [467, 1]], colorAt: [[464, V], [469, [92, 80, 192]], [475, D]], blurAt: [[464, 6], [467, 1], [468, 0]], weight: 400, weightTo: 640, weightAt: 468, weightDur: 4, presenceDur: 4 },
-    { in: 478, dur: 3, opacityAt: [[478, 0], [481, 1]], colorAt: [[478, V], [482, V], [488, D]], blurAt: [[478, 5], [481, 1], [483, 0]], presenceDur: 4 },
-  ],
-});
+// ---------------------------------------------------------------------------------------------
+// "Build to move beyond generic" (f446-496), redesigned at the client's request. Word timing
+// follows the reference (on the beat); each word has its own motion:
+//   Build, to  - letters rise out of a baseline mask with a springy settle, violet cooling to ink
+//   move       - letters sweep in from the left with a horizontal motion blur and a speed lean
+//   beyond     - the hero: semibold, a violet-to-coral gradient flowing through it, then a glowing
+//                underline shoots past the end of the word ("beyond") and springs back
+//   generic    - first a frosted loading-skeleton pill with a shimmer, which resolves into the word
+//                in a plain muted grey (generic), the same skeleton motif as the doctor cards later
+// then a glint sweeps the finished sentence, and the letters lift away in a wave into the search.
+// ---------------------------------------------------------------------------------------------
+const L1 = { cx: 952, base: 560, size: 76,
+  S: [[446, 1.25], [449, 1.19], [453, 1.16], [457, 1.065], [463, 1.01], [470, 1.0], [490, 0.995], [496, 0.975]],
+  X: [[446, -16], [455, 0], [470, 8], [490, 0]] };
+const INK1 = [12, 12, 32];
+const W1 = [
+  { t: 'Build', t0: 446, kind: 'rise', st: 0.75, weight: 400 },
+  { t: 'to', t0: 454, kind: 'rise', st: 0.8, weight: 400 },
+  { t: 'move', t0: 459, kind: 'slide', st: 0.6, weight: 400 },
+  { t: 'beyond', t0: 464, kind: 'hero', st: 0.65, weight: 600 },
+  { t: 'generic', t0: 478, kind: 'skel', st: 0.45, weight: 400 },
+];
+const PT = 14, PB = 24, PX = 10;                    // mask padding around each word (px)
+const l1 = document.createElement('div'); l1.id = 'l1';
+l1.innerHTML = `
+<style>
+  #l1 { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: ${L1.cx}px ${L1.base}px; }
+  #l1 .glow { position: absolute; border-radius: 50%; pointer-events: none;
+              background: radial-gradient(closest-side, rgba(255,255,255,0.62), rgba(255,255,255,0.22) 58%, rgba(255,255,255,0)); }
+  #l1 .w { position: absolute; left: 0; top: 0; }
+  #l1 .m { position: absolute; overflow: hidden; }
+  #l1 .ch { position: absolute; line-height: 1; font-family: 'Inter Display'; font-size: ${L1.size}px; white-space: pre;
+            padding: 12px 0 26px; color: transparent; -webkit-background-clip: text; background-clip: text;
+            background-repeat: no-repeat; transform-origin: 50% 78%; will-change: transform, filter; }
+  #l1 .meas { position: absolute; left: 0; top: 0; visibility: hidden; line-height: 1; font-family: 'Inter Display'; font-size: ${L1.size}px; white-space: pre; letter-spacing: -0.02em; }
+  #l1 .ul { position: absolute; height: 4.5px; border-radius: 3px; transform-origin: 0 50%;
+            background: linear-gradient(90deg, #7B61FF, #A06BF2 55%, #D97757);
+            box-shadow: 0 0 12px rgba(150,105,255,0.55), 0 0 3px rgba(217,119,87,0.5); }
+  #l1 .tip { position: absolute; width: 11px; height: 11px; border-radius: 50%; margin: -3.25px 0 0 -6px;
+             background: radial-gradient(circle, #fff 0%, #FFD9C9 35%, #E58A68 70%);
+             box-shadow: 0 0 14px 5px rgba(229,138,104,0.65), 0 0 30px 8px rgba(160,110,255,0.35); }
+  #l1 .skel { position: absolute; overflow: hidden; border-radius: 40px; transform-origin: 0 50%;
+              background: linear-gradient(180deg, rgba(255,255,255,0.58), rgba(255,255,255,0.36));
+              backdrop-filter: blur(12px) saturate(1.3); -webkit-backdrop-filter: blur(12px) saturate(1.3);
+              box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.95), 0 0 0 1px rgba(255,255,255,0.55), 0 12px 28px -8px rgba(80,56,200,0.28); }
+  #l1 .skel i { position: absolute; top: 0; bottom: 0; width: 46%; left: 0;
+                background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.95), rgba(255,255,255,0)); }
+  #l1 .skel b { position: absolute; left: 7%; right: 34%; top: 38%; height: 24%; border-radius: 20px; background: rgba(150,135,230,0.22); }
+</style>
+<div class="glow"></div><span class="meas"></span>`;
+stage.appendChild(l1);
+const glow1 = l1.querySelector('.glow'), meas = l1.querySelector('.meas');
+let M1 = null;                                         // measured layout
+function measure1() {
+  l1.style.transform = 'none';
+  // baseline offset inside a line-height:1 box
+  meas.style.fontWeight = 400; meas.textContent = 'x';
+  const probe = document.createElement('span'); probe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
+  meas.appendChild(probe);
+  const bOff = probe.getBoundingClientRect().top - meas.getBoundingClientRect().top; meas.removeChild(probe);
+  meas.textContent = ' '; const space = meas.getBoundingClientRect().width;
+  const words = W1.map((w, wi) => {
+    meas.style.fontWeight = w.weight; meas.textContent = w.t;
+    const node = meas.firstChild, r0 = meas.getBoundingClientRect(), rg = document.createRange();
+    const xs = Array.from(w.t).map((_, k) => { rg.setStart(node, k); rg.setEnd(node, k + 1); return rg.getBoundingClientRect().left - r0.left; });
+    const ww = r0.width;
+    const el = document.createElement('div'); el.className = 'w';
+    const m = document.createElement('div'); m.className = 'm'; el.appendChild(m);
+    m.style.cssText = `left:${-PX}px;top:${-PT}px;width:${ww + 2 * PX}px;height:${L1.size + PT + PB}px`;
+    const chs = Array.from(w.t).map((c, k) => {
+      const s = document.createElement('span'); s.className = 'ch'; s.textContent = c;
+      s.style.fontWeight = w.weight; s.style.left = (PX + xs[k]).toFixed(2) + 'px'; s.style.top = (PT - 12) + 'px';
+      m.appendChild(s); return s;
+    });
+    l1.appendChild(el);
+    return { ...w, ww, xs, el, m, chs };
+  });
+  // underline + tip under "beyond", skeleton pill for "generic"
+  const ul = document.createElement('div'); ul.className = 'ul'; l1.appendChild(ul);
+  const tip = document.createElement('div'); tip.className = 'tip'; l1.appendChild(tip);
+  const sk = document.createElement('div'); sk.className = 'skel'; sk.innerHTML = '<b></b><i></i>'; l1.insertBefore(sk, words[0].el);
+  // horizontal motion-blur filters for "move"
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('width', 0); svg.setAttribute('height', 0);
+  svg.style.position = 'absolute';
+  svg.innerHTML = '<defs>' + words[2].chs.map((_, k) => `<filter id="mvb${k}" x="-60%" y="-10%" width="220%" height="120%"><feGaussianBlur stdDeviation="0 0"/></filter>`).join('') + '</defs>';
+  l1.appendChild(svg);
+  const mvb = words[2].chs.map((_, k) => svg.querySelector(`#mvb${k} feGaussianBlur`));
+  M1 = { bOff, space, words, ul, tip, sk, mvb, n: words.reduce((a, w) => a + w.t.length, 0) };
+}
+const backOut = (t, s = 1.70158) => 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
+function renderL1(f) {
+  if (!M1) measure1();
+  const { bOff, space, words, ul, tip, sk, mvb } = M1;
+  // progressive centring: each word claims its width as it arrives
+  const pres = words.map((w, i) => i === 0 ? 1 : ease.inOutCubic(clamp((f - w.t0 + (i === 4 ? 1.5 : 0.5)) / 6)));
+  const xs = []; let c = 0;
+  words.forEach((w, i) => { if (i) c += space * pres[i]; xs.push(c); c += w.ww * pres[i]; });
+  const LW = c, left = L1.cx - LW / 2 + kf(f, L1.X), top = L1.base - bOff;
+  const LWfull = words.reduce((a, w) => a + w.ww, 0) + space * 4;
+  l1.style.transform = `scale(${kf(f, L1.S)})`;
+  // sheen across the finished sentence (line coordinates)
+  const sp = clamp((f - 483.5) / 6.5), P = -220 + (LWfull + 440) * (0.5 - 0.5 * Math.cos(Math.PI * sp));
+  const sheenOn = f > 483.5 && f < 490.5;
+  const sheen = sheenOn ? `linear-gradient(104deg, rgba(236,230,255,0) ${(P - 70).toFixed(1)}px, rgba(236,230,255,0.42) ${P.toFixed(1)}px, rgba(236,230,255,0) ${(P + 70).toFixed(1)}px)` : null;
+  // hero gradient (colours cool from bright to deep as it lands; flows right-to-left)
+  const gA = kf(f, [[464, [168, 150, 255]], [470, [118, 92, 248]], [479, [78, 52, 214]]]);
+  const gB = kf(f, [[464, [196, 160, 255]], [479, [126, 76, 228]]]);
+  const gC = kf(f, [[464, [255, 178, 150]], [479, [217, 119, 87]]]);
+  const flow = (1 - ease.inOutCubic(clamp((f - 464) / 16))) * 0.6 + 0.04 * Math.sin((f - 464) / 9);
+  let gi = 0;
+  words.forEach((w, wi) => {
+    w.el.style.left = (left + xs[wi]).toFixed(2) + 'px'; w.el.style.top = top.toFixed(2) + 'px';
+    const wordVisible = f >= w.t0 - 1;
+    w.el.style.display = wordVisible ? 'block' : 'none';
+    w.el.style.filter = 'drop-shadow(0 8px 18px rgba(58,38,170,0.16))';
+    w.chs.forEach((s, k) => {
+      const ti = w.t0 + k * w.st;
+      let tx = 0, ty = 0, sc = 1, sy = 1, skew = 0, bl = 0, op = 1, col = INK1, mx = 0;
+      if (w.kind === 'rise') {
+        const u = clamp((f - ti) / 7), e = backOut(u, 1.5);
+        ty = (1 - e) * 0.92 * L1.size; sy = 1 + 0.10 * (1 - ease.outCubic(u));
+        bl = 5 * (1 - ease.outCubic(clamp(u * 1.25))); op = clamp((f - ti) / 2.5);
+        col = wi === 0 ? kf(f, [[446, [150, 130, 255]], [449, [118, 100, 238]], [452, [80, 72, 160]], [455, [40, 38, 90]], [458, INK1]])
+                       : kf(f, [[ti, [150, 130, 255]], [ti + 4, V], [ti + 9, [70, 62, 150]], [ti + 15, INK1]]);
+      } else if (w.kind === 'slide') {
+        const u = clamp((f - ti) / 6.5), e = backOut(u, 1.25);
+        tx = -(1 - e) * 78; skew = -13 * (1 - ease.outCubic(u)); mx = 13 * (1 - ease.outCubic(clamp(u * 1.15)));
+        op = clamp((f - ti) / 2);
+        col = kf(f, [[ti, [150, 130, 255]], [ti + 4, V], [ti + 9, [70, 62, 150]], [ti + 15, INK1]]);
+      } else if (w.kind === 'hero') {
+        const u = clamp((f - ti) / 8), e = backOut(u, 1.9);
+        ty = (1 - e) * 0.95 * L1.size; sc = 0.9 + 0.1 * Math.min(1, e); bl = 6 * (1 - ease.outCubic(clamp(u * 1.2)));
+        op = clamp((f - ti) / 2.5);
+      } else {   // skeleton -> word
+        const tl = 481 + k * w.st, u = clamp((f - tl) / 5);
+        ty = 10 * (1 - ease.outCubic(u)); bl = 3.5 * (1 - u); op = ease.outCubic(u);
+        col = kf(f, [[481, [176, 170, 210]], [489, [106, 102, 140]]]);
+      }
+      // exit: a wave from left to right, letters lift, soften and fade
+      const te = 488.5 + gi * 0.16, ue = ease.inOutCubic(clamp((f - te) / 4));
+      ty -= 24 * ue; bl += 7 * ue; op *= 1 - ue;
+      const xl = xs[wi] + w.xs[k];                         // letter x in line coordinates
+      const fill = w.kind === 'hero'
+        ? `linear-gradient(90deg, ${rgba(gA)} 0%, ${rgba(gB)} 45%, ${rgba(gC)} 100%)`
+        : `linear-gradient(${rgba(col)}, ${rgba(col)})`;
+      const fillSize = w.kind === 'hero' ? `${(w.ww * 1.6).toFixed(1)}px 100%` : '100% 100%';
+      const fillPos = w.kind === 'hero' ? `${(-(w.xs[k]) - w.ww * flow).toFixed(1)}px 0` : '0 0';
+      s.style.backgroundImage = sheen ? `${sheen}, ${fill}` : fill;
+      s.style.backgroundSize = sheen ? `${LWfull.toFixed(1)}px 100%, ${fillSize}` : fillSize;
+      s.style.backgroundPosition = sheen ? `${(-xl).toFixed(1)}px 0, ${fillPos}` : fillPos;
+      s.style.opacity = op.toFixed(3);
+      s.style.transform = `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px) skewX(${skew.toFixed(2)}deg) scale(${sc.toFixed(4)}, ${(sc * sy).toFixed(4)})`;
+      if (w.kind === 'slide') {
+        mvb[k].setAttribute('stdDeviation', `${(mx + bl).toFixed(2)} ${(bl * 0.3).toFixed(2)}`);
+        s.style.filter = (mx + bl) > 0.05 ? `url(#mvb${k})` : 'none';
+      } else s.style.filter = bl > 0.05 ? `blur(${bl.toFixed(2)}px)` : 'none';
+      gi++;
+    });
+  });
+  // the underline under "beyond": shoots past the word, springs back, retracts on the way out
+  const hb = words[3], hx = left + xs[3], uy = L1.base + 0.17 * L1.size;
+  const ext = f < 467.5 ? 0 : f < 471.5 ? ease.outCubic((f - 467.5) / 4) * (hb.ww + 74)
+            : kf(f, [[471.5, hb.ww + 74], [474.5, hb.ww - 7, 'inOutCubic'], [476.5, hb.ww + 2, 'inOutCubic'], [478, hb.ww, 'inOutCubic']]);
+  const out = ease.inOutCubic(clamp((f - 487.5) / 3.5));
+  ul.style.display = ext > 0.5 && out < 1 ? 'block' : 'none';
+  ul.style.left = (hx + ext * out).toFixed(2) + 'px'; ul.style.top = uy.toFixed(2) + 'px';
+  ul.style.width = Math.max(0, ext * (1 - out)).toFixed(2) + 'px';
+  ul.style.opacity = (1 - out).toFixed(3);
+  const tipA = f < 467.5 ? 0 : kf(f, [[467.5, 0], [468.5, 1], [473, 1], [477, 0]]);
+  tip.style.display = tipA > 0.01 ? 'block' : 'none';
+  tip.style.left = (hx + ext).toFixed(2) + 'px'; tip.style.top = (uy + 2.25).toFixed(2) + 'px'; tip.style.opacity = tipA.toFixed(3);
+  // skeleton pill for "generic"
+  const gw = words[4], gx = left + xs[4];
+  const sIn = ease.outCubic(clamp((f - 477.5) / 3)), sOut = ease.inOutCubic(clamp((f - 483.5) / 3.5));
+  sk.style.display = f >= 477.5 && sOut < 1 ? 'block' : 'none';
+  const pw = gw.ww + 18, ph = 0.8 * L1.size;
+  sk.style.left = (gx - 4).toFixed(2) + 'px'; sk.style.top = (L1.base - 0.72 * L1.size).toFixed(2) + 'px';
+  sk.style.width = pw.toFixed(1) + 'px'; sk.style.height = ph.toFixed(1) + 'px';
+  sk.style.opacity = (sIn * (1 - sOut)).toFixed(3);
+  sk.style.transform = `scaleX(${(0.18 + 0.82 * sIn).toFixed(4)}) scale(${(1 + 0.04 * sOut).toFixed(4)})`;
+  sk.querySelector('i').style.transform = `translateX(${(-pw * 0.5 + pw * 1.6 * clamp((f - 478.5) / 5)).toFixed(1)}px)`;
+  sk.querySelector('b').style.opacity = (1 - ease.outCubic(clamp((f - 480.5) / 2.5))).toFixed(3);
+  // soft light behind the line, breathing with each landing word
+  const pulse = words.reduce((a, w, i) => a + 0.22 * Math.exp(-Math.pow((f - (w.t0 + 3.5)) / 2.6, 2)), 0);
+  const gop = (0.5 + pulse) * clamp((f - 445) / 4) * (1 - ease.inOutCubic(clamp((f - 489) / 6)));
+  const gwid = LW + 420, ghei = 300;
+  glow1.style.left = (left + LW / 2 - gwid / 2).toFixed(1) + 'px'; glow1.style.top = (L1.base - 0.35 * L1.size - ghei / 2).toFixed(1) + 'px';
+  glow1.style.width = gwid.toFixed(1) + 'px'; glow1.style.height = ghei + 'px'; glow1.style.opacity = gop.toFixed(3);
+}
 const V2 = [117, 101, 241];
 // ---------------------------------------------------------------------------------------------
 // "healthcare search" (f495-525), redesigned at the client's request (premium search moment, kept
@@ -147,9 +321,9 @@ function renderL2(f) {
 }
 window.renderFrame = async (f) => {
   await setImg(document.getElementById('bg'), `../../plates/S05_lavender_titles/bg_${String(f).padStart(4, '0')}.jpg`);
-  line1.el.style.display = f <= 496 ? 'block' : 'none';
+  l1.style.display = f <= 496 ? 'block' : 'none';
   l2.style.display = f >= 495 ? 'block' : 'none';
-  if (f <= 496) line1.render(f);
+  if (f <= 496) renderL1(f);
   if (f >= 495) renderL2(f);
 };
 window.sceneReady = document.fonts.ready;

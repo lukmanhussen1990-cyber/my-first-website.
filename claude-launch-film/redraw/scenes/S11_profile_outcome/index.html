@@ -38,7 +38,9 @@ function gradeLine() {
   graded = true;
 }
 window.renderFrame = async (f) => {
-  await setImg(document.getElementById('bg'), `../../plates/S11_profile_outcome/bg_${String(f).padStart(4, '0')}.jpg`);
+  // 1091-1128: footage with Dr. Imran Hussain composited in (tools/s11_comp.py); the rest as before
+  const pre = (f >= 1091 && f <= 1128) ? 'bgi_' : 'bg_';
+  await setImg(document.getElementById('bg'), `../../plates/S11_profile_outcome/${pre}${String(f).padStart(4, '0')}.jpg`);
   L.el.style.display = f >= 1127 ? 'block' : 'none';
   if (f < 1127) return;
   L.render(f);

@@ -13,6 +13,22 @@ K, OX, OY = 3.0, 440, 195
 Sm = np.array([[K, 0, -K * OX], [0, K, -K * OY], [0, 0, 1.0]]); Si = np.linalg.inv(Sm)
 CLIP = (549, 214, 1031, 740)          # chat content clip rect (canonical)
 od = f'{S}/rd/out/S09_anatomy_reply'; os.makedirs(od, exist_ok=True)
+# measured reference blur (tools/s09_blurfit.py): window-fixed parts smear vertically while the camera
+# whips; the chat text stays nearly sharp. Smoothed and cleaned into keyframes (frame px sigmas).
+BF = {int(k): v for k, v in json.load(open(f'{S}/rd/data/s09_blurfit.json')).items()}
+def med3(vals):
+    return [sorted(vals[max(0, i - 1):i + 2])[len(vals[max(0, i - 1):i + 2]) // 2] for i in range(len(vals))]
+_fs = sorted(BF)
+_sx = med3([BF[f]['side'][0] if BF[f]['side'] else 0 for f in _fs]); _sy = med3([BF[f]['side'][1] if BF[f]['side'] else 0 for f in _fs])
+SIDE = {f: (min(_sx[i], 1.5), _sy[i]) for i, f in enumerate(_fs)}
+def cont_blur(f):
+    # the reference keeps the chat text nearly sharp while the camera whips (the scroll follows the
+    # camera); only a slight vertical softening at the fastest frames
+    return (0.0, float(np.interp(f, [940, 945, 948, 952, 956], [0, 1.0, 1.3, 0.9, 0])))
+BASE = 0.55                                  # the footage's own softness
+def aniso(img, sx, sy):
+    sx = max(sx, BASE); sy = max(sy, BASE)
+    return cv2.GaussianBlur(img, (0, 0), sigmaX=sx, sigmaY=sy)
 def seg(f): return 0 if f <= 897 else 1
 def Hat(t, f):
     f0 = int(np.floor(t)); f1 = f0 + 1
@@ -56,6 +72,17 @@ for f in range(a, b + 1):
         M = Hat(t, f) @ Si @ P
         acc += cv2.warpPerspective(pm, M, (1920, 1080), flags=cv2.INTER_LINEAR, borderValue=(0, 0, 0, 0))
     acc /= N
+    # camera blur: window-fixed parts and chat text separately (content mask = warped chat clip)
+    if f >= 898:
+        cm = np.zeros(pm.shape[:2], np.float32)
+        x0, y0, x1, y1 = [int(K * pre * v) for v in (CLIP[0] - OX, CLIP[1] - OY, CLIP[2] - OX, CLIP[3] - OY)]
+        cm[y0:y1, x0:x1] = 1
+        cmw = cv2.warpPerspective(cm, Hat(float(f), f) @ Si @ P, (1920, 1080))
+        cmw = cv2.GaussianBlur(cmw, (0, 0), 6)[..., None]
+        sxs, sys_ = SIDE.get(f, (0, 0)); sxc, syc = cont_blur(f)
+        acc = aniso(acc, sxs, sys_) * (1 - cmw) + aniso(acc, sxc, syc) * cmw
+    else:
+        acc = aniso(acc, 0, 0)
     # defocus of the quick push-in after the cut (measured visually on the reference)
     sg = {897: 2.5, 898: 5.0, 899: 4.0, 900: 3.0, 901: 2.0, 902: 1.2, 903: 0.6}.get(f, 0)
     if sg: acc = cv2.GaussianBlur(acc, (0, 0), sg)

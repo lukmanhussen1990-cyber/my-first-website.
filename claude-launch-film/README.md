@@ -10,7 +10,7 @@ for a shot-by-shot comparison.
 
 ## Redrawn version
 
-`claude_launch_film_redraw_v5.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
+`claude_launch_film_redraw_v6.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
 scene is now rebuilt:
 
 - **Opening:** the four-point sparkle is replaced by the orange Claude starburst, and the
@@ -24,6 +24,20 @@ scene is now rebuilt:
 - **Redrawn scenes:** titles, chat pill, doctor cards and the "Claude" wordmarks are
   rebuilt as animated HTML/CSS. Real-world footage and backgrounds come from the
   reference, with the original text removed.
+- **Futuristic "right one":** both "right one" titles decode out of flickering machine glyphs
+  with a red/cyan RGB split and a light beam riding the lock front. On the dark title, HUD
+  brackets lock onto the words and "MATCH FOUND" types in; over the doctor cards, targeting
+  brackets lock onto Dr. Imran Hussain's card, a scan line passes over it and a "Best match" chip
+  pops onto the photo.
+- **"Build to move beyond generic":** letters rise out of a baseline mask, "move" sweeps in with
+  motion blur, "beyond" carries a violet-to-coral gradient and a glowing underline that shoots past
+  the word, and "generic" resolves out of a frosted loading-skeleton pill in plain grey; a glint
+  crosses the sentence before it lifts away into the search.
+- **Dr. Imran Hussain:** the second doctor card and the doctor profile page show Dr. Imran Hussain
+  with his photo. On the profile page the name, breadcrumb, photo, e-mail (a placeholder,
+  `dr.imranhussain@example.com`) and About text are put into the real footage: the card is tracked
+  frame by frame, each old item is filled from its surroundings, and the new one is added with the
+  footage's own blur, motion smear and fade.
 - **End credit:** "Built by Imran using Opus 5.5" plays at the end, over a ring-out of
   the music.
 
@@ -31,15 +45,15 @@ scene is now rebuilt:
 |---|---|---|
 | 1–60 | opening, Claude starburst, triangle reveal | redrawn |
 | 61–250 | cloud chat | redrawn (Claude composer) |
-| 251–350 | "right one" → "Meet Claude" | redrawn |
-| 351–448 | dashboard window | redrawn UI over the real background and glass; livelier per-letter headline (drop-in, light sweep, flowing gradient, glow, staggered exit); 445–448 flash kept from the name-change frames |
-| 449–525 | "Build to move beyond generic healthcare search" | redrawn; "healthcare" ripples in, then a compact frosted-glass search field opens beside it (soft shadow, focus ring), a gradient magnifier draws itself, "search" is typed behind a soft caret, a sheen crosses the glass and a violet-to-coral progress line runs along its base |
+| 251–350 | "right one" → "Meet Claude" | redrawn; "right one" decodes from machine glyphs (RGB split, light beam), HUD brackets lock on and "MATCH FOUND" types in |
+| 351–445 | dashboard window | redrawn UI over the real background and glass; livelier per-letter headline (drop-in, light sweep, flowing gradient, glow, staggered exit) |
+| 446–525 | "Build to move beyond generic healthcare search" | redrawn; "Build to move beyond generic" is a kinetic title (mask rise, motion-blur sweep, gradient hero word with an overshooting underline, skeleton-to-word "generic", glint, wave exit); "healthcare" ripples in, then a compact frosted-glass search field opens beside it (soft shadow, focus ring), a gradient magnifier draws itself, "search" is typed behind a soft caret, a sheen crosses the glass and a violet-to-coral progress line runs along its base |
 | 526–605 | typing the symptom | redrawn (Claude composer) |
 | 606–718 | anatomy viewer | redrawn UI (Claude sidebar, buttons, Done, pointer) over the tracked window; anatomy model kept |
 | 719–862 | processing lines | redrawn |
-| 863–972 | Claude's reply | redrawn Claude chat (user bubble, serif reply streaming with the starburst, composer) over the tracked, scrolling window |
-| 973–1090 | doctor cards, "right one" | redrawn over the reference light field (cards and titles removed) |
-| 1091–1167 | profile and analytics | "Right outcome" redrawn; the fast, blurred profile scroll stays the original footage with the Claude sidebar label |
+| 863–972 | Claude's reply | redrawn Claude chat (user bubble, serif reply streaming with the starburst, composer) over the tracked, scrolling window; the redrawn UI takes on the footage's measured focus blur |
+| 973–1090 | doctor cards, "right one" | redrawn over the reference light field (cards and titles removed); the centre doctor is Dr. Imran Hussain; futuristic "right one" with a targeting lock on his card and a "Best match" chip |
+| 1091–1167 | profile and analytics | "Right outcome" redrawn; the profile footage now shows Dr. Imran Hussain (name, breadcrumb, photo, e-mail, About), tracked and blur-matched through the fast scroll |
 | 1168–1348 | closing lines, Claude wordmark | redrawn |
 | 1349–1453 | end credit | new |
 
@@ -53,6 +67,12 @@ The redraw sources are in `redraw/`:
   original graphics sat, so `s04_plates.py` and `s10_plates.py` fill only those pixels and keep
   the real glass and light-field gradients. `s11_plates.py` cleans the profile scene's title.
 - `s07_refine.py`: masked ECC refinement of the anatomy-viewer window tracking.
+- `shared/hud.js`: the decode title and HUD brackets used by both "right one" moments.
+- `s11_*.py`, `textr.py`: the profile-page doctor swap. `s11_track.py` / `s11_refine*.py` track the page
+  (SIFT, then masked ECC on static content), `s11_calib.py` fits the original fonts, `s11_edit.py` builds the
+  edited page, `s11_comp.py` puts it into each frame with the measured blur and fade, and `s11_minicard.py`
+  fixes the small card seen through the white mist.
+- `s09_blurfit.py`: measures the reply scene's focus blur so the redrawn UI matches it.
 - `s07_*.py`, `s09_*.py`: window tracking (SIFT homographies on the window frame, scroll by
   phase correlation), plate cleaning and compositing of the flat UI layer.
 - `render.py`: renders a scene with headless Chromium.
