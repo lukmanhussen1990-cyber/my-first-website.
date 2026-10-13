@@ -10,7 +10,7 @@ for a shot-by-shot comparison.
 
 ## Redrawn version
 
-`claude_launch_film_redraw_v4.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
+`claude_launch_film_redraw_v5.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
 scene is now rebuilt:
 
 - **Opening:** the four-point sparkle is replaced by the orange Claude starburst, and the
@@ -33,12 +33,12 @@ scene is now rebuilt:
 | 61–250 | cloud chat | redrawn (Claude composer) |
 | 251–350 | "right one" → "Meet Claude" | redrawn |
 | 351–448 | dashboard window | redrawn UI over the real background and glass; livelier per-letter headline (drop-in, light sweep, flowing gradient, glow, staggered exit); 445–448 flash kept from the name-change frames |
-| 449–525 | "Build to move beyond generic healthcare search" | redrawn; "healthcare" ripples in letter by letter, "search" types itself out with a caret and a small magnifying glass that pings |
+| 449–525 | "Build to move beyond generic healthcare search" | redrawn; "healthcare" ripples in, then a compact frosted-glass search field opens beside it (soft shadow, focus ring), a gradient magnifier draws itself, "search" is typed behind a soft caret, a sheen crosses the glass and a violet-to-coral progress line runs along its base |
 | 526–605 | typing the symptom | redrawn (Claude composer) |
 | 606–718 | anatomy viewer | redrawn UI (Claude sidebar, buttons, Done, pointer) over the tracked window; anatomy model kept |
 | 719–862 | processing lines | redrawn |
 | 863–972 | Claude's reply | redrawn Claude chat (user bubble, serif reply streaming with the starburst, composer) over the tracked, scrolling window |
-| 973–1090 | doctor cards, "right one" | redrawn |
+| 973–1090 | doctor cards, "right one" | redrawn over the reference light field (cards and titles removed) |
 | 1091–1167 | profile and analytics | "Right outcome" redrawn; the fast, blurred profile scroll stays the original footage with the Claude sidebar label |
 | 1168–1348 | closing lines, Claude wordmark | redrawn |
 | 1349–1453 | end credit | new |
@@ -49,7 +49,10 @@ The redraw sources are in `redraw/`:
 - `shared/`: title-line animator, Claude composer, glass and icon components, and the
   Noto Sans logo font and Source Serif 4 for Claude's replies (both OFL). Inter (OFL) is used
   from the system.
-- `s04_plates.py`, `s11_plates.py`: clean plates for the dashboard and profile scenes.
+- `uimask.py`: renders a scene's redrawn foreground alone; its alpha marks exactly where the
+  original graphics sat, so `s04_plates.py` and `s10_plates.py` fill only those pixels and keep
+  the real glass and light-field gradients. `s11_plates.py` cleans the profile scene's title.
+- `s07_refine.py`: masked ECC refinement of the anatomy-viewer window tracking.
 - `s07_*.py`, `s09_*.py`: window tracking (SIFT homographies on the window frame, scroll by
   phase correlation), plate cleaning and compositing of the flat UI layer.
 - `render.py`: renders a scene with headless Chromium.

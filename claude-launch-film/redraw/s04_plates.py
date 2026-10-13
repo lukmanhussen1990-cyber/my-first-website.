@@ -20,11 +20,30 @@ def outline(H, grow):
     P = np.float32(pts).reshape(-1, 1, 2)
     return cv2.perspectiveTransform(P, np.array(H, np.float64).reshape(3, 3)).reshape(-1, 2)
 RISE = {351: 0, 355: 62, 359: 115, 364: 92, 372: 20, 382: 0}
+def grow_for(f):
+    # how far the original UI is smeared by defocus / motion in this frame
+    for (f0, f1, k) in ((351, 362, 19), (363, 372, 11), (373, 393, 7), (394, 412, 15), (413, 436, 7), (437, 444, 10)):
+        if f0 <= f <= f1: return k
+    return 9
 for f in range(a, b + 1):
     im = load(f)
     H = HW[str(f)]
     m = np.zeros(im.shape[:2], np.uint8)
-    cv2.fillPoly(m, [np.round(outline(H, -13)).astype(np.int32)], 255)
+    # window interior: fill only where the original UI sat (alpha of the redrawn UI, which is laid
+    # out on top of it) plus any leftover fine detail, so the real glass gradient is kept
+    inner = np.zeros_like(m); cv2.fillPoly(inner, [np.round(outline(H, -13)).astype(np.int32)], 255)
+    # union of the UI footprint over the next frames, carried back through the window homography
+    # (some redrawn elements fade in a little later than the originals they replace)
+    Hf = np.array(H, np.float64).reshape(3, 3); al = np.zeros(m.shape, np.uint8)
+    for g in range(f, min(444, f + 24) + 1, 4):
+        ag = cv2.imread(f'{S}/rd/work/s04_alpha/f{g:04d}.png', cv2.IMREAD_UNCHANGED)[..., 3]
+        Hg = np.array(HW[str(g)], np.float64).reshape(3, 3)
+        al = np.maximum(al, ag if g == f else cv2.warpPerspective(ag, Hf @ np.linalg.inv(Hg), (1920, 1080)))
+    k = grow_for(f)
+    ui = cv2.dilate((al > 6).astype(np.uint8) * 255, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * k + 1, 2 * k + 1)))
+    L = im.mean(2); hf = np.abs(L - cv2.GaussianBlur(L, (0, 0), 14))
+    det = cv2.dilate(((hf > 14) & (inner > 0)).astype(np.uint8) * 255, np.ones((9, 9), np.uint8))
+    m |= (ui | det) & inner
     if f <= 404:
         s, px, py = HX[str(max(351, min(404, f)))]
         rise = np.interp(f, sorted(RISE), [RISE[k] for k in sorted(RISE)])

@@ -198,7 +198,7 @@ const A = {
 const val = (keys, f, d = 0) => keys ? kf(f, keys) : d;
 function anim(g, a, f) {
   if (!g) return;
-  const dy = val(a.dy, f, 0), op = val(a.op, f, 1);
+  const dy = val(a.dy, f, 0), op = (typeof MASK_MODE !== 'undefined' && MASK_MODE) ? 1 : val(a.op, f, 1);
   g.setAttribute('transform', dy ? `translate(0 ${dy.toFixed(2)})` : '');
   g.setAttribute('opacity', op.toFixed(3));
   g.style.display = op <= 0.001 ? 'none' : '';
@@ -301,12 +301,17 @@ function drawFlash(f) {
 
 // ---------------------------------------------------------------- frame
 const PLATE = new Image();
+const MASK_MODE = location.search.includes('mask');
+if (MASK_MODE) { document.documentElement.style.background = 'transparent'; document.body.style.background = 'transparent'; $('stage').style.background = 'transparent'; }
 window.renderFrame = async (f) => {
   const H = Hf(f);
   // background
   // reference background, window glass and border with the original UI removed (rd/plates/S04)
-  await setImg(PLATE, `../../plates/S04_dashboard/bg_${String(f).padStart(4, '0')}.jpg`);
-  const bo = $('bgOut').getContext('2d'); bo.drawImage(PLATE, 0, 0, 1920, 1080);
+  if (MASK_MODE) { $('bgOut').style.display = 'none'; $('head').style.visibility = 'hidden'; }
+  else {
+    await setImg(PLATE, `../../plates/S04_dashboard/bg_${String(f).padStart(4, '0')}.jpg`);
+    const bo = $('bgOut').getContext('2d'); bo.drawImage(PLATE, 0, 0, 1920, 1080);
+  }
   $('bgIn').style.display = 'none';
   // the redrawn border is only needed where the headline crossed the original border
   G.frame.style.display = (f >= 392 && f <= 404) ? '' : 'none';
@@ -316,7 +321,7 @@ window.renderFrame = async (f) => {
   for (const k of ['menu', 'doctors', 'buddy', 'logout', 'sub', 'wContent', 'wPill', 'bTxt', 'bBg', 'c1', 'c1t', 'c1b', 'c2', 'c2t', 'c3', 'c3t', 'brain']) anim(G[k], A[k], f);
   anim(G.faces, A.c1b, f);
   // logo (HTML element)
-  { const dy = kf(f, A.logo.dy), op = kf(f, A.logo.op); G.logo.style.transform = `translateY(${dy.toFixed(2)}px)`; G.logo.style.opacity = op.toFixed(3); }
+  { const dy = kf(f, A.logo.dy), op = MASK_MODE ? 1 : kf(f, A.logo.op); G.logo.style.transform = `translateY(${dy.toFixed(2)}px)`; G.logo.style.opacity = op.toFixed(3); }
   // heading words (tspan dy chains)
   const d1 = [0, 0, 0, kf(f, A.the.dy)];
   G.h1aW.forEach((t, i) => t.setAttribute('dy', (d1[i] - (i ? d1[i - 1] : 0)).toFixed(2)));
@@ -394,7 +399,7 @@ function buildHeadLetters() {
     <mask id="shimM" maskUnits="userSpaceOnUse" x="-500" y="-500" width="3400" height="2000">
       <rect id="shimR" x="0" y="-500" width="380" height="2000" fill="url(#shimG)"/></mask>
     <filter id="hglow" x="-15%" y="-80%" width="130%" height="260%" color-interpolation-filters="sRGB">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="12" result="b"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="9" result="b"/>
       <feFlood id="hglowC" flood-color="rgb(150,120,255)" flood-opacity="0.0"/>
       <feComposite in2="b" operator="in" result="g"/>
       <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`);
@@ -451,7 +456,7 @@ function animateHead(f) {
   const gu = Math.sin(Math.PI * clamp((f - 366) / 30));
   const g = $('headGrad'); g.setAttribute('x1', (290 - 520 * gu).toFixed(1)); g.setAttribute('x2', (1637 - 520 * gu).toFixed(1));
   // soft violet glow that swells after the reveal
-  const glow = kf(f, [[366, 0], [372, 0.55], [378, 0.75], [384, 0.5], [390, 0.7], [396, 0.35], [404, 0]]);
+  const glow = kf(f, [[366, 0], [372, 0.28], [378, 0.38], [384, 0.26], [390, 0.34], [396, 0.18], [404, 0]]);
   $('hglowC').setAttribute('flood-opacity', glow.toFixed(3));
   $('headG').setAttribute('filter', glow > 0.01 ? 'url(#hglow)' : '');
 }

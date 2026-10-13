@@ -22,7 +22,7 @@ const A = new TitleLine(stage, {
   units: [
     { in: 1160, dur: 2, from: W, to: W },
     { in: 1179, dur: 6, from: G, to: W, presenceDur: 10 },
-    { in: 1189.5, dur: 6, from: [140, 125, 255], to: W, weight: 600, blur0: 4, presenceDur: 8 },
+    { in: 1189.5, dur: 6, colorAt: [[1189.5, [140, 125, 255]], [1193, [134, 118, 248]], [1197, W]], opacityAt: [[1189.5, 0], [1192, 1]], weight: 700, blur0: 4, presenceDur: 8 },   // violet on arrival, then white bold as on the reference
     { in: 1195, dur: 1, opacityAt: [[1194.5, 0], [1195, 1]], colorAt: [[1195, VI]], weight: 600, presenceDur: 7,
       typeAt: [[1195, 0.08], [1196, 0.22], [1198, 0.46], [1200, 0.78], [1202, 1]] },
   ],

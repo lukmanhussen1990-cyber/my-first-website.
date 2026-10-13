@@ -28,7 +28,7 @@
 </style>
 </head><body>
 <div id="stage">
-  <canvas id="outerBg" class="bg" width="480" height="270"></canvas>
+  <img id="outerPlate" style="position:absolute;left:0;top:0;width:1920px;height:1080px;display:none"><canvas id="outerBg" class="bg" width="480" height="270"></canvas>
   <div id="rim"></div>
   <div id="win">
     <canvas id="innerBg" class="bg" width="480" height="270"></canvas>
@@ -299,6 +299,8 @@ function mistMask(f) {
 }
 let BG_OUT = null, BG_IN2 = null;
 
+const MASK_MODE = location.search.includes('mask');
+if (MASK_MODE) { document.documentElement.style.background = 'transparent'; document.body.style.background = 'transparent'; $('stage').style.background = 'transparent'; }
 window.renderFrame = async (f) => {
   // ---- window (outro)
   const g = outroScale(f);
@@ -333,8 +335,13 @@ window.renderFrame = async (f) => {
   // background fields: inside the window and (when boxed) outside it
   const Pin = (f >= 1075 && BG_IN2 && BG_IN2[f]) ? BG_IN2[f] : bgParams(f);
   drawField($('innerBg'), Pin);
-  $('outerBg').style.display = boxed ? 'block' : 'none';
-  if (boxed) drawField($('outerBg'), (BG_OUT && BG_OUT[f]) ? BG_OUT[f] : Pin);
+  // around the shrinking window: the reference's own light field and glass bevel (background only;
+  // the window interior is fully covered by the redrawn content)
+  $('outerBg').style.display = 'none';
+  const op = $('outerPlate');
+  rim.style.display = 'none'; $('innerBg').style.visibility = 'hidden'; $('mist').style.display = 'none';
+  if (MASK_MODE) op.style.display = 'none';
+  else { await setImg(op, `${PLATES}bg/bg_${String(f).padStart(4, '0')}.jpg`); op.style.display = 'block'; }
 
   // ---- phase A settle zoom (cards + title)
   const za = zoomA(f);
