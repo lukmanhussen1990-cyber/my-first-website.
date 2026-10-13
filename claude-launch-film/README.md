@@ -10,10 +10,14 @@ for a shot-by-shot comparison.
 
 ## Redrawn version (work in progress)
 
-`claude_launch_film_redraw_v1.mp4` (48.43 s, 1,453 frames) is the first full cut of the
+`claude_launch_film_redraw_v2.mp4` (48.43 s, 1,453 frames) is the current cut of the
 redrawn film:
 
-- **Opening:** the four-point sparkle is replaced by the orange Claude starburst.
+- **Opening:** the four-point sparkle is replaced by the orange Claude starburst, and the
+  clouds open through a growing, turning triangle instead of the scalloped circle.
+- **Chat UI:** every chat box is a Claude-style composer: a rounded box with "+" and tools
+  buttons, an "Opus 5.5" model picker and the coral send button with an up-arrow. It
+  replaces the pill with a mic and a black send disc.
 - **Redrawn scenes:** titles, chat pill, doctor cards and the "Claude" wordmarks are
   rebuilt as animated HTML/CSS. Real-world footage and backgrounds come from the
   reference, with the original text removed.
@@ -22,12 +26,13 @@ redrawn film:
 
 | Frames | Scene | Status |
 |---|---|---|
-| 1–60 | opening, Claude starburst | redrawn |
-| 61–250 | cloud chat | redrawn |
+| 1–60 | opening, Claude starburst, triangle reveal | redrawn |
+| 61–250 | cloud chat | redrawn (Claude composer) |
 | 251–350 | "right one" → "Meet Claude" | redrawn |
 | 351–448 | dashboard window | name-change frames for now |
 | 449–525 | "Build to move beyond generic healthcare search" | redrawn |
-| 526–972 | typing, anatomy viewer, processing, reply | 719–862 redrawn, rest name-change frames for now |
+| 526–605 | typing the symptom | redrawn (Claude composer) |
+| 606–972 | anatomy viewer, processing, reply | 719–862 redrawn, rest name-change frames for now |
 | 973–1090 | doctor cards, "right one" | redrawn |
 | 1091–1167 | profile and analytics | name-change frames for now |
 | 1168–1348 | closing lines, Claude wordmark | redrawn |
@@ -36,7 +41,8 @@ redrawn film:
 The redraw sources are in `redraw/`:
 
 - `scenes/*/index.html`: one page per scene that draws any frame with `renderFrame(f)`.
-- `shared/`: title-line animator, glass/pill/icon components, Inter/Noto fonts (OFL).
+- `shared/`: title-line animator, Claude composer, glass and icon components, and the
+  Noto Sans logo font (OFL). Inter (OFL) is used from the system.
 - `render.py`: renders a scene with headless Chromium.
 - `assemble_final.py`: joins the scenes into one frame sequence.
 

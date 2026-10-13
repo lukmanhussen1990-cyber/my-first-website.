@@ -21,7 +21,7 @@
 <script>
 // ---------------------------------------------------------------------------------------------
 // S01 (frames 1-60): the client's orange starburst logo grows (in place of the reference's white four-point sparkle) at the centre of a navy field, then a
-// scalloped (14-lobe) circular mask opens from the centre onto the aerial cloud plate while the
+// rounded triangle mask (client request; the reference uses a scalloped circle) opens from the centre onto the aerial cloud plate while the
 // sparkle turns into a dark cut-out that shrinks and spins away. All numbers measured on the
 // reference frames (see rd/plates/S01_opening/tools/g1common.py for the mask fits).
 // ---------------------------------------------------------------------------------------------
@@ -66,25 +66,30 @@ const mask = document.createElement('canvas'); mask.width = 1920; mask.height = 
 const mctx = mask.getContext('2d');
 const plateImg = new Image();
 
+// Triangle opening (client request): an equilateral triangle with softly rounded corners grows from the
+// centre and turns with the measured spin, revealing the clouds. Its inradius follows the reference
+// mask radius (Rm), so the frame is fully open on the same beat. Accumulated over the shutter.
+function trianglePath(c, cx, cy, Rc, ph) {
+  const rr = 0.16 * Rc;                       // corner rounding
+  const P = [0, 1, 2].map(i => { const a = ph - Math.PI / 2 + i * 2 * Math.PI / 3; return [cx + Rc * Math.cos(a), cy + Rc * Math.sin(a)]; });
+  const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  const m0 = mid(P[2], P[0]);
+  c.moveTo(m0[0], m0[1]);
+  for (let i = 0; i < 3; i++) { const a = P[i], b = P[(i + 1) % 3]; c.arcTo(a[0], a[1], b[0], b[1], rr); }
+  c.closePath();
+}
 function drawFlower(c, f) {
-  // union of a central disk and 14 lobe circles; accumulated over the shutter (radial motion blur)
   const M = 14;
   c.clearRect(0, 0, 1920, 1080);
   c.globalCompositeOperation = 'lighter';
   for (let k = 0; k < M; k++) {
     const t = f - 0.25 + 0.5 * (k + 0.5) / M;
     const Rm = lin(RMAX, t); if (Rm <= 0) continue;
-    const rho = Q * Rm, D = Rm - rho, ph = phiDeg(t) * Math.PI / 180;
-    const cx = lin(MCX, t), cy = MCY;
+    const Rc = 2.05 * Rm;                     // circumradius; inradius = Rc / 2 ~ the reference radius
+    const ph = phiDeg(t) * Math.PI / 180;
     c.fillStyle = `rgba(255,255,255,${Math.min(1, 1.03 / M)})`;
     c.beginPath();
-    c.arc(cx, cy, D, 0, Math.PI * 2);
-    for (let i = 0; i < N_LOBES; i++) {
-      const a = ph + i * 2 * Math.PI / N_LOBES;
-      const x = cx + D * Math.cos(a), y = cy + D * Math.sin(a);
-      c.moveTo(x + rho, y);
-      c.arc(x, y, rho, 0, Math.PI * 2);
-    }
+    trianglePath(c, lin(MCX, t), MCY, Rc, ph);
     c.fill('nonzero');
   }
   c.globalCompositeOperation = 'source-over';
@@ -94,7 +99,7 @@ window.renderFrame = async (f) => {
   // --- clouds through the scalloped mask
   ctx.clearRect(0, 0, 1920, 1080);
   if (f >= 21) {
-    await setImg(plateImg, `../../plates/S01_opening/clouds_${String(f).padStart(4, '0')}.png`);
+    await setImg(plateImg, `../../plates/S01_opening/cloudsfull_${String(f).padStart(4, '0')}.png`);
     ctx.globalCompositeOperation = 'source-over';
     ctx.drawImage(plateImg, 0, 0, 1920, 1080);
     drawFlower(mctx, f);

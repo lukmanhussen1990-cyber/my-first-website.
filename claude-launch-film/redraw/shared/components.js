@@ -21,6 +21,9 @@ const ICON_PATHS = {
   play: '<path d="M7 4v16l13-8z"/>',
   arrowUpRight: '<path d="M7 17 17 7"/><path d="M8 7h9v9"/>',
   star: '<path d="m12 2 3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21l1.4-7L2 9.3l7-.8z"/>',
+  arrowUp: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+  chevronDown: '<path d="m6 9 6 6 6-6"/>',
+  sliders: '<path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/>',
   share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4"/><path d="m15.4 6.5-6.8 4"/>',
 };
 
@@ -63,6 +66,40 @@ function chatPill({ width = 1226, height = 140, text = '', textColor = '#fff', f
   return el;
 }
 
+// Claude-style message composer (client request: the chat must look like Claude's UI, not a pill
+// with a mic and a black send disc). A rounded box: the message on the first row, a tool row below
+// with "+" and a tools button on the left, the model selector ("Opus 5.5" + chevron) and Claude's
+// coral send button (arrow up, rounded square) on the right. Every size scales with the height h.
+// Parts are exposed (el.parts) so scenes can animate them; positions are box-local px.
+const CLAUDE_CORAL = '#D97757';
+function claudeComposer({ width = 1143, height = 175, text = '', model = 'Opus 5.5', fontSize = null,
+                          font = "'Inter'", textColor = '#fff', muted = 'rgba(255,255,255,0.72)',
+                          surface = 'rgba(255,255,255,0.08)', border = 'rgba(255,255,255,0.42)', blur = 22,
+                          btnBorder = 'rgba(255,255,255,0.30)', caret = false } = {}) {
+  const h = height, w = width, fs = fontSize || 0.245 * h;
+  const pad = 0.2 * h, row2 = 0.70 * h, bs = 0.27 * h, sb = 0.31 * h;
+  const el = document.createElement('div');
+  el.className = 'cc';
+  Object.assign(el.style, { width: w + 'px', height: h + 'px', borderRadius: (0.19 * h) + 'px', background: surface,
+    border: `1.5px solid ${border}`, backdropFilter: `blur(${blur}px) saturate(1.15)`, webkitBackdropFilter: `blur(${blur}px) saturate(1.15)` });
+  const btn = (x, name) => `<div class="cc-btn" style="left:${x}px;top:${row2 - bs / 2}px;width:${bs}px;height:${bs}px;border-radius:${0.26 * bs}px;border:1.5px solid ${btnBorder}">${icon(name, 0.58 * bs, textColor, 1.9)}</div>`;
+  el.innerHTML = `
+    <div class="cc-text" style="left:${pad}px;top:${0.36 * h - 0.5 * fs * 1.2}px;font-family:${font};font-size:${fs}px;line-height:${fs * 1.2}px;color:${textColor};width:${w - 2 * pad}px">
+      <span class="t"></span><span class="caret" style="height:${fs * 1.15}px;margin-left:${fs * 0.05}px;display:${caret ? 'inline-block' : 'none'}"></span></div>
+    ${btn(0.15 * h, 'plus')}${btn(0.15 * h + bs + 0.07 * h, 'sliders')}
+    <div class="cc-model" style="right:${0.15 * h + sb + 0.1 * h}px;top:${row2 - 0.09 * h}px;height:${0.18 * h}px;font-family:${font};font-size:${0.155 * h}px;color:${muted}">
+      <span>${model}</span>${icon('chevronDown', 0.15 * h, muted, 2.2, 'style="margin-left:' + (0.04 * h) + 'px"')}</div>
+    <div class="cc-send" style="right:${0.15 * h}px;top:${row2 - sb / 2}px;width:${sb}px;height:${sb}px;border-radius:${0.27 * sb}px;background:${CLAUDE_CORAL}">${icon('arrowUp', 0.56 * sb, '#fff', 2.4)}</div>`;
+  const q = (c) => el.querySelector(c);
+  el.parts = { text: q('.cc-text'), t: q('.cc-text .t'), caret: q('.cc-text .caret'), plus: el.querySelectorAll('.cc-btn')[0],
+               tools: el.querySelectorAll('.cc-btn')[1], model: q('.cc-model'), send: q('.cc-send') };
+  el.parts.t.textContent = text;
+  el.setText = (t) => { el.parts.t.textContent = t; };
+  el.setCaret = (on) => { el.parts.caret.style.display = on ? 'inline-block' : 'none'; };
+  el.geom = { h, w, fs, pad, row2, bs, sb };
+  return el;
+}
+
 // "Claude" in the brand-logo construction. Each glyph is its own span (.ch) so scenes can
 // animate per-letter blur/brightness (the reference wordmark's letter-by-letter focus sweeps).
 function claudeLogo({ size = 125, fill = null, gradient = false } = {}) {
@@ -75,4 +112,4 @@ function claudeLogo({ size = 125, fill = null, gradient = false } = {}) {
   return el;
 }
 
-window.ICON_PATHS = ICON_PATHS; window.icon = icon; window.sparkleSVG = sparkleSVG; window.chatPill = chatPill; window.claudeLogo = claudeLogo;
+window.ICON_PATHS = ICON_PATHS; window.icon = icon; window.sparkleSVG = sparkleSVG; window.chatPill = chatPill; window.claudeLogo = claudeLogo; window.claudeComposer = claudeComposer; window.CLAUDE_CORAL = CLAUDE_CORAL;
