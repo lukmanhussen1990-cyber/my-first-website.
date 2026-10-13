@@ -10,7 +10,7 @@ for a shot-by-shot comparison.
 
 ## Redrawn version
 
-`claude_launch_film_redraw_v6.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
+`claude_launch_film_redraw_v7.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
 scene is now rebuilt:
 
 - **Opening:** the four-point sparkle is replaced by the orange Claude starburst, and the
@@ -24,6 +24,10 @@ scene is now rebuilt:
 - **Redrawn scenes:** titles, chat pill, doctor cards and the "Claude" wordmarks are
   rebuilt as animated HTML/CSS. Real-world footage and backgrounds come from the
   reference, with the original text removed.
+- **Claude thinking (processing scene):** "Analyzing the affected area" draws a glowing lumbar spine,
+  scans it and pins the sore spot from the typed symptom with a coral pulse and glass callouts;
+  "Mapping anatomical connections" grows a network from that spot to related structures. A
+  breathing Claude starburst, shimmering status text, ticked-off steps and a progress bar run below.
 - **Futuristic "right one":** both "right one" titles decode out of flickering machine glyphs
   with a red/cyan RGB split and a light beam riding the lock front. On the dark title, HUD
   brackets lock onto the words and "MATCH FOUND" types in; over the doctor cards, targeting
@@ -50,7 +54,7 @@ scene is now rebuilt:
 | 446–525 | "Build to move beyond generic healthcare search" | redrawn; "Build to move beyond generic" is a kinetic title (mask rise, motion-blur sweep, gradient hero word with an overshooting underline, skeleton-to-word "generic", glint, wave exit); "healthcare" ripples in, then a compact frosted-glass search field opens beside it (soft shadow, focus ring), a gradient magnifier draws itself, "search" is typed behind a soft caret, a sheen crosses the glass and a violet-to-coral progress line runs along its base |
 | 526–605 | typing the symptom | redrawn (Claude composer) |
 | 606–718 | anatomy viewer | redrawn UI (Claude sidebar, buttons, Done, pointer) over the tracked window; anatomy model kept |
-| 719–862 | processing lines | redrawn |
+| 719–862 | processing lines | redesigned as Claude thinking: a glowing lumbar spine draws itself, a scan finds the sore spot (L4–L5) with callouts, then a network maps it to related muscles, nerves, discs, joints, pelvis and posture with travelling light pulses; the status line has Claude's breathing starburst, letter cascade, shimmer and animated dots, finished steps tick off, and a progress bar counts to 100% |
 | 863–972 | Claude's reply | redrawn Claude chat (user bubble, serif reply streaming with the starburst, composer) over the tracked, scrolling window; the redrawn UI takes on the footage's measured focus blur |
 | 973–1090 | doctor cards, "right one" | redrawn over the reference light field (cards and titles removed); the centre doctor is Dr. Imran Hussain; futuristic "right one" with a targeting lock on his card and a "Best match" chip |
 | 1091–1167 | profile and analytics | "Right outcome" redrawn; the profile footage now shows Dr. Imran Hussain (name, breadcrumb, photo, e-mail, About), tracked and blur-matched through the fast scroll |

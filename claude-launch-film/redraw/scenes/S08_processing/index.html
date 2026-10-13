@@ -3,107 +3,321 @@
 <link rel="stylesheet" href="../../shared/base.css">
 <script src="../../shared/lib.js"></script>
 <script src="../../shared/components.js"></script>
+<script src="../../shared/hud.js"></script>
 <style>
-  .row { position: absolute; left: 0; width: 1920px; text-align: center; white-space: pre; font-family: 'Inter'; font-weight: 500; letter-spacing: -0.02em; line-height: 1; }
-  .row span { display: inline-block; }
+  #cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 960px 520px; }
+  #viz { position: absolute; left: 0; top: 0; overflow: visible; }
+  .pill { position: absolute; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 17px 0 13px; border-radius: 99px; white-space: nowrap;
+          font-family: 'Inter'; font-weight: 500; font-size: 19px; color: #fff; letter-spacing: -0.1px;
+          background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.10));
+          backdrop-filter: blur(10px) saturate(1.3); -webkit-backdrop-filter: blur(10px) saturate(1.3);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 0 0 1px rgba(255,255,255,0.28), 0 10px 26px -10px rgba(30,10,90,0.55); }
+  .pill i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .row { position: absolute; left: 0; top: 0; display: flex; align-items: center; white-space: pre; transform-origin: 0 50%; }
+  .row .ic { position: relative; flex: none; }
+  .row .tx { position: relative; font-family: 'Inter Display'; font-weight: 500; letter-spacing: -0.015em; line-height: 1; }
+  .row .tx span { display: inline-block; will-change: transform, opacity, filter; }
+  #prog { position: absolute; }
+  #prog .track { position: absolute; left: 0; top: 0; height: 4px; border-radius: 3px; background: rgba(255,255,255,0.16); }
+  #prog .fill { position: absolute; left: 0; top: 0; height: 4px; border-radius: 3px; background: linear-gradient(90deg, #8B6CFF, #B06FE8 60%, #D97757);
+                box-shadow: 0 0 12px rgba(160,110,255,0.6); }
+  #prog .head { position: absolute; top: -4px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%;
+                background: radial-gradient(circle, #fff 0%, #FFD9C9 40%, #E58A68 75%); box-shadow: 0 0 14px 4px rgba(229,138,104,0.6); }
+  #prog .pct { position: absolute; top: -9px; font-family: 'Inter'; font-weight: 500; font-size: 20px; color: rgba(232,228,255,0.9); font-variant-numeric: tabular-nums; }
+  #prog .stp { position: absolute; top: -30px; left: 0; white-space: nowrap; font-family: 'Inter'; font-weight: 600; font-size: 13px; letter-spacing: 0.22em; color: rgba(214,206,255,0.75); }
 </style>
 </head><body>
-<div id="stage"><img class="plate" id="bg"></div>
+<div id="stage"><img class="plate" id="bg">
+  <div id="cam">
+    <svg id="viz" width="1920" height="1080" viewBox="0 0 1920 1080">
+      <defs>
+        <filter id="glowW" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.2" result="b"/>
+          <feFlood flood-color="rgb(176,150,255)" flood-opacity="0.85"/><feComposite in2="b" operator="in" result="g"/>
+          <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="glowC" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="6" result="b"/>
+          <feFlood flood-color="rgb(240,128,92)" flood-opacity="0.95"/><feComposite in2="b" operator="in" result="g"/>
+          <feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <pattern id="dots" width="30" height="30" patternUnits="userSpaceOnUse"><circle cx="15" cy="15" r="1.25" fill="#fff"/></pattern>
+        <radialGradient id="gridFade" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset="0.65" stop-color="#fff" stop-opacity="0.45"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+        <mask id="gridMask"><ellipse id="gridEll" cx="960" cy="470" rx="640" ry="300" fill="url(#gridFade)"/></mask>
+        <linearGradient id="beamG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgb(200,186,255)" stop-opacity="0"/><stop offset="0.86" stop-color="rgb(200,186,255)" stop-opacity="0.2"/><stop offset="1" stop-color="#fff" stop-opacity="0.95"/></linearGradient>
+        <linearGradient id="edgeG" gradientUnits="objectBoundingBox" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0.95"/><stop offset="1" stop-color="rgb(200,188,255)" stop-opacity="0.85"/></linearGradient>
+        <clipPath id="scanClip"><rect x="830" y="318" width="260" height="335" rx="8"/></clipPath>
+        <linearGradient id="hfade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.22" stop-color="#fff" stop-opacity="1"/><stop offset="0.78" stop-color="#fff" stop-opacity="1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <mask id="scanMask"><rect x="820" y="0" width="280" height="1080" fill="url(#hfade)"/></mask>
+      </defs>
+      <rect id="grid" x="0" y="0" width="1920" height="1080" fill="url(#dots)" mask="url(#gridMask)" opacity="0"/>
+      <g id="links"></g>
+      <g id="spine" filter="url(#glowW)"></g>
+      <g id="scan" clip-path="url(#scanClip)" mask="url(#scanMask)"><rect id="beamBand" x="820" y="0" width="280" height="64" fill="url(#beamG)"/></g>
+      <g id="edges" filter="url(#glowW)"></g>
+      <g id="leaders" filter="url(#glowW)"></g>
+      <g id="pulses"></g>
+      <g id="hot"></g>
+    </svg>
+    <div id="pills"></div>
+  </div>
+  <div id="status"></div>
+</div>
 <script>
-// S08 (f719-862): reference purple-to-black gradient (text removed) with two redrawn processing
-// lines. Letters of line 1 pop in in a scattered order, then a white highlight sweeps across the
-// lavender-to-violet text every ~20 frames; line 1 shrinks out, line 2 zooms in, then pans right.
-const stage = document.getElementById('stage');
-const SWEEPS = [739.5, 760, 780.5, 800.5, 820.5, 840.5, 860];   // frame the highlight sits at u = 0.04
-const SWEEP_DUR = 12.5;
-function sweepU(f) {             // highlight centre in line coordinates (u), or null
-  for (const t0 of SWEEPS) { const u = 0.04 + (f - t0) / SWEEP_DUR; if (u > -0.25 && u < 1.25) return u; }
-  return null;
-}
-// tiny deterministic PRNG for the scattered letter order
-function rng(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+// S08 (f719-862), redesigned at the client's request: Claude visibly thinks about the symptom typed in S06
+// ("Persistent sharp pain in lower back"). Step 1 "Analyzing the affected area" draws a glowing lumbar spine,
+// scans it and pins the sore spot (L4-L5) with a coral pulse and two glass callouts. Step 2 "Mapping anatomical
+// connections" turns that spot into the hub of a network: lines shoot out to related structures with light
+// pulses running along them and cross-links filling in. Below, Claude's starburst spins and breathes beside the
+// shimmering status text; finished steps slide up with a coral check; a gradient progress bar counts to 100%.
+// Timing follows the reference (step 1 from f724, step 2 from f787, camera pan at the end).
+const NS = 'http://www.w3.org/2000/svg';
+const $ = id => document.getElementById(id);
+const sv = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const BURST_D = "M -0.4729 -0.8811 L -0.5288 -0.8054 L -0.5252 -0.7658 L -0.5089 -0.7045 L -0.4477 -0.6054 L -0.3432 -0.4253 L -0.2459 -0.2469 L -0.2297 -0.2217 L -0.2315 -0.2163 L -0.2441 -0.2073 L -0.2783 -0.2361 L -0.4423 -0.3550 L -0.6819 -0.5388 L -0.7143 -0.5442 L -0.7630 -0.5460 L -0.8134 -0.4919 L -0.8008 -0.4145 L -0.7702 -0.3766 L -0.7252 -0.3478 L -0.6153 -0.2667 L -0.2387 -0.0163 L -0.2189 0.0017 L -0.2225 0.0126 L -0.2585 0.0144 L -0.4315 -0.0055 L -0.5756 -0.0127 L -0.6783 -0.0217 L -0.8621 -0.0325 L -0.9143 -0.0379 L -0.9504 -0.0127 L -0.9540 0.0126 L -0.9125 0.0666 L -0.8729 0.0756 L -0.5071 0.0936 L -0.3090 0.0972 L -0.2297 0.1026 L -0.2225 0.1135 L -0.2279 0.1279 L -0.2387 0.1369 L -0.5918 0.3333 L -0.7360 0.4324 L -0.7558 0.4522 L -0.7612 0.5098 L -0.7252 0.5441 L -0.6369 0.5333 L -0.1486 0.2162 L -0.1450 0.2180 L -0.1432 0.2288 L -0.2207 0.3189 L -0.3252 0.4576 L -0.5053 0.6846 L -0.5414 0.7369 L -0.5450 0.7873 L -0.4891 0.8143 L -0.4585 0.8017 L -0.3270 0.6612 L -0.0513 0.2846 L -0.0405 0.2810 L -0.0369 0.2882 L -0.0513 0.3405 L -0.0711 0.4810 L -0.1270 0.7549 L -0.1504 0.8612 L -0.1270 0.9152 L -0.0801 0.9513 L -0.0261 0.9315 L -0.0009 0.9026 L 0.0514 0.3441 L 0.0604 0.3387 L 0.0658 0.3405 L 0.1523 0.4900 L 0.2334 0.6143 L 0.3649 0.8017 L 0.4190 0.8107 L 0.4604 0.7963 L 0.4640 0.7927 L 0.4748 0.7711 L 0.4676 0.6918 L 0.4640 0.6810 L 0.2532 0.3675 L 0.2532 0.3513 L 0.2640 0.3513 L 0.4784 0.5351 L 0.6478 0.6612 L 0.6712 0.6630 L 0.6946 0.6306 L 0.6856 0.5855 L 0.4946 0.4071 L 0.3451 0.2738 L 0.2550 0.1855 L 0.2568 0.1747 L 0.2694 0.1747 L 0.3703 0.2017 L 0.7883 0.3008 L 0.8838 0.2522 L 0.8892 0.2216 L 0.8856 0.2108 L 0.8532 0.1675 L 0.7919 0.1279 L 0.5811 0.1117 L 0.3991 0.1099 L 0.2658 0.0972 L 0.2622 0.0918 L 0.2712 0.0864 L 0.5289 0.0252 L 0.7379 -0.0163 L 0.8532 -0.0451 L 0.8604 -0.0505 L 0.8838 -0.1082 L 0.8766 -0.1370 L 0.8135 -0.1676 L 0.5523 -0.1226 L 0.3397 -0.0757 L 0.3199 -0.0739 L 0.3126 -0.0829 L 0.3775 -0.1946 L 0.4838 -0.3370 L 0.6207 -0.5117 L 0.6460 -0.6000 L 0.5901 -0.6829 L 0.5090 -0.6847 L 0.4712 -0.6559 L 0.3955 -0.5766 L 0.3415 -0.5154 L 0.2190 -0.3622 L 0.1469 -0.2649 L 0.1235 -0.2415 L 0.1091 -0.2415 L 0.1072 -0.2487 L 0.1775 -0.6090 L 0.2045 -0.7928 L 0.1667 -0.8451 L 0.1253 -0.8649 L 0.0712 -0.8307 L 0.0658 -0.8253 L 0.0388 -0.7604 L 0.0154 -0.4901 L -0.0045 -0.3280 L -0.0135 -0.1892 L -0.0243 -0.1874 L -0.0333 -0.2037 L -0.0531 -0.2739 L -0.2117 -0.5820 L -0.3306 -0.8523 L -0.3666 -0.8829 L -0.4423 -0.8919 Z";
+const backOut = (t, s = 1.70158) => 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
+const gauss = (x, w) => Math.exp(-x * x / (2 * w * w));
+const draw = (el, p) => { el.setAttribute('stroke-dasharray', '1 1'); el.setAttribute('stroke-dashoffset', (1 - clamp(p)).toFixed(4)); };
 
-function makeLine(o) {
-  const box = document.createElement('div');
-  Object.assign(box.style, { position: 'absolute', left: '0px', top: '0px', width: '1920px', height: '1080px', transformOrigin: `${o.cx}px ${o.baseline}px` });
-  stage.appendChild(box);
-  const mk = (cls) => {
-    const r = document.createElement('div'); r.className = 'row';
-    r.style.fontSize = o.size + 'px'; r.style.left = (o.cx - 960) + 'px';
-    Array.from(o.text).forEach(ch => { const s = document.createElement('span'); s.textContent = ch; r.appendChild(s); });
-    box.appendChild(r); return r;
-  };
-  const base = mk(), hi = mk();
-  hi.style.color = 'rgb(240,238,255)';
-  return { o, box, base, hi, letters: Array.from(base.children), hl: Array.from(hi.children) };
-}
-const L1 = makeLine({ text: 'Analyzing the affected area...', size: 66.6, cx: 960, baseline: 559.5,
-  left: [176, 166, 251], right: [122, 106, 248],
-  S: [[719, 1.07], [725, 1.05], [731, 1.034], [737, 1.008], [740, 1.0], [779, 1.0], [782, 0.976], [785, 0.937], [787, 0.9]],
-  X: [[719, 0]], blur: [[719, 0]], opacity: [[719, 1]],
-  reveal: [719, 733] });
-const L2 = makeLine({ text: 'Mapping anatomical connections...', size: 66.6, fitWidth: 1061, cx: 972, baseline: 563,
-  left: [188, 179, 251], right: [126, 110, 247],
-  S: [[786, 0.88], [788, 0.903], [791, 0.933], [794, 0.975], [797, 1.003], [800, 1.0]],
-  X: [[845, 0], [848, 3], [851, 8], [854, 15], [857, 25], [860, 41], [862, 55]],
-  blur: [[788, 0]], opacity: [[788, 1]] });
+// ------------------------------------------------------------------ geometry
+const SX = 960, VY = [366, 412, 458, 504, 550], VDX = [-3, 0, 2, 3, 1];      // lumbar vertebrae L1-L5 (front view)
+const HUB = { x: 961, y: 527 };                                                  // L4-L5: the sore spot
+const NODES = [   // related structures (relative to the hub), side = where the label sits
+  { t: 'Lumbar muscles', dx: -330, dy: -118, side: -1, t0: 790.5 },
+  { t: 'Intervertebral discs', dx: 318, dy: -132, side: 1, t0: 792.5 },
+  { t: 'Sciatic nerve', dx: -372, dy: 18, side: -1, t0: 794.5 },
+  { t: 'Facet joints', dx: 372, dy: 6, side: 1, t0: 796.5 },
+  { t: 'Pelvis & hips', dx: -262, dy: 136, side: -1, t0: 798.5 },
+  { t: 'Posture', dx: 270, dy: 134, side: 1, t0: 800.5 },
+];
+const LINKS = [[0, 2], [2, 4], [1, 3], [3, 5]];
+const CAM_B = -46;                                                               // camera lift in step 2
 
-let laid = false;
-function layout() {
-  for (const L of [L1, L2]) {
-    if (L.o.fitWidth) {
-      const w = L.base.querySelector('span:last-child').getBoundingClientRect().right - L.base.querySelector('span').getBoundingClientRect().left;
-      L.o.size *= L.o.fitWidth / w;
-      L.base.style.fontSize = L.hi.style.fontSize = L.o.size + 'px';
-    }
-    // vertical: put the baseline at o.baseline
-    const c = document.createElement('canvas').getContext('2d');
-    c.font = `500 ${L.o.size}px Inter`;
-    const asc = c.measureText('H').fontBoundingBoxAscent;
-    L.base.style.top = L.hi.style.top = (L.o.baseline - asc) + 'px';
-    const rs = L.letters.map(s => s.getBoundingClientRect());
-    L.x0 = rs[0].left; L.x1 = rs[rs.length - 1].right;
-    L.u = rs.map(r => ((r.left + r.right) / 2 - L.x0) / (L.x1 - L.x0));
-    L.letters.forEach((s, i) => s.style.color = rgba(mixc(L.o.left, L.o.right, L.u[i])));
-    // scattered reveal order
-    if (L.o.reveal) {
-      const R = rng(7); const [a, b] = L.o.reveal;
-      L.appear = L.letters.map((s, i) => a + (b - a - 3) * Math.pow(R(), 0.85));
-    }
+// ------------------------------------------------------------------ build
+const spine = $('spine'), hot = $('hot'), edgesG = $('edges'), pulsesG = $('pulses'), linksG = $('links'), leadersG = $('leaders');
+const VERT = VY.map((y, i) => {
+  const x = SX + VDX[i], w = 86 - i * 0.5 + i * 2, h = 34 + i;
+  const g = sv('g', {}, spine);
+  const body = sv('rect', { x: x - w / 2, y: y - h / 2, width: w, height: h, rx: 10, fill: 'rgba(255,255,255,0.10)', stroke: 'rgba(246,242,255,0.95)', 'stroke-width': 2.2, pathLength: 1 }, g);
+  const wl = sv('path', { d: `M ${x - w / 2} ${y - 6} C ${x - w / 2 - 14} ${y - 9}, ${x - w / 2 - 26} ${y - 7}, ${x - w / 2 - 34} ${y - 2} C ${x - w / 2 - 37} ${y + 2}, ${x - w / 2 - 34} ${y + 6}, ${x - w / 2 - 28} ${y + 6} L ${x - w / 2} ${y + 6}`, fill: 'none', stroke: 'rgba(246,242,255,0.9)', 'stroke-width': 2, pathLength: 1, 'stroke-linecap': 'round' }, g);
+  const wr = sv('path', { d: `M ${x + w / 2} ${y - 6} C ${x + w / 2 + 14} ${y - 9}, ${x + w / 2 + 26} ${y - 7}, ${x + w / 2 + 34} ${y - 2} C ${x + w / 2 + 37} ${y + 2}, ${x + w / 2 + 34} ${y + 6}, ${x + w / 2 + 28} ${y + 6} L ${x + w / 2} ${y + 6}`, fill: 'none', stroke: 'rgba(246,242,255,0.9)', 'stroke-width': 2, pathLength: 1, 'stroke-linecap': 'round' }, g);
+  const disc = i < 4 ? sv('ellipse', { cx: x + 1, cy: y + h / 2 + 6, rx: 37, ry: 4.2, fill: 'rgba(206,194,255,0.55)' }, g) : null;
+  return { g, body, wl, wr, disc };
+});
+const sacrum = sv('path', { d: `M ${SX - 52} 578 C ${SX - 40} 576, ${SX + 40} 576, ${SX + 54} 578 C ${SX + 50} 606, ${SX + 22} 640, ${SX + 2} 652 C ${SX - 20} 640, ${SX - 48} 606, ${SX - 52} 578 Z`,
+  fill: 'rgba(255,255,255,0.07)', stroke: 'rgba(246,242,255,0.85)', 'stroke-width': 2, pathLength: 1 }, spine);
+const beamBand = $('beamBand');
+const beamLine = sv('rect', { x: 820, y: 0, width: 280, height: 2.4, fill: '#fff' }, $('scan'));
+beamLine.setAttribute('filter', 'url(#glowW)');
+let SB = null;   // scan brackets (HTML, in the camera layer)
+// hotspot: core + rings
+const hotRings = [0, 1, 2].map(() => sv('circle', { cx: HUB.x, cy: HUB.y, r: 10, fill: 'none', stroke: 'rgb(240,140,104)', 'stroke-width': 2 }, hot));
+const hotHalo = sv('circle', { cx: HUB.x, cy: HUB.y, r: 26, fill: 'rgba(240,128,92,0.22)' }, hot);
+const hotCore = sv('circle', { cx: HUB.x, cy: HUB.y, r: 7.5, fill: 'rgb(255,214,196)', filter: 'url(#glowC)' }, hot);
+// step-1 callouts: leader polylines + glass pills
+const pills = $('pills');
+function pill(text, dot) { const p = document.createElement('div'); p.className = 'pill'; p.innerHTML = `<i style="background:${dot};box-shadow:0 0 10px ${dot}"></i>${text}`; pills.appendChild(p); return p; }
+const CALL = [
+  { pts: [[HUB.x + 30, HUB.y - 4], [HUB.x + 118, HUB.y - 62], [HUB.x + 150, HUB.y - 62]], p: pill('L4–L5 · Lumbar spine', 'rgb(240,140,104)'), at: [HUB.x + 156, HUB.y - 62], side: 1, t0: 747 },
+  { pts: [[HUB.x - 30, HUB.y + 6], [HUB.x - 112, HUB.y + 52], [HUB.x - 146, HUB.y + 52]], p: pill('Sharp, persistent pain', 'rgb(255,200,120)'), at: [HUB.x - 152, HUB.y + 52], side: -1, t0: 752 },
+];
+CALL.forEach(c => { c.line = sv('polyline', { points: c.pts.map(p => p.join(',')).join(' '), fill: 'none', stroke: 'rgba(255,255,255,0.9)', 'stroke-width': 1.8, pathLength: 1 }, leadersG);
+                    c.dot = sv('circle', { cx: c.pts[0][0], cy: c.pts[0][1], r: 3.2, fill: '#fff' }, leadersG); });
+// step-2 network
+const NET = NODES.map((n, i) => {
+  const x = HUB.x + n.dx, y = HUB.y + n.dy;
+  const mx = (HUB.x + x) / 2, my = (HUB.y + y) / 2, len = Math.hypot(n.dx, n.dy);
+  const cx = mx - n.dy / len * 0.16 * len * (i % 2 ? -1 : 1), cy = my + n.dx / len * 0.16 * len * (i % 2 ? -1 : 1);
+  const d = `M ${HUB.x} ${HUB.y} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${x} ${y}`;
+  const edge = sv('path', { d, fill: 'none', stroke: 'url(#edgeG)', 'stroke-width': 2.1, pathLength: 1, 'stroke-linecap': 'round' }, edgesG);
+  const node = sv('circle', { cx: x, cy: y, r: 6, fill: '#fff', filter: 'url(#glowW)' }, edgesG);
+  const ring = sv('circle', { cx: x, cy: y, r: 12, fill: 'none', stroke: 'rgba(255,255,255,0.55)', 'stroke-width': 1.4 }, edgesG);
+  const ps = [0, 1].map(() => sv('circle', { r: 3.6, fill: '#fff', filter: 'url(#glowW)' }, pulsesG));
+  const p = pill(n.t, 'rgb(186,166,255)');
+  return { ...n, x, y, edge, node, ring, ps, p, q: [HUB.x, HUB.y, cx, cy, x, y] };
+});
+const LINKEL = LINKS.map(([a, b], j) => {
+  const A = NET[a], B = NET[b];
+  const bend = (j === 4 || j === 5) ? (j === 4 ? -70 : 70) : (A.dx < 0 ? -36 : 36);
+  const cx = (A.x + B.x) / 2 + (j < 4 ? bend : 0), cy = (A.y + B.y) / 2 + (j >= 4 ? bend : 0);
+  return sv('path', { d: `M ${A.x} ${A.y} Q ${cx} ${cy} ${B.x} ${B.y}`, fill: 'none', stroke: 'rgba(214,204,255,0.42)', 'stroke-width': 1.3, 'stroke-dasharray': '1 1', pathLength: 1 }, linksG);
+});
+function qpt(q, t) { const [x0, y0, cx, cy, x1, y1] = q, u = 1 - t; return [u * u * x0 + 2 * u * t * cx + t * t * x1, u * u * y0 + 2 * u * t * cy + t * t * y1]; }
+
+// ------------------------------------------------------------------ status rows (Claude thinking)
+const statusEl = $('status');
+function burstSVG(size) { return `<svg width="${size}" height="${size}" viewBox="-1 -1 2 2" style="overflow:visible"><path d="${BURST_D}" fill="#D97757"/></svg>`; }
+function makeRow(text, size) {
+  const r = document.createElement('div'); r.className = 'row';
+  const ic = document.createElement('div'); ic.className = 'ic'; ic.style.width = ic.style.height = Math.round(size * 0.92) + 'px'; ic.style.marginRight = Math.round(size * 0.36) + 'px';
+  ic.innerHTML = `<div class="sp" style="position:absolute;inset:0;filter:drop-shadow(0 0 10px rgba(229,120,88,0.75))">${burstSVG(Math.round(size * 0.92))}</div>` +
+    `<svg class="ck" viewBox="-12 -12 24 24" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"><circle r="11" fill="#D97757"/><path d="M -5 0.4 L -1.4 4 L 5.4 -3.6" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1 1"/></svg>`;
+  r.appendChild(ic);
+  const tx = document.createElement('div'); tx.className = 'tx'; tx.style.fontSize = size + 'px';
+  const letters = Array.from(text).map(c => { const s = document.createElement('span'); s.textContent = c; tx.appendChild(s); return s; });
+  const dots = [0, 1, 2].map(() => { const s = document.createElement('span'); s.textContent = '.'; tx.appendChild(s); return s; });
+  r.appendChild(tx); statusEl.appendChild(r);
+  return { r, ic, sp: ic.querySelector('.sp'), ck: ic.querySelector('.ck'), ckPath: ic.querySelector('.ck path'), tx, letters, dots, size };
+}
+const RA = makeRow('Analyzing the affected area', 54), RB = makeRow('Mapping anatomical connections', 54);
+const prog = document.createElement('div'); prog.id = 'prog';
+prog.innerHTML = '<div class="stp"></div><div class="track"></div><div class="fill"></div><div class="head"></div><div class="pct"></div>';
+statusEl.appendChild(prog);
+let M = null;
+function measure() {
+  M = {};
+  for (const R of [RA, RB]) {
+    R.r.style.transform = 'none';
+    R.w = R.r.getBoundingClientRect().width;
+    const r0 = R.tx.getBoundingClientRect().left;
+    R.lx = R.letters.concat(R.dots).map(s => { const b = s.getBoundingClientRect(); return (b.left + b.right) / 2 - r0; });
+    R.txw = R.tx.getBoundingClientRect().width; R.h = R.r.getBoundingClientRect().height;
   }
-  laid = true;
+  SB = new Brackets($('cam'), { color: 'rgba(236,230,255,0.95)', glow: 'rgba(150,120,255,0.9)', arm: 26, stroke: 3 });
 }
-
-function renderLine(L, f) {
-  const o = L.o;
-  L.box.style.transform = `translate(${kf(f, o.X)}px, 0px) scale(${kf(f, o.S)})`;
-  const b = kf(f, o.blur);
-  L.box.style.filter = b > 0.05 ? `blur(${b}px)` : 'none';
-  L.box.style.opacity = kf(f, o.opacity);
-  // letter reveal
-  L.letters.forEach((s, i) => {
-    let p = 1;
-    if (L.appear) p = ease.outCubic(invlerp(L.appear[i], L.appear[i] + 3, f));
-    s.style.opacity = p; L.hl[i].style.opacity = p;
-    const lb = 6 * (1 - p);
-    s.style.filter = lb > 0.05 ? `blur(${lb}px)` : 'none';
+const BASE_ACTIVE = 762, BASE_DONE = 694;
+const LIGHT = [226, 220, 255], BRIGHT = [255, 255, 255];
+function renderRow(R, f, t0, { y, scale = 1, op = 1, done = 0, dimTo = 1 }) {
+  const w = R.w * scale;
+  R.r.style.left = (960 - w / 2).toFixed(2) + 'px';
+  R.r.style.top = (y - R.h * scale / 2).toFixed(2) + 'px';
+  R.r.style.transform = `scale(${scale.toFixed(4)})`;
+  R.r.style.opacity = op.toFixed(3);
+  // icon: starburst spinning and breathing while thinking, a coral check once done
+  const ia = ease.outCubic(clamp((f - t0 + 1) / 5));
+  const breathe = 1 + 0.07 * Math.sin((f - t0) / 16 * 2 * Math.PI);
+  const spOut = clamp(done * 1.6);
+  R.sp.style.transform = `rotate(${((f - t0) * 2.1 + 360 * (1 - ia) * 0.5).toFixed(2)}deg) scale(${(ia * breathe * (1 - spOut)).toFixed(4)})`;
+  R.sp.style.opacity = (1 - spOut).toFixed(3);
+  const ckIn = clamp((done - 0.25) / 0.75);
+  R.ck.style.opacity = ckIn > 0 ? 1 : 0;
+  R.ck.style.transform = `scale(${(0.4 + 0.6 * backOut(ckIn, 2.2)).toFixed(4)})`;
+  R.ckPath.setAttribute('stroke-dashoffset', (1 - clamp((done - 0.45) / 0.55)).toFixed(3));
+  // letters cascade in (rise + blur), then Claude's shimmer passes along them; dots wave while thinking
+  const shimP = ((f - t0 - 6) % 30) / 30 * (R.txw + 360) - 180;
+  const all = R.letters.concat(R.dots);
+  all.forEach((s, k) => {
+    const isDot = k >= R.letters.length;
+    const tl = t0 + (isDot ? R.letters.length * 0.42 + (k - R.letters.length) * 0.8 : k * 0.42);
+    const u = clamp((f - tl) / 6), e = backOut(u, 1.3);
+    let ty = (1 - e) * 18, op2 = ease.outCubic(clamp((f - tl) / 4)), bl = 5 * (1 - ease.outCubic(u));
+    let col = mixc(LIGHT, [200, 190, 255], 0.0);
+    if (f > t0 + 6 && done < 0.5) col = mixc(LIGHT, BRIGHT, gauss(R.lx[k] - shimP, 60));
+    if (done > 0) col = mixc(col, [206, 198, 240], clamp(done));
+    if (isDot) {
+      const wv = Math.max(0, Math.sin(2 * Math.PI * (f - t0) / 20 - (k - R.letters.length) * 1.0));
+      op2 *= done > 0.5 ? 1 : 0.35 + 0.65 * wv; ty -= done > 0.5 ? 0 : 5 * wv;
+    }
+    s.style.transform = `translateY(${ty.toFixed(2)}px)`;
+    s.style.opacity = op2.toFixed(3);
+    s.style.filter = bl > 0.05 ? `blur(${bl.toFixed(2)}px)` : 'none';
+    s.style.color = rgba(col);
+    s.style.textShadow = done < 0.5 ? `0 0 18px rgba(170,140,255,${(0.45 * op2).toFixed(2)})` : 'none';
   });
-  // highlight sweep: soft white band masked onto the highlight copy of the text
-  const u = sweepU(f);
-  if (u === null) { L.hi.style.visibility = 'hidden'; return; }
-  L.hi.style.visibility = 'visible';
-  const P = L.x0 + u * (L.x1 - L.x0), W = 0.13 * (L.x1 - L.x0);
-  const m = `linear-gradient(90deg, rgba(0,0,0,0) ${P - W}px, rgba(0,0,0,0.95) ${P}px, rgba(0,0,0,0) ${P + W}px)`;
-  L.hi.style.webkitMaskImage = m; L.hi.style.maskImage = m;
 }
 
+// ------------------------------------------------------------------ frame
 window.renderFrame = async (f) => {
-  if (!laid) layout();
-  await setImg(document.getElementById('bg'), `../../plates/S08_processing/bg_${String(f).padStart(4, '0')}.jpg`);
-  L1.box.style.display = f <= 787 ? 'block' : 'none';
-  L2.box.style.display = f >= 788 ? 'block' : 'none';
-  if (f <= 787) renderLine(L1, f);
-  if (f >= 788) renderLine(L2, f);
+  if (!M) measure();
+  await setImg($('bg'), `../../plates/S08_processing/bg_${String(f).padStart(4, '0')}.jpg`);
+  const cam = $('cam');
+  const lift = CAM_B * ease.inOutCubic(clamp((f - 785) / 10));
+  const zoom = 1 + 0.07 * ease.inOutCubic(clamp((f - 838) / 24));
+  const panX = kf(f, [[845, 0], [848, 3], [851, 8], [854, 15], [857, 25], [860, 41], [862, 55]]);
+  const intro = ease.outCubic(clamp((f - 721) / 7));
+  cam.style.transform = `translate(${panX.toFixed(2)}px, ${(lift + 14 * (1 - intro)).toFixed(2)}px) scale(${(zoom * (0.97 + 0.03 * intro)).toFixed(4)})`;
+  cam.style.transformOrigin = `960px ${(HUB.y).toFixed(0)}px`;
+  cam.style.opacity = clamp((f - 721) / 4).toFixed(3);
+  // dot grid breathing behind everything, drifting up slowly
+  $('grid').setAttribute('opacity', (0.13 * clamp((f - 724) / 10)).toFixed(3));
+  $('grid').setAttribute('y', (-(f - 719) * 0.35 % 30).toFixed(2));
+  // ---- step 1: spine draws itself, top to bottom
+  const spineOp = 1 - 0.72 * ease.inOutCubic(clamp((f - 786) / 9));
+  spine.setAttribute('opacity', spineOp.toFixed(3));
+  VERT.forEach((v, i) => {
+    const p = clamp((f - 726 - i * 1.6) / 7);
+    draw(v.body, p); draw(v.wl, clamp((p - 0.3) / 0.7)); draw(v.wr, clamp((p - 0.3) / 0.7));
+    v.body.setAttribute('fill', `rgba(255,255,255,${(0.10 * clamp((p - 0.6) / 0.4)).toFixed(3)})`);
+    if (v.disc) v.disc.setAttribute('opacity', clamp((f - 731 - i * 1.6) / 4).toFixed(3));
+  });
+  draw(sacrum, clamp((f - 734) / 8)); sacrum.setAttribute('fill', `rgba(255,255,255,${(0.07 * clamp((f - 739) / 4)).toFixed(3)})`);
+  // scan brackets converge on the spine, then let go in step 2
+  const sbOut = clamp((f - 784) / 4);
+  SB.render({ x0: 838, y0: 330, x1: 1084, y1: 664 }, { t: clamp((f - 728) / 7), spread: 70, op: clamp((f - 728) / 2) * (1 - sbOut),
+    flash: gauss(f - 742, 1.3) });
+  // scan beam: two passes
+  const passes = [[731, 746], [757, 771]];
+  let by = null, bop = 0;
+  for (const [a, b] of passes) if (f >= a - 0.5 && f <= b + 1.5) { const t = ease.inOutCubic(clamp((f - a) / (b - a))); by = 312 + t * 350; bop = Math.min(clamp((f - a + 0.5) / 1.5), 1 - clamp((f - b) / 1.5)) * (a === 731 ? 1 : 0.7); }
+  beamLine.style.display = beamBand.style.display = by === null ? 'none' : 'block';
+  if (by !== null) { beamLine.setAttribute('y', (by - 1.2).toFixed(1)); beamBand.setAttribute('y', (by - 64).toFixed(1)); beamLine.setAttribute('opacity', bop.toFixed(3)); beamBand.setAttribute('opacity', bop.toFixed(3)); }
+  // ---- the sore spot ignites when the first pass reaches it, then keeps pulsing (it becomes the hub)
+  const hIn = clamp((f - 741.5) / 3);
+  hot.setAttribute('opacity', hIn.toFixed(3));
+  hotCore.setAttribute('r', (7.5 * (0.6 + 0.4 * backOut(hIn, 2.5)) + (f > 786 ? 1.5 * ease.inOutCubic(clamp((f - 786) / 8)) : 0)).toFixed(2));
+  hotHalo.setAttribute('r', (24 + 4 * Math.sin((f - 742) / 7)).toFixed(2));
+  hotRings.forEach((c, j) => {
+    const ph = ((f - 742 - j * 6) % 18 + 18) % 18 / 18;
+    c.setAttribute('r', (9 + 44 * ease.outCubic(ph)).toFixed(2));
+    c.setAttribute('opacity', (f >= 742 + j * 6 ? 0.85 * (1 - ph) : 0).toFixed(3));
+  });
+  // ---- callouts (step 1)
+  const cOut = clamp((f - 781) / 5);
+  CALL.forEach(c => {
+    const p = clamp((f - c.t0) / 5);
+    draw(c.line, p); c.line.setAttribute('opacity', (1 - cOut).toFixed(3)); c.dot.setAttribute('opacity', (clamp((f - c.t0) / 1.5) * (1 - cOut)).toFixed(3));
+    const pp = clamp((f - c.t0 - 3.5) / 5);
+    c.p.style.display = pp > 0 && cOut < 1 ? 'flex' : 'none';
+    const pw = c.p.offsetWidth;
+    c.p.style.left = (c.side > 0 ? c.at[0] : c.at[0] - pw).toFixed(1) + 'px'; c.p.style.top = (c.at[1] - 20).toFixed(1) + 'px';
+    c.p.style.opacity = (clamp(pp * 2) * (1 - cOut)).toFixed(3);
+    c.p.style.transformOrigin = c.side > 0 ? '0 50%' : '100% 50%';
+    c.p.style.transform = `translateX(${(c.side * 14 * (1 - ease.outCubic(pp))).toFixed(2)}px) scale(${(0.85 + 0.15 * backOut(pp, 2)).toFixed(4)})`;
+  });
+  // ---- step 2: the network
+  NET.forEach((n, i) => {
+    const p = ease.inOutCubic(clamp((f - n.t0) / 6));
+    draw(n.edge, p); n.edge.setAttribute('opacity', p > 0 ? 1 : 0);
+    const arr = clamp((f - n.t0 - 5) / 5);
+    n.node.setAttribute('opacity', clamp(arr * 3).toFixed(3));
+    n.node.setAttribute('r', (6 * (0.3 + 0.7 * backOut(arr, 2.6))).toFixed(2));
+    const rph = ((f - n.t0 - 5) % 26 + 26) % 26 / 26;
+    n.ring.setAttribute('r', (8 + 16 * ease.outCubic(rph)).toFixed(2));
+    n.ring.setAttribute('opacity', (arr >= 1 ? 0.6 * (1 - rph) : 0).toFixed(3));
+    // light pulses travelling hub -> node
+    n.ps.forEach((c, j) => {
+      const t = ((f - n.t0 - 8 - j * 11) % 22 + 22) % 22 / 22, on = f >= n.t0 + 8 + j * 11;
+      const [x, y] = qpt(n.q, ease.inOutQuad(t));
+      c.setAttribute('cx', x.toFixed(1)); c.setAttribute('cy', y.toFixed(1));
+      c.setAttribute('opacity', on ? (Math.sin(Math.PI * t) * 0.95).toFixed(3) : 0);
+    });
+    // label
+    const lp = clamp((f - n.t0 - 6) / 5);
+    n.p.style.display = lp > 0 ? 'flex' : 'none';
+    const pw = n.p.offsetWidth;
+    n.p.style.left = (n.side > 0 ? n.x + 22 : n.x - 22 - pw).toFixed(1) + 'px'; n.p.style.top = (n.y - 20).toFixed(1) + 'px';
+    n.p.style.opacity = clamp(lp * 2).toFixed(3);
+    n.p.style.transformOrigin = n.side > 0 ? '0 50%' : '100% 50%';
+    n.p.style.transform = `translateX(${(n.side * 16 * (1 - ease.outCubic(lp))).toFixed(2)}px) scale(${(0.82 + 0.18 * backOut(lp, 2)).toFixed(4)})`;
+  });
+  LINKEL.forEach((l, j) => { const p = ease.inOutCubic(clamp((f - 812 - j * 2.4) / 7)); draw(l, p); l.setAttribute('opacity', p > 0 ? 1 : 0); });
+  // gentle life in the network once it is built
+  $('edges').setAttribute('transform', '');
+  // ---- status rows
+  const doneA = clamp((f - 781) / 7);
+  const mv = ease.inOutCubic(clamp((f - 783) / 8));
+  RA.r.style.display = f >= 722 ? 'flex' : 'none';
+  renderRow(RA, f, 724, { y: lerp(BASE_ACTIVE, BASE_DONE, mv), scale: lerp(1, 0.56, mv), op: lerp(1, 0.78, mv), done: doneA });
+  RB.r.style.display = f >= 786 ? 'flex' : 'none';
+  if (f >= 786) renderRow(RB, f, 787.5, { y: BASE_ACTIVE, done: 0 });
+  // ---- progress
+  const pg = kf(f, [[726, 0], [782, 0.5, 'inOutCubic'], [789, 0.52], [858, 1.0, 'inOutCubic']]);
+  const PW = 560, px0 = 960 - PW / 2, py = 820;
+  prog.style.left = px0 + 'px'; prog.style.top = py + 'px';
+  prog.style.opacity = clamp((f - 726) / 5).toFixed(3);
+  prog.querySelector('.track').style.width = PW + 'px';
+  prog.querySelector('.fill').style.width = (PW * pg).toFixed(1) + 'px';
+  prog.querySelector('.head').style.left = (PW * pg).toFixed(1) + 'px';
+  prog.querySelector('.head').style.opacity = (pg > 0.01 ? 1 : 0);
+  const pct = prog.querySelector('.pct'); pct.textContent = Math.round(pg * 100) + '%'; pct.style.left = (PW + 18) + 'px';
+  prog.querySelector('.stp').textContent = f < 786 ? 'STEP 1 / 2' : 'STEP 2 / 2';
+  prog.querySelector('.fill').style.boxShadow = `0 0 ${(12 + 16 * gauss(f - 858, 2)).toFixed(1)}px rgba(${f > 850 ? '229,138,104' : '160,110,255'},0.65)`;
 };
 window.sceneReady = document.fonts.ready;
 </script>
