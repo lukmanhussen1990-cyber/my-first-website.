@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>One Token at a Time</title>
+<style>
+  @font-face { font-family: "Inter Display"; font-weight: 500; src: url("fonts/InterDisplay-Medium.woff2") format("woff2"); }
+  @font-face { font-family: "Inter Display"; font-weight: 600; src: url("fonts/InterDisplay-SemiBold.woff2") format("woff2"); }
+  @font-face { font-family: "Inter Display"; font-weight: 700; src: url("fonts/InterDisplay-Bold.woff2") format("woff2"); }
+  @font-face { font-family: "Inter Display"; font-weight: 800; src: url("fonts/InterDisplay-ExtraBold.woff2") format("woff2"); }
+  @font-face { font-family: "JetBrains Mono"; font-weight: 400; src: url("fonts/JetBrainsMono-Regular.woff2") format("woff2"); }
+  @font-face { font-family: "JetBrains Mono"; font-weight: 500; src: url("fonts/JetBrainsMono-Medium.woff2") format("woff2"); }
+  @font-face { font-family: "JetBrains Mono"; font-weight: 700; src: url("fonts/JetBrainsMono-Bold.woff2") format("woff2"); }
+  html, body { margin: 0; padding: 0; background: #0c0c0d; overflow: hidden; }
+  canvas { display: block; }
+  /* Preview mode (opening the file in a browser): scale the 1920x1080 canvas to fit. */
+  body.preview { display: grid; place-items: center; height: 100vh; }
+  body.preview canvas { width: min(100vw, 177.78vh); height: auto; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="scene.js"></script>
+</body>
+</html>
