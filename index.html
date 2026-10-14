@@ -1172,7 +1172,7 @@ function draw(t) {
   setStyle(grainCv, 'opacity', (1 - pP * 0.45).toFixed(3));
   setStyle(controlsEl, 'opacity', pP.toFixed(3));
   setStyle(dialEl, 'color', rgba(mix(DIAL_A, DIAL_B, cP)));
-  setStyle(dialLine, 'stroke', rgba(mix(DIAL_LA, DIAL_LB, cP)));
+  setStyle(dialLine, 'stroke', rgba(mix(DIAL_LA, DIAL_LB, pP)));   // the line follows the paper, the disc switches at once
 
   c.setTransform(dpr, 0, 0, dpr, 0, -G.sceneTop * dpr);
   c.clearRect(0, G.sceneTop, W, G.sceneBot - G.sceneTop);
@@ -1450,8 +1450,8 @@ function drawCaret(c, t, pP) {
 // anchor distance with a lag, so quick carriage moves stretch them and a carriage return flings
 // them. Each ribbon is drawn as a twisting bundle of near-parallel hairlines.
 const WEB = { ribbons: [], threads: [], fans: [], tweb: null, ready: false };
-function capAnchor(side, dy, top) { // side -1 left end, +1 right end; top: on the capsule's top near the T
-  if (top) return [car.x + side * 13 * k, G.capCY - G.capHH + 1.5 * k];
+function capAnchor(side, dy, top) { // side -1 left end, +1 right end; top: on the capsule's upper shoulder
+  if (top) return [car.x + side * 30 * k, G.capCY - G.capHH * 0.55];
   return [car.x + side * (G.capHW - 3 * k), G.capCY + dy * k];
 }
 function makeRope(n, a, b, o) {
@@ -1468,11 +1468,10 @@ function initWebs() {
   const R = mulberry(4242);
   WEB.ribbons = [
     // left side: collar → capsule nose (hugs the rail, twists)
-    makeRope(22, [20 * k, G.railY - 2 * k], capAnchor(-1, 0, true), { side: -1, top: true, ay: -2, by: -4, slack: 1.24, minLen: 40, g: -5, pull: 0.5, strands: 9, width: 5.2, twist: 3.1, phase: 0.4, alpha: 0.9, seed: 11, sag0: -8 }),
-    makeRope(18, [19 * k, G.railY + 5 * k], capAnchor(-1, 7), { side: -1, ay: 5, by: 7, slack: 1.3, minLen: 38, g: 30, pull: 0.6, strands: 6, width: 3.8, twist: 1.8, phase: 1.9, alpha: 0.6, seed: 12, sag0: 8 }),
+    makeRope(22, [20 * k, G.railY - 2 * k], capAnchor(-1, 0, true), { side: -1, top: true, ay: -2, by: -4, slack: 1.2, minLen: 40, g: 0, pull: 1.4, strands: 9, width: 5.2, twist: 3.1, phase: 0.4, alpha: 0.9, seed: 11, sag0: -5 }),
+    makeRope(18, [19 * k, G.railY + 5 * k], capAnchor(-1, 7), { side: -1, ay: 5, by: 7, slack: 1.16, minLen: 38, g: 22, pull: 0.8, strands: 6, width: 3.8, twist: 1.8, phase: 1.9, alpha: 0.6, seed: 12, sag0: 6 }),
     // right side: capsule tail → collar (sagging band + a tighter one along the top)
-    makeRope(24, capAnchor(1, 5), [W - 20 * k, G.railY + 3 * k], { side: 1, ay: 5, by: 3, slack: 1.07, minLen: 34, g: 55, pull: 0.6, strands: 10, width: 6.2, twist: 2.4, phase: 2.6, alpha: 0.9, seed: 13, sag0: 9 }),
-    makeRope(16, capAnchor(1, -6), [W - 20 * k, G.railY - 5 * k], { side: 1, ay: -6, by: -5, slack: 1.16, minLen: 30, g: 4, pull: 1.5, strands: 5, width: 3, twist: 1.4, phase: 0.2, alpha: 0.55, seed: 14, sag0: -5 }),
+    makeRope(24, capAnchor(1, 5), [W - 20 * k, G.railY + 3 * k], { side: 1, ay: 5, by: 3, slack: 1.06, minLen: 34, g: 30, pull: 1.0, strands: 12, width: 7.5, twist: 1.3, phase: 2.6, alpha: 0.9, seed: 13, sag0: 20 }),
   ];
   // hanging threads with tiny spiders, anchored under the rail
   WEB.threads = [87, 150, 181, 252, 401].map((x, i) => {
@@ -1700,8 +1699,8 @@ function drawWebs(c, t, pP) {
   for (const th of WEB.threads) {
     if (!th.spider) continue;
     const p = th.pts[th.n - 1];
-    c.fillStyle = rgba(mix([60, 54, 46], [150, 150, 144], pP), 0.85);
-    c.beginPath(); c.ellipse(p.x, p.y + 0.6 * k, 0.7 * k, 0.95 * k, 0, 0, 7); c.fill();
+    c.fillStyle = rgba(mix([96, 90, 80], [170, 170, 164], pP), lerp(0.55, 0.85, pP));
+    c.beginPath(); c.ellipse(p.x, p.y + 0.5 * k, 0.55 * k, 0.75 * k, 0, 0, 7); c.fill();
   }
   // ribbons
   for (const r of WEB.ribbons) drawRibbon(c, r, t, pP);
@@ -2051,7 +2050,7 @@ if (/[?&]debug\b/.test(location.search)) {
   window.__fw = {
     get text() { return text; }, get lines() { return lines.map((l) => l.idx.map((i) => text[i]).join('')); },
     get carX() { return car.x; }, get target() { return carriageTarget(); }, get col() { return caretCol(); },
-    get lamp() { return lampOn; }, colX, G, AU, fx,
+    get lamp() { return lampOn; }, colX, G, AU, fx, WEB,
   };
 }
 
