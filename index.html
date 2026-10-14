@@ -246,7 +246,7 @@ function layout() {
   buildCaptions();
   lightDirty = true;
   invalidateText();
-  car.x = car.from = car.to = carriageTarget(); car.pending = null; car.dur = 0; lightX = lastCarX = car.x;
+  car.x = car.from = car.to = carriageTarget(); car.pending = null; car.dur = 0; lightX = lastCarX = car.x; carHist.n = 0;
   initWebs();
   onViewport();
 }
@@ -2174,6 +2174,21 @@ function updateIdle(t) {
 /* --------------------------------------------------------------- loop -- */
 let lastT = now();
 let lightX = 0, drawDt = 1 / 60;
+// recent carriage positions (ring buffer) so the light can trail the carriage by a fixed delay
+const carHist = { t: new Float64Array(16), x: new Float64Array(16), n: 0, i: 0 };
+function pushCar(t) { const h = carHist; h.t[h.i] = t; h.x[h.i] = car.x; h.i = (h.i + 1) % 16; h.n = Math.min(16, h.n + 1); }
+function carXAt(tq) {
+  const h = carHist;
+  for (let j = 1; j <= h.n; j++) {
+    const a = (h.i - j + 16) % 16;
+    if (h.t[a] <= tq) {
+      if (j === 1) return h.x[a];
+      const b = (a + 1) % 16, u = (tq - h.t[a]) / Math.max(1e-6, h.t[b] - h.t[a]);
+      return h.x[a] + (h.x[b] - h.x[a]) * Math.min(1, Math.max(0, u));
+    }
+  }
+  return h.n ? h.x[(h.i - h.n + 16) % 16] : car.x;
+}
 let frameErrors = 0;
 function frame() {
   requestAnimationFrame(frame);   // schedule first: one bad frame must never stop the machine
@@ -2185,6 +2200,7 @@ function tick() {
   stepChannels(dt);
   pumpPending(t);
   updateCarriage(t);
+  pushCar(t);
   updateIdle(t);
   stepWebs(dt, t);
   if (appearAt.size > 64) for (const [i, a] of appearAt) if (a < t - 1) appearAt.delete(i);
@@ -2193,8 +2209,7 @@ function tick() {
   const lv = CH.light.v;
   if (lv > 0) {
     const grow = (lampOn ? 0.35 : 0.15) + (lampOn ? 0.65 : 0.85) * (lampOn ? E.outQuad(lv) : E.outCubic(lv));   // the outer fan is already lit early on (recording)
-    lightX += (car.x - lightX) * (1 - Math.exp(-dt / 0.036));   // lags ~28 px on a return, as recorded
-    if (Math.abs(car.x - lightX) > 200 * k) lightX = car.x;
+    lightX = carXAt(t - 0.024);   // the light trails the carriage by ~1.4 frames (≈29 px on a return, gone 1 frame after it stops, as recorded)
     const ax = lightX, ay = G.capCY - G.capHH - G.paperTop;
     setStyle(lightCv, 'transform', `translate(${(ax - L.ax).toFixed(2)}px, ${(ay - L.ay).toFixed(2)}px) translate(${L.ax}px, ${L.ay}px) scale(${grow.toFixed(4)}) translate(${-L.ax}px, ${-L.ay}px)`);
     // intensity comes up fast near the slot (≈0.1 s) while the reach keeps growing (measured)
