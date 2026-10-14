@@ -80,3 +80,16 @@ click, brighter room, plucks an octave up, three-partial theremin with ±60 cent
 long notes (third-octave mean difference 6.9 → 3.3 dB, loudness per segment within ~1–2 dB); return clunk
 added, ratchet and low thump softened, ding kept soft. Robustness: the lead voice is rebuilt every loop so
 automation never piles up, the bed has its own long noise buffer, copy fallback keeps the keyboard up.
+An independent frame-by-frame visual review against the recording (60 fps re-capture, all 888 video
+frames, full-resolution crops) found: webs too bright, cord-like with neat round loops instead of flat
+folded tape, no float-up while typing, too little sag after the return, straight hanging threads, twice
+the idle sway; idle zaps ~0.55 s late and irregular (the first one was re-rolled every frame); hint fading
+with the paper instead of staying as ink under the light; glossy LEDs with halos (recording: flat discs
+with a bezel); the T bar dropping for a frame and the carriage jumping at quick keys; lavender after-flash.
+Fixed (v9g–v9i): folded-tape webs (straight runs, sharp folds, stiffer bending, 25 % dimmer, calmer,
+lift while typing, deep V after the return, wavy threads, no coil); idle zaps at exactly the recording's
+12.92 / 13.55 / 14.18 s (2.45 s after the last key, runs of three 0.633 s apart); 175 ms green phase,
+silver after-flash, greener flood; two-ink hint (contrast within a few levels of the recording through
+the whole lamp switch); flat measured LEDs; continuous strikes and gliding carriage at quick keys.
+**Check 9 done. Next: capsule hardware (bolts, collars, slot lip, stem), lamp-on timing, light lag on
+the return, dial details, then a second independent review.**
