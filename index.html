@@ -196,16 +196,18 @@ function layout() {
   app.style.width = W + 'px';
   G.paperTop = Math.round(H * 0.1935);
   G.railY = H * 0.444;
-  G.base = G.railY - 56.5 * k;        // typing baseline
-  G.lineH = 23.3 * k;
-  G.cell = 13.1 * k;
-  G.textLeft = 88.8 * k;
-  G.font = 21.8 * k;
-  G.hintBase = G.railY - 136.9 * k;
+  G.base = G.railY - 55.84 * k;       // typing baseline of the first line (template-matched to the recording)
+  G.base2 = 1.33 * k;                 // from the second line on, the typing line sits ~1 px lower (as recorded)
+  G.lineH = 24.67 * k;                // line spacing on the paper
+  G.cell = 13.1 * k;                  // carriage step per character
+  G.textLeft = 88.8 * k;              // left edge of column 0 (the T sits on its centre)
+  G.glyphDX = 1.2 * k;                // glyphs land slightly right of the T centre in the recording
+  G.font = 22 * k;
+  G.hintBase = G.railY - 136.6 * k;
   G.hintFont = 11.7 * k;
   G.capHW = 45.8 * k; G.capHH = 21.7 * k;
   G.capCY = G.railY - 0.8 * k;
-  G.railT = G.railY - 10.8 * k; G.railB = G.railY + 10.2 * k;
+  G.railT = G.railY - 11 * k; G.railB = G.railY + 10.25 * k;
   G.rx = 53.3 * k; G.ry = 160 * k;     // paper corner ellipse
   G.sceneTop = G.paperTop - 2;
   G.sceneBot = Math.min(H, G.railY + 160 * k);
@@ -265,11 +267,12 @@ function placeIcon(el, cx, cy, s) {
 }
 
 function buildDialRays() {
+  // the recording's dial has 10 rays, 36° apart, starting straight up
   const g = dialEl.querySelector('.rays');
   let d = '';
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
-    const r0 = 11.6, r1 = 14.4;
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+    const r0 = 11.7, r1 = 14.6;
     d += `M${(Math.cos(a) * r0).toFixed(2)} ${(Math.sin(a) * r0).toFixed(2)}L${(Math.cos(a) * r1).toFixed(2)} ${(Math.sin(a) * r1).toFixed(2)}`;
   }
   g.innerHTML = `<path d="${d}" stroke-width="1.75"/>`;
@@ -338,13 +341,16 @@ function buildGrain() {
 
 /* ------------------------------------------------------------------ rail -- */
 const railCv = [document.createElement('canvas'), document.createElement('canvas')]; // [light, lamp]
+// median vertical profiles across the pipe, measured from the recording (f = 0 top edge … 1 bottom edge)
 const RAIL_STOPS = [
-  [[0, '#5a5d58'], [0.04, '#272e2c'], [0.1, '#2a3031'], [0.17, '#31373a'], [0.24, '#3e4447'], [0.3, '#565c5f'],
-   [0.35, '#858b8e'], [0.4, '#a0a6a9'], [0.45, '#9fa5a8'], [0.5, '#83898c'], [0.55, '#5f6568'], [0.6, '#52585b'],
-   [0.66, '#4b5154'], [0.71, '#4a4e52'], [0.76, '#454649'], [0.81, '#38393c'], [0.86, '#2c2d30'], [0.9, '#202124'],
-   [0.95, '#1a1a1c'], [1, '#141416']],
-  [[0, '#2c2b2a'], [0.06, '#1c1b1b'], [0.18, '#202020'], [0.3, '#2a2a2a'], [0.38, '#2c2c2c'], [0.5, '#232323'],
-   [0.62, '#1b1b1b'], [0.75, '#202020'], [0.88, '#1d1d1d'], [1, '#141414']],
+  [[0, '#3a3e3b'], [0.03, '#262d2b'], [0.08, '#2a3031'], [0.145, '#32383b'], [0.18, '#3c4245'], [0.21, '#4c5255'],
+   [0.24, '#62686b'], [0.27, '#7e8487'], [0.305, '#949a9d'], [0.34, '#9aa0a3'], [0.37, '#91979a'], [0.4, '#7e8487'],
+   [0.435, '#6b7174'], [0.47, '#5a6063'], [0.5, '#51575a'], [0.565, '#4c5255'], [0.63, '#454a4d'], [0.66, '#3e4547'],
+   [0.695, '#363c3f'], [0.725, '#303437'], [0.76, '#282c2f'], [0.79, '#1e2326'], [0.855, '#1b1d1e'], [0.92, '#141414'],
+   [0.97, '#131312'], [1, '#181614']],
+  [[0, '#1b1a17'], [0.03, '#13110f'], [0.11, '#141312'], [0.18, '#191816'], [0.24, '#222321'], [0.3, '#2b2c29'],
+   [0.34, '#2d2d2a'], [0.4, '#292926'], [0.47, '#212120'], [0.5, '#1e1f1c'], [0.6, '#1f1f1c'], [0.66, '#20201d'],
+   [0.73, '#1c1c1a'], [0.82, '#191816'], [0.86, '#121211'], [0.95, '#0f0f0d'], [1, '#10100f']],
 ];
 function buildRail() {
   const top = G.railT - 8 * k, bot = G.railB + 22 * k;
@@ -356,8 +362,11 @@ function buildRail() {
     c.setTransform(dpr, 0, 0, dpr, 0, -top * dpr);
     // soft shadow on the paper below the rail
     const sh = c.createLinearGradient(0, G.railB - 1 * k, 0, G.railB + 17 * k);
-    if (m === 0) { sh.addColorStop(0, 'rgba(30,24,16,0.62)'); sh.addColorStop(0.25, 'rgba(40,32,22,0.32)'); sh.addColorStop(0.6, 'rgba(50,40,28,0.1)'); sh.addColorStop(1, 'rgba(50,40,28,0)'); }
-    else { sh.addColorStop(0, 'rgba(0,0,0,0.45)'); sh.addColorStop(1, 'rgba(0,0,0,0)'); }
+    if (m === 0) {   // falloff measured below the pipe in the recording
+      for (const [o, a] of [[0, 0.8], [0.139, 0.5], [0.211, 0.37], [0.289, 0.23], [0.361, 0.17], [0.433, 0.11], [0.511, 0.067], [0.583, 0.04], [0.656, 0.02], [0.733, 0]])
+        sh.addColorStop(o, `rgba(30,24,16,${a})`);
+    }
+    else { sh.addColorStop(0, 'rgba(0,0,0,0.5)'); sh.addColorStop(0.3, 'rgba(0,0,0,0.25)'); sh.addColorStop(1, 'rgba(0,0,0,0)'); }
     c.fillStyle = sh; c.fillRect(0, G.railB - 1 * k, W, 18 * k);
     // pipe
     const gr = c.createLinearGradient(0, G.railT, 0, G.railB);
@@ -622,9 +631,9 @@ function drawGlyph(c, i, x, by, inkRgb) {
   const gx = x + (rnd(i, 1) - 0.5) * 0.7 * k, gy = by + (rnd(i, 2) - 0.5) * 0.9 * k;
   const dark = 0.74 + rnd(i, 3) * 0.26, rot = (rnd(i, 4) - 0.5) * 0.035;
   c.save(); c.translate(gx, gy); c.rotate(rot);
-  c.fillStyle = rgba(inkRgb, dark * 0.35);
-  c.shadowColor = rgba(inkRgb, 0.5); c.shadowBlur = 1.1 * k * dpr;
-  c.fillText(ch, 0.25 * k, 0.1 * k);
+  c.fillStyle = rgba(inkRgb, dark * 0.3);
+  c.shadowColor = rgba(inkRgb, 0.4); c.shadowBlur = 0.6 * k * dpr;
+  c.fillText(ch, 0.2 * k, 0.1 * k);
   c.shadowBlur = 0;
   c.fillStyle = rgba(inkRgb, dark);
   c.fillText(ch, 0, 0);
@@ -660,7 +669,7 @@ function renderLine(line, li, ink, t) {
   c.font = FONT(G.font); c.textAlign = 'center'; c.textBaseline = 'alphabetic';
   let from = e.n;
   if (full) { c.clearRect(0, 0, e.cv.width, e.cv.height); from = 0; e.first = first; e.ink = ink; e.ver = textVer; }
-  for (let n = from; n < vis; n++) drawGlyph(c, idx[n], pad + (n + 0.5) * G.cell, e.by, inkRgb);
+  for (let n = from; n < vis; n++) drawGlyph(c, idx[n], pad + (n + 0.5) * G.cell + G.glyphDX, e.by, inkRgb);
   e.n = vis;
   return e;
 }
@@ -686,7 +695,7 @@ function thinCaption(chars, size, rgb, erode, cell) {
 }
 function buildCaptions() {
   capText.hint = thinCaption('Need a first line?', G.hintFont, [50, 44, 34], 0.26 * k, 0);
-  capText.ph = thinCaption('Begin here.', G.font, [94, 86, 74], 0.55 * k, G.cell);
+  capText.ph = thinCaption('Begin here.', G.font, [104, 96, 84], 0.4 * k, G.cell);
 }
 
 /* --------------------------------------------------------- lamp channels -- */
@@ -783,6 +792,7 @@ const car = { x: 0, from: 0, to: 0, t0: 0, dur: 0, ease: E.outCubic, pending: nu
 const strike = { t0: -9 };
 const retract = { t0: -9 };
 const scrollAnim = { from: 0, t0: -9, dur: 0.26 };
+const shiftAnim = { from: 0, to: 0, t0: -9 };       // typing-line baseline shift, 0 (one line) … 1 (× G.base2)
 let lastKey = -9;
 
 function carriageTarget() { return colX(caretCol()); }
@@ -822,6 +832,20 @@ function retractDrop(t) {
   if (s < 0 || s > 0.75) return 0;
   return 24 * k * Math.exp(-s / 0.13) * (s > 0.6 ? (0.75 - s) / 0.15 : 1);
 }
+function springProgress(t, t0) {   // 0 → 1 with the same critically damped spring as the paper feed
+  const s = t - t0;
+  if (s <= 0) return 0;
+  if (s >= 0.45) return 1;
+  const w = 22 * s;
+  return 1 - (1 + w) * Math.exp(-w) * (s > 0.35 ? (0.45 - s) / 0.1 : 1);
+}
+function shiftFrac(t) { return lerp(shiftAnim.from, shiftAnim.to, springProgress(t, shiftAnim.t0)); }
+function baseShift(t) { return shiftFrac(t) * G.base2; }
+function retargetShift(t) {
+  const to = lines.length > 1 ? 1 : 0;
+  if (to === shiftAnim.to) return;
+  shiftAnim.from = shiftFrac(t); shiftAnim.to = to; shiftAnim.t0 = t;
+}
 // paper feed: critically damped spring (ω ≈ 22 s⁻¹) fitted to the recording
 function scrollOffset(t) {
   const s = t - scrollAnim.t0;
@@ -848,6 +872,7 @@ function typeChar(ch) {
     appearAt.set(i, t);
     retract.t0 = t; strike.t0 = -9;
     scrollAnim.from = scrollOffset(t) + 1; scrollAnim.t0 = t;
+    retargetShift(t);
     slideTo(carriageTarget(), 0.267, E.outSine, 0);
     fx.zap(true);
     flingWebs();
@@ -858,7 +883,7 @@ function typeChar(ch) {
     fx.spark(0.55);
     AU.space(); AU.spark(0.35);
   } else {
-    appearAt.set(i, t + 0.045);
+    appearAt.set(i, t + 0.035);
     strike.t0 = t;
     slideTo(carriageTarget(), 0.1, E.outSine, 0.15);
     AU.clack();
@@ -879,7 +904,7 @@ function deleteChar(quiet) {
   textVer++;
   lines = wrap(text);
   lastKey = t;
-  if (lines.length < before) { scrollAnim.from = scrollOffset(t) - 1; scrollAnim.t0 = t; invalidateText(); slideTo(carriageTarget(), 0.22, E.outCubic, 0); }
+  if (lines.length < before) { scrollAnim.from = scrollOffset(t) - 1; scrollAnim.t0 = t; retargetShift(t); invalidateText(); slideTo(carriageTarget(), 0.22, E.outCubic, 0); }
   else slideTo(carriageTarget(), 0.11, E.outSine, 0);
   onTextChanged();
   return true;
@@ -937,7 +962,7 @@ function flushPending() {
   snapCarriage();
   text += add; lines = wrap(text); lastKey = t;
   invalidateText();
-  if (lines.length !== before) { scrollAnim.from = scrollOffset(t) + 1; scrollAnim.t0 = t; retract.t0 = t; fx.zap(true); AU.carriageReturn(10); }
+  if (lines.length !== before) { scrollAnim.from = scrollOffset(t) + (lines.length - before); scrollAnim.t0 = t; retargetShift(t); retract.t0 = t; fx.zap(true); AU.carriageReturn(10); }
   else AU.clack();
   slideTo(carriageTarget(), 0.267, E.outSine, 0);
   onTextChanged();
@@ -1131,11 +1156,12 @@ function draw(t) {
   // ----- text -----
   c.save(); clipPaper(c);
   const ink = pP > 0.5 ? '#120e06' : '#3c3429';
-  const off = scrollOffset(t);
+  const off = scrollOffset(t), lastY = G.base + baseShift(t);
   const n = lines.length;
   let minLi = n;
   for (let li = n - 1; li >= 0; li--) {
-    const y = G.base - (n - 1 - li - off) * G.lineH;
+    // the last line sits on the typing line; older lines are fed up (the feed animates via `off`)
+    const y = li === n - 1 ? lastY : lastY - (n - 1 - li - off) * G.lineH;
     if (y < G.paperTop - G.lineH) break;
     minLi = li;
     if (!lines[li].idx.length) continue;
@@ -1150,7 +1176,8 @@ function draw(t) {
   if (lineCache.size > n - minLi + 3) for (const key of lineCache.keys()) if (key < minLi - 1 || key >= n) lineCache.delete(key);
   // hint + placeholder
   const empty = text.length === 0;
-  hintA = lerp(hintA, empty && !pending ? 1 : 0, 0.15);
+  // the placeholder vanishes the instant the first key lands (as recorded); it fades back in when cleared
+  hintA = empty && !pending ? Math.min(1, hintA + 0.08) : 0;
   const hbOn = hintA > 0.5 && pP < 0.5;
   if (hbOn !== hintBtnOn) { hintBtnOn = hbOn; hintBtn.style.pointerEvents = hbOn ? 'auto' : 'none'; }
   if (hintA > 0.01 && capText.hint) {
@@ -1158,7 +1185,7 @@ function draw(t) {
     c.globalAlpha = hintA * (1 - pP);
     if (c.globalAlpha > 0.004) c.drawImage(h1.cv, W / 2 - h1.ox, G.hintBase - h1.by, h1.w, h1.h);
     c.globalAlpha = hintA * lerp(1, 0.55, pP);
-    c.drawImage(h2.cv, G.textLeft - h2.ox, G.base - h2.by, h2.w, h2.h);
+    c.drawImage(h2.cv, G.textLeft + G.glyphDX - h2.ox, G.base - h2.by, h2.w, h2.h);
     c.globalAlpha = 1;
   }
   c.restore();
@@ -1229,17 +1256,17 @@ function drawLEDs(c, cx, cy, t, cP) {
   }
 }
 
+const STEM_FILL = [hex('#bfbeb5'), hex('#2c2e2e')], STEM_EDGE = [hex('#a09d95'), hex('#1d1e1e')];
 function drawT(c, cx, capTop, t, pP) {
   const lift = strikeLift(t) - retractDrop(t);
   const barBot = capTop - 22 * k - lift;
   const barTop = barBot - 6 * k;
   const stemTop = barBot - 0.5 * k, stemBot = capTop + 0.6 * k;
-  // stem
+  // stem: a flat matte strip with thin darker edges (as in the recording)
   if (stemBot > stemTop) {
-    const g = c.createLinearGradient(cx - 2.1 * k, 0, cx + 2.1 * k, 0);
-    const a = mix([142, 146, 142], [18, 18, 16], pP), b2 = mix([232, 234, 228], [42, 42, 38], pP), d = mix([126, 130, 126], [16, 16, 14], pP);
-    g.addColorStop(0, rgba(d)); g.addColorStop(0.45, rgba(b2)); g.addColorStop(0.7, rgba(a)); g.addColorStop(1, rgba(d));
-    c.fillStyle = g; c.fillRect(cx - 2.1 * k, stemTop, 4.2 * k, stemBot - stemTop);
+    const sw = 3.7 * k, e = 0.38 * k;
+    c.fillStyle = rgba(mix(STEM_EDGE[0], STEM_EDGE[1], pP)); c.fillRect(cx - sw / 2, stemTop, sw, stemBot - stemTop);
+    c.fillStyle = rgba(mix(STEM_FILL[0], STEM_FILL[1], pP)); c.fillRect(cx - sw / 2 + e, stemTop, sw - 2 * e, stemBot - stemTop);
   }
   // bar (pre-rendered for both skins, cross-faded)
   const bx = cx - 10.35 * k - 4 * k, by = barTop - 3 * k;
@@ -1365,7 +1392,7 @@ function drawCaret(c, t, pP) {
   const on = ph < 0.48 ? 1 : 0;
   if (!on) return;
   const n = lines.length, col = lines[n - 1].idx.length;
-  const x = G.textLeft + col * G.cell + 3 * k, y = G.base + 1.6 * k + scrollOffset(t) * G.lineH;
+  const x = G.textLeft + col * G.cell + 1.85 * k, y = G.base + baseShift(t) + 1.6 * k;
   const g = c.createRadialGradient(x, y, 0, x, y, 3.4 * k);
   g.addColorStop(0, `rgba(196,255,186,${0.9 * pP})`); g.addColorStop(0.45, `rgba(150,235,140,${0.55 * pP})`); g.addColorStop(1, 'rgba(120,220,110,0)');
   c.save(); c.translate(x, y); c.scale(0.8, 1); c.translate(-x, -y);
@@ -1990,6 +2017,7 @@ function boot() {
   input.value = text;
   try { const s = JSON.parse(store.get(LS.sliders, 'null')); if (s) Object.assign(sliders, s); } catch (e) {}
   layout();
+  shiftAnim.from = shiftAnim.to = lines.length > 1 ? 1 : 0;
   car.x = car.from = car.to = carriageTarget(); car.dur = 0; lightX = car.x; lastCarX = car.x;
   initWebs();
   setLamp(store.get(LS.lamp, '0') === '1', true);
