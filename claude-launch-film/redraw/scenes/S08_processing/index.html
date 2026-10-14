@@ -2,96 +2,192 @@
 <html><head><meta charset="utf-8"><title>S08 processing</title>
 <link rel="stylesheet" href="../../shared/base.css">
 <script src="../../shared/lib.js"></script>
-<script src="../../shared/components.js"></script>
 <style>
-  #grp { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  #rig { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  .mdl { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  .mskd { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; }
+  #scrim { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none;
+           background: linear-gradient(90deg, rgba(10,7,30,0.62) 0%, rgba(10,7,30,0.46) 30%, rgba(10,7,30,0) 52%); }
+  #back { position: absolute; border-radius: 50%; pointer-events: none;
+          background: radial-gradient(closest-side, rgba(170,150,255,0.30), rgba(170,150,255,0.10) 60%, rgba(170,150,255,0)); }
+  #ovl { position: absolute; left: 0; top: 0; overflow: visible; }
+  .tag { position: absolute; display: flex; align-items: center; gap: 9px; height: 34px; padding: 0 14px 0 11px; border-radius: 99px; white-space: nowrap;
+         font-family: 'Inter'; font-weight: 500; font-size: 16.5px; color: #fff; letter-spacing: 0.005em;
+         background: rgba(14,10,36,0.72); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14); }
+  .tag i { width: 7px; height: 7px; border-radius: 50%; background: #EE9A7C; flex: none; }
   .over { position: absolute; display: flex; align-items: center; gap: 14px; white-space: nowrap;
-          font-family: 'Inter'; font-weight: 600; font-size: 17px; letter-spacing: 0.22em; color: rgba(255,255,255,0.78); }
+          font-family: 'Inter'; font-weight: 600; font-size: 16px; letter-spacing: 0.22em; color: rgba(255,255,255,0.78); }
   .over .lbl { position: relative; overflow: hidden; padding: 4px 0; }
   .over .lbl span { display: inline-block; }
-  .head { position: absolute; left: 0; top: 0; white-space: nowrap; font-family: 'Claude Serif'; font-weight: 500; color: #fff; letter-spacing: -0.012em; line-height: 1; }
-  .head .w { position: absolute; top: 0; overflow: hidden; padding: 0.06em 0.02em 0.26em; margin-left: -0.02em; }
-  .head .w span { display: inline-block; will-change: transform; }
+  .ln { position: absolute; left: 0; top: 0; white-space: nowrap; font-family: 'Claude Serif'; line-height: 1; }
+  .m { position: absolute; top: 0; overflow: hidden; }
+  .m span { display: inline-block; will-change: transform; }
 </style>
 </head><body>
-<div id="stage"><img class="plate" id="bg"><div id="grp"></div></div>
+<div id="stage"><img class="plate" id="bg">
+  <div id="rig"><div id="back"></div><img class="mdl" id="mBase"><img class="mdl" id="mCol"><div class="mskd" id="scanL"></div><div class="mskd" id="heatL"></div>
+    <svg id="ovl" width="1920" height="1080"></svg><div id="tags"></div></div>
+  <div id="scrim"></div><div id="txt"></div>
+</div>
 <script>
-// S08 (f719-862), third design pass at the client's request (professional, restrained): an editorial status frame.
-// A small tracked label "CLAUDE IS THINKING" with Claude's turning spark sits above a large serif headline (the
-// serif Claude's replies use in this film). Headline words rise out of clean masks with a long exponential ease;
-// the ellipsis steps; at the change the first line rises away word by word as the second rises in, like a ticker.
-// No glows, particles or flares. Timing and the closing pan follow the reference.
+// S08 (f719-862), film-quality pass at the client's request: Claude visibly works on the real anatomy model from the
+// previous shot. Right: the 3D back (cut from the S07 footage) under a slow camera push. "Analyzing the affected
+// area": a scan plane slides down the body, bringing it from muted to full colour as it passes; the lower back warms
+// in Claude coral, a ring draws around it and a label pins it. "Mapping anatomical connections": fine coral lines
+// trace from the spot to the muscles it works with (erector spinae up to trapezius, latissimus dorsi, gluteus
+// maximus), each node labelled, a light pulse running along each line. Left: the editorial status text
+// (tracked label + serif headline, words rising out of masks, key words built letter by letter in coral).
 const $ = id => document.getElementById(id);
 const BURST_D = "M -0.4729 -0.8811 L -0.5288 -0.8054 L -0.5252 -0.7658 L -0.5089 -0.7045 L -0.4477 -0.6054 L -0.3432 -0.4253 L -0.2459 -0.2469 L -0.2297 -0.2217 L -0.2315 -0.2163 L -0.2441 -0.2073 L -0.2783 -0.2361 L -0.4423 -0.3550 L -0.6819 -0.5388 L -0.7143 -0.5442 L -0.7630 -0.5460 L -0.8134 -0.4919 L -0.8008 -0.4145 L -0.7702 -0.3766 L -0.7252 -0.3478 L -0.6153 -0.2667 L -0.2387 -0.0163 L -0.2189 0.0017 L -0.2225 0.0126 L -0.2585 0.0144 L -0.4315 -0.0055 L -0.5756 -0.0127 L -0.6783 -0.0217 L -0.8621 -0.0325 L -0.9143 -0.0379 L -0.9504 -0.0127 L -0.9540 0.0126 L -0.9125 0.0666 L -0.8729 0.0756 L -0.5071 0.0936 L -0.3090 0.0972 L -0.2297 0.1026 L -0.2225 0.1135 L -0.2279 0.1279 L -0.2387 0.1369 L -0.5918 0.3333 L -0.7360 0.4324 L -0.7558 0.4522 L -0.7612 0.5098 L -0.7252 0.5441 L -0.6369 0.5333 L -0.1486 0.2162 L -0.1450 0.2180 L -0.1432 0.2288 L -0.2207 0.3189 L -0.3252 0.4576 L -0.5053 0.6846 L -0.5414 0.7369 L -0.5450 0.7873 L -0.4891 0.8143 L -0.4585 0.8017 L -0.3270 0.6612 L -0.0513 0.2846 L -0.0405 0.2810 L -0.0369 0.2882 L -0.0513 0.3405 L -0.0711 0.4810 L -0.1270 0.7549 L -0.1504 0.8612 L -0.1270 0.9152 L -0.0801 0.9513 L -0.0261 0.9315 L -0.0009 0.9026 L 0.0514 0.3441 L 0.0604 0.3387 L 0.0658 0.3405 L 0.1523 0.4900 L 0.2334 0.6143 L 0.3649 0.8017 L 0.4190 0.8107 L 0.4604 0.7963 L 0.4640 0.7927 L 0.4748 0.7711 L 0.4676 0.6918 L 0.4640 0.6810 L 0.2532 0.3675 L 0.2532 0.3513 L 0.2640 0.3513 L 0.4784 0.5351 L 0.6478 0.6612 L 0.6712 0.6630 L 0.6946 0.6306 L 0.6856 0.5855 L 0.4946 0.4071 L 0.3451 0.2738 L 0.2550 0.1855 L 0.2568 0.1747 L 0.2694 0.1747 L 0.3703 0.2017 L 0.7883 0.3008 L 0.8838 0.2522 L 0.8892 0.2216 L 0.8856 0.2108 L 0.8532 0.1675 L 0.7919 0.1279 L 0.5811 0.1117 L 0.3991 0.1099 L 0.2658 0.0972 L 0.2622 0.0918 L 0.2712 0.0864 L 0.5289 0.0252 L 0.7379 -0.0163 L 0.8532 -0.0451 L 0.8604 -0.0505 L 0.8838 -0.1082 L 0.8766 -0.1370 L 0.8135 -0.1676 L 0.5523 -0.1226 L 0.3397 -0.0757 L 0.3199 -0.0739 L 0.3126 -0.0829 L 0.3775 -0.1946 L 0.4838 -0.3370 L 0.6207 -0.5117 L 0.6460 -0.6000 L 0.5901 -0.6829 L 0.5090 -0.6847 L 0.4712 -0.6559 L 0.3955 -0.5766 L 0.3415 -0.5154 L 0.2190 -0.3622 L 0.1469 -0.2649 L 0.1235 -0.2415 L 0.1091 -0.2415 L 0.1072 -0.2487 L 0.1775 -0.6090 L 0.2045 -0.7928 L 0.1667 -0.8451 L 0.1253 -0.8649 L 0.0712 -0.8307 L 0.0658 -0.8253 L 0.0388 -0.7604 L 0.0154 -0.4901 L -0.0045 -0.3280 L -0.0135 -0.1892 L -0.0243 -0.1874 L -0.0333 -0.2037 L -0.0531 -0.2739 L -0.2117 -0.5820 L -0.3306 -0.8523 L -0.3666 -0.8829 L -0.4423 -0.8919 Z";
 const expoOut = t => t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
-const exitE = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-const CX = 960, BASE = 596, SIZE = 78;
-const grp = $('grp');
-// overline: spark + label
-const over = document.createElement('div'); over.className = 'over';
-over.innerHTML = `<svg width="22" height="22" viewBox="-1 -1 2 2" style="overflow:visible"><path d="${BURST_D}" fill="#E08A69"/></svg><div class="lbl"><span>CLAUDE IS THINKING</span></div>`;
-grp.appendChild(over);
-const spark = over.querySelector('svg'), lbl = over.querySelector('.lbl span');
-// headline lines: one masked box per word
-function makeLine(text) {
-  const el = document.createElement('div'); el.className = 'head'; el.style.fontSize = SIZE + 'px'; grp.appendChild(el);
-  const meas = document.createElement('span'); meas.style.cssText = `visibility:hidden;white-space:pre;font-family:'Claude Serif';font-weight:500;font-size:${SIZE}px;letter-spacing:-0.012em;line-height:1`;
-  meas.textContent = text + '...'; el.appendChild(meas);
-  const node = meas.firstChild, r0 = meas.getBoundingClientRect(), rg = document.createRange();
-  const probe = document.createElement('span'); probe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline'; meas.appendChild(probe);
-  const bOff = probe.getBoundingClientRect().top - r0.top; meas.removeChild(probe);
-  const words = []; let i = 0;
-  for (const m of text.matchAll(/\S+/g)) { rg.setStart(node, m.index); rg.setEnd(node, m.index + m[0].length); const b = rg.getBoundingClientRect(); words.push({ t: m[0], x: b.left - r0.left, w: b.width }); }
-  const dots = [0, 1, 2].map(k => { rg.setStart(node, text.length + k); rg.setEnd(node, text.length + k + 1); const b = rg.getBoundingClientRect(); return { x: b.left - r0.left, w: b.width }; });
-  const width = r0.width; el.removeChild(meas);
-  words.forEach(w => { const box = document.createElement('div'); box.className = 'w'; box.style.left = w.x + 'px'; const s = document.createElement('span'); s.textContent = w.t; box.appendChild(s); el.appendChild(box); w.box = box; w.s = s; });
-  dots.forEach(d => { const s = document.createElement('div'); s.className = 'w'; s.style.left = d.x + 'px'; s.innerHTML = '<span>.</span>'; el.appendChild(s); d.box = s; d.s = s.firstChild; });
-  return { el, words, dots, width, bOff };
-}
-let L1 = null, L2 = null;   // built after the serif has loaded (word positions are measured)
-function renderLine(L, f, inT, outT, push, panX) {
-  const top = BASE - L.bOff - 0.06 * SIZE;
-  L.el.style.left = (CX - L.width / 2).toFixed(2) + 'px'; L.el.style.top = top.toFixed(2) + 'px';
-  L.el.style.transformOrigin = `${(L.width / 2).toFixed(1)}px ${(L.bOff).toFixed(1)}px`;
-  L.el.style.transform = `translateX(${panX.toFixed(2)}px) scale(${push.toFixed(5)})`;
-  const H = 1.32 * SIZE;
-  L.words.forEach((w, i) => {
-    const a = inT + i * 2.6, pin = expoOut(clamp((f - a) / 22));
-    const b = outT + i * 1.2, pout = outT ? exitE(clamp((f - b) / 9)) : 0;
-    const y = (1 - pin) * H - pout * H;
-    w.s.style.transform = `translateY(${y.toFixed(2)}px)`;
-    w.box.style.visibility = (f >= a - 0.5 && pout < 1) ? 'visible' : 'hidden';
+const cubicInOut = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const NS = 'http://www.w3.org/2000/svg', CORAL = '#EE9A7C', INK = '#F7F5FF';
+const PL = '../../plates/S08_processing/';
+// model placement: cut-out coords -> stage coords (scale MS, affected spot DOT -> DOTF)
+const MS = 1.12, DOT = [401, 584], DOTF = [1385, 640];   // cut-out crop starts at frame-692 x 609
+const M2F = (x, y) => [DOTF[0] + (x - DOT[0]) * MS, DOTF[1] + (y - DOT[1]) * MS];
+const TARGETS = [ // name, cut-out coords, label side
+  { n: 'Erector spinae', p: [280, 470], via: null, side: -1, t0: 792 },
+  { n: 'Trapezius', p: [318, 262], via: 0, side: -1, t0: 800 },
+  { n: 'Latissimus dorsi', p: [454, 410], via: null, side: 1, t0: 795 },
+  { n: 'Gluteus maximus', p: [430, 738], via: null, side: 1, t0: 798 },
+];
+let BUILT = false, A, B, RING, RING2, LEAD, HOTTAG, PATHS = [];
+function sv(tag, a, parent) { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); (parent || $('ovl')).appendChild(e); return e; }
+function tag(text) { const d = document.createElement('div'); d.className = 'tag'; d.innerHTML = `<i></i>${text}`; $('tags').appendChild(d); return d; }
+// ---- editorial text (two-line headlines, left aligned)
+const TX = 140, SIZE = 78, LH = 92, TOPB = 548;
+function buildHead(lines) {
+  const el = document.createElement('div'); el.style.cssText = 'position:absolute;left:0;top:0'; $('txt').appendChild(el);
+  const rows = lines.map((words, li) => {
+    const ln = document.createElement('div'); ln.className = 'ln'; ln.style.fontSize = SIZE + 'px'; el.appendChild(ln);
+    const meas = document.createElement('span'); meas.style.cssText = 'visibility:hidden;white-space:pre;letter-spacing:-0.012em';
+    words.forEach(([t, acc], i) => { const s = document.createElement('span'); s.textContent = t; meas.appendChild(s); if (i < words.length - 1) meas.appendChild(document.createTextNode(' ')); });
+    ln.appendChild(meas);
+    const r0 = meas.getBoundingClientRect(); const pr = document.createElement('span'); pr.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline'; meas.appendChild(pr);
+    const bOff = pr.getBoundingClientRect().top - r0.top; meas.removeChild(pr);
+    const rg = document.createRange();
+    const W = Array.from(meas.children).map((s, i) => { const b = s.getBoundingClientRect(), [t, acc] = words[i]; const w = { t, acc, x: b.left - r0.left, w: b.width };
+      if (acc) { const n = s.firstChild; w.letters = Array.from(t).map((c, k) => { rg.setStart(n, k); rg.setEnd(n, k + 1); return { c, x: rg.getBoundingClientRect().left - r0.left }; }); }
+      return w; });
+    ln.removeChild(meas);
+    const mk = (txt, x, col) => { const m = document.createElement('div'); m.className = 'm'; m.style.cssText += `left:${(x - 2).toFixed(2)}px;padding:${(0.08 * SIZE).toFixed(1)}px 2px ${(0.3 * SIZE).toFixed(1)}px;`;
+      const s = document.createElement('span'); s.textContent = txt; s.style.color = col; s.style.letterSpacing = '-0.012em'; m.appendChild(s); ln.appendChild(m); return s; };
+    W.forEach(w => { if (w.acc) w.ls = w.letters.map(l => mk(l.c, l.x, CORAL)); else w.sp = mk(w.t, w.x, INK); });
+    return { ln, W, bOff };
   });
-  // ellipsis: rises in after the last word, then steps (one dot brightens at a time)
-  const dIn = inT + L.words.length * 2.6 + 4;
-  L.dots.forEach((d, k) => {
-    const pin = expoOut(clamp((f - dIn - k * 1.5) / 18)), pout = outT ? exitE(clamp((f - outT - L.words.length * 1.2) / 9)) : 0;
-    d.s.style.transform = `translateY(${((1 - pin) * H - pout * H).toFixed(2)}px)`;
-    const step = Math.floor(((f - dIn - 14) / 7) % 4 + 4) % 4;
-    d.s.style.opacity = f < dIn + 14 ? 1 : (step === 3 ? 1 : (k <= step ? 1 : 0.28));
-    d.box.style.visibility = (f >= dIn - 0.5 && pout < 1) ? 'visible' : 'hidden';
+  return { el, rows };
+}
+function renderHead(H, f, t0, outT) {
+  let t = t0, wi = 0;
+  const RISE = 1.35 * SIZE;
+  H.rows.forEach((r, li) => {
+    r.ln.style.left = TX + 'px'; r.ln.style.top = (TOPB + li * LH - r.bOff - 0.08 * SIZE).toFixed(2) + 'px';
+    r.W.forEach(w => {
+      const po = outT ? cubicInOut(clamp((f - outT - wi * 1.1) / 9)) : 0;
+      const set = (s, a) => { const p = expoOut(clamp((f - a) / 20)); s.style.transform = `translateY(${((1 - p) * RISE - po * RISE).toFixed(2)}px)`; s.parentNode.style.visibility = (f >= a - 0.5 && po < 1) ? 'visible' : 'hidden'; };
+      if (w.acc) { w.ls.forEach((s, k) => set(s, t + k * 0.7)); t += w.t.length * 0.7 + 1.5; } else { set(w.sp, t); t += 2.6; }
+      wi++;
+    });
   });
 }
+let OVER, SPARK, LBL;
+async function build() {
+  await document.fonts.load(`400 ${SIZE}px 'Claude Serif'`); await document.fonts.load("600 16px 'Inter'"); await document.fonts.load("500 16.5px 'Inter'");
+  // model layers
+  const m = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = PL + 'model.png'; });
+  const W = m.naturalWidth * MS, H = m.naturalHeight * MS, [x0, y0] = M2F(0, 0);
+  for (const id of ['mBase', 'mCol']) { const e = $(id); e.src = PL + 'model.png'; Object.assign(e.style, { left: x0 + 'px', top: y0 + 'px', width: W + 'px', height: H + 'px' }); }
+  $('mBase').style.filter = 'grayscale(1) brightness(0.62) contrast(1.05)';
+
+  // layers clipped to the body (scan light, heat): masked by the model's own alpha
+  for (const id of ['scanL', 'heatL']) { const e = $(id); const mk = `url(${PL}model.png)`;
+    Object.assign(e.style, { webkitMaskImage: mk, maskImage: mk, webkitMaskSize: `${W}px ${H}px`, maskSize: `${W}px ${H}px`, webkitMaskPosition: `${x0}px ${y0}px`, maskPosition: `${x0}px ${y0}px`, webkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat' }); }
+  $('heatL').style.mixBlendMode = 'hard-light';
+  const bk = $('back'); const [bx, by] = M2F(317, 470); Object.assign(bk.style, { left: (bx - 560) + 'px', top: (by - 440) + 'px', width: '1120px', height: '880px' });
+  // overlay: ring + leader + label for the affected spot; connection lines, nodes, pulses, labels
+  RING = sv('circle', { cx: DOTF[0], cy: DOTF[1], r: 40, fill: 'none', stroke: '#FFF6F1', 'stroke-width': 2.2, pathLength: 1, 'stroke-dasharray': '1 1', transform: `rotate(-90 ${DOTF[0]} ${DOTF[1]})` });
+  RING2 = sv('circle', { cx: DOTF[0], cy: DOTF[1], r: 40, fill: 'none', stroke: CORAL, 'stroke-width': 1.4 });
+  sv('circle', { id: 'core', cx: DOTF[0], cy: DOTF[1], r: 5, fill: '#FFF1EA' });
+  LEAD = sv('polyline', { points: `${DOTF[0] + 40},${DOTF[1] + 8} ${DOTF[0] + 120},${DOTF[1] + 62} ${DOTF[0] + 150},${DOTF[1] + 62}`, fill: 'none', stroke: 'rgba(255,255,255,0.85)', 'stroke-width': 1.5, pathLength: 1, 'stroke-dasharray': '1 1' });
+  HOTTAG = tag('Lower back · L4–L5'); HOTTAG.style.left = (DOTF[0] + 156) + 'px'; HOTTAG.style.top = (DOTF[1] + 45) + 'px';
+  TARGETS.forEach((T, i) => {
+    const [tx, ty] = M2F(...T.p), from = T.via === null ? DOTF : M2F(...TARGETS[T.via].p);
+    const mx = (from[0] + tx) / 2, my = (from[1] + ty) / 2, dx = tx - from[0], dy = ty - from[1], L = Math.hypot(dx, dy);
+    const cx = mx - dy / L * 0.18 * L * (T.side), cy = my + dx / L * 0.18 * L * (T.side);
+    const path = sv('path', { d: `M ${from[0]} ${from[1]} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${tx.toFixed(1)} ${ty.toFixed(1)}`, fill: 'none', stroke: 'rgba(255,250,246,0.92)', 'stroke-width': 2.2, 'stroke-linecap': 'round', pathLength: 1, 'stroke-dasharray': '1 1' });
+    const node = sv('circle', { cx: tx, cy: ty, r: 0, fill: CORAL, stroke: '#fff', 'stroke-width': 1.5 }), nodeC = sv('circle', { cx: tx, cy: ty, r: 0, fill: '#FFF1EA' });
+    const pulse = sv('circle', { r: 4.6, fill: CORAL, stroke: '#fff', 'stroke-width': 1.2 });
+    const tg = tag(T.n); const tw = tg.getBoundingClientRect().width;
+    tg.style.left = (T.side > 0 ? tx + 16 : tx - 16 - tw) + 'px'; tg.style.top = (ty - 17) + 'px';
+    PATHS.push({ T, path, node, nodeC, pulse, tg, q: [from[0], from[1], cx, cy, tx, ty] });
+  });
+  // text
+  OVER = document.createElement('div'); OVER.className = 'over';
+  OVER.innerHTML = `<svg width="21" height="21" viewBox="-1 -1 2 2" style="overflow:visible"><path d="${BURST_D}" fill="#E08A69"/></svg><div class="lbl"><span>CLAUDE IS THINKING</span></div>`;
+  $('txt').appendChild(OVER); SPARK = OVER.querySelector('svg'); LBL = OVER.querySelector('.lbl span');
+  A = buildHead([[['Analyzing'], ['the']], [['affected', 1], ['area...', 1]]]);
+  B = buildHead([[['Mapping'], ['anatomical', 1]], [['connections...', 1]]]);
+  BUILT = true;
+}
+const qpt = (q, t) => { const [x0, y0, cx, cy, x1, y1] = q, u = 1 - t; return [u * u * x0 + 2 * u * t * cx + t * t * x1, u * u * y0 + 2 * u * t * cy + t * t * y1]; };
 window.renderFrame = async (f) => {
-  if (!L1) { await document.fonts.load("500 78px 'Claude Serif'"); await document.fonts.load("600 17px 'Inter'");
-    L1 = makeLine('Analyzing the affected area'); L2 = makeLine('Mapping anatomical connections'); }
-  await setImg($('bg'), `../../plates/S08_processing/bg_${String(f).padStart(4, '0')}.jpg`);
+  if (!BUILT) await build();
+  await setImg($('bg'), `${PL}bg_${String(f).padStart(4, '0')}.jpg`);
   const panX = kf(f, [[845, 0], [848, 3], [851, 8], [854, 15], [857, 25], [860, 41], [862, 55]]);
-  // overline: spark turns in and keeps turning; the label wipes in from the left
+  // ---- camera on the model: in through shot 1 toward the spot, eases back for the map, then the closing pan
+  const push = kf(f, [[721, 0.96], [784, 1.07, 'inOutCubic'], [806, 1.0, 'inOutCubic'], [862, 1.025]]);
+  const lift = kf(f, [[786, 0], [806, 30, 'inOutCubic']]);
+  const rigIn = expoOut(clamp((f - 720) / 14));
+  $('rig').style.transformOrigin = `${DOTF[0]}px ${DOTF[1]}px`;
+  $('rig').style.transform = `translate(${(panX + 40 * (1 - rigIn)).toFixed(2)}px, ${lift.toFixed(2)}px) scale(${push.toFixed(5)})`;
+  $('rig').style.opacity = clamp((f - 720) / 6).toFixed(3);
+  // ---- scan: a plane slides down the body; above it the body is in full colour
+  const [, yTop] = M2F(0, 150), [, yBot] = M2F(0, 805);
+  const sp = cubicInOut(clamp((f - 730) / 30)), sy = yTop + (yBot - yTop) * sp;
+  const reveal = f < 729.5 ? -1e5 : f >= 760 ? 1e5 : sy;
+  const cm = `linear-gradient(180deg, #000 ${(reveal - 6).toFixed(1)}px, rgba(0,0,0,0) ${(reveal + 2).toFixed(1)}px)`;
+  const mc = $('mCol'); const y0m = parseFloat(mc.style.top);
+  const cmLocal = `linear-gradient(180deg, #000 ${(reveal - 6 - y0m).toFixed(1)}px, rgba(0,0,0,0) ${(reveal + 2 - y0m).toFixed(1)}px)`;
+  mc.style.webkitMaskImage = mc.style.maskImage = f >= 760 ? 'none' : cmLocal;
+  const mute = cubicInOut(clamp((f - 752) / 14));
+  mc.style.filter = `saturate(${(0.95 - 0.45 * mute).toFixed(3)}) brightness(${(1 - 0.24 * mute).toFixed(3)}) contrast(1.04)`;
+  const sOn = f >= 729 && f <= 762, sFade = Math.min(clamp((f - 729) / 2), 1 - clamp((f - 759) / 3));
+  $('scanL').style.background = sOn ? `linear-gradient(180deg, rgba(255,255,255,0) ${(sy - 70).toFixed(1)}px, rgba(214,204,255,0.22) ${(sy - 4).toFixed(1)}px, rgba(255,255,255,0.95) ${(sy - 1).toFixed(1)}px, rgba(255,255,255,0.95) ${(sy + 1).toFixed(1)}px, rgba(255,255,255,0) ${(sy + 3).toFixed(1)}px)` : 'none';
+  $('scanL').style.opacity = sFade.toFixed(3);
+  // ---- the affected spot warms in coral, the ring draws, the label pins it (fades for the map)
+  const hot = clamp((f - 748) / 10), hotOut = 0.35 * clamp((f - 786) / 8);
+  const hr = 95 + 8 * Math.sin((f - 748) / 9);
+  $('heatL').style.background = `radial-gradient(circle at ${DOTF[0]}px ${DOTF[1]}px, rgba(250,132,92,${(0.95 * hot * (1 - hotOut)).toFixed(3)}) 0px, rgba(242,118,84,${(0.5 * hot * (1 - hotOut)).toFixed(3)}) ${(hr * 0.55).toFixed(0)}px, rgba(242,128,92,0) ${hr.toFixed(0)}px)`;
+  RING.setAttribute('stroke-dashoffset', (1 - cubicInOut(clamp((f - 752) / 12))).toFixed(4));
+  const rp = ((f - 764) % 30 + 30) % 30 / 30;
+  RING2.setAttribute('r', (40 + 34 * expoOut(rp)).toFixed(2)); RING2.style.opacity = f >= 764 ? (0.6 * (1 - rp)).toFixed(3) : 0;
+  $('core').setAttribute('r', (5 * expoOut(clamp((f - 750) / 8))).toFixed(2));
+  const lp = cubicInOut(clamp((f - 760) / 8)), lo = clamp((f - 784) / 6);
+  LEAD.setAttribute('stroke-dashoffset', (1 - lp).toFixed(4)); LEAD.style.opacity = (1 - lo).toFixed(3);
+  const tp = expoOut(clamp((f - 765) / 14));
+  HOTTAG.style.opacity = (clamp((f - 765) / 4) * (1 - lo)).toFixed(3); HOTTAG.style.transform = `translateX(${(-12 * (1 - tp)).toFixed(2)}px)`;
+  // ---- the map: lines trace to the connected muscles; nodes, labels, a pulse along each
+  PATHS.forEach(P => {
+    const p = cubicInOut(clamp((f - P.T.t0) / 10));
+    P.path.setAttribute('stroke-dashoffset', (1 - p).toFixed(4)); P.path.style.display = p > 0 ? 'block' : 'none';
+    const n = expoOut(clamp((f - P.T.t0 - 8) / 10));
+    P.node.setAttribute('r', (7 * n).toFixed(2)); P.nodeC.setAttribute('r', (2.6 * n).toFixed(2));
+    const tq = expoOut(clamp((f - P.T.t0 - 10) / 14));
+    P.tg.style.opacity = clamp((f - P.T.t0 - 10) / 4).toFixed(3); P.tg.style.transform = `translateX(${(P.T.side * 12 * (1 - tq)).toFixed(2)}px)`;
+    const u = (f - P.T.t0 - 22) / 18;
+    if (u >= 0 && u < 2) { const [x, y] = qpt(P.q, cubicInOut(u % 1)); P.pulse.setAttribute('cx', x.toFixed(1)); P.pulse.setAttribute('cy', y.toFixed(1)); P.pulse.style.opacity = Math.sin(Math.PI * (u % 1)).toFixed(3); P.pulse.style.display = 'block'; }
+    else P.pulse.style.display = 'none';
+  });
+  // ---- text: overline, then line 1 rises in and away, line 2 rises in
   const oi = expoOut(clamp((f - 723) / 18));
-  const ow = over.getBoundingClientRect().width;
-  over.style.left = (CX - ow / 2 + panX).toFixed(2) + 'px'; over.style.top = (BASE - SIZE - 66).toFixed(2) + 'px';
-  over.style.opacity = clamp((f - 723) / 6).toFixed(3);
-  spark.style.transform = `rotate(${(-120 * (1 - oi) + 1.8 * (f - 723)).toFixed(2)}deg) scale(${(0.5 + 0.5 * oi).toFixed(4)})`;
-  const lw = expoOut(clamp((f - 726) / 20));
-  lbl.parentNode.style.clipPath = `inset(0 ${((1 - lw) * 100).toFixed(2)}% 0 0)`;
-  lbl.style.transform = `translateX(${(-18 * (1 - lw)).toFixed(2)}px)`;
-  // headlines: line 1 rises in, rises out at the change while line 2 rises in
-  const push1 = 1 + 0.02 * clamp((f - 726) / 60), push2 = 1 + 0.02 * clamp((f - 786) / 76);
-  L1.el.style.display = f <= 795 ? 'block' : 'none';
-  if (f <= 795) renderLine(L1, f, 727, 779, push1, 0);
-  L2.el.style.display = f >= 784 ? 'block' : 'none';
-  if (f >= 784) renderLine(L2, f, 788.5, 0, push2, panX);
+  OVER.style.left = TX + 'px'; OVER.style.top = (TOPB - SIZE - 64) + 'px'; OVER.style.opacity = clamp((f - 723) / 6).toFixed(3);
+  SPARK.style.transform = `rotate(${(-120 * (1 - oi) + 1.8 * (f - 723)).toFixed(2)}deg) scale(${(0.5 + 0.5 * oi).toFixed(4)})`;
+  const lw = expoOut(clamp((f - 726) / 20)); LBL.parentNode.style.clipPath = `inset(0 ${((1 - lw) * 100).toFixed(2)}% 0 0)`;
+  A.el.style.display = f <= 795 ? 'block' : 'none'; B.el.style.display = f >= 784 ? 'block' : 'none';
+  if (f <= 795) renderHead(A, f, 727, 779);
+  if (f >= 784) renderHead(B, f, 788.5, 0);
+  $('txt').style.transform = `translateX(${panX.toFixed(2)}px)`;
 };
 window.sceneReady = document.fonts.ready;
 </script>

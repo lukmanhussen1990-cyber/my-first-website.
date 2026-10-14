@@ -10,7 +10,7 @@ for a shot-by-shot comparison.
 
 ## Redrawn version
 
-`claude_launch_film_redraw_v10.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
+`claude_launch_film_redraw_v11.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
 scene is now rebuilt:
 
 - **Opening:** the four-point sparkle is replaced by the orange Claude starburst, and the
@@ -24,8 +24,9 @@ scene is now rebuilt:
 - **Redrawn scenes:** titles, chat pill, doctor cards and the "Claude" wordmarks are
   rebuilt as animated HTML/CSS. Real-world footage and backgrounds come from the
   reference, with the original text removed.
-- **Claude thinking (processing scene):** an editorial status frame: "CLAUDE IS THINKING" with Claude's spark over
-  a large serif headline whose words rise out of clean masks; the second step replaces the first like a ticker.
+- **Claude thinking (processing scene):** Claude visibly works on the real anatomy model from the previous shot: a scan
+  brings the back from grey to colour, the lower back is pinned in coral, and lines map it to the muscles it works with,
+  beside the editorial status text.
 - **Hero statement:** "Because the right diagnosis / starts with the right direction" builds word by word with the
   narration into one two-line serif composition, the key words in Claude coral and an arrow drawn under "direction".
 - **Claude logo reveals:** at "Meet Claude" and in the finale the coral mark turns in and the wordmark wipes out
@@ -59,7 +60,7 @@ scene is now rebuilt:
 | 446–525 | "Build to move beyond generic healthcare search" | redrawn; "Build to move beyond generic" is a kinetic title (mask rise, motion-blur sweep, gradient hero word with an overshooting underline, skeleton-to-word "generic", glint, wave exit); "healthcare" ripples in, then a compact frosted-glass search field opens beside it (soft shadow, focus ring), a gradient magnifier draws itself, "search" is typed behind a soft caret, a sheen crosses the glass and a violet-to-coral progress line runs along its base |
 | 526–605 | typing the symptom | redrawn (Claude composer) |
 | 606–718 | anatomy viewer | redrawn UI (Claude sidebar, buttons, Done, pointer) over the tracked window; anatomy model kept |
-| 719–862 | processing lines | an editorial status frame: a small tracked "CLAUDE IS THINKING" label with Claude's turning spark over a large serif headline; words rise out of clean masks with a long exponential ease, the ellipsis steps, and the first line rises away as the second rises in |
+| 719–862 | processing lines | a product-film shot on the real 3D anatomy model (cut from the anatomy-viewer footage): a scan plane brings the back from grey to colour, the lower back warms in Claude coral with a ring and a label, then fine lines map it to the erector spinae, trapezius, latissimus dorsi and gluteus maximus; the editorial status text ("CLAUDE IS THINKING", serif headline, words rising out of masks) sits on the left |
 | 863–972 | Claude's reply | redrawn Claude chat (user bubble, serif reply streaming with the starburst, composer) over the tracked, scrolling window; the redrawn UI takes on the footage's measured focus blur |
 | 973–1090 | doctor cards, "right one" | redrawn over the reference light field (cards and titles removed); the centre doctor is Dr. Imran Hussain; futuristic "right one" with a targeting lock on his card and a "Best match" chip |
 | 1091–1167 | profile and analytics | "Right outcome" redrawn; the profile footage now shows Dr. Imran Hussain (name, breadcrumb, photo, e-mail, About), tracked and blur-matched through the fast scroll |
@@ -77,6 +78,7 @@ The redraw sources are in `redraw/`:
   the real glass and light-field gradients. `s11_plates.py` cleans the profile scene's title.
 - `s07_refine.py`: masked ECC refinement of the anatomy-viewer window tracking.
 - `shared/brand.js`: the Claude lockup reveal used by both logo moments. `wm_plates.py` cleans their backgrounds.
+- `s08_model.py`: cuts the anatomy model out of the footage (colour key, edge clean-up) for the thinking shot.
 - `sound_design.py`: synthesises the effects, ducks them under the narration, mixes and masters the soundtrack.
 - `shared/hud.js`: the decode title and HUD brackets used by both "right one" moments.
 - `s11_*.py`, `textr.py`: the profile-page doctor swap. `s11_track.py` / `s11_refine*.py` track the page
