@@ -14,7 +14,7 @@
   html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #181818; overflow: hidden; }
   body {
     position: fixed; inset: 0; overscroll-behavior: none; touch-action: manipulation;
-    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;
     -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
     font-family: "Courier Prime", "Courier New", monospace;
   }
@@ -182,7 +182,10 @@ function measure() {
   const iw = window.innerWidth, ih = window.innerHeight;
   // keep the layout height stable while the on-screen keyboard is open
   if (Math.abs(iw - stableW) > 1 || document.activeElement !== input || ih > stableH) { stableW = iw; stableH = ih; }
-  W = Math.min(iw, 440); H = stableH;
+  H = stableH;
+  // portrait phones: full width (max 440). Wide/short screens (desktop, landscape): keep the
+  // phone composition by also limiting the column to 0.6 × height.
+  W = H / iw < 1.3 ? Math.min(iw, 440, H * 0.6) : Math.min(iw, 440);
   k = W / 440;
   dpr = Math.min(2, window.devicePixelRatio || 1);
 }
@@ -190,6 +193,7 @@ function measure() {
 function layout() {
   measure();
   app.style.height = H + 'px';
+  app.style.width = W + 'px';
   G.paperTop = Math.round(H * 0.1935);
   G.railY = H * 0.444;
   G.base = G.railY - 56.5 * k;        // typing baseline
@@ -220,7 +224,7 @@ function layout() {
   // top bar
   placeIcon($('#back'), 47.7 * k, H * 0.0918, k);
   placeIcon($('#share'), 399.7 * k, H * 0.0896 - 0.25 * k, k);
-  placeIcon($('#sound'), 268 * k, H * 0.0885, k);
+  placeIcon($('#sound'), 214 * k, H * 0.0885, k);   // clear of the longest counter ("3 000 / 3 000")
   counterEl.style.fontSize = (14.4 * k) + 'px';
   counterEl.style.letterSpacing = (0.2 * k) + 'px';
   counterEl.style.right = (W - 369.2 * k) + 'px';
@@ -242,6 +246,7 @@ function layout() {
   buildGrain();
   buildRail();
   buildCapsules();
+  buildSprites();
   buildCaptions();
   lightDirty = true;
   invalidateText();
@@ -373,7 +378,7 @@ function buildRail() {
 function drawCollar(c, cx, m) {
   const w = 16 * k, t = G.railY - 14.4 * k, b = G.railY + 13.4 * k, x = cx - w / 2, r = 2.2 * k;
   c.save();
-  c.shadowColor = 'rgba(0,0,0,0.35)'; c.shadowBlur = 3 * k; c.shadowOffsetY = 1.5 * k;
+  c.shadowColor = 'rgba(0,0,0,0.35)'; c.shadowBlur = 3 * k * dpr; c.shadowOffsetY = 1.5 * k * dpr;
   const gr = c.createLinearGradient(0, t, 0, b);
   if (m === 0) { gr.addColorStop(0, '#465049'); gr.addColorStop(0.08, '#363d39'); gr.addColorStop(0.5, '#313633'); gr.addColorStop(0.92, '#252a27'); gr.addColorStop(1, '#1c201e'); }
   else { gr.addColorStop(0, '#2c2e2d'); gr.addColorStop(0.5, '#1d1f1e'); gr.addColorStop(1, '#141615'); }
@@ -545,6 +550,41 @@ function drawBolt(c, x, yEdge, dir, m) {
   }
 }
 
+/* ------------------------------------------------- small cached sprites -- */
+// pre-rendered pieces that would otherwise need a shadowBlur every frame
+const SPR = { slot: document.createElement('canvas'), bar: [document.createElement('canvas'), document.createElement('canvas')] };
+function buildSprites() {
+  // glowing lamp slot
+  const sw = 40 * k, sh = 20 * k, c = SPR.slot.getContext('2d');
+  SPR.slot.width = Math.ceil(sw * dpr); SPR.slot.height = Math.ceil(sh * dpr);
+  c.setTransform(dpr, 0, 0, dpr, sw / 2 * dpr, sh / 2 * dpr);
+  c.shadowColor = 'rgba(255,214,140,0.9)'; c.shadowBlur = 7 * k * dpr;
+  c.fillStyle = '#eed396'; roundRect(c, -9.9 * k, -1.15 * k, 19.8 * k, 2.3 * k, 1 * k); c.fill();
+  c.shadowBlur = 0; c.fillStyle = 'rgba(255,248,225,0.7)'; roundRect(c, -8.5 * k, -0.55 * k, 17 * k, 0.8 * k, 0.4 * k); c.fill();
+  SPR.slotW = sw; SPR.slotH = sh;
+  // T bar (black roller with metal end caps) for both skins, shadow baked in
+  const bw = 20.7 * k, bh = 6 * k, pw = bw + 8 * k, ph = bh + 8 * k;
+  for (let m = 0; m < 2; m++) {
+    const cv = SPR.bar[m], b = cv.getContext('2d');
+    cv.width = Math.ceil(pw * dpr); cv.height = Math.ceil(ph * dpr);
+    b.setTransform(dpr, 0, 0, dpr, 4 * k * dpr, 3 * k * dpr);
+    b.save();
+    b.shadowColor = 'rgba(0,0,0,0.35)'; b.shadowBlur = 2 * k * dpr; b.shadowOffsetY = 1 * k * dpr;
+    let g = b.createLinearGradient(0, 0, 0, bh);
+    const P = m ? [[36, 36, 32], [18, 18, 16], [22, 22, 20], [10, 10, 9]] : [[60, 64, 62], [22, 24, 24], [48, 52, 52], [8, 9, 9]];
+    g.addColorStop(0, rgba(P[0])); g.addColorStop(0.3, rgba(P[1])); g.addColorStop(0.55, rgba(P[2])); g.addColorStop(1, rgba(P[3]));
+    b.fillStyle = g; roundRect(b, 0, 0, bw, bh, 1.4 * k); b.fill();
+    b.restore();
+    const ea = m ? 0.15 : 1;
+    g = b.createLinearGradient(0, 0, 0, bh);
+    g.addColorStop(0, `rgba(235,238,232,${ea})`); g.addColorStop(0.5, `rgba(160,165,160,${ea})`); g.addColorStop(1, `rgba(90,94,90,${ea})`);
+    b.fillStyle = g; roundRect(b, bw - 2.3 * k, 0.2 * k, 2.1 * k, bh - 0.4 * k, 0.9 * k); b.fill();
+    b.globalAlpha = 0.5 * ea; roundRect(b, 0.2 * k, 0.3 * k, 1.1 * k, bh - 0.6 * k, 0.5 * k); b.fill();
+    b.globalAlpha = 1;
+  }
+  SPR.barW = pw; SPR.barH = ph;
+}
+
 /* ------------------------------------------------------------ text model -- */
 let text = '';
 let lines = [{ idx: [] }];
@@ -572,56 +612,57 @@ const colX = (col) => G.textLeft + (col + 0.5) * G.cell;
 let fontReady = false;
 const FONT = (px) => `400 ${px}px "Courier Prime", "Courier New", monospace`;
 const lineCache = new Map();
-let inkKey = '';
-function invalidateText() { lineCache.clear(); }
+let textVer = 0;                       // bumps whenever already-typed glyphs may have changed
+function invalidateText() { lineCache.clear(); textVer++; }
 
-function renderLine(line, li, ink) {
-  // count visible chars (strike timing)
-  const t = now();
+function drawGlyph(c, i, x, by, inkRgb) {
+  const ch = text[i];
+  if (ch === ' ' || ch === '\n' || ch === undefined) return;
+  // every strike is slightly different: position, darkness, a hint of rotation, extra ink
+  const gx = x + (rnd(i, 1) - 0.5) * 0.7 * k, gy = by + (rnd(i, 2) - 0.5) * 0.9 * k;
+  const dark = 0.74 + rnd(i, 3) * 0.26, rot = (rnd(i, 4) - 0.5) * 0.035;
+  c.save(); c.translate(gx, gy); c.rotate(rot);
+  c.fillStyle = rgba(inkRgb, dark * 0.35);
+  c.shadowColor = rgba(inkRgb, 0.5); c.shadowBlur = 1.1 * k * dpr;
+  c.fillText(ch, 0.25 * k, 0.1 * k);
+  c.shadowBlur = 0;
+  c.fillStyle = rgba(inkRgb, dark);
+  c.fillText(ch, 0, 0);
+  if (rnd(i, 5) < 0.35) { c.fillStyle = rgba(inkRgb, dark * 0.45); c.fillText(ch, -0.3 * k, -0.15 * k); }
+  c.restore();
+  // dry-ink speckle: knock tiny holes out of this glyph
+  c.globalCompositeOperation = 'destination-out';
+  const R = mulberry(i * 13 + 7);
+  for (let n = 0; n < 7; n++) {
+    c.fillStyle = `rgba(0,0,0,${0.25 + R() * 0.45})`;
+    c.fillRect(x - G.cell * 0.5 + R() * G.cell, by - G.font * 0.75 + R() * G.font, (0.35 + R() * 0.6) * k, (0.35 + R() * 0.6) * k);
+  }
+  c.globalCompositeOperation = 'source-over';
+}
+function renderLine(line, li, ink, t) {
   let vis = 0;
-  for (const i of line.idx) { const a = appearAt.get(i); if (a === undefined || a <= t) vis++; else break; }
-  const sig = line.idx.length ? line.idx[0] + ':' + line.idx.map((i) => text[i]).join('') + ':' + vis : 'e';
+  const idx = line.idx;
+  for (let j = 0; j < idx.length; j++) { const a = appearAt.get(idx[j]); if (a === undefined || a <= t) vis++; else break; }
+  const first = idx.length ? idx[0] : -1;
   let e = lineCache.get(li);
-  if (e && e.sig === sig && e.ink === ink) return e.cv;
-  if (!e) { e = { cv: document.createElement('canvas') }; lineCache.set(li, e); }
-  e.sig = sig; e.ink = ink;
-  const cv = e.cv, pad = 6 * k;
-  const w = COLS * G.cell + pad * 2, h = G.lineH * 1.7;
-  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
-  const c = cv.getContext('2d');
+  const pad = 6 * k;
+  if (!e) {
+    e = { cv: document.createElement('canvas'), n: 0, ink: '', first: -2, ver: -1, pad, by: G.lineH * 1.7 * 0.68 };
+    const w = COLS * G.cell + pad * 2, h = G.lineH * 1.7;
+    e.cv.width = Math.round(w * dpr); e.cv.height = Math.round(h * dpr);
+    lineCache.set(li, e);
+  }
+  const c = e.cv.getContext('2d');
+  const full = e.first !== first || e.ink !== ink || e.ver !== textVer || vis < e.n;
+  if (!full && vis === e.n) return e;
+  const inkRgb = hex(ink);
   c.setTransform(dpr, 0, 0, dpr, 0, 0);
   c.font = FONT(G.font); c.textAlign = 'center'; c.textBaseline = 'alphabetic';
-  const inkRgb = hex(ink);
-  const by = h * 0.68;
-  for (let n = 0; n < vis; n++) {
-    const i = line.idx[n], ch = text[i];
-    if (ch === ' ' || ch === '\n') continue;
-    const x = pad + (n + 0.5) * G.cell + (rnd(i, 1) - 0.5) * 0.7 * k;
-    const y = by + (rnd(i, 2) - 0.5) * 0.9 * k;
-    const dark = 0.74 + rnd(i, 3) * 0.26;
-    const rot = (rnd(i, 4) - 0.5) * 0.035;
-    c.save(); c.translate(x, y); c.rotate(rot);
-    c.fillStyle = rgba(inkRgb, dark * 0.35);
-    c.shadowColor = rgba(inkRgb, 0.5); c.shadowBlur = 1.1 * k * dpr;
-    c.fillText(ch, 0.25 * k, 0.1 * k);
-    c.shadowBlur = 0;
-    c.fillStyle = rgba(inkRgb, dark);
-    c.fillText(ch, 0, 0);
-    if (rnd(i, 5) < 0.35) { c.fillStyle = rgba(inkRgb, dark * 0.45); c.fillText(ch, -0.3 * k, -0.15 * k); }
-    c.restore();
-  }
-  // dry-ink speckle: knock out tiny holes
-  if (vis) {
-    c.globalCompositeOperation = 'destination-out';
-    const R = mulberry(line.idx[0] * 13 + 7);
-    for (let n = 0; n < vis * 7; n++) {
-      c.fillStyle = `rgba(0,0,0,${0.25 + R() * 0.45})`;
-      c.fillRect(pad + R() * vis * G.cell, by - G.font * 0.75 + R() * G.font, (0.35 + R() * 0.6) * k, (0.35 + R() * 0.6) * k);
-    }
-    c.globalCompositeOperation = 'source-over';
-  }
-  e.pad = pad; e.by = by;
-  return cv;
+  let from = e.n;
+  if (full) { c.clearRect(0, 0, e.cv.width, e.cv.height); from = 0; e.first = first; e.ink = ink; e.ver = textVer; }
+  for (let n = from; n < vis; n++) drawGlyph(c, idx[n], pad + (n + 0.5) * G.cell, e.by, inkRgb);
+  e.n = vis;
+  return e;
 }
 
 /* ------------------------------------------------- thin static captions -- */
@@ -835,6 +876,7 @@ function deleteChar(quiet) {
   appearAt.delete(text.length - 1);
   if (!quiet) AU.backspace();
   text = text.slice(0, -1);
+  textVer++;
   lines = wrap(text);
   lastKey = t;
   if (lines.length < before) { scrollAnim.from = scrollOffset(t) - 1; scrollAnim.t0 = t; invalidateText(); slideTo(carriageTarget(), 0.22, E.outCubic, 0); }
@@ -857,8 +899,12 @@ const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 // paste is flushed in a single batch.
 let pending = '';
 let nextStrikeAt = 0;
+let composing = false;
+input.addEventListener('compositionstart', () => { composing = true; });
+input.addEventListener('compositionend', () => { composing = false; syncInput(); });
+const UNTYPEABLE = /[\uD800-\uDFFF\uFE00-\uFE0F\u200B-\u200D\u2060\uFEFF]/g;
 function syncInput() {
-  let v = input.value.replace(/\r/g, '');
+  let v = input.value.replace(/\r/g, '').replace(/\t/g, ' ').replace(UNTYPEABLE, '');
   if (v.length > MAX) v = v.slice(0, MAX);
   const cur = text + pending;
   if (v === cur) return;
@@ -874,8 +920,8 @@ function syncInput() {
   pending += v.slice(p);
   if (pending.length > 24) flushPending();
   else pumpPending(now());              // a single key strikes right away
-  if (input.value !== v) input.value = v;
-  keepCaretAtEnd();
+  if (input.value !== v && !composing) input.value = v;
+  if (!composing) keepCaretAtEnd();
 }
 function pumpPending(t) {
   if (!pending || t < nextStrikeAt) return;
@@ -1059,17 +1105,23 @@ function clipPaper(c) {
 }
 
 let paperRGB = hex('#eae5d9');
+const styleCache = new Map();
+function setStyle(el, prop, val) {
+  const key = el.id + '.' + prop;
+  if (styleCache.get(key) === val) return;
+  styleCache.set(key, val); el.style[prop] = val;
+}
 function draw(t) {
   const c = sctx;
   const pP = E.ease(CH.paper.v), cP = CH.cap.v, sP = E.outQuad(CH.slot.v);
   // DOM-driven layers
   paperRGB = mix(hex('#eae5d9'), hex('#30302d'), pP);
-  paperEl.style.backgroundColor = rgba(paperRGB);
-  vignette.style.opacity = pP.toFixed(3);
-  grainCv.style.opacity = (1 - pP * 0.45).toFixed(3);
-  controlsEl.style.opacity = pP.toFixed(3);
-  dialEl.style.color = rgba(mix(hex('#202012'), hex('#b0b19e'), cP));
-  dialEl.querySelector('.ln').style.stroke = rgba(mix(hex('#e9e4d6'), hex('#3a3a30'), cP));
+  setStyle(paperEl, 'backgroundColor', rgba(paperRGB));
+  setStyle(vignette, 'opacity', pP.toFixed(3));
+  setStyle(grainCv, 'opacity', (1 - pP * 0.45).toFixed(3));
+  setStyle(controlsEl, 'opacity', pP.toFixed(3));
+  setStyle(dialEl, 'color', rgba(mix(DIAL_A, DIAL_B, cP)));
+  setStyle(dialLine, 'stroke', rgba(mix(DIAL_LA, DIAL_LB, cP)));
 
   c.setTransform(dpr, 0, 0, dpr, 0, -G.sceneTop * dpr);
   c.clearRect(0, G.sceneTop, W, G.sceneBot - G.sceneTop);
@@ -1081,18 +1133,21 @@ function draw(t) {
   const ink = pP > 0.5 ? '#120e06' : '#3c3429';
   const off = scrollOffset(t);
   const n = lines.length;
+  let minLi = n;
   for (let li = n - 1; li >= 0; li--) {
     const y = G.base - (n - 1 - li - off) * G.lineH;
     if (y < G.paperTop - G.lineH) break;
+    minLi = li;
     if (!lines[li].idx.length) continue;
-    const cv = renderLine(lines[li], li, ink);
-    const e = lineCache.get(li);
     const fade = clamp((y - G.paperTop - 6 * k) / (34 * k), 0, 1);
     if (fade <= 0) continue;
+    const e = renderLine(lines[li], li, ink, t);
     c.globalAlpha = fade;
-    c.drawImage(cv, G.textLeft - e.pad, y - e.by, cv.width / dpr, cv.height / dpr);
+    c.drawImage(e.cv, G.textLeft - e.pad, y - e.by, e.cv.width / dpr, e.cv.height / dpr);
   }
   c.globalAlpha = 1;
+  // forget line images that scrolled away (or no longer exist)
+  if (lineCache.size > n - minLi + 3) for (const key of lineCache.keys()) if (key < minLi - 1 || key >= n) lineCache.delete(key);
   // hint + placeholder
   const empty = text.length === 0;
   hintA = lerp(hintA, empty && !pending ? 1 : 0, 0.15);
@@ -1125,11 +1180,9 @@ function draw(t) {
   drawLEDs(c, cx, cy, t, cP);
   // slot glow
   if (sP > 0) {
-    c.save();
-    c.shadowColor = `rgba(255,214,140,${0.9 * sP})`; c.shadowBlur = 7 * k * dpr;
-    c.fillStyle = rgba(hex('#eed396'), sP);
-    roundRect(c, cx - 9.9 * k, capTop - 1.3 * k, 19.8 * k, 2.3 * k, 1 * k); c.fill();
-    c.restore();
+    c.globalAlpha = sP;
+    c.drawImage(SPR.slot, cx - SPR.slotW / 2, capTop - 0.15 * k - SPR.slotH / 2, SPR.slotW, SPR.slotH);
+    c.globalAlpha = 1;
   }
   // ----- T (with its little web) -----
   drawTWeb(c, cx, capTop, capTop - 22 * k - strikeLift(t) + retractDrop(t), t, pP);
@@ -1142,6 +1195,8 @@ function draw(t) {
   drawGlow(c, cx, cy, st, pP);
 }
 let hintA = 1, hintBtnOn = true;
+const DIAL_A = hex('#202012'), DIAL_B = hex('#b0b19e'), DIAL_LA = hex('#e9e4d6'), DIAL_LB = hex('#3a3a30');
+const dialLine = dialEl.querySelector('.ln'); dialLine.id = 'dialLine';
 const hintBtn = $('#hintBtn');
 
 function drawLEDs(c, cx, cy, t, cP) {
@@ -1159,8 +1214,14 @@ function drawLEDs(c, cx, cy, t, cP) {
     let g;
     const s = leds[i];
     c.save();
-    if (s === 'green') { g = c.createRadialGradient(x - r * 0.35, y - r * 0.35, 0, x, y, r); g.addColorStop(0, '#b6ff98'); g.addColorStop(0.35, '#6eea4e'); g.addColorStop(0.85, '#5bd83c'); g.addColorStop(1, '#3fae2a'); c.shadowColor = 'rgba(110,255,80,0.7)'; c.shadowBlur = 2 * k * dpr; }
-    else if (s === 'orange') { g = c.createRadialGradient(x - r * 0.35, y - r * 0.35, 0, x, y, r); g.addColorStop(0, '#ffc690'); g.addColorStop(0.35, '#f8913a'); g.addColorStop(0.85, '#f08024'); g.addColorStop(1, '#bd5a12'); c.shadowColor = 'rgba(255,140,40,0.6)'; c.shadowBlur = 1.5 * k * dpr; }
+    if (s === 'green' || s === 'orange') {
+      const hc = s === 'green' ? '110,255,80' : '255,140,40', hr = r * 2.1;
+      const hg = c.createRadialGradient(x, y, r * 0.6, x, y, hr);
+      hg.addColorStop(0, `rgba(${hc},0.35)`); hg.addColorStop(1, `rgba(${hc},0)`);
+      c.fillStyle = hg; c.fillRect(x - hr, y - hr, hr * 2, hr * 2);
+    }
+    if (s === 'green') { g = c.createRadialGradient(x - r * 0.35, y - r * 0.35, 0, x, y, r); g.addColorStop(0, '#b6ff98'); g.addColorStop(0.35, '#6eea4e'); g.addColorStop(0.85, '#5bd83c'); g.addColorStop(1, '#3fae2a'); }
+    else if (s === 'orange') { g = c.createRadialGradient(x - r * 0.35, y - r * 0.35, 0, x, y, r); g.addColorStop(0, '#ffc690'); g.addColorStop(0.35, '#f8913a'); g.addColorStop(0.85, '#f08024'); g.addColorStop(1, '#bd5a12'); }
     else if (s === 'red') { g = c.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r); g.addColorStop(0, '#4a1a1a'); g.addColorStop(1, '#1c0909'); }
     else { g = c.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r); g.addColorStop(0, '#1a1c18'); g.addColorStop(1, '#030403'); }
     c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
@@ -1180,21 +1241,10 @@ function drawT(c, cx, capTop, t, pP) {
     g.addColorStop(0, rgba(d)); g.addColorStop(0.45, rgba(b2)); g.addColorStop(0.7, rgba(a)); g.addColorStop(1, rgba(d));
     c.fillStyle = g; c.fillRect(cx - 2.1 * k, stemTop, 4.2 * k, stemBot - stemTop);
   }
-  // bar
-  const bx = cx - 10.35 * k, bw = 20.7 * k;
-  c.save();
-  c.shadowColor = 'rgba(0,0,0,0.35)'; c.shadowBlur = 2 * k * dpr; c.shadowOffsetY = 1 * k * dpr;
-  let g = c.createLinearGradient(0, barTop, 0, barBot);
-  g.addColorStop(0, rgba(mix([60, 64, 62], [36, 36, 32], pP))); g.addColorStop(0.3, rgba(mix([22, 24, 24], [18, 18, 16], pP)));
-  g.addColorStop(0.55, rgba(mix([48, 52, 52], [22, 22, 20], pP))); g.addColorStop(1, rgba(mix([8, 9, 9], [10, 10, 9], pP)));
-  c.fillStyle = g; roundRect(c, bx, barTop, bw, barBot - barTop, 1.4 * k); c.fill();
-  c.restore();
-  // metal end caps
-  const ea = 1 - pP * 0.85;
-  g = c.createLinearGradient(0, barTop, 0, barBot);
-  g.addColorStop(0, `rgba(235,238,232,${ea})`); g.addColorStop(0.5, `rgba(160,165,160,${ea})`); g.addColorStop(1, `rgba(90,94,90,${ea})`);
-  c.fillStyle = g; roundRect(c, bx + bw - 2.3 * k, barTop + 0.2 * k, 2.1 * k, barBot - barTop - 0.4 * k, 0.9 * k); c.fill();
-  c.globalAlpha = 0.5 * ea; roundRect(c, bx + 0.2 * k, barTop + 0.3 * k, 1.1 * k, barBot - barTop - 0.6 * k, 0.5 * k); c.fill();
+  // bar (pre-rendered for both skins, cross-faded)
+  const bx = cx - 10.35 * k - 4 * k, by = barTop - 3 * k;
+  if (pP < 1) { c.globalAlpha = 1; c.drawImage(SPR.bar[0], bx, by, SPR.barW, SPR.barH); }
+  if (pP > 0) { c.globalAlpha = pP; c.drawImage(SPR.bar[1], bx, by, SPR.barW, SPR.barH); }
   c.globalAlpha = 1;
 }
 
@@ -1297,10 +1347,10 @@ function drawGlow(c, cx, cy, st, pP) {
   const a = st.glow;
   const lampA = a * pP, paperA = a * (1 - pP);
   if (lampA > 0.005) {
-    glowEl.style.opacity = (lampA * 0.82).toFixed(3);
-    glowEl.style.transform = `translate(${(cx - 140 * k).toFixed(1)}px, ${(cy + 4 * k - 140 * k).toFixed(1)}px)`;
+    setStyle(glowEl, 'opacity', (lampA * 0.82).toFixed(3));
+    setStyle(glowEl, 'transform', `translate(${(cx - 140 * k).toFixed(1)}px, ${(cy + 4 * k - 140 * k).toFixed(1)}px)`);
     glowOn = true;
-  } else if (glowOn) { glowEl.style.opacity = '0'; glowOn = false; }
+  } else if (glowOn) { setStyle(glowEl, 'opacity', '0'); glowOn = false; }
   if (paperA > 0.01) {
     const r = 120 * k, gx = cx + 6 * k, gy = cy + 4 * k;
     const g = c.createRadialGradient(gx, gy, 0, gx, gy, r);
@@ -1479,43 +1529,51 @@ function stepWebs(dt, t) {
   }
 }
 let lastCarX = 0;
-function smoothPath(P) {
-  // Catmull-Rom resample → array of [x, y]
-  const out = [];
-  for (let i = 0; i < P.length - 1; i++) {
-    const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)];
+// reusable buffers for ribbon drawing (no per-frame allocation)
+const RB = { x: new Float32Array(256), y: new Float32Array(256), nx: new Float32Array(256), ny: new Float32Array(256), w: new Float32Array(256), f: new Float32Array(256) };
+function smoothPath(P, X, Y) {
+  // Catmull-Rom resample into X/Y; returns the sample count
+  let m = 0;
+  const n = P.length;
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = P[i > 0 ? i - 1 : 0], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2 < n ? i + 2 : n - 1];
     for (let s = 0; s < 3; s++) {
       const u = s / 3, u2 = u * u, u3 = u2 * u;
-      out.push([
-        0.5 * (2 * p1.x + (-p0.x + p2.x) * u + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * u2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * u3),
-        0.5 * (2 * p1.y + (-p0.y + p2.y) * u + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * u2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * u3),
-      ]);
+      X[m] = 0.5 * (2 * p1.x + (-p0.x + p2.x) * u + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * u2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * u3);
+      Y[m] = 0.5 * (2 * p1.y + (-p0.y + p2.y) * u + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * u2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * u3);
+      m++;
     }
   }
-  const l = P[P.length - 1]; out.push([l.x, l.y]);
-  return out;
+  X[m] = P[n - 1].x; Y[m] = P[n - 1].y;
+  return m + 1;
 }
 function drawRibbon(c, r, t, pP) {
-  const C = smoothPath(r.pts), m = C.length;
-  // arc length
-  const L = [0];
-  for (let i = 1; i < m; i++) L.push(L[i - 1] + Math.hypot(C[i][0] - C[i - 1][0], C[i][1] - C[i - 1][1]));
-  const total = L[m - 1] || 1;
+  const X = RB.x, Y = RB.y, NX = RB.nx, NY = RB.ny, Wd = RB.w, F = RB.f;
+  const m = smoothPath(r.pts, X, Y);
+  // arc length → f, normals and the twisting half-width, computed once for all strands
+  let total = 0; F[0] = 0;
+  for (let i = 1; i < m; i++) { total += Math.hypot(X[i] - X[i - 1], Y[i] - Y[i - 1]); F[i] = total; }
+  total = total || 1;
+  const ph = r.phase + Math.sin(t * 0.4 + r.seed) * 0.3, wk = r.width * k;
+  for (let i = 0; i < m; i++) {
+    const i0 = i > 0 ? i - 1 : 0, i1 = i < m - 1 ? i + 1 : m - 1;
+    let tx = X[i1] - X[i0], ty = Y[i1] - Y[i0]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+    NX[i] = -ty; NY[i] = tx;
+    const f = F[i] / total; F[i] = f;
+    const env = Math.min(1, f * 6, (1 - f) * 6);
+    const tw = Math.cos(f * Math.PI * r.twist + ph);
+    Wd[i] = wk * env * (0.08 + 0.92 * Math.abs(tw)) * (tw < 0 ? -1 : 1);
+  }
+  const R = mulberry(r.seed * 31);
   for (let sidx = 0; sidx < r.strands; sidx++) {
     const u = r.strands > 1 ? (sidx / (r.strands - 1)) * 2 - 1 : 0;
-    const R = mulberry(r.seed * 31 + sidx);
-    const wf = 0.6 + R() * 0.8, wp = R() * 6.28, wa = (0.25 + R() * 0.7) * k;
+    const wf = (0.6 + R() * 0.8) * 18, wp = R() * 6.28 + t * 0.6, wa = (0.25 + R() * 0.7) * k;
     c.strokeStyle = webColor(pP, r.alpha * (0.55 + R() * 0.6));
     c.beginPath();
     for (let i = 0; i < m; i++) {
-      const i0 = Math.max(0, i - 1), i1 = Math.min(m - 1, i + 1);
-      let tx = C[i1][0] - C[i0][0], ty = C[i1][1] - C[i0][1];
-      const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
-      const f = L[i] / total;
-      const env = Math.min(1, f * 6, (1 - f) * 6);              // gathers at the anchors
-      const tw = Math.cos(f * Math.PI * r.twist + r.phase + Math.sin(t * 0.4 + r.seed) * 0.3);
-      const off = (r.width * k * env * (0.08 + 0.92 * Math.abs(tw)) * u * Math.sign(tw || 1)) + Math.sin(f * 18 * wf + wp + t * 0.6) * wa * env;
-      const x = C[i][0] - ty * off, y = C[i][1] + tx * off;
+      const f = F[i], env = Math.min(1, f * 6, (1 - f) * 6);
+      const off = Wd[i] * u + Math.sin(f * wf + wp) * wa * env;
+      const x = X[i] + NX[i] * off, y = Y[i] + NY[i] * off;
       if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
     }
     c.stroke();
@@ -1902,9 +1960,9 @@ function frame() {
     lightX += (car.x - lightX) * (1 - Math.exp(-dt / 0.03));
     if (Math.abs(car.x - lightX) > 200 * k) lightX = car.x;
     const ax = lightX, ay = G.capCY - G.capHH - G.paperTop;
-    lightCv.style.transform = `translate(${(ax - L.ax).toFixed(2)}px, ${(ay - L.ay).toFixed(2)}px) translate(${L.ax}px, ${L.ay}px) scale(${grow.toFixed(4)}) translate(${-L.ax}px, ${-L.ay}px)`;
-    lightCv.style.opacity = ((lampOn ? E.outSine(lv) : lv) * flick).toFixed(3);
-  } else lightCv.style.opacity = '0';
+    setStyle(lightCv, 'transform', `translate(${(ax - L.ax).toFixed(2)}px, ${(ay - L.ay).toFixed(2)}px) translate(${L.ax}px, ${L.ay}px) scale(${grow.toFixed(4)}) translate(${-L.ax}px, ${-L.ay}px)`);
+    setStyle(lightCv, 'opacity', ((lampOn ? E.outSine(lv) : lv) * flick).toFixed(3));
+  } else setStyle(lightCv, 'opacity', '0');
   drawDt = dt;
   draw(t);
   requestAnimationFrame(frame);
