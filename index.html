@@ -30,7 +30,7 @@
     background: radial-gradient(ellipse 75% 60% at 50% 38%, rgba(0,0,0,0) 55%, rgba(0,0,0,.16) 100%); }
   #scene { position: absolute; left: 0; pointer-events: none; }
   #glow { position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0; display: none; mix-blend-mode: screen;
-          background: radial-gradient(closest-side, rgb(46,75,53) 0%, rgb(39,64,46) 25%, rgb(24,40,28) 50%, rgb(10,17,12) 75%, rgba(0,0,0,0) 100%); }
+          background: radial-gradient(closest-side, rgb(46,61,53) 0%, rgb(39,52,46) 25%, rgb(24,33,28) 50%, rgb(10,14,12) 75%, rgba(0,0,0,0) 100%); }
   button { -webkit-appearance: none; appearance: none; background: none; border: 0; padding: 0; margin: 0;
            color: inherit; font: inherit; cursor: pointer; outline: none; }
   button:focus-visible { outline: 1px dashed rgba(200,200,190,.5); outline-offset: 3px; }
@@ -709,7 +709,7 @@ function renderLine(line, li, ink, t) {
 /* ------------------------------------------------- thin static captions -- */
 // The hint and placeholder in the recording use very thin strokes. Courier Prime only ships
 // 400/700, so the glyphs are eroded with a destination-out outline stroke.
-const capText = { hint: null, hintLamp: null, ph: null };
+const capText = { hint: null, hintLamp: null, ph: null, phLamp: null };
 function thinCaption(chars, size, rgb, erode, cell) {
   const cv = document.createElement('canvas');
   const c0 = cv.getContext('2d'); c0.font = FONT(size);
@@ -730,6 +730,8 @@ function buildCaptions() {
   // in lamp mode the recording's hint ink matches the dark paper: it vanishes, and shows only where the light falls
   capText.hintLamp = thinCaption('Need a first line?', G.hintFont, [55, 54, 50], 0.3 * k, 0);
   capText.ph = thinCaption('Begin here.', G.font, [104, 96, 84], 0.4 * k, G.cell);
+  // under the lamp the placeholder is a softer grey (≈86): light on the dark paper, darker than the lit paper
+  capText.phLamp = thinCaption('Begin here.', G.font, [92, 86, 74], 0.4 * k, G.cell);
 }
 
 /* --------------------------------------------------------- lamp channels -- */
@@ -1186,12 +1188,12 @@ const fx = {
         if (s < 0.175) {
           const flick = hash(((t * 60) | 0) * 31 + i) < 0.78 ? 1 : 0.25;
           st.white = Math.max(st.white, e.amp * flick); st.flash = Math.max(st.flash, 0.32 * e.amp); st.beam = Math.max(st.beam, 0.8 * e.amp); st.tips = Math.max(st.tips, 0.8 * e.amp);
-          if (e.green) st.glow = Math.max(st.glow, s < 0.03 ? s / 0.03 : 1);
+          if (e.green) st.glow = Math.max(st.glow, s < 0.03 ? s / 0.03 : 1 - 0.25 * (s - 0.03) / 0.145);   // eases ~25 % through the phase
         } else {
           const q = s - 0.175;
           st.flash = Math.max(st.flash, 0.88 * e.amp * Math.exp(-q / 0.17) * (s > 0.525 ? (0.625 - s) / 0.1 : 1));
-          if (q < 0.16) { st.violet = Math.max(st.violet, e.amp * (1 - q / 0.2)); st.tips = Math.max(st.tips, e.amp * (1 - q / 0.2)); }
-          if (e.green && q < 0.04) st.glow = Math.max(st.glow, 1 - q / 0.04);
+          if (q < 0.2) { st.violet = Math.max(st.violet, e.amp * (1 - q / 0.2)); st.tips = Math.max(st.tips, e.amp * (1 - q / 0.2)); }   // fades to nothing (no cut)
+          if (e.green && q < 0.04) st.glow = Math.max(st.glow, 0.75 * (1 - q / 0.04));
         }
       }
     }
@@ -1209,7 +1211,7 @@ function clipPaper(c) {
 }
 
 // base cream is a touch lighter than #eae5d9 so that, with grain on top, it renders as #eae5d9-ish like the recording
-const PAPER_LIGHT = hex('#eee7db'), PAPER_DARK = hex('#333330');
+const PAPER_LIGHT = hex('#eee7db'), PAPER_DARK = hex('#30302d');
 let paperRGB = PAPER_LIGHT;
 const styleCache = new Map();
 function setStyle(el, prop, val) {
@@ -1265,15 +1267,17 @@ function draw(t) {
   if (hbOn !== hintBtnOn) { hintBtnOn = hbOn; hintBtn.style.pointerEvents = hbOn ? 'auto' : 'none'; }
   if (hintA > 0.01 && capText.hint) {
     const h1 = capText.hint, h2 = capText.ph;
-    // both stay on the sheet in lamp mode: the hint's ink turns paper-dark at the tap (so it fades with the paper
-    // and shows only under the light, as recorded); the placeholder is a soft grey that reads on both papers
-    const q = CH.cap.v, h3 = capText.hintLamp;
-    c.globalAlpha = hintA * (1 - q);
+    // both stay on the sheet in lamp mode, as recorded: as the paper darkens the hint's ink turns paper-dark (it
+    // fades with the paper and shows faintly where the light falls) and the placeholder turns a soft grey
+    const h3 = capText.hintLamp, h4 = capText.phLamp;
+    c.globalAlpha = hintA * (1 - pP);
     if (c.globalAlpha > 0.004) c.drawImage(h1.cv, W / 2 - h1.ox, G.hintBase - h1.by, h1.w, h1.h);
-    c.globalAlpha = hintA * q;
+    c.globalAlpha = hintA * pP * 0.45;
     if (c.globalAlpha > 0.004) c.drawImage(h3.cv, W / 2 - h3.ox, G.hintBase - h3.by, h3.w, h3.h);
-    c.globalAlpha = hintA * lerp(1, 0.85, pP);
-    c.drawImage(h2.cv, G.textLeft + G.glyphDX - h2.ox, G.base - h2.by, h2.w, h2.h);
+    c.globalAlpha = hintA * (1 - pP);
+    if (c.globalAlpha > 0.004) c.drawImage(h2.cv, G.textLeft + G.glyphDX - h2.ox, G.base - h2.by, h2.w, h2.h);
+    c.globalAlpha = hintA * pP * 0.88;
+    if (c.globalAlpha > 0.004) c.drawImage(h4.cv, G.textLeft + G.glyphDX - h4.ox, G.base - h4.by, h4.w, h4.h);
     c.globalAlpha = 1;
   }
   drawCaret(c, t, pP);   // the blinking insertion dot lives on the paper (under the T and the webs)
@@ -1534,7 +1538,7 @@ function initWebs() {
     makeRope(22, [20 * k, G.railY - 2 * k], capAnchor(-1, 0, true), { side: -1, top: true, ay: -2, by: -4, slack: 1.12, minLen: 40, g: 0, pull: 1.4, lift: 30, strands: 9, width: 5.2, twist: 3.1, phase: 0.4, alpha: 0.9, seed: 11, sag0: -5 }),
     makeRope(18, [19 * k, G.railY + 5 * k], capAnchor(-1, 7), { side: -1, ay: 5, by: 7, slack: 1.1, minLen: 38, g: 22, pull: 0.8, strands: 6, width: 3.8, twist: 1.8, phase: 1.9, alpha: 0.6, seed: 12, sag0: 6 }),
     // right side: capsule tail → collar (a wide sagging band)
-    makeRope(24, capAnchor(1, 5), [W - 20 * k, G.railY + 3 * k], { side: 1, ay: 5, by: 3, slack: 1.06, minLen: 34, g: 30, pull: 1.0, strands: 12, width: 7.5, twist: 1.3, phase: 2.6, alpha: 0.9, seed: 13, sag0: 20 }),
+    makeRope(24, capAnchor(1, 5), [W - 20 * k, G.railY + 3 * k], { side: 1, ay: 5, by: 3, slack: 1.06, minLen: 34, g: 30, pull: 1.0, strands: 15, width: 10, twist: 0.9, phase: 2.6, alpha: 1.2, seed: 13, sag0: 20 }),
   ];
   // hanging threads with tiny spiders, anchored under the rail
   WEB.threads = [87, 150, 181, 252, 401].map((x, i) => {
@@ -1557,7 +1561,7 @@ function initWebs() {
     }
   }
   // web between the T stem and the capsule's shoulder
-  WEB.tweb = { ph: R() * 6 };
+  WEB.tweb = { ph: R() * 6, gone: text.length ? 1 : (WEB.tweb ? WEB.tweb.gone : 0) };   // once torn it stays gone
   WEB.ready = true;
 }
 function stepRope(r, dt, t, a, b) {
@@ -1717,6 +1721,23 @@ function drawWebs(c, t, pP) {
   c.save();
   c.lineCap = 'round'; c.lineJoin = 'round';
   c.lineWidth = Math.max(0.42, 0.45 * k);
+  // the left ribbon wraps once around the rail ~65 px from the left collar (an irregular loop, as recorded)
+  if (car.x - G.capHW > 92 * k) {
+    c.strokeStyle = webColor(pP, 0.75);
+    c.beginPath();
+    const R = mulberry(812), kx = 70 * k + Math.sin(t * 0.6) * 0.3 * k, ky = G.railY - 3 * k;
+    for (let i = 0; i < 9; i++) {
+      const u = i / 8 - 0.5, rx = (8 + R() * 2.5) * k, ry = (15 + R() * 2.5) * k, tilt = 0.25 + (R() - 0.5) * 0.25, ox = u * 3 * k;
+      for (let a = -0.6; a <= 6.9; a += 0.35) {   // a loop that opens into the band on both sides
+        const ex = Math.cos(a) * rx * (0.85 + 0.15 * Math.sin(a * 2 + i)), ey = Math.sin(a) * ry;
+        const x = kx + ox + ex * Math.cos(tilt) - ey * Math.sin(tilt), y = ky + ex * Math.sin(tilt) + ey * Math.cos(tilt) + u * 1.5 * k;
+        if (a === -0.6) c.moveTo(x - 6 * k, y + 2 * k);
+        c.lineTo(x, y);
+      }
+      c.lineTo(kx + ox + 14 * k, ky + 5 * k + u * 2 * k);
+    }
+    c.stroke();
+  }
   // collar fans
   c.strokeStyle = webColor(pP, 0.85);
   c.beginPath();
@@ -1748,18 +1769,23 @@ function drawWebs(c, t, pP) {
   c.restore();
 }
 function drawTWeb(c, cx, capTop, barBot, t, pP) {
-  // a little sheet of silk between the stem and the capsule's left shoulder
-  if (!WEB.ready) return;
-  const sway = Math.sin(t * 1.1 + WEB.tweb.ph) * 1.2 * k;
+  // before the first key the recording shows a sheet of fine vertical threads between the T bar and the capsule
+  // (left of the stem), with a few running along the capsule's top; the first strikes tear it away
+  if (!WEB.ready || WEB.tweb.gone >= 1) return;
+  if (text.length || pending) WEB.tweb.gone = Math.min(1, WEB.tweb.gone + drawDt / 0.15);
+  const a = 1 - WEB.tweb.gone, sway = Math.sin(t * 1.1 + WEB.tweb.ph) * 0.6 * k;
   c.save();
-  c.strokeStyle = webColor(pP, 0.75); c.lineWidth = Math.max(0.5, 0.5 * k);
+  c.strokeStyle = webColor(pP, 0.7 * a); c.lineWidth = Math.max(0.45, 0.45 * k);
   c.beginPath();
-  for (let i = 0; i < 7; i++) {
-    const f = i / 6;
-    const sy = lerp(barBot + 3 * k, capTop - 4 * k, f * 0.8);
-    const ex = cx - (16 + f * 18) * k, ey = capTop + (1 + f * 3) * k;
-    c.moveTo(cx - 1.5 * k, sy);
-    c.quadraticCurveTo(cx - (8 + f * 8) * k + sway, lerp(sy, ey, 0.4) - 4 * k, ex, ey);
+  const R = mulberry(4711);
+  for (let i = 0; i < 11; i++) {   // vertical threads hanging from under the bar
+    const x = cx - (2.5 + i * 1.45 + R() * 0.8) * k, top = barBot + (0.5 + R() * 3) * k, bot = capTop - (0.3 + R() * 1.2) * k;
+    const w = (R() - 0.5) * 1.6 * k + sway * (0.4 + R() * 0.6);
+    c.moveTo(x, top); c.bezierCurveTo(x + w, lerp(top, bot, 0.33), x - w, lerp(top, bot, 0.66), x + w * 0.3, bot);
+  }
+  for (let i = 0; i < 5; i++) {    // and a few running left along the capsule's top
+    const y = capTop - (0.8 + i * 1.1 + R() * 0.6) * k, x0 = cx - 2 * k, x1 = cx - (24 + R() * 10) * k;
+    c.moveTo(x0, y); c.quadraticCurveTo((x0 + x1) / 2, y - (0.5 + R() * 1.5) * k + sway * 0.3, x1, y + (1 + R() * 2) * k);
   }
   c.stroke();
   c.restore();
@@ -2166,13 +2192,13 @@ function tick() {
   // light layer follows the carriage
   const lv = CH.light.v;
   if (lv > 0) {
-    const grow = 0.15 + 0.85 * (lampOn ? E.outQuad(lv) : E.outCubic(lv));
+    const grow = (lampOn ? 0.35 : 0.15) + (lampOn ? 0.65 : 0.85) * (lampOn ? E.outQuad(lv) : E.outCubic(lv));   // the outer fan is already lit early on (recording)
     lightX += (car.x - lightX) * (1 - Math.exp(-dt / 0.036));   // lags ~28 px on a return, as recorded
     if (Math.abs(car.x - lightX) > 200 * k) lightX = car.x;
     const ax = lightX, ay = G.capCY - G.capHH - G.paperTop;
     setStyle(lightCv, 'transform', `translate(${(ax - L.ax).toFixed(2)}px, ${(ay - L.ay).toFixed(2)}px) translate(${L.ax}px, ${L.ay}px) scale(${grow.toFixed(4)}) translate(${-L.ax}px, ${-L.ay}px)`);
     // intensity comes up fast near the slot (≈0.1 s) while the reach keeps growing (measured)
-    const inten = lampOn ? 1 - Math.pow(1 - Math.min(1, lv / 0.2), 2) : lv;
+    const inten = lampOn ? 1 - Math.pow(1 - Math.min(1, lv / 0.28), 2) : lv;
     setStyle(lightCv, 'opacity', inten.toFixed(3));
   } else setStyle(lightCv, 'opacity', '0');
   drawDt = dt;
