@@ -1055,9 +1055,11 @@ $('#share').addEventListener('click', async () => {
   } catch (e) { if (e && e.name === 'AbortError') return; }
   try { await navigator.clipboard.writeText(text); toast('Copied to clipboard'); }
   catch (e) {
+    const typing = document.activeElement === input;
     const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('Copied to clipboard'); } catch (e2) { toast('Copy failed'); }
     ta.remove();
+    if (typing) focusInput();   // the temporary textarea took focus; give it back so the keyboard stays
   }
 });
 let toastTimer = 0;
