@@ -1,0 +1,1950 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=overlays-content">
+<meta name="theme-color" content="#181818">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Frankenwriter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #181818; overflow: hidden; }
+  body {
+    position: fixed; inset: 0; overscroll-behavior: none; touch-action: manipulation;
+    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+    font-family: "Courier Prime", "Courier New", monospace;
+  }
+  #app {
+    position: absolute; left: 50%; top: 0; width: 100%; max-width: 440px; height: 100%;
+    transform: translateX(-50%); overflow: hidden; background: #181818; contain: strict;
+  }
+  #paper { position: absolute; left: 0; right: 0; bottom: 0; overflow: hidden; background: #eae5d9; }
+  #paper canvas, #paper div { position: absolute; left: 0; top: 0; pointer-events: none; }
+  #light { transform-origin: 0 0; will-change: transform, opacity; opacity: 0; }
+  #vignette { inset: 0; width: 100%; height: 100%; opacity: 0;
+    background: radial-gradient(ellipse 75% 60% at 50% 38%, rgba(0,0,0,0) 55%, rgba(0,0,0,.16) 100%); }
+  #scene { position: absolute; left: 0; pointer-events: none; }
+  #glow { position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0; mix-blend-mode: screen; will-change: transform, opacity;
+          background: radial-gradient(closest-side, rgb(62,86,72) 0%, rgb(53,74,62) 25%, rgb(33,46,39) 50%, rgb(14,19,16) 75%, rgba(0,0,0,0) 100%); }
+  button { -webkit-appearance: none; appearance: none; background: none; border: 0; padding: 0; margin: 0;
+           color: inherit; font: inherit; cursor: pointer; outline: none; }
+  button:focus-visible { outline: 1px dashed rgba(200,200,190,.5); outline-offset: 3px; }
+  .icon { position: absolute; display: flex; align-items: center; justify-content: center; }
+  .icon svg { display: block; overflow: visible; }
+  #back { color: #b3b3aa; }
+  #share { color: #b0b2a7; }
+  #sound { color: #b0b2a7; opacity: .9; }
+  #counter { position: absolute; color: #d4d4d4; white-space: pre; line-height: 1; font-weight: 400;
+             pointer-events: none; transform: scaleX(0.8); transform-origin: 100% 50%;
+             -webkit-text-stroke: 0.42px #181818; }
+  #dial { color: #202012; }
+  #dial svg .ln { stroke: #e9e4d6; }
+  #controls { position: absolute; left: 0; top: 0; width: 100%; opacity: 0; pointer-events: none; }
+  #controls.on { pointer-events: auto; }
+  .sl { position: absolute; touch-action: none; }
+  .sl-lbl { position: absolute; left: 0; right: 0; top: 0; display: flex; justify-content: space-between;
+            color: #b4b4b1; text-transform: uppercase; white-space: pre; line-height: 1; -webkit-text-stroke: 0.35px #31312e; }
+  .sl-lbl .v { text-transform: none; }
+  .sl-track { position: absolute; left: 0; right: 0; }
+  .sl-track svg { position: absolute; left: 0; top: 0; overflow: visible; }
+  .sl-thumb { position: absolute; top: 0; background: #d2d2cd; box-shadow: 0 0 0 .5px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.35); }
+  .sl-thumb::after { content: ""; position: absolute; left: 50%; top: 22%; bottom: 22%; width: 1px; margin-left: -.5px; background: #3b3b37; }
+  #input {
+    position: absolute; left: 0; top: 0; width: 40px; height: 24px; padding: 0; margin: 0; border: 0;
+    opacity: 0; color: transparent; background: transparent; caret-color: transparent; resize: none;
+    font-size: 16px; line-height: 24px; outline: none; overflow: hidden; white-space: pre-wrap; z-index: 0;
+    -webkit-user-select: text; user-select: text;
+  }
+  #tap { position: absolute; left: 0; width: 100%; }
+  #hintBtn { position: absolute; z-index: 2; }
+  #toast { position: absolute; left: 50%; transform: translate(-50%, 6px); padding: 7px 12px; border-radius: 6px;
+           background: rgba(20,20,18,.92); color: #d8d8d2; font-size: 12px; letter-spacing: .04em;
+           opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; white-space: nowrap; }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="paper">
+    <div id="vignette"></div>
+    <canvas id="light"></canvas>
+    <canvas id="grain"></canvas>
+  </div>
+  <div id="tap"></div>
+  <button id="hintBtn" aria-label="Need a first line?"></button>
+  <canvas id="scene"></canvas>
+  <div id="glow"></div>
+  <textarea id="input" autocapitalize="sentences" autocorrect="on" spellcheck="true" autocomplete="off"
+            maxlength="3000" rows="1" aria-label="Typewriter text"></textarea>
+
+  <button id="back" class="icon" aria-label="Back">
+    <svg viewBox="0 0 24 24" width="24" height="24"><path d="M19.6 12H4.6M10.9 5.6 4.5 12l6.4 6.4" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <button id="sound" class="icon" aria-label="Sound on or off">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 9.6h3.2L12 6.2v11.6l-4.3-3.4H4.5z"/>
+      <g class="on"><path d="M15 9.4a3.7 3.7 0 0 1 0 5.2"/><path d="M17.4 7.2a6.9 6.9 0 0 1 0 9.6"/></g>
+      <g class="off" style="display:none"><path d="M15.4 9.8l4.4 4.4M19.8 9.8l-4.4 4.4"/></g>
+    </svg>
+  </button>
+  <div id="counter">0 / 3 000</div>
+  <button id="share" class="icon" aria-label="Share">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7.9 9.8H3.85v11.1h16.3V9.8H16.1"/><path d="M12 3.6v11.6M8.5 7.1 12 3.6l3.5 3.5"/>
+    </svg>
+  </button>
+
+  <div id="controls">
+    <div class="sl" id="sl-light"><div class="sl-lbl"><span>LIGHT</span><span class="v">Low</span></div><div class="sl-track"><svg></svg><div class="sl-thumb"></div></div></div>
+    <div class="sl" id="sl-spread"><div class="sl-lbl"><span>SPREAD</span><span class="v">144°</span></div><div class="sl-track"><svg></svg><div class="sl-thumb"></div></div></div>
+    <div class="sl" id="sl-reach"><div class="sl-lbl"><span>REACH</span><span class="v">210%</span></div><div class="sl-track"><svg></svg><div class="sl-thumb"></div></div></div>
+  </div>
+  <button id="dial" class="icon" aria-label="Lamp on or off">
+    <svg viewBox="-16 -16 32 32" width="32" height="32">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" class="rays"></g>
+      <circle r="9.15" fill="currentColor"/>
+      <path class="ln" d="M-3.6 3.6 3.6-3.6" stroke-width="2.4" stroke-linecap="round"/>
+    </svg>
+  </button>
+  <div id="toast"></div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ============================================================================
+   Frankenwriter – a Halloween typewriter.
+   All geometry is measured from the reference recording at 440 CSS px width
+   and scaled by k = width / 440.
+   ========================================================================== */
+
+const COLS = 19;            // characters per line
+const MAX = 3000;           // character limit
+const LS = { text: 'fw.text', sound: 'fw.sound', lamp: 'fw.lamp', sliders: 'fw.sliders' };
+
+const $ = (s) => document.querySelector(s);
+const app = $('#app'), paperEl = $('#paper'), lightCv = $('#light'), grainCv = $('#grain'),
+      vignette = $('#vignette'), scene = $('#scene'), input = $('#input'), tapEl = $('#tap'),
+      counterEl = $('#counter'), dialEl = $('#dial'), controlsEl = $('#controls'), toastEl = $('#toast');
+const sctx = scene.getContext('2d');
+const glowEl = document.getElementById('glow');
+
+/* ---------------------------------------------------------------- utils -- */
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const E = {
+  outQuad: (t) => 1 - (1 - t) * (1 - t),
+  outSine: (t) => Math.sin((t * Math.PI) / 2),
+  outCubic: (t) => 1 - Math.pow(1 - t, 3),
+  inQuad: (t) => t * t,
+  inOutSine: (t) => -(Math.cos(Math.PI * t) - 1) / 2,
+  inOutQuad: (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2),
+};
+function cubicBezier(x1, y1, x2, y2) {
+  const ax = 3 * x1 - 3 * x2 + 1, bx = 3 * x2 - 6 * x1, cx = 3 * x1;
+  const ay = 3 * y1 - 3 * y2 + 1, by = 3 * y2 - 6 * y1, cy = 3 * y1;
+  return (x) => {
+    if (x <= 0) return 0; if (x >= 1) return 1;
+    let t = x;
+    for (let i = 0; i < 6; i++) { const f = ((ax * t + bx) * t + cx) * t - x; const d = (3 * ax * t + 2 * bx) * t + cx; if (Math.abs(d) < 1e-6) break; t -= f / d; }
+    return ((ay * t + by) * t + cy) * t;
+  };
+}
+E.ease = cubicBezier(0.25, 0.1, 0.25, 1);
+const hex = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+const rgba = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+function hash(n) { // integer hash → [0,1)
+  n = (n | 0) ^ 0x9e3779b9; n = Math.imul(n ^ (n >>> 16), 0x85ebca6b); n = Math.imul(n ^ (n >>> 13), 0xc2b2ae35);
+  return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+}
+const rnd = (i, s) => hash(i * 7919 + s * 104729 + 17);
+function mulberry(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const now = () => performance.now() / 1000;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+
+/* ------------------------------------------------------------- geometry -- */
+let W = 440, H = 956, k = 1, dpr = 1;
+const G = {};
+let stableW = 0, stableH = 0;
+
+function measure() {
+  const iw = window.innerWidth, ih = window.innerHeight;
+  // keep the layout height stable while the on-screen keyboard is open
+  if (Math.abs(iw - stableW) > 1 || document.activeElement !== input || ih > stableH) { stableW = iw; stableH = ih; }
+  W = Math.min(iw, 440); H = stableH;
+  k = W / 440;
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+}
+
+function layout() {
+  measure();
+  app.style.height = H + 'px';
+  G.paperTop = Math.round(H * 0.1935);
+  G.railY = H * 0.444;
+  G.base = G.railY - 56.5 * k;        // typing baseline
+  G.lineH = 23.3 * k;
+  G.cell = 13.1 * k;
+  G.textLeft = 88.8 * k;
+  G.font = 21.8 * k;
+  G.hintBase = G.railY - 136.9 * k;
+  G.hintFont = 11.7 * k;
+  G.capHW = 45.8 * k; G.capHH = 21.7 * k;
+  G.capCY = G.railY - 0.8 * k;
+  G.railT = G.railY - 10.8 * k; G.railB = G.railY + 10.2 * k;
+  G.rx = 53.3 * k; G.ry = 160 * k;     // paper corner ellipse
+  G.sceneTop = G.paperTop - 2;
+  G.sceneBot = Math.min(H, G.railY + 160 * k);
+  G.dialX = W - 44.4 * k; G.dialY = H * 0.601;
+
+  paperEl.style.top = G.paperTop + 'px';
+  paperEl.style.borderRadius = `${G.rx}px ${G.rx}px 0 0 / ${G.ry}px ${G.ry}px 0 0`;
+  scene.style.top = G.sceneTop + 'px';
+  scene.style.width = W + 'px';
+  scene.style.height = (G.sceneBot - G.sceneTop) + 'px';
+  scene.width = Math.round(W * dpr);
+  scene.height = Math.round((G.sceneBot - G.sceneTop) * dpr);
+  tapEl.style.top = G.paperTop + 'px';
+  tapEl.style.height = (H - G.paperTop) + 'px';
+
+  // top bar
+  placeIcon($('#back'), 47.7 * k, H * 0.0918, k);
+  placeIcon($('#share'), 399.7 * k, H * 0.0896 - 0.25 * k, k);
+  placeIcon($('#sound'), 268 * k, H * 0.0885, k);
+  counterEl.style.fontSize = (14.4 * k) + 'px';
+  counterEl.style.letterSpacing = (0.2 * k) + 'px';
+  counterEl.style.right = (W - 369.2 * k) + 'px';
+  counterEl.style.top = (H * 0.0866 - 5.6 * k) + 'px';
+  counterEl.style.webkitTextStroke = (0.42 * k) + 'px #181818';
+  // dial
+  placeIcon(dialEl, G.dialX, G.dialY, k);
+  buildDialRays();
+  layoutSliders();
+  toastEl.style.top = (G.paperTop - 34 * k) + 'px';
+  glowEl.style.width = glowEl.style.height = (280 * k) + 'px';
+
+  const hb = $('#hintBtn');
+  hb.style.left = (W / 2 - 80 * k) + 'px'; hb.style.width = (160 * k) + 'px';
+  hb.style.top = (G.hintBase - 22 * k) + 'px'; hb.style.height = (32 * k) + 'px';
+  input.style.left = G.textLeft + 'px';
+  input.style.top = (G.base - 18 * k) + 'px';
+
+  buildGrain();
+  buildRail();
+  buildCapsules();
+  buildCaptions();
+  lightDirty = true;
+  invalidateText();
+  car.x = car.from = car.to = carriageTarget(); car.pending = null; car.dur = 0; lightX = lastCarX = car.x;
+  initWebs();
+  onViewport();
+}
+
+function placeIcon(el, cx, cy, s) {
+  const sz = 44 * k;
+  el.style.width = sz + 'px'; el.style.height = sz + 'px';
+  el.style.left = (cx - sz / 2) + 'px'; el.style.top = (cy - sz / 2) + 'px';
+  const svg = el.querySelector('svg');
+  if (svg && el.id !== 'dial') { svg.style.width = (24 * s) + 'px'; svg.style.height = (24 * s) + 'px'; }
+  if (svg && el.id === 'dial') { svg.style.width = (32 * k) + 'px'; svg.style.height = (32 * k) + 'px'; }
+}
+
+function buildDialRays() {
+  const g = dialEl.querySelector('.rays');
+  let d = '';
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
+    const r0 = 11.6, r1 = 14.4;
+    d += `M${(Math.cos(a) * r0).toFixed(2)} ${(Math.sin(a) * r0).toFixed(2)}L${(Math.cos(a) * r1).toFixed(2)} ${(Math.sin(a) * r1).toFixed(2)}`;
+  }
+  g.innerHTML = `<path d="${d}" stroke-width="1.75"/>`;
+}
+
+/* ------------------------------------------------------------ paper grain -- */
+function buildGrain() {
+  const w = W, h = H - G.paperTop;
+  grainCv.width = Math.round(w * dpr); grainCv.height = Math.round(h * dpr);
+  grainCv.style.width = w + 'px'; grainCv.style.height = h + 'px';
+  const g = grainCv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const R = mulberry(9157);
+  // soft mottling
+  for (let i = 0; i < 70; i++) {
+    const x = R() * w, y = R() * h, r = (20 + R() * 70) * k;
+    const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    const dark = R() < 0.5;
+    gr.addColorStop(0, dark ? 'rgba(120,100,70,0.018)' : 'rgba(255,252,240,0.016)');
+    gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  // faint fibres
+  g.lineCap = 'round';
+  for (let i = 0; i < 160; i++) {
+    const x = R() * w, y = R() * h, len = (4 + R() * 16) * k, a = R() * Math.PI;
+    g.strokeStyle = `rgba(110,95,70,${0.025 + R() * 0.05})`;
+    g.lineWidth = (0.35 + R() * 0.3) * k;
+    g.beginPath(); g.moveTo(x, y);
+    g.quadraticCurveTo(x + Math.cos(a) * len * 0.5 + (R() - 0.5) * 4 * k, y + Math.sin(a) * len * 0.5 + (R() - 0.5) * 4 * k,
+      x + Math.cos(a) * len, y + Math.sin(a) * len);
+    g.stroke();
+  }
+  // specks & dust
+  const n = Math.round((w * h) / (1250 * k * k));
+  for (let i = 0; i < n; i++) {
+    const x = R() * w, y = R() * h;
+    const s = (0.28 + Math.pow(R(), 3) * 0.95) * k;
+    const a = 0.3 + R() * 0.6;
+    g.fillStyle = `rgba(${40 + R() * 25 | 0},${32 + R() * 18 | 0},${22 + R() * 12 | 0},${a})`;
+    const t = R();
+    g.beginPath();
+    if (t < 0.62) { g.ellipse(x, y, s, s * (0.6 + R() * 0.5), R() * 3, 0, Math.PI * 2); }
+    else if (t < 0.93) { // tiny triangle / chip
+      const r2 = s * 1.4, a0 = R() * 6.28;
+      g.moveTo(x + Math.cos(a0) * r2, y + Math.sin(a0) * r2);
+      g.lineTo(x + Math.cos(a0 + 2.2) * r2, y + Math.sin(a0 + 2.2) * r2);
+      g.lineTo(x + Math.cos(a0 + 4.1) * r2 * 0.7, y + Math.sin(a0 + 4.1) * r2 * 0.7);
+    } else { // dash
+      const a0 = R() * 6.28, l = s * 1.9;
+      g.ellipse(x, y, l, s * 0.4, a0, 0, Math.PI * 2);
+    }
+    g.fill();
+  }
+  // fine grain tile
+  const tile = document.createElement('canvas'); tile.width = tile.height = 128;
+  const tg = tile.getContext('2d'); const id = tg.createImageData(128, 128);
+  for (let i = 0; i < id.data.length; i += 4) {
+    const v = R(); id.data[i] = id.data[i + 1] = id.data[i + 2] = v < 0.5 ? 150 : 255; id.data[i + 3] = (Math.abs(v - 0.5) * 2) * 10;
+  }
+  tg.putImageData(id, 0, 0);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = g.createPattern(tile, 'repeat');
+  g.fillRect(0, 0, grainCv.width, grainCv.height);
+}
+
+/* ------------------------------------------------------------------ rail -- */
+const railCv = [document.createElement('canvas'), document.createElement('canvas')]; // [light, lamp]
+const RAIL_STOPS = [
+  [[0, '#5a5d58'], [0.04, '#272e2c'], [0.1, '#2a3031'], [0.17, '#31373a'], [0.24, '#3e4447'], [0.3, '#565c5f'],
+   [0.35, '#858b8e'], [0.4, '#a0a6a9'], [0.45, '#9fa5a8'], [0.5, '#83898c'], [0.55, '#5f6568'], [0.6, '#52585b'],
+   [0.66, '#4b5154'], [0.71, '#4a4e52'], [0.76, '#454649'], [0.81, '#38393c'], [0.86, '#2c2d30'], [0.9, '#202124'],
+   [0.95, '#1a1a1c'], [1, '#141416']],
+  [[0, '#2c2b2a'], [0.06, '#1c1b1b'], [0.18, '#202020'], [0.3, '#2a2a2a'], [0.38, '#2c2c2c'], [0.5, '#232323'],
+   [0.62, '#1b1b1b'], [0.75, '#202020'], [0.88, '#1d1d1d'], [1, '#141414']],
+];
+function buildRail() {
+  const top = G.railT - 8 * k, bot = G.railB + 22 * k;
+  G.railSpriteTop = top;
+  for (let m = 0; m < 2; m++) {
+    const cv = railCv[m];
+    cv.width = Math.round(W * dpr); cv.height = Math.round((bot - top) * dpr);
+    const c = cv.getContext('2d');
+    c.setTransform(dpr, 0, 0, dpr, 0, -top * dpr);
+    // soft shadow on the paper below the rail
+    const sh = c.createLinearGradient(0, G.railB - 1 * k, 0, G.railB + 17 * k);
+    if (m === 0) { sh.addColorStop(0, 'rgba(30,24,16,0.62)'); sh.addColorStop(0.25, 'rgba(40,32,22,0.32)'); sh.addColorStop(0.6, 'rgba(50,40,28,0.1)'); sh.addColorStop(1, 'rgba(50,40,28,0)'); }
+    else { sh.addColorStop(0, 'rgba(0,0,0,0.45)'); sh.addColorStop(1, 'rgba(0,0,0,0)'); }
+    c.fillStyle = sh; c.fillRect(0, G.railB - 1 * k, W, 18 * k);
+    // pipe
+    const gr = c.createLinearGradient(0, G.railT, 0, G.railB);
+    for (const [o, col] of RAIL_STOPS[m]) gr.addColorStop(o, col);
+    c.fillStyle = gr; c.fillRect(0, G.railT, W, G.railB - G.railT);
+    // faint brushed streaks
+    const R = mulberry(77 + m);
+    c.globalAlpha = m ? 0.05 : 0.07;
+    for (let i = 0; i < 40; i++) {
+      const y = lerp(G.railT, G.railB, R()); c.fillStyle = R() < 0.5 ? '#fff' : '#000';
+      c.fillRect(R() * W, y, (20 + R() * 120) * k, 0.4 * k);
+    }
+    c.globalAlpha = 1;
+    // collars
+    for (const cx of [12 * k, W - 12 * k]) drawCollar(c, cx, m);
+  }
+}
+function drawCollar(c, cx, m) {
+  const w = 16 * k, t = G.railY - 14.4 * k, b = G.railY + 13.4 * k, x = cx - w / 2, r = 2.2 * k;
+  c.save();
+  c.shadowColor = 'rgba(0,0,0,0.35)'; c.shadowBlur = 3 * k; c.shadowOffsetY = 1.5 * k;
+  const gr = c.createLinearGradient(0, t, 0, b);
+  if (m === 0) { gr.addColorStop(0, '#465049'); gr.addColorStop(0.08, '#363d39'); gr.addColorStop(0.5, '#313633'); gr.addColorStop(0.92, '#252a27'); gr.addColorStop(1, '#1c201e'); }
+  else { gr.addColorStop(0, '#2c2e2d'); gr.addColorStop(0.5, '#1d1f1e'); gr.addColorStop(1, '#141615'); }
+  c.fillStyle = gr; roundRect(c, x, t, w, b - t, r); c.fill();
+  c.restore();
+  const hg = c.createLinearGradient(x, 0, x + w, 0);
+  hg.addColorStop(0, 'rgba(0,0,0,0.25)'); hg.addColorStop(0.25, 'rgba(255,255,255,0.05)'); hg.addColorStop(0.6, 'rgba(255,255,255,0)'); hg.addColorStop(1, 'rgba(0,0,0,0.3)');
+  c.fillStyle = hg; roundRect(c, x, t, w, b - t, r); c.fill();
+}
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath(); c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.arcTo(x + w, y, x + w, y + r, r);
+  c.lineTo(x + w, y + h - r); c.arcTo(x + w, y + h, x + w - r, y + h, r); c.lineTo(x + r, y + h);
+  c.arcTo(x, y + h, x, y + h - r, r); c.lineTo(x, y + r); c.arcTo(x, y, x + r, y, r); c.closePath();
+}
+
+/* --------------------------------------------------------------- capsule -- */
+const capCv = [document.createElement('canvas'), document.createElement('canvas')];
+const CAP_PAD = 14; // css px padding around the body inside the sprite (bolts stick out)
+const SEAM = { x1: 9.7, x2: 37.7, y: 11.3 };
+function capsulePath(c) {
+  // elliptical corners measured from the silhouette against the cream paper (≈16 × 10.5 px)
+  const hw = G.capHW, hh = G.capHH, rx = 16 * k, ry = 10.5 * k;
+  c.beginPath();
+  c.moveTo(-hw + rx, -hh);
+  c.lineTo(hw - rx, -hh);
+  c.ellipse(hw - rx, -hh + ry, rx, ry, 0, -Math.PI / 2, 0);
+  c.lineTo(hw, hh - ry);
+  c.ellipse(hw - rx, hh - ry, rx, ry, 0, 0, Math.PI / 2);
+  c.lineTo(-hw + rx, hh);
+  c.ellipse(-hw + rx, hh - ry, rx, ry, 0, Math.PI / 2, Math.PI);
+  c.lineTo(-hw, -hh + ry);
+  c.ellipse(-hw + rx, -hh + ry, rx, ry, 0, Math.PI, Math.PI * 1.5);
+  c.closePath();
+}
+const CAP_COL = [
+  { body: [[0, '#7b8373'], [0.06, '#75826c'], [0.12, '#7a886a'], [0.2, '#7d8b6d'], [0.27, '#839173'], [0.36, '#8b947f'],
+           [0.44, '#8a917c'], [0.52, '#818773'], [0.6, '#768067'], [0.66, '#6f7b61'], [0.72, '#6a7357'], [0.78, '#626b4f'],
+           [0.85, '#565e49'], [0.91, '#4d5142'], [1, '#45483c']],
+    patch: [[0, '#868a70'], [0.2, '#8a9974'], [0.33, '#8f9d7f'], [0.5, '#869476'], [0.62, '#7e8d68'], [0.75, '#76845f']],
+    endc: [[0, '#7c796c'], [0.18, '#75735c'], [0.4, '#706e5a'], [0.6, '#6b6a53'], [0.75, '#625f47'], [1, '#56523f']],
+    lower: [[0, '#55564b'], [0.5, '#4a4b42'], [1, '#3a3b33']],
+    seam: '#3a2c1f', dark: '#2a1f15', thread: '#cdb791', rim: 'rgba(38,44,32,0.45)', slot: '#2b2e27', slotHi: 'rgba(255,255,255,0.18)' },
+  { body: [[0, '#38382a'], [0.08, '#363628'], [0.3, '#373729'], [0.42, '#3a3a2c'], [0.55, '#33352a'], [0.62, '#2e3021'],
+           [0.7, '#2d2f20'], [0.8, '#292b1c'], [0.88, '#25261b'], [1, '#1f1f1a']],
+    patch: [[0, '#323623'], [0.15, '#373727'], [0.35, '#3b3b2b'], [0.5, '#3a3a2c'], [0.62, '#373729'], [0.75, '#333325']],
+    endc: [[0, '#312d25'], [0.2, '#28241c'], [0.35, '#221e17'], [0.5, '#29251d'], [0.7, '#26221a'], [1, '#1d1910']],
+    lower: [[0, '#22201c'], [1, '#1d1b17']],
+    seam: '#120f0a', dark: '#0a0806', thread: '#5a4c38', rim: 'rgba(8,8,5,0.55)', slot: '#141410', slotHi: 'rgba(255,255,255,0.05)' },
+];
+function vgrad(c, y0, y1, stops) {
+  const g = c.createLinearGradient(0, y0, 0, y1);
+  for (const [o, col] of stops) g.addColorStop(o, col);
+  return g;
+}
+function buildCapsules() {
+  const hw = G.capHW, hh = G.capHH, pad = CAP_PAD * k;
+  const sx1 = SEAM.x1 * k, sx2 = SEAM.x2 * k, sy = SEAM.y * k;
+  for (let m = 0; m < 2; m++) {
+    const cv = capCv[m], P = CAP_COL[m];
+    cv.width = Math.round((hw + pad) * 2 * dpr); cv.height = Math.round((hh + pad) * 2 * dpr);
+    const c = cv.getContext('2d');
+    c.setTransform(dpr, 0, 0, dpr, (hw + pad) * dpr, (hh + pad) * dpr);
+    // soft drop shadow on the paper
+    c.save(); c.shadowColor = m ? 'rgba(0,0,0,0.6)' : 'rgba(45,35,20,0.42)'; c.shadowBlur = 6 * k * dpr; c.shadowOffsetY = 3 * k * dpr;
+    capsulePath(c); c.fillStyle = '#555'; c.fill(); c.restore();
+    c.save(); capsulePath(c); c.clip();
+    c.fillStyle = vgrad(c, -hh, hh, P.body); c.fillRect(-hw, -hh, hw * 2, hh * 2);
+    // patch (between the seams, above the horizontal seam)
+    c.fillStyle = vgrad(c, -hh, hh, P.patch); c.fillRect(sx1, -hh, sx2 - sx1, hh + sy);
+    // end cap (right of the right seam)
+    c.fillStyle = vgrad(c, -hh, sy, P.endc); c.fillRect(sx2, -hh, hw - sx2 + 1, hh + sy);
+    // lower panel (below the horizontal seam)
+    c.fillStyle = vgrad(c, sy, hh, P.lower); c.fillRect(sx1, sy, hw - sx1 + 1, hh - sy);
+    // cylindrical shading: dark rims at both ends, soft highlight on the nose
+    let gr = c.createLinearGradient(-hw, 0, hw, 0);
+    gr.addColorStop(0, 'rgba(0,0,0,0.26)'); gr.addColorStop(0.05, 'rgba(0,0,0,0.1)'); gr.addColorStop(0.13, m ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.06)');
+    gr.addColorStop(0.24, 'rgba(255,255,255,0)'); gr.addColorStop(0.93, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.24)');
+    c.fillStyle = gr; c.fillRect(-hw, -hh, hw * 2, hh * 2);
+    // top / bottom rim shading (round body)
+    gr = c.createLinearGradient(0, -hh, 0, hh);
+    gr.addColorStop(0, 'rgba(0,0,0,0.12)'); gr.addColorStop(0.08, 'rgba(0,0,0,0)'); gr.addColorStop(0.9, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.18)');
+    c.fillStyle = gr; c.fillRect(-hw, -hh, hw * 2, hh * 2);
+    // very subtle mottling
+    const R = mulberry(31 + m);
+    for (let i = 0; i < 26; i++) {
+      const x = lerp(-hw, hw, R()), y = lerp(-hh, hh, R()), r = (2 + R() * 6) * k;
+      const g2 = c.createRadialGradient(x, y, 0, x, y, r);
+      g2.addColorStop(0, R() < 0.5 ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,230,0.04)'); g2.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = g2; c.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    // seams with cross stitches
+    stitchLine(c, sx1, -hh, sx1, hh, P, 0);
+    stitchLine(c, sx2, -hh + 3.4 * k, sx2, hh - 4.2 * k, P, 1);
+    stitchLine(c, sx1, sy, hw, sy, P, 2);
+    // slot notch
+    c.fillStyle = P.slot; roundRect(c, -10.9 * k, -hh - 2 * k, 22.2 * k, 5.4 * k, 1.3 * k); c.fill();
+    c.fillStyle = P.slotHi; c.fillRect(-10.2 * k, -hh + 3.0 * k, 20.8 * k, 0.55 * k);
+    c.restore();
+    // rim
+    capsulePath(c); c.strokeStyle = P.rim; c.lineWidth = 0.7 * k; c.stroke();
+    // bolts
+    drawBolt(c, 25.4 * k, -hh, -1, m);
+    drawBolt(c, 25.4 * k, hh, 1, m);
+  }
+}
+function stitchLine(c, x0, y0, x1, y1, P, seed) {
+  const len = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / len, uy = (y1 - y0) / len, nx = -uy, ny = ux;
+  // seam groove
+  c.strokeStyle = 'rgba(30,22,14,0.5)'; c.lineWidth = 0.7 * k;
+  c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
+  const step = 2.7 * k, R = mulberry(500 + seed);
+  c.lineCap = 'round';
+  for (let d = step * 0.5; d < len - step * 0.3; d += step) {
+    const px = x0 + ux * d, py = y0 + uy * d, a = 1.2 * k, b = 1.15 * k;
+    const j1 = (R() - 0.5) * 0.35 * k, j2 = (R() - 0.5) * 0.35 * k;
+    const A = [px - ux * a - nx * b + j1, py - uy * a - ny * b], B = [px + ux * a + nx * b, py + uy * a + ny * b + j2];
+    const C = [px + ux * a - nx * b, py + uy * a - ny * b + j1], D = [px - ux * a + nx * b + j2, py - uy * a + ny * b];
+    c.strokeStyle = P.dark; c.lineWidth = 0.9 * k;
+    c.beginPath(); c.moveTo(A[0], A[1]); c.lineTo(B[0], B[1]); c.moveTo(C[0], C[1]); c.lineTo(D[0], D[1]); c.stroke();
+    c.strokeStyle = P.thread; c.lineWidth = 0.38 * k; c.globalAlpha = 0.9;
+    const o = -0.12 * k;
+    c.beginPath();
+    c.moveTo(lerp(A[0], B[0], 0.12) + o, lerp(A[1], B[1], 0.12) + o); c.lineTo(lerp(A[0], B[0], 0.88) + o, lerp(A[1], B[1], 0.88) + o);
+    c.moveTo(lerp(C[0], D[0], 0.12) + o, lerp(C[1], D[1], 0.12) + o); c.lineTo(lerp(C[0], D[0], 0.88) + o, lerp(C[1], D[1], 0.88) + o);
+    c.stroke();
+    c.globalAlpha = 1;
+  }
+}
+function drawBolt(c, x, yEdge, dir, m) {
+  // dir -1: top bolt (head above the top edge), +1: bottom bolt (head below the bottom edge).
+  // A hex nut sits just inside the body edge; the threaded shaft crosses the edge.
+  const metal = m ? ['#2b2621', '#62574b', '#3b332b', '#191612'] : ['#5f615e', '#f4f4f0', '#aeafaa', '#4c4d4a'];
+  const mg = (x0, x1) => { const g = c.createLinearGradient(x0, 0, x1, 0);
+    g.addColorStop(0, metal[3]); g.addColorStop(0.32, metal[1]); g.addColorStop(0.62, metal[2]); g.addColorStop(1, metal[0]); return g; };
+  const ny = yEdge - dir * 2.5 * k;           // nut centre (inside the body)
+  const hy = yEdge + dir * 3.7 * k;           // head centre (outside)
+  const top = Math.min(ny, hy), bot = Math.max(ny, hy);
+  // shaft
+  c.fillStyle = mg(x - 2.5 * k, x + 2.5 * k); c.fillRect(x - 2.5 * k, top, 5 * k, bot - top);
+  c.strokeStyle = m ? 'rgba(0,0,0,0.5)' : 'rgba(60,60,55,0.6)'; c.lineWidth = 0.42 * k;
+  for (let y = top + 0.4 * k; y < bot; y += 0.9 * k) { c.beginPath(); c.moveTo(x - 2.5 * k, y); c.lineTo(x + 2.5 * k, y + 0.5 * k); c.stroke(); }
+  // hex nut seen slightly from above
+  c.save();
+  c.shadowColor = 'rgba(0,0,0,0.45)'; c.shadowBlur = 1.5 * k * dpr; c.shadowOffsetY = 0.9 * k * dpr;
+  c.fillStyle = mg(x - 4.8 * k, x + 4.8 * k);
+  const nh = 2.4 * k;
+  c.beginPath();
+  c.moveTo(x - 4.8 * k, ny - nh * 0.55); c.lineTo(x - 3.3 * k, ny - nh); c.lineTo(x + 3.3 * k, ny - nh); c.lineTo(x + 4.8 * k, ny - nh * 0.55);
+  c.lineTo(x + 4.8 * k, ny + nh * 0.55); c.lineTo(x + 3.3 * k, ny + nh); c.lineTo(x - 3.3 * k, ny + nh); c.lineTo(x - 4.8 * k, ny + nh * 0.55);
+  c.closePath(); c.fill();
+  c.restore();
+  c.strokeStyle = m ? 'rgba(0,0,0,0.5)' : 'rgba(70,70,64,0.55)'; c.lineWidth = 0.4 * k;
+  c.beginPath(); c.moveTo(x - 1.6 * k, ny - nh); c.lineTo(x - 1.6 * k, ny + nh); c.moveTo(x + 1.8 * k, ny - nh); c.lineTo(x + 1.8 * k, ny + nh); c.stroke();
+  // head: domed screw (light skin) / flat iron disc with a hole (dark skin)
+  c.save();
+  c.shadowColor = 'rgba(0,0,0,0.4)'; c.shadowBlur = 1.2 * k * dpr;
+  c.fillStyle = mg(x - 3.4 * k, x + 3.4 * k);
+  c.beginPath(); c.ellipse(x, hy, 3.4 * k, 1.75 * k, 0, 0, Math.PI * 2); c.fill();
+  c.restore();
+  if (m) {
+    c.fillStyle = '#e9e3d6'; c.beginPath(); c.ellipse(x, hy, 1.25 * k, 0.75 * k, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#2a241e'; c.beginPath(); c.ellipse(x, hy, 0.55 * k, 0.32 * k, 0, 0, Math.PI * 2); c.fill();
+  } else {
+    c.fillStyle = '#ffffff'; c.globalAlpha = 0.7;
+    c.beginPath(); c.ellipse(x - 0.3 * k, hy - 0.2 * k, 1.5 * k, 0.75 * k, 0, 0, Math.PI * 2); c.fill();
+    c.globalAlpha = 1;
+    c.strokeStyle = 'rgba(25,25,22,0.75)'; c.lineWidth = 0.45 * k;
+    c.beginPath(); c.moveTo(x - 1.3 * k, hy); c.lineTo(x + 1.3 * k, hy); c.moveTo(x, hy - 0.65 * k); c.lineTo(x, hy + 0.65 * k); c.stroke();
+  }
+}
+
+/* ------------------------------------------------------------ text model -- */
+let text = '';
+let lines = [{ idx: [] }];
+const appearAt = new Map(); // char index → time it becomes visible (typewriter strike)
+
+function wrap(t) {
+  const out = []; let line = [];
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (ch === '\n') { out.push({ idx: line, hard: true }); line = []; continue; }
+    if (line.length < COLS) { line.push(i); continue; }
+    if (ch === ' ') { out.push({ idx: line }); line = []; continue; }  // space at the margin = line break
+    let sp = -1;
+    for (let j = line.length - 1; j >= 0; j--) if (t[line[j]] === ' ') { sp = j; break; }
+    if (sp >= 0 && sp < line.length - 1) { out.push({ idx: line.slice(0, sp + 1) }); line = line.slice(sp + 1); line.push(i); }
+    else { out.push({ idx: line }); line = [i]; }
+  }
+  out.push({ idx: line });
+  return out;
+}
+const caretCol = () => Math.min(lines[lines.length - 1].idx.length, COLS - 1);
+const colX = (col) => G.textLeft + (col + 0.5) * G.cell;
+
+/* ------------------------------------------------------- glyph rendering -- */
+let fontReady = false;
+const FONT = (px) => `400 ${px}px "Courier Prime", "Courier New", monospace`;
+const lineCache = new Map();
+let inkKey = '';
+function invalidateText() { lineCache.clear(); }
+
+function renderLine(line, li, ink) {
+  // count visible chars (strike timing)
+  const t = now();
+  let vis = 0;
+  for (const i of line.idx) { const a = appearAt.get(i); if (a === undefined || a <= t) vis++; else break; }
+  const sig = line.idx.length ? line.idx[0] + ':' + line.idx.map((i) => text[i]).join('') + ':' + vis : 'e';
+  let e = lineCache.get(li);
+  if (e && e.sig === sig && e.ink === ink) return e.cv;
+  if (!e) { e = { cv: document.createElement('canvas') }; lineCache.set(li, e); }
+  e.sig = sig; e.ink = ink;
+  const cv = e.cv, pad = 6 * k;
+  const w = COLS * G.cell + pad * 2, h = G.lineH * 1.7;
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  const c = cv.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c.font = FONT(G.font); c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+  const inkRgb = hex(ink);
+  const by = h * 0.68;
+  for (let n = 0; n < vis; n++) {
+    const i = line.idx[n], ch = text[i];
+    if (ch === ' ' || ch === '\n') continue;
+    const x = pad + (n + 0.5) * G.cell + (rnd(i, 1) - 0.5) * 0.7 * k;
+    const y = by + (rnd(i, 2) - 0.5) * 0.9 * k;
+    const dark = 0.74 + rnd(i, 3) * 0.26;
+    const rot = (rnd(i, 4) - 0.5) * 0.035;
+    c.save(); c.translate(x, y); c.rotate(rot);
+    c.fillStyle = rgba(inkRgb, dark * 0.35);
+    c.shadowColor = rgba(inkRgb, 0.5); c.shadowBlur = 1.1 * k * dpr;
+    c.fillText(ch, 0.25 * k, 0.1 * k);
+    c.shadowBlur = 0;
+    c.fillStyle = rgba(inkRgb, dark);
+    c.fillText(ch, 0, 0);
+    if (rnd(i, 5) < 0.35) { c.fillStyle = rgba(inkRgb, dark * 0.45); c.fillText(ch, -0.3 * k, -0.15 * k); }
+    c.restore();
+  }
+  // dry-ink speckle: knock out tiny holes
+  if (vis) {
+    c.globalCompositeOperation = 'destination-out';
+    const R = mulberry(line.idx[0] * 13 + 7);
+    for (let n = 0; n < vis * 7; n++) {
+      c.fillStyle = `rgba(0,0,0,${0.25 + R() * 0.45})`;
+      c.fillRect(pad + R() * vis * G.cell, by - G.font * 0.75 + R() * G.font, (0.35 + R() * 0.6) * k, (0.35 + R() * 0.6) * k);
+    }
+    c.globalCompositeOperation = 'source-over';
+  }
+  e.pad = pad; e.by = by;
+  return cv;
+}
+
+/* ------------------------------------------------- thin static captions -- */
+// The hint and placeholder in the recording use very thin strokes. Courier Prime only ships
+// 400/700, so the glyphs are eroded with a destination-out outline stroke.
+const capText = { hint: null, ph: null };
+function thinCaption(chars, size, rgb, erode, cell) {
+  const cv = document.createElement('canvas');
+  const c0 = cv.getContext('2d'); c0.font = FONT(size);
+  const n = chars.length;
+  const w = cell ? cell * n + size : c0.measureText(chars).width + size, h = size * 1.7;
+  cv.width = Math.ceil(w * dpr); cv.height = Math.ceil(h * dpr);
+  const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c.font = FONT(size); c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillStyle = rgba(rgb);
+  const by = h * 0.68, ox = size / 2;
+  const each = (fn) => { if (cell) { for (let i = 0; i < n; i++) fn(chars[i], ox + (i + 0.5) * cell); } else fn(chars, w / 2); };
+  each((t, x) => c.fillText(t, x, by));
+  c.globalCompositeOperation = 'destination-out'; c.lineWidth = erode; c.lineJoin = 'round'; c.strokeStyle = '#000';
+  each((t, x) => c.strokeText(t, x, by));
+  return { cv, w, h, by, ox: cell ? ox : w / 2 };
+}
+function buildCaptions() {
+  capText.hint = thinCaption('Need a first line?', G.hintFont, [50, 44, 34], 0.26 * k, 0);
+  capText.ph = thinCaption('Begin here.', G.font, [94, 86, 74], 0.55 * k, G.cell);
+}
+
+/* --------------------------------------------------------- lamp channels -- */
+// Each channel eases toward its target with its own delay/duration (staged transition).
+// timings measured from the recording (seconds after the tap: [delay, duration])
+const CH = {
+  cap:   { v: 0, t: 0, d: 0, on: [0, 0.1], off: [0.62, 0.12] },
+  paper: { v: 0, t: 0, d: 0, on: [0.15, 0.45], off: [0.2, 0.45] },
+  slot:  { v: 0, t: 0, d: 0, on: [0.5, 0.22], off: [0.1, 0.15] },
+  light: { v: 0, t: 0, d: 0, on: [0.62, 0.42], off: [0, 0.25] },
+};
+let lampOn = false;
+function setLamp(on, instant) {
+  lampOn = on;
+  for (const key in CH) {
+    const c = CH[key]; c.t = on ? 1 : 0;
+    const [delay, dur] = on ? c.on : c.off;
+    c.delay = delay; c.dur = dur;
+    if (instant) c.v = c.t;
+  }
+  store.set(LS.lamp, on ? '1' : '0');
+  controlsEl.classList.toggle('on', on);
+}
+function stepChannels(dt) {
+  for (const key in CH) {
+    const c = CH[key];
+    if (c.v === c.t) continue;
+    if (c.delay > 0) { c.delay -= dt; continue; }
+    const s = dt / c.dur;
+    c.v = c.t > c.v ? Math.min(c.t, c.v + s) : Math.max(c.t, c.v - s);
+  }
+}
+
+/* ------------------------------------------------------------ light fan -- */
+// Light model fitted to the recording (RMSE ≈ 3.6 grey levels):
+// a near-circular bright core + a wide elliptical halo (2.8:1), clipped by a soft fan
+// measured from a virtual apex 7 px below the slot.  Values are in "grey levels above
+// the dark paper" (0…160) and become the alpha of a warm light colour.
+const sliders = { light: 0, spread: 144, reach: 210 };
+let lightDirty = true;
+const LIGHT_RGB = [232, 212, 178];
+const L = { sw: 0, sh: 0, ax: 0, ay: 0, scale: 0.5 };
+function renderLight() {
+  lightDirty = false;
+  // parameters fitted to three frames of the recording (median error 1.7 grey levels)
+  const sc = sliders.reach / 210;
+  const r1 = 106.6 * k * sc;                                // core radius
+  const hb = 230.6 * k * sc, ha = hb * 2.894;               // halo ellipse
+  const half = sliders.spread / 2;                          // outer edge, degrees from vertical
+  const e0 = 90 - half + 1.8, soft = 22.6 * Math.min(1.4, half / 72);  // elevation where light starts / becomes full
+  const voff = 9.3 * k;
+  const boost = 1 + sliders.light * 0.9;
+  const SAT = 3.117, norm = 1 / (1 - Math.exp(-SAT));
+  // sprite extent: halo along the outer edge direction
+  const e = Math.max(4, e0) * Math.PI / 180;
+  const rEdge = 1 / Math.sqrt(Math.pow(Math.cos(e) / ha, 2) + Math.pow(Math.sin(e) / hb, 2));
+  const halfW = Math.min(Math.max(rEdge * Math.cos(e), r1) + 10 * k, 520 * k);
+  const sw = Math.ceil(halfW * 2), sh = Math.ceil(Math.max(hb, r1) + 12 * k);
+  const S = L.scale;
+  const pw = Math.max(2, Math.round(sw * S)), ph = Math.max(2, Math.round(sh * S));
+  lightCv.width = pw; lightCv.height = ph;
+  lightCv.style.width = sw + 'px'; lightCv.style.height = sh + 'px';
+  L.sw = sw; L.sh = sh; L.ax = sw / 2; L.ay = sh - 3 * k;
+  const c = lightCv.getContext('2d');
+  const img = c.createImageData(pw, ph), D = img.data;
+  const ihb = 1 / hb, iha = 1 / ha, D2R = 180 / Math.PI, icell = 1 / 0.857;
+  for (let py = 0; py < ph; py++) {
+    const dy = L.ay - (py + 0.5) / S;                      // up = positive
+    for (let px = 0; px < pw; px++) {
+      const dx = (px + 0.5) / S - L.ax;
+      const o = (py * pw + px) * 4;
+      if (dy < -1 * k) { D[o + 3] = 0; continue; }
+      const adx = Math.abs(dx);
+      const elev = Math.atan2(dy + voff, adx) * D2R;         // from the virtual apex
+      if (elev <= e0) { D[o + 3] = 0; continue; }
+      const elevR = Math.atan2(dy, adx) * D2R;               // from the slot itself
+      const m = smooth(e0, e0 + soft, elev) * smooth(3, 13, elevR);
+      if (m <= 0) { D[o + 3] = 0; continue; }
+      const dc = Math.sqrt(dx * dx * icell * icell + dy * dy);
+      const core = 106.2 * (1 - smooth(0, r1, dc));
+      const de = Math.sqrt(dx * dx * iha * iha + dy * dy * ihb * ihb);
+      const halo = de < 1 ? 65 * Math.pow(1 - de, 2.128) : 0;
+      const tot = (core + halo) * m * boost;
+      const lum = 160 * (1 - Math.exp(-tot / 160 * SAT)) * norm;
+      D[o] = LIGHT_RGB[0]; D[o + 1] = LIGHT_RGB[1]; D[o + 2] = LIGHT_RGB[2];
+      D[o + 3] = Math.min(255, lum / 160 * 255);
+    }
+  }
+  c.putImageData(img, 0, 0);
+}
+
+/* ---------------------------------------------------------- carriage/T -- */
+const car = { x: 0, from: 0, to: 0, t0: 0, dur: 0, ease: E.outCubic, pending: null };
+const strike = { t0: -9 };
+const retract = { t0: -9 };
+const scrollAnim = { from: 0, t0: -9, dur: 0.26 };
+let lastKey = -9;
+
+function carriageTarget() { return colX(caretCol()); }
+function slideTo(x, dur, easeFn, delay = 0) {
+  car.pending = { x, dur, ease: easeFn, at: now() + delay };
+}
+function snapCarriage() {
+  // a new key while the carriage is still travelling: jump to where it was going (as in the recording)
+  if (car.pending) { car.x = car.pending.x; car.pending = null; }
+  else if (car.dur > 0) car.x = car.to;
+  car.from = car.to = car.x; car.dur = 0;
+}
+function updateCarriage(t) {
+  if (car.pending && t >= car.pending.at) {
+    car.from = car.x; car.to = car.pending.x; car.t0 = car.pending.at; car.dur = car.pending.dur; car.ease = car.pending.ease;
+    car.pending = null;
+  }
+  if (car.dur > 0) {
+    const p = clamp((t - car.t0) / car.dur, 0, 1);
+    car.x = lerp(car.from, car.to, car.ease(p));
+    if (p >= 1) car.dur = 0;
+  }
+}
+// T bar lift above its rest height (css px) — curve measured frame-by-frame from the recording:
+// rise 50 ms (ease-in-out), hold ~35 ms, fall 50 ms, small dip below rest, settle.
+function strikeLift(t) {
+  const s = t - strike.t0, H1 = 18 * k, dip = 2.3 * k;
+  if (s < 0 || s > 0.19) return 0;
+  if (s < 0.05) return H1 * E.inOutSine(s / 0.05);
+  if (s < 0.085) return H1;
+  if (s < 0.135) { const p = (s - 0.085) / 0.05; return lerp(H1, -dip, E.inQuad(p)); }
+  const p = (s - 0.135) / 0.055; return -dip * (1 - E.outQuad(p));
+}
+// carriage return: the T drops into its slot, then rises back exponentially (τ ≈ 0.13 s)
+function retractDrop(t) {
+  const s = t - retract.t0;
+  if (s < 0 || s > 0.75) return 0;
+  return 24 * k * Math.exp(-s / 0.13) * (s > 0.6 ? (0.75 - s) / 0.15 : 1);
+}
+// paper feed: critically damped spring (ω ≈ 22 s⁻¹) fitted to the recording
+function scrollOffset(t) {
+  const s = t - scrollAnim.t0;
+  if (s <= 0) return scrollAnim.from;
+  if (s >= 0.45) return 0;
+  const w = 22 * s;
+  return scrollAnim.from * (1 + w) * Math.exp(-w) * (s > 0.35 ? (0.45 - s) / 0.1 : 1);
+}
+
+/* -------------------------------------------------------- typing actions -- */
+function typeChar(ch) {
+  if (text.length >= MAX) return false;
+  const t = now();
+  const before = lines.length;
+  const prevLineIdx = lines.length - 1;
+  snapCarriage();
+  text += ch;
+  lines = wrap(text);
+  const i = text.length - 1;
+  lastKey = t;
+  if (ch === '\n' || lines.length > before) {
+    // carriage return
+    const fromX = car.x;
+    appearAt.set(i, t);
+    retract.t0 = t; strike.t0 = -9;
+    scrollAnim.from = scrollOffset(t) + 1; scrollAnim.t0 = t;
+    slideTo(carriageTarget(), 0.267, E.outSine, 0);
+    fx.zap(true);
+    flingWebs();
+    AU.carriageReturn(Math.round((fromX - carriageTarget()) / G.cell));
+  } else if (ch === ' ') {
+    // space: no type bar, just a small spark and the carriage advance
+    slideTo(carriageTarget(), 0.1, E.outSine, 0);
+    fx.spark(0.55);
+    AU.space(); AU.spark(0.35);
+  } else {
+    appearAt.set(i, t + 0.045);
+    strike.t0 = t;
+    slideTo(carriageTarget(), 0.1, E.outSine, 0.15);
+    AU.clack();
+    if (Math.random() < 0.07) { fx.zap(true, 0.9); AU.zap(0.75); } else { fx.spark(); AU.spark(0.55); }   // now and then a big green zap
+  }
+  if (lines.length !== before || prevLineIdx !== lines.length - 1) invalidateText();
+  onTextChanged();
+  return true;
+}
+function deleteChar(quiet) {
+  if (!text.length) return false;
+  const t = now();
+  const before = lines.length;
+  snapCarriage();
+  appearAt.delete(text.length - 1);
+  if (!quiet) AU.backspace();
+  text = text.slice(0, -1);
+  lines = wrap(text);
+  lastKey = t;
+  if (lines.length < before) { scrollAnim.from = scrollOffset(t) - 1; scrollAnim.t0 = t; invalidateText(); slideTo(carriageTarget(), 0.22, E.outCubic, 0); }
+  else slideTo(carriageTarget(), 0.11, E.outSine, 0);
+  onTextChanged();
+  return true;
+}
+let saveTimer = 0;
+function onTextChanged() {
+  counterEl.textContent = fmt(text.length) + ' / 3 000';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => store.set(LS.text, text), 250);
+}
+const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+/* ------------------------------------------------------------- input -- */
+// The hidden textarea is the source of truth for what the user wants on the page (so mobile
+// autocorrect / predictive text work). Its value is diffed against text + pending: deletions
+// happen at once (backspace animation), additions are queued and struck one by one; a big
+// paste is flushed in a single batch.
+let pending = '';
+let nextStrikeAt = 0;
+function syncInput() {
+  let v = input.value.replace(/\r/g, '');
+  if (v.length > MAX) v = v.slice(0, MAX);
+  const cur = text + pending;
+  if (v === cur) return;
+  let p = 0; const n = Math.min(v.length, cur.length);
+  while (p < n && v[p] === cur[p]) p++;
+  if (p < text.length) {               // something already on paper changed: rub it out
+    pending = '';
+    const dels = text.length - p;
+    for (let i = 0; i < dels; i++) deleteChar(i < dels - 1);
+  } else {
+    pending = pending.slice(0, p - text.length);
+  }
+  pending += v.slice(p);
+  if (pending.length > 24) flushPending();
+  else pumpPending(now());              // a single key strikes right away
+  if (input.value !== v) input.value = v;
+  keepCaretAtEnd();
+}
+function pumpPending(t) {
+  if (!pending || t < nextStrikeAt) return;
+  const ch = pending[0]; pending = pending.slice(1);
+  typeChar(ch);
+  nextStrikeAt = t + (pending.length ? 0.034 : 0);
+}
+function flushPending() {
+  // large paste: everything lands at once with a single carriage return
+  const add = pending.slice(0, MAX - text.length); pending = '';
+  if (!add) return;
+  const t = now(), before = lines.length;
+  snapCarriage();
+  text += add; lines = wrap(text); lastKey = t;
+  invalidateText();
+  if (lines.length !== before) { scrollAnim.from = scrollOffset(t) + 1; scrollAnim.t0 = t; retract.t0 = t; fx.zap(true); AU.carriageReturn(10); }
+  else AU.clack();
+  slideTo(carriageTarget(), 0.267, E.outSine, 0);
+  onTextChanged();
+}
+function keepCaretAtEnd() {
+  const n = input.value.length;
+  try { if (input.selectionStart !== n || input.selectionEnd !== n) input.setSelectionRange(n, n); } catch (e) {}
+}
+input.addEventListener('input', syncInput);
+input.addEventListener('select', keepCaretAtEnd);
+input.addEventListener('keyup', keepCaretAtEnd);
+input.addEventListener('click', keepCaretAtEnd);
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab') e.preventDefault();
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')) e.preventDefault();
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'PageUp') { e.preventDefault(); }
+});
+function focusInput() {
+  try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
+  keepCaretAtEnd();
+}
+tapEl.addEventListener('click', focusInput);
+// buttons and sliders must not steal focus from the hidden textarea (keeps the phone keyboard up,
+// and on desktop the next keystroke still lands on the page)
+for (const el of document.querySelectorAll('button, .sl')) el.addEventListener('mousedown', (e) => e.preventDefault());
+document.addEventListener('keydown', (e) => {
+  if (document.activeElement === input || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') focusInput();
+});
+
+/* ------------------------------------------------------------ top bar -- */
+$('#back').addEventListener('click', () => { if (history.length > 1) history.back(); else toast('Nothing to go back to'); });
+$('#share').addEventListener('click', async () => {
+  if (!text.trim()) { toast('Nothing to share yet'); return; }
+  try {
+    if (navigator.share) { await navigator.share({ title: 'Frankenwriter', text }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(text); toast('Copied to clipboard'); }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('Copied to clipboard'); } catch (e2) { toast('Copy failed'); }
+    ta.remove();
+  }
+});
+let toastTimer = 0;
+function toast(msg) {
+  toastEl.textContent = msg; toastEl.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1600);
+}
+dialEl.addEventListener('click', () => { lastActivity = now(); setLamp(!lampOn); AU.lampSwitch(lampOn); });
+const FIRST_LINES = [
+  'It was a dark and stormy night.', 'The castle lights flickered twice.', 'Something scratched at the door.',
+  'The doctor smiled at the lightning.', 'Nobody rang the bell at midnight.', 'The jar on the shelf began to hum.',
+  'It lived. It actually lived.', 'The moon was late again tonight.', 'Thunder rolled over the old mill.',
+  'My creator never wrote back.', 'The stitches itched in the rain.', 'Somewhere a crow was laughing.',
+];
+$('#hintBtn').addEventListener('click', () => {
+  focusInput();
+  if (text.length || pending) return;
+  const line = FIRST_LINES[(Math.random() * FIRST_LINES.length) | 0];
+  input.value = line; syncInput();
+});
+
+/* ------------------------------------------------------------- sliders -- */
+const SL = {
+  light:  { el: $('#sl-light'),  min: 0,  max: 1,   fmt: (v) => (v < 0.34 ? 'Low' : v < 0.67 ? 'Medium' : 'High'), x0: 20, x1: 115 },
+  spread: { el: $('#sl-spread'), min: 30, max: 190, fmt: (v) => Math.round(v) + '°', x0: 140, x1: 232 },
+  reach:  { el: $('#sl-reach'),  min: 50, max: 210, fmt: (v) => Math.round(v) + '%', x0: 257, x1: 348 },
+};
+function layoutSliders() {
+  const labelY = H * 0.592, trackY = H * 0.6155;
+  for (const key in SL) {
+    const s = SL[key], el = s.el;
+    const x0 = s.x0 * k, w = (s.x1 - s.x0) * k;
+    el.style.left = x0 + 'px'; el.style.width = w + 'px';
+    el.style.top = (labelY - 8 * k) + 'px'; el.style.height = (trackY - labelY + 22 * k) + 'px';
+    const lbl = el.querySelector('.sl-lbl');
+    lbl.style.fontSize = (10.6 * k) + 'px'; lbl.style.paddingLeft = (4.3 * k) + 'px';
+    lbl.style.letterSpacing = (0.15 * k) + 'px';
+    const tr = el.querySelector('.sl-track');
+    tr.style.top = (trackY - labelY + 8 * k - 11 * k) + 'px'; tr.style.height = (22 * k) + 'px';
+    const svg = tr.querySelector('svg');
+    svg.setAttribute('width', w); svg.setAttribute('height', 22 * k);
+    let d = `M0 ${11 * k}H${w}`;
+    for (let i = 0; i < 9; i++) {
+      const x = (i / 8) * w, tall = i === 0 || i === 4 || i === 8;
+      const hh = (tall ? 5.2 : 2.6) * k;
+      d += `M${x.toFixed(2)} ${(11 * k - hh).toFixed(2)}V${(11 * k + hh).toFixed(2)}`;
+    }
+    svg.innerHTML = `<path d="${d}" stroke="#8f8f8b" stroke-width="${Math.max(0.8, 0.95 * k)}" fill="none"/>`;
+    const th = el.querySelector('.sl-thumb');
+    th.style.width = (8.3 * k) + 'px'; th.style.height = (16 * k) + 'px'; th.style.top = (3 * k) + 'px';
+    th.style.borderRadius = (2.4 * k) + 'px';
+    s.w = w; s.tw = 8.3 * k;
+    setSlider(key, sliders[key], true);
+    el.querySelector('.v').textContent = s.fmt(sliders[key]);
+  }
+}
+function setSlider(key, v, silent) {
+  const s = SL[key];
+  v = clamp(v, s.min, s.max);
+  const prev = sliders[key];
+  sliders[key] = v;
+  const f = (v - s.min) / (s.max - s.min);
+  if (!silent) { const pf = (prev - s.min) / (s.max - s.min); if (Math.floor(pf * 8 + 0.5) !== Math.floor(f * 8 + 0.5)) AU.tick(); }
+  s.el.querySelector('.sl-thumb').style.left = (f * (s.w - s.tw)) + 'px';
+  s.el.querySelector('.v').textContent = s.fmt(v);
+  if (!silent && prev !== v) { lightDirty = true; store.set(LS.sliders, JSON.stringify(sliders)); }
+}
+for (const key in SL) {
+  const s = SL[key];
+  let drag = false;
+  const toVal = (e) => {
+    const r = s.el.getBoundingClientRect();
+    const f = clamp((e.clientX - r.left - s.tw / 2) / (r.width - s.tw), 0, 1);
+    return s.min + f * (s.max - s.min);
+  };
+  s.el.addEventListener('pointerdown', (e) => { if (!lampOn) return; drag = true; L.scale = 0.34; s.el.setPointerCapture(e.pointerId); setSlider(key, toVal(e)); e.preventDefault(); });
+  s.el.addEventListener('pointermove', (e) => { if (drag) setSlider(key, toVal(e)); });
+  const end = () => { if (drag) { drag = false; L.scale = 0.5; lightDirty = true; } };
+  s.el.addEventListener('pointerup', end); s.el.addEventListener('pointercancel', end);
+}
+
+/* ------------------------------------------------------------- effects -- */
+// spark: per key (≈65 ms flash of the patch + violet bolt)
+// zap:   carriage return / random / idle (≈150 ms white bolt + green flood, then a white flash decaying ~0.35 s)
+const fx = {
+  list: [],
+  spark(amp = 1) { this.list.push({ kind: 's', t0: now(), amp }); joltWebs(110 * amp); },
+  zap(green = true, amp = 1) { this.list.push({ kind: 'z', t0: now(), green, amp }); joltWebs(260 * amp); },
+  state(t) {
+    const st = { flash: 0, white: 0, violet: 0, glow: 0, tips: 0 };
+    for (let i = this.list.length - 1; i >= 0; i--) {
+      const e = this.list[i], s = t - e.t0;
+      if (s < 0) continue;
+      if (e.kind === 's') {
+        if (s > 0.075) { this.list.splice(i, 1); continue; }
+        const a = e.amp * (s < 0.055 ? 1 : (0.075 - s) / 0.02);
+        st.flash = Math.max(st.flash, 0.42 * a); st.white = Math.max(st.white, a); st.tips = Math.max(st.tips, a);
+      } else {
+        if (s > 0.6) { this.list.splice(i, 1); continue; }
+        if (s < 0.15) {
+          const flick = hash(((t * 60) | 0) * 31 + i) < 0.78 ? 1 : 0.25;
+          st.white = Math.max(st.white, e.amp * flick); st.flash = Math.max(st.flash, 0.3 * e.amp); st.tips = Math.max(st.tips, 0.8 * e.amp);
+          if (e.green) st.glow = Math.max(st.glow, s < 0.03 ? s / 0.03 : 1);
+        } else {
+          const q = s - 0.15;
+          st.flash = Math.max(st.flash, 0.86 * e.amp * Math.exp(-q / 0.17) * (s > 0.5 ? (0.6 - s) / 0.1 : 1));
+          if (q < 0.16) { st.violet = Math.max(st.violet, e.amp * (1 - q / 0.2)); st.tips = Math.max(st.tips, e.amp * (1 - q / 0.2)); }
+          if (e.green && q < 0.04) st.glow = Math.max(st.glow, 1 - q / 0.04);
+        }
+      }
+    }
+    return st;
+  },
+};
+
+/* ------------------------------------------------------------ drawing -- */
+function clipPaper(c) {
+  const t = G.paperTop, rx = G.rx, ry = G.ry;
+  c.beginPath();
+  c.moveTo(0, H); c.lineTo(0, t + ry); c.ellipse(rx, t + ry, rx, ry, 0, Math.PI, Math.PI * 1.5);
+  c.lineTo(W - rx, t); c.ellipse(W - rx, t + ry, rx, ry, 0, -Math.PI / 2, 0); c.lineTo(W, H); c.closePath();
+  c.clip();
+}
+
+let paperRGB = hex('#eae5d9');
+function draw(t) {
+  const c = sctx;
+  const pP = E.ease(CH.paper.v), cP = CH.cap.v, sP = E.outQuad(CH.slot.v);
+  // DOM-driven layers
+  paperRGB = mix(hex('#eae5d9'), hex('#30302d'), pP);
+  paperEl.style.backgroundColor = rgba(paperRGB);
+  vignette.style.opacity = pP.toFixed(3);
+  grainCv.style.opacity = (1 - pP * 0.45).toFixed(3);
+  controlsEl.style.opacity = pP.toFixed(3);
+  dialEl.style.color = rgba(mix(hex('#202012'), hex('#b0b19e'), cP));
+  dialEl.querySelector('.ln').style.stroke = rgba(mix(hex('#e9e4d6'), hex('#3a3a30'), cP));
+
+  c.setTransform(dpr, 0, 0, dpr, 0, -G.sceneTop * dpr);
+  c.clearRect(0, G.sceneTop, W, G.sceneBot - G.sceneTop);
+
+  const cx = car.x, cy = G.capCY, capTop = cy - G.capHH;
+
+  // ----- text -----
+  c.save(); clipPaper(c);
+  const ink = pP > 0.5 ? '#120e06' : '#3c3429';
+  const off = scrollOffset(t);
+  const n = lines.length;
+  for (let li = n - 1; li >= 0; li--) {
+    const y = G.base - (n - 1 - li - off) * G.lineH;
+    if (y < G.paperTop - G.lineH) break;
+    if (!lines[li].idx.length) continue;
+    const cv = renderLine(lines[li], li, ink);
+    const e = lineCache.get(li);
+    const fade = clamp((y - G.paperTop - 6 * k) / (34 * k), 0, 1);
+    if (fade <= 0) continue;
+    c.globalAlpha = fade;
+    c.drawImage(cv, G.textLeft - e.pad, y - e.by, cv.width / dpr, cv.height / dpr);
+  }
+  c.globalAlpha = 1;
+  // hint + placeholder
+  const empty = text.length === 0;
+  hintA = lerp(hintA, empty && !pending ? 1 : 0, 0.15);
+  const hbOn = hintA > 0.5 && pP < 0.5;
+  if (hbOn !== hintBtnOn) { hintBtnOn = hbOn; hintBtn.style.pointerEvents = hbOn ? 'auto' : 'none'; }
+  if (hintA > 0.01 && capText.hint) {
+    const h1 = capText.hint, h2 = capText.ph;
+    c.globalAlpha = hintA * (1 - pP);
+    if (c.globalAlpha > 0.004) c.drawImage(h1.cv, W / 2 - h1.ox, G.hintBase - h1.by, h1.w, h1.h);
+    c.globalAlpha = hintA * lerp(1, 0.55, pP);
+    c.drawImage(h2.cv, G.textLeft - h2.ox, G.base - h2.by, h2.w, h2.h);
+    c.globalAlpha = 1;
+  }
+  c.restore();
+
+  // ----- rail -----
+  const rh = railCv[0].height / dpr;
+  if (pP < 1) { c.globalAlpha = 1; c.drawImage(railCv[0], 0, G.railSpriteTop, W, rh); }
+  if (pP > 0) { c.globalAlpha = pP; c.drawImage(railCv[1], 0, G.railSpriteTop, W, rh); }
+  c.globalAlpha = 1;
+
+  // ----- webs -----
+  drawWebs(c, t, pP);
+
+  // ----- capsule -----
+  const pad = CAP_PAD * k, cw = (G.capHW + pad) * 2, chh = (G.capHH + pad) * 2;
+  if (cP < 1) { c.globalAlpha = 1; c.drawImage(capCv[0], cx - cw / 2, cy - chh / 2, cw, chh); }
+  if (cP > 0) { c.globalAlpha = cP; c.drawImage(capCv[1], cx - cw / 2, cy - chh / 2, cw, chh); }
+  c.globalAlpha = 1;
+  drawLEDs(c, cx, cy, t, cP);
+  // slot glow
+  if (sP > 0) {
+    c.save();
+    c.shadowColor = `rgba(255,214,140,${0.9 * sP})`; c.shadowBlur = 7 * k * dpr;
+    c.fillStyle = rgba(hex('#eed396'), sP);
+    roundRect(c, cx - 9.9 * k, capTop - 1.3 * k, 19.8 * k, 2.3 * k, 1 * k); c.fill();
+    c.restore();
+  }
+  // ----- T (with its little web) -----
+  drawTWeb(c, cx, capTop, capTop - 22 * k - strikeLift(t) + retractDrop(t), t, pP);
+  drawT(c, cx, capTop, t, pP);
+  // ----- steam, sparks, glow -----
+  drawSteam(c, cx, capTop, t, pP, drawDt);
+  const st = fx.state(t);
+  drawSparks(c, cx, cy, t, st);
+  drawCaret(c, t, pP);
+  drawGlow(c, cx, cy, st, pP);
+}
+let hintA = 1, hintBtnOn = true;
+const hintBtn = $('#hintBtn');
+
+function drawLEDs(c, cx, cy, t, cP) {
+  const typing = t - lastKey < 0.27;
+  const leds = [
+    typing ? 'orange' : 'green',
+    cP > 0.5 ? 'orange' : 'red',
+    'off',
+  ];
+  const xs = [-37, -25, -13];
+  for (let i = 0; i < 3; i++) {
+    const x = cx + xs[i] * k, y = cy + 0.4 * k, r = 3.2 * k;
+    const ring = i === 0 ? (cP > 0.5 ? 'rgba(190,200,180,0.75)' : 'rgba(225,232,210,0.85)') : (cP > 0.5 ? 'rgba(110,110,95,0.35)' : 'rgba(225,215,205,0.7)');
+    c.fillStyle = ring; c.beginPath(); c.arc(x, y, r + 0.7 * k, 0, 7); c.fill();
+    let g;
+    const s = leds[i];
+    c.save();
+    if (s === 'green') { g = c.createRadialGradient(x - r * 0.35, y - r * 0.35, 0, x, y, r); g.addColorStop(0, '#b6ff98'); g.addColorStop(0.35, '#6eea4e'); g.addColorStop(0.85, '#5bd83c'); g.addColorStop(1, '#3fae2a'); c.shadowColor = 'rgba(110,255,80,0.7)'; c.shadowBlur = 2 * k * dpr; }
+    else if (s === 'orange') { g = c.createRadialGradient(x - r * 0.35, y - r * 0.35, 0, x, y, r); g.addColorStop(0, '#ffc690'); g.addColorStop(0.35, '#f8913a'); g.addColorStop(0.85, '#f08024'); g.addColorStop(1, '#bd5a12'); c.shadowColor = 'rgba(255,140,40,0.6)'; c.shadowBlur = 1.5 * k * dpr; }
+    else if (s === 'red') { g = c.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r); g.addColorStop(0, '#4a1a1a'); g.addColorStop(1, '#1c0909'); }
+    else { g = c.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r); g.addColorStop(0, '#1a1c18'); g.addColorStop(1, '#030403'); }
+    c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+    c.restore();
+  }
+}
+
+function drawT(c, cx, capTop, t, pP) {
+  const lift = strikeLift(t) - retractDrop(t);
+  const barBot = capTop - 22 * k - lift;
+  const barTop = barBot - 6 * k;
+  const stemTop = barBot - 0.5 * k, stemBot = capTop + 0.6 * k;
+  // stem
+  if (stemBot > stemTop) {
+    const g = c.createLinearGradient(cx - 2.1 * k, 0, cx + 2.1 * k, 0);
+    const a = mix([142, 146, 142], [18, 18, 16], pP), b2 = mix([232, 234, 228], [42, 42, 38], pP), d = mix([126, 130, 126], [16, 16, 14], pP);
+    g.addColorStop(0, rgba(d)); g.addColorStop(0.45, rgba(b2)); g.addColorStop(0.7, rgba(a)); g.addColorStop(1, rgba(d));
+    c.fillStyle = g; c.fillRect(cx - 2.1 * k, stemTop, 4.2 * k, stemBot - stemTop);
+  }
+  // bar
+  const bx = cx - 10.35 * k, bw = 20.7 * k;
+  c.save();
+  c.shadowColor = 'rgba(0,0,0,0.35)'; c.shadowBlur = 2 * k * dpr; c.shadowOffsetY = 1 * k * dpr;
+  let g = c.createLinearGradient(0, barTop, 0, barBot);
+  g.addColorStop(0, rgba(mix([60, 64, 62], [36, 36, 32], pP))); g.addColorStop(0.3, rgba(mix([22, 24, 24], [18, 18, 16], pP)));
+  g.addColorStop(0.55, rgba(mix([48, 52, 52], [22, 22, 20], pP))); g.addColorStop(1, rgba(mix([8, 9, 9], [10, 10, 9], pP)));
+  c.fillStyle = g; roundRect(c, bx, barTop, bw, barBot - barTop, 1.4 * k); c.fill();
+  c.restore();
+  // metal end caps
+  const ea = 1 - pP * 0.85;
+  g = c.createLinearGradient(0, barTop, 0, barBot);
+  g.addColorStop(0, `rgba(235,238,232,${ea})`); g.addColorStop(0.5, `rgba(160,165,160,${ea})`); g.addColorStop(1, `rgba(90,94,90,${ea})`);
+  c.fillStyle = g; roundRect(c, bx + bw - 2.3 * k, barTop + 0.2 * k, 2.1 * k, barBot - barTop - 0.4 * k, 0.9 * k); c.fill();
+  c.globalAlpha = 0.5 * ea; roundRect(c, bx + 0.2 * k, barTop + 0.3 * k, 1.1 * k, barBot - barTop - 0.6 * k, 0.5 * k); c.fill();
+  c.globalAlpha = 1;
+}
+
+function lightningPath(x, y0, y1, seed) {
+  const R = mulberry(seed), pts = [[x, y0]];
+  const n = 11;
+  let px = x;
+  for (let i = 1; i < n; i++) {
+    px = x + clamp((px - x) * -0.6 + (R() - 0.5) * 6.5 * k, -3.6 * k, 3.6 * k);
+    pts.push([px, lerp(y0, y1, i / n) + (R() - 0.5) * 1.6 * k]);
+  }
+  pts.push([x, y1]);
+  return pts;
+}
+function strokePts(c, pts) { c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]))); c.stroke(); }
+function drawSparks(c, cx, cy, t, st) {
+  const hh = G.capHH, x = cx + 25.4 * k;
+  const yTop = cy - hh - 3.7 * k, yBot = cy + hh + 3.7 * k;
+  // patch flash (between the seams, full height)
+  if (st.flash > 0.01) {
+    c.save();
+    c.translate(cx, cy); capsulePath(c); c.clip();
+    const x1 = SEAM.x1 * k, x2 = SEAM.x2 * k;
+    const g = c.createLinearGradient(x1, 0, x2, 0);
+    const a = st.flash;
+    g.addColorStop(0, `rgba(205,205,225,${0.75 * a})`); g.addColorStop(0.45, `rgba(244,243,252,${0.95 * a})`);
+    g.addColorStop(0.75, `rgba(232,230,246,${0.9 * a})`); g.addColorStop(1, `rgba(190,190,210,${0.75 * a})`);
+    c.fillStyle = g; c.fillRect(x1 + 0.4 * k, -hh, x2 - x1 - 0.8 * k, hh * 2);
+    c.restore();
+  }
+  const bolt = Math.max(st.white, st.violet);
+  if (bolt > 0.02) {
+    const pts = lightningPath(x, yTop + 1 * k, yBot - 1 * k, ((t * 60) | 0) * 7 + 3);
+    c.save();
+    c.lineJoin = 'miter'; c.lineCap = 'round';
+    const violet = st.violet >= st.white;
+    c.shadowColor = violet ? 'rgba(170,140,255,0.95)' : 'rgba(190,195,255,0.9)'; c.shadowBlur = 4 * k * dpr;
+    c.strokeStyle = violet ? `rgba(176,150,255,${0.8 * bolt})` : `rgba(200,205,255,${0.6 * bolt})`; c.lineWidth = 1.9 * k;
+    strokePts(c, pts);
+    c.shadowBlur = 0; c.strokeStyle = `rgba(255,255,255,${bolt})`; c.lineWidth = 0.75 * k; strokePts(c, pts);
+    // little side discharges near the bolt tips
+    c.lineWidth = 0.55 * k; c.strokeStyle = `rgba(255,255,255,${0.85 * bolt})`;
+    const R = mulberry(((t * 60) | 0) + 99);
+    c.beginPath();
+    for (let i = 0; i < 3; i++) {
+      const yy = yTop + (1.6 + i * 1.3) * k, len = (2.5 + R() * 2.5) * k;
+      c.moveTo(x + 0.6 * k, yy); c.lineTo(x + 0.6 * k + len, yy + (R() - 0.3) * 1.6 * k);
+    }
+    for (let i = 0; i < 2; i++) {
+      const yy = yBot - (1.8 + i * 1.4) * k, len = (2 + R() * 2.5) * k;
+      c.moveTo(x + 0.6 * k, yy); c.lineTo(x + 0.6 * k + len, yy - (R() - 0.3) * 1.4 * k);
+    }
+    c.stroke();
+    c.restore();
+  }
+  if (st.tips > 0.02) {
+    for (const yy of [yTop, yBot]) {
+      const hg = c.createRadialGradient(x, yy, 0, x, yy, 3.6 * k);
+      hg.addColorStop(0, `rgba(255,255,255,${0.95 * st.tips})`); hg.addColorStop(0.4, `rgba(240,236,255,${0.6 * st.tips})`); hg.addColorStop(1, 'rgba(200,190,255,0)');
+      c.fillStyle = hg; c.fillRect(x - 3.6 * k, yy - 3.6 * k, 7.2 * k, 7.2 * k);
+    }
+  }
+}
+// faint "steam" column rising from the top bolt in lamp mode (fine vertical streaks).
+// In the recording it builds up while the machine sits idle and is blown away by typing.
+let steamA = 0;
+function drawSteam(c, cx, capTop, t, pP, dt) {
+  const idle = t - lastKey;
+  const want = lampOn && idle > 0.4 ? 1 : 0;
+  steamA = want > steamA ? Math.min(1, steamA + dt / 1.3) : Math.max(0, steamA - dt / 0.3);
+  if (pP < 0.02 || steamA < 0.01) return;
+  const grow = E.outQuad(steamA), blow = want ? 0 : (1 - steamA) * 9 * k;
+  const bx = cx + 27.5 * k, by = capTop - 4.5 * k;
+  const a0 = pP * grow * (0.8 + 0.2 * Math.sin(t * 1.7) * Math.sin(t * 0.63 + 1));
+  c.save();
+  const glow = c.createLinearGradient(0, by, 0, by - 38 * k);
+  glow.addColorStop(0, 'rgba(255,255,250,0)'); glow.addColorStop(0.25, `rgba(255,255,250,${0.12 * a0})`);
+  glow.addColorStop(0.8, `rgba(255,255,250,${0.1 * a0})`); glow.addColorStop(1, 'rgba(255,255,250,0)');
+  c.fillStyle = glow; c.fillRect(bx - 6.5 * k, by - 38 * k, 13 * k, 38 * k);
+  c.lineWidth = Math.max(0.45, 0.55 * k); c.lineCap = 'round';
+  for (let i = 0; i < 14; i++) {
+    const R = mulberry(900 + i);
+    const f = i / 13, h = (31 + R() * 7) * k * (0.35 + 0.65 * grow);
+    const x0 = bx + (f - 0.5) * 9 * k, x1 = bx + (f - 0.5) * 11 * k + 1 * k + blow;
+    const sw = Math.sin(t * (0.7 + R() * 0.5) + i * 0.8) * 0.8 * k;
+    const g = c.createLinearGradient(0, by, 0, by - h);
+    const al = (0.3 + R() * 0.35) * a0 * (1 - Math.abs(f - 0.55) * 0.8);
+    g.addColorStop(0, 'rgba(255,255,250,0)'); g.addColorStop(0.15, `rgba(255,255,250,${al})`);
+    g.addColorStop(0.85, `rgba(255,255,250,${al * 0.85})`); g.addColorStop(1, 'rgba(255,255,250,0)');
+    c.strokeStyle = g;
+    c.beginPath(); c.moveTo(x0, by);
+    c.bezierCurveTo(x0 + sw * 0.4, by - h * 0.35, x1 - sw * 0.6, by - h * 0.7, x1 + sw * 0.3, by - h);
+    c.stroke();
+  }
+  c.restore();
+}
+function drawGlow(c, cx, cy, st, pP) {
+  // lamp mode: additive (screen) teal-green flood measured from the recording;
+  // light mode: a soft #9fc785 halo painted normally (screen would vanish on cream paper)
+  const a = st.glow;
+  const lampA = a * pP, paperA = a * (1 - pP);
+  if (lampA > 0.005) {
+    glowEl.style.opacity = (lampA * 0.82).toFixed(3);
+    glowEl.style.transform = `translate(${(cx - 140 * k).toFixed(1)}px, ${(cy + 4 * k - 140 * k).toFixed(1)}px)`;
+    glowOn = true;
+  } else if (glowOn) { glowEl.style.opacity = '0'; glowOn = false; }
+  if (paperA > 0.01) {
+    const r = 120 * k, gx = cx + 6 * k, gy = cy + 4 * k;
+    const g = c.createRadialGradient(gx, gy, 0, gx, gy, r);
+    g.addColorStop(0, `rgba(159,199,133,${0.4 * paperA})`); g.addColorStop(0.4, `rgba(159,199,133,${0.24 * paperA})`); g.addColorStop(1, 'rgba(159,199,133,0)');
+    c.fillStyle = g; c.fillRect(gx - r, gy - r, r * 2, r * 2);
+  }
+}
+let glowOn = false;
+function drawCaret(c, t, pP) {
+  if (pP < 0.02) return;
+  const ph = (t % 1.033) / 1.033;
+  const on = ph < 0.48 ? 1 : 0;
+  if (!on) return;
+  const n = lines.length, col = lines[n - 1].idx.length;
+  const x = G.textLeft + col * G.cell + 3 * k, y = G.base + 1.6 * k + scrollOffset(t) * G.lineH;
+  const g = c.createRadialGradient(x, y, 0, x, y, 3.4 * k);
+  g.addColorStop(0, `rgba(196,255,186,${0.9 * pP})`); g.addColorStop(0.45, `rgba(150,235,140,${0.55 * pP})`); g.addColorStop(1, 'rgba(120,220,110,0)');
+  c.save(); c.translate(x, y); c.scale(0.8, 1); c.translate(-x, -y);
+  c.fillStyle = g; c.fillRect(x - 3.4 * k, y - 3.4 * k, 6.8 * k, 6.8 * k);
+  c.restore();
+}
+
+/* --------------------------------------------------------------- webs -- */
+// Verlet ropes. Ribbons run from the collars to the capsule ends; their rest length follows the
+// anchor distance with a lag, so quick carriage moves stretch them and a carriage return flings
+// them. Each ribbon is drawn as a twisting bundle of near-parallel hairlines.
+const WEB = { ribbons: [], threads: [], fans: [], tweb: null, ready: false };
+function capAnchor(side, dy, top) { // side -1 left end, +1 right end; top: on the capsule's top near the T
+  if (top) return [car.x + side * 13 * k, G.capCY - G.capHH + 1.5 * k];
+  return [car.x + side * (G.capHW - 3 * k), G.capCY + dy * k];
+}
+function makeRope(n, a, b, o) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const f = i / (n - 1);
+    const x = lerp(a[0], b[0], f), y = lerp(a[1], b[1], f) + Math.sin(f * Math.PI) * (o.sag0 || 0) * k;
+    pts.push({ x, y, px: x, py: y });
+  }
+  const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  return Object.assign({ pts, n, rest: Math.max(o.minLen * k, d * o.slack) / (n - 1) }, o);
+}
+function initWebs() {
+  const R = mulberry(4242);
+  WEB.ribbons = [
+    // left side: collar → capsule nose (hugs the rail, twists)
+    makeRope(22, [20 * k, G.railY - 2 * k], capAnchor(-1, 0, true), { side: -1, top: true, ay: -2, by: -4, slack: 1.24, minLen: 40, g: -5, pull: 0.5, strands: 9, width: 5.2, twist: 3.1, phase: 0.4, alpha: 0.9, seed: 11, sag0: -8 }),
+    makeRope(18, [19 * k, G.railY + 5 * k], capAnchor(-1, 7), { side: -1, ay: 5, by: 7, slack: 1.3, minLen: 38, g: 30, pull: 0.6, strands: 6, width: 3.8, twist: 1.8, phase: 1.9, alpha: 0.6, seed: 12, sag0: 8 }),
+    // right side: capsule tail → collar (sagging band + a tighter one along the top)
+    makeRope(24, capAnchor(1, 5), [W - 20 * k, G.railY + 3 * k], { side: 1, ay: 5, by: 3, slack: 1.07, minLen: 34, g: 55, pull: 0.6, strands: 10, width: 6.2, twist: 2.4, phase: 2.6, alpha: 0.9, seed: 13, sag0: 9 }),
+    makeRope(16, capAnchor(1, -6), [W - 20 * k, G.railY - 5 * k], { side: 1, ay: -6, by: -5, slack: 1.16, minLen: 30, g: 4, pull: 1.5, strands: 5, width: 3, twist: 1.4, phase: 0.2, alpha: 0.55, seed: 14, sag0: -5 }),
+  ];
+  // hanging threads with tiny spiders, anchored under the rail
+  WEB.threads = [87, 150, 181, 252, 401].map((x, i) => {
+    const len = (18 + R() * 12) * k, n = 7, ax = x * k, ay = G.railB - 1 * k;
+    const pts = []; for (let j = 0; j < n; j++) pts.push({ x: ax, y: ay + (len * j) / (n - 1), px: ax, py: ay + (len * j) / (n - 1) });
+    return { pts, n, rest: len / (n - 1), ax, ay, spider: R() < 0.8, seed: i };
+  });
+  // static claw-like fans at both collars
+  WEB.fans = [];
+  for (const side of [-1, 1]) {
+    const cx = side < 0 ? 20 * k : W - 20 * k;
+    for (const [oy, dir] of [[-4, -1], [5, 1]]) {
+      const strands = [];
+      for (let i = 0; i < 5; i++) {
+        const ang = (dir < 0 ? -0.55 : 0.35) + i * 0.24 + (R() - 0.5) * 0.1;
+        const len = (24 + R() * 18) * k;
+        strands.push({ ang, len, bend: (R() - 0.5) * 6 * k, ph: R() * 6 });
+      }
+      WEB.fans.push({ side, x: cx, y: G.railY + oy * k, strands, dir });
+    }
+  }
+  // web between the T stem and the capsule's shoulder
+  WEB.tweb = { ph: R() * 6 };
+  WEB.ready = true;
+}
+function stepRope(r, dt, t, a, b) {
+  const P = r.pts, n = r.n;
+  // rest length chases the anchor distance (silk pays out / gathers slowly)
+  const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const target = Math.max(r.minLen * k, d * r.slack) / (n - 1);
+  r.rest += (target - r.rest) * (1 - Math.exp(-dt / (target > r.rest ? 0.12 : 0.9)));   // pays out fast, gathers slowly
+  const damp = Math.exp(-dt * 2.6), g = r.g * k, pull = r.pull;
+  for (let i = 1; i < n - 1; i++) {
+    const p = P[i];
+    const vx = (p.x - p.px) * damp, vy = (p.y - p.py) * damp;
+    p.px = p.x; p.py = p.y;
+    const wind = (Math.sin(t * 0.9 + p.x * 0.03 + r.seed) * 7 + Math.sin(t * 2.3 + i * 0.7) * 3) * k;
+    const ay = g - pull * (p.y - G.railY) * 1;
+    p.x += vx + wind * dt * dt;
+    p.y += vy + ay * dt * dt;
+  }
+  P[0].x = P[0].px = a[0]; P[0].y = P[0].py = a[1];
+  P[n - 1].x = b[0]; P[n - 1].y = b[1];
+  for (let it = 0; it < 6; it++) {
+    for (let i = 0; i < n - 1; i++) {
+      const p = P[i], q = P[i + 1];
+      const dx = q.x - p.x, dy = q.y - p.y, dist = Math.sqrt(dx * dx + dy * dy) || 1e-4;
+      const diff = (dist - r.rest) / dist * 0.5 * 0.92;
+      const ox = dx * diff, oy = dy * diff;
+      if (i > 0) { p.x += ox; p.y += oy; }
+      if (i + 1 < n - 1) { q.x -= ox; q.y -= oy; }
+    }
+    // bending stiffness: keep i and i+2 apart so slack forms loops, not tight knots
+    for (let i = 0; i < n - 2; i++) {
+      const p = P[i], q = P[i + 2];
+      const dx = q.x - p.x, dy = q.y - p.y, dist = Math.sqrt(dx * dx + dy * dy) || 1e-4;
+      const min = r.rest * 1.55;
+      if (dist < min) {
+        const diff = (dist - min) / dist * 0.5 * 0.35, ox = dx * diff, oy = dy * diff;
+        if (i > 0) { p.x += ox; p.y += oy; }
+        if (i + 2 < n - 1) { q.x -= ox; q.y -= oy; }
+      }
+    }
+  }
+}
+// carriage return: throw the long ribbons up into loose arcs
+function flingWebs() {
+  if (!WEB.ready) return;
+  for (const r of WEB.ribbons) {
+    const up = (r.side > 0 ? 260 : 120) * k * (0.7 + Math.random() * 0.6);
+    for (let i = 1; i < r.n - 1; i++) {
+      const f = i / (r.n - 1);
+      r.pts[i].py += up * Math.sin(Math.PI * f) * (0.6 + 0.4 * Math.sin(f * 9 + Math.random())) * 0.016;
+    }
+  }
+}
+// an electric jolt nudges the silk near the capsule (makes the ribbons wander like in the recording)
+function joltWebs(strength) {
+  if (!WEB.ready) return;
+  for (const r of WEB.ribbons) {
+    const n = r.n, near = r.side < 0 ? n - 1 : 0;
+    const i0 = 1 + ((Math.random() * (n - 2)) | 0);
+    const d = Math.abs(i0 - near) / n;
+    const kick = (Math.random() - 0.62) * strength * k * (1 - d * 0.6);
+    for (let j = -3; j <= 3; j++) {
+      const i = i0 + j; if (i <= 0 || i >= n - 1) continue;
+      r.pts[i].py -= kick * (1 - Math.abs(j) / 4) * 0.016;
+    }
+  }
+}
+function stepWebs(dt, t) {
+  if (!WEB.ready) return;
+  const sub = 2, h = dt / sub;
+  for (let s = 0; s < sub; s++) {
+    for (const r of WEB.ribbons) {
+      const cap = capAnchor(r.side, r.side < 0 ? r.by : r.ay, r.top);
+      if (r.side < 0) stepRope(r, h, t, [r.pts[0].x, r.pts[0].y], cap);
+      else stepRope(r, h, t, cap, [r.pts[r.n - 1].x, r.pts[r.n - 1].y]);
+    }
+    for (const th of WEB.threads) {
+      const P = th.pts, damp = Math.exp(-h * 2.2);
+      // the capsule brushes threads as it passes
+      const near = Math.abs(th.ax - car.x) < G.capHW + 4 * k;
+      for (let i = 1; i < th.n; i++) {
+        const p = P[i];
+        let vx = (p.x - p.px) * damp, vy = (p.y - p.py) * damp;
+        if (near) vx += (car.x - car.from) * 0;
+        p.px = p.x; p.py = p.y;
+        const wind = (Math.sin(t * 1.3 + th.seed * 1.7) * 9 + Math.sin(t * 3.1 + th.seed) * 3) * k * (i / th.n);
+        p.x += vx + wind * h * h; p.y += vy + 320 * k * h * h;
+      }
+      P[0].x = th.ax; P[0].y = th.ay;
+      for (let it = 0; it < 4; it++) for (let i = 0; i < th.n - 1; i++) {
+        const p = P[i], q = P[i + 1];
+        const dx = q.x - p.x, dy = q.y - p.y, dist = Math.sqrt(dx * dx + dy * dy) || 1e-4;
+        const diff = (dist - th.rest) / dist;
+        if (i === 0) { q.x -= dx * diff; q.y -= dy * diff; }
+        else { p.x += dx * diff * 0.5; p.y += dy * diff * 0.5; q.x -= dx * diff * 0.5; q.y -= dy * diff * 0.5; }
+      }
+    }
+  }
+  // carriage motion kicks nearby threads
+  const v = (car.x - lastCarX) / Math.max(dt, 1e-3); lastCarX = car.x;
+  if (Math.abs(v) > 1) for (const th of WEB.threads) {
+    if (Math.abs(th.ax - car.x) < G.capHW + 6 * k) for (let i = 2; i < th.n; i++) th.pts[i].px -= v * dt * 0.06 * (i / th.n);
+  }
+}
+let lastCarX = 0;
+function smoothPath(P) {
+  // Catmull-Rom resample → array of [x, y]
+  const out = [];
+  for (let i = 0; i < P.length - 1; i++) {
+    const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)];
+    for (let s = 0; s < 3; s++) {
+      const u = s / 3, u2 = u * u, u3 = u2 * u;
+      out.push([
+        0.5 * (2 * p1.x + (-p0.x + p2.x) * u + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * u2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * u3),
+        0.5 * (2 * p1.y + (-p0.y + p2.y) * u + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * u2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * u3),
+      ]);
+    }
+  }
+  const l = P[P.length - 1]; out.push([l.x, l.y]);
+  return out;
+}
+function drawRibbon(c, r, t, pP) {
+  const C = smoothPath(r.pts), m = C.length;
+  // arc length
+  const L = [0];
+  for (let i = 1; i < m; i++) L.push(L[i - 1] + Math.hypot(C[i][0] - C[i - 1][0], C[i][1] - C[i - 1][1]));
+  const total = L[m - 1] || 1;
+  for (let sidx = 0; sidx < r.strands; sidx++) {
+    const u = r.strands > 1 ? (sidx / (r.strands - 1)) * 2 - 1 : 0;
+    const R = mulberry(r.seed * 31 + sidx);
+    const wf = 0.6 + R() * 0.8, wp = R() * 6.28, wa = (0.25 + R() * 0.7) * k;
+    c.strokeStyle = webColor(pP, r.alpha * (0.55 + R() * 0.6));
+    c.beginPath();
+    for (let i = 0; i < m; i++) {
+      const i0 = Math.max(0, i - 1), i1 = Math.min(m - 1, i + 1);
+      let tx = C[i1][0] - C[i0][0], ty = C[i1][1] - C[i0][1];
+      const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+      const f = L[i] / total;
+      const env = Math.min(1, f * 6, (1 - f) * 6);              // gathers at the anchors
+      const tw = Math.cos(f * Math.PI * r.twist + r.phase + Math.sin(t * 0.4 + r.seed) * 0.3);
+      const off = (r.width * k * env * (0.08 + 0.92 * Math.abs(tw)) * u * Math.sign(tw || 1)) + Math.sin(f * 18 * wf + wp + t * 0.6) * wa * env;
+      const x = C[i][0] - ty * off, y = C[i][1] + tx * off;
+      if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
+    }
+    c.stroke();
+  }
+}
+function webColor(pP, a) {
+  const col = mix([118, 112, 100], [236, 236, 230], pP);
+  return rgba(col, a * lerp(0.3, 0.46, pP));
+}
+function drawWebs(c, t, pP) {
+  if (!WEB.ready) return;
+  c.save();
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  c.lineWidth = Math.max(0.42, 0.45 * k);
+  // a bundle wrapped around the rail near the left collar
+  if (car.x - G.capHW > 58 * k) {
+    c.strokeStyle = webColor(pP, 0.8);
+    c.beginPath();
+    for (let i = 0; i < 9; i++) {
+      const R = mulberry(77 + i);
+      const x0 = (50 + (R() - 0.5) * 7) * k + Math.sin(t * 0.7 + i) * 0.5 * k, y0 = G.railY + (R() - 0.5) * 3 * k;
+      const rx = (4.5 + R() * 3.5) * k, ry = (11 + R() * 4) * k, rot = 0.3 + (R() - 0.5) * 0.5, tw = (R() - 0.5) * 6 * k;
+      // a twisted, slightly open loop around the pipe
+      for (let a = 0; a <= 6.4; a += 0.4) {
+        const ex = Math.cos(a) * rx + Math.sin(a * 2) * tw * 0.3, ey = Math.sin(a) * ry;
+        const x = x0 + ex * Math.cos(rot) - ey * Math.sin(rot), y = y0 + ex * Math.sin(rot) + ey * Math.cos(rot);
+        if (a === 0) c.moveTo(x, y); else c.lineTo(x, y);
+      }
+    }
+    c.stroke();
+  }
+  // collar fans
+  c.strokeStyle = webColor(pP, 0.85);
+  c.beginPath();
+  for (const f of WEB.fans) {
+    for (const s of f.strands) {
+      const sway = Math.sin(t * 0.8 + s.ph) * 1.2 * k;
+      const ang = f.side < 0 ? s.ang : Math.PI - s.ang;
+      const ex = f.x + Math.cos(ang) * s.len + sway, ey = f.y + Math.sin(ang) * s.len * 0.75 + (f.dir > 0 ? s.len * 0.25 : 0);
+      const mx = (f.x + ex) / 2 + s.bend, my = (f.y + ey) / 2 + Math.abs(s.bend) * 0.5;
+      c.moveTo(f.x, f.y); c.quadraticCurveTo(mx, my, ex, ey);
+    }
+  }
+  c.stroke();
+  // hanging threads + spiders
+  c.beginPath();
+  for (const th of WEB.threads) {
+    const P = th.pts; c.moveTo(P[0].x, P[0].y);
+    for (let i = 1; i < th.n; i++) c.lineTo(P[i].x, P[i].y);
+  }
+  c.stroke();
+  for (const th of WEB.threads) {
+    if (!th.spider) continue;
+    const p = th.pts[th.n - 1];
+    c.fillStyle = rgba(mix([60, 54, 46], [150, 150, 144], pP), 0.85);
+    c.beginPath(); c.ellipse(p.x, p.y + 0.6 * k, 0.7 * k, 0.95 * k, 0, 0, 7); c.fill();
+  }
+  // ribbons
+  for (const r of WEB.ribbons) drawRibbon(c, r, t, pP);
+  c.restore();
+}
+function drawTWeb(c, cx, capTop, barBot, t, pP) {
+  // a little sheet of silk between the stem and the capsule's left shoulder
+  if (!WEB.ready) return;
+  const sway = Math.sin(t * 1.1 + WEB.tweb.ph) * 1.2 * k;
+  c.save();
+  c.strokeStyle = webColor(pP, 0.75); c.lineWidth = Math.max(0.5, 0.5 * k);
+  c.beginPath();
+  for (let i = 0; i < 7; i++) {
+    const f = i / 6;
+    const sy = lerp(barBot + 3 * k, capTop - 4 * k, f * 0.8);
+    const ex = cx - (16 + f * 18) * k, ey = capTop + (1 + f * 3) * k;
+    c.moveTo(cx - 1.5 * k, sy);
+    c.quadraticCurveTo(cx - (8 + f * 8) * k + sway, lerp(sy, ey, 0.4) - 4 * k, ex, ey);
+  }
+  c.stroke();
+  c.restore();
+}
+
+/* ------------------------------------------------------- viewport/keyboard -- */
+function onViewport() {
+  const vv = window.visualViewport;
+  let shift = 0, top = 0;
+  if (vv) {
+    top = vv.offsetTop;
+    const need = G.railY + 34 * k;
+    if (need > vv.height) shift = Math.min(need - vv.height, Math.max(0, G.base - G.lineH * 2.2));
+  }
+  app.style.transform = `translate(-50%, ${(top - shift).toFixed(1)}px)`;
+}
+if (window.visualViewport) {
+  visualViewport.addEventListener('resize', onViewport);
+  visualViewport.addEventListener('scroll', onViewport);
+}
+let resizeTimer = 0;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { const w = W, h = H; measure(); if (w !== W || Math.abs(h - H) > 1) layout(); else onViewport(); }, 60); });
+
+/* ---------------------------------------------------------------- audio -- */
+// Everything is synthesised with the Web Audio API — no audio files.
+const AU = {
+  ctx: null, master: null, sfx: null, music: null, verb: null, noise: null, on: store.get(LS.sound, '1') !== '0',
+  hum: null, musicOn: false, nextNote: 0, step: 0, timer: 0, ther: null,
+  init() {
+    if (this.ctx) return true;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    const ctx = this.ctx = new AC({ latencyHint: 'interactive' });
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 3.5; comp.attack.value = 0.004; comp.release.value = 0.18;
+    this.master = ctx.createGain(); this.master.gain.value = this.on ? 0.75 : 0;
+    comp.connect(this.master); this.master.connect(ctx.destination);
+    this.sfx = ctx.createGain(); this.sfx.gain.value = 0.85; this.sfx.connect(comp);
+    this.music = ctx.createGain(); this.music.gain.value = 0.3; this.music.connect(comp);
+    // small generated room for the music and the bell
+    this.verb = ctx.createConvolver();
+    const len = Math.floor(ctx.sampleRate * 1.9), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); let lp = 0;
+      for (let i = 0; i < len; i++) { lp += ((Math.random() * 2 - 1) - lp) * 0.35; d[i] = lp * Math.pow(1 - i / len, 2.6); } }
+    this.verb.buffer = ir;
+    const wet = ctx.createGain(); wet.gain.value = 0.32; this.verb.connect(wet); wet.connect(comp);
+    // shared white noise
+    const nb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), nd = nb.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    this.noise = nb;
+    return true;
+  },
+  resume() {
+    if (!this.init()) return;
+    if (this.ctx.state !== 'running' && this.on && !document.hidden) this.ctx.resume().catch(() => {});
+    if (this.on && !this.musicOn) this.startMusic();
+    if (this.on && lampOn && !this.hum) this.humOn(0.4);
+  },
+  ready() { return this.ctx && this.on && this.ctx.state !== 'closed'; },
+  setOn(on) {
+    this.on = on; store.set(LS.sound, on ? '1' : '0');
+    if (!this.init()) return;
+    const t = this.ctx.currentTime;
+    this.master.gain.cancelScheduledValues(t); this.master.gain.setTargetAtTime(on ? 0.75 : 0, t, 0.06);
+    if (on) { this.ctx.resume().catch(() => {}); if (!this.musicOn) this.startMusic(); if (lampOn && !this.hum) this.humOn(0.2); }
+    else { setTimeout(() => { if (!this.on) { this.stopMusic(); this.humOff(0); this.ctx.suspend().catch(() => {}); } }, 300); }
+  },
+  // ---- building blocks ----
+  noiseSrc(t, dur) { const s = this.ctx.createBufferSource(); s.buffer = this.noise; s.start(t, Math.random() * 1.5, dur + 0.05); return s; },
+  env(g, t, a, peak, d) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); },
+  burst(t, { f = 3000, q = 1.2, type = 'bandpass', gain = 0.5, a = 0.001, d = 0.04, dest } = {}) {
+    const n = this.noiseSrc(t, a + d), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+    fl.type = type; fl.frequency.value = f; fl.Q.value = q; this.env(g, t, a, gain, d);
+    n.connect(fl); fl.connect(g); g.connect(dest || this.sfx);
+  },
+  tone(t, { f = 440, f2 = 0, type = 'sine', gain = 0.3, a = 0.002, d = 0.1, dest, detune = 0 } = {}) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + a + d); o.detune.value = detune;
+    this.env(g, t, a, gain, d); o.connect(g); g.connect(dest || this.sfx); o.start(t); o.stop(t + a + d + 0.05);
+  },
+  // ---- sound effects ----
+  clack(v = 1) {
+    if (!this.ready()) return; const t = this.ctx.currentTime + 0.003, p = 0.92 + Math.random() * 0.16, g = v * (0.85 + Math.random() * 0.3);
+    this.burst(t, { f: (2000 + Math.random() * 2000) * p, q: 1.4, gain: 0.46 * g, d: 0.045 });
+    this.burst(t, { f: 6500 * p, type: 'highpass', q: 0.7, gain: 0.1 * g, d: 0.014 });
+    this.tone(t, { f: 120 * p, f2: 68 * p, gain: 0.38 * g, a: 0.002, d: 0.07 });
+    this.tone(t + 0.001, { f: 1900 * p, type: 'triangle', gain: 0.05 * g, d: 0.018 });
+    this.burst(t + 0.018 + Math.random() * 0.01, { f: 2600 * p, q: 3, gain: 0.12 * g, d: 0.02 });   // type bar settling
+  },
+  space() {
+    if (!this.ready()) return; const t = this.ctx.currentTime + 0.003, p = 0.94 + Math.random() * 0.1;
+    this.burst(t, { f: 950 * p, q: 1.1, gain: 0.32, d: 0.06 });
+    this.tone(t, { f: 92 * p, f2: 55, gain: 0.42, d: 0.09 });
+  },
+  backspace() {
+    if (!this.ready()) return; const t = this.ctx.currentTime + 0.003;
+    this.burst(t, { f: 2600, type: 'highpass', q: 0.8, gain: 0.3, d: 0.012 });
+    this.tone(t, { f: 1400 + Math.random() * 120, type: 'square', gain: 0.03, d: 0.01 });
+    this.tone(t + 0.004, { f: 210, f2: 120, gain: 0.18, d: 0.03 });
+  },
+  spark(v = 1) {
+    if (!this.ready()) return; const t0 = this.ctx.currentTime + 0.004;
+    const n = 4 + ((Math.random() * 5) | 0), dur = 0.08 + Math.random() * 0.07;
+    for (let i = 0; i < n; i++) this.burst(t0 + Math.random() * dur, { f: 3000 + Math.random() * 3000, type: 'highpass', q: 0.6, gain: (0.1 + Math.random() * 0.22) * v, a: 0.0005, d: 0.003 + Math.random() * 0.006 });
+    this.buzz(t0, dur, 0.06 * v, 110 + Math.random() * 40);
+  },
+  buzz(t, dur, gain, f) {
+    const o = this.ctx.createOscillator(), am = this.ctx.createOscillator(), amg = this.ctx.createGain(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+    o.type = 'sawtooth'; o.frequency.value = f; am.type = 'square'; am.frequency.value = 23 + Math.random() * 30;
+    amg.gain.value = 0.5; am.connect(amg); amg.connect(g.gain);
+    fl.type = 'bandpass'; fl.frequency.value = 1300; fl.Q.value = 0.9;
+    g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(fl); fl.connect(g); g.connect(this.sfx); o.start(t); am.start(t); o.stop(t + dur + 0.02); am.stop(t + dur + 0.02);
+  },
+  zap(v = 1) {
+    if (!this.ready()) return; const t0 = this.ctx.currentTime + 0.004;
+    for (let i = 0; i < 14; i++) this.burst(t0 + Math.random() * 0.32, { f: 2500 + Math.random() * 4000, type: 'highpass', q: 0.6, gain: (0.12 + Math.random() * 0.25) * v, a: 0.0005, d: 0.004 + Math.random() * 0.01 });
+    this.buzz(t0, 0.17, 0.11 * v, 72 + Math.random() * 20);
+    this.buzz(t0 + 0.15, 0.2, 0.07 * v, 140);
+    this.tone(t0 + 0.15, { f: 160, f2: 60, gain: 0.25 * v, d: 0.12 });
+  },
+  carriageReturn(cols) {
+    if (!this.ready()) return; const t0 = this.ctx.currentTime + 0.004, D = 0.267, n = Math.max(3, Math.min(18, cols));
+    for (let i = 1; i <= n; i++) {   // one ratchet click per character the carriage passes (ease-out-sine timing)
+      const tt = t0 + D * (2 / Math.PI) * Math.asin(i / n);
+      this.burst(tt, { f: 3200 + Math.random() * 600, q: 2.2, gain: 0.16, d: 0.007 });
+      this.tone(tt, { f: 900, type: 'triangle', gain: 0.025, d: 0.006 });
+    }
+    // slide hiss following the carriage speed
+    const ns = this.noiseSrc(t0, D + 0.05), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+    fl.type = 'bandpass'; fl.Q.value = 0.8; fl.frequency.setValueAtTime(1600, t0); fl.frequency.exponentialRampToValueAtTime(600, t0 + D);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.09, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + D + 0.03);
+    ns.connect(fl); fl.connect(g); g.connect(this.sfx);
+    this.zap(1.05);
+    this.ding(t0 + 0.02);
+  },
+  ding(t) {
+    const f = 2093 * (0.995 + Math.random() * 0.01);
+    for (const [mul, gn, d] of [[1, 0.13, 1.3], [2.76, 0.05, 0.6], [5.4, 0.025, 0.3], [1.004, 0.07, 1.1]]) {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.frequency.value = f * mul; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gn, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(this.sfx); g.connect(this.verb); o.start(t); o.stop(t + d + 0.05);
+    }
+  },
+  lampSwitch(on) {
+    if (!this.ready()) return; const t = this.ctx.currentTime + 0.003;
+    this.burst(t, { f: 2200, type: 'highpass', q: 0.7, gain: 0.32, d: 0.01 });
+    this.tone(t, { f: on ? 190 : 160, f2: 90, gain: 0.28, d: 0.04 });
+    this.burst(t + 0.035, { f: 3500, q: 2, gain: 0.08, d: 0.015 });
+    if (on) {   // warm-up flicker buzz as the bulb catches, then the hum
+      const ft = t + 0.62;
+      const o = this.ctx.createOscillator(), o2 = this.ctx.createOscillator(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+      o.type = 'sawtooth'; o.frequency.value = 100; o2.type = 'square'; o2.frequency.value = 50; fl.type = 'lowpass'; fl.frequency.value = 1800;
+      g.gain.setValueAtTime(0.0001, ft);
+      const pat = [[0, 0.05], [0.03, 0.0001], [0.05, 0.06], [0.1, 0.0001], [0.12, 0.04], [0.2, 0.03], [0.32, 0.0001]];
+      for (const [dt, v] of pat) g.gain.setValueAtTime(v, ft + dt);
+      o.connect(fl); o2.connect(fl); fl.connect(g); g.connect(this.sfx);
+      o.start(ft); o2.start(ft); o.stop(ft + 0.4); o2.stop(ft + 0.4);
+      this.humOn(0.8);
+    } else this.humOff(0.35);
+  },
+  humOn(delay) {
+    if (!this.ctx || this.hum) return;
+    const t = this.ctx.currentTime + delay, g = this.ctx.createGain(), fl = this.ctx.createBiquadFilter(), lfo = this.ctx.createOscillator(), lg = this.ctx.createGain();
+    fl.type = 'lowpass'; fl.frequency.value = 420; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.011, t + 0.5);
+    const oscs = [[60, 1], [120, 0.55], [180, 0.22], [240, 0.08]].map(([f, a]) => { const o = this.ctx.createOscillator(), og = this.ctx.createGain(); o.frequency.value = f; og.gain.value = a; o.connect(og); og.connect(fl); o.start(t); return o; });
+    lfo.frequency.value = 0.27; lg.gain.value = 0.003; lfo.connect(lg); lg.connect(g.gain); lfo.start(t);
+    fl.connect(g); g.connect(this.sfx);
+    this.hum = { g, oscs, lfo };
+  },
+  humOff(fade) {
+    if (!this.hum) return; const h = this.hum; this.hum = null; const t = this.ctx.currentTime;
+    h.g.gain.cancelScheduledValues(t); h.g.gain.setValueAtTime(Math.max(0.0001, h.g.gain.value), t); h.g.gain.exponentialRampToValueAtTime(0.0001, t + fade + 0.02);
+    for (const o of h.oscs) o.stop(t + fade + 0.05); h.lfo.stop(t + fade + 0.05);
+  },
+  tick() {
+    if (!this.ready()) return; const t = this.ctx.currentTime + 0.002;
+    this.tone(t, { f: 3400 + Math.random() * 300, type: 'square', gain: 0.025, d: 0.004 });
+    this.burst(t, { f: 5000, type: 'highpass', gain: 0.07, d: 0.005 });
+  },
+  // ---- background music: playful-spooky loop, 114 BPM ----
+  startMusic() {
+    if (!this.ctx || this.musicOn) return;
+    this.musicOn = true; this.step = 0; this.nextNote = this.ctx.currentTime + 0.12;
+    // theremin voice: one gliding oscillator pair with vibrato
+    const o = this.ctx.createOscillator(), o2 = this.ctx.createOscillator(), g = this.ctx.createGain(), g2 = this.ctx.createGain(), fl = this.ctx.createBiquadFilter();
+    const lfo = this.ctx.createOscillator(), lg = this.ctx.createGain(), dry = this.ctx.createGain();
+    o.type = 'sine'; o2.type = 'triangle'; g2.gain.value = 0.18; lfo.frequency.value = 5.6; lg.gain.value = 26;
+    lfo.connect(lg); lg.connect(o.detune); lg.connect(o2.detune);
+    fl.type = 'lowpass'; fl.frequency.value = 2200; fl.Q.value = 0.4;
+    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(fl); fl.connect(dry); dry.gain.value = 1;
+    dry.connect(this.music); fl.connect(this.verb);
+    g.gain.value = 0.0001; o.start(); o2.start(); lfo.start();
+    this.ther = { o, o2, g, lfo };
+    clearInterval(this.timer);
+    this.timer = setInterval(() => this.schedule(), 25);
+  },
+  stopMusic() {
+    if (!this.musicOn) return; this.musicOn = false; clearInterval(this.timer);
+    const t = this.ctx.currentTime, th = this.ther;
+    if (th) { th.g.gain.cancelScheduledValues(t); th.g.gain.setTargetAtTime(0.0001, t, 0.05); th.o.stop(t + 0.4); th.o2.stop(t + 0.4); th.lfo.stop(t + 0.4); this.ther = null; }
+  },
+  schedule() {
+    if (!this.musicOn || this.ctx.state !== 'running') { if (this.ctx) this.nextNote = Math.max(this.nextNote, this.ctx.currentTime + 0.05); return; }
+    const B = 60 / 114, S16 = B / 4;
+    while (this.nextNote < this.ctx.currentTime + 0.14) { this.playStep(this.step, this.nextNote, B); this.nextNote += S16; this.step = (this.step + 1) % (16 * 8); }
+  },
+  playStep(step, t, B) {
+    const bar = (step / 16) | 0, s = step % 16, M = this.music;
+    const PROG = [[45, [57, 60, 64]], [45, [57, 60, 64]], [50, [57, 62, 65]], [52, [56, 59, 62, 64]], [45, [57, 60, 64]], [41, [57, 60, 65]], [50, [57, 62, 65]], [52, [56, 59, 62, 64]]];
+    const [root, tones] = PROG[bar];
+    const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+    if (s % 4 === 0) {   // soft kick on every beat
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.frequency.setValueAtTime(115, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.13);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+      o.connect(g); g.connect(M); o.start(t); o.stop(t + 0.3);
+    }
+    if (s === 0 || s === 8) {   // plucked bass "oom"
+      const m = s === 0 ? root - 12 : root - 5;
+      const o = this.ctx.createOscillator(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+      o.type = 'triangle'; o.frequency.value = hz(m); fl.type = 'lowpass'; fl.frequency.setValueAtTime(900, t); fl.frequency.exponentialRampToValueAtTime(220, t + 0.3);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.42, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+      o.connect(fl); fl.connect(g); g.connect(M); o.start(t); o.stop(t + 0.5);
+    }
+    if (s === 4 || s === 12 || (s === 14 && bar % 2 === 1)) {   // plucky chord "pah"
+      for (const m of tones) {
+        const o = this.ctx.createOscillator(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+        o.type = 'square'; o.frequency.value = hz(m); o.detune.value = (Math.random() - 0.5) * 8;
+        fl.type = 'lowpass'; fl.frequency.setValueAtTime(2600, t); fl.frequency.exponentialRampToValueAtTime(420, t + 0.16);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.045, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+        o.connect(fl); fl.connect(g); g.connect(M); o.start(t); o.stop(t + 0.25);
+      }
+    }
+    if (s % 4 === 2) {   // shaker on the off-beats
+      const n = this.noiseSrc(t, 0.05), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+      fl.type = 'highpass'; fl.frequency.value = 7000; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+      n.connect(fl); fl.connect(g); g.connect(M);
+    }
+    // theremin melody: [bar, 16th, midi, length in 16ths]
+    const MEL = [[0, 0, 76, 10], [0, 10, 72, 6], [1, 0, 69, 8], [1, 8, 71, 4], [1, 12, 72, 4], [2, 0, 74, 8], [2, 8, 77, 8],
+      [3, 0, 76, 8], [3, 8, 68, 8], [4, 0, 81, 8], [4, 8, 76, 8], [5, 0, 77, 6], [5, 6, 72, 6], [5, 12, 69, 4],
+      [6, 0, 74, 8], [6, 8, 77, 4], [6, 12, 76, 4], [7, 0, 68, 6], [7, 6, 71, 6], [7, 12, 76, 4]];
+    const th = this.ther;
+    for (const [b, st, m, len] of MEL) if (b === bar && st === s && th) {
+      const f = hz(m), dur = len * B / 4;
+      th.o.frequency.setTargetAtTime(f, t, 0.045); th.o2.frequency.setTargetAtTime(f * 2, t, 0.045);
+      th.g.gain.cancelScheduledValues(t);
+      th.g.gain.setTargetAtTime(0.05, t, 0.04);                 // swell in
+      th.g.gain.setTargetAtTime(0.036, t + dur * 0.55, 0.12);    // relax
+      th.g.gain.setTargetAtTime(0.012, t + dur - 0.06, 0.03);    // breathe before the next note
+    }
+    if (s === 0 && bar % 4 === 0) {   // occasional bell chime
+      const f = hz(bar === 0 ? 88 : 81);
+      const car = this.ctx.createOscillator(), mod = this.ctx.createOscillator(), mg = this.ctx.createGain(), g = this.ctx.createGain();
+      car.frequency.value = f; mod.frequency.value = f * 3.5; mg.gain.setValueAtTime(f * 1.4, t); mg.gain.exponentialRampToValueAtTime(1, t + 1.6);
+      mod.connect(mg); mg.connect(car.frequency);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.6);
+      car.connect(g); g.connect(M); g.connect(this.verb); car.start(t); mod.start(t); car.stop(t + 2.7); mod.stop(t + 2.7);
+    }
+  },
+};
+// unlock audio on the first gesture (browser rule)
+const unlock = () => AU.resume();
+for (const ev of ['pointerdown', 'touchend', 'keydown', 'click']) window.addEventListener(ev, unlock, { capture: true, passive: true });
+document.addEventListener('visibilitychange', () => {
+  if (!AU.ctx) return;
+  if (document.hidden) AU.ctx.suspend().catch(() => {}); else if (AU.on) AU.ctx.resume().catch(() => {});
+});
+const soundBtn = $('#sound');
+function paintSound() {
+  soundBtn.querySelector('.on').style.display = AU.on ? '' : 'none';
+  soundBtn.querySelector('.off').style.display = AU.on ? 'none' : '';
+  soundBtn.setAttribute('aria-pressed', AU.on ? 'true' : 'false');
+}
+soundBtn.addEventListener('click', () => { AU.setOn(!AU.on); paintSound(); });
+paintSound();
+
+/* ---------------------------------------------------------- idle sparks -- */
+let nextIdle = 0, lastActivity = 0;
+function updateIdle(t) {
+  const idle = t - Math.max(lastKey, lastActivity);
+  if (idle < 2.4) { nextIdle = Math.max(nextIdle, t + (2.4 - idle) + Math.random() * 0.6); return; }
+  if (t >= nextIdle) {
+    fx.zap(Math.random() < 0.72, 0.8);
+    AU.spark(0.32);
+    nextIdle = t + 0.6 + Math.random() * 1.0;
+  }
+}
+
+/* --------------------------------------------------------------- loop -- */
+let lastT = now();
+let lightX = 0, drawDt = 1 / 60;
+function frame() {
+  const t = now();
+  const dt = Math.min(0.05, t - lastT); lastT = t;
+  stepChannels(dt);
+  pumpPending(t);
+  updateCarriage(t);
+  updateIdle(t);
+  stepWebs(dt, t);
+  if (appearAt.size > 64) for (const [i, a] of appearAt) if (a < t - 1) appearAt.delete(i);
+  if (lightDirty && (lampOn || CH.light.v > 0)) renderLight();
+  // light layer follows the carriage
+  const lv = CH.light.v;
+  if (lv > 0) {
+    const grow = 0.15 + 0.85 * E.outCubic(lv);
+    const flick = lampOn && lv < 1 ? flicker(lv) : 1;
+    lightX += (car.x - lightX) * (1 - Math.exp(-dt / 0.03));
+    if (Math.abs(car.x - lightX) > 200 * k) lightX = car.x;
+    const ax = lightX, ay = G.capCY - G.capHH - G.paperTop;
+    lightCv.style.transform = `translate(${(ax - L.ax).toFixed(2)}px, ${(ay - L.ay).toFixed(2)}px) translate(${L.ax}px, ${L.ay}px) scale(${grow.toFixed(4)}) translate(${-L.ax}px, ${-L.ay}px)`;
+    lightCv.style.opacity = ((lampOn ? E.outSine(lv) : lv) * flick).toFixed(3);
+  } else lightCv.style.opacity = '0';
+  drawDt = dt;
+  draw(t);
+  requestAnimationFrame(frame);
+}
+function flicker(p) {
+  // quick warm-up flicker of the bulb (p = 0…1); kept short so the ramp still matches the recording
+  const keys = [[0, 1], [0.06, 1], [0.09, 0.45], [0.13, 1], [0.21, 1], [0.24, 0.7], [0.28, 1], [1, 1]];
+  for (let i = 1; i < keys.length; i++) if (p <= keys[i][0]) return lerp(keys[i - 1][1], keys[i][1], (p - keys[i - 1][0]) / (keys[i][0] - keys[i - 1][0]));
+  return 1;
+}
+
+/* ---------------------------------------------------------------- debug -- */
+if (/[?&]debug\b/.test(location.search)) {
+  window.__fw = {
+    get text() { return text; }, get lines() { return lines.map((l) => l.idx.map((i) => text[i]).join('')); },
+    get carX() { return car.x; }, get target() { return carriageTarget(); }, get col() { return caretCol(); },
+    get lamp() { return lampOn; }, colX, G, AU,
+  };
+}
+
+/* --------------------------------------------------------------- boot -- */
+function boot() {
+  text = (store.get(LS.text, '') || '').slice(0, MAX);
+  lines = wrap(text);
+  input.value = text;
+  try { const s = JSON.parse(store.get(LS.sliders, 'null')); if (s) Object.assign(sliders, s); } catch (e) {}
+  layout();
+  car.x = car.from = car.to = carriageTarget(); car.dur = 0; lightX = car.x; lastCarX = car.x;
+  initWebs();
+  setLamp(store.get(LS.lamp, '0') === '1', true);
+  onTextChanged();
+  if (document.fonts && document.fonts.load) {
+    Promise.all([document.fonts.load(FONT(22)), document.fonts.load('700 22px "Courier Prime"')]).then(() => { fontReady = true; invalidateText(); buildCaptions(); });
+  }
+  if (!('ontouchstart' in window)) focusInput();
+  lastActivity = now();
+  requestAnimationFrame(frame);
+}
+boot();
+})();
+</script>
+</body>
+</html>
