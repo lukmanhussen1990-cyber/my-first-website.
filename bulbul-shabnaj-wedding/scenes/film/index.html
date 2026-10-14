@@ -1,0 +1,253 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Bulbul & Shabnaj</title>
+<script src="../../shared/lib.js"></script>
+<script src="../../shared/arch.js"></script>
+<script src="../../shared/rose.js"></script>
+<script src="../../shared/bird.js"></script>
+<script src="../../shared/garden.js"></script>
+<script src="../../shared/names.js"></script>
+<script src="../../shared/fx.js"></script>
+<style>
+  @font-face { font-family: 'Vibes'; src: url('../../shared/fonts/great-vibes-latin-400-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'Cormorant'; src: url('../../shared/fonts/cormorant-garamond-latin-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; }
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #04050f; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: #04050f; }
+  .layer { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  canvas.layer, svg.layer { overflow: visible; }
+</style>
+</head><body>
+<div id="stage">
+  <div class="layer" id="Lsky"><img id="skyImg" style="position:absolute;left:-340px;top:-210px;width:2600px;height:1500px"><canvas id="cStars" width="2600" height="1500" style="position:absolute;left:-340px;top:-210px"></canvas></div>
+  <svg class="layer" id="Lmoon" width="1920" height="1080"></svg>
+  <canvas id="cBack" width="1920" height="1080" style="position:absolute;left:0;top:0"></canvas>
+  <canvas id="cGarden" width="1920" height="1080" style="position:absolute;left:0;top:0"></canvas>
+  <svg class="layer" id="Larch" width="1920" height="1080"></svg>
+  <div class="layer" id="Lnames"></div>
+  <canvas id="cFront" width="1920" height="1080" style="position:absolute;left:0;top:0"></canvas>
+  <canvas id="cFx" width="1920" height="1080" style="position:absolute;left:0;top:0"></canvas>
+  <div id="fade" style="position:absolute;left:0;top:0;width:1920px;height:1080px;background:#04050f;opacity:0"></div>
+</div>
+<script>
+// Bulbul & Shabnaj: a wedding film, everything drawn from scratch. 72 bpm: 1 beat = 25 frames, 1 bar = 100 frames.
+const $ = id => document.getElementById(id);
+// ------------------------------------------------------------------ camera (world == screen at zoom 1)
+// layers move with parallax: depth 0 = infinitely far (barely moves), 1 = the arch plane, >1 nearer than the arch
+const CAM = f => ({
+  x: kf(f, [[1, 960], [205, 960], [300, 990, 'inOutCubic'], [500, 996], [585, 960, 'inOutCubic']]),
+  y: kf(f, [[1, 540], [205, 548], [300, 1080, 'inOutCubic'], [500, 1086], [585, 540, 'inOutCubic'], [700, 540], [800, 600, 'inOutCubic']]),
+  z: kf(f, [[1, 1.0], [205, 1.035, 'inOutSine'], [300, 2.35, 'inOutCubic'], [500, 2.46], [585, 1.0, 'inOutCubic'], [700, 1.0], [800, 0.9, 'inOutCubic'], [1300, 0.94, 'inOutSine']]) });
+function camMatrix(f, depth) {
+  const c = CAM(f), z = 1 + (c.z - 1) * depth, px = 960 + (c.x - 960) * depth, py = 540 + (c.y - 540) * depth;
+  return [z, 960 - px * z, 540 - py * z];
+}
+function place(el, f, depth) {
+  const c = CAM(f), z = 1 + (c.z - 1) * depth, px = 960 + (c.x - 960) * depth, py = 540 + (c.y - 540) * depth;
+  el.style.transform = `translate(${(960 - px * z).toFixed(2)}px, ${(540 - py * z).toFixed(2)}px) scale(${z.toFixed(5)})`;
+}
+// ------------------------------------------------------------------ sky: plate + twinkling stars + moon
+let STARS = null;
+function buildStars() {
+  const r = mulberry32(42); STARS = [];
+  for (let i = 0; i < 230; i++) {
+    const y = Math.pow(r(), 1.3) * 1050, x = r() * 2600, m = Math.pow(r(), 3);
+    STARS.push({ x, y, m: 0.35 + 1.4 * m, ph: r() * 6.283, fr: 0.04 + 0.09 * r(), glint: m > 0.72, warm: r() < 0.22 });
+  }
+}
+function drawStars(f, fade) {
+  const c = $('cStars'), g = c.getContext('2d'); g.clearRect(0, 0, 2600, 1500);
+  STARS.forEach(s => {
+    const tw = 0.55 + 0.45 * Math.sin(s.ph + f * s.fr * 2) * Math.sin(s.ph * 1.7 + f * s.fr * 1.3);
+    const a = clamp(fade * (0.35 + 0.65 * tw)), rad = 0.7 + s.m * 1.1;
+    const col = s.warm ? '255,226,190' : '228,236,255';
+    const gr = g.createRadialGradient(s.x, s.y, 0, s.x, s.y, rad * 3.2);
+    gr.addColorStop(0, `rgba(${col},${a})`); gr.addColorStop(0.35, `rgba(${col},${a * 0.45})`); gr.addColorStop(1, `rgba(${col},0)`);
+    g.fillStyle = gr; g.beginPath(); g.arc(s.x, s.y, rad * 3.2, 0, 6.283); g.fill();
+    if (s.glint) { g.strokeStyle = `rgba(${col},${a * 0.5})`; g.lineWidth = 0.8; const L = 7 + 9 * s.m * tw;
+      g.beginPath(); g.moveTo(s.x - L, s.y); g.lineTo(s.x + L, s.y); g.moveTo(s.x, s.y - L); g.lineTo(s.x, s.y + L); g.stroke(); }
+  });
+}
+let MOON = null;
+function buildMoon() {
+  const svg = $('Lmoon'), defs = svgEl('defs', {}, svg);
+  defs.innerHTML = `<radialGradient id="moonHalo"><stop offset="0" stop-color="rgba(255,236,200,0.34)"/><stop offset="0.35" stop-color="rgba(255,226,190,0.12)"/><stop offset="1" stop-color="rgba(255,220,190,0)"/></radialGradient>
+    <radialGradient id="moonFace" cx="0.38" cy="0.4" r="0.75"><stop offset="0" stop-color="#FFF8E6"/><stop offset="0.7" stop-color="#F3E2BE"/><stop offset="1" stop-color="#D9C192"/></radialGradient>
+    <mask id="crescent"><rect x="-200" y="-200" width="400" height="400" fill="#fff"/><circle cx="20" cy="-14" r="44" fill="#000"/></mask>`;
+  const g = svgEl('g', {}, svg);
+  svgEl('circle', { cx: 0, cy: 0, r: 230, fill: 'url(#moonHalo)' }, g);
+  svgEl('circle', { cx: 0, cy: 0, r: 50, fill: 'url(#moonFace)', mask: 'url(#crescent)' }, g);
+  MOON = { g, x: 1585, y: 196 };
+}
+// ------------------------------------------------------------------ the rose bush, the bulbul, dew and song
+let GARDEN = null;
+const GD = 0.82;                                            // the garden sits a little behind the arch
+const BIRD_LAND = 372, MATE_IN = 800, MATE_LAND = 846, TURN = 850, MATE_TURN = 1192, LEAVE = 1204;
+function arc3(P0, P1, P2, u) { const m = 1 - u; return [m * m * P0[0] + 2 * m * u * P1[0] + u * u * P2[0], m * m * P0[1] + 2 * m * u * P1[1] + u * u * P2[1]]; }
+function songState(f, phrases, len = 18) {
+  let beak = 0, tilt = 0, throat = 0;
+  for (const p0 of phrases) { const t = f - p0;
+    if (t >= 0 && t < len) { const env = Math.sin(Math.PI * t / len); beak = Math.max(beak, env * (0.55 + 0.45 * Math.abs(Math.sin(t * 1.9)))); throat = Math.max(throat, env); }
+    tilt = Math.min(tilt, -10 * Math.sin(Math.PI * clamp((t + 3) / (len + 6)))); }
+  return { beak, tilt, throat };
+}
+const turnState = (f, t0) => { const u = clamp((f - t0) / 7); return { m: Math.cos(Math.PI * ease.inOutSine(u)), hop: 12 * Math.sin(Math.PI * u) }; };
+// one bird: arrive along an arc, perch, sing, maybe turn around, leave together toward the moon
+function oneBird(f, o) {
+  if (f < o.inT0) return null;
+  let [x, y] = arc3(o.from, o.via, o.perch, ease.outCubic(clamp((f - o.inT0) / (o.inT1 - o.inT0))));
+  let fly = 1 - smooth(o.inT1 - 9, o.inT1 + 2, f), flap = (f - o.inT0) * 0.95 * (1 - 0.5 * smooth(o.inT1 - 14, o.inT1, f));
+  const land = f >= o.inT1 ? 5 * Math.exp(-(f - o.inT1) / 5) * Math.sin((f - o.inT1) / 2.2) : 0;
+  let bob = land + (f > o.inT1 + 10 ? 0.8 * Math.sin((f - o.inT1) / 9 + o.ph) : 0);
+  let mirror = o.face;
+  if (o.turn && f >= o.turn) { const T = turnState(f, o.turn); mirror = o.face * T.m; bob -= T.hop; }
+  if (f >= o.leave) {
+    const t = f - o.leave, u = clamp(t / 56), dir = Math.sign(mirror) < 0 ? 1 : -1;
+    [x, y] = arc3(o.perch, [o.perch[0] + dir * 160, o.perch[1] - 260], [o.perch[0] + dir * 980, o.perch[1] - 1150], ease.inQuad(u));
+    fly = smooth(o.leave - 2, o.leave + 6, f); flap = t * 1.05;
+  }
+  const S = songState(f, o.phrases);
+  const blink = o.blinks.reduce((b, t0) => Math.max(b, Math.max(0, 1 - Math.abs(f - t0) / 2.5)), 0);
+  return { x, y, mirror, st: { fly, flap, beak: S.beak, tilt: S.tilt, bob: bob / 168, throat: S.throat, blink } };
+}
+function birds(f) {
+  const out = [];
+  const b1 = oneBird(f, { inT0: 328, inT1: BIRD_LAND, from: [1840, 900], via: [1480, 980], perch: GARDEN.perch, face: 1, ph: 0,
+    phrases: [402, 427, 452, 477, 862, 887], turn: TURN, leave: LEAVE + 4, blinks: [440, 506, 548, 930, 1040, 1150] });
+  const b2 = oneBird(f, { inT0: MATE_IN, inT1: MATE_LAND, from: [2050, 760], via: [1560, 820], perch: GARDEN.perch2, face: 1, ph: 2,
+    phrases: [874, 899], turn: MATE_TURN, leave: LEAVE, blinks: [905, 990, 1100] });
+  if (b1) out.push(b1); if (b2) out.push(b2);
+  return out;
+}
+const beakOf = B => { const S = GARDEN.bird.o.S; return [B.x - 0.44 * S * B.mirror, B.y - 0.64 * S + B.st.bob * S]; };
+function birdState(f) { return birds(f)[0] || null; }
+function drawGarden(f) {
+  const c = $('cGarden'), ctx = c.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, 1920, 1080);
+  const [z, tx, ty] = camMatrix(f, GD); ctx.setTransform(z, 0, 0, z, tx, ty);
+  const grow = ease.inOutSine(invlerp(204, 292, f)), branchGrow = ease.outCubic(invlerp(246, 306, f));
+  const budIn = spring((f - 284) * 1, 2.6, 10), open = ease.inOutSine(invlerp(300, 380, f));
+  const sway = 0.6 * Math.sin(f / 37) + 0.3 * Math.sin(f / 23);
+  GARDEN.rose.dew = { k: invlerp(376, 400, f), glint: f };
+  GARDEN.drawBush(ctx, { grow, branchGrow, open, budIn: Math.max(0, budIn), sway });
+  birds(f).forEach(B => { ctx.save(); ctx.translate(B.x, B.y); ctx.scale(B.mirror, 1); GARDEN.bird.draw(ctx, B.st); ctx.restore(); });
+  const B = birdState(f); if (B) drawSong(ctx, f, B);
+}
+// gold song motes: little lights that leave the bulbul's beak as it sings and drift up, curling
+const SONG = (() => { const r = mulberry32(77), m = []; for (const p0 of [402, 427, 452, 477]) for (let i = 0; i < 9; i++)
+  m.push({ t0: p0 + i * 1.7 + r() * 1.5, vx: -0.2 + 0.9 * r(), vy: -1.5 - 1.2 * r(), curl: (r() - 0.5) * 0.1, sz: 1.8 + 2.2 * r(), life: 46 + 20 * r(), ph: r() * 6 }); return m; })();
+function drawSong(ctx, f, B) {
+  const [bx, by] = beakOf(B);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  SONG.forEach(m => {
+    const t = f - m.t0; if (t < 0 || t > m.life) return;
+    let x = bx, y = by, vx = m.vx, vy = m.vy;
+    for (let i = 0; i < t; i++) { const a = m.curl * Math.sin(i / 9 + m.ph); const c = Math.cos(a), s2 = Math.sin(a); [vx, vy] = [vx * c - vy * s2, vx * s2 + vy * c]; x += vx; y += vy; vy *= 0.995; }
+    const a = Math.sin(Math.PI * clamp(t / m.life)) * (0.7 + 0.3 * Math.sin(t / 3 + m.ph)), r = m.sz * 3.4;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(255,236,170,${a})`); g.addColorStop(0.3, `rgba(255,200,110,${a * 0.45})`); g.addColorStop(1, 'rgba(255,180,80,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+  });
+  ctx.restore();
+}
+// ------------------------------------------------------------------ the names, written by the song
+let NAMES = null;
+const TL = { stream: [500, 546], w1: [548, 592], amp: [592, 606], w2: [604, 662], sheen1: [600, 652], sheen2: [664, 716], div: [662, 684], sub: [670, 702] };
+const prog = (f, k, e = 'inOutSine') => ease[e](invlerp(TL[k][0], TL[k][1], f));
+const toScreen = (f, d, p) => { const [z, tx, ty] = camMatrix(f, d); return [p[0] * z + tx, p[1] * z + ty]; };
+const STREAM = (() => { const r = mulberry32(5150); return Array.from({ length: 90 }, (_, i) => ({ i, d: r() * 0.35, w: r() * 6.28, sz: 1.4 + 2.4 * r(), off: (r() - 0.5) * 26 })); })();
+const GLITTER = (() => { const r = mulberry32(919); return Array.from({ length: 140 }, () => ({ u: r(), dx: (r() - 0.5) * 30, dy: (r() - 0.5) * 34, sz: 0.8 + 1.8 * r(), life: 16 + 22 * r(), ph: r() * 6 })); })();
+function glow(g, x, y, r, a, core = '255,244,214', mid = '255,206,120') {
+  const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${core},${a})`); gr.addColorStop(0.25, `rgba(${mid},${a * 0.5})`); gr.addColorStop(1, `rgba(${mid},0)`);
+  g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill();
+}
+function drawFx(f) {
+  const g = $('cFx').getContext('2d'); g.clearRect(0, 0, 1920, 1080); g.globalCompositeOperation = 'lighter';
+  const B = birdState(f);
+  // the song rises from the bulbul's beak as a ribbon of light and becomes the pen
+  if (B && f >= TL.stream[0] && f < TL.w1[0] + 8) {
+    const a = toScreen(f, GD, beakOf(B));
+    const n1 = NAMES.n1, b = toScreen(f, 1, NAMES.pen(n1, 0, f));
+    const c1 = [a[0] - 40, a[1] - 300], c2 = [b[0] - 160, b[1] + 220];
+    const bz = t => { const m = 1 - t; return [m * m * m * a[0] + 3 * m * m * t * c1[0] + 3 * m * t * t * c2[0] + t * t * t * b[0], m * m * m * a[1] + 3 * m * m * t * c1[1] + 3 * m * t * t * c2[1] + t * t * t * b[1]]; };
+    STREAM.forEach(P => {
+      const t = (f - TL.stream[0]) / 38 - P.i * 0.006 - P.d; if (t < 0 || t > 1) return;
+      const q = bz(t), wv = Math.sin(t * 9 + P.w) * P.off * Math.sin(Math.PI * t);
+      const fade = (1 - smooth(TL.w1[0] - 2, TL.w1[0] + 8, f)) * Math.sin(Math.PI * Math.min(1, t * 1.15));
+      glow(g, q[0] + wv * 0.6, q[1] + wv, P.sz * 4, 0.75 * fade);
+    });
+  }
+  // the pen of light: writes "Bulbul", hops over the ampersand, writes "Shabnaj"; glitter falls from the ink
+  let pen = null;
+  if (f >= TL.w1[0] && f <= TL.w1[1]) pen = NAMES.pen(NAMES.n1, prog(f, 'w1'), f);
+  else if (f > TL.w1[1] && f < TL.w2[0]) { const u = invlerp(TL.w1[1], TL.w2[0], f), p0 = NAMES.pen(NAMES.n1, 1, f), p1 = NAMES.pen(NAMES.n2, 0, f);
+    pen = [lerp(p0[0], p1[0], ease.inOutSine(u)), lerp(p0[1], p1[1], ease.inOutSine(u)) - 70 * Math.sin(Math.PI * u)]; }
+  else if (f >= TL.w2[0] && f <= TL.w2[1]) pen = NAMES.pen(NAMES.n2, prog(f, 'w2'), f);
+  [[NAMES.n1, 'w1'], [NAMES.n2, 'w2']].forEach(([n, k]) => {
+    const w = prog(f, k), age = f - TL[k][0];
+    GLITTER.forEach(G => { if (G.u > w) return; const born = TL[k][0] + G.u * (TL[k][1] - TL[k][0]), t = f - born; if (t < 0 || t > G.life) return;
+      const q = toScreen(f, 1, NAMES.pen(n, G.u, born)); const a = (1 - t / G.life) * (0.6 + 0.4 * Math.sin(t * 0.8 + G.ph));
+      glow(g, q[0] + G.dx, q[1] + G.dy + t * 0.7, G.sz * 3.2, 0.7 * a); });
+  });
+  if (pen) { const q = toScreen(f, 1, pen); glow(g, q[0], q[1], 70, 0.42); glow(g, q[0], q[1], 16, 1.0); glow(g, q[0], q[1], 5, 1.0, '255,255,255', '255,240,200'); }
+  // the two birds face each other and sing; their song gathers into a heart of light that floats up and scatters
+  const BB = birds(f);
+  if (BB.length === 2 && f >= 876 && f < 1010) {
+    const a1 = toScreen(f, GD, beakOf(BB[0])), a2 = toScreen(f, GD, beakOf(BB[1])), zg = camMatrix(f, GD)[0];
+    const cx = (a1[0] + a2[0]) / 2, cy = Math.min(a1[1], a2[1]) - 62 * zg - 0.35 * Math.max(0, f - 905), sc = 3.1 * zg * (1 + 0.05 * Math.sin((f - 905) / 4) * smooth(900, 910, f));
+    HEART.forEach((H, i) => {
+      const src = i % 2 ? a1 : a2, u = ease.outCubic(clamp((f - 878 - H.d) / 22));
+      const tx = cx + sc * H.hx, ty = cy - sc * H.hy, x = lerp(src[0], tx, u) + (1 - u) * 30 * Math.sin(H.d + f / 5), y = lerp(src[1], ty, u) - (1 - u) * 40 * Math.sin(Math.PI * u);
+      const out = clamp((f - 965 - H.d) / 30), sx = x + out * H.vx * 60, sy = y - out * (40 + H.vy * 60);
+      const a = clamp((f - 878 - H.d) / 4) * (1 - out) * (0.75 + 0.25 * Math.sin(f / 2 + i));
+      glow(g, sx, sy, (2.2 + H.s) * 3.4, a);
+    });
+  }
+}
+const HEART = (() => { const r = mulberry32(14), pts = []; for (let i = 0; i < 56; i++) { const t = i / 56 * 6.283;
+  pts.push({ hx: 16 * Math.pow(Math.sin(t), 3), hy: 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t), d: r() * 10, s: r() * 2, vx: r() - 0.5, vy: r() }); } return pts; })();
+let PARTY = null, MONO = null;
+// ------------------------------------------------------------------ arch
+let ARCH = null;
+window.renderFrame = async (f) => {
+  if (!STARS) {
+    $('skyImg').src = '../../plates/sky.png'; await $('skyImg').decode().catch(() => {});
+    buildStars(); buildMoon();
+    ARCH = new Arch($('Larch'), { cx: 960, ys: 520, ya: 168, a: 392, band: 54, lobes: 4, depth: 22, frame: 84, top: 50, bottom: 1340 }); ARCH.addFiligree(7);
+    GARDEN = new Garden({ rx: 945, ry: 915, S: 74 });
+    await document.fonts.load("150px 'Vibes'"); await document.fonts.load("italic 74px 'Cormorant'");
+    NAMES = new Names($('Lnames'), {}); MONO = new Monogram($('Lnames'), { x: 960, y: 262, r: 54 }); PARTY = new Celebration();
+  }
+  // sky
+  const skyIn = smooth(1, 70, f);
+  $('Lsky').style.opacity = skyIn.toFixed(3);
+  drawStars(f, skyIn);
+  // a shooting star in the opening bar
+  { const g = $('cStars').getContext('2d'), u = invlerp(44, 66, f);
+    if (u > 0 && u < 1) { const x0 = 760, y0 = 260, L = 520, x = x0 + L * ease.outQuad(u), y = y0 + 0.36 * L * ease.outQuad(u), tail = 150 * Math.sin(Math.PI * u);
+      const gr = g.createLinearGradient(x - tail, y - 0.36 * tail, x, y); gr.addColorStop(0, 'rgba(255,240,220,0)'); gr.addColorStop(1, `rgba(255,248,236,${0.9 * Math.sin(Math.PI * u)})`);
+      g.strokeStyle = gr; g.lineWidth = 2.2; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - tail, y - 0.36 * tail); g.lineTo(x, y); g.stroke();
+      const hg = g.createRadialGradient(x, y, 0, x, y, 10); hg.addColorStop(0, `rgba(255,255,250,${Math.sin(Math.PI * u)})`); hg.addColorStop(1, 'rgba(255,240,220,0)'); g.fillStyle = hg; g.beginPath(); g.arc(x, y, 10, 0, 6.283); g.fill(); } }
+  place($('Lsky'), f, 0.25);
+  // moon rises a touch and glows in
+  const mo = smooth(20, 110, f);
+  MOON.g.setAttribute('transform', `translate(${MOON.x} ${(MOON.y + 26 * (1 - ease.outCubic(mo))).toFixed(2)})`);
+  MOON.g.style.opacity = mo.toFixed(3);
+  place($('Lmoon'), f, 0.35);
+  // arch: inks on through bar 2 (pillars first, then over the top), ornaments, then filigree
+  ARCH.render(ease.inOutSine(invlerp(100, 196, f)), invlerp(188, 228, f), invlerp(205, 330, f));
+  place($('Larch'), f, 1);
+  $('Larch').style.opacity = (1 - smooth(228, 286, f) + smooth(520, 580, f)).toFixed(3);   // we pass through the arch into the garden and back
+  drawGarden(f);
+  place($('Lnames'), f, 1);
+  NAMES.render({ w1: prog(f, 'w1'), w2: prog(f, 'w2'), a: invlerp(TL.amp[0], TL.amp[1], f), d: invlerp(TL.div[0], TL.div[1], f), s: invlerp(TL.sub[0], TL.sub[1], f),
+    sheen1: f < 900 ? prog(f, 'sheen1') : ease.inOutSine(invlerp(1078, 1124, f)), sheen2: f < 900 ? prog(f, 'sheen2') : ease.inOutSine(invlerp(1088, 1136, f)) });
+  MONO.render(invlerp(1000, 1062, f), Math.sin(Math.PI * invlerp(1066, 1100, f)));
+  ARCH.glint(f < 900 ? invlerp(700, 762, f) : invlerp(1052, 1116, f));
+  // the celebration: lanterns behind and in front, petals, fireflies (screen space)
+  const gb = $('cBack').getContext('2d'), gf = $('cFront').getContext('2d');
+  gb.clearRect(0, 0, 1920, 1080); gf.clearRect(0, 0, 1920, 1080);
+  PARTY.draw(gb, f, 'back'); PARTY.draw(gf, f, 'front');
+  drawFx(f);
+  $('fade').style.opacity = smooth(1262, 1300, f).toFixed(4);
+};
+window.sceneReady = document.fonts.ready;
+</script>
+</body></html>
