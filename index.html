@@ -1521,7 +1521,7 @@ function initWebs() {
   const R = mulberry(4242);
   WEB.ribbons = [
     // left side: collar → capsule nose (hugs the rail, twists)
-    makeRope(22, [20 * k, G.railY - 2 * k], capAnchor(-1, 0, true), { side: -1, top: true, ay: -2, by: -4, slack: 1.2, minLen: 40, g: 0, pull: 1.4, strands: 9, width: 5.2, twist: 3.1, phase: 0.4, alpha: 0.9, seed: 11, sag0: -5 }),
+    makeRope(22, [20 * k, G.railY - 2 * k], capAnchor(-1, 0, true), { side: -1, top: true, ay: -2, by: -4, slack: 1.2, minLen: 40, g: 0, pull: 1.4, lift: 20, strands: 9, width: 5.2, twist: 3.1, phase: 0.4, alpha: 0.9, seed: 11, sag0: -5 }),
     makeRope(18, [19 * k, G.railY + 5 * k], capAnchor(-1, 7), { side: -1, ay: 5, by: 7, slack: 1.16, minLen: 38, g: 22, pull: 0.8, strands: 6, width: 3.8, twist: 1.8, phase: 1.9, alpha: 0.6, seed: 12, sag0: 6 }),
     // right side: capsule tail → collar (a wide sagging band)
     makeRope(24, capAnchor(1, 5), [W - 20 * k, G.railY + 3 * k], { side: 1, ay: 5, by: 3, slack: 1.06, minLen: 34, g: 30, pull: 1.0, strands: 12, width: 7.5, twist: 1.3, phase: 2.6, alpha: 0.9, seed: 13, sag0: 20 }),
@@ -1530,7 +1530,7 @@ function initWebs() {
   WEB.threads = [87, 150, 181, 252, 401].map((x, i) => {
     const len = (18 + R() * 12) * k, n = 7, ax = x * k, ay = G.railB - 1 * k;
     const pts = []; for (let j = 0; j < n; j++) pts.push({ x: ax, y: ay + (len * j) / (n - 1), px: ax, py: ay + (len * j) / (n - 1) });
-    return { pts, n, rest: len / (n - 1), ax, ay, spider: R() < 0.8, seed: i };
+    return { pts, n, rest: len / (n - 1), ax, ay, spider: R() < 0.8, seed: i, wave: (2 + R() * 3) * k };
   });
   // static claw-like fans at both collars
   WEB.fans = [];
@@ -1557,13 +1557,13 @@ function stepRope(r, dt, t, a, b) {
   r.extra = (r.extra || 0) * Math.exp(-dt / 4);           // silk loosened by a fling relaxes over a few seconds
   const target = Math.max(r.minLen * k, d * (r.slack + r.extra)) / (n - 1);
   r.rest += (target - r.rest) * (1 - Math.exp(-dt / (target > r.rest ? 0.12 : 0.9)));   // pays out fast, gathers slowly
-  const damp = Math.exp(-dt * 2.6), g = r.g * k, pull = r.pull;
+  const damp = Math.exp(-dt * 2.6), g = r.g * k, pull = r.pull / (1 + 8 * r.extra), rest0 = G.railY - (r.lift || 0) * k;
   for (let i = 1; i < n - 1; i++) {
     const p = P[i];
     const vx = (p.x - p.px) * damp, vy = (p.y - p.py) * damp;
     p.px = p.x; p.py = p.y;
-    const wind = (Math.sin(t * 0.9 + p.x * 0.03 + r.seed) * 7 + Math.sin(t * 2.3 + i * 0.7) * 3) * k;
-    const ay = g - pull * (p.y - G.railY) * 1;
+    const wind = (Math.sin(t * 0.9 + p.x * 0.03 + r.seed) * 3.5 + Math.sin(t * 2.3 + i * 0.7) * 1.5) * k;
+    const ay = g - pull * (p.y - rest0);
     p.x += vx + wind * dt * dt;
     p.y += vy + ay * dt * dt;
   }
@@ -1582,7 +1582,7 @@ function stepRope(r, dt, t, a, b) {
     for (let i = 0; i < n - 2; i++) {
       const p = P[i], q = P[i + 2];
       const dx = q.x - p.x, dy = q.y - p.y, dist = Math.sqrt(dx * dx + dy * dy) || 1e-4;
-      const min = r.rest * 1.55;
+      const min = r.rest * 1.8;   // stiff enough for long straight tape runs (no tight curls)
       if (dist < min) {
         const diff = (dist - min) / dist * 0.5 * 0.35, ox = dx * diff, oy = dy * diff;
         if (i > 0) { p.x += ox; p.y += oy; }
@@ -1595,7 +1595,7 @@ function stepRope(r, dt, t, a, b) {
 function flingWebs() {
   if (!WEB.ready) return;
   for (const r of WEB.ribbons) {
-    r.extra = Math.min(0.16, (r.extra || 0) + (r.side > 0 ? 0.1 : 0.05));   // the carriage return tears loose some slack
+    r.extra = Math.min(0.26, (r.extra || 0) + (r.side > 0 ? 0.22 : 0.05));   // the carriage return tears loose some slack
     const up = (r.side > 0 ? 260 : 120) * k * (0.7 + Math.random() * 0.6);
     for (let i = 1; i < r.n - 1; i++) {
       const f = i / (r.n - 1);
@@ -1632,7 +1632,7 @@ function stepWebs(dt, t) {
         const p = P[i];
         const vx = (p.x - p.px) * damp, vy = (p.y - p.py) * damp;
         p.px = p.x; p.py = p.y;
-        const wind = (Math.sin(t * 1.3 + th.seed * 1.7) * 9 + Math.sin(t * 3.1 + th.seed) * 3) * k * (i / th.n);
+        const wind = (Math.sin(t * 1.3 + th.seed * 1.7) * 5 + Math.sin(t * 3.1 + th.seed) * 1.5) * k * (i / th.n);
         p.x += vx + wind * h * h; p.y += vy + 320 * k * h * h;
       }
       P[0].x = th.ax; P[0].y = th.ay;
@@ -1670,14 +1670,24 @@ function smoothPath(P, X, Y) {
   X[m] = P[n - 1].x; Y[m] = P[n - 1].y;
   return m + 1;
 }
+function foldPath(P, X, Y) {
+  // every other point joined by straight runs: the recording's silk reads as folded tape, not a smooth cord
+  let m = 0; const n = P.length;
+  for (let i = 0; i < n - 1; i += 2) {
+    const a = P[i], b = P[Math.min(i + 2, n - 1)];
+    for (let s = 0; s < 4; s++) { const u = s / 4; X[m] = a.x + (b.x - a.x) * u; Y[m] = a.y + (b.y - a.y) * u; m++; }
+  }
+  X[m] = P[n - 1].x; Y[m] = P[n - 1].y;
+  return m + 1;
+}
 function drawRibbon(c, r, t, pP) {
   const X = RB.x, Y = RB.y, NX = RB.nx, NY = RB.ny, Wd = RB.w, F = RB.f;
-  const m = smoothPath(r.pts, X, Y);
+  const m = foldPath(r.pts, X, Y);
   // arc length → f, normals and the twisting half-width, computed once for all strands
   let total = 0; F[0] = 0;
   for (let i = 1; i < m; i++) { total += Math.hypot(X[i] - X[i - 1], Y[i] - Y[i - 1]); F[i] = total; }
   total = total || 1;
-  const ph = r.phase + Math.sin(t * 0.4 + r.seed) * 0.3, wk = r.width * k;
+  const ph = r.phase + Math.sin(t * 0.4 + r.seed) * 0.15, wk = r.width * k;
   for (let i = 0; i < m; i++) {
     const i0 = i > 0 ? i - 1 : 0, i1 = i < m - 1 ? i + 1 : m - 1;
     let tx = X[i1] - X[i0], ty = Y[i1] - Y[i0]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
@@ -1685,12 +1695,12 @@ function drawRibbon(c, r, t, pP) {
     const f = F[i] / total; F[i] = f;
     const env = 0.3 + 0.7 * Math.min(1, f * 9, (1 - f) * 9);   // stays a band right up to its anchors
     const tw = Math.cos(f * Math.PI * r.twist + ph);
-    Wd[i] = wk * env * (0.08 + 0.92 * Math.abs(tw)) * (tw < 0 ? -1 : 1);
+    Wd[i] = wk * env * (0.08 + 0.92 * Math.pow(Math.abs(tw), 0.35)) * (tw < 0 ? -1 : 1);   // flat tape with sharp folds
   }
   const R = mulberry(r.seed * 31);
   for (let sidx = 0; sidx < r.strands; sidx++) {
     const u = r.strands > 1 ? (sidx / (r.strands - 1)) * 2 - 1 : 0;
-    const wf = (0.6 + R() * 0.8) * 18, wp = R() * 6.28 + t * 0.6, wa = (0.25 + R() * 0.7) * k;
+    const wf = (0.6 + R() * 0.8) * 18, wp = R() * 6.28 + t * 0.3, wa = (0.15 + R() * 0.35) * k;
     c.strokeStyle = webColor(pP, r.alpha * (0.55 + R() * 0.6));
     c.beginPath();
     for (let i = 0; i < m; i++) {
@@ -1704,36 +1714,19 @@ function drawRibbon(c, r, t, pP) {
 }
 function webColor(pP, a) {
   const col = mix([118, 112, 100], [236, 236, 230], pP);
-  return rgba(col, a * lerp(0.3, 0.46, pP));
+  return rgba(col, a * lerp(0.27, 0.35, pP));
 }
 function drawWebs(c, t, pP) {
   if (!WEB.ready) return;
   c.save();
   c.lineCap = 'round'; c.lineJoin = 'round';
   c.lineWidth = Math.max(0.42, 0.45 * k);
-  // a bundle wrapped around the rail near the left collar
-  if (car.x - G.capHW > 58 * k) {
-    c.strokeStyle = webColor(pP, 0.8);
-    c.beginPath();
-    for (let i = 0; i < 9; i++) {
-      const R = mulberry(77 + i);
-      const x0 = (50 + (R() - 0.5) * 7) * k + Math.sin(t * 0.7 + i) * 0.5 * k, y0 = G.railY + (R() - 0.5) * 3 * k;
-      const rx = (4.5 + R() * 3.5) * k, ry = (11 + R() * 4) * k, rot = 0.3 + (R() - 0.5) * 0.5, tw = (R() - 0.5) * 6 * k;
-      // a twisted, slightly open loop around the pipe
-      for (let a = 0; a <= 6.4; a += 0.4) {
-        const ex = Math.cos(a) * rx + Math.sin(a * 2) * tw * 0.3, ey = Math.sin(a) * ry;
-        const x = x0 + ex * Math.cos(rot) - ey * Math.sin(rot), y = y0 + ex * Math.sin(rot) + ey * Math.cos(rot);
-        if (a === 0) c.moveTo(x, y); else c.lineTo(x, y);
-      }
-    }
-    c.stroke();
-  }
   // collar fans
   c.strokeStyle = webColor(pP, 0.85);
   c.beginPath();
   for (const f of WEB.fans) {
     for (const s of f.strands) {
-      const sway = Math.sin(t * 0.8 + s.ph) * 1.2 * k;
+      const sway = Math.sin(t * 0.8 + s.ph) * 0.7 * k;
       const ang = f.side < 0 ? s.ang : Math.PI - s.ang;
       const ex = f.x + Math.cos(ang) * s.len + sway, ey = f.y + Math.sin(ang) * s.len * 0.75 + (f.dir > 0 ? s.len * 0.25 : 0);
       const mx = (f.x + ex) / 2 + s.bend, my = (f.y + ey) / 2 + Math.abs(s.bend) * 0.5;
@@ -1745,14 +1738,14 @@ function drawWebs(c, t, pP) {
   c.beginPath();
   for (const th of WEB.threads) {
     const P = th.pts; c.moveTo(P[0].x, P[0].y);
-    for (let i = 1; i < th.n; i++) c.lineTo(P[i].x, P[i].y);
+    for (let i = 1; i < th.n; i++) { const f = i / (th.n - 1); c.lineTo(P[i].x + Math.sin(f * 7.5 + th.seed * 2.3) * th.wave * f, P[i].y); }
   }
   c.stroke();
   for (const th of WEB.threads) {
     if (!th.spider) continue;
-    const p = th.pts[th.n - 1];
+    const p = th.pts[th.n - 1], wx = Math.sin(7.5 + th.seed * 2.3) * th.wave;
     c.fillStyle = rgba(mix([96, 90, 80], [170, 170, 164], pP), lerp(0.55, 0.85, pP));
-    c.beginPath(); c.ellipse(p.x, p.y + 0.5 * k, 0.55 * k, 0.75 * k, 0, 0, 7); c.fill();
+    c.beginPath(); c.ellipse(p.x + wx, p.y + 0.5 * k, 0.55 * k, 0.75 * k, 0, 0, 7); c.fill();
   }
   // ribbons
   for (const r of WEB.ribbons) drawRibbon(c, r, t, pP);
