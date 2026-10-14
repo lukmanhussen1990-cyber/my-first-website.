@@ -1768,8 +1768,8 @@ const AU = {
     comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 3.5; comp.attack.value = 0.004; comp.release.value = 0.18;
     this.master = ctx.createGain(); this.master.gain.value = this.on ? 0.75 : 0;
     comp.connect(this.master); this.master.connect(ctx.destination);
-    this.sfx = ctx.createGain(); this.sfx.gain.value = 0.85; this.sfx.connect(comp);
-    this.music = ctx.createGain(); this.music.gain.value = 0.3; this.music.connect(comp);
+    this.sfx = ctx.createGain(); this.sfx.gain.value = 0.7; this.sfx.connect(comp);
+    this.music = ctx.createGain(); this.music.gain.value = 0.46; this.music.connect(comp);
     // small generated room for the music and the bell
     this.verb = ctx.createConvolver();
     const len = Math.floor(ctx.sampleRate * 1.9), ir = ctx.createBuffer(2, len, ctx.sampleRate);
