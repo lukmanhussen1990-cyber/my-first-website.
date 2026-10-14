@@ -2,7 +2,7 @@
 <html><head><meta charset="utf-8"><title>S12 closing lines</title>
 <link rel="stylesheet" href="../../shared/base.css">
 <script src="../../shared/lib.js"></script>
-<script src="../../shared/horizon.js"></script>
+<script src="../../shared/sky.js"></script>
 <style>
   #blk { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
   .ln { position: absolute; left: 0; top: 0; white-space: nowrap; font-family: 'Claude Serif'; line-height: 1; }
@@ -11,7 +11,7 @@
   #arrow { position: absolute; left: 0; top: 0; overflow: visible; }
 </style>
 </head><body>
-<div id="stage"><img class="plate" id="bg"><div id="blk"><svg id="arrow" width="1920" height="1080"></svg></div></div>
+<div id="stage"><div id="blk"><svg id="arrow" width="1920" height="1080"></svg></div></div>
 <script>
 // S12 (f1168-1267), the film's hero statement, redesigned at the client's request. Each word rises out of a clean
 // mask as the narrator says it (the reference's word timings); "right" is set semibold, and the two words that carry
@@ -19,7 +19,7 @@
 // the first line glides up instead of clearing, so the whole sentence ends on screen as one composed statement; a
 // fine coral line draws under "direction" and resolves into an arrow pointing forward; the first line brightens
 // back and the camera pushes in toward the cut to the Claude lockup. Serif = the voice Claude uses in this film.
-// Background: the client's photograph of the horizon at dawn (shared/horizon.js), continuing into the finale.
+// Background: the client's sunset photograph (shared/sky.js), continuing into the finale.
 const $ = id => document.getElementById(id);
 const expoOut = t => t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
 const expoInOut = t => t <= 0 ? 0 : t >= 1 ? 1 : t < 0.5 ? Math.pow(2, 20 * t - 10) / 2 : (2 - Math.pow(2, -20 * t + 10)) / 2;
@@ -75,7 +75,7 @@ window.renderFrame = async (f) => {
     ARR = { line: document.createElementNS(NS, 'path'), head: document.createElementNS(NS, 'path') };
     [ARR.line, ARR.head].forEach(p => { p.setAttribute('fill', 'none'); p.setAttribute('stroke', CORAL); p.setAttribute('stroke-width', 3); p.setAttribute('stroke-linecap', 'round'); p.setAttribute('stroke-linejoin', 'round'); p.setAttribute('pathLength', 1); p.setAttribute('stroke-dasharray', '1 1'); svg.appendChild(p); });
   }
-  await horizonCam($('bg'), f);   // the closing sky (client photograph), shared with S13
+  await skyCam($('stage'), f);    // the closing sky (client's sunset photograph), shared with S13
   const [A, B] = LINES;
   // camera: the reference's settle at the start and push-in at the end, around the statement's centre
   const S = kf(f, [[1168, 1.12], [1171, 1.06], [1174, 1.025], [1178, 1.0], [1252, 1.0], [1267, 1.085, 'inOutCubic']]);

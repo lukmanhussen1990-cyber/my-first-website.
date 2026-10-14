@@ -1,6 +1,9 @@
-"""Sound design + master for the redrawn film. Synthesised (no samples): soft whooshes on transitions, a warm low
+"""Sound design + master for the redrawn film. Synthesised (one sample, below): soft whooshes on transitions, a warm low
 thump + mallet-bell chord on the two "Claude" reveals, quiet key/UI ticks synced to on-screen typing and clicks,
 faint digital ticks under the decode effects, and a warm pad + chime under the end credit (the film is in G minor).
+One sample: the solo sung "ahh" that opens the "Introducing Claude Opus 5.5" film (audio/ahh_opus55_src.wav, cut from
+0.070-1.235 s of that film's soundtrack, where it plays alone), tuned F#4 -> G4 to sit in this film's key. It opens the
+film as the spark blooms, and its reverse-reverb swell closes it, so when the film loops the swell runs into the "ahh".
 The effects bus is ducked under the narration, mixed with the soundtrack, then mastered (gentle compression,
 loudness to -14 LUFS, true peak -1 dBTP) by ffmpeg.  usage: sound_design.py OUT.wav"""
 import sys, os, subprocess, json
@@ -70,10 +73,26 @@ def pad(notes, dur, att=2.2, rel=2.5):
             y += np.sin(2 * np.pi * fr * t + rng.uniform(0, 6.28)) + 0.18 * np.sin(2 * np.pi * 2 * fr * t) + 0.06 * np.sin(2 * np.pi * 3 * fr * t)
     env = np.minimum(1, t / att) * np.minimum(1, np.maximum(0, (dur - t) / rel)) ** 1.5
     y = lp(y * env, 2400); return y / np.abs(y).max()
+def ahh_note():
+    """The Opus 5.5 film's opening "ahh" (stereo, its own room), tape-tuned F#4 (368.93 Hz measured) -> G4 (392 Hz)."""
+    import soxr
+    x, xsr = sf.read(f'{S}/audio/ahh_opus55_src.wav'); assert xsr == SR
+    r = 392.0 / 368.93
+    y = soxr.resample(x, SR, SR / r, quality='VHQ')
+    on = int(np.argmax(np.abs(y).max(1) > np.abs(y).max() * 0.05))
+    return y, on
+def reverse_swell(x, on, rt=1.4):
+    """Reverse reverb of the note: the reversed note through a room, reversed back, kept up to the note's onset."""
+    ir = make_ir(rt); m = x.mean(1)[::-1]
+    w = np.stack([fftconvolve(m, ir[:, c]) for c in range(2)], 1)[::-1]
+    w = w[:len(ir) - 1 + on]
+    k = int(0.008 * SR); w[-k:] *= np.linspace(1, 0, k)[:, None]
+    return w / np.abs(w).max()
 G = {'G3': 196.0, 'Bb3': 233.08, 'D4': 293.66, 'F4': 349.23, 'G4': 392.0, 'A4': 440.0, 'Bb4': 466.16, 'D5': 587.33, 'G5': 783.99, 'Bb5': 932.33, 'D6': 1174.66}
 # =============================================================== events (frame numbers from the scenes)
 # opening: the starburst blooms on navy, then the triangle opens onto the clouds
-put(verb(0.7 * bell([G['G4'], G['D5']], 3.0, 0.6), 0.45), T(2), -27)
+AHH, AHH_ON = ahh_note()
+put(AHH, T(2) - AHH_ON / SR, 1.5)                                     # the "ahh" (onset on frame 2, as the spark blooms)
 put(verb(whoosh(1.1, 300, 2600)), T(14), -22, pan=-0.2)
 # "right one": faint decode ticks, a soft lock, the readout typing; de-res; "Meet" rises
 for k in range(16): put(blip(2200 + 2600 * rng.random(), 0.018), T(251 + k * 0.55) + 0.01 * rng.random(), -31, pan=rng.uniform(-0.5, 0.5))
@@ -132,15 +151,23 @@ put(whoosh(1.2, 250, 5200, 0.95), T(1268) - 1.12, -29)
 put(thump(70, 42, 1.2), T(1268), -17)
 put(verb(bell([G['G3'], G['D4'], G['G4'], G['Bb4'], G['D5']], 4.5, 0.9), 0.55), T(1268), -24)
 put(verb(whoosh(0.6, 1200, 6000, 0.35, 0.7), 0.3), T(1276), -31, pan=0.35)
-put(verb(pad([G['G3'], G['Bb3'], G['D4'], G['A4']], T(1453) - T(1340) + 0.2), 0.4), T(1340), -33)
-put(verb(bell([G['D5'], G['G5']], 2.6, 0.5), 0.5), T(1366), -33)
-put(verb(bell([G['Bb5']], 2.2, 0.4), 0.5), T(1376), -35)
+put(verb(whoosh(0.7, 300, 1500, 0.6), 0.3), T(1328), -36)                                 # the lockup lifts
+put(verb(pad([G['G3'], G['Bb3'], G['D4'], G['A4']], T(1440) - T(1336), 2.2, 2.6), 0.4), T(1336), -33)
+put(verb(bell([G['D5'], G['G5']], 2.6, 0.5), 0.5), T(1340), -33)                          # the credit
+put(verb(bell([G['Bb5']], 2.2, 0.4), 0.5), T(1350), -35)
+# the loop: the credit rises out, the wordmark folds back into the mark, night falls, the mark winds down into the
+# opening's point of light while the "ahh" swells in reverse into the last frame; the film's first frames carry the "ahh"
+put(verb(whoosh(0.35, 2500, 7000, 0.5, 1.2), 0.25), T(1400), -38, pan=-0.2)
+put(verb(whoosh(0.5, 6000, 1200, 0.25, 0.8), 0.3), T(1402), -33, pan=0.25)
+SW = reverse_swell(AHH, AHH_ON)
+put(SW, N / SR - len(SW) / SR, -21)
 # =============================================================== duck under the narration, mix, master
 voc, vsr = sf.read(f'{S}/audio/vocals_htdemucs_ft.wav'); voc = voc.mean(1) if voc.ndim > 1 else voc
 env = np.sqrt(lp(voc ** 2, 8.0, 1).clip(0)); env = np.pad(env, (0, max(0, N - len(env))))[:N]
 env = env / (np.percentile(env[env > 1e-4], 95) + 1e-9)
 duck = 1 - 0.55 * np.clip(env, 0, 1)
 mix = base + fx * duck[:, None]
+k = int(0.003 * SR); mix[:k] *= np.linspace(0, 1, k)[:, None]; mix[-k:] *= np.linspace(1, 0, k)[:, None]   # no click at the loop point
 tmp = f'{S}/audio/work/sd_mix.wav'; os.makedirs(os.path.dirname(tmp), exist_ok=True)
 sf.write(tmp, mix.astype(np.float32), SR, subtype='FLOAT')
 out = sys.argv[1]

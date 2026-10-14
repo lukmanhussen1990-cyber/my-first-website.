@@ -34,7 +34,7 @@ class ClaudeLockup {
     this.base = o.cy + 0.36 * o.size;
   }
   box() { return { x0: this.markX - this.o.burst, x1: this.wordX + this.wordW, y0: this.base - 0.8 * this.o.size, y1: this.base + 0.1 * this.o.size }; }
-  render(f, { scale = 1, dy = 0, op = 1, blur = 0 } = {}) {
+  render(f, { scale = 1, dy = 0, op = 1, blur = 0, wipe = 1 } = {}) {
     const o = this.o, t0 = o.t0, R = o.burst;
     this.root.style.transformOrigin = `${o.cx}px ${o.cy}px`;
     this.root.style.transform = `translateY(${dy.toFixed(2)}px) scale(${scale.toFixed(5)})`;
@@ -47,7 +47,7 @@ class ClaudeLockup {
     this.mark.setAttribute('transform', `translate(${mx.toFixed(2)} ${o.cy.toFixed(2)}) rotate(${(-110 * (1 - a)).toFixed(2)}) scale(${(R * (0.55 + 0.45 * a)).toFixed(3)})`);
     this.mark.setAttribute('opacity', clamp((f - t0 + 0.5) / 2.5).toFixed(3));
     // wordmark: revealed in reading order by a mask wiping left to right from the mark's side, easing in from the left
-    const p = clExpoOut(clamp((f - t0 - 8) / 16));
+    const p = Math.min(clExpoOut(clamp((f - t0 - 8) / 16)), wipe);   // wipe < 1 folds the word back into the mark
     const top = this.base - this.bOff, x0 = this.wordX - 6;
     Object.assign(this.clip.style, { left: x0.toFixed(2) + 'px', top: (top - 0.25 * o.size).toFixed(2) + 'px', width: ((this.wordW + 14) * p).toFixed(2) + 'px', height: (this.wordH + 0.5 * o.size).toFixed(2) + 'px' });
     this.word.style.left = (6 - 26 * (1 - p)).toFixed(2) + 'px'; this.word.style.top = (0.25 * o.size).toFixed(2) + 'px';

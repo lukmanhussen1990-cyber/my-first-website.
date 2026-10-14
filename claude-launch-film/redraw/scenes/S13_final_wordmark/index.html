@@ -4,48 +4,80 @@
 <script src="../../shared/lib.js"></script>
 <script src="../../shared/components.js"></script>
 <script src="../../shared/brand.js"></script>
-<script src="../../shared/horizon.js"></script>
-<style> body, #stage { background: #000; } </style>
+<script src="../../shared/sky.js"></script>
+<style> body, #stage { background: rgb(1, 3, 19); } #spark { position: absolute; left: 0; top: 0; overflow: visible; } </style>
 </head><body>
-<div id="stage"><img class="plate" id="bg"></div>
+<div id="stage"><svg id="spark" width="1920" height="1080"><defs><filter id="sb" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur id="sbg" stdDeviation="0"/></filter></defs><path id="sp" fill="#D97757"/></svg></div>
 <script>
-// S13 (f1268-1453): the finale as one continuous shot. On the narrator's last "Claude" the coral mark turns in under
-// the dawn horizon (continuing from S12) and the wordmark slides out from behind it; the lockup eases back slowly. After the reference ends (f1349) the lockup lifts to
-// make room and the credit 'Built by Imran using Opus 5.5' arrives word by word, then everything softly fades out.
+// S13 (f1268-1453): the finale as one continuous shot on the closing sky (shared/sky.js, continuing from S12). On the
+// narrator's last "Claude" the coral mark turns in and the wordmark slides out from behind it; the lockup lifts and the
+// credit 'Built by Imran using Opus 5.5' arrives word by word. Then the sun goes down and the film closes into its own
+// opening: the credit rises out, the wordmark folds back into the mark, the mark returns to the centre of the frame and
+// winds down into the point of light the film opens on (S01 frame 1: same mark, colour, place and spin, on the same
+// navy), so the last frame leads straight into the first and the film loops.
 const stage = document.getElementById('stage');
-const W = [238, 238, 250], G = [150, 150, 172], VIO = [146, 128, 246], BLU = [112, 162, 252];
 let LK = null;
 // credit: words rise out of clean masks, "Imran" and "Opus 5.5" in white semibold, the rest in soft grey
 const CR = [['Built', 0], ['by', 0], ['Imran', 1], ['using', 0], ['Opus', 1], ['5.5', 1]];
+const CR_T0 = 1340, CR_OUT = 1400;
 let credit = null;
 function buildCredit() {
   const el = document.createElement('div'); el.style.cssText = "position:absolute;left:0;top:0;white-space:nowrap;font-family:'Inter';font-size:34px;letter-spacing:-0.005em;line-height:1";
   stage.appendChild(el);
   const ws = CR.map(([t, b]) => { const box = document.createElement('div'); box.style.cssText = 'position:absolute;top:0;overflow:hidden;padding:6px 1px 10px';
-    const sp = document.createElement('span'); sp.textContent = t; sp.style.cssText = `display:inline-block;font-weight:${b ? 600 : 400};color:${b ? '#FFFFFF' : 'rgba(236,234,248,0.62)'}`;
+    const sp = document.createElement('span'); sp.textContent = t; sp.style.cssText = `display:inline-block;font-weight:${b ? 600 : 400};color:${b ? '#FFFFFF' : 'rgba(236,234,248,0.72)'}`;
     box.appendChild(sp); el.appendChild(box); return { box, sp }; });
   let x = 0; const gap = 9.5;
   ws.forEach(w => { w.box.style.left = x + 'px'; x += w.box.getBoundingClientRect().width - 2 + gap; });
   credit = { el, ws, width: x - gap };
 }
-function renderCredit(f, fade) {
-  const BASE_Y = 612, t0 = 1366;
+function renderCredit(f) {
+  const BASE_Y = 612;
   credit.el.style.left = (960 - credit.width / 2).toFixed(1) + 'px'; credit.el.style.top = (BASE_Y - 34 * 0.86 - 6).toFixed(1) + 'px';
-  credit.el.style.opacity = fade.toFixed(3);
-  credit.ws.forEach((w, i) => { const p = clExpoOut(clamp((f - t0 - i * 2.4) / 20)); w.sp.style.transform = `translateY(${((1 - p) * 52).toFixed(2)}px)`; });
+  credit.ws.forEach((w, i) => {
+    const p = clExpoOut(clamp((f - CR_T0 - i * 2.4) / 20));
+    const q = ease.inOutCubic(clamp((f - CR_OUT - i * 0.8) / 7));          // out: each word rises on out of its mask
+    w.sp.style.transform = `translateY(${((1 - p) * 52 - q * 52).toFixed(2)}px)`;
+    w.box.style.visibility = q >= 1 ? 'hidden' : 'visible';
+  });
+}
+// the S01 opening mark at frame 1 (SPARK_R 4.0 x 1.35 tip radius, 16 deg, centre 962/539.5) is where the film loops to
+const LOOP = { x: 962.0, y: 539.5, rotEnd: 360 + 16 - 27.4, rotStart: 1414, tipEnd: 3.5 };   // one turn, landing one opening-frame short of 16 deg
+function sparkTip(f) {
+  if (f < 1430) return lerp(52.2, 58, ease.inOutCubic(clamp((f - 1414) / 16)));
+  return 58 - (58 - LOOP.tipEnd) * Math.pow(clamp((f - 1430) / 23), 4);
+}
+function sparkRot(f) {                                                        // winds up to S01's opening spin rate (27.4 deg/frame)
+  const n = 1453 - LOOP.rotStart, total = LOOP.rotEnd, p = 27.4 * n / total;
+  return total * Math.pow(clamp((f - LOOP.rotStart) / n), p);
 }
 
 window.renderFrame = async (f) => {
-  const bg = document.getElementById('bg');
-  await horizonCam(bg, f, kf(f, [[1428, 1], [1452, 0]]));   // the closing sky continues from S12 and fades out with the credit
-  if (!LK) { await ClaudeLockup.ready(); await document.fonts.load("600 34px 'Inter'"); LK = new ClaudeLockup(stage, { cx: 960, cy: 524, size: 150, burst: 58, gap: 32, t0: 1268 }); }
-  const fade = kf(f, [[1428, 1], [1450, 0]]);
-  const lift = ease.inOutCubic(clamp((f - 1352) / 22));
-  const sc = kf(f, [[1268, 1.05], [1348, 1.0]]) * (1 - 0.1 * lift);
-  LK.render(f, { scale: sc, dy: -40 * lift, op: fade });
+  await skyCam(stage, f);
+  if (!LK) { await ClaudeLockup.ready(); await document.fonts.load("600 34px 'Inter'"); await document.fonts.load("400 34px 'Inter'");
+    LK = new ClaudeLockup(stage, { cx: 960, cy: 524, size: 150, burst: 58, gap: 32, t0: 1268 }); stage.appendChild(document.getElementById('spark')); }
+  const lift = ease.inOutCubic(clamp((f - 1328) / 22));
+  const sc = kf(f, [[1268, 1.05], [1328, 1.0]]) * (1 - 0.1 * lift);
+  const wipe = 1 - ease.inOutCubic(clamp((f - 1402) / 14));                 // the wordmark folds back into the mark
+  LK.render(f, { scale: sc, dy: -40 * lift, wipe });
   if (!credit) buildCredit();
-  credit.el.style.display = f >= 1365 ? 'block' : 'none';
-  if (f >= 1365) renderCredit(f, fade);
+  credit.el.style.display = f >= CR_T0 - 1 && f < CR_OUT + 14 ? 'block' : 'none';
+  if (credit.el.style.display === 'block') renderCredit(f);
+  // from 1414 the mark is drawn here: it glides back to the centre, then winds down into the opening's point of light
+  const sp = document.getElementById('sp');
+  if (f < 1414) { sp.setAttribute('d', ''); LK.mark.style.visibility = 'visible'; return; }
+  LK.mark.style.visibility = 'hidden';
+  const mx0 = 960 + (LK.markX - 960) * sc, my0 = 524 - 40 * lift;            // the lockup mark's place on screen
+  const g = ease.inOutQuint(clamp((f - 1414) / 18));
+  const x = lerp(mx0, LOOP.x, g), y = lerp(my0, LOOP.y, g);
+  const tip = sparkTip(f), rot = sparkRot(f);
+  sp.setAttribute('d', CL_BURST_D);
+  sp.setAttribute('transform', `translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${rot.toFixed(3)}) scale(${tip.toFixed(4)})`);
+  // the opening's motion softness (S01): blur grows with the speed of the spin and the shrink
+  const dR = Math.abs(sparkTip(f + 0.5) - sparkTip(f - 0.5)) / 1.35, dA = Math.abs(sparkRot(f + 0.5) - sparkRot(f - 0.5)) * Math.PI / 180 * tip / 1.35;
+  const sd = 1.35 * Math.min(2, 0.3 + 0.05 * Math.hypot(dR, dA));
+  document.getElementById('sbg').setAttribute('stdDeviation', (sd / Math.max(tip, 1)).toFixed(4));
+  sp.setAttribute('filter', sd > 0.2 ? 'url(#sb)' : '');
 };
 window.sceneReady = document.fonts.ready;
 </script>

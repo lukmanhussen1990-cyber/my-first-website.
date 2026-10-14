@@ -10,8 +10,8 @@ for a shot-by-shot comparison.
 
 ## Redrawn version
 
-`claude_launch_film_redraw_v12.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
-scene is now rebuilt:
+`claude_launch_film_redraw_v13.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
+scene is now rebuilt. It is made to play on loop: the last frame leads straight into the first.
 
 - **Opening:** the four-point sparkle is replaced by the orange Claude starburst, and the
   clouds open through a growing, turning triangle instead of the scalloped circle.
@@ -27,8 +27,18 @@ scene is now rebuilt:
 - **Claude thinking (processing scene):** Claude visibly works on the real anatomy model from the previous shot: a scan
   brings the back from grey to colour, the lower back is pinned in coral, and lines map it to the muscles it works with,
   beside the editorial status text.
-- **Closing sky:** the ending (statement, Claude lockup, credit) plays over the client's photograph of the horizon
-  at dawn as one continuous shot (`shared/horizon.js`).
+- **Closing sky:** the ending (statement, Claude lockup, credit) plays over the client's sunset photograph as one
+  continuous shot (`shared/sky.js`, plate from `sky_plate.py`): the camera pushes slowly toward the sun, a soft
+  shade keeps the type readable, and through the finale the sun goes down (a crossfade to a dusk grade of the same
+  photograph while the camera tilts up and the sun sinks out of frame).
+- **Seamless loop:** at the end the credit rises out, the wordmark folds back into the mark, night falls from the
+  top of the frame to the opening's navy, and the mark returns to the centre and winds down into the point of light
+  the film opens on: the same mark, colour, place and spin rate as the first frame, so the film repeats without a
+  visible cut. The sound wraps too: a reverse-reverb swell of the opening "ahh" rises into the last frame and the
+  "ahh" itself starts on the second frame.
+- **Opening "ahh":** the solo sung note that opens the "Introducing Claude Opus 5.5" film, cut from that film's
+  soundtrack where it plays alone and tuned from F#4 to G4 to sit in this film's key, now opens the film as the
+  starburst blooms.
 - **Hero statement:** "Because the right diagnosis / starts with the right direction" builds word by word with the
   narration into one two-line serif composition, the key words in Claude coral and an arrow drawn under "direction".
 - **Claude logo reveals:** at "Meet Claude" and in the finale the coral mark turns in and the wordmark wipes out
@@ -50,12 +60,12 @@ scene is now rebuilt:
   `dr.imranhussain@example.com`) and About text are put into the real footage: the card is tracked
   frame by frame, each old item is filled from its surroundings, and the new one is added with the
   footage's own blur, motion smear and fade.
-- **End credit:** "Built by Imran using Opus 5.5" plays at the end, over a ring-out of
-  the music.
+- **End credit:** "Built by Imran using Opus 5.5" rises in under the lifted Claude lockup and holds before the
+  film folds back into its opening.
 
 | Frames | Scene | Status |
 |---|---|---|
-| 1–60 | opening, Claude starburst, triangle reveal | redrawn |
+| 1–60 | opening, Claude starburst, triangle reveal | redrawn; the opening "ahh" sounds as the starburst blooms |
 | 61–250 | cloud chat | redrawn (Claude composer) |
 | 251–350 | "right one" → "Meet Claude" | redrawn; "right one" decodes from machine glyphs, HUD brackets lock on and "MATCH FOUND" types in; on the narrator's "Claude" the coral mark turns in and the white wordmark wipes out beside it in reading order |
 | 351–445 | dashboard window | redrawn UI over the real background and glass; livelier per-letter headline (drop-in, light sweep, flowing gradient, glow, staggered exit) |
@@ -66,8 +76,8 @@ scene is now rebuilt:
 | 863–972 | Claude's reply | redrawn Claude chat (user bubble, serif reply streaming with the starburst, composer) over the tracked, scrolling window; the redrawn UI takes on the footage's measured focus blur |
 | 973–1090 | doctor cards, "right one" | redrawn over the reference light field (cards and titles removed); the centre doctor is Dr. Imran Hussain; futuristic "right one" with a targeting lock on his card and a "Best match" chip |
 | 1091–1167 | profile and analytics | "Right outcome" redrawn; the profile footage now shows Dr. Imran Hussain (name, breadcrumb, photo, e-mail, About), tracked and blur-matched through the fast scroll |
-| 1168–1267 | closing lines | over the client's photograph of the horizon at dawn (slow camera drift, the dawn warming), the hero statement: words rise out of masks as the narrator says them in a large serif, "right" semibold and "diagnosis" / "direction" in Claude coral built letter by letter; the first line glides up so the whole sentence ends on screen as one composition, and a fine coral line under "direction" resolves into an arrow pointing forward |
-| 1268–1453 | Claude lockup and end credit | one continuous shot on the same dawn horizon: the coral mark turns in and the wordmark wipes out beside it; after the reference ends the lockup lifts and "Built by Imran using Opus 5.5" rises in word by word |
+| 1168–1267 | closing lines | over the client's sunset photograph (slow push toward the sun, a soft shade behind the type), the hero statement: words rise out of masks as the narrator says them in a large serif, "right" semibold and "diagnosis" / "direction" in Claude coral built letter by letter; the first line glides up so the whole sentence ends on screen as one composition, and a fine coral line under "direction" resolves into an arrow pointing forward |
+| 1268–1453 | Claude lockup, end credit, loop | one continuous shot on the same sunset sky: the coral mark turns in and the wordmark wipes out beside it; the lockup lifts and "Built by Imran using Opus 5.5" rises in word by word; then the sun goes down, night falls to navy, the credit rises out, the wordmark folds back into the mark and the mark winds down into the opening's point of light (loop point) |
 
 The redraw sources are in `redraw/`:
 
@@ -81,7 +91,9 @@ The redraw sources are in `redraw/`:
 - `s07_refine.py`: masked ECC refinement of the anatomy-viewer window tracking.
 - `shared/brand.js`: the Claude lockup reveal used by both logo moments. `wm_plates.py` cleans their backgrounds.
 - `s08_model.py`: cuts the anatomy model out of the footage (colour key, edge clean-up) for the thinking shot.
-- `sound_design.py`: synthesises the effects, ducks them under the narration, mixes and masters the soundtrack.
+- `sound_design.py`: synthesises the effects, places the opening "ahh" and its reverse swell at the loop point,
+  ducks the effects under the narration, mixes and masters the soundtrack.
+- `sky_plate.py`: prepares the client's sunset photograph (upscale, grain) and its dusk grade for `shared/sky.js`.
 - `shared/hud.js`: the decode title and HUD brackets used by both "right one" moments.
 - `s11_*.py`, `textr.py`: the profile-page doctor swap. `s11_track.py` / `s11_refine*.py` track the page
   (SIFT, then masked ECC on static content), `s11_calib.py` fits the original fonts, `s11_edit.py` builds the
