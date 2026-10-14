@@ -946,8 +946,12 @@ let saveTimer = 0;
 function onTextChanged() {
   counterEl.textContent = fmt(text.length) + ' / 3 000';
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => store.set(LS.text, text), 250);
+  saveTimer = setTimeout(saveNow, 250);
 }
+function saveNow() { clearTimeout(saveTimer); store.set(LS.text, text + pending); }
+// never lose the last keystrokes when the tab is closed or the app is backgrounded
+window.addEventListener('pagehide', saveNow);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
 const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 /* ------------------------------------------------------------- input -- */
