@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=overlays-content">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-visual">
 <meta name="theme-color" content="#181818">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -46,7 +46,8 @@
   #dial svg .ln { stroke: #e9e4d6; }
   #controls { position: absolute; left: 0; top: 0; width: 100%; opacity: 0; pointer-events: none; }
   #controls.on { pointer-events: auto; }
-  .sl { position: absolute; touch-action: none; }
+  .sl { position: absolute; touch-action: none; outline: none; }
+  .sl:focus-visible { outline: 1px dashed rgba(200,200,190,.5); outline-offset: 2px; }
   .sl-lbl { position: absolute; left: 0; right: 0; top: 0; display: flex; justify-content: space-between;
             color: #b4b4b1; text-transform: uppercase; white-space: pre; line-height: 1; -webkit-text-stroke: 0.35px #31312e; }
   .sl-lbl .v { text-transform: none; }
@@ -102,9 +103,9 @@
   </button>
 
   <div id="controls">
-    <div class="sl" id="sl-light"><div class="sl-lbl"><span>LIGHT</span><span class="v">Low</span></div><div class="sl-track"><svg></svg><div class="sl-thumb"></div></div></div>
-    <div class="sl" id="sl-spread"><div class="sl-lbl"><span>SPREAD</span><span class="v">144<span class="deg">°</span></span></div><div class="sl-track"><svg></svg><div class="sl-thumb"></div></div></div>
-    <div class="sl" id="sl-reach"><div class="sl-lbl"><span>REACH</span><span class="v">210%</span></div><div class="sl-track"><svg></svg><div class="sl-thumb"></div></div></div>
+    <div class="sl" id="sl-light" role="slider" tabindex="-1" aria-label="Light"><div class="sl-lbl"><span>LIGHT</span><span class="v">Low</span></div><div class="sl-track"><svg></svg><div class="sl-thumb"></div></div></div>
+    <div class="sl" id="sl-spread" role="slider" tabindex="-1" aria-label="Spread"><div class="sl-lbl"><span>SPREAD</span><span class="v">144<span class="deg">°</span></span></div><div class="sl-track"><svg></svg><div class="sl-thumb"></div></div></div>
+    <div class="sl" id="sl-reach" role="slider" tabindex="-1" aria-label="Reach"><div class="sl-lbl"><span>REACH</span><span class="v">210%</span></div><div class="sl-track"><svg></svg><div class="sl-thumb"></div></div></div>
   </div>
   <button id="dial" class="icon" aria-label="Lamp on or off">
     <svg viewBox="-16 -16 32 32" width="32" height="32">
@@ -179,12 +180,14 @@ const store = {
 let W = 440, H = 956, k = 1, dpr = 1;
 const G = {};
 let stableW = 0, stableH = 0;
+const TOUCH = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window;
 
 function measure() {
-  const iw = window.innerWidth, ih = window.innerHeight;
-  // keep the layout height stable while the on-screen keyboard is open
-  if (Math.abs(iw - stableW) > 1 || document.activeElement !== input || ih > stableH) { stableW = iw; stableH = ih; }
-  H = stableH;
+  const iw = Math.max(1, window.innerWidth), ih = Math.max(1, window.innerHeight);
+  // on touch devices keep the layout height stable while the on-screen keyboard is open (a shorter
+  // window with the textarea focused); desktops always follow the window
+  if (!TOUCH || Math.abs(iw - stableW) > 1 || document.activeElement !== input || ih > stableH) { stableW = iw; stableH = ih; }
+  H = Math.max(200, stableH);
   // portrait phones: full width (max 440). Wide/short screens (desktop, landscape): keep the
   // phone composition by also limiting the column to 0.6 × height.
   W = H / iw < 1.3 ? Math.min(iw, 440, H * 0.6) : Math.min(iw, 440);
@@ -748,6 +751,9 @@ function setLamp(on, instant) {
   }
   store.set(LS.lamp, on ? '1' : '0');
   controlsEl.classList.toggle('on', on);
+  controlsEl.setAttribute('aria-hidden', on ? 'false' : 'true');
+  for (const el of controlsEl.querySelectorAll('.sl')) el.tabIndex = on ? 0 : -1;
+  dialEl.setAttribute('aria-pressed', on ? 'true' : 'false');
 }
 function stepChannels(dt) {
   for (const key in CH) {
@@ -930,7 +936,9 @@ function deleteChar(quiet) {
   if (!text.length) return false;
   const t = now();
   const before = lines.length;
-  snapCarriage();
+  // stop the carriage where it is: a still-pending advance from the struck letter is dropped
+  // (applying it first would make the carriage hop forward before sliding back)
+  car.pending = null; car.from = car.to = car.x; car.dur = 0;
   appearAt.delete(text.length - 1);
   if (!quiet) AU.backspace();
   text = text.slice(0, -1);
@@ -960,7 +968,7 @@ const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 // happen at once (backspace animation), additions are queued and struck one by one; a big
 // paste is flushed in a single batch.
 let pending = '';
-let nextStrikeAt = 0;
+let nextStrikeAt = 0, pendingGap = 0.034;   // queued characters strike this far apart (s)
 let composing = false;
 input.addEventListener('compositionstart', () => { composing = true; });
 input.addEventListener('compositionend', () => { composing = false; syncInput(); });
@@ -969,7 +977,10 @@ function syncInput() {
   let v = input.value.replace(/\r/g, '').replace(/\t/g, ' ').replace(UNTYPEABLE, '');
   if (v.length > MAX) v = v.slice(0, MAX);
   const cur = text + pending;
-  if (v === cur) return;
+  if (v === cur) {   // nothing typeable changed (e.g. an emoji was filtered): tidy the textarea anyway
+    if (!composing && input.value !== v) { input.value = v; keepCaretAtEnd(); }
+    return;
+  }
   let p = 0; const n = Math.min(v.length, cur.length);
   while (p < n && v[p] === cur[p]) p++;
   if (p < text.length) {               // something already on paper changed: rub it out
@@ -989,7 +1000,8 @@ function pumpPending(t) {
   if (!pending || t < nextStrikeAt) return;
   const ch = pending[0]; pending = pending.slice(1);
   typeChar(ch);
-  nextStrikeAt = t + (pending.length ? 0.034 : 0);
+  nextStrikeAt = t + (pending.length ? pendingGap : 0);
+  if (!pending) pendingGap = 0.034;
 }
 function flushPending() {
   // large paste: everything lands at once with a single carriage return
@@ -999,7 +1011,8 @@ function flushPending() {
   snapCarriage();
   text += add; lines = wrap(text); lastKey = t;
   invalidateText();
-  if (lines.length !== before) { scrollAnim.from = scrollOffset(t) + (lines.length - before); scrollAnim.t0 = t; retargetShift(t); retract.t0 = t; fx.zap(true); AU.carriageReturn(10); }
+  // feed at most a couple of lines visibly (a long paste would otherwise fly in from far below)
+  if (lines.length !== before) { scrollAnim.from = Math.min(2, scrollOffset(t) + (lines.length - before)); scrollAnim.t0 = t; retargetShift(t); retract.t0 = t; fx.zap(true); AU.carriageReturn(10); }
   else AU.clack();
   slideTo(carriageTarget(), 0.267, E.outSine, 0);
   onTextChanged();
@@ -1013,7 +1026,6 @@ input.addEventListener('select', keepCaretAtEnd);
 input.addEventListener('keyup', keepCaretAtEnd);
 input.addEventListener('click', keepCaretAtEnd);
 input.addEventListener('keydown', (e) => {
-  if (e.key === 'Tab') e.preventDefault();
   if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')) e.preventDefault();
   if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'PageUp') { e.preventDefault(); }
 });
@@ -1022,11 +1034,15 @@ function focusInput() {
   keepCaretAtEnd();
 }
 tapEl.addEventListener('click', focusInput);
+// a tap on the paper while typing must not blur the textarea (that would hide and re-show the keyboard)
+tapEl.addEventListener('mousedown', (e) => { if (document.activeElement === input) e.preventDefault(); });
 // buttons and sliders must not steal focus from the hidden textarea (keeps the phone keyboard up,
 // and on desktop the next keystroke still lands on the page)
 for (const el of document.querySelectorAll('button, .sl')) el.addEventListener('mousedown', (e) => e.preventDefault());
 document.addEventListener('keydown', (e) => {
   if (document.activeElement === input || e.metaKey || e.ctrlKey || e.altKey) return;
+  // Enter/Space on a focused button or slider operate that control instead of typing
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('button, .sl')) return;
   if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') focusInput();
 });
 
@@ -1060,7 +1076,9 @@ $('#hintBtn').addEventListener('click', () => {
   focusInput();
   if (text.length || pending) return;
   const line = FIRST_LINES[(Math.random() * FIRST_LINES.length) | 0];
-  input.value = line; syncInput();
+  // typed out key by key at a relaxed pace (not flushed like a paste)
+  input.value = line; keepCaretAtEnd();
+  pending = line; pendingGap = 0.085; nextStrikeAt = 0;
 });
 
 /* ------------------------------------------------------------- sliders -- */
@@ -1107,6 +1125,8 @@ function setSlider(key, v, silent) {
   if (!silent) { const pf = (prev - s.min) / (s.max - s.min); if (Math.floor(pf * 8 + 0.5) !== Math.floor(f * 8 + 0.5)) AU.tick(); }
   s.el.querySelector('.sl-thumb').style.left = (f * (s.w - s.tw)) + 'px';
   s.el.querySelector('.v').innerHTML = s.fmt(v);
+  s.el.setAttribute('aria-valuemin', s.min); s.el.setAttribute('aria-valuemax', s.max);
+  s.el.setAttribute('aria-valuenow', Math.round(v * 100) / 100); s.el.setAttribute('aria-valuetext', s.el.querySelector('.v').textContent);
   if (!silent && prev !== v) { lightDirty = true; store.set(LS.sliders, JSON.stringify(sliders)); }
 }
 for (const key in SL) {
@@ -1121,6 +1141,15 @@ for (const key in SL) {
   s.el.addEventListener('pointermove', (e) => { if (drag) setSlider(key, toVal(e)); });
   const end = () => { if (drag) { drag = false; L.scale = 0.5; lightDirty = true; } };
   s.el.addEventListener('pointerup', end); s.el.addEventListener('pointercancel', end);
+  // keyboard: arrows step one tick (1/8 of the range), Page keys two, Home/End to the ends
+  s.el.addEventListener('keydown', (e) => {
+    if (!lampOn) return;
+    const step = (s.max - s.min) / 8, map = { ArrowLeft: -step, ArrowDown: -step, ArrowRight: step, ArrowUp: step, PageDown: -2 * step, PageUp: 2 * step };
+    let v = null;
+    if (e.key in map) v = sliders[key] + map[e.key]; else if (e.key === 'Home') v = s.min; else if (e.key === 'End') v = s.max;
+    if (v === null) return;
+    e.preventDefault(); setSlider(key, v);
+  });
 }
 
 /* ------------------------------------------------------------- effects -- */
@@ -1204,6 +1233,7 @@ function draw(t) {
     const y = lastY - (n - 1 - li - off) * G.lineH;
     if (y < G.paperTop - G.lineH) break;
     minLi = li;
+    if (y > G.sceneBot + G.lineH) continue;   // still below the visible strip (e.g. mid-feed after a paste)
     if (!lines[li].idx.length) continue;
     const fade = clamp((y - G.paperTop - 6 * k) / (34 * k), 0, 1);
     if (fade <= 0) continue;
@@ -1748,7 +1778,10 @@ function drawTWeb(c, cx, capTop, barBot, t, pP) {
 function onViewport() {
   const vv = window.visualViewport;
   let shift = 0, top = 0;
-  if (vv) {
+  // the on-screen keyboard shrinks the visual viewport (iOS, and Android with resizes-visual):
+  // follow it and lift the page just enough to keep the typing line, rail and capsule in view.
+  // While the user is pinch-zoomed we leave panning to the browser.
+  if (vv && vv.scale < 1.01) {
     top = vv.offsetTop;
     const need = G.railY + 34 * k;
     if (need > vv.height) shift = Math.min(need - vv.height, Math.max(0, G.base - G.lineH * 2.2));
@@ -1777,8 +1810,8 @@ const AU = {
     comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 3.5; comp.attack.value = 0.004; comp.release.value = 0.18;
     this.master = ctx.createGain(); this.master.gain.value = this.on ? 0.75 : 0;
     comp.connect(this.master); this.master.connect(ctx.destination);
-    this.sfx = ctx.createGain(); this.sfx.gain.value = 0.7; this.sfx.connect(comp);
-    this.music = ctx.createGain(); this.music.gain.value = 0.46; this.music.connect(comp);
+    this.sfx = ctx.createGain(); this.sfx.gain.value = 0.8; this.sfx.connect(comp);
+    this.music = ctx.createGain(); this.music.gain.value = 0.52; this.music.connect(comp);
     // small generated room for the music and the bell
     this.verb = ctx.createConvolver();
     const len = Math.floor(ctx.sampleRate * 1.9), ir = ctx.createBuffer(2, len, ctx.sampleRate);
@@ -1792,19 +1825,22 @@ const AU = {
     this.noise = nb;
     return true;
   },
+  resumeAt: -9,
   resume() {
     if (!this.init()) return;
-    if (this.ctx.state !== 'running' && this.on && !document.hidden) this.ctx.resume().catch(() => {});
+    if (this.ctx.state !== 'running' && this.on && !document.hidden) { this.resumeAt = performance.now(); this.ctx.resume().catch(() => {}); }
     if (this.on && !this.musicOn) this.startMusic();
     if (this.on && lampOn && !this.hum) this.humOn(0.4);
   },
-  ready() { return this.ctx && this.on && this.ctx.state !== 'closed'; },
+  // only schedule sounds on a running clock (a paused context would queue them all for later);
+  // the grace window lets the very first key sound while the context is being resumed by that key
+  ready() { return !!this.ctx && this.on && (this.ctx.state === 'running' || (this.ctx.state === 'suspended' && performance.now() - this.resumeAt < 250)); },
   setOn(on) {
     this.on = on; store.set(LS.sound, on ? '1' : '0');
     if (!this.init()) return;
     const t = this.ctx.currentTime;
     this.master.gain.cancelScheduledValues(t); this.master.gain.setTargetAtTime(on ? 0.75 : 0, t, 0.06);
-    if (on) { this.ctx.resume().catch(() => {}); if (!this.musicOn) this.startMusic(); if (lampOn && !this.hum) this.humOn(0.2); }
+    if (on) { this.resumeAt = performance.now(); this.ctx.resume().catch(() => {}); if (!this.musicOn) this.startMusic(); if (lampOn && !this.hum) this.humOn(0.2); }
     else { setTimeout(() => { if (!this.on) { this.stopMusic(); this.humOff(0); this.ctx.suspend().catch(() => {}); } }, 300); }
   },
   // ---- building blocks ----
@@ -1824,7 +1860,7 @@ const AU = {
   clack(v = 1) {
     if (!this.ready()) return; const t = this.ctx.currentTime + 0.003, p = 0.92 + Math.random() * 0.16, g = v * (0.85 + Math.random() * 0.3);
     // measured from the recording: a very crisp broadband tick (decays to 10 % in ~4 ms, weighted to 4–14 kHz)
-    this.burst(t, { f: 3600 * p, type: 'highpass', q: 0.7, gain: 0.6 * g, a: 0.0004, d: 0.008 });
+    this.burst(t, { f: 3600 * p, type: 'highpass', q: 0.7, gain: 0.52 * g, a: 0.0004, d: 0.008 });
     this.burst(t, { f: (2000 + Math.random() * 2000) * p, q: 1.3, gain: 0.26 * g, a: 0.0006, d: 0.016 });   // 2–4 kHz body
     this.tone(t, { f: 120 * p, f2: 70 * p, gain: 0.2 * g, a: 0.0015, d: 0.045 });                            // low thump
     this.tone(t + 0.001, { f: 1900 * p, type: 'triangle', gain: 0.03 * g, d: 0.012 });
@@ -1848,12 +1884,15 @@ const AU = {
     this.buzz(t0, dur, 0.06 * v, 110 + Math.random() * 40);
   },
   buzz(t, dur, gain, f) {
-    const o = this.ctx.createOscillator(), am = this.ctx.createOscillator(), amg = this.ctx.createGain(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+    // sawtooth → band-pass → AM stage (0.5 ± 0.5, a crackling square LFO) → envelope
+    const o = this.ctx.createOscillator(), am = this.ctx.createOscillator(), amDepth = this.ctx.createGain(), amStage = this.ctx.createGain();
+    const fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
     o.type = 'sawtooth'; o.frequency.value = f; am.type = 'square'; am.frequency.value = 23 + Math.random() * 30;
-    amg.gain.value = 0.5; am.connect(amg); amg.connect(g.gain);
+    amStage.gain.value = 0.5; amDepth.gain.value = 0.5; am.connect(amDepth); amDepth.connect(amStage.gain);
     fl.type = 'bandpass'; fl.frequency.value = 1300; fl.Q.value = 0.9;
     g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(fl); fl.connect(g); g.connect(this.sfx); o.start(t); am.start(t); o.stop(t + dur + 0.02); am.stop(t + dur + 0.02);
+    o.connect(fl); fl.connect(amStage); amStage.connect(g); g.connect(this.sfx);
+    o.start(t); am.start(t); o.stop(t + dur + 0.02); am.stop(t + dur + 0.02);
   },
   zap(v = 1) {
     if (!this.ready()) return; const t0 = this.ctx.currentTime + 0.004;
@@ -1879,7 +1918,7 @@ const AU = {
   },
   ding(t) {
     const f = 2093 * (0.995 + Math.random() * 0.01);
-    for (const [mul, gn, d] of [[1, 0.13, 1.3], [2.76, 0.05, 0.6], [5.4, 0.025, 0.3], [1.004, 0.07, 1.1]]) {
+    for (const [mul, gn, d] of [[1, 0.075, 1.3], [2.76, 0.03, 0.6], [5.4, 0.015, 0.3], [1.004, 0.045, 1.1]]) {
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
       o.frequency.value = f * mul; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gn, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
       o.connect(g); g.connect(this.sfx); g.connect(this.verb); o.start(t); o.stop(t + d + 0.05);
@@ -2058,7 +2097,12 @@ function updateIdle(t) {
 /* --------------------------------------------------------------- loop -- */
 let lastT = now();
 let lightX = 0, drawDt = 1 / 60;
+let frameErrors = 0;
 function frame() {
+  requestAnimationFrame(frame);   // schedule first: one bad frame must never stop the machine
+  try { tick(); } catch (e) { if (frameErrors++ < 3) console.error(e); }
+}
+function tick() {
   const t = now();
   const dt = Math.min(0.05, t - lastT); lastT = t;
   stepChannels(dt);
@@ -2083,7 +2127,6 @@ function frame() {
   } else setStyle(lightCv, 'opacity', '0');
   drawDt = dt;
   draw(t);
-  requestAnimationFrame(frame);
 }
 function flicker(p) {
   // quick warm-up flicker of the bulb (p = 0…1); kept short so the ramp still matches the recording
@@ -2117,7 +2160,7 @@ function boot() {
   if (document.fonts && document.fonts.load) {
     Promise.all([document.fonts.load(FONT(22)), document.fonts.load('700 22px "Courier Prime"')]).then(() => { invalidateText(); buildCaptions(); });
   }
-  if (!('ontouchstart' in window)) focusInput();
+  if (!TOUCH) focusInput();
   lastActivity = now();
   blinkT0 = now() + 0.27;
   requestAnimationFrame(frame);
