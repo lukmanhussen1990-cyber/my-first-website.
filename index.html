@@ -2095,6 +2095,16 @@ const AU = {
       th.g.gain.setTargetAtTime(0.048, t + dur * 0.55, 0.12);    // relax
       th.g.gain.setTargetAtTime(0.012, t + dur - 0.06, 0.03);    // breathe before the next note
     }
+    if (s === 0 && bar % 4 !== 0) {   // soft celesta dyad on other downbeats: the recording's 1–1.3 kHz chimes (C6/E6, B5/D6)
+      const pair = { C: [84, 88], G: [83, 86], F: [84, 89], Am: [84, 88] }[LOOP[bar * 4 + 1]];
+      for (const m of pair) {
+        const o = this.ctx.createOscillator(), o2 = this.ctx.createOscillator(), g = this.ctx.createGain(), g2 = this.ctx.createGain();
+        o.frequency.value = hz(m); o2.frequency.value = hz(m) * 2.76; g2.gain.value = 0.18;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.03, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+        o.connect(g); o2.connect(g2); g2.connect(g); g.connect(M); g.connect(this.verb);
+        o.start(t); o2.start(t); o.stop(t + 1.35); o2.stop(t + 1.35);
+      }
+    }
     if (s === 0 && bar % 4 === 0) {   // occasional bell chime
       const f = hz(bar === 0 ? 88 : 81);
       const car = this.ctx.createOscillator(), mod = this.ctx.createOscillator(), mg = this.ctx.createGain(), g = this.ctx.createGain();
