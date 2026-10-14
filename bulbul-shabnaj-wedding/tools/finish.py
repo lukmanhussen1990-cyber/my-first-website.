@@ -26,8 +26,12 @@ def finish(img, f):
     return np.clip(x * 255 + 0.5, 0, 255).astype(np.uint8)
 enc = ['-c:v', 'libx264', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-x264-params', 'keyint=60:min-keyint=30:aq-mode=3']
 enc += (['-b:v', a.bitrate, '-maxrate', a.bitrate, '-bufsize', a.bitrate] if a.bitrate else ['-crf', str(a.crf)])
+# RGB -> YUV with the HD (BT.709) matrix, rounded rather than truncated (ffmpeg's default conversion here truncates,
+# which darkens everything by about 2 levels and crushes the night shadows), and tagged so players decode it the same way
+csc = ['-vf', 'scale=out_color_matrix=bt709:out_range=tv:flags=accurate_rnd+full_chroma_int,format=yuv420p',
+       '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv']
 cmd = ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'bgr24', '-s', f'{W}x{H}', '-r', '30', '-i', '-',
-       '-i', a.audio, '-map', '0:v', '-map', '1:a', *enc, '-c:a', 'aac', '-b:a', '256k', '-ar', '44100', '-movflags', '+faststart', '-shortest', a.out]
+       '-i', a.audio, '-map', '0:v', '-map', '1:a', *csc, *enc, '-c:a', 'aac', '-b:a', '256k', '-ar', '44100', '-movflags', '+faststart', '-shortest', a.out]
 p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
 for f in range(1, a.n + 1):
     img = cv2.imread(f'{a.frames}/f{f:04d}.png')
