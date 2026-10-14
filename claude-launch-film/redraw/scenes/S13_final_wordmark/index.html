@@ -5,75 +5,209 @@
 <script src="../../shared/components.js"></script>
 <script src="../../shared/brand.js"></script>
 <script src="../../shared/sky.js"></script>
-<style> body, #stage { background: rgb(1, 3, 19); } #spark { position: absolute; left: 0; top: 0; overflow: visible; } </style>
+<style> @font-face { font-family: 'Kawaii'; src: url('../../shared/fonts/Fredoka-500.woff2') format('woff2'); font-weight: 500; }
+@font-face { font-family: 'Kawaii'; src: url('../../shared/fonts/Fredoka-700.woff2') format('woff2'); font-weight: 700; }
+body, #stage { background: rgb(1, 3, 19); } #spark { position: absolute; left: 0; top: 0; overflow: visible; } </style>
 </head><body>
 <div id="stage"><svg id="spark" width="1920" height="1080"><defs><filter id="sb" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur id="sbg" stdDeviation="0"/></filter></defs><path id="sp" fill="#D97757"/></svg></div>
 <script>
-// S13 (f1268-1453): the finale as one continuous shot on the closing sky (shared/sky.js, continuing from S12). On the
-// narrator's last "Claude" the coral mark turns in and the wordmark slides out from behind it; the lockup lifts and
-// Claude writes the credit 'Built by Imran using Opus 5.5' (see below). Then the sun goes down and the film closes into
-// its own opening: the credit un-writes, the wordmark folds back into the mark, the mark returns to the centre and
-// winds down into the point of light the film opens on (S01 frame 1: same mark, colour, place and spin, on the same
-// navy), so the last frame leads straight into the first and the film loops.
+// S13 (f1268-1453): the finale as one continuous shot. On the narrator's last "Claude" the coral mark turns in under the
+// sunset sky (shared/sky.js, continuing from S12) and the wordmark slides out from behind it. Then the credit, in the
+// client's Hello Kitty style: a heart opens out of the centre into the client's Hello Kitty wallpaper, the lockup lifts
+// and takes on a sticker outline, "Built by Imran using Opus 5.5" pops on as a cute sticker (hopping letters, heart
+// i-dots, a bow) and the client's winking Hello Kitty pops up from behind it (Hello Kitty (c) Sanrio; the client's
+// images, cut out by tools/hk_assets.py). Then night falls and the film closes into its own opening: Kitty ducks away,
+// the sticker pops off, the wordmark folds back into the mark, the mark returns to the centre and winds down into the
+// point of light the film opens on (S01 frame 1: same mark, colour, place and spin, on the same navy), so it loops.
 const stage = document.getElementById('stage');
+const PL = '../../plates/S13_final_wordmark/';
 let LK = null;
-// The credit, written by Claude. It is set in the film's Claude serif and streams in token by token, exactly the way
-// Claude's replies arrive ("Im" + "ran", a short pause before "Opus", "5" + ".5"): each letter resolves out of a soft
-// focus, still warm with the mark's coral, and cools to its final colour as the next ones arrive ("Imran" and
-// "Opus 5.5" in white semibold, the rest in soft white). Meanwhile the Claude mark above makes one slow turn, like
-// Claude's own indicator while it writes, and comes to rest as the last letter settles. At the end the credit
-// un-writes in reverse, the first step of the film rewinding into its opening.
-const CR_SIZE = 42, CR_BASE = 614;
-const CR_TOK = [['Built', 0, 1334.0], [' by', 0, 1336.4], [' Im', 1, 1338.8], ['ran', 1, 1340.6], [' using', 0, 1343.4],
-  [' Opus', 1, 1348.6], [' 5', 1, 1351.2], ['.5', 1, 1352.8]];
-const CR_CH = 0.45, CR_IN = 9, CR_COOL = 13, CR_OUT = 1398, CR_OUT_CH = 0.32, CR_OUT_D = 6;
-const CR_FRESH = [240, 164, 135], CR_INK = [[247, 245, 255, 0.74], [255, 255, 255, 1]];
-const SPIN = { t0: 1330, t1: 1370 };                                       // the mark's turn while the credit is written
-let credit = null;
-function buildCredit() {
-  const el = document.createElement('div');
-  el.style.cssText = `position:absolute;left:0;top:0;white-space:pre;font-family:'Claude Serif';font-size:${CR_SIZE}px;line-height:1;letter-spacing:-0.004em`;
-  stage.appendChild(el);
-  // lay the whole line out once (kerning and spacing as typeset), then place every letter at its measured position
-  const meas = document.createElement('span'); meas.style.cssText = 'visibility:hidden;white-space:pre';
-  CR_TOK.forEach(([t, b]) => { const sp = document.createElement('span'); sp.textContent = t; sp.style.fontWeight = b ? 600 : 400; meas.appendChild(sp); });
-  el.appendChild(meas);
+// ---------------------------------------------------------------------------------------------- shared cute pieces
+const HEART_D = 'M 0 8 C -2 6 -12 0 -12 -6 C -12 -11 -8 -13 -5 -13 C -2.5 -13 -0.8 -11.6 0 -10 C 0.8 -11.6 2.5 -13 5 -13 C 8 -13 12 -11 12 -6 C 12 0 2 6 0 8 Z';
+const STAR_D = (() => { let d = ''; for (let i = 0; i < 10; i++) { const r = i % 2 ? 0.48 : 1, a = -Math.PI / 2 + i * Math.PI / 5; d += (i ? ' L ' : 'M ') + (r * Math.cos(a)).toFixed(3) + ' ' + (r * Math.sin(a)).toFixed(3); } return d + ' Z'; })();
+const BOW = {               // knot at 0,0; about 84 x 64 px
+  loops: 'M -5 -3 C -17 -29 -47 -33 -45 -8 C -44 12 -20 13 -5 4 Z M 5 -3 C 17 -29 47 -33 45 -8 C 44 12 20 13 5 4 Z',
+  tails: 'M -4 5 C -9 15 -15 25 -21 33 L -11 31 L -6 38 C -2 27 0 16 1 8 Z M 4 5 C 9 15 15 25 21 33 L 11 31 L 6 38 C 2 27 0 16 -1 8 Z',
+  folds: 'M -9 -2 C -20 -10 -30 -12 -37 -9 M -9 2 C -18 4 -26 5 -32 3 M 9 -2 C 20 -10 30 -12 37 -9 M 9 2 C 18 4 26 5 32 3',
+  dots: [[-30, -14, 3.2], [-19, -4, 2.6], [-37, 0, 2.4], [30, -14, 3.2], [19, -4, 2.6], [37, 0, 2.4]],
+};
+const HKC = { white: '#FFFFFF', blush: '#FFF0F5', rim: '#FF5C9A', dots: '#FFC9DA', ink: '#AD1457', key: '#E91E63', heart: '#FF4F8B',
+  bow: '#F2385E', bowDark: '#C2185B', star: '#FFD45C', shadow: 'rgba(173,20,87,0.36)' };
+// damped spring 0 -> 1 (overshoot ~16 %), its slope, and an ease-in-back for pop-offs
+const spring = (t, tau = 2.5, T = 9) => t <= 0 ? 0 : 1 - Math.exp(-t / tau) * Math.cos(2 * Math.PI * t / T);
+const springV = (t, tau, T) => spring(t + 0.5, tau, T) - spring(t - 0.5, tau, T);
+const inBack = t => 2.70158 * t * t * t - 1.70158 * t * t;
+function svgEl(tag, attrs, parent) { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function heartPath(cx, cy, s) { const n = HEART_D.split(' '); let k = 0;
+  return n.map(t => isNaN(parseFloat(t)) ? t : (k++ % 2 === 0 ? (cx + s * parseFloat(t)).toFixed(1) : (cy + s * parseFloat(t)).toFixed(1))).join(' '); }
+// ---------------------------------------------------------------------------------------------- timeline
+const HK = { iris: [1316, 1334], cx: 960, cy: 452, style: [1325, 1334, 1400, 1410], note: [1334, 1398] };
+const CC = { cx: 960, cy: 540, size: 40, padX: 38, t0: 1338, letters: 1342, step: 0.75, bow: 1356, out: 1398 };
+const KT = { pop: 1348, hops: [1368, 1384], out: 1392, scale: 0.42, x: 960, bottom: 1112 };
+const CC_WORDS = [['Buılt', 0], ['by', 0], ['Imran', 1], ['usıng', 0], ['Opus', 1], ['5.5', 1]];
+// lockup pose: lifts (and shrinks a touch) to make room for the Hello Kitty credit
+function pose(f) {
+  const lift = ease.inOutCubic(clamp((f - 1316) / 22));
+  return { lift, sc: kf(f, [[1268, 1.05], [1316, 1.0]]) * (1 - 0.1 * lift), dy: -110 * lift };
+}
+let hk = null;
+function buildHK() {
+  hk = {};
+  // the client's Hello Kitty wallpaper, opened by a heart iris; it lives under the sky's night layer
+  const sky = stage._sky;
+  const pat = hk.pat = document.createElement('div'); pat.style.cssText = 'position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden';
+  const pim = hk.pim = document.createElement('img'); pim.src = PL + 'hk_pattern.jpg'; pim.style.cssText = 'position:absolute;left:0;top:0;width:1920px;height:3413px;filter:saturate(0.94) brightness(1.02) blur(0.7px)';
+  const veil = document.createElement('div'); veil.style.cssText = 'position:absolute;left:0;top:0;width:1920px;height:1080px;background:radial-gradient(ellipse 900px 520px at 960px 560px, rgba(255,240,246,0.42), rgba(255,240,246,0.16) 70%, rgba(255,240,246,0.10))';
+  pat.append(pim, veil);
+  const rim = hk.rim = svgEl('svg', { width: 1920, height: 1080, style: 'position:absolute;left:0;top:0;overflow:visible' });
+  hk.rimPath = svgEl('path', { fill: 'none', stroke: '#fff', 'stroke-linejoin': 'round' }, rim);
+  sky.box.insertBefore(pat, sky.shade); sky.box.insertBefore(rim, sky.shade);
+  // Kitty (behind the credit sticker, so her ears tuck behind it), floating hearts, the sticker, stars, the note
+  const layer = hk.layer = document.createElement('div'); layer.style.cssText = 'position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none';
+  stage.appendChild(layer);
+  const kit = hk.kit = document.createElement('img'); kit.src = PL + 'hk_kitty.png';
+  const KW = 1413 * KT.scale, KH = 1304 * KT.scale; hk.KH = KH;
+  kit.style.cssText = `position:absolute;left:${(KT.x - KW / 2).toFixed(1)}px;top:${(KT.bottom - KH).toFixed(1)}px;width:${KW.toFixed(1)}px;height:${KH.toFixed(1)}px;transform-origin:${(KW / 2).toFixed(1)}px ${KH.toFixed(1)}px;filter:drop-shadow(0 10px 14px rgba(173,20,87,0.30))`;
+  layer.appendChild(kit);
+  const fl = svgEl('svg', { width: 1920, height: 1080, style: 'position:absolute;left:0;top:0;overflow:visible' }); layer.appendChild(fl);
+  hk.floats = [[742, 1360, 34, 150], [1186, 1366, 28, 135], [690, 1374, 22, 120], [1236, 1380, 36, 160], [800, 1386, 24, 120]].map(([x, t, s, rise]) => {
+    const g = svgEl('g', {}, fl);
+    svgEl('path', { d: HEART_D, fill: HKC.rim, stroke: HKC.rim, 'stroke-width': 5, 'stroke-linejoin': 'round' }, g);
+    svgEl('path', { d: HEART_D, fill: '#fff' }, g);
+    svgEl('ellipse', { cx: -5, cy: -8, rx: 2.4, ry: 1.5, fill: HKC.dots, opacity: 0.9, transform: 'rotate(-30 -5 -8)' }, g);
+    return { g, x, t, s: s / 24, rise };
+  });
+  buildSticker(layer);
+  const note = hk.note = document.createElement('div'); note.textContent = 'Hello Kitty © Sanrio';
+  note.style.cssText = "position:absolute;left:34px;top:1036px;font-family:'Kawaii';font-weight:500;font-size:17px;color:rgba(255,255,255,0.95);text-shadow:0 1px 3px rgba(173,20,87,0.75)";
+  layer.appendChild(note);
+}
+function buildSticker(parent) {
+  const line = document.createElement('div');
+  line.style.cssText = `position:absolute;left:0;top:0;white-space:pre;font-family:'Kawaii';font-size:${CC.size}px;line-height:1;letter-spacing:0.01em`;
+  const meas = document.createElement('span');
+  CC_WORDS.forEach(([t, b], i) => { const s = document.createElement('span'); s.textContent = t + (i < CC_WORDS.length - 1 ? ' ' : ''); s.style.fontWeight = b ? 700 : 500; meas.appendChild(s); });
+  line.appendChild(meas); parent.appendChild(line);
   const r0 = meas.getBoundingClientRect();
   const probe = document.createElement('span'); probe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline'; meas.appendChild(probe);
   const bOff = probe.getBoundingClientRect().top - r0.top; meas.removeChild(probe);
-  const rg = document.createRange(), chars = [];
-  Array.from(meas.children).forEach((sp, ti) => {
-    const [t, b, t0] = CR_TOK[ti], node = sp.firstChild; let k = 0;
+  const W = Math.round(r0.width + 2 * CC.padX), H = Math.round(CC.size * 2.05), base = H / 2 + 0.33 * CC.size;
+  const rg = document.createRange(), letters = [], dots = [], wordStarts = [];
+  let j = 0;
+  Array.from(meas.children).forEach((s, wi) => {
+    const node = s.firstChild, [t, b] = CC_WORDS[wi];
     Array.from(t).forEach((c, ci) => {
-      if (c === ' ') return;
       rg.setStart(node, ci); rg.setEnd(node, ci + 1); const lb = rg.getBoundingClientRect();
-      const e = document.createElement('span'); e.textContent = c;
-      e.style.cssText = `position:absolute;top:0;left:${(lb.left - r0.left).toFixed(2)}px;font-weight:${b ? 600 : 400};will-change:transform,opacity,filter`;
-      el.appendChild(e); chars.push({ e, b, t: t0 + CR_CH * k++ });
+      if (ci === 0) wordStarts.push(CC.letters + CC.step * j);
+      const x = lb.left - r0.left + CC.padX;
+      letters.push({ c, b, x, w: lb.width, t: CC.letters + CC.step * j });
+      if (c === 'ı') dots.push({ x: x + lb.width / 2, t: CC.letters + CC.step * j + 9 });
+      j++;
     });
   });
-  el.removeChild(meas);
-  credit = { el, chars, width: r0.width, bOff };
-}
-const crLook = (e, ch, p, cool) => {                                       // p: 0 = unwritten, 1 = written
-  const ink = CR_INK[ch.b], c = CR_FRESH.map((v, i) => lerp(v, ink[i], cool)), a = lerp(1, ink[3], cool);
-  e.style.color = `rgba(${c.map(Math.round).join(',')},${a.toFixed(3)})`;
-  e.style.opacity = Math.pow(p, 0.75).toFixed(3);
-  e.style.filter = p < 0.999 ? `blur(${(5 * (1 - p)).toFixed(2)}px)` : 'none';
-  e.style.transform = `translateY(${(6 * (1 - p) * (1 - p)).toFixed(2)}px)`;
-};
-function renderCredit(f) {
-  credit.el.style.left = (960 - credit.width / 2).toFixed(2) + 'px'; credit.el.style.top = (CR_BASE - credit.bOff).toFixed(2) + 'px';
-  const n = credit.chars.length;
-  credit.chars.forEach((ch, j) => {
-    let p = ease.outCubic(clamp((f - ch.t) / CR_IN)), cool = ease.inOutQuad(clamp((f - ch.t - 2) / CR_COOL));
-    const o = CR_OUT + CR_OUT_CH * (n - 1 - j);                              // un-write: last letter first
-    if (f > o) { const q = ease.inCubic(clamp((f - o) / CR_OUT_D)); p = Math.min(p, 1 - q); cool = Math.min(cool, 1 - q); }
-    ch.e.style.visibility = p > 0.002 ? 'visible' : 'hidden';
-    crLook(ch.e, ch, p, cool);
+  line.remove();
+  const wrap = document.createElement('div');
+  wrap.style.cssText = `position:absolute;left:${(CC.cx - W / 2).toFixed(1)}px;top:${(CC.cy - H / 2).toFixed(1)}px;width:${W}px;height:${H}px;transform-origin:${W / 2}px ${H / 2}px`;
+  parent.appendChild(wrap);
+  const badge = svgEl('svg', { width: W, height: H, style: `position:absolute;left:0;top:0;overflow:visible;filter:drop-shadow(0 7px 11px ${HKC.shadow}) drop-shadow(0 2px 2px rgba(173,20,87,0.25))` });
+  wrap.appendChild(badge);
+  svgEl('defs', {}, badge).innerHTML = `<linearGradient id="ccg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${HKC.white}"/><stop offset="1" stop-color="${HKC.blush}"/></linearGradient>
+    <pattern id="ccdots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="5" cy="6" r="3" fill="${HKC.dots}"/><circle cx="17" cy="18" r="3" fill="${HKC.dots}"/></pattern>
+    <clipPath id="ccclip"><rect x="0" y="0" width="${W}" height="${H}" rx="${H / 2}"/></clipPath>`;
+  svgEl('rect', { x: 0, y: 0, width: W, height: H, rx: H / 2, fill: 'url(#ccg)' }, badge);
+  svgEl('rect', { x: 0, y: 0, width: W, height: H, rx: H / 2, fill: 'url(#ccdots)', 'clip-path': 'url(#ccclip)', opacity: 0.55 }, badge);
+  svgEl('rect', { x: 3, y: 3, width: W - 6, height: H - 6, rx: H / 2 - 3, fill: 'none', stroke: HKC.rim, 'stroke-width': 6 }, badge);
+  svgEl('rect', { x: 9, y: 9, width: W - 18, height: H - 18, rx: H / 2 - 9, fill: 'none', stroke: '#fff', 'stroke-width': 2.5, 'stroke-dasharray': '2 9', 'stroke-linecap': 'round', opacity: 0.95 }, badge);
+  const txt = document.createElement('div'); txt.style.cssText = `position:absolute;left:0;top:0;width:${W}px;height:${H}px;font-family:'Kawaii';font-size:${CC.size}px;line-height:1;white-space:pre`;
+  wrap.appendChild(txt);
+  letters.forEach(L => { const e = document.createElement('span'); e.textContent = L.c;
+    e.style.cssText = `position:absolute;left:${L.x.toFixed(2)}px;top:${(base - bOff).toFixed(2)}px;font-weight:${L.b ? 700 : 500};color:${L.b ? HKC.key : HKC.ink};transform-origin:${(L.w / 2).toFixed(1)}px ${bOff.toFixed(1)}px;letter-spacing:0.01em`;
+    txt.appendChild(e); L.e = e; });
+  const deco = svgEl('svg', { width: W, height: H, style: 'position:absolute;left:0;top:0;overflow:visible' }); wrap.appendChild(deco);
+  dots.forEach(d => { d.g = svgEl('g', {}, deco); svgEl('path', { d: HEART_D, fill: HKC.heart }, d.g); d.y = base - 0.66 * CC.size; });
+  // the bow: a red ribbon with white polka dots, sticker border
+  const bowG = svgEl('g', {}, deco), bx = W - 12, by = -1;                 // on the sticker's top-right corner, clear of the text
+  const sticker = svgEl('g', { fill: '#fff', stroke: '#fff', 'stroke-width': 9, 'stroke-linejoin': 'round' }, bowG);
+  svgEl('path', { d: BOW.tails }, sticker); svgEl('path', { d: BOW.loops }, sticker); svgEl('rect', { x: -9, y: -10, width: 18, height: 20, rx: 8 }, sticker);
+  const ribbon = svgEl('g', { stroke: '#9E1240', 'stroke-width': 1.6, 'stroke-linejoin': 'round' }, bowG);
+  svgEl('path', { d: BOW.tails, fill: HKC.bowDark }, ribbon); svgEl('path', { d: BOW.loops, fill: HKC.bow }, ribbon);
+  BOW.dots.forEach(([x, y, r]) => svgEl('circle', { cx: x, cy: y, r, fill: '#fff', opacity: 0.92 }, bowG));
+  svgEl('path', { d: BOW.folds, fill: 'none', stroke: HKC.bowDark, 'stroke-width': 2.4, 'stroke-linecap': 'round', opacity: 0.7 }, bowG);
+  svgEl('rect', { x: -9, y: -10, width: 18, height: 20, rx: 8, fill: HKC.bowDark, stroke: '#9E1240', 'stroke-width': 1.6 }, bowG);
+  const starSvg = svgEl('svg', { width: W, height: H, style: 'position:absolute;left:0;top:0;overflow:visible' }); wrap.appendChild(starSvg);
+  const stars = [[-28, 6, 15, 1346], [W * 0.22, -30, 10, 1349], [W + 26, H - 4, 13, 1353], [W * 0.7, H + 24, 9, 1356]].map(([x, y, s, t]) => {
+    const g = svgEl('g', {}, starSvg);
+    svgEl('path', { d: STAR_D, fill: '#fff', stroke: '#fff', 'stroke-width': 0.62, 'stroke-linejoin': 'round' }, g);
+    svgEl('path', { d: STAR_D, fill: HKC.star, stroke: HKC.star, 'stroke-width': 0.22, 'stroke-linejoin': 'round' }, g);
+    svgEl('circle', { cx: -0.22, cy: -0.28, r: 0.13, fill: '#fff', opacity: 0.85 }, g);
+    return { g, x, y, s, t };
   });
+  hk.st = { wrap, W, H, letters, dots, bowG, bx, by, stars, wordStarts };
 }
-function markSpin(f) { const u = clamp((f - SPIN.t0) / (SPIN.t1 - SPIN.t0)); return 180 * (1 - Math.cos(Math.PI * u)); }
+function renderHK(f) {
+  // heart iris from the sunset into the Hello Kitty wallpaper (white sticker rim on its edge while it grows)
+  const u = clamp((f - HK.iris[0]) / (HK.iris[1] - HK.iris[0])), s = 0.4 + 302 * Math.pow(u, 3.1);
+  const open = f >= HK.iris[0];
+  hk.pat.style.visibility = hk.rim.style.visibility = open ? 'visible' : 'hidden';
+  hk.pat.style.clipPath = u < 1 ? `path('${heartPath(HK.cx, HK.cy, s)}')` : 'none';
+  hk.rimPath.setAttribute('d', heartPath(HK.cx, HK.cy, s)); hk.rimPath.setAttribute('stroke-width', (6 + 10 * u).toFixed(2));
+  hk.rimPath.style.opacity = (1 - clamp((u - 0.75) / 0.25)).toFixed(3);
+  hk.pim.style.transform = `translateY(${(-560 - 2.4 * (f - HK.iris[0])).toFixed(2)}px)`;   // the wallpaper drifts up slowly
+  hk.note.style.opacity = (clamp((f - HK.note[0]) / 6) * (1 - clamp((f - HK.note[1]) / 6))).toFixed(3);
+  // Kitty pops up from below, sways, hops twice, then ducks away
+  const kt = f - KT.pop, kp = spring(kt, 3.0, 11), kv = springV(kt, 3.0, 11);
+  let ky = 600 * (1 - kp), ksx = 1 - 0.22 * kv, ksy = 1 + 0.22 * kv, krot = f > KT.pop + 10 ? 2.4 * Math.sin(2 * Math.PI * (f - KT.pop - 10) / 52) : 0;
+  KT.hops.forEach(h => { const w = clamp((f - h) / 11); if (w > 0 && w < 1) { ky -= 24 * Math.sin(Math.PI * w); const land = clamp((f - h - 9) / 4); ksy *= 1 - 0.05 * Math.sin(Math.PI * land); ksx *= 1 + 0.04 * Math.sin(Math.PI * land); } });
+  const ko = f - KT.out; if (ko > 0) { ksy *= 1 - 0.06 * Math.sin(Math.PI * clamp(ko / 4)); ky += 640 * ease.inCubic(clamp((ko - 3) / 7)); }
+  hk.kit.style.visibility = kt > 0 && ko < 10 ? 'visible' : 'hidden';
+  hk.kit.style.transform = `translateY(${ky.toFixed(2)}px) rotate(${krot.toFixed(3)}deg) scale(${ksx.toFixed(4)}, ${ksy.toFixed(4)})`;
+  // floating hearts rise from around her head
+  const fade = 1 - clamp((f - CC.out) / 5);
+  hk.floats.forEach((F, i) => { const tt = f - F.t, w = clamp(tt / 40);
+    const y = 700 - F.rise * ease.outQuad(w), x = F.x + 7 * Math.sin(2 * Math.PI * tt / 24 + i), sc = F.s * (0.5 + 0.5 * ease.outBack(clamp(tt / 10)));
+    F.g.setAttribute('transform', `translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${(12 * Math.sin(2 * Math.PI * tt / 24 + i)).toFixed(2)}) scale(${sc.toFixed(4)})`);
+    F.g.style.visibility = tt > 0 && w < 1 ? 'visible' : 'hidden';
+    F.g.style.opacity = (clamp(tt / 4) * (1 - clamp((tt - 26) / 14)) * fade).toFixed(3); });
+  renderSticker(f);
+}
+function renderSticker(f) {
+  const st = hk.st, { wrap } = st;
+  const t = f - CC.t0, p = spring(t, 2.6, 9.5), v = springV(t, 2.6, 9.5);
+  let sx = p * (1 - 0.35 * v), sy = p * (1 + 0.35 * v), rot = t > 0 ? -6 * Math.exp(-t / 4.5) * Math.cos(2 * Math.PI * t / 11) : 0;
+  const bob = f > 1356 ? -2.6 * Math.sin(2 * Math.PI * (f - 1356) / 46) : 0;
+  let op = clamp(t / 2);
+  const k = f - CC.out;
+  if (k > 0) { const a = ease.outQuad(clamp(k / 3)) * (1 - ease.inCubic(clamp((k - 3) / 7))), z = 1 + 0.07 * a - inBack(clamp((k - 3) / 7));
+    sx *= Math.max(0, z); sy *= Math.max(0, z); rot += -7 * ease.inQuad(clamp((k - 3) / 7)); op *= 1 - clamp((k - 7) / 3); }
+  wrap.style.visibility = t > 0 && k < 11 ? 'visible' : 'hidden';
+  wrap.style.transform = `translateY(${bob.toFixed(2)}px) rotate(${rot.toFixed(3)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
+  wrap.style.opacity = op.toFixed(3);
+  st.letters.forEach(L => { const tt = f - L.t, q = spring(tt, 2.4, 9), qv = springV(tt, 2.4, 9), b = Math.max(0, 0.45 + 0.55 * q);
+    L.e.style.opacity = clamp(tt / 2).toFixed(3);
+    L.e.style.transform = `translateY(${(26 * (1 - q)).toFixed(2)}px) scale(${(b * (1 - 0.3 * qv)).toFixed(4)}, ${(b * (1 + 0.3 * qv)).toFixed(4)})`; });
+  st.dots.forEach(d => { const tt = f - d.t, q = spring(tt, 2.2, 8);
+    d.g.setAttribute('transform', `translate(${d.x.toFixed(2)} ${d.y.toFixed(2)}) rotate(${(-14 * Math.exp(-Math.max(0, tt) / 4) * Math.cos(2 * Math.PI * Math.max(0, tt) / 9)).toFixed(2)}) scale(${(0.56 * q).toFixed(4)})`);
+    d.g.style.visibility = tt > 0 ? 'visible' : 'hidden'; });
+  { const tt = f - CC.bow, q = spring(tt, 2.8, 10), sw = f > CC.bow + 14 ? 4 * Math.sin(2 * Math.PI * (f - CC.bow - 14) / 34) : 0;
+    st.bowG.setAttribute('transform', `translate(${st.bx.toFixed(1)} ${st.by}) rotate(${(24 + sw - 40 * (1 - Math.min(1, q))).toFixed(2)}) scale(${(0.86 * q).toFixed(4)})`);
+    st.bowG.style.visibility = tt > 0 ? 'visible' : 'hidden'; }
+  const fade = 1 - clamp((f - CC.out) / 5);
+  st.stars.forEach((S, i) => { const tt = f - S.t, q = spring(tt, 2.2, 8), tw = 1 + 0.16 * Math.sin(2 * Math.PI * tt / (16 + 3 * i) + i);
+    S.g.setAttribute('transform', `translate(${S.x.toFixed(1)} ${S.y.toFixed(1)}) rotate(${(12 * Math.sin(2 * Math.PI * tt / (40 + 7 * i))).toFixed(2)}) scale(${(S.s * q * (tt > 8 ? tw : 1)).toFixed(4)})`);
+    S.g.style.visibility = tt > 0 ? 'visible' : 'hidden'; S.g.style.opacity = fade.toFixed(3); });
+}
+// the lockup on the wallpaper: the wordmark takes a raspberry sticker outline, the mark a white die-cut border
+function styleLockup(f) {
+  const a = ease.inOutQuad(clamp((f - HK.style[0]) / (HK.style[1] - HK.style[0]))) * (1 - ease.inOutQuad(clamp((f - HK.style[2]) / (HK.style[3] - HK.style[2]))));
+  LK.word.style.webkitTextStroke = a > 0.001 ? `${(12 * a).toFixed(2)}px rgba(214,51,108,${a.toFixed(3)})` : '';
+  LK.word.style.paintOrder = 'stroke fill';
+  LK.word.style.filter = a > 0.001 ? `drop-shadow(0 6px 8px rgba(173,20,87,${(0.35 * a).toFixed(3)}))` : 'none';
+  LK.mark.setAttribute('stroke', '#fff'); LK.mark.setAttribute('stroke-linejoin', 'round'); LK.mark.setAttribute('paint-order', 'stroke');
+  LK.mark.setAttribute('stroke-width', (0.16 * a).toFixed(4)); LK.mark.setAttribute('stroke-opacity', a.toFixed(3));
+}
+// the Claude mark gives a happy little wiggle as the credit sticker lands
+function markSpin(f) { const t = f - (CC.t0 + 1); return t <= 0 ? 0 : 11 * Math.exp(-t / 6) * Math.sin(2 * Math.PI * t / 8); }
+// ---------------------------------------------------------------------------------------------- the loop
 // the S01 opening mark at frame 1 (SPARK_R 4.0 x 1.35 tip radius, 16 deg, centre 962/539.5) is where the film loops to
 const LOOP = { x: 962.0, y: 539.5, rotEnd: 360 + 16 - 27.4, rotStart: 1414, tipEnd: 3.5 };   // one turn, landing one opening-frame short of 16 deg
 function sparkTip(f) {
@@ -86,22 +220,23 @@ function sparkRot(f) {                                                        //
 }
 
 window.renderFrame = async (f) => {
-  await skyCam(stage, f);
-  if (!LK) { await ClaudeLockup.ready(); await document.fonts.load(`400 ${CR_SIZE}px 'Claude Serif'`); await document.fonts.load(`600 ${CR_SIZE}px 'Claude Serif'`);
-    LK = new ClaudeLockup(stage, { cx: 960, cy: 524, size: 150, burst: 58, gap: 32, t0: 1268 }); stage.appendChild(document.getElementById('spark')); }
-  const lift = ease.inOutCubic(clamp((f - 1316) / 22));
-  const sc = kf(f, [[1268, 1.05], [1316, 1.0]]) * (1 - 0.1 * lift);
+  const irisCover = clamp((f - HK.iris[0]) / (HK.iris[1] - HK.iris[0]));
+  await skyCam(stage, f, { shade: 1 - irisCover });
+  if (!LK) { await ClaudeLockup.ready(); await document.fonts.load(`500 ${CC.size}px 'Kawaii'`); await document.fonts.load(`700 ${CC.size}px 'Kawaii'`);
+    LK = new ClaudeLockup(stage, { cx: 960, cy: 524, size: 150, burst: 58, gap: 32, t0: 1268 }); }
+  if (!hk) { buildHK(); stage.appendChild(LK.root); stage.appendChild(hk.layer); stage.appendChild(document.getElementById('spark'));
+    await Promise.all([hk.pim.decode(), hk.kit.decode()]).catch(() => {}); }
+  const P = pose(f);
   const wipe = 1 - ease.inOutCubic(clamp((f - 1402) / 14));                 // the wordmark folds back into the mark
-  const spin = markSpin(f), w = Math.abs(markSpin(f + 0.5) - markSpin(f - 0.5)) * Math.PI / 180;
-  LK.render(f, { scale: sc, dy: -40 * lift, wipe, spin, markBlur: 0.05 * w * 58 * sc });
-  if (!credit) buildCredit();
-  credit.el.style.display = f >= CR_TOK[0][2] - 1 && f < CR_OUT + 16 ? 'block' : 'none';
-  if (credit.el.style.display === 'block') renderCredit(f);
+  LK.render(f, { scale: P.sc, dy: P.dy, wipe, spin: markSpin(f) });
+  styleLockup(f);
+  hk.layer.style.display = f >= HK.iris[0] && f < 1412 ? 'block' : 'none';
+  renderHK(f);
   // from 1414 the mark is drawn here: it glides back to the centre, then winds down into the opening's point of light
   const sp = document.getElementById('sp');
   if (f < 1414) { sp.setAttribute('d', ''); LK.mark.style.visibility = 'visible'; return; }
   LK.mark.style.visibility = 'hidden';
-  const mx0 = 960 + (LK.markX - 960) * sc, my0 = 524 - 40 * lift;            // the lockup mark's place on screen
+  const mx0 = 960 + (LK.markX - 960) * P.sc, my0 = 524 + P.dy;               // the lockup mark's place on screen
   const g = ease.inOutQuint(clamp((f - 1414) / 18));
   const x = lerp(mx0, LOOP.x, g), y = lerp(my0, LOOP.y, g);
   const tip = sparkTip(f), rot = sparkRot(f);

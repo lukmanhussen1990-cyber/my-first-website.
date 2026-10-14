@@ -7,7 +7,7 @@ const SKY = { src: '../../plates/S12_closing_lines/sunset.jpg', dusk: '../../pla
   W: 2006, H: 1128, sun: [1215.6, 1082.4] };
 const SKY_NAVY = '1,3,19';                                            // = S01 background
 const skySmooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
-async function skyCam(stage, f) {
+async function skyCam(stage, f, o = {}) {                            // o.shade: scale the type shade (0 hides it)
   let st = stage._sky;
   if (!st) {
     st = stage._sky = {};
@@ -33,7 +33,7 @@ async function skyCam(stage, f) {
   // light: the sky settles in as S12 opens, a breath of light as the Claude mark turns in, then the sun goes down
   const expo = 0.84 + 0.08 * skySmooth(1168, 1258, f) + 0.05 * Math.exp(-Math.pow((f - 1272) / 10, 2));
   st.a.style.filter = st.b.style.filter = `brightness(${expo.toFixed(4)})`;
-  const sh = kf(f, [[1168, 0.5], [1262, 0.5], [1272, 0.36], [1336, 0.36], [1350, 0.44], [1400, 0.44], [1416, 0]]);
+  const sh = kf(f, [[1168, 0.5], [1262, 0.5], [1272, 0.36], [1336, 0.36], [1350, 0.44], [1400, 0.44], [1416, 0]]) * (o.shade ?? 1);
   st.shade.style.background = `radial-gradient(ellipse 1050px 330px at 960px 556px, rgba(2,7,26,${sh.toFixed(3)}) 0%, rgba(2,7,26,${(0.62 * sh).toFixed(3)}) 46%, rgba(2,7,26,0) 100%)`;
   const dusk = 0.35 * skySmooth(1290, 1400, f) + 0.65 * skySmooth(1398, 1428, f);
   st.b.style.opacity = dusk.toFixed(4);

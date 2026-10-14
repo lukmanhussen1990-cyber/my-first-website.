@@ -73,6 +73,18 @@ def pad(notes, dur, att=2.2, rel=2.5):
             y += np.sin(2 * np.pi * fr * t + rng.uniform(0, 6.28)) + 0.18 * np.sin(2 * np.pi * 2 * fr * t) + 0.06 * np.sin(2 * np.pi * 3 * fr * t)
     env = np.minimum(1, t / att) * np.minimum(1, np.maximum(0, (dur - t) / rel)) ** 1.5
     y = lp(y * env, 2400); return y / np.abs(y).max()
+def pop(f0=1100, f1=380, dur=0.07):
+    """A soft bubble pop: a fast downward glide with a tiny click (stickers landing, popping off)."""
+    n = int(dur * SR); t = np.arange(n) / SR
+    fq = f0 * (f1 / f0) ** (t / dur); y = np.sin(2 * np.pi * np.cumsum(fq) / SR) * np.exp(-t / 0.02) * (1 - np.exp(-t / 0.0012))
+    y += 0.2 * bp(rng.standard_normal(n), 2000, 6000) * np.exp(-t / 0.002)
+    return y / np.abs(y).max()
+def bloop(f0, f1, dur=0.12):
+    """A round toy glide (Kitty popping up, hopping, ducking away)."""
+    n = int(dur * SR); t = np.arange(n) / SR
+    fq = f0 * (f1 / f0) ** np.clip(t / (0.75 * dur), 0, 1); ph = 2 * np.pi * np.cumsum(fq) / SR
+    y = (np.sin(ph) + 0.25 * np.sin(2 * ph)) * (1 - np.exp(-t / 0.004)) * np.exp(-np.maximum(0, t - 0.5 * dur) / (0.18 * dur))
+    return y / np.abs(y).max()
 def ahh_note():
     """The Opus 5.5 film's opening "ahh" (stereo, its own room), tape-tuned F#4 (368.93 Hz measured) -> G4 (392 Hz)."""
     import soxr
@@ -153,13 +165,23 @@ put(verb(bell([G['G3'], G['D4'], G['G4'], G['Bb4'], G['D5']], 4.5, 0.9), 0.55), 
 put(verb(whoosh(0.6, 1200, 6000, 0.35, 0.7), 0.3), T(1276), -31, pan=0.35)
 put(verb(whoosh(0.7, 300, 1500, 0.6), 0.3), T(1316), -36)                                 # the lockup lifts
 put(verb(pad([G['G3'], G['Bb3'], G['D4'], G['A4']], T(1440) - T(1326), 2.2, 2.6), 0.4), T(1326), -33)
-# Claude writes the credit: a faint breath of air rises with the stream (no typing clicks), and a soft chord rings
-# as the last letter settles and the mark comes to rest
-put(verb(whoosh(0.95, 1800, 5200, 0.8, 1.1), 0.35), T(1334), -41, pan=-0.15)
-put(verb(bell([G['D5'], G['G5'], G['Bb5']], 3.0, 0.45), 0.55), T(1361), -33)
-# the loop: the credit un-writes, the wordmark folds back into the mark, night falls, the mark winds down into the
+# the Hello Kitty credit: a twinkling run as the heart opens into the wallpaper, a pop as the sticker lands, a
+# toy-piano note as each word hops on, Kitty's bloop as she pops up (and on each hop), little plinks for the bow and
+# the heart i-dots; on the way out she bloops down and the sticker pops off
+put(verb(whoosh(0.6, 900, 5200, 0.7, 1.0), 0.3), T(1316), -34)
+for k, nt in enumerate(['G5', 'Bb5', 'D6', 'G6']): put(verb(bell([G[nt] if nt in G else 1567.98], 0.9, 0.35), 0.4), T(1318 + 2.2 * k), -31 + k, pan=-0.3 + 0.2 * k)
+put(verb(pop(), 0.2), T(1338), -21)
+for k, (fr, nt) in enumerate([(1344, 783.99), (1347.75, 932.33), (1349.25, 1046.5), (1353, 1174.66), (1356.75, 1396.91), (1359.75, 1567.98)]):
+    put(verb(bell([nt], 0.8, 0.3), 0.35), T(fr), -30, pan=-0.45 + 0.18 * k)
+put(verb(bloop(300, 720, 0.16), 0.25), T(1348), -24)
+put(verb(bell([G['D6'], 1567.98], 1.2, 0.4), 0.45), T(1352), -32)
+put(verb(pop(1500, 600, 0.05), 0.2), T(1356), -27, pan=0.4); put(verb(bell([2349.32], 0.6, 0.3), 0.4), T(1357), -35, pan=0.4)
+for fr, nt in [(1352.5, 1567.98), (1361.5, 1864.66)]: put(verb(bell([nt], 0.5, 0.25), 0.4), T(fr), -34)
+for fr in (1368, 1384): put(verb(bloop(420, 760, 0.09), 0.2), T(fr), -31)
+put(verb(bloop(760, 280, 0.16), 0.25), T(1395), -28)
+# the loop: the credit pops off, the wordmark folds back into the mark, night falls, the mark winds down into the
 # opening's point of light while the "ahh" swells in reverse into the last frame; the film's first frames carry the "ahh"
-put(verb(whoosh(0.35, 7000, 2500, 0.5, 1.2), 0.25), T(1398), -38, pan=0.2)
+put(verb(pop(1400, 520, 0.06), 0.2), T(1401), -24)
 put(verb(whoosh(0.5, 6000, 1200, 0.25, 0.8), 0.3), T(1402), -33, pan=0.25)
 SW = reverse_swell(AHH, AHH_ON)
 put(SW, N / SR - len(SW) / SR, -21)

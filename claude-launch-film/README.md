@@ -10,7 +10,7 @@ for a shot-by-shot comparison.
 
 ## Redrawn version
 
-`claude_launch_film_redraw_v14.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
+`claude_launch_film_redraw_v15.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
 scene is now rebuilt. It is made to play on loop: the last frame leads straight into the first.
 
 - **Opening:** the four-point sparkle is replaced by the orange Claude starburst, and the
@@ -31,7 +31,7 @@ scene is now rebuilt. It is made to play on loop: the last frame leads straight 
   continuous shot (`shared/sky.js`, plate from `sky_plate.py`): the camera pushes slowly toward the sun, a soft
   shade keeps the type readable, and through the finale the sun goes down (a crossfade to a dusk grade of the same
   photograph while the camera tilts up and the sun sinks out of frame).
-- **Seamless loop:** at the end the credit un-writes, the wordmark folds back into the mark, night falls from the
+- **Seamless loop:** at the end the credit pops off, the wordmark folds back into the mark, night falls from the
   top of the frame to the opening's navy, and the mark returns to the centre and winds down into the point of light
   the film opens on: the same mark, colour, place and spin rate as the first frame, so the film repeats without a
   visible cut. The sound wraps too: a reverse-reverb swell of the opening "ahh" rises into the last frame and the
@@ -60,12 +60,13 @@ scene is now rebuilt. It is made to play on loop: the last frame leads straight 
   `dr.imranhussain@example.com`) and About text are put into the real footage: the card is tracked
   frame by frame, each old item is filled from its surroundings, and the new one is added with the
   footage's own blur, motion smear and fade.
-- **End credit, written by Claude:** under the lifted lockup, "Built by Imran using Opus 5.5" streams in token by
-  token in Claude's serif, the way Claude's replies arrive ("Im" + "ran", a short pause before "Opus", "5" +
-  ".5"). Each letter resolves out of a soft focus, still warm with the mark's coral, and cools to its final colour
-  ("Imran" and "Opus 5.5" in white semibold, the rest in soft white). Meanwhile the Claude mark above makes one slow
-  turn, like Claude's own indicator while it writes, and comes to rest as the last letter settles, on a soft chord.
-  At the end the credit un-writes in reverse as the film rewinds into its opening.
+- **End credit, Hello Kitty style (client request):** after the Claude lockup, a heart opens out of the centre into
+  the client's Hello Kitty wallpaper and the lockup takes on a sticker outline. "Built by Imran using Opus 5.5" pops on
+  as a cute sticker (letters in Fredoka hop on one by one, the i's dotted with hearts, a polka-dot bow on the corner),
+  and the client's winking Hello Kitty pops up from behind it, sways and hops while hearts float up and stars twinkle.
+  She ducks away and the sticker pops off as night falls into the loop. Cute sounds to match (a twinkle as the heart
+  opens, a pop, a toy-piano note per word, Kitty's bloops). Hello Kitty is (c) Sanrio; the two images were supplied by
+  the client and are not included in this repository.
 
 | Frames | Scene | Status |
 |---|---|---|
@@ -81,7 +82,7 @@ scene is now rebuilt. It is made to play on loop: the last frame leads straight 
 | 973–1090 | doctor cards, "right one" | redrawn over the reference light field (cards and titles removed); the centre doctor is Dr. Imran Hussain; futuristic "right one" with a targeting lock on his card and a "Best match" chip |
 | 1091–1167 | profile and analytics | "Right outcome" redrawn; the profile footage now shows Dr. Imran Hussain (name, breadcrumb, photo, e-mail, About), tracked and blur-matched through the fast scroll |
 | 1168–1267 | closing lines | over the client's sunset photograph (slow push toward the sun, a soft shade behind the type), the hero statement: words rise out of masks as the narrator says them in a large serif, "right" semibold and "diagnosis" / "direction" in Claude coral built letter by letter; the first line glides up so the whole sentence ends on screen as one composition, and a fine coral line under "direction" resolves into an arrow pointing forward |
-| 1268–1453 | Claude lockup, end credit, loop | one continuous shot on the same sunset sky: the coral mark turns in and the wordmark wipes out beside it; the lockup lifts and Claude writes "Built by Imran using Opus 5.5" token by token while the mark turns once; then the sun goes down, night falls to navy, the credit un-writes, the wordmark folds back into the mark and the mark winds down into the opening's point of light (loop point) |
+| 1268–1453 | Claude lockup, end credit, loop | one continuous shot on the same sunset sky: the coral mark turns in and the wordmark wipes out beside it; a heart opens into the client's Hello Kitty wallpaper, the lockup lifts with a sticker outline, the credit pops on as a cute sticker and the client's Hello Kitty pops up from behind it; then she ducks away, the sticker pops off, night falls to navy, the wordmark folds back into the mark and the mark winds down into the opening's point of light (loop point) |
 
 The redraw sources are in `redraw/`:
 
@@ -98,6 +99,8 @@ The redraw sources are in `redraw/`:
 - `sound_design.py`: synthesises the effects, places the opening "ahh" and its reverse swell at the loop point,
   ducks the effects under the narration, mixes and masters the soundtrack.
 - `sky_plate.py`: prepares the client's sunset photograph (upscale, grain) and its dusk grade for `shared/sky.js`.
+- `hk_assets.py`: prepares the client's Hello Kitty wallpaper and cuts their Hello Kitty image out of its pink
+  background for the credit. `shared/fonts/Fredoka-*.woff2`: the credit's rounded face (SIL Open Font License).
 - `shared/hud.js`: the decode title and HUD brackets used by both "right one" moments.
 - `s11_*.py`, `textr.py`: the profile-page doctor swap. `s11_track.py` / `s11_refine*.py` track the page
   (SIFT, then masked ECC on static content), `s11_calib.py` fits the original fonts, `s11_edit.py` builds the
