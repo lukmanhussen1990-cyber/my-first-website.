@@ -42,7 +42,7 @@
   #counter { position: absolute; color: #d4d4d4; white-space: pre; line-height: 1; font-weight: 400;
              pointer-events: none; transform: scaleX(0.8); transform-origin: 100% 50%;
              -webkit-text-stroke: 0.42px #181818; }
-  #dial { color: #202012; }
+  #dial { color: #33302d; }
   #dial svg .ln { stroke: #e9e4d6; }
   #controls { position: absolute; left: 0; top: 0; width: 100%; opacity: 0; pointer-events: none; }
   #controls.on { pointer-events: auto; }
@@ -266,7 +266,7 @@ function buildDialRays() {
   let d = '';
   for (let i = 0; i < 10; i++) {
     const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
-    const r0 = 11.7, r1 = 14.6;
+    const r0 = 13.1, r1 = 16;   // measured: the rays stand a little clear of the disc
     d += `M${(Math.cos(a) * r0).toFixed(2)} ${(Math.sin(a) * r0).toFixed(2)}L${(Math.cos(a) * r1).toFixed(2)} ${(Math.sin(a) * r1).toFixed(2)}`;
   }
   g.innerHTML = `<path d="${d}" stroke-width="1.75"/>`;
@@ -305,7 +305,7 @@ function buildGrain() {
   for (let i = 0; i < n; i++) {
     const x = R() * w, y = R() * h;
     const s = (0.14 + Math.pow(R(), 4) * 0.75) * k;
-    const a = 0.3 + R() * 0.62;
+    const a = 0.27 + R() * 0.36;   // contrast distribution checked against the recording (count above 15/30/50 levels)
     g.fillStyle = `rgba(${40 + R() * 25 | 0},${32 + R() * 18 | 0},${22 + R() * 12 | 0},${a})`;
     const t = R();
     g.beginPath();
@@ -1310,7 +1310,8 @@ function draw(t) {
   drawGlow(c, cx, cy, st, pP);
 }
 let hintA = 1, hintBtnOn = true;
-const DIAL_A = hex('#202012'), DIAL_B = hex('#b0b19e'), DIAL_LA = hex('#e9e4d6'), DIAL_LB = hex('#3a3a30');
+const DIAL_A = hex('#33302d'), DIAL_B = hex('#aca69b'),   // warm greys measured from the recording
+      DIAL_LA = hex('#e9e4d6'), DIAL_LB = hex('#3a3a30');
 const dialLine = dialEl.querySelector('.ln'); dialLine.id = 'dialLine';
 const hintBtn = $('#hintBtn');
 
@@ -2172,7 +2173,7 @@ function tick() {
   const lv = CH.light.v;
   if (lv > 0) {
     const grow = 0.15 + 0.85 * (lampOn ? E.outQuad(lv) : E.outCubic(lv));
-    lightX += (car.x - lightX) * (1 - Math.exp(-dt / 0.03));
+    lightX += (car.x - lightX) * (1 - Math.exp(-dt / 0.036));   // lags ~28 px on a return, as recorded
     if (Math.abs(car.x - lightX) > 200 * k) lightX = car.x;
     const ax = lightX, ay = G.capCY - G.capHH - G.paperTop;
     setStyle(lightCv, 'transform', `translate(${(ax - L.ax).toFixed(2)}px, ${(ay - L.ay).toFixed(2)}px) translate(${L.ax}px, ${L.ay}px) scale(${grow.toFixed(4)}) translate(${-L.ax}px, ${-L.ay}px)`);
@@ -2188,7 +2189,7 @@ if (/[?&]debug\b/.test(location.search)) {
   window.__fw = {
     get text() { return text; }, get lines() { return lines.map((l) => l.idx.map((i) => text[i]).join('')); },
     get carX() { return car.x; }, get target() { return carriageTarget(); }, get col() { return caretCol(); },
-    get lamp() { return lampOn; }, get lift() { const t = now(); return strikeLift(t) - retractDrop(t); }, colX, G, AU, fx, WEB,
+    get lamp() { return lampOn; }, get lift() { const t = now(); return strikeLift(t) - retractDrop(t); }, get lightX() { return lightX; }, colX, G, AU, fx, WEB,
     renderLightForTest(scale, spread) { const s0 = L.scale; L.scale = scale; sliders.spread = spread; renderLight(); L.scale = s0; },
   };
 }
