@@ -22,7 +22,7 @@
     position: absolute; left: 50%; top: 0; width: 100%; max-width: 440px; height: 100%;
     transform: translateX(-50%); overflow: hidden; background: #181818; contain: strict;
   }
-  #paper { position: absolute; left: 0; right: 0; bottom: 0; overflow: hidden; background: #eae5d9; }
+  #paper { position: absolute; left: 0; right: 0; bottom: 0; overflow: hidden; background: #eee7db; }
   #paper canvas, #paper div { position: absolute; left: 0; top: 0; pointer-events: none; }
   #light { transform-origin: 0 0; will-change: transform, opacity; opacity: 0; }
   #vignette { inset: 0; width: 100%; height: 100%; opacity: 0;
@@ -306,24 +306,24 @@ function buildGrain() {
       x + Math.cos(a) * len, y + Math.sin(a) * len);
     g.stroke();
   }
-  // specks & dust
-  const n = Math.round((w * h) / (1250 * k * k));
+  // specks & dust (density and size distribution measured from the recording: ~1 per 180 px², mostly tiny)
+  const n = Math.round((w * h) / (125 * k * k));
   for (let i = 0; i < n; i++) {
     const x = R() * w, y = R() * h;
-    const s = (0.28 + Math.pow(R(), 3) * 0.95) * k;
-    const a = 0.3 + R() * 0.6;
+    const s = (0.14 + Math.pow(R(), 4) * 0.75) * k;
+    const a = 0.3 + R() * 0.62;
     g.fillStyle = `rgba(${40 + R() * 25 | 0},${32 + R() * 18 | 0},${22 + R() * 12 | 0},${a})`;
     const t = R();
     g.beginPath();
-    if (t < 0.62) { g.ellipse(x, y, s, s * (0.6 + R() * 0.5), R() * 3, 0, Math.PI * 2); }
-    else if (t < 0.93) { // tiny triangle / chip
-      const r2 = s * 1.4, a0 = R() * 6.28;
+    if (t < 0.45) { g.ellipse(x, y, s, s * (0.6 + R() * 0.5), R() * 3, 0, Math.PI * 2); }
+    else if (t < 0.85) { // tiny triangle / chip
+      const r2 = s * 1.6, a0 = R() * 6.28;
       g.moveTo(x + Math.cos(a0) * r2, y + Math.sin(a0) * r2);
       g.lineTo(x + Math.cos(a0 + 2.2) * r2, y + Math.sin(a0 + 2.2) * r2);
       g.lineTo(x + Math.cos(a0 + 4.1) * r2 * 0.7, y + Math.sin(a0 + 4.1) * r2 * 0.7);
-    } else { // dash
-      const a0 = R() * 6.28, l = s * 1.9;
-      g.ellipse(x, y, l, s * 0.4, a0, 0, Math.PI * 2);
+    } else { // dash / hair
+      const a0 = R() * 6.28, l = s * (1.6 + R() * 1.6);
+      g.ellipse(x, y, l, s * 0.35, a0, 0, Math.PI * 2);
     }
     g.fill();
   }
@@ -331,7 +331,7 @@ function buildGrain() {
   const tile = document.createElement('canvas'); tile.width = tile.height = 128;
   const tg = tile.getContext('2d'); const id = tg.createImageData(128, 128);
   for (let i = 0; i < id.data.length; i += 4) {
-    const v = R(); id.data[i] = id.data[i + 1] = id.data[i + 2] = v < 0.5 ? 150 : 255; id.data[i + 3] = (Math.abs(v - 0.5) * 2) * 10;
+    const v = R(); id.data[i] = id.data[i + 1] = id.data[i + 2] = v < 0.5 ? 150 : 255; id.data[i + 3] = (Math.abs(v - 0.5) * 2) * 12;
   }
   tg.putImageData(id, 0, 0);
   g.setTransform(1, 0, 0, 1, 0, 0);
@@ -1155,7 +1155,9 @@ function clipPaper(c) {
   c.clip();
 }
 
-let paperRGB = hex('#eae5d9');
+// base cream is a touch lighter than #eae5d9 so that, with grain on top, it renders as #eae5d9-ish like the recording
+const PAPER_LIGHT = hex('#eee7db'), PAPER_DARK = hex('#30302d');
+let paperRGB = PAPER_LIGHT;
 const styleCache = new Map();
 function setStyle(el, prop, val) {
   const key = el.id + '.' + prop;
@@ -1166,7 +1168,7 @@ function draw(t) {
   const c = sctx;
   const pP = E.ease(CH.paper.v), cP = CH.cap.v, sP = E.outQuad(CH.slot.v);
   // DOM-driven layers
-  paperRGB = mix(hex('#eae5d9'), hex('#30302d'), pP);
+  paperRGB = mix(PAPER_LIGHT, PAPER_DARK, pP);
   setStyle(paperEl, 'backgroundColor', rgba(paperRGB));
   setStyle(vignette, 'opacity', pP.toFixed(3));
   setStyle(grainCv, 'opacity', (1 - pP * 0.45).toFixed(3));
@@ -1949,14 +1951,14 @@ const AU = {
       for (const m of tones) {
         const o = this.ctx.createOscillator(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
         o.type = 'square'; o.frequency.value = hz(m); o.detune.value = (Math.random() - 0.5) * 8;
-        fl.type = 'lowpass'; fl.frequency.setValueAtTime(2600, t); fl.frequency.exponentialRampToValueAtTime(420, t + 0.16);
+        fl.type = 'lowpass'; fl.frequency.setValueAtTime(2000, t); fl.frequency.exponentialRampToValueAtTime(400, t + 0.16);
         g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.045, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
         o.connect(fl); fl.connect(g); g.connect(M); o.start(t); o.stop(t + 0.25);
       }
     }
     if (s % 4 === 2) {   // shaker on the off-beats
       const n = this.noiseSrc(t, 0.05), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
-      fl.type = 'highpass'; fl.frequency.value = 7000; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+      fl.type = 'highpass'; fl.frequency.value = 6000; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
       n.connect(fl); fl.connect(g); g.connect(M);
     }
     // theremin melody: [bar, 16th, midi, length in 16ths]
