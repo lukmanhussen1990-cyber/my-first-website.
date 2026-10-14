@@ -1985,9 +1985,9 @@ const AU = {
     // theremin voice: three gliding partials (1×, 2×, 3×) sharing one vibrato
     const o = this.ctx.createOscillator(), o2 = this.ctx.createOscillator(), g = this.ctx.createGain(), g2 = this.ctx.createGain(), fl = this.ctx.createBiquadFilter();
     const lfo = this.ctx.createOscillator(), lg = this.ctx.createGain(), dry = this.ctx.createGain();
-    // the recording's lead wobbles deeply (about ±50 cents at ~5 Hz) and has audible 2nd/3rd harmonics
+    // the recording's lead wobbles deeply (about ±60 cents at ~6 Hz) and has audible 2nd/3rd harmonics
     const o3 = this.ctx.createOscillator(), g3 = this.ctx.createGain();
-    o.type = 'sine'; o2.type = 'triangle'; o3.type = 'sine'; g2.gain.value = 0.7; g3.gain.value = 0.35; lfo.frequency.value = 5.1; lg.gain.value = 48;
+    o.type = 'sine'; o2.type = 'triangle'; o3.type = 'sine'; g2.gain.value = 0.7; g3.gain.value = 0.35; lfo.frequency.value = 6; lg.gain.value = 58;
     lfo.connect(lg); lg.connect(o.detune); lg.connect(o2.detune); lg.connect(o3.detune);
     fl.type = 'lowpass'; fl.frequency.value = 4000; fl.Q.value = 0.4;
     o.connect(g); o2.connect(g2); g2.connect(g); o3.connect(g3); g3.connect(g); g.connect(fl); fl.connect(dry); dry.gain.value = 1;
@@ -2074,7 +2074,12 @@ const AU = {
     const th = this.ther;
     for (const [b, st, m, len] of MELODY) if (b === bar && st === s && th) {
       const f = hz(m), dur = len * B / 4;
-      th.o.frequency.setTargetAtTime(f, t, 0.06); th.o2.frequency.setTargetAtTime(f * 2, t, 0.06); th.o3.frequency.setTargetAtTime(f * 3, t, 0.06);
+      if (len >= 5) {   // long notes scoop up from below, like the recording's theremin swoops
+        const f0 = f * 0.75;
+        th.o.frequency.setTargetAtTime(f0, t, 0.012); th.o2.frequency.setTargetAtTime(f0 * 2, t, 0.012); th.o3.frequency.setTargetAtTime(f0 * 3, t, 0.012);
+      }
+      const tg = len >= 5 ? t + 0.03 : t, tc = len >= 5 ? 0.07 : 0.06;
+      th.o.frequency.setTargetAtTime(f, tg, tc); th.o2.frequency.setTargetAtTime(f * 2, tg, tc); th.o3.frequency.setTargetAtTime(f * 3, tg, tc);
       th.g.gain.cancelScheduledValues(t);
       th.g.gain.setTargetAtTime(0.065, t, 0.04);                // swell in
       th.g.gain.setTargetAtTime(0.048, t + dur * 0.55, 0.12);    // relax
