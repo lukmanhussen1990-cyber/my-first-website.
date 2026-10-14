@@ -147,7 +147,6 @@ const E = {
   outCubic: (t) => 1 - Math.pow(1 - t, 3),
   inQuad: (t) => t * t,
   inOutSine: (t) => -(Math.cos(Math.PI * t) - 1) / 2,
-  inOutQuad: (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2),
 };
 function cubicBezier(x1, y1, x2, y2) {
   const ax = 3 * x1 - 3 * x2 + 1, bx = 3 * x2 - 6 * x1, cx = 3 * x1;
@@ -650,7 +649,6 @@ const caretCol = () => Math.min(lines[lines.length - 1].idx.length, COLS - 1);
 const colX = (col) => G.textLeft + (col + 0.5) * G.cell;
 
 /* ------------------------------------------------------- glyph rendering -- */
-let fontReady = false;
 const FONT = (px) => `400 ${px}px "Courier Prime", "Courier New", monospace`;
 const lineCache = new Map();
 let textVer = 0;                       // bumps whenever already-typed glyphs may have changed
@@ -734,10 +732,10 @@ function buildCaptions() {
 // Each channel eases toward its target with its own delay/duration (staged transition).
 // timings measured from the recording (seconds after the tap: [delay, duration])
 const CH = {
-  cap:   { v: 0, t: 0, d: 0, on: [0, 0.1], off: [0.62, 0.12] },
-  paper: { v: 0, t: 0, d: 0, on: [0.15, 0.45], off: [0.2, 0.45] },
-  slot:  { v: 0, t: 0, d: 0, on: [0.5, 0.22], off: [0.1, 0.15] },
-  light: { v: 0, t: 0, d: 0, on: [0.62, 0.42], off: [0, 0.25] },
+  cap:   { v: 0, t: 0, on: [0, 0.1], off: [0.62, 0.12] },
+  paper: { v: 0, t: 0, on: [0.15, 0.45], off: [0.2, 0.45] },
+  slot:  { v: 0, t: 0, on: [0.5, 0.22], off: [0.1, 0.15] },
+  light: { v: 0, t: 0, on: [0.62, 0.42], off: [0, 0.25] },
 };
 let lampOn = false;
 function setLamp(on, instant) {
@@ -769,7 +767,7 @@ function stepChannels(dt) {
 const sliders = { light: 0, spread: 144, reach: 210 };
 let lightDirty = true;
 const LIGHT_RGB = [232, 212, 178];
-const L = { sw: 0, sh: 0, ax: 0, ay: 0, scale: 0.5 };
+const L = { ax: 0, ay: 0, scale: 0.5 };   // sprite anchor (the slot) and render resolution
 function renderLight() {
   lightDirty = false;
   // parameters fitted to three frames of the recording (median error 1.7 grey levels)
@@ -790,7 +788,7 @@ function renderLight() {
   const pw = Math.max(2, Math.round(sw * S)), ph = Math.max(2, Math.round(sh * S));
   lightCv.width = pw; lightCv.height = ph;
   lightCv.style.width = sw + 'px'; lightCv.style.height = sh + 'px';
-  L.sw = sw; L.sh = sh; L.ax = sw / 2; L.ay = sh - 3 * k;
+  L.ax = sw / 2; L.ay = sh - 3 * k;
   const c = lightCv.getContext('2d');
   const img = c.createImageData(pw, ph), D = img.data;
   const ihb = 1 / hb, iha = 1 / ha, D2R = 180 / Math.PI, icell = 1 / 0.857;
@@ -826,7 +824,7 @@ function renderLight() {
 const car = { x: 0, from: 0, to: 0, t0: 0, dur: 0, ease: E.outCubic, pending: null };
 const strike = { t0: -9 };
 const retract = { t0: -9 };
-const scrollAnim = { from: 0, t0: -9, dur: 0.26 };
+const scrollAnim = { from: 0, t0: -9 };            // paper feed, in lines
 const shiftAnim = { from: 0, to: 0, t0: -9 };       // typing-line baseline shift, 0 (one line) … 1 (× G.base2)
 let lastKey = -9;
 
@@ -2095,7 +2093,7 @@ function boot() {
   setLamp(store.get(LS.lamp, '0') === '1', true);
   onTextChanged();
   if (document.fonts && document.fonts.load) {
-    Promise.all([document.fonts.load(FONT(22)), document.fonts.load('700 22px "Courier Prime"')]).then(() => { fontReady = true; invalidateText(); buildCaptions(); });
+    Promise.all([document.fonts.load(FONT(22)), document.fonts.load('700 22px "Courier Prime"')]).then(() => { invalidateText(); buildCaptions(); });
   }
   if (!('ontouchstart' in window)) focusInput();
   lastActivity = now();
