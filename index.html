@@ -1551,7 +1551,8 @@ function stepRope(r, dt, t, a, b) {
   const P = r.pts, n = r.n;
   // rest length chases the anchor distance (silk pays out / gathers slowly)
   const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
-  const target = Math.max(r.minLen * k, d * r.slack) / (n - 1);
+  r.extra = (r.extra || 0) * Math.exp(-dt / 4);           // silk loosened by a fling relaxes over a few seconds
+  const target = Math.max(r.minLen * k, d * (r.slack + r.extra)) / (n - 1);
   r.rest += (target - r.rest) * (1 - Math.exp(-dt / (target > r.rest ? 0.12 : 0.9)));   // pays out fast, gathers slowly
   const damp = Math.exp(-dt * 2.6), g = r.g * k, pull = r.pull;
   for (let i = 1; i < n - 1; i++) {
@@ -1591,6 +1592,7 @@ function stepRope(r, dt, t, a, b) {
 function flingWebs() {
   if (!WEB.ready) return;
   for (const r of WEB.ribbons) {
+    r.extra = Math.min(0.16, (r.extra || 0) + (r.side > 0 ? 0.1 : 0.05));   // the carriage return tears loose some slack
     const up = (r.side > 0 ? 260 : 120) * k * (0.7 + Math.random() * 0.6);
     for (let i = 1; i < r.n - 1; i++) {
       const f = i / (r.n - 1);
@@ -1681,7 +1683,7 @@ function drawRibbon(c, r, t, pP) {
     let tx = X[i1] - X[i0], ty = Y[i1] - Y[i0]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
     NX[i] = -ty; NY[i] = tx;
     const f = F[i] / total; F[i] = f;
-    const env = Math.min(1, f * 6, (1 - f) * 6);
+    const env = 0.3 + 0.7 * Math.min(1, f * 9, (1 - f) * 9);   // stays a band right up to its anchors
     const tw = Math.cos(f * Math.PI * r.twist + ph);
     Wd[i] = wk * env * (0.08 + 0.92 * Math.abs(tw)) * (tw < 0 ? -1 : 1);
   }
