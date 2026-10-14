@@ -1816,7 +1816,7 @@ const MELODY = [[0, 2, 76, 6], [0, 10, 67, 2], [0, 12, 65, 2], [0, 14, 64, 4],
   [7, 0, 71, 6], [7, 8, 69, 4], [7, 12, 72, 4]];
 const AU = {
   ctx: null, master: null, sfx: null, music: null, verb: null, noise: null, on: store.get(LS.sound, '1') !== '0',
-  hum: null, musicOn: false, nextNote: 0, step: 0, timer: 0, ther: null, bedNoise: null,
+  hum: null, musicOn: false, nextNote: 0, step: 0, timer: 0, lead: null, bed: null, bedNoise: null,
   init() {
     if (this.ctx) return true;
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -1982,17 +1982,7 @@ const AU = {
   startMusic() {
     if (!this.ctx || this.musicOn) return;
     this.musicOn = true; this.step = 0; this.nextNote = this.ctx.currentTime + 0.12;
-    // theremin voice: three gliding partials (1×, 2×, 3×) sharing one vibrato
-    const o = this.ctx.createOscillator(), o2 = this.ctx.createOscillator(), g = this.ctx.createGain(), g2 = this.ctx.createGain(), fl = this.ctx.createBiquadFilter();
-    const lfo = this.ctx.createOscillator(), lg = this.ctx.createGain(), dry = this.ctx.createGain();
-    // the recording's lead wobbles deeply (about ±60 cents at ~6 Hz) and has audible 2nd/3rd harmonics
-    const o3 = this.ctx.createOscillator(), g3 = this.ctx.createGain();
-    o.type = 'sine'; o2.type = 'triangle'; o3.type = 'sine'; g2.gain.value = 0.7; g3.gain.value = 0.35; lfo.frequency.value = 6; lg.gain.value = 58;
-    lfo.connect(lg); lg.connect(o.detune); lg.connect(o2.detune); lg.connect(o3.detune);
-    fl.type = 'lowpass'; fl.frequency.value = 4000; fl.Q.value = 0.4;
-    o.connect(g); o2.connect(g2); g2.connect(g); o3.connect(g3); g3.connect(g); g.connect(fl); fl.connect(dry); dry.gain.value = 1;
-    dry.connect(this.music); fl.connect(this.verb);
-    g.gain.value = 0.0001; o.start(); o2.start(); o3.start(); lfo.start();
+    this.lead = this.makeLead(this.ctx.currentTime);
     // airy bed: the recording's music sits on a soft, slightly crackly hiss (about -42 dBFS above 3 kHz)
     const bed = this.ctx.createBufferSource(), bh = this.ctx.createBiquadFilter(), bl = this.ctx.createBiquadFilter(), bg = this.ctx.createGain();
     if (!this.bedNoise) {   // its own long buffer, so the loop never repeats audibly
@@ -2003,15 +1993,32 @@ const AU = {
     bed.buffer = this.bedNoise; bed.loop = true; bh.type = 'highpass'; bh.frequency.value = 2600; bl.type = 'lowpass'; bl.frequency.value = 6500;
     bg.gain.value = 0.0001; bg.gain.setTargetAtTime(0.025, this.ctx.currentTime, 0.3);
     bed.connect(bh); bh.connect(bl); bl.connect(bg); bg.connect(this.music); bed.start();
-    this.ther = { o, o2, o3, g, lfo, bed, bg };
+    this.bed = { bed, bg };
     clearInterval(this.timer);
     this.timer = setInterval(() => this.schedule(), 25);
   },
   stopMusic() {
     if (!this.musicOn) return; this.musicOn = false; clearInterval(this.timer);
-    const t = this.ctx.currentTime, th = this.ther;
-    if (th) { th.g.gain.cancelScheduledValues(t); th.g.gain.setTargetAtTime(0.0001, t, 0.05); th.o.stop(t + 0.4); th.o2.stop(t + 0.4); th.o3.stop(t + 0.4); th.lfo.stop(t + 0.4);
-      th.bg.gain.cancelScheduledValues(t); th.bg.gain.setTargetAtTime(0.0001, t, 0.05); th.bed.stop(t + 0.4); this.ther = null; }
+    const t = this.ctx.currentTime;
+    if (this.lead) { this.dropLead(this.lead, t); this.lead = null; }
+    if (this.bed) { const B = this.bed; B.bg.gain.cancelScheduledValues(t); B.bg.gain.setTargetAtTime(0.0001, t, 0.05); B.bed.stop(t + 0.4); this.bed = null; }
+  },
+  // theremin voice: three gliding partials (1×, 2×, 3×) sharing one vibrato; a fresh voice is made at the top of
+  // every loop so the pitch automation never piles up over a long session
+  makeLead(t) {
+    const c = this.ctx, o = c.createOscillator(), o2 = c.createOscillator(), o3 = c.createOscillator(), lfo = c.createOscillator();
+    const g = c.createGain(), g2 = c.createGain(), g3 = c.createGain(), lg = c.createGain(), fl = c.createBiquadFilter();
+    // the recording's lead wobbles deeply (about ±60 cents at ~6 Hz) and has audible 2nd/3rd harmonics
+    o.type = 'sine'; o2.type = 'triangle'; o3.type = 'sine'; g2.gain.value = 0.7; g3.gain.value = 0.35; lfo.frequency.value = 6; lg.gain.value = 58;
+    lfo.connect(lg); lg.connect(o.detune); lg.connect(o2.detune); lg.connect(o3.detune);
+    fl.type = 'lowpass'; fl.frequency.value = 4000; fl.Q.value = 0.4;
+    o.connect(g); o2.connect(g2); g2.connect(g); o3.connect(g3); g3.connect(g); g.connect(fl); fl.connect(this.music); fl.connect(this.verb);
+    g.gain.value = 0.0001; for (const x of [o, o2, o3, lfo]) x.start(t);
+    return { o, o2, o3, g, lfo, t0: t };
+  },
+  dropLead(L, t) {
+    L.g.gain.cancelScheduledValues(t); L.g.gain.setTargetAtTime(0.0001, t, 0.03);
+    for (const x of [L.o, L.o2, L.o3, L.lfo]) x.stop(t + 0.3);
   },
   schedule() {
     if (!this.musicOn || this.ctx.state !== 'running') { if (this.ctx) this.nextNote = Math.max(this.nextNote, this.ctx.currentTime + 0.05); return; }
@@ -2076,7 +2083,8 @@ const AU = {
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.09, t + 0.002); g.gain.setTargetAtTime(0, t + 0.002, 0.038);
       n.connect(fl); fl.connect(g); g.connect(M); g.connect(this.verb);
     }
-    const th = this.ther;
+    if (step === 0 && this.lead && t - this.lead.t0 > 1) { this.dropLead(this.lead, t); this.lead = this.makeLead(t); }
+    const th = this.lead;
     for (const [b, st, m, len] of MELODY) if (b === bar && st === s && th) {
       const f = hz(m), dur = len * B / 4;
       if (len >= 5) {   // long notes scoop up from below, like the recording's theremin swoops
