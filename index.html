@@ -1224,6 +1224,7 @@ function draw(t) {
     c.drawImage(h2.cv, G.textLeft + G.glyphDX - h2.ox, G.base - h2.by, h2.w, h2.h);
     c.globalAlpha = 1;
   }
+  drawCaret(c, t, pP);   // the blinking insertion dot lives on the paper (under the T and the webs)
   c.restore();
 
   // ----- rail -----
@@ -1254,7 +1255,6 @@ function draw(t) {
   drawSteam(c, cx, capTop, t, pP, drawDt);
   const st = fx.state(t);
   drawSparks(c, cx, cy, t, st);
-  drawCaret(c, t, pP);
   drawGlow(c, cx, cy, st, pP);
 }
 let hintA = 1, hintBtnOn = true;
@@ -1442,18 +1442,23 @@ function drawGlow(c, cx, cy, st, pP) {
   }
 }
 let glowOn = false;
+let blinkT0 = 0;   // the blink rhythm starts ~0.27 s after launch, as in the recording
 function drawCaret(c, t, pP) {
-  if (pP < 0.02) return;
-  const ph = (t % 1.033) / 1.033;
-  const on = ph < 0.48 ? 1 : 0;
-  if (!on) return;
+  // blinking insertion dot (≈1.05 s period, on for half of it, as recorded): a dark ink dot on the
+  // cream paper, a pale green glowing dot in lamp mode
+  if (((t - blinkT0) % 1.05 + 1.05) % 1.05 >= 0.5) return;
   const n = lines.length, col = lines[n - 1].idx.length;
-  const x = G.textLeft + col * G.cell + 1.85 * k, y = G.base + baseShift(t) + scrollOffset(t) * G.lineH + 1.6 * k;
-  const g = c.createRadialGradient(x, y, 0, x, y, 3.4 * k);
-  g.addColorStop(0, `rgba(196,255,186,${0.9 * pP})`); g.addColorStop(0.45, `rgba(150,235,140,${0.55 * pP})`); g.addColorStop(1, 'rgba(120,220,110,0)');
-  c.save(); c.translate(x, y); c.scale(0.8, 1); c.translate(-x, -y);
-  c.fillStyle = g; c.fillRect(x - 3.4 * k, y - 3.4 * k, 6.8 * k, 6.8 * k);
-  c.restore();
+  const x = G.textLeft + col * G.cell + 2.1 * k, y = G.base + baseShift(t) + scrollOffset(t) * G.lineH + 1.9 * k;
+  if (pP < 0.98) {
+    c.fillStyle = `rgba(54,46,35,${0.95 * (1 - pP)})`;
+    c.beginPath(); c.arc(x, y, 2.25 * k, 0, Math.PI * 2); c.fill();
+  }
+  if (pP > 0.02) {
+    const g = c.createRadialGradient(x, y, 0, x, y, 3.6 * k);
+    g.addColorStop(0, `rgba(214,236,196,${0.98 * pP})`); g.addColorStop(0.48, `rgba(201,226,180,${0.9 * pP})`);
+    g.addColorStop(0.62, `rgba(150,200,130,${0.35 * pP})`); g.addColorStop(1, 'rgba(120,190,110,0)');
+    c.fillStyle = g; c.fillRect(x - 3.6 * k, y - 3.6 * k, 7.2 * k, 7.2 * k);
+  }
 }
 
 /* --------------------------------------------------------------- webs -- */
@@ -2097,6 +2102,7 @@ function boot() {
   }
   if (!('ontouchstart' in window)) focusInput();
   lastActivity = now();
+  blinkT0 = now() + 0.27;
   requestAnimationFrame(frame);
 }
 boot();
