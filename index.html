@@ -1796,6 +1796,12 @@ let resizeTimer = 0;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { const w = W, h = H; measure(); if (w !== W || Math.abs(h - H) > 1) layout(); else onViewport(); }, 60); });
 
 /* ---------------------------------------------------------------- audio -- */
+// background music harmony: [bass midi, pad tones, pluck tones]; LOOP gives the chord for each beat of the 8-bar loop
+const CHORDS = {
+  C: [36, [52, 55, 60], [72, 76, 79]], G: [31, [50, 55, 59, 62], [71, 74, 79]],
+  F: [29, [53, 57, 60], [72, 77, 81]], Am: [33, [52, 57, 60], [72, 76, 81]],
+};
+const LOOP = 'F C C C C C C C C G G G G G G G G F F F F Am Am Am Am G C G G F F F'.split(' ');
 // Everything is synthesised with the Web Audio API — no audio files.
 const AU = {
   ctx: null, master: null, sfx: null, music: null, verb: null, noise: null, on: store.get(LS.sound, '1') !== '0',
@@ -1811,12 +1817,12 @@ const AU = {
     this.master = ctx.createGain(); this.master.gain.value = this.on ? 0.75 : 0;
     comp.connect(this.master); this.master.connect(ctx.destination);
     this.sfx = ctx.createGain(); this.sfx.gain.value = 0.8; this.sfx.connect(comp);
-    this.music = ctx.createGain(); this.music.gain.value = 0.52; this.music.connect(comp);
+    this.music = ctx.createGain(); this.music.gain.value = 0.49; this.music.connect(comp);
     // small generated room for the music and the bell
     this.verb = ctx.createConvolver();
     const len = Math.floor(ctx.sampleRate * 1.9), ir = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); let lp = 0;
-      for (let i = 0; i < len; i++) { lp += ((Math.random() * 2 - 1) - lp) * 0.35; d[i] = lp * Math.pow(1 - i / len, 2.6); } }
+      for (let i = 0; i < len; i++) { lp += ((Math.random() * 2 - 1) - lp) * 0.6; d[i] = lp * Math.pow(1 - i / len, 2.6); } }
     this.verb.buffer = ir;
     const wet = ctx.createGain(); wet.gain.value = 0.32; this.verb.connect(wet); wet.connect(comp);
     // shared white noise
@@ -1967,20 +1973,28 @@ const AU = {
     // theremin voice: one gliding oscillator pair with vibrato
     const o = this.ctx.createOscillator(), o2 = this.ctx.createOscillator(), g = this.ctx.createGain(), g2 = this.ctx.createGain(), fl = this.ctx.createBiquadFilter();
     const lfo = this.ctx.createOscillator(), lg = this.ctx.createGain(), dry = this.ctx.createGain();
-    o.type = 'sine'; o2.type = 'triangle'; g2.gain.value = 0.18; lfo.frequency.value = 5.6; lg.gain.value = 26;
-    lfo.connect(lg); lg.connect(o.detune); lg.connect(o2.detune);
-    fl.type = 'lowpass'; fl.frequency.value = 2200; fl.Q.value = 0.4;
-    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(fl); fl.connect(dry); dry.gain.value = 1;
+    // the recording's lead wobbles deeply (about ±50 cents at ~5 Hz) and has audible 2nd/3rd harmonics
+    const o3 = this.ctx.createOscillator(), g3 = this.ctx.createGain();
+    o.type = 'sine'; o2.type = 'triangle'; o3.type = 'sine'; g2.gain.value = 0.45; g3.gain.value = 0.2; lfo.frequency.value = 5.1; lg.gain.value = 48;
+    lfo.connect(lg); lg.connect(o.detune); lg.connect(o2.detune); lg.connect(o3.detune);
+    fl.type = 'lowpass'; fl.frequency.value = 4000; fl.Q.value = 0.4;
+    o.connect(g); o2.connect(g2); g2.connect(g); o3.connect(g3); g3.connect(g); g.connect(fl); fl.connect(dry); dry.gain.value = 1;
     dry.connect(this.music); fl.connect(this.verb);
-    g.gain.value = 0.0001; o.start(); o2.start(); lfo.start();
-    this.ther = { o, o2, g, lfo };
+    g.gain.value = 0.0001; o.start(); o2.start(); o3.start(); lfo.start();
+    // airy bed: the recording's music sits on a soft, slightly crackly hiss (about -42 dBFS above 3 kHz)
+    const bed = this.ctx.createBufferSource(), bh = this.ctx.createBiquadFilter(), bl = this.ctx.createBiquadFilter(), bg = this.ctx.createGain();
+    bed.buffer = this.noise; bed.loop = true; bh.type = 'highpass'; bh.frequency.value = 2600; bl.type = 'lowpass'; bl.frequency.value = 6500;
+    bg.gain.value = 0.0001; bg.gain.setTargetAtTime(0.02, this.ctx.currentTime, 0.3);
+    bed.connect(bh); bh.connect(bl); bl.connect(bg); bg.connect(this.music); bed.start();
+    this.ther = { o, o2, o3, g, lfo, bed, bg };
     clearInterval(this.timer);
     this.timer = setInterval(() => this.schedule(), 25);
   },
   stopMusic() {
     if (!this.musicOn) return; this.musicOn = false; clearInterval(this.timer);
     const t = this.ctx.currentTime, th = this.ther;
-    if (th) { th.g.gain.cancelScheduledValues(t); th.g.gain.setTargetAtTime(0.0001, t, 0.05); th.o.stop(t + 0.4); th.o2.stop(t + 0.4); th.lfo.stop(t + 0.4); this.ther = null; }
+    if (th) { th.g.gain.cancelScheduledValues(t); th.g.gain.setTargetAtTime(0.0001, t, 0.05); th.o.stop(t + 0.4); th.o2.stop(t + 0.4); th.o3.stop(t + 0.4); th.lfo.stop(t + 0.4);
+      th.bg.gain.cancelScheduledValues(t); th.bg.gain.setTargetAtTime(0.0001, t, 0.05); th.bed.stop(t + 0.4); this.ther = null; }
   },
   schedule() {
     if (!this.musicOn || this.ctx.state !== 'running') { if (this.ctx) this.nextNote = Math.max(this.nextNote, this.ctx.currentTime + 0.05); return; }
@@ -1989,56 +2003,64 @@ const AU = {
   },
   playStep(step, t, B) {
     const bar = (step / 16) | 0, s = step % 16, M = this.music;
-    // chords change every two beats, following the recording's harmony (E7 … C … G … Dm … E7 … Am … F … E7 … Am … G)
-    const PROG = [[52, [56, 59, 64]], [48, [55, 60, 64]], [48, [55, 60, 64]], [43, [55, 59, 62]],
-      [43, [59, 62, 65]], [50, [57, 62, 65]], [52, [56, 59, 62, 64]], [52, [56, 59, 62]],
-      [45, [57, 60, 64]], [45, [57, 60, 64]], [45, [57, 60, 64]], [44, [56, 60, 64]],
-      [41, [57, 60, 65]], [52, [56, 59, 62, 64]], [45, [57, 60, 64]], [43, [55, 59, 62]]];
-    const [root, tones] = PROG[bar * 2 + (s >= 8 ? 1 : 0)];
+    // harmony, one chord per beat, read from the recording's bass line: C for two bars, G for two, F, Am, G
+    // (each change lands one beat into the phrase, as in the recording); the loop closes on F
+    const [root, padTones, pluckTones] = CHORDS[LOOP[bar * 4 + (s >> 2)]];
     const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
-    if (s % 4 === 0) {   // soft kick on every beat
+    if (s % 4 === 0) {   // soft kick on every beat, with the bright beater click heard in the recording
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-      o.frequency.setValueAtTime(115, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.13);
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+      o.frequency.setValueAtTime(118, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.1);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
       o.connect(g); g.connect(M); o.start(t); o.stop(t + 0.3);
+      this.burst(t, { f: 4800, q: 0.7, gain: 0.09, a: 0.0005, d: 0.007, dest: M });
     }
     if (s === 0 || s === 8) {   // soft sustained pad under everything (the recording has a continuous harmonic bed)
       const dur = 2 * B;
-      for (const m of tones) {
+      for (const m of padTones) {
         for (const det of [-6, 6]) {
           const o = this.ctx.createOscillator(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
-          o.type = 'triangle'; o.frequency.value = hz(m); o.detune.value = det;
-          fl.type = 'lowpass'; fl.frequency.value = 1100; fl.Q.value = 0.3;
-          g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.011, t + 0.09);
-          g.gain.setValueAtTime(0.011, t + dur - 0.1); g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.02);
+          o.type = 'sawtooth'; o.frequency.value = hz(m); o.detune.value = det;
+          fl.type = 'lowpass'; fl.frequency.value = 2400; fl.Q.value = 0.3;
+          g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.014, t + 0.09);
+          g.gain.setValueAtTime(0.014, t + dur - 0.1); g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.02);
           o.connect(fl); fl.connect(g); g.connect(M); o.start(t); o.stop(t + dur + 0.05);
         }
       }
     }
-    if (s === 0 || s === 8) {   // plucked bass "oom"
-      const m = root;
-      const o = this.ctx.createOscillator(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
-      o.type = 'triangle'; o.frequency.value = hz(m); fl.type = 'lowpass'; fl.frequency.setValueAtTime(900, t); fl.frequency.exponentialRampToValueAtTime(220, t + 0.3);
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.42, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.62);
-      o.connect(fl); fl.connect(g); g.connect(M); o.start(t); o.stop(t + 0.7);
-    }
-    if (s === 4 || s === 12 || (s === 14 && bar % 2 === 1)) {   // plucky chord "pah"
-      for (const m of tones) {
+    if (s % 4 === 2) {   // deep plucked bass on every off-beat ("pah"), root plus its octave
+      for (const [m, v] of [[root, 0.34], [root + 12, 0.22]]) {
         const o = this.ctx.createOscillator(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
-        o.type = 'square'; o.frequency.value = hz(m); o.detune.value = (Math.random() - 0.5) * 8;
-        fl.type = 'lowpass'; fl.frequency.setValueAtTime(2000, t); fl.frequency.exponentialRampToValueAtTime(400, t + 0.16);
-        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.045, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
-        o.connect(fl); fl.connect(g); g.connect(M); o.start(t); o.stop(t + 0.25);
+        o.type = 'triangle'; o.frequency.value = hz(m); fl.type = 'lowpass'; fl.frequency.setValueAtTime(700, t); fl.frequency.exponentialRampToValueAtTime(160, t + 0.25);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.44);
+        o.connect(fl); fl.connect(g); g.connect(M); o.start(t); o.stop(t + 0.48);
       }
     }
-    if (s % 4 === 2) {   // shaker on the off-beats
-      const n = this.noiseSrc(t, 0.05), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
-      fl.type = 'highpass'; fl.frequency.value = 6000; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
-      n.connect(fl); fl.connect(g); g.connect(M);
+    if (s % 4 === 0 || s % 4 === 2) {   // plucky chord on the beat and the off-beat, the off-beat one brighter
+      const off = s % 4 === 2, v = off ? 0.046 : 0.034;
+      for (const m of pluckTones) {
+        const o = this.ctx.createOscillator(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = hz(m); o.detune.value = (Math.random() - 0.5) * 8;
+        fl.type = 'lowpass'; fl.frequency.setValueAtTime(off ? 4200 : 3000, t + 0.02); fl.frequency.exponentialRampToValueAtTime(600, t + 0.2);
+        g.gain.setValueAtTime(0.0001, t); g.gain.setValueAtTime(0.0001, t + 0.02); g.gain.exponentialRampToValueAtTime(v, t + 0.026); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+        o.connect(fl); fl.connect(g); g.connect(M); o.start(t); o.stop(t + 0.26);
+      }
+    }
+    {   // soft shaker on every sixteenth: the recording has a continuous airy top that pulses with the beat
+      const n = this.noiseSrc(t, 0.2), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain(), v = 0.05 * [0.6, 0.35, 1, 0.4][s % 4];
+      fl.type = 'bandpass'; fl.frequency.value = 3500; fl.Q.value = 0.7;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.008); g.gain.setTargetAtTime(0, t + 0.008, 0.03);
+      n.connect(fl); fl.connect(g); g.connect(M); g.connect(this.verb);
+    }
+    if (Math.random() < 0.5) this.burst(t + Math.random() * B / 4, { f: 2500, type: 'highpass', q: 0.7, gain: 0.03 + Math.random() * 0.1, a: 0.0003, d: 0.0015, dest: M });   // faint crackle in the bed
+    if (s % 2 === 0) {   // hat on every eighth (beat and off-beat alike, as in the recording), ringing ~80 ms
+      const n = this.noiseSrc(t, 0.25), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+      fl.type = 'highpass'; fl.frequency.value = 5000;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(s % 4 === 2 ? 0.08 : 0.065, t + 0.002); g.gain.setTargetAtTime(0, t + 0.002, 0.038);
+      n.connect(fl); fl.connect(g); g.connect(M); g.connect(this.verb);
     }
     // theremin melody: [bar, 16th, midi, length in 16ths]
     // contour transcribed from the recording's lead: E5 … G4 F4 E4 | G5 D5 … D#5 | E5 D5 … F4 E4 A4 | G4 A4 G#4 |
-    // A4 C5 D5 G5 | F5→G5, wobbling G#5 G5 F#5 G5 E5 | long E5, D5, long C5 | B4 G#4 B4
+    // A4 C5 D5 G5 | F5→G5, wobbling G#5 G5 F#5 G5 E5 | long E5, D5, long C5 | B4 A4 C5 (back to the top)
     const MEL = [[0, 2, 76, 6], [0, 10, 67, 2], [0, 12, 65, 2], [0, 14, 64, 4],
       [1, 6, 79, 3], [1, 9, 74, 4], [1, 14, 75, 2],
       [2, 0, 76, 3], [2, 3, 74, 5], [2, 10, 65, 2], [2, 12, 64, 2], [2, 14, 69, 2],
@@ -2046,14 +2068,14 @@ const AU = {
       [4, 0, 69, 6], [4, 7, 72, 2], [4, 9, 74, 3], [4, 13, 79, 3],
       [5, 4, 77, 2], [5, 6, 79, 4], [5, 10, 80, 2], [5, 12, 79, 1], [5, 13, 78, 1], [5, 14, 79, 1], [5, 15, 76, 1],
       [6, 0, 76, 6], [6, 6, 74, 2], [6, 8, 72, 8],
-      [7, 0, 71, 6], [7, 8, 68, 4], [7, 12, 71, 4]];
+      [7, 0, 71, 6], [7, 8, 69, 4], [7, 12, 72, 4]];
     const th = this.ther;
     for (const [b, st, m, len] of MEL) if (b === bar && st === s && th) {
       const f = hz(m), dur = len * B / 4;
-      th.o.frequency.setTargetAtTime(f, t, 0.045); th.o2.frequency.setTargetAtTime(f * 2, t, 0.045);
+      th.o.frequency.setTargetAtTime(f, t, 0.06); th.o2.frequency.setTargetAtTime(f * 2, t, 0.06); th.o3.frequency.setTargetAtTime(f * 3, t, 0.06);
       th.g.gain.cancelScheduledValues(t);
-      th.g.gain.setTargetAtTime(0.05, t, 0.04);                 // swell in
-      th.g.gain.setTargetAtTime(0.036, t + dur * 0.55, 0.12);    // relax
+      th.g.gain.setTargetAtTime(0.065, t, 0.04);                // swell in
+      th.g.gain.setTargetAtTime(0.048, t + dur * 0.55, 0.12);    // relax
       th.g.gain.setTargetAtTime(0.012, t + dur - 0.06, 0.03);    // breathe before the next note
     }
     if (s === 0 && bar % 4 === 0) {   // occasional bell chime
