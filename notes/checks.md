@@ -57,7 +57,15 @@ Fixed: all of the above, measured numerically (median profiles, IoU template mat
 tracking during the wrap).
 **Check 7 done. Next: final checks, edge cases, audio fidelity, cleanup.**
 
-## Check 8 — final checks (v8a…)
-Done so far: 3-minute soak (no errors, flat 4 MB heap, steady frame cost), audio-node leak check,
-crisp click redesigned from the recording's click spectrum/decay, music contour transcribed from
-the recording, mirrored light render (2× faster).
+## Check 8 — final checks (v8a–v8h)
+Differences found: click too long/low (the recording's clicks decay in 3–6 ms, weighted to
+4–14 kHz), music contour/harmony generic, light ramp too slow at the slot, caret dot missing in
+light mode, bolts/stitches simplified, slider labels 3.5 px off, music bed too thin, levels off.
+An independent adversarial code review found 12 issues (spark buzz ignoring its volume, sounds
+queued on a paused clock, huge pastes building off-screen canvases, tap blur/refocus, desktop
+resize while focused, Android keyboard avoidance, loop dying on an exception, emoji left in the
+textarea, first line not typed out, keyboard access, carriage hop on quick backspace, unsaved
+recent typing).
+Fixed: all of the above, each with a regression test; 3-minute soak (no errors, flat 4 MB heap,
+steady frame cost), audio-node leak check, levels per segment within ~10 % of the recording.
+**Check 8 done. Next: side-by-side comparison video, final regression pass, delivery.**
