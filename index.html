@@ -492,7 +492,33 @@ function buildCapsules() {
     drawBolt(c, 25.4 * k, -hh, -1, m);
     drawBolt(c, 25.4 * k, hh, 1, m);
   }
+  buildFlash();
 }
+// the patch column turning to bright metal during a spark (stitches stay visible, as recorded)
+const flashCv = document.createElement('canvas');
+function buildFlash() {
+  const hh = G.capHH, x1 = SEAM.x1 * k, x2 = SEAM.x2 * k, sy = SEAM.y * k;
+  const w = x2 - x1 + 4 * k, h = hh * 2 + 2 * k;
+  flashCv.width = Math.ceil(w * dpr); flashCv.height = Math.ceil(h * dpr);
+  const c = flashCv.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, (2 * k - x1) * dpr, (hh + 1 * k) * dpr);   // origin = capsule centre
+  c.save(); capsulePath(c); c.clip();
+  let g = c.createLinearGradient(x1, 0, x2, 0);
+  g.addColorStop(0, 'rgb(118,118,124)'); g.addColorStop(0.12, 'rgb(150,150,156)'); g.addColorStop(0.45, 'rgb(186,186,192)');
+  g.addColorStop(0.68, 'rgb(170,170,178)'); g.addColorStop(0.88, 'rgb(122,122,130)'); g.addColorStop(1, 'rgb(96,96,104)');
+  c.fillStyle = g; c.fillRect(x1, -hh, x2 - x1, hh * 2);
+  g = c.createLinearGradient(0, -hh, 0, hh);
+  g.addColorStop(0, 'rgba(60,60,70,0.25)'); g.addColorStop(0.15, 'rgba(255,255,255,0)'); g.addColorStop(0.85, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(50,50,60,0.3)');
+  c.fillStyle = g; c.fillRect(x1, -hh, x2 - x1, hh * 2);
+  // stitches show through: dark beads on the vertical seams, crosses on the horizontal one
+  const P = { dark: 'rgba(40,36,34,0.85)', seam: 'rgba(80,72,66,0.8)', thread: 'rgba(255,255,255,0.9)' };
+  stitchLine(c, x1, -hh, x1, hh, P, 0);
+  stitchLine(c, x2, -hh + 3.4 * k, x2, hh - 4.2 * k, P, 1);
+  stitchLine(c, x1, sy, x2, sy, P, 2);
+  c.restore();
+  FL.w = w; FL.h = h; FL.ox = x1 - 2 * k; FL.oy = -hh - 1 * k;
+}
+const FL = { w: 0, h: 0, ox: 0, oy: 0 };
 function stitchLine(c, x0, y0, x1, y1, P, seed) {
   const len = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / len, uy = (y1 - y0) / len, nx = -uy, ny = ux;
   // seam groove
@@ -1094,23 +1120,23 @@ const fx = {
   spark(amp = 1) { this.list.push({ kind: 's', t0: now(), amp }); joltWebs(110 * amp); },
   zap(green = true, amp = 1) { this.list.push({ kind: 'z', t0: now(), green, amp }); joltWebs(260 * amp); },
   state(t) {
-    const st = { flash: 0, white: 0, violet: 0, glow: 0, tips: 0 };
+    const st = { flash: 0, beam: 0, white: 0, violet: 0, glow: 0, tips: 0 };
     for (let i = this.list.length - 1; i >= 0; i--) {
       const e = this.list[i], s = t - e.t0;
       if (s < 0) continue;
       if (e.kind === 's') {
         if (s > 0.075) { this.list.splice(i, 1); continue; }
         const a = e.amp * (s < 0.055 ? 1 : (0.075 - s) / 0.02);
-        st.flash = Math.max(st.flash, 0.42 * a); st.white = Math.max(st.white, a); st.tips = Math.max(st.tips, a);
+        st.flash = Math.max(st.flash, 0.17 * a); st.beam = Math.max(st.beam, a); st.white = Math.max(st.white, a); st.tips = Math.max(st.tips, a);
       } else {
         if (s > 0.6) { this.list.splice(i, 1); continue; }
         if (s < 0.15) {
           const flick = hash(((t * 60) | 0) * 31 + i) < 0.78 ? 1 : 0.25;
-          st.white = Math.max(st.white, e.amp * flick); st.flash = Math.max(st.flash, 0.3 * e.amp); st.tips = Math.max(st.tips, 0.8 * e.amp);
+          st.white = Math.max(st.white, e.amp * flick); st.flash = Math.max(st.flash, 0.32 * e.amp); st.beam = Math.max(st.beam, 0.8 * e.amp); st.tips = Math.max(st.tips, 0.8 * e.amp);
           if (e.green) st.glow = Math.max(st.glow, s < 0.03 ? s / 0.03 : 1);
         } else {
           const q = s - 0.15;
-          st.flash = Math.max(st.flash, 0.86 * e.amp * Math.exp(-q / 0.17) * (s > 0.5 ? (0.6 - s) / 0.1 : 1));
+          st.flash = Math.max(st.flash, e.amp * Math.exp(-q / 0.17) * (s > 0.5 ? (0.6 - s) / 0.1 : 1));
           if (q < 0.16) { st.violet = Math.max(st.violet, e.amp * (1 - q / 0.2)); st.tips = Math.max(st.tips, e.amp * (1 - q / 0.2)); }
           if (e.green && q < 0.04) st.glow = Math.max(st.glow, 1 - q / 0.04);
         }
@@ -1275,13 +1301,16 @@ function drawT(c, cx, capTop, t, pP) {
   c.globalAlpha = 1;
 }
 
-function lightningPath(x, y0, y1, seed) {
+function lightningPath(x, y0, y1, seed, amp) {
+  // irregular discharge: a random walk with small steps and the odd sharp kink
   const R = mulberry(seed), pts = [[x, y0]];
-  const n = 11;
-  let px = x;
+  const n = 18;
+  let dx = 0;
   for (let i = 1; i < n; i++) {
-    px = x + clamp((px - x) * -0.6 + (R() - 0.5) * 6.5 * k, -3.6 * k, 3.6 * k);
-    pts.push([px, lerp(y0, y1, i / n) + (R() - 0.5) * 1.6 * k]);
+    dx += (R() - 0.5) * 1.5 * amp;
+    if (R() < 0.18) dx += (R() < 0.5 ? -1 : 1) * amp * 1.2;
+    dx = clamp(dx, -2 * amp, 2 * amp) * 0.85;
+    pts.push([x + dx, lerp(y0, y1, i / n) + (R() - 0.5) * 0.8 * k]);
   }
   pts.push([x, y1]);
   return pts;
@@ -1290,49 +1319,65 @@ function strokePts(c, pts) { c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(
 function drawSparks(c, cx, cy, t, st) {
   const hh = G.capHH, x = cx + 25.4 * k;
   const yTop = cy - hh - 3.7 * k, yBot = cy + hh + 3.7 * k;
-  // patch flash (between the seams, full height)
-  if (st.flash > 0.01) {
-    c.save();
-    c.translate(cx, cy); capsulePath(c); c.clip();
-    const x1 = SEAM.x1 * k, x2 = SEAM.x2 * k;
-    const g = c.createLinearGradient(x1, 0, x2, 0);
-    const a = st.flash;
-    g.addColorStop(0, `rgba(205,205,225,${0.75 * a})`); g.addColorStop(0.45, `rgba(244,243,252,${0.95 * a})`);
-    g.addColorStop(0.75, `rgba(232,230,246,${0.9 * a})`); g.addColorStop(1, `rgba(190,190,210,${0.75 * a})`);
-    c.fillStyle = g; c.fillRect(x1 + 0.4 * k, -hh, x2 - x1 - 0.8 * k, hh * 2);
+  // a soft beam of light follows the discharge
+  if (st.beam > 0.01) {
+    c.save(); c.translate(cx, cy); capsulePath(c); c.clip(); c.translate(-cx, -cy);
+    const bw = 11 * k, g = c.createLinearGradient(x - bw, 0, x + bw, 0);
+    const a = st.beam;
+    g.addColorStop(0, 'rgba(205,200,225,0)'); g.addColorStop(0.3, `rgba(205,200,225,${0.18 * a})`); g.addColorStop(0.5, `rgba(220,215,240,${0.42 * a})`);
+    g.addColorStop(0.7, `rgba(205,200,225,${0.18 * a})`); g.addColorStop(1, 'rgba(205,200,225,0)');
+    c.fillStyle = g; c.fillRect(x - bw, cy - G.capHH, bw * 2, G.capHH * 2);
     c.restore();
+  }
+  // the patch column turns to metal (faintly on a key spark, brightly after a big zap)
+  if (st.flash > 0.01) {
+    c.globalAlpha = Math.min(1, st.flash);
+    c.drawImage(flashCv, cx + FL.ox, cy + FL.oy, FL.w, FL.h);
+    // lavender sheen during the after-flash of a big zap
+    if (st.violet > st.white) {
+      c.globalAlpha = Math.min(1, st.flash) * 0.35; c.fillStyle = '#d9d2f2';
+      c.save(); c.translate(cx, cy); capsulePath(c); c.clip(); c.fillRect(SEAM.x1 * k + 1 * k, -hh, (SEAM.x2 - SEAM.x1) * k - 2 * k, hh * 2); c.restore();
+    }
+    c.globalAlpha = 1;
   }
   const bolt = Math.max(st.white, st.violet);
   if (bolt > 0.02) {
-    const pts = lightningPath(x, yTop + 1 * k, yBot - 1 * k, ((t * 60) | 0) * 7 + 3);
+    const fr = (t * 60) | 0;
+    const violet = st.violet > st.white;               // soft, curly after-glow of a big zap
+    const pts = lightningPath(x, yTop + 1.5 * k, yBot - 1.5 * k, fr * 7 + 3, (violet ? 1.7 : 1.45) * k);
     c.save();
-    c.lineJoin = 'miter'; c.lineCap = 'round';
-    const violet = st.violet >= st.white;
-    c.shadowColor = violet ? 'rgba(170,140,255,0.95)' : 'rgba(190,195,255,0.9)'; c.shadowBlur = 4 * k * dpr;
-    c.strokeStyle = violet ? `rgba(176,150,255,${0.8 * bolt})` : `rgba(200,205,255,${0.6 * bolt})`; c.lineWidth = 1.9 * k;
-    strokePts(c, pts);
-    c.shadowBlur = 0; c.strokeStyle = `rgba(255,255,255,${bolt})`; c.lineWidth = 0.75 * k; strokePts(c, pts);
-    // little side discharges near the bolt tips
-    c.lineWidth = 0.55 * k; c.strokeStyle = `rgba(255,255,255,${0.85 * bolt})`;
-    const R = mulberry(((t * 60) | 0) + 99);
+    c.lineJoin = 'round'; c.lineCap = 'round';
+    c.strokeStyle = `rgba(165,148,255,${(violet ? 0.32 : 0.22) * bolt})`; c.lineWidth = (violet ? 3.6 : 2.4) * k; strokePts(c, pts);
+    c.strokeStyle = `rgba(200,188,255,${(violet ? 0.75 : 0.6) * bolt})`; c.lineWidth = (violet ? 1.7 : 1.15) * k; strokePts(c, pts);
+    c.strokeStyle = `rgba(255,255,255,${(violet ? 0.45 : 1) * bolt})`; c.lineWidth = 0.72 * k; strokePts(c, pts);
+    // a few short straight side discharges
+    const R = mulberry(fr * 13 + 5), nb = 1 + ((R() * 3) | 0);
+    c.lineWidth = 0.55 * k; c.strokeStyle = `rgba(255,255,255,${0.9 * bolt})`;
     c.beginPath();
-    for (let i = 0; i < 3; i++) {
-      const yy = yTop + (1.6 + i * 1.3) * k, len = (2.5 + R() * 2.5) * k;
-      c.moveTo(x + 0.6 * k, yy); c.lineTo(x + 0.6 * k + len, yy + (R() - 0.3) * 1.6 * k);
-    }
-    for (let i = 0; i < 2; i++) {
-      const yy = yBot - (1.8 + i * 1.4) * k, len = (2 + R() * 2.5) * k;
-      c.moveTo(x + 0.6 * k, yy); c.lineTo(x + 0.6 * k + len, yy - (R() - 0.3) * 1.4 * k);
+    for (let i = 0; i < nb; i++) {
+      const p = pts[1 + ((R() * (pts.length - 3)) | 0)];
+      const ang = -0.25 - R() * 0.9 + (R() < 0.25 ? Math.PI : 0), len = (3 + R() * 6) * k;
+      c.moveTo(p[0], p[1]); c.lineTo(p[0] + Math.cos(ang) * len, p[1] + Math.sin(ang) * len);
     }
     c.stroke();
     c.restore();
   }
   if (st.tips > 0.02) {
-    for (const yy of [yTop, yBot]) {
-      const hg = c.createRadialGradient(x, yy, 0, x, yy, 3.6 * k);
-      hg.addColorStop(0, `rgba(255,255,255,${0.95 * st.tips})`); hg.addColorStop(0.4, `rgba(240,236,255,${0.6 * st.tips})`); hg.addColorStop(1, 'rgba(200,190,255,0)');
-      c.fillStyle = hg; c.fillRect(x - 3.6 * k, yy - 3.6 * k, 7.2 * k, 7.2 * k);
+    // the bolts light up like chrome: bright streaks along the shafts and hot heads
+    c.save();
+    const R2 = mulberry(((t * 60) | 0) * 3 + 1);
+    for (const [y0, dir] of [[yTop, 1], [yBot, -1]]) {
+      // lit threads: short bright dashes stacked along the shaft, and a hot head
+      for (let j = 0; j < 7; j++) {
+        const yy = y0 + dir * (0.4 + j * 0.9) * k, w = (1.2 + R2() * 2.2) * k;
+        c.fillStyle = `rgba(255,255,255,${(0.45 + R2() * 0.5) * st.tips})`;
+        c.fillRect(x - w / 2 + (R2() - 0.5) * 0.8 * k, yy, w, 0.45 * k);
+      }
+      const hg = c.createRadialGradient(x, y0, 0, x, y0, 2.6 * k);
+      hg.addColorStop(0, `rgba(255,255,255,${0.95 * st.tips})`); hg.addColorStop(1, 'rgba(235,235,255,0)');
+      c.fillStyle = hg; c.fillRect(x - 2.6 * k, y0 - 2.6 * k, 5.2 * k, 5.2 * k);
     }
+    c.restore();
   }
 }
 // faint "steam" column rising from the top bolt in lamp mode (fine vertical streaks).
@@ -2006,7 +2051,7 @@ if (/[?&]debug\b/.test(location.search)) {
   window.__fw = {
     get text() { return text; }, get lines() { return lines.map((l) => l.idx.map((i) => text[i]).join('')); },
     get carX() { return car.x; }, get target() { return carriageTarget(); }, get col() { return caretCol(); },
-    get lamp() { return lampOn; }, colX, G, AU,
+    get lamp() { return lampOn; }, colX, G, AU, fx,
   };
 }
 
