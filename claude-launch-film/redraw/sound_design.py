@@ -111,7 +111,10 @@ put(verb(whoosh(0.4, 900, 4000, 0.5), 0.25), T(779), -33)
 put(verb(whoosh(1.05, 3800, 900, 0.5, 1.2), 0.3), T(730), -31, pan=0.25)
 put(thump(60, 44, 0.6), T(750), -29)
 put(verb(bell([G['G4'], G['D5']], 2.4, 0.6), 0.5), T(750), -31, pan=0.3)
-for k, (fr, nt) in enumerate([(800, G['G5']), (803, G['Bb5']), (806, 1046.5), (808, G['D6'])]): put(verb(blip(nt, 0.22), 0.45), T(fr), -33, pan=0.2 + 0.1 * k)
+put(verb(whoosh(0.35, 1800, 5200, 0.6, 1.0), 0.25), T(802), -33, pan=-0.3)                 # underline under "connections"
+put(verb(whoosh(0.4, 900, 3600, 0.7, 1.0), 0.3), T(806.5), -32, pan=0.2)                   # the line flows into the spot
+put(verb(bell([G['D5']], 1.6, 0.4), 0.45), T(814), -32, pan=0.3)                           # arrival
+for k, (fr, nt) in enumerate([(821, G['G5']), (824, G['Bb5']), (827, 1046.5), (829, G['D6'])]): put(verb(blip(nt, 0.22), 0.45), T(fr), -33, pan=0.2 + 0.1 * k)
 # doctor cards: decode, lock, scan, chip; window outro
 for k in range(14): put(blip(2300 + 2400 * rng.random(), 0.016), T(1056 + k * 0.55) + 0.01 * rng.random(), -33, pan=rng.uniform(-0.4, 0.4))
 put(verb(tick(0.8), 0.3), T(1062.8), -23); put(verb(blip(1567.98, 0.25), 0.4), T(1063), -28)

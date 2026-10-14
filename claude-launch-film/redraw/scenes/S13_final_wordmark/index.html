@@ -4,12 +4,13 @@
 <script src="../../shared/lib.js"></script>
 <script src="../../shared/components.js"></script>
 <script src="../../shared/brand.js"></script>
+<script src="../../shared/horizon.js"></script>
 <style> body, #stage { background: #000; } </style>
 </head><body>
 <div id="stage"><img class="plate" id="bg"></div>
 <script>
-// S13 (f1268-1453): the finale as one continuous shot. On the narrator's last "Claude" the coral mark turns in over
-// the reference's violet glow and the wordmark slides out from behind it; the lockup eases back slowly. After the reference ends (f1349) the lockup lifts to
+// S13 (f1268-1453): the finale as one continuous shot. On the narrator's last "Claude" the coral mark turns in under
+// the dawn horizon (continuing from S12) and the wordmark slides out from behind it; the lockup eases back slowly. After the reference ends (f1349) the lockup lifts to
 // make room and the credit 'Built by Imran using Opus 5.5' arrives word by word, then everything softly fades out.
 const stage = document.getElementById('stage');
 const W = [238, 238, 250], G = [150, 150, 172], VIO = [146, 128, 246], BLU = [112, 162, 252];
@@ -36,8 +37,7 @@ function renderCredit(f, fade) {
 
 window.renderFrame = async (f) => {
   const bg = document.getElementById('bg');
-  if (f <= 1348) { bg.style.display = 'block'; await setImg(bg, `../../plates/S13_final_wordmark/bg_${String(f).padStart(4, '0')}.jpg`); }
-  else bg.style.display = 'none';
+  await horizonCam(bg, f, kf(f, [[1428, 1], [1452, 0]]));   // the closing sky continues from S12 and fades out with the credit
   if (!LK) { await ClaudeLockup.ready(); await document.fonts.load("600 34px 'Inter'"); LK = new ClaudeLockup(stage, { cx: 960, cy: 524, size: 150, burst: 58, gap: 32, t0: 1268 }); }
   const fade = kf(f, [[1428, 1], [1450, 0]]);
   const lift = ease.inOutCubic(clamp((f - 1352) / 22));

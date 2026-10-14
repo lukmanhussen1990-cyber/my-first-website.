@@ -27,7 +27,7 @@
 <div id="stage"><img class="plate" id="bg">
   <div id="rig"><div id="back"></div><img class="mdl" id="mBase"><img class="mdl" id="mCol"><div class="mskd" id="scanL"></div><div class="mskd" id="heatL"></div>
     <svg id="ovl" width="1920" height="1080"></svg><div id="tags"></div></div>
-  <div id="scrim"></div><div id="txt"></div>
+  <div id="scrim"></div><div id="txt"></div><svg id="link" width="1920" height="1080" style="position:absolute;left:0;top:0;overflow:visible"></svg>
 </div>
 <script>
 // S08 (f719-862), film-quality pass at the client's request: Claude visibly works on the real anatomy model from the
@@ -47,12 +47,12 @@ const PL = '../../plates/S08_processing/';
 const MS = 1.12, DOT = [401, 584], DOTF = [1385, 640];   // cut-out crop starts at frame-692 x 609
 const M2F = (x, y) => [DOTF[0] + (x - DOT[0]) * MS, DOTF[1] + (y - DOT[1]) * MS];
 const TARGETS = [ // name, cut-out coords, label side
-  { n: 'Erector spinae', p: [280, 470], via: null, side: -1, t0: 792 },
-  { n: 'Trapezius', p: [318, 262], via: 0, side: -1, t0: 800 },
-  { n: 'Latissimus dorsi', p: [454, 410], via: null, side: 1, t0: 795 },
-  { n: 'Gluteus maximus', p: [430, 738], via: null, side: 1, t0: 798 },
+  { n: 'Erector spinae', p: [280, 470], via: null, side: -1, t0: 813 },
+  { n: 'Trapezius', p: [318, 262], via: 0, side: -1, t0: 821 },
+  { n: 'Latissimus dorsi', p: [454, 410], via: null, side: 1, t0: 816 },
+  { n: 'Gluteus maximus', p: [430, 738], via: null, side: 1, t0: 819 },
 ];
-let BUILT = false, A, B, RING, RING2, LEAD, HOTTAG, PATHS = [];
+let BUILT = false, A, B, RING, RING2, LEAD, HOTTAG, PATHS = [], LINK = null;
 function sv(tag, a, parent) { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); (parent || $('ovl')).appendChild(e); return e; }
 function tag(text) { const d = document.createElement('div'); d.className = 'tag'; d.innerHTML = `<i></i>${text}`; $('tags').appendChild(d); return d; }
 // ---- editorial text (two-line headlines, left aligned)
@@ -78,7 +78,7 @@ function buildHead(lines) {
   });
   return { el, rows };
 }
-function renderHead(H, f, t0, outT) {
+function renderHead(H, f, t0, outT, st = 0.7) {
   let t = t0, wi = 0;
   const RISE = 1.35 * SIZE;
   H.rows.forEach((r, li) => {
@@ -86,7 +86,7 @@ function renderHead(H, f, t0, outT) {
     r.W.forEach(w => {
       const po = outT ? cubicInOut(clamp((f - outT - wi * 1.1) / 9)) : 0;
       const set = (s, a) => { const p = expoOut(clamp((f - a) / 20)); s.style.transform = `translateY(${((1 - p) * RISE - po * RISE).toFixed(2)}px)`; s.parentNode.style.visibility = (f >= a - 0.5 && po < 1) ? 'visible' : 'hidden'; };
-      if (w.acc) { w.ls.forEach((s, k) => set(s, t + k * 0.7)); t += w.t.length * 0.7 + 1.5; } else { set(w.sp, t); t += 2.6; }
+      if (w.acc) { w.ls.forEach((s, k) => set(s, t + k * st)); t += w.t.length * st + 1.5; } else { set(w.sp, t); t += 2.6; }
       wi++;
     });
   });
@@ -128,6 +128,13 @@ async function build() {
   $('txt').appendChild(OVER); SPARK = OVER.querySelector('svg'); LBL = OVER.querySelector('.lbl span');
   A = buildHead([[['Analyzing'], ['the']], [['affected', 1], ['area...', 1]]]);
   B = buildHead([[['Mapping'], ['anatomical', 1]], [['connections...', 1]]]);
+  // the connector: an underline under "connections" that flows into the affected spot on the body
+  const cw = B.rows[1].W[0]; const L0 = cw.letters[0].x, L1 = cw.letters[11].x;    // 'c' .. end of 's' (before the dots)
+  LINK = { x0: TX + L0 + 2, x1: TX + L1 - 2, y: TOPB + LH + 18,
+    under: sv('path', { fill: 'none', stroke: 'rgba(255,248,244,0.9)', 'stroke-width': 2, 'stroke-linecap': 'round', pathLength: 1, 'stroke-dasharray': '1 1' }, $('link')),
+    flow: sv('path', { fill: 'none', stroke: 'rgba(255,248,244,0.78)', 'stroke-width': 1.7, 'stroke-linecap': 'round', pathLength: 1, 'stroke-dasharray': '1 1' }, $('link')),
+    head: sv('circle', { r: 4.4, fill: CORAL, stroke: '#fff', 'stroke-width': 1.2 }, $('link')),
+    rip: sv('circle', { r: 0, fill: 'none', stroke: '#FFF3EC', 'stroke-width': 1.6 }, $('link')) };
   BUILT = true;
 }
 const qpt = (q, t) => { const [x0, y0, cx, cy, x1, y1] = q, u = 1 - t; return [u * u * x0 + 2 * u * t * cx + t * t * x1, u * u * y0 + 2 * u * t * cy + t * t * y1]; };
@@ -186,8 +193,24 @@ window.renderFrame = async (f) => {
   const lw = expoOut(clamp((f - 726) / 20)); LBL.parentNode.style.clipPath = `inset(0 ${((1 - lw) * 100).toFixed(2)}% 0 0)`;
   A.el.style.display = f <= 795 ? 'block' : 'none'; B.el.style.display = f >= 784 ? 'block' : 'none';
   if (f <= 795) renderHead(A, f, 727, 779);
-  if (f >= 784) renderHead(B, f, 788.5, 0);
+  if (f >= 784) renderHead(B, f, 788.5, 0, 0.5);
   $('txt').style.transform = `translateX(${panX.toFixed(2)}px)`;
+  // ---- the connector: underline draws under "connections", then flows across into the spot; the spot ripples on arrival
+  const hx = DOTF[0] + panX, hy = DOTF[1] + lift, ux0 = LINK.x0 + panX, ux1 = LINK.x1 + panX, uy = LINK.y;
+  LINK.under.setAttribute('d', `M ${ux0.toFixed(1)} ${uy} L ${ux1.toFixed(1)} ${uy}`);
+  const c1x = ux1 + 170, c2x = hx - 190, c2y = hy + 30;
+  const fd = `M ${ux1.toFixed(1)} ${uy} C ${c1x.toFixed(1)} ${uy} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${(hx - 41).toFixed(1)} ${(hy + 4).toFixed(1)}`;
+  LINK.flow.setAttribute('d', fd);
+  const pu = cubicInOut(clamp((f - 802) / 6)), pf = cubicInOut(clamp((f - 806.5) / 7.5));
+  LINK.under.setAttribute('stroke-dashoffset', (1 - pu).toFixed(4)); LINK.under.style.display = pu > 0 ? 'block' : 'none';
+  LINK.flow.setAttribute('stroke-dashoffset', (1 - pf).toFixed(4)); LINK.flow.style.display = pf > 0 ? 'block' : 'none';
+  if (pf > 0 && pf < 1) { const pt = LINK.flow.getPointAtLength(LINK.flow.getTotalLength() * pf); LINK.head.setAttribute('cx', pt.x); LINK.head.setAttribute('cy', pt.y); LINK.head.style.display = 'block'; }
+  else if (pu > 0 && pu < 1) { LINK.head.setAttribute('cx', ux0 + (ux1 - ux0) * pu); LINK.head.setAttribute('cy', uy); LINK.head.style.display = 'block'; }
+  else LINK.head.style.display = 'none';
+  const rp2 = clamp((f - 814) / 14);
+  LINK.rip.setAttribute('cx', hx); LINK.rip.setAttribute('cy', hy); LINK.rip.setAttribute('r', (40 + 70 * expoOut(rp2)).toFixed(2));
+  LINK.rip.style.opacity = rp2 > 0 && rp2 < 1 ? (0.9 * (1 - rp2)).toFixed(3) : 0;
+  const lkOut = f < 784 ? 0 : 1; $('link').style.opacity = lkOut;
 };
 window.sceneReady = document.fonts.ready;
 </script>
