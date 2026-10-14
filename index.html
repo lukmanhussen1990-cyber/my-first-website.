@@ -2044,13 +2044,15 @@ function frame() {
   // light layer follows the carriage
   const lv = CH.light.v;
   if (lv > 0) {
-    const grow = 0.15 + 0.85 * E.outCubic(lv);
+    const grow = 0.15 + 0.85 * (lampOn ? E.outQuad(lv) : E.outCubic(lv));
     const flick = lampOn && lv < 1 ? flicker(lv) : 1;
     lightX += (car.x - lightX) * (1 - Math.exp(-dt / 0.03));
     if (Math.abs(car.x - lightX) > 200 * k) lightX = car.x;
     const ax = lightX, ay = G.capCY - G.capHH - G.paperTop;
     setStyle(lightCv, 'transform', `translate(${(ax - L.ax).toFixed(2)}px, ${(ay - L.ay).toFixed(2)}px) translate(${L.ax}px, ${L.ay}px) scale(${grow.toFixed(4)}) translate(${-L.ax}px, ${-L.ay}px)`);
-    setStyle(lightCv, 'opacity', ((lampOn ? E.outSine(lv) : lv) * flick).toFixed(3));
+    // intensity comes up fast near the slot (≈0.15 s) while the reach keeps growing (measured)
+    const inten = lampOn ? 1 - Math.pow(1 - Math.min(1, lv / 0.5), 2) : lv;
+    setStyle(lightCv, 'opacity', (inten * flick).toFixed(3));
   } else setStyle(lightCv, 'opacity', '0');
   drawDt = dt;
   draw(t);

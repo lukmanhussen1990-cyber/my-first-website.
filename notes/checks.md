@@ -1,0 +1,63 @@
+# Check log
+
+Each check compares the page with the reference recording side by side (Playwright replays the
+recording's exact keystroke timeline with a virtual clock, then frames are diffed, measured and
+viewed next to the video frames).
+
+## Check 1 — layout (v1)
+Differences found: carriage started at x=0 (init tween); light fan too bright at the edges; capsule
+corners too round, bolts oversized, stitches too faint; counter/hint/placeholder too heavy; share icon
+proportions.
+Fixed: carriage init, light model fitted to the video (least squares), capsule redrawn from sampled
+colours, thin captions via glyph erosion, share icon geometry.
+**Check 1 done. Next: typing mechanics (strike, slide, wrap, carriage return).**
+
+## Check 2 — typing (v2)
+Differences found: strike curve shape, slide easing, carriage return timing, paper feed, missing
+caret dot, big zap phases.
+Fixed: strike 50/35/50 ms + dip, slide ease-out-sine 100 ms after the strike, return 267 ms
+ease-out-sine, T drop + exponential recovery, spring feed, zap = 150 ms green phase + decaying flash,
+blinking green caret dot, idle zaps, input queue for autocorrect/predictive text.
+**Check 2 done. Next: cobwebs, sparks, glow.**
+
+## Check 3 — webs, sparks, glow (v3)
+Differences found: webs too few/too stiff, no rail coil, green glow too weak in lamp mode, no steam.
+Fixed: Verlet ribbons with lagging rest length + bending stiffness + jolts + carriage-return fling,
+rail coil, collar fans, hanging threads with spiders, screen-blended teal flood measured from the
+video, steam column from the top bolt, elliptical capsule corners.
+**Check 3 done. Next: lamp transition, light fan, sliders.**
+
+## Check 4 — lamp mode (v4)
+Differences found: stage timings, light growth/flicker, fan shape at the edges, slider label weight.
+Fixed: transition timeline measured per element (capsule instant, paper 0.15+0.45 s, slot 0.5 s,
+light 0.62+0.42 s), light model refitted on 3 frames (median error 1.7 grey levels), light trails
+the carriage, idle-only steam, thinner labels.
+**Check 4 done. Next: sound effects and music.**
+
+## Check 5 — sound (v5)
+Differences found: mix too hot (peak 0.68 vs 0.41), kick dominant.
+Fixed: master/kick/hum levels rebalanced (long-term spectrum within ±4 dB per octave band of the
+video), 113–114 BPM verified from the recording.
+**Check 5 done. Next: phone input, keyboard, sizes, performance.**
+
+## Check 6 — phone + performance (v6)
+Differences found/bugs: counter collided with the speaker icon at 4-digit counts, landscape too
+wide, per-frame shadow blurs, ribbon allocations.
+Fixed: composition-aware input, emoji filtering, keyboard-safe viewport shift, landscape/desktop
+column, sprites instead of per-frame blur, incremental glyph rendering (≈2–3 ms/frame at 4× CPU
+throttle), speaker icon moved.
+**Check 6 done. Next: frame-by-frame polish against the video.**
+
+## Check 7 — polish (v7a–v7e)
+Differences found: rail highlight 2 px low, shadow too long, stem too glossy, dial has 10 rays (not
+8), text baseline/size/glyph offset, line spacing 24.67 px with a first-line offset, sparks too
+neon, flash column too white, right web band too deep, paper specks 4× too sparse, cream slightly
+dark, new line during the paper feed should rise from below.
+Fixed: all of the above, measured numerically (median profiles, IoU template matching, row
+tracking during the wrap).
+**Check 7 done. Next: final checks, edge cases, audio fidelity, cleanup.**
+
+## Check 8 — final checks (v8a…)
+Done so far: 3-minute soak (no errors, flat 4 MB heap, steady frame cost), audio-node leak check,
+crisp click redesigned from the recording's click spectrum/decay, music contour transcribed from
+the recording, mirrored light render (2× faster).
