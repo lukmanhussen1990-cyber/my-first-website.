@@ -482,8 +482,9 @@ const PETAL = (() => {
     if (y < ch - 1) { d = Math.min(d, D[i + cw] + A); if (x < cw - 1) d = Math.min(d, D[i + cw + 1] + B); if (x > 0) d = Math.min(d, D[i + cw - 1] + B); }
     D[i] = d;
   }
-  const CORE = [194, 12, 106], MID = [226, 52, 132], RIM = [255, 218, 226], FROST = [253, 212, 228];
-  function make(frost) {
+  const CORE = [186, 4, 102], MID = [228, 70, 140], RIM = [253, 208, 216], FROST = [252, 206, 219];
+  function make(variant) {
+    const frost = variant === 1;
     const c = makeCanvas(cw, ch), g = c.getContext('2d'), img = g.createImageData(cw, ch), P = img.data;
     for (let y = 0; y < ch; y++) {
       const v = clamp((oy - y) / L);                       // 0 base .. 1 tip
@@ -491,23 +492,25 @@ const PETAL = (() => {
         const i = y * cw + x, cov = M[i * 4 + 3];
         if (!cov) continue;
         const d = D[i] - .5;
-        const rim = Math.exp(-d / 8), mid = Math.exp(-d / 19);
+        const rim = Math.exp(-d / 10), mid = Math.exp(-d / 22);
         let r = CORE[0], gg = CORE[1], b = CORE[2];
-        // core -> mid pink -> white-pink rim
+        // core -> mid pink
         r = lerp(r, MID[0], mid); gg = lerp(gg, MID[1], mid); b = lerp(b, MID[2], mid);
-        r = lerp(r, RIM[0], rim); gg = lerp(gg, RIM[1], rim); b = lerp(b, RIM[2], rim);
-        // frosted toward the base (whole petal for the frosted variant)
-        const fw = frost ? .9 : (1 - smooth(.12, .44, v)) * .9;
-        r = lerp(r, FROST[0], fw * (1 - rim * .5)); gg = lerp(gg, FROST[1], fw * (1 - rim * .5)); b = lerp(b, FROST[2], fw * (1 - rim * .5));
-        // faint lighter veins along the petal
+        // frosted toward the base (whole petal for the frosted variant, plus the +x flank for variant 2)
         const u = (x - ox) / (Wd * .5);
+        let fw = frost ? .9 : (1 - smooth(.04, .32, v)) * .88;
+        if (variant === 2) fw = Math.max((1 - smooth(.3, .6, v)) * .92, smooth(-.15, .45, u) * .94 * (1 - .5 * smooth(.65, 1, v)));
+        r = lerp(r, FROST[0], fw); gg = lerp(gg, FROST[1], fw); b = lerp(b, FROST[2], fw);
+        // crisp white-pink rim on top of everything
+        r = lerp(r, RIM[0], rim); gg = lerp(gg, RIM[1], rim); b = lerp(b, RIM[2], rim);
+        // faint lighter veins along the petal
         const vein = Math.pow(.5 + .5 * Math.cos(u * Math.PI * 4.5 + v * 1.4), 6) * smooth(.25, .5, v) * (1 - smooth(.85, 1, v)) * (1 - fw);
         r += 18 * vein; gg += 22 * vein; b += 18 * vein;
         // grain: fine jitter plus glittery speckles toward the rim
         const n = (Math.random() - .5) * 26;
         r += n; gg += n * .8; b += n * .9;
         if (Math.random() < .015 + rim * .18 + fw * .04) { const k = rnd(.3, .9); r = lerp(r, 255, k); gg = lerp(gg, 235, k); b = lerp(b, 245, k); }
-        const alpha = (frost ? .6 + .34 * rim : lerp(.95, .74, fw) + .05 * rim) * (cov / 255);
+        const alpha = (frost ? .86 + .12 * rim : lerp(.95, .93, fw) + .05 * rim) * (cov / 255);
         P[i * 4] = clamp(r, 0, 255); P[i * 4 + 1] = clamp(gg, 0, 255); P[i * 4 + 2] = clamp(b, 0, 255);
         P[i * 4 + 3] = clamp(alpha, 0, 1) * 255;
       }
@@ -515,14 +518,14 @@ const PETAL = (() => {
     g.putImageData(img, 0, 0);
     return c;
   }
-  const body = make(false), frost = make(true);
+  const body = make(0), frost = make(1), side = make(2);
   // outer glow (blurred via shadow)
   const gp = 46, glow = makeCanvas(cw + gp * 2, ch + gp * 2), gg = glow.getContext('2d');
   gg.shadowColor = 'rgba(255,165,212,1)'; gg.shadowBlur = 22;
   gg.shadowOffsetX = 4000;
   shape(gg, ox + gp - 4000, oy + gp);
   gg.fillStyle = '#000'; gg.fill();
-  return { body, frost, glow, L, Wd, ox, oy, gp };
+  return { body, frost, side, glow, L, Wd, ox, oy, gp };
 })();
 
 // Soft glow around the capsule, computed from its distance field (du), built once.
@@ -603,7 +606,7 @@ const ELEMENTS = [
     tint: ['#000', 'rgba(47,0,4,0)', '#300005'],
     mesh: { base: '#a8357f', blobs: [
       ['#aa47ae', 50, 165, 1.2], ['#b52a7a', 145, 300, 1.1], ['#8c0f59', 40, 438, 1.15],
-      ['#cb7c7b', 272, 150, 1.05], ['#c36497', 252, 405, 1.0], ['#cc60c5', 92, 48, .9]] },
+      ['#cd8370', 272, 150, 1.05], ['#c36497', 252, 405, 1.0], ['#e8a2b4', 150, 26, .85]] },
     glow: { c: [66, 2, 36], dy: -60, rx: 980, ry: 780, a: 1, floor: [60, 0, 26], fr: 660 } }
 ];
 
@@ -1414,18 +1417,18 @@ class BreezeFX extends FX {
 // Lotus petals measured from the reference frame (du, relative to the card centre), by overlaying
 // the outlines on the video. [angle (deg from vertical), length, width, base x, base y, layer, frost]
 const LOTUS = [
-  [0, 258, 140, 8, -45, 0, .7],
+  [0, 250, 140, 8, -36, 0, 1, 0, 0, .85],
   [-12.4, 279, 120, -118, -8, 0, 0], [11.1, 262, 120, 118, -8, 0, 0],
   [-45.5, 260, 122, -150, 20, 1, 0], [45.5, 258, 122, 150, 20, 1, 0],
-  [-7.5, 266, 104, -130, 62, 1, .85], [7.5, 266, 104, 130, 62, 1, .85],
-  [-77.5, 232, 120, -160, 75, 2, 0], [77.5, 232, 120, 160, 80, 2, 0],
-  [-88.3, 267, 110, -60, 186, 3, .15], [88.3, 260, 110, 60, 186, 3, .15],
-  [-86, 300, 116, -10, 222, 3, .32], [86, 300, 116, 10, 222, 3, .32]
+  [-7.5, 266, 104, -130, 62, 1, 1], [7.5, 266, 104, 130, 62, 1, 1],
+  [-77.5, 232, 120, -160, 75, 2, 0, -.06], [77.5, 232, 120, 160, 80, 2, 0, .06],
+  [-88, 220, 100, -10, 214, 3, 1], [88, 220, 100, 10, 214, 3, 1],
+  [-90, 305, 172, -25, 170, 3, 0, .085, 1], [90, 300, 172, 25, 170, 3, 0, -.085, 1]
 ];
 class BloomFX extends FX {
   constructor(card) {
     super(card); this.introDur = .75; this.outroDur = .8;
-    this.petals = LOTUS.map((p, i) => ({ ang: p[0], len: p[1], wid: p[2], bx: p[3], by: p[4], layer: p[5], white: p[6], ph: i * .7, k: 0, a: 0 }));
+    this.petals = LOTUS.map((p, i) => ({ ang: p[0], len: p[1], wid: p[2], bx: p[3], by: p[4], layer: p[5], white: p[6], shear: p[7] || 0, side: p[8] || 0, op: p[9] == null ? 1 : p[9], ph: i * .7, k: 0, a: 0 }));
     this.floaters = []; this.confetti = []; this.glow = 0; this.rim = 0; this.acc = 0;
   }
   onIntro() { this.floaters.length = 0; }
@@ -1436,17 +1439,17 @@ class BloomFX extends FX {
   }
   idle() { return this.confetti.length === 0 && this.floaters.length === 0; }
   burst() {
-    const n = Math.round(200 * PS * Math.max(.4, this.glow0));
+    const n = Math.round(260 * PS * Math.max(.4, this.glow0));
     const cols = ['#ff5fa5', '#ff86bd', '#ff4d9c', '#ffc0dc', '#f0559a'];
     for (let i = 0; i < n; i++) {
       // ring around the card, denser at the top
       let u = Math.random();
       if (Math.random() < .45) u = rnd(-.12, .62);
-      const P = capsulePoint(u, 0), d = rnd(4, 46), sp = rnd(22, 85);
+      const P = capsulePoint(u, 0), d = rnd(10, 62), sp = rnd(22, 85);
       this.confetti.push({
         x: P.x + P.nx * d, y: P.y + P.ny * d - (P.ny < 0 ? rnd(0, 30) : 0),
         vx: P.nx * sp + rnd(-14, 14), vy: P.ny * sp + rnd(-26, 4), drag: 1.8, g: 14,
-        rot: rnd(0, TAU), vr: rnd(-5, 5), size: rnd(8, 14), age: -rnd(0, .08), life: rnd(.5, .85),
+        rot: rnd(0, TAU), vr: rnd(-5, 5), size: rnd(10, 16), age: -rnd(0, .08), life: rnd(.5, .85),
         col: pick(cols), heart: false
       });
     }
@@ -1464,12 +1467,12 @@ class BloomFX extends FX {
       this.rim = smooth(0, .2, t);
       for (const p of this.petals) {
         const tl = t + .02 - p.layer * .05;
-        const s = REDUCED ? easeOutCubic(clamp(tl / .4)) : spring(tl, 15, .62);
+        const s = REDUCED ? easeOutCubic(clamp(tl / .4)) : spring(tl, 16, .74);
         p.k = s; p.a = clamp(tl / .12);
       }
     } else if (this.state === 'loop') {
       this.glow = 1; this.rim = 1;
-      for (const p of this.petals) { p.k = REDUCED ? 1 : spring(this.introDur + t + .02 - p.layer * .05, 15, .62); p.a = 1; }
+      for (const p of this.petals) { p.k = REDUCED ? 1 : spring(this.introDur + t + .02 - p.layer * .05, 16, .74); p.a = 1; }
     } else if (this.state === 'outro') {
       this.glow = this.glow0 * (1 - smooth(0, .3, t));
       this.rim = this.rim0 * (1 - smooth(0, .25, t));
@@ -1486,13 +1489,13 @@ class BloomFX extends FX {
           wob: rnd(4, 10), wf: rnd(1, 2.5), wp: rnd(0, TAU), size: rnd(1.8, 3), age: 0, life: rnd(1.4, 2.6),
           rot: rnd(0, TAU), vr: rnd(-.8, .8), kind: 'petal' });
       }
-      this.acc += dt * 36 * PS;
+      this.acc += dt * 48 * PS;
       while (this.acc >= 1) {
         this.acc -= 1;
-        const x = (Math.random() + Math.random() - 1) * 150, r = Math.random();
-        this.floaters.push({ x, y: -235 + Math.abs(x) * .3 + rnd(-30, 20), vx: rnd(-14, 14) + Math.sign(x) * rnd(4, 16), vy: rnd(-60, -20), drag: .35,
+        const x = (Math.random() + Math.random() - 1) * 140 - 20, r = Math.random();
+        this.floaters.push({ x, y: -228 + Math.abs(x) * .25 + rnd(-35, 15), vx: rnd(-14, 14) + Math.sign(x) * rnd(4, 14), vy: rnd(-55, -18), drag: .35,
           wob: rnd(8, 22), wf: rnd(1.5, 4), wp: rnd(0, TAU), size: rnd(1.9, 3.3), age: 0, life: rnd(1.1, 2.2),
-          rot: rnd(0, TAU), vr: rnd(-2.2, 2.2), kind: r < .55 ? 'petal' : r < .7 ? 'heart' : 'dot' });
+          rot: rnd(0, TAU), vr: rnd(-2.2, 2.2), kind: r < .78 ? 'petal' : r < .86 ? 'heart' : 'dot' });
       }
     } else if (this.state === 'outro') {
       for (const p of this.floaters) if (p.life - p.age > .3) p.life = p.age + .3;
@@ -1503,11 +1506,21 @@ class BloomFX extends FX {
   drawBack(ctx, C, time) {
     const sc = C.sc;
     if (this.glow > .002) {
-      drawCapsuleGlow(ctx, C, GLOW.bloom, this.glow);
+      drawCapsuleGlow(ctx, C, GLOW.bloom, this.glow * .6);
+      // soft white-pink light pooled under the lotus
+      ctx.save();
+      ctx.translate(C.x, C.y + 228 * sc);
+      ctx.scale(1, .3);
+      const ug = ctx.createRadialGradient(0, 0, 0, 0, 0, 380 * sc);
+      ug.addColorStop(0, `rgba(255,176,208,${.4 * this.glow})`);
+      ug.addColorStop(.5, `rgba(255,110,170,${.16 * this.glow})`);
+      ug.addColorStop(1, 'rgba(255,60,140,0)');
+      ctx.fillStyle = ug; ctx.fillRect(-380 * sc, -380 * sc, 760 * sc, 760 * sc);
+      ctx.restore();
       const R = 640 * sc, cy = C.y + 40 * sc;
       const g = ctx.createRadialGradient(C.x, cy, 0, C.x, cy, R);
-      g.addColorStop(0, `rgba(255,50,150,${.46 * this.glow})`);
-      g.addColorStop(.4, `rgba(220,20,110,${.24 * this.glow})`);
+      g.addColorStop(0, `rgba(255,50,150,${.5 * this.glow})`);
+      g.addColorStop(.4, `rgba(220,20,110,${.3 * this.glow})`);
       g.addColorStop(1, 'rgba(160,0,70,0)');
       ctx.fillStyle = g; ctx.fillRect(C.x - R, cy - R, R * 2, R * 2);
     }
@@ -1515,8 +1528,8 @@ class BloomFX extends FX {
       // light bleeding through from behind the top of the card
       const R = 300 * sc, cy = C.y - 225 * sc;
       const g = ctx.createRadialGradient(C.x, cy, 0, C.x, cy, R);
-      g.addColorStop(0, `rgba(255,222,240,${.48 * this.glow})`);
-      g.addColorStop(.4, `rgba(255,140,200,${.16 * this.glow})`);
+      g.addColorStop(0, `rgba(255,214,232,${.08 * this.glow})`);
+      g.addColorStop(.4, `rgba(255,130,190,${.1 * this.glow})`);
       g.addColorStop(1, 'rgba(255,60,150,0)');
       ctx.fillStyle = g; ctx.fillRect(C.x - R, cy - R, R * 2, R * 2);
     }
@@ -1531,18 +1544,20 @@ class BloomFX extends FX {
         ctx.save();
         ctx.translate(C.x + p.bx * sc, C.y + p.by * sc);
         ctx.rotate(ang);
-        ctx.scale(sx, sy);
+        if (p.shear) ctx.transform(1, 0, p.shear * p.k, 1, 0, 0);
+        ctx.scale(p.side && p.ang > 0 ? -sx : sx, sy);
         if (pass === 0) {
           ctx.globalCompositeOperation = 'lighter';
-          ctx.globalAlpha = p.a * .6;
+          ctx.globalAlpha = p.a * p.op * (p.layer === 3 ? .95 : .6);
           ctx.drawImage(PETAL.glow, -PETAL.ox - PETAL.gp, -PETAL.oy - PETAL.gp);
         } else {
           ctx.globalCompositeOperation = 'source-over';
-          if (p.white < 1) { ctx.globalAlpha = p.a * (1 - p.white * .7); ctx.drawImage(PETAL.body, -PETAL.ox, -PETAL.oy); }
+          const pa = p.a * p.op;
+          if (p.white < 1) { ctx.globalAlpha = pa * (1 - p.white * .7); ctx.drawImage(p.side ? PETAL.side : PETAL.body, -PETAL.ox, -PETAL.oy); }
           if (p.white > 0) {
-            ctx.globalAlpha = p.a * p.white; ctx.drawImage(PETAL.frost, -PETAL.ox, -PETAL.oy);
+            ctx.globalAlpha = pa * p.white; ctx.drawImage(PETAL.frost, -PETAL.ox, -PETAL.oy);
             ctx.globalCompositeOperation = 'lighter';
-            ctx.globalAlpha = p.a * p.white * .22; ctx.drawImage(PETAL.frost, -PETAL.ox, -PETAL.oy);
+            ctx.globalAlpha = pa * p.white * .08; ctx.drawImage(PETAL.frost, -PETAL.ox, -PETAL.oy);
           }
         }
         ctx.restore();
@@ -1561,25 +1576,27 @@ class BloomFX extends FX {
       if (a <= .004) continue;
       const x = C.x + p.x * C.sc, y = C.y + p.y * C.sc;
       if (p.kind === 'petal') {
-        const s = p.size * C.sc;
+        // soft, slightly blurred light-pink flake
+        const s = p.size * 1.45 * C.sc;
         ctx.save(); ctx.translate(x, y); ctx.rotate(p.rot);
-        ctx.beginPath();
-        ctx.moveTo(-s * 2.3, 0);
-        ctx.quadraticCurveTo(0, -s * 1.5, s * 2.3, 0);
-        ctx.quadraticCurveTo(0, s * 1.5, -s * 2.3, 0);
-        ctx.globalAlpha = a * .9; ctx.fillStyle = '#ffcfe4'; ctx.fill();
-        ctx.globalAlpha = a * .7; ctx.lineWidth = Math.max(.6, .9 * C.sc); ctx.strokeStyle = '#ff6fb0'; ctx.stroke();
+        for (const [k, al, col] of [[1.55, .22, '#ff8cc0'], [1, .78, '#ffd3e5']]) {
+          ctx.beginPath();
+          ctx.moveTo(-s * 2.3 * k, 0);
+          ctx.quadraticCurveTo(0, -s * 1.6 * k, s * 2.3 * k, 0);
+          ctx.quadraticCurveTo(0, s * 1.6 * k, -s * 2.3 * k, 0);
+          ctx.globalAlpha = a * al; ctx.fillStyle = col; ctx.fill();
+        }
         ctx.restore();
       } else if (p.kind === 'heart') {
-        const s = p.size * 4.2 * C.sc;
+        const s = p.size * 6.2 * C.sc;
         ctx.save(); ctx.translate(x, y); ctx.rotate(p.rot * .3);
         ctx.beginPath();
         ctx.moveTo(0, s * .35);
         ctx.bezierCurveTo(-s * .62, -s * .08, -s * .38, -s * .62, 0, -s * .26);
         ctx.bezierCurveTo(s * .38, -s * .62, s * .62, -s * .08, 0, s * .35);
         ctx.closePath();
-        ctx.globalAlpha = a * .35; ctx.lineWidth = 4 * C.sc; ctx.strokeStyle = '#ff4fa0'; ctx.stroke();
-        ctx.globalAlpha = a; ctx.lineWidth = Math.max(.7, 1.4 * C.sc); ctx.strokeStyle = '#ffe2ef'; ctx.stroke();
+        ctx.globalAlpha = a * .3; ctx.lineWidth = 6 * C.sc; ctx.strokeStyle = '#ff6fb2'; ctx.stroke();
+        ctx.globalAlpha = a * .95; ctx.lineWidth = Math.max(.8, 2 * C.sc); ctx.strokeStyle = '#ffe9f2'; ctx.stroke();
         ctx.restore();
       } else {
         const R = p.size * C.sc * 4.2;
@@ -2260,7 +2277,7 @@ function renderReflection() {
 /* =====================================================================
    Main loop
    ===================================================================== */
-function step(dt) {
+function step(dt, draw = true) {
   simTime += dt;
   if (pendingIntro && simTime >= pendingIntro.at) {
     const i = pendingIntro.i;
@@ -2272,7 +2289,7 @@ function step(dt) {
   updateRims();
   updateBg();
   updateGrain(dt);
-  render();
+  if (draw) render();
 }
 
 let raf = 0, last = 0, running = false;
@@ -2316,7 +2333,7 @@ if (document.fonts && document.fonts.ready) {
 // Test hooks: ?manual freezes the clock so frames can be stepped deterministically.
 if (MANUAL) {
   window.__ec = {
-    advance(sec, h = 1 / 60) { while (sec > 1e-9) { const d = Math.min(h, sec); step(d); sec -= d; } },
+    advance(sec, h = 1 / 60) { while (sec > 1e-9) { const d = Math.min(h, sec); sec -= d; step(d, sec <= 1e-9); } },
     move, goToCard,
     hover(i, on) { cards[i].hoverT = on ? 1 : 0; },
     state: () => ({ pos, target, active, t: simTime, fx: FXS_LIST.map(f => [f.state, +f.t.toFixed(3), +f.presence.toFixed(3)]) }),
