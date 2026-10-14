@@ -311,7 +311,7 @@ function buildGrain() {
       x + Math.cos(a) * len, y + Math.sin(a) * len);
     g.stroke();
   }
-  // specks & dust (density and size distribution measured from the recording: ~1 per 180 px², mostly tiny)
+  // specks & dust (density and size distribution measured from the recording: ~1 per 125 px², mostly tiny)
   const n = Math.round((w * h) / (125 * k * k));
   for (let i = 0; i < n; i++) {
     const x = R() * w, y = R() * h;
@@ -766,10 +766,10 @@ function stepChannels(dt) {
 }
 
 /* ------------------------------------------------------------ light fan -- */
-// Light model fitted to the recording (RMSE ≈ 3.6 grey levels):
-// a near-circular bright core + a wide elliptical halo (2.8:1), clipped by a soft fan
-// measured from a virtual apex 7 px below the slot.  Values are in "grey levels above
-// the dark paper" (0…160) and become the alpha of a warm light colour.
+// Light model fitted to the recording: a near-circular bright core + a wide elliptical halo
+// (2.9:1) with soft saturation, clipped by a soft-edged fan measured from a virtual apex ~9 px
+// below the slot. Values are "grey levels above the dark paper" (0…160) and become the alpha
+// of a warm light colour. The sprite is rendered once per slider change and moved with CSS.
 const sliders = { light: 0, spread: 144, reach: 210 };
 let lightDirty = true;
 const LIGHT_RGB = [232, 212, 178];
@@ -1153,8 +1153,9 @@ for (const key in SL) {
 }
 
 /* ------------------------------------------------------------- effects -- */
-// spark: per key (≈65 ms flash of the patch + violet bolt)
-// zap:   carriage return / random / idle (≈150 ms white bolt + green flood, then a white flash decaying ~0.35 s)
+// spark: per key, ≈65 ms — white bolt between the bolts, a soft beam, a faint metal flash of the patch
+// zap:   carriage return / random / idle — ≈150 ms flickering bolt + green flood, then a lavender
+//        metal after-flash of the patch decaying over ~0.35 s
 const fx = {
   list: [],
   spark(amp = 1) { this.list.push({ kind: 's', t0: now(), amp }); joltWebs(110 * amp); },
@@ -1520,7 +1521,7 @@ function initWebs() {
     // left side: collar → capsule nose (hugs the rail, twists)
     makeRope(22, [20 * k, G.railY - 2 * k], capAnchor(-1, 0, true), { side: -1, top: true, ay: -2, by: -4, slack: 1.2, minLen: 40, g: 0, pull: 1.4, strands: 9, width: 5.2, twist: 3.1, phase: 0.4, alpha: 0.9, seed: 11, sag0: -5 }),
     makeRope(18, [19 * k, G.railY + 5 * k], capAnchor(-1, 7), { side: -1, ay: 5, by: 7, slack: 1.16, minLen: 38, g: 22, pull: 0.8, strands: 6, width: 3.8, twist: 1.8, phase: 1.9, alpha: 0.6, seed: 12, sag0: 6 }),
-    // right side: capsule tail → collar (sagging band + a tighter one along the top)
+    // right side: capsule tail → collar (a wide sagging band)
     makeRope(24, capAnchor(1, 5), [W - 20 * k, G.railY + 3 * k], { side: 1, ay: 5, by: 3, slack: 1.06, minLen: 34, g: 30, pull: 1.0, strands: 12, width: 7.5, twist: 1.3, phase: 2.6, alpha: 0.9, seed: 13, sag0: 20 }),
   ];
   // hanging threads with tiny spiders, anchored under the rail
@@ -1625,12 +1626,9 @@ function stepWebs(dt, t) {
     }
     for (const th of WEB.threads) {
       const P = th.pts, damp = Math.exp(-h * 2.2);
-      // the capsule brushes threads as it passes
-      const near = Math.abs(th.ax - car.x) < G.capHW + 4 * k;
       for (let i = 1; i < th.n; i++) {
         const p = P[i];
-        let vx = (p.x - p.px) * damp, vy = (p.y - p.py) * damp;
-        if (near) vx += (car.x - car.from) * 0;
+        const vx = (p.x - p.px) * damp, vy = (p.y - p.py) * damp;
         p.px = p.x; p.py = p.y;
         const wind = (Math.sin(t * 1.3 + th.seed * 1.7) * 9 + Math.sin(t * 3.1 + th.seed) * 3) * k * (i / th.n);
         p.x += vx + wind * h * h; p.y += vy + 320 * k * h * h;
