@@ -58,6 +58,7 @@
     -webkit-user-select: text; user-select: text;
   }
   #tap { position: absolute; left: 0; width: 100%; }
+  #hintBtn { position: absolute; z-index: 2; }
   #toast { position: absolute; left: 50%; transform: translate(-50%, 6px); padding: 7px 12px; border-radius: 6px;
            background: rgba(20,20,18,.92); color: #d8d8d2; font-size: 12px; letter-spacing: .04em;
            opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; white-space: nowrap; }
@@ -72,6 +73,7 @@
     <canvas id="grain"></canvas>
   </div>
   <div id="tap"></div>
+  <button id="hintBtn" aria-label="Need a first line?"></button>
   <canvas id="scene"></canvas>
   <textarea id="input" autocapitalize="sentences" autocorrect="on" spellcheck="true" autocomplete="off"
             maxlength="3000" rows="1" aria-label="Typewriter text"></textarea>
@@ -134,6 +136,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const E = {
   outQuad: (t) => 1 - (1 - t) * (1 - t),
+  outSine: (t) => Math.sin((t * Math.PI) / 2),
   outCubic: (t) => 1 - Math.pow(1 - t, 3),
   inQuad: (t) => t * t,
   inOutSine: (t) => -(Math.cos(Math.PI * t) - 1) / 2,
@@ -214,6 +217,9 @@ function layout() {
   layoutSliders();
   toastEl.style.top = (G.paperTop - 34 * k) + 'px';
 
+  const hb = $('#hintBtn');
+  hb.style.left = (W / 2 - 80 * k) + 'px'; hb.style.width = (160 * k) + 'px';
+  hb.style.top = (G.hintBase - 22 * k) + 'px'; hb.style.height = (32 * k) + 'px';
   input.style.left = G.textLeft + 'px';
   input.style.top = (G.base - 18 * k) + 'px';
 
@@ -720,9 +726,10 @@ function slideTo(x, dur, easeFn, delay = 0) {
   car.pending = { x, dur, ease: easeFn, at: now() + delay };
 }
 function snapCarriage() {
+  // a new key while the carriage is still travelling: jump to where it was going (as in the recording)
   if (car.pending) { car.x = car.pending.x; car.pending = null; }
-  car.x = car.to = car.from = car.x;
-  car.dur = 0;
+  else if (car.dur > 0) car.x = car.to;
+  car.from = car.to = car.x; car.dur = 0;
 }
 function updateCarriage(t) {
   if (car.pending && t >= car.pending.at) {
@@ -735,23 +742,29 @@ function updateCarriage(t) {
     if (p >= 1) car.dur = 0;
   }
 }
-// T bar lift above its rest height (css px)
+// T bar lift above its rest height (css px) — curve measured frame-by-frame from the recording:
+// rise 50 ms (ease-in-out), hold ~35 ms, fall 50 ms, small dip below rest, settle.
 function strikeLift(t) {
-  const s = t - strike.t0, H1 = 18 * k;
-  if (s < 0 || s > 0.17) return 0;
-  if (s < 0.05) return H1 * E.outQuad(s / 0.05);
-  if (s < 0.08) return H1;
-  if (s < 0.145) return H1 * (1 - E.inOutQuad((s - 0.08) / 0.065)) - 1.2 * k * Math.sin(((s - 0.08) / 0.065) * Math.PI) * 0;
-  return -1.2 * k * Math.sin(((s - 0.145) / 0.025) * Math.PI);
+  const s = t - strike.t0, H1 = 18 * k, dip = 2.3 * k;
+  if (s < 0 || s > 0.19) return 0;
+  if (s < 0.05) return H1 * E.inOutSine(s / 0.05);
+  if (s < 0.085) return H1;
+  if (s < 0.135) { const p = (s - 0.085) / 0.05; return lerp(H1, -dip, E.inQuad(p)); }
+  const p = (s - 0.135) / 0.055; return -dip * (1 - E.outQuad(p));
 }
+// carriage return: the T drops into its slot, then rises back exponentially (τ ≈ 0.13 s)
 function retractDrop(t) {
   const s = t - retract.t0;
-  if (s < 0 || s > 0.36) return 0;
-  return 20 * k * (1 - E.outQuad(s / 0.36));
+  if (s < 0 || s > 0.75) return 0;
+  return 24 * k * Math.exp(-s / 0.13) * (s > 0.6 ? (0.75 - s) / 0.15 : 1);
 }
+// paper feed: critically damped spring (ω ≈ 22 s⁻¹) fitted to the recording
 function scrollOffset(t) {
-  const p = clamp((t - scrollAnim.t0) / scrollAnim.dur, 0, 1);
-  return scrollAnim.from * (1 - E.inOutSine(p));
+  const s = t - scrollAnim.t0;
+  if (s <= 0) return scrollAnim.from;
+  if (s >= 0.45) return 0;
+  const w = 22 * s;
+  return scrollAnim.from * (1 + w) * Math.exp(-w) * (s > 0.35 ? (0.45 - s) / 0.1 : 1);
 }
 
 /* -------------------------------------------------------- typing actions -- */
@@ -767,22 +780,26 @@ function typeChar(ch) {
   lastKey = t;
   if (ch === '\n' || lines.length > before) {
     // carriage return
-    appearAt.set(i, t + 0.02);
+    appearAt.set(i, t);
     retract.t0 = t; strike.t0 = -9;
     scrollAnim.from = scrollOffset(t) + 1; scrollAnim.t0 = t;
-    slideTo(carriageTarget(), 0.27, E.outQuad, 0);
+    slideTo(carriageTarget(), 0.267, E.outSine, 0);
     fx.zap(true);
+  } else if (ch === ' ') {
+    // space: no type bar, just a small spark and the carriage advance
+    slideTo(carriageTarget(), 0.1, E.outSine, 0);
+    fx.spark(0.55);
   } else {
     appearAt.set(i, t + 0.045);
     strike.t0 = t;
-    slideTo(carriageTarget(), 0.1, E.outCubic, 0.15);
-    if (ch !== ' ') fx.spark(); else fx.spark(0.6);
+    slideTo(carriageTarget(), 0.1, E.outSine, 0.15);
+    if (Math.random() < 0.07) fx.zap(true, 0.9); else fx.spark();   // now and then a big green zap
   }
   if (lines.length !== before || prevLineIdx !== lines.length - 1) invalidateText();
   onTextChanged();
   return true;
 }
-function deleteChar() {
+function deleteChar(quiet) {
   if (!text.length) return false;
   const t = now();
   const before = lines.length;
@@ -792,7 +809,7 @@ function deleteChar() {
   lines = wrap(text);
   lastKey = t;
   if (lines.length < before) { scrollAnim.from = scrollOffset(t) - 1; scrollAnim.t0 = t; invalidateText(); slideTo(carriageTarget(), 0.22, E.outCubic, 0); }
-  else slideTo(carriageTarget(), 0.11, E.outCubic, 0);
+  else slideTo(carriageTarget(), 0.11, E.outSine, 0);
   onTextChanged();
   return true;
 }
@@ -805,18 +822,49 @@ function onTextChanged() {
 const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 /* ------------------------------------------------------------- input -- */
+// The hidden textarea is the source of truth for what the user wants on the page (so mobile
+// autocorrect / predictive text work). Its value is diffed against text + pending: deletions
+// happen at once (backspace animation), additions are queued and struck one by one; a big
+// paste is flushed in a single batch.
+let pending = '';
+let nextStrikeAt = 0;
 function syncInput() {
-  const v = input.value;
-  if (v === text) return;
-  let p = 0; const n = Math.min(v.length, text.length);
-  while (p < n && v[p] === text[p]) p++;
-  // remove what differs, then type the rest (typewriter: only end edits)
-  const dels = text.length - p;
-  for (let i = 0; i < dels; i++) deleteChar();
-  const add = v.slice(p).replace(/\r/g, '');
-  for (const ch of add) { if (!typeChar(ch)) break; }
-  if (input.value !== text) input.value = text;
+  let v = input.value.replace(/\r/g, '');
+  if (v.length > MAX) v = v.slice(0, MAX);
+  const cur = text + pending;
+  if (v === cur) return;
+  let p = 0; const n = Math.min(v.length, cur.length);
+  while (p < n && v[p] === cur[p]) p++;
+  if (p < text.length) {               // something already on paper changed: rub it out
+    pending = '';
+    const dels = text.length - p;
+    for (let i = 0; i < dels; i++) deleteChar(i < dels - 1);
+  } else {
+    pending = pending.slice(0, p - text.length);
+  }
+  pending += v.slice(p);
+  if (pending.length > 24) flushPending();
+  else pumpPending(now());              // a single key strikes right away
+  if (input.value !== v) input.value = v;
   keepCaretAtEnd();
+}
+function pumpPending(t) {
+  if (!pending || t < nextStrikeAt) return;
+  const ch = pending[0]; pending = pending.slice(1);
+  typeChar(ch);
+  nextStrikeAt = t + (pending.length ? 0.034 : 0);
+}
+function flushPending() {
+  // large paste: everything lands at once with a single carriage return
+  const add = pending.slice(0, MAX - text.length); pending = '';
+  if (!add) return;
+  const t = now(), before = lines.length;
+  snapCarriage();
+  text += add; lines = wrap(text); lastKey = t;
+  invalidateText();
+  if (lines.length !== before) { scrollAnim.from = scrollOffset(t) + 1; scrollAnim.t0 = t; retract.t0 = t; fx.zap(true); }
+  slideTo(carriageTarget(), 0.267, E.outSine, 0);
+  onTextChanged();
 }
 function keepCaretAtEnd() {
   const n = input.value.length;
@@ -828,6 +876,7 @@ input.addEventListener('keyup', keepCaretAtEnd);
 input.addEventListener('click', keepCaretAtEnd);
 input.addEventListener('keydown', (e) => {
   if (e.key === 'Tab') e.preventDefault();
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')) e.preventDefault();
   if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'PageUp') { e.preventDefault(); }
 });
 function focusInput() {
@@ -860,6 +909,18 @@ function toast(msg) {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1600);
 }
 dialEl.addEventListener('click', () => setLamp(!lampOn));
+const FIRST_LINES = [
+  'It was a dark and stormy night.', 'The castle lights flickered twice.', 'Something scratched at the door.',
+  'The doctor smiled at the lightning.', 'Nobody rang the bell at midnight.', 'The jar on the shelf began to hum.',
+  'It lived. It actually lived.', 'The moon was late again tonight.', 'Thunder rolled over the old mill.',
+  'My creator never wrote back.', 'The stitches itched in the rain.', 'Somewhere a crow was laughing.',
+];
+$('#hintBtn').addEventListener('click', () => {
+  focusInput();
+  if (text.length || pending) return;
+  const line = FIRST_LINES[(Math.random() * FIRST_LINES.length) | 0];
+  input.value = line; syncInput();
+});
 
 /* ------------------------------------------------------------- sliders -- */
 const SL = {
@@ -921,11 +982,37 @@ for (const key in SL) {
 }
 
 /* ------------------------------------------------------------- effects -- */
+// spark: per key (≈65 ms flash of the patch + violet bolt)
+// zap:   carriage return / random / idle (≈150 ms white bolt + green flood, then a white flash decaying ~0.35 s)
 const fx = {
-  sparkT: -9, sparkDur: 0.07, sparkAmp: 1, bolt: null, boltT: 0,
-  glowT: -9, flashT: -9, big: false,
-  spark(amp = 1) { this.sparkT = now(); this.sparkDur = 0.07; this.sparkAmp = amp; this.big = false; },
-  zap(green) { const t = now(); this.sparkT = t; this.sparkDur = 0.17; this.sparkAmp = 1; this.big = true; this.flashT = t + 0.17; if (green) this.glowT = t; },
+  list: [],
+  spark(amp = 1) { this.list.push({ kind: 's', t0: now(), amp }); },
+  zap(green = true, amp = 1) { this.list.push({ kind: 'z', t0: now(), green, amp }); },
+  state(t) {
+    const st = { flash: 0, white: 0, violet: 0, glow: 0, tips: 0 };
+    for (let i = this.list.length - 1; i >= 0; i--) {
+      const e = this.list[i], s = t - e.t0;
+      if (s < 0) continue;
+      if (e.kind === 's') {
+        if (s > 0.075) { this.list.splice(i, 1); continue; }
+        const a = e.amp * (s < 0.055 ? 1 : (0.075 - s) / 0.02);
+        st.flash = Math.max(st.flash, 0.42 * a); st.white = Math.max(st.white, a); st.tips = Math.max(st.tips, a);
+      } else {
+        if (s > 0.6) { this.list.splice(i, 1); continue; }
+        if (s < 0.15) {
+          const flick = hash(((t * 60) | 0) * 31 + i) < 0.78 ? 1 : 0.25;
+          st.white = Math.max(st.white, e.amp * flick); st.flash = Math.max(st.flash, 0.3 * e.amp); st.tips = Math.max(st.tips, 0.8 * e.amp);
+          if (e.green) st.glow = Math.max(st.glow, s < 0.03 ? s / 0.03 : 1);
+        } else {
+          const q = s - 0.15;
+          st.flash = Math.max(st.flash, e.amp * Math.exp(-q / 0.17) * (s > 0.5 ? (0.6 - s) / 0.1 : 1));
+          if (q < 0.16) { st.violet = Math.max(st.violet, e.amp * (1 - q / 0.2)); st.tips = Math.max(st.tips, e.amp * (1 - q / 0.2)); }
+          if (e.green && q < 0.04) st.glow = Math.max(st.glow, 1 - q / 0.04);
+        }
+      }
+    }
+    return st;
+  },
 };
 
 /* ------------------------------------------------------------ drawing -- */
@@ -974,7 +1061,9 @@ function draw(t) {
   c.globalAlpha = 1;
   // hint + placeholder
   const empty = text.length === 0;
-  hintA = lerp(hintA, empty ? 1 : 0, 0.15);
+  hintA = lerp(hintA, empty && !pending ? 1 : 0, 0.15);
+  const hbOn = hintA > 0.5 && pP < 0.5;
+  if (hbOn !== hintBtnOn) { hintBtnOn = hbOn; hintBtn.style.pointerEvents = hbOn ? 'auto' : 'none'; }
   if (hintA > 0.01 && capText.hint) {
     const h1 = capText.hint, h2 = capText.ph;
     c.globalAlpha = hintA * (1 - pP);
@@ -1011,9 +1100,13 @@ function draw(t) {
   // ----- T -----
   drawT(c, cx, capTop, t, pP);
   // ----- sparks / glow -----
-  drawSparks(c, cx, cy, t, cP);
+  const st = fx.state(t);
+  drawSparks(c, cx, cy, t, st);
+  drawCaret(c, t, pP);
+  drawGlow(c, cx, cy, st);
 }
-let hintA = 1;
+let hintA = 1, hintBtnOn = true;
+const hintBtn = $('#hintBtn');
 
 function drawLEDs(c, cx, cy, t, cP) {
   const typing = t - lastKey < 0.27;
@@ -1070,54 +1163,85 @@ function drawT(c, cx, capTop, t, pP) {
 }
 
 function lightningPath(x, y0, y1, seed) {
-  const R = mulberry(seed), pts = [];
-  const n = 9;
-  for (let i = 0; i <= n; i++) {
-    const f = i / n;
-    pts.push([x + (i === 0 || i === n ? 0 : (R() - 0.5) * 6.5 * k), lerp(y0, y1, f) + (i > 0 && i < n ? (R() - 0.5) * 2 * k : 0)]);
+  const R = mulberry(seed), pts = [[x, y0]];
+  const n = 11;
+  let px = x;
+  for (let i = 1; i < n; i++) {
+    px = x + clamp((px - x) * -0.6 + (R() - 0.5) * 6.5 * k, -3.6 * k, 3.6 * k);
+    pts.push([px, lerp(y0, y1, i / n) + (R() - 0.5) * 1.6 * k]);
   }
+  pts.push([x, y1]);
   return pts;
 }
-function drawSparks(c, cx, cy, t, cP) {
-  const s = t - fx.sparkT;
-  const active = s >= 0 && s < fx.sparkDur;
-  const fl = t - fx.flashT;
-  const flashA = fx.big && fl >= 0 && fl < 0.16 ? (1 - fl / 0.16) : 0;
-  const gl = t - fx.glowT;
-  const glowA = gl >= 0 && gl < 0.42 ? (gl < 0.03 ? gl / 0.03 : gl < 0.17 ? 1 : 1 - (gl - 0.17) / 0.25) : 0;
-  if (glowA > 0) {
-    const r = 125 * k;
-    const g = c.createRadialGradient(cx + 10 * k, cy + 6 * k, 0, cx + 10 * k, cy + 6 * k, r);
-    g.addColorStop(0, `rgba(159,199,133,${0.42 * glowA})`); g.addColorStop(0.45, `rgba(159,199,133,${0.24 * glowA})`); g.addColorStop(1, 'rgba(159,199,133,0)');
-    c.fillStyle = g; c.fillRect(cx - r, cy - r, r * 2, r * 2);
+function strokePts(c, pts) { c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]))); c.stroke(); }
+function drawSparks(c, cx, cy, t, st) {
+  const hh = G.capHH, x = cx + 25.4 * k;
+  const yTop = cy - hh - 3.7 * k, yBot = cy + hh + 3.7 * k;
+  // patch flash (between the seams, full height)
+  if (st.flash > 0.01) {
+    c.save();
+    c.translate(cx, cy); capsulePath(c); c.clip();
+    const x1 = SEAM.x1 * k, x2 = SEAM.x2 * k;
+    const g = c.createLinearGradient(x1, 0, x2, 0);
+    const a = st.flash;
+    g.addColorStop(0, `rgba(205,205,225,${0.75 * a})`); g.addColorStop(0.45, `rgba(244,243,252,${0.95 * a})`);
+    g.addColorStop(0.75, `rgba(232,230,246,${0.9 * a})`); g.addColorStop(1, `rgba(190,190,210,${0.75 * a})`);
+    c.fillStyle = g; c.fillRect(x1 + 0.4 * k, -hh, x2 - x1 - 0.8 * k, hh * 2);
+    c.restore();
   }
-  if (!active && flashA <= 0) return;
-  // flash the patch / end cap
-  const amp = active ? fx.sparkAmp : flashA;
-  c.save();
-  c.translate(cx, cy); capsulePath(c); c.clip();
-  const g = c.createLinearGradient(9.7 * k, 0, G.capHW, 0);
-  g.addColorStop(0, `rgba(220,222,230,${0.55 * amp})`); g.addColorStop(0.5, `rgba(246,246,252,${0.85 * amp})`); g.addColorStop(1, `rgba(200,202,210,${0.6 * amp})`);
-  c.fillStyle = g; c.fillRect(9.7 * k, -G.capHH, G.capHW - 9.7 * k, G.capHH * 2);
-  c.restore();
-  if (!active && Math.random() < 0.5) return;
-  const x = cx + 25.6 * k;
-  const pts = lightningPath(x, cy - G.capHH - 3 * k, cy + G.capHH + 3 * k, (t * 60) | 0);
-  c.save();
-  c.lineJoin = 'round'; c.lineCap = 'round';
-  c.shadowColor = 'rgba(170,150,255,0.95)'; c.shadowBlur = 5 * k * dpr;
-  c.strokeStyle = `rgba(190,170,255,${0.75 * amp})`; c.lineWidth = 2.2 * k;
-  c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]))); c.stroke();
-  c.shadowBlur = 0; c.strokeStyle = `rgba(255,255,255,${amp})`; c.lineWidth = 0.9 * k; c.stroke();
-  // little branches near the top bolt
-  c.lineWidth = 0.6 * k; c.beginPath();
-  for (let i = 0; i < 3; i++) { const y = cy - G.capHH - 1 * k + i * 1.6 * k; c.moveTo(x + 0.5 * k, y); c.lineTo(x + (3.5 + i) * k, y - (1.6 - i * 0.4) * k); }
-  c.stroke();
-  // hot spots at bolt tips
-  for (const yy of [cy - G.capHH - 6.8 * k, cy + G.capHH + 6.8 * k]) {
-    const hg = c.createRadialGradient(x, yy, 0, x, yy, 4 * k); hg.addColorStop(0, `rgba(255,255,255,${0.9 * amp})`); hg.addColorStop(1, 'rgba(200,190,255,0)');
-    c.fillStyle = hg; c.fillRect(x - 4 * k, yy - 4 * k, 8 * k, 8 * k);
+  const bolt = Math.max(st.white, st.violet);
+  if (bolt > 0.02) {
+    const pts = lightningPath(x, yTop + 1 * k, yBot - 1 * k, ((t * 60) | 0) * 7 + 3);
+    c.save();
+    c.lineJoin = 'miter'; c.lineCap = 'round';
+    const violet = st.violet >= st.white;
+    c.shadowColor = violet ? 'rgba(170,140,255,0.95)' : 'rgba(190,195,255,0.9)'; c.shadowBlur = 4 * k * dpr;
+    c.strokeStyle = violet ? `rgba(176,150,255,${0.8 * bolt})` : `rgba(200,205,255,${0.6 * bolt})`; c.lineWidth = 1.9 * k;
+    strokePts(c, pts);
+    c.shadowBlur = 0; c.strokeStyle = `rgba(255,255,255,${bolt})`; c.lineWidth = 0.75 * k; strokePts(c, pts);
+    // little side discharges near the bolt tips
+    c.lineWidth = 0.55 * k; c.strokeStyle = `rgba(255,255,255,${0.85 * bolt})`;
+    const R = mulberry(((t * 60) | 0) + 99);
+    c.beginPath();
+    for (let i = 0; i < 3; i++) {
+      const yy = yTop + (1.6 + i * 1.3) * k, len = (2.5 + R() * 2.5) * k;
+      c.moveTo(x + 0.6 * k, yy); c.lineTo(x + 0.6 * k + len, yy + (R() - 0.3) * 1.6 * k);
+    }
+    for (let i = 0; i < 2; i++) {
+      const yy = yBot - (1.8 + i * 1.4) * k, len = (2 + R() * 2.5) * k;
+      c.moveTo(x + 0.6 * k, yy); c.lineTo(x + 0.6 * k + len, yy - (R() - 0.3) * 1.4 * k);
+    }
+    c.stroke();
+    c.restore();
   }
+  if (st.tips > 0.02) {
+    for (const yy of [yTop, yBot]) {
+      const hg = c.createRadialGradient(x, yy, 0, x, yy, 3.6 * k);
+      hg.addColorStop(0, `rgba(255,255,255,${0.95 * st.tips})`); hg.addColorStop(0.4, `rgba(240,236,255,${0.6 * st.tips})`); hg.addColorStop(1, 'rgba(200,190,255,0)');
+      c.fillStyle = hg; c.fillRect(x - 3.6 * k, yy - 3.6 * k, 7.2 * k, 7.2 * k);
+    }
+  }
+}
+function drawGlow(c, cx, cy, st) {
+  if (st.glow <= 0.01) return;
+  const r = 150 * k, gx = cx + 8 * k, gy = cy + 4 * k;
+  const g = c.createRadialGradient(gx, gy, 0, gx, gy, r);
+  const a = st.glow;
+  g.addColorStop(0, `rgba(150,205,128,${0.5 * a})`); g.addColorStop(0.3, `rgba(146,200,136,${0.38 * a})`);
+  g.addColorStop(0.65, `rgba(140,190,140,${0.16 * a})`); g.addColorStop(1, 'rgba(140,185,140,0)');
+  c.fillStyle = g; c.fillRect(gx - r, gy - r, r * 2, r * 2);
+}
+function drawCaret(c, t, pP) {
+  if (pP < 0.02) return;
+  const ph = (t % 1.033) / 1.033;
+  const on = ph < 0.48 ? 1 : 0;
+  if (!on) return;
+  const n = lines.length, col = lines[n - 1].idx.length;
+  const x = G.textLeft + col * G.cell + 3 * k, y = G.base + 1.6 * k + scrollOffset(t) * G.lineH;
+  const g = c.createRadialGradient(x, y, 0, x, y, 3.4 * k);
+  g.addColorStop(0, `rgba(196,255,186,${0.9 * pP})`); g.addColorStop(0.45, `rgba(150,235,140,${0.55 * pP})`); g.addColorStop(1, 'rgba(120,220,110,0)');
+  c.save(); c.translate(x, y); c.scale(0.8, 1); c.translate(-x, -y);
+  c.fillStyle = g; c.fillRect(x - 3.4 * k, y - 3.4 * k, 6.8 * k, 6.8 * k);
   c.restore();
 }
 
@@ -1145,6 +1269,17 @@ if (window.visualViewport) {
 let resizeTimer = 0;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { const w = W, h = H; measure(); if (w !== W || Math.abs(h - H) > 1) layout(); else onViewport(); }, 60); });
 
+/* ---------------------------------------------------------- idle sparks -- */
+let nextIdle = 0;
+function updateIdle(t) {
+  const idle = t - lastKey;
+  if (idle < 2.4) { nextIdle = Math.max(nextIdle, t + (2.4 - idle) + Math.random() * 0.6); return; }
+  if (t >= nextIdle) {
+    fx.zap(Math.random() < 0.72, 0.8);
+    nextIdle = t + 0.6 + Math.random() * 1.4;
+  }
+}
+
 /* --------------------------------------------------------------- loop -- */
 let lastT = now();
 let lightX = 0;
@@ -1152,7 +1287,10 @@ function frame() {
   const t = now();
   const dt = Math.min(0.05, t - lastT); lastT = t;
   stepChannels(dt);
+  pumpPending(t);
   updateCarriage(t);
+  updateIdle(t);
+  if (appearAt.size > 64) for (const [i, a] of appearAt) if (a < t - 1) appearAt.delete(i);
   if (lightDirty && (lampOn || CH.light.v > 0)) renderLight();
   // light layer follows the carriage
   const lv = CH.light.v;
@@ -1173,6 +1311,15 @@ function flicker(p) {
   const keys = [[0, 0.2], [0.08, 0.9], [0.13, 0.25], [0.2, 1], [0.27, 0.45], [0.34, 1], [0.46, 0.7], [0.55, 1], [1, 1]];
   for (let i = 1; i < keys.length; i++) if (p <= keys[i][0]) return lerp(keys[i - 1][1], keys[i][1], (p - keys[i - 1][0]) / (keys[i][0] - keys[i - 1][0]));
   return 1;
+}
+
+/* ---------------------------------------------------------------- debug -- */
+if (/[?&]debug\b/.test(location.search)) {
+  window.__fw = {
+    get text() { return text; }, get lines() { return lines.map((l) => l.idx.map((i) => text[i]).join('')); },
+    get carX() { return car.x; }, get target() { return carriageTarget(); }, get col() { return caretCol(); },
+    get lamp() { return lampOn; }, colX, G,
+  };
 }
 
 /* --------------------------------------------------------------- boot -- */
