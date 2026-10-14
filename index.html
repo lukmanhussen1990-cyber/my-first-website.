@@ -1188,8 +1188,9 @@ function draw(t) {
   const n = lines.length;
   let minLi = n;
   for (let li = n - 1; li >= 0; li--) {
-    // the last line sits on the typing line; older lines are fed up (the feed animates via `off`)
-    const y = li === n - 1 ? lastY : lastY - (n - 1 - li - off) * G.lineH;
+    // the whole sheet feeds up together: right after a wrap the new line starts one line below the
+    // typing line and rises into place with the older lines (as in the recording)
+    const y = lastY - (n - 1 - li - off) * G.lineH;
     if (y < G.paperTop - G.lineH) break;
     minLi = li;
     if (!lines[li].idx.length) continue;
@@ -1439,7 +1440,7 @@ function drawCaret(c, t, pP) {
   const on = ph < 0.48 ? 1 : 0;
   if (!on) return;
   const n = lines.length, col = lines[n - 1].idx.length;
-  const x = G.textLeft + col * G.cell + 1.85 * k, y = G.base + baseShift(t) + 1.6 * k;
+  const x = G.textLeft + col * G.cell + 1.85 * k, y = G.base + baseShift(t) + scrollOffset(t) * G.lineH + 1.6 * k;
   const g = c.createRadialGradient(x, y, 0, x, y, 3.4 * k);
   g.addColorStop(0, `rgba(196,255,186,${0.9 * pP})`); g.addColorStop(0.45, `rgba(150,235,140,${0.55 * pP})`); g.addColorStop(1, 'rgba(120,220,110,0)');
   c.save(); c.translate(x, y); c.scale(0.8, 1); c.translate(-x, -y);
