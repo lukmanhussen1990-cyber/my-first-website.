@@ -69,3 +69,14 @@ recent typing).
 Fixed: all of the above, each with a regression test; 3-minute soak (no errors, flat 4 MB heap,
 steady frame cost), audio-node leak check, levels per segment within ~10 % of the recording.
 **Check 8 done. Next: side-by-side comparison video, final regression pass, delivery.**
+
+## Check 9 — music and sound against the recording (v9a–v9f)
+Differences found: the music bed was much darker than the recording (−10 to −27 dB above 1 kHz, nothing
+continuous in the top end), the harmony did not follow the recording's bass line (measured per beat:
+C C | G G | F | Am | G), the bass was plucked instead of held on the off-beats, the lead's vibrato was too
+shallow and slow, and the carriage return lacked the recording's short wooden clunk (400–1500 Hz).
+Fixed: new chord loop and off-beat bass, eighth-note hats, sixteenth shaker, a soft hiss bed, kick beater
+click, brighter room, plucks an octave up, three-partial theremin with ±60 cents at ~6 Hz and scoops into
+long notes (third-octave mean difference 6.9 → 3.3 dB, loudness per segment within ~1–2 dB); return clunk
+added, ratchet and low thump softened, ding kept soft. Robustness: the lead voice is rebuilt every loop so
+automation never piles up, the bed has its own long noise buffer, copy fallback keeps the keyboard up.
