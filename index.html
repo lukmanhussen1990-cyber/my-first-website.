@@ -1796,13 +1796,24 @@ let resizeTimer = 0;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { const w = W, h = H; measure(); if (w !== W || Math.abs(h - H) > 1) layout(); else onViewport(); }, 60); });
 
 /* ---------------------------------------------------------------- audio -- */
+// Everything is synthesised with the Web Audio API — no audio files.
 // background music harmony: [bass midi, pad tones, pluck tones]; LOOP gives the chord for each beat of the 8-bar loop
 const CHORDS = {
   C: [36, [52, 55, 60], [72, 76, 79]], G: [31, [50, 55, 59, 62], [71, 74, 79]],
   F: [29, [53, 57, 60], [72, 77, 81]], Am: [33, [52, 57, 60], [72, 76, 81]],
 };
 const LOOP = 'F C C C C C C C C G G G G G G G G F F F F Am Am Am Am G C G G F F F'.split(' ');
-// Everything is synthesised with the Web Audio API — no audio files.
+// theremin melody: [bar, 16th, midi, length in 16ths]
+// contour transcribed from the recording's lead: E5 … G4 F4 E4 | G5 D5 … D#5 | E5 D5 … F4 E4 A4 | G4 A4 G#4 |
+// A4 C5 D5 G5 | F5→G5, wobbling G#5 G5 F#5 G5 E5 | long E5, D5, long C5 | B4 A4 C5 (back to the top)
+const MELODY = [[0, 2, 76, 6], [0, 10, 67, 2], [0, 12, 65, 2], [0, 14, 64, 4],
+  [1, 6, 79, 3], [1, 9, 74, 4], [1, 14, 75, 2],
+  [2, 0, 76, 3], [2, 3, 74, 5], [2, 10, 65, 2], [2, 12, 64, 2], [2, 14, 69, 2],
+  [3, 0, 67, 6], [3, 8, 69, 5], [3, 14, 68, 2],
+  [4, 0, 69, 6], [4, 7, 72, 2], [4, 9, 74, 3], [4, 13, 79, 3],
+  [5, 4, 77, 2], [5, 6, 79, 4], [5, 10, 80, 2], [5, 12, 79, 1], [5, 13, 78, 1], [5, 14, 79, 1], [5, 15, 76, 1],
+  [6, 0, 76, 6], [6, 6, 74, 2], [6, 8, 72, 8],
+  [7, 0, 71, 6], [7, 8, 69, 4], [7, 12, 72, 4]];
 const AU = {
   ctx: null, master: null, sfx: null, music: null, verb: null, noise: null, on: store.get(LS.sound, '1') !== '0',
   hum: null, musicOn: false, nextNote: 0, step: 0, timer: 0, ther: null,
@@ -1924,7 +1935,8 @@ const AU = {
   },
   ding(t) {
     const f = 2093 * (0.995 + Math.random() * 0.01);
-    for (const [mul, gn, d] of [[1, 0.075, 1.3], [2.76, 0.03, 0.6], [5.4, 0.015, 0.3], [1.004, 0.045, 1.1]]) {
+    // kept soft: the brief asks for a ding, the recording's return has none audible over the music
+    for (const [mul, gn, d] of [[1, 0.042, 1.2], [2.76, 0.017, 0.55], [5.4, 0.009, 0.3], [1.004, 0.025, 1]]) {
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
       o.frequency.value = f * mul; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gn, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
       o.connect(g); g.connect(this.sfx); g.connect(this.verb); o.start(t); o.stop(t + d + 0.05);
@@ -1970,7 +1982,7 @@ const AU = {
   startMusic() {
     if (!this.ctx || this.musicOn) return;
     this.musicOn = true; this.step = 0; this.nextNote = this.ctx.currentTime + 0.12;
-    // theremin voice: one gliding oscillator pair with vibrato
+    // theremin voice: three gliding partials (1×, 2×, 3×) sharing one vibrato
     const o = this.ctx.createOscillator(), o2 = this.ctx.createOscillator(), g = this.ctx.createGain(), g2 = this.ctx.createGain(), fl = this.ctx.createBiquadFilter();
     const lfo = this.ctx.createOscillator(), lg = this.ctx.createGain(), dry = this.ctx.createGain();
     // the recording's lead wobbles deeply (about ±50 cents at ~5 Hz) and has audible 2nd/3rd harmonics
@@ -2059,19 +2071,8 @@ const AU = {
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.09, t + 0.002); g.gain.setTargetAtTime(0, t + 0.002, 0.038);
       n.connect(fl); fl.connect(g); g.connect(M); g.connect(this.verb);
     }
-    // theremin melody: [bar, 16th, midi, length in 16ths]
-    // contour transcribed from the recording's lead: E5 … G4 F4 E4 | G5 D5 … D#5 | E5 D5 … F4 E4 A4 | G4 A4 G#4 |
-    // A4 C5 D5 G5 | F5→G5, wobbling G#5 G5 F#5 G5 E5 | long E5, D5, long C5 | B4 A4 C5 (back to the top)
-    const MEL = [[0, 2, 76, 6], [0, 10, 67, 2], [0, 12, 65, 2], [0, 14, 64, 4],
-      [1, 6, 79, 3], [1, 9, 74, 4], [1, 14, 75, 2],
-      [2, 0, 76, 3], [2, 3, 74, 5], [2, 10, 65, 2], [2, 12, 64, 2], [2, 14, 69, 2],
-      [3, 0, 67, 6], [3, 8, 69, 5], [3, 14, 68, 2],
-      [4, 0, 69, 6], [4, 7, 72, 2], [4, 9, 74, 3], [4, 13, 79, 3],
-      [5, 4, 77, 2], [5, 6, 79, 4], [5, 10, 80, 2], [5, 12, 79, 1], [5, 13, 78, 1], [5, 14, 79, 1], [5, 15, 76, 1],
-      [6, 0, 76, 6], [6, 6, 74, 2], [6, 8, 72, 8],
-      [7, 0, 71, 6], [7, 8, 69, 4], [7, 12, 72, 4]];
     const th = this.ther;
-    for (const [b, st, m, len] of MEL) if (b === bar && st === s && th) {
+    for (const [b, st, m, len] of MELODY) if (b === bar && st === s && th) {
       const f = hz(m), dur = len * B / 4;
       th.o.frequency.setTargetAtTime(f, t, 0.06); th.o2.frequency.setTargetAtTime(f * 2, t, 0.06); th.o3.frequency.setTargetAtTime(f * 3, t, 0.06);
       th.g.gain.cancelScheduledValues(t);
