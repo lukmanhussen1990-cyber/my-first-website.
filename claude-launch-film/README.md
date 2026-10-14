@@ -10,7 +10,7 @@ for a shot-by-shot comparison.
 
 ## Redrawn version
 
-`claude_launch_film_redraw_v9.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
+`claude_launch_film_redraw_v10.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
 scene is now rebuilt:
 
 - **Opening:** the four-point sparkle is replaced by the orange Claude starburst, and the
@@ -26,6 +26,8 @@ scene is now rebuilt:
   reference, with the original text removed.
 - **Claude thinking (processing scene):** an editorial status frame: "CLAUDE IS THINKING" with Claude's spark over
   a large serif headline whose words rise out of clean masks; the second step replaces the first like a ticker.
+- **Hero statement:** "Because the right diagnosis / starts with the right direction" builds word by word with the
+  narration into one two-line serif composition, the key words in Claude coral and an arrow drawn under "direction".
 - **Claude logo reveals:** at "Meet Claude" and in the finale the coral mark turns in and the wordmark wipes out
   beside it in reading order: no flashes or glows, just the lockup and precise easing.
 - **Sound:** synthesised sound design synced to the picture (soft whooshes on transitions, a warm thump and bell
@@ -61,7 +63,7 @@ scene is now rebuilt:
 | 863–972 | Claude's reply | redrawn Claude chat (user bubble, serif reply streaming with the starburst, composer) over the tracked, scrolling window; the redrawn UI takes on the footage's measured focus blur |
 | 973–1090 | doctor cards, "right one" | redrawn over the reference light field (cards and titles removed); the centre doctor is Dr. Imran Hussain; futuristic "right one" with a targeting lock on his card and a "Best match" chip |
 | 1091–1167 | profile and analytics | "Right outcome" redrawn; the profile footage now shows Dr. Imran Hussain (name, breadcrumb, photo, e-mail, About), tracked and blur-matched through the fast scroll |
-| 1168–1267 | closing lines | redrawn |
+| 1168–1267 | closing lines | the hero statement: words rise out of masks as the narrator says them in a large serif, "right" semibold and "diagnosis" / "direction" in Claude coral built letter by letter; the first line glides up so the whole sentence ends on screen as one composition, and a fine coral line under "direction" resolves into an arrow pointing forward |
 | 1268–1453 | Claude lockup and end credit | one continuous shot: the coral mark turns in and the wordmark wipes out beside it; after the reference ends the lockup lifts and "Built by Imran using Opus 5.5" rises in word by word |
 
 The redraw sources are in `redraw/`:

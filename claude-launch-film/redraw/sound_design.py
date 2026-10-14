@@ -115,6 +115,10 @@ put(verb(bell([G['G5'], G['D6']], 1.6, 0.5), 0.45), T(1064), -34)
 put(verb(whoosh(1.2, 3000, 250, 0.35)), T(1074), -25)
 # profile scroll
 put(verb(whoosh(0.5, 600, 3500, 0.6), 0.25), T(1118), -27, pan=-0.1)
+# the hero statement: a soft swell as the first line glides up, air as the arrow draws, a small chime as it lands
+put(verb(whoosh(0.55, 500, 2600, 0.6), 0.3), T(1202), -29)
+put(verb(whoosh(0.5, 1400, 6000, 0.7), 0.3), T(1243), -29, pan=0.3)
+put(verb(bell([G['D5'], G['A4'] * 2], 1.6, 0.3), 0.45), T(1254), -33, pan=0.4)
 # finale: rise, thump and a fuller bell chord on the last "Claude"; air under the wipe; pad + chime under the credit
 put(whoosh(1.2, 250, 5200, 0.95), T(1268) - 1.12, -29)
 put(thump(70, 42, 1.2), T(1268), -17)

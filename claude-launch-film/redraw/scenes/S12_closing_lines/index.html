@@ -2,50 +2,93 @@
 <html><head><meta charset="utf-8"><title>S12 closing lines</title>
 <link rel="stylesheet" href="../../shared/base.css">
 <script src="../../shared/lib.js"></script>
-<script src="../../shared/components.js"></script>
-<script src="../../shared/titles.js"></script>
+<style>
+  #blk { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  .ln { position: absolute; left: 0; top: 0; white-space: nowrap; font-family: 'Claude Serif'; line-height: 1; }
+  .m { position: absolute; top: 0; overflow: hidden; }
+  .m span { display: inline-block; will-change: transform; }
+  #arrow { position: absolute; left: 0; top: 0; overflow: visible; }
+</style>
 </head><body>
-<div id="stage"><img class="plate" id="bg"></div>
+<div id="stage"><img class="plate" id="bg"><div id="blk"><svg id="arrow" width="1920" height="1080"></svg></div></div>
 <script>
-// S12 (f1168-1267): reference dark background with the rising lavender glow (text removed) and the
-// two redrawn closing lines. Line A re-centres as words arrive, 'diagnosis' types on and the line
-// leaves to the left; line B slides in from the right, each new word gliding into place, then zooms.
-const stage = document.getElementById('stage');
-const W = [238, 238, 250], G = [150, 150, 172], VI = [148, 132, 255];
-const A = new TitleLine(stage, {
-  text: 'Because the right diagnosis', font: "'Inter'", size: 74, tracking: -0.02, weight: 400,
-  fitWidth: { unit: 0, width: 274, by: 'tracking' }, cx: 952, baseline: 562, layout: 'progressive', presenceDur: 10,
-  S: [[1168, 1.274], [1169, 1.219], [1170, 1.168], [1171, 1.124], [1172, 1.091], [1173, 1.066], [1174, 1.047], [1175, 1.029], [1176, 1.018], [1177, 1.007], [1178, 1.0]],
-  X: [[1202, 0], [1203, -9], [1204, -21], [1205, -38], [1206, -61], [1207, -88]],
-  blur: [[1185, 0], [1187, 1.2], [1189, 2.5], [1191, 3.2], [1192, 3.2], [1194, 1.8], [1196, 0.8], [1198, 0], [1203, 0.8], [1205, 3], [1207, 5]],
-  opacity: [[1204, 1], [1207, 0.75]],
-  units: [
-    { in: 1160, dur: 2, from: W, to: W },
-    { in: 1179, dur: 6, from: G, to: W, presenceDur: 10 },
-    { in: 1189.5, dur: 6, colorAt: [[1189.5, [140, 125, 255]], [1193, [134, 118, 248]], [1197, W]], opacityAt: [[1189.5, 0], [1192, 1]], weight: 700, blur0: 4, presenceDur: 8 },   // violet on arrival, then white bold as on the reference
-    { in: 1195, dur: 1, opacityAt: [[1194.5, 0], [1195, 1]], colorAt: [[1195, VI]], weight: 600, presenceDur: 7,
-      typeAt: [[1195, 0.08], [1196, 0.22], [1198, 0.46], [1200, 0.78], [1202, 1]] },
-  ],
-});
-const B = new TitleLine(stage, {
-  text: 'starts with the right direction', font: "'Inter'", size: 75, tracking: -0.02, weight: 400,
-  fitWidth: { unit: 'all', width: 921, by: 'tracking' }, cx: 958, baseline: 562, layout: 'full',
-  X: [[1208, 187], [1209, 140], [1210, 105], [1211, 79], [1212, 59], [1213, 46], [1214, 35], [1215, 28], [1216, 22], [1217, 19], [1219, 16], [1223, 12], [1227, 9], [1231, 7], [1236, 5], [1245, 4], [1255, 0]],
-  S: [[1255, 1.0], [1256, 1.006], [1257, 1.01], [1258, 1.015], [1259, 1.022], [1260, 1.029], [1261, 1.039], [1262, 1.052], [1263, 1.067], [1264, 1.086], [1265, 1.11], [1266, 1.138], [1267, 1.173]],
-  blur: [[1208, 4], [1210, 2.5], [1212, 1.2], [1214, 0.5], [1215, 0]],
-  units: [
-    { in: 1206, dur: 6, from: G, to: [235, 235, 248] },
-    { in: 1210, dur: 5, from: G, to: [235, 235, 248], slide: { dx: 45, dur: 9 } },
-    { in: 1219, dur: 5, from: G, to: [235, 235, 248], slide: { dx: 38, dur: 9 } },
-    { in: 1228, dur: 6, from: [140, 140, 165], to: [205, 205, 235], slide: { dx: 48, dur: 9 } },
-    { in: 1237, dur: 6, from: [110, 100, 200], to: [150, 135, 255], weight: 600, slide: { dx: 52, dur: 12 } },
-  ],
-});
+// S12 (f1168-1267), the film's hero statement, redesigned at the client's request. Each word rises out of a clean
+// mask as the narrator says it (the reference's word timings); "right" is set semibold, and the two words that carry
+// the idea, "diagnosis" and "direction", are Claude coral and build letter by letter. When the second half begins
+// the first line glides up instead of clearing, so the whole sentence ends on screen as one composed statement; a
+// fine coral line draws under "direction" and resolves into an arrow pointing forward; the first line brightens
+// back and the camera pushes in toward the cut to the Claude lockup. Serif = the voice Claude uses in this film.
+const $ = id => document.getElementById(id);
+const expoOut = t => t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
+const expoInOut = t => t <= 0 ? 0 : t >= 1 ? 1 : t < 0.5 ? Math.pow(2, 20 * t - 10) / 2 : (2 - Math.pow(2, -20 * t + 10)) / 2;
+const cubicInOut = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const SIZE = 84, CX = 960, LH = 1.22 * SIZE, CY = 548;          // single line sits at CY; the pair is centred on CY
+const INK = '#F7F5FF', DIM = 'rgba(247,245,255,0.58)', CORAL = '#EE9A7C';
+// word list: text, in-frame (as spoken), weight, accent (letter build in coral)
+const L1W = [['Because', 1166.5, 400], ['the', 1179, 400], ['right', 1189.5, 600], ['diagnosis', 1195, 400, 1]];
+const L2W = [['starts', 1206, 400], ['with', 1210, 400], ['the', 1219, 400], ['right', 1228, 600], ['direction', 1237, 400, 1]];
+let LINES = null, ARR = null;
+function buildLine(words) {
+  const el = document.createElement('div'); el.className = 'ln'; el.style.fontSize = SIZE + 'px'; $('blk').insertBefore(el, $('arrow'));
+  // measure the whole line in one run (kerning and spaces as typeset)
+  const meas = document.createElement('span'); meas.style.cssText = 'visibility:hidden;white-space:pre;letter-spacing:-0.014em';
+  words.forEach(([t, , w], i) => { const s = document.createElement('span'); s.textContent = t; s.style.fontWeight = w; meas.appendChild(s); if (i < words.length - 1) meas.appendChild(document.createTextNode(' ')); });
+  el.appendChild(meas);
+  const r0 = meas.getBoundingClientRect();
+  const probe = document.createElement('span'); probe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline'; meas.appendChild(probe);
+  const bOff = probe.getBoundingClientRect().top - r0.top; meas.removeChild(probe);
+  const rg = document.createRange();
+  const W = Array.from(meas.children).map((s, i) => {
+    const b = s.getBoundingClientRect(), [t, t0, wt, acc] = words[i];
+    const w = { t, t0, wt, acc, x: b.left - r0.left, w: b.width };
+    if (acc) { const n = s.firstChild; w.letters = Array.from(t).map((c, k) => { rg.setStart(n, k); rg.setEnd(n, k + 1); const lb = rg.getBoundingClientRect(); return { c, x: lb.left - r0.left }; }); }
+    return w;
+  });
+  const width = r0.width; el.removeChild(meas);
+  const mk = (txt, x, wt, col) => { const m = document.createElement('div'); m.className = 'm';
+    m.style.cssText += `left:${(x - 2).toFixed(2)}px;padding:${(0.08 * SIZE).toFixed(1)}px 2px ${(0.3 * SIZE).toFixed(1)}px;`;
+    const sp = document.createElement('span'); sp.textContent = txt; sp.style.fontWeight = wt; sp.style.color = col; sp.style.letterSpacing = '-0.014em';
+    m.appendChild(sp); el.appendChild(m); return sp; };
+  W.forEach(w => { if (w.acc) w.ls = w.letters.map(l => mk(l.c, l.x, w.wt, CORAL)); else w.sp = mk(w.t, w.x, w.wt, INK); });
+  return { el, W, width, bOff };
+}
+function renderLine(L, f, baseY, op) {
+  L.el.style.left = (CX - L.width / 2).toFixed(2) + 'px';
+  L.el.style.top = (baseY - L.bOff - 0.08 * SIZE).toFixed(2) + 'px';
+  L.el.style.opacity = op.toFixed(3);
+  const rise = 1.35 * SIZE;
+  L.W.forEach(w => {
+    if (w.acc) w.ls.forEach((s, k) => { const p = expoOut(clamp((f - w.t0 - k * 0.85) / 18)); s.style.transform = `translateY(${((1 - p) * rise).toFixed(2)}px)`; s.parentNode.style.visibility = f >= w.t0 + k * 0.85 - 0.5 ? 'visible' : 'hidden'; });
+    else { const p = expoOut(clamp((f - w.t0) / 20)); w.sp.style.transform = `translateY(${((1 - p) * rise).toFixed(2)}px)`; w.sp.parentNode.style.visibility = f >= w.t0 - 0.5 ? 'visible' : 'hidden'; }
+  });
+}
 window.renderFrame = async (f) => {
-  await setImg(document.getElementById('bg'), `../../plates/S12_closing_lines/bg_${String(f).padStart(4, '0')}.jpg`);
-  A.el.style.display = f <= 1207 ? 'block' : 'none';
-  B.el.style.display = f >= 1208 ? 'block' : 'none';
-  if (f <= 1207) A.render(f); else B.render(f);
+  if (!LINES) {
+    await document.fonts.load(`400 ${SIZE}px 'Claude Serif'`); await document.fonts.load(`600 ${SIZE}px 'Claude Serif'`);
+    LINES = [buildLine(L1W), buildLine(L2W)];
+    const NS = 'http://www.w3.org/2000/svg', svg = $('arrow');
+    ARR = { line: document.createElementNS(NS, 'path'), head: document.createElementNS(NS, 'path') };
+    [ARR.line, ARR.head].forEach(p => { p.setAttribute('fill', 'none'); p.setAttribute('stroke', CORAL); p.setAttribute('stroke-width', 3); p.setAttribute('stroke-linecap', 'round'); p.setAttribute('stroke-linejoin', 'round'); p.setAttribute('pathLength', 1); p.setAttribute('stroke-dasharray', '1 1'); svg.appendChild(p); });
+  }
+  await setImg($('bg'), `../../plates/S12_closing_lines/bg_${String(f).padStart(4, '0')}.jpg`);
+  const [A, B] = LINES;
+  // camera: the reference's settle at the start and push-in at the end, around the statement's centre
+  const S = kf(f, [[1168, 1.12], [1171, 1.06], [1174, 1.025], [1178, 1.0], [1252, 1.0], [1267, 1.085, 'inOutCubic']]);
+  $('blk').style.transformOrigin = `${CX}px ${CY}px`; $('blk').style.transform = `scale(${S.toFixed(5)})`;
+  // the first line glides up as the second half begins; dims while the second builds, then brightens back
+  const up = expoInOut(clamp((f - 1203.5) / 16));
+  const yA = CY + 0.36 * SIZE - up * LH / 2, yB = CY + 0.36 * SIZE + LH / 2;
+  const dim = 1 - 0.42 * cubicInOut(clamp((f - 1206) / 10)) * (1 - cubicInOut(clamp((f - 1247) / 10)));
+  renderLine(A, f, yA, dim);
+  B.el.style.display = f >= 1205 ? 'block' : 'none';
+  if (f >= 1205) renderLine(B, f, yB, 1);
+  // the arrow: a fine coral line draws under "direction" and resolves into an arrowhead pointing forward
+  const d = B.W[4], x0 = CX - B.width / 2 + d.x + 2, x1 = x0 + d.w + 34, y = yB + 0.2 * SIZE;
+  ARR.line.setAttribute('d', `M ${x0.toFixed(1)} ${y.toFixed(1)} L ${x1.toFixed(1)} ${y.toFixed(1)}`);
+  ARR.head.setAttribute('d', `M ${(x1 - 13).toFixed(1)} ${(y - 11).toFixed(1)} L ${x1.toFixed(1)} ${y.toFixed(1)} L ${(x1 - 13).toFixed(1)} ${(y + 11).toFixed(1)}`);
+  const pl = cubicInOut(clamp((f - 1243) / 13)), ph = expoOut(clamp((f - 1253.5) / 8));
+  ARR.line.setAttribute('stroke-dashoffset', (1 - pl).toFixed(4)); ARR.line.style.display = pl > 0 ? 'block' : 'none';
+  ARR.head.setAttribute('stroke-dashoffset', (1 - ph).toFixed(4)); ARR.head.style.display = ph > 0 ? 'block' : 'none';
 };
 window.sceneReady = document.fonts.ready;
 </script>
