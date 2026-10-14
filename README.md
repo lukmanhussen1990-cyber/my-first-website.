@@ -17,6 +17,6 @@ the keyboard and start typing.
 
 Other files:
 
-- `versions/` – snapshots saved after each hourly check (v1 … v8x).
+- `versions/` – snapshots saved during each hourly check (v1 … v10x); `index.html` is always the latest.
 - `notes/video-observations.md` – what was measured in the reference recording.
 - `notes/checks.md` – the comparison log for every check.
