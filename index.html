@@ -151,8 +151,11 @@
   /* background grain: ~±3/255 in every tone, like the reference (cards stay clean) */
   #grainBg { mix-blend-mode: hard-light; }
   /* faint animated film grain over everything */
-  #grain { mix-blend-mode: overlay; opacity: .14; }
+  #grain { mix-blend-mode: overlay; opacity: .14; z-index: 16; }
+  /* effects that draw over the cards (rim glows, sparks, flakes) sit above the cards' z-index */
+  #fxFront { z-index: 15; }
   #vignette {
+    z-index: 17;
     background:
       radial-gradient(ellipse 78% 74% at 50% 46%, rgba(0,0,0,0) 52%, rgba(0,0,0,.42) 86%, rgba(0,0,0,.62) 100%);
   }
@@ -424,22 +427,21 @@ const SPR = {
 };
 // light ray: bright at x=0 fading to the right, gaussian across
 SPR.ray = (() => {
+  // soft light shaft: bright near the rim, fading outward; gaussian (no hard core) across
   const W = 512, H = 64, c = makeCanvas(W, H), g = c.getContext('2d');
   const lg = g.createLinearGradient(0, 0, W, 0);
-  lg.addColorStop(0, 'rgba(255,248,220,0)');
-  lg.addColorStop(.025, 'rgba(255,246,210,1)');
-  lg.addColorStop(.14, 'rgba(255,222,128,.86)');
-  lg.addColorStop(.42, 'rgba(240,180,62,.44)');
-  lg.addColorStop(.72, 'rgba(200,140,34,.15)');
-  lg.addColorStop(1, 'rgba(164,121,27,0)');
+  lg.addColorStop(0, 'rgba(255,240,190,0)');
+  lg.addColorStop(.02, 'rgba(255,238,175,1)');
+  lg.addColorStop(.12, 'rgba(255,206,100,.95)');
+  lg.addColorStop(.34, 'rgba(242,162,44,.58)');
+  lg.addColorStop(.62, 'rgba(204,122,20,.14)');
+  lg.addColorStop(1, 'rgba(170,96,10,0)');
   g.fillStyle = lg; g.fillRect(0, 0, W, H);
-  // across the ray: thin bright core + soft wings
   g.globalCompositeOperation = 'destination-in';
   const vg = g.createLinearGradient(0, 0, 0, H);
   for (let i = 0; i <= 16; i++) {
     const y = (i / 16 - .5) * H;
-    const v = .78 * Math.exp(-((y / 4.2) ** 2)) + .3 * Math.exp(-((y / 15) ** 2));
-    vg.addColorStop(i / 16, `rgba(0,0,0,${Math.min(1, v).toFixed(3)})`);
+    vg.addColorStop(i / 16, `rgba(0,0,0,${Math.exp(-((y / (H * .17)) ** 2)).toFixed(3)})`);
   }
   g.fillStyle = vg; g.fillRect(0, 0, W, H);
   return c;
@@ -529,7 +531,7 @@ const PETAL = (() => {
 })();
 
 // Soft glow around the capsule, computed from its distance field (du), built once.
-function capsuleGlow(margin, res, prof, col) {
+function capsuleGlow(margin, res, prof, col, signed = false) {
   const w = Math.ceil((CW + 2 * margin) * res), h = Math.ceil((CH + 2 * margin) * res);
   const c = makeCanvas(w, h), g = c.getContext('2d'), img = g.createImageData(w, h), D = img.data;
   for (let j = 0; j < h; j++) {
@@ -537,7 +539,7 @@ function capsuleGlow(margin, res, prof, col) {
     const cy = Math.max(-CH2, Math.min(CH2, y));
     for (let i = 0; i < w; i++) {
       const x = (i + .5) / res - (CW / 2 + margin);
-      const d = Math.max(0, Math.hypot(x, y - cy) - CR);
+      const sd = Math.hypot(x, y - cy) - CR, d = signed ? sd : Math.max(0, sd);
       const rgb = col(d), k = (j * w + i) * 4;
       D[k] = rgb[0]; D[k + 1] = rgb[1]; D[k + 2] = rgb[2];
       D[k + 3] = Math.round(clamp(prof(d) * (1 - smooth(margin * .5, margin * .97, d))) * 255);
@@ -556,8 +558,12 @@ function drawCapsuleGlow(ctx, C, spr, alpha) {
 }
 const GLOW = {
   solar: capsuleGlow(240, .55,
-    d => .58 * Math.exp(-((d / 68) ** 2)) + .46 * Math.exp(-d / 125),
-    d => mixRgb(mixRgb([255, 252, 242], [255, 196, 84], smooth(6, 48, d)), [205, 128, 28], smooth(48, 170, d))),
+    d => .66 * Math.exp(-((d / 48) ** 2)) + .18 * Math.exp(-d / 95),
+    d => mixRgb(mixRgb([255, 246, 220], [255, 188, 66], smooth(4, 36, d)), [208, 118, 14], smooth(36, 150, d))),
+  // white-hot rim glow straddling the card edge (drawn over the card)
+  solarRim: capsuleGlow(90, .6,
+    d => d >= 0 ? .78 * Math.exp(-((d / 13) ** 2)) + .34 * Math.exp(-d / 30) : .8 * Math.exp(-((d / 13) ** 2)) + .1 * Math.exp(d / 14),
+    d => mixRgb(mixRgb([255, 251, 238], [255, 228, 166], smooth(2, 16, Math.abs(d))), [255, 196, 88], smooth(16, 44, Math.abs(d))), true),
   breeze: capsuleGlow(150, .55,
     d => .46 * Math.exp(-((d / 24) ** 2)) + .3 * Math.exp(-d / 60),
     d => mixRgb([90, 240, 190], [24, 170, 120], smooth(4, 60, d))),
@@ -595,7 +601,7 @@ const ELEMENTS = [
     mesh: { base: '#c98448', blobs: [
       ['#d97f86', 62, 112, 1.1], ['#cf7a36', 96, 330, 1.1], ['#b9d86e', 276, 104, 1.05],
       ['#e2c595', 246, 306, .85], ['#d39437', 214, 446, 1.1], ['#d6855e', 150, 228, .8]] },
-    glow: { c: [92, 60, 12], dy: 0, rx: 1150, ry: 920, a: 1, floor: [96, 64, 8], fr: 700 } },
+    glow: { c: [92, 60, 12], dy: 0, rx: 1150, ry: 920, a: 1, floor: [70, 46, 6], fr: 700 } },
   { id: 'breeze', name: 'Breeze', sub: 'AIR · CLARITY', num: '03',
     tint: ['#000', 'rgba(18,55,27,0)', '#12371b'],
     mesh: { base: '#6fb488', blobs: [
@@ -1052,15 +1058,24 @@ class SolarFX extends FX {
   }
   makeRays() {
     this.rays.length = 0;
-    const n = Math.round(170 * (REDUCED ? .6 : 1));
+    const k = REDUCED ? .6 : 1;
+    const n = Math.round(118 * k);
     for (let i = 0; i < n; i++) {
-      const long = Math.random() < .32;
+      const long = Math.random() < .3;
       this.rays.push({
-        a: (i + Math.random() * .85) / n * TAU,
-        len: long ? rnd(280, 520) : rnd(80, 260),
-        w: long ? rnd(9, 17) : rnd(8, 20),
-        b: long ? rnd(.6, 1) : rnd(.4, .95),
+        a: (i + Math.random() * .9) / n * TAU,
+        len: long ? rnd(260, 460) : rnd(100, 280),
+        w: long ? rnd(14, 26) : rnd(14, 30),
+        b: long ? rnd(.5, .85) : rnd(.85, 1),
         f1: rnd(1.5, 4.5), f2: rnd(5, 11), ph: rnd(0, TAU)
+      });
+    }
+    // short fuzzy spikes that make the rim look hairy
+    const m = Math.round(110 * k);
+    for (let i = 0; i < m; i++) {
+      this.rays.push({
+        a: Math.random() * TAU, len: rnd(25, 80), w: rnd(5, 10), b: rnd(.6, 1),
+        f1: rnd(3, 7), f2: rnd(8, 15), ph: rnd(0, TAU)
       });
     }
   }
@@ -1075,8 +1090,8 @@ class SolarFX extends FX {
     }
   }
   spawnRing() {
-    const P = capsulePoint(Math.random(), 0), d = rnd(40, 230);
-    this.rings.push({ x: P.x + P.nx * d, y: P.y + P.ny * d, vx: rnd(-7, 7), vy: rnd(-10, 3), size: rnd(5.5, 8.5), age: 0, life: rnd(2.4, 4.6) });
+    const P = capsulePoint(Math.random(), 0), d = rnd(28, 140);
+    this.rings.push({ x: P.x + P.nx * d, y: P.y + P.ny * d, vx: P.nx * rnd(2, 6) + rnd(-4, 4), vy: P.ny * rnd(2, 6) + rnd(-6, 2), size: rnd(7, 10), age: 0, life: rnd(2.4, 4.6) });
   }
   onIntro() {
     this.makeRays();
@@ -1095,19 +1110,19 @@ class SolarFX extends FX {
     this.rot += dt * (REDUCED ? 0 : .045);
     if (this.state === 'intro') {
       this.rim = smooth(.02, .2, t);
-      this.white = smooth(.1, .3, t);
-      const rp = clamp((t - .16) / .3);
+      this.white = smooth(.14, .32, t);
+      const rp = clamp((t - .2) / .38);
       this.rayK = rp <= 0 ? 0 : 1 + 2.4 * Math.pow(rp - 1, 3) + 1.4 * Math.pow(rp - 1, 2); // easeOutBack
       this.rayK = Math.max(0, this.rayK);
-      this.rayA = smooth(.14, .26, t);
-      this.flash = smooth(.14, .26, t) * (1 - smooth(.28, .6, t));
+      this.rayA = smooth(.18, .3, t);
+      this.flash = smooth(.18, .3, t) * (1 - smooth(.32, .62, t));
       this.halo = smooth(.1, .5, t);
       this.ring = 0; this.ambient = smooth(.15, .6, t);
     } else if (this.state === 'loop') {
       this.rim = 1; this.white = 1; this.rayK = 1; this.rayA = 1; this.flash = 0; this.halo = 1; this.ring = 0; this.ambient = 1;
     } else if (this.state === 'outro') {
       this.rayK = this.rayK0 * (1 - .4 * smooth(0, .22, t));
-      this.rayA = this.rayA0 * (1 - smooth(.03, .2, t));
+      this.rayA = this.rayA0 * (1 - smooth(.05, .24, t));
       this.halo = this.halo0 * (1 - smooth(.02, .34, t));
       this.rim = this.rim0 * (1 - smooth(.06, .26, t));
       this.ring = Math.max(.25, this.rim0) * smooth(.04, .12, t) * (1 - smooth(.26, .42, t));
@@ -1129,7 +1144,7 @@ class SolarFX extends FX {
     }
     // ambient dust & rings (respawn while lit)
     if (this.state === 'loop' || this.state === 'intro') {
-      this.dustAcc += dt * 24 * PS;
+      this.dustAcc += dt * 40 * PS;
       while (this.dustAcc >= 1) { this.dustAcc -= 1; this.spawnDust(1, Math.random() < .5); }
       const want = Math.max(3, Math.round(7 * PS));
       if (this.rings.filter(r => !r.out).length < want && Math.random() < dt * 1.2) this.spawnRing();
@@ -1147,10 +1162,10 @@ class SolarFX extends FX {
       const R = 1100 * sc;
       const g = ctx.createRadialGradient(C.x, C.y, 0, C.x, C.y, R);
       const h = this.halo;
-      g.addColorStop(0, `rgba(255,205,110,${.4 * h})`);
-      g.addColorStop(.2, `rgba(240,165,55,${.26 * h})`);
-      g.addColorStop(.45, `rgba(190,118,24,${.12 * h})`);
-      g.addColorStop(.75, `rgba(140,85,15,${.04 * h})`);
+      g.addColorStop(0, `rgba(255,192,86,${.2 * h})`);
+      g.addColorStop(.2, `rgba(240,152,38,${.13 * h})`);
+      g.addColorStop(.45, `rgba(188,108,14,${.07 * h})`);
+      g.addColorStop(.75, `rgba(140,78,8,${.035 * h})`);
       g.addColorStop(1, 'rgba(120,70,10,0)');
       ctx.fillStyle = g; ctx.fillRect(C.x - R, C.y - R, R * 2, R * 2);
       // corona hugging the rim
@@ -1161,7 +1176,7 @@ class SolarFX extends FX {
       for (const r of this.rays) {
         const a = r.a + this.rot;
         const fl = .62 + .38 * Math.sin(time * r.f1 + r.ph) * (.7 + .3 * Math.sin(time * r.f2 + r.ph * 2));
-        const r0 = capsuleRadius(a) - 18;
+        const r0 = capsuleRadius(a) - 8;
         const len = r.len * this.rayK * (.8 + .25 * fl);
         ctx.globalAlpha = clamp(r.b * fl * A);
         ctx.save();
@@ -1185,7 +1200,8 @@ class SolarFX extends FX {
     if (this.rim > .002) {
       const fl = .94 + .06 * Math.sin(time * 9.3);
       const w = this.white == null ? 1 : this.white;
-      glowStroke(ctx, C, 1, [[18, 'rgb(255,200,90)', .34 * (1.2 - w * .2)], [8, 'rgb(255,236,180)', .62 * (.4 + .6 * w)], [3.6, 'rgb(255,253,240)', w]], this.rim * fl);
+      drawCapsuleGlow(ctx, C, GLOW.solarRim, this.rim * fl * (.3 + .7 * w));
+      glowStroke(ctx, C, 0, [[18, 'rgb(255,176,40)', .32 * (1 - w)], [7, 'rgb(255,206,90)', .7 * (1 - w)], [5, 'rgb(255,250,232)', .5 * w]], this.rim * fl);
     }
     if (this.ring > .002) {
       glowStroke(ctx, C, 1, [[26, 'rgb(230,150,30)', .16], [12, 'rgb(250,190,60)', .34], [4.5, 'rgb(255,214,106)', .8], [1.8, 'rgb(255,246,210)', 1]], this.ring);
@@ -2141,7 +2157,7 @@ function updateRims() {
   const E = FXS_LIST;
   const specs = [
     [E[0].burn * 1.0 + E[0].rim * .35, 'rgba(255,70,40,', 26, 4],
-    [Math.max(E[1].rim * .62, E[1].ring * .6), 'rgba(255,236,180,', 20, 2],
+    [Math.max(E[1].rim * .3, E[1].ring * .6), 'rgba(255,232,170,', 30, 3],
     [E[2].glow * .3, 'rgba(120,255,210,', 20, 2],
     [E[3].rim * .22, 'rgba(255,170,215,', 22, 2]
   ];
@@ -2159,6 +2175,9 @@ function updateRims() {
 }
 
 function updateBg() {
+  // the sun lights the floor too: the glossy floor is barely darker while Solar is active
+  const fo = (1 - .65 * FXS_LIST[1].presence).toFixed(3);
+  if (floorEl._v !== fo) { floorEl._v = fo; floorEl.style.opacity = fo; }
   FXS_LIST.forEach((f, i) => {
     const v = f.presence.toFixed(3);
     if (glowEls[i]._v !== v) { glowEls[i]._v = v; glowEls[i].style.opacity = v; flineEls[i].style.opacity = v; }
