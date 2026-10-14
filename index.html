@@ -1301,7 +1301,7 @@ function draw(t) {
     c.globalAlpha = 1;
   }
   // ----- T (with its little web) -----
-  drawTWeb(c, cx, capTop, capTop - 22 * k - strikeLift(t) + retractDrop(t), t, pP);
+  drawTWeb(c, cx, capTop, capTop - 22 * k - strikeLift(t) + retractDrop(t) + baseShift(t), t, pP);
   drawT(c, cx, capTop, t, pP);
   // ----- steam, sparks, glow -----
   drawSteam(c, cx, capTop, t, pP, drawDt);
@@ -1342,7 +1342,7 @@ function drawLEDs(c, cx, cy, t, cP) {
 const STEM_FILL = [hex('#bfbeb5'), hex('#2c2e2e')], STEM_EDGE = [hex('#a09d95'), hex('#1d1e1e')];
 function drawT(c, cx, capTop, t, pP) {
   const lift = strikeLift(t) - retractDrop(t);
-  const barBot = capTop - 22 * k - lift;
+  const barBot = capTop - 22 * k - lift + baseShift(t);   // follows the typing line (1.3 px lower after the first line, as recorded)
   const barTop = barBot - 6 * k;
   const stemTop = barBot - 0.5 * k, stemBot = capTop - 0.6 * k;   // the stem disappears into the slot behind its lip
   // stem: a flat matte strip with thin darker edges (as in the recording)
