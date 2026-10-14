@@ -59,4 +59,12 @@ All CSS numbers below are for the 440 px reference width (1 CSS px = 3 video px)
 - Music loop ≈113.9 BPM (beat 0.527 s), soft kick on every beat (strong 40–150 Hz pulses).
 - Minor-key / C-major colour with chromatic G♯ (E7 → Am feel), plucky chord stabs, wobbly vibrato lead
   (theremin-like, E5/G5/A5 region), occasional bell partials (long straight lines at ~2.5 kHz / 5–6 kHz).
+- Bass line per beat (harmonic sum, 40–130 Hz): C for 8 beats, G for 8, F for 4, Am for 4, then G — one chord
+  per bar, each change one beat into the phrase. Bass is deep (C2/G1/F1/A1 plus the octave), enters on every
+  off-beat and is held until the next kick.
+- The mix has a continuous bright top: about −42 dBFS above 3 kHz even between notes (slightly crackly, kurtosis
+  ≈4), with hats/clicks on every eighth note and a bright beater click on the kick.
+- The lead scoops into notes and wobbles about ±60 cents at ~6 Hz, with audible 2nd and 3rd harmonics.
+- The dimmer tap is followed by a short 1.5–12 kHz switch tick (~1.21 s); the carriage return has no audible
+  bell over the music.
 - Typewriter clicks / sparks are short broadband transients mixed under the music.
