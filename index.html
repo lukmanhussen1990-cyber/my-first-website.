@@ -1817,7 +1817,7 @@ const AU = {
     this.master = ctx.createGain(); this.master.gain.value = this.on ? 0.75 : 0;
     comp.connect(this.master); this.master.connect(ctx.destination);
     this.sfx = ctx.createGain(); this.sfx.gain.value = 0.8; this.sfx.connect(comp);
-    this.music = ctx.createGain(); this.music.gain.value = 0.49; this.music.connect(comp);
+    this.music = ctx.createGain(); this.music.gain.value = 0.4; this.music.connect(comp);
     // small generated room for the music and the bell
     this.verb = ctx.createConvolver();
     const len = Math.floor(ctx.sampleRate * 1.9), ir = ctx.createBuffer(2, len, ctx.sampleRate);
@@ -1975,7 +1975,7 @@ const AU = {
     const lfo = this.ctx.createOscillator(), lg = this.ctx.createGain(), dry = this.ctx.createGain();
     // the recording's lead wobbles deeply (about ±50 cents at ~5 Hz) and has audible 2nd/3rd harmonics
     const o3 = this.ctx.createOscillator(), g3 = this.ctx.createGain();
-    o.type = 'sine'; o2.type = 'triangle'; o3.type = 'sine'; g2.gain.value = 0.45; g3.gain.value = 0.2; lfo.frequency.value = 5.1; lg.gain.value = 48;
+    o.type = 'sine'; o2.type = 'triangle'; o3.type = 'sine'; g2.gain.value = 0.7; g3.gain.value = 0.35; lfo.frequency.value = 5.1; lg.gain.value = 48;
     lfo.connect(lg); lg.connect(o.detune); lg.connect(o2.detune); lg.connect(o3.detune);
     fl.type = 'lowpass'; fl.frequency.value = 4000; fl.Q.value = 0.4;
     o.connect(g); o2.connect(g2); g2.connect(g); o3.connect(g3); g3.connect(g); g.connect(fl); fl.connect(dry); dry.gain.value = 1;
@@ -1984,7 +1984,7 @@ const AU = {
     // airy bed: the recording's music sits on a soft, slightly crackly hiss (about -42 dBFS above 3 kHz)
     const bed = this.ctx.createBufferSource(), bh = this.ctx.createBiquadFilter(), bl = this.ctx.createBiquadFilter(), bg = this.ctx.createGain();
     bed.buffer = this.noise; bed.loop = true; bh.type = 'highpass'; bh.frequency.value = 2600; bl.type = 'lowpass'; bl.frequency.value = 6500;
-    bg.gain.value = 0.0001; bg.gain.setTargetAtTime(0.02, this.ctx.currentTime, 0.3);
+    bg.gain.value = 0.0001; bg.gain.setTargetAtTime(0.025, this.ctx.currentTime, 0.3);
     bed.connect(bh); bh.connect(bl); bl.connect(bg); bg.connect(this.music); bed.start();
     this.ther = { o, o2, o3, g, lfo, bed, bg };
     clearInterval(this.timer);
@@ -2010,8 +2010,8 @@ const AU = {
     if (s % 4 === 0) {   // soft kick on every beat, with the bright beater click heard in the recording
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
       o.frequency.setValueAtTime(118, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.1);
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
-      o.connect(g); g.connect(M); o.start(t); o.stop(t + 0.3);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.004); g.gain.setTargetAtTime(0, t + 0.004, 0.075);
+      o.connect(g); g.connect(M); o.start(t); o.stop(t + 0.5);
       this.burst(t, { f: 4800, q: 0.7, gain: 0.09, a: 0.0005, d: 0.007, dest: M });
     }
     if (s === 0 || s === 8) {   // soft sustained pad under everything (the recording has a continuous harmonic bed)
@@ -2021,41 +2021,42 @@ const AU = {
           const o = this.ctx.createOscillator(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
           o.type = 'sawtooth'; o.frequency.value = hz(m); o.detune.value = det;
           fl.type = 'lowpass'; fl.frequency.value = 2400; fl.Q.value = 0.3;
-          g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.014, t + 0.09);
-          g.gain.setValueAtTime(0.014, t + dur - 0.1); g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.02);
+          g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.026, t + 0.09);
+          g.gain.setValueAtTime(0.026, t + dur - 0.1); g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.02);
           o.connect(fl); fl.connect(g); g.connect(M); o.start(t); o.stop(t + dur + 0.05);
         }
       }
     }
-    if (s % 4 === 2) {   // deep plucked bass on every off-beat ("pah"), root plus its octave
-      for (const [m, v] of [[root, 0.34], [root + 12, 0.22]]) {
+    if (s % 4 === 2) {   // deep bass on every off-beat ("pah"): root plus its octave, held until the next kick as in the recording
+      const end = t + B / 2 - 0.02;
+      for (const [m, v] of [[root, 0.085], [root + 12, 0.056]]) {
         const o = this.ctx.createOscillator(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
-        o.type = 'triangle'; o.frequency.value = hz(m); fl.type = 'lowpass'; fl.frequency.setValueAtTime(700, t); fl.frequency.exponentialRampToValueAtTime(160, t + 0.25);
-        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.44);
-        o.connect(fl); fl.connect(g); g.connect(M); o.start(t); o.stop(t + 0.48);
+        o.type = 'triangle'; o.frequency.value = hz(m); fl.type = 'lowpass'; fl.frequency.setValueAtTime(600, t); fl.frequency.exponentialRampToValueAtTime(260, t + 0.2);
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.018); g.gain.setValueAtTime(v, end - 0.03); g.gain.linearRampToValueAtTime(0, end);
+        o.connect(fl); fl.connect(g); g.connect(M); o.start(t); o.stop(end + 0.02);
       }
     }
     if (s % 4 === 0 || s % 4 === 2) {   // plucky chord on the beat and the off-beat, the off-beat one brighter
-      const off = s % 4 === 2, v = off ? 0.046 : 0.034;
+      const off = s % 4 === 2, v = off ? 0.06 : 0.046;
       for (const m of pluckTones) {
         const o = this.ctx.createOscillator(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
         o.type = 'sawtooth'; o.frequency.value = hz(m); o.detune.value = (Math.random() - 0.5) * 8;
-        fl.type = 'lowpass'; fl.frequency.setValueAtTime(off ? 4200 : 3000, t + 0.02); fl.frequency.exponentialRampToValueAtTime(600, t + 0.2);
+        fl.type = 'lowpass'; fl.frequency.setValueAtTime(off ? 4200 : 3000, t + 0.02); fl.frequency.exponentialRampToValueAtTime(1200, t + 0.2);
         g.gain.setValueAtTime(0.0001, t); g.gain.setValueAtTime(0.0001, t + 0.02); g.gain.exponentialRampToValueAtTime(v, t + 0.026); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
         o.connect(fl); fl.connect(g); g.connect(M); o.start(t); o.stop(t + 0.26);
       }
     }
     {   // soft shaker on every sixteenth: the recording has a continuous airy top that pulses with the beat
-      const n = this.noiseSrc(t, 0.2), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain(), v = 0.05 * [0.6, 0.35, 1, 0.4][s % 4];
-      fl.type = 'bandpass'; fl.frequency.value = 3500; fl.Q.value = 0.7;
+      const n = this.noiseSrc(t, 0.2), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain(), v = 0.12 * [0.6, 0.35, 1, 0.4][s % 4];
+      fl.type = 'bandpass'; fl.frequency.value = 3200; fl.Q.value = 0.9;
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.008); g.gain.setTargetAtTime(0, t + 0.008, 0.03);
       n.connect(fl); fl.connect(g); g.connect(M); g.connect(this.verb);
     }
     if (Math.random() < 0.5) this.burst(t + Math.random() * B / 4, { f: 2500, type: 'highpass', q: 0.7, gain: 0.03 + Math.random() * 0.1, a: 0.0003, d: 0.0015, dest: M });   // faint crackle in the bed
     if (s % 2 === 0) {   // hat on every eighth (beat and off-beat alike, as in the recording), ringing ~80 ms
       const n = this.noiseSrc(t, 0.25), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
-      fl.type = 'highpass'; fl.frequency.value = 5000;
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(s % 4 === 2 ? 0.08 : 0.065, t + 0.002); g.gain.setTargetAtTime(0, t + 0.002, 0.038);
+      fl.type = 'bandpass'; fl.frequency.value = 8000; fl.Q.value = 0.7;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.09, t + 0.002); g.gain.setTargetAtTime(0, t + 0.002, 0.038);
       n.connect(fl); fl.connect(g); g.connect(M); g.connect(this.verb);
     }
     // theremin melody: [bar, 16th, midi, length in 16ths]
