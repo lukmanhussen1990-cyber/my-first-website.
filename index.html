@@ -149,17 +149,6 @@ const E = {
   inQuad: (t) => t * t,
   inOutSine: (t) => -(Math.cos(Math.PI * t) - 1) / 2,
 };
-function cubicBezier(x1, y1, x2, y2) {
-  const ax = 3 * x1 - 3 * x2 + 1, bx = 3 * x2 - 6 * x1, cx = 3 * x1;
-  const ay = 3 * y1 - 3 * y2 + 1, by = 3 * y2 - 6 * y1, cy = 3 * y1;
-  return (x) => {
-    if (x <= 0) return 0; if (x >= 1) return 1;
-    let t = x;
-    for (let i = 0; i < 6; i++) { const f = ((ax * t + bx) * t + cx) * t - x; const d = (3 * ax * t + 2 * bx) * t + cx; if (Math.abs(d) < 1e-6) break; t -= f / d; }
-    return ((ay * t + by) * t + cy) * t;
-  };
-}
-E.ease = cubicBezier(0.25, 0.1, 0.25, 1);
 const hex = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
 const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 const rgba = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
@@ -748,9 +737,9 @@ function buildCaptions() {
 // timings measured from the recording (seconds after the tap: [delay, duration])
 const CH = {
   cap:   { v: 0, t: 0, on: [0, 0.1], off: [0.62, 0.12] },
-  paper: { v: 0, t: 0, on: [0.15, 0.45], off: [0.2, 0.45] },
+  paper: { v: 0, t: 0, on: [0.16, 0.525], off: [0.2, 0.45], out: true },   // ease-out-cubic fitted to the recording (rms 0.012)
   slot:  { v: 0, t: 0, on: [0.5, 0.22], off: [0.1, 0.15] },
-  light: { v: 0, t: 0, on: [0.62, 0.42], off: [0, 0.25] },
+  light: { v: 0, t: 0, on: [0.64, 0.5], off: [0, 0.25] },
 };
 let lampOn = false;
 function setLamp(on, instant) {
@@ -759,7 +748,8 @@ function setLamp(on, instant) {
     const c = CH[key]; c.t = on ? 1 : 0;
     const [delay, dur] = on ? c.on : c.off;
     c.delay = delay; c.dur = dur;
-    if (instant) c.v = c.t;
+    if (c.out) { c.from = c.v; c.u = 0; }   // eases out from wherever it is (continuous on quick toggles)
+    if (instant) { c.v = c.t; c.u = 1; }
   }
   store.set(LS.lamp, on ? '1' : '0');
   controlsEl.classList.toggle('on', on);
@@ -772,6 +762,7 @@ function stepChannels(dt) {
     const c = CH[key];
     if (c.v === c.t) continue;
     if (c.delay > 0) { c.delay -= dt; continue; }
+    if (c.out) { c.u = Math.min(1, c.u + dt / c.dur); c.v = c.u >= 1 ? c.t : lerp(c.from, c.t, E.outCubic(c.u)); continue; }
     const s = dt / c.dur;
     c.v = c.t > c.v ? Math.min(c.t, c.v + s) : Math.max(c.t, c.v - s);
   }
@@ -1218,7 +1209,7 @@ function clipPaper(c) {
 }
 
 // base cream is a touch lighter than #eae5d9 so that, with grain on top, it renders as #eae5d9-ish like the recording
-const PAPER_LIGHT = hex('#eee7db'), PAPER_DARK = hex('#30302d');
+const PAPER_LIGHT = hex('#eee7db'), PAPER_DARK = hex('#333330');
 let paperRGB = PAPER_LIGHT;
 const styleCache = new Map();
 function setStyle(el, prop, val) {
@@ -1228,7 +1219,7 @@ function setStyle(el, prop, val) {
 }
 function draw(t) {
   const c = sctx;
-  const pP = E.ease(CH.paper.v), cP = CH.cap.v, sP = E.outQuad(CH.slot.v);
+  const pP = CH.paper.v, cP = CH.cap.v, sP = E.outQuad(CH.slot.v);
   // DOM-driven layers
   paperRGB = mix(PAPER_LIGHT, PAPER_DARK, pP);
   setStyle(paperEl, 'backgroundColor', rgba(paperRGB));
@@ -2181,25 +2172,17 @@ function tick() {
   const lv = CH.light.v;
   if (lv > 0) {
     const grow = 0.15 + 0.85 * (lampOn ? E.outQuad(lv) : E.outCubic(lv));
-    const flick = lampOn && lv < 1 ? flicker(lv) : 1;
     lightX += (car.x - lightX) * (1 - Math.exp(-dt / 0.03));
     if (Math.abs(car.x - lightX) > 200 * k) lightX = car.x;
     const ax = lightX, ay = G.capCY - G.capHH - G.paperTop;
     setStyle(lightCv, 'transform', `translate(${(ax - L.ax).toFixed(2)}px, ${(ay - L.ay).toFixed(2)}px) translate(${L.ax}px, ${L.ay}px) scale(${grow.toFixed(4)}) translate(${-L.ax}px, ${-L.ay}px)`);
-    // intensity comes up fast near the slot (≈0.15 s) while the reach keeps growing (measured)
-    const inten = lampOn ? 1 - Math.pow(1 - Math.min(1, lv / 0.5), 2) : lv;
-    setStyle(lightCv, 'opacity', (inten * flick).toFixed(3));
+    // intensity comes up fast near the slot (≈0.1 s) while the reach keeps growing (measured)
+    const inten = lampOn ? 1 - Math.pow(1 - Math.min(1, lv / 0.2), 2) : lv;
+    setStyle(lightCv, 'opacity', inten.toFixed(3));
   } else setStyle(lightCv, 'opacity', '0');
   drawDt = dt;
   draw(t);
 }
-function flicker(p) {
-  // quick warm-up flicker of the bulb (p = 0…1); kept short so the ramp still matches the recording
-  const keys = [[0, 1], [0.06, 1], [0.09, 0.45], [0.13, 1], [0.21, 1], [0.24, 0.7], [0.28, 1], [1, 1]];
-  for (let i = 1; i < keys.length; i++) if (p <= keys[i][0]) return lerp(keys[i - 1][1], keys[i][1], (p - keys[i - 1][0]) / (keys[i][0] - keys[i - 1][0]));
-  return 1;
-}
-
 /* ---------------------------------------------------------------- debug -- */
 if (/[?&]debug\b/.test(location.search)) {
   window.__fw = {
