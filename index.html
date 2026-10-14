@@ -266,7 +266,7 @@ function buildDialRays() {
   let d = '';
   for (let i = 0; i < 10; i++) {
     const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
-    const r0 = 13.1, r1 = 16;   // measured: the rays stand a little clear of the disc
+    const r0 = 13.1, r1 = 15.4;   // measured: the rays stand a little clear of the disc
     d += `M${(Math.cos(a) * r0).toFixed(2)} ${(Math.sin(a) * r0).toFixed(2)}L${(Math.cos(a) * r1).toFixed(2)} ${(Math.sin(a) * r1).toFixed(2)}`;
   }
   g.innerHTML = `<path d="${d}" stroke-width="1.75"/>`;
@@ -601,8 +601,7 @@ function buildSprites() {
   c.save(); c.beginPath(); c.rect(-sw / 2, -sh / 2, sw, sh / 2 - 0.7 * k); c.clip();
   c.shadowColor = 'rgba(255,214,140,0.85)'; c.shadowBlur = 6 * k * dpr;
   c.fillStyle = '#eed396'; c.fillRect(-9.4 * k, 0.7 * k, 18.8 * k, 1.65 * k);
-  c.restore();
-  c.fillStyle = '#eed396'; c.fillRect(-9.4 * k, 0.7 * k, 18.8 * k, 1.65 * k);   // crisp, flat strip
+  c.restore();   // (the crisp strip itself is drawn pixel-snapped in draw())
   SPR.slotW = sw; SPR.slotH = sh;
   // T bar (black roller with metal end caps) for both skins, shadow baked in
   const bw = 20.7 * k, bh = 6 * k, pw = bw + 8 * k, ph = bh + 8 * k;
@@ -1302,6 +1301,9 @@ function draw(t) {
   if (sP > 0) {
     c.globalAlpha = sP;
     c.drawImage(SPR.slot, cx - SPR.slotW / 2, capTop - SPR.slotH / 2, SPR.slotW, SPR.slotH);
+    // the strip: flat and crisp (≈5 device px at 3x), snapped to the pixel grid
+    const y0 = Math.round((capTop + 0.7 * k) * dpr) / dpr, y1 = Math.round((capTop + 2.35 * k) * dpr) / dpr;
+    c.fillStyle = '#eed396'; c.fillRect(cx - 9.4 * k, y0, 18.8 * k, Math.max(1 / dpr, y1 - y0));
     c.globalAlpha = 1;
   }
   // ----- T (with its little web) -----
@@ -1493,7 +1495,7 @@ function drawGlow(c, cx, cy, st, pP) {
   }
 }
 let glowOn = false;
-let blinkT0 = 0;   // the blink rhythm starts ~0.27 s after launch, as in the recording
+let blinkT0 = 0;   // the blink rhythm starts ~0.34 s after launch, as in the recording
 function drawCaret(c, t, pP) {
   // blinking insertion dot (≈1.05 s period, on for half of it, as recorded): a dark ink dot on the
   // cream paper, a pale green glowing dot in lamp mode
@@ -2246,7 +2248,7 @@ function boot() {
   }
   if (!TOUCH) focusInput();
   lastActivity = now();
-  blinkT0 = now() + 0.27;
+  blinkT0 = now() + 0.34;
   requestAnimationFrame(frame);
 }
 boot();

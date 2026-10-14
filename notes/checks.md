@@ -93,3 +93,13 @@ silver after-flash, greener flood; two-ink hint (contrast within a few levels of
 the whole lamp switch); flat measured LEDs; continuous strikes and gliding carriage at quick keys.
 **Check 9 done. Next: capsule hardware (bolts, collars, slot lip, stem), lamp-on timing, light lag on
 the return, dial details, then a second independent review.**
+
+## Check 10 — capsule hardware, timing, second review (v10a–v10h)
+Differences found: bolts, collars, slot and stem simplified; lamp-on paper fade and light growth off by
+50–100 ms with a flicker the recording does not have; light lag on the return; dial colours; a second
+independent review then found a few overshoots (dark paper, hint under the lamp, zap flood too green, right
+web band too faint) plus light-mode shadow details.
+Fixed: measured bolts/collars/slot/stem, ease-out-cubic paper fade fitted to every frame, smooth light
+growth, light trailing the carriage by ~1.4 frames, dial greys, rail and capsule shadows profiled row by
+row, T-web and rail knot from close-ups, specks sized at full resolution, crisp slot strip.
+**Check 10 done. Next: final delivery (requested now).**
