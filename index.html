@@ -29,7 +29,7 @@
   #vignette { inset: 0; width: 100%; height: 100%; opacity: 0;
     background: radial-gradient(ellipse 75% 60% at 50% 38%, rgba(0,0,0,0) 55%, rgba(0,0,0,.16) 100%); }
   #scene { position: absolute; left: 0; pointer-events: none; }
-  #glow { position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0; mix-blend-mode: screen; will-change: transform, opacity;
+  #glow { position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0; display: none; mix-blend-mode: screen;
           background: radial-gradient(closest-side, rgb(62,86,72) 0%, rgb(53,74,62) 25%, rgb(33,46,39) 50%, rgb(14,19,16) 75%, rgba(0,0,0,0) 100%); }
   button { -webkit-appearance: none; appearance: none; background: none; border: 0; padding: 0; margin: 0;
            color: inherit; font: inherit; cursor: pointer; outline: none; }
@@ -1431,10 +1431,11 @@ function drawGlow(c, cx, cy, st, pP) {
   const a = st.glow;
   const lampA = a * pP, paperA = a * (1 - pP);
   if (lampA > 0.005) {
+    setStyle(glowEl, 'display', 'block');
     setStyle(glowEl, 'opacity', (lampA * 0.82).toFixed(3));
     setStyle(glowEl, 'transform', `translate(${(cx - 140 * k).toFixed(1)}px, ${(cy + 4 * k - 140 * k).toFixed(1)}px)`);
     glowOn = true;
-  } else if (glowOn) { setStyle(glowEl, 'opacity', '0'); glowOn = false; }
+  } else if (glowOn) { setStyle(glowEl, 'opacity', '0'); setStyle(glowEl, 'display', 'none'); glowOn = false; }
   if (paperA > 0.01) {
     const r = 120 * k, gx = cx + 6 * k, gy = cy + 4 * k;
     const g = c.createRadialGradient(gx, gy, 0, gx, gy, r);
