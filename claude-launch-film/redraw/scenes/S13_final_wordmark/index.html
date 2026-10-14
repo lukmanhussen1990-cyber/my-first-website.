@@ -10,37 +10,70 @@
 <div id="stage"><svg id="spark" width="1920" height="1080"><defs><filter id="sb" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur id="sbg" stdDeviation="0"/></filter></defs><path id="sp" fill="#D97757"/></svg></div>
 <script>
 // S13 (f1268-1453): the finale as one continuous shot on the closing sky (shared/sky.js, continuing from S12). On the
-// narrator's last "Claude" the coral mark turns in and the wordmark slides out from behind it; the lockup lifts and the
-// credit 'Built by Imran using Opus 5.5' arrives word by word. Then the sun goes down and the film closes into its own
-// opening: the credit rises out, the wordmark folds back into the mark, the mark returns to the centre of the frame and
+// narrator's last "Claude" the coral mark turns in and the wordmark slides out from behind it; the lockup lifts and
+// Claude writes the credit 'Built by Imran using Opus 5.5' (see below). Then the sun goes down and the film closes into
+// its own opening: the credit un-writes, the wordmark folds back into the mark, the mark returns to the centre and
 // winds down into the point of light the film opens on (S01 frame 1: same mark, colour, place and spin, on the same
 // navy), so the last frame leads straight into the first and the film loops.
 const stage = document.getElementById('stage');
 let LK = null;
-// credit: words rise out of clean masks, "Imran" and "Opus 5.5" in white semibold, the rest in soft grey
-const CR = [['Built', 0], ['by', 0], ['Imran', 1], ['using', 0], ['Opus', 1], ['5.5', 1]];
-const CR_T0 = 1340, CR_OUT = 1400;
+// The credit, written by Claude. It is set in the film's Claude serif and streams in token by token, exactly the way
+// Claude's replies arrive ("Im" + "ran", a short pause before "Opus", "5" + ".5"): each letter resolves out of a soft
+// focus, still warm with the mark's coral, and cools to its final colour as the next ones arrive ("Imran" and
+// "Opus 5.5" in white semibold, the rest in soft white). Meanwhile the Claude mark above makes one slow turn, like
+// Claude's own indicator while it writes, and comes to rest as the last letter settles. At the end the credit
+// un-writes in reverse, the first step of the film rewinding into its opening.
+const CR_SIZE = 42, CR_BASE = 614;
+const CR_TOK = [['Built', 0, 1334.0], [' by', 0, 1336.4], [' Im', 1, 1338.8], ['ran', 1, 1340.6], [' using', 0, 1343.4],
+  [' Opus', 1, 1348.6], [' 5', 1, 1351.2], ['.5', 1, 1352.8]];
+const CR_CH = 0.45, CR_IN = 9, CR_COOL = 13, CR_OUT = 1398, CR_OUT_CH = 0.32, CR_OUT_D = 6;
+const CR_FRESH = [240, 164, 135], CR_INK = [[247, 245, 255, 0.74], [255, 255, 255, 1]];
+const SPIN = { t0: 1330, t1: 1370 };                                       // the mark's turn while the credit is written
 let credit = null;
 function buildCredit() {
-  const el = document.createElement('div'); el.style.cssText = "position:absolute;left:0;top:0;white-space:nowrap;font-family:'Inter';font-size:34px;letter-spacing:-0.005em;line-height:1";
+  const el = document.createElement('div');
+  el.style.cssText = `position:absolute;left:0;top:0;white-space:pre;font-family:'Claude Serif';font-size:${CR_SIZE}px;line-height:1;letter-spacing:-0.004em`;
   stage.appendChild(el);
-  const ws = CR.map(([t, b]) => { const box = document.createElement('div'); box.style.cssText = 'position:absolute;top:0;overflow:hidden;padding:6px 1px 10px';
-    const sp = document.createElement('span'); sp.textContent = t; sp.style.cssText = `display:inline-block;font-weight:${b ? 600 : 400};color:${b ? '#FFFFFF' : 'rgba(236,234,248,0.72)'}`;
-    box.appendChild(sp); el.appendChild(box); return { box, sp }; });
-  let x = 0; const gap = 9.5;
-  ws.forEach(w => { w.box.style.left = x + 'px'; x += w.box.getBoundingClientRect().width - 2 + gap; });
-  credit = { el, ws, width: x - gap };
+  // lay the whole line out once (kerning and spacing as typeset), then place every letter at its measured position
+  const meas = document.createElement('span'); meas.style.cssText = 'visibility:hidden;white-space:pre';
+  CR_TOK.forEach(([t, b]) => { const sp = document.createElement('span'); sp.textContent = t; sp.style.fontWeight = b ? 600 : 400; meas.appendChild(sp); });
+  el.appendChild(meas);
+  const r0 = meas.getBoundingClientRect();
+  const probe = document.createElement('span'); probe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline'; meas.appendChild(probe);
+  const bOff = probe.getBoundingClientRect().top - r0.top; meas.removeChild(probe);
+  const rg = document.createRange(), chars = [];
+  Array.from(meas.children).forEach((sp, ti) => {
+    const [t, b, t0] = CR_TOK[ti], node = sp.firstChild; let k = 0;
+    Array.from(t).forEach((c, ci) => {
+      if (c === ' ') return;
+      rg.setStart(node, ci); rg.setEnd(node, ci + 1); const lb = rg.getBoundingClientRect();
+      const e = document.createElement('span'); e.textContent = c;
+      e.style.cssText = `position:absolute;top:0;left:${(lb.left - r0.left).toFixed(2)}px;font-weight:${b ? 600 : 400};will-change:transform,opacity,filter`;
+      el.appendChild(e); chars.push({ e, b, t: t0 + CR_CH * k++ });
+    });
+  });
+  el.removeChild(meas);
+  credit = { el, chars, width: r0.width, bOff };
 }
+const crLook = (e, ch, p, cool) => {                                       // p: 0 = unwritten, 1 = written
+  const ink = CR_INK[ch.b], c = CR_FRESH.map((v, i) => lerp(v, ink[i], cool)), a = lerp(1, ink[3], cool);
+  e.style.color = `rgba(${c.map(Math.round).join(',')},${a.toFixed(3)})`;
+  e.style.opacity = Math.pow(p, 0.75).toFixed(3);
+  e.style.filter = p < 0.999 ? `blur(${(5 * (1 - p)).toFixed(2)}px)` : 'none';
+  e.style.transform = `translateY(${(6 * (1 - p) * (1 - p)).toFixed(2)}px)`;
+};
 function renderCredit(f) {
-  const BASE_Y = 612;
-  credit.el.style.left = (960 - credit.width / 2).toFixed(1) + 'px'; credit.el.style.top = (BASE_Y - 34 * 0.86 - 6).toFixed(1) + 'px';
-  credit.ws.forEach((w, i) => {
-    const p = clExpoOut(clamp((f - CR_T0 - i * 2.4) / 20));
-    const q = ease.inOutCubic(clamp((f - CR_OUT - i * 0.8) / 7));          // out: each word rises on out of its mask
-    w.sp.style.transform = `translateY(${((1 - p) * 52 - q * 52).toFixed(2)}px)`;
-    w.box.style.visibility = q >= 1 ? 'hidden' : 'visible';
+  credit.el.style.left = (960 - credit.width / 2).toFixed(2) + 'px'; credit.el.style.top = (CR_BASE - credit.bOff).toFixed(2) + 'px';
+  const n = credit.chars.length;
+  credit.chars.forEach((ch, j) => {
+    let p = ease.outCubic(clamp((f - ch.t) / CR_IN)), cool = ease.inOutQuad(clamp((f - ch.t - 2) / CR_COOL));
+    const o = CR_OUT + CR_OUT_CH * (n - 1 - j);                              // un-write: last letter first
+    if (f > o) { const q = ease.inCubic(clamp((f - o) / CR_OUT_D)); p = Math.min(p, 1 - q); cool = Math.min(cool, 1 - q); }
+    ch.e.style.visibility = p > 0.002 ? 'visible' : 'hidden';
+    crLook(ch.e, ch, p, cool);
   });
 }
+function markSpin(f) { const u = clamp((f - SPIN.t0) / (SPIN.t1 - SPIN.t0)); return 180 * (1 - Math.cos(Math.PI * u)); }
 // the S01 opening mark at frame 1 (SPARK_R 4.0 x 1.35 tip radius, 16 deg, centre 962/539.5) is where the film loops to
 const LOOP = { x: 962.0, y: 539.5, rotEnd: 360 + 16 - 27.4, rotStart: 1414, tipEnd: 3.5 };   // one turn, landing one opening-frame short of 16 deg
 function sparkTip(f) {
@@ -54,14 +87,15 @@ function sparkRot(f) {                                                        //
 
 window.renderFrame = async (f) => {
   await skyCam(stage, f);
-  if (!LK) { await ClaudeLockup.ready(); await document.fonts.load("600 34px 'Inter'"); await document.fonts.load("400 34px 'Inter'");
+  if (!LK) { await ClaudeLockup.ready(); await document.fonts.load(`400 ${CR_SIZE}px 'Claude Serif'`); await document.fonts.load(`600 ${CR_SIZE}px 'Claude Serif'`);
     LK = new ClaudeLockup(stage, { cx: 960, cy: 524, size: 150, burst: 58, gap: 32, t0: 1268 }); stage.appendChild(document.getElementById('spark')); }
-  const lift = ease.inOutCubic(clamp((f - 1328) / 22));
-  const sc = kf(f, [[1268, 1.05], [1328, 1.0]]) * (1 - 0.1 * lift);
+  const lift = ease.inOutCubic(clamp((f - 1316) / 22));
+  const sc = kf(f, [[1268, 1.05], [1316, 1.0]]) * (1 - 0.1 * lift);
   const wipe = 1 - ease.inOutCubic(clamp((f - 1402) / 14));                 // the wordmark folds back into the mark
-  LK.render(f, { scale: sc, dy: -40 * lift, wipe });
+  const spin = markSpin(f), w = Math.abs(markSpin(f + 0.5) - markSpin(f - 0.5)) * Math.PI / 180;
+  LK.render(f, { scale: sc, dy: -40 * lift, wipe, spin, markBlur: 0.05 * w * 58 * sc });
   if (!credit) buildCredit();
-  credit.el.style.display = f >= CR_T0 - 1 && f < CR_OUT + 14 ? 'block' : 'none';
+  credit.el.style.display = f >= CR_TOK[0][2] - 1 && f < CR_OUT + 16 ? 'block' : 'none';
   if (credit.el.style.display === 'block') renderCredit(f);
   // from 1414 the mark is drawn here: it glides back to the centre, then winds down into the opening's point of light
   const sp = document.getElementById('sp');

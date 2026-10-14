@@ -151,13 +151,15 @@ put(whoosh(1.2, 250, 5200, 0.95), T(1268) - 1.12, -29)
 put(thump(70, 42, 1.2), T(1268), -17)
 put(verb(bell([G['G3'], G['D4'], G['G4'], G['Bb4'], G['D5']], 4.5, 0.9), 0.55), T(1268), -24)
 put(verb(whoosh(0.6, 1200, 6000, 0.35, 0.7), 0.3), T(1276), -31, pan=0.35)
-put(verb(whoosh(0.7, 300, 1500, 0.6), 0.3), T(1328), -36)                                 # the lockup lifts
-put(verb(pad([G['G3'], G['Bb3'], G['D4'], G['A4']], T(1440) - T(1336), 2.2, 2.6), 0.4), T(1336), -33)
-put(verb(bell([G['D5'], G['G5']], 2.6, 0.5), 0.5), T(1340), -33)                          # the credit
-put(verb(bell([G['Bb5']], 2.2, 0.4), 0.5), T(1350), -35)
-# the loop: the credit rises out, the wordmark folds back into the mark, night falls, the mark winds down into the
+put(verb(whoosh(0.7, 300, 1500, 0.6), 0.3), T(1316), -36)                                 # the lockup lifts
+put(verb(pad([G['G3'], G['Bb3'], G['D4'], G['A4']], T(1440) - T(1326), 2.2, 2.6), 0.4), T(1326), -33)
+# Claude writes the credit: a faint breath of air rises with the stream (no typing clicks), and a soft chord rings
+# as the last letter settles and the mark comes to rest
+put(verb(whoosh(0.95, 1800, 5200, 0.8, 1.1), 0.35), T(1334), -41, pan=-0.15)
+put(verb(bell([G['D5'], G['G5'], G['Bb5']], 3.0, 0.45), 0.55), T(1361), -33)
+# the loop: the credit un-writes, the wordmark folds back into the mark, night falls, the mark winds down into the
 # opening's point of light while the "ahh" swells in reverse into the last frame; the film's first frames carry the "ahh"
-put(verb(whoosh(0.35, 2500, 7000, 0.5, 1.2), 0.25), T(1400), -38, pan=-0.2)
+put(verb(whoosh(0.35, 7000, 2500, 0.5, 1.2), 0.25), T(1398), -38, pan=0.2)
 put(verb(whoosh(0.5, 6000, 1200, 0.25, 0.8), 0.3), T(1402), -33, pan=0.25)
 SW = reverse_swell(AHH, AHH_ON)
 put(SW, N / SR - len(SW) / SR, -21)

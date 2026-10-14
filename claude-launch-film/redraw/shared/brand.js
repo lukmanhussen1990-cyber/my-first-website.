@@ -18,6 +18,10 @@ class ClaudeLockup {
     svg.setAttribute('width', 1920); svg.setAttribute('height', 1080); svg.style.cssText = 'position:absolute;left:0;top:0;overflow:visible';
     root.appendChild(svg);
     this.mark = document.createElementNS(NS, 'path'); this.mark.setAttribute('d', CL_BURST_D); this.mark.setAttribute('fill', '#D97757'); svg.appendChild(this.mark);
+    // motion softness for the mark when it turns quickly (same treatment as the opening's starburst)
+    const fid = 'clmb' + (ClaudeLockup.n = (ClaudeLockup.n || 0) + 1);
+    const defs = document.createElementNS(NS, 'defs'); defs.innerHTML = `<filter id="${fid}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0"/></filter>`;
+    svg.insertBefore(defs, this.mark); this.markFilter = { id: fid, blur: defs.querySelector('feGaussianBlur') };
     // wordmark as one live text run in the logo font (keeps the logo's own spacing); masked for the slide-out
     const clip = this.clip = document.createElement('div'); clip.style.cssText = 'position:absolute;overflow:hidden';
     const word = this.word = document.createElement('div'); word.className = 'logo';
@@ -34,7 +38,7 @@ class ClaudeLockup {
     this.base = o.cy + 0.36 * o.size;
   }
   box() { return { x0: this.markX - this.o.burst, x1: this.wordX + this.wordW, y0: this.base - 0.8 * this.o.size, y1: this.base + 0.1 * this.o.size }; }
-  render(f, { scale = 1, dy = 0, op = 1, blur = 0, wipe = 1 } = {}) {
+  render(f, { scale = 1, dy = 0, op = 1, blur = 0, wipe = 1, spin = 0, markBlur = 0 } = {}) {
     const o = this.o, t0 = o.t0, R = o.burst;
     this.root.style.transformOrigin = `${o.cx}px ${o.cy}px`;
     this.root.style.transform = `translateY(${dy.toFixed(2)}px) scale(${scale.toFixed(5)})`;
@@ -44,7 +48,10 @@ class ClaudeLockup {
     const a = clExpoOut(clamp((f - t0) / 10));
     const g = clQuintInOut(clamp((f - t0 - 2) / 9));
     const mx = lerp(o.cx, this.markX, g);
-    this.mark.setAttribute('transform', `translate(${mx.toFixed(2)} ${o.cy.toFixed(2)}) rotate(${(-110 * (1 - a)).toFixed(2)}) scale(${(R * (0.55 + 0.45 * a)).toFixed(3)})`);
+    const ms = R * (0.55 + 0.45 * a);                    // spin: extra turn (deg), e.g. while Claude writes the credit
+    this.mark.setAttribute('transform', `translate(${mx.toFixed(2)} ${o.cy.toFixed(2)}) rotate(${(-110 * (1 - a) + spin).toFixed(3)}) scale(${ms.toFixed(3)})`);
+    this.markFilter.blur.setAttribute('stdDeviation', (markBlur / ms).toFixed(4));
+    if (markBlur > 0.05) this.mark.setAttribute('filter', `url(#${this.markFilter.id})`); else this.mark.removeAttribute('filter');
     this.mark.setAttribute('opacity', clamp((f - t0 + 0.5) / 2.5).toFixed(3));
     // wordmark: revealed in reading order by a mask wiping left to right from the mark's side, easing in from the left
     const p = Math.min(clExpoOut(clamp((f - t0 - 8) / 16)), wipe);   // wipe < 1 folds the word back into the mark
