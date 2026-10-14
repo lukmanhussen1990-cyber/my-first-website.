@@ -5,10 +5,11 @@
 <script src="../../shared/components.js"></script>
 <script src="../../shared/titles.js"></script>
 <script src="../../shared/hud.js"></script>
+<script src="../../shared/brand.js"></script>
 </head><body>
 <div id="stage"><img class="plate" id="bg"></div>
 <script>
-// S03 (f251-305; f306-350 come from the wordmark pass): reference dark background (text removed).
+// S03 (f251-350): reference dark background (text removed).
 // 'right one' (redesigned, futuristic): the letters decode out of flickering machine glyphs with a red/cyan
 // RGB split, locking left to right behind a light beam; HUD corner brackets fly in and lock onto the words,
 // a thin HUD rule draws under them and "MATCH FOUND" types in. The letters then de-res from the right while
@@ -71,12 +72,23 @@ const MEET = new TitleLine(stage, {
 });
 MEET.el.style.textShadow = '0 0 16px rgba(200,200,255,0.35)';
 
+// 'Meet' -> Claude (f306-350, on the narrator's "Claude"): the coral mark turns in and the wordmark slides out from
+// behind it; the lockup eases back slowly and lifts away as the light of the next scene rises.
+let LK = null;
+async function renderLK(f) {
+  if (!LK) { await ClaudeLockup.ready(); LK = new ClaudeLockup(stage, { cx: 960, cy: 516, size: 142, burst: 54, gap: 30, t0: 306 }); }
+  LK.root.style.display = f >= 305.5 ? 'block' : 'none';
+  if (f < 305.5) return;
+  const out = clamp((f - 341) / 8);
+  LK.render(f, { scale: kf(f, [[306, 1.06], [342, 1.0], [350, 0.985]]), op: 1 - ease.inOutCubic(out), dy: -10 * ease.inOutCubic(out) });
+}
 window.renderFrame = async (f) => {
   await setImg(document.getElementById('bg'), `../../plates/S03_dark_titles/bg_${String(f).padStart(4, '0')}.jpg`);
   if (RO) RO.root.style.display = f <= 288 ? 'block' : 'none';
-  MEET.el.style.display = f >= 282 ? 'block' : 'none';
+  MEET.el.style.display = f >= 282 && f <= 305 ? 'block' : 'none';
   if (f <= 288) renderRO(f);
-  if (f >= 282) MEET.render(f);
+  if (f >= 282 && f <= 305) MEET.render(f);
+  await renderLK(f);
 };
 window.sceneReady = document.fonts.ready;
 </script>

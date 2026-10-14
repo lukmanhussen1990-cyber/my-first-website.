@@ -4,189 +4,94 @@
 <script src="../../shared/lib.js"></script>
 <script src="../../shared/components.js"></script>
 <style>
-  #cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
-  .pt { position: absolute; border-radius: 50%; pointer-events: none; }
-  #bloom { position: absolute; border-radius: 50%; pointer-events: none; mix-blend-mode: screen;
-           background: radial-gradient(closest-side, rgba(255,255,255,0.55), rgba(196,180,255,0.22) 55%, rgba(196,180,255,0)); }
-  #streak { position: absolute; height: 3px; pointer-events: none; mix-blend-mode: screen; border-radius: 3px;
-            background: linear-gradient(90deg, rgba(190,175,255,0), rgba(225,215,255,0.75) 50%, rgba(190,175,255,0)); filter: blur(1.2px); }
-  .line { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
-  .line .ch { position: absolute; top: 0; white-space: pre; font-family: 'Inter Display'; font-weight: 500; line-height: 1; will-change: transform, opacity, filter; }
-  #icon { position: absolute; width: 58px; height: 58px; filter: drop-shadow(0 0 14px rgba(229,120,88,0.7)); }
-  #loader { position: absolute; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.13); overflow: hidden; }
-  #loader i { position: absolute; top: 0; height: 2px; width: 90px; border-radius: 2px;
-              background: linear-gradient(90deg, rgba(200,185,255,0), #fff 50%, rgba(217,119,87,0)); box-shadow: 0 0 10px rgba(200,170,255,0.9); }
+  #grp { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  .over { position: absolute; display: flex; align-items: center; gap: 14px; white-space: nowrap;
+          font-family: 'Inter'; font-weight: 600; font-size: 17px; letter-spacing: 0.22em; color: rgba(255,255,255,0.78); }
+  .over .lbl { position: relative; overflow: hidden; padding: 4px 0; }
+  .over .lbl span { display: inline-block; }
+  .head { position: absolute; left: 0; top: 0; white-space: nowrap; font-family: 'Claude Serif'; font-weight: 500; color: #fff; letter-spacing: -0.012em; line-height: 1; }
+  .head .w { position: absolute; top: 0; overflow: hidden; padding: 0.06em 0.02em 0.26em; margin-left: -0.02em; }
+  .head .w span { display: inline-block; will-change: transform; }
 </style>
 </head><body>
-<div id="stage"><img class="plate" id="bg">
-  <div id="cam"><div id="parts"></div><div id="bloom"></div><div id="streak"></div></div>
-  <div id="loader"><i></i></div>
-</div>
+<div id="stage"><img class="plate" id="bg"><div id="grp"></div></div>
 <script>
-// S08 (f719-862), second redesign at the client's request ("like the video, but better"): the reference's big
-// centred status lines on the violet light field, rebuilt with a cinematic finish. Claude's coral starburst
-// breathes beside the text as the thinking sign and glides across when the line changes. Line 1 lands letter by
-// letter out of a blur (the reference's scattered order) with a small glint on each landing; Claude's thinking
-// shimmer runs along the words with a soft bloom and a thin lens streak following it; the ellipsis pulses. Line 1
-// dissolves in a wave while line 2 zooms in word by word; soft light motes drift through the field and a thin
-// glowing loader runs under the text. Timing, zoom and the closing pan follow the reference.
+// S08 (f719-862), third design pass at the client's request (professional, restrained): an editorial status frame.
+// A small tracked label "CLAUDE IS THINKING" with Claude's turning spark sits above a large serif headline (the
+// serif Claude's replies use in this film). Headline words rise out of clean masks with a long exponential ease;
+// the ellipsis steps; at the change the first line rises away word by word as the second rises in, like a ticker.
+// No glows, particles or flares. Timing and the closing pan follow the reference.
 const $ = id => document.getElementById(id);
 const BURST_D = "M -0.4729 -0.8811 L -0.5288 -0.8054 L -0.5252 -0.7658 L -0.5089 -0.7045 L -0.4477 -0.6054 L -0.3432 -0.4253 L -0.2459 -0.2469 L -0.2297 -0.2217 L -0.2315 -0.2163 L -0.2441 -0.2073 L -0.2783 -0.2361 L -0.4423 -0.3550 L -0.6819 -0.5388 L -0.7143 -0.5442 L -0.7630 -0.5460 L -0.8134 -0.4919 L -0.8008 -0.4145 L -0.7702 -0.3766 L -0.7252 -0.3478 L -0.6153 -0.2667 L -0.2387 -0.0163 L -0.2189 0.0017 L -0.2225 0.0126 L -0.2585 0.0144 L -0.4315 -0.0055 L -0.5756 -0.0127 L -0.6783 -0.0217 L -0.8621 -0.0325 L -0.9143 -0.0379 L -0.9504 -0.0127 L -0.9540 0.0126 L -0.9125 0.0666 L -0.8729 0.0756 L -0.5071 0.0936 L -0.3090 0.0972 L -0.2297 0.1026 L -0.2225 0.1135 L -0.2279 0.1279 L -0.2387 0.1369 L -0.5918 0.3333 L -0.7360 0.4324 L -0.7558 0.4522 L -0.7612 0.5098 L -0.7252 0.5441 L -0.6369 0.5333 L -0.1486 0.2162 L -0.1450 0.2180 L -0.1432 0.2288 L -0.2207 0.3189 L -0.3252 0.4576 L -0.5053 0.6846 L -0.5414 0.7369 L -0.5450 0.7873 L -0.4891 0.8143 L -0.4585 0.8017 L -0.3270 0.6612 L -0.0513 0.2846 L -0.0405 0.2810 L -0.0369 0.2882 L -0.0513 0.3405 L -0.0711 0.4810 L -0.1270 0.7549 L -0.1504 0.8612 L -0.1270 0.9152 L -0.0801 0.9513 L -0.0261 0.9315 L -0.0009 0.9026 L 0.0514 0.3441 L 0.0604 0.3387 L 0.0658 0.3405 L 0.1523 0.4900 L 0.2334 0.6143 L 0.3649 0.8017 L 0.4190 0.8107 L 0.4604 0.7963 L 0.4640 0.7927 L 0.4748 0.7711 L 0.4676 0.6918 L 0.4640 0.6810 L 0.2532 0.3675 L 0.2532 0.3513 L 0.2640 0.3513 L 0.4784 0.5351 L 0.6478 0.6612 L 0.6712 0.6630 L 0.6946 0.6306 L 0.6856 0.5855 L 0.4946 0.4071 L 0.3451 0.2738 L 0.2550 0.1855 L 0.2568 0.1747 L 0.2694 0.1747 L 0.3703 0.2017 L 0.7883 0.3008 L 0.8838 0.2522 L 0.8892 0.2216 L 0.8856 0.2108 L 0.8532 0.1675 L 0.7919 0.1279 L 0.5811 0.1117 L 0.3991 0.1099 L 0.2658 0.0972 L 0.2622 0.0918 L 0.2712 0.0864 L 0.5289 0.0252 L 0.7379 -0.0163 L 0.8532 -0.0451 L 0.8604 -0.0505 L 0.8838 -0.1082 L 0.8766 -0.1370 L 0.8135 -0.1676 L 0.5523 -0.1226 L 0.3397 -0.0757 L 0.3199 -0.0739 L 0.3126 -0.0829 L 0.3775 -0.1946 L 0.4838 -0.3370 L 0.6207 -0.5117 L 0.6460 -0.6000 L 0.5901 -0.6829 L 0.5090 -0.6847 L 0.4712 -0.6559 L 0.3955 -0.5766 L 0.3415 -0.5154 L 0.2190 -0.3622 L 0.1469 -0.2649 L 0.1235 -0.2415 L 0.1091 -0.2415 L 0.1072 -0.2487 L 0.1775 -0.6090 L 0.2045 -0.7928 L 0.1667 -0.8451 L 0.1253 -0.8649 L 0.0712 -0.8307 L 0.0658 -0.8253 L 0.0388 -0.7604 L 0.0154 -0.4901 L -0.0045 -0.3280 L -0.0135 -0.1892 L -0.0243 -0.1874 L -0.0333 -0.2037 L -0.0531 -0.2739 L -0.2117 -0.5820 L -0.3306 -0.8523 L -0.3666 -0.8829 L -0.4423 -0.8919 Z";
-const backOut = (t, s = 1.70158) => 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
-const gauss = (x, w) => Math.exp(-x * x / (2 * w * w));
-function rnd(seed) { let s = seed >>> 0; return () => ((s = Math.imul(s ^ (s >>> 15), 2246822507) + 0x9E3779B9 >>> 0) % 100000) / 100000; }
-
-const SIZE = 70, BASE = 560, CX = 960, GAP = 22, ICON = 58;
-const INK_L = [246, 243, 255], INK_R = [172, 156, 255];     // white-lavender -> violet along the line
-const SWEEPS = [739.5, 760, 801.5, 820.5, 840.5, 860];  // shimmer passes (reference rhythm, none during the line change)
-const SWEEP_DUR = 14;
-const stage = $('stage'), cam = $('cam');
-
-// ---- light motes (deterministic), three depth layers
-const R = rnd(11), parts = [];
-for (let i = 0; i < 46; i++) {
-  const d = R(); const s = 2 + 9 * d * d;
-  const e = document.createElement('div'); e.className = 'pt';
-  e.style.width = e.style.height = (s * 2).toFixed(1) + 'px';
-  e.style.background = `radial-gradient(circle, rgba(255,255,255,${(0.5 - 0.25 * d).toFixed(2)}), rgba(214,200,255,0) 70%)`;
-  e.style.filter = `blur(${(0.4 + 2.6 * d).toFixed(2)}px)`;
-  $('parts').appendChild(e);
-  parts.push({ e, x: 120 + 1680 * R(), y: 260 + 600 * R(), s, d, sp: 0.25 + 0.9 * (1 - d) * R() + 0.3, ph: 6.28 * R(), a: 0.35 + 0.65 * R() });
-}
-
-// ---- lines
-function makeLine(text, seed) {
-  const box = document.createElement('div'); box.className = 'line'; stage.insertBefore(box, $('loader'));
-  const meas = document.createElement('span');
-  meas.style.cssText = `position:absolute;visibility:hidden;white-space:pre;font-family:'Inter Display';font-weight:500;font-size:${SIZE}px;letter-spacing:-0.015em;line-height:1`;
-  meas.textContent = text; box.appendChild(meas);
+const expoOut = t => t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
+const exitE = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const CX = 960, BASE = 596, SIZE = 78;
+const grp = $('grp');
+// overline: spark + label
+const over = document.createElement('div'); over.className = 'over';
+over.innerHTML = `<svg width="22" height="22" viewBox="-1 -1 2 2" style="overflow:visible"><path d="${BURST_D}" fill="#E08A69"/></svg><div class="lbl"><span>CLAUDE IS THINKING</span></div>`;
+grp.appendChild(over);
+const spark = over.querySelector('svg'), lbl = over.querySelector('.lbl span');
+// headline lines: one masked box per word
+function makeLine(text) {
+  const el = document.createElement('div'); el.className = 'head'; el.style.fontSize = SIZE + 'px'; grp.appendChild(el);
+  const meas = document.createElement('span'); meas.style.cssText = `visibility:hidden;white-space:pre;font-family:'Claude Serif';font-weight:500;font-size:${SIZE}px;letter-spacing:-0.012em;line-height:1`;
+  meas.textContent = text + '...'; el.appendChild(meas);
   const node = meas.firstChild, r0 = meas.getBoundingClientRect(), rg = document.createRange();
   const probe = document.createElement('span'); probe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline'; meas.appendChild(probe);
   const bOff = probe.getBoundingClientRect().top - r0.top; meas.removeChild(probe);
-  const chars = Array.from(text).map((c, k) => { rg.setStart(node, k); rg.setEnd(node, k + 1); const b = rg.getBoundingClientRect(); return { c, x: b.left - r0.left, w: b.width }; });
-  box.removeChild(meas);
-  const width = r0.width;
-  const els = chars.map(ch => { const s = document.createElement('span'); s.className = 'ch'; s.textContent = ch.c; s.style.fontSize = SIZE + 'px'; s.style.letterSpacing = '-0.015em'; box.appendChild(s); return s; });
-  // the three dots of the ellipsis are their own glyphs (they pulse)
-  const dots = [0, 1, 2].map(() => { const s = document.createElement('span'); s.className = 'ch'; s.textContent = '.'; s.style.fontSize = SIZE + 'px'; box.appendChild(s); return s; });
-  const dotW = (() => { const c = document.createElement('canvas').getContext('2d'); c.font = `500 ${SIZE}px 'Inter Display'`; return c.measureText('.').width - 0.015 * SIZE; })();
-  const rr = rnd(seed), order = chars.map(() => rr());
-  // word index of each letter
-  let w = 0; const word = chars.map(ch => { if (ch.c === ' ') { w++; return -1; } return w; });
-  return { box, chars, els, dots, dotW, width, bOff, order, word, full: width + dotW * 3 };
+  const words = []; let i = 0;
+  for (const m of text.matchAll(/\S+/g)) { rg.setStart(node, m.index); rg.setEnd(node, m.index + m[0].length); const b = rg.getBoundingClientRect(); words.push({ t: m[0], x: b.left - r0.left, w: b.width }); }
+  const dots = [0, 1, 2].map(k => { rg.setStart(node, text.length + k); rg.setEnd(node, text.length + k + 1); const b = rg.getBoundingClientRect(); return { x: b.left - r0.left, w: b.width }; });
+  const width = r0.width; el.removeChild(meas);
+  words.forEach(w => { const box = document.createElement('div'); box.className = 'w'; box.style.left = w.x + 'px'; const s = document.createElement('span'); s.textContent = w.t; box.appendChild(s); el.appendChild(box); w.box = box; w.s = s; });
+  dots.forEach(d => { const s = document.createElement('div'); s.className = 'w'; s.style.left = d.x + 'px'; s.innerHTML = '<span>.</span>'; el.appendChild(s); d.box = s; d.s = s.firstChild; });
+  return { el, words, dots, width, bOff };
 }
-const iconEl = document.createElement('div'); iconEl.id = 'icon';
-iconEl.innerHTML = `<svg width="${ICON}" height="${ICON}" viewBox="-1 -1 2 2" style="overflow:visible"><path d="${BURST_D}" fill="#D97757"/></svg>`;
-stage.insertBefore(iconEl, $('loader'));
-let L1 = null, L2 = null;
-
-function lineLayout(L, scale, panX) {
-  // group = icon + gap + text + dots, centred on CX; returns the text's left edge (unscaled) and transform
-  const gw = ICON + GAP + L.full, left = CX - gw / 2 + ICON + GAP;
-  L.box.style.transformOrigin = `${CX}px ${BASE}px`;
-  L.box.style.transform = `translateX(${panX.toFixed(2)}px) scale(${scale.toFixed(4)})`;
-  return { left, gw };
-}
-function shimmerAt(f) { for (const t0 of SWEEPS) { const u = (f - t0) / SWEEP_DUR; if (u > -0.2 && u < 1.2) return u; } return null; }
-
-function renderLine(L, f, o) {
-  const { left } = lineLayout(L, o.scale, o.panX);
-  const top = BASE - L.bOff;
-  const u = shimmerAt(f), P = u === null ? null : -60 + u * (L.full + 120);
-  L.chars.forEach((ch, k) => {
-    const s = L.els[k];
-    if (ch.c === ' ') { s.style.display = 'none'; return; }
-    const a = o.inT(k), uu = clamp((f - a) / 7);
-    const e = ease.outCubic(uu);
-    const ex = o.outT ? clamp((f - o.outT(k)) / 5) : 0, ee = ease.inOutCubic(ex);
-    let op = clamp((f - a) / 3) * (1 - ee);
-    const vis = op > 0.002;
-    s.style.display = vis ? 'block' : 'none';
-    if (!vis) return;
-    const sc = o.inScale ? 1 + (o.inScale - 1) * (1 - e) : 1;
-    const dx = o.inDX ? o.inDX * (1 - e) : 0;
-    const dy = (o.inDY || 0) * (1 - e) - 22 * ee;
-    const bl = 11 * (1 - ease.outCubic(clamp(uu * 1.2))) + 3.5 * ee;
-    s.style.left = (left + ch.x).toFixed(2) + 'px'; s.style.top = top.toFixed(2) + 'px';
-    s.style.transformOrigin = `${(ch.w / 2).toFixed(1)}px ${(0.62 * SIZE).toFixed(1)}px`;
-    s.style.transform = `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) scale(${sc.toFixed(4)})`;
-    s.style.opacity = op.toFixed(3);
-    s.style.filter = bl > 0.06 ? `blur(${bl.toFixed(2)}px)` : 'none';
-    // colour: gradient along the line, a glint as the letter lands, the shimmer band passing through
-    const xu = (ch.x + ch.w / 2) / L.full;
-    let col = mixc(INK_L, INK_R, Math.min(1, Math.max(0, (xu - 0.12) / 0.8)));
-    const glint = gauss(f - a - 4.5, 1.6) * (uu > 0 ? 1 : 0);
-    const band = P === null ? 0 : gauss(ch.x + ch.w / 2 - P, 70);
-    col = mixc(col, [255, 255, 255], Math.min(1, 0.85 * band + 0.7 * glint));
-    s.style.color = rgba(col);
-    const g = 0.42 + 0.5 * band + 0.4 * glint;
-    s.style.textShadow = `0 0 ${(18 + 16 * band).toFixed(1)}px rgba(160,130,255,${(g * op).toFixed(3)}), 0 0 3px rgba(255,255,255,${(0.25 * band).toFixed(3)})`;
+let L1 = null, L2 = null;   // built after the serif has loaded (word positions are measured)
+function renderLine(L, f, inT, outT, push, panX) {
+  const top = BASE - L.bOff - 0.06 * SIZE;
+  L.el.style.left = (CX - L.width / 2).toFixed(2) + 'px'; L.el.style.top = top.toFixed(2) + 'px';
+  L.el.style.transformOrigin = `${(L.width / 2).toFixed(1)}px ${(L.bOff).toFixed(1)}px`;
+  L.el.style.transform = `translateX(${panX.toFixed(2)}px) scale(${push.toFixed(5)})`;
+  const H = 1.32 * SIZE;
+  L.words.forEach((w, i) => {
+    const a = inT + i * 2.6, pin = expoOut(clamp((f - a) / 22));
+    const b = outT + i * 1.2, pout = outT ? exitE(clamp((f - b) / 9)) : 0;
+    const y = (1 - pin) * H - pout * H;
+    w.s.style.transform = `translateY(${y.toFixed(2)}px)`;
+    w.box.style.visibility = (f >= a - 0.5 && pout < 1) ? 'visible' : 'hidden';
   });
-  // ellipsis: lands after the text, then pulses one dot after another
-  L.dots.forEach((s, j) => {
-    const a = o.dotsT + j * 1.2, ex = o.outT ? clamp((f - o.outT(L.chars.length - 1) - 0.6) / 4) : 0;
-    const wv = Math.max(0, Math.sin(2 * Math.PI * (f - a) / 22 - j * 1.05));
-    const op = clamp((f - a) / 3) * (0.35 + 0.65 * wv) * (1 - ex);
-    s.style.display = op > 0.002 ? 'block' : 'none';
-    s.style.left = (left + L.width + j * L.dotW).toFixed(2) + 'px'; s.style.top = (top - 4 * wv).toFixed(2) + 'px';
-    s.style.opacity = op.toFixed(3); s.style.transform = 'none'; s.style.filter = 'none';
-    s.style.color = rgba(INK_R); s.style.textShadow = `0 0 16px rgba(160,130,255,${(0.6 * op).toFixed(3)})`;
+  // ellipsis: rises in after the last word, then steps (one dot brightens at a time)
+  const dIn = inT + L.words.length * 2.6 + 4;
+  L.dots.forEach((d, k) => {
+    const pin = expoOut(clamp((f - dIn - k * 1.5) / 18)), pout = outT ? exitE(clamp((f - outT - L.words.length * 1.2) / 9)) : 0;
+    d.s.style.transform = `translateY(${((1 - pin) * H - pout * H).toFixed(2)}px)`;
+    const step = Math.floor(((f - dIn - 14) / 7) % 4 + 4) % 4;
+    d.s.style.opacity = f < dIn + 14 ? 1 : (step === 3 ? 1 : (k <= step ? 1 : 0.28));
+    d.box.style.visibility = (f >= dIn - 0.5 && pout < 1) ? 'visible' : 'hidden';
   });
-  return { left, P };
 }
-
 window.renderFrame = async (f) => {
-  if (!L1) { L1 = makeLine('Analyzing the affected area', 7); L2 = makeLine('Mapping anatomical connections', 19); }
+  if (!L1) { await document.fonts.load("500 78px 'Claude Serif'"); await document.fonts.load("600 17px 'Inter'");
+    L1 = makeLine('Analyzing the affected area'); L2 = makeLine('Mapping anatomical connections'); }
   await setImg($('bg'), `../../plates/S08_processing/bg_${String(f).padStart(4, '0')}.jpg`);
   const panX = kf(f, [[845, 0], [848, 3], [851, 8], [854, 15], [857, 25], [860, 41], [862, 55]]);
-  // ---- motes drift upward with a slow sway (deeper ones slower), parallax with the pan
-  parts.forEach(p => {
-    const t = f - 719;
-    const y = ((p.y - t * p.sp - 260) % 600 + 600) % 600 + 260;
-    const x = p.x + 14 * Math.sin(t / 37 + p.ph) + panX * (1.4 - p.d);
-    const fadeEdge = Math.min(clamp((y - 260) / 90), clamp((860 - y) / 90));
-    p.e.style.left = (x - p.s).toFixed(1) + 'px'; p.e.style.top = (y - p.s).toFixed(1) + 'px';
-    p.e.style.opacity = (p.a * fadeEdge * clamp((f - 722) / 8) * (0.75 + 0.25 * Math.sin(t / 11 + p.ph))).toFixed(3);
-  });
-  // ---- line 1: scattered landing (reference order/timing), then a dissolve wave
-  const S1 = kf(f, [[719, 1.07], [725, 1.05], [731, 1.034], [737, 1.008], [740, 1.0], [779, 1.0], [782, 0.985], [787, 0.96]]);
-  L1.box.style.display = f <= 788 ? 'block' : 'none';
-  let lay = null;
-  if (f <= 788) lay = renderLine(L1, f, { scale: S1, panX: 0, inT: k => 724 + 10 * L1.order[k], inScale: 1.35, inDY: -6,
-    outT: k => 780.5 + (L1.chars[k].x / L1.width) * 5.5, dotsT: 735.5 });
-  // ---- line 2: zooms in word by word (reference zoom), shimmer, closing pan
-  const S2 = kf(f, [[786, 0.88], [788, 0.903], [791, 0.933], [794, 0.975], [797, 1.003], [800, 1.0]]);
-  L2.box.style.display = f >= 785 ? 'block' : 'none';
-  let lay2 = null;
-  if (f >= 785) lay2 = renderLine(L2, f, { scale: S2, panX, inT: k => 786.5 + L2.word[k] * 1.6 + (L2.chars[k].x / L2.width) * 3, inScale: 1.12, inDX: 26, inDY: 0, dotsT: 797 });
-  // ---- Claude's starburst: in at the start, breathing and slowly turning; glides to line 2's position
-  const g1 = ICON + GAP + L1.full, g2 = ICON + GAP + L2.full;
-  const mv = ease.inOutCubic(clamp((f - 782) / 10));
-  const sc = lerp(S1, S2 * 1, mv);
-  const ix = lerp(CX - g1 / 2 * S1, CX - g2 / 2 * S2, mv) + panX;
-  const iIn = clamp((f - 722) / 6), br = 1 + 0.06 * Math.sin((f - 722) / 18 * 2 * Math.PI);
-  iconEl.style.left = ix.toFixed(2) + 'px'; iconEl.style.top = (BASE - 0.36 * SIZE - ICON / 2).toFixed(2) + 'px';
-  iconEl.style.opacity = clamp(iIn * 1.5).toFixed(3);
-  iconEl.style.transform = `rotate(${((f - 722) * 1.6 - 90 * (1 - ease.outCubic(iIn))).toFixed(2)}deg) scale(${(sc * br * (0.4 + 0.6 * backOut(iIn, 2))).toFixed(4)})`;
-  // ---- bloom + lens streak riding the shimmer
-  const act = f <= 785 ? { L: L1, lay, S: S1, px: 0 } : { L: L2, lay: lay2, S: S2, px: panX };
-  const u = shimmerAt(f);
-  const bloom = $('bloom'), streak = $('streak');
-  if (u !== null && act.lay) {
-    const P = act.lay.left + (-60 + u * (act.L.full + 120));
-    const sx = CX + (P - CX) * act.S + act.px, strength = Math.sin(Math.PI * clamp(u));
-    bloom.style.display = streak.style.display = 'block';
-    bloom.style.left = (sx - 210).toFixed(1) + 'px'; bloom.style.top = (BASE - 0.36 * SIZE - 95).toFixed(1) + 'px';
-    bloom.style.width = '420px'; bloom.style.height = '190px'; bloom.style.opacity = (0.42 * strength).toFixed(3);
-    streak.style.left = (sx - 480).toFixed(1) + 'px'; streak.style.width = '960px'; streak.style.top = (BASE - 0.36 * SIZE).toFixed(1) + 'px';
-    streak.style.opacity = (0.5 * strength).toFixed(3);
-  } else { bloom.style.display = streak.style.display = 'none'; }
-  // ---- thin loader under the text
-  const ld = $('loader'), LW = 260;
-  ld.style.left = (CX - LW / 2 + panX).toFixed(1) + 'px'; ld.style.top = (BASE + 40).toFixed(1) + 'px'; ld.style.width = LW + 'px';
-  ld.style.opacity = (clamp((f - 734) / 6) * (f > 779 && f < 792 ? 0.45 + 0.55 * Math.abs(Math.cos(Math.PI * (f - 779) / 13)) : 1)).toFixed(3);
-  const lp = ((f - 734) % 26 + 26) % 26 / 26;
-  ld.querySelector('i').style.left = (-90 + (LW + 90) * ease.inOutCubic(lp)).toFixed(1) + 'px';
+  // overline: spark turns in and keeps turning; the label wipes in from the left
+  const oi = expoOut(clamp((f - 723) / 18));
+  const ow = over.getBoundingClientRect().width;
+  over.style.left = (CX - ow / 2 + panX).toFixed(2) + 'px'; over.style.top = (BASE - SIZE - 66).toFixed(2) + 'px';
+  over.style.opacity = clamp((f - 723) / 6).toFixed(3);
+  spark.style.transform = `rotate(${(-120 * (1 - oi) + 1.8 * (f - 723)).toFixed(2)}deg) scale(${(0.5 + 0.5 * oi).toFixed(4)})`;
+  const lw = expoOut(clamp((f - 726) / 20));
+  lbl.parentNode.style.clipPath = `inset(0 ${((1 - lw) * 100).toFixed(2)}% 0 0)`;
+  lbl.style.transform = `translateX(${(-18 * (1 - lw)).toFixed(2)}px)`;
+  // headlines: line 1 rises in, rises out at the change while line 2 rises in
+  const push1 = 1 + 0.02 * clamp((f - 726) / 60), push2 = 1 + 0.02 * clamp((f - 786) / 76);
+  L1.el.style.display = f <= 795 ? 'block' : 'none';
+  if (f <= 795) renderLine(L1, f, 727, 779, push1, 0);
+  L2.el.style.display = f >= 784 ? 'block' : 'none';
+  if (f >= 784) renderLine(L2, f, 788.5, 0, push2, panX);
 };
 window.sceneReady = document.fonts.ready;
 </script>

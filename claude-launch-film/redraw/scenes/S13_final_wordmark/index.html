@@ -1,0 +1,52 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S13 final wordmark and credit</title>
+<link rel="stylesheet" href="../../shared/base.css">
+<script src="../../shared/lib.js"></script>
+<script src="../../shared/components.js"></script>
+<script src="../../shared/brand.js"></script>
+<style> body, #stage { background: #000; } </style>
+</head><body>
+<div id="stage"><img class="plate" id="bg"></div>
+<script>
+// S13 (f1268-1453): the finale as one continuous shot. On the narrator's last "Claude" the coral mark turns in over
+// the reference's violet glow and the wordmark slides out from behind it; the lockup eases back slowly. After the reference ends (f1349) the lockup lifts to
+// make room and the credit 'Built by Imran using Opus 5.5' arrives word by word, then everything softly fades out.
+const stage = document.getElementById('stage');
+const W = [238, 238, 250], G = [150, 150, 172], VIO = [146, 128, 246], BLU = [112, 162, 252];
+let LK = null;
+// credit: words rise out of clean masks, "Imran" and "Opus 5.5" in white semibold, the rest in soft grey
+const CR = [['Built', 0], ['by', 0], ['Imran', 1], ['using', 0], ['Opus', 1], ['5.5', 1]];
+let credit = null;
+function buildCredit() {
+  const el = document.createElement('div'); el.style.cssText = "position:absolute;left:0;top:0;white-space:nowrap;font-family:'Inter';font-size:34px;letter-spacing:-0.005em;line-height:1";
+  stage.appendChild(el);
+  const ws = CR.map(([t, b]) => { const box = document.createElement('div'); box.style.cssText = 'position:absolute;top:0;overflow:hidden;padding:6px 1px 10px';
+    const sp = document.createElement('span'); sp.textContent = t; sp.style.cssText = `display:inline-block;font-weight:${b ? 600 : 400};color:${b ? '#FFFFFF' : 'rgba(236,234,248,0.62)'}`;
+    box.appendChild(sp); el.appendChild(box); return { box, sp }; });
+  let x = 0; const gap = 9.5;
+  ws.forEach(w => { w.box.style.left = x + 'px'; x += w.box.getBoundingClientRect().width - 2 + gap; });
+  credit = { el, ws, width: x - gap };
+}
+function renderCredit(f, fade) {
+  const BASE_Y = 612, t0 = 1366;
+  credit.el.style.left = (960 - credit.width / 2).toFixed(1) + 'px'; credit.el.style.top = (BASE_Y - 34 * 0.86 - 6).toFixed(1) + 'px';
+  credit.el.style.opacity = fade.toFixed(3);
+  credit.ws.forEach((w, i) => { const p = clExpoOut(clamp((f - t0 - i * 2.4) / 20)); w.sp.style.transform = `translateY(${((1 - p) * 52).toFixed(2)}px)`; });
+}
+
+window.renderFrame = async (f) => {
+  const bg = document.getElementById('bg');
+  if (f <= 1348) { bg.style.display = 'block'; await setImg(bg, `../../plates/S13_final_wordmark/bg_${String(f).padStart(4, '0')}.jpg`); }
+  else bg.style.display = 'none';
+  if (!LK) { await ClaudeLockup.ready(); await document.fonts.load("600 34px 'Inter'"); LK = new ClaudeLockup(stage, { cx: 960, cy: 524, size: 150, burst: 58, gap: 32, t0: 1268 }); }
+  const fade = kf(f, [[1428, 1], [1450, 0]]);
+  const lift = ease.inOutCubic(clamp((f - 1352) / 22));
+  const sc = kf(f, [[1268, 1.05], [1348, 1.0]]) * (1 - 0.1 * lift);
+  LK.render(f, { scale: sc, dy: -40 * lift, op: fade });
+  if (!credit) buildCredit();
+  credit.el.style.display = f >= 1365 ? 'block' : 'none';
+  if (f >= 1365) renderCredit(f, fade);
+};
+window.sceneReady = document.fonts.ready;
+</script>
+</body></html>

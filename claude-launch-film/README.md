@@ -10,7 +10,7 @@ for a shot-by-shot comparison.
 
 ## Redrawn version
 
-`claude_launch_film_redraw_v8.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
+`claude_launch_film_redraw_v9.mp4` (48.43 s, 1,453 frames) is the redrawn film; every
 scene is now rebuilt:
 
 - **Opening:** the four-point sparkle is replaced by the orange Claude starburst, and the
@@ -24,9 +24,13 @@ scene is now rebuilt:
 - **Redrawn scenes:** titles, chat pill, doctor cards and the "Claude" wordmarks are
   rebuilt as animated HTML/CSS. Real-world footage and backgrounds come from the
   reference, with the original text removed.
-- **Claude thinking (processing scene):** "Analyzing the affected area…" and "Mapping anatomical connections…"
-  keep the original big centred look, now with Claude's breathing starburst, letters landing out of a blur,
-  a thinking shimmer with a soft bloom, a pulsing ellipsis, a word-by-word zoom-in and drifting light motes.
+- **Claude thinking (processing scene):** an editorial status frame: "CLAUDE IS THINKING" with Claude's spark over
+  a large serif headline whose words rise out of clean masks; the second step replaces the first like a ticker.
+- **Claude logo reveals:** at "Meet Claude" and in the finale the coral mark turns in and the wordmark wipes out
+  beside it in reading order: no flashes or glows, just the lockup and precise easing.
+- **Sound:** synthesised sound design synced to the picture (soft whooshes on transitions, a warm thump and bell
+  chord on the two Claude reveals, key and click ticks on the typing and buttons, faint ticks under the decode
+  effects, a warm pad and chime under the end credit), ducked under the narration and mastered to -14 LUFS.
 - **Futuristic "right one":** both "right one" titles decode out of flickering machine glyphs
   with a red/cyan RGB split and a light beam riding the lock front. On the dark title, HUD
   brackets lock onto the words and "MATCH FOUND" types in; over the doctor cards, targeting
@@ -48,17 +52,17 @@ scene is now rebuilt:
 |---|---|---|
 | 1–60 | opening, Claude starburst, triangle reveal | redrawn |
 | 61–250 | cloud chat | redrawn (Claude composer) |
-| 251–350 | "right one" → "Meet Claude" | redrawn; "right one" decodes from machine glyphs (RGB split, light beam), HUD brackets lock on and "MATCH FOUND" types in |
+| 251–350 | "right one" → "Meet Claude" | redrawn; "right one" decodes from machine glyphs, HUD brackets lock on and "MATCH FOUND" types in; on the narrator's "Claude" the coral mark turns in and the white wordmark wipes out beside it in reading order |
 | 351–445 | dashboard window | redrawn UI over the real background and glass; livelier per-letter headline (drop-in, light sweep, flowing gradient, glow, staggered exit) |
 | 446–525 | "Build to move beyond generic healthcare search" | redrawn; "Build to move beyond generic" is a kinetic title (mask rise, motion-blur sweep, gradient hero word with an overshooting underline, skeleton-to-word "generic", glint, wave exit); "healthcare" ripples in, then a compact frosted-glass search field opens beside it (soft shadow, focus ring), a gradient magnifier draws itself, "search" is typed behind a soft caret, a sheen crosses the glass and a violet-to-coral progress line runs along its base |
 | 526–605 | typing the symptom | redrawn (Claude composer) |
 | 606–718 | anatomy viewer | redrawn UI (Claude sidebar, buttons, Done, pointer) over the tracked window; anatomy model kept |
-| 719–862 | processing lines | the reference's big centred status lines, rebuilt with a cinematic finish: letters land out of a blur with a glint, Claude's breathing starburst beside them, a thinking shimmer with a soft bloom and lens streak, pulsing ellipsis, a wave dissolve into a word-by-word zoom-in, drifting light motes and a thin glowing loader |
+| 719–862 | processing lines | an editorial status frame: a small tracked "CLAUDE IS THINKING" label with Claude's turning spark over a large serif headline; words rise out of clean masks with a long exponential ease, the ellipsis steps, and the first line rises away as the second rises in |
 | 863–972 | Claude's reply | redrawn Claude chat (user bubble, serif reply streaming with the starburst, composer) over the tracked, scrolling window; the redrawn UI takes on the footage's measured focus blur |
 | 973–1090 | doctor cards, "right one" | redrawn over the reference light field (cards and titles removed); the centre doctor is Dr. Imran Hussain; futuristic "right one" with a targeting lock on his card and a "Best match" chip |
 | 1091–1167 | profile and analytics | "Right outcome" redrawn; the profile footage now shows Dr. Imran Hussain (name, breadcrumb, photo, e-mail, About), tracked and blur-matched through the fast scroll |
-| 1168–1348 | closing lines, Claude wordmark | redrawn |
-| 1349–1453 | end credit | new |
+| 1168–1267 | closing lines | redrawn |
+| 1268–1453 | Claude lockup and end credit | one continuous shot: the coral mark turns in and the wordmark wipes out beside it; after the reference ends the lockup lifts and "Built by Imran using Opus 5.5" rises in word by word |
 
 The redraw sources are in `redraw/`:
 
@@ -70,6 +74,8 @@ The redraw sources are in `redraw/`:
   original graphics sat, so `s04_plates.py` and `s10_plates.py` fill only those pixels and keep
   the real glass and light-field gradients. `s11_plates.py` cleans the profile scene's title.
 - `s07_refine.py`: masked ECC refinement of the anatomy-viewer window tracking.
+- `shared/brand.js`: the Claude lockup reveal used by both logo moments. `wm_plates.py` cleans their backgrounds.
+- `sound_design.py`: synthesises the effects, ducks them under the narration, mixes and masters the soundtrack.
 - `shared/hud.js`: the decode title and HUD brackets used by both "right one" moments.
 - `s11_*.py`, `textr.py`: the profile-page doctor swap. `s11_track.py` / `s11_refine*.py` track the page
   (SIFT, then masked ECC on static content), `s11_calib.py` fits the original fonts, `s11_edit.py` builds the
