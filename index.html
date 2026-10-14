@@ -50,6 +50,7 @@
   .sl-lbl { position: absolute; left: 0; right: 0; top: 0; display: flex; justify-content: space-between;
             color: #b4b4b1; text-transform: uppercase; white-space: pre; line-height: 1; -webkit-text-stroke: 0.35px #31312e; }
   .sl-lbl .v { text-transform: none; }
+  .sl-lbl .deg { position: relative; top: -0.32em; margin-left: 0.04em; }
   .sl-track { position: absolute; left: 0; right: 0; }
   .sl-track svg { position: absolute; left: 0; top: 0; overflow: visible; }
   .sl-thumb { position: absolute; top: 0; background: #d2d2cd; box-shadow: 0 0 0 .5px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.35); }
@@ -102,7 +103,7 @@
 
   <div id="controls">
     <div class="sl" id="sl-light"><div class="sl-lbl"><span>LIGHT</span><span class="v">Low</span></div><div class="sl-track"><svg></svg><div class="sl-thumb"></div></div></div>
-    <div class="sl" id="sl-spread"><div class="sl-lbl"><span>SPREAD</span><span class="v">144°</span></div><div class="sl-track"><svg></svg><div class="sl-thumb"></div></div></div>
+    <div class="sl" id="sl-spread"><div class="sl-lbl"><span>SPREAD</span><span class="v">144<span class="deg">°</span></span></div><div class="sl-track"><svg></svg><div class="sl-thumb"></div></div></div>
     <div class="sl" id="sl-reach"><div class="sl-lbl"><span>REACH</span><span class="v">210%</span></div><div class="sl-track"><svg></svg><div class="sl-thumb"></div></div></div>
   </div>
   <button id="dial" class="icon" aria-label="Lamp on or off">
@@ -1063,7 +1064,7 @@ $('#hintBtn').addEventListener('click', () => {
 /* ------------------------------------------------------------- sliders -- */
 const SL = {
   light:  { el: $('#sl-light'),  min: 0,  max: 1,   fmt: (v) => (v < 0.34 ? 'Low' : v < 0.67 ? 'Medium' : 'High'), x0: 20, x1: 115 },
-  spread: { el: $('#sl-spread'), min: 30, max: 190, fmt: (v) => Math.round(v) + '°', x0: 140, x1: 232 },
+  spread: { el: $('#sl-spread'), min: 30, max: 190, fmt: (v) => Math.round(v) + '<span class="deg">°</span>', x0: 140, x1: 232 },
   reach:  { el: $('#sl-reach'),  min: 50, max: 210, fmt: (v) => Math.round(v) + '%', x0: 257, x1: 348 },
 };
 function layoutSliders() {
@@ -1074,7 +1075,7 @@ function layoutSliders() {
     el.style.left = x0 + 'px'; el.style.width = w + 'px';
     el.style.top = (labelY - 8 * k) + 'px'; el.style.height = (trackY - labelY + 22 * k) + 'px';
     const lbl = el.querySelector('.sl-lbl');
-    lbl.style.fontSize = (10.6 * k) + 'px'; lbl.style.paddingLeft = (4.3 * k) + 'px';
+    lbl.style.fontSize = (10.6 * k) + 'px'; lbl.style.paddingLeft = ((key === 'light' ? 4.3 : 0.9) * k) + 'px';
     lbl.style.letterSpacing = (0.15 * k) + 'px';
     const tr = el.querySelector('.sl-track');
     tr.style.top = (trackY - labelY + 8 * k - 11 * k) + 'px'; tr.style.height = (22 * k) + 'px';
@@ -1092,7 +1093,7 @@ function layoutSliders() {
     th.style.borderRadius = (2.4 * k) + 'px';
     s.w = w; s.tw = 8.3 * k;
     setSlider(key, sliders[key], true);
-    el.querySelector('.v').textContent = s.fmt(sliders[key]);
+    el.querySelector('.v').innerHTML = s.fmt(sliders[key]);
   }
 }
 function setSlider(key, v, silent) {
@@ -1103,7 +1104,7 @@ function setSlider(key, v, silent) {
   const f = (v - s.min) / (s.max - s.min);
   if (!silent) { const pf = (prev - s.min) / (s.max - s.min); if (Math.floor(pf * 8 + 0.5) !== Math.floor(f * 8 + 0.5)) AU.tick(); }
   s.el.querySelector('.sl-thumb').style.left = (f * (s.w - s.tw)) + 'px';
-  s.el.querySelector('.v').textContent = s.fmt(v);
+  s.el.querySelector('.v').innerHTML = s.fmt(v);
   if (!silent && prev !== v) { lightDirty = true; store.set(LS.sliders, JSON.stringify(sliders)); }
 }
 for (const key in SL) {
