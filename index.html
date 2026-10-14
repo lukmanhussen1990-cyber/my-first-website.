@@ -841,10 +841,9 @@ function slideTo(x, dur, easeFn, delay = 0) {
   car.pending = { x, dur, ease: easeFn, at: now() + delay };
 }
 function snapCarriage() {
-  // a new key while the carriage is still travelling: jump to where it was going (as in the recording)
-  if (car.pending) { car.x = car.pending.x; car.pending = null; }
-  else if (car.dur > 0) car.x = car.to;
-  car.from = car.to = car.x; car.dur = 0;
+  // a new key while the carriage still owes a step: make that step now as a quick glide (the recording
+  // glides at quick keys; a slide already under way just carries on)
+  if (car.pending) { car.from = car.x; car.to = car.pending.x; car.t0 = now(); car.dur = 0.07; car.ease = E.outSine; car.pending = null; }
 }
 function updateCarriage(t) {
   if (car.pending && t >= car.pending.at) {
@@ -858,14 +857,22 @@ function updateCarriage(t) {
   }
 }
 // T bar lift above its rest height (css px) — curve measured frame-by-frame from the recording:
-// rise 50 ms (ease-in-out), hold ~35 ms, fall 50 ms, small dip below rest, settle.
+// rise 50 ms (ease-in-out), hold ~2 frames, fall 50 ms, a short rebound below rest, settle.
+const STRIKE_H = 17;
 function strikeLift(t) {
-  const s = t - strike.t0, H1 = 18 * k, dip = 2.3 * k;
+  const s = t - strike.t0, H1 = STRIKE_H * k, dip = 3.2 * k;
   if (s < 0 || s > 0.19) return 0;
   if (s < 0.05) return H1 * E.inOutSine(s / 0.05);
-  if (s < 0.085) return H1;
-  if (s < 0.135) { const p = (s - 0.085) / 0.05; return lerp(H1, -dip, E.inQuad(p)); }
-  const p = (s - 0.135) / 0.055; return -dip * (1 - E.outQuad(p));
+  if (s < 0.07) return H1;
+  if (s < 0.12) { const p = (s - 0.07) / 0.05; return lerp(H1, -dip, E.inQuad(p)); }
+  const p = (s - 0.12) / 0.07; return -dip * (1 - E.outQuad(p));
+}
+// a new strike while the bar is still up carries on from where the bar is (no drop between quick keys)
+function strikeFromHere(t) {
+  const y = strikeLift(t) / (STRIKE_H * k);
+  const s0 = y > 0 ? 0.05 * Math.acos(1 - 2 * Math.min(1, y)) / Math.PI : 0;   // inverse of the rise curve
+  strike.t0 = t - s0;
+  return s0;
 }
 // carriage return: the T drops into its slot, then rises back exponentially (τ ≈ 0.13 s)
 function retractDrop(t) {
@@ -924,9 +931,9 @@ function typeChar(ch) {
     fx.spark(0.55);
     AU.space(); AU.spark(0.35);
   } else {
-    appearAt.set(i, t + 0.035);
-    strike.t0 = t;
-    slideTo(carriageTarget(), 0.1, E.outSine, 0.15);
+    const s0 = strikeFromHere(t);
+    appearAt.set(i, t + Math.max(0, 0.035 - s0));
+    slideTo(carriageTarget(), 0.1, E.outSine, 0.13);
     AU.clack();
     if (Math.random() < 0.07) { fx.zap(true, 0.9); AU.zap(0.75); } else { fx.spark(); AU.spark(0.55); }   // now and then a big green zap
   }
@@ -1306,33 +1313,27 @@ const DIAL_A = hex('#202012'), DIAL_B = hex('#b0b19e'), DIAL_LA = hex('#e9e4d6')
 const dialLine = dialEl.querySelector('.ln'); dialLine.id = 'dialLine';
 const hintBtn = $('#hintBtn');
 
+// flat, matte LEDs measured from the recording (3 px per CSS px): a flat core, a thin darker rim and a light
+// bezel; no glow. [fill, rim, bezel] for light mode and lamp mode; a null bezel means a dark outline only
+const LED_LOOK = {
+  green:  [[[102, 226, 74], [92, 140, 66], [160, 174, 145]], [[100, 230, 64], [90, 136, 74], [124, 148, 112]]],
+  orange: [[[250, 135, 32], [168, 100, 38], [160, 160, 140]], [[252, 134, 30], [164, 99, 37], null]],
+  red:    [[[33, 12, 9], [45, 28, 18], [140, 130, 120]], [[40, 14, 10], [50, 30, 18], [62, 50, 40]]],
+  off:    [[[3, 5, 0], [32, 33, 20], [136, 136, 118]], [[6, 6, 0], [20, 20, 6], [47, 47, 33]]],
+};
 function drawLEDs(c, cx, cy, t, cP) {
   const typing = t - lastKey < 0.27;
-  const leds = [
-    typing ? 'orange' : 'green',
-    cP > 0.5 ? 'orange' : 'red',
-    'off',
-  ];
+  const leds = [typing ? 'orange' : 'green', cP > 0.5 ? 'orange' : 'red', 'off'];
   const xs = [-37, -25, -13];
   for (let i = 0; i < 3; i++) {
-    const x = cx + xs[i] * k, y = cy + 0.4 * k, r = 3.2 * k;
-    const ring = i === 0 ? (cP > 0.5 ? 'rgba(190,200,180,0.75)' : 'rgba(225,232,210,0.85)') : (cP > 0.5 ? 'rgba(110,110,95,0.35)' : 'rgba(225,215,205,0.7)');
-    c.fillStyle = ring; c.beginPath(); c.arc(x, y, r + 0.7 * k, 0, 7); c.fill();
-    let g;
-    const s = leds[i];
-    c.save();
-    if (s === 'green' || s === 'orange') {
-      const hc = s === 'green' ? '110,255,80' : '255,140,40', hr = r * 2.1;
-      const hg = c.createRadialGradient(x, y, r * 0.6, x, y, hr);
-      hg.addColorStop(0, `rgba(${hc},0.35)`); hg.addColorStop(1, `rgba(${hc},0)`);
-      c.fillStyle = hg; c.fillRect(x - hr, y - hr, hr * 2, hr * 2);
-    }
-    if (s === 'green') { g = c.createRadialGradient(x - r * 0.35, y - r * 0.35, 0, x, y, r); g.addColorStop(0, '#b6ff98'); g.addColorStop(0.35, '#6eea4e'); g.addColorStop(0.85, '#5bd83c'); g.addColorStop(1, '#3fae2a'); }
-    else if (s === 'orange') { g = c.createRadialGradient(x - r * 0.35, y - r * 0.35, 0, x, y, r); g.addColorStop(0, '#ffc690'); g.addColorStop(0.35, '#f8913a'); g.addColorStop(0.85, '#f08024'); g.addColorStop(1, '#bd5a12'); }
-    else if (s === 'red') { g = c.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r); g.addColorStop(0, '#4a1a1a'); g.addColorStop(1, '#1c0909'); }
-    else { g = c.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r); g.addColorStop(0, '#1a1c18'); g.addColorStop(1, '#030403'); }
-    c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
-    c.restore();
+    const x = cx + xs[i] * k, y = cy + 0.4 * k;
+    const [A, B] = LED_LOOK[leds[i]];
+    // LED 1 keeps its light bezel when it turns orange; LED 2's orange lamp has only a dark outline
+    const bez = i === 0 ? mix(LED_LOOK.green[0][2], LED_LOOK.green[1][2], cP) : (B[2] ? mix(A[2], B[2], cP) : mix(A[2], [60, 28, 8], cP));
+    const big = leds[i] !== 'green';   // the dark LEDs and the lamp's orange are a touch wider than the green core
+    c.fillStyle = rgba(bez); c.beginPath(); c.arc(x, y, (i === 0 || B[2] ? (big ? 3.8 : 3.65) : lerp(3.8, 3.15, cP)) * k, 0, 7); c.fill();
+    c.fillStyle = rgba(mix(A[1], B[1], cP)); c.beginPath(); c.arc(x, y, (big ? 3.05 : 2.85) * k, 0, 7); c.fill();
+    c.fillStyle = rgba(mix(A[0], B[0], cP)); c.beginPath(); c.arc(x, y, (big ? 2.8 : 2.4) * k, 0, 7); c.fill();
   }
 }
 
@@ -2194,7 +2195,7 @@ if (/[?&]debug\b/.test(location.search)) {
   window.__fw = {
     get text() { return text; }, get lines() { return lines.map((l) => l.idx.map((i) => text[i]).join('')); },
     get carX() { return car.x; }, get target() { return carriageTarget(); }, get col() { return caretCol(); },
-    get lamp() { return lampOn; }, colX, G, AU, fx, WEB,
+    get lamp() { return lampOn; }, get lift() { const t = now(); return strikeLift(t) - retractDrop(t); }, colX, G, AU, fx, WEB,
     renderLightForTest(scale, spread) { const s0 = L.scale; L.scale = scale; sliders.spread = spread; renderLight(); L.scale = s0; },
   };
 }
