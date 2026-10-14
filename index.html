@@ -1988,7 +1988,9 @@ const AU = {
   startMusic() {
     if (!this.ctx || this.musicOn) return;
     this.musicOn = true; this.step = 0; this.nextNote = this.ctx.currentTime + 0.12;
-    this.lead = this.makeLead(this.ctx.currentTime);
+    const t = this.ctx.currentTime, mg = this.music.gain;   // ease the loop in rather than starting on a full kick
+    mg.cancelScheduledValues(t); mg.setValueAtTime(0.0001, t); mg.linearRampToValueAtTime(0.4, t + 0.6);
+    this.lead = this.makeLead(t);
     // airy bed: the recording's music sits on a soft, slightly crackly hiss (about -42 dBFS above 3 kHz)
     const bed = this.ctx.createBufferSource(), bh = this.ctx.createBiquadFilter(), bl = this.ctx.createBiquadFilter(), bg = this.ctx.createGain();
     if (!this.bedNoise) {   // its own long buffer, so the loop never repeats audibly
