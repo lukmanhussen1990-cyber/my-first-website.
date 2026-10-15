@@ -296,3 +296,12 @@ Check 21 done. Next: finish the ?still replay + perf check for v19c, then skin-p
 - Tests: full suite and ?still replay re-run for this version (results in Check 23).
 
 Check 22 done. Next: confirm the suite for v19d, then another look at sound packs and the celebration burst.
+
+## Check 23 (v19e) – graphics only from here on (user: "Continue polishing graphics only")
+- Full-resolution look at all 10 skins in light and lamp mode: all clean.
+- Page tear-off, frame by frame: the sheet now curls back in 3D as it flies off (perspective rotateX), a soft shade
+  along the torn edge and a light catch on top; nine paper scraps flutter down past the pipe, turning over as they fall;
+  the "Page N is full" note waits until the sheet has cleared the top bar instead of sitting on it.
+- Tests: functest, skintest, r12test, up16test, reducedtest, mobile18, reviewfix pass; ?still replay unchanged (gear only).
+
+Check 23 done. Next: graphics – fresh sheet roll-in, word-goal celebration burst, drafts sheet visuals.
