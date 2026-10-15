@@ -455,3 +455,13 @@ New layers on top of the recorded arc (off in ?still and with reduced motion, so
   ?still replay unchanged (gear only).
 
 Check 40 done. Next: electric – idle micro-crackles between keystrokes and a stronger carriage-return zap.
+
+## Check 41 (v19w) – electric graphics
+- On a strong zap the current sometimes leaps out along the metal pipe from one end of the capsule (a jagged arc,
+  halo + coloured body + white core).
+- St. Elmo's fire under the lamp: the bolt heads keep a faint, restless glow in the skin's spark colours, with the odd
+  tiny crackle, between discharges.
+- Tests: functest, skintest, reducedtest, up16test, ambient soak pass; perf p50 4.7–5.1 ms, p90 8.2–8.6 ms;
+  ?still replay unchanged.
+
+Check 41 done. Next: electric – share picture gets a frozen arc; the tray swatches spark on hover.

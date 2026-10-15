@@ -2500,6 +2500,7 @@ function draw(t) {
   drawSteam(c, cx, capTop, t, pP, drawDt);
   const st = fx.state(t);
   drawSparks(c, cx, cy, t, st);
+  drawStElmo(c, cx, cy, t, cP);
   drawParts(c);   // flying sparks share the scene canvas (no extra full-screen layer)
   drawGlow(c, cx, cy, st, pP);
 }
@@ -2646,6 +2647,11 @@ function drawElectricExtras(c, cx, cy, t, st, x, yTop, yBot, pts, bolt, fr) {
       strokeArc(c, jagPath(p[0], p[1], end[0], end[1], fr * 7 + i, 1.3 * k, 7), st.white * 0.85, 0.95 * k, lamp);
     }
   }
+  // now and then the current leaps out along the metal pipe, away from the capsule
+  if (st.white > 0.7 && hash(fr * 7 + 3) < 0.5) {
+    const side = hash(fr * 13 + 1) < 0.5 ? -1 : 1, x0 = cx + side * (G.capHW - 1 * k), yr = G.railT + 3 * k, l = (22 + R() * 30) * k;
+    strokeArc(c, jagPath(x0, yr, x0 + side * l, yr + (R() - 0.5) * 3 * k, fr * 11 + 7, 2.2 * k, 11), st.white * 0.8, 0.85 * k, lamp);
+  }
   // plasma at the bolt heads: a ring of short, flickering rays
   if (st.tips > 0.05) {
     for (const [y0, dir] of [[yTop, -1], [yBot, 1]]) {
@@ -2662,6 +2668,24 @@ function drawElectricExtras(c, cx, cy, t, st, x, yTop, yBot, pts, bolt, fr) {
       if (R() < 0.35) continue;
       const x0 = x - (4 + R() * 16) * k, l = (6 + R() * 9) * k;
       strokeArc(c, jagPath(x0, ey, x0 - l, ey + (R() - 0.5) * 2 * k, fr * 5 + (ey > cy ? 1 : 2), 0.8 * k, 6), st.violet * 0.85, 0.6 * k, lamp);
+    }
+  }
+  c.restore();
+}
+// St. Elmo's fire: under the lamp the bolt heads never quite go dark – a faint, restless glow with the odd crackle
+function drawStElmo(c, cx, cy, t, cP) {
+  if (STILL || REDUCED || cP < 0.05) return;
+  const x = cx + 25.4 * k, fr = (t * 60) | 0;
+  c.save(); c.globalCompositeOperation = 'lighter'; c.lineCap = 'round';
+  for (const [y0, dir, ph] of [[cy - G.capHH - 3.7 * k, -1, 0], [cy + G.capHH + 3.7 * k, 1, 2.1]]) {
+    const fl = 0.55 + 0.25 * Math.sin(t * 9.3 + ph) + 0.2 * Math.sin(t * 23.7 + ph * 2), a = 0.16 * cP * fl, r = 5.5 * k;
+    const g = c.createRadialGradient(x, y0, 0, x, y0, r);
+    g.addColorStop(0, rgba(skin.sp.tip, a)); g.addColorStop(0.5, rgba(skin.sp.halo, a * 0.5)); g.addColorStop(1, rgba(skin.sp.halo, 0));
+    c.fillStyle = g; c.fillRect(x - r, y0 - r, r * 2, r * 2);
+    if (hash(fr * 31 + (dir > 0 ? 7 : 0)) < 0.06) {   // a tiny crackle
+      const R = mulberry(fr * 5 + (dir > 0 ? 1 : 2)), f = (R() - 0.5) * 2, l = (2 + R() * 3) * k;
+      c.strokeStyle = rgba(skin.sp.mid, 0.6 * cP); c.lineWidth = 0.5 * k;
+      strokePts(c, jagPath(x, y0, x + Math.sin(f) * l, y0 + dir * Math.cos(f) * l, fr, 0.5 * k, 3));
     }
   }
   c.restore();
