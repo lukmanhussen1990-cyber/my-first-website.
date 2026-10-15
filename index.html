@@ -642,7 +642,7 @@ function buildPaperFx() {
 function applyPaper() {
   const P = paperTheme();
   PAPER_LIGHT = hex(P.light); PAPER_DARK = hex(P.dark);
-  buildCaptions(); buildPaperFx(); invalidateText();
+  buildCaptions(); buildPaperFx(); if (G.rx) buildEdge(); invalidateText();
   cardJob = null;
 }
 
@@ -666,7 +666,8 @@ function buildEdge() {
   g.closePath(); g.fillStyle = '#181818'; g.fill();
   g.beginPath();
   pts.forEach(([x, y, nx, ny], i) => { const d = bite[i] + 0.7 * k; i ? g.lineTo(x - nx * d, y - ny * d) : g.moveTo(x - nx * d, y - ny * d); });
-  g.strokeStyle = 'rgba(0,0,0,0.07)'; g.lineWidth = 1.1 * k; g.stroke();
+  // a dark sheet catches a faint light along its torn edge so it still reads against the backdrop
+  g.strokeStyle = paperTheme().lightInk ? 'rgba(255,246,226,0.13)' : 'rgba(0,0,0,0.07)'; g.lineWidth = 1.1 * k; g.stroke();
 }
 
 /* ------------------------------------------------------------------ rail -- */
