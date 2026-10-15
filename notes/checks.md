@@ -479,3 +479,10 @@ Check 42 done. Next: electric – sparks in the skin tray swatches on hover, the
 - Tests: functest, up16test, reducedtest pass.
 
 Check 43 done. Next: graphics rounds continue (Blueprint skins, lamp on every paper, 320px sheets, 1920 lamp).
+
+## Check 44 – electric layers everywhere (no code change)
+- Frame-by-frame zaps on Copper/Black (light), Ghost/Parchment, Space/Blueprint, Vampire/Black (lamp): forks,
+  bolt-head plasma, pipe arcs and the arc light all take the skin's colours and read well on every paper.
+- Desktop 1920x1080 in lamp mode: dimmed night, column shadow, beam and arc all consistent.
+
+Check 44 done. Next: graphics – ink and paper close-ups at 3x for each paper theme.
