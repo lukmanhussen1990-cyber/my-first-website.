@@ -9,6 +9,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.print.PrintAttributes;
 import android.print.PrintManager;
 import android.provider.MediaStore;
@@ -168,6 +170,17 @@ public class MainActivity extends Activity {
                     try { startActivity(Intent.createChooser(i, "Share picture")); } catch (Exception e) { /* no app to share with */ }
                 } });
             } catch (Exception e) { /* could not write the picture */ }
+        }
+
+        /** A short buzz (the opening film's key strikes and carriage stops: the page has no touch yet to vibrate with). */
+        @JavascriptInterface
+        public void buzz(int ms, int amplitude) {
+            try {
+                Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+                if (v == null || !v.hasVibrator()) return;
+                if (Build.VERSION.SDK_INT >= 26) v.vibrate(VibrationEffect.createOneShot(Math.max(1, ms), Math.max(1, Math.min(255, amplitude))));
+                else v.vibrate(Math.max(1, ms));
+            } catch (Exception e) { /* no vibrator */ }
         }
 
         @JavascriptInterface

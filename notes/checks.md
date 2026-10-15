@@ -642,3 +642,14 @@ Check 54 done.
   app); ?intro fallback; functest passes; ?still replay pixel-identical to the previous version.
 
 Check 55 done. Next: keep polishing until the session ends, then the final single-file delivery.
+
+## Check 56 – opening film: close-up and haptics (app v1.2)
+- After the carriage is returned the camera closes in on the type guide for the first letters (type bars swinging
+  up, the ribbon lifting, each letter landing and stepping left), then pulls back to the whole keyboard as the
+  typing goes on, then follows the sheet up to the name.
+- In the app each key strike is felt as a light tap and each carriage stop as a firmer one (a native buzz through
+  the app bridge, since the page has had no touch yet; follows the Vibration setting and Sound off).
+- Checked: phone and desktop frames, packaged page with the app's user agent and a stand-in bridge (buzzes fire,
+  audio running, no network requests, no errors or warnings), ?intro fallback, APK badging 1.2 (code 3).
+
+Check 56 done. Next: final single-file delivery and the full list of features.
