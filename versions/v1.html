@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#111111">
+<title>Galaxy Brain Effort Slider</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap">
+<style>
+  :root {
+    --page: #111111;
+    --card: #181818;
+    --line: #282828;
+    --track: #272727;
+    --dim: #787878;
+    --ink: #e6e6e6;
+    --sky: #9ad4fe;
+    --k: 1;                 /* responsive scale of the 440px card */
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--page); }
+  body {
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ---------- card ---------- */
+  .wrap { position: relative; width: calc(440px * var(--k)); height: calc(259px * var(--k)); }
+  .card {
+    position: absolute; left: 0; top: 0;
+    width: 440px; height: 259px;
+    border-radius: 14px;
+    background: var(--card);
+    box-shadow: inset 0 0 0 2px var(--line), 0 16px 40px rgba(0, 0, 0, .3);
+    transform-origin: 0 0;
+    transform: scale(var(--k)) translate(var(--sx, 0px), var(--sy, 0px));
+    user-select: none; -webkit-user-select: none;
+  }
+
+  /* ---------- text ---------- */
+  .txt { position: absolute; margin: 0; white-space: nowrap; }
+  .effort { left: 24.8px; top: 26.8px; font-size: 26px; line-height: 32px; letter-spacing: -.1px; color: var(--dim); }
+  .value  { position: absolute; left: 109.3px; top: 26.8px; height: 32px; font-size: 26px; line-height: 32px; letter-spacing: -.1px; color: var(--ink); }
+  .faster, .smarter, .rec { font-size: 24px; line-height: 30px; letter-spacing: -.2px; color: var(--dim); }
+  .faster  { left: 24.4px; top: 97.5px; }
+  .smarter { right: 24.3px; top: 97.5px; }
+  .rec     { left: 49.4px; top: 204.5px; }
+
+  .word { position: absolute; left: 0; top: 0; white-space: pre; }
+  .word.sky { color: var(--sky); text-shadow: 0 0 12px rgba(154, 212, 254, .14); }
+  .word .ch { display: inline-block; }
+
+  /* ---------- help ---------- */
+  .help {
+    position: absolute; left: 380px; top: 22px; width: 40px; height: 40px;
+    display: grid; place-items: center;
+    padding: 0; border: 0; border-radius: 50%; background: none;
+    color: var(--dim); cursor: pointer; z-index: 5;
+  }
+  .help svg { width: 26.2px; height: 26.2px; display: block; }
+  .help:hover { color: #9a9a9a; }
+  .help:focus-visible { outline: 2px solid rgba(154, 212, 254, .55); outline-offset: -4px; }
+  .tip {
+    position: absolute; right: 4px; bottom: calc(100% - 14px); z-index: 6;
+    width: max-content; max-width: 300px;
+    padding: 11px 15px; border-radius: 11px;
+    background: #222; border: 1px solid #333;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+    color: #d6d6d6; font-size: 17px; line-height: 23px; letter-spacing: -.1px;
+    opacity: 0; transform: translateY(6px) scale(.97); transform-origin: 90% 100%;
+    transition: opacity .16s ease, transform .2s cubic-bezier(.2, .8, .2, 1);
+    pointer-events: none;
+  }
+  .tip::after {
+    content: ""; position: absolute; right: 16px; bottom: -6px; width: 10px; height: 10px;
+    background: #222; border-right: 1px solid #333; border-bottom: 1px solid #333;
+    transform: rotate(45deg);
+  }
+  .tip.show { opacity: 1; transform: none; pointer-events: auto; }
+
+  /* ---------- slider ---------- */
+  .slider { position: absolute; left: 14px; top: 126px; width: 412px; height: 88px; cursor: pointer; outline: none; touch-action: none; }
+  .slider.grabbing { cursor: grabbing; }
+  .track { position: absolute; left: 10px; top: 24px; width: 392px; height: 40px; border-radius: 10px; background: var(--track); overflow: hidden; z-index: 1; }
+  .slider:focus-visible .track { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px rgba(154, 212, 254, .5); }
+  .fill {
+    position: absolute; left: 0; top: 0; height: 100%; width: 0;
+    background: linear-gradient(90deg, #934d75, #6b56ab) 0 0 / 392px 100% no-repeat;
+    -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, .1), #000 calc(100% - var(--hw, 22px)));
+            mask-image: linear-gradient(90deg, rgba(0, 0, 0, .1), #000 calc(100% - var(--hw, 22px)));
+  }
+  .galaxy { position: absolute; left: 0; top: 0; width: 392px; height: 40px; }
+  .mark { position: absolute; top: 20px; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(255, 255, 255, .222); }
+  .mark.tick { height: 20px; margin-top: -10px; border-radius: 3px; background: rgba(255, 255, 255, .273); }
+
+  .brain { position: absolute; left: 0; top: 0; width: 60px; height: 60px; margin: -30px 0 0 -30px; z-index: 3; pointer-events: none; }
+  .brain::before {               /* faint glow that grows with the effort level */
+    content: ""; position: absolute; inset: -34px; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(150, 118, 215, .075) 46%, rgba(150, 118, 215, .03) 70%, transparent);
+    opacity: var(--glow, 0);
+  }
+  .brain svg { position: relative; display: block; width: 60px; height: 60px; overflow: visible; }
+
+  .fx { position: absolute; left: -120px; top: -120px; width: 680px; height: 499px; pointer-events: none; }
+  #fxBack { z-index: 2; }
+  #fxFront { z-index: 4; }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+</style>
+</head>
+<body>
+<main class="wrap" id="wrap">
+  <section class="card" id="card" aria-label="Effort setting">
+    <p class="txt effort" aria-hidden="true">Effort</p>
+    <span class="value" id="value" aria-hidden="true"><span class="word">Low</span></span>
+
+    <button class="help" id="help" type="button" aria-label="What does effort do?" aria-expanded="false" aria-controls="tip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>
+      </svg>
+    </button>
+    <div class="tip" id="tip" role="tooltip">More effort = slower but smarter answers.</div>
+
+    <p class="txt faster" aria-hidden="true">Faster</p>
+    <p class="txt smarter" aria-hidden="true">Smarter</p>
+
+    <div class="slider" id="slider" role="slider" tabindex="0"
+         aria-label="Effort" aria-orientation="horizontal"
+         aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" aria-valuetext="Low"
+         aria-describedby="tip">
+      <div class="track" id="track">
+        <div class="fill" id="fill"></div>
+        <canvas class="galaxy" id="galaxy"></canvas>
+        <i class="mark" style="left:22px"></i>
+        <i class="mark tick" style="left:91.6px"></i>
+        <i class="mark" style="left:161.2px"></i>
+        <i class="mark" style="left:230.8px"></i>
+        <i class="mark" style="left:300.4px"></i>
+        <i class="mark" style="left:370px"></i>
+      </div>
+      <div class="brain" id="brain">
+        <svg viewBox="-44 -44 88 88" aria-hidden="true">
+          <defs>
+            <path id="half" d="M11.6 -35.8C10.2 -35.7 8.7 -35.1 7.5 -34.2C6.3 -33.4 5.1 -31.9 4.5 -30.5C3.9 -29.1 4 -29.6 4 -26.1C4 -22.6 3.8 -13.3 4.2 -9.6C4.7 -6 5.7 -5.7 6.6 -4.2C7.5 -2.9 8.5 -2.1 9.8 -1.2C11 -0.4 13 0.2 14 0.9C15 1.6 15.4 2.3 15.8 3C16.1 3.7 16.1 4.2 15.9 4.9C15.7 5.6 14.9 6.7 14.4 7.2C13.9 7.8 13.5 8 12.9 8.1C12.3 8.2 12 8.4 10.8 8C9.5 7.6 6.6 5.9 5.5 5.6C4.4 5.3 4.3 3 4.1 6.2C3.9 9.5 3.9 21.1 4.1 25.1C4.4 29.1 5 28.8 5.8 30.2C6.5 31.7 7.7 32.9 8.8 33.8C9.8 34.6 10.6 35 11.9 35.4C13.2 35.8 14.9 36.3 16.6 36.1C18.3 36 20.5 35.2 22 34.5C23.5 33.8 24.6 32.6 25.4 31.6C26.2 30.6 27.3 29.3 26.8 28.6C26.2 27.9 22.9 28 21.9 27.5C20.8 27 20.6 26.4 20.4 25.6C20.1 24.9 20 23.8 20.2 23C20.5 22.2 20.6 21.6 22.1 20.9C23.6 20.2 27.6 19.7 29.4 18.9C31.2 18.1 32 17.2 33 16.1C34 15 34.8 13.6 35.2 12.1C35.7 10.7 36.1 9 35.9 7.2C35.7 5.5 35.2 3.5 34.1 1.9C33 0.2 30.4 -1.7 29.4 -2.8C28.4 -3.8 28.4 -3.9 28.2 -4.6C28.1 -5.4 28 -6.5 28.5 -7.4C29 -8.3 30.9 -9.4 31.5 -10C32.1 -10.6 32 -10.2 32 -11.1C32 -12 31.7 -14 31.4 -15.2C31 -16.5 30.6 -17.4 30 -18.4C29.4 -19.3 28.1 -20.5 27.5 -20.9C26.9 -21.2 26.8 -21 26.4 -20.6C25.9 -20.3 25.4 -19.2 24.9 -18.8C24.3 -18.3 23.9 -17.8 23 -17.9C22.1 -17.9 20.5 -18.4 19.8 -19C19 -19.6 18.3 -19.9 18.4 -21.4C18.4 -22.8 19.9 -26.1 20 -27.8C20.1 -29.4 19.9 -30 19.2 -31.1C18.6 -32.2 17.6 -33.6 16.4 -34.4C15.1 -35.1 13.1 -35.8 11.6 -35.8Z"/>
+            <g id="lobes"><use href="#half"/><use href="#half" transform="scale(-1 1)"/></g>
+            <linearGradient id="gz" gradientUnits="userSpaceOnUse" x1="-36" y1="-36" x2="36" y2="36">
+              <stop offset="0" stop-color="#a3cafd"/>
+              <stop offset=".14" stop-color="#93b4fb"/>
+              <stop offset=".31" stop-color="#8e8ff8"/>
+              <stop offset=".5" stop-color="#9476f6"/>
+              <stop offset=".61" stop-color="#9f71f5"/>
+              <stop offset=".82" stop-color="#c278ee"/>
+              <stop offset="1" stop-color="#d27bea"/>
+            </linearGradient>
+          </defs>
+          <g transform="translate(0 0.5)">
+            <g>
+              <use href="#lobes" fill="#5c0e34" stroke="#5c0e34" stroke-width="16" stroke-linejoin="round"/>
+              <use href="#lobes" fill="#f384ba"/>
+            </g>
+            <g id="gBrain" opacity="0">
+              <use href="#lobes" fill="#230978" stroke="#230978" stroke-width="16" stroke-linejoin="round"/>
+              <use href="#lobes" fill="url(#gz)"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <canvas class="fx" id="fxBack" aria-hidden="true"></canvas>
+    <canvas class="fx" id="fxFront" aria-hidden="true"></canvas>
+
+    <p class="txt rec" aria-hidden="true">Recommended</p>
+    <p class="sr" id="live" aria-live="polite"></p>
+  </section>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ======================================================================
+     Constants — measured frame-by-frame from the reference recording.
+     All lengths are CSS px of the 440 x 259 card.
+     ====================================================================== */
+  const NAMES = ['Low', 'Medium', 'High', 'Extra', 'Max', 'Galaxy'];
+  const LAST = NAMES.length - 1;
+
+  const TRACK_X = 24, TRACK_Y = 150, TRACK_W = 392, TRACK_H = 40;
+  const SLIDER_X = 14, SLIDER_Y = 126;           // .slider offset inside the card
+  const BX0 = 16.6, BDX = 71.95;                 // brain centre (track-local) = BX0 + BDX * pos
+  const BY = TRACK_Y + 20.2;                     // brain centre y (card-local)
+  const SVG_PX = 60, SIL_PX = 44;                // svg box vs. silhouette size at scale 1
+  const GROW = 0.019, GALAXY_SCALE = 1.32;       // brain grows a little per step, a lot in Galaxy
+  const FX_PAD = 120, FX_W = 680, FX_H = 499;    // fx canvases overhang the card
+
+  // Step motion: fitted to the video (RMS error < 0.1%)
+  const EASE = cubicBezier(0.206, 0.971, 0.296, 0.994);
+  const STEP_MS = 420;
+
+  const $ = (s) => document.querySelector(s);
+  const card = $('#card'), wrap = $('#wrap'), slider = $('#slider'), track = $('#track');
+  const fillEl = $('#fill'), brainEl = $('#brain'), gBrain = $('#gBrain');
+  const galaxyCv = $('#galaxy'), backCv = $('#fxBack'), frontCv = $('#fxFront');
+  const valueEl = $('#value'), help = $('#help'), tip = $('#tip'), live = $('#live');
+  const gctx = galaxyCv.getContext('2d');
+  const bctx = backCv.getContext('2d');
+  const fctx = frontCv.getContext('2d');
+
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------------- helpers ---------------- */
+  function cubicBezier(x1, y1, x2, y2) {
+    const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+    const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+    const sx = (t) => ((ax * t + bx) * t + cx) * t;
+    const sy = (t) => ((ay * t + by) * t + cy) * t;
+    const dx = (t) => (3 * ax * t + 2 * bx) * t + cx;
+    return (x) => {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      let t = x;
+      for (let i = 0; i < 8; i++) {
+        const e = sx(t) - x, d = dx(t);
+        if (Math.abs(e) < 1e-7 || Math.abs(d) < 1e-7) break;
+        t -= e / d;
+      }
+      if (!(t >= 0 && t <= 1) || Math.abs(sx(t) - x) > 1e-5) {
+        let lo = 0, hi = 1;
+        t = x;
+        for (let i = 0; i < 50; i++) { if (sx(t) < x) lo = t; else hi = t; t = (lo + hi) / 2; }
+      }
+      return sy(t);
+    };
+  }
+  const clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = (t) => t * t * (3 - 2 * t);
+  const rand = (a = 0, b = 1) => a + Math.random() * (b - a);
+  const pick = (arr) => arr[(Math.random() * arr.length) | 0];
+
+  /* ---------------- responsive scale + canvas sizing ---------------- */
+  let K = 1, DPR = 1, R = 1;               // R = backing pixels per card px
+  function layout() {
+    K = Math.min(1, (window.innerWidth - 32) / 440);
+    K = Math.max(K, 0.3);
+    DPR = Math.min(window.devicePixelRatio || 1, 3);
+    R = DPR * K;
+    document.documentElement.style.setProperty('--k', K.toFixed(4));
+    sizeCanvas(galaxyCv, TRACK_W, TRACK_H);
+    sizeCanvas(backCv, FX_W, FX_H);
+    sizeCanvas(frontCv, FX_W, FX_H);
+    needsDraw = true;
+    kick();
+  }
+  function sizeCanvas(cv, w, h) {
+    cv.width = Math.max(1, Math.round(w * R));
+    cv.height = Math.max(1, Math.round(h * R));
+  }
+  const snap = (v) => Math.round(v * R) / R;
+
+  /* ======================================================================
+     State
+     ====================================================================== */
+  let pos = 0;                 // continuous brain position, in steps (0..5)
+  let vel = 0;                 // steps / second
+  let mode = 'idle';           // idle | tween | drag | spring
+  let tween = null;            // { from, to, t0, dur, squished }
+  let dragTarget = 0, springTo = 0;
+  let step = 0;                // logical step shown by the label
+  let needsDraw = true;
+
+  let galaxy = false;          // Galaxy mode active?
+  let gEnter = -1e9, gExit = -1e9;
+  let gMix = 0;                // 0 = pink brain, 1 = galaxy brain
+  let gAmt = 0, gAmtV = 0;     // galaxy scale spring
+  let fxLevel = 0;             // steady galaxy fx visibility (rays, glow, sparkles)
+  let gridLevel = 0;           // galaxy pixel grid visibility
+  let squish = 0, squishV = 0;
+  let shakeT0 = -1;
+
+  /* ======================================================================
+     Label: per-letter blur + slide. The old word drifts up and blurs out,
+     the new word rises in letter by letter (left to right), like the video.
+     Driven by the main loop so every effect shares one clock.
+     ====================================================================== */
+  const IN_MS = 280, IN_STAGGER = 22, OUT_MS = 200, OUT_STAGGER = 12, BLUR = 5;
+  const EASE_IN = cubicBezier(0.2, 0.75, 0.25, 1), EASE_OUT = cubicBezier(0.45, 0, 0.75, 0.5);
+  let curWord = { el: valueEl.querySelector('.word'), text: 'Low', kind: 'rest', letters: null };
+  const labelAnims = [];
+
+  function makeLetters(el, text) {
+    el.textContent = '';
+    return [...text].map((ch) => {
+      const s = document.createElement('span');
+      s.className = 'ch';
+      s.textContent = ch;
+      el.appendChild(s);
+      return s;
+    });
+  }
+  function letterState(w, j, now) {             // -> [opacity, blur, dy]
+    if (w.kind === 'in') {
+      const e = EASE_IN(clamp((now - w.t0 - j * IN_STAGGER) / IN_MS));
+      return [e, BLUR * (1 - e), w.dy * (1 - e)];
+    }
+    if (w.kind === 'out') {
+      const e = EASE_OUT(clamp((now - w.t0 - j * OUT_STAGGER) / OUT_MS));
+      const [o0, b0, y0] = w.from[j];
+      return [o0 * (1 - e), lerp(b0, BLUR, e), lerp(y0, w.dy, e)];
+    }
+    return [1, 0, 0];
+  }
+  function swapLabel(text, dir, now) {
+    const old = curWord;
+    if (old) {
+      if (!old.letters) old.letters = makeLetters(old.el, old.text);
+      old.from = old.letters.map((_, j) => letterState(old, j, now));
+      old.kind = 'out';
+      old.t0 = now;
+      old.dy = dir > 0 ? -6 : 6;
+      if (!labelAnims.includes(old)) labelAnims.push(old);
+    }
+    const el = document.createElement('span');
+    el.className = 'word' + (text === 'Galaxy' ? ' sky' : '');
+    valueEl.appendChild(el);
+    const w = { el, text, kind: 'in', t0: now, dy: dir > 0 ? 8 : -8, letters: makeLetters(el, text) };
+    if (reduceMotion) { w.kind = 'rest'; w.el.textContent = text; w.letters = null; if (old) { old.el.remove(); labelAnims.splice(labelAnims.indexOf(old), 1); } }
+    else labelAnims.push(w);
+    curWord = w;
+    animateLabels(now);
+  }
+  function animateLabels(now) {
+    for (let i = labelAnims.length - 1; i >= 0; i--) {
+      const w = labelAnims[i];
+      let done = true;
+      w.letters.forEach((l, j) => {
+        const [o, b, y] = letterState(w, j, now);
+        const limit = w.kind === 'in' ? w.t0 + j * IN_STAGGER + IN_MS : w.t0 + j * OUT_STAGGER + OUT_MS;
+        if (now < limit) done = false;
+        l.style.opacity = o.toFixed(3);
+        l.style.transform = Math.abs(y) > 0.01 ? `translateY(${y.toFixed(2)}px)` : '';
+        l.style.filter = b > 0.05 ? `blur(${b.toFixed(2)}px)` : '';
+      });
+      if (done) {
+        labelAnims.splice(i, 1);
+        if (w.kind === 'out') w.el.remove();
+        else { w.el.textContent = w.text; w.letters = null; w.kind = 'rest'; }   // plain text = exact kerning
+      }
+    }
+  }
+
+  /* ======================================================================
+     Steps / modes
+     ====================================================================== */
+  function setStep(s, now) {
+    if (s === step) return;
+    const dir = s > step ? 1 : -1;
+    step = s;
+    swapLabel(NAMES[s], dir, now);
+    slider.setAttribute('aria-valuenow', String(s));
+    slider.setAttribute('aria-valuetext', NAMES[s]);
+    if (s === LAST && !galaxy) enterGalaxy(now);
+    else if (s !== LAST && galaxy) exitGalaxy(now);
+  }
+
+  function goTo(s, now = performance.now()) {
+    s = clamp(Math.round(s), 0, LAST);
+    setStep(s, now);
+    const dist = Math.abs(s - pos);
+    if (dist < 1e-4) { pos = s; mode = 'idle'; needsDraw = true; kick(); return; }
+    tween = { from: pos, to: s, t0: now, dur: STEP_MS + Math.max(0, dist - 1) * 80, squished: false };
+    mode = 'tween';
+    kick();
+  }
+
+  function currentTarget() {
+    if (mode === 'tween' && tween) return tween.to;
+    if (mode === 'spring') return springTo;
+    return Math.round(pos);
+  }
+
+  function addSquish(a) {
+    if (reduceMotion) return;
+    squish = a;
+    squishV = 0;
+  }
+
+  /* ======================================================================
+     Galaxy mode
+     ====================================================================== */
+  const TINTS = [[142, 232, 247], [237, 234, 254], [177, 157, 251]];   // cyan, white-lavender, lavender
+  const RAY_COUNT = 14, RAY_A0 = 19.4;                                  // degrees, CCW from +x
+  const rays = Array.from({ length: RAY_COUNT }, (_, k) => ({ n: k % 2 ? 9 : 5, L: k % 2 ? 9 : 5, I: 1 }));
+  let rayTick = 0;
+
+  function rerollRays() {
+    for (const r of rays) {
+      const min = r.n === 9 ? 6 : 3;
+      const span = r.n - min + 1;
+      r.L = r.n - Math.floor(Math.pow(Math.random(), 1.3) * span);
+      r.I = 0.88 + 0.12 * (r.L - min) / (r.n - min);
+    }
+  }
+
+  const PCOLS = ['#5b40f0', '#78e3e8', '#a998f5', '#e46fd0', '#f5f5fa', '#8f7cf6'];
+  let particles = [];
+  function spawnParticles() {
+    particles = [];
+    const n = 26;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + rand(-0.08, 0.08);
+      particles.push({
+        dx: Math.cos(a), dy: Math.sin(a), rx: 20.5, ry: 17,
+        v: rand(55, 125), size: 3.5, col: pick(PCOLS),
+        end: rand(0.45, 0.75), delay: 0.03,
+      });
+    }
+    for (let i = 0; i < 14; i++) {
+      const a = rand(0, Math.PI * 2);
+      const r0 = rand(4, 15);
+      particles.push({
+        dx: Math.cos(a), dy: Math.sin(a), rx: r0, ry: r0 * 0.9,
+        v: rand(40, 100), size: rand(2, 3), col: pick(PCOLS),
+        end: rand(0.4, 0.7), delay: rand(0.04, 0.12),
+      });
+    }
+  }
+
+  let sparkles = [];
+  const SPARK_COLS = ['#ffffff', '#c4f2ff', '#d4ccff', '#9ee9ff'];
+  function updateSparkles(now, dt, active) {
+    sparkles = sparkles.filter((s) => now - s.t0 < s.life * 1000);
+    if (!active) return;
+    const want = 7;
+    if (sparkles.length < want && Math.random() < dt * 22) {
+      sparkles.push({
+        x: rand(-19, 19), y: rand(-21, 19), size: pick([2, 2, 2.5, 3]),
+        col: pick(SPARK_COLS), t0: now, life: rand(0.25, 0.8), a: rand(0.65, 1),
+      });
+    }
+  }
+
+  // ---- galaxy pixel grid (49 x 5 cells, 6px squares on an 8px pitch) ----
+  const COLS = 49, ROWS = 5;
+  const cells = [];
+  for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) cells.push({ c, r, lit: false, col: '', key: Math.random() });
+
+  const HUES = [
+    { h: 193, s: 0.44, w: 0.22 },   // cyan
+    { h: 236, s: 0.42, w: 0.17 },   // periwinkle
+    { h: 255, s: 0.48, w: 0.2 },    // lavender-violet
+    { h: 280, s: 0.5, w: 0.15 },    // purple
+    { h: 302, s: 0.48, w: 0.12 },   // magenta
+    { h: 252, s: 0.1, w: 0.14 },    // near white
+  ];
+  const HW = HUES.reduce((a, h) => a + h.w, 0);
+  function hsv(h, s, v) {
+    const f = (n) => { const k = (n + h / 60) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); };
+    return `rgb(${Math.round(f(5) * 255)},${Math.round(f(3) * 255)},${Math.round(f(1) * 255)})`;
+  }
+  const VMEAN = [[0, 0.27], [0.2, 0.3], [0.41, 0.36], [0.51, 0.5], [0.62, 0.62], [0.72, 0.69], [0.82, 0.75], [1, 0.84]];
+  function vMean(u) {
+    for (let i = 1; i < VMEAN.length; i++) {
+      if (u <= VMEAN[i][0]) {
+        const [u0, v0] = VMEAN[i - 1], [u1, v1] = VMEAN[i];
+        return lerp(v0, v1, (u - u0) / (u1 - u0));
+      }
+    }
+    return VMEAN[VMEAN.length - 1][1];
+  }
+  function rollCell(cell) {
+    const u = (1 + 8 * cell.c + 3) / TRACK_W;
+    const pLit = 0.15 + 0.85 * smooth(clamp((u - 0.2) / 0.42));
+    cell.lit = Math.random() < pLit;
+    if (!cell.lit) return;
+    let x = Math.random() * HW, hue = HUES[0];
+    for (const h of HUES) { x -= h.w; if (x <= 0) { hue = h; break; } }
+    const spread = lerp(0.14, 0.42, u);
+    const v = clamp(vMean(u) + (Math.random() - 0.5) * spread, 0.2, 1);
+    cell.col = hsv(hue.h + rand(-7, 7), clamp(hue.s + rand(-0.05, 0.05), 0, 1), v);
+  }
+  cells.forEach(rollCell);
+
+  let bgGrad = null;
+  function galaxyGradient() {
+    const g = gctx.createLinearGradient(0, 0, TRACK_W, 0);
+    const stops = [
+      [0, '#100a21'], [152, '#100a21'], [168, '#180c28'], [184, '#1f0f2c'], [200, '#271131'],
+      [216, '#2c1237'], [232, '#361741'], [248, '#38184a'], [264, '#381950'], [280, '#351a56'],
+      [296, '#331c5e'], [312, '#332069'], [328, '#3c3481'], [344, '#474594'], [392, '#5252a6'],
+    ];
+    for (const [x, c] of stops) g.addColorStop(x / TRACK_W, c);
+    return g;
+  }
+
+  function enterGalaxy(now) {
+    galaxy = true;
+    gEnter = now;
+    shakeT0 = reduceMotion ? -1 : now;
+    cells.forEach((c) => { rollCell(c); c.key = Math.random(); });
+    rerollRays();
+    rayTick = now;
+    if (!reduceMotion) spawnParticles();
+    live.textContent = 'Galaxy mode unlocked';
+    kick();
+  }
+  function exitGalaxy(now) {
+    galaxy = false;
+    gExit = now;
+    live.textContent = '';
+    kick();
+  }
+
+  /* ======================================================================
+     Pointer + keyboard
+     ====================================================================== */
+  function trackLocalX(clientX) {
+    const r = track.getBoundingClientRect();
+    return (clientX - r.left) * TRACK_W / r.width;
+  }
+  const posAt = (clientX) => clamp((trackLocalX(clientX) - BX0) / BDX, 0, LAST);
+  function brainScale() {
+    const base = 1 + GROW * pos;
+    return base + (GALAXY_SCALE - base) * gAmt;
+  }
+
+  let press = null;
+  slider.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    slider.focus({ preventScroll: true });
+    try { slider.setPointerCapture(e.pointerId); } catch (_) {}
+    hideTip();
+    const p = posAt(e.clientX);
+    const onBrain = Math.abs(trackLocalX(e.clientX) - (BX0 + BDX * pos)) < 24 * brainScale();
+    press = { id: e.pointerId, x0: e.clientX, dragging: onBrain, grab: onBrain ? pos - p : 0 };
+    if (onBrain) {
+      dragTarget = clamp(p + press.grab, 0, LAST);
+      mode = 'drag';
+      slider.classList.add('grabbing');
+      kick();
+    }
+  });
+  slider.addEventListener('pointermove', (e) => {
+    if (!press || e.pointerId !== press.id) return;
+    if (!press.dragging && Math.abs(e.clientX - press.x0) > 4) {
+      press.dragging = true;
+      press.grab = 0;
+      slider.classList.add('grabbing');
+    }
+    if (press.dragging) {
+      dragTarget = clamp(posAt(e.clientX) + press.grab, 0, LAST);
+      if (mode !== 'drag') { mode = 'drag'; kick(); }
+    }
+  });
+  function release(e) {
+    if (!press || e.pointerId !== press.id) return;
+    const wasDrag = press.dragging;
+    press = null;
+    slider.classList.remove('grabbing');
+    const now = performance.now();
+    if (wasDrag) {
+      springTo = Math.round(clamp(dragTarget, 0, LAST));
+      setStep(springTo, now);
+      mode = 'spring';
+      kick();
+    } else {
+      goTo(posAt(e.clientX), now);
+    }
+  }
+  slider.addEventListener('pointerup', release);
+  slider.addEventListener('pointercancel', release);
+  slider.addEventListener('lostpointercapture', (e) => { if (press && e.pointerId === press.id) release(e); });
+
+  slider.addEventListener('keydown', (e) => {
+    const cur = currentTarget();
+    let t = null;
+    switch (e.key) {
+      case 'ArrowRight': case 'ArrowUp': case 'PageUp': t = cur + 1; break;
+      case 'ArrowLeft': case 'ArrowDown': case 'PageDown': t = cur - 1; break;
+      case 'Home': t = 0; break;
+      case 'End': t = LAST; break;
+    }
+    if (t === null) return;
+    e.preventDefault();
+    goTo(clamp(t, 0, LAST));
+  });
+
+  /* ---------------- help tooltip ---------------- */
+  let tipTimer = 0;
+  function showTip() {
+    tip.classList.add('show');
+    help.setAttribute('aria-expanded', 'true');
+    clearTimeout(tipTimer);
+    tipTimer = setTimeout(hideTip, 4500);
+  }
+  function hideTip() {
+    tip.classList.remove('show');
+    help.setAttribute('aria-expanded', 'false');
+    clearTimeout(tipTimer);
+  }
+  help.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (tip.classList.contains('show')) hideTip(); else showTip();
+  });
+  document.addEventListener('pointerdown', (e) => {
+    if (!help.contains(e.target) && !tip.contains(e.target)) hideTip();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTip(); });
+
+  /* ======================================================================
+     Animation loop
+     ====================================================================== */
+  let running = false, last = 0;
+  function kick() {
+    if (running) return;
+    running = true;
+    last = performance.now();
+    requestAnimationFrame(frame);
+  }
+
+  function frame(now) {
+    const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
+    last = now;
+    const prev = pos;
+
+    // ---- motion ----
+    if (mode === 'tween') {
+      const p = clamp((now - tween.t0) / tween.dur);
+      pos = lerp(tween.from, tween.to, EASE(p));
+      vel = (pos - prev) / dt;
+      if (!tween.squished && Math.abs(pos - tween.to) < 0.05) { tween.squished = true; addSquish(0.028); }
+      if (p >= 1) { pos = tween.to; vel = 0; mode = 'idle'; }
+    } else if (mode === 'drag') {
+      pos += (dragTarget - pos) * (1 - Math.exp(-dt / 0.035));
+      vel = (pos - prev) / dt;
+      for (let n = 0; n <= LAST; n++) if ((prev - n) * (pos - n) < 0 || (pos === n && prev !== n)) addSquish(0.055);
+      setStep(clamp(Math.round(pos), 0, LAST), now);
+    } else if (mode === 'spring') {
+      const a = -260 * (pos - springTo) - 24 * vel;
+      vel += a * dt;
+      pos += vel * dt;
+      if (Math.abs(pos - springTo) < 0.0005 && Math.abs(vel) < 0.02) { pos = springTo; vel = 0; mode = 'idle'; }
+    }
+    pos = clamp(pos, -0.08, LAST + 0.08);
+
+    // ---- squish spring ----
+    if (squish !== 0 || squishV !== 0) {
+      const a = -700 * squish - 24 * squishV;
+      squishV += a * dt;
+      squish += squishV * dt;
+      if (Math.abs(squish) < 1e-4 && Math.abs(squishV) < 1e-3) { squish = 0; squishV = 0; }
+    }
+
+    // ---- galaxy amounts ----
+    const tIn = (now - gEnter) / 1000;
+    const tOut = (now - gExit) / 1000;
+    if (galaxy) {
+      gMix = smooth(clamp((tIn - 0.004) / 0.05));
+      fxLevel = 1;
+      gridLevel = 1;
+    } else {
+      gMix = Math.min(gMix, 1 - smooth(clamp(tOut / 0.26)));
+      fxLevel = Math.min(fxLevel, 1 - clamp(tOut / 0.22));
+      gridLevel = Math.min(gridLevel, 1 - clamp(tOut / 0.36));
+    }
+    {
+      const target = galaxy ? 1 : 0;
+      const k = galaxy ? 3600 : 900, c = galaxy ? 72 : 60;
+      const a = -k * (gAmt - target) - c * gAmtV;
+      gAmtV += a * dt;
+      gAmt += gAmtV * dt;
+      if (!galaxy && gAmt < 0.0005 && Math.abs(gAmtV) < 0.01) { gAmt = 0; gAmtV = 0; }
+    }
+
+    render(now, dt);
+    animateLabels(now);
+
+    const busy = mode !== 'idle' || galaxy || gMix > 0 || fxLevel > 0 || gridLevel > 0 || labelAnims.length ||
+      particles.length || sparkles.length || squish !== 0 || gAmt !== 0 || shakeT0 >= 0 || needsDraw;
+    needsDraw = false;
+    if (busy) requestAnimationFrame(frame); else running = false;
+  }
+
+  /* ======================================================================
+     Rendering
+     ====================================================================== */
+  function render(now, dt) {
+    const bx = BX0 + BDX * pos;                 // track-local brain x
+    const cx = TRACK_X + bx, cy = BY;           // card-local brain centre
+    const s = brainScale();
+
+    // purple fill (hue gradient fixed to the track, opacity ramp up to the brain)
+    fillEl.style.width = Math.max(0, bx).toFixed(2) + 'px';
+    fillEl.style.setProperty('--hw', (22 * s).toFixed(2) + 'px');
+    fillEl.style.opacity = (1 - gridLevel * (galaxy ? 1 : 0)).toFixed(3);
+
+    // brain
+    const sc = s * SIL_PX / SVG_PX;
+    brainEl.style.transform =
+      `translate(${(cx - SLIDER_X).toFixed(2)}px,${(cy - SLIDER_Y).toFixed(2)}px) ` +
+      `scale(${(sc * (1 + squish)).toFixed(4)},${(sc * (1 - squish)).toFixed(4)})`;
+    brainEl.style.setProperty('--glow', (clamp(pos / 4) * (1 - gMix)).toFixed(3));
+    gBrain.setAttribute('opacity', gMix.toFixed(3));
+
+    // card shake on unlock
+    if (shakeT0 >= 0) {
+      const t = (now - shakeT0) / 1000;
+      if (t < 0.26) {
+        const A = 2.4 * Math.pow(1 - t / 0.26, 1.5);
+        card.style.setProperty('--sx', rand(-A, A).toFixed(2) + 'px');
+        card.style.setProperty('--sy', rand(-A, A).toFixed(2) + 'px');
+      } else {
+        card.style.setProperty('--sx', '0px');
+        card.style.setProperty('--sy', '0px');
+        shakeT0 = -1;
+      }
+    }
+
+    drawGalaxy(now, dt, bx);
+    drawFx(now, dt, cx, cy, s);
+  }
+
+  let gridDrawn = false;
+  function drawGalaxy(now, dt, bx) {
+    if (gridLevel <= 0) {
+      if (gridDrawn) { gctx.setTransform(1, 0, 0, 1, 0, 0); gctx.clearRect(0, 0, galaxyCv.width, galaxyCv.height); gridDrawn = false; }
+      galaxyCv.style.opacity = '0';
+      return;
+    }
+    gridDrawn = true;
+    // twinkle: every cell re-rolls ~1.2x per second, independently
+    const p = 1.2 * dt;
+    for (const c of cells) if (Math.random() < p) rollCell(c);
+
+    gctx.setTransform(R, 0, 0, R, 0, 0);
+    gctx.clearRect(0, 0, TRACK_W, TRACK_H);
+    const xEnd = Math.min(TRACK_W, Math.max(0, bx));
+    if (!bgGrad) bgGrad = galaxyGradient();
+    gctx.fillStyle = bgGrad;
+    gctx.fillRect(0, 0, xEnd, TRACK_H);
+
+    // a gentle shimmer wave drifting toward the brain
+    const wave = now / 1000 * 0.35;
+    for (const c of cells) {
+      if (!c.lit) continue;
+      const x = 1 + 8 * c.c;
+      if (x >= xEnd) continue;
+      if (!galaxy && c.key > gridLevel) continue;          // sparkly dissolve on exit
+      const sh = 0.93 + 0.07 * Math.sin((x / 90 - wave) * Math.PI * 2);
+      gctx.globalAlpha = sh;
+      gctx.fillStyle = c.col;
+      if (gctx.roundRect) { gctx.beginPath(); gctx.roundRect(x, 1 + 8 * c.r, 6, 6, 1.3); gctx.fill(); }
+      else gctx.fillRect(x, 1 + 8 * c.r, 6, 6);
+    }
+    gctx.globalAlpha = 1;
+    galaxyCv.style.opacity = galaxy ? '1' : clamp(gridLevel * 1.15).toFixed(3);
+  }
+
+  let fxDrawn = false;
+  function drawFx(now, dt, cx, cy, s) {
+    const tIn = (now - gEnter) / 1000;
+    const flash = galaxy && !reduceMotion ? Math.pow(clamp(1 - tIn / 0.45), 1.6) : 0;
+    updateSparkles(now, dt, galaxy && tIn > 0.06);
+    particles = particles.filter((p) => tIn < p.end);
+    const anything = fxLevel > 0 || flash > 0 || particles.length || sparkles.length;
+    if (!anything) {
+      if (fxDrawn) {
+        bctx.setTransform(1, 0, 0, 1, 0, 0); bctx.clearRect(0, 0, backCv.width, backCv.height);
+        fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.clearRect(0, 0, frontCv.width, frontCv.height);
+        fxDrawn = false;
+      }
+      return;
+    }
+    fxDrawn = true;
+    for (const ctx of [bctx, fctx]) {
+      ctx.setTransform(R, 0, 0, R, FX_PAD * R, FX_PAD * R);
+      ctx.clearRect(-FX_PAD, -FX_PAD, FX_W, FX_H);
+    }
+
+    // ---------- back layer: violet glow + disco rays ----------
+    if (fxLevel > 0) {
+      const ga = fxLevel * smooth(clamp((tIn - 0.03) / 0.3));
+      if (ga > 0) {
+        const g = bctx.createRadialGradient(cx, cy, 0, cx, cy, 60);
+        g.addColorStop(0, `rgba(120,92,240,${0.16 * ga})`);
+        g.addColorStop(0.48, `rgba(120,92,240,${0.14 * ga})`);
+        g.addColorStop(0.62, `rgba(112,86,232,${0.075 * ga})`);
+        g.addColorStop(0.76, `rgba(104,80,222,${0.038 * ga})`);
+        g.addColorStop(1, 'rgba(100,80,220,0)');
+        bctx.fillStyle = g;
+        bctx.fillRect(cx - 60, cy - 60, 120, 120);
+      }
+      // rays: 14 dotted spokes, lengths re-rolled every 150 ms ("disco")
+      if (now - rayTick >= 150) { rayTick = now - ((now - rayTick) % 150); rerollRays(); }
+      const reveal = galaxy ? smooth(clamp((tIn - 0.1) / 0.18)) : 1;
+      const ra = fxLevel * reveal;
+      if (ra > 0) {
+        for (let k = 0; k < RAY_COUNT; k++) {
+          const ray = rays[k];
+          const ang = (RAY_A0 + k * 360 / RAY_COUNT) * Math.PI / 180;
+          const ca = Math.cos(ang), sa = -Math.sin(ang);
+          const L = Math.min(ray.L, Math.ceil(ray.L * reveal));
+          const [r, g, b] = TINTS[k % 3];
+          for (let i = 0; i < L; i++) {
+            const rr = 36 + 6 * i;
+            const sz = i < 2 ? 3 : 2;
+            const a = 0.6 * ray.I * (1 - 0.85 * i / Math.max(1, ray.L - 1)) * ra;
+            if (a <= 0.004) continue;
+            bctx.fillStyle = `rgba(${r},${g},${b},${a.toFixed(3)})`;
+            bctx.fillRect(snap(cx + rr * ca - sz / 2), snap(cy + rr * sa - sz / 2), sz, sz);
+          }
+        }
+      }
+    }
+
+    // ---------- front layer: white flash, burst particles, sparkles ----------
+    if (flash > 0) {
+      const g = fctx.createRadialGradient(cx, cy, 0, cx, cy, 64);
+      g.addColorStop(0, `rgba(250,250,255,${0.56 * flash})`);
+      g.addColorStop(0.15, `rgba(250,250,255,${0.5 * flash})`);
+      g.addColorStop(0.4, `rgba(250,250,255,${0.36 * flash})`);
+      g.addColorStop(0.7, `rgba(250,250,255,${0.17 * flash})`);
+      g.addColorStop(1, 'rgba(250,250,255,0)');
+      fctx.fillStyle = g;
+      fctx.fillRect(cx - 64, cy - 64, 128, 128);
+    }
+    for (const p of particles) {
+      const t = Math.max(0, tIn - p.delay);
+      const travel = p.v * t;
+      const x = cx + p.dx * (p.rx + travel);
+      const y = cy + p.dy * (p.ry + travel);
+      const a = tIn < 0.2 ? 1 : clamp(1 - (tIn - 0.2) / (p.end - 0.2));
+      if (a <= 0) continue;
+      fctx.globalAlpha = a;
+      fctx.fillStyle = p.col;
+      fctx.fillRect(snap(x - p.size / 2), snap(y - p.size / 2), p.size, p.size);
+    }
+    fctx.globalAlpha = 1;
+    for (const sp of sparkles) {
+      const life = (now - sp.t0) / 1000 / sp.life;
+      const a = sp.a * (life < 0.7 ? 1 : clamp((1 - life) / 0.3)) * fxLevel;
+      if (a <= 0) continue;
+      fctx.globalAlpha = a;
+      fctx.fillStyle = sp.col;
+      fctx.fillRect(snap(cx + sp.x * s / GALAXY_SCALE - sp.size / 2), snap(cy + sp.y * s / GALAXY_SCALE - sp.size / 2), sp.size, sp.size);
+    }
+    fctx.globalAlpha = 1;
+  }
+
+  /* ---------------- boot ---------------- */
+  window.addEventListener('resize', layout);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', layout);
+  layout();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { needsDraw = true; kick(); });
+
+  // test / automation hook
+  window.effortSlider = {
+    goTo: (s) => goTo(s),
+    get step() { return step; },
+    get pos() { return pos; },
+  };
+})();
+</script>
+</body>
+</html>
