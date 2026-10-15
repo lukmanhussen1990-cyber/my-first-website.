@@ -493,3 +493,19 @@ Check 44 done. Next: graphics – ink and paper close-ups at 3x for each paper t
 - Tests: up16test, functest pass.
 
 Check 45 done. Next: graphics – capsule shading close-ups per skin at 3x in light mode.
+
+## Check 46 (v20a) – tear the page off by hand (user: "Give option there so you can actually cut the paper … improve it")
+- A paper pull tab ("TEAR", an arrow, ribbed grips) sticks up from the middle of the sheet's top edge whenever
+  there is something on it. Drag it up: the sheet holds for the first few px (stretching a little), then rips free
+  (scraps along the pipe, a tear sound, a buzz, a spark) and follows the hand – leaning with sideways movement and
+  curling back. Let go high enough (or flick it up) and it flies off with the pull's momentum: a new page, with Undo;
+  let go early and it springs back into place. A tap wiggles the tab and says how it works; Enter/Space on the
+  focused tab tears straight away. Typing during a pull puts the sheet back.
+- The live text is hidden while the sheet is in the hand (blank paper underneath, as on a real machine); the tab
+  tears off with the sheet; hidden in ?still.
+- "New page" is now "Tear off page" in the share menu, the shortcut list and the Undo toast.
+- The scene canvas starts 20 px above the sheet (headroom for the tab; whole-pixel offset keeps the replay aligned).
+- Tests: drag test (short pull springs back: text kept, no page; full pull: page torn off, Undo toast; Enter on the
+  tab tears) pass; full suite + replay running (results in Check 47).
+
+Check 46 done. Next: confirm the suite/replay, then a phone-touch test of the pull.

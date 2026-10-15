@@ -73,6 +73,8 @@
   #shareMenu [role="menuitem"] svg { flex: none; color: #cdb07a; }
   #shareMenu [role="menuitem"]:hover, #shareMenu [role="menuitem"]:focus-visible { background: rgba(255,215,140,.1); outline: none; }
   #shareMenu .sep { height: 1px; margin: 4px 8px; background: linear-gradient(90deg, rgba(205,176,122,.4), rgba(205,176,122,.05)); }
+  #tearTab { position: absolute; left: 0; top: 0; z-index: 3; width: 76px; height: 40px; touch-action: none; cursor: grab; display: none; border-radius: 10px; }
+  #tearTab:active { cursor: grabbing; }
   .torn { position: absolute; left: 0; z-index: 4; pointer-events: none; transform-origin: 55% 100%;
           filter: drop-shadow(0 5px 9px rgba(0,0,0,.32)); will-change: transform; }
   #controls { position: absolute; left: 0; top: 0; width: 100%; opacity: 0; pointer-events: none; }
@@ -253,6 +255,7 @@
     <canvas id="relief"></canvas>
   </div>
   <div id="tap"></div>
+  <button id="tearTab" aria-label="Tear off this page (drag the tab up)"></button>
   <button id="hintBtn" aria-label="Need a first line?"></button>
   <canvas id="scene"></canvas>
   <div id="glow"></div>
@@ -428,7 +431,7 @@ function layout() {
   G.capCY = G.railY - 0.8 * k;
   G.railT = G.railY - 11 * k; G.railB = G.railY + 10.25 * k;
   G.rx = 53.3 * k; G.ry = 160 * k;     // paper corner ellipse
-  G.sceneTop = G.paperTop - 2;
+  G.sceneTop = G.paperTop - 22;   // (20 px of headroom above the sheet for the pull tab)
   G.sceneBot = Math.min(H, G.railY + 160 * k);
   G.dialX = W - 44.4 * k; G.dialY = H * 0.601;
 
@@ -2399,7 +2402,7 @@ function draw(t) {
   // ----- text -----
   c.save(); clipPaper(c);
   const ink = inkFor(pP > 0.5);
-  const n = lines.length, minLi = drawText(c, t, ink);
+  const n = lines.length, minLi = TAB.drag ? 0 : drawText(c, t, ink);   // pulled up by the tab, the sheet is the picture on top
   // forget line images that scrolled away (or no longer exist)
   if (lineCache.size > n - minLi + 3) for (const key of lineCache.keys()) if (key < minLi - 1 || key >= n) lineCache.delete(key);
   // hint + placeholder
@@ -2429,6 +2432,7 @@ function draw(t) {
   c.restore();
 
   if (!STILL) c.drawImage(edgeCv, 0, G.paperTop - 2, W, edgeCv.height / dpr);
+  updateTab(t); drawTearTab(c, TAB.a, t);
   // a fresh sheet feeding in after a tear: its top edge rises from the pipe to the top of the page
   const fs = t - feed.t0;
   if (!STILL && !REDUCED && fs > 0.18 && fs < 1.05) {
@@ -3812,7 +3816,7 @@ const MENU = [
     icon: '<rect x="4.5" y="5.5" width="15" height="13" rx="1.5"/><circle cx="9.3" cy="10" r="1.4"/><path d="M5 17l4.6-4.4 3 2.8 2.6-2.2L19 16.4"/>' },
   { act: 'txt', label: () => 'Save as .txt', icon: '<path d="M12 4.5v10M8 10.6l4 4 4-4M5.5 19.5h13"/>' },
   { act: 'print', label: () => 'Print / PDF', icon: '<path d="M7 9V4.5h10V9M7 16.5H5a1.5 1.5 0 0 1-1.5-1.5v-4.5A1.5 1.5 0 0 1 5 9h14a1.5 1.5 0 0 1 1.5 1.5V15a1.5 1.5 0 0 1-1.5 1.5h-2M7 13.5h10v6H7z"/>' },
-  { act: 'new', label: () => 'New page', icon: '<path d="M7 3.8h6.8l4.2 4.2v12.2H7z"/><path d="M13.6 3.8v4.4H18M12.5 11.4v5.4M9.8 14.1h5.4"/>' },
+  { act: 'new', label: () => 'Tear off page', icon: '<path d="M7 3.8h6.8l4.2 4.2v12.2H7z"/><path d="M13.6 3.8v4.4H18M12.5 11.4v5.4M9.8 14.1h5.4"/>' },
 ];
 function layoutMenu() {
   shareMenu.style.top = (H * 0.0896 + 22 * k) + 'px';
@@ -4038,11 +4042,11 @@ async function renderCard() {
 /* ------------------------------------------------------------- new page -- */
 // tear the page off above the pipe (it flies away), roll the carriage back and start on a fresh sheet; Undo
 // brings the old page back for a few seconds
-function newPage() {
+function newPage(pulled) {
   const prev = text + pending;
-  if (!prev) return;
+  if (!prev) { if (pulled) pulled.T.cv.remove(); return; }
   const t = now(), cols = caretCol();
-  tearOff(t);
+  if (pulled) { feed.t0 = t; flyTorn(pulled.T, pulled.from); } else tearOff(t);
   if (DR.cur) { DR.cur.pages.push(prev); archKey = ''; }
   pending = ''; text = ''; lines = wrap(text); appearAt.clear(); inkP.clear(); invalidateText();
   input.value = ''; keepCaretAtEnd();
@@ -4056,7 +4060,7 @@ function newPage() {
   onTextChanged(); saveNow();
   AU.tear(); haptic([14, 50, 10]);
   const d0 = DR.cur;
-  toast('New page', 5, { label: 'Undo', fn: () => {
+  toast('Page torn off', 5, { label: 'Undo', fn: () => {
     if (DR.cur !== d0) return;   // another draft is in the machine now
     if (text || pending) return;   // already typing on the new sheet
     if (DR.cur && DR.cur.pages[DR.cur.pages.length - 1] === prev) { DR.cur.pages.pop(); archKey = ''; }
@@ -4074,14 +4078,23 @@ function stepFeed(t) {
 }
 function tearOff(t) {
   feed.t0 = t;
+  const T = buildTorn(t);
+  if (!T) return;
+  scrapsAt(T.bot, 9);
+  flyTorn(T);
+}
+// the sheet as a picture, laid exactly over the live one (it carries the pull tab with it when it is showing)
+function buildTorn(t) {
   const top = G.paperTop, bot = G.railT - 3 * k, h = bot - top;
-  if (h < 20 * k) return;
-  const cv = document.createElement('canvas'), hh = h + 6 * k;
+  if (h < 20 * k) return null;
+  const ext = TAB.a > 0.05 ? 18 * k : 0;   // room above the sheet for the tab
+  const cv = document.createElement('canvas'), hh = h + 6 * k + ext;
   cv.className = 'torn';
   cv.width = Math.round(W * dpr); cv.height = Math.round(hh * dpr);
-  cv.style.width = W + 'px'; cv.style.height = hh + 'px'; cv.style.top = top + 'px';
+  cv.style.width = W + 'px'; cv.style.height = hh + 'px'; cv.style.top = (top - ext) + 'px';
   const c = cv.getContext('2d');
-  c.setTransform(dpr, 0, 0, dpr, 0, -top * dpr);
+  c.setTransform(dpr, 0, 0, dpr, 0, -(top - ext) * dpr);
+  if (ext) drawTearTab(c, TAB.a);
   // the sheet: rounded top like the real one, a ragged torn edge just above the pipe
   const R = mulberry((t * 1000) | 0), edge = [];
   for (let x = W; x > -3 * k; x -= 2.5 * k) edge.push([Math.max(0, x), bot + (R() - 0.5) * 3.2 * k + Math.sin(x * 0.07) * 1.2 * k]);
@@ -4114,11 +4127,17 @@ function tearOff(t) {
   for (let i = 2; i < edge.length - 2; i += 3) { const [x, y] = edge[i]; c.moveTo(x, y - 0.6 * k); c.lineTo(x + (R() - 0.5) * 1.6 * k, y + (0.6 + R() * 1.4) * k); }
   c.stroke();
   app.insertBefore(cv, toastEl);
-  scrapsAt(bot, 9);
-  const fly = -(top + hh + 60 * k);
+  return { cv, top: top - ext, hh, bot };
+}
+// send a torn sheet flying; from: where a hand already pulled it to ({x, y, r} in px/deg), else it lifts off by itself
+function flyTorn(T, from) {
+  const cv = T.cv, fly = -(T.top + T.hh + 60 * k);
   const done = () => cv.remove();
   try {
-    const an = REDUCED ? cv.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' }) : cv.animate([
+    const an = REDUCED ? cv.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' }) : from ? cv.animate([
+      { transform: `perspective(900px) translate(${from.x}px, ${from.y}px) rotate(${from.r}deg) rotateX(${from.rx || 0}deg)`, easing: 'cubic-bezier(.3,.6,.6,1)' },
+      { transform: `perspective(900px) translate(${from.x - 30 * k + from.vx * 120}px, ${fly}px) rotate(${from.r - 9}deg) rotateX(24deg)` },   // it keeps the pull's momentum
+    ], { duration: 460, fill: 'forwards' }) : cv.animate([
       { transform: 'perspective(900px) translate(0px, 0px) rotate(0deg) rotateX(0deg)', offset: 0, easing: 'ease-out' },   // the sheet lifts off the pipe…
       { transform: `perspective(900px) translate(${-1.5 * k}px, ${-7 * k}px) rotate(-0.7deg) rotateX(7deg)`, offset: 0.14, easing: 'cubic-bezier(.55,0,.9,.5)' },
       { transform: `perspective(900px) translate(${-34 * k}px, ${fly}px) rotate(-10deg) rotateX(24deg)`, offset: 1 },   // …curls back and flies away
@@ -4127,6 +4146,91 @@ function tearOff(t) {
   } catch (e) { done(); }
   setTimeout(done, 1600);   // in case the animation never finishes (hidden tab)
 }
+
+/* ------------------------------------------------------------- pull tab -- */
+// A little tab of paper sticks up from the top of the sheet. Pull it up and the page tears off along the pipe:
+// it resists for a moment, rips free (scraps, a buzz), follows the hand, and flies off when let go high or fast
+// enough; let go early and it springs back into place. A tap or Enter on it tears the page straight off.
+const tabEl = $('#tearTab');
+const TAB = { a: 0, x: 0, y: 0, drag: null, wig: -9 };
+function drawTearTab(c, a, t = 0) {
+  if (a < 0.01) return;
+  const w = 54 * k, h = 15 * k, x = TAB.x, y = G.paperTop + 1 * k, wig = t - TAB.wig < 0.4 ? Math.sin((t - TAB.wig) * 40) * 2 * k * (1 - (t - TAB.wig) / 0.4) : 0;
+  c.save(); c.globalAlpha = a; c.translate(x + wig, y);
+  c.shadowColor = 'rgba(0,0,0,0.35)'; c.shadowBlur = 4 * k * dpr; c.shadowOffsetY = -1 * k * dpr;
+  c.fillStyle = rgba(paperRGB); c.beginPath();
+  c.moveTo(-w / 2 - 4 * k, 2 * k); c.quadraticCurveTo(-w / 2, 2 * k, -w / 2, -h + 5 * k); c.quadraticCurveTo(-w / 2, -h, -w / 2 + 5 * k, -h);
+  c.lineTo(w / 2 - 5 * k, -h); c.quadraticCurveTo(w / 2, -h, w / 2, -h + 5 * k); c.quadraticCurveTo(w / 2, 2 * k, w / 2 + 4 * k, 2 * k); c.closePath(); c.fill();
+  c.shadowColor = 'transparent';
+  const inkc = hex(inkFor(CH.paper.v > 0.5));   // a small arrow, the word TEAR, and ribbed grips either side
+  c.strokeStyle = rgba(inkc, 0.5); c.lineWidth = 0.8 * k; c.lineCap = 'round'; c.beginPath();
+  for (const gx of [-22, -19, 19, 22]) { c.moveTo(gx * k, -h + 5 * k); c.lineTo(gx * k, -2.5 * k); }
+  c.moveTo(-2.4 * k, -h + 5.2 * k); c.lineTo(0, -h + 2.6 * k); c.lineTo(2.4 * k, -h + 5.2 * k);
+  c.stroke();
+  c.fillStyle = rgba(inkc, 0.6); c.font = `700 ${Math.round(6.4 * k * 10) / 10}px "Courier Prime", "Courier New", monospace`;
+  c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText('TEAR', 0, -2.4 * k);
+  c.restore();
+}
+function updateTab(t) {
+  const want = !STILL && !sheetOpen && scrollBack.v < 0.05 && !!(text || pending) && !TAB.drag;
+  TAB.a += ((want ? 1 : 0) - TAB.a) * Math.min(1, drawDt * 8);
+  if (TAB.a < 0.004) TAB.a = 0;
+  TAB.x = W * 0.5;
+  const on = TAB.a > 0.5 || !!TAB.drag;
+  if (on !== TAB.on) { TAB.on = on; tabEl.style.display = on ? 'block' : 'none'; }
+  if (on) setStyle(tabEl, 'transform', `translate(${(TAB.x - 38).toFixed(1)}px, ${(G.paperTop - 26 * k).toFixed(1)}px)`);
+}
+tabEl.addEventListener('pointerdown', (e) => {
+  if (TAB.drag || !(text || pending)) return;
+  e.preventDefault(); tabEl.setPointerCapture(e.pointerId);
+  lastActivity = now();
+  const T = buildTorn(now());
+  if (!T) return;
+  TAB.drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, T, prev: text + pending, ripped: false, moved: false, vy: 0, vx: 0, lt: performance.now(), ly: e.clientY, lx: e.clientX, pos: { x: 0, y: 0, r: 0 } };
+  TAB.a = 0; AU.trayClick();
+});
+function tabPose(d, dx, dy) {
+  // the paper holds for the first few px (it stretches a little), then gives way and follows the hand
+  const pull = Math.max(0, -dy), hold = 16 * k;
+  const y = pull < hold ? -pull * 0.35 : -(hold * 0.35 + (pull - hold));
+  return { x: dx * (d.ripped ? 0.55 : 0.15), y: Math.min(6 * k, y + Math.max(0, dy) * 0.2), r: dx * 0.04, rx: Math.min(14, Math.max(0, pull - hold) * 0.12) };
+}
+tabEl.addEventListener('pointermove', (e) => {
+  const d = TAB.drag; if (!d || e.pointerId !== d.id) return;
+  if (text + pending !== d.prev) { cancelTear(); return; }   // typing meanwhile: put the sheet back
+  const dx = e.clientX - d.x0, dy = e.clientY - d.y0, tm = performance.now();
+  if (Math.hypot(dx, dy) > 4) d.moved = true;
+  const dt = Math.max(1, tm - d.lt); d.vy = 0.7 * d.vy + 0.3 * (e.clientY - d.ly) / dt; d.vx = 0.7 * d.vx + 0.3 * (e.clientX - d.lx) / dt; d.lt = tm; d.ly = e.clientY; d.lx = e.clientX;
+  if (!d.ripped && -dy > 16 * k) {   // rip!
+    d.ripped = true; scrapsAt(d.T.bot, 7); haptic([12, 30, 8]); AU.tear(); fx.spark(0.6);
+  }
+  d.pos = tabPose(d, dx, dy);
+  setStyle(d.T.cv, 'transform', `perspective(900px) translate(${d.pos.x.toFixed(1)}px, ${d.pos.y.toFixed(1)}px) rotate(${d.pos.r.toFixed(2)}deg) rotateX(${d.pos.rx.toFixed(1)}deg)`);
+});
+function cancelTear() {
+  const d = TAB.drag; if (!d) return;
+  TAB.drag = null;
+  const cv = d.T.cv, p = d.pos;
+  try {
+    const an = cv.animate([{ transform: `perspective(900px) translate(${p.x}px, ${p.y}px) rotate(${p.r}deg) rotateX(${p.rx || 0}deg)` },
+      { transform: 'perspective(900px) translate(0px, 0px) rotate(0deg) rotateX(0deg)' }], { duration: 240, easing: 'cubic-bezier(.3,1.4,.5,1)' });
+    an.onfinish = () => cv.remove();
+  } catch (e) { cv.remove(); }
+  setTimeout(() => cv.remove(), 600);
+}
+function endTear(e) {
+  const d = TAB.drag; if (!d || (e && e.pointerId !== d.id)) return;
+  const pull = -(d.pos.y), fling = d.vy < -0.6 && d.ripped;
+  if (!d.moved) {   // a tap: wiggle and say how it works; a keyboard press tears straight away
+    cancelTear(); TAB.wig = now(); toast('Pull the tab up to tear the page off', 2.2); return;
+  }
+  if (d.ripped && (pull > 70 * k || fling)) {
+    TAB.drag = null;
+    newPage({ T: d.T, from: { x: d.pos.x, y: d.pos.y, r: d.pos.r, rx: d.pos.rx, vx: d.vx } });
+  } else cancelTear();
+}
+tabEl.addEventListener('pointerup', endTear); tabEl.addEventListener('pointercancel', () => cancelTear());
+tabEl.addEventListener('click', (e) => { if (e.detail === 0 && (text || pending)) { lastActivity = now(); newPage(); } });   // Enter / Space
 
 /* ------------------------------------------------------------- ambience -- */
 // Rare, gentle Halloween ambience that never touches the recorded opening: a distant lightning strike now and
@@ -4743,7 +4847,7 @@ function buildPanel() {
   if (!TOUCH) {
     const s7 = sec('SHORTCUTS'), g7 = el('div', 'shortcuts');
     for (const [k1, d] of [['Ctrl L', 'Lamp on / off'], ['Ctrl S', 'Save as .txt'], ['Ctrl P', 'Print or PDF'], ['Ctrl O', 'Drafts'],
-      ['Ctrl ,', 'This panel'], ['Ctrl Shift ↵', 'New page'], ['Ctrl M', 'Music / sound'], ['Ctrl Shift S', 'Save as image'], ['Esc', 'Close a menu']]) {
+      ['Ctrl ,', 'This panel'], ['Ctrl Shift ↵', 'Tear off the page (or pull the tab)'], ['Ctrl M', 'Music / sound'], ['Ctrl Shift S', 'Save as image'], ['Esc', 'Close a menu']]) {
       g7.append(el('kbd', '', k1), el('span', '', d));
     }
     s7.appendChild(g7); body.appendChild(s7);
