@@ -4000,6 +4000,17 @@ async function renderCard() {
     renderCapsule(sp, sk, 0);
     c.drawImage(sp, cx - sp.width / 2, G.capCY - sp.height / 2);
     drawLEDs(c, cx, G.capCY, lastKey + 10, 0);
+    // a discharge frozen mid-crack between the bolt heads, as if the picture was taken in the flash
+    const ax = cx + 25.4 * kc, yT = G.capCY - G.capHH - 3.7 * kc, yB = G.capCY + G.capHH + 3.7 * kc, dark = paperTheme().lightInk;
+    const ap = lightningPath(ax, yT + 1.5 * kc, yB - 1.5 * kc, 4242, 1.45 * kc);
+    c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
+    strokeArc(c, ap, 1, 0.9 * kc, dark);
+    const fp = ap[8]; strokeArc(c, jagPath(fp[0], fp[1], fp[0] + 15 * kc, fp[1] - 4 * kc, 77, 1.2 * kc, 7), 0.8, 0.8 * kc, dark);
+    for (const [y0, dir] of [[yT, -1], [yB, 1]]) for (let i = 0; i < 5; i++) {
+      const f = (i - 2) * 0.5, l = (4 + (i % 2) * 2.5) * kc;
+      strokeArc(c, jagPath(ax, y0, ax + Math.sin(f) * l, y0 + dir * Math.cos(f) * l, 90 + i + (dir > 0 ? 9 : 0), 0.6 * kc, 3), 0.8, 0.6 * kc, dark);
+    }
+    c.restore();
     buildSprites();
     drawT(c, cx, G.capCY - G.capHH, now() + 100, 0);
   });

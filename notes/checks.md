@@ -465,3 +465,10 @@ Check 40 done. Next: electric – idle micro-crackles between keystrokes and a s
   ?still replay unchanged.
 
 Check 41 done. Next: electric – share picture gets a frozen arc; the tray swatches spark on hover.
+
+## Check 42 (v19x) – electric graphics
+- Share picture: a discharge frozen mid-crack between the bolt heads (arc, one fork, plasma fans at both heads),
+  as if the picture was taken in the flash.
+- Tests: r12test, functest, up16test pass.
+
+Check 42 done. Next: electric – sparks in the skin tray swatches on hover, then the celebration's electric finale.
