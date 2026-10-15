@@ -377,6 +377,7 @@ const G = {};
 let stableW = 0, stableH = 0;
 const TOUCH = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window;
 const REDUCED = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);   // no flashes, bats or flying paper
+const STILL = /[?&]still\b/.test(location.search);   // test switch: only the recorded machine (no dust, sparks, flicker, creatures)
 
 function measure() {
   const iw = Math.max(1, window.innerWidth), ih = Math.max(1, window.innerHeight);
@@ -792,14 +793,14 @@ function paintFrank(c, m) {
   // wear: hairline scratches, rust blooming round the bolts and running down, a soft window reflection
   const Wr = mulberry(77 + m);
   c.lineCap = 'round';
-  for (let i = 0; i < 18; i++) {
+  if (!STILL) for (let i = 0; i < 18; i++) {
     const x = lerp(-hw + 6 * k, hw - 6 * k, Wr()), y = lerp(-hh + 3 * k, hh - 3 * k, Wr()), len = (3 + Wr() * 10) * k, a = (Wr() - 0.5) * 0.8;
     const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
     c.lineWidth = 0.32 * k;
     c.strokeStyle = m ? 'rgba(0,0,0,0.12)' : 'rgba(40,46,30,0.13)'; c.beginPath(); c.moveTo(x + 0.3 * k, y + 0.35 * k); c.lineTo(x2 + 0.3 * k, y2 + 0.35 * k); c.stroke();
     c.strokeStyle = m ? 'rgba(255,250,220,0.035)' : `rgba(255,255,236,${0.1 + Wr() * 0.1})`; c.beginPath(); c.moveTo(x, y); c.lineTo(x2, y2); c.stroke();
   }
-  for (const sy of [-1, 1]) {
+  if (!STILL) for (const sy of [-1, 1]) {
     const bx = 25.4 * k, by = sy * (hh - 4.6 * k);
     for (let i = 0; i < 6; i++) {
       const x = bx + (Wr() - 0.5) * 13 * k, y = by + (Wr() - 0.5) * 4 * k, r = (1.2 + Wr() * 2.6) * k;
@@ -810,8 +811,8 @@ function paintFrank(c, m) {
   }
   const rs = c.createLinearGradient(0, -hh + 6 * k, 0, -hh + 17 * k);   // a rust run below the top bolt
   rs.addColorStop(0, m ? 'rgba(70,32,10,0.22)' : 'rgba(140,70,24,0.2)'); rs.addColorStop(1, 'rgba(140,70,24,0)');
-  c.fillStyle = rs; c.fillRect(27.2 * k, -hh + 6 * k, 1.1 * k, 11 * k); c.fillRect(23.6 * k, -hh + 6 * k, 0.7 * k, 7 * k);
-  if (!m) {
+  if (!STILL) { c.fillStyle = rs; c.fillRect(27.2 * k, -hh + 6 * k, 1.1 * k, 11 * k); c.fillRect(23.6 * k, -hh + 6 * k, 0.7 * k, 7 * k); }
+  if (!m && !STILL) {
     const rf = c.createLinearGradient(0, -hh + 4 * k, 0, -hh + 10 * k);
     rf.addColorStop(0, 'rgba(255,255,245,0)'); rf.addColorStop(0.5, 'rgba(255,255,245,0.11)'); rf.addColorStop(1, 'rgba(255,255,245,0)');
     c.fillStyle = rf; c.beginPath(); c.ellipse(-12 * k, -hh + 7 * k, 26 * k, 2.6 * k, -0.02, 0, 7); c.fill();
@@ -2328,11 +2329,11 @@ function draw(t) {
     c.globalAlpha = 1;
   }
   drawCaret(c, t, pP);   // the blinking insertion dot lives on the paper (under the T and the webs)
-  const lv = CH.light.v * (t > 20 ? 1 : 0);
+  const lv = STILL ? 0 : CH.light.v;
   if (lv > 0.02 && lampOn) { drawTShadow(c, t, cx, capTop, lv * pP); if (!REDUCED) drawDust(c, t, lv * pP); }
   c.restore();
 
-  c.drawImage(edgeCv, 0, G.paperTop - 2, W, edgeCv.height / dpr);
+  if (!STILL) c.drawImage(edgeCv, 0, G.paperTop - 2, W, edgeCv.height / dpr);
   // ----- rail -----
   const rh = railCv[0].height / dpr;
   if (pP < 1) { c.globalAlpha = 1; c.drawImage(railCv[0], 0, G.railSpriteTop, W, rh); }
@@ -2506,10 +2507,12 @@ function drawSparks(c, cx, cy, t, st) {
     const pts = lightningPath(x, yTop + 1.5 * k, yBot - 1.5 * k, fr * 7 + 3, (violet ? 1.7 : 1.45) * k);
     c.save();
     c.lineJoin = 'round'; c.lineCap = 'round';
-    c.globalCompositeOperation = 'lighter';   // bloom
-    c.strokeStyle = rgba(skin.sp.halo, 0.07 * bolt); c.lineWidth = 9 * k; strokePts(c, pts);
-    c.strokeStyle = rgba(skin.sp.halo, 0.1 * bolt); c.lineWidth = 5 * k; strokePts(c, pts);
-    c.globalCompositeOperation = 'source-over';
+    if (!STILL) {   // bloom
+      c.globalCompositeOperation = 'lighter';
+      c.strokeStyle = rgba(skin.sp.halo, 0.07 * bolt); c.lineWidth = 9 * k; strokePts(c, pts);
+      c.strokeStyle = rgba(skin.sp.halo, 0.1 * bolt); c.lineWidth = 5 * k; strokePts(c, pts);
+      c.globalCompositeOperation = 'source-over';
+    }
     c.strokeStyle = rgba(skin.sp.halo, (violet ? 0.32 : 0.22) * bolt); c.lineWidth = (violet ? 3.6 : 2.4) * k; strokePts(c, pts);
     c.strokeStyle = rgba(skin.sp.mid, (violet ? 0.75 : 0.6) * bolt); c.lineWidth = (violet ? 1.7 : 1.15) * k; strokePts(c, pts);
     c.strokeStyle = `rgba(255,255,255,${(violet ? 0.45 : 1) * bolt})`; c.lineWidth = 0.72 * k; strokePts(c, pts);
@@ -4576,7 +4579,7 @@ document.addEventListener('keydown', (e) => {
 const PARTS = [];
 // a few sparks fly off the bolt heads (only once the page has settled: the recorded opening has none)
 function sparkParts(n, power) {
-  if (now() < 20) return;
+  if (STILL) return;
   if (!n) n = 2 + ((Math.random() * 2.5) | 0);
   const x = car.x + 25.4 * k, top = G.capCY - G.capHH - 3.7 * k;
   burstAt(x, top, n, power);
@@ -4654,7 +4657,7 @@ function drawDust(c, t, lv) {
 }
 const FLICK = { next: 25, t0: -9 };
 function bulbFlicker(t) {
-  if (!lampOn || t < 20) return 1;
+  if (!lampOn || STILL) return 1;
   if (t > FLICK.next) { FLICK.t0 = t; FLICK.next = t + 9 + Math.random() * 18; }
   const s = t - FLICK.t0;
   let f = 1 - 0.018 * (Math.sin(t * 7.1) * Math.sin(t * 2.3 + 1) + 1) * 0.5;   // a faint, constant shimmer
@@ -4667,8 +4670,8 @@ function bulbFlicker(t) {
 const SPIDERS = [];
 let nextSpider = 0;
 function updateSpiders(t) {
-  if (REDUCED) return;
-  if (!nextSpider) nextSpider = t + 30 + ambR() * 30;
+  if (REDUCED || STILL) return;
+  if (!nextSpider) nextSpider = t + 12 + ambR() * 14;
   if (t > nextSpider && !SPIDERS.length) {
     nextSpider = t + 35 + ambR() * 50;
     let x = 30 * k + ambR() * (W - 60 * k);
@@ -4710,8 +4713,8 @@ function drawSpiders(c, t, pP) {
 // With the lamp on a moth finds the light, circles it for a while and flutters off again.
 const MOTH = { on: false, t0: 0, until: 0, next: 0, x: 0, y: 0, vx: 0, vy: 0, leave: 0 };
 function updateMoth(t, dt) {
-  if (REDUCED) { MOTH.on = false; return; }
-  if (!MOTH.next) MOTH.next = t + 35 + ambR() * 25;
+  if (REDUCED || STILL) { MOTH.on = false; return; }
+  if (!MOTH.next) MOTH.next = t + 10 + ambR() * 12;
   if (!MOTH.on && lampOn && CH.light.v > 0.9 && t > MOTH.next) {
     Object.assign(MOTH, { on: true, t0: t, until: t + 14 + ambR() * 14, x: ambR() < 0.5 ? -20 * k : W + 20 * k, y: G.paperTop + ambR() * 120 * k, vx: 0, vy: 0, leave: 0 });
   }
