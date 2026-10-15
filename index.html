@@ -52,8 +52,8 @@
               transition: opacity .18s ease, transform .2s ease, visibility 0s linear .2s; }
   #skinTray.open { opacity: 1; pointer-events: auto; visibility: visible; transform: translate(-50%, 0) scale(1);
                    transition: opacity .18s ease, transform .2s ease, visibility 0s; }
-  .skin { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 3px 5px; min-width: 51px;
-          border-radius: 11px; color: #a9a9a0; font-size: 9.5px; letter-spacing: .04em; line-height: 1; text-transform: uppercase; }
+  .skin { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 2px 5px; min-width: 47px;
+          border-radius: 11px; color: #a9a9a0; font-size: 9px; letter-spacing: .03em; line-height: 1; text-transform: uppercase; }
   .skin canvas { display: block; }
   .skin[aria-checked="true"] { background: rgba(255,255,255,.09); color: #f1efe6; box-shadow: inset 0 0 0 1px rgba(255,255,255,.17); }
   .skin:focus-visible { outline: 1px dashed rgba(200,200,190,.5); outline-offset: 1px; }
@@ -514,11 +514,13 @@ function vgrad(c, y0, y1, stops) {
   return g;
 }
 function buildCapsules() {
-  for (let m = 0; m < 2; m++) renderCapsule(capCv[m], skin, m);
+  for (let m = 0; m < 2; m++) renderCapsule(capCv[m], skin, m, true);
   buildFlash();
 }
-// one capsule sprite (m: 0 light / 1 lamp) in a given skin: shared drop shadow, rim and slot around the skin's body
-function renderCapsule(cv, sk, m) {
+// one capsule sprite (m: 0 light / 1 lamp) in a given skin: shared drop shadow, rim and slot around the skin's body.
+// live: the sprite on the rail, whose animated parts (if the skin has any) are drawn every frame by skin.overlay;
+// otherwise (tray swatch, share picture) everything is painted in
+function renderCapsule(cv, sk, m, live) {
   const hw = G.capHW, hh = G.capHH, pad = CAP_PAD * k;
   cv.width = Math.round((hw + pad) * 2 * dpr); cv.height = Math.round((hh + pad) * 2 * dpr);
   const c = cv.getContext('2d');
@@ -527,7 +529,7 @@ function renderCapsule(cv, sk, m) {
   c.save(); c.shadowColor = m ? 'rgba(0,0,0,0.6)' : 'rgba(45,35,20,0.55)'; c.shadowBlur = (m ? 6 : 13) * k * dpr; c.shadowOffsetY = (m ? 3.5 : 4.5) * k * dpr;
   capsulePath(c); c.fillStyle = '#555'; c.fill(); c.restore();
   c.save(); capsulePath(c); c.clip();
-  sk.paint(c, m);
+  sk.paint(c, m, live);
   c.restore();
   // rim
   capsulePath(c); c.strokeStyle = sk.rim[m]; c.lineWidth = 0.7 * k; c.stroke();
@@ -537,7 +539,7 @@ function renderCapsule(cv, sk, m) {
   if (m) { sg.addColorStop(0, 'rgb(34,25,10)'); sg.addColorStop(0.35, 'rgb(22,19,13)'); sg.addColorStop(1, 'rgb(30,30,24)'); }
   else { sg.addColorStop(0, 'rgb(28,26,22)'); sg.addColorStop(0.32, 'rgb(30,29,25)'); sg.addColorStop(0.42, 'rgb(40,40,34)'); sg.addColorStop(1, 'rgb(84,88,70)'); }
   c.fillStyle = sg; roundRect(c, -so, s0, so * 2, s1 - s0, 1.5 * k); c.fill();
-  sk.props(c, m);
+  sk.props(c, m, live);
 }
 // the recorded Frankenstein skin: sage body, stitched patch, end cap, neck bolts
 function paintFrank(c, m) {
@@ -717,6 +719,10 @@ const SKINS = {
   witch: { name: 'Witch', short: 'Witch', paint: paintWitch, props: propsWitch, rim: ['rgba(30,14,46,0.45)', 'rgba(5,2,9,0.6)'],
     sp: { beam: [214, 170, 255], beam2: [230, 196, 255], halo: [180, 80, 255], mid: [222, 160, 255], tip: [236, 210, 255], sheen: '#e9d6ff' },
     flood: [[60, 30, 82], [50, 25, 68], [30, 15, 41], [12, 6, 16]], halo: [175, 115, 235], steam: [238, 220, 255], steamAt: [30.8, -12.4] },
+  claude: { name: 'Claude Special', short: 'Claude', paint: paintClaude, props: propsClaude, overlay: overlayClaude,
+    rim: ['rgba(120,45,25,0.35)', 'rgba(12,5,3,0.6)'],
+    sp: { beam: [255, 205, 180], beam2: [255, 225, 205], halo: [230, 120, 80], mid: [255, 175, 135], tip: [255, 228, 210], sheen: '#f7d6c4' },
+    flood: [[88, 44, 30], [72, 36, 24], [43, 21, 14], [17, 8, 5]], halo: [217, 119, 87], steam: null },
 };
 const SKIN_IDS = Object.keys(SKINS);
 for (const id of SKIN_IDS) SKINS[id].id = id;
@@ -983,6 +989,122 @@ function propsWitch(c, m) {
   c.fillStyle = pg; c.fillRect(x - fr, fy - KK(1.2), fr * 2, fr * 2);
   c.restore();
   c.fillStyle = 'rgba(255,255,255,0.6)'; c.beginPath(); c.ellipse(x - KK(1.4), fy - KK(1.6), KK(0.9), KK(0.5), -0.6, 0, 7); c.fill();   // glint
+}
+
+// ---- Claude Special: warm terracotta clay with a cream label, the hand-drawn spark on its side and a speech
+// bubble on top. On the rail the spark breathes and spins like a thinking indicator while you type, and the
+// bubble's dots bounce (skin.overlay); swatches and the share picture get a still version.
+const SPARK = [1, 0.75, 0.95, 0.79, 0.99, 0.72, 0.93, 0.77, 0.98, 0.74, 0.91, 0.8];   // slightly uneven, hand-made rays
+function drawClaudeSpark(c, x, y, R, ang, t, act, m) {
+  const n = SPARK.length;
+  if (m > 0.01) {   // it glows under the lamp
+    const g = c.createRadialGradient(x, y, 0, x, y, R * 2);
+    g.addColorStop(0, `rgba(255,196,160,${0.5 * m})`); g.addColorStop(0.5, `rgba(255,150,105,${0.17 * m})`); g.addColorStop(1, 'rgba(255,140,90,0)');
+    c.fillStyle = g; c.fillRect(x - R * 2, y - R * 2, R * 4, R * 4);
+  }
+  const rays = (dx, dy) => {
+    c.beginPath();
+    for (let i = 0; i < n; i++) {
+      const a = ang + (i / n) * Math.PI * 2 + Math.sin(i * 2.3) * 0.05;
+      const L = R * SPARK[i] * (1 + 0.045 * Math.sin(t * 1.7 + i * 0.9) + act * 0.17 * Math.sin(t * 9 - i * 0.85)), r0 = R * 0.12;
+      c.moveTo(x + dx + Math.cos(a) * r0, y + dy + Math.sin(a) * r0);
+      c.lineTo(x + dx + Math.cos(a) * L, y + dy + Math.sin(a) * L);
+    }
+    c.stroke();
+  };
+  c.lineCap = 'round'; c.lineWidth = R * 0.21;
+  if (m < 0.99) { c.strokeStyle = `rgba(110,40,20,${0.32 * (1 - m)})`; rays(R * 0.05, R * 0.08); }   // pressed into the clay
+  c.strokeStyle = rgba(mix([248, 242, 231], [255, 226, 200], m)); rays(0, 0);
+}
+function drawClaudeDots(c, x, y, t, act, m) {
+  if (m > 0.01) {
+    const g = c.createRadialGradient(x, y, 0, x, y, KK(7));
+    g.addColorStop(0, `rgba(255,170,120,${0.35 * m})`); g.addColorStop(1, 'rgba(255,150,100,0)');
+    c.fillStyle = g; c.fillRect(x - KK(7), y - KK(7), KK(14), KK(14));
+  }
+  c.fillStyle = rgba(mix([200, 104, 74], [255, 182, 143], m));
+  for (let i = 0; i < 3; i++) {
+    const hop = act * Math.max(0, Math.sin(t * 10 - i * 0.9)) * KK(1.5);
+    c.beginPath(); c.arc(x + (i - 1) * KK(3.5), y - hop, KK(1.12), 0, 7); c.fill();
+  }
+}
+function miniSpark(c, x, y, r) {
+  c.beginPath();
+  for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3 + 0.3; c.moveTo(x, y); c.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); }
+  c.stroke();
+}
+function paintClaude(c, m, live) {
+  const hw = G.capHW, hh = G.capHH, R = mulberry(211 + m);
+  c.fillStyle = vgrad(c, -hh, hh, m ? [[0, '#5e2f22'], [0.3, '#53281c'], [0.65, '#3f1d13'], [1, '#26100a']]
+    : [[0, '#ee9e80'], [0.14, '#e38a6b'], [0.4, '#d97757'], [0.72, '#c4623f'], [1, '#9b4a2e']]);
+  c.fillRect(-hw, -hh, hw * 2, hh * 2);
+  for (let i = 0; i < 24; i++) {   // soft clay mottling
+    const x = lerp(-hw, hw, R()), y = lerp(-hh, hh, R()), r = (2 + R() * 7) * k;
+    const g = c.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, R() < 0.5 ? 'rgba(90,30,10,0.06)' : 'rgba(255,236,222,0.06)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  // the cream label wrapped round the body, typed "CLAUDE" between two little sparks
+  const ly = KK(9.4), lh = KK(6.2);
+  c.fillStyle = m ? '#3c2c24' : '#f3ece1'; roundRect(c, KK(-39), ly, KK(46), lh, KK(1.6)); c.fill();
+  c.fillStyle = m ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)'; c.fillRect(KK(-37.5), ly + KK(0.5), KK(43), KK(0.7));
+  c.strokeStyle = m ? 'rgba(0,0,0,0.35)' : 'rgba(150,70,40,0.35)'; c.lineWidth = KK(0.35); roundRect(c, KK(-39), ly, KK(46), lh, KK(1.6)); c.stroke();
+  const ink = m ? '#b07a5e' : '#a8482a';
+  c.fillStyle = ink; c.font = `700 ${KK(4.4)}px "Courier Prime", "Courier New", monospace`; c.textBaseline = 'middle'; c.textAlign = 'center';
+  const word = 'CLAUDE', gap = KK(3.55);
+  for (let i = 0; i < word.length; i++) c.fillText(word[i], KK(-16) + (i - (word.length - 1) / 2) * gap, ly + lh / 2 + KK(0.3));
+  c.strokeStyle = ink; c.lineWidth = KK(0.55); c.lineCap = 'round';
+  miniSpark(c, KK(-33.6), ly + lh / 2, KK(1.6)); miniSpark(c, KK(1.6), ly + lh / 2, KK(1.6));
+  capShade(c, m);
+  if (!live) drawClaudeSpark(c, KK(25.4), KK(-1.5), KK(9.2), 0.25, 0, 0, m);
+}
+function propsClaude(c, m, live) {
+  const hh = G.capHH, x = KK(25.4);
+  // a speech bubble on top, its tail pointing down at the capsule
+  const bx = x - KK(7.6), by = -hh - KK(12.6), bw = KK(15.2), bh = KK(8.8), r = KK(3.6);
+  const path = () => {
+    c.beginPath(); c.moveTo(bx + r, by);
+    c.lineTo(bx + bw - r, by); c.arcTo(bx + bw, by, bx + bw, by + r, r);
+    c.lineTo(bx + bw, by + bh - r); c.arcTo(bx + bw, by + bh, bx + bw - r, by + bh, r);
+    c.lineTo(x - KK(1.2), by + bh); c.lineTo(x - KK(6.2), -hh - KK(0.5)); c.lineTo(x - KK(4.6), by + bh);
+    c.lineTo(bx + r, by + bh); c.arcTo(bx, by + bh, bx, by + bh - r, r);
+    c.lineTo(bx, by + r); c.arcTo(bx, by, bx + r, by, r); c.closePath();
+  };
+  c.save();
+  c.shadowColor = m ? 'rgba(0,0,0,0.5)' : 'rgba(90,40,20,0.3)'; c.shadowBlur = KK(2.2) * dpr; c.shadowOffsetY = KK(0.8) * dpr;
+  c.fillStyle = m ? '#3b2b23' : '#f7f1e7'; path(); c.fill();
+  c.restore();
+  c.strokeStyle = m ? 'rgba(0,0,0,0.45)' : 'rgba(150,70,40,0.42)'; c.lineWidth = KK(0.45); path(); c.stroke();
+  if (!live) drawClaudeDots(c, x, by + bh / 2, 0, 0, m);
+}
+let claudeAct = 0, claudeAng = 0.25, claudeT = 0, claudeLines = 0;
+const claudeBits = [];   // a little sparkle burst from the spark at every new line
+function overlayClaude(c, cx, cy, t, cP, alpha) {
+  const gapT = t - claudeT, dt = clamp(gapT, 0, 0.05); claudeT = t;
+  if (gapT < 0.2 && lines.length > claudeLines && claudeLines) {
+    const R = mulberry((t * 997) | 0);
+    for (let i = 0; i < 11; i++) claudeBits.push({ t0: t, a: (i / 11) * 6.283 + R() * 0.5, v: 26 + R() * 22, s: 0.7 + R() * 0.6 });
+  }
+  claudeLines = lines.length;
+  const typing = t - lastKey < 0.45 ? 1 : 0;
+  claudeAct += (typing - claudeAct) * Math.min(1, dt * (typing ? 9 : 2.2));   // eases into "thinking" while you type
+  claudeAng += dt * (0.07 + 1.7 * claudeAct);
+  if (alpha < 0.01) return;
+  c.save(); c.globalAlpha = alpha;
+  drawClaudeSpark(c, cx + KK(25.4), cy - KK(1.5), KK(9.2), claudeAng, t, claudeAct, cP);
+  drawClaudeDots(c, cx + KK(25.4), cy - G.capHH - KK(8.2), t, claudeAct, cP);
+  if (claudeBits.length) {
+    const x0 = cx + KK(25.4), y0 = cy - KK(1.5);
+    c.strokeStyle = rgba(mix([255, 246, 232], [255, 222, 190], cP)); c.lineCap = 'round';
+    for (let i = claudeBits.length - 1; i >= 0; i--) {
+      const b = claudeBits[i], s = t - b.t0;
+      if (s > 0.65 || s < 0) { claudeBits.splice(i, 1); continue; }
+      const d = KK(b.v) * 0.32 * (1 - Math.exp(-s / 0.2)) + KK(9.5), x = x0 + Math.cos(b.a) * d, y = y0 + Math.sin(b.a) * d, r = KK(1.6 * b.s) * (1 - s / 0.65);
+      c.globalAlpha = alpha * (1 - s / 0.65); c.lineWidth = KK(0.55);
+      c.beginPath(); c.moveTo(x - r, y); c.lineTo(x + r, y); c.moveTo(x, y - r); c.lineTo(x, y + r); c.stroke();
+    }
+  }
+  c.restore();
 }
 
 /* ------------------------------------------------- small cached sprites -- */
@@ -1698,12 +1820,15 @@ function draw(t) {
   const pad = CAP_PAD * k, cw = (G.capHW + pad) * 2, chh = (G.capHH + pad) * 2;
   if (cP < 1) { c.globalAlpha = 1; c.drawImage(capCv[0], cx - cw / 2, cy - chh / 2, cw, chh); }
   if (cP > 0) { c.globalAlpha = cP; c.drawImage(capCv[1], cx - cw / 2, cy - chh / 2, cw, chh); }
+  let swapA = 0;
   if (swap.t0 && t - swap.t0 < SWAP_DUR) {   // a new skin: the old one melts away under the zap
-    const a = 1 - E.inOutSine(clamp((t - swap.t0) / SWAP_DUR, 0, 1));
+    const a = swapA = 1 - E.inOutSine(clamp((t - swap.t0) / SWAP_DUR, 0, 1));
     if (cP < 1) { c.globalAlpha = a; c.drawImage(swap.cv[0], cx - cw / 2, cy - chh / 2, cw, chh); }
     if (cP > 0) { c.globalAlpha = a * cP; c.drawImage(swap.cv[1], cx - cw / 2, cy - chh / 2, cw, chh); }
   }
   c.globalAlpha = 1;
+  if (skin.overlay) skin.overlay(c, cx, cy, t, cP, 1 - swapA);   // animated parts of the skin
+  if (swapA > 0 && swap.from && swap.from.overlay) swap.from.overlay(c, cx, cy, t, cP, swapA);
   setStyle(capBtn, 'transform', `translate(${(cx - G.capHW).toFixed(1)}px, ${(cy - G.capHH - 4 * k).toFixed(1)}px)`);
   drawLEDs(c, cx, cy, t, cP);
   // slot glow
@@ -2420,6 +2545,11 @@ const AU = {
       v.frequency.value = 5.5; vg.gain.value = 9; v.connect(vg); vg.connect(o.frequency);
       g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(0.07, s + 0.18); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.95);
       o.connect(g); g.connect(this.sfx); g.connect(this.verb); o.start(s); v.start(s); o.stop(s + 1); v.stop(s + 1);
+    } else if (id === 'claude') {    // a warm little "hello": a rising major arpeggio with a soft shimmer
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+        this.tone(s + i * 0.075, { f, gain: 0.06, a: 0.008, d: 0.5 });
+        this.tone(s + i * 0.075, { f: f * 2, type: 'triangle', gain: 0.012, a: 0.004, d: 0.2 });
+      });
     } else if (id === 'witch') {     // a sparkle of magic
       [1568, 1976, 2349, 2637, 3136, 3951].forEach((f, i) => this.tone(s + i * 0.045, { f, type: 'triangle', gain: 0.035, a: 0.002, d: 0.22 }));
     }
@@ -2686,7 +2816,7 @@ paintSound();
 // hidden textarea, so the phone keyboard stays up; keyboard users get focus moved into the tray.
 const capBtn = $('#capBtn'), skinTray = $('#skinTray');
 const SWAP_DUR = 0.42;
-const swap = { t0: 0, cv: [document.createElement('canvas'), document.createElement('canvas')] };
+const swap = { t0: 0, from: null, cv: [document.createElement('canvas'), document.createElement('canvas')] };
 let trayOpen = false, trayKey = '', trayTimer = 0;
 function applySkinGlow() {
   const f = skin.flood;   // frank keeps the recorded green flood from the stylesheet
@@ -2695,7 +2825,6 @@ function applySkinGlow() {
 function layoutSkinUI() {
   capBtn.style.width = (G.capHW * 2) + 'px'; capBtn.style.height = (G.capHH * 2 + 8 * k) + 'px';
   skinTray.style.top = (G.capCY + G.capHH + 18 * k) + 'px';
-  skinTray.style.gridTemplateColumns = `repeat(${W >= 360 ? 6 : 3}, auto)`;
   trayKey = '';   // swatches are redrawn at the new size the next time the tray opens
 }
 function markTray() {
@@ -2719,7 +2848,7 @@ function buildTray() {
   if (key !== trayKey) {   // each swatch is the skin's real light-mode sprite, cropped around the body and props
     trayKey = key;
     const tmp = document.createElement('canvas'), pad = CAP_PAD * k, ex = 4 * k, ey = 16 * k;
-    const cw = 46, ch = Math.round(cw * (G.capHH + ey) / (G.capHW + ex));
+    const cw = 43, ch = Math.round(cw * (G.capHH + ey) / (G.capHW + ex));
     for (const b of skinTray.children) {
       renderCapsule(tmp, SKINS[b.dataset.id], 0);
       const cv = b.querySelector('canvas');
@@ -2739,6 +2868,8 @@ function placeTray() {
 }
 function openTray(kb) {
   buildTray();
+  skinTray.style.gridTemplateColumns = `repeat(${SKIN_IDS.length}, auto)`;   // one row if it fits, else two
+  if (skinTray.offsetWidth > W - 12) skinTray.style.gridTemplateColumns = `repeat(${Math.ceil(SKIN_IDS.length / 2)}, auto)`;
   placeTray();
   trayOpen = true; skinTray.classList.add('open'); capBtn.setAttribute('aria-expanded', 'true');
   clearTimeout(trayTimer);
@@ -2763,7 +2894,7 @@ function setSkin(id) {
     const o = swap.cv[m]; o.width = capCv[m].width; o.height = capCv[m].height;
     o.getContext('2d').drawImage(capCv[m], 0, 0);
   }
-  skin = next; store.set(LS.skin, id);
+  swap.from = skin; skin = next; store.set(LS.skin, id);
   if (!tipDone) { tipDone = true; store.set(LS.tip, '1'); }
   buildCapsules(); applySkinGlow();
   swap.t0 = now(); lastActivity = swap.t0;
@@ -3381,7 +3512,7 @@ function boot() {
   setLamp(store.get(LS.lamp, '0') === '1', true);
   onTextChanged();
   if (document.fonts && document.fonts.load) {
-    Promise.all([document.fonts.load(FONT(22)), document.fonts.load('700 22px "Courier Prime"')]).then(() => { invalidateText(); buildCaptions(); });
+    Promise.all([document.fonts.load(FONT(22)), document.fonts.load('700 22px "Courier Prime"')]).then(() => { invalidateText(); buildCaptions(); buildCapsules(); trayKey = ''; });
   }
   if (!TOUCH) focusInput();
   lastActivity = now();

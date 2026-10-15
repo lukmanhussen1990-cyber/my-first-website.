@@ -188,3 +188,21 @@ A 3-minute soak with skins, pictures, new pages + undo, lightning and bats: heap
 constant, no errors. New 30 s feature demo recorded (picture and sound replayed from one storyboard, clicks
 within 10 ms). Default look identical to v10i on the replay (except the longer, more faithful shadow tail).
 **Check 14 done. Next: final delivery of the single file and the list of improvements.**
+
+## Check 15 — Claude Special skin (v15a)
+Requested: "Add another skin Claude Special, make it better". The seventh skin, and the first one that is
+alive on the rail:
+- Warm terracotta clay with soft mottling, a cream label wrapped round the body that reads CLAUDE between
+  two little sparks, and a cream hand-drawn 12-ray spark on its side (pressed into the clay; it glows
+  under the lamp). A speech bubble sits on top.
+- While you type the spark spins up and its rays pulse like a thinking indicator, and the bubble's three
+  dots hop; idle, it slowly breathes. Every new line throws a small burst of sparkles from the spark.
+- Its zaps, glows and flood are warm terracotta; picking it plays a soft rising C-major "hello" (levelled
+  with the other skin sounds, −29 dBFS short-term RMS).
+- Skins can now have animated parts (skin.overlay, drawn each frame and cross-faded on a change); the tray
+  swatch and the share picture get the still version. The capsule label uses the typewriter font, so the
+  sprites are redrawn once the font has loaded.
+- The tray fits all seven skins in one row from 375 px up (two rows below that).
+Checked: default look unchanged on the replay; skintest (now seven skins), functest, imetest, hinttest,
+focustest, reviewfix, tiptest, r12test, reducedtest and ctrls pass; share picture with the new skin.
+**Check 15 done. Next: a short demo of the new skin, then deliver the updated single file.**

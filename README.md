@@ -11,8 +11,9 @@ the keyboard and start typing.
 - Tap the dimmer dial (bottom right of the paper) to switch the lamp on/off; the LIGHT / SPREAD /
   REACH sliders appear in lamp mode.
 - Tap "Need a first line?" for a random spooky opening line.
-- Tap the capsule to change its skin: Frankenstein (the recorded one), Pumpkin, Vampire, Mummy, Ghost
-  or Witch – each with its own sparks, glow and sound.
+- Tap the capsule to change its skin: Frankenstein (the recorded one), Pumpkin, Vampire, Mummy, Ghost,
+  Witch or Claude Special – each with its own sparks, glow and sound. Claude Special is alive: its spark
+  breathes and spins while you type, its speech bubble shows typing dots, and every new line sparkles.
 - Share icon: share or copy the text, share or save a picture of the page, save a `.txt`, or tear the
   page off for a new one (with Undo).
 - Speaker icon: music + effects → effects only → off. Android phones also get light haptics.
@@ -24,6 +25,6 @@ the keyboard and start typing.
 
 Other files:
 
-- `versions/` – snapshots saved during each hourly check (v1 … v14x); `index.html` is always the latest.
+- `versions/` – snapshots saved during each hourly check (v1 … v15x); `index.html` is always the latest.
 - `notes/video-observations.md` – what was measured in the reference recording.
 - `notes/checks.md` – the comparison log for every check.
