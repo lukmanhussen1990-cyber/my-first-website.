@@ -411,3 +411,10 @@ non-recorded skins.
 - Tests: functest, skintest, up16test, r12test pass.
 
 Check 35 done. Next: graphics – a pass over every toast/HUD/pill for consistent styling, then the hint line.
+
+## Check 36 (v19r) – graphics
+- Toasts restyled to match the goal pill and the brass menus: warm dark body, a fine brass hairline, soft drop shadow,
+  rounder corners.
+- Tests: functest, reviewfix pass.
+
+Check 36 done. Next: graphics – the scroll-back view and page pill, then the spark particles' colours per skin in light mode.
