@@ -753,6 +753,11 @@ function renderCapsule(cv, sk, m, live) {
   capsulePath(c); c.fillStyle = '#555'; c.fill(); c.restore();
   c.save(); capsulePath(c); c.clip();
   sk.paint(c, m, live);
+  if (sk.gloss && !m) {   // a soft window reflection along the top of glossy skins
+    const hw2 = G.capHW, rf = c.createLinearGradient(0, -hh + 3 * k, 0, -hh + 11 * k);
+    rf.addColorStop(0, 'rgba(255,255,250,0)'); rf.addColorStop(0.5, `rgba(255,255,250,${sk.gloss})`); rf.addColorStop(1, 'rgba(255,255,250,0)');
+    c.fillStyle = rf; c.beginPath(); c.ellipse(-hw2 * 0.25, -hh + 7 * k, hw2 * 0.62, 2.8 * k, -0.02, 0, 7); c.fill();
+  }
   c.restore();
   // rim
   capsulePath(c); c.strokeStyle = sk.rim[m]; c.lineWidth = 0.7 * k; c.stroke();
@@ -954,22 +959,22 @@ const SKINS = {
   frank: { name: 'Frankenstein', short: 'Frank', paint: paintFrank, props: propsFrank, rim: [CAP_COL[0].rim, CAP_COL[1].rim],
     sp: { beam: [205, 200, 225], beam2: [220, 215, 240], halo: [165, 148, 255], mid: [200, 188, 255], tip: [235, 235, 255], sheen: '#d8d8d5' },
     flood: null, halo: [159, 199, 133], steam: [255, 255, 250], steamAt: [27.5, -4.5] },
-  pumpkin: { name: 'Pumpkin', short: 'Pumpkin', paint: paintPumpkin, props: propsPumpkin, pitch: 0.8, rim: ['rgba(120,50,6,0.35)', 'rgba(10,4,1,0.55)'],
+  pumpkin: { gloss: 0.16, name: 'Pumpkin', short: 'Pumpkin', paint: paintPumpkin, props: propsPumpkin, pitch: 0.8, rim: ['rgba(120,50,6,0.35)', 'rgba(10,4,1,0.55)'],
     sp: { beam: [255, 190, 120], beam2: [255, 214, 160], halo: [255, 140, 40], mid: [255, 196, 110], tip: [255, 220, 170], sheen: '#ffd9a0' },
     flood: [[84, 50, 14], [68, 40, 11], [41, 24, 7], [17, 10, 3]], halo: [240, 150, 60], steam: [255, 236, 214], steamAt: [27.4, -8.6] },
-  vampire: { name: 'Vampire', short: 'Vampire', paint: paintVampire, props: propsVampire, overlay: overlayVampire, pitch: 0.7, rim: ['rgba(30,4,8,0.45)', 'rgba(4,0,1,0.6)'],
+  vampire: { gloss: 0.2, name: 'Vampire', short: 'Vampire', paint: paintVampire, props: propsVampire, overlay: overlayVampire, pitch: 0.7, rim: ['rgba(30,4,8,0.45)', 'rgba(4,0,1,0.6)'],
     sp: { beam: [255, 140, 160], beam2: [255, 170, 186], halo: [255, 50, 90], mid: [255, 140, 165], tip: [255, 200, 210], sheen: '#ffc2cc' },
     flood: [[80, 14, 26], [66, 11, 21], [39, 7, 12], [16, 3, 5]], halo: [205, 45, 70], steam: null },
   mummy: { name: 'Mummy', short: 'Mummy', paint: paintMummy, props: propsMummy, pitch: 0.6, rim: ['rgba(90,70,40,0.3)', 'rgba(12,10,6,0.55)'],
     sp: { beam: [255, 222, 160], beam2: [255, 236, 190], halo: [240, 180, 60], mid: [255, 222, 140], tip: [255, 236, 190], sheen: '#f3e2b8' },
     flood: [[72, 60, 24], [60, 50, 20], [36, 30, 12], [14, 12, 5]], halo: [210, 170, 90], steam: [240, 228, 196], steamAt: [30.5, -5.5] },
-  ghost: { name: 'Ghost', short: 'Ghost', paint: paintGhost, props: propsGhost, bob: (t) => Math.sin(t * 2.4) * 1.8 * k + Math.sin(t * 0.9) * 0.6 * k, pitch: 1.5, rim: ['rgba(120,140,160,0.35)', 'rgba(20,30,40,0.5)'],
+  ghost: { gloss: 0.25, name: 'Ghost', short: 'Ghost', paint: paintGhost, props: propsGhost, bob: (t) => Math.sin(t * 2.4) * 1.8 * k + Math.sin(t * 0.9) * 0.6 * k, pitch: 1.5, rim: ['rgba(120,140,160,0.35)', 'rgba(20,30,40,0.5)'],
     sp: { beam: [190, 228, 255], beam2: [214, 240, 255], halo: [110, 190, 255], mid: [185, 232, 255], tip: [225, 245, 255], sheen: '#e6f4ff' },
     flood: [[38, 62, 80], [32, 52, 66], [19, 31, 40], [8, 12, 16]], halo: [150, 200, 240], steam: null },
-  witch: { name: 'Witch', short: 'Witch', paint: paintWitch, props: propsWitch, pitch: 1.6, rim: ['rgba(30,14,46,0.45)', 'rgba(5,2,9,0.6)'],
+  witch: { gloss: 0.14, name: 'Witch', short: 'Witch', paint: paintWitch, props: propsWitch, pitch: 1.6, rim: ['rgba(30,14,46,0.45)', 'rgba(5,2,9,0.6)'],
     sp: { beam: [214, 170, 255], beam2: [230, 196, 255], halo: [180, 80, 255], mid: [222, 160, 255], tip: [236, 210, 255], sheen: '#e9d6ff' },
     flood: [[60, 30, 82], [50, 25, 68], [30, 15, 41], [12, 6, 16]], halo: [175, 115, 235], steam: [238, 220, 255], steamAt: [30.8, -12.4] },
-  claude: { name: 'Claude Special', short: 'Claude', paint: paintClaude, props: propsClaude, overlay: overlayClaude,
+  claude: { gloss: 0.1, name: 'Claude Special', short: 'Claude', paint: paintClaude, props: propsClaude, overlay: overlayClaude,
     rim: ['rgba(120,45,25,0.35)', 'rgba(12,5,3,0.6)'],
     sp: { beam: [255, 205, 180], beam2: [255, 225, 205], halo: [230, 120, 80], mid: [255, 175, 135], tip: [255, 228, 210], sheen: '#f7d6c4' },
     flood: [[88, 44, 30], [72, 36, 24], [43, 21, 14], [17, 8, 5]], halo: [217, 119, 87], steam: null, pitch: 1.2 },
@@ -4313,7 +4318,17 @@ scrimEl.addEventListener('click', () => closeSheet());
 for (const el of [panelEl, draftsEl]) el.querySelector('.x').addEventListener('click', () => closeSheet());
 gearBtn.addEventListener('click', (e) => { lastActivity = now(); sheetOpen === panelEl ? closeSheet() : openSheet(panelEl, e.detail === 0); });
 backBtn.addEventListener('click', (e) => { lastActivity = now(); sheetOpen === draftsEl ? closeSheet() : openSheet(draftsEl, e.detail === 0); });
-document.addEventListener('keydown', (e) => { if (sheetOpen && e.key === 'Escape') { e.preventDefault(); closeSheet(); } });
+document.addEventListener('keydown', (e) => {
+  if (!sheetOpen) return;
+  if (e.key === 'Escape') { e.preventDefault(); closeSheet(); return; }
+  if (e.key === 'Tab') {   // keep keyboard focus inside the open sheet
+    const f = [...sheetOpen.querySelectorAll('button, input')].filter((n) => n.offsetParent !== null);
+    if (!f.length) return;
+    const i = f.indexOf(document.activeElement);
+    if (e.shiftKey && (i <= 0)) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && (i === f.length - 1 || i < 0)) { e.preventDefault(); f[0].focus(); }
+  }
+});
 
 // small builders
 function el(tag, cls, html) { const n = document.createElement(tag); if (cls) n.className = cls; if (html !== undefined) n.innerHTML = html; return n; }
@@ -4489,7 +4504,43 @@ function renderDrafts() {
     const b = el('button', 'key', lbl); b.addEventListener('click', () => { closeSheet(false); fn(); }); g.appendChild(b);
   }
   ex.appendChild(g); body.appendChild(ex);
+  const bk = el('div', 'sec'); bk.appendChild(el('h3', '', 'ALL DRAFTS'));
+  const g2 = el('div', 'keys');
+  const b1 = el('button', 'key', 'Back up (.json)'); b1.addEventListener('click', backupDrafts);
+  const b2 = el('button', 'key', 'Restore…'); b2.addEventListener('click', () => restoreInput.click());
+  g2.append(b1, b2); bk.appendChild(g2); body.appendChild(bk);
 }
+// a backup file of every draft (and the settings), and restoring one: drafts already here are kept
+function backupDrafts() {
+  saveNow();
+  const data = { app: 'frankenwriter', v: 1, saved: new Date().toISOString(), drafts: DR.list, prefs };
+  download(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }), fileName('json').replace('frankenwriter-', 'frankenwriter-drafts-'));
+  toast('Backup saved');
+}
+const restoreInput = document.createElement('input');
+restoreInput.type = 'file'; restoreInput.accept = '.json,application/json'; restoreInput.style.display = 'none';
+document.body.appendChild(restoreInput);
+restoreInput.addEventListener('change', () => {
+  const f = restoreInput.files && restoreInput.files[0];
+  restoreInput.value = '';
+  if (!f) return;
+  f.text().then((txt) => {
+    const data = JSON.parse(txt);
+    const list = Array.isArray(data) ? data : data && data.drafts;
+    if (!Array.isArray(list)) throw new Error('no drafts');
+    let added = 0;
+    for (const d of list) {
+      if (!d || typeof d.text !== 'string') continue;
+      const pages = Array.isArray(d.pages) ? d.pages.filter((p) => typeof p === 'string').map((p) => p.slice(0, MAX)) : [];
+      const item = { id: String(d.id || newId()), name: String(d.name || '').slice(0, 40), text: d.text.slice(0, MAX), pages, created: +d.created || Date.now(), updated: +d.updated || Date.now() };
+      if (DR.list.some((x) => x.text === item.text && x.pages.join('\f') === item.pages.join('\f'))) continue;   // already here
+      if (DR.list.some((x) => x.id === item.id)) item.id = newId();
+      DR.list.push(item); added++;
+    }
+    saveDrafts(); renderDrafts();
+    toast(added ? 'Restored ' + added + ' draft' + (added > 1 ? 's' : '') : 'Nothing new in that file', 2.5);
+  }).catch(() => toast('That file is not a Frankenwriter backup', 2.5));
+});
 
 /* ---------------------------------------------------------------- print -- */
 function printDraft() {
