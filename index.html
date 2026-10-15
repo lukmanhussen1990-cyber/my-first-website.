@@ -4190,7 +4190,16 @@ function drawFlyingBat(c, x, y, s, ph) {
     c.quadraticCurveTo(sd * 9.6 * s, tip + 2.4 * s, sd * 8 * s, mid + 2 * s);
     c.quadraticCurveTo(sd * 6.5 * s, mid + 0.6 * s, sd * 5 * s, mid + 2.6 * s);
     c.quadraticCurveTo(sd * 3.4 * s, mid + 1.2 * s, sd * 1.5 * s, 2 * s);
-    c.closePath(); c.fill();
+    c.closePath();
+    c.save(); c.globalAlpha = 0.86; c.fill(); c.restore();   // the membrane is a little see-through…
+    // …stretched over finger bones fanning from the wrist to each point of the scalloped edge
+    const wx = sd * 4.6 * s, wy = mid - 1.8 * s;
+    c.strokeStyle = c.fillStyle; c.lineWidth = 0.55 * s; c.lineCap = 'round'; c.beginPath();
+    c.moveTo(sd * 1.5 * s, -0.8 * s); c.lineTo(wx, wy);
+    c.moveTo(wx, wy); c.lineTo(sd * 11 * s, tip - 1 * s);
+    c.moveTo(wx, wy); c.lineTo(sd * 8 * s, mid + 2 * s);
+    c.moveTo(wx, wy); c.lineTo(sd * 5 * s, mid + 2.6 * s);
+    c.stroke();
   }
   c.beginPath(); c.ellipse(0, 0.5 * s, 1.8 * s, 2.6 * s, 0, 0, 7); c.fill();
   c.beginPath(); c.arc(0, -2.3 * s, 1.5 * s, 0, 7); c.fill();

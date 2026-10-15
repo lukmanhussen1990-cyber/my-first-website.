@@ -365,3 +365,11 @@ Check 30 done. Next: graphics – desktop backdrop at large sizes, then moth/bat
 - Tests: up16test, functest, reducedtest, ambient soak pass.
 
 Check 31 done. Next: graphics – bats and lightning at full resolution, then the spider.
+
+## Check 32 (v19n) – graphics
+- Bats at full resolution: the wing membrane is a little see-through and stretched over finger bones fanning from the
+  wrist to each point of the scalloped edge, so the silhouette reads as a bat at every point of the flap.
+- Spider checked at 3x: clean, unchanged.
+- Tests: up16test, functest, ambient soak pass.
+
+Check 32 done. Next: graphics – lightning flash and the wide-screen night, then the control panel's previews.
