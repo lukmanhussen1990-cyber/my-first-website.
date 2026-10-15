@@ -122,3 +122,25 @@ functest, imetest, hinttest, focustest, reviewfix, new skintest and tiptest pass
 frame times unchanged.
 **Check 11 done. Next: share as an image card, download .txt, a fresh page with a tear-off, sound modes
 (all / effects only / off), haptics.**
+
+## Check 12 — share picture, new page, sound modes, haptics (v12a)
+Added, all outside the recorded opening (nothing changes until it is used):
+- The share icon opens a small menu: Share text (Copy text where the browser cannot share), Share as image
+  (Save as image where files cannot be shared), Save as .txt, and New page. The menu keeps the phone keyboard
+  up, works with arrows / Home / End / Escape, and shows "Nothing to share yet" on an empty page.
+- The picture is the app's own composition: dark top with the name, the cream paper with the same glyph
+  jitter, ink and grain, the typed lines, the pipe with faint cobwebs and the capsule (in its current skin)
+  under the last line, and the date. 1080 px wide (square for short pages); very long pages are scaled to
+  stay under 6 Mpx (a full 3 000-character page: 789 × 7609, 3.3 MB instead of 13.6 MB). It is drawn a few
+  lines at a time while the menu is open, so the machine keeps running.
+- New page: the sheet is torn off just above the pipe (ragged edge, loose fibres, the lamp light baked in)
+  and flies away with a rip and a whoosh; the carriage rolls back with its return; "New page · UNDO" for 5 s
+  brings the old page back (ignored once typing has started on the new sheet).
+- The speaker cycles music + effects → effects only → off (remembered); its icon and label follow.
+- Light haptics on Android phones (keys, space, return, backspace, skin change, new page), silent when the
+  sound is off.
+Checked: the default look is unchanged on the deterministic replay (refactors of the glyph, grain, rail and
+text drawing are pixel-identical); new r12test (menu, .txt, picture, keyboard, tear + undo, sound modes,
+haptics) and the full suite pass; reviewfix/audioleak updated for the three sound modes.
+**Check 12 done. Next: rare distant lightning with thunder under the lamp, a backdrop for wide screens,
+reduced-motion support, small UI polish.**

@@ -57,6 +57,20 @@
   .skin canvas { display: block; }
   .skin[aria-checked="true"] { background: rgba(255,255,255,.09); color: #f1efe6; box-shadow: inset 0 0 0 1px rgba(255,255,255,.17); }
   .skin:focus-visible { outline: 1px dashed rgba(200,200,190,.5); outline-offset: 1px; }
+  #shareMenu { position: absolute; top: 0; right: 0; z-index: 6; display: flex; flex-direction: column; min-width: 172px; padding: 5px;
+               border-radius: 14px; background: rgba(24,24,22,.92); box-shadow: 0 10px 30px rgba(0,0,0,.55), inset 0 0 0 .5px rgba(255,255,255,.13);
+               -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); opacity: 0; pointer-events: none; visibility: hidden;
+               transform: translateY(-6px) scale(.96); transform-origin: 88% 0;
+               transition: opacity .16s ease, transform .18s ease, visibility 0s linear .18s; }
+  #shareMenu.open { opacity: 1; pointer-events: auto; visibility: visible; transform: none;
+                    transition: opacity .16s ease, transform .18s ease, visibility 0s; }
+  #shareMenu [role="menuitem"] { display: flex; align-items: center; gap: 11px; padding: 10px 14px 10px 10px; border-radius: 9px;
+               color: #d6d5cd; font-size: 13px; letter-spacing: .02em; text-align: left; white-space: nowrap; }
+  #shareMenu [role="menuitem"] svg { flex: none; color: #a9a9a0; }
+  #shareMenu [role="menuitem"]:hover, #shareMenu [role="menuitem"]:focus-visible { background: rgba(255,255,255,.08); outline: none; }
+  #shareMenu .sep { height: 1px; margin: 4px 8px; background: rgba(255,255,255,.1); }
+  .torn { position: absolute; left: 0; z-index: 4; pointer-events: none; transform-origin: 55% 100%;
+          filter: drop-shadow(0 5px 9px rgba(0,0,0,.32)); will-change: transform; }
   #controls { position: absolute; left: 0; top: 0; width: 100%; opacity: 0; pointer-events: none; }
   #controls.on { pointer-events: auto; }
   .sl { position: absolute; touch-action: none; outline: none; }
@@ -81,6 +95,8 @@
            background: rgba(20,20,18,.92); color: #d8d8d2; font-size: 12px; letter-spacing: .04em;
            opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  #toast.show.act { pointer-events: auto; }
+  #toast button { margin-left: 14px; padding: 3px 2px; color: #f2d58c; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
 </style>
 </head>
 <body>
@@ -105,11 +121,12 @@
     <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
       <path d="M4.5 9.6h3.2L12 6.2v11.6l-4.3-3.4H4.5z"/>
       <g class="on"><path d="M15 9.4a3.7 3.7 0 0 1 0 5.2"/><path d="M17.4 7.2a6.9 6.9 0 0 1 0 9.6"/></g>
+      <g class="fx" style="display:none"><path d="M15 9.4a3.7 3.7 0 0 1 0 5.2"/></g>
       <g class="off" style="display:none"><path d="M15.4 9.8l4.4 4.4M19.8 9.8l-4.4 4.4"/></g>
     </svg>
   </button>
   <div id="counter">0 / 3 000</div>
-  <button id="share" class="icon" aria-label="Share">
+  <button id="share" class="icon" aria-label="Share" aria-haspopup="menu" aria-expanded="false">
     <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
       <path d="M7.9 9.8H3.85v11.1h16.3V9.8H16.1"/><path d="M12 3.6v11.6M8.5 7.1 12 3.6l3.5 3.5"/>
     </svg>
@@ -129,6 +146,7 @@
   </button>
   <button id="capBtn" aria-label="Change the capsule skin" aria-haspopup="true" aria-expanded="false"></button>
   <div id="skinTray" role="radiogroup" aria-label="Capsule skins"></div>
+  <div id="shareMenu" role="menu" aria-label="Share"></div>
   <div id="toast"></div>
 </div>
 
@@ -258,6 +276,7 @@ function layout() {
   buildRail();
   buildCapsules();
   layoutSkinUI();
+  layoutMenu();
   buildSprites();
   buildCaptions();
   lightDirty = true;
@@ -295,6 +314,11 @@ function buildGrain() {
   grainCv.style.width = w + 'px'; grainCv.style.height = h + 'px';
   const g = grainCv.getContext('2d');
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  paintGrain(g, w, h, k, grainCv.width, grainCv.height);
+}
+// paper grain (w × h css px at scale k; pw × ph device px for the fine tile). k is a parameter on purpose:
+// the share card paints the same paper at its own scale
+function paintGrain(g, w, h, k, pw, ph, fine = true) {
   const R = mulberry(9157);
   // soft mottling
   for (let i = 0; i < 70; i++) {
@@ -337,6 +361,7 @@ function buildGrain() {
     }
     g.fill();
   }
+  if (!fine) return;
   // fine grain tile
   const tile = document.createElement('canvas'); tile.width = tile.height = 128;
   const tg = tile.getContext('2d'); const id = tg.createImageData(128, 128);
@@ -346,7 +371,7 @@ function buildGrain() {
   tg.putImageData(id, 0, 0);
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.fillStyle = g.createPattern(tile, 'repeat');
-  g.fillRect(0, 0, grainCv.width, grainCv.height);
+  g.fillRect(0, 0, pw, ph);
 }
 
 /* ------------------------------------------------------------------ rail -- */
@@ -370,29 +395,33 @@ function buildRail() {
     cv.width = Math.round(W * dpr); cv.height = Math.round((bot - top) * dpr);
     const c = cv.getContext('2d');
     c.setTransform(dpr, 0, 0, dpr, 0, -top * dpr);
-    // soft shadow on the paper below the rail
-    const sh = c.createLinearGradient(0, G.railB - 1 * k, 0, G.railB + 29 * k);
-    if (m === 0) {   // falloff measured below the pipe in the recording: steep, then a faint tail to ~26 px
-      for (const [d, a] of [[-1, 0.8], [0, 0.64], [1, 0.57], [2, 0.48], [3, 0.36], [4, 0.27], [5, 0.19], [6, 0.14], [7, 0.12], [8, 0.108], [10, 0.1], [11, 0.074], [13, 0.064], [18, 0.06], [22, 0.055], [23, 0.03], [25, 0.02], [27, 0.006], [29, 0]])
-        sh.addColorStop((d + 1) / 30, `rgba(30,24,16,${a})`);
-    }
-    else { sh.addColorStop(0, 'rgba(0,0,0,0.5)'); sh.addColorStop(0.18, 'rgba(0,0,0,0.25)'); sh.addColorStop(0.6, 'rgba(0,0,0,0)'); }
-    c.fillStyle = sh; c.fillRect(0, G.railB - 1 * k, W, 30 * k);
-    // pipe
-    const gr = c.createLinearGradient(0, G.railT, 0, G.railB);
-    for (const [o, col] of RAIL_STOPS[m]) gr.addColorStop(o, col);
-    c.fillStyle = gr; c.fillRect(0, G.railT, W, G.railB - G.railT);
-    // faint brushed streaks
-    const R = mulberry(77 + m);
-    c.globalAlpha = m ? 0.05 : 0.07;
-    for (let i = 0; i < 40; i++) {
-      const y = lerp(G.railT, G.railB, R()); c.fillStyle = R() < 0.5 ? '#fff' : '#000';
-      c.fillRect(R() * W, y, (20 + R() * 120) * k, 0.4 * k);
-    }
-    c.globalAlpha = 1;
-    // collars
-    for (const cx of [12 * k, W - 12 * k]) drawCollar(c, cx, m);
+    paintRail(c, m);
   }
+}
+// the pipe (m: 0 light / 1 lamp) across the width W at the current scale, with its shadow and collars
+function paintRail(c, m) {
+  // soft shadow on the paper below the rail
+  const sh = c.createLinearGradient(0, G.railB - 1 * k, 0, G.railB + 29 * k);
+  if (m === 0) {   // falloff measured below the pipe in the recording: steep, then a faint tail to ~26 px
+    for (const [d, a] of [[-1, 0.8], [0, 0.64], [1, 0.57], [2, 0.48], [3, 0.36], [4, 0.27], [5, 0.19], [6, 0.14], [7, 0.12], [8, 0.108], [10, 0.1], [11, 0.074], [13, 0.064], [18, 0.06], [22, 0.055], [23, 0.03], [25, 0.02], [27, 0.006], [29, 0]])
+      sh.addColorStop((d + 1) / 30, `rgba(30,24,16,${a})`);
+  }
+  else { sh.addColorStop(0, 'rgba(0,0,0,0.5)'); sh.addColorStop(0.18, 'rgba(0,0,0,0.25)'); sh.addColorStop(0.6, 'rgba(0,0,0,0)'); }
+  c.fillStyle = sh; c.fillRect(0, G.railB - 1 * k, W, 30 * k);
+  // pipe
+  const gr = c.createLinearGradient(0, G.railT, 0, G.railB);
+  for (const [o, col] of RAIL_STOPS[m]) gr.addColorStop(o, col);
+  c.fillStyle = gr; c.fillRect(0, G.railT, W, G.railB - G.railT);
+  // faint brushed streaks
+  const R = mulberry(77 + m);
+  c.globalAlpha = m ? 0.05 : 0.07;
+  for (let i = 0; i < 40; i++) {
+    const y = lerp(G.railT, G.railB, R()); c.fillStyle = R() < 0.5 ? '#fff' : '#000';
+    c.fillRect(R() * W, y, (20 + R() * 120) * k, 0.4 * k);
+  }
+  c.globalAlpha = 1;
+  // collars
+  for (const cx of [12 * k, W - 12 * k]) drawCollar(c, cx, m);
 }
 function drawCollar(c, cx, m) {
   const w = 16 * k, t = G.railY - 14.4 * k, b = G.railY + 13.4 * k, x = cx - w / 2, r = 2.2 * k;
@@ -991,27 +1020,29 @@ const lineCache = new Map();
 let textVer = 0;                       // bumps whenever already-typed glyphs may have changed
 function invalidateText() { lineCache.clear(); textVer++; }
 
-function drawGlyph(c, i, x, by, inkRgb) {
+function drawGlyph(c, i, x, by, inkRgb, s) {
   const ch = text[i];
   if (ch === ' ' || ch === '\n' || ch === undefined) return;
+  // s: an explicit scale (the share card); by default the live layout
+  const kk = s ? s.k : k, dp = s ? s.dpr : dpr, cell = s ? s.cell : G.cell, font = s ? s.font : G.font;
   // every strike is slightly different: position, darkness, a hint of rotation, extra ink
-  const gx = x + (rnd(i, 1) - 0.5) * 0.7 * k, gy = by + (rnd(i, 2) - 0.5) * 0.9 * k;
+  const gx = x + (rnd(i, 1) - 0.5) * 0.7 * kk, gy = by + (rnd(i, 2) - 0.5) * 0.9 * kk;
   const dark = 0.74 + rnd(i, 3) * 0.26, rot = (rnd(i, 4) - 0.5) * 0.035;
   c.save(); c.translate(gx, gy); c.rotate(rot);
   c.fillStyle = rgba(inkRgb, dark * 0.3);
-  c.shadowColor = rgba(inkRgb, 0.4); c.shadowBlur = 0.6 * k * dpr;
-  c.fillText(ch, 0.2 * k, 0.1 * k);
+  c.shadowColor = rgba(inkRgb, 0.4); c.shadowBlur = 0.6 * kk * dp;
+  c.fillText(ch, 0.2 * kk, 0.1 * kk);
   c.shadowBlur = 0;
   c.fillStyle = rgba(inkRgb, dark);
   c.fillText(ch, 0, 0);
-  if (rnd(i, 5) < 0.35) { c.fillStyle = rgba(inkRgb, dark * 0.45); c.fillText(ch, -0.3 * k, -0.15 * k); }
+  if (rnd(i, 5) < 0.35) { c.fillStyle = rgba(inkRgb, dark * 0.45); c.fillText(ch, -0.3 * kk, -0.15 * kk); }
   c.restore();
   // dry-ink speckle: knock tiny holes out of this glyph
   c.globalCompositeOperation = 'destination-out';
   const R = mulberry(i * 13 + 7);
   for (let n = 0; n < 7; n++) {
     c.fillStyle = `rgba(0,0,0,${0.25 + R() * 0.45})`;
-    c.fillRect(x - G.cell * 0.5 + R() * G.cell, by - G.font * 0.75 + R() * G.font, (0.35 + R() * 0.6) * k, (0.35 + R() * 0.6) * k);
+    c.fillRect(x - cell * 0.5 + R() * cell, by - font * 0.75 + R() * font, (0.35 + R() * 0.6) * kk, (0.35 + R() * 0.6) * kk);
   }
   c.globalCompositeOperation = 'source-over';
 }
@@ -1242,6 +1273,9 @@ function scrollOffset(t) {
 }
 
 /* -------------------------------------------------------- typing actions -- */
+// light haptics on phones that support them (Android); they go quiet together with the sound
+const CAN_BUZZ = TOUCH && typeof navigator.vibrate === 'function';
+function haptic(p) { if (CAN_BUZZ && AU.mode !== 'off') try { navigator.vibrate(p); } catch (e) {} }
 function typeChar(ch) {
   if (text.length >= MAX) return false;
   const t = now();
@@ -1263,16 +1297,19 @@ function typeChar(ch) {
     fx.zap(true);
     flingWebs();
     AU.carriageReturn(Math.round((fromX - carriageTarget()) / G.cell));
+    haptic([9, 45, 7]);
   } else if (ch === ' ') {
     // space: no type bar, just a small spark and the carriage advance
     slideTo(carriageTarget(), 0.1, E.outSine, 0);
     fx.spark(0.55);
     AU.space(); AU.spark(0.35);
+    haptic(4);
   } else {
     const s0 = strikeFromHere(t);
     appearAt.set(i, t + Math.max(0, 0.035 - s0));
     slideTo(carriageTarget(), 0.1, E.outSine, 0.13);
     AU.clack();
+    haptic(6);
     if (Math.random() < 0.07) { fx.zap(true, 0.9); AU.zap(0.75); } else { fx.spark(); AU.spark(0.55); }   // now and then a big green zap
   }
   if (lines.length !== before || prevLineIdx !== lines.length - 1) invalidateText();
@@ -1287,7 +1324,7 @@ function deleteChar(quiet) {
   // (applying it first would make the carriage hop forward before sliding back)
   car.pending = null; car.from = car.to = car.x; car.dur = 0;
   appearAt.delete(text.length - 1);
-  if (!quiet) AU.backspace();
+  if (!quiet) { AU.backspace(); haptic(3); }
   text = text.slice(0, -1);
   textVer++;
   lines = wrap(text);
@@ -1396,8 +1433,7 @@ document.addEventListener('keydown', (e) => {
 
 /* ------------------------------------------------------------ top bar -- */
 $('#back').addEventListener('click', () => { if (history.length > 1) history.back(); else toast('Nothing to go back to'); });
-$('#share').addEventListener('click', async () => {
-  if (!text.trim()) { toast('Nothing to share yet'); return; }
+async function shareText() {
   try {
     if (navigator.share) { await navigator.share({ title: 'Frankenwriter', text }); return; }
   } catch (e) { if (e && e.name === 'AbortError') return; }
@@ -1409,11 +1445,20 @@ $('#share').addEventListener('click', async () => {
     ta.remove();
     if (typing) focusInput();   // the temporary textarea took focus; give it back so the keyboard stays
   }
-});
+}
 let toastTimer = 0;
-function toast(msg, dur = 1.6) {
-  toastEl.textContent = msg; toastEl.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show'), dur * 1000);
+// a short message above the paper; with an action (e.g. Undo) it carries a button for its lifetime
+function toast(msg, dur = 1.6, action) {
+  toastEl.textContent = msg;
+  toastEl.classList.toggle('act', !!action);
+  if (action) {
+    const b = document.createElement('button'); b.textContent = action.label;
+    b.addEventListener('mousedown', (e) => e.preventDefault());
+    b.addEventListener('click', () => { clearTimeout(toastTimer); toastEl.classList.remove('show', 'act'); action.fn(); });
+    toastEl.appendChild(b);
+  }
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show', 'act'), dur * 1000);
 }
 dialEl.addEventListener('click', () => { lastActivity = now(); setLamp(!lampOn); AU.lampSwitch(lampOn); });
 const FIRST_LINES = [
@@ -1575,24 +1620,7 @@ function draw(t) {
   // ----- text -----
   c.save(); clipPaper(c);
   const ink = pP > 0.5 ? '#120e06' : '#3c3429';
-  const off = scrollOffset(t), lastY = G.base + baseShift(t);
-  const n = lines.length;
-  let minLi = n;
-  for (let li = n - 1; li >= 0; li--) {
-    // the whole sheet feeds up together: right after a wrap the new line starts one line below the
-    // typing line and rises into place with the older lines (as in the recording)
-    const y = lastY - (n - 1 - li - off) * G.lineH;
-    if (y < G.paperTop - G.lineH) break;
-    minLi = li;
-    if (y > G.sceneBot + G.lineH) continue;   // still below the visible strip (e.g. mid-feed after a paste)
-    if (!lines[li].idx.length) continue;
-    const fade = clamp((y - G.paperTop - 6 * k) / (34 * k), 0, 1);
-    if (fade <= 0) continue;
-    const e = renderLine(lines[li], li, ink, t);
-    c.globalAlpha = fade;
-    c.drawImage(e.cv, G.textLeft - e.pad, y - e.by, e.cv.width / dpr, e.cv.height / dpr);
-  }
-  c.globalAlpha = 1;
+  const n = lines.length, minLi = drawText(c, t, ink);
   // forget line images that scrolled away (or no longer exist)
   if (lineCache.size > n - minLi + 3) for (const key of lineCache.keys()) if (key < minLi - 1 || key >= n) lineCache.delete(key);
   // hint + placeholder
@@ -1657,6 +1685,28 @@ function draw(t) {
   const st = fx.state(t);
   drawSparks(c, cx, cy, t, st);
   drawGlow(c, cx, cy, st, pP);
+}
+// the typed lines as they sit on the paper at time t; returns the first line drawn
+function drawText(c, t, ink) {
+  const off = scrollOffset(t), lastY = G.base + baseShift(t);
+  const n = lines.length;
+  let minLi = n;
+  for (let li = n - 1; li >= 0; li--) {
+    // the whole sheet feeds up together: right after a wrap the new line starts one line below the
+    // typing line and rises into place with the older lines (as in the recording)
+    const y = lastY - (n - 1 - li - off) * G.lineH;
+    if (y < G.paperTop - G.lineH) break;
+    minLi = li;
+    if (y > G.sceneBot + G.lineH) continue;   // still below the visible strip (e.g. mid-feed after a paste)
+    if (!lines[li].idx.length) continue;
+    const fade = clamp((y - G.paperTop - 6 * k) / (34 * k), 0, 1);
+    if (fade <= 0) continue;
+    const e = renderLine(lines[li], li, ink, t);
+    c.globalAlpha = fade;
+    c.drawImage(e.cv, G.textLeft - e.pad, y - e.by, e.cv.width / dpr, e.cv.height / dpr);
+  }
+  c.globalAlpha = 1;
+  return minLi;
 }
 let hintA = 1, hintBtnOn = true;
 const DIAL_A = hex('#33302d'), DIAL_B = hex('#aca69b'),   // warm greys measured from the recording
@@ -2181,6 +2231,7 @@ const MELODY = [[0, 2, 76, 6], [0, 10, 67, 2], [0, 12, 65, 2], [0, 14, 64, 4],
   [7, 0, 71, 6], [7, 8, 69, 4], [7, 12, 72, 4]];
 const AU = {
   ctx: null, master: null, sfx: null, music: null, verb: null, noise: null, on: store.get(LS.sound, '1') !== '0',
+  mode: ({ 0: 'off', fx: 'fx' })[store.get(LS.sound, '1')] || 'all',   // all: music + effects, fx: effects only, off
   hum: null, musicOn: false, nextNote: 0, step: 0, timer: 0, lead: null, bed: null, bedNoise: null,
   init() {
     if (this.ctx) return true;
@@ -2211,20 +2262,25 @@ const AU = {
   resume() {
     if (!this.init()) return;
     if (this.ctx.state !== 'running' && this.on && !document.hidden) { this.resumeAt = performance.now(); this.ctx.resume().catch(() => {}); }
-    if (this.on && !this.musicOn) this.startMusic();
+    if (this.mode === 'all' && !this.musicOn) this.startMusic();
     if (this.on && lampOn && !this.hum) this.humOn(0.4);
   },
   // only schedule sounds on a running clock (a paused context would queue them all for later);
   // the grace window lets the very first key sound while the context is being resumed by that key
   ready() { return !!this.ctx && this.on && (this.ctx.state === 'running' || (this.ctx.state === 'suspended' && performance.now() - this.resumeAt < 250)); },
-  setOn(on) {
-    this.on = on; store.set(LS.sound, on ? '1' : '0');
+  setMode(mode) {
+    const on = mode !== 'off';
+    this.mode = mode; this.on = on; store.set(LS.sound, mode === 'all' ? '1' : mode === 'fx' ? 'fx' : '0');
     if (!this.init()) return;
     const t = this.ctx.currentTime;
     this.master.gain.cancelScheduledValues(t); this.master.gain.setTargetAtTime(on ? 0.75 : 0, t, 0.06);
-    if (on) { this.resumeAt = performance.now(); this.ctx.resume().catch(() => {}); if (!this.musicOn) this.startMusic(); if (lampOn && !this.hum) this.humOn(0.2); }
-    else { setTimeout(() => { if (!this.on) { this.stopMusic(); this.humOff(0); this.ctx.suspend().catch(() => {}); } }, 300); }
+    if (on) {
+      this.resumeAt = performance.now(); this.ctx.resume().catch(() => {});
+      if (mode === 'all') { if (!this.musicOn) this.startMusic(); } else this.stopMusic();
+      if (lampOn && !this.hum) this.humOn(0.2);
+    } else { setTimeout(() => { if (!this.on) { this.stopMusic(); this.humOff(0); this.ctx.suspend().catch(() => {}); } }, 300); }
   },
+  setOn(on) { this.setMode(on ? 'all' : 'off'); },
   // ---- building blocks ----
   noiseSrc(t, dur) { const s = this.ctx.createBufferSource(); s.buffer = this.noise; s.start(t, Math.random() * 1.5, dur + 0.05); return s; },
   env(g, t, a, peak, d) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); },
@@ -2335,6 +2391,23 @@ const AU = {
       o.frequency.value = f * mul; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gn, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
       o.connect(g); g.connect(this.sfx); g.connect(this.verb); o.start(t); o.stop(t + d + 0.05);
     }
+  },
+  tear() {
+    if (!this.ready()) return; const t0 = this.ctx.currentTime + 0.004;
+    // the rip: a dense crackle of short band-passed bursts rising in pitch over a filtered noise tear
+    for (let i = 0; i < 26; i++) {
+      const u = i / 26;
+      this.burst(t0 + u * 0.3 + Math.random() * 0.012, { f: 1300 + u * 2600 + Math.random() * 800, q: 1.4, gain: 0.09 + Math.random() * 0.13, a: 0.001, d: 0.008 + Math.random() * 0.012 });
+    }
+    const n = this.noiseSrc(t0, 0.36), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+    fl.type = 'bandpass'; fl.Q.value = 0.9; fl.frequency.setValueAtTime(900, t0); fl.frequency.exponentialRampToValueAtTime(3800, t0 + 0.3);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.15, t0 + 0.04); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
+    n.connect(fl); fl.connect(g); g.connect(this.sfx);
+    // and the sheet whooshing away
+    const w = this.noiseSrc(t0 + 0.28, 0.5), wf = this.ctx.createBiquadFilter(), wg = this.ctx.createGain(), t1 = t0 + 0.28;
+    wf.type = 'lowpass'; wf.frequency.setValueAtTime(500, t1); wf.frequency.exponentialRampToValueAtTime(2200, t1 + 0.22); wf.frequency.exponentialRampToValueAtTime(400, t1 + 0.48);
+    wg.gain.setValueAtTime(0.0001, t1); wg.gain.exponentialRampToValueAtTime(0.08, t1 + 0.2); wg.gain.exponentialRampToValueAtTime(0.0001, t1 + 0.48);
+    w.connect(wf); wf.connect(wg); wg.connect(this.sfx);
   },
   trayClick() {
     if (!this.ready()) return; const t = this.ctx.currentTime + 0.003;
@@ -2528,11 +2601,18 @@ document.addEventListener('visibilitychange', () => {
 });
 const soundBtn = $('#sound');
 function paintSound() {
-  soundBtn.querySelector('.on').style.display = AU.on ? '' : 'none';
-  soundBtn.querySelector('.off').style.display = AU.on ? 'none' : '';
-  soundBtn.setAttribute('aria-pressed', AU.on ? 'true' : 'false');
+  const m = AU.mode;
+  soundBtn.querySelector('.on').style.display = m === 'all' ? '' : 'none';
+  soundBtn.querySelector('.fx').style.display = m === 'fx' ? '' : 'none';
+  soundBtn.querySelector('.off').style.display = m === 'off' ? '' : 'none';
+  soundBtn.setAttribute('aria-label', m === 'all' ? 'Sound: music and effects' : m === 'fx' ? 'Sound: effects only' : 'Sound: off');
 }
-soundBtn.addEventListener('click', () => { AU.setOn(!AU.on); paintSound(); });
+// music and effects → effects only → off → …
+soundBtn.addEventListener('click', () => {
+  const next = { all: 'fx', fx: 'off', off: 'all' }[AU.mode];
+  AU.setMode(next); paintSound();
+  toast(next === 'all' ? 'Music and sound on' : next === 'fx' ? 'Music off' : 'Sound off');
+});
 paintSound();
 
 /* ---------------------------------------------------------- skin picker -- */
@@ -2641,6 +2721,285 @@ function updateTip(t) {
   toast('Tap the capsule for Halloween skins', 3.2);
 }
 
+/* ----------------------------------------------------------- share menu -- */
+// the share icon opens a small menu: share (or copy) the text, share or save a picture of the page, save a
+// .txt, or tear the page off and start a new one (with undo). Like the skin tray it never takes focus from the
+// hidden textarea, so the phone keyboard stays up.
+const shareBtn = $('#share'), shareMenu = $('#shareMenu');
+let menuOpen = false, cardJob = null, cardTimer = 0;
+function canShareFiles() {
+  try { return !!(navigator.canShare && navigator.canShare({ files: [new File([new Blob(['x'])], 'x.png', { type: 'image/png' })] })); }
+  catch (e) { return false; }
+}
+const MENU = [
+  { act: 'text', label: () => (navigator.share ? 'Share text' : 'Copy text'), icon: '<path d="M5 7.5h14M5 11.5h14M5 15.5h9"/>' },
+  { act: 'image', label: () => (canShareFiles() ? 'Share as image' : 'Save as image'),
+    icon: '<rect x="4.5" y="5.5" width="15" height="13" rx="1.5"/><circle cx="9.3" cy="10" r="1.4"/><path d="M5 17l4.6-4.4 3 2.8 2.6-2.2L19 16.4"/>' },
+  { act: 'txt', label: () => 'Save as .txt', icon: '<path d="M12 4.5v10M8 10.6l4 4 4-4M5.5 19.5h13"/>' },
+  { act: 'new', label: () => 'New page', icon: '<path d="M7 3.8h6.8l4.2 4.2v12.2H7z"/><path d="M13.6 3.8v4.4H18M12.5 11.4v5.4M9.8 14.1h5.4"/>' },
+];
+function layoutMenu() {
+  shareMenu.style.top = (H * 0.0896 + 22 * k) + 'px';
+  shareMenu.style.right = Math.max(8, W - 413.7 * k) + 'px';
+}
+function buildMenu() {
+  if (!shareMenu.children.length) {
+    for (const m of MENU) {
+      if (m.act === 'new') { const sp = document.createElement('div'); sp.className = 'sep'; sp.setAttribute('role', 'separator'); shareMenu.appendChild(sp); }
+      const b = document.createElement('button');
+      b.setAttribute('role', 'menuitem'); b.dataset.act = m.act; b.tabIndex = -1;
+      b.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${m.icon}</svg><span></span>`;
+      b.addEventListener('mousedown', (e) => e.preventDefault());
+      b.addEventListener('click', (e) => menuAction(m.act, e.detail === 0));
+      shareMenu.appendChild(b);
+    }
+  }
+  for (const b of shareMenu.querySelectorAll('[data-act]')) b.querySelector('span').textContent = MENU.find((m) => m.act === b.dataset.act).label();
+}
+function menuItems() { return [...shareMenu.querySelectorAll('[data-act]')]; }
+function openMenu(kb) {
+  if (!text.trim()) { toast('Nothing to share yet'); return; }
+  closeTray();
+  buildMenu();
+  menuOpen = true; shareMenu.classList.add('open'); shareBtn.setAttribute('aria-expanded', 'true');
+  AU.trayClick();
+  if (kb) menuItems()[0].focus();
+  clearTimeout(cardTimer); cardTimer = setTimeout(prepareCard, 220);   // after the menu has opened
+}
+function closeMenu(kb) {
+  if (!menuOpen) return;
+  menuOpen = false; shareMenu.classList.remove('open'); shareBtn.setAttribute('aria-expanded', 'false');
+  if (kb || shareMenu.contains(document.activeElement)) shareBtn.focus();
+}
+shareBtn.addEventListener('click', (e) => { lastActivity = now(); if (menuOpen) closeMenu(e.detail === 0); else openMenu(e.detail === 0); });
+shareMenu.addEventListener('keydown', (e) => {
+  const items = menuItems(), i = items.indexOf(document.activeElement);
+  let j = -1;
+  if (e.key === 'ArrowDown') j = (i + 1) % items.length;
+  else if (e.key === 'ArrowUp') j = (i + items.length - 1) % items.length;
+  else if (e.key === 'Home') j = 0; else if (e.key === 'End') j = items.length - 1;
+  else if (e.key === 'Tab') { closeMenu(); return; }
+  if (j < 0) return;
+  e.preventDefault(); items[j].focus();
+});
+document.addEventListener('pointerdown', (e) => { if (menuOpen && !shareMenu.contains(e.target) && !shareBtn.contains(e.target)) closeMenu(); }, true);
+document.addEventListener('keydown', (e) => { if (menuOpen && e.key === 'Escape') { e.preventDefault(); closeMenu(true); } });
+input.addEventListener('input', () => closeMenu());
+
+function fileName(ext) {
+  const d = new Date(), p = (n) => String(n).padStart(2, '0');
+  return `frankenwriter-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.${ext}`;
+}
+function download(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+function menuAction(act, kb) {
+  closeMenu(kb);
+  lastActivity = now();
+  if (act === 'text') shareText();
+  else if (act === 'image') shareImage();
+  else if (act === 'txt') { download(new Blob([text], { type: 'text/plain;charset=utf-8' }), fileName('txt')); toast('Text saved'); }
+  else if (act === 'new') newPage();
+}
+// the picture is made while the menu is open, so sharing it can usually happen right in the tap (Safari wants that)
+function cardFor(key) {
+  if (cardJob && cardJob.key === key) return cardJob;
+  const job = { key, blob: null };
+  job.promise = renderCard().then((cv) => new Promise((r) => cv.toBlob(r, 'image/png'))).then((b) => (job.blob = b)).catch(() => null);
+  cardJob = job;
+  return job;
+}
+function prepareCard() { if (menuOpen) cardFor(text + '\u0000' + skin.id); }
+async function shareImage() {
+  const job = cardFor(text + '\u0000' + skin.id);
+  const blob = job.blob || await job.promise;
+  if (!blob) { toast('Could not make the picture'); return; }
+  const name = fileName('png'), file = new File([blob], name, { type: 'image/png' });
+  if (canShareFiles()) {
+    try { await navigator.share({ files: [file], title: 'Frankenwriter' }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  download(blob, name); toast('Picture saved');
+}
+
+/* ----------------------------------------------------------- share card -- */
+// A picture of the page: the app's own composition at 1080 px wide, the typed lines on the cream paper
+// (same glyph jitter, ink and grain), the machine in its current skin under the last line, and the date.
+function withScale(kk, railY, w, fn) {
+  // draw sprites at another scale (device px = css px × kk); everything is restored afterwards
+  const sk = k, sd = dpr, sw = W, keep = {};
+  for (const key of ['capHW', 'capHH', 'capCY', 'railY', 'railT', 'railB', 'base2']) keep[key] = G[key];
+  k = kk; dpr = 1; W = w;
+  G.capHW = 45.8 * kk; G.capHH = 21.7 * kk; G.railY = railY; G.capCY = railY - 0.8 * kk;
+  G.railT = railY - 11 * kk; G.railB = railY + 10.25 * kk; G.base2 = 1.33 * kk;
+  try { fn(); } finally { k = sk; dpr = sd; W = sw; Object.assign(G, keep); }
+}
+function spacedText(c, str, x, y, gap) {   // centred text with extra letter spacing
+  let w = 0; for (const ch of str) w += c.measureText(ch).width + gap; w -= gap;
+  let cx = x - w / 2; c.textAlign = 'left';
+  for (const ch of str) { c.fillText(ch, cx, y); cx += c.measureText(ch).width + gap; }
+}
+// faint cobweb bands hanging under the pipe between the collars and the capsule, pinched in the middle,
+// with little fans at the collars (a still version of the live webs)
+function cardWebs(c, xa, xb, railY, kc, seed) {
+  const R = mulberry(4242 + seed), span = xb - xa;
+  c.save(); c.lineCap = 'round';
+  const fan = (x, dir) => {
+    for (let i = 0; i < 9; i++) {
+      const a = Math.PI / 2 + dir * (0.15 + R() * 0.9), len = (8 + R() * 18) * kc, y = railY + (3 + R() * 5) * kc;
+      c.strokeStyle = `rgba(105,100,90,${0.1 + R() * 0.16})`; c.lineWidth = (0.35 + R() * 0.3) * kc;
+      c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); c.stroke();
+    }
+  };
+  if (seed === 1) fan(xa, 1); else fan(xb, -1);
+  if (span > 60 * kc) {
+    const xm = xa + span * (0.5 + (R() - 0.5) * 0.1), ym = railY + Math.min(30, 10 + span / kc * 0.07) * kc;
+    for (let i = 0; i < 13; i++) {
+      const y0 = railY + (2 + R() * 7) * kc, y1 = railY + (2 + R() * 7) * kc;
+      const px = xm + (R() - 0.5) * 2 * kc, py = ym + (R() - 0.5) * 2 * kc;
+      c.strokeStyle = `rgba(105,100,90,${0.1 + R() * 0.17})`; c.lineWidth = (0.35 + R() * 0.35) * kc;
+      c.beginPath(); c.moveTo(xa, y0);
+      c.quadraticCurveTo(lerp(xa, px, 0.5), lerp(y0, py, 0.75) + R() * 4 * kc, px, py);
+      c.quadraticCurveTo(lerp(px, xb, 0.5), lerp(py, y1, 0.25) + R() * 4 * kc, xb, y1);
+      c.stroke();
+    }
+  }
+  c.restore();
+}
+async function renderCard() {
+  let L = lines.map((l) => l.idx);
+  while (L.length > 1 && !L[L.length - 1].some((i) => text[i] !== ' ')) L.pop();
+  const MAXL = 168, cut = L.length > MAXL;
+  if (cut) L = L.slice(0, MAXL - 1);
+  const nL = L.length + (cut ? 1 : 0);
+  // laid out in the app's css px (440 wide), then scaled: 1080 px wide, smaller for very long pages (≤ 6 Mpx)
+  const hCss = Math.max(440, 122 + (nL - 1) * 24.67 + 55.84 + 71.3);
+  const kc = Math.min(1080 / 440, Math.sqrt(6e6 / (440 * hCss)));
+  const CW = Math.round(440 * kc), CH = Math.round(hCss * kc);
+  const cell = 13.1 * kc, font = 22 * kc, lineH = 24.67 * kc, textLeft = 88.8 * kc, paperTop = 61.1 * kc;
+  const railY = CH - 71.3 * kc, lastBase = railY - 55.84 * kc, firstBase = lastBase - (nL - 1) * lineH;
+  const cv = document.createElement('canvas'); cv.width = CW; cv.height = CH;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#181818'; c.fillRect(0, 0, CW, CH);
+  c.font = `700 ${Math.round(15 * kc)}px "Courier Prime", "Courier New", monospace`; c.fillStyle = '#d4d4d4'; c.textBaseline = 'alphabetic';
+  spacedText(c, 'FRANKENWRITER', CW / 2, 37.5 * kc, 0.35 * kc);
+  // the paper, with the app's rounded top and grain
+  const rx = 53.3 * kc, ry = 160 * kc;
+  c.save();
+  c.beginPath(); c.moveTo(0, CH); c.lineTo(0, paperTop + ry); c.ellipse(rx, paperTop + ry, rx, ry, 0, Math.PI, Math.PI * 1.5);
+  c.lineTo(CW - rx, paperTop); c.ellipse(CW - rx, paperTop + ry, rx, ry, 0, -Math.PI / 2, 0); c.lineTo(CW, CH); c.closePath(); c.clip();
+  c.fillStyle = rgba(PAPER_LIGHT); c.fillRect(0, paperTop, CW, CH - paperTop);
+  const gr = document.createElement('canvas'); gr.width = CW; gr.height = Math.ceil(CH - paperTop);
+  paintGrain(gr.getContext('2d'), CW, CH - paperTop, kc, CW, CH - paperTop, false);
+  c.drawImage(gr, 0, paperTop);
+  // typed lines (a few at a time, so the machine keeps running while a long page is drawn)
+  const S = { k: kc, dpr: 1, cell, font }, inkRgb = hex('#3c3429'), pad = 6 * kc;
+  const lc = document.createElement('canvas'); lc.width = Math.ceil(COLS * cell + pad * 2); lc.height = Math.ceil(lineH * 1.7);
+  const lx = lc.getContext('2d'), by = lineH * 1.7 * 0.68;
+  for (let li = 0; li < L.length; li++) {
+    lx.setTransform(1, 0, 0, 1, 0, 0); lx.clearRect(0, 0, lc.width, lc.height);
+    lx.font = FONT(font); lx.textAlign = 'center'; lx.textBaseline = 'alphabetic';
+    const idx = L[li];
+    for (let j = 0; j < idx.length; j++) drawGlyph(lx, idx[j], pad + (j + 0.5) * cell + 1.2 * kc, by, inkRgb, S);
+    c.drawImage(lc, textLeft - pad, firstBase + li * lineH - by);
+    if (li % 6 === 5) await new Promise((r) => setTimeout(r, 0));
+  }
+  if (cut) { c.font = FONT(font); c.textAlign = 'left'; c.fillStyle = rgba(inkRgb, 0.85); c.fillText('…', textLeft, lastBase); }
+  // the machine under the last line: pipe, cobwebs, capsule (current skin), LEDs and the T
+  const col = cut ? 1 : Math.min((L[L.length - 1] || []).length, COLS - 1);
+  const cx = textLeft + (col + 0.5) * cell;
+  withScale(kc, railY, CW, () => {
+    c.save(); paintRail(c, 0); c.restore();
+    cardWebs(c, 20 * kc, cx - 44 * kc, railY, kc, 1);
+    cardWebs(c, cx + 44 * kc, CW - 20 * kc, railY, kc, 2);
+    const sp = document.createElement('canvas');
+    renderCapsule(sp, skin, 0);
+    c.drawImage(sp, cx - sp.width / 2, G.capCY - sp.height / 2);
+    drawLEDs(c, cx, G.capCY, lastKey + 10, 0);
+    buildSprites();
+    drawT(c, cx, G.capCY - G.capHH, now() + 100, 0);
+  });
+  buildSprites();   // back to the live sprites
+  // the date, typed small under the machine
+  c.font = FONT(Math.round(10.5 * kc)); c.textAlign = 'right'; c.fillStyle = rgba(inkRgb, 0.55);
+  c.fillText(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), textLeft + COLS * cell, CH - 25.3 * kc);
+  c.restore();
+  return cv;
+}
+
+/* ------------------------------------------------------------- new page -- */
+// tear the page off above the pipe (it flies away), roll the carriage back and start on a fresh sheet; Undo
+// brings the old page back for a few seconds
+function newPage() {
+  const prev = text + pending;
+  if (!prev) return;
+  const t = now(), cols = caretCol();
+  tearOff(t);
+  pending = ''; text = ''; lines = wrap(text); appearAt.clear(); invalidateText();
+  input.value = ''; keepCaretAtEnd();
+  lastKey = t;
+  car.pending = null; car.from = car.to = car.x; car.dur = 0;
+  scrollAnim.from = 0; scrollAnim.t0 = -9;
+  retargetShift(t);
+  slideTo(carriageTarget(), 0.267, E.outSine, 0.24);
+  retract.t0 = t + 0.24; strike.t0 = -9;
+  setTimeout(() => { fx.zap(true); flingWebs(); AU.carriageReturn(Math.max(3, cols)); }, 240);
+  onTextChanged(); saveNow();
+  AU.tear(); haptic([14, 50, 10]);
+  toast('New page', 5, { label: 'Undo', fn: () => {
+    if (text || pending) return;   // already typing on the new sheet
+    input.value = prev.slice(0, MAX); keepCaretAtEnd(); syncInput();   // a long page lands at once, a short one is typed back
+  } });
+}
+function tearOff(t) {
+  const top = G.paperTop, bot = G.railT - 3 * k, h = bot - top;
+  if (h < 20 * k) return;
+  const cv = document.createElement('canvas'), hh = h + 6 * k;
+  cv.className = 'torn';
+  cv.width = Math.round(W * dpr); cv.height = Math.round(hh * dpr);
+  cv.style.width = W + 'px'; cv.style.height = hh + 'px'; cv.style.top = top + 'px';
+  const c = cv.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, 0, -top * dpr);
+  // the sheet: rounded top like the real one, a ragged torn edge just above the pipe
+  const R = mulberry((t * 1000) | 0), edge = [];
+  for (let x = W; x > -3 * k; x -= 2.5 * k) edge.push([Math.max(0, x), bot + (R() - 0.5) * 3.2 * k + Math.sin(x * 0.07) * 1.2 * k]);
+  c.beginPath();
+  c.moveTo(0, top + G.ry); c.ellipse(G.rx, top + G.ry, G.rx, G.ry, 0, Math.PI, Math.PI * 1.5);
+  c.lineTo(W - G.rx, top); c.ellipse(W - G.rx, top + G.ry, G.rx, G.ry, 0, -Math.PI / 2, 0);
+  for (const [x, y] of edge) c.lineTo(x, y);
+  c.closePath();
+  c.save(); c.clip();
+  c.fillStyle = rgba(paperRGB); c.fillRect(0, top, W, hh);
+  c.globalAlpha = 1 - CH.paper.v * 0.45; c.drawImage(grainCv, 0, top, W, H - top); c.globalAlpha = 1;
+  if (lightXf.a > 0.01) {   // the lamp's light, as it falls on the sheet right now
+    c.save(); c.globalAlpha = lightXf.a;
+    c.translate(lightXf.tx + L.ax, top + lightXf.ty + L.ay); c.scale(lightXf.g, lightXf.g); c.translate(-L.ax, -L.ay);
+    c.drawImage(lightCv, 0, 0, parseFloat(lightCv.style.width), parseFloat(lightCv.style.height));
+    c.restore();
+  }
+  drawText(c, t, CH.paper.v > 0.5 ? '#120e06' : '#3c3429');
+  c.restore();
+  // a few loose fibres along the tear
+  c.strokeStyle = CH.paper.v > 0.5 ? 'rgba(90,90,84,0.6)' : 'rgba(255,253,246,0.9)'; c.lineWidth = 0.5 * k; c.lineCap = 'round';
+  c.beginPath();
+  for (let i = 2; i < edge.length - 2; i += 3) { const [x, y] = edge[i]; c.moveTo(x, y - 0.6 * k); c.lineTo(x + (R() - 0.5) * 1.6 * k, y + (0.6 + R() * 1.4) * k); }
+  c.stroke();
+  app.insertBefore(cv, toastEl);
+  const fly = -(top + hh + 60 * k);
+  const done = () => cv.remove();
+  try {
+    const an = cv.animate([
+      { transform: 'translate(0px, 0px) rotate(0deg)', offset: 0, easing: 'ease-out' },                         // the sheet lifts off the pipe…
+      { transform: `translate(${-1.5 * k}px, ${-7 * k}px) rotate(-0.7deg)`, offset: 0.14, easing: 'cubic-bezier(.55,0,.9,.5)' },
+      { transform: `translate(${-34 * k}px, ${fly}px) rotate(-10deg)`, offset: 1 },                          // …and flies away
+    ], { duration: 700, fill: 'forwards' });
+    an.onfinish = done;
+  } catch (e) { done(); }
+  setTimeout(done, 1600);   // in case the animation never finishes (hidden tab)
+}
+
 /* ---------------------------------------------------------- idle sparks -- */
 let nextIdle = 0, lastActivity = 0, idleFrom = -1, idleRun = 0;
 function updateIdle(t) {
@@ -2658,6 +3017,7 @@ function updateIdle(t) {
 /* --------------------------------------------------------------- loop -- */
 let lastT = now();
 let lightX = 0, drawDt = 1 / 60;
+const lightXf = { tx: 0, ty: 0, g: 1, a: 0 };   // the light layer's current CSS transform and opacity
 // recent carriage positions (ring buffer) so the light can trail the carriage by a fixed delay
 const carHist = { t: new Float64Array(16), x: new Float64Array(16), n: 0, i: 0 };
 function pushCar(t) { const h = carHist; h.t[h.i] = t; h.x[h.i] = car.x; h.i = (h.i + 1) % 16; h.n = Math.min(16, h.n + 1); }
@@ -2700,7 +3060,8 @@ function tick() {
     // intensity comes up fast near the slot (≈0.1 s) while the reach keeps growing (measured)
     const inten = lampOn ? 1 - Math.pow(1 - Math.min(1, lv / 0.28), 2) : lv;
     setStyle(lightCv, 'opacity', inten.toFixed(3));
-  } else setStyle(lightCv, 'opacity', '0');
+    lightXf.tx = ax - L.ax; lightXf.ty = ay - L.ay; lightXf.g = grow; lightXf.a = inten;
+  } else { setStyle(lightCv, 'opacity', '0'); lightXf.a = 0; }
   drawDt = dt;
   draw(t);
 }
@@ -2710,6 +3071,7 @@ if (/[?&]debug\b/.test(location.search)) {
     get text() { return text; }, get lines() { return lines.map((l) => l.idx.map((i) => text[i]).join('')); },
     get carX() { return car.x; }, get target() { return carriageTarget(); }, get col() { return caretCol(); },
     get lamp() { return lampOn; }, get lift() { const t = now(); return strikeLift(t) - retractDrop(t); }, get lightX() { return lightX; }, colX, G, AU, fx, WEB,
+    renderCard, newPage,
     renderLightForTest(scale, spread) { const s0 = L.scale; L.scale = scale; sliders.spread = spread; renderLight(); L.scale = s0; },
   };
 }
