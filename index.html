@@ -26,6 +26,7 @@
   #paper { position: absolute; left: 0; right: 0; bottom: 0; overflow: hidden; background: #eee7db; }
   #paper canvas, #paper div { position: absolute; left: 0; top: 0; pointer-events: none; }
   #paperFx { display: none; }
+  #relief { mix-blend-mode: multiply; opacity: 0; }
   #light { transform-origin: 0 0; will-change: transform, opacity; opacity: 0; }
   #vignette { inset: 0; width: 100%; height: 100%; opacity: 0;
     background: radial-gradient(ellipse 75% 60% at 50% 38%, rgba(0,0,0,0) 55%, rgba(0,0,0,.16) 100%); }
@@ -239,6 +240,7 @@
     <canvas id="paperFx"></canvas>
     <canvas id="light"></canvas>
     <canvas id="grain"></canvas>
+    <canvas id="relief"></canvas>
   </div>
   <div id="tap"></div>
   <button id="hintBtn" aria-label="Need a first line?"></button>
@@ -451,6 +453,7 @@ function layout() {
 
   buildGrain();
   buildPaperFx();
+  buildRelief();
   buildEdge();
   buildRail();
   buildCapsules();
@@ -588,6 +591,29 @@ function paintPaperFx(g, w, h, k, id) {
       g.strokeStyle = `rgba(230,225,215,${0.02 + R() * 0.05})`; g.lineWidth = (0.3 + R() * 0.3) * k;
       g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * len * 0.5 + (R() - 0.5) * 3 * k, y + Math.sin(a) * len * 0.5, x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
     }
+  }
+}
+// under the lamp the light rakes across the sheet and shows its fibres: an overlay layer of soft fibre relief
+const reliefCv = document.getElementById('relief');
+function buildRelief() {
+  const w = W, h = H - G.paperTop, d = Math.min(dpr, 1.5);
+  reliefCv.width = Math.round(w * d); reliefCv.height = Math.round(h * d);
+  reliefCv.style.width = w + 'px'; reliefCv.style.height = h + 'px';
+  const g = reliefCv.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0);
+  const R = mulberry(31337);
+  g.lineCap = 'round';
+  for (let i = 0; i < 520; i++) {
+    const x = R() * w, y = R() * h, len = (5 + R() * 22) * k, a = R() * Math.PI, light = R() < 0.55;
+    g.strokeStyle = `rgba(70,52,34,${(light ? 0.08 : 0.14) + R() * 0.16})`;   // multiplied: shows only where the paper is lit
+    g.lineWidth = (0.35 + R() * 0.45) * k;
+    g.beginPath(); g.moveTo(x, y);
+    g.quadraticCurveTo(x + Math.cos(a) * len * 0.5 + (R() - 0.5) * 5 * k, y + Math.sin(a) * len * 0.5 + (R() - 0.5) * 5 * k, x + Math.cos(a) * len, y + Math.sin(a) * len);
+    g.stroke();
+  }
+  for (let i = 0; i < 60; i++) {   // soft pulp clouds
+    const x = R() * w, y = R() * h, r = (10 + R() * 40) * k, gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, `rgba(90,70,45,${0.04 + R() * 0.06})`); gr.addColorStop(1, 'rgba(90,70,45,0)');
+    g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
   }
 }
 function buildPaperFx() {
@@ -2300,6 +2326,7 @@ function draw(t) {
   setStyle(paperEl, 'backgroundColor', rgba(paperRGB));
   setStyle(vignette, 'opacity', pP.toFixed(3));
   setStyle(grainCv, 'opacity', ((1 - pP * 0.45) * paperTheme().grainA).toFixed(3));
+  setStyle(reliefCv, 'opacity', STILL ? '0' : (pP * 0.8).toFixed(3));
   setStyle(controlsEl, 'opacity', pP.toFixed(3));
   setStyle(dialEl, 'color', rgba(mix(DIAL_A, DIAL_B, cP)));
   setStyle(dialLine, 'stroke', rgba(mix(DIAL_LA, DIAL_LB, pP)));   // the line follows the paper, the disc switches at once
