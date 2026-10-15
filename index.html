@@ -2434,6 +2434,16 @@ function draw(t) {
   c.globalAlpha = 1;
   if (skin.overlay) skin.overlay(c, cx, cy, t, cP, 1 - swapA);   // animated parts of the skin
   if (swapA > 0 && swap.from && swap.from.overlay) swap.from.overlay(c, cx, cy, t, cP, swapA);
+  if (swap.t0 && t - swap.t0 < 0.5 && !REDUCED) {   // the new skin arrives with a shockwave in its own colour
+    const q = (t - swap.t0) / 0.5, e = E.outCubic(q), hc = skin.sp.halo;
+    c.save(); c.lineWidth = (3.2 - 2.4 * q) * k;
+    for (const [d, al] of [[0, 0.55], [0.12, 0.3]]) {
+      const qq = clamp(e - d, 0, 1); if (qq <= 0) continue;
+      c.globalAlpha = al * (1 - q); c.strokeStyle = rgba(cP > 0.5 ? hc : mix(hc, [40, 20, 10], 0.25));
+      c.beginPath(); c.ellipse(cx, cy, G.capHW * (1 + 0.9 * qq), G.capHH * (1 + 1.5 * qq), 0, 0, 7); c.stroke();
+    }
+    c.restore();
+  }
   setStyle(capBtn, 'transform', `translate(${(cx - G.capHW).toFixed(1)}px, ${(cy - G.capHH - 4 * k).toFixed(1)}px)`);
   drawLEDs(c, cx, cy, t, cP);
   // slot glow

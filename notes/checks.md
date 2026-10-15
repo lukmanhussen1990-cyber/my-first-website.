@@ -313,3 +313,10 @@ Check 23 done. Next: graphics – fresh sheet roll-in, word-goal celebration bur
 - Tests: functest, up16test, reducedtest, r12test pass; ?still replay unchanged.
 
 Check 24 done. Next: graphics – fresh sheet roll-in, drafts sheet visuals, skin swap transition.
+
+## Check 25 (v19g) – graphics
+- Skin swap: a double shockwave ring in the new skin's halo colour expands out of the capsule while the old skin melts
+  away under the zap (0.5 s, off with reduced motion).
+- Tests: skintest, functest, reducedtest, r12test pass.
+
+Check 25 done. Next: graphics – fresh sheet roll-in, drafts sheet visuals.
