@@ -305,3 +305,11 @@ Check 22 done. Next: confirm the suite for v19d, then another look at sound pack
 - Tests: functest, skintest, r12test, up16test, reducedtest, mobile18, reviewfix pass; ?still replay unchanged (gear only).
 
 Check 23 done. Next: graphics – fresh sheet roll-in, word-goal celebration burst, drafts sheet visuals.
+
+## Check 24 (v19f) – graphics
+- Word-goal celebration: after the capsule's burst, two firework rings open over the page (skin colour, then gold),
+  an outer ring and a slower inner one, drifting down with little gravity. On light paper they are drawn as glowing
+  colour (additive light was invisible on cream); under the lamp / on dark paper they stay additive light.
+- Tests: functest, up16test, reducedtest, r12test pass; ?still replay unchanged.
+
+Check 24 done. Next: graphics – fresh sheet roll-in, drafts sheet visuals, skin swap transition.
