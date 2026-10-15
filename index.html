@@ -379,7 +379,7 @@ const paperTheme = () => PAPERS[prefs.paper] || PAPERS.cream;
 function inkFor(lamp) {
   const P = paperTheme(), I = INKS[prefs.ink];
   if (!I) return lamp ? P.ink[1] : P.ink[0];
-  if (P.lightInk) return I[1];
+  if (P.lightInk) return '#' + mix(hex(I[1]), [255, 255, 255], 0.25).map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');   // a little paler on a dark sheet, so blue on blueprint still reads
   if (!lamp) return I[0];
   const c = hex(I[0]);   // under the lamp the ribbon reads darker, like the recorded ink…
   // …and never lighter than half the darkened sheet, so a brown ink on old parchment still stands out of the shadow

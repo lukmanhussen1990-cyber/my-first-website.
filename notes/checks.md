@@ -486,3 +486,10 @@ Check 43 done. Next: graphics rounds continue (Blueprint skins, lamp on every pa
 - Desktop 1920x1080 in lamp mode: dimmed night, column shadow, beam and arc all consistent.
 
 Check 44 done. Next: graphics – ink and paper close-ups at 3x for each paper theme.
+
+## Check 45 (v19z) – graphics
+- Ink close-ups at 3x on every paper: coloured ribbons on the dark sheets are a quarter paler, so blue ink on
+  Blueprint reads clearly (it was light blue on blue).
+- Tests: up16test, functest pass.
+
+Check 45 done. Next: graphics – capsule shading close-ups per skin at 3x in light mode.
