@@ -533,3 +533,11 @@ Check 48 done. Next: graphics rounds continue.
 - Tab checked on every paper and in lamp mode (paper-coloured, readable grip and label).
 
 Check 49 done. Next: graphics rounds continue.
+
+## Check 50 (v20c) – graphics
+- Panel and share menu checked in lamp mode: consistent.
+- The pull tab on a dark sheet (lamp mode, Black, Blueprint): a faint light outline and a light label/grips, so it
+  stays visible and readable.
+- Tests: functest, r12test, up16test, tear drag pass.
+
+Check 50 done. Next: graphics rounds continue.

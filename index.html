@@ -4157,7 +4157,7 @@ const TAB = { a: 0, x: 0, y: 0, drag: null, wig: -9 };
 const tabCv = document.createElement('canvas');
 let tabKey = '';
 function tabSprite() {
-  const inkc = hex(inkFor(CH.paper.v > 0.5)), key = paperRGB.map(Math.round).join() + inkc.join() + k.toFixed(3) + dpr;
+  const darkSheet = paperRGB[0] + paperRGB[1] + paperRGB[2] < 300, inkc = darkSheet ? [232, 224, 208] : hex(inkFor(false)), key = paperRGB.map(Math.round).join() + inkc.join() + k.toFixed(3) + dpr;
   if (key === tabKey) return tabCv;
   tabKey = key;
   const w = 54 * k, h = 15 * k, pw = w + 14 * k, ph = h + 10 * k;
@@ -4168,6 +4168,7 @@ function tabSprite() {
   c.moveTo(-w / 2 - 4 * k, 2 * k); c.quadraticCurveTo(-w / 2, 2 * k, -w / 2, -h + 5 * k); c.quadraticCurveTo(-w / 2, -h, -w / 2 + 5 * k, -h);
   c.lineTo(w / 2 - 5 * k, -h); c.quadraticCurveTo(w / 2, -h, w / 2, -h + 5 * k); c.quadraticCurveTo(w / 2, 2 * k, w / 2 + 4 * k, 2 * k); c.closePath(); c.fill();
   c.shadowColor = 'transparent';
+  if (darkSheet) { c.strokeStyle = 'rgba(255,246,226,0.2)'; c.lineWidth = 0.8 * k; c.stroke(); }   // a dark sheet's tab catches a little light
   // a small arrow, the word TEAR, and ribbed grips either side
   c.strokeStyle = rgba(inkc, 0.5); c.lineWidth = 0.8 * k; c.lineCap = 'round'; c.beginPath();
   for (const gx of [-22, -19, 19, 22]) { c.moveTo(gx * k, -h + 5 * k); c.lineTo(gx * k, -2.5 * k); }
