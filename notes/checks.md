@@ -402,3 +402,12 @@ on in its first second), and the raised "°" (also from the recording). Fixed:
 
 Check 34 done. Next: graphics – Black paper sheet body (slight lift and grain), skin rim light under the lamp for the
 non-recorded skins.
+
+## Check 35 (v19q) – graphics
+- Under the lamp, the nine non-recorded skins get a warm rim light along the top of the body (the bulb in the slot)
+  and the glossy ones keep a dimmer, warmer reflection, so brass/copper/ghost/vampire no longer go flat and muddy.
+  Frankenstein keeps its measured lamp look.
+- Black paper lifted a touch (#1e1d1b → #22201d) so the sheet separates from the near-black surround.
+- Tests: functest, skintest, up16test, r12test pass.
+
+Check 35 done. Next: graphics – a pass over every toast/HUD/pill for consistent styling, then the hint line.

@@ -369,7 +369,7 @@ const PAPERS = {
                ph: [[124, 98, 60], [98, 86, 62]], caret: [72, 46, 18], grainA: 1 },
   blueprint: { name: 'Blueprint', light: '#1e4d8c', dark: '#0f2645', ink: ['#f0f5ff', '#dfe9ff'], hint: [[214, 228, 255], [120, 150, 200]],
                ph: [[150, 182, 232], [104, 134, 186]], caret: [232, 240, 255], grainA: 0.3, lightInk: true },
-  black:     { name: 'Black Paper', light: '#1e1d1b', dark: '#0f0f0e', ink: ['#efe9dd', '#dcd4c6'], hint: [[214, 208, 196], [104, 100, 92]],
+  black:     { name: 'Black Paper', light: '#22201d', dark: '#0f0f0e', ink: ['#efe9dd', '#dcd4c6'], hint: [[214, 208, 196], [104, 100, 92]],
                ph: [[146, 140, 128], [98, 94, 86]], caret: [232, 226, 214], grainA: 0.22, lightInk: true },
 };
 // ribbon colours: [on light paper, on dark paper]; black is the paper's own ink
@@ -807,6 +807,16 @@ function renderCapsule(cv, sk, m, live) {
     const hw2 = G.capHW, rf = c.createLinearGradient(0, -hh + 3 * k, 0, -hh + 11 * k);
     rf.addColorStop(0, 'rgba(255,255,250,0)'); rf.addColorStop(0.5, `rgba(255,255,250,${sk.gloss})`); rf.addColorStop(1, 'rgba(255,255,250,0)');
     c.fillStyle = rf; c.beginPath(); c.ellipse(-hw2 * 0.25, -hh + 7 * k, hw2 * 0.62, 2.8 * k, -0.02, 0, 7); c.fill();
+  }
+  if (m && sk.id !== 'frank') {   // under the lamp the bulb in the slot rims the top of the body with warm light
+    const rl = c.createLinearGradient(0, -hh, 0, -hh + 8 * k);   // (the recorded skin keeps its measured look)
+    rl.addColorStop(0, 'rgba(255,214,150,0.34)'); rl.addColorStop(1, 'rgba(255,214,150,0)');
+    c.fillStyle = rl; c.fillRect(-G.capHW, -hh, G.capHW * 2, 8 * k);
+    if (sk.gloss) {   // and the glossy ones keep a dimmer, warmer reflection
+      const hw2 = G.capHW, rf = c.createLinearGradient(0, -hh + 3 * k, 0, -hh + 11 * k);
+      rf.addColorStop(0, 'rgba(255,226,180,0)'); rf.addColorStop(0.5, `rgba(255,226,180,${sk.gloss * 0.45})`); rf.addColorStop(1, 'rgba(255,226,180,0)');
+      c.fillStyle = rf; c.beginPath(); c.ellipse(-hw2 * 0.25, -hh + 7 * k, hw2 * 0.62, 2.8 * k, -0.02, 0, 7); c.fill();
+    }
   }
   c.restore();
   // rim
