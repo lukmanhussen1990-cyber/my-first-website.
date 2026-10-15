@@ -433,3 +433,10 @@ Check 37 done. Next: graphics – scroll-back view and page pill, then a fresh f
 - Tests: up16test, mobile18, functest pass.
 
 Check 38 done. Next: graphics – every skin on Blueprint and Black paper, light and lamp.
+
+## Check 39 (v19u) – graphics
+- Every skin on Black paper: dark props (the vampire's perched bat, the witch's hat, fangs, flask) get a faint
+  light halo on dark sheets so they no longer vanish; the capsule sprites are rebuilt when the paper changes.
+- Tests: functest, skintest, up16test, r12test pass; ?still replay unchanged.
+
+Check 39 done. Next: graphics – every skin on Blueprint; desktop wide layout at 1920x1080.

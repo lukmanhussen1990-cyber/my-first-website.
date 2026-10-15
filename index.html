@@ -651,7 +651,7 @@ function buildPaperFx() {
 function applyPaper() {
   const P = paperTheme();
   PAPER_LIGHT = hex(P.light); PAPER_DARK = hex(P.dark);
-  buildCaptions(); buildPaperFx(); if (G.rx) buildEdge(); invalidateText();
+  buildCaptions(); buildPaperFx(); if (G.rx) { buildEdge(); buildCapsules(); } invalidateText();
   cardJob = null;
 }
 
@@ -828,7 +828,11 @@ function renderCapsule(cv, sk, m, live) {
   if (m) { sg.addColorStop(0, 'rgb(34,25,10)'); sg.addColorStop(0.35, 'rgb(22,19,13)'); sg.addColorStop(1, 'rgb(30,30,24)'); }
   else { sg.addColorStop(0, 'rgb(28,26,22)'); sg.addColorStop(0.32, 'rgb(30,29,25)'); sg.addColorStop(0.42, 'rgb(40,40,34)'); sg.addColorStop(1, 'rgb(84,88,70)'); }
   c.fillStyle = sg; roundRect(c, -so, s0, so * 2, s1 - s0, 1.5 * k); c.fill();
+  // on a dark sheet, dark props (the vampire's bat, the witch's hat) get a faint light halo so they don't vanish
+  const halo = !m && paperTheme().lightInk;
+  if (halo) { c.save(); c.shadowColor = 'rgba(255,244,225,0.4)'; c.shadowBlur = 2.4 * k * dpr; }
   sk.props(c, m, live);
+  if (halo) c.restore();
 }
 // the recorded Frankenstein skin: sage body, stitched patch, end cap, neck bolts
 function paintFrank(c, m) {
