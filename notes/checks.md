@@ -166,3 +166,25 @@ Checked: default look identical on the replay; ambsoak (20 virtual minutes: 8 st
 at 98 s, overlays end hidden, no errors), reducedtest, the full suite, perf and audio-node counts.
 **Check 13 done. Next: final regression against the recording, a new demo video showing the new features,
 then the final single-file delivery.**
+
+## Check 14 — independent review of the new features, fixes, demo (v13b–v14a)
+A second, independent review of everything added in v11–v13 (reproduced in headless Chromium) found six
+real problems, all fixed and re-checked with the reviewer's own reproductions:
+1. A shared picture could lose most of its text after New page → Undo (the picture is drawn in steps and
+   read the live page meanwhile): it now draws from a snapshot of the page and skin taken when it starts;
+   a failed picture is no longer kept.
+2. Width-only window resizes did not redraw the night backdrop: they do now.
+3. The one-time tip could appear at 40 s and replace "New page · UNDO": it now waits until after the
+   first minute and never covers another message.
+4. Escape after opening the tray/menu with the mouse took focus from the textarea (the next Enter reopened
+   the tray instead of typing a newline): focus now stays where it was.
+5. With the phone keyboard up the tray could open under it (up to 100 % hidden on a 320 × 568 phone): it
+   now opens above the capsule when there is no room below.
+6. The Undo button stayed focusable after its toast had gone (Enter could bring an old page back much
+   later): hidden toasts drop their button; toasts are announced (role="status").
+Smaller: a page of only spaces/newlines can be torn off; the capsule button uses aria-controls instead of
+a menu popup; Ctrl/Cmd+S saves the page as .txt.
+A 3-minute soak with skins, pictures, new pages + undo, lightning and bats: heap flat at ~6 MB, DOM nodes
+constant, no errors. New 30 s feature demo recorded (picture and sound replayed from one storyboard, clicks
+within 10 ms). Default look identical to v10i on the replay (except the longer, more faithful shadow tail).
+**Check 14 done. Next: final delivery of the single file and the list of improvements.**

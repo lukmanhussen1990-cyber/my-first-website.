@@ -153,7 +153,7 @@
     </svg>
   </button>
   <div id="counter">0 / 3 000</div>
-  <button id="share" class="icon" aria-label="Share" aria-haspopup="menu" aria-expanded="false">
+  <button id="share" class="icon" aria-label="Share" aria-haspopup="menu" aria-controls="shareMenu" aria-expanded="false">
     <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
       <path d="M7.9 9.8H3.85v11.1h16.3V9.8H16.1"/><path d="M12 3.6v11.6M8.5 7.1 12 3.6l3.5 3.5"/>
     </svg>
@@ -171,12 +171,12 @@
       <path class="ln" d="M-3.6 3.6 3.6-3.6" stroke-width="2.4" stroke-linecap="round"/>
     </svg>
   </button>
-  <button id="capBtn" aria-label="Change the capsule skin" aria-haspopup="true" aria-expanded="false"></button>
+  <button id="capBtn" aria-label="Change the capsule skin" aria-controls="skinTray" aria-expanded="false"></button>
   <div id="skinTray" role="radiogroup" aria-label="Capsule skins"></div>
   <div id="shareMenu" role="menu" aria-label="Share"></div>
   <div id="flash"></div>
   <canvas id="amb"></canvas>
-  <div id="toast"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
 </div>
 
 <script>
@@ -1052,7 +1052,7 @@ let textVer = 0;                       // bumps whenever already-typed glyphs ma
 function invalidateText() { lineCache.clear(); textVer++; }
 
 function drawGlyph(c, i, x, by, inkRgb, s) {
-  const ch = text[i];
+  const ch = (s ? s.text : text)[i];
   if (ch === ' ' || ch === '\n' || ch === undefined) return;
   // s: an explicit scale (the share card); by default the live layout
   const kk = s ? s.k : k, dp = s ? s.dpr : dpr, cell = s ? s.cell : G.cell, font = s ? s.font : G.font;
@@ -1477,19 +1477,26 @@ async function shareText() {
     if (typing) focusInput();   // the temporary textarea took focus; give it back so the keyboard stays
   }
 }
-let toastTimer = 0;
-// a short message above the paper; with an action (e.g. Undo) it carries a button for its lifetime
+let toastTimer = 0, toastClear = 0;
+// a short message above the paper; with an action (e.g. Undo) it carries a button for its lifetime only
 function toast(msg, dur = 1.6, action) {
+  clearTimeout(toastClear);
   toastEl.textContent = msg;
   toastEl.classList.toggle('act', !!action);
   if (action) {
     const b = document.createElement('button'); b.textContent = action.label;
     b.addEventListener('mousedown', (e) => e.preventDefault());
-    b.addEventListener('click', () => { clearTimeout(toastTimer); toastEl.classList.remove('show', 'act'); action.fn(); });
+    b.addEventListener('click', () => { if (b.disabled) return; hideToast(); action.fn(); });
     toastEl.appendChild(b);
   }
   toastEl.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show', 'act'), dur * 1000);
+  clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, dur * 1000);
+}
+function hideToast() {
+  clearTimeout(toastTimer);
+  toastEl.classList.remove('show', 'act');
+  const b = toastEl.querySelector('button'); if (b) { b.disabled = true; b.tabIndex = -1; }
+  clearTimeout(toastClear); toastClear = setTimeout(() => { if (!toastEl.classList.contains('show')) toastEl.textContent = ''; }, 300);
 }
 dialEl.addEventListener('click', () => { lastActivity = now(); setLamp(!lampOn); AU.lampSwitch(lampOn); });
 const FIRST_LINES = [
@@ -2221,6 +2228,7 @@ function drawTWeb(c, cx, capTop, barBot, t, pP) {
 }
 
 /* ------------------------------------------------------- viewport/keyboard -- */
+const view = { top: 0, h: 0 };   // the part of the app that is on screen (app px), for popups
 function onViewport() {
   const vv = window.visualViewport;
   let shift = 0, top = 0;
@@ -2233,13 +2241,15 @@ function onViewport() {
     if (need > vv.height) shift = Math.min(need - vv.height, Math.max(0, G.base - G.lineH * 2.2));
   }
   app.style.transform = `translate(-50%, ${(top - shift).toFixed(1)}px)`;
+  view.top = shift; view.h = vv && vv.scale < 1.01 ? vv.height : H;
+  if (trayOpen) placeTray();
 }
 if (window.visualViewport) {
   visualViewport.addEventListener('resize', onViewport);
   visualViewport.addEventListener('scroll', onViewport);
 }
 let resizeTimer = 0;
-window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { const w = W, h = H; measure(); if (w !== W || Math.abs(h - H) > 1) layout(); else onViewport(); }, 60); });
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { const w = W, h = H; measure(); if (w !== W || Math.abs(h - H) > 1) layout(); else { layoutBackdrop(); onViewport(); } }, 60); });
 
 /* ---------------------------------------------------------------- audio -- */
 // Everything is synthesised with the Web Audio API — no audio files.
@@ -2720,8 +2730,16 @@ function buildTray() {
   }
   markTray();
 }
+// below the capsule, or above it when the on-screen keyboard leaves no room below
+function placeTray() {
+  const h = skinTray.offsetHeight || 70 * k, below = G.capCY + G.capHH + 18 * k, vh = view.h || H;
+  const fits = below + h <= view.top + vh - 6;
+  skinTray.style.top = (fits ? below : Math.max(view.top + 6, G.capCY - G.capHH - 10 * k - h)) + 'px';
+  skinTray.style.transformOrigin = fits ? '50% 0' : '50% 100%';
+}
 function openTray(kb) {
   buildTray();
+  placeTray();
   trayOpen = true; skinTray.classList.add('open'); capBtn.setAttribute('aria-expanded', 'true');
   clearTimeout(trayTimer);
   AU.trayClick(true);
@@ -2767,12 +2785,12 @@ skinTray.addEventListener('keydown', (e) => {
   clearTimeout(trayTimer);
 });
 document.addEventListener('pointerdown', (e) => { if (trayOpen && !skinTray.contains(e.target) && e.target !== capBtn) closeTray(); }, true);
-document.addEventListener('keydown', (e) => { if (trayOpen && e.key === 'Escape') { e.preventDefault(); closeTray(true); } });
+document.addEventListener('keydown', (e) => { if (trayOpen && e.key === 'Escape') { e.preventDefault(); closeTray(); } });   // focus goes back to the button only from inside the tray
 applySkinGlow();
-// a one-time tip, well after the start (the opening of a session stays exactly as recorded)
+// a one-time tip, after the first minute (the opening of a session stays exactly as recorded)
 let tipDone = store.get(LS.tip, '') === '1';
 function updateTip(t) {
-  if (tipDone || t < 40 || trayOpen || t - Math.max(lastKey, lastActivity) < 2.5) return;
+  if (tipDone || t < 60 || trayOpen || menuOpen || toastEl.classList.contains('show') || t - Math.max(lastKey, lastActivity) < 2.5) return;
   tipDone = true; store.set(LS.tip, '1');
   toast('Tap the capsule for Halloween skins', 3.2);
 }
@@ -2814,7 +2832,7 @@ function buildMenu() {
 }
 function menuItems() { return [...shareMenu.querySelectorAll('[data-act]')]; }
 function openMenu(kb) {
-  if (!text.trim()) { toast('Nothing to share yet'); return; }
+  if (!text.length) { toast('Nothing to share yet'); return; }
   closeTray();
   buildMenu();
   menuOpen = true; shareMenu.classList.add('open'); shareBtn.setAttribute('aria-expanded', 'true');
@@ -2839,7 +2857,7 @@ shareMenu.addEventListener('keydown', (e) => {
   e.preventDefault(); items[j].focus();
 });
 document.addEventListener('pointerdown', (e) => { if (menuOpen && !shareMenu.contains(e.target) && !shareBtn.contains(e.target)) closeMenu(); }, true);
-document.addEventListener('keydown', (e) => { if (menuOpen && e.key === 'Escape') { e.preventDefault(); closeMenu(true); } });
+document.addEventListener('keydown', (e) => { if (menuOpen && e.key === 'Escape') { e.preventDefault(); closeMenu(); } });
 input.addEventListener('input', () => closeMenu());
 
 function fileName(ext) {
@@ -2862,6 +2880,7 @@ document.addEventListener('keydown', (e) => {
 function menuAction(act, kb) {
   closeMenu(kb);
   lastActivity = now();
+  if (act !== 'new' && !text.trim()) { toast('Nothing to share yet'); return; }
   if (act === 'text') shareText();
   else if (act === 'image') shareImage();
   else if (act === 'txt') saveTxt();
@@ -2879,7 +2898,7 @@ function prepareCard() { if (menuOpen) cardFor(text + '\u0000' + skin.id); }
 async function shareImage() {
   const job = cardFor(text + '\u0000' + skin.id);
   const blob = job.blob || await job.promise;
-  if (!blob) { toast('Could not make the picture'); return; }
+  if (!blob) { if (cardJob === job) cardJob = null; toast('Could not make the picture'); return; }
   const name = fileName('png'), file = new File([blob], name, { type: 'image/png' });
   if (canShareFiles()) {
     try { await navigator.share({ files: [file], title: 'Frankenwriter' }); return; }
@@ -2933,8 +2952,9 @@ function cardWebs(c, xa, xb, railY, kc, seed) {
   c.restore();
 }
 async function renderCard() {
+  const src = text, sk = skin;   // the page as it is now: typing, a new page or an undo may change it while it is drawn
   let L = lines.map((l) => l.idx);
-  while (L.length > 1 && !L[L.length - 1].some((i) => text[i] !== ' ')) L.pop();
+  while (L.length > 1 && !L[L.length - 1].some((i) => src[i] !== ' ')) L.pop();
   const MAXL = 168, cut = L.length > MAXL;
   if (cut) L = L.slice(0, MAXL - 1);
   const nL = L.length + (cut ? 1 : 0);
@@ -2959,7 +2979,7 @@ async function renderCard() {
   paintGrain(gr.getContext('2d'), CW, CH - paperTop, kc, CW, CH - paperTop, false);
   c.drawImage(gr, 0, paperTop);
   // typed lines (a few at a time, so the machine keeps running while a long page is drawn)
-  const S = { k: kc, dpr: 1, cell, font }, inkRgb = hex('#3c3429'), pad = 6 * kc;
+  const S = { k: kc, dpr: 1, cell, font, text: src }, inkRgb = hex('#3c3429'), pad = 6 * kc;
   const lc = document.createElement('canvas'); lc.width = Math.ceil(COLS * cell + pad * 2); lc.height = Math.ceil(lineH * 1.7);
   const lx = lc.getContext('2d'), by = lineH * 1.7 * 0.68;
   for (let li = 0; li < L.length; li++) {
@@ -2979,7 +2999,7 @@ async function renderCard() {
     cardWebs(c, 20 * kc, cx - 44 * kc, railY, kc, 1);
     cardWebs(c, cx + 44 * kc, CW - 20 * kc, railY, kc, 2);
     const sp = document.createElement('canvas');
-    renderCapsule(sp, skin, 0);
+    renderCapsule(sp, sk, 0);
     c.drawImage(sp, cx - sp.width / 2, G.capCY - sp.height / 2);
     drawLEDs(c, cx, G.capCY, lastKey + 10, 0);
     buildSprites();
