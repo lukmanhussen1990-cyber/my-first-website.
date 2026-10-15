@@ -25,6 +25,7 @@
   }
   #paper { position: absolute; left: 0; right: 0; bottom: 0; overflow: hidden; background: #eee7db; }
   #paper canvas, #paper div { position: absolute; left: 0; top: 0; pointer-events: none; }
+  #paperFx { display: none; }
   #light { transform-origin: 0 0; will-change: transform, opacity; opacity: 0; }
   #vignette { inset: 0; width: 100%; height: 100%; opacity: 0;
     background: radial-gradient(ellipse 75% 60% at 50% 38%, rgba(0,0,0,0) 55%, rgba(0,0,0,.16) 100%); }
@@ -89,9 +90,9 @@
     font-size: 16px; line-height: 24px; outline: none; overflow: hidden; white-space: pre-wrap; z-index: 0;
     -webkit-user-select: text; user-select: text;
   }
-  #tap { position: absolute; left: 0; width: 100%; }
+  #tap { position: absolute; left: 0; width: 100%; touch-action: none; }
   #hintBtn { position: absolute; z-index: 2; }
-  #toast { position: absolute; left: 50%; transform: translate(-50%, 6px); padding: 7px 12px; border-radius: 6px;
+  #toast { position: absolute; z-index: 9; left: 50%; transform: translate(-50%, 6px); padding: 7px 12px; border-radius: 6px;
            background: rgba(20,20,18,.92); color: #d8d8d2; font-size: 12px; letter-spacing: .04em;
            opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -121,6 +122,109 @@
     #skinTray, #shareMenu, #toast { transition: none; }
   }
   #toast button { margin-left: 14px; padding: 3px 2px; color: #f2d58c; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+  #gear { color: #b0b2a7; }
+  #scrim { position: absolute; inset: 0; z-index: 7; background: rgba(0,0,0,.42); opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+  #scrim.on { opacity: 1; pointer-events: auto; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 8; display: flex; flex-direction: column; max-height: 60%;
+           background: linear-gradient(180deg, #2e2924 0%, #211d1a 40%, #171513 100%); color: #e8dfcc;
+           border-radius: 18px 18px 0 0; box-shadow: 0 -14px 40px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,226,170,.2);
+           transform: translateY(104%); visibility: hidden;
+           transition: transform .34s cubic-bezier(.2,.8,.2,1), visibility 0s linear .34s; }
+  .sheet.open { transform: none; visibility: visible; transition: transform .34s cubic-bezier(.2,.8,.2,1), visibility 0s; }
+  .sheet::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: .6;
+           background: radial-gradient(rgba(255,255,255,.03) 1px, transparent 1.3px) 0 0 / 5px 5px; }
+  .plate { position: relative; align-self: center; margin: 12px 0 4px; padding: 6px 28px 5px; border-radius: 5px; font-weight: 700;
+           font-size: 11px; letter-spacing: .32em; color: #3a2a12; text-shadow: 0 1px 0 rgba(255,240,200,.6);
+           background: linear-gradient(180deg, #f3da98, #cfa04c 55%, #a97b2f);
+           box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 0 rgba(0,0,0,.25), 0 2px 7px rgba(0,0,0,.55); }
+  .plate::before, .plate::after { content: ""; position: absolute; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%;
+           background: radial-gradient(circle at 35% 35%, #fff4cf, #8a6424 72%); box-shadow: 0 0 0 .5px rgba(0,0,0,.45); }
+  .plate::before { left: 9px; } .plate::after { right: 9px; }
+  .sheet .x { position: absolute; right: 12px; top: 10px; width: 30px; height: 30px; border-radius: 50%; font-size: 13px; color: #2a231a;
+           background: radial-gradient(circle at 50% 30%, #fbf5e8, #d9cfba 62%, #b3a68b); border: 1.5px solid #3b342b;
+           box-shadow: 0 2px 0 #574c3e, 0 3px 7px rgba(0,0,0,.5); }
+  .sheet .body { position: relative; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 0 16px 22px; }
+  .sec { margin-top: 15px; }
+  .sec > h3 { margin: 0 0 10px; display: flex; align-items: center; gap: 10px; font-size: 10px; letter-spacing: .26em; color: #cdb07a; font-weight: 700; }
+  .sec > h3::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(205,176,122,.45), rgba(205,176,122,0)); }
+  .keys { display: flex; flex-wrap: wrap; gap: 10px 8px; }
+  .key { min-width: 40px; padding: 7px 12px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .05em; color: #2a231a;
+         background: radial-gradient(circle at 50% 30%, #fbf5e8, #d9cfba 62%, #b3a68b); border: 1.5px solid #3b342b;
+         box-shadow: 0 2px 0 #574c3e, 0 4px 8px rgba(0,0,0,.45), inset 0 -2px 3px rgba(0,0,0,.12); transition: transform .08s, box-shadow .08s; }
+  .key:active { transform: translateY(2px); box-shadow: 0 0 0 #574c3e, 0 1px 3px rgba(0,0,0,.45); }
+  .key[aria-checked="true"], .key[aria-pressed="true"] { background: radial-gradient(circle at 50% 30%, #ffe7b0, #e9b85c 62%, #b98431);
+         border-color: #4a3818; color: #2b1d05; transform: translateY(1px);
+         box-shadow: 0 1px 0 #574c3e, 0 2px 6px rgba(0,0,0,.45), 0 0 12px rgba(255,190,90,.28); }
+  .key.wide { width: 100%; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; font-size: 12px; color: #d9cfbb; }
+  .row + .row { border-top: 1px solid rgba(255,235,200,.06); }
+  .row small { display: block; font-size: 9.5px; color: #988f7e; margin-top: 2px; }
+  .sw { flex: none; width: 46px; height: 24px; border-radius: 12px; position: relative;
+        background: linear-gradient(#141210, #2a2622); box-shadow: inset 0 1px 3px rgba(0,0,0,.75), 0 1px 0 rgba(255,235,200,.08); }
+  .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+        background: radial-gradient(circle at 40% 35%, #fbf5e8, #b9ad94); box-shadow: 0 1px 2px rgba(0,0,0,.6); transition: left .18s ease; }
+  .sw[aria-checked="true"] { background: linear-gradient(#7a5a20, #cf9f4a); }
+  .sw[aria-checked="true"]::after { left: 25px; }
+  .vol { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 24px; background: transparent; margin: 0; --p: 70%; }
+  .vol::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, #cf9f4a var(--p), #3a342d var(--p)); box-shadow: inset 0 1px 2px rgba(0,0,0,.6); }
+  .vol::-webkit-slider-thumb { -webkit-appearance: none; width: 19px; height: 19px; margin-top: -7.5px; border-radius: 50%;
+        background: radial-gradient(circle at 40% 35%, #fff4d6, #cf9f4a 70%, #8a6424); border: 1px solid #3b2a10; box-shadow: 0 2px 4px rgba(0,0,0,.6); }
+  .vol::-moz-range-track { height: 4px; border-radius: 2px; background: #3a342d; }
+  .vol::-moz-range-progress { height: 4px; border-radius: 2px; background: #cf9f4a; }
+  .vol::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #fff4d6, #cf9f4a 70%, #8a6424); border: 1px solid #3b2a10; }
+  .carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 3px 16px 10px; scrollbar-width: none; }
+  .carousel::-webkit-scrollbar { display: none; }
+  .card { flex: 0 0 112px; scroll-snap-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 6px 9px;
+          border-radius: 14px; color: #e8dfcc; text-align: center; border: 1px solid rgba(255,230,180,.1);
+          background: linear-gradient(180deg, rgba(255,240,210,.07), rgba(255,240,210,.02)); transition: transform .15s, box-shadow .15s; }
+  .card canvas { display: block; }
+  .card b { font-size: 11px; letter-spacing: .04em; }
+  .card small { font-size: 9px; line-height: 1.25; color: #a99f8c; min-height: 2.5em; }
+  .card[aria-checked="true"] { border-color: #e2b35c; box-shadow: 0 0 0 1px #e2b35c, 0 0 18px rgba(226,179,92,.25);
+          background: linear-gradient(180deg, rgba(255,215,140,.15), rgba(255,215,140,.03)); }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .paper { aspect-ratio: 1 / .8; border-radius: 9px 9px 3px 3px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+           gap: 2px; font-size: 17px; border: 2px solid rgba(0,0,0,.25); box-shadow: 0 2px 6px rgba(0,0,0,.5); overflow: hidden; }
+  .paper span { font-size: 8px; letter-spacing: .05em; opacity: .85; text-transform: uppercase; }
+  .paper[aria-checked="true"] { border-color: #e2b35c; box-shadow: 0 0 0 1px #e2b35c, 0 0 14px rgba(226,179,92,.35); }
+  .ink { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 7px 0 6px; border-radius: 10px; font-size: 9.5px; color: #d9cfbb; letter-spacing: .05em; }
+  .ink i { position: relative; width: 30px; height: 30px; border-radius: 50%; display: block;
+           box-shadow: inset 0 0 0 1.5px rgba(0,0,0,.35), 0 2px 5px rgba(0,0,0,.5); }
+  .ink i::after { content: ""; position: absolute; left: 50%; top: 50%; width: 9px; height: 9px; margin: -4.5px; border-radius: 50%;
+           background: radial-gradient(circle at 40% 35%, #e9e2d2, #8c8270); box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
+  .ink[aria-checked="true"] { background: rgba(255,215,140,.1); box-shadow: inset 0 0 0 1px #e2b35c; }
+  .goal { margin-top: 10px; font-size: 11px; color: #cfc5b1; }
+  .goal .bar { height: 6px; margin-top: 6px; border-radius: 3px; background: #2e2924; box-shadow: inset 0 1px 2px rgba(0,0,0,.6); overflow: hidden; }
+  .goal .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #a87a2e, #f0c46c); border-radius: 3px; transition: width .3s; }
+  .shortcuts { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 11px; color: #cfc5b1; align-items: center; }
+  kbd { font: inherit; font-size: 10px; padding: 1px 6px; border-radius: 4px; color: #efe6d3; background: #3a342d; border: 1px solid #4d463c; box-shadow: 0 1px 0 #0d0c0b; white-space: nowrap; }
+  .draft { display: flex; align-items: center; gap: 6px; padding: 9px 8px 9px 12px; border-radius: 12px; margin-bottom: 8px;
+           background: rgba(255,240,210,.045); border: 1px solid rgba(255,230,180,.08); }
+  .draft.cur { border-color: rgba(226,179,92,.6); background: rgba(255,215,140,.09); }
+  .draft .t { flex: 1; min-width: 0; text-align: left; color: inherit; padding: 2px 0; }
+  .draft .t b { display: block; font-size: 13px; color: #efe6d3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .draft .t small { display: block; font-size: 10px; color: #a99f8c; margin-top: 3px; }
+  .draft input { width: 100%; font: inherit; font-size: 13px; background: #f3ecdc; color: #2a231a; border: 0; border-radius: 4px; padding: 4px 6px; outline: none; -webkit-user-select: text; user-select: text; }
+  .ib { flex: none; width: 32px; height: 32px; border-radius: 50%; color: #cdb07a; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+  .ib:hover { background: rgba(255,255,255,.06); }
+  .ib.danger { width: auto; padding: 0 10px; border-radius: 16px; color: #2b0b05; font-weight: 700; background: #ff8a70; }
+  .pages { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  #goalHud { position: absolute; z-index: 2; left: 50%; top: 0; transform: translateX(-50%); padding: 3px 11px 4px; border-radius: 999px;
+             font-size: 10.5px; letter-spacing: .05em; color: #e6dcc8; background: rgba(36,32,29,.88); white-space: nowrap; pointer-events: none;
+             box-shadow: inset 0 0 0 .5px rgba(255,230,180,.22); display: none; overflow: hidden; }
+  #goalHud i { position: absolute; left: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, #a87a2e, #f0c46c); }
+  #pageTag { position: absolute; z-index: 2; left: 50%; transform: translateX(-50%); padding: 3px 10px; border-radius: 999px; font-size: 10px;
+             letter-spacing: .12em; color: #e6dcc8; background: rgba(36,32,29,.82); pointer-events: none; opacity: 0; transition: opacity .25s; text-transform: uppercase; }
+  #pageTag.on { opacity: 1; }
+  @media print {
+    html, body { overflow: visible !important; position: static !important; background: #fff !important; height: auto !important; }
+    body > *:not(#print) { display: none !important; }
+    #print { display: block !important; color: #111; font: 12pt/1.55 "Courier Prime", "Courier New", monospace; white-space: pre-wrap; }
+    #print .pg { break-after: page; padding: 0 0 12pt; }
+    #print .pg:last-child { break-after: auto; }
+    #print h1 { font: 700 10pt "Courier Prime", monospace; letter-spacing: .3em; margin: 0 0 18pt; color: #555; }
+  }
+  #print { display: none; }
 </style>
 </head>
 <body>
@@ -131,6 +235,7 @@
 <div id="app">
   <div id="paper">
     <div id="vignette"></div>
+    <canvas id="paperFx"></canvas>
     <canvas id="light"></canvas>
     <canvas id="grain"></canvas>
   </div>
@@ -141,8 +246,13 @@
   <textarea id="input" autocapitalize="sentences" autocorrect="on" spellcheck="true" autocomplete="off"
             maxlength="3000" rows="1" aria-label="Typewriter text"></textarea>
 
-  <button id="back" class="icon" aria-label="Back">
+  <button id="back" class="icon" aria-label="Drafts" aria-haspopup="dialog" aria-expanded="false">
     <svg viewBox="0 0 24 24" width="24" height="24"><path d="M19.6 12H4.6M10.9 5.6 4.5 12l6.4 6.4" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <button id="gear" class="icon" aria-label="Control panel" aria-haspopup="dialog" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round">
+      <path d="M4.5 7h15M4.5 12h15M4.5 17h15"/><circle cx="9" cy="7" r="1.9" fill="#181818"/><circle cx="15.4" cy="12" r="1.9" fill="#181818"/><circle cx="7.6" cy="17" r="1.9" fill="#181818"/>
+    </svg>
   </button>
   <button id="sound" class="icon" aria-label="Sound on or off">
     <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
@@ -176,6 +286,11 @@
   <div id="shareMenu" role="menu" aria-label="Share"></div>
   <div id="flash"></div>
   <canvas id="amb"></canvas>
+  <div id="goalHud" aria-live="polite"></div>
+  <div id="pageTag"></div>
+  <div id="scrim"></div>
+  <div id="panel" class="sheet" role="dialog" aria-modal="true" aria-label="Control panel"><div class="plate">CONTROL PANEL</div><button class="x" aria-label="Close">✕</button><div class="body"></div></div>
+  <div id="drafts" class="sheet" role="dialog" aria-modal="true" aria-label="Drafts"><div class="plate">DRAFTS</div><button class="x" aria-label="Close">✕</button><div class="body"></div></div>
   <div id="toast" role="status" aria-live="polite"></div>
 </div>
 
@@ -226,6 +341,34 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
 };
+
+/* ---------------------------------------------------------------- prefs -- */
+// everything the control panel sets, remembered; the defaults are the recorded machine
+const PREF_DEF = { paper: 'cream', ink: 'black', pack: 'electric', vol: 1, ambience: true, bell: true, haptics: true };
+const prefs = Object.assign({}, PREF_DEF, (() => { try { return JSON.parse(store.get('fw.prefs', '{}')) || {}; } catch (e) { return {}; } })());
+function savePrefs() { store.set('fw.prefs', JSON.stringify(prefs)); }
+// paper themes: base colour on the cream side / under the lamp, ink (normal / lamp), caption greys, caret
+const PAPERS = {
+  cream:     { name: 'Cream', light: '#eee7db', dark: '#30302d', ink: ['#3c3429', '#120e06'], hint: [[12, 10, 6], [55, 54, 50]],
+               ph: [[104, 96, 84], [92, 86, 74]], caret: [54, 46, 35], grainA: 1 },
+  parchment: { name: 'Old Parchment', light: '#e2cc9a', dark: '#2f291d', ink: ['#3a2612', '#140b03'], hint: [[44, 28, 10], [64, 56, 40]],
+               ph: [[124, 98, 60], [98, 86, 62]], caret: [72, 46, 18], grainA: 1 },
+  blueprint: { name: 'Blueprint', light: '#1e4d8c', dark: '#0f2645', ink: ['#f0f5ff', '#dfe9ff'], hint: [[214, 228, 255], [120, 150, 200]],
+               ph: [[150, 182, 232], [104, 134, 186]], caret: [232, 240, 255], grainA: 0.3, lightInk: true },
+  black:     { name: 'Black Paper', light: '#1e1d1b', dark: '#0f0f0e', ink: ['#efe9dd', '#dcd4c6'], hint: [[214, 208, 196], [104, 100, 92]],
+               ph: [[146, 140, 128], [98, 94, 86]], caret: [232, 226, 214], grainA: 0.22, lightInk: true },
+};
+// ribbon colours: [on light paper, on dark paper]; black is the paper's own ink
+const INKS = { black: null, red: ['#a8241c', '#ff7262'], blue: ['#24408f', '#94b4ff'], sepia: ['#6b4423', '#dcab7c'] };
+const paperTheme = () => PAPERS[prefs.paper] || PAPERS.cream;
+function inkFor(lamp) {
+  const P = paperTheme(), I = INKS[prefs.ink];
+  if (!I) return lamp ? P.ink[1] : P.ink[0];
+  if (P.lightInk) return I[1];
+  if (!lamp) return I[0];
+  const c = hex(I[0]);   // under the lamp the ribbon reads darker, like the recorded ink
+  return '#' + c.map((v) => Math.round(v * 0.62).toString(16).padStart(2, '0')).join('');
+}
 
 /* ------------------------------------------------------------- geometry -- */
 let W = 440, H = 956, k = 1, dpr = 1;
@@ -282,6 +425,7 @@ function layout() {
 
   // top bar
   placeIcon($('#back'), 47.7 * k, H * 0.0918, k);
+  placeIcon($('#gear'), 97 * k, H * 0.0918, k);
   placeIcon($('#share'), 399.7 * k, H * 0.0896 - 0.25 * k, k);
   placeIcon($('#sound'), 214 * k, H * 0.0885, k);   // clear of the longest counter ("3 000 / 3 000")
   counterEl.style.fontSize = (14.4 * k) + 'px';
@@ -303,11 +447,13 @@ function layout() {
   input.style.top = (G.base - 18 * k) + 'px';
 
   buildGrain();
+  buildPaperFx();
   buildRail();
   buildCapsules();
   layoutSkinUI();
   layoutMenu();
   layoutBackdrop();
+  layoutSheets();
   buildSprites();
   buildCaptions();
   lightDirty = true;
@@ -403,6 +549,58 @@ function paintGrain(g, w, h, k, pw, ph, fine = true) {
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.fillStyle = g.createPattern(tile, 'repeat');
   g.fillRect(0, 0, pw, ph);
+}
+
+/* ---------------------------------------------------------- paper themes -- */
+// extra layers for the non-cream papers (cream is the recorded paper and has none): parchment stains and a
+// burnt edge, a blueprint grid, light fibres on black paper. Also used by the share picture.
+const paperFxCv = document.getElementById('paperFx');
+function paintPaperFx(g, w, h, k, id) {
+  const R = mulberry(4711);
+  if (id === 'parchment') {
+    const e = g.createRadialGradient(w / 2, h * 0.42, Math.min(w, h) * 0.25, w / 2, h * 0.42, Math.max(w, h) * 0.75);
+    e.addColorStop(0, 'rgba(120,80,30,0)'); e.addColorStop(0.7, 'rgba(120,80,30,0.12)'); e.addColorStop(1, 'rgba(90,50,15,0.38)');
+    g.fillStyle = e; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 26; i++) {   // stains and foxing
+      const x = R() * w, y = R() * h, r = (R() < 0.7 ? 3 + R() * 10 : 18 + R() * 40) * k;
+      const s = g.createRadialGradient(x, y, 0, x, y, r);
+      s.addColorStop(0, `rgba(130,82,30,${0.05 + R() * 0.1})`); s.addColorStop(0.7, `rgba(140,90,35,${0.03 + R() * 0.05})`); s.addColorStop(1, 'rgba(140,90,35,0)');
+      g.fillStyle = s; g.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    g.strokeStyle = 'rgba(110,70,25,0.08)'; g.lineWidth = 0.6 * k;   // a soft old fold
+    g.beginPath(); g.moveTo(0, h * 0.63); g.bezierCurveTo(w * 0.3, h * 0.62, w * 0.7, h * 0.645, w, h * 0.633); g.stroke();
+  } else if (id === 'blueprint') {
+    const step = 12 * k;
+    for (let x = 0, i = 0; x < w; x += step, i++) { g.fillStyle = i % 5 ? 'rgba(200,220,255,0.07)' : 'rgba(200,220,255,0.16)'; g.fillRect(x, 0, Math.max(0.6, 0.5 * k), h); }
+    for (let y = 0, i = 0; y < h; y += step, i++) { g.fillStyle = i % 5 ? 'rgba(200,220,255,0.07)' : 'rgba(200,220,255,0.16)'; g.fillRect(0, y, w, Math.max(0.6, 0.5 * k)); }
+    const v = g.createRadialGradient(w / 2, h * 0.4, Math.min(w, h) * 0.3, w / 2, h * 0.4, Math.max(w, h) * 0.8);
+    v.addColorStop(0, 'rgba(0,10,30,0)'); v.addColorStop(1, 'rgba(0,10,30,0.35)'); g.fillStyle = v; g.fillRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(220,235,255,0.22)'; g.lineWidth = 0.7 * k;   // a title block in the corner
+    g.strokeRect(w - 118 * k, h - 64 * k, 104 * k, 46 * k); g.beginPath(); g.moveTo(w - 118 * k, h - 46 * k); g.lineTo(w - 14 * k, h - 46 * k); g.stroke();
+  } else if (id === 'black') {
+    g.lineCap = 'round';
+    for (let i = 0; i < 260; i++) {
+      const x = R() * w, y = R() * h, len = (3 + R() * 14) * k, a = R() * Math.PI;
+      g.strokeStyle = `rgba(230,225,215,${0.02 + R() * 0.05})`; g.lineWidth = (0.3 + R() * 0.3) * k;
+      g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * len * 0.5 + (R() - 0.5) * 3 * k, y + Math.sin(a) * len * 0.5, x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
+    }
+  }
+}
+function buildPaperFx() {
+  const id = prefs.paper;
+  if (!PAPERS[id] || id === 'cream') { paperFxCv.style.display = 'none'; paperFxCv.width = paperFxCv.height = 0; return; }
+  const w = W, h = H - G.paperTop;
+  paperFxCv.width = Math.round(w * dpr); paperFxCv.height = Math.round(h * dpr);
+  paperFxCv.style.width = w + 'px'; paperFxCv.style.height = h + 'px'; paperFxCv.style.display = 'block';
+  const g = paperFxCv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  paintPaperFx(g, w, h, k, id);
+}
+// switch paper / ink: colours, captions, the cached lines and the extra layer
+function applyPaper() {
+  const P = paperTheme();
+  PAPER_LIGHT = hex(P.light); PAPER_DARK = hex(P.dark);
+  buildCaptions(); buildPaperFx(); invalidateText();
+  cardJob = null;
 }
 
 /* ------------------------------------------------------------------ rail -- */
@@ -1180,7 +1378,8 @@ function drawGlyph(c, i, x, by, inkRgb, s) {
   const kk = s ? s.k : k, dp = s ? s.dpr : dpr, cell = s ? s.cell : G.cell, font = s ? s.font : G.font;
   // every strike is slightly different: position, darkness, a hint of rotation, extra ink
   const gx = x + (rnd(i, 1) - 0.5) * 0.7 * kk, gy = by + (rnd(i, 2) - 0.5) * 0.9 * kk;
-  const dark = 0.74 + rnd(i, 3) * 0.26, rot = (rnd(i, 4) - 0.5) * 0.035;
+  const pr = (s ? s.press : inkP);
+  const dark = (0.74 + rnd(i, 3) * 0.26) * ((pr && pr.get(i)) || 1), rot = (rnd(i, 4) - 0.5) * 0.035;
   c.save(); c.translate(gx, gy); c.rotate(rot);
   c.fillStyle = rgba(inkRgb, dark * 0.3);
   c.shadowColor = rgba(inkRgb, 0.4); c.shadowBlur = 0.6 * kk * dp;
@@ -1245,12 +1444,13 @@ function thinCaption(chars, size, rgb, erode, cell) {
   return { cv, w, h, by, ox: cell ? ox : w / 2 };
 }
 function buildCaptions() {
-  capText.hint = thinCaption('Need a first line?', G.hintFont, [12, 10, 6], 0.3 * k, 0);
+  const P = paperTheme();
+  capText.hint = thinCaption('Need a first line?', G.hintFont, P.hint[0], 0.3 * k, 0);
   // in lamp mode the recording's hint ink matches the dark paper: it vanishes, and shows only where the light falls
-  capText.hintLamp = thinCaption('Need a first line?', G.hintFont, [55, 54, 50], 0.3 * k, 0);
-  capText.ph = thinCaption('Begin here.', G.font, [104, 96, 84], 0.4 * k, G.cell);
+  capText.hintLamp = thinCaption('Need a first line?', G.hintFont, P.hint[1], 0.3 * k, 0);
+  capText.ph = thinCaption('Begin here.', G.font, P.ph[0], 0.4 * k, G.cell);
   // under the lamp the placeholder is a softer grey (≈86): light on the dark paper, darker than the lit paper
-  capText.phLamp = thinCaption('Begin here.', G.font, [92, 86, 74], 0.4 * k, G.cell);
+  capText.phLamp = thinCaption('Begin here.', G.font, P.ph[1], 0.4 * k, G.cell);
 }
 
 /* --------------------------------------------------------- lamp channels -- */
@@ -1428,10 +1628,13 @@ function scrollOffset(t) {
 /* -------------------------------------------------------- typing actions -- */
 // light haptics on phones that support them (Android); they go quiet together with the sound
 const CAN_BUZZ = TOUCH && typeof navigator.vibrate === 'function';
-function haptic(p) { if (CAN_BUZZ && AU.mode !== 'off') try { navigator.vibrate(p); } catch (e) {} }
+function haptic(p) { if (CAN_BUZZ && prefs.haptics && AU.mode !== 'off') try { navigator.vibrate(p); } catch (e) {} }
+// how hard each key was struck: a quick key hits lighter, like a real typewriter (index → darkness factor)
+const inkP = new Map();
 function typeChar(ch) {
   if (text.length >= MAX) return false;
   const t = now();
+  inkP.set(text.length, 0.8 + 0.2 * smooth(0.035, 0.11, t - lastKey));
   const before = lines.length;
   const prevLineIdx = lines.length - 1;
   snapCarriage();
@@ -1463,11 +1666,29 @@ function typeChar(ch) {
     slideTo(carriageTarget(), 0.1, E.outSine, 0.13);
     AU.clack();
     haptic(6);
+    if (prefs.bell && lines[lines.length - 1].idx.length === COLS - 4) AU.bell();   // the margin bell
     if (Math.random() < 0.07) { fx.zap(true, 0.9); AU.zap(0.75); } else { fx.spark(); AU.spark(0.55); }   // now and then a big green zap
   }
   if (lines.length !== before || prevLineIdx !== lines.length - 1) invalidateText();
   onTextChanged();
+  if (text.length >= MAX) queueMicrotask(autoPage);   // after the input handler has finished with the textarea
   return true;
+}
+// the sheet is full: it is torn off (kept with the draft) and a fresh one rolls in
+function autoPage() {
+  if (text.length < MAX) return;
+  const t = now(), cols = caretCol();
+  if (DR.cur) { DR.cur.pages.push(text); archKey = ''; }
+  tearOff(t);
+  text = ''; lines = wrap(''); appearAt.clear(); inkP.clear(); invalidateText();
+  input.value = pending; keepCaretAtEnd();
+  car.pending = null; car.from = car.to = car.x; car.dur = 0;
+  scrollAnim.from = 2; scrollAnim.t0 = t + 0.25; retargetShift(t);
+  slideTo(carriageTarget(), 0.267, E.outSine, 0.24);
+  retract.t0 = t + 0.24;
+  setTimeout(() => { fx.zap(true); flingWebs(); AU.carriageReturn(Math.max(3, cols)); }, 240);
+  saveNow(); AU.tear();
+  toast('Page ' + (DR.cur ? DR.cur.pages.length : 1) + ' is full – here is a fresh sheet', 2.6);
 }
 function deleteChar(quiet) {
   if (!text.length) return false;
@@ -1493,7 +1714,10 @@ function onTextChanged() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveNow, 250);
 }
-function saveNow() { clearTimeout(saveTimer); store.set(LS.text, text + pending); }
+function saveNow() {
+  clearTimeout(saveTimer); store.set(LS.text, text + pending);
+  if (DR.cur && DR.cur.text !== text + pending) { DR.cur.text = text + pending; DR.cur.updated = Date.now(); saveDrafts(); }
+}
 // never lose the last keystrokes when the tab is closed or the app is backgrounded
 window.addEventListener('pagehide', saveNow);
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
@@ -1579,13 +1803,13 @@ tapEl.addEventListener('mousedown', (e) => { if (document.activeElement === inpu
 for (const el of document.querySelectorAll('button, .sl')) el.addEventListener('mousedown', (e) => e.preventDefault());
 document.addEventListener('keydown', (e) => {
   if (document.activeElement === input || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (sheetOpen || (e.target.closest && e.target.closest('input, .sheet'))) return;   // a menu is in use
   // Enter/Space on a focused button or slider operate that control instead of typing
   if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('button, .sl')) return;
   if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') focusInput();
 });
 
 /* ------------------------------------------------------------ top bar -- */
-$('#back').addEventListener('click', () => { if (history.length > 1) history.back(); else toast('Nothing to go back to'); });
 async function shareText() {
   try {
     if (navigator.share) { await navigator.share({ title: 'Frankenwriter', text }); return; }
@@ -1713,8 +1937,8 @@ for (const key in SL) {
 //        metal after-flash of the patch decaying over ~0.35 s
 const fx = {
   list: [],
-  spark(amp = 1) { this.list.push({ kind: 's', t0: now(), amp }); joltWebs(110 * amp); },
-  zap(green = true, amp = 1) { this.list.push({ kind: 'z', t0: now(), green, amp }); joltWebs(260 * amp); },
+  spark(amp = 1) { this.list.push({ kind: 's', t0: now(), amp }); joltWebs(110 * amp); sparkParts(0, 0.5 * amp); },
+  zap(green = true, amp = 1) { this.list.push({ kind: 'z', t0: now(), green, amp }); joltWebs(260 * amp); sparkParts(9, 0.85 * amp); },
   state(t) {
     const st = { flash: 0, beam: 0, white: 0, violet: 0, glow: 0, tips: 0 };
     for (let i = this.list.length - 1; i >= 0; i--) {
@@ -1752,7 +1976,7 @@ function clipPaper(c) {
 }
 
 // base cream is a touch lighter than #eae5d9 so that, with grain on top, it renders as #eae5d9-ish like the recording
-const PAPER_LIGHT = hex('#eee7db'), PAPER_DARK = hex('#30302d');
+let PAPER_LIGHT = hex(paperTheme().light), PAPER_DARK = hex(paperTheme().dark);
 let paperRGB = PAPER_LIGHT;
 const styleCache = new Map();
 function setStyle(el, prop, val) {
@@ -1767,7 +1991,7 @@ function draw(t) {
   paperRGB = mix(PAPER_LIGHT, PAPER_DARK, pP);
   setStyle(paperEl, 'backgroundColor', rgba(paperRGB));
   setStyle(vignette, 'opacity', pP.toFixed(3));
-  setStyle(grainCv, 'opacity', (1 - pP * 0.45).toFixed(3));
+  setStyle(grainCv, 'opacity', ((1 - pP * 0.45) * paperTheme().grainA).toFixed(3));
   setStyle(controlsEl, 'opacity', pP.toFixed(3));
   setStyle(dialEl, 'color', rgba(mix(DIAL_A, DIAL_B, cP)));
   setStyle(dialLine, 'stroke', rgba(mix(DIAL_LA, DIAL_LB, pP)));   // the line follows the paper, the disc switches at once
@@ -1779,7 +2003,7 @@ function draw(t) {
 
   // ----- text -----
   c.save(); clipPaper(c);
-  const ink = pP > 0.5 ? '#120e06' : '#3c3429';
+  const ink = inkFor(pP > 0.5);
   const n = lines.length, minLi = drawText(c, t, ink);
   // forget line images that scrolled away (or no longer exist)
   if (lineCache.size > n - minLi + 3) for (const key of lineCache.keys()) if (key < minLi - 1 || key >= n) lineCache.delete(key);
@@ -1851,9 +2075,21 @@ function draw(t) {
 }
 // the typed lines as they sit on the paper at time t; returns the first line drawn
 function drawText(c, t, ink) {
-  const off = scrollOffset(t), lastY = G.base + baseShift(t);
+  const off = scrollOffset(t) + scrollBack.v, lastY = G.base + baseShift(t);
   const n = lines.length;
   let minLi = n;
+  if (scrollBack.v > 0.01) {   // reading back: the pages already torn off this draft sit above this one
+    const A = archive();
+    for (let ai = A.length - 1; ai >= 0; ai--) {
+      const y = lastY - (n - 1 + A.length - ai - off) * G.lineH;
+      if (y < G.paperTop - G.lineH) break;
+      if (y > G.sceneBot + G.lineH || (!A[ai].mark && !A[ai].idx.length)) continue;
+      const e = renderArchLine(A[ai], ai, ink);
+      c.globalAlpha = clamp((y - G.paperTop - 6 * k) / (34 * k), 0, 1);
+      c.drawImage(e.cv, G.textLeft - e.pad, y - e.by, e.cv.width / dpr, e.cv.height / dpr);
+    }
+    c.globalAlpha = 1;
+  }
   for (let li = n - 1; li >= 0; li--) {
     // the whole sheet feeds up together: right after a wrap the new line starts one line below the
     // typing line and rises into place with the older lines (as in the recording)
@@ -2060,9 +2296,9 @@ function drawCaret(c, t, pP) {
   // cream paper, a pale green glowing dot in lamp mode
   if (((t - blinkT0) % 1.05 + 1.05) % 1.05 >= 0.5) return;
   const n = lines.length, col = lines[n - 1].idx.length;
-  const x = G.textLeft + col * G.cell + 2.1 * k, y = G.base + baseShift(t) + scrollOffset(t) * G.lineH + 1.9 * k;
+  const x = G.textLeft + col * G.cell + 2.1 * k, y = G.base + baseShift(t) + (scrollOffset(t) + scrollBack.v) * G.lineH + 1.9 * k;
   if (pP < 0.98) {
-    c.fillStyle = `rgba(54,46,35,${0.95 * (1 - pP)})`;
+    c.fillStyle = rgba(paperTheme().caret, 0.95 * (1 - pP));
     c.beginPath(); c.arc(x, y, 2.25 * k, 0, Math.PI * 2); c.fill();
   }
   if (pP > 0.02) {
@@ -2395,6 +2631,12 @@ const MELODY = [[0, 2, 76, 6], [0, 10, 67, 2], [0, 12, 65, 2], [0, 14, 64, 4],
   [5, 4, 77, 2], [5, 6, 79, 4], [5, 10, 80, 2], [5, 12, 79, 1], [5, 13, 78, 1], [5, 14, 79, 1], [5, 15, 76, 1],
   [6, 0, 76, 6], [6, 6, 74, 2], [6, 8, 72, 8],
   [7, 0, 71, 6], [7, 8, 69, 4], [7, 12, 72, 4]];
+// sound packs: the recorded electric machine, a plain mechanical typewriter, and a spooky one with ambience
+const PACKS = {
+  electric: { name: 'Electric Frankenstein', desc: 'Clacks, crackling sparks, the theremin tune', sparks: 1, bell: 1 },
+  classic:  { name: 'Classic Typewriter', desc: 'Wooden clacks, ratchet and bell, no electricity', sparks: 0, bell: 1.35 },
+  spooky:   { name: 'Spooky Halloween', desc: 'Hollow keys, wind, creaks and distant thunder', sparks: 0.55, bell: 0.85 },
+};
 const AU = {
   ctx: null, master: null, sfx: null, music: null, verb: null, noise: null, on: store.get(LS.sound, '1') !== '0',
   mode: ({ 0: 'off', fx: 'fx' })[store.get(LS.sound, '1')] || 'all',   // all: music + effects, fx: effects only, off
@@ -2407,7 +2649,7 @@ const AU = {
     const ctx = this.ctx = new AC({ latencyHint: 'interactive' });
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 3.5; comp.attack.value = 0.004; comp.release.value = 0.18;
-    this.master = ctx.createGain(); this.master.gain.value = this.on ? 0.75 : 0;
+    this.master = ctx.createGain(); this.master.gain.value = this.on ? this.level() : 0;
     comp.connect(this.master); this.master.connect(ctx.destination);
     this.sfx = ctx.createGain(); this.sfx.gain.value = 0.8; this.sfx.connect(comp);
     this.music = ctx.createGain(); this.music.gain.value = 0.4; this.music.connect(comp);
@@ -2430,6 +2672,7 @@ const AU = {
     if (this.ctx.state !== 'running' && this.on && !document.hidden) { this.resumeAt = performance.now(); this.ctx.resume().catch(() => {}); }
     if (this.mode === 'all' && !this.musicOn) this.startMusic();
     if (this.on && lampOn && !this.hum) this.humOn(0.4);
+    this.ambSync();
   },
   // only schedule sounds on a running clock (a paused context would queue them all for later);
   // the grace window lets the very first key sound while the context is being resumed by that key
@@ -2439,7 +2682,8 @@ const AU = {
     this.mode = mode; this.on = on; store.set(LS.sound, mode === 'all' ? '1' : mode === 'fx' ? 'fx' : '0');
     if (!this.init()) return;
     const t = this.ctx.currentTime;
-    this.master.gain.cancelScheduledValues(t); this.master.gain.setTargetAtTime(on ? 0.75 : 0, t, 0.06);
+    this.master.gain.cancelScheduledValues(t); this.master.gain.setTargetAtTime(on ? this.level() : 0, t, 0.06);
+    this.ambSync();
     if (on) {
       this.resumeAt = performance.now(); this.ctx.resume().catch(() => {});
       if (mode === 'all') { if (!this.musicOn) this.startMusic(); } else this.stopMusic();
@@ -2447,6 +2691,58 @@ const AU = {
     } else { setTimeout(() => { if (!this.on) { this.stopMusic(); this.humOff(0); this.ctx.suspend().catch(() => {}); } }, 300); }
   },
   setOn(on) { this.setMode(on ? 'all' : 'off'); },
+  level() { return 0.75 * clamp(prefs.vol, 0, 1.4); },
+  setVolume(v) {
+    prefs.vol = v; savePrefs();
+    if (this.ctx && this.on) { const t = this.ctx.currentTime; this.master.gain.cancelScheduledValues(t); this.master.gain.setTargetAtTime(this.level(), t, 0.04); }
+  },
+  setPack(id) { prefs.pack = PACKS[id] ? id : 'electric'; savePrefs(); this.ambSync(); },
+  // ---- Spooky ambience: a wind bed, now and then a creak, an owl or thunder far away
+  amb: null, ambTimer: 0, ambNext: 0,
+  ambSync() {
+    const want = this.ctx && this.on && prefs.pack === 'spooky' && prefs.ambience && !document.hidden;
+    if (want && !this.amb) {
+      const c = this.ctx, t = c.currentTime, n = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain(), lfo2 = c.createOscillator(), lg2 = c.createGain();
+      n.buffer = this.noise; n.loop = true; bp.type = 'bandpass'; bp.frequency.value = 520; bp.Q.value = 1.6;
+      lfo.frequency.value = 0.07; lg.gain.value = 260; lfo.connect(lg); lg.connect(bp.frequency);          // gusts sweep the pitch…
+      lfo2.frequency.value = 0.11; lg2.gain.value = 0.018; lfo2.connect(lg2); lg2.connect(g.gain);           // …and the level
+      g.gain.setValueAtTime(0.0001, t); g.gain.setTargetAtTime(0.03, t, 1.2);
+      n.connect(bp); bp.connect(g); g.connect(this.sfx); g.connect(this.verb);
+      n.start(t); lfo.start(t); lfo2.start(t);
+      this.amb = { n, g, lfo, lfo2 }; this.ambNext = t + 6 + Math.random() * 8;
+      clearInterval(this.ambTimer); this.ambTimer = setInterval(() => this.ambTick(), 1000);
+    } else if (!want && this.amb) {
+      const a = this.amb, t = this.ctx.currentTime; this.amb = null; clearInterval(this.ambTimer);
+      a.g.gain.cancelScheduledValues(t); a.g.gain.setTargetAtTime(0.0001, t, 0.3);
+      for (const o of [a.n, a.lfo, a.lfo2]) o.stop(t + 1.6);
+    }
+  },
+  ambTick() {
+    if (!this.amb || !this.ready()) return;
+    const t = this.ctx.currentTime; if (t < this.ambNext) return;
+    this.ambNext = t + 14 + Math.random() * 22;
+    const r = Math.random();
+    if (r < 0.45) this.creak(); else if (r < 0.75) this.owl(); else this.thunder(0.85 + Math.random() * 0.15);
+  },
+  creak() {   // an old door or floorboard: a slowly bending sawtooth through a narrow resonance, with stick-slip
+    const c = this.ctx, t = c.currentTime + 0.02, d = 0.7 + Math.random() * 0.6, o = c.createOscillator(), bp = c.createBiquadFilter(), g = c.createGain(), am = c.createOscillator(), ag = c.createGain();
+    o.type = 'sawtooth'; o.frequency.setValueAtTime(70 + Math.random() * 40, t); o.frequency.linearRampToValueAtTime(110 + Math.random() * 60, t + d * 0.6); o.frequency.linearRampToValueAtTime(85, t + d);
+    bp.type = 'bandpass'; bp.frequency.value = 900 + Math.random() * 500; bp.Q.value = 6;
+    am.type = 'square'; am.frequency.value = 18 + Math.random() * 14; ag.gain.value = 0.5; am.connect(ag); ag.connect(g.gain);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.12); g.gain.setTargetAtTime(0.0001, t + d - 0.2, 0.08);
+    o.connect(bp); bp.connect(g); g.connect(this.sfx); g.connect(this.verb);
+    o.start(t); am.start(t); o.stop(t + d + 0.4); am.stop(t + d + 0.4);
+  },
+  owl() {   // two soft hoots, far away
+    const c = this.ctx;
+    for (const [dt, f, d] of [[0, 380, 0.32], [0.5, 360, 0.55]]) {
+      const t = c.currentTime + 0.05 + dt, o = c.createOscillator(), g = c.createGain(), v = c.createOscillator(), vg = c.createGain();
+      o.frequency.setValueAtTime(f * 1.04, t); o.frequency.exponentialRampToValueAtTime(f, t + d);
+      v.frequency.value = 7; vg.gain.value = 4; v.connect(vg); vg.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.022, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(this.verb); g.connect(this.sfx); o.start(t); v.start(t); o.stop(t + d + 0.05); v.stop(t + d + 0.05);
+    }
+  },
   // ---- building blocks ----
   noiseSrc(t, dur) { const s = this.ctx.createBufferSource(); s.buffer = this.noise; s.start(t, Math.random() * 1.5, dur + 0.05); return s; },
   env(g, t, a, peak, d) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak), t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); },
@@ -2469,6 +2765,13 @@ const AU = {
     this.tone(t, { f: 120 * p, f2: 70 * p, gain: 0.2 * g, a: 0.0015, d: 0.045 });                            // low thump
     this.tone(t + 0.001, { f: 1900 * p, type: 'triangle', gain: 0.03 * g, d: 0.012 });
     this.burst(t + 0.02 + Math.random() * 0.01, { f: 5200 * p, type: 'highpass', q: 0.7, gain: 0.12 * g, a: 0.0004, d: 0.004 });   // type bar settling
+    if (prefs.pack === 'classic') {   // a heavier office machine: the platen knocks, the frame rings a little
+      this.tone(t, { f: 230 * p, f2: 150 * p, type: 'triangle', gain: 0.14 * g, a: 0.001, d: 0.05 });
+      this.burst(t + 0.002, { f: 1200 * p, q: 2.2, gain: 0.16 * g, a: 0.0008, d: 0.025 });
+    } else if (prefs.pack === 'spooky') {   // hollow, echoing keys
+      this.burst(t, { f: 700 * p, q: 3, gain: 0.18 * g, a: 0.001, d: 0.06, dest: this.verb });
+      this.tone(t, { f: 95 * p, f2: 60 * p, gain: 0.12 * g, a: 0.002, d: 0.08 });
+    }
   },
   space() {
     if (!this.ready()) return; const t = this.ctx.currentTime + 0.003, p = 0.94 + Math.random() * 0.1;
@@ -2482,7 +2785,8 @@ const AU = {
     this.tone(t + 0.004, { f: 210, f2: 120, gain: 0.18, d: 0.03 });
   },
   spark(v = 1) {
-    if (!this.ready()) return; const t0 = this.ctx.currentTime + 0.004;
+    v *= PACKS[prefs.pack].sparks;
+    if (v < 0.01 || !this.ready()) return; const t0 = this.ctx.currentTime + 0.004;
     const n = 4 + ((Math.random() * 5) | 0), dur = 0.08 + Math.random() * 0.07;
     for (let i = 0; i < n; i++) this.burst(t0 + Math.random() * dur, { f: 3000 + Math.random() * 3000, type: 'highpass', q: 0.6, gain: (0.1 + Math.random() * 0.22) * v, a: 0.0005, d: 0.003 + Math.random() * 0.006 });
     this.buzz(t0, dur, 0.06 * v, 110 + Math.random() * 40);
@@ -2499,7 +2803,8 @@ const AU = {
     o.start(t); am.start(t); o.stop(t + dur + 0.02); am.stop(t + dur + 0.02);
   },
   zap(v = 1) {
-    if (!this.ready()) return; const t0 = this.ctx.currentTime + 0.004;
+    v *= PACKS[prefs.pack].sparks;
+    if (v < 0.01 || !this.ready()) return; const t0 = this.ctx.currentTime + 0.004;
     for (let i = 0; i < 14; i++) this.burst(t0 + Math.random() * 0.32, { f: 2500 + Math.random() * 4000, type: 'highpass', q: 0.6, gain: (0.12 + Math.random() * 0.25) * v, a: 0.0005, d: 0.004 + Math.random() * 0.01 });
     this.buzz(t0, 0.17, 0.11 * v, 72 + Math.random() * 20);
     this.buzz(t0 + 0.15, 0.2, 0.07 * v, 140);
@@ -2554,6 +2859,15 @@ const AU = {
       [1568, 1976, 2349, 2637, 3136, 3951].forEach((f, i) => this.tone(s + i * 0.045, { f, type: 'triangle', gain: 0.035, a: 0.002, d: 0.22 }));
     }
   },
+  bell() {   // the margin bell: a bright, short strike on a small steel bell
+    if (!this.ready()) return; const t = this.ctx.currentTime + 0.004, f = 2580 * (0.99 + Math.random() * 0.02), v = PACKS[prefs.pack].bell;
+    for (const [mul, gn, d] of [[1, 0.075, 1.3], [2.71, 0.03, 0.6], [5.15, 0.014, 0.25], [1.006, 0.04, 1.1]]) {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.frequency.value = f * mul; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gn * v, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(this.sfx); g.connect(this.verb); o.start(t); o.stop(t + d + 0.05);
+    }
+    this.burst(t, { f: 6000, type: 'highpass', q: 0.7, gain: 0.08 * v, d: 0.006 });   // the hammer
+  },
   ding(t) {
     const f = 2093 * (0.995 + Math.random() * 0.01);
     // kept soft: the brief asks for a ding, the recording's return has none audible over the music
@@ -2587,6 +2901,14 @@ const AU = {
       const env = 0.15 + 0.85 * Math.sin(Math.PI * (i + 0.5) / N);
       this.burst(t0 + i * 0.07 + Math.random() * 0.02, { f: 700 + Math.random() * 500, q: 1.3, gain: 0.08 * env * (0.6 + Math.random() * 0.6), a: 0.006, d: 0.035 });
     }
+  },
+  fanfare() {   // a goal reached: a bright rising arpeggio over a crackle
+    if (!this.ready()) return; const t = this.ctx.currentTime + 0.02;
+    [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568].forEach((f, i) => {
+      this.tone(t + i * 0.07, { f, type: 'triangle', gain: 0.06, a: 0.005, d: 0.45 });
+      this.tone(t + i * 0.07, { f: f * 2, gain: 0.015, a: 0.003, d: 0.2 });
+    });
+    for (let i = 0; i < 18; i++) this.burst(t + 0.3 + Math.random() * 0.6, { f: 3000 + Math.random() * 4000, type: 'highpass', q: 0.6, gain: 0.1 + Math.random() * 0.15, a: 0.0005, d: 0.006 });
   },
   tear() {
     if (!this.ready()) return; const t0 = this.ctx.currentTime + 0.004;
@@ -2794,6 +3116,7 @@ for (const ev of ['pointerdown', 'touchend', 'keydown', 'click']) window.addEven
 document.addEventListener('visibilitychange', () => {
   if (!AU.ctx) return;
   if (document.hidden) AU.ctx.suspend().catch(() => {}); else if (AU.on) AU.ctx.resume().catch(() => {});
+  AU.ambSync();
 });
 const soundBtn = $('#sound');
 function paintSound() {
@@ -2899,6 +3222,7 @@ function setSkin(id) {
   buildCapsules(); applySkinGlow();
   swap.t0 = now(); lastActivity = swap.t0;
   fx.zap(true, 0.9); AU.skinSwap(id);
+  refreshPanel();
 }
 capBtn.addEventListener('click', (e) => {
   lastActivity = now();
@@ -3108,9 +3432,10 @@ async function renderCard() {
   c.fillStyle = rgba(PAPER_LIGHT); c.fillRect(0, paperTop, CW, CH - paperTop);
   const gr = document.createElement('canvas'); gr.width = CW; gr.height = Math.ceil(CH - paperTop);
   paintGrain(gr.getContext('2d'), CW, CH - paperTop, kc, CW, CH - paperTop, false);
-  c.drawImage(gr, 0, paperTop);
+  c.globalAlpha = paperTheme().grainA; c.drawImage(gr, 0, paperTop); c.globalAlpha = 1;
+  if (prefs.paper !== 'cream') { const fx = document.createElement('canvas'); fx.width = CW; fx.height = gr.height; paintPaperFx(fx.getContext('2d'), CW, CH - paperTop, kc, prefs.paper); c.drawImage(fx, 0, paperTop); }
   // typed lines (a few at a time, so the machine keeps running while a long page is drawn)
-  const S = { k: kc, dpr: 1, cell, font, text: src }, inkRgb = hex('#3c3429'), pad = 6 * kc;
+  const S = { k: kc, dpr: 1, cell, font, text: src, press: inkP }, inkRgb = hex(inkFor(false)), pad = 6 * kc;
   const lc = document.createElement('canvas'); lc.width = Math.ceil(COLS * cell + pad * 2); lc.height = Math.ceil(lineH * 1.7);
   const lx = lc.getContext('2d'), by = lineH * 1.7 * 0.68;
   for (let li = 0; li < L.length; li++) {
@@ -3152,7 +3477,8 @@ function newPage() {
   if (!prev) return;
   const t = now(), cols = caretCol();
   tearOff(t);
-  pending = ''; text = ''; lines = wrap(text); appearAt.clear(); invalidateText();
+  if (DR.cur) { DR.cur.pages.push(prev); archKey = ''; }
+  pending = ''; text = ''; lines = wrap(text); appearAt.clear(); inkP.clear(); invalidateText();
   input.value = ''; keepCaretAtEnd();
   lastKey = t;
   car.pending = null; car.from = car.to = car.x; car.dur = 0;
@@ -3165,6 +3491,7 @@ function newPage() {
   AU.tear(); haptic([14, 50, 10]);
   toast('New page', 5, { label: 'Undo', fn: () => {
     if (text || pending) return;   // already typing on the new sheet
+    if (DR.cur && DR.cur.pages[DR.cur.pages.length - 1] === prev) { DR.cur.pages.pop(); archKey = ''; }
     input.value = prev.slice(0, MAX); keepCaretAtEnd(); syncInput();   // a long page lands at once, a short one is typed back
   } });
 }
@@ -3194,7 +3521,7 @@ function tearOff(t) {
     c.drawImage(lightCv, 0, 0, parseFloat(lightCv.style.width), parseFloat(lightCv.style.height));
     c.restore();
   }
-  drawText(c, t, CH.paper.v > 0.5 ? '#120e06' : '#3c3429');
+  drawText(c, t, inkFor(CH.paper.v > 0.5));
   c.restore();
   // a few loose fibres along the tear
   c.strokeStyle = CH.paper.v > 0.5 ? 'rgba(90,90,84,0.6)' : 'rgba(255,253,246,0.9)'; c.lineWidth = 0.5 * k; c.lineCap = 'round';
@@ -3373,6 +3700,8 @@ function paintBackdrop(c, ww, wh, d, lit) {
   }
 }
 
+// ---- more creatures for the overlay (filled in below)
+let ambExtra = () => false, drawAmbExtra = () => {};
 // ---- bats crossing the page (a few times an hour)
 const bats = [];
 let ambOn = false;
@@ -3403,7 +3732,7 @@ function drawFlyingBat(c, x, y, s, ph) {
   c.restore();
 }
 function drawBats(t) {
-  if (!bats.length) { if (ambOn) { ambCv.style.display = 'none'; ambOn = false; } return; }
+  if (!bats.length && !PARTS.length && !ambExtra()) { if (ambOn) { ambCv.style.display = 'none'; ambOn = false; } return; }
   if (!ambOn) {
     ambOn = true; ambCv.style.display = 'block';
     ambCv.width = Math.round(W * dpr); ambCv.height = Math.round(H * dpr); ambCv.style.width = W + 'px'; ambCv.style.height = H + 'px';
@@ -3418,6 +3747,492 @@ function drawBats(t) {
     if (s > 0.3 && (x < -40 * k || x > W + 40 * k)) { bats.splice(i, 1); continue; }
     drawFlyingBat(c, x, b.y0 + Math.sin(s * 2.3 + b.ph) * b.wob - s * 14 * k, b.s, s * b.f * 6.283 + b.ph);
   }
+  drawAmbExtra(c, t);
+  drawParts(c);
+}
+
+/* --------------------------------------------------------------- drafts -- */
+// Writings live in localStorage: each draft keeps the pages already torn off and the sheet in the machine.
+const DR = { list: [], cur: null, warned: false };
+let idSeq = 0;
+const newId = () => Date.now().toString(36) + (++idSeq).toString(36) + ((performance.timeOrigin * 1000) % 46656 | 0).toString(36);
+function loadDrafts() {
+  let list = null;
+  try { list = JSON.parse(store.get('fw.drafts', 'null')); } catch (e) {}
+  if (!Array.isArray(list)) list = [];
+  list = list.filter((d) => d && typeof d.text === 'string');
+  for (const d of list) { if (!Array.isArray(d.pages)) d.pages = []; d.name = d.name || ''; }
+  if (!list.length) list.push({ id: newId(), name: '', text: (store.get(LS.text, '') || '').slice(0, MAX), pages: [], created: Date.now(), updated: Date.now() });
+  DR.list = list;
+  DR.cur = list.find((d) => d.id === store.get('fw.cur', '')) || list[0];
+}
+function saveDrafts() {
+  try { localStorage.setItem('fw.drafts', JSON.stringify(DR.list)); localStorage.setItem('fw.cur', DR.cur.id); }
+  catch (e) { if (!DR.warned) { DR.warned = true; toast('Storage is full – export your drafts', 3); } }
+}
+function draftText(d, live) { return [...d.pages, live ? text + pending : d.text].join('\n\n'); }
+function draftTitle(d) {
+  if (d.name) return d.name;
+  const src = (d.pages[0] || (d === DR.cur ? text + pending : d.text) || '').trim().split('\n')[0];
+  return src ? (src.length > 30 ? src.slice(0, 29) + '…' : src) : 'Untitled';
+}
+const words = (s) => (s.match(/[^\s]+/g) || []).length;
+function ago(ms) {
+  const s = (Date.now() - ms) / 1000;
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s / 60) + ' min ago';
+  if (s < 86400) return Math.floor(s / 3600) + ' h ago';
+  const d = Math.floor(s / 86400); return d === 1 ? 'yesterday' : d + ' days ago';
+}
+// put a text into the machine as the current sheet (a new page rolls in)
+function loadSheet(str, roll) {
+  const t = now();
+  pending = ''; text = str.slice(0, MAX); lines = wrap(text);
+  appearAt.clear(); inkP.clear(); invalidateText(); archCache.clear();
+  input.value = text; keepCaretAtEnd();
+  car.pending = null; car.from = car.to = car.x; car.dur = 0;
+  scrollAnim.from = roll ? Math.min(3, lines.length + 1) : 0; scrollAnim.t0 = roll ? t + 0.2 : -9;
+  scrollBack.v = scrollBack.to = 0;
+  retargetShift(t);
+  slideTo(carriageTarget(), 0.3, E.outSine, roll ? 0.2 : 0);
+  lastKey = t;
+  onTextChanged();
+}
+function openDraft(id) {
+  const d = DR.list.find((x) => x.id === id);
+  if (!d || d === DR.cur) return;
+  saveNow();
+  if (text) tearOff(now());
+  DR.cur = d; saveDrafts();
+  loadSheet(d.text, true);
+  AU.tear(); haptic([10, 40, 10]);
+  toast('Opened “' + draftTitle(d) + '”', 2);
+}
+function newDraft() {
+  saveNow();
+  const d = { id: newId(), name: '', text: '', pages: [], created: Date.now(), updated: Date.now() };
+  DR.list.unshift(d);
+  if (text) tearOff(now());
+  DR.cur = d; saveDrafts();
+  loadSheet('', true);
+  AU.tear();
+}
+function deleteDraft(id) {
+  const i = DR.list.findIndex((x) => x.id === id);
+  if (i < 0) return;
+  const [d] = DR.list.splice(i, 1);
+  const wasCur = d === DR.cur;
+  if (!DR.list.length) DR.list.push({ id: newId(), name: '', text: '', pages: [], created: Date.now(), updated: Date.now() });
+  if (wasCur) { DR.cur = DR.list[Math.min(i, DR.list.length - 1)]; loadSheet(DR.cur.text, true); }
+  saveDrafts(); renderDrafts();
+  toast('Draft deleted', 5, { label: 'Undo', fn: () => {
+    DR.list.splice(Math.min(i, DR.list.length), 0, d);
+    if (wasCur) { saveNow(); DR.cur = d; loadSheet(d.text, true); }
+    saveDrafts(); renderDrafts();
+  } });
+}
+
+/* ---------------------------------------------------- scroll-back reading -- */
+// Drag (or wheel) the paper down to read earlier lines, then the pages already torn off this draft.
+// Any key brings the typing line back.
+const scrollBack = { v: 0, to: 0 };
+const archCache = new Map();
+let archLines = null, archKey = '';
+function archive() {   // the earlier pages as lines, oldest first, with a gap and a page mark between pages
+  const key = DR.cur ? DR.cur.id + ':' + DR.cur.pages.length : '';
+  if (key === archKey && archLines) return archLines;
+  archKey = key; archLines = []; archCache.clear();
+  if (!DR.cur) return archLines;
+  DR.cur.pages.forEach((p, pi) => {
+    for (const l of wrap(p)) archLines.push({ page: pi, idx: l.idx, src: p });
+    archLines.push({ page: pi, mark: true }, { page: pi, idx: [] });
+  });
+  return archLines;
+}
+function maxScrollBack() { return Math.max(0, lines.length - 1 + archive().length); }
+function stepScrollBack(dt) {
+  if (scrollBack.to > maxScrollBack()) scrollBack.to = maxScrollBack();
+  scrollBack.v += (scrollBack.to - scrollBack.v) * Math.min(1, dt * 14);
+  if (Math.abs(scrollBack.to - scrollBack.v) < 0.002) scrollBack.v = scrollBack.to;
+}
+function renderArchLine(al, ai, ink) {
+  const key = ai + '|' + ink;
+  let e = archCache.get(key);
+  if (e) return e;
+  if (archCache.size > 80) archCache.clear();
+  const pad = 6 * k, w = COLS * G.cell + pad * 2, h = G.lineH * 1.7, cv = document.createElement('canvas');
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const by = h * 0.68;
+  if (al.mark) {   // a small page mark between pages
+    c.font = FONT(G.font * 0.5); c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    c.fillStyle = rgba(hex(ink), 0.55);
+    c.fillText('— page ' + (al.page + 1) + ' —', pad + COLS * G.cell / 2, by - 4 * k);
+  } else {
+    c.font = FONT(G.font); c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    const S = { k, dpr, cell: G.cell, font: G.font, text: al.src, press: null }, rgb = hex(ink);
+    al.idx.forEach((i, n) => drawGlyph(c, i, pad + (n + 0.5) * G.cell + G.glyphDX, by, rgb, S));
+  }
+  e = { cv, pad, by };
+  archCache.set(key, e);
+  return e;
+}
+const pageTag = $('#pageTag');
+let pageTagOn = false;
+function showPageTag(t) {
+  const on = scrollBack.v > 0.6;
+  if (on) {
+    // which page is at the typing line?
+    const back = Math.round(scrollBack.v), n = lines.length;
+    const total = DR.cur ? DR.cur.pages.length + 1 : 1;
+    let label = 'page ' + total + ' of ' + total;
+    if (back > n - 1) { const al = archive()[archive().length - (back - (n - 1))]; if (al) label = 'page ' + (al.page + 1) + ' of ' + total; }
+    if (pageTag.textContent !== label) pageTag.textContent = label;
+  }
+  if (on !== pageTagOn) { pageTagOn = on; pageTag.classList.toggle('on', on); }
+}
+// drag on the paper: a tap still focuses the textarea, a vertical drag scrolls
+const drag = { id: -1, y0: 0, s0: 0, moved: false };
+tapEl.addEventListener('pointerdown', (e) => { drag.id = e.pointerId; drag.y0 = e.clientY; drag.s0 = scrollBack.to; drag.moved = false; });
+tapEl.addEventListener('pointermove', (e) => {
+  if (e.pointerId !== drag.id) return;
+  const dy = e.clientY - drag.y0;
+  if (!drag.moved && Math.abs(dy) > 8) { drag.moved = true; try { tapEl.setPointerCapture(e.pointerId); } catch (er) {} }
+  if (drag.moved) { scrollBack.to = clamp(drag.s0 + dy / G.lineH, 0, maxScrollBack()); lastActivity = now(); }
+});
+const endDrag = (e) => { if (e.pointerId === drag.id) drag.id = -1; };
+tapEl.addEventListener('pointerup', endDrag); tapEl.addEventListener('pointercancel', endDrag);
+tapEl.addEventListener('click', (e) => { if (drag.moved) { e.stopImmediatePropagation(); drag.moved = false; } }, true);
+app.addEventListener('wheel', (e) => {
+  if (sheetOpen) return;
+  scrollBack.to = clamp(scrollBack.to - e.deltaY / (G.lineH * 2.2), 0, maxScrollBack()); lastActivity = now();
+  e.preventDefault();
+}, { passive: false });
+input.addEventListener('input', () => { scrollBack.to = 0; });
+
+/* ---------------------------------------------------------------- goals -- */
+// A word goal (counted from when it was set) and a writing sprint; reaching the goal sets off a celebration.
+const GOAL = Object.assign({ words: 0, base: 0, done: false, sprint: 0, end: 0, sbase: 0 }, (() => { try { return JSON.parse(store.get('fw.goal', '{}')) || {}; } catch (e) { return {}; } })());
+const saveGoal = () => store.set('fw.goal', JSON.stringify(GOAL));
+const goalHud = $('#goalHud');
+let hudText = '', wordsNow = 0, wordsT = -1;
+function draftWords() { return DR.cur ? words(draftText(DR.cur, true)) : words(text); }
+function setGoal(n) { GOAL.words = n; GOAL.base = draftWords(); GOAL.done = false; saveGoal(); refreshPanel(); }
+function setSprint(min) {
+  GOAL.sprint = min; GOAL.end = min ? Date.now() + min * 60000 : 0; GOAL.sbase = draftWords(); saveGoal(); refreshPanel();
+  if (min) toast(min + '-minute sprint: go!', 2);
+}
+function updateGoals(t) {
+  if (!GOAL.words && !GOAL.end) { if (hudText) { hudText = ''; goalHud.style.display = 'none'; } return; }
+  if (t - wordsT > 0.4) { wordsT = t; wordsNow = draftWords(); }
+  let label = '', frac = 0;
+  if (GOAL.words) {
+    const got = Math.max(0, wordsNow - GOAL.base);
+    label = Math.min(got, GOAL.words) + ' / ' + GOAL.words + ' words'; frac = Math.min(1, got / GOAL.words);
+    if (got >= GOAL.words && !GOAL.done) { GOAL.done = true; saveGoal(); celebrate('Goal reached: ' + GOAL.words + ' words!'); }
+  }
+  if (GOAL.end) {
+    const left = Math.max(0, GOAL.end - Date.now()), m = Math.floor(left / 60000), s = Math.floor(left / 1000) % 60;
+    label += (label ? ' · ' : '') + '⏱ ' + m + ':' + String(s).padStart(2, '0');
+    if (!GOAL.words) frac = 1 - left / (GOAL.sprint * 60000);
+    if (left <= 0) {
+      const n = Math.max(0, wordsNow - GOAL.sbase);
+      GOAL.end = 0; GOAL.sprint = 0; saveGoal(); refreshPanel();
+      celebrate('Sprint over: ' + n + ' word' + (n === 1 ? '' : 's') + '!', n < 1);
+    }
+  }
+  const html = label + '<i style="width:' + (frac * 100).toFixed(1) + '%"></i>';
+  if (html !== hudText) { hudText = html; goalHud.innerHTML = html; goalHud.style.display = 'block'; }
+}
+function celebrate(msg, small) {
+  lastActivity = now();
+  const n = small ? 1 : 4;
+  for (let i = 0; i < n; i++) setTimeout(() => { fx.zap(true, 1); AU.zap(0.6); }, i * 230);
+  burstAt(car.x + 25.4 * k, G.capCY - G.capHH, small ? 18 : 70, small ? 1 : 1.6);
+  if (!small) AU.fanfare();
+  haptic(small ? 20 : [30, 60, 30, 60, 60]);
+  toast(msg, 3.5);
+}
+
+/* --------------------------------------------------------- sheets (menus) -- */
+const scrimEl = $('#scrim'), panelEl = $('#panel'), draftsEl = $('#drafts'), gearBtn = $('#gear'), backBtn = $('#back');
+let sheetOpen = null, sheetRefocus = false;
+function layoutSheets() {
+  const mh = Math.max(320, H - (G.capCY + G.capHH + 26 * k));
+  panelEl.style.maxHeight = draftsEl.style.maxHeight = Math.min(H - 20, mh) + 'px';
+  goalHud.style.top = (G.paperTop - 26 * k) + 'px';
+  pageTag.style.top = (G.paperTop + 8 * k) + 'px';
+}
+function openSheet(el, kb) {
+  if (sheetOpen === el) return;
+  closeTray(); closeMenu();
+  if (sheetOpen) closeSheet(false);
+  sheetRefocus = document.activeElement === input;
+  if (sheetRefocus) input.blur();   // the phone keyboard would cover the panel
+  sheetOpen = el;
+  if (el === panelEl) buildPanel(); else renderDrafts();
+  el.classList.add('open'); scrimEl.classList.add('on');
+  (el === panelEl ? gearBtn : backBtn).setAttribute('aria-expanded', 'true');
+  AU.trayClick();
+  if (kb) { const f = el.querySelector('.body button, .body input'); if (f) f.focus(); }
+}
+function closeSheet(refocus = true) {
+  const el = sheetOpen;
+  if (!el) return;
+  sheetOpen = null;
+  el.classList.remove('open'); scrimEl.classList.remove('on');
+  (el === panelEl ? gearBtn : backBtn).setAttribute('aria-expanded', 'false');
+  if (el.contains(document.activeElement)) document.activeElement.blur();
+  if (refocus && (sheetRefocus || !TOUCH)) focusInput();
+}
+scrimEl.addEventListener('click', () => closeSheet());
+for (const el of [panelEl, draftsEl]) el.querySelector('.x').addEventListener('click', () => closeSheet());
+gearBtn.addEventListener('click', (e) => { lastActivity = now(); sheetOpen === panelEl ? closeSheet() : openSheet(panelEl, e.detail === 0); });
+backBtn.addEventListener('click', (e) => { lastActivity = now(); sheetOpen === draftsEl ? closeSheet() : openSheet(draftsEl, e.detail === 0); });
+document.addEventListener('keydown', (e) => { if (sheetOpen && e.key === 'Escape') { e.preventDefault(); closeSheet(); } });
+
+// small builders
+function el(tag, cls, html) { const n = document.createElement(tag); if (cls) n.className = cls; if (html !== undefined) n.innerHTML = html; return n; }
+function sec(title) { const s = el('div', 'sec'); s.appendChild(el('h3', '', title)); return s; }
+function sw(label, sub, on, fn) {
+  const r = el('div', 'row'), t = el('div', '', label + (sub ? '<small>' + sub + '</small>' : '')), b = el('button', 'sw');
+  b.setAttribute('role', 'switch'); b.setAttribute('aria-checked', on ? 'true' : 'false'); b.setAttribute('aria-label', label);
+  b.addEventListener('click', () => { const v = b.getAttribute('aria-checked') !== 'true'; b.setAttribute('aria-checked', v ? 'true' : 'false'); fn(v); });
+  r.append(t, b); return r;
+}
+function keyGroup(opts, cur, fn, label) {
+  const g = el('div', 'keys'); g.setAttribute('role', 'radiogroup'); if (label) g.setAttribute('aria-label', label);
+  for (const [val, txt] of opts) {
+    const b = el('button', 'key', txt); b.setAttribute('role', 'radio'); b.dataset.v = val;
+    b.setAttribute('aria-checked', String(val) === String(cur) ? 'true' : 'false');
+    b.addEventListener('click', () => { for (const x of g.children) x.setAttribute('aria-checked', x === b ? 'true' : 'false'); fn(val); });
+    g.appendChild(b);
+  }
+  return g;
+}
+const SKIN_DESC = {
+  frank: 'The recorded one: stitched patch and neck bolts', pumpkin: 'Ribbed and carved, glows under the lamp',
+  vampire: 'Crimson satin, ruby crest, bat wings', mummy: 'Wrapped bandages with a peeking eye',
+  ghost: 'See-through and floating', witch: 'Stars, moon, a pointy hat and a potion',
+  claude: 'A spark that thinks while you type', brass: 'Polished brass and rivets, an office classic',
+  copper: 'Riveted copper, gauges and gears', space: 'White hull, porthole and antenna',
+};
+function drawSwatch(cv, id, cw) {
+  const tmp = document.createElement('canvas'), pad = CAP_PAD * k, ex = 4 * k, ey = 16 * k;
+  const ch = Math.round(cw * (G.capHH + ey) / (G.capHW + ex));
+  renderCapsule(tmp, SKINS[id], 0);
+  cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); cv.style.width = cw + 'px'; cv.style.height = ch + 'px';
+  const c = cv.getContext('2d'); c.imageSmoothingQuality = 'high';
+  c.drawImage(tmp, (pad - ex) * dpr, (pad - ey) * dpr, (G.capHW + ex) * 2 * dpr, (G.capHH + ey) * 2 * dpr, 0, 0, cv.width, cv.height);
+}
+let panelKey = '';
+function buildPanel() {
+  const body = panelEl.querySelector('.body'), key = k.toFixed(3) + dpr;
+  if (panelKey === key && body.children.length) { refreshPanel(); return; }
+  panelKey = key; body.innerHTML = '';
+  // skins
+  const s1 = sec('CAPSULE'), car1 = el('div', 'carousel'); car1.setAttribute('role', 'radiogroup'); car1.setAttribute('aria-label', 'Capsule skin');
+  for (const id of SKIN_IDS) {
+    const b = el('button', 'card'); b.setAttribute('role', 'radio'); b.dataset.v = id;
+    const cv = document.createElement('canvas'); drawSwatch(cv, id, 92);
+    b.append(cv, el('b', '', SKINS[id].name), el('small', '', SKIN_DESC[id] || ''));
+    b.addEventListener('click', () => { lastActivity = now(); setSkin(id); refreshPanel(); });
+    car1.appendChild(b);
+  }
+  s1.appendChild(car1); body.appendChild(s1);
+  // paper
+  const s2 = sec('PAPER'), g2 = el('div', 'grid4'); g2.setAttribute('role', 'radiogroup'); g2.setAttribute('aria-label', 'Paper');
+  for (const id in PAPERS) {
+    const P = PAPERS[id], b = el('button', 'paper', 'Aa<span>' + P.name.replace('Old ', '') + '</span>');
+    b.setAttribute('role', 'radio'); b.dataset.v = id; b.setAttribute('aria-label', P.name);
+    b.style.background = P.light; b.style.color = P.ink[0];
+    if (id === 'blueprint') b.style.backgroundImage = 'linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px)', b.style.backgroundSize = '8px 8px';
+    b.addEventListener('click', () => { prefs.paper = id; savePrefs(); applyPaper(); refreshPanel(); });
+    g2.appendChild(b);
+  }
+  s2.appendChild(g2); body.appendChild(s2);
+  // ink
+  const s3 = sec('RIBBON'), g3 = el('div', 'grid4'); g3.setAttribute('role', 'radiogroup'); g3.setAttribute('aria-label', 'Ink colour');
+  for (const [id, name, col] of [['black', 'Black', '#25221d'], ['red', 'Red', '#b0281f'], ['blue', 'Blue', '#2b4a9a'], ['sepia', 'Sepia', '#7a5030']]) {
+    const b = el('button', 'ink', '<i style="background:' + col + '"></i>' + name);
+    b.setAttribute('role', 'radio'); b.dataset.v = id;
+    b.addEventListener('click', () => { prefs.ink = id; savePrefs(); invalidateText(); cardJob = null; refreshPanel(); });
+    g3.appendChild(b);
+  }
+  s3.appendChild(g3); body.appendChild(s3);
+  // sound
+  const s4 = sec('SOUND');
+  s4.appendChild(keyGroup(Object.entries(PACKS).map(([id, p]) => [id, p.name.replace('Electric ', '').replace(' Typewriter', '').replace('Spooky ', '')]), prefs.pack, (v) => { AU.setPack(v); refreshPanel(); AU.resume(); AU.clack(); }, 'Sound pack'));
+  const pd = el('div', 'row'); pd.style.border = '0'; pd.innerHTML = '<small class="packdesc"></small>'; s4.appendChild(pd);
+  const vr = el('div', 'row'), vol = el('input', 'vol');
+  vol.type = 'range'; vol.min = '0'; vol.max = '1'; vol.step = '0.01'; vol.setAttribute('aria-label', 'Volume');
+  vol.addEventListener('input', () => { AU.setVolume(+vol.value); vol.style.setProperty('--p', (vol.value * 100) + '%'); });
+  vol.addEventListener('change', () => { AU.resume(); AU.clack(); });
+  vr.append(el('div', '', 'Volume'), vol); s4.appendChild(vr);
+  const mr = el('div', 'row'); mr.appendChild(el('div', '', 'Music'));
+  mr.appendChild(keyGroup([['all', 'On'], ['fx', 'Off'], ['off', 'Mute all']], AU.mode, (v) => { AU.setMode(v); paintSound(); }, 'Music'));
+  mr.lastChild.classList.add('modekeys'); s4.appendChild(mr);
+  s4.appendChild(sw('Margin bell', 'Rings 4 letters before the end of a line', prefs.bell, (v) => { prefs.bell = v; savePrefs(); if (v) { AU.resume(); AU.bell(); } }));
+  s4.appendChild(sw('Night ambience', 'Wind, creaks and far thunder (Spooky pack)', prefs.ambience, (v) => { prefs.ambience = v; savePrefs(); AU.ambSync(); }));
+  if (CAN_BUZZ) s4.appendChild(sw('Vibration', 'A light tap on each key', prefs.haptics, (v) => { prefs.haptics = v; savePrefs(); haptic(20); }));
+  body.appendChild(s4);
+  // lamp
+  const s5 = sec('LAMP');
+  s5.appendChild(sw('Lamp', 'Also: the dial, or Ctrl+L', lampOn, (v) => { if (v !== lampOn) { setLamp(v); AU.lampSwitch(v); } }));
+  s5.lastChild.querySelector('.sw').classList.add('lampsw');
+  body.appendChild(s5);
+  // goals
+  const s6 = sec('GOALS');
+  const gr = el('div', 'row'); gr.appendChild(el('div', '', 'Words'));
+  gr.appendChild(keyGroup([[0, 'Off'], [100, '100'], [250, '250'], [500, '500'], [1000, '1k']], GOAL.words, (v) => setGoal(+v), 'Word goal'));
+  gr.lastChild.classList.add('goalkeys'); s6.appendChild(gr);
+  const sr = el('div', 'row'); sr.appendChild(el('div', '', 'Sprint'));
+  sr.appendChild(keyGroup([[0, 'Off'], [5, '5m'], [10, '10m'], [15, '15m'], [25, '25m']], GOAL.sprint, (v) => setSprint(+v), 'Writing sprint'));
+  sr.lastChild.classList.add('sprintkeys'); s6.appendChild(sr);
+  s6.appendChild(el('div', 'goal', '<span class="gtext"></span><div class="bar"><i></i></div>'));
+  body.appendChild(s6);
+  // keys (desktop)
+  if (!TOUCH) {
+    const s7 = sec('SHORTCUTS'), g7 = el('div', 'shortcuts');
+    for (const [k1, d] of [['Ctrl L', 'Lamp on / off'], ['Ctrl S', 'Save as .txt'], ['Ctrl P', 'Print or PDF'], ['Ctrl O', 'Drafts'],
+      ['Ctrl ,', 'This panel'], ['Ctrl Shift ↵', 'New page'], ['Ctrl M', 'Music / sound'], ['Ctrl Shift S', 'Save as image'], ['Esc', 'Close a menu']]) {
+      g7.append(el('kbd', '', k1), el('span', '', d));
+    }
+    s7.appendChild(g7); body.appendChild(s7);
+  }
+  refreshPanel();
+}
+function refreshPanel() {
+  if (!panelEl.querySelector('.body').children.length) return;
+  const q = (s) => panelEl.querySelectorAll(s);
+  for (const b of q('.card')) b.setAttribute('aria-checked', b.dataset.v === skin.id ? 'true' : 'false');
+  for (const b of q('.paper')) b.setAttribute('aria-checked', b.dataset.v === prefs.paper ? 'true' : 'false');
+  for (const b of q('.ink')) b.setAttribute('aria-checked', b.dataset.v === prefs.ink ? 'true' : 'false');
+  for (const b of q('.modekeys .key')) b.setAttribute('aria-checked', b.dataset.v === AU.mode ? 'true' : 'false');
+  for (const b of q('.goalkeys .key')) b.setAttribute('aria-checked', +b.dataset.v === GOAL.words ? 'true' : 'false');
+  for (const b of q('.sprintkeys .key')) b.setAttribute('aria-checked', +b.dataset.v === (GOAL.end ? GOAL.sprint : 0) ? 'true' : 'false');
+  const lsw = panelEl.querySelector('.lampsw'); if (lsw) lsw.setAttribute('aria-checked', lampOn ? 'true' : 'false');
+  const pd = panelEl.querySelector('.packdesc'); if (pd) pd.textContent = PACKS[prefs.pack].desc;
+  const vol = panelEl.querySelector('.vol'); if (vol) { vol.value = prefs.vol; vol.style.setProperty('--p', (prefs.vol * 100) + '%'); }
+  const gt = panelEl.querySelector('.gtext'), gb = panelEl.querySelector('.goal .bar i');
+  if (gt) {
+    const w = draftWords();
+    let s = w + ' word' + (w === 1 ? '' : 's') + ' in this draft';
+    let f = 0;
+    if (GOAL.words) { const got = Math.max(0, w - GOAL.base); s = Math.min(got, GOAL.words) + ' of ' + GOAL.words + ' words' + (GOAL.done ? ' — done!' : ''); f = Math.min(1, got / GOAL.words); }
+    gt.textContent = s; gb.style.width = (f * 100) + '%';
+  }
+  const sel = panelEl.querySelector('.card[aria-checked="true"]');
+  if (sel && panelEl.classList.contains('open')) sel.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+}
+// the drafts sheet
+function renderDrafts() {
+  const body = draftsEl.querySelector('.body');
+  body.innerHTML = '';
+  const nb = el('button', 'key wide', '+  NEW DRAFT'); nb.style.margin = '6px 0 14px';
+  nb.addEventListener('click', () => { newDraft(); closeSheet(); });
+  body.appendChild(nb);
+  saveNow();
+  const list = DR.list.slice().sort((a, b) => (b === DR.cur) - (a === DR.cur) || b.updated - a.updated);
+  for (const d of list) {
+    const row = el('div', 'draft' + (d === DR.cur ? ' cur' : '')), t = el('button', 't');
+    const all = draftText(d, d === DR.cur), np = d.pages.length + 1;
+    t.innerHTML = '<b></b><small></small>';
+    t.querySelector('b').textContent = draftTitle(d);
+    t.querySelector('small').textContent = (d === DR.cur ? 'in the machine · ' : '') + words(all) + ' words · ' + np + ' page' + (np > 1 ? 's' : '') + ' · ' + ago(d.updated);
+    t.addEventListener('click', () => { if (d !== DR.cur) openDraft(d.id); closeSheet(); });
+    const rn = el('button', 'ib', '✎'); rn.setAttribute('aria-label', 'Rename');
+    rn.addEventListener('click', () => {
+      const inp = document.createElement('input'); inp.value = draftTitle(d); inp.maxLength = 40; inp.setAttribute('aria-label', 'Draft name');
+      t.replaceWith(inp); inp.focus(); inp.select();
+      let fin = false;
+      const done = () => { if (fin) return; fin = true; const v = inp.value.trim(); d.name = v === draftTitle(Object.assign({}, d, { name: '' })) ? '' : v; saveDrafts(); renderDrafts(); };
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } else if (e.key === 'Escape') { e.stopPropagation(); renderDrafts(); } });
+      inp.addEventListener('blur', done);
+    });
+    const del = el('button', 'ib', '✕'); del.setAttribute('aria-label', 'Delete');
+    del.addEventListener('click', () => {
+      if (del.classList.contains('danger')) { deleteDraft(d.id); return; }
+      del.classList.add('danger'); del.textContent = 'Delete?';
+      setTimeout(() => { if (del.isConnected) { del.classList.remove('danger'); del.textContent = '✕'; } }, 3000);
+    });
+    row.append(t, rn, del);
+    body.appendChild(row);
+  }
+  const ex = el('div', 'sec'); ex.appendChild(el('h3', '', 'THIS DRAFT'));
+  const g = el('div', 'keys');
+  for (const [lbl, fn] of [['Save .txt', () => saveTxt()], ['Picture', () => shareImage()], ['Print / PDF', () => printDraft()], ['Share', () => shareText()]]) {
+    const b = el('button', 'key', lbl); b.addEventListener('click', () => { closeSheet(false); fn(); }); g.appendChild(b);
+  }
+  ex.appendChild(g); body.appendChild(ex);
+}
+
+/* ---------------------------------------------------------------- print -- */
+function printDraft() {
+  let pr = document.getElementById('print');
+  if (!pr) { pr = document.createElement('div'); pr.id = 'print'; document.body.appendChild(pr); }
+  pr.innerHTML = '';
+  const d = DR.cur, pages = d ? [...d.pages, text + pending] : [text];
+  pages.forEach((p, i) => {
+    const pg = el('div', 'pg');
+    if (i === 0) pg.appendChild(el('h1', '', 'FRANKENWRITER · ' + (d ? draftTitle(d) : '')));
+    pg.appendChild(document.createTextNode(p));
+    pr.appendChild(pg);
+  });
+  setTimeout(() => window.print(), 50);
+}
+
+/* ------------------------------------------------------------ shortcuts -- */
+document.addEventListener('keydown', (e) => {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+  const key = e.key.toLowerCase();
+  const act = (fn) => { e.preventDefault(); lastActivity = now(); fn(); };
+  if (key === 'l' && !e.shiftKey) act(() => { setLamp(!lampOn); AU.lampSwitch(lampOn); refreshPanel(); });
+  else if (key === 'p' && !e.shiftKey) act(printDraft);
+  else if (key === 'o' && !e.shiftKey) act(() => (sheetOpen === draftsEl ? closeSheet() : openSheet(draftsEl, true)));
+  else if (key === ',') act(() => (sheetOpen === panelEl ? closeSheet() : openSheet(panelEl, true)));
+  else if (key === 'enter' && e.shiftKey) act(newPage);
+  else if (key === 'm' && !e.shiftKey) act(() => { const next = { all: 'fx', fx: 'off', off: 'all' }[AU.mode]; AU.setMode(next); paintSound(); refreshPanel(); toast(next === 'all' ? 'Music and sound on' : next === 'fx' ? 'Music off' : 'Sound off'); });
+  else if (key === 's' && e.shiftKey) act(shareImage);
+});
+
+/* ------------------------------------------------------- sparks particles -- */
+// tiny glowing sparks that fly off the discharges, fall and fade (drawn on the overlay above everything)
+const PARTS = [];
+// a few sparks fly off the bolt heads (only once the page has settled: the recorded opening has none)
+function sparkParts(n, power) {
+  if (now() < 20) return;
+  if (!n) n = 2 + ((Math.random() * 2.5) | 0);
+  const x = car.x + 25.4 * k, top = G.capCY - G.capHH - 3.7 * k;
+  burstAt(x, top, n, power);
+  if (power > 0.6) burstAt(x, G.capCY + G.capHH + 3.7 * k, n >> 1, power * 0.6);
+}
+function burstAt(x, y, n, power = 1, col) {
+  if (REDUCED) n = Math.min(n, 6);
+  const c = col || skin.sp.mid;
+  for (let i = 0; i < n && PARTS.length < 260; i++) {
+    const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.5, v = (60 + Math.random() * 170) * power * k;
+    PARTS.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: 0.45 + Math.random() * 0.6 * power, c, w: (0.7 + Math.random() * 0.8) * k });
+  }
+}
+function stepParts(dt) {
+  for (let i = PARTS.length - 1; i >= 0; i--) {
+    const p = PARTS[i]; p.t += dt;
+    if (p.t > p.life) { PARTS.splice(i, 1); continue; }
+    p.vy += 520 * k * dt; p.vx *= 1 - 1.6 * dt; p.vy *= 1 - 0.9 * dt;
+    p.px = p.x; p.py = p.y; p.x += p.vx * dt; p.y += p.vy * dt;
+  }
+}
+function drawParts(c) {
+  if (!PARTS.length) return;
+  c.save(); c.globalCompositeOperation = 'lighter'; c.lineCap = 'round';
+  for (const p of PARTS) {
+    const a = 1 - p.t / p.life;
+    c.strokeStyle = rgba(mix(p.c, [255, 255, 255], 0.55), a); c.lineWidth = p.w;
+    c.beginPath(); c.moveTo(p.px === undefined ? p.x : p.px, p.py === undefined ? p.y : p.py); c.lineTo(p.x, p.y); c.stroke();
+    c.fillStyle = rgba(p.c, 0.25 * a); c.beginPath(); c.arc(p.x, p.y, p.w * 2.2, 0, 7); c.fill();
+  }
+  c.restore();
 }
 
 /* ---------------------------------------------------------- idle sparks -- */
@@ -3468,6 +4283,10 @@ function tick() {
   updateIdle(t);
   updateTip(t);
   updateAmbient(t);
+  updateGoals(t);
+  stepScrollBack(dt);
+  showPageTag(t);
+  stepParts(dt);
   const surge = updateLightning(t);
   stepWebs(dt, t);
   if (appearAt.size > 64) for (const [i, a] of appearAt) if (a < t - 1) appearAt.delete(i);
@@ -3501,7 +4320,8 @@ if (/[?&]debug\b/.test(location.search)) {
 
 /* --------------------------------------------------------------- boot -- */
 function boot() {
-  text = (store.get(LS.text, '') || '').slice(0, MAX);
+  loadDrafts();
+  text = (DR.cur.text || '').slice(0, MAX);
   lines = wrap(text);
   input.value = text;
   try { const s = JSON.parse(store.get(LS.sliders, 'null')); if (s) Object.assign(sliders, s); } catch (e) {}

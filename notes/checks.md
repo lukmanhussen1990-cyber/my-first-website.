@@ -206,3 +206,22 @@ alive on the rail:
 Checked: default look unchanged on the replay; skintest (now seven skins), functest, imetest, hinttest,
 focustest, reviewfix, tiptest, r12test, reducedtest and ctrls pass; share picture with the new skin.
 **Check 15 done. Next: a short demo of the new skin, then deliver the updated single file.**
+
+# Big upgrade (8 hours, started 10:21 UTC)
+
+## Check 16 — control panel, papers, ribbons, bell, sound packs, drafts, pages, goals (v16a, 10:38)
+Added: a control panel (new slider icon next to the arrow) styled like an old machine's panel — brass name
+plate, typewriter keys, bakelite switches — with a skin carousel, four papers (Cream, Old Parchment,
+Blueprint, Black Paper with white ink), four ribbons (black, red, blue, sepia), sound packs (Electric
+Frankenstein = the recording, Classic Typewriter, Spooky Halloween with wind/creak/owl/thunder ambience),
+volume, music on/off, margin bell, vibration, lamp, word goal and writing sprint, and a shortcut list.
+The arrow now opens Drafts (new, open, rename, delete with undo, export). Full pages tear off by themselves
+and stay with the draft; New page keeps the old page too; drag or wheel the paper to read back through
+earlier lines and pages (a page tag shows where you are). Print / PDF of a whole draft. Quick keys strike
+lighter. Margin bell 4 letters before the end of a line. Shortcuts: Ctrl+L, Ctrl+S, Ctrl+P, Ctrl+O,
+Ctrl+, , Ctrl+Shift+Enter, Ctrl+M, Ctrl+Shift+S, Esc.
+Bugs found and fixed: typing in the rename box was pulled into the page; Undo toast sat under the panel's
+scrim; the auto page break was undone by the input handler (now deferred); new code drew random numbers that
+shifted the machine's own randomness.
+Compared with the recording replay: identical except the new icon and the lighter fast-typed letter.
+Check 16 done. Next: new skins (Brass, Steampunk Copper, Space), ghost float, vampire wings, then graphics.
