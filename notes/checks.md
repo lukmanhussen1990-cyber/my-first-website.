@@ -525,3 +525,11 @@ Check 47 done. Next: graphics rounds continue.
 - Tests: functest, r12test, up16test, reducedtest, mobile18, tear drag (mouse + touch) pass.
 
 Check 48 done. Next: graphics rounds continue.
+
+## Check 49 – tear by hand on a phone, frame by frame (no code change)
+- 390x844@3x with real touch events: the tab sits at the top of the sheet; pulling, the sheet first stretches a few
+  px, then rips free with its torn edge and blank paper showing underneath, leans and curls as it rises, and flies
+  off with the pull's momentum on release; the fresh sheet shows its hint and the "Page torn off – Undo" note.
+- Tab checked on every paper and in lamp mode (paper-coloured, readable grip and label).
+
+Check 49 done. Next: graphics rounds continue.
