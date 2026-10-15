@@ -225,3 +225,18 @@ scrim; the auto page break was undone by the input handler (now deferred); new c
 shifted the machine's own randomness.
 Compared with the recording replay: identical except the new icon and the lighter fast-typed letter.
 Check 16 done. Next: new skins (Brass, Steampunk Copper, Space), ghost float, vampire wings, then graphics.
+
+## Check 17 — new skins and graphics (v17a, 10:47)
+Added skins: Classic Brass (brushed brass, engraved bands, rivet rows, enamel maker's badge, knob), Steampunk
+Copper (riveted plates, verdigris, a pressure gauge whose needle rises while you type, valve, gear) and Space
+Capsule (white hull, mission stripes, a porthole of twinkling stars and a ringed planet, a blinking antenna,
+a thruster that fires while you type). The Ghost now floats; the Vampire grew little bat wings that flutter
+while you type. Every skin crackles in its own pitch and has its own pick-up sound. Ten skins in the tray
+(two rows) and in the panel carousel.
+Graphics: Frankenstein capsule wear (hairline scratches, rust round the bolts and running down, a soft
+window reflection); under the lamp the T bar throws a soft shadow up the paper that moves with the strike
+and the carriage, dust drifts through the beam, the bulb shimmers and stutters now and then; sparks bloom
+and throw hot streaks that fall and fade; a spider lets itself down from the pipe on a thread; a moth finds
+the lamp and circles it. All new motion waits until 20–35 s, so the recorded opening is unchanged.
+Tests: full suite passes (skin test updated for ten skins); frame times 2–4 ms at 4× CPU throttle.
+Check 17 done. Next: second pass on everything — panel polish, share picture with themes, phone checks.

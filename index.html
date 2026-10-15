@@ -759,6 +759,33 @@ function paintFrank(c, m) {
     g2.addColorStop(0, R() < 0.5 ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,230,0.04)'); g2.addColorStop(1, 'rgba(0,0,0,0)');
     c.fillStyle = g2; c.fillRect(x - r, y - r, r * 2, r * 2);
   }
+  // wear: hairline scratches, rust blooming round the bolts and running down, a soft window reflection
+  const Wr = mulberry(77 + m);
+  c.lineCap = 'round';
+  for (let i = 0; i < 18; i++) {
+    const x = lerp(-hw + 6 * k, hw - 6 * k, Wr()), y = lerp(-hh + 3 * k, hh - 3 * k, Wr()), len = (3 + Wr() * 10) * k, a = (Wr() - 0.5) * 0.8;
+    const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
+    c.lineWidth = 0.32 * k;
+    c.strokeStyle = m ? 'rgba(0,0,0,0.12)' : 'rgba(40,46,30,0.13)'; c.beginPath(); c.moveTo(x + 0.3 * k, y + 0.35 * k); c.lineTo(x2 + 0.3 * k, y2 + 0.35 * k); c.stroke();
+    c.strokeStyle = m ? 'rgba(255,250,220,0.035)' : `rgba(255,255,236,${0.1 + Wr() * 0.1})`; c.beginPath(); c.moveTo(x, y); c.lineTo(x2, y2); c.stroke();
+  }
+  for (const sy of [-1, 1]) {
+    const bx = 25.4 * k, by = sy * (hh - 4.6 * k);
+    for (let i = 0; i < 6; i++) {
+      const x = bx + (Wr() - 0.5) * 13 * k, y = by + (Wr() - 0.5) * 4 * k, r = (1.2 + Wr() * 2.6) * k;
+      const g2 = c.createRadialGradient(x, y, 0, x, y, r);
+      g2.addColorStop(0, m ? 'rgba(70,32,10,0.3)' : 'rgba(150,74,24,0.3)'); g2.addColorStop(1, 'rgba(150,74,24,0)');
+      c.fillStyle = g2; c.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+  }
+  const rs = c.createLinearGradient(0, -hh + 6 * k, 0, -hh + 17 * k);   // a rust run below the top bolt
+  rs.addColorStop(0, m ? 'rgba(70,32,10,0.22)' : 'rgba(140,70,24,0.2)'); rs.addColorStop(1, 'rgba(140,70,24,0)');
+  c.fillStyle = rs; c.fillRect(27.2 * k, -hh + 6 * k, 1.1 * k, 11 * k); c.fillRect(23.6 * k, -hh + 6 * k, 0.7 * k, 7 * k);
+  if (!m) {
+    const rf = c.createLinearGradient(0, -hh + 4 * k, 0, -hh + 10 * k);
+    rf.addColorStop(0, 'rgba(255,255,245,0)'); rf.addColorStop(0.5, 'rgba(255,255,245,0.11)'); rf.addColorStop(1, 'rgba(255,255,245,0)');
+    c.fillStyle = rf; c.beginPath(); c.ellipse(-12 * k, -hh + 7 * k, 26 * k, 2.6 * k, -0.02, 0, 7); c.fill();
+  }
   // seams with cross stitches
   stitchLine(c, sx1, -hh, sx1, hh, P, 0);
   stitchLine(c, sx2, -hh + 3.4 * k, sx2, hh - 4.2 * k, P, 1);
@@ -902,25 +929,34 @@ const SKINS = {
   frank: { name: 'Frankenstein', short: 'Frank', paint: paintFrank, props: propsFrank, rim: [CAP_COL[0].rim, CAP_COL[1].rim],
     sp: { beam: [205, 200, 225], beam2: [220, 215, 240], halo: [165, 148, 255], mid: [200, 188, 255], tip: [235, 235, 255], sheen: '#d8d8d5' },
     flood: null, halo: [159, 199, 133], steam: [255, 255, 250], steamAt: [27.5, -4.5] },
-  pumpkin: { name: 'Pumpkin', short: 'Pumpkin', paint: paintPumpkin, props: propsPumpkin, rim: ['rgba(120,50,6,0.35)', 'rgba(10,4,1,0.55)'],
+  pumpkin: { name: 'Pumpkin', short: 'Pumpkin', paint: paintPumpkin, props: propsPumpkin, pitch: 0.8, rim: ['rgba(120,50,6,0.35)', 'rgba(10,4,1,0.55)'],
     sp: { beam: [255, 190, 120], beam2: [255, 214, 160], halo: [255, 140, 40], mid: [255, 196, 110], tip: [255, 220, 170], sheen: '#ffd9a0' },
     flood: [[84, 50, 14], [68, 40, 11], [41, 24, 7], [17, 10, 3]], halo: [240, 150, 60], steam: [255, 236, 214], steamAt: [27.4, -8.6] },
-  vampire: { name: 'Vampire', short: 'Vampire', paint: paintVampire, props: propsVampire, rim: ['rgba(30,4,8,0.45)', 'rgba(4,0,1,0.6)'],
+  vampire: { name: 'Vampire', short: 'Vampire', paint: paintVampire, props: propsVampire, overlay: overlayVampire, pitch: 0.7, rim: ['rgba(30,4,8,0.45)', 'rgba(4,0,1,0.6)'],
     sp: { beam: [255, 140, 160], beam2: [255, 170, 186], halo: [255, 50, 90], mid: [255, 140, 165], tip: [255, 200, 210], sheen: '#ffc2cc' },
     flood: [[80, 14, 26], [66, 11, 21], [39, 7, 12], [16, 3, 5]], halo: [205, 45, 70], steam: null },
-  mummy: { name: 'Mummy', short: 'Mummy', paint: paintMummy, props: propsMummy, rim: ['rgba(90,70,40,0.3)', 'rgba(12,10,6,0.55)'],
+  mummy: { name: 'Mummy', short: 'Mummy', paint: paintMummy, props: propsMummy, pitch: 0.6, rim: ['rgba(90,70,40,0.3)', 'rgba(12,10,6,0.55)'],
     sp: { beam: [255, 222, 160], beam2: [255, 236, 190], halo: [240, 180, 60], mid: [255, 222, 140], tip: [255, 236, 190], sheen: '#f3e2b8' },
     flood: [[72, 60, 24], [60, 50, 20], [36, 30, 12], [14, 12, 5]], halo: [210, 170, 90], steam: [240, 228, 196], steamAt: [30.5, -5.5] },
-  ghost: { name: 'Ghost', short: 'Ghost', paint: paintGhost, props: propsGhost, rim: ['rgba(120,140,160,0.35)', 'rgba(20,30,40,0.5)'],
+  ghost: { name: 'Ghost', short: 'Ghost', paint: paintGhost, props: propsGhost, bob: (t) => Math.sin(t * 2.4) * 1.8 * k + Math.sin(t * 0.9) * 0.6 * k, pitch: 1.5, rim: ['rgba(120,140,160,0.35)', 'rgba(20,30,40,0.5)'],
     sp: { beam: [190, 228, 255], beam2: [214, 240, 255], halo: [110, 190, 255], mid: [185, 232, 255], tip: [225, 245, 255], sheen: '#e6f4ff' },
     flood: [[38, 62, 80], [32, 52, 66], [19, 31, 40], [8, 12, 16]], halo: [150, 200, 240], steam: null },
-  witch: { name: 'Witch', short: 'Witch', paint: paintWitch, props: propsWitch, rim: ['rgba(30,14,46,0.45)', 'rgba(5,2,9,0.6)'],
+  witch: { name: 'Witch', short: 'Witch', paint: paintWitch, props: propsWitch, pitch: 1.6, rim: ['rgba(30,14,46,0.45)', 'rgba(5,2,9,0.6)'],
     sp: { beam: [214, 170, 255], beam2: [230, 196, 255], halo: [180, 80, 255], mid: [222, 160, 255], tip: [236, 210, 255], sheen: '#e9d6ff' },
     flood: [[60, 30, 82], [50, 25, 68], [30, 15, 41], [12, 6, 16]], halo: [175, 115, 235], steam: [238, 220, 255], steamAt: [30.8, -12.4] },
   claude: { name: 'Claude Special', short: 'Claude', paint: paintClaude, props: propsClaude, overlay: overlayClaude,
     rim: ['rgba(120,45,25,0.35)', 'rgba(12,5,3,0.6)'],
     sp: { beam: [255, 205, 180], beam2: [255, 225, 205], halo: [230, 120, 80], mid: [255, 175, 135], tip: [255, 228, 210], sheen: '#f7d6c4' },
-    flood: [[88, 44, 30], [72, 36, 24], [43, 21, 14], [17, 8, 5]], halo: [217, 119, 87], steam: null },
+    flood: [[88, 44, 30], [72, 36, 24], [43, 21, 14], [17, 8, 5]], halo: [217, 119, 87], steam: null, pitch: 1.2 },
+  brass: { name: 'Classic Brass', short: 'Brass', paint: paintBrass, props: propsBrass, rim: ['rgba(90,60,10,0.4)', 'rgba(10,6,0,0.6)'],
+    sp: { beam: [255, 228, 170], beam2: [255, 240, 200], halo: [255, 190, 70], mid: [255, 215, 120], tip: [255, 240, 200], sheen: '#ffe9a6' },
+    flood: [[82, 64, 22], [68, 52, 18], [41, 31, 11], [16, 12, 4]], halo: [220, 180, 90], steam: [255, 246, 226], steamAt: [25.4, -8], pitch: 1.1 },
+  copper: { name: 'Steampunk Copper', short: 'Copper', paint: paintCopper, props: propsCopper, overlay: overlayCopper, rim: ['rgba(90,40,15,0.4)', 'rgba(10,4,2,0.6)'],
+    sp: { beam: [255, 200, 160], beam2: [255, 222, 190], halo: [255, 140, 80], mid: [255, 180, 120], tip: [200, 255, 230], sheen: '#ffd2a8' },
+    flood: [[80, 50, 32], [64, 40, 26], [38, 24, 15], [15, 9, 6]], halo: [210, 140, 90], steam: [250, 250, 245], steamAt: [25.4, -9.5], pitch: 0.85 },
+  space: { name: 'Space Capsule', short: 'Space', paint: paintSpace, props: propsSpace, overlay: overlaySpace, rim: ['rgba(90,100,115,0.35)', 'rgba(5,8,12,0.6)'],
+    sp: { beam: [190, 230, 255], beam2: [220, 242, 255], halo: [90, 180, 255], mid: [170, 225, 255], tip: [230, 245, 255], sheen: '#e8f4ff' },
+    flood: [[32, 50, 84], [26, 42, 70], [16, 25, 42], [6, 10, 17]], halo: [150, 200, 255], steam: null, pitch: 1.9 },
 };
 const SKIN_IDS = Object.keys(SKINS);
 for (const id of SKIN_IDS) SKINS[id].id = id;
@@ -1187,6 +1223,231 @@ function propsWitch(c, m) {
   c.fillStyle = pg; c.fillRect(x - fr, fy - KK(1.2), fr * 2, fr * 2);
   c.restore();
   c.fillStyle = 'rgba(255,255,255,0.6)'; c.beginPath(); c.ellipse(x - KK(1.4), fy - KK(1.6), KK(0.9), KK(0.5), -0.6, 0, 7); c.fill();   // glint
+}
+
+// ---- Classic Brass: polished brass with brushed highlights, engraved bands, a riveted seam and an enamel badge
+function brassGrad(c, hh, m) {
+  return vgrad(c, -hh, hh, m ? [[0, '#5a4718'], [0.18, '#6b5520'], [0.42, '#453512'], [0.7, '#33270c'], [1, '#1d1607']]
+    : [[0, '#c9a34a'], [0.1, '#f6dd8e'], [0.22, '#e3bd5f'], [0.45, '#b98d33'], [0.66, '#d6ad52'], [0.82, '#9c7424'], [1, '#6e4f14']]);
+}
+function rivetRow(c, y, x0, x1, step, r, m) {
+  for (let x = x0; x <= x1; x += step) {
+    const g = c.createRadialGradient(x - r * 0.35, y - r * 0.35, 0, x, y, r);
+    g.addColorStop(0, m ? '#9a8450' : '#fff3c4'); g.addColorStop(0.5, m ? '#5a4718' : '#c99d43'); g.addColorStop(1, m ? '#231b08' : '#6b4d14');
+    c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+  }
+}
+function paintBrass(c, m) {
+  const hw = G.capHW, hh = G.capHH, R = mulberry(61 + m);
+  c.fillStyle = brassGrad(c, hh, m); c.fillRect(-hw, -hh, hw * 2, hh * 2);
+  c.globalAlpha = m ? 0.05 : 0.12;   // brushed grain
+  for (let i = 0; i < 70; i++) { c.fillStyle = R() < 0.5 ? '#fff' : '#3a2a08'; c.fillRect(-hw + R() * hw * 2, -hh + R() * hh * 2, (8 + R() * 40) * k, 0.35 * k); }
+  c.globalAlpha = 1;
+  for (const y of [-hh + KK(5), hh - KK(6)]) {   // engraved bands
+    c.fillStyle = m ? 'rgba(0,0,0,0.35)' : 'rgba(90,60,10,0.45)'; c.fillRect(-hw, y, hw * 2, KK(0.8));
+    c.fillStyle = m ? 'rgba(255,220,140,0.06)' : 'rgba(255,245,200,0.55)'; c.fillRect(-hw, y + KK(0.8), hw * 2, KK(0.5));
+  }
+  rivetRow(c, -hh + KK(2.4), -hw + KK(8), hw - KK(8), KK(7.4), KK(0.95), m);
+  rivetRow(c, hh - KK(2.8), -hw + KK(8), hw - KK(8), KK(7.4), KK(0.95), m);
+  capShade(c, m);
+  // the maker's badge: black enamel oval with a brass rim and a little lightning bolt
+  c.save(); c.translate(KK(25.4), KK(0.4));
+  c.fillStyle = m ? '#3b2f12' : '#a87f2c'; c.beginPath(); c.ellipse(0, 0, KK(9.2), KK(6.6), 0, 0, 7); c.fill();
+  const eg = c.createLinearGradient(0, -KK(6), 0, KK(6)); eg.addColorStop(0, m ? '#0c0a07' : '#2a2620'); eg.addColorStop(1, m ? '#050403' : '#0f0d0b');
+  c.fillStyle = eg; c.beginPath(); c.ellipse(0, 0, KK(8), KK(5.5), 0, 0, 7); c.fill();
+  c.fillStyle = m ? '#8a7234' : '#f1cf72';
+  c.beginPath(); c.moveTo(KK(1.2), KK(-4.2)); c.lineTo(KK(-2.2), KK(0.6)); c.lineTo(KK(0.1), KK(0.6)); c.lineTo(KK(-1.2), KK(4.2)); c.lineTo(KK(2.4), KK(-0.8)); c.lineTo(KK(0.2), KK(-0.8)); c.closePath(); c.fill();
+  c.font = `700 ${KK(2.2)}px "Courier Prime", monospace`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('Nº 7', KK(-5.1), KK(0.2)); c.fillText('1931', KK(5.2), KK(0.2));
+  c.fillStyle = 'rgba(255,255,255,0.18)'; c.beginPath(); c.ellipse(KK(-2.5), KK(-3.4), KK(4), KK(1.1), -0.15, 0, 7); c.fill();
+  c.restore();
+  if (!m) { c.fillStyle = 'rgba(255,250,230,0.35)'; c.beginPath(); c.ellipse(KK(-10), -hh + KK(9), KK(26), KK(2.2), 0, 0, 7); c.fill(); }   // window reflection
+}
+function propsBrass(c, m) {
+  const hh = G.capHH, x = KK(25.4);
+  // a turned brass knob on top and a small foot underneath
+  const g = c.createLinearGradient(x - KK(4), 0, x + KK(4), 0);
+  g.addColorStop(0, m ? '#2e240c' : '#7c5a1a'); g.addColorStop(0.35, m ? '#8a7234' : '#ffe9a6'); g.addColorStop(0.7, m ? '#5a4718' : '#c99d43'); g.addColorStop(1, m ? '#1d1607' : '#6b4d14');
+  c.fillStyle = g;
+  c.fillRect(x - KK(1.6), -hh - KK(3.6), KK(3.2), KK(3.8));
+  c.beginPath(); c.ellipse(x, -hh - KK(5.2), KK(4.2), KK(2.6), 0, 0, 7); c.fill();
+  c.fillStyle = m ? 'rgba(255,230,160,0.2)' : 'rgba(255,255,255,0.6)'; c.beginPath(); c.ellipse(x - KK(1.2), -hh - KK(6), KK(1.6), KK(0.7), 0, 0, 7); c.fill();
+  c.fillStyle = g; roundRect(c, x - KK(5), hh - KK(0.5), KK(10), KK(2.6), KK(1)); c.fill();
+}
+
+// ---- Steampunk Copper: riveted copper plates with verdigris, a pressure gauge whose needle follows your typing
+function paintCopper(c, m, live) {
+  const hw = G.capHW, hh = G.capHH, R = mulberry(83 + m);
+  c.fillStyle = vgrad(c, -hh, hh, m ? [[0, '#5a2e1a'], [0.2, '#6b3820'], [0.5, '#4a2414'], [1, '#22100a']]
+    : [[0, '#c87a4c'], [0.12, '#f0a878'], [0.26, '#d98a58'], [0.5, '#b8663a'], [0.75, '#a85a30'], [1, '#6e3418']]);
+  c.fillRect(-hw, -hh, hw * 2, hh * 2);
+  for (let i = 0; i < 30; i++) {   // verdigris creeping along the seams and edges
+    const sx = [KK(-4), KK(12), -hw + KK(3), hw - KK(3)][i % 4], x = sx + (R() - 0.5) * KK(5), y = lerp(-hh, hh, R()), r = KK(0.8 + R() * 2.8);
+    const g = c.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, m ? 'rgba(60,120,100,0.18)' : 'rgba(80,165,135,0.32)'); g.addColorStop(1, 'rgba(90,170,140,0)');
+    c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  for (const x of [KK(-4), KK(12)]) {   // plate seams with rivets
+    c.fillStyle = m ? 'rgba(0,0,0,0.45)' : 'rgba(70,30,10,0.5)'; c.fillRect(x, -hh, KK(0.7), hh * 2);
+    c.fillStyle = m ? 'rgba(255,180,120,0.05)' : 'rgba(255,210,170,0.45)'; c.fillRect(x + KK(0.7), -hh, KK(0.4), hh * 2);
+    for (let y = -hh + KK(4); y < hh - KK(2); y += KK(5.6)) {
+      const g = c.createRadialGradient(x - KK(1.6), y - KK(0.4), 0, x - KK(1.3), y, KK(1.1));
+      g.addColorStop(0, m ? '#a06a48' : '#ffd2a8'); g.addColorStop(1, m ? '#2a140a' : '#7a3a18');
+      c.fillStyle = g; c.beginPath(); c.arc(x - KK(1.3), y, KK(1), 0, 7); c.fill();
+    }
+  }
+  capShade(c, m);
+  if (!m) { c.fillStyle = 'rgba(255,240,220,0.3)'; c.beginPath(); c.ellipse(KK(-14), -hh + KK(8), KK(24), KK(2), 0, 0, 7); c.fill(); }
+  // the gauge
+  const gx = KK(27), gy = KK(0.5), gr = KK(8.6);
+  c.fillStyle = m ? '#3a2416' : '#8a4a22'; c.beginPath(); c.arc(gx, gy, gr + KK(1.6), 0, 7); c.fill();
+  const bez = c.createLinearGradient(gx - gr, gy - gr, gx + gr, gy + gr);
+  bez.addColorStop(0, m ? '#9a7a40' : '#ffe39a'); bez.addColorStop(0.5, m ? '#5a4520' : '#c79a3e'); bez.addColorStop(1, m ? '#2a1e0c' : '#7a5418');
+  c.fillStyle = bez; c.beginPath(); c.arc(gx, gy, gr + KK(0.6), 0, 7); c.fill();
+  c.fillStyle = m ? '#2c2a24' : '#f3ead6'; c.beginPath(); c.arc(gx, gy, gr - KK(0.6), 0, 7); c.fill();
+  c.strokeStyle = m ? '#a89a7e' : '#3a2a1a'; c.lineWidth = KK(0.45);
+  for (let i = 0; i <= 10; i++) {
+    const a = Math.PI * (0.8 + i * 0.14), r0 = gr - KK(i % 5 ? 2 : 3.2), r1 = gr - KK(1.2);
+    c.beginPath(); c.moveTo(gx + Math.cos(a) * r0, gy + Math.sin(a) * r0); c.lineTo(gx + Math.cos(a) * r1, gy + Math.sin(a) * r1); c.stroke();
+  }
+  c.strokeStyle = '#c0281c'; c.lineWidth = KK(0.9);   // red zone
+  c.beginPath(); c.arc(gx, gy, gr - KK(1.6), Math.PI * 2.08, Math.PI * 2.2); c.stroke();
+  if (!live) copperNeedle(c, gx, gy, gr, 0.35, m);
+  c.fillStyle = 'rgba(255,255,255,0.22)'; c.beginPath(); c.ellipse(gx - KK(2.4), gy - KK(3.8), KK(4), KK(1.6), -0.4, 0, 7); c.fill();   // glass
+}
+function copperNeedle(c, gx, gy, gr, v, m) {
+  const a = Math.PI * (0.8 + clamp(v, 0, 1) * 1.4);
+  c.strokeStyle = m ? '#e05a40' : '#a01810'; c.lineWidth = KK(0.75); c.lineCap = 'round';
+  c.beginPath(); c.moveTo(gx - Math.cos(a) * KK(1.6), gy - Math.sin(a) * KK(1.6)); c.lineTo(gx + Math.cos(a) * (gr - KK(2)), gy + Math.sin(a) * (gr - KK(2))); c.stroke();
+  c.fillStyle = m ? '#6a5a3a' : '#3a2a1a'; c.beginPath(); c.arc(gx, gy, KK(1.1), 0, 7); c.fill();
+}
+function propsCopper(c, m) {
+  const hh = G.capHH, x = KK(25.4);
+  // a little steam valve on top: pipe, wheel handle
+  const pg = c.createLinearGradient(x - KK(2), 0, x + KK(2), 0);
+  pg.addColorStop(0, m ? '#2a140a' : '#7a3a18'); pg.addColorStop(0.4, m ? '#a06a48' : '#ffc89c'); pg.addColorStop(1, m ? '#3a1c0e' : '#9a4a22');
+  c.fillStyle = pg; c.fillRect(x - KK(1.7), -hh - KK(5.5), KK(3.4), KK(5.8));
+  c.strokeStyle = m ? '#6a4a2a' : '#c78a4a'; c.lineWidth = KK(1);
+  c.beginPath(); c.ellipse(x, -hh - KK(6.4), KK(4.6), KK(1.5), 0, 0, 7); c.stroke();
+  c.beginPath(); c.moveTo(x - KK(4.6), -hh - KK(6.4)); c.lineTo(x + KK(4.6), -hh - KK(6.4)); c.stroke();
+  // a gear hanging below
+  c.save(); c.translate(x - KK(2), hh + KK(4.4)); c.fillStyle = m ? '#4a3418' : '#b07a30';
+  c.beginPath();
+  for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8, r = i % 2 ? KK(3.6) : KK(2.7); c.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+  c.closePath(); c.fill();
+  c.fillStyle = m ? '#1a1208' : '#3a2410'; c.beginPath(); c.arc(0, 0, KK(1), 0, 7); c.fill();
+  c.restore();
+}
+let copperV = 0.3, copperT = 0;
+function overlayCopper(c, cx, cy, t, cP, alpha) {
+  const dt = clamp(t - copperT, 0, 0.05); copperT = t;
+  const want = t - lastKey < 0.5 ? 0.62 + 0.3 * Math.min(1, (0.5 - (t - lastKey)) * 2) : 0.28;
+  copperV += (want - copperV) * Math.min(1, dt * 3.5);
+  if (alpha < 0.01) return;
+  c.save(); c.globalAlpha = alpha;
+  copperNeedle(c, cx + KK(27), cy + KK(0.5), KK(8.6), copperV + Math.sin(t * 23) * 0.012 + Math.sin(t * 7.7) * 0.01, cP);
+  c.restore();
+}
+
+// ---- Space Capsule: a glossy white hull, panel lines, a porthole full of stars, a blinking antenna,
+// and a thruster that fires while you type
+function paintSpace(c, m, live) {
+  const hw = G.capHW, hh = G.capHH;
+  c.fillStyle = vgrad(c, -hh, hh, m ? [[0, '#6e7682'], [0.3, '#5c6470'], [0.7, '#3e444e'], [1, '#22262c']]
+    : [[0, '#ffffff'], [0.16, '#f4f7fa'], [0.45, '#e3e8ee'], [0.75, '#c9d0d9'], [1, '#97a1ad']]);
+  c.fillRect(-hw, -hh, hw * 2, hh * 2);
+  c.fillStyle = m ? '#6a1e22' : '#d8333a'; c.fillRect(-hw, KK(7.2), hw * 2, KK(2.4));   // mission stripe
+  c.fillStyle = m ? '#1e3058' : '#2a52b8'; c.fillRect(-hw, KK(10.4), hw * 2, KK(1.2));
+  c.strokeStyle = m ? 'rgba(0,0,0,0.35)' : 'rgba(80,90,105,0.35)'; c.lineWidth = KK(0.4);   // panel lines
+  for (const x of [-30, -6, 12]) { c.beginPath(); c.moveTo(KK(x), -hh); c.lineTo(KK(x), hh); c.stroke(); }
+  c.beginPath(); c.moveTo(-hw, KK(-9)); c.lineTo(KK(-6), KK(-9)); c.stroke();
+  c.fillStyle = m ? 'rgba(0,0,0,0.3)' : 'rgba(80,90,105,0.4)';
+  for (const [x, y] of [[-28, -14], [-28, 14], [-8, -14], [-8, 14], [10, -14], [14, 14]]) { c.beginPath(); c.arc(KK(x), KK(y), KK(0.55), 0, 7); c.fill(); }
+  c.font = `700 ${KK(3.2)}px "Courier Prime", monospace`; c.fillStyle = m ? '#4a5260' : '#5a6474'; c.textAlign = 'left'; c.textBaseline = 'middle';
+  c.fillText('FW-1', KK(-40), KK(-12.6));
+  capShade(c, m);
+  if (!m) { c.fillStyle = 'rgba(255,255,255,0.7)'; c.beginPath(); c.ellipse(KK(-12), -hh + KK(6), KK(26), KK(2.4), 0, 0, 7); c.fill(); }
+  // porthole
+  const px = KK(26), py = KK(-1.5), pr = KK(8.2);
+  const ring = c.createLinearGradient(px - pr, py - pr, px + pr, py + pr);
+  ring.addColorStop(0, m ? '#9aa4b0' : '#ffffff'); ring.addColorStop(0.5, m ? '#5a626e' : '#aab4c0'); ring.addColorStop(1, m ? '#2a2e34' : '#6a7480');
+  c.fillStyle = ring; c.beginPath(); c.arc(px, py, pr + KK(1.6), 0, 7); c.fill();
+  const glass = c.createRadialGradient(px - KK(2), py - KK(2), 0, px, py, pr);
+  glass.addColorStop(0, '#1d2a52'); glass.addColorStop(1, '#070b1a');
+  c.fillStyle = glass; c.beginPath(); c.arc(px, py, pr, 0, 7); c.fill();
+  if (!live) spaceStars(c, px, py, pr, 0, m);
+  c.fillStyle = 'rgba(255,255,255,0.28)'; c.beginPath(); c.ellipse(px - KK(2.6), py - KK(3.6), KK(3.8), KK(1.6), -0.5, 0, 7); c.fill();
+  for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; c.fillStyle = m ? '#3a4048' : '#8a94a0'; c.beginPath(); c.arc(px + Math.cos(a) * (pr + KK(0.8)), py + Math.sin(a) * (pr + KK(0.8)), KK(0.45), 0, 7); c.fill(); }
+}
+const STARS = (() => { const R = mulberry(909), a = []; for (let i = 0; i < 16; i++) a.push([R() * 2 - 1, R() * 2 - 1, 0.25 + R() * 0.6, R() * 6.28]); return a; })();
+function spaceStars(c, px, py, pr, t, m) {
+  c.save(); c.beginPath(); c.arc(px, py, pr, 0, 7); c.clip();
+  for (const [sx, sy, s, ph] of STARS) {
+    const x = px + sx * pr - ((t * 1.5) % 2) * 0, y = py + sy * pr, a = 0.55 + 0.45 * Math.sin(t * 2.2 + ph);
+    c.fillStyle = `rgba(230,240,255,${a})`; c.fillRect(x, y, KK(s), KK(s));
+  }
+  // a little planet with a ring
+  c.fillStyle = '#d98a4a'; c.beginPath(); c.arc(px + KK(3), py + KK(2.6), KK(2.2), 0, 7); c.fill();
+  c.strokeStyle = 'rgba(240,210,160,0.8)'; c.lineWidth = KK(0.4); c.beginPath(); c.ellipse(px + KK(3), py + KK(2.6), KK(3.6), KK(1), -0.35, 0, 7); c.stroke();
+  c.restore();
+}
+function propsSpace(c, m) {
+  const hh = G.capHH, x = KK(25.4);
+  // antenna with a light; thruster bell underneath
+  c.strokeStyle = m ? '#6a7480' : '#9aa4b0'; c.lineWidth = KK(0.7); c.lineCap = 'round';
+  c.beginPath(); c.moveTo(x, -hh); c.lineTo(x + KK(1.5), -hh - KK(9)); c.stroke();
+  c.fillStyle = m ? '#4a525e' : '#c9d0d9'; c.beginPath(); c.ellipse(x, -hh + KK(0.2), KK(3), KK(1), 0, 0, 7); c.fill();
+  c.fillStyle = m ? '#5a1418' : '#c0282c'; c.beginPath(); c.arc(x + KK(1.5), -hh - KK(9.4), KK(1.2), 0, 7); c.fill();
+  const ng = c.createLinearGradient(x - KK(4), 0, x + KK(4), 0);
+  ng.addColorStop(0, m ? '#22262c' : '#5a626e'); ng.addColorStop(0.4, m ? '#7a828e' : '#e8ecf0'); ng.addColorStop(1, m ? '#2a2e34' : '#6a7480');
+  c.fillStyle = ng; c.beginPath(); c.moveTo(x - KK(2.2), hh - KK(0.4)); c.lineTo(x + KK(2.2), hh - KK(0.4)); c.lineTo(x + KK(4), hh + KK(4)); c.lineTo(x - KK(4), hh + KK(4)); c.closePath(); c.fill();
+}
+let spaceT = 0, spaceFire = 0;
+function overlaySpace(c, cx, cy, t, cP, alpha) {
+  const dt = clamp(t - spaceT, 0, 0.05); spaceT = t;
+  spaceFire += ((t - lastKey < 0.35 ? 1 : 0) - spaceFire) * Math.min(1, dt * 10);
+  if (alpha < 0.01) return;
+  const hh = G.capHH, x = cx + KK(25.4);
+  c.save(); c.globalAlpha = alpha;
+  spaceStars(c, cx + KK(26), cy - KK(1.5), KK(8.2), t, cP);
+  c.fillStyle = 'rgba(255,255,255,0.28)'; c.beginPath(); c.ellipse(cx + KK(23.4), cy - KK(5.1), KK(3.8), KK(1.6), -0.5, 0, 7); c.fill();
+  if ((t % 1.4) < 0.18) {   // the antenna light blinks
+    const g = c.createRadialGradient(x + KK(1.5), cy - hh - KK(9.4), 0, x + KK(1.5), cy - hh - KK(9.4), KK(5));
+    g.addColorStop(0, 'rgba(255,90,80,0.95)'); g.addColorStop(0.3, 'rgba(255,60,50,0.4)'); g.addColorStop(1, 'rgba(255,60,50,0)');
+    c.fillStyle = g; c.fillRect(x - KK(4), cy - hh - KK(15), KK(11), KK(11));
+  }
+  if (spaceFire > 0.02) {   // thruster flame
+    const L = KK(6 + 5 * spaceFire * (0.8 + 0.4 * Math.sin(t * 40))), y0 = cy + hh + KK(4);
+    const g = c.createLinearGradient(0, y0, 0, y0 + L);
+    g.addColorStop(0, `rgba(255,255,240,${0.95 * spaceFire})`); g.addColorStop(0.35, `rgba(255,190,90,${0.8 * spaceFire})`); g.addColorStop(1, 'rgba(255,90,40,0)');
+    c.fillStyle = g; c.beginPath(); c.moveTo(x - KK(3.2), y0); c.quadraticCurveTo(x, y0 + L * 1.25, x + KK(3.2), y0); c.closePath(); c.fill();
+  }
+  c.restore();
+}
+
+// ---- the vampire's little bat wings flutter at the capsule's ends while you type
+let vampT = 0, vampAct = 0;
+function overlayVampire(c, cx, cy, t, cP, alpha) {
+  const dt = clamp(t - vampT, 0, 0.05); vampT = t;
+  vampAct += ((t - lastKey < 0.4 ? 1 : 0) - vampAct) * Math.min(1, dt * 8);
+  if (alpha < 0.01) return;
+  c.save(); c.globalAlpha = alpha;
+  c.fillStyle = rgba(mix([42, 26, 34], [12, 6, 9], cP));
+  for (const sd of [-1, 1]) {
+    const ax = cx + sd * (G.capHW - KK(3)), ay = cy - KK(7);
+    const flap = 0.18 + vampAct * (0.35 + 0.35 * Math.sin(t * 15 + (sd > 0 ? 0 : 0.6))) + 0.04 * Math.sin(t * 1.3);
+    c.save(); c.translate(ax, ay); c.scale(sd, 1); c.rotate(-flap);
+    c.beginPath(); c.moveTo(0, 0);
+    c.quadraticCurveTo(KK(5), KK(-6), KK(12), KK(-4.5));
+    c.quadraticCurveTo(KK(11), KK(-1.6), KK(10.2), KK(0.5));
+    c.quadraticCurveTo(KK(8.8), KK(-0.6), KK(7.4), KK(1.6));
+    c.quadraticCurveTo(KK(6), KK(0.4), KK(4.6), KK(2.4));
+    c.quadraticCurveTo(KK(2.6), KK(1.2), 0, KK(3)); c.closePath(); c.fill();
+    c.strokeStyle = rgba(mix([90, 50, 70], [40, 20, 30], cP), 0.8); c.lineWidth = KK(0.35);
+    c.beginPath(); c.moveTo(KK(0.5), KK(0.5)); c.lineTo(KK(10.5), KK(-3.6)); c.moveTo(KK(0.5), KK(1)); c.lineTo(KK(7.4), KK(1)); c.stroke();
+    c.restore();
+  }
+  c.restore();
 }
 
 // ---- Claude Special: warm terracotta clay with a cream label, the hand-drawn spark on its side and a speech
@@ -1999,7 +2260,7 @@ function draw(t) {
   c.setTransform(dpr, 0, 0, dpr, 0, -G.sceneTop * dpr);
   c.clearRect(0, G.sceneTop, W, G.sceneBot - G.sceneTop);
 
-  const cx = car.x, cy = G.capCY, capTop = cy - G.capHH;
+  const cx = car.x, cy = G.capCY + (skin.bob ? skin.bob(t) : 0), capTop = cy - G.capHH;
 
   // ----- text -----
   c.save(); clipPaper(c);
@@ -2029,6 +2290,8 @@ function draw(t) {
     c.globalAlpha = 1;
   }
   drawCaret(c, t, pP);   // the blinking insertion dot lives on the paper (under the T and the webs)
+  const lv = CH.light.v * (t > 20 ? 1 : 0);
+  if (lv > 0.02 && lampOn) { drawTShadow(c, t, cx, capTop, lv * pP); if (!REDUCED) drawDust(c, t, lv * pP); }
   c.restore();
 
   // ----- rail -----
@@ -2039,6 +2302,7 @@ function draw(t) {
 
   // ----- webs -----
   drawWebs(c, t, pP);
+  drawSpiders(c, t, pP);
 
   // ----- capsule -----
   const pad = CAP_PAD * k, cw = (G.capHW + pad) * 2, chh = (G.capHH + pad) * 2;
@@ -2203,6 +2467,10 @@ function drawSparks(c, cx, cy, t, st) {
     const pts = lightningPath(x, yTop + 1.5 * k, yBot - 1.5 * k, fr * 7 + 3, (violet ? 1.7 : 1.45) * k);
     c.save();
     c.lineJoin = 'round'; c.lineCap = 'round';
+    c.globalCompositeOperation = 'lighter';   // bloom
+    c.strokeStyle = rgba(skin.sp.halo, 0.07 * bolt); c.lineWidth = 9 * k; strokePts(c, pts);
+    c.strokeStyle = rgba(skin.sp.halo, 0.1 * bolt); c.lineWidth = 5 * k; strokePts(c, pts);
+    c.globalCompositeOperation = 'source-over';
     c.strokeStyle = rgba(skin.sp.halo, (violet ? 0.32 : 0.22) * bolt); c.lineWidth = (violet ? 3.6 : 2.4) * k; strokePts(c, pts);
     c.strokeStyle = rgba(skin.sp.mid, (violet ? 0.75 : 0.6) * bolt); c.lineWidth = (violet ? 1.7 : 1.15) * k; strokePts(c, pts);
     c.strokeStyle = `rgba(255,255,255,${(violet ? 0.45 : 1) * bolt})`; c.lineWidth = 0.72 * k; strokePts(c, pts);
@@ -2789,7 +3057,7 @@ const AU = {
     if (v < 0.01 || !this.ready()) return; const t0 = this.ctx.currentTime + 0.004;
     const n = 4 + ((Math.random() * 5) | 0), dur = 0.08 + Math.random() * 0.07;
     for (let i = 0; i < n; i++) this.burst(t0 + Math.random() * dur, { f: 3000 + Math.random() * 3000, type: 'highpass', q: 0.6, gain: (0.1 + Math.random() * 0.22) * v, a: 0.0005, d: 0.003 + Math.random() * 0.006 });
-    this.buzz(t0, dur, 0.06 * v, 110 + Math.random() * 40);
+    this.buzz(t0, dur, 0.06 * v, (110 + Math.random() * 40) * (skin.pitch || 1));   // each skin crackles in its own key
   },
   buzz(t, dur, gain, f) {
     // sawtooth → band-pass → AM stage (0.5 ± 0.5, a crackling square LFO) → envelope
@@ -2855,6 +3123,14 @@ const AU = {
         this.tone(s + i * 0.075, { f, gain: 0.06, a: 0.008, d: 0.5 });
         this.tone(s + i * 0.075, { f: f * 2, type: 'triangle', gain: 0.012, a: 0.004, d: 0.2 });
       });
+    } else if (id === 'brass') {     // a bright little brass chime
+      for (const [f, d] of [[1760, 0], [2349, 0.09]]) this.tone(s + d, { f, gain: 0.05, a: 0.003, d: 0.7 });
+    } else if (id === 'copper') {    // a hiss of steam and a valve clunk
+      this.burst(s, { f: 4500, type: 'highpass', q: 0.5, gain: 0.12, a: 0.05, d: 0.45 });
+      this.tone(s + 0.05, { f: 140, f2: 90, gain: 0.16, d: 0.12 });
+    } else if (id === 'space') {     // a radio beep and a launch whoosh
+      this.tone(s, { f: 1320, type: 'square', gain: 0.025, d: 0.08 }); this.tone(s + 0.12, { f: 1760, type: 'square', gain: 0.025, d: 0.08 });
+      this.burst(s + 0.2, { f: 600, type: 'lowpass', q: 0.7, gain: 0.18, a: 0.15, d: 0.4 });
     } else if (id === 'witch') {     // a sparkle of magic
       [1568, 1976, 2349, 2637, 3136, 3951].forEach((f, i) => this.tone(s + i * 0.045, { f, type: 'triangle', gain: 0.035, a: 0.002, d: 0.22 }));
     }
@@ -4228,12 +4504,143 @@ function drawParts(c) {
   c.save(); c.globalCompositeOperation = 'lighter'; c.lineCap = 'round';
   for (const p of PARTS) {
     const a = 1 - p.t / p.life;
-    c.strokeStyle = rgba(mix(p.c, [255, 255, 255], 0.55), a); c.lineWidth = p.w;
-    c.beginPath(); c.moveTo(p.px === undefined ? p.x : p.px, p.py === undefined ? p.y : p.py); c.lineTo(p.x, p.y); c.stroke();
-    c.fillStyle = rgba(p.c, 0.25 * a); c.beginPath(); c.arc(p.x, p.y, p.w * 2.2, 0, 7); c.fill();
+    const tx = p.x - p.vx * 0.022, ty = p.y - p.vy * 0.022;   // a short streak along the flight
+    c.strokeStyle = rgba(p.c, 0.35 * a); c.lineWidth = p.w * 2.2;
+    c.beginPath(); c.moveTo(tx, ty); c.lineTo(p.x, p.y); c.stroke();
+    c.strokeStyle = rgba(mix(p.c, [255, 255, 255], 0.7), a); c.lineWidth = p.w * 0.8;
+    c.beginPath(); c.moveTo(tx, ty); c.lineTo(p.x, p.y); c.stroke();
   }
   c.restore();
 }
+
+/* ------------------------------------------------------------ lamp scene -- */
+// Under the lamp: the T bar throws a soft shadow up the paper, dust drifts through the beam, the bulb
+// flickers now and then. (None of it before the first 20 s, so the recorded opening stays as it was.)
+function beamAt(x, y) {   // rough intensity of the lamp's beam at a point (0 … 1)
+  const ox = lightX, oy = G.capCY - G.capHH, dx = x - ox, dy = oy - y;
+  if (dy <= 0) return 0;
+  const ang = Math.abs(Math.atan2(dx, dy)) * 180 / Math.PI, half = sliders.spread / 2;
+  const r = Math.hypot(dx, dy), r1 = 106.6 * k * sliders.reach / 210;
+  return smooth(half + 6, half - 8, ang) * Math.exp(-Math.max(0, r - r1 * 0.5) / (r1 * 0.9));
+}
+function drawTShadow(c, t, cx, capTop, lv) {
+  const lift = strikeLift(t) - retractDrop(t), barBot = capTop - 22 * k - lift + baseShift(t);
+  const ox = lightX, oy = capTop + 1 * k, reach = 220 * k;
+  c.save();
+  for (const [w, a] of [[10.6, 0.16], [12.4, 0.08]]) {   // core and penumbra
+    const pl = [cx - w * k, barBot], pr = [cx + w * k, barBot];
+    const far = (p) => { const dx = p[0] - ox, dy = p[1] - oy, s = reach / Math.max(1, -dy); return [ox + dx * s, oy + dy * s]; };
+    const fl = far(pl), fr = far(pr);
+    const g = c.createLinearGradient(0, barBot, 0, barBot - reach * 0.75);
+    g.addColorStop(0, `rgba(0,0,0,${a * lv})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = g;
+    c.beginPath(); c.moveTo(pl[0], pl[1]); c.lineTo(pr[0], pr[1]); c.lineTo(fr[0], fr[1]); c.lineTo(fl[0], fl[1]); c.closePath(); c.fill();
+  }
+  c.restore();
+}
+const MOTES = (() => { const R = mulberry(2024), a = []; for (let i = 0; i < 70; i++) a.push({ x: R(), y: R(), s: 0.4 + R() * 0.9, ph: R() * 6.28, sp: 0.4 + R() * 0.8 }); return a; })();
+function drawDust(c, t, lv) {
+  const top = G.paperTop, h = G.railT - top;
+  c.save(); c.globalCompositeOperation = 'lighter';
+  for (const m of MOTES) {
+    const x = ((m.x * W + Math.sin(t * 0.13 * m.sp + m.ph) * 26 * k + t * 2.2 * k * m.sp) % W + W) % W;
+    const y = top + (((m.y * h - t * 3.2 * k * m.sp + Math.sin(t * 0.21 + m.ph) * 9 * k) % h) + h) % h;
+    const b = beamAt(x, y);
+    if (b < 0.03) continue;
+    const a = b * lv * (0.35 + 0.45 * Math.sin(t * 1.3 * m.sp + m.ph * 3) ** 2);
+    c.fillStyle = `rgba(255,236,200,${(a * 0.9).toFixed(3)})`;
+    c.beginPath(); c.arc(x, y, m.s * k, 0, 7); c.fill();
+  }
+  c.restore();
+}
+const FLICK = { next: 25, t0: -9 };
+function bulbFlicker(t) {
+  if (!lampOn || t < 20) return 1;
+  if (t > FLICK.next) { FLICK.t0 = t; FLICK.next = t + 9 + Math.random() * 18; }
+  const s = t - FLICK.t0;
+  let f = 1 - 0.018 * (Math.sin(t * 7.1) * Math.sin(t * 2.3 + 1) + 1) * 0.5;   // a faint, constant shimmer
+  if (s < 0.32) f *= 1 - 0.22 * Math.max(0, Math.sin(s * 60)) * (1 - s / 0.32);   // a quick stutter
+  return f;
+}
+
+/* -------------------------------------------------------------- spiders -- */
+// Now and then a little spider lets itself down from the pipe on a thread, dangles, and climbs back.
+const SPIDERS = [];
+let nextSpider = 0;
+function updateSpiders(t) {
+  if (REDUCED) return;
+  if (!nextSpider) nextSpider = t + 30 + ambR() * 30;
+  if (t > nextSpider && !SPIDERS.length) {
+    nextSpider = t + 35 + ambR() * 50;
+    let x = 30 * k + ambR() * (W - 60 * k);
+    if (Math.abs(x - car.x) < G.capHW + 20 * k) x = car.x > W / 2 ? 40 * k + ambR() * 60 * k : W - 40 * k - ambR() * 60 * k;
+    SPIDERS.push({ x, t0: t, drop: (28 + ambR() * 45) * k, hang: 3 + ambR() * 4, s: 0.8 + ambR() * 0.4 });
+  }
+  for (let i = SPIDERS.length - 1; i >= 0; i--) if (t - SPIDERS[i].t0 > 2.4 + SPIDERS[i].hang + 2.2) SPIDERS.splice(i, 1);
+}
+function drawSpiders(c, t, pP) {
+  for (const sp of SPIDERS) {
+    const s = t - sp.t0, down = 2.4, up = 2.2;
+    let d;
+    if (s < down) d = E.outQuad(s / down);
+    else if (s < down + sp.hang) d = 1 + 0.06 * Math.sin((s - down) * 2.2);
+    else d = 1 - E.inOutSine((s - down - sp.hang) / up);
+    const ay = G.railB - 1 * k, y = ay + sp.drop * d, sway = Math.sin(t * 1.3 + sp.x) * 1.4 * k * d, x = sp.x + sway;
+    const col = rgba(mix([30, 24, 18], mix([18, 16, 13], [190, 178, 155], beamAt(x, y)), pP)), sc = sp.s * k;
+    c.strokeStyle = rgba(mix([120, 115, 105], [200, 195, 180], pP), 0.55); c.lineWidth = Math.max(0.4, 0.35 * k);
+    c.beginPath(); c.moveTo(sp.x, ay); c.lineTo(x, y - 2 * sc); c.stroke();
+    c.save(); c.translate(x, y); c.rotate(sway * 0.02);
+    c.strokeStyle = col; c.lineWidth = 0.55 * sc; c.lineCap = 'round';
+    const walk = s < down || s > down + sp.hang ? Math.sin(t * 22) : Math.sin(t * 3) * 0.3;
+    c.beginPath();
+    for (let i = 0; i < 4; i++) for (const sd of [-1, 1]) {
+      const a = (i - 1.5) * 0.42 + (i % 2 ? walk : -walk) * 0.18, kx = sd * 3.2 * sc, ky = (i - 1.5) * 1.6 * sc;
+      c.moveTo(sd * 0.8 * sc, (i - 1.5) * 0.7 * sc); c.quadraticCurveTo(kx, ky - 1.6 * sc, sd * (4.4 + Math.cos(a)) * sc, ky + 1.4 * sc + Math.sin(a) * sc);
+    }
+    c.stroke();
+    c.fillStyle = col;
+    c.beginPath(); c.ellipse(0, -1.5 * sc, 1.25 * sc, 1.1 * sc, 0, 0, 7); c.fill();   // head + thorax
+    c.beginPath(); c.ellipse(0, 1.4 * sc, 1.9 * sc, 2.3 * sc, 0, 0, 7); c.fill();     // abdomen
+    c.fillStyle = rgba(mix([120, 30, 20], [220, 60, 40], pP), 0.8);                     // a little red mark
+    c.beginPath(); c.arc(0, 1.6 * sc, 0.5 * sc, 0, 7); c.fill();
+    c.restore();
+  }
+}
+
+/* ----------------------------------------------------------------- moth -- */
+// With the lamp on a moth finds the light, circles it for a while and flutters off again.
+const MOTH = { on: false, t0: 0, until: 0, next: 0, x: 0, y: 0, vx: 0, vy: 0, leave: 0 };
+function updateMoth(t, dt) {
+  if (REDUCED) { MOTH.on = false; return; }
+  if (!MOTH.next) MOTH.next = t + 35 + ambR() * 25;
+  if (!MOTH.on && lampOn && CH.light.v > 0.9 && t > MOTH.next) {
+    Object.assign(MOTH, { on: true, t0: t, until: t + 14 + ambR() * 14, x: ambR() < 0.5 ? -20 * k : W + 20 * k, y: G.paperTop + ambR() * 120 * k, vx: 0, vy: 0, leave: 0 });
+  }
+  if (!MOTH.on) return;
+  const s = t - MOTH.t0, ox = lightX, oy = G.capCY - G.capHH - 46 * k;
+  let tx = ox + Math.sin(s * 1.7) * 34 * k + Math.sin(s * 4.3) * 10 * k, ty = oy + Math.cos(s * 1.3) * 26 * k + Math.sin(s * 5.1) * 8 * k;
+  if (t > MOTH.until || !lampOn) { MOTH.leave += dt; tx = MOTH.x + (MOTH.x < W / 2 ? -1 : 1) * 200 * k; ty = MOTH.y - 120 * k; }
+  MOTH.vx += ((tx - MOTH.x) * 9 - MOTH.vx * 3.2) * dt + (Math.random() - 0.5) * 900 * k * dt;
+  MOTH.vy += ((ty - MOTH.y) * 9 - MOTH.vy * 3.2) * dt + (Math.random() - 0.5) * 900 * k * dt;
+  MOTH.x += MOTH.vx * dt; MOTH.y += MOTH.vy * dt;
+  if (MOTH.leave > 4 || MOTH.x < -60 * k || MOTH.x > W + 60 * k && MOTH.leave > 0) { MOTH.on = false; MOTH.next = t + 50 + ambR() * 70; }
+}
+function drawMoth(c, t) {
+  if (!MOTH.on) return;
+  const lit = 0.35 + 0.65 * beamAt(MOTH.x, MOTH.y), f = Math.abs(Math.sin(t * 34)), s = k * 1.05;
+  const col = rgba(mix([70, 62, 52], [236, 222, 196], lit)), col2 = rgba(mix([55, 48, 40], [214, 196, 168], lit));
+  c.save(); c.translate(MOTH.x, MOTH.y); c.rotate(Math.atan2(MOTH.vy, MOTH.vx) * 0.15);
+  for (const sd of [-1, 1]) {
+    c.save(); c.scale(sd * (0.35 + 0.65 * f), 1);
+    c.fillStyle = col; c.beginPath(); c.moveTo(0, -0.5 * s); c.quadraticCurveTo(4 * s, -5.5 * s, 7.4 * s, -2.6 * s); c.quadraticCurveTo(6 * s, 0.6 * s, 0, 0.6 * s); c.fill();
+    c.fillStyle = col2; c.beginPath(); c.moveTo(0, 0.2 * s); c.quadraticCurveTo(5 * s, 1 * s, 4.6 * s, 4 * s); c.quadraticCurveTo(2 * s, 3.4 * s, 0, 1.6 * s); c.fill();
+    c.restore();
+  }
+  c.fillStyle = rgba(mix([40, 32, 24], [130, 110, 84], lit)); c.beginPath(); c.ellipse(0, 0.6 * s, 0.9 * s, 2.6 * s, 0, 0, 7); c.fill();
+  c.restore();
+}
+ambExtra = () => MOTH.on;
+drawAmbExtra = (c, t) => drawMoth(c, t);
 
 /* ---------------------------------------------------------- idle sparks -- */
 let nextIdle = 0, lastActivity = 0, idleFrom = -1, idleRun = 0;
@@ -4287,7 +4694,8 @@ function tick() {
   stepScrollBack(dt);
   showPageTag(t);
   stepParts(dt);
-  const surge = updateLightning(t);
+  const surge = updateLightning(t) * bulbFlicker(t);
+  updateSpiders(t); updateMoth(t, dt);
   stepWebs(dt, t);
   if (appearAt.size > 64) for (const [i, a] of appearAt) if (a < t - 1) appearAt.delete(i);
   if (lightDirty && (lampOn || CH.light.v > 0)) renderLight();
@@ -4313,6 +4721,7 @@ if (/[?&]debug\b/.test(location.search)) {
     get text() { return text; }, get lines() { return lines.map((l) => l.idx.map((i) => text[i]).join('')); },
     get carX() { return car.x; }, get target() { return carriageTarget(); }, get col() { return caretCol(); },
     get lamp() { return lampOn; }, get lift() { const t = now(); return strikeLift(t) - retractDrop(t); }, get lightX() { return lightX; }, colX, G, AU, fx, WEB,
+    SPIDERS, MOTH, spawnSpider: () => { nextSpider = 1; }, spawnMoth: () => { MOTH.next = 1; },
     renderCard, newPage, strikeLightning: (d) => strikeLightning(now(), d), launchBats: () => launchBats(now()), AMB,
     renderLightForTest(scale, spread) { const s0 = L.scale; L.scale = scale; sliders.spread = spread; renderLight(); L.scale = s0; },
   };
