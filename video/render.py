@@ -7,7 +7,9 @@ clean plates to give bumpy crayon edges and stippled grain.
 Usage:
   python3 render.py                      # full video -> output/sixth_dimension.mp4
   python3 render.py --png 10 300 560     # preview single frames -> output/preview_*.png
+  python3 render.py --plates plates_mice --out sixth_dimension_mice.mp4
 """
+import argparse
 import json
 import os
 import subprocess
@@ -51,10 +53,10 @@ def boil_frames():
     return changes
 
 
-def load_plates():
+def load_plates(plates_dir):
     plates = {}
-    for fn in sorted(os.listdir(os.path.join(HERE, "plates"))):
-        z = np.load(os.path.join(HERE, "plates", fn))
+    for fn in sorted(os.listdir(os.path.join(HERE, plates_dir))):
+        z = np.load(os.path.join(HERE, plates_dir, fn))
         plates[fn[:-4]] = (z["owner"], z["prob"].astype(np.float32) / 255.0)
     return plates
 
@@ -127,8 +129,8 @@ def compose(band, fade):
     return np.clip(frame + 0.5, 0, 255).astype(np.uint8)
 
 
-def frames():
-    plates = load_plates()
+def frames(plates_dir):
+    plates = load_plates(plates_dir)
     timeline = {e["frame"]: (e["scene"], e["state"]) for e in CFG["timeline"]}
     boils = boil_frames()
     cache, seed_cache = {}, {}
@@ -149,18 +151,23 @@ def frames():
 
 
 def main(argv):
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--plates", default="plates", help="plate folder to render")
+    ap.add_argument("--out", default="sixth_dimension.mp4", help="file name in output/")
+    ap.add_argument("--png", type=int, nargs="+", help="only write these preview frames")
+    args = ap.parse_args(argv)
     out_dir = os.path.join(HERE, "output")
     os.makedirs(out_dir, exist_ok=True)
-    if argv[:1] == ["--png"]:
-        want = {int(x) for x in argv[1:]}
-        for f, img in frames():
+    if args.png:
+        want = set(args.png)
+        for f, img in frames(args.plates):
             if f in want:
                 Image.fromarray(img).save(os.path.join(out_dir, f"preview_{f:04d}.png"))
             if f >= max(want):
                 break
         return
 
-    out = os.path.join(out_dir, "sixth_dimension.mp4")
+    out = os.path.join(out_dir, args.out)
     cmd = [
         "ffmpeg", "-v", "error", "-y",
         "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", "30", "-i", "-",
@@ -174,7 +181,7 @@ def main(argv):
         "-movflags", "+faststart", out,
     ]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    for f, img in frames():
+    for f, img in frames(args.plates):
         proc.stdin.write(img.tobytes())
     proc.stdin.close()
     if proc.wait() != 0:
