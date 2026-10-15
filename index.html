@@ -117,6 +117,39 @@
            animation: fogdrift 80s ease-in-out infinite alternate; }
   #fog i + i { bottom: 4%; height: 24%; opacity: .7; animation-duration: 115s; animation-direction: alternate-reverse; }
   @keyframes fogdrift { from { transform: translateX(-7%); } to { transform: translateX(7%); } }
+  /* atmosphere modes (Normal is the recorded look): a sunny room, a fully dark one, a horror one */
+  #sun { display: none; transform-origin: 0 0; will-change: transform, opacity; }
+  #modeFx { position: absolute; inset: 0; pointer-events: none; display: none; overflow: hidden; }
+  #modeFx i { position: absolute; inset: 0; display: none; }
+  body.m-solar #modeFx, body.m-dark #modeFx, body.m-horror #modeFx { display: block; }
+  body.m-solar #modeFx .rays { display: block; inset: -20%;
+    background: repeating-linear-gradient(118deg, rgba(255,236,190,0) 0 46px, rgba(255,238,196,.17) 46px 76px, rgba(255,236,190,0) 76px 132px);
+    -webkit-mask-image: radial-gradient(ellipse 75% 65% at 18% 12%, #000 0%, rgba(0,0,0,.45) 45%, transparent 78%);
+    mask-image: radial-gradient(ellipse 75% 65% at 18% 12%, #000 0%, rgba(0,0,0,.45) 45%, transparent 78%);
+    animation: sunrays 18s ease-in-out infinite alternate; }
+  @keyframes sunrays { from { transform: translateX(-14px); opacity: .65; } to { transform: translateX(14px); opacity: 1; } }
+  body.m-dark #modeFx .vig { display: block; background: radial-gradient(ellipse 90% 75% at 50% 42%, transparent 55%, rgba(0,0,0,.6) 100%); }
+  body.m-horror #modeFx .vig { display: block; opacity: .6;
+    background: radial-gradient(ellipse 85% 70% at 50% 45%, transparent 38%, rgba(80,0,0,.55) 82%, rgba(25,0,0,.9) 100%); }
+  body.m-horror #modeFx .dim { display: block; background: #050000; opacity: 0; }
+  body.m-solar #app { background: #ecdcb6; }
+  body.m-solar #app .icon, body.m-solar #app #counter { color: #5d4b33; }
+  body.m-solar.m-dusk #app .icon, body.m-solar.m-dusk #app #counter { color: #b0ab9e; }
+  body.m-dark #app { background: #040404; }
+  body.m-dark #app .icon, body.m-dark #app #counter { color: #6f6d67; }
+  body.m-horror #app { background: #100606; }
+  body.m-horror #app .icon, body.m-horror #app #counter { color: #a48a83; }
+  body.wide.m-solar #fog { display: none; }
+  body.m-horror #fog i { filter: sepia(1) saturate(5) hue-rotate(-40deg) brightness(.9); }
+  body.m-horror #flash { background: rgb(210,50,40); }
+  @media (prefers-reduced-motion: reduce) { body.m-solar #modeFx .rays { animation: none; } }
+  .modegrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .mtile { aspect-ratio: 1 / .8; border-radius: 9px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+           font-size: 8px; letter-spacing: .06em; text-transform: uppercase; border: 2px solid rgba(0,0,0,.25); box-shadow: 0 2px 6px rgba(0,0,0,.5); overflow: hidden; }
+  .mtile svg { display: block; }
+  .mtile[aria-checked="true"] { border-color: #e2b35c; box-shadow: 0 0 0 1px #e2b35c, 0 0 14px rgba(226,179,92,.35); }
+  .grid4.overridden { opacity: .45; }
+  .modedesc { margin-top: 8px; font-size: 10px; color: #a99f8c; }
   /* a lightning strike lights up the room; bats fly across now and then */
   #flash { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; mix-blend-mode: screen; background: rgb(150,170,215); }
   #amb { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; display: none; }
@@ -251,6 +284,7 @@
     <div id="vignette"></div>
     <canvas id="paperFx"></canvas>
     <canvas id="light"></canvas>
+    <canvas id="sun"></canvas>
     <canvas id="grain"></canvas>
     <canvas id="relief"></canvas>
   </div>
@@ -258,6 +292,7 @@
   <button id="tearTab" aria-label="Tear off this page (drag the tab up)"></button>
   <button id="hintBtn" aria-label="Need a first line?"></button>
   <canvas id="scene"></canvas>
+  <div id="modeFx"><i class="rays"></i><i class="vig"></i><i class="dim"></i></div>
   <div id="glow"></div>
   <textarea id="input" autocapitalize="sentences" autocorrect="on" spellcheck="true" autocomplete="off"
             maxlength="12000" rows="1" aria-label="Typewriter text"></textarea>
@@ -267,7 +302,7 @@
   </button>
   <button id="gear" class="icon" aria-label="Control panel" aria-haspopup="dialog" aria-expanded="false">
     <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round">
-      <path d="M4.5 7h15M4.5 12h15M4.5 17h15"/><circle cx="9" cy="7" r="1.9" fill="#181818"/><circle cx="15.4" cy="12" r="1.9" fill="#181818"/><circle cx="7.6" cy="17" r="1.9" fill="#181818"/>
+      <path d="M4.5 7h15M4.5 12h15M4.5 17h15"/><circle cx="9" cy="7" r="1.9" style="fill:var(--room,#181818)"/><circle cx="15.4" cy="12" r="1.9" style="fill:var(--room,#181818)"/><circle cx="7.6" cy="17" r="1.9" style="fill:var(--room,#181818)"/>
     </svg>
   </button>
   <button id="sound" class="icon" aria-label="Sound on or off">
@@ -361,9 +396,10 @@ const store = {
 
 /* ---------------------------------------------------------------- prefs -- */
 // everything the control panel sets, remembered; the defaults are the recorded machine
-const PREF_DEF = { paper: 'cream', ink: 'black', pack: 'electric', vol: 1, ambience: true, bell: true, haptics: true };
+const PREF_DEF = { paper: 'cream', ink: 'black', pack: 'electric', vol: 1, ambience: true, bell: true, haptics: true, mode: 'normal' };
 const prefs = Object.assign({}, PREF_DEF, (() => { try { return JSON.parse(store.get('fw.prefs', '{}')) || {}; } catch (e) { return {}; } })());
 for (const key in PREF_DEF) if (typeof prefs[key] !== typeof PREF_DEF[key] || (typeof prefs[key] === 'number' && !Number.isFinite(prefs[key]))) prefs[key] = PREF_DEF[key];
+if (!['normal', 'solar', 'dark', 'horror'].includes(prefs.mode)) prefs.mode = 'normal';
 function savePrefs() { store.set('fw.prefs', JSON.stringify(prefs)); }
 // paper themes: base colour on the cream side / under the lamp, ink (normal / lamp), caption greys, caret
 const PAPERS = {
@@ -378,10 +414,18 @@ const PAPERS = {
 };
 // ribbon colours: [on light paper, on dark paper]; black is the paper's own ink
 const INKS = { black: null, red: ['#a8241c', '#ff7262'], blue: ['#24408f', '#94b4ff'], sepia: ['#6b4423', '#dcab7c'] };
-const paperTheme = () => PAPERS[prefs.paper] || PAPERS.cream;
+// the Full dark and Horror modes bring their own sheet (Solar keeps the chosen paper and lights it)
+const MODE_PAPERS = {
+  dark:   { name: 'Full dark', light: '#100f0e', dark: '#070707', ink: ['#cbc5b9', '#b4aea2'], hint: [[176, 170, 160], [88, 84, 78]],
+            ph: [[108, 104, 96], [78, 74, 68]], caret: [196, 190, 178], grainA: 0.14, lightInk: true },
+  horror: { name: 'Horror', light: '#d3c7ad', dark: '#1d0d0b', ink: ['#640b0b', '#8a1612'], hint: [[92, 14, 12], [74, 42, 38]],
+            ph: [[132, 92, 82], [92, 62, 56]], caret: [112, 16, 14], grainA: 1.15 },
+};
+const paperTheme = () => MODE_PAPERS[prefs.mode] || PAPERS[prefs.paper] || PAPERS.cream;
+const paperId = () => (MODE_PAPERS[prefs.mode] ? prefs.mode : prefs.paper);
 function inkFor(lamp) {
   const P = paperTheme(), I = INKS[prefs.ink];
-  if (!I) return lamp ? P.ink[1] : P.ink[0];
+  if (!I || MODE_PAPERS[prefs.mode]) return lamp ? P.ink[1] : P.ink[0];   // the dark and horror sheets keep their own ink
   if (P.lightInk) return '#' + mix(hex(I[1]), [255, 255, 255], 0.25).map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');   // a little paler on a dark sheet, so blue on blueprint still reads
   if (!lamp) return I[0];
   const c = hex(I[0]);   // under the lamp the ribbon reads darker, like the recorded ink…
@@ -398,6 +442,7 @@ let stableW = 0, stableH = 0;
 const TOUCH = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window;
 const REDUCED = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);   // no flashes, bats or flying paper
 const STILL = /[?&]still\b/.test(location.search);   // test switch: only the recorded machine (no dust, sparks, flicker, creatures)
+if (STILL) prefs.mode = 'normal';
 
 function measure() {
   const iw = Math.max(1, window.innerWidth), ih = Math.max(1, window.innerHeight);
@@ -454,7 +499,7 @@ function layout() {
   counterEl.style.letterSpacing = (0.2 * k) + 'px';
   counterEl.style.right = (W - 369.2 * k) + 'px';
   counterEl.style.top = (H * 0.0866 - 5.6 * k) + 'px';
-  counterEl.style.webkitTextStroke = (0.42 * k) + 'px #181818';
+  counterEl.style.webkitTextStroke = (0.42 * k) + 'px ' + roomColor();
   // dial
   placeIcon(dialEl, G.dialX, G.dialY, k);
   buildDialRays();
@@ -470,6 +515,7 @@ function layout() {
 
   buildGrain();
   buildPaperFx();
+  buildSun();
   buildRelief();
   buildEdge();
   buildRail();
@@ -609,11 +655,48 @@ function paintPaperFx(g, w, h, k, id, card) {
       g.fillText('DWG. 31-10', w - 114 * k, h - 37 * k); g.fillText('SCALE 1:1', w - 114 * k, h - 27 * k);
       g.fillText('DRAWN: IGOR', w - 62 * k, h - 37 * k); g.fillText('SHEET 1', w - 62 * k, h - 27 * k);
     }
-  } else if (id === 'black') {
+  } else if (id === 'horror') {
+    // an old, stained, scratched sheet: a scorched rim, water rings, blood spattered near the edges, claw marks,
+    // and the smear of four fingers dragged down one corner
+    const e = g.createRadialGradient(w / 2, h * 0.4, Math.min(w, h) * 0.22, w / 2, h * 0.4, Math.max(w, h) * 0.72);
+    e.addColorStop(0, 'rgba(90,40,20,0)'); e.addColorStop(0.65, 'rgba(90,40,20,0.14)'); e.addColorStop(1, 'rgba(40,12,4,0.55)');
+    g.fillStyle = e; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 7; i++) {   // water rings
+      const x = R() * w, y = R() * h, r = (14 + R() * 34) * k;
+      g.strokeStyle = `rgba(110,70,40,${0.03 + R() * 0.04})`; g.lineWidth = (2 + R() * 3) * k;
+      const a0 = R() * 6.3; g.beginPath(); g.ellipse(x, y, r, r * (0.85 + R() * 0.2), R(), a0, a0 + 2.5 + R() * 2.5); g.stroke();   // a broken ring, the way a cup leaves it
+    }
+    for (let i = 0; i < 9; i++) {   // blood: a drop with a ring of smaller spatter, mostly near the edges
+      const side = R(), x = side < 0.5 ? (R() < 0.5 ? R() * w * 0.18 : w - R() * w * 0.18) : R() * w, y = side < 0.5 ? R() * h : (R() < 0.5 ? R() * h * 0.15 : h - R() * h * 0.25);
+      const r = (2.5 + R() * 6) * k, a = 0.35 + R() * 0.35;
+      g.fillStyle = `rgba(105,8,6,${a})`; g.beginPath(); g.ellipse(x, y, r, r * (0.8 + R() * 0.4), R() * 3, 0, 7); g.fill();
+      for (let j = 0; j < 10; j++) {
+        const ang = R() * 6.3, dd = r * (1.4 + R() * 4), rr = (0.4 + R() * 1.4) * k;
+        g.fillStyle = `rgba(105,8,6,${a * (0.5 + R() * 0.5)})`; g.beginPath(); g.arc(x + Math.cos(ang) * dd, y + Math.sin(ang) * dd, rr, 0, 7); g.fill();
+      }
+    }
     g.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {   // claw marks: three parallel scratches
+      const x0 = R() * w, y0 = R() * h * 0.8, ang = 0.9 + R() * 0.8, len = (40 + R() * 50) * k;
+      for (let j = 0; j < 3; j++) {
+        const ox = j * 6 * k * Math.sin(ang), oy = -j * 6 * k * Math.cos(ang);
+        g.strokeStyle = `rgba(60,25,15,${0.18 + R() * 0.1})`; g.lineWidth = (0.6 + R() * 0.5) * k;
+        g.beginPath(); g.moveTo(x0 + ox, y0 + oy); g.quadraticCurveTo(x0 + ox + Math.cos(ang) * len * 0.5 + 3 * k, y0 + oy + Math.sin(ang) * len * 0.5, x0 + ox + Math.cos(ang) * len, y0 + oy + Math.sin(ang) * len); g.stroke();
+      }
+    }
+    const fx = w * (0.78 + R() * 0.1), fy = h * 0.55;   // four fingers dragged down the right side
+    for (let j = 0; j < 4; j++) {
+      const gr = g.createLinearGradient(0, fy, 0, fy + 120 * k);
+      gr.addColorStop(0, 'rgba(100,10,8,0.16)'); gr.addColorStop(1, 'rgba(100,10,8,0)');
+      g.strokeStyle = gr; g.lineWidth = (5 - j * 0.6) * k;
+      g.beginPath(); g.moveTo(fx + j * 8 * k, fy + Math.abs(j - 1.5) * 5 * k); g.lineTo(fx + j * 8 * k + 6 * k, fy + (110 - j * 8) * k); g.stroke();
+    }
+  } else if (id === 'black' || id === 'dark') {
+    g.lineCap = 'round';
+    const fa = id === 'dark' ? 0.5 : 1;   // the full-dark sheet: the same fibres, fainter
     for (let i = 0; i < 260; i++) {
       const x = R() * w, y = R() * h, len = (3 + R() * 14) * k, a = R() * Math.PI;
-      g.strokeStyle = `rgba(230,225,215,${0.02 + R() * 0.05})`; g.lineWidth = (0.3 + R() * 0.3) * k;
+      g.strokeStyle = `rgba(230,225,215,${(0.02 + R() * 0.05) * fa})`; g.lineWidth = (0.3 + R() * 0.3) * k;
       g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * len * 0.5 + (R() - 0.5) * 3 * k, y + Math.sin(a) * len * 0.5, x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
     }
   }
@@ -642,8 +725,8 @@ function buildRelief() {
   }
 }
 function buildPaperFx() {
-  const id = prefs.paper;
-  if (!PAPERS[id] || id === 'cream') { paperFxCv.style.display = 'none'; paperFxCv.width = paperFxCv.height = 0; return; }
+  const id = paperId();
+  if (!(PAPERS[id] || MODE_PAPERS[id]) || id === 'cream') { paperFxCv.style.display = 'none'; paperFxCv.width = paperFxCv.height = 0; return; }
   const w = W, h = H - G.paperTop;
   paperFxCv.width = Math.round(w * dpr); paperFxCv.height = Math.round(h * dpr);
   paperFxCv.style.width = w + 'px'; paperFxCv.style.height = h + 'px'; paperFxCv.style.display = 'block';
@@ -675,7 +758,7 @@ function buildEdge() {
   g.beginPath();
   pts.forEach(([x, y, nx, ny], i) => { const d = bite[i]; i ? g.lineTo(x - nx * d, y - ny * d) : g.moveTo(x - nx * d, y - ny * d); });
   for (let i = pts.length - 1; i >= 0; i--) { const [x, y, nx, ny] = pts[i]; g.lineTo(x + nx * 3 * k, y + ny * 3 * k); }
-  g.closePath(); g.fillStyle = '#181818'; g.fill();
+  g.closePath(); g.fillStyle = roomColor(); g.fill();
   g.beginPath();
   pts.forEach(([x, y, nx, ny], i) => { const d = bite[i] + 0.7 * k; i ? g.lineTo(x - nx * d, y - ny * d) : g.moveTo(x - nx * d, y - ny * d); });
   // a dark sheet catches a faint light along its torn edge so it still reads against the backdrop
@@ -2044,6 +2127,7 @@ function typeChar(ch) {
   }
   if (lines.length !== before || prevLineIdx !== lines.length - 1) invalidateText();
   onTextChanged();
+  if (prefs.mode === 'horror') maybeDrip(t);
   if (text.length >= MAX) queueMicrotask(autoPage);   // after the input handler has finished with the textarea
   return true;
 }
@@ -2507,6 +2591,7 @@ function draw(t) {
   drawStElmo(c, cx, cy, t, cP);
   drawParts(c);   // flying sparks share the scene canvas (no extra full-screen layer)
   drawGlow(c, cx, cy, st, pP);
+  if (prefs.mode !== 'normal') drawModeScene(c, t);
 }
 // the typed lines as they sit on the paper at time t; returns the first line drawn
 function drawText(c, t, ink) {
@@ -2545,6 +2630,7 @@ function drawText(c, t, ink) {
     c.drawImage(e.cv, G.textLeft - e.pad, y - e.by, e.cv.width / dpr, e.cv.height / dpr);
   }
   c.globalAlpha = 1;
+  if (prefs.mode === 'horror') drawDrips(c, t, lastY, off, ink);
   return minLi;
 }
 let hintA = 1, hintBtnOn = true;
@@ -3250,7 +3336,40 @@ const AU = {
   setPack(id) { prefs.pack = PACKS[id] ? id : 'electric'; savePrefs(); this.ambSync(); },
   // ---- Spooky ambience: a wind bed, now and then a creak, an owl or thunder far away
   amb: null, ambTimer: 0, ambNext: 0,
+  // Horror mode: a low, slowly breathing drone under everything (only while sound is on and the tab is visible)
+  droneSync() {
+    const want = this.ctx && this.on && prefs.mode === 'horror' && !document.hidden;
+    if (want && !this.drone) {
+      const c = this.ctx, t = c.currentTime, lp = c.createBiquadFilter(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain(), oscs = [];
+      lp.type = 'lowpass'; lp.frequency.value = 170; lp.Q.value = 2;
+      lfo.frequency.value = 0.09; lg.gain.value = 70; lfo.connect(lg); lg.connect(lp.frequency);
+      for (const [f, type] of [[55, 'sawtooth'], [55.7, 'sawtooth'], [82.4, 'sine'], [41.2, 'triangle']]) { const o = c.createOscillator(); o.type = type; o.frequency.value = f; o.connect(lp); o.start(t); oscs.push(o); }
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.045, t + 3);
+      lp.connect(g); g.connect(this.sfx); g.connect(this.verb); lfo.start(t);
+      this.drone = { g, oscs, lfo };
+    } else if (!want && this.drone) {
+      const d = this.drone, t = this.ctx.currentTime; this.drone = null;
+      d.g.gain.cancelScheduledValues(t); d.g.gain.setTargetAtTime(0.0001, t, 0.4);
+      for (const o of [...d.oscs, d.lfo]) o.stop(t + 2);
+    }
+  },
+  heartbeat(v = 1) {   // lub-dub, felt more than heard
+    if (!this.ready()) return; const t = this.ctx.currentTime + 0.01;
+    for (const [dt, f, g] of [[0, 58, 0.26], [0.21, 50, 0.18]]) {
+      this.tone(t + dt, { f, f2: f * 0.68, gain: g * v, a: 0.012, d: 0.17 });
+      this.burst(t + dt, { f: 110, type: 'lowpass', q: 0.7, gain: 0.1 * v, a: 0.006, d: 0.08 });
+    }
+  },
+  chirp() {   // Solar mode: a little bird outside, a few quick rising notes
+    if (!this.ready()) return; const t0 = this.ctx.currentTime + 0.02, n = 2 + ((Math.random() * 4) | 0), base = 2600 + Math.random() * 1500;
+    for (let i = 0; i < n; i++) {
+      const t = t0 + i * (0.08 + Math.random() * 0.07), f = base * (1 + Math.random() * 0.15);
+      this.tone(t, { f, f2: f * (1.3 + Math.random() * 0.3), gain: 0.016, a: 0.004, d: 0.045 + Math.random() * 0.04, dest: this.verb });
+      this.tone(t, { f, f2: f * (1.3 + Math.random() * 0.3), gain: 0.012, a: 0.004, d: 0.045 + Math.random() * 0.04 });
+    }
+  },
   ambSync() {
+    this.droneSync();
     const want = this.ctx && this.on && prefs.pack === 'spooky' && prefs.ambience && !document.hidden;
     if (want && !this.amb) {
       const c = this.ctx, t = c.currentTime, n = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain(), lfo2 = c.createOscillator(), lg2 = c.createGain();
@@ -3996,7 +4115,7 @@ async function renderCard() {
   const gr = document.createElement('canvas'); gr.width = CW; gr.height = Math.ceil(CH - paperTop);
   paintGrain(gr.getContext('2d'), CW, CH - paperTop, kc, CW, CH - paperTop, false);
   c.globalAlpha = paperTheme().grainA; c.drawImage(gr, 0, paperTop); c.globalAlpha = 1;
-  if (prefs.paper !== 'cream') { const fx = document.createElement('canvas'); fx.width = CW; fx.height = gr.height; paintPaperFx(fx.getContext('2d'), CW, CH - paperTop, kc, prefs.paper, true); c.drawImage(fx, 0, paperTop); }
+  if (paperId() !== 'cream') { const fx = document.createElement('canvas'); fx.width = CW; fx.height = gr.height; paintPaperFx(fx.getContext('2d'), CW, CH - paperTop, kc, paperId(), true); c.drawImage(fx, 0, paperTop); }
   if (paperTheme().lightInk) { c.strokeStyle = 'rgba(255,246,226,0.16)'; c.lineWidth = 2.2 * kc; c.stroke(); }   // a dark sheet's edge catches a little light
   // typed lines (a few at a time, so the machine keeps running while a long page is drawn)
   const S = { k: kc, dpr: 1, cell, font, text: src, press: inkP }, inkRgb = hex(inkFor(false)), pad = 6 * kc;
@@ -4285,7 +4404,8 @@ function updateAmbient(t) {
   AMB.lastT = t;
   if (t >= AMB.nextBolt) {
     if (t - lastKey < 1.2 && AMB.defer < 3) { AMB.nextBolt = t + 2 + ambR() * 3; AMB.defer++; }   // wait for a pause
-    else { AMB.defer = 0; AMB.nextBolt = t + 90 + ambR() * 150; strikeLightning(t); }   // reschedule first: a failure must not repeat every frame
+    else if (prefs.mode === 'solar') AMB.nextBolt = t + 60;   // no storms on a sunny day
+    else { AMB.defer = 0; AMB.nextBolt = t + (prefs.mode === 'horror' ? 40 + ambR() * 60 : 90 + ambR() * 150); strikeLightning(t); }   // reschedule first: a failure must not repeat every frame
   }
   if (t >= AMB.nextBats) { AMB.nextBats = t + 120 + ambR() * 200; launchBats(t); }
 }
@@ -4332,29 +4452,40 @@ function layoutBackdrop() {
 function paintBackdrop(c, ww, wh, d, lit) {
   c.setTransform(d, 0, 0, d, 0, 0);
   const side = (ww - W) / 2, colR = side + W, R = mulberry(1031), s = clamp(Math.min(side / 420, wh / 900), 0.55, 1.25);
+  const md = prefs.mode, day = md === 'solar', hor = md === 'horror';   // the room's mode changes the view outside
   const sky = c.createLinearGradient(0, 0, 0, wh);
-  if (lit) { sky.addColorStop(0, '#3f4a61'); sky.addColorStop(0.55, '#6f7c97'); sky.addColorStop(1, '#8c97ae'); }
+  if (day) { sky.addColorStop(0, '#5f9ad6'); sky.addColorStop(0.55, '#a7cbe8'); sky.addColorStop(1, '#f2dfb4'); }
+  else if (hor) { if (lit) { sky.addColorStop(0, '#5c1c1a'); sky.addColorStop(0.55, '#7c302c'); sky.addColorStop(1, '#8c403a'); } else { sky.addColorStop(0, '#0e0303'); sky.addColorStop(0.6, '#1c0707'); sky.addColorStop(1, '#2a0c0b'); } }
+  else if (lit) { sky.addColorStop(0, '#3f4a61'); sky.addColorStop(0.55, '#6f7c97'); sky.addColorStop(1, '#8c97ae'); }
   else { sky.addColorStop(0, '#0a0c10'); sky.addColorStop(0.6, '#11141a'); sky.addColorStop(1, '#171b23'); }
   c.fillStyle = sky; c.fillRect(0, 0, ww, wh);
   // faint stars
   for (let i = 0; i < 140; i++) {
     const x = R() * ww, y = R() * wh * 0.62, a = 0.03 + R() * 0.11, z = R() < 0.92 ? 1 : 1.7;
-    if (!lit) { c.fillStyle = `rgba(215,220,235,${a})`; c.fillRect(x, y, z, z); }
+    if (!lit && !day) { c.fillStyle = `rgba(215,220,235,${a})`; c.fillRect(x, y, z, z); }
   }
-  // a dim moon over the left side, thin clouds drifting across it
-  if (side > 140) {
+  if (side > 140 && day) {   // the sun, high on the left, with a soft glare
+    const mx = side * 0.36, my = wh * 0.17, mr = clamp(side * 0.07, 14, 34);
+    const glare = c.createRadialGradient(mx, my, mr * 0.6, mx, my, mr * 9);
+    glare.addColorStop(0, 'rgba(255,248,220,0.9)'); glare.addColorStop(0.25, 'rgba(255,240,200,0.35)'); glare.addColorStop(1, 'rgba(255,240,200,0)');
+    c.fillStyle = glare; c.fillRect(mx - mr * 9, my - mr * 9, mr * 18, mr * 18);
+    const disc = c.createRadialGradient(mx, my, 0, mx, my, mr);
+    disc.addColorStop(0, '#fffdf2'); disc.addColorStop(1, '#ffe9a8');
+    c.fillStyle = disc; c.beginPath(); c.arc(mx, my, mr, 0, 7); c.fill();
+  } else if (side > 140) {   // a dim moon over the left side (a blood moon in the horror mode), thin clouds drifting across it
     const mx = side * 0.36, my = wh * 0.19, mr = clamp(side * 0.07, 14, 34);
     const halo = c.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 7);
-    halo.addColorStop(0, lit ? 'rgba(255,255,255,0.18)' : 'rgba(205,208,190,0.07)'); halo.addColorStop(1, 'rgba(205,208,190,0)');
+    halo.addColorStop(0, lit ? 'rgba(255,255,255,0.18)' : hor ? 'rgba(210,40,30,0.18)' : 'rgba(205,208,190,0.07)'); halo.addColorStop(1, hor ? 'rgba(210,40,30,0)' : 'rgba(205,208,190,0)');
     c.fillStyle = halo; c.fillRect(mx - mr * 7, my - mr * 7, mr * 14, mr * 14);
     // a round moon: lit a little from the upper left, darker toward its rim, soft-edged maria
-    c.save(); c.globalAlpha = lit ? 0.95 : 0.62;
+    c.save(); c.globalAlpha = lit ? 0.95 : hor ? 0.9 : 0.62;
     const disc = c.createRadialGradient(mx - mr * 0.3, my - mr * 0.3, mr * 0.1, mx, my, mr);
-    disc.addColorStop(0, lit ? '#f6f7ef' : '#9a9c92'); disc.addColorStop(0.75, lit ? '#e2e4d9' : '#84867d'); disc.addColorStop(1, lit ? '#c4c7bb' : '#696b63');
+    if (hor && !lit) { disc.addColorStop(0, '#d8573f'); disc.addColorStop(0.75, '#a83022'); disc.addColorStop(1, '#6a140e'); }
+    else { disc.addColorStop(0, lit ? '#f6f7ef' : '#9a9c92'); disc.addColorStop(0.75, lit ? '#e2e4d9' : '#84867d'); disc.addColorStop(1, lit ? '#c4c7bb' : '#696b63'); }
     c.fillStyle = disc; c.beginPath(); c.arc(mx, my, mr, 0, 7); c.fill(); c.clip();
     for (const [ox, oy, rr] of [[-0.32, -0.22, 0.27], [0.24, 0.12, 0.2], [-0.04, 0.38, 0.15], [0.35, -0.35, 0.1]]) {
       const cg = c.createRadialGradient(mx + ox * mr, my + oy * mr, 0, mx + ox * mr, my + oy * mr, rr * mr);
-      cg.addColorStop(0, lit ? 'rgba(170,174,160,0.55)' : 'rgba(90,92,85,0.6)'); cg.addColorStop(1, 'rgba(90,92,85,0)');
+      cg.addColorStop(0, lit ? 'rgba(170,174,160,0.55)' : hor ? 'rgba(80,8,6,0.55)' : 'rgba(90,92,85,0.6)'); cg.addColorStop(1, 'rgba(90,92,85,0)');
       c.fillStyle = cg; c.beginPath(); c.arc(mx + ox * mr, my + oy * mr, rr * mr, 0, 7); c.fill();
     }
     c.restore();
@@ -4362,14 +4493,24 @@ function paintBackdrop(c, ww, wh, d, lit) {
       const cy = my + (i ? (R() - 0.4) * mr * 3.2 : mr * 0.25), cx = mx + (R() - 0.5) * mr * (i ? 6 : 2), rw = mr * (3 + R() * 4), rh = mr * (0.4 + R() * 0.35);
       c.save(); c.translate(cx, cy); c.scale(rw, rh);
       const g = c.createRadialGradient(0, 0, 0, 0, 0, 1);
-      g.addColorStop(0, lit ? 'rgba(78,86,106,0.6)' : 'rgba(20,23,30,0.8)'); g.addColorStop(0.6, lit ? 'rgba(78,86,106,0.3)' : 'rgba(20,23,30,0.45)'); g.addColorStop(1, 'rgba(20,23,30,0)');
+      const cc = hor ? '22,5,5' : '20,23,30';
+      g.addColorStop(0, lit ? 'rgba(78,86,106,0.6)' : `rgba(${cc},0.8)`); g.addColorStop(0.6, lit ? 'rgba(78,86,106,0.3)' : `rgba(${cc},0.45)`); g.addColorStop(1, `rgba(${cc},0)`);
       c.fillStyle = g; c.beginPath(); c.arc(0, 0, 1, 0, 7); c.fill(); c.restore();
     }
   }
   // hills: far and near
   const farY = (x) => wh * 0.79 + wh * 0.045 * (Math.sin(x * 0.0042 + 1.3) * 0.6 + Math.sin(x * 0.011 + 3.1) * 0.3 + Math.sin(x * 0.027 + 0.7) * 0.1);
   const nearY = (x) => wh * 0.885 + wh * 0.035 * (Math.sin(x * 0.0055 + 4.2) * 0.6 + Math.sin(x * 0.013 + 1.7) * 0.3 + Math.sin(x * 0.031 + 2.9) * 0.1);
-  const farCol = lit ? '#262b36' : '#0e1015', nearCol = lit ? '#08090b' : '#0a0b0e';
+  const farCol = day ? '#93acb9' : hor ? (lit ? '#3a1412' : '#1c0707') : lit ? '#262b36' : '#0e1015', nearCol = day ? '#6b8c47' : hor ? (lit ? '#150606' : '#0c0303') : lit ? '#08090b' : '#0a0b0e';
+  if (day) for (let i = 0; i < 8; i++) {   // fair-weather clouds
+    const cx = R() * ww, cy = wh * (0.06 + R() * 0.34), sc = (0.6 + R() * 0.9) * s;
+    for (let j = 0; j < 6; j++) {
+      const bx = cx + (j - 2.5) * 16 * sc + (R() - 0.5) * 8 * sc, by = cy - Math.sin((j / 5) * Math.PI) * 10 * sc + (R() - 0.5) * 4 * sc, br = (14 + R() * 12) * sc;
+      const cg = c.createRadialGradient(bx, by - br * 0.3, 0, bx, by, br);
+      cg.addColorStop(0, 'rgba(255,255,255,0.95)'); cg.addColorStop(0.7, 'rgba(250,250,252,0.75)'); cg.addColorStop(1, 'rgba(240,244,250,0)');
+      c.fillStyle = cg; c.beginPath(); c.arc(bx, by, br, 0, 7); c.fill();
+    }
+  }
   const ridge = (fn, col) => { c.fillStyle = col; c.beginPath(); c.moveTo(0, wh); for (let x = 0; x <= ww + 8; x += 8) c.lineTo(x, fn(x)); c.lineTo(ww, wh); c.closePath(); c.fill(); };
   ridge(farY, farCol);
   // the castle on the far hill, left of the machine
@@ -4384,8 +4525,8 @@ function paintBackdrop(c, ww, wh, d, lit) {
     rect(-60, 18, 76); roof(-51, 18, 76, 30);
     rect(42, 16, 66); roof(50, 16, 66, 24);
     rect(-2, 2, 84); c.beginPath(); c.moveTo(x, y - 84 * q); c.lineTo(x + 12 * q, y - 80 * q); c.lineTo(x, y - 76 * q); c.fill();   // flag
-    if (!lit) {   // two windows still lit up there
-      c.fillStyle = 'rgba(226,170,80,0.75)'; c.fillRect(x - 5 * q, y - 44 * q, 2.6 * q, 4.4 * q); c.fillRect(x - 53 * q, y - 58 * q, 2.4 * q, 4 * q);
+    if (!lit && !day) {   // two windows still lit up there (red in the horror mode)
+      c.fillStyle = hor ? 'rgba(255,60,40,0.85)' : 'rgba(226,170,80,0.75)'; c.fillRect(x - 5 * q, y - 44 * q, 2.6 * q, 4.4 * q); c.fillRect(x - 53 * q, y - 58 * q, 2.4 * q, 4 * q);
       const g = c.createRadialGradient(x - 4 * q, y - 42 * q, 0, x - 4 * q, y - 42 * q, 14 * q);
       g.addColorStop(0, 'rgba(226,170,80,0.08)'); g.addColorStop(1, 'rgba(226,170,80,0)'); c.fillStyle = g; c.fillRect(x - 18 * q, y - 56 * q, 28 * q, 28 * q);
     }
@@ -4404,32 +4545,56 @@ function paintBackdrop(c, ww, wh, d, lit) {
         for (let i = 0; i < n; i++) branch(x2, y2, len * (0.6 + R() * 0.16), ang + (R() - 0.5) * 0.9 + (i - (n - 1) / 2) * 0.62, w * 0.6, depth - 1);
       }
     };
+    if (day) c.strokeStyle = '#5b4630';
     branch(tx, ty, 62 * s, -Math.PI / 2 - 0.12, 8 * s, 6);
+    if (day) {   // in daylight the old tree has a few leaves left, and the stones are grey
+      for (let i = 0; i < 22; i++) { c.fillStyle = `rgba(${80 + (R() * 30) | 0},${120 + (R() * 30) | 0},55,0.9)`; c.beginPath(); c.arc(tx + (R() - 0.5) * 80 * s, ty - (70 + R() * 50) * s, (5 + R() * 7) * s, 0, 7); c.fill(); }
+      c.fillStyle = '#a4a8a0';
+    }
     for (const [ox, h, cross] of [[-0.42, 21, 1], [-0.3, 15, 0], [-0.18, 18, 1], [0.24, 14, 0]]) {
       const gx = colR + side * (0.58 + ox), gy = nearY(gx) + 1.5 * s;
       if (gx < colR + 12 || gx > ww - 10) continue;
       if (cross) { c.fillRect(gx - 1.8 * s, gy - h * s, 3.6 * s, h * s); c.fillRect(gx - 6 * s, gy - h * 0.72 * s, 12 * s, 3.2 * s); }
       else { c.beginPath(); c.moveTo(gx - 6 * s, gy); c.lineTo(gx - 6 * s, gy - h * 0.62 * s); c.arc(gx, gy - h * 0.62 * s, 6 * s, Math.PI, 0); c.lineTo(gx + 6 * s, gy); c.closePath(); c.fill(); }
     }
-    if (!lit) for (const [ox, r] of [[-0.36, 5.2], [0.12, 4.2]]) {   // two jack-o'-lanterns glowing among the graves
+    if (!lit || day) for (const [ox, r] of [[-0.36, 5.2], [0.12, 4.2]]) {   // two jack-o'-lanterns glowing among the graves (plain pumpkins by day)
       const px = colR + side * (0.58 + ox), py = nearY(px) - r * 0.7 * s;
       if (px < colR + 12 || px > ww - 10) continue;
       const gl = c.createRadialGradient(px, py, 0, px, py, r * 5 * s);
-      gl.addColorStop(0, 'rgba(255,140,30,0.16)'); gl.addColorStop(1, 'rgba(255,140,30,0)');
-      c.fillStyle = gl; c.fillRect(px - r * 5 * s, py - r * 5 * s, r * 10 * s, r * 10 * s);
-      c.fillStyle = '#3a1d08'; c.beginPath(); c.ellipse(px, py, r * 1.25 * s, r * s, 0, 0, 7); c.fill();
-      c.fillStyle = 'rgba(255,170,60,0.85)';   // the carved face lit from inside
+      gl.addColorStop(0, hor ? 'rgba(255,40,20,0.2)' : 'rgba(255,140,30,0.16)'); gl.addColorStop(1, 'rgba(255,140,30,0)');
+      if (!day) { c.fillStyle = gl; c.fillRect(px - r * 5 * s, py - r * 5 * s, r * 10 * s, r * 10 * s); }
+      c.fillStyle = day ? '#d9781f' : '#3a1d08'; c.beginPath(); c.ellipse(px, py, r * 1.25 * s, r * s, 0, 0, 7); c.fill();
+      c.fillStyle = day ? '#5a2a08' : hor ? 'rgba(255,70,40,0.9)' : 'rgba(255,170,60,0.85)';   // the carved face lit from inside
       for (const ex of [-0.45, 0.45]) { c.beginPath(); c.moveTo(px + (ex - 0.2) * r * s, py - 0.1 * r * s); c.lineTo(px + ex * r * s, py - 0.5 * r * s); c.lineTo(px + (ex + 0.2) * r * s, py - 0.1 * r * s); c.fill(); }
       c.beginPath(); c.moveTo(px - 0.6 * r * s, py + 0.2 * r * s); c.quadraticCurveTo(px, py + 0.75 * r * s, px + 0.6 * r * s, py + 0.2 * r * s); c.quadraticCurveTo(px, py + 0.45 * r * s, px - 0.6 * r * s, py + 0.2 * r * s); c.fill();
       c.fillStyle = nearCol; c.fillRect(px - 0.6 * s, py - r * 1.35 * s, 1.4 * s, r * 0.45 * s);   // stalk
     }
     c.fillStyle = nearCol;
+    if (day) c.strokeStyle = '#6b5338';
     // a crooked little fence on the left
     const fx0 = side * 0.12, fx1 = side * 0.62;
     c.lineWidth = 1.6 * s;
     for (let x = fx0; x < fx1; x += 9 * s) { const y = nearY(x) + 2 * s, h = (9 + R() * 4) * s, lean = (R() - 0.5) * 3 * s; c.beginPath(); c.moveTo(x, y); c.lineTo(x + lean, y - h); c.stroke(); }
     c.lineWidth = 1.2 * s; c.beginPath(); c.moveTo(fx0, nearY(fx0) - 5 * s); for (let x = fx0; x < fx1; x += 9 * s) c.lineTo(x, nearY(x) - 5 * s - (R() - 0.5) * s); c.stroke();
+    const fx = colR + side * 0.86;
+    if (hor && fx < ww - 14) {   // something tall stands among the graves, watching the window
+      const fy = nearY(fx) + 2 * s, fh = 66 * s;
+      c.fillStyle = lit ? '#030000' : '#060101';
+      c.beginPath(); c.arc(fx, fy - fh + 5 * s, 5 * s, 0, 7); c.fill();   // head
+      c.beginPath(); c.moveTo(fx - 6 * s, fy - fh + 11 * s); c.quadraticCurveTo(fx, fy - fh + 8 * s, fx + 6 * s, fy - fh + 11 * s);
+      c.lineTo(fx + 9 * s, fy - fh * 0.42); c.lineTo(fx + 5 * s, fy); c.lineTo(fx - 5 * s, fy); c.lineTo(fx - 9 * s, fy - fh * 0.42); c.closePath(); c.fill();
+      c.lineWidth = 2 * s; c.lineCap = 'round'; c.strokeStyle = c.fillStyle;   // long arms hanging
+      c.beginPath(); c.moveTo(fx - 6.5 * s, fy - fh + 13 * s); c.quadraticCurveTo(fx - 11 * s, fy - fh * 0.5, fx - 10 * s, fy - fh * 0.18); c.stroke();
+      c.beginPath(); c.moveTo(fx + 6.5 * s, fy - fh + 13 * s); c.quadraticCurveTo(fx + 11 * s, fy - fh * 0.5, fx + 10 * s, fy - fh * 0.18); c.stroke();
+      for (const ex of [-1.8, 1.8]) {   // two red eyes
+        const eg = c.createRadialGradient(fx + ex * s, fy - fh + 5 * s, 0, fx + ex * s, fy - fh + 5 * s, 5 * s);
+        eg.addColorStop(0, 'rgba(255,60,40,0.9)'); eg.addColorStop(0.3, 'rgba(255,30,20,0.35)'); eg.addColorStop(1, 'rgba(255,30,20,0)');
+        c.fillStyle = eg; c.fillRect(fx + ex * s - 5 * s, fy - fh, 10 * s, 10 * s);
+        c.fillStyle = '#ffb0a0'; c.beginPath(); c.arc(fx + ex * s, fy - fh + 5 * s, 0.8 * s, 0, 7); c.fill();
+      }
+    }
   }
+  if (md === 'dark') { c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(0, 0, ww, wh); }   // the full-dark room: the night outside barely shows
   // the bolt itself, on one side, only in the lit version
   if (lit) {
     const left = ambR() < 0.5 && side > 100, bx = left ? side * (0.2 + ambR() * 0.6) : colR + side * (0.2 + ambR() * 0.6), Rb = mulberry((ambR() * 1e6) | 0);
@@ -4460,6 +4625,13 @@ function launchBats(t) {
       s: (0.85 + ambR() * 0.5) * k, ph: ambR() * 6.28, f: 7 + ambR() * 2.5, wob: (8 + ambR() * 16) * k });
   }
   AU.flutter(n);
+}
+// in the Solar mode birds cross instead of bats: a gliding gull shape whose wings beat and bend
+function drawBird(c, x, y, s, ph) {
+  const flap = Math.sin(ph * 0.8);
+  c.save(); c.translate(x, y); c.strokeStyle = 'rgba(74,62,48,0.85)'; c.lineWidth = 1.3 * s; c.lineCap = 'round'; c.lineJoin = 'round';
+  c.beginPath(); c.moveTo(-9 * s, -flap * 4 * s); c.quadraticCurveTo(-4 * s, -3.4 * s - flap * 2 * s, 0, 0); c.quadraticCurveTo(4 * s, -3.4 * s - flap * 2 * s, 9 * s, -flap * 4 * s); c.stroke();
+  c.restore();
 }
 function drawFlyingBat(c, x, y, s, ph) {
   const flap = Math.sin(ph), tip = -flap * 7 * s, mid = -flap * 3 * s;
@@ -4501,7 +4673,7 @@ function drawBats(t) {
     if (s < 0) continue;
     const x = b.dir > 0 ? -30 * k + s * b.v : W + 30 * k - s * b.v;
     if (s > 0.3 && (x < -40 * k || x > W + 40 * k)) { bats.splice(i, 1); continue; }
-    drawFlyingBat(c, x, b.y0 + Math.sin(s * 2.3 + b.ph) * b.wob - s * 14 * k, b.s, s * b.f * 6.283 + b.ph);
+    (prefs.mode === 'solar' ? drawBird : drawFlyingBat)(c, x, b.y0 + Math.sin(s * 2.3 + b.ph) * b.wob - s * 14 * k, b.s, s * b.f * 6.283 + b.ph);
   }
   drawAmbExtra(c, t);
 }
@@ -4826,6 +4998,31 @@ function buildPanel() {
   }
   s1.appendChild(car1); body.appendChild(s1);
   // paper
+  // atmosphere mode
+  const s0 = sec('MODE'), g0 = el('div', 'modegrid'); g0.setAttribute('role', 'radiogroup'); g0.setAttribute('aria-label', 'Mode');
+  const MODE_ICON = {
+    normal: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="4" y="9" width="16" height="7" rx="3.5"/><path d="M12 9V5M9 5h6"/></svg>',
+    solar: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>',
+    dark: '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M15.5 3.2a8.6 8.6 0 1 0 5.3 13.6A7.4 7.4 0 0 1 15.5 3.2z"/></svg>',
+    horror: '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 3c-4.4 0-7.5 3-7.5 7 0 2.4 1.1 4.1 2.6 5.1V18h2v-1.6h1.4V18h3v-1.6h1.4V18h2v-2.9c1.5-1 2.6-2.7 2.6-5.1C19.5 6 16.4 3 12 3zM8.9 13.2a1.9 1.9 0 1 1 0-3.8 1.9 1.9 0 0 1 0 3.8zm6.2 0a1.9 1.9 0 1 1 0-3.8 1.9 1.9 0 0 1 0 3.8z"/><path d="M6 19.5c0 1 .5 1.8 1.1 1.8s1.1-.8 1.1-1.8-.6-1.5-1.1-2.4c-.5.9-1.1 1.4-1.1 2.4z" fill="#b01010"/></svg>',
+  };
+  const MODE_LOOK = {
+    normal: ['linear-gradient(180deg, #181818 0 26%, #eee7db 26%)', '#3c3429'],
+    solar: ['radial-gradient(circle at 22% 18%, #fff6d8 0, #ffe2a0 18%, transparent 46%), linear-gradient(160deg, #f6dc9a, #eccf8c 60%, #e3bd70)', '#7a4f12'],
+    dark: ['radial-gradient(ellipse at 50% 40%, #151515, #030303 75%)', '#9d9a92'],
+    horror: ['radial-gradient(ellipse at 50% 45%, #3a0c0a 0, #1a0505 60%, #070101 100%)', '#d9c8c0'],
+  };
+  for (const id in MODES) {
+    const b = el('button', 'mtile', MODE_ICON[id] + '<span>' + MODES[id].name + '</span>');
+    b.setAttribute('role', 'radio'); b.dataset.v = id; b.setAttribute('aria-label', MODES[id].name + ' mode');
+    b.style.background = MODE_LOOK[id][0]; b.style.color = MODE_LOOK[id][1];
+    b.addEventListener('click', () => {
+      if (prefs.mode === id) return;
+      lastActivity = now(); prefs.mode = id; savePrefs(); applyMode(); refreshPanel(); toast(MODES[id].name + ' mode', 1.6);
+    });
+    g0.appendChild(b);
+  }
+  s0.append(g0, el('div', 'modedesc', '')); body.insertBefore(s0, body.firstChild);   // the mode comes first
   const s2 = sec('PAPER'), g2 = el('div', 'grid4'); g2.setAttribute('role', 'radiogroup'); g2.setAttribute('aria-label', 'Paper');
   for (const id in PAPERS) {
     const P = PAPERS[id], b = el('button', 'paper', 'Aa<span>' + P.name.replace('Old ', '') + '</span>');
@@ -4836,7 +5033,12 @@ function buildPanel() {
     if (id === 'parchment') b.style.backgroundImage = 'radial-gradient(circle at 24% 30%, rgba(150,100,40,.2) 0, rgba(150,100,40,.12) 9%, transparent 16%), radial-gradient(circle at 78% 72%, rgba(150,100,40,.15) 0, rgba(150,100,40,.08) 6%, transparent 12%), radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(120,80,30,.25) 100%)';
     if (id === 'black') b.style.backgroundImage = 'linear-gradient(32deg, transparent 46%, rgba(255,255,255,.07) 47%, transparent 48%), linear-gradient(-58deg, transparent 62%, rgba(255,255,255,.06) 63%, transparent 64%), linear-gradient(80deg, transparent 20%, rgba(255,255,255,.05) 21%, transparent 22%)';
     if (id === 'cream') b.style.backgroundImage = 'radial-gradient(rgba(60,50,40,.12) .5px, transparent .8px), radial-gradient(rgba(60,50,40,.09) .5px, transparent .8px)', b.style.backgroundSize = '13px 11px, 17px 19px', b.style.backgroundPosition = '0 0, 6px 4px';
-    b.addEventListener('click', () => { prefs.paper = id; savePrefs(); applyPaper(); refreshPanel(); });
+    b.addEventListener('click', () => {
+      prefs.paper = id;
+      if (MODE_PAPERS[prefs.mode]) { prefs.mode = 'normal'; savePrefs(); applyMode(); toast('Normal mode – ' + P.name, 1.8); }   // the dark/horror sheets give way to the chosen paper
+      else { savePrefs(); applyPaper(); }
+      refreshPanel();
+    });
     g2.appendChild(b);
   }
   s2.appendChild(g2); body.appendChild(s2);
@@ -4895,7 +5097,10 @@ function refreshPanel() {
   if (!panelEl.querySelector('.body').children.length) return;
   const q = (s) => panelEl.querySelectorAll(s);
   for (const b of q('.card')) b.setAttribute('aria-checked', b.dataset.v === skin.id ? 'true' : 'false');
-  for (const b of q('.paper')) b.setAttribute('aria-checked', b.dataset.v === prefs.paper ? 'true' : 'false');
+  for (const b of q('.paper')) b.setAttribute('aria-checked', b.dataset.v === prefs.paper && !MODE_PAPERS[prefs.mode] ? 'true' : 'false');
+  for (const b of q('.mtile')) b.setAttribute('aria-checked', b.dataset.v === prefs.mode ? 'true' : 'false');
+  const md = panelEl.querySelector('.modedesc'); if (md) md.textContent = MODES[prefs.mode].desc + (MODE_PAPERS[prefs.mode] ? ' (It brings its own paper.)' : '');
+  const pg = panelEl.querySelector('.grid4'); if (pg) pg.classList.toggle('overridden', !!MODE_PAPERS[prefs.mode]);
   for (const b of q('.ink')) b.setAttribute('aria-checked', b.dataset.v === prefs.ink ? 'true' : 'false');
   for (const b of q('.modekeys .key')) b.setAttribute('aria-checked', b.dataset.v === AU.mode ? 'true' : 'false');
   for (const b of q('.goalkeys .key')) b.setAttribute('aria-checked', +b.dataset.v === GOAL.words ? 'true' : 'false');
@@ -5319,6 +5524,175 @@ function drawMoth(c, t) {
 ambExtra = () => MOTH.on;
 drawAmbExtra = (c, t) => drawMoth(c, t);
 
+/* ---------------------------------------------------------------- modes -- */
+// Atmosphere modes laid over everything else. Normal is the recorded machine. Solar puts it in a sunny room:
+// window light on the sheet, sunbeams, a day sky outside, birds. Full dark turns everything near-black with soft
+// grey ink. Horror: an old blood-stained sheet, ink that drips, a heartbeat in the dark, flickering lights, a shadow
+// passing, words that type themselves, a blood moon and something standing among the graves.
+const MODES = {
+  normal: { name: 'Normal', desc: 'The machine as it was recorded.' },
+  solar:  { name: 'Solar', desc: 'Sunlight through a window, sunbeams, birds outside.' },
+  dark:   { name: 'Full dark', desc: 'Everything near-black: easy on the eyes at night.' },
+  horror: { name: 'Horror', desc: 'Blood ink that drips, a heartbeat, something watching.' },
+};
+function roomColor() { return prefs.mode === 'solar' ? rgba(mix([236, 220, 182], [28, 24, 19], SUN.q)) : prefs.mode === 'dark' ? '#040404' : prefs.mode === 'horror' ? '#100606' : '#181818'; }
+const modeFxEl = $('#modeFx'), raysEl = modeFxEl.querySelector('.rays'), vigEl = modeFxEl.querySelector('.vig'), dimEl = modeFxEl.querySelector('.dim'), sunCv = $('#sun');
+function applyMode() {
+  const m = prefs.mode;
+  document.body.classList.remove('m-solar', 'm-dark', 'm-horror', 'm-dusk');
+  app.style.backgroundColor = ''; SUN.room = ''; SUN.q = 0;
+  if (m !== 'normal') document.body.classList.add('m-' + m);
+  document.documentElement.style.setProperty('--room', roomColor());
+  counterEl.style.webkitTextStroke = (0.42 * k) + 'px ' + roomColor();
+  const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = roomColor();
+  applyPaper();   // the sheet, ink, theme layer, edge and capsules follow
+  buildSun();
+  backKey = ''; layoutBackdrop();
+  tabKey = '';
+  HOR.drips.length = 0; HOR.ghost = null;
+  setStyle(dimEl, 'opacity', '0'); setStyle(vigEl, 'opacity', m === 'horror' ? '0.6' : '1');
+  AU.ambSync();
+}
+// Solar: a four-pane window's light thrown across the sheet from the upper left (drawn once, drifts with the sun)
+const SUN = { cloud: 1, to: 1, next: 0, q: 0, room: '' };
+function buildSun() {
+  if (prefs.mode !== 'solar' || !G.paperTop) { sunCv.style.display = 'none'; if (sunCv.width) sunCv.width = sunCv.height = 0; return; }
+  const w = W, h = H - G.paperTop, d = Math.min(dpr, 1.5);
+  sunCv.width = Math.round(w * d); sunCv.height = Math.round(h * d); sunCv.style.width = w + 'px'; sunCv.style.height = h + 'px'; sunCv.style.display = 'block';
+  const g = sunCv.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0);
+  g.save();
+  if ('filter' in g) g.filter = `blur(${(14 * k * d).toFixed(1)}px)`;
+  g.translate(-w * 0.22, h * 0.02); g.transform(1, 0.1, 0.42, 1, 0, 0);   // thrown at a slant
+  const ww = w * 0.92, wh = h * 0.6, bar = 10 * k, pw = (ww - bar) / 2, ph = (wh - bar) / 2;
+  const grd = g.createLinearGradient(0, 0, ww, wh);
+  grd.addColorStop(0, 'rgba(255,226,150,0.7)'); grd.addColorStop(1, 'rgba(255,200,115,0.3)');
+  g.fillStyle = grd;
+  for (const [x, y] of [[0, 0], [pw + bar, 0], [0, ph + bar], [pw + bar, ph + bar]]) g.fillRect(x, y, pw, ph);
+  g.restore();
+  // a warm wash over the whole sheet
+  const wash = g.createRadialGradient(w * 0.1, 0, 0, w * 0.1, 0, Math.max(w, h));
+  wash.addColorStop(0, 'rgba(255,214,140,0.16)'); wash.addColorStop(1, 'rgba(255,214,140,0)');
+  g.fillStyle = wash; g.fillRect(0, 0, w, h);
+}
+// Horror state: heartbeat, flicker, a passing shadow, words that type themselves, dripping ink
+const HOR = { beat: -1, nextFlick: 0, flickT0: -9, nextShadow: 0, shadowT0: -9, shadowDir: 1, nextGhost: 0, ghost: null, drips: [] };
+const GHOST_LINES = ['help me', 'it is behind you', "don't stop typing", 'let me out', 'who is there?', 'we can see you', 'not alone', 'turn around'];
+function flickEnv(s) { return s < 0.05 ? 0.6 : s < 0.11 ? 0 : s < 0.2 ? 0.8 : s < 0.34 ? 0.25 : s < 0.42 ? 0.65 : 0; }
+let birdNext = 0;
+function modeTick(t, dt, pP) {
+  const m = prefs.mode;
+  if (m === 'solar') {
+    if (t > SUN.next) { SUN.next = t + 8 + critR() * 14; SUN.to = critR() < 0.3 ? 0.55 : 1; }   // now and then a cloud passes
+    SUN.cloud += (SUN.to - SUN.cloud) * Math.min(1, dt * 0.8);
+    const a = (0.86 + 0.14 * Math.sin(t * 0.31)) * SUN.cloud * (1 - 0.8 * pP);
+    setStyle(sunCv, 'opacity', a.toFixed(3));
+    setStyle(sunCv, 'transform', `translateX(${(Math.sin(t * 0.021) * 10 * k).toFixed(1)}px)`);
+    setStyle(raysEl, 'visibility', pP > 0.6 ? 'hidden' : 'visible');
+    // with the lamp on the curtains are drawn: the sunny room dims to dusk and the icons turn light
+    const q = Math.round(pP * 10) / 10;   // in steps, so the sheet's edge sprite (cut against the room) is rebuilt only a few times
+    if (q !== SUN.q || !SUN.room) {
+      SUN.q = q; const room = SUN.room = roomColor();
+      app.style.backgroundColor = room; document.documentElement.style.setProperty('--room', room); counterEl.style.webkitTextStroke = (0.42 * k) + 'px ' + room;
+      buildEdge();
+    }
+    document.body.classList.toggle('m-dusk', pP > 0.5);
+    if (!birdNext) birdNext = t + 6 + critR() * 10;
+    if (t > birdNext) { birdNext = t + 14 + critR() * 26; AU.chirp(); }
+  } else if (m === 'horror' && !REDUCED) {
+    // a slow heartbeat throbs in the red dark at the edges (and is heard, quietly, when sound is on)
+    const per = HOR.ghost ? 0.78 : 1.05, ph = (t % per) / per, beat = Math.floor(t / per);
+    const pulse = Math.exp(-((ph / 0.07) ** 2)) + 0.6 * Math.exp(-(((ph - 0.2) / 0.07) ** 2));
+    setStyle(vigEl, 'opacity', (0.55 + 0.38 * Math.min(1, pulse)).toFixed(3));
+    if (beat !== HOR.beat) { if (HOR.beat >= 0) AU.heartbeat(HOR.ghost ? 1 : 0.7); HOR.beat = beat; }
+    if (!HOR.nextFlick) { HOR.nextFlick = t + 6 + critR() * 8; HOR.nextShadow = t + 18 + critR() * 15; HOR.nextGhost = t + 12 + critR() * 10; }
+    if (t > HOR.nextFlick) { HOR.flickT0 = t; HOR.nextFlick = t + 9 + critR() * 18; }
+    setStyle(dimEl, 'opacity', flickEnv(t - HOR.flickT0).toFixed(2));
+    if (t > HOR.nextShadow) { HOR.shadowT0 = t; HOR.shadowDir = critR() < 0.5 ? 1 : -1; HOR.nextShadow = t + 28 + critR() * 40; }
+    // when the writer stops, the machine goes on by itself for a moment
+    const g = HOR.ghost;
+    if (!g && t > HOR.nextGhost && t - lastKey > 5 && !sheetOpen) {
+      const str = GHOST_LINES[(critR() * GHOST_LINES.length) | 0], fs = G.font * 0.95;
+      const y0 = G.railY + 62 * k, y1 = Math.min(H - 70 * k, G.sceneBot - 20 * k);   // on the blank paper under the pipe (inside the scene)
+      if (y1 > y0) HOR.ghost = { str, t0: t, x: G.textLeft + critR() * Math.max(0, COLS * G.cell - str.length * fs * 0.6), y: y0 + critR() * (y1 - y0), n: 0, fade: 0, seed: (critR() * 1e6) | 0 };
+      HOR.nextGhost = t + 35 + critR() * 40;
+    } else if (g) {
+      const shown = Math.min(g.str.length, Math.floor((t - g.t0) / 0.13));
+      if (shown > g.n) { g.n = shown; if (g.str[shown - 1] !== ' ') AU.clack(0.22); }
+      if (!g.fade && (t - lastKey < 0.2 || t - g.t0 > g.str.length * 0.13 + 2.6)) g.fade = t;
+      if (g.fade && t - g.fade > 1.4) HOR.ghost = null;
+    }
+  } else if (m === 'horror') setStyle(vigEl, 'opacity', '0.7');
+}
+// drawn on the scene: the horror shadow and the ghost's words
+const GOLD = (() => { const R = mulberry(77), a = []; for (let i = 0; i < 46; i++) a.push({ x: R(), y: R(), s: 0.5 + R() * 1.1, ph: R() * 6.3, sp: 0.3 + R() * 0.7 }); return a; })();
+function drawModeScene(c, t) {
+  if (REDUCED) return;
+  if (prefs.mode === 'solar') {   // golden dust turning slowly in the window light
+    const top = G.paperTop, h = H - top, a0 = SUN.cloud * (1 - CH.paper.v);
+    if (a0 < 0.05) return;
+    c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = 'rgb(255,226,160)';
+    for (const m of GOLD) {
+      const x = ((m.x * W + Math.sin(t * 0.11 * m.sp + m.ph) * 30 * k + t * 3 * k * m.sp) % W + W) % W;
+      const y = top + ((m.y * h * 0.75 + t * 4 * k * m.sp + Math.sin(t * 0.2 + m.ph) * 12 * k) % (h * 0.75));
+      const lit = clamp(1.2 - (x / W) * 0.8 - ((y - top) / h) * 0.9, 0, 1);   // brightest where the sun falls, upper left
+      c.globalAlpha = a0 * lit * (0.35 + 0.5 * Math.sin(t * 1.1 * m.sp + m.ph * 3) ** 2);
+      c.beginPath(); c.arc(x, y, m.s * k, 0, 7); c.fill();
+    }
+    c.restore();
+    return;
+  }
+  if (prefs.mode !== 'horror') return;
+  const s = (t - HOR.shadowT0) / 2.8;
+  if (s > 0 && s < 1) {   // someone walks past between the lamp and the sheet
+    const x = HOR.shadowDir > 0 ? lerp(-0.45 * W, 1.45 * W, s) : lerp(1.45 * W, -0.45 * W, s), y = G.paperTop + 130 * k, a = 0.32 * Math.sin(Math.PI * s);
+    c.save();
+    for (const [dx, dy, rx, ry] of [[0, 0, 44, 52], [0, 110, 120, 80]]) {
+      const gr = c.createRadialGradient(x + dx * k, y + dy * k, 0, x + dx * k, y + dy * k, Math.max(rx, ry) * k);
+      gr.addColorStop(0, `rgba(10,0,0,${a})`); gr.addColorStop(0.6, `rgba(10,0,0,${a * 0.7})`); gr.addColorStop(1, 'rgba(10,0,0,0)');
+      c.fillStyle = gr; c.save(); c.translate(x + dx * k, y + dy * k); c.scale(rx / Math.max(rx, ry), ry / Math.max(rx, ry)); c.translate(-(x + dx * k), -(y + dy * k));
+      c.beginPath(); c.arc(x + dx * k, y + dy * k, Math.max(rx, ry) * k, 0, 7); c.fill(); c.restore();
+    }
+    c.restore();
+  }
+  const g = HOR.ghost;
+  if (g) {
+    const a = 0.62 * (g.fade ? Math.max(0, 1 - (t - g.fade) / 1.4) : 1), fs = G.font * 0.95, R = mulberry(g.seed);
+    c.save(); c.font = `italic ${fs.toFixed(1)}px "Courier Prime", "Courier New", monospace`; c.textBaseline = 'alphabetic';
+    c.shadowColor = `rgba(140,0,0,${a * 0.6})`; c.shadowBlur = 3 * k * dpr;
+    let x = g.x;
+    for (let i = 0; i < g.n; i++) {
+      const ch = g.str[i], w = c.measureText(ch).width;
+      c.save(); c.translate(x, g.y + (R() - 0.5) * 2 * k); c.rotate((R() - 0.5) * 0.12);
+      c.fillStyle = `rgba(96,10,8,${a * (0.75 + R() * 0.25)})`; c.fillText(ch, 0, 0); c.restore();
+      x += w * 1.02;
+    }
+    c.restore();
+  }
+}
+// horror ink drips: now and then a struck letter bleeds a drop that runs down and dries
+function maybeDrip(t) {
+  if (prefs.mode !== 'horror' || STILL || REDUCED || critR() > 0.07) return;
+  HOR.drips.push({ i: text.length - 1, t0: t, len: (5 + critR() * 13) * k, w: (0.9 + critR() * 0.5) * k });
+  if (HOR.drips.length > 40) HOR.drips.shift();
+}
+function drawDrips(c, t, lastY, off, ink) {
+  if (!HOR.drips.length) return;
+  const n = lines.length, rgb = hex(ink);
+  for (let j = HOR.drips.length - 1; j >= 0; j--) {
+    const d = HOR.drips[j];
+    if (d.i >= text.length) { HOR.drips.splice(j, 1); continue; }
+    let li = n - 1, col = -1;
+    for (; li >= 0; li--) { col = lines[li].idx.indexOf(d.i); if (col >= 0) break; }
+    if (col < 0) continue;
+    const y = lastY - (n - 1 - li - off) * G.lineH, x = G.textLeft + (col + 0.5) * G.cell + G.glyphDX;
+    if (y < G.paperTop + 6 * k || y > G.sceneBot) continue;
+    const q = E.outCubic(clamp((t - d.t0) / 1.8, 0, 1)), L = d.len * q, y0 = y - 1.2 * k;
+    c.fillStyle = rgba(rgb, 0.88);
+    c.beginPath(); c.moveTo(x - d.w * 0.6, y0); c.lineTo(x + d.w * 0.6, y0); c.lineTo(x + d.w * 0.35, y0 + L); c.lineTo(x - d.w * 0.35, y0 + L); c.closePath(); c.fill();
+    c.beginPath(); c.arc(x, y0 + L, d.w * (0.7 + 0.3 * q), 0, 7); c.fill();
+  }
+}
+
 /* ---------------------------------------------------------- idle sparks -- */
 let nextIdle = 0, lastActivity = 0, idleFrom = -1, idleRun = 0;
 function updateIdle(t) {
@@ -5367,6 +5741,7 @@ function tick() {
   updateIdle(t);
   updateTip(t);
   updateAmbient(t);
+  if (prefs.mode !== 'normal') modeTick(t, dt, CH.paper.v);
   updateGoals(t);
   stepScrollBack(dt);
   showPageTag(t);
@@ -5400,7 +5775,8 @@ if (/[?&]debug\b/.test(location.search)) {
     get text() { return text; }, get lines() { return lines.map((l) => l.idx.map((i) => text[i]).join('')); },
     get carX() { return car.x; }, get target() { return carriageTarget(); }, get col() { return caretCol(); },
     get lamp() { return lampOn; }, get lift() { const t = now(); return strikeLift(t) - retractDrop(t); }, get lightX() { return lightX; }, colX, G, AU, fx, WEB,
-    get DR() { return DR; }, draftText, SPIDERS, MOTH, spawnSpider: () => { nextSpider = 1; }, spawnMoth: () => { MOTH.next = 1; },
+    get DR() { return DR; }, draftText, applyMode, HOR,
+    __hor() { const t = now(); return { ghost: !!HOR.ghost, drips: HOR.drips.length, shadow: t - HOR.shadowT0 < 2.8, nextGhost: HOR.nextGhost - t, nextShadow: HOR.nextShadow - t }; }, SPIDERS, MOTH, spawnSpider: () => { nextSpider = 1; }, spawnMoth: () => { MOTH.next = 1; },
     renderCard, newPage, celebrate, strikeLightning: (d) => strikeLightning(now(), d), launchBats: () => launchBats(now()), AMB,
     renderLightForTest(scale, spread) { const s0 = L.scale; L.scale = scale; sliders.spread = spread; renderLight(); L.scale = s0; },
   };
@@ -5414,6 +5790,7 @@ function boot() {
   input.value = text;
   try { const s = JSON.parse(store.get(LS.sliders, 'null')); if (s) Object.assign(sliders, s); } catch (e) {}
   layout();
+  if (prefs.mode !== 'normal') applyMode();
   shiftAnim.from = shiftAnim.to = lines.length > 1 ? 1 : 0;
   car.x = car.from = car.to = carriageTarget(); car.dur = 0; lightX = car.x; lastCarX = car.x;
   initWebs();

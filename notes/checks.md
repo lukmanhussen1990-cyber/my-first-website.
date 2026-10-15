@@ -562,3 +562,29 @@ Check 50 done. Next: graphics rounds continue.
 - Tests: full suite, tear drag (mouse + touch), perf and ?still replay re-run (results in Check 52).
 
 Check 51 done. Next: confirm suite/replay/perf.
+
+## Check 52 (v21a) – atmosphere modes (user: "add thing like a solar mod and a full dark mod and a horror mod")
+A MODE row at the top of the control panel: Normal (the recorded machine, unchanged) · Solar · Full dark · Horror.
+Remembered with the other settings; ?still always uses Normal.
+- Solar: a four-pane window's light thrown across the sheet (blurred, drifting, dimmed now and then by a passing
+  cloud), slow sunbeams over the page, golden dust turning in the light, a warm cream room and dark icons; on wide
+  screens a day sky (sun with glare, fair-weather clouds, green hills, the castle in haze, the old tree with a few
+  leaves, plain pumpkins); birds instead of bats; no lightning; a little birdsong now and then when sound is on.
+  With the lamp on the curtains are drawn: the room dims to dusk and the icons turn light.
+- Full dark: its own near-black sheet with faint fibres and soft grey ink, a black room and dim icons, a dark
+  vignette, and the night outside dimmed almost to nothing.
+- Horror: its own old sheet – scorched rim, broken water rings, blood spatter near the edges, claw marks, a
+  four-finger smear – with blood-red ink (glowing deep red under the lamp). Now and then a struck letter bleeds a
+  drop that runs down. A heartbeat throbs in the red dark around the page; the lights flicker; a shadow walks past
+  between the lamp and the sheet; when the writer stops for a while, words type themselves under the pipe ("help
+  me", "turn around", …) and fade when typing resumes. Lightning comes more often, the flash is red; outside, a
+  blood moon, red windows in the castle, and something tall with red eyes standing among the graves. With sound
+  on: a low breathing drone and a soft heartbeat.
+- Picking a paper while in Full dark/Horror returns to Normal with that paper; the gear knobs, counter outline,
+  sheet edge and theme-color follow the mode's room colour; the share picture uses the mode's sheet and ink.
+- Tests: full suite, hand tear (mouse + touch) pass, no errors; mode switching from the panel, persistence after
+  reload, horror drips / ghost words / shadow / flicker, horror drone and heartbeat, solar birdsong, each mode in
+  lamp mode, wide backdrops, share pictures all checked. Perf (normal) p50 4.6 ms; per-mode perf and the ?still
+  replay are running (results in Check 53).
+
+Check 52 done. Next: confirm per-mode perf + replay, then polish the modes.
