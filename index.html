@@ -2928,6 +2928,7 @@ function drawRibbon(c, r, t, pP) {
   }
 }
 function webColor(pP, a) {
+  if (paperTheme().lightInk) pP = 1;   // on a dark sheet the silk shows pale, as it does under the lamp
   const col = mix([118, 112, 100], [236, 236, 230], pP);
   return rgba(col, a * lerp(0.27, 0.35, pP));
 }

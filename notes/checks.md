@@ -351,3 +351,10 @@ Check 28 done. Next: graphics – share-card picture in every skin/paper, then t
 - Tests: r12test, up16test, functest pass.
 
 Check 29 done. Next: graphics – lamp-mode capsule shading per skin and the cobweb look on dark papers.
+
+## Check 30 (v19l) – graphics
+- Cobwebs on Blueprint and Black paper: the silk is drawn pale (as under the lamp) instead of the cream sheet's grey,
+  which had almost vanished on dark paper.
+- Tests: up16test, functest pass; ?still replay unchanged.
+
+Check 30 done. Next: graphics – desktop backdrop at large sizes, then moth/bat detail at full resolution.
