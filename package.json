@@ -1,0 +1,12 @@
+{
+  "name": "imran",
+  "private": true,
+  "description": "imran — animated logo with chess cards and sound design",
+  "scripts": {
+    "start": "npx serve .",
+    "render": "node tools/render.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}
