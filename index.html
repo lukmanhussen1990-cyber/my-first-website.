@@ -4958,14 +4958,50 @@ function drawMoth(c, t) {
   if (!MOTH.on) return;
   const lit = 0.35 + 0.65 * beamAt(MOTH.x, MOTH.y), f = Math.abs(Math.sin(t * 34)), s = k * 1.05;
   const col = rgba(mix([70, 62, 52], [236, 222, 196], lit)), col2 = rgba(mix([55, 48, 40], [214, 196, 168], lit));
-  c.save(); c.translate(MOTH.x, MOTH.y); c.rotate(Math.atan2(MOTH.vy, MOTH.vx) * 0.15);
-  for (const sd of [-1, 1]) {
-    c.save(); c.scale(sd * (0.35 + 0.65 * f), 1);
-    c.fillStyle = col; c.beginPath(); c.moveTo(0, -0.5 * s); c.quadraticCurveTo(4 * s, -5.5 * s, 7.4 * s, -2.6 * s); c.quadraticCurveTo(6 * s, 0.6 * s, 0, 0.6 * s); c.fill();
-    c.fillStyle = col2; c.beginPath(); c.moveTo(0, 0.2 * s); c.quadraticCurveTo(5 * s, 1 * s, 4.6 * s, 4 * s); c.quadraticCurveTo(2 * s, 3.4 * s, 0, 1.6 * s); c.fill();
-    c.restore();
+  const band = rgba(mix([40, 34, 28], [150, 128, 98], lit), 0.75), fur = rgba(mix([48, 40, 30], [178, 156, 122], lit));
+  const wings = (fillA, fillB, detail) => {
+    for (const sd of [-1, 1]) {
+      c.save(); c.scale(sd * (0.35 + 0.65 * f), 1);
+      // forewing: long and swept back, with a darker band and a small eye-spot
+      c.fillStyle = fillA; c.beginPath(); c.moveTo(0, -0.9 * s); c.quadraticCurveTo(3.4 * s, -5.4 * s, 7.8 * s, -3.4 * s);
+      c.quadraticCurveTo(7.4 * s, -0.8 * s, 5.4 * s, 0.5 * s); c.quadraticCurveTo(2.6 * s, 0.9 * s, 0, 0.5 * s); c.fill();
+      if (detail) {
+        c.strokeStyle = band; c.lineWidth = 0.55 * s; c.beginPath(); c.moveTo(1.2 * s, -2.2 * s); c.quadraticCurveTo(4 * s, -2.6 * s, 6.4 * s, -0.4 * s); c.stroke();
+        c.fillStyle = band; c.beginPath(); c.arc(4.6 * s, -2.9 * s, 0.6 * s, 0, 7); c.fill();
+      }
+      // hindwing: rounder, tucked under
+      c.fillStyle = fillB; c.beginPath(); c.moveTo(0, 0.1 * s); c.quadraticCurveTo(4.6 * s, 0.6 * s, 4.4 * s, 3.6 * s); c.quadraticCurveTo(2 * s, 3.6 * s, 0, 1.7 * s); c.fill();
+      c.restore();
+    }
+  };
+  c.save();
+  // its shadow on the sheet, thrown away from the bulb (only where the lamp actually lights it)
+  const sh = beamAt(MOTH.x, MOTH.y);
+  if (sh > 0.05) {
+    const dx = MOTH.x - lightX, dy = MOTH.y - (G.capCY - G.capHH), d = Math.hypot(dx, dy) || 1;
+    const shc = `rgba(20,14,8,${0.05 * sh})`;
+    for (const [ox, oy] of [[0, 0], [0.9, 0.5], [-0.7, 0.8]]) {   // three faint, slightly offset copies make a soft edge
+      c.save(); c.translate(MOTH.x + (dx / d * 4 + ox) * k, MOTH.y + (dy / d * 4 + oy) * k); c.rotate(Math.atan2(MOTH.vy, MOTH.vx) * 0.15); c.scale(1.08, 1.08);
+      wings(shc, shc, false); c.restore();
+    }
   }
-  c.fillStyle = rgba(mix([40, 32, 24], [130, 110, 84], lit)); c.beginPath(); c.ellipse(0, 0.6 * s, 0.9 * s, 2.6 * s, 0, 0, 7); c.fill();
+  c.translate(MOTH.x, MOTH.y); c.rotate(Math.atan2(MOTH.vy, MOTH.vx) * 0.15);
+  wings(col, col2, true);
+  // a furry body (thorax and banded abdomen) and two feathery antennae
+  c.fillStyle = fur; c.beginPath(); c.ellipse(0, -0.6 * s, 1.15 * s, 1.3 * s, 0, 0, 7); c.fill();
+  c.fillStyle = rgba(mix([40, 32, 24], [130, 110, 84], lit)); c.beginPath(); c.ellipse(0, 1.4 * s, 0.85 * s, 2.2 * s, 0, 0, 7); c.fill();
+  c.strokeStyle = fur; c.lineWidth = 0.35 * s;
+  for (const yb of [0.8, 1.7, 2.6]) { c.beginPath(); c.moveTo(-0.7 * s, yb * s); c.lineTo(0.7 * s, yb * s); c.stroke(); }
+  c.lineWidth = 0.4 * s; c.lineCap = 'round';
+  for (const sd of [-1, 1]) {
+    c.beginPath(); c.moveTo(sd * 0.4 * s, -1.8 * s); c.quadraticCurveTo(sd * 1.2 * s, -3.6 * s, sd * 2.8 * s, -4.4 * s); c.stroke();
+    c.lineWidth = 0.25 * s;
+    for (let q = 0.35; q < 1; q += 0.22) {
+      const ax = sd * (0.4 + 2.4 * q) * s, ay = (-1.8 - 2.6 * q) * s;
+      c.beginPath(); c.moveTo(ax, ay); c.lineTo(ax + sd * 0.6 * s, ay + 0.3 * s); c.stroke();
+    }
+    c.lineWidth = 0.4 * s;
+  }
   c.restore();
 }
 ambExtra = () => MOTH.on;

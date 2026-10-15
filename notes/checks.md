@@ -358,3 +358,10 @@ Check 29 done. Next: graphics – lamp-mode capsule shading per skin and the cob
 - Tests: up16test, functest pass; ?still replay unchanged.
 
 Check 30 done. Next: graphics – desktop backdrop at large sizes, then moth/bat detail at full resolution.
+
+## Check 31 (v19m) – graphics
+- Moth at full resolution: swept-back forewings with a darker band and an eye-spot, rounder hindwings, a furry thorax,
+  a banded abdomen and feathery antennae; under the lamp it throws a soft shadow on the sheet, away from the bulb.
+- Tests: up16test, functest, reducedtest, ambient soak pass.
+
+Check 31 done. Next: graphics – bats and lightning at full resolution, then the spider.
