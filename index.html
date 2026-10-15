@@ -1664,6 +1664,7 @@ const lineCache = new Map();
 let textVer = 0;                       // bumps whenever already-typed glyphs may have changed
 function invalidateText() { lineCache.clear(); if (typeof archCache !== 'undefined') archCache.clear(); textVer++; }
 
+const CLOG = { a: [0.02, -0.15], e: [0, -0.3], o: [0, -0.22], d: [-0.03, -0.22], b: [0.03, -0.22], p: [0.03, -0.22], q: [-0.03, -0.22], g: [-0.02, -0.25] };
 function drawGlyph(c, i, x, by, inkRgb, s) {
   const ch = (s ? s.text : text)[i];
   if (ch === ' ' || ch === '\n' || ch === undefined) return;
@@ -1681,6 +1682,11 @@ function drawGlyph(c, i, x, by, inkRgb, s) {
   c.fillStyle = rgba(inkRgb, dark);
   c.fillText(ch, 0, 0);
   if (rnd(i, 5) < 0.35) { c.fillStyle = rgba(inkRgb, dark * 0.45); c.fillText(ch, -0.3 * kk, -0.15 * kk); }
+  const clog = CLOG[ch];   // now and then a letter's eye is clogged with ink
+  if (clog && !STILL && rnd(i, 6) < 0.07) {
+    c.fillStyle = rgba(inkRgb, dark); c.beginPath();
+    c.ellipse(clog[0] * font, clog[1] * font, 0.17 * font, 0.15 * font, rnd(i, 7) - 0.5, 0, 7); c.fill();
+  }
   c.restore();
   // dry-ink speckle: knock tiny holes out of this glyph
   c.globalCompositeOperation = 'destination-out';
@@ -3043,7 +3049,7 @@ const AU = {
     o.type = 'sawtooth'; o.frequency.setValueAtTime(70 + Math.random() * 40, t); o.frequency.linearRampToValueAtTime(110 + Math.random() * 60, t + d * 0.6); o.frequency.linearRampToValueAtTime(85, t + d);
     bp.type = 'bandpass'; bp.frequency.value = 900 + Math.random() * 500; bp.Q.value = 6;
     am.type = 'square'; am.frequency.value = 18 + Math.random() * 14; ag.gain.value = 0.5; am.connect(ag); ag.connect(g.gain);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.12); g.gain.setTargetAtTime(0.0001, t + d - 0.2, 0.08);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.028, t + 0.12); g.gain.setTargetAtTime(0.0001, t + d - 0.2, 0.08);
     o.connect(bp); bp.connect(g); g.connect(this.sfx); g.connect(this.verb);
     o.start(t); am.start(t); o.stop(t + d + 0.4); am.stop(t + d + 0.4);
   },
