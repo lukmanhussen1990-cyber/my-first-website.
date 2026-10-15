@@ -2401,6 +2401,15 @@ function draw(t) {
   c.restore();
 
   if (!STILL) c.drawImage(edgeCv, 0, G.paperTop - 2, W, edgeCv.height / dpr);
+  // a fresh sheet feeding in after a tear: its top edge rises from the pipe to the top of the page
+  const fs = t - feed.t0;
+  if (!STILL && !REDUCED && fs > 0.18 && fs < 1.05) {
+    const q = E.outCubic(clamp((fs - 0.18) / 0.8, 0, 1)), y = G.railT - (G.railT - G.paperTop - 4 * k) * q, a = Math.sin(Math.PI * Math.min(1, q * 1.05));
+    const g = c.createLinearGradient(0, y, 0, y + 16 * k);
+    g.addColorStop(0, `rgba(30,24,16,${0.13 * a})`); g.addColorStop(1, 'rgba(30,24,16,0)');
+    c.fillStyle = g; c.fillRect(0, y, W, 16 * k);
+    c.fillStyle = `rgba(255,255,250,${0.5 * a})`; c.fillRect(0, y - 0.8 * k, W, 0.8 * k);
+  }
   // ----- rail -----
   const rh = railCv[0].height / dpr;
   if (pP < 1) { c.globalAlpha = 1; c.drawImage(railCv[0], 0, G.railSpriteTop, W, rh); }

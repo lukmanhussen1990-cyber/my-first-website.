@@ -328,3 +328,10 @@ Check 25 done. Next: graphics – fresh sheet roll-in, drafts sheet visuals.
 - Tests: up16test, backup, functest pass.
 
 Check 26 done. Next: graphics – fresh sheet roll-in, then another full-screen look in every paper theme.
+
+## Check 27 (v19i) – graphics
+- Fresh sheet after a tear: its top edge visibly rises from the pipe to the top of the page (a thin light edge with a
+  soft shadow under it), together with the grain sliding up; off with reduced motion and in ?still.
+- Tests: functest, reducedtest, up16test, mobile18 pass; ?still replay unchanged.
+
+Check 27 done. Next: graphics – a full-screen look in every paper theme and ink, light and lamp.
