@@ -44,6 +44,19 @@
              -webkit-text-stroke: 0.42px #181818; }
   #dial { color: #33302d; }
   #dial svg .ln { stroke: #e9e4d6; }
+  #capBtn { position: absolute; left: 0; top: 0; z-index: 1; border-radius: 45%; -webkit-tap-highlight-color: transparent; }
+  #skinTray { position: absolute; left: 50%; top: 0; z-index: 5; display: grid; gap: 2px; padding: 5px; border-radius: 15px;
+              background: rgba(24,24,22,.9); box-shadow: 0 8px 26px rgba(0,0,0,.5), inset 0 0 0 .5px rgba(255,255,255,.13);
+              -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); opacity: 0; pointer-events: none; visibility: hidden;
+              transform: translate(-50%, 8px) scale(.96); transform-origin: 50% 0;
+              transition: opacity .18s ease, transform .2s ease, visibility 0s linear .2s; }
+  #skinTray.open { opacity: 1; pointer-events: auto; visibility: visible; transform: translate(-50%, 0) scale(1);
+                   transition: opacity .18s ease, transform .2s ease, visibility 0s; }
+  .skin { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 3px 5px; min-width: 51px;
+          border-radius: 11px; color: #a9a9a0; font-size: 9.5px; letter-spacing: .04em; line-height: 1; text-transform: uppercase; }
+  .skin canvas { display: block; }
+  .skin[aria-checked="true"] { background: rgba(255,255,255,.09); color: #f1efe6; box-shadow: inset 0 0 0 1px rgba(255,255,255,.17); }
+  .skin:focus-visible { outline: 1px dashed rgba(200,200,190,.5); outline-offset: 1px; }
   #controls { position: absolute; left: 0; top: 0; width: 100%; opacity: 0; pointer-events: none; }
   #controls.on { pointer-events: auto; }
   .sl { position: absolute; touch-action: none; outline: none; }
@@ -114,6 +127,8 @@
       <path class="ln" d="M-3.6 3.6 3.6-3.6" stroke-width="2.4" stroke-linecap="round"/>
     </svg>
   </button>
+  <button id="capBtn" aria-label="Change the capsule skin" aria-haspopup="true" aria-expanded="false"></button>
+  <div id="skinTray" role="radiogroup" aria-label="Capsule skins"></div>
   <div id="toast"></div>
 </div>
 
@@ -129,7 +144,7 @@
 
 const COLS = 19;            // characters per line
 const MAX = 3000;           // character limit
-const LS = { text: 'fw.text', sound: 'fw.sound', lamp: 'fw.lamp', sliders: 'fw.sliders' };
+const LS = { text: 'fw.text', sound: 'fw.sound', lamp: 'fw.lamp', sliders: 'fw.sliders', skin: 'fw.skin', tip: 'fw.tip' };
 
 const $ = (s) => document.querySelector(s);
 const app = $('#app'), paperEl = $('#paper'), lightCv = $('#light'), grainCv = $('#grain'),
@@ -242,6 +257,7 @@ function layout() {
   buildGrain();
   buildRail();
   buildCapsules();
+  layoutSkinUI();
   buildSprites();
   buildCaptions();
   lightDirty = true;
@@ -400,7 +416,7 @@ function roundRect(c, x, y, w, h, r) {
 
 /* --------------------------------------------------------------- capsule -- */
 const capCv = [document.createElement('canvas'), document.createElement('canvas')];
-const CAP_PAD = 14; // css px padding around the body inside the sprite (bolts stick out)
+const CAP_PAD = 20; // css px padding around the body inside the sprite (bolts, hats and other props stick out)
 const SEAM = { x1: 9.7, x2: 37.7, y: 11.3 };
 function capsulePath(c) {
   // elliptical corners measured from the silhouette against the cream paper (≈16 × 10.5 px)
@@ -438,63 +454,76 @@ function vgrad(c, y0, y1, stops) {
   return g;
 }
 function buildCapsules() {
-  const hw = G.capHW, hh = G.capHH, pad = CAP_PAD * k;
-  const sx1 = SEAM.x1 * k, sx2 = SEAM.x2 * k, sy = SEAM.y * k;
-  for (let m = 0; m < 2; m++) {
-    const cv = capCv[m], P = CAP_COL[m];
-    cv.width = Math.round((hw + pad) * 2 * dpr); cv.height = Math.round((hh + pad) * 2 * dpr);
-    const c = cv.getContext('2d');
-    c.setTransform(dpr, 0, 0, dpr, (hw + pad) * dpr, (hh + pad) * dpr);
-    // soft drop shadow on the paper
-    c.save(); c.shadowColor = m ? 'rgba(0,0,0,0.6)' : 'rgba(45,35,20,0.55)'; c.shadowBlur = (m ? 6 : 13) * k * dpr; c.shadowOffsetY = (m ? 3.5 : 4.5) * k * dpr;
-    capsulePath(c); c.fillStyle = '#555'; c.fill(); c.restore();
-    c.save(); capsulePath(c); c.clip();
-    c.fillStyle = vgrad(c, -hh, hh, P.body); c.fillRect(-hw, -hh, hw * 2, hh * 2);
-    // patch (between the seams, above the horizontal seam)
-    c.fillStyle = vgrad(c, -hh, hh, P.patch); c.fillRect(sx1, -hh, sx2 - sx1, hh + sy);
-    // end cap (right of the right seam)
-    c.fillStyle = vgrad(c, -hh, sy, P.endc); c.fillRect(sx2, -hh, hw - sx2 + 1, hh + sy);
-    // lower panel (below the horizontal seam)
-    c.fillStyle = vgrad(c, sy, hh, P.lower); c.fillRect(sx1, sy, hw - sx1 + 1, hh - sy);
-    // cylindrical shading: dark rims at both ends, soft highlight on the nose
-    let gr = c.createLinearGradient(-hw, 0, hw, 0);
-    gr.addColorStop(0, 'rgba(0,0,0,0.26)'); gr.addColorStop(0.05, 'rgba(0,0,0,0.1)'); gr.addColorStop(0.13, m ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.06)');
-    gr.addColorStop(0.24, 'rgba(255,255,255,0)'); gr.addColorStop(0.93, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.24)');
-    c.fillStyle = gr; c.fillRect(-hw, -hh, hw * 2, hh * 2);
-    // top / bottom rim shading (round body); light mode has a faint sheen at the top edge, no dark line
-    gr = c.createLinearGradient(0, -hh, 0, hh);
-    gr.addColorStop(0, m ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,240,0.07)'); gr.addColorStop(0.08, 'rgba(0,0,0,0)'); gr.addColorStop(0.9, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.18)');
-    c.fillStyle = gr; c.fillRect(-hw, -hh, hw * 2, hh * 2);
-    // very subtle mottling
-    const R = mulberry(31 + m);
-    for (let i = 0; i < 26; i++) {
-      const x = lerp(-hw, hw, R()), y = lerp(-hh, hh, R()), r = (2 + R() * 6) * k;
-      const g2 = c.createRadialGradient(x, y, 0, x, y, r);
-      g2.addColorStop(0, R() < 0.5 ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,230,0.04)'); g2.addColorStop(1, 'rgba(0,0,0,0)');
-      c.fillStyle = g2; c.fillRect(x - r, y - r, r * 2, r * 2);
-    }
-    // seams with cross stitches
-    stitchLine(c, sx1, -hh, sx1, hh, P, 0);
-    stitchLine(c, sx2, -hh + 3.4 * k, sx2, hh - 4.2 * k, P, 1);
-    stitchLine(c, sx1, sy, hw, sy, P, 2);
-    c.restore();
-    // rim
-    capsulePath(c); c.strokeStyle = P.rim; c.lineWidth = 0.7 * k; c.stroke();
-    // slot (measured at full resolution): a dark recessed opening straddling the top edge, darkest along its
-    // lip; in light mode its inside lightens toward the bottom (≈30 → 85), in lamp mode the glow strip sits in it
-    const so = 10.6 * k, s0 = -hh - 0.65 * k, s1 = -hh + 3.4 * k, sg = c.createLinearGradient(0, s0, 0, s1);
-    if (m) { sg.addColorStop(0, 'rgb(34,25,10)'); sg.addColorStop(0.35, 'rgb(22,19,13)'); sg.addColorStop(1, 'rgb(30,30,24)'); }
-    else { sg.addColorStop(0, 'rgb(28,26,22)'); sg.addColorStop(0.32, 'rgb(30,29,25)'); sg.addColorStop(0.42, 'rgb(40,40,34)'); sg.addColorStop(1, 'rgb(84,88,70)'); }
-    c.fillStyle = sg; roundRect(c, -so, s0, so * 2, s1 - s0, 1.5 * k); c.fill();
-    // bolts
-    drawBolt(c, 25.4 * k, -hh, -1, m);
-    drawBolt(c, 25.4 * k, hh, 1, m);
-  }
+  for (let m = 0; m < 2; m++) renderCapsule(capCv[m], skin, m);
   buildFlash();
+}
+// one capsule sprite (m: 0 light / 1 lamp) in a given skin: shared drop shadow, rim and slot around the skin's body
+function renderCapsule(cv, sk, m) {
+  const hw = G.capHW, hh = G.capHH, pad = CAP_PAD * k;
+  cv.width = Math.round((hw + pad) * 2 * dpr); cv.height = Math.round((hh + pad) * 2 * dpr);
+  const c = cv.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, (hw + pad) * dpr, (hh + pad) * dpr);
+  // soft drop shadow on the paper
+  c.save(); c.shadowColor = m ? 'rgba(0,0,0,0.6)' : 'rgba(45,35,20,0.55)'; c.shadowBlur = (m ? 6 : 13) * k * dpr; c.shadowOffsetY = (m ? 3.5 : 4.5) * k * dpr;
+  capsulePath(c); c.fillStyle = '#555'; c.fill(); c.restore();
+  c.save(); capsulePath(c); c.clip();
+  sk.paint(c, m);
+  c.restore();
+  // rim
+  capsulePath(c); c.strokeStyle = sk.rim[m]; c.lineWidth = 0.7 * k; c.stroke();
+  // slot (measured at full resolution): a dark recessed opening straddling the top edge, darkest along its
+  // lip; in light mode its inside lightens toward the bottom (≈30 → 85), in lamp mode the glow strip sits in it
+  const so = 10.6 * k, s0 = -hh - 0.65 * k, s1 = -hh + 3.4 * k, sg = c.createLinearGradient(0, s0, 0, s1);
+  if (m) { sg.addColorStop(0, 'rgb(34,25,10)'); sg.addColorStop(0.35, 'rgb(22,19,13)'); sg.addColorStop(1, 'rgb(30,30,24)'); }
+  else { sg.addColorStop(0, 'rgb(28,26,22)'); sg.addColorStop(0.32, 'rgb(30,29,25)'); sg.addColorStop(0.42, 'rgb(40,40,34)'); sg.addColorStop(1, 'rgb(84,88,70)'); }
+  c.fillStyle = sg; roundRect(c, -so, s0, so * 2, s1 - s0, 1.5 * k); c.fill();
+  sk.props(c, m);
+}
+// the recorded Frankenstein skin: sage body, stitched patch, end cap, neck bolts
+function paintFrank(c, m) {
+  const hw = G.capHW, hh = G.capHH, P = CAP_COL[m];
+  const sx1 = SEAM.x1 * k, sx2 = SEAM.x2 * k, sy = SEAM.y * k;
+  c.fillStyle = vgrad(c, -hh, hh, P.body); c.fillRect(-hw, -hh, hw * 2, hh * 2);
+  // patch (between the seams, above the horizontal seam)
+  c.fillStyle = vgrad(c, -hh, hh, P.patch); c.fillRect(sx1, -hh, sx2 - sx1, hh + sy);
+  // end cap (right of the right seam)
+  c.fillStyle = vgrad(c, -hh, sy, P.endc); c.fillRect(sx2, -hh, hw - sx2 + 1, hh + sy);
+  // lower panel (below the horizontal seam)
+  c.fillStyle = vgrad(c, sy, hh, P.lower); c.fillRect(sx1, sy, hw - sx1 + 1, hh - sy);
+  capShade(c, m);
+  // very subtle mottling
+  const R = mulberry(31 + m);
+  for (let i = 0; i < 26; i++) {
+    const x = lerp(-hw, hw, R()), y = lerp(-hh, hh, R()), r = (2 + R() * 6) * k;
+    const g2 = c.createRadialGradient(x, y, 0, x, y, r);
+    g2.addColorStop(0, R() < 0.5 ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,230,0.04)'); g2.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = g2; c.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  // seams with cross stitches
+  stitchLine(c, sx1, -hh, sx1, hh, P, 0);
+  stitchLine(c, sx2, -hh + 3.4 * k, sx2, hh - 4.2 * k, P, 1);
+  stitchLine(c, sx1, sy, hw, sy, P, 2);
+}
+function propsFrank(c, m) {
+  drawBolt(c, 25.4 * k, -G.capHH, -1, m);
+  drawBolt(c, 25.4 * k, G.capHH, 1, m);
+}
+// cylindrical shading shared by all skins: dark rims at both ends, soft highlight on the nose, round top/bottom
+function capShade(c, m) {
+  const hw = G.capHW, hh = G.capHH;
+  let gr = c.createLinearGradient(-hw, 0, hw, 0);
+  gr.addColorStop(0, 'rgba(0,0,0,0.26)'); gr.addColorStop(0.05, 'rgba(0,0,0,0.1)'); gr.addColorStop(0.13, m ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.06)');
+  gr.addColorStop(0.24, 'rgba(255,255,255,0)'); gr.addColorStop(0.93, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.24)');
+  c.fillStyle = gr; c.fillRect(-hw, -hh, hw * 2, hh * 2);
+  // light mode has a faint sheen at the top edge, no dark line
+  gr = c.createLinearGradient(0, -hh, 0, hh);
+  gr.addColorStop(0, m ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,240,0.07)'); gr.addColorStop(0.08, 'rgba(0,0,0,0)'); gr.addColorStop(0.9, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.18)');
+  c.fillStyle = gr; c.fillRect(-hw, -hh, hw * 2, hh * 2);
 }
 // the patch column turning to bright metal during a spark (stitches stay visible, as recorded)
 const flashCv = document.createElement('canvas');
 function buildFlash() {
+  if (skin.id !== 'frank') { buildFlashGlow(); return; }
   const hh = G.capHH, x1 = SEAM.x1 * k, x2 = SEAM.x2 * k, sy = SEAM.y * k;
   const w = x2 - x1 + 4 * k, h = hh * 2 + 2 * k;
   flashCv.width = Math.ceil(w * dpr); flashCv.height = Math.ceil(h * dpr);
@@ -517,6 +546,21 @@ function buildFlash() {
   FL.w = w; FL.h = h; FL.ox = x1 - 2 * k; FL.oy = -hh - 1 * k;
 }
 const FL = { w: 0, h: 0, ox: 0, oy: 0 };
+// the other skins have no metal patch: the discharge lights up a soft column in the skin's spark colour instead
+function buildFlashGlow() {
+  const hh = G.capHH, x1 = 10.4 * k, x2 = 40.4 * k, sp = skin.sp;
+  const w = x2 - x1 + 4 * k, h = hh * 2 + 2 * k;
+  flashCv.width = Math.ceil(w * dpr); flashCv.height = Math.ceil(h * dpr);
+  const c = flashCv.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, (2 * k - x1) * dpr, (hh + 1 * k) * dpr);   // origin = capsule centre
+  c.save(); capsulePath(c); c.clip();
+  const g = c.createLinearGradient(x1, 0, x2, 0), hot = mix(sp.mid, [255, 255, 255], 0.5);
+  g.addColorStop(0, rgba(sp.mid, 0)); g.addColorStop(0.3, rgba(sp.mid, 0.35)); g.addColorStop(0.5, rgba(hot, 0.6));
+  g.addColorStop(0.7, rgba(sp.mid, 0.35)); g.addColorStop(1, rgba(sp.mid, 0));
+  c.fillStyle = g; c.fillRect(x1, -hh, x2 - x1, hh * 2);
+  c.restore();
+  FL.w = w; FL.h = h; FL.ox = x1 - 2 * k; FL.oy = -hh - 1 * k;
+}
 function stitchLine(c, x0, y0, x1, y1, P, seed) {
   const len = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / len, uy = (y1 - y0) / len, nx = -uy, ny = ux;
   // seam groove
@@ -587,6 +631,298 @@ function drawBolt(c, x, yEdge, dir, m) {
     c.fillStyle = m ? 'rgba(235,222,195,0.7)' : 'rgba(255,255,255,0.32)';
     c.beginPath(); c.ellipse(x - 1.1 * k, y1 + 1.3 * k, 1.8 * k, 0.75 * k, 0, 0, Math.PI * 2); c.fill();
   }
+}
+
+/* ---------------------------------------------------------------- skins -- */
+// The recording types "Testing halloween capsule skins": tap the capsule to dress it up. Frankenstein is the
+// recorded skin; the others reuse the same body, slot, LEDs and T, with their own decorations, props and sparks.
+// Each skin: paint(c, m) inside the body clip, props(c, m) outside it, rim colours, spark colours, flood / halo
+// glow colours (lamp / cream paper) and a steam tint and source (null: no steam).
+const SKINS = {
+  frank: { name: 'Frankenstein', short: 'Frank', paint: paintFrank, props: propsFrank, rim: [CAP_COL[0].rim, CAP_COL[1].rim],
+    sp: { beam: [205, 200, 225], beam2: [220, 215, 240], halo: [165, 148, 255], mid: [200, 188, 255], tip: [235, 235, 255], sheen: '#d8d8d5' },
+    flood: null, halo: [159, 199, 133], steam: [255, 255, 250], steamAt: [27.5, -4.5] },
+  pumpkin: { name: 'Pumpkin', short: 'Pumpkin', paint: paintPumpkin, props: propsPumpkin, rim: ['rgba(120,50,6,0.35)', 'rgba(10,4,1,0.55)'],
+    sp: { beam: [255, 190, 120], beam2: [255, 214, 160], halo: [255, 140, 40], mid: [255, 196, 110], tip: [255, 220, 170], sheen: '#ffd9a0' },
+    flood: [[84, 50, 14], [68, 40, 11], [41, 24, 7], [17, 10, 3]], halo: [240, 150, 60], steam: [255, 236, 214], steamAt: [27.4, -8.6] },
+  vampire: { name: 'Vampire', short: 'Vampire', paint: paintVampire, props: propsVampire, rim: ['rgba(30,4,8,0.45)', 'rgba(4,0,1,0.6)'],
+    sp: { beam: [255, 140, 160], beam2: [255, 170, 186], halo: [255, 50, 90], mid: [255, 140, 165], tip: [255, 200, 210], sheen: '#ffc2cc' },
+    flood: [[80, 14, 26], [66, 11, 21], [39, 7, 12], [16, 3, 5]], halo: [205, 45, 70], steam: null },
+  mummy: { name: 'Mummy', short: 'Mummy', paint: paintMummy, props: propsMummy, rim: ['rgba(90,70,40,0.3)', 'rgba(12,10,6,0.55)'],
+    sp: { beam: [255, 222, 160], beam2: [255, 236, 190], halo: [240, 180, 60], mid: [255, 222, 140], tip: [255, 236, 190], sheen: '#f3e2b8' },
+    flood: [[72, 60, 24], [60, 50, 20], [36, 30, 12], [14, 12, 5]], halo: [210, 170, 90], steam: [240, 228, 196], steamAt: [30.5, -5.5] },
+  ghost: { name: 'Ghost', short: 'Ghost', paint: paintGhost, props: propsGhost, rim: ['rgba(120,140,160,0.35)', 'rgba(20,30,40,0.5)'],
+    sp: { beam: [190, 228, 255], beam2: [214, 240, 255], halo: [110, 190, 255], mid: [185, 232, 255], tip: [225, 245, 255], sheen: '#e6f4ff' },
+    flood: [[38, 62, 80], [32, 52, 66], [19, 31, 40], [8, 12, 16]], halo: [150, 200, 240], steam: null },
+  witch: { name: 'Witch', short: 'Witch', paint: paintWitch, props: propsWitch, rim: ['rgba(30,14,46,0.45)', 'rgba(5,2,9,0.6)'],
+    sp: { beam: [214, 170, 255], beam2: [230, 196, 255], halo: [180, 80, 255], mid: [222, 160, 255], tip: [236, 210, 255], sheen: '#e9d6ff' },
+    flood: [[60, 30, 82], [50, 25, 68], [30, 15, 41], [12, 6, 16]], halo: [175, 115, 235], steam: [238, 220, 255], steamAt: [30.8, -12.4] },
+};
+const SKIN_IDS = Object.keys(SKINS);
+for (const id of SKIN_IDS) SKINS[id].id = id;
+let skin = SKINS[store.get(LS.skin, 'frank')] || SKINS.frank;
+const KK = (v) => v * k;   // css px → current scale
+
+// tiny helpers for skin art
+function polyPath(c, pts) { c.beginPath(); c.moveTo(KK(pts[0][0]), KK(pts[0][1])); for (let i = 1; i < pts.length; i++) c.lineTo(KK(pts[i][0]), KK(pts[i][1])); c.closePath(); }
+function star(c, x, y, r, rot) {
+  c.beginPath();
+  for (let i = 0; i < 10; i++) { const a = rot + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+  c.closePath();
+}
+
+// ---- Pumpkin: ribbed orange body, carved face lit by a candle (bright under the lamp), stem and vine tendril
+function paintPumpkin(c, m) {
+  const hw = G.capHW, hh = G.capHH;
+  c.fillStyle = vgrad(c, -hh, hh, m ? [[0, '#70401a'], [0.3, '#5f3212'], [0.7, '#4a250c'], [1, '#2c1506']]
+    : [[0, '#f7b65c'], [0.15, '#f1a141'], [0.45, '#e98b2b'], [0.75, '#cf6d1d'], [1, '#a14e14']]);
+  c.fillRect(-hw, -hh, hw * 2, hh * 2);
+  c.lineCap = 'round';
+  for (const x0 of [-34, -22, -10, 10, 22, 34]) {   // ribs: meridians bulging outwards
+    const x = KK(x0), b = KK(x0 / 46 * 5);
+    c.strokeStyle = m ? 'rgba(14,5,1,0.55)' : 'rgba(140,58,8,0.42)'; c.lineWidth = KK(1.3);
+    c.beginPath(); c.moveTo(x - b * 0.3, -hh); c.quadraticCurveTo(x + b, 0, x - b * 0.3, hh); c.stroke();
+    c.strokeStyle = m ? 'rgba(255,170,90,0.07)' : 'rgba(255,216,150,0.3)'; c.lineWidth = KK(1);
+    c.beginPath(); c.moveTo(x - b * 0.3 + KK(1.5), -hh); c.quadraticCurveTo(x + b + KK(1.5), 0, x - b * 0.3 + KK(1.5), hh); c.stroke();
+  }
+  capShade(c, m);
+  // the carved face: eyes, nose and a toothy grin, glowing from inside
+  const face = () => {
+    c.beginPath();
+    for (const e of [[[15, -3], [23, -3], [19, -11]], [[29, -3], [37, -3], [33, -11]], [[24.6, 2.2], [27.4, 2.2], [26, -0.6]]]) {
+      c.moveTo(KK(e[0][0]), KK(e[0][1])); c.lineTo(KK(e[1][0]), KK(e[1][1])); c.lineTo(KK(e[2][0]), KK(e[2][1])); c.closePath();
+    }
+    const top = [[14, 5], [17, 7.4], [19, 5.8], [22, 8.4], [25, 6.6], [28, 8.6], [31, 6.4], [34, 8], [38, 5]];
+    c.moveTo(KK(top[0][0]), KK(top[0][1]));
+    for (const [x, y] of top.slice(1)) c.lineTo(KK(x), KK(y));
+    c.quadraticCurveTo(KK(26), KK(19), KK(14), KK(5)); c.closePath();
+  };
+  const g = c.createRadialGradient(KK(26), KK(2), 0, KK(26), KK(2), KK(15));
+  if (m) { g.addColorStop(0, '#fff3b8'); g.addColorStop(0.45, '#ffc045'); g.addColorStop(1, '#ee7a10'); }
+  else { g.addColorStop(0, '#ffb24a'); g.addColorStop(0.5, '#9a4a0c'); g.addColorStop(1, '#55260a'); }
+  c.save();
+  if (m) { c.shadowColor = 'rgba(255,170,40,0.95)'; c.shadowBlur = KK(6) * dpr; }
+  face(); c.fillStyle = g; c.fill();
+  c.restore();
+  face(); c.strokeStyle = m ? 'rgba(80,30,0,0.6)' : 'rgba(90,40,6,0.55)'; c.lineWidth = KK(0.5); c.stroke();
+}
+function propsPumpkin(c, m) {
+  const hh = G.capHH, x = KK(25.4);
+  // curved woody stem on top
+  c.save();
+  const sg = c.createLinearGradient(x - KK(3), 0, x + KK(3), 0);
+  sg.addColorStop(0, m ? '#1b1f0f' : '#4a5626'); sg.addColorStop(0.45, m ? '#2f361a' : '#7c8c45'); sg.addColorStop(1, m ? '#14170b' : '#3c461d');
+  c.fillStyle = sg;
+  c.beginPath(); c.moveTo(x - KK(3.2), -hh + KK(1.2));
+  c.quadraticCurveTo(x - KK(2.4), -hh - KK(5), x + KK(0.6), -hh - KK(8.6));
+  c.lineTo(x + KK(3.4), -hh - KK(7.4));
+  c.quadraticCurveTo(x + KK(1.2), -hh - KK(4), x + KK(3), -hh + KK(1.2)); c.closePath(); c.fill();
+  c.strokeStyle = m ? 'rgba(0,0,0,0.5)' : 'rgba(40,46,18,0.6)'; c.lineWidth = KK(0.4); c.stroke();
+  c.fillStyle = m ? '#3a3a2a' : '#b9a77a'; c.beginPath(); c.ellipse(x + KK(2), -hh - KK(8), KK(1.7), KK(0.9), -0.5, 0, 7); c.fill();   // cut end
+  // a small leaf by the stem
+  c.fillStyle = m ? '#25301a' : '#6e8c3a';
+  c.beginPath(); c.moveTo(x - KK(2.4), -hh + KK(0.6)); c.quadraticCurveTo(x - KK(9), -hh - KK(5.5), x - KK(11), -hh - KK(1.5));
+  c.quadraticCurveTo(x - KK(6.5), -hh + KK(1.6), x - KK(2.4), -hh + KK(0.6)); c.fill();
+  c.strokeStyle = m ? 'rgba(0,0,0,0.35)' : 'rgba(60,80,30,0.7)'; c.lineWidth = KK(0.35);
+  c.beginPath(); c.moveTo(x - KK(2.6), -hh + KK(0.4)); c.quadraticCurveTo(x - KK(7), -hh - KK(2.4), x - KK(10.4), -hh - KK(1.5)); c.stroke();
+  // a curly tendril underneath: out to the side, then a tightening spiral
+  c.strokeStyle = m ? '#2a3418' : '#5f7a30'; c.lineWidth = KK(0.8); c.lineCap = 'round';
+  const ox = x - KK(6.5), oy = hh + KK(6);
+  c.beginPath(); c.moveTo(x - KK(2), hh - KK(0.6));
+  c.quadraticCurveTo(x - KK(3), hh + KK(3), ox, oy - KK(2.4));
+  for (let i = 1; i <= 40; i++) { const u = i / 40, a = -Math.PI / 2 - u * Math.PI * 3.2, r = KK(2.4 * (1 - u) + 0.4 * u); c.lineTo(ox + Math.cos(a) * r, oy + Math.sin(a) * r); }
+  c.stroke();
+  c.restore();
+}
+
+// ---- Vampire: satin crimson-black body with gold trim, a ruby crest, tiny fangs; a bat perched on top
+function paintVampire(c, m) {
+  const hw = G.capHW, hh = G.capHH;
+  c.fillStyle = vgrad(c, -hh, hh, m ? [[0, '#300b12'], [0.4, '#22070c'], [1, '#0d0204']]
+    : [[0, '#6e1b26'], [0.14, '#82232f'], [0.32, '#5e1320'], [0.62, '#3e0b15'], [1, '#22050a']]);
+  c.fillRect(-hw, -hh, hw * 2, hh * 2);
+  const sh = c.createLinearGradient(0, -hh, 0, hh);   // satin sheen
+  sh.addColorStop(0.18, 'rgba(255,255,255,0)'); sh.addColorStop(0.3, m ? 'rgba(255,200,210,0.05)' : 'rgba(255,220,226,0.2)'); sh.addColorStop(0.45, 'rgba(255,255,255,0)');
+  c.fillStyle = sh; c.fillRect(-hw, -hh, hw * 2, hh * 2);
+  capShade(c, m);
+  const gold = m ? '#6f5a28' : '#d8b45c', goldD = m ? '#3e3216' : '#8f6f2a';
+  c.strokeStyle = gold; c.lineWidth = KK(0.8);
+  for (const y of [-hh + KK(2.6), hh - KK(2.6)]) { c.beginPath(); c.moveTo(-hw + KK(6), y); c.lineTo(hw - KK(6), y); c.stroke(); }
+  // crest: gold oval with a ruby and little flourishes
+  c.save(); c.translate(KK(25.4), KK(1));
+  c.strokeStyle = gold; c.lineWidth = KK(0.7);
+  for (const s of [-1, 1]) { c.beginPath(); c.moveTo(s * KK(6.2), 0); c.bezierCurveTo(s * KK(9), KK(-5), s * KK(12), KK(-1), s * KK(10.5), KK(3)); c.stroke(); }
+  const og = c.createLinearGradient(0, KK(-7), 0, KK(7)); og.addColorStop(0, gold); og.addColorStop(1, goldD);
+  c.fillStyle = og; c.beginPath(); c.ellipse(0, 0, KK(5.6), KK(7), 0, 0, 7); c.fill();
+  const rg = c.createRadialGradient(KK(-1), KK(-1.5), 0, 0, 0, KK(3.8));
+  rg.addColorStop(0, m ? '#ff6a7a' : '#ff9aa6'); rg.addColorStop(0.4, m ? '#b0102a' : '#d81d3c'); rg.addColorStop(1, m ? '#40040e' : '#6a0618');
+  if (m) { c.shadowColor = 'rgba(255,40,70,0.8)'; c.shadowBlur = KK(4) * dpr; }
+  c.fillStyle = rg; c.beginPath(); c.ellipse(0, 0, KK(3.4), KK(4.4), 0, 0, 7); c.fill();
+  c.shadowBlur = 0; c.fillStyle = 'rgba(255,255,255,0.55)'; c.beginPath(); c.ellipse(KK(-1.1), KK(-1.8), KK(1), KK(0.6), -0.5, 0, 7); c.fill();
+  c.restore();
+}
+function propsVampire(c, m) {
+  const hh = G.capHH, x = KK(25.4);
+  // two little fangs under the crest, one with a drop of blood
+  for (const fx0 of [21.6, 26.6]) {
+    c.fillStyle = m ? '#cfc8bc' : '#fbf7ee'; c.strokeStyle = m ? 'rgba(0,0,0,0.6)' : 'rgba(90,60,60,0.55)'; c.lineWidth = KK(0.3);
+    c.beginPath(); c.moveTo(KK(fx0), hh - KK(0.6)); c.lineTo(KK(fx0 + 2.6), hh - KK(0.6));
+    c.quadraticCurveTo(KK(fx0 + 2.3), hh + KK(2.6), KK(fx0 + 1.3), hh + KK(4.6)); c.quadraticCurveTo(KK(fx0 + 0.4), hh + KK(2.6), KK(fx0), hh - KK(0.6));
+    c.fill(); c.stroke();
+  }
+  c.fillStyle = m ? '#7a0a1a' : '#c3122e';
+  c.beginPath(); c.moveTo(KK(22.9), hh + KK(5)); c.quadraticCurveTo(KK(23.9), hh + KK(6.6), KK(22.9), hh + KK(7.2)); c.quadraticCurveTo(KK(21.9), hh + KK(6.6), KK(22.9), hh + KK(5)); c.fill();
+  // a bat perched on top, wings half spread
+  c.save(); c.translate(x, -hh + KK(0.6));
+  c.fillStyle = m ? '#0b0709' : '#251c21';
+  for (const sd of [-1, 1]) {
+    c.beginPath(); c.moveTo(sd * KK(1.4), KK(-5.8));
+    c.quadraticCurveTo(sd * KK(4), KK(-9.6), sd * KK(6.2), KK(-9.8));
+    c.quadraticCurveTo(sd * KK(9), KK(-9.6), sd * KK(11.6), KK(-7.2));
+    c.quadraticCurveTo(sd * KK(10.2), KK(-6.2), sd * KK(9.2), KK(-4.4));
+    c.quadraticCurveTo(sd * KK(7.9), KK(-5.6), sd * KK(6.4), KK(-3.8));
+    c.quadraticCurveTo(sd * KK(4.6), KK(-5), sd * KK(1.6), KK(-2.8));
+    c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(sd * KK(0.6), KK(-9.2)); c.lineTo(sd * KK(1.9), KK(-11.6)); c.lineTo(sd * KK(1.9), KK(-8.6)); c.closePath(); c.fill();   // ears
+  }
+  c.beginPath(); c.ellipse(0, KK(-4.2), KK(2.2), KK(3.2), 0, 0, 7); c.fill();   // body
+  c.beginPath(); c.arc(0, KK(-7.8), KK(2), 0, 7); c.fill();                       // head
+  c.strokeStyle = c.fillStyle; c.lineWidth = KK(0.5); c.lineCap = 'round';
+  c.beginPath(); c.moveTo(KK(-0.8), KK(-1.4)); c.lineTo(KK(-1), KK(0.3)); c.moveTo(KK(0.8), KK(-1.4)); c.lineTo(KK(1), KK(0.3)); c.stroke();   // feet
+  c.fillStyle = m ? '#ff4060' : '#d8304a';
+  for (const ex of [-0.75, 0.75]) { c.beginPath(); c.arc(KK(ex), KK(-8), KK(0.45), 0, 7); c.fill(); }
+  c.restore();
+}
+
+// ---- Mummy: parchment bandages wrapped at slight angles with frayed edges, an eye peeking through a gap
+function paintMummy(c, m) {
+  const hw = G.capHW, hh = G.capHH, R = mulberry(77 + m);
+  c.fillStyle = m ? '#3c3529' : '#c9b994'; c.fillRect(-hw, -hh, hw * 2, hh * 2);
+  const bands = [[-18, -0.12], [-12, 0.1], [-6, -0.06], [0, 0.14], [6, -0.1], [12, 0.08], [18, -0.14], [-24, 0.05]];
+  for (const [y0, ang] of bands) {
+    c.save(); c.translate(0, KK(y0)); c.rotate(ang);
+    const h = KK(6 + R() * 1.6), light = R();
+    const bg = c.createLinearGradient(0, -h / 2, 0, h / 2);
+    bg.addColorStop(0, m ? `rgb(${86 + light * 14 | 0},${78 + light * 12 | 0},${62 + light * 10 | 0})` : `rgb(${236 + light * 12 | 0},${226 + light * 12 | 0},${200 + light * 14 | 0})`);
+    bg.addColorStop(1, m ? 'rgb(56,50,39)' : 'rgb(196,182,148)');
+    c.fillStyle = bg; c.fillRect(-hw - KK(8), -h / 2, hw * 2 + KK(16), h);
+    c.strokeStyle = m ? 'rgba(10,8,5,0.5)' : 'rgba(120,100,66,0.45)'; c.lineWidth = KK(0.4);
+    c.beginPath(); c.moveTo(-hw - KK(8), h / 2); c.lineTo(hw + KK(8), h / 2); c.stroke();
+    c.strokeStyle = m ? 'rgba(110,100,80,0.35)' : 'rgba(250,244,226,0.7)'; c.lineWidth = KK(0.3);   // frayed threads
+    for (let i = 0; i < 6; i++) { const fx = lerp(-hw, hw, R()); c.beginPath(); c.moveTo(fx, h / 2); c.lineTo(fx + KK(R() * 2 - 1), h / 2 + KK(1 + R() * 1.5)); c.stroke(); }
+    c.restore();
+  }
+  for (let i = 0; i < 7; i++) {   // old stains
+    const x = lerp(-hw, hw, R()), y = lerp(-hh, hh, R()), r = KK(2 + R() * 4);
+    const st = c.createRadialGradient(x, y, 0, x, y, r); st.addColorStop(0, m ? 'rgba(0,0,0,0.18)' : 'rgba(120,90,40,0.18)'); st.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = st; c.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  capShade(c, m);
+  // a dark gap between two wraps with a glowing eye
+  c.fillStyle = m ? '#090705' : '#2a2116'; c.beginPath(); c.ellipse(KK(27), KK(-2.5), KK(8), KK(2.6), -0.08, 0, 7); c.fill();
+  const eg = c.createRadialGradient(KK(28), KK(-2.6), 0, KK(28), KK(-2.6), KK(2.6));
+  eg.addColorStop(0, m ? '#f8ffb0' : '#e8f080'); eg.addColorStop(0.5, m ? '#b8e040' : '#9aa83a'); eg.addColorStop(1, 'rgba(120,160,20,0)');
+  c.save(); if (m) { c.shadowColor = 'rgba(200,255,90,0.9)'; c.shadowBlur = KK(5) * dpr; }
+  c.fillStyle = eg; c.beginPath(); c.ellipse(KK(28), KK(-2.6), KK(2.4), KK(1.6), 0, 0, 7); c.fill(); c.restore();
+  c.fillStyle = '#100c06'; c.beginPath(); c.ellipse(KK(28.3), KK(-2.6), KK(0.7), KK(1.1), 0, 0, 7); c.fill();
+}
+function propsMummy(c, m) {
+  const hh = G.capHH, x = KK(25.4);
+  // a loose bandage tail hanging down, and a frayed end flicking up
+  const col = m ? '#4a4334' : '#ddd0b2', edge = m ? 'rgba(10,8,5,0.6)' : 'rgba(130,110,76,0.6)';
+  c.fillStyle = col; c.strokeStyle = edge; c.lineWidth = KK(0.4);
+  c.beginPath(); c.moveTo(x - KK(4), hh - KK(1)); c.bezierCurveTo(x - KK(3), hh + KK(5), x + KK(2), hh + KK(6), x + KK(1), hh + KK(12));
+  c.lineTo(x + KK(5), hh + KK(11.5)); c.bezierCurveTo(x + KK(6), hh + KK(5), x + KK(1), hh + KK(3), x + KK(1), hh - KK(1)); c.closePath(); c.fill(); c.stroke();
+  c.strokeStyle = m ? 'rgba(100,90,70,0.6)' : 'rgba(225,214,186,0.95)';
+  for (let i = 0; i < 5; i++) { const fx = x + KK(1.4 + i * 0.8); c.beginPath(); c.moveTo(fx, hh + KK(11.6)); c.lineTo(fx + KK((i % 2 ? 0.6 : -0.4)), hh + KK(13.6 + (i % 3) * 0.6)); c.stroke(); }
+  c.fillStyle = col; c.strokeStyle = edge;
+  c.beginPath(); c.moveTo(x - KK(1.5), -hh + KK(1)); c.quadraticCurveTo(x + KK(1), -hh - KK(4), x + KK(5.5), -hh - KK(5));
+  c.lineTo(x + KK(6), -hh - KK(2.4)); c.quadraticCurveTo(x + KK(2.5), -hh - KK(1.5), x + KK(2), -hh + KK(1)); c.closePath(); c.fill(); c.stroke();
+}
+
+// ---- Ghost: pale body with the rail faintly showing through, a sweet face with blush; a tiny chain and ball
+function paintGhost(c, m) {
+  const hw = G.capHW, hh = G.capHH;
+  c.fillStyle = vgrad(c, -hh, hh, m ? [[0, '#a3b7c5'], [0.5, '#8297a8'], [1, '#556a7a']]
+    : [[0, '#ffffff'], [0.4, '#f1f6f9'], [0.8, '#d8e3ea'], [1, '#bccad4']]);
+  c.fillRect(-hw, -hh, hw * 2, hh * 2);
+  // see-through: the pipe shows faintly through the body
+  const ry = G.railY - G.capCY, rt = (G.railB - G.railT) / 2;
+  const rg = c.createLinearGradient(0, ry - rt, 0, ry + rt);
+  rg.addColorStop(0, 'rgba(60,70,80,0)'); rg.addColorStop(0.3, m ? 'rgba(20,28,36,0.16)' : 'rgba(80,92,104,0.12)'); rg.addColorStop(0.7, m ? 'rgba(20,28,36,0.2)' : 'rgba(80,92,104,0.15)'); rg.addColorStop(1, 'rgba(60,70,80,0)');
+  c.fillStyle = rg; c.fillRect(-hw, ry - rt, hw * 2, rt * 2);
+  capShade(c, m);
+  if (m) { const gl = c.createRadialGradient(0, 0, 0, 0, 0, hw); gl.addColorStop(0, 'rgba(200,235,255,0.18)'); gl.addColorStop(1, 'rgba(200,235,255,0)'); c.fillStyle = gl; c.fillRect(-hw, -hh, hw * 2, hh * 2); }
+  // face
+  c.fillStyle = m ? '#0d1418' : '#1f2328';
+  for (const ex of [20.5, 31.5]) { c.beginPath(); c.ellipse(KK(ex), KK(-4), KK(2.5), KK(3.5), 0, 0, 7); c.fill(); }
+  c.fillStyle = 'rgba(255,255,255,0.85)';
+  for (const ex of [19.8, 30.8]) { c.beginPath(); c.arc(KK(ex), KK(-5.2), KK(0.8), 0, 7); c.fill(); }
+  c.fillStyle = m ? '#0d1418' : '#2a2f36'; c.beginPath(); c.ellipse(KK(26), KK(5.4), KK(2), KK(2.7), 0, 0, 7); c.fill();
+  c.fillStyle = m ? 'rgba(255,150,180,0.22)' : 'rgba(255,140,160,0.35)';
+  for (const bx of [14.6, 37.4]) { c.beginPath(); c.ellipse(KK(bx), KK(1.8), KK(2.6), KK(1.4), 0, 0, 7); c.fill(); }
+}
+function propsGhost(c, m) {
+  const hh = G.capHH, x = KK(25.4);
+  // a little shackle chain with an iron ball
+  c.strokeStyle = m ? '#2c3238' : '#6f7880'; c.lineWidth = KK(0.85);
+  for (let i = 0; i < 3; i++) { c.beginPath(); c.ellipse(x + KK(i % 2 ? 0.3 : -0.3), hh + KK(1.7 + i * 3), KK(1.3), KK(1.9), i % 2 ? 0 : 0.35, 0, 7); c.stroke(); }
+  const by = hh + KK(12.4);
+  const bg = c.createRadialGradient(x - KK(1.2), by - KK(1.2), 0, x, by, KK(3.6));
+  bg.addColorStop(0, m ? '#4a5258' : '#a3abb2'); bg.addColorStop(1, m ? '#121619' : '#3a4046');
+  c.fillStyle = bg; c.beginPath(); c.arc(x, by, KK(3.6), 0, 7); c.fill();
+}
+
+// ---- Witch: deep purple body with gold stars and a crescent moon, a belt with a silver buckle; a pointy hat
+// on top and a little potion bottle hanging below
+function paintWitch(c, m) {
+  const hw = G.capHW, hh = G.capHH, R = mulberry(5 + m);
+  c.fillStyle = vgrad(c, -hh, hh, m ? [[0, '#2e2244'], [0.5, '#221833'], [1, '#120c1c']]
+    : [[0, '#714f9a'], [0.2, '#64438b'], [0.5, '#533775'], [0.8, '#3f2858'], [1, '#2b1a40']]);
+  c.fillRect(-hw, -hh, hw * 2, hh * 2);
+  capShade(c, m);
+  const gold = m ? '#8a7430' : '#f2d36a';
+  for (const [x, y, r] of [[-40, -9, 1.6], [-31, -14, 1.1], [-20, -8, 1.3], [-3, 6, 1], [12, -12, 1.2], [16, 4, 0.9], [38, -12, 1.1], [41, 3, 1.3]]) {
+    c.fillStyle = gold; star(c, KK(x), KK(y), KK(r * 1.4), -Math.PI / 2 + R() * 0.6); c.fill();
+  }
+  // crescent moon
+  c.save(); c.translate(KK(26), KK(-5));
+  if (m) { c.shadowColor = 'rgba(240,210,110,0.7)'; c.shadowBlur = KK(4) * dpr; }
+  c.fillStyle = gold; c.beginPath(); c.arc(0, 0, KK(5.4), 0, 7); c.arc(KK(2.4), KK(-1.4), KK(4.6), 0, 7, true); c.fill('evenodd');
+  c.restore();
+  // belt and buckle
+  const by = KK(SEAM.y);
+  c.fillStyle = m ? '#08060b' : '#1d1424'; c.fillRect(-hw, by - KK(2), hw * 2, KK(4));
+  c.strokeStyle = m ? '#6e6a74' : '#d9d4de'; c.lineWidth = KK(0.9); c.strokeRect(KK(22), by - KK(2.6), KK(6.8), KK(5.2));
+  c.fillStyle = m ? '#6e6a74' : '#d9d4de'; c.fillRect(KK(25), by - KK(1.6), KK(0.9), KK(3.2));
+}
+function propsWitch(c, m) {
+  const hh = G.capHH, x = KK(25.4);
+  // pointy hat with a bent tip and a purple band
+  c.save(); c.translate(x, -hh + KK(0.4)); c.scale(1.15, 1.15);
+  c.fillStyle = m ? '#0a080d' : '#1c1622';
+  c.beginPath(); c.ellipse(0, 0, KK(7), KK(1.8), 0, 0, 7); c.fill();
+  c.beginPath(); c.moveTo(KK(-4.4), KK(-0.6)); c.quadraticCurveTo(KK(-2), KK(-8), KK(0.4), KK(-13));
+  c.quadraticCurveTo(KK(2.8), KK(-15.5), KK(5.4), KK(-12.4)); c.quadraticCurveTo(KK(2.6), KK(-11.6), KK(1.8), KK(-9.6));
+  c.quadraticCurveTo(KK(3), KK(-5), KK(4.4), KK(-0.6)); c.closePath(); c.fill();
+  c.fillStyle = m ? '#3c2458' : '#8a52c4'; c.beginPath(); c.moveTo(KK(-4.2), KK(-1.4)); c.lineTo(KK(4.2), KK(-1.4)); c.lineTo(KK(3.6), KK(-3.3)); c.lineTo(KK(-3.4), KK(-3.3)); c.closePath(); c.fill();
+  c.fillStyle = m ? '#8a7430' : '#f2d36a'; c.fillRect(KK(-0.9), KK(-3.2), KK(1.8), KK(1.7));
+  c.restore();
+  // a little potion flask hanging on a string, its liquid glowing under the lamp
+  c.strokeStyle = m ? '#4a4038' : '#8b7d6c'; c.lineWidth = KK(0.4);
+  c.beginPath(); c.moveTo(x, hh); c.lineTo(x, hh + KK(3.2)); c.stroke();
+  c.fillStyle = m ? '#3a2f26' : '#8a6a4a'; c.fillRect(x - KK(1), hh + KK(3), KK(2), KK(1.6));                 // cork
+  c.fillStyle = m ? 'rgba(120,140,130,0.5)' : 'rgba(200,225,215,0.85)'; c.fillRect(x - KK(1.2), hh + KK(4.5), KK(2.4), KK(1.8));   // neck
+  const fy = hh + KK(9.1), fr = KK(3.6);
+  c.save();
+  c.fillStyle = m ? 'rgba(90,110,100,0.55)' : 'rgba(205,228,218,0.9)'; c.beginPath(); c.arc(x, fy, fr, 0, 7); c.fill();
+  c.beginPath(); c.arc(x, fy, fr - KK(0.4), 0, 7); c.clip();
+  const pg = c.createRadialGradient(x - KK(1), fy, 0, x, fy + KK(1), fr);
+  pg.addColorStop(0, m ? '#b8ffb0' : '#c8ffb8'); pg.addColorStop(0.5, m ? '#36c050' : '#3cc15a'); pg.addColorStop(1, m ? '#0e4a1c' : '#177a30');
+  if (m) { c.shadowColor = 'rgba(80,255,120,0.8)'; c.shadowBlur = KK(4) * dpr; }
+  c.fillStyle = pg; c.fillRect(x - fr, fy - KK(1.2), fr * 2, fr * 2);
+  c.restore();
+  c.fillStyle = 'rgba(255,255,255,0.6)'; c.beginPath(); c.ellipse(x - KK(1.4), fy - KK(1.6), KK(0.9), KK(0.5), -0.6, 0, 7); c.fill();   // glint
 }
 
 /* ------------------------------------------------- small cached sprites -- */
@@ -1033,6 +1369,7 @@ function keepCaretAtEnd() {
   try { if (input.selectionStart !== n || input.selectionEnd !== n) input.setSelectionRange(n, n); } catch (e) {}
 }
 input.addEventListener('input', syncInput);
+input.addEventListener('input', () => closeTray());
 input.addEventListener('select', keepCaretAtEnd);
 input.addEventListener('keyup', keepCaretAtEnd);
 input.addEventListener('click', keepCaretAtEnd);
@@ -1074,9 +1411,9 @@ $('#share').addEventListener('click', async () => {
   }
 });
 let toastTimer = 0;
-function toast(msg) {
+function toast(msg, dur = 1.6) {
   toastEl.textContent = msg; toastEl.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1600);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show'), dur * 1000);
 }
 dialEl.addEventListener('click', () => { lastActivity = now(); setLamp(!lampOn); AU.lampSwitch(lampOn); });
 const FIRST_LINES = [
@@ -1295,7 +1632,13 @@ function draw(t) {
   const pad = CAP_PAD * k, cw = (G.capHW + pad) * 2, chh = (G.capHH + pad) * 2;
   if (cP < 1) { c.globalAlpha = 1; c.drawImage(capCv[0], cx - cw / 2, cy - chh / 2, cw, chh); }
   if (cP > 0) { c.globalAlpha = cP; c.drawImage(capCv[1], cx - cw / 2, cy - chh / 2, cw, chh); }
+  if (swap.t0 && t - swap.t0 < SWAP_DUR) {   // a new skin: the old one melts away under the zap
+    const a = 1 - E.inOutSine(clamp((t - swap.t0) / SWAP_DUR, 0, 1));
+    if (cP < 1) { c.globalAlpha = a; c.drawImage(swap.cv[0], cx - cw / 2, cy - chh / 2, cw, chh); }
+    if (cP > 0) { c.globalAlpha = a * cP; c.drawImage(swap.cv[1], cx - cw / 2, cy - chh / 2, cw, chh); }
+  }
   c.globalAlpha = 1;
+  setStyle(capBtn, 'transform', `translate(${(cx - G.capHW).toFixed(1)}px, ${(cy - G.capHH - 4 * k).toFixed(1)}px)`);
   drawLEDs(c, cx, cy, t, cP);
   // slot glow
   if (sP > 0) {
@@ -1387,8 +1730,9 @@ function drawSparks(c, cx, cy, t, st) {
     c.save(); c.translate(cx, cy); capsulePath(c); c.clip(); c.translate(-cx, -cy);
     const bw = 11 * k, g = c.createLinearGradient(x - bw, 0, x + bw, 0);
     const a = st.beam;
-    g.addColorStop(0, 'rgba(205,200,225,0)'); g.addColorStop(0.3, `rgba(205,200,225,${0.18 * a})`); g.addColorStop(0.5, `rgba(220,215,240,${0.42 * a})`);
-    g.addColorStop(0.7, `rgba(205,200,225,${0.18 * a})`); g.addColorStop(1, 'rgba(205,200,225,0)');
+    const b1 = skin.sp.beam, b2 = skin.sp.beam2;
+    g.addColorStop(0, rgba(b1, 0)); g.addColorStop(0.3, rgba(b1, 0.18 * a)); g.addColorStop(0.5, rgba(b2, 0.42 * a));
+    g.addColorStop(0.7, rgba(b1, 0.18 * a)); g.addColorStop(1, rgba(b1, 0));
     c.fillStyle = g; c.fillRect(x - bw, cy - G.capHH, bw * 2, G.capHH * 2);
     c.restore();
   }
@@ -1397,8 +1741,8 @@ function drawSparks(c, cx, cy, t, st) {
     c.globalAlpha = Math.min(1, st.flash);
     c.drawImage(flashCv, cx + FL.ox, cy + FL.oy, FL.w, FL.h);
     // silver sheen during the after-flash of a big zap
-    if (st.violet > st.white) {
-      c.globalAlpha = Math.min(1, st.flash) * 0.35; c.fillStyle = '#d8d8d5';
+    if (st.violet > st.white && skin.id === 'frank') {
+      c.globalAlpha = Math.min(1, st.flash) * 0.35; c.fillStyle = skin.sp.sheen;
       c.save(); c.translate(cx, cy); capsulePath(c); c.clip(); c.fillRect(SEAM.x1 * k + 1 * k, -hh, (SEAM.x2 - SEAM.x1) * k - 2 * k, hh * 2); c.restore();
     }
     c.globalAlpha = 1;
@@ -1410,8 +1754,8 @@ function drawSparks(c, cx, cy, t, st) {
     const pts = lightningPath(x, yTop + 1.5 * k, yBot - 1.5 * k, fr * 7 + 3, (violet ? 1.7 : 1.45) * k);
     c.save();
     c.lineJoin = 'round'; c.lineCap = 'round';
-    c.strokeStyle = `rgba(165,148,255,${(violet ? 0.32 : 0.22) * bolt})`; c.lineWidth = (violet ? 3.6 : 2.4) * k; strokePts(c, pts);
-    c.strokeStyle = `rgba(200,188,255,${(violet ? 0.75 : 0.6) * bolt})`; c.lineWidth = (violet ? 1.7 : 1.15) * k; strokePts(c, pts);
+    c.strokeStyle = rgba(skin.sp.halo, (violet ? 0.32 : 0.22) * bolt); c.lineWidth = (violet ? 3.6 : 2.4) * k; strokePts(c, pts);
+    c.strokeStyle = rgba(skin.sp.mid, (violet ? 0.75 : 0.6) * bolt); c.lineWidth = (violet ? 1.7 : 1.15) * k; strokePts(c, pts);
     c.strokeStyle = `rgba(255,255,255,${(violet ? 0.45 : 1) * bolt})`; c.lineWidth = 0.72 * k; strokePts(c, pts);
     // a few short straight side discharges
     const R = mulberry(fr * 13 + 5), nb = 1 + ((R() * 3) | 0);
@@ -1426,19 +1770,19 @@ function drawSparks(c, cx, cy, t, st) {
     c.restore();
   }
   if (st.tips > 0.02) {
-    // the bolts light up like chrome: bright streaks along the shafts and hot heads
+    // the bolts light up like chrome: bright streaks along the shafts and hot heads (other skins: a hot glow)
     c.save();
-    const R2 = mulberry(((t * 60) | 0) * 3 + 1);
+    const R2 = mulberry(((t * 60) | 0) * 3 + 1), chrome = skin.id === 'frank', rr = (chrome ? 2.6 : 4) * k;
     for (const [y0, dir] of [[yTop, 1], [yBot, -1]]) {
       // lit threads: short bright dashes stacked along the shaft, and a hot head
-      for (let j = 0; j < 7; j++) {
+      if (chrome) for (let j = 0; j < 7; j++) {
         const yy = y0 + dir * (0.4 + j * 0.9) * k, w = (1.2 + R2() * 2.2) * k;
         c.fillStyle = `rgba(255,255,255,${(0.45 + R2() * 0.5) * st.tips})`;
         c.fillRect(x - w / 2 + (R2() - 0.5) * 0.8 * k, yy, w, 0.45 * k);
       }
-      const hg = c.createRadialGradient(x, y0, 0, x, y0, 2.6 * k);
-      hg.addColorStop(0, `rgba(255,255,255,${0.95 * st.tips})`); hg.addColorStop(1, 'rgba(235,235,255,0)');
-      c.fillStyle = hg; c.fillRect(x - 2.6 * k, y0 - 2.6 * k, 5.2 * k, 5.2 * k);
+      const hg = c.createRadialGradient(x, y0, 0, x, y0, rr);
+      hg.addColorStop(0, `rgba(255,255,255,${0.95 * st.tips})`); hg.addColorStop(1, rgba(skin.sp.tip, 0));
+      c.fillStyle = hg; c.fillRect(x - rr, y0 - rr, rr * 2, rr * 2);
     }
     c.restore();
   }
@@ -1450,14 +1794,15 @@ function drawSteam(c, cx, capTop, t, pP, dt) {
   const idle = t - lastKey;
   const want = lampOn && idle > 0.4 ? 1 : 0;
   steamA = want > steamA ? Math.min(1, steamA + dt / 1.3) : Math.max(0, steamA - dt / 0.3);
-  if (pP < 0.02 || steamA < 0.01) return;
+  const sc = skin.steam;
+  if (pP < 0.02 || steamA < 0.01 || !sc) return;
   const grow = E.outQuad(steamA), blow = want ? 0 : (1 - steamA) * 9 * k;
-  const bx = cx + 27.5 * k, by = capTop - 4.5 * k;
+  const bx = cx + skin.steamAt[0] * k, by = capTop + skin.steamAt[1] * k;
   const a0 = pP * grow * (0.8 + 0.2 * Math.sin(t * 1.7) * Math.sin(t * 0.63 + 1));
   c.save();
   const glow = c.createLinearGradient(0, by, 0, by - 38 * k);
-  glow.addColorStop(0, 'rgba(255,255,250,0)'); glow.addColorStop(0.25, `rgba(255,255,250,${0.12 * a0})`);
-  glow.addColorStop(0.8, `rgba(255,255,250,${0.1 * a0})`); glow.addColorStop(1, 'rgba(255,255,250,0)');
+  glow.addColorStop(0, rgba(sc, 0)); glow.addColorStop(0.25, rgba(sc, 0.12 * a0));
+  glow.addColorStop(0.8, rgba(sc, 0.1 * a0)); glow.addColorStop(1, rgba(sc, 0));
   c.fillStyle = glow; c.fillRect(bx - 6.5 * k, by - 38 * k, 13 * k, 38 * k);
   c.lineWidth = Math.max(0.45, 0.55 * k); c.lineCap = 'round';
   for (let i = 0; i < 14; i++) {
@@ -1467,8 +1812,8 @@ function drawSteam(c, cx, capTop, t, pP, dt) {
     const sw = Math.sin(t * (0.7 + R() * 0.5) + i * 0.8) * 0.8 * k;
     const g = c.createLinearGradient(0, by, 0, by - h);
     const al = (0.3 + R() * 0.35) * a0 * (1 - Math.abs(f - 0.55) * 0.8);
-    g.addColorStop(0, 'rgba(255,255,250,0)'); g.addColorStop(0.15, `rgba(255,255,250,${al})`);
-    g.addColorStop(0.85, `rgba(255,255,250,${al * 0.85})`); g.addColorStop(1, 'rgba(255,255,250,0)');
+    g.addColorStop(0, rgba(sc, 0)); g.addColorStop(0.15, rgba(sc, al));
+    g.addColorStop(0.85, rgba(sc, al * 0.85)); g.addColorStop(1, rgba(sc, 0));
     c.strokeStyle = g;
     c.beginPath(); c.moveTo(x0, by);
     c.bezierCurveTo(x0 + sw * 0.4, by - h * 0.35, x1 - sw * 0.6, by - h * 0.7, x1 + sw * 0.3, by - h);
@@ -1490,7 +1835,8 @@ function drawGlow(c, cx, cy, st, pP) {
   if (paperA > 0.01) {
     const r = 120 * k, gx = cx + 6 * k, gy = cy + 4 * k;
     const g = c.createRadialGradient(gx, gy, 0, gx, gy, r);
-    g.addColorStop(0, `rgba(159,199,133,${0.4 * paperA})`); g.addColorStop(0.4, `rgba(159,199,133,${0.24 * paperA})`); g.addColorStop(1, 'rgba(159,199,133,0)');
+    const hc = skin.halo;
+    g.addColorStop(0, rgba(hc, 0.4 * paperA)); g.addColorStop(0.4, rgba(hc, 0.24 * paperA)); g.addColorStop(1, rgba(hc, 0));
     c.fillStyle = g; c.fillRect(gx - r, gy - r, r * 2, r * 2);
   }
 }
@@ -1956,6 +2302,31 @@ const AU = {
     this.zap(1.05);
     this.ding(t0 + 0.02);
   },
+  skinSwap(id) {
+    if (!this.ready()) return; const t = this.ctx.currentTime + 0.004;
+    // a rising "transform" sweep under the zap, then the new skin's own little signature
+    this.tone(t, { f: 260, f2: 1300, type: 'triangle', gain: 0.06, a: 0.01, d: 0.24 });
+    this.burst(t, { f: 4200, type: 'highpass', q: 0.7, gain: 0.16, a: 0.03, d: 0.14 });
+    this.zap(0.55);
+    const s = t + 0.26;
+    if (id === 'pumpkin') {          // a hollow wooden bonk
+      this.tone(s, { f: 190, f2: 120, gain: 0.3, a: 0.002, d: 0.16 });
+      this.burst(s, { f: 420, q: 2.5, gain: 0.5, a: 0.002, d: 0.08 });
+    } else if (id === 'vampire') {   // bat wings fluttering past
+      for (let i = 0; i < 9; i++) this.burst(s + i * 0.045, { f: 900 + i * 60, q: 1.6, gain: 0.22 * (1 - i / 10), a: 0.004, d: 0.025 });
+    } else if (id === 'mummy') {     // a dusty rustle and a low groan
+      this.burst(s, { f: 1200, type: 'lowpass', q: 0.5, gain: 0.12, a: 0.12, d: 0.3 });
+      this.tone(s + 0.05, { f: 82, f2: 64, type: 'sawtooth', gain: 0.05, a: 0.08, d: 0.45 });
+    } else if (id === 'ghost') {     // a soft "oooOOooo"
+      const o = this.ctx.createOscillator(), v = this.ctx.createOscillator(), vg = this.ctx.createGain(), g = this.ctx.createGain();
+      o.frequency.setValueAtTime(470, s); o.frequency.linearRampToValueAtTime(640, s + 0.35); o.frequency.linearRampToValueAtTime(430, s + 0.9);
+      v.frequency.value = 5.5; vg.gain.value = 9; v.connect(vg); vg.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(0.07, s + 0.18); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.95);
+      o.connect(g); g.connect(this.sfx); g.connect(this.verb); o.start(s); v.start(s); o.stop(s + 1); v.stop(s + 1);
+    } else if (id === 'witch') {     // a sparkle of magic
+      [1568, 1976, 2349, 2637, 3136, 3951].forEach((f, i) => this.tone(s + i * 0.045, { f, type: 'triangle', gain: 0.035, a: 0.002, d: 0.22 }));
+    }
+  },
   ding(t) {
     const f = 2093 * (0.995 + Math.random() * 0.01);
     // kept soft: the brief asks for a ding, the recording's return has none audible over the music
@@ -1964,6 +2335,11 @@ const AU = {
       o.frequency.value = f * mul; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gn, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
       o.connect(g); g.connect(this.sfx); g.connect(this.verb); o.start(t); o.stop(t + d + 0.05);
     }
+  },
+  trayClick() {
+    if (!this.ready()) return; const t = this.ctx.currentTime + 0.003;
+    this.burst(t, { f: 3000, type: 'highpass', q: 0.7, gain: 0.12, d: 0.008 });
+    this.tone(t, { f: 700, f2: 980, type: 'triangle', gain: 0.03, d: 0.05 });
   },
   lampSwitch(on) {
     if (!this.ready()) return; const t = this.ctx.currentTime + 0.003;
@@ -2159,6 +2535,112 @@ function paintSound() {
 soundBtn.addEventListener('click', () => { AU.setOn(!AU.on); paintSound(); });
 paintSound();
 
+/* ---------------------------------------------------------- skin picker -- */
+// tap the capsule to open a little tray of skins (the choice is remembered). Nothing here takes focus from the
+// hidden textarea, so the phone keyboard stays up; keyboard users get focus moved into the tray.
+const capBtn = $('#capBtn'), skinTray = $('#skinTray');
+const SWAP_DUR = 0.42;
+const swap = { t0: 0, cv: [document.createElement('canvas'), document.createElement('canvas')] };
+let trayOpen = false, trayKey = '', trayTimer = 0;
+function applySkinGlow() {
+  const f = skin.flood;   // frank keeps the recorded green flood from the stylesheet
+  glowEl.style.background = f ? `radial-gradient(closest-side, ${rgba(f[0])} 0%, ${rgba(f[1])} 25%, ${rgba(f[2])} 50%, ${rgba(f[3])} 75%, rgba(0,0,0,0) 100%)` : '';
+}
+function layoutSkinUI() {
+  capBtn.style.width = (G.capHW * 2) + 'px'; capBtn.style.height = (G.capHH * 2 + 8 * k) + 'px';
+  skinTray.style.top = (G.capCY + G.capHH + 18 * k) + 'px';
+  skinTray.style.gridTemplateColumns = `repeat(${W >= 360 ? 6 : 3}, auto)`;
+  trayKey = '';   // swatches are redrawn at the new size the next time the tray opens
+}
+function markTray() {
+  for (const b of skinTray.children) {
+    const on = b.dataset.id === skin.id;
+    b.setAttribute('aria-checked', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
+  }
+}
+function buildTray() {
+  if (!skinTray.children.length) {
+    for (const id of SKIN_IDS) {
+      const b = document.createElement('button');
+      b.className = 'skin'; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', SKINS[id].name); b.dataset.id = id;
+      b.innerHTML = `<canvas aria-hidden="true"></canvas><span>${SKINS[id].short}</span>`;
+      b.addEventListener('mousedown', (e) => e.preventDefault());
+      b.addEventListener('click', (e) => pickSkin(id, e.detail === 0));
+      skinTray.appendChild(b);
+    }
+  }
+  const key = k.toFixed(4) + '/' + dpr;
+  if (key !== trayKey) {   // each swatch is the skin's real light-mode sprite, cropped around the body and props
+    trayKey = key;
+    const tmp = document.createElement('canvas'), pad = CAP_PAD * k, ex = 4 * k, ey = 16 * k;
+    const cw = 46, ch = Math.round(cw * (G.capHH + ey) / (G.capHW + ex));
+    for (const b of skinTray.children) {
+      renderCapsule(tmp, SKINS[b.dataset.id], 0);
+      const cv = b.querySelector('canvas');
+      cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); cv.style.width = cw + 'px'; cv.style.height = ch + 'px';
+      const c = cv.getContext('2d'); c.imageSmoothingQuality = 'high';
+      c.drawImage(tmp, (pad - ex) * dpr, (pad - ey) * dpr, (G.capHW + ex) * 2 * dpr, (G.capHH + ey) * 2 * dpr, 0, 0, cv.width, cv.height);
+    }
+  }
+  markTray();
+}
+function openTray(kb) {
+  buildTray();
+  trayOpen = true; skinTray.classList.add('open'); capBtn.setAttribute('aria-expanded', 'true');
+  clearTimeout(trayTimer);
+  AU.trayClick(true);
+  if (kb) { const b = skinTray.querySelector('[aria-checked="true"]'); if (b) b.focus(); }
+}
+function closeTray(kb) {
+  if (!trayOpen) return;
+  trayOpen = false; skinTray.classList.remove('open'); capBtn.setAttribute('aria-expanded', 'false');
+  clearTimeout(trayTimer);
+  if (kb || skinTray.contains(document.activeElement)) capBtn.focus();
+}
+function pickSkin(id, kb) {
+  lastActivity = now();
+  setSkin(id); markTray();
+  clearTimeout(trayTimer); trayTimer = setTimeout(() => closeTray(kb), 380);
+}
+function setSkin(id) {
+  const next = SKINS[id];
+  if (!next || next === skin) return;
+  for (let m = 0; m < 2; m++) {   // keep the old look for the cross-fade
+    const o = swap.cv[m]; o.width = capCv[m].width; o.height = capCv[m].height;
+    o.getContext('2d').drawImage(capCv[m], 0, 0);
+  }
+  skin = next; store.set(LS.skin, id);
+  if (!tipDone) { tipDone = true; store.set(LS.tip, '1'); }
+  buildCapsules(); applySkinGlow();
+  swap.t0 = now(); lastActivity = swap.t0;
+  fx.zap(true, 0.9); AU.skinSwap(id);
+}
+capBtn.addEventListener('click', (e) => {
+  lastActivity = now();
+  if (trayOpen) closeTray(e.detail === 0); else openTray(e.detail === 0);
+});
+skinTray.addEventListener('keydown', (e) => {
+  const n = SKIN_IDS.length, i = SKIN_IDS.indexOf(skin.id);
+  let j = -1;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = (i + 1) % n;
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = (i + n - 1) % n;
+  else if (e.key === 'Home') j = 0; else if (e.key === 'End') j = n - 1;
+  if (j < 0) return;
+  e.preventDefault();
+  lastActivity = now(); setSkin(SKIN_IDS[j]); markTray(); skinTray.children[j].focus();
+  clearTimeout(trayTimer);
+});
+document.addEventListener('pointerdown', (e) => { if (trayOpen && !skinTray.contains(e.target) && e.target !== capBtn) closeTray(); }, true);
+document.addEventListener('keydown', (e) => { if (trayOpen && e.key === 'Escape') { e.preventDefault(); closeTray(true); } });
+applySkinGlow();
+// a one-time tip, well after the start (the opening of a session stays exactly as recorded)
+let tipDone = store.get(LS.tip, '') === '1';
+function updateTip(t) {
+  if (tipDone || t < 40 || trayOpen || t - Math.max(lastKey, lastActivity) < 2.5) return;
+  tipDone = true; store.set(LS.tip, '1');
+  toast('Tap the capsule for Halloween skins', 3.2);
+}
+
 /* ---------------------------------------------------------- idle sparks -- */
 let nextIdle = 0, lastActivity = 0, idleFrom = -1, idleRun = 0;
 function updateIdle(t) {
@@ -2204,6 +2686,7 @@ function tick() {
   updateCarriage(t);
   pushCar(t);
   updateIdle(t);
+  updateTip(t);
   stepWebs(dt, t);
   if (appearAt.size > 64) for (const [i, a] of appearAt) if (a < t - 1) appearAt.delete(i);
   if (lightDirty && (lampOn || CH.light.v > 0)) renderLight();

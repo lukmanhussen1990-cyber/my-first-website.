@@ -103,3 +103,22 @@ Fixed: measured bolts/collars/slot/stem, ease-out-cubic paper fade fitted to eve
 growth, light trailing the carriage by ~1.4 frames, dial greys, rail and capsule shadows profiled row by
 row, T-web and rail knot from close-ups, specks sized at full resolution, crisp slot strip.
 **Check 10 done. Next: final delivery (requested now).**
+
+## Check 11 — capsule skins and picker (v11a)
+The recording types "Testing halloween capsule skins", so this round adds them. Tap the capsule (or Tab to
+it and press Enter) to open a small tray with six skins drawn from their real sprites: Frankenstein (the
+recorded one, unchanged), Pumpkin (ribbed, carved face lit by a candle, glowing under the lamp, stem, leaf
+and tendril), Vampire (satin crimson, gold trim, ruby crest, a perched bat, fangs with a drop of blood),
+Mummy (frayed bandages, an eye peeking out of a gap, loose ends), Ghost (see-through to the pipe, a sweet
+face, a little chain and ball) and Witch (stars and moon, belt and buckle, pointy hat, glowing potion).
+Each skin brings its own spark, flood, halo and steam colours, a cross-fade under a zap when it is picked,
+and a short sound (bonk, flutter, rustle and groan, "oooo", magic sparkle). The choice is remembered; the
+tray never takes focus from the hidden textarea (the phone keyboard stays up), closes on typing, outside
+taps or Escape, has arrow/Home/End keys, and fits phones down to 320 px (three columns). A one-time tip
+appears after 40 s of idle use.
+Checked: default skin pixel-identical to v10i on a deterministic replay (≤3 levels) except the capsule's
+light-mode shadow tail, which was cut off by the sprite edge and now fades out like the recording's;
+functest, imetest, hinttest, focustest, reviewfix, new skintest and tiptest pass; audio nodes bounded;
+frame times unchanged.
+**Check 11 done. Next: share as an image card, download .txt, a fresh page with a tear-off, sound modes
+(all / effects only / off), haptics.**
