@@ -34,14 +34,12 @@
   /* fixed + clipped stage: the overhanging effects never widen the mobile layout viewport */
   .stage { position: fixed; inset: 0; display: grid; place-items: center; overflow: hidden; }
   .wrap { position: relative; width: calc(440px * var(--k)); height: calc(259px * var(--k)); }
+  .scaler { position: absolute; left: 0; top: 0; width: 440px; height: 259px; transform-origin: 0 0; transform: scale(var(--k)); }
   .card {
-    position: absolute; left: 0; top: 0;
-    width: 440px; height: 259px;
+    position: absolute; inset: 0;
     border-radius: 14px;
     background: var(--card);
     box-shadow: inset 0 0 0 2px var(--line), 0 16px 40px rgba(0, 0, 0, .3);
-    transform-origin: 0 0;
-    transform: scale(var(--k)) translate(var(--sx, 0px), var(--sy, 0px));
     user-select: none; -webkit-user-select: none;
   }
 
@@ -109,7 +107,8 @@
   }
   .brain svg { position: relative; display: block; width: 60px; height: 60px; overflow: visible; }
 
-  .fx { position: absolute; left: -120px; top: -120px; width: 680px; height: 499px; pointer-events: none; }
+  /* effects only ever happen around the Galaxy end of the track, so the canvases only cover that box */
+  .fx { position: absolute; left: 150px; top: 30px; width: 410px; height: 280px; pointer-events: none; }
   #fxBack { z-index: 2; }
   #fxFront { z-index: 4; }
 
@@ -120,6 +119,7 @@
 <body>
 <div class="stage">
 <main class="wrap" id="wrap">
+ <div class="scaler">
   <section class="card" id="card" aria-label="Effort setting">
     <p class="txt effort" aria-hidden="true">Effort</p>
     <span class="value" id="value" aria-hidden="true"><span class="word">Low</span></span>
@@ -189,6 +189,7 @@
     <p class="txt rec" aria-hidden="true">Recommended</p>
     <p class="sr" id="live" aria-live="polite"></p>
   </section>
+ </div>
 </main>
 </div>
 
@@ -209,7 +210,8 @@
   const BY = TRACK_Y + 20.2;                     // brain centre y (card-local)
   const SVG_PX = 60, SIL_PX = 44;                // svg box vs. silhouette size at scale 1
   const GROW = 0.019, GALAXY_SCALE = 1.32;       // brain grows a little per step, a lot in Galaxy
-  const FX_PAD = 120, FX_W = 680, FX_H = 499;    // fx canvases overhang the card
+  const FX_X = 150, FX_Y = 30, FX_W = 410, FX_H = 280;   // fx canvas box (card-local), see .fx
+  const TICK_MS = 150;                           // "disco" tick of the rays, measured in the video
 
   // Step motion: fitted to the video (RMS error < 0.1%)
   const EASE = cubicBezier(0.206, 0.971, 0.296, 0.994);
@@ -257,24 +259,40 @@
   const pick = (arr) => arr[(Math.random() * arr.length) | 0];
 
   /* ---------------- responsive scale + canvas sizing ---------------- */
-  let K = 1, DPR = 1, R = 1;               // R = backing pixels per card px
+  let K = 0, R = 1;                        // R = canvas backing pixels per card px
   function layout() {
-    K = Math.min(1, (window.innerWidth - 32) / 440);
-    K = Math.max(K, 0.3);
-    DPR = Math.min(window.devicePixelRatio || 1, 3);
-    R = DPR * K;
-    document.documentElement.style.setProperty('--k', K.toFixed(4));
-    sizeCanvas(galaxyCv, TRACK_W, TRACK_H);
-    sizeCanvas(backCv, FX_W, FX_H);
-    sizeCanvas(frontCv, FX_W, FX_H);
+    const k = Math.max(0.3, Math.min(1, (window.innerWidth - 32) / 440));
+    // the pixels are chunky squares, so canvases never need more than 2x backing resolution
+    R = Math.min(window.devicePixelRatio || 1, 2) * k;
+    let resized = sizeCanvas(galaxyCv, TRACK_W, TRACK_H);
+    resized = sizeCanvas(backCv, FX_W, FX_H) || resized;
+    resized = sizeCanvas(frontCv, FX_W, FX_H) || resized;
+    if (resized) { gridFull = true; backDirty = frontDirty = true; gridShown = backShown = frontShown = true; }
+    if (k !== K) {
+      K = k;
+      document.documentElement.style.setProperty('--k', K.toFixed(4));
+    }
     needsDraw = true;
     kick();
   }
   function sizeCanvas(cv, w, h) {
-    cv.width = Math.max(1, Math.round(w * R));
-    cv.height = Math.max(1, Math.round(h * R));
+    const W = Math.max(1, Math.round(w * R)), H = Math.max(1, Math.round(h * R));
+    if (cv.width === W && cv.height === H) return false;
+    cv.width = W;
+    cv.height = H;
+    return true;
   }
-  const snap = (v) => Math.round(v * R) / R;
+  // snap to the device-pixel grid of the fx canvases (which start at FX_X, FX_Y)
+  const snapX = (v) => Math.round((v - FX_X) * R) / R + FX_X;
+  const snapY = (v) => Math.round((v - FX_Y) * R) / R + FX_Y;
+
+  // style writes only when the value really changes (avoids needless style/paint work every frame)
+  const written = new Map();
+  function put(el, key, prop, val) {
+    if (written.get(key) === val) return;
+    written.set(key, val);
+    el.style.setProperty(prop, val);
+  }
 
   /* ======================================================================
      State
@@ -294,7 +312,11 @@
   let fxLevel = 0;             // steady galaxy fx visibility (rays, glow, sparkles)
   let gridLevel = 0;           // galaxy pixel grid visibility
   let squish = 0, squishV = 0;
-  let shakeT0 = -1;
+
+  // redraw bookkeeping for the canvases
+  let gridFull = true, gridShown = false, gridEnd = -1;
+  let backDirty = true, frontDirty = true, backShown = false, frontShown = false;
+  let lastCx = NaN, lastS = NaN, lastFx = 0;
 
   /* ======================================================================
      Label: per-letter blur + slide. The old word drifts up and blurs out,
@@ -444,17 +466,20 @@
     }
   }
 
+  // pixel sparkles on the brain: they pop in and out on the disco tick
   let sparkles = [];
   const SPARK_COLS = ['#ffffff', '#c4f2ff', '#d4ccff', '#9ee9ff'];
-  function updateSparkles(now, dt, active) {
-    sparkles = sparkles.filter((s) => now - s.t0 < s.life * 1000);
+  function tickSparkles(active) {
+    for (const sp of sparkles) sp.ttl--;
+    sparkles = sparkles.filter((sp) => sp.ttl > 0);
     if (!active) return;
-    const want = 7;
-    if (sparkles.length < want && Math.random() < dt * 22) {
-      sparkles.push({
-        x: rand(-19, 19), y: rand(-21, 19), size: pick([2, 2, 2.5, 3]),
-        col: pick(SPARK_COLS), t0: now, life: rand(0.25, 0.8), a: rand(0.65, 1),
-      });
+    for (let i = 0; i < 3 && sparkles.length < 7; i++) {
+      if (Math.random() < 0.85) {
+        sparkles.push({
+          x: rand(-19, 19), y: rand(-21, 19), size: pick([2, 2, 2.5, 3]),
+          col: pick(SPARK_COLS), a: rand(0.65, 1), ttl: 2 + ((Math.random() * 4) | 0),
+        });
+      }
     }
   }
 
@@ -515,13 +540,27 @@
     return g;
   }
 
+  // quick decaying jitter of the card (measured: ~2.4px, ~260ms). A Web Animation of transform runs
+  // on the compositor, so the card is only promoted to its own layer while it shakes.
+  function shakeCard() {
+    if (reduceMotion || !card.animate) return;
+    const N = 16, frames = [];
+    for (let i = 0; i <= N; i++) {
+      const A = i === N ? 0 : 2.4 * Math.pow(1 - i / N, 1.5);
+      frames.push({ offset: i / N, transform: `translate(${rand(-A, A).toFixed(2)}px,${rand(-A, A).toFixed(2)}px)` });
+    }
+    card.animate(frames, { duration: 260, easing: 'linear' });
+  }
+
   function enterGalaxy(now) {
     galaxy = true;
     gEnter = now;
-    shakeT0 = reduceMotion ? -1 : now;
+    shakeCard();
     cells.forEach((c) => { seedCell(c); c.key = Math.random(); });
+    gridFull = true;
     rerollRays();
     rayTick = now;
+    sparkles = [];
     if (!reduceMotion) spawnParticles();
     live.textContent = 'Galaxy mode unlocked';
     kick();
@@ -529,6 +568,7 @@
   function exitGalaxy(now) {
     galaxy = false;
     gExit = now;
+    gridFull = true;
     live.textContent = '';
     kick();
   }
@@ -701,7 +741,7 @@
     animateLabels(now);
 
     const busy = mode !== 'idle' || galaxy || gMix > 0 || fxLevel > 0 || gridLevel > 0 || labelAnims.length ||
-      particles.length || sparkles.length || squish !== 0 || gAmt !== 0 || shakeT0 >= 0 || needsDraw;
+      particles.length || squish !== 0 || gAmt !== 0 || needsDraw;
     needsDraw = false;
     if (busy) requestAnimationFrame(frame); else running = false;
   }
@@ -715,98 +755,118 @@
     const s = brainScale();
 
     // purple fill (hue gradient fixed to the track, opacity ramp up to the brain)
-    fillEl.style.width = Math.max(0, bx).toFixed(2) + 'px';
-    fillEl.style.setProperty('--hw', (22 * s).toFixed(2) + 'px');
-    fillEl.style.opacity = (1 - gridLevel * (galaxy ? 1 : 0)).toFixed(3);
+    put(fillEl, 'fw', 'width', Math.max(0, bx).toFixed(2) + 'px');
+    put(fillEl, 'fhw', '--hw', (22 * s).toFixed(2) + 'px');
+    put(fillEl, 'fo', 'opacity', galaxy ? '0' : '1');
 
     // brain
     const sc = s * SIL_PX / SVG_PX;
-    brainEl.style.transform =
+    put(brainEl, 'bt', 'transform',
       `translate(${(cx - SLIDER_X).toFixed(2)}px,${(cy - SLIDER_Y).toFixed(2)}px) ` +
-      `scale(${(sc * (1 + squish)).toFixed(4)},${(sc * (1 - squish)).toFixed(4)})`;
-    brainEl.style.setProperty('--glow', (clamp(pos / 4) * (1 - gMix)).toFixed(3));
-    gBrain.setAttribute('opacity', gMix.toFixed(3));
+      `scale(${(sc * (1 + squish)).toFixed(4)},${(sc * (1 - squish)).toFixed(4)})`);
+    put(brainEl, 'bg', '--glow', (clamp(pos / 4) * (1 - gMix)).toFixed(3));
+    const mix = gMix.toFixed(3);
+    if (written.get('gm') !== mix) { written.set('gm', mix); gBrain.setAttribute('opacity', mix); }
 
-    // card shake on unlock
-    if (shakeT0 >= 0) {
-      const t = (now - shakeT0) / 1000;
-      if (t < 0.26) {
-        const A = 2.4 * Math.pow(1 - t / 0.26, 1.5);
-        card.style.setProperty('--sx', rand(-A, A).toFixed(2) + 'px');
-        card.style.setProperty('--sy', rand(-A, A).toFixed(2) + 'px');
-      } else {
-        card.style.setProperty('--sx', '0px');
-        card.style.setProperty('--sy', '0px');
-        shakeT0 = -1;
-      }
-    }
-
-    drawGalaxy(now, dt, bx);
-    drawFx(now, dt, cx, cy, s);
+    drawGalaxy(dt, bx);
+    drawFx(now, cx, cy, s);
   }
 
-  let gridDrawn = false;
-  function drawGalaxy(now, dt, bx) {
+  // ---------------- galaxy pixel grid: full redraw only when needed, else just the cells that blinked
+  const dirtyCells = [];
+  function cellSquare(c) {
+    const x = 1 + 8 * c.c, y = 1 + 8 * c.r;
+    gctx.fillStyle = c.col;
+    if (gctx.roundRect) { gctx.beginPath(); gctx.roundRect(x, y, 6, 6, 1.3); gctx.fill(); }
+    else gctx.fillRect(x, y, 6, 6);
+  }
+  function drawGalaxy(dt, bx) {
     if (gridLevel <= 0) {
-      if (gridDrawn) { gctx.setTransform(1, 0, 0, 1, 0, 0); gctx.clearRect(0, 0, galaxyCv.width, galaxyCv.height); gridDrawn = false; }
-      galaxyCv.style.opacity = '0';
+      if (gridShown) {
+        gctx.setTransform(1, 0, 0, 1, 0, 0);
+        gctx.clearRect(0, 0, galaxyCv.width, galaxyCv.height);
+        gridShown = false;
+        gridEnd = -1;
+      }
+      put(galaxyCv, 'go', 'opacity', '0');
       return;
     }
-    gridDrawn = true;
+    if (!bgGrad) bgGrad = galaxyGradient();
+
     // twinkle: lit cells blink bright/dim ~1.3x per second; a few cells switch on/off
     const pBlink = 1.3 * dt, pToggle = 0.12 * dt;
     for (const c of cells) {
-      if (c.lit && Math.random() < pBlink) { c.dim = !c.dim; paintCell(c); }
-      if (Math.random() < pToggle) c.lit = Math.random() < pLitAt(c.u);
+      let changed = false;
+      if (c.lit && Math.random() < pBlink) { c.dim = !c.dim; paintCell(c); changed = true; }
+      if (Math.random() < pToggle) {
+        const lit = Math.random() < pLitAt(c.u);
+        if (lit !== c.lit) { c.lit = lit; changed = true; }
+      }
+      if (changed) dirtyCells.push(c);
     }
 
-    gctx.setTransform(R, 0, 0, R, 0, 0);
-    gctx.clearRect(0, 0, TRACK_W, TRACK_H);
     const xEnd = Math.min(TRACK_W, Math.max(0, bx));
-    if (!bgGrad) bgGrad = galaxyGradient();
-    gctx.fillStyle = bgGrad;
-    gctx.fillRect(0, 0, xEnd, TRACK_H);
-
-    // a gentle shimmer wave drifting toward the brain
-    const wave = now / 1000 * 0.35;
-    for (const c of cells) {
-      if (!c.lit) continue;
-      const x = 1 + 8 * c.c;
-      if (x >= xEnd) continue;
-      if (!galaxy && c.key > gridLevel) continue;          // sparkly dissolve on exit
-      const sh = 0.93 + 0.07 * Math.sin((x / 90 - wave) * Math.PI * 2);
-      gctx.globalAlpha = sh;
-      gctx.fillStyle = c.col;
-      if (gctx.roundRect) { gctx.beginPath(); gctx.roundRect(x, 1 + 8 * c.r, 6, 6, 1.3); gctx.fill(); }
-      else gctx.fillRect(x, 1 + 8 * c.r, 6, 6);
+    gctx.setTransform(R, 0, 0, R, 0, 0);
+    if (gridFull || !galaxy || Math.abs(xEnd - gridEnd) > 0.005) {
+      gctx.clearRect(0, 0, TRACK_W, TRACK_H);
+      gctx.fillStyle = bgGrad;
+      gctx.fillRect(0, 0, xEnd, TRACK_H);
+      for (const c of cells) {
+        if (!c.lit || 1 + 8 * c.c >= xEnd) continue;
+        if (!galaxy && c.key > gridLevel) continue;          // sparkly dissolve on exit
+        cellSquare(c);
+      }
+      gridFull = false;
+      gridEnd = xEnd;
+    } else {
+      for (const c of dirtyCells) {
+        const x = 1 + 8 * c.c;
+        if (x + 7 > xEnd) continue;                         // hidden under the brain anyway
+        gctx.fillStyle = bgGrad;
+        gctx.fillRect(x - 1, 8 * c.r, 8, 8);
+        if (c.lit) cellSquare(c);
+      }
     }
-    gctx.globalAlpha = 1;
-    galaxyCv.style.opacity = galaxy ? '1' : clamp(gridLevel * 1.15).toFixed(3);
+    dirtyCells.length = 0;
+    gridShown = true;
+    put(galaxyCv, 'go', 'opacity', galaxy ? '1' : clamp(gridLevel * 1.15).toFixed(3));
   }
 
-  let fxDrawn = false;
-  function drawFx(now, dt, cx, cy, s) {
+  // ---------------- effects: redraw only when something actually changed
+  function drawFx(now, cx, cy, s) {
     const tIn = (now - gEnter) / 1000;
-    const flash = galaxy && !reduceMotion ? Math.pow(clamp(1 - tIn / 0.55), 1.5) : 0;
-    updateSparkles(now, dt, galaxy && tIn > 0.06);
-    particles = particles.filter((p) => tIn < p.end);
-    const anything = fxLevel > 0 || flash > 0 || particles.length || sparkles.length;
-    if (!anything) {
-      if (fxDrawn) {
-        bctx.setTransform(1, 0, 0, 1, 0, 0); bctx.clearRect(0, 0, backCv.width, backCv.height);
-        fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.clearRect(0, 0, frontCv.width, frontCv.height);
-        fxDrawn = false;
-      }
+    const fading = !galaxy && fxLevel > 0;
+    if ((galaxy || fading) && now - rayTick >= TICK_MS) {
+      rayTick = now - ((now - rayTick) % TICK_MS);
+      rerollRays();
+      tickSparkles(galaxy && tIn > 0.06);
+      backDirty = frontDirty = true;
+    }
+    if (!galaxy && fxLevel <= 0) sparkles.length = 0;
+    if (galaxy && tIn < 0.8) backDirty = frontDirty = true;            // intro: flash + ray reveal
+    if (fxLevel !== lastFx) { lastFx = fxLevel; backDirty = frontDirty = true; }   // exit fade (incl. last 0)
+    if (cx !== lastCx || s !== lastS) { lastCx = cx; lastS = s; backDirty = frontDirty = true; }
+    if (particles.length) { particles = particles.filter((p) => tIn < p.end); frontDirty = true; }
+    if (backDirty) drawBack(tIn, cx, cy);
+    if (frontDirty) drawFront(tIn, cx, cy, s);
+  }
+
+  function clearCanvas(ctx, cv) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+  }
+
+  // back layer: violet glow + disco rays
+  function drawBack(tIn, cx, cy) {
+    backDirty = false;
+    if (fxLevel <= 0) {
+      if (backShown) { clearCanvas(bctx, backCv); backShown = false; }
       return;
     }
-    fxDrawn = true;
-    for (const ctx of [bctx, fctx]) {
-      ctx.setTransform(R, 0, 0, R, FX_PAD * R, FX_PAD * R);
-      ctx.clearRect(-FX_PAD, -FX_PAD, FX_W, FX_H);
-    }
-
-    // ---------- back layer: violet glow + disco rays ----------
-    if (fxLevel > 0) {
+    backShown = true;
+    bctx.setTransform(R, 0, 0, R, -FX_X * R, -FX_Y * R);
+    bctx.clearRect(FX_X, FX_Y, FX_W, FX_H);
+    {
       const ga = fxLevel * smooth(clamp((tIn - 0.03) / 0.3));
       if (ga > 0) {
         const g = bctx.createRadialGradient(cx, cy, 0, cx, cy, 60);
@@ -818,8 +878,7 @@
         bctx.fillStyle = g;
         bctx.fillRect(cx - 60, cy - 60, 120, 120);
       }
-      // rays: 14 dotted spokes, lengths re-rolled every 150 ms ("disco")
-      if (now - rayTick >= 150) { rayTick = now - ((now - rayTick) % 150); rerollRays(); }
+      // rays: 14 dotted spokes, lengths re-rolled on every tick ("disco")
       const reveal = galaxy ? smooth(clamp((tIn - 0.1) / 0.18)) : 1;
       const ra = fxLevel * reveal;
       if (ra > 0) {
@@ -835,13 +894,24 @@
             const a = 0.6 * ray.I * (1 - 0.85 * i / Math.max(1, ray.L - 1)) * ra;
             if (a <= 0.004) continue;
             bctx.fillStyle = `rgba(${r},${g},${b},${a.toFixed(3)})`;
-            bctx.fillRect(snap(cx + rr * ca - sz / 2), snap(cy + rr * sa - sz / 2), sz, sz);
+            bctx.fillRect(snapX(cx + rr * ca - sz / 2), snapY(cy + rr * sa - sz / 2), sz, sz);
           }
         }
       }
     }
+  }
 
-    // ---------- front layer: white flash, burst particles, sparkles ----------
+  // front layer: white flash, burst particles, sparkles on the brain
+  function drawFront(tIn, cx, cy, s) {
+    frontDirty = false;
+    const flash = galaxy && !reduceMotion ? Math.pow(clamp(1 - tIn / 0.55), 1.5) : 0;
+    if (!(flash > 0 || particles.length || (sparkles.length && fxLevel > 0))) {
+      if (frontShown) { clearCanvas(fctx, frontCv); frontShown = false; }
+      return;
+    }
+    frontShown = true;
+    fctx.setTransform(R, 0, 0, R, -FX_X * R, -FX_Y * R);
+    fctx.clearRect(FX_X, FX_Y, FX_W, FX_H);
     if (flash > 0) {
       // measured in the video: linear falloff, ~0.62 opacity at the brain, gone at ~70px
       const g = fctx.createRadialGradient(cx, cy, 0, cx, cy, 70);
@@ -859,16 +929,15 @@
       if (a <= 0) continue;
       fctx.globalAlpha = a;
       fctx.fillStyle = p.col;
-      fctx.fillRect(snap(x - p.size / 2), snap(y - p.size / 2), p.size, p.size);
+      fctx.fillRect(snapX(x - p.size / 2), snapY(y - p.size / 2), p.size, p.size);
     }
     fctx.globalAlpha = 1;
     for (const sp of sparkles) {
-      const life = (now - sp.t0) / 1000 / sp.life;
-      const a = sp.a * (life < 0.7 ? 1 : clamp((1 - life) / 0.3)) * fxLevel;
+      const a = sp.a * fxLevel;
       if (a <= 0) continue;
       fctx.globalAlpha = a;
       fctx.fillStyle = sp.col;
-      fctx.fillRect(snap(cx + sp.x * s / GALAXY_SCALE - sp.size / 2), snap(cy + sp.y * s / GALAXY_SCALE - sp.size / 2), sp.size, sp.size);
+      fctx.fillRect(snapX(cx + sp.x * s / GALAXY_SCALE - sp.size / 2), snapY(cy + sp.y * s / GALAXY_SCALE - sp.size / 2), sp.size, sp.size);
     }
     fctx.globalAlpha = 1;
   }
