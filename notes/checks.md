@@ -509,3 +509,12 @@ Check 45 done. Next: graphics – capsule shading close-ups per skin at 3x in li
   tab tears) pass; full suite + replay running (results in Check 47).
 
 Check 46 done. Next: confirm the suite/replay, then a phone-touch test of the pull.
+
+## Check 47 (v20a confirmed)
+- Full suite passes (functest, imetest, hinttest, focustest, reviewfix, skintest, tiptest, r12test – updated for the
+  "Page torn off" toast – reducedtest, ctrls, up16test, backup, mobile18), no page errors.
+- Pull-tab drag test passes with a mouse and with real touch events on a phone viewport (390x844@3x).
+- ?still replay of the recording: identical to the reference except the gear icon (moving the scene canvas changed
+  nothing).
+
+Check 47 done. Next: graphics rounds continue.
