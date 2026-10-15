@@ -250,3 +250,15 @@ New effects now show from the first second; a test-only ?still switch removes th
 which matches the recording except the deliberately lighter fast-typed letter and the new panel icon.
 Also: soft reflections on glossy skins, Tab stays inside menus, back up / restore all drafts (.json).
 Check 18 done. Next: phone pass (touch scroll, keyboard, panel), performance, more polish.
+
+## Check 19 — one hour in (v18b–v18g, 11:20)
+Tested again: typing, backspace, wrap, lamp, sliders, panel, drafts, pages, scroll-back (wheel and touch
+drag), goals, packs, shortcuts, backup/restore, reduced motion, 20-minute ambience soak, 3-minute feature
+soak (heap flat ~6.8 MB, no errors), phone emulation (tap focus, panel hides and restores the keyboard).
+Main screen vs the recording (still replay): identical except the deliberately lighter fast-typed letter.
+Weak spots found and fixed: frame cost had risen (sparks moved onto the scene canvas, cheaper dust:
+4.0 ms vs 3.2 ms before the upgrade at 4× CPU throttle); creaks too loud; clogged letters looked like grey
+dots (now filled eyes); fibres showed in the dark too (now multiplied, so only lit paper shows them).
+New: breathing light shafts in the beam, fibre relief under the lamp, see-through ghost, first lightning
+after ~1 min, three web substeps for steadier silk, Print in the share menu.
+Check 19 done. Next: another independent review, then a fresh full-quality look at every screen.

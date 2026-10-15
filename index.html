@@ -2779,7 +2779,7 @@ function joltWebs(strength) {
 }
 function stepWebs(dt, t) {
   if (!WEB.ready) return;
-  const sub = 2, h = dt / sub;
+  const sub = STILL ? 2 : 3, h = dt / sub;   // three substeps: smoother, steadier silk
   for (let s = 0; s < sub; s++) {
     for (const r of WEB.ribbons) {
       const cap = capAnchor(r.side, r.side < 0 ? r.by : r.ay, r.top);
