@@ -180,6 +180,7 @@
   .card canvas { display: block; }
   .card b { font-size: 11px; letter-spacing: .04em; }
   .card small { font-size: 9px; line-height: 1.25; color: #a99f8c; min-height: 2.5em; }
+  @media (hover: hover) { .card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.35); } }
   .card[aria-checked="true"] { border-color: #e2b35c; box-shadow: 0 0 0 1px #e2b35c, 0 0 18px rgba(226,179,92,.25);
           background: linear-gradient(180deg, rgba(255,215,140,.15), rgba(255,215,140,.03)); }
   .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
@@ -448,6 +449,7 @@ function layout() {
 
   buildGrain();
   buildPaperFx();
+  buildEdge();
   buildRail();
   buildCapsules();
   layoutSkinUI();
@@ -601,6 +603,29 @@ function applyPaper() {
   PAPER_LIGHT = hex(P.light); PAPER_DARK = hex(P.dark);
   buildCaptions(); buildPaperFx(); invalidateText();
   cardJob = null;
+}
+
+/* ------------------------------------------------------------ paper edge -- */
+// the sheet's top edge is not machine-cut: tiny irregular bites along it and a hairline of paper thickness
+const edgeCv = document.createElement('canvas');
+function buildEdge() {
+  const rx = G.rx, ry = G.ry, top = 2, h = ry + 4 * k;
+  edgeCv.width = Math.round(W * dpr); edgeCv.height = Math.round(h * dpr);
+  const g = edgeCv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const pts = [], R = mulberry(5150);
+  const push = (x, y, nx, ny) => { const l = Math.hypot(nx, ny) || 1; pts.push([x, y, nx / l, ny / l]); };
+  for (let a = Math.PI; a <= Math.PI * 1.5; a += 0.01) push(rx + Math.cos(a) * rx, top + ry + Math.sin(a) * ry, Math.cos(a) / rx, Math.sin(a) / ry);
+  for (let x = rx; x <= W - rx; x += 2 * k) push(x, top, 0, -1);
+  for (let a = -Math.PI / 2; a <= 0; a += 0.01) push(W - rx + Math.cos(a) * rx, top + ry + Math.sin(a) * ry, Math.cos(a) / rx, Math.sin(a) / ry);
+  let n = 0;
+  const bite = pts.map(() => { n += (R() - 0.5) * 0.5; n *= 0.86; return Math.max(0, 0.25 + n + (R() < 0.04 ? R() * 0.9 : 0)) * k; });
+  g.beginPath();
+  pts.forEach(([x, y, nx, ny], i) => { const d = bite[i]; i ? g.lineTo(x - nx * d, y - ny * d) : g.moveTo(x - nx * d, y - ny * d); });
+  for (let i = pts.length - 1; i >= 0; i--) { const [x, y, nx, ny] = pts[i]; g.lineTo(x + nx * 3 * k, y + ny * 3 * k); }
+  g.closePath(); g.fillStyle = '#181818'; g.fill();
+  g.beginPath();
+  pts.forEach(([x, y, nx, ny], i) => { const d = bite[i] + 0.7 * k; i ? g.lineTo(x - nx * d, y - ny * d) : g.moveTo(x - nx * d, y - ny * d); });
+  g.strokeStyle = 'rgba(0,0,0,0.07)'; g.lineWidth = 1.1 * k; g.stroke();
 }
 
 /* ------------------------------------------------------------------ rail -- */
@@ -2107,6 +2132,14 @@ function hideToast() {
 }
 dialEl.addEventListener('click', () => { lastActivity = now(); setLamp(!lampOn); AU.lampSwitch(lampOn); });
 const FIRST_LINES = [
+  'The lamp went out at midnight.', 'Three knocks. Then silence.', 'I found the key inside the pumpkin.',
+  'The mirror showed someone else.', 'Dear diary, the bats are back.', 'Lightning wrote my name on the wall.',
+  'The ghost only wanted tea.', 'Under the bed, something sighed.', 'The candles lit themselves again.',
+  'Grandma never locked the attic.', 'The wolf knew my phone number.', 'The scarecrow moved in the night.',
+  'My shadow left without me.', 'The cat brought home a bone.', 'Fog crept in under the door.',
+  'The organ played by itself.', 'Once upon a full moon,', 'The last train had no driver.',
+  'Every clock stopped at 3:33.', 'The garden grew a hand.', 'Someone typed on this page before me.',
+  'The well whispered back.', 'We were not alone in the lab.', 'The spider spelled a word.',
   'It was a dark and stormy night.', 'The castle lights flickered twice.', 'Something scratched at the door.',
   'The doctor smiled at the lightning.', 'Nobody rang the bell at midnight.', 'The jar on the shelf began to hum.',
   'It lived. It actually lived.', 'The moon was late again tonight.', 'Thunder rolled over the old mill.',
@@ -2294,6 +2327,7 @@ function draw(t) {
   if (lv > 0.02 && lampOn) { drawTShadow(c, t, cx, capTop, lv * pP); if (!REDUCED) drawDust(c, t, lv * pP); }
   c.restore();
 
+  c.drawImage(edgeCv, 0, G.paperTop - 2, W, edgeCv.height / dpr);
   // ----- rail -----
   const rh = railCv[0].height / dpr;
   if (pP < 1) { c.globalAlpha = 1; c.drawImage(railCv[0], 0, G.railSpriteTop, W, rh); }
@@ -3541,6 +3575,7 @@ const MENU = [
   { act: 'image', label: () => (canShareFiles() ? 'Share as image' : 'Save as image'),
     icon: '<rect x="4.5" y="5.5" width="15" height="13" rx="1.5"/><circle cx="9.3" cy="10" r="1.4"/><path d="M5 17l4.6-4.4 3 2.8 2.6-2.2L19 16.4"/>' },
   { act: 'txt', label: () => 'Save as .txt', icon: '<path d="M12 4.5v10M8 10.6l4 4 4-4M5.5 19.5h13"/>' },
+  { act: 'print', label: () => 'Print / PDF', icon: '<path d="M7 9V4.5h10V9M7 16.5H5a1.5 1.5 0 0 1-1.5-1.5v-4.5A1.5 1.5 0 0 1 5 9h14a1.5 1.5 0 0 1 1.5 1.5V15a1.5 1.5 0 0 1-1.5 1.5h-2M7 13.5h10v6H7z"/>' },
   { act: 'new', label: () => 'New page', icon: '<path d="M7 3.8h6.8l4.2 4.2v12.2H7z"/><path d="M13.6 3.8v4.4H18M12.5 11.4v5.4M9.8 14.1h5.4"/>' },
 ];
 function layoutMenu() {
@@ -3615,6 +3650,7 @@ function menuAction(act, kb) {
   if (act === 'text') shareText();
   else if (act === 'image') shareImage();
   else if (act === 'txt') saveTxt();
+  else if (act === 'print') printDraft();
   else if (act === 'new') newPage();
 }
 // the picture is made while the menu is open, so sharing it can usually happen right in the tap (Safari wants that)
@@ -3771,7 +3807,17 @@ function newPage() {
     input.value = prev.slice(0, MAX); keepCaretAtEnd(); syncInput();   // a long page lands at once, a short one is typed back
   } });
 }
+// after a tear the fresh sheet feeds up into place: its grain (and theme layer) slide up for a moment
+const feed = { t0: -9 };
+function stepFeed(t) {
+  const s = t - feed.t0;
+  if (s < 0 || s > 1.2) { if (feed.on) { feed.on = false; setStyle(grainCv, 'transform', ''); setStyle(paperFxCv, 'transform', ''); } return; }
+  feed.on = true;
+  const y = (1 - E.outCubic(clamp((s - 0.2) / 0.8, 0, 1))) * 70 * k;
+  setStyle(grainCv, 'transform', `translateY(${y.toFixed(1)}px)`); setStyle(paperFxCv, 'transform', `translateY(${y.toFixed(1)}px)`);
+}
 function tearOff(t) {
+  feed.t0 = t;
   const top = G.paperTop, bot = G.railT - 3 * k, h = bot - top;
   if (h < 20 * k) return;
   const cv = document.createElement('canvas'), hh = h + 6 * k;
@@ -4224,7 +4270,9 @@ function celebrate(msg, small) {
   lastActivity = now();
   const n = small ? 1 : 4;
   for (let i = 0; i < n; i++) setTimeout(() => { fx.zap(true, 1); AU.zap(0.6); }, i * 230);
-  burstAt(car.x + 25.4 * k, G.capCY - G.capHH, small ? 18 : 70, small ? 1 : 1.6);
+  const bx = car.x + 25.4 * k, by = G.capCY - G.capHH;
+  burstAt(bx, by, small ? 18 : 90, small ? 1 : 1.9);
+  if (!small) for (let i = 1; i <= 3; i++) setTimeout(() => { burstAt(car.x + 25.4 * k, G.capCY - G.capHH, 45, 1.5, [255, 214, 120]); burstAt(car.x - 30 * k, G.capCY, 25, 1.2, [255, 255, 255]); }, i * 260);
   if (!small) AU.fanfare();
   haptic(small ? 20 : [30, 60, 30, 60, 60]);
   toast(msg, 3.5);
@@ -4236,7 +4284,7 @@ let sheetOpen = null, sheetRefocus = false;
 function layoutSheets() {
   const mh = Math.max(320, H - (G.capCY + G.capHH + 26 * k));
   panelEl.style.maxHeight = draftsEl.style.maxHeight = Math.min(H - 20, mh) + 'px';
-  goalHud.style.top = (G.paperTop - 26 * k) + 'px';
+  goalHud.style.top = (H * 0.0918 + 24 * k) + 'px';   // under the top bar, clear of the toasts
   pageTag.style.top = (G.paperTop + 8 * k) + 'px';
 }
 function openSheet(el, kb) {
@@ -4694,6 +4742,7 @@ function tick() {
   stepScrollBack(dt);
   showPageTag(t);
   stepParts(dt);
+  stepFeed(t);
   const surge = updateLightning(t) * bulbFlicker(t);
   updateSpiders(t); updateMoth(t, dt);
   stepWebs(dt, t);
