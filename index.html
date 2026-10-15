@@ -2605,6 +2605,67 @@ function lightningPath(x, y0, y1, seed, amp) {
   pts.push([x, y1]);
   return pts;
 }
+// a jagged discharge between any two points (forks, crawling arcs)
+function jagPath(x0, y0, x1, y1, seed, amp, n = 8) {
+  const R = mulberry(seed), dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len, pts = [[x0, y0]];
+  let off = 0;
+  for (let i = 1; i < n; i++) { off = clamp(off + (R() - 0.5) * 1.6 * amp, -1.6 * amp, 1.6 * amp) * 0.8; const q = i / n; pts.push([x0 + dx * q + nx * off, y0 + dy * q + ny * off]); }
+  pts.push([x1, y1]);
+  return pts;
+}
+// the electric extras around the recorded arc (left out in ?still so the replay stays comparable)
+const ARC = { prev: null, prevFr: -1, cur: null };
+function strokeArc(c, pts, a, w, dark) {   // halo, coloured body and a white-hot core
+  // on a dark sheet the halo is light; on cream the body is a deeper shade of the spark colour so the white core reads
+  c.strokeStyle = rgba(skin.sp.halo, (dark ? 0.35 : 0.3) * a); c.lineWidth = w * 3.4; strokePts(c, pts);
+  c.strokeStyle = rgba(dark ? skin.sp.mid : mix(skin.sp.halo, [30, 10, 40], 0.25), (dark ? 0.75 : 0.85) * a); c.lineWidth = w * 1.6; strokePts(c, pts);
+  c.strokeStyle = `rgba(255,255,255,${0.95 * a})`; c.lineWidth = w * 0.6; strokePts(c, pts);
+}
+function drawElectricExtras(c, cx, cy, t, st, x, yTop, yBot, pts, bolt, fr) {
+  const lamp = CH.paper.v > 0.5 || paperTheme().lightInk, hh = G.capHH;
+  c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
+  // the arc lights up its surroundings: a coloured pool of light on the pipe and the paper around it
+  if (bolt > 0.05) {
+    const my = (yTop + yBot) / 2, r = 46 * k, g = c.createRadialGradient(x, my, 0, x, my, r);
+    g.addColorStop(0, rgba(skin.sp.halo, (lamp ? 0.22 : 0.09) * bolt)); g.addColorStop(1, rgba(skin.sp.halo, 0));
+    c.globalCompositeOperation = lamp ? 'lighter' : 'source-over'; c.fillStyle = g; c.fillRect(x - r, my - r, r * 2, r * 2);
+    c.globalCompositeOperation = 'source-over';
+  }
+  // persistence of vision: last frame's arc lingers faintly, so the discharge seems to dance
+  if (ARC.prev && bolt > 0.05) {
+    c.globalAlpha = 0.35; c.strokeStyle = rgba(skin.sp.mid, 0.8 * bolt); c.lineWidth = 0.9 * k; strokePts(c, ARC.prev); c.globalAlpha = 1;
+  }
+  if (fr !== ARC.prevFr) { ARC.prev = ARC.cur; ARC.cur = pts; ARC.prevFr = fr; }
+  const R = mulberry(fr * 29 + 11);
+  // forks: on a strong discharge one or two branches split off and die out in the air
+  if (st.white > 0.55) {
+    const nf = 1 + (R() < 0.45 ? 1 : 0);
+    for (let i = 0; i < nf; i++) {
+      const p = pts[3 + ((R() * (pts.length - 7)) | 0)], side = R() < 0.5 ? -1 : 1, ang = side * (0.5 + R() * 0.7), len = (12 + R() * 14) * k;
+      const end = [p[0] + Math.sin(ang) * len, p[1] + (R() - 0.5) * len * 0.8];
+      strokeArc(c, jagPath(p[0], p[1], end[0], end[1], fr * 7 + i, 1.3 * k, 7), st.white * 0.85, 0.95 * k, lamp);
+    }
+  }
+  // plasma at the bolt heads: a ring of short, flickering rays
+  if (st.tips > 0.05) {
+    for (const [y0, dir] of [[yTop, -1], [yBot, 1]]) {
+      const n = 4 + ((R() * 3) | 0);
+      for (let i = 0; i < n; i++) {
+        const f = (R() - 0.5) * 2.4, l = (3.5 + R() * 5.5) * k;   // fanned out away from the capsule
+        strokeArc(c, jagPath(x, y0, x + Math.sin(f) * l, y0 + dir * Math.cos(f) * l, fr * 3 + i * 17 + (dir > 0 ? 5 : 0), 0.6 * k, 3), st.tips * (0.55 + R() * 0.45), 0.7 * k, lamp);
+      }
+    }
+  }
+  // after a big zap little arcs crawl along the capsule's top and bottom edge, away from the bolt
+  if (st.violet > 0.15) {
+    for (const ey of [cy - hh + 1.2 * k, cy + hh - 1.2 * k]) {
+      if (R() < 0.35) continue;
+      const x0 = x - (4 + R() * 16) * k, l = (6 + R() * 9) * k;
+      strokeArc(c, jagPath(x0, ey, x0 - l, ey + (R() - 0.5) * 2 * k, fr * 5 + (ey > cy ? 1 : 2), 0.8 * k, 6), st.violet * 0.85, 0.6 * k, lamp);
+    }
+  }
+  c.restore();
+}
 function strokePts(c, pts) { c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]))); c.stroke(); }
 function drawSparks(c, cx, cy, t, st) {
   const hh = G.capHH, x = cx + 25.4 * k;
@@ -2658,6 +2719,7 @@ function drawSparks(c, cx, cy, t, st) {
     }
     c.stroke();
     c.restore();
+    if (!STILL && !REDUCED) drawElectricExtras(c, cx, cy, t, st, x, yTop, yBot, pts, bolt, fr);
   }
   if (st.tips > 0.02) {
     // the bolts light up like chrome: bright streaks along the shafts and hot heads (other skins: a hot glow)

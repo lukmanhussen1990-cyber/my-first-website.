@@ -440,3 +440,18 @@ Check 38 done. Next: graphics – every skin on Blueprint and Black paper, light
 - Tests: functest, skintest, up16test, r12test pass; ?still replay unchanged.
 
 Check 39 done. Next: graphics – every skin on Blueprint; desktop wide layout at 1920x1080.
+
+## Check 40 (v19v) – electric graphics (user: "More better graphics of the electric")
+New layers on top of the recorded arc (off in ?still and with reduced motion, so the replay stays comparable):
+- forks: on a strong discharge one or two jagged branches split off the main arc and die out in the air;
+- plasma at both bolt heads: a fan of short, flickering jagged rays pointing away from the capsule;
+- persistence: last frame's arc lingers faintly, so the discharge seems to dance;
+- creeping arcs: after a big zap little arcs crawl along the capsule's top and bottom edge;
+- the arc lights its surroundings: a pool of the skin's spark colour on the pipe and paper (additive under the lamp);
+- every extra is drawn as halo + coloured body + white-hot core; on cream the body is a deeper shade of the spark
+  colour so the white core reads.
+- Checked frame by frame on Frankenstein (light + lamp), Pumpkin (light) and Witch (lamp).
+- Tests: functest, skintest, reducedtest, up16test, r12test, mobile18 pass; perf p50 4.4–5.4 ms, p90 7–9 ms;
+  ?still replay unchanged (gear only).
+
+Check 40 done. Next: electric – idle micro-crackles between keystrokes and a stronger carriage-return zap.
