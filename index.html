@@ -347,6 +347,7 @@ const store = {
 // everything the control panel sets, remembered; the defaults are the recorded machine
 const PREF_DEF = { paper: 'cream', ink: 'black', pack: 'electric', vol: 1, ambience: true, bell: true, haptics: true };
 const prefs = Object.assign({}, PREF_DEF, (() => { try { return JSON.parse(store.get('fw.prefs', '{}')) || {}; } catch (e) { return {}; } })());
+for (const key in PREF_DEF) if (typeof prefs[key] !== typeof PREF_DEF[key] || (typeof prefs[key] === 'number' && !Number.isFinite(prefs[key]))) prefs[key] = PREF_DEF[key];
 function savePrefs() { store.set('fw.prefs', JSON.stringify(prefs)); }
 // paper themes: base colour on the cream side / under the lamp, ink (normal / lamp), caption greys, caret
 const PAPERS = {
@@ -1661,7 +1662,7 @@ const colX = (col) => G.textLeft + (col + 0.5) * G.cell;
 const FONT = (px) => `400 ${px}px "Courier Prime", "Courier New", monospace`;
 const lineCache = new Map();
 let textVer = 0;                       // bumps whenever already-typed glyphs may have changed
-function invalidateText() { lineCache.clear(); textVer++; }
+function invalidateText() { lineCache.clear(); if (typeof archCache !== 'undefined') archCache.clear(); textVer++; }
 
 function drawGlyph(c, i, x, by, inkRgb, s) {
   const ch = (s ? s.text : text)[i];
@@ -2069,6 +2070,7 @@ function flushPending() {
   else AU.clack();
   slideTo(carriageTarget(), 0.267, E.outSine, 0);
   onTextChanged();
+  if (text.length >= MAX) queueMicrotask(autoPage);   // a paste that fills the sheet
 }
 function keepCaretAtEnd() {
   const n = input.value.length;
@@ -2947,6 +2949,7 @@ const PACKS = {
   classic:  { name: 'Classic Typewriter', desc: 'Wooden clacks, ratchet and bell, no electricity', sparks: 0, bell: 1.35 },
   spooky:   { name: 'Spooky Halloween', desc: 'Hollow keys, wind, creaks and distant thunder', sparks: 0.55, bell: 0.85 },
 };
+if (!PACKS[prefs.pack]) prefs.pack = 'electric';
 const AU = {
   ctx: null, master: null, sfx: null, music: null, verb: null, noise: null, on: store.get(LS.sound, '1') !== '0',
   mode: ({ 0: 'off', fx: 'fx' })[store.get(LS.sound, '1')] || 'all',   // all: music + effects, fx: effects only, off
@@ -3809,7 +3812,9 @@ function newPage() {
   setTimeout(() => { fx.zap(true); flingWebs(); AU.carriageReturn(Math.max(3, cols)); }, 240);
   onTextChanged(); saveNow();
   AU.tear(); haptic([14, 50, 10]);
+  const d0 = DR.cur;
   toast('New page', 5, { label: 'Undo', fn: () => {
+    if (DR.cur !== d0) return;   // another draft is in the machine now
     if (text || pending) return;   // already typing on the new sheet
     if (DR.cur && DR.cur.pages[DR.cur.pages.length - 1] === prev) { DR.cur.pages.pop(); archKey = ''; }
     input.value = prev.slice(0, MAX); keepCaretAtEnd(); syncInput();   // a long page lands at once, a short one is typed back
@@ -3876,6 +3881,7 @@ function tearOff(t) {
 // Rare, gentle Halloween ambience that never touches the recorded opening: a distant lightning strike now and
 // then (the room flashes, the lamp dips, thunder rolls in, the webs tremble) and a few bats crossing the page.
 // It has its own random stream so the machine's own randomness is unchanged.
+const critR = mulberry((Date.now() ^ 0x2c1b3c6d) | 0);   // spiders and moth have their own stream
 const ambR = mulberry(+((location.search.match(/[?&]seed=(\d+)/) || [])[1] || (Date.now() ^ 0x5bd1e995)) | 0);   // ?seed=… repeats a session
 const AMB = { nextBolt: 0, nextBats: 0, defer: 0, lastT: 0, boltT0: -99, flashAmp: 0.4, flashOn: false };
 const flashEl = $('#flash'), backCv = $('#backdrop'), litCv = $('#backlit'), ambCv = $('#amb');
@@ -4489,7 +4495,7 @@ function renderDrafts() {
       t.replaceWith(inp); inp.focus(); inp.select();
       let fin = false;
       const done = () => { if (fin) return; fin = true; const v = inp.value.trim(); d.name = v === draftTitle(Object.assign({}, d, { name: '' })) ? '' : v; saveDrafts(); renderDrafts(); };
-      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } else if (e.key === 'Escape') { e.stopPropagation(); renderDrafts(); } });
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } else if (e.key === 'Escape') { e.stopPropagation(); fin = true; renderDrafts(); } });
       inp.addEventListener('blur', done);
     });
     const del = el('button', 'ib', '✕'); del.setAttribute('aria-label', 'Delete');
@@ -4671,12 +4677,12 @@ const SPIDERS = [];
 let nextSpider = 0;
 function updateSpiders(t) {
   if (REDUCED || STILL) return;
-  if (!nextSpider) nextSpider = t + 12 + ambR() * 14;
+  if (!nextSpider) nextSpider = t + 12 + critR() * 14;
   if (t > nextSpider && !SPIDERS.length) {
-    nextSpider = t + 35 + ambR() * 50;
-    let x = 30 * k + ambR() * (W - 60 * k);
-    if (Math.abs(x - car.x) < G.capHW + 20 * k) x = car.x > W / 2 ? 40 * k + ambR() * 60 * k : W - 40 * k - ambR() * 60 * k;
-    SPIDERS.push({ x, t0: t, drop: (28 + ambR() * 45) * k, hang: 3 + ambR() * 4, s: 0.8 + ambR() * 0.4 });
+    nextSpider = t + 35 + critR() * 50;
+    let x = 30 * k + critR() * (W - 60 * k);
+    if (Math.abs(x - car.x) < G.capHW + 20 * k) x = car.x > W / 2 ? 40 * k + critR() * 60 * k : W - 40 * k - critR() * 60 * k;
+    SPIDERS.push({ x, t0: t, drop: (28 + critR() * 45) * k, hang: 3 + critR() * 4, s: 0.8 + critR() * 0.4 });
   }
   for (let i = SPIDERS.length - 1; i >= 0; i--) if (t - SPIDERS[i].t0 > 2.4 + SPIDERS[i].hang + 2.2) SPIDERS.splice(i, 1);
 }
@@ -4714,9 +4720,9 @@ function drawSpiders(c, t, pP) {
 const MOTH = { on: false, t0: 0, until: 0, next: 0, x: 0, y: 0, vx: 0, vy: 0, leave: 0 };
 function updateMoth(t, dt) {
   if (REDUCED || STILL) { MOTH.on = false; return; }
-  if (!MOTH.next) MOTH.next = t + 10 + ambR() * 12;
+  if (!MOTH.next) MOTH.next = t + 10 + critR() * 12;
   if (!MOTH.on && lampOn && CH.light.v > 0.9 && t > MOTH.next) {
-    Object.assign(MOTH, { on: true, t0: t, until: t + 14 + ambR() * 14, x: ambR() < 0.5 ? -20 * k : W + 20 * k, y: G.paperTop + ambR() * 120 * k, vx: 0, vy: 0, leave: 0 });
+    Object.assign(MOTH, { on: true, t0: t, until: t + 14 + critR() * 14, x: critR() < 0.5 ? -20 * k : W + 20 * k, y: G.paperTop + critR() * 120 * k, vx: 0, vy: 0, leave: 0 });
   }
   if (!MOTH.on) return;
   const s = t - MOTH.t0, ox = lightX, oy = G.capCY - G.capHH - 46 * k;
@@ -4725,7 +4731,7 @@ function updateMoth(t, dt) {
   MOTH.vx += ((tx - MOTH.x) * 9 - MOTH.vx * 3.2) * dt + (Math.random() - 0.5) * 900 * k * dt;
   MOTH.vy += ((ty - MOTH.y) * 9 - MOTH.vy * 3.2) * dt + (Math.random() - 0.5) * 900 * k * dt;
   MOTH.x += MOTH.vx * dt; MOTH.y += MOTH.vy * dt;
-  if (MOTH.leave > 4 || MOTH.x < -60 * k || MOTH.x > W + 60 * k && MOTH.leave > 0) { MOTH.on = false; MOTH.next = t + 50 + ambR() * 70; }
+  if (MOTH.leave > 4 || MOTH.x < -60 * k || MOTH.x > W + 60 * k && MOTH.leave > 0) { MOTH.on = false; MOTH.next = t + 50 + critR() * 70; }
 }
 function drawMoth(c, t) {
   if (!MOTH.on) return;

@@ -240,3 +240,13 @@ and throw hot streaks that fall and fade; a spider lets itself down from the pip
 the lamp and circles it. All new motion waits until 20–35 s, so the recorded opening is unchanged.
 Tests: full suite passes (skin test updated for ten skins); frame times 2–4 ms at 4× CPU throttle.
 Check 17 done. Next: second pass on everything — panel polish, share picture with themes, phone checks.
+
+## Check 18 — independent review of the upgrade (v18a, 11:12)
+Fixed: a paste that filled the sheet left the page stuck (now it tears off too); earlier pages in scroll-back
+kept their old size after a resize; spiders/moth shared the lightning's random stream (now their own);
+a bad saved sound pack made every key throw (saved settings are validated); Undo of New page after
+switching drafts copied the page into the other draft; Escape while renaming saved the name.
+New effects now show from the first second; a test-only ?still switch removes them for the pixel replay,
+which matches the recording except the deliberately lighter fast-typed letter and the new panel icon.
+Also: soft reflections on glossy skins, Tab stays inside menus, back up / restore all drafts (.json).
+Check 18 done. Next: phone pass (touch scroll, keyboard, panel), performance, more polish.
