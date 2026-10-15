@@ -5794,22 +5794,34 @@ function tick() {
 // The Android app (Imran Typer) opens with its logo's typewriter – green and gold – typing the app's name: keys go
 // down, type bars fly up, the carriage steps along, the bell rings, the carriage returns and the paper rolls up
 // into the page. Also shown on the web with ?intro. Tap to skip.
-// The app ships its logo (intro.jpg: the green typewriter with its sheet taken out); the intro animates that very
-// picture. Without the picture (the plain web page) a drawn version of the same machine plays instead.
+// The app ships its logo cut into its moving parts (i_*.webp) and plays it as a working machine; failing that, the
+// whole picture with its sheet taken out (intro.jpg); on the plain web page a drawn version of the same machine.
 function playIntro() {
   if (STILL) return;
-  const img = new Image();
-  let started = false;
-  const go = (ok) => { if (started) return; started = true; if (ok) playIntroImage(img); else playIntroDrawn(); };
-  img.onload = () => go(img.naturalWidth > 0); img.onerror = () => go(false);
-  setTimeout(() => go(img.complete && img.naturalWidth > 0), 700);
-  img.src = 'intro.jpg';
+  // a black cover until the first frame (the APK page carries one from the start, so the app never flashes up first)
+  let cover = document.getElementById('introCover');
+  if (!cover) { cover = document.createElement('div'); cover.id = 'introCover'; cover.style.cssText = 'position:fixed;inset:0;z-index:51;background:#000'; document.body.appendChild(cover); }
+  const uncover = () => { const el = document.getElementById('introCover'); if (el) el.remove(); };
+  setTimeout(uncover, 4000);
+  // only the app ships the pictures (a plain web page with ?intro plays the drawn machine; ?intro=real tries them)
+  if (!IN_APP && !/[?&]intro=real\b/.test(location.search)) { uncover(); playIntroDrawn(); return; }
+  loadIntroLayers((L) => {
+    if (L) { try { playIntroReal(L); } catch (e) { uncover(); throw e; } requestAnimationFrame(() => requestAnimationFrame(uncover)); return; }
+    uncover();
+    const img = new Image();
+    let started = false;
+    const go = (ok) => { if (started) return; started = true; if (ok) playIntroImage(img); else playIntroDrawn(); };
+    img.onload = () => go(img.naturalWidth > 0); img.onerror = () => go(false);
+    setTimeout(() => go(img.complete && img.naturalWidth > 0), 700);
+    img.src = 'intro.jpg';
+  });
 }
 // the sound of the intro (its own context: it plays before the app's own audio has started)
 function introSound(T0, plan) {
   let ac = null, out = null, nb = null;
   try {
     if (AU.mode === 'off') return null;
+    if (!IN_APP && navigator.userActivation && !navigator.userActivation.hasBeenActive) return null;
     ac = new (window.AudioContext || window.webkitAudioContext)();
     out = ac.createGain(); out.gain.value = 0.8 * prefs.vol; out.connect(ac.destination);
     nb = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const ch = nb.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
@@ -5965,6 +5977,386 @@ function playIntroImage(img) {
   }
   cv.addEventListener('pointerdown', () => { if (!skipAt) skipAt = performance.now() / 1000 - T0; });
   requestAnimationFrame(frame);
+}
+// ---- the logo as a working machine. The app ships the picture cut into its moving parts (tools/make_intro_layers.py):
+// the carriage steps along under the escapement and slams back on its return, the return lever swings, the knobs
+// turn as the sheet feeds, keys go down, type bars swing up through the guide, the ribbon lifts, letters are struck
+// into the sheet one by one, the bell rings near the margin. A camera moves round it like a short film.
+const IL = {   // where each part sits on the 1254 px logo
+  carriage: [150, 100], lever: [50, 290], pivot: [203, 338], front: [270, 366], body: [0, 440], guide: [522, 418],
+  knobs: [[158, 374, 60, 132, 0, 17.28], [1094, 372, 66, 136, 60, 36.56]], kF: 8, kH: 136,
+};
+function loadIntroLayers(cb) {
+  const names = ['bg.png', 'carriage.webp', 'lever.webp', 'front.webp', 'body.webp', 'guide.webp', 'knobs.webp'];
+  const imgs = {}; let left = names.length, called = false;
+  const end = (ok) => { if (called) return; called = true; cb(ok ? imgs : null); };
+  for (const nm of names) {
+    const im = new Image();
+    im.onload = () => { if (!--left) end(true); }; im.onerror = () => end(false);
+    imgs[nm.split('.')[0]] = im; im.src = 'i_' + nm;
+  }
+  setTimeout(() => end(false), 2500);
+}
+// the machine's sounds, all made here: key, slug on the platen, escapement, bell, ratchet, carriage slide and stop
+function introAudio(T0) {
+  let ac, out, nb, wet;
+  try {
+    if (AU.mode === 'off') return null;
+    if (!IN_APP && navigator.userActivation && !navigator.userActivation.hasBeenActive) return null;   // a browser would refuse it
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    out = ac.createGain(); out.gain.value = 0.9 * prefs.vol;
+    const comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4; comp.attack.value = 0.002; comp.release.value = 0.12;
+    out.connect(comp); comp.connect(ac.destination);
+    const sr = ac.sampleRate;
+    nb = ac.createBuffer(1, sr, sr); const ch = nb.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+    // a small wooden room: a short decaying noise tail, darker as it fades
+    const ir = ac.createBuffer(2, Math.round(sr * 0.7), sr);
+    for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); let lp = 0;
+      for (let i = 0; i < d.length; i++) { const tt = i / sr, k = 0.35 + 0.6 * Math.exp(-tt * 9); lp += k * ((Math.random() * 2 - 1) - lp); d[i] = lp * Math.exp(-tt * 7.5) * (i < sr * 0.004 ? 0 : 1); } }
+    const conv = ac.createConvolver(); conv.buffer = ir; wet = ac.createGain(); wet.gain.value = 0.22;
+    wet.connect(conv); conv.connect(out);
+  } catch (e) { return null; }
+  const A = (tt) => ac.currentTime + Math.max(0, tt - (performance.now() / 1000 - T0)) + 0.01;
+  const env = (gn, t, g, att, dur) => { gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(g, t + att); gn.gain.exponentialRampToValueAtTime(0.0001, t + att + dur); };
+  const send = (node, rev) => { node.connect(out); if (rev) { const s = ac.createGain(); s.gain.value = rev; node.connect(s); s.connect(wet); } };
+  const noise = (t, type, f, q, g, dur, rev = 1, att = 0.0008) => { const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), gn = ac.createGain();
+    s.buffer = nb; fl.type = type; fl.frequency.value = f; fl.Q.value = q; env(gn, t, g, att, dur);
+    s.connect(fl); fl.connect(gn); send(gn, rev); s.start(t, Math.random() * 0.8, att + dur + 0.05); };
+  const tone = (t, f, f2, g, dur, type = 'sine', rev = 1) => { const o = ac.createOscillator(), gn = ac.createGain(); o.type = type;
+    o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur); env(gn, t, g, 0.0015, dur);
+    o.connect(gn); send(gn, rev); o.start(t); o.stop(t + dur + 0.05); };
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const S = {
+    keyDown(t, space) { const p = rnd(0.94, 1.06);   // the key lever bottoming out
+      noise(t, 'bandpass', (space ? 900 : 1700) * p, 1.1, space ? 0.22 : 0.16, 0.014);
+      tone(t, (space ? 120 : 175) * p, (space ? 80 : 120) * p, space ? 0.2 : 0.11, 0.035); },
+    strike(t) { const p = rnd(0.95, 1.05);   // the slug hitting the platen through the ribbon
+      noise(t, 'highpass', 2600 * p, 0.7, 0.5, 0.006, 0.6);
+      noise(t, 'bandpass', 1250 * p, 0.9, 0.42, 0.03);
+      noise(t + 0.001, 'lowpass', 520, 0.7, 0.34, 0.045);
+      tone(t, 150 * p, 92, 0.24, 0.055);
+      tone(t, 2900 * rnd(0.96, 1.04), 0, 0.022, 0.09, 'sine', 1.5); tone(t, 4350 * rnd(0.96, 1.04), 0, 0.012, 0.06, 'sine', 1.5); },
+    escape(t) { noise(t, 'bandpass', 4300 * rnd(0.95, 1.05), 3, 0.12, 0.006, 0.5); tone(t, 1450, 0, 0.018, 0.012, 'triangle', 0.5); },
+    keyUp(t) { noise(t, 'bandpass', 2500 * rnd(0.9, 1.1), 1.4, 0.05, 0.008, 0.4); },
+    bell(t) { noise(t, 'highpass', 5200, 0.8, 0.09, 0.005);
+      for (const [m, g, dd] of [[1, 0.1, 1.7], [1.004, 0.05, 1.4], [2.0, 0.025, 0.8], [2.76, 0.03, 0.6], [5.4, 0.01, 0.25]]) tone(t, 2360 * m, 0, g, dd, 'sine', 1.6); },
+    click(t, g = 1) { noise(t, 'bandpass', rnd(3000, 3700), 3.5, 0.11 * g, 0.006, 0.6); tone(t, rnd(1700, 1900), 0, 0.012 * g, 0.016, 'sine', 0.4); },
+    rustle(t, dur, g = 1) { const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), gn = ac.createGain(); s.buffer = nb; s.loop = true;
+      fl.type = 'bandpass'; fl.frequency.value = 4800; fl.Q.value = 0.6;
+      gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.03 * g, t + dur * 0.3); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      s.connect(fl); fl.connect(gn); send(gn, 0.3); s.start(t); s.stop(t + dur + 0.05); },
+    lever(t) { noise(t, 'bandpass', 2100, 1.1, 0.14, 0.016); tone(t, 320, 240, 0.05, 0.03); },
+    slide(t, dur, teeth) {   // the carriage running back on its rail, the rack buzzing under the pawl, then the stop
+      const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), gn = ac.createGain(); s.buffer = nb; s.loop = true;
+      fl.type = 'bandpass'; fl.Q.value = 0.9; fl.frequency.setValueAtTime(1100, t); fl.frequency.linearRampToValueAtTime(1900, t + dur * 0.5); fl.frequency.linearRampToValueAtTime(1500, t + dur);
+      gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.075, t + dur * 0.25); gn.gain.setValueAtTime(0.075, t + dur * 0.85); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.02);
+      s.connect(fl); fl.connect(gn); send(gn, 0.6); s.start(t); s.stop(t + dur + 0.1);
+      for (let i = 0; i < teeth; i++) { const u = (i + 0.5) / teeth, tt = t + dur * Math.sqrt(u) * 0.95; noise(tt, 'bandpass', rnd(3400, 4200), 2.5, 0.045, 0.005, 0.3); }
+      const e = t + dur;   // the margin stop
+      noise(e, 'lowpass', 320, 0.8, 0.7, 0.07); tone(e, 88, 60, 0.45, 0.1); noise(e, 'bandpass', 950, 1.2, 0.34, 0.04);
+      tone(e, 1260, 0, 0.035, 0.16, 'sine', 1.5); tone(e, 1890, 0, 0.022, 0.12, 'sine', 1.5); },
+    room(t0, t1) { const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), gn = ac.createGain(); s.buffer = nb; s.loop = true;
+      fl.type = 'lowpass'; fl.frequency.value = 380; gn.gain.setValueAtTime(0.0001, t0); gn.gain.exponentialRampToValueAtTime(0.02, t0 + 0.8);
+      gn.gain.setValueAtTime(0.02, t1 - 0.6); gn.gain.exponentialRampToValueAtTime(0.0001, t1); s.connect(fl); fl.connect(gn); gn.connect(out); s.start(t0); s.stop(t1 + 0.05); },
+  };
+  try { if (ac.state === 'suspended') ac.resume(); } catch (e) {}
+  return { ac, out, A, S, stop() { try { const t = ac.currentTime; out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.linearRampToValueAtTime(0, t + 0.15); } catch (e) {} } };
+}
+function playIntroReal(L) {
+  const cv = introCanvas(), c = cv.getContext('2d');
+  cv.style.background = '#000';
+  const d = Math.min(window.devicePixelRatio || 1, 2);
+  let vw = 0, vh = 0;
+  const size = () => { vw = window.innerWidth; vh = window.innerHeight; cv.width = Math.round(vw * d); cv.height = Math.round(vh * d); };
+  size(); window.addEventListener('resize', size);
+  const word = APP_BRAND, n = word.length;
+  const PITCH = 27, FONT = 44, LH = 44, PX = 285, PW = 684, PH = 720, PS = 2, PBOT = 455, PY = 441, TOP0 = 458;
+  const C0 = (n - 1) / 2 * PITCH;   // the carriage offset for the first letter: the line comes out centred on the sheet
+  // ---- the script
+  const ease = introEaseIO, hand = (x) => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+  const feeds = [];   // the sheet going up: [t0, t1, amount, kind]
+  const moves = [];   // the carriage: [t0, t1, amount, kind]
+  const snd = [];     // [t, name, ...args]
+  feeds.push([0.5, 1.05, 160, 'knob'], [1.2, 1.78, 168, 'knob']);
+  const R1 = 2.25;   // carriage return to the start of the line (the first thing a typist does)
+  const ret = (t0, travel) => {
+    feeds.push([t0, t0 + 0.12, LH, 'lf']);
+    const dur = 0.24 + travel / 1300;
+    moves.push([t0 + 0.14, t0 + 0.14 + dur, travel, 'slam']);
+    snd.push([t0, 'lever'], [t0 + 0.03, 'click', 0.8], [t0 + 0.07, 'click', 0.9], [t0 + 0.11, 'click', 0.7], [t0 + 0.14, 'slide', dur, Math.round(travel / PITCH)]);
+    return t0 + 0.14 + dur;
+  };
+  const stop1 = ret(R1, C0);
+  const keys = [];   // [t, ch, index]
+  let tt = stop1 + 0.5;
+  for (let i = 0; i < n; i++) {
+    keys.push([tt, word[i], i]);
+    tt += 0.16 + 0.045 * Math.sin(i * 2.3 + 0.5) + (word[i] === ' ' ? 0.07 : 0) + (word[i + 1] === ' ' ? 0.03 : 0);
+  }
+  const STRIKE = 0.062, ESC = 0.094;
+  for (const [t0, ch, i] of keys) {
+    const sp = ch === ' ';
+    snd.push([t0 + 0.028, 'keyDown', sp]);
+    if (!sp) snd.push([t0 + STRIKE, 'strike']);
+    snd.push([t0 + (sp ? 0.06 : ESC), 'escape'], [t0 + 0.165, 'keyUp']);
+    moves.push([t0 + (sp ? 0.06 : ESC), t0 + (sp ? 0.06 : ESC) + 0.035, -PITCH, 'esc']);
+    if (i === Math.max(0, n - 3)) snd.push([t0 + ESC + 0.01, 'bell']);
+  }
+  const lastKey = keys[n - 1][0];
+  const R2 = lastKey + 0.55, stop2 = ret(R2, n * PITCH);
+  const RO = stop2 + 0.35;
+  feeds.push([RO, RO + 0.5, 112, 'knob'], [RO + 0.62, RO + 1.14, 104, 'knob']);
+  const END = RO + 2.25, FADE = 0.75;
+  const thunks = [stop1, stop2];
+  for (const [t0, t1, amt, kind] of feeds) if (kind === 'knob') {
+    const clicks = Math.round(amt / 11);
+    for (let k = 0; k < clicks; k++) snd.push([t0 + (t1 - t0) * hand((k + 0.5) / clicks), 'click', 0.7 + 0.3 * Math.random()]);
+    snd.push([t0, 'rustle', t1 - t0, 1]);
+  }
+  const T0 = performance.now() / 1000;
+  const au = introAudio(T0);
+  if (au) { try { au.S.room(au.A(0), au.A(END)); for (const [t, nm, ...a] of snd) au.S[nm](au.A(t), ...a); } catch (e) {} }
+  // ---- motion, as functions of time
+  const topAt = (t) => { let y = TOP0; for (const [t0, t1, amt, kind] of feeds) y -= amt * (kind === 'lf' ? introEase((t - t0) / (t1 - t0)) : hand((t - t0) / (t1 - t0))); return y; };
+  const slam = (x) => { x = clamp(x, 0, 1); return (1 - Math.cos(Math.PI * x * 0.86)) / (1 - Math.cos(Math.PI * 0.86)); };
+  const escStep = (x) => { if (x <= 0) return 0; if (x >= 1) return 1 + 0.05 * Math.exp(-(x - 1) * 6) * Math.cos((x - 1) * 9); const s = 1 - Math.pow(1 - x, 3); return s * 1.06 - 0.06 * x * x; };
+  const carAt = (t) => { let x = 0;
+    for (const [t0, t1, amt, kind] of moves) { const u = (t - t0) / (t1 - t0); x += amt * (kind === 'slam' ? slam(u) : escStep(u)); }
+    for (const s of thunks) if (t > s) x -= 3.5 * Math.exp(-(t - s) * 18) * Math.sin((t - s) * 70);   // the bounce off the margin stop
+    return x; };
+  const leverAt = (t) => { let v = 0; for (const s of [R1, R2]) { v = Math.max(v, hand((t - s) / 0.12) * (1 - hand((t - s - 0.75) / 0.2))); } return v; };
+  // camera shots: a region of the logo fitted to the screen
+  const shot = (x0, y0, x1, y1, zmax = 9) => { const z = Math.min(vw / (x1 - x0), vh / (y1 - y0), zmax); return [(x0 + x1) / 2, (y0 + y1) / 2, z]; };
+  const textX = 627 + C0 - (n - 1) / 2 * PITCH + (n - 1) / 2 * PITCH, textY = () => PY - (TOP0 - topAt(END)) + (TOP0 - topAt(lastKey + 0.2)) - 14;
+  const camAt = (t) => {
+    const W = shot(20, 60, 1234, 1170), Tp = shot(215, 60, 1039, 990), Tx = shot(textX - 230, textY() - 135, textX + 230, textY() + 135, 1.9);
+    const W0 = [W[0], W[1] + 30, W[2] * 0.9];
+    const mix = (a, b, u) => [lerp(a[0], b[0], u), lerp(a[1], b[1], u), Math.exp(lerp(Math.log(a[2]), Math.log(b[2]), u))];
+    let cam = mix(W0, W, introEase(t / 1.9));
+    cam = mix(cam, Tp, ease((t - 1.75) / 1.25));
+    cam = mix(cam, Tx, ease((t - (R2 + 0.5)) / (RO + 1.25 - R2 - 0.5)));
+    cam[2] *= 1 + 0.05 * ease((t - (RO + 1.2)) / (END - RO - 1.2));
+    return cam;
+  };
+  const shakeAt = (t) => { let y = 0, x = 0;
+    for (const [t0, ch] of keys) if (ch !== ' ') { const s = t - t0 - STRIKE; if (s > 0 && s < 0.12) y += 0.9 * Math.exp(-s * 40) * Math.cos(s * 90); }
+    for (const s0 of thunks) { const s = t - s0; if (s > 0 && s < 0.5) { const a = 4 * Math.exp(-s * 11); x += a * Math.sin(s * 150); y += a * 0.6 * Math.sin(s * 110 + 1); } }
+    return [x, y]; };
+  // ---- the sheet: paper with a little tooth and fibre; letters are struck into it as they are typed
+  const sheet = document.createElement('canvas'); sheet.width = PW * PS; sheet.height = PH * PS;
+  const sg = sheet.getContext('2d');
+  {
+    sg.scale(PS, PS);
+    sg.fillStyle = 'rgb(254,251,243)'; sg.beginPath(); const r = 5; sg.moveTo(0, PH); sg.lineTo(0, r); sg.quadraticCurveTo(0, 0, r, 0); sg.lineTo(PW - r, 0); sg.quadraticCurveTo(PW, 0, PW, r); sg.lineTo(PW, PH); sg.closePath(); sg.fill();
+    const nz = document.createElement('canvas'); nz.width = nz.height = 128; const nzg = nz.getContext('2d'), id = nzg.createImageData(128, 128);
+    for (let i = 0; i < 128 * 128; i++) { const v = 170 + Math.random() * 60; id.data[i * 4] = v; id.data[i * 4 + 1] = v * 0.97; id.data[i * 4 + 2] = v * 0.9; id.data[i * 4 + 3] = Math.random() * 9; }
+    nzg.putImageData(id, 0, 0);
+    sg.globalCompositeOperation = 'source-atop';
+    sg.fillStyle = sg.createPattern(nz, 'repeat'); sg.save(); sg.scale(0.5, 0.5); sg.fillRect(0, 0, PW * 2, PH * 2); sg.restore();
+    sg.lineCap = 'round';
+    for (let i = 0; i < 700; i++) { const x = Math.random() * PW, y = Math.random() * PH, a = Math.random() * 6.3, l = 2 + Math.random() * 7;
+      sg.strokeStyle = `rgba(${Math.random() < 0.5 ? '150,130,100' : '255,255,255'},${0.03 + Math.random() * 0.05})`; sg.lineWidth = 0.35 + Math.random() * 0.4;
+      sg.beginPath(); sg.moveTo(x, y); sg.quadraticCurveTo(x + Math.cos(a + 0.6) * l * 0.5, y + Math.sin(a + 0.6) * l * 0.5, x + Math.cos(a) * l, y + Math.sin(a) * l); sg.stroke(); }
+    const eg = sg.createLinearGradient(0, 0, 8, 0); eg.addColorStop(0, 'rgba(120,100,70,0.16)'); eg.addColorStop(1, 'rgba(120,100,70,0)');
+    sg.fillStyle = eg; sg.fillRect(0, 0, 8, PH);
+    const eg2 = sg.createLinearGradient(PW, 0, PW - 8, 0); eg2.addColorStop(0, 'rgba(120,100,70,0.16)'); eg2.addColorStop(1, 'rgba(120,100,70,0)');
+    sg.fillStyle = eg2; sg.fillRect(PW - 8, 0, 8, PH);
+    sg.globalCompositeOperation = 'source-over';
+  }
+  const inkTile = document.createElement('canvas'); inkTile.width = inkTile.height = 64;
+  { const g = inkTile.getContext('2d'), id = g.createImageData(64, 64);
+    for (let i = 0; i < 64 * 64; i++) { id.data[i * 4 + 3] = Math.random() < 0.11 ? 90 + Math.random() * 140 : 0; } g.putImageData(id, 0, 0); }
+  const glyph = document.createElement('canvas'); glyph.width = glyph.height = Math.ceil(FONT * PS * 1.6);
+  const stamp = (ch, u, v, i) => {   // one letter struck through the ribbon: uneven pressure, a little ink spread
+    const g = glyph.getContext('2d'), G = glyph.width;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, G, G);
+    g.font = `700 ${FONT * PS}px "Courier Prime", "Courier New", monospace`; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+    g.fillStyle = 'rgb(22,19,18)'; g.fillText(ch, G / 2, G * 0.72);
+    g.globalCompositeOperation = 'destination-out';
+    g.fillStyle = g.createPattern(inkTile, 'repeat'); g.save(); g.translate(Math.random() * 64, Math.random() * 64); g.fillRect(-64, -64, G + 128, G + 128); g.restore();
+    const a = Math.random() * 6.3, sk = g.createLinearGradient(G / 2 - Math.cos(a) * G / 3, G / 2 - Math.sin(a) * G / 3, G / 2 + Math.cos(a) * G / 3, G / 2 + Math.sin(a) * G / 3);
+    sk.addColorStop(0, 'rgba(0,0,0,0)'); sk.addColorStop(1, `rgba(0,0,0,${0.12 + Math.random() * 0.22})`); g.fillStyle = sk; g.fillRect(0, 0, G, G);
+    sg.save(); sg.setTransform(1, 0, 0, 1, 0, 0);
+    sg.translate((u + (Math.random() - 0.5) * 0.8) * PS, (v + (Math.random() - 0.5) * 0.9) * PS); sg.rotate((Math.random() - 0.5) * 0.025);
+    sg.globalAlpha = 0.9 + Math.random() * 0.08; sg.shadowColor = 'rgba(28,24,22,0.5)'; sg.shadowBlur = 1.1 * PS;
+    sg.drawImage(glyph, -G / 2, -G * 0.72);
+    sg.restore();
+  };
+  const struck = new Set();
+  const pshadow = document.createElement('canvas'); pshadow.width = (PW + 80) / 4; pshadow.height = (PH + 80) / 4;
+  { const g = pshadow.getContext('2d'); g.filter = 'blur(3px)'; g.fillStyle = 'rgba(0,20,12,0.55)'; g.fillRect(10, 10, PW / 4, PH / 4); }
+  // fixed shading on the sheet: light from above, the bail rod's shadow, the turn round the platen
+  const shadeStops = [[150, [255, 255, 255]], [220, [254, 249, 243]], [280, [253, 244, 233]], [330, [251, 242, 230]], [375, [248, 238, 225]],
+    [388, [238, 226, 210]], [405, [196, 181, 156]], [412, [226, 213, 194]], [421, [243, 231, 215]], [432, [240, 228, 210]], [446, [226, 212, 190]], [456, [196, 182, 160]]];
+  // grain for the whole frame
+  const grain = document.createElement('canvas'); grain.width = grain.height = 160;
+  { const g = grain.getContext('2d'), id = g.createImageData(160, 160);
+    for (let i = 0; i < 160 * 160; i++) { const v = Math.random() < 0.5 ? 0 : 255; id.data[i * 4] = id.data[i * 4 + 1] = id.data[i * 4 + 2] = v; id.data[i * 4 + 3] = Math.random() * 40; } g.putImageData(id, 0, 0); }
+  const grainPat = c.createPattern(grain, 'repeat');
+  const motes = Array.from({ length: 24 }, () => ({ x: Math.random(), y: Math.random(), z: 0.3 + Math.random() * 0.7, ph: Math.random() * 6.3 }));
+  // ---- keys and type bars
+  const KEYS = [
+    [[278, 678], [364, 678], [451, 678], [538, 678], [626, 678], [714, 678], [800, 678], [885, 678], [971, 678]],
+    [[239, 763], [324, 763], [411, 763], [497, 763], [584, 763], [671, 763], [757, 763], [843, 763], [929, 763], [1014, 763]],
+    [[258, 852], [359, 852], [448, 852], [538, 852], [627, 852], [716, 852], [807, 852], [896, 851], [995, 853]],
+  ];
+  const ROWS = ['QWERTYUIO', 'ASDFGHJKLP', 'ZXCVBNM,.'];
+  const keyFor = (ch) => { ch = ch.toUpperCase(); for (let r = 0; r < 3; r++) { const i = ROWS[r].indexOf(ch); if (i >= 0) return KEYS[r][i]; } return [627, 678]; };
+  const keyTravel = (s) => (s < 0 ? 0 : s < 0.035 ? introEase(s / 0.035) : s < 0.1 ? 1 : s < 0.17 ? 1 - hand((s - 0.1) / 0.07) : 0);
+  // a type bar in the basket, swung about its slot in the segment from rest to the printing point (looked at from
+  // the front and a little above: 34 degrees)
+  const CE = Math.cos(0.6), SE = Math.sin(0.6), CX = 627, CY = 470, RS = 85, RB = 255;
+  const proj = (X, Y, Z) => [CX + X, CY - Y * CE + Z * SE];
+  const Q = [0, 147, 170];
+  const barAt = (phi, s) => {   // s: 0 at rest .. 1 on the paper
+    const P = [RS * Math.sin(phi), 0, RS * Math.cos(phi)];
+    const u = [Math.sin(phi), 0, Math.cos(phi)], qv = [Q[0] - P[0], Q[1] - P[1], Q[2] - P[2]], ql = Math.hypot(...qv), q = qv.map((v) => v / ql);
+    const om = Math.acos(clamp(u[0] * q[0] + u[1] * q[1] + u[2] * q[2], -1, 1)), so = Math.sin(om) || 1;
+    const a = Math.sin((1 - s) * om) / so, b = Math.sin(s * om) / so, len = lerp(RB - RS, ql, s);
+    const dir = [a * u[0] + b * q[0], a * u[1] + b * q[1], a * u[2] + b * q[2]];
+    return [proj(...P), proj(P[0] + dir[0] * len, P[1] + dir[1] * len, P[2] + dir[2] * len)];
+  };
+  const barSwing = (s) => (s < 0 ? 0 : s < STRIKE - 0.034 ? 0 : s < STRIKE ? Math.pow((s - STRIKE + 0.034) / 0.034, 1.6) : s < STRIKE + 0.075 ? 1 - introEase((s - STRIKE) / 0.075) * 1.04 : s < STRIKE + 0.12 ? -0.04 * Math.sin(Math.PI * (s - STRIKE - 0.075) / 0.045) : 0);
+  // ---- drawing
+  const body = L.body, KS = IL.kH;
+  let skipAt = 0, done = false;
+  function drawCarriage(cx, top, t, alpha) {
+    c.globalAlpha = alpha;
+    c.drawImage(L.carriage, IL.carriage[0] + cx, IL.carriage[1]);
+    const turned = (TOP0 - top) / 70;   // radians the platen has turned
+    for (const [x, y, w, h, sxo, N] of IL.knobs) {
+      const k = Math.floor(turned * N / (2 * Math.PI) * IL.kF), f = ((-k % IL.kF) + IL.kF) % IL.kF;
+      c.drawImage(L.knobs, sxo, f * KS, w, h, x + cx, y, w, h);
+    }
+    const lv = leverAt(t), [px, py] = IL.pivot;
+    c.save(); c.translate(px + cx, py); c.rotate(-0.06 * lv); c.scale(1 - 0.16 * lv, 1); c.translate(-px - cx, -py);
+    c.drawImage(L.lever, IL.lever[0] + cx, IL.lever[1]); c.restore();
+    // the sheet
+    if (top < PBOT) {
+      c.save(); c.beginPath(); c.rect(PX + cx - 60, top - 60, PW + 120, PBOT - top + 60); c.clip();
+      c.globalAlpha = alpha * 0.8; c.drawImage(pshadow, PX + cx - 40 + 9, top - 40 + 14, PW + 80, PH + 80); c.globalAlpha = alpha;
+      c.restore();
+      c.save(); c.beginPath(); c.rect(PX + cx - 2, top - 2, PW + 4, PBOT - top + 2); c.clip();
+      c.drawImage(sheet, PX + cx, top, PW, PH);
+      c.globalCompositeOperation = 'multiply';
+      const g = c.createLinearGradient(0, 150, 0, 456);
+      for (const [y, col] of shadeStops) g.addColorStop((y - 150) / 306, `rgb(${col})`);
+      c.fillStyle = g; c.fillRect(PX + cx, Math.max(top, 150), PW, PBOT - Math.max(top, 150));
+      const hg = c.createLinearGradient(PX + cx, 0, PX + cx + PW, 0);
+      hg.addColorStop(0, 'rgb(255,255,255)'); hg.addColorStop(0.55, 'rgb(252,250,247)'); hg.addColorStop(1, 'rgb(240,234,226)');
+      c.fillStyle = hg; c.fillRect(PX + cx, top, PW, PBOT - top);
+      c.globalCompositeOperation = 'source-over';
+      // the top edge throws a faint shadow onto the platen as it comes up out of it
+      c.restore();
+    }
+    c.drawImage(L.front, IL.front[0] + cx, IL.front[1]);
+    c.globalAlpha = 1;
+  }
+  function frame() {
+    if (done) return;
+    requestAnimationFrame(frame);
+    let t = performance.now() / 1000 - T0;
+    if (skipAt) t = Math.max(t, END - FADE + (t - skipAt));
+    if (t >= END) { finish(); return; }
+    const top = topAt(t), cx = carAt(t);
+    // letters land on the sheet at the moment of the strike
+    for (const [t0, ch, i] of keys) if (ch !== ' ' && t >= t0 + STRIKE && !struck.has(i)) {
+      struck.add(i);
+      const tS = t0 + STRIKE, cxs = carAt(tS), tops = topAt(tS);
+      stamp(ch, 627 - (PX + cxs), PY - tops, i);
+    }
+    const [camx, camy, z] = camAt(t), [shx, shy] = shakeAt(t);
+    c.setTransform(d, 0, 0, d, 0, 0);
+    c.fillStyle = '#04261a'; c.fillRect(0, 0, vw, vh);
+    const Z = z * d;
+    c.setTransform(Z, 0, 0, Z, (vw / 2 - (camx + shx * 0.5) * z) * d, (vh / 2 - (camy + shy * 0.5) * z) * d);
+    c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+    const K = 1254 / 128;
+    c.drawImage(L.bg, -128 * K, -128 * K, 384 * K, 384 * K);
+    // the carriage, smeared along when it is flying
+    let v = 0; for (const [t0, t1, amt, kind] of moves) if (kind === 'slam') v += amt * (slam((t + 0.008 - t0) / (t1 - t0)) - slam((t - 0.008 - t0) / (t1 - t0))) / 0.016;
+    if (Math.abs(v) > 260) { const dt = 1 / 60; drawCarriage(cx - v * dt * 0.66, top, t, 0.22); drawCarriage(cx - v * dt * 0.33, top, t, 0.4); }
+    drawCarriage(cx, top, t, 1);
+    // the ribbon lifts into the guide for each strike
+    let rib = 0;
+    for (const [t0, ch] of keys) if (ch !== ' ') { const s = t - t0; if (s > 0.012 && s < 0.14) rib = Math.max(rib, s < 0.05 ? introEase((s - 0.012) / 0.038) : 1 - hand((s - 0.075) / 0.06)); }
+    if (rib > 0) {   // a fabric band, its top edge soft, a faint sheen along it
+      const ry = 464 - 40 * rib, rg = c.createLinearGradient(0, ry, 0, ry + 24);
+      rg.addColorStop(0, 'rgba(30,28,30,0)'); rg.addColorStop(0.18, 'rgba(34,31,33,0.96)'); rg.addColorStop(0.3, 'rgba(58,54,56,0.96)'); rg.addColorStop(0.42, 'rgba(20,18,20,0.97)'); rg.addColorStop(1, 'rgba(16,14,16,0.97)');
+      c.fillStyle = rg; c.beginPath(); c.moveTo(598, 470); c.lineTo(598, ry + 3); c.quadraticCurveTo(628, ry - 1, 657, ry + 3); c.lineTo(657, 470); c.closePath(); c.fill();
+    }
+    c.drawImage(body, IL.body[0], IL.body[1]);
+    // the keys being pressed
+    for (const [t0, ch] of keys) {
+      const k = keyTravel(t - t0); if (k <= 0) continue;
+      const dy = 7 * k;
+      if (ch === ' ') {
+        c.fillStyle = '#09090a'; c.fillRect(356, 908, 544, 8 + dy);
+        c.drawImage(body, 352, 905 - 440, 552, 82, 352, 905 + dy, 552, 82);
+        c.fillStyle = `rgba(60,36,0,${0.08 * k})`; c.fillRect(366, 918 + dy, 524, 44);
+      } else {
+        const [kx, ky] = keyFor(ch);
+        c.fillStyle = '#09090a'; c.beginPath(); c.ellipse(kx, ky + 2, 35, 25, 0, 0, 7); c.fill();
+        c.drawImage(body, kx - 37, ky - 24 - 440, 74, 60, kx - 37, ky - 24 + dy, 74, 60);
+        c.fillStyle = `rgba(60,36,0,${0.09 * k})`; c.beginPath(); c.ellipse(kx, ky - 3 + dy, 30, 17, 0, 0, 7); c.fill();
+      }
+    }
+    // the type bar on its way up and back (with a little motion smear)
+    for (const [t0, ch] of keys) {
+      if (ch === ' ') continue;
+      const s = t - t0; if (s < STRIKE - 0.036 || s > STRIKE + 0.13) continue;
+      const [kx] = keyFor(ch), phi = clamp((kx - 627) / 400, -1, 1) * 0.72;
+      for (const [lag, al] of [[0.012, 0.25], [0.006, 0.45], [0, 1]]) {
+        const sw = barSwing(s - lag); if (sw <= 0.001 && lag) continue;
+        const [P, T] = barAt(phi, Math.max(0, sw));
+        c.globalAlpha = al; c.lineCap = 'round';
+        const lit = Math.max(0, sw);
+        c.strokeStyle = 'rgb(92,58,18)'; c.lineWidth = 9; c.beginPath(); c.moveTo(P[0], P[1]); c.lineTo(T[0], T[1]); c.stroke();
+        c.strokeStyle = `rgb(${214 + 30 * lit | 0},${160 + 40 * lit | 0},${78 + 50 * lit | 0})`; c.lineWidth = 6; c.beginPath(); c.moveTo(P[0], P[1]); c.lineTo(T[0], T[1]); c.stroke();
+        c.strokeStyle = 'rgba(255,240,200,0.95)'; c.lineWidth = 2; c.beginPath(); c.moveTo(P[0] - 1.2, P[1]); c.lineTo(T[0] - 1.2, T[1]); c.stroke();
+        const ang = Math.atan2(T[1] - P[1], T[0] - P[0]);
+        c.save(); c.translate(T[0], T[1]); c.rotate(ang + Math.PI / 2);
+        c.fillStyle = 'rgb(58,40,16)'; c.fillRect(-9, -5, 18, 10); c.fillStyle = 'rgb(200,150,72)'; c.fillRect(-9, -5, 18, 2.5);
+        c.restore();
+      }
+      c.globalAlpha = 1;
+    }
+    c.drawImage(L.guide, IL.guide[0], IL.guide[1]);
+    // ---- the film: warm light from the lamp, dust in it, lens falloff, grain, fade
+    c.setTransform(d, 0, 0, d, 0, 0);
+    const M = Math.max(vw, vh);
+    c.globalCompositeOperation = 'soft-light';
+    const lg = c.createRadialGradient(vw * 0.22, -vh * 0.08, 0, vw * 0.22, -vh * 0.08, M * 1.1);
+    lg.addColorStop(0, 'rgba(255,214,150,0.55)'); lg.addColorStop(0.5, 'rgba(255,214,150,0.12)'); lg.addColorStop(1, 'rgba(0,10,20,0.35)');
+    c.fillStyle = lg; c.fillRect(0, 0, vw, vh);
+    c.globalCompositeOperation = 'lighter';
+    for (const m of motes) {
+      const px = ((m.x + t * 0.006 * m.z + Math.sin(t * 0.3 + m.ph) * 0.01) % 1) * vw, py = ((m.y - t * 0.004 * m.z + 1) % 1) * vh;
+      const lit = clamp(1 - Math.hypot(px / vw - 0.22, py / vh + 0.08) / 0.95, 0, 1);
+      const a = 0.35 * lit * m.z * (0.6 + 0.4 * Math.sin(t * 1.7 + m.ph));
+      if (a < 0.02) continue;
+      c.fillStyle = `rgba(255,236,200,${a.toFixed(3)})`; c.beginPath(); c.arc(px, py, 0.6 + m.z * 1.3, 0, 7); c.fill();
+    }
+    c.globalCompositeOperation = 'source-over';
+    const vg = c.createRadialGradient(vw / 2, vh * 0.48, M * 0.3, vw / 2, vh * 0.48, M * 0.78);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.5)');
+    c.fillStyle = vg; c.fillRect(0, 0, vw, vh);
+    c.save(); c.globalAlpha = 0.28; c.translate((Math.random() * 160) | 0, (Math.random() * 160) | 0); c.fillStyle = grainPat; c.fillRect(-160, -160, vw + 320, vh + 320); c.restore();
+    const fin = 1 - introEase(t / 1.1);
+    if (fin > 0) { c.fillStyle = `rgba(0,0,0,${fin.toFixed(3)})`; c.fillRect(0, 0, vw, vh); }
+    const hint = clamp((t - 1.2) / 0.6, 0, 1) * (1 - clamp((t - (END - FADE - 0.6)) / 0.4, 0, 1));
+    if (hint > 0) { c.font = '400 12px "Courier Prime", "Courier New", monospace'; c.textAlign = 'center'; c.fillStyle = `rgba(255,246,228,${(0.5 * hint).toFixed(3)})`; c.fillText('tap to skip', vw / 2, vh - 22); }
+    const fade = clamp((t - (END - FADE)) / FADE, 0, 1);
+    cv.style.opacity = fade > 0 ? String(1 - introEaseIO(fade)) : '';
+  }
+  function finish() {
+    done = true; cv.remove(); window.removeEventListener('resize', size);
+    if (au) { au.stop(); setTimeout(() => { try { au.ac.close(); } catch (e) {} }, 1200); }
+    if (!TOUCH) focusInput();
+  }
+  cv.addEventListener('pointerdown', () => { if (!skipAt) { skipAt = performance.now() / 1000 - T0; if (au) au.stop(); } });
+  const go = () => requestAnimationFrame(frame);
+  if (document.fonts && document.fonts.load) document.fonts.load(`700 ${FONT}px "Courier Prime"`).then(go, go); else go();
 }
 function playIntroDrawn() {
   const cv = document.createElement('canvas'), c = cv.getContext('2d');

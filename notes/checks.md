@@ -616,3 +616,29 @@ Check 53 done. Next: polish the modes further.
   up16test, skintest, focustest pass; ?still replay unchanged.
 
 Check 54 done.
+
+## Check 55 – realistic opening film (app v1.1)
+- The logo is now cut into its real moving parts at build time (android/tools/make_intro_layers.py): fitted
+  background, carriage with an empty black platen, return lever, both ridged knobs (8 turning phases each, ridges
+  rolling round the cylinder), bail rod and rollers, the fixed body (strip, guide, segment, type bars, shell, keys,
+  shadow), and the guide + segment again for type bars to pass behind.
+- The opening (about 9 s, tap to skip) plays the machine like a short film: fade up from black, a sheet is fed in
+  by two turns of the knob (ratchet clicks, paper rustle, knob ridges rolling), the camera pushes in, the return
+  lever swings and the carriage slams over to the margin (line feed, buzz of the rack, thunk and bounce, camera
+  shake). Then "IMRAN TYPER" is typed with human timing: each key goes down and springs back, its type bar swings
+  up out of the fan on a 3D arc into the guide, the ribbon lifts, the letter is struck into the sheet with uneven
+  pressure and ink texture, the carriage steps one letter with the escapement. The bell rings near the margin, the
+  carriage is returned, the paper rolls up and the camera closes in on the typed name before fading into the app.
+- The sheet: paper tooth and fibres, fixed light falling off down the sheet and to the right, the bail rod's
+  shadow, its turn round the platen, a soft shadow behind it. Film touches: warm lamp light, dust in it, lens
+  falloff, fine grain. Motion smear on the fast carriage return.
+- Sound, all synthesized: key thock, slug on the platen (click, body, platen thud, ring of the bar), escapement
+  tick, key release, bell partials, ratchet, paper rustle, carriage slide with rack buzz and margin-stop thunk,
+  soft room tone, through a small-room reverb and a compressor; tapping to skip fades it out.
+- A black cover is in the app page from its first paint, so the app never flashes up before the film.
+- On the plain web page ?intro plays the drawn machine (no missing-file requests); ?intro=real tries the pictures.
+- Checked: frame-by-frame on a phone (390x844 @2x) and desktop (1280x720); packaged page with the app's user
+  agent (audio context running, bundled font, no network requests, no errors or warnings, intro ends into the
+  app); ?intro fallback; functest passes; ?still replay pixel-identical to the previous version.
+
+Check 55 done. Next: keep polishing until the session ends, then the final single-file delivery.
