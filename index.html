@@ -105,6 +105,7 @@
   #backlit { opacity: 0; }
   #fog { position: fixed; inset: 0; display: none; overflow: hidden; pointer-events: none; }
   body.wide #backdrop, body.wide #backlit, body.wide #fog { display: block; }
+  body.wide #app { box-shadow: 0 0 70px 24px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.03); }   /* the machine stands in the night, not pasted on it */
   body.wide #app { box-shadow: 0 0 0 1px rgba(255,255,255,.035), 0 30px 90px rgba(0,0,0,.65); }
   #fog i { position: absolute; left: -30%; width: 160%; bottom: -6%; height: 34%;
            background: radial-gradient(ellipse 22% 42% at 18% 72%, rgba(190,200,215,.075), transparent 70%),
@@ -1269,7 +1270,13 @@ function paintWitch(c, m) {
   // crescent moon
   c.save(); c.translate(KK(26), KK(-5));
   if (m) { c.shadowColor = 'rgba(240,210,110,0.7)'; c.shadowBlur = KK(4) * dpr; }
-  c.fillStyle = gold; c.beginPath(); c.arc(0, 0, KK(5.4), 0, 7); c.arc(KK(2.4), KK(-1.4), KK(4.6), 0, 7, true); c.fill('evenodd');
+  // one closed path through the two circles' crossing points (cutting a whole disc out left a sliver of its rim)
+  const R0 = KK(5.4), bx = KK(2.4), by0 = KK(-1.4), r1 = KK(4.6), dd = Math.hypot(bx, by0), base = Math.atan2(by0, bx);
+  const ca = Math.acos((R0 * R0 + dd * dd - r1 * r1) / (2 * R0 * dd)), cb = Math.acos((r1 * r1 + dd * dd - R0 * R0) / (2 * r1 * dd));
+  c.fillStyle = gold; c.beginPath();
+  c.arc(0, 0, R0, base + ca, base - ca + Math.PI * 2);                              // the outer rim, the long way round
+  c.arc(bx, by0, r1, base + Math.PI + cb, base + Math.PI - cb, true);                // back along the inner edge
+  c.closePath(); c.fill();
   c.restore();
   // belt and buckle
   const by = KK(SEAM.y);
@@ -2363,6 +2370,7 @@ function draw(t) {
   setStyle(grainCv, 'opacity', ((1 - pP * 0.45) * paperTheme().grainA).toFixed(3));
   setStyle(reliefCv, 'opacity', STILL ? '0' : (pP * 0.8).toFixed(3));
   setStyle(controlsEl, 'opacity', pP.toFixed(3));
+  if (backOn && !STILL) setStyle(backCv, 'opacity', (1 - 0.4 * pP).toFixed(3));   // the room around the lamp goes darker too
   // on a dark sheet (Black, Blueprint) the dial turns light so it never disappears into the paper
   const dkP = (PAPER_LIGHT[0] + PAPER_LIGHT[1] + PAPER_LIGHT[2]) < 300;
   setStyle(dialEl, 'color', rgba(mix(dkP ? DIAL_B : DIAL_A, DIAL_B, cP)));
@@ -3896,8 +3904,12 @@ async function renderCard() {
   });
   buildSprites();   // back to the live sprites
   // the date, typed small under the machine
-  c.font = FONT(Math.round(10.5 * kc)); c.textAlign = 'right'; c.fillStyle = rgba(inkRgb, 0.55);
-  c.fillText(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), textLeft + COLS * cell, CH - 25.3 * kc);
+  c.font = FONT(Math.round(10.5 * kc)); c.fillStyle = rgba(inkRgb, 0.55);
+  const dstr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), dw = c.measureText(dstr).width, dr = textLeft + COLS * cell;
+  // on the right as usual, unless the capsule (and whatever hangs from it) is right above that spot
+  const clash = cx + 52 * kc > dr - dw - 8 * kc;
+  c.textAlign = clash ? 'left' : 'right';
+  c.fillText(dstr, clash ? textLeft : dr, CH - 25.3 * kc);
   c.restore();
   return cv;
 }
@@ -4073,11 +4085,17 @@ function paintBackdrop(c, ww, wh, d, lit) {
     const halo = c.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 7);
     halo.addColorStop(0, lit ? 'rgba(255,255,255,0.18)' : 'rgba(205,208,190,0.07)'); halo.addColorStop(1, 'rgba(205,208,190,0)');
     c.fillStyle = halo; c.fillRect(mx - mr * 7, my - mr * 7, mr * 14, mr * 14);
-    c.fillStyle = lit ? '#eef0e6' : '#8a8c83'; c.globalAlpha = lit ? 0.95 : 0.6;
-    c.beginPath(); c.arc(mx, my, mr, 0, 7); c.fill();
-    c.fillStyle = lit ? '#d3d6ca' : '#76786f';
-    for (const [ox, oy, rr] of [[-0.32, -0.22, 0.27], [0.24, 0.12, 0.2], [-0.04, 0.38, 0.15], [0.35, -0.35, 0.1]]) { c.beginPath(); c.arc(mx + ox * mr, my + oy * mr, rr * mr, 0, 7); c.fill(); }
-    c.globalAlpha = 1;
+    // a round moon: lit a little from the upper left, darker toward its rim, soft-edged maria
+    c.save(); c.globalAlpha = lit ? 0.95 : 0.62;
+    const disc = c.createRadialGradient(mx - mr * 0.3, my - mr * 0.3, mr * 0.1, mx, my, mr);
+    disc.addColorStop(0, lit ? '#f6f7ef' : '#9a9c92'); disc.addColorStop(0.75, lit ? '#e2e4d9' : '#84867d'); disc.addColorStop(1, lit ? '#c4c7bb' : '#696b63');
+    c.fillStyle = disc; c.beginPath(); c.arc(mx, my, mr, 0, 7); c.fill(); c.clip();
+    for (const [ox, oy, rr] of [[-0.32, -0.22, 0.27], [0.24, 0.12, 0.2], [-0.04, 0.38, 0.15], [0.35, -0.35, 0.1]]) {
+      const cg = c.createRadialGradient(mx + ox * mr, my + oy * mr, 0, mx + ox * mr, my + oy * mr, rr * mr);
+      cg.addColorStop(0, lit ? 'rgba(170,174,160,0.55)' : 'rgba(90,92,85,0.6)'); cg.addColorStop(1, 'rgba(90,92,85,0)');
+      c.fillStyle = cg; c.beginPath(); c.arc(mx + ox * mr, my + oy * mr, rr * mr, 0, 7); c.fill();
+    }
+    c.restore();
     for (let i = 0; i < 5; i++) {   // soft veils of cloud, one of them across the moon
       const cy = my + (i ? (R() - 0.4) * mr * 3.2 : mr * 0.25), cx = mx + (R() - 0.5) * mr * (i ? 6 : 2), rw = mr * (3 + R() * 4), rh = mr * (0.4 + R() * 0.35);
       c.save(); c.translate(cx, cy); c.scale(rw, rh);
@@ -4511,12 +4529,20 @@ const SKIN_DESC = {
   copper: 'Riveted copper, gauges and gears', space: 'White hull, porthole and antenna',
 };
 function drawSwatch(cv, id, cw) {
-  const tmp = document.createElement('canvas'), pad = CAP_PAD * k, ex = 4 * k, ey = 16 * k;
-  const ch = Math.round(cw * (G.capHH + ey) / (G.capHW + ex));
-  renderCapsule(tmp, SKINS[id], 0);
-  cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); cv.style.width = cw + 'px'; cv.style.height = ch + 'px';
-  const c = cv.getContext('2d'); c.imageSmoothingQuality = 'high';
-  c.drawImage(tmp, (pad - ex) * dpr, (pad - ey) * dpr, (G.capHW + ex) * 2 * dpr, (G.capHH + ey) * 2 * dpr, 0, 0, cv.width, cv.height);
+  // drawn at the swatch's own scale (no stretching), with its indicator lights and a soft contact shadow
+  cv.width = Math.round(cw * dpr); const u = cv.width / ((45.8 + 4) * 2);
+  cv.height = Math.round((21.7 + 16) * 2 * u); cv.style.width = cw + 'px'; cv.style.height = (cv.height / dpr) + 'px';
+  const c = cv.getContext('2d'), tmp = document.createElement('canvas');
+  withScale(u, cv.height / 2 + 0.8 * u, cv.width, () => {
+    renderCapsule(tmp, SKINS[id], 0);
+    const cx = cv.width / 2, cy = G.capCY;
+    const sh = c.createRadialGradient(cx, cy + G.capHH + 3 * u, 0, cx, cy + G.capHH + 3 * u, G.capHW * 1.1);
+    sh.addColorStop(0, 'rgba(0,0,0,0.45)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+    c.save(); c.translate(0, cy + G.capHH + 3 * u); c.scale(1, 0.16); c.translate(0, -(cy + G.capHH + 3 * u));
+    c.fillStyle = sh; c.fillRect(0, 0, cv.width, cv.height * 8); c.restore();
+    c.globalAlpha = SKINS[id].alpha || 1; c.drawImage(tmp, cx - tmp.width / 2, cy - tmp.height / 2); c.globalAlpha = 1;
+    drawLEDs(c, cx, cy, lastKey + 10, 0);
+  });
 }
 let panelKey = '';
 function buildPanel() {
@@ -4659,7 +4685,8 @@ function renderDrafts() {
     t.querySelector('b').textContent = draftTitle(d);
     t.querySelector('small').textContent = (d === DR.cur ? 'open · ' : '') + words(all) + ' words · ' + np + ' page' + (np > 1 ? 's' : '') + ' · ' + ago(d.updated).replace(/ /g, '\u00a0');   // the age never breaks across lines
     t.addEventListener('click', () => { if (d !== DR.cur) openDraft(d.id); closeSheet(); });
-    const rn = el('button', 'ib', '✎'); rn.setAttribute('aria-label', 'Rename');
+    const rn = el('button', 'ib'); rn.setAttribute('aria-label', 'Rename');
+    rn.innerHTML = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.2 5.3l3.5 3.5L8.6 18.9l-4.3.8.8-4.3z"/><path d="M13.4 7.1l3.5 3.5"/></svg>';
     rn.addEventListener('click', () => {
       const inp = document.createElement('input'); inp.value = draftTitle(d); inp.maxLength = 60; inp.setAttribute('aria-label', 'Draft name');
       t.replaceWith(inp); inp.focus({ preventScroll: true }); inp.select();

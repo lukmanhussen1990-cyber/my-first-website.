@@ -382,3 +382,23 @@ Check 32 done. Next: graphics – lightning flash and the wide-screen night, the
 - Full suite + perf re-run for the graphics round (results in Check 34).
 
 Check 33 done. Next: confirm the suite/perf, then more graphics – ghost and witch details in lamp mode.
+
+## Check 34 (v19p) – graphics (independent graphics review)
+Full suite + perf for v19o passed (p50 ≈ 3.7 ms, p90 ≈ 8 ms on a quiet machine; an earlier 10 ms p90 was measured
+while the review agent was running in parallel).
+A graphics-only review at 390x844@3x and 1280x800 found 12 items. Kept on purpose: the lamp-mode webs, steam
+streaks, spark look and the Frankenstein capsule's lamp shading (all measured from the recording, which turns the lamp
+on in its first second), and the raised "°" (also from the recording). Fixed:
+- Witch skin: the crescent moon is one closed path through the two circles' crossing points (cutting out a whole disc
+  had left a ragged sliver of rim).
+- Desktop: a soft shadow around the app column, and the night backdrop dims as the lamp comes on.
+- Desktop moon: shaded from the upper left and darker toward its rim, soft-edged maria clipped to the disc.
+- Share picture: the date moves to the left when the capsule (and whatever hangs from it) is above its usual spot.
+- Control panel capsule thumbnails: drawn at their own scale (no stretching), with the indicator lights and a soft
+  contact shadow, so they match the live capsule.
+- Drafts: the rename pencil is a line icon in the same weight and gold as the other icons.
+- Tests: functest, skintest, r12test, up16test, reducedtest, mobile18, backup, ambient soak, share cards pass;
+  ?still replay unchanged (gear only).
+
+Check 34 done. Next: graphics – Black paper sheet body (slight lift and grain), skin rim light under the lamp for the
+non-recorded skins.
