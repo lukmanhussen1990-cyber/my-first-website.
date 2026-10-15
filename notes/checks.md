@@ -373,3 +373,12 @@ Check 31 done. Next: graphics – bats and lightning at full resolution, then th
 - Tests: up16test, functest, ambient soak pass.
 
 Check 32 done. Next: graphics – lightning flash and the wide-screen night, then the control panel's previews.
+
+## Check 33 (v19o) – graphics
+- Lightning on the wide night (1280x800) checked frame by frame: bolt, lit sky and silhouettes read well; unchanged.
+- T strike checked at 3x frame by frame: matches the recording; unchanged on purpose.
+- Control panel paper tiles hint at their sheets: scattered grain on Cream, soft tea stains on Parchment, faint
+  fibres on Black (Blueprint already showed its grid).
+- Full suite + perf re-run for the graphics round (results in Check 34).
+
+Check 33 done. Next: confirm the suite/perf, then more graphics – ghost and witch details in lamp mode.

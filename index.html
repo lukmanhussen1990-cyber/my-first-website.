@@ -4540,6 +4540,10 @@ function buildPanel() {
     b.setAttribute('role', 'radio'); b.dataset.v = id; b.setAttribute('aria-label', P.name);
     b.style.background = P.light; b.style.color = P.ink[0];
     if (id === 'blueprint') b.style.backgroundImage = 'linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px)', b.style.backgroundSize = '8px 8px';
+    // each tile hints at its sheet: tea stains on the parchment, faint fibres in the black paper
+    if (id === 'parchment') b.style.backgroundImage = 'radial-gradient(circle at 24% 30%, rgba(150,100,40,.2) 0, rgba(150,100,40,.12) 9%, transparent 16%), radial-gradient(circle at 78% 72%, rgba(150,100,40,.15) 0, rgba(150,100,40,.08) 6%, transparent 12%), radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(120,80,30,.25) 100%)';
+    if (id === 'black') b.style.backgroundImage = 'linear-gradient(32deg, transparent 46%, rgba(255,255,255,.07) 47%, transparent 48%), linear-gradient(-58deg, transparent 62%, rgba(255,255,255,.06) 63%, transparent 64%), linear-gradient(80deg, transparent 20%, rgba(255,255,255,.05) 21%, transparent 22%)';
+    if (id === 'cream') b.style.backgroundImage = 'radial-gradient(rgba(60,50,40,.12) .5px, transparent .8px), radial-gradient(rgba(60,50,40,.09) .5px, transparent .8px)', b.style.backgroundSize = '13px 11px, 17px 19px', b.style.backgroundPosition = '0 0, 6px 4px';
     b.addEventListener('click', () => { prefs.paper = id; savePrefs(); applyPaper(); refreshPanel(); });
     g2.appendChild(b);
   }
