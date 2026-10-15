@@ -996,7 +996,7 @@ const SKINS = {
   mummy: { name: 'Mummy', short: 'Mummy', paint: paintMummy, props: propsMummy, pitch: 0.6, rim: ['rgba(90,70,40,0.3)', 'rgba(12,10,6,0.55)'],
     sp: { beam: [255, 222, 160], beam2: [255, 236, 190], halo: [240, 180, 60], mid: [255, 222, 140], tip: [255, 236, 190], sheen: '#f3e2b8' },
     flood: [[72, 60, 24], [60, 50, 20], [36, 30, 12], [14, 12, 5]], halo: [210, 170, 90], steam: [240, 228, 196], steamAt: [30.5, -5.5] },
-  ghost: { gloss: 0.25, name: 'Ghost', short: 'Ghost', paint: paintGhost, props: propsGhost, bob: (t) => Math.sin(t * 2.4) * 1.8 * k + Math.sin(t * 0.9) * 0.6 * k, pitch: 1.5, rim: ['rgba(120,140,160,0.35)', 'rgba(20,30,40,0.5)'],
+  ghost: { gloss: 0.25, alpha: 0.86, name: 'Ghost', short: 'Ghost', paint: paintGhost, props: propsGhost, bob: (t) => Math.sin(t * 2.4) * 1.8 * k + Math.sin(t * 0.9) * 0.6 * k, pitch: 1.5, rim: ['rgba(120,140,160,0.35)', 'rgba(20,30,40,0.5)'],
     sp: { beam: [190, 228, 255], beam2: [214, 240, 255], halo: [110, 190, 255], mid: [185, 232, 255], tip: [225, 245, 255], sheen: '#e6f4ff' },
     flood: [[38, 62, 80], [32, 52, 66], [19, 31, 40], [8, 12, 16]], halo: [150, 200, 240], steam: null },
   witch: { gloss: 0.14, name: 'Witch', short: 'Witch', paint: paintWitch, props: propsWitch, pitch: 1.6, rim: ['rgba(30,14,46,0.45)', 'rgba(5,2,9,0.6)'],
@@ -2381,8 +2381,9 @@ function draw(t) {
 
   // ----- capsule -----
   const pad = CAP_PAD * k, cw = (G.capHW + pad) * 2, chh = (G.capHH + pad) * 2;
-  if (cP < 1) { c.globalAlpha = 1; c.drawImage(capCv[0], cx - cw / 2, cy - chh / 2, cw, chh); }
-  if (cP > 0) { c.globalAlpha = cP; c.drawImage(capCv[1], cx - cw / 2, cy - chh / 2, cw, chh); }
+  const ca = skin.alpha || 1;   // the ghost is see-through
+  if (cP < 1) { c.globalAlpha = ca; c.drawImage(capCv[0], cx - cw / 2, cy - chh / 2, cw, chh); }
+  if (cP > 0) { c.globalAlpha = cP * ca; c.drawImage(capCv[1], cx - cw / 2, cy - chh / 2, cw, chh); }
   let swapA = 0;
   if (swap.t0 && t - swap.t0 < SWAP_DUR) {   // a new skin: the old one melts away under the zap
     const a = swapA = 1 - E.inOutSine(clamp((t - swap.t0) / SWAP_DUR, 0, 1));
@@ -3920,7 +3921,7 @@ const ambR = mulberry(+((location.search.match(/[?&]seed=(\d+)/) || [])[1] || (D
 const AMB = { nextBolt: 0, nextBats: 0, defer: 0, lastT: 0, boltT0: -99, flashAmp: 0.4, flashOn: false };
 const flashEl = $('#flash'), backCv = $('#backdrop'), litCv = $('#backlit'), ambCv = $('#amb');
 function updateAmbient(t) {
-  if (!AMB.nextBolt) { AMB.nextBolt = t + 75 + ambR() * 60; AMB.nextBats = t + 100 + ambR() * 80; }
+  if (!AMB.nextBolt) { AMB.nextBolt = t + 45 + ambR() * 30; AMB.nextBats = t + 60 + ambR() * 40; }
   if (t - AMB.lastT > 2) {   // back from a hidden tab: nothing fires at once
     AMB.nextBolt = Math.max(AMB.nextBolt, t + 20 + ambR() * 30); AMB.nextBats = Math.max(AMB.nextBats, t + 30 + ambR() * 40);
   }
