@@ -461,9 +461,9 @@ function buildCapsules() {
     gr.addColorStop(0, 'rgba(0,0,0,0.26)'); gr.addColorStop(0.05, 'rgba(0,0,0,0.1)'); gr.addColorStop(0.13, m ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.06)');
     gr.addColorStop(0.24, 'rgba(255,255,255,0)'); gr.addColorStop(0.93, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.24)');
     c.fillStyle = gr; c.fillRect(-hw, -hh, hw * 2, hh * 2);
-    // top / bottom rim shading (round body)
+    // top / bottom rim shading (round body); light mode has a faint sheen at the top edge, no dark line
     gr = c.createLinearGradient(0, -hh, 0, hh);
-    gr.addColorStop(0, m ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,240,0.07)'); gr.addColorStop(0.08, 'rgba(0,0,0,0)');   // light mode: a faint sheen at the top edge, no dark line gr.addColorStop(0.9, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.18)');
+    gr.addColorStop(0, m ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,240,0.07)'); gr.addColorStop(0.08, 'rgba(0,0,0,0)'); gr.addColorStop(0.9, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.18)');
     c.fillStyle = gr; c.fillRect(-hw, -hh, hw * 2, hh * 2);
     // very subtle mottling
     const R = mulberry(31 + m);
