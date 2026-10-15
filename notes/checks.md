@@ -144,3 +144,25 @@ text drawing are pixel-identical); new r12test (menu, .txt, picture, keyboard, t
 haptics) and the full suite pass; reviewfix/audioleak updated for the three sound modes.
 **Check 12 done. Next: rare distant lightning with thunder under the lamp, a backdrop for wide screens,
 reduced-motion support, small UI polish.**
+
+## Check 13 — ambience, backdrop, reduced motion (v13a)
+Added (none of it can happen in the first minute, so the recorded opening is untouched; it uses its own
+random stream, so the machine's own randomness is unchanged):
+- Rare distant lightning (first after ~1.5–2 min, then every ~1.5–4 min, waiting for a pause in typing):
+  the room flashes in two or three flickers, the lamp dips with the surge, thunder rolls in 0.7–2.7 s later
+  (closer = sooner, louder, with a crack) and the webs tremble.
+- Now and then one to three bats flap across the page.
+- Wide screens (desktop, landscape): the machine stands in front of a night window — a dim moon veiled by
+  cloud, faint stars, hills, a castle with two lit windows, a dead tree, a few graves and a fence, drifting
+  fog; lightning lights the whole sky with a bolt and shows the silhouettes. The column gets a soft shadow.
+- prefers-reduced-motion: no flashes, no bats, no fog drift, instant menus; the torn page fades instead of
+  flying away.
+- Hover: the top-bar icons brighten under a mouse (the dial stays as recorded).
+Found and fixed while testing: the bats' wing sound could ask for a zero gain, which throws — and since
+the launch was rescheduled after the call, it would have retried every frame. The envelope helper now
+clamps, and both ambient events are rescheduled before they run. New sounds were levelled against a key
+clack (thunder −26/−34 dB, tear −32, skin sounds −27…−31, wings −47 dBFS short-term RMS).
+Checked: default look identical on the replay; ambsoak (20 virtual minutes: 8 strikes, ≥ 90 s apart, first
+at 98 s, overlays end hidden, no errors), reducedtest, the full suite, perf and audio-node counts.
+**Check 13 done. Next: final regression against the recording, a new demo video showing the new features,
+then the final single-file delivery.**

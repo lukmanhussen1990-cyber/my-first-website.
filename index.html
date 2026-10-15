@@ -96,11 +96,38 @@
            opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
   #toast.show.act { pointer-events: auto; }
+  /* wide screens: a night outside the window behind the machine */
+  #backdrop, #backlit { position: fixed; left: 0; top: 0; display: none; pointer-events: none; }
+  #backlit { opacity: 0; }
+  #fog { position: fixed; inset: 0; display: none; overflow: hidden; pointer-events: none; }
+  body.wide #backdrop, body.wide #backlit, body.wide #fog { display: block; }
+  body.wide #app { box-shadow: 0 0 0 1px rgba(255,255,255,.035), 0 30px 90px rgba(0,0,0,.65); }
+  #fog i { position: absolute; left: -30%; width: 160%; bottom: -6%; height: 34%;
+           background: radial-gradient(ellipse 22% 42% at 18% 72%, rgba(190,200,215,.075), transparent 70%),
+                       radial-gradient(ellipse 18% 36% at 52% 82%, rgba(190,200,215,.06), transparent 70%),
+                       radial-gradient(ellipse 24% 46% at 84% 74%, rgba(190,200,215,.075), transparent 70%);
+           animation: fogdrift 80s ease-in-out infinite alternate; }
+  #fog i + i { bottom: 4%; height: 24%; opacity: .7; animation-duration: 115s; animation-direction: alternate-reverse; }
+  @keyframes fogdrift { from { transform: translateX(-7%); } to { transform: translateX(7%); } }
+  /* a lightning strike lights up the room; bats fly across now and then */
+  #flash { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; mix-blend-mode: screen; background: rgb(150,170,215); }
+  #amb { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; display: none; }
+  @media (hover: hover) {
+    .icon { transition: filter .15s ease; }
+    .icon:not(#dial):hover { filter: brightness(1.4); }   /* the light icons on the dark bar brighten */
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #fog i { animation: none; }
+    #skinTray, #shareMenu, #toast { transition: none; }
+  }
   #toast button { margin-left: 14px; padding: 3px 2px; color: #f2d58c; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
 </style>
 </head>
 <body>
 <noscript><p style="color:#d8d8d2;font:14px 'Courier New',monospace;padding:24px">This typewriter needs JavaScript to run.</p></noscript>
+<canvas id="backdrop"></canvas>
+<canvas id="backlit"></canvas>
+<div id="fog"><i></i><i></i></div>
 <div id="app">
   <div id="paper">
     <div id="vignette"></div>
@@ -147,6 +174,8 @@
   <button id="capBtn" aria-label="Change the capsule skin" aria-haspopup="true" aria-expanded="false"></button>
   <div id="skinTray" role="radiogroup" aria-label="Capsule skins"></div>
   <div id="shareMenu" role="menu" aria-label="Share"></div>
+  <div id="flash"></div>
+  <canvas id="amb"></canvas>
   <div id="toast"></div>
 </div>
 
@@ -203,6 +232,7 @@ let W = 440, H = 956, k = 1, dpr = 1;
 const G = {};
 let stableW = 0, stableH = 0;
 const TOUCH = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window;
+const REDUCED = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);   // no flashes, bats or flying paper
 
 function measure() {
   const iw = Math.max(1, window.innerWidth), ih = Math.max(1, window.innerHeight);
@@ -277,6 +307,7 @@ function layout() {
   buildCapsules();
   layoutSkinUI();
   layoutMenu();
+  layoutBackdrop();
   buildSprites();
   buildCaptions();
   lightDirty = true;
@@ -2283,7 +2314,7 @@ const AU = {
   setOn(on) { this.setMode(on ? 'all' : 'off'); },
   // ---- building blocks ----
   noiseSrc(t, dur) { const s = this.ctx.createBufferSource(); s.buffer = this.noise; s.start(t, Math.random() * 1.5, dur + 0.05); return s; },
-  env(g, t, a, peak, d) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); },
+  env(g, t, a, peak, d) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak), t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); },
   burst(t, { f = 3000, q = 1.2, type = 'bandpass', gain = 0.5, a = 0.001, d = 0.04, dest } = {}) {
     const n = this.noiseSrc(t, a + d), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
     fl.type = type; fl.frequency.value = f; fl.Q.value = q; this.env(g, t, a, gain, d);
@@ -2366,8 +2397,8 @@ const AU = {
     this.zap(0.55);
     const s = t + 0.26;
     if (id === 'pumpkin') {          // a hollow wooden bonk
-      this.tone(s, { f: 190, f2: 120, gain: 0.3, a: 0.002, d: 0.16 });
-      this.burst(s, { f: 420, q: 2.5, gain: 0.5, a: 0.002, d: 0.08 });
+      this.tone(s, { f: 190, f2: 120, gain: 0.18, a: 0.002, d: 0.16 });
+      this.burst(s, { f: 420, q: 2.5, gain: 0.3, a: 0.002, d: 0.08 });
     } else if (id === 'vampire') {   // bat wings fluttering past
       for (let i = 0; i < 9; i++) this.burst(s + i * 0.045, { f: 900 + i * 60, q: 1.6, gain: 0.22 * (1 - i / 10), a: 0.004, d: 0.025 });
     } else if (id === 'mummy') {     // a dusty rustle and a low groan
@@ -2392,16 +2423,41 @@ const AU = {
       o.connect(g); g.connect(this.sfx); g.connect(this.verb); o.start(t); o.stop(t + d + 0.05);
     }
   },
+  thunder(dist = 0.5) {
+    if (!this.ready()) return; const c = this.ctx, t0 = c.currentTime + 0.01, dur = 3.2 + dist * 1.6;
+    // rolling low rumble: looped noise through falling low-passes, a few swells, a long tail into the room
+    const n = c.createBufferSource(), lp = c.createBiquadFilter(), lp2 = c.createBiquadFilter(), g = c.createGain();
+    n.buffer = this.noise; n.loop = true;
+    lp.type = 'lowpass'; lp.frequency.setValueAtTime(700 - dist * 450, t0); lp.frequency.exponentialRampToValueAtTime(90, t0 + dur);
+    lp2.type = 'lowpass'; lp2.frequency.value = 900;
+    const peak = 0.34 - dist * 0.16;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(peak, t0 + 0.12 + dist * 0.25);
+    let tt = t0 + 0.4 + dist * 0.2;
+    for (let i = 0; i < 4; i++) { g.gain.setTargetAtTime(peak * (0.35 + Math.random() * 0.6), tt, 0.12); tt += 0.25 + Math.random() * 0.45; }
+    g.gain.setTargetAtTime(0.0001, tt, Math.max(0.2, (t0 + dur - tt) / 4));
+    n.connect(lp); lp.connect(lp2); lp2.connect(g); g.connect(this.sfx); g.connect(this.verb);
+    n.start(t0, Math.random() * 1.5); n.stop(t0 + dur + 0.6);
+    if (dist < 0.35) this.burst(t0, { f: 1800, type: 'highpass', q: 0.6, gain: 0.22, a: 0.002, d: 0.12 });   // the crack of a close one
+  },
+  flutter(n = 1) {
+    if (!this.ready()) return; const t0 = this.ctx.currentTime + 0.05;
+    // soft wingbeats passing by
+    const N = 14 + n * 4;
+    for (let i = 0; i < N; i++) {
+      const env = 0.15 + 0.85 * Math.sin(Math.PI * (i + 0.5) / N);
+      this.burst(t0 + i * 0.07 + Math.random() * 0.02, { f: 700 + Math.random() * 500, q: 1.3, gain: 0.08 * env * (0.6 + Math.random() * 0.6), a: 0.006, d: 0.035 });
+    }
+  },
   tear() {
     if (!this.ready()) return; const t0 = this.ctx.currentTime + 0.004;
     // the rip: a dense crackle of short band-passed bursts rising in pitch over a filtered noise tear
     for (let i = 0; i < 26; i++) {
       const u = i / 26;
-      this.burst(t0 + u * 0.3 + Math.random() * 0.012, { f: 1300 + u * 2600 + Math.random() * 800, q: 1.4, gain: 0.09 + Math.random() * 0.13, a: 0.001, d: 0.008 + Math.random() * 0.012 });
+      this.burst(t0 + u * 0.3 + Math.random() * 0.012, { f: 1300 + u * 2600 + Math.random() * 800, q: 1.4, gain: 0.16 + Math.random() * 0.22, a: 0.001, d: 0.008 + Math.random() * 0.012 });
     }
     const n = this.noiseSrc(t0, 0.36), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
     fl.type = 'bandpass'; fl.Q.value = 0.9; fl.frequency.setValueAtTime(900, t0); fl.frequency.exponentialRampToValueAtTime(3800, t0 + 0.3);
-    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.15, t0 + 0.04); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.26, t0 + 0.04); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
     n.connect(fl); fl.connect(g); g.connect(this.sfx);
     // and the sheet whooshing away
     const w = this.noiseSrc(t0 + 0.28, 0.5), wf = this.ctx.createBiquadFilter(), wg = this.ctx.createGain(), t1 = t0 + 0.28;
@@ -2990,7 +3046,7 @@ function tearOff(t) {
   const fly = -(top + hh + 60 * k);
   const done = () => cv.remove();
   try {
-    const an = cv.animate([
+    const an = REDUCED ? cv.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' }) : cv.animate([
       { transform: 'translate(0px, 0px) rotate(0deg)', offset: 0, easing: 'ease-out' },                         // the sheet lifts off the pipe…
       { transform: `translate(${-1.5 * k}px, ${-7 * k}px) rotate(-0.7deg)`, offset: 0.14, easing: 'cubic-bezier(.55,0,.9,.5)' },
       { transform: `translate(${-34 * k}px, ${fly}px) rotate(-10deg)`, offset: 1 },                          // …and flies away
@@ -2998,6 +3054,211 @@ function tearOff(t) {
     an.onfinish = done;
   } catch (e) { done(); }
   setTimeout(done, 1600);   // in case the animation never finishes (hidden tab)
+}
+
+/* ------------------------------------------------------------- ambience -- */
+// Rare, gentle Halloween ambience that never touches the recorded opening: a distant lightning strike now and
+// then (the room flashes, the lamp dips, thunder rolls in, the webs tremble) and a few bats crossing the page.
+// It has its own random stream so the machine's own randomness is unchanged.
+const ambR = mulberry((Date.now() ^ 0x5bd1e995) | 0);
+const AMB = { nextBolt: 0, nextBats: 0, defer: 0, lastT: 0, boltT0: -99, flashAmp: 0.4, flashOn: false };
+const flashEl = $('#flash'), backCv = $('#backdrop'), litCv = $('#backlit'), ambCv = $('#amb');
+function updateAmbient(t) {
+  if (!AMB.nextBolt) { AMB.nextBolt = t + 75 + ambR() * 60; AMB.nextBats = t + 100 + ambR() * 80; }
+  if (t - AMB.lastT > 2) {   // back from a hidden tab: nothing fires at once
+    AMB.nextBolt = Math.max(AMB.nextBolt, t + 20 + ambR() * 30); AMB.nextBats = Math.max(AMB.nextBats, t + 30 + ambR() * 40);
+  }
+  AMB.lastT = t;
+  if (t >= AMB.nextBolt) {
+    if (t - lastKey < 1.2 && AMB.defer < 3) { AMB.nextBolt = t + 2 + ambR() * 3; AMB.defer++; }   // wait for a pause
+    else { AMB.defer = 0; AMB.nextBolt = t + 90 + ambR() * 150; strikeLightning(t); }   // reschedule first: a failure must not repeat every frame
+  }
+  if (t >= AMB.nextBats) { AMB.nextBats = t + 120 + ambR() * 200; launchBats(t); }
+}
+function strikeLightning(t) {
+  const dist = ambR();   // 0 close … 1 far
+  AMB.boltT0 = t; AMB.flashAmp = (lampOn ? 0.42 : 0.26) * (1 - dist * 0.4);
+  if (backOn) paintBackdrop(litCv.getContext('2d'), window.innerWidth, window.innerHeight, AMB.backD, true);
+  const delay = 0.7 + dist * 2;
+  setTimeout(() => { AU.thunder(dist); if (!REDUCED) joltWebs(90 + (1 - dist) * 120); }, delay * 1000);
+}
+// two or three flickers in ~0.3 s, then the afterglow fades
+function boltEnv(s) {
+  let e = 0;
+  for (const [t0, a, tau] of [[0, 0.65, 0.04], [0.1, 0.4, 0.03], [0.19, 1, 0.09]]) if (s >= t0) e += a * Math.exp(-(s - t0) / tau);
+  return Math.min(1, e);
+}
+function updateLightning(t) {
+  const s = t - AMB.boltT0;
+  if (REDUCED || s < 0 || s > 1) {
+    if (AMB.flashOn) { setStyle(flashEl, 'opacity', '0'); setStyle(litCv, 'opacity', '0'); AMB.flashOn = false; }
+    return 1;
+  }
+  const e = boltEnv(s);
+  setStyle(flashEl, 'opacity', (e * AMB.flashAmp).toFixed(3));
+  if (backOn) setStyle(litCv, 'opacity', e.toFixed(3));
+  AMB.flashOn = true;
+  return 1 - 0.45 * e;   // the lamp dips with the surge
+}
+
+// ---- the night behind the machine on wide screens: sky, a dim moon, hills, a castle, a dead tree, graves
+let backOn = false, backKey = '';
+function layoutBackdrop() {
+  const ww = window.innerWidth, wh = window.innerHeight, wide = ww - W > 40;
+  document.body.classList.toggle('wide', wide);
+  backOn = wide;
+  if (!wide) { if (backKey) { backCv.width = backCv.height = litCv.width = litCv.height = 0; backKey = ''; } return; }
+  const key = ww + 'x' + wh + '/' + W + '@' + dpr;
+  if (key === backKey) return;
+  backKey = key;
+  const d = AMB.backD = Math.min(dpr, 1.5);   // a soft night does not need full resolution
+  for (const cv of [backCv, litCv]) { cv.width = Math.round(ww * d); cv.height = Math.round(wh * d); cv.style.width = ww + 'px'; cv.style.height = wh + 'px'; }
+  paintBackdrop(backCv.getContext('2d'), ww, wh, d, false);
+}
+function paintBackdrop(c, ww, wh, d, lit) {
+  c.setTransform(d, 0, 0, d, 0, 0);
+  const side = (ww - W) / 2, colR = side + W, R = mulberry(1031), s = clamp(Math.min(side / 420, wh / 900), 0.55, 1.25);
+  const sky = c.createLinearGradient(0, 0, 0, wh);
+  if (lit) { sky.addColorStop(0, '#3f4a61'); sky.addColorStop(0.55, '#6f7c97'); sky.addColorStop(1, '#8c97ae'); }
+  else { sky.addColorStop(0, '#0a0c10'); sky.addColorStop(0.6, '#11141a'); sky.addColorStop(1, '#171b23'); }
+  c.fillStyle = sky; c.fillRect(0, 0, ww, wh);
+  // faint stars
+  for (let i = 0; i < 140; i++) {
+    const x = R() * ww, y = R() * wh * 0.62, a = 0.03 + R() * 0.11, z = R() < 0.92 ? 1 : 1.7;
+    if (!lit) { c.fillStyle = `rgba(215,220,235,${a})`; c.fillRect(x, y, z, z); }
+  }
+  // a dim moon over the left side, thin clouds drifting across it
+  if (side > 140) {
+    const mx = side * 0.36, my = wh * 0.19, mr = clamp(side * 0.07, 14, 34);
+    const halo = c.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 7);
+    halo.addColorStop(0, lit ? 'rgba(255,255,255,0.18)' : 'rgba(205,208,190,0.07)'); halo.addColorStop(1, 'rgba(205,208,190,0)');
+    c.fillStyle = halo; c.fillRect(mx - mr * 7, my - mr * 7, mr * 14, mr * 14);
+    c.fillStyle = lit ? '#eef0e6' : '#8a8c83'; c.globalAlpha = lit ? 0.95 : 0.6;
+    c.beginPath(); c.arc(mx, my, mr, 0, 7); c.fill();
+    c.fillStyle = lit ? '#d3d6ca' : '#76786f';
+    for (const [ox, oy, rr] of [[-0.32, -0.22, 0.27], [0.24, 0.12, 0.2], [-0.04, 0.38, 0.15], [0.35, -0.35, 0.1]]) { c.beginPath(); c.arc(mx + ox * mr, my + oy * mr, rr * mr, 0, 7); c.fill(); }
+    c.globalAlpha = 1;
+    for (let i = 0; i < 5; i++) {   // soft veils of cloud, one of them across the moon
+      const cy = my + (i ? (R() - 0.4) * mr * 3.2 : mr * 0.25), cx = mx + (R() - 0.5) * mr * (i ? 6 : 2), rw = mr * (3 + R() * 4), rh = mr * (0.4 + R() * 0.35);
+      c.save(); c.translate(cx, cy); c.scale(rw, rh);
+      const g = c.createRadialGradient(0, 0, 0, 0, 0, 1);
+      g.addColorStop(0, lit ? 'rgba(78,86,106,0.6)' : 'rgba(20,23,30,0.8)'); g.addColorStop(0.6, lit ? 'rgba(78,86,106,0.3)' : 'rgba(20,23,30,0.45)'); g.addColorStop(1, 'rgba(20,23,30,0)');
+      c.fillStyle = g; c.beginPath(); c.arc(0, 0, 1, 0, 7); c.fill(); c.restore();
+    }
+  }
+  // hills: far and near
+  const farY = (x) => wh * 0.79 + wh * 0.045 * (Math.sin(x * 0.0042 + 1.3) * 0.6 + Math.sin(x * 0.011 + 3.1) * 0.3 + Math.sin(x * 0.027 + 0.7) * 0.1);
+  const nearY = (x) => wh * 0.885 + wh * 0.035 * (Math.sin(x * 0.0055 + 4.2) * 0.6 + Math.sin(x * 0.013 + 1.7) * 0.3 + Math.sin(x * 0.031 + 2.9) * 0.1);
+  const farCol = lit ? '#262b36' : '#0e1015', nearCol = lit ? '#08090b' : '#0a0b0e';
+  const ridge = (fn, col) => { c.fillStyle = col; c.beginPath(); c.moveTo(0, wh); for (let x = 0; x <= ww + 8; x += 8) c.lineTo(x, fn(x)); c.lineTo(ww, wh); c.closePath(); c.fill(); };
+  ridge(farY, farCol);
+  // the castle on the far hill, left of the machine
+  if (side > 130) {
+    const x = side * 0.5, y = farY(x) + 4 * s, q = s;
+    c.fillStyle = farCol;
+    const rect = (x0, w, h) => c.fillRect(x + x0 * q, y - h * q, w * q, h * q);
+    const merlons = (x0, w, h) => { for (let mx = x0; mx < x0 + w - 3; mx += 8) c.fillRect(x + mx * q, y - (h + 4) * q, 4.5 * q, 4.5 * q); };
+    const roof = (cx, w, h0, h) => { c.beginPath(); c.moveTo(x + (cx - w / 2 - 2) * q, y - h0 * q); c.lineTo(x + cx * q, y - (h0 + h) * q); c.lineTo(x + (cx + w / 2 + 2) * q, y - h0 * q); c.closePath(); c.fill(); };
+    rect(-62, 124, 26); merlons(-62, 124, 26);
+    rect(-20, 40, 60); merlons(-20, 40, 60);
+    rect(-60, 18, 76); roof(-51, 18, 76, 30);
+    rect(42, 16, 66); roof(50, 16, 66, 24);
+    rect(-2, 2, 84); c.beginPath(); c.moveTo(x, y - 84 * q); c.lineTo(x + 12 * q, y - 80 * q); c.lineTo(x, y - 76 * q); c.fill();   // flag
+    if (!lit) {   // two windows still lit up there
+      c.fillStyle = 'rgba(226,170,80,0.75)'; c.fillRect(x - 5 * q, y - 44 * q, 2.6 * q, 4.4 * q); c.fillRect(x - 53 * q, y - 58 * q, 2.4 * q, 4 * q);
+      const g = c.createRadialGradient(x - 4 * q, y - 42 * q, 0, x - 4 * q, y - 42 * q, 14 * q);
+      g.addColorStop(0, 'rgba(226,170,80,0.08)'); g.addColorStop(1, 'rgba(226,170,80,0)'); c.fillStyle = g; c.fillRect(x - 18 * q, y - 56 * q, 28 * q, 28 * q);
+    }
+  }
+  ridge(nearY, nearCol);
+  c.fillStyle = nearCol; c.strokeStyle = nearCol; c.lineCap = 'round';
+  // a dead tree and a few graves on the right
+  if (side > 130) {
+    const tx = colR + side * 0.58, ty = nearY(tx) + 6 * s;
+    const branch = (x, y, len, ang, w, depth) => {
+      const x2 = x + Math.cos(ang) * len, y2 = y + Math.sin(ang) * len;
+      c.lineWidth = w; c.beginPath(); c.moveTo(x, y);
+      c.quadraticCurveTo(x + Math.cos(ang + 0.35) * len * 0.5, y + Math.sin(ang + 0.35) * len * 0.5, x2, y2); c.stroke();
+      if (depth > 0) {
+        const n = R() < 0.35 ? 3 : 2;
+        for (let i = 0; i < n; i++) branch(x2, y2, len * (0.6 + R() * 0.16), ang + (R() - 0.5) * 0.9 + (i - (n - 1) / 2) * 0.62, w * 0.6, depth - 1);
+      }
+    };
+    branch(tx, ty, 62 * s, -Math.PI / 2 - 0.12, 8 * s, 6);
+    for (const [ox, h, cross] of [[-0.42, 21, 1], [-0.3, 15, 0], [-0.18, 18, 1], [0.24, 14, 0]]) {
+      const gx = colR + side * (0.58 + ox), gy = nearY(gx) + 1.5 * s;
+      if (gx < colR + 12 || gx > ww - 10) continue;
+      if (cross) { c.fillRect(gx - 1.8 * s, gy - h * s, 3.6 * s, h * s); c.fillRect(gx - 6 * s, gy - h * 0.72 * s, 12 * s, 3.2 * s); }
+      else { c.beginPath(); c.moveTo(gx - 6 * s, gy); c.lineTo(gx - 6 * s, gy - h * 0.62 * s); c.arc(gx, gy - h * 0.62 * s, 6 * s, Math.PI, 0); c.lineTo(gx + 6 * s, gy); c.closePath(); c.fill(); }
+    }
+    // a crooked little fence on the left
+    const fx0 = side * 0.12, fx1 = side * 0.62;
+    c.lineWidth = 1.6 * s;
+    for (let x = fx0; x < fx1; x += 9 * s) { const y = nearY(x) + 2 * s, h = (9 + R() * 4) * s, lean = (R() - 0.5) * 3 * s; c.beginPath(); c.moveTo(x, y); c.lineTo(x + lean, y - h); c.stroke(); }
+    c.lineWidth = 1.2 * s; c.beginPath(); c.moveTo(fx0, nearY(fx0) - 5 * s); for (let x = fx0; x < fx1; x += 9 * s) c.lineTo(x, nearY(x) - 5 * s - (R() - 0.5) * s); c.stroke();
+  }
+  // the bolt itself, on one side, only in the lit version
+  if (lit) {
+    const left = ambR() < 0.5 && side > 100, bx = left ? side * (0.2 + ambR() * 0.6) : colR + side * (0.2 + ambR() * 0.6), Rb = mulberry((ambR() * 1e6) | 0);
+    const path = (x, y, yEnd, w, depth) => {
+      c.lineWidth = w; c.beginPath(); c.moveTo(x, y);
+      while (y < yEnd) {
+        x += (Rb() - 0.5) * 26 * s; y += (8 + Rb() * 16) * s; c.lineTo(x, y);
+        if (depth > 0 && Rb() < 0.12) { const sx = x, sy = y; c.stroke(); path(sx, sy, sy + (40 + Rb() * 90) * s, w * 0.5, depth - 1); c.lineWidth = w; c.beginPath(); c.moveTo(sx, sy); }
+      }
+      c.stroke();
+    };
+    c.save(); c.strokeStyle = '#f4f7ff'; c.shadowColor = 'rgba(190,210,255,0.95)'; c.shadowBlur = 14 * d; c.lineJoin = 'round';
+    path(bx, -10, farY(bx) - 10, 2.4 * s, 2);
+    c.restore();
+  }
+}
+
+// ---- bats crossing the page (a few times an hour)
+const bats = [];
+let ambOn = false;
+function launchBats(t) {
+  if (REDUCED) return;
+  const n = 1 + ((ambR() * 3) | 0), dir = ambR() < 0.5 ? 1 : -1, y0 = H * (0.08 + ambR() * 0.24);
+  for (let i = 0; i < n; i++) {
+    bats.push({ t0: t + i * (0.16 + ambR() * 0.3), dir, y0: y0 + (ambR() - 0.5) * 60 * k, v: (200 + ambR() * 90) * k,
+      s: (0.85 + ambR() * 0.5) * k, ph: ambR() * 6.28, f: 7 + ambR() * 2.5, wob: (8 + ambR() * 16) * k });
+  }
+  AU.flutter(n);
+}
+function drawFlyingBat(c, x, y, s, ph) {
+  const flap = Math.sin(ph), tip = -flap * 7 * s, mid = -flap * 3 * s;
+  c.save(); c.translate(x, y);
+  for (const sd of [-1, 1]) {
+    c.beginPath(); c.moveTo(sd * 1.5 * s, -1 * s);
+    c.quadraticCurveTo(sd * 5 * s, mid - 3 * s, sd * 11 * s, tip - 1 * s);
+    c.quadraticCurveTo(sd * 9.6 * s, tip + 2.4 * s, sd * 8 * s, mid + 2 * s);
+    c.quadraticCurveTo(sd * 6.5 * s, mid + 0.6 * s, sd * 5 * s, mid + 2.6 * s);
+    c.quadraticCurveTo(sd * 3.4 * s, mid + 1.2 * s, sd * 1.5 * s, 2 * s);
+    c.closePath(); c.fill();
+  }
+  c.beginPath(); c.ellipse(0, 0.5 * s, 1.8 * s, 2.6 * s, 0, 0, 7); c.fill();
+  c.beginPath(); c.arc(0, -2.3 * s, 1.5 * s, 0, 7); c.fill();
+  c.beginPath(); c.moveTo(-1.3 * s, -3 * s); c.lineTo(-1.6 * s, -5.2 * s); c.lineTo(-0.3 * s, -3.5 * s); c.closePath();
+  c.moveTo(1.3 * s, -3 * s); c.lineTo(1.6 * s, -5.2 * s); c.lineTo(0.3 * s, -3.5 * s); c.closePath(); c.fill();
+  c.restore();
+}
+function drawBats(t) {
+  if (!bats.length) { if (ambOn) { ambCv.style.display = 'none'; ambOn = false; } return; }
+  if (!ambOn) {
+    ambOn = true; ambCv.style.display = 'block';
+    ambCv.width = Math.round(W * dpr); ambCv.height = Math.round(H * dpr); ambCv.style.width = W + 'px'; ambCv.style.height = H + 'px';
+  }
+  const c = ambCv.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+  c.fillStyle = '#0d0b0e';
+  for (let i = bats.length - 1; i >= 0; i--) {
+    const b = bats[i], s = t - b.t0;
+    if (s < 0) continue;
+    const x = b.dir > 0 ? -30 * k + s * b.v : W + 30 * k - s * b.v;
+    if (s > 0.3 && (x < -40 * k || x > W + 40 * k)) { bats.splice(i, 1); continue; }
+    drawFlyingBat(c, x, b.y0 + Math.sin(s * 2.3 + b.ph) * b.wob - s * 14 * k, b.s, s * b.f * 6.283 + b.ph);
+  }
 }
 
 /* ---------------------------------------------------------- idle sparks -- */
@@ -3047,6 +3308,8 @@ function tick() {
   pushCar(t);
   updateIdle(t);
   updateTip(t);
+  updateAmbient(t);
+  const surge = updateLightning(t);
   stepWebs(dt, t);
   if (appearAt.size > 64) for (const [i, a] of appearAt) if (a < t - 1) appearAt.delete(i);
   if (lightDirty && (lampOn || CH.light.v > 0)) renderLight();
@@ -3058,12 +3321,13 @@ function tick() {
     const ax = lightX, ay = G.capCY - G.capHH - G.paperTop;
     setStyle(lightCv, 'transform', `translate(${(ax - L.ax).toFixed(2)}px, ${(ay - L.ay).toFixed(2)}px) translate(${L.ax}px, ${L.ay}px) scale(${grow.toFixed(4)}) translate(${-L.ax}px, ${-L.ay}px)`);
     // intensity comes up fast near the slot (≈0.1 s) while the reach keeps growing (measured)
-    const inten = lampOn ? 1 - Math.pow(1 - Math.min(1, lv / 0.28), 2) : lv;
+    const inten = (lampOn ? 1 - Math.pow(1 - Math.min(1, lv / 0.28), 2) : lv) * surge;
     setStyle(lightCv, 'opacity', inten.toFixed(3));
     lightXf.tx = ax - L.ax; lightXf.ty = ay - L.ay; lightXf.g = grow; lightXf.a = inten;
   } else { setStyle(lightCv, 'opacity', '0'); lightXf.a = 0; }
   drawDt = dt;
   draw(t);
+  drawBats(t);
 }
 /* ---------------------------------------------------------------- debug -- */
 if (/[?&]debug\b/.test(location.search)) {
@@ -3071,7 +3335,7 @@ if (/[?&]debug\b/.test(location.search)) {
     get text() { return text; }, get lines() { return lines.map((l) => l.idx.map((i) => text[i]).join('')); },
     get carX() { return car.x; }, get target() { return carriageTarget(); }, get col() { return caretCol(); },
     get lamp() { return lampOn; }, get lift() { const t = now(); return strikeLift(t) - retractDrop(t); }, get lightX() { return lightX; }, colX, G, AU, fx, WEB,
-    renderCard, newPage,
+    renderCard, newPage, strikeLightning: () => strikeLightning(now()), launchBats: () => launchBats(now()), AMB,
     renderLightForTest(scale, spread) { const s0 = L.scale; L.scale = scale; sliders.spread = spread; renderLight(); L.scale = s0; },
   };
 }
