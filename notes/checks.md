@@ -541,3 +541,24 @@ Check 49 done. Next: graphics rounds continue.
 - Tests: functest, r12test, up16test, tear drag pass.
 
 Check 50 done. Next: graphics rounds continue.
+
+## Check 51 (v20d) – second graphics review (new features), all ten items handled
+- Torn edge: a real rip (slow wander, slight slant, uneven teeth, fine jitter) with a soft lighter fibre lip and the
+  odd longer strand, instead of an even row of ticks.
+- The torn piece keeps the paper's theme layer (Blueprint grid, Parchment stains, Black fibres).
+- Held in the hand, the sheet sits behind the capsule and the T; the paper's top-edge sprite is skipped while it is
+  held (it showed as a dark line across the lifted sheet); the hint waits until a flying sheet is clear.
+- Electric extras by skin: bolt-head plasma only on skins with metal terminals (Frankenstein, Brass, Copper, Space,
+  Mummy, Witch); no forks across the faces of Pumpkin, Ghost and Claude.
+- On light paper the extras are bolder: a darker tinted halo and a deeper body, so pale lilac lines and orange on the
+  pumpkin read.
+- Share picture: the frozen arc has a blurred glow instead of a hard outline; three small tapered sparks per bolt,
+  and none on bolt-less skins.
+- Flying sparks taper: a bright head and a thin fading tail, never wider than 0.9 px·k.
+- St. Elmo's fire: radius 9, stronger, with a hot point at the bolt tip.
+- Paper scraps: bigger irregular pieces in the paper's colour with a darker edge and a small shadow, still tumbling.
+- "Page torn off – Undo" shows once the sheet has flown clear (0.65 s); the selected capsule card's glow is no longer
+  clipped square by the carousel; a pull of 50 (was 70) tears the page.
+- Tests: full suite, tear drag (mouse + touch), perf and ?still replay re-run (results in Check 52).
+
+Check 51 done. Next: confirm suite/replay/perf.

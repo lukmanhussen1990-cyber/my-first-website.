@@ -183,7 +183,7 @@
   .vol::-moz-range-track { height: 4px; border-radius: 2px; background: #3a342d; }
   .vol::-moz-range-progress { height: 4px; border-radius: 2px; background: #cf9f4a; }
   .vol::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #fff4d6, #cf9f4a 70%, #8a6424); border: 1px solid #3b2a10; }
-  .carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 3px 16px 10px; scrollbar-width: none; }
+  .carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; margin: -12px -16px -6px; padding: 15px 16px 16px;   /* room for the chosen card's glow */ scrollbar-width: none; }
   .carousel::-webkit-scrollbar { display: none; }
   .card { flex: 0 0 112px; scroll-snap-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 6px 9px;
           border-radius: 14px; color: #e8dfcc; text-align: center; border: 1px solid rgba(255,230,180,.1);
@@ -2408,7 +2408,7 @@ function draw(t) {
   // hint + placeholder
   const empty = text.length === 0;
   // the placeholder vanishes the instant the first key lands (as recorded); it fades back in when cleared
-  hintA = empty && !pending ? Math.min(1, hintA + 0.08) : 0;
+  hintA = empty && !pending && t - feed.t0 > 0.55 ? Math.min(1, hintA + 0.08) : 0;   // (not over a sheet still flying off)
   const hbOn = hintA > 0.5;
   if (hbOn !== hintBtnOn) { hintBtnOn = hbOn; hintBtn.style.pointerEvents = hbOn ? 'auto' : 'none'; }
   if (hintA > 0.01 && capText.hint) {
@@ -2431,7 +2431,7 @@ function draw(t) {
   if (lv > 0.02 && lampOn) { drawShafts(c, t, lv * pP); drawTShadow(c, t, cx, capTop, lv * pP); if (!REDUCED) drawDust(c, t, lv * pP); }
   c.restore();
 
-  if (!STILL) c.drawImage(edgeCv, 0, G.paperTop - 2, W, edgeCv.height / dpr);
+  if (!STILL && !TAB.drag) c.drawImage(edgeCv, 0, G.paperTop - 2, W, edgeCv.height / dpr);   // (held up, the sheet in the hand is the top edge)
   updateTab(t); drawTearTab(c, TAB.a, t);
   // a fresh sheet feeding in after a tear: its top edge rises from the pipe to the top of the page
   const fs = t - feed.t0;
@@ -2620,10 +2620,18 @@ function jagPath(x0, y0, x1, y1, seed, amp, n = 8) {
 }
 // the electric extras around the recorded arc (left out in ?still so the replay stays comparable)
 const ARC = { prev: null, prevFr: -1, cur: null, storm: -9 };
-function strokeArc(c, pts, a, w, dark) {   // halo, coloured body and a white-hot core
+// skins with metal terminals at the arc's ends (others have a stem, a bat, a chain or a face there)
+const BOLTED = { frank: 1, brass: 1, copper: 1, space: 1, mummy: 1, witch: 1 }, FACED = { pumpkin: 1, ghost: 1, claude: 1 };
+function strokeArc(c, pts, a, w, dark, soft) {   // halo, coloured body and a white-hot core (soft: a blurred glow instead of an outline)
+  if (soft) {
+    c.save(); c.shadowColor = rgba(skin.sp.halo, 0.9 * a); c.shadowBlur = w * 6;
+    c.strokeStyle = rgba(dark ? skin.sp.mid : mix(skin.sp.halo, [30, 10, 40], 0.35), 0.9 * a); c.lineWidth = w * 1.3; strokePts(c, pts); c.restore();
+    c.strokeStyle = `rgba(255,255,255,${0.95 * a})`; c.lineWidth = w * 0.6; strokePts(c, pts);
+    return;
+  }
   // on a dark sheet the halo is light; on cream the body is a deeper shade of the spark colour so the white core reads
-  c.strokeStyle = rgba(skin.sp.halo, (dark ? 0.35 : 0.3) * a); c.lineWidth = w * 3.4; strokePts(c, pts);
-  c.strokeStyle = rgba(dark ? skin.sp.mid : mix(skin.sp.halo, [30, 10, 40], 0.25), (dark ? 0.75 : 0.85) * a); c.lineWidth = w * 1.6; strokePts(c, pts);
+  c.strokeStyle = rgba(dark ? skin.sp.halo : mix(skin.sp.halo, [40, 20, 30], 0.3), (dark ? 0.35 : 0.32) * a); c.lineWidth = w * (dark ? 3.4 : 3.8); strokePts(c, pts);
+  c.strokeStyle = rgba(dark ? skin.sp.mid : mix(skin.sp.halo, [30, 10, 40], 0.45), (dark ? 0.75 : 0.95) * a); c.lineWidth = w * 1.7; strokePts(c, pts);
   c.strokeStyle = `rgba(255,255,255,${0.95 * a})`; c.lineWidth = w * 0.6; strokePts(c, pts);
 }
 function drawElectricExtras(c, cx, cy, t, st, x, yTop, yBot, pts, bolt, fr) {
@@ -2643,7 +2651,7 @@ function drawElectricExtras(c, cx, cy, t, st, x, yTop, yBot, pts, bolt, fr) {
   if (fr !== ARC.prevFr) { ARC.prev = ARC.cur; ARC.cur = pts; ARC.prevFr = fr; }
   const R = mulberry(fr * 29 + 11);
   // forks: on a strong discharge one or two branches split off and die out in the air
-  if (st.white > 0.55) {
+  if (st.white > 0.55 && !FACED[skin.id]) {
     const nf = 1 + (R() < 0.45 ? 1 : 0);
     for (let i = 0; i < nf; i++) {
       const p = pts[3 + ((R() * (pts.length - 7)) | 0)], side = R() < 0.5 ? -1 : 1, ang = side * (0.5 + R() * 0.7), len = (12 + R() * 14) * k;
@@ -2666,7 +2674,7 @@ function drawElectricExtras(c, cx, cy, t, st, x, yTop, yBot, pts, bolt, fr) {
     strokeArc(c, jagPath(x0, yr, x0 + side * l, yr + (R() - 0.5) * 3 * k, fr * 11 + 7, 2.2 * k, 11), st.white * 0.8, 0.85 * k, lamp);
   }
   // plasma at the bolt heads: a ring of short, flickering rays
-  if (st.tips > 0.05) {
+  if (st.tips > 0.05 && BOLTED[skin.id]) {
     for (const [y0, dir] of [[yTop, -1], [yBot, 1]]) {
       const n = 4 + ((R() * 3) | 0);
       for (let i = 0; i < n; i++) {
@@ -2691,10 +2699,11 @@ function drawStElmo(c, cx, cy, t, cP) {
   const x = cx + 25.4 * k, fr = (t * 60) | 0;
   c.save(); c.globalCompositeOperation = 'lighter'; c.lineCap = 'round';
   for (const [y0, dir, ph] of [[cy - G.capHH - 3.7 * k, -1, 0], [cy + G.capHH + 3.7 * k, 1, 2.1]]) {
-    const fl = 0.55 + 0.25 * Math.sin(t * 9.3 + ph) + 0.2 * Math.sin(t * 23.7 + ph * 2), a = 0.16 * cP * fl, r = 5.5 * k;
+    const fl = 0.55 + 0.25 * Math.sin(t * 9.3 + ph) + 0.2 * Math.sin(t * 23.7 + ph * 2), a = 0.3 * cP * fl, r = 9 * k;
     const g = c.createRadialGradient(x, y0, 0, x, y0, r);
     g.addColorStop(0, rgba(skin.sp.tip, a)); g.addColorStop(0.5, rgba(skin.sp.halo, a * 0.5)); g.addColorStop(1, rgba(skin.sp.halo, 0));
     c.fillStyle = g; c.fillRect(x - r, y0 - r, r * 2, r * 2);
+    c.fillStyle = `rgba(255,255,255,${0.55 * cP * fl})`; c.beginPath(); c.arc(x, y0 + dir * 1.2 * k, 0.7 * k, 0, 7); c.fill();   // a hot point at the very tip
     if (hash(fr * 31 + (dir > 0 ? 7 : 0)) < 0.06) {   // a tiny crackle
       const R = mulberry(fr * 5 + (dir > 0 ? 1 : 2)), f = (R() - 0.5) * 2, l = (2 + R() * 3) * k;
       c.strokeStyle = rgba(skin.sp.mid, 0.6 * cP); c.lineWidth = 0.5 * k;
@@ -4017,11 +4026,12 @@ async function renderCard() {
     const ax = cx + 25.4 * kc, yT = G.capCY - G.capHH - 3.7 * kc, yB = G.capCY + G.capHH + 3.7 * kc, dark = paperTheme().lightInk;
     const ap = lightningPath(ax, yT + 1.5 * kc, yB - 1.5 * kc, 4242, 1.45 * kc);
     c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
-    strokeArc(c, ap, 1, 0.9 * kc, dark);
-    const fp = ap[8]; strokeArc(c, jagPath(fp[0], fp[1], fp[0] + 15 * kc, fp[1] - 4 * kc, 77, 1.2 * kc, 7), 0.8, 0.8 * kc, dark);
-    for (const [y0, dir] of [[yT, -1], [yB, 1]]) for (let i = 0; i < 5; i++) {
-      const f = (i - 2) * 0.5, l = (4 + (i % 2) * 2.5) * kc;
-      strokeArc(c, jagPath(ax, y0, ax + Math.sin(f) * l, y0 + dir * Math.cos(f) * l, 90 + i + (dir > 0 ? 9 : 0), 0.6 * kc, 3), 0.8, 0.6 * kc, dark);
+    strokeArc(c, ap, 1, 0.9 * kc, dark, true);
+    if (!FACED[sk.id]) { const fp = ap[8]; strokeArc(c, jagPath(fp[0], fp[1], fp[0] + 15 * kc, fp[1] - 4 * kc, 77, 1.2 * kc, 7), 0.8, 0.8 * kc, dark, true); }
+    if (BOLTED[sk.id]) for (const [y0, dir] of [[yT, -1], [yB, 1]]) for (let i = 0; i < 3; i++) {   // a few tapered sparks at each bolt
+      const f = (i - 1) * 0.7, l = (4.5 + (i % 2) * 2) * kc;
+      c.save(); c.globalAlpha = 0.85; c.lineWidth = (0.9 - i * 0.15) * kc; c.strokeStyle = 'rgba(255,255,255,0.9)'; c.shadowColor = rgba(skin.sp.halo, 0.9); c.shadowBlur = 3 * kc;
+      strokePts(c, jagPath(ax, y0, ax + Math.sin(f) * l, y0 + dir * Math.cos(f) * l, 90 + i + (dir > 0 ? 9 : 0), 0.5 * kc, 3)); c.restore();
     }
     c.restore();
     buildSprites();
@@ -4060,12 +4070,13 @@ function newPage(pulled) {
   onTextChanged(); saveNow();
   AU.tear(); haptic([14, 50, 10]);
   const d0 = DR.cur;
-  toast('Page torn off', 5, { label: 'Undo', fn: () => {
+  const note = () => toast('Page torn off', 5, { label: 'Undo', fn: () => {
     if (DR.cur !== d0) return;   // another draft is in the machine now
     if (text || pending) return;   // already typing on the new sheet
     if (DR.cur && DR.cur.pages[DR.cur.pages.length - 1] === prev) { DR.cur.pages.pop(); archKey = ''; }
     input.value = prev.slice(0, MAX); keepCaretAtEnd(); syncInput();   // a long page lands at once, a short one is typed back
   } });
+  if (REDUCED) note(); else setTimeout(note, 650);   // once the sheet has flown clear of the top
 }
 // after a tear the fresh sheet feeds up into place: its grain (and theme layer) slide up for a moment
 const feed = { t0: -9 };
@@ -4096,8 +4107,13 @@ function buildTorn(t) {
   c.setTransform(dpr, 0, 0, dpr, 0, -(top - ext) * dpr);
   if (ext) drawTearTab(c, TAB.a);
   // the sheet: rounded top like the real one, a ragged torn edge just above the pipe
-  const R = mulberry((t * 1000) | 0), edge = [];
-  for (let x = W; x > -3 * k; x -= 2.5 * k) edge.push([Math.max(0, x), bot + (R() - 0.5) * 3.2 * k + Math.sin(x * 0.07) * 1.2 * k]);
+  // a ripped edge, not a perforation: a slow wander, a slight slant, uneven teeth and fine jitter
+  const R = mulberry((t * 1000) | 0), edge = [], slant = (R() - 0.5) * 4 * k, ph = R() * 6.3;
+  let wob = 0;
+  for (let x = W; x > -3 * k; x -= (1 + R() * 3) * k) {
+    wob = wob * 0.8 + (R() - 0.5) * 1.4 * k;
+    edge.push([Math.max(0, x), bot + Math.sin(x * 0.021 + ph) * 2 * k + slant * (x / W - 0.5) + wob + (R() - 0.5) * 1.2 * k]);
+  }
   c.beginPath();
   c.moveTo(0, top + G.ry); c.ellipse(G.rx, top + G.ry, G.rx, G.ry, 0, Math.PI, Math.PI * 1.5);
   c.lineTo(W - G.rx, top); c.ellipse(W - G.rx, top + G.ry, G.rx, G.ry, 0, -Math.PI / 2, 0);
@@ -4106,6 +4122,7 @@ function buildTorn(t) {
   c.save(); c.clip();
   c.fillStyle = rgba(paperRGB); c.fillRect(0, top, W, hh);
   c.globalAlpha = 1 - CH.paper.v * 0.45; c.drawImage(grainCv, 0, top, W, H - top); c.globalAlpha = 1;
+  if (paperFxCv.width) c.drawImage(paperFxCv, 0, top, W, parseFloat(paperFxCv.style.height));   // grid, stains, fibres of the theme
   if (lightXf.a > 0.01) {   // the lamp's light, as it falls on the sheet right now
     c.save(); c.globalAlpha = lightXf.a;
     c.translate(lightXf.tx + L.ax, top + lightXf.ty + L.ay); c.scale(lightXf.g, lightXf.g); c.translate(-L.ax, -L.ay);
@@ -4121,10 +4138,14 @@ function buildTorn(t) {
   hl.addColorStop(0, 'rgba(255,255,255,0.18)'); hl.addColorStop(1, 'rgba(255,255,255,0)');
   c.fillStyle = hl; c.fillRect(0, top, W, 30 * k);
   c.restore();
-  // a few loose fibres along the tear
-  c.strokeStyle = CH.paper.v > 0.5 ? 'rgba(90,90,84,0.6)' : 'rgba(255,253,246,0.9)'; c.lineWidth = 0.5 * k; c.lineCap = 'round';
-  c.beginPath();
-  for (let i = 2; i < edge.length - 2; i += 3) { const [x, y] = edge[i]; c.moveTo(x, y - 0.6 * k); c.lineTo(x + (R() - 0.5) * 1.6 * k, y + (0.6 + R() * 1.4) * k); }
+  // the torn lip: a soft, lighter band of loose fibres along the rip, and the odd longer strand
+  const lip = (w, a) => { c.beginPath(); edge.forEach(([x, y], i) => (i ? c.lineTo(x, y - 0.4 * k) : c.moveTo(x, y - 0.4 * k))); c.lineWidth = w; c.strokeStyle = a; c.stroke(); };
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  const dkS = CH.paper.v > 0.5 || paperTheme().lightInk;
+  lip(2 * k, dkS ? 'rgba(200,196,186,0.18)' : 'rgba(255,253,246,0.55)');
+  lip(0.7 * k, dkS ? 'rgba(220,216,206,0.25)' : 'rgba(255,255,250,0.85)');
+  c.strokeStyle = dkS ? 'rgba(200,196,186,0.35)' : 'rgba(255,253,246,0.9)'; c.lineWidth = 0.4 * k; c.beginPath();
+  for (let i = 3; i < edge.length - 3; i += 5 + ((R() * 6) | 0)) { const [x, y] = edge[i]; c.moveTo(x, y); c.quadraticCurveTo(x + (R() - 0.5) * 2 * k, y + 1.5 * k, x + (R() - 0.5) * 2.5 * k, y + (1.5 + R() * 2.5) * k); }
   c.stroke();
   app.insertBefore(cv, toastEl);
   return { cv, top: top - ext, hh, bot };
@@ -4201,6 +4222,7 @@ tabEl.addEventListener('pointerdown', (e) => {
   lastActivity = now();
   const T = buildTorn(now());
   if (!T) return;
+  app.insertBefore(T.cv, scene); T.cv.style.zIndex = 'auto';   // held in the hand, the sheet stays behind the capsule and the T
   TAB.drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, T, prev: text + pending, ripped: false, moved: false, vy: 0, vx: 0, lt: performance.now(), ly: e.clientY, lx: e.clientX, pos: { x: 0, y: 0, r: 0 } };
   TAB.a = 0; AU.trayClick();
 });
@@ -4239,7 +4261,7 @@ function endTear(e) {
   if (!d.moved) {   // a tap: wiggle and say how it works; a keyboard press tears straight away
     cancelTear(); TAB.wig = now(); toast('Pull the tab up to tear the page off', 2.2); return;
   }
-  if (d.ripped && (pull > 70 * k || fling)) {
+  if (d.ripped && (pull > 50 * k || fling)) {
     TAB.drag = null;
     newPage({ T: d.T, from: { x: d.pos.x, y: d.pos.y, r: d.pos.r, rx: d.pos.rx, vx: d.vx } });
   } else cancelTear();
@@ -5048,7 +5070,7 @@ function scrapsAt(y, n) {
   if (STILL || REDUCED) return;
   for (let i = 0; i < n; i++) SCRAPS.push({ x: (0.08 + Math.random() * 0.84) * W, y: y + (Math.random() - 0.5) * 3 * k, vx: (Math.random() - 0.5) * 50 * k,
     vy: -(10 + Math.random() * 45) * k, r: Math.random() * 6.3, vr: (Math.random() - 0.5) * 14, t: 0, life: 1.1 + Math.random() * 0.9,
-    w: (1.6 + Math.random() * 2.4) * k, h: (0.9 + Math.random() * 1.4) * k, ph: Math.random() * 6.3 });
+    w: (2.2 + Math.random() * 3) * k, h: (1.4 + Math.random() * 2) * k, ph: Math.random() * 6.3, j: Math.random() });
 }
 // a firework ring: sparks thrown evenly outwards from one point, plus a few slower ones inside
 function ringAt(x, y, n, col) {
@@ -5085,7 +5107,9 @@ function drawParts(c) {
       c.globalAlpha = Math.min(1, (p.life - p.t) / 0.3);
       const fl = Math.cos(p.t * 9 + p.ph);   // turning over as it falls: it narrows to an edge and back
       c.setTransform(1, 0, 0, 1, 0, 0); c.translate(p.x * dpr, (p.y - G.sceneTop) * dpr); c.rotate(p.r); c.scale(dpr, dpr * (0.25 + 0.75 * Math.abs(fl)));
-      c.beginPath(); c.moveTo(-p.w, -p.h); c.lineTo(p.w * 0.8, -p.h * 0.7); c.lineTo(p.w, p.h); c.lineTo(-p.w * 0.6, p.h * 0.8); c.closePath(); c.fill(); c.stroke();
+      const scrap = (ox, oy) => { c.beginPath(); c.moveTo(-p.w + ox, -p.h + oy); c.lineTo(p.w * (0.5 + p.j * 0.4) + ox, -p.h * 0.7 + oy); c.lineTo(p.w + ox, p.h * (0.2 + p.j * 0.6) + oy); c.lineTo(p.w * 0.2 + ox, p.h + oy); c.lineTo(-p.w * 0.6 + ox, p.h * 0.8 + oy); c.closePath(); };
+      c.fillStyle = 'rgba(0,0,0,0.14)'; scrap(0.8 * k, 1.1 * k); c.fill();   // its shadow
+      c.fillStyle = rgba(paperRGB); scrap(0, 0); c.fill(); c.stroke();
     }
     c.restore();
   }
@@ -5097,17 +5121,22 @@ function drawParts(c) {
   if (lightSheet) for (const p of PARTS) {   // (all sparks: the ones flying off the bolts land on the paper too)
     if (!p.cd) p.cd = rgba(mix(p.c, [60, 20, 0], 0.3));
     const a = 1 - p.t / p.life, d = p.fw ? 0.05 : 0.026, tx = p.x - p.vx * d, ty = p.y - p.vy * d;
-    c.globalAlpha = a * 0.25; c.strokeStyle = p.cs; c.lineWidth = p.w * 3.2;
-    c.beginPath(); c.moveTo(tx, ty); c.lineTo(p.x, p.y); c.stroke();
-    c.globalAlpha = a; c.strokeStyle = p.cd; c.lineWidth = p.w;
-    c.beginPath(); c.moveTo(tx, ty); c.lineTo(p.x, p.y); c.stroke();
+    const mx = p.x - p.vx * d * 0.35, my = p.y - p.vy * d * 0.35;
+    c.globalAlpha = a * 0.22; c.strokeStyle = p.cs; c.lineWidth = p.w * 2.8;
+    c.beginPath(); c.moveTo(mx, my); c.lineTo(p.x, p.y); c.stroke();
+    c.globalAlpha = a * 0.5; c.strokeStyle = p.cd; c.lineWidth = p.w * 0.45;   // a thin fading tail…
+    c.beginPath(); c.moveTo(tx, ty); c.lineTo(mx, my); c.stroke();
+    c.globalAlpha = a; c.lineWidth = Math.min(p.w * 0.9, 0.9 * k);              // …and a bright head
+    c.beginPath(); c.moveTo(mx, my); c.lineTo(p.x, p.y); c.stroke();
   }
   c.globalCompositeOperation = 'lighter';
   if (!lightSheet) for (const p of PARTS) {
-    const a = 1 - p.t / p.life;
-    const tx = p.x - p.vx * 0.022, ty = p.y - p.vy * 0.022;   // a short hot streak along the flight
-    c.globalAlpha = a; c.strokeStyle = p.cs; c.lineWidth = p.w * 1.3;
-    c.beginPath(); c.moveTo(tx, ty); c.lineTo(p.x, p.y); c.stroke();
+    const a = 1 - p.t / p.life, d = p.fw ? 0.05 : 0.03;
+    const tx = p.x - p.vx * d, ty = p.y - p.vy * d, mx = p.x - p.vx * d * 0.35, my = p.y - p.vy * d * 0.35;   // a hot head and a fading tail
+    c.globalAlpha = a * 0.45; c.strokeStyle = p.cs; c.lineWidth = p.w * 0.45;
+    c.beginPath(); c.moveTo(tx, ty); c.lineTo(mx, my); c.stroke();
+    c.globalAlpha = a; c.lineWidth = Math.min(p.w * 0.9, 0.9 * k);
+    c.beginPath(); c.moveTo(mx, my); c.lineTo(p.x, p.y); c.stroke();
   }
   c.restore();
 }
