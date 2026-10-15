@@ -320,3 +320,11 @@ Check 24 done. Next: graphics – fresh sheet roll-in, drafts sheet visuals, ski
 - Tests: skintest, functest, reducedtest, r12test pass.
 
 Check 25 done. Next: graphics – fresh sheet roll-in, drafts sheet visuals.
+
+## Check 26 (v19h) – graphics
+- Drafts sheet: every draft row has a small paper thumbnail (current paper theme, its first lines as ink strokes,
+  torn-off pages stacked behind with a soft shadow); tapping it opens the draft. The age ("1 h ago") never breaks
+  across lines.
+- Tests: up16test, backup, functest pass.
+
+Check 26 done. Next: graphics – fresh sheet roll-in, then another full-screen look in every paper theme.

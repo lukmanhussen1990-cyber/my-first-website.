@@ -206,6 +206,7 @@
   .goal .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #a87a2e, #f0c46c); border-radius: 3px; transition: width .3s; }
   .shortcuts { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 11px; color: #cfc5b1; align-items: center; }
   kbd { font: inherit; font-size: 10px; padding: 1px 6px; border-radius: 4px; color: #efe6d3; background: #3a342d; border: 1px solid #4d463c; box-shadow: 0 1px 0 #0d0c0b; white-space: nowrap; }
+  .draft .thumb { flex: none; margin: -4px 2px -4px -6px; cursor: pointer; }
   .draft { display: flex; align-items: center; gap: 6px; padding: 9px 8px 9px 12px; border-radius: 12px; margin-bottom: 8px;
            background: rgba(255,240,210,.045); border: 1px solid rgba(255,230,180,.08); }
   .draft.cur { border-color: rgba(226,179,92,.6); background: rgba(255,215,140,.09); }
@@ -4593,6 +4594,27 @@ function refreshPanel() {
   if (sel && panelEl.classList.contains('open')) sel.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
 }
 // the drafts sheet
+// a little picture of the draft's latest sheet: the paper in the current theme, its first lines as ink strokes,
+// and the torn-off pages stacked behind it
+function draftThumb(d) {
+  const w = 30, h = 40, pad = 4, cv = document.createElement('canvas'), dd = Math.min(3, window.devicePixelRatio || 1);
+  cv.className = 'thumb'; cv.setAttribute('aria-hidden', 'true');
+  cv.width = (w + pad * 2) * dd; cv.height = (h + pad * 2) * dd; cv.style.width = (w + pad * 2) + 'px'; cv.style.height = (h + pad * 2) + 'px';
+  const g = cv.getContext('2d'); g.scale(dd, dd);
+  const P = paperTheme(), sheet = (x, y, a) => {
+    g.save(); g.globalAlpha = a; g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 3; g.shadowOffsetY = 1;
+    g.fillStyle = P.light; g.beginPath(); g.moveTo(x, y + h); g.lineTo(x, y + 6); g.quadraticCurveTo(x, y, x + 6, y);
+    g.lineTo(x + w - 6, y); g.quadraticCurveTo(x + w, y, x + w, y + 6); g.lineTo(x + w, y + h); g.closePath(); g.fill(); g.restore();
+  };
+  const stack = Math.min(2, d.pages.length);
+  for (let i = stack; i >= 1; i--) sheet(pad + i * 2, pad - i * 2 + 2, 0.55 + 0.2 * (2 - i));
+  sheet(pad, pad + 2, 1);
+  const src = (d === DR.cur ? text + pending : d.text) || (d.pages.length ? d.pages[d.pages.length - 1] : '');
+  const rows = []; for (const para of src.split('\n')) { let l = para; do { rows.push(l.slice(0, 22)); l = l.slice(22); } while (l.length && rows.length < 9); if (rows.length >= 9) break; }
+  g.fillStyle = inkFor(false); g.globalAlpha = 0.75;
+  rows.slice(-9).forEach((r, i) => { const n = r.trim().length; if (n) g.fillRect(pad + 4, pad + 9 + i * 3.3, Math.max(1.5, n / 22 * (w - 8)), 1.4); });
+  return cv;
+}
 function renderDrafts() {
   const body = draftsEl.querySelector('.body');
   body.innerHTML = '';
@@ -4606,7 +4628,7 @@ function renderDrafts() {
     const all = draftText(d, d === DR.cur), np = d.pages.length + 1;
     t.innerHTML = '<b></b><small></small>';
     t.querySelector('b').textContent = draftTitle(d);
-    t.querySelector('small').textContent = (d === DR.cur ? 'open · ' : '') + words(all) + ' words · ' + np + ' page' + (np > 1 ? 's' : '') + ' · ' + ago(d.updated);
+    t.querySelector('small').textContent = (d === DR.cur ? 'open · ' : '') + words(all) + ' words · ' + np + ' page' + (np > 1 ? 's' : '') + ' · ' + ago(d.updated).replace(/ /g, '\u00a0');   // the age never breaks across lines
     t.addEventListener('click', () => { if (d !== DR.cur) openDraft(d.id); closeSheet(); });
     const rn = el('button', 'ib', '✎'); rn.setAttribute('aria-label', 'Rename');
     rn.addEventListener('click', () => {
@@ -4623,7 +4645,8 @@ function renderDrafts() {
       del.classList.add('danger'); del.textContent = 'Delete?';
       setTimeout(() => { if (del.isConnected) { del.classList.remove('danger'); del.textContent = '✕'; } }, 3000);
     });
-    row.append(t, rn, del);
+    const th = draftThumb(d); th.addEventListener('click', () => t.click());
+    row.append(th, t, rn, del);
     body.appendChild(row);
   }
   const ex = el('div', 'sec'); ex.appendChild(el('h3', '', 'THIS DRAFT'));
