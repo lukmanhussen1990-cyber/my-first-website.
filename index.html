@@ -379,8 +379,11 @@ function inkFor(lamp) {
   if (!I) return lamp ? P.ink[1] : P.ink[0];
   if (P.lightInk) return I[1];
   if (!lamp) return I[0];
-  const c = hex(I[0]);   // under the lamp the ribbon reads darker, like the recorded ink
-  return '#' + c.map((v) => Math.round(v * 0.62).toString(16).padStart(2, '0')).join('');
+  const c = hex(I[0]);   // under the lamp the ribbon reads darker, like the recorded ink…
+  // …and never lighter than half the darkened sheet, so a brown ink on old parchment still stands out of the shadow
+  const lum = (q) => 0.299 * q[0] + 0.587 * q[1] + 0.114 * q[2];
+  const f = Math.min(0.62, 0.5 * lum(hex(P.dark)) / Math.max(1, lum(c)));
+  return '#' + c.map((v) => Math.round(v * f).toString(16).padStart(2, '0')).join('');
 }
 
 /* ------------------------------------------------------------- geometry -- */

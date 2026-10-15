@@ -335,3 +335,11 @@ Check 26 done. Next: graphics – fresh sheet roll-in, then another full-screen 
 - Tests: functest, reducedtest, up16test, mobile18 pass; ?still replay unchanged.
 
 Check 27 done. Next: graphics – a full-screen look in every paper theme and ink, light and lamp.
+
+## Check 28 (v19j) – graphics
+- Every paper × ink, light and lamp: under the lamp a coloured ribbon is now never lighter than half the darkened
+  sheet (keeping its hue), so sepia on Old Parchment and red/blue on Cream stay readable outside the beam
+  (sepia on parchment had been lighter than the paper and vanished). Default black ink unchanged.
+- Tests: up16test, functest, skintest pass; ?still replay unchanged.
+
+Check 28 done. Next: graphics – share-card picture in every skin/paper, then the lamp-mode capsule shading.
