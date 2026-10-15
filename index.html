@@ -120,7 +120,7 @@
   /* atmosphere modes (Normal is the recorded look): a sunny room, a fully dark one, a horror one */
   #sun { display: none; transform-origin: 0 0; will-change: transform, opacity; }
   #modeFx { position: absolute; inset: 0; pointer-events: none; display: none; overflow: hidden; }
-  #modeFx i { position: absolute; inset: 0; display: none; }
+  #modeFx i { position: absolute; inset: 0; display: none; will-change: opacity; }   /* the heartbeat and flicker only change opacity: kept on the compositor */
   body.m-solar #modeFx, body.m-dark #modeFx, body.m-horror #modeFx { display: block; }
   body.m-solar #modeFx .rays { display: block; inset: -20%;
     background: repeating-linear-gradient(118deg, rgba(255,236,190,0) 0 46px, rgba(255,238,196,.17) 46px 76px, rgba(255,236,190,0) 76px 132px);

@@ -588,3 +588,11 @@ Remembered with the other settings; ?still always uses Normal.
   replay are running (results in Check 53).
 
 Check 52 done. Next: confirm per-mode perf + replay, then polish the modes.
+
+## Check 53 (v21b)
+- ?still replay of the recording: identical to the reference except the gear icon (Normal mode unchanged).
+- Perf at 4x CPU throttle, phone 3x: Normal 4.6–5.6 ms p50, Horror 5.8–6.0, Solar 5.0–5.3, Dark 5.7–5.8 (p90 8–11):
+  the modes stay within noise of Normal. The heartbeat/flicker layers get will-change: opacity (compositor only).
+- Tests: functest, r12test, up16test, reducedtest pass.
+
+Check 53 done. Next: polish the modes further.
