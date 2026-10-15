@@ -2615,7 +2615,7 @@ function jagPath(x0, y0, x1, y1, seed, amp, n = 8) {
   return pts;
 }
 // the electric extras around the recorded arc (left out in ?still so the replay stays comparable)
-const ARC = { prev: null, prevFr: -1, cur: null };
+const ARC = { prev: null, prevFr: -1, cur: null, storm: -9 };
 function strokeArc(c, pts, a, w, dark) {   // halo, coloured body and a white-hot core
   // on a dark sheet the halo is light; on cream the body is a deeper shade of the spark colour so the white core reads
   c.strokeStyle = rgba(skin.sp.halo, (dark ? 0.35 : 0.3) * a); c.lineWidth = w * 3.4; strokePts(c, pts);
@@ -2645,6 +2645,15 @@ function drawElectricExtras(c, cx, cy, t, st, x, yTop, yBot, pts, bolt, fr) {
       const p = pts[3 + ((R() * (pts.length - 7)) | 0)], side = R() < 0.5 ? -1 : 1, ang = side * (0.5 + R() * 0.7), len = (12 + R() * 14) * k;
       const end = [p[0] + Math.sin(ang) * len, p[1] + (R() - 0.5) * len * 0.8];
       strokeArc(c, jagPath(p[0], p[1], end[0], end[1], fr * 7 + i, 1.3 * k, 7), st.white * 0.85, 0.95 * k, lamp);
+    }
+  }
+  // a reached goal: for a moment long arcs lash out of the bolt heads in all directions
+  const ss = t - ARC.storm;
+  if (ss >= 0 && ss < 0.9) {
+    const sa = 1 - ss / 0.9, n = 3 + ((R() * 3) | 0);
+    for (let i = 0; i < n; i++) {
+      const top = R() < 0.65, y0 = top ? yTop : yBot, ang = (top ? -1 : 1) * (Math.PI / 2) + (R() - 0.5) * 2.6, l = (24 + R() * 30) * k;
+      strokeArc(c, jagPath(x, y0, x + Math.cos(ang) * l, y0 + Math.sin(ang) * l, fr * 19 + i, 2 * k, 10), sa * (0.6 + R() * 0.4), 1 * k, lamp);
     }
   }
   // now and then the current leaps out along the metal pipe, away from the capsule
@@ -4560,6 +4569,7 @@ function celebrate(msg, small) {
   burstAt(bx, by, small ? 18 : 90, small ? 1 : 1.9);
   if (!small) for (let i = 1; i <= 3; i++) setTimeout(() => { burstAt(car.x + 25.4 * k, G.capCY - G.capHH, 45, 1.5, [255, 214, 120]); burstAt(car.x - 30 * k, G.capCY, 25, 1.2, [255, 255, 255]); }, i * 260);
   if (!small) {   // …then two firework rings open over the page, in the skin's colour and in gold
+    ARC.storm = now();
     AU.fanfare();
     setTimeout(() => ringAt(W * 0.36, G.paperTop + (G.railT - G.paperTop) * 0.42, 34, skin.sp.mid), 420);
     setTimeout(() => ringAt(W * 0.66, G.paperTop + (G.railT - G.paperTop) * 0.3, 28, [255, 214, 120]), 760);

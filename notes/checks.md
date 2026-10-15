@@ -472,3 +472,10 @@ Check 41 done. Next: electric – share picture gets a frozen arc; the tray swat
 - Tests: r12test, functest, up16test pass.
 
 Check 42 done. Next: electric – sparks in the skin tray swatches on hover, then the celebration's electric finale.
+
+## Check 43 (v19y) – electric graphics
+- Reaching a word goal: for 0.9 s long jagged arcs lash out of both bolt heads in all directions (fading), under the
+  capsule bursts and before the firework rings.
+- Tests: functest, up16test, reducedtest pass.
+
+Check 43 done. Next: graphics rounds continue (Blueprint skins, lamp on every paper, 320px sheets, 1920 lamp).
