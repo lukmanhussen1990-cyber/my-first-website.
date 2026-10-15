@@ -574,7 +574,7 @@ function paintGrain(g, w, h, k, pw, ph, fine = true) {
 // extra layers for the non-cream papers (cream is the recorded paper and has none): parchment stains and a
 // burnt edge, a blueprint grid, light fibres on black paper. Also used by the share picture.
 const paperFxCv = document.getElementById('paperFx');
-function paintPaperFx(g, w, h, k, id) {
+function paintPaperFx(g, w, h, k, id, card) {
   const R = mulberry(4711);
   if (id === 'parchment') {
     const e = g.createRadialGradient(w / 2, h * 0.42, Math.min(w, h) * 0.25, w / 2, h * 0.42, Math.max(w, h) * 0.75);
@@ -594,14 +594,16 @@ function paintPaperFx(g, w, h, k, id) {
     for (let y = 0, i = 0; y < h; y += step, i++) { g.fillStyle = i % 5 ? 'rgba(200,220,255,0.07)' : 'rgba(200,220,255,0.16)'; g.fillRect(0, y, w, Math.max(0.6, 0.5 * k)); }
     const v = g.createRadialGradient(w / 2, h * 0.4, Math.min(w, h) * 0.3, w / 2, h * 0.4, Math.max(w, h) * 0.8);
     v.addColorStop(0, 'rgba(0,10,30,0)'); v.addColorStop(1, 'rgba(0,10,30,0.35)'); g.fillStyle = v; g.fillRect(0, 0, w, h);
-    g.strokeStyle = 'rgba(220,235,255,0.22)'; g.lineWidth = 0.7 * k;   // a title block in the corner
-    g.strokeRect(w - 118 * k, h - 64 * k, 104 * k, 46 * k); g.beginPath(); g.moveTo(w - 118 * k, h - 46 * k); g.lineTo(w - 14 * k, h - 46 * k); g.stroke();
-    g.beginPath(); g.moveTo(w - 66 * k, h - 46 * k); g.lineTo(w - 66 * k, h - 18 * k); g.stroke();
-    g.fillStyle = 'rgba(220,235,255,0.3)'; g.textBaseline = 'middle';
-    g.font = `bold ${7.5 * k}px "Courier Prime", "Courier New", monospace`; g.fillText('FRANKENWRITER MK I', w - 114 * k, h - 55 * k);
-    g.font = `${6 * k}px "Courier Prime", "Courier New", monospace`;
-    g.fillText('DWG. 31-10', w - 114 * k, h - 37 * k); g.fillText('SCALE 1:1', w - 114 * k, h - 27 * k);
-    g.fillText('DRAWN: IGOR', w - 62 * k, h - 37 * k); g.fillText('SHEET 1', w - 62 * k, h - 27 * k);
+    if (!card) {   // a title block in the corner (the shared picture has its date there instead)
+      g.strokeStyle = 'rgba(220,235,255,0.22)'; g.lineWidth = 0.7 * k;
+      g.strokeRect(w - 118 * k, h - 64 * k, 104 * k, 46 * k); g.beginPath(); g.moveTo(w - 118 * k, h - 46 * k); g.lineTo(w - 14 * k, h - 46 * k); g.stroke();
+      g.beginPath(); g.moveTo(w - 66 * k, h - 46 * k); g.lineTo(w - 66 * k, h - 18 * k); g.stroke();
+      g.fillStyle = 'rgba(220,235,255,0.3)'; g.textBaseline = 'middle';
+      g.font = `bold ${7.5 * k}px "Courier Prime", "Courier New", monospace`; g.fillText('FRANKENWRITER MK I', w - 114 * k, h - 55 * k);
+      g.font = `${6 * k}px "Courier Prime", "Courier New", monospace`;
+      g.fillText('DWG. 31-10', w - 114 * k, h - 37 * k); g.fillText('SCALE 1:1', w - 114 * k, h - 27 * k);
+      g.fillText('DRAWN: IGOR', w - 62 * k, h - 37 * k); g.fillText('SHEET 1', w - 62 * k, h - 27 * k);
+    }
   } else if (id === 'black') {
     g.lineCap = 'round';
     for (let i = 0; i < 260; i++) {
@@ -3862,7 +3864,8 @@ async function renderCard() {
   const gr = document.createElement('canvas'); gr.width = CW; gr.height = Math.ceil(CH - paperTop);
   paintGrain(gr.getContext('2d'), CW, CH - paperTop, kc, CW, CH - paperTop, false);
   c.globalAlpha = paperTheme().grainA; c.drawImage(gr, 0, paperTop); c.globalAlpha = 1;
-  if (prefs.paper !== 'cream') { const fx = document.createElement('canvas'); fx.width = CW; fx.height = gr.height; paintPaperFx(fx.getContext('2d'), CW, CH - paperTop, kc, prefs.paper); c.drawImage(fx, 0, paperTop); }
+  if (prefs.paper !== 'cream') { const fx = document.createElement('canvas'); fx.width = CW; fx.height = gr.height; paintPaperFx(fx.getContext('2d'), CW, CH - paperTop, kc, prefs.paper, true); c.drawImage(fx, 0, paperTop); }
+  if (paperTheme().lightInk) { c.strokeStyle = 'rgba(255,246,226,0.16)'; c.lineWidth = 2.2 * kc; c.stroke(); }   // a dark sheet's edge catches a little light
   // typed lines (a few at a time, so the machine keeps running while a long page is drawn)
   const S = { k: kc, dpr: 1, cell, font, text: src, press: inkP }, inkRgb = hex(inkFor(false)), pad = 6 * kc;
   const lc = document.createElement('canvas'); lc.width = Math.ceil(COLS * cell + pad * 2); lc.height = Math.ceil(lineH * 1.7);

@@ -343,3 +343,11 @@ Check 27 done. Next: graphics – a full-screen look in every paper theme and in
 - Tests: up16test, functest, skintest pass; ?still replay unchanged.
 
 Check 28 done. Next: graphics – share-card picture in every skin/paper, then the lamp-mode capsule shading.
+
+## Check 29 (v19k) – graphics
+- Share picture checked on Blueprint/space, Black/vampire, Parchment/mummy (long page): the Blueprint title block no
+  longer collides with the date (left out of the picture), and a dark sheet's rounded edge catches a faint light line
+  so it separates from the background, as in the app.
+- Tests: r12test, up16test, functest pass.
+
+Check 29 done. Next: graphics – lamp-mode capsule shading per skin and the cobweb look on dark papers.
